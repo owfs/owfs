@@ -259,10 +259,10 @@ static int OW_w_subkey(const BYTE * data, const size_t size,
 	BYTE ident[8];
 	struct transaction_log tscratch[] = {
 		TRXN_START,
-		{p, NULL, 3, trxn_match},
-		{NULL, ident, 8, trxn_read},
-		{global_passwd[extension], NULL, 8, trxn_match},
-		{&data[0x10], NULL, size - 0x10, trxn_match},
+        TRXN_WRITE3(p),
+        TRXN_READ(ident,8),
+        TRXN_WRITE(global_passwd[extension], 8),
+        TRXN_WRITE( &data[0x10], size - 0x10),
 		TRXN_END,
 	};
 
@@ -285,10 +285,10 @@ static int OW_r_subkey(BYTE * data, const size_t size, const off_t offset,
 	BYTE p[3] = { _1W_READ_SUBKEY, 0x00, 0x00 };	// read subkey
 	struct transaction_log tscratch[] = {
 		TRXN_START,
-		{p, NULL, 3, trxn_match},
-		{NULL, data, 8, trxn_read},
-		{global_passwd[extension], NULL, 8, trxn_match},
-		{NULL, &data[0x10 + offset], 0x30 - offset, trxn_read},
+        TRXN_WRITE3(p),
+        TRXN_READ(data,8),
+        TRXN_WRITE(global_passwd[extension], 8),
+        TRXN_WRITE( &data[0x10 + offset], 0x30 - offset),
 		TRXN_END,
 	};
 
@@ -392,16 +392,16 @@ static int OW_w_ident(const BYTE * data, const size_t size,
 	BYTE all_data[0x40];
 	struct transaction_log tscratch[] = {
 		TRXN_START,
-		{write_scratch, NULL, 3, trxn_match},
-		{all_data, NULL, 0x40, trxn_match},
+        TRXN_WRITE3(write_scratch),
+        TRXN_WRITE(all_data, 0x40),
 		TRXN_END,
 	};
 	struct transaction_log tcopy[] = {
 		TRXN_START,
-		{copy_scratch, NULL, 3, trxn_match},
-		{cp_array[IDENT], NULL, 8, trxn_match},
-		{global_passwd[pn->extension], NULL, 8, trxn_match},
-		TRXN_END,
+        TRXN_WRITE3(copy_scratch),
+        TRXN_WRITE( cp_array[IDENT], 8),
+        TRXN_WRITE(global_passwd[pn->extension], 8),
+        TRXN_END,
 	};
 
 	//printf("OW_w_ident\n");
@@ -433,15 +433,15 @@ static int OW_w_change_password(const BYTE * data, const size_t size,
 	BYTE all_data[0x40];
 	struct transaction_log tscratch[] = {
 		TRXN_START,
-		{write_scratch, NULL, 3, trxn_match},
-		{all_data, NULL, 0x40, trxn_match},
-		TRXN_END,
+        TRXN_WRITE3(write_scratch),
+        TRXN_WRITE(all_data, 0x40),
+        TRXN_END,
 	};
 	struct transaction_log tcopy[] = {
 		TRXN_START,
-		{copy_scratch, NULL, 3, trxn_match},
-		{cp_array[PASSWORD], NULL, 8, trxn_match},
-		{global_passwd[pn->extension], NULL, 8, trxn_match},
+        TRXN_WRITE3(copy_scratch),
+        TRXN_WRITE( cp_array[PASSWORD], 8),
+        TRXN_WRITE(global_passwd[pn->extension], 8),
 		TRXN_END,
 	};
 
@@ -492,15 +492,15 @@ static int OW_w_page(const BYTE * data, const size_t size,
 	size_t left = size;
 	struct transaction_log tscratch[] = {
 		TRXN_START,
-		{write_scratch, NULL, 3, trxn_match},
-		{all_data, NULL, 0x40, trxn_match},
+        TRXN_WRITE3(write_scratch),
+        TRXN_WRITE(all_data, 0x40),
 		TRXN_END,
 	};
 	struct transaction_log tcopy[] = {
 		TRXN_START,
-		{copy_scratch, NULL, 3, trxn_match},
+        TRXN_WRITE3(copy_scratch),
 		{NULL, NULL, 8, trxn_match},
-		{global_passwd[pn->extension], NULL, 8, trxn_match},
+        TRXN_WRITE(global_passwd[pn->extension], 8),
 		TRXN_END,
 	};
 
