@@ -20,6 +20,8 @@ die (
     ) if ( $#ARGV != 0 ) ;
 
 OW::init($ARGV[0]) or die "Cannot open 1wire port $ARGV[0]" ;
+#OW::set_error_print(2);
+#OW::set_error_level(9);
 
 # for "paging" 
 #my $lin = 0 ;
