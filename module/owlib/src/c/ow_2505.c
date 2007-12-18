@@ -171,11 +171,9 @@ static int OW_w_status( BYTE * data,  size_t size,
     int ret;
     struct transaction_log tfirst[] = {
         TRXN_START,
-        {p, NULL, 4, trxn_match,},
-        {NULL, &p[4], 2, trxn_read,},
-        {p, NULL, 6, trxn_crc16,},
-        {NULL, NULL, 0, trxn_program,},
-        {NULL, p, 1, trxn_read,},
+        TRXN_WR_CRC16( p, 4, 0 ),
+        TRXN_PROGRAM,
+        TRXN_READ1( p ),
         TRXN_END,
     };
 
@@ -191,11 +189,9 @@ static int OW_w_status( BYTE * data,  size_t size,
         const BYTE *d = &data[1];
         UINT s = offset + 1;
         struct transaction_log trest[] = {
-            {p, NULL, 1, trxn_match,},
-            {NULL, &p[1], 2, trxn_read,},
-            {p, (BYTE *) & s, 3, trxn_crc16seeded,},
-            {NULL, NULL, 0, trxn_program,},
-            {NULL, p, 1, trxn_read,},
+            TRXN_WR_CRC16_SEEDED( p, (BYTE *) & s, 1, 0 ) ,
+            TRXN_PROGRAM,
+            TRXN_READ1( p ),
             TRXN_END,
         };
         for (i = 0; i < size; ++i, ++d, ++s) {

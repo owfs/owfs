@@ -106,6 +106,11 @@ struct transaction_log {
                 TRXN_READ(((BYTE *)pointer)+(writelength),readlength+2), \
                 TRXN_CRC16((BYTE *)pointer,writelength+readlength+2)
 
+#define TRXN_WR_CRC16_SEEDED(pointer,seed, writelength,readlength) \
+                TRXN_WRITE((BYTE *)pointer,writelength), \
+                TRXN_READ(((BYTE *)pointer)+(writelength),readlength+2), \
+                TRXN_CRC16_seeded((BYTE *)pointer,seed,writelength+readlength+2)
+
 #define TRXN_PROGRAM   { NULL, NULL, 0, trxn_program, }
 
 int BUS_transaction(const struct transaction_log *tl,
