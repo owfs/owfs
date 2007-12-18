@@ -298,7 +298,9 @@ static int FS_stat(struct one_wire_query * owq)
 		return -ENOENT;
 	if (pn->selected_filetype->data.v == NULL)
 		return -ENOENT;
+    STATLOCK ;
     OWQ_U(owq) = ((UINT *) pn->selected_filetype->data.v)[dindex];
+    STATUNLOCK ;
 	return 0;
 }
 
@@ -315,7 +317,9 @@ static int FS_time(struct one_wire_query * owq)
 	if (tv == NULL)
 		return -ENOENT;
 
+    STATLOCK ;
     OWQ_F(owq) = (_FLOAT) tv[dindex].tv_sec +
 		((_FLOAT) (tv[dindex].tv_usec / 1000)) / 1000.0;
+    STATUNLOCK ;
 	return 0;
 }
