@@ -260,8 +260,8 @@ static int OW_r_mem(BYTE * data, const size_t size, const off_t offset,
     BYTE p[3 + 128 + 2] = { _1W_READ_MEMORY, LOW_HIGH_ADDRESS(offset), };
 	struct transaction_log t[] = {
 		TRXN_START,
-		{p, NULL, 3, trxn_match},
-		{NULL, &p[3], 128 + 2 - offset, trxn_read},
+        TRXN_WRITE3( p ),
+        TRXN_READ( &p[3], 128 + 2 - offset ),
 		TRXN_END,
 	};
 
@@ -288,14 +288,11 @@ static int OW_r_control(BYTE * data, const struct parsedname *pn)
     BYTE p[3 + 1 + 2] = { _1W_READ_STATUS, LOW_HIGH_ADDRESS(_ADDRESS_STATUS_MEMORY_SRAM), };
 	struct transaction_log t[] = {
 		TRXN_START,
-		{p, NULL, 3, trxn_match},
-		{NULL, &p[3], 1 + 2, trxn_read},
+        TRXN_WR_CRC16( p, 3, 1 ),
 		TRXN_END,
 	};
 
 	if (BUS_transaction(t, pn))
-		return 1;
-	if (CRC16(p, 3 + 1 + 2))
 		return 1;
 
 	*data = p[3];
@@ -308,14 +305,11 @@ static int OW_w_control(const BYTE data, const struct parsedname *pn)
     BYTE p[3 + 1 + 2] = { _1W_WRITE_STATUS, LOW_HIGH_ADDRESS(_ADDRESS_STATUS_MEMORY_SRAM), data, };
 	struct transaction_log t[] = {
 		TRXN_START,
-		{p, NULL, 4, trxn_match},
-		{NULL, &p[4], 2, trxn_read},
+        TRXN_WR_CRC16( p, 4, 0 ),
 		TRXN_END,
 	};
 
 	if (BUS_transaction(t, pn))
-		return 1;
-	if (CRC16(p, 6))
 		return 1;
 
 	return 0;
@@ -363,16 +357,13 @@ static int OW_full_access(BYTE * data, const struct parsedname *pn)
     BYTE p[3 + 2 + 2] = { _1W_CHANNEL_ACCESS, data[0], data[1], };
 	struct transaction_log t[] = {
 		TRXN_START,
-		{p, NULL, 3, trxn_match},
-		{NULL, &p[3], 2 + 2, trxn_read},
+        TRXN_WR_CRC16( p, 3, 2 ),
 		TRXN_END,
 	};
 
 	if (BUS_transaction(t, pn))
 		return 1;
 	//printf("DS2406 access %.2X %.2X -> %.2X %.2X \n",data[0],data[1],p[3],p[4]);
-	if (CRC16(p, 3 + 2 + 2))
-		return 1;
 	//printf("DS2406 CRC ok\n");
 	data[0] = p[3];
 	data[1] = p[4];
@@ -470,6 +461,7 @@ static int FS_sibling(struct one_wire_query * owq)
 static int FS_temp(struct one_wire_query * owq)
 {
 	UINT D2;
+    int UT1, dT ;
 	struct s_TAI8570 tai;
 	struct parsedname pn2;
 
@@ -477,28 +469,36 @@ static int FS_temp(struct one_wire_query * owq)
 	if (testTAI8570(&tai, &pn2))
 		return -ENOENT;
 
-	if (TAI8570_SenseValue(&D2, SEC_READD2, &tai, &pn2))
+    UT1 = 8 * tai.C[4] + 20224 ;
+    if (TAI8570_SenseValue(&D2, SEC_READD2, &tai, &pn2))
 		return -EINVAL;
-    OWQ_F(owq) = 20. + (D2 - 8 * tai.C[4] - 20224) * (tai.C[5] + 50.) / 10240.;
+    LEVEL_DEBUG("TAI8570 Raw Temperature (D2) = %lu\n",D2);
+    dT = D2 - UT1 ;
+    OWQ_F(owq) = (200. + dT * (tai.C[5] + 50.) / 1024. ) / 10. ;
 	return 0;
 }
 
 static int FS_pressure(struct one_wire_query * owq)
 {
-	UINT D1, D2;
-	_FLOAT dT, OFF, SENS, X;
+	UINT D1;
+	_FLOAT TEMP, dT, OFF, SENS, X;
 	struct s_TAI8570 tai;
 	struct parsedname pn2;
+    OWQ_allocate_struct_and_pointer( owq_sibling ) ;
+
+    OWQ_create_shallow_single( owq_sibling, owq) ;
+
+    if ( FS_read_sibling( "TAI8570/temperature", owq_sibling ) ) return -EINVAL ;
+    TEMP = OWQ_F(owq_sibling) ;
 
     memcpy(&pn2, PN(owq), sizeof(struct parsedname));	//shallow copy
 	if (testTAI8570(&tai, &pn2))
 		return -ENOENT;
 
-	if (TAI8570_SenseValue(&D1, SEC_READD1, &tai, &pn2))
+    if (TAI8570_SenseValue(&D1, SEC_READD1, &tai, &pn2))
 		return -EINVAL;
-	if (TAI8570_SenseValue(&D2, SEC_READD2, &tai, &pn2))
-		return -EINVAL;
-	dT = D2 - 8. * tai.C[4] - 20224.;
+    LEVEL_DEBUG("TAI8570 Raw Pressure (D1) = %lu\n",D1);
+    dT = (TEMP * 10. - 200.) * 1024. / (tai.C[5] + 50.) ;
 	OFF = 4. * tai.C[1] + ((tai.C[3] - 512.) * dT) / 4096.;
 	SENS = 24576. + tai.C[0] + (tai.C[2] * dT) / 1024.;
 	X = (SENS * (D1 - 7168.)) / 16384. - OFF;
@@ -529,13 +529,16 @@ static int ReadTmexPage(BYTE * data, size_t size, int page,
 /* called with a copy of pn already set to the right device */
 static int TAI8570_config(BYTE cfg, struct parsedname *pn)
 {
-    BYTE data[] = { _1W_CHANNEL_ACCESS, cfg, 0xFF, 0xFF };
+    BYTE data[] = { _1W_CHANNEL_ACCESS, cfg, };
+    BYTE dummy[] = { 0xFF, 0xFF, } ;
 	struct transaction_log t[] = {
 		TRXN_START,
-		{data, data, 4, trxn_read,},
+        TRXN_WRITE2(data),
+        TRXN_READ2(dummy),
 		TRXN_END,
 	};
-	return BUS_transaction(t, pn);
+    //printf("TAI8570_config\n");
+    return BUS_transaction(t, pn);
 }
 
 static int TAI8570_A(struct parsedname *pn)
@@ -615,8 +618,8 @@ static int TAI8570_Write(BYTE * cmd, const struct s_TAI8570 *tai,
 	size_t len = strlen((ASCII *) cmd);
 	BYTE zero = 0x04;
 	struct transaction_log t[] = {
-		{cmd, NULL, len, trxn_read,},
-		{&zero, NULL, 1, trxn_read,},
+        TRXN_BLIND( cmd, len),
+        TRXN_BLIND( &zero, 1),
 		TRXN_END,
 	};
 	memcpy(pn->sn, tai->writer, 8);
@@ -634,9 +637,10 @@ static int TAI8570_Read(UINT * u, const struct s_TAI8570 *tai,
 	BYTE data[32];
 	UINT U = 0;
 	struct transaction_log t[] = {
-		{data, data, 32, trxn_read,},
+        TRXN_MODIFY( data, data, 32),
 		TRXN_END,
 	};
+    //printf("TAI8570_Read\n");
 	memcpy(pn->sn, tai->reader, 8);
 	if (TAI8570_config(CFG_READ, pn))
 		return 1;				// config write
@@ -666,10 +670,11 @@ static int TAI8570_Check(const struct s_TAI8570 *tai,
 	BYTE data[1];
 	int ret = 1;
 	struct transaction_log t[] = {
-		{NULL, data, 1, trxn_read,},
+        TRXN_READ1( data ),
 		TRXN_END,
 	};
-	UT_delay(30);				// conversion time in msec
+    //printf("TAI8570_Check\n");
+    UT_delay(30);				// conversion time in msec
 	memcpy(pn->sn, tai->writer, 8);
 	if (TAI8570_config(CFG_READPULSE, pn))
 		return 1;				// config write
@@ -711,16 +716,16 @@ static int TAI8570_CalValue(UINT * cal, BYTE * cmd,
 							const struct s_TAI8570 *tai,
 							struct parsedname *pn)
 {
-	if (TAI8570_ClockPulse(tai, pn))
+    if (TAI8570_ClockPulse(tai, pn))
 		return 1;
-	if (TAI8570_Write(cmd, tai, pn))
+    if (TAI8570_Write(cmd, tai, pn))
 		return 1;
-	if (TAI8570_ClockPulse(tai, pn))
+    if (TAI8570_ClockPulse(tai, pn))
 		return 1;
-	if (TAI8570_Read(cal, tai, pn))
+    if (TAI8570_Read(cal, tai, pn))
 		return 1;
-	TAI8570_DataPulse(tai, pn);
-	return 0;
+    TAI8570_DataPulse(tai, pn);
+    return 0;
 }
 
 /* read calibration constants and put in Cache, too
@@ -734,8 +739,10 @@ static int TAI8570_Calibration(UINT * cal, const struct s_TAI8570 *tai,
 	int rep;
 
 	for (rep = 0; rep < 5; ++rep) {
+        //printf("TAI8570_Calibration #%d\n",rep);
 		if (TAI8570_Reset(tai, pn))
 			return 1;
+        //printf("TAI8570 Pre_Cal_Value\n");
 		TAI8570_CalValue(&cal[0], SEC_READW1, tai, pn);
 		//printf("TAI8570 SIBLING cal[0]=%u ok\n",cal[0]);
 		TAI8570_CalValue(&cal[1], SEC_READW2, tai, pn);
