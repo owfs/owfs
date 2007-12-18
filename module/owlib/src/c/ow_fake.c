@@ -31,6 +31,9 @@ static int Fake_next_both(struct device_search *ds,
 static const ASCII *namefind(const char *name);
 static int Fake_setroutines(struct connection_in *in) ;
 static int Tester_setroutines(struct connection_in *in) ;
+static int Fake_sendback_data(const BYTE * data, BYTE * resp,
+			      const size_t len,
+			      const struct parsedname *pn);
 
 static int Fake_setroutines(struct connection_in *in)
 {
@@ -39,7 +42,7 @@ static int Fake_setroutines(struct connection_in *in)
     in->iroutines.next_both = Fake_next_both;
     in->iroutines.PowerByte = NULL;
     in->iroutines.ProgramPulse = Fake_ProgramPulse;
-    in->iroutines.sendback_data = NULL;
+    in->iroutines.sendback_data = Fake_sendback_data;
     in->iroutines.sendback_bits = Fake_sendback_bits;
     in->iroutines.select = NULL;
     in->iroutines.reconnect = NULL;
@@ -48,6 +51,17 @@ static int Fake_setroutines(struct connection_in *in)
     in->iroutines.flags = ADAP_FLAG_2409path;
     in->combuffer_length = 0 ; // no buffer needed
     return 0 ;
+}
+
+static int Fake_sendback_data(const BYTE * data, BYTE * resp,
+			      const size_t len,
+			      const struct parsedname *pn)
+{
+  (void) pn;
+  (void) data;
+  (void) resp;
+  (void) len;
+  return 0;
 }
 
 static int Tester_setroutines(struct connection_in *in )

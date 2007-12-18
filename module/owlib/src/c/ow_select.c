@@ -53,7 +53,7 @@ int BUS_select(const struct parsedname *pn)
 	// match Serial Number command 0x55
     BYTE sent[9] = { _1W_MATCH_ROM, };
 	int pl = pn->pathlength;
-	printf("SELECT WORK: pathlength=%d path=%s\n",pn->pathlength,pn->path);
+	//printf("SELECT WORK: pathlength=%d path=%s\n",pn->pathlength,pn->path);
     // if declared only a single device, we can use faster SKIP ROM command
     if (Global.one_device) {
         return BUS_Skip_Rom(pn) ;
@@ -190,6 +190,12 @@ static int Turnoff(int depth, const struct parsedname *pn)
 
 	if ((BUS_reset(pn)))
 		return 1;
+
+	if(pn->selected_connection->Adapter == adapter_fake) {
+	  LEVEL_DEBUG("Turnoff: return on fake adapter");
+	  return 0;
+	}
+
 	if (depth && BUS_select_subbranch(&(pn->bp[depth - 1]), pn))
 		return 1;
 	return BUS_transaction_nolock(t, pn);
