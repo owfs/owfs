@@ -202,8 +202,8 @@ static int OW_w_app(const BYTE * data, const size_t size,
     BYTE cf[] = { _1W_COPY_SCRATCHPAD_VALIDATION_KEY, };
 	struct transaction_log tcopy[] = {
 		TRXN_START,
-		{cp, NULL, 1, trxn_match},
-		{cf, cf, 10, trxn_power},
+        TRXN_WRITE1(cp),
+        TRXN_POWER(cf,10),
 		TRXN_END,
 	};
 

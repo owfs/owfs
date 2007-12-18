@@ -868,8 +868,8 @@ static int OW_r_eeprom(const size_t page, const size_t size,
 	BYTE p[] = { _1W_RECALL_DATA, BYTE_MASK(page), };
 	struct transaction_log t[] = {
 		TRXN_START,
-		{p, NULL, 2, trxn_match,},
-		TRXN_END,
+        TRXN_WRITE2(p),
+        TRXN_END,
 	};
 	if (offset > (off_t) page + 16)
 		return 0;
@@ -885,8 +885,8 @@ static int OW_r_sram(BYTE * data, const size_t size, const off_t offset,
 	BYTE p[] = { _1W_READ_DATA, BYTE_MASK(offset), };
 	struct transaction_log t[] = {
 		TRXN_START,
-		{p, NULL, 2, trxn_match,},
-		{NULL, data, size, trxn_read,},
+        TRXN_WRITE2(p),
+        TRXN_READ(data,size),
 		TRXN_END,
 	};
 
@@ -908,7 +908,7 @@ static int OW_w_eeprom(const size_t page, const size_t size,
 	BYTE p[] = { _1W_COPY_DATA, BYTE_MASK(page), };
 	struct transaction_log t[] = {
 		TRXN_START,
-		{p, NULL, 2, trxn_match,},
+        TRXN_WRITE2(p),
 		TRXN_END,
 	};
 	if (offset > (off_t) page + 16)
@@ -924,8 +924,8 @@ static int OW_w_sram(const BYTE * data, const size_t size,
 	BYTE p[] = { _1W_WRITE_DATA, BYTE_MASK(offset), };
 	struct transaction_log t[] = {
 		TRXN_START,
-		{p, NULL, 2, trxn_match,},
-		{data, NULL, size, trxn_match,},
+        TRXN_WRITE2(p),
+        TRXN_READ(data,size),
 		TRXN_END,
 	};
 
@@ -936,7 +936,7 @@ static int OW_cmd(const BYTE cmd, const struct parsedname *pn)
 {
 	struct transaction_log t[] = {
 		TRXN_START,
-		{&cmd, NULL, 1, trxn_match,},
+        TRXN_WRITE1(&cmd),
 		TRXN_END,
 	};
 
@@ -995,7 +995,7 @@ static int OW_lock(const struct parsedname *pn)
 	BYTE lock[] = { _1W_WRITE_DATA, 0x07, 0x40, _1W_LOCK, 0x00 };
 	struct transaction_log t[] = {
 		TRXN_START,
-		{lock, NULL, 5, trxn_match,},
+        TRXN_WRITE(lock, 5),
 		TRXN_END,
 	};
 

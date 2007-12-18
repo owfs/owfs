@@ -189,7 +189,8 @@ static int OW_w_status( BYTE * data,  size_t size,
         const BYTE *d = &data[1];
         UINT s = offset + 1;
         struct transaction_log trest[] = {
-            TRXN_WR_CRC16_SEEDED( p, (BYTE *) & s, 1, 0 ) ,
+            //TRXN_WR_CRC16_SEEDED( p, &s, 1, 0 ) ,
+            TRXN_WR_CRC16_SEEDED( p, p, 1, 0 ) ,
             TRXN_PROGRAM,
             TRXN_READ1( p ),
             TRXN_END,

@@ -230,7 +230,7 @@ static int OW_w_2Dpage( BYTE * data,  size_t size,
 	};
 	struct transaction_log tsram[] = {
 		TRXN_START,
-		{p, NULL, 4, trxn_match},
+        TRXN_WRITE( p, 4),
 		TRXN_END,
 	};
 

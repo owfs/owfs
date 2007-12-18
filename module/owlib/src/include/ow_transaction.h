@@ -94,6 +94,7 @@ struct transaction_log {
 #define TRXN_CRC16(data,length) { data, NULL, length, trxn_crc16, }
 #define TRXN_CRC16_seeded(data,length,seed) { data, seed, length, trxn_crc16, }
 #define TRXN_BLIND(writedata,length)  { writedata, NULL, length, trxn_blind, }
+#define TRXN_POWER(byte_pointer, msec)  { byte_pointer, byte_pointer, msec, trxn_power, }
 
 #define TRXN_DELAY(msec) { NULL, NULL, msec, trxn_delay }
 
@@ -112,7 +113,7 @@ struct transaction_log {
 #define TRXN_WR_CRC16_SEEDED(pointer,seed, writelength,readlength) \
                 TRXN_WRITE((BYTE *)pointer,writelength), \
                 TRXN_READ(((BYTE *)pointer)+(writelength),readlength+2), \
-                TRXN_CRC16_seeded((BYTE *)pointer,seed,writelength+readlength+2)
+                TRXN_CRC16_seeded((BYTE *)pointer, writelength+readlength+2, (BYTE *) (seed) )
 
 #define TRXN_PROGRAM   { NULL, NULL, 0, trxn_program, }
 
