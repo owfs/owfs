@@ -15,6 +15,13 @@ $Id$
 #include "ow_counters.h"
 #include "ow_connection.h"
 
+struct transaction_bundle {
+    const struct transaction_log *start ;
+    int packets ;
+    size_t bytes ;
+    int select_first ;
+} ;
+
 // static int BUS_transaction_length( const struct transaction_log * tl, const struct parsedname * pn ) ;
 static int BUS_transaction_single(const struct transaction_log *t,
                            const struct parsedname *pn) ;
@@ -59,13 +66,17 @@ static int BUS_transaction_single(const struct transaction_log *t,
                            const struct parsedname *pn)
 {
     int ret = 0;
-
     switch (t->type) {
-        case trxn_select:
+        case trxn_select: // select a 1-wire device (by unique ID)
             ret = BUS_select(pn);
             LEVEL_DEBUG("  Transaction select = %d\n", ret);
             break;
-        case trxn_match:
+        case trxn_compare: // match two strings -- no actual 1-wire
+            if ( (t->in==NULL) || (t->out==NULL) || (memcmp(t->in,t->out,t->size)!=0) ) {
+                ret = -EINVAL ;
+            }
+            break ;
+        case trxn_match: // send data and compare response
             if (t->size == 0) { /* ignore for both cases */
                 break;
             } else if (t->in) { /* just compare out and in */
@@ -161,21 +172,6 @@ static int BUS_transaction_single(const struct transaction_log *t,
 
 #if 0
 /* start of bundled transactions */
-
-struct transaction_bundle {
-    const struct transaction_log *start ;
-    int packets ;
-    size_t bytes ;
-    int select_first ;
-} ;
-
-void bundle_init( struct transaction_bundle * tb )
-{
-    tb->start = NULL ,
-    tb->packets = 0 ;
-    tb->bytes = 0 ;
-    select_first = 0 ;
-}
 
 int bundle_add( const struct transaction_log * tl, struct transaction_bundle * tb )
 {

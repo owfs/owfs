@@ -112,7 +112,7 @@ static int FS_w_convert(struct one_wire_query * owq)
             const BYTE cmd_temp[] = { _1W_SKIP_ROM, 0x44 };
 				struct transaction_log t[] = {
 					TRXN_START,
-					{cmd_temp, NULL, 2, trxn_match,},
+                    TRXN_WRITE2( cmd_temp ),
 					TRXN_END,
 				};
 				BUSLOCK(pn2);
@@ -126,10 +126,8 @@ static int FS_w_convert(struct one_wire_query * owq)
             BYTE cmd_volt[] = { _1W_SKIP_ROM, 0x3C, 0x0F, 0x00, 0xFF, 0xFF };
 				struct transaction_log t[] = {
 					TRXN_START,
-					{cmd_volt, NULL, 4, trxn_match,},
-					{NULL, &cmd_volt[4], 2, trxn_read,},
-					{&cmd_volt[1], NULL, 5, trxn_crc16,},
-					{NULL, NULL, 5, trxn_delay},
+                    TRXN_WR_CRC16( cmd_volt, 4, 0 ),
+                    TRXN_DELAY( 5 ),
 					TRXN_END,
 				};
 				ret = BUS_transaction(t, pn2);
@@ -170,9 +168,9 @@ static int FS_r_present(struct one_wire_query * owq)
 		BYTE match[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, };
 		struct transaction_log t[] = {
 			TRXN_START,
-			{read_ROM, NULL, 1, trxn_match,},
-			{NULL, resp, 8, trxn_read,},
-			TRXN_END,
+            TRXN_WRITE1( read_ROM),
+            TRXN_READ( resp, 8 ),
+            TRXN_END,
 		};
 
 		/* check if DS2400 compatibility is needed */
@@ -213,8 +211,8 @@ static int FS_r_single(struct one_wire_query * owq)
 		BYTE match[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, };
 		struct transaction_log t[] = {
 			TRXN_START,
-			{read_ROM, NULL, 1, trxn_match,},
-			{NULL, resp, 8, trxn_read,},
+            TRXN_WRITE1( read_ROM),
+            TRXN_READ( resp, 8 ),
 			TRXN_END,
 		};
 

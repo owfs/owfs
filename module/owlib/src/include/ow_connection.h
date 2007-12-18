@@ -109,6 +109,7 @@ extern int global_count_tester_busses;
 
 struct connection_in;
 struct device_search;
+
 /* -------------------------------------------- */
 /* Interface-specific routines ---------------- */
 struct interface_routines {
@@ -124,10 +125,11 @@ struct interface_routines {
 					  const struct parsedname * pn);
 	/* Send a 12V 480msec oulse to program EEPROM */
 	int (*ProgramPulse) (const struct parsedname * pn);
-	/* send and recieve data -- byte at a time */
-	int (*sendback_data) (const BYTE * data, BYTE * resp, const size_t len,
-						  const struct parsedname * pn);
-	/* send and recieve data -- bit at a time */
+    /* send and recieve data -- byte at a time */
+    int (*sendback_data) (const BYTE * data, BYTE * resp, const size_t len, const struct parsedname * pn);
+    /* send and recieve data -- byte at a time */
+    int (*select_and_sendback) (const BYTE * data, BYTE * resp, const size_t len, const struct parsedname * pn);
+    /* send and recieve data -- bit at a time */
 	int (*sendback_bits) (const BYTE * databits, BYTE * respbits,
 						  const size_t len, const struct parsedname * pn);
 	/* select a device */
@@ -370,11 +372,12 @@ struct connection_in {
 	int buspath_bad;			// should the current DS2409 branches be cleared?
 	struct buspath branch;		// Branch currently selected
 
-	/* Static buffer for serial conmmunications */
+	/* Static buffer for conmmunication */
 	/* Since only used during actual transfer to/from the adapter,
 	   should be protected from contention even when multithreading allowed */
     size_t combuffer_length ;
     BYTE * combuffer ;
+    int bundling_enabled ;
 	union {
 		struct connin_serial serial;
 		struct connin_link link;
