@@ -30,11 +30,11 @@ static int LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay,
 static int LINK_sendback_data(const BYTE * data, BYTE * resp,
 							  const size_t len,
 							  const struct parsedname *pn);
-static int LINKE_setroutines(struct connection_in *in);
+static void LINKE_setroutines(struct connection_in *in);
 static int LINKE_preamble(const struct parsedname *pn);
 static void LINKE_close(struct connection_in *in);
 
-static int LINKE_setroutines(struct connection_in * in)
+static void LINKE_setroutines(struct connection_in * in)
 {
 	in->iroutines.detect = LINKE_detect;
     in->iroutines.reset = LINK_reset;
@@ -48,8 +48,6 @@ static int LINKE_setroutines(struct connection_in * in)
     in->iroutines.close = LINKE_close;
     in->iroutines.transaction = NULL;
     in->iroutines.flags = ADAP_FLAG_2409path;
-    in->combuffer_length = 0 ; // no buffer needed
-    return 0 ;
 }
 
 #define LINK_string(x)  ((BYTE *)(x))
@@ -63,12 +61,9 @@ int LINKE_detect(struct connection_in *in)
 	pn.selected_connection = in;
 	LEVEL_CONNECT("LinkE detect\n");
 	/* Set up low-level routines */
-    if (LINKE_setroutines(in)) {
-        return -ENOMEM ;
-    }
+    LINKE_setroutines(in) ;
 
-    if (in->name ==
-        NULL)
+    if (in->name == NULL)
 		return -1;
 	if (ClientAddr(in->name, in))
 		return -1;

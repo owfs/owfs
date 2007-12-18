@@ -69,7 +69,7 @@ static int DS9490_sendback_data(const BYTE * data, BYTE * resp,
 								const size_t len,
 								const struct parsedname *pn);
 static int DS9490_HaltPulse(const struct parsedname *pn) ;
-static int DS9490_setroutines(struct connection_in *in);
+static void DS9490_setroutines(struct connection_in *in);
 static int DS9490_detect_low(const struct parsedname *pn);
 static int DS9490_detect_found(struct usb_list *ul,
 							   const struct parsedname *pn);
@@ -92,7 +92,7 @@ static int DS9490_SetSpeed( const struct parsedname * pn ) ;
 
 
 /* Device-specific routines */
-static int DS9490_setroutines(struct connection_in *in)
+static void DS9490_setroutines(struct connection_in *in)
 {
     in->iroutines.detect = DS9490_detect;
     in->iroutines.reset = DS9490_reset;
@@ -107,11 +107,8 @@ static int DS9490_setroutines(struct connection_in *in)
     in->iroutines.transaction = NULL;
     in->iroutines.flags = 0;
 
-    in->combuffer_length = USB_FIFO_SIZE ;
-    if ( in->combuffer == NULL ) {
-        in->combuffer = malloc(in->combuffer_length) ;
-    }
-    return ( in->combuffer == NULL ) ? -ENOMEM : 0 ;
+    in->combuffer = realloc( in->combuffer, USB_FIFO_SIZE ) ;
+    in->combuffer_length = sizeof( in->combuffer ) ;
 }
 
 #define DS2490_DIR_GULP_ELEMENTS     ((64/8) - 1)
@@ -300,9 +297,7 @@ int DS9490_detect(struct connection_in *in)
 	struct parsedname pn;
 	int ret;
 
-    if ( DS9490_setroutines(in) ) { // set up close, reconnect, reset, ...
-        return -ENOMEM ;
-    }
+    DS9490_setroutines(in) ; // set up close, reconnect, reset, ...
 	in->name = badUSBname;		// initialized
 
 	FS_ParsedName(NULL, &pn);	// minimal parsename -- no destroy needed

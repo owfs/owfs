@@ -44,11 +44,6 @@ int BadAdapter_detect(struct connection_in *in)
 	in->iroutines.transaction = NULL;
 	in->iroutines.flags = 0;
 	in->adapter_name = "Bad Adapter";
-    in->combuffer_length = 0 ;
-    if ( in->combuffer ) {
-        free(in->combuffer) ;
-        in->combuffer = NULL ;
-    }
 	return 0;
 }
 

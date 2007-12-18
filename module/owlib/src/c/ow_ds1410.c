@@ -44,7 +44,7 @@ static int DS1410_reset(const struct parsedname *pn);
 static int DS1410_sendback_bits(const BYTE * data, BYTE * resp,
 								const size_t len,
 								const struct parsedname *pn);
-static int DS1410_setroutines(struct connection_in *in);
+static void DS1410_setroutines(struct connection_in *in);
 static int DS1410_open(const struct parsedname *pn);
 static void DS1410_close(struct connection_in *in);
 static int DS1410_ODtoggle(BYTE * od, int file_descriptor);
@@ -57,7 +57,7 @@ static int DS1410_PToff(const struct parsedname *pn);
 static int DS1410Present(BYTE * p, int file_descriptor);
 
 /* Device-specific functions */
-static int DS1410_setroutines(struct connection_in *in)
+static void DS1410_setroutines(struct connection_in *in)
 {
 	in->iroutines.detect = DS1410_detect;
 	in->iroutines.reset = DS1410_reset;
@@ -71,8 +71,6 @@ static int DS1410_setroutines(struct connection_in *in)
 	in->iroutines.close = DS1410_close;
 	in->iroutines.transaction = NULL;
 	in->iroutines.flags = ADAP_FLAG_overdrive;
-    in->combuffer_length = 0 ; // no buffer
-    return 0 ;
 }
 
 /* Open a DS1410 after an unsucessful DS2480_detect attempt */
@@ -86,9 +84,7 @@ int DS1410_detect(struct connection_in *in)
 	BYTE od;
 
 	/* Set up low-level routines */
-	if ( DS1410_setroutines(in) ) {
-        return -ENOMEM ;
-    }
+	DS1410_setroutines(in);
 
 	/* Reset the bus */
 	in->Adapter = adapter_DS1410;	/* OWFS assigned value */

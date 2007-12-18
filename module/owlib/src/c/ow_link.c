@@ -48,12 +48,12 @@ static int LINK_sendback_data(const BYTE * data, BYTE * resp,
 static int LINK_byte_bounce(const BYTE * out, BYTE * in,
 							const struct parsedname *pn);
 static int LINK_CR(const struct parsedname *pn);
-static int LINK_setroutines(struct connection_in *in);
+static void LINK_setroutines(struct connection_in *in);
 static void LINK_close (struct connection_in *in);
 static int LINK_directory(struct device_search *ds, struct dirblob *db, 
 			  const struct parsedname *pn);
 
-static int LINK_setroutines(struct connection_in *in)
+static void LINK_setroutines(struct connection_in *in)
 {
 	in->iroutines.detect = LINK_detect;
     in->iroutines.reset = LINK_reset;
@@ -67,8 +67,6 @@ static int LINK_setroutines(struct connection_in *in)
     in->iroutines.close = LINK_close;
     in->iroutines.transaction = NULL;
     in->iroutines.flags = ADAP_FLAG_2409path;
-    in->combuffer_length = 0 ; // no buffer needed
-    return 0 ;
 }
 
 #define LINK_string(x)  ((BYTE *)(x))
@@ -85,9 +83,7 @@ int LINK_detect(struct connection_in *in)
 	pn.selected_connection = in;
 
 	/* Set up low-level routines */
-    if ( LINK_setroutines(in) ) {
-        return -ENOMEM ;
-    }
+    LINK_setroutines(in) ;
 
 	/* Initialize dir-at-once structures */
 	DirblobInit (&(in->connin.link.main));

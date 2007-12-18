@@ -29,13 +29,13 @@ static void Fake_close(struct connection_in *in);
 static int Fake_next_both(struct device_search *ds,
 						  const struct parsedname *pn);
 static const ASCII *namefind(const char *name);
-static int Fake_setroutines(struct connection_in *in) ;
-static int Tester_setroutines(struct connection_in *in) ;
+static void Fake_setroutines(struct connection_in *in) ;
+static void Tester_setroutines(struct connection_in *in) ;
 static int Fake_sendback_data(const BYTE * data, BYTE * resp,
 			      const size_t len,
 			      const struct parsedname *pn);
 
-static int Fake_setroutines(struct connection_in *in)
+static void Fake_setroutines(struct connection_in *in)
 {
     in->iroutines.detect = Fake_detect;
     in->iroutines.reset = Fake_reset;
@@ -49,8 +49,6 @@ static int Fake_setroutines(struct connection_in *in)
     in->iroutines.close = Fake_close;
     in->iroutines.transaction = NULL;
     in->iroutines.flags = ADAP_FLAG_2409path;
-    in->combuffer_length = 0 ; // no buffer needed
-    return 0 ;
 }
 
 static int Fake_sendback_data(const BYTE * data, BYTE * resp,
@@ -64,11 +62,10 @@ static int Fake_sendback_data(const BYTE * data, BYTE * resp,
   return 0;
 }
 
-static int Tester_setroutines(struct connection_in *in )
+static void Tester_setroutines(struct connection_in *in )
 {
     Fake_setroutines(in) ;
     in->iroutines.detect = Fake_detect;
-    return 0 ;
 }
 
 /* Device-specific functions */

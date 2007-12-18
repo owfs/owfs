@@ -191,7 +191,7 @@ static int Turnoff(int depth, const struct parsedname *pn)
 	if ((BUS_reset(pn)))
 		return 1;
 
-	if(pn->selected_connection->Adapter == adapter_fake) {
+    if( (pn->selected_connection->Adapter == adapter_fake) || (pn->selected_connection->Adapter == adapter_tester) ) {
 	  LEVEL_DEBUG("Turnoff: return on fake adapter");
 	  return 0;
 	}

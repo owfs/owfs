@@ -21,7 +21,7 @@ static int DS9097_reset(const struct parsedname *pn);
 static int DS9097_sendback_bits(const BYTE * outbits, BYTE * inbits,
 								const size_t length,
 								const struct parsedname *pn);
-static int DS9097_setroutines(struct connection_in *in);
+static void DS9097_setroutines(struct connection_in *in);
 static int DS9097_send_and_get(const BYTE * bussend, BYTE * busget,
 							   const size_t length,
 							   const struct parsedname *pn);
@@ -32,9 +32,9 @@ static int DS9097_send_and_get(const BYTE * bussend, BYTE * busget,
 #define ZeroBit 0x00
 
 /* Device-specific functions */
-static int DS9097_setroutines(struct connection_in *in)
+static void DS9097_setroutines(struct connection_in *in)
 {
-	in->iroutines.detect = DS9097_detect;
+    in->iroutines.detect = DS9097_detect;
     in->iroutines.reset = DS9097_reset;
     in->iroutines.next_both = NULL;
     in->iroutines.PowerByte = NULL;
@@ -46,11 +46,8 @@ static int DS9097_setroutines(struct connection_in *in)
     in->iroutines.close = COM_close;
     in->iroutines.transaction = NULL;
     in->iroutines.flags = ADAP_FLAG_overdrive;
-    in->combuffer_length = UART_FIFO_SIZE ;
-    if ( in->combuffer == NULL ) {
-        in->combuffer = malloc(in->combuffer_length ) ;
-    }
-    return (in->combuffer==NULL) ? -ENOMEM : 0 ;
+    in->combuffer = realloc( in->combuffer, UART_FIFO_SIZE ) ;
+    in->combuffer_length = sizeof( in->combuffer ) ;
 }
 
 /* Open a DS9097 after an unsucessful DS2480_detect attempt */
@@ -65,9 +62,7 @@ int DS9097_detect(struct connection_in *in)
 		return -ENODEV;
 
 	/* Set up low-level routines */
-    if ( DS9097_setroutines(in) ) {
-        return -ENOMEM ;
-    }
+    DS9097_setroutines(in) ;
 
 	in->Adapter = adapter_DS9097;
 	// in->adapter_name already set, to support HA3 and HA4B

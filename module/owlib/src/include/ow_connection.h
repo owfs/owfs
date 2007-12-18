@@ -95,6 +95,7 @@ extern int global_count_tester_busses;
   Need one for each for read and write
   This is for alt setting "3" -- 64 bytes, 1msec polling
 */
+#define DEFAULT_FIFO_SIZE 64
 #define USB_FIFO_EACH 64
 #define USB_FIFO_READ 0
 #define USB_FIFO_WRITE USB_FIFO_EACH

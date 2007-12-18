@@ -49,12 +49,12 @@ static int HA7_select_and_sendback(const BYTE * data, BYTE * resp,
                              const size_t len,
                              const struct parsedname *pn);
 static int HA7_select(const struct parsedname *pn);
-static int HA7_setroutines(struct connection_in *in);
+static void HA7_setroutines(struct connection_in *in);
 static void HA7_close(struct connection_in *in);
 static int HA7_directory(BYTE search, struct dirblob *db,
 						 const struct parsedname *pn);
 
-static int HA7_setroutines(struct connection_in *in)
+static void HA7_setroutines(struct connection_in *in)
 {
 	in->iroutines.detect = HA7_detect;
     in->iroutines.reset = HA7_reset;
@@ -70,12 +70,9 @@ static int HA7_setroutines(struct connection_in *in)
     in->iroutines.transaction = NULL;
     in->iroutines.flags =
 		ADAP_FLAG_overdrive | ADAP_FLAG_dirgulp | ADAP_FLAG_2409path;
-    in->combuffer_length = HA7_FIFO_SIZE ;
-    if ( in->combuffer == NULL ) {
-        in->combuffer = malloc( in->combuffer_length ) ;
-    }
+    in->combuffer = realloc( in->combuffer, HA7_FIFO_SIZE ) ;
+    in->combuffer_length = sizeof( in->combuffer ) ;
     in->bundling_enabled = 1 ;
-    return (in->combuffer==NULL) ? -ENOMEM : 0 ;
 }
 
 int HA7_detect(struct connection_in *in)
@@ -88,10 +85,9 @@ int HA7_detect(struct connection_in *in)
 	pn.selected_connection = in;
 	LEVEL_CONNECT("HA7 detect\n");
 	/* Set up low-level routines */
-    if ( HA7_setroutines(in) ) {
-        return -ENOMEM ;
-    }
-	in->connin.ha7.locked = 0;
+    HA7_setroutines(in) ;
+	
+    in->connin.ha7.locked = 0;
 	/* Initialize dir-at-once structures */
 	DirblobInit(&(in->connin.ha7.main));
 	DirblobInit(&(in->connin.ha7.alarm));

@@ -53,13 +53,18 @@ struct connection_in *NewIn(const struct connection_in *in)
 	size_t len = sizeof(struct connection_in);
 	struct connection_in *now = (struct connection_in *) malloc(len);
 	if (now) {
-		if (in) {
+        if (in) {
 			memcpy(now, in, len);
-            now->combuffer = NULL ;
 		} else {
 			memset(now, 0, len);
+            now->combuffer_length = DEFAULT_FIFO_SIZE ;
 		}
-		now->next = head_inbound_list;	/* put in linked list at start */
+        now->combuffer = malloc( now->combuffer_length ) ;
+        if ( now->combuffer == NULL ) {
+            free(now) ;
+            return NULL ;
+        }
+        now->next = head_inbound_list;	/* put in linked list at start */
 		head_inbound_list = now;
 		now->index = count_inbound_connections++;
 #if OW_MT

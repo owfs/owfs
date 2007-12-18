@@ -53,7 +53,7 @@ static int DS2482_reset(const struct parsedname *pn);
 static int DS2482_sendback_data(const BYTE * data, BYTE * resp,
 								const size_t len,
 								const struct parsedname *pn);
-static int DS2482_setroutines(struct connection_in *in);
+static void DS2482_setroutines(struct connection_in *in);
 static int HeadChannel(struct connection_in *in);
 static int CreateChannels(struct connection_in *in);
 static int DS2482_channel_select(const struct parsedname *pn);
@@ -111,7 +111,7 @@ static int DS2482_PowerByte(const BYTE byte, BYTE * resp, const UINT delay,
 #define DS2482_REG_STS_1WB     0x01
 
 /* Device-specific functions */
-static int DS2482_setroutines(struct connection_in *in)
+static void DS2482_setroutines(struct connection_in *in)
 {
 	in->iroutines.detect = DS2482_detect;
     in->iroutines.reset = DS2482_reset;
@@ -125,8 +125,6 @@ static int DS2482_setroutines(struct connection_in *in)
     in->iroutines.close = DS2482_close;
     in->iroutines.transaction = NULL;
     in->iroutines.flags = ADAP_FLAG_overdrive;
-    in->combuffer_length = 0 ;
-    return 0 ;
 }
 
 /* All the rest of the program sees is the DS9907_detect and the entry in iroutines */
@@ -146,9 +144,7 @@ int DS2482_detect(struct connection_in *in)
 	}
 
 	/* Set up low-level routines */
-    if ( DS2482_setroutines(in) ){
-        return -ENOMEM ;
-    }
+    DS2482_setroutines(in) ;
 
 	/* cycle though the possible addresses */
 	for (i = 0; i < 8; ++i) {
