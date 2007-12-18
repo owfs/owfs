@@ -58,8 +58,10 @@ $Id$
 enum transaction_type {
 	trxn_select,
 	trxn_match,
+    trxn_modify,
     trxn_compare,
 	trxn_read,
+    trxn_blind,
 	trxn_power,
 	trxn_program,
 	trxn_reset,
@@ -86,11 +88,12 @@ struct transaction_log {
 #define TRXN_RESET   { NULL, NULL, 0, trxn_reset, }
 #define TRXN_WRITE(writedata,length)   { writedata, NULL, length, trxn_match, }
 #define TRXN_READ(readdata,length)    { NULL, readdata, length, trxn_read, }
-#define TRXN_MODIFY(writedata,readdata,length) { writedata, readdata, length, trxn_read, }
+#define TRXN_MODIFY(writedata,readdata,length) { writedata, readdata, length, trxn_modify, }
 #define TRXN_COMPARE(data1, data2, length) { data1, data2, length, trxn_compare }
 #define TRXN_CRC8(data,length) { data, NULL, length, trxn_crc8, }
 #define TRXN_CRC16(data,length) { data, NULL, length, trxn_crc16, }
 #define TRXN_CRC16_seeded(data,length,seed) { data, seed, length, trxn_crc16, }
+#define TRXN_BLIND(writedata,length)  { writedata, NULL, length, trxn_blind, }
 
 #define TRXN_DELAY(msec) { NULL, NULL, msec, trxn_delay }
 

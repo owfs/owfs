@@ -75,6 +75,7 @@ static int BUS_transaction_single(const struct transaction_log *t,
             if ( (t->in==NULL) || (t->out==NULL) || (memcmp(t->in,t->out,t->size)!=0) ) {
                 ret = -EINVAL ;
             }
+            LEVEL_DEBUG("  Transaction compare = %d\n", ret);
             break ;
         case trxn_match: // send data and compare response
             if (t->size == 0) { /* ignore for both cases */
@@ -111,6 +112,22 @@ static int BUS_transaction_single(const struct transaction_log *t,
                 LEVEL_DEBUG("  Transaction sendback = %d\n", ret);
             }
             break;
+        case trxn_modify: // write data and read response. No match needed
+            ret = BUS_sendback_data(t->out, t->in, t->size, pn);
+            LEVEL_DEBUG("  Transaction modify = %d\n", ret);
+            break ;
+        case trxn_blind: // write data ignore response
+        {
+            BYTE * dummy = malloc( t->size ) ;
+            if ( dummy != NULL ) {
+                ret = BUS_sendback_data(t->out, dummy, t->size, pn);
+                free( dummy) ;
+            } else {
+                ret = -ENOMEM ;
+            }
+        }
+            LEVEL_DEBUG("  Transaction blind = %d\n", ret);
+            break ;
         case trxn_power:
             ret = BUS_PowerByte(t->out[0], t->in, t->size, pn);
             LEVEL_DEBUG("  Transaction power (%d usec) = %d\n", t->size, ret);
@@ -272,3 +289,4 @@ int bundle_add( const struct transaction_log * tl, struct transaction_bundle * t
     
     
 #endif
+
