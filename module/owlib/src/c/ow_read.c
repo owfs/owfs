@@ -274,9 +274,13 @@ static int FS_r_virtual(struct one_wire_query * owq)
                 BUSUNLOCK(pn) ;
                 break ;
             case ePN_statistics:
-                STATLOCK ;
-                read_status = FS_r_local(owq);  // this returns status
-                STATUNLOCK ;
+		//STATLOCK ;
+		// reading /statistics/read/tries.ALL
+		// will cause a deadlock since it calls STAT_ADD1(read_array);
+		// Should perhaps create a new mutex for this.
+		// Comment out this STATLOCK until it's solved.
+		read_status = FS_r_local(owq);  // this returns status
+		//STATUNLOCK ;
                 break ;
             default:
                 read_status = FS_r_local(owq);  // this returns status
