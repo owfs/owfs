@@ -824,22 +824,21 @@ if test "${ENABLE_OWPYTHON}" = "true" ; then
     m4_include(module/swig/python/python.m4)
     AC_MSG_RESULT(Looking for location of Python executable)
     SC_PATH_PYTHON
-#    AC_SUBST(PYTHON)
-    AC_SUBST(PYINCLUDE)
+    AC_SUBST(PYCFLAGS)
+    AC_SUBST(PYLDFLAGS)
     AC_SUBST(PYLIB)
-    AC_SUBST(PYLINK)
     AC_SUBST(PYTHONDYNAMICLINKING)
     if test -z "${PYTHON}" ; then
         AC_MSG_WARN([Cannot find python binary. Install python package.])
         AC_MSG_WARN([OWPYTHON is disabled because python binary is not found])
         ENABLE_OWPYTHON="false"
     else
-        if test -z "${PYLIB}" ; then
+        if test -z "${PYLDFLAGS}" ; then
             AC_MSG_WARN([Cannot find python library. Install python-devel package.])
             AC_MSG_WARN([OWPYTHON is disabled because python library is not found])
             ENABLE_OWPYTHON="false"
         else
-            if test -z "${PYINCLUDE}" ; then
+            if test -z "${PYCFLAGS}" ; then
                 AC_MSG_WARN([Cannot find python include-file. Install python-devel package.])
                 AC_MSG_WARN([OWPYTHON is disabled because python include-file is not found])
                 ENABLE_OWPYTHON="false"

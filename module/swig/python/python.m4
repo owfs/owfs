@@ -1,8 +1,6 @@
 #------------------------------------------------------------------------
-# SC_PATH_TCLCONFIG --
+# SC_PATH_PYTHONCONFIG --
 #
-#	Locate the tclConfig.sh file and perform a sanity check on
-#	the Tcl compile flags
 #
 # Arguments:
 #	none
@@ -10,11 +8,11 @@
 # Results:
 #
 #	Adds the following arguments to configure:
-#		--with-tcl=...
+#		--with-pythonconfig=...
+#		--with-python=...
 #
 #	Defines the following vars:
-#		TCL_BIN_DIR	Full path to the directory containing
-#				the tclConfig.sh file
+#
 #------------------------------------------------------------------------
 
 AC_DEFUN([SC_PATH_PYTHON],
@@ -24,14 +22,18 @@ AC_DEFUN([SC_PATH_PYTHON],
 # Look for Python
 #----------------------------------------------------------------
 
-PYINCLUDE=
+PYCFLAGS=
+PYLDFLAGS=
 PYLIB=
-PYPACKAGE=
 
-#AC_ARG_WITH(python, AS_HELP_STRING([--without-python], [Disable Python])
-#AS_HELP_STRING([--with-python=path], [Set location of Python executable]),[ PYBIN="$withval"], [PYBIN=yes])
 AC_ARG_WITH(python, [  --with-python           Set location of Python executable],[ PYBIN="$withval"], [PYBIN=yes])
+AC_ARG_WITH(pythonconfig, [  --with-pythonconfig        Set location of python-config executable],[ PYTHONCONFIGBIN="$withval"], [PYTHONCONFIGBIN=yes])
 
+if test "x$PYTHONCONFIGBIN" = xyes; then
+      AC_CHECK_PROGS(PYTHONCONFIG, python-config python2.5-config python2.4-config python2.3-config)
+else
+      PYTHONCONFIG="$PYTHONCONFIGBIN"
+fi
 
 # First, check for "--without-python" or "--with-python=no".
 if test x"${PYBIN}" = xno -o x"${with_alllang}" = xno ; then 
@@ -40,11 +42,45 @@ else
 # First figure out the name of the Python executable
 
 if test "x$PYBIN" = xyes; then
-AC_CHECK_PROGS(PYTHON, python python2.4 python2.3 python2.2 python2.1 python2.0 python1.6 python1.5 python1.4 python)
+AC_CHECK_PROGS(PYTHON, python python2.5 python2.4 python2.3 python2.2 python2.1 python2.0 python1.6 python1.5 python1.4 python)
 else
 PYTHON="$PYBIN"
 fi
 
+
+if test ! -z "$PYTHONCONFIG"; then
+
+# python-config available.
+   AC_MSG_CHECKING(for PYTHON cflags)
+   PYTHONCFLAGS="`$PYTHONCONFIG --cflags 2>/dev/null`"
+   if test -z "$PYTHONCFLAGS"; then
+	AC_MSG_RESULT(not found)
+   else
+	AC_MSG_RESULT($PYTHONCFLAGS)
+   fi
+   PYCFLAGS=$PYTHONCFLAGS
+
+   AC_MSG_CHECKING(for PYTHON ldflags)
+   PYTHONLDFLAGS="`$PYTHONCONFIG --ldflags 2>/dev/null`"
+   if test -z "$PYTHONLDFLAGS"; then
+	AC_MSG_RESULT(not found)
+   else
+   	AC_MSG_RESULT($PYTHONLDFLAGS)
+   fi
+   PYLDFLAGS=$PYTHONLDFLAGS
+
+   AC_MSG_CHECKING(for PYTHON libs)
+   PYTHONLIBS="`$PYTHONCONFIG --libs 2>/dev/null`"
+   if test -z "$PYTHONLIBS"; then
+	AC_MSG_RESULT(not found)
+   else
+   	AC_MSG_RESULT($PYTHONLIBS)
+   fi
+   PYLIB="$PYTHONLIBS"
+
+else
+
+# python-config not available.
 if test -n "$PYTHON"; then
     AC_MSG_CHECKING(for Python prefix)
     PYPREFIX=`($PYTHON -c "import sys; print sys.prefix") 2>/dev/null`
@@ -95,14 +131,14 @@ if test -n "$PYTHON"; then
 
     AC_MSG_CHECKING(for Python header files)
     if test -r $PYPREFIX/include/$PYVERSION/Python.h; then
-        PYINCLUDE="-I$PYPREFIX/include/$PYVERSION -I$PYEPREFIX/$PYLIBDIR/$PYVERSION/config"
+        PYCFLAGS="-I$PYPREFIX/include/$PYVERSION -I$PYEPREFIX/$PYLIBDIR/$PYVERSION/config"
     fi
-    if test -z "$PYINCLUDE"; then
+    if test -z "$PYCFLAGS"; then
         if test -r $PYPREFIX/include/Py/Python.h; then
-            PYINCLUDE="-I$PYPREFIX/include/Py -I$PYEPREFIX/$PYLIBDIR/python/lib"
+            PYCFLAGS="-I$PYPREFIX/include/Py -I$PYEPREFIX/$PYLIBDIR/python/lib"
         fi
     fi
-    AC_MSG_RESULT($PYINCLUDE)
+    AC_MSG_RESULT($PYCFLAGS)
 
     # Set the library directory blindly.   This probably won't work with older versions
     AC_MSG_CHECKING(for Python library)
@@ -125,12 +161,14 @@ if test -n "$PYTHON"; then
     else
          PYLINK="-l$PYVERSION"
     fi
+    PYLDFLAGS="$PYLINK"
+fi
 fi
 
 # Cygwin (Windows) needs the library for dynamic linking
 case $host in
 *-*-cygwin* | *-*-mingw*) PYTHONDYNAMICLINKING="-L$PYLIB $PYLINK"
-         DEFS="-DUSE_DL_IMPORT $DEFS" PYINCLUDE="$PYINCLUDE"
+         DEFS="-DUSE_DL_IMPORT $DEFS" PYCFLAGS="$PYCFLAGS"
          ;;
 *)PYTHONDYNAMICLINKING="";;
 esac
