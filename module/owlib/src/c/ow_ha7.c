@@ -486,14 +486,10 @@ static int HA7_select(const struct parsedname *pn)
 			setHA7address(&ha7, pn->sn);
 			if (HA7_toHA7(file_descriptor, &ha7, pn->selected_connection) == 0) {
 				ASCII *buf;
-                printf("SELECT1\n");
 				if (HA7_read(file_descriptor, &buf) == 0) {
-                    printf("SELECT2\n");
                     free(buf);
-                    printf("SELECT3\n");
                     ret = 0;
 				}
-                printf("SELECT4\n");
             }
 			close(file_descriptor);
 		}
