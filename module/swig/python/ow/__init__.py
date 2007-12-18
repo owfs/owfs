@@ -398,7 +398,7 @@ class Sensor( object ):
                 self._usePath = '/uncached' + self._path
 
         if self._path == '/':
-            self._type    = owfs_get('/system/adapter/name.0')
+            self._type    = owfs_get('bus.0/interface/settings/name')
         else:
             self._type  = owfs_get( '%s/type' % self._usePath )
 
