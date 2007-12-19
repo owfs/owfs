@@ -1078,6 +1078,8 @@ static int DS9490_directory(int gulp_elements, struct device_search *ds, struct 
 
     DirblobClear(db) ;
 
+    // Note that USB_FIFO_SIZE >>= 64
+    
     /* DS1994/DS2404 might need an extra reset */
     if (pn->selected_connection->ExtraReset) {
         if (BUS_reset(pn) < 0)

@@ -27,20 +27,20 @@ int BUS_send_data(const BYTE * data, const size_t len,
 				  const struct parsedname *pn)
 {
 	int ret;
-	if (len > 16) {
-		int dlen = len - (len >> 1);
-		if ((ret = BUS_send_data(data, dlen, pn)))
-			return ret;
-		ret = BUS_send_data(&data[dlen], len >> 1, pn);
-	} else {
-		BYTE resp[16];
-		if ((ret = BUS_sendback_data(data, resp, len, pn)) == 0) {
-			if ((ret = memcmp(data, resp, (size_t) len))) {
-				ret = -EIO;		/* EPROTO not available for MacOSX */
-				STAT_ADD1_BUS(e_bus_errors, pn->selected_connection);
-			}
-		}
-	}
+    BYTE * resp ;
+    
+    if ( len == 0 ) return 0 ;
+
+    resp = malloc(len) ;
+    if ( resp==NULL) return -ENOMEM ;
+    
+    if ((ret = BUS_sendback_data(data, resp, len, pn)) == 0) {
+        if ((ret = memcmp(data, resp, (size_t) len))) {
+            ret = -EIO;		/* EPROTO not available for MacOSX */
+            STAT_ADD1_BUS(e_bus_errors, pn->selected_connection);
+        }
+    }
+    free(resp) ;
 	return ret;
 }
 
@@ -73,14 +73,15 @@ int BUS_sendback_data(const BYTE * data, BYTE * resp, const size_t len,
 	} else {
 		UINT i, bits = len << 3;
 		int ret;
-		int remain = len - (UART_FIFO_SIZE >> 3);
+        int combuffer_length_adjusted = (pn->selected_connection->combuffer_length) >> 3 ;
+        int remain = len - combuffer_length_adjusted ;
 
 		/* Split into smaller packets? */
 		if (remain > 0)
-			return BUS_sendback_data(data, resp, UART_FIFO_SIZE >> 3, pn)
-				|| BUS_sendback_data(&data[UART_FIFO_SIZE >> 3],
-									 resp ? (&resp[UART_FIFO_SIZE >> 3]) :
-									 NULL, remain, pn);
+            return BUS_sendback_data(data, resp, combuffer_length_adjusted, pn)
+                    || BUS_sendback_data(&data[combuffer_length_adjusted],
+									 resp ? (&resp[combuffer_length_adjusted]) : NULL,
+                                     remain, pn);
 
 		/* Encode bits */
 		for (i = 0; i < bits; ++i)
