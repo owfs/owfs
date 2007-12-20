@@ -33,7 +33,7 @@ static int file_compare(const void *a, const void *b)
 				  ((const struct filetype *) b)->name);
 }
 
-void *Tree[] = { NULL, NULL, NULL, NULL, NULL, NULL, };
+void *Tree[ePN_max_type];
 
 
 // FreeBSD fix from Robert Nilsson
@@ -94,6 +94,8 @@ void DeviceDestroy(void)
 
 void DeviceSort(void)
 {
+	memset(Tree, 0, sizeof(void *) * ePN_max_type);
+
 	/* Sort the filetypes for the unrecognized device */
 	qsort(NoDevice.filetype_array, (size_t) NoDevice.count_of_filetypes, sizeof(struct filetype),
 		  file_compare);

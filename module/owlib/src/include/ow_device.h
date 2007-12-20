@@ -70,6 +70,7 @@ $Id$
 
 /* Define our understanding of integers, floats, ... */
 #include "ow_localtypes.h"
+#include "ow_parsedname.h"
 
 /* Several different structures:
   device -- one for each type of 1-wire device
@@ -128,7 +129,7 @@ struct device {
 /* Device tree for matching names */
 /* Bianry tree implementation */
 /* A separate root for each device type: real, statistics, settings, system, structure */
-extern void *Tree[6];
+extern void *Tree[ePN_max_type];
 
 /* Bad bad C library */
 /* implementation of tfind, tsearch returns an opaque structure */

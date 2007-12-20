@@ -136,6 +136,7 @@ enum ePN_type {
 	ePN_settings,
 	ePN_structure,
 	ePN_interface,
+	ePN_max_type,
 };
 
 enum ePS_state {
