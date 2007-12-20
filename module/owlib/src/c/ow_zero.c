@@ -97,7 +97,7 @@ static void *Announce(void *v)
 
 void OW_Announce(struct connection_out *out)
 {
-	struct announce_struct *as = malloc(sizeof(struct announce_struct));
+	struct announce_struct *as;
 	struct sockaddr sa;
 #if OW_MT
 	pthread_t thread;
@@ -105,11 +105,13 @@ void OW_Announce(struct connection_out *out)
 #endif
 	socklen_t sl = sizeof(sa);
 
-	if (libdnssd == NULL)
+	if (libdnssd == NULL || Global.announce_off)
+		return;
+	
+	as = malloc(sizeof(struct announce_struct));
+	if (as == NULL)
 		return;
 
-	if (as == NULL || Global.announce_off)
-		return;
 	as->out = out;
 	if (getsockname(out->file_descriptor, &sa, &sl)) {
 		ERROR_CONNECT("Could not get port number of device.\n");

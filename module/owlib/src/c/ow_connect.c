@@ -200,7 +200,8 @@ void FreeOut(void)
 		if (now->host) {
 			free(now->host);
 			now->host = NULL;
-		} else if (now->service) {
+		}
+		if (now->service) {
 			free(now->service);
 			now->service = NULL;
 		}
