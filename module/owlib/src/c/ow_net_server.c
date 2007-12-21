@@ -139,7 +139,6 @@ void *ServerProcessHandler(void *arg)
 		close(hp->acceptfd);
 		free(hp);
 	}
-	if(arg != NULL) free(arg);
 	pthread_exit(NULL);
 	return NULL;
 }
