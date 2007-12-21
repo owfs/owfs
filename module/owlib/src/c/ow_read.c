@@ -635,14 +635,15 @@ static int FS_read_mixed_part(struct one_wire_query * owq)
    4. Device is locked
    5. Cache should be consulted
 
-   owq_shallow_copy comes in as a single, not aggregate, even if the original value was an aggregate
+   .BYTE and .n allowed
+
+owq_shallow_copy comes in as a single, not aggregate, even if the original value was an aggregate
 */
 int FS_read_sibling( char * property, struct one_wire_query * owq_shallow_copy)
 {
     struct parsedname * pn = PN(owq_shallow_copy) ; // already set up with native device and property
 
     if ( FS_ParseProperty_for_sibling( property, pn ) ) return -ENOENT ;
-
     /* There are a few types that are not supported: binary, ascii, aggregates (.ALL) */
     switch ( pn->selected_filetype->format ) {
         case ft_vascii:
