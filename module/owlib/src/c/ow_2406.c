@@ -185,12 +185,11 @@ static int FS_channel(struct one_wire_query * owq)
 /* bits 2 and 3 */
 static int FS_sense(struct one_wire_query * owq)
 {
-	BYTE data;
-    if (OW_access(&data, PN(owq)))
-		return -EINVAL;
-    OWQ_U(owq) = (data >> 2) & 0x03;
-//    y[0] = UT_getbit(&data,2) ;
-//    y[1] = UT_getbit(&data,3) ;
+    OWQ_allocate_struct_and_pointer( owq_sibling ) ;
+
+    OWQ_create_shallow_single( owq_sibling, owq) ;
+    if ( FS_read_sibling( "PIO.BYTE", owq_sibling ) ) return -EINVAL ;
+    OWQ_U(owq) = BYTE_INVERSE(OWQ_U(owq_sibling)) & 0x03;
 	return 0;
 }
 
@@ -423,7 +422,7 @@ static int ReadTmexPage(BYTE * data, size_t size, int page,
 						const struct parsedname *pn);
 static int TAI8570_Calibration(UINT * cal, const struct s_TAI8570 *tai,
 							   struct parsedname *pn);
-static int testTAI8570(struct s_TAI8570 *tai, struct parsedname *pn);
+static int testTAI8570(struct s_TAI8570 *tai, struct one_wire_query * owq );
 static int TAI8570_Write(BYTE * cmd, const struct s_TAI8570 *tai,
 						 struct parsedname *pn);
 static int TAI8570_Read(UINT * u, const struct s_TAI8570 *tai,
@@ -449,10 +448,8 @@ static int FS_sibling(struct one_wire_query * owq)
 {
 	ASCII sib[16];
 	struct s_TAI8570 tai;
-	struct parsedname pn2;
 
-    memcpy(&pn2, PN(owq), sizeof(struct parsedname));	//shallow copy
-	if (testTAI8570(&tai, &pn2))
+	if (testTAI8570(&tai, owq))
 		return -ENOENT;
 	bytes2string(sib, tai.sibling, 8);
     return Fowq_output_offset_and_size( sib, 16, owq );
@@ -466,7 +463,7 @@ static int FS_temp(struct one_wire_query * owq)
 	struct parsedname pn2;
 
     memcpy(&pn2, PN(owq), sizeof(struct parsedname));	//shallow copy
-	if (testTAI8570(&tai, &pn2))
+	if (testTAI8570(&tai, owq))
 		return -ENOENT;
 
     UT1 = 8 * tai.C[4] + 20224 ;
@@ -492,7 +489,7 @@ static int FS_pressure(struct one_wire_query * owq)
     TEMP = OWQ_F(owq_sibling) ;
 
     memcpy(&pn2, PN(owq), sizeof(struct parsedname));	//shallow copy
-	if (testTAI8570(&tai, &pn2))
+	if (testTAI8570(&tai, owq))
 		return -ENOENT;
 
     if (TAI8570_SenseValue(&D1, SEC_READD1, &tai, &pn2))
@@ -759,12 +756,22 @@ static int TAI8570_Calibration(UINT * cal, const struct s_TAI8570 *tai,
 }
 
 /* Called with a copy of pn */
-static int testTAI8570(struct s_TAI8570 *tai, struct parsedname *pn)
+static int testTAI8570(struct s_TAI8570 *tai, struct one_wire_query * owq )
 {
 	int pow;
 	BYTE data[32];
 	UINT cal[4];
-	// See if already cached
+    struct parsedname * pn = PN(owq) ;
+	
+    OWQ_allocate_struct_and_pointer( owq_sibling ) ;
+
+    OWQ_create_shallow_single( owq_sibling, owq) ;
+
+    // see which DS2406 is powered
+    if ( FS_read_sibling( "power", owq_sibling ) ) return -EINVAL ;
+    pow = OWQ_Y(owq_sibling) ;
+
+    // See if already cached
 	if (Cache_Get_Internal_Strict
            ((void *) tai, sizeof(struct s_TAI8570), InternalProp(BAR), pn) == 0) {
 		LEVEL_DEBUG("TAI8570 cache read: reader=" SNformat " writer="
@@ -789,11 +796,6 @@ static int testTAI8570(struct s_TAI8570 *tai, struct parsedname *pn)
 	if (ReadTmexPage(data, 32, 1, pn))
 		return 1;				// read page
 
-	// see which DS2406 is powered
-	if (OW_power(&pow, pn)) {
-		LEVEL_DETAIL("Cannot tell DS2406 power status\n");
-		return 1;
-	}
 	memcpy(tai->sibling, &data[1], 8);
 	if (pow) {
 		memcpy(tai->writer, tai->master, 8);

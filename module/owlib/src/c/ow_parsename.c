@@ -651,5 +651,11 @@ int FS_ParsedNamePlus(const char *path, const char *file,
 /* For read and write sibling -- much simpler requirements */
 int FS_ParseProperty_for_sibling( char *filename, struct parsedname *pn)
 {
-	return ( Parse_Property( filename, pn ) == parse_done ) ? 0 : 1 ;
+    // need to make a copy of filename since a static string can't be modified by strsep
+    char * filename_copy = strdup( filename ) ;
+    int ret ;
+    if ( filename_copy == NULL ) return 1 ;
+    ret = ( Parse_Property( filename_copy, pn ) == parse_done ) ? 0 : 1 ;
+    free( filename_copy ) ;
+    return ret ;
 }
