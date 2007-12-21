@@ -16,7 +16,7 @@ $Id$
 #include "ow.h"
 #include "ow_counters.h"
 
-// #define CACHE_DEBUG
+//#define CACHE_DEBUG
 
 #if OW_CACHE
 #include <limits.h>
@@ -60,6 +60,7 @@ struct tree_node {
 	time_t expires;
 	int dsize;
 };
+
 
 /* Bad bad C library */
 /* implementation of tfind, tsearch returns an opaque structure */
@@ -294,6 +295,20 @@ int Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn)
 	//printf("AddDir tn=%p\n",tn) ;
 	if (!tn)
 		return -ENOMEM;
+	memset(tn, 0, sizeof(struct tree_node) + size); // get rid of valgrind warnings
+	/* Is there some bug hidden here? All data seem to be set in
+	   tn-structure, but it gives the below...
+	   ==11000== Conditional jump or move depends on uninitialised value(s)
+	   ==11000==    at 0x4C3FDDF: tree_compare (ow_cache.c:97)
+	   ==11000==    by 0x3DDFCCF5B8: tsearch (in /lib64/libc-2.6.so)
+	   ==11000==    by 0x4C40F00: Cache_Add_Common (ow_cache.c:412)
+	   ==11000==    by 0x4C41793: Cache_Add_Dir (ow_cache.c:310)
+	   ==11000==    by 0x4C42B4E: FS_cache2real (ow_dir.c:559)
+	   ==11000==    by 0x4C42EDD: FS_dir_all_connections_loop (ow_dir.c:330)
+	   ==11000==    by 0x4C43414: FS_dir_both (ow_dir.c:346)
+	   ==11000==    by 0x4021F4: DirHandler (dir.c:109)
+	   ==11000==    by 0x402959: DataHandler (data.c:138)
+	 */
 
 	LEVEL_DEBUG("Cache_Add_Dir " SNformat " elements=%d\n", SNvar(pn->sn),
 				(int) (db->devices));
@@ -320,8 +335,7 @@ int Cache_Add_Device(const int bus_nr, const struct parsedname *pn)
 	if (duration <= 0)
 		return 0;				/* in case timeout set to 0 */
 
-	tn = (struct tree_node *) malloc(sizeof(struct tree_node) +
-									 sizeof(int));
+	tn = (struct tree_node *) malloc(sizeof(struct tree_node) + sizeof(int));
 	if (!tn)
 		return -ENOMEM;
 
@@ -357,6 +371,7 @@ int Cache_Add_Internal(const void *data, const size_t datasize,
 	tn = (struct tree_node *) malloc(sizeof(struct tree_node) + datasize);
 	if (!tn)
 		return -ENOMEM;
+
 	LEVEL_DEBUG("Cache_Add_Internal " SNformat " size=%d\n", SNvar(pn->sn),
 				(int) datasize);
 	memset(&tn->tk, 0, sizeof(struct tree_key));
@@ -407,7 +422,7 @@ static int Cache_Add_Common(struct tree_node *tn)
 		// failed size test
 		free(tn);
 	} else if ((opaque = tsearch(tn, &cache.new_db, tree_compare))) {
-		//printf("Cache_Add_Common to %p\n",opaque) ;
+		//printf("Cache_Add_Common to %p\n",opaque);
 		if (tn != opaque->key) {
 			cache.new_ram += sizeof(tn) - sizeof(opaque->key);
 			free(opaque->key);

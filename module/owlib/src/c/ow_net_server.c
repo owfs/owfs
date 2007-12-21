@@ -133,9 +133,13 @@ void *ServerProcessHandler(void *arg)
 	pthread_detach(pthread_self());
 	if (hp) {
 		hp->HandlerRoutine(hp->acceptfd);
+		/* This will never be reached right now.
+		   The thread is killed when application is stopped.
+		   Should perhaps fix a signal handler for this. */
 		close(hp->acceptfd);
 		free(hp);
 	}
+	if(arg != NULL) free(arg);
 	pthread_exit(NULL);
 	return NULL;
 }
@@ -164,10 +168,10 @@ static void ServerProcessAccept(void *vp)
 			break;
 		if (acceptfd < 0) {
 			if (errno == EINTR) {
-				LEVEL_DEBUG("ow_net.c: accept interrupted\n");
+				LEVEL_DEBUG("ow_net_server.c: accept interrupted\n");
 				continue;
 			}
-			LEVEL_DEBUG("ow_net.c: accept error %d [%s]\n", errno,
+			LEVEL_DEBUG("ow_net_server.c: accept error %d [%s]\n", errno,
 						strerror(errno));
 		}
 		break;
@@ -284,7 +288,7 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor),
 			LEVEL_DEBUG("ServerProcess: sigwait error %n\n", err);
 		}
 	}
-	LEVEL_DEBUG("ow_net.c:ServerProcess() shutdown initiated\n");
+	LEVEL_DEBUG("ow_net_server.c:ServerProcess() shutdown initiated\n");
 
 	for (out = head_outbound_list; out; out = out->next) {
 		OUTLOCK(out);
@@ -300,7 +304,7 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor),
 		OUTUNLOCK(out);
 	}
 
-	LEVEL_DEBUG("ow_net.c:ServerProcess() shutdown done\n");
+	LEVEL_DEBUG("ow_net_server.c:ServerProcess() shutdown done\n");
 
 	/* Cleanup that may never be reached */
 	Exit(0);

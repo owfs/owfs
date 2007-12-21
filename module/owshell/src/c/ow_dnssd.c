@@ -161,9 +161,10 @@ int OW_Load_dnssd_library(void)
 int OW_Free_dnssd_library(void)
 {
 	int rc = -1;
-	if (libdnssd)
+	if (libdnssd) {
 		rc = DL_close(libdnssd);
-	libdnssd = NULL;
+		libdnssd = NULL;
+	}
 	return rc;
 }
 
