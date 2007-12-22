@@ -21,7 +21,7 @@ man_MANS = owfs.1 \
            DS2430A.3 DS2431.3 DS2433.3 DS2436.3 DS2437.3 DS2438.3 \
            DS2450.3 \
            DS2502.3 DS2502-E48.3 DS2502-UNW.3 DS2505.3 DS2505-UNW.3 DS2506.3 DS2506-UNW.3 \
-           DS2720.3 DS2740.3 DS2751.3 DS2755.3 DS2756.3 DS2760.3 DS2761.3 DS2762.3 DS2770.3 DS2780.3 DS2781.3 \
+           DS2720.3 DS2740.3 DS2751.3 DS2755.3 DS2756.3 DS2760.3 DS2761.3 DS2762.3 DS2770.3 DS2780.3 DS2781.3 DS2788.3 \
            DS2804.3 DS28E04.3 DS28EA00.3 DS28EC20.3 \
            DS2890.3 \
            Thermachron.3 \
@@ -31,10 +31,18 @@ man_MANS = owfs.1 \
            cmdline \
            cmdline_mini \
            cmdline2_mini \
+           configuration \
            description \
+           format \
+           help \
+           job_control \
            seealso \
            standard \
            standard_mini \
+           persistent_thresholds \
+           temperature \
+           temperatures \
+           timeout \
            owperl.3 \
            owtcl.3 \
            owfs.5 \

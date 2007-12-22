@@ -11,7 +11,10 @@
 .TH DS2760 3  2003 "OWFS Manpage" "One-Wire File System"
 .SH NAME
 .B DS2780
-- Statnd-alone Fuel Guage IC
+- Stand-alone Fuel Gauge IC
+.br
+.B DS2788
+- Stand-alone Fuel Gauge with LED Drivers
 .SH SYNOPSIS
 Temperature Voltage Current Memory and Switch.
 .PP
@@ -48,11 +51,15 @@ Temperature Voltage Current Memory and Switch.
 |
 .B chgtf
 |
+.B ds
+|
 .B learnf
 |
 .B pmod
 |
 .B porf
+|
+.B rnaop
 |
 .B sef
 |
@@ -198,7 +205,7 @@ Integral of
 over time. Units are in
 .B volthours
 .SH OBSCURE PROPERTIES
-.SS aef chgtf learnf pmod porf sef uven uvf
+.SS aef chgtf dc learnf pmod porf rnaop sef uven uvf
 .I varies, yes-no
 .br
 Bit flags corresponding to various battery management functions of the chip. See the 
@@ -224,6 +231,8 @@ including thermocouples. Support for thermocouples in built into the software, u
 .so addressing
 .SH DATASHEET
 http://pdfserv.maxim-ic.com/en/ds/DS2780.pdf
+.br
+http://pdfserv.maxim-ic.com/en/ds/DS2788.pdf
 .SH SEE ALSO
 .so seealso
 .SH AVAILABILITY

@@ -23,7 +23,7 @@
 .SS Resistance
 .B DS2890 (3)
 .SS Multifunction (current, voltage, temperature)
-.B DS2436 (3) DS2437 (3) DS2438 (3) DS2751 (3) DS2755 (3) DS2756 (3) DS2760 (3) DS2770 (3) DS2780 (3) DS2781 (3) DS2784 (3)
+.B DS2436 (3) DS2437 (3) DS2438 (3) DS2751 (3) DS2755 (3) DS2756 (3) DS2760 (3) DS2770 (3) DS2780 (3) DS2781 (3) DS2788 (3) DS2784 (3)
 .SS Counter
 .B DS2423 (3)
 .SS LCD Screen
