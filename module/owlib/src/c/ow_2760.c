@@ -356,14 +356,17 @@ struct filetype DS2780[] = {
   {"volt",PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_volatile,   FS_r_volt, NO_WRITE_FUNCTION, {s:0x0C},} ,
   {"volthours",PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_volatile,   FS_r_vh, FS_w_vh, {v:NULL},} ,
 
-  {"aef",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile,   FS_r_bit, FS_w_bit, {u:(0x01 << 8) | 0x06},} ,
   {"chgtf",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile,   FS_r_bit, FS_w_bit, {u:(0x01 << 8) | 0x07},} ,
-  {"learnf",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile,   FS_r_bit, FS_w_bit, {u:(0x01 << 8) | 0x04},} ,
-  {"pmod",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile,   FS_r_bit, FS_w_bit, {u:(0x60 << 8) | 0x05},} ,
-  {"porf",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile,   FS_r_bit, FS_w_bit, {u:(0x01 << 8) | 0x01},} ,
+  {"aef",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile,   FS_r_bit, FS_w_bit, {u:(0x01 << 8) | 0x06},} ,
   {"sef",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile,   FS_r_bit, FS_w_bit, {u:(0x01 << 8) | 0x05},} ,
-  {"uven",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile,   FS_r_bit, FS_w_bit, {u:(0x60 << 8) | 0x06},} ,
+  {"learnf",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile,   FS_r_bit, FS_w_bit, {u:(0x01 << 8) | 0x04},} ,
   {"uvf",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile,   FS_r_bit, FS_w_bit, {u:(0x01 << 8) | 0x02},} ,
+  {"porf",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile,   FS_r_bit, FS_w_bit, {u:(0x01 << 8) | 0x01},} ,
+  {"nben",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile,   FS_r_bit, FS_w_bit, {u:(0x60 << 8) | 0x07},} ,
+  {"uven",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile,   FS_r_bit, FS_w_bit, {u:(0x60 << 8) | 0x06},} ,
+  {"pmod",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile,   FS_r_bit, FS_w_bit, {u:(0x60 << 8) | 0x05},} ,
+  {"rnaop",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile,   FS_r_bit, FS_w_bit, {u:(0x60 << 8) | 0x04},} ,
+  {"dc",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile,   FS_r_bit, FS_w_bit, {u:(0x60 << 8) | 0x03},} ,
 
 	F_thermocouple
 };
