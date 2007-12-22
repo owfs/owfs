@@ -69,7 +69,7 @@ static void HA7_setroutines(struct connection_in *in)
     in->iroutines.close = HA7_close;
     in->iroutines.transaction = NULL;
     in->iroutines.flags =
-		ADAP_FLAG_overdrive | ADAP_FLAG_dirgulp | ADAP_FLAG_2409path;
+            ADAP_FLAG_dirgulp | ADAP_FLAG_bundle | ADAP_FLAG_bundle_select ;
     in->combuffer = realloc( in->combuffer, HA7_FIFO_SIZE ) ;
     in->combuffer_length = sizeof( in->combuffer ) ;
     in->bundling_enabled = 1 ;
@@ -399,7 +399,43 @@ static int HA7_select_and_sendback(const BYTE * data, BYTE * resp,
     ASCII *r;
     struct toHA7 ha7;
     int ret = -EIO;
+    
+    if ((MAX_FIFO_SIZE >> 1) < size) {
+        size_t half = size >> 1;
+        if (HA7_sendback_data(data, resp, half, pn))
+            return -EIO;
+        return HA7_sendback_data(&data[half], &resp[half], size - half,
+                                  pn);
+    }
 
+    if ((file_descriptor = ClientConnect(pn->selected_connection)) < 0)
+        return -EIO;
+
+    toHA7init(&ha7);
+    ha7.command = "WriteBlock";
+    ha7.data = data;
+    ha7.length = size;
+    setHA7address(&ha7, pn->sn);
+    
+    if (HA7_toHA7(file_descriptor, &ha7, pn->selected_connection) == 0 ) {
+        if ( HA7_read(file_descriptor, &r) == 0 ) {
+            ASCII *p = r;
+            if ((p = strstr(p, "<INPUT TYPE=\"TEXT\" NAME=\"ResultData_0\""))
+                 && (p = strstr(p, "VALUE=\""))) {
+                p += 7;
+                LEVEL_DEBUG("HA7_sendback_data received(%d): %.*s\n", size * 2,
+                            size * 2, p);
+                if (strspn(p, "0123456789ABCDEF") >= size << 1) {
+                    string2bytes(p, resp, size);
+                    ret = 0;
+                }
+                 }
+                 free(r);
+        } else {
+            STAT_ADD1_BUS( e_bus_read_errors, pn->selected_connection ) ;
+        }
+    }
+    close(file_descriptor);
     return ret;
 }
 
