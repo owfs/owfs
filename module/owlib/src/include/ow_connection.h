@@ -89,18 +89,19 @@ extern int global_count_tester_busses;
  *       the uart.
  */
 #define UART_FIFO_SIZE 160
-//extern BYTE combuffer[] ;
 
 /** USB bulk endpoint FIFO size
   Need one for each for read and write
   This is for alt setting "3" -- 64 bytes, 1msec polling
 */
-#define DEFAULT_FIFO_SIZE 64
 #define USB_FIFO_EACH 64
 #define USB_FIFO_READ 0
 #define USB_FIFO_WRITE USB_FIFO_EACH
 #define USB_FIFO_SIZE ( USB_FIFO_EACH + USB_FIFO_EACH )
-#define HA7_FIFO_SIZE 20000
+#define HA7_FIFO_SIZE 32000
+#define LINK_FIFO_SIZE UART_FIFO_SIZE
+#define LINKE_FIFO_SIZE 1500
+#define I2C_FIFO_SIZE 1
 
 #if USB_FIFO_SIZE > UART_FIFO_SIZE
 #define MAX_FIFO_SIZE USB_FIFO_SIZE
@@ -374,13 +375,12 @@ struct connection_in {
 	size_t last_root_devs;
 	int buspath_bad;			// should the current DS2409 branches be cleared?
 	struct buspath branch;		// Branch currently selected
+    BYTE combuffer[MAX_FIFO_SIZE] ;
 
 	/* Static buffer for conmmunication */
 	/* Since only used during actual transfer to/from the adapter,
 	   should be protected from contention even when multithreading allowed */
-    size_t combuffer_length ;
-    BYTE * combuffer ;
-    int bundling_enabled ;
+    size_t bundling_length ;
 	union {
 		struct connin_serial serial;
 		struct connin_link link;

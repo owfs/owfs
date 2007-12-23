@@ -57,13 +57,7 @@ struct connection_in *NewIn(const struct connection_in *in)
 			memcpy(now, in, len);
 		} else {
 			memset(now, 0, len);
-            now->combuffer_length = DEFAULT_FIFO_SIZE ;
 		}
-        now->combuffer = malloc( now->combuffer_length ) ;
-        if ( now->combuffer == NULL ) {
-            free(now) ;
-            return NULL ;
-        }
         now->next = head_inbound_list;	/* put in linked list at start */
 		head_inbound_list = now;
 		now->index = count_inbound_connections++;
@@ -171,10 +165,6 @@ void FreeIn(void)
 		default:
 			break;
 		}
-        if (now->combuffer) {
-            free(now->combuffer) ;
-            now->combuffer = NULL ;
-        }
 		if (now->name) {
 			free(now->name);
 			now->name = NULL;

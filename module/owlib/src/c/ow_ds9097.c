@@ -46,8 +46,7 @@ static void DS9097_setroutines(struct connection_in *in)
     in->iroutines.close = COM_close;
     in->iroutines.transaction = NULL;
     in->iroutines.flags = ADAP_FLAG_overdrive;
-    in->combuffer = realloc( in->combuffer, UART_FIFO_SIZE ) ;
-    in->combuffer_length = sizeof( in->combuffer ) ;
+    in->bundling_length = UART_FIFO_SIZE / 10 ;
 }
 
 /* Open a DS9097 after an unsucessful DS2480_detect attempt */

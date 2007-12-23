@@ -78,7 +78,7 @@ static int DS9490_PowerByte(const BYTE byte, BYTE * resp, const UINT delay,
 static int DS9490_ProgramPulse(const struct parsedname *pn) ;
 static int DS9490_read(BYTE * buf, const size_t size,
 					   const struct parsedname *pn);
-static int DS9490_write(BYTE * buf, const size_t size,
+static int DS9490_write(const BYTE * buf, const size_t size,
 						const struct parsedname *pn);
 static int DS9490_overdrive(const struct parsedname * pn ) ;
 static int DS9490_redetect_low(const struct parsedname *pn);
@@ -107,8 +107,7 @@ static void DS9490_setroutines(struct connection_in *in)
     in->iroutines.transaction = NULL;
     in->iroutines.flags = 0;
 
-    in->combuffer = realloc( in->combuffer, USB_FIFO_SIZE ) ;
-    in->combuffer_length = sizeof( in->combuffer ) ;
+    in->bundling_length = USB_FIFO_SIZE ;
 }
 
 #define DS2490_DIR_GULP_ELEMENTS     ((64/8) - 1)
@@ -959,7 +958,7 @@ static int DS9490_read(BYTE * buf, const size_t size,
 /* Fills the EP2 buffer in the USB adapter
    returns number of bytes (size)
    or <0 for an error */
-static int DS9490_write(BYTE * buf, const size_t size,
+static int DS9490_write(const BYTE * buf, const size_t size,
 						const struct parsedname *pn)
 {
 	int ret;

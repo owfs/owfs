@@ -70,9 +70,7 @@ static void HA7_setroutines(struct connection_in *in)
     in->iroutines.transaction = NULL;
     in->iroutines.flags =
             ADAP_FLAG_dirgulp | ADAP_FLAG_bundle | ADAP_FLAG_bundle_select ;
-    in->combuffer = realloc( in->combuffer, HA7_FIFO_SIZE ) ;
-    in->combuffer_length = sizeof( in->combuffer ) ;
-    in->bundling_enabled = 1 ;
+    in->bundling_length = HA7_FIFO_SIZE ; // arbitrary number
 }
 
 int HA7_detect(struct connection_in *in)

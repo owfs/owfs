@@ -125,6 +125,7 @@ static void DS2482_setroutines(struct connection_in *in)
     in->iroutines.close = DS2482_close;
     in->iroutines.transaction = NULL;
     in->iroutines.flags = ADAP_FLAG_overdrive;
+    in->bundling_length = I2C_FIFO_SIZE ;
 }
 
 /* All the rest of the program sees is the DS9907_detect and the entry in iroutines */

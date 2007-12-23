@@ -73,7 +73,7 @@ int BUS_sendback_data(const BYTE * data, BYTE * resp, const size_t len,
 	} else {
 		UINT i, bits = len << 3;
 		int ret;
-        int combuffer_length_adjusted = (pn->selected_connection->combuffer_length) >> 3 ;
+        int combuffer_length_adjusted = MAX_FIFO_SIZE >> 3 ;
         int remain = len - combuffer_length_adjusted ;
 
 		/* Split into smaller packets? */

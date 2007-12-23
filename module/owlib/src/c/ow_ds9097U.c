@@ -57,8 +57,7 @@ static void DS2480_setroutines(struct connection_in * in)
     in->iroutines.close = COM_close;
     in->iroutines.transaction = NULL;
     in->iroutines.flags = 0;
-    in->combuffer = realloc( in->combuffer, UART_FIFO_SIZE ) ;
-    in->combuffer_length = sizeof( in->combuffer ) ;
+    in->bundling_length = UART_FIFO_SIZE ;
 }
 
 /* --------------------------- */

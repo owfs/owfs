@@ -48,6 +48,7 @@ static void LINKE_setroutines(struct connection_in * in)
     in->iroutines.close = LINKE_close;
     in->iroutines.transaction = NULL;
     in->iroutines.flags = ADAP_FLAG_2409path;
+    in->bundling_length = LINKE_FIFO_SIZE ;
 }
 
 #define LINK_string(x)  ((BYTE *)(x))
