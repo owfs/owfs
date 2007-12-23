@@ -200,6 +200,9 @@ $Id$
 /* Directory blob (strings) separated out for readability */
 #include "ow_charblob.h"
 
+/* memory blob used for bundled transactions */
+#include "ow_memblob.h"
+
 /* Many mutexes separated out for readability */
 #include "ow_mutexes.h"
 

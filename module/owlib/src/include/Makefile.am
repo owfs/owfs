@@ -50,6 +50,7 @@ noinst_HEADERS =          \
         ow_interface.h    \
         ow_localtypes.h   \
         ow_lcd.h          \
+        ow_memblob.h      \
         ow_message.h      \
         ow_mutexes.h      \
         ow_none.h         \
