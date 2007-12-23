@@ -67,6 +67,7 @@ OWLIB_SOURCE = ow_dl.c           \
                ow_linke.c        \
                ow_locator.c      \
                ow_locks.c        \
+               ow_memblob.c      \
                ow_memory.c       \
                ow_multicast.c    \
                ow_name.c         \

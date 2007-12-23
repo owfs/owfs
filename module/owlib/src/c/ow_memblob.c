@@ -72,8 +72,8 @@ void MemblobClear(struct memblob *mb)
 		free(mb->memory_storage);
 		mb->memory_storage = NULL;
 	}
-	db->used = 0;
-	mb->devices = 0;
+	mb->used = 0;
+    mb->allocated = 0;
 }
 
 void MemblobInit(struct memblob *mb)
@@ -90,8 +90,8 @@ int MemblobAdd(BYTE * data, size_t length, struct memblob *mb)
 		int newalloc = mb->allocated + MEMBLOB_ALLOCATION_INCREMENT;
 		BYTE *try_bigger_block = realloc(mb->memory_storage, newalloc);
 		if (try_bigger_block!=NULL) {
-			db->allocated = newalloc;
-			db->memory_storage = try_bigger_block;
+			mb->allocated = newalloc;
+			mb->memory_storage = try_bigger_block;
 		} else {				// allocation failed -- keep old
 			return -ENOMEM;
 		}
