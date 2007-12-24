@@ -225,12 +225,12 @@ static int OW_w_reset_password(const BYTE * data, const size_t size,
 	BYTE ident[8];
 	struct transaction_log tscratch[] = {
 		TRXN_START,
-		{set_password, NULL, 3, trxn_match},
-		{NULL, ident, 8, trxn_read},
-		{ident, NULL, 8, trxn_match},
-		{ident, NULL, 8, trxn_match},
-		{passwd, NULL, 8, trxn_match},
-		TRXN_END,
+        TRXN_WRITE3(set_password),
+        TRXN_READ(ident, 8),
+        TRXN_WRITE(ident, 8),
+        TRXN_WRITE(ident, 8),
+        TRXN_WRITE(passwd, 8),
+        TRXN_END,
 	};
 
 
@@ -499,7 +499,6 @@ static int OW_w_page(const BYTE * data, const size_t size,
 	struct transaction_log tcopy[] = {
 		TRXN_START,
         TRXN_WRITE3(copy_scratch),
-		{NULL, NULL, 8, trxn_match},
         TRXN_WRITE(global_passwd[pn->extension], 8),
 		TRXN_END,
 	};

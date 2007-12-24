@@ -100,7 +100,7 @@ static int OW_r_sense(int *val, const struct parsedname *pn)
 	BYTE inp;
 	struct transaction_log r[] = {
 		TRXN_NVERIFY,
-		{NULL, &inp, 1, trxn_read,},
+        TRXN_READ1(&inp),
 		TRXN_END,
 	};
 

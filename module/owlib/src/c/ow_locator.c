@@ -63,7 +63,7 @@ static int OW_locator(BYTE * addr, const struct parsedname *pn)
 	BYTE loc[10] = { 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, };	// key and 8 byte default
 	struct transaction_log t[] = {
 		TRXN_NVERIFY,
-		{loc, loc, 10, trxn_read,},
+        TRXN_MODIFY(loc, loc, 10),
 		TRXN_END,
 	};
 
