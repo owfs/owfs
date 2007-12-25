@@ -520,8 +520,8 @@ int BUS_PowerByte(const BYTE data, BYTE * resp, UINT delay,
 				  const struct parsedname *pn);
 int BUS_ProgramPulse(const struct parsedname *pn);
 int BUS_next_both(struct device_search *ds, const struct parsedname *pn);
-int BUS_sendback_data(const BYTE * data, BYTE * resp, const size_t len,
-					  const struct parsedname *pn);
+int BUS_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
+int BUS_select_and_sendback(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 
 int TestConnection(const struct parsedname *pn);
 

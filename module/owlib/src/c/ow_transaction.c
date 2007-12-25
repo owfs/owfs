@@ -19,7 +19,7 @@ $Id$
 struct transaction_bundle {
     const struct transaction_log *start ;
     int packets ;
-    size_t bytes ;
+    size_t max_size ;
     struct memblob mb ;
     int select_first ;
 } ;
@@ -173,83 +173,223 @@ static int BUS_transaction_single(const struct transaction_log *t,
 }
 
 #if 0
-static int Bundle_execute( struct transaction_bundle * tb, struct parsedname * pn )
+struct transaction_bundle {
+    const struct transaction_log *start ;
+    int packets ;
+    size_t max_size ;
+    struct memblob mb ;
+    int select_first ;
+} ;
+#endif
+
+static int Bundle_pack( struct transaction_log * tl, struct parsedname * pn ) ;
+static int Pack_item( struct transaction_log * tl, struct transaction_bundle * tb ) ;
+static int Bundle_ship( struct transaction_bundle * tb, struct parsedname * pn ) ;
+static int Bundle_enroute( struct transaction_bundle * tb, struct parsedname * pn ) ;
+static int Bundle_unpack( struct transaction_bundle * tb ) ;
+
+static void Bundle_init( struct transaction_bundle * tb, struct parsedname * pn ) ;
+
+// initialize the bundle
+static void Bundle_init( struct transaction_bundle * tb, struct parsedname * pn )
+{
+    memset( tb, 0, sizeof( struct transaction_bundle ) ) ;
+    MemblobInit( &tb->mb ) ;
+    tb->max_size = pn->selected_connection->bundling_length ;
+}
+
+static int Bundle_pack( struct transaction_log * tl, struct parsedname * pn )
+{
+    struct transaction_log * t_index ;
+    struct transaction_bundle s_tb ;
+    struct transaction_bundle * tb = &s_tb ;
+
+    Bundle_init( tb, pn ) ;
+
+    for ( t_index = tl ; t_index->type != trxn_end ; ++t_index ) {
+        switch ( Pack_item( t_index, tb ) ) {
+            case 0:
+                break ;
+            case -EINVAL:
+                if ( Bundle_ship( tb, pn ) ) return -EINVAL ;
+                if ( BUS_transaction_single( t_index, pn ) ) return -EINVAL ;
+                break ;
+            case -EAGAIN:
+                if ( Bundle_ship( tb, pn ) ) return -EINVAL ;
+                if ( Pack_item( t_index, tb ) == 0 ) break ;
+                if ( BUS_transaction_single( t_index, pn ) ) return -EINVAL ;
+                break ;
+        }
+    }
+    return Bundle_ship( tb, pn ) ;
+}
+
+// Take a bundle, execute the transaction, unpack, and clear the memoblob
+static int Bundle_ship( struct transaction_bundle * tb, struct parsedname * pn )
+{
+    if ( tb->packets == 0 ) {
+        return 0 ;
+    }
+    
+    if ( Bundle_enroute( tb, pn ) != 0 ) {
+        // clear the bundle
+        MemblobClear( &tb->mb) ;
+        tb->packets = 0 ;
+        tb->select_first = 0 ;
+        return -EINVAL ;
+    }
+
+    return Bundle_unpack( tb ) ;
+}
+
+// Execute a bundle transaction (actual bytes on 1-wire bus)
+static int Bundle_enroute( struct transaction_bundle * tb, struct parsedname * pn )
+{
+    if ( tb->select_first ) {
+        return BUS_select_and_sendback( tb->mb.memory_storage, tb->mb.memory_storage, tb->mb.used, pn ) ;
+    } else {
+        return BUS_sendback_data(  tb->mb.memory_storage, tb->mb.memory_storage, tb->mb.used, pn ) ;
+    }
+}
+
+/* See if the item can be packed
+   return -EINVAL -- cannot be packed at all
+   return -EAGAIN -- should be at start
+   return -EINTR  -- should be at end (force end)
+   return 0       -- added successfully
+*/
+static int Pack_item( struct transaction_log * tl, struct transaction_bundle * tb )
+{ 
+    int ret = 0 ; //default return value for good packets;
+    switch (tl->type) {
+        case trxn_select: // select a 1-wire device (by unique ID)
+            if (tb->packets != 0 ) return -EAGAIN ; // select must be first
+            tb->select_first = 1 ;
+            break;
+        case trxn_compare: // match two strings -- no actual 1-wire
+            break;
+        case trxn_read:
+            if ( tl->size > tb->max_size ) return -EINVAL ; // too big for any bundle
+            if ( tl->size + tb->mb.used > tb->max_size ) return -EAGAIN ; // too big for this partial bundle
+            if ( MemblobChar( 0xFF, tl->size, &tb->mb ) ) return -EINVAL ;
+            break;
+        case trxn_match: // write data and match response
+        case trxn_modify: // write data and read response. No match needed
+        case trxn_blind: // write data and ignore response
+            if ( tl->size > tb->max_size ) return -EINVAL ; // too big for any bundle
+            if ( tl->size + tb->mb.used > tb->max_size ) return -EAGAIN ; // too big for this partial bundle
+            if ( MemblobAdd( tl->out, tl->size, &tb->mb ) ) return -EINVAL ;
+            break;
+        case trxn_power:
+        case trxn_program:
+            if ( 1 > tb->max_size ) return -EINVAL ; // too big for any bundle
+            if ( 1 + tb->mb.used > tb->max_size ) return -EAGAIN ; // too big for this partial bundle
+            if ( MemblobAdd( tl->out, 1, &tb->mb ) ) return -EINVAL ;
+            ret = -EINTR ; // needs delay
+            break;
+        case trxn_crc8:
+        case trxn_crc8seeded:
+        case trxn_crc16:
+        case trxn_crc16seeded:
+            break ;
+        case trxn_delay:
+        case trxn_udelay:
+            ret = -EINTR ;
+            break;
+        case trxn_reset:
+        case trxn_end:
+        case trxn_verify:
+            return -EINVAL ;
+        case trxn_nop:
+            break;
+    }
+    if ( tb->packets == 0 ) {
+        tb->start = tl ;
+    }
+    ++ tb->packets ;
+    return ret ;
+}
+
+static int Bundle_unpack( struct transaction_bundle * tb )
 {
     int packet_index ;
-    struct transaction_log * tl ;
-    size_t bytes_used = 0 ;
-    BYTE * data = MemblobGet( &tb->mb ) ;
+    const struct transaction_log * tl ;
+    BYTE * data = tb->mb.memory_storage ;
+    int ret = 0 ;
 
 
     for ( packet_index = 0, tl = tb->start ; packet_index < tb->packets ; ++packet_index, ++tl ) {
         switch (tl->type) {
-            case trxn_select: // select a 1-wire device (by unique ID)
-                break;
             case trxn_compare: // match two strings -- no actual 1-wire
                 if ( (tl->in==NULL) || (tl->out==NULL) || (memcmp(tl->in,tl->out,tl->size)!=0) ) {
-                        return -EINVAL ;
+                        ret = -EINVAL ;
                     }
                 break ;
             case trxn_match: // send data and compare response
-                if ( memcmp( tl->out, &data[bytes_used], tl->size) != 0 ) return -EINVAL ;
-                bytes_used += tl->size ;
+                if ( memcmp( tl->out, data, tl->size) != 0 ) {
+                    ret = -EINVAL ;
+                }
+                data += tl->size ;
                 break;
             case trxn_read:
             case trxn_modify: // write data and read response. No match needed
-                memmove(tl->in, &data[bytes_used], tl->size);
-                bytes_used += tl->size ;
+                memmove(tl->in, data, tl->size);
+                data += tl->size ;
+                break;
+            case trxn_blind:
+                data += tl->size ;
                 break;
             case trxn_power:
             case trxn_program:
+                memmove(tl->in, data, 1);
+                data += 1 ;
+                UT_delay( tl->size ) ;
                 break;
             case trxn_crc8:
-                ret = CRC8(tl->out, tl->size);
-                LEVEL_DEBUG("  Transaction CRC8 = %d\n", ret);
+                if ( CRC8(tl->out, tl->size) != 0 ) {
+                    ret = -EINVAL ;
+                }
                 break;
             case trxn_crc8seeded:
-                ret = CRC8seeded(tl->out, tl->size, ((UINT *) (tl->in))[0]);
-                LEVEL_DEBUG("  Transaction CRC8 = %d\n", ret);
+                if ( CRC8seeded(tl->out, tl->size, ((UINT *) (tl->in))[0]) != 0 ) {
+                    ret = -EINVAL ;
+                }
                 break;
             case trxn_crc16:
-                ret = CRC16(tl->out, tl->size);
-                LEVEL_DEBUG("  Transaction CRC16 = %d\n", ret);
+                if ( CRC16(tl->out, tl->size) != 0 ) {
+                    ret = -EINVAL ;
+                }
                 break;
             case trxn_crc16seeded:
-                ret = CRC16seeded(tl->out, tl->size, ((UINT *) (tl->in))[0]);
-                LEVEL_DEBUG("  Transaction CRC16 = %d\n", ret);
+                if ( CRC16seeded(tl->out, tl->size, ((UINT *) (tl->in))[0]) != 0 ) {
+                    ret = -EINVAL ;
+                }
                 break;
             case trxn_delay:
-                if ( tl->size > 0 ) {
-                    UT_delay(tl->size);
-                }
-                LEVEL_DEBUG("  Transaction Delay %d\n", tl->size);
+                UT_delay(tl->size);
                 break;
             case trxn_udelay:
-                if ( tl->size > 0 ) {
-                    UT_delay_us(tl->size);
-                }
-                LEVEL_DEBUG("  Transaction Micro Delay %d\n", t->size);
+                UT_delay_us(tl->size);
                 break;
             case trxn_reset:
-                ret = BUS_reset(pn);
-                LEVEL_DEBUG("  Transaction reset = %d\n", ret);
-                break ;
             case trxn_end:
-                LEVEL_DEBUG("  Transaction end = %d\n", ret);
-                return -ESRCH ; // special "end" flag
             case trxn_verify:
-            {
-                struct parsedname pn2;
-                memcpy(&pn2, pn, sizeof(struct parsedname));    //shallow copy
-                pn2.selected_device = NULL;
-                ret = BUS_select(&pn2) || BUS_verify(tl->size, pn);
-                LEVEL_DEBUG("  Transaction verify = %d\n", ret);
-            }
-            break;
+                // should never get here
+                ret = -EINVAL ;
+                break ;
             case trxn_nop:
-                ret = 0;
+            case trxn_select:
                 break;
         }
+        if ( ret != 0 ) {
+            break ;
+        }
     }
+    
+    // clear the bundle
+    MemblobClear( &tb->mb) ;
+    tb->packets = 0 ;
+    tb->select_first = 0 ;
+    
+    return ret ;
 }
-#endif

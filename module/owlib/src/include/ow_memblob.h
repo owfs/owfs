@@ -62,7 +62,7 @@ struct memblob {
 
 void MemblobClear(struct memblob *mb);
 void MemblobInit(struct memblob *mb);
-int MemblobAdd(BYTE * data, size_t length, struct memblob *mb);
-BYTE * MemblobGet(const struct memblob *mb);
+int MemblobAdd(const BYTE * data, size_t length, struct memblob *mb);
+int MemblobChar(BYTE character, size_t length, struct memblob *mb) ;
 
 #endif							/* OW_MEMBLOB_H */

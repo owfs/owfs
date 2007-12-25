@@ -56,6 +56,7 @@ $Id$
 #include "ow.h"
 
 #define MEMBLOB_ALLOCATION_INCREMENT 1000
+static int MemblobIncrease(size_t length, struct memblob *mb) ;
 
 /*
     A "memblob" is a structure holding a list of 1-wire serial numbers
@@ -83,26 +84,41 @@ void MemblobInit(struct memblob *mb)
 	mb->memory_storage = NULL;
 }
 
-int MemblobAdd(BYTE * data, size_t length, struct memblob *mb)
+static int MemblobIncrease(size_t length, struct memblob *mb)
 {
-	// make more room? -- blocks of 10 devices (80byte)
-	if ((mb->used + length > mb->allocated) || (mb->memory_storage == NULL)) {
-		int newalloc = mb->allocated + MEMBLOB_ALLOCATION_INCREMENT;
-		BYTE *try_bigger_block = realloc(mb->memory_storage, newalloc);
-		if (try_bigger_block!=NULL) {
-			mb->allocated = newalloc;
-			mb->memory_storage = try_bigger_block;
-		} else {				// allocation failed -- keep old
-			return -ENOMEM;
-		}
-	}
-	// add the device and increment the counter
-	memcpy(&(mb->memory_storage[mb->used]), data, length);
-	mb->used += length ;
-	return 0;
+    // make more room? -- blocks of 10 devices (80byte)
+    if ((mb->used + length > mb->allocated) || (mb->memory_storage == NULL)) {
+        size_t newalloc = mb->allocated + MEMBLOB_ALLOCATION_INCREMENT;
+        BYTE *try_bigger_block = realloc(mb->memory_storage, newalloc);
+        if (try_bigger_block!=NULL) {
+            mb->allocated = newalloc;
+            mb->memory_storage = try_bigger_block;
+        } else {                // allocation failed -- keep old
+            return -ENOMEM;
+        }
+    }
+    mb->used += length ;
+    return 0;
 }
 
-BYTE * MemblobGet(const struct memblob *mb)
+int MemblobAdd(const BYTE * data, size_t length, struct memblob *mb)
 {
-    return mb->memory_storage ;
+    size_t used = mb->used ;
+    int ret = MemblobIncrease( length, mb ) ;
+    if ( ret == 0 ) {
+        // add the device and increment the counter
+        memcpy(&(mb->memory_storage[used]), data, length);
+    }
+    return ret ;
+}
+
+int MemblobChar(BYTE character, size_t length, struct memblob *mb)
+{
+    size_t used = mb->used ;
+    int ret = MemblobIncrease( length, mb ) ;
+    if ( ret == 0 ) {
+        // add the device and increment the counter
+        memset(&(mb->memory_storage[used]), character, length);
+    }
+    return ret ;
 }
