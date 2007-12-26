@@ -155,7 +155,7 @@ struct interface_routines {
 #define ADAP_FLAG_2409path      0x00000010
 #define ADAP_FLAG_dirgulp       0x00000100
 #define ADAP_FLAG_bundle        0x00001000
-#define ADAP_FLAG_bundle_select 0x00002000
+#define ADAP_FLAG_dir_auto_reset 0x00002000
 
 #define AdapterSupports2409(pn)	(((pn)->selected_connection->iroutines.flags&ADAP_FLAG_2409path)!=0)
 

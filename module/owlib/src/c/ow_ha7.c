@@ -18,8 +18,6 @@ $Id$
 
 #if OW_HA7
 
-static struct timeval tvnet = { 0, 200000, };
-
 struct toHA7 {
 	ASCII *command;
 	ASCII lock[10];
@@ -69,7 +67,7 @@ static void HA7_setroutines(struct connection_in *in)
     in->iroutines.close = HA7_close;
     in->iroutines.transaction = NULL;
     in->iroutines.flags =
-            ADAP_FLAG_dirgulp | ADAP_FLAG_bundle | ADAP_FLAG_bundle_select ;
+            ADAP_FLAG_dirgulp | ADAP_FLAG_bundle | ADAP_FLAG_dir_auto_reset ;
     in->bundling_length = HA7_FIFO_SIZE ; // arbitrary number
 }
 
@@ -163,8 +161,9 @@ static int HA7_directory(BYTE search, struct dirblob *db,
 
 	toHA7init(&ha7);
 	ha7.command = "Search";
-    if (search == _1W_CONDITIONAL_SEARCH_ROM)
+	if (search == _1W_CONDITIONAL_SEARCH_ROM) {
 		ha7.conditional[0] = '1';
+	}
 	if (HA7_toHA7(file_descriptor, &ha7, pn->selected_connection)) {
 		ret = -EIO;
 	} else if (HA7_read(file_descriptor, &resp)) {
@@ -236,13 +235,12 @@ static int HA7_read(int file_descriptor, ASCII ** returned_buffer)
 	ASCII readin_area[4097];
 	ASCII *start;
 	ssize_t read_size, returned_buffer_size;
-//	struct timeval tvnetfirst = { Global.timeout_network, 0, };
-	struct timeval tvnetfirst = { 60, 0, };
+	struct timeval tvnet = { Global.timeout_ha7, 0, };
     
-    *returned_buffer = NULL;
+	*returned_buffer = NULL;
 	readin_area[4096] = '\0';			// just in case
 
-    if ((read_size = tcp_read(file_descriptor, readin_area, 4096, &tvnetfirst)) < 0) {
+    if ((read_size = tcp_read(file_descriptor, readin_area, 4096, &tvnet)) < 0) {
 		LEVEL_CONNECT("HA7_read (ethernet) error = %d\n", read_size);
 		//write(1, readin_area, read_size);
 		return -EIO;
@@ -271,7 +269,7 @@ static int HA7_read(int file_descriptor, ASCII ** returned_buffer)
     memcpy(*returned_buffer, start, returned_buffer_size);
     
     while (read_size == 4096) { // full read, so presume more waiting
-        if ((read_size = tcp_read(file_descriptor, readin_area, 4096, &tvnetfirst)) < 0) {
+        if ((read_size = tcp_read(file_descriptor, readin_area, 4096, &tvnet)) < 0) {
             LEVEL_DATA("Couldn't get rest of HA7 data (err=%d)\n",
                         read_size);
             free( *returned_buffer );

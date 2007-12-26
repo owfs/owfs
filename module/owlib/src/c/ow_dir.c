@@ -526,9 +526,9 @@ static int FS_realdir(void (*dirfunc) (void *, const struct parsedname *),
 		return -EIO;
 	}
 	/* BUS still locked */
-    if (RootNotBranch(pn_real_device)) {
+	if (RootNotBranch(pn_real_device)) {
 		db.allocated = pn_real_device->selected_connection->last_root_devs;	// root dir estimated length
-    }
+	}
 	do {
 		BUSUNLOCK(pn_whole_directory);
 		if (DirblobPure(&db)) {	/* only add if there is a blob allocated successfully */
@@ -550,8 +550,9 @@ static int FS_realdir(void (*dirfunc) (void *, const struct parsedname *),
 		BUSLOCK(pn_whole_directory);
 	} while ((ret = BUS_next(&ds, pn_whole_directory)) == 0);
 	/* BUS still locked */
-	if (RootNotBranch(pn_real_device) && ret == -ENODEV)
+	if (RootNotBranch(pn_real_device) && ret == -ENODEV) {
 		pn_real_device->selected_connection->last_root_devs = devices;	// root dir estimated length
+	}
 	BUSUNLOCK(pn_whole_directory);
 
 	/* Add to the cache (full list as a single element */

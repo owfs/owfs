@@ -31,8 +31,8 @@ int BUS_first(struct device_search *ds, const struct parsedname *pn)
 	// reset the search state
 	LEVEL_DEBUG("Start of directory path=%s device=" SNformat "\n",
 				SAFESTRING(pn->path), SNvar(pn->sn));
-    BUS_first_both(ds) ;
-    pn->selected_connection->ExtraReset = 0;
+	BUS_first_both(ds) ;
+	pn->selected_connection->ExtraReset = 0;
 	ds->search = _1W_SEARCH_ROM;
 
 	if (!pn->selected_connection->AnyDevices) {
@@ -45,7 +45,7 @@ int BUS_first(struct device_search *ds, const struct parsedname *pn)
 int BUS_first_alarm(struct device_search *ds, const struct parsedname *pn)
 {
 	// reset the search state
-    BUS_first_both(ds) ;
+	BUS_first_both(ds) ;
 	ds->search = _1W_CONDITIONAL_SEARCH_ROM;
 	//BUS_reset(pn);
 	return BUS_next(ds, pn);
@@ -73,11 +73,17 @@ int BUS_next(struct device_search *ds, const struct parsedname *pn)
 {
 	int ret;
 
-	if (BUS_select(pn))
-		return 1;
+	if ( !RootNotBranch(pn) // branch directory
+		|| (pn->selected_connection->iroutines.flags & ADAP_FLAG_dir_auto_reset)==0 // needs this flag
+	) {
+		if (BUS_select(pn)) {
+			return 1;
+		}
+	}
+	
 	ret = BUS_next_both(ds, pn);
 	LEVEL_DEBUG("BUS_next return = %d " SNformat "\n", ret, SNvar(ds->sn));
-    if (ret && ret != -ENODEV) { // true error
+	if (ret && ret != -ENODEV) { // true error
 		STAT_ADD1_BUS(e_bus_search_errors, pn->selected_connection);
 	}
 	return ret;
