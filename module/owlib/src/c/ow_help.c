@@ -115,7 +115,8 @@ void ow_help_cache(void)
 		   "  --timeout_usb       [  5] Timeout for USB transaction\n"
 		   "  --timeout_network   [  1] Timeout for each network transaction\n"
 		   "  --timeout_server    [ 10] Timeout for first server connection\n"
-		   "  --timeout_ftp       [900] Timeout for FTP session\n");
+		   "  --timeout_ftp       [900] Timeout for FTP session\n"
+		   "  --timeout_ha7       [ 60] Timeout for HA7Net adapter\n");
 }
 
 void ow_help_program(void)

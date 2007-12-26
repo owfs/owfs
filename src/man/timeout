@@ -74,3 +74,8 @@ Seconds that an ftp session is kept alive.
 .PP
 Can be changed within the program at 
 .I /settings/timeout/ftp
+.SS --timeout_ha7=60
+Seconds that the program will wait for a (tcp) response from the HA7Net adapter.
+.PP
+Can be changed within the program at 
+.I /settings/timeout/ha7

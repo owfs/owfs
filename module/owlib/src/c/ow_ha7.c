@@ -236,7 +236,8 @@ static int HA7_read(int file_descriptor, ASCII ** returned_buffer)
 	ASCII readin_area[4097];
 	ASCII *start;
 	ssize_t read_size, returned_buffer_size;
-	struct timeval tvnetfirst = { Global.timeout_network, 0, };
+//	struct timeval tvnetfirst = { Global.timeout_network, 0, };
+	struct timeval tvnetfirst = { 60, 0, };
     
     *returned_buffer = NULL;
 	readin_area[4096] = '\0';			// just in case
@@ -270,7 +271,7 @@ static int HA7_read(int file_descriptor, ASCII ** returned_buffer)
     memcpy(*returned_buffer, start, returned_buffer_size);
     
     while (read_size == 4096) { // full read, so presume more waiting
-        if ((read_size = tcp_read(file_descriptor, readin_area, 4096, &tvnet)) < 0) {
+        if ((read_size = tcp_read(file_descriptor, readin_area, 4096, &tvnetfirst)) < 0) {
             LEVEL_DATA("Couldn't get rest of HA7 data (err=%d)\n",
                         read_size);
             free( *returned_buffer );

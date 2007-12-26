@@ -81,6 +81,7 @@ struct global Global = {
     .timeout_network = 1 ,
     .timeout_server = 10 ,
     .timeout_ftp = 900 ,
+    .timeout_ha7 = 60 ,
     .timeout_persistent_low = 600 ,
     .timeout_persistent_high = 3600 ,
     .clients_persistent_low = 10 ,

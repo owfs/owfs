@@ -125,10 +125,14 @@ const struct option owopts_long[] = {
 	{"timeout_network", required_argument, NULL, 307,},	// timeout -- tcp wait
 	{"timeout_server", required_argument, NULL, 308,},	// timeout -- server wait
 	{"timeout_ftp", required_argument, NULL, 309,},	// timeout -- ftp wait
-	{"timeout_persistent_low", required_argument, NULL, 310,},
-	{"timeout_persistent_high", required_argument, NULL, 311,},
-	{"clients_persistent_low", required_argument, NULL, 312,},
-	{"clients_persistent_high", required_argument, NULL, 313,},
+	{"timeout_HA7", required_argument, NULL, 310,},	// timeout -- HA7Net wait
+	{"timeout_ha7", required_argument, NULL, 310,},	// timeout -- HA7Net wait
+	{"timeout_HA7Net", required_argument, NULL, 310,},	// timeout -- HA7Net wait
+	{"timeout_ha7net", required_argument, NULL, 310,},	// timeout -- HA7Net wait
+	{"timeout_persistent_low", required_argument, NULL, 311,},
+	{"timeout_persistent_high", required_argument, NULL, 312,},
+	{"clients_persistent_low", required_argument, NULL, 313,},
+	{"clients_persistent_high", required_argument, NULL, 314,},
 
     {"one_device", no_argument, &Global.one_device, 1},
     {"1_device", no_argument, &Global.one_device, 1},
@@ -514,6 +518,7 @@ int owopt(const int option_char, const char *arg)
 		break;
 	case 298:					/* allow_other */
 		break;
+	// TIMEOUTS
 	case 301:
 	case 302:
 	case 303:
@@ -527,6 +532,7 @@ int owopt(const int option_char, const char *arg)
 	case 311:
 	case 312:
 	case 313:
+	case 314:
 		{
 			long long int i;
 			if (OW_parsevalue(&i, arg))

@@ -83,6 +83,7 @@ struct global {
 	int timeout_network;
 	int timeout_server;
 	int timeout_ftp;
+	int timeout_ha7;
 	int timeout_persistent_low;
 	int timeout_persistent_high;
 	int clients_persistent_low;
