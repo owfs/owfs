@@ -264,12 +264,15 @@ static int Pack_item( struct transaction_log * tl, struct transaction_bundle * t
     int ret = 0 ; //default return value for good packets;
     switch (tl->type) {
         case trxn_select: // select a 1-wire device (by unique ID)
+		LEVEL_DEBUG("Transaction Bundle: pack=SELECT\n") ;
             if (tb->packets != 0 ) return -EAGAIN ; // select must be first
             tb->select_first = 1 ;
             break;
         case trxn_compare: // match two strings -- no actual 1-wire
+		LEVEL_DEBUG("Transaction Bundle: pack=COMPARE\n") ;
             break;
         case trxn_read:
+		LEVEL_DEBUG("Transaction Bundle: pack=READ\n") ;
             if ( tl->size > tb->max_size ) return -EINVAL ; // too big for any bundle
             if ( tl->size + tb->mb.used > tb->max_size ) return -EAGAIN ; // too big for this partial bundle
             if ( MemblobChar( 0xFF, tl->size, &tb->mb ) ) return -EINVAL ;
@@ -277,12 +280,14 @@ static int Pack_item( struct transaction_log * tl, struct transaction_bundle * t
         case trxn_match: // write data and match response
         case trxn_modify: // write data and read response. No match needed
         case trxn_blind: // write data and ignore response
+		LEVEL_DEBUG("Transaction Bundle: pack=MATCH MODIFY BLIND\n") ;
             if ( tl->size > tb->max_size ) return -EINVAL ; // too big for any bundle
             if ( tl->size + tb->mb.used > tb->max_size ) return -EAGAIN ; // too big for this partial bundle
             if ( MemblobAdd( tl->out, tl->size, &tb->mb ) ) return -EINVAL ;
             break;
         case trxn_power:
         case trxn_program:
+		LEVEL_DEBUG("Transaction Bundle: pack=POWER PROGRAM\n") ;
             if ( 1 > tb->max_size ) return -EINVAL ; // too big for any bundle
             if ( 1 + tb->mb.used > tb->max_size ) return -EAGAIN ; // too big for this partial bundle
             if ( MemblobAdd( tl->out, 1, &tb->mb ) ) return -EINVAL ;
@@ -292,16 +297,20 @@ static int Pack_item( struct transaction_log * tl, struct transaction_bundle * t
         case trxn_crc8seeded:
         case trxn_crc16:
         case trxn_crc16seeded:
+		LEVEL_DEBUG("Transaction Bundle: pack=CRC*\n") ;
             break ;
         case trxn_delay:
         case trxn_udelay:
+		LEVEL_DEBUG("Transaction Bundle: pack=(U)DELAYS\n") ;
             ret = -EINTR ;
             break;
         case trxn_reset:
         case trxn_end:
         case trxn_verify:
+		LEVEL_DEBUG("Transaction Bundle: pack=RESET END VERIFY\n") ;
             return -EINVAL ;
         case trxn_nop:
+		LEVEL_DEBUG("Transaction Bundle: pack=NOP\n") ;
             break;
     }
     if ( tb->packets == 0 ) {
@@ -321,14 +330,15 @@ static int Bundle_unpack( struct transaction_bundle * tb )
 	LEVEL_DEBUG("Transaction Bundle: unpacking\n") ; 
 
     for ( packet_index = 0, tl = tb->start ; packet_index < tb->packets ; ++packet_index, ++tl ) {
-	LEVEL_DEBUG("Transaction Bundle: unpacking #%d\n",packet_index) ; 
         switch (tl->type) {
             case trxn_compare: // match two strings -- no actual 1-wire
+	LEVEL_DEBUG("Transaction Bundle: unpacking #%d COMPARE\n",packet_index) ; 
                 if ( (tl->in==NULL) || (tl->out==NULL) || (memcmp(tl->in,tl->out,tl->size)!=0) ) {
                         ret = -EINVAL ;
                     }
                 break ;
             case trxn_match: // send data and compare response
+	LEVEL_DEBUG("Transaction Bundle: unpacking #%d MATCH\n",packet_index) ; 
                 if ( memcmp( tl->out, data, tl->size) != 0 ) {
                     ret = -EINVAL ;
                 }
@@ -336,52 +346,63 @@ static int Bundle_unpack( struct transaction_bundle * tb )
                 break;
             case trxn_read:
             case trxn_modify: // write data and read response. No match needed
+	LEVEL_DEBUG("Transaction Bundle: unpacking #%d READ MODIFY\n",packet_index) ; 
                 memmove(tl->in, data, tl->size);
                 data += tl->size ;
                 break;
             case trxn_blind:
+	LEVEL_DEBUG("Transaction Bundle: unpacking #%d BLIND\n",packet_index) ; 
                 data += tl->size ;
                 break;
             case trxn_power:
             case trxn_program:
+	LEVEL_DEBUG("Transaction Bundle: unpacking #%d POWER PROGRAM\n",packet_index) ; 
                 memmove(tl->in, data, 1);
                 data += 1 ;
                 UT_delay( tl->size ) ;
                 break;
             case trxn_crc8:
+	LEVEL_DEBUG("Transaction Bundle: unpacking #%d CRC8\n",packet_index) ; 
                 if ( CRC8(tl->out, tl->size) != 0 ) {
                     ret = -EINVAL ;
                 }
                 break;
             case trxn_crc8seeded:
+	LEVEL_DEBUG("Transaction Bundle: unpacking #%d CRC8 SEEDED\n",packet_index) ; 
                 if ( CRC8seeded(tl->out, tl->size, ((UINT *) (tl->in))[0]) != 0 ) {
                     ret = -EINVAL ;
                 }
                 break;
             case trxn_crc16:
+	LEVEL_DEBUG("Transaction Bundle: unpacking #%d CRC16\n",packet_index) ; 
                 if ( CRC16(tl->out, tl->size) != 0 ) {
                     ret = -EINVAL ;
                 }
                 break;
             case trxn_crc16seeded:
+	LEVEL_DEBUG("Transaction Bundle: unpacking #%d CRC16 SEEDED\n",packet_index) ; 
                 if ( CRC16seeded(tl->out, tl->size, ((UINT *) (tl->in))[0]) != 0 ) {
                     ret = -EINVAL ;
                 }
                 break;
             case trxn_delay:
+	LEVEL_DEBUG("Transaction Bundle: unpacking #%d DELAY\n",packet_index) ; 
                 UT_delay(tl->size);
                 break;
             case trxn_udelay:
+	LEVEL_DEBUG("Transaction Bundle: unpacking #%d UDELAY\n",packet_index) ; 
                 UT_delay_us(tl->size);
                 break;
             case trxn_reset:
             case trxn_end:
             case trxn_verify:
                 // should never get here
+	LEVEL_DEBUG("Transaction Bundle: unpacking #%d RESET END VERIFY\n",packet_index) ; 
                 ret = -EINVAL ;
                 break ;
             case trxn_nop:
             case trxn_select:
+	LEVEL_DEBUG("Transaction Bundle: unpacking #%d NOP or SELECT\n",packet_index) ; 
                 break;
         }
         if ( ret != 0 ) {
