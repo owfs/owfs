@@ -55,7 +55,6 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
-#define MEMBLOB_ALLOCATION_INCREMENT 1000
 static int MemblobIncrease(size_t length, struct memblob *mb) ;
 
 /*
@@ -77,10 +76,11 @@ void MemblobClear(struct memblob *mb)
     mb->allocated = 0;
 }
 
-void MemblobInit(struct memblob *mb)
+void MemblobInit(struct memblob *mb, size_t increment)
 {
 	mb->used = 0;
 	mb->allocated = 0;
+    mb->increment = increment ;
 	mb->memory_storage = NULL;
 }
 
@@ -88,7 +88,8 @@ static int MemblobIncrease(size_t length, struct memblob *mb)
 {
     // make more room? -- blocks of 10 devices (80byte)
     if ((mb->used + length > mb->allocated) || (mb->memory_storage == NULL)) {
-        size_t newalloc = mb->allocated + MEMBLOB_ALLOCATION_INCREMENT;
+        size_t increment = ((length / mb->increment) + 1 ) * mb->increment ;
+        size_t newalloc = mb->allocated + increment ;
         BYTE *try_bigger_block = realloc(mb->memory_storage, newalloc);
         if (try_bigger_block!=NULL) {
             mb->allocated = newalloc;

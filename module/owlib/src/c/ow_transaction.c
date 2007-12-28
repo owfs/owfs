@@ -190,11 +190,13 @@ static int Bundle_unpack( struct transaction_bundle * tb ) ;
 
 static void Bundle_init( struct transaction_bundle * tb, struct parsedname * pn ) ;
 
+#define TRANSACTION_INCREMENT 1000
+
 // initialize the bundle
 static void Bundle_init( struct transaction_bundle * tb, struct parsedname * pn )
 {
     memset( tb, 0, sizeof( struct transaction_bundle ) ) ;
-    MemblobInit( &tb->mb ) ;
+    MemblobInit( &tb->mb, TRANSACTION_INCREMENT ) ;
     tb->max_size = pn->selected_connection->bundling_length ;
 }
 
