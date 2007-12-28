@@ -282,7 +282,11 @@ static int HA7_read(int file_descriptor, struct memblob * mb)
         // increase size of returned_buffer
         }
     }
-	return 0;
+    if ( MemblobAdd( "", 1, mb ) ) {
+        MemblobClear( mb ) ;
+        return -ENOMEM;
+    }
+    return 0;
 }
 
 static int HA7_write(int file_descriptor, const ASCII * msg, size_t length,
