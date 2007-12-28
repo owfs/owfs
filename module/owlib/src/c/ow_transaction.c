@@ -28,6 +28,15 @@ struct transaction_bundle {
 static int BUS_transaction_single(const struct transaction_log *t,
                            const struct parsedname *pn) ;
 
+static int Bundle_pack( struct transaction_log * tl, struct parsedname * pn ) ;
+static int Pack_item( struct transaction_log * tl, struct transaction_bundle * tb ) ;
+static int Bundle_ship( struct transaction_bundle * tb, struct parsedname * pn ) ;
+static int Bundle_enroute( struct transaction_bundle * tb, struct parsedname * pn ) ;
+static int Bundle_unpack( struct transaction_bundle * tb ) ;
+
+static void Bundle_init( struct transaction_bundle * tb, struct parsedname * pn ) ;
+
+#define TRANSACTION_INCREMENT 1000
 
 /* Bus transaction */
 /* Encapsulates communication with a device, including locking the bus, reset and selection */
@@ -51,6 +60,10 @@ int BUS_transaction_nolock(const struct transaction_log *tl,
 {
     const struct transaction_log *t = tl;
     int ret = 0;
+
+	if ( pn->selected_connection->iroutines.flags & ADAP_FLAG_bundle ) {
+		return Bundle_pack( tl, pn ) ;
+	}
 
     do {
         //printf("Transact type=%d\n",t->type) ;
@@ -172,26 +185,6 @@ static int BUS_transaction_single(const struct transaction_log *t,
     return ret;
 }
 
-#if 0
-struct transaction_bundle {
-    const struct transaction_log *start ;
-    int packets ;
-    size_t max_size ;
-    struct memblob mb ;
-    int select_first ;
-} ;
-#endif
-
-static int Bundle_pack( struct transaction_log * tl, struct parsedname * pn ) ;
-static int Pack_item( struct transaction_log * tl, struct transaction_bundle * tb ) ;
-static int Bundle_ship( struct transaction_bundle * tb, struct parsedname * pn ) ;
-static int Bundle_enroute( struct transaction_bundle * tb, struct parsedname * pn ) ;
-static int Bundle_unpack( struct transaction_bundle * tb ) ;
-
-static void Bundle_init( struct transaction_bundle * tb, struct parsedname * pn ) ;
-
-#define TRANSACTION_INCREMENT 1000
-
 // initialize the bundle
 static void Bundle_init( struct transaction_bundle * tb, struct parsedname * pn )
 {
@@ -206,17 +199,22 @@ static int Bundle_pack( struct transaction_log * tl, struct parsedname * pn )
     struct transaction_bundle s_tb ;
     struct transaction_bundle * tb = &s_tb ;
 
+	LEVEL_DEBUG("Transaction Bundle: Start\n") ; 
+
     Bundle_init( tb, pn ) ;
 
     for ( t_index = tl ; t_index->type != trxn_end ; ++t_index ) {
         switch ( Pack_item( t_index, tb ) ) {
             case 0:
+	LEVEL_DEBUG("Transaction Bundle: Item added\n") ; 
                 break ;
             case -EINVAL:
+	LEVEL_DEBUG("Transaction Bundle: Item cannot be bundled\n") ; 
                 if ( Bundle_ship( tb, pn ) ) return -EINVAL ;
                 if ( BUS_transaction_single( t_index, pn ) ) return -EINVAL ;
                 break ;
             case -EAGAIN:
+	LEVEL_DEBUG("Transaction Bundle: Item too big\n") ; 
                 if ( Bundle_ship( tb, pn ) ) return -EINVAL ;
                 if ( Pack_item( t_index, tb ) == 0 ) break ;
                 if ( BUS_transaction_single( t_index, pn ) ) return -EINVAL ;
@@ -229,6 +227,7 @@ static int Bundle_pack( struct transaction_log * tl, struct parsedname * pn )
 // Take a bundle, execute the transaction, unpack, and clear the memoblob
 static int Bundle_ship( struct transaction_bundle * tb, struct parsedname * pn )
 {
+	LEVEL_DEBUG("Transaction Bundle: Ship Packets=%d\n",tb->packets) ; 
     if ( tb->packets == 0 ) {
         return 0 ;
     }
@@ -319,8 +318,10 @@ static int Bundle_unpack( struct transaction_bundle * tb )
     BYTE * data = tb->mb.memory_storage ;
     int ret = 0 ;
 
+	LEVEL_DEBUG("Transaction Bundle: unpacking\n") ; 
 
     for ( packet_index = 0, tl = tb->start ; packet_index < tb->packets ; ++packet_index, ++tl ) {
+	LEVEL_DEBUG("Transaction Bundle: unpacking #%d\n",packet_index) ; 
         switch (tl->type) {
             case trxn_compare: // match two strings -- no actual 1-wire
                 if ( (tl->in==NULL) || (tl->out==NULL) || (memcmp(tl->in,tl->out,tl->size)!=0) ) {
