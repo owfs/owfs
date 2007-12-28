@@ -275,7 +275,7 @@ static int HA7_read(int file_descriptor, struct memblob * mb)
             MemblobClear( mb ) ;
             return -EIO;
         } else {
-            if ( MemblobAdd( (BYTE *)start, read_size, mb ) ) {
+            if ( MemblobAdd( (BYTE *)readin_area, read_size, mb ) ) {
                 MemblobClear( mb ) ;
                 return -ENOMEM;
             }
