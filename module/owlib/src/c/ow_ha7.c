@@ -31,7 +31,7 @@ struct toHA7 {
 static int HA7_write(int file_descriptor, const ASCII * msg, size_t size,
 					 struct connection_in *in);
 static void toHA7init(struct toHA7 *ha7);
-static void setHA7address(struct toHA7 *ha7, BYTE * sn);
+static void setHA7address(struct toHA7 *ha7, const BYTE * sn);
 static int HA7_toHA7(int file_descriptor, const struct toHA7 *ha7,
 					 struct connection_in *in);
 static int HA7_getlock(int file_descriptor, struct connection_in *in);
@@ -282,7 +282,7 @@ static int HA7_read(int file_descriptor, struct memblob * mb)
         // increase size of returned_buffer
         }
     }
-    if ( MemblobAdd( "", 1, mb ) ) {
+    if ( MemblobAdd( (BYTE *) "", 1, mb ) ) {
         MemblobClear( mb ) ;
         return -ENOMEM;
     }
@@ -487,7 +487,7 @@ static int HA7_sendback_data(const BYTE * data, BYTE * resp,
     return ret;
 }
 
-static void setHA7address(struct toHA7 *ha7, BYTE * sn)
+static void setHA7address(struct toHA7 *ha7, const BYTE * sn)
 {
 	num2string(&(ha7->address[0]), sn[7]);
 	num2string(&(ha7->address[2]), sn[6]);
