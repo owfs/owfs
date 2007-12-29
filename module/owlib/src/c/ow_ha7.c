@@ -54,21 +54,21 @@ static int HA7_directory(BYTE search, struct dirblob *db,
 
 static void HA7_setroutines(struct connection_in *in)
 {
-	in->iroutines.detect = HA7_detect;
-    in->iroutines.reset = HA7_reset;
-    in->iroutines.next_both = HA7_next_both;
-    in->iroutines.PowerByte = NULL;
-//    in->iroutines.ProgramPulse = ;
-    in->iroutines.select_and_sendback = HA7_select_and_sendback;
-    in->iroutines.sendback_data = HA7_sendback_data;
-//    in->iroutines.sendback_bits = ;
-    in->iroutines.select = HA7_select;
-    in->iroutines.reconnect = NULL;
-    in->iroutines.close = HA7_close;
-    in->iroutines.transaction = NULL;
-    in->iroutines.flags =
-            ADAP_FLAG_dirgulp | ADAP_FLAG_bundle | ADAP_FLAG_dir_auto_reset ;
-    in->bundling_length = HA7_FIFO_SIZE ; // arbitrary number
+		in->iroutines.detect = HA7_detect;
+	in->iroutines.reset = HA7_reset;
+	in->iroutines.next_both = HA7_next_both;
+	in->iroutines.PowerByte = NULL;
+	//    in->iroutines.ProgramPulse = ;
+	in->iroutines.select_and_sendback = HA7_select_and_sendback;
+	in->iroutines.sendback_data = HA7_sendback_data;
+	//    in->iroutines.sendback_bits = ;
+	in->iroutines.select = HA7_select;
+	in->iroutines.reconnect = NULL;
+	in->iroutines.close = HA7_close;
+	in->iroutines.transaction = NULL;
+	in->iroutines.flags =
+		ADAP_FLAG_dirgulp | ADAP_FLAG_bundle | ADAP_FLAG_dir_auto_reset ;
+	in->bundling_length = HA7_FIFO_SIZE ; // arbitrary number
 }
 
 int HA7_detect(struct connection_in *in)
@@ -80,16 +80,19 @@ int HA7_detect(struct connection_in *in)
 	FS_ParsedName(NULL, &pn);	// minimal parsename -- no destroy needed
 	pn.selected_connection = in;
 	LEVEL_CONNECT("HA7 detect\n");
-	/* Set up low-level routines */
-    HA7_setroutines(in) ;
 	
-    in->connin.ha7.locked = 0;
+	/* Set up low-level routines */
+	HA7_setroutines(in) ;
+	
+	in->connin.ha7.locked = 0;
+	
 	/* Initialize dir-at-once structures */
 	DirblobInit(&(in->connin.ha7.main));
 	DirblobInit(&(in->connin.ha7.alarm));
 
 	if (in->name == NULL)
 		return -1;
+	
 	/* Add the port if it isn't there already */
 	if (strchr(in->name, ':') == NULL) {
 		ASCII *temp = realloc(in->name, strlen(in->name) + 3);
@@ -98,10 +101,13 @@ int HA7_detect(struct connection_in *in)
 		in->name = temp;
 		strcat(in->name, ":80");
 	}
+	
 	if (ClientAddr(in->name, in))
 		return -1;
+	
 	if ((file_descriptor = ClientConnect(in)) < 0)
 		return -EIO;
+	
 	in->Adapter = adapter_HA7NET;
 
 	toHA7init(&ha7);
@@ -112,7 +118,7 @@ int HA7_detect(struct connection_in *in)
 			in->adapter_name = "HA7Net";
 			in->busmode = bus_ha7net;
 			in->AnyDevices = 1;
-            MemblobClear(&mb);
+			MemblobClear(&mb);
 			close(file_descriptor);
 			return 0;
 		}
@@ -139,9 +145,9 @@ static int HA7_reset(const struct parsedname *pn)
 	} else if (HA7_read(file_descriptor, &mb)) {
 		ret = -EIO;
 	}
-    MemblobClear( &mb) ;
-    close(file_descriptor);
-    return ret;
+	MemblobClear( &mb) ;
+	close(file_descriptor);
+	return ret;
 }
 
 static int HA7_directory(BYTE search, struct dirblob *db,
@@ -150,7 +156,7 @@ static int HA7_directory(BYTE search, struct dirblob *db,
 	int file_descriptor;
 	int ret = 0;
 	struct toHA7 ha7;
-    struct memblob mb ;
+	struct memblob mb ;
 
 	DirblobClear(db);
 	if ((file_descriptor = ClientConnect(pn->selected_connection)) < 0) {
@@ -163,6 +169,7 @@ static int HA7_directory(BYTE search, struct dirblob *db,
 	if (search == _1W_CONDITIONAL_SEARCH_ROM) {
 		ha7.conditional[0] = '1';
 	}
+	
 	if (HA7_toHA7(file_descriptor, &ha7, pn->selected_connection)) {
 		ret = -EIO;
 	} else if (HA7_read(file_descriptor, &mb)) {
@@ -170,7 +177,7 @@ static int HA7_directory(BYTE search, struct dirblob *db,
 		ret = -EIO;
 	} else {
 		BYTE sn[8];
-        ASCII *p = (ASCII *) mb.memory_storage;
+		ASCII *p = (ASCII *) mb.memory_storage;
 		while ((p = strstr(p, "<INPUT CLASS=\"HA7Value\" NAME=\"Address_"))
 			   && (p = strstr(p, "VALUE=\""))) {
 			p += 7;
@@ -192,7 +199,7 @@ static int HA7_directory(BYTE search, struct dirblob *db,
 			}
 			DirblobAdd(sn, db);
 		}
-        MemblobClear( &mb );
+		MemblobClear( &mb );
 	}
 	close(file_descriptor);
 	return ret;
@@ -201,14 +208,16 @@ static int HA7_directory(BYTE search, struct dirblob *db,
 static int HA7_next_both(struct device_search *ds,
 						 const struct parsedname *pn)
 {
-    struct dirblob *db = (ds->search == _1W_CONDITIONAL_SEARCH_ROM) ?
+	struct dirblob *db = (ds->search == _1W_CONDITIONAL_SEARCH_ROM) ?
 		&(pn->selected_connection->connin.ha7.alarm) : &(pn->selected_connection->connin.ha7.main);
 	int ret = 0;
 
-	if (!pn->selected_connection->AnyDevices)
+	if (!pn->selected_connection->AnyDevices) {
 		ds->LastDevice = 1;
-	if (ds->LastDevice)
+	}
+	if (ds->LastDevice) {
 		return -ENODEV;
+	}
 
 	if (++(ds->index) == 0) {
 		if (HA7_directory(ds->search, db, pn))
@@ -233,60 +242,64 @@ static int HA7_next_both(struct device_search *ds,
 
 static int HA7_read(int file_descriptor, struct memblob * mb)
 {
-    ASCII readin_area[HA7_READ_BUFFER_LENGTH+1];
+	ASCII readin_area[HA7_READ_BUFFER_LENGTH+1];
 	ASCII *start;
 	ssize_t read_size;
 	struct timeval tvnet = { Global.timeout_ha7, 0, };
     
-    readin_area[HA7_READ_BUFFER_LENGTH] = '\0';			// just in case
-
-    MemblobInit( mb, HA7_READ_BUFFER_LENGTH ) ;
+	MemblobInit( mb, HA7_READ_BUFFER_LENGTH ) ;
     
-    if ((read_size = tcp_read(file_descriptor, readin_area, HA7_READ_BUFFER_LENGTH, &tvnet)) < 0) {
+    	// Read first block of data from HA7
+	if ((read_size = tcp_read(file_descriptor, readin_area, HA7_READ_BUFFER_LENGTH, &tvnet)) < 0) {
 		LEVEL_CONNECT("HA7_read (ethernet) error = %d\n", read_size);
 		//write(1, readin_area, read_size);
 		return -EIO;
-    }
+	}
+
+	// make sure null terminated (allocated extra byte in readin_area to always have room)
+	readin_area[read_size] = '\0' ;
     
+	// Look for happy response
 	if (strncmp("HTTP/1.1 200 OK", readin_area, 15)) {	//Bad HTTP return code
 		ASCII *p = strchr(&readin_area[15], '\n');
 		if (p == NULL)
 			p = &readin_area[15 + 32];
 		LEVEL_DATA("HA7 response problem:%.*s\n", p - readin_area - 15, &readin_area[15]);
-		return -EIO;
-    }
+		return -EINVAL;
+	}
     
+	// Look for "<body>"
 	if ((start = strstr(readin_area, "<body>")) == NULL) {
-		LEVEL_DATA("HA7 response no HTTP body to parse\n");
-        MemblobClear( mb ) ;
-        return -EIO;
-    }
+		LEVEL_DATA("HA7 response: No HTTP body to parse\n");
+		MemblobClear( mb ) ;
+		return -EINVAL;
+	}
     
-    // HTML body found, dump header
-    if ( MemblobAdd( (BYTE *) start, read_size - (start-readin_area), mb ) ) {
-        MemblobClear( mb ) ;
-        return -ENOMEM;
-    }
+	// HTML body found, dump header
+	if ( MemblobAdd( (BYTE *) start, read_size - (start-readin_area), mb ) ) {
+		MemblobClear( mb ) ;
+		return -ENOMEM;
+	}
     
-    while (read_size == HA7_READ_BUFFER_LENGTH) { // full read, so presume more waiting
-        if ((read_size = tcp_read(file_descriptor, readin_area, HA7_READ_BUFFER_LENGTH, &tvnet)) < 0) {
-            LEVEL_DATA("Couldn't get rest of HA7 data (err=%d)\n",
-                        read_size);
-            MemblobClear( mb ) ;
-            return -EIO;
-        } else {
-            if ( MemblobAdd( (BYTE *)readin_area, read_size, mb ) ) {
-                MemblobClear( mb ) ;
-                return -ENOMEM;
-            }
-        // increase size of returned_buffer
-        }
-    }
-    if ( MemblobAdd( (BYTE *) "", 1, mb ) ) {
-        MemblobClear( mb ) ;
-        return -ENOMEM;
-    }
-    return 0;
+	// loop through reading in HA7_READ_BUFFER_LENGTH blocks
+	while (read_size == HA7_READ_BUFFER_LENGTH) { // full read, so presume more waiting
+		if ((read_size = tcp_read(file_descriptor, readin_area, HA7_READ_BUFFER_LENGTH, &tvnet)) < 0) {
+			LEVEL_DATA("Couldn't get rest of HA7 data (err=%d)\n", read_size);
+			MemblobClear( mb ) ;
+			return -EIO;
+		} else if ( MemblobAdd( (BYTE *)readin_area, read_size, mb ) ) {
+			MemblobClear( mb ) ;
+			return -ENOMEM;
+		}
+	}
+
+	// Add trailing null
+	if ( MemblobAdd( (BYTE *) "", 1, mb ) ) {
+		MemblobClear( mb ) ;
+		return -ENOMEM;
+	}
+	//printf("READ FROM HA7:\n%s\n",mb->memory_storage);
+	return 0;
 }
 
 static int HA7_write(int file_descriptor, const ASCII * msg, size_t length,
@@ -318,68 +331,69 @@ static int HA7_toHA7(int file_descriptor, const struct toHA7 *ha7,
 					 struct connection_in *in)
 {
 	int first = 1;
-    int probable_length ;
-    int ret = 0 ;
-    char * full_command ;
+	int probable_length ;
+	int ret = 0 ;
+	char * full_command ;
 	LEVEL_DEBUG
 		("To HA7 command=%s address=%.16s conditional=%.1s lock=%.10s\n",
 		 SAFESTRING(ha7->command), SAFESTRING(ha7->address),
 		 SAFESTRING(ha7->conditional),
 		 SAFESTRING(ha7->lock));
 
-    if (ha7->command == NULL)
-        return -EINVAL;
+	if (ha7->command == NULL) {
+		return -EINVAL;
+	}
 
-    probable_length = 11 + strlen(ha7->command) + 5
-            + ( (ha7->address[0]) ? 1+8+16 : 0 )
-            + ( (ha7->conditional[0]) ? 1+12+1 : 0 )
-            + ( (ha7->data) ? 1+5+ha7->length*2 : 0 )
-            + ( (ha7->lock[0]) ? 1+7+10 : 0 )
-            + 11
-            + 1 ;
-
-    full_command = malloc(probable_length) ;
-    if ( full_command==NULL ) return -ENOMEM ;
-    memset( full_command, 0, probable_length ) ;
-
-    strcpy(full_command, "GET /1Wire/" ) ;
-    strcat(full_command, ha7->command ) ;
-    strcat(full_command, ".html" ) ;
+	probable_length = 11 + strlen(ha7->command) + 5
+		+ ( (ha7->address[0]) ? 1+8+16 : 0 )
+		+ ( (ha7->conditional[0]) ? 1+12+1 : 0 )
+		+ ( (ha7->data) ? 1+5+ha7->length*2 : 0 )
+		+ ( (ha7->lock[0]) ? 1+7+10 : 0 )
+		+ 11
+		+ 1 ;
 	
-    if (ha7->address[0]) {
-        strcat( full_command, first ? "?" : "&" ) ;
-        strcat( full_command, "Address=" ) ;
-        strcat( full_command, ha7->address ) ;
+	full_command = malloc(probable_length) ;
+	if ( full_command==NULL ) return -ENOMEM ;
+	memset( full_command, 0, probable_length ) ;
+	
+	strcpy(full_command, "GET /1Wire/" ) ;
+	strcat(full_command, ha7->command ) ;
+	strcat(full_command, ".html" ) ;
+	
+	if (ha7->address[0]) {
+        	strcat( full_command, first ? "?" : "&" ) ;
+		strcat( full_command, "Address=" ) ;
+		strcat( full_command, ha7->address ) ;
 		first = 0;
 	}
 
 	if (ha7->conditional[0]) {
-        strcat( full_command, first ? "?" : "&" ) ;
-        strcat( full_command, "Conditional=" ) ;
-        strcat( full_command, ha7->conditional ) ;
-        first = 0;
-	}
-
-	if (ha7->data) {
-        strcat( full_command, first ? "?" : "&" ) ;
-        strcat( full_command, "Data=" ) ;
-        bytes2string(&full_command[strlen(full_command)] , ha7->data, ha7->length);
-	}
-
-	if (ha7->lock[0]) {
-        strcat( full_command, first ? "?" : "&" ) ;
-        strcat( full_command, "LockID=" ) ;
-        strcat( full_command, ha7->lock ) ;
+		strcat( full_command, first ? "?" : "&" ) ;
+		strcat( full_command, "Conditional=" ) ;
+		strcat( full_command, ha7->conditional ) ;
 		first = 0;
 	}
 
-    strcat( full_command, " HTTP/1.0\n\n" );
-    
-    LEVEL_DEBUG("To HA7 %s", full_command ) ;
+	if (ha7->data) {
+		strcat( full_command, first ? "?" : "&" ) ;
+		strcat( full_command, "Data=" ) ;
+		bytes2string(&full_command[strlen(full_command)] , ha7->data, ha7->length);
+	}
 
-    ret = HA7_write(file_descriptor, full_command, probable_length, in);
-    free( full_command ) ;
-    return ret ;
+	if (ha7->lock[0]) {
+		strcat( full_command, first ? "?" : "&" ) ;
+		strcat( full_command, "LockID=" ) ;
+		strcat( full_command, ha7->lock ) ;
+		first = 0;
+	}
+
+	strcat( full_command, " HTTP/1.0\n\n" );
+    
+	LEVEL_DEBUG("To HA7 %s", full_command ) ;
+
+	ret = HA7_write(file_descriptor, full_command, probable_length, in);
+	free( full_command ) ;
+	return ret ;
 }
 
 // Reset, select, and read/write data
@@ -390,48 +404,48 @@ static int HA7_select_and_sendback(const BYTE * data, BYTE * resp,
                              const size_t size,
                              const struct parsedname *pn)
 {
-    int file_descriptor;
-    struct memblob mb ;
-    struct toHA7 ha7;
-    int ret = -EIO;
-    
-    if ((MAX_FIFO_SIZE >> 1) < size) {
-        size_t half = size >> 1;
-        if (HA7_sendback_data(data, resp, half, pn))
-            return -EIO;
-        return HA7_sendback_data(&data[half], &resp[half], size - half,
-                                  pn);
-    }
+	int file_descriptor;
+	struct memblob mb ;
+	struct toHA7 ha7;
+	int ret = -EIO;
+	
+	if ((MAX_FIFO_SIZE >> 1) < size) {
+		size_t half = size >> 1;
+		if (HA7_select_and_sendback(data, resp, half, pn)) {
+			return -EIO;
+		}
+		return HA7_sendback_data(&data[half], &resp[half], size - half, pn);
+	}
 
-    if ((file_descriptor = ClientConnect(pn->selected_connection)) < 0)
-        return -EIO;
+	if ((file_descriptor = ClientConnect(pn->selected_connection)) < 0) {
+		return -EIO;
+	}
 
-    toHA7init(&ha7);
-    ha7.command = "WriteBlock";
-    ha7.data = data;
-    ha7.length = size;
-    setHA7address(&ha7, pn->sn);
+	toHA7init(&ha7);
+	ha7.command = "WriteBlock";
+	ha7.data = data;
+	ha7.length = size;
+	setHA7address(&ha7, pn->sn);
     
-    if (HA7_toHA7(file_descriptor, &ha7, pn->selected_connection) == 0 ) {
-        if ( HA7_read(file_descriptor, &mb) == 0 ) {
-            ASCII *p = (ASCII *) mb.memory_storage;
-            if ((p = strstr(p, "<INPUT TYPE=\"TEXT\" NAME=\"ResultData_0\""))
-                 && (p = strstr(p, "VALUE=\""))) {
-                p += 7;
-                LEVEL_DEBUG("HA7_sendback_data received(%d): %.*s\n", size * 2,
-                            size * 2, p);
-                if (strspn(p, "0123456789ABCDEF") >= size << 1) {
-                    string2bytes(p, resp, size);
-                    ret = 0;
-                }
-                 }
-                 MemblobClear( &mb );
-        } else {
-            STAT_ADD1_BUS( e_bus_read_errors, pn->selected_connection ) ;
-        }
-    }
-    close(file_descriptor);
-    return ret;
+	if (HA7_toHA7(file_descriptor, &ha7, pn->selected_connection) == 0 ) {
+		if ( HA7_read(file_descriptor, &mb) == 0 ) {
+			ASCII *p = (ASCII *) mb.memory_storage;
+			if ((p = strstr(p, "<INPUT TYPE=\"TEXT\" NAME=\"ResultData_0\""))
+				&& (p = strstr(p, "VALUE=\""))) {
+				p += 7;
+				LEVEL_DEBUG("HA7_sendback_data received(%d): %.*s\n", size * 2, size * 2, p);
+				if (strspn(p, "0123456789ABCDEF") >= size << 1) {
+					string2bytes(p, resp, size);
+					ret = 0;
+				}
+			}
+			MemblobClear( &mb );
+		} else {
+			STAT_ADD1_BUS( e_bus_read_errors, pn->selected_connection ) ;
+		}
+	}
+	close(file_descriptor);
+	return ret;
 }
 
 // DS2480_sendback_data
@@ -449,42 +463,42 @@ static int HA7_sendback_data(const BYTE * data, BYTE * resp,
     struct toHA7 ha7;
     int ret = -EIO;
     
-    if ((MAX_FIFO_SIZE >> 1) < size) {
-        size_t half = size >> 1;
-        if (HA7_sendback_data(data, resp, half, pn))
-            return -EIO;
-        return HA7_sendback_data(&data[half], &resp[half], size - half,
-                                  pn);
-    }
+	if ((MAX_FIFO_SIZE >> 1) < size) {
+		size_t half = size >> 1;
+		if (HA7_sendback_data(data, resp, half, pn)) {
+			return -EIO;
+		}
+		return HA7_sendback_data(&data[half], &resp[half], size - half, pn);
+	}
 
-    if ((file_descriptor = ClientConnect(pn->selected_connection)) < 0)
-        return -EIO;
+	if ((file_descriptor = ClientConnect(pn->selected_connection)) < 0) {
+		return -EIO;
+	}
 
-    toHA7init(&ha7);
-    ha7.command = "WriteBlock";
-    ha7.data = data;
-    ha7.length = size;
+	toHA7init(&ha7);
+	ha7.command = "WriteBlock";
+	ha7.data = data;
+	ha7.length = size;
     
-    if (HA7_toHA7(file_descriptor, &ha7, pn->selected_connection) == 0 ) {
-        if ( HA7_read(file_descriptor, &mb) == 0 ) {
-            ASCII *p = (ASCII *) mb.memory_storage;
-            if ((p = strstr(p, "<INPUT TYPE=\"TEXT\" NAME=\"ResultData_0\""))
-                 && (p = strstr(p, "VALUE=\""))) {
-                p += 7;
-                LEVEL_DEBUG("HA7_sendback_data received(%d): %.*s\n", size * 2,
-                            size * 2, p);
-                if (strspn(p, "0123456789ABCDEF") >= size << 1) {
-                    string2bytes(p, resp, size);
-                    ret = 0;
-                }
-            }
-            MemblobClear( &mb );
-        } else {
-            STAT_ADD1_BUS( e_bus_read_errors, pn->selected_connection ) ;
-        }
-    }
-    close(file_descriptor);
-    return ret;
+	if (HA7_toHA7(file_descriptor, &ha7, pn->selected_connection) == 0 ) {
+		if ( HA7_read(file_descriptor, &mb) == 0 ) {
+			ASCII *p = (ASCII *) mb.memory_storage;
+			if ((p = strstr(p, "<INPUT TYPE=\"TEXT\" NAME=\"ResultData_0\""))
+				&& (p = strstr(p, "VALUE=\""))) {
+				p += 7;
+				LEVEL_DEBUG("HA7_sendback_data received(%d): %.*s\n", size * 2, size * 2, p);
+				if (strspn(p, "0123456789ABCDEF") >= size << 1) {
+					string2bytes(p, resp, size);
+					ret = 0;
+				}
+			}
+			MemblobClear( &mb );
+		} else {
+			STAT_ADD1_BUS( e_bus_read_errors, pn->selected_connection ) ;
+		}
+	}
+	close(file_descriptor);
+	return ret;
 }
 
 static void setHA7address(struct toHA7 *ha7, const BYTE * sn)
@@ -512,12 +526,12 @@ static int HA7_select(const struct parsedname *pn)
 			ha7.command = "AddressDevice";
 			setHA7address(&ha7, pn->sn);
 			if (HA7_toHA7(file_descriptor, &ha7, pn->selected_connection) == 0) {
-                struct memblob mb ;
-                if (HA7_read(file_descriptor, &mb) == 0) {
-                    MemblobClear( &mb );
-                    ret = 0;
+				struct memblob mb ;
+				if (HA7_read(file_descriptor, &mb) == 0) {
+					MemblobClear( &mb );
+					ret = 0;
 				}
-            }
+			}
 			close(file_descriptor);
 		}
 	} else {
@@ -547,7 +561,7 @@ static int HA7_releaselock(int file_descriptor, struct connection_in *in)
 
 static void toHA7init(struct toHA7 *ha7)
 {
-    memset( ha7, 0, sizeof( struct toHA7) ) ;
+	memset( ha7, 0, sizeof( struct toHA7) ) ;
 }
 
 #endif							/* OW_HA7 */

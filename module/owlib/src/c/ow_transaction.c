@@ -28,13 +28,13 @@ struct transaction_bundle {
 static int BUS_transaction_single(const struct transaction_log *t,
                            const struct parsedname *pn) ;
 
-static int Bundle_pack( struct transaction_log * tl, struct parsedname * pn ) ;
-static int Pack_item( struct transaction_log * tl, struct transaction_bundle * tb ) ;
-static int Bundle_ship( struct transaction_bundle * tb, struct parsedname * pn ) ;
-static int Bundle_enroute( struct transaction_bundle * tb, struct parsedname * pn ) ;
+static int Bundle_pack( const struct transaction_log * tl, const struct parsedname * pn ) ;
+static int Pack_item( const struct transaction_log * tl, struct transaction_bundle * tb ) ;
+static int Bundle_ship( struct transaction_bundle * tb, const struct parsedname * pn ) ;
+static int Bundle_enroute( struct transaction_bundle * tb, const struct parsedname * pn ) ;
 static int Bundle_unpack( struct transaction_bundle * tb ) ;
 
-static void Bundle_init( struct transaction_bundle * tb, struct parsedname * pn ) ;
+static void Bundle_init( struct transaction_bundle * tb, const struct parsedname * pn ) ;
 
 #define TRANSACTION_INCREMENT 1000
 
@@ -186,14 +186,14 @@ static int BUS_transaction_single(const struct transaction_log *t,
 }
 
 // initialize the bundle
-static void Bundle_init( struct transaction_bundle * tb, struct parsedname * pn )
+static void Bundle_init( struct transaction_bundle * tb, const struct parsedname * pn )
 {
     memset( tb, 0, sizeof( struct transaction_bundle ) ) ;
     MemblobInit( &tb->mb, TRANSACTION_INCREMENT ) ;
     tb->max_size = pn->selected_connection->bundling_length ;
 }
 
-static int Bundle_pack( struct transaction_log * tl, struct parsedname * pn )
+static int Bundle_pack( const struct transaction_log * tl, const struct parsedname * pn )
 {
     struct transaction_log * t_index ;
     struct transaction_bundle s_tb ;
@@ -225,7 +225,7 @@ static int Bundle_pack( struct transaction_log * tl, struct parsedname * pn )
 }
 
 // Take a bundle, execute the transaction, unpack, and clear the memoblob
-static int Bundle_ship( struct transaction_bundle * tb, struct parsedname * pn )
+static int Bundle_ship( struct transaction_bundle * tb, const struct parsedname * pn )
 {
 	LEVEL_DEBUG("Transaction Bundle: Ship Packets=%d\n",tb->packets) ; 
     if ( tb->packets == 0 ) {
@@ -244,7 +244,7 @@ static int Bundle_ship( struct transaction_bundle * tb, struct parsedname * pn )
 }
 
 // Execute a bundle transaction (actual bytes on 1-wire bus)
-static int Bundle_enroute( struct transaction_bundle * tb, struct parsedname * pn )
+static int Bundle_enroute( struct transaction_bundle * tb, const struct parsedname * pn )
 {
     if ( tb->select_first ) {
         return BUS_select_and_sendback( tb->mb.memory_storage, tb->mb.memory_storage, tb->mb.used, pn ) ;
@@ -259,7 +259,7 @@ static int Bundle_enroute( struct transaction_bundle * tb, struct parsedname * p
    return -EINTR  -- should be at end (force end)
    return 0       -- added successfully
 */
-static int Pack_item( struct transaction_log * tl, struct transaction_bundle * tb )
+static int Pack_item( const struct transaction_log * tl, struct transaction_bundle * tb )
 { 
     int ret = 0 ; //default return value for good packets;
     switch (tl->type) {

@@ -117,6 +117,7 @@ void _Debug_Bytes( const char * title, const unsigned char * buf, int length)
         printf("\n-- NULL buffer\n");
         return ;
     }
+#if 0
     /* hex lines -- 16 bytes each */
     for ( i=0 ; i<length ; ++i ) {
         if ( (i&0x0F) == 0 ) { // devisible by 16
@@ -124,6 +125,8 @@ void _Debug_Bytes( const char * title, const unsigned char * buf, int length)
         }
         printf(" %.2X",buf[i]) ;
     }
+
+#endif
     /* char line -- printable or . */
     printf("\n   <");
     for ( i=0 ; i<length ; ++i ) {

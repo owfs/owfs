@@ -80,7 +80,7 @@ ssize_t tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval
 					errno = 0;	// clear errno. We never use it anyway.
 					nread = 0;	/* and call read() again */
 				} else {
-					//ERROR_DATA("Network data read error\n");
+					ERROR_DATA("Network data read error\n");
 					STAT_ADD1(NET_read_errors);
 					return (-1);
 				}
