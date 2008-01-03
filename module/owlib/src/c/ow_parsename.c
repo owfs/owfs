@@ -16,8 +16,15 @@ $Id$
 
 static int BranchAdd(struct parsedname *pn);
 
-enum parse_enum { parse_first, parse_done, parse_error, parse_real,
-	parse_nonreal, parse_prop, parse_subprop
+enum parse_enum { 
+	parse_first, 
+	parse_done, 
+	parse_error, 
+	parse_real,
+	parse_branch,
+	parse_nonreal, 
+	parse_prop, 
+	parse_subprop
 };
 
 struct parsedname_pointers {
@@ -29,6 +36,7 @@ struct parsedname_pointers {
 
 
 static enum parse_enum Parse_Unspecified(char *pathnow, int back_from_remote, struct parsedname *pn);
+static enum parse_enum Parse_Branch(char *pathnow, int back_from_remote, struct parsedname *pn) ;
 static enum parse_enum Parse_Real(char *pathnow, int back_from_remote, struct parsedname *pn);
 static enum parse_enum Parse_NonReal(char *pathnow, struct parsedname *pn);
 static enum parse_enum Parse_RealDevice(char *filename, int back_from_remote, struct parsedname *pn);
@@ -144,10 +152,8 @@ static int FS_ParsedName_anywhere(const char *path, int back_from_remote,
 		}
 
 		// break out next name in path, make sure pp->pathnext isn't NULL. (SIGSEGV in uClibc)
-		if(pp->pathnext)
-		  pp->pathnow = strsep(&(pp->pathnext), "/");
-		else
-		  pp->pathnow = NULL;
+		pp->pathnow = (pp->pathnext) ? strsep(&(pp->pathnext), "/") : NULL ;
+
 		//LEVEL_DEBUG("PARSENAME pathnow=[%s] rest=[%s]\n",pathnow,pathnext) ;
 		if (pp->pathnow == NULL || pp->pathnow[0] == '\0') {
 			pe = parse_done ;
@@ -165,6 +171,11 @@ static int FS_ParsedName_anywhere(const char *path, int back_from_remote,
 		case parse_real:
 			//LEVEL_DEBUG("PARSENAME parse_real\n") ;
 			pe = Parse_Real(pp->pathnow, back_from_remote, pn);
+			break;
+		
+		case parse_branch:
+			//LEVEL_DEBUG("PARSENAME parse_branch\n") ;
+			pe = Parse_Branch(pp->pathnow, back_from_remote, pn);
 			break;
 		
 		case parse_nonreal:
@@ -185,8 +196,8 @@ static int FS_ParsedName_anywhere(const char *path, int back_from_remote,
 			break;
 		
 		default:
-		pe = parse_error ; // unknown state
-		break;
+			pe = parse_error ; // unknown state
+			break;
 
 		}
 	//printf("PARSENAME pe=%d\n",pe) ;
@@ -273,60 +284,58 @@ static enum parse_enum Parse_Unspecified(char *pathnow,
                                          int back_from_remote,
                                          struct parsedname *pn)
 {
-    if (strcasecmp(pathnow, "alarm") == 0) {
-        pn->state |= ePS_alarm;
-        pn->type = ePN_real;
-        return parse_real;
+	if (strncasecmp(pathnow, "bus.", 4) == 0) {
+		return Parse_Bus(pathnow, back_from_remote, pn);
+	
+	} else if (strcasecmp(pathnow, "settings") == 0) {
+		if ( SpecifiedLocalBus(pn) ) return parse_error ;
+		pn->type = ePN_settings;
+		return parse_nonreal;
+	
+	} else if (strcasecmp(pathnow, "statistics") == 0) {
+		if ( SpecifiedLocalBus(pn) ) return parse_error ;
+		pn->type = ePN_statistics;
+		return parse_nonreal;
+	
+	} else if (strcasecmp(pathnow, "structure") == 0) {
+		if ( SpecifiedLocalBus(pn) ) return parse_error ;
+		pn->type = ePN_structure;
+		return parse_nonreal;
+	
+	} else if (strcasecmp(pathnow, "system") == 0) {
+		if ( SpecifiedLocalBus(pn) ) return parse_error ;
+		pn->type = ePN_system;
+		return parse_nonreal;
+	
+	} else if (strcasecmp(pathnow, "interface") == 0) {
+		if ( ! SpecifiedBus(pn) ) return parse_error ;
+		pn->type = ePN_interface;
+		return parse_nonreal;
+	
+	} else if (strcasecmp(pathnow, "text") == 0) {
+		pn->state |= ePS_text;
+		return parse_first;
+	
+	} else if (strcasecmp(pathnow, "uncached") == 0) {
+		pn->state |= ePS_uncached;
+		return parse_first;
+	
+	}
+	
+	pn->type = ePN_real;
+	return Parse_Branch(pathnow,back_from_remote, pn ) ;
+}
 
-    } else if (strncasecmp(pathnow, "bus.", 4) == 0) {
-        return Parse_Bus(pathnow, back_from_remote, pn);
-
-    } else if (strcasecmp(pathnow, "settings") == 0) {
-        if ( SpecifiedLocalBus(pn) ) return parse_error ;
-        pn->type = ePN_settings;
-        return parse_nonreal;
-
-    } else if (strcasecmp(pathnow, "simultaneous") == 0) {
-        pn->selected_device = DeviceSimultaneous;
-        return parse_prop;
-
-    } else if (strcasecmp(pathnow, "statistics") == 0) {
-        if ( SpecifiedLocalBus(pn) ) return parse_error ;
-        pn->type = ePN_statistics;
-        return parse_nonreal;
-
-    } else if (strcasecmp(pathnow, "structure") == 0) {
-        if ( SpecifiedLocalBus(pn) ) return parse_error ;
-        pn->type = ePN_structure;
-        return parse_nonreal;
-
-    } else if (strcasecmp(pathnow, "system") == 0) {
-        if ( SpecifiedLocalBus(pn) ) return parse_error ;
-        pn->type = ePN_system;
-        return parse_nonreal;
-
-    } else if (strcasecmp(pathnow, "interface") == 0) {
-        if ( ! SpecifiedBus(pn) ) return parse_error ;
-        pn->type = ePN_interface;
-        return parse_nonreal;
-
-    } else if (strcasecmp(pathnow, "text") == 0) {
-        pn->state |= ePS_text;
-        return parse_first;
-
-    } else if (strcasecmp(pathnow, "thermostat") == 0) {
-        pn->selected_device = DeviceThermostat;
-        pn->type = ePN_real;
-        return parse_prop;
-
-    } else if (strcasecmp(pathnow, "uncached") == 0) {
-        pn->state |= ePS_uncached;
-        return parse_first;
-
-    } else {
-        pn->type = ePN_real;
-        return Parse_RealDevice(pathnow, back_from_remote, pn);
-    }
+static enum parse_enum Parse_Branch(char *pathnow,
+                                         int back_from_remote,
+                                         struct parsedname *pn)
+{
+	if (strcasecmp(pathnow, "alarm") == 0) {
+		pn->state |= ePS_alarm;
+		pn->type = ePN_real;
+		return parse_real;
+	}
+	return Parse_Real( pathnow, back_from_remote, pn ) ;
 }
 
 static enum parse_enum Parse_Real(char *pathnow, int back_from_remote,
@@ -580,7 +589,7 @@ static enum parse_enum Parse_Property(char *filename,
 			if (pn->pathlength > dir_depth)
 				dir_depth = pn->pathlength;
 			STATUNLOCK;
-			return parse_real;
+			return parse_branch;
 		case ft_subdir:
 			pn->subdir = pn->selected_filetype;
 			pn->selected_filetype = NULL;
