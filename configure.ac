@@ -368,6 +368,40 @@ AC_ARG_ENABLE(debug,
 AC_SUBST(ENABLE_DEBUG)
 AM_CONDITIONAL(ENABLE_DEBUG, test "${ENABLE_DEBUG}" = "true")
 
+# Test if OWSHELL should be supported
+ENABLE_OWSHELL="true"
+AC_MSG_CHECKING([if OWSHELL support is enabled])
+AC_ARG_ENABLE(owshell,
+[  --enable-owshell        Enable owshell support (default true)],
+[
+    AC_MSG_RESULT([$enableval])
+    if ! test "$enableval" = "yes" ; then
+        ENABLE_OWSHELL="false"
+    fi
+],
+[
+    AC_MSG_RESULT([yes (default)])
+])
+AC_SUBST(ENABLE_OWSHELL)
+AM_CONDITIONAL(ENABLE_OWSHELL, test "${ENABLE_OWSHELL}" = "true")
+
+# Test if OWLIB should be supported
+ENABLE_OWLIB="true"
+AC_MSG_CHECKING([if OWLIB support is enabled])
+AC_ARG_ENABLE(owlib,
+[  --enable-owlib          Enable owlib support (default true)],
+[
+    AC_MSG_RESULT([$enableval])
+    if ! test "$enableval" = "yes" ; then
+        ENABLE_OWLIB="false"
+    fi
+],
+[
+    AC_MSG_RESULT([yes (default)])
+])
+AC_SUBST(ENABLE_OWLIB)
+AM_CONDITIONAL(ENABLE_OWLIB, test "${ENABLE_OWLIB}" = "true")
+
 # Test if TAI8570 barometer should be supported
 ENABLE_TAI8570="true"
 AC_MSG_CHECKING([if TAI8570 barometer support is enabled])
@@ -482,9 +516,12 @@ AC_ARG_ENABLE(owhttpd,
     AC_MSG_RESULT([$enableval])
     if test ! "$enableval" = "yes" ; then
         ENABLE_OWHTTPD="false"
+    else
+        ENABLE_OWLIB="true"
     fi
 ],
 [
+    ENABLE_OWLIB="true"
     AC_MSG_RESULT([yes (default)])
 ])
 AC_SUBST(ENABLE_OWHTTPD)
@@ -499,9 +536,12 @@ AC_ARG_ENABLE(owftpd,
     AC_MSG_RESULT([$enableval])
     if test ! "$enableval" = "yes" ; then
         ENABLE_OWFTPD="false"
+    else
+        ENABLE_OWLIB="true"
     fi
 ],
 [
+    ENABLE_OWLIB="true"
     AC_MSG_RESULT([yes (default)])
 ])
 AC_SUBST(ENABLE_OWFTPD)
@@ -516,9 +556,12 @@ AC_ARG_ENABLE(owserver,
     AC_MSG_RESULT([$enableval])
     if test ! "$enableval" = "yes" ; then
         ENABLE_OWSERVER="false"
+    else
+        ENABLE_OWLIB="true"
     fi
 ],
 [
+    ENABLE_OWLIB="true"
     AC_MSG_RESULT([yes (default)])
 ])
 AC_SUBST(ENABLE_OWSERVER)
@@ -533,9 +576,12 @@ AC_ARG_ENABLE(ownet,
     AC_MSG_RESULT([$enableval])
     if test ! "$enableval" = "yes" ; then
         ENABLE_OWNET="false"
+    else
+        ENABLE_OWLIB="true"
     fi
 ],
 [
+    ENABLE_OWLIB="true"
     AC_MSG_RESULT([yes (default)])
 ])
 AC_SUBST(ENABLE_OWNET)
@@ -584,9 +630,12 @@ AC_ARG_ENABLE(owcapi,
     AC_MSG_RESULT([$enableval])
     if test ! "$enableval" = "yes" ; then
         ENABLE_OWCAPI="false"
+    else
+        ENABLE_OWLIB="true"
     fi
 ],
 [
+    ENABLE_OWLIB="true"
     AC_MSG_RESULT([yes (default)])
 ])
 AC_SUBST(ENABLE_OWCAPI)
@@ -626,6 +675,7 @@ AC_ARG_ENABLE(swig,
         if test -z "$SWIG"; then
 	   AC_MSG_ERROR([Swig is not found and could not be enabled])
 	fi
+        ENABLE_OWLIB="true"
         ENABLE_SWIG="true"
 	AC_MSG_RESULT([yes])
     fi
@@ -1115,6 +1165,7 @@ if test "${ENABLE_OWFS}" != "false" ; then
     LD_EXTRALIBS="$save_LD_EXTRALIBS"
 
     if test "${ENABLE_OWFS}" != "false"; then
+        ENABLE_OWLIB="true"
         ENABLE_OWFS="true"
     fi
 else
@@ -1639,6 +1690,16 @@ fi
 AC_MSG_RESULT()
 AC_MSG_RESULT([Module configuration:])
 
+if test "${ENABLE_OWLIB}" = "true"; then
+    AC_MSG_RESULT([        owlib is enabled])
+else
+    AC_MSG_RESULT([        owlib is DISABLED])
+fi
+if test "${ENABLE_OWSHELL}" = "true"; then
+    AC_MSG_RESULT([        owshell is enabled])
+else
+    AC_MSG_RESULT([        owshell is DISABLED])
+fi
 if test "${ENABLE_OWFS}" = "true"; then
     AC_MSG_RESULT([        owfs is enabled])
 else
