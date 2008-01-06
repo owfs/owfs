@@ -1,4 +1,4 @@
-﻿/*
+/*
  * ConsoleTest.cs
  * Created using SharpDevelop.
  *
