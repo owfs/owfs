@@ -189,7 +189,8 @@ end;
 procedure TOWNetSocket.CloseConnection;
 begin
   _tcpsocket.CloseSocket;
-  _persistentConnection := False;
+  // Do not reset persistentConnection!
+  //_persistentConnection := False;
 end;
 }
 
@@ -200,7 +201,8 @@ begin
      _tcpsocket.CloseSocket;
      if FreeSockets then FreeAndNil(_tcpSocket);
    End;
-   _PersistentConnection := False;
+   // Do not reset persistentConnection!
+   //_PersistentConnection := False;
 end;
 
 

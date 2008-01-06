@@ -364,7 +364,8 @@ public class OWNet {
     private void disconnect(boolean force) throws IOException {
         if ((!persistentConnection) || force) {
           debugprint("DISCONNECT","Cleaning up connection\n");
-          persistentConnection = false;
+          // do not reset persistentConnection!!
+          // persistentConnection = false;
           if (in != null) in.close(); in = null;
           if (out != null) out.close(); out = null;
           if (owsocket != null) owsocket.close();  owsocket = null;
