@@ -130,10 +130,9 @@ public class OWNet {
      */
     static public final int OWNET_FLAG_T_R      = 0x0030000;
 
+    static public final int OWNET_FLAG_PERSIST     = 0x0000004; // for Persistent connections
 
     static private final int OWNET_DEFAULT_SG_FLAGS = 0x0000103;
-    static private final int OWNET_FLAG_PERSIST     = 0x0000004; // for Persistent connections
-
 //
 // class private variables
 //
@@ -329,8 +328,9 @@ public class OWNet {
     private void connect() throws IOException {
        if (!persistentConnection) {
           // make sure we have cleared old connection objects
-          debugprint("CONNECT","!persistentConnection\n");
-          if (owsocket!=null) disconnect(true);
+          debugprint("CONNECT","!persistentConnection, Disconnecting\n");
+          //if (owsocket!=null) disconnect(true);
+          disconnect(true);
           debugprint("CONNECT","Initializing connection\n");
           owsocket = new Socket(remoteServer, remotePort);
           owsocket.setSoTimeout(conn_timeout);
@@ -394,7 +394,7 @@ public class OWNet {
         debugprint("sendPacket", msg);
         try {
            for ( i = 0; i<OWNET_PROT_STRUCT_SIZE; i++) out.writeInt(msg[i]);
-        } catch (IOException e) { 
+        } catch (IOException e) {
            // if persistent connection has timeout
             if (persistentConnection) {
                 disconnect(true);
@@ -435,7 +435,7 @@ public class OWNet {
         byte[] data = new byte[packetHeader[OWNET_PROT_PAYLOAD]];
         String retVal = null;
         in.readFully(data,0,data.length);
-        retVal = new String(data,packetHeader[OWNET_PROT_OFFSET],packetHeader[OWNET_PROT_DATALEN]);
+        retVal = new String(data,0/*packetHeader[OWNET_PROT_OFFSET]*/,packetHeader[OWNET_PROT_DATALEN]);
         return retVal;
     }
 
@@ -565,7 +565,7 @@ public class OWNet {
     private String[] OW_Dir(String path, boolean dirall) throws IOException
     {
         StringBuilder retVals = new StringBuilder();
-        
+
         int[] msg = null;
 
         // try to connect to remote server
@@ -574,7 +574,7 @@ public class OWNet {
         if (dirall) {
             sendPacket(OWNET_MSG_DIRALL, path.length()+1, 0);
         } else {
-            sendPacket(OWNET_MSG_DIR, path.length()+1, 0);            
+            sendPacket(OWNET_MSG_DIR, path.length()+1, 0);
         }
         sendCString(path);
 
@@ -726,7 +726,7 @@ public class OWNet {
         return OW_Dir(path,false);
     }
 
-    
+
     /**
      * Get directory list from server (multipacket mode) and swallow any IOException
      * @param path directory to list
@@ -751,7 +751,7 @@ public class OWNet {
         return OW_Dir(path,true);
     }
 
-    
+
     /**
      * Get directory list from server (singlepacket mode) and swallow any IOException
      * @param path directory to list
