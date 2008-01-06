@@ -106,7 +106,7 @@ type
 
     TOWNet = Class
       private
-         owsocket : TOWNetSocket; 
+         owsocket : TOWNetSocket;
 
          procedure setRemoteServer(const Value: String);
          function  getRemoteServer: String;
@@ -127,7 +127,7 @@ type
          Constructor Create(); overload;
          Constructor Create(Host:String); overload;
          Constructor Create(Host:String; Port: Integer); overload;
-         Destructor  Destroy; 
+         Destructor  Destroy;
 
          function  Read(path:String; expectedDatalen : Integer = 0) : String;
          function  Write(path : String; value : String) : Boolean;
@@ -288,7 +288,7 @@ begin
   try try
      getmem(data, packetHeader[OWNET_PROT_PAYLOAD]+1);
     _tcpsocket.RecvBufferEx(data,packetHeader[OWNET_PROT_PAYLOAD],Timeout);
-    retVal := AnsiMidStr(pchar(data),packetHeader[OWNET_PROT_OFFSET], packetHeader[OWNET_PROT_DATALEN]);
+    retVal := AnsiMidStr(pchar(data),0 {packetHeader[OWNET_PROT_OFFSET]}, packetHeader[OWNET_PROT_DATALEN]);
   except
   end
   finally
