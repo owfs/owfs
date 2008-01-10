@@ -1,7 +1,6 @@
 # $Id$
 
-LIBOWNET_SOURCE =	dummy1.c	\
-        compat.c   \
+LIBOWNET_SOURCE =	compat.c   \
         dummy1.c   \
         dummy2.c   \
         error.c   \
@@ -29,8 +28,7 @@ LIBOWNET_SOURCE =	dummy1.c	\
         ow_server.c   \
         ow_tcp_read.c   \
         ow_util.c   \
-        ow_zero.c   \
-        dummy2.c
+        ow_zero.c
 
 
 lib_LTLIBRARIES = libownet.la
