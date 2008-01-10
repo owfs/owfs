@@ -402,6 +402,23 @@ AC_ARG_ENABLE(owlib,
 AC_SUBST(ENABLE_OWLIB)
 AM_CONDITIONAL(ENABLE_OWLIB, test "${ENABLE_OWLIB}" = "true")
 
+# Test if OWNETLIB should be supported
+ENABLE_OWNETLIB="true"
+AC_MSG_CHECKING([if OWNETLIB support is enabled])
+AC_ARG_ENABLE(ownetlib,
+[  --enable-ownetlib       Enable ownetlib support (default true)],
+[
+    AC_MSG_RESULT([$enableval])
+    if ! test "$enableval" = "yes" ; then
+        ENABLE_OWNETLIB="false"
+    fi
+],
+[
+    AC_MSG_RESULT([yes (default)])
+])
+AC_SUBST(ENABLE_OWNETLIB)
+AM_CONDITIONAL(ENABLE_OWNETLIB, test "${ENABLE_OWNETLIB}" = "true")
+
 # Test if TAI8570 barometer should be supported
 ENABLE_TAI8570="true"
 AC_MSG_CHECKING([if TAI8570 barometer support is enabled])
@@ -1746,6 +1763,11 @@ if test "${ENABLE_LIBOWNET}" = "true"; then
     AC_MSG_RESULT([                 libownet is enabled])
 else
     AC_MSG_RESULT([                 libownet is DISABLED])
+fi
+if test "${ENABLE_OWNETLIB}" = "true"; then
+    AC_MSG_RESULT([    ownetlib is enabled])
+else
+    AC_MSG_RESULT([    ownetlib is DISABLED])
 fi
 if test "${ENABLE_OWTAP}" = "true"; then
     AC_MSG_RESULT([                    owtap is enabled])
