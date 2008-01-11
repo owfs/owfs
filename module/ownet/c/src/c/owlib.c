@@ -14,7 +14,7 @@ $Id$
 #include "ow.h"
 #include "ow_connection.h"
 #include "ow_pid.h"
-#include "ow_server.c"
+#include "ow_server.h"
 
 void SetSignals(void);
 

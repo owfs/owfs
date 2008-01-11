@@ -15,3 +15,7 @@ $Id$
 #include "ownetapi.h"
 #include "ow_server.h"
 
+int OWNET_write( OWNET_HANDLE h, const char * onewire_path, const char * value_string, size_t value_length )
+{
+  return -1;
+}

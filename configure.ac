@@ -605,40 +605,6 @@ AC_SUBST(ENABLE_OWNET)
 AM_CONDITIONAL(ENABLE_OWNET, test "${ENABLE_OWNET}" = "true")
 
 
-#Check libownet
-AC_MSG_CHECKING(if libownet is enabled)
-ENABLE_LIBOWNET="false"
-AC_ARG_ENABLE(libownet,
-[  --enable-libownet       Enable libownet module (default false)],
-[
-    if test "$enableval" != "false" ; then
-	if test "$ENABLE_OWNET" != "true" ; then
-	    ENABLE_LIBOWNET="false"
-	    AC_MSG_RESULT([no (ownet disabled)])
-	else
-	    ENABLE_LIBOWNET="true"
-	    AC_MSG_RESULT([yes])
-	fi
-    else
-	ENABLE_LIBOWNET="false"
-	AC_MSG_RESULT([$enableval])
-    fi
-],
-[
-    if test "$ENABLE_OWNET" != "true" ; then
-	ENABLE_LIBOWNET="false"
-	AC_MSG_RESULT([no (ownet disabled)])
-    else
-	if test "$ENABLE_LIBOWNET" != "true" ; then
-	   AC_MSG_RESULT([no])
-	else
-	   AC_MSG_RESULT([yes])
-	fi
-    fi
-])
-AC_SUBST(ENABLE_LIBOWNET)
-AM_CONDITIONAL(ENABLE_LIBOWNET, test "${ENABLE_LIBOWNET}" = "true")
-
 #Check owtap
 AC_MSG_CHECKING(if owtap is enabled)
 ENABLE_OWTAP="true"
@@ -1758,11 +1724,6 @@ if test "${ENABLE_OWNET}" = "true"; then
     AC_MSG_RESULT([                    ownet is enabled])
 else
     AC_MSG_RESULT([                    ownet is DISABLED])
-fi
-if test "${ENABLE_LIBOWNET}" = "true"; then
-    AC_MSG_RESULT([                 libownet is enabled])
-else
-    AC_MSG_RESULT([                 libownet is DISABLED])
 fi
 if test "${ENABLE_OWNETLIB}" = "true"; then
     AC_MSG_RESULT([                 ownetlib is enabled])

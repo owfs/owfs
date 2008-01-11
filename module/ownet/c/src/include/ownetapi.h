@@ -43,14 +43,14 @@ typedef int OWNET_HANDLE ;
 OWNET_HANDLE OWNET_init( const char * owserver_tcp_address_and_port ) ;
 
 /* int OWNET_dirlist( OWNET_HANDLE h, const char * onewire_path, 
-        char * return_string )
+        char ** return_string )
    Get the 1-wire directory as a comma-separated list.
    return_string is allocated by this program, and must be free-ed by your program.
    
    return non-negative length of return_string on success
    return <0 error and NULL on error
 */
-int OWNET_dirlist( OWNET_HANDLE h, const char * onewire_path, char * return_string ) ;
+int OWNET_dirlist( OWNET_HANDLE h, const char * onewire_path, char ** return_string ) ;
 
 /* int OWNET_dirprocess( OWNET_HANDLE h, const char * onewire_path, 
         void (*dirfunc) (void * passed_on_value, const char* directory_element), 
@@ -74,7 +74,7 @@ int OWNET_dirprocess( OWNET_HANDLE h, const char * onewire_path, void (*dirfunc)
    returns length of result on success,
    returns <0 on error
 */
-int OWNET_read( OWNET_HANDLE h, const char * onewire_path, char * return_string ) ;
+int OWNET_read( OWNET_HANDLE h, const char * onewire_path, char ** return_string ) ;
 
 /* int OWNET_write( OWNET_HANDLE h, const char * onewire_path, 
         const char * value_string, size_t value_length )

@@ -31,6 +31,7 @@ OWNET_HANDLE OWNET_init( const char * owserver_tcp_address_and_port )
         slot_found->name = strdup(owserver_tcp_address_and_port);
     }
     slot_found->busmode = bus_server;
+#if 0
     handle = ServerDetect(slot_found) ;
     if ( handle == 0 ) {
         slot_found->state = connection_active ;
@@ -38,6 +39,11 @@ OWNET_HANDLE OWNET_init( const char * owserver_tcp_address_and_port )
     } else {
         FreeIn(slot_found) ;
     }
+#else
+    //DefaultOwserver() ;// use Server_detect in minimal ow_net.c
+    //Server_detect() ;  // use Server_detect in minimal ow_server.c
+#endif
+
     return handle ;
 }
 

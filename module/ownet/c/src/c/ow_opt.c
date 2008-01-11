@@ -207,6 +207,7 @@ static int ConfigurationFile(const ASCII * file)
 	}
 }
 
+#if 0
 int owopt_packed(const char *params)
 {
 	char *params_copy ; // copy of the input line
@@ -265,6 +266,7 @@ int owopt_packed(const char *params)
 	free(params_copy);
 	return ret;
 }
+#endif
 
 /* Parses one argument */
 /* return 0 if ok */

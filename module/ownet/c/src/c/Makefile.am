@@ -20,10 +20,12 @@ LIBOWNET_SOURCE =	compat.c   \
         ownet_read.c   \
         ownet_setget.c   \
         ownet_write.c   \
-        ow_opt.c   \
         ow_server.c   \
         ow_tcp_read.c   \
         ow_util.c
+
+#        ow_opt.c   
+
 
 lib_LTLIBRARIES = libownet.la
 
@@ -35,7 +37,6 @@ if HAVE_CYGWIN
 libownet_la_LDFLAGS = ${PROFILING_FLAG} ${PTHREAD_LIBS} -shared -no-undefined
 else
 libownet_la_LDFLAGS = -version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE) -release $(LT_RELEASE) ${PROFILING_FLAG} ${PTHREAD_LIBS} -shared -shrext .so
-#libownet_la_LDFLAGS = -version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE) -release $(LT_RELEASE) ${PROFILING_FLAG} ${PTHREAD_LIBS} -shared -shrext .so ${LIBUSB_LIBS}
 endif
 
 # Maybe need this for MacOS X
@@ -63,8 +64,6 @@ AM_CFLAGS = -I../include \
          -D__EXTENSIONS__ \
          ${PROFILING_FLAG} \
 	 ${PTHREAD_CFLAGS}
-#	 ${PTHREAD_CFLAGS} \
-#	 ${LIBUSB_CFLAGS}
 
 clean-generic:
 

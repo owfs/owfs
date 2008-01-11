@@ -217,5 +217,6 @@ void OW_Browse(void);
 */
 int Server_detect(struct connection_in *in);
 int Zero_detect(struct connection_in *in);
+int BadAdapter_detect(struct connection_in *in);
 
 #endif							/* OW_CONNECTION_H */

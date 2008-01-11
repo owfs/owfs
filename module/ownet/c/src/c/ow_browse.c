@@ -115,7 +115,9 @@ static void ResolveBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 		}
 		if (in) {
 			if (Zero_detect(in)) {
-				BadAdapter_detect(in);
+			  //BadAdapter_detect(in);
+			  printf("Zero_detect failed\n");
+			  exit(1);
 			} else {
 				in->connin.tcp.type = strdup(bs->type);
 				in->connin.tcp.domain = strdup(bs->domain);

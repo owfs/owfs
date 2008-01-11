@@ -15,3 +15,10 @@ $Id$
 #include "ownetapi.h"
 #include "ow_server.h"
 
+int OWNET_dirlist( OWNET_HANDLE h, const char * onewire_path, char ** return_string )
+{
+  if(!return_string) return -1;
+
+  *return_string = NULL;
+  return -1;
+}

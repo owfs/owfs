@@ -1,5 +1,7 @@
 headerdir = ${prefix}/include
-header_DATA = ownetapi.h  \
+header_DATA = ownetapi.h
+
+EXTRA_DIST = ${header_DATA} \
         compat_getopt.h   \
         compat.h          \
         compat_netdb.h    \
@@ -21,8 +23,6 @@ header_DATA = ownetapi.h  \
         ow_server.h       \
         ow_stub.h         \
         sem.h
-
-EXTRA_DIST = ${header_DATA}
 
 clean-generic:
 
