@@ -82,7 +82,7 @@ int CharblobPure(struct charblob *cb)
 	return !cb->troubled;
 }
 
-int CharblobAdd(ASCII * a, size_t s, struct charblob *cb)
+int CharblobAdd(const ASCII * a, size_t s, struct charblob *cb)
 {
 	size_t incr = 1024;
 	if (incr < s)

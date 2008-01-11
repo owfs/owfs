@@ -15,10 +15,35 @@ $Id$
 #include "ownetapi.h"
 #include "ow_server.h"
 
+static void dirlist_callback( void * v, const char * data_element )
+{
+    struct charblob * cb = v ;
+    CharblobAdd( data_element, strlen(data_element), cb ) ;
+}
+
 int OWNET_dirlist( OWNET_HANDLE h, const char * onewire_path, char ** return_string )
 {
-  if(!return_string) return -1;
+    struct charblob s_charblob ;
+    struct charblob * cb = & s_charblob ;
 
-  *return_string = NULL;
-  return -1;
+    struct request_packet s_request_packet ;
+    struct request_packet * rp = & s_request_packet ;
+    memset( rp, 0, sizeof(struct request_packet));
+
+    rp->owserver = find_connection_in(h) ;
+    if ( rp->owserver == NULL ) {
+        return -EBADF ;
+    }
+
+    rp->path = (onewire_path==NULL) ? "/" : onewire_path ;
+    
+    CharblobInit( cb ) ;
+
+    if ( ServerDir( dirlist_callback, cb, rp ) < 0 ) {
+        CharblobClear(cb) ;
+        return -EINVAL ;
+    }
+    
+    return_string[0] = cb->blob ;
+    return cb->used ;
 }
