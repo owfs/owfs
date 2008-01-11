@@ -1,8 +1,6 @@
 # $Id$
 
 LIBOWNET_SOURCE =	compat.c   \
-        dummy1.c   \
-        dummy2.c   \
         error.c   \
         getaddrinfo.c   \
         getopt.c   \
@@ -11,12 +9,10 @@ LIBOWNET_SOURCE =	compat.c   \
         ow_browse.c   \
         ow_charblob.c   \
         ow_connect.c   \
-        ow_dirblob.c   \
         ow_dl.c   \
         ow_dnssd.c   \
         owlib.c   \
         ow_locks.c   \
-        ow_memblob.c   \
         ow_net_client.c   \
         ownet_close.c   \
         ownet_dir.c   \
@@ -27,9 +23,7 @@ LIBOWNET_SOURCE =	compat.c   \
         ow_opt.c   \
         ow_server.c   \
         ow_tcp_read.c   \
-        ow_util.c   \
-        ow_zero.c
-
+        ow_util.c
 
 lib_LTLIBRARIES = libownet.la
 
@@ -37,9 +31,11 @@ libownet_la_SOURCES = ${LIBOWNET_SOURCE}
 
 
 if HAVE_CYGWIN
-libownet_la_LDFLAGS = ${PROFILING_FLAG} ${PTHREAD_LIBS} -shared -no-undefined ${LIBUSB_LIBS}
+#libownet_la_LDFLAGS = ${PROFILING_FLAG} ${PTHREAD_LIBS} -shared -no-undefined ${LIBUSB_LIBS}
+libownet_la_LDFLAGS = ${PROFILING_FLAG} ${PTHREAD_LIBS} -shared -no-undefined
 else
-libownet_la_LDFLAGS = -version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE) -release $(LT_RELEASE) ${PROFILING_FLAG} ${PTHREAD_LIBS} -shared -shrext .so ${LIBUSB_LIBS}
+libownet_la_LDFLAGS = -version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE) -release $(LT_RELEASE) ${PROFILING_FLAG} ${PTHREAD_LIBS} -shared -shrext .so
+#libownet_la_LDFLAGS = -version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE) -release $(LT_RELEASE) ${PROFILING_FLAG} ${PTHREAD_LIBS} -shared -shrext .so ${LIBUSB_LIBS}
 endif
 
 # Maybe need this for MacOS X
@@ -66,8 +62,9 @@ AM_CFLAGS = -I../include \
          -D_FILE_OFFSET_BITS=64 \
          -D__EXTENSIONS__ \
          ${PROFILING_FLAG} \
-	 ${PTHREAD_CFLAGS} \
-	 ${LIBUSB_CFLAGS}
+	 ${PTHREAD_CFLAGS}
+#	 ${PTHREAD_CFLAGS} \
+#	 ${LIBUSB_CFLAGS}
 
 clean-generic:
 

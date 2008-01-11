@@ -12,6 +12,6 @@ $Id$
 /* ow_server talks to the server, sending and recieving messages */
 /* this is an alternative to direct bus communication */
 
-#include "ownet.h"
+#include "ownetapi.h"
 #include "ow_server.h"
 

@@ -8,15 +8,12 @@ header_DATA = ownetapi.h  \
         ow_codes.h        \
         ow_connection.h   \
         ow_debug.h        \
-        ow_dirblob.h      \
         ow_dl.h           \
         ow_dnssd.h        \
         ow_functions.h    \
         ow_global.h       \
         ow.h              \
-        ow_integer.h      \
         ow_localtypes.h   \
-        ow_memblob.h      \
         ow_message.h      \
         ow_mutexes.h      \
         ownetapi.h        \

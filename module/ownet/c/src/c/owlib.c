@@ -33,7 +33,6 @@ void LibSetup(void)
 	LockSetup();
 #endif							/* __UCLIBC__ */
 
-	start_time = time(NULL);
 	errno = 0;					/* set error level none */
 }
 

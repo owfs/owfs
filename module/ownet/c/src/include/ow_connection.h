@@ -66,7 +66,7 @@ See: http://www.iana.org/assignments/port-numbers
 
 #include "ow.h"
 #include <sys/ioctl.h>
-#include "ownet.h"
+#include "ownetapi.h"
 
 /* large enough for arrays of 2048 elements of ~49 bytes each */
 #define MAX_OWSERVER_PROTOCOL_PACKET_SIZE  100050

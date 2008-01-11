@@ -25,8 +25,9 @@ int ClientAddr(char *sname, struct connection_in *in)
 	char *p;
 	int ret;
 
-	if (sname == NULL)
-		return -1;
+    if (sname == NULL || sname[0] == '\0') {
+        sname = "4304" ;
+    }
 	if ((p = strrchr(sname, ':'))) {	/* : exists */
 		p[0] = '\0';			/* Separate tokens in the string */
 		in->connin.tcp.host = strdup(sname);

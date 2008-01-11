@@ -1765,9 +1765,9 @@ else
     AC_MSG_RESULT([                 libownet is DISABLED])
 fi
 if test "${ENABLE_OWNETLIB}" = "true"; then
-    AC_MSG_RESULT([    ownetlib is enabled])
+    AC_MSG_RESULT([                 ownetlib is enabled])
 else
-    AC_MSG_RESULT([    ownetlib is DISABLED])
+    AC_MSG_RESULT([                 ownetlib is DISABLED])
 fi
 if test "${ENABLE_OWTAP}" = "true"; then
     AC_MSG_RESULT([                    owtap is enabled])
