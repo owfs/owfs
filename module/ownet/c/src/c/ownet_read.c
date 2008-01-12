@@ -15,10 +15,54 @@ $Id$
 #include "ownetapi.h"
 #include "ow_server.h"
 
-int OWNET_read( OWNET_HANDLE h, const char * onewire_path, char ** return_string )
+int OWNET_read( OWNET_HANDLE h, const char * onewire_path, unsigned char ** return_string )
 {
-  if(!return_string) return -1;
+    unsigned char buffer[MAX_READ_BUFFER_SIZE] ;
+    int ret ;
 
-  *return_string = NULL;
-  return -1;
+    struct request_packet s_request_packet ;
+    struct request_packet * rp = & s_request_packet ;
+    memset( rp, 0, sizeof(struct request_packet));
+
+    rp->owserver = find_connection_in(h) ;
+    if ( rp->owserver == NULL ) {
+        return -EBADF ;
+    }
+
+    rp->path = (onewire_path==NULL) ? "/" : onewire_path ;
+    rp->read_value = buffer ;
+    rp->data_length = MAX_READ_BUFFER_SIZE ;
+    rp->data_offset = 0 ;
+
+    ret = ServerRead(rp) ;
+    if ( ret <= 0 ) {
+        return ret ;
+    }
+
+    *return_string = malloc( ret ) ;
+    if ( *return_string == NULL ) {
+        return -ENOMEM ;
+    }
+
+    memcpy( *return_string, buffer, ret ) ;
+    return ret ;
+}
+
+int OWNET_lread( OWNET_HANDLE h, const char * onewire_path, unsigned char * return_string, size_t size, off_t offset )
+{
+    struct request_packet s_request_packet ;
+    struct request_packet * rp = & s_request_packet ;
+    memset( rp, 0, sizeof(struct request_packet));
+
+    rp->owserver = find_connection_in(h) ;
+    if ( rp->owserver == NULL ) {
+        return -EBADF ;
+    }
+
+    rp->path = (onewire_path==NULL) ? "/" : onewire_path ;
+    rp->read_value = return_string ;
+    rp->data_length = size ;
+    rp->data_offset = offset ;
+
+    return ServerRead(rp) ;
 }

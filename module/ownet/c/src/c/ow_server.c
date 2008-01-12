@@ -129,7 +129,7 @@ int ServerRead(struct request_packet * rp)
 		if ((connectfd =
 			ToServerTwice(connectfd, persistent, &sm, &sp, rp->owserver)) < 0) {
 			ret = -EIO;
-		} else if (FromServer(connectfd, &cm, (ASCII *) rp->data_value, rp->data_length) < 0) {
+		} else if (FromServer(connectfd, &cm, (ASCII *) rp->read_value, rp->data_length) < 0) {
 			ret = -EIO;
 		} else {
 			ret = cm.ret;
@@ -183,7 +183,7 @@ int ServerWrite(struct request_packet * rp)
 	struct server_msg sm;
 	struct client_msg cm;
 	struct serverpackage sp =
-		{ rp->path, (BYTE *)rp->data_value, rp->data_length, rp->tokenstring, rp->tokens, };
+		{ rp->path, (BYTE *)rp->write_value, rp->data_length, rp->tokenstring, rp->tokens, };
 	int persistent = 1;
 	int connectfd;
 	int ret = 0;

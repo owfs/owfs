@@ -29,8 +29,9 @@ $Id$
 
 struct request_packet {
 	struct connection_in * owserver ;
-	ASCII * path ;
-	BYTE * data_value ;
+	const ASCII * path ;
+	unsigned char * read_value ;
+    const unsigned char * write_value ;
 	size_t data_length ;
 	off_t data_offset ;
 	int error_code ;

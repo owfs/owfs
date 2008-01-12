@@ -21,7 +21,10 @@ static void dirlist_callback( void * v, const char * data_element )
     CharblobAdd( data_element, strlen(data_element), cb ) ;
 }
 
-int OWNET_dirlist( OWNET_HANDLE h, const char * onewire_path, char ** return_string )
+int OWNET_dirlist( 
+        OWNET_HANDLE h, 
+        const char * onewire_path, 
+        char ** return_string )
 {
     struct charblob s_charblob ;
     struct charblob * cb = & s_charblob ;
@@ -46,4 +49,24 @@ int OWNET_dirlist( OWNET_HANDLE h, const char * onewire_path, char ** return_str
     
     return_string[0] = cb->blob ;
     return cb->used ;
+}
+
+int OWNET_dirprocess( 
+        OWNET_HANDLE h, 
+        const char * onewire_path,
+        void (*dirfunc) (void * passed_on_value, const char * directory_element),
+        void * passed_on_value ) 
+{
+    struct request_packet s_request_packet ;
+    struct request_packet * rp = & s_request_packet ;
+    memset( rp, 0, sizeof(struct request_packet));
+
+    rp->owserver = find_connection_in(h) ;
+    if ( rp->owserver == NULL ) {
+        return -EBADF ;
+    }
+
+    rp->path = (onewire_path==NULL) ? "/" : onewire_path ;
+    
+    return ServerDir( dirfunc, passed_on_value, rp ) ;
 }

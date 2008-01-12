@@ -27,6 +27,8 @@ extern "C" {
 
 #include <sys/types.h>
 
+#define MAX_READ_BUFFER_SIZE 10000
+
 /* OWNET_HANDLE
    A (non-negative) integer corresponding to a particular owserver connection.
    It is used for each function call, and allows multiple owservers to be
@@ -66,24 +68,46 @@ int OWNET_dirlist( OWNET_HANDLE h, const char * onewire_path, char ** return_str
 int OWNET_dirprocess( OWNET_HANDLE h, const char * onewire_path, void (*dirfunc) (void * passed_on_value, const char * directory_element), void * passed_on_value ) ;
 
 
-/* int OWNET_read( OWNET_HANDLE h, const char * onewire_path, 
-        char * return_string )
+/* int OWNET_get( OWNET_HANDLE h, const char * onewire_path, 
+        unsigned char ** return_string )
    Read a value from a one-wire device property
    return_string has the result but must be free-ed by the calling program.
 
    returns length of result on success,
    returns <0 on error
 */
-int OWNET_read( OWNET_HANDLE h, const char * onewire_path, char ** return_string ) ;
+int OWNET_get( OWNET_HANDLE h, const char * onewire_path, unsigned char ** return_string ) ;
 
-/* int OWNET_write( OWNET_HANDLE h, const char * onewire_path, 
-        const char * value_string, size_t value_length )
-   Write a value to a one-wire device property
+/* int OWNET_lread( OWNET_HANDLE h, const char * onewire_path, 
+        unsigned char * return_string, size_t size, off_t offset )
+   Read a value from a one-wire device property
+   Buffer should be pre-allocated, and size and offset specified.
+   return_string has the result.
+
+   returns length of result on success,
+   returns <0 on error
+*/
+int OWNET_lread( OWNET_HANDLE h, const char * onewire_path, unsigned char * return_string, size_t size, off_t offset ) ;
+
+/* int OWNET_put( OWNET_HANDLE h, const char * onewire_path, 
+        const unsigned char * value_string, size_t size)
+   Write a value to a one-wire device property,
+   of specified size and offset
    
    return 0 on success
    return <0 on error
 */
-int OWNET_write( OWNET_HANDLE h, const char * onewire_path, const char * value_string, size_t value_length ) ;
+int OWNET_put( OWNET_HANDLE h, const char * onewire_path, const unsigned char * value_string, size_t size) ;
+
+/* int OWNET_lwrite( OWNET_HANDLE h, const char * onewire_path, 
+        const unsigned char * value_string, size_t size, off_t offset )
+   Write a value to a one-wire device property,
+   of specified size and offset
+   
+   return 0 on success
+   return <0 on error
+*/
+int OWNET_lwrite( OWNET_HANDLE h, const char * onewire_path, const unsigned char * value_string, size_t size, off_t offset ) ;
 
 /* void OWNET_close( OWNET_HANDLE h)
    close a particular owserver connection

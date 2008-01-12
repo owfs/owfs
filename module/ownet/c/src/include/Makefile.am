@@ -5,9 +5,7 @@ EXTRA_DIST = ${header_DATA} \
         compat_getopt.h   \
         compat.h          \
         compat_netdb.h    \
-        i2c-dev.h         \
         ow_charblob.h     \
-        ow_codes.h        \
         ow_connection.h   \
         ow_debug.h        \
         ow_dl.h           \

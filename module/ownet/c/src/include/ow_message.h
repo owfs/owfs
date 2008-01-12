@@ -65,7 +65,7 @@ struct client_msg {
 };
 
 struct serverpackage {
-	ASCII *path;
+	const ASCII *path;
 	BYTE *data;
 	size_t datasize;
 	BYTE *tokenstring;
