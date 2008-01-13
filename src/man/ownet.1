@@ -1,6 +1,6 @@
 '\"
-'\" Copyright (c) 2003-2006 Paul H Alfille, MD
-'\" (palfille@earthlink.net)
+'\" Copyright (c) 2008 Paul H Alfille, MD
+'\" (palfille@gmail.com)
 '\"
 '\" Library manual page for the OWFS -- 1-wire filesystem package
 '\" Based on Dallas Semiconductor, Inc's datasheets, and trial and error.
@@ -8,47 +8,109 @@
 '\" Free for all use. No waranty. None. Use at your own risk.
 '\" $Id$
 '\"
-.TH OWCAPI 1 2004 "OWFS Manpage" "One-Wire File System"
+.TH OWNET 1 2008 "OWFS Manpage" "One-Wire File System"
 .SH NAME
-.B owcapi
-\- easy C-language 1-wire interface
+.B ownet (libownet)
+\- easy C-language 1-wire interface to the owserver protocol
 .SH SYNOPSIS
-.B libowcapi
+.B libownet
 library to link with your program
+.SS Handle
+.B OWNET_HANDLE
+.br
+Handle to each owserver connection
 .SS Initialization
-.B ssize_t OW_init(
-.I device name or full parameter string
+.B OWNET_HANDLE OWNET_init( const char * 
+.I owserver_tcp_address_and_port 
 .B )
 .br
-.B ssize_t OW_init_args(
-.I int argc, char ** args
+Associate an 
+.B owserver (1)
+tcp/ip address with a handle.
+.SS Directory listing
+.B int OWNET_dirlist( OWNET_HANDLE 
+.I owserver_handle 
+.B , const char * 
+.I onewire_path
+.B , char ** 
+.I comma_separated_list 
 .B )
+.br
+Create a comma-separated list of directory elements.
 .PP
-The full set of initialization options is extensive. They correspond roughly to the command line options of
-.B owfs (1)
-.B owhttpd (1)
-and
-.B owftpd (1)
+.B int OWNET_dirprocess( OWNET_HANDLE 
+.I owserver_handle 
+.B , const char * 
+.I onewire_path
+.B , void (*
+.I dirfunc
+.B ) (void *, const char *), void * 
+.I passed_on_value 
+.B )
+.br
+.B void 
+.I dirfunc
+.B ( void *
+.I passed_on_value
+.B , const char *
+.I directory_element
+.B )
+.br
+Apply function 
+.I dirfunc
+to each directory element, along with an arbitrary passed_on_value.
 .SS Get data
-.B int OW_get{
-.I const char * path, char ** buffer, size_t * buffer_length
+.B int OWNET_put( OWNET_HANDLE 
+.I owserver_handle 
+.B , const char * 
+.I onewire_path
+.B , const unsigned char * 
+.I value_string
+.B , size_t 
+.I size
 .B )
 .br
-.B ssize_t OW_lread(
-.I const char * path, unsigned char * buffer, const size_t size, const off_t offset
-.B )
-.SS Set data
-.B ssize_t OW_put{
-.I const char * path, const char * buffer, size_t * buffer_length
+Write a value (of specified size) to a 1-wire device.
+.PP
+.B int OWNET_lwrite( OWNET_HANDLE 
+.I owserver_handle 
+.B , const char * 
+.I onewire_path
+.B , const unsigned char * 
+.I value_string
+.B , size_t 
+.I size
+.B , off_t 
+.I offset
 .B )
 .br
-.B ssize_t OW_lwrite(
-.I const char * path, const unsigned char * buffer, const size_t size, const off_t offset
-.B )
+Write a value (of specified size and offset) to a 1-wire device.
 .SS Close
-.B void OW_finish{
-.I void
+.B void OWNET_close( OWNET_HANDLE 
+.I owserver_handle 
 .B )
+.br
+Close the connection to a particular owserver.
+.PP
+.B void OWNET_closeall( void )
+.br
+Close all open owserver connections.
+.SS Temperature scale
+.B void OWNET_set_temperature_scale( char 
+.I temperature_scale
+.B )
+.br
+.B char OWNET_get_temperature_scale( void )
+.br
+Set and retrieve the temperature scale used for all communications.
+.SS Device format
+.B void OWNET_set_device_format( const char * 
+.K device_format
+.B )
+.br
+.B const char * OWNET_get_device_format( void )
+.br
+Set and retrieve the 1-wire device serial number format used for all communications.
 .SH FUNCTIONS
 .SS OW_init
 .I OW_init_string
