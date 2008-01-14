@@ -38,23 +38,12 @@ or
 .B owhttpd(1)
 for choices. Default is Celsius.
 Conversion takes 1 second.
-.SS temphigh templow
-.I read-write. floating point
-.br
-Temperature limits for alarms. Units are selected from the invoking command line. See
-.B owfs(1)
-or
-.B owhttpd(1)
-for choices. Default is Celsius.
-.br
-Note that alarms are not implemented.
+.so temperature_threshold
 .SH STANDARD PROPERTIES
 .SS type
 .I read-only, ascii
 .br
 Chip type: DS1821
-.SH ALARMS
-None implemented.
 .SH DESCRIPTION
 .so description
 .SS DS1821

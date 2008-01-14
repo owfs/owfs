@@ -41,10 +41,6 @@ Thermometer.
 .PP
 .I 10
 .SH SPECIAL PROPERTIES
-.SS die
-.I read-only,ascii
-.br
-Two character manufacturing die lot. "B6" "B7" or "C2"
 .SS power
 .I read-only,yes-no
 .br
@@ -58,41 +54,11 @@ read by the chip at high resolution (~12 bits). Units are selected from the invo
 or
 .B owhttpd(1)
 for choices. Default is Celsius.
-Conversion takes 750 msec.
-.SS temphigh templow
-.I read-write. floating point
-.br
-Temperature limits for alarms. Units are selected from the invoking command line. See
-.B owfs(1)
-or
-.B owhttpd(1)
-for choices. Default is Celsius.
-.br
-Note that alarms are not implemented.
-.SS trim
-.I read-write,unsigned integer
-.br
-32 bit trim value in the EEPROM of the chip. When written, it does not seem to read back. Used for a production problem in the B7
-.I die.
-See AN247.pdf
-.br
-Read allowed for all chips. Only the B7 chips can be written.
-.SS trimblanket
-.I read-write,yes-no
-.br
-Writing non-zero (=1) puts a default trim value in the chip. Only applied to the B7
-.I die.
-Reading will be true (non-zero) if trim value is the blanket value. Again, only B7 chips will register true, and since the written trim values cannot be read, this value may have little utility.
-.SS trimvalid
-.I read-only,yes-no
-.br
-Is the 
-.I trim 
-value in the valid range? Non-zero if true, which includes all non-B7 chips.
+Conversion takes 1000 msec.
+.so temperature_threshold
+.so temperature_errata
 .SH STANDARD PROPERTIES
 .so standard
-.SH ALARMS
-None implemented.
 .SH DESCRIPTION
 .so description
 .SS DS18S20 DS1920

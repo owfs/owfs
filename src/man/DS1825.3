@@ -33,7 +33,6 @@ Thermometer with hardware address pins.
 .PP
 .I 3B
 .SH SPECIAL PROPERTIES
-.so temperatures
 .SS power
 .I read-only,yes-no
 .br
@@ -46,20 +45,21 @@ A distiguishing feature of the
 is the ability to set hardware pins for an address (0-15). This is an alternative to the unique 64-bit
 .I address
 that is set in the factory.
-.SS temphigh templow
-.I read-write. floating point
+.SS temperature
+.I read-only, floating point
 .br
-Temperature limits for alarms. Units are selected from the invoking command line. See
-.B owfs(1)
-or
-.B owhttpd(1)
-for choices. Default is Celsius.
+Measured temperature with 12 bit resolution. 
+.SS temperature9 temperature10 temperature11 temperature12
+.I read-only, floating point
+Measured temperature at 9 to 12 bit resolution. There is a tradeoff of time versus accuracy in the temperature measurement.
+.SS fasttemp
+.I read-only, floating point
 .br
-Note that alarms are not implemented.
+Equivalent to
+.I temperature9
+.so temperature_threshold
 .SH STANDARD PROPERTIES
 .so standard
-.SH ALARMS
-None implemented.
 .SH DESCRIPTION
 .so description
 .SS DS1825
