@@ -155,13 +155,20 @@ if test -n "$PYTHON"; then
         AC_MSG_RESULT($PYLIB)
     fi
 
+    AC_MSG_CHECKING(for Python LDFLAGS)
     # Check for really old versions
     if test -r $PYLIB/libPython.a; then
          PYLINK="-lModules -lPython -lObjects -lParser"
     else
-         PYLINK="-l$PYVERSION"
+	if test ! -r $PYLIB/lib$PYVERSION.so -a -r $PYLIB/lib$PYVERSION.a ; then
+		# python2.2 on FC1 need this
+		PYLINK="$PYLIB/lib$PYVERSION.a"
+	else
+		PYLINK="-l$PYVERSION"
+	fi
     fi
     PYLDFLAGS="$PYLINK"
+    AC_MSG_RESULT($PYLDFLAGS)
 fi
 fi
 
