@@ -259,7 +259,10 @@ case "$RPM_BUILD_ROOT" in *-root) rm -rf $RPM_BUILD_ROOT ;; esac
 make install \
 	DESTDIR=$RPM_BUILD_ROOT
 
-rm -f $RPM_BUILD_ROOT/usr/lib*/libowperl.*
+rm -f $RPM_BUILD_ROOT%{_libdir}/libowperl.*
+for f in $RPM_BUILD_ROOT%{prefix}/lib/lib* ; do
+   mv $f $RPM_BUILD_ROOT%{_libdir}/
+done
 
 install -d -m 755 $RPM_BUILD_ROOT%{prefix}/include/owfs
 mv -f $RPM_BUILD_ROOT%{prefix}/include/*.h $RPM_BUILD_ROOT%{prefix}/include/owfs
@@ -317,11 +320,11 @@ rm -f $RPM_BUILD_ROOT%{perl_sitearch}/auto/OWNet/.packlist
 %if %{build_python}
 %endif
 %if %{build_php}
-#rm -f $RPM_BUILD_ROOT%{prefix}/lib*/php*/modules/libowphp.la $RPM_BUILD_ROOT%{prefix}/lib*/php*/modules/libowphp.a
-rm -f $RPM_BUILD_ROOT@PHPLIBDIR@/libowphp.la $RPM_BUILD_ROOT@PHPLIBDIR@/libowphp.a
+rm -f $RPM_BUILD_ROOT%{_libdir}/php*/modules/libowphp.la $RPM_BUILD_ROOT%{_libdir}/php*/modules/libowphp.a
+#rm -f $RPM_BUILD_ROOT/usr/lib/php/modules/libowphp.la $RPM_BUILD_ROOT/usr/lib/php/modules/libowphp.a
 %endif
 %if %{build_tcl}
-rm -f $RPM_BUILD_ROOT%{prefix}/lib*/owtcl-*/ow.la $RPM_BUILD_ROOT%{prefix}/lib*/owtcl-*/ow.a
+rm -f $RPM_BUILD_ROOT%{_libdir}/owtcl-*/ow.la $RPM_BUILD_ROOT%{_libdir}/owtcl-*/ow.a
 %endif
 
 #mv -f $RPM_BUILD_ROOT%{prefix}/bin/* $RPM_BUILD_ROOT%{prefix}/sbin
@@ -371,26 +374,6 @@ if [ $1 = 0 ]; then
 fi
 %endif
 
-%if %{build_shell}
-%post shell
-/sbin/chkconfig --add owshell
-
-%preun shell
-if [ $1 = 0 ]; then
-    /sbin/chkconfig --del owshell
-fi
-%endif
-
-%if %{build_man}
-%post man
-/sbin/chkconfig --add owman
-
-%preun man
-if [ $1 = 0 ]; then
-    /sbin/chkconfig --del owman
-fi
-%endif
-
 %if %{build_server}
 %post server
 /sbin/chkconfig --add owserver
@@ -405,20 +388,20 @@ fi
 %defattr(-,root,root)
 %doc README NEWS INSTALL ChangeLog AUTHORS COPYING
 %{prefix}/include/owfs/owfs_config.h
-%{prefix}/lib/libow-*.so*
-%{prefix}/lib/libow.so
-%{prefix}/lib/libow.a
-%{prefix}/lib/libow.la
+%{_libdir}/libow-*.so*
+%{_libdir}/libow.so
+%{_libdir}/libow.a
+%{_libdir}/libow.la
 %{_mandir}/man3/*.3.gz
 
 %if %{build_capi}
 %files capi
 %defattr(-,root,root)
 %{prefix}/include/owfs/owcapi.h
-%{prefix}/lib/libowcapi-*.so*
-%{prefix}/lib/libowcapi.so
-%{prefix}/lib/libowcapi.a
-%{prefix}/lib/libowcapi.la
+%{_libdir}/libowcapi-*.so*
+%{_libdir}/libowcapi.so
+%{_libdir}/libowcapi.a
+%{_libdir}/libowcapi.la
 %{_mandir}/man1/*owcapi.1.gz
 %endif
 
@@ -536,10 +519,10 @@ fi
 %if %{build_php}
 %files php
 %defattr(-,root,root)
-%dir @PHPLIBDIR@
-@PHPLIBDIR@/libowphp.so*
-#%dir %{prefix}/lib*/php*/modules
-#%{prefix}/lib*/php*/modules/libowphp.so*
+#%dir /usr/lib/php/modules
+#/usr/lib/php/modules/libowphp.so*
+%dir %{prefix}/lib*/php*/modules
+%{prefix}/lib*/php*/modules/libowphp.so*
 %{prefix}/bin/ownet.php
 %endif
 
@@ -556,6 +539,10 @@ fi
 
 
 %changelog
+* Tue Jan 15 2008 Serg Oskin <serg@oskin.ru>
+- no scripts for owshell
+- x86_64 support (Not fully tested)
+
 * Sat Sep 30 2006 Paul Alfille <paul.alfille@gmail.com>
 - added shell programs, removed nfsd
 
