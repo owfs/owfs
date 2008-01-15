@@ -261,26 +261,28 @@ static int FS_22temp(struct one_wire_query * owq)
 	return -ENODEV;
 }
 
+// use sibling function for fasttemp to keep cache value consistent
 static int FS_fasttemp(struct one_wire_query * owq)
 {
-    _FLOAT T;
     OWQ_allocate_struct_and_pointer( owq_sibling ) ;
 
     OWQ_create_shallow_single( owq_sibling, owq) ;
 
     if ( FS_read_sibling( "temperature9", owq_sibling ) ) return -EINVAL ;
     OWQ_F(owq) = OWQ_F(owq_sibling) ;
+    return  0 ;
 }
 
+// use sibling function for temperature to keep cache value consistent
 static int FS_slowtemp(struct one_wire_query * owq)
 {
-    _FLOAT T;
     OWQ_allocate_struct_and_pointer( owq_sibling ) ;
 
     OWQ_create_shallow_single( owq_sibling, owq) ;
 
     if ( FS_read_sibling( "temperature12", owq_sibling ) ) return -EINVAL ;
     OWQ_F(owq) = OWQ_F(owq_sibling) ;
+    return  0 ;
 }
 
 static int FS_power(struct one_wire_query * owq)
