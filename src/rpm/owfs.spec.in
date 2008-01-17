@@ -1,6 +1,7 @@
 %define build_fs 1
 %define build_httpd 1
 %define build_capi 1
+%define build_ownet 1
 %define build_ftpd 1
 %define build_server 1
 %define build_perl 1
@@ -49,6 +50,16 @@ Requires: %{name}-libs = %{version}
 
 %description capi
 %{name}-capi library on top of libow providing an easy API to develop third-part applications to access to 1-Wire networks.
+%endif
+
+%if %{build_ownet}
+%package ownet
+Summary: C-API to develop third-part applications which access 1-Wire networks.
+Group: System Environment/Libraries
+Requires: %{name}-libs = %{version}
+
+%description ownet
+%{name}-ownet library provids an easy API to develop third-part applications to access to 1-Wire networks. It doesn't depend on owlib, and only supports remote-server connections. This library doesn't include any 1-wire adapter support, except server connections.
 %endif
 
 %if %{build_fs}
@@ -209,6 +220,11 @@ automake -a -c
 	--enable-owcapi \
 %else
 	--disable-owcapi \
+%endif
+%if %{build_ownet}
+	--enable-ownetlib \
+%else
+	--disable-ownetlib \
 %endif
 %if %{build_ftpd}
 	--enable-owftpd \
@@ -403,6 +419,17 @@ fi
 %{_libdir}/libowcapi.a
 %{_libdir}/libowcapi.la
 %{_mandir}/man1/*owcapi.1.gz
+%endif
+
+%if %{build_ownet}
+%files ownet
+%defattr(-,root,root)
+%{prefix}/include/owfs/ownetapi.h
+%{_libdir}/libownet-*.so*
+%{_libdir}/libownet.so
+%{_libdir}/libownet.a
+%{_libdir}/libownet.la
+#%{_mandir}/man1/*ownet.1.gz
 %endif
 
 %if %{build_fs}
