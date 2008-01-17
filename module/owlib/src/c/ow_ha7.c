@@ -46,6 +46,10 @@ static int HA7_sendback_data(const BYTE * data, BYTE * resp,
 static int HA7_select_and_sendback(const BYTE * data, BYTE * resp,
                              const size_t len,
                              const struct parsedname *pn);
+static int HA7_sendback_block(const BYTE * data, BYTE * resp,
+                              const size_t size,
+                              int also_address,
+                              const struct parsedname *pn);
 static int HA7_select(const struct parsedname *pn);
 static void HA7_setroutines(struct connection_in *in);
 static void HA7_close(struct connection_in *in);
@@ -404,53 +408,27 @@ static int HA7_select_and_sendback(const BYTE * data, BYTE * resp,
                              const size_t size,
                              const struct parsedname *pn)
 {
-	int file_descriptor;
-	struct memblob mb ;
-	struct toHA7 ha7;
-	int ret = -EIO;
-	
-	if ((MAX_FIFO_SIZE >> 1) < size) {
-		size_t half = size >> 1;
-		if (HA7_select_and_sendback(data, resp, half, pn)) {
-			return -EIO;
-		}
-		return HA7_sendback_data(&data[half], &resp[half], size - half, pn);
-	}
+    size_t location = 0 ;
+    int also_address = 1 ;
 
-	if ((file_descriptor = ClientConnect(pn->selected_connection)) < 0) {
-		return -EIO;
-	}
+    while ( location < size ) {
+        size_t block = size - location ;
+        if ( block > 32 ) {
+            block = 32 ;
+        }
 
-	toHA7init(&ha7);
-	ha7.command = "WriteBlock";
-	ha7.data = data;
-	ha7.length = size;
-	setHA7address(&ha7, pn->sn);
-    
-	if (HA7_toHA7(file_descriptor, &ha7, pn->selected_connection) == 0 ) {
-		if ( HA7_read(file_descriptor, &mb) == 0 ) {
-			ASCII *p = (ASCII *) mb.memory_storage;
-			if ((p = strstr(p, "<INPUT TYPE=\"TEXT\" NAME=\"ResultData_0\""))
-				&& (p = strstr(p, "VALUE=\""))) {
-				p += 7;
-				LEVEL_DEBUG("HA7_sendback_data received(%d): %.*s\n", size * 2, size * 2, p);
-				if (strspn(p, "0123456789ABCDEF") >= size << 1) {
-					string2bytes(p, resp, size);
-					ret = 0;
-				}
-			}
-			MemblobClear( &mb );
-		} else {
-			STAT_ADD1_BUS( e_bus_read_errors, pn->selected_connection ) ;
-		}
-	}
-	close(file_descriptor);
-	return ret;
+        // Don't add address (that's the "0")
+        if ( HA7_sendback_block( &data[location], &resp[location], block, also_address, pn ) ) {
+            return -EIO ;
+        }
+        location += block ;
+        also_address = 0 ; //for subsequent blocks
+    }
+    return 0 ;
 }
 
 // DS2480_sendback_data
 //  Send data and return response block
-//  puts into data mode if needed.
 /* return 0=good
    sendout_data, readin
  */
@@ -458,47 +436,66 @@ static int HA7_sendback_data(const BYTE * data, BYTE * resp,
                              const size_t size,
                              const struct parsedname *pn)
 {
+    size_t location = 0 ;
+
+    while ( location < size ) {
+        size_t block = size - location ;
+        if ( block > 32 ) {
+            block = 32 ;
+        }
+
+        // Don't add address (that's the "0")
+        if ( HA7_sendback_block( &data[location], &resp[location], block, 0, pn ) ) {
+            return -EIO ;
+        }
+        location += block ;
+    }
+    return 0 ;
+}
+
+// HA7 only allows WriteBlock of 32 bytes
+// This routine assumes that larger writes have already been broken up
+static int HA7_sendback_block(const BYTE * data, BYTE * resp,
+                             const size_t size,
+                             int also_address, 
+                             const struct parsedname *pn)
+{
     int file_descriptor;
     struct memblob mb ;
     struct toHA7 ha7;
     int ret = -EIO;
     
-	if ((MAX_FIFO_SIZE >> 1) < size) {
-		size_t half = size >> 1;
-		if (HA7_sendback_data(data, resp, half, pn)) {
-			return -EIO;
-		}
-		return HA7_sendback_data(&data[half], &resp[half], size - half, pn);
-	}
+    if ((file_descriptor = ClientConnect(pn->selected_connection)) < 0) {
+        return -EIO;
+    }
 
-	if ((file_descriptor = ClientConnect(pn->selected_connection)) < 0) {
-		return -EIO;
-	}
-
-	toHA7init(&ha7);
-	ha7.command = "WriteBlock";
-	ha7.data = data;
-	ha7.length = size;
+    toHA7init(&ha7);
+    ha7.command = "WriteBlock";
+    ha7.data = data;
+    ha7.length = size;
+    if ( also_address ) {
+        setHA7address(&ha7, pn->sn);
+    }
     
-	if (HA7_toHA7(file_descriptor, &ha7, pn->selected_connection) == 0 ) {
-		if ( HA7_read(file_descriptor, &mb) == 0 ) {
-			ASCII *p = (ASCII *) mb.memory_storage;
-			if ((p = strstr(p, "<INPUT TYPE=\"TEXT\" NAME=\"ResultData_0\""))
-				&& (p = strstr(p, "VALUE=\""))) {
-				p += 7;
-				LEVEL_DEBUG("HA7_sendback_data received(%d): %.*s\n", size * 2, size * 2, p);
-				if (strspn(p, "0123456789ABCDEF") >= size << 1) {
-					string2bytes(p, resp, size);
-					ret = 0;
-				}
-			}
-			MemblobClear( &mb );
-		} else {
-			STAT_ADD1_BUS( e_bus_read_errors, pn->selected_connection ) ;
-		}
-	}
-	close(file_descriptor);
-	return ret;
+    if (HA7_toHA7(file_descriptor, &ha7, pn->selected_connection) == 0 ) {
+        if ( HA7_read(file_descriptor, &mb) == 0 ) {
+            ASCII *p = (ASCII *) mb.memory_storage;
+            if ((p = strstr(p, "<INPUT TYPE=\"TEXT\" NAME=\"ResultData_0\""))
+                 && (p = strstr(p, "VALUE=\""))) {
+                p += 7;
+                LEVEL_DEBUG("HA7_sendback_data received(%d): %.*s\n", size * 2, size * 2, p);
+                if (strspn(p, "0123456789ABCDEF") >= size << 1) {
+                    string2bytes(p, resp, size);
+                    ret = 0;
+                }
+                 }
+                 MemblobClear( &mb );
+        } else {
+            STAT_ADD1_BUS( e_bus_read_errors, pn->selected_connection ) ;
+        }
+    }
+    close(file_descriptor);
+    return ret;
 }
 
 static void setHA7address(struct toHA7 *ha7, const BYTE * sn)

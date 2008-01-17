@@ -24,6 +24,8 @@ $Id$
 /* Multicast to discover HA7 servers */
 /* Wait 10 seconds for responses */
 /* returns number found (>=0) or <0 on error */
+/* Taken from Embedded Data Systems' documentation */
+/* http://www.talk1wire.com/?q=node/7 */
 # define HA7_response_len 84
 int FS_FindHA7(void)
 {
@@ -31,22 +33,25 @@ int FS_FindHA7(void)
 	struct addrinfo hint;
 	struct addrinfo *now;
 	int ret = -1;
+    int on = 1 ;
 	int n;
 
 	memset(&hint, 0, sizeof(struct addrinfo));
-	hint.ai_flags = AI_CANONNAME;
+	hint.ai_flags = AI_CANONNAME | AI_NUMERICHOST | AI_NUMERICSERV ;
 	hint.ai_family = AF_INET;
 	hint.ai_socktype = SOCK_DGRAM;
 	hint.ai_protocol = 0;
-	if ((n = getaddrinfo("224.1.2.3", "4567", &hint, &ai))) {
+    printf("FS_FindHA7 0\n");
+    if ((n = getaddrinfo("224.1.2.3", "4567", &hint, &ai))) {
 		LEVEL_CONNECT("Couldn't set up HA7 broadcast message %s\n",
 					  gai_strerror(n));
 		return -ENOENT;
 	}
+    printf("FS_FindHA7 1\n");
 
 	for (now = ai; now; now = now->ai_next) {
 		BYTE buffer[HA7_response_len];
-		struct timeval tv = { 5, 0 };
+		struct timeval tv = { 50, 0 };
 		int file_descriptor;
 		struct sockaddr_in from;
 		ASCII name[64];
@@ -57,6 +62,10 @@ int FS_FindHA7(void)
 					now->ai_protocol)) < 0)
 			continue;
 		printf("Finding file_descriptor=%d\n", file_descriptor);
+        if ( setsockopt(file_descriptor,SOL_SOCKET,SO_BROADCAST,&on,sizeof(on)) == -1 ) {
+            ERROR_DEBUG("Cannot set socket option for broadcast.\n");
+            return -EIO ;
+        }
 		if (sendto(file_descriptor, "HA\000\001", 4, 0, now->ai_addr, now->ai_addrlen)
 			!= 4) {
 			ERROR_CONNECT("Trouble sending broadcast message\n");
@@ -67,6 +76,7 @@ int FS_FindHA7(void)
 			ret = 0;			// possible read -- no default error
 
 		/* now read */
+        printf("FS_FindHA7 2\n");
 
 		if ((n =
 			 tcp_read(file_descriptor, buffer, HA7_response_len,
@@ -75,7 +85,7 @@ int FS_FindHA7(void)
 			printf("HA7 response bad length %d\n", n);
 			continue;
 		}
-		printf("Read in the corrent length\n");
+		printf("Read in the correct length\n");
 		if (memcmp("HA\x80\x01", buffer, 4)) {
 			LEVEL_CONNECT("HA7 response content error\n");
 			continue;
@@ -91,7 +101,8 @@ int FS_FindHA7(void)
 		in->name = strdup(name);
 		in->busmode = bus_ha7net;
 	}
-	freeaddrinfo(ai);
+    printf("FS_FindHA7 4\n");
+    freeaddrinfo(ai);
 	return ret;
 }
 #endif							/* OW_HA7 */

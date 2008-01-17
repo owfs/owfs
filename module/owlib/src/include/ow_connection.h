@@ -98,7 +98,7 @@ extern int global_count_tester_busses;
 #define USB_FIFO_READ 0
 #define USB_FIFO_WRITE USB_FIFO_EACH
 #define USB_FIFO_SIZE ( USB_FIFO_EACH + USB_FIFO_EACH )
-#define HA7_FIFO_SIZE 32000
+#define HA7_FIFO_SIZE 128
 #define LINK_FIFO_SIZE UART_FIFO_SIZE
 #define LINKE_FIFO_SIZE 1500
 #define I2C_FIFO_SIZE 1

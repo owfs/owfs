@@ -256,16 +256,17 @@ static int FS_w_pio(struct one_wire_query * owq)
 static int OW_r_mem(BYTE * data, const size_t size, const off_t offset,
 					const struct parsedname *pn)
 {
-    BYTE p[3 + 128 + 2] = { _1W_READ_MEMORY, LOW_HIGH_ADDRESS(offset), };
+    BYTE p[3 + 128] = { _1W_READ_MEMORY, LOW_HIGH_ADDRESS(offset), };
 	struct transaction_log t[] = {
 		TRXN_START,
         TRXN_WRITE3( p ),
-        TRXN_READ( &p[3], 128 + 2 - offset ),
+        TRXN_READ( &p[3], size ),
 		TRXN_END,
 	};
 
-	if (BUS_transaction(t, pn) || CRC16(p, 3 + 128 + 2 - offset))
+    if (BUS_transaction(t, pn)) {
 		return 1;
+    }
 
 	memcpy(data, &p[3], size);
 	return 0;

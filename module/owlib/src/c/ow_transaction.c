@@ -262,6 +262,7 @@ static int Bundle_enroute( struct transaction_bundle * tb, const struct parsedna
 static int Pack_item( const struct transaction_log * tl, struct transaction_bundle * tb )
 { 
     int ret = 0 ; //default return value for good packets;
+    //printf("PACK_ITEM used=%d size=%d max=%d\n",tb->mb.used,tl->size,tb->max_size);
     switch (tl->type) {
         case trxn_select: // select a 1-wire device (by unique ID)
 		LEVEL_DEBUG("Transaction Bundle: pack=SELECT\n") ;
