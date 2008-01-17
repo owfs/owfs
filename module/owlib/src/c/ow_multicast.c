@@ -37,7 +37,11 @@ int FS_FindHA7(void)
 	int n;
 
 	memset(&hint, 0, sizeof(struct addrinfo));
+#ifdef AI_NUMERICSERV
 	hint.ai_flags = AI_CANONNAME | AI_NUMERICHOST | AI_NUMERICSERV ;
+#else
+	hint.ai_flags = AI_CANONNAME | AI_NUMERICHOST ;
+#endif
 	hint.ai_family = AF_INET;
 	hint.ai_socktype = SOCK_DGRAM;
 	hint.ai_protocol = 0;
