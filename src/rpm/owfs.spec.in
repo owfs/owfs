@@ -67,7 +67,7 @@ Requires: %{name}-libs = %{version}
 Summary: Virtual filesystem on top of %{name}-libs providing access to 1-Wire networks.
 Group: System Environment/Daemon
 Requires: %{name}-libs = %{version}, fuse >= 1.0
-BuildRequires: fuse-devel >= 1.0
+#BuildRequires: fuse-devel >= 1.0
 
 %description fs
 %{name}-fs is a virtual filesystem on top of %{name}-libs providing access to 1-Wire networks.
@@ -203,6 +203,7 @@ autoconf
 automake -a -c
 ./configure \
 	--prefix=%{prefix} \
+	--libdir=%{_libdir} \
 	--enable-usb \
 	--enable-cache \
 	--enable-mt \
@@ -275,11 +276,6 @@ case "$RPM_BUILD_ROOT" in *-root) rm -rf $RPM_BUILD_ROOT ;; esac
 make install \
 	DESTDIR=$RPM_BUILD_ROOT
 
-rm -f $RPM_BUILD_ROOT%{_libdir}/libowperl.*
-for f in $RPM_BUILD_ROOT%{prefix}/lib/lib* ; do
-   mv $f $RPM_BUILD_ROOT%{_libdir}/
-done
-
 install -d -m 755 $RPM_BUILD_ROOT%{prefix}/include/owfs
 mv -f $RPM_BUILD_ROOT%{prefix}/include/*.h $RPM_BUILD_ROOT%{prefix}/include/owfs
 
@@ -336,8 +332,7 @@ rm -f $RPM_BUILD_ROOT%{perl_sitearch}/auto/OWNet/.packlist
 %if %{build_python}
 %endif
 %if %{build_php}
-rm -f $RPM_BUILD_ROOT%{_libdir}/php*/modules/libowphp.la $RPM_BUILD_ROOT%{_libdir}/php*/modules/libowphp.a
-#rm -f $RPM_BUILD_ROOT/usr/lib/php/modules/libowphp.la $RPM_BUILD_ROOT/usr/lib/php/modules/libowphp.a
+rm -f $RPM_BUILD_ROOT@PHPLIBDIR@/libowphp.la $RPM_BUILD_ROOT@PHPLIBDIR@/libowphp.a
 %endif
 %if %{build_tcl}
 rm -f $RPM_BUILD_ROOT%{_libdir}/owtcl-*/ow.la $RPM_BUILD_ROOT%{_libdir}/owtcl-*/ow.a
@@ -357,6 +352,14 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/owtcl-*/ow.la $RPM_BUILD_ROOT%{_libdir}/owtcl-*/
 /sbin/ldconfig
 
 %postun capi
+/sbin/ldconfig
+%endif
+
+%if %{build_ownet}
+%post ownet
+/sbin/ldconfig
+
+%postun ownet
 /sbin/ldconfig
 %endif
 
@@ -469,9 +472,9 @@ fi
 %endif
 
 %if %{build_python}
-#%dir %{prefix}/lib*/python*/site-packages/ow
-#%{prefix}/lib*/python*/site-packages/ow/__init__.py*
-#%{prefix}/lib*/python*/site-packages/ow/_OW.so
+#%dir %{_libdir}/python*/site-packages/ow
+#%{_libdir}/python*/site-packages/ow/__init__.py*
+#%{_libdir}/python*/site-packages/ow/_OW.so
 # include ownet-python (it's a duplicate since it's in owfs-python too)
 %dir %{prefix}/lib*/python*/site-packages/ownet
 %{prefix}/lib*/python*/site-packages/ownet/__init__.py*
@@ -535,9 +538,9 @@ fi
 %if %{build_python}
 %files python
 %defattr(-,root,root)
-%dir %{prefix}/lib*/python*/site-packages/ow
-%{prefix}/lib*/python*/site-packages/ow/__init__.py*
-%{prefix}/lib*/python*/site-packages/ow/_OW.so
+%dir %{_libdir}/python*/site-packages/ow
+%{_libdir}/python*/site-packages/ow/__init__.py*
+%{_libdir}/python*/site-packages/ow/_OW.so
 %dir %{prefix}/lib*/python*/site-packages/ownet
 %{prefix}/lib*/python*/site-packages/ownet/__init__.py*
 %{prefix}/lib*/python*/site-packages/ownet/connection.py*
@@ -546,26 +549,28 @@ fi
 %if %{build_php}
 %files php
 %defattr(-,root,root)
-#%dir /usr/lib/php/modules
-#/usr/lib/php/modules/libowphp.so*
-%dir %{prefix}/lib*/php*/modules
-%{prefix}/lib*/php*/modules/libowphp.so*
+%dir @PHPLIBDIR@
+@PHPLIBDIR@/libowphp.so*
 %{prefix}/bin/ownet.php
 %endif
 
 %if %{build_tcl}
 %files tcl
 %defattr(-,root,root)
-%dir %{prefix}/lib*/owtcl-*
-%{prefix}/lib*/owtcl-*/ow-*.so
-%{prefix}/lib*/owtcl-*/ow.so
-%{prefix}/lib*/owtcl-*/ow.tcl
-%{prefix}/lib*/owtcl-*/pkgIndex.tcl
+%dir %{_libdir}/owtcl-*
+%{_libdir}/owtcl-*/ow-*.so
+%{_libdir}/owtcl-*/ow.so
+%{_libdir}/owtcl-*/ow.tcl
+%{_libdir}/owtcl-*/pkgIndex.tcl
 %{_mandir}/mann/owtcl.n.gz
 %endif
 
 
 %changelog
+
+* Tue Jan 19 2008 Christian Magnusson <mag@mag.cx>
+- x86_64 support, tested on i386 and x86_64
+
 * Tue Jan 15 2008 Serg Oskin <serg@oskin.ru>
 - no scripts for owshell
 - x86_64 support (Not fully tested)
