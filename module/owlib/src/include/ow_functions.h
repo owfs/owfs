@@ -138,7 +138,7 @@ int FS_busless(char *path);
 
 /* Cache  and Storage functions */
 #include "ow_cache.h"
-void FS_LoadDirectoryOnly(BYTE * sn, const struct parsedname *pn);
+void FS_LoadDirectoryOnly(struct parsedname * pn_directory, const struct parsedname *pn_original) ;
 
 int Simul_Test(const enum simul_type type, const struct parsedname *pn);
 int FS_poll_convert(const struct parsedname *pn);

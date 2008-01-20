@@ -284,6 +284,7 @@ int Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn)
 	time_t duration = TimeOut(fc_directory);
 	struct tree_node *tn;
 	size_t size = db->devices * 8;
+    struct parsedname pn_directory ;
 	//printf("Cache_Add_Dir\n") ;
 	if (!pn)
 		return 0;				// do check here to avoid needless processing
@@ -299,8 +300,9 @@ int Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn)
 
 	LEVEL_DEBUG("Cache_Add_Dir " SNformat " elements=%d\n", SNvar(pn->sn),
 				(int) (db->devices));
-    FS_LoadDirectoryOnly(tn->tk.sn, pn);
-	tn->tk.p = pn->selected_connection;
+    FS_LoadDirectoryOnly(&pn_directory, pn);
+    memcpy(tn->tk.sn, pn_directory.sn, 8);
+    tn->tk.p = pn->selected_connection;
 	tn->tk.extension = 0;
 	tn->expires = duration + time(NULL);
 	tn->dsize = size;
@@ -620,6 +622,7 @@ int Cache_Get_Dir(struct dirblob *db, const struct parsedname *pn)
 {
 	time_t duration = TimeOut(fc_directory);
 	struct tree_node tn;
+    struct parsedname pn_directory ;
 	DirblobInit(db);
 	//printf("Cache_Get_Dir\n") ;
 	if (duration <= 0)
@@ -628,8 +631,9 @@ int Cache_Get_Dir(struct dirblob *db, const struct parsedname *pn)
 	LEVEL_DEBUG("Cache_Get_Dir " SNformat "\n", SNvar(pn->sn));
 	//printf("GetDir tn=%p\n",tn) ;
 	memset(&tn.tk, 0, sizeof(struct tree_key));
-    FS_LoadDirectoryOnly(tn.tk.sn, pn);
-	tn.tk.p = pn->selected_connection;
+    FS_LoadDirectoryOnly(&pn_directory, pn);
+    memcpy(tn.tk.sn, pn_directory.sn,8);
+    tn.tk.p = pn->selected_connection;
 	tn.tk.extension = 0;
 	return Get_Stat(&cache_dir, Cache_Get_Common_Dir(db, duration, &tn));
 }
@@ -880,13 +884,15 @@ int Cache_Del(const struct parsedname *pn)
 int Cache_Del_Dir(const struct parsedname *pn)
 {
 	struct tree_node tn;
+    struct parsedname pn_directory ;
 	time_t duration = TimeOut(fc_directory);
 	if (duration <= 0)
 		return 1;
 
 	memset(&tn.tk, 0, sizeof(struct tree_key));
-    FS_LoadDirectoryOnly(tn.tk.sn, pn);
-	tn.tk.p = pn->selected_connection;
+    FS_LoadDirectoryOnly(&pn_directory, pn);
+    memcpy(tn.tk.sn, pn_directory.sn, 8);
+    tn.tk.p = pn->selected_connection;
 	tn.tk.extension = 0;
 	return Del_Stat(&cache_dir, Cache_Del_Common(&tn));
 }

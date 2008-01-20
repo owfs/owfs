@@ -77,10 +77,9 @@ struct internal_prop ipSimul[] = {
 /* returns 0 if valid conversion exists */
 int Simul_Test(const enum simul_type type, const struct parsedname *pn)
 {
-	struct parsedname pn2;
-	memcpy(&pn2, pn, sizeof(struct parsedname));	// shallow copy
-    FS_LoadDirectoryOnly(pn2.sn, &pn2);
-	if (Cache_Get_Internal_Strict(NULL, 0, &ipSimul[type], &pn2)) {
+	struct parsedname pn_directory;
+    FS_LoadDirectoryOnly(&pn_directory, pn);
+	if (Cache_Get_Internal_Strict(NULL, 0, &ipSimul[type], &pn_directory)) {
 		LEVEL_DEBUG("No simultaneous conversion valid.\n");
 		return 1;
 	}
@@ -91,17 +90,15 @@ int Simul_Test(const enum simul_type type, const struct parsedname *pn)
 static int FS_w_convert(struct one_wire_query * owq)
 {
     struct parsedname * pn = PN(owq) ;
-    struct parsedname struct_pn2 ;
-    struct parsedname * pn2 = & struct_pn2 ;
+    struct parsedname pn_directory ;
     
     enum simul_type type = (enum simul_type) pn->selected_filetype->data.i;
-	memcpy(pn2, pn, sizeof(struct parsedname));	// shallow copy
-    FS_LoadDirectoryOnly(pn2->sn, pn2);
-	pn2->selected_device = NULL;				/* only branch select done, not actual device */
+	
+    FS_LoadDirectoryOnly( &pn_directory, pn);
 	/* Since writing to /simultaneous/temperature is done recursive to all
 	 * adapters, we have to fake a successful write even if it's detected
 	 * as a bad adapter. */
-	Cache_Del_Internal(&ipSimul[type], pn2);	// remove existing entry
+	Cache_Del_Internal(&ipSimul[type], &pn_directory);	// remove existing entry
 	CookTheCache();				// make sure all volatile entries are invalidated
     if (OWQ_Y(owq) == 0)
 		return 0;				// don't send convert
@@ -115,10 +112,10 @@ static int FS_w_convert(struct one_wire_query * owq)
                     TRXN_WRITE2( cmd_temp ),
 					TRXN_END,
 				};
-				BUSLOCK(pn2);
-				ret = BUS_transaction_nolock(t, pn2)
-					|| FS_poll_convert(pn2);
-				BUSUNLOCK(pn2);
+				BUSLOCK(&pn_directory);
+				ret = BUS_transaction_nolock(t, &pn_directory)
+					|| FS_poll_convert(&pn_directory);
+				BUSUNLOCK(&pn_directory);
 				//printf("CONVERT (simultaneous temp) ret=%d\n",ret) ;
 			}
 			break;
@@ -130,13 +127,13 @@ static int FS_w_convert(struct one_wire_query * owq)
                     TRXN_DELAY( 5 ),
 					TRXN_END,
 				};
-				ret = BUS_transaction(t, pn2);
+				ret = BUS_transaction(t, &pn_directory);
 				//printf("CONVERT (simultaneous volt) ret=%d\n",ret) ;
 			}
 			break;
 		}
 		if (ret == 0)
-			Cache_Add_Internal(NULL, 0, &ipSimul[type], pn2);
+			Cache_Add_Internal(NULL, 0, &ipSimul[type], &pn_directory);
 	}
 	return 0;
 }
@@ -144,13 +141,11 @@ static int FS_w_convert(struct one_wire_query * owq)
 static int FS_r_convert(struct one_wire_query * owq)
 {
     struct parsedname * pn = PN(owq) ;
-    struct parsedname struct_pn2 ;
-    struct parsedname * pn2 = & struct_pn2 ;
+    struct parsedname pn_directory ;
     
-	memcpy(pn2, pn, sizeof(struct parsedname));	// shallow copy
-    FS_LoadDirectoryOnly(pn2->sn, pn2);
+    FS_LoadDirectoryOnly(&pn_directory, pn);
     OWQ_Y(owq) =
-		(Cache_Get_Internal_Strict(NULL, 0, &ipSimul[pn->selected_filetype->data.i], pn2)
+		(Cache_Get_Internal_Strict(NULL, 0, &ipSimul[pn->selected_filetype->data.i], &pn_directory)
 		 == 0);
 	return 0;
 }
@@ -161,8 +156,7 @@ static int FS_r_present(struct one_wire_query * owq)
     if (pn->selected_connection->Adapter == adapter_fake) {	// fake adapter -- simple memory look
         OWQ_Y(owq) = (pn->selected_connection->connin.fake.db.devices > 0);
 	} else {					// real adapter
-        struct parsedname struct_pn2 ;
-        struct parsedname * pn2 = & struct_pn2 ;
+        struct parsedname pn_directory ;
         BYTE read_ROM[] = { _1W_READ_ROM, };
 		BYTE resp[8];
 		BYTE match[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, };
@@ -177,16 +171,14 @@ static int FS_r_present(struct one_wire_query * owq)
 		if (pn->selected_filetype->data.i)
 			read_ROM[0] = 0x0F;
 
-		memcpy(pn2, pn, sizeof(struct parsedname));	// shallow copy
-        FS_LoadDirectoryOnly(pn2->sn, pn2);
-		pn2->selected_device = NULL;			// directory only
-		if (BUS_transaction(t, pn2))
+        FS_LoadDirectoryOnly(&pn_directory, pn);
+		if (BUS_transaction(t, &pn_directory))
 			return -EINVAL;
 		if (memcmp(resp, match, 8)) {	// some device(s) complained
             OWQ_Y(owq) = 1;			// YES present
 			if (CRC8(resp, 8))
 				return 0;		// crc8 error -- more than one device
-			OW_single2cache(resp, pn2);
+			OW_single2cache(resp, &pn_directory);
 		} else {				// no devices
             OWQ_Y(owq) = 0;
 		}
@@ -205,8 +197,7 @@ static int FS_r_single(struct one_wire_query * owq)
 			FS_devicename(ad, sizeof(ad), resp, pn);
 		}
 	} else {					// real adapter
-        struct parsedname struct_pn2 ;
-        struct parsedname * pn2 = & struct_pn2 ;
+        struct parsedname pn_directory ;
         BYTE read_ROM[] = { _1W_READ_ROM, };
 		BYTE match[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, };
 		struct transaction_log t[] = {
@@ -220,15 +211,13 @@ static int FS_r_single(struct one_wire_query * owq)
 		if (pn->selected_filetype->data.i)
 			read_ROM[0] = 0x0F;
 
-		memcpy(pn2, pn, sizeof(struct parsedname));	// shallow copy
-        FS_LoadDirectoryOnly(pn2->sn, pn2);
-		pn2->selected_device = NULL;			// directory only
-		if (BUS_transaction(t, pn2))
+        FS_LoadDirectoryOnly(&pn_directory, pn);
+		if (BUS_transaction(t, &pn_directory))
 			return -EINVAL;
 		LEVEL_DEBUG("FS_r_single (simultaneous) dat=" SNformat
 					" crc8c=%02x\n", SNvar(resp), CRC8(resp, 7));
 		if ((memcmp(resp, match, 8) != 0) && (CRC8(resp, 8) == 0)) {	// non-empty, and no CRC error
-			OW_single2cache(resp, pn2);
+			OW_single2cache(resp, &pn_directory);
 			/* Return device id. */
 			FS_devicename(ad, sizeof(ad), resp, pn);
 		}

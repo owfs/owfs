@@ -574,15 +574,19 @@ static int FS_realdir(void (*dirfunc) (void *, const struct parsedname *),
    -- DS2409/main|aux for branch
    -- DS2409 needs only the last element since each DS2409 is unique
    */
-void FS_LoadDirectoryOnly(BYTE * sn, const struct parsedname *pn_branch_directory)
+void FS_LoadDirectoryOnly(struct parsedname * pn_directory, const struct parsedname *pn_original)
 {
-	if (RootNotBranch(pn_branch_directory)) {
-		memset(sn, 0, 8);
+    if ( pn_directory != pn_original ) {
+        memcpy( pn_directory, pn_original, sizeof(struct parsedname) ) ; //shallow copy
+    }
+    if (RootNotBranch(pn_directory)) {
+		memset(pn_directory->sn, 0, 8);
 	} else {
-        --pn_branch_directory->pathlength ;
-        memcpy(sn, pn_branch_directory->bp[pn_branch_directory->pathlength].sn, 7);
-		sn[7] = pn_branch_directory->bp[pn_branch_directory->pathlength].branch;
+        --pn_directory->pathlength ;
+        memcpy( pn_directory->sn, pn_directory->bp[pn_directory->pathlength].sn, 7);
+		pn_directory->sn[7] = pn_directory->bp[pn_directory->pathlength].branch;
 	}
+    pn_directory->selected_device = NULL ;
 }
 
 /* A directory of devices -- either main or branch */
