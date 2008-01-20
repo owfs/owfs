@@ -299,7 +299,7 @@ int Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn)
 
 	LEVEL_DEBUG("Cache_Add_Dir " SNformat " elements=%d\n", SNvar(pn->sn),
 				(int) (db->devices));
-	FS_LoadPath(tn->tk.sn, pn);
+    FS_LoadDirectoryOnly(tn->tk.sn, pn);
 	tn->tk.p = pn->selected_connection;
 	tn->tk.extension = 0;
 	tn->expires = duration + time(NULL);
@@ -628,7 +628,7 @@ int Cache_Get_Dir(struct dirblob *db, const struct parsedname *pn)
 	LEVEL_DEBUG("Cache_Get_Dir " SNformat "\n", SNvar(pn->sn));
 	//printf("GetDir tn=%p\n",tn) ;
 	memset(&tn.tk, 0, sizeof(struct tree_key));
-	FS_LoadPath(tn.tk.sn, pn);
+    FS_LoadDirectoryOnly(tn.tk.sn, pn);
 	tn.tk.p = pn->selected_connection;
 	tn.tk.extension = 0;
 	return Get_Stat(&cache_dir, Cache_Get_Common_Dir(db, duration, &tn));
@@ -885,7 +885,7 @@ int Cache_Del_Dir(const struct parsedname *pn)
 		return 1;
 
 	memset(&tn.tk, 0, sizeof(struct tree_key));
-	FS_LoadPath(tn.tk.sn, pn);
+    FS_LoadDirectoryOnly(tn.tk.sn, pn);
 	tn.tk.p = pn->selected_connection;
 	tn.tk.extension = 0;
 	return Del_Stat(&cache_dir, Cache_Del_Common(&tn));

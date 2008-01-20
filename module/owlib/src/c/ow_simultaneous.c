@@ -79,7 +79,7 @@ int Simul_Test(const enum simul_type type, const struct parsedname *pn)
 {
 	struct parsedname pn2;
 	memcpy(&pn2, pn, sizeof(struct parsedname));	// shallow copy
-	FS_LoadPath(pn2.sn, &pn2);
+    FS_LoadDirectoryOnly(pn2.sn, &pn2);
 	if (Cache_Get_Internal_Strict(NULL, 0, &ipSimul[type], &pn2)) {
 		LEVEL_DEBUG("No simultaneous conversion valid.\n");
 		return 1;
@@ -96,7 +96,7 @@ static int FS_w_convert(struct one_wire_query * owq)
     
     enum simul_type type = (enum simul_type) pn->selected_filetype->data.i;
 	memcpy(pn2, pn, sizeof(struct parsedname));	// shallow copy
-	FS_LoadPath(pn2->sn, pn2);
+    FS_LoadDirectoryOnly(pn2->sn, pn2);
 	pn2->selected_device = NULL;				/* only branch select done, not actual device */
 	/* Since writing to /simultaneous/temperature is done recursive to all
 	 * adapters, we have to fake a successful write even if it's detected
@@ -148,7 +148,7 @@ static int FS_r_convert(struct one_wire_query * owq)
     struct parsedname * pn2 = & struct_pn2 ;
     
 	memcpy(pn2, pn, sizeof(struct parsedname));	// shallow copy
-	FS_LoadPath(pn2->sn, pn2);
+    FS_LoadDirectoryOnly(pn2->sn, pn2);
     OWQ_Y(owq) =
 		(Cache_Get_Internal_Strict(NULL, 0, &ipSimul[pn->selected_filetype->data.i], pn2)
 		 == 0);
@@ -178,7 +178,7 @@ static int FS_r_present(struct one_wire_query * owq)
 			read_ROM[0] = 0x0F;
 
 		memcpy(pn2, pn, sizeof(struct parsedname));	// shallow copy
-		FS_LoadPath(pn2->sn, pn2);
+        FS_LoadDirectoryOnly(pn2->sn, pn2);
 		pn2->selected_device = NULL;			// directory only
 		if (BUS_transaction(t, pn2))
 			return -EINVAL;
@@ -221,7 +221,7 @@ static int FS_r_single(struct one_wire_query * owq)
 			read_ROM[0] = 0x0F;
 
 		memcpy(pn2, pn, sizeof(struct parsedname));	// shallow copy
-		FS_LoadPath(pn2->sn, pn2);
+        FS_LoadDirectoryOnly(pn2->sn, pn2);
 		pn2->selected_device = NULL;			// directory only
 		if (BUS_transaction(t, pn2))
 			return -EINVAL;

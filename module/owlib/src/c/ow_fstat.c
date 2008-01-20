@@ -24,14 +24,14 @@ static int FS_nr_subdirs(struct parsedname *pn2)
 	BYTE sn[8];
 	int dindex = 0;
 
-	FS_LoadPath(sn, pn2);
+	FS_LoadDirectoryOnly(sn, pn2);
 	//printf("FS_nr_subdirs: sn="SNformat" pn2->path=%s\n", SNarg(sn), pn2->path);
 	if (Cache_Get_Dir(sn, 0, pn2)) {
 		// no entries in directory are cached
 		return 0;
 	}
 	do {
-		FS_LoadPath(sn, pn2);
+        FS_LoadDirectoryOnly(sn, pn2);
 		++dindex;
 	} while (Cache_Get_Dir(sn, dindex, pn2) == 0);
 	return dindex;

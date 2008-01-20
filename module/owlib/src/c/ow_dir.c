@@ -574,7 +574,7 @@ static int FS_realdir(void (*dirfunc) (void *, const struct parsedname *),
    -- DS2409/main|aux for branch
    -- DS2409 needs only the last element since each DS2409 is unique
    */
-void FS_LoadPath(BYTE * sn, const struct parsedname *pn_branch_directory)
+void FS_LoadDirectoryOnly(BYTE * sn, const struct parsedname *pn_branch_directory)
 {
 	if (RootNotBranch(pn_branch_directory)) {
 		memset(sn, 0, 8);
