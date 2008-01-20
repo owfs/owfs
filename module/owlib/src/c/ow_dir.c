@@ -579,8 +579,9 @@ void FS_LoadDirectoryOnly(BYTE * sn, const struct parsedname *pn_branch_director
 	if (RootNotBranch(pn_branch_directory)) {
 		memset(sn, 0, 8);
 	} else {
-		memcpy(sn, pn_branch_directory->bp[pn_branch_directory->pathlength - 1].sn, 7);
-		sn[7] = pn_branch_directory->bp[pn_branch_directory->pathlength - 1].branch;
+        --pn_branch_directory->pathlength ;
+        memcpy(sn, pn_branch_directory->bp[pn_branch_directory->pathlength].sn, 7);
+		sn[7] = pn_branch_directory->bp[pn_branch_directory->pathlength].branch;
 	}
 }
 
