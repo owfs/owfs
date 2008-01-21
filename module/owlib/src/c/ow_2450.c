@@ -432,15 +432,17 @@ static int OW_volts(_FLOAT * f, const int resolution,
 	//printf("2450 control = %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",control[0],control[1],control[2],control[3],control[4],control[5],control[6],control[7]) ;
 
 	// Set control registers
-	if (writeback)
-		if (OW_w_mem(control, 8, _ADDRESS_CONTROL_PAGE, pn))
+    if (writeback) {
+        if (OW_w_mem(control, 8, _ADDRESS_CONTROL_PAGE, pn)) {
 			return 1;
+        }
+    }
 	//printf("writeback=%d\n",writeback);
 	// Start A/D process if needed
-	if (OW_convert(pn)) {
-		LEVEL_DEFAULT("OW_volts: Failed to start conversion\n");
-		return 1;
-	}
+    if (OW_convert(pn)) {
+        LEVEL_DEFAULT("OW_volts: Failed to start conversion\n");
+        return 1;
+    }
 	// read data
 	if (OW_r_mem(data, 8, _ADDRESS_CONVERSION_PAGE, pn)) {
 		LEVEL_DEFAULT("OW_volts: OW_r_mem_crc16_AA Failed\n");
@@ -487,9 +489,11 @@ static int OW_1_volts(_FLOAT * f, const int element, const int resolution,
 		writeback = 1;
 	}
 	// Set control registers
-	if (writeback)
-		if (OW_w_mem(control, 2, _ADDRESS_CONTROL_PAGE + (element << 1), pn))
+    if (writeback) {
+        if (OW_w_mem(control, 2, _ADDRESS_CONTROL_PAGE + (element << 1), pn)) {
 			return 1;
+        }
+    }
 
 	// Start A/D process
 	if (OW_convert(pn)) {

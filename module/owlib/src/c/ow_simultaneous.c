@@ -78,6 +78,9 @@ struct internal_prop ipSimul[] = {
 int Simul_Test(const enum simul_type type, const struct parsedname *pn)
 {
 	struct parsedname pn_directory;
+    if ( IsUncachedDir(pn) ) {
+        return 1 ;
+    }
     FS_LoadDirectoryOnly(&pn_directory, pn);
 	if (Cache_Get_Internal_Strict(NULL, 0, &ipSimul[type], &pn_directory)) {
 		LEVEL_DEBUG("No simultaneous conversion valid.\n");
@@ -95,14 +98,17 @@ static int FS_w_convert(struct one_wire_query * owq)
     enum simul_type type = (enum simul_type) pn->selected_filetype->data.i;
 	
     FS_LoadDirectoryOnly( &pn_directory, pn);
-	/* Since writing to /simultaneous/temperature is done recursive to all
-	 * adapters, we have to fake a successful write even if it's detected
-	 * as a bad adapter. */
-	Cache_Del_Internal(&ipSimul[type], &pn_directory);	// remove existing entry
-	CookTheCache();				// make sure all volatile entries are invalidated
-    if (OWQ_Y(owq) == 0)
+    if (OWQ_Y(owq) == 0) {
 		return 0;				// don't send convert
-	if (pn->selected_connection->Adapter != adapter_Bad) {
+    }
+	
+    Cache_Del_Internal(&ipSimul[type], &pn_directory);  // remove existing entry
+    CookTheCache();             // make sure all volatile entries are invalidated
+
+    /* Since writing to /simultaneous/temperature is done recursive to all
+    * adapters, we have to fake a successful write even if it's detected
+    * as a bad adapter. */
+    if (pn->selected_connection->Adapter != adapter_Bad) {
 		int ret = 1;			// set just to block compiler errors
 		switch (type) {
 		case simul_temp:{
@@ -116,7 +122,7 @@ static int FS_w_convert(struct one_wire_query * owq)
 				ret = BUS_transaction_nolock(t, &pn_directory)
 					|| FS_poll_convert(&pn_directory);
 				BUSUNLOCK(&pn_directory);
-				//printf("CONVERT (simultaneous temp) ret=%d\n",ret) ;
+				LEVEL_DEBUG("CONVERT (simultaneous temp) ret=%d\n",ret) ;
 			}
 			break;
 		case simul_volt:{
@@ -128,7 +134,7 @@ static int FS_w_convert(struct one_wire_query * owq)
 					TRXN_END,
 				};
 				ret = BUS_transaction(t, &pn_directory);
-				//printf("CONVERT (simultaneous volt) ret=%d\n",ret) ;
+				LEVEL_DEBUG("CONVERT (simultaneous volt) ret=%d\n",ret) ;
 			}
 			break;
 		}
