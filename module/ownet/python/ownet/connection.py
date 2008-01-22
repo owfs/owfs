@@ -29,6 +29,7 @@ import sys
 import os
 import socket
 import struct
+import re
 
 
 __author__ = 'Peter Kropf'
@@ -243,10 +244,10 @@ class Connection(object):
         """
 
         stripped = str.strip()
-        if stripped.isdigit():
+		if re.compile('^-?\d+$').match(stripped) :
             return int(stripped)
 
-        if stripped.replace('.', '').isdigit():
+		if re.compile('^-?\d*\.\d*$').match(stripped) :	# Could crash if it matched '.' - let it.
             return float(stripped)
 
         return str
