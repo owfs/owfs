@@ -23,7 +23,15 @@ Thermostat.
 |
 .B templow
 |
+.B temphighflag
+|
+.B templowflag
+|
+.B thermostatmode
+|
 .B polarity
+|
+.B 1shot
 ]]
 .SH FAMILY CODE
 .PP
@@ -38,6 +46,53 @@ or
 .B owhttpd(1)
 for choices. Default is Celsius.
 Conversion takes 1 second.
+.SS temphigh templow
+.I read-write. floating point
+.br
+Temperature limits for alarms. Units are selected from the invoking command line. See
+.B owfs(1)
+or
+.B owhttpd(1)
+for choices. Default is Celsius.
+.br
+Note that alarms are not implemented.
+.SS temphighflag, templowflag
+.I read-write.  yes-no
+.br
+.B temphighflag
+goes to 1 when
+.B temperature
+exceeds
+.B temphigh
+and stays at 1 until it is reset by writing it to zero. 
+This state persists across power cycles and operates in both 1-wire and thermostat modes.
+.B templowflag 
+behaves in the same way, monitoring the temperature with respect to 
+.B templow.
+.SS thermostatmode
+.I read-write. yes-no
+.br
+When this bit is set to 1 the chip will enter thermostat mode on the next power-up. 
+See the datasheet for further information on thermostat mode.
+.B NOTE:
+Once the DS1821 has entered thermostat mode it cannot be taken out back to 1-wire mode using a 1-wire interface.
+Special electrical incantations on the power and data lines must be performed that are not possible with a normal
+1-wire bus master. A special circuit is required - see the datasheet for complete details.
+.SS polarity
+.I read-write. yes-no
+.br
+Controls the output sense of the thermostat output (DQ) while in thermostat mode.
+If 
+.B polarity
+is 0 the output is active low. If it is 1, active high.
+.SS 1shot
+.I read-write. yes-no
+.br
+If this bit is 1, a START CONVERT command will begin a conversion and the chip will enter a low power state when the
+conversion is complete.
+If the bit is 0 then START CONVERT will begin a conversion and start another one as soon as it is done. 
+STOP CONVERSION must be performed to get the conversion cycle to stop.
+This interface automatically issues a STOP CONVERSION command when going out of continuous mode.
 .so temperature_threshold
 .SH STANDARD PROPERTIES
 .SS type
@@ -49,7 +104,11 @@ Chip type: DS1821
 .SS DS1821
 The
 .B DS1821 (3)
-is a unique 1-wire device. It is unaddressable, and can be put in inaccessible mode.
+is a unique 1-wire device. It is unaddressable, and therefore there can be only one on a given bus. 
+It is meant to be programmed once using 1-wire and then permanently installed in a thermostat circuit. 
+Once in thermostat mode, it is no longer programmable from a 1-wire interface. 
+It is possible to recover it into 1-wire mode but only with a special circuit.
+
 .SH ADDRESSING
 Unlike all other 1-wire chips, the DS2821 (3) has no unique address. It is addressed as
 .B thermostat
