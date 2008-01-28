@@ -244,10 +244,10 @@ class Connection(object):
         """
 
         stripped = str.strip()
-		if re.compile('^-?\d+$').match(stripped) :
+	if re.compile('^-?\d+$').match(stripped) :
             return int(stripped)
 
-		if re.compile('^-?\d*\.\d*$').match(stripped) :	# Could crash if it matched '.' - let it.
+	if re.compile('^-?\d*\.\d*$').match(stripped) :	# Could crash if it matched '.' - let it.
             return float(stripped)
 
         return str
