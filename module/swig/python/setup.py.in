@@ -105,7 +105,7 @@ setup(
                                                            if len(arg) > 1 ],
                                     extra_link_args = [ arg for arg in extra_l_args
                                                            if len(arg) > 1 ],
-                                    runtime_library_dirs = [ '@libdir@' ],
+                                    runtime_library_dirs = [ '@LIBDIR@' ],
                                     )
                          ],
     )

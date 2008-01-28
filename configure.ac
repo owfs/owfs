@@ -978,6 +978,45 @@ AC_SUBST(ENABLE_OWTCL)
 AM_CONDITIONAL(ENABLE_OWTCL, test "${ENABLE_OWTCL}" = "true")
 
 
+AC_DEFUN([ACX_EXPAND], [
+  EXP_VAR=[$1]
+  FROM_VAR=[$2]
+
+  dnl first expand prefix and exec_prefix if necessary
+  prefix_save=$prefix
+  exec_prefix_save=$exec_prefix
+
+  dnl if no prefix given, then use /usr/local, the default prefix
+  if test "x$prefix" = "xNONE"; then
+    prefix=$ac_default_prefix
+  fi
+  dnl if no exec_prefix given, then use prefix
+  if test "x$exec_prefix" = "xNONE"; then
+    exec_prefix=$prefix
+  fi
+
+  full_var="$FROM_VAR"
+  dnl loop until it doesn't change anymore
+  while true; do
+    new_full_var="`eval echo $full_var`"
+    if test "x$new_full_var"="x$full_var"; then break; fi
+    full_var=$new_full_var
+  done
+
+  dnl clean up
+  full_var=$new_full_var
+  AC_SUBST([$1], "$full_var")
+
+  dnl restore prefix and exec_prefix
+  prefix=$prefix_save
+  exec_prefix=$exec_prefix_save
+]) dnl ACX_EXPAND
+
+ACX_EXPAND(LIBDIR, $libdir)
+ACX_EXPAND(BINDIR, $bindir)
+ACX_EXPAND(DATADIR, $datadir)
+
+
 AC_MSG_CHECKING([if cflag _XOPEN_SOURCE is required])
 case "${host_cpu}-${host_os}" in
 	*-aix* | *solaris* | *-osf* | *-hpux*)
@@ -994,26 +1033,28 @@ esac
 
 # Check if extra libs are needed. Should perhaps test if they are available too
 # instead of hardcoding the libraries.
+EXTRALIBS=""
 AC_MSG_CHECKING([if extra libs are required])
 case "${host_cpu}-${host_os}" in
 	*-darwin*)
 		# This will actually be duplicates if libusb is used.
 		OSLIBS="-Wl,-framework -Wl,IOKit -Wl,-framework -Wl,CoreFoundation"
-		LD_EXTRALIBS=""
+		EXTRALIBS=""
 		AC_MSG_RESULT([${OSLIBS}])
 	;;
 	*-solaris*)
 		OSLIBS=""
-		LD_EXTRALIBS=" -lsocket -lnsl "
+		EXTRALIBS=" -lsocket -lnsl "
 		LIBS="$LIBS -lsocket -lnsl"
-		AC_MSG_RESULT([${LD_EXTRALIBS}])
+		AC_MSG_RESULT([${EXTRALIBS}])
 	;;
 	*)
 		OSLIBS=""
-		LD_EXTRALIBS="-Wl,--rpath -Wl,$libdir"
-		AC_MSG_RESULT([${LD_EXTRALIBS}])
+		EXTRALIBS="-Wl,--rpath -Wl,$libdir"
+		AC_MSG_RESULT([${EXTRALIBS}])
 	;;
 esac
+ACX_EXPAND(LD_EXTRALIBS, $EXTRALIBS)
 AC_SUBST(LD_EXTRALIBS)
 AC_SUBST(OSLIBS)
 AC_MSG_WARN([LD_EXTRALIBS=${LD_EXTRALIBS} OSLIBS=${OSLIBS}])
