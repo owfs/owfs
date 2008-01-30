@@ -98,23 +98,23 @@ const struct option owopts_long[] = {
 	{"ha7e", required_argument, NULL, 277},
 	{"HA7e", required_argument, NULL, 277},
 	{"HA7E", required_argument, NULL, 277},
-	{"TESTER", required_argument, NULL, 278}, /* Tester */
-	{"Tester", required_argument, NULL, 278}, /* Tester */
-	{"tester", required_argument, NULL, 278}, /* Tester */
-	{"etherweather", required_argument, NULL, 279}, /* EtherWeather */
-	{"EtherWeather", required_argument, NULL, 279}, /* EtherWeather */
+	{"TESTER", required_argument, NULL, 278},	/* Tester */
+	{"Tester", required_argument, NULL, 278},	/* Tester */
+	{"tester", required_argument, NULL, 278},	/* Tester */
+	{"etherweather", required_argument, NULL, 279},	/* EtherWeather */
+	{"EtherWeather", required_argument, NULL, 279},	/* EtherWeather */
 	{"zero", no_argument, &Global.announce_off, 0},
 	{"nozero", no_argument, &Global.announce_off, 1},
 	{"autoserver", no_argument, &Global.autoserver, 1},
 	{"noautoserver", no_argument, &Global.autoserver, 0},
 	{"announce", required_argument, NULL, 280},
 	{"allow_other", no_argument, NULL, 298},
-    {"altUSB", no_argument, &Global.altUSB, 1}, /* Willy Robison's tweaks */
-    {"altusb", no_argument, &Global.altUSB, 1}, /* Willy Robison's tweaks */
-    {"usb_flextime", no_argument, &Global.usb_flextime, 1},
-    {"USB_flextime", no_argument, &Global.usb_flextime, 1},
-    {"usb_regulartime", no_argument, &Global.usb_flextime, 0},
-    {"USB_regulartime", no_argument, &Global.usb_flextime, 0},
+	{"altUSB", no_argument, &Global.altUSB, 1},	/* Willy Robison's tweaks */
+	{"altusb", no_argument, &Global.altUSB, 1},	/* Willy Robison's tweaks */
+	{"usb_flextime", no_argument, &Global.usb_flextime, 1},
+	{"USB_flextime", no_argument, &Global.usb_flextime, 1},
+	{"usb_regulartime", no_argument, &Global.usb_flextime, 0},
+	{"USB_regulartime", no_argument, &Global.usb_flextime, 0},
 
 	{"timeout_volatile", required_argument, NULL, 301,},	// timeout -- changing cached values
 	{"timeout_stable", required_argument, NULL, 302,},	// timeout -- unchanging cached values
@@ -134,13 +134,13 @@ const struct option owopts_long[] = {
 	{"clients_persistent_low", required_argument, NULL, 313,},
 	{"clients_persistent_high", required_argument, NULL, 314,},
 
-    {"one_device", no_argument, &Global.one_device, 1},
-    {"1_device", no_argument, &Global.one_device, 1},
+	{"one_device", no_argument, &Global.one_device, 1},
+	{"1_device", no_argument, &Global.one_device, 1},
 
-	{"pingcrazy",no_argument, &Global.pingcrazy, 1},
-	{"no_dirall",no_argument, &Global.no_dirall, 1},
-	{"no_get",no_argument, &Global.no_get, 1},
-	{"no_persistence",no_argument, &Global.no_persistence, 1},
+	{"pingcrazy", no_argument, &Global.pingcrazy, 1},
+	{"no_dirall", no_argument, &Global.no_dirall, 1},
+	{"no_get", no_argument, &Global.no_get, 1},
+	{"no_persistence", no_argument, &Global.no_persistence, 1},
 	{"8bit", no_argument, &Global.eightbit_serial, 1},
 	{"6bit", no_argument, &Global.eightbit_serial, 0},
 	{0, 0, 0, 0},
@@ -164,9 +164,10 @@ static int ParseInterp(struct lineparse *lp)
 			continue;			// no match
 		//LEVEL_DEBUG("Configuration option %s recognized as %s. Value=%s\n",lp->opt,long_option_pointer->name,SAFESTRING(lp->val)) ;
 		//printf("Configuration option %s recognized as %s. Value=%s\n",lp->opt,long_option_pointer->name,SAFESTRING(lp->val)) ;
-		if (long_option_pointer->flag) {			// immediate value mode
+		if (long_option_pointer->flag) {	// immediate value mode
 			//printf("flag c=%d flag=%p long_option_pointer->flag=%p\n",c,flag,long_option_pointer->flag);
-			if ((c != 0) || (flag != NULL && flag != long_option_pointer->flag)) {
+			if ((c != 0)
+				|| (flag != NULL && flag != long_option_pointer->flag)) {
 				//fprintf(stderr,"Ambiguous option %s in configuration file.\n",lp->opt ) ;
 				return -1;
 			}
@@ -201,8 +202,7 @@ static void ParseTheLine(struct lineparse *lp)
 {
 	ASCII *p;
 	// state machine -- pretty self-explanatory.
-	enum pstate { pspreopt, psinopt, pspreeq, pspreval, psinval } ps =
-		pspreopt;
+	enum pstate { pspreopt, psinopt, pspreeq, pspreval, psinval } ps = pspreopt;
 	lp->opt = NULL;
 	lp->val = NULL;
 	for (p = lp->line; *p; ++p) {
@@ -274,9 +274,7 @@ static int ConfigurationFile(const ASCII * file)
 		while (fgets(lp.line, 256, configuration_file_pointer)) {
 			// check line length
 			if (strlen(lp.line) > 250) {
-				ERROR_DEFAULT
-					("Line too long (>250 characters) in file %s.\n%s\n",
-					 file, lp.line);
+				ERROR_DEFAULT("Line too long (>250 characters) in file %s.\n%s\n", file, lp.line);
 				ret = 1;
 				break;
 			}
@@ -295,9 +293,9 @@ static int ConfigurationFile(const ASCII * file)
 
 int owopt_packed(const char *params)
 {
-	char *params_copy ; // copy of the input line
-    char *current_location_in_params_copy ; // pointers into the input line copy
-    char *next_location_in_params_copy; // pointers into the input line copy
+	char *params_copy;			// copy of the input line
+	char *current_location_in_params_copy;	// pointers into the input line copy
+	char *next_location_in_params_copy;	// pointers into the input line copy
 	char **argv = NULL;
 	int argc = 0;
 	int ret = 0;
@@ -313,8 +311,7 @@ int owopt_packed(const char *params)
 	// Stuffs arbitrary first value since argv[0] ignored by getopt
 	// create a synthetic argv/argc for get_opt
 	for (next_location_in_params_copy = "X";
-	     next_location_in_params_copy != NULL;
-	     next_location_in_params_copy = strsep(&current_location_in_params_copy, " ")) {
+		 next_location_in_params_copy != NULL; next_location_in_params_copy = strsep(&current_location_in_params_copy, " ")) {
 		// make room
 		if (argc >= allocated - 1) {
 			char **larger_argv = realloc(argv, (allocated + 10) * sizeof(char *));
@@ -333,8 +330,7 @@ int owopt_packed(const char *params)
 
 	// analyze argv/argc as if real comman line arguments
 	while (ret == 0) {
-		if ((option_char =
-			 getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL)) == -1)
+		if ((option_char = getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL)) == -1)
 			break;
 		ret = owopt(option_char, optarg);
 	}
@@ -346,7 +342,7 @@ int owopt_packed(const char *params)
 		++optind;
 	}
 
-	if (argv!=NULL)
+	if (argv != NULL)
 		free(argv);
 	free(params_copy);
 	return ret;
@@ -361,8 +357,7 @@ int owopt(const int option_char, const char *arg)
 	switch (option_char) {
 	case 'c':
 		if (config_depth > 4) {
-			LEVEL_DEFAULT("Configuration file layered too deeply (>%d)\n",
-						  config_depth);
+			LEVEL_DEFAULT("Configuration file layered too deeply (>%d)\n", config_depth);
 			return 1;
 		} else {
 			int ret;
@@ -393,20 +388,16 @@ int owopt(const int option_char, const char *arg)
 		Global.readonly = 0;
 		break;
 	case 'C':
-		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT,
-					   temp_celsius);
+		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_celsius);
 		break;
 	case 'F':
-		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT,
-					   temp_fahrenheit);
+		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_fahrenheit);
 		break;
 	case 'R':
-		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT,
-					   temp_rankine);
+		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_rankine);
 		break;
 	case 'K':
-		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT,
-					   temp_kelvin);
+		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_kelvin);
 		break;
 	case 'V':
 		printf("libow version:\n\t" VERSION "\n");
@@ -431,35 +422,28 @@ int owopt(const int option_char, const char *arg)
 		}
 	case 'f':
 		if (!strcasecmp(arg, "f.i"))
-			set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT,
-						   fdi);
+			set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fdi);
 		else if (!strcasecmp(arg, "fi"))
 			set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fi);
 		else if (!strcasecmp(arg, "f.i.c"))
-			set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT,
-						   fdidc);
+			set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fdidc);
 		else if (!strcasecmp(arg, "f.ic"))
-			set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT,
-						   fdic);
+			set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fdic);
 		else if (!strcasecmp(arg, "fi.c"))
-			set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT,
-						   fidc);
+			set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fidc);
 		else if (!strcasecmp(arg, "fic"))
-			set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT,
-						   fic);
+			set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fic);
 		else {
 			LEVEL_DEFAULT("Unrecognized format type %s\n", arg);
-				return 1;
+			return 1;
 		}
 		break;
 	case 'P':
 		if (arg == NULL || strlen(arg) == 0) {
 			LEVEL_DEFAULT("No PID file specified\n");
-				return 1;
+			return 1;
 		} else if ((pid_file = strdup(arg)) == NULL) {
-			fprintf(stderr,
-					"Insufficient memory to store the PID filename: %s\n",
-					arg);
+			fprintf(stderr, "Insufficient memory to store the PID filename: %s\n", arg);
 			return 1;
 		}
 		break;
@@ -513,12 +497,12 @@ int owopt(const int option_char, const char *arg)
 		return OW_ArgTester(arg);
 	case 279:
 		return OW_ArgEtherWeather(arg);
-        case 280:
+	case 280:
 		Global.announce_name = strdup(arg);
 		break;
 	case 298:					/* allow_other */
 		break;
-	// TIMEOUTS
+		// TIMEOUTS
 	case 301:
 	case 302:
 	case 303:
@@ -537,7 +521,7 @@ int owopt(const int option_char, const char *arg)
 			long long int i;
 			if (OW_parsevalue(&i, arg))
 				return 1;
-            // Using the character as a numeric value -- convenient but risky
+			// Using the character as a numeric value -- convenient but risky
 			(&Global.timeout_volatile)[option_char - 301] = (int) i;
 		}
 		break;
@@ -574,8 +558,7 @@ static int OW_ArgHA7(const char *arg)
 		return FS_FindHA7();
 	}
 #else							/* OW_HA7 */
-	LEVEL_DEFAULT
-		("HA7 support (intentionally) not included in compilation. Reconfigure and recompile.\n");
+	LEVEL_DEFAULT("HA7 support (intentionally) not included in compilation. Reconfigure and recompile.\n");
 	return 1;
 #endif							/* OW_HA7 */
 }
@@ -592,22 +575,22 @@ static int OW_ArgEtherWeather(const char *arg)
 
 static int OW_ArgFake(const char *arg)
 {
-    struct connection_in *in = NewIn(NULL);
-    if (in == NULL)
-        return 1;
-    in->name = strdup(arg);
-    in->busmode = bus_fake;
-    return 0;
+	struct connection_in *in = NewIn(NULL);
+	if (in == NULL)
+		return 1;
+	in->name = strdup(arg);
+	in->busmode = bus_fake;
+	return 0;
 }
 
 static int OW_ArgTester(const char *arg)
 {
-    struct connection_in *in = NewIn(NULL);
-    if (in == NULL)
-        return 1;
-    in->name = strdup(arg);
-    in->busmode = bus_tester;
-    return 0;
+	struct connection_in *in = NewIn(NULL);
+	if (in == NULL)
+		return 1;
+	in->name = strdup(arg);
+	in->busmode = bus_tester;
+	return 0;
 }
 
 int OW_ArgServer(const char *arg)
@@ -654,7 +637,7 @@ static int OW_ArgPassive(char *adapter_type_name, const char *arg)
 		return 1;
 	in->name = strdup(arg);
 	in->busmode = bus_passive;
-    // special set name of adapter here 
+	// special set name of adapter here 
 	in->adapter_name = adapter_type_name;
 	return 0;
 }
@@ -679,8 +662,7 @@ static int OW_ArgParallel(const char *arg)
 	in->busmode = bus_parallel;
 	return 0;
 #else							/* OW_PARPORT */
-	LEVEL_DEFAULT
-		("Parallel port support (intentionally) not included in compilation. For DS1410E. That's ok, it doesn't work anyways.\n");
+	LEVEL_DEFAULT("Parallel port support (intentionally) not included in compilation. For DS1410E. That's ok, it doesn't work anyways.\n");
 	return 1;
 #endif							/* OW_PARPORT */
 }
@@ -695,8 +677,7 @@ static int OW_ArgI2C(const char *arg)
 	in->busmode = bus_i2c;
 	return 0;
 #else							/* OW_I2C */
-	LEVEL_DEFAULT
-		("I2C (smbus DS2482-X00) support (intentionally) not included in compilation. Reconfigure and recompile.\n");
+	LEVEL_DEFAULT("I2C (smbus DS2482-X00) support (intentionally) not included in compilation. Reconfigure and recompile.\n");
 	return 1;
 #endif							/* OW_I2C */
 }
@@ -714,9 +695,9 @@ int OW_ArgUSB(const char *arg)
 		int number_of_usb_adapters;
 		number_of_usb_adapters = DS9490_enumerate();
 		LEVEL_CONNECT("All USB adapters requested, %d found.\n", number_of_usb_adapters);
-        // first one
-        in->connin.usb.usb_nr = 1;
-        // cycle through rest
+		// first one
+		in->connin.usb.usb_nr = 1;
+		// cycle through rest
 		if (number_of_usb_adapters > 1) {
 			int usb_adapter_index;
 			for (usb_adapter_index = 2; usb_adapter_index <= number_of_usb_adapters; ++usb_adapter_index) {
@@ -731,18 +712,15 @@ int OW_ArgUSB(const char *arg)
 		in->connin.usb.usb_nr = atoi(arg);
 		//printf("ArgUSB file_descriptor=%d\n",in->file_descriptor);
 		if (in->connin.usb.usb_nr < 1) {
-			LEVEL_CONNECT("USB option %s implies no USB detection.\n",
-						  arg);
+			LEVEL_CONNECT("USB option %s implies no USB detection.\n", arg);
 			in->connin.usb.usb_nr = 0;
 		} else if (in->connin.usb.usb_nr > 1) {
-			LEVEL_CONNECT("USB adapter %d requested.\n",
-						  in->connin.usb.usb_nr);
+			LEVEL_CONNECT("USB adapter %d requested.\n", in->connin.usb.usb_nr);
 		}
 	}
 	return 0;
 #else							/* OW_USB */
-	LEVEL_DEFAULT
-		("USB support (intentionally) not included in compilation. Check LIBUSB, then reconfigure and recompile.\n");
+	LEVEL_DEFAULT("USB support (intentionally) not included in compilation. Check LIBUSB, then reconfigure and recompile.\n");
 	return 1;
 #endif							/* OW_USB */
 }

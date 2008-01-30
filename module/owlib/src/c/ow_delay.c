@@ -31,9 +31,7 @@ void UT_delay(const UINT len)
 	gettimeofday(&tv, NULL);
 	while (1) {
 		gettimeofday(&now, NULL);
-		diff =
-			1000 * (now.tv_sec - tv.tv_sec) + (now.tv_usec -
-											   tv.tv_usec) / 1000;
+		diff = 1000 * (now.tv_sec - tv.tv_sec) + (now.tv_usec - tv.tv_usec) / 1000;
 		if (diff >= len)
 			break;
 		for (i = 0; i < 30; i++)
@@ -99,9 +97,7 @@ void UT_delay_us(const unsigned long len)
 	gettimeofday(&tv, NULL);
 	while (1) {
 		gettimeofday(&now, NULL);
-		diff =
-			1000000 * (now.tv_sec - tv.tv_sec) + (now.tv_usec -
-												  tv.tv_usec);
+		diff = 1000000 * (now.tv_sec - tv.tv_sec) + (now.tv_usec - tv.tv_usec);
 		if (diff >= len)
 			break;
 		for (i = 0; i < 10; i++)

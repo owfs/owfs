@@ -96,7 +96,7 @@ int DirblobAdd(BYTE * sn, struct dirblob *db)
 	if ((db->devices >= db->allocated) || (db->snlist == NULL)) {
 		int newalloc = db->allocated + DIRBLOB_ALLOCATION_INCREMENT;
 		BYTE *try_bigger_block = realloc(db->snlist, DIRBLOB_ELEMENT_LENGTH * newalloc);
-		if (try_bigger_block!=NULL) {
+		if (try_bigger_block != NULL) {
 			db->allocated = newalloc;
 			db->snlist = try_bigger_block;
 		} else {				// allocation failed -- keep old
@@ -122,17 +122,16 @@ int DirblobGet(int device_index, BYTE * sn, const struct dirblob *db)
    return position (>=0) on match
    return -1 on no match or error
  */
-int DirblobSearch( BYTE * sn, const struct dirblob *db)
+int DirblobSearch(BYTE * sn, const struct dirblob *db)
 {
-    int device_index ;
-    if ( db==NULL || db->devices < 1 ) {
-        return -1 ;
-    }
-    for ( device_index = 0 ; device_index < db->devices ; ++device_index ) {
-        if (memcmp(sn,&(db->snlist[DIRBLOB_ELEMENT_LENGTH*device_index]),DIRBLOB_ELEMENT_LENGTH)==0 ) {
-            return device_index ;
-        }
-    }
-    return -1 ;
+	int device_index;
+	if (db == NULL || db->devices < 1) {
+		return -1;
+	}
+	for (device_index = 0; device_index < db->devices; ++device_index) {
+		if (memcmp(sn, &(db->snlist[DIRBLOB_ELEMENT_LENGTH * device_index]), DIRBLOB_ELEMENT_LENGTH) == 0) {
+			return device_index;
+		}
+	}
+	return -1;
 }
-

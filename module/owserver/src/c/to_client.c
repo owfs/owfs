@@ -56,8 +56,7 @@ int ToClient(int file_descriptor, struct client_msg *cm, char *data)
 	if (data && cm->payload > 0) {
 		++nio;
 	}
-	LEVEL_DEBUG("ToClient payload=%d size=%d, ret=%d, sg=0x%X offset=%d \n",
-				cm->payload, cm->size, cm->ret, cm->sg, cm->offset);
+	LEVEL_DEBUG("ToClient payload=%d size=%d, ret=%d, sg=0x%X offset=%d \n", cm->payload, cm->size, cm->ret, cm->sg, cm->offset);
 	//printf(">%.4d|%.4d\n",cm->ret,cm->payload);
 	//printf("Scale=%s\n", TemperatureScaleName(SGTemperatureScale(cm->sg)));
 

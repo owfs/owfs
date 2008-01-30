@@ -67,7 +67,7 @@ $Id$
 
 /* Cannot stand alone -- part of ow.h but separated for clarity */
 
-#ifndef OW_FUNCTION_H					/* tedious wrapper */
+#ifndef OW_FUNCTION_H			/* tedious wrapper */
 #define OW_FUNCTION_H
 
 _FLOAT Temperature(_FLOAT C, const struct parsedname *pn);
@@ -92,29 +92,23 @@ void DeviceDestroy(void);
 //  int filecmp(const void * name , const void * ex ) 
 /* Pasename processing -- URL/path comprehension */
 int filecmp(const void *name, const void *ex);
-int FS_ParsedNamePlus(const char *path, const char *file,
-					  struct parsedname *pn);
+int FS_ParsedNamePlus(const char *path, const char *file, struct parsedname *pn);
 int FS_ParsedName(const char *fn, struct parsedname *pn);
 int FS_ParsedName_BackFromRemote(const char *fn, struct parsedname *pn);
 void FS_ParsedName_destroy(struct parsedname *pn);
-int FS_ParseProperty_for_sibling( char *filename, struct parsedname *pn) ;
+int FS_ParseProperty_for_sibling(char *filename, struct parsedname *pn);
 
 size_t FileLength(const struct parsedname *pn);
 size_t FullFileLength(const struct parsedname *pn);
 int CheckPresence(struct parsedname *pn);
-void FS_devicename(char *buffer, const size_t length, const BYTE * sn,
-				   const struct parsedname *pn);
+void FS_devicename(char *buffer, const size_t length, const BYTE * sn, const struct parsedname *pn);
 void FS_devicefind(const char *code, struct parsedname *pn);
 void FS_devicefindhex(BYTE f, struct parsedname *pn);
 
-int FS_dirname_state(char *buffer, const size_t length,
-					 const struct parsedname *pn);
-int FS_dirname_type(char *buffer, const size_t length,
-					const struct parsedname *pn);
-void FS_DirName(char *buffer, const size_t size,
-				const struct parsedname *pn);
-int FS_FileName(char *name, const size_t size,
-				const struct parsedname *pn);
+int FS_dirname_state(char *buffer, const size_t length, const struct parsedname *pn);
+int FS_dirname_type(char *buffer, const size_t length, const struct parsedname *pn);
+void FS_DirName(char *buffer, const size_t size, const struct parsedname *pn);
+int FS_FileName(char *name, const size_t size, const struct parsedname *pn);
 
 /* Utility functions */
 BYTE CRC8(const BYTE * bytes, const size_t length);
@@ -138,7 +132,7 @@ int FS_busless(char *path);
 
 /* Cache  and Storage functions */
 #include "ow_cache.h"
-void FS_LoadDirectoryOnly(struct parsedname * pn_directory, const struct parsedname *pn_original) ;
+void FS_LoadDirectoryOnly(struct parsedname *pn_directory, const struct parsedname *pn_original);
 
 int Simul_Test(const enum simul_type type, const struct parsedname *pn);
 int FS_poll_convert(const struct parsedname *pn);
@@ -161,12 +155,11 @@ void UT_delay(const UINT len);
 void UT_delay_us(const unsigned long len);
 
 ssize_t tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval *ptv);
-void tcp_read_flush(int file_descriptor) ;
+void tcp_read_flush(int file_descriptor);
 int tcp_wait(int file_descriptor, const struct timeval *ptv);
 int ClientAddr(char *sname, struct connection_in *in);
 int ClientConnect(struct connection_in *in);
-void ServerProcess(void (*HandlerRoutine) (int file_descriptor),
-				   void (*Exit) (int errcode));
+void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (int errcode));
 void FreeClientAddr(struct connection_in *in);
 int ServerOutSetup(struct connection_out *out);
 
@@ -181,51 +174,44 @@ void ow_help(const char *arg);
 void update_max_delay(const struct parsedname *pn);
 
 int ServerPresence(const struct parsedname *pn);
-int ServerRead(struct one_wire_query * owq);
-int ServerWrite(struct one_wire_query * owq);
-int ServerDir(void (*dirfunc) (void *, const struct parsedname *),
-			  void *v, const struct parsedname *pn, uint32_t * flags);
+int ServerRead(struct one_wire_query *owq);
+int ServerWrite(struct one_wire_query *owq);
+int ServerDir(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn, uint32_t * flags);
 
 /* High-level callback functions */
-int FS_dir(void (*dirfunc) (void *, const struct parsedname *),
-		   void *v, const struct parsedname *pn);
-int FS_dir_remote(void (*dirfunc) (void *, const struct parsedname *),
-				  void *v, const struct parsedname *pn, uint32_t * flags);
+int FS_dir(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn);
+int FS_dir_remote(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn, uint32_t * flags);
 
-int FS_write(const char *path, const char *buf, const size_t size,
-			 const off_t offset);
-int FS_write_postparse(struct one_wire_query * owq);
-int FS_write_sibling( char * property, struct one_wire_query * owq_shallow_copy) ;
+int FS_write(const char *path, const char *buf, const size_t size, const off_t offset);
+int FS_write_postparse(struct one_wire_query *owq);
+int FS_write_sibling(char *property, struct one_wire_query *owq_shallow_copy);
 
-int FS_read(const char *path, char *buf, const size_t size,
-			const off_t offset);
+int FS_read(const char *path, char *buf, const size_t size, const off_t offset);
 //int FS_read_postparse(char *buf, const size_t size, const off_t offset,
-//					  const struct parsedname *pn);
-int FS_read_postparse(struct one_wire_query * owq) ;
-int FS_read_distribute(struct one_wire_query * owq);
-int FS_read_fake(struct one_wire_query * owq);
-int FS_read_tester(struct one_wire_query * owq);
-int FS_r_aggregate_all(struct one_wire_query * owq) ;
-int FS_read_sibling( char * property, struct one_wire_query * owq_shallow_copy) ;
+//                    const struct parsedname *pn);
+int FS_read_postparse(struct one_wire_query *owq);
+int FS_read_distribute(struct one_wire_query *owq);
+int FS_read_fake(struct one_wire_query *owq);
+int FS_read_tester(struct one_wire_query *owq);
+int FS_r_aggregate_all(struct one_wire_query *owq);
+int FS_read_sibling(char *property, struct one_wire_query *owq_shallow_copy);
 
-int Fowq_output_offset_and_size(char * string, size_t length, struct one_wire_query * owq) ;
-int Fowq_output_offset_and_size_z(char * string, struct one_wire_query * owq) ;
+int Fowq_output_offset_and_size(char *string, size_t length, struct one_wire_query *owq);
+int Fowq_output_offset_and_size_z(char *string, struct one_wire_query *owq);
 
 int FS_fstat(const char *path, struct stat *stbuf);
 int FS_fstat_postparse(struct stat *stbuf, const struct parsedname *pn);
 
 /* iteration functions for splitting writes to buffers */
-int OW_readwrite_paged(struct one_wire_query * owq, size_t page, size_t pagelen,
-				  int (*readwritefunc) (BYTE *, size_t, off_t, struct parsedname * )) ;
-int OWQ_readwrite_paged(struct one_wire_query * owq, size_t page, size_t pagelen,
-                        int (*readwritefunc) (struct one_wire_query *, size_t, size_t )) ;
+int OW_readwrite_paged(struct one_wire_query *owq, size_t page, size_t pagelen, int (*readwritefunc) (BYTE *, size_t, off_t, struct parsedname *));
+int OWQ_readwrite_paged(struct one_wire_query *owq, size_t page, size_t pagelen, int (*readwritefunc) (struct one_wire_query *, size_t, size_t));
 
-int OW_r_mem_simple(struct one_wire_query * owq, size_t page, size_t pagesize ) ;
-int OW_r_mem_crc16_A5(struct one_wire_query * owq, size_t page, size_t pagesize) ;
-int OW_r_mem_crc16_AA(struct one_wire_query * owq, size_t page, size_t pagesize) ;
-int OW_r_mem_crc16_F0(struct one_wire_query * owq, size_t page, size_t pagesize) ;
-int OW_r_mem_toss8(struct one_wire_query * owq, size_t page, size_t pagesize) ;
-int OW_r_mem_counter_bytes(BYTE * extra, size_t page, size_t pagesize, struct parsedname * pn) ;
+int OW_r_mem_simple(struct one_wire_query *owq, size_t page, size_t pagesize);
+int OW_r_mem_crc16_A5(struct one_wire_query *owq, size_t page, size_t pagesize);
+int OW_r_mem_crc16_AA(struct one_wire_query *owq, size_t page, size_t pagesize);
+int OW_r_mem_crc16_F0(struct one_wire_query *owq, size_t page, size_t pagesize);
+int OW_r_mem_toss8(struct one_wire_query *owq, size_t page, size_t pagesize);
+int OW_r_mem_counter_bytes(BYTE * extra, size_t page, size_t pagesize, struct parsedname *pn);
 
 int OW_w_eprom_mem(const BYTE * data, size_t size, off_t offset, const struct parsedname *pn);
 int OW_w_eprom_status(const BYTE * data, size_t size, off_t offset, const struct parsedname *pn);

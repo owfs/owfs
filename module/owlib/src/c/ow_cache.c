@@ -75,12 +75,9 @@ struct tree_opaque {
 static int Cache_Add_Common(struct tree_node *tn);
 static int Cache_Add_Store(struct tree_node *tn);
 
-static int Cache_Get_Common(void *data, size_t * dsize, time_t duration,
-							const struct tree_node *tn);
-static int Cache_Get_Common_Dir(struct dirblob *db, time_t duration,
-								const struct tree_node *tn);
-static int Cache_Get_Store(void *data, size_t * dsize, time_t duration,
-						   const struct tree_node *tn);
+static int Cache_Get_Common(void *data, size_t * dsize, time_t duration, const struct tree_node *tn);
+static int Cache_Get_Common_Dir(struct dirblob *db, time_t duration, const struct tree_node *tn);
+static int Cache_Get_Store(void *data, size_t * dsize, time_t duration, const struct tree_node *tn);
 
 static int Cache_Del_Common(const struct tree_node *tn);
 static int Cache_Del_Store(const struct tree_node *tn);
@@ -94,9 +91,7 @@ static time_t TimeOut(const enum fc_change change);
 /* used for the sort/search b-tree routines */
 static int tree_compare(const void *a, const void *b)
 {
-	return memcmp(&((const struct tree_node *) a)->tk,
-				  &((const struct tree_node *) b)->tk,
-				  sizeof(struct tree_key));
+	return memcmp(&((const struct tree_node *) a)->tk, &((const struct tree_node *) b)->tk, sizeof(struct tree_key));
 }
 
 /* Gives the delay for a given property type */
@@ -130,9 +125,7 @@ static void node_show(struct tree_node *tn)
 	char b[26];
 	ctime_r(&tn->expires, b);
 	printf("\tNode " SNformat
-		   " pointer=%p extension=%d length=%d start=%p expires=%s",
-		   SNvar(tn->tk.sn), tn->tk.p, tn->tk.extension, tn->dsize, tn,
-		   b ? b : "null\n");
+		   " pointer=%p extension=%d length=%d start=%p expires=%s", SNvar(tn->tk.sn), tn->tk.p, tn->tk.extension, tn->dsize, tn, b ? b : "null\n");
 	for (i = 0; i < sizeof(struct tree_key); ++i)
 		printf("%.2X ", ((uint8_t *) tn)[i]);
 	printf("\n");
@@ -198,52 +191,52 @@ static int Add_Stat(struct cache *scache, const int result)
 	return result;
 }
 
-int OWQ_Cache_Add( const struct one_wire_query * owq )
+int OWQ_Cache_Add(const struct one_wire_query *owq)
 {
-	const struct parsedname * pn = PN(owq) ;
-	if ( pn->extension == EXTENSION_ALL ) {
-		switch ( pn->selected_filetype->format ) {
-			case ft_ascii:
-			case ft_vascii:
-			case ft_binary:
-                return 1 ; // cache of string arrays not supported
-            case ft_integer:
-			case ft_unsigned:
-			case ft_yesno:
-			case ft_date:
-			case ft_float:
-			case ft_temperature:
-			case ft_tempgap:
-				return Cache_Add( OWQ_array(owq), (pn->selected_filetype->ag->elements) * sizeof(union value_object), pn ) ;
-			default:
-				return 1 ;
+	const struct parsedname *pn = PN(owq);
+	if (pn->extension == EXTENSION_ALL) {
+		switch (pn->selected_filetype->format) {
+		case ft_ascii:
+		case ft_vascii:
+		case ft_binary:
+			return 1;			// cache of string arrays not supported
+		case ft_integer:
+		case ft_unsigned:
+		case ft_yesno:
+		case ft_date:
+		case ft_float:
+		case ft_temperature:
+		case ft_tempgap:
+			return Cache_Add(OWQ_array(owq), (pn->selected_filetype->ag->elements) * sizeof(union value_object), pn);
+		default:
+			return 1;
 		}
 	} else {
-		switch ( pn->selected_filetype->format ) {
-			case ft_ascii:
-			case ft_vascii:
-			case ft_binary:
-				if ( OWQ_offset(owq) > 0 ) return 1 ;
-                return Cache_Add( OWQ_buffer(owq), OWQ_length(owq), pn ) ;
-			case ft_integer:
-			case ft_unsigned:
-			case ft_yesno:
-			case ft_date:
-			case ft_float:
-			case ft_temperature:
-			case ft_tempgap:
-				return Cache_Add( &OWQ_val(owq), sizeof(union value_object), pn ) ;
-			default:
-				return 1 ;
+		switch (pn->selected_filetype->format) {
+		case ft_ascii:
+		case ft_vascii:
+		case ft_binary:
+			if (OWQ_offset(owq) > 0)
+				return 1;
+			return Cache_Add(OWQ_buffer(owq), OWQ_length(owq), pn);
+		case ft_integer:
+		case ft_unsigned:
+		case ft_yesno:
+		case ft_date:
+		case ft_float:
+		case ft_temperature:
+		case ft_tempgap:
+			return Cache_Add(&OWQ_val(owq), sizeof(union value_object), pn);
+		default:
+			return 1;
 		}
 	}
 }
-	
+
 
 /* Add an item to the cache */
 /* return 0 if good, 1 if not */
-int Cache_Add(const void *data, const size_t datasize,
-			  const struct parsedname *pn)
+int Cache_Add(const void *data, const size_t datasize, const struct parsedname *pn)
 {
 	struct tree_node *tn;
 	time_t duration;
@@ -258,10 +251,9 @@ int Cache_Add(const void *data, const size_t datasize,
 	tn = (struct tree_node *) malloc(sizeof(struct tree_node) + datasize);
 	if (!tn)
 		return -ENOMEM;
-    memset(&tn->tk, 0, sizeof(struct tree_key));
+	memset(&tn->tk, 0, sizeof(struct tree_key));
 
-	LEVEL_DEBUG("Cache_Add " SNformat " size=%d\n", SNvar(pn->sn),
-				(int) datasize);
+	LEVEL_DEBUG("Cache_Add " SNformat " size=%d\n", SNvar(pn->sn), (int) datasize);
 	memcpy(tn->tk.sn, pn->sn, 8);
 	tn->tk.p = pn->selected_filetype;
 	tn->tk.extension = pn->extension;
@@ -284,7 +276,7 @@ int Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn)
 	time_t duration = TimeOut(fc_directory);
 	struct tree_node *tn;
 	size_t size = db->devices * 8;
-    struct parsedname pn_directory ;
+	struct parsedname pn_directory;
 	//printf("Cache_Add_Dir\n") ;
 	if (!pn)
 		return 0;				// do check here to avoid needless processing
@@ -296,13 +288,12 @@ int Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn)
 	//printf("AddDir tn=%p\n",tn) ;
 	if (!tn)
 		return -ENOMEM;
-    memset(&tn->tk, 0, sizeof(struct tree_key));
+	memset(&tn->tk, 0, sizeof(struct tree_key));
 
-	LEVEL_DEBUG("Cache_Add_Dir " SNformat " elements=%d\n", SNvar(pn->sn),
-				(int) (db->devices));
-    FS_LoadDirectoryOnly(&pn_directory, pn);
-    memcpy(tn->tk.sn, pn_directory.sn, 8);
-    tn->tk.p = pn->selected_connection;
+	LEVEL_DEBUG("Cache_Add_Dir " SNformat " elements=%d\n", SNvar(pn->sn), (int) (db->devices));
+	FS_LoadDirectoryOnly(&pn_directory, pn);
+	memcpy(tn->tk.sn, pn_directory.sn, 8);
+	tn->tk.p = pn->selected_connection;
 	tn->tk.extension = 0;
 	tn->expires = duration + time(NULL);
 	tn->dsize = size;
@@ -327,10 +318,9 @@ int Cache_Add_Device(const int bus_nr, const struct parsedname *pn)
 	tn = (struct tree_node *) malloc(sizeof(struct tree_node) + sizeof(int));
 	if (!tn)
 		return -ENOMEM;
-    memset(&tn->tk, 0, sizeof(struct tree_key));
+	memset(&tn->tk, 0, sizeof(struct tree_key));
 
-	LEVEL_DEBUG("Cache_Add_Device " SNformat " bus=%d\n", SNvar(pn->sn),
-				(int) bus_nr);
+	LEVEL_DEBUG("Cache_Add_Device " SNformat " bus=%d\n", SNvar(pn->sn), (int) bus_nr);
 	memcpy(tn->tk.sn, pn->sn, 8);
 	tn->tk.p = NULL;			// value connected to all in-devices
 	//tn->tk.p.selected_connection = pn->selected_connection ;
@@ -343,9 +333,7 @@ int Cache_Add_Device(const int bus_nr, const struct parsedname *pn)
 
 /* Add an item to the cache */
 /* return 0 if good, 1 if not */
-int Cache_Add_Internal(const void *data, const size_t datasize,
-					   const struct internal_prop *ip,
-					   const struct parsedname *pn)
+int Cache_Add_Internal(const void *data, const size_t datasize, const struct internal_prop *ip, const struct parsedname *pn)
 {
 	struct tree_node *tn;
 	time_t duration;
@@ -360,10 +348,9 @@ int Cache_Add_Internal(const void *data, const size_t datasize,
 	tn = (struct tree_node *) malloc(sizeof(struct tree_node) + datasize);
 	if (!tn)
 		return -ENOMEM;
-    memset(&tn->tk, 0, sizeof(struct tree_key));
+	memset(&tn->tk, 0, sizeof(struct tree_key));
 
-	LEVEL_DEBUG("Cache_Add_Internal " SNformat " size=%d\n", SNvar(pn->sn),
-				(int) datasize);
+	LEVEL_DEBUG("Cache_Add_Internal " SNformat " size=%d\n", SNvar(pn->sn), (int) datasize);
 	memcpy(tn->tk.sn, pn->sn, 8);
 	tn->tk.p = ip->name;
 	tn->tk.extension = EXTENSION_INTERNAL;
@@ -391,9 +378,7 @@ static int Cache_Add_Common(struct tree_node *tn)
 	void *flip = NULL;
 	//printf("Cache_Add_Common\n") ;
 	node_show(tn);
-	LEVEL_DEBUG("Add to cache sn " SNformat
-				" pointer=%p index=%d size=%d\n", SNvar(tn->tk.sn),
-				tn->tk.p, tn->tk.extension, tn->dsize);
+	LEVEL_DEBUG("Add to cache sn " SNformat " pointer=%p index=%d size=%d\n", SNvar(tn->tk.sn), tn->tk.p, tn->tk.extension, tn->dsize);
 	CACHELOCK;
 	if (cache.killed < time(NULL)) {	// old database has timed out
 		flip = cache.old_db;
@@ -406,8 +391,7 @@ static int Cache_Add_Common(struct tree_node *tn)
 		cache.retired = time(NULL);
 		cache.killed = cache.retired + cache.lifespan;
 	}
-	if (Global.cache_size
-		&& (cache.old_ram + cache.new_ram > Global.cache_size)) {
+	if (Global.cache_size && (cache.old_ram + cache.new_ram > Global.cache_size)) {
 		// failed size test
 		free(tn);
 	} else if ((opaque = tsearch(tn, &cache.new_db, tree_compare))) {
@@ -427,8 +411,7 @@ static int Cache_Add_Common(struct tree_node *tn)
 	CACHEUNLOCK;
 	/* flipped old database is now out of circulation -- can be destroyed without a lock */
 	if (flip) {
-		LEVEL_DEBUG
-			("Cache_Add_Common: flip cache. tdestroy() will be called.\n");
+		LEVEL_DEBUG("Cache_Add_Common: flip cache. tdestroy() will be called.\n");
 		tdestroy(flip, free);
 		STATLOCK;
 		++cache_flips;			/* statistics */
@@ -544,44 +527,45 @@ int Cache_Get_Strict(void *data, size_t dsize, const struct parsedname *pn)
 }
 
 
-int OWQ_Cache_Get( struct one_wire_query * owq )
+int OWQ_Cache_Get(struct one_wire_query *owq)
 {
-	struct parsedname * pn = PN(owq) ;
-	if ( pn->extension == EXTENSION_ALL ) {
-		switch ( pn->selected_filetype->format ) {
-			case ft_ascii:
-			case ft_vascii:
-			case ft_binary:
-                return 1 ; // string arrays not supported
-			case ft_integer:
-			case ft_unsigned:
-			case ft_yesno:
-			case ft_date:
-			case ft_float:
-			case ft_temperature:
-			case ft_tempgap:
-				return Cache_Get_Strict( OWQ_array(owq), (pn->selected_filetype->ag->elements) * sizeof(union value_object), pn ) ;
-			default:
-				return 1 ;
+	struct parsedname *pn = PN(owq);
+	if (pn->extension == EXTENSION_ALL) {
+		switch (pn->selected_filetype->format) {
+		case ft_ascii:
+		case ft_vascii:
+		case ft_binary:
+			return 1;			// string arrays not supported
+		case ft_integer:
+		case ft_unsigned:
+		case ft_yesno:
+		case ft_date:
+		case ft_float:
+		case ft_temperature:
+		case ft_tempgap:
+			return Cache_Get_Strict(OWQ_array(owq), (pn->selected_filetype->ag->elements) * sizeof(union value_object), pn);
+		default:
+			return 1;
 		}
 	} else {
-		switch ( pn->selected_filetype->format ) {
-			case ft_ascii:
-			case ft_vascii:
-            case ft_binary:
-                if ( OWQ_offset(owq) > 0 ) return 1 ;
-                OWQ_length(owq) = OWQ_size(owq) ;
-                return Cache_Get( OWQ_buffer(owq), &OWQ_length(owq), pn ) ;
-			case ft_integer:
-			case ft_unsigned:
-			case ft_yesno:
-			case ft_date:
-			case ft_float:
-			case ft_temperature:
-			case ft_tempgap:
-				return Cache_Get_Strict( &OWQ_val(owq), sizeof(union value_object), pn ) ;
-			default:
-				return 1 ;
+		switch (pn->selected_filetype->format) {
+		case ft_ascii:
+		case ft_vascii:
+		case ft_binary:
+			if (OWQ_offset(owq) > 0)
+				return 1;
+			OWQ_length(owq) = OWQ_size(owq);
+			return Cache_Get(OWQ_buffer(owq), &OWQ_length(owq), pn);
+		case ft_integer:
+		case ft_unsigned:
+		case ft_yesno:
+		case ft_date:
+		case ft_float:
+		case ft_temperature:
+		case ft_tempgap:
+			return Cache_Get_Strict(&OWQ_val(owq), sizeof(union value_object), pn);
+		default:
+			return 1;
 		}
 	}
 }
@@ -601,19 +585,16 @@ int Cache_Get(void *data, size_t * dsize, const struct parsedname *pn)
 	if (duration <= 0)
 		return 1;
 
-	LEVEL_DEBUG("Cache_Get " SNformat " size=%d IsUncachedDir=%d\n",
-				SNvar(pn->sn), (int) dsize[0], IsUncachedDir(pn));
+	LEVEL_DEBUG("Cache_Get " SNformat " size=%d IsUncachedDir=%d\n", SNvar(pn->sn), (int) dsize[0], IsUncachedDir(pn));
 	memset(&tn.tk, 0, sizeof(struct tree_key));
 	memcpy(tn.tk.sn, pn->sn, 8);
 	tn.tk.p = pn->selected_filetype;
 	tn.tk.extension = pn->extension;
 	switch (pn->selected_filetype->change) {
 	case fc_persistent:
-		return Get_Stat(&cache_sto,
-						Cache_Get_Store(data, dsize, duration, &tn));
+		return Get_Stat(&cache_sto, Cache_Get_Store(data, dsize, duration, &tn));
 	default:
-		return Get_Stat(&cache_ext,
-						Cache_Get_Common(data, dsize, duration, &tn));
+		return Get_Stat(&cache_ext, Cache_Get_Common(data, dsize, duration, &tn));
 	}
 }
 
@@ -622,7 +603,7 @@ int Cache_Get_Dir(struct dirblob *db, const struct parsedname *pn)
 {
 	time_t duration = TimeOut(fc_directory);
 	struct tree_node tn;
-    struct parsedname pn_directory ;
+	struct parsedname pn_directory;
 	DirblobInit(db);
 	//printf("Cache_Get_Dir\n") ;
 	if (duration <= 0)
@@ -631,24 +612,22 @@ int Cache_Get_Dir(struct dirblob *db, const struct parsedname *pn)
 	LEVEL_DEBUG("Cache_Get_Dir " SNformat "\n", SNvar(pn->sn));
 	//printf("GetDir tn=%p\n",tn) ;
 	memset(&tn.tk, 0, sizeof(struct tree_key));
-    FS_LoadDirectoryOnly(&pn_directory, pn);
-    memcpy(tn.tk.sn, pn_directory.sn,8);
-    tn.tk.p = pn->selected_connection;
+	FS_LoadDirectoryOnly(&pn_directory, pn);
+	memcpy(tn.tk.sn, pn_directory.sn, 8);
+	tn.tk.p = pn->selected_connection;
 	tn.tk.extension = 0;
 	return Get_Stat(&cache_dir, Cache_Get_Common_Dir(db, duration, &tn));
 }
 
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
-static int Cache_Get_Common_Dir(struct dirblob *db, time_t duration,
-								const struct tree_node *tn)
+static int Cache_Get_Common_Dir(struct dirblob *db, time_t duration, const struct tree_node *tn)
 {
 	int ret;
 	time_t now = time(NULL);
 	size_t size;
 	struct tree_opaque *opaque;
 	//printf("Cache_Get_Common_Dir\n") ;
-	LEVEL_DEBUG("Get from cache sn " SNformat " pointer=%p extension=%d\n",
-				SNvar(tn->tk.sn), tn->tk.p, tn->tk.extension);
+	LEVEL_DEBUG("Get from cache sn " SNformat " pointer=%p extension=%d\n", SNvar(tn->tk.sn), tn->tk.p, tn->tk.extension);
 	CACHELOCK;
 	if ((opaque = tfind(tn, &cache.new_db, tree_compare))
 		|| ((cache.retired + duration > now)
@@ -695,14 +674,11 @@ int Cache_Get_Device(void *bus_nr, const struct parsedname *pn)
 	memcpy(tn.tk.sn, pn->sn, 8);
 	tn.tk.p = NULL;				// value connected to all in-devices
 	tn.tk.extension = EXTENSION_DEVICE;
-	return Get_Stat(&cache_dev,
-					Cache_Get_Common(bus_nr, &size, duration, &tn));
+	return Get_Stat(&cache_dev, Cache_Get_Common(bus_nr, &size, duration, &tn));
 }
 
 /* Does cache get, but doesn't allow play in data size */
-int Cache_Get_Internal_Strict(void *data, size_t dsize,
-							  const struct internal_prop *ip,
-							  const struct parsedname *pn)
+int Cache_Get_Internal_Strict(void *data, size_t dsize, const struct internal_prop *ip, const struct parsedname *pn)
 {
 	size_t size = dsize;
 	if (Cache_Get_Internal(data, &size, ip, pn) || dsize != size)
@@ -711,9 +687,7 @@ int Cache_Get_Internal_Strict(void *data, size_t dsize,
 }
 
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
-int Cache_Get_Internal(void *data, size_t * dsize,
-					   const struct internal_prop *ip,
-					   const struct parsedname *pn)
+int Cache_Get_Internal(void *data, size_t * dsize, const struct internal_prop *ip, const struct parsedname *pn)
 {
 	struct tree_node tn;
 	time_t duration;
@@ -725,19 +699,16 @@ int Cache_Get_Internal(void *data, size_t * dsize,
 	if (duration <= 0)
 		return 1;				/* in case timeout set to 0 */
 
-	LEVEL_DEBUG("Cache_Get_Internal " SNformat " size=%d\n", SNvar(pn->sn),
-				(int) dsize[0]);
+	LEVEL_DEBUG("Cache_Get_Internal " SNformat " size=%d\n", SNvar(pn->sn), (int) dsize[0]);
 	memset(&tn.tk, 0, sizeof(struct tree_key));
 	memcpy(tn.tk.sn, pn->sn, 8);
 	tn.tk.p = ip->name;
 	tn.tk.extension = EXTENSION_INTERNAL;
 	switch (ip->change) {
 	case fc_persistent:
-		return Get_Stat(&cache_sto,
-						Cache_Get_Store(data, dsize, duration, &tn));
+		return Get_Stat(&cache_sto, Cache_Get_Store(data, dsize, duration, &tn));
 	default:
-		return Get_Stat(&cache_int,
-						Cache_Get_Common(data, dsize, duration, &tn));
+		return Get_Stat(&cache_int, Cache_Get_Common(data, dsize, duration, &tn));
 	}
 }
 
@@ -767,16 +738,13 @@ void CookTheCache(void)
 }
 
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
-static int Cache_Get_Common(void *data, size_t * dsize, time_t duration,
-							const struct tree_node *tn)
+static int Cache_Get_Common(void *data, size_t * dsize, time_t duration, const struct tree_node *tn)
 {
 	int ret;
 	time_t now = Cooked_Now(tn);
 	struct tree_opaque *opaque;
 	//printf("Cache_Get_Common\n") ;
-	LEVEL_DEBUG("Get from cache sn " SNformat
-				" pointer=%p index=%d size=%lu\n", SNvar(tn->tk.sn),
-				tn->tk.p, tn->tk.extension, dsize[0]);
+	LEVEL_DEBUG("Get from cache sn " SNformat " pointer=%p index=%d size=%lu\n", SNvar(tn->tk.sn), tn->tk.p, tn->tk.extension, dsize[0]);
 	node_show(tn);
 	//printf("\nTree (new):\n");
 	new_tree();
@@ -820,8 +788,7 @@ static int Cache_Get_Common(void *data, size_t * dsize, time_t duration,
 }
 
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
-static int Cache_Get_Store(void *data, size_t * dsize, time_t duration,
-						   const struct tree_node *tn)
+static int Cache_Get_Store(void *data, size_t * dsize, time_t duration, const struct tree_node *tn)
 {
 	struct tree_opaque *opaque;
 	int ret;
@@ -852,9 +819,9 @@ static int Del_Stat(struct cache *scache, const int result)
 	return result;
 }
 
-int OWQ_Cache_Del( const struct one_wire_query * owq )
+int OWQ_Cache_Del(const struct one_wire_query *owq)
 {
-	return Cache_Del( PN(owq) ) ;
+	return Cache_Del(PN(owq));
 }
 
 int Cache_Del(const struct parsedname *pn)
@@ -884,15 +851,15 @@ int Cache_Del(const struct parsedname *pn)
 int Cache_Del_Dir(const struct parsedname *pn)
 {
 	struct tree_node tn;
-    struct parsedname pn_directory ;
+	struct parsedname pn_directory;
 	time_t duration = TimeOut(fc_directory);
 	if (duration <= 0)
 		return 1;
 
 	memset(&tn.tk, 0, sizeof(struct tree_key));
-    FS_LoadDirectoryOnly(&pn_directory, pn);
-    memcpy(tn.tk.sn, pn_directory.sn, 8);
-    tn.tk.p = pn->selected_connection;
+	FS_LoadDirectoryOnly(&pn_directory, pn);
+	memcpy(tn.tk.sn, pn_directory.sn, 8);
+	tn.tk.p = pn->selected_connection;
 	tn.tk.extension = 0;
 	return Del_Stat(&cache_dir, Cache_Del_Common(&tn));
 }
@@ -911,8 +878,7 @@ int Cache_Del_Device(const struct parsedname *pn)
 	return Del_Stat(&cache_dev, Cache_Del_Common(&tn));
 }
 
-int Cache_Del_Internal(const struct internal_prop *ip,
-					   const struct parsedname *pn)
+int Cache_Del_Internal(const struct internal_prop *ip, const struct parsedname *pn)
 {
 	struct tree_node tn;
 	time_t duration;
@@ -941,8 +907,7 @@ static int Cache_Del_Common(const struct tree_node *tn)
 	struct tree_opaque *opaque;
 	time_t now = time(NULL);
 	int ret = 1;
-	LEVEL_DEBUG("Delete from cache sn " SNformat " in=%p index=%d\n",
-				SNvar(tn->tk.sn), tn->tk.p, tn->tk.extension);
+	LEVEL_DEBUG("Delete from cache sn " SNformat " in=%p index=%d\n", SNvar(tn->tk.sn), tn->tk.p, tn->tk.extension);
 	CACHELOCK;
 	if ((opaque = tfind(tn, &cache.new_db, tree_compare))
 		|| ((cache.killed > now)
@@ -985,16 +950,18 @@ static int Cache_Del_Store(const struct tree_node *tn)
 
    owq_shallow_copy comes in as a single, not aggregate, even if the original value was an aggregate
 */
-void FS_cache_sibling( char * property, struct one_wire_query * owq_shallow_copy)
+void FS_cache_sibling(char *property, struct one_wire_query *owq_shallow_copy)
 {
-    struct parsedname * pn = PN(owq_shallow_copy) ; // already set up with native device and property
+	struct parsedname *pn = PN(owq_shallow_copy);	// already set up with native device and property
 
-    if ( FS_ParseProperty_for_sibling( property, pn ) ) return ;
+	if (FS_ParseProperty_for_sibling(property, pn))
+		return;
 
-    /* There are a few types that are not supported: aggregates (.ALL) */
-    if ( pn->extension == EXTENSION_ALL ) return ;
+	/* There are a few types that are not supported: aggregates (.ALL) */
+	if (pn->extension == EXTENSION_ALL)
+		return;
 
-    OWQ_Cache_Add(owq_shallow_copy) ;
+	OWQ_Cache_Add(owq_shallow_copy);
 }
 
 #endif							/* OW_CACHE */

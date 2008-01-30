@@ -14,35 +14,28 @@ $Id$
 #include "ow_devices.h"
 
 /* device display format */
-void FS_devicename(char *buffer, const size_t length, const BYTE * sn,
-				   const struct parsedname *pn)
+void FS_devicename(char *buffer, const size_t length, const BYTE * sn, const struct parsedname *pn)
 {
 	UCLIBCLOCK;
 	//printf("dev format sg=%X DeviceFormat = %d\n",pn->si->sg,DeviceFormat(pn)) ;
 	switch (DeviceFormat(pn)) {
 	case fdi:
-		snprintf(buffer, length, "%02X.%02X%02X%02X%02X%02X%02X", sn[0],
-				 sn[1], sn[2], sn[3], sn[4], sn[5], sn[6]);
+		snprintf(buffer, length, "%02X.%02X%02X%02X%02X%02X%02X", sn[0], sn[1], sn[2], sn[3], sn[4], sn[5], sn[6]);
 		break;
 	case fi:
-		snprintf(buffer, length, "%02X%02X%02X%02X%02X%02X%02X", sn[0],
-				 sn[1], sn[2], sn[3], sn[4], sn[5], sn[6]);
+		snprintf(buffer, length, "%02X%02X%02X%02X%02X%02X%02X", sn[0], sn[1], sn[2], sn[3], sn[4], sn[5], sn[6]);
 		break;
 	case fdidc:
-		snprintf(buffer, length, "%02X.%02X%02X%02X%02X%02X%02X.%02X",
-				 sn[0], sn[1], sn[2], sn[3], sn[4], sn[5], sn[6], sn[7]);
+		snprintf(buffer, length, "%02X.%02X%02X%02X%02X%02X%02X.%02X", sn[0], sn[1], sn[2], sn[3], sn[4], sn[5], sn[6], sn[7]);
 		break;
 	case fdic:
-		snprintf(buffer, length, "%02X.%02X%02X%02X%02X%02X%02X%02X",
-				 sn[0], sn[1], sn[2], sn[3], sn[4], sn[5], sn[6], sn[7]);
+		snprintf(buffer, length, "%02X.%02X%02X%02X%02X%02X%02X%02X", sn[0], sn[1], sn[2], sn[3], sn[4], sn[5], sn[6], sn[7]);
 		break;
 	case fidc:
-		snprintf(buffer, length, "%02X%02X%02X%02X%02X%02X%02X.%02X",
-				 sn[0], sn[1], sn[2], sn[3], sn[4], sn[5], sn[6], sn[7]);
+		snprintf(buffer, length, "%02X%02X%02X%02X%02X%02X%02X.%02X", sn[0], sn[1], sn[2], sn[3], sn[4], sn[5], sn[6], sn[7]);
 		break;
 	case fic:
-		snprintf(buffer, length, "%02X%02X%02X%02X%02X%02X%02X%02X", sn[0],
-				 sn[1], sn[2], sn[3], sn[4], sn[5], sn[6], sn[7]);
+		snprintf(buffer, length, "%02X%02X%02X%02X%02X%02X%02X%02X", sn[0], sn[1], sn[2], sn[3], sn[4], sn[5], sn[6], sn[7]);
 		break;
 	}
 	UCLIBCUNLOCK;
@@ -53,8 +46,7 @@ static const char dirname_state_alarm[] = "alarm";
 static const char dirname_state_text[] = "text";
 
 /* copy state into buffer (for constructing path) return number of chars added */
-int FS_dirname_state(char *buffer, const size_t length,
-					 const struct parsedname *pn)
+int FS_dirname_state(char *buffer, const size_t length, const struct parsedname *pn)
 {
 	const char *p;
 	size_t len;
@@ -69,11 +61,11 @@ int FS_dirname_state(char *buffer, const size_t length,
 #endif
 	} else if (IsUncachedDir(pn)) {
 		p = dirname_state_uncached;
-    } else if (pn->terminal_bus_number > -1) {
+	} else if (pn->terminal_bus_number > -1) {
 		int ret;
-        //printf("Called FS_dirname_state on %s bus number %d\n",pn->path,pn->bus_nr) ;
-        UCLIBCLOCK;
-        ret = snprintf(buffer, length, "bus.%d", pn->terminal_bus_number);
+		//printf("Called FS_dirname_state on %s bus number %d\n",pn->path,pn->bus_nr) ;
+		UCLIBCLOCK;
+		ret = snprintf(buffer, length, "bus.%d", pn->terminal_bus_number);
 		UCLIBCUNLOCK;
 		return ret;
 	} else {
@@ -94,8 +86,7 @@ static const char dirname_type_structure[] = "structure";
 static const char dirname_type_interface[] = "interface";
 
 /* copy type into buffer (for constructing path) return number of chars added */
-int FS_dirname_type(char *buffer, const size_t length,
-					const struct parsedname *pn)
+int FS_dirname_type(char *buffer, const size_t length, const struct parsedname *pn)
 {
 	const char *p;
 	size_t len;
@@ -139,8 +130,7 @@ int FS_FileName(char *name, const size_t size, const struct parsedname *pn)
 	} else if (pn->extension == EXTENSION_BYTE) {
 		s = snprintf(name, size, "%s.BYTE", pn->selected_filetype->name);
 	} else if (pn->selected_filetype->ag->letters == ag_letters) {
-		s = snprintf(name, size, "%s.%c", pn->selected_filetype->name,
-					 pn->extension + 'A');
+		s = snprintf(name, size, "%s.%c", pn->selected_filetype->name, pn->extension + 'A');
 	} else {
 		s = snprintf(name, size, "%s.%-d", pn->selected_filetype->name, pn->extension);
 	}
@@ -152,10 +142,9 @@ int FS_FileName(char *name, const size_t size, const struct parsedname *pn)
 /* This can be a device, directory, subdiirectory, if property file */
 /* Prints this directory element (not the whole path) */
 /* Suggest that size = OW_FULLNAME_MAX */
-void FS_DirName(char *buffer, const size_t size,
-				const struct parsedname *pn)
+void FS_DirName(char *buffer, const size_t size, const struct parsedname *pn)
 {
-	if (pn->selected_filetype) {				/* A real file! */
+	if (pn->selected_filetype) {	/* A real file! */
 		char *pname = strchr(pn->selected_filetype->name, '/');	// for subdirectories
 		if (pname) {
 			++pname;

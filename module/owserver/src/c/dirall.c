@@ -56,10 +56,9 @@ void DirallHandlerCallback(void *v, const struct parsedname *pn2)
 	char retbuffer[PATH_MAX];
 # if 0
 	char *path = (KnownBus(dhs->pn)
-				  && BusIsServer(dhs->pn->selected_connection)) ? dhs->pn->
-		path_busless : dhs->pn->path;
+				  && BusIsServer(dhs->pn->selected_connection)) ? dhs->pn->path_busless : dhs->pn->path;
 #endif
-char * path = dhs->pn->path ;      
+	char *path = dhs->pn->path;
 
 	/* make sure path has a "/" before the file is added */
 	size_t _pathlen = strlen(path);
@@ -68,21 +67,18 @@ char * path = dhs->pn->path ;
 		retbuffer[_pathlen] = '/';
 		retbuffer[++_pathlen] = '\0';
 	}
-	
-    if (pn2->selected_device != NULL) {
+
+	if (pn2->selected_device != NULL) {
 		FS_DirName(&retbuffer[_pathlen], PATH_MAX - _pathlen - 1, pn2);
-    } else if (NotRealDir(pn2)) {
-        FS_dirname_type(&retbuffer[_pathlen], PATH_MAX - _pathlen - 1,
-						pn2);
-    } else {
-		FS_dirname_state(&retbuffer[_pathlen], PATH_MAX - _pathlen - 1,
-						 pn2);
-    }
-    CharblobAdd(retbuffer, strlen(retbuffer), dhs->cb);
+	} else if (NotRealDir(pn2)) {
+		FS_dirname_type(&retbuffer[_pathlen], PATH_MAX - _pathlen - 1, pn2);
+	} else {
+		FS_dirname_state(&retbuffer[_pathlen], PATH_MAX - _pathlen - 1, pn2);
+	}
+	CharblobAdd(retbuffer, strlen(retbuffer), dhs->cb);
 }
 
-void *DirallHandler(struct handlerdata *hd, struct client_msg *cm,
-					const struct parsedname *pn)
+void *DirallHandler(struct handlerdata *hd, struct client_msg *cm, const struct parsedname *pn)
 {
 	uint32_t flags = 0;
 	struct charblob cb;
@@ -94,29 +90,27 @@ void *DirallHandler(struct handlerdata *hd, struct client_msg *cm,
 	CharblobInit(&cb);
 
 	// Now generate the directory (using the embedded callback function above for each element
-	LEVEL_DEBUG
-		("OWSERVER Dir-All SpecifiedBus=%d path = %s\n",
-		 SpecifiedBus(pn), SAFESTRING(pn->path));
+	LEVEL_DEBUG("OWSERVER Dir-All SpecifiedBus=%d path = %s\n", SpecifiedBus(pn), SAFESTRING(pn->path));
 
-    if ( hd->sm.payload >= PATH_MAX ) {
-        cm->ret = -EMSGSIZE ;
-    } else {
-       // Now generate the directory using the callback function above for each element
-	   cm->ret = FS_dir_remote(DirallHandlerCallback, &dhs, pn, &flags);
-    }
+	if (hd->sm.payload >= PATH_MAX) {
+		cm->ret = -EMSGSIZE;
+	} else {
+		// Now generate the directory using the callback function above for each element
+		cm->ret = FS_dir_remote(DirallHandlerCallback, &dhs, pn, &flags);
+	}
 
-	if ( cm->ret < 0 ) { // error
+	if (cm->ret < 0) {			// error
 		cm->size = cm->payload = 0;
-	} else if ( cb.blob == NULL ) { // empty
+	} else if (cb.blob == NULL) {	// empty
 		cm->size = cm->payload = 0;
-	} else if ( (ret = strdup(cb.blob)) != NULL ) { // try to copy
+	} else if ((ret = strdup(cb.blob)) != NULL) {	// try to copy
 		cm->payload = cb.used + 1;
 		cm->size = cb.used;
-	} else { // couldn't copy
+	} else {					// couldn't copy
 		cm->ret = -ENOMEM;
 		cm->size = cm->payload = 0;
 	}
-	cm->offset = flags;         /* send the flags in the offset slot */
+	cm->offset = flags;			/* send the flags in the offset slot */
 	CharblobClear(&cb);
 	return ret;
 }

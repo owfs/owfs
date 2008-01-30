@@ -65,7 +65,7 @@ $Id$
     25-05-2003 iButtonLink device
 */
 
-#ifndef OW_DEVICE_H					/* tedious wrapper */
+#ifndef OW_DEVICE_H				/* tedious wrapper */
 #define OW_DEVICE_H
 
 /* Define our understanding of integers, floats, ... */
@@ -111,10 +111,10 @@ bound the allowable files in a device directory
 
 struct device {
 	const char *family_code;
-	char * readable_name;
+	char *readable_name;
 	uint32_t flags;
 	int count_of_filetypes;
-	struct filetype * filetype_array;
+	struct filetype *filetype_array;
 };
 
 #define DeviceHeader( chip )    extern struct device d_##chip

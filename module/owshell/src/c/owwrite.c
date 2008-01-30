@@ -28,15 +28,15 @@ int main(int argc, char *argv[])
 	Setup();
 	/* process command line arguments */
 	while (1) {
-		c = getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL) ;
-		if ( c == -1 ) {
-			break ;
+		c = getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL);
+		if (c == -1) {
+			break;
 		}
 		owopt(c, optarg);
 	}
 
-	DefaultOwserver() ;
-	Server_detect() ;
+	DefaultOwserver();
+	Server_detect();
 
 	/* non-option arguments */
 	while (optind < argc - 1) {
@@ -45,8 +45,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (optind < argc) {
-		fprintf(stderr, "Unpaired <path> <value> entry: %s\n",
-				argv[optind]);
+		fprintf(stderr, "Unpaired <path> <value> entry: %s\n", argv[optind]);
 		rc = -1;
 	}
 	Exit((rc >= 0 ? 0 : 1));

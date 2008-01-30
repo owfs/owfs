@@ -33,7 +33,7 @@ $Id$
     daemon/Web interface) is working, although not polished off yet. The
     board is 2" x 3", runs off of 7-9v DC, and should cost around $50
     (assembled/programmed, but without case and power supply).
-*/    
+*/
 
 #include <config.h>
 #include "owfs_config.h"
@@ -47,10 +47,11 @@ $Id$
 #define EtherWeather_COMMAND_BITS		'b'
 #define EtherWeather_COMMAND_POWER	'P'
 
-static int EtherWeather_command(struct connection_in *in, char command, int datalen, const BYTE * idata, BYTE * odata) {
+static int EtherWeather_command(struct connection_in *in, char command, int datalen, const BYTE * idata, BYTE * odata)
+{
 	ssize_t res;
 	ssize_t left = datalen;
-	BYTE * packet;
+	BYTE *packet;
 
 	struct timeval tvnet = { 0, 200000, };
 
@@ -73,18 +74,17 @@ static int EtherWeather_command(struct connection_in *in, char command, int data
 		return -EIO;
 	}
 */
-        while (left > 0) {
+	while (left > 0) {
 		res = write(in->file_descriptor, &packet[datalen + 2 - left], left);
 		if (res < 0) {
 			if (errno == EINTR) {
 				continue;
 			}
-			ERROR_CONNECT("Trouble writing data to EtherWeather: %s\n",
-				SAFESTRING(in->name));
+			ERROR_CONNECT("Trouble writing data to EtherWeather: %s\n", SAFESTRING(in->name));
 			break;
 		}
 		left -= res;
-        }
+	}
 
 	tcdrain(in->file_descriptor);
 	gettimeofday(&(in->bus_write_time), NULL);
@@ -94,40 +94,37 @@ static int EtherWeather_command(struct connection_in *in, char command, int data
 		free(packet);
 		return -EIO;
 	}
-
 	// Allow extra time for powered bytes
 	if (command == 'P') {
 		tvnet.tv_sec += 2;
 	}
-
 	// Read the response header
 	if (tcp_read(in->file_descriptor, packet, 2, &tvnet) != 2) {
 		LEVEL_CONNECT("EtherWeather_command header read error\n");
 		free(packet);
 		return -EIO;
-        }
-
+	}
 	// Make sure it was echoed properly
 	if (packet[0] != (datalen + 1) || packet[1] != command) {
 		LEVEL_CONNECT("EtherWeather_command invalid header\n");
 		free(packet);
 		return -EIO;
 	}
-
 	// Then read any data
 	if (datalen > 0) {
 		if (tcp_read(in->file_descriptor, odata, datalen, &tvnet) != (ssize_t) datalen) {
 			LEVEL_CONNECT("EtherWeather_command data read error\n");
 			free(packet);
 			return -EIO;
-        	}
+		}
 	}
 
 	free(packet);
 	return 0;
 }
 
-static int EtherWeather_sendback_data(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn) {
+static int EtherWeather_sendback_data(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
+{
 
 	if (EtherWeather_command(pn->selected_connection, EtherWeather_COMMAND_BYTES, size, data, resp)) {
 		return -EIO;
@@ -136,7 +133,8 @@ static int EtherWeather_sendback_data(const BYTE * data, BYTE * resp, const size
 	return 0;
 }
 
-static int EtherWeather_sendback_bits(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn) {
+static int EtherWeather_sendback_bits(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
+{
 
 	if (EtherWeather_command(pn->selected_connection, EtherWeather_COMMAND_BITS, size, data, resp)) {
 		return -EIO;
@@ -145,7 +143,8 @@ static int EtherWeather_sendback_bits(const BYTE * data, BYTE * resp, const size
 	return 0;
 }
 
-static int EtherWeather_next_both(struct device_search *ds, const struct parsedname *pn) {
+static int EtherWeather_next_both(struct device_search *ds, const struct parsedname *pn)
+{
 	BYTE sendbuf[9];
 
 	// if the last call was not the last one
@@ -160,7 +159,8 @@ static int EtherWeather_next_both(struct device_search *ds, const struct parsedn
 	} else {
 		sendbuf[8] = ds->LastDiscrepancy;
 	}
-	if (ds->search == 0xEC) sendbuf[8] |= 0x80;
+	if (ds->search == 0xEC)
+		sendbuf[8] |= 0x80;
 
 	if (EtherWeather_command(pn->selected_connection, EtherWeather_COMMAND_ACCEL, 9, sendbuf, sendbuf)) {
 		return -EIO;
@@ -185,7 +185,8 @@ static int EtherWeather_next_both(struct device_search *ds, const struct parsedn
 
 	/* 0xFE indicates no discrepancies */
 	ds->LastDiscrepancy = sendbuf[8];
-	if (ds->LastDiscrepancy == 0xFE) ds->LastDiscrepancy = -1;
+	if (ds->LastDiscrepancy == 0xFE)
+		ds->LastDiscrepancy = -1;
 
 	ds->LastDevice = (sendbuf[8] == 0xFE);
 
@@ -194,7 +195,8 @@ static int EtherWeather_next_both(struct device_search *ds, const struct parsedn
 	return 0;
 }
 
-static int EtherWeather_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname *pn) {
+static int EtherWeather_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname *pn)
+{
 	BYTE pbbuf[2];
 
 	/* PowerByte command specifies delay in 500ms ticks, not milliseconds */
@@ -210,7 +212,8 @@ static int EtherWeather_PowerByte(const BYTE byte, BYTE * resp, const UINT delay
 }
 
 
-static void EtherWeather_close(struct connection_in *in) {
+static void EtherWeather_close(struct connection_in *in)
+{
 	if (in->file_descriptor >= 0) {
 		close(in->file_descriptor);
 		in->file_descriptor = -1;
@@ -218,7 +221,8 @@ static void EtherWeather_close(struct connection_in *in) {
 	FreeClientAddr(in);
 }
 
-static int EtherWeather_reset(const struct parsedname *pn) {
+static int EtherWeather_reset(const struct parsedname *pn)
+{
 	if (EtherWeather_command(pn->selected_connection, EtherWeather_COMMAND_RESET, 0, NULL, NULL)) {
 		return -EIO;
 	}
@@ -226,27 +230,28 @@ static int EtherWeather_reset(const struct parsedname *pn) {
 	return 0;
 }
 
-static void EtherWeather_setroutines(struct connection_in *in) {
-    in->iroutines.detect = EtherWeather_detect;
-    in->iroutines.reset = EtherWeather_reset;
-    in->iroutines.next_both = EtherWeather_next_both;
-    in->iroutines.PowerByte = EtherWeather_PowerByte;
+static void EtherWeather_setroutines(struct connection_in *in)
+{
+	in->iroutines.detect = EtherWeather_detect;
+	in->iroutines.reset = EtherWeather_reset;
+	in->iroutines.next_both = EtherWeather_next_both;
+	in->iroutines.PowerByte = EtherWeather_PowerByte;
 //    in->iroutines.ProgramPulse = ;
-    in->iroutines.sendback_data = EtherWeather_sendback_data;
-    in->iroutines.sendback_bits = EtherWeather_sendback_bits;
-    in->iroutines.select = NULL;
-    in->iroutines.reconnect = NULL;
-    in->iroutines.close = EtherWeather_close;
-    in->iroutines.transaction = NULL;
-    in->iroutines.flags =
-		ADAP_FLAG_overdrive | ADAP_FLAG_dirgulp | ADAP_FLAG_2409path;
+	in->iroutines.sendback_data = EtherWeather_sendback_data;
+	in->iroutines.sendback_bits = EtherWeather_sendback_bits;
+	in->iroutines.select = NULL;
+	in->iroutines.reconnect = NULL;
+	in->iroutines.close = EtherWeather_close;
+	in->iroutines.transaction = NULL;
+	in->iroutines.flags = ADAP_FLAG_overdrive | ADAP_FLAG_dirgulp | ADAP_FLAG_2409path;
 }
 
-int EtherWeather_detect(struct connection_in *in) {
+int EtherWeather_detect(struct connection_in *in)
+{
 
 	struct parsedname pn;
 
-	FS_ParsedName(NULL, &pn); // minimal parsename -- no destroy needed
+	FS_ParsedName(NULL, &pn);	// minimal parsename -- no destroy needed
 	pn.selected_connection = in;
 
 	LEVEL_CONNECT("Connecting to EtherWeather\n");
@@ -284,4 +289,3 @@ int EtherWeather_detect(struct connection_in *in) {
 
 	return 0;
 }
-

@@ -25,8 +25,8 @@ int ClientAddr(char *sname, struct connection_in *in)
 	int ret;
 
 	if (sname == NULL || sname[0] == '\0') {
-        sname = "4304" ;
-    }
+		sname = "4304";
+	}
 	if ((p = strrchr(sname, ':'))) {	/* : exists */
 		p[0] = '\0';			/* Separate tokens in the string */
 		in->connin.tcp.host = strdup(sname);
@@ -51,9 +51,7 @@ int ClientAddr(char *sname, struct connection_in *in)
 
 //printf("ClientAddr: [%s] [%s]\n", in->connin.tcp.host, in->connin.tcp.service);
 
-	if ((ret =
-		 getaddrinfo(in->connin.tcp.host, in->connin.tcp.service,
-					 &hint, &in->connin.tcp.ai))) {
+	if ((ret = getaddrinfo(in->connin.tcp.host, in->connin.tcp.service, &hint, &in->connin.tcp.ai))) {
 		LEVEL_CONNECT("GetAddrInfo error %s\n", gai_strerror(ret));
 		return -1;
 	}

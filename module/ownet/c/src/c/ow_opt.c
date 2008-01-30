@@ -78,7 +78,7 @@ static int ParseInterp(struct lineparse *lp)
 			continue;			// no match
 		//LEVEL_DEBUG("Configuration option %s recognized as %s. Value=%s\n",lp->opt,long_option_pointer->name,SAFESTRING(lp->val)) ;
 		//printf("Configuration option %s recognized as %s. Value=%s\n",lp->opt,long_option_pointer->name,SAFESTRING(lp->val)) ;
-		if (long_option_pointer->flag) {			// immediate value mode
+		if (long_option_pointer->flag) {	// immediate value mode
 			//printf("flag c=%d flag=%p long_option_pointer->flag=%p\n",c,flag,long_option_pointer->flag);
 			if ((c != 0) || (flag != NULL && flag != long_option_pointer->flag)) {
 				//fprintf(stderr,"Ambiguous option %s in configuration file.\n",lp->opt ) ;
@@ -115,8 +115,7 @@ static void ParseTheLine(struct lineparse *lp)
 {
 	ASCII *p;
 	// state machine -- pretty self-explanatory.
-	enum pstate { pspreopt, psinopt, pspreeq, pspreval, psinval } ps =
-		pspreopt;
+	enum pstate { pspreopt, psinopt, pspreeq, pspreval, psinval } ps = pspreopt;
 	lp->opt = NULL;
 	lp->val = NULL;
 	for (p = lp->line; *p; ++p) {
@@ -188,9 +187,7 @@ static int ConfigurationFile(const ASCII * file)
 		while (fgets(lp.line, 256, configuration_file_pointer)) {
 			// check line length
 			if (strlen(lp.line) > 250) {
-				ERROR_DEFAULT
-					("Line too long (>250 characters) in file %s.\n%s\n",
-					 file, lp.line);
+				ERROR_DEFAULT("Line too long (>250 characters) in file %s.\n%s\n", file, lp.line);
 				ret = 1;
 				break;
 			}
@@ -210,9 +207,9 @@ static int ConfigurationFile(const ASCII * file)
 #if 0
 int owopt_packed(const char *params)
 {
-	char *params_copy ; // copy of the input line
-	char *current_location_in_params_copy ; // pointers into the input line copy
-	char *next_location_in_params_copy; // pointers into the input line copy
+	char *params_copy;			// copy of the input line
+	char *current_location_in_params_copy;	// pointers into the input line copy
+	char *next_location_in_params_copy;	// pointers into the input line copy
 	char **argv = NULL;
 	int argc = 0;
 	int ret = 0;
@@ -228,8 +225,7 @@ int owopt_packed(const char *params)
 	// Stuffs arbitrary first value since argv[0] ignored by getopt
 	// create a synthetic argv/argc for get_opt
 	for (next_location_in_params_copy = "X";
-	     next_location_in_params_copy != NULL;
-	     next_location_in_params_copy = strsep(&current_location_in_params_copy, " ")) {
+		 next_location_in_params_copy != NULL; next_location_in_params_copy = strsep(&current_location_in_params_copy, " ")) {
 		// make room
 		if (argc >= allocated - 1) {
 			char **larger_argv = realloc(argv, (allocated + 10) * sizeof(char *));
@@ -248,8 +244,7 @@ int owopt_packed(const char *params)
 
 	// analyze argv/argc as if real comman line arguments
 	while (ret == 0) {
-		if ((option_char =
-			 getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL)) == -1)
+		if ((option_char = getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL)) == -1)
 			break;
 		ret = owopt(option_char, optarg);
 	}
@@ -261,7 +256,7 @@ int owopt_packed(const char *params)
 		++optind;
 	}
 
-	if (argv!=NULL)
+	if (argv != NULL)
 		free(argv);
 	free(params_copy);
 	return ret;
@@ -277,8 +272,7 @@ int owopt(const int option_char, const char *arg)
 	switch (option_char) {
 	case 'c':
 		if (config_depth > 4) {
-			LEVEL_DEFAULT("Configuration file layered too deeply (>%d)\n",
-						  config_depth);
+			LEVEL_DEFAULT("Configuration file layered too deeply (>%d)\n", config_depth);
 			return 1;
 		} else {
 			int ret;
@@ -294,20 +288,16 @@ int owopt(const int option_char, const char *arg)
 		Global.readonly = 0;
 		break;
 	case 'C':
-		set_semiglobal(&ow_Global.sg, TEMPSCALE_MASK, TEMPSCALE_BIT,
-					   temp_celsius);
+		set_semiglobal(&ow_Global.sg, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_celsius);
 		break;
 	case 'F':
-		set_semiglobal(&ow_Global.sg, TEMPSCALE_MASK, TEMPSCALE_BIT,
-					   temp_fahrenheit);
+		set_semiglobal(&ow_Global.sg, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_fahrenheit);
 		break;
 	case 'R':
-		set_semiglobal(&ow_Global.sg, TEMPSCALE_MASK, TEMPSCALE_BIT,
-					   temp_rankine);
+		set_semiglobal(&ow_Global.sg, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_rankine);
 		break;
 	case 'K':
-		set_semiglobal(&ow_Global.sg, TEMPSCALE_MASK, TEMPSCALE_BIT,
-					   temp_kelvin);
+		set_semiglobal(&ow_Global.sg, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_kelvin);
 		break;
 	case 'V':
 		printf("libownet version:\n\t" VERSION "\n");

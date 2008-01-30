@@ -41,9 +41,7 @@ struct ppdev_frob_struct ENIlow = { (BYTE) ~ 0x1C, 0x06 };
 /* All the rest of the program sees is the DS9907_detect and the entry in iroutines */
 static int DS1410bit(BYTE out, BYTE * in, int file_descriptor);
 static int DS1410_reset(const struct parsedname *pn);
-static int DS1410_sendback_bits(const BYTE * data, BYTE * resp,
-								const size_t len,
-								const struct parsedname *pn);
+static int DS1410_sendback_bits(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 static void DS1410_setroutines(struct connection_in *in);
 static int DS1410_open(const struct parsedname *pn);
 static void DS1410_close(struct connection_in *in);
@@ -98,8 +96,7 @@ int DS1410_detect(struct connection_in *in)
 		return -EIO;			// Also exits "Passthru mode"
 
 	if (DS1410_ODcheck(&od, in->file_descriptor)) {
-		LEVEL_CONNECT("Cannot check Overdrive mode on DS1410E at %s\n",
-					  in->name);
+		LEVEL_CONNECT("Cannot check Overdrive mode on DS1410E at %s\n", in->name);
 	} else if (od) {
 		DS1410_ODoff(&pn);
 	}
@@ -129,9 +126,7 @@ static int DS1410_open(const struct parsedname *pn)
 		close(pn->selected_connection->file_descriptor);
 		pn->selected_connection->file_descriptor = -1;
 	} else if (DS1410_PToff(pn)) {
-		LEVEL_CONNECT
-			("Cannot exit PassThru mode for DS1410E at %s\nIs there really an adapter there?\n",
-			 pn->selected_connection->name);
+		LEVEL_CONNECT("Cannot exit PassThru mode for DS1410E at %s\nIs there really an adapter there?\n", pn->selected_connection->name);
 	} else {
 		return 0;
 	}
@@ -152,9 +147,7 @@ static void DS1410_close(struct connection_in *in)
 
 /* Symmetric */
 /* send a bit -- read a bit */
-static int DS1410_sendback_bits(const BYTE * data, BYTE * resp,
-								const size_t len,
-								const struct parsedname *pn)
+static int DS1410_sendback_bits(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn)
 {
 	int i;
 	for (i = 0; i < len; ++i) {
@@ -216,8 +209,7 @@ static int DS1410bit(BYTE out, BYTE * in, int file_descriptor)
 		|| nanosleep(&usec12, NULL)
 		)
 		return 1;
-	printf("DS1410 bit success %d->%d counter=%d\n", (int) out,
-		   (int) in[0], i);
+	printf("DS1410 bit success %d->%d counter=%d\n", (int) out, (int) in[0], i);
 	return 0;
 }
 
@@ -437,8 +429,7 @@ static int DS1410Present(BYTE * p, int file_descriptor)
 		|| nanosleep(&usec12, NULL)
 		)
 		return 1;
-	printf("DS1410 present success %d reached pass=%d counter=%d\n",
-		   (int) p[0], pass, i);
+	printf("DS1410 present success %d reached pass=%d counter=%d\n", (int) p[0], pass, i);
 	return 0;
 }
 

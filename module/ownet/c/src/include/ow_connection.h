@@ -130,8 +130,8 @@ struct connin_tcp {
 	struct addrinfo *ai_ok;
 	char *type;					// for zeroconf
 	char *domain;				// for zeroconf
-	char *fqdn; // fully qualified domain name
-	int no_dirall; // flag that server doesn't support DIRALL
+	char *fqdn;					// fully qualified domain name
+	int no_dirall;				// flag that server doesn't support DIRALL
 };
 
 //enum server_type { srv_unknown, srv_direct, srv_client, src_
@@ -143,10 +143,10 @@ enum bus_mode {
 };
 
 enum connection_state {
-	connection_vacant ,
-	connection_pending ,
-	connection_active ,
-} ;
+	connection_vacant,
+	connection_pending,
+	connection_active,
+};
 
 enum adapter_type {
 	adapter_tcp = 9,
@@ -161,7 +161,7 @@ enum e_reconnect {
 struct device_search {
 	int LastDiscrepancy;		// for search
 	int LastDevice;				// for search
-	int index ;
+	int index;
 	BYTE sn[8];
 	BYTE search;
 };
@@ -169,7 +169,7 @@ struct device_search {
 struct connection_in {
 	struct connection_in *next;
 	int index;
-	enum connection_state state ;
+	enum connection_state state;
 	char *name;
 	int file_descriptor;
 #if OW_MT
@@ -180,12 +180,12 @@ struct connection_in {
 	struct interface_routines iroutines;
 	enum adapter_type Adapter;
 	char *adapter_name;
-	BYTE combuffer[MAX_FIFO_SIZE] ;
+	BYTE combuffer[MAX_FIFO_SIZE];
 
 	/* Static buffer for conmmunication */
 	/* Since only used during actual transfer to/from the adapter,
 	   should be protected from contention even when multithreading allowed */
-	size_t bundling_length ;
+	size_t bundling_length;
 	union {
 		struct connin_tcp tcp;
 	} connin;
@@ -202,7 +202,7 @@ extern struct connection_in *head_inbound_list;
 enum bus_mode get_busmode(struct connection_in *c);
 int BusIsServer(struct connection_in *in);
 
-void FreeIn(struct connection_in * target) ;
+void FreeIn(struct connection_in *target);
 void DelIn(struct connection_in *in);
 
 struct connection_in *NewIn(void);

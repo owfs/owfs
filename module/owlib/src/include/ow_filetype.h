@@ -65,7 +65,7 @@ $Id$
     25-05-2003 iButtonLink device
 */
 
-#ifndef OW_FILETYPE_H					/* tedious wrapper */
+#ifndef OW_FILETYPE_H			/* tedious wrapper */
 #define OW_FILETYPE_H
 
 /* Define our understanding of integers, floats, ... */
@@ -165,8 +165,8 @@ struct filetype {
 	struct aggregate *ag;		// struct pointer for aggregate
 	enum ft_format format;		// type of data
 	enum fc_change change;		// volatility
-	int (*read)  ( struct one_wire_query * ) ; // read callback function
-	int (*write) ( struct one_wire_query * ) ; // write callback function
+	int (*read) (struct one_wire_query *);	// read callback function
+	int (*write) (struct one_wire_query *);	// write callback function
 	union {
 		void *v;
 		int i;

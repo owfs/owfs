@@ -18,22 +18,20 @@ $Id$
 /* void OWNET_close( OWNET_HANDLE h)
    close a particular owserver connection
 */
-void OWNET_close( OWNET_HANDLE h)
+void OWNET_close(OWNET_HANDLE h)
 {
-	FreeIn(find_connection_in(h)) ;
+	FreeIn(find_connection_in(h));
 }
 
 /* void OWNET_closeall( void )
    close all owserver connections
 */
-void OWNET_closeall( void )
+void OWNET_closeall(void)
 {
-	struct connection_in *target ;
+	struct connection_in *target;
 
-    // step through head_inbound_list linked list
-	for ( target = head_inbound_list ; target != NULL ; target = target->next ) {
-		FreeIn(target) ;
+	// step through head_inbound_list linked list
+	for (target = head_inbound_list; target != NULL; target = target->next) {
+		FreeIn(target);
 	}
 }
-
-

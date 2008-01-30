@@ -19,7 +19,7 @@ $Id$
     GNU General Public License for more details.
 */
 
-#ifndef OW_SERVER_H			/* tedious wrapper */
+#ifndef OW_SERVER_H				/* tedious wrapper */
 #define OW_SERVER_H
 
 #include <config.h>
@@ -28,23 +28,23 @@ $Id$
 #include "ow_connection.h"
 
 struct request_packet {
-	struct connection_in * owserver ;
-	const ASCII * path ;
-	unsigned char * read_value ;
-    const unsigned char * write_value ;
-	size_t data_length ;
-	off_t data_offset ;
-	int error_code ;
+	struct connection_in *owserver;
+	const ASCII *path;
+	unsigned char *read_value;
+	const unsigned char *write_value;
+	size_t data_length;
+	off_t data_offset;
+	int error_code;
 	int tokens;					/* for anti-loop work */
 	BYTE *tokenstring;			/* List of tokens from owservers passed */
-} ;
+};
 
 extern struct ow_global {
-	uint32_t sg ;
+	uint32_t sg;
 	int timeout_network;
 	int timeout_server;
-	int autoserver ;
-} ow_Global ;
+	int autoserver;
+} ow_Global;
 
 #define BUSRET_MASK    ( (UINT) 0x00000002 )
 #define BUSRET_BIT     1
@@ -61,10 +61,9 @@ extern struct ow_global {
 #define DeviceFormat         ( (enum deviceformat) ((ow_Global.sg & DEVFORMAT_MASK) >> DEVFORMAT_BIT) )
 #define set_semiglobal(s, mask, bit, val) do { *(s) = (*(s) & ~(mask)) | ((val)<<bit); } while(0)
 
-int ServerPresence(struct request_packet * rp);
-int ServerRead(struct request_packet * rp);
-int ServerWrite(struct request_packet * rp);
-int ServerDir(void (*dirfunc) (void *, const char  *),
-			  void *v, struct request_packet * rp);
+int ServerPresence(struct request_packet *rp);
+int ServerRead(struct request_packet *rp);
+int ServerWrite(struct request_packet *rp);
+int ServerDir(void (*dirfunc) (void *, const char *), void *v, struct request_packet *rp);
 
 #endif							/* OW_SERVER_H */

@@ -22,6 +22,6 @@
 #define _1W_RESUME                 0xA5
 #define _1W_OVERDRIVE_SKIP_ROM     0x3C
 #define _1W_OVERDRIVE_MATCH_ROM    0x69
-#define _1W_SWAP                   0xAA // used by the DS27xx
+#define _1W_SWAP                   0xAA	// used by the DS27xx
 
 #endif							/* OW_CODES_H */

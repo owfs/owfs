@@ -19,18 +19,15 @@ void ow_help_general(void)
 {
 	switch (Global.opt) {
 	case opt_owfs:
-		printf("Syntax: %s [options] device mountpoint\n",
-			   SAFESTRING(Global.progname));
+		printf("Syntax: %s [options] device mountpoint\n", SAFESTRING(Global.progname));
 		break;
 	case opt_httpd:
 	case opt_server:
-		printf("Syntax: %s [options] device clientport\n",
-			   SAFESTRING(Global.progname));
+		printf("Syntax: %s [options] device clientport\n", SAFESTRING(Global.progname));
 		break;
 	case opt_ftpd:
 	default:
-		printf("Syntax: %s [options] device\n",
-			   SAFESTRING(Global.progname));
+		printf("Syntax: %s [options] device\n", SAFESTRING(Global.progname));
 		break;
 	}
 	printf("\n"
@@ -46,8 +43,7 @@ void ow_help_general(void)
 		   "  and man pages for individual 1-wire devices e.g. 'man DS2409'\n",
 		   SAFESTRING(Global.progname), SAFESTRING(Global.progname),
 		   SAFESTRING(Global.progname), SAFESTRING(Global.progname),
-		   SAFESTRING(Global.progname), SAFESTRING(Global.progname),
-		   SAFESTRING(Global.progname)
+		   SAFESTRING(Global.progname), SAFESTRING(Global.progname), SAFESTRING(Global.progname)
 		);
 }
 
@@ -72,12 +68,12 @@ void ow_help_job(void)
 		   " Permission\n"
 		   " -r --readonly     Don't allow writing to 1-wire devices\n"
 		   " -w --write        Allow writing to 1-wire\n"
-	   "\n"
-           " Development tests (owserver only)\n"
-           "  --pingcrazy      Add lots of keep-alive messages to the owserver protocol\n"
-           "  --no_dirall      DIRALL fails, drops back to older DIR (individual entries)\n"
-           "  --no_get         GET fails, drops back to DIRALL and READ\n"
-           "  --no_persistence persistent connections refused, drops back to non-persistent\n");
+		   "\n"
+		   " Development tests (owserver only)\n"
+		   "  --pingcrazy      Add lots of keep-alive messages to the owserver protocol\n"
+		   "  --no_dirall      DIRALL fails, drops back to older DIR (individual entries)\n"
+		   "  --no_get         GET fails, drops back to DIRALL and READ\n"
+		   "  --no_persistence persistent connections refused, drops back to non-persistent\n");
 }
 
 void ow_help_temperature(void)
@@ -93,8 +89,7 @@ void ow_help_temperature(void)
 		   " Temperature scale\n"
 		   "  -C --Celsius        Celsius(default) temperature scale\n"
 		   "  -F --Fahrenheit     Fahrenheit temperature scale\n"
-		   "  -K --Kelvin         Kelvin temperature scale\n"
-		   "  -R --Rankine        Rankine temperature scale\n");
+		   "  -K --Kelvin         Kelvin temperature scale\n" "  -R --Rankine        Rankine temperature scale\n");
 }
 
 void ow_help_cache(void)
@@ -115,8 +110,7 @@ void ow_help_cache(void)
 		   "  --timeout_usb       [  5] Timeout for USB transaction\n"
 		   "  --timeout_network   [  1] Timeout for each network transaction\n"
 		   "  --timeout_server    [ 10] Timeout for first server connection\n"
-		   "  --timeout_ftp       [900] Timeout for FTP session\n"
-		   "  --timeout_ha7       [ 60] Timeout for HA7Net adapter\n");
+		   "  --timeout_ftp       [900] Timeout for FTP session\n" "  --timeout_ha7       [ 60] Timeout for HA7Net adapter\n");
 }
 
 void ow_help_program(void)
@@ -136,10 +130,7 @@ void ow_help_program(void)
 		   "  --zero                Announce service via zeroconf\n"
 		   "  --announce name       Name for service given in zeroconf broadcast\n"
 		   "  --nozero              Don't announce service via zeroconf\n"
-		   "\n"
-		   " owftpd (ftp server)\n"
-		   "  has default port 22 (root only)\n"
-		   "  --max_clients n       Simultaneous ftp sessions\n");
+		   "\n" " owftpd (ftp server)\n" "  has default port 22 (root only)\n" "  --max_clients n       Simultaneous ftp sessions\n");
 }
 
 void ow_help_device(void)
@@ -149,7 +140,7 @@ void ow_help_device(void)
 		   "\n"
 		   " Serial devices (dev is port name, e.g. /dev/ttyS0)\n"
 		   "  -d dev          DS9097U or DS9097 adapter (or LINK in emulation mode)\n"
-	           "  --8bit          Open 8bit (instead of 6) serial-port with DS9097\n"
+		   "  --8bit          Open 8bit (instead of 6) serial-port with DS9097\n"
 		   "  --LINK dev      Serial LINK adapter (non-emulation)\n"
 		   "  --HA3 dev       Serial HA3 adapter\n"
 		   "  --HA4B dev      Serial HA4B adapter\n"
@@ -163,9 +154,9 @@ void ow_help_device(void)
 		   "  -u              DS9490R or PuceBaboon adapter\n"
 		   "  -u all          Scan and use all DS9490-type adapters\n"
 		   "  -d /dev/ttyUSB0 ECLO USB adapter\n"
-            "  --altUSB        Change some settings for DS9490 adapters (especially for AAG and DS2423)\n"
-            "  --usb_flextime | --usb_regulartime     Needed for Louis Swart's LCD module\n"
-            "\n"
+		   "  --altUSB        Change some settings for DS9490 adapters (especially for AAG and DS2423)\n"
+		   "  --usb_flextime | --usb_regulartime     Needed for Louis Swart's LCD module\n"
+		   "\n"
 		   " Network (address is form [ip:]port, ip DNS name or n.n.n.n, port is port number)\n"
 		   "  -s address      owserver\n"
 		   "  --LINK address  LINK-HUB-E network LINK\n"
@@ -177,15 +168,12 @@ void ow_help_device(void)
 		   "  --fake list     List of devices to simulate (random ID, random data)\n"
 		   "                   use family codes in hex\n"
 		   "                   e.g. 1F,10,21 for DS2409,DS18B20,DS1921\n"
-            "\n"
-           " 1-wire device selection\n"
-           "  --one-device     Only single device on bus, use ROM SKIP command\n");
+		   "\n" " 1-wire device selection\n" "  --one-device     Only single device on bus, use ROM SKIP command\n");
 }
 
 void ow_help(const char *arg)
 {
-	printf("1-WIRE access programs         by Paul H Alfille and others.\n"
-		   "\n");
+	printf("1-WIRE access programs         by Paul H Alfille and others.\n" "\n");
 	if (arg) {
 		switch (arg[0]) {
 		case 'd':
@@ -215,6 +203,5 @@ void ow_help(const char *arg)
 		ow_help_general();
 	}
 
-	printf("\n"
-		   "Copyright 2003 GPLv2. See http://www.owfs.org for support, downloads\n");
+	printf("\n" "Copyright 2003 GPLv2. See http://www.owfs.org for support, downloads\n");
 }

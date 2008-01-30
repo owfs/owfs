@@ -19,77 +19,45 @@ static int write_fully(int file_descriptor, const char *buf, int buflen);
 static void init_passive_port(void);
 static int get_passive_port(void);
 static int convert_newlines(char *dst, const char *src, int srclen);
-static void get_addr_str(const sockaddr_storage_t * s, char *buf,
-						 int bufsiz);
+static void get_addr_str(const sockaddr_storage_t * s, char *buf, int bufsiz);
 static void send_readme(const struct ftp_session_s *f, int code);
 static void netscape_hack(int file_descriptor);
-static void set_port(struct ftp_session_s *f,
-					 const sockaddr_storage_t * host_port);
-static int set_pasv(struct ftp_session_s *f,
-					sockaddr_storage_t * host_port);
+static void set_port(struct ftp_session_s *f, const sockaddr_storage_t * host_port);
+static int set_pasv(struct ftp_session_s *f, sockaddr_storage_t * host_port);
 //static int ip_equal(const sockaddr_storage_t *a, const sockaddr_storage_t *b);
-static int ip_equal(const sockaddr_storage_t * a,
-					const sockaddr_storage_t * b);
-static void get_absolute_fname(char *fname, size_t fname_len,
-							   const char *dir, const char *file);
-static void both_list(struct ftp_session_s *f,
-					  const struct ftp_command_s *cmd,
-					  enum file_list_e fle);
+static int ip_equal(const sockaddr_storage_t * a, const sockaddr_storage_t * b);
+static void get_absolute_fname(char *fname, size_t fname_len, const char *dir, const char *file);
+static void both_list(struct ftp_session_s *f, const struct ftp_command_s *cmd, enum file_list_e fle);
 
 /* command handlers */
-static void do_user(struct ftp_session_s *f,
-					const struct ftp_command_s *cmd);
-static void do_pass(struct ftp_session_s *f,
-					const struct ftp_command_s *cmd);
-static void do_cwd(struct ftp_session_s *f,
-				   const struct ftp_command_s *cmd);
-static void do_cdup(struct ftp_session_s *f,
-					const struct ftp_command_s *cmd);
-static void do_quit(struct ftp_session_s *f,
-					const struct ftp_command_s *cmd);
-static void do_port(struct ftp_session_s *f,
-					const struct ftp_command_s *cmd);
-static void do_pasv(struct ftp_session_s *f,
-					const struct ftp_command_s *cmd);
-static void do_type(struct ftp_session_s *f,
-					const struct ftp_command_s *cmd);
-static void do_stru(struct ftp_session_s *f,
-					const struct ftp_command_s *cmd);
-static void do_mode(struct ftp_session_s *f,
-					const struct ftp_command_s *cmd);
-static void do_retr(struct ftp_session_s *f,
-					const struct ftp_command_s *cmd);
-static void do_stor(struct ftp_session_s *f,
-					const struct ftp_command_s *cmd);
-static void do_pwd(struct ftp_session_s *f,
-				   const struct ftp_command_s *cmd);
-static void do_nlst(struct ftp_session_s *f,
-					const struct ftp_command_s *cmd);
-static void do_list(struct ftp_session_s *f,
-					const struct ftp_command_s *cmd);
-static void do_syst(struct ftp_session_s *f,
-					const struct ftp_command_s *cmd);
-static void do_noop(struct ftp_session_s *f,
-					const struct ftp_command_s *cmd);
-static void do_rest(struct ftp_session_s *f,
-					const struct ftp_command_s *cmd);
-static void do_lprt(struct ftp_session_s *f,
-					const struct ftp_command_s *cmd);
-static void do_lpsv(struct ftp_session_s *f,
-					const struct ftp_command_s *cmd);
-static void do_eprt(struct ftp_session_s *f,
-					const struct ftp_command_s *cmd);
-static void do_epsv(struct ftp_session_s *f,
-					const struct ftp_command_s *cmd);
-static void do_size(struct ftp_session_s *f,
-					const struct ftp_command_s *cmd);
-static void do_mdtm(struct ftp_session_s *f,
-					const struct ftp_command_s *cmd);
+static void do_user(struct ftp_session_s *f, const struct ftp_command_s *cmd);
+static void do_pass(struct ftp_session_s *f, const struct ftp_command_s *cmd);
+static void do_cwd(struct ftp_session_s *f, const struct ftp_command_s *cmd);
+static void do_cdup(struct ftp_session_s *f, const struct ftp_command_s *cmd);
+static void do_quit(struct ftp_session_s *f, const struct ftp_command_s *cmd);
+static void do_port(struct ftp_session_s *f, const struct ftp_command_s *cmd);
+static void do_pasv(struct ftp_session_s *f, const struct ftp_command_s *cmd);
+static void do_type(struct ftp_session_s *f, const struct ftp_command_s *cmd);
+static void do_stru(struct ftp_session_s *f, const struct ftp_command_s *cmd);
+static void do_mode(struct ftp_session_s *f, const struct ftp_command_s *cmd);
+static void do_retr(struct ftp_session_s *f, const struct ftp_command_s *cmd);
+static void do_stor(struct ftp_session_s *f, const struct ftp_command_s *cmd);
+static void do_pwd(struct ftp_session_s *f, const struct ftp_command_s *cmd);
+static void do_nlst(struct ftp_session_s *f, const struct ftp_command_s *cmd);
+static void do_list(struct ftp_session_s *f, const struct ftp_command_s *cmd);
+static void do_syst(struct ftp_session_s *f, const struct ftp_command_s *cmd);
+static void do_noop(struct ftp_session_s *f, const struct ftp_command_s *cmd);
+static void do_rest(struct ftp_session_s *f, const struct ftp_command_s *cmd);
+static void do_lprt(struct ftp_session_s *f, const struct ftp_command_s *cmd);
+static void do_lpsv(struct ftp_session_s *f, const struct ftp_command_s *cmd);
+static void do_eprt(struct ftp_session_s *f, const struct ftp_command_s *cmd);
+static void do_epsv(struct ftp_session_s *f, const struct ftp_command_s *cmd);
+static void do_size(struct ftp_session_s *f, const struct ftp_command_s *cmd);
+static void do_mdtm(struct ftp_session_s *f, const struct ftp_command_s *cmd);
 
 static struct {
 	char *name;
-	void (*func) (struct ftp_session_s * f,
-				  const struct ftp_command_s * cmd);
+	void (*func) (struct ftp_session_s * f, const struct ftp_command_s * cmd);
 } command_func[] = {
 	{
 	"USER", do_user}, {
@@ -121,9 +89,7 @@ static struct {
 #define NUM_COMMAND_FUNC (sizeof(command_func) / sizeof(command_func[0]))
 
 int ftp_session_init(struct ftp_session_s *f,
-					 const sockaddr_storage_t * client_addr,
-					 const sockaddr_storage_t * server_addr,
-					 struct telnet_session_s *t, const char *dir)
+					 const sockaddr_storage_t * client_addr, const sockaddr_storage_t * server_addr, struct telnet_session_s *t, const char *dir)
 {
 	daemon_assert(f != NULL);
 	daemon_assert(client_addr != NULL);
@@ -145,8 +111,7 @@ int ftp_session_init(struct ftp_session_s *f,
 		hints.ai_family = AF_INET;
 		hints.ai_flags = AI_PASSIVE;
 		if (getaddrinfo(NULL, "ftp", &hints, &res) != 0) {
-			ERROR_CONNECT("Unable to determing IPv4 address; %s",
-						  gai_strerror(errcode));
+			ERROR_CONNECT("Unable to determing IPv4 address; %s", gai_strerror(errcode));
 			return 0;
 		}
 
@@ -178,8 +143,7 @@ int ftp_session_init(struct ftp_session_s *f,
 	f->epsv_all_set = 0;
 
 	f->client_addr = *client_addr;
-	get_addr_str(client_addr, f->client_addr_str,
-				 sizeof(f->client_addr_str));
+	get_addr_str(client_addr, f->client_addr_str, sizeof(f->client_addr_str));
 
 	f->server_addr = *server_addr;
 
@@ -225,8 +189,7 @@ void ftp_session_run(struct ftp_session_s *f, struct watched_s *watched)
 	reply(f, 220, "Service ready for new user.");
 
 	/* process commands */
-	while (f->session_active &&
-		   telnet_session_readln(f->telnet_session, buf, sizeof(buf))) {
+	while (f->session_active && telnet_session_readln(f->telnet_session, buf, sizeof(buf))) {
 
 		/* delay our timeout based on this input */
 		watchdog_defer_watched(f->watched);
@@ -242,8 +205,7 @@ void ftp_session_run(struct ftp_session_s *f, struct watched_s *watched)
 		len = strlen(buf);
 		if (buf[len - 1] != '\n') {
 			reply(f, 500, "Command line too long.");
-			while (telnet_session_readln
-				   (f->telnet_session, buf, sizeof(buf))) {
+			while (telnet_session_readln(f->telnet_session, buf, sizeof(buf))) {
 				len = strlen(buf);
 				if (buf[len - 1] == '\n')
 					break;
@@ -370,8 +332,7 @@ static void reply(struct ftp_session_s *f, int code, const char *fmt, ...)
 	daemon_assert(invariant(f));
 }
 
-static void do_user(struct ftp_session_s *f,
-					const struct ftp_command_s *cmd)
+static void do_user(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 {
 	const char *user;
 
@@ -381,8 +342,7 @@ static void do_user(struct ftp_session_s *f,
 
 	user = cmd->arg[0].string;
 	if (strcasecmp(user, "ftp") && strcasecmp(user, "anonymous")) {
-		LEVEL_CONNECT("%s attempted to log in as \"%s\"",
-					  f->client_addr_str, user);
+		LEVEL_CONNECT("%s attempted to log in as \"%s\"", f->client_addr_str, user);
 		//reply(f, 530, "Only anonymous FTP supported.");
 		reply(f, 331, "Force Anonymous. Send e-mail address as password.");
 	} else {
@@ -391,8 +351,7 @@ static void do_user(struct ftp_session_s *f,
 	daemon_assert(invariant(f));
 }
 
-static void do_pass(struct ftp_session_s *f,
-					const struct ftp_command_s *cmd)
+static void do_pass(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 {
 	const char *password;
 
@@ -401,16 +360,14 @@ static void do_pass(struct ftp_session_s *f,
 	daemon_assert(cmd->num_arg == 1);
 
 	password = cmd->arg[0].string;
-	LEVEL_CONNECT("%s reports e-mail address \"%s\"",
-				  f->client_addr_str, password);
+	LEVEL_CONNECT("%s reports e-mail address \"%s\"", f->client_addr_str, password);
 	reply(f, 230, "User logged in, proceed.");
 
 	daemon_assert(invariant(f));
 }
 
 #ifdef INET6
-static void get_addr_str(const sockaddr_storage_t * s, char *buf,
-						 int bufsiz)
+static void get_addr_str(const sockaddr_storage_t * s, char *buf, int bufsiz)
 {
 	int port;
 	int error;
@@ -424,19 +381,16 @@ static void get_addr_str(const sockaddr_storage_t * s, char *buf,
 	 * number (which is 5 chars max), plus the '\0' character. */
 	daemon_assert(bufsiz >= (INET_ADDRSTRLEN + 12));
 
-	error = getnameinfo(client_addr, sizeof(sockaddr_storage_t), buf,
-						bufsiz, NULL, 0, NI_NUMERICHOST);
+	error = getnameinfo(client_addr, sizeof(sockaddr_storage_t), buf, bufsiz, NULL, 0, NI_NUMERICHOST);
 	/* getnameinfo() should never fail when called with NI_NUMERICHOST */
 	daemon_assert(error == 0);
 
 	len = strlen(buf);
 	daemon_assert(bufsiz >= len + 12);
-	snprintf(buf + len, bufsiz - len, " port %d",
-			 ntohs(SINPORT(&f->client_addr)));
+	snprintf(buf + len, bufsiz - len, " port %d", ntohs(SINPORT(&f->client_addr)));
 }
 #else
-static void get_addr_str(const sockaddr_storage_t * s, char *buf,
-						 int bufsiz)
+static void get_addr_str(const sockaddr_storage_t * s, char *buf, int bufsiz)
 {
 	unsigned int addr;
 	int port;
@@ -451,14 +405,11 @@ static void get_addr_str(const sockaddr_storage_t * s, char *buf,
 
 	addr = ntohl(s->sin_addr.s_addr);
 	port = ntohs(s->sin_port);
-	snprintf(buf, bufsiz, "%d.%d.%d.%d port %d",
-			 (addr >> 24) & 0xff,
-			 (addr >> 16) & 0xff, (addr >> 8) & 0xff, addr & 0xff, port);
+	snprintf(buf, bufsiz, "%d.%d.%d.%d port %d", (addr >> 24) & 0xff, (addr >> 16) & 0xff, (addr >> 8) & 0xff, addr & 0xff, port);
 }
 #endif
 
-static void do_cwd(struct ftp_session_s *f,
-				   const struct ftp_command_s *cmd)
+static void do_cwd(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 {
 	char *new_dir;
 
@@ -472,8 +423,7 @@ static void do_cwd(struct ftp_session_s *f,
 	daemon_assert(invariant(f));
 }
 
-static void do_cdup(struct ftp_session_s *f,
-					const struct ftp_command_s *cmd)
+static void do_cdup(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 {
 	daemon_assert(invariant(f));
 	daemon_assert(cmd != NULL);
@@ -492,8 +442,7 @@ static void change_dir(struct ftp_session_s *f, char *new_dir)
 	cps.rest = new_dir;
 	cps.pse = parse_status_init;
 
-	LEVEL_DEBUG("CD dir=%s, file=%s\n", SAFESTRING(cps.buffer),
-				SAFESTRING(new_dir));
+	LEVEL_DEBUG("CD dir=%s, file=%s\n", SAFESTRING(cps.buffer), SAFESTRING(new_dir));
 	FileLexCD(&cps);
 
 	switch (cps.solutions) {
@@ -518,8 +467,7 @@ static void change_dir(struct ftp_session_s *f, char *new_dir)
 		free(cps.dir);
 }
 
-static void do_quit(struct ftp_session_s *f,
-					const struct ftp_command_s *cmd)
+static void do_quit(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 {
 	daemon_assert(invariant(f));
 	daemon_assert(cmd != NULL);
@@ -532,8 +480,7 @@ static void do_quit(struct ftp_session_s *f,
 }
 
 /* support for the various port setting functions */
-static void set_port(struct ftp_session_s *f,
-					 const sockaddr_storage_t * host_port)
+static void set_port(struct ftp_session_s *f, const sockaddr_storage_t * host_port)
 {
 	daemon_assert(invariant(f));
 	daemon_assert(host_port != NULL);
@@ -543,8 +490,7 @@ static void set_port(struct ftp_session_s *f,
 	} else if (!ip_equal(&f->client_addr, host_port)) {
 		reply(f, 500, "Port must be on command channel IP.");
 	} else if (ntohs(cSINPORT(host_port)) < IPPORT_RESERVED) {
-		reply(f, 500,
-			  "Port may not be less than 1024, which is reserved.");
+		reply(f, 500, "Port may not be less than 1024, which is reserved.");
 	} else {
 		/* close any outstanding PASSIVE port */
 		if (f->data_channel == DATA_PASSIVE) {
@@ -561,8 +507,7 @@ static void set_port(struct ftp_session_s *f,
 }
 
 /* set IP and port for client to receive data on */
-static void do_port(struct ftp_session_s *f,
-					const struct ftp_command_s *cmd)
+static void do_port(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 {
 	const sockaddr_storage_t *host_port;
 
@@ -579,8 +524,7 @@ static void do_port(struct ftp_session_s *f,
 }
 
 /* set IP and port for client to receive data on, transport independent */
-static void do_lprt(struct ftp_session_s *f,
-					const struct ftp_command_s *cmd)
+static void do_lprt(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 {
 	const sockaddr_storage_t *host_port;
 
@@ -592,8 +536,7 @@ static void do_lprt(struct ftp_session_s *f,
 
 #ifdef INET6
 	if ((cSSFAM(host_port) != AF_INET) && (cSSFAM(host_port) != AF_INET6)) {
-		reply(f, 521,
-			  "Only IPv4 and IPv6 supported, address families (4,6)");
+		reply(f, 521, "Only IPv4 and IPv6 supported, address families (4,6)");
 	}
 #else
 	if (cSSFAM(host_port) != AF_INET) {
@@ -612,8 +555,7 @@ static void do_lprt(struct ftp_session_s *f,
 /* the same IP as the control connection, EPSV must be used.  Since  */
 /* that is the only mode of transfer we support, we reject all EPRT  */
 /* requests.                                                         */
-static void do_eprt(struct ftp_session_s *f,
-					const struct ftp_command_s *cmd)
+static void do_eprt(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 {
 	daemon_assert(invariant(f));
 	daemon_assert(cmd != NULL);
@@ -627,8 +569,7 @@ static void do_eprt(struct ftp_session_s *f,
 /* support for the various pasv setting functions */
 /* returns the file descriptor of the bound port, or -1 on error */
 /* note: the "host_port" parameter will be modified, having its port set */
-static int set_pasv(struct ftp_session_s *f,
-					sockaddr_storage_t * bind_addr)
+static int set_pasv(struct ftp_session_s *f, sockaddr_storage_t * bind_addr)
 {
 	int socket_fd;
 	int port;
@@ -638,29 +579,25 @@ static int set_pasv(struct ftp_session_s *f,
 
 	socket_fd = socket(SSFAM(bind_addr), SOCK_STREAM, 0);
 	if (socket_fd == -1) {
-		reply(f, 500, "Error creating server socket; %s.",
-			  strerror(errno));
+		reply(f, 500, "Error creating server socket; %s.", strerror(errno));
 		return -1;
 	}
 
 	for (;;) {
 		port = get_passive_port();
 		SINPORT(bind_addr) = htons(port);
-		if (bind(socket_fd, (struct sockaddr *) bind_addr,
-				 sizeof(struct sockaddr)) == 0) {
+		if (bind(socket_fd, (struct sockaddr *) bind_addr, sizeof(struct sockaddr)) == 0) {
 			break;
 		}
 		if (errno != EADDRINUSE) {
-			reply(f, 500, "Error binding server port; %s.",
-				  strerror(errno));
+			reply(f, 500, "Error binding server port; %s.", strerror(errno));
 			close(socket_fd);
 			return -1;
 		}
 	}
 
 	if (listen(socket_fd, 1) != 0) {
-		reply(f, 500, "Error listening on server port; %s.",
-			  strerror(errno));
+		reply(f, 500, "Error listening on server port; %s.", strerror(errno));
 		close(socket_fd);
 		return -1;
 	}
@@ -669,8 +606,7 @@ static int set_pasv(struct ftp_session_s *f,
 }
 
 /* pick a server port to listen for connection on */
-static void do_pasv(struct ftp_session_s *f,
-					const struct ftp_command_s *cmd)
+static void do_pasv(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 {
 	int socket_fd;
 	unsigned int addr;
@@ -694,9 +630,7 @@ static void do_pasv(struct ftp_session_s *f,
 	addr = ntohl(f->server_ipv4_addr.sin_addr.s_addr);
 	port = ntohs(f->server_ipv4_addr.sin_port);
 	reply(f, 227, "Entering Passive Mode (%d,%d,%d,%d,%d,%d).",
-		  addr >> 24,
-		  (addr >> 16) & 0xff,
-		  (addr >> 8) & 0xff, addr & 0xff, port >> 8, port & 0xff);
+		  addr >> 24, (addr >> 16) & 0xff, (addr >> 8) & 0xff, addr & 0xff, port >> 8, port & 0xff);
 
 	/* close any outstanding PASSIVE port */
 	if (f->data_channel == DATA_PASSIVE) {
@@ -710,8 +644,7 @@ static void do_pasv(struct ftp_session_s *f,
 }
 
 /* pick a server port to listen for connection on, including IPv6 */
-static void do_lpsv(struct ftp_session_s *f,
-					const struct ftp_command_s *cmd)
+static void do_lpsv(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 {
 	int socket_fd;
 	char addr[80];
@@ -739,16 +672,13 @@ static void do_lpsv(struct ftp_session_s *f,
 		p = (uint8_t *) & SIN6PORT(&f->server_addr);
 		snprintf(addr, sizeof(addr),
 				 "(6,16,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,2,%d,%d)",
-				 a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8],
-				 a[9], a[10], a[11], a[12], a[13], a[14], a[15], p[0],
-				 p[1]);
+				 a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11], a[12], a[13], a[14], a[15], p[0], p[1]);
 	} else
 #endif
 	{
 		a = (uint8_t *) & SIN4ADDR(&f->server_addr);
 		p = (uint8_t *) & SIN4PORT(&f->server_addr);
-		snprintf(addr, sizeof(addr), "(4,4,%d,%d,%d,%d,2,%d,%d)",
-				 a[0], a[1], a[2], a[3], p[0], p[1]);
+		snprintf(addr, sizeof(addr), "(4,4,%d,%d,%d,%d,2,%d,%d)", a[0], a[1], a[2], a[3], p[0], p[1]);
 	}
 
 	reply(f, 228, "Entering Long Passive Mode %s", addr);
@@ -765,8 +695,7 @@ static void do_lpsv(struct ftp_session_s *f,
 }
 
 /* pick a server port to listen for connection on, new IPv6 method */
-static void do_epsv(struct ftp_session_s *f,
-					const struct ftp_command_s *cmd)
+static void do_epsv(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 {
 	int socket_fd;
 	sockaddr_storage_t *addr;
@@ -813,8 +742,7 @@ static void do_epsv(struct ftp_session_s *f,
 	}
 
 	/* report port to client */
-	reply(f, 229, "Entering Extended Passive Mode (|||%d|)",
-		  ntohs(SINPORT(&f->server_addr)));
+	reply(f, 229, "Entering Extended Passive Mode (|||%d|)", ntohs(SINPORT(&f->server_addr)));
 
 	/* close any outstanding PASSIVE port */
 	if (f->data_channel == DATA_PASSIVE) {
@@ -858,8 +786,7 @@ static int get_passive_port()
 	return port;
 }
 
-static void do_type(struct ftp_session_s *f,
-					const struct ftp_command_s *cmd)
+static void do_type(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 {
 	char type;
 	char form;
@@ -897,8 +824,7 @@ static void do_type(struct ftp_session_s *f,
 	daemon_assert(invariant(f));
 }
 
-static void do_stru(struct ftp_session_s *f,
-					const struct ftp_command_s *cmd)
+static void do_stru(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 {
 	char structure;
 	int cmd_okay;
@@ -926,8 +852,7 @@ static void do_stru(struct ftp_session_s *f,
 	daemon_assert(invariant(f));
 }
 
-static void do_mode(struct ftp_session_s *f,
-					const struct ftp_command_s *cmd)
+static void do_mode(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 {
 	char mode;
 
@@ -946,8 +871,7 @@ static void do_mode(struct ftp_session_s *f,
 }
 
 /* convert the user-entered file name into a full path on our local drive */
-static void get_absolute_fname(char *fname, size_t fname_len,
-							   const char *dir, const char *file)
+static void get_absolute_fname(char *fname, size_t fname_len, const char *dir, const char *file)
 {
 	daemon_assert(fname != NULL);
 	daemon_assert(dir != NULL);
@@ -976,8 +900,7 @@ static void get_absolute_fname(char *fname, size_t fname_len,
 	}
 }
 
-static void do_retr(struct ftp_session_s *f,
-					const struct ftp_command_s *cmd)
+static void do_retr(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 {
 	const char *file_name;
 	int file_fd;
@@ -1009,59 +932,58 @@ static void do_retr(struct ftp_session_s *f,
 	if ((f->file_offset_command_number == (f->command_number - 1)))
 		offset = f->file_offset;
 
-    /* Can we parse the name? */
-    if (FS_OWQ_create_plus(f->dir, file_name, NULL,0,offset,&owq)) {
+	/* Can we parse the name? */
+	if (FS_OWQ_create_plus(f->dir, file_name, NULL, 0, offset, &owq)) {
 		reply(f, 550, "File does not exist.");
 		need_owq_destroy = 0;
 		goto exit_retr;
-    }
-    
-    if ( IsDir(PN(&owq))) {
+	}
+
+	if (IsDir(PN(&owq))) {
 		reply(f, 550, "Error, file is a directory.");
 		goto exit_retr;
-    }
-    
-    if (OWQ_pn(&owq).selected_filetype->read == NO_READ_FUNCTION) {
+	}
+
+	if (OWQ_pn(&owq).selected_filetype->read == NO_READ_FUNCTION) {
 		reply(f, 550, "Error, file is write-only.");
 		goto exit_retr;
-    }
-    
-    if ((OWQ_pn(&owq).selected_filetype->format == ft_binary)
-			   && (f->data_type == TYPE_ASCII)) {
+	}
+
+	if ((OWQ_pn(&owq).selected_filetype->format == ft_binary)
+		&& (f->data_type == TYPE_ASCII)) {
 		reply(f, 550, "Error, binary file (type ascii).");
 		goto exit_retr;
-    }
-    
-    OWQ_size(&owq) = FullFileLength(PN(&owq)) ;
-    OWQ_buffer(&owq) = malloc(OWQ_size(&owq) - offset) ;
+	}
+
+	OWQ_size(&owq) = FullFileLength(PN(&owq));
+	OWQ_buffer(&owq) = malloc(OWQ_size(&owq) - offset);
 	if (OWQ_buffer(&owq) == NULL) {
 		reply(f, 550, "Error, file too large.");
 		goto exit_retr;
-    }
+	}
 
-    returned_length = FS_read_postparse(&owq) ;
-    if (returned_length  < 0) {
-        reply(f, 550, "Error reading from file; %s.", strerror(-returned_length));
+	returned_length = FS_read_postparse(&owq);
+	if (returned_length < 0) {
+		reply(f, 550, "Error reading from file; %s.", strerror(-returned_length));
 		goto exit_retr;
-    }
-    
-	if (f->data_type == TYPE_IMAGE) {
-        bufwrite = OWQ_buffer(&owq);
-        size_write = returned_length;
-        goto good_retr ;
-    }
+	}
 
-    buf2 = malloc(2 * returned_length) ;
-    if (buf2 == NULL) {
+	if (f->data_type == TYPE_IMAGE) {
+		bufwrite = OWQ_buffer(&owq);
+		size_write = returned_length;
+		goto good_retr;
+	}
+
+	buf2 = malloc(2 * returned_length);
+	if (buf2 == NULL) {
 		reply(f, 550, "Error, file too large.");
 		goto exit_retr;
-    }
-    
+	}
 	// TYPE_ASCII
-    size_write = convert_newlines(buf2, OWQ_buffer(&owq), returned_length);
-    bufwrite = buf2;
+	size_write = convert_newlines(buf2, OWQ_buffer(&owq), returned_length);
+	bufwrite = buf2;
 
-good_retr:
+  good_retr:
 	/* ready to transfer */
 	reply(f, 150, "About to open data connection.");
 
@@ -1075,8 +997,7 @@ good_retr:
 
 	/* we're golden, send the file */
 	if (write_fully(socket_fd, bufwrite, size_write) == -1) {
-		reply(f, 550, "Error writing to data connection; %s.",
-			  strerror(errno));
+		reply(f, 550, "Error writing to data connection; %s.", strerror(errno));
 		goto exit_retr;
 	}
 
@@ -1094,8 +1015,7 @@ good_retr:
 
 	/* calculate transfer rate */
 	transfer_time.tv_sec = end_timestamp.tv_sec - start_timestamp.tv_sec;
-	transfer_time.tv_usec =
-		end_timestamp.tv_usec - start_timestamp.tv_usec;
+	transfer_time.tv_usec = end_timestamp.tv_usec - start_timestamp.tv_usec;
 	while (transfer_time.tv_usec >= 1000000) {
 		transfer_time.tv_sec++;
 		transfer_time.tv_usec -= 1000000;
@@ -1107,13 +1027,11 @@ good_retr:
 
 	/* note the transfer */
 	LEVEL_DATA("%s retrieved \"%s\", %ld bytes in %d.%06d seconds\n",
-			   f->client_addr_str,
-               OWQ_pn(&owq).path,
-			   size_write, transfer_time.tv_sec, transfer_time.tv_usec);
+			   f->client_addr_str, OWQ_pn(&owq).path, size_write, transfer_time.tv_sec, transfer_time.tv_usec);
 
   exit_retr:
-          if (OWQ_buffer(&owq))
-          free(OWQ_buffer(&owq));
+	if (OWQ_buffer(&owq))
+		free(OWQ_buffer(&owq));
 	if (buf2)
 		free(buf2);
 	if (need_owq_destroy)
@@ -1129,8 +1047,7 @@ good_retr:
 }
 
 /* Write to 1-wire device */
-static void do_stor(struct ftp_session_s *f,
-					const struct ftp_command_s *cmd)
+static void do_stor(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 {
 	int file_fd;
 	int socket_fd;
@@ -1138,11 +1055,11 @@ static void do_stor(struct ftp_session_s *f,
 	struct timeval end_timestamp;
 	struct timeval transfer_time;
 	struct timeval limit_time = { Global.timeout_ftp, 0 };
-    
-	OWQ_allocate_struct_and_pointer( owq ) ;
-    struct parsedname * pn = PN(owq);
 
-    size_t size_read;
+	OWQ_allocate_struct_and_pointer(owq);
+	struct parsedname *pn = PN(owq);
+
+	size_t size_read;
 	int need_pn_destroy = 1;
 
 	daemon_assert(invariant(f));
@@ -1154,36 +1071,36 @@ static void do_stor(struct ftp_session_s *f,
 	socket_fd = -1;
 
 	/* create an absolute name for our file */
-    if (FS_OWQ_create_plus(f->dir, cmd->arg[0].string, NULL, 0, 0, owq)) {
+	if (FS_OWQ_create_plus(f->dir, cmd->arg[0].string, NULL, 0, 0, owq)) {
 		reply(f, 550, "File does not exist.");
 		need_pn_destroy = 0;
 		goto exit_stor;
 	}
-    
-    /* if the last command was a REST command, restart at the */
-    /* requested position in the file                         */
-    if ((f->file_offset_command_number == (f->command_number - 1)))
-        OWQ_offset(owq) = f->file_offset;
-    
-    if (IsDir(pn)) {
+
+	/* if the last command was a REST command, restart at the */
+	/* requested position in the file                         */
+	if ((f->file_offset_command_number == (f->command_number - 1)))
+		OWQ_offset(owq) = f->file_offset;
+
+	if (IsDir(pn)) {
 		reply(f, 550, "Error, file is a directory.");
 		goto exit_stor;
-    }
+	}
 
-    if (pn->selected_filetype->write == NO_WRITE_FUNCTION) {
+	if (pn->selected_filetype->write == NO_WRITE_FUNCTION) {
 		reply(f, 550, "Error, file is read-only.");
 		goto exit_stor;
 	}
 
-    if ((pn->selected_filetype->format == ft_binary)
-			   && (f->data_type == TYPE_ASCII)) {
+	if ((pn->selected_filetype->format == ft_binary)
+		&& (f->data_type == TYPE_ASCII)) {
 		reply(f, 550, "Error, binary file (type ascii).");
 		goto exit_stor;
 	}
-    size_read = FullFileLength(PN(owq)) - OWQ_offset(owq) + 100 ;
-    OWQ_buffer(owq) = malloc(size_read) ;
-    
-    if (OWQ_buffer(owq) == NULL) {
+	size_read = FullFileLength(PN(owq)) - OWQ_offset(owq) + 100;
+	OWQ_buffer(owq) = malloc(size_read);
+
+	if (OWQ_buffer(owq) == NULL) {
 		reply(f, 550, "Out of memory.");
 		goto exit_stor;
 	}
@@ -1199,16 +1116,15 @@ static void do_stor(struct ftp_session_s *f,
 	if (socket_fd == -1)
 		goto exit_stor;
 
-    {
-        /* we're golden, read the file */
-        ssize_t size_actual = tcp_read(socket_fd, OWQ_buffer(owq), size_read, &limit_time) ;
-        if ( size_actual < 0 ) {
-            reply(f, 550, "Error reading from data connection; %s.",
-                strerror(errno));
-            goto exit_stor;
-        }
-        OWQ_size(owq) = size_actual ;
-    }
+	{
+		/* we're golden, read the file */
+		ssize_t size_actual = tcp_read(socket_fd, OWQ_buffer(owq), size_read, &limit_time);
+		if (size_actual < 0) {
+			reply(f, 550, "Error reading from data connection; %s.", strerror(errno));
+			goto exit_stor;
+		}
+		OWQ_size(owq) = size_actual;
+	}
 
 	watchdog_defer_watched(f->watched);
 
@@ -1224,8 +1140,7 @@ static void do_stor(struct ftp_session_s *f,
 
 	/* calculate transfer rate */
 	transfer_time.tv_sec = end_timestamp.tv_sec - start_timestamp.tv_sec;
-	transfer_time.tv_usec =
-		end_timestamp.tv_usec - start_timestamp.tv_usec;
+	transfer_time.tv_usec = end_timestamp.tv_usec - start_timestamp.tv_usec;
 	while (transfer_time.tv_usec >= 1000000) {
 		transfer_time.tv_sec++;
 		transfer_time.tv_usec -= 1000000;
@@ -1235,24 +1150,22 @@ static void do_stor(struct ftp_session_s *f,
 		transfer_time.tv_usec += 1000000;
 	}
 
-    {
-        /* write to one-wire */
-        int tcp_error = FS_write_postparse(owq) ;
-        if (tcp_error < 0) {
-            reply(f, 550, "Error writing to file; %s.", strerror(-tcp_error));
-            goto exit_stor;
-        }
+	{
+		/* write to one-wire */
+		int tcp_error = FS_write_postparse(owq);
+		if (tcp_error < 0) {
+			reply(f, 550, "Error writing to file; %s.", strerror(-tcp_error));
+			goto exit_stor;
+		}
 	}
 
 	/* note the transfer */
 	LEVEL_DATA("%s stored \"%s\", %ld bytes in %d.%06d seconds\n",
-			   f->client_addr_str,
-			   pn->path,
-               OWQ_size(owq), transfer_time.tv_sec, transfer_time.tv_usec);
+			   f->client_addr_str, pn->path, OWQ_size(owq), transfer_time.tv_sec, transfer_time.tv_usec);
 
   exit_stor:
-    if (OWQ_buffer(owq))
-          free(OWQ_buffer(owq));
+	if (OWQ_buffer(owq))
+		free(OWQ_buffer(owq));
 	if (need_pn_destroy)
 		FS_OWQ_destroy(owq);
 	f->file_offset = 0;
@@ -1271,8 +1184,7 @@ static int open_connection(struct ftp_session_s *f)
 	struct sockaddr_in addr;
 	unsigned addr_len;
 
-	daemon_assert((f->data_channel == DATA_PORT) ||
-				  (f->data_channel == DATA_PASSIVE));
+	daemon_assert((f->data_channel == DATA_PORT) || (f->data_channel == DATA_PASSIVE));
 
 	if (f->data_channel == DATA_PORT) {
 		socket_fd = socket(SSFAM(&f->data_port), SOCK_STREAM, 0);
@@ -1280,8 +1192,7 @@ static int open_connection(struct ftp_session_s *f)
 			reply(f, 425, "Error creating socket; %s.", strerror(errno));
 			return -1;
 		}
-		if (connect(socket_fd, (struct sockaddr *) &f->data_port,
-					sizeof(sockaddr_storage_t)) != 0) {
+		if (connect(socket_fd, (struct sockaddr *) &f->data_port, sizeof(sockaddr_storage_t)) != 0) {
 			reply(f, 425, "Error connecting; %s.", strerror(errno));
 			close(socket_fd);
 			return -1;
@@ -1290,11 +1201,9 @@ static int open_connection(struct ftp_session_s *f)
 		daemon_assert(f->data_channel == DATA_PASSIVE);
 
 		addr_len = sizeof(struct sockaddr_in);
-		socket_fd =
-			accept(f->server_fd, (struct sockaddr *) &addr, &addr_len);
+		socket_fd = accept(f->server_fd, (struct sockaddr *) &addr, &addr_len);
 		if (socket_fd == -1) {
-			reply(f, 425, "Error accepting connection; %s.",
-				  strerror(errno));
+			reply(f, 425, "Error accepting connection; %s.", strerror(errno));
 			return -1;
 		}
 #ifdef INET6
@@ -1302,19 +1211,15 @@ static int open_connection(struct ftp_session_s *f)
 		/* protocol - in that case, we'll just blindly let the connection */
 		/* through, otherwise verify addresses match */
 		if (SAFAM(addr) == SSFAM(&f->client_addr)) {
-			if (memcmp(&SINADDR(&f->client_addr), &SINADDR(&addr),
-					   sizeof(SINADDR(&addr)))) {
-				reply(f, 425,
-					  "Error accepting connection; connection from invalid IP.");
+			if (memcmp(&SINADDR(&f->client_addr), &SINADDR(&addr), sizeof(SINADDR(&addr)))) {
+				reply(f, 425, "Error accepting connection; connection from invalid IP.");
 				close(socket_fd);
 				return -1;
 			}
 		}
 #else
-		if (memcmp(&f->client_addr.sin_addr,
-				   &addr.sin_addr, sizeof(struct in_addr))) {
-			reply(f, 425,
-				  "Error accepting connection; connection from invalid IP.");
+		if (memcmp(&f->client_addr.sin_addr, &addr.sin_addr, sizeof(struct in_addr))) {
+			reply(f, 425, "Error accepting connection; connection from invalid IP.");
 			close(socket_fd);
 			return -1;
 		}
@@ -1359,8 +1264,7 @@ static int write_fully(int file_descriptor, const char *buf, int buflen)
 	return amt_written;
 }
 
-static void do_pwd(struct ftp_session_s *f,
-				   const struct ftp_command_s *cmd)
+static void do_pwd(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 {
 	daemon_assert(invariant(f));
 	daemon_assert(cmd != NULL);
@@ -1371,9 +1275,7 @@ static void do_pwd(struct ftp_session_s *f,
 	daemon_assert(invariant(f));
 }
 
-static void both_list(struct ftp_session_s *f,
-					  const struct ftp_command_s *cmd,
-					  enum file_list_e fle)
+static void both_list(struct ftp_session_s *f, const struct ftp_command_s *cmd, enum file_list_e fle)
 {
 	struct file_parse_s fps;
 
@@ -1427,20 +1329,17 @@ static void both_list(struct ftp_session_s *f,
 	daemon_assert(invariant(f));
 }
 
-static void do_nlst(struct ftp_session_s *f,
-					const struct ftp_command_s *cmd)
+static void do_nlst(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 {
 	both_list(f, cmd, file_list_nlst);
 }
 
-static void do_list(struct ftp_session_s *f,
-					const struct ftp_command_s *cmd)
+static void do_list(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 {
 	both_list(f, cmd, file_list_list);
 }
 
-static void do_syst(struct ftp_session_s *f,
-					const struct ftp_command_s *cmd)
+static void do_syst(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 {
 	daemon_assert(invariant(f));
 	daemon_assert(cmd != NULL);
@@ -1452,8 +1351,7 @@ static void do_syst(struct ftp_session_s *f,
 }
 
 
-static void do_noop(struct ftp_session_s *f,
-					const struct ftp_command_s *cmd)
+static void do_noop(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 {
 	daemon_assert(invariant(f));
 	daemon_assert(cmd != NULL);
@@ -1464,8 +1362,7 @@ static void do_noop(struct ftp_session_s *f,
 	daemon_assert(invariant(f));
 }
 
-static void do_rest(struct ftp_session_s *f,
-					const struct ftp_command_s *cmd)
+static void do_rest(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 {
 	daemon_assert(invariant(f));
 	daemon_assert(cmd != NULL);
@@ -1484,8 +1381,7 @@ static void do_rest(struct ftp_session_s *f,
 	daemon_assert(invariant(f));
 }
 
-static void do_size(struct ftp_session_s *f,
-					const struct ftp_command_s *cmd)
+static void do_size(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 {
 	off_t filesize;
 	struct parsedname pn;
@@ -1507,8 +1403,7 @@ static void do_size(struct ftp_session_s *f,
 
 			/* verify that the file is not a directory */
 			if (pn.selected_device == NULL || pn.selected_filetype == NULL) {
-				reply(f, 550,
-					  "File is a directory, SIZE command not valid.");
+				reply(f, 550, "File is a directory, SIZE command not valid.");
 			} else {
 				filesize = FullFileLength(&pn);
 				/* output the size */
@@ -1537,8 +1432,7 @@ struct tm *gmtime_r(const time_t * timep, struct tm *timeptr)
 }
 #endif							/* HAVE_GMTIME_R */
 
-static void do_mdtm(struct ftp_session_s *f,
-					const struct ftp_command_s *cmd)
+static void do_mdtm(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 {
 	const char *file_name;
 	char full_path[PATH_MAX + 1 + MAX_STRING_LEN];
@@ -1582,11 +1476,9 @@ static void send_readme(const struct ftp_session_s *f, int code)
 	sprintf(code_str, "%03d-", code);
 
 	telnet_session_print(f->telnet_session, code_str);
-	telnet_session_println(f->telnet_session,
-						   "owftpd 1-wire ftp server -- Paul H Alfille");
+	telnet_session_println(f->telnet_session, "owftpd 1-wire ftp server -- Paul H Alfille");
 	telnet_session_print(f->telnet_session, code_str);
-	telnet_session_println(f->telnet_session,
-						   "Version: " VERSION " see http://www.owfs.org");
+	telnet_session_println(f->telnet_session, "Version: " VERSION " see http://www.owfs.org");
 
 }
 
@@ -1613,8 +1505,7 @@ static void netscape_hack(int file_descriptor)
 
 /* compare two addresses to see if they contain the same IP address */
 //static int ip_equal(const sockaddr_storage_t *a, const sockaddr_storage_t *b) {
-static int ip_equal(const sockaddr_storage_t * a,
-					const sockaddr_storage_t * b)
+static int ip_equal(const sockaddr_storage_t * a, const sockaddr_storage_t * b)
 {
 	daemon_assert(a != NULL);
 	daemon_assert(b != NULL);

@@ -37,7 +37,7 @@ int FS_fstat_postparse(struct stat *stbuf, const struct parsedname *pn)
 	memset(stbuf, 0, sizeof(struct stat));
 
 	LEVEL_CALL("ATTRIBUTES path=%s\n", SAFESTRING(pn->path));
-	if (KnownBus(pn) && pn->known_bus==NULL) {
+	if (KnownBus(pn) && pn->known_bus == NULL) {
 		/* check for presence of first in-device at least since FS_ParsedName
 		 * doesn't do it yet. */
 		return -ENOENT;
@@ -63,18 +63,18 @@ int FS_fstat_postparse(struct stat *stbuf, const struct parsedname *pn)
 		stbuf->st_nlink = 2;	// plus number of sub-directories
 
 		nr = -1;				// make it 1
-    //printf("FS_fstat seem to be %d entries (%d dirs) in device\n", pn.selected_device->nft, nr);
+		//printf("FS_fstat seem to be %d entries (%d dirs) in device\n", pn.selected_device->nft, nr);
 		stbuf->st_nlink += nr;
 		FSTATLOCK;
 		stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = dir_time;
 		FSTATUNLOCK;
 	} else if (pn->selected_filetype->format == ft_directory || pn->selected_filetype->format == ft_subdir) {	/* other directory */
 		int nr = 0;
-    //printf("FS_fstat other dir inside device\n");
+		//printf("FS_fstat other dir inside device\n");
 		stbuf->st_mode = S_IFDIR | 0777;
 		stbuf->st_nlink = 2;	// plus number of sub-directories
 		nr = -1;				// make it 1
-    //printf("FS_fstat seem to be %d entries (%d dirs) in device\n", NFT(pn.selected_filetype));
+		//printf("FS_fstat seem to be %d entries (%d dirs) in device\n", NFT(pn.selected_filetype));
 		stbuf->st_nlink += nr;
 
 		FSTATLOCK;
@@ -84,7 +84,7 @@ int FS_fstat_postparse(struct stat *stbuf, const struct parsedname *pn)
 		stbuf->st_mode = S_IFREG;
 		if (pn->selected_filetype->read != NO_READ_FUNCTION)
 			stbuf->st_mode |= 0444;
-		if (!Global.readonly && (pn->selected_filetype->write != NO_WRITE_FUNCTION) )
+		if (!Global.readonly && (pn->selected_filetype->write != NO_WRITE_FUNCTION))
 			stbuf->st_mode |= 0222;
 		stbuf->st_nlink = 1;
 
@@ -93,8 +93,7 @@ int FS_fstat_postparse(struct stat *stbuf, const struct parsedname *pn)
 		case fc_Avolatile:
 		case fc_second:
 		case fc_statistic:
-			stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime =
-				time(NULL);
+			stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = time(NULL);
 			break;
 		case fc_stable:
 		case fc_Astable:
@@ -103,11 +102,10 @@ int FS_fstat_postparse(struct stat *stbuf, const struct parsedname *pn)
 			FSTATUNLOCK;
 			break;
 		default:
-			stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime =
-				start_time;
+			stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = start_time;
 			break;
 		}
-    //printf("FS_fstat file\n");
+		//printf("FS_fstat file\n");
 	}
 	stbuf->st_size = FullFileLength(pn);
 	return 0;

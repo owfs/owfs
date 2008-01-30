@@ -43,17 +43,16 @@ static char owtclInitScript[] = "if {[info proc owtclInit]==\"\"} {\n\
 	}\n\
     }\n"
 #ifdef NO_EMBEDDED_RUNTIME
-"    set msg \"Can't find a $env(OWTCL_LIBRARY_FILE) in the following directories: \n\"\n\
+	"    set msg \"Can't find a $env(OWTCL_LIBRARY_FILE) in the following directories: \n\"\n\
     append msg \"    $dirs\n\n$errors\n\n\"\n\
     append msg \"This probably means that owtcl wasn't installed properly.\"\n\
     return -code error $msg\n"
 #else
-"    set env(OWTCL_LIBRARY) EMBEDDED_RUNTIME\n"
-"    uplevel #0 {"
+	"    set env(OWTCL_LIBRARY) EMBEDDED_RUNTIME\n" "    uplevel #0 {"
 #	include "ow.tcl.h"
-"    }\n"
+	"    }\n"
 #endif
-"  }\n\
+	"  }\n\
 }\n\
 owtclInit";
 
@@ -65,14 +64,12 @@ static char owtclSafeInitScript[] = "if {[info proc owtclInit]==\"\"} {\n\
   proc owtclInit {} {\n\
     set env(OWTCL_LIBRARY) EMBEDDED_RUNTIME\n"
 #ifdef NO_EMBEDDED_RUNTIME
-"    append msg \"owtcl requires embedded runtime to be compiled for\"\n\
+	"    append msg \"owtcl requires embedded runtime to be compiled for\"\n\
     append msg \" use in safe interpreters\"\n\
     return -code error $msg\n"
 #endif
-"    uplevel #0 {"
+	"    uplevel #0 {"
 #	include "ow.tcl.h"
-"    }"
-"  }\n\
+	"    }" "  }\n\
 }\n\
 owtclInit";
-

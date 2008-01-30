@@ -26,14 +26,11 @@ struct announce_struct {
 
 /* Sent back from Bounjour -- arbitrarily use it to set the Ref for Deallocation */
 static void RegisterBack(DNSServiceRef s, DNSServiceFlags f,
-						 DNSServiceErrorType e, const char *name,
-						 const char *type, const char *domain,
-						 void *context)
+						 DNSServiceErrorType e, const char *name, const char *type, const char *domain, void *context)
 {
 	DNSServiceRef *sref = context;
 	LEVEL_DETAIL
-		("RegisterBack ref=%d flags=%d error=%d name=%s type=%s domain=%s\n",
-		 s, f, e, SAFESTRING(name), SAFESTRING(type), SAFESTRING(domain));
+		("RegisterBack ref=%d flags=%d error=%d name=%s type=%s domain=%s\n", s, f, e, SAFESTRING(name), SAFESTRING(type), SAFESTRING(domain));
 	if (e == kDNSServiceErr_NoError)
 		sref[0] = s;
 	LEVEL_DEBUG("RegisterBack: done\n");
@@ -57,9 +54,7 @@ static void *Announce(void *v)
 	err =
 		DNSServiceRegister(&sref, 0, 0,
 						   Global.announce_name ? Global.
-						   announce_name : as->name, as->type0, NULL, NULL,
-						   as->port, 0, NULL, RegisterBack,
-						   &(as->out->sref0));
+						   announce_name : as->name, as->type0, NULL, NULL, as->port, 0, NULL, RegisterBack, &(as->out->sref0));
 	if (err)
 		LEVEL_DEBUG("Announce: err=%d\n", err);
 
@@ -68,23 +63,18 @@ static void *Announce(void *v)
 	if (err == kDNSServiceErr_NoError) {
 		DNSServiceProcessResult(sref);
 	} else {
-		ERROR_CONNECT("Unsuccessful call to DNSServiceRegister err = %d\n",
-					  err);
+		ERROR_CONNECT("Unsuccessful call to DNSServiceRegister err = %d\n", err);
 	}
 	LEVEL_DEBUG("Announce: 3\n");
 	if (as->type1) {
 		err =
 			DNSServiceRegister(&sref, 0, 0,
 							   Global.announce_name ? Global.
-							   announce_name : as->name, as->type1, NULL,
-							   NULL, as->port, 0, NULL, RegisterBack,
-							   &(as->out->sref1));
+							   announce_name : as->name, as->type1, NULL, NULL, as->port, 0, NULL, RegisterBack, &(as->out->sref1));
 		if (err == kDNSServiceErr_NoError) {
 			DNSServiceProcessResult(sref);
 		} else {
-			ERROR_CONNECT
-				("Unsuccessful call to DNSServiceRegister err = %d\n",
-				 err);
+			ERROR_CONNECT("Unsuccessful call to DNSServiceRegister err = %d\n", err);
 		}
 	}
 	free(as);
@@ -107,7 +97,7 @@ void OW_Announce(struct connection_out *out)
 
 	if (libdnssd == NULL || Global.announce_off)
 		return;
-	
+
 	as = malloc(sizeof(struct announce_struct));
 	if (as == NULL)
 		return;
@@ -143,9 +133,7 @@ void OW_Announce(struct connection_out *out)
 		//LEVEL_DEBUG("DNSServiceRegister request: index=%d, name=%s, port=%d, type=%s / %s\n",out->index,SAFESTRING(as->name),ntohs(as->port),SAFESTRING(as->type0),SAFESTRING(as->type1)) ;
 		err = pthread_create(&thread, NULL, Announce, (void *) as);
 		if (err) {
-			ERROR_CONNECT
-				("Zeroconf/Bounjour registration thread error %d).\n",
-				 err);
+			ERROR_CONNECT("Zeroconf/Bounjour registration thread error %d).\n", err);
 		}
 #else							/* OW_MT */
 		Announce(as);

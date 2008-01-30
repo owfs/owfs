@@ -49,8 +49,7 @@ int FromClient(struct handlerdata *hd)
 	memset(&hd->sp, 0, sizeof(struct serverpackage));
 
 	/* read header */
-	if (tcp_read(hd->file_descriptor, &hd->sm, sizeof(struct server_msg), &tv) !=
-		sizeof(struct server_msg)) {
+	if (tcp_read(hd->file_descriptor, &hd->sm, sizeof(struct server_msg), &tv) != sizeof(struct server_msg)) {
 		hd->sm.type = msg_error;
 		return -EIO;
 	}
@@ -62,10 +61,7 @@ int FromClient(struct handlerdata *hd)
 	hd->sm.type = ntohl(hd->sm.type);
 	hd->sm.sg = ntohl(hd->sm.sg);
 	hd->sm.offset = ntohl(hd->sm.offset);
-	LEVEL_DEBUG
-		("FromClient payload=%d size=%d type=%d sg=0x%X offset=%d\n",
-		 hd->sm.payload, hd->sm.size, hd->sm.type, hd->sm.sg,
-		 hd->sm.offset);
+	LEVEL_DEBUG("FromClient payload=%d size=%d type=%d sg=0x%X offset=%d\n", hd->sm.payload, hd->sm.size, hd->sm.type, hd->sm.sg, hd->sm.offset);
 	//printf("<%.4d|%.4d\n",sm->type,sm->payload);
 
 	/* figure out length of rest of message: payload plus tokens */
@@ -76,7 +72,7 @@ int FromClient(struct handlerdata *hd)
 		return 0;
 
 	/* valid size? */
-    if ((hd->sm.payload < 0) || (trueload > MAX_OWSERVER_PROTOCOL_PACKET_SIZE)) {
+	if ((hd->sm.payload < 0) || (trueload > MAX_OWSERVER_PROTOCOL_PACKET_SIZE)) {
 		hd->sm.type = msg_error;
 		return -EMSGSIZE;
 	}

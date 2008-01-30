@@ -23,11 +23,10 @@ int TestConnection(const struct parsedname *pn)
 {
 	int ret = 0;
 	struct connection_in *saved_head_inbound_list;
-	struct connection_in *selected_connection = pn->selected_connection ;
+	struct connection_in *selected_connection = pn->selected_connection;
 
 	// Test without a lock -- efficient
-	if (pn == NULL || selected_connection == NULL
-		|| selected_connection->reconnect_state < reconnect_error)
+	if (pn == NULL || selected_connection == NULL || selected_connection->reconnect_state < reconnect_error)
 		return 0;
 	CONNINLOCK;
 	saved_head_inbound_list = head_inbound_list;
@@ -37,29 +36,27 @@ int TestConnection(const struct parsedname *pn)
 	// Test again
 	if (selected_connection->reconnect_state >= reconnect_error) {
 		// Add Statistics
-		STAT_ADD1_BUS(e_bus_reconnects,selected_connection);
+		STAT_ADD1_BUS(e_bus_reconnects, selected_connection);
 
 		if (selected_connection == saved_head_inbound_list)
 			Global.SimpleBusName = "Reconnecting...";
 
 		// Close the bus (should leave enough reconnection information available)
-		BUS_close(selected_connection);		// already locked
+		BUS_close(selected_connection);	// already locked
 
 		// Call reconnection
 		if ((selected_connection->iroutines.reconnect)
 			? (selected_connection->iroutines.reconnect) (pn)	// call bus-specific reconnect
 			: BUS_detect(selected_connection)	// call initial opener
 			) {
-			STAT_ADD1_BUS(e_bus_reconnect_errors,selected_connection);
-			LEVEL_DEFAULT("Failed to reconnect %s adapter!\n",
-						  selected_connection->adapter_name);
+			STAT_ADD1_BUS(e_bus_reconnect_errors, selected_connection);
+			LEVEL_DEFAULT("Failed to reconnect %s adapter!\n", selected_connection->adapter_name);
 			selected_connection->reconnect_state = reconnect_ok + 1;
 			// delay to slow thrashing
 			UT_delay(200);
 			ret = -EIO;
 		} else {
-			LEVEL_DEFAULT("%s adapter reconnected\n",
-						  selected_connection->adapter_name);
+			LEVEL_DEFAULT("%s adapter reconnected\n", selected_connection->adapter_name);
 			selected_connection->reconnect_state = reconnect_ok;
 			if (selected_connection == saved_head_inbound_list)
 				Global.SimpleBusName = saved_head_inbound_list->name;

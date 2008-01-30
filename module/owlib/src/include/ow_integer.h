@@ -23,13 +23,11 @@ static inline uint16_t UT_uint16(BYTE * p)
 }
 static inline uint32_t UT_uint24(BYTE * p)
 {
-	return (((uint32_t) p[2]) << 16) | (((uint32_t) p[1]) << 8) |
-		((uint32_t) p[0]);
+	return (((uint32_t) p[2]) << 16) | (((uint32_t) p[1]) << 8) | ((uint32_t) p[0]);
 }
 static inline uint32_t UT_uint32(BYTE * p)
 {
-	return (((uint32_t) p[3]) << 24) | (((uint32_t) p[2]) << 16) |
-		(((uint32_t) p[1]) << 8) | ((uint32_t) p[0]);
+	return (((uint32_t) p[3]) << 24) | (((uint32_t) p[2]) << 16) | (((uint32_t) p[1]) << 8) | ((uint32_t) p[0]);
 }
 static inline int8_t UT_int8(BYTE * p)
 {
@@ -41,13 +39,11 @@ static inline int16_t UT_int16(BYTE * p)
 }
 static inline int32_t UT_int24(BYTE * p)
 {
-	return (((int32_t) p[2]) << 16) | (((uint32_t) p[1]) << 8) |
-		((uint32_t) p[0]);
+	return (((int32_t) p[2]) << 16) | (((uint32_t) p[1]) << 8) | ((uint32_t) p[0]);
 }
 static inline int32_t UT_int32(BYTE * p)
 {
-	return (((int32_t) p[3]) << 24) | (((uint32_t) p[2]) << 16) |
-		(((uint32_t) p[1]) << 8) | ((uint32_t) p[0]);
+	return (((int32_t) p[3]) << 24) | (((uint32_t) p[2]) << 16) | (((uint32_t) p[1]) << 8) | ((uint32_t) p[0]);
 }
 
 #endif							/* OW_INTEGER_H */

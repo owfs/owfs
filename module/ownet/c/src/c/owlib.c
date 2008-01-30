@@ -27,7 +27,7 @@ void LibSetup(void)
 #if OW_ZERO
 	OW_Load_dnssd_library();
 #endif
-    
+
 #ifndef __UCLIBC__
 	/* Setup the multithreading synchronizing locks */
 	LockSetup();
@@ -69,9 +69,7 @@ int LibStart(void)
 #endif							/* __UCLIBC__ */
 
 	if (head_inbound_list == NULL && !ow_Global.autoserver) {
-		LEVEL_DEFAULT
-			("No device port/server specified (-d or -u or -s)\n%s -h for help\n",
-			 SAFESTRING(Global.progname));
+		LEVEL_DEFAULT("No device port/server specified (-d or -u or -s)\n%s -h for help\n", SAFESTRING(Global.progname));
 		return 1;
 	}
 
@@ -112,15 +110,13 @@ int LibStart(void)
 	if (ow_Global.autoserver) {
 #if OW_ZERO
 		if (libdnssd == NULL) {
-			fprintf(stderr,
-					"Zeroconf/Bonjour is disabled since dnssd library isn't found.\n");
+			fprintf(stderr, "Zeroconf/Bonjour is disabled since dnssd library isn't found.\n");
 			exit(0);
 		} else {
 			OW_Browse();
 		}
 #else
-		fprintf(stderr,
-				"OWFS is compiled without Zeroconf/Bonjour support.\n");
+		fprintf(stderr, "OWFS is compiled without Zeroconf/Bonjour support.\n");
 		exit(0);
 #endif
 	}
@@ -134,26 +130,21 @@ void SigHandler(int signo, siginfo_t * info, void *context)
 {
 	(void) context;
 #if OW_MT
-    if (info) {
-    LEVEL_DEBUG
-            ("Signal handler for %d, errno %d, code %d, pid=%ld, self=%lu\n",
-             signo, info->si_errno, info->si_code, (long int) info->si_pid,
-             pthread_self());
-    } else {
-        LEVEL_DEBUG("Signal handler for %d, self=%lu\n",
-                    signo, pthread_self());
-    }
-#else /* OW_MT */
-    if (info) {
-    LEVEL_DEBUG
-            ("Signal handler for %d, errno %d, code %d, pid=%ld\n",
-             signo, info->si_errno, info->si_code, (long int) info->si_pid);
-    } else {
-        LEVEL_DEBUG("Signal handler for %d\n",
-                    signo);
-    }
-#endif /* OW_MT */
-    return;
+	if (info) {
+		LEVEL_DEBUG
+			("Signal handler for %d, errno %d, code %d, pid=%ld, self=%lu\n",
+			 signo, info->si_errno, info->si_code, (long int) info->si_pid, pthread_self());
+	} else {
+		LEVEL_DEBUG("Signal handler for %d, self=%lu\n", signo, pthread_self());
+	}
+#else							/* OW_MT */
+	if (info) {
+		LEVEL_DEBUG("Signal handler for %d, errno %d, code %d, pid=%ld\n", signo, info->si_errno, info->si_code, (long int) info->si_pid);
+	} else {
+		LEVEL_DEBUG("Signal handler for %d\n", signo);
+	}
+#endif							/* OW_MT */
+	return;
 }
 
 void SetSignals(void)
@@ -228,10 +219,10 @@ void LibStop(void)
 
 	/* Have to reset more internal variables, and this should be fixed
 	 * by setting optind = 0 and call getopt()
-         * (first_nonopt = last_nonopt = 1;)
+	 * (first_nonopt = last_nonopt = 1;)
 	 */
 	optind = 0;
-	(void)getopt_long(1, argv, " ", NULL, NULL);
+	(void) getopt_long(1, argv, " ", NULL, NULL);
 
 	optarg = NULL;
 	optind = 1;
@@ -249,8 +240,7 @@ void set_signal_handlers(void (*exit_handler)
 
 	sa.sa_flags = SA_SIGINFO;
 	sa.sa_sigaction = exit_handler;
-	if ((sigaction(SIGINT, &sa, NULL) == -1) ||
-		(sigaction(SIGTERM, &sa, NULL) == -1)) {
+	if ((sigaction(SIGINT, &sa, NULL) == -1) || (sigaction(SIGTERM, &sa, NULL) == -1)) {
 		LEVEL_DEFAULT("Cannot set exit signal handlers\n");
 		//exit_handler (-1, NULL, NULL);
 		exit(1);

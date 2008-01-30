@@ -25,9 +25,9 @@ int count_inbound_connections = 0;
 
 struct connection_in *find_connection_in(int bus_number)
 {
-	struct connection_in *c_in ;
-    // step through head_inbound_list linked list
-	for ( c_in = head_inbound_list ; c_in != NULL ; c_in = c_in->next ) {
+	struct connection_in *c_in;
+	// step through head_inbound_list linked list
+	for (c_in = head_inbound_list; c_in != NULL; c_in = c_in->next) {
 		if (c_in->index == bus_number)
 			return c_in;
 	}
@@ -53,12 +53,12 @@ struct connection_in *NewIn(const struct connection_in *in)
 	size_t len = sizeof(struct connection_in);
 	struct connection_in *now = (struct connection_in *) malloc(len);
 	if (now) {
-        if (in) {
+		if (in) {
 			memcpy(now, in, len);
 		} else {
 			memset(now, 0, len);
 		}
-        now->next = head_inbound_list;	/* put in linked list at start */
+		now->next = head_inbound_list;	/* put in linked list at start */
 		head_inbound_list = now;
 		now->index = count_inbound_connections++;
 #if OW_MT

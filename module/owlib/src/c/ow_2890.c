@@ -55,8 +55,8 @@ WRITE_FUNCTION(FS_w_wiper);
 
 struct filetype DS2890[] = {
 	F_STANDARD,
-  {"chargepump",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable,   FS_r_cp, FS_w_cp, {v:NULL},} ,
-  {"wiper",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_stable,   FS_r_wiper, FS_w_wiper, {v:NULL},} ,
+  {"chargepump", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, FS_r_cp, FS_w_cp, {v:NULL},},
+  {"wiper", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_stable, FS_r_wiper, FS_w_wiper, {v:NULL},},
 };
 
 DeviceEntryExtended(2C, DS2890, DEV_alarm | DEV_resume | DEV_ovdr);
@@ -78,37 +78,37 @@ static int OW_r_cp(int *val, const struct parsedname *pn);
 static int OW_w_cp(const int val, const struct parsedname *pn);
 
 /* Wiper */
-static int FS_w_wiper(struct one_wire_query * owq)
+static int FS_w_wiper(struct one_wire_query *owq)
 {
-    UINT num = OWQ_U(owq);
+	UINT num = OWQ_U(owq);
 	if (num > 255)
 		num = 255;
 
-    if (OW_w_wiper(num, PN(owq)))
+	if (OW_w_wiper(num, PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
 /* write Charge Pump */
-static int FS_w_cp(struct one_wire_query * owq)
+static int FS_w_cp(struct one_wire_query *owq)
 {
-    if (OW_w_cp(OWQ_Y(owq), PN(owq)))
+	if (OW_w_cp(OWQ_Y(owq), PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
 /* read Wiper */
-static int FS_r_wiper(struct one_wire_query * owq)
+static int FS_r_wiper(struct one_wire_query *owq)
 {
-    if (OW_r_wiper(&OWQ_U(owq), PN(owq)))
+	if (OW_r_wiper(&OWQ_U(owq), PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
 /* Charge Pump */
-static int FS_r_cp(struct one_wire_query * owq)
+static int FS_r_cp(struct one_wire_query *owq)
 {
-    if (OW_r_cp(&OWQ_Y(owq), PN(owq)))
+	if (OW_r_cp(&OWQ_Y(owq), PN(owq)))
 		return -EINVAL;
 	return 0;
 }
@@ -121,10 +121,10 @@ static int OW_w_wiper(const UINT val, const struct parsedname *pn)
 	BYTE ns[] = { _1W_RELEASE_WIPER, };
 	struct transaction_log t[] = {
 		TRXN_START,
-        TRXN_WRITE2(cmd),
-        TRXN_READ1(resp),
-        TRXN_WRITE1(ns),
-        TRXN_COMPARE(resp,&cmd[1],1),
+		TRXN_WRITE2(cmd),
+		TRXN_READ1(resp),
+		TRXN_WRITE1(ns),
+		TRXN_COMPARE(resp, &cmd[1], 1),
 		TRXN_END
 	};
 
@@ -138,8 +138,8 @@ static int OW_r_wiper(UINT * val, const struct parsedname *pn)
 	BYTE resp[2];
 	struct transaction_log t[] = {
 		TRXN_START,
-        TRXN_WRITE1(fo),
-        TRXN_READ2(resp),
+		TRXN_WRITE1(fo),
+		TRXN_READ2(resp),
 		TRXN_END
 	};
 
@@ -158,14 +158,14 @@ static int OW_w_cp(const int val, const struct parsedname *pn)
 	BYTE ns[] = { _1W_RELEASE_WIPER, };
 	struct transaction_log t[] = {
 		TRXN_START,
-        TRXN_WRITE2(cmd),
-        TRXN_READ1(resp),
-        TRXN_WRITE1(ns),
-        TRXN_COMPARE(resp,&cmd[1],1),
+		TRXN_WRITE2(cmd),
+		TRXN_READ1(resp),
+		TRXN_WRITE1(ns),
+		TRXN_COMPARE(resp, &cmd[1], 1),
 		TRXN_END
 	};
 
-	return BUS_transaction(t, pn) ;
+	return BUS_transaction(t, pn);
 }
 
 /* read Charge Pump */
@@ -175,8 +175,8 @@ static int OW_r_cp(int *val, const struct parsedname *pn)
 	BYTE resp[2];
 	struct transaction_log t[] = {
 		TRXN_START,
-        TRXN_WRITE1(aa),
-        TRXN_READ2(resp) ,
+		TRXN_WRITE1(aa),
+		TRXN_READ2(resp),
 		TRXN_END
 	};
 

@@ -101,4 +101,3 @@ void UT_set2bit(BYTE * buf, const int loc, const int bits)
 		return;
 	}
 }
-

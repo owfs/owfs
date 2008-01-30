@@ -85,8 +85,7 @@ ssize_t OW_init_args(int argc, char **argv)
 	if (argc > 0)
 		Global.progname = strdup(argv[0]);
 
-	while (((c =
-			 getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL)) != -1)
+	while (((c = getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL)) != -1)
 		   && (ret == 0)
 		) {
 		ret = owopt(c, optarg);
@@ -121,7 +120,7 @@ static void getdircallback(void *v, const struct parsedname *const pn2)
   return length of string, or <0 for error
   *buffer will be returned as NULL on error
  */
-static ssize_t getdir(struct one_wire_query * owq)
+static ssize_t getdir(struct one_wire_query *owq)
 {
 	struct charblob cb;
 	int ret;
@@ -130,13 +129,13 @@ static ssize_t getdir(struct one_wire_query * owq)
 	ret = FS_dir(getdircallback, &cb, PN(owq));
 	if (ret < 0) {
 		OWQ_buffer(owq) = NULL;
-		OWQ_size(owq) = 0 ;
+		OWQ_size(owq) = 0;
 	} else if ((OWQ_buffer(owq) = strdup(cb.blob))) {
 		ret = cb.used;
-		OWQ_size(owq) = ret ;
+		OWQ_size(owq) = ret;
 	} else {
 		ret = -ENOMEM;
-		OWQ_size(owq) = 0 ;
+		OWQ_size(owq) = 0;
 	}
 	CharblobClear(&cb);
 	return ret;
@@ -147,7 +146,7 @@ static ssize_t getdir(struct one_wire_query * owq)
   return length of string, or <0 for error
   *buffer will be returned as NULL on error
  */
-static ssize_t getval(struct one_wire_query * owq)
+static ssize_t getval(struct one_wire_query *owq)
 {
 	ssize_t ret;
 	ssize_t s = FullFileLength(PN(owq));
@@ -155,15 +154,15 @@ static ssize_t getval(struct one_wire_query * owq)
 		return -ENOENT;
 	if ((OWQ_buffer(owq) = malloc(s + 1)) == NULL)
 		return -ENOMEM;
-	OWQ_size(owq) = s ;
+	OWQ_size(owq) = s;
 	ret = FS_read_postparse(owq);
 	if (ret < 0) {
 		free(OWQ_buffer(owq));
 		OWQ_buffer(owq) = NULL;
-		OWQ_size(owq) = 0 ;
+		OWQ_size(owq) = 0;
 	} else {
-		OWQ_size(owq) = ret ;
-		OWQ_buffer(owq)[ret] = '\0' ;
+		OWQ_size(owq) = ret;
+		OWQ_buffer(owq)[ret] = '\0';
 	}
 	return ret;
 }
@@ -171,7 +170,7 @@ static ssize_t getval(struct one_wire_query * owq)
 ssize_t OW_get(const char *path, char **buffer, size_t * buffer_length)
 {
 	//struct parsedname pn;
-	struct one_wire_query owq ;
+	struct one_wire_query owq;
 	ssize_t ret = 0;			/* current buffer string length */
 
 	/* Check the parameters */
@@ -191,17 +190,19 @@ ssize_t OW_get(const char *path, char **buffer, size_t * buffer_length)
 	} else if (FS_OWQ_create(path, NULL, 0, 0, &owq)) {	/* Can we parse the input string */
 		ret = -ENOENT;
 	} else {
-		if (IsDir(PN(&owq))) {		/* A directory of some kind */
+		if (IsDir(PN(&owq))) {	/* A directory of some kind */
 			ret = getdir(&owq);
 			if (ret > 0) {
-				if ( buffer_length) *buffer_length = OWQ_size(&owq);
-				*buffer = OWQ_buffer(&owq) ;
+				if (buffer_length)
+					*buffer_length = OWQ_size(&owq);
+				*buffer = OWQ_buffer(&owq);
 			}
 		} else {				/* A regular file */
 			ret = getval(&owq);
 			if (ret > 0) {
-				if ( buffer_length) *buffer_length = OWQ_size(&owq);
-				*buffer = OWQ_buffer(&owq) ;
+				if (buffer_length)
+					*buffer_length = OWQ_size(&owq);
+				*buffer = OWQ_buffer(&owq);
 			}
 		}
 		FS_OWQ_destroy(&owq);
@@ -210,14 +211,12 @@ ssize_t OW_get(const char *path, char **buffer, size_t * buffer_length)
 	return ReturnAndErrno(ret);
 }
 
-ssize_t OW_lread(const char *path, char *buf, const size_t size,
-				 const off_t offset)
+ssize_t OW_lread(const char *path, char *buf, const size_t size, const off_t offset)
 {
 	return ReturnAndErrno(FS_read(path, buf, size, offset));
 }
 
-ssize_t OW_lwrite(const char *path, const char *buf, const size_t size,
-				  const off_t offset)
+ssize_t OW_lwrite(const char *path, const char *buf, const size_t size, const off_t offset)
 {
 	return ReturnAndErrno(FS_write(path, buf, size, offset));
 }

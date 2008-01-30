@@ -23,7 +23,7 @@ $Id$
    This header has all the public routines for a program linking in the library
 */
 
-#ifndef OWNET_H			/* tedious wrapper */
+#ifndef OWNET_H					/* tedious wrapper */
 #define OWNET_H
 
 #include <sys/types.h>
@@ -33,7 +33,7 @@ $Id$
    It is used for each function call, and allows multiple owservers to be
    accessed
 */
-typedef int OWNET_HANDLE ;
+typedef int OWNET_HANDLE;
 
 /* OWNET_HANDLE OWNET_init( const char * owserver )
    Starting routine -- takes a string correspondiong to the tcp address of owserver
@@ -41,7 +41,7 @@ typedef int OWNET_HANDLE ;
 
    returns a non-negative HANDLE, or <0 for error
 */
-OWNET_HANDLE OWNET_init( const char * owserver_tcp_address_and_port ) ;
+OWNET_HANDLE OWNET_init(const char *owserver_tcp_address_and_port);
 
 /* int OWNET_dirlist( OWNET_HANDLE h, const char * onewire_path, 
         char * return_string )
@@ -51,7 +51,7 @@ OWNET_HANDLE OWNET_init( const char * owserver_tcp_address_and_port ) ;
    return non-negative length of return_string on success
    return <0 error and NULL on error
 */
-int OWNET_dirlist( OWNET_HANDLE h, const char * onewire_path, char * return_string ) ;
+int OWNET_dirlist(OWNET_HANDLE h, const char *onewire_path, char *return_string);
 
 /* int OWNET_dirprocess( OWNET_HANDLE h, const char * onewire_path, 
         void (*dirfunc) (void * passed_on_value, const char* directory_element), 
@@ -64,7 +64,8 @@ int OWNET_dirlist( OWNET_HANDLE h, const char * onewire_path, char * return_stri
    returns number of elements processed,
    or <0 for error
 */
-int OWNET_dirprocess( OWNET_HANDLE h, const char * onewire_path, void (*dirfunc) (void * passed_on_value, const char * directory_element), void * passed_on_value ) ;
+int OWNET_dirprocess(OWNET_HANDLE h, const char *onewire_path,
+					 void (*dirfunc) (void *passed_on_value, const char *directory_element), void *passed_on_value);
 
 
 /* int OWNET_read( OWNET_HANDLE h, const char * onewire_path, 
@@ -75,7 +76,7 @@ int OWNET_dirprocess( OWNET_HANDLE h, const char * onewire_path, void (*dirfunc)
    returns length of result on success,
    returns <0 on error
 */
-int OWNET_read( OWNET_HANDLE h, const char * onewire_path, char * return_string ) ;
+int OWNET_read(OWNET_HANDLE h, const char *onewire_path, char *return_string);
 
 /* int OWNET_write( OWNET_HANDLE h, const char * onewire_path, 
         const char * value_string, size_t value_length )
@@ -84,17 +85,17 @@ int OWNET_read( OWNET_HANDLE h, const char * onewire_path, char * return_string 
    return 0 on success
    return <0 on error
 */
-int OWNET_write( OWNET_HANDLE h, const char * onewire_path, const char * value_string, size_t value_length ) ;
+int OWNET_write(OWNET_HANDLE h, const char *onewire_path, const char *value_string, size_t value_length);
 
 /* void OWNET_close( OWNET_HANDLE h)
    close a particular owserver connection
 */
-void OWNET_close( OWNET_HANDLE h) ;
+void OWNET_close(OWNET_HANDLE h);
 
 /* void OWNET_closeall( void )
    close all owserver connections
 */
-void OWNET_closeall( void ) ;
+void OWNET_closeall(void);
 
 /* get and set temperature scale
    Note that temperature scale applies to all HANDLES
@@ -104,8 +105,8 @@ void OWNET_closeall( void ) ;
    K - kelvin
    0 -> set default (C)
 */
-void OWNET_set_temperature_scale( char temperature_scale ) ;
-char OWNET_get_temperature_scale( void ) ;
+void OWNET_set_temperature_scale(char temperature_scale);
+char OWNET_get_temperature_scale(void);
 
 /* get and set device format
    Note that device format applies to all HANDLES
@@ -117,7 +118,7 @@ char OWNET_get_temperature_scale( void ) ;
    fic
    NULL or "" -> set default
 */
-void OWNET_set_device_format( const char * device_format ) ;
-const char * OWNET_get_device_format( void ) ;
+void OWNET_set_device_format(const char *device_format);
+const char *OWNET_get_device_format(void);
 
 #endif							/* OWNET_H */

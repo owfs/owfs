@@ -65,7 +65,7 @@ $Id$
     25-05-2003 iButtonLink device
 */
 
-#ifndef OW_PARSEDNAME_H					/* tedious wrapper */
+#ifndef OW_PARSEDNAME_H			/* tedious wrapper */
 #define OW_PARSEDNAME_H
 
 /* Define our understanding of integers, floats, ... */
@@ -74,8 +74,8 @@ $Id$
 
 /* predeclare some structures */
 struct connection_in;
-struct device ;
-struct filetype ;
+struct device;
+struct filetype;
 
 /* Maximum length of a file or directory name, and extension */
 #define OW_NAME_MAX      (32)
@@ -140,32 +140,32 @@ enum ePN_type {
 };
 
 enum ePS_state {
-	ePS_normal        = 0x0000,
-	ePS_uncached      = 0x0001,
-	ePS_alarm         = 0x0002,
-	ePS_text          = 0x0004,
-	ePS_bus           = 0x0008,
-	ePS_buslocal      = 0x0010,
-	ePS_busremote     = 0x0020,
+	ePS_normal = 0x0000,
+	ePS_uncached = 0x0001,
+	ePS_alarm = 0x0002,
+	ePS_text = 0x0004,
+	ePS_bus = 0x0008,
+	ePS_buslocal = 0x0010,
+	ePS_busremote = 0x0020,
 	ePS_busveryremote = 0x0040,
 };
 
 struct parsedname {
 	char *path;					// text-more device name
 	char *path_busless;			// pointer to path without first bus
-    struct connection_in * known_bus; // where this device is located
+	struct connection_in *known_bus;	// where this device is located
 	enum ePN_type type;			// global branch
 	enum ePS_state state;		// global branch
 	BYTE sn[8];					// 64-bit serial number
-	struct device *selected_device;			// 1-wire device
-	struct filetype *selected_filetype;		// device property
+	struct device *selected_device;	// 1-wire device
+	struct filetype *selected_filetype;	// device property
 	int extension;				// numerical extension (for array values) or -1
 	struct filetype *subdir;	// in-device grouping
 	UINT pathlength;			// DS2409 branching depth
 	struct buspath *bp;			// DS2409 branching route
 	struct connection_in *head_inbound_list;	// Global head_inbound_list at definition time
-    struct connection_in *selected_connection; // which bus is assigned to this item
-    int terminal_bus_number ; // last bus is list -- used for return trip
+	struct connection_in *selected_connection;	// which bus is assigned to this item
+	int terminal_bus_number;	// last bus is list -- used for return trip
 	uint32_t sg;				// more state info, packed for network transmission
 	struct devlock **lock;		// need to clear dev lock?
 	int tokens;					/* for anti-loop work */

@@ -63,16 +63,14 @@ static void exit_handler(int signo, siginfo_t * info, void *context)
 {
 	(void) context;
 #if OW_MT
-    if (info) {
-    LEVEL_DEBUG
-            ("exit_handler: for %d, errno %d, code %d, pid=%ld, self=%lu main=%lu\n",
-             signo, info->si_errno, info->si_code, (long int) info->si_pid,
-             pthread_self(), main_threadid);
-    } else {
-        LEVEL_DEBUG("exit_handler: for %d, self=%lu, main=%lu\n", signo,
-                    pthread_self(), main_threadid);
-    }
-    if (!shutdown_in_progress) {
+	if (info) {
+		LEVEL_DEBUG
+			("exit_handler: for %d, errno %d, code %d, pid=%ld, self=%lu main=%lu\n",
+			 signo, info->si_errno, info->si_code, (long int) info->si_pid, pthread_self(), main_threadid);
+	} else {
+		LEVEL_DEBUG("exit_handler: for %d, self=%lu, main=%lu\n", signo, pthread_self(), main_threadid);
+	}
+	if (!shutdown_in_progress) {
 		shutdown_in_progress = 1;
 
 		if (info != NULL) {
@@ -84,15 +82,13 @@ static void exit_handler(int signo, siginfo_t * info, void *context)
 			}
 		}
 		if (!IS_MAINTHREAD) {
-			LEVEL_DEBUG
-				("exit_handler: kill mainthread %lu self=%d signo=%d\n",
-				 main_threadid, pthread_self(), signo);
+			LEVEL_DEBUG("exit_handler: kill mainthread %lu self=%d signo=%d\n", main_threadid, pthread_self(), signo);
 			pthread_kill(main_threadid, signo);
 		}
 	}
 #else
-    (void) signo ;
-    (void) info ;
+	(void) signo;
+	(void) info;
 	shutdown_in_progress = 1;
 #endif
 	return;
@@ -109,8 +105,7 @@ int main(int argc, char **argv)
 	if (argc > 0)
 		Global.progname = strdup(argv[0]);
 
-	while ((c =
-			getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL)) != -1) {
 		switch (c) {
 		case 'V':
 			fprintf(stderr, "%s version:\n\t" VERSION "\n", argv[0]);
@@ -130,8 +125,7 @@ int main(int argc, char **argv)
 
 	if (count_outbound_connections == 0) {
 		if (Global.announce_off) {
-			LEVEL_DEFAULT("No TCP port specified (-p)\n%s -h for help\n",
-						  argv[0]);
+			LEVEL_DEFAULT("No TCP port specified (-p)\n%s -h for help\n", argv[0]);
 			ow_exit(1);
 		}
 		OW_ArgServer(NULL);		// make the default assignment
@@ -148,8 +142,7 @@ int main(int argc, char **argv)
 	pthread_mutex_init(&persistence_mutex, pmattr);
 
 	main_threadid = pthread_self();
-	LEVEL_DEBUG("main_threadid = %lu\n",
-				(unsigned long int) main_threadid);
+	LEVEL_DEBUG("main_threadid = %lu\n", (unsigned long int) main_threadid);
 #endif
 
 	/* Set up "Antiloop" -- a unique token */

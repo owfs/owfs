@@ -105,20 +105,22 @@ ssize_t tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval
 
 void tcp_read_flush(int file_descriptor)
 {
-    ASCII buffer[16] ;
-    ssize_t nread ;
-    int flags = fcntl( file_descriptor, F_GETFL, 0 ) ;
+	ASCII buffer[16];
+	ssize_t nread;
+	int flags = fcntl(file_descriptor, F_GETFL, 0);
 
-    // Apparently you can test for GET_FL success like this
-    // see http://www.informit.com/articles/article.asp?p=99706&seqNum=13&rl=1
-    if ( flags<0 ) return ;
+	// Apparently you can test for GET_FL success like this
+	// see http://www.informit.com/articles/article.asp?p=99706&seqNum=13&rl=1
+	if (flags < 0)
+		return;
 
-    if ( fcntl(file_descriptor, F_SETFL, flags|O_NONBLOCK ) < 0 ) return ;
+	if (fcntl(file_descriptor, F_SETFL, flags | O_NONBLOCK) < 0)
+		return;
 
-    while ( ( nread = read( file_descriptor, (BYTE *)buffer, 16 ) ) > 0 ) {
-        Debug_Bytes("tcp_read_flush",(BYTE *)buffer,nread) ;
-        continue;
-    }
+	while ((nread = read(file_descriptor, (BYTE *) buffer, 16)) > 0) {
+		Debug_Bytes("tcp_read_flush", (BYTE *) buffer, nread);
+		continue;
+	}
 
-    fcntl( file_descriptor, F_SETFL, flags ) ;
+	fcntl(file_descriptor, F_SETFL, flags);
 }

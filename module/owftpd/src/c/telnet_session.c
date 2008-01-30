@@ -125,8 +125,7 @@ int telnet_session_println(struct telnet_session_s *t, const char *s)
 }
 
 /* read a line */
-int telnet_session_readln(struct telnet_session_s *t, char *buf,
-						  int buflen)
+int telnet_session_readln(struct telnet_session_s *t, char *buf, int buflen)
 {
 	int amt_read;
 
@@ -375,16 +374,14 @@ static void write_outgoing_data(struct telnet_session_s *t)
 		daemon_assert(t->out_take < BUF_LEN);
 		daemon_assert(t->out_buflen > 0);
 		daemon_assert(t->out_buflen + t->out_take <= BUF_LEN);
-		write_ret =
-			write(t->out_fd, t->out_buf + t->out_take, t->out_buflen);
+		write_ret = write(t->out_fd, t->out_buf + t->out_take, t->out_buflen);
 	} else {
 		/* handle a buffer that looks like this:       */
 		/*     |-- data --|-- empty --|-- data --|     */
 		daemon_assert(t->out_take >= 0);
 		daemon_assert(t->out_take < BUF_LEN);
 		daemon_assert((BUF_LEN - t->out_take) > 0);
-		write_ret = write(t->out_fd,
-						  t->out_buf + t->out_take, BUF_LEN - t->out_take);
+		write_ret = write(t->out_fd, t->out_buf + t->out_take, BUF_LEN - t->out_take);
 	}
 
 	/* handle three possible write results */

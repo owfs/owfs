@@ -68,8 +68,7 @@ int main(int argc, char *argv[])
 		Global.progname = strdup(argv[0]);
 	//mtrace() ;
 	/* process command line arguments */
-	while ((c =
-			getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL)) != -1) {
 		switch (c) {
 		case 'V':
 			fprintf(stderr, "%s version:\n\t" VERSION "\n", argv[0]);
@@ -111,9 +110,8 @@ int main(int argc, char *argv[])
 	}
 
 	if (count_outbound_connections == 0) {
-		LEVEL_DEFAULT("No mount point specified.\nTry '%s -h' for help.\n",
-			      argv[0]);
-			ow_exit(1);
+		LEVEL_DEFAULT("No mount point specified.\nTry '%s -h' for help.\n", argv[0]);
+		ow_exit(1);
 	}
 	// FUSE directory mounting
 	LEVEL_CONNECT("fuse mount point: %s\n", head_outbound_list->name);
@@ -158,8 +156,7 @@ int main(int argc, char *argv[])
 	{
 		int i;
 		for (i = 0; i < fuse_options.argc; i++) {
-			LEVEL_DEBUG("fuse_options.argv[%d]=[%s]\n", i,
-						fuse_options.argv[i]);
+			LEVEL_DEBUG("fuse_options.argv[%d]=[%s]\n", i, fuse_options.argv[i]);
 		}
 	}
 #endif

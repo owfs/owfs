@@ -46,7 +46,7 @@ $Id$
 
 /* CAnn stand alone -- separated out of ow.h for clarity */
 
-#ifndef OW_GLOBAL_H					/* tedious wrapper */
+#ifndef OW_GLOBAL_H				/* tedious wrapper */
 #define OW_GLOBAL_H
 
 
@@ -69,11 +69,11 @@ struct global {
 	int max_clients;			// for ftp
 	int autoserver;
 	size_t cache_size;			// max cache size (or 0 for no max) ;
-    int one_device ; // Single device, use faster ROM comands
+	int one_device;				// Single device, use faster ROM comands
 	/* Special parameter to trigger William Robison <ibutton@n952.dyndns.ws> timings */
 	int altUSB;
-    int usb_flextime;
-    /* timeouts -- order must match ow_opt.c values for correct indexing */
+	int usb_flextime;
+	/* timeouts -- order must match ow_opt.c values for correct indexing */
 	int timeout_volatile;
 	int timeout_stable;
 	int timeout_directory;

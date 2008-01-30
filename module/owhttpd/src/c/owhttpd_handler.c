@@ -44,7 +44,7 @@ int handle_socket(FILE * out)
 
 	str = fgets(up.line, PATH_MAX, out);
 	LEVEL_CALL("PreParse line=%s\n", up.line);
-    URLparse(&up);			/* Braek up URL */
+	URLparse(&up);				/* Braek up URL */
 
 	/* read lines until blank */
 	if (up.version) {
@@ -56,13 +56,12 @@ int handle_socket(FILE * out)
 
 	LEVEL_CALL
 		("WLcmd: %s\tfile: %s\trequest: %s\tvalue: %s\tversion: %s \n",
-		 SAFESTRING(up.cmd), SAFESTRING(up.file), SAFESTRING(up.request),
-		 SAFESTRING(up.value), SAFESTRING(up.version));
-		/*
-		 * This is necessary for some stupid *
-		 * * operating system such as SunOS
-		 */
-		fflush(out);
+		 SAFESTRING(up.cmd), SAFESTRING(up.file), SAFESTRING(up.request), SAFESTRING(up.value), SAFESTRING(up.version));
+	/*
+	 * This is necessary for some stupid *
+	 * * operating system such as SunOS
+	 */
+	fflush(out);
 
 	/* Good command line? */
 	if (up.cmd == NULL || strcmp(up.cmd, "GET") != 0) {
@@ -83,9 +82,9 @@ int handle_socket(FILE * out)
 		} else if (up.request == NULL) {
 			ShowDevice(out, &pn);
 		} else {				/* First write new values, then show */
-			OWQ_allocate_struct_and_pointer( owq_write ) ;
+			OWQ_allocate_struct_and_pointer(owq_write);
 
-            if (FS_OWQ_create_plus(up.file, up.request, up.value, strlen(up.value), 0, owq_write)) {
+			if (FS_OWQ_create_plus(up.file, up.request, up.value, strlen(up.value), 0, owq_write)) {
 				Bad404(out);
 			} else {
 				/* Single device, show it's properties */
@@ -146,34 +145,32 @@ static void URLparse(struct urlparse *up)
 			*str = '\0';
 	}
 
-    /* Separate out the FORM field and value */
-    if (up->request) {
-        for (str = up->request; *str; str++) {
-            if (*str == '=') {
-                *str = '\0';
-                up->value = str + 1;
-                break;
-            }
-        }
-    }
+	/* Separate out the FORM field and value */
+	if (up->request) {
+		for (str = up->request; *str; str++) {
+			if (*str == '=') {
+				*str = '\0';
+				up->value = str + 1;
+				break;
+			}
+		}
+	}
 
-    /* Remove garbage from oned of value */
-    if (up->value) {
-        for (str = up->value; *str; str++) {
-            if (*str == '&') {
-                *str = '\0';
-                break;
-            }
-        }
-        /* Special case -- checkbox off, CHANGE is value read */
-        if ( strcmp("CHANGE",up->value)==0 ) {
-            up->value[0] = '0' ;
-            up->value[1] = '\0' ;
-        }
-    }
-    LEVEL_DEBUG("URL parse file=%s, request=%s, value=%s\n",
-				SAFESTRING(up->file), SAFESTRING(up->request),
-				SAFESTRING(up->value));
+	/* Remove garbage from oned of value */
+	if (up->value) {
+		for (str = up->value; *str; str++) {
+			if (*str == '&') {
+				*str = '\0';
+				break;
+			}
+		}
+		/* Special case -- checkbox off, CHANGE is value read */
+		if (strcmp("CHANGE", up->value) == 0) {
+			up->value[0] = '0';
+			up->value[1] = '\0';
+		}
+	}
+	LEVEL_DEBUG("URL parse file=%s, request=%s, value=%s\n", SAFESTRING(up->file), SAFESTRING(up->request), SAFESTRING(up->value));
 }
 
 
@@ -182,10 +179,8 @@ static void Bad400(FILE * out)
 	HTTPstart(out, "400 Bad Request", ct_html);
 	HTTPtitle(out, "Error 400 -- Bad request");
 	HTTPheader(out, "Unrecognized Request");
-	fprintf(out,
-			"<P>The 1-wire web server is carefully constrained for security and stability. Your requested web page is not recognized.</P>");
-	fprintf(out,
-			"<P>Navigate from the <A HREF=\"/\">Main page</A> for best results.</P>");
+	fprintf(out, "<P>The 1-wire web server is carefully constrained for security and stability. Your requested web page is not recognized.</P>");
+	fprintf(out, "<P>Navigate from the <A HREF=\"/\">Main page</A> for best results.</P>");
 	HTTPfoot(out);
 }
 
@@ -194,9 +189,7 @@ static void Bad404(FILE * out)
 	HTTPstart(out, "404 File not found", ct_html);
 	HTTPtitle(out, "Error 400 -- Item doesn't exist");
 	HTTPheader(out, "Non-existent Device");
-	fprintf(out,
-			"<P>The 1-wire web server is carefully constrained for security and stability. Your requested device is not recognized.</P>");
-	fprintf(out,
-			"<P>Navigate from the <A HREF=\"/\">Main page</A> for best results.</P>");
+	fprintf(out, "<P>The 1-wire web server is carefully constrained for security and stability. Your requested device is not recognized.</P>");
+	fprintf(out, "<P>Navigate from the <A HREF=\"/\">Main page</A> for best results.</P>");
 	HTTPfoot(out);
 }

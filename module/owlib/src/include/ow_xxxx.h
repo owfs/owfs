@@ -20,16 +20,16 @@ $Id$
 #include "ow_codes.h"
 
 /* ------- Prototypes ----------- */
-int FS_type(struct one_wire_query * owq);
-int FS_code(struct one_wire_query * owq);
-int FS_crc8(struct one_wire_query * owq);
-int FS_ID(struct one_wire_query * owq);
-int FS_r_ID(struct one_wire_query * owq);
-int FS_address(struct one_wire_query * owq);
-int FS_r_address(struct one_wire_query * owq);
-int FS_locator(struct one_wire_query * owq);
-int FS_r_locator(struct one_wire_query * owq);
-int FS_present(struct one_wire_query * owq);
+int FS_type(struct one_wire_query *owq);
+int FS_code(struct one_wire_query *owq);
+int FS_crc8(struct one_wire_query *owq);
+int FS_ID(struct one_wire_query *owq);
+int FS_r_ID(struct one_wire_query *owq);
+int FS_address(struct one_wire_query *owq);
+int FS_r_address(struct one_wire_query *owq);
+int FS_locator(struct one_wire_query *owq);
+int FS_r_locator(struct one_wire_query *owq);
+int FS_present(struct one_wire_query *owq);
 
 /* ------- Structures ----------- */
 

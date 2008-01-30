@@ -71,8 +71,8 @@ $Id$
 /* Internal properties -- used by some devices */
 /* in passing to store state information        */
 struct internal_prop {
-    char *name;
-    enum fc_change change;
+	char *name;
+	enum fc_change change;
 };
 
 #if OW_CACHE
@@ -85,37 +85,28 @@ void Cache_Open(void);
 void Cache_Close(void);
 void Cache_Clear(void);
 
-int OWQ_Cache_Add( const struct one_wire_query * owq ) ;
-int Cache_Add(const void *data, const size_t datasize,
-			  const struct parsedname *pn);
+int OWQ_Cache_Add(const struct one_wire_query *owq);
+int Cache_Add(const void *data, const size_t datasize, const struct parsedname *pn);
 int Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn);
 int Cache_Add_Device(const int bus_nr, const struct parsedname *pn);
-int Cache_Add_Internal(const void *data, const size_t datasize,
-					   const struct internal_prop *ip,
-					   const struct parsedname *pn);
+int Cache_Add_Internal(const void *data, const size_t datasize, const struct internal_prop *ip, const struct parsedname *pn);
 
-int OWQ_Cache_Get( struct one_wire_query * owq ) ;
+int OWQ_Cache_Get(struct one_wire_query *owq);
 int Cache_Get(void *data, size_t * dsize, const struct parsedname *pn);
-int Cache_Get_Strict(void *data, size_t dsize,
-					 const struct parsedname *pn);
+int Cache_Get_Strict(void *data, size_t dsize, const struct parsedname *pn);
 int Cache_Get_Dir(struct dirblob *db, const struct parsedname *pn);
 int Cache_Get_Device(void *bus_nr, const struct parsedname *pn);
-int Cache_Get_Internal(void *data, size_t * dsize,
-					   const struct internal_prop *ip,
-					   const struct parsedname *pn);
-int Cache_Get_Internal_Strict(void *data, size_t dsize,
-							  const struct internal_prop *ip,
-							  const struct parsedname *pn);
+int Cache_Get_Internal(void *data, size_t * dsize, const struct internal_prop *ip, const struct parsedname *pn);
+int Cache_Get_Internal_Strict(void *data, size_t dsize, const struct internal_prop *ip, const struct parsedname *pn);
 
-int OWQ_Cache_Del( const struct one_wire_query * owq ) ;
+int OWQ_Cache_Del(const struct one_wire_query *owq);
 int Cache_Del(const struct parsedname *pn);
 int Cache_Del_Dir(const struct parsedname *pn);
 int Cache_Del_Device(const struct parsedname *pn);
-int Cache_Del_Internal(const struct internal_prop *ip,
-					   const struct parsedname *pn);
+int Cache_Del_Internal(const struct internal_prop *ip, const struct parsedname *pn);
 void CookTheCache(void);
 
-void FS_cache_sibling( char * property, struct one_wire_query * owq_shallow_copy) ;
+void FS_cache_sibling(char *property, struct one_wire_query *owq_shallow_copy);
 
 #else							/* OW_CACHE */
 

@@ -48,7 +48,7 @@ $Id$
 
 /* Cannot stand alone -- part of ow.h and only separated out for clarity */
 
-#ifndef OW_MUTEXES_H					/* tedious wrapper */
+#ifndef OW_MUTEXES_H			/* tedious wrapper */
 #define OW_MUTEXES_H
 
 

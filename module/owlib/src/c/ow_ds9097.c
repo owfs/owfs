@@ -18,13 +18,9 @@ $Id$
 /* All the rest of the program sees is the DS9907_detect and the entry in iroutines */
 
 static int DS9097_reset(const struct parsedname *pn);
-static int DS9097_sendback_bits(const BYTE * outbits, BYTE * inbits,
-								const size_t length,
-								const struct parsedname *pn);
+static int DS9097_sendback_bits(const BYTE * outbits, BYTE * inbits, const size_t length, const struct parsedname *pn);
 static void DS9097_setroutines(struct connection_in *in);
-static int DS9097_send_and_get(const BYTE * bussend, BYTE * busget,
-							   const size_t length,
-							   const struct parsedname *pn);
+static int DS9097_send_and_get(const BYTE * bussend, BYTE * busget, const size_t length, const struct parsedname *pn);
 
 #define	OneBit	0xFF
 //#define ZeroBit 0xC0
@@ -34,19 +30,19 @@ static int DS9097_send_and_get(const BYTE * bussend, BYTE * busget,
 /* Device-specific functions */
 static void DS9097_setroutines(struct connection_in *in)
 {
-    in->iroutines.detect = DS9097_detect;
-    in->iroutines.reset = DS9097_reset;
-    in->iroutines.next_both = NULL;
-    in->iroutines.PowerByte = NULL;
+	in->iroutines.detect = DS9097_detect;
+	in->iroutines.reset = DS9097_reset;
+	in->iroutines.next_both = NULL;
+	in->iroutines.PowerByte = NULL;
 //    in->iroutines.ProgramPulse = ;
-    in->iroutines.sendback_data = NULL;
-    in->iroutines.sendback_bits = DS9097_sendback_bits;
-    in->iroutines.select = NULL;
-    in->iroutines.reconnect = NULL;
-    in->iroutines.close = COM_close;
-    in->iroutines.transaction = NULL;
-    in->iroutines.flags = ADAP_FLAG_overdrive;
-    in->bundling_length = UART_FIFO_SIZE / 10 ;
+	in->iroutines.sendback_data = NULL;
+	in->iroutines.sendback_bits = DS9097_sendback_bits;
+	in->iroutines.select = NULL;
+	in->iroutines.reconnect = NULL;
+	in->iroutines.close = COM_close;
+	in->iroutines.transaction = NULL;
+	in->iroutines.flags = ADAP_FLAG_overdrive;
+	in->bundling_length = UART_FIFO_SIZE / 10;
 }
 
 /* Open a DS9097 after an unsucessful DS2480_detect attempt */
@@ -61,11 +57,11 @@ int DS9097_detect(struct connection_in *in)
 		return -ENODEV;
 
 	/* Set up low-level routines */
-    DS9097_setroutines(in) ;
+	DS9097_setroutines(in);
 
 	in->Adapter = adapter_DS9097;
 	// in->adapter_name already set, to support HA3 and HA4B
-	in->busmode = bus_passive; // in case initially tried DS9097U
+	in->busmode = bus_passive;	// in case initially tried DS9097U
 
 	FS_ParsedName(NULL, &pn);	// minimal parsename -- no destroy needed
 	pn.selected_connection = in;
@@ -91,12 +87,10 @@ static int DS9097_reset(const struct parsedname *pn)
 	tcgetattr(file_descriptor, &term);
 	term.c_cflag = CS8 | CREAD | HUPCL | CLOCAL;
 	if (cfsetospeed(&term, B9600) < 0 || cfsetispeed(&term, B9600) < 0) {
-		ERROR_CONNECT("Cannot set speed (9600): %s\n",
-					  SAFESTRING(pn->selected_connection->name));
+		ERROR_CONNECT("Cannot set speed (9600): %s\n", SAFESTRING(pn->selected_connection->name));
 	}
 	if (tcsetattr(file_descriptor, TCSANOW, &term) < 0) {
-		ERROR_CONNECT("Cannot set attributes: %s\n",
-					  SAFESTRING(pn->selected_connection->name));
+		ERROR_CONNECT("Cannot set attributes: %s\n", SAFESTRING(pn->selected_connection->name));
 		return -EIO;
 	}
 	if ((ret = DS9097_send_and_get(&resetbyte, &c, 1, pn)))
@@ -104,14 +98,14 @@ static int DS9097_reset(const struct parsedname *pn)
 
 	switch (c) {
 	case 0:
-		ret = BUS_RESET_SHORT ;
-		break ;
+		ret = BUS_RESET_SHORT;
+		break;
 	case 0xF0:
-		ret = BUS_RESET_OK ;
+		ret = BUS_RESET_OK;
 		pn->selected_connection->AnyDevices = 0;
 		break;
 	default:
-		ret = BUS_RESET_OK ;
+		ret = BUS_RESET_OK;
 		pn->selected_connection->AnyDevices = 1;
 		pn->selected_connection->ProgramAvailable = 0;	/* from digitemp docs */
 		if (pn->selected_connection->ds2404_compliance) {
@@ -134,7 +128,7 @@ static int DS9097_reset(const struct parsedname *pn)
 	   SMALLINT owTouchReset(int portnum)
 	   They use 8bit all the time actually..
 	   8 data bits */
-	term[portnum].c_cflag |= CS8;  //(0x60)
+	term[portnum].c_cflag |= CS8;	//(0x60)
 	cfsetispeed(&term[portnum], B9600);
 	cfsetospeed(&term[portnum], B9600);
 	tcsetattr(file_descriptor[portnum], TCSANOW, &term[portnum]);
@@ -142,35 +136,32 @@ static int DS9097_reset(const struct parsedname *pn)
 	cfsetispeed(&term[portnum], B115200);
 	cfsetospeed(&term[portnum], B115200);
 	/* set to 6 data bits */
-	term[portnum].c_cflag |= CS6;  // (0x20)
+	term[portnum].c_cflag |= CS6;	// (0x20)
 	tcsetattr(file_descriptor[portnum], TCSANOW, &term[portnum]);
 	/* Not really a change of data-bits here...
 	   They always use 8bit mode... doohhh? */
 #endif
 
-	if(Global.eightbit_serial) {
-	  /* coninue with 8 data bits */
-	  term.c_cflag = CS8 | CREAD | HUPCL | CLOCAL;
+	if (Global.eightbit_serial) {
+		/* coninue with 8 data bits */
+		term.c_cflag = CS8 | CREAD | HUPCL | CLOCAL;
 	} else {
-	  /* 6 data bits, Receiver enabled, Hangup, Dont change "owner" */
-	  term.c_cflag = CS6 | CREAD | HUPCL | CLOCAL;
+		/* 6 data bits, Receiver enabled, Hangup, Dont change "owner" */
+		term.c_cflag = CS6 | CREAD | HUPCL | CLOCAL;
 	}
 #ifndef B115200
 	/* MacOSX support max 38400 in termios.h ? */
 	if (cfsetospeed(&term, B38400) < 0 || cfsetispeed(&term, B38400) < 0) {
-		ERROR_CONNECT("Cannot set speed (38400): %s\n",
-					  SAFESTRING(pn->selected_connection->name));
+		ERROR_CONNECT("Cannot set speed (38400): %s\n", SAFESTRING(pn->selected_connection->name));
 	}
 #else
 	if (cfsetospeed(&term, B115200) < 0 || cfsetispeed(&term, B115200) < 0) {
-		ERROR_CONNECT("Cannot set speed (115200): %s\n",
-					  SAFESTRING(pn->selected_connection->name));
+		ERROR_CONNECT("Cannot set speed (115200): %s\n", SAFESTRING(pn->selected_connection->name));
 	}
 #endif
 
 	if (tcsetattr(file_descriptor, TCSANOW, &term) < 0) {
-		ERROR_CONNECT("Cannot set attributes: %s\n",
-					  SAFESTRING(pn->selected_connection->name));
+		ERROR_CONNECT("Cannot set attributes: %s\n", SAFESTRING(pn->selected_connection->name));
 		return -EFAULT;
 	}
 	/* Flush the input and output buffers */
@@ -206,8 +197,7 @@ static int setRTS(int on, const struct connection_in *in)
 /* Actually uses bit zero of each byte */
 /* Dispatches DS9097_MAX_BITS "bits" at a time */
 #define DS9097_MAX_BITS 24
-int DS9097_sendback_bits(const BYTE * outbits, BYTE * inbits,
-						 const size_t length, const struct parsedname *pn)
+int DS9097_sendback_bits(const BYTE * outbits, BYTE * inbits, const size_t length, const struct parsedname *pn)
 {
 	int ret;
 	BYTE d[DS9097_MAX_BITS];
@@ -242,9 +232,7 @@ int DS9097_sendback_bits(const BYTE * outbits, BYTE * inbits,
 /* Routine to send a string of bits and get another string back */
 /* This seems rather COM-port specific */
 /* Indeed, will move to DS9097 */
-static int DS9097_send_and_get(const BYTE * bussend, BYTE * busget,
-							   const size_t length,
-							   const struct parsedname *pn)
+static int DS9097_send_and_get(const BYTE * bussend, BYTE * busget, const size_t length, const struct parsedname *pn)
 {
 	size_t gl = length;
 	ssize_t r;

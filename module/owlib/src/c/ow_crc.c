@@ -53,8 +53,7 @@ static BYTE crc8_table[] = {
 	0xD7, 0x89, 0x6B, 0x35
 };
 
-static UINT crc16_table[16] =
-	{ 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0 };
+static UINT crc16_table[16] = { 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0 };
 
 BYTE CRC8compute(const BYTE * bytes, const size_t length, const UINT seed)
 {

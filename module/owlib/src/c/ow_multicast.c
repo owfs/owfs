@@ -33,25 +33,24 @@ int FS_FindHA7(void)
 	struct addrinfo hint;
 	struct addrinfo *now;
 	int ret = -1;
-    int on = 1 ;
+	int on = 1;
 	int n;
 
 	memset(&hint, 0, sizeof(struct addrinfo));
 #ifdef AI_NUMERICSERV
-	hint.ai_flags = AI_CANONNAME | AI_NUMERICHOST | AI_NUMERICSERV ;
+	hint.ai_flags = AI_CANONNAME | AI_NUMERICHOST | AI_NUMERICSERV;
 #else
-	hint.ai_flags = AI_CANONNAME | AI_NUMERICHOST ;
+	hint.ai_flags = AI_CANONNAME | AI_NUMERICHOST;
 #endif
 	hint.ai_family = AF_INET;
 	hint.ai_socktype = SOCK_DGRAM;
 	hint.ai_protocol = 0;
-    printf("FS_FindHA7 0\n");
-    if ((n = getaddrinfo("224.1.2.3", "4567", &hint, &ai))) {
-		LEVEL_CONNECT("Couldn't set up HA7 broadcast message %s\n",
-					  gai_strerror(n));
+	printf("FS_FindHA7 0\n");
+	if ((n = getaddrinfo("224.1.2.3", "4567", &hint, &ai))) {
+		LEVEL_CONNECT("Couldn't set up HA7 broadcast message %s\n", gai_strerror(n));
 		return -ENOENT;
 	}
-    printf("FS_FindHA7 1\n");
+	printf("FS_FindHA7 1\n");
 
 	for (now = ai; now; now = now->ai_next) {
 		BYTE buffer[HA7_response_len];
@@ -61,15 +60,13 @@ int FS_FindHA7(void)
 		ASCII name[64];
 		struct connection_in *in;
 		printf("Finding...\n");
-		if ((file_descriptor =
-			 socket(now->ai_family, now->ai_socktype,
-					now->ai_protocol)) < 0)
+		if ((file_descriptor = socket(now->ai_family, now->ai_socktype, now->ai_protocol)) < 0)
 			continue;
 		printf("Finding file_descriptor=%d\n", file_descriptor);
-        if ( setsockopt(file_descriptor,SOL_SOCKET,SO_BROADCAST,&on,sizeof(on)) == -1 ) {
-            ERROR_DEBUG("Cannot set socket option for broadcast.\n");
-            return -EIO ;
-        }
+		if (setsockopt(file_descriptor, SOL_SOCKET, SO_BROADCAST, &on, sizeof(on)) == -1) {
+			ERROR_DEBUG("Cannot set socket option for broadcast.\n");
+			return -EIO;
+		}
 		if (sendto(file_descriptor, "HA\000\001", 4, 0, now->ai_addr, now->ai_addrlen)
 			!= 4) {
 			ERROR_CONNECT("Trouble sending broadcast message\n");
@@ -80,11 +77,9 @@ int FS_FindHA7(void)
 			ret = 0;			// possible read -- no default error
 
 		/* now read */
-        printf("FS_FindHA7 2\n");
+		printf("FS_FindHA7 2\n");
 
-		if ((n =
-			 tcp_read(file_descriptor, buffer, HA7_response_len,
-					  &tv)) != HA7_response_len) {
+		if ((n = tcp_read(file_descriptor, buffer, HA7_response_len, &tv)) != HA7_response_len) {
 			LEVEL_CONNECT("HA7 response bad length\n");
 			printf("HA7 response bad length %d\n", n);
 			continue;
@@ -100,13 +95,12 @@ int FS_FindHA7(void)
 		printf("Success!\n");
 		++ret;
 		inet_ntop(AF_INET, &(from.sin_addr), name, 64);
-		snprintf(&name[64 - strlen(name)], 64 - strlen(name), ":%d",
-				 (buffer[2] << 8) + buffer[3]);
+		snprintf(&name[64 - strlen(name)], 64 - strlen(name), ":%d", (buffer[2] << 8) + buffer[3]);
 		in->name = strdup(name);
 		in->busmode = bus_ha7net;
 	}
-    printf("FS_FindHA7 4\n");
-    freeaddrinfo(ai);
+	printf("FS_FindHA7 4\n");
+	freeaddrinfo(ai);
 	return ret;
 }
 #endif							/* OW_HA7 */

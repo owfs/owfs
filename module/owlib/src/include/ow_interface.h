@@ -21,4 +21,4 @@ $Id$
 DeviceHeader(interface_settings);
 DeviceHeader(interface_statistics);
 
-#endif                          /* OW_INTERFACE_H */
+#endif							/* OW_INTERFACE_H */

@@ -67,7 +67,7 @@ $Id$
 
 /* Cannot stand alone -- part of ow.h but separated for clarity */
 
-#ifndef OW_FUNCTION_H					/* tedious wrapper */
+#ifndef OW_FUNCTION_H			/* tedious wrapper */
 #define OW_FUNCTION_H
 
 /* Prototypes for owlib.c -- libow overall control */
@@ -99,7 +99,7 @@ void OWLIB_can_finish_end(void);
 void LockSetup(void);
 
 ssize_t tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval *ptv);
-void tcp_read_flush(int file_descriptor) ;
+void tcp_read_flush(int file_descriptor);
 int tcp_wait(int file_descriptor, const struct timeval *ptv);
 int ClientAddr(char *sname, struct connection_in *in);
 int ClientConnect(struct connection_in *in);

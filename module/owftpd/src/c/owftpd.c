@@ -23,8 +23,7 @@ int main(int argc, char *argv[])
 		Global.progname = strdup(argv[0]);
 
 	/* check our command-line arguments */
-	while ((c =
-			getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL)) != -1) {
 		switch (c) {
 		case 'V':
 			fprintf(stderr, "%s version:\n\t" VERSION "\n", argv[0]);

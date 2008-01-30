@@ -9,4 +9,3 @@
 
 /* FreeBSD-style sendfile() supported */
 #undef HAVE_FREEBSD_SENDFILE
-

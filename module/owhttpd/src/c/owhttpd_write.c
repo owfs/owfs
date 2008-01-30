@@ -21,24 +21,24 @@ static void hex_only(char *str);
 /* --------------- Functions ---------------- */
 
 
-void ChangeData(struct one_wire_query * owq)
+void ChangeData(struct one_wire_query *owq)
 {
-    struct parsedname * pn = PN(owq) ;
-    ASCII * value_string = OWQ_buffer(owq) ;
-    
-    /* Do command processing and make changes to 1-wire devices */
-    httpunescape((BYTE *) value_string);
-    LEVEL_DETAIL("CHANGEDATA path=%s value=%s\n", pn->path, value_string);
-    switch (pn->selected_filetype->format) {
-        case ft_binary:
-            hex_only(value_string);
-            OWQ_size(owq) = hex_convert(value_string);
-            break;
-        default:
-            OWQ_size(owq) = strlen(value_string) ;
-            break;
-    }
-    FS_write_postparse(owq) ;
+	struct parsedname *pn = PN(owq);
+	ASCII *value_string = OWQ_buffer(owq);
+
+	/* Do command processing and make changes to 1-wire devices */
+	httpunescape((BYTE *) value_string);
+	LEVEL_DETAIL("CHANGEDATA path=%s value=%s\n", pn->path, value_string);
+	switch (pn->selected_filetype->format) {
+	case ft_binary:
+		hex_only(value_string);
+		OWQ_size(owq) = hex_convert(value_string);
+		break;
+	default:
+		OWQ_size(owq) = strlen(value_string);
+		break;
+	}
+	FS_write_postparse(owq);
 }
 
 /* Change web-escaped string back to straight ascii */
@@ -90,11 +90,11 @@ static int hex_convert(char *str)
 {
 	char *uc = str;
 	BYTE *hx = (BYTE *) str;
-    int return_length = 0 ;
-    for (; *uc; uc += 2) {
+	int return_length = 0;
+	for (; *uc; uc += 2) {
 		*hx++ = string2num(uc);
-    ++return_length ;
-    }
-    *hx = '\0';
-    return return_length ;
+		++return_length;
+	}
+	*hx = '\0';
+	return return_length;
 }

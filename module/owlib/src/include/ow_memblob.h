@@ -56,14 +56,14 @@ $Id$
 
 struct memblob {
 	size_t allocated;
-    size_t increment ;
+	size_t increment;
 	size_t used;
-	BYTE * memory_storage;
+	BYTE *memory_storage;
 };
 
 void MemblobClear(struct memblob *mb);
 void MemblobInit(struct memblob *mb, size_t increment);
 int MemblobAdd(const BYTE * data, size_t length, struct memblob *mb);
-int MemblobChar(BYTE character, size_t length, struct memblob *mb) ;
+int MemblobChar(BYTE character, size_t length, struct memblob *mb);
 
 #endif							/* OW_MEMBLOB_H */

@@ -66,24 +66,24 @@ void Handler(int file_descriptor)
 	timersub(&tv_high, &tv_low, &tv_high);	// just the delta
 
 	while (FromClient(&hd) == 0) {
-        // Was persistence requested?
-		int loop_persistent = ((hd.sm.sg & PERSISTENT_MASK) != 0) ;
+		// Was persistence requested?
+		int loop_persistent = ((hd.sm.sg & PERSISTENT_MASK) != 0);
 
-        /* Persistence suppression? */
-        if (Global.no_persistence) {
-            loop_persistent = 0 ;
-        }
+		/* Persistence suppression? */
+		if (Global.no_persistence) {
+			loop_persistent = 0;
+		}
 
 		/* Persistence logic */
 		if (loop_persistent) {	/* Requested persistence */
-            LEVEL_DEBUG("Persistence requested\n") ;      
+			LEVEL_DEBUG("Persistence requested\n");
 			if (persistent) {	/* already had persistence granted */
 				hd.persistent = 1;	/* so keep it */
 			} else {			/* See if available */
 
-                PERSISTENCELOCK;
+				PERSISTENCELOCK;
 
-                if (persistent_connections < Global.clients_persistent_high) {	/* ok */
+				if (persistent_connections < Global.clients_persistent_high) {	/* ok */
 					++persistent_connections;	/* global count */
 					persistent = 1;	/* connection toggle */
 					hd.persistent = 1;	/* for responses */
@@ -92,8 +92,8 @@ void Handler(int file_descriptor)
 					hd.persistent = 0;	/* for responses */
 				}
 
-                PERSISTENCEUNLOCK;
-                
+				PERSISTENCEUNLOCK;
+
 			}
 		} else {				/* No persistence requested this time */
 			hd.persistent = 0;	/* for responses */
@@ -117,15 +117,14 @@ void Handler(int file_descriptor)
 		if (tcp_wait(file_descriptor, &tv_low)) {	// timed out
 			/* test if below threshold for longer wait */
 
-            PERSISTENCELOCK;
+			PERSISTENCELOCK;
 
-            /* store the test because the mutex locks the variable */
-			loop_persistent =
-				(persistent_connections < Global.clients_persistent_low);
+			/* store the test because the mutex locks the variable */
+			loop_persistent = (persistent_connections < Global.clients_persistent_low);
 
-            PERSISTENCEUNLOCK;
+			PERSISTENCEUNLOCK;
 
-            if (loop_persistent == 0)
+			if (loop_persistent == 0)
 				break;			/* too many connections and we're slow */
 
 			/*  longer wait */
@@ -133,8 +132,7 @@ void Handler(int file_descriptor)
 				break;
 		}
 
-		LEVEL_DEBUG
-			("OWSERVER tcp connection persistence -- reusing connection now.\n");
+		LEVEL_DEBUG("OWSERVER tcp connection persistence -- reusing connection now.\n");
 	}
 
 	LEVEL_DEBUG("OWSERVER handler done\n");
@@ -142,13 +140,13 @@ void Handler(int file_descriptor)
 	// restore the persistent count
 	if (persistent) {
 
-        PERSISTENCELOCK;
+		PERSISTENCELOCK;
 
-        --persistent_connections;
+		--persistent_connections;
 
-        PERSISTENCEUNLOCK;
+		PERSISTENCEUNLOCK;
 
-    }
+	}
 }
 
 /*
@@ -173,12 +171,12 @@ static void SingleHandler(struct handlerdata *hd)
 	//printf("OWSERVER pre-create\n");
 	// PTHREAD_CREATE_DETACHED doesn't work for older uclibc... call pthread_detach() instead.
 
-    if ( Global.pingcrazy ) { // extra pings
-        TOCLIENTLOCK(hd);
-            ToClient(hd->file_descriptor, &ping_cm, NULL);  // send the ping
-        TOCLIENTUNLOCK(hd);
-        LEVEL_DEBUG("Extra ping (pingcrazy mode)\n");
-    }
+	if (Global.pingcrazy) {		// extra pings
+		TOCLIENTLOCK(hd);
+		ToClient(hd->file_descriptor, &ping_cm, NULL);	// send the ping
+		TOCLIENTUNLOCK(hd);
+		LEVEL_DEBUG("Extra ping (pingcrazy mode)\n");
+	}
 	if (pthread_create(&thread, NULL, DataHandler, hd)) {
 		LEVEL_DEBUG("OWSERVER:handler() can't create new thread\n");
 		DataHandler(hd);		// do it without pings
@@ -189,18 +187,18 @@ static void SingleHandler(struct handlerdata *hd)
 #ifdef HAVE_NANOSLEEP
 		struct timespec nano = { 0, 100000000 };	// .1 seconds (Note second element NANOsec)
 		nanosleep(&nano, NULL);
-#else /* HAVE_NANOSLEEP */
+#else							/* HAVE_NANOSLEEP */
 		usleep((unsigned long) 100000);
-#endif /* HAVE_NANOSLEEP */
+#endif							/* HAVE_NANOSLEEP */
 
-        TOCLIENTLOCK(hd);
-		
-        if (!timerisset(&(hd->tv))) {	// flag that the other thread is done
+		TOCLIENTLOCK(hd);
+
+		if (!timerisset(&(hd->tv))) {	// flag that the other thread is done
 			loop = 0;
 		} else {				// check timing -- ping if expired
 			gettimeofday(&now, NULL);	// current time
 			timersub(&now, &delta, &result);	// less delay
-			if (timercmp(&(hd->tv), &result, <) || Global.pingcrazy ) {	// test against last message time
+			if (timercmp(&(hd->tv), &result, <) || Global.pingcrazy) {	// test against last message time
 				char *c = NULL;	// dummy argument
 				ToClient(hd->file_descriptor, &ping_cm, c);	// send the ping
 				//printf("OWSERVER ping\n") ;
@@ -208,9 +206,9 @@ static void SingleHandler(struct handlerdata *hd)
 			}
 		}
 
-        TOCLIENTUNLOCK(hd);
+		TOCLIENTUNLOCK(hd);
 
-    } while (loop);
+	} while (loop);
   HandlerDone:
 	if (hd->sp.path) {
 		free(hd->sp.path);

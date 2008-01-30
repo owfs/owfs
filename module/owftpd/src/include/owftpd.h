@@ -190,8 +190,7 @@ struct telnet_session_s {
 
 #else							/* NDEBUG */
 
-void daemon_assert_fail(const char *assertion,
-						const char *file, int line, const char *function);
+void daemon_assert_fail(const char *assertion, const char *file, int line, const char *function);
 
 #ifndef __STRING
 #define __STRING(x) #x
@@ -265,9 +264,7 @@ struct ftp_session_s {
 };
 
 int ftp_session_init(struct ftp_session_s *f,
-					 const sockaddr_storage_t * client_addr,
-					 const sockaddr_storage_t * server_addr,
-					 struct telnet_session_s *t, const char *dir);
+					 const sockaddr_storage_t * client_addr, const sockaddr_storage_t * server_addr, struct telnet_session_s *t, const char *dir);
 void ftp_session_drop(struct ftp_session_s *f, const char *reason);
 void ftp_session_run(struct ftp_session_s *f, struct watched_s *watched);
 void ftp_session_destroy(struct ftp_session_s *f);
@@ -344,8 +341,7 @@ int ftp_command_parse(const char *input, struct ftp_command_s *cmd);
 void telnet_session_init(struct telnet_session_s *t, int in, int out);
 int telnet_session_print(struct telnet_session_s *t, const char *s);
 int telnet_session_println(struct telnet_session_s *t, const char *s);
-int telnet_session_readln(struct telnet_session_s *t, char *buf,
-						  int buflen);
+int telnet_session_readln(struct telnet_session_s *t, char *buf, int buflen);
 void telnet_session_destroy(struct telnet_session_s *t);
 
 #endif							/* OWFTPD_H */

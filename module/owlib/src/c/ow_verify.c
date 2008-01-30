@@ -41,8 +41,7 @@ int BUS_verify(BYTE search, const struct parsedname *pn)
 	if (buffer[0] != search)
 		return 1;
 	for (i = 0; (i < 64) && (goodbits < 64); i++) {
-		switch (UT_getbit(buffer, 3 * i + 8) << 1 |
-				UT_getbit(buffer, 3 * i + 9)) {
+		switch (UT_getbit(buffer, 3 * i + 8) << 1 | UT_getbit(buffer, 3 * i + 9)) {
 		case 0:
 			break;
 		case 1:

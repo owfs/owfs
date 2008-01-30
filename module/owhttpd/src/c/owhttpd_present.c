@@ -46,8 +46,7 @@ void HTTPstart(FILE * out, const char *status, const enum content_type ct)
 
 void HTTPtitle(FILE * out, const char *title)
 {
-	fprintf(out, "<HTML><HEAD><TITLE>1-Wire Web: %s</TITLE></HEAD>\n",
-			title);
+	fprintf(out, "<HTML><HEAD><TITLE>1-Wire Web: %s</TITLE></HEAD>\n", title);
 }
 
 void HTTPheader(FILE * out, const char *head)

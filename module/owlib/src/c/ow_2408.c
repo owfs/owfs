@@ -90,23 +90,23 @@ WRITE_FUNCTION(FS_Hmessage);
 struct aggregate A2408 = { 8, ag_numbers, ag_aggregate, };
 struct filetype DS2408[] = {
 	F_STANDARD,
-  {"power",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile,   FS_power, NO_WRITE_FUNCTION, {v:NULL},} ,
-  {"PIO",PROPERTY_LENGTH_BITFIELD, &A2408, ft_bitfield, fc_stable,   FS_r_pio, FS_w_pio, {v:NULL},} ,
-  {"sensed",PROPERTY_LENGTH_BITFIELD, &A2408, ft_bitfield, fc_volatile,   FS_sense, NO_WRITE_FUNCTION, {v:NULL},} ,
-  {"latch",PROPERTY_LENGTH_BITFIELD, &A2408, ft_bitfield, fc_volatile,   FS_r_latch, FS_w_latch, {v:NULL},} ,
-  {"strobe",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable,   FS_r_strobe, FS_w_strobe, {v:NULL},} ,
-  {"set_alarm",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_stable,   FS_r_s_alarm, FS_w_s_alarm, {v:NULL},} ,
-  {"por",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable,   FS_r_por, FS_w_por, {v:NULL},} ,
-  {"LCD_M",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_stable,   NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},} ,
-  {"LCD_M/clear",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable,   NO_READ_FUNCTION, FS_Mclear, {v:NULL},} ,
-  {"LCD_M/home",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable,   NO_READ_FUNCTION, FS_Mhome, {v:NULL},} ,
-  {"LCD_M/screen", 128, NULL, ft_ascii, fc_stable,   NO_READ_FUNCTION, FS_Mscreen, {v:NULL},} ,
-  {"LCD_M/message", 128, NULL, ft_ascii, fc_stable,   NO_READ_FUNCTION, FS_Mmessage, {v:NULL},} ,
-  {"LCD_H",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_stable,   NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},} ,
-  {"LCD_H/clear",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable,   NO_READ_FUNCTION, FS_Hclear, {v:NULL},} ,
-  {"LCD_H/home",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable,   NO_READ_FUNCTION, FS_Hhome, {v:NULL},} ,
-  {"LCD_H/screen", 128, NULL, ft_ascii, fc_stable,   NO_READ_FUNCTION, FS_Hscreen, {v:NULL},} ,
-  {"LCD_H/message", 128, NULL, ft_ascii, fc_stable,   NO_READ_FUNCTION, FS_Hmessage, {v:NULL},} ,
+  {"power", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, {v:NULL},},
+  {"PIO", PROPERTY_LENGTH_BITFIELD, &A2408, ft_bitfield, fc_stable, FS_r_pio, FS_w_pio, {v:NULL},},
+  {"sensed", PROPERTY_LENGTH_BITFIELD, &A2408, ft_bitfield, fc_volatile, FS_sense, NO_WRITE_FUNCTION, {v:NULL},},
+  {"latch", PROPERTY_LENGTH_BITFIELD, &A2408, ft_bitfield, fc_volatile, FS_r_latch, FS_w_latch, {v:NULL},},
+  {"strobe", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, FS_r_strobe, FS_w_strobe, {v:NULL},},
+  {"set_alarm", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_stable, FS_r_s_alarm, FS_w_s_alarm, {v:NULL},},
+  {"por", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, FS_r_por, FS_w_por, {v:NULL},},
+  {"LCD_M", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_stable, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
+  {"LCD_M/clear", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_Mclear, {v:NULL},},
+  {"LCD_M/home", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_Mhome, {v:NULL},},
+  {"LCD_M/screen", 128, NULL, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_Mscreen, {v:NULL},},
+  {"LCD_M/message", 128, NULL, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_Mmessage, {v:NULL},},
+  {"LCD_H", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_stable, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
+  {"LCD_H/clear", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_Hclear, {v:NULL},},
+  {"LCD_H/home", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_Hhome, {v:NULL},},
+  {"LCD_H/screen", 128, NULL, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_Hscreen, {v:NULL},},
+  {"LCD_H/message", 128, NULL, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_Hmessage, {v:NULL},},
 };
 
 DeviceEntryExtended(29, DS2408, DEV_alarm | DEV_resume | DEV_ovdr);
@@ -122,7 +122,7 @@ DeviceEntryExtended(29, DS2408, DEV_alarm | DEV_resume | DEV_ovdr);
 
 /* Internal properties */
 //static struct internal_prop ip_init = { "INI", fc_stable };
-MakeInternalProp(INI,fc_stable) ; // LCD screen initialized?
+MakeInternalProp(INI, fc_stable);	// LCD screen initialized?
 
 /* Nibbles for LCD controller */
 #define NIBBLE_CTRL( x )    ((x)&0xF0) , (((x)<<4)&0xF0)
@@ -136,46 +136,45 @@ static int OW_c_latch(const struct parsedname *pn);
 static int OW_w_pio(const BYTE data, const struct parsedname *pn);
 static int OW_r_reg(BYTE * data, const struct parsedname *pn);
 static int OW_w_s_alarm(const BYTE * data, const struct parsedname *pn);
-static int OW_w_pios(const BYTE * data, const size_t size,
-					 const struct parsedname *pn);
+static int OW_w_pios(const BYTE * data, const size_t size, const struct parsedname *pn);
 
 /* 2408 switch */
 /* 2408 switch -- is Vcc powered?*/
-static int FS_power(struct one_wire_query * owq)
+static int FS_power(struct one_wire_query *owq)
 {
-    BYTE data[6];
-    if (OW_r_reg(data, PN(owq)))
+	BYTE data[6];
+	if (OW_r_reg(data, PN(owq)))
 		return -EINVAL;
-    OWQ_Y(owq) = UT_getbit(&data[5], 7);
+	OWQ_Y(owq) = UT_getbit(&data[5], 7);
 	return 0;
 }
 
-static int FS_r_strobe(struct one_wire_query * owq)
+static int FS_r_strobe(struct one_wire_query *owq)
 {
-    BYTE data[6];
-    if (OW_r_reg(data, PN(owq)))
+	BYTE data[6];
+	if (OW_r_reg(data, PN(owq)))
 		return -EINVAL;
-    OWQ_Y(owq) = UT_getbit(&data[5], 2);
+	OWQ_Y(owq) = UT_getbit(&data[5], 2);
 	return 0;
 }
 
-static int FS_w_strobe(struct one_wire_query * owq)
+static int FS_w_strobe(struct one_wire_query *owq)
 {
-    struct parsedname * pn = PN(owq) ;
-    BYTE data[6];
+	struct parsedname *pn = PN(owq);
+	BYTE data[6];
 	if (OW_r_reg(data, pn))
 		return -EINVAL;
-    UT_setbit(&data[5], 2, OWQ_Y(owq));
+	UT_setbit(&data[5], 2, OWQ_Y(owq));
 	return OW_w_control(data[5], pn) ? -EINVAL : 0;
 }
 
-static int FS_Mclear(struct one_wire_query * owq)
+static int FS_Mclear(struct one_wire_query *owq)
 {
-    struct parsedname * pn = PN(owq) ;
-    int init = 1;
+	struct parsedname *pn = PN(owq);
+	int init = 1;
 
 	if (Cache_Get_Internal_Strict(&init, sizeof(init), InternalProp(INI), pn)) {
-        OWQ_Y(owq) = 1 ;
+		OWQ_Y(owq) = 1;
 		if (FS_r_strobe(owq)	// set reset pin to strobe mode
 			|| OW_w_pio(0x30, pn))
 			return -EINVAL;
@@ -197,31 +196,31 @@ static int FS_Mclear(struct one_wire_query * owq)
 	return FS_Mhome(owq);
 }
 
-static int FS_Mhome(struct one_wire_query * owq)
+static int FS_Mhome(struct one_wire_query *owq)
 {
 // home
-    if (OW_w_pio(0x02, PN(owq)))
+	if (OW_w_pio(0x02, PN(owq)))
 		return -EINVAL;
 	UT_delay(2);
 	return 0;
 }
 
-static int FS_Mscreen(struct one_wire_query * owq)
+static int FS_Mscreen(struct one_wire_query *owq)
 {
-    struct parsedname * pn = PN(owq) ;
-    size_t size = OWQ_size(owq) ;
-    BYTE data[size];
+	struct parsedname *pn = PN(owq);
+	size_t size = OWQ_size(owq);
+	BYTE data[size];
 	size_t i;
 	for (i = 0; i < size; ++i) {
-        // no upper ascii chars
-        if (OWQ_buffer(owq)[i] & 0x80)
+		// no upper ascii chars
+		if (OWQ_buffer(owq)[i] & 0x80)
 			return -EINVAL;
-        data[i] = OWQ_buffer(owq)[i] | 0x80;
+		data[i] = OWQ_buffer(owq)[i] | 0x80;
 	}
 	return OW_w_pios(data, size, pn);
 }
 
-static int FS_Mmessage(struct one_wire_query * owq)
+static int FS_Mmessage(struct one_wire_query *owq)
 {
 	if (FS_Mclear(owq))
 		return -EINVAL;
@@ -230,70 +229,70 @@ static int FS_Mmessage(struct one_wire_query * owq)
 
 /* 2408 switch PIO sensed*/
 /* From register 0x88 */
-static int FS_sense(struct one_wire_query * owq)
+static int FS_sense(struct one_wire_query *owq)
 {
-    BYTE data[6];
-    if (OW_r_reg(data, PN(owq)))
+	BYTE data[6];
+	if (OW_r_reg(data, PN(owq)))
 		return -EINVAL;
-    OWQ_U(owq) = data[0];
+	OWQ_U(owq) = data[0];
 	return 0;
 }
 
 /* 2408 switch PIO set*/
 /* From register 0x89 */
-static int FS_r_pio(struct one_wire_query * owq)
+static int FS_r_pio(struct one_wire_query *owq)
 {
-    BYTE data[6];
-    if (OW_r_reg(data, PN(owq)))
+	BYTE data[6];
+	if (OW_r_reg(data, PN(owq)))
 		return -EINVAL;
-    OWQ_U(owq) = BYTE_INVERSE(data[1]) ;		/* reverse bits */
+	OWQ_U(owq) = BYTE_INVERSE(data[1]);	/* reverse bits */
 	return 0;
 }
 
 /* 2408 switch PIO change*/
-static int FS_w_pio(struct one_wire_query * owq)
+static int FS_w_pio(struct one_wire_query *owq)
 {
-    /* reverse bits */
-    if (OW_w_pio(BYTE_INVERSE(OWQ_U(owq)), PN(owq)))
+	/* reverse bits */
+	if (OW_w_pio(BYTE_INVERSE(OWQ_U(owq)), PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
 /* 2408 read activity latch */
 /* From register 0x8A */
-static int FS_r_latch(struct one_wire_query * owq)
+static int FS_r_latch(struct one_wire_query *owq)
 {
-    BYTE data[6];
-    if (OW_r_reg(data, PN(owq)))
+	BYTE data[6];
+	if (OW_r_reg(data, PN(owq)))
 		return -EINVAL;
-    OWQ_U(owq) = data[2];
+	OWQ_U(owq) = data[2];
 	return 0;
 }
 
 /* 2408 write activity latch */
 /* Actually resets them all */
-static int FS_w_latch(struct one_wire_query * owq)
+static int FS_w_latch(struct one_wire_query *owq)
 {
-    if (OW_c_latch(PN(owq)))
+	if (OW_c_latch(PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
 /* 2408 alarm settings*/
 /* From registers 0x8B-0x8D */
-static int FS_r_s_alarm(struct one_wire_query * owq)
+static int FS_r_s_alarm(struct one_wire_query *owq)
 {
-    BYTE d[6];
+	BYTE d[6];
 	int i, p;
-    UINT U ;
-    if (OW_r_reg(d, PN(owq)))
+	UINT U;
+	if (OW_r_reg(d, PN(owq)))
 		return -EINVAL;
 	/* register 0x8D */
-    U = (d[5] & 0x03) * 100000000;
+	U = (d[5] & 0x03) * 100000000;
 	/* registers 0x8B and 0x8C */
 	for (i = 0, p = 1; i < 8; ++i, p *= 10)
-        U += UT_getbit(&d[3], i) | (UT_getbit(&d[4], i) << 1) * p;
-    OWQ_U(owq) = U ;
+		U += UT_getbit(&d[3], i) | (UT_getbit(&d[4], i) << 1) * p;
+	OWQ_U(owq) = U;
 	return 0;
 }
 
@@ -302,52 +301,51 @@ static int FS_r_s_alarm(struct one_wire_query * owq)
 /* next 8 channels */
 /* data[1] polarity */
 /* data[0] selection  */
-static int FS_w_s_alarm(struct one_wire_query * owq)
+static int FS_w_s_alarm(struct one_wire_query *owq)
 {
-    BYTE data[3];
+	BYTE data[3];
 	int i;
 	UINT p;
-    UINT U = OWQ_U(owq) ;
+	UINT U = OWQ_U(owq);
 	for (i = 0, p = 1; i < 8; ++i, p *= 10) {
 		UT_setbit(&data[1], i, ((int) (U / p) % 10) & 0x01);
 		UT_setbit(&data[0], i, (((int) (U / p) % 10) & 0x02) >> 1);
 	}
 	data[2] = ((U / 100000000) % 10) & 0x03;
-    if (OW_w_s_alarm(data, PN(owq)))
+	if (OW_w_s_alarm(data, PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
-static int FS_r_por(struct one_wire_query * owq)
+static int FS_r_por(struct one_wire_query *owq)
 {
-    BYTE data[6];
-    if (OW_r_reg(data, PN(owq)))
+	BYTE data[6];
+	if (OW_r_reg(data, PN(owq)))
 		return -EINVAL;
-    OWQ_Y(owq) = UT_getbit(&data[5], 3);
+	OWQ_Y(owq) = UT_getbit(&data[5], 3);
 	return 0;
 }
 
-static int FS_w_por(struct one_wire_query * owq)
+static int FS_w_por(struct one_wire_query *owq)
 {
-    struct parsedname * pn = PN(owq) ;
-    BYTE data[6];
+	struct parsedname *pn = PN(owq);
+	BYTE data[6];
 	if (OW_r_reg(data, pn))
 		return -EINVAL;
-    UT_setbit(&data[5], 3, OWQ_Y(owq));
+	UT_setbit(&data[5], 3, OWQ_Y(owq));
 	return OW_w_control(data[5], pn) ? -EINVAL : 0;
 }
 
-static int FS_Hclear(struct one_wire_query * owq)
+static int FS_Hclear(struct one_wire_query *owq)
 {
-    struct parsedname * pn = PN(owq) ;
-    int init = 1;
+	struct parsedname *pn = PN(owq);
+	int init = 1;
 	// clear, display on, mode
 	BYTE start[] = { 0x30, };
 	BYTE next[] = { 0x30, 0x30, 0x20, NIBBLE_CTRL(0x28), };
 	// 20 -- 4bit interface
 	// 28 -- 4bit, 2 line
-	BYTE clear[] =
-		{ NIBBLE_CTRL(0x01), NIBBLE_CTRL(0x0C), NIBBLE_CTRL(0x06), };
+	BYTE clear[] = { NIBBLE_CTRL(0x01), NIBBLE_CTRL(0x0C), NIBBLE_CTRL(0x06), };
 	// 01 -- display clear
 	// 0C -- display on
 	// 06 -- entry mode set
@@ -370,23 +368,23 @@ static int FS_Hclear(struct one_wire_query * owq)
 	return 0;
 }
 
-static int FS_Hhome(struct one_wire_query * owq)
+static int FS_Hhome(struct one_wire_query *owq)
 {
-    BYTE home[] = { 0x80, 0x00 };
+	BYTE home[] = { 0x80, 0x00 };
 	// home
-    if (OW_w_pios(home, 2, PN(owq)))
+	if (OW_w_pios(home, 2, PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
-static int FS_Hscreen(struct one_wire_query * owq)
+static int FS_Hscreen(struct one_wire_query *owq)
 {
-    char * buf = OWQ_buffer(owq) ;
-    size_t size = OWQ_size(owq) ;
-    BYTE data[2 * size + 2];
+	char *buf = OWQ_buffer(owq);
+	size_t size = OWQ_size(owq);
+	BYTE data[2 * size + 2];
 	size_t i, j = 0;
-	
-    data[0] = 0x80;
+
+	data[0] = 0x80;
 	data[1] = 0x00;
 	//printf("Hscreen test<%*s>\n",(int)size,buf) ;
 	for (i = 0, j = 2; i < size; ++i) {
@@ -398,10 +396,10 @@ static int FS_Hscreen(struct one_wire_query * owq)
 			data[j++] = 0x08;
 		}
 	}
-    return OW_w_pios(data, j, PN(owq)) ? -EINVAL : 0;
+	return OW_w_pios(data, j, PN(owq)) ? -EINVAL : 0;
 }
 
-static int FS_Hmessage(struct one_wire_query * owq)
+static int FS_Hmessage(struct one_wire_query *owq)
 {
 	if (FS_Hclear(owq) || FS_Hhome(owq)
 		|| FS_Hscreen(owq))
@@ -420,10 +418,12 @@ static int FS_Hmessage(struct one_wire_query * owq)
 */
 static int OW_r_reg(BYTE * data, const struct parsedname *pn)
 {
-    BYTE p[3 + 8 + 2] = { _1W_READ_PIO_REGISTERS, LOW_HIGH_ADDRESS(_ADDRESS_PIO_LOGIC_STATE), };
+	BYTE p[3 + 8 + 2] = { _1W_READ_PIO_REGISTERS,
+		LOW_HIGH_ADDRESS(_ADDRESS_PIO_LOGIC_STATE),
+	};
 	struct transaction_log t[] = {
 		TRXN_START,
-		TRXN_WR_CRC16(p,3,8),
+		TRXN_WR_CRC16(p, 3, 8),
 		TRXN_END,
 	};
 
@@ -438,7 +438,7 @@ static int OW_r_reg(BYTE * data, const struct parsedname *pn)
 
 static int OW_w_pio(const BYTE data, const struct parsedname *pn)
 {
-    BYTE write_string[] = { _1W_CHANNEL_ACCESS_WRITE, data, (BYTE) ~data, };
+	BYTE write_string[] = { _1W_CHANNEL_ACCESS_WRITE, data, (BYTE) ~ data, };
 	BYTE read_back[2];
 	struct transaction_log t[] = {
 		TRXN_START,
@@ -460,28 +460,27 @@ static int OW_w_pio(const BYTE data, const struct parsedname *pn)
 }
 
 /* Send several bytes to the channel */
-static int OW_w_pios(const BYTE * data, const size_t size,
-					 const struct parsedname *pn)
+static int OW_w_pios(const BYTE * data, const size_t size, const struct parsedname *pn)
 {
-	BYTE cmd[] = { _1W_CHANNEL_ACCESS_WRITE, } ;
+	BYTE cmd[] = { _1W_CHANNEL_ACCESS_WRITE, };
 	size_t formatted_size = 4 * size;
 	BYTE formatted_data[formatted_size];
 	struct transaction_log t[] = {
 		TRXN_START,
 		TRXN_WRITE1(cmd),
-		TRXN_MODIFY(formatted_data,formatted_data,formatted_size),
+		TRXN_MODIFY(formatted_data, formatted_data, formatted_size),
 		TRXN_END,
 	};
 	size_t i;
 
 	// setup the array
-    // each byte takes 4 bytes after formatting
+	// each byte takes 4 bytes after formatting
 	for (i = 0; i < size; ++i) {
-        int formatted_data_pointer = 4 * i ;
-		formatted_data[formatted_data_pointer+0] = data[i];
-        formatted_data[formatted_data_pointer+1] = (BYTE) ~data[i];
-		formatted_data[formatted_data_pointer+2] = 0xFF;
-		formatted_data[formatted_data_pointer+3] = 0xFF;
+		int formatted_data_pointer = 4 * i;
+		formatted_data[formatted_data_pointer + 0] = data[i];
+		formatted_data[formatted_data_pointer + 1] = (BYTE) ~ data[i];
+		formatted_data[formatted_data_pointer + 2] = 0xFF;
+		formatted_data[formatted_data_pointer + 3] = 0xFF;
 	}
 	//{ int j ; printf("IN  "); for (j=0 ; j<formatted_size ; ++j ) printf("%.2X ",formatted_data[j]); printf("\n") ; }
 	if (BUS_transaction(t, pn)) {
@@ -490,19 +489,19 @@ static int OW_w_pios(const BYTE * data, const size_t size,
 	//{ int j ; printf("OUT "); for (j=0 ; j<formatted_size ; ++j ) printf("%.2X ",formatted_data[j]); printf("\n") ; }
 	// check the array
 	for (i = 0; i < size; ++i) {
-        int formatted_data_pointer = 4 * i ;
-        if ( formatted_data[formatted_data_pointer+0] != data[i] ) {
-            return 1;
-        }
-        if ( formatted_data[formatted_data_pointer+1] != (BYTE) ~data[i] ) {
-            return 1;
-        }
-        if ( formatted_data[formatted_data_pointer+2] != 0xAA ) {
-            return 1;
-        }
-        if ( formatted_data[formatted_data_pointer+3] != data[i] ) {
-            return 1;
-        }
+		int formatted_data_pointer = 4 * i;
+		if (formatted_data[formatted_data_pointer + 0] != data[i]) {
+			return 1;
+		}
+		if (formatted_data[formatted_data_pointer + 1] != (BYTE) ~ data[i]) {
+			return 1;
+		}
+		if (formatted_data[formatted_data_pointer + 2] != 0xAA) {
+			return 1;
+		}
+		if (formatted_data[formatted_data_pointer + 3] != data[i]) {
+			return 1;
+		}
 	}
 
 	return 0;
@@ -511,8 +510,8 @@ static int OW_w_pios(const BYTE * data, const size_t size,
 /* Reset activity latch */
 static int OW_c_latch(const struct parsedname *pn)
 {
-    BYTE reset_string[] = { _1W_RESET_ACTIVITY_LATCHES, };
-	BYTE read_back[1] ;
+	BYTE reset_string[] = { _1W_RESET_ACTIVITY_LATCHES, };
+	BYTE read_back[1];
 	struct transaction_log t[] = {
 		TRXN_START,
 		TRXN_WRITE1(reset_string),
@@ -534,14 +533,18 @@ static int OW_c_latch(const struct parsedname *pn)
 /* Write control/status */
 static int OW_w_control(const BYTE data, const struct parsedname *pn)
 {
-    BYTE write_string[1 + 2 + 1] = { _1W_WRITE_CONDITIONAL_SEARCH_REGISTER, LOW_HIGH_ADDRESS(_ADDRESS_CONTROL_STATUS_REGISTER), data, };
-    BYTE check_string[1 + 2 + 3 + 2] = { _1W_READ_PIO_REGISTERS, LOW_HIGH_ADDRESS(_ADDRESS_CONTROL_STATUS_REGISTER), };
+	BYTE write_string[1 + 2 + 1] = { _1W_WRITE_CONDITIONAL_SEARCH_REGISTER,
+		LOW_HIGH_ADDRESS(_ADDRESS_CONTROL_STATUS_REGISTER), data,
+	};
+	BYTE check_string[1 + 2 + 3 + 2] = { _1W_READ_PIO_REGISTERS,
+		LOW_HIGH_ADDRESS(_ADDRESS_CONTROL_STATUS_REGISTER),
+	};
 	struct transaction_log t[] = {
 		TRXN_START,
-		TRXN_WRITE(write_string,4),
+		TRXN_WRITE(write_string, 4),
 		/* Read registers */
 		TRXN_START,
-		TRXN_WR_CRC16(check_string,3,3),
+		TRXN_WR_CRC16(check_string, 3, 3),
 		TRXN_END,
 	};
 
@@ -556,10 +559,12 @@ static int OW_w_control(const BYTE data, const struct parsedname *pn)
 /* write alarm settings */
 static int OW_w_s_alarm(const BYTE * data, const struct parsedname *pn)
 {
-    BYTE old_register[6] ;
-    BYTE new_register[6] ;
-    BYTE control_value[1] ;
-    BYTE alarm_access[] = { _1W_WRITE_CONDITIONAL_SEARCH_REGISTER, LOW_HIGH_ADDRESS(_ADDRESS_CONTROL_STATUS_REGISTER), };
+	BYTE old_register[6];
+	BYTE new_register[6];
+	BYTE control_value[1];
+	BYTE alarm_access[] = { _1W_WRITE_CONDITIONAL_SEARCH_REGISTER,
+		LOW_HIGH_ADDRESS(_ADDRESS_CONTROL_STATUS_REGISTER),
+	};
 	struct transaction_log t[] = {
 		TRXN_START,
 		TRXN_WRITE3(alarm_access),
@@ -584,5 +589,6 @@ static int OW_w_s_alarm(const BYTE * data, const struct parsedname *pn)
 		return 1;
 	//printf("S_ALARM back 0x8B... = %.2X %.2X %.2X \n",d[3],d[4],d[5]) ;
 
-	return (data[0] != new_register[3]) || (data[1] != new_register[4]) || (control_value[0] != (new_register[5] & 0x0F));
+	return (data[0] != new_register[3]) || (data[1] != new_register[4])
+		|| (control_value[0] != (new_register[5] & 0x0F));
 }

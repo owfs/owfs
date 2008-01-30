@@ -31,19 +31,19 @@ int main(int argc, char *argv[])
 
 	/* process command line arguments */
 	while (1) {
-		c = getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL) ;
-		if ( c == -1 ) {
-			break ;
+		c = getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL);
+		if (c == -1) {
+			break;
 		}
 		owopt(c, optarg);
 	}
 
-	DefaultOwserver() ;
-	Server_detect() ;
+	DefaultOwserver();
+	Server_detect();
 
 	/* non-option arguments */
 	while (optind < argc) {
-		++paths_found ;
+		++paths_found;
 		if (dirall) {
 			rc = ServerDirall(argv[optind]);
 			if (rc < 0) {

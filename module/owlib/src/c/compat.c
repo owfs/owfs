@@ -140,29 +140,26 @@ int	(*compar)();		 ordering function
 
 void *tsearch(__const void *key, void **vrootp, __compar_fn_t compar)
 {
-    register node *q;
-    register node **rootp = (node **) vrootp;
+	register node *q;
+	register node **rootp = (node **) vrootp;
 
-    if (rootp == (struct node_t **)0)
-	return ((struct node_t *)0);
-    while (*rootp != (struct node_t *)0)	/* Knuth's T1: */
-    {
-	int r;
+	if (rootp == (struct node_t **) 0)
+		return ((struct node_t *) 0);
+	while (*rootp != (struct node_t *) 0) {	/* Knuth's T1: */
+		int r;
 
-	if ((r = (*compar)(key, (*rootp)->key)) == 0)	/* T2: */
-	    return (*rootp);		/* we found it! */
-	rootp = (r < 0) ?
-	    &(*rootp)->left :		/* T3: follow left branch */
-	    &(*rootp)->right;		/* T4: follow right branch */
-    }
-    q = (node *) malloc(sizeof(node));	/* T5: key not found */
-    if (q != (struct node_t *)0)	/* make new node */
-    {
-	*rootp = q;			/* link new node to old */
-	q->key = (void *)key;			/* initialize new node */
-	q->left = q->right = (struct node_t *)0;
-    }
-    return (q);
+		if ((r = (*compar) (key, (*rootp)->key)) == 0)	/* T2: */
+			return (*rootp);	/* we found it! */
+		rootp = (r < 0) ? &(*rootp)->left :	/* T3: follow left branch */
+			&(*rootp)->right;	/* T4: follow right branch */
+	}
+	q = (node *) malloc(sizeof(node));	/* T5: key not found */
+	if (q != (struct node_t *) 0) {	/* make new node */
+		*rootp = q;				/* link new node to old */
+		q->key = (void *) key;	/* initialize new node */
+		q->left = q->right = (struct node_t *) 0;
+	}
+	return (q);
 }
 #endif
 
@@ -175,23 +172,21 @@ typedef struct node_t {
 } node;
 #endif
 
-void *tfind(__const void *key, void * __const *vrootp, __compar_fn_t compar)
+void *tfind(__const void *key, void *__const * vrootp, __compar_fn_t compar)
 {
-    register node **rootp = (node **) vrootp;
+	register node **rootp = (node **) vrootp;
 
-    if (rootp == (struct node_t **)0)
-	return ((struct node_t *)0);
-    while (*rootp != (struct node_t *)0)	/* Knuth's T1: */
-    {
-	int r;
+	if (rootp == (struct node_t **) 0)
+		return ((struct node_t *) 0);
+	while (*rootp != (struct node_t *) 0) {	/* Knuth's T1: */
+		int r;
 
-	if ((r = (*compar)(key, (*rootp)->key)) == 0)	/* T2: */
-	    return (*rootp);		/* we found it! */
-	rootp = (r < 0) ?
-	    &(*rootp)->left :		/* T3: follow left branch */
-	    &(*rootp)->right;		/* T4: follow right branch */
-    }
-    return NULL;
+		if ((r = (*compar) (key, (*rootp)->key)) == 0)	/* T2: */
+			return (*rootp);	/* we found it! */
+		rootp = (r < 0) ? &(*rootp)->left :	/* T3: follow left branch */
+			&(*rootp)->right;	/* T4: follow right branch */
+	}
+	return NULL;
 }
 #endif
 
@@ -208,47 +203,41 @@ char	*key;			key to be deleted
 register node	**rootp;	address of the root of tree
 int	(*compar)();		comparison function
 */
-void *tdelete(__const void *key, void ** vrootp, __compar_fn_t compar)
+void *tdelete(__const void *key, void **vrootp, __compar_fn_t compar)
 {
-    node *p;
-    register node *q;
-    register node *r;
-    int cmp;
-    register node **rootp = (node **) vrootp;
+	node *p;
+	register node *q;
+	register node *r;
+	int cmp;
+	register node **rootp = (node **) vrootp;
 
-    if (rootp == (struct node_t **)0 || (p = *rootp) == (struct node_t *)0)
-	return ((struct node_t *)0);
-    while ((cmp = (*compar)(key, (*rootp)->key)) != 0)
-    {
-	p = *rootp;
-	rootp = (cmp < 0) ?
-	    &(*rootp)->left :		/* follow left branch */
-	    &(*rootp)->right;		/* follow right branch */
-	if (*rootp == (struct node_t *)0)
-	    return ((struct node_t *)0);	/* key not found */
-    }
-    r = (*rootp)->right;			/* D1: */
-    if ((q = (*rootp)->left) == (struct node_t *)0)	/* Left (struct node_t *)0? */
-	q = r;
-    else if (r != (struct node_t *)0)		/* Right link is null? */
-    {
-	if (r->left == (struct node_t *)0)	/* D2: Find successor */
-	{
-	    r->left = q;
-	    q = r;
+	if (rootp == (struct node_t **) 0 || (p = *rootp) == (struct node_t *) 0)
+		return ((struct node_t *) 0);
+	while ((cmp = (*compar) (key, (*rootp)->key)) != 0) {
+		p = *rootp;
+		rootp = (cmp < 0) ? &(*rootp)->left :	/* follow left branch */
+			&(*rootp)->right;	/* follow right branch */
+		if (*rootp == (struct node_t *) 0)
+			return ((struct node_t *) 0);	/* key not found */
 	}
-	else
-	{			/* D3: Find (struct node_t *)0 link */
-	    for (q = r->left; q->left != (struct node_t *)0; q = r->left)
-		r = q;
-	    r->left = q->right;
-	    q->left = (*rootp)->left;
-	    q->right = (*rootp)->right;
+	r = (*rootp)->right;		/* D1: */
+	if ((q = (*rootp)->left) == (struct node_t *) 0)	/* Left (struct node_t *)0? */
+		q = r;
+	else if (r != (struct node_t *) 0) {	/* Right link is null? */
+		if (r->left == (struct node_t *) 0) {	/* D2: Find successor */
+			r->left = q;
+			q = r;
+		} else {				/* D3: Find (struct node_t *)0 link */
+			for (q = r->left; q->left != (struct node_t *) 0; q = r->left)
+				r = q;
+			r->left = q->right;
+			q->left = (*rootp)->left;
+			q->right = (*rootp)->right;
+		}
 	}
-    }
-    free((struct node_t *) *rootp);	/* D4: Free node */
-    *rootp = q;				/* link parent to new node */
-    return(p);
+	free((struct node_t *) *rootp);	/* D4: Free node */
+	*rootp = q;					/* link parent to new node */
+	return (p);
 }
 #endif
 
@@ -267,20 +256,19 @@ register int	level;
 */
 static void trecurse(__const void *vroot, __action_fn_t action, int level)
 {
-    register node *root = (node *) vroot;
+	register node *root = (node *) vroot;
 
-    if (root->left == (struct node_t *)0 && root->right == (struct node_t *)0)
-	(*action)(root, leaf, level);
-    else
-    {
-	(*action)(root, preorder, level);
-	if (root->left != (struct node_t *)0)
-	    trecurse(root->left, action, level + 1);
-	(*action)(root, postorder, level);
-	if (root->right != (struct node_t *)0)
-	    trecurse(root->right, action, level + 1);
-	(*action)(root, endorder, level);
-    }
+	if (root->left == (struct node_t *) 0 && root->right == (struct node_t *) 0)
+		(*action) (root, leaf, level);
+	else {
+		(*action) (root, preorder, level);
+		if (root->left != (struct node_t *) 0)
+			trecurse(root->left, action, level + 1);
+		(*action) (root, postorder, level);
+		if (root->right != (struct node_t *) 0)
+			trecurse(root->right, action, level + 1);
+		(*action) (root, endorder, level);
+	}
 }
 
 /* void twalk(root, action)		Walk the nodes of a tree 
@@ -290,10 +278,9 @@ PTR
 */
 void twalk(__const void *vroot, __action_fn_t action)
 {
-    register __const node *root = (node *) vroot;
+	register __const node *root = (node *) vroot;
 
-    if (root != (node *)0 && action != (__action_fn_t) 0)
-	trecurse(root, action, 0);
+	if (root != (node *) 0 && action != (__action_fn_t) 0)
+		trecurse(root, action, 0);
 }
 #endif
-

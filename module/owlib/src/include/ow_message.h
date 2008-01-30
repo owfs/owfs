@@ -20,7 +20,7 @@ Written 2003 Paul H Alfille
 /* definitions and stuctures for the owserver messages */
 /* This file doesn't stand alone, it must be included in ow.h */
 
-#ifndef OW_MESSAGE_H					/* tedious wrapper */
+#ifndef OW_MESSAGE_H			/* tedious wrapper */
 #define OW_MESSAGE_H
 
 /* Unique token for owserver loop checks */

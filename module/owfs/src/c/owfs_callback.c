@@ -39,8 +39,7 @@ $Id$
 #define FUSEFLAG int
 #endif							/* FUSE_MAJOR_VERSION */
 
-static int FS_getdir(const char *path, fuse_dirh_t h,
-					 fuse_dirfil_t filler);
+static int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler);
 static int FS_utime(const char *path, struct utimbuf *buf);
 static int FS_truncate(const char *path, const off_t size);
 static int FS_chmod(const char *path, mode_t mode);
@@ -48,10 +47,8 @@ static int FS_chown(const char *path, uid_t uid, gid_t gid);
 static int FS_open(const char *path, FUSEFLAG flags);
 static int FS_release(const char *path, FUSEFLAG flags);
 #ifdef FUSE22PLUS
-static int CB_read(const char *path, char *buffer, size_t size,
-				   off_t offset, struct fuse_file_info *flags);
-static int CB_write(const char *path, const char *buffer, size_t size,
-					off_t offset, struct fuse_file_info *flags);
+static int CB_read(const char *path, char *buffer, size_t size, off_t offset, struct fuse_file_info *flags);
+static int CB_write(const char *path, const char *buffer, size_t size, off_t offset, struct fuse_file_info *flags);
 #else							/* fuse < 2.2 */
 #define CB_read FS_read
 #define CB_write FS_write
@@ -198,14 +195,12 @@ static int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler)
 }
 
 #ifdef FUSE22PLUS
-static int CB_read(const char *path, char *buffer, size_t size,
-				   off_t offset, struct fuse_file_info *flags)
+static int CB_read(const char *path, char *buffer, size_t size, off_t offset, struct fuse_file_info *flags)
 {
 	(void) flags;
 	return FS_read(path, buffer, size, offset);
 }
-static int CB_write(const char *path, const char *buffer, size_t size,
-					off_t offset, struct fuse_file_info *flags)
+static int CB_write(const char *path, const char *buffer, size_t size, off_t offset, struct fuse_file_info *flags)
 {
 	(void) flags;
 	return FS_write(path, buffer, size, offset);

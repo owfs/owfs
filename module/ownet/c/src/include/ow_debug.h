@@ -17,12 +17,12 @@
 #include <owfs_config.h>
 
 /* error functions */
-enum e_err_level {e_err_default, e_err_connect, e_err_call, e_err_data, e_err_detail, e_err_debug, e_err_beyond, } ;
-enum e_err_type { e_err_type_level, e_err_type_error, } ;
-enum e_err_print { e_err_print_mixed, e_err_print_syslog, e_err_print_console,} ;
+enum e_err_level { e_err_default, e_err_connect, e_err_call, e_err_data, e_err_detail, e_err_debug, e_err_beyond, };
+enum e_err_type { e_err_type_level, e_err_type_error, };
+enum e_err_print { e_err_print_mixed, e_err_print_syslog, e_err_print_console, };
 
 void err_msg(enum e_err_type errnoflag, enum e_err_level level, const char *fmt, ...);
-void _Debug_Bytes( const char * title, const unsigned char * buf, int length) ;
+void _Debug_Bytes(const char *title, const unsigned char *buf, int length);
 
 extern int log_available;
 

@@ -120,20 +120,17 @@ struct interface_routines {
 	/* reset the interface -- actually the 1-wire bus */
 	int (*reset) (const struct parsedname * pn);
 	/* Bulk of search routine, after set ups for first or alarm or family */
-	int (*next_both) (struct device_search * ds,
-					  const struct parsedname * pn);
+	int (*next_both) (struct device_search * ds, const struct parsedname * pn);
 	/* Send a byte with bus power to follow */
-	int (*PowerByte) (const BYTE data, BYTE * resp, const UINT delay,
-					  const struct parsedname * pn);
+	int (*PowerByte) (const BYTE data, BYTE * resp, const UINT delay, const struct parsedname * pn);
 	/* Send a 12V 480msec oulse to program EEPROM */
 	int (*ProgramPulse) (const struct parsedname * pn);
-    /* send and recieve data -- byte at a time */
-    int (*sendback_data) (const BYTE * data, BYTE * resp, const size_t len, const struct parsedname * pn);
-    /* send and recieve data -- byte at a time */
-    int (*select_and_sendback) (const BYTE * data, BYTE * resp, const size_t len, const struct parsedname * pn);
-    /* send and recieve data -- bit at a time */
-	int (*sendback_bits) (const BYTE * databits, BYTE * respbits,
-						  const size_t len, const struct parsedname * pn);
+	/* send and recieve data -- byte at a time */
+	int (*sendback_data) (const BYTE * data, BYTE * resp, const size_t len, const struct parsedname * pn);
+	/* send and recieve data -- byte at a time */
+	int (*select_and_sendback) (const BYTE * data, BYTE * resp, const size_t len, const struct parsedname * pn);
+	/* send and recieve data -- bit at a time */
+	int (*sendback_bits) (const BYTE * databits, BYTE * respbits, const size_t len, const struct parsedname * pn);
 	/* select a device */
 	int (*select) (const struct parsedname * pn);
 	/* reconnect with a balky device */
@@ -141,8 +138,7 @@ struct interface_routines {
 	/* Close the connection (port) */
 	void (*close) (struct connection_in * in);
 	/* transaction */
-	int (*transaction) (const struct transaction_log * tl,
-						const struct parsedname * pn);
+	int (*transaction) (const struct transaction_log * tl, const struct parsedname * pn);
 	/* capabilities flags */
 	UINT flags;
 };
@@ -175,7 +171,7 @@ struct interface_routines {
 #define OUTUNLOCK(out)
 #endif							/* OW_MT */
 
-enum bus_speed { bus_speed_unknown, bus_speed_slow, bus_speed_overdrive } ;
+enum bus_speed { bus_speed_unknown, bus_speed_slow, bus_speed_overdrive };
 
 struct connin_serial {
 	speed_t speed;
@@ -187,7 +183,7 @@ struct connin_serial {
 
 struct connin_fake {
 	struct dirblob db;
-    int bus_number_this_type ;
+	int bus_number_this_type;
 };
 
 struct connin_usb {
@@ -200,15 +196,15 @@ struct connin_usb {
 	int pulldownslewrate;
 	int usb_flextime;
 	unsigned int timeout;
-    /* "Name" of the device, like "8146572300000051"
-    * This is set to the first DS1420 id found on the 1-wire adapter which
-    * exists on the DS9490 adapters. If user only have a DS2490 chip, there
-    * are no such DS1420 device available. It's used to find the 1-wire adapter
-    * if it's disconnected and later reconnected again.
-    */
-    BYTE ds1420_address[8];
-    struct dirblob main;        /* main directory */
-    struct dirblob alarm;       /* alarm directory */
+	/* "Name" of the device, like "8146572300000051"
+	 * This is set to the first DS1420 id found on the 1-wire adapter which
+	 * exists on the DS9490 adapters. If user only have a DS2490 chip, there
+	 * are no such DS1420 device available. It's used to find the 1-wire adapter
+	 * if it's disconnected and later reconnected again.
+	 */
+	BYTE ds1420_address[8];
+	struct dirblob main;		/* main directory */
+	struct dirblob alarm;		/* alarm directory */
 };
 
 struct connin_i2c {
@@ -233,8 +229,8 @@ struct connin_tcp {
 	struct addrinfo *ai_ok;
 	char *type;					// for zeroconf
 	char *domain;				// for zeroconf
-	char *fqdn; // fully qualified domain name
-	int no_dirall; // flag that server doesn't support DIRALL
+	char *fqdn;					// fully qualified domain name
+	int no_dirall;				// flag that server doesn't support DIRALL
 };
 
 struct connin_ha7 {
@@ -314,7 +310,7 @@ enum e_reconnect {
 struct device_search {
 	int LastDiscrepancy;		// for search
 	int LastDevice;				// for search
-	int index ;
+	int index;
 	BYTE sn[8];
 	BYTE search;
 };
@@ -339,7 +335,8 @@ enum e_bus_stat {
 	e_bus_search_errors,
 	e_bus_status_errors,
 	e_bus_select_errors,
-	e_bus_stat_last_marker } ;
+	e_bus_stat_last_marker
+};
 
 struct connection_in {
 	struct connection_in *next;
@@ -355,7 +352,7 @@ struct connection_in {
 	struct timeval last_lock;	/* statistics */
 	struct timeval last_unlock;
 
-	UINT bus_stat[e_bus_stat_last_marker] ;
+	UINT bus_stat[e_bus_stat_last_marker];
 
 	struct timeval bus_time;
 
@@ -369,18 +366,18 @@ struct connection_in {
 	int AnyDevices;
 	int ExtraReset;				// DS1994/DS2404 might need an extra reset
 	enum bus_speed set_speed;
-	int changed_bus_settings ;
+	int changed_bus_settings;
 	int ds2404_compliance;
 	int ProgramAvailable;
 	size_t last_root_devs;
 	int buspath_bad;			// should the current DS2409 branches be cleared?
 	struct buspath branch;		// Branch currently selected
-    BYTE combuffer[MAX_FIFO_SIZE] ;
+	BYTE combuffer[MAX_FIFO_SIZE];
 
 	/* Static buffer for conmmunication */
 	/* Since only used during actual transfer to/from the adapter,
 	   should be protected from contention even when multithreading allowed */
-    size_t bundling_length ;
+	size_t bundling_length;
 	union {
 		struct connin_serial serial;
 		struct connin_link link;
@@ -504,20 +501,14 @@ int BUS_first_alarm(struct device_search *ds, const struct parsedname *pn);
 
 int BUS_select(const struct parsedname *pn);
 
-int BUS_sendout_cmd(const BYTE * cmd, const size_t len,
-					const struct parsedname *pn);
-int BUS_send_cmd(const BYTE * cmd, const size_t len,
-				 const struct parsedname *pn);
-int BUS_sendback_cmd(const BYTE * cmd, BYTE * resp, const size_t len,
-					 const struct parsedname *pn);
-int BUS_send_data(const BYTE * data, const size_t len,
-				  const struct parsedname *pn);
-int BUS_readin_data(BYTE * data, const size_t len,
-					const struct parsedname *pn);
+int BUS_sendout_cmd(const BYTE * cmd, const size_t len, const struct parsedname *pn);
+int BUS_send_cmd(const BYTE * cmd, const size_t len, const struct parsedname *pn);
+int BUS_sendback_cmd(const BYTE * cmd, BYTE * resp, const size_t len, const struct parsedname *pn);
+int BUS_send_data(const BYTE * data, const size_t len, const struct parsedname *pn);
+int BUS_readin_data(BYTE * data, const size_t len, const struct parsedname *pn);
 int BUS_verify(BYTE search, const struct parsedname *pn);
 
-int BUS_PowerByte(const BYTE data, BYTE * resp, UINT delay,
-				  const struct parsedname *pn);
+int BUS_PowerByte(const BYTE data, BYTE * resp, UINT delay, const struct parsedname *pn);
 int BUS_ProgramPulse(const struct parsedname *pn);
 int BUS_next_both(struct device_search *ds, const struct parsedname *pn);
 int BUS_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);

@@ -26,8 +26,8 @@ void LibSetup(enum opt_program opt)
 #if OW_ZERO
 	OW_Load_dnssd_library();
 #endif
-    
-    Global.opt = opt;
+
+	Global.opt = opt;
 
 	/* special resort in case static data (devices and filetypes) not properly sorted */
 	DeviceSort();
@@ -88,7 +88,7 @@ static int my_daemon(int nochdir, int noclose)
 		act.sa_flags = SA_RESTART;
 		sigaction(SIGCHLD, &act, NULL);
 //printf("owlib: my_daemon: pid=%d fork error\n", getpid());
-printf ("Libsetup ok\n");
+		printf("Libsetup ok\n");
 
 		return (-1);
 	case 0:
@@ -205,13 +205,10 @@ int LibStart(void)
 #endif							/* __UCLIBC__ */
 
 	if (head_inbound_list == NULL && !Global.autoserver) {
-		LEVEL_DEFAULT
-			("No device port/server specified (-d or -u or -s)\n%s -h for help\n",
-			 SAFESTRING(Global.progname));
+		LEVEL_DEFAULT("No device port/server specified (-d or -u or -s)\n%s -h for help\n", SAFESTRING(Global.progname));
 		BadAdapter_detect(NewIn(NULL));
 		return 1;
 	}
-
 #ifndef __UCLIBC__
 	/* daemon() is called BEFORE initialization of USB adapter etc... Cygwin will fail to
 	 * use the adapter after daemon otherwise. Some permissions are changed on the process
@@ -266,19 +263,17 @@ int LibStart(void)
 
 		case bus_serial:
 			/* Set up DS2480/LINK interface */
-			if (!DS2480_detect(in)) break;
-			LEVEL_CONNECT("Cannot detect DS2480 or LINK interface on %s.\n",
-				      in->name);
+			if (!DS2480_detect(in))
+				break;
+			LEVEL_CONNECT("Cannot detect DS2480 or LINK interface on %s.\n", in->name);
 			BUS_close(in);
 			BadAdapter_detect(in);	/* reset the methods */
-			in->adapter_name = "DS9097"; // need to set adapter name for this approach to passive adapter
+			in->adapter_name = "DS9097";	// need to set adapter name for this approach to passive adapter
 			// Fall Through
 
 		case bus_passive:
 			if (DS9097_detect(in)) {
-				LEVEL_DEFAULT
-					("Cannot detect DS9097 (passive) interface on %s.\n",
-					 in->name);
+				LEVEL_DEFAULT("Cannot detect DS9097 (passive) interface on %s.\n", in->name);
 				ret = -ENODEV;
 			}
 			break;
@@ -286,8 +281,7 @@ int LibStart(void)
 		case bus_i2c:
 #if OW_I2C
 			if (DS2482_detect(in)) {
-				LEVEL_CONNECT("Cannot detect an i2c DS2482-x00 on %s\n",
-							  in->name);
+				LEVEL_CONNECT("Cannot detect an i2c DS2482-x00 on %s\n", in->name);
 				ret = -ENODEV;
 			}
 #else							/* OW_I2C */
@@ -298,8 +292,7 @@ int LibStart(void)
 		case bus_ha7net:
 #if OW_HA7
 			if (HA7_detect(in)) {
-				LEVEL_CONNECT("Cannot detect an HA7net server on %s\n",
-							  in->name);
+				LEVEL_CONNECT("Cannot detect an HA7net server on %s\n", in->name);
 				ret = -ENODEV;
 			}
 #else							/* OW_HA7 */
@@ -310,8 +303,7 @@ int LibStart(void)
 		case bus_parallel:
 #if OW_PARPORT
 			if ((ret = DS1410_detect(in))) {
-				LEVEL_DEFAULT
-					("Cannot detect the DS1410E parallel adapter\n");
+				LEVEL_DEFAULT("Cannot detect the DS1410E parallel adapter\n");
 			}
 #else							/* OW_PARPORT */
 			ret = -ENOPROTOOPT;
@@ -333,31 +325,28 @@ int LibStart(void)
 
 		case bus_link:
 			if ((ret = LINK_detect(in))) {
-				LEVEL_CONNECT("Cannot open LINK adapter at %s\n",
-							  in->name);
+				LEVEL_CONNECT("Cannot open LINK adapter at %s\n", in->name);
 			}
 			break;
 		case bus_elink:
 			if ((ret = LINKE_detect(in))) {
-				LEVEL_CONNECT("Cannot open LINK-HUB-E adapter at %s\n",
-							  in->name);
+				LEVEL_CONNECT("Cannot open LINK-HUB-E adapter at %s\n", in->name);
 			}
 			break;
 
 		case bus_etherweather:
 			if (EtherWeather_detect(in)) {
-				LEVEL_CONNECT("Cannot detect an EtherWeather server on %s\n",
-					in->name);
+				LEVEL_CONNECT("Cannot detect an EtherWeather server on %s\n", in->name);
 				ret = -ENODEV;
 			}
 			break;
 
 		case bus_fake:
-			Fake_detect(in);    // never fails
+			Fake_detect(in);	// never fails
 			break;
 
 		case bus_tester:
-			Tester_detect(in);    // never fails
+			Tester_detect(in);	// never fails
 			break;
 
 		default:
@@ -384,15 +373,13 @@ int LibStart(void)
 	if (Global.autoserver) {
 #if OW_ZERO
 		if (libdnssd == NULL) {
-			fprintf(stderr,
-					"Zeroconf/Bonjour is disabled since dnssd library isn't found.\n");
+			fprintf(stderr, "Zeroconf/Bonjour is disabled since dnssd library isn't found.\n");
 			exit(0);
 		} else {
 			OW_Browse();
 		}
 #else
-		fprintf(stderr,
-				"OWFS is compiled without Zeroconf/Bonjour support.\n");
+		fprintf(stderr, "OWFS is compiled without Zeroconf/Bonjour support.\n");
 		exit(0);
 #endif
 	}
@@ -406,26 +393,21 @@ void SigHandler(int signo, siginfo_t * info, void *context)
 {
 	(void) context;
 #if OW_MT
-    if (info) {
-    LEVEL_DEBUG
-            ("Signal handler for %d, errno %d, code %d, pid=%ld, self=%lu\n",
-             signo, info->si_errno, info->si_code, (long int) info->si_pid,
-             pthread_self());
-    } else {
-        LEVEL_DEBUG("Signal handler for %d, self=%lu\n",
-                    signo, pthread_self());
-    }
-#else /* OW_MT */
-    if (info) {
-    LEVEL_DEBUG
-            ("Signal handler for %d, errno %d, code %d, pid=%ld\n",
-             signo, info->si_errno, info->si_code, (long int) info->si_pid);
-    } else {
-        LEVEL_DEBUG("Signal handler for %d\n",
-                    signo);
-    }
-#endif /* OW_MT */
-    return;
+	if (info) {
+		LEVEL_DEBUG
+			("Signal handler for %d, errno %d, code %d, pid=%ld, self=%lu\n",
+			 signo, info->si_errno, info->si_code, (long int) info->si_pid, pthread_self());
+	} else {
+		LEVEL_DEBUG("Signal handler for %d, self=%lu\n", signo, pthread_self());
+	}
+#else							/* OW_MT */
+	if (info) {
+		LEVEL_DEBUG("Signal handler for %d, errno %d, code %d, pid=%ld\n", signo, info->si_errno, info->si_code, (long int) info->si_pid);
+	} else {
+		LEVEL_DEBUG("Signal handler for %d\n", signo);
+	}
+#endif							/* OW_MT */
+	return;
 }
 
 void SetSignals(void)
@@ -514,10 +496,10 @@ void LibStop(void)
 
 	/* Have to reset more internal variables, and this should be fixed
 	 * by setting optind = 0 and call getopt()
-         * (first_nonopt = last_nonopt = 1;)
+	 * (first_nonopt = last_nonopt = 1;)
 	 */
 	optind = 0;
-	(void)getopt_long(1, argv, " ", NULL, NULL);
+	(void) getopt_long(1, argv, " ", NULL, NULL);
 
 	optarg = NULL;
 	optind = 1;
@@ -535,8 +517,7 @@ void set_signal_handlers(void (*exit_handler)
 
 	sa.sa_flags = SA_SIGINFO;
 	sa.sa_sigaction = exit_handler;
-	if ((sigaction(SIGINT, &sa, NULL) == -1) ||
-		(sigaction(SIGTERM, &sa, NULL) == -1)) {
+	if ((sigaction(SIGINT, &sa, NULL) == -1) || (sigaction(SIGTERM, &sa, NULL) == -1)) {
 		LEVEL_DEFAULT("Cannot set exit signal handlers\n");
 		//exit_handler (-1, NULL, NULL);
 		exit(1);

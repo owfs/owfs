@@ -65,22 +65,22 @@ WRITE_FUNCTION(FS_w_itime);
 
 struct filetype DS2415[] = {
 	F_STANDARD,
-  {"flags",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_stable,   FS_r_flags, FS_w_flags, {v:NULL},} ,
-  {"running",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable,   FS_r_run, FS_w_run, {v:NULL},} ,
-  {"udate",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_second,   FS_r_counter, FS_w_counter, {v:NULL},} ,
-  {"date",PROPERTY_LENGTH_DATE, NULL, ft_date, fc_second,   FS_r_date, FS_w_date, {v:NULL},} ,
+  {"flags", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_stable, FS_r_flags, FS_w_flags, {v:NULL},},
+  {"running", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, FS_r_run, FS_w_run, {v:NULL},},
+  {"udate", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_second, FS_r_counter, FS_w_counter, {v:NULL},},
+  {"date", PROPERTY_LENGTH_DATE, NULL, ft_date, fc_second, FS_r_date, FS_w_date, {v:NULL},},
 };
 
 DeviceEntry(24, DS2415);
 
 struct filetype DS2417[] = {
 	F_STANDARD,
-  {"enable",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable,   FS_r_enable, FS_w_enable, {v:NULL},} ,
-  {"interval",PROPERTY_LENGTH_INTEGER, NULL, ft_integer, fc_stable,   FS_r_interval, FS_w_interval, {v:NULL},} ,
-  {"itime",PROPERTY_LENGTH_INTEGER, NULL, ft_integer, fc_stable,   FS_r_itime, FS_w_itime, {v:NULL},} ,
-  {"running",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable,   FS_r_run, FS_w_run, {v:NULL},} ,
-  {"udate",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_second,   FS_r_counter, FS_w_counter, {v:NULL},} ,
-  {"date",PROPERTY_LENGTH_DATE, NULL, ft_date, fc_second,   FS_r_date, FS_w_date, {v:NULL},} ,
+  {"enable", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, FS_r_enable, FS_w_enable, {v:NULL},},
+  {"interval", PROPERTY_LENGTH_INTEGER, NULL, ft_integer, fc_stable, FS_r_interval, FS_w_interval, {v:NULL},},
+  {"itime", PROPERTY_LENGTH_INTEGER, NULL, ft_integer, fc_stable, FS_r_itime, FS_w_itime, {v:NULL},},
+  {"running", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, FS_r_run, FS_w_run, {v:NULL},},
+  {"udate", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_second, FS_r_counter, FS_w_counter, {v:NULL},},
+  {"date", PROPERTY_LENGTH_DATE, NULL, ft_date, fc_second, FS_r_date, FS_w_date, {v:NULL},},
 };
 
 DeviceEntry(27, DS2417);
@@ -101,76 +101,74 @@ static int OW_w_clock(const _DATE d, const struct parsedname *pn);
 static int OW_w_control(const BYTE cr, const struct parsedname *pn);
 
 /* set clock */
-static int FS_w_counter(struct one_wire_query * owq)
+static int FS_w_counter(struct one_wire_query *owq)
 {
-    _DATE d = (_DATE) OWQ_D(owq) ;
-    if (OW_w_clock(d, PN(owq)))
+	_DATE d = (_DATE) OWQ_D(owq);
+	if (OW_w_clock(d, PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
 /* set clock */
-static int FS_w_date(struct one_wire_query * owq)
+static int FS_w_date(struct one_wire_query *owq)
 {
-    if (OW_w_clock(OWQ_D(owq), PN(owq)))
+	if (OW_w_clock(OWQ_D(owq), PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
 /* write running */
-static int FS_w_run(struct one_wire_query * owq)
+static int FS_w_run(struct one_wire_query *owq)
 {
 	BYTE cr;
-    if (OW_r_control(&cr, PN(owq))
-        || OW_w_control((BYTE) (OWQ_Y(owq) ? cr | 0x0C : cr & 0xF3), PN(owq)))
+	if (OW_r_control(&cr, PN(owq))
+		|| OW_w_control((BYTE) (OWQ_Y(owq) ? cr | 0x0C : cr & 0xF3), PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
 /* write running */
-static int FS_w_enable(struct one_wire_query * owq)
+static int FS_w_enable(struct one_wire_query *owq)
 {
 	BYTE cr;
 
-    if (OW_r_control(&cr, PN(owq))
-        || OW_w_control((BYTE) (OWQ_Y(owq) ? cr | 0x80 : cr & 0x7F), PN(owq)))
+	if (OW_r_control(&cr, PN(owq))
+		|| OW_w_control((BYTE) (OWQ_Y(owq) ? cr | 0x80 : cr & 0x7F), PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
 /* write flags */
-static int FS_w_flags(struct one_wire_query * owq)
+static int FS_w_flags(struct one_wire_query *owq)
 {
 	BYTE cr;
 
-    if (OW_r_control(&cr, PN(owq))
-		||
-        OW_w_control((BYTE) ((cr & 0x0F) | ((((UINT) OWQ_I(owq)) & 0x0F) << 4)),
-                      PN(owq)))
+	if (OW_r_control(&cr, PN(owq))
+		|| OW_w_control((BYTE)
+						((cr & 0x0F) | ((((UINT) OWQ_I(owq)) & 0x0F) << 4)), PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
 /* write flags */
-static int FS_w_interval(struct one_wire_query * owq)
+static int FS_w_interval(struct one_wire_query *owq)
 {
 	BYTE cr;
 
-    if (OW_r_control(&cr, PN(owq))
-		||
-        OW_w_control((BYTE) ((cr & 0x8F) | ((((UINT) OWQ_I(owq)) & 0x07) << 4)),
-                      PN(owq)))
+	if (OW_r_control(&cr, PN(owq))
+		|| OW_w_control((BYTE)
+						((cr & 0x8F) | ((((UINT) OWQ_I(owq)) & 0x07) << 4)), PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
 /* write flags */
-static int FS_w_itime(struct one_wire_query * owq)
+static int FS_w_itime(struct one_wire_query *owq)
 {
 	BYTE cr;
-    int I = OWQ_I(owq) ;
+	int I = OWQ_I(owq);
 
-    if (OW_r_control(&cr, PN(owq)))
+	if (OW_r_control(&cr, PN(owq)))
 		return -EINVAL;
 
 	if (I == 0) {
@@ -193,73 +191,73 @@ static int FS_w_itime(struct one_wire_query * owq)
 		cr = (cr & 0x8F) | 0x70;	/* set interval */
 	}
 
-    if (OW_w_control(cr, PN(owq)))
+	if (OW_w_control(cr, PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
 /* read flags */
-int FS_r_flags(struct one_wire_query * owq)
+int FS_r_flags(struct one_wire_query *owq)
 {
 	BYTE cr;
-    if (OW_r_control(&cr, PN(owq)))
+	if (OW_r_control(&cr, PN(owq)))
 		return -EINVAL;
-    OWQ_U(owq) = cr >> 4;
+	OWQ_U(owq) = cr >> 4;
 	return 0;
 }
 
 /* read flags */
-int FS_r_interval(struct one_wire_query * owq)
+int FS_r_interval(struct one_wire_query *owq)
 {
 	BYTE cr;
-    if (OW_r_control(&cr, PN(owq)))
+	if (OW_r_control(&cr, PN(owq)))
 		return -EINVAL;
-    OWQ_I(owq) = (cr >> 4) & 0x07;
+	OWQ_I(owq) = (cr >> 4) & 0x07;
 	return 0;
 }
 
 /* read flags */
-int FS_r_itime(struct one_wire_query * owq)
+int FS_r_itime(struct one_wire_query *owq)
 {
 	BYTE cr;
-    if (OW_r_control(&cr, PN(owq)))
+	if (OW_r_control(&cr, PN(owq)))
 		return -EINVAL;
-    OWQ_I(owq) = itimes[(cr >> 4) & 0x07];
+	OWQ_I(owq) = itimes[(cr >> 4) & 0x07];
 	return 0;
 }
 
 /* read running */
-int FS_r_run(struct one_wire_query * owq)
+int FS_r_run(struct one_wire_query *owq)
 {
 	BYTE cr;
-    if (OW_r_control(&cr, PN(owq)))
+	if (OW_r_control(&cr, PN(owq)))
 		return -EINVAL;
-    OWQ_Y(owq) = ((cr & 0x08) != 0);
+	OWQ_Y(owq) = ((cr & 0x08) != 0);
 	return 0;
 }
 
 /* read running */
-int FS_r_enable(struct one_wire_query * owq)
+int FS_r_enable(struct one_wire_query *owq)
 {
 	BYTE cr;
-    if (OW_r_control(&cr, PN(owq)))
+	if (OW_r_control(&cr, PN(owq)))
 		return -EINVAL;
-    OWQ_Y(owq) = ((cr & 0x80) != 0);
+	OWQ_Y(owq) = ((cr & 0x80) != 0);
 	return 0;
 }
 
 /* read clock */
-int FS_r_counter(struct one_wire_query * owq)
+int FS_r_counter(struct one_wire_query *owq)
 {
-    int ret = FS_r_date(owq) ;
-    OWQ_U(owq) = (UINT) OWQ_D(owq) ;
-    return ret ;
+	int ret = FS_r_date(owq);
+	OWQ_U(owq) = (UINT) OWQ_D(owq);
+	return ret;
 }
 
 /* read clock */
-int FS_r_date(struct one_wire_query * owq)
+int FS_r_date(struct one_wire_query *owq)
 {
-    if (OW_r_clock(&OWQ_D(owq), PN(owq)))
+	if (OW_r_clock(&OWQ_D(owq), PN(owq)))
 		return -EINVAL;
 	return 0;
 }
@@ -267,7 +265,7 @@ int FS_r_date(struct one_wire_query * owq)
 /* 1904 clock-in-a-can */
 static int OW_r_control(BYTE * cr, const struct parsedname *pn)
 {
-    BYTE r[1] = { _1W_READ_CLOCK, };
+	BYTE r[1] = { _1W_READ_CLOCK, };
 	struct transaction_log t[] = {
 		TRXN_START,
 		TRXN_WRITE1(r),
@@ -284,12 +282,12 @@ static int OW_r_control(BYTE * cr, const struct parsedname *pn)
 /* 1904 clock-in-a-can */
 static int OW_r_clock(_DATE * d, const struct parsedname *pn)
 {
-    BYTE r[1] = { _1W_READ_CLOCK, };
+	BYTE r[1] = { _1W_READ_CLOCK, };
 	BYTE data[5];
 	struct transaction_log t[] = {
 		TRXN_START,
 		TRXN_WRITE1(r),
-		TRXN_READ(data,5),
+		TRXN_READ(data, 5),
 		TRXN_END,
 	};
 
@@ -303,8 +301,8 @@ static int OW_r_clock(_DATE * d, const struct parsedname *pn)
 
 static int OW_w_clock(const _DATE d, const struct parsedname *pn)
 {
-    BYTE r[1] = { _1W_READ_CLOCK, };
-    BYTE w[6] = { _1W_WRITE_CLOCK, };
+	BYTE r[1] = { _1W_READ_CLOCK, };
+	BYTE w[6] = { _1W_WRITE_CLOCK, };
 	struct transaction_log tread[] = {
 		TRXN_START,
 		TRXN_WRITE1(r),
@@ -313,7 +311,7 @@ static int OW_w_clock(const _DATE d, const struct parsedname *pn)
 	};
 	struct transaction_log twrite[] = {
 		TRXN_START,
-		TRXN_WRITE(w,6),
+		TRXN_WRITE(w, 6),
 		TRXN_END,
 	};
 
@@ -330,7 +328,7 @@ static int OW_w_clock(const _DATE d, const struct parsedname *pn)
 
 static int OW_w_control(const BYTE cr, const struct parsedname *pn)
 {
-    BYTE w[2] = { _1W_WRITE_CLOCK, cr, };
+	BYTE w[2] = { _1W_WRITE_CLOCK, cr, };
 	struct transaction_log t[] = {
 		TRXN_START,
 		TRXN_WRITE2(w),

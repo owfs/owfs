@@ -18,16 +18,15 @@ $Id$
 
 /* State informatoin, sent to remote or kept locally */
 /* cacheenabled, presencecheck, tempscale, devform */
-int32_t SemiGlobal =
-	((uint8_t) fdi) << 24 | ((uint8_t) temp_celsius) << 16 | ((uint8_t) 1)
+int32_t SemiGlobal = ((uint8_t) fdi) << 24 | ((uint8_t) temp_celsius) << 16 | ((uint8_t) 1)
 	<< 8;
 
 struct global Global;
 
 /* Globals */
-int count_inbound_connections = 0 ;
-struct connection_in s_owserver_connection ;
-struct connection_in *owserver_connection = & s_owserver_connection ;
+int count_inbound_connections = 0;
+struct connection_in s_owserver_connection;
+struct connection_in *owserver_connection = &s_owserver_connection;
 
 
 /* All ow library setup */
@@ -36,7 +35,7 @@ void Setup(void)
 #if OW_ZERO
 	OW_Load_dnssd_library();
 #endif
-	memset( owserver_connection, 0, sizeof(s_owserver_connection) ) ;
+	memset(owserver_connection, 0, sizeof(s_owserver_connection));
 
 	// global structure of configuration parameters
 	memset(&Global, 0, sizeof(struct global));
@@ -59,8 +58,8 @@ static void Cleanup(void)
 #endif
 }
 
-void Exit( int exit_code )
+void Exit(int exit_code)
 {
 	Cleanup();
-	exit( exit_code ) ;
+	exit(exit_code);
 }

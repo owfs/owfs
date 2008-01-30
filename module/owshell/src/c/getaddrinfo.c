@@ -131,15 +131,13 @@ static const struct gaih_typeproto gaih_inet_typeproto[] = {
 
 struct gaih {
 	int family;
-	int (*gaih) (const char *name, const struct gaih_service * service,
-				 const struct addrinfo * req, struct addrinfo ** pai);
+	int (*gaih) (const char *name, const struct gaih_service * service, const struct addrinfo * req, struct addrinfo ** pai);
 };
 
 #if PF_UNSPEC == 0
 static const struct addrinfo default_hints;
 #else
-static const struct addrinfo default_hints =
-	{ 0, PF_UNSPEC, 0, 0, 0, NULL, NULL, NULL };
+static const struct addrinfo default_hints = { 0, PF_UNSPEC, 0, 0, 0, NULL, NULL, NULL };
 #endif
 
 
@@ -165,9 +163,7 @@ static int addrconfig(sa_family_t af)
 #endif
 
 /* Using Unix sockets this way is a security risk.  */
-static int
-gaih_local(const char *name, const struct gaih_service *service,
-		   const struct addrinfo *req, struct addrinfo **pai)
+static int gaih_local(const char *name, const struct gaih_service *service, const struct addrinfo *req, struct addrinfo **pai)
 {
 	struct utsname utsname;
 
@@ -179,9 +175,7 @@ gaih_local(const char *name, const struct gaih_service *service,
 			return -EAI_SYSTEM;
 
 	if (name != NULL) {
-		if (strcmp(name, "localhost") &&
-			strcmp(name, "local") &&
-			strcmp(name, "unix") && strcmp(name, utsname.nodename))
+		if (strcmp(name, "localhost") && strcmp(name, "local") && strcmp(name, "unix") && strcmp(name, utsname.nodename))
 			return GAIH_OKIFUNSPEC | -EAI_NONAME;
 	}
 
@@ -189,11 +183,8 @@ gaih_local(const char *name, const struct gaih_service *service,
 		const struct gaih_typeproto *tp = gaih_inet_typeproto + 1;
 
 		while (tp->name[0]
-			   && ((tp->protoflag & GAI_PROTO_NOSERVICE) != 0
-				   || (req->ai_socktype != 0
-					   && req->ai_socktype != tp->socktype)
-				   || (req->ai_protocol != 0
-					   && !(tp->protoflag & GAI_PROTO_PROTOANY)
+			   && ((tp->protoflag & GAI_PROTO_NOSERVICE) != 0 || (req->ai_socktype != 0 && req->ai_socktype != tp->socktype)
+				   || (req->ai_protocol != 0 && !(tp->protoflag & GAI_PROTO_PROTOANY)
 					   && req->ai_protocol != tp->protocol)))
 			++tp;
 
@@ -214,20 +205,17 @@ gaih_local(const char *name, const struct gaih_service *service,
 	(*pai)->ai_next = NULL;
 	(*pai)->ai_flags = req->ai_flags;
 	(*pai)->ai_family = AF_LOCAL;
-	(*pai)->ai_socktype =
-		req->ai_socktype ? req->ai_socktype : SOCK_STREAM;
+	(*pai)->ai_socktype = req->ai_socktype ? req->ai_socktype : SOCK_STREAM;
 	(*pai)->ai_protocol = req->ai_protocol;
 	(*pai)->ai_addrlen = sizeof(struct sockaddr_un);
 	(*pai)->ai_addr = (void *) (*pai) + sizeof(struct addrinfo);
 
 #ifdef HAVE_SA_LEN
-	((struct sockaddr_un *) (*pai)->ai_addr)->sun_len =
-		sizeof(struct sockaddr_un);
+	((struct sockaddr_un *) (*pai)->ai_addr)->sun_len = sizeof(struct sockaddr_un);
 #endif							/* HAVE_SA_LEN */
 
 	((struct sockaddr_un *) (*pai)->ai_addr)->sun_family = AF_LOCAL;
-	memset(((struct sockaddr_un *) (*pai)->ai_addr)->sun_path, 0,
-		   UNIX_PATH_MAX);
+	memset(((struct sockaddr_un *) (*pai)->ai_addr)->sun_path, 0, UNIX_PATH_MAX);
 
 	if (service) {
 		struct sockaddr_un *sunp = (struct sockaddr_un *) (*pai)->ai_addr;
@@ -238,12 +226,10 @@ gaih_local(const char *name, const struct gaih_service *service,
 
 			strcpy(sunp->sun_path, service->name);
 		} else {
-			if (strlen(P_tmpdir "/") + 1 + strlen(service->name) >=
-				sizeof(sunp->sun_path))
+			if (strlen(P_tmpdir "/") + 1 + strlen(service->name) >= sizeof(sunp->sun_path))
 				return GAIH_OKIFUNSPEC | -EAI_SERVICE;
 
-			__stpcpy(__stpcpy(sunp->sun_path, P_tmpdir "/"),
-					 service->name);
+			__stpcpy(__stpcpy(sunp->sun_path, P_tmpdir "/"), service->name);
 		}
 	} else {
 		/* This is a dangerous use of the interface since there is a time
@@ -252,17 +238,13 @@ gaih_local(const char *name, const struct gaih_service *service,
 		   be created.  */
 		char *buf = ((struct sockaddr_un *) (*pai)->ai_addr)->sun_path;
 
-		if (__builtin_expect(__path_search(buf, L_tmpnam, NULL, NULL, 0),
-							 0) != 0
-			|| __builtin_expect(__gen_tempname(buf, __GT_NOCREATE),
-								0) != 0)
+		if (__builtin_expect(__path_search(buf, L_tmpnam, NULL, NULL, 0), 0) != 0 || __builtin_expect(__gen_tempname(buf, __GT_NOCREATE), 0) != 0)
 			return -EAI_SYSTEM;
 	}
 
 	if (req->ai_flags & AI_CANONNAME)
-		(*pai)->ai_canonname =
-			strcpy((char *) *pai + sizeof(struct addrinfo)
-				   + sizeof(struct sockaddr_un), utsname.nodename);
+		(*pai)->ai_canonname = strcpy((char *) *pai + sizeof(struct addrinfo)
+									  + sizeof(struct sockaddr_un), utsname.nodename);
 	else
 		(*pai)->ai_canonname = NULL;
 	return 0;
@@ -270,8 +252,7 @@ gaih_local(const char *name, const struct gaih_service *service,
 #endif							/* 0 */
 
 #ifndef HAVE_GETHOSTBYNAME_R
-struct hostent *gethostbyname_r(const char *name, struct hostent *result,
-								char *buf, size_t buflen, int *h_errnop)
+struct hostent *gethostbyname_r(const char *name, struct hostent *result, char *buf, size_t buflen, int *h_errnop)
 {
 #ifdef HAVE_PTHREAD
 	static pthread_mutex_t gethostbyname_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -297,9 +278,7 @@ struct hostent *gethostbyname_r(const char *name, struct hostent *result,
 #endif
 
 #ifndef HAVE_GETSERVBYNAME_R
-struct servent *getservbyname_r(const char *name, const char *proto,
-								struct servent *result,
-								char *buf, size_t buflen)
+struct servent *getservbyname_r(const char *name, const char *proto, struct servent *result, char *buf, size_t buflen)
 {
 #ifdef HAVE_PTHREAD
 	static pthread_mutex_t getservbyname_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -325,9 +304,7 @@ struct servent *getservbyname_r(const char *name, const char *proto,
 
 
 
-static int
-gaih_inet_serv(const char *servicename, const struct gaih_typeproto *tp,
-			   const struct addrinfo *req, struct gaih_servtuple *st)
+static int gaih_inet_serv(const char *servicename, const struct gaih_typeproto *tp, const struct addrinfo *req, struct gaih_servtuple *st)
 {
 	struct servent *s;
 	size_t tmpbuflen = 1024;
@@ -338,8 +315,7 @@ gaih_inet_serv(const char *servicename, const struct gaih_typeproto *tp,
 	do {
 		tmpbuf = alloca(tmpbuflen);
 #if 0
-		r = getservbyname_r(servicename, tp->name, &ts, tmpbuf, tmpbuflen,
-							&s);
+		r = getservbyname_r(servicename, tp->name, &ts, tmpbuf, tmpbuflen, &s);
 		if (!s)
 			r = errno;
 		if (r != 0 || s == NULL) {
@@ -418,10 +394,7 @@ gaih_inet_serv(const char *servicename, const struct gaih_typeproto *tp,
 }
 
 #ifndef HAVE_GETHOSTBYNAME2_R
-struct hostenv *gethostbyname2_r(const char *name, int af,
-								 struct hostent *ret, char *buf,
-								 size_t buflen, struct hostent **result,
-								 int *h_errnop)
+struct hostenv *gethostbyname2_r(const char *name, int af, struct hostent *ret, char *buf, size_t buflen, struct hostent **result, int *h_errnop)
 {
 	/* Don't support this if it doesn't exists...
 	   (eg. IPV6 will fail on cygwin for example) */
@@ -483,9 +456,7 @@ struct hostenv *gethostbyname2_r(const char *name, int af,
 #endif
 
 #ifndef HAVE_GETHOSTBYADDR_R
-struct hostent *gethostbyaddr_r(const char *name, int len, int type,
-								struct hostent *result,
-								char *buf, size_t buflen, int *h_errnop)
+struct hostent *gethostbyaddr_r(const char *name, int len, int type, struct hostent *result, char *buf, size_t buflen, int *h_errnop)
 {
 #ifdef HAVE_PTHREAD
 	static pthread_mutex_t gethostbyaddr_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -510,9 +481,7 @@ struct hostent *gethostbyaddr_r(const char *name, int len, int type,
 }
 #endif
 
-static int
-gaih_inet(const char *name, const struct gaih_service *service,
-		  const struct addrinfo *req, struct addrinfo **pai)
+static int gaih_inet(const char *name, const struct gaih_service *service, const struct addrinfo *req, struct addrinfo **pai)
 {
 	const struct gaih_typeproto *tp = gaih_inet_typeproto;
 	struct gaih_servtuple *st = (struct gaih_servtuple *) &nullserv;
@@ -528,11 +497,9 @@ gaih_inet(const char *name, const struct gaih_service *service,
 		++tp;
 
 		while (tp->name[0]
-			   &&
-			   ((req->ai_socktype != 0 && req->ai_socktype != tp->socktype)
-				|| (req->ai_protocol != 0
-					&& !(tp->protoflag & GAI_PROTO_PROTOANY)
-					&& req->ai_protocol != tp->protocol)))
+			   && ((req->ai_socktype != 0 && req->ai_socktype != tp->socktype)
+				   || (req->ai_protocol != 0 && !(tp->protoflag & GAI_PROTO_PROTOANY)
+					   && req->ai_protocol != tp->protocol)))
 			++tp;
 
 		if (!tp->name[0]) {
@@ -562,19 +529,16 @@ gaih_inet(const char *name, const struct gaih_service *service,
 					if ((tp->protoflag & GAI_PROTO_NOSERVICE) != 0)
 						continue;
 
-					if (req->ai_socktype != 0
-						&& req->ai_socktype != tp->socktype)
+					if (req->ai_socktype != 0 && req->ai_socktype != tp->socktype)
 						continue;
-					if (req->ai_protocol != 0
-						&& !(tp->protoflag & GAI_PROTO_PROTOANY)
+					if (req->ai_protocol != 0 && !(tp->protoflag & GAI_PROTO_PROTOANY)
 						&& req->ai_protocol != tp->protocol)
 						continue;
 
 					newp = (struct gaih_servtuple *)
 						alloca(sizeof(struct gaih_servtuple));
 
-					if ((rc =
-						 gaih_inet_serv(service->name, tp, req, newp))) {
+					if ((rc = gaih_inet_serv(service->name, tp, req, newp))) {
 						if (rc & GAIH_OKIFUNSPEC)
 							continue;
 						return rc;
@@ -629,8 +593,7 @@ gaih_inet(const char *name, const struct gaih_service *service,
 		at->next = NULL;
 
 		if (inet_pton(AF_INET, name, at->addr) > 0) {
-			if (req->ai_family == AF_UNSPEC || req->ai_family == AF_INET
-				|| v4mapped)
+			if (req->ai_family == AF_UNSPEC || req->ai_family == AF_INET || v4mapped)
 				at->family = AF_INET;
 			else
 				return -EAI_FAMILY;
@@ -645,8 +608,7 @@ gaih_inet(const char *name, const struct gaih_service *service,
 				*scope_delim = '\0';
 
 			if (inet_pton(AF_INET6, namebuf, at->addr) > 0) {
-				if (req->ai_family == AF_UNSPEC
-					|| req->ai_family == AF_INET6)
+				if (req->ai_family == AF_UNSPEC || req->ai_family == AF_INET6)
 					at->family = AF_INET6;
 				else
 					return -EAI_FAMILY;
@@ -664,8 +626,7 @@ gaih_inet(const char *name, const struct gaih_service *service,
 					if (try_numericscope != 0) {
 						char *end;
 						assert(sizeof(uint32_t) <= sizeof(unsigned long));
-						at->scopeid =
-							(uint32_t) strtoul(scope_delim + 1, &end, 10);
+						at->scopeid = (uint32_t) strtoul(scope_delim + 1, &end, 10);
 						if (*end != '\0')
 							return GAIH_OKIFUNSPEC | -EAI_NONAME;
 					}
@@ -674,8 +635,7 @@ gaih_inet(const char *name, const struct gaih_service *service,
 		}
 #endif
 
-		if (at->family == AF_UNSPEC
-			&& (req->ai_flags & AI_NUMERICHOST) == 0) {
+		if (at->family == AF_UNSPEC && (req->ai_flags & AI_NUMERICHOST) == 0) {
 			struct hostent *h;
 			struct gaih_addrtuple **pat = &at;
 			int no_data = 0;
@@ -694,9 +654,7 @@ gaih_inet(const char *name, const struct gaih_service *service,
 			no_inet6_data = no_data;
 
 			if (req->ai_family == AF_INET ||
-				(!v4mapped && req->ai_family == AF_UNSPEC) ||
-				(v4mapped
-				 && (no_inet6_data != 0 || (req->ai_flags & AI_ALL))))
+				(!v4mapped && req->ai_family == AF_UNSPEC) || (v4mapped && (no_inet6_data != 0 || (req->ai_flags & AI_ALL))))
 #if __HAS_IPV6__
 				gethosts2(AF_INET, struct in_addr);
 #else
@@ -731,8 +689,7 @@ gaih_inet(const char *name, const struct gaih_service *service,
 			extern const struct in6_addr __in6addr_loopback;
 			at->family = AF_INET6;
 			if ((req->ai_flags & AI_PASSIVE) == 0)
-				memcpy(at->addr, &__in6addr_loopback,
-					   sizeof(struct in6_addr));
+				memcpy(at->addr, &__in6addr_loopback, sizeof(struct in6_addr));
 			atr = at->next;
 		}
 #endif
@@ -758,8 +715,7 @@ gaih_inet(const char *name, const struct gaih_service *service,
 		 * buffer is the size of an unformatted IPv6 address in
 		 * printable format.
 		 */
-		char buffer[sizeof
-					"ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255"];
+		char buffer[sizeof "ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255"];
 
 		while (at2 != NULL) {
 			if (req->ai_flags & AI_CANONNAME) {
@@ -786,8 +742,7 @@ gaih_inet(const char *name, const struct gaih_service *service,
 #else
 										sizeof(struct in_addr),
 #endif
-										at2->family, &th, tmpbuf,
-										tmpbuflen, &herrno);
+										at2->family, &th, tmpbuf, tmpbuflen, &herrno);
 
 					if (!h)
 						rc = errno;
@@ -800,8 +755,7 @@ gaih_inet(const char *name, const struct gaih_service *service,
 				}
 
 				if (h == NULL)
-					c = inet_ntop(at2->family, at2->addr, buffer,
-								  sizeof(buffer));
+					c = inet_ntop(at2->family, at2->addr, buffer, sizeof(buffer));
 				else
 					c = h->h_name;
 
@@ -833,8 +787,7 @@ gaih_inet(const char *name, const struct gaih_service *service,
 				(*pai)->ai_socktype = st2->socktype;
 				(*pai)->ai_protocol = st2->protocol;
 				(*pai)->ai_addrlen = socklen;
-				(*pai)->ai_addr =
-					(void *) (*pai) + sizeof(struct addrinfo);
+				(*pai)->ai_addr = (void *) (*pai) + sizeof(struct addrinfo);
 #ifdef HAVE_SA_LEN
 				(*pai)->ai_addr->sa_len = socklen;
 #endif							/* HAVE_SA_LEN */
@@ -842,39 +795,31 @@ gaih_inet(const char *name, const struct gaih_service *service,
 
 #if __HAS_IPV6__
 				if (family == AF_INET6) {
-					struct sockaddr_in6 *sin6p =
-						(struct sockaddr_in6 *) (*pai)->ai_addr;
+					struct sockaddr_in6 *sin6p = (struct sockaddr_in6 *) (*pai)->ai_addr;
 
 					sin6p->sin6_flowinfo = 0;
 					if (at2->family == AF_INET6) {
-						memcpy(&sin6p->sin6_addr,
-							   at2->addr, sizeof(struct in6_addr));
+						memcpy(&sin6p->sin6_addr, at2->addr, sizeof(struct in6_addr));
 					} else {
 						sin6p->sin6_addr.s6_addr32[0] = 0;
 						sin6p->sin6_addr.s6_addr32[1] = 0;
 						sin6p->sin6_addr.s6_addr32[2] = htonl(0x0000ffff);
-						memcpy(&sin6p->sin6_addr.s6_addr32[3],
-							   at2->addr,
-							   sizeof(sin6p->sin6_addr.s6_addr32[3]));
+						memcpy(&sin6p->sin6_addr.s6_addr32[3], at2->addr, sizeof(sin6p->sin6_addr.s6_addr32[3]));
 					}
 					sin6p->sin6_port = st2->port;
 					sin6p->sin6_scope_id = at2->scopeid;
 				} else
 #endif
 				{
-					struct sockaddr_in *sinp =
-						(struct sockaddr_in *) (*pai)->ai_addr;
+					struct sockaddr_in *sinp = (struct sockaddr_in *) (*pai)->ai_addr;
 
-					memcpy(&sinp->sin_addr,
-						   at2->addr, sizeof(struct in_addr));
+					memcpy(&sinp->sin_addr, at2->addr, sizeof(struct in_addr));
 					sinp->sin_port = st2->port;
 					memset(sinp->sin_zero, '\0', sizeof(sinp->sin_zero));
 				}
 
 				if (c) {
-					(*pai)->ai_canonname = ((void *) (*pai) +
-											sizeof(struct addrinfo) +
-											socklen);
+					(*pai)->ai_canonname = ((void *) (*pai) + sizeof(struct addrinfo) + socklen);
 					strcpy((*pai)->ai_canonname, c);
 				} else
 					(*pai)->ai_canonname = NULL;
@@ -900,9 +845,7 @@ static struct gaih gaih[] = {
 	{PF_UNSPEC, NULL}
 };
 
-int
-getaddrinfo(const char *name, const char *service,
-			const struct addrinfo *hints, struct addrinfo **pai)
+int getaddrinfo(const char *name, const char *service, const struct addrinfo *hints, struct addrinfo **pai)
 {
 	int i = 0, j = 0, last_i = 0;
 	struct addrinfo *p = NULL, **end;
@@ -921,8 +864,7 @@ getaddrinfo(const char *name, const char *service,
 	if (hints == NULL)
 		hints = &default_hints;
 
-	if (hints->ai_flags & ~(AI_PASSIVE | AI_CANONNAME | AI_NUMERICHOST |
-							AI_ADDRCONFIG | AI_V4MAPPED | AI_ALL))
+	if (hints->ai_flags & ~(AI_PASSIVE | AI_CANONNAME | AI_NUMERICHOST | AI_ADDRCONFIG | AI_V4MAPPED | AI_ALL))
 		return EAI_BADFLAGS;
 
 	if ((hints->ai_flags & AI_CANONNAME) && name == NULL)
@@ -962,8 +904,7 @@ getaddrinfo(const char *name, const char *service,
 				if (i != 0) {
 					last_i = i;
 
-					if (hints->ai_family == AF_UNSPEC
-						&& (i & GAIH_OKIFUNSPEC))
+					if (hints->ai_family == AF_UNSPEC && (i & GAIH_OKIFUNSPEC))
 						continue;
 
 					if (p)
@@ -1057,8 +998,7 @@ const char *gai_strerror(int code)
  * author:
  *      Paul Vixie, 1996.
  */
-static const char *inet_ntop4(const unsigned char *src, char *dst,
-							  size_t size)
+static const char *inet_ntop4(const unsigned char *src, char *dst, size_t size)
 {
 	char tmp[sizeof("255.255.255.255") + 1] = "\0";
 	int octet;

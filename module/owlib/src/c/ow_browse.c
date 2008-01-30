@@ -30,18 +30,13 @@ struct BrowseStruct {
 };
 
 static struct connection_in *FindIn(struct BrowseStruct *bs);
-static struct BrowseStruct *BSCreate(const char *name, const char *type,
-									 const char *domain);
+static struct BrowseStruct *BSCreate(const char *name, const char *type, const char *domain);
 static void BSKill(struct BrowseStruct *bs);
 static void *Process(void *v);
 static void ResolveBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
-						DNSServiceErrorType e, const char *n,
-						const char *host, uint16_t port, uint16_t tl,
-						const char *t, void *c);
+						DNSServiceErrorType e, const char *n, const char *host, uint16_t port, uint16_t tl, const char *t, void *c);
 static void BrowseBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
-					   DNSServiceErrorType e, const char *name,
-					   const char *type, const char *domain,
-					   void *context);
+					   DNSServiceErrorType e, const char *name, const char *type, const char *domain, void *context);
 
 /* Look for new services with Bonjour -- will block so done in a separate thread */
 static void *Process(void *v)
@@ -62,11 +57,7 @@ static void RequestBack(DNSServiceRef sr,
 						DNSServiceFlags flags,
 						uint32_t interfaceIndex,
 						DNSServiceErrorType errorCode,
-						const char *fullname,
-						uint16_t rrtype,
-						uint16_t rrclass,
-						uint16_t rdlen,
-						const void *rdata, uint32_t ttl, void *context)
+						const char *fullname, uint16_t rrtype, uint16_t rrclass, uint16_t rdlen, const void *rdata, uint32_t ttl, void *context)
 {
 	int i;
 	(void) context;
@@ -88,9 +79,7 @@ static void RequestBack(DNSServiceRef sr,
 #endif							/* 0 */
 
 static void ResolveBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
-						DNSServiceErrorType e, const char *n,
-						const char *host, uint16_t port, uint16_t tl,
-						const char *t, void *c)
+						DNSServiceErrorType e, const char *n, const char *host, uint16_t port, uint16_t tl, const char *t, void *c)
 {
 	ASCII name[121];
 	struct BrowseStruct *bs = c;
@@ -99,9 +88,7 @@ static void ResolveBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 	(void) t;
 	//printf("ResolveBack ref=%ld flags=%d index=%d, error=%d name=%s host=%s port=%d\n",(long int)s,f,i,e,name,host,ntohs(port)) ;
 	//printf("ResolveBack ref=%ld flags=%d index=%d, error=%d name=%s type=%s domain=%s\n",(long int)s,f,i,e,bs->name,bs->type,bs->domain) ;
-	LEVEL_DETAIL
-		("ResolveBack ref=%d flags=%d index=%d, error=%d name=%s host=%s port=%d\n",
-		 (long int) s, f, i, e, n, host, ntohs(port));
+	LEVEL_DETAIL("ResolveBack ref=%d flags=%d index=%d, error=%d name=%s host=%s port=%d\n", (long int) s, f, i, e, n, host, ntohs(port));
 	/* remove trailing .local. */
 	if (snprintf(name, 120, "%s:%d", SAFESTRING(host), ntohs(port)) < 0) {
 		ERROR_CONNECT("Trouble with zeroconf resolve return %s\n", n);
@@ -131,18 +118,12 @@ static void ResolveBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 	do {
 		DNSServiceRef sr;
 		printf("\nRecord Request (of %s) = %d\n", n,
-			   DNSServiceQueryRecord(&sr, 0, 0, n, kDNSServiceType_SRV,
-									 kDNSServiceClass_IN, RequestBack,
-									 NULL));
+			   DNSServiceQueryRecord(&sr, 0, 0, n, kDNSServiceType_SRV, kDNSServiceClass_IN, RequestBack, NULL));
 		printf("Process Request = %d\n", DNSServiceProcessResult(sr));
 		DNSServiceRefDeallocate(sr);
 		printf("Reconfirm %s\n", n);
-		DNSServiceReconfirmRecord(0, 0, n, kDNSServiceType_SRV,
-								  kDNSServiceClass_IN, 0, NULL);
-		printf("Record Request (of %s) = %d\n", n,
-			   DNSServiceQueryRecord(&sr, 0, 0, n, kDNSServiceType_SRV,
-									 kDNSServiceClass_IN, RequestBack,
-									 NULL));
+		DNSServiceReconfirmRecord(0, 0, n, kDNSServiceType_SRV, kDNSServiceClass_IN, 0, NULL);
+		printf("Record Request (of %s) = %d\n", n, DNSServiceQueryRecord(&sr, 0, 0, n, kDNSServiceType_SRV, kDNSServiceClass_IN, RequestBack, NULL));
 		printf("Process Request = %d\n\n", DNSServiceProcessResult(sr));
 		DNSServiceRefDeallocate(sr);
 	} while (0);
@@ -150,8 +131,7 @@ static void ResolveBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 	BSKill(bs);
 }
 
-static struct BrowseStruct *BSCreate(const char *name, const char *type,
-									 const char *domain)
+static struct BrowseStruct *BSCreate(const char *name, const char *type, const char *domain)
 {
 	struct BrowseStruct *bs = malloc(sizeof(struct BrowseStruct));
 	if (bs) {
@@ -194,14 +174,11 @@ static struct connection_in *FindIn(struct BrowseStruct *bs)
 
 /* Sent back from Bounjour -- arbitrarily use it to set the Ref for Deallocation */
 static void BrowseBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
-					   DNSServiceErrorType e, const char *name,
-					   const char *type, const char *domain, void *context)
+					   DNSServiceErrorType e, const char *name, const char *type, const char *domain, void *context)
 {
 	(void) context;
 	//printf("BrowseBack ref=%ld flags=%d index=%d, error=%d name=%s type=%s domain=%s\n",(long int)s,f,i,e,name,type,domain) ;
-	LEVEL_DETAIL
-		("BrowseBack ref=%ld flags=%d index=%d, error=%d name=%s type=%s domain=%s\n",
-		 (long int) s, f, i, e, name, type, domain);
+	LEVEL_DETAIL("BrowseBack ref=%ld flags=%d index=%d, error=%d name=%s type=%s domain=%s\n", (long int) s, f, i, e, name, type, domain);
 
 	if (e == kDNSServiceErr_NoError) {
 		struct BrowseStruct *bs = BSCreate(name, type, domain);
@@ -216,9 +193,7 @@ static void BrowseBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 			if (f & kDNSServiceFlagsAdd) {	// Add
 				DNSServiceRef sr;
 
-				if (DNSServiceResolve
-					(&sr, 0, 0, name, type, domain, ResolveBack,
-					 bs) == kDNSServiceErr_NoError) {
+				if (DNSServiceResolve(&sr, 0, 0, name, type, domain, ResolveBack, bs) == kDNSServiceErr_NoError) {
 					int file_descriptor = DNSServiceRefSockFD(sr);
 					DNSServiceErrorType err = kDNSServiceErr_Unknown;
 					if (file_descriptor >= 0) {
@@ -228,17 +203,14 @@ static void BrowseBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 
 							FD_ZERO(&readfd);
 							FD_SET(file_descriptor, &readfd);
-							if (select(file_descriptor + 1, &readfd, NULL, NULL, &tv) >
-								0) {
+							if (select(file_descriptor + 1, &readfd, NULL, NULL, &tv) > 0) {
 								if (FD_ISSET(file_descriptor, &readfd)) {
 									err = DNSServiceProcessResult(sr);
 								}
 							} else if (errno == EINTR) {
 								continue;
 							} else {
-								ERROR_CONNECT
-									("Resolve timeout error for %s\n",
-									 name);
+								ERROR_CONNECT("Resolve timeout error for %s\n", name);
 							}
 							break;
 						}
@@ -262,9 +234,7 @@ void OW_Browse(void)
 	if ((rs = malloc(sizeof(struct RefStruct))) == NULL)
 		return;
 
-	dnserr =
-		DNSServiceBrowse(&Global.browse, 0, 0, "_owserver._tcp", NULL,
-						 BrowseBack, NULL);
+	dnserr = DNSServiceBrowse(&Global.browse, 0, 0, "_owserver._tcp", NULL, BrowseBack, NULL);
 	rs->sref = Global.browse;
 	if (dnserr == kDNSServiceErr_NoError) {
 		pthread_t thread;
@@ -272,8 +242,7 @@ void OW_Browse(void)
 		//printf("Browse %ld %s|%s|%s\n",(long int)Global.browse,"","_owserver._tcp","") ;
 		err = pthread_create(&thread, 0, Process, (void *) rs);
 		if (err) {
-			ERROR_CONNECT("Zeroconf/Bounjour browsing thread error %d).\n",
-						  err);
+			ERROR_CONNECT("Zeroconf/Bounjour browsing thread error %d).\n", err);
 		}
 	} else {
 		LEVEL_CONNECT("DNSServiceBrowse error = %d\n", dnserr);
@@ -284,8 +253,7 @@ void OW_Browse(void)
 
 void OW_Browse(void)
 {
-	LEVEL_CONNECT
-		("Zeroconf/Bonjour requires multithreading support (a compile-time configuration setting).\n");
+	LEVEL_CONNECT("Zeroconf/Bonjour requires multithreading support (a compile-time configuration setting).\n");
 }
 
 #endif							/* OW_MT */

@@ -68,14 +68,14 @@ READ_FUNCTION(FS_sense);
 /* -------- Structures ---------- */
 struct filetype DS18S20[] = {
 	F_STANDARD,
-  {"temperature",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile,   FS_10temp, NO_WRITE_FUNCTION, {v:NULL},} ,
-  {"templow",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable,   FS_r_templimit, FS_w_templimit, {i:1},} ,
-  {"temphigh",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable,   FS_r_templimit, FS_w_templimit, {i:0},} ,
-  {"trim",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_volatile,   FS_r_trim, FS_w_trim, {v:NULL},} ,
-  {"die", 2, NULL, ft_ascii, fc_static,   FS_r_die, NO_WRITE_FUNCTION, {i:1},} ,
-  {"trimvalid",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile,   FS_r_trimvalid, NO_WRITE_FUNCTION, {v:NULL},} ,
-  {"trimblanket",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile,   FS_r_blanket, FS_w_blanket, {v:NULL},} ,
-  {"power",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile,   FS_power, NO_WRITE_FUNCTION, {v:NULL},} ,
+  {"temperature", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_10temp, NO_WRITE_FUNCTION, {v:NULL},},
+  {"templow", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:1},},
+  {"temphigh", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:0},},
+  {"trim", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_volatile, FS_r_trim, FS_w_trim, {v:NULL},},
+  {"die", 2, NULL, ft_ascii, fc_static, FS_r_die, NO_WRITE_FUNCTION, {i:1},},
+  {"trimvalid", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_trimvalid, NO_WRITE_FUNCTION, {v:NULL},},
+  {"trimblanket", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_blanket, FS_w_blanket, {v:NULL},},
+  {"power", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, {v:NULL},},
 }
 
 ;
@@ -84,19 +84,19 @@ DeviceEntryExtended(10, DS18S20, DEV_temp | DEV_alarm);
 struct filetype DS18B20[] = {
 	F_STANDARD,
 //    {"scratchpad",     8,  NULL, ft_binary, fc_volatile,   FS_tempdata, NO_WRITE_FUNCTION, NULL, } ,//    {"scratchpad",     8,  NULL, ft_binary, fc_volatile,  {o:FS_tempdata} ,
-  {"temperature",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile,   FS_slowtemp, NO_WRITE_FUNCTION, {i:12},} ,
-  {"temperature9",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile,   FS_22temp, NO_WRITE_FUNCTION, {i:9},} ,
-  {"temperature10",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile,   FS_22temp, NO_WRITE_FUNCTION, {i:10},} ,
-  {"temperature11",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile,   FS_22temp, NO_WRITE_FUNCTION, {i:11},} ,
-  {"temperature12",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile,   FS_22temp, NO_WRITE_FUNCTION, {i:12},} ,
-  {"fasttemp",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile,   FS_fasttemp, NO_WRITE_FUNCTION, {i:9},} ,
-  {"templow",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable,   FS_r_templimit, FS_w_templimit, {i:1},} ,
-  {"temphigh",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable,   FS_r_templimit, FS_w_templimit, {i:0},} ,
-  {"trim",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_volatile,   FS_r_trim, FS_w_trim, {v:NULL},} ,
-  {"die", 2, NULL, ft_ascii, fc_static,   FS_r_die, NO_WRITE_FUNCTION, {i:2},} ,
-  {"trimvalid",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile,   FS_r_trimvalid, NO_WRITE_FUNCTION, {v:NULL},} ,
-  {"trimblanket",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile,   FS_r_blanket, FS_w_blanket, {v:NULL},} ,
-  {"power",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile,   FS_power, NO_WRITE_FUNCTION, {v:NULL},} ,
+  {"temperature", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_slowtemp, NO_WRITE_FUNCTION, {i:12},},
+  {"temperature9", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:9},},
+  {"temperature10", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:10},},
+  {"temperature11", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:11},},
+  {"temperature12", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:12},},
+  {"fasttemp", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_fasttemp, NO_WRITE_FUNCTION, {i:9},},
+  {"templow", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:1},},
+  {"temphigh", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:0},},
+  {"trim", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_volatile, FS_r_trim, FS_w_trim, {v:NULL},},
+  {"die", 2, NULL, ft_ascii, fc_static, FS_r_die, NO_WRITE_FUNCTION, {i:2},},
+  {"trimvalid", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_trimvalid, NO_WRITE_FUNCTION, {v:NULL},},
+  {"trimblanket", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_blanket, FS_w_blanket, {v:NULL},},
+  {"power", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, {v:NULL},},
 };
 
 DeviceEntryExtended(28, DS18B20, DEV_temp | DEV_alarm);
@@ -104,19 +104,19 @@ DeviceEntryExtended(28, DS18B20, DEV_temp | DEV_alarm);
 struct filetype DS1822[] = {
 	F_STANDARD,
 //    {"scratchpad",     8,  NULL, ft_binary, fc_volatile,   FS_tempdata, NO_WRITE_FUNCTION, NULL, } ,//    {"scratchpad",     8,  NULL, ft_binary, fc_volatile,  {o:FS_tempdata} ,
-  {"temperature",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile,   FS_slowtemp, NO_WRITE_FUNCTION, {i:12},} ,
-  {"temperature9",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile,   FS_22temp, NO_WRITE_FUNCTION, {i:9},} ,
-  {"temperature10",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile,   FS_22temp, NO_WRITE_FUNCTION, {i:10},} ,
-  {"temperature11",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile,   FS_22temp, NO_WRITE_FUNCTION, {i:11},} ,
-  {"temperature12",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile,   FS_22temp, NO_WRITE_FUNCTION, {i:12},} ,
-  {"fasttemp",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile,   FS_fasttemp, NO_WRITE_FUNCTION, {i:9},} ,
-  {"templow",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable,   FS_r_templimit, FS_w_templimit, {i:1},} ,
-  {"temphigh",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable,   FS_r_templimit, FS_w_templimit, {i:0},} ,
-  {"trim",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_volatile,   FS_r_trim, FS_w_trim, {v:NULL},} ,
-  {"die", 2, NULL, ft_ascii, fc_static,   FS_r_die, NO_WRITE_FUNCTION, {i:0},} ,
-  {"trimvalid",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile,   FS_r_trimvalid, NO_WRITE_FUNCTION, {v:NULL},} ,
-  {"trimblanket",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile,   FS_r_blanket, FS_w_blanket, {v:NULL},} ,
-  {"power",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile,   FS_power, NO_WRITE_FUNCTION, {v:NULL},} ,
+  {"temperature", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_slowtemp, NO_WRITE_FUNCTION, {i:12},},
+  {"temperature9", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:9},},
+  {"temperature10", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:10},},
+  {"temperature11", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:11},},
+  {"temperature12", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:12},},
+  {"fasttemp", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_fasttemp, NO_WRITE_FUNCTION, {i:9},},
+  {"templow", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:1},},
+  {"temphigh", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:0},},
+  {"trim", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_volatile, FS_r_trim, FS_w_trim, {v:NULL},},
+  {"die", 2, NULL, ft_ascii, fc_static, FS_r_die, NO_WRITE_FUNCTION, {i:0},},
+  {"trimvalid", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_trimvalid, NO_WRITE_FUNCTION, {v:NULL},},
+  {"trimblanket", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_blanket, FS_w_blanket, {v:NULL},},
+  {"power", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, {v:NULL},},
 };
 
 DeviceEntryExtended(22, DS1822, DEV_temp | DEV_alarm);
@@ -124,16 +124,16 @@ DeviceEntryExtended(22, DS1822, DEV_temp | DEV_alarm);
 struct filetype DS1825[] = {
 	F_STANDARD,
 //    {"scratchpad",     8,  NULL, ft_binary, fc_volatile,   FS_tempdata, NO_WRITE_FUNCTION, NULL, } ,//    {"scratchpad",     8,  NULL, ft_binary, fc_volatile,  {o:FS_tempdata} ,
-  {"temperature",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile,   FS_slowtemp, NO_WRITE_FUNCTION, {i:12},} ,
-  {"temperature9",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile,   FS_22temp, NO_WRITE_FUNCTION, {i:9},} ,
-  {"temperature10",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile,   FS_22temp, NO_WRITE_FUNCTION, {i:10},} ,
-  {"temperature11",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile,   FS_22temp, NO_WRITE_FUNCTION, {i:11},} ,
-  {"temperature12",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile,   FS_22temp, NO_WRITE_FUNCTION, {i:12},} ,
-  {"fasttemp",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile,   FS_fasttemp, NO_WRITE_FUNCTION, {i:9},} ,
-  {"templow",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable,   FS_r_templimit, FS_w_templimit, {i:1},} ,
-  {"temphigh",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable,   FS_r_templimit, FS_w_templimit, {i:0},} ,
-  {"power",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile,   FS_power, NO_WRITE_FUNCTION, {v:NULL},} ,
-  {"prog_addr",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_stable,   FS_r_ad, NO_WRITE_FUNCTION, {v:NULL},} ,
+  {"temperature", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_slowtemp, NO_WRITE_FUNCTION, {i:12},},
+  {"temperature9", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:9},},
+  {"temperature10", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:10},},
+  {"temperature11", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:11},},
+  {"temperature12", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:12},},
+  {"fasttemp", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_fasttemp, NO_WRITE_FUNCTION, {i:9},},
+  {"templow", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:1},},
+  {"temphigh", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:0},},
+  {"power", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, {v:NULL},},
+  {"prog_addr", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_stable, FS_r_ad, NO_WRITE_FUNCTION, {v:NULL},},
 };
 
 DeviceEntryExtended(3B, DS1825, DEV_temp | DEV_alarm);
@@ -143,27 +143,27 @@ struct aggregate A28EA00 = { 2, ag_letters, ag_aggregate, };
 struct filetype DS28EA00[] = {
 	F_STANDARD,
 //    {"scratchpad",     8,  NULL, ft_binary, fc_volatile,   FS_tempdata, NO_WRITE_FUNCTION, NULL, } ,//    {"scratchpad",     8,  NULL, ft_binary, fc_volatile,  {o:FS_tempdata} ,
-  {"temperature",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile,   FS_slowtemp, NO_WRITE_FUNCTION, {i:12},} ,
-  {"temperature9",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile,   FS_22temp, NO_WRITE_FUNCTION, {i:9},} ,
-  {"temperature10",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile,   FS_22temp, NO_WRITE_FUNCTION, {i:10},} ,
-  {"temperature11",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile,   FS_22temp, NO_WRITE_FUNCTION, {i:11},} ,
-  {"temperature12",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile,   FS_22temp, NO_WRITE_FUNCTION, {i:12},} ,
-  {"fasttemp",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile,   FS_fasttemp, NO_WRITE_FUNCTION, {i:9},} ,
-  {"templow",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable,   FS_r_templimit, FS_w_templimit, {i:1},} ,
-  {"temphigh",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable,   FS_r_templimit, FS_w_templimit, {i:0},} ,
-  {"power",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile,   FS_power, NO_WRITE_FUNCTION, {v:NULL},} ,
-  {"PIO",PROPERTY_LENGTH_BITFIELD, &A28EA00, ft_bitfield, fc_volatile,   FS_r_pio, NO_WRITE_FUNCTION, {v:NULL},} ,
-  {"latch",PROPERTY_LENGTH_BITFIELD, &A28EA00, ft_bitfield, fc_stable,   FS_r_latch, FS_w_pio, {v:NULL},} ,
-  {"sensed",PROPERTY_LENGTH_BITFIELD, &A28EA00, ft_bitfield, fc_volatile,   FS_sense, NO_WRITE_FUNCTION, {v:NULL},} ,
+  {"temperature", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_slowtemp, NO_WRITE_FUNCTION, {i:12},},
+  {"temperature9", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:9},},
+  {"temperature10", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:10},},
+  {"temperature11", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:11},},
+  {"temperature12", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:12},},
+  {"fasttemp", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_fasttemp, NO_WRITE_FUNCTION, {i:9},},
+  {"templow", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:1},},
+  {"temphigh", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:0},},
+  {"power", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, {v:NULL},},
+  {"PIO", PROPERTY_LENGTH_BITFIELD, &A28EA00, ft_bitfield, fc_volatile, FS_r_pio, NO_WRITE_FUNCTION, {v:NULL},},
+  {"latch", PROPERTY_LENGTH_BITFIELD, &A28EA00, ft_bitfield, fc_stable, FS_r_latch, FS_w_pio, {v:NULL},},
+  {"sensed", PROPERTY_LENGTH_BITFIELD, &A28EA00, ft_bitfield, fc_volatile, FS_sense, NO_WRITE_FUNCTION, {v:NULL},},
 };
 
 DeviceEntryExtended(42, DS28EA00, DEV_temp | DEV_alarm | DEV_chain);
 
 /* Internal properties */
 //static struct internal_prop ip_resolution = { "RES", fc_stable };
-MakeInternalProp(RES,fc_stable) ; // resolution
+MakeInternalProp(RES, fc_stable);	// resolution
 //static struct internal_prop ip_power = { "POW", fc_stable };
-MakeInternalProp(POW,fc_stable) ; // power status
+MakeInternalProp(POW, fc_stable);	// power status
 
 struct tempresolution {
 	BYTE config;
@@ -223,38 +223,35 @@ struct die_limits DIE[] = {
 
 /* DS1820&2*/
 static int OW_10temp(_FLOAT * temp, const struct parsedname *pn);
-static int OW_22temp(_FLOAT * temp, const int resolution,
-					 const struct parsedname *pn);
+static int OW_22temp(_FLOAT * temp, const int resolution, const struct parsedname *pn);
 static int OW_power(BYTE * data, const struct parsedname *pn);
-static int OW_r_templimit(_FLOAT * T, const int Tindex,
-						  const struct parsedname *pn);
-static int OW_w_templimit(const _FLOAT T, const int Tindex,
-						  const struct parsedname *pn);
+static int OW_r_templimit(_FLOAT * T, const int Tindex, const struct parsedname *pn);
+static int OW_w_templimit(const _FLOAT T, const int Tindex, const struct parsedname *pn);
 static int OW_r_scratchpad(BYTE * data, const struct parsedname *pn);
 static int OW_w_scratchpad(const BYTE * data, const struct parsedname *pn);
 static int OW_r_trim(BYTE * trim, const struct parsedname *pn);
 static int OW_w_trim(const BYTE * trim, const struct parsedname *pn);
 static enum eDie OW_die(const struct parsedname *pn);
-static int OW_read_pio( BYTE * pio, BYTE * latch, const struct parsedname * pn) ;
-static int OW_w_pio( BYTE pio, const struct parsedname * pn ) ;
+static int OW_read_pio(BYTE * pio, BYTE * latch, const struct parsedname *pn);
+static int OW_w_pio(BYTE pio, const struct parsedname *pn);
 
-static int FS_10temp(struct one_wire_query * owq)
+static int FS_10temp(struct one_wire_query *owq)
 {
-    if (OW_10temp(&OWQ_F(owq), PN(owq)))
+	if (OW_10temp(&OWQ_F(owq), PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
 /* For DS1822 and DS18B20 -- resolution stuffed in ft->data */
-static int FS_22temp(struct one_wire_query * owq)
+static int FS_22temp(struct one_wire_query *owq)
 {
-    int resolution = OWQ_pn(owq).selected_filetype->data.i ;
-    switch (resolution) {
+	int resolution = OWQ_pn(owq).selected_filetype->data.i;
+	switch (resolution) {
 	case 9:
 	case 10:
 	case 11:
 	case 12:
-        if (OW_22temp(&OWQ_F(owq), resolution, PN(owq)))
+		if (OW_22temp(&OWQ_F(owq), resolution, PN(owq)))
 			return -EINVAL;
 		return 0;
 	}
@@ -262,107 +259,109 @@ static int FS_22temp(struct one_wire_query * owq)
 }
 
 // use sibling function for fasttemp to keep cache value consistent
-static int FS_fasttemp(struct one_wire_query * owq)
+static int FS_fasttemp(struct one_wire_query *owq)
 {
-    OWQ_allocate_struct_and_pointer( owq_sibling ) ;
+	OWQ_allocate_struct_and_pointer(owq_sibling);
 
-    OWQ_create_shallow_single( owq_sibling, owq) ;
+	OWQ_create_shallow_single(owq_sibling, owq);
 
-    if ( FS_read_sibling( "temperature9", owq_sibling ) ) return -EINVAL ;
-    OWQ_F(owq) = OWQ_F(owq_sibling) ;
-    return  0 ;
+	if (FS_read_sibling("temperature9", owq_sibling))
+		return -EINVAL;
+	OWQ_F(owq) = OWQ_F(owq_sibling);
+	return 0;
 }
 
 // use sibling function for temperature to keep cache value consistent
-static int FS_slowtemp(struct one_wire_query * owq)
+static int FS_slowtemp(struct one_wire_query *owq)
 {
-    OWQ_allocate_struct_and_pointer( owq_sibling ) ;
+	OWQ_allocate_struct_and_pointer(owq_sibling);
 
-    OWQ_create_shallow_single( owq_sibling, owq) ;
+	OWQ_create_shallow_single(owq_sibling, owq);
 
-    if ( FS_read_sibling( "temperature12", owq_sibling ) ) return -EINVAL ;
-    OWQ_F(owq) = OWQ_F(owq_sibling) ;
-    return  0 ;
+	if (FS_read_sibling("temperature12", owq_sibling))
+		return -EINVAL;
+	OWQ_F(owq) = OWQ_F(owq_sibling);
+	return 0;
 }
 
-static int FS_power(struct one_wire_query * owq)
+static int FS_power(struct one_wire_query *owq)
 {
 	BYTE data;
-    if (OW_power(&data, PN(owq)))
+	if (OW_power(&data, PN(owq)))
 		return -EINVAL;
-    OWQ_Y(owq) = (data != 0x00);
+	OWQ_Y(owq) = (data != 0x00);
 	return 0;
 }
 
 
 /* 28EA00 switch */
-static int FS_w_pio(struct one_wire_query * owq)
+static int FS_w_pio(struct one_wire_query *owq)
 {
-    BYTE data = BYTE_INVERSE(OWQ_U(owq)&0x03) ; /* reverse bits, set unused to 1s */
-    //printf("Write pio raw=%X, stored=%X\n",OWQ_U(owq),data) ;
-    if (OW_w_pio(data, PN(owq)))
+	BYTE data = BYTE_INVERSE(OWQ_U(owq) & 0x03);	/* reverse bits, set unused to 1s */
+	//printf("Write pio raw=%X, stored=%X\n",OWQ_U(owq),data) ;
+	if (OW_w_pio(data, PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
-static int FS_sense(struct one_wire_query * owq)
+static int FS_sense(struct one_wire_query *owq)
 {
 	BYTE pio, latch;
-    if (OW_read_pio(&pio, &latch, PN(owq)))
+	if (OW_read_pio(&pio, &latch, PN(owq)))
 		return -EINVAL;
-    OWQ_U(owq) = pio & 0x03;	/* don't reverse bits */
-    //printf("Read sense raw_pio=%X, raw_latch=%X, returned=%X\n",pio,latch,OWQ_U(owq)) ;
-    return 0;
+	OWQ_U(owq) = pio & 0x03;	/* don't reverse bits */
+	//printf("Read sense raw_pio=%X, raw_latch=%X, returned=%X\n",pio,latch,OWQ_U(owq)) ;
+	return 0;
 }
 
-static int FS_r_pio(struct one_wire_query * owq)
+static int FS_r_pio(struct one_wire_query *owq)
 {
-    BYTE pio, latch;
-    if (OW_read_pio(&pio, &latch, PN(owq)))
-        return -EINVAL;
-    OWQ_U(owq) = BYTE_INVERSE(pio) & 0x03;  /* reverse bits */
-    //printf("Read pio raw_pio=%X, raw_latch=%X, returned=%X\n",pio,latch,OWQ_U(owq)) ;
-    return 0;
+	BYTE pio, latch;
+	if (OW_read_pio(&pio, &latch, PN(owq)))
+		return -EINVAL;
+	OWQ_U(owq) = BYTE_INVERSE(pio) & 0x03;	/* reverse bits */
+	//printf("Read pio raw_pio=%X, raw_latch=%X, returned=%X\n",pio,latch,OWQ_U(owq)) ;
+	return 0;
 }
 
-static int FS_r_latch(struct one_wire_query * owq)
+static int FS_r_latch(struct one_wire_query *owq)
 {
-    BYTE pio, latch;
-    if (OW_read_pio(&pio, &latch, PN(owq)))
-        return -EINVAL;
-    OWQ_U(owq) = BYTE_INVERSE(latch) & 0x03;  /* reverse bits */
-    //printf("Read latch raw_pio=%X, raw_latch=%X, returned=%X\n",pio,latch,OWQ_U(owq)) ;
-    return 0;
+	BYTE pio, latch;
+	if (OW_read_pio(&pio, &latch, PN(owq)))
+		return -EINVAL;
+	OWQ_U(owq) = BYTE_INVERSE(latch) & 0x03;	/* reverse bits */
+	//printf("Read latch raw_pio=%X, raw_latch=%X, returned=%X\n",pio,latch,OWQ_U(owq)) ;
+	return 0;
 }
 
-static int FS_r_templimit(struct one_wire_query * owq)
+static int FS_r_templimit(struct one_wire_query *owq)
 {
-    if (OW_r_templimit(&OWQ_F(owq), PN(owq)->selected_filetype->data.i, PN(owq)))
+	if (OW_r_templimit(&OWQ_F(owq), PN(owq)->selected_filetype->data.i, PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
 /* DS1825 hardware programmable address */
-static int FS_r_ad(struct one_wire_query * owq)
+static int FS_r_ad(struct one_wire_query *owq)
 {
 	BYTE data[9];
-    if (OW_r_scratchpad(data, PN(owq)))
+	if (OW_r_scratchpad(data, PN(owq)))
 		return -EINVAL;
-    OWQ_U(owq) = data[4] & 0x0F;
+	OWQ_U(owq) = data[4] & 0x0F;
 	return 0;
 }
 
-static int FS_w_templimit(struct one_wire_query * owq)
+static int FS_w_templimit(struct one_wire_query *owq)
 {
-    if (OW_w_templimit(OWQ_F(owq), PN(owq)->selected_filetype->data.i, PN(owq)))
+	if (OW_w_templimit(OWQ_F(owq), PN(owq)->selected_filetype->data.i, PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
-static int FS_r_die(struct one_wire_query * owq)
+static int FS_r_die(struct one_wire_query *owq)
 {
 	char *d;
-    switch (OW_die(PN(owq))) {
+	switch (OW_die(PN(owq))) {
 	case eB6:
 		d = "B6";
 		break;
@@ -378,26 +377,26 @@ static int FS_r_die(struct one_wire_query * owq)
 	default:
 		return -EINVAL;
 	}
-    return Fowq_output_offset_and_size(d, 2, owq);
+	return Fowq_output_offset_and_size(d, 2, owq);
 }
 
-static int FS_r_trim(struct one_wire_query * owq)
+static int FS_r_trim(struct one_wire_query *owq)
 {
 	BYTE t[2];
-    if (OW_r_trim(t, PN(owq)))
+	if (OW_r_trim(t, PN(owq)))
 		return -EINVAL;
-    OWQ_U(owq) = (t[1] << 8) | t[0];
+	OWQ_U(owq) = (t[1] << 8) | t[0];
 	return 0;
 }
 
-static int FS_w_trim(struct one_wire_query * owq)
+static int FS_w_trim(struct one_wire_query *owq)
 {
-    UINT trim = OWQ_U(owq) ;
-	BYTE t[2] = {LOW_HIGH_ADDRESS(trim), } ;
-    switch (OW_die(PN(owq))) {
+	UINT trim = OWQ_U(owq);
+	BYTE t[2] = { LOW_HIGH_ADDRESS(trim), };
+	switch (OW_die(PN(owq))) {
 	case eB7:
 	case eC2:
-        if (OW_w_trim(t, PN(owq)))
+		if (OW_w_trim(t, PN(owq)))
 			return -EINVAL;
 		return 0;
 	default:
@@ -406,34 +405,35 @@ static int FS_w_trim(struct one_wire_query * owq)
 }
 
 /* Are the trim values valid-looking? */
-static int FS_r_trimvalid(struct one_wire_query * owq)
+static int FS_r_trimvalid(struct one_wire_query *owq)
 {
 	BYTE trim[2];
-    switch (OW_die(PN(owq))) {
+	switch (OW_die(PN(owq))) {
 	case eB7:
 	case eC2:
-        if (OW_r_trim(trim, PN(owq)))
+		if (OW_r_trim(trim, PN(owq)))
 			return -EINVAL;
-        OWQ_Y(owq) = (((trim[0] & 0x07) == 0x05) || ((trim[0] & 0x07) == 0x03))
+		OWQ_Y(owq) = (((trim[0] & 0x07) == 0x05)
+					  || ((trim[0] & 0x07) == 0x03))
 			&& (trim[1] == 0xBB);
 		break;
 	default:
-        OWQ_Y(owq) = 1;				/* Assume true */
+		OWQ_Y(owq) = 1;			/* Assume true */
 	}
 	return 0;
 }
 
 /* Put in a black trim value if non-zero */
-static int FS_r_blanket(struct one_wire_query * owq)
+static int FS_r_blanket(struct one_wire_query *owq)
 {
 	BYTE trim[2];
 	BYTE blanket[] = { 0x9D, 0xBB };
-    switch (OW_die(PN(owq))) {
+	switch (OW_die(PN(owq))) {
 	case eB7:
 	case eC2:
-        if (OW_r_trim(trim, PN(owq)))
+		if (OW_r_trim(trim, PN(owq)))
 			return -EINVAL;
-        OWQ_Y(owq) = (memcmp(trim, blanket, 2) == 0);
+		OWQ_Y(owq) = (memcmp(trim, blanket, 2) == 0);
 		return 0;
 	default:
 		return -EINVAL;
@@ -441,14 +441,14 @@ static int FS_r_blanket(struct one_wire_query * owq)
 }
 
 /* Put in a black trim value if non-zero */
-static int FS_w_blanket(struct one_wire_query * owq)
+static int FS_w_blanket(struct one_wire_query *owq)
 {
 	BYTE blanket[] = { 0x9D, 0xBB };
-    switch (OW_die(PN(owq))) {
+	switch (OW_die(PN(owq))) {
 	case eB7:
 	case eC2:
-        if (OWQ_Y(owq)) {
-            if (OW_w_trim(blanket, PN(owq)))
+		if (OWQ_Y(owq)) {
+			if (OW_w_trim(blanket, PN(owq)))
 				return -EINVAL;
 		}
 		return 0;
@@ -466,8 +466,8 @@ static int OW_10temp(_FLOAT * temp, const struct parsedname *pn)
 	BYTE pow;
 	struct transaction_log tunpowered[] = {
 		TRXN_START,
-        {convert, convert, delay, trxn_power},
-        TRXN_END,
+		{convert, convert, delay, trxn_power},
+		TRXN_END,
 	};
 	struct transaction_log tpowered[] = {
 		TRXN_START,
@@ -546,8 +546,7 @@ static int OW_power(BYTE * data, const struct parsedname *pn)
 	return 0;
 }
 
-static int OW_22temp(_FLOAT * temp, const int resolution,
-					 const struct parsedname *pn)
+static int OW_22temp(_FLOAT * temp, const int resolution, const struct parsedname *pn)
 {
 	BYTE data[9];
 	BYTE convert[] = { _1W_CONVERT_T, };
@@ -572,8 +571,7 @@ static int OW_22temp(_FLOAT * temp, const int resolution,
 		pow = 0x00;				/* assume unpowered if cannot tell */
 
 	/* Resolution */
-	if (Cache_Get_Internal_Strict
-		(&oldres, sizeof(oldres), InternalProp(RES), pn)
+	if (Cache_Get_Internal_Strict(&oldres, sizeof(oldres), InternalProp(RES), pn)
 		|| oldres != resolution) {
 		/* Get existing settings */
 		if (OW_r_scratchpad(data, pn))
@@ -583,15 +581,13 @@ static int OW_22temp(_FLOAT * temp, const int resolution,
 			data[4] = (res & 0xF0) | (data[4] & 0x0F);
 			if (OW_w_scratchpad(&data[2], pn))
 				return 1;
-			Cache_Add_Internal(&resolution, sizeof(int), InternalProp(RES),
-							   pn);
+			Cache_Add_Internal(&resolution, sizeof(int), InternalProp(RES), pn);
 		}
 	}
 
 	/* Conversion */
 	if (!pow) {					// unpowered, deliver power, no communication allowed
-		LEVEL_DEBUG("Unpowered temperature conversion -- %d msec\n",
-					delay);
+		LEVEL_DEBUG("Unpowered temperature conversion -- %d msec\n", delay);
 		if (BUS_transaction(tunpowered, pn))
 			return 1;
 	} else if (Simul_Test(simul_temp, pn)) {	// powered, so release bus immediately after issuing convert
@@ -611,14 +607,12 @@ static int OW_22temp(_FLOAT * temp, const int resolution,
 
 	//*temp = .0625*(((char)data[1])<<8|data[0]) ;
 	// Torsten Godau <tg@solarlabs.de> found a problem with 9-bit resolution
-	temp[0] =
-		(_FLOAT) ((int16_t) ((data[1] << 8) | (data[0] & mask))) * .0625;
+	temp[0] = (_FLOAT) ((int16_t) ((data[1] << 8) | (data[0] & mask))) * .0625;
 	return 0;
 }
 
 /* Limits Tindex=0 high 1=low */
-static int OW_r_templimit(_FLOAT * T, const int Tindex,
-						  const struct parsedname *pn)
+static int OW_r_templimit(_FLOAT * T, const int Tindex, const struct parsedname *pn)
 {
 	BYTE data[9];
 	BYTE recall[] = { _1W_READ_POWERMODE, };
@@ -640,8 +634,7 @@ static int OW_r_templimit(_FLOAT * T, const int Tindex,
 }
 
 /* Limits Tindex=0 high 1=low */
-static int OW_w_templimit(const _FLOAT T, const int Tindex,
-						  const struct parsedname *pn)
+static int OW_w_templimit(const _FLOAT T, const int Tindex, const struct parsedname *pn)
 {
 	BYTE data[9];
 
@@ -659,8 +652,8 @@ static int OW_r_scratchpad(BYTE * data, const struct parsedname *pn)
 	struct transaction_log tread[] = {
 		TRXN_START,
 		TRXN_WRITE1(be),
-		TRXN_READ(data,9),
-		TRXN_CRC8(data,9),
+		TRXN_READ(data, 9),
+		TRXN_CRC8(data, 9),
 		TRXN_END,
 	};
 	return BUS_transaction(tread, pn);
@@ -674,7 +667,7 @@ static int OW_w_scratchpad(const BYTE * data, const struct parsedname *pn)
 	BYTE pow[] = { _1W_COPY_SCRATCHPAD, };
 	struct transaction_log twrite[] = {
 		TRXN_START,
-		TRXN_WRITE(d,4),
+		TRXN_WRITE(d, 4),
 		TRXN_END,
 	};
 	struct transaction_log tpower[] = {
@@ -757,8 +750,7 @@ static int OW_w_trim(const BYTE * trim, const struct parsedname *pn)
 
 static enum eDie OW_die(const struct parsedname *pn)
 {
-	BYTE die[6] =
-		{ pn->sn[6], pn->sn[5], pn->sn[4], pn->sn[3], pn->sn[2], pn->sn[1],
+	BYTE die[6] = { pn->sn[6], pn->sn[5], pn->sn[4], pn->sn[3], pn->sn[2], pn->sn[1],
 	};
 	// data gives index into die matrix
 	if (memcmp(die, DIE[pn->selected_filetype->data.i].C2, 6) > 0)
@@ -788,9 +780,7 @@ int FS_poll_convert(const struct parsedname *pn)
 			break;
 		}
 		if (p[0] != 0) {
-			LEVEL_DEBUG
-				("FS_poll_convert: BUS_transaction done after %dms\n",
-				 (i + 1) * 50);
+			LEVEL_DEBUG("FS_poll_convert: BUS_transaction done after %dms\n", (i + 1) * 50);
 			return 0;
 		}
 		t[0].size = 50;			// 50 msec for rest of delays
@@ -800,38 +790,40 @@ int FS_poll_convert(const struct parsedname *pn)
 }
 
 /* read PIO pins for the DS28EA00 and rearrange slightly */
-static int OW_read_pio( BYTE * pio, BYTE * latch, const struct parsedname * pn)
+static int OW_read_pio(BYTE * pio, BYTE * latch, const struct parsedname *pn)
 {
-  BYTE data ;
-  BYTE cmd[] = { _1W_PIO_ACCESS_READ, } ;
-  struct transaction_log t[] = {
-    TRXN_START,
-    TRXN_WRITE1(cmd),
-    TRXN_READ1(&data),
-    TRXN_END ,
-  } ;
-  if ( BUS_transaction(t,pn) ) return 1 ;
-  /* compare lower and upper nibble to be complements */
-  //printf("READ.PIO data=%X data$0x0F=%X data>>4=%X ^=%X\n",data,(data&0x0F),data>>4,(data&0x0F)^(data>>4));
-  if ( ((data&0x0F)^(data>>4)) != 0x0F ) return 1 ;
-  
-  // PIO bits 0 and 2 (move to consecutive bits)
-  pio[0] = (data & 0x01) | ((data & 0x04) >> 1 ) ;
-  // latch bits 1 and 3 (move to consecutive bits)
-  latch[0] = ((data & 0x02) >> 1 ) | ((data & 0x08) >> 2 ) ;
-  //printf("READ.PIO pio=%X latch=%X\n",pio[0],latch[0]);
-  
-  return 0 ;
+	BYTE data;
+	BYTE cmd[] = { _1W_PIO_ACCESS_READ, };
+	struct transaction_log t[] = {
+		TRXN_START,
+		TRXN_WRITE1(cmd),
+		TRXN_READ1(&data),
+		TRXN_END,
+	};
+	if (BUS_transaction(t, pn))
+		return 1;
+	/* compare lower and upper nibble to be complements */
+	//printf("READ.PIO data=%X data$0x0F=%X data>>4=%X ^=%X\n",data,(data&0x0F),data>>4,(data&0x0F)^(data>>4));
+	if (((data & 0x0F) ^ (data >> 4)) != 0x0F)
+		return 1;
+
+	// PIO bits 0 and 2 (move to consecutive bits)
+	pio[0] = (data & 0x01) | ((data & 0x04) >> 1);
+	// latch bits 1 and 3 (move to consecutive bits)
+	latch[0] = ((data & 0x02) >> 1) | ((data & 0x08) >> 2);
+	//printf("READ.PIO pio=%X latch=%X\n",pio[0],latch[0]);
+
+	return 0;
 }
 
 /* Write to PIO -- both channels. Already inverted and other fields set to 1 */
-static int OW_w_pio( BYTE pio, const struct parsedname * pn )
+static int OW_w_pio(BYTE pio, const struct parsedname *pn)
 {
-  BYTE cmd[] = { _1W_PIO_ACCESS_WRITE, pio, BYTE_INVERSE(pio)} ;
-  struct transaction_log t[] = {
-    TRXN_START,
-    TRXN_WRITE3(cmd),
-    TRXN_END ,
-  } ;
-  return BUS_transaction(t,pn) ;
+	BYTE cmd[] = { _1W_PIO_ACCESS_WRITE, pio, BYTE_INVERSE(pio) };
+	struct transaction_log t[] = {
+		TRXN_START,
+		TRXN_WRITE3(cmd),
+		TRXN_END,
+	};
+	return BUS_transaction(t, pn);
 }

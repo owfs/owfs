@@ -122,7 +122,8 @@ typedef int INT;
 #define OWLIB_OPT "m:c:f:p:s:hu::d:t:CFRKVP:"
 extern const struct option owopts_long[];
 enum opt_program { opt_owfs, opt_server, opt_httpd, opt_ftpd, opt_tcl,
-		opt_swig, opt_c, };
+	opt_swig, opt_c,
+};
 void owopt(const int c, const char *arg);
 
 /* Several different structures:
@@ -224,7 +225,7 @@ extern struct global Global;
 enum deviceformat { fdi, fi, fdidc, fdic, fidc, fic };
 /* Gobal temperature scale */
 enum temp_type { temp_celsius, temp_fahrenheit, temp_kelvin, temp_rankine,
-	};
+};
 const char *TemperatureScaleName(enum temp_type t);
 
 /* Server (Socket-based) interface */
@@ -283,7 +284,7 @@ ssize_t tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval
 int ClientAddr(char *sname);
 int ClientConnect(void);
 
-void DefaultOwserver( void ) ;
+void DefaultOwserver(void);
 void OW_ArgNet(const char *arg);
 void Setup(void);
 void ow_help(void);
@@ -331,9 +332,9 @@ struct connection_in {
 	char *adapter_name;
 };
 
-extern struct connection_in s_owserver_connection ;
+extern struct connection_in s_owserver_connection;
 extern struct connection_in *owserver_connection;
 
-void Exit( int exit_code ) ;
+void Exit(int exit_code);
 
 #endif							/* OWSHELL_H */

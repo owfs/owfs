@@ -15,40 +15,40 @@ $Id$
 #include "ownetapi.h"
 #include "ow_server.h"
 
-int OWNET_put( OWNET_HANDLE h, const char * onewire_path, const unsigned char * value_string, size_t size)
+int OWNET_put(OWNET_HANDLE h, const char *onewire_path, const unsigned char *value_string, size_t size)
 {
-    struct request_packet s_request_packet ;
-    struct request_packet * rp = & s_request_packet ;
-    memset( rp, 0, sizeof(struct request_packet));
+	struct request_packet s_request_packet;
+	struct request_packet *rp = &s_request_packet;
+	memset(rp, 0, sizeof(struct request_packet));
 
-    rp->owserver = find_connection_in(h) ;
-    if ( rp->owserver == NULL ) {
-        return -EBADF ;
-    }
+	rp->owserver = find_connection_in(h);
+	if (rp->owserver == NULL) {
+		return -EBADF;
+	}
 
-    rp->path = (onewire_path==NULL) ? "/" : onewire_path ;
-    rp->write_value = value_string ;
-    rp->data_length = size ;
-    rp->data_offset = 0 ;
+	rp->path = (onewire_path == NULL) ? "/" : onewire_path;
+	rp->write_value = value_string;
+	rp->data_length = size;
+	rp->data_offset = 0;
 
-    return ServerWrite(rp) ;
+	return ServerWrite(rp);
 }
 
-int OWNET_lwrite( OWNET_HANDLE h, const char * onewire_path, const unsigned char * value_string, size_t size, off_t offset )
+int OWNET_lwrite(OWNET_HANDLE h, const char *onewire_path, const unsigned char *value_string, size_t size, off_t offset)
 {
-    struct request_packet s_request_packet ;
-    struct request_packet * rp = & s_request_packet ;
-    memset( rp, 0, sizeof(struct request_packet));
+	struct request_packet s_request_packet;
+	struct request_packet *rp = &s_request_packet;
+	memset(rp, 0, sizeof(struct request_packet));
 
-    rp->owserver = find_connection_in(h) ;
-    if ( rp->owserver == NULL ) {
-        return -EBADF ;
-    }
+	rp->owserver = find_connection_in(h);
+	if (rp->owserver == NULL) {
+		return -EBADF;
+	}
 
-    rp->path = (onewire_path==NULL) ? "/" : onewire_path ;
-    rp->write_value = value_string ;
-    rp->data_length = size ;
-    rp->data_offset = offset ;
+	rp->path = (onewire_path == NULL) ? "/" : onewire_path;
+	rp->write_value = value_string;
+	rp->data_length = size;
+	rp->data_offset = offset;
 
-    return ServerWrite(rp) ;
+	return ServerWrite(rp);
 }

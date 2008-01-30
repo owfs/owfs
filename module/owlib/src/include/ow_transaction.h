@@ -51,17 +51,17 @@ $Id$
     25-05-2003 iButtonLink device
 */
 
-#ifndef OW_TRANSACTION_H			/* tedious wrapper */
+#ifndef OW_TRANSACTION_H		/* tedious wrapper */
 #define OW_TRANSACTION_H
 
 
 enum transaction_type {
 	trxn_select,
 	trxn_match,
-    trxn_modify,
-    trxn_compare,
+	trxn_modify,
+	trxn_compare,
 	trxn_read,
-    trxn_blind,
+	trxn_blind,
 	trxn_power,
 	trxn_program,
 	trxn_reset,
@@ -117,9 +117,7 @@ struct transaction_log {
 
 #define TRXN_PROGRAM   { NULL, NULL, 0, trxn_program, }
 
-int BUS_transaction(const struct transaction_log *tl,
-					const struct parsedname *pn);
-int BUS_transaction_nolock(const struct transaction_log *tl,
-						   const struct parsedname *pn);
+int BUS_transaction(const struct transaction_log *tl, const struct parsedname *pn);
+int BUS_transaction_nolock(const struct transaction_log *tl, const struct parsedname *pn);
 
 #endif							/* OW_TRANSACTION_H */

@@ -180,9 +180,7 @@ struct addrinfo {
 /* Translate name of a service location and/or a service name to set of
    socket addresses.  */
 extern int getaddrinfo(__const char *__restrict __name,
-					   __const char *__restrict __service,
-					   __const struct addrinfo *__restrict __req,
-					   struct addrinfo **__restrict __pai) __THROW;
+					   __const char *__restrict __service, __const struct addrinfo *__restrict __req, struct addrinfo **__restrict __pai) __THROW;
 
 /* Free `addrinfo' structure AI including associated storage.  */
 extern void freeaddrinfo(struct addrinfo *__ai) __THROW;

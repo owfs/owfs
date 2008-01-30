@@ -14,11 +14,9 @@ $Id$
 
 #include "owshell.h"
 
-static int FromServer(int file_descriptor, struct client_msg *cm, char *msg,
-					  size_t size);
+static int FromServer(int file_descriptor, struct client_msg *cm, char *msg, size_t size);
 static void *FromServerAlloc(int file_descriptor, struct client_msg *cm);
-static int ToServer(int file_descriptor, struct server_msg *sm,
-					struct serverpackage *sp);
+static int ToServer(int file_descriptor, struct server_msg *sm, struct serverpackage *sp);
 static uint32_t SetupSemi(void);
 
 void Server_detect(void)
@@ -28,8 +26,7 @@ void Server_detect(void)
 		Exit(1);
 	}
 	if (owserver_connection->name == NULL || ClientAddr(owserver_connection->name)) {
-		fprintf(stderr, "Could not connect with owserver %s\n",
-				owserver_connection->name);
+		fprintf(stderr, "Could not connect with owserver %s\n", owserver_connection->name);
 		Exit(1);
 	}
 }
@@ -224,7 +221,7 @@ static void *FromServerAlloc(int file_descriptor, struct client_msg *cm)
 		return NULL;
 	if (cm->ret < 0)
 		return NULL;
-    if (cm->payload > MAX_OWSERVER_PROTOCOL_PACKET_SIZE) {
+	if (cm->payload > MAX_OWSERVER_PROTOCOL_PACKET_SIZE) {
 //printf("FromServerAlloc payload too large\n");
 		return NULL;
 	}
@@ -246,8 +243,7 @@ static void *FromServerAlloc(int file_descriptor, struct client_msg *cm)
 
 /* Read from server -- return negative on error,
     return 0 or positive giving size of data element */
-static int FromServer(int file_descriptor, struct client_msg *cm, char *msg,
-					  size_t size)
+static int FromServer(int file_descriptor, struct client_msg *cm, char *msg, size_t size)
 {
 	size_t rtry;
 	size_t ret;
@@ -298,8 +294,7 @@ static int FromServer(int file_descriptor, struct client_msg *cm, char *msg,
 
 // should be const char * data but iovec has problems with const arguments
 //static int ToServer( int file_descriptor, struct server_msg * sm, const char * path, const char * data, int datasize ) {
-static int ToServer(int file_descriptor, struct server_msg *sm,
-					struct serverpackage *sp)
+static int ToServer(int file_descriptor, struct server_msg *sm, struct serverpackage *sp)
 {
 	int payload = 0;
 	struct iovec io[5] = {
@@ -346,10 +341,7 @@ static int ToServer(int file_descriptor, struct server_msg *sm,
 	sm->sg = htonl(sm->sg);
 	sm->offset = htonl(sm->offset);
 
-	return writev(file_descriptor, io,
-				  5) !=
-		(ssize_t) (payload + sizeof(struct server_msg) +
-				   sp->tokens * sizeof(union antiloop));
+	return writev(file_descriptor, io, 5) != (ssize_t) (payload + sizeof(struct server_msg) + sp->tokens * sizeof(union antiloop));
 }
 
 /* flag the sg for "virtual root" -- the remote bus was specifically requested */

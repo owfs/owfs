@@ -18,7 +18,7 @@ $Id$
 
 /* Read "n" bytes from a descriptor. */
 /* Stolen from Unix Network Programming by Stevens, Fenner, Rudoff p89 */
-ssize_t tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval * ptv)
+ssize_t tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval *ptv)
 {
 	size_t nleft;
 	ssize_t nread;

@@ -60,34 +60,34 @@ WRITE_FUNCTION(FS_w_change_password);
 struct aggregate A1991 = { 3, ag_numbers, ag_separate, };
 struct filetype DS1991[] = {
 	F_STANDARD,
-  {"settings",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile,   NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},} ,
-  {"settings/reset_password", 8, &A1991, ft_binary, fc_stable,   NO_READ_FUNCTION, FS_w_reset_password, {v:NULL},} ,
-  {"settings/change_password", 8, &A1991, ft_binary, fc_stable,   NO_READ_FUNCTION, FS_w_change_password, {v:NULL},} ,
-  {"settings/password", 8, &A1991, ft_binary, fc_stable,   NO_READ_FUNCTION, FS_w_password, {v:NULL},} ,
-  {"settings/ident", 8, &A1991, ft_binary, fc_volatile,   FS_r_ident, FS_w_ident, {v:NULL},} ,
-  {"settings/page", 48, &A1991, ft_binary, fc_volatile,   FS_r_page, FS_w_page, {v:NULL},} ,
-  {"pages",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile,   NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},} ,
-  {"pages/page", 48, &A1991, ft_binary, fc_volatile,   FS_r_page, FS_w_page, {v:NULL},} ,
-  {"pages/password", 8, &A1991, ft_binary, fc_stable,   NO_READ_FUNCTION, FS_w_password, {v:NULL},} ,
-  {"pages/ident", 8, &A1991, ft_binary, fc_volatile,   FS_r_ident, FS_w_ident, {v:NULL},} ,
-  {"memory", 144, NULL, ft_binary, fc_volatile,   FS_r_memory, FS_w_memory, {v:NULL},} ,
+  {"settings", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
+  {"settings/reset_password", 8, &A1991, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_reset_password, {v:NULL},},
+  {"settings/change_password", 8, &A1991, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_change_password, {v:NULL},},
+  {"settings/password", 8, &A1991, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_password, {v:NULL},},
+  {"settings/ident", 8, &A1991, ft_binary, fc_volatile, FS_r_ident, FS_w_ident, {v:NULL},},
+  {"settings/page", 48, &A1991, ft_binary, fc_volatile, FS_r_page, FS_w_page, {v:NULL},},
+  {"pages", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
+  {"pages/page", 48, &A1991, ft_binary, fc_volatile, FS_r_page, FS_w_page, {v:NULL},},
+  {"pages/password", 8, &A1991, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_password, {v:NULL},},
+  {"pages/ident", 8, &A1991, ft_binary, fc_volatile, FS_r_ident, FS_w_ident, {v:NULL},},
+  {"memory", 144, NULL, ft_binary, fc_volatile, FS_r_memory, FS_w_memory, {v:NULL},},
 };
 
 DeviceEntry(02, DS1991);
 
 struct filetype DS1425[] = {
 	F_STANDARD,
-  {"settings",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile,   NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},} ,
-  {"settings/reset_password", 8, &A1991, ft_binary, fc_stable,   NO_READ_FUNCTION, FS_w_reset_password, {v:NULL},} ,
-  {"settings/change_password", 8, &A1991, ft_binary, fc_stable,   NO_READ_FUNCTION, FS_w_change_password, {v:NULL},} ,
-  {"settings/password", 8, &A1991, ft_binary, fc_stable,   NO_READ_FUNCTION, FS_w_password, {v:NULL},} ,
-  {"settings/ident", 8, &A1991, ft_binary, fc_volatile,   FS_r_ident, FS_w_ident, {v:NULL},} ,
-  {"settings/page", 48, &A1991, ft_binary, fc_volatile,   FS_r_page, FS_w_page, {v:NULL},} ,
-  {"pages",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile,   NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},} ,
-  {"pages/page", 48, &A1991, ft_binary, fc_volatile,   FS_r_page, FS_w_page, {v:NULL},} ,
-  {"pages/password", 8, &A1991, ft_binary, fc_stable,   NO_READ_FUNCTION, FS_w_password, {v:NULL},} ,
-  {"pages/ident", 8, &A1991, ft_binary, fc_volatile,   FS_r_ident, FS_w_ident, {v:NULL},} ,
-  {"memory", 144, NULL, ft_binary, fc_volatile,   FS_r_memory, FS_w_memory, {v:NULL},} ,
+  {"settings", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
+  {"settings/reset_password", 8, &A1991, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_reset_password, {v:NULL},},
+  {"settings/change_password", 8, &A1991, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_change_password, {v:NULL},},
+  {"settings/password", 8, &A1991, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_password, {v:NULL},},
+  {"settings/ident", 8, &A1991, ft_binary, fc_volatile, FS_r_ident, FS_w_ident, {v:NULL},},
+  {"settings/page", 48, &A1991, ft_binary, fc_volatile, FS_r_page, FS_w_page, {v:NULL},},
+  {"pages", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
+  {"pages/page", 48, &A1991, ft_binary, fc_volatile, FS_r_page, FS_w_page, {v:NULL},},
+  {"pages/password", 8, &A1991, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_password, {v:NULL},},
+  {"pages/ident", 8, &A1991, ft_binary, fc_volatile, FS_r_ident, FS_w_ident, {v:NULL},},
+  {"memory", 144, NULL, ft_binary, fc_volatile, FS_r_memory, FS_w_memory, {v:NULL},},
 };
 
 DeviceEntry(82, DS1425);
@@ -104,29 +104,16 @@ static BYTE global_passwd[3][8] = { "", "", "" };
 /* ------- Functions ------------ */
 
 
-static int OW_r_ident(BYTE * data, const size_t size, const off_t offset,
-					  const struct parsedname *pn);
-static int OW_w_ident(const BYTE * data, const size_t size,
-					  const off_t offset, const struct parsedname *pn);
-static int OW_w_reset_password(const BYTE * data, const size_t size,
-							   const off_t offset,
-							   const struct parsedname *pn);
-static int OW_w_change_password(const BYTE * data, const size_t size,
-								const off_t offset,
-								const struct parsedname *pn);
-static int OW_r_page(BYTE * data, const size_t size, const off_t offset,
-					 const struct parsedname *pn);
-static int OW_w_page(const BYTE * data, const size_t size,
-					 const off_t offset, const struct parsedname *pn);
-static int OW_r_memory(BYTE * data, const size_t size, const off_t offset,
-					   const struct parsedname *pn);
-static int OW_w_memory(const BYTE * data, const size_t size,
-					   const off_t offset, const struct parsedname *pn);
-static int OW_r_subkey(BYTE * data, const size_t size, const off_t offset,
-					   const struct parsedname *pn, const int extension);
-static int OW_w_subkey(const BYTE * data, const size_t size,
-					   const off_t offset, const struct parsedname *pn,
-					   const int extension);
+static int OW_r_ident(BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn);
+static int OW_w_ident(const BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn);
+static int OW_w_reset_password(const BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn);
+static int OW_w_change_password(const BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn);
+static int OW_r_page(BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn);
+static int OW_w_page(const BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn);
+static int OW_r_memory(BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn);
+static int OW_w_memory(const BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn);
+static int OW_r_subkey(BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn, const int extension);
+static int OW_w_subkey(const BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn, const int extension);
 
 /* array with magic bytes representing the Copy Scratch operations */
 enum block { ALL = 0, IDENT, PASSWORD, DATA };
@@ -146,91 +133,90 @@ static const BYTE cp_array[9][8] = {
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
-static int FS_w_password(struct one_wire_query * owq)
+static int FS_w_password(struct one_wire_query *owq)
 {
-    struct parsedname * pn = PN(owq) ;
-    size_t s = OWQ_size(owq) ;
+	struct parsedname *pn = PN(owq);
+	size_t s = OWQ_size(owq);
 
-    if ( s > 8 ) s = 8 ;
-    memset(global_passwd[pn->extension], 0, 8);
-    memcpy(global_passwd[pn->extension], (BYTE *) OWQ_buffer(owq), s);
+	if (s > 8)
+		s = 8;
+	memset(global_passwd[pn->extension], 0, 8);
+	memcpy(global_passwd[pn->extension], (BYTE *) OWQ_buffer(owq), s);
 	//printf("Use password [%s] for subkey %d\n", global_passwd[pn->extension], pn->extension);
 	return 0;
 }
 
-static int FS_w_reset_password(struct one_wire_query * owq)
+static int FS_w_reset_password(struct one_wire_query *owq)
 {
-    if (OW_w_reset_password((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq)))
+	if (OW_w_reset_password((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
-static int FS_w_change_password(struct one_wire_query * owq)
+static int FS_w_change_password(struct one_wire_query *owq)
 {
-    if (OW_w_change_password((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq)))
+	if (OW_w_change_password((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
-static int FS_r_page(struct one_wire_query * owq)
+static int FS_r_page(struct one_wire_query *owq)
 {
-    if (OW_r_page((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq)))
+	if (OW_r_page((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq)))
 		return -EINVAL;
-    return OWQ_size(owq);
+	return OWQ_size(owq);
 }
 
-static int FS_w_page(struct one_wire_query * owq)
+static int FS_w_page(struct one_wire_query *owq)
 {
-    if (OW_w_page((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq)))
+	if (OW_w_page((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
-static int FS_r_ident(struct one_wire_query * owq)
+static int FS_r_ident(struct one_wire_query *owq)
 {
-    if (OW_r_ident((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq)))
+	if (OW_r_ident((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq)))
 		return -EINVAL;
-    return OWQ_size(owq);
+	return OWQ_size(owq);
 }
 
-static int FS_w_ident(struct one_wire_query * owq)
+static int FS_w_ident(struct one_wire_query *owq)
 {
-    if (OWQ_offset(owq))
+	if (OWQ_offset(owq))
 		return -EINVAL;
-    if (OW_w_ident((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq)))
+	if (OW_w_ident((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
-static int FS_r_memory(struct one_wire_query * owq)
+static int FS_r_memory(struct one_wire_query *owq)
 {
-    if (OW_r_memory((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq)))
+	if (OW_r_memory((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq)))
 		return -EINVAL;
-    return OWQ_size(owq);
+	return OWQ_size(owq);
 }
 
-static int FS_w_memory(struct one_wire_query * owq)
+static int FS_w_memory(struct one_wire_query *owq)
 {
-    if (OW_w_memory((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq)))
+	if (OW_w_memory((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
-static int OW_w_reset_password(const BYTE * data, const size_t size,
-							   const off_t offset,
-							   const struct parsedname *pn)
+static int OW_w_reset_password(const BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn)
 {
 	BYTE set_password[3] = { _1W_WRITE_PASSWORD, 0x00, 0x00 };
 	BYTE passwd[8];
 	BYTE ident[8];
 	struct transaction_log tscratch[] = {
 		TRXN_START,
-        TRXN_WRITE3(set_password),
-        TRXN_READ(ident, 8),
-        TRXN_WRITE(ident, 8),
-        TRXN_WRITE(ident, 8),
-        TRXN_WRITE(passwd, 8),
-        TRXN_END,
+		TRXN_WRITE3(set_password),
+		TRXN_READ(ident, 8),
+		TRXN_WRITE(ident, 8),
+		TRXN_WRITE(ident, 8),
+		TRXN_WRITE(passwd, 8),
+		TRXN_END,
 	};
 
 
@@ -251,18 +237,16 @@ static int OW_w_reset_password(const BYTE * data, const size_t size,
 	return 0;
 }
 
-static int OW_w_subkey(const BYTE * data, const size_t size,
-					   const off_t offset, const struct parsedname *pn,
-					   const int extension)
+static int OW_w_subkey(const BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn, const int extension)
 {
 	BYTE p[4] = { _1W_WRITE_SUBKEY, 0x00, 0x00, 0x00 };	// write subkey
 	BYTE ident[8];
 	struct transaction_log tscratch[] = {
 		TRXN_START,
-        TRXN_WRITE3(p),
-        TRXN_READ(ident,8),
-        TRXN_WRITE(global_passwd[extension], 8),
-        TRXN_WRITE( &data[0x10], size - 0x10),
+		TRXN_WRITE3(p),
+		TRXN_READ(ident, 8),
+		TRXN_WRITE(global_passwd[extension], 8),
+		TRXN_WRITE(&data[0x10], size - 0x10),
 		TRXN_END,
 	};
 
@@ -279,16 +263,15 @@ static int OW_w_subkey(const BYTE * data, const size_t size,
 	return 0;
 }
 
-static int OW_r_subkey(BYTE * data, const size_t size, const off_t offset,
-					   const struct parsedname *pn, const int extension)
+static int OW_r_subkey(BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn, const int extension)
 {
 	BYTE p[3] = { _1W_READ_SUBKEY, 0x00, 0x00 };	// read subkey
 	struct transaction_log tscratch[] = {
 		TRXN_START,
-        TRXN_WRITE3(p),
-        TRXN_READ(data,8),
-        TRXN_WRITE(global_passwd[extension], 8),
-        TRXN_WRITE( &data[0x10 + offset], 0x30 - offset),
+		TRXN_WRITE3(p),
+		TRXN_READ(data, 8),
+		TRXN_WRITE(global_passwd[extension], 8),
+		TRXN_WRITE(&data[0x10 + offset], 0x30 - offset),
 		TRXN_END,
 	};
 
@@ -314,8 +297,7 @@ static int OW_r_subkey(BYTE * data, const size_t size, const off_t offset,
 	return 0;
 }
 
-static int OW_r_memory(BYTE * data, const size_t size, const off_t offset,
-					   const struct parsedname *pn)
+static int OW_r_memory(BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn)
 {
 	BYTE all_data[0x40];
 	int i, ret, nr_bytes;
@@ -339,8 +321,7 @@ static int OW_r_memory(BYTE * data, const size_t size, const off_t offset,
 	return 0;
 }
 
-static int OW_w_memory(const BYTE * data, const size_t size,
-					   const off_t offset, const struct parsedname *pn)
+static int OW_w_memory(const BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn)
 {
 	BYTE all_data[0x40];
 	int i, ret, nr_bytes;
@@ -371,8 +352,7 @@ static int OW_w_memory(const BYTE * data, const size_t size,
 }
 
 // size and offset already bounds checked
-static int OW_r_ident(BYTE * data, const size_t size, const off_t offset,
-					  const struct parsedname *pn)
+static int OW_r_ident(BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn)
 {
 	BYTE all_data[0x40];
 	//printf("OW_r_ident\n");
@@ -384,24 +364,23 @@ static int OW_r_ident(BYTE * data, const size_t size, const off_t offset,
 	return 0;
 }
 
-static int OW_w_ident(const BYTE * data, const size_t size,
-					  const off_t offset, const struct parsedname *pn)
+static int OW_w_ident(const BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn)
 {
 	BYTE write_scratch[3] = { _1W_WRITE_SCRATCHPAD, 0x00, 0x00 };
 	BYTE copy_scratch[3] = { _1W_COPY_SCRATCHPAD, 0x00, 0x00 };
 	BYTE all_data[0x40];
 	struct transaction_log tscratch[] = {
 		TRXN_START,
-        TRXN_WRITE3(write_scratch),
-        TRXN_WRITE(all_data, 0x40),
+		TRXN_WRITE3(write_scratch),
+		TRXN_WRITE(all_data, 0x40),
 		TRXN_END,
 	};
 	struct transaction_log tcopy[] = {
 		TRXN_START,
-        TRXN_WRITE3(copy_scratch),
-        TRXN_WRITE( cp_array[IDENT], 8),
-        TRXN_WRITE(global_passwd[pn->extension], 8),
-        TRXN_END,
+		TRXN_WRITE3(copy_scratch),
+		TRXN_WRITE(cp_array[IDENT], 8),
+		TRXN_WRITE(global_passwd[pn->extension], 8),
+		TRXN_END,
 	};
 
 	//printf("OW_w_ident\n");
@@ -424,24 +403,22 @@ static int OW_w_ident(const BYTE * data, const size_t size,
 	return 0;
 }
 
-static int OW_w_change_password(const BYTE * data, const size_t size,
-								const off_t offset,
-								const struct parsedname *pn)
+static int OW_w_change_password(const BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn)
 {
 	BYTE write_scratch[3] = { _1W_WRITE_SCRATCHPAD, 0x00, 0x00 };
 	BYTE copy_scratch[3] = { _1W_COPY_SCRATCHPAD, 0x00, 0x00 };
 	BYTE all_data[0x40];
 	struct transaction_log tscratch[] = {
 		TRXN_START,
-        TRXN_WRITE3(write_scratch),
-        TRXN_WRITE(all_data, 0x40),
-        TRXN_END,
+		TRXN_WRITE3(write_scratch),
+		TRXN_WRITE(all_data, 0x40),
+		TRXN_END,
 	};
 	struct transaction_log tcopy[] = {
 		TRXN_START,
-        TRXN_WRITE3(copy_scratch),
-        TRXN_WRITE( cp_array[PASSWORD], 8),
-        TRXN_WRITE(global_passwd[pn->extension], 8),
+		TRXN_WRITE3(copy_scratch),
+		TRXN_WRITE(cp_array[PASSWORD], 8),
+		TRXN_WRITE(global_passwd[pn->extension], 8),
 		TRXN_END,
 	};
 
@@ -465,8 +442,7 @@ static int OW_w_change_password(const BYTE * data, const size_t size,
 	return 0;
 }
 
-static int OW_r_page(BYTE * data, const size_t size, const off_t offset,
-					 const struct parsedname *pn)
+static int OW_r_page(BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn)
 {
 	BYTE all_data[0x40];
 	int ret;
@@ -482,8 +458,7 @@ static int OW_r_page(BYTE * data, const size_t size, const off_t offset,
 	return 0;
 }
 
-static int OW_w_page(const BYTE * data, const size_t size,
-					 const off_t offset, const struct parsedname *pn)
+static int OW_w_page(const BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn)
 {
 	BYTE write_scratch[3] = { _1W_WRITE_SCRATCHPAD, 0xC0, BYTE_INVERSE(0xC0) };
 	BYTE copy_scratch[3] = { _1W_COPY_SCRATCHPAD, 0x00, 0x00 };
@@ -492,14 +467,14 @@ static int OW_w_page(const BYTE * data, const size_t size,
 	size_t left = size;
 	struct transaction_log tscratch[] = {
 		TRXN_START,
-        TRXN_WRITE3(write_scratch),
-        TRXN_WRITE(all_data, 0x40),
+		TRXN_WRITE3(write_scratch),
+		TRXN_WRITE(all_data, 0x40),
 		TRXN_END,
 	};
 	struct transaction_log tcopy[] = {
 		TRXN_START,
-        TRXN_WRITE3(copy_scratch),
-        TRXN_WRITE(global_passwd[pn->extension], 8),
+		TRXN_WRITE3(copy_scratch),
+		TRXN_WRITE(global_passwd[pn->extension], 8),
 		TRXN_END,
 	};
 

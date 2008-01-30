@@ -65,7 +65,7 @@ $Id$
     25-05-2003 iButtonLink device
 */
 
-#ifndef OW_LOCALTYPES_H					/* tedious wrapper */
+#ifndef OW_LOCALTYPES_H			/* tedious wrapper */
 #define OW_LOCALTYPES_H
 
 #include <time.h>

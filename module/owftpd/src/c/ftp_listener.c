@@ -216,30 +216,23 @@ static void *connection_acceptor(void *v)
 		file_descriptor = accept(f->file_descriptor, (struct sockaddr *) &client_addr, &addr_len);
 		if (file_descriptor >= 0) {
 			tcp_nodelay = 1;
-			if (setsockopt
-				(file_descriptor, IPPROTO_TCP, TCP_NODELAY, (void *) &tcp_nodelay,
-				 sizeof(int)) != 0) {
-				ERROR_CONNECT
-					("Error in setsockopt(), FTP server dropping connection\n");
+			if (setsockopt(file_descriptor, IPPROTO_TCP, TCP_NODELAY, (void *) &tcp_nodelay, sizeof(int)) != 0) {
+				ERROR_CONNECT("Error in setsockopt(), FTP server dropping connection\n");
 				close(file_descriptor);
 				continue;
 			}
 
 			addr_len = sizeof(sockaddr_storage_t);
-			if (getsockname
-				(file_descriptor, (struct sockaddr *) &server_addr, &addr_len) == -1) {
-				ERROR_CONNECT
-					("Error in getsockname(), FTP server dropping connection\n");
+			if (getsockname(file_descriptor, (struct sockaddr *) &server_addr, &addr_len) == -1) {
+				ERROR_CONNECT("Error in getsockname(), FTP server dropping connection\n");
 				close(file_descriptor);
 				continue;
 			}
 
-			info =
-				(struct connection_info_s *)
+			info = (struct connection_info_s *)
 				malloc(sizeof(struct connection_info_s));
 			if (info == NULL) {
-				LEVEL_CONNECT
-					("Out of memory, FTP server dropping connection\n");
+				LEVEL_CONNECT("Out of memory, FTP server dropping connection\n");
 				close(file_descriptor);
 				continue;
 			}
@@ -247,12 +240,8 @@ static void *connection_acceptor(void *v)
 
 			telnet_session_init(&info->telnet_session, file_descriptor, file_descriptor);
 
-			if (!ftp_session_init(&info->ftp_session,
-								  &client_addr,
-								  &server_addr,
-								  &info->telnet_session, f->dir)) {
-				LEVEL_CONNECT
-					("Eerror initializing FTP session, FTP server exiting\n");
+			if (!ftp_session_init(&info->ftp_session, &client_addr, &server_addr, &info->telnet_session, f->dir)) {
+				LEVEL_CONNECT("Eerror initializing FTP session, FTP server exiting\n");
 				close(file_descriptor);
 				telnet_session_destroy(&info->telnet_session);
 				free(info);
@@ -260,8 +249,7 @@ static void *connection_acceptor(void *v)
 			}
 
 
-			error_code = pthread_create(&thread_id,
-										NULL, connection_handler, info);
+			error_code = pthread_create(&thread_id, NULL, connection_handler, info);
 
 			if (error_code != 0) {
 				errno = error_code;
@@ -280,8 +268,7 @@ static void *connection_acceptor(void *v)
 				++num_error;
 			}
 			if (num_error >= MAX_ACCEPT_ERROR) {
-				LEVEL_CONNECT
-					("Too many consecutive errors, FTP server exiting\n");
+				LEVEL_CONNECT("Too many consecutive errors, FTP server exiting\n");
 				return NULL;
 			}
 		}
@@ -300,9 +287,7 @@ static char *addr2string(const sockaddr_storage_t * s)
 	{
 		static char addr[IP_ADDRSTRLEN + 1];
 		int error;
-		error = getnameinfo((struct sockaddr *) s,
-							sizeof(sockaddr_storage_t),
-							addr, sizeof(addr), NULL, 0, NI_NUMERICHOST);
+		error = getnameinfo((struct sockaddr *) s, sizeof(sockaddr_storage_t), addr, sizeof(addr), NULL, 0, NI_NUMERICHOST);
 		if (error != 0) {
 			LEVEL_CONNECT("getnameinfo error; %s\n", gai_strerror(error));
 			ret_val = "Unknown IP";
@@ -341,9 +326,7 @@ static void *connection_handler(void *v)
 	/* process global data */
 	pthread_mutex_lock(&f->mutex);
 	num_connections = ++f->num_connections;
-	ERROR_DEBUG("%s port %d connection\n",
-				addr2string(&info->ftp_session.client_addr),
-				ntohs(SINPORT(&info->ftp_session.client_addr)));
+	ERROR_DEBUG("%s port %d connection\n", addr2string(&info->ftp_session.client_addr), ntohs(SINPORT(&info->ftp_session.client_addr)));
 	pthread_mutex_unlock(&f->mutex);
 
 	/* handle the session */
@@ -354,18 +337,14 @@ static void *connection_handler(void *v)
 	} else {
 
 		/* too many users */
-		sprintf(drop_reason,
-				"Too many users logged in, dropping connection (%d logins maximum)",
-				f->max_connections);
+		sprintf(drop_reason, "Too many users logged in, dropping connection (%d logins maximum)", f->max_connections);
 		ftp_session_drop(&info->ftp_session, drop_reason);
 
 		/* log the rejection */
 		pthread_mutex_lock(&f->mutex);
 		LEVEL_CONNECT
 			("%s port %d exceeds max users (%d), dropping connection\n",
-			 addr2string(&info->ftp_session.client_addr),
-			 ntohs(SINPORT(&info->ftp_session.client_addr)),
-			 num_connections);
+			 addr2string(&info->ftp_session.client_addr), ntohs(SINPORT(&info->ftp_session.client_addr)), num_connections);
 		pthread_mutex_unlock(&f->mutex);
 
 	}
@@ -392,9 +371,7 @@ static void connection_handler_cleanup(void *v)
 	f->num_connections--;
 	pthread_cond_signal(&f->shutdown_cond);
 
-	LEVEL_CONNECT("%s port %d disconnected\n",
-				  addr2string(&info->ftp_session.client_addr),
-				  ntohs(SINPORT(&info->ftp_session.client_addr)));
+	LEVEL_CONNECT("%s port %d disconnected\n", addr2string(&info->ftp_session.client_addr), ntohs(SINPORT(&info->ftp_session.client_addr)));
 
 	pthread_mutex_unlock(&f->mutex);
 

@@ -56,24 +56,24 @@ READ_FUNCTION(FS_counter);
 
 struct aggregate A1963S = { 16, ag_numbers, ag_separate, };
 struct filetype DS1963S[] = {
-    F_STANDARD,
-    {"pages",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile,   NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},} ,
-    {"pages/page", 32, &A1963S, ft_binary, fc_stable,   FS_r_page, FS_w_page, {v:NULL},} ,
-    {"pages/count",PROPERTY_LENGTH_UNSIGNED, &A1963S, ft_unsigned, fc_volatile,   FS_counter, NO_WRITE_FUNCTION, {v:NULL},} ,
-    {"pages/password", 8, NULL, ft_binary, fc_stable,   NO_READ_FUNCTION, FS_w_password, {v:NULL},} ,
-    {"memory", 512, NULL, ft_binary, fc_stable,   FS_r_memory, FS_w_memory, {v:NULL},} ,
-    {"password", 8, NULL, ft_binary, fc_stable,   NO_READ_FUNCTION, FS_w_password, {v:NULL},} ,
+	F_STANDARD,
+  {"pages", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
+  {"pages/page", 32, &A1963S, ft_binary, fc_stable, FS_r_page, FS_w_page, {v:NULL},},
+  {"pages/count", PROPERTY_LENGTH_UNSIGNED, &A1963S, ft_unsigned, fc_volatile, FS_counter, NO_WRITE_FUNCTION, {v:NULL},},
+  {"pages/password", 8, NULL, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_password, {v:NULL},},
+  {"memory", 512, NULL, ft_binary, fc_stable, FS_r_memory, FS_w_memory, {v:NULL},},
+  {"password", 8, NULL, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_password, {v:NULL},},
 };
 
 DeviceEntryExtended(18, DS1963S, DEV_resume | DEV_ovdr);
 
 struct aggregate A1963L = { 16, ag_numbers, ag_separate, };
 struct filetype DS1963L[] = {
-    F_STANDARD,
-    {"pages",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile,   NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},} ,
-    {"pages/page", 32, &A1963L, ft_binary, fc_stable,   FS_r_page, FS_w_page, {v: NULL},} ,
-    {"pages/count",PROPERTY_LENGTH_UNSIGNED, &A1963L, ft_unsigned, fc_volatile,   FS_counter, NO_WRITE_FUNCTION, {v:NULL},} ,
-    {"memory", 512, NULL, ft_binary, fc_stable,   FS_r_memory, FS_w_memory, {v:NULL},} ,
+	F_STANDARD,
+  {"pages", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
+  {"pages/page", 32, &A1963L, ft_binary, fc_stable, FS_r_page, FS_w_page, {v:NULL},},
+  {"pages/count", PROPERTY_LENGTH_UNSIGNED, &A1963L, ft_unsigned, fc_volatile, FS_counter, NO_WRITE_FUNCTION, {v:NULL},},
+  {"memory", 512, NULL, ft_binary, fc_stable, FS_r_memory, FS_w_memory, {v:NULL},},
 };
 
 DeviceEntryExtended(1A, DS1963L, DEV_ovdr);
@@ -88,120 +88,114 @@ DeviceEntryExtended(1A, DS1963L, DEV_ovdr);
 
 /* ------- Functions ------------ */
 
-static int OW_w_mem( BYTE * data,  size_t size,
-                     off_t offset,  struct parsedname *pn);
-static int OW_r_counter(struct one_wire_query * owq, size_t page, size_t pagesize) ;
+static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
+static int OW_r_counter(struct one_wire_query *owq, size_t page, size_t pagesize);
 
-static int FS_w_password(struct one_wire_query * owq)
+static int FS_w_password(struct one_wire_query *owq)
 {
-    (void) owq ;
-    return -EINVAL;
+	(void) owq;
+	return -EINVAL;
 }
 
-static int FS_r_page(struct one_wire_query * owq)
+static int FS_r_page(struct one_wire_query *owq)
 {
-    size_t pagesize = 32 ;
-    if (OWQ_readwrite_paged( owq, OWQ_pn(owq).extension, pagesize, OW_r_mem_toss8 ) )
-        return -EINVAL;
-    return 0;
+	size_t pagesize = 32;
+	if (OWQ_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_r_mem_toss8))
+		return -EINVAL;
+	return 0;
 }
 
-static int FS_r_memory(struct one_wire_query * owq)
+static int FS_r_memory(struct one_wire_query *owq)
 {
-    /* read is not page-limited */
-    size_t pagesize = 32 ;
-    if (OWQ_readwrite_paged( owq, 0, pagesize, OW_r_mem_toss8 ) )
-        return -EINVAL;
-    return 0;
+	/* read is not page-limited */
+	size_t pagesize = 32;
+	if (OWQ_readwrite_paged(owq, 0, pagesize, OW_r_mem_toss8))
+		return -EINVAL;
+	return 0;
 }
 
-static int FS_counter(struct one_wire_query * owq)
+static int FS_counter(struct one_wire_query *owq)
 {
-    size_t pagesize = 32 ;
-    if (OW_r_counter(owq, OWQ_pn(owq).extension, pagesize ))
-        return -EINVAL;
-    return 0;
+	size_t pagesize = 32;
+	if (OW_r_counter(owq, OWQ_pn(owq).extension, pagesize))
+		return -EINVAL;
+	return 0;
 }
 
-static int FS_w_page(struct one_wire_query * owq)
+static int FS_w_page(struct one_wire_query *owq)
 {
-    size_t pagesize = 32 ;
-    if (OW_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem))
-        return -EINVAL;
-    return 0;
+	size_t pagesize = 32;
+	if (OW_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem))
+		return -EINVAL;
+	return 0;
 }
 
-static int FS_w_memory(struct one_wire_query * owq)
+static int FS_w_memory(struct one_wire_query *owq)
 {
-    size_t pagesize = 32 ;
-    if (OW_readwrite_paged(owq, 0, pagesize, OW_w_mem))
-        return -EINVAL;
-    return 0;
+	size_t pagesize = 32;
+	if (OW_readwrite_paged(owq, 0, pagesize, OW_w_mem))
+		return -EINVAL;
+	return 0;
 }
 
 /* paged, and pre-screened */
-static int OW_w_mem( BYTE * data,  size_t size,
-                     off_t offset,  struct parsedname *pn)
+static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
 {
-    BYTE p[1 + 2 + 32 + 2] = { _1W_WRITE_SCRATCHPAD, LOW_HIGH_ADDRESS(offset), };
-    struct transaction_log tcopy[] = {
-        TRXN_START,
-        TRXN_WRITE(p,3+size),
-        TRXN_END,
-    };
-    struct transaction_log tcopy_crc16[] = {
-        TRXN_START,
-        TRXN_WR_CRC16(p,3+size,0),
-        TRXN_END,
-    };
-    struct transaction_log tread[] = {
-        TRXN_START,
-        TRXN_WRITE1(p),
-        TRXN_READ(&p[1],3+size),
-        TRXN_COMPARE(data,&p[4],size),
-        TRXN_END,
-    };
-    struct transaction_log tsram[] = {
-        TRXN_START,
-        TRXN_WRITE(p,4),
-        TRXN_END,
-    };
+	BYTE p[1 + 2 + 32 + 2] = { _1W_WRITE_SCRATCHPAD, LOW_HIGH_ADDRESS(offset), };
+	struct transaction_log tcopy[] = {
+		TRXN_START,
+		TRXN_WRITE(p, 3 + size),
+		TRXN_END,
+	};
+	struct transaction_log tcopy_crc16[] = {
+		TRXN_START,
+		TRXN_WR_CRC16(p, 3 + size, 0),
+		TRXN_END,
+	};
+	struct transaction_log tread[] = {
+		TRXN_START,
+		TRXN_WRITE1(p),
+		TRXN_READ(&p[1], 3 + size),
+		TRXN_COMPARE(data, &p[4], size),
+		TRXN_END,
+	};
+	struct transaction_log tsram[] = {
+		TRXN_START,
+		TRXN_WRITE(p, 4),
+		TRXN_END,
+	};
 
-    /* Copy to scratchpad */
-    memcpy(&p[3], data, size);
+	/* Copy to scratchpad */
+	memcpy(&p[3], data, size);
 
-    if (BUS_transaction(
-            ((offset + size) & 0x1F) != 0 ? tcopy : tcopy_crc16,
-            pn))
-        return 1;
+	if (BUS_transaction(((offset + size) & 0x1F) != 0 ? tcopy : tcopy_crc16, pn))
+		return 1;
 
-    /* Re-read scratchpad and compare */
-    /* Note that we tacitly shift the data one byte down for the E/S byte */
-    p[0] = _1W_READ_SCRATCHPAD;
-    if (BUS_transaction(tread, pn))
-        return 1;
+	/* Re-read scratchpad and compare */
+	/* Note that we tacitly shift the data one byte down for the E/S byte */
+	p[0] = _1W_READ_SCRATCHPAD;
+	if (BUS_transaction(tread, pn))
+		return 1;
 
-    /* Copy Scratchpad to SRAM */
-    p[0] = _1W_COPY_SCRATCHPAD;
-    if (BUS_transaction(tsram, pn))
-        return 1;
+	/* Copy Scratchpad to SRAM */
+	p[0] = _1W_COPY_SCRATCHPAD;
+	if (BUS_transaction(tsram, pn))
+		return 1;
 
-    return 0;
+	return 0;
 }
 
 /* read counter (just past memory) */
 /* Nathan Holmes helped troubleshoot this one! */
-static int OW_r_counter(struct one_wire_query * owq, size_t page, size_t pagesize)
+static int OW_r_counter(struct one_wire_query *owq, size_t page, size_t pagesize)
 {
-    BYTE extra[8];
-    if ( OW_r_mem_counter_bytes( extra, page, pagesize, PN(owq) ) ) return 1 ;
-    if (extra[4] != _1W_COUNTER_FILL ||
-        extra[5] != _1W_COUNTER_FILL ||
-        extra[6] != _1W_COUNTER_FILL ||
-        extra[7] != _1W_COUNTER_FILL ) {
-        return 1;
-    }
-    /* counter is held in the 4 bytes after the data */
-    OWQ_U(owq) = UT_uint32(extra);
-    return 0 ;
+	BYTE extra[8];
+	if (OW_r_mem_counter_bytes(extra, page, pagesize, PN(owq)))
+		return 1;
+	if (extra[4] != _1W_COUNTER_FILL || extra[5] != _1W_COUNTER_FILL || extra[6] != _1W_COUNTER_FILL || extra[7] != _1W_COUNTER_FILL) {
+		return 1;
+	}
+	/* counter is held in the 4 bytes after the data */
+	OWQ_U(owq) = UT_uint32(extra);
+	return 0;
 }

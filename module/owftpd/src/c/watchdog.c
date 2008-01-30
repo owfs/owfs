@@ -166,8 +166,7 @@ static void *watcher(void *void_w)
 		time(&now);
 
 		pthread_mutex_lock(&w->mutex);
-		while ((w->oldest != NULL) &&
-			   (difftime(now, w->oldest->alarm_time) > 0)) {
+		while ((w->oldest != NULL) && (difftime(now, w->oldest->alarm_time) > 0)) {
 			watched = w->oldest;
 
 			/*******************************************************

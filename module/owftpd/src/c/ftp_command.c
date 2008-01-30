@@ -55,14 +55,11 @@ struct {
 
 /* prototypes */
 static const char *copy_string(char *dst, const char *src);
-static const char *parse_host_port(struct sockaddr_in *addr,
-								   const char *s);
+static const char *parse_host_port(struct sockaddr_in *addr, const char *s);
 static const char *parse_number(int *num, const char *s, int max_num);
 static const char *parse_offset(off_t * ofs, const char *s);
-static const char *parse_host_port_long(sockaddr_storage_t * sa,
-										const char *s);
-static const char *parse_host_port_ext(sockaddr_storage_t * sa,
-									   const char *s);
+static const char *parse_host_port_long(sockaddr_storage_t * sa, const char *s);
+static const char *parse_host_port_ext(sockaddr_storage_t * sa, const char *s);
 
 int ftp_command_parse(const char *input, struct ftp_command_s *cmd)
 {
@@ -76,9 +73,7 @@ int ftp_command_parse(const char *input, struct ftp_command_s *cmd)
 
 	/* see if our input starts with a valid command */
 	for (match = 0; match < NUM_COMMAND; ++match) {
-		if (strncasecmp
-			(input, command_def[match].name,
-			 strlen(command_def[match].name)) == 0)
+		if (strncasecmp(input, command_def[match].name, strlen(command_def[match].name)) == 0)
 			break;
 	}
 
@@ -152,9 +147,7 @@ int ftp_command_parse(const char *input, struct ftp_command_s *cmd)
 			if (optional_number != NULL) {
 				input = optional_number;
 			} else {
-				if ((tolower(input[0]) == 'a') &&
-					(tolower(input[1]) == 'l') &&
-					(tolower(input[2]) == 'l')) {
+				if ((tolower(input[0]) == 'a') && (tolower(input[1]) == 'l') && (tolower(input[2]) == 'l')) {
 					tmp.arg[0].num = EPSV_ALL;
 					input += 3;
 				} else {
@@ -259,9 +252,7 @@ static const char *copy_string(char *dst, const char *src)
 	daemon_assert(dst != NULL);
 	daemon_assert(src != NULL);
 
-	for (i = 0;
-		 (i <= MAX_STRING_LEN) && (src[i] != '\0') && (src[i] != '\n');
-		 i++) {
+	for (i = 0; (i <= MAX_STRING_LEN) && (src[i] != '\0') && (src[i] != '\n'); i++) {
 		dst[i] = src[i];
 	}
 	dst[i] = '\0';
@@ -306,8 +297,7 @@ static const char *parse_host_port(struct sockaddr_in *addr, const char *s)
 	daemon_assert(octets[3] <= 255);
 
 	/* convert our number to a IP/port */
-	sprintf(addr_str, "%d.%d.%d.%d",
-			octets[0], octets[1], octets[2], octets[3]);
+	sprintf(addr_str, "%d.%d.%d.%d", octets[0], octets[1], octets[2], octets[3]);
 	port = (octets[4] << 8) | octets[5];
 #ifdef HAVE_INET_ATON
 	if (inet_aton(addr_str, &in_addr) == 0) {
@@ -329,8 +319,7 @@ static const char *parse_host_port(struct sockaddr_in *addr, const char *s)
 
 /* note: returns success even for unknown address families */
 /*       this is okay, as long as subsequent uses VERIFY THE FAMILY first */
-static const char *parse_host_port_long(sockaddr_storage_t * sa,
-										const char *s)
+static const char *parse_host_port_long(sockaddr_storage_t * sa, const char *s)
 {
 	int i;
 	int family;
@@ -424,8 +413,7 @@ static const char *parse_host_port_long(sockaddr_storage_t * sa,
 	return s;
 }
 
-static const char *parse_host_port_ext(sockaddr_storage_t * sa,
-									   const char *s)
+static const char *parse_host_port_ext(sockaddr_storage_t * sa, const char *s)
 {
 	int delimeter;
 	int family;

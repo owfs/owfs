@@ -54,8 +54,8 @@ WRITE_FUNCTION(FS_w_PIO);
 
 struct filetype DS2405[] = {
 	F_STANDARD,
-  {"PIO",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable,   FS_r_PIO, FS_w_PIO, {v:NULL},} ,
-  {"sensed",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile,   FS_r_sense, NO_WRITE_FUNCTION, {v:NULL},} ,
+  {"PIO", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, FS_r_PIO, FS_w_PIO, {v:NULL},},
+  {"sensed", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_sense, NO_WRITE_FUNCTION, {v:NULL},},
 };
 
 DeviceEntryExtended(05, DS2405, DEV_alarm);
@@ -67,29 +67,29 @@ static int OW_r_PIO(int *val, const struct parsedname *pn);
 static int OW_w_PIO(int val, const struct parsedname *pn);
 
 /* 2405 switch */
-static int FS_r_PIO(struct one_wire_query * owq)
+static int FS_r_PIO(struct one_wire_query *owq)
 {
 	int num;
-    if (OW_r_PIO(&num, PN(owq)))
+	if (OW_r_PIO(&num, PN(owq)))
 		return -EINVAL;
-    OWQ_Y(owq) = (num != 0);
+	OWQ_Y(owq) = (num != 0);
 	return 0;
 }
 
 /* 2405 switch */
-static int FS_r_sense(struct one_wire_query * owq)
+static int FS_r_sense(struct one_wire_query *owq)
 {
 	int num;
-    if (OW_r_sense(&num, PN(owq)))
+	if (OW_r_sense(&num, PN(owq)))
 		return -EINVAL;
-    OWQ_Y(owq) = (num != 0);
+	OWQ_Y(owq) = (num != 0);
 	return 0;
 }
 
 /* write 2405 switch */
-static int FS_w_PIO(struct one_wire_query * owq)
+static int FS_w_PIO(struct one_wire_query *owq)
 {
-    if (OW_w_PIO(OWQ_Y(owq), PN(owq)))
+	if (OW_w_PIO(OWQ_Y(owq), PN(owq)))
 		return -EINVAL;
 	return 0;
 }
@@ -100,7 +100,7 @@ static int OW_r_sense(int *val, const struct parsedname *pn)
 	BYTE inp;
 	struct transaction_log r[] = {
 		TRXN_NVERIFY,
-        TRXN_READ1(&inp),
+		TRXN_READ1(&inp),
 		TRXN_END,
 	};
 

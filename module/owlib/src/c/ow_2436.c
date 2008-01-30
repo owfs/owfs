@@ -56,10 +56,10 @@ READ_FUNCTION(FS_volts);
 struct aggregate A2436 = { 3, ag_numbers, ag_separate, };
 struct filetype DS2436[] = {
 	F_STANDARD,
-  {"pages",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile,   NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},} ,
-  {"pages/page", 32, &A2436, ft_binary, fc_stable,   FS_r_page, FS_w_page, {v:NULL},} ,
-  {"volts",PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_volatile,   FS_volts, NO_WRITE_FUNCTION, {v:NULL},} ,
-  {"temperature",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile,   FS_temp, NO_WRITE_FUNCTION, {v:NULL},} ,
+  {"pages", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
+  {"pages/page", 32, &A2436, ft_binary, fc_stable, FS_r_page, FS_w_page, {v:NULL},},
+  {"volts", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_volatile, FS_volts, NO_WRITE_FUNCTION, {v:NULL},},
+  {"temperature", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_temp, NO_WRITE_FUNCTION, {v:NULL},},
 };
 
 DeviceEntry(1B, DS2436);
@@ -86,55 +86,52 @@ DeviceEntry(1B, DS2436);
 /* ------- Functions ------------ */
 
 /* DS2436 */
-static int OW_r_page(BYTE * p, const size_t size, const off_t offset,
-					 const struct parsedname *pn);
-static int OW_w_page(const BYTE * p, const size_t size, const off_t offset,
-					 const struct parsedname *pn);
+static int OW_r_page(BYTE * p, const size_t size, const off_t offset, const struct parsedname *pn);
+static int OW_w_page(const BYTE * p, const size_t size, const off_t offset, const struct parsedname *pn);
 static int OW_temp(_FLOAT * T, const struct parsedname *pn);
 static int OW_volts(_FLOAT * V, const struct parsedname *pn);
 
 /* 2436 A/D */
-static int FS_r_page(struct one_wire_query * owq)
+static int FS_r_page(struct one_wire_query *owq)
 {
-    struct parsedname * pn = PN(owq) ;
-    if (pn->extension > 2)
+	struct parsedname *pn = PN(owq);
+	if (pn->extension > 2)
 		return -ERANGE;
-    if (OW_r_page((BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq) + ((pn->extension) << 5), pn))
+	if (OW_r_page((BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq) + ((pn->extension) << 5), pn))
 		return -EINVAL;
-    return OWQ_size(owq);
+	return OWQ_size(owq);
 }
 
-static int FS_w_page(struct one_wire_query * owq)
+static int FS_w_page(struct one_wire_query *owq)
 {
-    struct parsedname * pn = PN(owq) ;
-    if (pn->extension > 2)
+	struct parsedname *pn = PN(owq);
+	if (pn->extension > 2)
 		return -ERANGE;
-    if (OW_w_page((BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq) + ((pn->extension) << 5), pn))
+	if (OW_w_page((BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq) + ((pn->extension) << 5), pn))
 		return -EINVAL;
 	return 0;
 }
 
-static int FS_temp(struct one_wire_query * owq)
+static int FS_temp(struct one_wire_query *owq)
 {
-    if (OW_temp(&OWQ_F(owq), PN(owq)))
+	if (OW_temp(&OWQ_F(owq), PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
-static int FS_volts(struct one_wire_query * owq)
+static int FS_volts(struct one_wire_query *owq)
 {
-    if (OW_volts(&OWQ_F(owq), PN(owq)))
+	if (OW_volts(&OWQ_F(owq), PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
 /* DS2436 simple battery */
 /* only called for a single page, and that page is 0,1,2 only*/
-static int OW_r_page(BYTE * data, const size_t size, const off_t offset,
-					 const struct parsedname *pn)
+static int OW_r_page(BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn)
 {
-	int pagesize = 32 ;
-	int page = offset / pagesize ;
+	int pagesize = 32;
+	int page = offset / pagesize;
 	BYTE scratchin[] = { _1W_READ_SCRATCHPAD, offset, };
 	static BYTE copyin[] = { _1W_COPY_NV1_TO_SP1, _1W_COPY_NV2_TO_SP2, _1W_COPY_NV3_TO_SP3, };
 	BYTE *copy = &copyin[page];
@@ -146,7 +143,7 @@ static int OW_r_page(BYTE * data, const size_t size, const off_t offset,
 	struct transaction_log tscratch[] = {
 		TRXN_START,
 		TRXN_WRITE2(scratchin),
-		TRXN_READ(data,size),
+		TRXN_READ(data, size),
 		TRXN_END,
 	};
 
@@ -162,11 +159,10 @@ static int OW_r_page(BYTE * data, const size_t size, const off_t offset,
 }
 
 /* only called for a single page, and that page is 0,1,2 only*/
-static int OW_w_page(const BYTE * data, const size_t size, const off_t offset,
-					 const struct parsedname *pn)
+static int OW_w_page(const BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn)
 {
-	int pagesize = 32 ;
-	int page = offset / pagesize ;
+	int pagesize = 32;
+	int page = offset / pagesize;
 	BYTE scratchin[] = { _1W_READ_SCRATCHPAD, offset, };
 	BYTE scratchout[] = { _1W_WRITE_SCRATCHPAD, offset, };
 	BYTE p[pagesize];
@@ -175,14 +171,14 @@ static int OW_w_page(const BYTE * data, const size_t size, const off_t offset,
 	struct transaction_log twrite[] = {
 		TRXN_START,
 		TRXN_WRITE2(scratchout),
-		TRXN_WRITE(data,size),
+		TRXN_WRITE(data, size),
 		TRXN_END,
-	} ;
+	};
 	struct transaction_log tread[] = {
 		TRXN_START,
 		TRXN_WRITE2(scratchin),
-		TRXN_READ(p,size),
-		TRXN_COMPARE(p,data,size),
+		TRXN_READ(p, size),
+		TRXN_COMPARE(p, data, size),
 		TRXN_END,
 	};
 	struct transaction_log tcopy[] = {
@@ -191,9 +187,12 @@ static int OW_w_page(const BYTE * data, const size_t size, const off_t offset,
 		TRXN_END,
 	};
 
-	if (BUS_transaction(twrite, pn)) return 1 ;
-	if (BUS_transaction(tread, pn)) return 1 ;
-	if (BUS_transaction(tcopy, pn)) return 1 ;
+	if (BUS_transaction(twrite, pn))
+		return 1;
+	if (BUS_transaction(tread, pn))
+		return 1;
+	if (BUS_transaction(tcopy, pn))
+		return 1;
 
 	UT_delay(10);
 

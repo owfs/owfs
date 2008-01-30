@@ -23,21 +23,21 @@ int count_inbound_connections = 0;
 
 struct connection_in *find_connection_in(OWNET_HANDLE handle)
 {
-	struct connection_in *c_in ;
-	struct connection_in *c_ret = NULL ;
+	struct connection_in *c_in;
+	struct connection_in *c_ret = NULL;
 
-    // step through head_inbound_list linked list
-	CONNINLOCK ;
-	for ( c_in = head_inbound_list ; c_in != NULL ; c_in = c_in->next ) {
+	// step through head_inbound_list linked list
+	CONNINLOCK;
+	for (c_in = head_inbound_list; c_in != NULL; c_in = c_in->next) {
 		if (c_in->index == handle) {
-			if ( c_in->state == connection_active ) {
-				c_ret =  c_in;
+			if (c_in->state == connection_active) {
+				c_ret = c_in;
 			}
-			break ;
+			break;
 		}
 	}
-	CONNINUNLOCK ;
-	return c_ret ;
+	CONNINUNLOCK;
+	return c_ret;
 }
 
 enum bus_mode get_busmode(struct connection_in *in)
@@ -56,52 +56,52 @@ int BusIsServer(struct connection_in *in)
 /* Based on a shallow copy of "in" if not NULL */
 struct connection_in *NewIn(void)
 {
-	struct connection_in *now ;
+	struct connection_in *now;
 
-    // step through head_inbound_list linked list
-	CONNINLOCK ;
-	for ( now = head_inbound_list ; now != NULL ; now = now->next ) {
-		if ( now->state == connection_vacant ) {
+	// step through head_inbound_list linked list
+	CONNINLOCK;
+	for (now = head_inbound_list; now != NULL; now = now->next) {
+		if (now->state == connection_vacant) {
 #if OW_MT
 			pthread_mutex_init(&(now->bus_mutex), pmattr);
 #endif							/* OW_MT */
-			now->state = connection_pending ;
-			CONNINUNLOCK ;
-			return now ;
+			now->state = connection_pending;
+			CONNINUNLOCK;
+			return now;
 		}
 	}
-	now = malloc( sizeof (struct connection_in) ) ;
-	if (now!=NULL) {
-		memset(now, 0, sizeof(struct connection_in)) ;
+	now = malloc(sizeof(struct connection_in));
+	if (now != NULL) {
+		memset(now, 0, sizeof(struct connection_in));
 		now->next = head_inbound_list;	/* put in linked list at start */
 		head_inbound_list = now;
 		now->index = count_inbound_connections++;
-		now->state = connection_pending ;
+		now->state = connection_pending;
 #if OW_MT
 		pthread_mutex_init(&(now->bus_mutex), pmattr);
 #endif							/* OW_MT */
 	}
-	CONNINUNLOCK ;
+	CONNINUNLOCK;
 	return now;
 }
 
-void FreeIn(struct connection_in * target)
+void FreeIn(struct connection_in *target)
 {
-	if ( target == NULL ) {
-		return ;
+	if (target == NULL) {
+		return;
 	}
-	CONNINLOCK ;
-	switch (target->state) { 
+	CONNINLOCK;
+	switch (target->state) {
 	case connection_vacant:
-		break ;
+		break;
 	case connection_pending:
 		if (target->name) {
 			free(target->name);
 			target->name = NULL;
 		}
-		break ;
+		break;
 	case connection_active:
-		BUSLOCKIN( target ) ;
+		BUSLOCKIN(target);
 		switch (get_busmode(target)) {
 		case bus_zero:
 			if (target->connin.tcp.type)
@@ -122,9 +122,9 @@ void FreeIn(struct connection_in * target)
 			free(target->name);
 			target->name = NULL;
 		}
-		BUSUNLOCKIN( target ) ;
+		BUSUNLOCKIN(target);
 		pthread_mutex_destroy(&(target->bus_mutex));
 	}
-	target->state = connection_vacant ;
-	CONNINUNLOCK ;
+	target->state = connection_vacant;
+	CONNINUNLOCK;
 }

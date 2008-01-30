@@ -23,14 +23,12 @@ struct device *DeviceThermostat;
 
 static int device_compare(const void *a, const void *b)
 {
-	return strcmp(((const struct device *) a)->family_code,
-				  ((const struct device *) b)->family_code);
+	return strcmp(((const struct device *) a)->family_code, ((const struct device *) b)->family_code);
 }
 
 static int file_compare(const void *a, const void *b)
 {
-	return strcmp(((const struct filetype *) a)->name,
-				  ((const struct filetype *) b)->name);
+	return strcmp(((const struct filetype *) a)->name, ((const struct filetype *) b)->name);
 }
 
 void *Tree[ePN_max_type];
@@ -49,18 +47,14 @@ static void Device2Tree(const struct device *d, enum ePN_type type)
 		memmove(d_copy, d, sizeof(struct device));
 		tsearch(d_copy, &Tree[type], device_compare);
 		if (d_copy->filetype_array)
-			qsort(d_copy->filetype_array, (size_t) d_copy->count_of_filetypes,
-				  sizeof(struct filetype), file_compare);
+			qsort(d_copy->filetype_array, (size_t) d_copy->count_of_filetypes, sizeof(struct filetype), file_compare);
 	} else {
-		LEVEL_DATA
-			("Device2Tree:  Could not allocate memory for device %s\n",
-			 d->readable_name);
+		LEVEL_DATA("Device2Tree:  Could not allocate memory for device %s\n", d->readable_name);
 	}
 #else							/* __FreeBSD__ */
 	tsearch(d, &Tree[type], device_compare);
 	if (d->filetype_array)
-		qsort(d->filetype_array, (size_t) d->count_of_filetypes, sizeof(struct filetype),
-			  file_compare);
+		qsort(d->filetype_array, (size_t) d->count_of_filetypes, sizeof(struct filetype), file_compare);
 #endif							/* __FreeBSD__ */
 /*
 {
@@ -97,8 +91,7 @@ void DeviceSort(void)
 	memset(Tree, 0, sizeof(void *) * ePN_max_type);
 
 	/* Sort the filetypes for the unrecognized device */
-	qsort(NoDevice.filetype_array, (size_t) NoDevice.count_of_filetypes, sizeof(struct filetype),
-		  file_compare);
+	qsort(NoDevice.filetype_array, (size_t) NoDevice.count_of_filetypes, sizeof(struct filetype), file_compare);
 
 	Device2Tree(&d_DS1420, ePN_real);
 	Device2Tree(&d_DS1425, ePN_real);
@@ -154,7 +147,7 @@ void DeviceSort(void)
 	Device2Tree(&d_DS28EC20, ePN_real);
 	Device2Tree(&d_DS28E04, ePN_real);
 	Device2Tree(&d_LCD, ePN_real);
-    Device2Tree(&d_stats_cache, ePN_statistics);
+	Device2Tree(&d_stats_cache, ePN_statistics);
 	Device2Tree(&d_stats_directory, ePN_statistics);
 	Device2Tree(&d_stats_errors, ePN_statistics);
 	Device2Tree(&d_stats_read, ePN_statistics);
@@ -166,9 +159,9 @@ void DeviceSort(void)
 	Device2Tree(&d_sys_connections, ePN_system);
 	Device2Tree(&d_sys_configure, ePN_system);
 	Device2Tree(&d_simultaneous, ePN_real);
-    Device2Tree(&d_interface_settings, ePN_interface) ;
-    Device2Tree(&d_interface_statistics, ePN_interface) ;
-    /* Match simultaneous for special processing */
+	Device2Tree(&d_interface_settings, ePN_interface);
+	Device2Tree(&d_interface_statistics, ePN_interface);
+	/* Match simultaneous for special processing */
 	{
 		struct parsedname pn;
 		pn.type = ePN_real;

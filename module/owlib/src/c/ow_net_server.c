@@ -59,9 +59,7 @@ static int ServerAddr(struct connection_out *out)
 	//printf("ServerAddr: [%s] [%s]\n", out->host, out->service);
 
 	if ((ret = getaddrinfo(out->host, out->service, &hint, &out->ai))) {
-		ERROR_CONNECT("GetAddrInfo error [%s]=%s:%s\n",
-					  SAFESTRING(out->name), SAFESTRING(out->host),
-					  SAFESTRING(out->service));
+		ERROR_CONNECT("GetAddrInfo error [%s]=%s:%s\n", SAFESTRING(out->name), SAFESTRING(out->host), SAFESTRING(out->service));
 		return -1;
 	}
 	return 0;
@@ -74,37 +72,30 @@ static int ServerListen(struct connection_out *out)
 	int ret;
 
 	if (out->ai == NULL) {
-		LEVEL_CONNECT("Server address not yet parsed [%s]\n",
-					  SAFESTRING(out->name));
+		LEVEL_CONNECT("Server address not yet parsed [%s]\n", SAFESTRING(out->name));
 		return -1;
 	}
 
 	if (out->ai_ok == NULL)
 		out->ai_ok = out->ai;
 	do {
-		file_descriptor = socket(out->ai_ok->ai_family,
-					out->ai_ok->ai_socktype, out->ai_ok->ai_protocol);
+		file_descriptor = socket(out->ai_ok->ai_family, out->ai_ok->ai_socktype, out->ai_ok->ai_protocol);
 		if (file_descriptor >= 0) {
-			ret =
-				setsockopt(file_descriptor, SOL_SOCKET, SO_REUSEADDR, (char *) &on,
-						   sizeof(on))
+			ret = setsockopt(file_descriptor, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof(on))
 				|| bind(file_descriptor, out->ai_ok->ai_addr, out->ai_ok->ai_addrlen)
 				|| listen(file_descriptor, 10);
 			if (ret) {
-				ERROR_CONNECT("ServerListen: Socket problem [%s]\n",
-							  SAFESTRING(out->name));
+				ERROR_CONNECT("ServerListen: Socket problem [%s]\n", SAFESTRING(out->name));
 				close(file_descriptor);
 			} else {
 				out->file_descriptor = file_descriptor;
 				return file_descriptor;
 			}
 		} else {
-			ERROR_CONNECT("ServerListen: socket() [%s]",
-						  SAFESTRING(out->name));
+			ERROR_CONNECT("ServerListen: socket() [%s]", SAFESTRING(out->name));
 		}
 	} while ((out->ai_ok = out->ai_ok->ai_next));
-	ERROR_CONNECT("ServerListen: Socket problem [%s]\n",
-				  SAFESTRING(out->name));
+	ERROR_CONNECT("ServerListen: Socket problem [%s]\n", SAFESTRING(out->name));
 	return -1;
 }
 
@@ -150,15 +141,11 @@ static void ServerProcessAccept(void *vp)
 	int acceptfd;
 	int ret;
 
-	LEVEL_DEBUG("ServerProcessAccept %s[%lu] try lock %d\n",
-				SAFESTRING(out->name), (unsigned long int) pthread_self(),
-				out->index);
+	LEVEL_DEBUG("ServerProcessAccept %s[%lu] try lock %d\n", SAFESTRING(out->name), (unsigned long int) pthread_self(), out->index);
 
 	ACCEPTLOCK(out);
 
-	LEVEL_DEBUG("ServerProcessAccept %s[%lu] locked %d\n",
-				SAFESTRING(out->name), (unsigned long int) pthread_self(),
-				out->index);
+	LEVEL_DEBUG("ServerProcessAccept %s[%lu] locked %d\n", SAFESTRING(out->name), (unsigned long int) pthread_self(), out->index);
 
 	do {
 		acceptfd = accept(out->file_descriptor, NULL, NULL);
@@ -170,8 +157,7 @@ static void ServerProcessAccept(void *vp)
 				LEVEL_DEBUG("ow_net_server.c: accept interrupted\n");
 				continue;
 			}
-			LEVEL_DEBUG("ow_net_server.c: accept error %d [%s]\n", errno,
-						strerror(errno));
+			LEVEL_DEBUG("ow_net_server.c: accept error %d [%s]\n", errno, strerror(errno));
 		}
 		break;
 	} while (1);
@@ -180,17 +166,14 @@ static void ServerProcessAccept(void *vp)
 
 	if (shutdown_in_progress) {
 		LEVEL_DEBUG
-			("ServerProcessAccept %s[%lu] shutdown_in_progress %d return\n",
-			 SAFESTRING(out->name), (unsigned long int) pthread_self(),
-			 out->index);
+			("ServerProcessAccept %s[%lu] shutdown_in_progress %d return\n", SAFESTRING(out->name), (unsigned long int) pthread_self(), out->index);
 		if (acceptfd >= 0)
 			close(acceptfd);
 		return;
 	}
 
 	if (acceptfd < 0) {
-		ERROR_CONNECT("ServerProcessAccept: accept() problem %d (%d)\n",
-					  out->file_descriptor, out->index);
+		ERROR_CONNECT("ServerProcessAccept: accept() problem %d (%d)\n", out->file_descriptor, out->index);
 	} else {
 		struct HandlerThread_data *hp;
 		hp = malloc(sizeof(struct HandlerThread_data));
@@ -199,17 +182,13 @@ static void ServerProcessAccept(void *vp)
 			hp->acceptfd = acceptfd;
 			ret = pthread_create(&tid, NULL, ServerProcessHandler, hp);
 			if (ret) {
-				LEVEL_DEBUG
-					("ServerProcessAccept %s[%lu] create failed ret=%d\n",
-					 SAFESTRING(out->name),
-					 (unsigned long int) pthread_self(), ret);
+				LEVEL_DEBUG("ServerProcessAccept %s[%lu] create failed ret=%d\n", SAFESTRING(out->name), (unsigned long int) pthread_self(), ret);
 				close(acceptfd);
 				free(hp);
 			}
 		}
 	}
-	LEVEL_DEBUG("ServerProcessAccept = %lu CLOSING\n",
-				(unsigned long int) pthread_self());
+	LEVEL_DEBUG("ServerProcessAccept = %lu CLOSING\n", (unsigned long int) pthread_self());
 	return;
 }
 
@@ -219,12 +198,10 @@ static void *ServerProcessOut(void *v)
 {
 	struct connection_out *out = (struct connection_out *) v;
 
-	LEVEL_DEBUG("ServerProcessOut = %lu\n",
-				(unsigned long int) pthread_self());
+	LEVEL_DEBUG("ServerProcessOut = %lu\n", (unsigned long int) pthread_self());
 
 	if (ServerOutSetup(out)) {
-		LEVEL_CONNECT("Cannot set up head_outbound_list [%s](%d) -- will exit\n",
-					  SAFESTRING(out->name), out->index);
+		LEVEL_CONNECT("Cannot set up head_outbound_list [%s](%d) -- will exit\n", SAFESTRING(out->name), out->index);
 		(out->Exit) (1);
 	}
 
@@ -233,8 +210,7 @@ static void *ServerProcessOut(void *v)
 	while (!shutdown_in_progress) {
 		ServerProcessAccept(v);
 	}
-	LEVEL_DEBUG("ServerProcessOut = %lu CLOSING (%s)\n",
-				(unsigned long int) pthread_self(), SAFESTRING(out->name));
+	LEVEL_DEBUG("ServerProcessOut = %lu CLOSING (%s)\n", (unsigned long int) pthread_self(), SAFESTRING(out->name));
 	OUTLOCK(out);
 	out->tid = 0;
 	OUTUNLOCK(out);
@@ -243,8 +219,7 @@ static void *ServerProcessOut(void *v)
 }
 
 /* Setup Servers -- a thread for each port */
-void ServerProcess(void (*HandlerRoutine) (int file_descriptor),
-				   void (*Exit) (int errcode))
+void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (int errcode))
 {
 	struct connection_out *out = head_outbound_list;
 	int err, signo;
@@ -260,11 +235,9 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor),
 		OUTLOCK(out);
 		out->HandlerRoutine = HandlerRoutine;
 		out->Exit = Exit;
-		if (pthread_create
-			(&(out->tid), NULL, ServerProcessOut, (void *) (out))) {
+		if (pthread_create(&(out->tid), NULL, ServerProcessOut, (void *) (out))) {
 			OUTUNLOCK(out);
-			ERROR_CONNECT("Could not create a thread for %s\n",
-						  SAFESTRING(out->name));
+			ERROR_CONNECT("Could not create a thread for %s\n", SAFESTRING(out->name));
 			Exit(1);
 		}
 		OUTUNLOCK(out);
@@ -292,11 +265,9 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor),
 	for (out = head_outbound_list; out; out = out->next) {
 		OUTLOCK(out);
 		if (out->tid) {
-			LEVEL_DEBUG("Shutting down %d of %d thread %ld\n", out->index,
-						count_outbound_connections, out->tid);
+			LEVEL_DEBUG("Shutting down %d of %d thread %ld\n", out->index, count_outbound_connections, out->tid);
 			if (pthread_cancel(out->tid)) {
-				LEVEL_DEBUG("Can't kill %d of %d\n", out->index,
-							count_outbound_connections);
+				LEVEL_DEBUG("Can't kill %d of %d\n", out->index, count_outbound_connections);
 			}
 			out->tid = 0;
 		}
@@ -312,20 +283,17 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor),
 #else							/* OW_MT */
 
 // Non multithreaded
-void ServerProcess(void (*HandlerRoutine) (int file_descriptor),
-				   void (*Exit) (int errcode))
+void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (int errcode))
 {
 	if (count_outbound_connections == 0) {
 		LEVEL_CONNECT("No output device (port) specified. Exiting.\n");
 		Exit(1);
 	} else if (count_outbound_connections > 1) {
-		LEVEL_CONNECT
-			("More than one output device specified (%d). Library compiled non-threaded. Exiting.\n",
-			 count_inbound_connections);
+		LEVEL_CONNECT("More than one output device specified (%d). Library compiled non-threaded. Exiting.\n", count_inbound_connections);
 		Exit(1);
-	} else if (ServerAddr(head_outbound_list) || (ServerListen(head_outbound_list) < 0)) {
-		LEVEL_CONNECT("Cannot set up head_outbound_list [%s] -- will exit\n",
-					  SAFESTRING(head_outbound_list->name));
+	} else if (ServerAddr(head_outbound_list)
+			   || (ServerListen(head_outbound_list) < 0)) {
+		LEVEL_CONNECT("Cannot set up head_outbound_list [%s] -- will exit\n", SAFESTRING(head_outbound_list->name));
 		Exit(1);
 	} else {
 		OW_Announce(head_outbound_list);

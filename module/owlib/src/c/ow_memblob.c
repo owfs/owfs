@@ -55,7 +55,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
-static int MemblobIncrease(size_t length, struct memblob *mb) ;
+static int MemblobIncrease(size_t length, struct memblob *mb);
 
 /*
     A "memblob" is a structure holding a list of 1-wire serial numbers
@@ -73,53 +73,54 @@ void MemblobClear(struct memblob *mb)
 		mb->memory_storage = NULL;
 	}
 	mb->used = 0;
-    mb->allocated = 0;
+	mb->allocated = 0;
 }
 
 void MemblobInit(struct memblob *mb, size_t increment)
 {
 	mb->used = 0;
 	mb->allocated = 0;
-    mb->increment = increment ;
+	mb->increment = increment;
 	mb->memory_storage = NULL;
 }
 
 static int MemblobIncrease(size_t length, struct memblob *mb)
 {
-    // make more room? -- blocks of 10 devices (80byte)
-    if ((mb->used + length > mb->allocated) || (mb->memory_storage == NULL)) {
-        size_t increment = ((length / mb->increment) + 1 ) * mb->increment ;
-        size_t newalloc = mb->allocated + increment ;
-        BYTE *try_bigger_block = realloc(mb->memory_storage, newalloc);
-        if (try_bigger_block!=NULL) {
-            mb->allocated = newalloc;
-            mb->memory_storage = try_bigger_block;
-        } else {                // allocation failed -- keep old
-            return -ENOMEM;
-        }
-    }
-    mb->used += length ;
-    return 0;
+	// make more room? -- blocks of 10 devices (80byte)
+	if ((mb->used + length > mb->allocated)
+		|| (mb->memory_storage == NULL)) {
+		size_t increment = ((length / mb->increment) + 1) * mb->increment;
+		size_t newalloc = mb->allocated + increment;
+		BYTE *try_bigger_block = realloc(mb->memory_storage, newalloc);
+		if (try_bigger_block != NULL) {
+			mb->allocated = newalloc;
+			mb->memory_storage = try_bigger_block;
+		} else {				// allocation failed -- keep old
+			return -ENOMEM;
+		}
+	}
+	mb->used += length;
+	return 0;
 }
 
 int MemblobAdd(const BYTE * data, size_t length, struct memblob *mb)
 {
-    size_t used = mb->used ;
-    int ret = MemblobIncrease( length, mb ) ;
-    if ( ret == 0 ) {
-        // add the device and increment the counter
-        memcpy(&(mb->memory_storage[used]), data, length);
-    }
-    return ret ;
+	size_t used = mb->used;
+	int ret = MemblobIncrease(length, mb);
+	if (ret == 0) {
+		// add the device and increment the counter
+		memcpy(&(mb->memory_storage[used]), data, length);
+	}
+	return ret;
 }
 
 int MemblobChar(BYTE character, size_t length, struct memblob *mb)
 {
-    size_t used = mb->used ;
-    int ret = MemblobIncrease( length, mb ) ;
-    if ( ret == 0 ) {
-        // add the device and increment the counter
-        memset(&(mb->memory_storage[used]), character, length);
-    }
-    return ret ;
+	size_t used = mb->used;
+	int ret = MemblobIncrease(length, mb);
+	if (ret == 0) {
+		// add the device and increment the counter
+		memset(&(mb->memory_storage[used]), character, length);
+	}
+	return ret;
 }

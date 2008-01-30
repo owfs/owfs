@@ -66,26 +66,26 @@ void *DataHandler(void *v)
 	memset(&cm, 0, sizeof(struct client_msg));
 	cm.sg = hd->sm.sg;			// default flag return -- includes persistence state
 
-    /* Pre-handling for special testing mode to exclude certain messsages */
-    switch ((enum msg_classification) hd->sm.type) {
-    case msg_dirall:
-        if (Global.no_dirall) {
-            hd->sm.type = msg_error ;
-        }
-        break ;
-    case msg_get:
-        if (Global.no_get) {
-            hd->sm.type = msg_error ;
-        }
-        break ;
-    default:
-        break ;
-    }
+	/* Pre-handling for special testing mode to exclude certain messsages */
+	switch ((enum msg_classification) hd->sm.type) {
+	case msg_dirall:
+		if (Global.no_dirall) {
+			hd->sm.type = msg_error;
+		}
+		break;
+	case msg_get:
+		if (Global.no_get) {
+			hd->sm.type = msg_error;
+		}
+		break;
+	default:
+		break;
+	}
 
-    /* Now Check message types and only parse valid messages */
-    switch ((enum msg_classification) hd->sm.type) {	// outer switch
+	/* Now Check message types and only parse valid messages */
+	switch ((enum msg_classification) hd->sm.type) {	// outer switch
 	case msg_read:				// good message
-	case msg_write:				// good message
+	case msg_write:			// good message
 	case msg_dir:				// good message
 	case msg_presence:			// good message
 	case msg_dirall:			// good message
@@ -94,8 +94,8 @@ void *DataHandler(void *v)
 			cm.ret = -EBADMSG;
 		} else {
 			OWQ_allocate_struct_and_pointer(owq);
-			struct parsedname * pn = PN(owq) ;
-            
+			struct parsedname *pn = PN(owq);
+
 			/* Parse the path string */
 			LEVEL_CALL("owserver: parse path=%s\n", hd->sp.path);
 			if ((cm.ret = FS_OWQ_create(hd->sp.path, NULL, hd->sm.size, hd->sm.offset, owq)))
@@ -111,8 +111,7 @@ void *DataHandler(void *v)
 
 			switch ((enum msg_classification) hd->sm.type) {
 			case msg_presence:
-				LEVEL_CALL("Presence message on %s bus number=%d\n",
-						   SAFESTRING(pn->path), pn->known_bus->index);
+				LEVEL_CALL("Presence message on %s bus number=%d\n", SAFESTRING(pn->path), pn->known_bus->index);
 				// Basically, if we were able to ParsedName it's here!
 				cm.size = cm.payload = 0;
 				cm.ret = 0;		// good answer
@@ -128,7 +127,7 @@ void *DataHandler(void *v)
 						|| ((int) hd->sp.datasize < hd->sm.size)) {
 						cm.ret = -EMSGSIZE;
 					} else {
-						OWQ_buffer(owq) = (ASCII *) hd->sp.data ;
+						OWQ_buffer(owq) = (ASCII *) hd->sp.data;
 						WriteHandler(hd, &cm, owq);
 					}
 				}
@@ -151,7 +150,7 @@ void *DataHandler(void *v)
 				}
 				break;
 			default:			// never reached
-				LEVEL_CALL("Error: unknown message %d\n", (int)hd->sm.type);
+				LEVEL_CALL("Error: unknown message %d\n", (int) hd->sm.type);
 				break;
 			}
 			FS_OWQ_destroy(owq);
@@ -165,7 +164,7 @@ void *DataHandler(void *v)
 	case msg_size:				// no longer used
 	case msg_error:
 	default:					// "bad" message
-        cm.ret = -ENOMSG ;
+		cm.ret = -ENOMSG;
 		LEVEL_CALL("No message\n");
 		break;
 	}

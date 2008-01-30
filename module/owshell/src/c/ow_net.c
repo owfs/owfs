@@ -15,15 +15,15 @@ $Id$
 
 #include "owshell.h"
 
-void DefaultOwserver( void )
+void DefaultOwserver(void)
 {
 #if OW_ZERO
-	if ( count_inbound_connections == 0 ) {
-//		OW_Browse() ;
+	if (count_inbound_connections == 0) {
+//      OW_Browse() ;
 	}
-#endif /* OW_ZERO */
-	if ( count_inbound_connections == 0 ) {
-		OW_ArgNet(OWSERVER_DEFAULT_PORT) ;
+#endif							/* OW_ZERO */
+	if (count_inbound_connections == 0) {
+		OW_ArgNet(OWSERVER_DEFAULT_PORT);
 	}
 }
 
@@ -59,9 +59,7 @@ int ClientAddr(char *sname)
 
 //printf("ClientAddr: [%s] [%s]\n", owserver_connection->host, owserver_connection->service);
 
-	if ((ret =
-		 getaddrinfo(owserver_connection->host, owserver_connection->service,
-					 &hint, &owserver_connection->ai))) {
+	if ((ret = getaddrinfo(owserver_connection->host, owserver_connection->service, &hint, &owserver_connection->ai))) {
 		//LEVEL_CONNECT("GetAddrInfo error %s\n",gai_strerror(ret));
 		return -1;
 	}

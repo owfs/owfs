@@ -85,43 +85,36 @@ typedef int (*__compar_fn_t) (__const void *, __const void *);
 #endif
 
 #ifndef HAVE_TSEARCH
-void *tsearch (__const void *__key, void **__rootp,
-                      __compar_fn_t __compar);
+void *tsearch(__const void *__key, void **__rootp, __compar_fn_t __compar);
 #endif
 
 #ifndef HAVE_TFIND
-void *tfind (__const void *__key, void *__const *__rootp,
-                    __compar_fn_t __compar);
+void *tfind(__const void *__key, void *__const * __rootp, __compar_fn_t __compar);
 #endif
 
 #ifndef HAVE_TDELETE
-void *tdelete (__const void *__restrict __key,
-                      void **__restrict __rootp,
-                      __compar_fn_t __compar);
+void *tdelete(__const void *__restrict __key, void **__restrict __rootp, __compar_fn_t __compar);
 #endif
 
 #if defined(_SEARCH_H) || defined(_SEARCH_H_)
 /* VISIT is always defined in search.h on MacOSX. */
 #else
-typedef enum
-  {
-    preorder,
-    postorder,
-    endorder,
-    leaf
-  }
-VISIT;
-#endif /* SEARCH_H */
+typedef enum {
+	preorder,
+	postorder,
+	endorder,
+	leaf
+} VISIT;
+#endif							/* SEARCH_H */
 
 #ifndef __ACTION_FN_T
 # define __ACTION_FN_T
 
-typedef void (*__action_fn_t) (__const void *__nodep, VISIT __value,
-                               int __level);
+typedef void (*__action_fn_t) (__const void *__nodep, VISIT __value, int __level);
 #endif
 
 #ifndef HAVE_TWALK
-void twalk (__const void *__root, __action_fn_t __action);
+void twalk(__const void *__root, __action_fn_t __action);
 #endif
 
 #ifdef __UCLIBC__

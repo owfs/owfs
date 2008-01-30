@@ -20,10 +20,10 @@ static int OW_locator(BYTE * addr, const struct parsedname *pn);
 /* ------- Functions ------------ */
 
 
-int FS_locator(struct one_wire_query * owq)
+int FS_locator(struct one_wire_query *owq)
 {
-    struct parsedname * pn = PN(owq) ;
-    BYTE loc[8];
+	struct parsedname *pn = PN(owq);
+	BYTE loc[8];
 	ASCII ad[16];
 
 	if (get_busmode(pn->selected_connection) == bus_fake) {
@@ -35,13 +35,13 @@ int FS_locator(struct one_wire_query * owq)
 		OW_locator(loc, pn);
 	}
 	bytes2string(ad, loc, 8);
-    return Fowq_output_offset_and_size(ad, 16, owq);
+	return Fowq_output_offset_and_size(ad, 16, owq);
 }
 
-int FS_r_locator(struct one_wire_query * owq)
+int FS_r_locator(struct one_wire_query *owq)
 {
-    struct parsedname * pn = PN(owq) ;
-    BYTE loc[8];
+	struct parsedname *pn = PN(owq);
+	BYTE loc[8];
 	ASCII ad[16];
 	size_t i;
 
@@ -55,7 +55,7 @@ int FS_r_locator(struct one_wire_query * owq)
 	}
 	for (i = 0; i < 8; ++i)
 		num2string(ad + (i << 1), loc[7 - i]);
-    return Fowq_output_offset_and_size(ad, 16, owq);
+	return Fowq_output_offset_and_size(ad, 16, owq);
 }
 
 static int OW_locator(BYTE * addr, const struct parsedname *pn)
@@ -63,7 +63,7 @@ static int OW_locator(BYTE * addr, const struct parsedname *pn)
 	BYTE loc[10] = { 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, };	// key and 8 byte default
 	struct transaction_log t[] = {
 		TRXN_NVERIFY,
-        TRXN_MODIFY(loc, loc, 10),
+		TRXN_MODIFY(loc, loc, 10),
 		TRXN_END,
 	};
 

@@ -42,20 +42,16 @@ void owopt(const int c, const char *arg)
 		ow_help();
 		Exit(0);
 	case 'C':
-		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT,
-					   temp_celsius);
+		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_celsius);
 		break;
 	case 'F':
-		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT,
-					   temp_fahrenheit);
+		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_fahrenheit);
 		break;
 	case 'R':
-		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT,
-					   temp_rankine);
+		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_rankine);
 		break;
 	case 'K':
-		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT,
-					   temp_kelvin);
+		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_kelvin);
 		break;
 	case 'V':
 		printf("owshell version:\n\t" VERSION "\n");
@@ -65,22 +61,17 @@ void owopt(const int c, const char *arg)
 		break;
 	case 'f':
 		if (!strcasecmp(arg, "f.i"))
-			set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT,
-						   fdi);
+			set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fdi);
 		else if (!strcasecmp(arg, "fi"))
 			set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fi);
 		else if (!strcasecmp(arg, "f.i.c"))
-			set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT,
-						   fdidc);
+			set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fdidc);
 		else if (!strcasecmp(arg, "f.ic"))
-			set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT,
-						   fdic);
+			set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fdic);
 		else if (!strcasecmp(arg, "fi.c"))
-			set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT,
-						   fidc);
+			set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fidc);
 		else if (!strcasecmp(arg, "fic"))
-			set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT,
-						   fic);
+			set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fic);
 		else {
 			fprintf(stderr, "Unrecognized format type %s\n", arg);
 			Exit(1);
@@ -89,15 +80,13 @@ void owopt(const int c, const char *arg)
 	case 275:					// autoserver
 #if OW_ZERO
 		if (libdnssd == NULL) {
-			fprintf(stderr,
-					"Zeroconf/Bonjour is disabled since dnssd library isn't found.\n");
+			fprintf(stderr, "Zeroconf/Bonjour is disabled since dnssd library isn't found.\n");
 			Exit(0);
 		} else {
 			OW_Browse();
 		}
 #else
-		fprintf(stderr,
-				"Zeroconf/Bonjour is disabled since it's compiled without support.\n");
+		fprintf(stderr, "Zeroconf/Bonjour is disabled since it's compiled without support.\n");
 		Exit(0);
 #endif
 		break;
@@ -113,11 +102,9 @@ void owopt(const int c, const char *arg)
 
 void OW_ArgNet(const char *arg)
 {
-	++ count_inbound_connections ;
+	++count_inbound_connections;
 	if (count_inbound_connections > 1) {
-		fprintf(stderr,
-				"Cannot link to more than one owserver. (%s and %s).\n",
-				owserver_connection->name, arg);
+		fprintf(stderr, "Cannot link to more than one owserver. (%s and %s).\n", owserver_connection->name, arg);
 		Exit(1);
 	}
 	owserver_connection->name = strdup(arg);

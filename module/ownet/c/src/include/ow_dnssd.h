@@ -127,8 +127,7 @@ extern "C" {
 			 * with this name on the network (e.g. PTR records).  Unique indicates that the
 			 * record's name is to be unique on the network (e.g. SRV records).
 			 */ 
-			kDNSServiceFlagsBrowseDomains =
-			0x40, kDNSServiceFlagsRegistrationDomains = 0x80, 
+			kDNSServiceFlagsBrowseDomains = 0x40, kDNSServiceFlagsRegistrationDomains = 0x80, 
 			/* Flags for specifying domain enumeration type in DNSServiceEnumerateDomains.
 			 * BrowseDomains enumerates domains recommended for browsing, RegistrationDomains
 			 * enumerates domains recommended for registration.
@@ -219,17 +218,13 @@ extern "C" {
 			-65545, kDNSServiceErr_AlreadyRegistered =
 			-65547, kDNSServiceErr_NameConflict =
 			-65548, kDNSServiceErr_Invalid =
-			-65549, kDNSServiceErr_Firewall =
-			-65550, kDNSServiceErr_Incompatible =
-			-65551, /* client library incompatible with daemon */ 
+			-65549, kDNSServiceErr_Firewall = -65550, kDNSServiceErr_Incompatible = -65551, /* client library incompatible with daemon */ 
 			kDNSServiceErr_BadInterfaceIndex =
 			-65552, kDNSServiceErr_Refused =
 			-65553, kDNSServiceErr_NoSuchRecord =
 			-65554, kDNSServiceErr_NoAuth =
 			-65555, kDNSServiceErr_NoSuchKey =
-			-65556, kDNSServiceErr_NATTraversal =
-			-65557, kDNSServiceErr_DoubleNAT =
-			-65558, kDNSServiceErr_BadTime = -65559 
+			-65556, kDNSServiceErr_NATTraversal = -65557, kDNSServiceErr_DoubleNAT = -65558, kDNSServiceErr_BadTime = -65559 
 			/* mDNS Error codes are in the range
 			 * FFFE FF00 (-65792) to FFFE FFFF (-65537) */ 
 	};
@@ -386,12 +381,10 @@ extern "C" {
  */ 
 	
 #if ORIGINAL_DNSSD_INCLUDE
-	 DNSServiceErrorType DNSSD_API DNSServiceProcessResult(DNSServiceRef
-														   sdRef);
+	 DNSServiceErrorType DNSSD_API DNSServiceProcessResult(DNSServiceRef sdRef);
 	
 #else							/*  */
-	typedef DNSServiceErrorType
-		DNSSD_API(*_DNSServiceProcessResult) (DNSServiceRef sdRef);
+	typedef DNSServiceErrorType DNSSD_API(*_DNSServiceProcessResult) (DNSServiceRef sdRef);
 	extern _DNSServiceProcessResult DNSServiceProcessResult;
 	
 #endif							/*  */
@@ -426,8 +419,7 @@ extern "C" {
 	void DNSSD_API DNSServiceRefDeallocate(DNSServiceRef sdRef);
 	
 #else							/*  */
-	typedef void DNSSD_API(*_DNSServiceRefDeallocate) (DNSServiceRef
-													   sdRef);
+	typedef void DNSSD_API(*_DNSServiceRefDeallocate) (DNSServiceRef sdRef);
 	extern _DNSServiceRefDeallocate DNSServiceRefDeallocate;
 	
 #endif							/*  */
@@ -475,10 +467,7 @@ extern "C" {
 	typedef void (DNSSD_API * DNSServiceDomainEnumReply) 
 		(
 		 DNSServiceRef sdRef, 
-		 DNSServiceFlags flags, 
-		 uint32_t interfaceIndex, 
-		 DNSServiceErrorType errorCode, 
-		 const char *replyDomain, void *context );
+		 DNSServiceFlags flags, uint32_t interfaceIndex, DNSServiceErrorType errorCode, const char *replyDomain, void *context );
 	
 /* DNSServiceEnumerateDomains() Parameters:
  *
@@ -513,18 +502,14 @@ extern "C" {
 #if ORIGINAL_DNSSD_INCLUDE
 	 DNSServiceErrorType DNSSD_API DNSServiceEnumerateDomains 
 		(DNSServiceRef * sdRef, DNSServiceFlags flags,
-		 uint32_t interfaceIndex, DNSServiceDomainEnumReply callBack,
-		 void *context /* may be NULL */  
+		 uint32_t interfaceIndex, DNSServiceDomainEnumReply callBack, void *context /* may be NULL */  
 		);
 	
 #else							/*  */
 	typedef DNSServiceErrorType DNSSD_API(*_DNSServiceEnumerateDomains) 
 		(
 		 DNSServiceRef * sdRef, 
-		 DNSServiceFlags flags, 
-		 uint32_t interfaceIndex, 
-		 DNSServiceDomainEnumReply callBack, 
-		 void *context /* may be NULL */  
+		 DNSServiceFlags flags, uint32_t interfaceIndex, DNSServiceDomainEnumReply callBack, void *context /* may be NULL */  
 		);
 	extern _DNSServiceEnumerateDomains DNSServiceEnumerateDomains;
 	
@@ -565,10 +550,7 @@ extern "C" {
 	typedef void (DNSSD_API * DNSServiceRegisterReply) 
 		(
 		 DNSServiceRef sdRef, 
-		 DNSServiceFlags flags, 
-		 DNSServiceErrorType errorCode, 
-		 const char *name, const char *regtype, const char *domain,
-		 void *context );
+		 DNSServiceFlags flags, DNSServiceErrorType errorCode, const char *name, const char *regtype, const char *domain, void *context );
 	
 /* DNSServiceRegister()  Parameters:
  *
@@ -642,22 +624,17 @@ extern "C" {
  */ 
 	
 #if ORIGINAL_DNSSD_INCLUDE
-	 DNSServiceErrorType DNSSD_API DNSServiceRegister 
-		(DNSServiceRef * sdRef, DNSServiceFlags flags,
-		 uint32_t interfaceIndex, const char *name, /* may be NULL */ 
-		 const char *regtype, const char *domain, /* may be NULL */ 
-		 const char *host, /* may be NULL */ 
-		 uint16_t port, uint16_t txtLen, const void *txtRecord, /* may be NULL */ 
-		 DNSServiceRegisterReply callBack, /* may be NULL */ 
-		 void *context /* may be NULL */  
+	 DNSServiceErrorType DNSSD_API DNSServiceRegister  (DNSServiceRef * sdRef, DNSServiceFlags flags, uint32_t interfaceIndex, const char *name, /* may be NULL */ 
+														 const char *regtype, const char *domain, /* may be NULL */ 
+														 const char *host, /* may be NULL */ 
+														 uint16_t port, uint16_t txtLen, const void *txtRecord, /* may be NULL */ 
+														 DNSServiceRegisterReply callBack, /* may be NULL */ 
+														 void *context /* may be NULL */  
 		);
 	
 #else							/*  */
 	typedef DNSServiceErrorType DNSSD_API(*_DNSServiceRegister) 
-		(
-		 DNSServiceRef * sdRef, 
-		 DNSServiceFlags flags, 
-		 uint32_t interfaceIndex, const char *name, /* may be NULL */ 
+		(DNSServiceRef * sdRef, DNSServiceFlags flags, uint32_t interfaceIndex, const char *name, /* may be NULL */ 
 		 const char *regtype, const char *domain, /* may be NULL */ 
 		 const char *host, /* may be NULL */ 
 		 uint16_t port, uint16_t txtLen, const void *txtRecord, /* may be NULL */ 
@@ -703,19 +680,13 @@ extern "C" {
 	 DNSServiceErrorType DNSSD_API DNSServiceAddRecord 
 		(
 		 DNSServiceRef sdRef, 
-		 DNSRecordRef * RecordRef, 
-		 DNSServiceFlags flags, 
-		 uint16_t rrtype, 
-		 uint16_t rdlen, const void *rdata, uint32_t ttl );
+		 DNSRecordRef * RecordRef, DNSServiceFlags flags, uint16_t rrtype, uint16_t rdlen, const void *rdata, uint32_t ttl );
 	
 #else							/*  */
 	typedef DNSServiceErrorType DNSSD_API(*_DNSServiceAddRecord) 
 		(
 		 DNSServiceRef sdRef, 
-		 DNSRecordRef * RecordRef, 
-		 DNSServiceFlags flags, 
-		 uint16_t rrtype, 
-		 uint16_t rdlen, const void *rdata, uint32_t ttl );
+		 DNSRecordRef * RecordRef, DNSServiceFlags flags, uint16_t rrtype, uint16_t rdlen, const void *rdata, uint32_t ttl );
 	extern _DNSServiceAddRecord DNSServiceAddRecord;
 	
 #endif							/*  */
@@ -749,18 +720,12 @@ extern "C" {
  */ 
 	
 #if ORIGINAL_DNSSD_INCLUDE
-	 DNSServiceErrorType DNSSD_API DNSServiceUpdateRecord 
-		(
-		 DNSServiceRef sdRef, DNSRecordRef RecordRef, /* may be NULL */ 
-		 DNSServiceFlags flags, 
-		 uint16_t rdlen, const void *rdata, uint32_t ttl );
+	 DNSServiceErrorType DNSSD_API DNSServiceUpdateRecord  (DNSServiceRef sdRef, DNSRecordRef RecordRef, /* may be NULL */ 
+															 DNSServiceFlags flags, uint16_t rdlen, const void *rdata, uint32_t ttl );
 	
 #else							/*  */
-	typedef DNSServiceErrorType DNSSD_API(*_DNSServiceUpdateRecord) 
-		(
-		 DNSServiceRef sdRef, DNSRecordRef RecordRef, /* may be NULL */ 
-		 DNSServiceFlags flags, 
-		 uint16_t rdlen, const void *rdata, uint32_t ttl );
+	typedef DNSServiceErrorType DNSSD_API(*_DNSServiceUpdateRecord)  (DNSServiceRef sdRef, DNSRecordRef RecordRef, /* may be NULL */ 
+																	   DNSServiceFlags flags, uint16_t rdlen, const void *rdata, uint32_t ttl );
 	extern _DNSServiceUpdateRecord DNSServiceUpdateRecord;
 	
 #endif							/*  */
@@ -787,16 +752,10 @@ extern "C" {
  */ 
 	
 #if ORIGINAL_DNSSD_INCLUDE
-	 DNSServiceErrorType DNSSD_API DNSServiceRemoveRecord 
-		(
-		 DNSServiceRef sdRef, 
-		 DNSRecordRef RecordRef, DNSServiceFlags flags );
+	 DNSServiceErrorType DNSSD_API DNSServiceRemoveRecord  (DNSServiceRef sdRef, DNSRecordRef RecordRef, DNSServiceFlags flags );
 	
 #else							/*  */
-	typedef DNSServiceErrorType DNSSD_API(*_DNSServiceRemoveRecord) 
-		(
-		 DNSServiceRef sdRef, 
-		 DNSRecordRef RecordRef, DNSServiceFlags flags );
+	typedef DNSServiceErrorType DNSSD_API(*_DNSServiceRemoveRecord)  (DNSServiceRef sdRef, DNSRecordRef RecordRef, DNSServiceFlags flags );
 	extern _DNSServiceRemoveRecord DNSServiceRemoveRecord;
 	
 #endif							/*  */
@@ -850,9 +809,7 @@ extern "C" {
 		 DNSServiceRef sdRef, 
 		 DNSServiceFlags flags, 
 		 uint32_t interfaceIndex, 
-		 DNSServiceErrorType errorCode, 
-		 const char *serviceName, const char *regtype,
-		 const char *replyDomain, void *context );
+		 DNSServiceErrorType errorCode, const char *serviceName, const char *regtype, const char *replyDomain, void *context );
 	
 /* DNSServiceBrowse() Parameters:
  *
@@ -889,22 +846,14 @@ extern "C" {
 	
 #if ORIGINAL_DNSSD_INCLUDE
 	 DNSServiceErrorType DNSSD_API DNSServiceBrowse 
-		(DNSServiceRef * sdRef, DNSServiceFlags flags,
-		 uint32_t interfaceIndex, const char *regtype,
-		 const char *domain, /* may be NULL */ 
-		 DNSServiceBrowseReply callBack,
-		 void *context /* may be NULL */  
+		(DNSServiceRef * sdRef, DNSServiceFlags flags, uint32_t interfaceIndex, const char *regtype, const char *domain, /* may be NULL */ 
+		 DNSServiceBrowseReply callBack, void *context /* may be NULL */  
 		);
 	
 #else							/*  */
 	typedef DNSServiceErrorType DNSSD_API(*_DNSServiceBrowse) 
-		(
-		 DNSServiceRef * sdRef, 
-		 DNSServiceFlags flags, 
-		 uint32_t interfaceIndex, 
-		 const char *regtype, const char *domain, /* may be NULL */ 
-		 DNSServiceBrowseReply callBack,
-		 void *context /* may be NULL */  
+		(DNSServiceRef * sdRef, DNSServiceFlags flags, uint32_t interfaceIndex, const char *regtype, const char *domain, /* may be NULL */ 
+		 DNSServiceBrowseReply callBack, void *context /* may be NULL */  
 		);
 	extern _DNSServiceBrowse DNSServiceBrowse;
 	
@@ -962,8 +911,7 @@ extern "C" {
 		 DNSServiceFlags flags, 
 		 uint32_t interfaceIndex, 
 		 DNSServiceErrorType errorCode, 
-		 const char *fullname, const char *hosttarget, uint16_t port,
-		 uint16_t txtLen, const char *txtRecord, void *context );
+		 const char *fullname, const char *hosttarget, uint16_t port, uint16_t txtLen, const char *txtRecord, void *context );
 	
 /* DNSServiceResolve() Parameters
  *
@@ -1007,8 +955,7 @@ extern "C" {
 	 DNSServiceErrorType DNSSD_API DNSServiceResolve 
 		(DNSServiceRef * sdRef, DNSServiceFlags flags,
 		 uint32_t interfaceIndex, const char *name, const char *regtype,
-		 const char *domain, DNSServiceResolveReply callBack,
-		 void *context /* may be NULL */  
+		 const char *domain, DNSServiceResolveReply callBack, void *context /* may be NULL */  
 		);
 	
 #else							/*  */
@@ -1017,9 +964,7 @@ extern "C" {
 		 DNSServiceRef * sdRef, 
 		 DNSServiceFlags flags, 
 		 uint32_t interfaceIndex, 
-		 const char *name, const char *regtype, const char *domain,
-		 DNSServiceResolveReply callBack,
-		 void *context /* may be NULL */  
+		 const char *name, const char *regtype, const char *domain, DNSServiceResolveReply callBack, void *context /* may be NULL */  
 		);
 	extern _DNSServiceResolve DNSServiceResolve;
 	
@@ -1049,12 +994,10 @@ extern "C" {
  */ 
 	
 #if ORIGINAL_DNSSD_INCLUDE
-	 DNSServiceErrorType DNSSD_API DNSServiceCreateConnection(DNSServiceRef
-															  * sdRef);
+	 DNSServiceErrorType DNSSD_API DNSServiceCreateConnection(DNSServiceRef * sdRef);
 	
 #else							/*  */
-	typedef DNSServiceErrorType
-		DNSSD_API(*_DNSServiceCreateConnection) (DNSServiceRef * sdRef);
+	typedef DNSServiceErrorType DNSSD_API(*_DNSServiceCreateConnection) (DNSServiceRef * sdRef);
 	extern _DNSServiceCreateConnection DNSServiceCreateConnection;
 	
 #endif							/*  */
@@ -1086,11 +1029,7 @@ extern "C" {
  *
  */ 
 	typedef void (DNSSD_API * DNSServiceRegisterRecordReply) 
-		(
-		 DNSServiceRef sdRef, 
-		 DNSRecordRef RecordRef, 
-		 DNSServiceFlags flags, 
-		 DNSServiceErrorType errorCode, void *context );
+		(DNSServiceRef sdRef, DNSRecordRef RecordRef, DNSServiceFlags flags, DNSServiceErrorType errorCode, void *context );
 	
 /* DNSServiceRegisterRecord() Parameters:
  *
@@ -1139,9 +1078,7 @@ extern "C" {
 		(DNSServiceRef sdRef, DNSRecordRef * RecordRef,
 		 DNSServiceFlags flags, uint32_t interfaceIndex,
 		 const char *fullname, uint16_t rrtype, uint16_t rrclass,
-		 uint16_t rdlen, const void *rdata, uint32_t ttl,
-		 DNSServiceRegisterRecordReply callBack,
-		 void *context /* may be NULL */  
+		 uint16_t rdlen, const void *rdata, uint32_t ttl, DNSServiceRegisterRecordReply callBack, void *context /* may be NULL */  
 		);
 	
 #else							/*  */
@@ -1152,9 +1089,7 @@ extern "C" {
 		 DNSServiceFlags flags, 
 		 uint32_t interfaceIndex, 
 		 const char *fullname, uint16_t rrtype, uint16_t rrclass,
-		 uint16_t rdlen, const void *rdata, uint32_t ttl,
-		 DNSServiceRegisterRecordReply callBack,
-		 void *context /* may be NULL */  
+		 uint16_t rdlen, const void *rdata, uint32_t ttl, DNSServiceRegisterRecordReply callBack, void *context /* may be NULL */  
 		);
 	extern _DNSServiceRegisterRecord DNSServiceRegisterRecord;
 	
@@ -1202,9 +1137,7 @@ extern "C" {
 		 DNSServiceFlags flags, 
 		 uint32_t interfaceIndex, 
 		 DNSServiceErrorType errorCode, 
-		 const char *fullname, uint16_t rrtype, uint16_t rrclass,
-		 uint16_t rdlen, const void *rdata, uint32_t ttl,
-		 void *context );
+		 const char *fullname, uint16_t rrtype, uint16_t rrclass, uint16_t rdlen, const void *rdata, uint32_t ttl, void *context );
 	
 /* DNSServiceQueryRecord() Parameters:
  *
@@ -1248,8 +1181,7 @@ extern "C" {
 	 DNSServiceErrorType DNSSD_API DNSServiceQueryRecord 
 		(DNSServiceRef * sdRef, DNSServiceFlags flags,
 		 uint32_t interfaceIndex, const char *fullname, uint16_t rrtype,
-		 uint16_t rrclass, DNSServiceQueryRecordReply callBack,
-		 void *context /* may be NULL */  
+		 uint16_t rrclass, DNSServiceQueryRecordReply callBack, void *context /* may be NULL */  
 		);
 	
 #else							/*  */
@@ -1258,9 +1190,7 @@ extern "C" {
 		 DNSServiceRef * sdRef, 
 		 DNSServiceFlags flags, 
 		 uint32_t interfaceIndex, 
-		 const char *fullname, uint16_t rrtype, uint16_t rrclass,
-		 DNSServiceQueryRecordReply callBack,
-		 void *context /* may be NULL */  
+		 const char *fullname, uint16_t rrtype, uint16_t rrclass, DNSServiceQueryRecordReply callBack, void *context /* may be NULL */  
 		);
 	extern _DNSServiceQueryRecord DNSServiceQueryRecord;
 	
@@ -1296,17 +1226,13 @@ extern "C" {
 	void DNSSD_API DNSServiceReconfirmRecord 
 		(
 		 DNSServiceFlags flags, 
-		 uint32_t interfaceIndex, 
-		 const char *fullname, uint16_t rrtype, uint16_t rrclass,
-		 uint16_t rdlen, const void *rdata );
+		 uint32_t interfaceIndex, const char *fullname, uint16_t rrtype, uint16_t rrclass, uint16_t rdlen, const void *rdata );
 	
 #else							/*  */
 	typedef void DNSSD_API(*_DNSServiceReconfirmRecord) 
 		(
 		 DNSServiceFlags flags, 
-		 uint32_t interfaceIndex, 
-		 const char *fullname, uint16_t rrtype, uint16_t rrclass,
-		 uint16_t rdlen, const void *rdata );
+		 uint32_t interfaceIndex, const char *fullname, uint16_t rrtype, uint16_t rrclass, uint16_t rdlen, const void *rdata );
 	extern _DNSServiceReconfirmRecord DNSServiceReconfirmRecord;
 	
 #endif							/*  */
@@ -1344,14 +1270,12 @@ extern "C" {
  */ 
 	
 #if ORIGINAL_DNSSD_INCLUDE
-	int DNSSD_API DNSServiceConstructFullName 
-		(char *fullName, const char *service, /* may be NULL */ 
-		 const char *regtype, const char *domain );
+	int DNSSD_API DNSServiceConstructFullName  (char *fullName, const char *service, /* may be NULL */ 
+												 const char *regtype, const char *domain );
 	
 #else							/*  */
-	typedef int DNSSD_API(*_DNSServiceConstructFullName) 
-		(char *fullName, const char *service, /* may be NULL */ 
-		 const char *regtype, const char *domain );
+	typedef int DNSSD_API(*_DNSServiceConstructFullName)  (char *fullName, const char *service, /* may be NULL */ 
+															const char *regtype, const char *domain );
 	extern _DNSServiceConstructFullName DNSServiceConstructFullName;
 	
 #endif							/*  */
@@ -1426,8 +1350,7 @@ extern "C" {
  *                  This storage must remain valid for as long as
  *                  the TXTRecordRef.
  */ 
-	void DNSSD_API TXTRecordCreate 
-		( TXTRecordRef * txtRecord, uint16_t bufferLen, void *buffer );
+	void DNSSD_API TXTRecordCreate  (TXTRecordRef * txtRecord, uint16_t bufferLen, void *buffer );
 	
 /* TXTRecordDeallocate()
  *
@@ -1476,11 +1399,8 @@ extern "C" {
  *                  Returns kDNSServiceErr_NoMemory if adding this key would
  *                  exceed the available storage.
  */ 
-	DNSServiceErrorType DNSSD_API TXTRecordSetValue 
-		(
-		 TXTRecordRef * txtRecord, 
-		 const char *key, uint8_t valueSize, /* may be zero */ 
-		 const void *value /* may be NULL */  
+	DNSServiceErrorType DNSSD_API TXTRecordSetValue  (TXTRecordRef * txtRecord, const char *key, uint8_t valueSize, /* may be zero */ 
+														const void *value /* may be NULL */  
 		);
 	
 /* TXTRecordRemoveValue()
@@ -1497,8 +1417,7 @@ extern "C" {
  *                  exist in the TXTRecordRef.
  *
  */ 
-	DNSServiceErrorType DNSSD_API TXTRecordRemoveValue 
-		(TXTRecordRef * txtRecord, const char *key );
+	DNSServiceErrorType DNSSD_API TXTRecordRemoveValue  (TXTRecordRef * txtRecord, const char *key );
 	
 /* TXTRecordGetLength()
  *
@@ -1512,8 +1431,7 @@ extern "C" {
  *                  Returns 0 if the TXTRecordRef is empty.
  *
  */ 
-	uint16_t DNSSD_API TXTRecordGetLength 
-		(const TXTRecordRef * txtRecord );
+	uint16_t DNSSD_API TXTRecordGetLength  (const TXTRecordRef * txtRecord );
 	
 /* TXTRecordGetBytesPtr()
  *
@@ -1526,8 +1444,7 @@ extern "C" {
  *                  to DNSServiceUpdateRecord().
  *
  */ 
-	const void *DNSSD_API TXTRecordGetBytesPtr 
-		(const TXTRecordRef * txtRecord );
+	const void *DNSSD_API TXTRecordGetBytesPtr  (const TXTRecordRef * txtRecord );
 	
 /*********************************************************************************************
  *
@@ -1577,8 +1494,7 @@ extern "C" {
  *                  Otherwise, it returns 0.
  *
  */ 
-	int DNSSD_API TXTRecordContainsKey 
-		(uint16_t txtLen, const void *txtRecord, const char *key );
+	int DNSSD_API TXTRecordContainsKey  (uint16_t txtLen, const void *txtRecord, const char *key );
 	
 /* TXTRecordGetValuePtr()
  *
@@ -1600,10 +1516,7 @@ extern "C" {
  *                  For empty value, valueLen will be zero.
  *                  For non-empty value, valueLen will be length of value data.
  */ 
-	const void *DNSSD_API TXTRecordGetValuePtr 
-		(
-		 uint16_t txtLen, 
-		 const void *txtRecord, const char *key, uint8_t * valueLen );
+	const void *DNSSD_API TXTRecordGetValuePtr  (uint16_t txtLen, const void *txtRecord, const char *key, uint8_t * valueLen );
 	
 /* TXTRecordGetCount()
  *
@@ -1617,8 +1530,7 @@ extern "C" {
  * return value:    Returns the total number of keys in the TXT Record.
  *
  */ 
-	uint16_t DNSSD_API TXTRecordGetCount 
-		(uint16_t txtLen, const void *txtRecord );
+	uint16_t DNSSD_API TXTRecordGetCount  (uint16_t txtLen, const void *txtRecord );
 	
 /* TXTRecordGetItemAtIndex()
  *
@@ -1658,9 +1570,7 @@ extern "C" {
  *                  TXTRecordGetCount()-1.
  */ 
 	DNSServiceErrorType DNSSD_API TXTRecordGetItemAtIndex 
-		(uint16_t txtLen, const void *txtRecord, uint16_t index_,
-		 uint16_t keyBufLen, char *key, uint8_t * valueLen,
-		 const void **value );
+		(uint16_t txtLen, const void *txtRecord, uint16_t index_, uint16_t keyBufLen, char *key, uint8_t * valueLen, const void **value );
 	
 #ifdef __APPLE_API_PRIVATE
 	
@@ -1687,8 +1597,7 @@ extern "C" {
  * return value:    Returns kDNSServiceErr_NoError on succeses, otherwise returns
  *                  an error code indicating the error that occurred
  */ 
-	DNSServiceErrorType DNSSD_API DNSServiceSetDefaultDomainForUser 
-		(DNSServiceFlags flags, const char *domain );
+	DNSServiceErrorType DNSSD_API DNSServiceSetDefaultDomainForUser  (DNSServiceFlags flags, const char *domain );
 	
 #endif							//__APPLE_API_PRIVATE
 	

@@ -63,14 +63,14 @@ WRITE_FUNCTION(FS_w_thf);
 /* -------- Structures ---------- */
 struct filetype DS1821[] = {
 	F_type,
-  {"temperature",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile,   FS_temperature, NO_WRITE_FUNCTION, {v:NULL},} ,
-  {"polarity",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable,   FS_r_polarity, FS_w_polarity, {v:NULL},} ,
-  {"templow",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable,   FS_r_templimit, FS_w_templimit, {i:1},} ,
-  {"temphigh",PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable,   FS_r_templimit, FS_w_templimit, {i:0},} ,
-  {"templowflag",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable,   FS_r_tlf, FS_w_tlf, {v:NULL},},
-  {"temphighflag",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable,   FS_r_thf, FS_w_thf, {v:NULL},},
-  {"thermostatmode",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable,   FS_r_thermomode, FS_w_thermomode, {v:NULL},},
-  {"1shot",PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable,   FS_r_oneshot, FS_w_oneshot, {v:NULL},} 
+  {"temperature", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_temperature, NO_WRITE_FUNCTION, {v:NULL},},
+  {"polarity", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, FS_r_polarity, FS_w_polarity, {v:NULL},},
+  {"templow", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:1},},
+  {"temphigh", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:0},},
+  {"templowflag", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, FS_r_tlf, FS_w_tlf, {v:NULL},},
+  {"temphighflag", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, FS_r_thf, FS_w_thf, {v:NULL},},
+  {"thermostatmode", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, FS_r_thermomode, FS_w_thermomode, {v:NULL},},
+  {"1shot", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, FS_r_oneshot, FS_w_oneshot, {v:NULL},}
 }
 
 ;
@@ -90,139 +90,135 @@ DeviceEntry(thermostat, DS1821);
 
 	/* Definition of status register bits. */
 	/* Please see the DS1821 datasheet for further information. */
-	#define DS1821_STATUS_1SHOT 0	// 0: convert temp continuously; 1: one conversion only.
-	#define DS1821_STATUS_POL 1	// 0: in thermostat mode DQ output is active low; 1: active high.
-	#define DS1821_STATUS_TR 2	// 0: go 1-wire mode on next power-up; 1: go into thermostat mode.
-	#define DS1821_STATUS_TLF 3	// 0: temp has not been below the TL temp; 1: temp has.
-	#define DS1821_STATUS_THF 4	// 0: temp has not been above the TH temp; 1: temp has.
-	#define DS1821_STATUS_NVB 5	// 0: EEPROM write not in progress; 1: EEPROM write in progress.
+#define DS1821_STATUS_1SHOT 0	// 0: convert temp continuously; 1: one conversion only.
+#define DS1821_STATUS_POL 1		// 0: in thermostat mode DQ output is active low; 1: active high.
+#define DS1821_STATUS_TR 2		// 0: go 1-wire mode on next power-up; 1: go into thermostat mode.
+#define DS1821_STATUS_TLF 3		// 0: temp has not been below the TL temp; 1: temp has.
+#define DS1821_STATUS_THF 4		// 0: temp has not been above the TH temp; 1: temp has.
+#define DS1821_STATUS_NVB 5		// 0: EEPROM write not in progress; 1: EEPROM write in progress.
 					// Bit 6 always returns 1.
-	#define DS1821_STATUS_DONE 7	// 0: temp conversion in progress; 1: conversion finished.
+#define DS1821_STATUS_DONE 7	// 0: temp conversion in progress; 1: conversion finished.
 	/* End of status register bits. */
-	
+
 
 /* ------- Functions ------------ */
 
 /* DS1821*/
 static int OW_temperature(_FLOAT * temp, const struct parsedname *pn);
-static int OW_current_temperature(_FLOAT * temp,
-								  const struct parsedname *pn);
-static int OW_current_temperature_lowres(_FLOAT * temp,
-									  const struct parsedname *pn);
+static int OW_current_temperature(_FLOAT * temp, const struct parsedname *pn);
+static int OW_current_temperature_lowres(_FLOAT * temp, const struct parsedname *pn);
 static int OW_r_status(BYTE * data, const struct parsedname *pn);
 static int OW_w_status(BYTE * data, const struct parsedname *pn);
-static int OW_r_templimit(_FLOAT * T, const int Tindex,
-						  const struct parsedname *pn);
-static int OW_w_templimit(const _FLOAT T, const int Tindex,
-						  const struct parsedname *pn);
+static int OW_r_templimit(_FLOAT * T, const int Tindex, const struct parsedname *pn);
+static int OW_w_templimit(const _FLOAT T, const int Tindex, const struct parsedname *pn);
 
 /* Internal properties */
 //static struct internal_prop ip_continuous = { "CON", fc_stable };
-MakeInternalProp(CON,fc_stable) ; // continuous conversions
+MakeInternalProp(CON, fc_stable);	// continuous conversions
 
-static int FS_temperature(struct one_wire_query * owq)
+static int FS_temperature(struct one_wire_query *owq)
 {
-    if (OW_temperature(&OWQ_F(owq), PN(owq)))
+	if (OW_temperature(&OWQ_F(owq), PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
-static int FS_r_thf(struct one_wire_query * owq)
+static int FS_r_thf(struct one_wire_query *owq)
 {
-    BYTE data;
+	BYTE data;
 
-    if (OW_r_status(&data, PN(owq)))
+	if (OW_r_status(&data, PN(owq)))
 		return -EINVAL;
-    OWQ_Y(owq) = (data >> DS1821_STATUS_THF) & 0x01;
+	OWQ_Y(owq) = (data >> DS1821_STATUS_THF) & 0x01;
 //    OWQ_Y(owq) = (data & 0x10) >> 4;
 	return 0;
 }
 
-static int FS_w_thf(struct one_wire_query * owq)
+static int FS_w_thf(struct one_wire_query *owq)
 {
 	BYTE data;
 
-    if (OW_r_status(&data, PN(owq)))
+	if (OW_r_status(&data, PN(owq)))
 		return -EINVAL;
-    UT_setbit(&data, DS1821_STATUS_THF, OWQ_Y(owq));
-    if (OW_w_status(&data, PN(owq)))
+	UT_setbit(&data, DS1821_STATUS_THF, OWQ_Y(owq));
+	if (OW_w_status(&data, PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
 
-static int FS_r_tlf(struct one_wire_query * owq)
+static int FS_r_tlf(struct one_wire_query *owq)
 {
-    BYTE data;
+	BYTE data;
 
-    if (OW_r_status(&data, PN(owq)))
+	if (OW_r_status(&data, PN(owq)))
 		return -EINVAL;
-    OWQ_Y(owq) = (data >> DS1821_STATUS_TLF) & 0x01;
+	OWQ_Y(owq) = (data >> DS1821_STATUS_TLF) & 0x01;
 //OWQ_Y(owq) = (data & 0x08) >> 3;
 	return 0;
 }
 
-static int FS_w_tlf(struct one_wire_query * owq)
+static int FS_w_tlf(struct one_wire_query *owq)
 {
-    BYTE data;
+	BYTE data;
 
-    if (OW_r_status(&data, PN(owq)))
+	if (OW_r_status(&data, PN(owq)))
 		return -EINVAL;
-    UT_setbit(&data, DS1821_STATUS_TLF, OWQ_Y(owq));
-    if (OW_w_status(&data, PN(owq)))
+	UT_setbit(&data, DS1821_STATUS_TLF, OWQ_Y(owq));
+	if (OW_w_status(&data, PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
 
-static int FS_r_thermomode(struct one_wire_query * owq)
+static int FS_r_thermomode(struct one_wire_query *owq)
 {
-    BYTE data;
+	BYTE data;
 
-    if (OW_r_status(&data, PN(owq)))
+	if (OW_r_status(&data, PN(owq)))
 		return -EINVAL;
-    OWQ_Y(owq) = (data >> DS1821_STATUS_TR) & 0x01;
+	OWQ_Y(owq) = (data >> DS1821_STATUS_TR) & 0x01;
 //    OWQ_Y(owq) = (data & 0x04) >> 2;
 	return 0;
 }
 
-static int FS_w_thermomode(struct one_wire_query * owq)
+static int FS_w_thermomode(struct one_wire_query *owq)
 {
 	BYTE data;
 
-    if (OW_r_status(&data, PN(owq)))
+	if (OW_r_status(&data, PN(owq)))
 		return -EINVAL;
-    UT_setbit(&data, DS1821_STATUS_TR, OWQ_Y(owq));
-    if (OW_w_status(&data, PN(owq)))
+	UT_setbit(&data, DS1821_STATUS_TR, OWQ_Y(owq));
+	if (OW_w_status(&data, PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
 
-static int FS_r_polarity(struct one_wire_query * owq)
-{
-    BYTE data;
-
-    if (OW_r_status(&data, PN(owq)))
-		return -EINVAL;
-    OWQ_Y(owq) = (data >> DS1821_STATUS_POL) & 0x01;
-	return 0;
-}
-
-static int FS_w_polarity(struct one_wire_query * owq)
+static int FS_r_polarity(struct one_wire_query *owq)
 {
 	BYTE data;
 
-    if (OW_r_status(&data, PN(owq)))
+	if (OW_r_status(&data, PN(owq)))
 		return -EINVAL;
-    UT_setbit(&data, DS1821_STATUS_POL, OWQ_Y(owq));
-    if (OW_w_status(&data, PN(owq)))
+	OWQ_Y(owq) = (data >> DS1821_STATUS_POL) & 0x01;
+	return 0;
+}
+
+static int FS_w_polarity(struct one_wire_query *owq)
+{
+	BYTE data;
+
+	if (OW_r_status(&data, PN(owq)))
+		return -EINVAL;
+	UT_setbit(&data, DS1821_STATUS_POL, OWQ_Y(owq));
+	if (OW_w_status(&data, PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
 
-static int FS_r_oneshot(struct one_wire_query * owq)
+static int FS_r_oneshot(struct one_wire_query *owq)
 {
 	BYTE data;
 
@@ -244,7 +240,7 @@ static int FS_r_oneshot(struct one_wire_query * owq)
  * commands at the appropriate times on the assumption that the reason you are setting the continuous conversion
  * mode is because you want continuous conversions.
  */
-static int FS_w_oneshot(struct one_wire_query * owq)
+static int FS_w_oneshot(struct one_wire_query *owq)
 {
 	BYTE pstop[] = { _1W_STOP_CONVERT_T, };
 	struct transaction_log tstop[] = {
@@ -265,13 +261,13 @@ static int FS_w_oneshot(struct one_wire_query * owq)
 	if (OW_r_status(&data, PN(owq)))
 		return -EINVAL;
 
-	int oneshotmode = (data >> DS1821_STATUS_1SHOT) & 0x01 ;
+	int oneshotmode = (data >> DS1821_STATUS_1SHOT) & 0x01;
 
 	UT_setbit(&data, DS1821_STATUS_1SHOT, OWQ_Y(owq));
 	if (OW_w_status(&data, PN(owq)))
 		return -EINVAL;
 
-	if ( !oneshotmode && OWQ_Y(owq) ) { 
+	if (!oneshotmode && OWQ_Y(owq)) {
 		/* 1Shot mode was off and we are setting it on; i.e. we are ending continuous mode.
 		 * Continuous conversions may be in progress.
 		 * Since we are turning this mode off, it's probably a reasonable assumption
@@ -279,9 +275,9 @@ static int FS_w_oneshot(struct one_wire_query * owq)
 		 * so issue a STOP CONVERSION to halt the conversions.
 		 */
 		int ret = BUS_transaction(tstop, PN(owq));
-		if( ret ) return ret;
-	}
-	else if ( oneshotmode && !OWQ_Y(owq) ) {
+		if (ret)
+			return ret;
+	} else if (oneshotmode && !OWQ_Y(owq)) {
 		/* 1Shot mode was on and we are turning it off; i.e. we are starting continuous mode.
 		 * Continuous conversions are probably not in progress.
 		 * Presumably, we are doing this because we want continuous conversions so
@@ -290,41 +286,42 @@ static int FS_w_oneshot(struct one_wire_query * owq)
 		int ret = BUS_transaction(tstart, PN(owq));
 
 		/* We have just kicked off a conversion. If we try to read the temperature
- 		 * right now we will get some previous temperature, which we are not probably
- 		 * expecting.  So wait for the first conversion only, just in case. We will now
- 		 * be in continuous conversion mode so after the first one we no longer have to 
- 		 * worry about it.
- 		 */
+		 * right now we will get some previous temperature, which we are not probably
+		 * expecting.  So wait for the first conversion only, just in case. We will now
+		 * be in continuous conversion mode so after the first one we no longer have to 
+		 * worry about it.
+		 */
 		UT_delay(1000);
-		if( ret ) return ret;
+		if (ret)
+			return ret;
 	}
-	// else ;	/* We are setting the bit to what it already was so do nothing special. */
-	
+	// else ;   /* We are setting the bit to what it already was so do nothing special. */
+
 	return 0;
 }
 
 
-static int FS_r_templimit(struct one_wire_query * owq)
+static int FS_r_templimit(struct one_wire_query *owq)
 {
-    if (OW_r_templimit(&OWQ_F(owq), OWQ_pn(owq).selected_filetype->data.i, PN(owq)))
+	if (OW_r_templimit(&OWQ_F(owq), OWQ_pn(owq).selected_filetype->data.i, PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
-static int FS_w_templimit(struct one_wire_query * owq)
+static int FS_w_templimit(struct one_wire_query *owq)
 {
-    if (OW_w_templimit(OWQ_F(owq), OWQ_pn(owq).selected_filetype->data.i, PN(owq)))
+	if (OW_w_templimit(OWQ_F(owq), OWQ_pn(owq).selected_filetype->data.i, PN(owq)))
 		return -EINVAL;
 	return 0;
 }
 
 static int OW_r_status(BYTE * data, const struct parsedname *pn)
 {
-    BYTE p[] = { _1W_READ_STATUS, };
+	BYTE p[] = { _1W_READ_STATUS, };
 	struct transaction_log t[] = {
 		TRXN_START,
-        TRXN_WRITE1(p),
-        TRXN_READ1(data),
+		TRXN_WRITE1(p),
+		TRXN_READ1(data),
 		TRXN_END,
 	};
 
@@ -333,10 +330,10 @@ static int OW_r_status(BYTE * data, const struct parsedname *pn)
 
 static int OW_w_status(BYTE * data, const struct parsedname *pn)
 {
-    BYTE p[] = { _1W_WRITE_STATUS, data[0] };
+	BYTE p[] = { _1W_WRITE_STATUS, data[0] };
 	struct transaction_log t[] = {
 		TRXN_START,
-        TRXN_WRITE2(p),
+		TRXN_WRITE2(p),
 		TRXN_END,
 	};
 
@@ -356,19 +353,19 @@ static int OW_w_status(BYTE * data, const struct parsedname *pn)
  */
 static int OW_temperature(_FLOAT * temp, const struct parsedname *pn)
 {
-    BYTE c[] = { _1W_START_CONVERT_T, };
+	BYTE c[] = { _1W_START_CONVERT_T, };
 	BYTE status;
 
 	struct transaction_log t[] = {
 		TRXN_START,
-	TRXN_WRITE1(c),
+		TRXN_WRITE1(c),
 		TRXN_END,
 	};
 
 	if (OW_r_status(&status, pn))
 		return 1;
 
-	if ((status >> DS1821_STATUS_1SHOT) & 0x01) {		/* 1-shot, convert and wait 1 second */
+	if ((status >> DS1821_STATUS_1SHOT) & 0x01) {	/* 1-shot, convert and wait 1 second */
 		if (BUS_transaction(t, pn))
 			return 1;
 		UT_delay(1000);
@@ -382,27 +379,26 @@ static int OW_temperature(_FLOAT * temp, const struct parsedname *pn)
 /* Do a transaction to get the temperature, the remaining count, and the count-per-c registers.
  * Perform the calculation to increase the temperature resolution.
  */
-static int OW_current_temperature(_FLOAT * temp,
-								  const struct parsedname *pn)
+static int OW_current_temperature(_FLOAT * temp, const struct parsedname *pn)
 {
-    BYTE read_temp[] = { _1W_READ_TEMPERATURE, };
-    BYTE read_counter[] = { _1W_READ_COUNTER, };
-    BYTE load_counter[] = { _1W_LOAD_COUNTER, };
+	BYTE read_temp[] = { _1W_READ_TEMPERATURE, };
+	BYTE read_counter[] = { _1W_READ_COUNTER, };
+	BYTE load_counter[] = { _1W_LOAD_COUNTER, };
 	BYTE temp_read;
 	BYTE count_per_c;
 	BYTE count_remain;
 	struct transaction_log t[] = {
 		TRXN_START,
-        TRXN_WRITE1(read_temp),
-        TRXN_READ1(&temp_read),
+		TRXN_WRITE1(read_temp),
+		TRXN_READ1(&temp_read),
 		TRXN_START,
-        TRXN_WRITE1(read_counter),
-        TRXN_READ1(&count_remain),
+		TRXN_WRITE1(read_counter),
+		TRXN_READ1(&count_remain),
 		TRXN_START,
-        TRXN_WRITE1(load_counter),
+		TRXN_WRITE1(load_counter),
 		TRXN_START,
-        TRXN_WRITE1(read_counter),
-        TRXN_READ1(&count_per_c),
+		TRXN_WRITE1(read_counter),
+		TRXN_READ1(&count_per_c),
 		TRXN_END,
 	};
 
@@ -411,9 +407,7 @@ static int OW_current_temperature(_FLOAT * temp,
 
 	if (count_per_c) {
 		/* Perform calculation to get high temperature resolution - see datasheet. */
-		temp[0] =
-			(_FLOAT) ((int8_t) temp_read) + .5 -
-			((_FLOAT) count_remain) / ((_FLOAT) count_per_c);
+		temp[0] = (_FLOAT) ((int8_t) temp_read) + .5 - ((_FLOAT) count_remain) / ((_FLOAT) count_per_c);
 	} else {					/* Bad count_per_c -- use lower resolution */
 		temp[0] = (_FLOAT) ((int8_t) temp_read);
 	}
@@ -424,15 +418,14 @@ static int OW_current_temperature(_FLOAT * temp,
 /* Read temperature register but do not attempt to increase the resolution,
  * because, for instance, the chip is in continuous conversion mode.
  */
-static int OW_current_temperature_lowres(_FLOAT * temp,
-								  const struct parsedname *pn)
+static int OW_current_temperature_lowres(_FLOAT * temp, const struct parsedname *pn)
 {
-    BYTE read_temp[] = { _1W_READ_TEMPERATURE, };
+	BYTE read_temp[] = { _1W_READ_TEMPERATURE, };
 	BYTE temp_read;
 	struct transaction_log t[] = {
 		TRXN_START,
-        TRXN_WRITE1(read_temp),
-        TRXN_READ1(&temp_read),
+		TRXN_WRITE1(read_temp),
+		TRXN_READ1(&temp_read),
 		TRXN_END,
 	};
 
@@ -444,10 +437,9 @@ static int OW_current_temperature_lowres(_FLOAT * temp,
 }
 
 /* Limits Tindex=0 high 1=low */
-static int OW_r_templimit(_FLOAT * T, const int Tindex,
-						  const struct parsedname *pn)
+static int OW_r_templimit(_FLOAT * T, const int Tindex, const struct parsedname *pn)
 {
-    BYTE p[] = { _1W_READ_TH, _1W_READ_TL, };
+	BYTE p[] = { _1W_READ_TH, _1W_READ_TL, };
 	BYTE data;
 	struct transaction_log t[] = {
 		TRXN_START,
@@ -463,11 +455,10 @@ static int OW_r_templimit(_FLOAT * T, const int Tindex,
 }
 
 /* Limits Tindex=0 high 1=low */
-static int OW_w_templimit(const _FLOAT T, const int Tindex,
-						  const struct parsedname *pn)
+static int OW_w_templimit(const _FLOAT T, const int Tindex, const struct parsedname *pn)
 {
-    BYTE p[] = { _1W_WRITE_TH, _1W_WRITE_TL, };
-	BYTE data = BYTE_MASK((int) (T + .49)) ;	// round off
+	BYTE p[] = { _1W_WRITE_TH, _1W_WRITE_TL, };
+	BYTE data = BYTE_MASK((int) (T + .49));	// round off
 	struct transaction_log t[] = {
 		TRXN_START,
 		TRXN_WRITE1(&p[Tindex]),

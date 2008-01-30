@@ -76,16 +76,14 @@ static void ShowDirCallback(void *v, const struct parsedname *const pn2)
 	}
 	//printf("path=%s loc=%s name=%s typ=%s pn->selected_device=%p pn->selected_filetype=%p pn->subdir=%p pathlength=%d\n",pn->path,loc,nam,typ,pn->selected_device,pn->selected_filetype,pn->subdir,pn->pathlength ) ;
 	fprintf(sds->out,
-			"<TR><TD><A HREF='%s/%s'><CODE><B><BIG>%s</BIG></B></CODE></A></TD><TD>%s</TD><TD>%s</TD></TR>",
-			sds->prepath, loc, loc, nam, typ);
+			"<TR><TD><A HREF='%s/%s'><CODE><B><BIG>%s</BIG></B></CODE></A></TD><TD>%s</TD><TD>%s</TD></TR>", sds->prepath, loc, loc, nam, typ);
 }
 
 	/* Misnamed. Actually all directory */
 void ShowDir(FILE * out, const struct parsedname *const pn)
 {
 	int b = Backup(pn->path);
-	struct showdirstruct sds =
-		{ strcmp(pn->path, "/") ? pn->path : "", out, };
+	struct showdirstruct sds = { strcmp(pn->path, "/") ? pn->path : "", out, };
 	if (pn->state & ePS_text) {
 		ShowDirText(out, pn);
 		return;
@@ -115,20 +113,16 @@ void ShowDir(FILE * out, const struct parsedname *const pn)
 	fprintf(out, "<TABLE BGCOLOR=\"#DDDDDD\" BORDER=1>");
 
 	if (b != 1) {
-		fprintf(out,
-				"<TR><TD><A HREF='%.*s'><CODE><B><BIG>up</BIG></B></CODE></A></TD><TD>higher level</TD><TD>directory</TD></TR>",
-				b, pn->path);
+		fprintf(out, "<TR><TD><A HREF='%.*s'><CODE><B><BIG>up</BIG></B></CODE></A></TD><TD>higher level</TD><TD>directory</TD></TR>", b, pn->path);
 	} else {
-		fprintf(out,
-				"<TR><TD><A HREF='/'><CODE><B><BIG>top</BIG></B></CODE></A></TD><TD>highest level</TD><TD>directory</TD></TR>");
+		fprintf(out, "<TR><TD><A HREF='/'><CODE><B><BIG>top</BIG></B></CODE></A></TD><TD>highest level</TD><TD>directory</TD></TR>");
 	}
 
 	FS_dir(ShowDirCallback, &sds, pn);
 	fprintf(out, "</TABLE>");
 	HTTPfoot(out);
 }
-static void ShowDirTextCallback(void *v,
-								const struct parsedname *const pn2)
+static void ShowDirTextCallback(void *v, const struct parsedname *const pn2)
 {
 	/* uncached tag */
 	/* device name */

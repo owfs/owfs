@@ -58,9 +58,9 @@ WRITE_FUNCTION(FS_w_memory2D);
 struct aggregate A2431 = { 4, ag_numbers, ag_separate, };
 struct filetype DS2431[] = {
 	F_STANDARD,
-  {"pages",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile,   NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},} ,
-  {"pages/page", 32, &A2431, ft_binary, fc_stable,   FS_r_page, FS_w_page2D, {v:NULL},} ,
-  {"memory", 128, NULL, ft_binary, fc_stable,   FS_r_memory, FS_w_memory2D, {v:NULL},} ,
+  {"pages", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
+  {"pages/page", 32, &A2431, ft_binary, fc_stable, FS_r_page, FS_w_page2D, {v:NULL},},
+  {"memory", 128, NULL, ft_binary, fc_stable, FS_r_memory, FS_w_memory2D, {v:NULL},},
 };
 
 DeviceEntryExtended(2D, DS2431, DEV_ovdr | DEV_resume);
@@ -68,9 +68,9 @@ DeviceEntryExtended(2D, DS2431, DEV_ovdr | DEV_resume);
 struct aggregate A2433 = { 16, ag_numbers, ag_separate, };
 struct filetype DS2433[] = {
 	F_STANDARD,
-  {"pages",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile,   NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},} ,
-  {"pages/page", 32, &A2433, ft_binary, fc_stable,   FS_r_page, FS_w_page, {v:NULL},} ,
-  {"memory", 512, NULL, ft_binary, fc_stable,   FS_r_memory, FS_w_memory, {v:NULL},} ,
+  {"pages", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
+  {"pages/page", 32, &A2433, ft_binary, fc_stable, FS_r_page, FS_w_page, {v:NULL},},
+  {"memory", 512, NULL, ft_binary, fc_stable, FS_r_memory, FS_w_memory, {v:NULL},},
 };
 
 DeviceEntryExtended(23, DS2433, DEV_ovdr);
@@ -78,9 +78,9 @@ DeviceEntryExtended(23, DS2433, DEV_ovdr);
 struct aggregate A28EC20 = { 80, ag_numbers, ag_separate, };
 struct filetype DS28EC20[] = {
 	F_STANDARD,
-  {"pages",PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile,   NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},} ,
-  {"pages/page", 32, &A28EC20, ft_binary, fc_stable,   FS_r_page, FS_w_page, {v:NULL},} ,
-  {"memory", 2560, NULL, ft_binary, fc_stable,   FS_r_memory, FS_w_memory, {v:NULL},} ,
+  {"pages", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
+  {"pages/page", 32, &A28EC20, ft_binary, fc_stable, FS_r_page, FS_w_page, {v:NULL},},
+  {"memory", 2560, NULL, ft_binary, fc_stable, FS_r_memory, FS_w_memory, {v:NULL},},
 };
 
 DeviceEntryExtended(43, DS28EC20, DEV_ovdr | DEV_resume);
@@ -95,84 +95,81 @@ DeviceEntryExtended(43, DS28EC20, DEV_ovdr | DEV_resume);
 
 /* DS2433 */
 
-static int OW_w_23page( BYTE * data,  size_t size,
-					    off_t offset,  struct parsedname *pn);
-static int OW_w_2Dpage( BYTE * data,  size_t size,
-					    off_t offset,  struct parsedname *pn);
+static int OW_w_23page(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
+static int OW_w_2Dpage(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
 
-static int FS_r_memory(struct one_wire_query * owq)
+static int FS_r_memory(struct one_wire_query *owq)
 {
 	/* read is not page-limited */
-    if (OW_r_mem_simple(owq, 0, 0 ))
+	if (OW_r_mem_simple(owq, 0, 0))
 		return -EINVAL;
-    return OWQ_size(owq);
+	return OWQ_size(owq);
 }
 
-static int FS_w_memory(struct one_wire_query * owq)
+static int FS_w_memory(struct one_wire_query *owq)
 {
 	/* paged access */
-	size_t pagesize = 32 ;
-    if (OW_readwrite_paged(owq, 0, pagesize, OW_w_23page))
+	size_t pagesize = 32;
+	if (OW_readwrite_paged(owq, 0, pagesize, OW_w_23page))
 		return -EFAULT;
 	return 0;
 }
 
 /* Although externally it's 32 byte pages, internally it acts as 8 byte pages */
-static int FS_w_memory2D(struct one_wire_query * owq)
+static int FS_w_memory2D(struct one_wire_query *owq)
 {
 	/* paged access */
-	size_t pagesize = 8 ;
-    if (OW_readwrite_paged(owq, 0, pagesize, OW_w_2Dpage))
+	size_t pagesize = 8;
+	if (OW_readwrite_paged(owq, 0, pagesize, OW_w_2Dpage))
 		return -EFAULT;
 	return 0;
 }
 
-static int FS_r_page(struct one_wire_query * owq)
+static int FS_r_page(struct one_wire_query *owq)
 {
-	size_t pagesize = 32 ;
-    if (OW_r_mem_simple( owq, OWQ_pn(owq).extension, pagesize ))
+	size_t pagesize = 32;
+	if (OW_r_mem_simple(owq, OWQ_pn(owq).extension, pagesize))
 		return -EINVAL;
-    return OWQ_size(owq);
+	return OWQ_size(owq);
 }
 
-static int FS_w_page(struct one_wire_query * owq)
+static int FS_w_page(struct one_wire_query *owq)
 {
 	/* paged access */
-	size_t pagesize = 32 ;
-    if (OW_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_23page))
+	size_t pagesize = 32;
+	if (OW_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_23page))
 		return -EFAULT;
 	return 0;
 }
 
-static int FS_w_page2D(struct one_wire_query * owq)
+static int FS_w_page2D(struct one_wire_query *owq)
 {
 	/* paged access */
-	size_t pagesize = 8 ;
-    if (OW_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_2Dpage))
+	size_t pagesize = 8;
+	if (OW_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_2Dpage))
 		return -EFAULT;
 	return 0;
 }
 
 /* paged, and pre-screened */
-static int OW_w_23page( BYTE * data,  size_t size,
-					    off_t offset,  struct parsedname *pn)
+static int OW_w_23page(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
 {
-    BYTE p[1 + 2 + 32 + 2] = { _1W_WRITE_SCRATCHPAD, LOW_HIGH_ADDRESS(offset), };
+	BYTE p[1 + 2 + 32 + 2] = { _1W_WRITE_SCRATCHPAD, LOW_HIGH_ADDRESS(offset), };
 	struct transaction_log tcopy[] = {
 		TRXN_START,
-		TRXN_WR_CRC16(p,3+size,0),
+		TRXN_WR_CRC16(p, 3 + size, 0),
 		TRXN_END,
 	};
 	struct transaction_log treread[] = {
 		TRXN_START,
 		TRXN_WRITE1(p),
-		TRXN_READ(&p[1],3+size),
-		TRXN_COMPARE(&p[4],data,size),
+		TRXN_READ(&p[1], 3 + size),
+		TRXN_COMPARE(&p[4], data, size),
 		TRXN_END,
 	};
 	struct transaction_log twrite[] = {
 		TRXN_START,
-		TRXN_WRITE(p,4),
+		TRXN_WRITE(p, 4),
 		TRXN_END,
 	};
 
@@ -188,56 +185,55 @@ static int OW_w_23page( BYTE * data,  size_t size,
 
 	/* Re-read scratchpad and compare */
 	/* Note that we tacitly shift the data one byte down for the E/S byte */
-    p[0] = _1W_READ_SCRATCHPAD;
+	p[0] = _1W_READ_SCRATCHPAD;
 	if (BUS_transaction(treread, pn))
 		return 1;
 
 	/* Copy Scratchpad to SRAM */
-    p[0] = _1W_COPY_SCRATCHPAD;
+	p[0] = _1W_COPY_SCRATCHPAD;
 	if (BUS_transaction(twrite, pn))
 		return 1;
 
 	// pause for write
 	switch (pn->sn[0]) {
-	case 0x23: 					// DS2433
+	case 0x23:					// DS2433
 		UT_delay(5);
-		break ;
-	case 0x43: 					// DS28EC20
+		break;
+	case 0x43:					// DS28EC20
 		UT_delay(10);
-		break ;
+		break;
 	}
 	return 0;
 }
 
 /* paged, and pre-screened */
 /* read REAL DS2431 pages -- 8 bytes. */
-static int OW_w_2Dpage( BYTE * data,  size_t size,
-					    off_t offset,  struct parsedname *pn)
+static int OW_w_2Dpage(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
 {
 	off_t pageoff = offset & 0x07;
-    BYTE p[4 + 8 + 2] = { _1W_WRITE_SCRATCHPAD, LOW_HIGH_ADDRESS(offset - pageoff),
+	BYTE p[4 + 8 + 2] = { _1W_WRITE_SCRATCHPAD, LOW_HIGH_ADDRESS(offset - pageoff),
 	};
 	struct transaction_log tcopy[] = {
 		TRXN_START,
-		TRXN_WRITE(p,3+8),
+		TRXN_WRITE(p, 3 + 8),
 		TRXN_END,
 	};
 	struct transaction_log tread[] = {
 		TRXN_START,
-		TRXN_WR_CRC16(p,1,3+8),
-		TRXN_COMPARE(&p[4],data,size),
+		TRXN_WR_CRC16(p, 1, 3 + 8),
+		TRXN_COMPARE(&p[4], data, size),
 		TRXN_END,
 	};
 	struct transaction_log tsram[] = {
 		TRXN_START,
-        TRXN_WRITE( p, 4),
+		TRXN_WRITE(p, 4),
 		TRXN_END,
 	};
 
-	if (size != 8) { // incomplete page
-		OWQ_allocate_struct_and_pointer( owq_old ) ;
-        OWQ_create_temporary( owq_old, (char *) &p[3], 8, offset - pageoff, pn ) ;
-		if (OW_r_mem_simple( owq_old, 0 ,0 ))
+	if (size != 8) {			// incomplete page
+		OWQ_allocate_struct_and_pointer(owq_old);
+		OWQ_create_temporary(owq_old, (char *) &p[3], 8, offset - pageoff, pn);
+		if (OW_r_mem_simple(owq_old, 0, 0))
 			return 1;
 	}
 
@@ -248,12 +244,12 @@ static int OW_w_2Dpage( BYTE * data,  size_t size,
 		return 1;
 
 	/* Re-read scratchpad and compare */
-    p[0] = _1W_READ_SCRATCHPAD;
+	p[0] = _1W_READ_SCRATCHPAD;
 	if (BUS_transaction(tread, pn))
 		return 1;
 
 	/* Copy Scratchpad to SRAM */
-    p[0] = _1W_COPY_SCRATCHPAD;
+	p[0] = _1W_COPY_SCRATCHPAD;
 	if (BUS_transaction(tsram, pn))
 		return 1;
 

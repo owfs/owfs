@@ -56,32 +56,34 @@ WRITE_FUNCTION(FS_w_TS);
 /* -------- Structures ---------- */
 
 struct filetype set_cache[] = {
-  {"volatile",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static,   FS_r_timeout, FS_w_timeout, {v:&Global.timeout_volatile},} ,
-  {"stable",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static,   FS_r_timeout, FS_w_timeout, {v:&Global.timeout_stable},} ,
-  {"directory",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static,   FS_r_timeout, FS_w_timeout, {v:&Global.timeout_directory},} ,
-  {"presence",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static,   FS_r_timeout, FS_w_timeout, {v:&Global.timeout_presence},} ,
-  {"serial",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static,   FS_r_timeout, FS_w_timeout, {v:&Global.timeout_serial},} ,
-  {"usb",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static,   FS_r_timeout, FS_w_timeout, {v:&Global.timeout_usb},} ,
-  {"network",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static,   FS_r_timeout, FS_w_timeout, {v:&Global.timeout_network},} ,
-  {"server",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static,   FS_r_timeout, FS_w_timeout, {v:&Global.timeout_server},} ,
-  {"ftp",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static,   FS_r_timeout, FS_w_timeout, {v:&Global.timeout_ftp},} ,
-  {"ha7",PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static,   FS_r_timeout, FS_w_timeout, {v:&Global.timeout_ha7},} ,
+  {"volatile", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, {v:&Global.timeout_volatile},},
+  {"stable", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, {v:&Global.timeout_stable},},
+  {"directory", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, {v:&Global.timeout_directory},},
+  {"presence", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, {v:&Global.timeout_presence},},
+  {"serial", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, {v:&Global.timeout_serial},},
+  {"usb", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, {v:&Global.timeout_usb},},
+  {"network", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, {v:&Global.timeout_network},},
+  {"server", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, {v:&Global.timeout_server},},
+  {"ftp", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, {v:&Global.timeout_ftp},},
+  {"ha7", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, {v:&Global.timeout_ha7},},
 }
 
 ;
-struct device d_set_cache =
-	{ "timeout", "timeout", ePN_settings, COUNT_OF_FILETYPES(set_cache), set_cache };
+struct device d_set_cache = { "timeout", "timeout", ePN_settings, COUNT_OF_FILETYPES(set_cache),
+	set_cache
+};
 struct filetype set_units[] = {
-  {"temperature_scale", 1, NULL, ft_ascii, fc_static,   FS_r_TS, FS_w_TS, {v:NULL},} ,
+  {"temperature_scale", 1, NULL, ft_ascii, fc_static, FS_r_TS, FS_w_TS, {v:NULL},},
 }
 
 ;
-struct device d_set_units =
-	{ "units", "units", ePN_settings, COUNT_OF_FILETYPES(set_units), set_units };
+struct device d_set_units = { "units", "units", ePN_settings, COUNT_OF_FILETYPES(set_units),
+	set_units
+};
 
 /* ------- Functions ------------ */
 
-static int FS_r_timeout(struct one_wire_query * owq)
+static int FS_r_timeout(struct one_wire_query *owq)
 {
 	CACHELOCK;
 	OWQ_I(owq) = ((UINT *) OWQ_pn(owq).selected_filetype->data.v)[0];
@@ -89,10 +91,10 @@ static int FS_r_timeout(struct one_wire_query * owq)
 	return 0;
 }
 
-static int FS_w_timeout(struct one_wire_query * owq)
+static int FS_w_timeout(struct one_wire_query *owq)
 {
 	int previous;
-	struct parsedname * pn = PN(owq) ;
+	struct parsedname *pn = PN(owq);
 	CACHELOCK;
 	//printf("FS_w_timeout!!!\n");
 	previous = ((UINT *) pn->selected_filetype->data.v)[0];
@@ -103,32 +105,29 @@ static int FS_w_timeout(struct one_wire_query * owq)
 	return 0;
 }
 
-static int FS_w_TS(struct one_wire_query * owq)
+static int FS_w_TS(struct one_wire_query *owq)
 {
-    if ( OWQ_size(owq) == 0 || OWQ_offset(owq) > 0 ) return 0 ; /* do nothing */
-    switch (OWQ_buffer(owq)[0]) {
+	if (OWQ_size(owq) == 0 || OWQ_offset(owq) > 0)
+		return 0;				/* do nothing */
+	switch (OWQ_buffer(owq)[0]) {
 	case 'C':
-		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT,
-					   temp_celsius);
+		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_celsius);
 		return 0;
 	case 'F':
-		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT,
-					   temp_fahrenheit);
+		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_fahrenheit);
 		return 0;
 	case 'R':
-		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT,
-					   temp_rankine);
+		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_rankine);
 		return 0;
 	case 'K':
-		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT,
-					   temp_kelvin);
+		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_kelvin);
 		return 0;
 	}
 	return -EINVAL;
 }
 
-static int FS_r_TS(struct one_wire_query * owq)
+static int FS_r_TS(struct one_wire_query *owq)
 {
-    Fowq_output_offset_and_size_z( TemperatureScaleName(TemperatureScale(PN(owq))), owq);
-    return 0 ;
+	Fowq_output_offset_and_size_z(TemperatureScaleName(TemperatureScale(PN(owq))), owq);
+	return 0;
 }

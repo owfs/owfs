@@ -46,7 +46,7 @@ $Id$
 #include "ow_2760.h"			// battery
 #include "ow_2804.h"			// switch
 #include "ow_2890.h"			// potentiometer
-#include "ow_interface.h"       // interface pseudo-device
+#include "ow_interface.h"		// interface pseudo-device
 #include "ow_lcd.h"				// LCD driver
 #include "ow_simultaneous.h"	// fake entry to address entire directory
 #include "ow_stats.h"			// statistic reporting pseudo-device

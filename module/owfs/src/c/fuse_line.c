@@ -65,9 +65,7 @@ int Fuse_add(char *opt, struct Fuse_option *fo)
 		int i = fo->max_options;
 		void *temp = fo->argv;
 		fo->max_options += 10;
-		fo->argv =
-			(char **) realloc(temp,
-							  (fo->max_options + 1) * sizeof(char *));
+		fo->argv = (char **) realloc(temp, (fo->max_options + 1) * sizeof(char *));
 		if (fo->argv == NULL) {
 			if (temp)
 				free(temp);
@@ -86,14 +84,12 @@ char *Fuse_arg(char *opt_arg, char *entryname)
 	char *ret = NULL;
 	int len = strlen(opt_arg);
 	if (len < 3 || opt_arg[0] != '"' || opt_arg[len - 1] != '"') {
-		fprintf(stderr, "Put the %s value in quotes. \"%s\"\n", entryname,
-				opt_arg);
+		fprintf(stderr, "Put the %s value in quotes. \"%s\"\n", entryname, opt_arg);
 		return NULL;
 	}
 	ret = strdup(&opt_arg[1]);	// start after first quote
 	if (ret == NULL) {
-		fprintf(stderr, "Insufficient memory to store %s options: %s\n",
-				entryname, opt_arg);
+		fprintf(stderr, "Insufficient memory to store %s options: %s\n", entryname, opt_arg);
 		return NULL;
 	}
 	ret[len - 2] = '\0';		// pare off trailing quote

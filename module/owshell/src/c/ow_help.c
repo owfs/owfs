@@ -39,6 +39,5 @@ void ow_help(void)
 		   "  -R --Rankine                   |Rankine temperature scale\n"
 		   "  -f --format                    |format for 1-wire unique serial IDs display\n"
 		   "                                 |  f[.]i[[.]c] f-amily i-d c-rc (all in hex)\n"
-		   "  -V --version                   |Program version\n"
-		   "  -h --help                      |Basic help page\n");
+		   "  -V --version                   |Program version\n" "  -h --help                      |Basic help page\n");
 }

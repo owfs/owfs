@@ -15,12 +15,13 @@ $Id$
 #include "ow_counters.h"
 #include "ow_connection.h"
 
-void _print_owq( struct one_wire_query * owq )
+void _print_owq(struct one_wire_query *owq)
 {
-    char c[32] ;
-    printf("OWQ OneWireQuery structure of %s\n",OWQ_pn(owq).path) ;
-    printf("    OneWireQuery size=%lu offset=%lu, extension=%d\n",(unsigned long)OWQ_size(owq),(unsigned long)OWQ_offset(owq),(int)OWQ_pn(owq).extension) ;
-    Debug_Bytes("OneWireQuery buffer",(BYTE *) OWQ_buffer(owq),OWQ_size(owq)) ;
-    printf("    OneWireQuery I=%d U=%u F=%G Y=%d D=%s\n",OWQ_I(owq),OWQ_U(owq),OWQ_F(owq),OWQ_Y(owq),SAFESTRING(ctime_r(&OWQ_D(owq),c))) ;
-    printf("--- OneWireQuery done\n") ;
-}    
+	char c[32];
+	printf("OWQ OneWireQuery structure of %s\n", OWQ_pn(owq).path);
+	printf("    OneWireQuery size=%lu offset=%lu, extension=%d\n",
+		   (unsigned long) OWQ_size(owq), (unsigned long) OWQ_offset(owq), (int) OWQ_pn(owq).extension);
+	Debug_Bytes("OneWireQuery buffer", (BYTE *) OWQ_buffer(owq), OWQ_size(owq));
+	printf("    OneWireQuery I=%d U=%u F=%G Y=%d D=%s\n", OWQ_I(owq), OWQ_U(owq), OWQ_F(owq), OWQ_Y(owq), SAFESTRING(ctime_r(&OWQ_D(owq), c)));
+	printf("--- OneWireQuery done\n");
+}

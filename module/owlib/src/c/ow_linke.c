@@ -18,37 +18,31 @@ $Id$
 static struct timeval tvnet = { 0, 200000, };
 
 //static void byteprint( const BYTE * b, int size ) ;
-static int LINK_write(const BYTE * buf, const size_t size,
-					  const struct parsedname *pn);
-static int LINK_read(BYTE * buf, const size_t size,
-					 const struct parsedname *pn);
+static int LINK_write(const BYTE * buf, const size_t size, const struct parsedname *pn);
+static int LINK_read(BYTE * buf, const size_t size, const struct parsedname *pn);
 static int LINK_reset(const struct parsedname *pn);
-static int LINK_next_both(struct device_search *ds,
-						  const struct parsedname *pn);
-static int LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay,
-						  const struct parsedname *pn);
-static int LINK_sendback_data(const BYTE * data, BYTE * resp,
-							  const size_t len,
-							  const struct parsedname *pn);
+static int LINK_next_both(struct device_search *ds, const struct parsedname *pn);
+static int LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay, const struct parsedname *pn);
+static int LINK_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 static void LINKE_setroutines(struct connection_in *in);
 static int LINKE_preamble(const struct parsedname *pn);
 static void LINKE_close(struct connection_in *in);
 
-static void LINKE_setroutines(struct connection_in * in)
+static void LINKE_setroutines(struct connection_in *in)
 {
 	in->iroutines.detect = LINKE_detect;
-    in->iroutines.reset = LINK_reset;
-    in->iroutines.next_both = LINK_next_both;
-    in->iroutines.PowerByte = LINK_PowerByte;
+	in->iroutines.reset = LINK_reset;
+	in->iroutines.next_both = LINK_next_both;
+	in->iroutines.PowerByte = LINK_PowerByte;
 //    in->iroutines.ProgramPulse = ;
-    in->iroutines.sendback_data = LINK_sendback_data;
+	in->iroutines.sendback_data = LINK_sendback_data;
 //    in->iroutines.sendback_bits = ;
-    in->iroutines.select = NULL;
-    in->iroutines.reconnect = NULL;
-    in->iroutines.close = LINKE_close;
-    in->iroutines.transaction = NULL;
-    in->iroutines.flags = ADAP_FLAG_2409path;
-    in->bundling_length = LINKE_FIFO_SIZE ;
+	in->iroutines.select = NULL;
+	in->iroutines.reconnect = NULL;
+	in->iroutines.close = LINKE_close;
+	in->iroutines.transaction = NULL;
+	in->iroutines.flags = ADAP_FLAG_2409path;
+	in->bundling_length = LINKE_FIFO_SIZE;
 }
 
 #define LINK_string(x)  ((BYTE *)(x))
@@ -62,9 +56,9 @@ int LINKE_detect(struct connection_in *in)
 	pn.selected_connection = in;
 	LEVEL_CONNECT("LinkE detect\n");
 	/* Set up low-level routines */
-    LINKE_setroutines(in) ;
+	LINKE_setroutines(in);
 
-    if (in->name == NULL)
+	if (in->name == NULL)
 		return -1;
 	if (ClientAddr(in->name, in))
 		return -1;
@@ -86,10 +80,10 @@ int LINKE_detect(struct connection_in *in)
 static int LINK_reset(const struct parsedname *pn)
 {
 	BYTE resp[8];
-	int ret ;
-	
-	tcp_read_flush( pn->selected_connection->file_descriptor ) ;
-	
+	int ret;
+
+	tcp_read_flush(pn->selected_connection->file_descriptor);
+
 	// Send 'r' reset
 	if (LINK_write(LINK_string("r"), 1, pn) || LINK_read(resp, 4, pn)) {
 		return -EIO;
@@ -99,29 +93,28 @@ static int LINK_reset(const struct parsedname *pn)
 
 	case 'P':
 		pn->selected_connection->AnyDevices = 1;
-		ret = BUS_RESET_OK ;
+		ret = BUS_RESET_OK;
 		break;
 
 	case 'N':
 		pn->selected_connection->AnyDevices = 0;
-		ret = BUS_RESET_OK ;
+		ret = BUS_RESET_OK;
 		break;
 
 	case 'S':
-		ret = BUS_RESET_SHORT ;
-		break ;
+		ret = BUS_RESET_SHORT;
+		break;
 
 	default:
 		ret = -EIO;
-		break ;
+		break;
 
 	}
 
-	return ret ;
+	return ret;
 }
 
-static int LINK_next_both(struct device_search *ds,
-						  const struct parsedname *pn)
+static int LINK_next_both(struct device_search *ds, const struct parsedname *pn)
 {
 	char resp[21];
 	int ret;
@@ -131,8 +124,8 @@ static int LINK_next_both(struct device_search *ds,
 	if (ds->LastDevice)
 		return -ENODEV;
 
-    ++ds->index ;
-    if (ds->index == 0) {
+	++ds->index;
+	if (ds->index == 0) {
 		if ((ret = LINK_write(LINK_string("f"), 1, pn)))
 			return ret;
 	} else {
@@ -185,12 +178,11 @@ static int LINK_next_both(struct device_search *ds,
    0=good else bad
    Note that buffer length should 1 exta char long for ethernet reads
 */
-static int LINK_read(BYTE * buf, const size_t size,
-					 const struct parsedname *pn)
+static int LINK_read(BYTE * buf, const size_t size, const struct parsedname *pn)
 {
-    if ( tcp_read(pn->selected_connection->file_descriptor, buf, size, &tvnet) != (ssize_t) size ) {
-        LEVEL_CONNECT("LINK_read (ethernet) error\n");
-        return -EIO ;
+	if (tcp_read(pn->selected_connection->file_descriptor, buf, size, &tvnet) != (ssize_t) size) {
+		LEVEL_CONNECT("LINK_read (ethernet) error\n");
+		return -EIO;
 	}
 	return 0;
 }
@@ -201,24 +193,22 @@ static int LINK_read(BYTE * buf, const size_t size,
           -EIO = error
    Special processing for the remote hub (add 0x0A)
  */
-static int LINK_write(const BYTE * buf, const size_t size,
-					  const struct parsedname *pn)
+static int LINK_write(const BYTE * buf, const size_t size, const struct parsedname *pn)
 {
-	ssize_t r ;
-    //Debug_Bytes( "LINK write", buf, size) ;
-    r = write(pn->selected_connection->file_descriptor, buf, size);
+	ssize_t r;
+	//Debug_Bytes( "LINK write", buf, size) ;
+	r = write(pn->selected_connection->file_descriptor, buf, size);
 
-    if (r < 0) {
-        ERROR_CONNECT("Trouble writing data to LINK: %s\n",
-                        SAFESTRING(pn->selected_connection->name));
-        return r ;
-    }
+	if (r < 0) {
+		ERROR_CONNECT("Trouble writing data to LINK: %s\n", SAFESTRING(pn->selected_connection->name));
+		return r;
+	}
 
-    tcdrain(pn->selected_connection->file_descriptor);
-    gettimeofday(&(pn->selected_connection->bus_write_time), NULL);
-	
-    if (r < (ssize_t) size) {
-        LEVEL_CONNECT("Short write to LINK -- intended %d, sent %d\n",(int)size,(int)r) ;
+	tcdrain(pn->selected_connection->file_descriptor);
+	gettimeofday(&(pn->selected_connection->bus_write_time), NULL);
+
+	if (r < (ssize_t) size) {
+		LEVEL_CONNECT("Short write to LINK -- intended %d, sent %d\n", (int) size, (int) r);
 		STAT_ADD1_BUS(e_bus_write_errors, pn->selected_connection);
 		return -EIO;
 	}
@@ -226,27 +216,28 @@ static int LINK_write(const BYTE * buf, const size_t size,
 	return 0;
 }
 
-static int LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay,
-						  const struct parsedname *pn)
+static int LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay, const struct parsedname *pn)
 {
-	ASCII buf[3] = "pxx" ;
-	
-	num2string( &buf[1], data ) ;
-	
-	if (LINK_write(LINK_string(buf), 3, pn) || LINK_read(LINK_string(buf),2,pn) ) {
+	ASCII buf[3] = "pxx";
+
+	num2string(&buf[1], data);
+
+	if (LINK_write(LINK_string(buf), 3, pn)
+		|| LINK_read(LINK_string(buf), 2, pn)) {
 		return -EIO;			// send just the <CR>
 	}
-	
-	resp[0] = string2num(buf) ;
-	
+
+	resp[0] = string2num(buf);
+
 	// delay
 	UT_delay(delay);
-	
-	if (LINK_write(LINK_string("\r"), 1, pn) || LINK_read(LINK_string(buf),3,pn) ) {
-	return -EIO;            // send just the <CR>
+
+	if (LINK_write(LINK_string("\r"), 1, pn)
+		|| LINK_read(LINK_string(buf), 3, pn)) {
+		return -EIO;			// send just the <CR>
 	}
-	
-	return 0 ;
+
+	return 0;
 }
 
 // _sendback_data
@@ -255,24 +246,23 @@ static int LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay,
    sendout_data, readin
  */
 // Assume buffer length (combuffer) is 1 + 32*2 + 1
-static int LINK_sendback_data(const BYTE * data, BYTE * resp,
-							  const size_t size,
-							  const struct parsedname *pn)
+static int LINK_sendback_data(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
 {
-	size_t left = size ;
+	size_t left = size;
 	BYTE *buf = pn->selected_connection->combuffer;
 
-    if (size == 0)
+	if (size == 0)
 		return 0;
 
-    while ( left > 0 ) {
-        buf[0] = 'b' ; //put in byte mode
-        size_t this_length = (left > 32) ? 32 : left;
-        size_t total_length = 2 * this_length + 2 ;
+	while (left > 0) {
+		buf[0] = 'b';			//put in byte mode
+		size_t this_length = (left > 32) ? 32 : left;
+		size_t total_length = 2 * this_length + 2;
 //        printf(">> size=%d, left=%d, i=%d\n",size,left,i);
 		bytes2string((char *) &buf[1], &data[size - left], this_length);
-        buf[total_length-1] = '\r' ; // take out of byte mode
-		if (LINK_write(buf, total_length, pn) || LINK_read(buf, total_length+2, pn))
+		buf[total_length - 1] = '\r';	// take out of byte mode
+		if (LINK_write(buf, total_length, pn)
+			|| LINK_read(buf, total_length + 2, pn))
 			return -EIO;
 		string2bytes((char *) buf, &resp[size - left], this_length);
 		left -= this_length;

@@ -14,13 +14,9 @@ $Id$
 #if OW_ZERO
 
 static void ResolveBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
-						DNSServiceErrorType e, const char *n,
-						const char *host, uint16_t port, uint16_t tl,
-						const char *t, void *c);
+						DNSServiceErrorType e, const char *n, const char *host, uint16_t port, uint16_t tl, const char *t, void *c);
 static void BrowseBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
-					   DNSServiceErrorType e, const char *name,
-					   const char *type, const char *domain,
-					   void *context);
+					   DNSServiceErrorType e, const char *name, const char *type, const char *domain, void *context);
 static void HandleCall(DNSServiceRef sref);
 
 static void HandleCall(DNSServiceRef sref)
@@ -58,17 +54,14 @@ static void HandleCall(DNSServiceRef sref)
 	}
 	DNSServiceRefDeallocate(sref);
 	if (err != kDNSServiceErr_NoError) {
-		fprintf(stderr, "Service Discovery Process result error  0x%X\n",
-				(int) err);
+		fprintf(stderr, "Service Discovery Process result error  0x%X\n", (int) err);
 		Exit(1);
 	}
 }
 
 
 static void ResolveBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
-						DNSServiceErrorType e, const char *n,
-						const char *host, uint16_t port, uint16_t tl,
-						const char *t, void *c)
+						DNSServiceErrorType e, const char *n, const char *host, uint16_t port, uint16_t tl, const char *t, void *c)
 {
 	ASCII name[121];
 	(void) tl;
@@ -79,7 +72,7 @@ static void ResolveBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 	if (snprintf(name, 120, "%s:%d", SAFESTRING(host), ntohs(port)) < 0) {
 		perror("Trouble with zeroconf resolve return\n");
 	} else if (count_inbound_connections < 1) {
-		++count_inbound_connections ;
+		++count_inbound_connections;
 		owserver_connection->name = strdup(name);
 		return;
 	}
@@ -88,8 +81,7 @@ static void ResolveBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 
 /* Sent back from Bounjour -- arbitrarily use it to set the Ref for Deallocation */
 static void BrowseBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
-					   DNSServiceErrorType e, const char *name,
-					   const char *type, const char *domain, void *context)
+					   DNSServiceErrorType e, const char *name, const char *type, const char *domain, void *context)
 {
 	(void) context;
 	//fprintf(stderr, "BrowseBack ref=%ld flags=%ld index=%ld, error=%d name=%s type=%s domain=%s\n",(long int)s,(long int)f,(long int)i,(int)e,SAFESTRING(name),SAFESTRING(type),SAFESTRING(domain)) ;
@@ -99,14 +91,11 @@ static void BrowseBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 		if (f & kDNSServiceFlagsAdd) {	// Add
 			DNSServiceRef sr;
 
-			if (DNSServiceResolve
-				(&sr, 0, 0, name, type, domain, ResolveBack,
-				 NULL) == kDNSServiceErr_NoError) {
+			if (DNSServiceResolve(&sr, 0, 0, name, type, domain, ResolveBack, NULL) == kDNSServiceErr_NoError) {
 				HandleCall(sr);
 				return;
 			} else {
-				fprintf(stderr, "Service Resolve error on %s\n",
-						SAFESTRING(name));
+				fprintf(stderr, "Service Resolve error on %s\n", SAFESTRING(name));
 			}
 		} else {
 			fprintf(stderr, "OWSERVER %s is leaving\n", name);
@@ -122,9 +111,7 @@ void OW_Browse(void)
 	DNSServiceErrorType dnserr;
 	DNSServiceRef sref;
 
-	dnserr =
-		DNSServiceBrowse(&sref, 0, 0, "_owserver._tcp", NULL, BrowseBack,
-						 NULL);
+	dnserr = DNSServiceBrowse(&sref, 0, 0, "_owserver._tcp", NULL, BrowseBack, NULL);
 	if (dnserr == kDNSServiceErr_NoError) {
 		HandleCall(sref);
 	} else {
@@ -137,8 +124,7 @@ void OW_Browse(void)
 
 void OW_Browse(void)
 {
-	fprintf(stderr,
-			"OWFS is compiled without Zeroconf/Bonjour support.\n");
+	fprintf(stderr, "OWFS is compiled without Zeroconf/Bonjour support.\n");
 }
 
 #endif							/* OW_ZERO */

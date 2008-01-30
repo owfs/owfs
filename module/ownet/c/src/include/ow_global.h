@@ -46,7 +46,7 @@ $Id$
 
 /* CAnn stand alone -- separated out of ow.h for clarity */
 
-#ifndef OW_GLOBAL_H					/* tedious wrapper */
+#ifndef OW_GLOBAL_H				/* tedious wrapper */
 #define OW_GLOBAL_H
 
 

@@ -69,8 +69,7 @@ struct dev_opaque {
  */
 static int dev_compare(const void *a, const void *b)
 {
-	return memcmp(&((const struct devlock *) a)->sn,
-				  &((const struct devlock *) b)->sn, 8);
+	return memcmp(&((const struct devlock *) a)->sn, &((const struct devlock *) b)->sn, 8);
 }
 #endif
 
@@ -91,15 +90,14 @@ int LockGet(const struct parsedname *pn)
 
 	/* pn->selected_connection is null when "cat /tmp/1wire/system/adapter/pulldownslewrate.0"
 	 * and you have owfs -s & owserver -u started. */
-	if(pn->selected_connection == NULL) {
-	  if((pn->type == ePN_settings) ||
-	     (pn->type == ePN_system)) {
-	    /* Probably trying to read/write some adapter settings which
-	     * is not available for remote connections... only local adapters. */
-	    return -ENOTSUP;
-	  }
+	if (pn->selected_connection == NULL) {
+		if ((pn->type == ePN_settings) || (pn->type == ePN_system)) {
+			/* Probably trying to read/write some adapter settings which
+			 * is not available for remote connections... only local adapters. */
+			return -ENOTSUP;
+		}
 	}
-	inindex = pn->selected_connection->index; // do this after testing pn->selected_device since pn->selected_connection is perhaps null
+	inindex = pn->selected_connection->index;	// do this after testing pn->selected_device since pn->selected_connection is perhaps null
 
 	pn->lock[inindex] = NULL;
 	/* Need locking? */
@@ -143,9 +141,9 @@ int LockGet(const struct parsedname *pn)
 		pthread_mutex_lock(&(opaque->key->lock));
 		pn->lock[inindex] = opaque->key;
 	}
-#else                          /* OW_MT */
-    (void) pn ; // suppress compiler warning in the trivial case.
-#endif                          /* OW_MT */
+#else							/* OW_MT */
+	(void) pn;					// suppress compiler warning in the trivial case.
+#endif							/* OW_MT */
 	return 0;
 }
 
@@ -173,8 +171,8 @@ void LockRelease(const struct parsedname *pn)
 		}
 		pn->lock[inindex] = NULL;
 	}
-#else                          /* OW_MT */
-	(void) pn ; // suppress compiler warning in the trivial case.
+#else							/* OW_MT */
+	(void) pn;					// suppress compiler warning in the trivial case.
 #endif							/* OW_MT */
 }
 
@@ -201,7 +199,7 @@ void BUS_lock_in(struct connection_in *in)
 	}
 #endif							/* OW_MT */
 	gettimeofday(&(in->last_lock), NULL);	/* for statistics */
-	STAT_ADD1_BUS(e_bus_locks,in) ;
+	STAT_ADD1_BUS(e_bus_locks, in);
 }
 
 void BUS_unlock_in(struct connection_in *in)
@@ -239,7 +237,7 @@ void BUS_unlock_in(struct connection_in *in)
 			--t->tv_sec;
 		}
 	}
-	++in->bus_stat[e_bus_unlocks] ;
+	++in->bus_stat[e_bus_unlocks];
 	STATUNLOCK;
 #if OW_MT
 	if (in->busmode == bus_i2c && in->connin.i2c.channels > 1) {

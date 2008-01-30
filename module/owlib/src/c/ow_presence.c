@@ -46,44 +46,44 @@ $Id$
 #include "ow_connection.h"
 
 /* ------- Prototypes ------------ */
-static int CheckPresence_low(struct connection_in *in,
-							 const struct parsedname *pn);
+static int CheckPresence_low(struct connection_in *in, const struct parsedname *pn);
 
 /* ------- Functions ------------ */
 
 /* Check if device exists -- >=0 yes, -1 no */
 int CheckPresence(struct parsedname *pn)
 {
-    int bus_nr ;
+	int bus_nr;
 
-    if (NotRealDir(pn)) {
-        return 0 ;
-    }
-    
-    if ( (pn->selected_device == DeviceSimultaneous) || (pn->selected_device == DeviceThermostat) ) {
-        return 0 ;
-    }
-		
-    /* If set, already found bus. */
-    /* Use UnsetKnownBus to clear and allow a new search */
-    if ( KnownBus(pn) ) {
-        return pn->known_bus->index ;
-    }
-    
-    if ( Cache_Get_Device(&bus_nr, pn) == 0 ) {
-        SetKnownBus( bus_nr, pn ) ;
-        return bus_nr ;
-    }
-    
-    LEVEL_DETAIL("Checking presence of %s\n", SAFESTRING(pn->path));
+	if (NotRealDir(pn)) {
+		return 0;
+	}
+
+	if ((pn->selected_device == DeviceSimultaneous)
+		|| (pn->selected_device == DeviceThermostat)) {
+		return 0;
+	}
+
+	/* If set, already found bus. */
+	/* Use UnsetKnownBus to clear and allow a new search */
+	if (KnownBus(pn)) {
+		return pn->known_bus->index;
+	}
+
+	if (Cache_Get_Device(&bus_nr, pn) == 0) {
+		SetKnownBus(bus_nr, pn);
+		return bus_nr;
+	}
+
+	LEVEL_DETAIL("Checking presence of %s\n", SAFESTRING(pn->path));
 	bus_nr = CheckPresence_low(pn->head_inbound_list, pn);	// check only allocated count_inbound_connections
-    if ( bus_nr >= 0 ) {
-        SetKnownBus( bus_nr, pn ) ;
-        Cache_Add_Device(bus_nr, pn);
-        return bus_nr ;
-    }
-    UnsetKnownBus(pn) ;
-    return -1 ;
+	if (bus_nr >= 0) {
+		SetKnownBus(bus_nr, pn);
+		Cache_Add_Device(bus_nr, pn);
+		return bus_nr;
+	}
+	UnsetKnownBus(pn);
+	return -1;
 }
 
 /* Check if device exists -- -1 no, >=0 yes (bus number) */
@@ -104,8 +104,7 @@ static void *CheckPresence_callback(void *vp)
 	return NULL;
 }
 
-static int CheckPresence_low(struct connection_in *in,
-							 const struct parsedname *pn)
+static int CheckPresence_low(struct connection_in *in, const struct parsedname *pn)
 {
 	int ret = 0;
 	pthread_t thread;
@@ -113,9 +112,8 @@ static int CheckPresence_low(struct connection_in *in,
 	struct parsedname pn2;
 	struct checkpresence_struct cps = { in->next, pn, 0 };
 
-    threadbad = ( in->next == NULL )
-			|| pthread_create(&thread, NULL, CheckPresence_callback,
-							  (void *) (&cps));
+	threadbad = (in->next == NULL)
+		|| pthread_create(&thread, NULL, CheckPresence_callback, (void *) (&cps));
 
 	memcpy(&pn2, pn, sizeof(struct parsedname));	// shallow copy
 	pn2.selected_connection = in;
@@ -133,9 +131,9 @@ static int CheckPresence_low(struct connection_in *in,
 		}
 		//printf("CheckPresence_low: ServerPresence(%s) pn->selected_connection->index=%d ret=%d\n", pn->path, pn->selected_connection->index, ret);
 	} else if (get_busmode(in) == bus_fake) {
-        ret = (DirblobSearch( pn2.sn, &(in->connin.fake.db) ) < 0) ? -1 : in->index;
+		ret = (DirblobSearch(pn2.sn, &(in->connin.fake.db)) < 0) ? -1 : in->index;
 	} else if (get_busmode(in) == bus_tester) {
-        ret = (DirblobSearch( pn2.sn, &(in->connin.tester.db) ) < 0) ? -1 : in->index;
+		ret = (DirblobSearch(pn2.sn, &(in->connin.tester.db)) < 0) ? -1 : in->index;
 	} else {
 		struct transaction_log t[] = {
 			TRXN_NVERIFY,
@@ -162,15 +160,14 @@ static int CheckPresence_low(struct connection_in *in,
 
 #else							/* OW_MT */
 
-static int CheckPresence_low(struct connection_in *in,
-							 const struct parsedname *pn)
+static int CheckPresence_low(struct connection_in *in, const struct parsedname *pn)
 {
 	struct parsedname pn2;
 
 	memcpy(&pn2, pn, sizeof(struct parsedname));	// shallow copy
 	pn2.selected_connection = in;
-	
-    if (TestConnection(&pn2)) {	// reconnect successful?
+
+	if (TestConnection(&pn2)) {	// reconnect successful?
 		return -ECONNABORTED;
 	} else if (BusIsServer(in)) {
 		if (ServerPresence(&pn2) >= 0) {
@@ -178,14 +175,14 @@ static int CheckPresence_low(struct connection_in *in,
 			return in->index;
 		}
 	} else if (get_busmode(in) == bus_fake) {
-		int ret = DirblobSearch(pn2.sn,&(in->connin.fake.db)) ;
-		if ( ret >= 0 ) {
-			return ret ;
+		int ret = DirblobSearch(pn2.sn, &(in->connin.fake.db));
+		if (ret >= 0) {
+			return ret;
 		}
 	} else if (get_busmode(in) == bus_tester) {
-		int ret = DirblobSearch(pn2.sn,&(in->connin.tester.db)) ;
-		if ( ret >= 0 ) {
-			return ret ;
+		int ret = DirblobSearch(pn2.sn, &(in->connin.tester.db));
+		if (ret >= 0) {
+			return ret;
 		}
 	} else {
 		struct transaction_log t[] = {
@@ -193,37 +190,36 @@ static int CheckPresence_low(struct connection_in *in,
 			TRXN_END,
 		};
 		/* this can only be done on local busses */
-		if (BUS_transaction(t, &pn2)==0) {
+		if (BUS_transaction(t, &pn2) == 0) {
 			/* Device was found on this in-device, return it's index */
 			return in->index;
 		}
 	}
 
-    /* recurse to next bus number */
-    if (in->next) {
+	/* recurse to next bus number */
+	if (in->next) {
 		return CheckPresence_low(in->next, pn);
-    }
-    return -ENOENT ; // no success
+	}
+	return -ENOENT;				// no success
 }
 #endif							/* OW_MT */
 
-int FS_present(struct one_wire_query * owq)
+int FS_present(struct one_wire_query *owq)
 {
-    struct parsedname * pn = PN(owq) ;
+	struct parsedname *pn = PN(owq);
 
-	if (NotRealDir(pn) || pn->selected_device == DeviceSimultaneous
-		|| pn->selected_device == DeviceThermostat) {
-        OWQ_Y(owq) = 1;
+	if (NotRealDir(pn) || pn->selected_device == DeviceSimultaneous || pn->selected_device == DeviceThermostat) {
+		OWQ_Y(owq) = 1;
 	} else if (get_busmode(pn->selected_connection) == bus_fake) {
-        OWQ_Y(owq) = 1;
+		OWQ_Y(owq) = 1;
 	} else if (get_busmode(pn->selected_connection) == bus_tester) {
-        OWQ_Y(owq) = 1;
+		OWQ_Y(owq) = 1;
 	} else {
 		struct transaction_log t[] = {
 			TRXN_NVERIFY,
 			TRXN_END,
 		};
-        OWQ_Y(owq) = BUS_transaction(t, pn) ? 0 : 1;
+		OWQ_Y(owq) = BUS_transaction(t, pn) ? 0 : 1;
 	}
 	return 0;
 }

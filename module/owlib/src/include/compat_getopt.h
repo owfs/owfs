@@ -139,25 +139,16 @@ extern "C" {
 /* Many other libraries have conflicting prototypes for getopt, with
    differences in the consts, in stdlib.h.  To avoid compilation
    errors, only prototype getopt for the GNU C library.  */
-	extern int getopt(int __argc, char *const *__argv,
-					  const char *__shortopts);
+	extern int getopt(int __argc, char *const *__argv, const char *__shortopts);
 #endif
 
 #ifndef HAVE_GETOPT_LONG
-	extern int getopt_long(int __argc, char *const *__argv,
-						   const char *__shortopts,
-						   const struct option *__longopts,
-						   int *__longind);
-	extern int getopt_long_only(int __argc, char *const *__argv,
-								const char *__shortopts,
-								const struct option *__longopts,
-								int *__longind);
+	extern int getopt_long(int __argc, char *const *__argv, const char *__shortopts, const struct option *__longopts, int *__longind);
+	extern int getopt_long_only(int __argc, char *const *__argv, const char *__shortopts, const struct option *__longopts, int *__longind);
 
 /* Internal only.  Users should not call this directly.  */
 	extern int _getopt_internal(int __argc, char *const *__argv,
-								const char *__shortopts,
-								const struct option *__longopts,
-								int *__longind, int __long_only);
+								const char *__shortopts, const struct option *__longopts, int *__longind, int __long_only);
 #endif
 
 #ifdef	__cplusplus

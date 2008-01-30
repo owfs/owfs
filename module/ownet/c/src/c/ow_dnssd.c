@@ -89,8 +89,7 @@ int OW_Load_dnssd_library(void)
 #if 0
 			char *derr;
 			derr = DL_error();
-			fprintf(stderr, "DL_open [%s] failed [%s]\n", libdirs[i],
-					derr);
+			fprintf(stderr, "DL_open [%s] failed [%s]\n", libdirs[i], derr);
 #endif
 			i++;
 			continue;
@@ -114,8 +113,7 @@ int OW_Load_dnssd_library(void)
 #if 0
 			char *derr;
 			derr = DL_error();
-			fprintf(stderr, "DL_open [%s] failed [%s]\n", libdirs[i],
-					derr);
+			fprintf(stderr, "DL_open [%s] failed [%s]\n", libdirs[i], derr);
 #endif
 			i++;
 			continue;
@@ -131,29 +129,15 @@ int OW_Load_dnssd_library(void)
 		return -1;
 	}
 
-	DNSServiceRefSockFD =
-		(_DNSServiceRefSockFD) DL_sym(libdnssd, "DNSServiceRefSockFD");
-	DNSServiceProcessResult =
-		(_DNSServiceProcessResult) DL_sym(libdnssd,
-										  "DNSServiceProcessResult");
-	DNSServiceRefDeallocate =
-		(_DNSServiceRefDeallocate) DL_sym(libdnssd,
-										  "DNSServiceRefDeallocate");
-	DNSServiceResolve =
-		(_DNSServiceResolve) DL_sym(libdnssd, "DNSServiceResolve");
-	DNSServiceBrowse =
-		(_DNSServiceBrowse) DL_sym(libdnssd, "DNSServiceBrowse");
-	DNSServiceRegister =
-		(_DNSServiceRegister) DL_sym(libdnssd, "DNSServiceRegister");
-	DNSServiceReconfirmRecord =
-		(_DNSServiceReconfirmRecord) DL_sym(libdnssd,
-											"DNSServiceReconfirmRecord");
-	DNSServiceCreateConnection =
-		(_DNSServiceCreateConnection) DL_sym(libdnssd,
-											 "DNSServiceCreateConnection");
-	DNSServiceEnumerateDomains =
-		(_DNSServiceEnumerateDomains) DL_sym(libdnssd,
-											 "DNSServiceEnumerateDomains");
+	DNSServiceRefSockFD = (_DNSServiceRefSockFD) DL_sym(libdnssd, "DNSServiceRefSockFD");
+	DNSServiceProcessResult = (_DNSServiceProcessResult) DL_sym(libdnssd, "DNSServiceProcessResult");
+	DNSServiceRefDeallocate = (_DNSServiceRefDeallocate) DL_sym(libdnssd, "DNSServiceRefDeallocate");
+	DNSServiceResolve = (_DNSServiceResolve) DL_sym(libdnssd, "DNSServiceResolve");
+	DNSServiceBrowse = (_DNSServiceBrowse) DL_sym(libdnssd, "DNSServiceBrowse");
+	DNSServiceRegister = (_DNSServiceRegister) DL_sym(libdnssd, "DNSServiceRegister");
+	DNSServiceReconfirmRecord = (_DNSServiceReconfirmRecord) DL_sym(libdnssd, "DNSServiceReconfirmRecord");
+	DNSServiceCreateConnection = (_DNSServiceCreateConnection) DL_sym(libdnssd, "DNSServiceCreateConnection");
+	DNSServiceEnumerateDomains = (_DNSServiceEnumerateDomains) DL_sym(libdnssd, "DNSServiceEnumerateDomains");
 
 	return 0;
 }
