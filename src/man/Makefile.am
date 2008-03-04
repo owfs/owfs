@@ -45,7 +45,7 @@ man_MANS = owfs.1 \
            timeout \
            owperl.3 \
            owtcl.3 \
-           owfs.5 \
+           owfs.5 owfs.conf.5 \
            owtcl.n
 
 

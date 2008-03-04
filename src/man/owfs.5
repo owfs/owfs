@@ -1,5 +1,5 @@
 '\"
-'\" Copyright (c) 2003-2004 Paul H Alfille, MD
+'\" Copyright (c) 2003-2008 Paul H Alfille, MD
 '\" (palfille@earthlink.net)
 '\"
 '\" Program manual page for the OWFS -- 1-wire filesystem package
@@ -24,25 +24,81 @@ A configuration file can be invoked for any of the OWFS programs (
 .B owperl (1) owcapi (1) owtcl (1) owphp owpython
 ) to set command line paramters.
 .SH SYNTAX
-.TP
+.P
 Similar to Unix shell script or perl syntax
+.TP
+Comments
 # Any 
 .I #
 marks the start of a comment
 .br
-.br
 # blank lines are ignored
+
+.TP
+Options
+.B option 
+# some options (like 'foreground') take no values
 .br
-option         # some options (like 'foreground') take no values
+.B option = value 
+# other options need a value
 .br
-option = value # other options need a value
+.B option value   
+# '=' can be omitted if whitespace separates
 .br
-option value   # '=' can be omitted if whitespace separates
+.B Option
+# Case is ignored (for options, not values)
 .br
-Option         # Case is ignored (for options, not values)
+.B opt            
+# non-ambiguous abbreviation allowed
 .br
-opt            # non-ambiguous abbreviation allowed
+.B -opt --opt     
+# hyphens ignored
+.TP
+.I owserver
+.B server: 
+opt = value # only
+.I owserver
+effected by this line
 .br
+.B ! server: 
+opt = value # 
+.I owserver
+NOT effected by this line
+.TP
+.I owhttpd
+.B http: 
+opt = value # only
+.I owhttpd
+effected by this line
+.br
+.B ! http: 
+opt = value # 
+.I owhttpd
+NOT effected by this line
+.TP
+.I owftpd
+.B ftp: 
+opt = value # only
+.I owftpd
+effected by this line
+.br
+.B ! ftp: 
+opt = value # 
+.I owftpd
+NOT effected by this line
+.TP
+.I owfs
+.B owfs: 
+opt = value # only
+.I owfs
+effected by this line
+.br
+.B ! owfs: 
+opt = value # 
+.I owfs
+NOT effected by this line
+.TP
+Limits
 # maximum line length of 250 characters
 .br
 # no limit on number of lines
@@ -93,13 +149,19 @@ Here is a sample configuration file with all the possible parameters included.
 .I HA7
 = address[:port] # HA7Net at tcp address (port 80)
 .br
+.I etherweather
+= address[:port] # Etherweather device
+.br
 .I server
 = [address:]port #
 .B owserver
 tcp address
 .br
 .I FAKE
-= 01,10,1B,28 # Fake device with family codes (hex)
+= 10,1B # Random simulated device with family codes (hex)
+.br
+.I TESTER
+= 28,3E # Predictable simulated device with family codes
 .br
 #
 .br
