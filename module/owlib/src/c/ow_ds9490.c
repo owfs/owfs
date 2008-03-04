@@ -63,15 +63,15 @@ static int DS9490_open(struct usb_list *ul, const struct parsedname *pn);
 static int DS9490_reconnect(const struct parsedname *pn);
 int DS9490_getstatus(BYTE * buffer, int readlen, const struct parsedname *pn);
 static int DS9490_next_both(struct device_search *ds, const struct parsedname *pn);
-static int DS9490_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
+static int DS9490_sendback_data(const BYTE * data, BYTE * resp, size_t len, const struct parsedname *pn);
 static int DS9490_HaltPulse(const struct parsedname *pn);
 static void DS9490_setroutines(struct connection_in *in);
 static int DS9490_detect_low(const struct parsedname *pn);
 static int DS9490_detect_found(struct usb_list *ul, const struct parsedname *pn);
-static int DS9490_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname *pn);
+static int DS9490_PowerByte(BYTE byte, BYTE * resp, UINT delay, const struct parsedname *pn);
 static int DS9490_ProgramPulse(const struct parsedname *pn);
-static int DS9490_read(BYTE * buf, const size_t size, const struct parsedname *pn);
-static int DS9490_write(const BYTE * buf, const size_t size, const struct parsedname *pn);
+static int DS9490_read(BYTE * buf, size_t size, const struct parsedname *pn);
+static int DS9490_write(const BYTE * buf, size_t size, const struct parsedname *pn);
 static int DS9490_overdrive(const struct parsedname *pn);
 static int DS9490_redetect_low(const struct parsedname *pn);
 static char *DS9490_device_name(const struct usb_list *ul);
@@ -866,7 +866,7 @@ static int DS9490_reset(const struct parsedname *pn)
 	return BUS_RESET_OK;
 }
 
-static int DS9490_read(BYTE * buf, const size_t size, const struct parsedname *pn)
+static int DS9490_read(BYTE * buf, size_t size, const struct parsedname *pn)
 {
 	int ret;
 	usb_dev_handle *usb = pn->selected_connection->connin.usb.usb;
@@ -882,24 +882,26 @@ static int DS9490_read(BYTE * buf, const size_t size, const struct parsedname *p
 /* Fills the EP2 buffer in the USB adapter
    returns number of bytes (size)
    or <0 for an error */
-static int DS9490_write(const BYTE * buf, const size_t size, const struct parsedname *pn)
+static int DS9490_write(const BYTE * buf, size_t size, const struct parsedname *pn)
 {
 	int ret;
 	usb_dev_handle *usb = pn->selected_connection->connin.usb.usb;
 	//printf("DS9490_write\n");
 
-	if (size == 0)
+    if (size == 0) {
 		return 0;
+    }
 
-	if ((ret = usb_bulk_write(usb, DS2490_EP2, (ASCII *) buf, (const int) size, pn->selected_connection->connin.usb.timeout)) > 0)
+    if ((ret = usb_bulk_write(usb, DS2490_EP2, (ASCII *) buf, (int) size, pn->selected_connection->connin.usb.timeout)) > 0) {
 		return ret;
+    }
 	LEVEL_DATA("DS9490_write: failed ret=%d\n", ret);
 	USB_CLEAR_HALT(usb, DS2490_EP2);
 	STAT_ADD1_BUS(e_bus_write_errors, pn->selected_connection);
 	return ret;
 }
 
-static int DS9490_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn)
+static int DS9490_sendback_data(const BYTE * data, BYTE * resp, size_t len, const struct parsedname *pn)
 {
 	int ret = 0;
 	BYTE buffer[32];
@@ -1098,7 +1100,7 @@ static int FindDiscrepancy(BYTE * last_sn)
 /* Returns 0=good
    bad = -EIO
  */
-static int DS9490_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname *pn)
+static int DS9490_PowerByte(BYTE byte, BYTE * resp, UINT delay, const struct parsedname *pn)
 {
 	int ret;
 

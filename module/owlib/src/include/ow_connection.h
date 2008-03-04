@@ -195,7 +195,7 @@ struct connin_usb {
 	int writeonelowtime;
 	int pulldownslewrate;
 	int usb_flextime;
-	unsigned int timeout;
+	int timeout;
 	/* "Name" of the device, like "8146572300000051"
 	 * This is set to the first DS1420 id found on the 1-wire adapter which
 	 * exists on the DS9490 adapters. If user only have a DS2490 chip, there

@@ -55,6 +55,7 @@ noinst_HEADERS =          \
         ow_mutexes.h      \
         ow_none.h         \
         ow_onewirequery.h \
+        ow_opt.h          \
         ow_parsedname.h   \
         ow_pid.h          \
         ow_settings.h     \

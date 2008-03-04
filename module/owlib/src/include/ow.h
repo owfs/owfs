@@ -212,14 +212,7 @@ $Id$
 */
 
 /* command line options */
-/* These are the owlib-specific options */
-#define OWLIB_OPT "m:c:f:p:s:h::u::d:t:CFRKVP:"
-extern const struct option owopts_long[];
-enum opt_program { opt_owfs, opt_server, opt_httpd, opt_ftpd, opt_tcl,
-	opt_swig, opt_c,
-};
-int owopt(const int c, const char *arg);
-int owopt_packed(const char *params);
+#include "ow_opt.h"
 
 /* Several different structures:
   device -- one for each type of 1-wire device

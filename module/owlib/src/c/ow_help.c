@@ -89,7 +89,9 @@ void ow_help_temperature(void)
 		   " Temperature scale\n"
 		   "  -C --Celsius        Celsius(default) temperature scale\n"
 		   "  -F --Fahrenheit     Fahrenheit temperature scale\n"
-		   "  -K --Kelvin         Kelvin temperature scale\n" "  -R --Rankine        Rankine temperature scale\n");
+		   "  -K --Kelvin         Kelvin temperature scale\n"
+           "  -R --Rankine        Rankine temperature scale\n"
+          );
 }
 
 void ow_help_cache(void)
@@ -110,7 +112,9 @@ void ow_help_cache(void)
 		   "  --timeout_usb       [  5] Timeout for USB transaction\n"
 		   "  --timeout_network   [  1] Timeout for each network transaction\n"
 		   "  --timeout_server    [ 10] Timeout for first server connection\n"
-		   "  --timeout_ftp       [900] Timeout for FTP session\n" "  --timeout_ha7       [ 60] Timeout for HA7Net adapter\n");
+		   "  --timeout_ftp       [900] Timeout for FTP session\n"
+           "  --timeout_ha7       [ 60] Timeout for HA7Net adapter\n"
+          );
 }
 
 void ow_help_program(void)
@@ -124,13 +128,23 @@ void ow_help_program(void)
 		   "                         needs /etc/fuse.conf setting\n"
 		   "\n"
 		   " owhttpd (web server)\n"
-		   " owserver (OWFS server)\n"
-		   " owftpd (ftp server)\n"
+           "  -p --port [ip:]port   TCP address and port number for access\n"
+           "  --zero                Announce service via zeroconf\n"
+           "  --announce name       Name for service given in zeroconf broadcast\n"
+           "  --nozero              Don't announce service via zeroconf\n"
+           "\n"
+           " owserver (OWFS server)\n"
+           "  -p --port [ip:]port   TCP address and port number for access\n"
+           "                           has default port 4304\n"
+           "\n"
+           " owftpd (ftp server)\n"
 		   "  -p --port [ip:]port   TCP address and port number for access\n"
-		   "  --zero                Announce service via zeroconf\n"
+           "                           has default port 22 (root only)\n"
+           "  --zero                Announce service via zeroconf\n"
 		   "  --announce name       Name for service given in zeroconf broadcast\n"
 		   "  --nozero              Don't announce service via zeroconf\n"
-		   "\n" " owftpd (ftp server)\n" "  has default port 22 (root only)\n" "  --max_clients n       Simultaneous ftp sessions\n");
+           "\n"
+          );
 }
 
 void ow_help_device(void)
@@ -141,12 +155,12 @@ void ow_help_device(void)
 		   " Serial devices (dev is port name, e.g. /dev/ttyS0)\n"
 		   "  -d dev          DS9097U or DS9097 adapter (or LINK in emulation mode)\n"
 		   "  --8bit          Open 8bit (instead of 6) serial-port with DS9097\n"
-		   "  --LINK dev      Serial LINK adapter (non-emulation)\n"
-		   "  --HA3 dev       Serial HA3 adapter\n"
-		   "  --HA4B dev      Serial HA4B adapter\n"
-		   "  --HA4B dev      Serial HA4B adapter\n"
-		   "  --HA5 dev       Serial HA5 adapter\n"
-		   "  --HA7E dev      Serial HA7E adapter\n"
+		   "  --LINK=dev      Serial LINK adapter (non-emulation)\n"
+		   "  --HA3=dev       Serial HA3 adapter\n"
+		   "  --HA4B=dev      Serial HA4B adapter\n"
+		   "  --HA4B=dev      Serial HA4B adapter\n"
+		   "  --HA5=dev       Serial HA5 adapter\n"
+		   "  --HA7E=dev      Serial HA7E adapter\n"
 		   " i2c devices\n"
 		   "  -d dev          DS2482-x00 adapter (dev is /dev/i2c-0)\n"
 		   "\n"
@@ -159,16 +173,20 @@ void ow_help_device(void)
 		   "\n"
 		   " Network (address is form [ip:]port, ip DNS name or n.n.n.n, port is port number)\n"
 		   "  -s address      owserver\n"
-		   "  --LINK address  LINK-HUB-E network LINK\n"
-		   "  --HA7NET address HA7NET busmaster\n"
-		   "  --etherweather address EtherWeather\n"
+		   "  --LINK=address  LINK-HUB-E network LINK\n"
+		   "  --HA7NET=address HA7NET busmaster\n"
+		   "  --etherweather=address EtherWeather\n"
 		   "  --autoserver    Find owserver using zeroconf\n"
 		   "\n"
 		   " Simulated\n"
-		   "  --fake list     List of devices to simulate (random ID, random data)\n"
+		   "  --fake=list     List of devices to simulate (random ID, random data)\n"
 		   "                   use family codes in hex\n"
 		   "                   e.g. 1F,10,21 for DS2409,DS18B20,DS1921\n"
-		   "\n" " 1-wire device selection\n" "  --one-device     Only single device on bus, use ROM SKIP command\n");
+           "  --tester=list   List of devices to simulate (non-random ID, non-random data)\n"
+           "\n"
+           " 1-wire device selection\n"
+           "  --one-device     Only single device on bus, use ROM SKIP command\n"
+          );
 }
 
 void ow_help(const char *arg)
@@ -203,5 +221,5 @@ void ow_help(const char *arg)
 		ow_help_general();
 	}
 
-	printf("\n" "Copyright 2003 GPLv2. See http://www.owfs.org for support, downloads\n");
+	printf("\n" "Copyright 2003-8 GPLv2. See http://www.owfs.org for support, downloads\n");
 }

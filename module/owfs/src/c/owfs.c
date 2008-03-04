@@ -73,21 +73,21 @@ int main(int argc, char *argv[])
 		case 'V':
 			fprintf(stderr, "%s version:\n\t" VERSION "\n", argv[0]);
 			break;
-		case 260:				/* fuse_mnt_opt */
+            case e_fuse_opt:				/* fuse_mnt_opt */
 			if (fuse_mnt_opt)
 				free(fuse_mnt_opt);
 			fuse_mnt_opt = Fuse_arg(optarg, "FUSE mount options");
 			if (fuse_mnt_opt == NULL)
 				ow_exit(0);
 			break;
-		case 267:				/* fuse_open_opt */
+            case e_fuse_open_opt:				/* fuse_open_opt */
 			if (fuse_open_opt)
 				free(fuse_open_opt);
 			fuse_open_opt = Fuse_arg(optarg, "FUSE open options");
 			if (fuse_open_opt == NULL)
 				ow_exit(0);
 			break;
-		case 298:				/* allow_other */
+            case e_allow_other:				/* allow_other */
 			allow_other = 1;
 			break;
 		}
