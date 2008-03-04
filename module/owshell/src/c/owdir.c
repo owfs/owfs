@@ -62,4 +62,5 @@ int main(int argc, char *argv[])
 			rc = ServerDir("/");
 	}
 	Exit((rc >= 0 ? 0 : 1));
+    return 0 ; // never reached
 }
