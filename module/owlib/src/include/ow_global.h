@@ -93,6 +93,7 @@ struct global {
 	int no_get;
 	int no_persistence;
 	int eightbit_serial;
+    void * server_port ;
 };
 extern struct global Global;
 
