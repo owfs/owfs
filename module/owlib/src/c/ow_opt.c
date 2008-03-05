@@ -156,26 +156,31 @@ static int ParseInterp(struct lineparse *lp)
 	size_t option_name_length;
 	const struct option *long_option_pointer;
 
+    LEVEL_DEBUG("Configuration file (%s:%d) Program=%s%s, Option=%s, Value=%s\n",SAFESTRING(lp->file),lp->line_number,lp->reverse_prog?"Not ":"",SAFESTRING(lp->prog),SAFESTRING(lp->opt),SAFESTRING(lp->val)) ;
     // Check for program specification
     if ( lp->prog != NULL ) {
-        if ( strcasecmp( lp->prog, "server" ) == 0 ) {
+        ASCII * prog_char ;
+        for ( prog_char = lp->prog ; *prog_char ; ++prog_char ) {
+            *prog_char = tolower( *prog_char ) ;
+        }
+        if ( strstr( lp->prog, "server" ) != NULL ) {
             if (  (Global.opt == opt_server) == lp->reverse_prog ) {
                 return 0 ;
             }
-        } else if ( strcasecmp( lp->prog, "http" ) == 0 ) {
+        } else if ( strstr( lp->prog, "http" ) != NULL ) {
             if (  (Global.opt == opt_httpd) == lp->reverse_prog ) {
                 return 0 ;
             }
-        } else if ( strcasecmp( lp->prog, "ftp" ) == 0 ) {
+        } else if ( strstr( lp->prog, "ftp" ) != NULL ) {
             if (  (Global.opt == opt_ftpd) == lp->reverse_prog ) {
                 return 0 ;
             }
-        } else if ( strcasecmp( lp->prog, "fs" ) == 0 ) {
+        } else if ( strstr( lp->prog, "fs" ) != NULL ) {
             if (  (Global.opt == opt_owfs) == lp->reverse_prog ) {
                 return 0 ;
             }
         } else {
-            LEVEL_DEFAULT("Configuration file (%s,%d) Unrecognized program %s. Option=%s, Value=%s\n",SAFESTRING(lp->file),lp->line_number,SAFESTRING(lp->prog),SAFESTRING(lp->opt),SAFESTRING(lp->val)) ;
+            LEVEL_DEFAULT("Configuration file (%s:%d) Unrecognized program %s. Option=%s, Value=%s\n",SAFESTRING(lp->file),lp->line_number,SAFESTRING(lp->prog),SAFESTRING(lp->opt),SAFESTRING(lp->val)) ;
             return 0 ;
         }
     }
@@ -195,7 +200,7 @@ static int ParseInterp(struct lineparse *lp)
     // long option -- search in owopts_long array
     for (long_option_pointer = owopts_long; long_option_pointer->name != NULL; ++long_option_pointer) {
         if (strncasecmp(lp->opt, long_option_pointer->name, option_name_length) == 0 ) {
-            LEVEL_DEBUG("Configuration file (%s,%d) Option %s recognized as %s. Value=%s\n",SAFESTRING(lp->file),lp->line_number,lp->opt,long_option_pointer->name,SAFESTRING(lp->val)) ;
+            LEVEL_DEBUG("Configuration file (%s:%d) Option %s recognized as %s. Value=%s\n",SAFESTRING(lp->file),lp->line_number,lp->opt,long_option_pointer->name,SAFESTRING(lp->val)) ;
             if ( long_option_pointer->flag != NULL) {	// immediate value mode
                 //printf("flag c=%d flag=%p long_option_pointer->flag=%p\n",c,flag,long_option_pointer->flag);
                 (long_option_pointer->flag)[0] = long_option_pointer->val;
@@ -205,7 +210,7 @@ static int ParseInterp(struct lineparse *lp)
             }
         }
 	}
-    LEVEL_DEFAULT("Configuration file (%s,%d) Unrecognized option %s. Value=%s\n",SAFESTRING(lp->file),lp->line_number,SAFESTRING(lp->opt),SAFESTRING(lp->val)) ;
+    LEVEL_DEFAULT("Configuration file (%s:%d) Unrecognized option %s. Value=%s\n",SAFESTRING(lp->file),lp->line_number,SAFESTRING(lp->opt),SAFESTRING(lp->val)) ;
     return 0 ;
 }
 
