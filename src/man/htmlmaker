@@ -17,5 +17,6 @@ for e in 1 3 5 n ; do
     cp html/$f.html html/$b.html
   done
 done
+pod2html ../../module/ownet/perl5/OWNet/lib/OWNet.pm > html/OWNet.3.html
 
 scp html/* owfs@owfs.org:public_html/uploads
