@@ -60,6 +60,7 @@ noinst_HEADERS =          \
         ow_pid.h          \
         ow_settings.h     \
         ow_simultaneous.h \
+        ow_stateinfo.h    \
         ow_stats.h        \
         ow_stub.h         \
         ow_system.h       \

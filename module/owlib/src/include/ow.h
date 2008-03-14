@@ -281,6 +281,10 @@ extern void set_signal_handlers(void (*exit_handler)
 /* Separated out into ow_global.h for readability */
 #include "ow_global.h"
 
+/* State information for the program */
+/* Separated out into ow_stateinfo.h for readability */
+#include "ow_stateinfo.h"
+
 /* -------------------------------------------- */
 /* start of program -- for statistics amd file atrtributes */
 extern time_t start_time;

@@ -85,6 +85,7 @@ void LibSetup(enum opt_program op);
 int LibStart(void);
 void LibStop(void);
 void LibClose(void);
+int EnterBackground(void) ;
 
 /* Initial sorting or the device and filetype lists */
 void DeviceSort(void);
