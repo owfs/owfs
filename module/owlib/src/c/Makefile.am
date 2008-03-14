@@ -63,6 +63,9 @@ OWLIB_SOURCE = ow_dl.c           \
                ow_interface.c    \
                ow_iterate.c      \
                ow_lcd.c          \
+               ow_lib_close.c    \
+               ow_lib_setup.c    \
+               ow_lib_stop.c     \
                ow_link.c         \
                ow_linke.c        \
                ow_locator.c      \
@@ -88,6 +91,7 @@ OWLIB_SOURCE = ow_dl.c           \
                ow_server.c       \
                ow_select.c       \
                ow_settings.c     \
+               ow_sig_handlers.c \
                ow_simultaneous.c \
                ow_system.c       \
                ow_tcp_read.c     \

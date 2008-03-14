@@ -16,34 +16,10 @@ $Id$
 #include "ow_pid.h"
 
 void SetSignals(void);
+void SigHandler(int signo, siginfo_t * info, void *context) ;
 
 // flag to initiate shutdown
 int shutdown_in_progress = 0;
-
-/* All ow library setup */
-void LibSetup(enum opt_program opt)
-{
-#if OW_ZERO
-	OW_Load_dnssd_library();
-#endif
-
-	Global.opt = opt;
-
-	/* special resort in case static data (devices and filetypes) not properly sorted */
-	DeviceSort();
-
-#if OW_CACHE
-	Cache_Open();
-#endif							/* OW_CACHE */
-
-#ifndef __UCLIBC__
-	/* Setup the multithreading synchronizing locks */
-	LockSetup();
-#endif							/* __UCLIBC__ */
-
-	start_time = time(NULL);
-	errno = 0;					/* set error level none */
-}
 
 #if defined(__UCLIBC__)
 #if (defined(__UCLIBC_HAS_MMU__) || defined(__ARCH_HAS_MMU__))
@@ -436,90 +412,5 @@ void SetSignals(void)
 	if (sigaction(SIGPIPE, &sa, NULL) == -1) {
 		LEVEL_DEFAULT("Cannot ignore SIGPIPE\n");
 		exit(0);
-	}
-}
-
-/* All ow library closeup */
-void LibClose(void)
-{
-	LEVEL_CALL("Starting Library cleanup\n");
-	PIDstop();
-#if OW_CACHE
-	LEVEL_CALL("Closing Cache\n");
-	Cache_Close();
-#endif							/* OW_CACHE */
-	LEVEL_CALL("Closing input devices\n");
-	FreeIn();
-	LEVEL_CALL("Closing outout devices\n");
-	FreeOut();
-	DeviceDestroy();
-
-#if OW_MT
-	if (pmattr) {
-		pthread_mutexattr_destroy(pmattr);
-		pmattr = NULL;
-	}
-#endif							/* OW_MT */
-
-	if (Global.announce_name)
-		free(Global.announce_name);
-
-	if (Global.progname)
-		free(Global.progname);
-
-#if OW_ZERO
-	if (Global.browse && (libdnssd != NULL))
-		DNSServiceRefDeallocate(Global.browse);
-
-	OW_Free_dnssd_library();
-#endif
-	LEVEL_CALL("Finished Library cleanup\n");
-	if (log_available)
-		closelog();
-}
-
-/* Just close in/out devices and clear cache. Just enough to make it possible
-   to call LibStart() again. This is called from swig/ow.i to when script
-   wants to initialize a new server-connection. */
-void LibStop(void)
-{
-	char *argv[1] = { NULL };
-#if OW_CACHE
-	LEVEL_CALL("Clear Cache\n");
-	Cache_Clear();
-#endif							/* OW_CACHE */
-	LEVEL_CALL("Closing input devices\n");
-	FreeIn();
-	LEVEL_CALL("Closing outout devices\n");
-	FreeOut();
-
-
-	/* Have to reset more internal variables, and this should be fixed
-	 * by setting optind = 0 and call getopt()
-	 * (first_nonopt = last_nonopt = 1;)
-	 */
-	optind = 0;
-	(void) getopt_long(1, argv, " ", NULL, NULL);
-
-	optarg = NULL;
-	optind = 1;
-	opterr = 1;
-	optopt = '?';
-}
-
-void set_signal_handlers(void (*exit_handler)
-						  (int signo, siginfo_t * info, void *context))
-{
-	struct sigaction sa;
-
-	memset(&sa, 0, sizeof(struct sigaction));
-	sigemptyset(&(sa.sa_mask));
-
-	sa.sa_flags = SA_SIGINFO;
-	sa.sa_sigaction = exit_handler;
-	if ((sigaction(SIGINT, &sa, NULL) == -1) || (sigaction(SIGTERM, &sa, NULL) == -1)) {
-		LEVEL_DEFAULT("Cannot set exit signal handlers\n");
-		//exit_handler (-1, NULL, NULL);
-		exit(1);
 	}
 }
