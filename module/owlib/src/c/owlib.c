@@ -22,13 +22,6 @@ void SigHandler(int signo, siginfo_t * info, void *context) ;
 int shutdown_in_progress = 0;
 
 
-#ifdef __UCLIBC__
-#if OW_MT
-extern char *__pthread_initial_thread_bos;
-void __pthread_initialize(void);
-#endif							/* OW_MT */
-#endif							/* __UCLIBC */
-
 /* Start the owlib process -- actually only tests for backgrounding */
 int LibStart(void)
 {
@@ -37,21 +30,6 @@ int LibStart(void)
 	/* Initialize random number generator, make sure fake devices get the same
 	 * id each time */
 	srand(1);
-
-#if OW_MT
-	/* Have to re-initialize pthread since the main-process is gone.
-	 *
-	 * This workaround will probably be fixed in uClibc-0.9.28
-	 * Other uClibc developers have noticed similar problems which are
-	 * trigged when pthread functions are used in shared libraries. */
-	__pthread_initial_thread_bos = NULL;
-	__pthread_initialize();
-
-	/* global mutex attribute */
-	pthread_mutexattr_init(&mattr);
-	pthread_mutexattr_settype(&mattr, PTHREAD_MUTEX_ADAPTIVE_NP);
-	pmattr = &mattr;
-#endif							/* OW_MT */
 
 	/* Setup the multithreading synchronizing locks */
 	LockSetup();

@@ -19,6 +19,13 @@ $Id$
 
 /* ------- Globals ----------- */
 
+#ifdef __UCLIBC__
+#if OW_MT
+extern char *__pthread_initial_thread_bos;
+void __pthread_initialize(void);
+#endif							/* OW_MT */
+#endif							/* __UCLIBC */
+
 #if OW_MT
 pthread_mutex_t stat_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t cache_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -39,6 +46,24 @@ pthread_mutex_t libusb_mutex = PTHREAD_MUTEX_INITIALIZER;
 /* Essentially sets up mutexes to protect global data/devices */
 void LockSetup(void)
 {
+
+#ifdef __UCLIBC__
+#if OW_MT
+	/* Have to re-initialize pthread since the main-process is gone.
+	 *
+	 * This workaround will probably be fixed in uClibc-0.9.28
+	 * Other uClibc developers have noticed similar problems which are
+	 * trigged when pthread functions are used in shared libraries. */
+	__pthread_initial_thread_bos = NULL;
+	__pthread_initialize();
+
+	/* global mutex attribute */
+	pthread_mutexattr_init(&mattr);
+	pthread_mutexattr_settype(&mattr, PTHREAD_MUTEX_ADAPTIVE_NP);
+	pmattr = &mattr;
+#endif							/* OW_MT */
+#endif							/* __UCLIBC */
+
 #if OW_MT
 	pthread_mutex_init(&stat_mutex, pmattr);
 	pthread_mutex_init(&cache_mutex, pmattr);
