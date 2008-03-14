@@ -14,10 +14,10 @@ $Id$
 #include "ow.h"
 
 struct stateinfo StateInfo = {
-    lib_setup_done = 0 ,
-    lib_start_done = 0 ,
-    lib_finish_done = 0 ,
-    lock_setup_done = 0 ,
-    start_time = 0 ,
-    dir_time =0 ,
+    .lib_setup_done = 0 ,
+    .lib_start_done = 0 ,
+    .lib_finish_done = 0 ,
+    .lock_setup_done = 0 ,
+    .start_time = 0 ,
+    .dir_time =0 ,
 };
