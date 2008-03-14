@@ -44,6 +44,7 @@ $Id$
 
 #include <config.h>
 #include "owfs_config.h"
+#include "ow.h"
 #include "ow_interface.h"
 #include "ow_connection.h"
 
@@ -415,6 +416,6 @@ static int FS_time(struct one_wire_query *owq)
 
 static int FS_elapsed(struct one_wire_query *owq)
 {
-	OWQ_U(owq) = time(NULL) - start_time;
+	OWQ_U(owq) = time(NULL) - StateInfo.start_time;
 	return 0;
 }

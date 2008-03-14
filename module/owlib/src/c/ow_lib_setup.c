@@ -39,6 +39,6 @@ void LibSetup(enum opt_program opt)
 	LockSetup();
 #endif							/* __UCLIBC__ */
 
-	start_time = time(NULL);
+	StateInfo.start_time = time(NULL);
 	errno = 0;					/* set error level none */
 }

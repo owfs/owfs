@@ -286,10 +286,6 @@ extern void set_signal_handlers(void (*exit_handler)
 #include "ow_stateinfo.h"
 
 /* -------------------------------------------- */
-/* start of program -- for statistics amd file atrtributes */
-extern time_t start_time;
-extern time_t dir_time;			/* time of last directory scan */
-
 /* Prototypes */
 /* Separated out to ow_functions.h for clarity */
 #include "ow_functions.h"

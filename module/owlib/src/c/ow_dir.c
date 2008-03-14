@@ -15,6 +15,7 @@ $Id$
 #include "ow_counters.h"
 #include "ow_connection.h"
 #include "ow_dirblob.h"
+#include "ow.h"
 
 static int FS_dir_both(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_directory, uint32_t * flags);
 static int
@@ -90,7 +91,7 @@ static int FS_dir_both(void (*dirfunc) (void *, const struct parsedname *), void
 	STATUNLOCK;
 
 	FSTATLOCK;
-	dir_time = time(NULL);		// protected by mutex
+	StateInfo.dir_time = time(NULL);		// protected by mutex
 	FSTATUNLOCK;
 
 	if (pn_raw_directory->selected_filetype != NULL) {

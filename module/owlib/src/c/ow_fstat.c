@@ -55,7 +55,7 @@ int FS_fstat_postparse(struct stat *stbuf, const struct parsedname *pn)
 		   it's unlikely that this "feature" will go away.
 		 */
 		stbuf->st_nlink += nr;
-		stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = start_time;
+		stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = StateInfo.start_time;
 	} else if (pn->selected_filetype == NULL) {
 		int nr = 0;
 		//printf("FS_fstat pn.selected_filetype == NULL  (1-wire device)\n");
@@ -66,7 +66,7 @@ int FS_fstat_postparse(struct stat *stbuf, const struct parsedname *pn)
 		//printf("FS_fstat seem to be %d entries (%d dirs) in device\n", pn.selected_device->nft, nr);
 		stbuf->st_nlink += nr;
 		FSTATLOCK;
-		stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = dir_time;
+		stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = StateInfo.dir_time;
 		FSTATUNLOCK;
 	} else if (pn->selected_filetype->format == ft_directory || pn->selected_filetype->format == ft_subdir) {	/* other directory */
 		int nr = 0;
@@ -78,7 +78,7 @@ int FS_fstat_postparse(struct stat *stbuf, const struct parsedname *pn)
 		stbuf->st_nlink += nr;
 
 		FSTATLOCK;
-		stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = dir_time;
+		stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = StateInfo.dir_time;
 		FSTATUNLOCK;
 	} else {					/* known 1-wire filetype */
 		stbuf->st_mode = S_IFREG;
@@ -98,11 +98,11 @@ int FS_fstat_postparse(struct stat *stbuf, const struct parsedname *pn)
 		case fc_stable:
 		case fc_Astable:
 			FSTATLOCK;
-			stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = dir_time;
+			stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = StateInfo.dir_time;
 			FSTATUNLOCK;
 			break;
 		default:
-			stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = start_time;
+			stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = StateInfo.start_time;
 			break;
 		}
 		//printf("FS_fstat file\n");

@@ -25,13 +25,7 @@ pthread_mutexattr_t *pmattr = NULL;
 pthread_mutexattr_t mattr;
 #endif							/* OW_MT */
 
-/* information about this process */
-pid_t pid_num;
 /* char * pid_file in ow_opt.c */
-
-/* Times for directory information */
-time_t start_time;
-time_t dir_time;				/* time of last directory scan */
 
 /* State information, sent to remote or kept locally */
 /* cacheenabled, presencecheck, tempscale, devform */

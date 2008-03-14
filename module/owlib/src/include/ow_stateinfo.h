@@ -56,6 +56,8 @@ struct stateinfo {
 	int lib_start_done ;
 	int lib_finish_done ;
 	int lock_setup_done ;
+	time_t start_time ;
+	time_t dir_time ;
 };
 extern struct stateinfo StateInfo;
 
