@@ -27,7 +27,7 @@ pthread_t main_threadid;
 
 static void ow_exit(int e)
 {
-	shutdown_in_progress = 1;
+	StateInfo.shutdown_in_progress = 1;
 	LEVEL_DEBUG("owfs: ow_exit(%d)\n", e);
 	if (IS_MAINTHREAD) {
 		LibClose();

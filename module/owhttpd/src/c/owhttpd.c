@@ -68,8 +68,8 @@ static void exit_handler(int signo, siginfo_t * info, void *context)
 	} else {
 		LEVEL_DEBUG("exit_handler: for %d, self=%lu, main=%lu\n", signo, pthread_self(), main_threadid);
 	}
-	if (!shutdown_in_progress) {
-		shutdown_in_progress = 1;
+	if (!StateInfo.shutdown_in_progress) {
+        StateInfo.shutdown_in_progress = 1;
 
 		if (info != NULL) {
 			if (SI_FROMUSER(info)) {
@@ -87,7 +87,7 @@ static void exit_handler(int signo, siginfo_t * info, void *context)
 #else
 	(void) signo;
 	(void) info;
-	shutdown_in_progress = 1;
+	StateInfo.shutdown_in_progress = 1;
 #endif
 	return;
 }

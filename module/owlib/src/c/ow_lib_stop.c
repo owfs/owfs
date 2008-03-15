@@ -12,6 +12,7 @@ $Id$
 #include <config.h>
 #include "owfs_config.h"
 #include "ow.h"
+#include "ow_connection.h"
 
 /* Just close in/out devices and clear cache. Just enough to make it possible
    to call LibStart() again. This is called from swig/ow.i to when script
@@ -19,7 +20,6 @@ $Id$
 void LibStop(void)
 {
 	char *argv[1] = { NULL };
-    StateInfo.shutdown_in_progress = 1 ;
 #if OW_CACHE
 	LEVEL_CALL("Clear Cache\n");
 	Cache_Clear();
