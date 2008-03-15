@@ -20,4 +20,5 @@ struct stateinfo StateInfo = {
     .lock_setup_done = 0 ,
     .start_time = 0 ,
     .dir_time =0 ,
+    .shutdown_in_progress = 0,
 };

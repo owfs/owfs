@@ -247,8 +247,6 @@ extern int count_inbound_connections;
 /* Parsedname -- path converted into components */
 #include "ow_parsedname.h"
 
-extern int shutdown_in_progress;
-
 enum simul_type { simul_temp, simul_volt, };
 
 /* "Object-type" structure for the anctual owfs query --

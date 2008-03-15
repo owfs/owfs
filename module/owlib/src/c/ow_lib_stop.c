@@ -19,6 +19,7 @@ $Id$
 void LibStop(void)
 {
 	char *argv[1] = { NULL };
+    StateInfo.shutdown_in_progress = 1 ;
 #if OW_CACHE
 	LEVEL_CALL("Clear Cache\n");
 	Cache_Clear();

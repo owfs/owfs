@@ -150,8 +150,9 @@ static void ServerProcessAccept(void *vp)
 	do {
 		acceptfd = accept(out->file_descriptor, NULL, NULL);
 		//LEVEL_DEBUG("ServerProcessAccept %s[%lu] accept %d\n",SAFESTRING(out->name),(unsigned long int)pthread_self(),out->index) ;
-		if (shutdown_in_progress)
+        if (StateInfo.shutdown_in_progress) {
 			break;
+        }
 		if (acceptfd < 0) {
 			if (errno == EINTR) {
 				LEVEL_DEBUG("ow_net_server.c: accept interrupted\n");
@@ -164,11 +165,12 @@ static void ServerProcessAccept(void *vp)
 	ACCEPTUNLOCK(out);
 	//LEVEL_DEBUG("ServerProcessAccept %s[%lu] unlock %d\n",SAFESTRING(out->name),(unsigned long int)pthread_self(),out->index) ;
 
-	if (shutdown_in_progress) {
+	if (StateInfo.shutdown_in_progress) {
 		LEVEL_DEBUG
 			("ServerProcessAccept %s[%lu] shutdown_in_progress %d return\n", SAFESTRING(out->name), (unsigned long int) pthread_self(), out->index);
-		if (acceptfd >= 0)
+        if (acceptfd >= 0) {
 			close(acceptfd);
+        }
 		return;
 	}
 
@@ -207,7 +209,7 @@ static void *ServerProcessOut(void *v)
 
 	OW_Announce(out);
 
-	while (!shutdown_in_progress) {
+	while (!StateInfo.shutdown_in_progress) {
 		ServerProcessAccept(v);
 	}
 	LEVEL_DEBUG("ServerProcessOut = %lu CLOSING (%s)\n", (unsigned long int) pthread_self(), SAFESTRING(out->name));
@@ -248,7 +250,7 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 	(void) sigaddset(&myset, SIGINT);
 	(void) sigaddset(&myset, SIGTERM);
 	(void) pthread_sigmask(SIG_BLOCK, &myset, NULL);
-	while (!shutdown_in_progress) {
+	while (!StateInfo.shutdown_in_progress) {
 		if ((err = sigwait(&myset, &signo)) == 0) {
 			if (signo == SIGHUP) {
 				LEVEL_DEBUG("ServerProcess: ignore signo=%d\n", signo);
@@ -299,7 +301,7 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 		OW_Announce(head_outbound_list);
 		while (1) {
 			int acceptfd = accept(head_outbound_list->file_descriptor, NULL, NULL);
-			if (shutdown_in_progress)
+			if (StateInfo.shutdown_in_progress)
 				break;
 			if (acceptfd < 0) {
 				ERROR_CONNECT("Trouble with accept, will reloop\n");

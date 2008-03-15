@@ -18,10 +18,6 @@ $Id$
 void SetSignals(void);
 void SigHandler(int signo, siginfo_t * info, void *context) ;
 
-// flag to initiate shutdown
-int shutdown_in_progress = 0;
-
-
 /* Start the owlib process -- actually only tests for backgrounding */
 int LibStart(void)
 {
