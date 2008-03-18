@@ -54,44 +54,51 @@ $Id$
 
 #if OW_MT
 #include <pthread.h>
+#endif /* OW_MT */
 
-extern pthread_mutex_t stat_mutex;
-extern pthread_mutex_t cache_mutex;
-extern pthread_mutex_t store_mutex;
-extern pthread_mutex_t fstat_mutex;
-extern pthread_mutex_t simul_mutex;
-extern pthread_mutex_t dir_mutex;
-extern pthread_mutex_t libusb_mutex;
-extern pthread_mutex_t connin_mutex;
+extern struct mutex {
+#if OW_MT
+	pthread_mutex_t stat_mutex;
+	pthread_mutex_t cache_mutex;
+	pthread_mutex_t store_mutex;
+	pthread_mutex_t fstat_mutex;
+	pthread_mutex_t simul_mutex;
+	pthread_mutex_t dir_mutex;
+	pthread_mutex_t libusb_mutex;
+	pthread_mutex_t connin_mutex;
+	pthread_mutexattr_t *pmattr;
+ #ifdef __UCLIBC__
+	pthread_mutexattr_t mattr;
+	pthread_mutex_t uclibc_mutex;
+ #endif							/* __UCLIBC__ */
+#endif							/* OW_MT */
+} Mutex ;
 
-extern pthread_mutexattr_t *pmattr;
-#ifdef __UCLIBC__
-extern pthread_mutexattr_t mattr;
-extern pthread_mutex_t uclibc_mutex;
-#endif							/* __UCLIBC__ */
-#define STATLOCK          pthread_mutex_lock(  &stat_mutex   )
-#define STATUNLOCK        pthread_mutex_unlock(&stat_mutex   )
-#define CACHELOCK         pthread_mutex_lock(  &cache_mutex  )
-#define CACHEUNLOCK       pthread_mutex_unlock(&cache_mutex  )
-#define STORELOCK         pthread_mutex_lock(  &store_mutex  )
-#define STOREUNLOCK       pthread_mutex_unlock(&store_mutex  )
-#define FSTATLOCK         pthread_mutex_lock(  &fstat_mutex  )
-#define FSTATUNLOCK       pthread_mutex_unlock(&fstat_mutex  )
-#define SIMULLOCK         pthread_mutex_lock(  &simul_mutex  )
-#define SIMULUNLOCK       pthread_mutex_unlock(&simul_mutex  )
-#define DIRLOCK           pthread_mutex_lock(  &dir_mutex    )
-#define DIRUNLOCK         pthread_mutex_unlock(&dir_mutex    )
-#define LIBUSBLOCK        pthread_mutex_lock(  &libusb_mutex    )
-#define LIBUSBUNLOCK      pthread_mutex_unlock(&libusb_mutex    )
-#define CONNINLOCK        pthread_mutex_lock(  &connin_mutex    )
-#define CONNINUNLOCK      pthread_mutex_unlock(&connin_mutex    )
+
+#if OW_MT
+#define STATLOCK          pthread_mutex_lock(  &Mutex.stat_mutex   )
+#define STATUNLOCK        pthread_mutex_unlock(&Mutex.stat_mutex   )
+#define CACHELOCK         pthread_mutex_lock(  &Mutex.cache_mutex  )
+#define CACHEUNLOCK       pthread_mutex_unlock(&Mutex.cache_mutex  )
+#define STORELOCK         pthread_mutex_lock(  &Mutex.store_mutex  )
+#define STOREUNLOCK       pthread_mutex_unlock(&Mutex.store_mutex  )
+#define FSTATLOCK         pthread_mutex_lock(  &Mutex.fstat_mutex  )
+#define FSTATUNLOCK       pthread_mutex_unlock(&Mutex.fstat_mutex  )
+#define SIMULLOCK         pthread_mutex_lock(  &Mutex.simul_mutex  )
+#define SIMULUNLOCK       pthread_mutex_unlock(&Mutex.simul_mutex  )
+#define DIRLOCK           pthread_mutex_lock(  &Mutex.dir_mutex    )
+#define DIRUNLOCK         pthread_mutex_unlock(&Mutex.dir_mutex    )
+#define LIBUSBLOCK        pthread_mutex_lock(  &Mutex.libusb_mutex    )
+#define LIBUSBUNLOCK      pthread_mutex_unlock(&Mutex.libusb_mutex    )
+#define CONNINLOCK        pthread_mutex_lock(  &Mutex.connin_mutex    )
+#define CONNINUNLOCK      pthread_mutex_unlock(&Mutex.connin_mutex    )
 #define BUSLOCK(pn)       BUS_lock(pn)
 #define BUSUNLOCK(pn)     BUS_unlock(pn)
 #define BUSLOCKIN(in)       BUS_lock_in(in)
 #define BUSUNLOCKIN(in)     BUS_unlock_in(in)
 #ifdef __UCLIBC__
-#define UCLIBCLOCK     pthread_mutex_lock(  &uclibc_mutex)
-#define UCLIBCUNLOCK   pthread_mutex_unlock(&uclibc_mutex)
+#define UCLIBCLOCK     pthread_mutex_lock(  &Mutex.uclibc_mutex)
+#define UCLIBCUNLOCK   pthread_mutex_unlock(&Mutex.uclibc_mutex)
 #else							/* __UCLIBC__ */
 #define UCLIBCLOCK
 #define UCLIBCUNLOCK

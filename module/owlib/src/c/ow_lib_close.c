@@ -31,9 +31,9 @@ void LibClose(void)
 	DeviceDestroy();
 
 #if OW_MT
-	if (pmattr) {
-		pthread_mutexattr_destroy(pmattr);
-		pmattr = NULL;
+	if (Mutex.pmattr) {
+		pthread_mutexattr_destroy(Mutex.pmattr);
+		Mutex.pmattr = NULL;
 	}
 #endif							/* OW_MT */
 

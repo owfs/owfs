@@ -61,7 +61,7 @@ void Handler(int file_descriptor)
 	int persistent = 0;
 
 	hd.file_descriptor = file_descriptor;
-	pthread_mutex_init(&hd.to_client, pmattr);
+	pthread_mutex_init(&hd.to_client, Mutex.pmattr);
 
 	timersub(&tv_high, &tv_low, &tv_high);	// just the delta
 

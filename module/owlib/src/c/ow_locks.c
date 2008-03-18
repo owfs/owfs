@@ -26,22 +26,27 @@ void __pthread_initialize(void);
 #endif							/* OW_MT */
 #endif							/* __UCLIBC */
 
+struct mutex Mutex = {
 #if OW_MT
-pthread_mutex_t stat_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t cache_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t store_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t fstat_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t dir_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t connin_mutex = PTHREAD_MUTEX_INITIALIZER;
+	.stat_mutex = PTHREAD_MUTEX_INITIALIZER,
+	.cache_mutex = PTHREAD_MUTEX_INITIALIZER,
+	.store_mutex = PTHREAD_MUTEX_INITIALIZER,
+	.fstat_mutex = PTHREAD_MUTEX_INITIALIZER,
+	.dir_mutex = PTHREAD_MUTEX_INITIALIZER,
+	.connin_mutex = PTHREAD_MUTEX_INITIALIZER,
 #ifdef __UCLIBC__
 /* vsnprintf() doesn't seem to be thread-safe in uClibc
    even if thread-support is enabled. */
-pthread_mutex_t uclibc_mutex = PTHREAD_MUTEX_INITIALIZER;
+	.uclibc_mutex = PTHREAD_MUTEX_INITIALIZER,
 #endif							/* __UCLIBC__ */
 #if OW_USB
-pthread_mutex_t libusb_mutex = PTHREAD_MUTEX_INITIALIZER;
+	.libusb_mutex = PTHREAD_MUTEX_INITIALIZER,
 #endif							/* OW_USB */
+/* mutex attribute -- needed for uClibc programming */
+/* we create at start, and destroy at end */
+	.pmattr = NULL,
 #endif							/* OW_MT */
+} ;
 
 /* Essentially sets up mutexes to protect global data/devices */
 void LockSetup(void)
@@ -58,24 +63,24 @@ void LockSetup(void)
 	__pthread_initialize();
 
 	/* global mutex attribute */
-	pthread_mutexattr_init(&mattr);
-	pthread_mutexattr_settype(&mattr, PTHREAD_MUTEX_ADAPTIVE_NP);
-	pmattr = &mattr;
+	pthread_mutexattr_init(&Mutex.mattr);
+	pthread_mutexattr_settype(&Mutex.mattr, PTHREAD_MUTEX_ADAPTIVE_NP);
+	Mutex.pmattr = &Mutex.mattr;
 #endif							/* OW_MT */
 #endif							/* __UCLIBC */
 
 #if OW_MT
-	pthread_mutex_init(&stat_mutex, pmattr);
-	pthread_mutex_init(&cache_mutex, pmattr);
-	pthread_mutex_init(&store_mutex, pmattr);
-	pthread_mutex_init(&fstat_mutex, pmattr);
-	pthread_mutex_init(&dir_mutex, pmattr);
-	pthread_mutex_init(&connin_mutex, pmattr);
+	pthread_mutex_init(&Mutex.stat_mutex, Mutex.pmattr);
+	pthread_mutex_init(&Mutex.cache_mutex, Mutex.pmattr);
+	pthread_mutex_init(&Mutex.store_mutex, Mutex.pmattr);
+	pthread_mutex_init(&Mutex.fstat_mutex, Mutex.pmattr);
+	pthread_mutex_init(&Mutex.dir_mutex, Mutex.pmattr);
+	pthread_mutex_init(&Mutex.connin_mutex, Mutex.pmattr);
 #ifdef __UCLIBC__
-	pthread_mutex_init(&uclibc_mutex, pmattr);
+	pthread_mutex_init(&Mutex.uclibc_mutex, Mutex.pmattr);
 #endif							/* UCLIBC */
 #if OW_USB
-	pthread_mutex_init(&libusb_mutex, pmattr);
+	pthread_mutex_init(&Mutex.libusb_mutex, Mutex.pmattr);
 #endif							/* OW_USB */
 #endif							/* OW_MT */
 }
@@ -155,7 +160,7 @@ int LockGet(const struct parsedname *pn)
 		return -ENOMEM;
 	} else if (dlock == opaque->key) {	// new device slot
 		dlock->users = 1;
-		pthread_mutex_init(&(dlock->lock), pmattr);	// create a mutex
+		pthread_mutex_init(&(dlock->lock), Mutex.pmattr);	// create a mutex
 		pthread_mutex_lock(&(dlock->lock));	// and set it
 		DEVUNLOCK(pn);
 		pn->lock[inindex] = dlock;

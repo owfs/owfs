@@ -62,8 +62,8 @@ struct connection_in *NewIn(const struct connection_in *in)
 		head_inbound_list = now;
 		now->index = count_inbound_connections++;
 #if OW_MT
-		pthread_mutex_init(&(now->bus_mutex), pmattr);
-		pthread_mutex_init(&(now->dev_mutex), pmattr);
+		pthread_mutex_init(&(now->bus_mutex), Mutex.pmattr);
+		pthread_mutex_init(&(now->dev_mutex), Mutex.pmattr);
 		now->dev_db = NULL;
 #endif							/* OW_MT */
 		/* Support DS1994/DS2404 which require longer delays, and is automatically
@@ -91,8 +91,8 @@ struct connection_out *NewOut(void)
 		head_outbound_list = now;
 		now->index = count_outbound_connections++;
 #if OW_MT
-		pthread_mutex_init(&(now->accept_mutex), pmattr);
-		pthread_mutex_init(&(now->out_mutex), pmattr);
+		pthread_mutex_init(&(now->accept_mutex), Mutex.pmattr);
+		pthread_mutex_init(&(now->out_mutex), Mutex.pmattr);
 #endif							/* OW_MT */
 		// Zero sref's -- done with struct memset
 		//now->sref0 = 0 ;

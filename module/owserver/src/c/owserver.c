@@ -139,7 +139,7 @@ int main(int argc, char **argv)
 	if (LibStart())
 		ow_exit(1);
 #if OW_MT
-	pthread_mutex_init(&persistence_mutex, pmattr);
+	pthread_mutex_init(&persistence_mutex, Mutex.pmattr);
 
 	main_threadid = pthread_self();
 	LEVEL_DEBUG("main_threadid = %lu\n", (unsigned long int) main_threadid);
