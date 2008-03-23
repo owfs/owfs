@@ -20,10 +20,13 @@ $Id$
 /* ------- Globals ----------- */
 
 #ifdef __UCLIBC__
-#if OW_MT
+ #if OW_MT
+  #if ((__UCLIBC_MAJOR__ << 16)+(__UCLIBC_MINOR__ << 8)+(__UCLIBC_SUBLEVEL__) < 0x00091D)
+/* If uClibc < 0.9.29, then re-initialize internal pthread-structs */
 extern char *__pthread_initial_thread_bos;
 void __pthread_initialize(void);
-#endif							/* OW_MT */
+  #endif						/* UCLIBC_VERSION */
+ #endif							/* OW_MT */
 #endif							/* __UCLIBC */
 
 struct mutex Mutex = {
@@ -54,7 +57,10 @@ void LockSetup(void)
 
 #ifdef __UCLIBC__
 #if OW_MT
-	/* Have to re-initialize pthread since the main-process is gone.
+#if ((__UCLIBC_MAJOR__ << 16)+(__UCLIBC_MINOR__ << 8)+(__UCLIBC_SUBLEVEL__) < 0x00091D)
+	/* If uClibc < 0.9.29, then re-initialize internal pthread-structs
+	 * pthread and mutexes doesn't work after daemon() is called and
+	 *   the main-process is gone.
 	 *
 	 * This workaround will probably be fixed in uClibc-0.9.28
 	 * Other uClibc developers have noticed similar problems which are
@@ -66,6 +72,7 @@ void LockSetup(void)
 	pthread_mutexattr_init(&Mutex.mattr);
 	pthread_mutexattr_settype(&Mutex.mattr, PTHREAD_MUTEX_ADAPTIVE_NP);
 	Mutex.pmattr = &Mutex.mattr;
+#endif							/* UCLIBC_VERSION */
 #endif							/* OW_MT */
 #endif							/* __UCLIBC */
 
