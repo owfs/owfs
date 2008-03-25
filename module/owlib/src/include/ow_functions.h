@@ -143,14 +143,6 @@ void LockSetup(void);
 int LockGet(const struct parsedname *pn);
 void LockRelease(const struct parsedname *pn);
 
-// ow_api.c
-int OWLIB_can_init_start(void);
-void OWLIB_can_init_end(void);
-int OWLIB_can_access_start(void);
-void OWLIB_can_access_end(void);
-int OWLIB_can_finish_start(void);
-void OWLIB_can_finish_end(void);
-
 /* 1-wire lowlevel */
 void UT_delay(const UINT len);
 void UT_delay_us(const unsigned long len);
@@ -228,6 +220,5 @@ int API_init( const char * command_line ) ;
 void API_finish( void ) ;
 int API_access_start( void ) ;
 void API_access_end( void ) ;
-
 
 #endif							/* OW_FUNCTION_H */
