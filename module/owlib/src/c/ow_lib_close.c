@@ -19,16 +19,9 @@ $Id$
 void LibClose(void)
 {
 	LEVEL_CALL("Starting Library cleanup\n");
-	PIDstop();
-#if OW_CACHE
-	LEVEL_CALL("Closing Cache\n");
-	Cache_Close();
-#endif							/* OW_CACHE */
-	LEVEL_CALL("Closing input devices\n");
-	FreeIn();
-	LEVEL_CALL("Closing outout devices\n");
-	FreeOut();
-	DeviceDestroy();
+    LibStop() ;
+    PIDstop();
+    DeviceDestroy();
 
 #if OW_MT
 	if (Mutex.pmattr) {
@@ -37,19 +30,26 @@ void LibClose(void)
 	}
 #endif							/* OW_MT */
 
-	if (Global.announce_name)
-		free(Global.announce_name);
+	if (Global.announce_name) {
+        free(Global.announce_name);
+        Global.announce_name = NULL ;
+    }
 
-	if (Global.progname)
+    if (Global.progname) {
 		free(Global.progname);
+        Global.progname = NULL ;
+    }
 
 #if OW_ZERO
-	if (Global.browse && (libdnssd != NULL))
+	if (Global.browse && (libdnssd != NULL)) {
 		DNSServiceRefDeallocate(Global.browse);
-
+    }
+    
 	OW_Free_dnssd_library();
 #endif
 	LEVEL_CALL("Finished Library cleanup\n");
-	if (log_available)
+	if (log_available) {
 		closelog();
+        log_available = 0 ;
+    }
 }

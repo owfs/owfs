@@ -49,12 +49,11 @@ $Id$
 #ifndef OW_STATEINFO_H				/* tedious wrapper */
 #define OW_STATEINFO_H
 
+enum lib_state { lib_state_pre, lib_state_setup, lib_state_started, lib_state_active, lib_state_finished, } ;
 
 /* Global information (for local control) */
 struct stateinfo {
-	int lib_setup_done ;
-	int lib_start_done ;
-	int lib_finish_done ;
+    enum lib_state owlib_state ;
 	int lock_setup_done ;
 	time_t start_time ;
 	time_t dir_time ;

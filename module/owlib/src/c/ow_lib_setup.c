@@ -13,14 +13,12 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
-static int primative_lib_setup_lock = 0 ;
-
 /* All ow library setup */
 void LibSetup(enum opt_program opt)
 {
-	if ( primative_lib_setup_lock++ ) {
-		return ;
-	}
+    /* Setup the multithreading synchronizing locks */
+    LockSetup();
+
 #if OW_ZERO
 	OW_Load_dnssd_library();
 #endif
@@ -33,11 +31,6 @@ void LibSetup(enum opt_program opt)
 #if OW_CACHE
 	Cache_Open();
 #endif							/* OW_CACHE */
-
-#ifndef __UCLIBC__
-	/* Setup the multithreading synchronizing locks */
-	LockSetup();
-#endif							/* __UCLIBC__ */
 
 	StateInfo.start_time = time(NULL);
 	errno = 0;					/* set error level none */

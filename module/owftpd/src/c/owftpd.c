@@ -19,8 +19,9 @@ int main(int argc, char *argv[])
 	LibSetup(opt_ftpd);
 
 	/* grab our executable name */
-	if (argc > 0)
+    if (argc > 0) {
 		Global.progname = strdup(argv[0]);
+    }
 
 	/* check our command-line arguments */
 	while ((c = getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL)) != -1) {
@@ -29,13 +30,15 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "%s version:\n\t" VERSION "\n", argv[0]);
 			break;
 		}
-		if (owopt(c, optarg))
+        if (owopt(c, optarg)) {
 			ow_exit(0);			/* rest of message */
+        }
 	}
 
 	/* FTP on default port? */
-	if (count_outbound_connections == 0)
+    if (count_outbound_connections == 0) {
 		OW_ArgServer("0.0.0.0:21");	// well known port
+    }
 
 	/* non-option args are adapters */
 	while (optind < argc) {
@@ -50,11 +53,17 @@ int main(int argc, char *argv[])
 		ow_exit(1);
 	}
 
-	/* Set up adapters */
-	if (LibStart())
-		ow_exit(1);
+    /* become a daemon if not told otherwise */
+    if (EnterBackground()) {
+        ow_exit(1);
+    }
 
-	/* avoid SIGPIPE on socket activity */
+    /* Set up adapters */
+    if (LibStart()) {
+        ow_exit(1);
+    }
+
+    /* avoid SIGPIPE on socket activity */
 	signal(SIGPIPE, SIG_IGN);
 
 	/* create our main listener */

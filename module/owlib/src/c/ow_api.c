@@ -62,47 +62,82 @@ int OWLIB_can_init_start(void)
 	return ids > 0;
 }
 
-void OWLIB_can_init_end(void)
+void API_setup( enum opt_program opt )
 {
-	INITUNLOCK;
+    static int deja_vue = 0 ;
+    // poor mans lock for the Lib Setup and Lock Setup
+    if ( ++deja_vue == 1 ) {
+        LibSetup(opt) ;
+        StateInfo.owlib_state = lib_state_setup ;
+    }
 }
 
-/* Returns 0 if ok, else 1 */
-/* MUST BE PAIRED with OWLIB_can_access_end() */
-int OWLIB_can_access_start(void)
+/* Swig ensures that API_LibSetup is called first, but still we check */
+int API_init( const char * command_line )
 {
-	int ret;
-	ACCESSLOCK;
-	access_num++;
-	ACCESSUNLOCK;
-	INITLOCK;
-	CONNINLOCK;
-	ret = (count_inbound_connections == 0);
-	CONNINUNLOCK;
-	INITUNLOCK;
-	return ret;
+    int return_code = 0 ;
+
+    if ( StateInfo.owlib_state == lib_state_pre ) {
+        LibSetup(Global.opt) ; // use previous or default value
+        StateInfo.owlib_state = lib_state_setup ;
+    }
+    LIBWRITELOCK ;
+    // stop if started
+    if ( StateInfo.owlib_state == lib_state_started ) {
+        LibStop() ;
+        StateInfo.owlib_state = lib_state_setup ;
+    }
+        
+    // now restart
+    if ( StateInfo.owlib_state == lib_state_setup ) {
+        return_code = owopt_packed( command_line ) ;
+        if ( return_code != 0 ) {
+            LIBWRITEUNLOCK ;
+            return return_code ;
+        }
+        
+        return_code = LibStart() ;
+        if ( return_code != 0 ) {
+            LIBWRITEUNLOCK ;
+            return return_code ;
+        }
+            
+        StateInfo.owlib_state = lib_state_started ;
+    }
+    LIBWRITEUNLOCK ;
+    return return_code ;
 }
 
-void OWLIB_can_access_end(void)
+void API_finish( void )
 {
-	ACCESSLOCK;
-	access_num--;
-	ACCESSSIGNAL;
-	ACCESSUNLOCK;
+    if ( StateInfo.owlib_state == lib_state_pre ) {
+        return ;
+    }
+    LIBWRITELOCK ;
+    LibStop() ;
+    StateInfo.owlib_state = lib_state_pre ;
+    LIBWRITEUNLOCK ;
 }
 
-/* Returns 0 always */
-/* MUST BE PAIRED with OWLIB_can_finish_end() */
-int OWLIB_can_finish_start(void)
+// called before read/write/dir operation -- tests setup state
+// pair with API_access_stop
+int API_access_start( void )
 {
-	ACCESSLOCK;
-	while (access_num > 0)
-		ACCESSWAIT;
-	INITLOCK;
-	return 0;					/* just for symetry */
+    if ( StateInfo.owlib_state == lib_state_pre ) {
+        return -EACCES ;
+    }
+    LIBREADLOCK ;
+    if ( StateInfo.owlib_state != lib_state_started ) {
+        LIBREADUNLOCK ;
+        return -EACCES ;
+    }
+    return 0 ;
 }
-void OWLIB_can_finish_end(void)
+
+// called after read/write/dir operation
+// pair with API_access_start
+void API_access_end( void )
 {
-	INITUNLOCK;
-	ACCESSUNLOCK;
+    LIBREADUNLOCK ;
 }
+

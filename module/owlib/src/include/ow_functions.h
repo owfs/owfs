@@ -222,4 +222,12 @@ void BUS_unlock(const struct parsedname *pn);
 void BUS_lock_in(struct connection_in *in);
 void BUS_unlock_in(struct connection_in *in);
 
+/* API wrappers for swig and owcapi */
+void API_setup( enum opt_program opt ) ;
+int API_init( const char * command_line ) ;
+void API_finish( void ) ;
+int API_access_start( void ) ;
+void API_access_end( void ) ;
+
+
 #endif							/* OW_FUNCTION_H */

@@ -67,6 +67,7 @@ extern struct mutex {
 	pthread_mutex_t libusb_mutex;
 	pthread_mutex_t connin_mutex;
 	pthread_mutexattr_t *pmattr;
+    pthread_rwlock_t lib_mutex ;
  #ifdef __UCLIBC__
 	pthread_mutexattr_t mattr;
 	pthread_mutex_t uclibc_mutex;
@@ -76,6 +77,10 @@ extern struct mutex {
 
 
 #if OW_MT
+#define LIBREADLOCK       pthread_rwlock_rdlock(&Mutex.lib_mutex   )
+#define LIBREADUNLOCK     pthread_rwlock_unlock(&Mutex.lib_mutex   )
+#define LIBWRITELOCK      pthread_rwlock_wrlock(&Mutex.lib_mutex   )
+#define LIBWRITEUNLOCK    pthread_rwlock_unlock(&Mutex.lib_mutex   )
 #define STATLOCK          pthread_mutex_lock(  &Mutex.stat_mutex   )
 #define STATUNLOCK        pthread_mutex_unlock(&Mutex.stat_mutex   )
 #define CACHELOCK         pthread_mutex_lock(  &Mutex.cache_mutex  )
@@ -105,6 +110,10 @@ extern struct mutex {
 #endif							/* __UCLIBC__ */
 
 #else							/* OW_MT */
+#define LIBREADLOCK
+#define LIBREADUNLOCK
+#define LIBWRITELOCK
+#define LIBWRITEUNLOCK
 #define STATLOCK
 #define STATUNLOCK
 #define CACHELOCK

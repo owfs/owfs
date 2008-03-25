@@ -64,8 +64,9 @@ int main(int argc, char *argv[])
 	LibSetup(opt_owfs);
 
 	/* grab our executable name */
-	if (argc > 0)
+    if (argc > 0) {
 		Global.progname = strdup(argv[0]);
+    }
 	//mtrace() ;
 	/* process command line arguments */
 	while ((c = getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL)) != -1) {
@@ -73,26 +74,31 @@ int main(int argc, char *argv[])
 		case 'V':
 			fprintf(stderr, "%s version:\n\t" VERSION "\n", argv[0]);
 			break;
-            case e_fuse_opt:				/* fuse_mnt_opt */
-			if (fuse_mnt_opt)
-				free(fuse_mnt_opt);
-			fuse_mnt_opt = Fuse_arg(optarg, "FUSE mount options");
-			if (fuse_mnt_opt == NULL)
-				ow_exit(0);
-			break;
-            case e_fuse_open_opt:				/* fuse_open_opt */
-			if (fuse_open_opt)
-				free(fuse_open_opt);
-			fuse_open_opt = Fuse_arg(optarg, "FUSE open options");
-			if (fuse_open_opt == NULL)
-				ow_exit(0);
-			break;
-            case e_allow_other:				/* allow_other */
-			allow_other = 1;
-			break;
+        case e_fuse_opt:				/* fuse_mnt_opt */
+            if (fuse_mnt_opt) {
+                free(fuse_mnt_opt);
+            }
+            fuse_mnt_opt = Fuse_arg(optarg, "FUSE mount options");
+            if (fuse_mnt_opt == NULL) {
+                ow_exit(0);
+            }
+            break;
+        case e_fuse_open_opt:				/* fuse_open_opt */
+            if (fuse_open_opt) {
+                free(fuse_open_opt);
+            }
+            fuse_open_opt = Fuse_arg(optarg, "FUSE open options");
+            if (fuse_open_opt == NULL) {
+                ow_exit(0);
+            }
+            break;
+        case e_allow_other:				/* allow_other */
+            allow_other = 1;
+            break;
 		}
-		if (owopt(c, optarg))
+        if (owopt(c, optarg)) {
 			ow_exit(0);			/* rest of message */
+        }
 	}
 
 	/* non-option arguments */
@@ -120,8 +126,9 @@ int main(int argc, char *argv[])
 	//set_signal_handlers(exit_handler);
 
 	/* Set up adapters */
-	if (LibStart())
+    if (LibStart()) {
 		ow_exit(1);
+    }
 
 #if OW_MT
 	main_threadid = pthread_self();
@@ -137,8 +144,9 @@ int main(int argc, char *argv[])
 #endif							/* FUSE_VERSION >= 22 */
 	if (!Global.want_background) {
 		Fuse_add("-f", &fuse_options);	// foreground for fuse too
-		if (Global.error_level > 2)
+        if (Global.error_level > 2) {
 			Fuse_add("-d", &fuse_options);	// debug for fuse too
+        }
 	}
 	Fuse_parse(fuse_mnt_opt, &fuse_options);
 	LEVEL_DEBUG("fuse_mnt_opt=[%s]\n", fuse_mnt_opt);

@@ -27,9 +27,6 @@ int LibStart(void)
 	 * id each time */
 	srand(1);
 
-	/* Setup the multithreading synchronizing locks */
-	LockSetup();
-
 	while (in) {
 		BadAdapter_detect(in);	/* default "NOTSUP" calls */
 		switch (get_busmode(in)) {
@@ -150,8 +147,9 @@ int LibStart(void)
 
 	/* Use first bus for http bus name */
 	CONNINLOCK;
-	if (head_inbound_list)
+    if (head_inbound_list) {
 		Global.SimpleBusName = head_inbound_list->name;
+    }
 	CONNINUNLOCK;
 
 	// zeroconf/Bonjour look for new services

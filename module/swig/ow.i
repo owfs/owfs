@@ -9,7 +9,7 @@
 #include "config.h"
 #include "owfs_config.h"
 #include "ow.h"
-LibSetup(opt_swig) ;
+API_setup(opt_swig) ;
 %}
 
 %{
@@ -28,43 +28,26 @@ char *version( ) {
     return VERSION;
 }
 
-static int finishcalled = 0;
-static int libstart_called = 0;
-
 int init( const char * dev ) {
-    int ret = 1 ; /* Good initialization */
-    //    LibSetup(opt_swig) ; /* Done in %init section */
 
-    if (finishcalled) return 0;
-
-    if(libstart_called) {
-	OWLIB_can_finish_start() ;
-	LibStop() ;
-	libstart_called = 0;
-	OWLIB_can_finish_end() ;
+    if ( API_init(dev) ) {
+        return 0 ; // error
     }
-    if ( OWLIB_can_init_start() || owopt_packed(dev) ) {
-        ret = 0 ; // error
-    } else {
-	LibStart() ;
-	libstart_called = 1;
-    }
-    OWLIB_can_init_end() ;
-    return ret ; 
+    return 1 ;
 }
 
 int put( const char * path, const char * value ) {
-    int s ;
-    int ret = 1 ; /* good result */
-    /* Overall flag for valid setup */
-    if ( value==NULL) return 0 ;
-    if ( OWLIB_can_access_start() ) {
-        ret = 0 ;
-    } else {
-        s = strlen(value) ;
-        if ( FS_write(path,value,s,0) < 0  ) ret = 0 ;
+    int ret = 0 ; /* bad result */
+    
+    if ( value!=NULL) {
+        if ( API_access_start() == 0 ) {
+            size_t s = strlen(value) ;
+            if ( FS_write(path,value,s,0) < 0  ) {
+                ret = 1 ; // success
+            }
+            API_access_end() ;
+        }   
     }
-    OWLIB_can_access_end() ;
     return ret ;
 }
 
@@ -82,6 +65,7 @@ static void getdircallback( void * v, const struct parsedname * const pn2 ) {
  */
 static void getdir( struct one_wire_query * owq ) {
     struct charblob cb ;
+    
     CharblobInit( &cb ) ;
     if ( FS_dir( getdircallback, &cb, PN(owq) ) >= 0 ) {
         OWQ_buffer(owq) = strdup( (cb.blob == NULL ? "" : cb.blob) ) ;
@@ -110,39 +94,34 @@ static void getval( struct one_wire_query * owq ) {
 }
 
 char * get( const char * path ) {
-    OWQ_allocate_struct_and_pointer(owq);
     char * buf = NULL ;
 
-    /* Check the parameters */
-    if ( path==NULL ) path="/" ;
-
-    if ( strlen(path) > PATH_MAX ) {
-        // buf = NULL ;
-    } else if ( OWLIB_can_access_start() ) { /* Check for prior init */
-        // buf = NULL ;
-    } else if ( FS_OWQ_create( path, NULL, (size_t)0, (off_t)0, owq ) ) { /* Can we parse the input string */
-        // buf = NULL ;
-    } else {
-        if ( IsDir( PN(owq) ) ) { /* A directory of some kind */
-            getdir( owq ) ;
-        } else { /* A regular file */
-            getval( owq ) ;
+    if ( API_access_start() == 0 ) {
+        OWQ_allocate_struct_and_pointer(owq);
+    
+        /* Check the parameters */
+        if ( path==NULL ) path="/" ;
+    
+        if ( strlen(path) > PATH_MAX ) {
+            // buf = NULL ;
+        } else if ( FS_OWQ_create( path, NULL, (size_t)0, (off_t)0, owq ) ) { /* Can we parse the input string */
+            // buf = NULL ;
+        } else {
+            if ( IsDir( PN(owq) ) ) { /* A directory of some kind */
+                getdir( owq ) ;
+            } else { /* A regular file */
+                getval( owq ) ;
+            }
+            buf = OWQ_buffer(owq) ;
+            FS_OWQ_destroy(owq) ;
         }
-        buf = OWQ_buffer(owq) ;
-        FS_OWQ_destroy(owq) ;
+        API_access_end() ;
     }
-    OWLIB_can_access_end() ;
     return buf ;
 }
 
 void finish( void ) {
-    OWLIB_can_finish_start() ;
-
-    LibClose() ;
-    finishcalled = 1;
-    libstart_called = 0;
-
-    OWLIB_can_finish_end() ;
+    API_finish() ;
 }
 
 
