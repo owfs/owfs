@@ -37,7 +37,7 @@ struct mutex Mutex = {
 	.fstat_mutex = PTHREAD_MUTEX_INITIALIZER,
 	.dir_mutex = PTHREAD_MUTEX_INITIALIZER,
     .connin_mutex = PTHREAD_MUTEX_INITIALIZER,
-    .lib_mutex = PTHREAD_MUTEX_INITIALIZER,
+    .lib_mutex = PTHREAD_RWLOCK_INITIALIZER,
 #ifdef __UCLIBC__
 /* vsnprintf() doesn't seem to be thread-safe in uClibc
    even if thread-support is enabled. */
