@@ -101,6 +101,15 @@ DeviceEntryExtended(12, DS2406, DEV_alarm);
 #define _1W_WRITE_STATUS 0x55
 #define _1W_READ_STATUS 0xAA
 #define _1W_CHANNEL_ACCESS 0xF5
+    
+#define _DS2406_ALR  0x80
+#define _DS2406_IM   0x40
+#define _DS2406_TOG  0x20
+#define _DS2406_IC   0x10
+#define _DS2406_CHS1 0x08
+#define _DS2406_CHS0 0x04
+#define _DS2406_CRC1 0x02
+#define _DS2406_CRC0 0x01
 
 #define _ADDRESS_STATUS_MEMORY_SRAM 0x0007
 
@@ -336,7 +345,7 @@ static int OW_w_pio(const BYTE data, const struct parsedname *pn)
 
 static int OW_access(BYTE * data, const struct parsedname *pn)
 {
-	BYTE d[2] = { 0x55, 0xFF, };
+    BYTE d[2] = { _DS2406_IM|_DS2406_IC|_DS2406_CHS1|_DS2406_CHS0|_DS2406_CRC0, 0xFF, };
 	if (OW_full_access(d, pn))
 		return 1;
 	data[0] = d[0];
@@ -346,7 +355,7 @@ static int OW_access(BYTE * data, const struct parsedname *pn)
 /* Clear latches */
 static int OW_clear(const struct parsedname *pn)
 {
-	BYTE data[2] = { 0xD5, 0xFF, };
+    BYTE data[2] = { _DS2406_ALR|_DS2406_IM|_DS2406_IC|_DS2406_CHS0|_DS2406_CRC0, 0xFF, };
 	return OW_full_access(data, pn);;
 }
 
@@ -407,9 +416,9 @@ static BYTE SEC_RESET[] = { 0x0E, 0x04, 0x0E, 0x04, 0x0E, 0x04, 0x0E, 0x04, 0x0E
 	0x04, 0x0E, 0x04, 0x0E, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x00
 };
 
-static BYTE CFG_READ = 0xEC;	// '11101100'   Configuraci� de lectura para DS2407
-static BYTE CFG_WRITE = 0x8C;	// '10001100'  Configuraci� de Escritura para DS2407
-static BYTE CFG_READPULSE = 0xC8;	// '11001000'  Configuraci� de lectura de Pulso de conversion para DS2407
+static BYTE CFG_READ = _DS2406_ALR|_DS2406_IM|_DS2406_TOG|_DS2406_CHS1|_DS2406_CHS0;	// '11101100'   Configuraci� de lectura para DS2407
+static BYTE CFG_WRITE = _DS2406_ALR|_DS2406_CHS1|_DS2406_CHS0;	// '10001100'  Configuraci� de Escritura para DS2407
+static BYTE CFG_READPULSE = _DS2406_ALR|_DS2406_IM|_DS2406_CHS1;	// '11001000'  Configuraci� de lectura de Pulso de conversion para DS2407
 
 static int ReadTmexPage(BYTE * data, size_t size, int page, const struct parsedname *pn);
 static int TAI8570_Calibration(UINT * cal, const struct s_TAI8570 *tai, struct parsedname *pn);
