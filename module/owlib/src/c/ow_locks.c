@@ -19,15 +19,15 @@ $Id$
 
 /* ------- Globals ----------- */
 
-#ifdef __UCLIBC__
- #if OW_MT
+#if OW_MT
+ #ifdef __UCLIBC__
   #if ((__UCLIBC_MAJOR__ << 16)+(__UCLIBC_MINOR__ << 8)+(__UCLIBC_SUBLEVEL__) < 0x00091D)
 /* If uClibc < 0.9.29, then re-initialize internal pthread-structs */
 extern char *__pthread_initial_thread_bos;
 void __pthread_initialize(void);
   #endif						/* UCLIBC_VERSION */
- #endif							/* OW_MT */
-#endif							/* __UCLIBC */
+ #endif							/* __UCLIBC__ */
+#endif							/* OW_MT */
 
 struct mutex Mutex = {
 #if OW_MT
@@ -55,8 +55,8 @@ struct mutex Mutex = {
 void LockSetup(void)
 {
 
-#ifdef __UCLIBC__
- #if OW_MT
+#if OW_MT
+ #ifdef __UCLIBC__
   #if ((__UCLIBC_MAJOR__ << 16)+(__UCLIBC_MINOR__ << 8)+(__UCLIBC_SUBLEVEL__) < 0x00091D)
 	/* If uClibc < 0.9.29, then re-initialize internal pthread-structs
 	 * pthread and mutexes doesn't work after daemon() is called and
@@ -73,10 +73,8 @@ void LockSetup(void)
 	pthread_mutexattr_settype(&Mutex.mattr, PTHREAD_MUTEX_ADAPTIVE_NP);
 	Mutex.pmattr = &Mutex.mattr;
   #endif							/* UCLIBC_VERSION */
- #endif							/* OW_MT */
-#endif							/* __UCLIBC */
+ #endif							/* __UCLIBC__ */
 
-#if OW_MT
 	pthread_mutex_init(&Mutex.stat_mutex, Mutex.pmattr);
 	pthread_mutex_init(&Mutex.cache_mutex, Mutex.pmattr);
 	pthread_mutex_init(&Mutex.store_mutex, Mutex.pmattr);
@@ -89,7 +87,7 @@ void LockSetup(void)
     rwlock_init( &Mutex.connin ) ;
 #ifdef __UCLIBC__
 	pthread_mutex_init(&Mutex.uclibc_mutex, Mutex.pmattr);
-#endif							/* UCLIBC */
+#endif							/* __UCLIBC__ */
 #if OW_USB
 	pthread_mutex_init(&Mutex.libusb_mutex, Mutex.pmattr);
 #endif							/* OW_USB */

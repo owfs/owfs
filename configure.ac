@@ -1033,6 +1033,20 @@ case "${host_cpu}-${host_os}" in
 	;;
 esac
 
+AC_MSG_CHECKING([if cflag _BSD_SOURCE is required])
+case "${host_cpu}-${host_os}" in
+	*)
+		# have to add this to support major() in sys/sysmacros.h
+		CFLAGS="$CFLAGS -D_BSD_SOURCE=1"
+		AC_MSG_RESULT([-D_BSD_SOURCE=1])
+	;;
+esac
+
+# should perhaps add _GNU_SOURCE=1 instead of the two defines above...
+# That would define _BSD_SOURCE, _SVID_SOURCE, _LARGEFILE64_SOURCE,
+# _XOPEN_SOURCE=600, _POSIX_C_SOURCE, _POSIX_SOURCE, _ISOC99_SOURCE
+
+
 # Check if extra libs are needed. Should perhaps test if they are available too
 # instead of hardcoding the libraries.
 EXTRALIBS=""
