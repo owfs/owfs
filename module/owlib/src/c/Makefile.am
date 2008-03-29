@@ -87,6 +87,7 @@ OWLIB_SOURCE = ow_dl.c           \
                ow_printparse.c   \
                ow_read.c         \
                ow_reconnect.c    \
+               ow_rwlock.c       \
                ow_stats.c        \
                ow_search.c       \
                ow_server.c       \
@@ -108,8 +109,7 @@ OWLIB_SOURCE = ow_dl.c           \
                ow_zero.c         \
                owlib.c           \
                error.c           \
-               globals.c         \
-               rwlock.c
+               globals.c
 
 lib_LTLIBRARIES = libow.la
 
