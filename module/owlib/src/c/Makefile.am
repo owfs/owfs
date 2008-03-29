@@ -108,7 +108,8 @@ OWLIB_SOURCE = ow_dl.c           \
                ow_zero.c         \
                owlib.c           \
                error.c           \
-               globals.c
+               globals.c         \
+               rwlock.c
 
 lib_LTLIBRARIES = libow.la
 
