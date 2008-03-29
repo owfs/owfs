@@ -32,15 +32,6 @@ inline void rwlock_read_lock( rwlock_t * rwlock ) ;
 inline void rwlock_read_unlock( rwlock_t * rwlock ) ;
 void rwlock_destroy( rwlock_t * rwlock ) ;
 
-#else /* OW_MT */
-
-#define rwlock_init(x)
-#define rwlock_write_lock(x)
-#define rwlock_write_unlock(x)
-#define rwlock_read_lock(x)
-#define rwlock_read_unlock(x)
-#define rwlock_destroy(x)
-
 #endif /* OW_MT */
         
 #endif							/* RWLOCK */

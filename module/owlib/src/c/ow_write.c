@@ -66,13 +66,10 @@ int FS_write(const char *path, const char *buf, const size_t size, const off_t o
 
 	LEVEL_CALL("WRITE path=%s size=%d offset=%d\n", SAFESTRING(path), (int) size, (int) offset);
 
-	/* if readonly exit */
-	if (Global.readonly) {
-		return -EROFS;
-	}
 	// parsable path?
-	if (FS_OWQ_create(path, buf, size, offset, owq))
+    if (FS_OWQ_create(path, buf, size, offset, owq)) {
 		return -ENOENT;
+    }
 
 	write_return = FS_write_postparse(owq);
 	FS_OWQ_destroy(owq);
@@ -86,12 +83,17 @@ int FS_write_postparse(struct one_wire_query *owq)
 	ssize_t write_or_error;
 	struct parsedname *pn = PN(owq);
 
-	if (Global.readonly)
+    if (Global.readonly) {
 		return -EROFS;			// read-only invokation
-	if (IsDir(pn))
+    }
+    
+    if (IsDir(pn)) {
 		return -EISDIR;			// not a file
-	if (pn->selected_connection == NULL)
+    }
+    
+    if (pn->selected_connection == NULL) {
 		return -ENODEV;			// no busses
+    }
 
 	STATLOCK;
 	AVERAGE_IN(&write_avg);

@@ -37,7 +37,6 @@ struct mutex Mutex = {
 	.fstat_mutex = PTHREAD_MUTEX_INITIALIZER,
 	.dir_mutex = PTHREAD_MUTEX_INITIALIZER,
     .connin_mutex = PTHREAD_MUTEX_INITIALIZER,
-    .lib_mutex = PTHREAD_RWLOCK_INITIALIZER,
 #ifdef __UCLIBC__
 /* vsnprintf() doesn't seem to be thread-safe in uClibc
    even if thread-support is enabled. */
@@ -57,8 +56,8 @@ void LockSetup(void)
 {
 
 #ifdef __UCLIBC__
-#if OW_MT
-#if ((__UCLIBC_MAJOR__ << 16)+(__UCLIBC_MINOR__ << 8)+(__UCLIBC_SUBLEVEL__) < 0x00091D)
+ #if OW_MT
+  #if ((__UCLIBC_MAJOR__ << 16)+(__UCLIBC_MINOR__ << 8)+(__UCLIBC_SUBLEVEL__) < 0x00091D)
 	/* If uClibc < 0.9.29, then re-initialize internal pthread-structs
 	 * pthread and mutexes doesn't work after daemon() is called and
 	 *   the main-process is gone.
@@ -73,8 +72,8 @@ void LockSetup(void)
 	pthread_mutexattr_init(&Mutex.mattr);
 	pthread_mutexattr_settype(&Mutex.mattr, PTHREAD_MUTEX_ADAPTIVE_NP);
 	Mutex.pmattr = &Mutex.mattr;
-#endif							/* UCLIBC_VERSION */
-#endif							/* OW_MT */
+  #endif							/* UCLIBC_VERSION */
+ #endif							/* OW_MT */
 #endif							/* __UCLIBC */
 
 #if OW_MT
@@ -84,7 +83,10 @@ void LockSetup(void)
 	pthread_mutex_init(&Mutex.fstat_mutex, Mutex.pmattr);
 	pthread_mutex_init(&Mutex.dir_mutex, Mutex.pmattr);
 	pthread_mutex_init(&Mutex.connin_mutex, Mutex.pmattr);
-    pthread_rwlock_init(&Mutex.lib_mutex, NULL ) ;
+
+    rwlock_init( &Mutex.lib ) ;
+    rwlock_init( &Mutex.cache ) ;
+    rwlock_init( &Mutex.connin ) ;
 #ifdef __UCLIBC__
 	pthread_mutex_init(&Mutex.uclibc_mutex, Mutex.pmattr);
 #endif							/* UCLIBC */

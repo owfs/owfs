@@ -67,7 +67,9 @@ extern struct mutex {
 	pthread_mutex_t libusb_mutex;
 	pthread_mutex_t connin_mutex;
 	pthread_mutexattr_t *pmattr;
-    pthread_rwlock_t lib_mutex ;
+    rwlock_t lib ;
+    rwlock_t cache ;
+    rwlock_t connin ;
  #ifdef __UCLIBC__
 	pthread_mutexattr_t mattr;
 	pthread_mutex_t uclibc_mutex;
@@ -77,10 +79,21 @@ extern struct mutex {
 
 
 #if OW_MT
-#define LIBREADLOCK       pthread_rwlock_rdlock(&Mutex.lib_mutex   )
-#define LIBREADUNLOCK     pthread_rwlock_unlock(&Mutex.lib_mutex   )
-#define LIBWRITELOCK      pthread_rwlock_wrlock(&Mutex.lib_mutex   )
-#define LIBWRITEUNLOCK    pthread_rwlock_unlock(&Mutex.lib_mutex   )
+#define LIB_WLOCK         rwlock_write_lock(   &Mutex.lib    ) ;
+#define LIB_WUNLOCK       rwlock_write_unlock( &Mutex.lib    ) ;
+#define LIB_RLOCK         rwlock_read_lock(    &Mutex.lib    ) ;
+#define LIB_RUNLOCK       rwlock_read_unlock(  &Mutex.lib    ) ;
+
+#define CACHE_WLOCK       rwlock_write_lock(   &Mutex.cache  ) ;
+#define CACHE_WUNLOCK     rwlock_write_unlock( &Mutex.cache  ) ;
+#define CACHE_RLOCK       rwlock_read_lock(    &Mutex.cache  ) ;
+#define CACHE_RUNLOCK     rwlock_read_unlock(  &Mutex.cache  ) ;
+
+#define CONNIN_WLOCK      rwlock_write_lock(   &Mutex.connin ) ;
+#define CONNIN_WUNLOCK    rwlock_write_unlock( &Mutex.connin ) ;
+#define CONNIN_RLOCK      rwlock_read_lock(    &Mutex.connin ) ;
+#define CONNIN_RUNLOCK    rwlock_read_unlock(  &Mutex.connin ) ;
+
 #define STATLOCK          pthread_mutex_lock(  &Mutex.stat_mutex   )
 #define STATUNLOCK        pthread_mutex_unlock(&Mutex.stat_mutex   )
 #define CACHELOCK         pthread_mutex_lock(  &Mutex.cache_mutex  )
@@ -110,10 +123,21 @@ extern struct mutex {
 #endif							/* __UCLIBC__ */
 
 #else							/* OW_MT */
-#define LIBREADLOCK
-#define LIBREADUNLOCK
-#define LIBWRITELOCK
-#define LIBWRITEUNLOCK
+#define LIB_WLOCK     
+#define LIB_WUNLOCK   
+#define LIB_RLOCK     
+#define LIB_RUNLOCK   
+
+#define CACHE_WLOCK   
+#define CACHE_WUNLOCK 
+#define CACHE_RLOCK   
+#define CACHE_RUNLOCK 
+
+#define CONNIN_WLOCK  
+#define CONNIN_WUNLOCK
+#define CONNIN_RLOCK  
+#define CONNIN_RUNLOCK
+
 #define STATLOCK
 #define STATUNLOCK
 #define CACHELOCK

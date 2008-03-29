@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <limits.h>
 #include <errno.h>
 #include <string.h>
 
@@ -9,18 +10,63 @@ const char DEFAULT_ARGV[] = "--fake 28 --fake 10";
 
 const char DEFAULT_PATH[] = "/";
 
+/* Takes a path and filename and prints the 1-wire value */
+/* makes sure the bridging "/" in the path is correct */
+/* watches for total length and free allocated space */
+void GetValue( const char * path, const char * name ) {
+    char fullpath[PATH_MAX+1] ;
+    int length_left = PATH_MAX ;
+
+    char * get_buffer ;
+    ssize_t get_return;
+    size_t get_length ;
+
+    /* Check arguments and lengths */
+    if ( path==NULL || strlen(path)==0) {
+        path = "/" ;
+    }
+    if ( name==NULL ) {
+        name = "" ;
+    }
+    
+    fullpath[PATH_MAX] = '\0' ; // make sure final 0 byte
+
+    strncpy(fullpath, path, length_left) ;
+    length_left -= strlen(fullpath) ;
+    
+    if ( length_left > 0 ) {
+        if ( fullpath[PATH_MAX-length_left-1] != '/' ) {
+            strcat(fullpath, "/" ) ;
+            --length_left ;
+        }
+    }
+    if ( name[0] == '/' ) {
+        ++name ;
+    }
+    
+    strncpy(&fullpath[PATH_MAX-length_left], name, length_left) ;
+    
+    get_return = OW_get( fullpath, &get_buffer, &get_length ) ;
+    if ( get_return < 0 ) {
+        printf("ERROR (%d) reading %s (%s)\n",errno,fullpath,strerror(errno)) ;
+    } else {
+        printf("%s has value %s (%d bytes)\n",fullpath,get_buffer,(int)get_length);
+        free(get_buffer);
+    }
+}
+
 int main(int argc, char **argv)
 {
-	ssize_t rc;
-	ssize_t ret = 0;
-	size_t len;
-    char *dir_buffer = NULL;
-    char ** d_buffer ;
-    char * dir_member ;
-    char * buffer = NULL ;
     const char *path = DEFAULT_PATH;
 
-	/* steal first argument and treat it as a path (if not beginning with '-') */
+    ssize_t dir_return ;
+    char *dir_buffer = NULL;
+    size_t dir_length ;
+    char ** d_buffer ;
+    char * dir_member ;
+
+    /* ------------- INITIALIZATIOB ------------------ */
+    /* steal first argument and treat it as a path (if not beginning with '-') */
 	if ((argc > 1) && (argv[1][0] != '-')) {
 		path = argv[1];
 		argv = &argv[1];
@@ -30,60 +76,36 @@ int main(int argc, char **argv)
 	if (argc < 2) {
 		printf("Starting with extra parameter \"%s\" as default\n", DEFAULT_ARGV);
 
-		if ((rc = OW_init(DEFAULT_ARGV)) < 0) {
-			perror("OW_init failed.\n");
-			ret = rc;
+		if ( OW_init(DEFAULT_ARGV) < 0) {
+            printf("OW_init error = %d (%s)\n",errno,strerror(errno)) ;
 			goto cleanup;
 		}
 	} else {
-
-		if ((rc = OW_init_args(argc, argv)) < 0) {
-			printf("OW_init_args failed with rd=%d\n", rc);
-			ret = rc;
+		if ( OW_init_args(argc, argv) < 0) {
+            printf("OW_init error = %d (%s)\n",errno,strerror(errno)) ;
 			goto cleanup;
 		}
 	}
 
-	if ((rc = OW_get(path, &dir_buffer, &len)) < 0) {
-		printf("OW_get failed with rc=%d\n", rc);
-		ret = rc;
+    /* ------------- DIRECTORY PATH ------------------ */
+    dir_return = OW_get( path, &dir_buffer, &dir_length ) ;
+    if ( dir_return < 0 ) {
+        printf("DIRECTORY ERROR (%d) reading %s (%s)\n",errno,path,strerror(errno)) ;
 		goto cleanup;
+    } else {
+        printf("Directory %s has members %s (%d bytes)\n",path, dir_buffer, (int)dir_length);
 	}
+    
+    printf("\n");
 
-	if (dir_buffer==NULL || (len <= 0)) {
-		printf("OW_get: buffer is empty (buffer=%p len=%d)\n", dir_buffer, len);
-		ret = 1;
-		goto cleanup;
-	}
-
-	printf("OW_get() returned rc=%d, len=%d\n", (int) rc, (int) len);
-	dir_buffer[len] = 0;
-	printf("------- buffer content -------\n");
-	printf("%s\n", dir_buffer);
-	printf("------------------------------\n");
-
+    /* ------------- GO THROUGH DIR ------------------ */
     d_buffer = &dir_buffer ;
     while ( (dir_member=strsep(d_buffer,","))!=NULL ) {
         switch ( dir_member[0] ) {
             case '1':
                 if ( dir_member[1] == '0' ) {
-                    char tpath[128] ;
-                    char *type_buffer = NULL;
-
-                    strcpy( tpath, dir_member ) ;
-                    strcat( tpath, "temperature" ) ;
-                    if ( OW_get(tpath, &type_buffer, &len) < 0 ) {
-                        printf("OW_get: error\n" ) ;
-                        break ;
-                    }
-                    printf("OW_get() returned len=%d\n", (int) len);
-                    type_buffer[len] = 0;
-                    printf("------- buffer content (%s) -------\n",tpath);
-                    printf("%s\n", type_buffer);
-                    printf("------------------------------\n");
-                    if (type_buffer) {
-                        free(type_buffer);
-                    }
+                    // DS18S20 (family code 10)
+                    GetValue(dir_member, "temperature") ;
                 }
                 //fall through
             case '0': case '2': case '3':
@@ -91,23 +113,7 @@ int main(int argc, char **argv)
             case '8': case '9': case 'A': case 'B':
             case 'C': case 'D': case 'E': case 'F':
             {
-                char tpath[128] ;
-                char *type_buffer = NULL;
-
-                strcpy( tpath, dir_member ) ;
-                strcat( tpath, "type" ) ;
-                if ( OW_get( tpath, &type_buffer, &len ) < 0 ) {
-                    printf("OW_get: error\n", type_buffer, len);
-                    break ;
-                }
-                printf("OW_get() returned len=%d\n", (int) len);
-                type_buffer[len] = 0;
-                printf("------- buffer content (%s) -------\n",tpath);
-                printf("%s\n", type_buffer);
-                printf("------------------------------\n");
-                if (type_buffer) {
-                    free(type_buffer);
-                }
+                GetValue(dir_member, "type") ;
             }
             break ;
             default:
@@ -116,32 +122,17 @@ int main(int argc, char **argv)
     }
 
 
-	if ((rc = OW_get("system/adapter/name.ALL", &buffer, &len)) < 0) {
-		printf("OW_get(system/adapter/name.ALL) failed with rc=%d\n", rc);
-		ret = rc;
-		goto cleanup;
-	}
-	if (!buffer || (len <= 0)) {
-		printf("OW_get: buffer is empty (buffer=%p len=%d)\n", buffer, len);
-		ret = 1;
-		goto cleanup;
-	}
-	printf("OW_get() returned rc=%d, len=%d\n", (int) rc, (int) len);
-	buffer[len] = 0;
-	printf("------- buffer content (system/adapter/name.ALL) -------\n");
-	printf("%s\n", buffer);
-	printf("------------------------------\n");
+    /* ------------- STATIC PATHS   ------------------ */
+    GetValue("system/process", "pid" );
+    GetValue("badPath", "badName" ) ;
 
-  cleanup:
-	OW_finish();
+cleanup:
+    /* ------------- DONE -- CLEANUP ----------------- */
+    OW_finish();
 
-  if (buffer) {
-      free(buffer);
-      buffer = NULL;
-  }
-  if (dir_buffer) {
-      free(dir_buffer);
-      dir_buffer = NULL;
-  }
-  exit(ret);
+    if (dir_buffer) {
+        free(dir_buffer);
+        dir_buffer = NULL;
+    }
+    return 0 ;
 }

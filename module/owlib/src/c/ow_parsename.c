@@ -102,12 +102,14 @@ static int FS_ParsedName_anywhere(const char *path, int back_from_remote, struct
 	LEVEL_CALL("PARSENAME path=[%s]\n", SAFESTRING(path));
 
 	ret = FS_ParsedName_setup(pp, path, pn);
-	if (ret)
+    if (ret) {
 		return ret;
+    }
 	//printf("1pathnow=[%s] pathnext=[%s] pn->type=%d\n", pathnow, pathnext, pn->type);
 
-	if (path == NULL)
+    if (path == NULL) {
 		return 0;
+    }
 
 	while (1) {
 		//printf("PARSENAME parse_enum=%d pathnow=%s\n",pe,SAFESTRING(pp->pathnow));
@@ -117,8 +119,9 @@ static int FS_ParsedName_anywhere(const char *path, int back_from_remote, struct
 		case parse_done:		// the only exit!
 			//LEVEL_DEBUG("PARSENAME parse_done\n") ;
 			//printf("PARSENAME end ret=%d\n",ret) ;
-			if (pp->pathcpy)
+            if (pp->pathcpy) {
 				free(pp->pathcpy);
+            }
 			if (ret) {
 				FS_ParsedName_destroy(pn);
 			} else {
@@ -207,8 +210,9 @@ static int FS_ParsedName_anywhere(const char *path, int back_from_remote, struct
 /* Initial memory allocation and pn setup */
 static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path, struct parsedname *pn)
 {
-	if (pn == NULL)
+    if (pn == NULL) {
 		return -EINVAL;
+    }
 
 	memset(pn, 0, sizeof(struct parsedname));
 	pn->known_bus = NULL;		/* all busses */
@@ -223,8 +227,13 @@ static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path,
 	pp->pathnext = NULL;
 
 	/* minimal structure for setup use */
-	if (path == NULL)
+    if (path == NULL) {
 		return 0;
+    }
+    
+    if ( strlen(path) > PATH_MAX ) {
+        return -EBADF ;
+    }
 
 	/* Default attributes */
 	pn->state = ePS_normal;

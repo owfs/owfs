@@ -40,28 +40,6 @@ pthread_cond_t access_cond = PTHREAD_COND_INITIALIZER;
 
 int access_num = 0;
 
-/* Returns 0 if ok, else 1 */
-/* MUST BE PAIRED with OWLIB_can_init_end() */
-int OWLIB_can_init_start(void)
-{
-	int ids;
-#if OW_MT
-#ifdef __UCLIBC__
-	if (INITLOCK == EINVAL) {	/* Not initialized */
-		pthread_mutex_init(&init_mutex, Mutex.pmattr);
-		pthread_mutex_init(&access_mutex, Mutex.pmattr);
-		INITLOCK;
-	}
-#else							/* UCLIBC */
-	INITLOCK;
-#endif							/* UCLIBC */
-#endif							/* OW_MT */
-	CONNINLOCK;
-	ids = count_inbound_connections;
-	CONNINUNLOCK;
-	return ids > 0;
-}
-
 void API_setup( enum opt_program opt )
 {
     static int deja_vue = 0 ;
@@ -81,7 +59,7 @@ int API_init( const char * command_line )
         LibSetup(Global.opt) ; // use previous or default value
         StateInfo.owlib_state = lib_state_setup ;
     }
-    LIBWRITELOCK ;
+    LIB_WLOCK ;
     // stop if started
     if ( StateInfo.owlib_state == lib_state_started ) {
         LibStop() ;
@@ -92,19 +70,19 @@ int API_init( const char * command_line )
     if ( StateInfo.owlib_state == lib_state_setup ) {
         return_code = owopt_packed( command_line ) ;
         if ( return_code != 0 ) {
-            LIBWRITEUNLOCK ;
+            LIB_WUNLOCK ;
             return return_code ;
         }
         
         return_code = LibStart() ;
         if ( return_code != 0 ) {
-            LIBWRITEUNLOCK ;
+            LIB_WUNLOCK ;
             return return_code ;
         }
             
         StateInfo.owlib_state = lib_state_started ;
     }
-    LIBWRITEUNLOCK ;
+    LIB_WUNLOCK ;
     return return_code ;
 }
 
@@ -113,10 +91,10 @@ void API_finish( void )
     if ( StateInfo.owlib_state == lib_state_pre ) {
         return ;
     }
-    LIBWRITELOCK ;
+    LIB_WLOCK ;
     LibStop() ;
     StateInfo.owlib_state = lib_state_pre ;
-    LIBWRITEUNLOCK ;
+    LIB_WUNLOCK ;
 }
 
 // called before read/write/dir operation -- tests setup state
@@ -126,9 +104,9 @@ int API_access_start( void )
     if ( StateInfo.owlib_state == lib_state_pre ) {
         return -EACCES ;
     }
-    LIBREADLOCK ;
+    LIB_RLOCK ;
     if ( StateInfo.owlib_state != lib_state_started ) {
-        LIBREADUNLOCK ;
+        LIB_RUNLOCK ;
         return -EACCES ;
     }
     return 0 ;
@@ -138,6 +116,6 @@ int API_access_start( void )
 // pair with API_access_start
 void API_access_end( void )
 {
-    LIBREADUNLOCK ;
+    LIB_RUNLOCK ;
 }
 

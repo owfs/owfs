@@ -21,8 +21,10 @@ int FS_OWQ_create(const char *path, char *buffer, size_t size, off_t offset, str
 	struct parsedname *pn = PN(owq);
 
 	LEVEL_DEBUG("FS_OWQ_create of %s\n", path);
-	if (FS_ParsedName(path, pn))
+    if (FS_ParsedName(path, pn)) {
 		return -ENOENT;
+    }
+    
 	OWQ_buffer(owq) = buffer;
 	OWQ_size(owq) = size;
 	OWQ_offset(owq) = offset;
