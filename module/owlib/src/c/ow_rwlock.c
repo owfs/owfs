@@ -47,7 +47,7 @@ inline void rwlock_read_lock( rwlock_t * rwlock )
     sem_post(&(rwlock->allow_readers)) ;
 
     pthread_mutex_lock( &(rwlock->protect_reader_count) ) ;
-    if ( ++reader_count == 1 ) {
+    if ( ++rwlock->reader_count == 1 ) {
         sem_wait(&(rwlock->no_processes)) ;
     }
     pthread_mutex_unlock( &(rwlock->protect_reader_count) ) ;
@@ -56,7 +56,7 @@ inline void rwlock_read_lock( rwlock_t * rwlock )
 inline void rwlock_read_unlock( rwlock_t * rwlock )
 {
     pthread_mutex_lock( &(rwlock->protect_reader_count) ) ;
-    if ( --reader_count == 0 ) {
+    if ( --rwlock->reader_count == 0 ) {
         sem_post(&(rwlock->no_processes)) ;
     }
     pthread_mutex_unlock( &(rwlock->protect_reader_count) ) ;
