@@ -1023,11 +1023,13 @@ case "${host_cpu}-${host_os}" in
 		CFLAGS="$CFLAGS -D_XOPEN_SOURCE=500"
 		AC_MSG_RESULT([-D_XOPEN_SOURCE=500])
 	;;
-	*-freebsd* | *)
-		AC_MSG_RESULT([no])
-	;;
 	*-darwin*)
 		AC_MSG_RESULT([no])
+	;;
+	*-freebsd* | *)
+		# have to add this to support pthread_rwlock_t
+		CFLAGS="$CFLAGS -D_XOPEN_SOURCE=500"
+		AC_MSG_RESULT([-D_XOPEN_SOURCE=500])
 	;;
 esac
 

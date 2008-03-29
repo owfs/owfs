@@ -48,8 +48,8 @@ int OWLIB_can_init_start(void)
 #if OW_MT
 #ifdef __UCLIBC__
 	if (INITLOCK == EINVAL) {	/* Not initialized */
-		pthread_mutex_init(&init_mutex, pmattr);
-		pthread_mutex_init(&access_mutex, pmattr);
+		pthread_mutex_init(&init_mutex, Mutex.pmattr);
+		pthread_mutex_init(&access_mutex, Mutex.pmattr);
 		INITLOCK;
 	}
 #else							/* UCLIBC */
