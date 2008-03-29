@@ -8,12 +8,15 @@
     only solve writer starvation and no timeout or
     queued wakeup */
 
-#ifndef RWLOCK_h
-#define RWLOCK_h
+#ifndef RWLOCK_H
+#define RWLOCK_H
 
 #ifdef OW_MT
 
 #include <pthread.h>
+#ifdef HAVE_SEMAPHORE_H
+#include <semaphore.h>
+#endif
 
 typedef struct {
     pthread_mutex_t protect_reader_count;
