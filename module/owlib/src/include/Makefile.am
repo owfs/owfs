@@ -66,7 +66,8 @@ noinst_HEADERS =          \
         ow_system.h       \
         ow_thermocouple.h \
         ow_transaction.h  \
-        ow_xxxx.h
+        ow_xxxx.h         \
+        rwlock.h
 
 clean-generic:
 

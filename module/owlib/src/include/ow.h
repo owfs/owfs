@@ -203,6 +203,8 @@ $Id$
 /* memory blob used for bundled transactions */
 #include "ow_memblob.h"
 
+/* We use our own read-write locks */
+#include "rwlock.h"
 /* Many mutexes separated out for readability */
 #include "ow_mutexes.h"
 
