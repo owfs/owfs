@@ -20,6 +20,7 @@ EXTRA_DIST = ${header_DATA} \
         ow_pid.h          \
         ow_server.h       \
         ow_stub.h         \
+        rwlock.h          \
         sem.h
 
 clean-generic:

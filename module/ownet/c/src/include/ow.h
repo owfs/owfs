@@ -164,6 +164,7 @@ $Id$
 #include "ow_charblob.h"
 
 /* Many mutexes separated out for readability */
+#include "rwlock.h"
 #include "ow_mutexes.h"
 
 /*
@@ -198,16 +199,13 @@ extern int count_inbound_connections;
 #define OW_FULLNAME_MAX  (OW_NAME_MAX+OW_EXT_MAX)
 #define OW_DEFAULT_LENGTH (128)
 
-extern int shutdown_in_progress;
-
 /* device display format */
 enum deviceformat { fdi, fi, fdidc, fdic, fidc, fic };
 /* Gobal temperature scale */
 enum temp_type { temp_celsius, temp_fahrenheit, temp_kelvin, temp_rankine,
 };
 
-extern void set_signal_handlers(void (*exit_handler)
-								 (int signo, siginfo_t * info, void *context));
+void SetSignals(void) ;
 
 /* OWSERVER messages */
 #include "ow_message.h"

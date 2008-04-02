@@ -52,19 +52,15 @@ $Id$
 
 /* Global information (for local control) */
 struct global {
-	int announce_off;			// use zeroconf?
-	ASCII *announce_name;
 #if OW_ZERO
 	DNSServiceRef browse;
 #endif
 	ASCII *progname;
 	union antiloop Token;
-	int want_background;
 	int now_background;
 	int error_level;
 	int error_print;
 	int readonly;
-	char *SimpleBusName;
 };
 extern struct global Global;
 

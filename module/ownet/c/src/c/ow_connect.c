@@ -27,7 +27,6 @@ struct connection_in *find_connection_in(OWNET_HANDLE handle)
 	struct connection_in *c_ret = NULL;
 
 	// step through head_inbound_list linked list
-	CONNINLOCK;
 	for (c_in = head_inbound_list; c_in != NULL; c_in = c_in->next) {
 		if (c_in->index == handle) {
 			if (c_in->state == connection_active) {
@@ -36,7 +35,6 @@ struct connection_in *find_connection_in(OWNET_HANDLE handle)
 			break;
 		}
 	}
-	CONNINUNLOCK;
 	return c_ret;
 }
 
@@ -59,14 +57,12 @@ struct connection_in *NewIn(void)
 	struct connection_in *now;
 
 	// step through head_inbound_list linked list
-	CONNINLOCK;
 	for (now = head_inbound_list; now != NULL; now = now->next) {
 		if (now->state == connection_vacant) {
 #if OW_MT
-			pthread_mutex_init(&(now->bus_mutex), pmattr);
+			pthread_mutex_init(&(now->bus_mutex), Mutex.pmattr);
 #endif							/* OW_MT */
 			now->state = connection_pending;
-			CONNINUNLOCK;
 			return now;
 		}
 	}
@@ -78,10 +74,9 @@ struct connection_in *NewIn(void)
 		now->index = count_inbound_connections++;
 		now->state = connection_pending;
 #if OW_MT
-		pthread_mutex_init(&(now->bus_mutex), pmattr);
+		pthread_mutex_init(&(now->bus_mutex), Mutex.pmattr);
 #endif							/* OW_MT */
 	}
-	CONNINUNLOCK;
 	return now;
 }
 
@@ -90,7 +85,6 @@ void FreeIn(struct connection_in *target)
 	if (target == NULL) {
 		return;
 	}
-	CONNINLOCK;
 	switch (target->state) {
 	case connection_vacant:
 		break;
@@ -101,7 +95,6 @@ void FreeIn(struct connection_in *target)
 		}
 		break;
 	case connection_active:
-		BUSLOCKIN(target);
 		switch (get_busmode(target)) {
 		case bus_zero:
 			if (target->connin.tcp.type)
@@ -126,5 +119,4 @@ void FreeIn(struct connection_in *target)
 		pthread_mutex_destroy(&(target->bus_mutex));
 	}
 	target->state = connection_vacant;
-	CONNINUNLOCK;
 }

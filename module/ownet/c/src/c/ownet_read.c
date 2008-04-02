@@ -18,15 +18,17 @@ $Id$
 int OWNET_read(OWNET_HANDLE h, const char *onewire_path, unsigned char **return_string)
 {
 	unsigned char buffer[MAX_READ_BUFFER_SIZE];
-	int ret;
+    int return_value ;
 
 	struct request_packet s_request_packet;
 	struct request_packet *rp = &s_request_packet;
 	memset(rp, 0, sizeof(struct request_packet));
 
-	rp->owserver = find_connection_in(h);
+    CONNIN_RLOCK ;
+    rp->owserver = find_connection_in(h);
 	if (rp->owserver == NULL) {
-		return -EBADF;
+        CONNIN_RUNLOCK ;
+        return -EBADF;
 	}
 
 	rp->path = (onewire_path == NULL) ? "/" : onewire_path;
@@ -34,29 +36,32 @@ int OWNET_read(OWNET_HANDLE h, const char *onewire_path, unsigned char **return_
 	rp->data_length = MAX_READ_BUFFER_SIZE;
 	rp->data_offset = 0;
 
-	ret = ServerRead(rp);
-	if (ret <= 0) {
-		return ret;
-	}
+	return_value = ServerRead(rp);
+    if (return_value > 0) {
+        *return_string = malloc(return_value);
+        if (*return_string == NULL) {
+            return_value = -ENOMEM;
+        } else {
+            memcpy(*return_string, buffer, return_value);
+        }
+    }
 
-	*return_string = malloc(ret);
-	if (*return_string == NULL) {
-		return -ENOMEM;
-	}
-
-	memcpy(*return_string, buffer, ret);
-	return ret;
+    CONNIN_RUNLOCK ;
+    return return_value ;
 }
 
 int OWNET_lread(OWNET_HANDLE h, const char *onewire_path, unsigned char *return_string, size_t size, off_t offset)
 {
 	struct request_packet s_request_packet;
 	struct request_packet *rp = &s_request_packet;
-	memset(rp, 0, sizeof(struct request_packet));
+    int return_value ;
+    memset(rp, 0, sizeof(struct request_packet));
 
-	rp->owserver = find_connection_in(h);
+    CONNIN_RLOCK ;
+    rp->owserver = find_connection_in(h);
 	if (rp->owserver == NULL) {
-		return -EBADF;
+        CONNIN_RUNLOCK ;
+        return -EBADF;
 	}
 
 	rp->path = (onewire_path == NULL) ? "/" : onewire_path;
@@ -64,5 +69,8 @@ int OWNET_lread(OWNET_HANDLE h, const char *onewire_path, unsigned char *return_
 	rp->data_length = size;
 	rp->data_offset = offset;
 
-	return ServerRead(rp);
+	return_value = ServerRead(rp);
+
+    CONNIN_RUNLOCK ;
+    return return_value ;
 }

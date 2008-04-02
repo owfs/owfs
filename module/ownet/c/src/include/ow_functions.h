@@ -70,12 +70,6 @@ $Id$
 #ifndef OW_FUNCTION_H			/* tedious wrapper */
 #define OW_FUNCTION_H
 
-/* Prototypes for owlib.c -- libow overall control */
-void LibSetup(void);
-int LibStart(void);
-void LibStop(void);
-void LibClose(void);
-
 /* Utility functions */
 BYTE char2num(const char *s);
 BYTE string2num(const char *s);
@@ -87,14 +81,6 @@ int UT_getbit(const BYTE * buf, const int loc);
 int UT_get2bit(const BYTE * buf, const int loc);
 void UT_setbit(BYTE * buf, const int loc, const int bit);
 void UT_set2bit(BYTE * buf, const int loc, const int bits);
-
-// ow_api.c
-int OWLIB_can_init_start(void);
-void OWLIB_can_init_end(void);
-int OWLIB_can_access_start(void);
-void OWLIB_can_access_end(void);
-int OWLIB_can_finish_start(void);
-void OWLIB_can_finish_end(void);
 
 void LockSetup(void);
 

@@ -51,38 +51,65 @@ $Id$
 #ifndef OW_MUTEXES_H			/* tedious wrapper */
 #define OW_MUTEXES_H
 
-
 #if OW_MT
 #include <pthread.h>
+#endif /* OW_MT */
 
-extern pthread_mutex_t connin_mutex;
-
-extern pthread_mutexattr_t *pmattr;
+extern struct mutex {
+#if OW_MT
+    pthread_mutexattr_t *pmattr;
+    rwlock_t lib ;
+    rwlock_t connin ;
 #ifdef __UCLIBC__
-extern pthread_mutexattr_t mattr;
-extern pthread_mutex_t uclibc_mutex;
-#endif							/* __UCLIBC__ */
-#define CONNINLOCK        pthread_mutex_lock(  &connin_mutex    )
-#define CONNINUNLOCK      pthread_mutex_unlock(&connin_mutex    )
+    pthread_mutexattr_t mattr;
+    pthread_mutex_t uclibc_mutex;
+#endif                         /* __UCLIBC__ */
+#endif                          /* OW_MT */
+} Mutex ;
+
+
+#if OW_MT
+#define LIB_WLOCK         rwlock_write_lock(   &Mutex.lib    ) ;
+#define LIB_WUNLOCK       rwlock_write_unlock( &Mutex.lib    ) ;
+#define LIB_RLOCK         rwlock_read_lock(    &Mutex.lib    ) ;
+#define LIB_RUNLOCK       rwlock_read_unlock(  &Mutex.lib    ) ;
+
+#define CONNIN_WLOCK      rwlock_write_lock(   &Mutex.connin ) ;
+#define CONNIN_WUNLOCK    rwlock_write_unlock( &Mutex.connin ) ;
+#define CONNIN_RLOCK      rwlock_read_lock(    &Mutex.connin ) ;
+#define CONNIN_RUNLOCK    rwlock_read_unlock(  &Mutex.connin ) ;
+
+#define BUSLOCK(pn)       BUS_lock(pn)
+#define BUSUNLOCK(pn)     BUS_unlock(pn)
 #define BUSLOCKIN(in)       BUS_lock_in(in)
 #define BUSUNLOCKIN(in)     BUS_unlock_in(in)
 #ifdef __UCLIBC__
-#define UCLIBCLOCK     pthread_mutex_lock(  &uclibc_mutex)
-#define UCLIBCUNLOCK   pthread_mutex_unlock(&uclibc_mutex)
-#else							/* __UCLIBC__ */
+#define UCLIBCLOCK     pthread_mutex_lock(  &Mutex.uclibc_mutex)
+#define UCLIBCUNLOCK   pthread_mutex_unlock(&Mutex.uclibc_mutex)
+#else                           /* __UCLIBC__ */
 #define UCLIBCLOCK
 #define UCLIBCUNLOCK
-#endif							/* __UCLIBC__ */
+#endif                          /* __UCLIBC__ */
 
-#else							/* OW_MT */
+#else                           /* OW_MT */
+#define LIB_WLOCK
+#define LIB_WUNLOCK
+#define LIB_RLOCK
+#define LIB_RUNLOCK
+
+#define CONNIN_WLOCK
+#define CONNIN_WUNLOCK
+#define CONNIN_RLOCK
+#define CONNIN_RUNLOCK
+
 #define UCLIBCLOCK
 #define UCLIBCUNLOCK
 #define UCLIBCLOCK
 #define UCLIBCUNLOCK
-#define CONNINLOCK
-#define CONNINUNLOCK
+#define BUSLOCK(pn)
+#define BUSUNLOCK(pn)
 #define BUSLOCKIN(in)
 #define BUSUNLOCKIN(in)
-#endif							/* OW_MT */
+#endif                          /* OW_MT */
 
-#endif							/* OW_MUTEXES_H */
+#endif                          /* OW_MUTEXES_H */

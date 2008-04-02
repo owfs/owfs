@@ -52,31 +52,6 @@ static void *Process(void *v)
 	return NULL;
 }
 
-#if 0
-static void RequestBack(DNSServiceRef sr,
-						DNSServiceFlags flags,
-						uint32_t interfaceIndex,
-						DNSServiceErrorType errorCode,
-						const char *fullname, uint16_t rrtype, uint16_t rrclass, uint16_t rdlen, const void *rdata, uint32_t ttl, void *context)
-{
-	int i;
-	(void) context;
-	printf("DNSServiceRef %ld\n", (long int) sr);
-	printf("DNSServiceFlags %d\n", flags);
-	printf("interface %d\n", interfaceIndex);
-	printf("DNSServiceErrorType %d\n", errorCode);
-	printf("name <%s>\n", fullname);
-	printf("rrtype %d\n", rrtype);
-	printf("rrclass %d\n", rrclass);
-	printf("rdlen %d\n", rdlen);
-	printf("rdata ");
-	for (i = 0; i < rdlen; ++i)
-		printf(" %.2X", ((const BYTE *) rdata)[i]);
-	printf("\nttl %d\n", ttl);
-}
-
-		/* Resolved service -- add to connection_in */
-#endif							/* 0 */
 
 static void ResolveBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 						DNSServiceErrorType e, const char *n, const char *host, uint16_t port, uint16_t tl, const char *t, void *c)
@@ -113,21 +88,6 @@ static void ResolveBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 			BUSUNLOCKIN(in);
 		}
 	}
-#if 0
-	// test out RecordRequest and RecordReconfirm
-	do {
-		DNSServiceRef sr;
-		printf("\nRecord Request (of %s) = %d\n", n,
-			   DNSServiceQueryRecord(&sr, 0, 0, n, kDNSServiceType_SRV, kDNSServiceClass_IN, RequestBack, NULL));
-		printf("Process Request = %d\n", DNSServiceProcessResult(sr));
-		DNSServiceRefDeallocate(sr);
-		printf("Reconfirm %s\n", n);
-		DNSServiceReconfirmRecord(0, 0, n, kDNSServiceType_SRV, kDNSServiceClass_IN, 0, NULL);
-		printf("Record Request (of %s) = %d\n", n, DNSServiceQueryRecord(&sr, 0, 0, n, kDNSServiceType_SRV, kDNSServiceClass_IN, RequestBack, NULL));
-		printf("Process Request = %d\n\n", DNSServiceProcessResult(sr));
-		DNSServiceRefDeallocate(sr);
-	} while (0);
-#endif							/* 0 */
 	BSKill(bs);
 }
 
@@ -158,7 +118,6 @@ static void BSKill(struct BrowseStruct *bs)
 static struct connection_in *FindIn(struct BrowseStruct *bs)
 {
 	struct connection_in *now;
-	CONNINLOCK;
 	for (now = head_inbound_list; now; now = now->next) {
 		if (now->busmode != bus_zero || strcasecmp(now->name, bs->name)
 			|| strcasecmp(now->connin.tcp.type, bs->type)
@@ -168,7 +127,6 @@ static struct connection_in *FindIn(struct BrowseStruct *bs)
 		BUSLOCKIN(now);
 		break;
 	}
-	CONNINUNLOCK;
 	return now;
 }
 
@@ -183,7 +141,8 @@ static void BrowseBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 	if (e == kDNSServiceErr_NoError) {
 		struct BrowseStruct *bs = BSCreate(name, type, domain);
 
-		if (bs) {
+        CONNIN_WLOCK ;
+        if (bs) {
 			struct connection_in *in = FindIn(bs);
 
 			if (in) {
@@ -222,7 +181,8 @@ static void BrowseBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 			}
 			BSKill(bs);
 		}
-	}
+        CONNIN_WUNLOCK ;
+    }
 	return;
 }
 

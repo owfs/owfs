@@ -1,26 +1,26 @@
 # $Id$
 
-LIBOWNET_SOURCE =	compat.c   \
-        error.c   \
+LIBOWNET_SOURCE =	    \
+        compat.c        \
+        error.c         \
         getaddrinfo.c   \
-        getopt.c   \
-        globals.c   \
-        ow_api.c   \
-        ow_browse.c   \
+        getopt.c        \
+        globals.c       \
+        ow_browse.c     \
         ow_charblob.c   \
-        ow_connect.c   \
-        ow_dl.c   \
-        ow_dnssd.c   \
-        owlib.c   \
-        ow_locks.c   \
-        ow_net_client.c   \
+        ow_connect.c    \
+        ow_dl.c         \
+        ow_dnssd.c      \
+        ow_locks.c      \
+        ow_net_client.c \
         ownet_close.c   \
-        ownet_dir.c   \
-        ownet_init.c   \
-        ownet_read.c   \
-        ownet_setget.c   \
+        ownet_dir.c     \
+        ownet_init.c    \
+        ownet_read.c    \
+        ownet_setget.c  \
         ownet_write.c   \
-        ow_server.c   \
+        ow_rwlock.c     \
+        ow_server.c     \
         ow_tcp_read.c   \
         ow_util.c
 

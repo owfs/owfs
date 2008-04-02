@@ -29,10 +29,6 @@ pthread_mutexattr_t mattr;
 pid_t pid_num;
 /* char * pid_file in ow_opt.c */
 
-/* Times for directory information */
-time_t start_time;
-time_t dir_time;				/* time of last directory scan */
-
 /* State information, sent to remote or kept locally */
 /* cacheenabled, presencecheck, tempscale, devform */
 #if OW_CACHE
@@ -44,21 +40,17 @@ int32_t SemiGlobal = ((uint8_t) fdi) << 24 | ((uint8_t) temp_celsius) << 16 | ((
 #endif
 
 struct global Global = {
-	.announce_off = 0,
-	.announce_name = NULL,
 #if OW_ZERO
 	.browse = NULL,
 #endif
 
 	.progname = NULL,			// "One Wire File System" , Can't allocate here since it's freed
-	.want_background = 1,
 	.now_background = 0,
 
 	.error_level = e_err_default,
 	.error_print = e_err_print_mixed,
 
 	.readonly = 0,
-	.SimpleBusName = "None",
 };
 
 /* Statistics globals are stored in ow_stats.c */
