@@ -348,7 +348,7 @@ AC_LANG_RESTORE
 # Checks for header files.
 AC_HEADER_DIRENT
 AC_HEADER_STDC
-AC_CHECK_HEADERS([sys/mkdev.h sys/time.h sys/types.h feature_tests.h fcntl.h netinet/in.h stdlib.h string.h sys/file.h syslog.h termios.h unistd.h limits.h stdint.h features.h getopt.h resolv.h semaphore.h])
+AC_CHECK_HEADERS([sys/mkdev.h sys/time.h sys/types.h feature_tests.h fcntl.h netinet/in.h stdlib.h string.h sys/file.h syslog.h termios.h unistd.h limits.h stdint.h features.h getopt.h resolv.h sem.h semaphore.h])
 AC_CHECK_HEADERS([linux/limits.h linux/types.h bits/netdb.h bits/siginfo.h dlfcn.h])
 
 # Test if debugging out enabled
@@ -1016,11 +1016,12 @@ ACX_EXPAND(LIBDIR, $libdir)
 ACX_EXPAND(BINDIR, $bindir)
 ACX_EXPAND(DATADIR, $datadir)
 
-
+EXTRACFLAGS="-D_FILE_OFFSET_BITS=64"
 AC_MSG_CHECKING([if cflag _XOPEN_SOURCE is required])
 case "${host_cpu}-${host_os}" in
 	*-aix* | *solaris* | *-osf* | *-hpux*)
 		CFLAGS="$CFLAGS -D_XOPEN_SOURCE=500"
+		EXTRACFLAGS="$EXTRACFLAGS -D_XOPEN_SOURCE=500"
 		AC_MSG_RESULT([-D_XOPEN_SOURCE=500])
 	;;
 	*-darwin*)
@@ -1029,6 +1030,7 @@ case "${host_cpu}-${host_os}" in
 	*-freebsd* | *)
 		# have to add this to support pthread_rwlock_t
 		CFLAGS="$CFLAGS -D_XOPEN_SOURCE=500"
+		EXTRACFLAGS="$EXTRACFLAGS -D_XOPEN_SOURCE=500"
 		AC_MSG_RESULT([-D_XOPEN_SOURCE=500])
 	;;
 esac
@@ -1038,6 +1040,7 @@ case "${host_cpu}-${host_os}" in
 	*)
 		# have to add this to support major() in sys/sysmacros.h
 		CFLAGS="$CFLAGS -D_BSD_SOURCE=1"
+		EXTRACFLAGS="$EXTRACFLAGS -D_BSD_SOURCE=1"
 		AC_MSG_RESULT([-D_BSD_SOURCE=1])
 	;;
 esac
@@ -1460,6 +1463,7 @@ AC_ARG_ENABLE(profiling,
 AC_MSG_RESULT([$enableval])
     if test "$enableval" = "yes" ; then
         ENABLE_PROFILING=true
+	EXTRACFLAGS="$EXTRACFLAGS -pg"
     fi
 ],
 [
@@ -1467,6 +1471,12 @@ AC_MSG_RESULT([$enableval])
 ])
 AC_SUBST(ENABLE_PROFILING)
 AM_CONDITIONAL(ENABLE_PROFILING, test "${ENABLE_PROFILING}" = "true")
+
+if test "${ENABLE_PROFILING}" = "true" ; then
+   PROFILING_FLAG=-pg
+fi
+AC_SUBST(PROFILING_FLAG)
+AC_SUBST(EXTRACFLAGS)
 
 
 # owftpd section
@@ -1536,11 +1546,6 @@ else
    OW_ZERO=0
 fi
 AC_SUBST(OW_ZERO)
-
-if test "${ENABLE_PROFILING}" = "true" ; then
-   PROFILING_FLAG=-pg
-fi
-AC_SUBST(PROFILING_FLAG)
 
 if test "${ENABLE_PARPORT}" = "true" ; then
    OW_PARPORT=1

@@ -120,6 +120,9 @@
 /* Define to 1 if you have the <semaphore.h> header file. */
 #undef HAVE_SEMAPHORE_H
 
+/* Define to 1 if you have the <sem.h> header file. */
+#undef HAVE_SEM_H
+
 /* Define to 1 if you have the `socket' function. */
 #undef HAVE_SOCKET
 

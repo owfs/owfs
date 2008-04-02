@@ -26,19 +26,18 @@ owpresent_SOURCES = ${COMMON_OWSHELL_SOURCE} \
                owpresent.c
 
 AM_CFLAGS = -I../include \
-         -D_FILE_OFFSET_BITS=64 \
-         -I../../../owlib/src/include \
-         -fexceptions \
-         -Wall \
-         -W \
-         -Wundef \
-         -Wshadow \
-         -Wpointer-arith \
-         -Wcast-qual \
-         -Wcast-align \
-         -Wstrict-prototypes \
-         -Wredundant-decls \
-         ${PROFILING_FLAG}
+	${EXTRACFLAGS} \
+	-I../../../owlib/src/include \
+	-fexceptions \
+	-Wall \
+	-W \
+	-Wundef \
+	-Wshadow \
+	-Wpointer-arith \
+	-Wcast-qual \
+	-Wcast-align \
+	-Wstrict-prototypes \
+	-Wredundant-decls
 
 LDADD = ${PROFILING_FLAG} ${LD_EXTRALIBS} ${OSLIBS}
 

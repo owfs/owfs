@@ -17,23 +17,22 @@ SS_FLAG = -DHAVE_NEW_SS_FAMILY
 endif
 
 AM_CFLAGS = -I../include \
-         -I../../../owlib/src/include \
-         -L../../../owlib/src/c \
-         -fexceptions \
-         -Wall \
-         -W \
-         -Wundef \
-         -Wshadow \
-         -Wpointer-arith \
-         -Wcast-qual \
-         -Wcast-align \
-         -Wstrict-prototypes \
-         -Wredundant-decls \
-         ${PROFILING_FLAG} \
-         ${SS_FLAG} \
-	 ${LIBUSB_CFLAGS} \
-	 ${PTHREAD_CFLAGS} \
-         -D_FILE_OFFSET_BITS=64
+	-I../../../owlib/src/include \
+	-L../../../owlib/src/c \
+	-fexceptions \
+	-Wall \
+	-W \
+	-Wundef \
+	-Wshadow \
+	-Wpointer-arith \
+	-Wcast-qual \
+	-Wcast-align \
+	-Wstrict-prototypes \
+	-Wredundant-decls \
+	${EXTRACFLAGS} \
+	${SS_FLAG} \
+	${LIBUSB_CFLAGS} \
+	${PTHREAD_CFLAGS}
 
 LDADD = -low ${LIBUSB_LIBS} ${PROFILING_FLAG} ${PTHREAD_LIBS} ${LD_EXTRALIBS} ${OSLIBS}
 

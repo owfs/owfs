@@ -46,20 +46,19 @@ endif
 #	$(LDADDS)
 
 AM_CFLAGS = -I../include \
-         -fexceptions \
-         -Wall \
-         -W \
-         -Wundef \
-         -Wshadow \
-         -Wpointer-arith \
-         -Wcast-qual \
-         -Wcast-align \
-         -Wstrict-prototypes \
-         -Wredundant-decls \
-         -D_FILE_OFFSET_BITS=64 \
-         -D__EXTENSIONS__ \
-         ${PROFILING_FLAG} \
-	 ${PTHREAD_CFLAGS}
+	-fexceptions \
+	-Wall \
+	-W \
+	-Wundef \
+	-Wshadow \
+	-Wpointer-arith \
+	-Wcast-qual \
+	-Wcast-align \
+	-Wstrict-prototypes \
+	-Wredundant-decls \
+	${EXTRACFLAGS} \
+	-D__EXTENSIONS__ \
+	${PTHREAD_CFLAGS}
 
 clean-generic:
 

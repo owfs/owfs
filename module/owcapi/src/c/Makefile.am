@@ -13,22 +13,21 @@ libowcapi_la_LDFLAGS = -low -version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE)
 endif
 
 AM_CFLAGS = -I../include \
-         -I../../../owlib/src/include \
-         -L../../../owlib/src/c \
-         -fexceptions \
-         -Wall \
-         -W \
-         -Wundef \
-         -Wshadow \
-         -Wpointer-arith \
-         -Wcast-qual \
-         -Wcast-align \
-         -Wstrict-prototypes \
-         -Wredundant-decls \
-         ${PROFILING_FLAG} \
-	 ${PTHREAD_CFLAGS} \
-         -D__EXTENSIONS__ \
-         -D_FILE_OFFSET_BITS=64
+	-I../../../owlib/src/include \
+	-L../../../owlib/src/c \
+	-fexceptions \
+	-Wall \
+	-W \
+	-Wundef \
+	-Wshadow \
+	-Wpointer-arith \
+	-Wcast-qual \
+	-Wcast-align \
+	-Wstrict-prototypes \
+	-Wredundant-decls \
+	${EXTRACFLAGS} \
+	${PTHREAD_CFLAGS} \
+	-D__EXTENSIONS__
 
 clean-generic:
 

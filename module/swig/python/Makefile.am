@@ -10,7 +10,7 @@ LIBOW = ../../owlib/src/c/libow.la
 #AM_CFLAGS = -I../include \
 #	-fexceptions \
 #	${PTHREAD_CFLAGS} \
-#	-D_FILE_OFFSET_BITS=64
+#	${EXTRACFLAGS}
 
 #LDADD = -low ${PTHREAD_LIBS} ${LD_EXTRALIBS} ${OSLIBS}
 

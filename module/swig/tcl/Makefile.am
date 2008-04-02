@@ -40,8 +40,8 @@ AM_CFLAGS = -I../../owlib/src/include \
 	-Wcast-align \
 	-Wstrict-prototypes \
 	-Wredundant-decls \
+	${EXTRACFLAGS} \
 	${PTHREAD_CFLAGS} \
-	-D_FILE_OFFSET_BITS=64 \
 	$(TCL_DEFS) \
 	$(TCL_SHLIB_CFLAGS) \
 	$(TCL_INCLUDE_SPEC) \

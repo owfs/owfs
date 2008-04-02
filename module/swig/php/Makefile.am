@@ -23,8 +23,8 @@ AM_CFLAGS = -fexceptions \
 	-I.. \
 	-I$(top_srcdir)/src/include \
 	-I$(top_srcdir)/module/owlib/src/include \
-	-D_FILE_OFFSET_BITS=64 \
-	 ${PTHREAD_CFLAGS} \
+	${EXTRACFLAGS} \
+	${PTHREAD_CFLAGS} \
 	@PHPINC@
 
 LDADD = -L../../owlib/src/c -low ${PTHREAD_LIBS} ${LD_EXTRALIBS} ${OSLIBS}
