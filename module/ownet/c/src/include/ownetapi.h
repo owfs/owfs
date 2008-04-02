@@ -77,7 +77,7 @@ extern "C" {
    returns length of result on success,
    returns <0 on error
 */
-	int OWNET_get(OWNET_HANDLE h, const char *onewire_path, unsigned char **return_string);
+	int OWNET_get(OWNET_HANDLE h, const char *onewire_path, char **return_string);
 
 /* int OWNET_lread( OWNET_HANDLE h, const char * onewire_path, 
         unsigned char * return_string, size_t size, off_t offset )
@@ -88,7 +88,7 @@ extern "C" {
    returns length of result on success,
    returns <0 on error
 */
-	int OWNET_lread(OWNET_HANDLE h, const char *onewire_path, unsigned char *return_string, size_t size, off_t offset);
+	int OWNET_lread(OWNET_HANDLE h, const char *onewire_path, char *return_string, size_t size, off_t offset);
 
 /* int OWNET_put( OWNET_HANDLE h, const char * onewire_path, 
         const unsigned char * value_string, size_t size)
@@ -98,7 +98,7 @@ extern "C" {
    return 0 on success
    return <0 on error
 */
-	int OWNET_put(OWNET_HANDLE h, const char *onewire_path, const unsigned char *value_string, size_t size);
+	int OWNET_put(OWNET_HANDLE h, const char *onewire_path, const char *value_string, size_t size);
 
 /* int OWNET_lwrite( OWNET_HANDLE h, const char * onewire_path, 
         const unsigned char * value_string, size_t size, off_t offset )
@@ -108,7 +108,7 @@ extern "C" {
    return 0 on success
    return <0 on error
 */
-	int OWNET_lwrite(OWNET_HANDLE h, const char *onewire_path, const unsigned char *value_string, size_t size, off_t offset);
+	int OWNET_lwrite(OWNET_HANDLE h, const char *onewire_path, const char *value_string, size_t size, off_t offset);
 
 /* void OWNET_close( OWNET_HANDLE h)
    close a particular owserver connection
