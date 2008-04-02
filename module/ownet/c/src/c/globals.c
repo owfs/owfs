@@ -18,17 +18,6 @@ $Id$
 /* connections globals stored in ow_connect.c */
 /* i.e. connection_in * head_inbound_list ...         */
 
-#if OW_MT
-/* mutex attribute -- needed for uClibc programming */
-/* we create at start, and destroy at end */
-pthread_mutexattr_t *pmattr = NULL;
-pthread_mutexattr_t mattr;
-#endif							/* OW_MT */
-
-/* information about this process */
-pid_t pid_num;
-/* char * pid_file in ow_opt.c */
-
 /* State information, sent to remote or kept locally */
 /* cacheenabled, presencecheck, tempscale, devform */
 #if OW_CACHE
