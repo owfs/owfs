@@ -172,13 +172,6 @@ $Id$
     Global variables -- each invokation will have it's own data
 */
 
-/* command line options */
-/* These are the owlib-specific options */
-#define OWLIB_OPT "m:c:f:p:s:h::u::d:t:CFRKVP:"
-extern const struct option owopts_long[];
-int owopt(const int c, const char *arg);
-int owopt_packed(const char *params);
-
 /* Several different structures:
   device -- one for each type of 1-wire device
   filetype -- one for each type of file

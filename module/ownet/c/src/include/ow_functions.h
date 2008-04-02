@@ -70,18 +70,6 @@ $Id$
 #ifndef OW_FUNCTION_H			/* tedious wrapper */
 #define OW_FUNCTION_H
 
-/* Utility functions */
-BYTE char2num(const char *s);
-BYTE string2num(const char *s);
-char num2char(const BYTE n);
-void num2string(char *s, const BYTE n);
-void string2bytes(const char *str, BYTE * b, const int bytes);
-void bytes2string(char *str, const BYTE * b, const int bytes);
-int UT_getbit(const BYTE * buf, const int loc);
-int UT_get2bit(const BYTE * buf, const int loc);
-void UT_setbit(BYTE * buf, const int loc, const int bit);
-void UT_set2bit(BYTE * buf, const int loc, const int bits);
-
 void LockSetup(void);
 
 ssize_t tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval *ptv);

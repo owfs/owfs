@@ -21,11 +21,7 @@ LIBOWNET_SOURCE =	    \
         ownet_write.c   \
         ow_rwlock.c     \
         ow_server.c     \
-        ow_tcp_read.c   \
-        ow_util.c
-
-#        ow_opt.c   
-
+        ow_tcp_read.c
 
 lib_LTLIBRARIES = libownet.la
 
