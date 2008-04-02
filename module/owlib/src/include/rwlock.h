@@ -14,9 +14,7 @@
 #ifdef OW_MT
 
 #include <pthread.h>
-#ifdef HAVE_SEMAPHORE_H
-#include <semaphore.h>
-#endif
+#include "sem.h"
 
 typedef struct {
     pthread_mutex_t protect_reader_count;
