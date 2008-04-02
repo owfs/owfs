@@ -64,7 +64,7 @@ to each directory element, along with an arbitrary passed_on_value.
 .I owserver_handle 
 .B , const char * 
 .I onewire_path
-.B , const unsigned char * 
+.B , const char * 
 .I value_string
 .B , size_t 
 .I size
@@ -76,7 +76,7 @@ Write a value (of specified size) to a 1-wire device.
 .I owserver_handle 
 .B , const char * 
 .I onewire_path
-.B , const unsigned char * 
+.B , const char * 
 .I value_string
 .B , size_t 
 .I size
@@ -342,21 +342,21 @@ owtcl
 .SH EXAMPLE
 /* Simple directory listing -- no error checking */
 .br
-#include <owcapi.h>
+#include <ownetapi.h>
 .br
-unsigned char * buf;
+char * buf;
 .br
 size_t s ;
 .br
-OW_init("/dev/ttyS0");
+OWNET_init("localhost:4304");
 .br
-OW_get("/",&buf,&s) ;
+OWNET_dirlist("/",&buf,&s) ;
 .br
 printf("Directory %s\n",buf);
 .br
 free(buf);
 .br
-OW_finish() ;
+OWNET_finish() ;
 .SH SEE ALSO
 .so seealso
 .SH AVAILABILITY
