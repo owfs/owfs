@@ -6,6 +6,8 @@
 #ifndef __semaphore_h
 #define __semaphore_h
 
+/* This should be HAVE_SEMAPHORE_H !?!? */
+/* HAVE_SEMAPHORE is never defined... is it like this for debugging purpose? */
 #ifdef HAVE_SEMAPHORE
 #include <semaphore.h>
 #else
