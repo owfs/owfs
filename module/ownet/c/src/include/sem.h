@@ -6,11 +6,9 @@
 #ifndef __semaphore_h
 #define __semaphore_h
 
-/* This should be HAVE_SEMAPHORE_H !?!? */
-/* HAVE_SEMAPHORE is never defined... is it like this for debugging purpose? */
-#ifdef HAVE_SEMAPHORE
+#ifdef HAVE_SEMAPHORE_H
 #include <semaphore.h>
-#else
+#else /* HAVE_SEMAPHORE_H */
 
 #include <pthread.h>
 #include <errno.h>
@@ -122,6 +120,6 @@ static inline int sem_trywait(sem_t * s)
 }
 
 
-#endif							/* HAVE_SEMAPHORE */
+#endif							/* HAVE_SEMAPHORE_H */
 
 #endif							/* __semaphore_h */
