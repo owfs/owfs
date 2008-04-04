@@ -15,7 +15,7 @@ $Id$
 #include "ownetapi.h"
 #include "ow_server.h"
 
-int OWNET_read(OWNET_HANDLE h, const char *onewire_path, unsigned char **return_string)
+int OWNET_read(OWNET_HANDLE h, const char *onewire_path, char **return_string)
 {
 	unsigned char buffer[MAX_READ_BUFFER_SIZE];
     int return_value ;
@@ -50,7 +50,7 @@ int OWNET_read(OWNET_HANDLE h, const char *onewire_path, unsigned char **return_
     return return_value ;
 }
 
-int OWNET_lread(OWNET_HANDLE h, const char *onewire_path, unsigned char *return_string, size_t size, off_t offset)
+int OWNET_lread(OWNET_HANDLE h, const char *onewire_path, char *return_string, size_t size, off_t offset)
 {
 	struct request_packet s_request_packet;
 	struct request_packet *rp = &s_request_packet;

@@ -15,7 +15,7 @@ $Id$
 #include "ownetapi.h"
 #include "ow_server.h"
 
-int OWNET_put(OWNET_HANDLE h, const char *onewire_path, const unsigned char *value_string, size_t size)
+int OWNET_put(OWNET_HANDLE h, const char *onewire_path, const char *value_string, size_t size)
 {
 	struct request_packet s_request_packet;
 	struct request_packet *rp = &s_request_packet;
@@ -40,7 +40,7 @@ int OWNET_put(OWNET_HANDLE h, const char *onewire_path, const unsigned char *val
     return return_value ;
 }
 
-int OWNET_lwrite(OWNET_HANDLE h, const char *onewire_path, const unsigned char *value_string, size_t size, off_t offset)
+int OWNET_lwrite(OWNET_HANDLE h, const char *onewire_path, const char *value_string, size_t size, off_t offset)
 {
 	struct request_packet s_request_packet;
 	struct request_packet *rp = &s_request_packet;
