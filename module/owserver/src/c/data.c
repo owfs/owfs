@@ -64,6 +64,7 @@ void *DataHandler(void *v)
 
 	//printf("OWSERVER message type = %d\n",sm.type ) ;
 	memset(&cm, 0, sizeof(struct client_msg));
+    cm.version = MakeServerprotocol( OWSERVER_PROTOCOL_VERSION ) ;
 	cm.sg = hd->sm.sg;			// default flag return -- includes persistence state
 
 	/* Pre-handling for special testing mode to exclude certain messsages */

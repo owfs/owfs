@@ -82,6 +82,13 @@ const struct option owopts_long[] = {
     {"max_clients", required_argument, NULL, e_max_clients},	/* ftp max connections */
     {"max-clients", required_argument, NULL, e_max_clients},	/* ftp max connections */
     {"maxclients", required_argument, NULL, e_max_clients},	/* ftp max connections */
+
+    {"sidetap", required_argument, NULL, e_sidetap}, /* sidetap address */
+    {"side", required_argument, NULL, e_sidetap}, /* sidetap address */
+    {"Sidetap", required_argument, NULL, e_sidetap}, /* sidetap address */
+    {"SideTap", required_argument, NULL, e_sidetap}, /* sidetap address */
+    {"SIDE", required_argument, NULL, e_sidetap}, /* sidetap address */
+
     {"HA7", optional_argument, NULL, e_ha7},	/* HA7Net */
     {"ha7", optional_argument, NULL, e_ha7},	/* HA7Net */
     {"HA7NET", optional_argument, NULL, e_ha7},
@@ -558,6 +565,13 @@ int owopt(const int option_char, const char *arg)
 		break;
         case e_fuse_open_opt:					/* fuse_open_opt, handled in owfs.c */
 		break;
+        case e_sidetap: /* sidetap address */
+            switch (Global.opt) {
+                case opt_server:
+                    return OW_ArgSide(arg);
+                default:
+                    return 0;
+            }
         case e_max_clients:
 		{
 			long long int i;
@@ -678,11 +692,20 @@ static int OW_ArgTester(const char *arg)
 
 int OW_ArgServer(const char *arg)
 {
-	struct connection_out *out = NewOut();
-	if (out == NULL)
-		return 1;
-	out->name = arg ? strdup(arg) : NULL;
-	return 0;
+    struct connection_out *out = NewOut();
+    if (out == NULL)
+        return 1;
+    out->name = arg ? strdup(arg) : NULL;
+    return 0;
+}
+
+int OW_ArgSide(const char *arg)
+{
+    struct connection_side *side = NewSide();
+    if (side == NULL)
+        return 1;
+    side->name = arg ? strdup(arg) : NULL;
+    return 0;
 }
 
 int OW_ArgDevice(const char *arg)

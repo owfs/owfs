@@ -227,10 +227,7 @@ $Id$
 /* predeclare connection_in/out */
 struct connection_in;
 struct connection_out;
-
-/* Exposed connection info */
-extern int count_outbound_connections;
-extern int count_inbound_connections;
+struct connection_side;
 
 /* Maximum length of a file or directory name, and extension */
 #define OW_NAME_MAX      (32)

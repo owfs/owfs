@@ -69,6 +69,10 @@ See: http://www.iana.org/assignments/port-numbers
 #include <sys/ioctl.h>
 #include "ow_transaction.h"
 
+/* Exposed connection info */
+extern int count_outbound_connections;
+extern int count_inbound_connections;
+
 /* large enough for arrays of 2048 elements of ~49 bytes each */
 #define MAX_OWSERVER_PROTOCOL_PACKET_SIZE  100050
 
@@ -392,28 +396,41 @@ struct connection_in {
 };
 /* Network connection structure */
 struct connection_out {
-	struct connection_out *next;
-	void (*HandlerRoutine) (int file_descriptor);
-	void (*Exit) (int errcode);
-	char *name;
-	char *host;
-	char *service;
-	int index;
-	struct addrinfo *ai;
-	struct addrinfo *ai_ok;
-	int file_descriptor;
+    struct connection_out *next;
+    void (*HandlerRoutine) (int file_descriptor);
+    void (*Exit) (int errcode);
+    char *name;
+    char *host;
+    char *service;
+    int index;
+    struct addrinfo *ai;
+    struct addrinfo *ai_ok;
+    int file_descriptor;
 #if OW_MT
-	pthread_mutex_t accept_mutex;
-	pthread_mutex_t out_mutex;
-	pthread_t tid;
-#endif							/* OW_MT */
+    pthread_mutex_t accept_mutex;
+    pthread_mutex_t out_mutex;
+    pthread_t tid;
+#endif                          /* OW_MT */
 #if OW_ZERO
-	DNSServiceRef sref0;
-	DNSServiceRef sref1;
+    DNSServiceRef sref0;
+    DNSServiceRef sref1;
 #endif
+};
+/* Network connection structure */
+struct connection_side {
+    struct connection_side *next;
+    char *name;
+    char *host;
+    char *service;
+    int index;
+    struct addrinfo *ai;
+    struct addrinfo *ai_ok;
+    int file_descriptor;
+    int good_entry ;
 };
 extern struct connection_out *head_outbound_list;
 extern struct connection_in *head_inbound_list;
+extern struct connection_side *head_sidebound_list;
 
 #define  FD_PERSISTENT_IN_USE    -2
 #define  FD_PERSISTENT_NONE      -1
@@ -444,10 +461,12 @@ void COM_break(const struct parsedname *pn);
 
 void FreeIn(void);
 void FreeOut(void);
+void FreeSide(void);
 void DelIn(struct connection_in *in);
 
 struct connection_in *NewIn(const struct connection_in *in);
 struct connection_out *NewOut(void);
+struct connection_side *NewSide(void);
 struct connection_in *find_connection_in(int nr);
 
 /* Bonjour registration */

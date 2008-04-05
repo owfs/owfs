@@ -626,34 +626,38 @@ static int ToServerTwice(int file_descriptor, int persistent, struct server_msg 
 static int ToServer(int file_descriptor, struct server_msg *sm, struct serverpackage *sp)
 {
 	int payload = 0;
-	struct iovec io[5] = {
-		{sm, sizeof(struct server_msg),},	// send "server message" header structure
-	};
+    int tokens = 0 ;
+    struct iovec io[5] = { {NULL,0}, {NULL,0}, {NULL,0}, {NULL,0}, {NULL,0}, } ;
+
+    // First block to send, the header
+    io[0].iov_base = sm ;
+    io[0].iov_len = sizeof(struct server_msg) ;
+
+    // Next block, the path
 	if ((io[1].iov_base = sp->path)) {	// send path (if not null)
 		io[1].iov_len = payload = strlen(sp->path) + 1;
-	} else {
-		io[1].iov_len = payload = 0;
 	}
+
+    // next block, data (only for writes)
 	if ((io[2].iov_base = sp->data)) {	// send data (if datasize not zero)
 		payload += (io[2].iov_len = sp->datasize);
-	} else {
-		io[2].iov_len = 0;
 	}
-	if (Global.opt != opt_server) {	// if not being called from owserver, that's it
-		io[3].iov_base = io[4].iov_base = NULL;
-		io[3].iov_len = io[4].iov_len = 0;
-		sp->tokens = 0;
-		sm->version = 0;
-	} else {
-		if (sp->tokens > 0) {	// owserver: send prior tags
+
+    
+    sm->version = MakeServerprotocol(OWSERVER_PROTOCOL_VERSION) ;
+	if (Global.opt == opt_server) {
+        tokens = sp->tokens ;
+        sm->version |= MakeServermessage ;
+
+        // next block prior tokens (if an owserver)
+        if (tokens > 0) {	// owserver: send prior tags
 			io[3].iov_base = sp->tokenstring;
-			io[3].iov_len = sp->tokens * sizeof(union antiloop);
-		} else {
-			io[3].iov_base = NULL;
-			io[3].iov_len = 0;
+			io[3].iov_len = tokens * sizeof(union antiloop);
 		}
-		++sp->tokens;
-		sm->version = Servermessage + (sp->tokens);
+
+        // final block, new token (if an owserver)
+		++tokens;
+		sm->version |= MakeServertokens(tokens);
 		io[4].iov_base = &(Global.Token);	// owserver: add our tag
 		io[4].iov_len = sizeof(union antiloop);
 	}
@@ -670,7 +674,7 @@ static int ToServer(int file_descriptor, struct server_msg *sm, struct serverpac
 	sm->sg = htonl(sm->sg);
 	sm->offset = htonl(sm->offset);
 
-	return writev(file_descriptor, io, 5) != (ssize_t) (payload + sizeof(struct server_msg) + sp->tokens * sizeof(union antiloop));
+	return writev(file_descriptor, io, 5) != (ssize_t) (payload + sizeof(struct server_msg) + tokens * sizeof(union antiloop));
 }
 
 /* flag the sg for "virtual root" -- the remote bus was specifically requested */

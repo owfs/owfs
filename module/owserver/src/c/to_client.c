@@ -60,16 +60,18 @@ int ToClient(int file_descriptor, struct client_msg *cm, char *data)
 	//printf(">%.4d|%.4d\n",cm->ret,cm->payload);
 	//printf("Scale=%s\n", TemperatureScaleName(SGTemperatureScale(cm->sg)));
 
-	cm->payload = htonl(cm->payload);
-	cm->size = htonl(cm->size);
+    cm->version = htonl(cm->version);
+    cm->payload = htonl(cm->payload);
+    cm->size = htonl(cm->size);
 	cm->offset = htonl(cm->offset);
 	cm->ret = htonl(cm->ret);
 	cm->sg = htonl(cm->sg);
 
 	ret = writev(file_descriptor, io, nio) != (ssize_t) (io[0].iov_len + io[1].iov_len);
 
-	cm->payload = ntohl(cm->payload);
-	cm->size = ntohl(cm->size);
+    cm->version = ntohl(cm->version);
+    cm->payload = ntohl(cm->payload);
+    cm->size = ntohl(cm->size);
 	cm->offset = ntohl(cm->offset);
 	cm->ret = ntohl(cm->ret);
 	cm->sg = ntohl(cm->sg);

@@ -108,7 +108,15 @@ int FromClient(struct handlerdata *hd)
 		hd->sp.datasize = 0;
 	}
 
-	if (isServermessage(hd->sm.version)) {	/* make sure no loop */
+    if (isServersidetap(hd->sm.version)) { /* side tap shouldn't come to owserver */
+        free(msg);
+        hd->sm.type = msg_error;
+        LEVEL_CALL("owserver shouldn't get sidetap messages\n");
+        return -EPROTO;
+    }
+        
+
+    if (isServermessage(hd->sm.version)) {	/* make sure no loop */
 		size_t i;
 		char *p = &msg[hd->sm.payload];	// end of normal buffer
 		hd->sp.tokenstring = (BYTE *) p;
@@ -117,7 +125,7 @@ int FromClient(struct handlerdata *hd)
 			if (memcmp(p, &(Global.Token), sizeof(union antiloop)) == 0) {
 				free(msg);
 				hd->sm.type = msg_error;
-				LEVEL_DEBUG("owserver loop suppression\n");
+				LEVEL_CALL("owserver loop suppression\n");
 				return -ELOOP;
 			}
 		}

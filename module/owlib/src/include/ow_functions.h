@@ -150,10 +150,16 @@ void UT_delay_us(const unsigned long len);
 ssize_t tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval *ptv);
 void tcp_read_flush(int file_descriptor);
 int tcp_wait(int file_descriptor, const struct timeval *ptv);
+
 int ClientAddr(char *sname, struct connection_in *in);
 int ClientConnect(struct connection_in *in);
-void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (int errcode));
 void FreeClientAddr(struct connection_in *in);
+
+void SideAddr(struct connection_side *side);
+int SideConnect(struct connection_side *side);
+void FreeSideAddr(struct connection_side *side);
+
+void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (int errcode));
 int ServerOutSetup(struct connection_out *out);
 
 int OW_ArgNet(const char *arg);
@@ -161,6 +167,7 @@ int OW_ArgServer(const char *arg);
 int OW_ArgUSB(const char *arg);
 int OW_ArgDevice(const char *arg);
 int OW_ArgGeneric(const char *arg);
+int OW_ArgSide(const char *arg);
 
 void ow_help(const char *arg);
 

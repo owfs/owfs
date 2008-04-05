@@ -15,9 +15,6 @@ $Id$
 #include "ow_devices.h"
 #include "ow_pid.h"
 
-void SetSignals(void);
-void SigHandler(int signo, siginfo_t * info, void *context) ;
-
 #if defined(__UCLIBC__)
  #if (defined(__UCLIBC_HAS_MMU__) || defined(__ARCH_HAS_MMU__))
   #define HAVE_DAEMON 1

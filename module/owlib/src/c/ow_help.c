@@ -135,7 +135,7 @@ void ow_help_program(void)
            "\n"
            " owserver (OWFS server)\n"
            "  -p --port [ip:]port   TCP address and port number for access\n"
-           "                           has default port 4304\n"
+           "  --sidetap [ip:]port   TCP address and port number for eavesdropping\n"
            "\n"
            " owftpd (ftp server)\n"
 		   "  -p --port [ip:]port   TCP address and port number for access\n"
