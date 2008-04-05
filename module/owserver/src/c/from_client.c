@@ -66,10 +66,12 @@ int FromClient(struct handlerdata *hd)
 
 	/* figure out length of rest of message: payload plus tokens */
 	trueload = hd->sm.payload;
-	if (isServermessage(hd->sm.version))
+    if (isServermessage(hd->sm.version)) {
 		trueload += sizeof(union antiloop) * Servertokens(hd->sm.version);
-	if (trueload == 0)
+    }
+    if (trueload == 0) {
 		return 0;
+    }
 
 	/* valid size? */
 	if ((hd->sm.payload < 0) || (trueload > MAX_OWSERVER_PROTOCOL_PACKET_SIZE)) {
