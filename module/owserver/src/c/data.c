@@ -172,9 +172,16 @@ void *DataHandler(void *v)
 	LEVEL_DEBUG("RealHandler: cm.ret=%d\n", cm.ret);
 
 	TOCLIENTLOCK(hd);
-	if (cm.ret != -EIO)
+    if (cm.ret != -EIO) {
 		ToClient(hd->file_descriptor, &cm, retbuffer);
-	timerclear(&(hd->tv));
+        if ( count_sidebound_connections > 0 ) {
+            struct connection_side * side ;
+            for ( side=head_sidebound_list ; side!=NULL ; side = side->next ) {
+                ToClientSide(side, &cm, retbuffer, &(hd->sidem) );
+            }
+        }
+    }
+    timerclear(&(hd->tv));
 	TOCLIENTUNLOCK(hd);
 	if (retbuffer)
 		free(retbuffer);

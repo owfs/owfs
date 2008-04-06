@@ -83,7 +83,13 @@ static void DirHandlerCallback(void *v, const struct parsedname *pn2)
 
 	TOCLIENTLOCK(dhs->hd);
 	ToClient(dhs->hd->file_descriptor, dhs->cm, retbuffer);	// send this directory element
-	gettimeofday(&(dhs->hd->tv), NULL);	// reset timer
+    if ( count_sidebound_connections > 0 ) {
+        struct connection_side * side ;
+        for ( side=head_sidebound_list ; side!=NULL ; side = side->next ) {
+            ToClientSide(side, dhs->cm, retbuffer, &(dhs->hd->sidem) );
+        }
+    }
+    gettimeofday(&(dhs->hd->tv), NULL);	// reset timer
 	TOCLIENTUNLOCK(dhs->hd);
 }
 

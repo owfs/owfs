@@ -40,11 +40,13 @@ $Id$
 /* Send fully configured message back to client.
    data is optional and length depends on "payload"
  */
-int ToClient(int file_descriptor, struct client_msg *cm, char *data)
+int ToClient(int file_descriptor, struct client_msg *original_cm, char *data)
 {
 	// note data should be (const char *) but iovec complains about const arguments 
 	int nio = 1;
 	int ret;
+    struct client_msg s_cm ;
+    struct client_msg * cm = &s_cm ;
 	struct iovec io[] = {
 		{cm, sizeof(struct client_msg),},
 		{data, cm->payload,},
@@ -60,21 +62,14 @@ int ToClient(int file_descriptor, struct client_msg *cm, char *data)
 	//printf(">%.4d|%.4d\n",cm->ret,cm->payload);
 	//printf("Scale=%s\n", TemperatureScaleName(SGTemperatureScale(cm->sg)));
 
-    cm->version = htonl(cm->version);
-    cm->payload = htonl(cm->payload);
-    cm->size = htonl(cm->size);
-	cm->offset = htonl(cm->offset);
-	cm->ret = htonl(cm->ret);
-	cm->sg = htonl(cm->sg);
+    cm->version = htonl(original_cm->version);
+    cm->payload = htonl(original_cm->payload);
+    cm->size = htonl(original_cm->size);
+    cm->offset = htonl(original_cm->offset);
+    cm->ret = htonl(original_cm->ret);
+    cm->sg = htonl(original_cm->sg);
 
 	ret = writev(file_descriptor, io, nio) != (ssize_t) (io[0].iov_len + io[1].iov_len);
-
-    cm->version = ntohl(cm->version);
-    cm->payload = ntohl(cm->payload);
-    cm->size = ntohl(cm->size);
-	cm->offset = ntohl(cm->offset);
-	cm->ret = ntohl(cm->ret);
-	cm->sg = ntohl(cm->sg);
 
 	return ret;
 }

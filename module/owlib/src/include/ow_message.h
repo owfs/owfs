@@ -56,12 +56,19 @@ struct server_msg {
 
 /* message to client */
 struct client_msg {
-	int32_t version;
-	int32_t payload;
-	int32_t ret;
-	int32_t sg;
-	int32_t size;
-	int32_t offset;
+    int32_t version;
+    int32_t payload;
+    int32_t ret;
+    int32_t sg;
+    int32_t size;
+    int32_t offset;
+};
+
+/* message to client */
+struct side_msg {
+    int32_t version;
+    char host[120];
+    char peer[120];
 };
 
 struct serverpackage {

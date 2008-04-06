@@ -114,6 +114,10 @@ struct connection_side *NewSide(void)
         now->next = head_sidebound_list;
         head_sidebound_list = now;
         now->index = count_sidebound_connections++;
+        now->file_descriptor = -1 ;
+#if OW_MT
+        pthread_mutex_init(&(now->side_mutex), Mutex.pmattr);
+#endif                          /* OW_MT */
     } else {
     LEVEL_DEFAULT("Cannot allocate memory for sidetap structure,\n");
     }
@@ -242,6 +246,13 @@ void FreeSide(void)
     while (next) {
         now = next;
         next = now->next;
+#if OW_MT
+        pthread_mutex_destroy(&(now->side_mutex));
+#endif                          /* OW_MT */
+        if ( now->file_descriptor > -1 ) {
+            close(now->file_descriptor) ;
+            now->file_descriptor = -1 ;
+        }
         if (now->name) {
             free(now->name);
             now->name = NULL;

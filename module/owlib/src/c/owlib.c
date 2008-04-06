@@ -59,10 +59,10 @@ int LibStart(void)
 
 static void SetupInboundConnections( void )
 {
-    struct connection_in *in = head_inbound_list;
+    struct connection_in *in ;
     int ret = 0;
 
-    while (in) {
+    for ( in = head_inbound_list ; in != NULL ; in = in->next ) {
         BadAdapter_detect(in);  /* default "NOTSUP" calls */
         switch (get_busmode(in)) {
 
@@ -176,15 +176,14 @@ static void SetupInboundConnections( void )
             BUS_close(in);      /* can use adapter's close */
             BadAdapter_detect(in);  /* Set to default null assignments */
         }
-        in = in->next;
     }
 }
 
 static void SetupSideboundConnections( void )
 {
-    struct connection_side *side = head_sidebound_list;
+    struct connection_side *side ;
 
-    while (side) {
+    for (side = head_sidebound_list ; side!=NULL ; side=side->next ) {
         SideAddr(side) ;
     }
 }

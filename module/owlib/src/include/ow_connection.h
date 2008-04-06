@@ -72,6 +72,7 @@ See: http://www.iana.org/assignments/port-numbers
 /* Exposed connection info */
 extern int count_outbound_connections;
 extern int count_inbound_connections;
+extern int count_sidebound_connections;
 
 /* large enough for arrays of 2048 elements of ~49 bytes each */
 #define MAX_OWSERVER_PROTOCOL_PACKET_SIZE  100050
@@ -166,6 +167,8 @@ struct interface_routines {
 #define ACCEPTUNLOCK(out)     pthread_mutex_unlock(&((out)->accept_mutex) )
 #define OUTLOCK(out)          pthread_mutex_lock(  &((out)->out_mutex) )
 #define OUTUNLOCK(out)        pthread_mutex_unlock(&((out)->out_mutex) )
+#define SIDELOCK(side)        pthread_mutex_lock(  &((side)->side_mutex) )
+#define SIDEUNLOCK(side)      pthread_mutex_unlock(&((side)->side_mutex) )
 #else							/* OW_MT */
 #define DEVLOCK(pn)
 #define DEVUNLOCK(pn)
@@ -173,6 +176,8 @@ struct interface_routines {
 #define ACCEPTUNLOCK(out)
 #define OUTLOCK(out)
 #define OUTUNLOCK(out)
+#define SIDELOCK(side)
+#define SIDEUNLOCK(side)
 #endif							/* OW_MT */
 
 enum bus_speed { bus_speed_unknown, bus_speed_slow, bus_speed_overdrive };
@@ -427,6 +432,9 @@ struct connection_side {
     struct addrinfo *ai_ok;
     int file_descriptor;
     int good_entry ;
+#if OW_MT
+    pthread_mutex_t side_mutex;
+#endif                          /* OW_MT */
 };
 extern struct connection_out *head_outbound_list;
 extern struct connection_in *head_inbound_list;
