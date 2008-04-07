@@ -59,16 +59,15 @@ $Id$
 extern struct mutex {
 #if OW_MT
 	pthread_mutex_t stat_mutex;
-	pthread_mutex_t cache_mutex;
-	pthread_mutex_t store_mutex;
+	pthread_mutex_t sg_mutex;
 	pthread_mutex_t fstat_mutex;
 	pthread_mutex_t simul_mutex;
 	pthread_mutex_t dir_mutex;
 	pthread_mutex_t libusb_mutex;
-	pthread_mutex_t connin_mutex;
 	pthread_mutexattr_t *pmattr;
     rwlock_t lib ;
     rwlock_t cache ;
+    rwlock_t store ;
     rwlock_t connin ;
  #ifdef __UCLIBC__
 	pthread_mutexattr_t mattr;
@@ -89,6 +88,11 @@ extern struct mutex {
 #define CACHE_RLOCK       rwlock_read_lock(    &Mutex.cache  ) ;
 #define CACHE_RUNLOCK     rwlock_read_unlock(  &Mutex.cache  ) ;
 
+#define STORE_WLOCK       rwlock_write_lock(   &Mutex.store ) ;
+#define STORE_WUNLOCK     rwlock_write_unlock( &Mutex.store ) ;
+#define STORE_RLOCK       rwlock_read_lock(    &Mutex.store ) ;
+#define STORE_RUNLOCK     rwlock_read_unlock(  &Mutex.store ) ;
+
 #define CONNIN_WLOCK      rwlock_write_lock(   &Mutex.connin ) ;
 #define CONNIN_WUNLOCK    rwlock_write_unlock( &Mutex.connin ) ;
 #define CONNIN_RLOCK      rwlock_read_lock(    &Mutex.connin ) ;
@@ -96,10 +100,8 @@ extern struct mutex {
 
 #define STATLOCK          pthread_mutex_lock(  &Mutex.stat_mutex   )
 #define STATUNLOCK        pthread_mutex_unlock(&Mutex.stat_mutex   )
-#define CACHELOCK         pthread_mutex_lock(  &Mutex.cache_mutex  )
-#define CACHEUNLOCK       pthread_mutex_unlock(&Mutex.cache_mutex  )
-#define STORELOCK         pthread_mutex_lock(  &Mutex.store_mutex  )
-#define STOREUNLOCK       pthread_mutex_unlock(&Mutex.store_mutex  )
+#define SGLOCK            pthread_mutex_lock(  &Mutex.sg_mutex  )
+#define SGUNLOCK          pthread_mutex_unlock(&Mutex.sg_mutex  )
 #define FSTATLOCK         pthread_mutex_lock(  &Mutex.fstat_mutex  )
 #define FSTATUNLOCK       pthread_mutex_unlock(&Mutex.fstat_mutex  )
 #define SIMULLOCK         pthread_mutex_lock(  &Mutex.simul_mutex  )
@@ -108,8 +110,6 @@ extern struct mutex {
 #define DIRUNLOCK         pthread_mutex_unlock(&Mutex.dir_mutex    )
 #define LIBUSBLOCK        pthread_mutex_lock(  &Mutex.libusb_mutex    )
 #define LIBUSBUNLOCK      pthread_mutex_unlock(&Mutex.libusb_mutex    )
-#define CONNINLOCK        pthread_mutex_lock(  &Mutex.connin_mutex    )
-#define CONNINUNLOCK      pthread_mutex_unlock(&Mutex.connin_mutex    )
 #define BUSLOCK(pn)       BUS_lock(pn)
 #define BUSUNLOCK(pn)     BUS_unlock(pn)
 #define BUSLOCKIN(in)       BUS_lock_in(in)
@@ -128,22 +128,25 @@ extern struct mutex {
 #define LIB_RLOCK     
 #define LIB_RUNLOCK   
 
-#define CACHE_WLOCK   
-#define CACHE_WUNLOCK 
-#define CACHE_RLOCK   
-#define CACHE_RUNLOCK 
+#define CACHE_WLOCK
+#define CACHE_WUNLOCK
+#define CACHE_RLOCK
+#define CACHE_RUNLOCK
 
-#define CONNIN_WLOCK  
+#define STORE_WLOCK
+#define STORE_WUNLOCK
+#define STORE_RLOCK
+#define STORE_RUNLOCK
+
+#define CONNIN_WLOCK
 #define CONNIN_WUNLOCK
 #define CONNIN_RLOCK  
 #define CONNIN_RUNLOCK
 
 #define STATLOCK
 #define STATUNLOCK
-#define CACHELOCK
-#define CACHEUNLOCK
-#define STORELOCK
-#define STOREUNLOCK
+#define SGLOCK
+#define SGUNLOCK
 #define FSTATLOCK
 #define FSTATUNLOCK
 #define SIMULLOCK
@@ -156,8 +159,6 @@ extern struct mutex {
 #define LIBUSBUNLOCK
 #define UCLIBCLOCK
 #define UCLIBCUNLOCK
-#define CONNINLOCK
-#define CONNINUNLOCK
 #define BUSLOCK(pn)
 #define BUSUNLOCK(pn)
 #define BUSLOCKIN(in)

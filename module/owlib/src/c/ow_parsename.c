@@ -72,6 +72,7 @@ void FS_ParsedName_destroy(struct parsedname *pn)
 		free(pn->lock);
 		pn->lock = NULL;
 	}
+    CONNIN_RUNLOCK;
 	//printf("PNDestroy done (%d)\n",BusIsServer(pn->selected_connection)) ;
 	// Tokenstring is part of a larger allocation and destroyed separately 
 }
@@ -219,7 +220,9 @@ static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path,
 	pn->known_bus = NULL;		/* all busses */
 
 	/* Set the persistent state info (temp scale, ...) -- will be overwritten by client settings in the server */
+    SGLOCK ;
 	pn->sg = SemiGlobal | (1 << BUSRET_BIT);	// initial flag as the bus-returning level, will change if a bus is specified
+    SGUNLOCK ;
 
 	// initialization
 	pp->pathnow = NULL;
@@ -252,25 +255,33 @@ static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path,
 		return -ENOMEM;
 	}
 
-	/* connection_in list and start */
-	CONNINLOCK;
-	pn->head_inbound_list = head_inbound_list;
-	pn->lock = calloc(count_inbound_connections, sizeof(struct devlock *));
-	CONNINUNLOCK;
-
-	if (pn->head_inbound_list == NULL) {
+	if (head_inbound_list == NULL) {
 		free(pp->pathcpy);
 		free(pn->path);
 		return -ENOENT;
 	}
 
-	if (pn->lock == NULL) {
+    /* connection_in list and start */
+    /* ---------------------------- */
+    /* -- This is important, the -- */
+    /* -- lock array allocated one  */
+    /* -- per bus. But buses can -- */
+    /* -- be added by Browse so  -- */
+    /* -- a reader/writer lock is - */
+    /* -- held until ParsedNameDestroy */
+    /* ---------------------------- */
+    
+    CONNIN_RLOCK;
+    pn->lock = calloc(count_inbound_connections, sizeof(struct devlock *));
+
+    if (pn->lock == NULL) {
 		free(pp->pathcpy);
 		free(pn->path);
-		return -ENOMEM;
+        CONNIN_RUNLOCK;
+        return -ENOMEM;
 	}
 
-	pn->selected_connection = pn->head_inbound_list;
+	pn->selected_connection = head_inbound_list;
 
 	/* Have to save pn->path at once */
 	strcpy(pn->path, path);
@@ -424,11 +435,9 @@ static enum parse_enum Parse_Bus(char *pathnow, int back_from_remote, struct par
 	   the SetKnownBus will be be performed else where since the sending bus number is used */
 	/* this will only be reached once, because a local bus.x triggers "SpecifiedBus" */
 	//printf("SPECIFIED BUS for ParsedName PRE (%d):\n\tpath=%s\n\tpath_busless=%s\n\tKnnownBus=%d\tSpecifiedBus=%d\n",bus_number,   SAFESTRING(pn->path),SAFESTRING(pn->path_busless),KnownBus(pn),SpecifiedBus(pn));
-	CONNINLOCK;
-    if (count_inbound_connections <= bus_number) {
+   if (count_inbound_connections <= bus_number) {
 		bus_number = -1;
     }
-	CONNINUNLOCK;
     if (bus_number < 0) {
 		return parse_error;
     }

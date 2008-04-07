@@ -32,11 +32,9 @@ void __pthread_initialize(void);
 struct mutex Mutex = {
 #if OW_MT
 	.stat_mutex = PTHREAD_MUTEX_INITIALIZER,
-	.cache_mutex = PTHREAD_MUTEX_INITIALIZER,
-	.store_mutex = PTHREAD_MUTEX_INITIALIZER,
+	.sg_mutex = PTHREAD_MUTEX_INITIALIZER,
 	.fstat_mutex = PTHREAD_MUTEX_INITIALIZER,
 	.dir_mutex = PTHREAD_MUTEX_INITIALIZER,
-    .connin_mutex = PTHREAD_MUTEX_INITIALIZER,
 #ifdef __UCLIBC__
 /* vsnprintf() doesn't seem to be thread-safe in uClibc
    even if thread-support is enabled. */
@@ -76,14 +74,13 @@ void LockSetup(void)
  #endif							/* __UCLIBC__ */
 
 	pthread_mutex_init(&Mutex.stat_mutex, Mutex.pmattr);
-	pthread_mutex_init(&Mutex.cache_mutex, Mutex.pmattr);
-	pthread_mutex_init(&Mutex.store_mutex, Mutex.pmattr);
+	pthread_mutex_init(&Mutex.sg_mutex, Mutex.pmattr);
 	pthread_mutex_init(&Mutex.fstat_mutex, Mutex.pmattr);
 	pthread_mutex_init(&Mutex.dir_mutex, Mutex.pmattr);
-	pthread_mutex_init(&Mutex.connin_mutex, Mutex.pmattr);
 
     rwlock_init( &Mutex.lib ) ;
     rwlock_init( &Mutex.cache ) ;
+    rwlock_init( &Mutex.store ) ;
     rwlock_init( &Mutex.connin ) ;
 #ifdef __UCLIBC__
 	pthread_mutex_init(&Mutex.uclibc_mutex, Mutex.pmattr);

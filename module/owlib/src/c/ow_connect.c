@@ -29,7 +29,8 @@ struct connection_in *find_connection_in(int bus_number)
 {
 	struct connection_in *c_in;
 	// step through head_inbound_list linked list
-	for (c_in = head_inbound_list; c_in != NULL; c_in = c_in->next) {
+
+    for ( c_in = head_inbound_list ; c_in != NULL; c_in = c_in->next) {
 		if (c_in->index == bus_number)
 			return c_in;
 	}

@@ -67,35 +67,37 @@ static int ServerAddr(struct connection_out *out)
 
 static int ServerListen(struct connection_out *out)
 {
-	int file_descriptor;
-	int on = 1;
-	int ret;
-
 	if (out->ai == NULL) {
 		LEVEL_CONNECT("Server address not yet parsed [%s]\n", SAFESTRING(out->name));
 		return -1;
 	}
 
-	if (out->ai_ok == NULL)
+    if (out->ai_ok == NULL) {
 		out->ai_ok = out->ai;
-	do {
-		file_descriptor = socket(out->ai_ok->ai_family, out->ai_ok->ai_socktype, out->ai_ok->ai_protocol);
-		if (file_descriptor >= 0) {
-			ret = setsockopt(file_descriptor, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof(on))
-				|| bind(file_descriptor, out->ai_ok->ai_addr, out->ai_ok->ai_addrlen)
-				|| listen(file_descriptor, 10);
-			if (ret) {
-				ERROR_CONNECT("ServerListen: Socket problem [%s]\n", SAFESTRING(out->name));
-				close(file_descriptor);
-			} else {
-				out->file_descriptor = file_descriptor;
-				return file_descriptor;
-			}
-		} else {
-			ERROR_CONNECT("ServerListen: socket() [%s]", SAFESTRING(out->name));
-		}
+    }
+	
+    do {
+        int on = 1;
+        int file_descriptor = socket(out->ai_ok->ai_family, out->ai_ok->ai_socktype, out->ai_ok->ai_protocol);
+        
+        //printf("ServerListen file_descriptor=%d\n",file_descriptor);
+        if (file_descriptor < 0) {
+            ERROR_CONNECT("ServerListen: Socket problem [%s]\n", SAFESTRING(out->name));
+        } else if ( setsockopt(file_descriptor, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof(on)) != 0 ) {
+            ERROR_CONNECT("ServerListen: SetSockOpt problem [%s]\n", SAFESTRING(out->name));
+            close(file_descriptor);
+        } else if ( bind(file_descriptor, out->ai_ok->ai_addr, out->ai_ok->ai_addrlen) != 0 ) {
+            ERROR_CONNECT("ServerListen: Bind problem [%s]\n", SAFESTRING(out->name));
+            close(file_descriptor);
+        } else if ( listen(file_descriptor, 10) != 0 ) {
+            ERROR_CONNECT("ServerListen: Listen problem [%s]\n", SAFESTRING(out->name));
+            close(file_descriptor);
+        } else {
+            out->file_descriptor = file_descriptor;
+            return file_descriptor;
+        }
 	} while ((out->ai_ok = out->ai_ok->ai_next));
-	ERROR_CONNECT("ServerListen: Socket problem [%s]\n", SAFESTRING(out->name));
+	LEVEL_CONNECT("ServerListen: No good listen network sockets [%s]\n", SAFESTRING(out->name));
 	return -1;
 }
 
@@ -123,7 +125,7 @@ void *ServerProcessHandler(void *arg)
 	struct HandlerThread_data *hp = (struct HandlerThread_data *) arg;
 	pthread_detach(pthread_self());
 	if (hp) {
-		hp->HandlerRoutine(hp->acceptfd);
+        hp->HandlerRoutine(hp->acceptfd);
 		/* This will never be reached right now.
 		   The thread is killed when application is stopped.
 		   Should perhaps fix a signal handler for this. */
@@ -203,7 +205,7 @@ static void *ServerProcessOut(void *v)
 	LEVEL_DEBUG("ServerProcessOut = %lu\n", (unsigned long int) pthread_self());
 
 	if (ServerOutSetup(out)) {
-		LEVEL_CONNECT("Cannot set up head_outbound_list [%s](%d) -- will exit\n", SAFESTRING(out->name), out->index);
+		LEVEL_CONNECT("Cannot set up server socket on %s, index=%d -- will exit\n", SAFESTRING(out->name), out->index);
 		(out->Exit) (1);
 	}
 
@@ -245,11 +247,12 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 		OUTUNLOCK(out);
 	}
 
-	(void) sigemptyset(&myset);
-	(void) sigaddset(&myset, SIGHUP);
-	(void) sigaddset(&myset, SIGINT);
-	(void) sigaddset(&myset, SIGTERM);
+	(void) sigemptyset(&myset         );
+	(void) sigaddset(  &myset, SIGHUP );
+	(void) sigaddset(  &myset, SIGINT );
+	(void) sigaddset(  &myset, SIGTERM);
 	(void) pthread_sigmask(SIG_BLOCK, &myset, NULL);
+    
 	while (!StateInfo.shutdown_in_progress) {
 		if ((err = sigwait(&myset, &signo)) == 0) {
 			if (signo == SIGHUP) {

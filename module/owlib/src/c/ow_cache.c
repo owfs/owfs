@@ -379,7 +379,7 @@ static int Cache_Add_Common(struct tree_node *tn)
 	//printf("Cache_Add_Common\n") ;
 	node_show(tn);
 	LEVEL_DEBUG("Add to cache sn " SNformat " pointer=%p index=%d size=%d\n", SNvar(tn->tk.sn), tn->tk.p, tn->tk.extension, tn->dsize);
-	CACHELOCK;
+	CACHE_WLOCK;
 	if (cache.killed < time(NULL)) {	// old database has timed out
 		flip = cache.old_db;
 		/* Flip caches! old = new. New truncated, reset time and counters and flag */
@@ -408,7 +408,7 @@ static int Cache_Add_Common(struct tree_node *tn)
 	} else {					// nothing found or added?!? free our memory segment
 		free(tn);
 	}
-	CACHEUNLOCK;
+	CACHE_WUNLOCK;
 	/* flipped old database is now out of circulation -- can be destroyed without a lock */
 	if (flip) {
 		LEVEL_DEBUG("Cache_Add_Common: flip cache. tdestroy() will be called.\n");
@@ -447,7 +447,7 @@ void Cache_Clear(void)
 {
 	void *c_new = NULL;
 	void *c_old = NULL;
-	CACHELOCK;
+	CACHE_WLOCK;
 	c_old = cache.old_db;
 	c_new = cache.new_db;
 	cache.old_db = NULL;
@@ -457,7 +457,7 @@ void Cache_Clear(void)
 	cache.added = 0;
 	cache.retired = time(NULL);
 	cache.killed = cache.retired + cache.lifespan;
-	CACHEUNLOCK;
+	CACHE_WUNLOCK;
 	/* flipped old database is now out of circulation -- can be destroyed without a lock */
 	if (c_new)
 		tdestroy(c_new, free);
@@ -473,7 +473,7 @@ static int Cache_Add_Store(struct tree_node *tn)
 	struct tree_opaque *opaque;
 	enum { no_add, yes_add, just_update } state = no_add;
 	//printf("Cache_Add_Store\n") ;
-	STORELOCK;
+	STORE_WLOCK;
 	if ((opaque = tsearch(tn, &cache.store, tree_compare))) {
 		//printf("CACHE ADD pointer=%p, key=%p\n",tn,opaque->key);
 		if (tn != opaque->key) {
@@ -486,7 +486,7 @@ static int Cache_Add_Store(struct tree_node *tn)
 	} else {					// nothing found or added?!? free our memory segment
 		free(tn);
 	}
-	STOREUNLOCK;
+	STORE_WUNLOCK;
 	switch (state) {
 	case yes_add:
 		STATLOCK;
@@ -628,7 +628,7 @@ static int Cache_Get_Common_Dir(struct dirblob *db, time_t duration, const struc
 	struct tree_opaque *opaque;
 	//printf("Cache_Get_Common_Dir\n") ;
 	LEVEL_DEBUG("Get from cache sn " SNformat " pointer=%p extension=%d\n", SNvar(tn->tk.sn), tn->tk.p, tn->tk.extension);
-	CACHELOCK;
+	CACHE_RLOCK;
 	if ((opaque = tfind(tn, &cache.new_db, tree_compare))
 		|| ((cache.retired + duration > now)
 			&& (opaque = tfind(tn, &cache.old_db, tree_compare)))
@@ -655,7 +655,7 @@ static int Cache_Get_Common_Dir(struct dirblob *db, time_t duration, const struc
 		LEVEL_DEBUG("dir not found in cache\n");
 		ret = -ENOENT;
 	}
-	CACHEUNLOCK;
+	CACHE_RUNLOCK;
 	return ret;
 }
 
@@ -732,9 +732,9 @@ static time_t Cooked_Now(const struct tree_node *tn)
 */
 void CookTheCache(void)
 {
-	CACHELOCK;
+	CACHE_WLOCK;
 	cache.cooked_now = time(NULL) + TimeOut(fc_volatile);
-	CACHEUNLOCK;
+	CACHE_WUNLOCK;
 }
 
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
@@ -750,7 +750,7 @@ static int Cache_Get_Common(void *data, size_t * dsize, time_t duration, const s
 	new_tree();
 	//printf("\nTree (old):\n");
 	new_tree();
-	CACHELOCK;
+	CACHE_RLOCK;
 	if ((opaque = tfind(tn, &cache.new_db, tree_compare))
 		|| ((cache.retired + duration > now)
 			&& (opaque = tfind(tn, &cache.old_db, tree_compare)))
@@ -783,7 +783,7 @@ static int Cache_Get_Common(void *data, size_t * dsize, time_t duration, const s
 		LEVEL_DEBUG("value not found in cache\n");
 		ret = -ENOENT;
 	}
-	CACHEUNLOCK;
+	CACHE_RUNLOCK;
 	return ret;
 }
 
@@ -794,7 +794,7 @@ static int Cache_Get_Store(void *data, size_t * dsize, time_t duration, const st
 	int ret;
 	(void) duration;
 	//printf("Cache_Get_Store\n") ;
-	STORELOCK;
+	STORE_RLOCK;
 	if ((opaque = tfind(tn, &cache.store, tree_compare))) {
 		if ((ssize_t) dsize[0] >= opaque->key->dsize) {
 			dsize[0] = opaque->key->dsize;
@@ -807,7 +807,7 @@ static int Cache_Get_Store(void *data, size_t * dsize, time_t duration, const st
 	} else {
 		ret = -ENOENT;
 	}
-	STOREUNLOCK;
+	STORE_RUNLOCK;
 	return ret;
 }
 
@@ -908,7 +908,7 @@ static int Cache_Del_Common(const struct tree_node *tn)
 	time_t now = time(NULL);
 	int ret = 1;
 	LEVEL_DEBUG("Delete from cache sn " SNformat " in=%p index=%d\n", SNvar(tn->tk.sn), tn->tk.p, tn->tk.extension);
-	CACHELOCK;
+	CACHE_WLOCK;
 	if ((opaque = tfind(tn, &cache.new_db, tree_compare))
 		|| ((cache.killed > now)
 			&& (opaque = tfind(tn, &cache.old_db, tree_compare)))
@@ -916,7 +916,7 @@ static int Cache_Del_Common(const struct tree_node *tn)
 		opaque->key->expires = now - 1;
 		ret = 0;
 	}
-	CACHEUNLOCK;
+	CACHE_WUNLOCK;
 	return ret;
 }
 
@@ -924,12 +924,12 @@ static int Cache_Del_Store(const struct tree_node *tn)
 {
 	struct tree_opaque *opaque;
 	struct tree_node *tn_found = NULL;
-	STORELOCK;
+	STORE_WLOCK;
 	if ((opaque = tfind(tn, &cache.store, tree_compare))) {
 		tn_found = opaque->key;
 		tdelete(tn, &cache.store, tree_compare);
 	}
-	STOREUNLOCK;
+	STORE_WUNLOCK;
 	if (!tn_found)
 		return 1;
 

@@ -399,6 +399,8 @@ struct connection_in {
 		struct connin_etherweather etherweather;
 	} connin;
 };
+extern struct connection_in *head_inbound_list;
+
 /* Network connection structure */
 struct connection_out {
     struct connection_out *next;
@@ -421,6 +423,8 @@ struct connection_out {
     DNSServiceRef sref1;
 #endif
 };
+extern struct connection_out *head_outbound_list;
+
 /* Network connection structure */
 struct connection_side {
     struct connection_side *next;
@@ -436,8 +440,6 @@ struct connection_side {
     pthread_mutex_t side_mutex;
 #endif                          /* OW_MT */
 };
-extern struct connection_out *head_outbound_list;
-extern struct connection_in *head_inbound_list;
 extern struct connection_side *head_sidebound_list;
 
 #define  FD_PERSISTENT_IN_USE    -2

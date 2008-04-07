@@ -530,16 +530,13 @@ static int USB_next(struct usb_list *ul)
 static int usbdevice_in_use(char *name)
 {
 	struct connection_in *in;
-	CONNINLOCK;
-	in = head_inbound_list;
-	CONNINUNLOCK;
-	while (in) {
-		if ((in->busmode == bus_usb) && (in->name)
-			&& (!strcmp(in->name, name)))
-			return 1;			// It seems to be in use already
-		in = in->next;
+    for ( in = head_inbound_list ; in != NULL ; in = in->next ) {
+		if ((in->busmode == bus_usb) && (in->name!=NULL)
+                   && (strcmp(in->name, name)==0)) {
+            return 1;			// It seems to be in use already
+        }
 	}
-	return 0;					// not found in the current head_inbound_list-list
+    return 0;					// not found in the current head_inbound_list
 }
 
 /* Construct the device name */

@@ -41,13 +41,17 @@ $Id$
    data is optional and length depends on "payload"
    This is the Side message header added
  */
-int ToClientSide(struct connection_side * side, struct client_msg *cm, char *data, struct side_msg * sidem )
+int ToClientSide(struct connection_side * side, struct client_msg *original_cm, char *data, struct side_msg * sidem )
 {
     // note data should be (const char *) but iovec complains about const arguments 
-    int nio = 1;
+    int nio = 2;
     int ret;
+    struct client_msg s_cm ;
+    struct client_msg * cm = &s_cm ;
     struct iovec io[] = {
         {sidem, sizeof(struct side_msg),},
+        {cm, sizeof(struct client_msg),},
+        {data, original_cm->payload,},
     };
 
     if ( ! side->good_entry ) {
@@ -58,26 +62,32 @@ int ToClientSide(struct connection_side * side, struct client_msg *cm, char *dat
         return 0 ;
     }
     LEVEL_DEBUG("ToSide \n");
+    
+    if (data && original_cm->payload > 0) {
+        ++nio;
+        //printf("ToClient <%*s>\n",original_cm->payload,data) ;
+    }
+
+    cm->version = htonl(original_cm->version);
+    cm->payload = htonl(original_cm->payload);
+    cm->size = htonl(original_cm->size);
+    cm->offset = htonl(original_cm->offset);
+    cm->ret = htonl(original_cm->ret);
+    cm->sg = htonl(original_cm->sg);
 
     SIDELOCK(side) ;
 
     sidem->version |= MakeServermessage ;
     sidem->version = htonl(sidem->version);
 
-    ret = writev(side->file_descriptor, io, nio) != (ssize_t) (io[0].iov_len);
+    ret = writev(side->file_descriptor, io, nio) ;
 
     sidem->version = ntohl(sidem->version);
     sidem->version ^= MakeServermessage ;
 
-    if (ret) {
-        SIDEUNLOCK(side) ;
-        return ret;
-    }
-        
-    ret = ToClient( side->file_descriptor, cm, data ) ;
-
     SIDEUNLOCK(side) ;
-    return ret ;
+    
+    return ( ret != (ssize_t) (io[0].iov_len+io[1].iov_len+io[2].iov_len) ) ;
 }
 
 int FromClientSide(struct connection_side * side, struct handlerdata *hd )

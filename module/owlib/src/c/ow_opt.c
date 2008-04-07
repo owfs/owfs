@@ -392,11 +392,13 @@ int owopt_packed(const char *params)
 	int allocated = 0;
 	int option_char;
 
-	if (params == NULL)
+    if (params == NULL) {
 		return 0;
+    }
 	current_location_in_params_copy = params_copy = strdup(params);
-	if (params_copy == NULL)
+    if (params_copy == NULL) {
 		return -ENOMEM;
+    }
 
 	// Stuffs arbitrary first value since argv[0] ignored by getopt
 	// create a synthetic argv/argc for get_opt
@@ -420,8 +422,9 @@ int owopt_packed(const char *params)
 
 	// analyze argv/argc as if real command line arguments
 	while (ret == 0) {
-		if ((option_char = getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL)) == -1)
+        if ((option_char = getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL)) == -1) {
 			break;
+        }
 		ret = owopt(option_char, optarg);
 	}
 
@@ -432,8 +435,9 @@ int owopt_packed(const char *params)
 		++optind;
 	}
 
-	if (argv != NULL)
+    if (argv != NULL) {
 		free(argv);
+    }
 	free(params_copy);
 	return ret;
 }
@@ -466,8 +470,9 @@ int owopt(const int option_char, const char *arg)
 	case 't':
 		{
 			long long int i;
-			if (OW_parsevalue(&i, arg))
+            if (OW_parsevalue(&i, arg)) {
 				return 1;
+            }
 			Global.timeout_volatile = (int) i;
 		}
 		break;
@@ -511,19 +516,19 @@ int owopt(const int option_char, const char *arg)
 			return 0;
 		}
 	case 'f':
-		if (!strcasecmp(arg, "f.i"))
+        if (!strcasecmp(arg, "f.i")) {
 			set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fdi);
-		else if (!strcasecmp(arg, "fi"))
+        } else if (!strcasecmp(arg, "fi")) {
 			set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fi);
-		else if (!strcasecmp(arg, "f.i.c"))
+        } else if (!strcasecmp(arg, "f.i.c")) {
 			set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fdidc);
-		else if (!strcasecmp(arg, "f.ic"))
+        } else if (!strcasecmp(arg, "f.ic")) {
 			set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fdic);
-		else if (!strcasecmp(arg, "fi.c"))
+        } else if (!strcasecmp(arg, "fi.c")) {
 			set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fidc);
-		else if (!strcasecmp(arg, "fic"))
+        } else if (!strcasecmp(arg, "fic")) {
 			set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fic);
-		else {
+        } else {
 			LEVEL_DEFAULT("Unrecognized format type %s\n", arg);
 			return 1;
 		}
@@ -540,24 +545,27 @@ int owopt(const int option_char, const char *arg)
         case e_error_print:
 		{
 			long long int i;
-			if (OW_parsevalue(&i, arg))
+            if (OW_parsevalue(&i, arg)) {
 				return 1;
+            }
 			Global.error_print = (int) i;
 		}
 		break;
         case e_error_level:
 		{
 			long long int i;
-			if (OW_parsevalue(&i, arg))
+            if (OW_parsevalue(&i, arg)) {
 				return 1;
+            }
 			Global.error_level = (int) i;
 		}
 		break;
         case e_cache_size:
 		{
 			long long int i;
-			if (OW_parsevalue(&i, arg))
+            if (OW_parsevalue(&i, arg)) {
 				return 1;
+            }
 			Global.cache_size = (size_t) i;
 		}
 		break;
@@ -575,8 +583,9 @@ int owopt(const int option_char, const char *arg)
         case e_max_clients:
 		{
 			long long int i;
-			if (OW_parsevalue(&i, arg))
+            if (OW_parsevalue(&i, arg)) {
 				return 1;
+            }
 			Global.max_clients = (int) i;
 		}
 		break;
@@ -633,8 +642,9 @@ int owopt(const int option_char, const char *arg)
 int OW_ArgNet(const char *arg)
 {
 	struct connection_in *in = NewIn(NULL);
-	if (in == NULL)
+    if (in == NULL) {
 		return 1;
+    }
 	in->name = strdup(arg);
 	in->busmode = bus_server;
 	return 0;
@@ -645,8 +655,9 @@ static int OW_ArgHA7(const char *arg)
 #if OW_HA7
 	if (arg) {
 		struct connection_in *in = NewIn(NULL);
-		if (in == NULL)
+        if (in == NULL) {
 			return 1;
+        }
 		in->name = arg ? strdup(arg) : NULL;
 		in->busmode = bus_ha7net;
 		return 0;
@@ -663,8 +674,9 @@ static int OW_ArgHA7(const char *arg)
 static int OW_ArgEtherWeather(const char *arg)
 {
 	struct connection_in *in = NewIn(NULL);
-	if (in == NULL)
+    if (in == NULL) {
 		return 1;
+    }
 	in->name = arg ? strdup(arg) : NULL;
 	in->busmode = bus_etherweather;
 	return 0;
@@ -673,8 +685,9 @@ static int OW_ArgEtherWeather(const char *arg)
 static int OW_ArgFake(const char *arg)
 {
 	struct connection_in *in = NewIn(NULL);
-	if (in == NULL)
+    if (in == NULL) {
 		return 1;
+    }
 	in->name = strdup(arg);
 	in->busmode = bus_fake;
 	return 0;
@@ -683,8 +696,9 @@ static int OW_ArgFake(const char *arg)
 static int OW_ArgTester(const char *arg)
 {
 	struct connection_in *in = NewIn(NULL);
-	if (in == NULL)
+    if (in == NULL) {
 		return 1;
+    }
 	in->name = strdup(arg);
 	in->busmode = bus_tester;
 	return 0;
@@ -693,17 +707,19 @@ static int OW_ArgTester(const char *arg)
 int OW_ArgServer(const char *arg)
 {
     struct connection_out *out = NewOut();
-    if (out == NULL)
+    if (out == NULL) {
         return 1;
-    out->name = arg ? strdup(arg) : NULL;
+    }
+    out->name = (arg!=NULL) ? strdup(arg) : NULL;
     return 0;
 }
 
 int OW_ArgSide(const char *arg)
 {
     struct connection_side *side = NewSide();
-    if (side == NULL)
+    if (side == NULL) {
         return 1;
+    }
     side->name = arg ? strdup(arg) : NULL;
     return 0;
 }
@@ -719,18 +735,21 @@ int OW_ArgDevice(const char *arg)
 		LEVEL_DEFAULT("Not a \"character\" device %s (st_mode=%x)\n", arg, sbuf.st_mode);
 		return 1;
 	}
-	if (major(sbuf.st_rdev) == 99)
+    if (major(sbuf.st_rdev) == 99) {
 		return OW_ArgParallel(arg);
-	if (major(sbuf.st_rdev) == 89)
+    }
+    if (major(sbuf.st_rdev) == 89) {
 		return OW_ArgI2C(arg);
+    }
 	return OW_ArgSerial(arg);
 }
 
 static int OW_ArgSerial(const char *arg)
 {
 	struct connection_in *in = NewIn(NULL);
-	if (in == NULL)
+    if (in == NULL) {
 		return 1;
+    }
 	in->name = strdup(arg);
 	in->busmode = bus_serial;
 	return 0;
@@ -739,8 +758,9 @@ static int OW_ArgSerial(const char *arg)
 static int OW_ArgPassive(char *adapter_type_name, const char *arg)
 {
 	struct connection_in *in = NewIn(NULL);
-	if (in == NULL)
+    if (in == NULL) {
 		return 1;
+    }
 	in->name = strdup(arg);
 	in->busmode = bus_passive;
 	// special set name of adapter here 
@@ -751,8 +771,9 @@ static int OW_ArgPassive(char *adapter_type_name, const char *arg)
 static int OW_ArgLink(const char *arg)
 {
 	struct connection_in *in = NewIn(NULL);
-	if (in == NULL)
+    if (in == NULL) {
 		return 1;
+    }
 	in->name = strdup(arg);
 	in->busmode = (arg[0] == '/') ? bus_link : bus_elink;
 	return 0;
@@ -762,8 +783,9 @@ static int OW_ArgParallel(const char *arg)
 {
 #if OW_PARPORT
 	struct connection_in *in = NewIn(NULL);
-	if (in == NULL)
+	if (in == NULL) {
 		return 1;
+    }
 	in->name = strdup(arg);
 	in->busmode = bus_parallel;
 	return 0;
@@ -777,8 +799,9 @@ static int OW_ArgI2C(const char *arg)
 {
 #if OW_I2C
 	struct connection_in *in = NewIn(NULL);
-	if (in == NULL)
+	if (in == NULL) {
 		return 1;
+    }
 	in->name = strdup(arg);
 	in->busmode = bus_i2c;
 	return 0;
@@ -792,8 +815,9 @@ int OW_ArgUSB(const char *arg)
 {
 #if OW_USB
 	struct connection_in *in = NewIn(NULL);
-	if (in == NULL)
+	if (in == NULL) {
 		return 1;
+    }
 	in->busmode = bus_usb;
 	if (arg == NULL) {
 		in->connin.usb.usb_nr = 1;

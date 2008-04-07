@@ -49,18 +49,17 @@ int ToClient(int file_descriptor, struct client_msg *original_cm, char *data)
     struct client_msg * cm = &s_cm ;
 	struct iovec io[] = {
 		{cm, sizeof(struct client_msg),},
-		{data, cm->payload,},
+		{data, original_cm->payload,},
 	};
 
+    LEVEL_DEBUG("ToClient payload=%d size=%d, ret=%d, sg=0x%X offset=%d \n", original_cm->payload, original_cm->size, original_cm->ret, original_cm->sg, original_cm->offset);
 	/* If payload==0, no extra data
 	   If payload <0, flag to show a delay message, again no data
 	 */
-	if (data && cm->payload > 0) {
+    if (data && original_cm->payload > 0) {
 		++nio;
+        //printf("ToClient <%*s>\n",original_cm->payload,data) ;
 	}
-	LEVEL_DEBUG("ToClient payload=%d size=%d, ret=%d, sg=0x%X offset=%d \n", cm->payload, cm->size, cm->ret, cm->sg, cm->offset);
-	//printf(">%.4d|%.4d\n",cm->ret,cm->payload);
-	//printf("Scale=%s\n", TemperatureScaleName(SGTemperatureScale(cm->sg)));
 
     cm->version = htonl(original_cm->version);
     cm->payload = htonl(original_cm->payload);

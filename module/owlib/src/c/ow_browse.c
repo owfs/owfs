@@ -94,15 +94,16 @@ static void ResolveBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 		ERROR_CONNECT("Trouble with zeroconf resolve return %s\n", n);
 	} else {
 		if ((in = FindIn(bs)) == NULL) {	// new or old connection_in slot?
-			CONNINLOCK;
-			if ((in = NewIn(NULL))) {
+			CONNIN_WLOCK;
+            in = NewIn(NULL) ;
+			if ( in != NULL ) {
 				BUSLOCKIN(in);
 				in->name = strdup(name);
 				in->busmode = bus_server;
 			}
-			CONNINUNLOCK;
+			CONNIN_WUNLOCK;
 		}
-		if (in) {
+		if (in != NULL) {
 			if (Zero_detect(in)) {
 				BadAdapter_detect(in);
 			} else {
@@ -158,8 +159,10 @@ static void BSKill(struct BrowseStruct *bs)
 static struct connection_in *FindIn(struct BrowseStruct *bs)
 {
 	struct connection_in *now;
-	CONNINLOCK;
-	for (now = head_inbound_list; now; now = now->next) {
+	CONNIN_RLOCK;
+    now = head_inbound_list;
+    CONNIN_RUNLOCK ;
+	for ( ; now!= NULL ; now = now->next) {
 		if (now->busmode != bus_zero || strcasecmp(now->name, bs->name)
 			|| strcasecmp(now->connin.tcp.type, bs->type)
 			|| strcasecmp(now->connin.tcp.domain, bs->domain)
@@ -168,7 +171,6 @@ static struct connection_in *FindIn(struct BrowseStruct *bs)
 		BUSLOCKIN(now);
 		break;
 	}
-	CONNINUNLOCK;
 	return now;
 }
 

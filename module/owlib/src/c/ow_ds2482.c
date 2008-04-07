@@ -221,7 +221,7 @@ static int DS2482_redetect(const struct parsedname *pn)
 				/* loop through devices, matching those that have the same "head" */
 				/* BUSLOCK also locks the sister channels for this */
 				struct connection_in *in;
-				for (in = pn->head_inbound_list; in; in = in->next) {
+				for (in = head_inbound_list; in; in = in->next) {
 					if (in == head)
 						in->reconnect_state = reconnect_ok;
 				}

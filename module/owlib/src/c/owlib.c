@@ -31,11 +31,10 @@ int LibStart(void)
     SetupSideboundConnections() ;
 
     /* Use first bus for http bus name */
-	CONNINLOCK;
-    if (head_inbound_list) {
-		Global.SimpleBusName = head_inbound_list->name;
+    {
+        struct connection_in * c_first  = find_connection_in(0) ;
+        Global.SimpleBusName = (c_first!=NULL) ? c_first->name : "No connections" ;
     }
-	CONNINUNLOCK;
 
 	// zeroconf/Bonjour look for new services
 	if (Global.autoserver) {
@@ -62,6 +61,7 @@ static void SetupInboundConnections( void )
     struct connection_in *in ;
     int ret = 0;
 
+    CONNIN_RLOCK ;
     for ( in = head_inbound_list ; in != NULL ; in = in->next ) {
         BadAdapter_detect(in);  /* default "NOTSUP" calls */
         switch (get_busmode(in)) {
@@ -177,6 +177,7 @@ static void SetupInboundConnections( void )
             BadAdapter_detect(in);  /* Set to default null assignments */
         }
     }
+    CONNIN_RUNLOCK ;
 }
 
 static void SetupSideboundConnections( void )

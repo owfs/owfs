@@ -159,9 +159,7 @@ static int FS_pid(struct one_wire_query *owq)
 
 static int FS_in(struct one_wire_query *owq)
 {
-	CONNINLOCK;
 	OWQ_U(owq) = count_inbound_connections;
-	CONNINUNLOCK;
 	return 0;
 }
 

@@ -85,9 +85,9 @@ struct device d_set_units = { "units", "units", ePN_settings, COUNT_OF_FILETYPES
 
 static int FS_r_timeout(struct one_wire_query *owq)
 {
-	CACHELOCK;
+	CACHE_RLOCK;
 	OWQ_I(owq) = ((UINT *) OWQ_pn(owq).selected_filetype->data.v)[0];
-	CACHEUNLOCK;
+	CACHE_RUNLOCK;
 	return 0;
 }
 
@@ -95,35 +95,43 @@ static int FS_w_timeout(struct one_wire_query *owq)
 {
 	int previous;
 	struct parsedname *pn = PN(owq);
-	CACHELOCK;
+	CACHE_WLOCK;
 	//printf("FS_w_timeout!!!\n");
 	previous = ((UINT *) pn->selected_filetype->data.v)[0];
 	((UINT *) pn->selected_filetype->data.v)[0] = OWQ_I(owq);
-	CACHEUNLOCK;
-	if (previous > OWQ_I(owq))
+	CACHE_WUNLOCK;
+    if (previous > OWQ_I(owq)) {
 		Cache_Clear();
+    }
 	return 0;
 }
 
 static int FS_w_TS(struct one_wire_query *owq)
 {
-	if (OWQ_size(owq) == 0 || OWQ_offset(owq) > 0)
+    int ret = 0 ;
+    if (OWQ_size(owq) == 0 || OWQ_offset(owq) > 0) {
 		return 0;				/* do nothing */
-	switch (OWQ_buffer(owq)[0]) {
+    }
+    
+    SGLOCK ;
+    switch (OWQ_buffer(owq)[0]) {
 	case 'C':
 		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_celsius);
-		return 0;
+        break ;
 	case 'F':
 		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_fahrenheit);
-		return 0;
+		break ;
 	case 'R':
 		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_rankine);
-		return 0;
-	case 'K':
+        break ;
+    case 'K':
 		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_kelvin);
-		return 0;
+		break ;
+    default:
+        ret = -EINVAL ;
 	}
-	return -EINVAL;
+    SGUNLOCK ;
+	return ret ;
 }
 
 static int FS_r_TS(struct one_wire_query *owq)

@@ -221,12 +221,12 @@ int ServerWrite(struct one_wire_query *owq)
 		} else {
 			int32_t sg = cm.sg & ~(BUSRET_MASK | PERSISTENT_MASK);
 			ret = cm.ret;
+            SGLOCK ;
 			if (SemiGlobal != sg) {
 				//printf("ServerRead: cm.sg changed!  SemiGlobal=%X cm.sg=%X\n", SemiGlobal, cm.sg);
-				CACHELOCK;
 				SemiGlobal = sg;
-				CACHEUNLOCK;
 			}
+            SGUNLOCK ;
 		}
 	} else {
 		ret = -EIO;

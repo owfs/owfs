@@ -61,7 +61,7 @@ void err_msg(enum e_err_type errnoflag, enum e_err_level level, const char *fmt,
 #endif
 	n = strlen(buf);
 	if (errnoflag == e_err_type_error) {
-		snprintf(buf + n, MAXLINE - n, ": %s", strerror(errno_save));
+		snprintf(buf + n, MAXLINE - n, " -> %s\n", strerror(errno_save));
 	}
 	UCLIBCUNLOCK;
 	va_end(ap);
