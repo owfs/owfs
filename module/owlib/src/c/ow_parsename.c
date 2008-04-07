@@ -402,8 +402,9 @@ static enum parse_enum Parse_Bus(char *pathnow, int back_from_remote, struct par
 	}
 
 	bus_number = atoi(&pathnow[4]);
-	if (bus_number < 0)
+    if (bus_number < 0) {
 		return parse_error;
+    }
 	pn->terminal_bus_number = bus_number;
 
 	/* Should make a presence check on remote busses here, but
@@ -423,11 +424,13 @@ static enum parse_enum Parse_Bus(char *pathnow, int back_from_remote, struct par
 	/* this will only be reached once, because a local bus.x triggers "SpecifiedBus" */
 	//printf("SPECIFIED BUS for ParsedName PRE (%d):\n\tpath=%s\n\tpath_busless=%s\n\tKnnownBus=%d\tSpecifiedBus=%d\n",bus_number,   SAFESTRING(pn->path),SAFESTRING(pn->path_busless),KnownBus(pn),SpecifiedBus(pn));
 	CONNINLOCK;
-	if (count_inbound_connections <= bus_number)
+    if (count_inbound_connections <= bus_number) {
 		bus_number = -1;
+    }
 	CONNINUNLOCK;
-	if (bus_number < 0)
+    if (bus_number < 0) {
 		return parse_error;
+    }
 
 	/* Since we are going to use a specific in-device now, set
 	 * pn->selected_connection to point at that device at once. */
@@ -476,8 +479,9 @@ static enum parse_enum Parse_RealDevice(char *filename, int back_from_remote, st
 	//printf("NP hex = %s\n",filename ) ;
 	//printf("NP cmp'ed %s\n",ID ) ;
 	for (i = 0; i < 14; ++i, ++filename) {	/* get ID number */
-		if (*filename == '.')
+        if (*filename == '.') {
 			++filename;
+        }
 		if (isxdigit(*filename)) {
 			ID[i] = *filename;
 		} else {
@@ -493,8 +497,9 @@ static enum parse_enum Parse_RealDevice(char *filename, int back_from_remote, st
 	pn->sn[5] = string2num(&ID[10]);
 	pn->sn[6] = string2num(&ID[12]);
 	pn->sn[7] = CRC8compute(pn->sn, 7, 0);
-	if (*filename == '.')
+    if (*filename == '.') {
 		++filename;
+    }
 	//printf("NP1\n");
 	if (isxdigit(filename[0]) && isxdigit(filename[1])) {
 		char crc[2];
@@ -505,8 +510,9 @@ static enum parse_enum Parse_RealDevice(char *filename, int back_from_remote, st
 	/* Search for known 1-wire device -- keyed to device name (family code in HEX) */
 	FS_devicefindhex(pn->sn[0], pn);
 
-	if (back_from_remote)
+    if (back_from_remote) {
 		return parse_prop;
+    }
 
 	if (Global.one_device) {
 		bus_nr = 0;				// arbitrary assignment
@@ -547,8 +553,9 @@ static enum parse_enum Parse_Property(char *filename, struct parsedname *pn)
 		//printf("FP known filetype %s\n",pn->selected_filetype->name) ;
 		/* Filetype found, now process extension */
 		if (dot == NULL || dot[0] == '\0') {	/* no extension */
-			if (pn->selected_filetype->ag)
+            if (pn->selected_filetype->ag) {
 				return parse_error;	/* aggregate filetypes need an extension */
+            }
 			pn->extension = 0;	/* default when no aggregate */
 
 		} else if (pn->selected_filetype->ag == NULL) {
@@ -565,16 +572,17 @@ static enum parse_enum Parse_Property(char *filename, struct parsedname *pn)
 		} else {				/* specific extension */
 			if (pn->selected_filetype->ag->letters == ag_letters) {	/* Letters */
 				//printf("FP letters\n") ;
-				if ((strlen(dot) != 1) || !isupper(dot[0]))
+                if ((strlen(dot) != 1) || !isupper(dot[0])) {
 					return parse_error;
+                }
 				pn->extension = dot[0] - 'A';	/* Letter extension */
 			} else {			/* Numbers */
 				char *p;
 				//printf("FP numbers\n") ;
 				pn->extension = strtol(dot, &p, 0);	/* Number conversion */
-				if ((p == dot)
-					|| ((pn->extension == 0) && (errno == -EINVAL)))
+                if ((p == dot) || ((pn->extension == 0) && (errno == -EINVAL))) {
 					return parse_error;	/* Bad number */
+                }   
 			}
 			//printf("FP ext=%d nr_elements=%d\n", pn->extension, pn->selected_filetype->ag->elements) ;
 			/* Now check range */
@@ -595,8 +603,9 @@ static enum parse_enum Parse_Property(char *filename, struct parsedname *pn)
 			}
 			/* STATISTICS */
 			STATLOCK;
-			if (pn->pathlength > dir_depth)
+            if (pn->pathlength > dir_depth) {
 				dir_depth = pn->pathlength;
+            }
 			STATUNLOCK;
 			return parse_branch;
 		case ft_subdir:
@@ -617,8 +626,9 @@ static int BranchAdd(struct parsedname *pn)
 	if ((pn->pathlength % BRANCH_INCR) == 0) {
 		void *temp = pn->bp;
 		if ((pn->bp = realloc(temp, (BRANCH_INCR + pn->pathlength) * sizeof(struct buspath))) == NULL) {
-			if (temp)
+            if (temp) {
 				free(temp);
+            }
 			return -ENOMEM;
 		}
 	}
@@ -646,11 +656,13 @@ int FS_ParsedNamePlus(const char *path, const char *file, struct parsedname *pn)
 		int ret = 0;
 		char *fullpath;
 		fullpath = malloc(strlen(file) + strlen(path) + 2);
-		if (fullpath == NULL)
+        if (fullpath == NULL) {
 			return -ENOMEM;
+        }
 		strcpy(fullpath, path);
-		if (fullpath[strlen(fullpath) - 1] != '/')
+        if (fullpath[strlen(fullpath) - 1] != '/') {
 			strcat(fullpath, "/");
+        }
 		strcat(fullpath, file);
 		//printf("PARSENAMEPLUS path=%s pre\n",fullpath) ;
 		ret = FS_ParsedName(fullpath, pn);
@@ -667,8 +679,9 @@ int FS_ParseProperty_for_sibling(char *filename, struct parsedname *pn)
 	// need to make a copy of filename since a static string can't be modified by strsep
 	char *filename_copy = strdup(filename);
 	int ret;
-	if (filename_copy == NULL)
+    if (filename_copy == NULL) {
 		return 1;
+    }
 	ret = (Parse_Property(filename_copy, pn) == parse_done) ? 0 : 1;
 	free(filename_copy);
 	return ret;
