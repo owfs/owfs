@@ -53,8 +53,9 @@ static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path,
 /* ---------------------------------------------- */
 void FS_ParsedName_destroy(struct parsedname *pn)
 {
-	if (!pn)
+    if (!pn) {
 		return;
+    }
 	LEVEL_DEBUG("ParsedName_destroy %s\n", SAFESTRING(pn->path));
 	//printf("PNDestroy bp (%d)\n",BusIsServer(pn->selected_connection)) ;
 	if (pn->bp) {
