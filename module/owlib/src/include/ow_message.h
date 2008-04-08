@@ -64,11 +64,16 @@ struct client_msg {
     int32_t offset;
 };
 
+union address {
+    struct sockaddr sock ;
+    char text[120] ;
+} ;
+
 /* message to client */
 struct side_msg {
     int32_t version;
-    char host[120];
-    char peer[120];
+    union address host ;
+    union address peer ;
 };
 
 struct serverpackage {

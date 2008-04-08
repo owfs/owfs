@@ -61,7 +61,7 @@ int ToClientSide(struct connection_side * side, struct client_msg *original_cm, 
     if ( side->file_descriptor < 0 ) {
         return 0 ;
     }
-    LEVEL_DEBUG("ToSide \n");
+    LEVEL_DEBUG("ToClient data sent to Sidetap \n");
     
     if (data && original_cm->payload > 0) {
         ++nio;
@@ -107,7 +107,7 @@ int FromClientSide(struct connection_side * side, struct handlerdata *hd )
     if ( ! side->good_entry ) {
         return 0 ;
     }
-    LEVEL_DEBUG("FromSide \n");
+    LEVEL_DEBUG("FromClient data sent to Sidetap \n");
 
     SIDELOCK(side) ;
 
@@ -145,17 +145,31 @@ int FromClientSide(struct connection_side * side, struct handlerdata *hd )
     /* read from client, free return pointer if not Null */
 int SetupSideMessage( struct handlerdata *hd )
 {
-    socklen_t hostlength = sizeof(hd->sidem.host) ;
-    socklen_t peerlength = sizeof(hd->sidem.peer) ;
+    socklen_t hostlength = sizeof(union address) ;
+    socklen_t peerlength = sizeof(union address) ;
     memset( &(hd->sidem), 0, sizeof(struct side_msg ) ) ;
-    if ( getsockname( hd->file_descriptor, (hd->sidem.host), &hostlength) ) {
+    if ( getsockname( hd->file_descriptor, &(hd->sidem.host.sock), &hostlength) ) {
         ERROR_CALL("Can't get socket host address for Sidetap info\n");
         return -1 ;
     }
-    if ( getpeername( hd->file_descriptor, (hd->sidem.peer), &peerlength) ) {
+    if ( getpeername( hd->file_descriptor, &(hd->sidem.peer.sock), &peerlength) ) {
         ERROR_CALL("Can't get socket peer address for Sidetap info\n");
         return -1 ;
     }
+#if 0
+    {
+        char host[50] ;
+        char serv[50] ;
+        printf("Peer getnameinfo=%d\n",getnameinfo(&(hd->sidem.peer.sock),peerlength,host,50,serv,50,0) ) ;
+        printf("\tAddress=<%s>:<%s>\n",host,serv);
+    }
+    {
+        char host[50] ;
+        char serv[50] ;
+        printf("Host getnameinfo=%d\n",getnameinfo(&(hd->sidem.host.sock),hostlength,host,50,serv,50,0) ) ;
+        printf("\tAddress=<%s>:<%s>\n",host,serv);
+    }
+#endif 
     hd->sidem.version |= MakeServersidetap ;
     hd->sidem.version |= MakeServertokens(peerlength) ;
     return 0 ;
