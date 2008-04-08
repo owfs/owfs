@@ -61,12 +61,12 @@ int ToClient(int file_descriptor, struct client_msg *original_cm, char *data)
         //printf("ToClient <%*s>\n",original_cm->payload,data) ;
 	}
 
-    cm->version = htonl(original_cm->version);
-    cm->payload = htonl(original_cm->payload);
-    cm->size = htonl(original_cm->size);
-    cm->offset = htonl(original_cm->offset);
-    cm->ret = htonl(original_cm->ret);
-    cm->sg = htonl(original_cm->sg);
+    cm->version = htonl( original_cm->version );
+    cm->payload = htonl( original_cm->payload );
+    cm->ret     = htonl( original_cm->ret     );
+    cm->sg      = htonl( original_cm->sg      );
+    cm->size    = htonl( original_cm->size    );
+    cm->offset  = htonl( original_cm->offset  );
 
 	ret = writev(file_descriptor, io, nio) != (ssize_t) (io[0].iov_len + io[1].iov_len);
 

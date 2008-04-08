@@ -68,12 +68,12 @@ int ToClientSide(struct connection_side * side, struct client_msg *original_cm, 
         //printf("ToClient <%*s>\n",original_cm->payload,data) ;
     }
 
-    cm->version = htonl(original_cm->version);
-    cm->payload = htonl(original_cm->payload);
-    cm->size = htonl(original_cm->size);
-    cm->offset = htonl(original_cm->offset);
-    cm->ret = htonl(original_cm->ret);
-    cm->sg = htonl(original_cm->sg);
+    cm->version = htonl( original_cm->version );
+    cm->payload = htonl( original_cm->payload );
+    cm->ret     = htonl( original_cm->ret     );
+    cm->sg      = htonl( original_cm->sg      );
+    cm->size    = htonl( original_cm->size    );
+    cm->offset  = htonl( original_cm->offset  );
 
     SIDELOCK(side) ;
 
@@ -93,20 +93,21 @@ int ToClientSide(struct connection_side * side, struct client_msg *original_cm, 
 int FromClientSide(struct connection_side * side, struct handlerdata *hd )
 {
 // note data should be (const char *) but iovec complains about const arguments
-    int nio = 1;
+    int nio = 2;
     int ret;
+    ssize_t trueload = hd->sm.payload + sizeof(union antiloop)*Servertokens(hd->sm.version);
+    struct server_msg s_sm ;
+    struct server_msg * sm = &s_sm ;
     struct iovec io[] = {
         {&(hd->sidem), sizeof(struct side_msg),},
+        {sm, sizeof(struct server_msg),},
+        {hd->sp.path, trueload,},
     };
-    struct client_msg s_cm ;
-    struct client_msg * cm = &s_cm ;
 
     if ( ! side->good_entry ) {
         return 0 ;
     }
     LEVEL_DEBUG("FromSide \n");
-
-    memcpy( cm , &(hd->sm) , sizeof(hd->sm) ) ;
 
     SIDELOCK(side) ;
 
@@ -120,32 +121,25 @@ int FromClientSide(struct connection_side * side, struct handlerdata *hd )
     }
 
     hd->sidem.version = htonl(hd->sidem.version);
+    
+    sm->version = htonl( hd->sm.version );
+    sm->payload = htonl( hd->sm.payload );
+    sm->type    = htonl( hd->sm.type    );
+    sm->sg      = htonl( hd->sm.sg      );
+    sm->size    = htonl( hd->sm.size    );
+    sm->offset  = htonl( hd->sm.offset  );
 
-    ret = writev(side->file_descriptor, io, nio) != (ssize_t) (io[0].iov_len);
+    if ( trueload > 0 ) {
+        ++ nio ;
+    }
+
+    ret = writev(side->file_descriptor, io, nio) ;
 
     hd->sidem.version = ntohl(hd->sidem.version);
 
-    if (ret) {
-        SIDEUNLOCK(side) ;
-        return -EIO;
-    }
-
-    ret =  ToClient( side->file_descriptor, cm, hd->sp.path ) ;
-    if (ret) {
-        SIDEUNLOCK(side) ;
-        return ret;
-    }
-
-    if ( hd->sp.tokens > 0 ) {
-        io[0].iov_base = hd->sp.tokenstring ;
-        io[0].iov_len = hd->sp.tokens ;
-        if ( writev(side->file_descriptor, io, nio) != (ssize_t) (io[0].iov_len) ) {
-            SIDEUNLOCK(side) ;
-            return -EIO ;
-        }
-    }
     SIDEUNLOCK(side) ;
-    return 0 ;
+    
+    return ( ret != (ssize_t) (io[0].iov_len+io[1].iov_len+io[2].iov_len) ) ;
 }
 
     /* read from client, free return pointer if not Null */
@@ -154,11 +148,11 @@ int SetupSideMessage( struct handlerdata *hd )
     socklen_t hostlength = sizeof(hd->sidem.host) ;
     socklen_t peerlength = sizeof(hd->sidem.peer) ;
     memset( &(hd->sidem), 0, sizeof(struct side_msg ) ) ;
-    if ( getsockname( hd->file_descriptor, (struct sockaddr *)(hd->sidem.host), &hostlength) ) {
+    if ( getsockname( hd->file_descriptor, (hd->sidem.host), &hostlength) ) {
         ERROR_CALL("Can't get socket host address for Sidetap info\n");
         return -1 ;
     }
-    if ( getpeername( hd->file_descriptor, (struct sockaddr *)(hd->sidem.peer), &peerlength) ) {
+    if ( getpeername( hd->file_descriptor, (hd->sidem.peer), &peerlength) ) {
         ERROR_CALL("Can't get socket peer address for Sidetap info\n");
         return -1 ;
     }
