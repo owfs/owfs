@@ -56,25 +56,28 @@ static void ShowDirCallback(void *v, const struct parsedname *const pn2)
 	const char *typ = NULL;
 	buffer[0] = '\0';
 	if (pn2->selected_device == NULL) {
-		if (NotRealDir(pn2)) {
-			FS_dirname_type(buffer, OW_FULLNAME_MAX, pn2);
-		} else if (pn2->state) {
-			FS_dirname_state(buffer, OW_FULLNAME_MAX, pn2);
+        if (NotRealDir(pn2)) {
+            FS_dirname_type(buffer, OW_FULLNAME_MAX, pn2);
+        } else if (SpecifiedRemoteBus(pn2)) { //fully parsed
+            loc=strrchr(pn2->path,'/')+1 ;
+            nam = loc ;
+        } else if (pn2->state) {
+            FS_dirname_state(buffer, OW_FULLNAME_MAX, pn2);
 		}
 		typ = name_directory;
 	} else if (pn2->selected_device == DeviceSimultaneous) {
-		loc = nam = pn2->selected_device->readable_name;
+        loc = nam = pn2->selected_device->readable_name;
 		typ = name_onewire_chip;
 	} else if (IsRealDir(pn2)) {
-		FS_devicename(loc, OW_FULLNAME_MAX, pn2->sn, pn2);
+        FS_devicename(loc, OW_FULLNAME_MAX, pn2->sn, pn2);
 		nam = pn2->selected_device->readable_name;
 		typ = name_onewire_chip;
 	} else {
-		strcpy(loc, pn2->selected_device->family_code);
+        strcpy(loc, pn2->selected_device->family_code);
 		nam = loc;
 		typ = name_directory;
 	}
-	//printf("path=%s loc=%s name=%s typ=%s pn->selected_device=%p pn->selected_filetype=%p pn->subdir=%p pathlength=%d\n",pn->path,loc,nam,typ,pn->selected_device,pn->selected_filetype,pn->subdir,pn->pathlength ) ;
+	//printf("path=%s loc=%s name=%s typ=%s pn->selected_device=%p pn->selected_filetype=%p pn->subdir=%p pathlength=%d\n",pn2->path,loc,nam,typ,pn2->selected_device,pn2->selected_filetype,pn2->subdir,pn2->pathlength ) ;
 	fprintf(sds->out,
 			"<TR><TD><A HREF='%s/%s'><CODE><B><BIG>%s</BIG></B></CODE></A></TD><TD>%s</TD><TD>%s</TD></TR>", sds->prepath, loc, loc, nam, typ);
 }

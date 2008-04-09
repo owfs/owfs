@@ -669,8 +669,9 @@ static int FS_busdir(void (*dirfunc) (void *, const struct parsedname *), void *
 	struct parsedname *pn_bus_directory = &s_pn_bus_directory;
 	int bus_number;
 
-	if (!RootNotBranch(pn_directory))
+    if (!RootNotBranch(pn_directory)) {
 		return 0;
+    }
 
 	memcpy(pn_bus_directory, pn_directory, sizeof(struct parsedname));	// shallow copy
 

@@ -27,6 +27,11 @@ enum parse_enum {
 	parse_subprop
 };
 
+enum parse_pass {
+    parse_pass_pre_remote ,
+    parse_pass_post_remote ,
+};
+
 struct parsedname_pointers {
 	char *pathcpy;
 	char *pathnow;
@@ -35,15 +40,15 @@ struct parsedname_pointers {
 };
 
 
-static enum parse_enum Parse_Unspecified(char *pathnow, int back_from_remote, struct parsedname *pn);
-static enum parse_enum Parse_Branch(char *pathnow, int back_from_remote, struct parsedname *pn);
-static enum parse_enum Parse_Real(char *pathnow, int back_from_remote, struct parsedname *pn);
+static enum parse_enum Parse_Unspecified(char *pathnow, enum parse_pass remote_status, struct parsedname *pn);
+static enum parse_enum Parse_Branch(char *pathnow, enum parse_pass remote_status, struct parsedname *pn);
+static enum parse_enum Parse_Real(char *pathnow, enum parse_pass remote_status, struct parsedname *pn);
 static enum parse_enum Parse_NonReal(char *pathnow, struct parsedname *pn);
-static enum parse_enum Parse_RealDevice(char *filename, int back_from_remote, struct parsedname *pn);
+static enum parse_enum Parse_RealDevice(char *filename, enum parse_pass remote_status, struct parsedname *pn);
 static enum parse_enum Parse_NonRealDevice(char *filename, struct parsedname *pn);
 static enum parse_enum Parse_Property(char *filename, struct parsedname *pn);
-static enum parse_enum Parse_Bus(char *pathnow, int back_from_remote, struct parsedname *pn);
-static int FS_ParsedName_anywhere(const char *path, int back_from_remote, struct parsedname *pn);
+static enum parse_enum Parse_Bus(char *pathnow, enum parse_pass remote_status, struct parsedname *pn);
+static int FS_ParsedName_anywhere(const char *path, enum parse_pass remote_status, struct parsedname *pn);
 static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path, struct parsedname *pn);
 
 #define BRANCH_INCR (9)
@@ -80,17 +85,17 @@ void FS_ParsedName_destroy(struct parsedname *pn)
 /* Parse a path to check it's validity and attach to the propery data structures */
 int FS_ParsedName(const char *path, struct parsedname *pn)
 {
-	return FS_ParsedName_anywhere(path, 0, pn);
+    return FS_ParsedName_anywhere(path, parse_pass_pre_remote, pn);
 }
 
 /* Parse a path from a remote source back -- so don't check presence */
 int FS_ParsedName_BackFromRemote(const char *path, struct parsedname *pn)
 {
-	return FS_ParsedName_anywhere(path, 1, pn);
+    return FS_ParsedName_anywhere(path, parse_pass_post_remote, pn);
 }
 
 /* Parse off starting "mode" directory (uncached, alarm...) */
-static int FS_ParsedName_anywhere(const char *path, int back_from_remote, struct parsedname *pn)
+static int FS_ParsedName_anywhere(const char *path, enum parse_pass remote_status, struct parsedname *pn)
 {
 	struct parsedname_pointers s_pp;
 	struct parsedname_pointers *pp = &s_pp;
@@ -170,17 +175,17 @@ static int FS_ParsedName_anywhere(const char *path, int back_from_remote, struct
 
 		case parse_first:
 			//LEVEL_DEBUG("PARSENAME parse_first\n") ;
-			pe = Parse_Unspecified(pp->pathnow, back_from_remote, pn);
+			pe = Parse_Unspecified(pp->pathnow, remote_status, pn);
 			break;
 
 		case parse_real:
 			//LEVEL_DEBUG("PARSENAME parse_real\n") ;
-			pe = Parse_Real(pp->pathnow, back_from_remote, pn);
+			pe = Parse_Real(pp->pathnow, remote_status, pn);
 			break;
 
 		case parse_branch:
 			//LEVEL_DEBUG("PARSENAME parse_branch\n") ;
-			pe = Parse_Branch(pp->pathnow, back_from_remote, pn);
+			pe = Parse_Branch(pp->pathnow, remote_status, pn);
 			break;
 
 		case parse_nonreal:
@@ -301,38 +306,43 @@ static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path,
 }
 
 // Early parsing -- only bus entries, uncached and text may have preceeded
-static enum parse_enum Parse_Unspecified(char *pathnow, int back_from_remote, struct parsedname *pn)
+static enum parse_enum Parse_Unspecified(char *pathnow, enum parse_pass remote_status, struct parsedname *pn)
 {
 	if (strncasecmp(pathnow, "bus.", 4) == 0) {
-		return Parse_Bus(pathnow, back_from_remote, pn);
+		return Parse_Bus(pathnow, remote_status, pn);
 
 	} else if (strcasecmp(pathnow, "settings") == 0) {
-		if (SpecifiedLocalBus(pn))
+        if (SpecifiedLocalBus(pn)) {
 			return parse_error;
+        }
 		pn->type = ePN_settings;
 		return parse_nonreal;
 
 	} else if (strcasecmp(pathnow, "statistics") == 0) {
-		if (SpecifiedLocalBus(pn))
+        if (SpecifiedLocalBus(pn)) {
 			return parse_error;
+        }
 		pn->type = ePN_statistics;
 		return parse_nonreal;
 
 	} else if (strcasecmp(pathnow, "structure") == 0) {
-		if (SpecifiedLocalBus(pn))
+        if (SpecifiedLocalBus(pn)) {
 			return parse_error;
+        }
 		pn->type = ePN_structure;
 		return parse_nonreal;
 
 	} else if (strcasecmp(pathnow, "system") == 0) {
-		if (SpecifiedLocalBus(pn))
+        if (SpecifiedLocalBus(pn)) {
 			return parse_error;
+        }
 		pn->type = ePN_system;
 		return parse_nonreal;
 
 	} else if (strcasecmp(pathnow, "interface") == 0) {
-		if (!SpecifiedBus(pn))
+        if (!SpecifiedBus(pn)) {
 			return parse_error;
+        }
 		pn->type = ePN_interface;
 		return parse_nonreal;
 
@@ -347,20 +357,20 @@ static enum parse_enum Parse_Unspecified(char *pathnow, int back_from_remote, st
 	}
 
 	pn->type = ePN_real;
-	return Parse_Branch(pathnow, back_from_remote, pn);
+	return Parse_Branch(pathnow, remote_status, pn);
 }
 
-static enum parse_enum Parse_Branch(char *pathnow, int back_from_remote, struct parsedname *pn)
+static enum parse_enum Parse_Branch(char *pathnow, enum parse_pass remote_status, struct parsedname *pn)
 {
 	if (strcasecmp(pathnow, "alarm") == 0) {
 		pn->state |= ePS_alarm;
 		pn->type = ePN_real;
 		return parse_real;
 	}
-	return Parse_Real(pathnow, back_from_remote, pn);
+	return Parse_Real(pathnow, remote_status, pn);
 }
 
-static enum parse_enum Parse_Real(char *pathnow, int back_from_remote, struct parsedname *pn)
+static enum parse_enum Parse_Real(char *pathnow, enum parse_pass remote_status, struct parsedname *pn)
 {
 	if (strcasecmp(pathnow, "simultaneous") == 0) {
 		pn->selected_device = DeviceSimultaneous;
@@ -379,7 +389,7 @@ static enum parse_enum Parse_Real(char *pathnow, int back_from_remote, struct pa
 		return parse_real;
 
 	} else {
-		return Parse_RealDevice(pathnow, back_from_remote, pn);
+		return Parse_RealDevice(pathnow, remote_status, pn);
 	}
 
 	return parse_error;
@@ -403,11 +413,10 @@ static enum parse_enum Parse_NonReal(char *pathnow, struct parsedname *pn)
 }
 
 /* We've reached a /bus.n entry */
-static enum parse_enum Parse_Bus(char *pathnow, int back_from_remote, struct parsedname *pn)
+static enum parse_enum Parse_Bus(char *pathnow, enum parse_pass remote_status, struct parsedname *pn)
 {
 	char *found;
 	int bus_number;
-
 	/* Processing for bus.X directories -- eventually will make this more generic */
 	if (!isdigit(pathnow[4])) {
 		return parse_error;
@@ -427,12 +436,12 @@ static enum parse_enum Parse_Bus(char *pathnow, int back_from_remote, struct par
 		return parse_error;
 	} else if (SpecifiedRemoteBus(pn)) {	/* already specified a "bus." */
 		/* Let the remote bus do the heavy listing */
-		pn->state |= ePS_busveryremote;
+        pn->state |= ePS_busveryremote;
 		return parse_first;
 	}
 
 	/* on return from remote directory ow_server.c:ServerDir
-	   the SetKnownBus will be be performed else where since the sending bus number is used */
+	   SetKnownBus will be be performed elsewhere since the sending bus number is used */
 	/* this will only be reached once, because a local bus.x triggers "SpecifiedBus" */
 	//printf("SPECIFIED BUS for ParsedName PRE (%d):\n\tpath=%s\n\tpath_busless=%s\n\tKnnownBus=%d\tSpecifiedBus=%d\n",bus_number,   SAFESTRING(pn->path),SAFESTRING(pn->path_busless),KnownBus(pn),SpecifiedBus(pn));
    if (count_inbound_connections <= bus_number) {
@@ -447,31 +456,32 @@ static enum parse_enum Parse_Bus(char *pathnow, int back_from_remote, struct par
 	SetSpecifiedBus(bus_number, pn);
 
 	// return trip, so bus_pathless not needed.
-	if (back_from_remote) {
-		return parse_first;
+	if (remote_status == parse_pass_post_remote) {
+        return parse_first;
 	}
 
 	if (SpecifiedLocalBus(pn)) {
 		/* don't return bus-list for local paths. */
-		pn->sg &= (~BUSRET_MASK);
+        pn->sg &= (~BUSRET_MASK);
 	}
 
 	/* Create the path without the "bus.x" part in pn->path_busless */
 	if (!(found = strstr(pn->path, "/bus."))) {	// no bus
 		int length = pn->path_busless - pn->path - 1;
 		strncpy(pn->path_busless, pn->path, length);	// just copy path
-	} else {
+    } else {
 		int length = found - pn->path;
 		strncpy(pn->path_busless, pn->path, length);
 		if ((found = strchr(found + 1, '/'))) {	// more after bus
 			strcpy(&(pn->path_busless[length]), found);	// copy rest
+
 		} else {
 			pn->path_busless[length] = '\0';	// add final null
-		}
+        }
 	}
 	//printf("SPECIFIED BUS for ParsedName POST (%d):\n\tpath=%s\n\tpath_busless=%s\n\tKnnownBus=%d\tSpecifiedBus=%d\n",bus_number,SAFESTRING(pn->path),SAFESTRING(pn->path_busless),KnownBus(pn),SpecifiedBus(pn));
 	//LEVEL_DEBUG("PARSENAME test path=%s, path_busless=%s\n",pn->path, pn->path_busless ) ;
-	return parse_first;
+    return parse_first;
 }
 
 /* Parse Name (only device name) part of string */
@@ -479,7 +489,7 @@ static enum parse_enum Parse_Bus(char *pathnow, int back_from_remote, struct par
    return 0 if good
    *next points to next segment, or NULL if not filetype
  */
-static enum parse_enum Parse_RealDevice(char *filename, int back_from_remote, struct parsedname *pn)
+static enum parse_enum Parse_RealDevice(char *filename, enum parse_pass remote_status, struct parsedname *pn)
 {
 	//printf("DevicePart: %s %s\n", filename, pn->path);
 
@@ -514,13 +524,14 @@ static enum parse_enum Parse_RealDevice(char *filename, int back_from_remote, st
 	if (isxdigit(filename[0]) && isxdigit(filename[1])) {
 		char crc[2];
 		num2string(crc, pn->sn[7]);
-		if (strncasecmp(crc, filename, 2))
+        if (strncasecmp(crc, filename, 2)) {
 			return parse_error;
+        }
 	}
 	/* Search for known 1-wire device -- keyed to device name (family code in HEX) */
 	FS_devicefindhex(pn->sn[0], pn);
 
-    if (back_from_remote) {
+    if (remote_status == parse_pass_post_remote) {
 		return parse_prop;
     }
 

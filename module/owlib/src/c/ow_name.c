@@ -170,6 +170,9 @@ void FS_DirName(char *buffer, const size_t size, const struct parsedname *pn)
 	} else if (pn->selected_device == NULL) {	/* root-type directory */
 		if (NotRealDir(pn)) {
 			FS_dirname_type(buffer, size, pn);
+        } else if (SpecifiedRemoteBus(pn)) {
+            char * lastpart = strrchr(pn->path,'/') + 1 ;
+            strncpy(buffer,lastpart,size) ;
 		} else {
 			FS_dirname_state(buffer, size, pn);
 		}
