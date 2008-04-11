@@ -93,13 +93,12 @@ ssize_t OW_init_args(int argc, char **argv)
 	return ReturnAndErrno(ret);
 }
 
-static void getdircallback(void *v, const struct parsedname *const pn2)
+static void getdircallback(void *v, const struct parsedname *const pn_entry)
 {
 	struct charblob *cb = v;
-	char buf[OW_FULLNAME_MAX + 2];
-	FS_DirName(buf, OW_FULLNAME_MAX, pn2);
+	char * buf = FS_DirName(pn_entry);
 	CharblobAdd(buf, strlen(buf), cb);
-	if (IsDir(pn2))
+	if (IsDir(pn_entry))
 		CharblobAddChar('/', cb);
 }
 

@@ -225,21 +225,15 @@ struct showdevicestruct {
 	char *path;
 	FILE *out;
 };
-static void ShowDeviceTextCallback(void *v, const struct parsedname *const pn2)
+static void ShowDeviceTextCallback(void *v, const struct parsedname *const pn_entry)
 {
 	struct showdevicestruct *sds = v;
-	char file[OW_FULLNAME_MAX + 1];
-	FS_DirName(file, OW_FULLNAME_MAX, pn2);
-	//printf("ShowDevice: emb: pn2->selected_filetype=%p pn2->subdir=%p pn2->dev=%p path2=%s file=%s\n", pn2->selected_filetype, pn2->subdir, pn2->dev, path2, file);
-	ShowText(sds->out, sds->path, file);
+    ShowText(sds->out, sds->path, FS_DirName(pn_entry));
 }
-static void ShowDeviceCallback(void *v, const struct parsedname *const pn2)
+static void ShowDeviceCallback(void *v, const struct parsedname *const pn_entry)
 {
 	struct showdevicestruct *sds = v;
-	char file[OW_FULLNAME_MAX + 1];
-	FS_DirName(file, OW_FULLNAME_MAX, pn2);
-	//printf("ShowDevice: emb: pn2->selected_filetype=%p pn2->subdir=%p pn2->dev=%p path2=%s file=%s\n", pn2->selected_filetype, pn2->subdir, pn2->dev, path2, file);
-	Show(sds->out, sds->path, file);
+    Show(sds->out, sds->path, FS_DirName(pn_entry));
 }
 static void ShowDeviceText(FILE * out, const struct parsedname *const pn)
 {

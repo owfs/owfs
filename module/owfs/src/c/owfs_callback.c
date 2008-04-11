@@ -157,17 +157,16 @@ struct getdirstruct {
 };
 	/* Callback function to FS_dir */
 	/* Prints this directory element (not the whole path) */
-static void FS_getdir_callback(void *v, const struct parsedname *pn2)
+static void FS_getdir_callback(void *v, const struct parsedname *pn_entry)
 {
-	char extname[OW_FULLNAME_MAX + 1];
 	struct getdirstruct *gds = v;
-	FS_DirName(extname, OW_FULLNAME_MAX + 1, pn2);
 #ifdef FUSE22PLUS
-	(gds->filler) (gds->h, extname, DT_DIR, (ino_t) 0);
+	(gds->filler) (gds->h, FS_DirName(pn_entry), DT_DIR, (ino_t) 0);
 #else							/* FUSE22PLUS */
-	(gds->filler) (gds->h, extname, DT_DIR);
+	(gds->filler) (gds->h, FS_DirName(pn_entry), DT_DIR);
 #endif							/* FUSE22PLUS */
 }
+
 static int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler)
 {
 	struct parsedname pn;

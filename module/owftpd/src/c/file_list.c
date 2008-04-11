@@ -221,13 +221,13 @@ struct wildlexparse {
 };
 /* Called for each directory element, and operates recursively */
 /* uses C library fnmatch for file wildcard comparisons */
-static void WildLexParseCallback(void *v, const struct parsedname *const pn2)
+static void WildLexParseCallback(void *v, const struct parsedname *const pn_entry)
 {
 	struct wildlexparse *wlp = v;
 	struct file_parse_s fps;	// duplicate for recursive call
 
 	/* get real name from parsedname struct */
-	FS_DirName(&wlp->end[1], OW_FULLNAME_MAX, pn2);
+    strcpy(&wlp->end[1],FS_DirName(pn_entry));
 
 	LEVEL_DEBUG("WildLexParseCallback: Try %s vs %s\n", &wlp->end[1], wlp->match);
 	if (fnmatch(wlp->match, &wlp->end[1], FNM_PATHNAME)) {

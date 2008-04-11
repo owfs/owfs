@@ -45,44 +45,17 @@ $Id$
 /* Dir, will return: */
 /* cm fully constructed for error message or null marker (end of directory elements */
 /* cm.ret is also set to an error or 0 */
-struct dirallhandlerstruct {
-	struct charblob *cb;
-	const struct parsedname *pn;
-};
 
-void DirallHandlerCallback(void *v, const struct parsedname *pn2)
+void DirallHandlerCallback(void *v, const struct parsedname *pn_entry)
 {
-	struct dirallhandlerstruct *dhs = v;
-	char retbuffer[PATH_MAX];
-# if 0
-	char *path = (KnownBus(dhs->pn)
-				  && BusIsServer(dhs->pn->selected_connection)) ? dhs->pn->path_busless : dhs->pn->path;
-#endif
-	char *path = dhs->pn->path;
-
-	/* make sure path has a "/" before the file is added */
-	size_t _pathlen = strlen(path);
-	strcpy(retbuffer, path);
-	if ((_pathlen == 0) || (retbuffer[_pathlen - 1] != '/')) {
-		retbuffer[_pathlen] = '/';
-		retbuffer[++_pathlen] = '\0';
-	}
-
-	if (pn2->selected_device != NULL) {
-		FS_DirName(&retbuffer[_pathlen], PATH_MAX - _pathlen - 1, pn2);
-	} else if (NotRealDir(pn2)) {
-		FS_dirname_type(&retbuffer[_pathlen], PATH_MAX - _pathlen - 1, pn2);
-	} else {
-		FS_dirname_state(&retbuffer[_pathlen], PATH_MAX - _pathlen - 1, pn2);
-	}
-	CharblobAdd(retbuffer, strlen(retbuffer), dhs->cb);
+    struct charblob *cb = v;
+    CharblobAdd(pn_entry->path, strlen(pn_entry->path), cb);
 }
 
 void *DirallHandler(struct handlerdata *hd, struct client_msg *cm, const struct parsedname *pn)
 {
 	uint32_t flags = 0;
 	struct charblob cb;
-	struct dirallhandlerstruct dhs = { &cb, pn, };
 	char *ret = NULL;
 
 	(void) hd;
@@ -96,7 +69,7 @@ void *DirallHandler(struct handlerdata *hd, struct client_msg *cm, const struct 
 		cm->ret = -EMSGSIZE;
 	} else {
 		// Now generate the directory using the callback function above for each element
-		cm->ret = FS_dir_remote(DirallHandlerCallback, &dhs, pn, &flags);
+		cm->ret = FS_dir_remote(DirallHandlerCallback, &cb, pn, &flags);
 	}
 
 	if (cm->ret < 0) {			// error

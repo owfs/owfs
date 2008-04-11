@@ -155,15 +155,16 @@ struct wildlexcd {
 	ASCII *match;
 	struct cd_parse_s *cps;
 };
-static void WildLexCDCallback(void *v, const struct parsedname *const pn2)
+static void WildLexCDCallback(void *v, const struct parsedname *const pn_entry)
 {
 	struct wildlexcd *wlcd = v;
 	struct cd_parse_s cps;
-	FS_DirName(&wlcd->end[1], OW_FULLNAME_MAX, pn2);
+    strcpy(&wlcd->end[1],FS_DirName(pn_entry));
 	//printf("Try %s vs %s\n",end,match) ;
 	//if ( fnmatch( match, end, FNM_PATHNAME|FNM_CASEFOLD ) ) return ;
-	if (fnmatch(wlcd->match, &wlcd->end[1], FNM_PATHNAME))
+    if (fnmatch(wlcd->match, &wlcd->end[1], FNM_PATHNAME)) {
 		return;
+    }
 	//printf("Match! %s\n",end) ;
 	memcpy(&cps, wlcd->cps, sizeof(cps));
 	cps.pse = parse_status_next;
@@ -185,19 +186,21 @@ static void WildLexCD(struct cd_parse_s *cps, ASCII * match)
 		return;
 	}
 
-	if (pn.selected_filetype) {
+    if (!IsDir(&pn)) {
 		cps->ret = -ENOTDIR;
 	} else {
 		struct wildlexcd wlcd = { NULL, match, cps, };
 		int root = (cps->buffer[1] == '\0');
 
 		wlcd.end = &cps->buffer[strlen(cps->buffer)];
-		if (root)
+        if (root) {
 			--wlcd.end;
+        }
 		wlcd.end[0] = '/';
 		FS_dir(WildLexCDCallback, &wlcd, &pn);
-		if (root)
+        if (root) {
 			++wlcd.end;
+        }
 		wlcd.end[0] = '\0';		// restore cps->buffer
 	}
 	FS_ParsedName_destroy(&pn);

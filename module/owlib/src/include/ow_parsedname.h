@@ -139,6 +139,8 @@ enum ePN_type {
 	ePN_max_type,
 };
 
+extern char * ePN_name[] ; // must match ePN_type
+
 enum ePS_state {
 	ePS_normal = 0x0000,
 	ePS_uncached = 0x0001,

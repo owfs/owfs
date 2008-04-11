@@ -94,6 +94,7 @@ void DeviceDestroy(void);
 /* Pasename processing -- URL/path comprehension */
 int filecmp(const void *name, const void *ex);
 int FS_ParsedNamePlus(const char *path, const char *file, struct parsedname *pn);
+int FS_ParsedNamePlusExt(const char *path, const char *file, int extension, enum ag_index alphanumeric, struct parsedname *pn) ;
 int FS_ParsedName(const char *fn, struct parsedname *pn);
 int FS_ParsedName_BackFromRemote(const char *fn, struct parsedname *pn);
 void FS_ParsedName_destroy(struct parsedname *pn);
@@ -106,10 +107,7 @@ void FS_devicename(char *buffer, const size_t length, const BYTE * sn, const str
 void FS_devicefind(const char *code, struct parsedname *pn);
 void FS_devicefindhex(BYTE f, struct parsedname *pn);
 
-int FS_dirname_state(char *buffer, const size_t length, const struct parsedname *pn);
-int FS_dirname_type(char *buffer, const size_t length, const struct parsedname *pn);
-void FS_DirName(char *buffer, const size_t size, const struct parsedname *pn);
-int FS_FileName(char *name, const size_t size, const struct parsedname *pn);
+const char * FS_DirName(const struct parsedname *pn) ;
 
 /* Utility functions */
 BYTE CRC8(const BYTE * bytes, const size_t length);

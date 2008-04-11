@@ -47,46 +47,25 @@ $Id$
 struct dirhandlerstruct {
 	struct handlerdata *hd;
 	struct client_msg *cm;
-	const struct parsedname *pn;
 };
 
-static void DirHandlerCallback(void *v, const struct parsedname *pn2)
+static void DirHandlerCallback(void *v, const struct parsedname *pn_entry)
 {
 	struct dirhandlerstruct *dhs = (struct dirhandlerstruct *) v;
-	char retbuffer[PATH_MAX];
-#if 0
-	char *path = (KnownBus(dhs->pn)
-				  && (BusIsServer(dhs->pn->selected_connection))) ? dhs->pn->path_busless : dhs->pn->path;
-#endif
-	char *path = dhs->pn->path;
-	size_t _pathlen = strlen(path);
+	char *path = pn_entry->path;
 
-	LEVEL_DEBUG("owserver dir path = %s\n", SAFESTRING(pn2->path));
+    LEVEL_DEBUG("owserver Calling dir=%s\n", SAFESTRING(path));
 
-	/* make sure path ends in "/" before anything is tacked on */
-	strcpy(retbuffer, path);
-	if ((_pathlen == 0) || (retbuffer[_pathlen - 1] != '/')) {
-		retbuffer[_pathlen] = '/';
-		retbuffer[++_pathlen] = '\0';
-	}
-
-	if (pn2->selected_device != NULL) {
-		FS_DirName(&retbuffer[_pathlen], PATH_MAX - _pathlen - 1, pn2);
-	} else if (NotRealDir(pn2)) {
-		FS_dirname_type(&retbuffer[_pathlen], PATH_MAX - _pathlen - 1, pn2);
-	} else {
-		FS_dirname_state(&retbuffer[_pathlen], PATH_MAX - _pathlen - 1, pn2);
-	}
-	dhs->cm->size = strlen(retbuffer);
+	dhs->cm->size = strlen(path);
 	dhs->cm->payload = dhs->cm->size + 1;
 	dhs->cm->ret = 0;
 
 	TOCLIENTLOCK(dhs->hd);
-	ToClient(dhs->hd->file_descriptor, dhs->cm, retbuffer);	// send this directory element
+	ToClient(dhs->hd->file_descriptor, dhs->cm, path);	// send this directory element
     if ( count_sidebound_connections > 0 ) {
         struct connection_side * side ;
         for ( side=head_sidebound_list ; side!=NULL ; side = side->next ) {
-            ToClientSide(side, dhs->cm, retbuffer, &(dhs->hd->sidem) );
+            ToClientSide(side, dhs->cm, path, &(dhs->hd->sidem) );
         }
     }
     gettimeofday(&(dhs->hd->tv), NULL);	// reset timer
@@ -96,7 +75,7 @@ static void DirHandlerCallback(void *v, const struct parsedname *pn2)
 void DirHandler(struct handlerdata *hd, struct client_msg *cm, const struct parsedname *pn)
 {
 	uint32_t flags = 0;
-	struct dirhandlerstruct dhs = { hd, cm, pn, };
+	struct dirhandlerstruct dhs = { hd, cm, };
 
 	LEVEL_CALL("DirHandler: pn->path=%s\n", pn->path);
 

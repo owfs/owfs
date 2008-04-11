@@ -39,54 +39,30 @@ int Backup(const char *path)
 #define name_directory    "directory"
 #define name_onewire_chip "1-wire chip"
 
-struct showdirstruct {
-	char *prepath;
-	FILE *out;
-};
 	/* Callback function to FS_dir */
-static void ShowDirCallback(void *v, const struct parsedname *const pn2)
+static void ShowDirCallback(void *v, const struct parsedname * pn_entry)
 {
 	/* uncached tag */
 	/* device name */
 	/* Have to allocate all buffers to make it work for Coldfire */
-	struct showdirstruct *sds = v;
-	char buffer[OW_FULLNAME_MAX + 1];
-	char *loc = buffer;
-	char *nam = buffer;
-	const char *typ = NULL;
-	buffer[0] = '\0';
-	if (pn2->selected_device == NULL) {
-        if (NotRealDir(pn2)) {
-            FS_dirname_type(buffer, OW_FULLNAME_MAX, pn2);
-        } else if (SpecifiedRemoteBus(pn2)) { //fully parsed
-            loc=strrchr(pn2->path,'/')+1 ;
-            nam = loc ;
-        } else if (pn2->state) {
-            FS_dirname_state(buffer, OW_FULLNAME_MAX, pn2);
-		}
+	FILE *out = v;
+	const char *nam ;
+	const char *typ ;
+    if (IsDir(pn_entry)) {
+        nam = FS_DirName(pn_entry) ;
 		typ = name_directory;
-	} else if (pn2->selected_device == DeviceSimultaneous) {
-        loc = nam = pn2->selected_device->readable_name;
-		typ = name_onewire_chip;
-	} else if (IsRealDir(pn2)) {
-        FS_devicename(loc, OW_FULLNAME_MAX, pn2->sn, pn2);
-		nam = pn2->selected_device->readable_name;
-		typ = name_onewire_chip;
 	} else {
-        strcpy(loc, pn2->selected_device->family_code);
-		nam = loc;
-		typ = name_directory;
+        nam = pn_entry->selected_device->readable_name;
+		typ = name_onewire_chip;
 	}
-	//printf("path=%s loc=%s name=%s typ=%s pn->selected_device=%p pn->selected_filetype=%p pn->subdir=%p pathlength=%d\n",pn2->path,loc,nam,typ,pn2->selected_device,pn2->selected_filetype,pn2->subdir,pn2->pathlength ) ;
-	fprintf(sds->out,
-			"<TR><TD><A HREF='%s/%s'><CODE><B><BIG>%s</BIG></B></CODE></A></TD><TD>%s</TD><TD>%s</TD></TR>", sds->prepath, loc, loc, nam, typ);
+    fprintf(out,
+            "<TR><TD><A HREF='%s'><CODE><B><BIG>%s</BIG></B></CODE></A></TD><TD>%s</TD><TD>%s</TD></TR>", pn_entry->path, FS_DirName(pn_entry), nam, typ);
 }
 
 	/* Misnamed. Actually all directory */
 void ShowDir(FILE * out, const struct parsedname *const pn)
 {
 	int b = Backup(pn->path);
-	struct showdirstruct sds = { strcmp(pn->path, "/") ? pn->path : "", out, };
 	if (pn->state & ePS_text) {
 		ShowDirText(out, pn);
 		return;
@@ -121,51 +97,31 @@ void ShowDir(FILE * out, const struct parsedname *const pn)
 		fprintf(out, "<TR><TD><A HREF='/'><CODE><B><BIG>top</BIG></B></CODE></A></TD><TD>highest level</TD><TD>directory</TD></TR>");
 	}
 
-	FS_dir(ShowDirCallback, &sds, pn);
+	FS_dir(ShowDirCallback, out, pn);
 	fprintf(out, "</TABLE>");
 	HTTPfoot(out);
 }
-static void ShowDirTextCallback(void *v, const struct parsedname *const pn2)
+static void ShowDirTextCallback(void *v, const struct parsedname *const pn_entry)
 {
 	/* uncached tag */
 	/* device name */
 	/* Have to allocate all buffers to make it work for Coldfire */
-	struct showdirstruct *sds = v;
-	char buffer[OW_FULLNAME_MAX + 1];
-	char *loc = buffer;
-	char *nam = buffer;
-	const char *typ = NULL;
-	buffer[0] = '\0';
-	if (pn2->selected_device == NULL) {
-		if (NotRealDir(pn2)) {
-			FS_dirname_type(buffer, OW_FULLNAME_MAX, pn2);
-		} else if (pn2->state) {
-			FS_dirname_state(buffer, OW_FULLNAME_MAX, pn2);
-		}
-		typ = name_directory;
-	} else if (pn2->selected_device == DeviceSimultaneous) {
-		loc = nam = pn2->selected_device->readable_name;
-		typ = name_onewire_chip;
-	} else if (IsRealDir(pn2)) {
-		FS_devicename(loc, OW_FULLNAME_MAX, pn2->sn, pn2);
-		nam = pn2->selected_device->readable_name;
-		typ = name_onewire_chip;
-	} else {
-		strcpy(loc, pn2->selected_device->family_code);
-		nam = loc;
-		typ = name_directory;
-	}
-	//printf("path=%s loc=%s name=%s typ=%s pn->selected_device=%p pn->selected_filetype=%p pn->subdir=%p pathlength=%d\n",pn->path,loc,nam,typ,pn->selected_device,pn->selected_filetype,pn->subdir,pn->pathlength ) ;
-	//printf("path=%s loc=%s name=%s typ=%s pn->selected_device=%p pn->selected_filetype=%p pn->subdir=%p pathlength=%d\n",pn->path,loc,nam,typ,pn->selected_device,pn->selected_filetype,pn->subdir,pn->pathlength ) ;
-	fprintf(sds->out, "%s %s \"%s\"\r\n", loc, nam, typ);
-	free(buffer);
+	FILE *out = v;
+    const char *nam ;
+    const char *typ ;
+    if (IsDir(pn_entry)) {
+        nam = FS_DirName(pn_entry) ;
+        typ = name_directory;
+    } else {
+        nam = pn_entry->selected_device->readable_name;
+        typ = name_onewire_chip;
+    }
+    fprintf(out, "%s %s \"%s\"\r\n", FS_DirName(pn_entry), nam, typ);
 }
 static void ShowDirText(FILE * out, const struct parsedname *const pn)
 {
-	struct showdirstruct sds = { NULL, out, };
-
 	HTTPstart(out, "200 OK", ct_text);
 
-	FS_dir(ShowDirTextCallback, &sds, pn);
+	FS_dir(ShowDirTextCallback, out, pn);
 	return;
 }

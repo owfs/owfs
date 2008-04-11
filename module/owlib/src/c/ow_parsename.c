@@ -669,29 +669,47 @@ int filecmp(const void *name, const void *ex)
 /* Parse a path/file combination */
 int FS_ParsedNamePlus(const char *path, const char *file, struct parsedname *pn)
 {
-	if (path == NULL || path[0] == '\0') {
-		return FS_ParsedName(file, pn);
-	} else if (file == NULL || file[0] == '\0') {
-		return FS_ParsedName(path, pn);
-	} else {
-		int ret = 0;
-		char *fullpath;
-		fullpath = malloc(strlen(file) + strlen(path) + 2);
+    if (path == NULL || path[0] == '\0') {
+        return FS_ParsedName(file, pn);
+    } else if (file == NULL || file[0] == '\0') {
+        return FS_ParsedName(path, pn);
+    } else {
+        int ret = 0;
+        char *fullpath;
+        fullpath = malloc(strlen(file) + strlen(path) + 2);
         if (fullpath == NULL) {
-			return -ENOMEM;
+            return -ENOMEM;
         }
-		strcpy(fullpath, path);
+        strcpy(fullpath, path);
         if (fullpath[strlen(fullpath) - 1] != '/') {
-			strcat(fullpath, "/");
+            strcat(fullpath, "/");
         }
-		strcat(fullpath, file);
-		//printf("PARSENAMEPLUS path=%s pre\n",fullpath) ;
-		ret = FS_ParsedName(fullpath, pn);
-		//printf("PARSENAMEPLUS path=%s post\n",fullpath) ;
-		free(fullpath);
-		//printf("PARSENAMEPLUS free\n") ;
-		return ret;
-	}
+        strcat(fullpath, file);
+        //printf("PARSENAMEPLUS path=%s pre\n",fullpath) ;
+        ret = FS_ParsedName(fullpath, pn);
+        //printf("PARSENAMEPLUS path=%s post\n",fullpath) ;
+        free(fullpath);
+        //printf("PARSENAMEPLUS free\n") ;
+        return ret;
+    }
+}
+
+/* Parse a path/file combination */
+int FS_ParsedNamePlusExt(const char *path, const char *file, int extension, enum ag_index alphanumeric, struct parsedname *pn)
+{
+    char name[OW_FULLNAME_MAX] ;
+    UCLIBCLOCK ;
+    if ( extension == -2 ) {
+        snprintf(name,OW_FULLNAME_MAX,"%s.BYTE",file) ;
+    } else if ( extension == -1 ) {
+        snprintf(name,OW_FULLNAME_MAX,"%s.ALL",file) ;
+    } else if ( alphanumeric == ag_letters ) {
+        snprintf(name,OW_FULLNAME_MAX,"%s.%c",file,extension+'A') ;
+    } else {
+        snprintf(name,OW_FULLNAME_MAX,"%s.%d",file,extension) ;
+    }
+    UCLIBCUNLOCK ;
+    return FS_ParsedNamePlus(path,name,pn) ;
 }
 
 /* For read and write sibling -- much simpler requirements */

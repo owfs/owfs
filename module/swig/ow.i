@@ -51,12 +51,11 @@ int put( const char * path, const char * value ) {
     return ret ;
 }
 
-static void getdircallback( void * v, const struct parsedname * const pn2 ) {
+static void getdircallback( void * v, const struct parsedname * const pn_entry ) {
     struct charblob * cb = v ;
-    char buf[OW_FULLNAME_MAX+2] ;
-    FS_DirName( buf, OW_FULLNAME_MAX, pn2 ) ;
+    char * buf = FS_DirName(pn_entry) ;
     CharblobAdd( buf, strlen(buf), cb ) ;
-    if ( IsDir(pn2) ) CharblobAddChar( '/', cb ) ;
+    if ( IsDir(pn_entry) ) CharblobAddChar( '/', cb ) ;
 }
 /*
   Get a directory,  returning a copy of the contents in *buffer (which must be free-ed elsewhere)
