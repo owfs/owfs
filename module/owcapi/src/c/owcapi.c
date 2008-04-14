@@ -96,7 +96,7 @@ ssize_t OW_init_args(int argc, char **argv)
 static void getdircallback(void *v, const struct parsedname *const pn_entry)
 {
 	struct charblob *cb = v;
-	char * buf = FS_DirName(pn_entry);
+	const char * buf = FS_DirName(pn_entry);
 	CharblobAdd(buf, strlen(buf), cb);
 	if (IsDir(pn_entry))
 		CharblobAddChar('/', cb);

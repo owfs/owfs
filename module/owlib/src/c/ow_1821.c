@@ -112,10 +112,6 @@ static int OW_w_status(BYTE * data, const struct parsedname *pn);
 static int OW_r_templimit(_FLOAT * T, const int Tindex, const struct parsedname *pn);
 static int OW_w_templimit(const _FLOAT T, const int Tindex, const struct parsedname *pn);
 
-/* Internal properties */
-//static struct internal_prop ip_continuous = { "CON", fc_stable };
-MakeInternalProp(CON, fc_stable);	// continuous conversions
-
 static int FS_temperature(struct one_wire_query *owq)
 {
 	if (OW_temperature(&OWQ_F(owq), PN(owq)))

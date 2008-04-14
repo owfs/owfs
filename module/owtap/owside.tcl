@@ -9,7 +9,7 @@ package require Tk
 # Global: IPAddress() loose tap server
 # -- port number of this program (tap) and real owserver (server). loose is stray garbage
 
-set SocketVars {string version type payload size sg offset tokenlength totallength paylength typetext ping state sock versiontext flagtext persist return id }
+set SocketVars {string tapversion taphost tappeer version type payload size sg offset tokenlength totallength paylength typetext ping state sock versiontext flagtext persist return id }
 
 set MessageList {ERROR NOP READ WRITE DIR SIZE PRESENCE DIRALL GET}
 set MessageListPlus $MessageList
@@ -33,15 +33,19 @@ set setup_flags(detail_list) {}
 
 # Global: circ_buffer => data for the last n transactions displayed in the listboxes
 
+# Global: cross_buffer -> takes taphost:tappeer to circ_buffer index
+
 #Main procedure. We actually start it at the end, to allow Proc-s to be defined first.
 proc Main { argv } {
     ArgumentProcess
+
+	tk_messageBox -message "Still under development."  -icon warning -type ok -title "owside"
 
     CircBufferSetup 50
     DisplaySetup
     StatsSetup
 
-    SetupTap
+    SetupSide
 }
 
 # Command line processing
@@ -58,52 +62,50 @@ proc ArgumentProcess { } {
     # INADDR_ANY
     # tk_messageBox -message "$::argv" -type ok
     set IPAddress(tap.ip) "0.0.0.0"
-    set IPAddress(tap.port) "0"
-    set IPAddress(server.ip) "0.0.0.0"
-    set IPAddress(server.port) "4304"
+    set IPAddress(tap.port) "4305"
     foreach a $::argv {
         if { [regexp -- {^-p(.*)$} $a whole address] } {
 			set mode "tap"
 		} elseif { [regexp -- {^-s(.*)$} $a whole address] } {
-			set mode "server"
+			set mode "tap"
 		}  else {
 			set address $a
 		}
-		IPandPort $mode $address
+		IPandPort $address
     }
-    MainTitle $IPAddress(tap.ip):$IPAddress(tap.port) $IPAddress(server.ip):$IPAddress(server.port)
+    MainTitle $IPAddress(tap.ip):$IPAddress(tap.port)
 }
 
-proc IPandPort { mode argument_string } {
+proc IPandPort { argument_string } {
     global IPAddress
     if { [regexp -- {^(.*?):(.*)$} $argument_string wholestring firstpart secondpart] } {
-		if { $firstpart != "" } { set IPAddress($mode.ip) $firstpart }
-		if { $secondpart != "" } { set IPAddress($mode.port) $secondpart }
+		if { $firstpart != "" } { set IPAddress(tap.ip) $firstpart }
+		if { $secondpart != "" } { set IPAddress(tap.port) $secondpart }
     } else {
-		if { $argument_string != "" } { set IPAddress($mode.port) $argument_string }
+		if { $argument_string != "" } { set IPAddress(tap.port) $argument_string }
     }
 }
 
 # Accept from client (our "server" portion)
-proc SetupTap { } {
+proc SetupSide { } {
     global IPAddress
-    StatusMessage "Attempting to open surrogate server on $IPAddress(tap.ip):$IPAddress(tap.port)"
-    if {[catch {socket -server TapAccept -myaddr $IPAddress(tap.ip) $IPAddress(tap.port)} result] } {
+    StatusMessage "Attempting to open sidetap server on $IPAddress(tap.ip):$IPAddress(tap.port)"
+    if {[catch {socket -server SideAccept -myaddr $IPAddress(tap.ip) $IPAddress(tap.port)} result] } {
         ErrorMessage $result
     }
-    StatusMessage "Success. Tap server address=[PrettySock $result]"
-    MainTitle [PrettySock $result] $IPAddress(server.ip):$IPAddress(server.port)
+    StatusMessage "Success. Sidetap server address=[PrettySock $result]"
+    MainTitle [PrettySock $result]
 }
 
 #Main loop. Called whenever the server (listen) port accepts a connection.
-proc TapAccept { sock addr port } {
+proc SideAccept { sock addr port } {
     global serve
     global stats
 
     # Start the State machine
     set serve($sock.state) "Open client"
     while {1} {
-#puts $serve($sock.state)
+puts $serve($sock.state)
         switch $serve($sock.state) {
         "Open client" {
                 StatusMessage "Reading client request from $addr port $port" 0
@@ -114,39 +116,46 @@ proc TapAccept { sock addr port } {
         "Persistent loop" {
                 TapSetup $sock
                 set serve($sock.sock) $sock
-                set current [CircBufferAllocate]
                 set serve($sock.state) "Read client"
             }
         "Read client" {
                 # wait a long time (3hr) for very first packet
                 ResetSockTimer $sock 10000000
                 fileevent $sock readable [list TapProcess $sock]
-#   ShowMessage $sock
+		#   ShowMessage $sock
                 vwait serve($sock.state)
             }
+        "Process any packet" {
+                StatusMessage "Reading owserver packet from $addr port $port" 0
+		switch [expr {$serve($sock.tapversion) & 0x10000}] {
+			0 {
+				set serve($sock.state) "Process server packet"
+			}
+			0x10000 {
+				set serve($sock.state) "Process client packet"
+			}
+		}
+	}
         "Process client packet" {
                 fileevent $sock readable {}
                 ClearSockTimer $sock
                 StatusMessage "Success reading client request" 0
+                set current [CircBufferAllocate]
+                set cross_buffer($serve($sock.taphost).$serve($sock.tappeer)) $current
                 set message_type $serve($sock.typetext)
                 CircBufferEntryRequest $current "$addr:$port $message_type $serve($sock.payload) bytes" $serve($sock.string)
                 AddClient $addr:$port
                 #stats
                 RequestStatsIncr $sock 0
-                # now owserver
-                if {$persist>0} {
-                    set serve($sock.state) "Send to server"
-                } else {
-                    set serve($sock.state) "Open server"
-                }
             }
-        "Client early end" {
-                StatusMessage "FAILURE reading client request"
-                CircBufferEntryRequest $current "network read error" $serve($sock.string)
-                CircBufferEntryResponse $current "<none>"
-                RequestStatsIncr $sock 1
-                set serve($sock.state) "Done with client"
-            }
+        "Process server packet" {
+                StatusMessage "Success reading OWSERVER response" 0
+                set current $cross_buffer($serve($sock.taphost).$serve($sock.tappeer)) $current
+                CircBufferEntryResponse $current $serve($sock.return) $serve($sock.string)
+		#stats
+                ResponseStatsIncr $sock 0
+                set serve($sock.state) "Send to client"
+}
         "Web client" {
                 StatusMessage "Error: owtap is not a web server"
                 CircBufferEntryRequest $current "Not a web server"
@@ -155,50 +164,29 @@ proc TapAccept { sock addr port } {
                 WebResponse $sock
                 set serve($sock.state) "Done with client"
             }
-        "Open server" {
-                global IPAddress
-                StatusMessage "Attempting to open connection to OWSERVER" 0
-                if {[catch {socket $IPAddress(server.ip) $IPAddress(server.port)} relay] } {
-                    set serve($sock.state) "Unopened server"
-                } else {
-                    set serve($sock.state) "Send to server"
-                }
-            }
-        "Unopened server" {
-                StatusMessage "OWSERVER error: $relay at $IPAddress(server.ip):$IPAddress(server.port)"
-                set serve($relay.string) {}
-                CircBufferEntryResponse $current "owserver not responding"
+        "Early end" {
+                StatusMessage "Reading owserver packet from $addr port $port" 0
+		switch [expr {$serve($sock.tapversion) & 0x10000}] {
+			0 {
+				set serve($sock.state) "Server early end"
+				}
+			0x10000 {
+				set serve($sock.state) "Client early end"
+				}
+			}
+		}
+        "Client early end" {
+                StatusMessage "FAILURE reading client request"
+                CircBufferEntryRequest $current "network read error" $serve($sock.string)
+                CircBufferEntryResponse $current "<none>"
+                RequestStatsIncr $sock 1
                 set serve($sock.state) "Done with client"
-            }
-        "Send to server" {
-                StatusMessage "Sending client request to OWSERVER" 0
-                fconfigure $relay -translation binary -buffering full -encoding binary -blocking 0
-                set serve($relay.sock) $sock
-                puts -nonewline $relay  $serve($sock.string)
-                flush $relay
-                set serve($sock.state) "Read from server"
-            }
-        "Read from server" {
-                StatusMessage "Reading OWSERVER response" 0
-                TapSetup $relay
-                ResetSockTimer $relay
-                fileevent $relay readable [list RelayProcess $relay]
-                vwait serve($sock.state)
-            }
+}
         "Server early end" {
                 StatusMessage "FAILURE reading OWSERVER response" 0
                 ResponseStatsIncr $relay 1
                 CircBufferEntryResponse $current "network read error" $serve($relay.string)
                 set serve($sock.state) "Done with server"
-            }
-        "Process server packet" {
-                StatusMessage "Success reading OWSERVER response" 0
-                ResponseAdd $relay
-                fileevent $relay readable {}
-                CircBufferEntryResponse $current $serve($relay.return) $serve($relay.string)
-                #stats
-                ResponseStatsIncr $relay 0
-                set serve($sock.state) "Send to client"
             }
         "Send to client" {
                 ClearSockTimer $relay
@@ -433,9 +421,9 @@ proc TapProcess { sock } {
     set read_value [ReadProcess $sock]
     switch $read_value {
         "Web client"  { set serve($sock.state) "Web client" }
-        "Client early end"  { set serve($sock.state) "Client early end" }
+        "Early end"  { set serve($sock.state) "Early end" }
         "Packet reloop"  { return }
-        "Process packet"  { set serve($sock.state) "Process client packet" }
+        "Process packet"  { set serve($sock.state) "Process any packet" }
     }
     TypeParser serve $sock
 }
@@ -445,7 +433,7 @@ proc ReadProcess { sock } {
     global serve
     # test eof
     if { [eof $sock] } {
-        return "Client early end"
+        return "Early end"
     }
     # read what's waiting
     set new_string [read $sock]
@@ -455,7 +443,8 @@ proc ReadProcess { sock } {
     append serve($sock.string) $new_string
     ResetSockTimer $sock
     set len [string length $serve($sock.string)]
-    if { $len < 24 } {
+    if { $len < 268 } {
+	# headers are 244 for sidetap header, 24 for owprotocol header
         #do nothing -- reloop
         return "Packet reloop"
     } elseif { $serve($sock.totallength) == 0 } {
@@ -475,22 +464,6 @@ proc ReadProcess { sock } {
     # Fully parsed
     set new_length [string length $serve($sock.string)]
     return "Process packet"
-}
-
-# Wrapper for processing -- either change a vwait var, or just return waiting for more network traffic
-proc RelayProcess { relay } {
-    global serve
-    set read_value [ReadProcess $relay]
-#puts "Current length [string length $serve($relay.string)] return val=$read_value"
-    switch $read_value {
-        "Web client"  -
-        "Client early end"  { set serve($serve($relay.sock).state) "Server early end"}
-        "Packet reloop"  { return }
-        "Process packet"  { set serve($serve($relay.sock).state) "Process server packet" }
-    }
-    ErrorParser serve $relay
-#puts $serve($serve($relay.sock).typetext)
-#    ShowMessage $relay
 }
 
 # Debugging routine -- show all the packet info
@@ -1131,14 +1104,14 @@ proc TypeParser { array_name prefix } {
 proc HeaderParser { array_name prefix string_value } {
 	upvar 1 $array_name a_name
 	set length [string length $string_value]
-    foreach x {version payload type flags size offset typetext} {
+    foreach x {tapversion taphost tappeer version payload type flags size offset typetext} {
 		set a_name($prefix.$x) ""
 	}
     foreach x {paylength tokenlength totallength ping} {
 		set a_name($prefix.$x) 0
 	}
-    binary scan $string_value {IIIIII} a_name($prefix.version) a_name($prefix.payload) a_name($prefix.type) a_name($prefix.flags) a_name($prefix.size) a_name($prefix.offset)
-	if { $length < 24 } {
+    binary scan $string_value {Ia120a120IIIIII} a_name($prefix.tapversion) a_name($prefix.taphost) a_name($prefix.tappeer) a_name($prefix.version) a_name($prefix.payload) a_name($prefix.type) a_name($prefix.flags) a_name($prefix.size) a_name($prefix.offset)
+	if { $length < 268 } {
 		set a_name($prefix.totallength) $length
 		set a_name($prefix.typetext) BadHeader
 		return
@@ -1328,8 +1301,8 @@ proc PrettyPeer { sock } {
     return [lindex $socklist 1]:[lindex $socklist 2]
 }
 
-proc MainTitle { tap server } {
-    wm title . "OWTAP ($tap) tap of owserver ($server)"
+proc MainTitle { tap } {
+    wm title . "OWSIDE Sidetap on ($tap)"
 }
 
 proc Restart { } {
@@ -1340,12 +1313,12 @@ proc Restart { } {
             if { [ catch {
                 fconfigure $channel -blocking 0 ;
                 close $channel;
-} reason ] == 1 } {
+	} reason ] == 1 } {
             StatusMessage "Error closing channel $channel $reason" 1
             }
         }
     }
-#    exec [info nameofexecutable] $::argv0 "--" {*}$::argv &
+	#    exec [info nameofexecutable] $::argv0 "--" {*}$::argv &
     if { [info nameofexecutable] eq $::argv0 } {
         eval exec [list [info nameofexecutable]] "--" $::argv &
     } else {
