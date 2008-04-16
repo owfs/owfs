@@ -9,7 +9,7 @@ package require Tk
 # Global: IPAddress() loose tap server
 # -- port number of this program (tap) and real owserver (server). loose is stray garbage
 
-set SocketVars {string tapversion taphost tappeer version type payload size sg offset tokenlength totallength paylength typetext ping state sock versiontext flagtext persist return id }
+set SocketVars {string tapversion taphost tappeer version type payload size sg offset tokenlength totallength paylength typetext ping state sock versiontext flagtext persist return id taptype }
 
 set MessageList {ERROR NOP READ WRITE DIR SIZE PRESENCE DIRALL GET}
 set MessageListPlus $MessageList
@@ -39,7 +39,7 @@ set setup_flags(detail_list) {}
 proc Main { argv } {
     ArgumentProcess
 
-	tk_messageBox -message "Still under development."  -icon warning -type ok -title "owside"
+    tk_messageBox -message "Still under development."  -icon warning -type ok -title "owside"
 
     CircBufferSetup 50
     DisplaySetup
@@ -64,14 +64,14 @@ proc ArgumentProcess { } {
     set IPAddress(tap.ip) "0.0.0.0"
     set IPAddress(tap.port) "4305"
     foreach a $::argv {
-        if { [regexp -- {^-p(.*)$} $a whole address] } {
-			set mode "tap"
-		} elseif { [regexp -- {^-s(.*)$} $a whole address] } {
-			set mode "tap"
-		}  else {
-			set address $a
-		}
-		IPandPort $address
+	if { [regexp -- {^-p(.*)$} $a whole address] } {
+	    set mode "tap"
+	} elseif { [regexp -- {^-s(.*)$} $a whole address] } {
+	    set mode "tap"
+	}  else {
+	    set address $a
+	}
+	IPandPort $address
     }
     MainTitle $IPAddress(tap.ip):$IPAddress(tap.port)
 }
@@ -79,10 +79,16 @@ proc ArgumentProcess { } {
 proc IPandPort { argument_string } {
     global IPAddress
     if { [regexp -- {^(.*?):(.*)$} $argument_string wholestring firstpart secondpart] } {
-		if { $firstpart != "" } { set IPAddress(tap.ip) $firstpart }
-		if { $secondpart != "" } { set IPAddress(tap.port) $secondpart }
+	if { $firstpart != "" } {
+	    set IPAddress(tap.ip) $firstpart
+	}
+	if { $secondpart != "" } {
+	    set IPAddress(tap.port) $secondpart
+	}
     } else {
-		if { $argument_string != "" } { set IPAddress(tap.port) $argument_string }
+	if { $argument_string != "" } {
+	    set IPAddress(tap.port) $argument_string
+	}
     }
 }
 
@@ -105,146 +111,135 @@ proc SideAccept { sock addr port } {
     # Start the State machine
     set serve($sock.state) "Open client"
     while {1} {
-puts $serve($sock.state)
-        switch $serve($sock.state) {
-        "Open client" {
-                StatusMessage "Reading client request from $addr port $port" 0
-                set persist 0
-                fconfigure $sock -buffering full -translation binary -encoding binary -blocking 0
-                set serve($sock.state) "Persistent loop"
-            }
-        "Persistent loop" {
-                TapSetup $sock
-                set serve($sock.sock) $sock
-                set serve($sock.state) "Read client"
-            }
-        "Read client" {
-                # wait a long time (3hr) for very first packet
-                ResetSockTimer $sock 10000000
-                fileevent $sock readable [list TapProcess $sock]
+	puts $serve($sock.state)
+	switch $serve($sock.state) {
+	    "Open client" {
+		StatusMessage "Reading client request from $addr port $port" 0
+		set persist 0
+		if { [catch {fconfigure $sock -buffering full -translation binary -encoding binary -blocking 0} result] } {
+		    StatusMessage "Socket $sock closed."
+		    return
+		}
+		set serve($sock.state) "Persistent loop"
+	    }
+	    "Persistent loop" {
+		TapSetup $sock
+		set serve($sock.sock) $sock
+		set serve($sock.state) "Read client"
+	    }
+	    "Read client" {
+		# wait a long time (3hr) for very first packet
+		ResetSockTimer $sock 10000000
+		fileevent $sock readable [list TapProcess $sock]
 		#   ShowMessage $sock
-                vwait serve($sock.state)
-            }
-        "Process any packet" {
-                StatusMessage "Reading owserver packet from $addr port $port" 0
-		switch [expr {$serve($sock.tapversion) & 0x10000}] {
-			0 {
-				set serve($sock.state) "Process server packet"
-			}
-			0x10000 {
-				set serve($sock.state) "Process client packet"
-			}
+		vwait serve($sock.state)
+	    }
+	    "Process any packet" {
+		StatusMessage "Reading owserver packet from $addr port $port" 0
+		puts $serve($sock.taptype)
+		switch $serve($sock.taptype) {
+		    "client" {
+			set serve($sock.state) "Process client packet"
+		    }
+		    "server" {
+			set serve($sock.state) "Process server packet"
+		    }
+		    default {
+			set serve($sock.state) "Open client"
+		    }
 		}
-	}
-        "Process client packet" {
-                fileevent $sock readable {}
-                ClearSockTimer $sock
-                StatusMessage "Success reading client request" 0
-                set current [CircBufferAllocate]
-                set cross_buffer($serve($sock.taphost).$serve($sock.tappeer)) $current
-                set message_type $serve($sock.typetext)
-                CircBufferEntryRequest $current "$addr:$port $message_type $serve($sock.payload) bytes" $serve($sock.string)
-                AddClient $addr:$port
-                #stats
-                RequestStatsIncr $sock 0
-            }
-        "Process server packet" {
-                StatusMessage "Success reading OWSERVER response" 0
-                set current $cross_buffer($serve($sock.taphost).$serve($sock.tappeer)) $current
-                CircBufferEntryResponse $current $serve($sock.return) $serve($sock.string)
+	    }
+	    "Process client packet" {
+		fileevent $sock readable {}
+		ClearSockTimer $sock
+		StatusMessage "Success reading client request" 0
+		set message_type $serve($sock.typetext)
+		CircBufferEntryRequest "$addr:$port $message_type $serve($sock.payload) bytes" $serve($sock.string)
+		AddClient $addr:$port
 		#stats
-                ResponseStatsIncr $sock 0
-                set serve($sock.state) "Send to client"
-}
-        "Web client" {
-                StatusMessage "Error: owtap is not a web server"
-                CircBufferEntryRequest $current "Not a web server"
-                CircBufferEntryResponse $current "<none>"
-                RequestStatsIncr $sock 1
-                WebResponse $sock
-                set serve($sock.state) "Done with client"
-            }
-        "Early end" {
-                StatusMessage "Reading owserver packet from $addr port $port" 0
-		switch [expr {$serve($sock.tapversion) & 0x10000}] {
-			0 {
-				set serve($sock.state) "Server early end"
-				}
-			0x10000 {
-				set serve($sock.state) "Client early end"
-				}
-			}
+		RequestStatsIncr $sock 0
+		# now owserver
+		set serve($sock.state) "Persistent loop"
+	    }
+	    "Process server packet" {
+		StatusMessage "Success reading OWSERVER response" 0
+		CircBufferEntryResponse $serve($sock.return) $serve($sock.string)
+		#stats
+		ResponseStatsIncr $sock 0
+		set serve($sock.state) "Send to client"
+	    }
+	    "Web client" {
+		StatusMessage "Error: owtap is not a web server"
+		RequestStatsIncr $sock 1
+		WebResponse $sock
+		CloseSock $sock
+		StatusMessage "Ready" 0
+		return
+	    }
+	    "Early end" {
+		StatusMessage "Reading owserver packet from $addr port $port" 0
+		switch $serve($sock.taptype) {
+		    "client" {
+			set serve($sock.state) "Client early end"
+		    }
+		    "server" {
+			set serve($sock.state) "Server early end"
+		    }
+		    default {
+			set serve($sock.state) "Open client"
+		    }
 		}
-        "Client early end" {
-                StatusMessage "FAILURE reading client request"
-                CircBufferEntryRequest $current "network read error" $serve($sock.string)
-                CircBufferEntryResponse $current "<none>"
-                RequestStatsIncr $sock 1
-                set serve($sock.state) "Done with client"
-}
-        "Server early end" {
-                StatusMessage "FAILURE reading OWSERVER response" 0
-                ResponseStatsIncr $relay 1
-                CircBufferEntryResponse $current "network read error" $serve($relay.string)
-                set serve($sock.state) "Done with server"
-            }
-        "Send to client" {
-                ClearSockTimer $relay
-                StatusMessage "Sending OWSERVER response to client" 0
-                puts -nonewline $sock  $serve($relay.string)
-                flush $sock
-# filter out the multi-response types and continue listening
-                if { $serve($relay.ping) == 1 } {
-                    set serve($sock.state) "Ping received"
-                } elseif { ( $message_type=="DIR" ) && ($serve($relay.paylength)>0)} {
-                    set serve($sock.state) "Dir element received"
-                } else {
-                    set serve($sock.state) "Persistent test"
-                }
-            }
-        "Ping received" {
-                set serve($sock.state) "Read from server"
-            }
-        "Dir element received" {
-                set serve($sock.state) "Read from server"
-            }
-        "Persistent test" {
-                if { $serve($relay.persist)==1 } {
-                    StatPersistCounter $persist
-                    incr persist
-                    ClearTap $sock
-                    ClearTap $relay
-                    set serve($sock.state) "Persistent loop"
-                } else {
-                    set serve($sock.state) "Done with server"
-                }
-            }
-        "Server timeout" {
-                CircBufferEntryResponse $current "owserver read timeout"
-                set serve($sock.state) "Done with server"
-            }
-        "Done with server"  {
-                CloseSock $relay
-                set serve($sock.state) "Done with client"
-            }
-        "Client timeout" {
-                CircBufferEntryRequest $current "client read timeout"
-                CircBufferEntryResponse $current "<none>"
-                set serve($sock.state) "Done with client"
-            }
-        "Done with client" {
-                CloseSock $sock
-                set serve($sock.state) "Done with all"
-            }
-        "Done with all" {
-                StatusMessage "Ready" 0
-                return
-            }
-        default {
-                StatusMessage "Internal error -- bad state: $serve($sock.state)" 1
-                return
-            }
-        }
+	    }
+	    "Client early end" {
+		StatusMessage "FAILURE reading client request"
+		CircBufferEntryRequest "network read error" $serve($sock.string)
+		RequestStatsIncr $sock 1
+		set serve($sock.state) "Open client"
+	    }
+	    "Server early end" {
+		StatusMessage "FAILURE reading OWSERVER response" 0
+		ResponseStatsIncr $sock 1
+		CircBufferEntryResponse "network read error" $serve($sock.string)
+		set serve($sock.state) "Open client"
+	    }
+	    "Send to client" {
+		if { $serve($sock.ping) == 1 } {
+		    set serve($sock.state) "Ping received"
+		} elseif { ( $message_type=="DIR" ) && ($serve($sock.paylength)>0)} {
+		    set serve($sock.state) "Dir element received"
+		} else {
+		    set serve($sock.state) "Persistent test"
+		}
+	    }
+	    "Ping received" {
+		set serve($sock.state) "Read from server"
+	    }
+	    "Dir element received" {
+		set serve($sock.state) "Read from server"
+	    }
+	    "Persistent test" {
+		if { $serve($sock.persist)==1 } {
+		    StatPersistCounter $persist
+		    incr persist
+		    ClearTap $sock
+		    set serve($sock.state) "Persistent loop"
+		} else {
+		    set serve($sock.state) "Open client"
+		}
+	    }
+	    "Server timeout" {
+		StatusMessage "OWSERVER timeout" 0
+		set serve($sock.state) "Open client"
+	    }
+	    "Client timeout" {
+		StatusMessage "Client timeout" 0
+		set serve($sock.state) "Open client"
+	    }
+	    default {
+		StatusMessage "Internal error -- bad state: $serve($sock.state)" 1
+		return
+	    }
+	}
     }
 }
 
@@ -253,11 +248,11 @@ proc StatsSetup { } {
     global stats
     global MessageListPlus
     foreach x $MessageListPlus {
-        set stats($x.tries) 0
-        set stats($x.errors) 0
-        set stats($x.rate) 0
-        set stats($x.request_bytes) 0
-        set stats($x.response_bytes) 0
+	set stats($x.tries) 0
+	set stats($x.errors) 0
+	set stats($x.rate) 0
+	set stats($x.request_bytes) 0
+	set stats($x.response_bytes) 0
     }
     foreach x { request_yes request_no grant refuse -1 0 denominator max request_rate grant_rate } {
         set stats(persistence_length.$x) 0
@@ -270,7 +265,7 @@ proc RequestStatsIncr { sock is_error} {
     global stats
     global serve
     set message_type $serve($sock.typetext)
-    set length [string length $serve($sock.string)]
+    set length [ expr {[string length $serve($sock.string) ] - 244} ]
 
     incr stats($message_type.tries)
     incr stats($message_type.errors) $is_error
@@ -284,14 +279,14 @@ proc RequestStatsIncr { sock is_error} {
 
     # persistence stats
     if { [info exist serve($sock.persist)] } {
-        if { $serve($sock.persist) == 0 } {
-            incr stats(persistence_length.request_no)
-        } else {
-            incr stats(persistence_length.request_yes)
-            incr stats(persistence_length.refuse)
-            set stats(persistence_length.grant_rate) [expr {100 * $stats(persistence_length.grant) / $stats(persistence_length.request_yes)}]
-        }
-        set stats(persistence_length.request_rate) [expr { 100 * $stats(persistence_length.request_yes) / $stats(Total.tries) }]
+	if { $serve($sock.persist) == 0 } {
+	    incr stats(persistence_length.request_no)
+	} else {
+	    incr stats(persistence_length.request_yes)
+	    incr stats(persistence_length.refuse)
+	    set stats(persistence_length.grant_rate) [expr {100 * $stats(persistence_length.grant) / $stats(persistence_length.request_yes)}]
+	}
+	set stats(persistence_length.request_rate) [expr { 100 * $stats(persistence_length.request_yes) / $stats(Total.tries) }]
     }
 }
 
@@ -300,7 +295,11 @@ proc ResponseStatsIncr { sock is_error} {
     global stats
     global serve
     set message_type $serve($serve($sock.sock).typetext)
-    set length [string length $serve($sock.string)]
+    set length [ expr { [string length $serve($sock.string) ] - 244} ]
+    
+    if { $stats($message_type.tries) == 0 } {
+        return
+    }
 
     incr stats($message_type.errors) $is_error
     set stats($message_type.rate) [expr {100 * $stats($message_type.errors) / $stats($message_type.tries)} ]
@@ -316,8 +315,8 @@ proc StatPersistCounter { persist } {
     global stats
     # max persistence length
     if { $persist > $stats(persistence_length.max) } {
-        set stats(persistence_length.max) $persist
-        set stats(persistence_length.$persist) 0
+	set stats(persistence_length.max) $persist
+	set stats(persistence_length.$persist) 0
     }
     # increment this bin (and decrement prior)
     if { $persist==0 } {
@@ -353,14 +352,14 @@ proc ClearTap { sock } {
     global serve
     global SocketVars
     foreach x $SocketVars {
-        if { [info exist serve($sock.$x)] } {
-            unset serve($sock.$x)
-        }
+	if { [info exist serve($sock.$x)] } {
+	    unset serve($sock.$x)
+	}
     }
     if { [info exist serve($sock.num] } {
-        for {set i $serve($sock.num)} {$i >= 0} {incr i -1} {
-            unset serve($sock.$i)
-        }
+	for {set i $serve($sock.num)} {$i >= 0} {incr i -1} {
+	    unset serve($sock.$i)
+	}
         unset serve($sock.num)
     }
 }
@@ -379,16 +378,16 @@ proc ResponseAdd { sock } {
 proc SockTimeout { sock } {
     global serve
     switch $serve($serve($sock.sock).state) {
-        "Read client" {
-            set serve($serve($sock.sock).state) "Client timeout"
-        }
-        "Read from server" {
-            set serve($serve($sock.sock).state) "Server timeout"
-        }
-        default {
-            ErrorMessage "Strange timeout for $sock state=$serve($serve($sock.sock).state)"
-            set serve($serve($sock.sock).state) "Server timeout"
-        }
+	"Read client" {
+	    set serve($serve($sock.sock).state) "Client timeout"
+	}
+	"Read from server" {
+	    set serve($serve($sock.sock).state) "Server timeout"
+	}
+	default {
+	    ErrorMessage "Strange timeout for $sock state=$serve($serve($sock.sock).state)"
+	    set serve($serve($sock.sock).state) "Server timeout"
+	}
     }
     StatusMessage "Network read timeout [PrettySock $sock]" 1
 }
@@ -404,8 +403,8 @@ proc CloseSock { sock } {
 proc ClearSockTimer { sock } {
     global serve
     if { [info exist serve($sock.id)] } {
-        after cancel $serve($sock.id)
-        unset serve($sock.id)
+	after cancel $serve($sock.id)
+	unset serve($sock.id)
     }
 }
 
@@ -420,10 +419,10 @@ proc TapProcess { sock } {
     global serve
     set read_value [ReadProcess $sock]
     switch $read_value {
-        "Web client"  { set serve($sock.state) "Web client" }
-        "Early end"  { set serve($sock.state) "Early end" }
-        "Packet reloop"  { return }
-        "Process packet"  { set serve($sock.state) "Process any packet" }
+	"Web client"  { set serve($sock.state) "Web client" }
+	"Early end"  { set serve($sock.state) "Early end" }
+	"Packet reloop"  { return }
+	"Process packet"  { set serve($sock.state) "Process any packet" }
     }
     TypeParser serve $sock
 }
@@ -458,8 +457,8 @@ proc ReadProcess { sock } {
     }
     #already in payload (and token) portion
     if { $len < $serve($sock.totallength) } {
-        #do nothing -- reloop
-        return "Packet reloop"
+	#do nothing -- reloop
+	return "Packet reloop"
     }
     # Fully parsed
     set new_length [string length $serve($sock.string)]
@@ -471,9 +470,9 @@ proc ShowMessage { sock } {
     global serve
     global SocketVars
     foreach x $SocketVars {
-        if { [info exist serve($sock.$x)] } {
-            puts "\t$sock.$x = $serve($sock.$x)"
-        }
+	if { [info exist serve($sock.$x)] } {
+	    puts "\t$sock.$x = $serve($sock.$x)"
+	}
     }
 }
 
@@ -501,7 +500,7 @@ proc Right_ScrollByKey { args } {
 proc SelectionMade { widget y } {
     set index [ $widget nearest $y ]
     if { $index >= 0 } {
-        TransactionDetail [current_from_index $index]
+    TransactionDetail [current_from_index $index]
     }
 }
 
@@ -518,8 +517,8 @@ proc DisplaySetup { } {
     listbox .log.response_list -width 40 -height 10 -selectmode single -yscroll [list Right_ScrollByKey] -bg lightyellow
 
     foreach lb {request_list response_list} {
-        bind .log.$lb <ButtonRelease-1> {+ SelectionMade %W %y }
-        bind .log.$lb <space> {+ SelectionMade %W }
+	bind .log.$lb <ButtonRelease-1> {+ SelectionMade %W %y }
+	bind .log.$lb <space> {+ SelectionMade %W }
     }
 
     grid .log.request_title -row 0 -column 0 -sticky news
@@ -548,33 +547,33 @@ proc SetupMenu { } {
     # file menu
     menu .main_menu.file -tearoff 0
     .main_menu add cascade -label File -menu .main_menu.file  -underline 0
-        .main_menu.file add command -label "Log to File..." -underline 0 -command SaveLog -state disabled
-        .main_menu.file add command -label "Stop logging" -underline 0 -command SaveAsLog -state disabled
-        .main_menu.file add separator
-        .main_menu.file add command -label "Restart" -underline 0 -command Restart
-        .main_menu.file add separator
-        .main_menu.file add command -label "Quit" -underline 0 -command exit
+    .main_menu.file add command -label "Log to File..." -underline 0 -command SaveLog -state disabled
+    .main_menu.file add command -label "Stop logging" -underline 0 -command SaveAsLog -state disabled
+    .main_menu.file add separator
+    .main_menu.file add command -label "Restart" -underline 0 -command Restart
+    .main_menu.file add separator
+    .main_menu.file add command -label "Quit" -underline 0 -command exit
 
     # statistics menu
     menu .main_menu.view -tearoff 0
     .main_menu add cascade -label View -menu .main_menu.view  -underline 0
-        .main_menu.view add checkbutton -label "Statistics by Message type" -underline 14 -indicatoron 1 -command {StatByType}
-        .main_menu.view add checkbutton -label "Persistence rates" -underline 12 -indicatoron 1 -command {RatePersist}
-        .main_menu.view add checkbutton -label "Persistence lengths" -underline 12 -indicatoron 1 -command {LengthPersist}
-        .main_menu.view add separator
-        .main_menu.view add checkbutton -label "Detail window list" -underline 0 -indicatoron 1 -command {DetailList}
-        .main_menu.view add separator
-        .main_menu.view add checkbutton -label "Clients" -underline 0 -indicatoron 1 -command {StatByClient}
-        .main_menu.view add separator
-        .main_menu.view add checkbutton -label "Status messages" -underline 0 -indicatoron 1 -command {StatusWindow}
+    .main_menu.view add checkbutton -label "Statistics by Message type" -underline 14 -indicatoron 1 -command {StatByType}
+    .main_menu.view add checkbutton -label "Persistence rates" -underline 12 -indicatoron 1 -command {RatePersist}
+    .main_menu.view add checkbutton -label "Persistence lengths" -underline 12 -indicatoron 1 -command {LengthPersist}
+    .main_menu.view add separator
+    .main_menu.view add checkbutton -label "Detail window list" -underline 0 -indicatoron 1 -command {DetailList}
+    .main_menu.view add separator
+    .main_menu.view add checkbutton -label "Clients" -underline 0 -indicatoron 1 -command {StatByClient}
+    .main_menu.view add separator
+    .main_menu.view add checkbutton -label "Status messages" -underline 0 -indicatoron 1 -command {StatusWindow}
 
     # help menu
     menu .main_menu.help -tearoff 0
     .main_menu add cascade -label Help -menu .main_menu.help  -underline 0
-        .main_menu.help add command -label "About OWTAP" -underline 0 -command About
-        .main_menu.help add command -label "Command Line" -underline 0 -command CommandLine
-        .main_menu.help add command -label "OWSERVER  Protocol" -underline 0 -command Protocol
-        .main_menu.help add command -label "Version" -underline 0 -command Version
+    .main_menu.help add command -label "About OWTAP" -underline 0 -command About
+    .main_menu.help add command -label "Command Line" -underline 0 -command CommandLine
+    .main_menu.help add command -label "OWSERVER  Protocol" -underline 0 -command Protocol
+    .main_menu.help add command -label "Version" -underline 0 -command Version
 }
 
 # error routine -- popup and exit
@@ -591,11 +590,11 @@ proc StatusMessage { msg { priority 1 } } {
     global current_status
     set current_status $msg
     if { $priority > 0 } {
-        global status_messages
-        lappend status_messages $msg
-        if { [llength $status_messages] > 50 } {
-            set status_messages [lreplace $status_messages 0 0]
-        }
+	global status_messages
+	lappend status_messages $msg
+	if { [llength $status_messages] > 50 } {
+	    set status_messages [lreplace $status_messages 0 0]
+	}
     }
 }
 
@@ -615,16 +614,26 @@ proc CircBufferAllocate { } {
     set total $circ_buffer(total)
     set cb_index [ expr { $total % $size } ]
     if { $total >= $size } {
-        # delete top listbox entry (oldest)
-        .log.request_list delete 0
-        .log.response_list delete 0
-        # clear old entry
-        if { [info exist circ_buffer($cb_index.num)] } {
-            set num $circ_buffer($cb_index.num)
-            for {set x 0} { $x < $num } {incr x} {
-                unset circ_buffer($cb_index.response.$x)
-            }
-        }
+	# delete top listbox entry (oldest)
+	.log.request_list delete 0
+	.log.response_list delete 0
+	# clear old entry
+	if { [info exist circ_buffer($cb_index.num)] } {
+	    set num $circ_buffer($cb_index.num)
+	    for {set x 0} { $x < $num } {incr x} {
+		unset circ_buffer($cb_index.response.$x)
+	    }
+	}
+    
+	global current_to_pair
+	global pair_to_current
+	if { [ info exist current_to_pair($total)] } {
+	    set sock_pair $current_to_pair($total)
+	    if { [info exist pair_to_current($sock_pair) ] } {
+		unset pair_to_current($sock_pair)
+	    }
+	    unset current_to_pair($total)
+	}
     }
     set circ_buffer($cb_index.num) 0
     set circ_buffer($cb_index.request) ""
@@ -634,14 +643,12 @@ proc CircBufferAllocate { } {
 }
 
 # place a new request packet
-proc CircBufferEntryRequest { current request {transaction_string "" } } {
+proc CircBufferEntryRequest { request {transaction_string "" } } {
     global circ_buffer
     set size $circ_buffer(size)
     set total $circ_buffer(total)
-    if { [expr {$current + $size}] <= $total } {
-        StatusMessage "Packet buffer history overflow. (nonfatal)" 0
-        return
-    }
+    set current [CircBufferAllocate]
+    
     # Still filling for the first time?
     if { $total < $size } {
         set index $current
@@ -654,26 +661,50 @@ proc CircBufferEntryRequest { current request {transaction_string "" } } {
     #Now store packet
     set cb_index [ expr { $current % $size } ]
     set circ_buffer($cb_index.request) $transaction_string
+
+    # get request data
+    global current_to_pair
+    global pair_to_current
+    HeaderParser q x $transaction_string
+    set sock_pair $q(x.taphost).$q(x.tappeer)
+    if { [info exist pair_to_current($sock_pair)] } {
+        set old_current $pair_to_current($sock_pair)
+        if { [ info exist current_to_pair(old_current) ] && $current_to_pair($old_current) == $sock_pair } {
+	    unset current_to_pair($old_current)
+        }
+    }
+    set current_to_pair($current) $sock_pair
+    set pair_to_current($sock_pair) $current
 }
 
 # place a new response packet
-proc CircBufferEntryResponse { current response {transaction_string "" } } {
+proc CircBufferEntryResponse { response {transaction_string "" } } {
     global circ_buffer
+    
+    global pair_to_current
+    HeaderParser q x $transaction_string
+    set sock_pair $q(x.taphost).$q(x.tappeer)
+    if { ! [ info exists pair_to_current($sock_pair) ] } {
+	StatusMessage "OWSERVER response without client request -- ignored" 0
+	return
+    }
+    set current $pair_to_current($sock_pair)        
+    
     set size $circ_buffer(size)
     set total $circ_buffer(total)
     if { [expr {$current + $size}] <= $total } {
-        StatusMessage "Packet buffer history overflow. (nonfatal)" 0
-        return
+	StatusMessage "Packet buffer history overflow. (nonfatal)" 0
+	return
     }
     # Still filling for the first time?
     if { $total < $size } {
-        set index $current
+	set index $current
     } else {
-        set index [ expr $size - $total + $current - 1 ]
+	set index [ expr $size - $total + $current - 1 ]
     }
     .log.response_list insert $index "$current: $response"
     .log.response_list delete [expr $index + 1 ]
-
+    
     #Now store packet
     set cb_index [ expr { $current % $size } ]
     set circ_buffer($cb_index.response.$circ_buffer($cb_index.num)) $transaction_string
@@ -685,7 +716,9 @@ proc cb_from_index { index } {
     global circ_buffer
     set size $circ_buffer(size)
     set total $circ_buffer(total)
-    if { $total < $size } { return $index }
+    if { $total < $size } {
+	return $index
+    }
     return [expr { ($total + $index) % $size }]
 }
 
@@ -694,7 +727,9 @@ proc current_from_index { index } {
     global circ_buffer
     set size $circ_buffer(size)
     set total $circ_buffer(total)
-    if { $total < $size } { return $index }
+    if { $total < $size } {
+	return $index
+    }
     return [expr { $total + $index - $size  + 1 }]
 }
 
@@ -705,13 +740,13 @@ Program: owtap
 Synopsis: owserver protocol inspector
 
 Description: owtap is interposed
-  between owserver and client.
+between owserver and client.
 
-  The communication is logged and
-  shown on screen.
+The communication is logged and
+shown on screen.
 
-  All messages are transparently
-  forwarded  between client and server.
+All messages are transparently
+forwarded  between client and server.
 
 
 Author: Paul H Alfille <paul.alfille@gmail.com>
@@ -727,19 +762,19 @@ proc CommandLine { } {
     tk_messageBox -type ok -title {owtap command line} -message {
 syntax: owtap.tcl -s serverport -p tapport
 
-  server port is the address of owserver
-  tapport is the port assigned this program
+server port is the address of owserver
+tapport is the port assigned this program
 
-  Usage (owdir example)
+Usage (owdir example)
 
-  If owserver was invoked as:
+If owserver was invoked as:
     owserver -p 3000 -u
-  a client (say owdir) would normally call:
+a client (say owdir) would normally call:
     owdir -s 3000 /
 
-  To use owtap, invoke it with
+To use owtap, invoke it with
     owtap.tcl -s 3000 -p 4000
-  and now call owdir with:
+and now call owdir with:
     owdir -s 4000 /
     }
 }
@@ -766,7 +801,7 @@ known port" by the IANA (4304)
 and has an associated mDNS
 service (_owserver._tcp).
 
-Datails can be found at:
+Details can be found at:
 http://www.owfs.org/index.php?page=owserver-protocol
     }
 }
@@ -778,7 +813,7 @@ proc DetailList { } {
     set menu_index "Detail window list"
 
     if { [ WindowAlreadyExists $window_name $menu_name $menu_index ] } {
-        return
+      return
     }
 
     global setup_flags
@@ -799,10 +834,10 @@ proc DetailList { } {
 
 proc DetailClear { list_box } {
     foreach i [$list_box curselection] {
-        lappend windows [$list_box get $i]
+    lappend windows [$list_box get $i]
     }
     foreach w $windows {
-        DetailDelete $w
+    DetailDelete $w
     }
 }
 
@@ -810,7 +845,7 @@ proc DetailDelete { window_name } {
     global setup_flags
     set i [lsearch -exact $setup_flags(detail_list) $window_name]
     if { $i >= 0 } {
-        set setup_flags(detail_list) [lreplace $setup_flags(detail_list) $i $i]
+	set setup_flags(detail_list) [lreplace $setup_flags(detail_list) $i $i]
     }
     destroy $window_name
 }
@@ -889,11 +924,11 @@ proc LengthPersist { } {
     set row 3
     set bg white
     for {set x 0} {$x < 16} {incr x} {
-        label $window_name.a${x} -text $x -bg $bg
-        grid  $window_name.a${x} -row $row -column 0 -sticky news
-        label $window_name.b${x} -textvariable stats(persistence_length.$x) -bg $bg
-        grid  $window_name.b${x} -row $row -column 1 -sticky news
-        if {$bg=="white"} { set bg lightyellow} else {set bg white}
+    label $window_name.a${x} -text $x -bg $bg
+    grid  $window_name.a${x} -row $row -column 0 -sticky news
+    label $window_name.b${x} -textvariable stats(persistence_length.$x) -bg $bg
+    grid  $window_name.b${x} -row $row -column 1 -sticky news
+    if {$bg=="white"} { set bg lightyellow} else {set bg white}
         incr row
     }
     label $window_name.ap -text "> 15" -bg $bg
@@ -970,16 +1005,16 @@ proc WindowAlreadyExists { window_name menu_name menu_index } {
     global setup_flags
 
     if { [ info exist setup_flags($window_name) ] } {
-        if { $setup_flags($window_name) } {
-            # hide window
-            wm withdraw $window_name
-            set setup_flags($window_name) 0
-        } else {
-            # show window
-            wm deiconify $window_name
-            set setup_flags($window_name) 1
-        }
-        return 1
+	if { $setup_flags($window_name) } {
+	    # hide window
+	    wm withdraw $window_name
+	    set setup_flags($window_name) 0
+	} else {
+	    # show window
+	    wm deiconify $window_name
+	    set setup_flags($window_name) 1
+	}
+	return 1
     }
 
     # create window
@@ -1029,21 +1064,29 @@ proc StatByType { } {
     set bgcolor white
     set bgcolor2 yellow
     foreach x $MessageListPlus {
-        incr column_number
-        label $window_name.${column_number}0 -text $x -bg $bgcolor2
-        grid  $window_name.${column_number}0 -row 0 -column $column_number -sticky news
-        label $window_name.${column_number}1 -textvariable stats($x.tries) -bg $bgcolor
-        grid  $window_name.${column_number}1 -row 1 -column $column_number -sticky news
-        label $window_name.${column_number}2 -textvariable stats($x.errors) -bg $bgcolor
-        grid  $window_name.${column_number}2 -row 2 -column $column_number -sticky news
-        label $window_name.${column_number}3 -textvariable stats($x.rate) -bg $bgcolor
-        grid  $window_name.${column_number}3 -row 3 -column $column_number -sticky news
-        label $window_name.${column_number}5 -textvariable stats($x.request_bytes) -bg $bgcolor
-        grid  $window_name.${column_number}5 -row 5 -column $column_number -sticky news
-        label $window_name.${column_number}6 -textvariable stats($x.response_bytes) -bg $bgcolor
-        grid  $window_name.${column_number}6 -row 6 -column $column_number -sticky news
-        if { $bgcolor == "white" } { set bgcolor lightyellow } else { set bgcolor white }
-        if { $bgcolor2 == "yellow" } { set bgcolor2 orange } else { set bgcolor2 yellow }
+	incr column_number
+	label $window_name.${column_number}0 -text $x -bg $bgcolor2
+	grid  $window_name.${column_number}0 -row 0 -column $column_number -sticky news
+	label $window_name.${column_number}1 -textvariable stats($x.tries) -bg $bgcolor
+	grid  $window_name.${column_number}1 -row 1 -column $column_number -sticky news
+	label $window_name.${column_number}2 -textvariable stats($x.errors) -bg $bgcolor
+	grid  $window_name.${column_number}2 -row 2 -column $column_number -sticky news
+	label $window_name.${column_number}3 -textvariable stats($x.rate) -bg $bgcolor
+	grid  $window_name.${column_number}3 -row 3 -column $column_number -sticky news
+	label $window_name.${column_number}5 -textvariable stats($x.request_bytes) -bg $bgcolor
+	grid  $window_name.${column_number}5 -row 5 -column $column_number -sticky news
+	label $window_name.${column_number}6 -textvariable stats($x.response_bytes) -bg $bgcolor
+	grid  $window_name.${column_number}6 -row 6 -column $column_number -sticky news
+	if { $bgcolor == "white" } {
+	    set bgcolor lightyellow
+        } else {
+	    set bgcolor white
+	}
+	if { $bgcolor2 == "yellow" } {
+	    set bgcolor2 orange
+	} else {
+	    set bgcolor2 yellow
+	}
     }
     frame $window_name.f4 -bg yellow
     grid $window_name.f4 -column 1 -row 4 -columnspan [llength MessageListPlus]
@@ -1057,8 +1100,8 @@ proc TransactionDetail { index } {
 
     # Does the window exist?
     if { [winfo exists $window_name] == 1 } {
-        raise $window_name
-        return
+	raise $window_name
+	return
     }
 
     # Make the window
@@ -1077,51 +1120,53 @@ proc TransactionDetail { index } {
     wm protocol $window_name WM_DELETE_WINDOW [list DetailDelete $window_name ]
 }
 
-# Parse for return HeaderParser
-proc ErrorParser { array_name prefix } {
-	upvar 1 $array_name a_name
-	set a_name($prefix.return) [DetailReturn a_name $prefix]
-}
-
 # Parse for TYPE after HeaderParser
 proc TypeParser { array_name prefix } {
-	upvar 1 $array_name a_name
+    upvar 1 $array_name a_name
     global MessageList
-	if { $a_name($prefix.totallength) < 24 } {
-		set a_name($prefix.typetext) BadHeader
-		return
-	}
-	set type [lindex $MessageList $a_name($prefix.type)]
-	if { $type == {} } {
-		set a_name($prefix.typetext) Unknown
-		return
-	}
+    # 268 is 244 sidetap header and 24 owserver header
+    if { $a_name($prefix.totallength) < 268 } {
+	set a_name($prefix.typetext) BadHeader
+	return
+    }
+    set type [lindex $MessageList $a_name($prefix.type)]
+    if { $type == {} } {
+	set a_name($prefix.typetext) Unknown
+	return
+    }
     set a_name($prefix.typetext) $type
 }
 
 #Parse header information and place in array
 # works for request or response (though type is "ret" in response)
 proc HeaderParser { array_name prefix string_value } {
-	upvar 1 $array_name a_name
-	set length [string length $string_value]
-    foreach x {tapversion taphost tappeer version payload type flags size offset typetext} {
-		set a_name($prefix.$x) ""
-	}
+    upvar 1 $array_name a_name
+    set length [string length $string_value]
+    foreach x {tapversion taphost tappeer version payload type flags size offset typetext taptype} {
+	set a_name($prefix.$x) ""
+    }
     foreach x {paylength tokenlength totallength ping} {
-		set a_name($prefix.$x) 0
-	}
+	set a_name($prefix.$x) 0
+    }
     binary scan $string_value {Ia120a120IIIIII} a_name($prefix.tapversion) a_name($prefix.taphost) a_name($prefix.tappeer) a_name($prefix.version) a_name($prefix.payload) a_name($prefix.type) a_name($prefix.flags) a_name($prefix.size) a_name($prefix.offset)
-	if { $length < 268 } {
-		set a_name($prefix.totallength) $length
-		set a_name($prefix.typetext) BadHeader
-		return
-	}
-	if { $a_name($prefix.payload) == -1 } {
-		set a_name($prefix.paylength) 0
-		set a_name($prefix.ping) 1
-	} else {
-		set a_name($prefix.paylength) $a_name($prefix.payload)
-	}
+    set a_name($prefix.return) [DetailReturn a_name $prefix]
+    # 268 is 244 sidetap header and 24 owserver header
+    if { $length < 268 } {
+	set a_name($prefix.totallength) $length
+	set a_name($prefix.typetext) BadHeader
+	return
+    }
+    if { $a_name($prefix.payload) == -1 } {
+	set a_name($prefix.paylength) 0
+	set a_name($prefix.ping) 1
+    } else {
+	set a_name($prefix.paylength) $a_name($prefix.payload)
+    }
+    if { [expr { $a_name($prefix.tapversion) & 0x10000 } ] == 0x10000 } {
+	set a_name($prefix.taptype) "server"
+    } else {
+	set a_name($prefix.taptype) "client"
+    }
     set version $a_name($prefix.version)
     set flags $a_name($prefix.flags)
     set tok [expr { $version & 0xFFFF}]
@@ -1130,7 +1175,8 @@ proc HeaderParser { array_name prefix string_value } {
     set a_name($prefix.versiontext) "T$tok V$ver"
     set a_name($prefix.flagtext) [DetailFlags $flags]
     set a_name($prefix.tokenlength) [expr {$tok * 16} ]
-    set a_name($prefix.totallength) [expr {$a_name($prefix.tokenlength)+$a_name($prefix.paylength)+24}]
+    # 268 is 244 sidetap header and 24 owserver header
+    set a_name($prefix.totallength) [expr {$a_name($prefix.tokenlength)+$a_name($prefix.paylength)+268}]
 }
 
 # Request portion
@@ -1143,17 +1189,18 @@ proc RequestDetail { window_name cb_index } {
     HeaderParser q x $circ_buffer($cb_index.request)
     # request headers
     DetailRow $window_name white lightyellow $q(x.version) $q(x.payload) $q(x.type) $q(x.flags) $q(x.size) $q(x.offset)
-# request headers
-    if { [string length $circ_buffer($cb_index.request)] >= 24 } {
-        TypeParser q x
-        DetailRow $window_name white lightyellow $q(x.versiontext) $q(x.paylength) $q(x.typetext) $q(x.flagtext) $q(x.size) $q(x.offset)
-        if { $q(x.paylength) > 0 } {
-            switch $q(x.typetext) {
-                "WRITE" { DetailPayloadPlus $window_name lightyellow white $circ_buffer($cb_index.request) $q(x.paylength) $q(x.size) }
-                default { DetailPayload $window_name lightyellow $circ_buffer($cb_index.request) $q(x.paylength) }
-            }
-        }
-        wm title $window_name "[wm title $window_name]: $q(x.typetext)"
+    # request headers
+    # 268 is 244 sidetap header and 24 owserver header
+    if { [string length $circ_buffer($cb_index.request)] >= 268 } {
+	TypeParser q x
+	DetailRow $window_name white lightyellow $q(x.versiontext) $q(x.paylength) $q(x.typetext) $q(x.flagtext) $q(x.size) $q(x.offset)
+	if { $q(x.paylength) > 0 } {
+	    switch $q(x.typetext) {
+		"WRITE" { DetailPayloadPlus $window_name lightyellow white $circ_buffer($cb_index.request) $q(x.paylength) $q(x.size) }
+		default { DetailPayload $window_name lightyellow $circ_buffer($cb_index.request) $q(x.paylength) }
+	    }
+	}
+	wm title $window_name "[wm title $window_name]: $q(x.typetext)"
     }
 }
 
@@ -1166,30 +1213,31 @@ proc ResponseDetail { window_name cb_index } {
     # get response data
     set num $circ_buffer($cb_index.num)
     for {set i 0} {$i < $num} {incr i} {
-        HeaderParser r x $circ_buffer($cb_index.response.$i)
-        set offset $r(x.offset)
-        DetailRowPlus $window_name white #EEEEFF $i $r(x.version) $r(x.payload) $r(x.type) $r(x.flags) $r(x.size) $offset
-        if { [string length $circ_buffer($cb_index.response.$i)] >= 24 } {
-            ErrorParser r x
-            switch [$window_name.x22 cget -text] {
-                "DIR"   -
-                "DIRALL" {set offset [DetailOffset $offset]}
-            }
-            DetailRow $window_name white #EEEEFF $r(x.versiontext) [expr {$r(x.ping)?"PING":$r(x.paylength)}] $r(x.return) $r(x.flagtext) $r(x.size) $offset
-            DetailPayload $window_name #EEEEFF $circ_buffer($cb_index.response.$i) $r(x.paylength)
-        }
+	HeaderParser r x $circ_buffer($cb_index.response.$i)
+	set offset $r(x.offset)
+	DetailRowPlus $window_name white #EEEEFF $i $r(x.version) $r(x.payload) $r(x.type) $r(x.flags) $r(x.size) $offset
+        # 268 is 244 sidetap header and 24 owserver header
+	if { [string length $circ_buffer($cb_index.response.$i)] >= 268 } {
+	    switch [$window_name.x22 cget -text] {
+		"DIR"   -
+		"DIRALL" {set offset [DetailOffset $offset]}
+	    }
+	    DetailRow $window_name white #EEEEFF $r(x.versiontext) [expr {$r(x.ping)?"PING":$r(x.paylength)}] $r(x.return) $r(x.flagtext) $r(x.size) $offset
+	    DetailPayload $window_name #EEEEFF $circ_buffer($cb_index.response.$i) $r(x.paylength)
+	}
     }
 }
 
 proc DetailPayload { window_name color full_string payload } {
-    DetailText $window_name $color [string range $full_string 24 [expr {$payload + 24}] ]
+    # 268 is 244 sidetap header and 24 owserver header
+    DetailText $window_name $color [string range $full_string 268 [expr {$payload + 268}] ]
 }
 
 proc DetailPayloadPlus { window_name color1 color2 full_string payload size } {
-    set endpay [expr {24+$payload-$size-1}]
-    DetailText $window_name $color1 [string range $full_string 24 $endpay ]
+    set endpay [expr {268+$payload-$size-1}]
+    DetailText $window_name $color1 [string range $full_string 268 $endpay ]
     incr endpay
-    DetailText $window_name $color2 [string range $full_string $endpay [expr {$payload + 24}] ]
+    DetailText $window_name $color2 [string range $full_string $endpay [expr {$payload + 268}] ]
 }
 
 proc DetailText { window_name color text_string } {
@@ -1235,20 +1283,22 @@ proc DetailReturn { array_name prefix } {
     } else {
         return "ESHORT"
     }
-    if { $ret >= 0 } { return "OK" }
+    if { $ret >= 0 } {
+	return "OK"
+    }
     switch -- $ret {
-        -1      { return "EPERM"}
-        -2      { return "ENOENT"}
-        -5      { return "EIO"}
-        -12     { return "ENOMEM"}
-        -14     { return "EFAULT"}
-        -19     { return "ENODEV"}
-        -20     { return "ENOTDIR"}
-        -21     { return "EISDIR"}
-        -22     { return "EINVAL"}
-        -34     { return "ERANGE"}
-        -42     { return "ENOMSG"}
-        default { return "ERROR"}
+	-1      { return "EPERM"}
+	-2      { return "ENOENT"}
+	-5      { return "EIO"}
+	-12     { return "ENOMEM"}
+	-14     { return "EFAULT"}
+	-19     { return "ENODEV"}
+	-20     { return "ENOTDIR"}
+	-21     { return "EISDIR"}
+	-22     { return "EINVAL"}
+	-34     { return "ERANGE"}
+	-42     { return "ENOMSG"}
+	default { return "ERROR"}
     }
 }
 
@@ -1258,20 +1308,20 @@ proc DetailOffset { offset } {
 
 proc DetailFlags { flags } {
     switch [expr {($flags >>16)&0xFF}] {
-        0 {set T "C"}
-        1 {set T "F"}
-        2 {set T "K"}
-        3 {set T "R"}
-        default {set T "?temp"}
+	0 {set T "C"}
+	1 {set T "F"}
+	2 {set T "K"}
+	3 {set T "R"}
+	default {set T "?temp"}
     }
     switch [expr {$flags >>24}] {
-        0 {set F " f.i"}
-        1 {set F " fi"}
-        2 {set F " f.i.c"}
-        3 {set F " f.ic"}
-        4 {set F " fi.c"}
-        5 {set F " fic"}
-        default {set F " ?format"}
+	0 {set F " f.i"}
+	1 {set F " fi"}
+	2 {set F " f.i.c"}
+	3 {set F " f.ic"}
+	4 {set F " fi.c"}
+	5 {set F " fic"}
+	default {set F " ?format"}
     }
     return $T$F[expr {$flags&0x04?" persist":""}][expr {$flags&0x02?" bus":""}][expr {$flags&0x01?" cache":""}]
 }
@@ -1306,19 +1356,18 @@ proc MainTitle { tap } {
 }
 
 proc Restart { } {
-#   foreach ch [chan names] { close $ch }
     foreach channel [file channels] {
         if { [regexp -- {^std(out|in|err)$} $channel ] == 0 } {
-            # change to non-blocking and close
-            if { [ catch {
-                fconfigure $channel -blocking 0 ;
-                close $channel;
-	} reason ] == 1 } {
-            StatusMessage "Error closing channel $channel $reason" 1
-            }
-        }
+	    # change to non-blocking and close
+	    if { [ catch {
+		fconfigure $channel -blocking 0 ;
+		close $channel;
+	    } reason ] == 1 } {
+		StatusMessage "Error closing channel $channel $reason" 1
+	    }
+	}
     }
-	#    exec [info nameofexecutable] $::argv0 "--" {*}$::argv &
+    #    exec [info nameofexecutable] $::argv0 "--" {*}$::argv &
     if { [info nameofexecutable] eq $::argv0 } {
         eval exec [list [info nameofexecutable]] "--" $::argv &
     } else {
