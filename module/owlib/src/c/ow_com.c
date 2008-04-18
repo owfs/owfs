@@ -53,18 +53,19 @@ int COM_open(struct connection_in *in)
 		ERROR_CONNECT("Trouble setting port speed: %s\n", SAFESTRING(in->name));
 	}
 	// Set to non-canonical mode, and no RTS/CTS handshaking
-	newSerialTio.c_iflag = IGNBRK | IGNPAR | IXANY;
-	//newSerialTio.c_oflag &= ~(OPOST);
-	newSerialTio.c_oflag = 0;
-	newSerialTio.c_cflag = CLOCAL | CS8 | CREAD;
-	//newSerialTio.c_lflag &= ~(ECHO|ECHOE|ECHOK|ECHONL|ICANON|IEXTEN|ISIG);
-	newSerialTio.c_lflag = 0;
-	newSerialTio.c_cc[VMIN] = 0;
+    newSerialTio.c_iflag &= ~(BRKINT|ICRNL|IGNCR|INLCR|INPCK|ISTRIP|IXON|IXOFF|PARMRK);
+    newSerialTio.c_iflag |= IGNBRK|IGNPAR;
+    newSerialTio.c_oflag &= ~(OPOST);
+    newSerialTio.c_cflag &= ~(CRTSCTS|CSIZE|HUPCL|PARENB);
+    newSerialTio.c_cflag |= (CLOCAL|CS8|CREAD);
+    newSerialTio.c_lflag &= ~(ECHO|ECHOE|ECHOK|ECHONL|ICANON|IEXTEN|ISIG);
+    newSerialTio.c_cc[VMIN] = 0;
 	newSerialTio.c_cc[VTIME] = 3;
 	if (tcsetattr(in->file_descriptor, TCSAFLUSH, &newSerialTio)) {
 		ERROR_CONNECT("Cannot set port attributes: %s\n", SAFESTRING(in->name));
 		return -EIO;
 	}
+    tcflush(in->file_descriptor, TCIOFLUSH);
 	//fcntl(pn->si->file_descriptor, F_SETFL, fcntl(pn->si->file_descriptor, F_GETFL, 0) & ~O_NONBLOCK);
 	return 0;
 }
