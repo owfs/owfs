@@ -109,11 +109,11 @@ proc SideAccept { sock addr port } {
     global stats
 
     # Start the State machine
-    set serve($sock.state) "Open client"
+    set serve($sock.state) "Open owserver"
     while {1} {
 	puts $serve($sock.state)
 	switch $serve($sock.state) {
-	    "Open client" {
+	    "Open owserver" {
 		StatusMessage "Reading client request from $addr port $port" 0
 		set persist 0
 		if { [catch {fconfigure $sock -buffering full -translation binary -encoding binary -blocking 0} result] } {
@@ -125,9 +125,9 @@ proc SideAccept { sock addr port } {
 	    "Persistent loop" {
 		TapSetup $sock
 		set serve($sock.sock) $sock
-		set serve($sock.state) "Read client"
+		set serve($sock.state) "Read owserver"
 	    }
-	    "Read client" {
+	    "Read owserver" {
 		# wait a long time (3hr) for very first packet
 		ResetSockTimer $sock 10000000
 		fileevent $sock readable [list TapProcess $sock]
@@ -145,7 +145,7 @@ proc SideAccept { sock addr port } {
 			set serve($sock.state) "Process server packet"
 		    }
 		    default {
-			set serve($sock.state) "Open client"
+			set serve($sock.state) "Open owserver"
 		    }
 		}
 	    }
@@ -166,7 +166,7 @@ proc SideAccept { sock addr port } {
 		CircBufferEntryResponse $serve($sock.return) $serve($sock.string)
 		#stats
 		ResponseStatsIncr $sock 0
-		set serve($sock.state) "Send to client"
+		set serve($sock.state) "Analyze response"
 	    }
 	    "Web client" {
 		StatusMessage "Error: owtap is not a web server"
@@ -186,7 +186,7 @@ proc SideAccept { sock addr port } {
 			set serve($sock.state) "Server early end"
 		    }
 		    default {
-			set serve($sock.state) "Open client"
+			set serve($sock.state) "Open owserver"
 		    }
 		}
 	    }
@@ -194,15 +194,15 @@ proc SideAccept { sock addr port } {
 		StatusMessage "FAILURE reading client request"
 		CircBufferEntryRequest "network read error" $serve($sock.string)
 		RequestStatsIncr $sock 1
-		set serve($sock.state) "Open client"
+		set serve($sock.state) "Open owserver"
 	    }
 	    "Server early end" {
 		StatusMessage "FAILURE reading OWSERVER response" 0
 		ResponseStatsIncr $sock 1
 		CircBufferEntryResponse "network read error" $serve($sock.string)
-		set serve($sock.state) "Open client"
+		set serve($sock.state) "Open owserver"
 	    }
-	    "Send to client" {
+	    "Analyze response" {
 		if { $serve($sock.ping) == 1 } {
 		    set serve($sock.state) "Ping received"
 		} elseif { ( $message_type=="DIR" ) && ($serve($sock.paylength)>0)} {
@@ -212,10 +212,10 @@ proc SideAccept { sock addr port } {
 		}
 	    }
 	    "Ping received" {
-		set serve($sock.state) "Read from server"
+		set serve($sock.state) "Read owserver"
 	    }
 	    "Dir element received" {
-		set serve($sock.state) "Read from server"
+		set serve($sock.state) "Read owserver"
 	    }
 	    "Persistent test" {
 		if { $serve($sock.persist)==1 } {
@@ -224,16 +224,16 @@ proc SideAccept { sock addr port } {
 		    ClearTap $sock
 		    set serve($sock.state) "Persistent loop"
 		} else {
-		    set serve($sock.state) "Open client"
+		    set serve($sock.state) "Open owserver"
 		}
 	    }
 	    "Server timeout" {
 		StatusMessage "OWSERVER timeout" 0
-		set serve($sock.state) "Open client"
+		set serve($sock.state) "Open owserver"
 	    }
 	    "Client timeout" {
 		StatusMessage "Client timeout" 0
-		set serve($sock.state) "Open client"
+		set serve($sock.state) "Open owserver"
 	    }
 	    default {
 		StatusMessage "Internal error -- bad state: $serve($sock.state)" 1
@@ -378,7 +378,7 @@ proc ResponseAdd { sock } {
 proc SockTimeout { sock } {
     global serve
     switch $serve($serve($sock.sock).state) {
-	"Read client" {
+	"Read owserver" {
 	    set serve($serve($sock.sock).state) "Client timeout"
 	}
 	"Read from server" {
@@ -570,7 +570,7 @@ proc SetupMenu { } {
     # help menu
     menu .main_menu.help -tearoff 0
     .main_menu add cascade -label Help -menu .main_menu.help  -underline 0
-    .main_menu.help add command -label "About OWTAP" -underline 0 -command About
+    .main_menu.help add command -label "About OWSIDE" -underline 0 -command About
     .main_menu.help add command -label "Command Line" -underline 0 -command CommandLine
     .main_menu.help add command -label "OWSERVER  Protocol" -underline 0 -command Protocol
     .main_menu.help add command -label "Version" -underline 0 -command Version
@@ -735,19 +735,17 @@ proc current_from_index { index } {
 
 # Popup giving attribution
 proc About { } {
-    tk_messageBox -type ok -title {About owtap} -message {
-Program: owtap
+    tk_messageBox -type ok -title {About owside} -message {
+Program: owside
 Synopsis: owserver protocol inspector
 
-Description: owtap is interposed
-between owserver and client.
+Description: owside receives a copy of
+all owserver and client conversation.
 
 The communication is logged and
 shown on screen.
 
-All messages are transparently
-forwarded  between client and server.
-
+Clients are not affected by owside.
 
 Author: Paul H Alfille <paul.alfille@gmail.com>
 
@@ -760,7 +758,7 @@ Website: http://www.owfs.org
 # Popup giving commandline
 proc CommandLine { } {
     tk_messageBox -type ok -title {owtap command line} -message {
-syntax: owtap.tcl -s serverport -p tapport
+syntax: owside.tcl -p tapport
 
 server port is the address of owserver
 tapport is the port assigned this program
@@ -1216,13 +1214,13 @@ proc ResponseDetail { window_name cb_index } {
 	HeaderParser r x $circ_buffer($cb_index.response.$i)
 	set offset $r(x.offset)
 	DetailRowPlus $window_name white #EEEEFF $i $r(x.version) $r(x.payload) $r(x.type) $r(x.flags) $r(x.size) $offset
-        # 268 is 244 sidetap header and 24 owserver header
-	if { [string length $circ_buffer($cb_index.response.$i)] >= 268 } {
-	    switch [$window_name.x22 cget -text] {
-		"DIR"   -
+        # 268 is 244 sidetap header and 24 owserv
 		"DIRALL" {set offset [DetailOffset $offset]}
 	    }
-	    DetailRow $window_name white #EEEEFF $r(x.versiontext) [expr {$r(x.ping)?"PING":$r(x.paylength)}] $r(x.return) $r(x.flagtext) $r(x.size) $offset
+	    DetailRow $window_name white #EEEEFF $r(x.veer header
+	if { [string length $circ_buffer($cb_index.response.$i)] >= 268 } {
+	    switch [$window_name.x22 cget -text] {
+		"DIR"   -rsiontext) [expr {$r(x.ping)?"PING":$r(x.paylength)}] $r(x.return) $r(x.flagtext) $r(x.size) $offset
 	    DetailPayload $window_name #EEEEFF $circ_buffer($cb_index.response.$i) $r(x.paylength)
 	}
     }
@@ -1331,12 +1329,12 @@ proc WebResponse { sock } {
     fconfigure $sock -buffering full -translation crlf -blocking 0
     puts $sock "HTTP/1.0 400 Bad Request"
     puts $sock "Date: [clock format [clock seconds] -gmt 1]"
-    puts $sock "Server: OWTAP-$R"
+    puts $sock "Server: OWSIDE-$R"
     puts $sock "Last-Modified: [clock format [clock seconds] -gmt 1]"
     puts $sock "Content-Type: text/html"
     puts $sock ""
-    puts $sock "<HTML><HEAD><TITLE>OWTAP-$R owserver protocol inspector</TITLE></HEAD>"
-    puts $sock "<BODY><P>Attempt to access OWTAP directly. You probably meant to access OWHTTPD, the 1-wire web server.</P>"
+    puts $sock "<HTML><HEAD><TITLE>OWSIDE-$R owserver protocol inspector</TITLE></HEAD>"
+    puts $sock "<BODY><P>Attempt to access OWSIDE directly. You probably meant to access OWHTTPD, the 1-wire web server.</P>"
     puts $sock "<P>For more information see <A HREF=http://www.owfs.org>OWFS website</A> or the <A HREF=http://sourceforge.net/projects/owfs/>Sourceforge site.</A?</P?</BODY></HTML>"
     flush $sock
 }
