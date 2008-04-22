@@ -129,7 +129,7 @@ void OWQ_create_shallow_single(struct one_wire_query *owq_shallow, struct one_wi
 void OWQ_create_shallow_bitfield(struct one_wire_query *owq_shallow, struct one_wire_query *owq_original)
 {
     memcpy(owq_shallow, owq_original, sizeof(struct one_wire_query));
-    PN(owq_shallow)->extention = EXTENSION_BYTE ;
+    PN(owq_shallow)->extension = EXTENSION_BYTE ;
 }
 
 /* make a "shallow" copy -- but possibly full array size or just an element size */
