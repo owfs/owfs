@@ -147,8 +147,9 @@ static int FS_r_page(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	BYTE data[8];
-	if (OW_r_page(data, pn->extension, pn))
+    if (OW_r_page(data, pn->extension, pn)) {
 		return -EINVAL;
+    }
 	memcpy((BYTE *) OWQ_buffer(owq), &data[OWQ_offset(owq)], OWQ_size(owq));
 	return OWQ_size(owq);
 }
@@ -158,14 +159,17 @@ static int FS_w_page(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	if (OWQ_size(owq) != 8) {	/* partial page */
 		BYTE data[8];
-		if (OW_r_page(data, pn->extension, pn))
+        if (OW_r_page(data, pn->extension, pn)) {
 			return -EINVAL;
+        }
 		memcpy(&data[OWQ_offset(owq)], (BYTE *) OWQ_buffer(owq), OWQ_size(owq));
-		if (OW_w_page(data, pn->extension, pn))
+        if (OW_w_page(data, pn->extension, pn)) {
 			return -EFAULT;
+        }
 	} else {					/* complete page */
-		if (OW_w_page((BYTE *) OWQ_buffer(owq), pn->extension, pn))
+        if (OW_w_page((BYTE *) OWQ_buffer(owq), pn->extension, pn)) {
 			return -EFAULT;
+        }
 	}
 	return 0;
 }
@@ -174,8 +178,9 @@ static int FS_MStype(struct one_wire_query *owq)
 {
 	BYTE data[8];
 	ASCII *t;
-	if (OW_r_page(data, 0, PN(owq)))
+    if (OW_r_page(data, 0, PN(owq))) {
 		return -EINVAL;
+    }
 	switch (data[0]) {
 	case 0x00:
 		t = "MS-T";
@@ -204,16 +209,18 @@ static int FS_MStype(struct one_wire_query *owq)
 
 static int FS_temp(struct one_wire_query *owq)
 {
-	if (OW_temp(&OWQ_F(owq), PN(owq)))
+    if (OW_temp(&OWQ_F(owq), PN(owq))) {
 		return -EINVAL;
+    }
 	return 0;
 }
 
 static int FS_volts(struct one_wire_query *owq)
 {
 	/* data=1 VDD data=0 VAD */
-	if (OW_volts(&OWQ_F(owq), OWQ_pn(owq).selected_filetype->data.i, PN(owq)))
+    if (OW_volts(&OWQ_F(owq), OWQ_pn(owq).selected_filetype->data.i, PN(owq))) {
 		return -EINVAL;
+    }
 	return 0;
 }
 
@@ -224,16 +231,19 @@ static int FS_Humid(struct one_wire_query *owq)
 
 	OWQ_create_shallow_single(owq_sibling, owq);
 
-	if (FS_read_sibling("VAD", owq_sibling))
+    if (FS_read_sibling("VAD", owq_sibling)) {
 		return -EINVAL;
+    }
 	VAD = OWQ_F(owq_sibling);
 
-	if (FS_read_sibling("temperature", owq_sibling))
+    if (FS_read_sibling("temperature", owq_sibling)) {
 		return -EINVAL;
+    }
 	T = OWQ_F(owq_sibling);
 
-	if (FS_read_sibling("VDD", owq_sibling))
+    if (FS_read_sibling("VDD", owq_sibling)) {
 		return -EINVAL;
+    }
 	VDD = OWQ_F(owq_sibling);
 
 	//*H = (VAD/VDD-.16)/(.0062*(1.0546-.00216*T)) ;
@@ -267,16 +277,19 @@ static int FS_Humid_4000(struct one_wire_query *owq)
 
 	OWQ_create_shallow_single(owq_sibling, owq);
 
-	if (FS_read_sibling("VAD", owq_sibling))
+    if (FS_read_sibling("VAD", owq_sibling)) {
 		return -EINVAL;
+    }
 	VAD = OWQ_F(owq_sibling);
 
-	if (FS_read_sibling("temperature", owq_sibling))
+    if (FS_read_sibling("temperature", owq_sibling)) {
 		return -EINVAL;
+    }
 	T = OWQ_F(owq_sibling);
 
-	if (FS_read_sibling("VDD", owq_sibling))
+    if (FS_read_sibling("VDD", owq_sibling)) {
 		return -EINVAL;
+    }
 	VDD = OWQ_F(owq_sibling);
 
 	OWQ_F(owq) = (VAD / VDD - (0.8 / VDD)) / (.0062 * (1.0305 + .000044 * T + .0000011 * T * T));
@@ -300,8 +313,9 @@ static int FS_Humid_1735(struct one_wire_query *owq)
 
 	OWQ_create_shallow_single(owq_sibling, owq);
 
-	if (FS_read_sibling("VAD", owq_sibling))
+    if (FS_read_sibling("VAD", owq_sibling)) {
 		return -EINVAL;
+    }
 	VAD = OWQ_F(owq_sibling);
 
 	OWQ_F(owq) = 38.92 * VAD - 41.98;
@@ -315,16 +329,18 @@ static int FS_Current(struct one_wire_query *owq)
 
 	OWQ_create_shallow_single(owq_sibling, owq);
 
-	if (FS_read_sibling("IAD", owq_sibling))
+    if (FS_read_sibling("IAD", owq_sibling)) {
 		return -EINVAL;
+    }
 	if (OWQ_Y(owq_sibling) == 0) {	// IAD is off
 		OWQ_Y(owq_sibling) = 1;	// need to turn on IAD for current readings
 		if (FS_write_sibling("IAD", owq_sibling))
 			return -EINVAL;
 	}
 
-	if (OW_current(&OWQ_F(owq), PN(owq)))
+    if (OW_current(&OWQ_F(owq), PN(owq))) {
 		return -EINVAL;
+    }
 	return 0;
 }
 
@@ -332,8 +348,9 @@ static int FS_Current(struct one_wire_query *owq)
 static int FS_r_status(struct one_wire_query *owq)
 {
 	BYTE page0[8 + 1];
-	if (OW_r_page(page0, 0, PN(owq)))
+    if (OW_r_page(page0, 0, PN(owq))) {
 		return -EINVAL;
+    }
 	OWQ_Y(owq) = UT_getbit(page0, PN(owq)->selected_filetype->data.i);
 	return 0;
 }
@@ -341,18 +358,21 @@ static int FS_r_status(struct one_wire_query *owq)
 static int FS_w_status(struct one_wire_query *owq)
 {
 	BYTE page0[8 + 1];
-	if (OW_r_page(page0, 0, PN(owq)))
+    if (OW_r_page(page0, 0, PN(owq))) {
 		return -EINVAL;
+    }
 	UT_setbit(page0, PN(owq)->selected_filetype->data.i, OWQ_Y(owq));
-	if (OW_w_page(page0, 0, PN(owq)))
+    if (OW_w_page(page0, 0, PN(owq))) {
 		return -EINVAL;
+    }
 	return 0;
 }
 
 static int FS_r_Offset(struct one_wire_query *owq)
 {
-	if (OW_r_int(&OWQ_I(owq), 0x0D, PN(owq)))
+    if (OW_r_int(&OWQ_I(owq), 0x0D, PN(owq))) {
 		return -EINVAL;			/* page1 byte 5 */
+    }
 	OWQ_I(owq) >>= 3;
 	return 0;
 }
@@ -360,10 +380,12 @@ static int FS_r_Offset(struct one_wire_query *owq)
 static int FS_w_Offset(struct one_wire_query *owq)
 {
 	int I = OWQ_I(owq);
-	if (I > 255 || I < -256)
+    if (I > 255 || I < -256) {
 		return -EINVAL;
-	if (OW_w_offset(I << 3, PN(owq)))
+    }
+    if (OW_w_offset(I << 3, PN(owq))) {
 		return -EINVAL;
+    }
 	return 0;
 }
 
@@ -382,11 +404,13 @@ static int FS_w_date(struct one_wire_query *owq)
 	int page = ((uint32_t) (pn->selected_filetype->data.s)) >> 3;
 	int offset = ((uint32_t) (pn->selected_filetype->data.s)) & 0x07;
 	BYTE data[8];
-	if (OW_r_page(data, page, pn))
+    if (OW_r_page(data, page, pn)) {
 		return -EINVAL;
+    }
 	UT_fromDate(OWQ_D(owq), &data[offset]);
-	if (OW_w_page(data, page, pn))
+    if (OW_w_page(data, page, pn)) {
 		return -EINVAL;
+    }
 	return 0;
 }
 
@@ -407,8 +431,9 @@ int FS_r_date(struct one_wire_query *owq)
 	int page = ((uint32_t) (pn->selected_filetype->data.s)) >> 3;
 	int offset = ((uint32_t) (pn->selected_filetype->data.s)) & 0x07;
 	BYTE data[8];
-	if (OW_r_page(data, page, pn))
+    if (OW_r_page(data, page, pn)) {
 		return -EINVAL;
+    }
 	OWQ_D(owq) = UT_toDate(&data[offset]);
 	return 0;
 }
@@ -430,8 +455,9 @@ static int OW_r_page(BYTE * p, const int page, const struct parsedname *pn)
 	};
 
 	// read to scratch, then in
-	if (BUS_transaction(t, pn))
+    if (BUS_transaction(t, pn)) {
 		return 1;
+    }
 
 	// copy to buffer
 	memcpy(p, data, 8);
@@ -458,8 +484,9 @@ static int OW_w_page(const BYTE * p, const int page, const struct parsedname *pn
 		TRXN_END,
 	};
 
-	if (BUS_transaction(t, pn))
+    if (BUS_transaction(t, pn)) {
 		return 1;
+    }
 
 	UT_delay(10);
 	return 0;					// timeout
@@ -476,13 +503,15 @@ static int OW_temp(_FLOAT * T, const struct parsedname *pn)
 	};
 	// write conversion command
 	if (Simul_Test(simul_temp, pn) != 0) {
-		if (BUS_transaction(tconvert, pn))
+        if (BUS_transaction(tconvert, pn)) {
 			return 1;
+        }
 		UT_delay(10);
 	}
 	// read back registers
-	if (OW_r_page(data, 0, pn))
+    if (OW_r_page(data, 0, pn)) {
 		return 1;
+    }
 	//*T = ((int)((signed char)data[2])) + .00390625*data[1] ;
 	T[0] = UT_int16(&data[1]) / 256.0;
 	return 0;
@@ -509,20 +538,24 @@ static int OW_volts(_FLOAT * V, const int src, const struct parsedname *pn)
 	};
 
 	// set voltage source command
-	if (OW_r_page(data, 0, pn))
+    if (OW_r_page(data, 0, pn)) {
 		return 1;
+    }
 	UT_setbit(data, 3, src);	// AD bit in status register
-	if (BUS_transaction(tsource, pn))
+    if (BUS_transaction(tsource, pn)) {
 		return 1;
+    }
 
 	// write conversion command
-	if (BUS_transaction(tconvert, pn))
+    if (BUS_transaction(tconvert, pn)) {
 		return 1;
+    }
 	UT_delay(10);
 
 	// read back registers
-	if (OW_r_page(data, 0, pn))
+    if (OW_r_page(data, 0, pn)) {
 		return 1;
+    }
 	//printf("DS2438 current read %.2X %.2X %g\n",data[6],data[5],(_FLOAT)( ( ((int)data[6]) <<8 )|data[5] ));
 	//V[0] = .01 * (_FLOAT)( ( ((int)data[4]) <<8 )|data[3] ) ;
 	V[0] = .01 * (_FLOAT) UT_int16(&data[3]);
@@ -536,8 +569,9 @@ static int OW_current(_FLOAT * F, const struct parsedname *pn)
 	BYTE data[9];
 	// set current readings on source command
 	// Actual units are volts-- need to know sense resistor for current
-	if (OW_r_page(data, 0, pn))
+    if (OW_r_page(data, 0, pn)) {
 		return 1;
+    }
 
 	LEVEL_DEBUG("DS2438 vis scratchpad " SNformat "\n", SNvar(data));
 	//F[0] = .0002441 * (_FLOAT) ((((int) data[6]) << 8) | data[5]);
@@ -552,23 +586,27 @@ static int OW_w_offset(const int I, const struct parsedname *pn)
 	int current_conversion_enabled;
 
 	// set current readings off source command
-	if (OW_r_page(data, 0, pn))
+    if (OW_r_page(data, 0, pn)) {
 		return 1;
+    }
 	current_conversion_enabled = UT_getbit(data, 0);
 	if (current_conversion_enabled) {
 		UT_setbit(data, 0, 0);	// AD bit in status register
-		if (OW_w_page(data, 0, pn))
+        if (OW_w_page(data, 0, pn)) {
 			return 1;
+        }
 	}
 	// read back registers
-	if (OW_w_int(I, 0x0D, pn))
+    if (OW_w_int(I, 0x0D, pn)) {
 		return 1;				/* page1 byte5 */
+    }
 
 	if (current_conversion_enabled) {
 		// if ( OW_r_page( data , 0 , pn ) ) return 1 ; /* Assume no change to these fields */
 		UT_setbit(data, 0, 1);	// AD bit in status register
-		if (OW_w_page(data, 0, pn))
+        if (OW_w_page(data, 0, pn)) {
 			return 1;
+        }
 	}
 	return 0;
 }
@@ -578,8 +616,9 @@ static int OW_r_int(int *I, const UINT address, const struct parsedname *pn)
 	BYTE data[8];
 
 	// read back registers
-	if (OW_r_page(data, address >> 3, pn))
+    if (OW_r_page(data, address >> 3, pn)) {
 		return 1;
+    }
 	*I = ((int) ((signed char) data[(address & 0x07) + 1])) << 8 | data[address & 0x07];
 	return 0;
 }
@@ -589,8 +628,9 @@ static int OW_w_int(const int I, const UINT address, const struct parsedname *pn
 	BYTE data[8];
 
 	// read back registers
-	if (OW_r_page(data, address >> 3, pn))
+    if (OW_r_page(data, address >> 3, pn)) {
 		return 1;
+    }
 	data[address & 0x07] = BYTE_MASK(I);
 	data[(address & 0x07) + 1] = BYTE_MASK(I >> 8);
 	return OW_w_page(data, address >> 3, pn);
