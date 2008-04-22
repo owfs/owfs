@@ -338,8 +338,9 @@ static int FS_r_local(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 
 	/* Readable? */
-	if (pn->selected_filetype->read == NO_READ_FUNCTION)
+    if (pn->selected_filetype->read == NO_READ_FUNCTION) {
 		return -ENOTSUP;
+    }
 
 	/* Mounting fuse with "direct_io" will cause a second read with offset
 	 * at end-of-file... Just return 0 if offset == size */
@@ -359,12 +360,14 @@ static int FS_r_local(struct one_wire_query *owq)
 	}
 
 	/* Special case for "fake" adapter */
-	if (pn->selected_connection->Adapter == adapter_fake && pn->selected_filetype->change != fc_static && IsRealDir(pn))
+    if (pn->selected_connection->Adapter == adapter_fake && pn->selected_filetype->change != fc_static && IsRealDir(pn)) {
 		return FS_read_fake(owq);
+    }
 
 	/* Special case for "tester" adapter */
-	if (pn->selected_connection->Adapter == adapter_tester && pn->selected_filetype->change != fc_static)
+    if (pn->selected_connection->Adapter == adapter_tester && pn->selected_filetype->change != fc_static) {
 		return FS_read_tester(owq);
+    }
 
 	/* Array property? Read separately? Read together and manually separate? */
 	if (pn->selected_filetype->ag) {	/* array property */
@@ -372,10 +375,12 @@ static int FS_r_local(struct one_wire_query *owq)
 		case EXTENSION_BYTE:
 			return FS_read_lump(owq);
 		case EXTENSION_ALL:
-			if (OWQ_offset(owq) > 0)
+            if (OWQ_offset(owq) > 0) {
 				return 0;		// no aggregates can be offset -- too confusing
-			if (pn->selected_filetype->format == ft_bitfield)
+            }
+            if (pn->selected_filetype->format == ft_bitfield) {
 				return FS_read_all_bits(owq);
+            }
 			switch (pn->selected_filetype->ag->combined) {
 			case ag_separate:	/* separate reads, artificially combined into a single array */
 				return FS_read_from_parts(owq);
@@ -385,8 +390,9 @@ static int FS_r_local(struct one_wire_query *owq)
 				return FS_read_lump(owq);
 			}
 		default:
-			if (pn->selected_filetype->format == ft_bitfield)
+            if (pn->selected_filetype->format == ft_bitfield) {
 				return FS_read_one_bit(owq);
+            }
 			switch (pn->selected_filetype->ag->combined) {
 			case ag_separate:	/* separate reads, artificially combined into a single array */
 				return FS_read_lump(owq);
@@ -509,8 +515,9 @@ static int FS_read_all_bits(struct one_wire_query *owq)
 
 	/* read the UINT */
 	lump_read = FS_read_lump(owq_single);
-	if (lump_read < 0)
+    if (lump_read < 0) {
 		return lump_read;
+    }
 	U = OWQ_U(owq_single);
 
 	/* Loop through F_r_single, just to get data */
@@ -537,8 +544,9 @@ static int FS_read_one_bit(struct one_wire_query *owq)
 
 	/* read the UINT */
 	lump_read = FS_read_lump(owq_single);
-	if (lump_read < 0)
+    if (lump_read < 0) {
 		return lump_read;
+    }
 	U = OWQ_U(owq_single);
 
 	OWQ_Y(owq) = UT_getbit((void *) (&U), pn->extension);
@@ -555,8 +563,9 @@ static int FS_read_a_part(struct one_wire_query *owq)
 	size_t extension = OWQ_pn(owq).extension;
 	int lump_read;
 
-	if (OWQ_create_shallow_aggregate(owq_all, owq))
+    if (OWQ_create_shallow_aggregate(owq_all, owq)) {
 		return -ENOMEM;
+    }
 
 	lump_read = FS_read_lump(owq_all);
 	if (lump_read < 0) {
@@ -601,8 +610,9 @@ static int FS_read_mixed_part(struct one_wire_query *owq)
 
 	size_t extension = OWQ_pn(owq).extension;
 
-	if (OWQ_create_shallow_aggregate(owq_all, owq))
+    if (OWQ_create_shallow_aggregate(owq_all, owq)) {
 		return -ENOMEM;
+    }
 
 	if (OWQ_Cache_Get(owq_all)) {	// no "all" cached
 		OWQ_destroy_shallow_aggregate(owq_all);
@@ -656,8 +666,9 @@ int FS_read_sibling(char *property, struct one_wire_query *owq_shallow_copy)
 {
 	struct parsedname *pn = PN(owq_shallow_copy);	// already set up with native device and property
 
-	if (FS_ParseProperty_for_sibling(property, pn))
+    if (FS_ParseProperty_for_sibling(property, pn)) {
 		return -ENOENT;
+    }
 	/* There are a few types that are not supported: binary, ascii, aggregates (.ALL) */
 	switch (pn->selected_filetype->format) {
 	case ft_vascii:
@@ -667,8 +678,9 @@ int FS_read_sibling(char *property, struct one_wire_query *owq_shallow_copy)
 	default:
 		break;
 	}
-	if (pn->extension == EXTENSION_ALL)
+    if (pn->extension == EXTENSION_ALL) {
 		return -ENOTSUP;
+    }
 
 	return FS_r_local(owq_shallow_copy);
 }

@@ -59,6 +59,7 @@ int FS_OWQ_create_plus(const char *path, const char *file, char *buffer, size_t 
 void FS_OWQ_destroy(struct one_wire_query *owq);
 
 void OWQ_create_shallow_single(struct one_wire_query *owq_shallow, struct one_wire_query *owq_original);
+void OWQ_create_shallow_bitfield(struct one_wire_query *owq_shallow, struct one_wire_query *owq_original);
 int OWQ_create_shallow_aggregate(struct one_wire_query *owq_shallow, struct one_wire_query *owq_original);
 void OWQ_destroy_shallow_aggregate(struct one_wire_query *owq_shallow);
 void OWQ_create_temporary(struct one_wire_query *owq_temporary, char *buffer, size_t size, off_t offset, struct parsedname *pn);

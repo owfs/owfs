@@ -119,11 +119,17 @@ void FS_OWQ_destroy(struct one_wire_query *owq)
 	FS_ParsedName_destroy(pn);
 }
 
-/* make a "shallow" copy -- but possibly full array size or just an element size */
-/* if full array size, allocate extra space for value_object and possible buffer */
+/* make a "shallow" copy -- just an element size */
 void OWQ_create_shallow_single(struct one_wire_query *owq_shallow, struct one_wire_query *owq_original)
 {
-	memcpy(owq_shallow, owq_original, sizeof(struct one_wire_query));
+    memcpy(owq_shallow, owq_original, sizeof(struct one_wire_query));
+}
+
+/* make a "shallow" copy -- bitfield */
+void OWQ_create_shallow_bitfield(struct one_wire_query *owq_shallow, struct one_wire_query *owq_original)
+{
+    memcpy(owq_shallow, owq_original, sizeof(struct one_wire_query));
+    PN(owq_shallow)->extention = EXTENSION_BYTE ;
 }
 
 /* make a "shallow" copy -- but possibly full array size or just an element size */
