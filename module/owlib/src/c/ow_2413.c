@@ -72,18 +72,22 @@ DeviceEntryExtended(3A, DS2413, DEV_resume | DEV_ovdr);
 /* ------- Functions ------------ */
 
 /* DS2413 */
-static int OW_write(const BYTE data, const struct parsedname *pn);
+static int OW_write(BYTE data, const struct parsedname *pn);
 static int OW_read(BYTE * data, const struct parsedname *pn);
 
 /* 2413 switch */
-/* bits 0 and 2 */
+/* complement of sense */
 static int FS_r_pio(struct one_wire_query *owq)
 {
-	BYTE data;
-	BYTE uu[] = { 0x03, 0x02, 0x03, 0x02, 0x01, 0x00, 0x01, 0x00, };
-	if (OW_read(&data, PN(owq)))
-		return -EINVAL;
-	OWQ_U(owq) = uu[data & 0x07];	/* look up reversed bits */
+    OWQ_allocate_struct_and_pointer(owq_sibling);
+
+    OWQ_create_shallow_single(owq_sibling, owq);
+
+    if (FS_read_sibling("sensed", owq_sibling)) {
+        return -EINVAL;
+    }
+    
+    OWQ_U(owq) = OWQ_U(owq_sibling) ^ 0x03 ;
 	return 0;
 }
 
@@ -91,9 +95,13 @@ static int FS_r_pio(struct one_wire_query *owq)
 /* bits 0 and 2 */
 static int FS_sense(struct one_wire_query *owq)
 {
-	if (FS_r_pio(owq))
-		return -EINVAL;
-	OWQ_U(owq) ^= 0x03;
+    BYTE data;
+    if ( OW_read( &data, PN(owq) ) ) {
+        return -EINVAL ;
+    }
+
+    // bits 0->0 and 2->1
+    OWQ_U(owq) = (data & 0x01) | ((data>>1) & 0x02) ;
 	return 0;
 }
 
@@ -101,21 +109,24 @@ static int FS_sense(struct one_wire_query *owq)
 /* bites 1 and 3 */
 static int FS_r_latch(struct one_wire_query *owq)
 {
-	BYTE data;
-	BYTE uu[] = { 0x00, 0x01, 0x00, 0x01, 0x02, 0x03, 0x02, 0x03, };
-	if (OW_read(&data, PN(owq)))
-		return -EINVAL;
-	OWQ_U(owq) = uu[(data >> 1) & 0x07];
-	return 0;
+    BYTE data;
+    if ( OW_read( &data, PN(owq) ) ) {
+        return -EINVAL ;
+    }
+
+    // bits 1->0 and 3->1
+    OWQ_U(owq) = ((data>>1) & 0x01) | ((data>>2) & 0x02) ;
+    return 0;
 }
 
 /* write 2413 switch -- 2 values*/
 static int FS_w_pio(struct one_wire_query *owq)
 {
 	/* reverse bits */
-	BYTE data = ~BYTE_MASK(OWQ_U(owq));
-	if (OW_write(data, PN(owq)))
+	BYTE data = OWQ_U(owq) & 0x03 ;
+    if (OW_write(data ^ 0x03, PN(owq))) {
 		return -EINVAL;
+    }
 	return 0;
 }
 
@@ -130,17 +141,21 @@ static int OW_read(BYTE * data, const struct parsedname *pn)
 		TRXN_END,
 	};
 
-	if (BUS_transaction(t, pn))
+    if (BUS_transaction(t, pn)) {
 		return 1;
-	if ((data[0] & 0x0F) + ((data[0] >> 4) & 0x0F) != 0x0F)
+    }
+    
+    // High nibble the complement of low nibble?
+    if ((data[0] & 0x0F) + ((data[0] >> 4) & 0x0F) != 0x0F) {
 		return 1;
+    }
 
 	return 0;
 }
 
 /* write status byte */
 /* top 6 bits are set to 1, complement then sent */
-static int OW_write(const BYTE data, const struct parsedname *pn)
+static int OW_write(BYTE data, const struct parsedname *pn)
 {
 	BYTE p[] = { _1W_PIO_ACCESS_WRITE, data | 0xFC, (~data) & 0x03, };
 	BYTE q[2];
@@ -151,10 +166,12 @@ static int OW_write(const BYTE data, const struct parsedname *pn)
 		TRXN_END,
 	};
 
-	if (BUS_transaction(t, pn))
+    if (BUS_transaction(t, pn)) {
 		return 1;
-	if (q[0] != 0xAA)
+    }
+    if (q[0] != 0xAA) {
 		return 1;
+    }
 
 	return 0;
 }
