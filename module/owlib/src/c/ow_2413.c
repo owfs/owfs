@@ -83,7 +83,7 @@ static int FS_r_pio(struct one_wire_query *owq)
 
     OWQ_create_shallow_bitfield(owq_sibling, owq);
 
-    if (FS_read_sibling("sensed", owq_sibling)) {
+    if (FS_read_sibling("sensed", owq_sibling) < 0) {
         return -EINVAL;
     }
     
