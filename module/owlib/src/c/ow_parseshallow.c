@@ -38,8 +38,9 @@ int OWQ_create_shallow_aggregate(struct one_wire_query *owq_shallow, struct one_
 
 	/* allocate new value_object array space */
 	OWQ_array(owq_shallow) = calloc((size_t) pn->selected_filetype->ag->elements, sizeof(union value_object));
-	if (OWQ_array(owq_shallow) == NULL)
+    if (OWQ_array(owq_shallow) == NULL) {
 		return -ENOMEM;
+    }
 	if (pn->extension == EXTENSION_ALL) {
 		memcpy(OWQ_array(owq_shallow), OWQ_array(owq_original), pn->selected_filetype->ag->elements * sizeof(union value_object));
 	}
