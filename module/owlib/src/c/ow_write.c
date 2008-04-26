@@ -226,12 +226,14 @@ static int FS_w_local(struct one_wire_query *owq)
 	//printf("FS_w_local\n");
 
 	/* Writable? */
-	if (pn->selected_filetype->write == NO_WRITE_FUNCTION)
+    if (pn->selected_filetype->write == NO_WRITE_FUNCTION) {
 		return -ENOTSUP;
+    }
 
 	/* Special case for "fake" adapter */
-	if (pn->selected_connection->Adapter == adapter_fake && IsRealDir(pn))
+    if (pn->selected_connection->Adapter == adapter_fake && IsRealDir(pn)) {
 		return 0;
+    }
 
 	/* Array properties? Write all together if aggregate */
 	if (pn->selected_filetype->ag) {
@@ -274,8 +276,9 @@ static int FS_write_single_lump(struct one_wire_query *owq)
 
 	write_error = (OWQ_pn(owq).selected_filetype->write) (owq_copy);
 
-	if (write_error < 0)
+    if (write_error < 0) {
 		return write_error;
+    }
 
 	OWQ_Cache_Add(owq);
 
@@ -291,8 +294,9 @@ static int FS_write_a_part(struct one_wire_query *owq)
 
 	int write_error;
 
-	if (OWQ_create_shallow_aggregate(owq_all, owq) < 0)
+    if (OWQ_create_shallow_aggregate(owq_all, owq) < 0) {
 		return -ENOMEM;
+    }
 
 	if (OWQ_Cache_Get(owq_all)) {
 		write_error = (pn->selected_filetype->write) (owq_all);
@@ -356,8 +360,9 @@ static int FS_write_aggregate_lump(struct one_wire_query *owq)
 
 	OWQ_destroy_shallow_aggregate(owq_copy);
 
-	if (write_error < 0)
+    if (write_error < 0) {
 		return write_error;
+    }
 
 	OWQ_Cache_Add(owq);
 
@@ -406,16 +411,19 @@ static int FS_write_in_parts(struct one_wire_query *owq)
 		OWQ_pn(owq_single).extension = extension;
 		OWQ_size(owq_single) = FileLength(PN(owq_single));
 		OWQ_offset(owq_single) = 0;
-		if (buffer_pointer)
+        if (buffer_pointer) {
 			OWQ_buffer(owq_single) = buffer_pointer;
+        }
 
 		single_write = FS_write_single_lump(owq_single);
 
-		if (single_write < 0)
+        if (single_write < 0) {
 			return single_write;
+        }
 
-		if (buffer_pointer)
+        if (buffer_pointer) {
 			buffer_pointer += OWQ_array_length(owq, extension);
+        }
 	}
 
 	return 0;
@@ -454,8 +462,9 @@ static int FS_write_a_bit(struct one_wire_query *owq)
 
 	if (OWQ_Cache_Get(owq_single)) {
 		int read_error = (pn->selected_filetype->read) (owq_single);
-		if (read_error < 0)
+        if (read_error < 0) {
 			return read_error;
+        }
 	}
 
 	UT_setbit((void *) (&OWQ_U(owq_single)), pn->extension, OWQ_Y(owq));
@@ -478,8 +487,9 @@ int FS_write_sibling(char *property, struct one_wire_query *owq_shallow_copy)
 {
 	struct parsedname *pn = PN(owq_shallow_copy);	// already set up with native device and property
 
-	if (FS_ParseProperty_for_sibling(property, pn))
+    if (FS_ParseProperty_for_sibling(property, pn)) {
 		return -ENOENT;
+    }
 
 	/* There are a few types that are not supported: binary, ascii, aggregates (.ALL) */
 	switch (pn->selected_filetype->format) {
@@ -490,8 +500,9 @@ int FS_write_sibling(char *property, struct one_wire_query *owq_shallow_copy)
 	default:
 		break;
 	}
-	if (pn->extension == EXTENSION_ALL)
+    if (pn->extension == EXTENSION_ALL) {
 		return -ENOTSUP;
+    }
 
 	return FS_w_local(owq_shallow_copy);
 }
