@@ -42,6 +42,7 @@ $Id$
 #include <config.h>
 #include "owfs_config.h"
 #include "ow_1821.h"
+#include <math.h>
 
 /* ------- Prototypes ----------- */
 /* DS18S20&2 Temperature */

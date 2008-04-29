@@ -102,7 +102,6 @@ $Id$
 #include <string.h>
 #include <dirent.h>
 #include <signal.h>
-#include <math.h>
 
 #ifdef HAVE_STDINT_H
 #include <stdint.h>				/* for bit twiddling */
