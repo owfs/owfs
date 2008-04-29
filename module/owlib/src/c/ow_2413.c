@@ -61,7 +61,7 @@ struct filetype DS2413[] = {
 	F_STANDARD,
   {"PIO", PROPERTY_LENGTH_BITFIELD, &A2413, ft_bitfield, fc_volatile, FS_r_pio, FS_w_pio, {v:NULL},},
   {"sensed", PROPERTY_LENGTH_BITFIELD, &A2413, ft_bitfield, fc_volatile, FS_sense, NO_WRITE_FUNCTION, {v:NULL},},
-  {"latch", PROPERTY_LENGTH_BITFIELD, &A2413, ft_bitfield, fc_volatile, FS_r_latch, NO_WRITE_FUNCTION, {v:NULL},},
+  {"latch", PROPERTY_LENGTH_BITFIELD, &A2413, ft_bitfield, fc_volatile, FS_r_latch, FS_w_pio, {v:NULL},},
 };
 
 DeviceEntryExtended(3A, DS2413, DEV_resume | DEV_ovdr);
