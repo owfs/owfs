@@ -145,11 +145,11 @@ static int FS_r_latch(struct one_wire_query *owq)
 /* write 2413 switch -- 2 values*/
 static int FS_w_pio(struct one_wire_query *owq)
 {
-	/* reverse bits */
-	BYTE data = OWQ_U(owq) & 0x03 ;
+	/* mask and reverse bits */
+	BYTE data = ( OWQ_U(owq) & 0x03 ) ^ 0x03 ;
     BYTE followup_read ;
     
-    if (OW_write(data ^ 0x03, &followup_read, PN(owq))) {
+    if (OW_write(data, &followup_read, PN(owq))) {
 		return -EINVAL;
     }
     
@@ -202,7 +202,7 @@ static int OW_read(BYTE * data, const struct parsedname *pn)
 /* top 6 bits are set to 1, complement then sent */
 static int OW_write(BYTE data, BYTE * and_read, const struct parsedname *pn)
 {
-	BYTE p[] = { _1W_PIO_ACCESS_WRITE, data | 0xFC, (~data) & 0x03, };
+	BYTE p[] = { _1W_PIO_ACCESS_WRITE, data | 0xFC, data ^ 0x03, };
 	BYTE q[2];
 	struct transaction_log t[] = {
 		TRXN_START,
