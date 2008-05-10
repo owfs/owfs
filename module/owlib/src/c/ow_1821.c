@@ -455,7 +455,11 @@ static int OW_r_templimit(_FLOAT * T, const int Tindex, const struct parsedname 
 static int OW_w_templimit(const _FLOAT T, const int Tindex, const struct parsedname *pn)
 {
 	BYTE p[] = { _1W_WRITE_TH, _1W_WRITE_TL, };
-	BYTE data = BYTE_MASK(lrint(T));	// round off
+#ifdef HAVE_LRINT
+	BYTE data = BYTE_MASK(lrint(T));    // round off
+#else
+	BYTE data = BYTE_MASK((int) (T + .49)); // round off
+#endif
 	struct transaction_log t[] = {
 		TRXN_START,
 		TRXN_WRITE1(&p[Tindex]),

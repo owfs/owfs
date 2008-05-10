@@ -1618,6 +1618,8 @@ if test "${ENABLE_ZERO}" = "true" ; then
    AC_SEARCH_LIBS(dlopen, dl, AC_DEFINE(HAVE_DLOPEN, 1, [Define if you have dlopen]))
 fi
 
+AC_SEARCH_LIBS(lrint, m, AC_DEFINE(HAVE_LRINT, 1, [Define if you have lrint]))
+
 AC_SEARCH_LIBS(nanosleep, rt posix4, AC_DEFINE(HAVE_NANOSLEEP, 1, [Define if you have nanosleep]))
 
 # Process config.h.in

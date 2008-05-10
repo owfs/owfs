@@ -90,6 +90,9 @@
 /* Define to 1 if you have the <linux/types.h> header file. */
 #undef HAVE_LINUX_TYPES_H
 
+/* Define if you have lrint */
+#undef HAVE_LRINT
+
 /* Define to 1 if you have the `memchr' function. */
 #undef HAVE_MEMCHR
 
