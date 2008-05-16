@@ -26,6 +26,18 @@ import sys
 from optparse import OptionParser
 
 
+class nagios:
+    ok       = (0, 'OK')
+    warning  = (1, 'WARNING')
+    critical = (2, 'CRITICAL')
+    unknown  = (3, 'UNKNOWN')
+
+
+def exit(status, message):
+    print 'ow ' + status[1] + ' - ' + message
+    sys.exit(status[0])
+
+
 # FIXME: need to add more help text in the init_string and sensor_path parameters
 parser = OptionParser(usage='usage: %prog [options] init_string sensor_path',
                       version='%prog ' + ow.__version__)
@@ -39,18 +51,6 @@ if len(args) != 2:
 
 init = args[0]
 sensor_path = args[1]
-
-
-class nagios:
-    ok       = (0, 'OK')
-    warning  = (1, 'WARNING')
-    critical = (2, 'CRITICAL')
-    unknown  = (3, 'UNKNOWN')
-
-
-def exit(status, message):
-    print 'ow ' + status[1] + ' - ' + message
-    sys.exit(status[0])
 
 
 try:
