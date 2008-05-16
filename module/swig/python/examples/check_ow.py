@@ -60,7 +60,11 @@ except ow.exUnknownSensor, ex:
 
 
 pieces = [x for x in sensor_path.split('/') if x]
-sensor = '/' + pieces[0]
+if len(pieces):
+    sensor = '/' + pieces[0]
+else:
+    sensor = '/'
+
 
 try:
     s = ow.Sensor(sensor)
