@@ -138,7 +138,7 @@ def opt(option, arg = ''):
     Useful only when directly connected to a sensor adapter. When using a remote owserver process,
     the owserver process must be started with the correct command line arguments.
     """
-    return ow._OW.opt(option, arg)
+    return _OW.opt(option, arg)
 
 
 #
