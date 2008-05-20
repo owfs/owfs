@@ -41,9 +41,10 @@ def exit(status, message):
 # FIXME: need to add more help text in the init_string and sensor_path parameters
 parser = OptionParser(usage='usage: %prog [options] init_string sensor_path',
                       version='%prog ' + ow.__version__)
-parser.add_option('-v', dest='verbose',    action='count', help='multiple -v increases the level of debugging output.')
-parser.add_option('-w', dest='warning',    type='float',   help='warning level.')
-parser.add_option('-c', dest='critical',   type='float',   help='critical level.')
+parser.add_option('-v', dest='verbose',     action='count', help='multiple -v increases the level of debugging output.')
+parser.add_option('-w', dest='warning',     type='float',   help='warning level.')
+parser.add_option('-c', dest='critical',    type='float',   help='critical level.')
+parser.add_option('-t', dest='temperature', choices=['C', 'F', 'R', 'K'], help='set the temperature scale: C -  celsius, F - fahrenheit, R - rankine or K - kelvin.')
 options, args = parser.parse_args()
 
 if len(args) != 2:
@@ -52,8 +53,11 @@ if len(args) != 2:
 init = args[0]
 sensor_path = args[1]
 
+if options.temperature:
+    ow.opt(options.temperature)
 
 try:
+    ow.error_print(ow.error_print.suppressed) # needed to exclude debug output which confuses nagios
     ow.init(init)
 except ow.exUnknownSensor, ex:
     exit(nagios.unknown[0], 'unable to initialize sensor adapter ' + str(ex))

@@ -127,6 +127,19 @@ error_print.stderr     = 2
 error_print.suppressed = 3
 
 
+def opt(option, arg = ''):
+    """
+    Pass options to the ow opt function. Used for things like setting the temperature scale:
+
+        ow.opt('F') # use the fahrenheit temperature scale
+
+        ow.opt('C') # use the celsius temperature scale
+    
+    Useful only when directly connected to a sensor adapter. When using a remote owserver process,
+    the owserver process must be started with the correct command line arguments.
+    """
+    return ow._OW.opt(option, arg)
+
 
 #
 # Module varialbe used to turn on _OW function call logging

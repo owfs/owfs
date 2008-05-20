@@ -140,6 +140,12 @@ int get_error_level(void) {
     return Global.error_level;
 }
 
+
+int opt(const char option_char, const char *arg) {
+    return owopt(option_char, arg);
+}
+
+
 %}
 %typemap(newfree) char * { if ($1) free($1) ; }
 %newobject get ;
@@ -153,3 +159,4 @@ extern void set_error_print(int);
 extern int get_error_print(void);
 extern void set_error_level(int);
 extern int get_error_level(void);
+extern int opt(const char, const char *);
