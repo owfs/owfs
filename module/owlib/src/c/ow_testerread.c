@@ -78,33 +78,37 @@ static int FS_read_tester_single(struct one_wire_query *owq)
 			ASCII address[16];
 			size_t length_left = OWQ_size(owq);
 			size_t buffer_index;
+            size_t length = FileLength( PN(owq) ) ;
+            ASCII return_chars[length] ;
 
 			bytes2string(address, pn->sn, 8);
 			OWQ_length(owq) = OWQ_size(owq);
-			for (buffer_index = 0; buffer_index < OWQ_size(owq); buffer_index += sizeof(address)) {
+			for (buffer_index = 0; buffer_index < length; buffer_index += sizeof(address)) {
 				size_t copy_length = length_left;
 				if (copy_length > sizeof(address))
 					copy_length = sizeof(address);
-				memcpy(&OWQ_buffer(owq)[buffer_index], address, copy_length);
+				memcpy(&return_chars[buffer_index], address, copy_length);
 				length_left -= copy_length;
 			}
-		}
-		break;
+            return Fowq_output_offset_and_size(return_chars, length, owq) ;
+        }
 	case ft_binary:
 		{
 			size_t length_left = OWQ_size(owq);
 			size_t buffer_index;
+            size_t length = FileLength( PN(owq) ) ;
+            ASCII return_chars[length] ;
 
 			OWQ_length(owq) = OWQ_size(owq);
-			for (buffer_index = 0; buffer_index < OWQ_size(owq); buffer_index += 8) {
+			for (buffer_index = 0; buffer_index < length; buffer_index += 8) {
 				size_t copy_length = length_left;
 				if (copy_length > 8)
 					copy_length = 8;
-				memcpy(&OWQ_buffer(owq)[buffer_index], pn->sn, copy_length);
+				memcpy(&return_chars[buffer_index], pn->sn, copy_length);
 				length_left -= copy_length;
 			}
-		}
-		break;
+            return Fowq_output_offset_and_size(return_chars, length, owq) ;
+        }
 	case ft_directory:
 	case ft_subdir:
 		return -ENOENT;
