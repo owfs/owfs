@@ -348,6 +348,9 @@ rm -f $RPM_BUILD_ROOT%{perl_sitearch}/auto/OW/.packlist
 rm -f $RPM_BUILD_ROOT%{perl_sitearch}/auto/OWNet/.packlist
 %endif
 %if %{build_python}
+# Remove OpenSUSE info files
+rm -f $RPM_BUILD_ROOT@PYSITEDIR@/ow-*-info
+rm -f $RPM_BUILD_ROOT@PYSITEDIR@/ownet-*-info
 %endif
 %if %{build_php}
 rm -f $RPM_BUILD_ROOT@PHPLIBDIR@/libowphp.la $RPM_BUILD_ROOT@PHPLIBDIR@/libowphp.a
@@ -490,13 +493,13 @@ fi
 %endif
 
 %if %{build_python}
-#%dir %{_libdir}/python*/site-packages/ow
-#%{_libdir}/python*/site-packages/ow/__init__.py*
-#%{_libdir}/python*/site-packages/ow/_OW.so
+#%dir @PYSITEDIR@/ow
+#@PYSITEDIR@/ow/__init__.py*
+#@PYSITEDIR@/ow/_OW.so
 # include ownet-python (it's a duplicate since it's in owfs-python too)
-%dir %{prefix}/lib*/python*/site-packages/ownet
-%{prefix}/lib*/python*/site-packages/ownet/__init__.py*
-%{prefix}/lib*/python*/site-packages/ownet/connection.py*
+%dir @PYSITEDIR@/ownet
+@PYSITEDIR@/ownet/__init__.py*
+@PYSITEDIR@/ownet/connection.py*
 %endif
 
 %endif
@@ -563,12 +566,16 @@ fi
 %if %{build_python}
 %files python
 %defattr(-,root,root)
-%dir %{_libdir}/python*/site-packages/ow
-%{_libdir}/python*/site-packages/ow/__init__.py*
-%{_libdir}/python*/site-packages/ow/_OW.so
-%dir %{prefix}/lib*/python*/site-packages/ownet
-%{prefix}/lib*/python*/site-packages/ownet/__init__.py*
-%{prefix}/lib*/python*/site-packages/ownet/connection.py*
+%dir @PYSITEDIR@/ow
+@PYSITEDIR@/ow/__init__.py*
+@PYSITEDIR@/ow/_OW.so
+#OpenSUSE info file
+#@PYSITEDIR@/ow-*info
+%dir @PYSITEDIR@/ownet
+@PYSITEDIR@/ownet/__init__.py*
+@PYSITEDIR@/ownet/connection.py*
+#OpenSUSE info file
+#@PYSITEDIR@/ownet-*info
 %endif
 
 %if %{build_php}
