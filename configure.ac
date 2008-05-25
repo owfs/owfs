@@ -897,6 +897,8 @@ if test "${ENABLE_OWPYTHON}" = "true" ; then
     AC_SUBST(PYCFLAGS)
     AC_SUBST(PYLDFLAGS)
     AC_SUBST(PYLIB)
+    AC_SUBST(PYVERSION)
+    AC_SUBST(PYSITEDIR)
     AC_SUBST(PYTHONDYNAMICLINKING)
     if test -z "${PYTHON}" ; then
         AC_MSG_WARN([Cannot find python binary. Install python package.])

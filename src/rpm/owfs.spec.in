@@ -7,6 +7,7 @@
 %define build_perl 1
 %define build_python 1
 %define build_php 1
+%define build_side 1
 %define build_tap 1
 %define build_mon 1
 %define build_tcl 1
@@ -105,6 +106,16 @@ owserver arbitrates access to the bus from multiple client processes. The
 physical bus is usually connected to a serial or USB port, and other processes
 connect to owserver over network sockets (tcp port). Communication can be local
 or over a network.
+%endif
+
+%if %{build_side}
+%package side
+Summary: Packet sniffer for the owserver protocol
+Group: System Environment/Daemon
+Requires: tcl >= 8.1
+
+%description side
+%{name}-side is a packet sniffer for the owserver protocol
 %endif
 
 %if %{build_tap}
@@ -237,6 +248,11 @@ automake -a -c
 %else
 	--disable-owserver \
 %endif
+%if %{build_side}
+	--enable-owside \
+%else
+	--disable-owside \
+%endif
 %if %{build_tap}
 	--enable-owtap \
 %else
@@ -316,6 +332,8 @@ install -D -m 644 src/rpm/owserver.conf $RPM_BUILD_ROOT/etc/sysconfig/owserver
 install -D -m 755 src/rpm/owserver.init $RPM_BUILD_ROOT/etc/rc.d/init.d/owserver
 install -d -m 755 $RPM_BUILD_ROOT%{prefix}/sbin
 mv -f $RPM_BUILD_ROOT%{prefix}/bin/owserver $RPM_BUILD_ROOT%{prefix}/sbin
+%endif
+%if %{build_side}
 %endif
 %if %{build_tap}
 %endif
@@ -508,6 +526,13 @@ fi
 %config /etc/sysconfig/owserver
 %{prefix}/sbin/owserver
 %{_mandir}/man1/owserver.1.gz
+%endif
+
+%if %{build_side}
+%files side
+%defattr(-,root,root)
+%{prefix}/bin/owside
+#%{_mandir}/man1/owside.1.gz
 %endif
 
 %if %{build_tap}

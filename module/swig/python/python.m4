@@ -25,6 +25,8 @@ AC_DEFUN([SC_PATH_PYTHON],
 PYCFLAGS=
 PYLDFLAGS=
 PYLIB=
+PYVERSION=
+PYSITEDIR=
 
 AC_ARG_WITH(python, [  --with-python           Set location of Python executable],[ PYBIN="$withval"], [PYBIN=yes])
 AC_ARG_WITH(pythonconfig, [  --with-pythonconfig        Set location of python-config executable],[ PYTHONCONFIGBIN="$withval"], [PYTHONCONFIGBIN=yes])
@@ -51,7 +53,7 @@ fi
 if test ! -z "$PYTHONCONFIG"; then
 
 # python-config available.
-   AC_MSG_CHECKING(for PYTHON cflags)
+   AC_MSG_CHECKING(for Python cflags)
    PYTHONCFLAGS="`$PYTHONCONFIG --cflags 2>/dev/null`"
    if test -z "$PYTHONCFLAGS"; then
 	AC_MSG_RESULT(not found)
@@ -60,7 +62,7 @@ if test ! -z "$PYTHONCONFIG"; then
    fi
    PYCFLAGS=$PYTHONCFLAGS
 
-   AC_MSG_CHECKING(for PYTHON ldflags)
+   AC_MSG_CHECKING(for Python ldflags)
    PYTHONLDFLAGS="`$PYTHONCONFIG --ldflags 2>/dev/null`"
    if test -z "$PYTHONLDFLAGS"; then
 	AC_MSG_RESULT(not found)
@@ -69,7 +71,7 @@ if test ! -z "$PYTHONCONFIG"; then
    fi
    PYLDFLAGS=$PYTHONLDFLAGS
 
-   AC_MSG_CHECKING(for PYTHON libs)
+   AC_MSG_CHECKING(for Python libs)
    PYTHONLIBS="`$PYTHONCONFIG --libs 2>/dev/null`"
    if test -z "$PYTHONLIBS"; then
 	AC_MSG_RESULT(not found)
@@ -77,6 +79,35 @@ if test ! -z "$PYTHONCONFIG"; then
    	AC_MSG_RESULT($PYTHONLIBS)
    fi
    PYLIB="$PYTHONLIBS"
+
+   # Need to do this hack since autoconf replaces __file__ with the name of the configure file
+   filehack="file__"
+   PYVERSION=`($PYTHON -c "import string,operator,os.path; print operator.getitem(os.path.split(operator.getitem(os.path.split(string.__$filehack),0)),1)")`
+   AC_MSG_RESULT($PYVERSION)
+
+   AC_MSG_CHECKING(for Python exec-prefix)
+   PYTHONEPREFIX="`$PYTHONCONFIG --exec-prefix 2>/dev/null`"
+   if test -z "$PYTHONEPREFIX"; then
+     AC_MSG_RESULT(not found)
+   else
+     AC_MSG_RESULT($PYTHONEPREFIX)
+   fi
+   PYEPREFIX="$PYTHONEPREFIX"
+
+   AC_MSG_CHECKING(for Python site-dir)
+   #This seem to be the site-packages dir where files are installed.
+   PYSITEDIR=`($PYTHON -c "from distutils.sysconfig import get_python_lib; print get_python_lib()") 2>/dev/null`
+   if test -z "$PYSITEDIR"; then
+     # I'm not really sure if it should be installed at /usr/lib64...
+     if test -d "$PYEPREFIX/lib$LIBPOSTFIX/$PYVERSION/site-packages"; then
+       PYSITEDIR="$PYEPREFIX/lib$LIBPOSTFIX/$PYVERSION/site-packages"
+     else
+       if test -d "$PYEPREFIX/lib/$PYVERSION/site-packages"; then
+         PYSITEDIR="$PYEPREFIX/lib/$PYVERSION/site-packages"
+       fi
+     fi
+   fi
+   AC_MSG_RESULT($PYSITEDIR)
 
 else
 
@@ -126,7 +157,15 @@ if test -n "$PYTHON"; then
       fi
     fi
     AC_MSG_RESULT($PYLIBDIR)
-    
+
+    AC_MSG_CHECKING(for Python site-dir)
+    PYSITEDIR=`($PYTHON -c "from distutils.sysconfig import get_python_lib; print get_python_lib()") 2>/dev/null`
+    if test -z "$PYSITEDIR"; then
+        PYSITEDIR="$PYEPREFIX/$PYLIBDIR/$PYVERSION/site-packages"
+    fi
+    AC_MSG_RESULT($PYSITEDIR)
+
+   
     # Set the include directory
 
     AC_MSG_CHECKING(for Python header files)
