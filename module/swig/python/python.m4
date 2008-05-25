@@ -96,7 +96,7 @@ if test ! -z "$PYTHONCONFIG"; then
 
    AC_MSG_CHECKING(for Python site-dir)
    #This seem to be the site-packages dir where files are installed.
-   PYSITEDIR=`($PYTHON -c "from distutils.sysconfig import get_python_lib; print get_python_lib()") 2>/dev/null`
+   PYSITEDIR=`($PYTHON -c "from distutils.sysconfig import get_python_lib; print get_python_lib(plat_specific=1)") 2>/dev/null`
    if test -z "$PYSITEDIR"; then
      # I'm not really sure if it should be installed at /usr/lib64...
      if test -d "$PYEPREFIX/lib$LIBPOSTFIX/$PYVERSION/site-packages"; then
@@ -159,9 +159,16 @@ if test -n "$PYTHON"; then
     AC_MSG_RESULT($PYLIBDIR)
 
     AC_MSG_CHECKING(for Python site-dir)
-    PYSITEDIR=`($PYTHON -c "from distutils.sysconfig import get_python_lib; print get_python_lib()") 2>/dev/null`
+    PYSITEDIR=`($PYTHON -c "from distutils.sysconfig import get_python_lib; print get_python_lib(plat_specific=1)") 2>/dev/null`
     if test -z "$PYSITEDIR"; then
-        PYSITEDIR="$PYEPREFIX/$PYLIBDIR/$PYVERSION/site-packages"
+      # I'm not really sure if it should be installed at /usr/lib64...
+      if test -d "$PYEPREFIX/lib$LIBPOSTFIX/$PYVERSION/site-packages"; then
+        PYSITEDIR="$PYEPREFIX/lib$LIBPOSTFIX/$PYVERSION/site-packages"
+      else
+        if test -d "$PYEPREFIX/lib/$PYVERSION/site-packages"; then
+          PYSITEDIR="$PYEPREFIX/lib/$PYVERSION/site-packages"
+        fi
+      fi
     fi
     AC_MSG_RESULT($PYSITEDIR)
 
