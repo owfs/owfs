@@ -1,9 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 
 AC_REVISION($Id$)
-
 AC_INIT
-AC_CONFIG_SRCDIR([module/owlib/src/include/ow.h])
 
 # Making releases:
 #   VERSION_PATCHLEVEL += 1;
@@ -44,12 +42,21 @@ PACKAGE="owfs"
 AC_SUBST(PACKAGE)dnl
 
 AC_MSG_RESULT(Configuring ${PACKAGE}-${VERSION})
-
-AC_PREFIX_DEFAULT(/opt/owfs)dnl
-AC_PREREQ(2.57)dnl
 AC_CONFIG_AUX_DIR(src/scripts/install)dnl
-
+AC_CANONICAL_TARGET
+#AM_INIT_AUTOMAKE
 AM_INIT_AUTOMAKE(${PACKAGE}, ${VERSION})dnl
+#AC_CONFIG_SRCDIR([module/owlib/src/include/ow.h])
+# Process config.h.in
+AH_TOP([
+#ifndef OWCONFIG_H
+#define OWCONFIG_H
+])
+AH_BOTTOM([#endif])
+AM_CONFIG_HEADER(src/include/config.h)
+
+AC_PREREQ(2.57)dnl
+AC_PREFIX_DEFAULT(/opt/owfs)dnl
 
 AC_PATH_PROG(TEST,test,$PATH)dnl
 AC_PATH_PROG(RM,rm,$PATH)dnl
@@ -110,6 +117,24 @@ AC_SUBST(HAVE_DARWIN)
 AM_CONDITIONAL(HAVE_DARWIN, test "${HAVE_DARWIN}" = "true")
 AC_SUBST(HAVE_CYGWIN)
 AM_CONDITIONAL(HAVE_CYGWIN, test "${HAVE_CYGWIN}" = "true")
+
+
+# Make sure tclConfig.sh is found under /usr/lib64/
+# Should perhaps support cross-compiling to other cpu-type too?
+LIBPOSTFIX=
+case "${host_os}" in
+  *linux* )
+    case "${host_cpu}" in
+      powerpc64 | s390x | x86_64 )
+        LIBPOSTFIX="64"
+	CFLAGS="$CFLAGS -m64"
+        ;;
+    esac
+    ;;
+esac
+AC_SUBST(LIBPOSTFIX)
+
+
 
 if test "$cross_compiling" != yes; then
 OW_CHECK_NESTED_FUNCTIONS
@@ -349,8 +374,8 @@ AC_LANG_RESTORE
 # Checks for header files.
 AC_HEADER_DIRENT
 AC_HEADER_STDC
-AC_CHECK_HEADERS([sys/mkdev.h sys/time.h sys/types.h feature_tests.h fcntl.h netinet/in.h stdlib.h string.h sys/file.h syslog.h termios.h unistd.h limits.h stdint.h features.h getopt.h resolv.h semaphore.h])
-AC_CHECK_HEADERS([linux/limits.h linux/types.h bits/netdb.h bits/siginfo.h dlfcn.h])
+AC_CHECK_HEADERS([sys/mkdev.h sys/time.h sys/times.h sys/types.h sys/uio.h feature_tests.h fcntl.h netinet/in.h stdlib.h string.h sys/file.h syslog.h termios.h unistd.h limits.h stdint.h features.h getopt.h resolv.h semaphore.h])
+AC_CHECK_HEADERS([linux/limits.h linux/types.h netdb.h dlfcn.h])
 
 # Test if debugging out enabled
 ENABLE_DEBUG="true"
@@ -678,21 +703,6 @@ AC_SUBST(ENABLE_OWCAPI)
 AM_CONDITIONAL(ENABLE_OWCAPI, test "${ENABLE_OWCAPI}" = "true")
 
 
-# Make sure tclConfig.sh is found under /usr/lib64/
-# Should perhaps support cross-compiling to other cpu-type too?
-LIBPOSTFIX=
-case "${host_os}" in
-  *linux* )
-    case "${host_cpu}" in
-      powerpc64 | s390x | x86_64 )
-        LIBPOSTFIX="64"
-        ;;
-    esac
-    ;;
-esac
-AC_SUBST(LIBPOSTFIX)
-
-
 #Check swig
 AC_MSG_CHECKING(if swig is enabled)
 if test -z "$SWIG"  ; then
@@ -936,7 +946,6 @@ if test -z "$SWIG" ; then
 else
     ENABLE_OWTCL="true"
 fi
-#ENABLE_OWTCL="true"
 AC_ARG_ENABLE(owtcl,
 [  --enable-owtcl          Enable owtcl module (default true)],
 [
@@ -1625,13 +1634,6 @@ AC_SEARCH_LIBS(lrint, m, AC_DEFINE(HAVE_LRINT, 1, [Define if you have lrint]))
 
 AC_SEARCH_LIBS(nanosleep, rt posix4, AC_DEFINE(HAVE_NANOSLEEP, 1, [Define if you have nanosleep]))
 
-# Process config.h.in
-AH_TOP([
-#ifndef OWCONFIG_H
-#define OWCONFIG_H
-])
-AH_BOTTOM([#endif])
-AM_CONFIG_HEADER(src/include/config.h)
 
 AC_CONFIG_FILES([
     Makefile
