@@ -87,15 +87,13 @@ $Id$
 #include <feature_tests.h>
 #endif							/* HAVE_FEATURE_TESTS_H */
 
-#ifdef HAVE_SYS_STAT_H
-#include <sys/stat.h>			/* for stat */
-#endif							/* HAVE_SYS_STAT_H */
-
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>			/* for stat */
 #endif							/* HAVE_SYS_TYPES_H */
 
+#ifdef HAVE_SYS_TIMES_H
 #include <sys/times.h>			/* for times */
+#endif							/* HAVE_SYS_TIMES_H */
 #include <ctype.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -121,16 +119,31 @@ $Id$
 #include <time.h>
 #endif							/* __USE_XOPEN */
 
+#ifdef HAVE_TERMIOS_H
 #include <termios.h>
+#endif							/* HAVE_TERMIOS_H */
+
 #include <errno.h>
+
+#ifdef HAVE_SYSLOG_H
 #include <syslog.h>
+#endif							/* HAVE_SYSLOG_H */
 
 #ifdef HAVE_GETOPT_H
 #include <getopt.h>				/* for long options */
 #endif							/* HAVE_GETOPT_H */
 
+#ifdef HAVE_SYS_UIO_H
 #include <sys/uio.h>
+#endif
+
+#ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>			/* for gettimeofday */
+#endif							/* HAVE_SYS_TIME_H */
+
+#ifdef HAVE_SYS_STAT_H
+#include <sys/stat.h>			/* for stat */
+#endif							/* HAVE_SYS_STAT_H */
 
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
@@ -140,7 +153,9 @@ $Id$
 #include <netinet/in.h>
 #endif							/* HAVE_NETINET_IN_H */
 
-#include <netdb.h>				/* addrinfo */
+#ifdef HAVE_NETDB_H
+#include <netdb.h>				/* for getaddrinfo */
+#endif							/* HAVE_NETDB_H */
 
 #ifdef HAVE_SYS_MKDEV_H
 #include <sys/mkdev.h>			/* for major() */
