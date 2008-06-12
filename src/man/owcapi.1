@@ -30,7 +30,7 @@ The full set of initialization options is extensive. They correspond roughly to 
 and
 .B owftpd (1)
 .SS Get data
-.B int OW_get{
+.B int OW_get(
 .I const char * path, char ** buffer, size_t * buffer_length
 .B )
 .br
@@ -38,15 +38,23 @@ and
 .I const char * path, unsigned char * buffer, const size_t size, const off_t offset
 .B )
 .SS Set data
-.B ssize_t OW_put{
+.B ssize_t OW_put(
 .I const char * path, const char * buffer, size_t * buffer_length
 .B )
 .br
 .B ssize_t OW_lwrite(
 .I const char * path, const unsigned char * buffer, const size_t size, const off_t offset
 .B )
+.SS Debug
+.B void OW_set_error_level(
+.I const char *param
+.B )
+.br
+.B void OW_set_error_print(
+.I const char *param
+.B )
 .SS Close
-.B void OW_finish{
+.B void OW_finish(
 .I void
 .B )
 .SH FUNCTIONS
@@ -235,6 +243,42 @@ One of the
 functions must be called before accessing the 1-wire bus.
 .I OW_finish
 is optional.
+.SS OW_set_error_level
+.I OW_set_error_level
+sets the debug output to a certain level. 0 is default, and higher value gives more output.
+.br
+(0=default, 1=err_connect, 2=err_call, 3=err_data, 4=err_detail, 5=err_debug, 6=err_beyond)
+.TP
+.I Arguments
+.I params
+is the level. Should be an integer.
+.TP
+.I Returns
+None
+.TP
+.I Sequence
+One of the
+.I init
+functions must be called before setting the level, since
+.I init
+defaults to level 0.
+.SS OW_set_error_print
+.I OW_set_error_print
+sets where the debug output should be directed. 0=mixed output, 1=syslog, 2=console.
+.TP
+.I Arguments
+.I params
+is the level. Should be an integer between 0 and 2.
+.TP
+.I Returns
+None
+.TP
+.I Sequence
+One of the
+.I init
+functions must be called before setting the level, since
+.I init
+defaults to 0 (mixed output).
 .SS OW_finish
 .I OW_finish
 cleans up the
@@ -287,6 +331,10 @@ unsigned char * buf;
 size_t s ;
 .br
 OW_init("/dev/ttyS0");
+.br
+OW_set_error_print("2");
+.br
+OW_set_error_level("6");
 .br
 OW_get("/",&buf,&s) ;
 .br
