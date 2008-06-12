@@ -6,10 +6,10 @@ man_MANS = owfs.1 \
            owhttpd.1 \
            owserver.1 \
            owftpd.1 \
-           owcapi.1 \
+           owcapi.1 libowcapi.1 \
+           ownet.1 ownetapi.1 libownet.1 ownetlib.1 \
            owshell.1 owdir.1 owread.1 owwrite.1 owpresent.1 \
            owtap.1 owmon.1 \
-           libowcapi.1 \
            DS1427.3 \
            DS1821.3 DS1822.3 DS1825.3 DS18B20.3 DS18S20.3 DS28EA00.3 \
            DS1904.3 DS1920.3 DS1921.3 DS1963L.3 DS1963S.3 DS1977.3 \
@@ -27,22 +27,6 @@ man_MANS = owfs.1 \
            Thermachron.3 \
            LCD.3 \
            OWNet.3 \
-           addressing \
-           cmdline \
-           cmdline_mini \
-           cmdline2_mini \
-           configuration \
-           description \
-           format \
-           help \
-           job_control \
-           seealso \
-           standard \
-           standard_mini \
-           persistent_thresholds \
-           temperature \
-           temperatures \
-           timeout \
            owperl.3 \
            owtcl.3 \
            owfs.5 owfs.conf.5 \
@@ -50,9 +34,19 @@ man_MANS = owfs.1 \
 
 
 EXTRA_DIST = ${man_MANS} \
-           addressing cmdline cmdline2_mini cmdline_mini \
-           description seealso standard standard_mini \
-           temperatures temperatures_mini
+           addressing \
+           cmdline cmdline2_mini cmdline_mini \
+           configuration \
+           description \
+           format \
+           help \
+           job_control \
+           persistent_thresholds \
+           seealso \
+           standard standard_mini \
+           temperature temperature_errata temperature_threshold \
+           temperatures temperatures_mini \
+           timeout
 
 clean-generic:
 
