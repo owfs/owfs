@@ -1,6 +1,6 @@
 ## $Id$
 
-EXTRA_DIST = setup.py MANIFEST.in Readme.txt Readme_pypi.txt $(wildcard examples/*.py) $(wildcard ownet/*.py)
+EXTRA_DIST = setup.py MANIFEST.in Readme.txt Readme_pypi.txt examples/check_ow.py examples/temperatures.py ownet/__init__.py ownet/connection.py
 
 install-data-local:
 #	OpenSUSE is buggy and install libraries at /usr/local.

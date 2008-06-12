@@ -2,7 +2,7 @@
 
 include version.h
 
-EXTRA_DIST = owtclInitScript.h tcl.m4 ow.tcl $(wildcard example/*.tcl)
+EXTRA_DIST = owtclInitScript.h tcl.m4 ow.tcl example/owdir.tcl example/test.tcl
 
 pkglib_LTLIBRARIES = ow.la
 ow_la_SOURCES = ow.c

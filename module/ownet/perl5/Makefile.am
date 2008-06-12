@@ -1,6 +1,6 @@
 ## $Id$
 
-EXTRA_DIST = OWNet/README OWNet/MANIFEST OWNet/Changes OWNet/Makefile.PL OWNet/lib/OWNet.pm OWNet/t/OWNet.t $(wildcard examples/*.pl)
+EXTRA_DIST = OWNet/README OWNet/MANIFEST OWNet/Changes OWNet/Makefile.PL OWNet/lib/OWNet.pm OWNet/t/OWNet.t examples/test.pl examples/test2.pl
 
 all: OWNet/Makefile
 

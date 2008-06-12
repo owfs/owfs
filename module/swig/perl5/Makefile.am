@@ -1,6 +1,6 @@
 ## $Id$
 
-EXTRA_DIST = perl5.m4 OW/META.yml OW/README OW/MANIFEST OW/Changes OW/Makefile.linux.in OW/Makefile.osx.in OW/t/OW.t $(wildcard example/*.pl)
+EXTRA_DIST = perl5.m4 OW/META.yml OW/README OW/MANIFEST OW/Changes OW/Makefile.linux.in OW/Makefile.osx.in OW/t/OW.t example/owdir.pl example/tree.pl
 
 #all: OW/Makefile
 all: OW/blib/lib/OW.pm
