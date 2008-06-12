@@ -1677,6 +1677,7 @@ AC_CONFIG_FILES([
     module/owcapi/src/include/Makefile
     module/owcapi/src/c/Makefile
     module/owcapi/src/example/Makefile
+    module/owcapi/src/example++/Makefile
     module/owtap/Makefile
     module/owside/Makefile
     module/owmon/Makefile
