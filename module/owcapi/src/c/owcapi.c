@@ -41,6 +41,16 @@ static ssize_t ReturnAndErrno(ssize_t ret)
 	}
 }
 
+void OW_set_error_print(const char *params)
+{
+	API_set_error_print(params);
+}
+
+void OW_set_error_level(const char *params)
+{
+	API_set_error_level(params);
+}
+
 ssize_t OW_init(const char *params)
 {
 	ssize_t ret = 0;

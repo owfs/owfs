@@ -38,8 +38,11 @@ extern "C" {
 	ssize_t OW_init(const char *params);
 	ssize_t OW_init_args(int argc, char **args);
 
-/* OW_get -- data read or directory read
-  path is OWFS style name,
+	void OW_set_error_level(const char *params);
+	void OW_set_error_print(const char *params);
+
+	/* OW_get -- data read or directory read
+       path is OWFS style name,
     "" or "/" for root directory
     "01.23456708ABDE" for device directory
     "10.468ACE13579B/temperature for a specific device property

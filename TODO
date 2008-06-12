@@ -1,0 +1,4 @@
+
+swig/python module crash on x86_64 platforms (python2.5). Memory error when writing to the Global-struct.
+	    Shared libow-library is loaded correctly, but it fails anyway.
+

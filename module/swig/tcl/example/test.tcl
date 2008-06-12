@@ -1,6 +1,6 @@
 #!/usr/bin/env tclsh
 # -*- Tcl -*-
-# File: owdir.tcl
+# File: test.tcl
 #
 # $Id$
 #

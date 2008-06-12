@@ -50,6 +50,23 @@ void API_setup( enum opt_program opt )
     }
 }
 
+void API_set_error_level(const char * params)
+{
+	if(params != NULL) {
+		Global.error_level = atoi(params);
+	}
+	return;
+}
+
+void API_set_error_print(const char * params)
+{
+	if(params != NULL) {
+		Global.error_print = atoi(params);
+	}
+	return;
+}
+
+
 /* Swig ensures that API_LibSetup is called first, but still we check */
 int API_init( const char * command_line )
 {

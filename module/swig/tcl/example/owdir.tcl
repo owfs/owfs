@@ -31,7 +31,10 @@ if { $argc > 1 } {
 } else {
     set dir "/";
 }
-    
+
 ::OW::init $adapter
+#::OW::set_error_print 2;
+#::OW::set_error_level 9;
+
 puts [ ::OW::get $dir ]
 ::OW::finish

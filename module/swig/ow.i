@@ -6,9 +6,12 @@
 %include "typemaps.i"
 
 %init %{
+#if 0
+// includes not needed here... it just results into duplicate includes
 #include "config.h"
 #include "owfs_config.h"
 #include "ow.h"
+#endif
 API_setup(opt_swig) ;
 %}
 
@@ -16,6 +19,9 @@ API_setup(opt_swig) ;
 #include "config.h"
 #include "owfs_config.h"
 #include "ow.h"
+
+// define this to add debug-output from newer swig-versions.
+//#define SWIGRUNTIME_DEBUG 1
 
 #if OW_MT
     pthread_t main_threadid ;

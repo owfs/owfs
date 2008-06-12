@@ -153,7 +153,69 @@ owtcl_ObjCmdProc(Owtcl_Delete)
 	return TCL_OK;
 }
 
+/*
+ * Set error_level
+ */
+owtcl_ObjCmdProc(Owtcl_Set_error_level)
+{
+	OwtclStateType *OwtclStatePtr = (OwtclStateType *) clientData;
+	char *arg;
+	int arg_len;
+	owtcl_ArgObjIncr;
+	
+	(void) interp;				// suppress compiler warning
+	(void) objc;				// suppress compiler warning
+	(void) objv;				// suppress compiler warning
 
+	if (objc < 2) {
+		Tcl_WrongNumArgs(interp, 1, objv, "?value?");
+		owtcl_ArgObjDecr;
+		return TCL_ERROR;
+	}
+
+	if (!OwtclStatePtr->used) {
+		owtcl_Error(interp, "OWTCL", "DISCONNECTED", "owtcl disconnected");
+		owtcl_ArgObjDecr;
+		return TCL_ERROR;
+    }
+	arg = Tcl_GetStringFromObj(objv[1], &arg_len);
+
+	OW_set_error_level(arg);
+
+	return TCL_OK;
+}
+
+/*
+ * Set error_level
+ */
+owtcl_ObjCmdProc(Owtcl_Set_error_print)
+{
+	OwtclStateType *OwtclStatePtr = (OwtclStateType *) clientData;
+	char *arg;
+	int arg_len;
+	owtcl_ArgObjIncr;
+
+	(void) interp;				// suppress compiler warning
+	(void) objc;				// suppress compiler warning
+	(void) objv;				// suppress compiler warning
+
+	if (objc < 2) {
+		Tcl_WrongNumArgs(interp, 1, objv, "?value?");
+		owtcl_ArgObjDecr;
+		return TCL_ERROR;
+	}
+
+	if (!OwtclStatePtr->used) {
+		owtcl_Error(interp, "OWTCL", "DISCONNECTED", "owtcl disconnected");
+		owtcl_ArgObjDecr;
+		return TCL_ERROR;
+    }
+	arg = Tcl_GetStringFromObj(objv[1], &arg_len);
+
+	OW_set_error_print(arg);
+
+	return TCL_OK;
+}
 
 /*
  * Change a owfs node's value. 
@@ -369,6 +431,8 @@ struct CmdListType {
 	"::OW::_init", Owtcl_Connect}, {
 	"::OW::put", Owtcl_Put}, {
 	"::OW::get", Owtcl_Get}, {
+	"::OW::set_error_level", Owtcl_Set_error_level}, {
+	"::OW::set_error_print", Owtcl_Set_error_print}, {
 	"::OW::version", Owtcl_Version}, {
 	"::OW::finish", Owtcl_Delete}, {
 	"::OW::isdirectory", Owtcl_IsDir}, {

@@ -1,7 +1,7 @@
 # $Id$
 
 
-EXTRA_DIST = php.m4 example/runme.php example/load_php_OW.php.in example/load_php_OW.php
+EXTRA_DIST = php.m4 example/owdir.php example/load_php_OW.php.in example/load_php_OW.php
 #noinst_DATA = ow_wrap.c php_OW.h
 
 #use libtool to build the php extension
