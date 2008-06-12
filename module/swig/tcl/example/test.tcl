@@ -1,3 +1,4 @@
+#!/usr/bin/env tclsh
 # -*- Tcl -*-
 # File: owdir.tcl
 #
@@ -29,7 +30,7 @@ puts [ ::OW::get "/10.67C6697351FF/temperature" ]
 puts "\nRead /10.67C6697351FF/type"
 puts [ ::OW::get "/10.67C6697351FF/type" ]
 
-puts "\nRead system/adapter/name.ALL"
-puts [ ::OW::get "system/adapter/name.ALL" ]
+puts "\nRead bus.0/interface/settings/name"
+puts [ ::OW::get "bus.0/interface/settings/name" ]
 
 ::OW::finish
