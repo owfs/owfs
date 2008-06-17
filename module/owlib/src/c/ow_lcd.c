@@ -140,8 +140,8 @@ static int OW_r_memory(BYTE * data, size_t size, off_t offset, struct parsedname
 static int OW_w_memory(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
 static int OW_clear(const struct parsedname *pn);
 static int OW_w_screen(BYTE lcd_location, const char *text, int size, const struct parsedname *pn);
-static int LCD_byte(BYTE byte, int delay, const struct parsedname *pn);
-static int LCD_2byte(BYTE * byte, int delay, const struct parsedname *pn);
+static int LCD_byte(BYTE b, int delay, const struct parsedname *pn);
+static int LCD_2byte(BYTE * bytes, int delay, const struct parsedname *pn);
 static int OW_simple_command(BYTE lcd_command_code, const struct parsedname *pn);
 static int OW_w_unpaged_to_screen(BYTE lcd_location, BYTE length, const char *text, const struct parsedname *pn);
 
@@ -536,11 +536,11 @@ static int OW_simple_command(BYTE lcd_command_code, const struct parsedname *pn)
 	return BUS_transaction(t, pn);
 }
 
-static int LCD_byte(BYTE byte, int delay, const struct parsedname *pn)
+static int LCD_byte(BYTE b, int delay, const struct parsedname *pn)
 {
 	struct transaction_log t[] = {
 		TRXN_START,
-		TRXN_WRITE1(&byte),
+		TRXN_WRITE1(&b),
 		TRXN_DELAY(delay),
 		TRXN_END,
 	};
