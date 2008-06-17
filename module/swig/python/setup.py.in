@@ -24,12 +24,16 @@ distutils setup file for use in creating a Python module from the owfs
 project.
 """
 
-import os, platform
+import os
+# platform doesn't exist for python 2.2
+#import platform
 from distutils.core import setup, Extension
 from distutils import sysconfig
 import string
 
-python_version = platform.python_version()[0:3]
+#python_version = platform.python_version()[0:3]
+python_version = sysconfig.get_config_vars()["VERSION"]
+
 
 classifiers = """
 Development Status :: 4 - Beta
@@ -43,16 +47,15 @@ Topic :: System :: Hardware
 Topic :: Utilities
 """
 
-libraries = []
-library_dirs = []
-include_dirs = []
-extra_link_args = []
-extra_compile_args = []
-runtime_library_dirs = []
-extra_objects = []
-define_macros = []
-undef_macros = []
-msg = [' ']
+my_libraries = []
+my_library_dirs = []
+my_include_dirs = []
+my_extra_link_args = []
+my_extra_compile_args = []
+my_runtime_library_dirs = []
+my_extra_objects = []
+my_define_macros = []
+my_undef_macros = []
 
 def write_configuration(define_macros, include_dirs, libraries, library_dirs,
                         extra_link_args, extra_compile_args,
@@ -82,54 +85,55 @@ have_darwin = '@HAVE_DARWIN@'
 # Should perhaps add ${LD_EXTRALIBS} ${OSLIBS} to extra_l_args too if
 # supporting MacOSX.
 
-extra_compile_args = [ '-D_FILE_OFFSET_BITS=64' ]
+my_extra_compile_args = [ '-D_FILE_OFFSET_BITS=64' ]
 if len('@PYCFLAGS@') > 0:
-	extra_compile_args = extra_compile_args + string.split('@PYCFLAGS@', ' ')
+	my_extra_compile_args = my_extra_compile_args + string.split('@PYCFLAGS@', ' ')
 
 if len('@PIC_FLAGS@') > 0:
-	extra_compile_args = extra_compile_args + string.split('@PIC_FLAGS@', ' ')
+	my_extra_compile_args = my_extra_compile_args + string.split('@PIC_FLAGS@', ' ')
 
-extra_link_args = [ ]
+my_extra_link_args = [ ]
 if enable_usb == 'true':
     if len('@LIBUSB_CFLAGS@') > 1:
-	extra_compile_args = extra_compile_args + string.split('@LIBUSB_CFLAGS@', ' ')
+	my_extra_compile_args = my_extra_compile_args + string.split('@LIBUSB_CFLAGS@', ' ')
 
 if enable_usb == 'true':
     if len('@LIBUSB_LIBS@') > 1:
-	extra_link_args = extra_link_args + string.split('@LIBUSB_LIBS@', ' ')
+	my_extra_link_args = my_extra_link_args + string.split('@LIBUSB_LIBS@', ' ')
 
 if enable_mt == 'true':
     if len('@PTHREAD_CFLAGS@') > 1:
-	extra_compile_args = extra_compile_args + string.split('@PTHREAD_CFLAGS@', ' ')
+	my_extra_compile_args = my_extra_compile_args + string.split('@PTHREAD_CFLAGS@', ' ')
 
 if enable_mt == 'true':
     if len('@PTHREAD_LIBS@') > 1:
-	extra_link_args = extra_link_args + string.split('@PTHREAD_LIBS@', ' ')
+	my_extra_link_args = my_extra_link_args + string.split('@PTHREAD_LIBS@', ' ')
 
 if have_darwin == 'true':
-    extra_link_args = extra_link_args + string.split('../../owlib/src/c/.libs/libow.so', ' ')
+    my_extra_link_args = my_extra_link_args + string.split('../../owlib/src/c/.libs/libow.so', ' ')
 
 if len('@PYLDFLAGS@') > 1:
-	extra_link_args = extra_link_args + string.split('@PYLDFLAGS@', ' ')
+	my_extra_link_args = my_extra_link_args + string.split('@PYLDFLAGS@', ' ')
 
 ARCH=""
-if platform.machine() == "x86_64" or platform.machine() == "amd64":
-    print "64bit system detected"
-    ARCH = "x64"
+#if platform.machine() == "x86_64" or platform.machine() == "amd64":
+#    print "64bit system detected"
+#    ARCH = "x64"
 
-libraries = [ 'ow' ]
+my_libraries = [ 'ow' ]
 
 
 # Try to link static to solve problem with python on x86_64 servers...
 if ARCH == "x64":
-    extra_objects = [ '../../owlib/src/c/.libs/libow.a' ]
-    libraries = [ ]
-    #extra_link_args = extra_link_args + string.split('-Wl,--export-dynamic', ' ')
+    my_extra_objects = [ '../../owlib/src/c/.libs/libow.a' ]
+    my_libraries = [ ]
+    #my_extra_link_args = my_extra_link_args + string.split('-Wl,--export-dynamic', ' ')
 elif ARCH != "x64":
-    libraries = [ 'ow' ]
+    my_extra_objects = ""
+    my_libraries = [ 'ow' ]
 
 if have_darwin == 'true':
-    libraries = [ ]
+    my_libraries = [ ]
 
 removals = ['-Wstrict-prototypes']
    
@@ -138,31 +142,33 @@ if python_version == '2.5':
     for removal in removals:
         cv_opt = cv_opt.replace(removal, " ")
     sysconfig.get_config_vars()["CFLAGS"] = ' '.join(cv_opt.split())
-    cv_opt = ' '.join(extra_compile_args)
+    cv_opt = ' '.join(my_extra_compile_args)
     for removal in removals:
         cv_opt = cv_opt.replace(removal, " ")
-    extra_compile_args = ' '.join(cv_opt.split())
+    my_extra_compile_args = ' '.join(cv_opt.split())
 else:
     cv_opt = sysconfig.get_config_vars()["OPT"]
     for removal in removals:
         cv_opt = cv_opt.replace(removal, " ")
     sysconfig.get_config_vars()["OPT"] = ' '.join(cv_opt.split())
+#    cv_opt = ' '.join(my_extra_compile_args)
+#    my_extra_compile_args = ' '.join(cv_opt.split())
 
 			
-#print "extra_compile_args=", extra_compile_args
-#extra_compile_args = [ arg for arg in extra_compile_args if len(arg) > 1 ]
-extra_compile_args = string.split(extra_compile_args, ' ')
-#print "extra_compile_args=", extra_compile_args
-extra_link_args = [ arg for arg in extra_link_args if len(arg) > 1 ]
-include_dirs = [ '../../owlib/src/include', '../../../src/include' ]
-library_dirs = [ '../../owlib/src/c/.libs' ]
-runtime_library_dirs = [ '@LIBDIR@' ]
+print "my_extra_compile_args=", my_extra_compile_args
+my_extra_compile_args = [ arg for arg in my_extra_compile_args if len(arg) > 1 ]
+#my_extra_compile_args = string.split(my_extra_compile_args, ' ')
+print "my_extra_compile_args=", my_extra_compile_args
+my_extra_link_args = [ arg for arg in my_extra_link_args if len(arg) > 1 ]
+my_include_dirs = [ '../../owlib/src/include', '../../../src/include' ]
+my_library_dirs = [ '../../owlib/src/c/.libs' ]
+my_runtime_library_dirs = [ '@LIBDIR@' ]
 
 sources = [ 'ow_wrap.c' ]
 
-write_configuration(define_macros, include_dirs, libraries, library_dirs,
-                    extra_link_args, extra_compile_args,
-                    runtime_library_dirs,extra_objects)
+write_configuration(my_define_macros, my_include_dirs, my_libraries, my_library_dirs,
+                    my_extra_link_args, my_extra_compile_args,
+                    my_runtime_library_dirs,my_extra_objects)
 
 setup(
     name             = 'ow',
@@ -179,13 +185,13 @@ setup(
     ext_package      = 'ow',
     ext_modules      = [ Extension( '_OW',
                                     sources,
-                                    include_dirs = include_dirs,
-                                    library_dirs = library_dirs,
-                                    libraries    = libraries,
-                                    extra_compile_args = extra_compile_args,
-                                    extra_link_args = extra_link_args,
-                                    runtime_library_dirs = runtime_library_dirs,
-                                    extra_objects=extra_objects)
+                                    include_dirs = my_include_dirs,
+                                    library_dirs = my_library_dirs,
+                                    libraries    = my_libraries,
+                                    extra_compile_args = my_extra_compile_args,
+                                    extra_link_args = my_extra_link_args,
+                                    runtime_library_dirs = my_runtime_library_dirs,
+                                    extra_objects=my_extra_objects)
                          ],
     )
 
