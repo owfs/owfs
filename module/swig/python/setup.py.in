@@ -124,15 +124,13 @@ if my_platform == "x86_64" or my_platform == "amd64" or my_platform == "64":
 
 my_libraries = [ 'ow' ]
 
-
-# Try to link static to solve problem with python on x86_64 servers...
-if ARCH == "x64":
-    my_extra_objects = [ '../../owlib/src/c/.libs/libow.a' ]
-    my_libraries = [ ]
-    #my_extra_link_args = my_extra_link_args + string.split('-Wl,--export-dynamic', ' ')
-elif ARCH != "x64":
-    my_extra_objects = ""
-    my_libraries = [ 'ow' ]
+#if ARCH == "x64":
+#    my_extra_objects = [ '../../owlib/src/c/.libs/libow.a' ]
+#    my_libraries = [ ]
+#    #my_extra_link_args = my_extra_link_args + string.split('-Wl,--export-dynamic', ' ')
+#elif ARCH != "x64":
+#    my_extra_objects = ""
+#    my_libraries = [ 'ow' ]
 
 if have_darwin == 'true':
     my_libraries = [ ]
