@@ -116,9 +116,11 @@ if len('@PYLDFLAGS@') > 1:
 	my_extra_link_args = my_extra_link_args + string.split('@PYLDFLAGS@', ' ')
 
 ARCH=""
-#if platform.machine() == "x86_64" or platform.machine() == "amd64":
-#    print "64bit system detected"
-#    ARCH = "x64"
+my_platform = '@LIBPOSTFIX@'
+#my_platform = [ platform.machine() ]
+if my_platform == "x86_64" or my_platform == "amd64" or my_platform == "64":
+    print "64bit system detected"
+    ARCH = "x64"
 
 my_libraries = [ 'ow' ]
 
