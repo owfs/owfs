@@ -42,11 +42,12 @@ PACKAGE="owfs"
 AC_SUBST(PACKAGE)dnl
 
 AC_MSG_RESULT(Configuring ${PACKAGE}-${VERSION})
+
 AC_CONFIG_AUX_DIR(src/scripts/install)dnl
+
 AC_CANONICAL_TARGET
-#AM_INIT_AUTOMAKE
 AM_INIT_AUTOMAKE(${PACKAGE}, ${VERSION})dnl
-#AC_CONFIG_SRCDIR([module/owlib/src/include/ow.h])
+
 # Process config.h.in
 AH_TOP([
 #ifndef OWCONFIG_H
@@ -58,8 +59,12 @@ AM_CONFIG_HEADER(src/include/config.h)
 AC_PREREQ(2.57)dnl
 AC_PREFIX_DEFAULT(/opt/owfs)dnl
 
+AC_PATH_PROG(ECHO,echo,$PATH)dnl
 AC_PATH_PROG(TEST,test,$PATH)dnl
 AC_PATH_PROG(RM,rm,$PATH)dnl
+AC_PATH_PROG(RPM,rpm,,$PATH)dnl
+AC_PATH_PROG(RPMBUILD,rpmbuild,,$PATH)dnl
+AC_PATH_PROG([SWIG],[swig],,$PATH)dnl
 
 # Check for additional programs
 
@@ -118,6 +123,11 @@ AM_CONDITIONAL(HAVE_DARWIN, test "${HAVE_DARWIN}" = "true")
 AC_SUBST(HAVE_CYGWIN)
 AM_CONDITIONAL(HAVE_CYGWIN, test "${HAVE_CYGWIN}" = "true")
 
+PIC_FLAGS=""
+if test "$lt_prog_compiler_pic_works" = yes; then
+   PIC_FLAGS="$lt_prog_compiler_pic"
+fi
+AC_SUBST(PIC_FLAGS)
 
 # Make sure tclConfig.sh is found under /usr/lib64/
 # Should perhaps support cross-compiling to other cpu-type too?
@@ -142,26 +152,6 @@ fi
 
 OWFSROOT="`pwd`"
 AC_SUBST(OWFSROOT)
-
-AC_PATH_PROG(RPM,rpm,,$PATH)dnl
-AC_PATH_PROG(RPMBUILD,rpmbuild,,$PATH)dnl
-AC_PATH_PROG([SWIG],[swig],,$PATH)dnl
-
-# ccmalloc macros from Armljn Hemel stratego-dev 14 jan 2003
-AC_CHECK_PROG(CCMALLOC, ccmalloc, ccmalloc)
-AC_SUBST(CCMALLLOC)
-AC_ARG_ENABLE(ccmalloc, 
-[  --enable-ccmalloc       ccmalloc memory checking],
-[ AC_MSG_RESULT(["$enableval"])
- if test "$enableval" = yes; then
-   CCLD="$CCMALLOC --no-wrapper $CC"
- else
-   CCLD="$CC"
- fi],
-   CCLD=$CC
-)
-AC_SUBST(CCLD)
-
 
 AC_DEFUN([ACX_PTHREAD], [
 AC_REQUIRE([AC_CANONICAL_HOST])
@@ -1102,6 +1092,26 @@ case "${host_cpu}-${host_os}" in
 		AC_MSG_RESULT([${EXTRALIBS}])
 	;;
 esac
+
+#Check for profiling
+AC_MSG_CHECKING(if profiling is enabled)
+ENABLE_PROFILING="false"
+AC_ARG_ENABLE(profiling,
+[  --enable-profiling      Enable profiling (default false)],
+[
+AC_MSG_RESULT([$enableval])
+    if test "$enableval" = "yes" ; then
+        ENABLE_PROFILING=true
+        EXTRALIBS="$EXTRALIBS -pg"
+        EXTRACFLAGS="$EXTRACFLAGS -pg"
+    fi
+],
+[
+    AC_MSG_RESULT([no (default)])
+])
+AC_SUBST(EXTRACFLAGS)
+AC_SUBST(ENABLE_PROFILING)
+AM_CONDITIONAL(ENABLE_PROFILING, test "${ENABLE_PROFILING}" = "true")
 ACX_EXPAND(LD_EXTRALIBS, $EXTRALIBS)
 AC_SUBST(LD_EXTRALIBS)
 AC_SUBST(OSLIBS)
@@ -1483,29 +1493,6 @@ fi
 AC_SUBST(ENABLE_PARPORT)
 AM_CONDITIONAL(ENABLE_PARPORT, test "${ENABLE_PARPORT}" = "true")
 
-#Check for profiling
-AC_MSG_CHECKING(if profiling is enabled)
-ENABLE_PROFILING="false"
-AC_ARG_ENABLE(profiling,
-[  --enable-profiling      Enable profiling (default false)],
-[
-AC_MSG_RESULT([$enableval])
-    if test "$enableval" = "yes" ; then
-        ENABLE_PROFILING=true
-	EXTRACFLAGS="$EXTRACFLAGS -pg"
-    fi
-],
-[
-    AC_MSG_RESULT([no (default)])
-])
-AC_SUBST(ENABLE_PROFILING)
-AM_CONDITIONAL(ENABLE_PROFILING, test "${ENABLE_PROFILING}" = "true")
-
-if test "${ENABLE_PROFILING}" = "true" ; then
-   PROFILING_FLAG=-pg
-fi
-AC_SUBST(PROFILING_FLAG)
-AC_SUBST(EXTRACFLAGS)
 
 
 # owftpd section

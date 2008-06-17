@@ -7,20 +7,11 @@ EXTRA_DIST = python.m4 \
 noinst_DATA = OW.py
 LIBOW = ../../owlib/src/c/libow.la
 
-#owpython_LDFLAGS = -shared -shrext .so
-
-#AM_CFLAGS = -I../include \
-#	-fexceptions \
-#	${PTHREAD_CFLAGS} \
-#	${EXTRACFLAGS}
-
-#LDADD = -low ${PTHREAD_LIBS} ${LD_EXTRALIBS} ${OSLIBS}
-
 ow_wrap.c: ../ow.i ${LIBOW}
 	$(SWIG) -python -o $@ ../ow.i
 
 OW.py: ow_wrap.c setup.py
-	$(PYTHON) setup.py build
+	LDFLAGS="$(PYLDFLAGS) ${PTHREAD_LIBS} ${LIBUSB_LIBS} ${LD_EXTRALIBS}" CFLAGS="$(PYCFLAGS) $(PIC_FLAGS)" $(PYTHON) setup.py build
 
 install-data-local:
 #	OpenSUSE is buggy and install libraries at /usr/local.
@@ -30,7 +21,7 @@ install-data-local:
 # Other options are (but not needed): --install-data="/$(DESTDIR)$(PYSITEDIR)" --install-script="/$(DESTDIR)$(PYSITEDIR)" --install-header=
 
 clean-local:
-	@RM@ -f *~ .*~ *.o
+	@RM@ -f *~ .*~ *.o configuration.log
 	@RM@ -rf build OW.py ow_wrap.c
 
 clean-generic:

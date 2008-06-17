@@ -7,9 +7,9 @@ lib_LTLIBRARIES = libowcapi.la
 libowcapi_la_SOURCES = owcapi.c
 
 if HAVE_CYGWIN
-libowcapi_la_LDFLAGS = -low ${PROFILING_FLAG} -shared -no-undefined 
+libowcapi_la_LDFLAGS = -low ${LD_EXTRALIBS} -shared -no-undefined 
 else
-libowcapi_la_LDFLAGS = -low -version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE) -release $(LT_RELEASE) ${PROFILING_FLAG} -shared -shrext .so
+libowcapi_la_LDFLAGS = -low -version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE) -release $(LT_RELEASE) ${PTHREAD_LIBS} ${LIBUSB_LIBS} ${LD_EXTRALIBS} -shared -shrext .so
 endif
 
 AM_CFLAGS = -I../include \
@@ -25,9 +25,11 @@ AM_CFLAGS = -I../include \
 	-Wcast-align \
 	-Wstrict-prototypes \
 	-Wredundant-decls \
+	-D__EXTENSIONS__ \
 	${EXTRACFLAGS} \
 	${PTHREAD_CFLAGS} \
-	-D__EXTENSIONS__
+	${LIBUSB_CFLAGS} \
+	${PIC_FLAGS}
 
 clean-generic:
 

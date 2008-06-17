@@ -453,7 +453,7 @@ fi
 %{_libdir}/libownet.so
 %{_libdir}/libownet.a
 %{_libdir}/libownet.la
-#%{_mandir}/man1/*ownet.1.gz
+%{_mandir}/man1/*ownet*.1.gz
 %endif
 
 %if %{build_fs}

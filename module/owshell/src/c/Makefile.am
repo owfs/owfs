@@ -26,7 +26,6 @@ owpresent_SOURCES = ${COMMON_OWSHELL_SOURCE} \
                owpresent.c
 
 AM_CFLAGS = -I../include \
-	${EXTRACFLAGS} \
 	-I../../../owlib/src/include \
 	-fexceptions \
 	-Wall \
@@ -37,9 +36,10 @@ AM_CFLAGS = -I../include \
 	-Wcast-qual \
 	-Wcast-align \
 	-Wstrict-prototypes \
-	-Wredundant-decls
+	-Wredundant-decls \
+	${EXTRACFLAGS}
 
-LDADD = ${PROFILING_FLAG} ${LD_EXTRALIBS} ${OSLIBS}
+LDADD = ${LD_EXTRALIBS} ${OSLIBS}
 
 clean-generic:
 

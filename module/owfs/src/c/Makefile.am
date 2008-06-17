@@ -20,10 +20,10 @@ AM_CFLAGS = -I../include \
 	-Wstrict-prototypes \
 	-Wredundant-decls \
 	${EXTRACFLAGS} \
-	${PTHREAD_CFLAGS} \
-	${LIBUSB_CFLAGS}
+	${LIBUSB_CFLAGS} \
+	${PTHREAD_CFLAGS}
 
-LDADD = -low $(FUSE_LIBS) $(LIBUSB_LIBS) ${PROFILING_FLAG} ${PTHREAD_LIBS} ${LD_EXTRALIBS} ${OSLIBS}
+LDADD = -low ${FUSE_LIBS} ${LIBUSB_LIBS} ${PTHREAD_LIBS} ${LD_EXTRALIBS} ${OSLIBS}
 
 clean-generic:
 

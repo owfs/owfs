@@ -29,12 +29,12 @@ AM_CFLAGS = -I../include \
 	-Wcast-align \
 	-Wstrict-prototypes \
 	-Wredundant-decls \
-	${EXTRACFLAGS} \
 	${SS_FLAG} \
+	${EXTRACFLAGS} \
 	${LIBUSB_CFLAGS} \
 	${PTHREAD_CFLAGS}
 
-LDADD = -low ${LIBUSB_LIBS} ${PROFILING_FLAG} ${PTHREAD_LIBS} ${LD_EXTRALIBS} ${OSLIBS}
+LDADD = -low ${LIBUSB_LIBS} ${PTHREAD_LIBS} ${LD_EXTRALIBS} ${OSLIBS}
 
 
 clean-generic:

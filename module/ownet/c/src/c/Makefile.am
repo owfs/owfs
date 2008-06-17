@@ -29,10 +29,9 @@ libownet_la_SOURCES = ${LIBOWNET_SOURCE}
 
 
 if HAVE_CYGWIN
-#libownet_la_LDFLAGS = ${PROFILING_FLAG} ${PTHREAD_LIBS} -shared -no-undefined ${LIBUSB_LIBS}
-libownet_la_LDFLAGS = ${PROFILING_FLAG} ${PTHREAD_LIBS} -shared -no-undefined
+libownet_la_LDFLAGS = ${PTHREAD_LIBS} ${LD_EXTRALIBS} -shared -no-undefined
 else
-libownet_la_LDFLAGS = -version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE) -release $(LT_RELEASE) ${PROFILING_FLAG} ${PTHREAD_LIBS} -shared -shrext .so
+libownet_la_LDFLAGS = -version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE) -release $(LT_RELEASE) ${PTHREAD_LIBS} ${LD_EXTRALIBS} -shared -shrext .so
 endif
 
 # Maybe need this for MacOS X
@@ -56,9 +55,10 @@ AM_CFLAGS = -I../include \
 	-Wcast-align \
 	-Wstrict-prototypes \
 	-Wredundant-decls \
-	${EXTRACFLAGS} \
 	-D__EXTENSIONS__ \
-	${PTHREAD_CFLAGS}
+	${EXTRACFLAGS} \
+	${PTHREAD_CFLAGS} \
+	${PIC_FLAGS}
 
 clean-generic:
 
