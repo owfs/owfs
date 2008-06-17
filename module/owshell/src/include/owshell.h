@@ -114,7 +114,7 @@ typedef int INT;
 
 /*
     OW -- One Wire
-    Global variables -- each invokation will have it's own data
+    Globals variables -- each invokation will have it's own data
 */
 
 /* command line options */
@@ -189,7 +189,7 @@ union antiloop {
 	BYTE uuid[16];
 };
 
-/* Global information (for local control) */
+/* Globals information (for local control) */
 struct global {
 	int announce_off;			// use zeroconf?
 	ASCII *announce_name;
@@ -218,7 +218,7 @@ struct global {
 	int timeout_ftp;
 
 };
-extern struct global Global;
+extern struct global Globals;
 
 
 /* device display format */

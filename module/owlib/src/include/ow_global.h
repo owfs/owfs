@@ -50,7 +50,7 @@ $Id$
 #define OW_GLOBAL_H
 
 
-/* Global information (for local control) */
+/* Globals information (for local control) */
 struct global {
 	int announce_off;			// use zeroconf?
 	ASCII *announce_name;
@@ -93,8 +93,7 @@ struct global {
 	int no_get;
 	int no_persistence;
 	int eightbit_serial;
-    void * server_port ;
 };
-extern struct global Global;
+extern struct global Globals;
 
 #endif							/* OW_GLOBAL_H */

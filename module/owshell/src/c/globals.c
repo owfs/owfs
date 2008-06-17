@@ -11,7 +11,7 @@ $Id$
 
 #include "owshell.h"
 
-/* Globals for port and bus communication */
+/* Globalss for port and bus communication */
 /* connections globals stored in ow_connect.c */
 /* i.e. connection_in * owserver_connection ...         */
 
@@ -21,9 +21,9 @@ $Id$
 int32_t SemiGlobal = ((uint8_t) fdi) << 24 | ((uint8_t) temp_celsius) << 16 | ((uint8_t) 1)
 	<< 8;
 
-struct global Global;
+struct global Globals;
 
-/* Globals */
+/* Globalss */
 int count_inbound_connections = 0;
 struct connection_in s_owserver_connection;
 struct connection_in *owserver_connection = &s_owserver_connection;
@@ -38,16 +38,16 @@ void Setup(void)
 	memset(owserver_connection, 0, sizeof(s_owserver_connection));
 
 	// global structure of configuration parameters
-	memset(&Global, 0, sizeof(struct global));
-	Global.timeout_volatile = 15;
-	Global.timeout_stable = 300;
-	Global.timeout_directory = 60;
-	Global.timeout_presence = 120;
-	Global.timeout_serial = 5;
-	Global.timeout_usb = 5000;	// 5 seconds
-	Global.timeout_network = 1;
-	Global.timeout_server = 10;
-	Global.timeout_ftp = 900;
+	memset(&Globals, 0, sizeof(struct global));
+	Globals.timeout_volatile = 15;
+	Globals.timeout_stable = 300;
+	Globals.timeout_directory = 60;
+	Globals.timeout_presence = 120;
+	Globals.timeout_serial = 5;
+	Globals.timeout_usb = 5000;	// 5 seconds
+	Globals.timeout_network = 1;
+	Globals.timeout_server = 10;
+	Globals.timeout_ftp = 900;
 	errno = 0;					/* set error level none */
 }
 

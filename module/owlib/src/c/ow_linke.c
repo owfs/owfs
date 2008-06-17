@@ -274,7 +274,7 @@ static int LINK_sendback_data(const BYTE * data, BYTE * resp, const size_t size,
 static int LINKE_preamble(const struct parsedname *pn)
 {
 	BYTE data[6];
-	struct timeval tvnetfirst = { Global.timeout_network, 0, };
+	struct timeval tvnetfirst = { Globals.timeout_network, 0, };
 	if (tcp_read(pn->selected_connection->file_descriptor, data, 6, &tvnetfirst) != 6)
 		return -EIO;
 	LEVEL_CONNECT("Good preamble\n");

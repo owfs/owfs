@@ -783,7 +783,7 @@ static int DS2480_read(BYTE * buf, const size_t size, const struct parsedname *p
 		// set a descriptor to wait for a character available
 		FD_ZERO(&fdset);
 		FD_SET(pn->selected_connection->file_descriptor, &fdset);
-		tval.tv_sec = Global.timeout_serial;
+		tval.tv_sec = Globals.timeout_serial;
 		tval.tv_usec = 0;
 		/* This timeout need to be pretty big for some reason.
 		 * Even commands like DS2480_reset() fails with too low

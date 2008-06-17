@@ -194,12 +194,12 @@ void OW_Browse(void)
 	if ((rs = malloc(sizeof(struct RefStruct))) == NULL)
 		return;
 
-	dnserr = DNSServiceBrowse(&Global.browse, 0, 0, "_owserver._tcp", NULL, BrowseBack, NULL);
-	rs->sref = Global.browse;
+	dnserr = DNSServiceBrowse(&Globals.browse, 0, 0, "_owserver._tcp", NULL, BrowseBack, NULL);
+	rs->sref = Globals.browse;
 	if (dnserr == kDNSServiceErr_NoError) {
 		pthread_t thread;
 		int err;
-		//printf("Browse %ld %s|%s|%s\n",(long int)Global.browse,"","_owserver._tcp","") ;
+		//printf("Browse %ld %s|%s|%s\n",(long int)Globals.browse,"","_owserver._tcp","") ;
 		err = pthread_create(&thread, 0, Process, (void *) rs);
 		if (err) {
 			ERROR_CONNECT("Zeroconf/Bounjour browsing thread error %d).\n", err);

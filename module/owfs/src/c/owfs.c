@@ -43,7 +43,7 @@ static void ow_exit(int e)
 
 /*
     OW -- One Wire
-    Global variables -- each invokation will have it's own data
+    Globals variables -- each invokation will have it's own data
 */
 struct fuse *fuse;
 int fuse_fd = -1;
@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
 
 	/* grab our executable name */
     if (argc > 0) {
-		Global.progname = strdup(argv[0]);
+		Globals.progname = strdup(argv[0]);
     }
 	//mtrace() ;
 	/* process command line arguments */
@@ -142,9 +142,9 @@ int main(int argc, char *argv[])
 	Fuse_add("-o", &fuse_options);	// add "-o direct_io" to prevent buffering
 	Fuse_add("direct_io", &fuse_options);
 #endif							/* FUSE_VERSION >= 22 */
-	if (!Global.want_background) {
+	if (!Globals.want_background) {
 		Fuse_add("-f", &fuse_options);	// foreground for fuse too
-        if (Global.error_level > 2) {
+        if (Globals.error_level > 2) {
 			Fuse_add("-d", &fuse_options);	// debug for fuse too
         }
 	}
@@ -159,7 +159,7 @@ int main(int argc, char *argv[])
 #if OW_MT == 0
 	Fuse_add("-s", &fuse_options);	// single threaded
 #endif							/* OW_MT */
-	Global.now_background = Global.want_background;	// tell "error" that we are background
+	Globals.now_background = Globals.want_background;	// tell "error" that we are background
 #if 0
 	{
 		int i;

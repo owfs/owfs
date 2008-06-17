@@ -109,7 +109,7 @@ static int FS_read_real(struct one_wire_query *owq)
 	/* if not a specified bus, relook for chip location */
 	if (read_or_error < 0) {	//error
 		STAT_ADD1(read_tries[1]);
-		if (Global.opt == opt_server) {	// called from owserver
+		if (Globals.opt == opt_server) {	// called from owserver
 			// Only one try (repeated remotely)
 			Cache_Del_Device(pn);
 		} else if (SpecifiedBus(pn)) {	// this bus or bust!

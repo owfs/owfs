@@ -14,7 +14,7 @@ $Id$
 #include "ow.h"
 #include "ow_devices.h"
 
-/* Globals for port and bus communication */
+/* Globalss for port and bus communication */
 /* connections globals stored in ow_connect.c */
 /* i.e. connection_in * head_inbound_list ...         */
 
@@ -30,7 +30,7 @@ int32_t SemiGlobal = ((uint8_t) fdi) << 24 | ((uint8_t) temp_celsius) << 16 | ((
 	<< 8;
 #endif
 
-struct global Global = {
+struct global Globals = {
 	.announce_off = 0,
 	.announce_name = NULL,
 #if OW_ZERO

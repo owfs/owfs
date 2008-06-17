@@ -131,19 +131,19 @@ void finish( void ) {
 
 
 void set_error_print(int val) {
-    Global.error_print = val;
+    Globals.error_print = val;
 }
 
 int get_error_print(void) {
-    return Global.error_print;
+    return Globals.error_print;
 }
 
 void set_error_level(int val) {
-    Global.error_level = val;
+    Globals.error_level = val;
 }
 
 int get_error_level(void) {
-    return Global.error_level;
+    return Globals.error_level;
 }
 
 

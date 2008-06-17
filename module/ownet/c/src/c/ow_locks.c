@@ -16,7 +16,7 @@ $Id$
 #include "ow.h"
 #include "ow_connection.h"
 
-/* ------- Globals ----------- */
+/* ------- Globalss ----------- */
 
 #ifdef __UCLIBC__
 #if OW_MT

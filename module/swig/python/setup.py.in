@@ -157,10 +157,9 @@ else:
 #    my_extra_compile_args = ' '.join(cv_opt.split())
 
 			
-print "my_extra_compile_args=", my_extra_compile_args
+#print "my_extra_compile_args=", my_extra_compile_args
 my_extra_compile_args = [ arg for arg in my_extra_compile_args if len(arg) > 1 ]
-#my_extra_compile_args = string.split(my_extra_compile_args, ' ')
-print "my_extra_compile_args=", my_extra_compile_args
+#print "my_extra_compile_args=", my_extra_compile_args
 my_extra_link_args = [ arg for arg in my_extra_link_args if len(arg) > 1 ]
 my_include_dirs = [ '../../owlib/src/include', '../../../src/include' ]
 my_library_dirs = [ '../../owlib/src/c/.libs' ]

@@ -471,7 +471,7 @@ static int ToServer(int file_descriptor, struct server_msg *sm, struct serverpac
 		}
 		++sp->tokens;
 		sm->version = Servermessage + (sp->tokens);
-		io[4].iov_base = &(Global.Token);	// owserver: add our tag
+		io[4].iov_base = &(Globals.Token);	// owserver: add our tag
 		io[4].iov_len = sizeof(union antiloop);
 	}
 

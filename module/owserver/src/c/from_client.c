@@ -42,7 +42,7 @@ int FromClient(struct handlerdata *hd)
 {
 	char *msg;
 	ssize_t trueload;
-	struct timeval tv = { Global.timeout_server, 0, };
+	struct timeval tv = { Globals.timeout_server, 0, };
 	//printf("FromClient\n");
 
 	/* Clear return structure */
@@ -123,7 +123,7 @@ int FromClient(struct handlerdata *hd)
 		hd->sp.tokenstring = (BYTE *) p;
 		hd->sp.tokens = Servertokens(hd->sm.version);
 		for (i = 0; i < hd->sp.tokens; ++i, p += sizeof(union antiloop)) {
-			if (memcmp(p, &(Global.Token), sizeof(union antiloop)) == 0) {
+			if (memcmp(p, &(Globals.Token), sizeof(union antiloop)) == 0) {
 				free(msg);
 				hd->sm.type = msg_error;
 				LEVEL_CALL("owserver loop suppression\n");

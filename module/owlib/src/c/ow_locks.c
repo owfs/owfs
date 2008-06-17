@@ -17,7 +17,7 @@ $Id$
 #include "ow_counters.h"
 #include "ow_connection.h"
 
-/* ------- Globals ----------- */
+/* ------- Globalss ----------- */
 
 #if OW_MT
  #ifdef __UCLIBC__

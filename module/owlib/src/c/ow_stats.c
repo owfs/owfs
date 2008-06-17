@@ -48,7 +48,7 @@ $Id$
 #include "ow_counters.h"
 
 /* ----------------- */
-/* ---- Globals ---- */
+/* ---- Globalss ---- */
 /* ----------------- */
 UINT cache_flips = 0;
 UINT cache_adds = 0;

@@ -18,7 +18,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
-/* ------- Globals ----------- */
+/* ------- Globalss ----------- */
 #if OW_MT
 pthread_mutex_t init_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t access_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -53,7 +53,7 @@ void API_setup( enum opt_program opt )
 void API_set_error_level(const char * params)
 {
 	if(params != NULL) {
-		Global.error_level = atoi(params);
+		Globals.error_level = atoi(params);
 	}
 	return;
 }
@@ -61,7 +61,7 @@ void API_set_error_level(const char * params)
 void API_set_error_print(const char * params)
 {
 	if(params != NULL) {
-		Global.error_print = atoi(params);
+		Globals.error_print = atoi(params);
 	}
 	return;
 }
@@ -73,7 +73,7 @@ int API_init( const char * command_line )
     int return_code = 0 ;
 
     if ( StateInfo.owlib_state == lib_state_pre ) {
-        LibSetup(Global.opt) ; // use previous or default value
+        LibSetup(Globals.opt) ; // use previous or default value
         StateInfo.owlib_state = lib_state_setup ;
     }
     LIB_WLOCK ;

@@ -70,12 +70,12 @@ void *DataHandler(void *v)
 	/* Pre-handling for special testing mode to exclude certain messsages */
 	switch ((enum msg_classification) hd->sm.type) {
 	case msg_dirall:
-		if (Global.no_dirall) {
+		if (Globals.no_dirall) {
 			hd->sm.type = msg_error;
 		}
 		break;
 	case msg_get:
-		if (Global.no_get) {
+		if (Globals.no_get) {
 			hd->sm.type = msg_error;
 		}
 		break;

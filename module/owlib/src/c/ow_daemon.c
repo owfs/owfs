@@ -118,8 +118,8 @@ int EnterBackground(void)
 	 * use the adapter after daemon otherwise. Some permissions are changed on the process
 	 * (or process-group id) which libusb-win32 is depending on. */
     //printf("Enter Background\n") ;
-    if (Global.want_background) {
-		switch (Global.opt) {
+    if (Globals.want_background) {
+		switch (Globals.opt) {
 		case opt_owfs:
 			// handles PID from a callback
 			break;
@@ -136,7 +136,7 @@ int EnterBackground(void)
 				LEVEL_DEFAULT("Cannot enter background mode, quitting.\n");
 				return 1;
             } else {
-    			Global.now_background = 1;
+    			Globals.now_background = 1;
 #ifdef __UCLIBC__
                 /* Have to re-initialize pthread since the main-process is gone.
                 *
@@ -151,7 +151,7 @@ int EnterBackground(void)
 			break;
 		}
 	} else {					// not background
-		if (Global.opt != opt_owfs)
+		if (Globals.opt != opt_owfs)
 			PIDstart();
 	}
     //printf("Exit Background\n") ;

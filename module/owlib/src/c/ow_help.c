@@ -17,17 +17,17 @@ $Id$
 
 void ow_help_general(void)
 {
-	switch (Global.opt) {
+	switch (Globals.opt) {
 	case opt_owfs:
-		printf("Syntax: %s [options] device mountpoint\n", SAFESTRING(Global.progname));
+		printf("Syntax: %s [options] device mountpoint\n", SAFESTRING(Globals.progname));
 		break;
 	case opt_httpd:
 	case opt_server:
-		printf("Syntax: %s [options] device clientport\n", SAFESTRING(Global.progname));
+		printf("Syntax: %s [options] device clientport\n", SAFESTRING(Globals.progname));
 		break;
 	case opt_ftpd:
 	default:
-		printf("Syntax: %s [options] device\n", SAFESTRING(Global.progname));
+		printf("Syntax: %s [options] device\n", SAFESTRING(Globals.progname));
 		break;
 	}
 	printf("\n"
@@ -41,9 +41,9 @@ void ow_help_general(void)
 		   "\n"
 		   " man %s                 man page for this program\n"
 		   "  and man pages for individual 1-wire devices e.g. 'man DS2409'\n",
-		   SAFESTRING(Global.progname), SAFESTRING(Global.progname),
-		   SAFESTRING(Global.progname), SAFESTRING(Global.progname),
-		   SAFESTRING(Global.progname), SAFESTRING(Global.progname), SAFESTRING(Global.progname)
+		   SAFESTRING(Globals.progname), SAFESTRING(Globals.progname),
+		   SAFESTRING(Globals.progname), SAFESTRING(Globals.progname),
+		   SAFESTRING(Globals.progname), SAFESTRING(Globals.progname), SAFESTRING(Globals.progname)
 		);
 }
 

@@ -51,7 +51,7 @@ static void Show(FILE * out, const struct parsedname * pn_entry )
     } else if ( pn_entry->selected_filetype->format == ft_directory || pn_entry->selected_filetype->format == ft_subdir ) {
         // Directory
         ShowDirectory(out,pn_entry) ;
-    } else if ( pn_entry->selected_filetype->write == NO_WRITE_FUNCTION || Global.readonly ) {
+    } else if ( pn_entry->selected_filetype->write == NO_WRITE_FUNCTION || Globals.readonly ) {
         // Unwritable
         if ( pn_entry->selected_filetype->read != NO_READ_FUNCTION ) {
             ShowReadonly( out, owq ) ;
@@ -207,7 +207,7 @@ static void ShowText(FILE * out, const struct parsedname * pn_entry )
         ShowTextDirectory(out,pn_entry ) ;
     } else if ( IsStructureDir(pn_entry) ) {
         ShowTextStructure(out,owq) ;
-    } else if ( pn_entry->selected_filetype->write == NO_WRITE_FUNCTION || Global.readonly ) {
+    } else if ( pn_entry->selected_filetype->write == NO_WRITE_FUNCTION || Globals.readonly ) {
         // Unwritable
         if ( pn_entry->selected_filetype->read != NO_READ_FUNCTION ) {
             ShowTextReadonly( out, owq ) ;

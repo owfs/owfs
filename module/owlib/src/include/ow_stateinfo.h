@@ -51,7 +51,7 @@ $Id$
 
 enum lib_state { lib_state_pre, lib_state_setup, lib_state_started, lib_state_active, lib_state_finished, } ;
 
-/* Global information (for local control) */
+/* Globals information (for local control) */
 struct stateinfo {
     enum lib_state owlib_state ;
 	int lock_setup_done ;

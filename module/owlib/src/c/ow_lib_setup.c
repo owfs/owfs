@@ -23,7 +23,7 @@ void LibSetup(enum opt_program opt)
 	OW_Load_dnssd_library();
 #endif
 
-	Global.opt = opt;
+	Globals.opt = opt;
 
 	/* special resort in case static data (devices and filetypes) not properly sorted */
 	DeviceSort();

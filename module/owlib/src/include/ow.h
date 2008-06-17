@@ -225,7 +225,7 @@ $Id$
 
 /*
     OW -- One Wire
-    Global variables -- each invokation will have it's own data
+    Globals variables -- each invokation will have it's own data
 */
 
 /* command line options */
@@ -289,7 +289,7 @@ extern void set_signal_handlers(void (*exit_handler)
 /* OWSERVER messages */
 #include "ow_message.h"
 
-/* Global information (for local control) */
+/* Globals information (for local control) */
 /* Separated out into ow_global.h for readability */
 #include "ow_global.h"
 

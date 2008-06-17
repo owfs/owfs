@@ -60,7 +60,7 @@ ssize_t OW_init(const char *params)
 
 	/* Proceed with init while lock held */
 	/* grab our executable name */
-	Global.progname = strdup("OWCAPI");
+	Globals.progname = strdup("OWCAPI");
 
     ret = API_init(params) ;
 
@@ -82,7 +82,7 @@ ssize_t OW_init_args(int argc, char **argv)
 	/* Proceed with init while lock held */
 	/* grab our executable name */
 	if (argc > 0)
-		Global.progname = strdup(argv[0]);
+		Globals.progname = strdup(argv[0]);
 
 	while (((c = getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL)) != -1)
 		   && (ret == 0)

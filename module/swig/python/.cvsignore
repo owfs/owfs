@@ -5,3 +5,4 @@ Makefile
 Makefile.in
 .deps
 setup.py
+configuration.log

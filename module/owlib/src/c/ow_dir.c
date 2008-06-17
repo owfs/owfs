@@ -149,7 +149,7 @@ static int FS_dir_both(void (*dirfunc) (void *, const struct parsedname *), void
 		//printf("KNOWN_BUS\n");
 		// Not specified bus, so scan through all and print union
 		ret = FS_dir_all_connections(dirfunc, v, pn_raw_directory, flags);
-		if ((Global.opt != opt_server)
+		if ((Globals.opt != opt_server)
 			|| ShouldReturnBusList(pn_raw_directory)) {
 			if (pn_raw_directory->pathlength == 0) {
 				// only add funny directories for non-micro hub (DS2409) branches

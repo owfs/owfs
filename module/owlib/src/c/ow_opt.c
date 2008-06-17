@@ -62,8 +62,8 @@ const struct option owopts_long[] = {
 	{"format", required_argument, NULL, 'f'},
 	{"pid_file", required_argument, NULL, 'P'},
 	{"pid-file", required_argument, NULL, 'P'},
-	{"background", no_argument, &Global.want_background, 1},
-	{"foreground", no_argument, &Global.want_background, 0},
+	{"background", no_argument, &Globals.want_background, 1},
+	{"foreground", no_argument, &Globals.want_background, 0},
     {"error_print", required_argument, NULL, e_error_print},
     {"error-print", required_argument, NULL, e_error_print},
     {"errorprint", required_argument, NULL, e_error_print},
@@ -114,18 +114,18 @@ const struct option owopts_long[] = {
     {"tester", required_argument, NULL, e_tester},	/* Tester */
     {"etherweather", required_argument, NULL, e_etherweather},	/* EtherWeather */
     {"EtherWeather", required_argument, NULL, e_etherweather},	/* EtherWeather */
-	{"zero", no_argument, &Global.announce_off, 0},
-	{"nozero", no_argument, &Global.announce_off, 1},
-	{"autoserver", no_argument, &Global.autoserver, 1},
-	{"noautoserver", no_argument, &Global.autoserver, 0},
+	{"zero", no_argument, &Globals.announce_off, 0},
+	{"nozero", no_argument, &Globals.announce_off, 1},
+	{"autoserver", no_argument, &Globals.autoserver, 1},
+	{"noautoserver", no_argument, &Globals.autoserver, 0},
     {"announce", required_argument, NULL, e_announce},
     {"allow_other", no_argument, NULL, e_allow_other},
-	{"altUSB", no_argument, &Global.altUSB, 1},	/* Willy Robison's tweaks */
-	{"altusb", no_argument, &Global.altUSB, 1},	/* Willy Robison's tweaks */
-	{"usb_flextime", no_argument, &Global.usb_flextime, 1},
-	{"USB_flextime", no_argument, &Global.usb_flextime, 1},
-	{"usb_regulartime", no_argument, &Global.usb_flextime, 0},
-	{"USB_regulartime", no_argument, &Global.usb_flextime, 0},
+	{"altUSB", no_argument, &Globals.altUSB, 1},	/* Willy Robison's tweaks */
+	{"altusb", no_argument, &Globals.altUSB, 1},	/* Willy Robison's tweaks */
+	{"usb_flextime", no_argument, &Globals.usb_flextime, 1},
+	{"USB_flextime", no_argument, &Globals.usb_flextime, 1},
+	{"usb_regulartime", no_argument, &Globals.usb_flextime, 0},
+	{"USB_regulartime", no_argument, &Globals.usb_flextime, 0},
 
     {"timeout_volatile", required_argument, NULL, e_timeout_volatile,},	// timeout -- changing cached values
     {"timeout_stable", required_argument, NULL, e_timeout_stable,},	// timeout -- unchanging cached values
@@ -145,15 +145,15 @@ const struct option owopts_long[] = {
     {"clients_persistent_low", required_argument, NULL, e_clients_persistent_low,},
     {"clients_persistent_high", required_argument, NULL, e_clients_persistent_high,},
 
-    {"one_device", no_argument, &Global.one_device, 1},
-	{"1_device", no_argument, &Global.one_device, 1},
+    {"one_device", no_argument, &Globals.one_device, 1},
+	{"1_device", no_argument, &Globals.one_device, 1},
 
-	{"pingcrazy", no_argument, &Global.pingcrazy, 1},
-	{"no_dirall", no_argument, &Global.no_dirall, 1},
-	{"no_get", no_argument, &Global.no_get, 1},
-	{"no_persistence", no_argument, &Global.no_persistence, 1},
-	{"8bit", no_argument, &Global.eightbit_serial, 1},
-	{"6bit", no_argument, &Global.eightbit_serial, 0},
+	{"pingcrazy", no_argument, &Globals.pingcrazy, 1},
+	{"no_dirall", no_argument, &Globals.no_dirall, 1},
+	{"no_get", no_argument, &Globals.no_get, 1},
+	{"no_persistence", no_argument, &Globals.no_persistence, 1},
+	{"8bit", no_argument, &Globals.eightbit_serial, 1},
+	{"6bit", no_argument, &Globals.eightbit_serial, 0},
 	{0, 0, 0, 0},
 };
 
@@ -171,19 +171,19 @@ static int ParseInterp(struct lineparse *lp)
             *prog_char = tolower( *prog_char ) ;
         }
         if ( strstr( lp->prog, "server" ) != NULL ) {
-            if (  (Global.opt == opt_server) == lp->reverse_prog ) {
+            if (  (Globals.opt == opt_server) == lp->reverse_prog ) {
                 return 0 ;
             }
         } else if ( strstr( lp->prog, "http" ) != NULL ) {
-            if (  (Global.opt == opt_httpd) == lp->reverse_prog ) {
+            if (  (Globals.opt == opt_httpd) == lp->reverse_prog ) {
                 return 0 ;
             }
         } else if ( strstr( lp->prog, "ftp" ) != NULL ) {
-            if (  (Global.opt == opt_ftpd) == lp->reverse_prog ) {
+            if (  (Globals.opt == opt_ftpd) == lp->reverse_prog ) {
                 return 0 ;
             }
         } else if ( strstr( lp->prog, "fs" ) != NULL ) {
-            if (  (Global.opt == opt_owfs) == lp->reverse_prog ) {
+            if (  (Globals.opt == opt_owfs) == lp->reverse_prog ) {
                 return 0 ;
             }
         } else {
@@ -473,14 +473,14 @@ int owopt(const int option_char, const char *arg)
             if (OW_parsevalue(&i, arg)) {
 				return 1;
             }
-			Global.timeout_volatile = (int) i;
+			Globals.timeout_volatile = (int) i;
 		}
 		break;
 	case 'r':
-		Global.readonly = 1;
+		Globals.readonly = 1;
 		break;
 	case 'w':
-		Global.readonly = 0;
+		Globals.readonly = 0;
 		break;
 	case 'C':
 		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_celsius);
@@ -500,7 +500,7 @@ int owopt(const int option_char, const char *arg)
 	case 's':
 		return OW_ArgNet(arg);
 	case 'p':
-		switch (Global.opt) {
+		switch (Globals.opt) {
 		case opt_httpd:
 		case opt_server:
 		case opt_ftpd:
@@ -509,7 +509,7 @@ int owopt(const int option_char, const char *arg)
 			return 0;
 		}
 	case 'm':
-		switch (Global.opt) {
+		switch (Globals.opt) {
 		case opt_owfs:
 			return OW_ArgServer(arg);
 		default:
@@ -548,7 +548,7 @@ int owopt(const int option_char, const char *arg)
             if (OW_parsevalue(&i, arg)) {
 				return 1;
             }
-			Global.error_print = (int) i;
+			Globals.error_print = (int) i;
 		}
 		break;
         case e_error_level:
@@ -557,7 +557,7 @@ int owopt(const int option_char, const char *arg)
             if (OW_parsevalue(&i, arg)) {
 				return 1;
             }
-			Global.error_level = (int) i;
+			Globals.error_level = (int) i;
 		}
 		break;
         case e_cache_size:
@@ -566,7 +566,7 @@ int owopt(const int option_char, const char *arg)
             if (OW_parsevalue(&i, arg)) {
 				return 1;
             }
-			Global.cache_size = (size_t) i;
+			Globals.cache_size = (size_t) i;
 		}
 		break;
         case e_fuse_opt:					/* fuse_opt, handled in owfs.c */
@@ -574,7 +574,7 @@ int owopt(const int option_char, const char *arg)
         case e_fuse_open_opt:					/* fuse_open_opt, handled in owfs.c */
 		break;
         case e_sidetap: /* sidetap address */
-            switch (Global.opt) {
+            switch (Globals.opt) {
                 case opt_server:
                     return OW_ArgSide(arg);
                 default:
@@ -586,7 +586,7 @@ int owopt(const int option_char, const char *arg)
             if (OW_parsevalue(&i, arg)) {
 				return 1;
             }
-			Global.max_clients = (int) i;
+			Globals.max_clients = (int) i;
 		}
 		break;
         case e_ha7:
@@ -604,7 +604,7 @@ int owopt(const int option_char, const char *arg)
         case e_etherweather:
 		return OW_ArgEtherWeather(arg);
         case e_announce:
-		Global.announce_name = strdup(arg);
+		Globals.announce_name = strdup(arg);
 		break;
         case e_allow_other:					/* allow_other */
 		break;
@@ -628,7 +628,7 @@ int owopt(const int option_char, const char *arg)
 			if (OW_parsevalue(&i, arg))
 				return 1;
 			// Using the character as a numeric value -- convenient but risky
-            (&Global.timeout_volatile)[option_char - e_timeout_volatile] = (int) i;
+            (&Globals.timeout_volatile)[option_char - e_timeout_volatile] = (int) i;
 		}
 		break;
 	case 0:

@@ -1054,7 +1054,7 @@ static void do_stor(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 	struct timeval start_timestamp;
 	struct timeval end_timestamp;
 	struct timeval transfer_time;
-	struct timeval limit_time = { Global.timeout_ftp, 0 };
+	struct timeval limit_time = { Globals.timeout_ftp, 0 };
 
 	OWQ_allocate_struct_and_pointer(owq);
 	struct parsedname *pn = PN(owq);

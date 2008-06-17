@@ -54,7 +54,7 @@ int BUS_select(const struct parsedname *pn)
 	int pl = pn->pathlength;
 	//printf("SELECT WORK: pathlength=%d path=%s\n",pn->pathlength,pn->path);
 	// if declared only a single device, we can use faster SKIP ROM command
-	if (Global.one_device) {
+	if (Globals.one_device) {
 		return BUS_Skip_Rom(pn);
 	}
 

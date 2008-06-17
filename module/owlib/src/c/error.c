@@ -37,9 +37,9 @@ void err_msg(enum e_err_type errnoflag, enum e_err_level level, const char *fmt,
 	va_list ap;
 
 	/* Print where? */
-	switch (Global.error_print) {
+	switch (Globals.error_print) {
 	case e_err_print_mixed:
-		sl = Global.now_background ? e_err_print_syslog : e_err_print_console;
+		sl = Globals.now_background ? e_err_print_syslog : e_err_print_console;
 		break;
 	case e_err_print_syslog:
 		sl = e_err_print_syslog;

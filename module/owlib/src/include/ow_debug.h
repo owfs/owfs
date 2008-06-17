@@ -31,35 +31,35 @@ void _Debug_Bytes(const char *title, const unsigned char *buf, int length);
 extern int log_available;
 
 #if OW_DEBUG
-#define LEVEL_DEFAULT(...)    if (Global.error_level>=e_err_default) \
+#define LEVEL_DEFAULT(...)    if (Globals.error_level>=e_err_default) \
     err_msg(e_err_type_level,e_err_default,__VA_ARGS__)
-#define LEVEL_CONNECT(...)    if (Global.error_level>=e_err_connect) \
+#define LEVEL_CONNECT(...)    if (Globals.error_level>=e_err_connect) \
     err_msg(e_err_type_level,e_err_connect,__VA_ARGS__)
-#define LEVEL_CALL(...)       if (Global.error_level>=e_err_call)  \
+#define LEVEL_CALL(...)       if (Globals.error_level>=e_err_call)  \
     err_msg(e_err_type_level,e_err_call,__VA_ARGS__)
-#define LEVEL_DATA(...)       if (Global.error_level>=e_err_data) \
+#define LEVEL_DATA(...)       if (Globals.error_level>=e_err_data) \
     err_msg(e_err_type_level,e_err_data,__VA_ARGS__)
-#define LEVEL_DETAIL(...)     if (Global.error_level>=e_err_detail) \
+#define LEVEL_DETAIL(...)     if (Globals.error_level>=e_err_detail) \
     err_msg(e_err_type_level,e_err_detail,__VA_ARGS__)
-#define LEVEL_DEBUG(...)      if (Global.error_level>=e_err_debug) \
+#define LEVEL_DEBUG(...)      if (Globals.error_level>=e_err_debug) \
     err_msg(e_err_type_level,e_err_debug,__VA_ARGS__)
 
-#define ERROR_DEFAULT(...)    if (Global.error_level>=e_err_default) \
+#define ERROR_DEFAULT(...)    if (Globals.error_level>=e_err_default) \
     err_msg(e_err_type_error,e_err_default,__VA_ARGS__)
-#define ERROR_CONNECT(...)    if (Global.error_level>=e_err_connect) \
+#define ERROR_CONNECT(...)    if (Globals.error_level>=e_err_connect) \
     err_msg(e_err_type_error,e_err_connect,__VA_ARGS__)
-#define ERROR_CALL(...)       if (Global.error_level>=e_err_call)  \
+#define ERROR_CALL(...)       if (Globals.error_level>=e_err_call)  \
     err_msg(e_err_type_error,e_err_call,__VA_ARGS__)
-#define ERROR_DATA(...)       if (Global.error_level>=e_err_data) \
+#define ERROR_DATA(...)       if (Globals.error_level>=e_err_data) \
     err_msg(e_err_type_error,e_err_data,__VA_ARGS__)
-#define ERROR_DETAIL(...)     if (Global.error_level>=e_err_detail) \
+#define ERROR_DETAIL(...)     if (Globals.error_level>=e_err_detail) \
     err_msg(e_err_type_error,e_err_detail,__VA_ARGS__)
-#define ERROR_DEBUG(...)      if (Global.error_level>=e_err_debug) \
+#define ERROR_DEBUG(...)      if (Globals.error_level>=e_err_debug) \
     err_msg(e_err_type_error,e_err_debug,__VA_ARGS__)
 
-#define Debug_OWQ(owq)        if (Global.error_level>=e_err_debug) \
+#define Debug_OWQ(owq)        if (Globals.error_level>=e_err_debug) \
     _print_owq(owq)
-#define Debug_Bytes(title,buf,length)    if (Global.error_level>=e_err_beyond) \
+#define Debug_Bytes(title,buf,length)    if (Globals.error_level>=e_err_beyond) \
     _Debug_Bytes(title,buf,length)
 #else
 #define LEVEL_DEFAULT(...)    { } while (0);

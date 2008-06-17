@@ -15,7 +15,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
-/* ------- Globals ----------- */
+/* ------- Globalss ----------- */
 
 #ifdef OW_MT
 

@@ -169,7 +169,7 @@ $Id$
 
 /*
     OW -- One Wire
-    Global variables -- each invokation will have it's own data
+    Globals variables -- each invokation will have it's own data
 */
 
 /* Several different structures:
@@ -203,7 +203,7 @@ void SetSignals(void) ;
 /* OWSERVER messages */
 #include "ow_message.h"
 
-/* Global information (for local control) */
+/* Globals information (for local control) */
 /* Separated out into ow_global.h for readability */
 #include "ow_global.h"
 

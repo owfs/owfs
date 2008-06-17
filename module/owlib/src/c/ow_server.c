@@ -506,7 +506,7 @@ static void *FromServerAlloc(int file_descriptor, struct client_msg *cm)
 {
 	char *msg;
 	int ret;
-	struct timeval tv = { Global.timeout_network + 1, 0, };
+	struct timeval tv = { Globals.timeout_network + 1, 0, };
 
 	do {						/* loop until non delay message (payload>=0) */
 		//printf("OW_SERVER loop1\n");
@@ -557,7 +557,7 @@ static int FromServer(int file_descriptor, struct client_msg *cm, char *msg, siz
 {
 	size_t rtry;
 	size_t ret;
-	struct timeval tv = { Global.timeout_network + 1, 0, };
+	struct timeval tv = { Globals.timeout_network + 1, 0, };
 
 	do {						// read regular header, or delay (delay when payload<0)
 		//printf("OW_SERVER loop2\n");
@@ -645,7 +645,7 @@ static int ToServer(int file_descriptor, struct server_msg *sm, struct serverpac
 
     
     sm->version = MakeServerprotocol(OWSERVER_PROTOCOL_VERSION) ;
-	if (Global.opt == opt_server) {
+	if (Globals.opt == opt_server) {
         tokens = sp->tokens ;
         sm->version |= MakeServermessage ;
 
@@ -658,7 +658,7 @@ static int ToServer(int file_descriptor, struct server_msg *sm, struct serverpac
         // final block, new token (if an owserver)
 		++tokens;
 		sm->version |= MakeServertokens(tokens);
-		io[4].iov_base = &(Global.Token);	// owserver: add our tag
+		io[4].iov_base = &(Globals.Token);	// owserver: add our tag
 		io[4].iov_len = sizeof(union antiloop);
 	}
 

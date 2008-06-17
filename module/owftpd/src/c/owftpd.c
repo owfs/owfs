@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
 
 	/* grab our executable name */
     if (argc > 0) {
-		Global.progname = strdup(argv[0]);
+		Globals.progname = strdup(argv[0]);
     }
 
 	/* check our command-line arguments */
@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* Need at least 1 adapter */
-	if (count_inbound_connections == 0 && !Global.autoserver) {
+	if (count_inbound_connections == 0 && !Globals.autoserver) {
 		LEVEL_DEFAULT("Need to specify at least one 1-wire adapter.\n");
 		ow_exit(1);
 	}

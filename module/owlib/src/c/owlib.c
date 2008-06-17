@@ -33,11 +33,11 @@ int LibStart(void)
     /* Use first bus for http bus name */
     {
         struct connection_in * c_first  = find_connection_in(0) ;
-        Global.SimpleBusName = (c_first!=NULL) ? c_first->name : "No connections" ;
+        Globals.SimpleBusName = (c_first!=NULL) ? c_first->name : "No connections" ;
     }
 
 	// zeroconf/Bonjour look for new services
-	if (Global.autoserver) {
+	if (Globals.autoserver) {
 #if OW_ZERO
 		if (libdnssd == NULL) {
 			fprintf(stderr, "Zeroconf/Bonjour is disabled since dnssd library isn't found.\n");

@@ -235,7 +235,7 @@ static int HA7_read(int file_descriptor, struct memblob *mb)
 	ASCII readin_area[HA7_READ_BUFFER_LENGTH + 1];
 	ASCII *start;
 	ssize_t read_size;
-	struct timeval tvnet = { Global.timeout_ha7, 0, };
+	struct timeval tvnet = { Globals.timeout_ha7, 0, };
 
 	MemblobInit(mb, HA7_READ_BUFFER_LENGTH);
 

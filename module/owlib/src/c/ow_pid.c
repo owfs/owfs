@@ -14,7 +14,7 @@ $Id$
 #include "ow.h"
 #include "ow_pid.h"
 
-/* Globals */
+/* Globalss */
 int pid_created = 0;			/* flag flag when file actually created */
 char *pid_file = NULL;			/* filename where PID number stored */
 

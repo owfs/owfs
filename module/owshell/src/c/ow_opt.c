@@ -92,7 +92,7 @@ void owopt(const int c, const char *arg)
 		break;
 	case 307:
 	case 308:
-		OW_parsevalue(&((int *) &Global.timeout_volatile)[c - 301], arg);
+		OW_parsevalue(&((int *) &Globals.timeout_volatile)[c - 301], arg);
 	case 0:
 		break;
 	default:

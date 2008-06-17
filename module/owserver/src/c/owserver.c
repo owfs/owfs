@@ -103,7 +103,7 @@ int main(int argc, char **argv)
 
 	/* grab our executable name */
     if (argc > 0) {
-		Global.progname = strdup(argv[0]);
+		Globals.progname = strdup(argv[0]);
     }
 
 	while ((c = getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL)) != -1) {
@@ -126,7 +126,7 @@ int main(int argc, char **argv)
 	}
 
 	if (count_outbound_connections == 0) {
-        if (Global.announce_off) {
+        if (Globals.announce_off) {
 			LEVEL_DEFAULT("No TCP port specified (-p)\n%s -h for help\n", argv[0]);
 			ow_exit(1);
 		}
@@ -164,6 +164,6 @@ int main(int argc, char **argv)
 static void SetupAntiloop(void)
 {
 	struct tms t;
-	Global.Token.simple.pid = getpid();
-	Global.Token.simple.clock = times(&t);
+	Globals.Token.simple.pid = getpid();
+	Globals.Token.simple.clock = times(&t);
 }

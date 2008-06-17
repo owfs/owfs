@@ -103,14 +103,14 @@ static time_t TimeOut(const enum fc_change change)
 		return 1;
 	case fc_volatile:
 	case fc_Avolatile:
-		return Global.timeout_volatile;
+		return Globals.timeout_volatile;
 	case fc_stable:
 	case fc_Astable:
-		return Global.timeout_stable;
+		return Globals.timeout_stable;
 	case fc_presence:
-		return Global.timeout_presence;
+		return Globals.timeout_presence;
 	case fc_directory:
-		return Global.timeout_directory;
+		return Globals.timeout_directory;
 	default:					/* static or statistic */
 		return 0;
 	}
@@ -391,7 +391,7 @@ static int Cache_Add_Common(struct tree_node *tn)
 		cache.retired = time(NULL);
 		cache.killed = cache.retired + cache.lifespan;
 	}
-	if (Global.cache_size && (cache.old_ram + cache.new_ram > Global.cache_size)) {
+	if (Globals.cache_size && (cache.old_ram + cache.new_ram > Globals.cache_size)) {
 		// failed size test
 		free(tn);
 	} else if ((opaque = tsearch(tn, &cache.new_db, tree_compare))) {

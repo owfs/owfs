@@ -142,7 +142,7 @@ static int DS9097_reset(const struct parsedname *pn)
 	   They always use 8bit mode... doohhh? */
 #endif
 
-	if (Global.eightbit_serial) {
+	if (Globals.eightbit_serial) {
 		/* coninue with 8 data bits */
 		term.c_cflag = CS8 | CREAD | HUPCL | CLOCAL;
 	} else {
@@ -280,7 +280,7 @@ static int DS9097_send_and_get(const BYTE * bussend, BYTE * busget, const size_t
 			/* I can't imagine that 5 seconds timeout is needed???
 			 * Any comments Paul ? */
 			/* We make it 10 * standard since 10 bytes required for 1 bit */
-			tv.tv_sec = Global.timeout_serial;
+			tv.tv_sec = Globals.timeout_serial;
 			tv.tv_usec = 0;
 			/* Initialize readset */
 			FD_ZERO(&readset);

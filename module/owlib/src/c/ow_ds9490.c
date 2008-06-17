@@ -295,9 +295,9 @@ int DS9490_detect(struct connection_in *in)
 
 	in->changed_bus_settings = 1;	// Trigger needing new configuration
 	in->set_speed = bus_speed_slow;	// not overdrive at start
-	in->connin.usb.usb_flextime = Global.usb_flextime;
+	in->connin.usb.usb_flextime = Globals.usb_flextime;
 	// store timeout value -- sec -> msec
-	in->connin.usb.timeout = 1000 * Global.timeout_usb;
+	in->connin.usb.timeout = 1000 * Globals.timeout_usb;
 
 	ret = DS9490_detect_low(&pn);
 	if (ret) {
@@ -1200,7 +1200,7 @@ static int DS9490_SetSpeed(const struct parsedname *pn)
 	pn->selected_connection->changed_bus_settings = 0;
 
 	// in case timeout value changed (via settings) -- sec -> msec
-	pn->selected_connection->connin.usb.timeout = 1000 * Global.timeout_usb;
+	pn->selected_connection->connin.usb.timeout = 1000 * Globals.timeout_usb;
 
 	if (pn->selected_connection->set_speed == bus_speed_overdrive) {
 		if (DS9490_overdrive(pn) == 0)
@@ -1216,7 +1216,7 @@ static int DS9490_SetSpeed(const struct parsedname *pn)
 		 * suitable for short 1-wire busses. Use flexible speed instead. */
 
 		// default values for bus-timing when using --altUSB
-		if (Global.altUSB) {
+		if (Globals.altUSB) {
 			pn->selected_connection->connin.usb.pulldownslewrate = PARMSET_Slew1p37Vus;
 			pn->selected_connection->connin.usb.writeonelowtime = PARMSET_W1L_10us;
 			pn->selected_connection->connin.usb.datasampleoffset = PARMSET_DS0_W0R_8us;

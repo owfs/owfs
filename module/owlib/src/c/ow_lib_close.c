@@ -30,19 +30,19 @@ void LibClose(void)
 	}
 #endif							/* OW_MT */
 
-	if (Global.announce_name) {
-        free(Global.announce_name);
-        Global.announce_name = NULL ;
+	if (Globals.announce_name) {
+        free(Globals.announce_name);
+        Globals.announce_name = NULL ;
     }
 
-    if (Global.progname) {
-		free(Global.progname);
-        Global.progname = NULL ;
+    if (Globals.progname) {
+		free(Globals.progname);
+        Globals.progname = NULL ;
     }
 
 #if OW_ZERO
-	if (Global.browse && (libdnssd != NULL)) {
-		DNSServiceRefDeallocate(Global.browse);
+	if (Globals.browse && (libdnssd != NULL)) {
+		DNSServiceRefDeallocate(Globals.browse);
     }
     
 	OW_Free_dnssd_library();

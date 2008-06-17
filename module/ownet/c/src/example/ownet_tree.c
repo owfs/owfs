@@ -4,7 +4,7 @@
 
 #include <ownetapi.h>
 
-//------------- Global vaiables ----------
+//------------- Globals vaiables ----------
 char *owserver_address = "4304";
 char *one_wire_path = "/";
 

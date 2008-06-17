@@ -83,7 +83,7 @@ int FS_write_postparse(struct one_wire_query *owq)
 	ssize_t write_or_error;
 	struct parsedname *pn = PN(owq);
 
-    if (Global.readonly) {
+    if (Globals.readonly) {
 		return -EROFS;			// read-only invokation
     }
     
@@ -135,7 +135,7 @@ int FS_write_postparse(struct one_wire_query *owq)
 			/* if not a specified bus, relook for chip location */
 			if (write_or_error < 0) {	// second look -- initial write gave an error
 				STAT_ADD1(write_tries[1]);
-				if (Global.opt == opt_server) {	// called from owserver
+				if (Globals.opt == opt_server) {	// called from owserver
 					Cache_Del_Device(pn);
 				} else if (SpecifiedBus(pn)) {
 					write_or_error = TestConnection(pn) ? -ECONNABORTED : FS_w_given_bus(owq);

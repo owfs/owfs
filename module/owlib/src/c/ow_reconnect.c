@@ -36,7 +36,7 @@ int TestConnection(const struct parsedname *pn)
 		STAT_ADD1_BUS(e_bus_reconnects, selected_connection);
 
         if (selected_connection->index == 0) {
-			Global.SimpleBusName = "Reconnecting...";
+			Globals.SimpleBusName = "Reconnecting...";
         }
 
 		// Close the bus (should leave enough reconnection information available)
@@ -57,7 +57,7 @@ int TestConnection(const struct parsedname *pn)
 			LEVEL_DEFAULT("%s adapter reconnected\n", selected_connection->adapter_name);
 			selected_connection->reconnect_state = reconnect_ok;
             if (selected_connection->index == 0) {
-                Global.SimpleBusName = selected_connection->name;
+                Globals.SimpleBusName = selected_connection->name;
             }
 		}
 	}

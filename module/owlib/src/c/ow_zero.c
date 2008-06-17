@@ -53,7 +53,7 @@ static void *Announce(void *v)
 
 	err =
 		DNSServiceRegister(&sref, 0, 0,
-						   Global.announce_name ? Global.
+						   Globals.announce_name ? Globals.
 						   announce_name : as->name, as->type0, NULL, NULL, as->port, 0, NULL, RegisterBack, &(as->out->sref0));
 	if (err)
 		LEVEL_DEBUG("Announce: err=%d\n", err);
@@ -69,7 +69,7 @@ static void *Announce(void *v)
 	if (as->type1) {
 		err =
 			DNSServiceRegister(&sref, 0, 0,
-							   Global.announce_name ? Global.
+							   Globals.announce_name ? Globals.
 							   announce_name : as->name, as->type1, NULL, NULL, as->port, 0, NULL, RegisterBack, &(as->out->sref1));
 		if (err == kDNSServiceErr_NoError) {
 			DNSServiceProcessResult(sref);
@@ -95,7 +95,7 @@ void OW_Announce(struct connection_out *out)
 #endif
 	socklen_t sl = sizeof(sa);
 
-	if (libdnssd == NULL || Global.announce_off)
+	if (libdnssd == NULL || Globals.announce_off)
 		return;
 
 	as = malloc(sizeof(struct announce_struct));
@@ -108,7 +108,7 @@ void OW_Announce(struct connection_out *out)
 		return;
 	}
 	as->port = ((struct sockaddr_in *) (&sa))->sin_port;
-	switch (Global.opt) {
+	switch (Globals.opt) {
 	case opt_httpd:
 		as->name = "OWFS (1-wire) Web";
 		as->type0 = "_http._tcp";

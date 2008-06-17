@@ -50,7 +50,7 @@ $Id$
 #define OW_GLOBAL_H
 
 
-/* Global information (for local control) */
+/* Globals information (for local control) */
 struct global {
 #if OW_ZERO
 	DNSServiceRef browse;
@@ -62,6 +62,6 @@ struct global {
 	int error_print;
 	int readonly;
 };
-extern struct global Global;
+extern struct global Globals;
 
 #endif							/* OW_GLOBAL_H */

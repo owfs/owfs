@@ -17,7 +17,7 @@ $Id$
 /* Routines for handling a linked list of connections in and out */
 /* typical connection in would be gtmhe serial port or USB */
 
-/* Globals */
+/* Globalss */
 struct connection_out *head_outbound_list = NULL;
 int count_outbound_connections = 0;
 struct connection_side *head_sidebound_list = NULL;

@@ -56,8 +56,8 @@ pthread_mutex_t persistence_mutex = PTHREAD_MUTEX_INITIALIZER;
 void Handler(int file_descriptor)
 {
 	struct handlerdata hd;
-	struct timeval tv_low = { Global.timeout_persistent_low, 0, };
-	struct timeval tv_high = { Global.timeout_persistent_high, 0, };
+	struct timeval tv_low = { Globals.timeout_persistent_low, 0, };
+	struct timeval tv_high = { Globals.timeout_persistent_high, 0, };
 	int persistent = 0;
 
 	hd.file_descriptor = file_descriptor;
@@ -70,7 +70,7 @@ void Handler(int file_descriptor)
 		int loop_persistent = ((hd.sm.sg & PERSISTENT_MASK) != 0);
 
 		/* Persistence suppression? */
-		if (Global.no_persistence) {
+		if (Globals.no_persistence) {
 			loop_persistent = 0;
 		}
 
@@ -83,7 +83,7 @@ void Handler(int file_descriptor)
 
 				PERSISTENCELOCK;
 
-				if (persistent_connections < Global.clients_persistent_high) {	/* ok */
+				if (persistent_connections < Globals.clients_persistent_high) {	/* ok */
 					++persistent_connections;	/* global count */
 					persistent = 1;	/* connection toggle */
 					hd.persistent = 1;	/* for responses */
@@ -130,7 +130,7 @@ void Handler(int file_descriptor)
 			PERSISTENCELOCK;
 
 			/* store the test because the mutex locks the variable */
-			loop_persistent = (persistent_connections < Global.clients_persistent_low);
+			loop_persistent = (persistent_connections < Globals.clients_persistent_low);
 
 			PERSISTENCEUNLOCK;
 
@@ -169,7 +169,7 @@ static void SingleHandler(struct handlerdata *hd)
 {
 	struct client_msg ping_cm;
 	struct timeval now;			// timer calculation
-	struct timeval delta = { Global.timeout_network, 500000 };	// 1.5 seconds ping interval
+	struct timeval delta = { Globals.timeout_network, 500000 };	// 1.5 seconds ping interval
 	struct timeval result;		// timer calculation
 	pthread_t thread;			// hanler thread id (not used)
 	int loop = 1;				// ping loop flap
@@ -183,7 +183,7 @@ static void SingleHandler(struct handlerdata *hd)
 	//printf("OWSERVER pre-create\n");
 	// PTHREAD_CREATE_DETACHED doesn't work for older uclibc... call pthread_detach() instead.
 
-	if (Global.pingcrazy) {		// extra pings
+	if (Globals.pingcrazy) {		// extra pings
 		TOCLIENTLOCK(hd);
 		ToClient(hd->file_descriptor, &ping_cm, NULL);	// send the ping
 		TOCLIENTUNLOCK(hd);
@@ -210,7 +210,7 @@ static void SingleHandler(struct handlerdata *hd)
 		} else {				// check timing -- ping if expired
 			gettimeofday(&now, NULL);	// current time
 			timersub(&now, &delta, &result);	// less delay
-			if (timercmp(&(hd->tv), &result, <) || Global.pingcrazy) {	// test against last message time
+			if (timercmp(&(hd->tv), &result, <) || Globals.pingcrazy) {	// test against last message time
 				char *c = NULL;	// dummy argument
 				ToClient(hd->file_descriptor, &ping_cm, c);	// send the ping
 				//printf("OWSERVER ping\n") ;

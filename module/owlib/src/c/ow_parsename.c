@@ -535,7 +535,7 @@ static enum parse_enum Parse_RealDevice(char *filename, enum parse_pass remote_s
 		return parse_prop;
     }
 
-	if (Global.one_device) {
+	if (Globals.one_device) {
 		bus_nr = 0;				// arbitrary assignment
 	} else {
 		/* Check the presence, and cache the proper bus number for better performance */

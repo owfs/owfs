@@ -222,7 +222,7 @@ static int LINK_read(BYTE * buf, const size_t size, const struct parsedname *pn)
 		STAT_ADD1(DS2480_read_null);
 		return -EIO;
 	}
-	//printf("LINK read attempting %d bytes on %d time %ld\n",(int)size,pn->selected_connection->file_descriptor,(long int)Global.timeout_serial);
+	//printf("LINK read attempting %d bytes on %d time %ld\n",(int)size,pn->selected_connection->file_descriptor,(long int)Globals.timeout_serial);
 	while (bytes_left > 0) {
 		int select_return = 0;
 		fd_set fdset;
@@ -230,7 +230,7 @@ static int LINK_read(BYTE * buf, const size_t size, const struct parsedname *pn)
 		// set a descriptor to wait for a character available
 		FD_ZERO(&fdset);
 		FD_SET(pn->selected_connection->file_descriptor, &fdset);
-		tval.tv_sec = Global.timeout_serial;
+		tval.tv_sec = Globals.timeout_serial;
 		tval.tv_usec = 0;
 		/* This timeout need to be pretty big for some reason.
 		 * Even commands like DS2480_reset() fails with too low
