@@ -82,10 +82,11 @@ int FS_fstat_postparse(struct stat *stbuf, const struct parsedname *pn)
 		FSTATUNLOCK;
 	} else {					/* known 1-wire filetype */
 		stbuf->st_mode = S_IFREG;
-		if (pn->selected_filetype->read != NO_READ_FUNCTION)
+        if (pn->selected_filetype->read != NO_READ_FUNCTION) {
 			stbuf->st_mode |= 0444;
 		if (!Globals.readonly && (pn->selected_filetype->write != NO_WRITE_FUNCTION))
 			stbuf->st_mode |= 0222;
+        }
 		stbuf->st_nlink = 1;
 
 		switch (pn->selected_filetype->change) {

@@ -249,13 +249,11 @@ static int FS_w_s_alarm(struct one_wire_query *owq)
 /* write 2406 switch -- 2 values*/
 static int FS_w_pio(struct one_wire_query *owq)
 {
-	BYTE data = 0;
-	/* reverse bits */
-	data = BYTE_INVERSE(OWQ_U(owq)) & 0x03;
-//    UT_setbit( &data , 0 , y[0]==0 ) ;
-//    UT_setbit( &data , 1 , y[1]==0 ) ;
-	if (OW_w_pio(data, PN(owq)))
+    BYTE data = BYTE_INVERSE(OWQ_U(owq)) & 0x03 ; /* reverse bits */
+	
+    if (OW_w_pio(data, PN(owq))) {
 		return -EINVAL;
+    }
 	return 0;
 }
 
@@ -346,8 +344,9 @@ static int OW_w_pio(const BYTE data, const struct parsedname *pn)
 static int OW_access(BYTE * data, const struct parsedname *pn)
 {
     BYTE d[2] = { _DS2406_IM|_DS2406_IC|_DS2406_CHS1|_DS2406_CHS0|_DS2406_CRC0, 0xFF, };
-	if (OW_full_access(d, pn))
+    if (OW_full_access(d, pn)) {
 		return 1;
+    }
 	data[0] = d[0];
 	return 0;
 }

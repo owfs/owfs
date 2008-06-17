@@ -252,9 +252,11 @@ static int FS_r_pio(struct one_wire_query *owq)
 /* 2408 switch PIO change*/
 static int FS_w_pio(struct one_wire_query *owq)
 {
-	/* reverse bits */
-	if (OW_w_pio(BYTE_INVERSE(OWQ_U(owq)), PN(owq)))
+    BYTE data = BYTE_INVERSE(OWQ_U(owq)) & 0xFF ;   /* reverse bits */
+    
+    if (OW_w_pio(data, PN(owq))) {
 		return -EINVAL;
+    }
 	return 0;
 }
 
@@ -448,12 +450,14 @@ static int OW_w_pio(const BYTE data, const struct parsedname *pn)
 	};
 
 	//printf( "W_PIO attempt\n");
-	if (BUS_transaction(t, pn))
+    if (BUS_transaction(t, pn)) {
 		return 1;
+    }
 	//printf( "W_PIO attempt\n");
 	//printf("wPIO data = %2X %2X %2X %2X %2X\n",write_string[0],write_string[1],write_string[2],read_back[0],read_back[1]) ;
-	if (read_back[0] != 0xAA)
+    if (read_back[0] != 0xAA) {
 		return 1;
+    }
 	//printf( "W_PIO 0xAA ok\n");
 	/* Ignore byte 5 read_back[1] the PIO status byte */
 	return 0;
