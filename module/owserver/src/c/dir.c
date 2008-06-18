@@ -54,7 +54,7 @@ static void DirHandlerCallback(void *v, const struct parsedname *pn_entry)
 	struct dirhandlerstruct *dhs = (struct dirhandlerstruct *) v;
 	char *path = pn_entry->path;
 
-    LEVEL_DEBUG("owserver Calling dir=%s\n", SAFESTRING(path));
+	LEVEL_DEBUG("owserver Calling dir=%s\n", SAFESTRING(path));
 
 	dhs->cm->size = strlen(path);
 	dhs->cm->payload = dhs->cm->size + 1;
@@ -62,13 +62,13 @@ static void DirHandlerCallback(void *v, const struct parsedname *pn_entry)
 
 	TOCLIENTLOCK(dhs->hd);
 	ToClient(dhs->hd->file_descriptor, dhs->cm, path);	// send this directory element
-    if ( count_sidebound_connections > 0 ) {
-        struct connection_side * side ;
-        for ( side=head_sidebound_list ; side!=NULL ; side = side->next ) {
-            ToClientSide(side, dhs->cm, path, &(dhs->hd->sidem) );
-        }
-    }
-    gettimeofday(&(dhs->hd->tv), NULL);	// reset timer
+	if (count_sidebound_connections > 0) {
+		struct connection_side *side;
+		for (side = head_sidebound_list; side != NULL; side = side->next) {
+			ToClientSide(side, dhs->cm, path, &(dhs->hd->sidem));
+		}
+	}
+	gettimeofday(&(dhs->hd->tv), NULL);	// reset timer
 	TOCLIENTUNLOCK(dhs->hd);
 }
 

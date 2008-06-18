@@ -89,9 +89,7 @@ void ow_help_temperature(void)
 		   " Temperature scale\n"
 		   "  -C --Celsius        Celsius(default) temperature scale\n"
 		   "  -F --Fahrenheit     Fahrenheit temperature scale\n"
-		   "  -K --Kelvin         Kelvin temperature scale\n"
-           "  -R --Rankine        Rankine temperature scale\n"
-          );
+		   "  -K --Kelvin         Kelvin temperature scale\n" "  -R --Rankine        Rankine temperature scale\n");
 }
 
 void ow_help_cache(void)
@@ -112,9 +110,7 @@ void ow_help_cache(void)
 		   "  --timeout_usb       [  5] Timeout for USB transaction\n"
 		   "  --timeout_network   [  1] Timeout for each network transaction\n"
 		   "  --timeout_server    [ 10] Timeout for first server connection\n"
-		   "  --timeout_ftp       [900] Timeout for FTP session\n"
-           "  --timeout_ha7       [ 60] Timeout for HA7Net adapter\n"
-          );
+		   "  --timeout_ftp       [900] Timeout for FTP session\n" "  --timeout_ha7       [ 60] Timeout for HA7Net adapter\n");
 }
 
 void ow_help_program(void)
@@ -128,23 +124,21 @@ void ow_help_program(void)
 		   "                         needs /etc/fuse.conf setting\n"
 		   "\n"
 		   " owhttpd (web server)\n"
-           "  -p --port [ip:]port   TCP address and port number for access\n"
-           "  --zero                Announce service via zeroconf\n"
-           "  --announce name       Name for service given in zeroconf broadcast\n"
-           "  --nozero              Don't announce service via zeroconf\n"
-           "\n"
-           " owserver (OWFS server)\n"
-           "  -p --port [ip:]port   TCP address and port number for access\n"
-           "  --sidetap [ip:]port   TCP address and port number for eavesdropping\n"
-           "\n"
-           " owftpd (ftp server)\n"
 		   "  -p --port [ip:]port   TCP address and port number for access\n"
-           "                           has default port 22 (root only)\n"
-           "  --zero                Announce service via zeroconf\n"
+		   "  --zero                Announce service via zeroconf\n"
 		   "  --announce name       Name for service given in zeroconf broadcast\n"
 		   "  --nozero              Don't announce service via zeroconf\n"
-           "\n"
-          );
+		   "\n"
+		   " owserver (OWFS server)\n"
+		   "  -p --port [ip:]port   TCP address and port number for access\n"
+		   "  --sidetap [ip:]port   TCP address and port number for eavesdropping\n"
+		   "\n"
+		   " owftpd (ftp server)\n"
+		   "  -p --port [ip:]port   TCP address and port number for access\n"
+		   "                           has default port 22 (root only)\n"
+		   "  --zero                Announce service via zeroconf\n"
+		   "  --announce name       Name for service given in zeroconf broadcast\n"
+		   "  --nozero              Don't announce service via zeroconf\n" "\n");
 }
 
 void ow_help_device(void)
@@ -182,11 +176,8 @@ void ow_help_device(void)
 		   "  --fake=list     List of devices to simulate (random ID, random data)\n"
 		   "                   use family codes in hex\n"
 		   "                   e.g. 1F,10,21 for DS2409,DS18B20,DS1921\n"
-           "  --tester=list   List of devices to simulate (non-random ID, non-random data)\n"
-           "\n"
-           " 1-wire device selection\n"
-           "  --one-device     Only single device on bus, use ROM SKIP command\n"
-          );
+		   "  --tester=list   List of devices to simulate (non-random ID, non-random data)\n"
+		   "\n" " 1-wire device selection\n" "  --one-device     Only single device on bus, use ROM SKIP command\n");
 }
 
 void ow_help(const char *arg)

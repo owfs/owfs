@@ -148,10 +148,12 @@ static int EtherWeather_next_both(struct device_search *ds, const struct parsedn
 	BYTE sendbuf[9];
 
 	// if the last call was not the last one
-	if (!pn->selected_connection->AnyDevices)
+	if (!pn->selected_connection->AnyDevices) {
 		ds->LastDevice = 1;
-	if (ds->LastDevice)
+	}
+	if (ds->LastDevice) {
 		return -ENODEV;
+	}
 
 	memcpy(sendbuf, ds->sn, 8);
 	if (ds->LastDiscrepancy == -1) {
@@ -159,8 +161,9 @@ static int EtherWeather_next_both(struct device_search *ds, const struct parsedn
 	} else {
 		sendbuf[8] = ds->LastDiscrepancy;
 	}
-	if (ds->search == 0xEC)
+	if (ds->search == 0xEC) {
 		sendbuf[8] |= 0x80;
+	}
 
 	if (EtherWeather_command(pn->selected_connection, EtherWeather_COMMAND_ACCEL, 9, sendbuf, sendbuf)) {
 		return -EIO;
@@ -185,8 +188,9 @@ static int EtherWeather_next_both(struct device_search *ds, const struct parsedn
 
 	/* 0xFE indicates no discrepancies */
 	ds->LastDiscrepancy = sendbuf[8];
-	if (ds->LastDiscrepancy == 0xFE)
+	if (ds->LastDiscrepancy == 0xFE) {
 		ds->LastDiscrepancy = -1;
+	}
 
 	ds->LastDevice = (sendbuf[8] == 0xFE);
 
@@ -259,22 +263,26 @@ int EtherWeather_detect(struct connection_in *in)
 	/* Set up low-level routines */
 	EtherWeather_setroutines(in);
 
-	if (in->name == NULL)
+	if (in->name == NULL) {
 		return -1;
+	}
 
 	/* Add the port if it isn't there already */
 	if (strchr(in->name, ':') == NULL) {
 		ASCII *temp = realloc(in->name, strlen(in->name) + 3);
-		if (temp == NULL)
+		if (temp == NULL) {
 			return -ENOMEM;
+		}
 		in->name = temp;
 		strcat(in->name, ":15862");
 	}
 
-	if (ClientAddr(in->name, in))
+	if (ClientAddr(in->name, in)) {
 		return -1;
-	if ((pn.selected_connection->file_descriptor = ClientConnect(in)) < 0)
+	}
+	if ((pn.selected_connection->file_descriptor = ClientConnect(in)) < 0) {
 		return -EIO;
+	}
 
 
 	/* TODO: probe version, and confirm that it's actually an EtherWeather */

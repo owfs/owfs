@@ -85,7 +85,7 @@ void LibSetup(enum opt_program op);
 int LibStart(void);
 void LibStop(void);
 void LibClose(void);
-int EnterBackground(void) ;
+int EnterBackground(void);
 
 /* Initial sorting or the device and filetype lists */
 void DeviceSort(void);
@@ -94,7 +94,7 @@ void DeviceDestroy(void);
 /* Pasename processing -- URL/path comprehension */
 int filecmp(const void *name, const void *ex);
 int FS_ParsedNamePlus(const char *path, const char *file, struct parsedname *pn);
-int FS_ParsedNamePlusExt(const char *path, const char *file, int extension, enum ag_index alphanumeric, struct parsedname *pn) ;
+int FS_ParsedNamePlusExt(const char *path, const char *file, int extension, enum ag_index alphanumeric, struct parsedname *pn);
 int FS_ParsedName(const char *fn, struct parsedname *pn);
 int FS_ParsedName_BackFromRemote(const char *fn, struct parsedname *pn);
 void FS_ParsedName_destroy(struct parsedname *pn);
@@ -107,7 +107,7 @@ void FS_devicename(char *buffer, const size_t length, const BYTE * sn, const str
 void FS_devicefind(const char *code, struct parsedname *pn);
 void FS_devicefindhex(BYTE f, struct parsedname *pn);
 
-const char * FS_DirName(const struct parsedname *pn) ;
+const char *FS_DirName(const struct parsedname *pn);
 
 /* Utility functions */
 BYTE CRC8(const BYTE * bytes, const size_t length);
@@ -196,8 +196,8 @@ int FS_read_sibling(char *property, struct one_wire_query *owq_shallow_copy);
 
 int Fowq_output_offset_and_size(char *string, size_t length, struct one_wire_query *owq);
 int Fowq_output_offset_and_size_z(char *string, struct one_wire_query *owq);
-struct one_wire_query * FS_OWQ_from_pn( const struct parsedname * pn ) ;
-void FS_OWQ_from_pn_destroy(struct one_wire_query *owq) ;
+struct one_wire_query *FS_OWQ_from_pn(const struct parsedname *pn);
+void FS_OWQ_from_pn_destroy(struct one_wire_query *owq);
 
 int FS_fstat(const char *path, struct stat *stbuf);
 int FS_fstat_postparse(struct stat *stbuf, const struct parsedname *pn);
@@ -222,12 +222,12 @@ void BUS_lock_in(struct connection_in *in);
 void BUS_unlock_in(struct connection_in *in);
 
 /* API wrappers for swig and owcapi */
-void API_setup( enum opt_program opt ) ;
-int API_init( const char * command_line ) ;
-void API_set_error_level( const char *params ) ;
-void API_set_error_print( const char *params ) ;
-void API_finish( void ) ;
-int API_access_start( void ) ;
-void API_access_end( void ) ;
+void API_setup(enum opt_program opt);
+int API_init(const char *command_line);
+void API_set_error_level(const char *params);
+void API_set_error_print(const char *params);
+void API_finish(void);
+int API_access_start(void);
+void API_access_end(void);
 
 #endif							/* OW_FUNCTION_H */

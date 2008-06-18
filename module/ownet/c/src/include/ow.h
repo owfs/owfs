@@ -198,7 +198,7 @@ enum deviceformat { fdi, fi, fdidc, fdic, fidc, fic };
 enum temp_type { temp_celsius, temp_fahrenheit, temp_kelvin, temp_rankine,
 };
 
-void SetSignals(void) ;
+void SetSignals(void);
 
 /* OWSERVER messages */
 #include "ow_message.h"

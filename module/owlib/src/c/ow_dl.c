@@ -39,8 +39,9 @@ void *DL_sym(DLHANDLE handle, const char *name)
 int DL_close(DLHANDLE handle)
 {
 #if OW_CYGWIN
-	if (FreeLibrary(handle))
+	if (FreeLibrary(handle)) {
 		return 0;
+	}
 	return -1;
 #elif defined(HAVE_DLOPEN)
 	return dlclose(handle);

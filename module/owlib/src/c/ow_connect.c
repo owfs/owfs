@@ -30,17 +30,19 @@ struct connection_in *find_connection_in(int bus_number)
 	struct connection_in *c_in;
 	// step through head_inbound_list linked list
 
-    for ( c_in = head_inbound_list ; c_in != NULL; c_in = c_in->next) {
-		if (c_in->index == bus_number)
+	for (c_in = head_inbound_list; c_in != NULL; c_in = c_in->next) {
+		if (c_in->index == bus_number) {
 			return c_in;
+		}
 	}
 	return NULL;
 }
 
 enum bus_mode get_busmode(struct connection_in *in)
 {
-	if (in == NULL)
+	if (in == NULL) {
 		return bus_unknown;
+	}
 	return in->busmode;
 }
 
@@ -86,43 +88,43 @@ struct connection_in *NewIn(const struct connection_in *in)
 
 struct connection_out *NewOut(void)
 {
-    size_t len = sizeof(struct connection_out);
-    struct connection_out *now = (struct connection_out *) malloc(len);
-    if (now) {
-        memset(now, 0, len);
-        now->next = head_outbound_list;
-        head_outbound_list = now;
-        now->index = count_outbound_connections++;
+	size_t len = sizeof(struct connection_out);
+	struct connection_out *now = (struct connection_out *) malloc(len);
+	if (now) {
+		memset(now, 0, len);
+		now->next = head_outbound_list;
+		head_outbound_list = now;
+		now->index = count_outbound_connections++;
 #if OW_MT
-        pthread_mutex_init(&(now->accept_mutex), Mutex.pmattr);
-        pthread_mutex_init(&(now->out_mutex), Mutex.pmattr);
-#endif                          /* OW_MT */
-        // Zero sref's -- done with struct memset
-        //now->sref0 = 0 ;
-        //now->sref1 = 0 ;
-    } else {
-    LEVEL_DEFAULT("Cannot allocate memory for server structure,\n");
-    }
-    return now;
+		pthread_mutex_init(&(now->accept_mutex), Mutex.pmattr);
+		pthread_mutex_init(&(now->out_mutex), Mutex.pmattr);
+#endif							/* OW_MT */
+		// Zero sref's -- done with struct memset
+		//now->sref0 = 0 ;
+		//now->sref1 = 0 ;
+	} else {
+		LEVEL_DEFAULT("Cannot allocate memory for server structure,\n");
+	}
+	return now;
 }
 
 struct connection_side *NewSide(void)
 {
-    size_t len = sizeof(struct connection_side);
-    struct connection_side *now = (struct connection_side *) malloc(len);
-    if (now) {
-        memset(now, 0, len);
-        now->next = head_sidebound_list;
-        head_sidebound_list = now;
-        now->index = count_sidebound_connections++;
-        now->file_descriptor = -1 ;
+	size_t len = sizeof(struct connection_side);
+	struct connection_side *now = (struct connection_side *) malloc(len);
+	if (now) {
+		memset(now, 0, len);
+		now->next = head_sidebound_list;
+		head_sidebound_list = now;
+		now->index = count_sidebound_connections++;
+		now->file_descriptor = -1;
 #if OW_MT
-        pthread_mutex_init(&(now->side_mutex), Mutex.pmattr);
-#endif                          /* OW_MT */
-    } else {
-    LEVEL_DEFAULT("Cannot allocate memory for sidetap structure,\n");
-    }
-    return now;
+		pthread_mutex_init(&(now->side_mutex), Mutex.pmattr);
+#endif							/* OW_MT */
+	} else {
+		LEVEL_DEFAULT("Cannot allocate memory for sidetap structure,\n");
+	}
+	return now;
 }
 
 void FreeIn(void)
@@ -139,18 +141,22 @@ void FreeIn(void)
 #if OW_MT
 		pthread_mutex_destroy(&(now->bus_mutex));
 		pthread_mutex_destroy(&(now->dev_mutex));
-		if (now->dev_db)
+		if (now->dev_db) {
 			tdestroy(now->dev_db, free);
+		}
 		now->dev_db = NULL;
 #endif							/* OW_MT */
 		switch (get_busmode(now)) {
 		case bus_zero:
-			if (now->connin.tcp.type)
+			if (now->connin.tcp.type) {
 				free(now->connin.tcp.type);
-			if (now->connin.tcp.domain)
+			}
+			if (now->connin.tcp.domain) {
 				free(now->connin.tcp.domain);
-			if (now->connin.tcp.fqdn)
+			}
+			if (now->connin.tcp.fqdn) {
 				free(now->connin.tcp.fqdn);
+			}
 			// fall through
 		case bus_server:
 			LEVEL_DEBUG("FreeClientAddr\n");
@@ -197,79 +203,81 @@ void FreeIn(void)
 
 void FreeOut(void)
 {
-    struct connection_out *next = head_outbound_list;
-    struct connection_out *now;
+	struct connection_out *next = head_outbound_list;
+	struct connection_out *now;
 
-    head_outbound_list = NULL;
-    count_outbound_connections = 0;
-    while (next) {
-        now = next;
-        next = now->next;
-        if (now->name) {
-            free(now->name);
-            now->name = NULL;
-        }
-        if (now->host) {
-            free(now->host);
-            now->host = NULL;
-        }
-        if (now->service) {
-            free(now->service);
-            now->service = NULL;
-        }
-        if (now->ai) {
-            freeaddrinfo(now->ai);
-            now->ai = NULL;
-        }
+	head_outbound_list = NULL;
+	count_outbound_connections = 0;
+	while (next) {
+		now = next;
+		next = now->next;
+		if (now->name) {
+			free(now->name);
+			now->name = NULL;
+		}
+		if (now->host) {
+			free(now->host);
+			now->host = NULL;
+		}
+		if (now->service) {
+			free(now->service);
+			now->service = NULL;
+		}
+		if (now->ai) {
+			freeaddrinfo(now->ai);
+			now->ai = NULL;
+		}
 #if OW_MT
-        pthread_mutex_destroy(&(now->accept_mutex));
-        pthread_mutex_destroy(&(now->out_mutex));
-#endif                          /* OW_MT */
+		pthread_mutex_destroy(&(now->accept_mutex));
+		pthread_mutex_destroy(&(now->out_mutex));
+#endif							/* OW_MT */
 #if OW_ZERO
-        if (libdnssd != NULL) {
-    if (now->sref0)
-        DNSServiceRefDeallocate(now->sref0);
-    if (now->sref1)
-        DNSServiceRefDeallocate(now->sref1);
-        }
+		if (libdnssd != NULL) {
+			if (now->sref0) {
+				DNSServiceRefDeallocate(now->sref0);
+			}
+			if (now->sref1) {
+				DNSServiceRefDeallocate(now->sref1);
+			}
+		}
 #endif
-        free(now);
-    }
+		free(now);
+	}
 }
 
 void FreeSide(void)
 {
-    struct connection_side *next = head_sidebound_list;
-    struct connection_side *now;
+	struct connection_side *next = head_sidebound_list;
+	struct connection_side *now;
 
-    head_sidebound_list = NULL;
-    count_outbound_connections = 0;
-    while (next) {
-        now = next;
-        next = now->next;
+	head_sidebound_list = NULL;
+	count_outbound_connections = 0;
+	while (next) {
+		now = next;
+		next = now->next;
 #if OW_MT
-        pthread_mutex_destroy(&(now->side_mutex));
-#endif                          /* OW_MT */
-        if ( now->file_descriptor > -1 ) {
-            close(now->file_descriptor) ;
-            now->file_descriptor = -1 ;
-        }
-        if (now->name) {
-            free(now->name);
-            now->name = NULL;
-        }
-        if (now->host) {
-            free(now->host);
-            now->host = NULL;
-        }
-        if (now->service) {
-            free(now->service);
-            now->service = NULL;
-        }
-        if (now->ai) {
-            freeaddrinfo(now->ai);
-            now->ai = NULL;
-        }
-        free(now);
-    }
+		pthread_mutex_destroy(&(now->side_mutex));
+#endif							/* OW_MT */
+		if (now->file_descriptor > -1) {
+			close(now->file_descriptor);
+			now->file_descriptor = -1;
+		}
+		if (now->name) {
+			free(now->name);
+			now->name = NULL;
+		}
+		if (now->host) {
+			free(now->host);
+			now->host = NULL;
+		}
+		if (now->service) {
+			free(now->service);
+			now->service = NULL;
+		}
+		if (now->ai) {
+			freeaddrinfo(now->ai);
+			now->ai = NULL;
+		}
+		free(now);
+	}
 }

@@ -28,12 +28,14 @@ int BUS_send_data(const BYTE * data, const size_t len, const struct parsedname *
 	int ret;
 	BYTE *resp;
 
-	if (len == 0)
+	if (len == 0) {
 		return 0;
+	}
 
 	resp = malloc(len);
-	if (resp == NULL)
+	if (resp == NULL) {
 		return -ENOMEM;
+	}
 
 	if ((ret = BUS_sendback_data(data, resp, len, pn)) == 0) {
 		if ((ret = memcmp(data, resp, (size_t) len))) {
@@ -70,8 +72,9 @@ int BUS_select_and_sendback(const BYTE * data, BYTE * resp, const size_t len, co
 		return (pn->selected_connection->iroutines.select_and_sendback) (data, resp, len, pn);
 	} else {
 		int ret = BUS_select(pn);
-		if (ret)
+		if (ret) {
 			return ret;
+		}
 
 		return BUS_sendback_data(data, resp, len, pn);
 	}
@@ -81,39 +84,41 @@ int BUS_select_and_sendback(const BYTE * data, BYTE * resp, const size_t len, co
 /* send bytes, and read back -- calls lower level bit routine */
 int BUS_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn)
 {
+	UINT i, bits = len << 3;
+	int ret;
+	int combuffer_length_adjusted = MAX_FIFO_SIZE >> 3;
+	int remain = len - combuffer_length_adjusted;
+
 	if (len == 0) {
 		return 0;
-	} else if (pn->selected_connection->iroutines.sendback_data) {
-		return (pn->selected_connection->iroutines.sendback_data) (data, resp, len, pn);
-	} else {
-		UINT i, bits = len << 3;
-		int ret;
-		int combuffer_length_adjusted = MAX_FIFO_SIZE >> 3;
-		int remain = len - combuffer_length_adjusted;
-
-		/* Split into smaller packets? */
-		if (remain > 0)
-			return BUS_sendback_data(data, resp, combuffer_length_adjusted, pn)
-				|| BUS_sendback_data(&data[combuffer_length_adjusted], resp ? (&resp[combuffer_length_adjusted]) : NULL, remain, pn);
-
-		/* Encode bits */
-		for (i = 0; i < bits; ++i)
-			pn->selected_connection->combuffer[i] = UT_getbit(data, i) ? 0xFF : 0x00;
-
-		/* Communication with DS9097 routine */
-		if ((ret = BUS_sendback_bits(pn->selected_connection->combuffer, pn->selected_connection->combuffer, bits, pn))) {
-			STAT_ADD1_BUS(e_bus_errors, pn->selected_connection);
-			return ret;
-		}
-
-		/* Decode Bits */
-		if (resp) {
-			for (i = 0; i < bits; ++i)
-				UT_setbit(resp, i, pn->selected_connection->combuffer[i] & 0x01);
-		}
-
-		return 0;
 	}
+	if (pn->selected_connection->iroutines.sendback_data) {
+		return (pn->selected_connection->iroutines.sendback_data) (data, resp, len, pn);
+	}
+
+	/* Split into smaller packets? */
+	if (remain > 0)
+		return BUS_sendback_data(data, resp, combuffer_length_adjusted, pn)
+			|| BUS_sendback_data(&data[combuffer_length_adjusted], resp ? (&resp[combuffer_length_adjusted]) : NULL, remain, pn);
+
+	/* Encode bits */
+	for (i = 0; i < bits; ++i)
+		pn->selected_connection->combuffer[i] = UT_getbit(data, i) ? 0xFF : 0x00;
+
+	/* Communication with DS9097 routine */
+	if ((ret = BUS_sendback_bits(pn->selected_connection->combuffer, pn->selected_connection->combuffer, bits, pn))) {
+		STAT_ADD1_BUS(e_bus_errors, pn->selected_connection);
+		return ret;
+	}
+
+	/* Decode Bits */
+	if (resp) {
+		for (i = 0; i < bits; ++i) {
+			UT_setbit(resp, i, pn->selected_connection->combuffer[i] & 0x01);
+		}
+	}
+
+	return 0;
 }
 
 // Send 8 bits of communication to the 1-Wire Net

@@ -233,10 +233,11 @@ static const char *_getopt_initialize(int argc, char *const *argv, const char *o
 	} else if (optstring[0] == '+') {
 		ordering = REQUIRE_ORDER;
 		++optstring;
-	} else if (getenv("POSIXLY_CORRECT") != NULL)
+	} else if (getenv("POSIXLY_CORRECT") != NULL) {
 		ordering = REQUIRE_ORDER;
-	else
+	} else {
 		ordering = PERMUTE;
+	}
 
 	return optstring;
 }
@@ -300,17 +301,20 @@ static const char *_getopt_initialize(int argc, char *const *argv, const char *o
 int _getopt_internal(int argc, char *const *argv, const char *optstring, const struct option *longopts, int *longind, int long_only)
 {
 	int print_errors = opterr;
-	if (optstring[0] == ':')
+	if (optstring[0] == ':') {
 		print_errors = 0;
+	}
 
-	if (argc < 1)
+	if (argc < 1) {
 		return -1;
+	}
 
 	optarg = NULL;
 
 	if (optind == 0 || !__getopt_initialized) {
-		if (optind == 0)
+		if (optind == 0) {
 			optind = 1;			/* Don't scan ARGV[0], the program name.  */
+		}
 		optstring = _getopt_initialize(argc, argv, optstring);
 		__getopt_initialized = 1;
 	}
@@ -326,25 +330,29 @@ int _getopt_internal(int argc, char *const *argv, const char *optstring, const s
 
 		/* Give FIRST_NONOPT & LAST_NONOPT rational values if OPTIND has been
 		   moved back by the user (who may also have changed the arguments).  */
-		if (last_nonopt > optind)
+		if (last_nonopt > optind) {
 			last_nonopt = optind;
-		if (first_nonopt > optind)
+		}
+		if (first_nonopt > optind) {
 			first_nonopt = optind;
+		}
 
 		if (ordering == PERMUTE) {
 			/* If we have just processed some options following some non-options,
 			   exchange them so that the options come first.  */
 
-			if (first_nonopt != last_nonopt && last_nonopt != optind)
+			if (first_nonopt != last_nonopt && last_nonopt != optind) {
 				exchange((char **) argv);
-			else if (last_nonopt != optind)
+			} else if (last_nonopt != optind) {
 				first_nonopt = optind;
+			}
 
 			/* Skip any additional non-options
 			   and extend the range of non-options previously skipped.  */
 
-			while (optind < argc && NONOPTION_P)
+			while (optind < argc && NONOPTION_P) {
 				optind++;
+			}
 			last_nonopt = optind;
 		}
 
@@ -356,10 +364,11 @@ int _getopt_internal(int argc, char *const *argv, const char *optstring, const s
 		if (optind != argc && !strcmp(argv[optind], "--")) {
 			optind++;
 
-			if (first_nonopt != last_nonopt && last_nonopt != optind)
+			if (first_nonopt != last_nonopt && last_nonopt != optind) {
 				exchange((char **) argv);
-			else if (first_nonopt == last_nonopt)
+			} else if (first_nonopt == last_nonopt) {
 				first_nonopt = optind;
+			}
 			last_nonopt = argc;
 
 			optind = argc;
@@ -371,8 +380,9 @@ int _getopt_internal(int argc, char *const *argv, const char *optstring, const s
 		if (optind == argc) {
 			/* Set the next-arg-index to point at the non-options
 			   that we previously skipped, so the caller will digest them.  */
-			if (first_nonopt != last_nonopt)
+			if (first_nonopt != last_nonopt) {
 				optind = first_nonopt;
+			}
 			return -1;
 		}
 
@@ -380,8 +390,9 @@ int _getopt_internal(int argc, char *const *argv, const char *optstring, const s
 		   either stop the scan or describe it to the caller and pass it by.  */
 
 		if (NONOPTION_P) {
-			if (ordering == REQUIRE_ORDER)
+			if (ordering == REQUIRE_ORDER) {
 				return -1;
+			}
 			optarg = argv[optind++];
 			return 1;
 		}
@@ -457,9 +468,9 @@ int _getopt_internal(int argc, char *const *argv, const char *optstring, const s
 			if (*nameend) {
 				/* Don't test has_arg with >, because some C compilers don't
 				   allow it to be used on enums.  */
-				if (pfound->has_arg)
+				if (pfound->has_arg) {
 					optarg = nameend + 1;
-				else {
+				} else {
 					if (print_errors) {
 
 						if (argv[optind - 1][1] == '-') {
@@ -480,9 +491,9 @@ int _getopt_internal(int argc, char *const *argv, const char *optstring, const s
 					return '?';
 				}
 			} else if (pfound->has_arg == 1) {
-				if (optind < argc)
+				if (optind < argc) {
 					optarg = argv[optind++];
-				else {
+				} else {
 					if (print_errors) {
 						fprintf(stderr, _("%s: option `%s' requires an argument\n"), argv[0], argv[optind - 1]);
 					}
@@ -492,8 +503,9 @@ int _getopt_internal(int argc, char *const *argv, const char *optstring, const s
 				}
 			}
 			nextchar += strlen(nextchar);
-			if (longind != NULL)
+			if (longind != NULL) {
 				*longind = option_index;
+			}
 			if (pfound->flag) {
 				*(pfound->flag) = pfound->val;
 				return 0;
@@ -531,8 +543,9 @@ int _getopt_internal(int argc, char *const *argv, const char *optstring, const s
 		char *temp = my_index(optstring, c);
 
 		/* Increment `optind' when we start to process its last character.  */
-		if (*nextchar == '\0')
+		if (*nextchar == '\0') {
 			++optind;
+		}
 
 		if (temp == NULL || c == ':') {
 			if (print_errors) {
@@ -565,10 +578,11 @@ int _getopt_internal(int argc, char *const *argv, const char *optstring, const s
 					fprintf(stderr, _("%s: option requires an argument -- %c\n"), argv[0], c);
 				}
 				optopt = c;
-				if (optstring[0] == ':')
+				if (optstring[0] == ':') {
 					c = ':';
-				else
+				} else {
 					c = '?';
+				}
 				return c;
 			} else
 				/* We already incremented `optind' once;
@@ -612,9 +626,9 @@ int _getopt_internal(int argc, char *const *argv, const char *optstring, const s
 				if (*nameend) {
 					/* Don't test has_arg with >, because some C compilers don't
 					   allow it to be used on enums.  */
-					if (pfound->has_arg)
+					if (pfound->has_arg) {
 						optarg = nameend + 1;
-					else {
+					} else {
 						if (print_errors) {
 							fprintf(stderr, _("\
 					%s: option `-W %s' doesn't allow an argument\n"), argv[0], pfound->name);
@@ -624,9 +638,9 @@ int _getopt_internal(int argc, char *const *argv, const char *optstring, const s
 						return '?';
 					}
 				} else if (pfound->has_arg == 1) {
-					if (optind < argc)
+					if (optind < argc) {
 						optarg = argv[optind++];
-					else {
+					} else {
 						if (print_errors) {
 							fprintf(stderr, _("%s: option `%s' requires an argument\n"), argv[0], argv[optind - 1]);
 						}
@@ -635,8 +649,9 @@ int _getopt_internal(int argc, char *const *argv, const char *optstring, const s
 					}
 				}
 				nextchar += strlen(nextchar);
-				if (longind != NULL)
+				if (longind != NULL) {
 					*longind = option_index;
+				}
 				if (pfound->flag) {
 					*(pfound->flag) = pfound->val;
 					return 0;
@@ -669,10 +684,11 @@ int _getopt_internal(int argc, char *const *argv, const char *optstring, const s
 						fprintf(stderr, _("%s: option requires an argument -- %c\n"), argv[0], c);
 					}
 					optopt = c;
-					if (optstring[0] == ':')
+					if (optstring[0] == ':') {
 						c = ':';
-					else
+					} else {
 						c = '?';
+					}
 				} else
 					/* We already incremented `optind' once;
 					   increment it again when taking next ARGV-elt as argument.  */

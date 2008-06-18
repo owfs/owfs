@@ -62,8 +62,9 @@ int FS_output_owq(struct one_wire_query *owq)
 	}
 
 	/* Special case, structure is always ascii */
-	if (OWQ_pn(owq).type == ePN_structure)
+	if (OWQ_pn(owq).type == ePN_structure) {
 		return Fowq_output_ascii(owq);
+	}
 
 	switch (OWQ_pn(owq).extension) {
 	case EXTENSION_BYTE:
@@ -169,16 +170,18 @@ static int Fowq_output_float(struct one_wire_query *owq)
 static int Fowq_output_date(struct one_wire_query *owq)
 {
 	char c[PROPERTY_LENGTH_DATE + 2];
-	if (OWQ_size(owq) < PROPERTY_LENGTH_DATE)
+	if (OWQ_size(owq) < PROPERTY_LENGTH_DATE) {
 		return -EMSGSIZE;
+	}
 	ctime_r(&OWQ_D(owq), c);
 	return Fowq_output_offset_and_size(c, PROPERTY_LENGTH_DATE, owq);
 }
 
 static int Fowq_output_yesno(struct one_wire_query *owq)
 {
-	if (OWQ_size(owq) < PROPERTY_LENGTH_YESNO)
+	if (OWQ_size(owq) < PROPERTY_LENGTH_YESNO) {
 		return -EMSGSIZE;
+	}
 	OWQ_buffer(owq)[0] = ((OWQ_Y(owq) & 0x1) == 0) ? '0' : '1';
 	return PROPERTY_LENGTH_YESNO;
 }
@@ -198,15 +201,17 @@ int Fowq_output_offset_and_size(char *string, size_t length, struct one_wire_que
 
 	/* offset is after the length of the string -- return 0 since
 	   some conditions a read after the end is done automatically */
-	if (offset > (off_t) length)
+	if (offset > (off_t) length) {
 		return 0;
+	}
 
 	/* correct length for offset (cannot be negative because of previous check) */
 	copy_length -= offset;
 
 	/* correct length for buffer space */
-	if (copy_length > OWQ_size(owq))
+	if (copy_length > OWQ_size(owq)) {
 		copy_length = OWQ_size(owq);
+	}
 
 	/* and copy */
 	memcpy(OWQ_buffer(owq), &string[offset], copy_length);
@@ -245,8 +250,9 @@ static int Fowq_output_array_with_commas(struct one_wire_query *owq)
 		memcpy(&OWQ_val(&owq_single), &OWQ_array(owq)[extension], sizeof(union value_object));
 		// add the comma first (if not the first element and enough room)
 		if (used_size > 0) {
-			if (remaining_size == 0)
+			if (remaining_size == 0) {
 				return -EFAULT;
+			}
 			OWQ_buffer(owq)[used_size] = ',';
 			++used_size;
 			--remaining_size;
@@ -256,8 +262,9 @@ static int Fowq_output_array_with_commas(struct one_wire_query *owq)
 		OWQ_size(&owq_single) = remaining_size;
 		len = FS_output_owq(&owq_single);
 		// any error aborts
-		if (len < 0)
+		if (len < 0) {
 			return len;
+		}
 		remaining_size -= len;
 		used_size += len;
 	}

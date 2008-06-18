@@ -18,14 +18,14 @@ $Id$
 /* make a "shallow" copy -- just an element size */
 void OWQ_create_shallow_single(struct one_wire_query *owq_shallow, struct one_wire_query *owq_original)
 {
-    memcpy(owq_shallow, owq_original, sizeof(struct one_wire_query));
+	memcpy(owq_shallow, owq_original, sizeof(struct one_wire_query));
 }
 
 /* make a "shallow" copy -- bitfield */
 void OWQ_create_shallow_bitfield(struct one_wire_query *owq_shallow, struct one_wire_query *owq_original)
 {
-    memcpy(owq_shallow, owq_original, sizeof(struct one_wire_query));
-    PN(owq_shallow)->extension = EXTENSION_BYTE ;
+	memcpy(owq_shallow, owq_original, sizeof(struct one_wire_query));
+	PN(owq_shallow)->extension = EXTENSION_BYTE;
 }
 
 /* make a "shallow" copy -- but possibly full array size or just an element size */
@@ -38,9 +38,9 @@ int OWQ_create_shallow_aggregate(struct one_wire_query *owq_shallow, struct one_
 
 	/* allocate new value_object array space */
 	OWQ_array(owq_shallow) = calloc((size_t) pn->selected_filetype->ag->elements, sizeof(union value_object));
-    if (OWQ_array(owq_shallow) == NULL) {
+	if (OWQ_array(owq_shallow) == NULL) {
 		return -ENOMEM;
-    }
+	}
 	if (pn->extension == EXTENSION_ALL) {
 		memcpy(OWQ_array(owq_shallow), OWQ_array(owq_original), pn->selected_filetype->ag->elements * sizeof(union value_object));
 	}

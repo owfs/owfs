@@ -28,8 +28,8 @@ enum parse_enum {
 };
 
 enum parse_pass {
-    parse_pass_pre_remote ,
-    parse_pass_post_remote ,
+	parse_pass_pre_remote,
+	parse_pass_post_remote,
 };
 
 struct parsedname_pointers {
@@ -58,9 +58,9 @@ static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path,
 /* ---------------------------------------------- */
 void FS_ParsedName_destroy(struct parsedname *pn)
 {
-    if (!pn) {
+	if (!pn) {
 		return;
-    }
+	}
 	LEVEL_DEBUG("ParsedName_destroy %s\n", SAFESTRING(pn->path));
 	//printf("PNDestroy bp (%d)\n",BusIsServer(pn->selected_connection)) ;
 	if (pn->bp) {
@@ -77,7 +77,7 @@ void FS_ParsedName_destroy(struct parsedname *pn)
 		free(pn->lock);
 		pn->lock = NULL;
 	}
-    CONNIN_RUNLOCK;
+	CONNIN_RUNLOCK;
 	//printf("PNDestroy done (%d)\n",BusIsServer(pn->selected_connection)) ;
 	// Tokenstring is part of a larger allocation and destroyed separately 
 }
@@ -85,13 +85,13 @@ void FS_ParsedName_destroy(struct parsedname *pn)
 /* Parse a path to check it's validity and attach to the propery data structures */
 int FS_ParsedName(const char *path, struct parsedname *pn)
 {
-    return FS_ParsedName_anywhere(path, parse_pass_pre_remote, pn);
+	return FS_ParsedName_anywhere(path, parse_pass_pre_remote, pn);
 }
 
 /* Parse a path from a remote source back -- so don't check presence */
 int FS_ParsedName_BackFromRemote(const char *path, struct parsedname *pn)
 {
-    return FS_ParsedName_anywhere(path, parse_pass_post_remote, pn);
+	return FS_ParsedName_anywhere(path, parse_pass_post_remote, pn);
 }
 
 /* Parse off starting "mode" directory (uncached, alarm...) */
@@ -109,14 +109,14 @@ static int FS_ParsedName_anywhere(const char *path, enum parse_pass remote_statu
 	LEVEL_CALL("PARSENAME path=[%s]\n", SAFESTRING(path));
 
 	ret = FS_ParsedName_setup(pp, path, pn);
-    if (ret) {
+	if (ret) {
 		return ret;
-    }
+	}
 	//printf("1pathnow=[%s] pathnext=[%s] pn->type=%d\n", pathnow, pathnext, pn->type);
 
-    if (path == NULL) {
+	if (path == NULL) {
 		return 0;
-    }
+	}
 
 	while (1) {
 		//printf("PARSENAME parse_enum=%d pathnow=%s\n",pe,SAFESTRING(pp->pathnow));
@@ -126,9 +126,9 @@ static int FS_ParsedName_anywhere(const char *path, enum parse_pass remote_statu
 		case parse_done:		// the only exit!
 			//LEVEL_DEBUG("PARSENAME parse_done\n") ;
 			//printf("PARSENAME end ret=%d\n",ret) ;
-            if (pp->pathcpy) {
+			if (pp->pathcpy) {
 				free(pp->pathcpy);
-            }
+			}
 			if (ret) {
 				FS_ParsedName_destroy(pn);
 			} else {
@@ -217,17 +217,17 @@ static int FS_ParsedName_anywhere(const char *path, enum parse_pass remote_statu
 /* Initial memory allocation and pn setup */
 static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path, struct parsedname *pn)
 {
-    if (pn == NULL) {
+	if (pn == NULL) {
 		return -EINVAL;
-    }
+	}
 
 	memset(pn, 0, sizeof(struct parsedname));
 	pn->known_bus = NULL;		/* all busses */
 
 	/* Set the persistent state info (temp scale, ...) -- will be overwritten by client settings in the server */
-    SGLOCK ;
+	SGLOCK;
 	pn->sg = SemiGlobal | (1 << BUSRET_BIT);	// initial flag as the bus-returning level, will change if a bus is specified
-    SGUNLOCK ;
+	SGUNLOCK;
 
 	// initialization
 	pp->pathnow = NULL;
@@ -236,13 +236,13 @@ static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path,
 	pp->pathnext = NULL;
 
 	/* minimal structure for setup use */
-    if (path == NULL) {
+	if (path == NULL) {
 		return 0;
-    }
-    
-    if ( strlen(path) > PATH_MAX ) {
-        return -EBADF ;
-    }
+	}
+
+	if (strlen(path) > PATH_MAX) {
+		return -EBADF;
+	}
 
 	/* Default attributes */
 	pn->state = ePS_normal;
@@ -266,24 +266,24 @@ static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path,
 		return -ENOENT;
 	}
 
-    /* connection_in list and start */
-    /* ---------------------------- */
-    /* -- This is important, the -- */
-    /* -- lock array allocated one  */
-    /* -- per bus. But buses can -- */
-    /* -- be added by Browse so  -- */
-    /* -- a reader/writer lock is - */
-    /* -- held until ParsedNameDestroy */
-    /* ---------------------------- */
-    
-    CONNIN_RLOCK;
-    pn->lock = calloc(count_inbound_connections, sizeof(struct devlock *));
+	/* connection_in list and start */
+	/* ---------------------------- */
+	/* -- This is important, the -- */
+	/* -- lock array allocated one  */
+	/* -- per bus. But buses can -- */
+	/* -- be added by Browse so  -- */
+	/* -- a reader/writer lock is - */
+	/* -- held until ParsedNameDestroy */
+	/* ---------------------------- */
 
-    if (pn->lock == NULL) {
+	CONNIN_RLOCK;
+	pn->lock = calloc(count_inbound_connections, sizeof(struct devlock *));
+
+	if (pn->lock == NULL) {
 		free(pp->pathcpy);
 		free(pn->path);
-        CONNIN_RUNLOCK;
-        return -ENOMEM;
+		CONNIN_RUNLOCK;
+		return -ENOMEM;
 	}
 
 	pn->selected_connection = head_inbound_list;
@@ -297,8 +297,9 @@ static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path,
 	pp->pathnext = pp->pathcpy;
 
 	/* remove initial "/" */
-	if (pp->pathnext[0] == '/')
+	if (pp->pathnext[0] == '/') {
 		++pp->pathnext;
+	}
 
 	pn->terminal_bus_number = -1;
 
@@ -312,37 +313,37 @@ static enum parse_enum Parse_Unspecified(char *pathnow, enum parse_pass remote_s
 		return Parse_Bus(pathnow, remote_status, pn);
 
 	} else if (strcasecmp(pathnow, "settings") == 0) {
-        if (SpecifiedLocalBus(pn)) {
+		if (SpecifiedLocalBus(pn)) {
 			return parse_error;
-        }
+		}
 		pn->type = ePN_settings;
 		return parse_nonreal;
 
 	} else if (strcasecmp(pathnow, "statistics") == 0) {
-        if (SpecifiedLocalBus(pn)) {
+		if (SpecifiedLocalBus(pn)) {
 			return parse_error;
-        }
+		}
 		pn->type = ePN_statistics;
 		return parse_nonreal;
 
 	} else if (strcasecmp(pathnow, "structure") == 0) {
-        if (SpecifiedLocalBus(pn)) {
+		if (SpecifiedLocalBus(pn)) {
 			return parse_error;
-        }
+		}
 		pn->type = ePN_structure;
 		return parse_nonreal;
 
 	} else if (strcasecmp(pathnow, "system") == 0) {
-        if (SpecifiedLocalBus(pn)) {
+		if (SpecifiedLocalBus(pn)) {
 			return parse_error;
-        }
+		}
 		pn->type = ePN_system;
 		return parse_nonreal;
 
 	} else if (strcasecmp(pathnow, "interface") == 0) {
-        if (!SpecifiedBus(pn)) {
+		if (!SpecifiedBus(pn)) {
 			return parse_error;
-        }
+		}
 		pn->type = ePN_interface;
 		return parse_nonreal;
 
@@ -423,9 +424,9 @@ static enum parse_enum Parse_Bus(char *pathnow, enum parse_pass remote_status, s
 	}
 
 	bus_number = atoi(&pathnow[4]);
-    if (bus_number < 0) {
+	if (bus_number < 0) {
 		return parse_error;
-    }
+	}
 	pn->terminal_bus_number = bus_number;
 
 	/* Should make a presence check on remote busses here, but
@@ -436,7 +437,7 @@ static enum parse_enum Parse_Bus(char *pathnow, enum parse_pass remote_status, s
 		return parse_error;
 	} else if (SpecifiedRemoteBus(pn)) {	/* already specified a "bus." */
 		/* Let the remote bus do the heavy listing */
-        pn->state |= ePS_busveryremote;
+		pn->state |= ePS_busveryremote;
 		return parse_first;
 	}
 
@@ -444,12 +445,12 @@ static enum parse_enum Parse_Bus(char *pathnow, enum parse_pass remote_status, s
 	   SetKnownBus will be be performed elsewhere since the sending bus number is used */
 	/* this will only be reached once, because a local bus.x triggers "SpecifiedBus" */
 	//printf("SPECIFIED BUS for ParsedName PRE (%d):\n\tpath=%s\n\tpath_busless=%s\n\tKnnownBus=%d\tSpecifiedBus=%d\n",bus_number,   SAFESTRING(pn->path),SAFESTRING(pn->path_busless),KnownBus(pn),SpecifiedBus(pn));
-   if (count_inbound_connections <= bus_number) {
+	if (count_inbound_connections <= bus_number) {
 		bus_number = -1;
-    }
-    if (bus_number < 0) {
+	}
+	if (bus_number < 0) {
 		return parse_error;
-    }
+	}
 
 	/* Since we are going to use a specific in-device now, set
 	 * pn->selected_connection to point at that device at once. */
@@ -457,19 +458,19 @@ static enum parse_enum Parse_Bus(char *pathnow, enum parse_pass remote_status, s
 
 	// return trip, so bus_pathless not needed.
 	if (remote_status == parse_pass_post_remote) {
-        return parse_first;
+		return parse_first;
 	}
 
 	if (SpecifiedLocalBus(pn)) {
 		/* don't return bus-list for local paths. */
-        pn->sg &= (~BUSRET_MASK);
+		pn->sg &= (~BUSRET_MASK);
 	}
 
 	/* Create the path without the "bus.x" part in pn->path_busless */
 	if (!(found = strstr(pn->path, "/bus."))) {	// no bus
 		int length = pn->path_busless - pn->path - 1;
 		strncpy(pn->path_busless, pn->path, length);	// just copy path
-    } else {
+	} else {
 		int length = found - pn->path;
 		strncpy(pn->path_busless, pn->path, length);
 		if ((found = strchr(found + 1, '/'))) {	// more after bus
@@ -477,11 +478,11 @@ static enum parse_enum Parse_Bus(char *pathnow, enum parse_pass remote_status, s
 
 		} else {
 			pn->path_busless[length] = '\0';	// add final null
-        }
+		}
 	}
 	//printf("SPECIFIED BUS for ParsedName POST (%d):\n\tpath=%s\n\tpath_busless=%s\n\tKnnownBus=%d\tSpecifiedBus=%d\n",bus_number,SAFESTRING(pn->path),SAFESTRING(pn->path_busless),KnownBus(pn),SpecifiedBus(pn));
 	//LEVEL_DEBUG("PARSENAME test path=%s, path_busless=%s\n",pn->path, pn->path_busless ) ;
-    return parse_first;
+	return parse_first;
 }
 
 /* Parse Name (only device name) part of string */
@@ -499,9 +500,9 @@ static enum parse_enum Parse_RealDevice(char *filename, enum parse_pass remote_s
 	//printf("NP hex = %s\n",filename ) ;
 	//printf("NP cmp'ed %s\n",ID ) ;
 	for (i = 0; i < 14; ++i, ++filename) {	/* get ID number */
-        if (*filename == '.') {
+		if (*filename == '.') {
 			++filename;
-        }
+		}
 		if (isxdigit(*filename)) {
 			ID[i] = *filename;
 		} else {
@@ -517,23 +518,23 @@ static enum parse_enum Parse_RealDevice(char *filename, enum parse_pass remote_s
 	pn->sn[5] = string2num(&ID[10]);
 	pn->sn[6] = string2num(&ID[12]);
 	pn->sn[7] = CRC8compute(pn->sn, 7, 0);
-    if (*filename == '.') {
+	if (*filename == '.') {
 		++filename;
-    }
+	}
 	//printf("NP1\n");
 	if (isxdigit(filename[0]) && isxdigit(filename[1])) {
 		char crc[2];
 		num2string(crc, pn->sn[7]);
-        if (strncasecmp(crc, filename, 2)) {
+		if (strncasecmp(crc, filename, 2)) {
 			return parse_error;
-        }
+		}
 	}
 	/* Search for known 1-wire device -- keyed to device name (family code in HEX) */
 	FS_devicefindhex(pn->sn[0], pn);
 
-    if (remote_status == parse_pass_post_remote) {
+	if (remote_status == parse_pass_post_remote) {
 		return parse_prop;
-    }
+	}
 
 	if (Globals.one_device) {
 		bus_nr = 0;				// arbitrary assignment
@@ -574,9 +575,9 @@ static enum parse_enum Parse_Property(char *filename, struct parsedname *pn)
 		//printf("FP known filetype %s\n",pn->selected_filetype->name) ;
 		/* Filetype found, now process extension */
 		if (dot == NULL || dot[0] == '\0') {	/* no extension */
-            if (pn->selected_filetype->ag) {
+			if (pn->selected_filetype->ag) {
 				return parse_error;	/* aggregate filetypes need an extension */
-            }
+			}
 			pn->extension = 0;	/* default when no aggregate */
 
 		} else if (pn->selected_filetype->ag == NULL) {
@@ -593,17 +594,17 @@ static enum parse_enum Parse_Property(char *filename, struct parsedname *pn)
 		} else {				/* specific extension */
 			if (pn->selected_filetype->ag->letters == ag_letters) {	/* Letters */
 				//printf("FP letters\n") ;
-                if ((strlen(dot) != 1) || !isupper(dot[0])) {
+				if ((strlen(dot) != 1) || !isupper(dot[0])) {
 					return parse_error;
-                }
+				}
 				pn->extension = dot[0] - 'A';	/* Letter extension */
 			} else {			/* Numbers */
 				char *p;
 				//printf("FP numbers\n") ;
 				pn->extension = strtol(dot, &p, 0);	/* Number conversion */
-                if ((p == dot) || ((pn->extension == 0) && (errno == -EINVAL))) {
+				if ((p == dot) || ((pn->extension == 0) && (errno == -EINVAL))) {
 					return parse_error;	/* Bad number */
-                }   
+				}
 			}
 			//printf("FP ext=%d nr_elements=%d\n", pn->extension, pn->selected_filetype->ag->elements) ;
 			/* Now check range */
@@ -624,9 +625,9 @@ static enum parse_enum Parse_Property(char *filename, struct parsedname *pn)
 			}
 			/* STATISTICS */
 			STATLOCK;
-            if (pn->pathlength > dir_depth) {
+			if (pn->pathlength > dir_depth) {
 				dir_depth = pn->pathlength;
-            }
+			}
 			STATUNLOCK;
 			return parse_branch;
 		case ft_subdir:
@@ -647,9 +648,9 @@ static int BranchAdd(struct parsedname *pn)
 	if ((pn->pathlength % BRANCH_INCR) == 0) {
 		void *temp = pn->bp;
 		if ((pn->bp = realloc(temp, (BRANCH_INCR + pn->pathlength) * sizeof(struct buspath))) == NULL) {
-            if (temp) {
+			if (temp) {
 				free(temp);
-            }
+			}
 			return -ENOMEM;
 		}
 	}
@@ -669,47 +670,47 @@ int filecmp(const void *name, const void *ex)
 /* Parse a path/file combination */
 int FS_ParsedNamePlus(const char *path, const char *file, struct parsedname *pn)
 {
-    if (path == NULL || path[0] == '\0') {
-        return FS_ParsedName(file, pn);
-    } else if (file == NULL || file[0] == '\0') {
-        return FS_ParsedName(path, pn);
-    } else {
-        int ret = 0;
-        char *fullpath;
-        fullpath = malloc(strlen(file) + strlen(path) + 2);
-        if (fullpath == NULL) {
-            return -ENOMEM;
-        }
-        strcpy(fullpath, path);
-        if (fullpath[strlen(fullpath) - 1] != '/') {
-            strcat(fullpath, "/");
-        }
-        strcat(fullpath, file);
-        //printf("PARSENAMEPLUS path=%s pre\n",fullpath) ;
-        ret = FS_ParsedName(fullpath, pn);
-        //printf("PARSENAMEPLUS path=%s post\n",fullpath) ;
-        free(fullpath);
-        //printf("PARSENAMEPLUS free\n") ;
-        return ret;
-    }
+	if (path == NULL || path[0] == '\0') {
+		return FS_ParsedName(file, pn);
+	} else if (file == NULL || file[0] == '\0') {
+		return FS_ParsedName(path, pn);
+	} else {
+		int ret = 0;
+		char *fullpath;
+		fullpath = malloc(strlen(file) + strlen(path) + 2);
+		if (fullpath == NULL) {
+			return -ENOMEM;
+		}
+		strcpy(fullpath, path);
+		if (fullpath[strlen(fullpath) - 1] != '/') {
+			strcat(fullpath, "/");
+		}
+		strcat(fullpath, file);
+		//printf("PARSENAMEPLUS path=%s pre\n",fullpath) ;
+		ret = FS_ParsedName(fullpath, pn);
+		//printf("PARSENAMEPLUS path=%s post\n",fullpath) ;
+		free(fullpath);
+		//printf("PARSENAMEPLUS free\n") ;
+		return ret;
+	}
 }
 
 /* Parse a path/file combination */
 int FS_ParsedNamePlusExt(const char *path, const char *file, int extension, enum ag_index alphanumeric, struct parsedname *pn)
 {
-    char name[OW_FULLNAME_MAX] ;
-    UCLIBCLOCK ;
-    if ( extension == -2 ) {
-        snprintf(name,OW_FULLNAME_MAX,"%s.BYTE",file) ;
-    } else if ( extension == -1 ) {
-        snprintf(name,OW_FULLNAME_MAX,"%s.ALL",file) ;
-    } else if ( alphanumeric == ag_letters ) {
-        snprintf(name,OW_FULLNAME_MAX,"%s.%c",file,extension+'A') ;
-    } else {
-        snprintf(name,OW_FULLNAME_MAX,"%s.%d",file,extension) ;
-    }
-    UCLIBCUNLOCK ;
-    return FS_ParsedNamePlus(path,name,pn) ;
+	char name[OW_FULLNAME_MAX];
+	UCLIBCLOCK;
+	if (extension == -2) {
+		snprintf(name, OW_FULLNAME_MAX, "%s.BYTE", file);
+	} else if (extension == -1) {
+		snprintf(name, OW_FULLNAME_MAX, "%s.ALL", file);
+	} else if (alphanumeric == ag_letters) {
+		snprintf(name, OW_FULLNAME_MAX, "%s.%c", file, extension + 'A');
+	} else {
+		snprintf(name, OW_FULLNAME_MAX, "%s.%d", file, extension);
+	}
+	UCLIBCUNLOCK;
+	return FS_ParsedNamePlus(path, name, pn);
 }
 
 /* For read and write sibling -- much simpler requirements */
@@ -718,9 +719,9 @@ int FS_ParseProperty_for_sibling(char *filename, struct parsedname *pn)
 	// need to make a copy of filename since a static string can't be modified by strsep
 	char *filename_copy = strdup(filename);
 	int ret;
-    if (filename_copy == NULL) {
+	if (filename_copy == NULL) {
 		return 1;
-    }
+	}
 	ret = (Parse_Property(filename_copy, pn) == parse_done) ? 0 : 1;
 	free(filename_copy);
 	return ret;

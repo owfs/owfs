@@ -435,8 +435,9 @@ static int OW_cmd(const BYTE cmd, const struct parsedname *pn);
 static int FS_r_mem(struct one_wire_query *owq)
 {
 	/* read is not a "paged" endeavor, the CRC comes after a full read */
-	if (OW_r_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq), PN(owq)))
+	if (OW_r_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq), PN(owq))) {
 		return -EINVAL;
+	}
 	return OWQ_size(owq);
 }
 
@@ -445,8 +446,9 @@ static int FS_r_page(struct one_wire_query *owq)
 {
 //printf("2406 read size=%d, offset=%d\n",(int)size,(int)offset);
 	if (OW_r_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq) +
-				 ((struct LockPage *) OWQ_pn(owq).selected_filetype->data.v)->offset[OWQ_pn(owq).extension], PN(owq)))
+			((struct LockPage *) OWQ_pn(owq).selected_filetype->data.v)->offset[OWQ_pn(owq).extension], PN(owq))) {
 		return -EINVAL;
+	}
 	return OWQ_size(owq);
 }
 
@@ -454,8 +456,9 @@ static int FS_w_page(struct one_wire_query *owq)
 {
 	if (OW_w_mem
 		((BYTE *) OWQ_buffer(owq), OWQ_size(owq),
-		 OWQ_offset(owq) + ((struct LockPage *) OWQ_pn(owq).selected_filetype->data.v)->offset[OWQ_pn(owq).extension], PN(owq)))
+			OWQ_offset(owq) + ((struct LockPage *) OWQ_pn(owq).selected_filetype->data.v)->offset[OWQ_pn(owq).extension], PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -463,16 +466,18 @@ static int FS_w_page(struct one_wire_query *owq)
 static int FS_r_lock(struct one_wire_query *owq)
 {
 	BYTE data;
-	if (OW_r_mem(&data, 1, ((struct LockPage *) OWQ_pn(owq).selected_filetype->data.v)->reg, PN(owq)))
+	if (OW_r_mem(&data, 1, ((struct LockPage *) OWQ_pn(owq).selected_filetype->data.v)->reg, PN(owq))) {
 		return -EINVAL;
+	}
 	OWQ_Y(owq) = UT_getbit(&data, OWQ_pn(owq).extension);
 	return 0;
 }
 
 static int FS_w_lock(struct one_wire_query *owq)
 {
-	if (OW_lock(PN(owq)))
+	if (OW_lock(PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -480,8 +485,9 @@ static int FS_w_lock(struct one_wire_query *owq)
 static int FS_w_mem(struct one_wire_query *owq)
 {
 	/* write is "byte at a time" -- not paged */
-	if (OW_w_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq), PN(owq)))
+	if (OW_w_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq), PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -490,13 +496,15 @@ static int FS_r_vis(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	int I;
 	_FLOAT f = 0.;
-	if (OW_r_int(&I, 0x0E, pn))
+	if (OW_r_int(&I, 0x0E, pn)) {
 		return -EINVAL;
+	}
 	switch (pn->sn[0]) {
 	case 0x36:					//DS2740
 		f = 6.25E-6;
-		if (pn->selected_filetype->data.v)
+		if (pn->selected_filetype->data.v) {
 			f = pn->selected_filetype->data.f;	// for DS2740BU
+		}
 		break;
 	case 0x51:					//DS2751
 	case 0x35:					//DS2755
@@ -539,8 +547,9 @@ static int FS_r_vis_avg(struct one_wire_query *owq)
 static int FS_r_vh(struct one_wire_query *owq)
 {
 	int I;
-	if (OW_r_int(&I, 0x10, PN(owq)))
+	if (OW_r_int(&I, 0x10, PN(owq))) {
 		return -EINVAL;
+	}
 	OWQ_F(owq) = .00000625 * I;
 	return 0;
 }
@@ -557,8 +566,9 @@ static int FS_r_voltlim(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	int I;
-	if (OW_r_int(&I, pn->selected_filetype->data.u, pn))
+	if (OW_r_int(&I, pn->selected_filetype->data.u, pn)) {
 		return -EINVAL;
+	}
 	OWQ_F(owq) = .00000625 * I;
 	return 0;
 }
@@ -576,8 +586,9 @@ static int FS_r_templim(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	int I;
-	if (OW_r_int8(&I, pn->selected_filetype->data.u, pn))
+	if (OW_r_int8(&I, pn->selected_filetype->data.u, pn)) {
 		return -EINVAL;
+	}
 	OWQ_F(owq) = I;
 	return 0;
 }
@@ -587,10 +598,12 @@ static int FS_w_templim(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	int I = OWQ_F(owq);
-	if (I < -128)
+	if (I < -128) {
 		return -ERANGE;
-	if (I > 127)
+	}
+	if (I > 127) {
 		return -ERANGE;
+	}
 	return OW_w_int8(&I, pn->selected_filetype->data.u, pn) ? -EINVAL : 0;
 }
 
@@ -598,8 +611,9 @@ static int FS_w_templim(struct one_wire_query *owq)
 static int FS_r_timer(struct one_wire_query *owq)
 {
 	int I;
-	if (OW_r_int(&I, 0x02, PN(owq)))
+	if (OW_r_int(&I, 0x02, PN(owq))) {
 		return -EINVAL;
+	}
 	OWQ_F(owq) = .015625 * I;
 	return 0;
 }
@@ -614,8 +628,9 @@ static int FS_w_timer(struct one_wire_query *owq)
 // Amp-hours -- using 25mOhm internal resistor
 static int FS_r_ah(struct one_wire_query *owq)
 {
-	if (FS_r_vh(owq))
+	if (FS_r_vh(owq)) {
 		return -EINVAL;
+	}
 	OWQ_F(owq) = OWQ_F(owq) / .025;
 	return 0;
 }
@@ -631,8 +646,9 @@ static int FS_w_ah(struct one_wire_query *owq)
 static int FS_r_vis_off(struct one_wire_query *owq)
 {
 	int I;
-	if (OW_r_int8(&I, 0x7B, PN(owq)))
+	if (OW_r_int8(&I, 0x7B, PN(owq))) {
 		return -EINVAL;
+	}
 	OWQ_F(owq) = 1.56E-6 * I;
 	return 0;
 }
@@ -641,10 +657,12 @@ static int FS_r_vis_off(struct one_wire_query *owq)
 static int FS_w_vis_off(struct one_wire_query *owq)
 {
 	int I = OWQ_F(owq) / 1.56E-6;
-	if (I < -128)
+	if (I < -128) {
 		return -ERANGE;
-	if (I > 127)
+	}
+	if (I > 127) {
 		return -ERANGE;
+	}
 	return OW_w_int8(&I, 0x7B, PN(owq)) ? -EINVAL : 0;
 }
 
@@ -654,8 +672,9 @@ static int FS_r_abias(struct one_wire_query *owq)
 	OWQ_allocate_struct_and_pointer(owq_sibling);
 	OWQ_create_shallow_single(owq_sibling, owq);
 
-	if (FS_read_sibling("vbias", owq_sibling))
+	if (FS_read_sibling("vbias", owq_sibling)) {
 		return -EINVAL;
+	}
 
 	OWQ_F(owq) = OWQ_F(owq_sibling) / .025;
 	return 0;
@@ -679,8 +698,9 @@ static int FS_r_current(struct one_wire_query *owq)
 
 	OWQ_create_shallow_single(owq_sibling, owq);
 
-	if (FS_read_sibling("vis", owq_sibling))
+	if (FS_read_sibling("vis", owq_sibling)) {
 		return -EINVAL;
+	}
 
 	OWQ_F(owq) = OWQ_F(owq_sibling) / .025;
 	return 0;
@@ -693,25 +713,29 @@ static int FS_r_vbias(struct one_wire_query *owq)
 	switch (pn->sn[0]) {
 	case 0x51:					//DS2751
 	case 0x30:					//DS2760
-		if (OW_r_int8(&I, 0x33, pn))
+		if (OW_r_int8(&I, 0x33, pn)) {
 			return -EINVAL;
+		}
 		OWQ_F(owq) = 15.625E-6 * I;
 		break;
 	case 0x35:					//DS2755
-		if (OW_r_int8(&I, 0x33, pn))
+		if (OW_r_int8(&I, 0x33, pn)) {
 			return -EINVAL;
+		}
 		OWQ_F(owq) = 1.95E-6 * I;
 		break;
 	case 0x28:					//DS2770
 		// really a 2byte value!
-		if (OW_r_int(&I, 0x32, pn))
+		if (OW_r_int(&I, 0x32, pn)) {
 			return -EINVAL;
+		}
 		OWQ_F(owq) = 1.5625E-6 * I;
 		break;
 	case 0x32:					//DS2780
 	case 0x3D:					//DS2780
-		if (OW_r_int8(&I, 0x61, pn))
+		if (OW_r_int8(&I, 0x61, pn)) {
 			return -EINVAL;
+		}
 		OWQ_F(owq) = 1.5625E-6 * I;
 		break;
 	}
@@ -727,35 +751,43 @@ static int FS_w_vbias(struct one_wire_query *owq)
 	case 0x51:					//DS2751
 	case 0x30:					//DS2760
 		I = OWQ_F(owq) / 15.625E-6;
-		if (I < -128)
+		if (I < -128) {
 			return -ERANGE;
-		if (I > 127)
+		}
+		if (I > 127) {
 			return -ERANGE;
+		}
 		ret = OW_w_int8(&I, 0x33, pn);
 		break;
 	case 0x35:					//DS2755
 		I = OWQ_F(owq) / 1.95E-6;
-		if (I < -128)
+		if (I < -128) {
 			return -ERANGE;
-		if (I > 127)
+		}
+		if (I > 127) {
 			return -ERANGE;
+		}
 		ret = OW_w_int8(&I, 0x33, pn);
 		break;
 	case 0x28:					//DS2770
 		I = OWQ_F(owq) / 1.5625E-6;
-		if (I < -32768)
+		if (I < -32768) {
 			return -ERANGE;
-		if (I > 32767)
+		}
+		if (I > 32767) {
 			return -ERANGE;
+		}
 		// really 2 bytes
 		ret = OW_w_int(&I, 0x32, pn);
 		break;
 	case 0x32:					//DS2780
 		I = OWQ_F(owq) / 1.5625E-6;
-		if (I < -128)
+		if (I < -128) {
 			return -ERANGE;
-		if (I > 127)
+		}
+		if (I > 127) {
 			return -ERANGE;
+		}
 		ret = OW_w_int8(&I, 0x61, pn);
 		break;
 	}
@@ -766,8 +798,9 @@ static int FS_r_volt(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	int I;
-	if (OW_r_int(&I, 0x0C, pn))
+	if (OW_r_int(&I, 0x0C, pn)) {
 		return -EINVAL;
+	}
 	switch (pn->sn[0]) {
 	case 0x3D:					//DS2781
 		OWQ_F(owq) = (I / 32) * .00976;
@@ -792,8 +825,9 @@ static int FS_r_temp(struct one_wire_query *owq)
 	default:
 		off = 0x18;
 	}
-	if (OW_r_int(&I, off, pn))
+	if (OW_r_int(&I, off, pn)) {
 		return -EINVAL;
+	}
 	OWQ_F(owq) = (I / 32) * .125;
 	return 0;
 }
@@ -804,8 +838,9 @@ static int FS_r_bit(struct one_wire_query *owq)
 	int bit = BYTE_MASK(pn->selected_filetype->data.u);
 	size_t location = pn->selected_filetype->data.u >> 8;
 	BYTE c[1];
-	if (OW_r_mem(c, 1, location, pn))
+	if (OW_r_mem(c, 1, location, pn)) {
 		return -EINVAL;
+	}
 	OWQ_Y(owq) = UT_getbit(c, bit);
 	return 0;
 }
@@ -816,8 +851,9 @@ static int FS_w_bit(struct one_wire_query *owq)
 	int bit = BYTE_MASK(pn->selected_filetype->data.u);
 	size_t location = pn->selected_filetype->data.u >> 8;
 	BYTE c[1];
-	if (OW_r_mem(c, 1, location, pn))
+	if (OW_r_mem(c, 1, location, pn)) {
 		return -EINVAL;
+	}
 	UT_setbit(c, bit, OWQ_Y(owq) != 0);
 	return OW_w_mem(c, 1, location, pn) ? -EINVAL : 0;
 }
@@ -825,23 +861,26 @@ static int FS_w_bit(struct one_wire_query *owq)
 /* switch PIO sensed*/
 static int FS_r_pio(struct one_wire_query *owq)
 {
-	if (FS_r_bit(owq))
+	if (FS_r_bit(owq)) {
 		return -EINVAL;
+	}
 	OWQ_Y(owq) = !OWQ_Y(owq);
 	return 0;
 }
 
 static int FS_charge(struct one_wire_query *owq)
 {
-	if (OW_cmd(OWQ_Y(owq) ? 0xB5 : 0xBE, PN(owq)))
+	if (OW_cmd(OWQ_Y(owq) ? 0xB5 : 0xBE, PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
 static int FS_refresh(struct one_wire_query *owq)
 {
-	if (OW_cmd(0x63, PN(owq)))
+	if (OW_cmd(0x63, PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -860,10 +899,12 @@ static int OW_r_eeprom(const size_t page, const size_t size, const off_t offset,
 		TRXN_WRITE2(p),
 		TRXN_END,
 	};
-	if (offset > (off_t) page + 16)
+	if (offset > (off_t) page + 16) {
 		return 0;
-	if (offset + size <= page)
+	}
+	if (offset + size <= page) {
 		return 0;
+	}
 	return BUS_transaction(t, pn);
 }
 
@@ -897,10 +938,12 @@ static int OW_w_eeprom(const size_t page, const size_t size, const off_t offset,
 		TRXN_WRITE2(p),
 		TRXN_END,
 	};
-	if (offset > (off_t) page + 16)
+	if (offset > (off_t) page + 16) {
 		return 0;
-	if (offset + size <= page)
+	}
+	if (offset + size <= page) {
 		return 0;
+	}
 	return BUS_transaction(t, pn);
 }
 
@@ -941,8 +984,9 @@ static int OW_r_int(int *I, off_t offset, const struct parsedname *pn)
 {
 	BYTE i[2];
 	int ret = OW_r_sram(i, 2, offset, pn);
-	if (ret)
+	if (ret) {
 		return ret;
+	}
 	// Data in the DS27xx is stored MSB/LSB -- different from DS2438 for example
 	// Thanks to Jan Bertelsen for finding this!
 	I[0] = (((int) ((int8_t) i[0]) << 8) + ((uint8_t) i[1]));
@@ -959,8 +1003,9 @@ static int OW_r_int8(int *I, off_t offset, const struct parsedname *pn)
 {
 	BYTE i[1];
 	int ret = OW_r_sram(i, 1, offset, pn);
-	if (ret)
+	if (ret) {
 		return ret;
+	}
 	//I[0] = ((int)((int8_t)i[0]) ) ;
 	I[0] = UT_int8(i);
 	return 0;
@@ -1008,13 +1053,15 @@ static int FS_thermocouple(struct one_wire_query *owq)
 	OWQ_create_shallow_single(owq_sibling, owq);
 
 	/* Get measured voltage */
-	if (FS_read_sibling("vis", owq_sibling))
+	if (FS_read_sibling("vis", owq_sibling)) {
 		return -EINVAL;
+	}
 	mV = OWQ_F(owq_sibling) * 1000;	/* convert Volts to mVolts */
 
 	/* Get cold junction temperature */
-	if (FS_read_sibling("temperature", owq_sibling))
+	if (FS_read_sibling("temperature", owq_sibling)) {
 		return -EINVAL;
+	}
 	T_coldjunction = OWQ_F(owq_sibling);
 
 	OWQ_F(owq) = ThermocoupleTemperature(mV, T_coldjunction, OWQ_pn(owq).selected_filetype->data.i);

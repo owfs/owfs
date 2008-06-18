@@ -89,8 +89,9 @@ static int OW_w_control(const UINT data, const struct parsedname *pn);
 /* discharge 2409 lines */
 static int FS_discharge(struct one_wire_query *owq)
 {
-	if ((OWQ_Y(owq)) && OW_discharge(PN(owq)))
+	if ((OWQ_Y(owq)) && OW_discharge(PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -98,8 +99,9 @@ static int FS_discharge(struct one_wire_query *owq)
 /* Added by Jan Kandziora */
 static int FS_clearevent(struct one_wire_query *owq)
 {
-	if ((OWQ_Y(owq)) && OW_clearevent(PN(owq)))
+	if ((OWQ_Y(owq)) && OW_clearevent(PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -107,8 +109,9 @@ static int FS_clearevent(struct one_wire_query *owq)
 static int FS_r_sensed(struct one_wire_query *owq)
 {
 	BYTE data;
-	if (OW_r_control(&data, PN(owq)))
+	if (OW_r_control(&data, PN(owq))) {
 		return -EINVAL;
+	}
 //    y[0] = data&0x02 ? 1 : 0 ;
 //    y[1] = data&0x08 ? 1 : 0 ;
 	OWQ_U(owq) = ((data >> 1) & 0x01) | ((data >> 2) & 0x02);
@@ -119,8 +122,9 @@ static int FS_r_sensed(struct one_wire_query *owq)
 static int FS_r_branch(struct one_wire_query *owq)
 {
 	BYTE data;
-	if (OW_r_control(&data, PN(owq)))
+	if (OW_r_control(&data, PN(owq))) {
 		return -EINVAL;
+	}
 //    y[0] = data&0x01 ? 0 : 1 ;
 //    y[1] = data&0x04 ? 0 : 1 ;
 	OWQ_U(owq) = (((data) & 0x01) | ((data >> 1) & 0x02)) ^ 0x03;
@@ -131,8 +135,9 @@ static int FS_r_branch(struct one_wire_query *owq)
 static int FS_r_event(struct one_wire_query *owq)
 {
 	BYTE data;
-	if (OW_r_control(&data, PN(owq)))
+	if (OW_r_control(&data, PN(owq))) {
 		return -EINVAL;
+	}
 //    y[0] = data&0x10 ? 1 : 0 ;
 //    y[1] = data&0x20 ? 1 : 0 ;
 	OWQ_U(owq) = (data >> 4) & 0x03;
@@ -144,8 +149,9 @@ static int FS_r_control(struct one_wire_query *owq)
 {
 	BYTE data;
 	UINT control[] = { 2, 3, 0, 1, };
-	if (OW_r_control(&data, PN(owq)))
+	if (OW_r_control(&data, PN(owq))) {
 		return -EINVAL;
+	}
 	OWQ_U(owq) = control[data >> 6];
 	return 0;
 }
@@ -153,10 +159,12 @@ static int FS_r_control(struct one_wire_query *owq)
 /* 2409 switch -- control pin state */
 static int FS_w_control(struct one_wire_query *owq)
 {
-	if (OWQ_U(owq) > 3)
+	if (OWQ_U(owq) > 3) {
 		return -EINVAL;
-	if (OW_w_control(OWQ_U(owq), PN(owq)))
+	}
+	if (OW_w_control(OWQ_U(owq), PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -175,14 +183,16 @@ static int OW_discharge(const struct parsedname *pn)
 	pn->selected_connection->buspath_bad = 1;
 	BUSUNLOCK(pn);
 
-	if (BUS_transaction(t, pn))
+	if (BUS_transaction(t, pn)) {
 		return 1;
+	}
 
 	UT_delay(100);
 
 	dis[0] = _1W_ALL_LINES_OFF;
-	if (BUS_transaction(t, pn))
+	if (BUS_transaction(t, pn)) {
 		return 1;
+	}
 
 	return 0;
 }
@@ -198,8 +208,9 @@ static int OW_clearevent(const struct parsedname *pn)
 	};
 
 	// Could certainly couple this with next transaction
-	if (BUS_transaction(t, pn))
+	if (BUS_transaction(t, pn)) {
 		return 1;
+	}
 
 	return 0;
 }
@@ -217,8 +228,9 @@ static int OW_w_control(const UINT data, const struct parsedname *pn)
 		TRXN_END,
 	};
 
-	if (BUS_transaction(t, pn))
+	if (BUS_transaction(t, pn)) {
 		return 1;
+	}
 
 	/* Check that Info corresponds */
 	return (info & 0xC0) == r[data] ? 0 : 1;
@@ -234,7 +246,8 @@ static int OW_r_control(BYTE * data, const struct parsedname *pn)
 		TRXN_END,
 	};
 
-	if (BUS_transaction(t, pn))
+	if (BUS_transaction(t, pn)) {
 		return 1;
+	}
 	return 0;
 }

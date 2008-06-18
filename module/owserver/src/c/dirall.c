@@ -48,8 +48,8 @@ $Id$
 
 void DirallHandlerCallback(void *v, const struct parsedname *pn_entry)
 {
-    struct charblob *cb = v;
-    CharblobAdd(pn_entry->path, strlen(pn_entry->path), cb);
+	struct charblob *cb = v;
+	CharblobAdd(pn_entry->path, strlen(pn_entry->path), cb);
 }
 
 void *DirallHandler(struct handlerdata *hd, struct client_msg *cm, const struct parsedname *pn)

@@ -403,42 +403,42 @@ extern struct connection_in *head_inbound_list;
 
 /* Network connection structure */
 struct connection_out {
-    struct connection_out *next;
-    void (*HandlerRoutine) (int file_descriptor);
-    void (*Exit) (int errcode);
-    char *name;
-    char *host;
-    char *service;
-    int index;
-    struct addrinfo *ai;
-    struct addrinfo *ai_ok;
-    int file_descriptor;
+	struct connection_out *next;
+	void (*HandlerRoutine) (int file_descriptor);
+	void (*Exit) (int errcode);
+	char *name;
+	char *host;
+	char *service;
+	int index;
+	struct addrinfo *ai;
+	struct addrinfo *ai_ok;
+	int file_descriptor;
 #if OW_MT
-    pthread_mutex_t accept_mutex;
-    pthread_mutex_t out_mutex;
-    pthread_t tid;
-#endif                          /* OW_MT */
+	pthread_mutex_t accept_mutex;
+	pthread_mutex_t out_mutex;
+	pthread_t tid;
+#endif							/* OW_MT */
 #if OW_ZERO
-    DNSServiceRef sref0;
-    DNSServiceRef sref1;
+	DNSServiceRef sref0;
+	DNSServiceRef sref1;
 #endif
 };
 extern struct connection_out *head_outbound_list;
 
 /* Network connection structure */
 struct connection_side {
-    struct connection_side *next;
-    char *name;
-    char *host;
-    char *service;
-    int index;
-    struct addrinfo *ai;
-    struct addrinfo *ai_ok;
-    int file_descriptor;
-    int good_entry ;
+	struct connection_side *next;
+	char *name;
+	char *host;
+	char *service;
+	int index;
+	struct addrinfo *ai;
+	struct addrinfo *ai_ok;
+	int file_descriptor;
+	int good_entry;
 #if OW_MT
-    pthread_mutex_t side_mutex;
-#endif                          /* OW_MT */
+	pthread_mutex_t side_mutex;
+#endif							/* OW_MT */
 };
 extern struct connection_side *head_sidebound_list;
 

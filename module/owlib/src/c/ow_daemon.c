@@ -16,16 +16,16 @@ $Id$
 #include "ow_pid.h"
 
 #if defined(__UCLIBC__)
- #if (defined(__UCLIBC_HAS_MMU__) || defined(__ARCH_HAS_MMU__))
-  #define HAVE_DAEMON 1
- #else /* __UCLIBC_HAS_MMU__ */
-  #undef HAVE_DAEMON
- #endif/* __UCLIBC_HAS_MMU__ */
+#if (defined(__UCLIBC_HAS_MMU__) || defined(__ARCH_HAS_MMU__))
+#define HAVE_DAEMON 1
+#else							/* __UCLIBC_HAS_MMU__ */
+#undef HAVE_DAEMON
+#endif							/* __UCLIBC_HAS_MMU__ */
 #endif							/* __UCLIBC__ */
 
 #ifndef HAVE_DAEMON
- #include <sys/resource.h>
- #include <sys/wait.h>
+#include <sys/resource.h>
+#include <sys/wait.h>
 
 static void catchchild(int sig)
 {
@@ -46,11 +46,11 @@ static int my_daemon(int nochdir, int noclose)
 
 	signal(SIGCHLD, SIG_DFL);
 
- #if defined(__UCLIBC__)
+#if defined(__UCLIBC__)
 	pid = vfork();
- #else /* __UCLIBC__ */
+#else							/* __UCLIBC__ */
 	pid = fork();
- #endif /* __UCLIBC__ */
+#endif							/* __UCLIBC__ */
 	switch (pid) {
 	case -1:
 		memset(&act, 0, sizeof(act));
@@ -76,11 +76,11 @@ static int my_daemon(int nochdir, int noclose)
 
 	/* Make certain we are not a session leader, or else we
 	 * might reacquire a controlling terminal */
- #ifdef __UCLIBC__
+#ifdef __UCLIBC__
 	pid = vfork();
- #else /* __UCLIBC__ */
+#else							/* __UCLIBC__ */
 	pid = fork();
- #endif /* __UCLIBC__ */
+#endif							/* __UCLIBC__ */
 	if (pid) {
 		//printf("owlib: my_daemon: _exit() pid=%d\n", getpid());
 		_exit(0);
@@ -117,8 +117,8 @@ int EnterBackground(void)
 	/* daemon() is called BEFORE initialization of USB adapter etc... Cygwin will fail to
 	 * use the adapter after daemon otherwise. Some permissions are changed on the process
 	 * (or process-group id) which libusb-win32 is depending on. */
-    //printf("Enter Background\n") ;
-    if (Globals.want_background) {
+	//printf("Enter Background\n") ;
+	if (Globals.want_background) {
 		switch (Globals.opt) {
 		case opt_owfs:
 			// handles PID from a callback
@@ -127,25 +127,25 @@ int EnterBackground(void)
 		case opt_ftpd:
 		case opt_server:
 			if (
- #ifdef HAVE_DAEMON
+#ifdef HAVE_DAEMON
 				   daemon(1, 0)
- #else							/* HAVE_DAEMON */
+#else							/* HAVE_DAEMON */
 				   my_daemon(1, 0)
- #endif							/* HAVE_DAEMON */
+#endif							/* HAVE_DAEMON */
 				) {
 				LEVEL_DEFAULT("Cannot enter background mode, quitting.\n");
 				return 1;
-            } else {
-    			Globals.now_background = 1;
+			} else {
+				Globals.now_background = 1;
 #ifdef __UCLIBC__
-                /* Have to re-initialize pthread since the main-process is gone.
-                *
-                * This workaround will probably be fixed in uClibc-0.9.28
-                * Other uClibc developers have noticed similar problems which are
-                * trigged when pthread functions are used in shared libraries. */
-                LockSetup() ;
-#endif /* __UCLIBC__ */
-            }
+				/* Have to re-initialize pthread since the main-process is gone.
+				 *
+				 * This workaround will probably be fixed in uClibc-0.9.28
+				 * Other uClibc developers have noticed similar problems which are
+				 * trigged when pthread functions are used in shared libraries. */
+				LockSetup();
+#endif							/* __UCLIBC__ */
+			}
 		default:
 			PIDstart();
 			break;
@@ -154,7 +154,7 @@ int EnterBackground(void)
 		if (Globals.opt != opt_owfs)
 			PIDstart();
 	}
-    //printf("Exit Background\n") ;
+	//printf("Exit Background\n") ;
 
 	return 0;
 }

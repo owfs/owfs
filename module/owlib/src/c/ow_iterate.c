@@ -27,10 +27,12 @@ int OW_readwrite_paged(struct one_wire_query *owq, size_t page, size_t pagelen, 
 	OWQ_length(owq) = size;
 	while (size > 0) {
 		size_t thispage = pagelen - (offset % pagelen);
-		if (thispage > size)
+		if (thispage > size) {
 			thispage = size;
-		if (readwritefunc(buffer_position, thispage, offset, pn))
+		}
+		if (readwritefunc(buffer_position, thispage, offset, pn)) {
 			return 1;
+		}
 		buffer_position += thispage;
 		size -= thispage;
 		offset += thispage;
@@ -53,8 +55,9 @@ int OWQ_readwrite_paged(struct one_wire_query *owq, size_t page, size_t pagelen,
 	OWQ_length(owq) = size;
 	while (size > 0) {
 		size_t thispage = pagelen - (offset % pagelen);
-		if (thispage > size)
+		if (thispage > size) {
 			thispage = size;
+		}
 		OWQ_size(owq_page) = thispage;
 		if (readwritefunc(owq_page, 0, pagelen)) {
 			LEVEL_DEBUG("OWQ_readwrite_paged error at offset %ld\n", (long) offset);

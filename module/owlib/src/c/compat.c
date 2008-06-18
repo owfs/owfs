@@ -62,17 +62,19 @@ char *strsep(char **stringp, const char *delim)
 	int c, sc;
 	char *tok;
 
-	if ((s = *stringp) == NULL)
+	if ((s = *stringp) == NULL) {
 		return (NULL);
+	}
 	for (tok = s;;) {
 		c = *s++;
 		spanp = delim;
 		do {
 			if ((sc = *spanp++) == c) {
-				if (c == 0)
+				if (c == 0) {
 					s = NULL;
-				else
+				} else {
 					s[-1] = 0;
+				}
 				*stringp = s;
 				return (tok);
 			}
@@ -101,10 +103,12 @@ typedef struct node_t {
 
 static void tdestroy_recurse_(node * root, void (*freefct) (void *))
 {
-	if (root->left != NULL)
+	if (root->left != NULL) {
 		tdestroy_recurse_(root->left, freefct);
-	if (root->right != NULL)
+	}
+	if (root->right != NULL) {
 		tdestroy_recurse_(root->right, freefct);
+	}
 	if (root->key) {
 		(*freefct) ((void *) root->key);
 		//free(root->key);
@@ -143,13 +147,15 @@ void *tsearch(__const void *key, void **vrootp, __compar_fn_t compar)
 	register node *q;
 	register node **rootp = (node **) vrootp;
 
-	if (rootp == (struct node_t **) 0)
+	if (rootp == (struct node_t **) 0) {
 		return ((struct node_t *) 0);
+	}
 	while (*rootp != (struct node_t *) 0) {	/* Knuth's T1: */
 		int r;
 
-		if ((r = (*compar) (key, (*rootp)->key)) == 0)	/* T2: */
+		if ((r = (*compar) (key, (*rootp)->key)) == 0) {	/* T2: */
 			return (*rootp);	/* we found it! */
+		}
 		rootp = (r < 0) ? &(*rootp)->left :	/* T3: follow left branch */
 			&(*rootp)->right;	/* T4: follow right branch */
 	}
@@ -176,13 +182,15 @@ void *tfind(__const void *key, void *__const * vrootp, __compar_fn_t compar)
 {
 	register node **rootp = (node **) vrootp;
 
-	if (rootp == (struct node_t **) 0)
+	if (rootp == (struct node_t **) 0) {
 		return ((struct node_t *) 0);
+	}
 	while (*rootp != (struct node_t *) 0) {	/* Knuth's T1: */
 		int r;
 
-		if ((r = (*compar) (key, (*rootp)->key)) == 0)	/* T2: */
+		if ((r = (*compar) (key, (*rootp)->key)) == 0) {	/* T2: */
 			return (*rootp);	/* we found it! */
+		}
 		rootp = (r < 0) ? &(*rootp)->left :	/* T3: follow left branch */
 			&(*rootp)->right;	/* T4: follow right branch */
 	}
@@ -211,19 +219,21 @@ void *tdelete(__const void *key, void **vrootp, __compar_fn_t compar)
 	int cmp;
 	register node **rootp = (node **) vrootp;
 
-	if (rootp == (struct node_t **) 0 || (p = *rootp) == (struct node_t *) 0)
+	if (rootp == (struct node_t **) 0 || (p = *rootp) == (struct node_t *) 0) {
 		return ((struct node_t *) 0);
+	}
 	while ((cmp = (*compar) (key, (*rootp)->key)) != 0) {
 		p = *rootp;
 		rootp = (cmp < 0) ? &(*rootp)->left :	/* follow left branch */
 			&(*rootp)->right;	/* follow right branch */
-		if (*rootp == (struct node_t *) 0)
+		if (*rootp == (struct node_t *) 0) {
 			return ((struct node_t *) 0);	/* key not found */
+		}
 	}
 	r = (*rootp)->right;		/* D1: */
-	if ((q = (*rootp)->left) == (struct node_t *) 0)	/* Left (struct node_t *)0? */
+	if ((q = (*rootp)->left) == (struct node_t *) 0) {	/* Left (struct node_t *)0? */
 		q = r;
-	else if (r != (struct node_t *) 0) {	/* Right link is null? */
+	} else if (r != (struct node_t *) 0) {	/* Right link is null? */
 		if (r->left == (struct node_t *) 0) {	/* D2: Find successor */
 			r->left = q;
 			q = r;
@@ -258,15 +268,17 @@ static void trecurse(__const void *vroot, __action_fn_t action, int level)
 {
 	register node *root = (node *) vroot;
 
-	if (root->left == (struct node_t *) 0 && root->right == (struct node_t *) 0)
+	if (root->left == (struct node_t *) 0 && root->right == (struct node_t *) 0) {
 		(*action) (root, leaf, level);
-	else {
+	} else {
 		(*action) (root, preorder, level);
-		if (root->left != (struct node_t *) 0)
+		if (root->left != (struct node_t *) 0) {
 			trecurse(root->left, action, level + 1);
+		}
 		(*action) (root, postorder, level);
-		if (root->right != (struct node_t *) 0)
+		if (root->right != (struct node_t *) 0) {
 			trecurse(root->right, action, level + 1);
+		}
 		(*action) (root, endorder, level);
 	}
 }
@@ -280,7 +292,8 @@ void twalk(__const void *vroot, __action_fn_t action)
 {
 	register __const node *root = (node *) vroot;
 
-	if (root != (node *) 0 && action != (__action_fn_t) 0)
+	if (root != (node *) 0 && action != (__action_fn_t) 0) {
 		trecurse(root, action, 0);
+	}
 }
 #endif

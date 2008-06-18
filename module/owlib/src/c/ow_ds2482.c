@@ -173,7 +173,7 @@ int DS2482_detect(struct connection_in *in)
 
 			/* write the RESET code */
 			if (i2c_smbus_write_byte(file_descriptor, DS2482_CMD_RESET)	// reset
-                         || DS2482_readstatus(&c, file_descriptor, DS2482_Chip_reset_usec)	// pause .5 usec then read status
+				|| DS2482_readstatus(&c, file_descriptor, DS2482_Chip_reset_usec)	// pause .5 usec then read status
 				|| (c != (DS2482_REG_STS_LL | DS2482_REG_STS_RST))	// make sure status is properly set
 				) {
 				LEVEL_CONNECT("i2c device at %s address %d cannot be reset. Not a DS2482.\n", in->name, test_address[i]);
@@ -214,7 +214,7 @@ static int DS2482_redetect(const struct parsedname *pn)
 		BYTE c;
 		/* write the RESET code */
 		if (i2c_smbus_write_byte(file_descriptor, DS2482_CMD_RESET)	// reset
-                  || DS2482_readstatus(&c, file_descriptor, DS2482_Chip_reset_usec)	// pause .5 usec then read status
+			|| DS2482_readstatus(&c, file_descriptor, DS2482_Chip_reset_usec)	// pause .5 usec then read status
 			|| (c != (DS2482_REG_STS_LL | DS2482_REG_STS_RST))	// make sure status is properly set
 			) {
 			LEVEL_CONNECT("i2c device at %s address %d cannot be reset. Not a DS2482.\n", head->name, address);
@@ -228,9 +228,9 @@ static int DS2482_redetect(const struct parsedname *pn)
 				/* BUSLOCK also locks the sister channels for this */
 				struct connection_in *in;
 				for (in = head_inbound_list; in; in = in->next) {
-                    if (in == head) {
+					if (in == head) {
 						in->reconnect_state = reconnect_ok;
-                    }
+					}
 				}
 			}
 			return 0;
@@ -282,19 +282,18 @@ static int DS2482_next_both(struct device_search *ds, const struct parsedname *p
 
 	// initialize for search
 	// if the last call was not the last one
-    if (!pn->selected_connection->AnyDevices) {
+	if (!pn->selected_connection->AnyDevices) {
 		ds->LastDevice = 1;
-    }
-    if (ds->LastDevice) {
+	}
+	if (ds->LastDevice) {
 		return -ENODEV;
-    }
+	}
 
 	/* Make sure we're using the correct channel */
 	/* Appropriate search command */
-    if ((ret = BUS_send_data(&(ds->search), 1, pn))) {
+	if ((ret = BUS_send_data(&(ds->search), 1, pn))) {
 		return ret;
-    }
-
+	}
 	// loop to do the search
 	for (bit_number = 0; bit_number < 64; ++bit_number) {
 		LEVEL_DEBUG("DS2482 search bit number %d\n", bit_number);
@@ -305,9 +304,9 @@ static int DS2482_next_both(struct device_search *ds, const struct parsedname *p
 			search_direction = (bit_number == ds->LastDiscrepancy) ? 1 : 0;
 		}
 		/* Appropriate search command */
-        if ((ret = DS2482_triple(bits, search_direction, file_descriptor))) {
+		if ((ret = DS2482_triple(bits, search_direction, file_descriptor))) {
 			return ret;
-        }
+		}
 		if (bits[0] || bits[1] || bits[2]) {
 			if (bits[0] && bits[1]) {	/* 1,1 */
 				/* No devices respond */
@@ -345,22 +344,22 @@ static int DS2482_reset(const struct parsedname *pn)
 	int file_descriptor = pn->selected_connection->connin.i2c.head->connin.i2c.file_descriptor;
 
 	/* Make sure we're using the correct channel */
-    if (DS2482_channel_select(pn)) {
+	if (DS2482_channel_select(pn)) {
 		return -EIO;
-    }
+	}
 
 	/* write the RESET code */
-    if (i2c_smbus_write_byte(file_descriptor, DS2482_CMD_1WIRE_RESET)) {
+	if (i2c_smbus_write_byte(file_descriptor, DS2482_CMD_1WIRE_RESET)) {
 		return -EIO;
-    }
+	}
 
 	/* wait */
 	// rstl+rsth+.25 usec
 
 	/* read status */
-    if (DS2482_readstatus(&c, file_descriptor, DS2482_1wire_reset_usec)) {
+	if (DS2482_readstatus(&c, file_descriptor, DS2482_1wire_reset_usec)) {
 		return -EIO;			// 8 * Tslot
-    }
+	}
 
 	pn->selected_connection->AnyDevices = (c & DS2482_REG_STS_PPD) != 0;
 	LEVEL_DEBUG("DS2482 Reset\n");
@@ -373,14 +372,14 @@ static int DS2482_sendback_data(const BYTE * data, BYTE * resp, const size_t len
 	size_t i;
 
 	/* Make sure we're using the correct channel */
-    if (DS2482_channel_select(pn)) {
+	if (DS2482_channel_select(pn)) {
 		return -1;
-    }
+	}
 
 	for (i = 0; i < len; ++i) {
-        if (DS2482_send_and_get(file_descriptor, data[i], &resp[i])) {
+		if (DS2482_send_and_get(file_descriptor, data[i], &resp[i])) {
 			return 1;
-        }
+		}
 	}
 	return 0;
 }
@@ -392,26 +391,26 @@ static int DS2482_send_and_get(int file_descriptor, const BYTE wr, BYTE * rd)
 	BYTE c;
 
 	/* Write data byte */
-    if (i2c_smbus_write_byte_data(file_descriptor, DS2482_CMD_1WIRE_WRITE_BYTE, wr) < 0) {
+	if (i2c_smbus_write_byte_data(file_descriptor, DS2482_CMD_1WIRE_WRITE_BYTE, wr) < 0) {
 		return 1;
-    }
+	}
 
 	/* read status for done */
-    if (DS2482_readstatus(&c, file_descriptor, DS2482_1wire_write_usec)) {
+	if (DS2482_readstatus(&c, file_descriptor, DS2482_1wire_write_usec)) {
 		return -1;
-    }
+	}
 
 	/* Select the data register */
-    if (i2c_smbus_write_byte_data(file_descriptor, DS2482_CMD_SET_READ_PTR, DS2482_PTR_CODE_DATA) < 0) {
+	if (i2c_smbus_write_byte_data(file_descriptor, DS2482_CMD_SET_READ_PTR, DS2482_PTR_CODE_DATA) < 0) {
 		return 1;
-    }
+	}
 
 	/* Read the data byte */
 	read_back = i2c_smbus_read_byte(file_descriptor);
 
-    if (read_back < 0) {
+	if (read_back < 0) {
 		return 1;
-    }
+	}
 	rd[0] = (BYTE) read_back;
 
 	return 0;
@@ -453,9 +452,9 @@ static int CreateChannels(struct connection_in *in)
 	in->adapter_name = name[0];
 	for (i = 1; i < 8; ++i) {
 		struct connection_in *added = NewIn(in);
-        if (added == NULL) {
+		if (added == NULL) {
 			return -ENOMEM;
-        }
+		}
 		added->connin.i2c.index = i;
 		added->adapter_name = name[i];
 	}
@@ -469,14 +468,14 @@ static int DS2482_triple(BYTE * bits, int direction, int file_descriptor)
 
 	LEVEL_DEBUG("-> TRIPLET attempt direction %d\n", direction);
 	/* Write TRIPLE command */
-    if (i2c_smbus_write_byte_data(file_descriptor, DS2482_CMD_1WIRE_TRIPLET, direction ? 0xFF : 0) < 0) {
+	if (i2c_smbus_write_byte_data(file_descriptor, DS2482_CMD_1WIRE_TRIPLET, direction ? 0xFF : 0) < 0) {
 		return 1;
-    }
+	}
 
 	/* read status */
-    if (DS2482_readstatus(&c, file_descriptor, DS2482_1wire_triplet_usec)) {
+	if (DS2482_readstatus(&c, file_descriptor, DS2482_1wire_triplet_usec)) {
 		return -1;				// 250usec = 3*Tslot
-    }
+	}
 
 	bits[0] = (c & DS2482_REG_STS_SBR) != 0;
 	bits[1] = (c & DS2482_REG_STS_TSB) != 0;
@@ -507,32 +506,32 @@ static int DS2482_channel_select(const struct parsedname *pn)
 
 	/* Already properly selected? */
 	/* All `100 (1 channel) will be caught here */
-    if (chan == head->connin.i2c.current) {
+	if (chan == head->connin.i2c.current) {
 		return 0;
-    }
+	}
 
 	/* Select command */
-    if (i2c_smbus_write_byte_data(file_descriptor, DS2482_CMD_CHANNEL_SELECT, W_chan[chan]) < 0) {
+	if (i2c_smbus_write_byte_data(file_descriptor, DS2482_CMD_CHANNEL_SELECT, W_chan[chan]) < 0) {
 		return -EIO;
-    }
+	}
 
 	/* Read back and confirm */
 	read_back = i2c_smbus_read_byte(file_descriptor);
-    if (read_back < 0) {
+	if (read_back < 0) {
 		return -ENODEV;
-    }
-    if (((BYTE) read_back) != R_chan[chan]) {
+	}
+	if (((BYTE) read_back) != R_chan[chan]) {
 		return -ENODEV;
-    }
+	}
 
 	/* Set the channel in head */
 	head->connin.i2c.current = pn->selected_connection->connin.i2c.index;
 
 	/* Now check the configuration register */
 	/* This is since configuration is per chip, not just channel */
-    if (config != head->connin.i2c.configchip) {
+	if (config != head->connin.i2c.configchip) {
 		return SetConfiguration(config, pn->selected_connection);
-    }
+	}
 
 	return 0;
 }
@@ -562,19 +561,19 @@ static int SetConfiguration(BYTE c, struct connection_in *in)
 static int DS2482_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname *pn)
 {
 	/* Make sure we're using the correct channel */
-    if (DS2482_channel_select(pn)) {
+	if (DS2482_channel_select(pn)) {
 		return -1;
-    }
+	}
 
 	/* Set the power (bit is automatically cleared by reset) */
-    if (SetConfiguration(pn->selected_connection->connin.i2c.configreg | DS2482_REG_CFG_SPU, pn->selected_connection)) {
+	if (SetConfiguration(pn->selected_connection->connin.i2c.configreg | DS2482_REG_CFG_SPU, pn->selected_connection)) {
 		return -1;
-    }
+	}
 
 	/* send and get byte (and trigger strong pull-up */
-    if (DS2482_send_and_get(pn->selected_connection->connin.i2c.head->connin.i2c.file_descriptor, byte, resp)) {
+	if (DS2482_send_and_get(pn->selected_connection->connin.i2c.head->connin.i2c.file_descriptor, byte, resp)) {
 		return -1;
-    }
+	}
 
 	UT_delay(delay);
 
@@ -584,13 +583,13 @@ static int DS2482_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, cons
 static void DS2482_close(struct connection_in *in)
 {
 	struct connection_in *head;
-    if (in == NULL) {
+	if (in == NULL) {
 		return;
-    }
+	}
 	head = in->connin.i2c.head;
-    if (head->connin.i2c.file_descriptor < 0) {
+	if (head->connin.i2c.file_descriptor < 0) {
 		return;
-    }
+	}
 	close(head->connin.i2c.file_descriptor);
 	head->connin.i2c.file_descriptor = -1;
 }

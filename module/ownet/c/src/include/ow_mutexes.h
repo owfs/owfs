@@ -53,19 +53,19 @@ $Id$
 
 #if OW_MT
 #include <pthread.h>
-#endif /* OW_MT */
+#endif							/* OW_MT */
 
 extern struct mutex {
 #if OW_MT
-    pthread_mutexattr_t *pmattr;
-    rwlock_t lib ;
-    rwlock_t connin ;
+	pthread_mutexattr_t *pmattr;
+	rwlock_t lib;
+	rwlock_t connin;
 #ifdef __UCLIBC__
-    pthread_mutexattr_t mattr;
-    pthread_mutex_t uclibc_mutex;
-#endif                         /* __UCLIBC__ */
-#endif                          /* OW_MT */
-} Mutex ;
+	pthread_mutexattr_t mattr;
+	pthread_mutex_t uclibc_mutex;
+#endif							/* __UCLIBC__ */
+#endif							/* OW_MT */
+} Mutex;
 
 
 #if OW_MT
@@ -86,12 +86,12 @@ extern struct mutex {
 #ifdef __UCLIBC__
 #define UCLIBCLOCK     pthread_mutex_lock(  &Mutex.uclibc_mutex)
 #define UCLIBCUNLOCK   pthread_mutex_unlock(&Mutex.uclibc_mutex)
-#else                           /* __UCLIBC__ */
+#else							/* __UCLIBC__ */
 #define UCLIBCLOCK
 #define UCLIBCUNLOCK
-#endif                          /* __UCLIBC__ */
+#endif							/* __UCLIBC__ */
 
-#else                           /* OW_MT */
+#else							/* OW_MT */
 #define LIB_WLOCK
 #define LIB_WUNLOCK
 #define LIB_RLOCK
@@ -110,6 +110,6 @@ extern struct mutex {
 #define BUSUNLOCK(pn)
 #define BUSLOCKIN(in)
 #define BUSUNLOCKIN(in)
-#endif                          /* OW_MT */
+#endif							/* OW_MT */
 
-#endif                          /* OW_MUTEXES_H */
+#endif							/* OW_MUTEXES_H */

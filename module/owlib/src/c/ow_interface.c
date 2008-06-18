@@ -250,25 +250,27 @@ static int FS_r_ds2490status(struct one_wire_query *owq)
 static int FS_r_pulldownslewrate(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
-	if (pn->selected_connection->busmode != bus_usb)
+	if (pn->selected_connection->busmode != bus_usb) {
 		OWQ_U(owq) = 3;
-	else
+	} else {
 		OWQ_U(owq) = pn->selected_connection->connin.usb.pulldownslewrate;
-
+	}
 	return 0;
 }
 
 static int FS_w_pulldownslewrate(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
-	if (pn->selected_connection->busmode != bus_usb)
+	if (pn->selected_connection->busmode != bus_usb) {
 		return -ENOTSUP;
+	}
 
 	LEVEL_DEBUG("FS_w_pulldownslewrate\n");
 
-	if (OWQ_U(owq) > 7)
+	if (OWQ_U(owq) > 7) {
 		return -ENOTSUP;
-
+	}
+	
 	pn->selected_connection->connin.usb.pulldownslewrate = OWQ_U(owq);
 	pn->selected_connection->changed_bus_settings = 1;	// force a reset
 
@@ -285,22 +287,24 @@ static int FS_w_pulldownslewrate(struct one_wire_query *owq)
 static int FS_r_writeonelowtime(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
-	if (pn->selected_connection->busmode != bus_usb)
+	if (pn->selected_connection->busmode != bus_usb) {
 		OWQ_U(owq) = 10;
-	else
+	} else {
 		OWQ_U(owq) = pn->selected_connection->connin.usb.writeonelowtime + 8;
-
+	}
 	return 0;
 }
 
 static int FS_w_writeonelowtime(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
-	if (pn->selected_connection->busmode != bus_usb)
+	if (pn->selected_connection->busmode != bus_usb) {
 		return -ENOTSUP;
+	}
 
-	if ((OWQ_U(owq) < 8) || (OWQ_U(owq) > 15))
+	if ((OWQ_U(owq) < 8) || (OWQ_U(owq) > 15)) {
 		return -ENOTSUP;
+	}
 
 	pn->selected_connection->connin.usb.writeonelowtime = OWQ_U(owq) - 8;
 	pn->selected_connection->changed_bus_settings = 0;	// force a reset
@@ -316,21 +320,24 @@ static int FS_w_writeonelowtime(struct one_wire_query *owq)
 static int FS_r_datasampleoffset(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
-	if (pn->selected_connection->busmode != bus_usb)
+	if (pn->selected_connection->busmode != bus_usb) {
 		OWQ_U(owq) = 8;
-	else
+	} else {
 		OWQ_U(owq) = pn->selected_connection->connin.usb.datasampleoffset + 3;
+	}
 	return 0;
 }
 
 static int FS_w_datasampleoffset(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
-	if (pn->selected_connection->busmode != bus_usb)
+	if (pn->selected_connection->busmode != bus_usb){
 		return -ENOTSUP;
-
-	if ((OWQ_U(owq) < 3) || (OWQ_U(owq) > 10))
+	}
+	
+	if ((OWQ_U(owq) < 3) || (OWQ_U(owq) > 10)) {
 		return -ENOTSUP;
+	}
 
 	pn->selected_connection->connin.usb.datasampleoffset = OWQ_U(owq) - 3;
 	pn->selected_connection->changed_bus_settings = 0;	// force a reset
@@ -384,8 +391,9 @@ static int FS_time_p(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	struct timeval *tv;
 
-	if (pn->selected_filetype == NULL)
+	if (pn->selected_filetype == NULL) {
 		return -ENOENT;
+	}
 	switch (pn->selected_filetype->data.i) {
 	case 0:
 		tv = &(pn->selected_connection->bus_time);
@@ -402,13 +410,16 @@ static int FS_time(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	int dindex = pn->extension;
 	struct timeval *tv;
-	if (dindex < 0)
+	if (dindex < 0) {
 		dindex = 0;
-	if (pn->selected_filetype == NULL)
+	}
+	if (pn->selected_filetype == NULL) {
 		return -ENOENT;
+	}
 	tv = (struct timeval *) pn->selected_filetype->data.v;
-	if (tv == NULL)
+	if (tv == NULL) {
 		return -ENOENT;
+	}
 
 	OWQ_F(owq) = (_FLOAT) tv[dindex].tv_sec + ((_FLOAT) (tv[dindex].tv_usec / 1000)) / 1000.0;
 	return 0;

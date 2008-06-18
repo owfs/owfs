@@ -175,9 +175,9 @@ static int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler)
 
 	LEVEL_CALL("GETDIR path=%s\n", SAFESTRING(path));
 
-    if ((ret = FS_ParsedName(path, &pn))) {
+	if ((ret = FS_ParsedName(path, &pn))) {
 		return ret;
-    }
+	}
 
 	if (pn.selected_filetype) {
 		ret = -ENOENT;

@@ -84,38 +84,43 @@ static int OW_r_status(BYTE * data, const struct parsedname *pn);
 /* DS2430A memory */
 static int FS_r_memory(struct one_wire_query *owq)
 {
-	if (OW_r_mem_simple(owq, 0, 0))
+	if (OW_r_mem_simple(owq, 0, 0)) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
 /* DS2430A memory */
 static int FS_r_application(struct one_wire_query *owq)
 {
-	if (OW_r_app((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq)))
+	if (OW_r_app((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq))) {
 		return -EINVAL;
+	}
 	return OWQ_size(owq);
 }
 
 static int FS_w_memory(struct one_wire_query *owq)
 {
-	if (OW_w_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq)))
+	if (OW_w_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
 static int FS_w_application(struct one_wire_query *owq)
 {
-	if (OW_w_app((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq)))
+	if (OW_w_app((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
 static int FS_r_lock(struct one_wire_query *owq)
 {
 	BYTE data;
-	if (OW_r_status(&data, PN(owq)))
+	if (OW_r_status(&data, PN(owq))) {
 		return -EINVAL;
+	}
 	OWQ_Y(owq) = data & 0x01;
 	return 0;
 }
@@ -154,16 +159,20 @@ static int OW_w_mem(const BYTE * data, const size_t size, const off_t offset, co
 	};
 
 	/* load scratch pad if incomplete write */
-	if ((size != 16) && BUS_transaction(tread, pn))
+	if ((size != 16) && BUS_transaction(tread, pn)) {
 		return 1;
+	}
 	/* write data to scratchpad */
-	if (BUS_transaction(twrite, pn))
+	if (BUS_transaction(twrite, pn)) {
 		return 1;
+	}
 	/* read back the scratchpad */
-	if (BUS_transaction(tver, pn))
+	if (BUS_transaction(tver, pn)) {
 		return 1;
-	if (memcmp(data, ver, size))
+	}
+	if (memcmp(data, ver, size)) {
 		return 1;
+	}
 	/* copy scratchpad to memory */
 	return BUS_transaction(tcopy, pn);
 }
@@ -203,14 +212,17 @@ static int OW_w_app(const BYTE * data, const size_t size, const off_t offset, co
 	};
 
 	/* load scratch pad if incomplete write */
-	if ((size != 8) && BUS_transaction(tread, pn))
+	if ((size != 8) && BUS_transaction(tread, pn)){
 		return 1;
+	}
 	/* write data to scratchpad */
-	if (BUS_transaction(twrite, pn))
+	if (BUS_transaction(twrite, pn)) {
 		return 1;
+	}
 	/* read back the scratchpad */
-	if (BUS_transaction(tver, pn))
+	if (BUS_transaction(tver, pn)) {
 		return 1;
+	}
 	/* copy scratchpad to memory */
 	return BUS_transaction(tcopy, pn);
 }
@@ -224,8 +236,9 @@ static int OW_r_app(BYTE * data, const size_t size, const off_t offset, const st
 		TRXN_READ(data, size),
 		TRXN_END,
 	};
-	if (BUS_transaction(tread, pn))
+	if (BUS_transaction(tread, pn)) {
 		return 1;
+	}
 	return 0;
 }
 

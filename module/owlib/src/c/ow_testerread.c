@@ -28,10 +28,12 @@ int FS_read_tester(struct one_wire_query *owq)
 {
 	switch (OWQ_pn(owq).extension) {
 	case EXTENSION_ALL:		/* array */
-		if (OWQ_offset(owq))
+		if (OWQ_offset(owq)) {
 			return 0;
-		if (OWQ_size(owq) < FullFileLength(PN(owq)))
+		}
+		if (OWQ_size(owq) < FullFileLength(PN(owq))) {
 			return -ERANGE;
+		}
 		return FS_read_tester_array(owq);
 	case EXTENSION_BYTE:		/* bitfield */
 	default:
@@ -78,37 +80,39 @@ static int FS_read_tester_single(struct one_wire_query *owq)
 			ASCII address[16];
 			size_t length_left = OWQ_size(owq);
 			size_t buffer_index;
-            size_t length = FileLength( PN(owq) ) ;
-            ASCII return_chars[length] ;
+			size_t length = FileLength(PN(owq));
+			ASCII return_chars[length];
 
 			bytes2string(address, pn->sn, 8);
 			OWQ_length(owq) = OWQ_size(owq);
 			for (buffer_index = 0; buffer_index < length; buffer_index += sizeof(address)) {
 				size_t copy_length = length_left;
-				if (copy_length > sizeof(address))
+				if (copy_length > sizeof(address)) {
 					copy_length = sizeof(address);
+				}
 				memcpy(&return_chars[buffer_index], address, copy_length);
 				length_left -= copy_length;
 			}
-            return Fowq_output_offset_and_size(return_chars, length, owq) ;
-        }
+			return Fowq_output_offset_and_size(return_chars, length, owq);
+		}
 	case ft_binary:
 		{
 			size_t length_left = OWQ_size(owq);
 			size_t buffer_index;
-            size_t length = FileLength( PN(owq) ) ;
-            ASCII return_chars[length] ;
+			size_t length = FileLength(PN(owq));
+			ASCII return_chars[length];
 
 			OWQ_length(owq) = OWQ_size(owq);
 			for (buffer_index = 0; buffer_index < length; buffer_index += 8) {
 				size_t copy_length = length_left;
-				if (copy_length > 8)
+				if (copy_length > 8) {
 					copy_length = 8;
+				}
 				memcpy(&return_chars[buffer_index], pn->sn, copy_length);
 				length_left -= copy_length;
 			}
-            return Fowq_output_offset_and_size(return_chars, length, owq) ;
-        }
+			return Fowq_output_offset_and_size(return_chars, length, owq);
+		}
 	case ft_directory:
 	case ft_subdir:
 		return -ENOENT;
@@ -149,8 +153,9 @@ static int FS_read_tester_array(struct one_wire_query *owq)
 		case ft_subdir:
 			return -ENOENT;
 		}
-		if (FS_read_tester_single(owq_single))
+		if (FS_read_tester_single(owq_single)) {
 			return -EINVAL;
+		}
 		memcpy(&OWQ_array(owq)[extension], &OWQ_val(owq_single), sizeof(union value_object));
 	}
 	return 0;

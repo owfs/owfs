@@ -102,9 +102,9 @@ int main(int argc, char **argv)
 	LibSetup(opt_server);
 
 	/* grab our executable name */
-    if (argc > 0) {
+	if (argc > 0) {
 		Globals.progname = strdup(argv[0]);
-    }
+	}
 
 	while ((c = getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL)) != -1) {
 		switch (c) {
@@ -114,9 +114,9 @@ int main(int argc, char **argv)
 		default:
 			break;
 		}
-        if (owopt(c, optarg)) {
+		if (owopt(c, optarg)) {
 			ow_exit(0);			/* rest of message */
-        }
+		}
 	}
 
 	/* non-option arguments */
@@ -126,7 +126,7 @@ int main(int argc, char **argv)
 	}
 
 	if (count_outbound_connections == 0) {
-        if (Globals.announce_off) {
+		if (Globals.announce_off) {
 			LEVEL_DEFAULT("No TCP port specified (-p)\n%s -h for help\n", argv[0]);
 			ow_exit(1);
 		}
@@ -135,18 +135,17 @@ int main(int argc, char **argv)
 
 	set_signal_handlers(exit_handler);
 
-    /* become a daemon if not told otherwise */
-    if (EnterBackground()) {
-        ow_exit(1);
-    }
+	/* become a daemon if not told otherwise */
+	if (EnterBackground()) {
+		ow_exit(1);
+	}
 
 	/*
 	 * Actually open the devices
 	 */
-    if (LibStart()) {
+	if (LibStart()) {
 		ow_exit(1);
-    }
-    
+	}
 #if OW_MT
 	pthread_mutex_init(&persistence_mutex, Mutex.pmattr);
 

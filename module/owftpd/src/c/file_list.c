@@ -227,7 +227,7 @@ static void WildLexParseCallback(void *v, const struct parsedname *const pn_entr
 	struct file_parse_s fps;	// duplicate for recursive call
 
 	/* get real name from parsedname struct */
-    strcpy(&wlp->end[1],FS_DirName(pn_entry));
+	strcpy(&wlp->end[1], FS_DirName(pn_entry));
 
 	LEVEL_DEBUG("WildLexParseCallback: Try %s vs %s\n", &wlp->end[1], wlp->match);
 	if (fnmatch(wlp->match, &wlp->end[1], FNM_PATHNAME)) {

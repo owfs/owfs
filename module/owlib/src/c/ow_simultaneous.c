@@ -138,8 +138,9 @@ static int FS_w_convert(struct one_wire_query *owq)
 			}
 			break;
 		}
-		if (ret == 0)
+		if (ret == 0) {
 			Cache_Add_Internal(NULL, 0, &ipSimul[type], &pn_directory);
+		}
 	}
 	return 0;
 }
@@ -173,16 +174,19 @@ static int FS_r_present(struct one_wire_query *owq)
 		};
 
 		/* check if DS2400 compatibility is needed */
-		if (pn->selected_filetype->data.i)
+		if (pn->selected_filetype->data.i) {
 			read_ROM[0] = 0x0F;
+		}
 
 		FS_LoadDirectoryOnly(&pn_directory, pn);
-		if (BUS_transaction(t, &pn_directory))
+		if (BUS_transaction(t, &pn_directory)) {
 			return -EINVAL;
+		}
 		if (memcmp(resp, match, 8)) {	// some device(s) complained
 			OWQ_Y(owq) = 1;		// YES present
-			if (CRC8(resp, 8))
+			if (CRC8(resp, 8)) {
 				return 0;		// crc8 error -- more than one device
+			}
 			OW_single2cache(resp, &pn_directory);
 		} else {				// no devices
 			OWQ_Y(owq) = 0;
@@ -213,12 +217,14 @@ static int FS_r_single(struct one_wire_query *owq)
 		};
 
 		/* check if DS2400 compatibility is needed */
-		if (pn->selected_filetype->data.i)
+		if (pn->selected_filetype->data.i) {
 			read_ROM[0] = 0x0F;
+		}
 
 		FS_LoadDirectoryOnly(&pn_directory, pn);
-		if (BUS_transaction(t, &pn_directory))
+		if (BUS_transaction(t, &pn_directory)) {
 			return -EINVAL;
+		}
 		LEVEL_DEBUG("FS_r_single (simultaneous) dat=" SNformat " crc8c=%02x\n", SNvar(resp), CRC8(resp, 7));
 		if ((memcmp(resp, match, 8) != 0) && (CRC8(resp, 8) == 0)) {	// non-empty, and no CRC error
 			OW_single2cache(resp, &pn_directory);
@@ -237,8 +243,9 @@ static void OW_single2cache(BYTE * sn, const struct parsedname *pn2)
 	struct dirblob db;
 	DirblobInit(&db);
 	DirblobAdd(sn, &db);
-	if (DirblobPure(&db))
+	if (DirblobPure(&db)) {
 		Cache_Add_Dir(&db, pn2);	// Directory cache
+	}
 	memcpy(pn2->sn, sn, 8);
 	Cache_Add_Device(pn2->selected_connection->index, pn2);	// Device cache
 }

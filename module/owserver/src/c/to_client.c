@@ -45,28 +45,29 @@ int ToClient(int file_descriptor, struct client_msg *original_cm, char *data)
 	// note data should be (const char *) but iovec complains about const arguments 
 	int nio = 1;
 	int ret;
-    struct client_msg s_cm ;
-    struct client_msg * cm = &s_cm ;
+	struct client_msg s_cm;
+	struct client_msg *cm = &s_cm;
 	struct iovec io[] = {
 		{cm, sizeof(struct client_msg),},
 		{data, original_cm->payload,},
 	};
 
-    LEVEL_DEBUG("ToClient payload=%d size=%d, ret=%d, sg=0x%X offset=%d \n", original_cm->payload, original_cm->size, original_cm->ret, original_cm->sg, original_cm->offset);
+	LEVEL_DEBUG("ToClient payload=%d size=%d, ret=%d, sg=0x%X offset=%d \n", original_cm->payload, original_cm->size, original_cm->ret,
+				original_cm->sg, original_cm->offset);
 	/* If payload==0, no extra data
 	   If payload <0, flag to show a delay message, again no data
 	 */
-    if (data && original_cm->payload > 0) {
+	if (data && original_cm->payload > 0) {
 		++nio;
-        //printf("ToClient <%*s>\n",original_cm->payload,data) ;
+		//printf("ToClient <%*s>\n",original_cm->payload,data) ;
 	}
 
-    cm->version = htonl( original_cm->version );
-    cm->payload = htonl( original_cm->payload );
-    cm->ret     = htonl( original_cm->ret     );
-    cm->sg      = htonl( original_cm->sg      );
-    cm->size    = htonl( original_cm->size    );
-    cm->offset  = htonl( original_cm->offset  );
+	cm->version = htonl(original_cm->version);
+	cm->payload = htonl(original_cm->payload);
+	cm->ret = htonl(original_cm->ret);
+	cm->sg = htonl(original_cm->sg);
+	cm->size = htonl(original_cm->size);
+	cm->offset = htonl(original_cm->offset);
 
 	ret = writev(file_descriptor, io, nio) != (ssize_t) (io[0].iov_len + io[1].iov_len);
 

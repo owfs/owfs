@@ -20,9 +20,9 @@ $Id$
 */
 void OWNET_close(OWNET_HANDLE h)
 {
-    CONNIN_WLOCK ;
-    FreeIn(find_connection_in(h));
-    CONNIN_WUNLOCK ;
+	CONNIN_WLOCK;
+	FreeIn(find_connection_in(h));
+	CONNIN_WUNLOCK;
 }
 
 /* void OWNET_closeall( void )
@@ -32,10 +32,10 @@ void OWNET_closeall(void)
 {
 	struct connection_in *target;
 
-    CONNIN_WLOCK ;
+	CONNIN_WLOCK;
 	// step through head_inbound_list linked list
 	for (target = head_inbound_list; target != NULL; target = target->next) {
 		FreeIn(target);
 	}
-    CONNIN_WUNLOCK ;
+	CONNIN_WUNLOCK;
 }

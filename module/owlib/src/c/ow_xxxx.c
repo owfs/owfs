@@ -59,8 +59,9 @@ void update_max_delay(const struct parsedname *pn)
 	long sec, usec;
 	struct timeval *r, *w;
 	struct timeval last_delay;
-	if (pn == NULL || pn->selected_connection == NULL)
+	if (pn == NULL || pn->selected_connection == NULL) {
 		return;
+	}
 	gettimeofday(&(pn->selected_connection->bus_read_time), NULL);
 	r = &pn->selected_connection->bus_read_time;
 	w = &pn->selected_connection->bus_write_time;

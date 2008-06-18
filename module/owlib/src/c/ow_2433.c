@@ -101,8 +101,9 @@ static int OW_w_2Dpage(BYTE * data, size_t size, off_t offset, struct parsedname
 static int FS_r_memory(struct one_wire_query *owq)
 {
 	/* read is not page-limited */
-	if (OW_r_mem_simple(owq, 0, 0))
+	if (OW_r_mem_simple(owq, 0, 0)) {
 		return -EINVAL;
+	}
 	return OWQ_size(owq);
 }
 
@@ -110,8 +111,9 @@ static int FS_w_memory(struct one_wire_query *owq)
 {
 	/* paged access */
 	size_t pagesize = 32;
-	if (OW_readwrite_paged(owq, 0, pagesize, OW_w_23page))
+	if (OW_readwrite_paged(owq, 0, pagesize, OW_w_23page)) {
 		return -EFAULT;
+	}
 	return 0;
 }
 
@@ -120,16 +122,18 @@ static int FS_w_memory2D(struct one_wire_query *owq)
 {
 	/* paged access */
 	size_t pagesize = 8;
-	if (OW_readwrite_paged(owq, 0, pagesize, OW_w_2Dpage))
+	if (OW_readwrite_paged(owq, 0, pagesize, OW_w_2Dpage)) {
 		return -EFAULT;
+	}
 	return 0;
 }
 
 static int FS_r_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (OW_r_mem_simple(owq, OWQ_pn(owq).extension, pagesize))
+	if (OW_r_mem_simple(owq, OWQ_pn(owq).extension, pagesize)) {
 		return -EINVAL;
+	}
 	return OWQ_size(owq);
 }
 
@@ -137,8 +141,9 @@ static int FS_w_page(struct one_wire_query *owq)
 {
 	/* paged access */
 	size_t pagesize = 32;
-	if (OW_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_23page))
+	if (OW_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_23page)) {
 		return -EFAULT;
+	}
 	return 0;
 }
 
@@ -146,8 +151,9 @@ static int FS_w_page2D(struct one_wire_query *owq)
 {
 	/* paged access */
 	size_t pagesize = 8;
-	if (OW_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_2Dpage))
+	if (OW_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_2Dpage)) {
 		return -EFAULT;
+	}
 	return 0;
 }
 
@@ -180,19 +186,22 @@ static int OW_w_23page(BYTE * data, size_t size, off_t offset, struct parsedname
 		tcopy[2].type = tcopy[3].type = trxn_nop;
 	}
 
-	if (BUS_transaction(tcopy, pn))
+	if (BUS_transaction(tcopy, pn)) {
 		return 1;
+	}
 
 	/* Re-read scratchpad and compare */
 	/* Note that we tacitly shift the data one byte down for the E/S byte */
 	p[0] = _1W_READ_SCRATCHPAD;
-	if (BUS_transaction(treread, pn))
+	if (BUS_transaction(treread, pn)) {
 		return 1;
+	}
 
 	/* Copy Scratchpad to SRAM */
 	p[0] = _1W_COPY_SCRATCHPAD;
-	if (BUS_transaction(twrite, pn))
+	if (BUS_transaction(twrite, pn)) {
 		return 1;
+	}
 
 	// pause for write
 	switch (pn->sn[0]) {
@@ -233,25 +242,29 @@ static int OW_w_2Dpage(BYTE * data, size_t size, off_t offset, struct parsedname
 	if (size != 8) {			// incomplete page
 		OWQ_allocate_struct_and_pointer(owq_old);
 		OWQ_create_temporary(owq_old, (char *) &p[3], 8, offset - pageoff, pn);
-		if (OW_r_mem_simple(owq_old, 0, 0))
+		if (OW_r_mem_simple(owq_old, 0, 0)) {
 			return 1;
+		}
 	}
 
 	memcpy(&p[3 + pageoff], data, size);
 
 	/* Copy to scratchpad */
-	if (BUS_transaction(tcopy, pn))
+	if (BUS_transaction(tcopy, pn)) {
 		return 1;
+	}
 
 	/* Re-read scratchpad and compare */
 	p[0] = _1W_READ_SCRATCHPAD;
-	if (BUS_transaction(tread, pn))
+	if (BUS_transaction(tread, pn)) {
 		return 1;
+	}
 
 	/* Copy Scratchpad to SRAM */
 	p[0] = _1W_COPY_SCRATCHPAD;
-	if (BUS_transaction(tsram, pn))
+	if (BUS_transaction(tsram, pn)){
 		return 1;
+	}
 
 	UT_delay(13);
 	return 0;

@@ -81,35 +81,40 @@ static int OW_w_cp(const int val, const struct parsedname *pn);
 static int FS_w_wiper(struct one_wire_query *owq)
 {
 	UINT num = OWQ_U(owq);
-	if (num > 255)
+	if (num > 255) {
 		num = 255;
+	}
 
-	if (OW_w_wiper(num, PN(owq)))
+	if (OW_w_wiper(num, PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
 /* write Charge Pump */
 static int FS_w_cp(struct one_wire_query *owq)
 {
-	if (OW_w_cp(OWQ_Y(owq), PN(owq)))
+	if (OW_w_cp(OWQ_Y(owq), PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
 /* read Wiper */
 static int FS_r_wiper(struct one_wire_query *owq)
 {
-	if (OW_r_wiper(&OWQ_U(owq), PN(owq)))
+	if (OW_r_wiper(&OWQ_U(owq), PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
 /* Charge Pump */
 static int FS_r_cp(struct one_wire_query *owq)
 {
-	if (OW_r_cp(&OWQ_Y(owq), PN(owq)))
+	if (OW_r_cp(&OWQ_Y(owq), PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -143,8 +148,9 @@ static int OW_r_wiper(UINT * val, const struct parsedname *pn)
 		TRXN_END
 	};
 
-	if (BUS_transaction(t, pn))
+	if (BUS_transaction(t, pn)) {
 		return 1;
+	}
 
 	*val = resp[1];
 	return 0;
@@ -180,8 +186,9 @@ static int OW_r_cp(int *val, const struct parsedname *pn)
 		TRXN_END
 	};
 
-	if (BUS_transaction(t, pn))
+	if (BUS_transaction(t, pn)) {
 		return 1;
+	}
 
 	*val = ((resp[1] & 0x40) != 0);
 	return 0;

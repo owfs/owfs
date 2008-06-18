@@ -237,8 +237,9 @@ static int OW_w_pio(BYTE pio, const struct parsedname *pn);
 
 static int FS_10temp(struct one_wire_query *owq)
 {
-	if (OW_10temp(&OWQ_F(owq), PN(owq)))
+	if (OW_10temp(&OWQ_F(owq), PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -251,8 +252,9 @@ static int FS_22temp(struct one_wire_query *owq)
 	case 10:
 	case 11:
 	case 12:
-		if (OW_22temp(&OWQ_F(owq), resolution, PN(owq)))
+		if (OW_22temp(&OWQ_F(owq), resolution, PN(owq))) {
 			return -EINVAL;
+		}
 		return 0;
 	}
 	return -ENODEV;
@@ -265,8 +267,9 @@ static int FS_fasttemp(struct one_wire_query *owq)
 
 	OWQ_create_shallow_single(owq_sibling, owq);
 
-	if (FS_read_sibling("temperature9", owq_sibling))
+	if (FS_read_sibling("temperature9", owq_sibling)) {
 		return -EINVAL;
+	}
 	OWQ_F(owq) = OWQ_F(owq_sibling);
 	return 0;
 }
@@ -278,8 +281,9 @@ static int FS_slowtemp(struct one_wire_query *owq)
 
 	OWQ_create_shallow_single(owq_sibling, owq);
 
-	if (FS_read_sibling("temperature12", owq_sibling))
+	if (FS_read_sibling("temperature12", owq_sibling)) {
 		return -EINVAL;
+	}
 	OWQ_F(owq) = OWQ_F(owq_sibling);
 	return 0;
 }
@@ -287,8 +291,9 @@ static int FS_slowtemp(struct one_wire_query *owq)
 static int FS_power(struct one_wire_query *owq)
 {
 	BYTE data;
-	if (OW_power(&data, PN(owq)))
+	if (OW_power(&data, PN(owq))) {
 		return -EINVAL;
+	}
 	OWQ_Y(owq) = (data != 0x00);
 	return 0;
 }
@@ -299,16 +304,18 @@ static int FS_w_pio(struct one_wire_query *owq)
 {
 	BYTE data = BYTE_INVERSE(OWQ_U(owq) & 0x03);	/* reverse bits, set unused to 1s */
 	//printf("Write pio raw=%X, stored=%X\n",OWQ_U(owq),data) ;
-	if (OW_w_pio(data, PN(owq)))
+	if (OW_w_pio(data, PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
 static int FS_sense(struct one_wire_query *owq)
 {
 	BYTE pio, latch;
-	if (OW_read_pio(&pio, &latch, PN(owq)))
+	if (OW_read_pio(&pio, &latch, PN(owq))) {
 		return -EINVAL;
+	}
 	OWQ_U(owq) = pio & 0x03;	/* don't reverse bits */
 	//printf("Read sense raw_pio=%X, raw_latch=%X, returned=%X\n",pio,latch,OWQ_U(owq)) ;
 	return 0;
@@ -317,8 +324,9 @@ static int FS_sense(struct one_wire_query *owq)
 static int FS_r_pio(struct one_wire_query *owq)
 {
 	BYTE pio, latch;
-	if (OW_read_pio(&pio, &latch, PN(owq)))
+	if (OW_read_pio(&pio, &latch, PN(owq))) {
 		return -EINVAL;
+	}
 	OWQ_U(owq) = BYTE_INVERSE(pio) & 0x03;	/* reverse bits */
 	//printf("Read pio raw_pio=%X, raw_latch=%X, returned=%X\n",pio,latch,OWQ_U(owq)) ;
 	return 0;
@@ -327,8 +335,9 @@ static int FS_r_pio(struct one_wire_query *owq)
 static int FS_r_latch(struct one_wire_query *owq)
 {
 	BYTE pio, latch;
-	if (OW_read_pio(&pio, &latch, PN(owq)))
+	if (OW_read_pio(&pio, &latch, PN(owq))) {
 		return -EINVAL;
+	}
 	OWQ_U(owq) = BYTE_INVERSE(latch) & 0x03;	/* reverse bits */
 	//printf("Read latch raw_pio=%X, raw_latch=%X, returned=%X\n",pio,latch,OWQ_U(owq)) ;
 	return 0;
@@ -336,8 +345,9 @@ static int FS_r_latch(struct one_wire_query *owq)
 
 static int FS_r_templimit(struct one_wire_query *owq)
 {
-	if (OW_r_templimit(&OWQ_F(owq), PN(owq)->selected_filetype->data.i, PN(owq)))
+	if (OW_r_templimit(&OWQ_F(owq), PN(owq)->selected_filetype->data.i, PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -345,16 +355,18 @@ static int FS_r_templimit(struct one_wire_query *owq)
 static int FS_r_ad(struct one_wire_query *owq)
 {
 	BYTE data[9];
-	if (OW_r_scratchpad(data, PN(owq)))
+	if (OW_r_scratchpad(data, PN(owq))) {
 		return -EINVAL;
+	}
 	OWQ_U(owq) = data[4] & 0x0F;
 	return 0;
 }
 
 static int FS_w_templimit(struct one_wire_query *owq)
 {
-	if (OW_w_templimit(OWQ_F(owq), PN(owq)->selected_filetype->data.i, PN(owq)))
+	if (OW_w_templimit(OWQ_F(owq), PN(owq)->selected_filetype->data.i, PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -383,8 +395,9 @@ static int FS_r_die(struct one_wire_query *owq)
 static int FS_r_trim(struct one_wire_query *owq)
 {
 	BYTE t[2];
-	if (OW_r_trim(t, PN(owq)))
+	if (OW_r_trim(t, PN(owq))) {
 		return -EINVAL;
+	}
 	OWQ_U(owq) = (t[1] << 8) | t[0];
 	return 0;
 }
@@ -396,8 +409,9 @@ static int FS_w_trim(struct one_wire_query *owq)
 	switch (OW_die(PN(owq))) {
 	case eB7:
 	case eC2:
-		if (OW_w_trim(t, PN(owq)))
+		if (OW_w_trim(t, PN(owq))) {
 			return -EINVAL;
+		}
 		return 0;
 	default:
 		return -EINVAL;
@@ -411,8 +425,9 @@ static int FS_r_trimvalid(struct one_wire_query *owq)
 	switch (OW_die(PN(owq))) {
 	case eB7:
 	case eC2:
-		if (OW_r_trim(trim, PN(owq)))
+		if (OW_r_trim(trim, PN(owq))) {
 			return -EINVAL;
+		}
 		OWQ_Y(owq) = (((trim[0] & 0x07) == 0x05)
 					  || ((trim[0] & 0x07) == 0x03))
 			&& (trim[1] == 0xBB);
@@ -431,8 +446,9 @@ static int FS_r_blanket(struct one_wire_query *owq)
 	switch (OW_die(PN(owq))) {
 	case eB7:
 	case eC2:
-		if (OW_r_trim(trim, PN(owq)))
+		if (OW_r_trim(trim, PN(owq))) {
 			return -EINVAL;
+		}
 		OWQ_Y(owq) = (memcmp(trim, blanket, 2) == 0);
 		return 0;
 	default:
@@ -448,8 +464,9 @@ static int FS_w_blanket(struct one_wire_query *owq)
 	case eB7:
 	case eC2:
 		if (OWQ_Y(owq)) {
-			if (OW_w_trim(blanket, PN(owq)))
+			if (OW_w_trim(blanket, PN(owq))) {
 				return -EINVAL;
+			}
 		}
 		return 0;
 	default:
@@ -475,24 +492,28 @@ static int OW_10temp(_FLOAT * temp, const struct parsedname *pn)
 		TRXN_END,
 	};
 
-	if (OW_power(&pow, pn))
+	if (OW_power(&pow, pn)) {
 		pow = 0x00;				/* assume unpowered if cannot tell */
+	}
 
 	/* Select particular device and start conversion */
 	if (!pow) {					// unpowered, deliver power, no communication allowed
-		if (BUS_transaction(tunpowered, pn))
+		if (BUS_transaction(tunpowered, pn)) {
 			return 1;
+		}
 	} else if (Simul_Test(simul_temp, pn)) {	// powered
 		int ret;
 		BUSLOCK(pn);
 		ret = BUS_transaction_nolock(tpowered, pn) || FS_poll_convert(pn);
 		BUSUNLOCK(pn);
-		if (ret)
+		if (ret) {
 			return ret;
+		}
 	}
 
-	if (OW_r_scratchpad(data, pn))
+	if (OW_r_scratchpad(data, pn)) {
 		return 1;
+	}
 
 #if 0
 	/* Check for error condition */
@@ -500,15 +521,18 @@ static int OW_10temp(_FLOAT * temp, const struct parsedname *pn)
 		/* repeat the conversion (only once) */
 		/* Do it the most conservative way -- unpowered */
 		if (!pow) {				// unpowered, deliver power, no communication allowed
-			if (BUS_transaction(tunpowered, pn))
+			if (BUS_transaction(tunpowered, pn)) {
 				return 1;
+			}
 		} else {				// powered, so release bus immediately after issuing convert
-			if (BUS_transaction(tpowered, pn))
+			if (BUS_transaction(tpowered, pn)) {
 				return 1;
+			}
 			UT_delay(delay);
 		}
-		if (OW_r_scratchpad(data, pn))
+		if (OW_r_scratchpad(data, pn)) {
 			return 1;
+		}
 	}
 #endif
 // Correction thanks to Nathan D. Holmes
@@ -536,8 +560,9 @@ static int OW_power(BYTE * data, const struct parsedname *pn)
 	if (IsUncachedDir(pn)
 		|| Cache_Get_Internal_Strict(data, sizeof(BYTE), InternalProp(POW), pn)) {
 		//printf("POWER "SNformat", need to ask\n",SNvar(pn->sn)) ;
-		if (BUS_transaction(tpower, pn))
+		if (BUS_transaction(tpower, pn)) {
 			return 1;
+		}
 		//printf("POWER "SNformat", asked\n",SNvar(pn->sn)) ;
 		Cache_Add_Internal(data, sizeof(BYTE), InternalProp(POW), pn);
 		//printf("POWER "SNformat", cached\n",SNvar(pn->sn)) ;
@@ -567,20 +592,23 @@ static int OW_22temp(_FLOAT * temp, const int resolution, const struct parsednam
 	};
 	//LEVEL_DATA("OW_22temp\n");
 	/* powered? */
-	if (OW_power(&pow, pn))
+	if (OW_power(&pow, pn)) {
 		pow = 0x00;				/* assume unpowered if cannot tell */
+	}
 
 	/* Resolution */
 	if (Cache_Get_Internal_Strict(&oldres, sizeof(oldres), InternalProp(RES), pn)
 		|| oldres != resolution) {
 		/* Get existing settings */
-		if (OW_r_scratchpad(data, pn))
+		if (OW_r_scratchpad(data, pn)) {
 			return 1;
+		}
 		/* Put in new settings */
 		if ((data[4] | 0x0F) != res) {	// ignore lower nibble
 			data[4] = (res & 0xF0) | (data[4] & 0x0F);
-			if (OW_w_scratchpad(&data[2], pn))
+			if (OW_w_scratchpad(&data[2], pn)) {
 				return 1;
+			}
 			Cache_Add_Internal(&resolution, sizeof(int), InternalProp(RES), pn);
 		}
 	}
@@ -588,21 +616,24 @@ static int OW_22temp(_FLOAT * temp, const int resolution, const struct parsednam
 	/* Conversion */
 	if (!pow) {					// unpowered, deliver power, no communication allowed
 		LEVEL_DEBUG("Unpowered temperature conversion -- %d msec\n", delay);
-		if (BUS_transaction(tunpowered, pn))
+		if (BUS_transaction(tunpowered, pn)) {
 			return 1;
+		}
 	} else if (Simul_Test(simul_temp, pn)) {	// powered, so release bus immediately after issuing convert
 		int ret;
 		LEVEL_DEBUG("Powered temperature conversion\n");
 		BUSLOCK(pn);
 		ret = BUS_transaction_nolock(tpowered, pn) || FS_poll_convert(pn);
 		BUSUNLOCK(pn);
-		if (ret)
+		if (ret) {
 			return ret;
+		}
 	} else {
 		LEVEL_DEBUG("Simultaneous temperature conversion\n");
 	}
-	if (OW_r_scratchpad(data, pn))
+	if (OW_r_scratchpad(data, pn)) {
 		return 1;
+	}
 	//printf("Temperature Got bytes %.2X %.2X\n",data[0],data[1]) ;
 
 	//*temp = .0625*(((char)data[1])<<8|data[0]) ;
@@ -622,13 +653,15 @@ static int OW_r_templimit(_FLOAT * T, const int Tindex, const struct parsedname 
 		TRXN_END,
 	};
 
-	if (BUS_transaction(trecall, pn))
+	if (BUS_transaction(trecall, pn)) {
 		return 1;
+	}
 
 	UT_delay(10);
 
-	if (OW_r_scratchpad(data, pn))
+	if (OW_r_scratchpad(data, pn)) {
 		return 1;
+	}
 	T[0] = (_FLOAT) ((int8_t) data[2 + Tindex]);
 	return 0;
 }
@@ -638,8 +671,9 @@ static int OW_w_templimit(const _FLOAT T, const int Tindex, const struct parsedn
 {
 	BYTE data[9];
 
-	if (OW_r_scratchpad(data, pn))
+	if (OW_r_scratchpad(data, pn)) {
 		return 1;
+	}
 	data[2 + Tindex] = (uint8_t) T;
 	return OW_w_scratchpad(&data[2], pn);
 }
@@ -677,11 +711,13 @@ static int OW_w_scratchpad(const BYTE * data, const struct parsedname *pn)
 	};
 
 	/* different processing for DS18S20 and both DS19B20 and DS1822 */
-	if (pn->sn[0] == 0x10)
+	if (pn->sn[0] == 0x10) {
 		twrite->size = 4;
+	}
 
-	if (BUS_transaction(twrite, pn))
+	if (BUS_transaction(twrite, pn)) {
 		return 1;
+	}
 
 	return BUS_transaction(tpower, pn);
 }
@@ -704,8 +740,9 @@ static int OW_r_trim(BYTE * trim, const struct parsedname *pn)
 		TRXN_END,
 	};
 
-	if (BUS_transaction(t0, pn))
+	if (BUS_transaction(t0, pn)) {
 		return 1;
+	}
 
 	return BUS_transaction(t1, pn);
 }
@@ -737,14 +774,18 @@ static int OW_w_trim(const BYTE * trim, const struct parsedname *pn)
 		TRXN_END,
 	};
 
-	if (BUS_transaction(t0, pn))
+	if (BUS_transaction(t0, pn)) {
 		return 1;
-	if (BUS_transaction(t1, pn))
+	}
+	if (BUS_transaction(t1, pn)) {
 		return 1;
-	if (BUS_transaction(t2, pn))
+	}
+	if (BUS_transaction(t2, pn)) {
 		return 1;
-	if (BUS_transaction(t3, pn))
+	}
+	if (BUS_transaction(t3, pn)) {
 		return 1;
+	}
 	return 0;
 }
 
@@ -753,10 +794,12 @@ static enum eDie OW_die(const struct parsedname *pn)
 	BYTE die[6] = { pn->sn[6], pn->sn[5], pn->sn[4], pn->sn[3], pn->sn[2], pn->sn[1],
 	};
 	// data gives index into die matrix
-	if (memcmp(die, DIE[pn->selected_filetype->data.i].C2, 6) > 0)
+	if (memcmp(die, DIE[pn->selected_filetype->data.i].C2, 6) > 0) {
 		return eC2;
-	if (memcmp(die, DIE[pn->selected_filetype->data.i].B7, 6) > 0)
+	}
+	if (memcmp(die, DIE[pn->selected_filetype->data.i].B7, 6) > 0) {
 		return eB7;
+	}
 	return eB6;
 }
 
@@ -800,12 +843,14 @@ static int OW_read_pio(BYTE * pio, BYTE * latch, const struct parsedname *pn)
 		TRXN_READ1(&data),
 		TRXN_END,
 	};
-	if (BUS_transaction(t, pn))
+	if (BUS_transaction(t, pn)) {
 		return 1;
+	}
 	/* compare lower and upper nibble to be complements */
 	//printf("READ.PIO data=%X data$0x0F=%X data>>4=%X ^=%X\n",data,(data&0x0F),data>>4,(data&0x0F)^(data>>4));
-	if (((data & 0x0F) ^ (data >> 4)) != 0x0F)
+	if (((data & 0x0F) ^ (data >> 4)) != 0x0F) {
 		return 1;
+	}
 
 	// PIO bits 0 and 2 (move to consecutive bits)
 	pio[0] = (data & 0x01) | ((data & 0x04) >> 1);

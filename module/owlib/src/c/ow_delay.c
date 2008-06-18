@@ -25,17 +25,19 @@ void UT_delay(const UINT len)
 	unsigned long diff;
 	int i, j = 0;
 
-	if (len == 0)
+	if (len == 0) {
 		return;
-
+	}
 	gettimeofday(&tv, NULL);
 	while (1) {
 		gettimeofday(&now, NULL);
 		diff = 1000 * (now.tv_sec - tv.tv_sec) + (now.tv_usec - tv.tv_usec) / 1000;
-		if (diff >= len)
+		if (diff >= len) {
 			break;
-		for (i = 0; i < 30; i++)
+		}
+		for (i = 0; i < 30; i++) {
 			j += i;
+		}
 	}
 #else							/* DELAY_BUSY_WHILE */
 
@@ -44,8 +46,9 @@ void UT_delay(const UINT len)
 	struct timespec s;
 	struct timespec rem;
 
-	if (len == 0)
+	if (len == 0) {
 		return;
+	}
 
 	rem.tv_sec = len / 1000;
 	rem.tv_nsec = 1000000 * (len % 1000);
@@ -54,8 +57,9 @@ void UT_delay(const UINT len)
 		s.tv_sec = rem.tv_sec;
 		s.tv_nsec = rem.tv_nsec;
 		if (nanosleep(&s, &rem) < 0) {
-			if (errno != EINTR)
+			if (errno != EINTR) {
 				break;
+			}
 			/* was interupted... continue sleeping... */
 			//printf("UT_delay: EINTR s=%ld.%ld r=%ld.%ld: %s\n", s.tv_sec, s.tv_nsec, rem.tv_sec, rem.tv_nsec, strerror(errno));
 #ifdef __UCLIBC__
@@ -91,17 +95,20 @@ void UT_delay_us(const unsigned long len)
 	unsigned long diff;
 	int i, j = 0;
 
-	if (len == 0)
+	if (len == 0) {
 		return;
+	}
 
 	gettimeofday(&tv, NULL);
 	while (1) {
 		gettimeofday(&now, NULL);
 		diff = 1000000 * (now.tv_sec - tv.tv_sec) + (now.tv_usec - tv.tv_usec);
-		if (diff >= len)
+		if (diff >= len) {
 			break;
-		for (i = 0; i < 10; i++)
+		}
+		for (i = 0; i < 10; i++) {
 			j += i;
+		}
 	}
 #else							/* DELAY_BUSY_WHILE */
 
@@ -111,8 +118,9 @@ void UT_delay_us(const unsigned long len)
 	struct timespec s;
 	struct timespec rem;
 
-	if (len == 0)
+	if (len == 0) {
 		return;
+	}
 
 	rem.tv_sec = len / 1000000;
 	rem.tv_nsec = 1000 * (len % 1000000);
@@ -121,8 +129,9 @@ void UT_delay_us(const unsigned long len)
 		s.tv_sec = rem.tv_sec;
 		s.tv_nsec = rem.tv_nsec;
 		if (nanosleep(&s, &rem) < 0) {
-			if (errno != EINTR)
+			if (errno != EINTR) {
 				break;
+			}
 			/* was interupted... continue sleeping... */
 			//printf("UT_delay: EINTR s=%ld.%ld r=%ld.%ld: %s\n", s.tv_sec, s.tv_nsec, rem.tv_sec, rem.tv_nsec, strerror(errno));
 #ifdef __UCLIBC__

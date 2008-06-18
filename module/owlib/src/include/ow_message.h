@@ -56,24 +56,24 @@ struct server_msg {
 
 /* message to client */
 struct client_msg {
-    int32_t version;
-    int32_t payload;
-    int32_t ret;
-    int32_t sg;
-    int32_t size;
-    int32_t offset;
+	int32_t version;
+	int32_t payload;
+	int32_t ret;
+	int32_t sg;
+	int32_t size;
+	int32_t offset;
 };
 
 union address {
-    struct sockaddr sock ;
-    char text[120] ;
-} ;
+	struct sockaddr sock;
+	char text[120];
+};
 
 /* message to client */
 struct side_msg {
-    int32_t version;
-    union address host ;
-    union address peer ;
+	int32_t version;
+	union address host;
+	union address peer;
 };
 
 struct serverpackage {
@@ -100,7 +100,7 @@ struct serverpackage {
 #define ServerprotocolMASK ((0xFF)<<17)
 #define Serverprotocol(version) (( (version) & ServerprotocolMASK) >> 17 )
 #define MakeServerprotocol(protocol) ( (protocol) << 17 )
-        
+
 // bit 32 set is Sidetap flag
 #define ServersidetapMASK   (((int32_t)1)<<31)
 #define MakeServersidetap ( ServersidetapMASK )

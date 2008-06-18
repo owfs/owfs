@@ -53,19 +53,19 @@ int COM_open(struct connection_in *in)
 		ERROR_CONNECT("Trouble setting port speed: %s\n", SAFESTRING(in->name));
 	}
 	// Set to non-canonical mode, and no RTS/CTS handshaking
-    newSerialTio.c_iflag &= ~(BRKINT|ICRNL|IGNCR|INLCR|INPCK|ISTRIP|IXON|IXOFF|PARMRK);
-    newSerialTio.c_iflag |= IGNBRK|IGNPAR;
-    newSerialTio.c_oflag &= ~(OPOST);
-    newSerialTio.c_cflag &= ~(CRTSCTS|CSIZE|HUPCL|PARENB);
-    newSerialTio.c_cflag |= (CLOCAL|CS8|CREAD);
-    newSerialTio.c_lflag &= ~(ECHO|ECHOE|ECHOK|ECHONL|ICANON|IEXTEN|ISIG);
-    newSerialTio.c_cc[VMIN] = 0;
+	newSerialTio.c_iflag &= ~(BRKINT | ICRNL | IGNCR | INLCR | INPCK | ISTRIP | IXON | IXOFF | PARMRK);
+	newSerialTio.c_iflag |= IGNBRK | IGNPAR;
+	newSerialTio.c_oflag &= ~(OPOST);
+	newSerialTio.c_cflag &= ~(CRTSCTS | CSIZE | HUPCL | PARENB);
+	newSerialTio.c_cflag |= (CLOCAL | CS8 | CREAD);
+	newSerialTio.c_lflag &= ~(ECHO | ECHOE | ECHOK | ECHONL | ICANON | IEXTEN | ISIG);
+	newSerialTio.c_cc[VMIN] = 0;
 	newSerialTio.c_cc[VTIME] = 3;
 	if (tcsetattr(in->file_descriptor, TCSAFLUSH, &newSerialTio)) {
 		ERROR_CONNECT("Cannot set port attributes: %s\n", SAFESTRING(in->name));
 		return -EIO;
 	}
-    tcflush(in->file_descriptor, TCIOFLUSH);
+	tcflush(in->file_descriptor, TCIOFLUSH);
 	//fcntl(pn->si->file_descriptor, F_SETFL, fcntl(pn->si->file_descriptor, F_GETFL, 0) & ~O_NONBLOCK);
 	return 0;
 }
@@ -73,8 +73,9 @@ int COM_open(struct connection_in *in)
 void COM_close(struct connection_in *in)
 {
 	int file_descriptor;
-	if (in == NULL)
+	if (in == NULL) {
 		return;
+	}
 	file_descriptor = in->file_descriptor;
 	// restore tty settings
 	if (file_descriptor > -1) {
@@ -92,23 +93,26 @@ void COM_close(struct connection_in *in)
 
 void COM_flush(const struct parsedname *pn)
 {
-	if (!pn || !pn->selected_connection || (pn->selected_connection->file_descriptor < 0))
+	if (!pn || !pn->selected_connection || (pn->selected_connection->file_descriptor < 0)) {
 		return;
+	}
 	tcflush(pn->selected_connection->file_descriptor, TCIOFLUSH);
 }
 
 void COM_break(const struct parsedname *pn)
 {
-	if (!pn || !pn->selected_connection || (pn->selected_connection->file_descriptor < 0))
+	if (!pn || !pn->selected_connection || (pn->selected_connection->file_descriptor < 0)) {
 		return;
+	}
 	tcsendbreak(pn->selected_connection->file_descriptor, 0);
 }
 
 void COM_speed(speed_t new_baud, const struct parsedname *pn)
 {
 	struct termios t;
-	if (!pn || !pn->selected_connection || (pn->selected_connection->file_descriptor < 0))
+	if (!pn || !pn->selected_connection || (pn->selected_connection->file_descriptor < 0)) {
 		return;
+	}
 
 	// read the attribute structure
 	if (tcgetattr(pn->selected_connection->file_descriptor, &t) < 0) {
@@ -123,8 +127,9 @@ void COM_speed(speed_t new_baud, const struct parsedname *pn)
 	if (tcsetattr(pn->selected_connection->file_descriptor, TCSAFLUSH, &t)
 		< 0) {
 		ERROR_CONNECT("Could not set com port attributes: %s\n", SAFESTRING(pn->selected_connection->name));
-		if (new_baud != B9600)
+		if (new_baud != B9600) {
 			COM_speed(B9600, pn);
+		}
 		return;
 	}
 	pn->selected_connection->connin.serial.speed = new_baud;

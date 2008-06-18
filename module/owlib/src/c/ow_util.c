@@ -25,8 +25,9 @@ $Id$
 /* 2 hex digits to number. This is the most used function in owfs for the LINK */
 BYTE string2num(const char *s)
 {
-	if (s == NULL)
+	if (s == NULL) {
 		return 0;
+	}
 	return (_HEXVALUE(s[0]) << 4) + _HEXVALUE(s[1]);
 }
 

@@ -26,7 +26,7 @@ void SideAddr(struct connection_side *side)
 	int ret;
 
 	if (side->name == NULL || side->name[0] == '\0') {
-        side->name = strdup("4305"); // arbitrary
+		side->name = strdup("4305");	// arbitrary
 	}
 	if ((p = strrchr(side->name, ':'))) {	/* : exists */
 		p[0] = '\0';			/* Separate tokens in the string */
@@ -54,10 +54,10 @@ void SideAddr(struct connection_side *side)
 
 	if ((ret = getaddrinfo(side->host, side->service, &hint, &side->ai))) {
 		LEVEL_CONNECT("GetAddrInfo error %s\n", gai_strerror(ret));
-		side->good_entry = 0 ;
-    } else {
-        side->good_entry = 1 ;
-    }
+		side->good_entry = 0;
+	} else {
+		side->good_entry = 1;
+	}
 }
 
 void FreeSideAddr(struct connection_side *side)
@@ -96,14 +96,14 @@ int SideConnect(struct connection_side *side)
 	if (ai) {
 		file_descriptor = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
 		if (file_descriptor >= 0) {
-            if (connect(file_descriptor, ai->ai_addr, ai->ai_addrlen) == 0) {
+			if (connect(file_descriptor, ai->ai_addr, ai->ai_addrlen) == 0) {
 				return file_descriptor;
-            }
+			}
 			close(file_descriptor);
 		}
 	}
 
-	ai = side->ai;		// loop from first address info since it failed.
+	ai = side->ai;				// loop from first address info since it failed.
 	do {
 		file_descriptor = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
 		if (file_descriptor >= 0) {
@@ -120,4 +120,3 @@ int SideConnect(struct connection_side *side)
 	STAT_ADD1(NET_connection_errors);
 	return -1;
 }
-

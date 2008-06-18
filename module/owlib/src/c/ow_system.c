@@ -145,8 +145,9 @@ static int FS_r_ds2490status(struct one_wire_query *owq)
 static int FS_pidfile(struct one_wire_query *owq)
 {
 	char *name = "";
-	if (pid_file)
+	if (pid_file) {
 		name = pid_file;
+	}
 	Fowq_output_offset_and_size_z(name, owq);
 	return 0;
 }

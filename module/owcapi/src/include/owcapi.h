@@ -42,24 +42,24 @@ extern "C" {
 	void OW_set_error_print(const char *params);
 
 	/* OW_get -- data read or directory read
-       path is OWFS style name,
-    "" or "/" for root directory
-    "01.23456708ABDE" for device directory
-    "10.468ACE13579B/temperature for a specific device property
+	   path is OWFS style name,
+	   "" or "/" for root directory
+	   "01.23456708ABDE" for device directory
+	   "10.468ACE13579B/temperature for a specific device property
 
-  buffer is a char buffer that is allocated by OW_get.
-   buffer MUST BE "free"ed after use. 
-  buffer_length, if not NULL, will be assigned the length of the returned data
+	   buffer is a char buffer that is allocated by OW_get.
+	   buffer MUST BE "free"ed after use. 
+	   buffer_length, if not NULL, will be assigned the length of the returned data
 
-  If path is NULL, it is assumed to be "/" the root directory
-  If path is not a valid C string, the results are unpredictable.
+	   If path is NULL, it is assumed to be "/" the root directory
+	   If path is not a valid C string, the results are unpredictable.
 
-  If buffer is NULL, an error is returned
-  If buffer_length is NULL it is ignored
+	   If buffer is NULL, an error is returned
+	   If buffer_length is NULL it is ignored
 
-  return value >=0 ok, length of information returned (in bytes)
-                <0 error
-*/
+	   return value >=0 ok, length of information returned (in bytes)
+	   <0 error
+	 */
 	ssize_t OW_get(const char *path, char **buffer, size_t * buffer_length);
 
 /* OW_put -- data write

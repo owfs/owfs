@@ -85,11 +85,13 @@ int CharblobPure(struct charblob *cb)
 int CharblobAdd(ASCII * a, size_t s, struct charblob *cb)
 {
 	size_t incr = 1024;
-	if (incr < s)
+	if (incr < s) {
 		incr = s;
+	}
 	// make more room? -- blocks of 1k
-	if (cb->used)
+	if (cb->used) {
 		CharblobAddChar(',', cb);	// add a comma
+	}
 	if (cb->used + s > cb->allocated) {
 		int newalloc = cb->allocated + incr;
 		ASCII *temp = realloc(cb->blob, newalloc);

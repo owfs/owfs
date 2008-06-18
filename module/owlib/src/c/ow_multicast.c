@@ -60,8 +60,9 @@ int FS_FindHA7(void)
 		ASCII name[64];
 		struct connection_in *in;
 		printf("Finding...\n");
-		if ((file_descriptor = socket(now->ai_family, now->ai_socktype, now->ai_protocol)) < 0)
+		if ((file_descriptor = socket(now->ai_family, now->ai_socktype, now->ai_protocol)) < 0) {
 			continue;
+		}
 		printf("Finding file_descriptor=%d\n", file_descriptor);
 		if (setsockopt(file_descriptor, SOL_SOCKET, SO_BROADCAST, &on, sizeof(on)) == -1) {
 			ERROR_DEBUG("Cannot set socket option for broadcast.\n");
@@ -73,9 +74,9 @@ int FS_FindHA7(void)
 			continue;
 		}
 		printf("sendto ok\n");
-		if (ret < 0)
+		if (ret < 0) {
 			ret = 0;			// possible read -- no default error
-
+		}
 		/* now read */
 		printf("FS_FindHA7 2\n");
 
@@ -90,8 +91,9 @@ int FS_FindHA7(void)
 			continue;
 		}
 		printf("Read in with correct start chars\n");
-		if ((in = NewIn(NULL)) == NULL)
+		if ((in = NewIn(NULL)) == NULL) {
 			break;
+		}
 		printf("Success!\n");
 		++ret;
 		inet_ntop(AF_INET, &(from.sin_addr), name, 64);

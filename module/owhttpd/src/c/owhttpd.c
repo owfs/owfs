@@ -69,7 +69,7 @@ static void exit_handler(int signo, siginfo_t * info, void *context)
 		LEVEL_DEBUG("exit_handler: for %d, self=%lu, main=%lu\n", signo, pthread_self(), main_threadid);
 	}
 	if (!StateInfo.shutdown_in_progress) {
-        StateInfo.shutdown_in_progress = 1;
+		StateInfo.shutdown_in_progress = 1;
 
 		if (info != NULL) {
 			if (SI_FROMUSER(info)) {
@@ -100,9 +100,9 @@ int main(int argc, char *argv[])
 	LibSetup(opt_httpd);
 
 	/* grab our executable name */
-    if (argc > 0) {
+	if (argc > 0) {
 		Globals.progname = strdup(argv[0]);
-    }
+	}
 
 	while ((c = getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL)) != -1) {
 		switch (c) {
@@ -112,9 +112,9 @@ int main(int argc, char *argv[])
 		default:
 			break;
 		}
-        if (owopt(c, optarg)) {
+		if (owopt(c, optarg)) {
 			ow_exit(0);			/* rest of message */
-        }
+		}
 	}
 
 	/* non-option arguments */
@@ -133,18 +133,17 @@ int main(int argc, char *argv[])
 
 	set_signal_handlers(exit_handler);
 
-    /* become a daemon if not told otherwise */
-    if (EnterBackground()) {
-        ow_exit(1);
-    }
+	/* become a daemon if not told otherwise */
+	if (EnterBackground()) {
+		ow_exit(1);
+	}
 
 	/*
 	 * Now we drop privledges and become a daemon.
 	 */
-    if (LibStart()) {
+	if (LibStart()) {
 		ow_exit(1);
-    }
-    
+	}
 #if OW_MT
 	main_threadid = pthread_self();
 #endif

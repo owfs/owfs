@@ -103,30 +103,36 @@ int BUS_next_both(struct device_search *ds, const struct parsedname *pn)
 
 		// initialize for search
 		// if the last call was not the last one
-		if (!pn->selected_connection->AnyDevices)
+		if (!pn->selected_connection->AnyDevices) {
 			ds->LastDevice = 1;
-		if (ds->LastDevice)
+		}
+		if (ds->LastDevice) {
 			return -ENODEV;
+		}
 
 		/* Appropriate search command */
-		if ((ret = BUS_send_data(&(ds->search), 1, pn)))
+		if ((ret = BUS_send_data(&(ds->search), 1, pn))) {
 			return ret;
+		}
 		// loop to do the search
 		for (bit_number = 0;; ++bit_number) {
 			bits[1] = bits[2] = 0xFF;
 			if (bit_number == 0) {	/* First bit */
 				/* get two bits (AND'ed bit and AND'ed complement) */
-				if ((ret = BUS_sendback_bits(&bits[1], &bits[1], 2, pn)))
+				if ((ret = BUS_sendback_bits(&bits[1], &bits[1], 2, pn))) {
 					return ret;
+				}
 			} else {
 				bits[0] = search_direction;
 				if (bit_number < 64) {
 					/* Send chosen bit path, then check match on next two */
-					if ((ret = BUS_sendback_bits(bits, bits, 3, pn)))
+					if ((ret = BUS_sendback_bits(bits, bits, 3, pn))) {
 						return ret;
+					}
 				} else {		/* last bit */
-					if ((ret = BUS_sendback_bits(bits, bits, 1, pn)))
+					if ((ret = BUS_sendback_bits(bits, bits, 1, pn))) {
 						return ret;
+					}
 					break;
 				}
 			}

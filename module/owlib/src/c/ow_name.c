@@ -13,16 +13,16 @@ $Id$
 #include "owfs_config.h"
 #include "ow_devices.h"
 
-char * ePN_name[] = {
-    "" ,
-    "" ,
-    "statistics" ,
-    "system",
-    "settings",
-    "structure",
-    "interface",
-    0,
-} ;
+char *ePN_name[] = {
+	"",
+	"",
+	"statistics",
+	"system",
+	"settings",
+	"structure",
+	"interface",
+	0,
+};
 
 /* device display format */
 void FS_devicename(char *buffer, const size_t length, const BYTE * sn, const struct parsedname *pn)
@@ -45,11 +45,11 @@ void FS_devicename(char *buffer, const size_t length, const BYTE * sn, const str
 	case fic:
 		snprintf(buffer, length, "%02X%02X%02X%02X%02X%02X%02X%02X", sn[0], sn[1], sn[2], sn[3], sn[4], sn[5], sn[6], sn[7]);
 		break;
-    case fdi:
-    default:
-        snprintf(buffer, length, "%02X.%02X%02X%02X%02X%02X%02X", sn[0], sn[1], sn[2], sn[3], sn[4], sn[5], sn[6]);
-        break;
-    }
+	case fdi:
+	default:
+		snprintf(buffer, length, "%02X.%02X%02X%02X%02X%02X%02X", sn[0], sn[1], sn[2], sn[3], sn[4], sn[5], sn[6]);
+		break;
+	}
 	UCLIBCUNLOCK;
 }
 
@@ -57,16 +57,15 @@ void FS_devicename(char *buffer, const size_t length, const BYTE * sn, const str
 /* This can be a device, directory, subdiirectory, if property file */
 /* Prints this directory element (not the whole path) */
 /* Suggest that size = OW_FULLNAME_MAX */
-const char * FS_DirName(const struct parsedname *pn)
+const char *FS_DirName(const struct parsedname *pn)
 {
-    char * slash ;
-    if ( pn == NULL || pn->path == NULL ) {
-        return "" ;
-    }
-    slash = strrchr(pn->path,'/') ;
-    if ( slash == NULL ) {
-        return "" ;
-    }
-    return slash + 1 ;
+	char *slash;
+	if (pn == NULL || pn->path == NULL) {
+		return "";
+	}
+	slash = strrchr(pn->path, '/');
+	if (slash == NULL) {
+		return "";
+	}
+	return slash + 1;
 }
-

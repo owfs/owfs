@@ -38,10 +38,12 @@ int FS_read_fake(struct one_wire_query *owq)
 {
 	switch (OWQ_pn(owq).extension) {
 	case EXTENSION_ALL:
-		if (OWQ_offset(owq))
+		if (OWQ_offset(owq)) {
 			return 0;
-		if (OWQ_size(owq) < FullFileLength(PN(owq)))
+		}
+		if (OWQ_size(owq) < FullFileLength(PN(owq))) {
 			return -ERANGE;
+		}
 		return FS_read_fake_array(owq);
 	case EXTENSION_BYTE:		/* bitfield */
 	default:
@@ -51,9 +53,9 @@ int FS_read_fake(struct one_wire_query *owq)
 
 static int FS_read_fake_single(struct one_wire_query *owq)
 {
-    enum { type_a, type_b } format_type = type_a ; // assume ascii
-    
-    switch (OWQ_pn(owq).selected_filetype->format) {
+	enum { type_a, type_b } format_type = type_a;	// assume ascii
+
+	switch (OWQ_pn(owq).selected_filetype->format) {
 	case ft_integer:
 		OWQ_I(owq) = Random_i;
 		break;
@@ -78,21 +80,21 @@ static int FS_read_fake_single(struct one_wire_query *owq)
 	case ft_date:
 		OWQ_D(owq) = Random_d;
 		break;
-    case ft_binary:
-        format_type = type_b ; // binary
-        // fall through
-    case ft_vascii:
+	case ft_binary:
+		format_type = type_b;	// binary
+		// fall through
+	case ft_vascii:
 	case ft_ascii:
-        {
+		{
 			size_t i;
-            size_t length = FileLength( PN(owq) ) ;
-            ASCII random_chars[length] ;
+			size_t length = FileLength(PN(owq));
+			ASCII random_chars[length];
 			for (i = 0; i < length; ++i) {
-                random_chars[i] = (format_type==type_a) ? Random_a : Random_b ;
+				random_chars[i] = (format_type == type_a) ? Random_a : Random_b;
 			}
-            return Fowq_output_offset_and_size(random_chars, length, owq) ;
-        }
-    case ft_directory:
+			return Fowq_output_offset_and_size(random_chars, length, owq);
+		}
+	case ft_directory:
 	case ft_subdir:
 		return -ENOENT;
 	}
@@ -132,8 +134,9 @@ static int FS_read_fake_array(struct one_wire_query *owq)
 		case ft_subdir:
 			return -ENOENT;
 		}
-		if (FS_read_fake_single(owq_single))
+		if (FS_read_fake_single(owq_single)) {
 			return -EINVAL;
+		}
 		memcpy(&OWQ_array(owq)[extension], &OWQ_val(owq_single), sizeof(union value_object));
 	}
 	return 0;

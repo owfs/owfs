@@ -97,48 +97,54 @@ static int OW_r_counter(struct one_wire_query *owq, size_t page, size_t pagesize
 static int FS_r_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (OWQ_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_r_mem_toss8))
+	if (OWQ_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_r_mem_toss8)) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
 static int FS_w_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (OW_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem))
+	if (OW_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem)) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
 static int FS_r_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (OWQ_readwrite_paged(owq, 0, pagesize, OW_r_mem_toss8))
+	if (OWQ_readwrite_paged(owq, 0, pagesize, OW_r_mem_toss8)) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
 static int FS_w_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (OW_readwrite_paged(owq, 0, pagesize, OW_w_mem))
+	if (OW_readwrite_paged(owq, 0, pagesize, OW_w_mem)) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
 static int FS_counter(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (OW_r_counter(owq, OWQ_pn(owq).extension + 14, pagesize))
+	if (OW_r_counter(owq, OWQ_pn(owq).extension + 14, pagesize)) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
 static int FS_pagecount(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (OW_r_counter(owq, OWQ_pn(owq).extension, pagesize))
+	if (OW_r_counter(owq, OWQ_pn(owq).extension, pagesize)) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -150,12 +156,14 @@ static int FS_r_mincount(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	UINT st[3], ct[2];			// stored and current counter values
 
-	if (OW_r_counter(owq, 14, 32))
+	if (OW_r_counter(owq, 14, 32)) {
 		return -EINVAL;
+	}
 	ct[0] = OWQ_U(owq);
 
-	if (OW_r_counter(owq, 15, 32))
+	if (OW_r_counter(owq, 15, 32)) {
 		return -EINVAL;
+	}
 	ct[1] = OWQ_U(owq);
 
 	if (Cache_Get_Internal_Strict((void *) st, 3 * sizeof(UINT), InternalProp(CUM), pn)) {	// record doesn't (yet) exist
@@ -169,8 +177,9 @@ static int FS_r_mincount(struct one_wire_query *owq)
 	st[1] = ct[1];
 	OWQ_U(owq) = st[2];
 
-	if (Cache_Add_Internal((void *) st, 3 * sizeof(UINT), InternalProp(CUM), pn))
+	if (Cache_Add_Internal((void *) st, 3 * sizeof(UINT), InternalProp(CUM), pn)) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -181,16 +190,19 @@ static int FS_w_mincount(struct one_wire_query *owq)
 
 	st[2] = OWQ_U(owq);
 
-	if (OW_r_counter(owq, 14, 32))
+	if (OW_r_counter(owq, 14, 32)) {
 		return -EINVAL;
+	}
 	st[0] = OWQ_U(owq);
 
-	if (OW_r_counter(owq, 15, 32))
+	if (OW_r_counter(owq, 15, 32)) {
 		return -EINVAL;
+	}
 	st[1] = OWQ_U(owq);
 
-	if (Cache_Add_Internal((void *) st, 3 * sizeof(UINT), InternalProp(CUM), pn))
+	if (Cache_Add_Internal((void *) st, 3 * sizeof(UINT), InternalProp(CUM), pn)) {
 		return -EINVAL;
+	}
 	return 0;
 }
 #endif							/*OW_CACHE */
@@ -237,13 +249,15 @@ static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 	/* Re-read scratchpad and compare */
 	/* Note that we tacitly shift the data one byte down for the E/S byte */
 	p[0] = _1W_READ_SCRATCHPAD;
-	if (BUS_transaction(treread, pn))
+	if (BUS_transaction(treread, pn)) {
 		return 1;
+	}
 
 	/* Copy Scratchpad to SRAM */
 	p[0] = _1W_COPY_SCRATCHPAD;
-	if (BUS_transaction(twrite, pn))
+	if (BUS_transaction(twrite, pn)) {
 		return 1;
+	}
 
 	UT_delay(32);
 	return 0;
@@ -254,8 +268,9 @@ static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 static int OW_r_counter(struct one_wire_query *owq, size_t page, size_t pagesize)
 {
 	BYTE extra[8];
-	if (OW_r_mem_counter_bytes(extra, page, pagesize, PN(owq)))
+	if (OW_r_mem_counter_bytes(extra, page, pagesize, PN(owq))) {
 		return 1;
+	}
 #if 0
 	if (extra[4] != _1W_COUNTER_FILL || extra[5] != _1W_COUNTER_FILL || extra[6] != _1W_COUNTER_FILL || extra[7] != _1W_COUNTER_FILL) {
 		return 1;

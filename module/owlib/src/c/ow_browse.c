@@ -95,8 +95,8 @@ static void ResolveBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 	} else {
 		if ((in = FindIn(bs)) == NULL) {	// new or old connection_in slot?
 			CONNIN_WLOCK;
-            in = NewIn(NULL) ;
-			if ( in != NULL ) {
+			in = NewIn(NULL);
+			if (in != NULL) {
 				BUSLOCKIN(in);
 				in->name = strdup(name);
 				in->busmode = bus_server;
@@ -146,12 +146,15 @@ static struct BrowseStruct *BSCreate(const char *name, const char *type, const c
 static void BSKill(struct BrowseStruct *bs)
 {
 	if (bs) {
-		if (bs->name)
+		if (bs->name) {
 			free(bs->name);
-		if (bs->type)
+		}
+		if (bs->type) {
 			free(bs->type);
-		if (bs->domain)
+		}
+		if (bs->domain) {
 			free(bs->domain);
+		}
 		free(bs);
 	}
 }
@@ -160,14 +163,15 @@ static struct connection_in *FindIn(struct BrowseStruct *bs)
 {
 	struct connection_in *now;
 	CONNIN_RLOCK;
-    now = head_inbound_list;
-    CONNIN_RUNLOCK ;
-	for ( ; now!= NULL ; now = now->next) {
+	now = head_inbound_list;
+	CONNIN_RUNLOCK;
+	for (; now != NULL; now = now->next) {
 		if (now->busmode != bus_zero || strcasecmp(now->name, bs->name)
 			|| strcasecmp(now->connin.tcp.type, bs->type)
 			|| strcasecmp(now->connin.tcp.domain, bs->domain)
-			)
+			) {
 			continue;
+		}
 		BUSLOCKIN(now);
 		break;
 	}
@@ -218,8 +222,9 @@ static void BrowseBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 						}
 					}
 					DNSServiceRefDeallocate(sr);
-					if (err == kDNSServiceErr_NoError)
+					if (err == kDNSServiceErr_NoError) {
 						return;
+					}
 				}
 			}
 			BSKill(bs);
@@ -233,8 +238,9 @@ void OW_Browse(void)
 	struct RefStruct *rs;
 	DNSServiceErrorType dnserr;
 
-	if ((rs = malloc(sizeof(struct RefStruct))) == NULL)
+	if ((rs = malloc(sizeof(struct RefStruct))) == NULL) {
 		return;
+	}
 
 	dnserr = DNSServiceBrowse(&Globals.browse, 0, 0, "_owserver._tcp", NULL, BrowseBack, NULL);
 	rs->sref = Globals.browse;

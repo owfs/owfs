@@ -25,9 +25,9 @@ int TestConnection(const struct parsedname *pn)
 	struct connection_in *selected_connection = pn->selected_connection;
 
 	// Test without a lock -- efficient
-    if (pn == NULL || selected_connection == NULL || selected_connection->reconnect_state < reconnect_error) {
+	if (pn == NULL || selected_connection == NULL || selected_connection->reconnect_state < reconnect_error) {
 		return 0;
-    }
+	}
 	// Lock the bus
 	BUSLOCK(pn);
 	// Test again
@@ -35,10 +35,9 @@ int TestConnection(const struct parsedname *pn)
 		// Add Statistics
 		STAT_ADD1_BUS(e_bus_reconnects, selected_connection);
 
-        if (selected_connection->index == 0) {
+		if (selected_connection->index == 0) {
 			Globals.SimpleBusName = "Reconnecting...";
-        }
-
+		}
 		// Close the bus (should leave enough reconnection information available)
 		BUS_close(selected_connection);	// already locked
 
@@ -56,9 +55,9 @@ int TestConnection(const struct parsedname *pn)
 		} else {
 			LEVEL_DEFAULT("%s adapter reconnected\n", selected_connection->adapter_name);
 			selected_connection->reconnect_state = reconnect_ok;
-            if (selected_connection->index == 0) {
-                Globals.SimpleBusName = selected_connection->name;
-            }
+			if (selected_connection->index == 0) {
+				Globals.SimpleBusName = selected_connection->name;
+			}
 		}
 	}
 	BUSUNLOCK(pn);

@@ -100,38 +100,38 @@ static int FS_w_timeout(struct one_wire_query *owq)
 	previous = ((UINT *) pn->selected_filetype->data.v)[0];
 	((UINT *) pn->selected_filetype->data.v)[0] = OWQ_I(owq);
 	CACHE_WUNLOCK;
-    if (previous > OWQ_I(owq)) {
+	if (previous > OWQ_I(owq)) {
 		Cache_Clear();
-    }
+	}
 	return 0;
 }
 
 static int FS_w_TS(struct one_wire_query *owq)
 {
-    int ret = 0 ;
-    if (OWQ_size(owq) == 0 || OWQ_offset(owq) > 0) {
+	int ret = 0;
+	if (OWQ_size(owq) == 0 || OWQ_offset(owq) > 0) {
 		return 0;				/* do nothing */
-    }
-    
-    SGLOCK ;
-    switch (OWQ_buffer(owq)[0]) {
+	}
+
+	SGLOCK;
+	switch (OWQ_buffer(owq)[0]) {
 	case 'C':
 		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_celsius);
-        break ;
+		break;
 	case 'F':
 		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_fahrenheit);
-		break ;
+		break;
 	case 'R':
 		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_rankine);
-        break ;
-    case 'K':
+		break;
+	case 'K':
 		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_kelvin);
-		break ;
-    default:
-        ret = -EINVAL ;
+		break;
+	default:
+		ret = -EINVAL;
 	}
-    SGUNLOCK ;
-	return ret ;
+	SGUNLOCK;
+	return ret;
 }
 
 static int FS_r_TS(struct one_wire_query *owq)

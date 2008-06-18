@@ -77,8 +77,9 @@ BYTE CRC8seeded(const BYTE * bytes, const size_t length, const UINT seed)
 	BYTE r = CRC8compute(bytes, length, seed);
 	STATLOCK;
 	++CRC8_tries;				/* statistics */
-	if (r)
+	if (r) {
 		++CRC8_errors;			/* statistics */
+	}
 	STATUNLOCK;
 	return r;
 }
@@ -100,8 +101,9 @@ int CRC16seeded(const BYTE * bytes, const size_t length, const UINT seed)
 	for (i = 0; i < length; ++i) {
 		UINT c = (bytes[i] ^ (sd & 0xFF)) & 0xFF;
 		sd >>= 8;
-		if (crc16_table[c & 0x0F] ^ crc16_table[c >> 4])
+		if (crc16_table[c & 0x0F] ^ crc16_table[c >> 4]) {
 			sd ^= 0xC001;
+		}
 		sd ^= (c <<= 6);
 		sd ^= (c << 1);
 	}

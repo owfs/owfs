@@ -37,7 +37,7 @@ struct global Globals = {
 	.browse = NULL,
 #endif
 
-	.opt = opt_swig ,
+	.opt = opt_swig,
 	.progname = NULL,			// "One Wire File System" , Can't allocate here since it's freed
 	.want_background = 1,
 	.now_background = 0,

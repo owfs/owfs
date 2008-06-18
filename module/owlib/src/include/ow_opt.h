@@ -67,7 +67,7 @@ $Id$
 
 /* Cannot stand alone -- part of ow.h but separated for clarity */
 
-#ifndef OW_OPT_H			/* tedious wrapper */
+#ifndef OW_OPT_H				/* tedious wrapper */
 #define OW_OPT_H
 
 /* command line options */
@@ -75,21 +75,21 @@ $Id$
 #define OWLIB_OPT "m:c:f:p:s:h::u::d:t:CFRKVP:"
 extern const struct option owopts_long[];
 enum opt_program { opt_owfs, opt_server, opt_httpd, opt_ftpd, opt_tcl,
-    opt_swig, opt_c,
+	opt_swig, opt_c,
 };
 int owopt(const int c, const char *arg);
 int owopt_packed(const char *params);
 
 enum e_long_option { e_error_print = 257, e_error_level,
-    e_cache_size,
-    e_fuse_opt, e_fuse_open_opt,
-    e_max_clients,
-    e_sidetap,
-    e_ha7, e_fake, e_link, e_ha3, e_ha4b, e_ha5, e_ha7e, e_tester, e_etherweather,
-    e_announce, e_allow_other,
-    e_timeout_volatile, e_timeout_stable, e_timeout_directory, e_timeout_presence,
-    e_timeout_serial, e_timeout_usb, e_timeout_network, e_timeout_server, e_timeout_ftp, e_timeout_ha7,
-    e_timeout_persistent_low, e_timeout_persistent_high, e_clients_persistent_low, e_clients_persistent_high,
-} ;
+	e_cache_size,
+	e_fuse_opt, e_fuse_open_opt,
+	e_max_clients,
+	e_sidetap,
+	e_ha7, e_fake, e_link, e_ha3, e_ha4b, e_ha5, e_ha7e, e_tester, e_etherweather,
+	e_announce, e_allow_other,
+	e_timeout_volatile, e_timeout_stable, e_timeout_directory, e_timeout_presence,
+	e_timeout_serial, e_timeout_usb, e_timeout_network, e_timeout_server, e_timeout_ftp, e_timeout_ha7,
+	e_timeout_persistent_low, e_timeout_persistent_high, e_clients_persistent_low, e_clients_persistent_high,
+};
 
 #endif							/* OW_OPT_H */

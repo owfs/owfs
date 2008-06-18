@@ -141,8 +141,8 @@ static void BrowseBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 	if (e == kDNSServiceErr_NoError) {
 		struct BrowseStruct *bs = BSCreate(name, type, domain);
 
-        CONNIN_WLOCK ;
-        if (bs) {
+		CONNIN_WLOCK;
+		if (bs) {
 			struct connection_in *in = FindIn(bs);
 
 			if (in) {
@@ -181,8 +181,8 @@ static void BrowseBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 			}
 			BSKill(bs);
 		}
-        CONNIN_WUNLOCK ;
-    }
+		CONNIN_WUNLOCK;
+	}
 	return;
 }
 

@@ -74,21 +74,21 @@ DeviceEntryExtended(3A, DS2413, DEV_resume | DEV_ovdr);
 /* DS2413 */
 static int OW_write(BYTE data, BYTE * and_read, const struct parsedname *pn);
 static int OW_read(BYTE * data, const struct parsedname *pn);
-static UINT SENSED_state( UINT status_bit ) ;
-static UINT LATCH_state( UINT status_bit ) ;
+static UINT SENSED_state(UINT status_bit);
+static UINT LATCH_state(UINT status_bit);
 
 /* 2413 switch */
 /* complement of sense */
 static int FS_r_pio(struct one_wire_query *owq)
 {
-    OWQ_allocate_struct_and_pointer(owq_sibling);
-    OWQ_create_shallow_bitfield(owq_sibling, owq);
+	OWQ_allocate_struct_and_pointer(owq_sibling);
+	OWQ_create_shallow_bitfield(owq_sibling, owq);
 
-    if (FS_read_sibling("sensed", owq_sibling) < 0) {
-        return -EINVAL;
-    }
-    
-    OWQ_U(owq) = OWQ_U(owq_sibling) ^ 0x03 ;
+	if (FS_read_sibling("sensed", owq_sibling) < 0) {
+		return -EINVAL;
+	}
+
+	OWQ_U(owq) = OWQ_U(owq_sibling) ^ 0x03;
 	return 0;
 }
 
@@ -96,83 +96,80 @@ static int FS_r_pio(struct one_wire_query *owq)
 /* bits 0 and 2 */
 static int FS_sense(struct one_wire_query *owq)
 {
-    BYTE data;
-    if ( OW_read( &data, PN(owq) ) ) {
-        return -EINVAL ;
-    }
+	BYTE data;
+	if (OW_read(&data, PN(owq))) {
+		return -EINVAL;
+	}
+	// bits 0->0 and 2->1
+	OWQ_U(owq) = SENSED_state(data);
 
-    // bits 0->0 and 2->1
-    OWQ_U(owq) = SENSED_state(data) ;
+	// Use incidental information (Latch) to add data to cache
+	{
+		OWQ_allocate_struct_and_pointer(owq_sibling);
+		OWQ_create_shallow_bitfield(owq_sibling, owq);
+		if (FS_ParseProperty_for_sibling("latch", PN(owq_sibling)) == 0) {
+			OWQ_U(owq_sibling) = LATCH_state(data);
+			OWQ_Cache_Add(owq_sibling);
+		}
+	}
 
-    // Use incidental information (Latch) to add data to cache
-    {
-        OWQ_allocate_struct_and_pointer(owq_sibling);
-        OWQ_create_shallow_bitfield(owq_sibling, owq);
-        if ( FS_ParseProperty_for_sibling("latch",PN(owq_sibling)) == 0 ) {
-            OWQ_U(owq_sibling) = LATCH_state(data) ;
-            OWQ_Cache_Add(owq_sibling);
-        }
-    }
-
-    return 0;
+	return 0;
 }
 
 /* 2413 switch activity latch*/
 /* bites 1 and 3 */
 static int FS_r_latch(struct one_wire_query *owq)
 {
-    BYTE data;
-    if ( OW_read( &data, PN(owq) ) ) {
-        return -EINVAL ;
-    }
+	BYTE data;
+	if (OW_read(&data, PN(owq))) {
+		return -EINVAL;
+	}
+	// bits 1->0 and 3->1
+	OWQ_U(owq) = LATCH_state(data);
 
-    // bits 1->0 and 3->1
-    OWQ_U(owq) = LATCH_state(data) ;
-    
-    // Use incidental information (sensed) to add data to cache
-    {
-        OWQ_allocate_struct_and_pointer(owq_sibling);
-        OWQ_create_shallow_bitfield(owq_sibling, owq);
-        if ( FS_ParseProperty_for_sibling("sensed",PN(owq_sibling)) == 0 ) {
-            OWQ_U(owq_sibling) = SENSED_state(data) ;
-            OWQ_Cache_Add(owq_sibling);
-        }
-    }
+	// Use incidental information (sensed) to add data to cache
+	{
+		OWQ_allocate_struct_and_pointer(owq_sibling);
+		OWQ_create_shallow_bitfield(owq_sibling, owq);
+		if (FS_ParseProperty_for_sibling("sensed", PN(owq_sibling)) == 0) {
+			OWQ_U(owq_sibling) = SENSED_state(data);
+			OWQ_Cache_Add(owq_sibling);
+		}
+	}
 
-    return 0;
+	return 0;
 }
 
 /* write 2413 switch -- 2 values*/
 static int FS_w_pio(struct one_wire_query *owq)
 {
 	/* mask and reverse bits */
-	BYTE data = ( OWQ_U(owq) & 0x03 ) ^ 0x03 ;
-    BYTE followup_read ;
-    
-    if (OW_write(data, &followup_read, PN(owq))) {
-		return -EINVAL;
-    }
-    
-    // Use incidental information (sensed) to add data to cache
-    {
-        OWQ_allocate_struct_and_pointer(owq_sibling);
-        OWQ_create_shallow_bitfield(owq_sibling, owq);
-        if ( FS_ParseProperty_for_sibling("sensed",PN(owq_sibling)) == 0 ) {
-            OWQ_U(owq_sibling) = SENSED_state(followup_read) ;
-            OWQ_Cache_Add(owq_sibling);
-        }
-    }
-    // Use incidental information (latch) to add data to cache
-    {
-        OWQ_allocate_struct_and_pointer(owq_sibling);
-        OWQ_create_shallow_bitfield(owq_sibling, owq);
-        if ( FS_ParseProperty_for_sibling("latch",PN(owq_sibling)) == 0 ) {
-            OWQ_U(owq_sibling) = LATCH_state(followup_read) ;
-            OWQ_Cache_Add(owq_sibling);
-        }
-    }
+	BYTE data = (OWQ_U(owq) & 0x03) ^ 0x03;
+	BYTE followup_read;
 
-    return 0;
+	if (OW_write(data, &followup_read, PN(owq))) {
+		return -EINVAL;
+	}
+	// Use incidental information (sensed) to add data to cache
+	{
+		OWQ_allocate_struct_and_pointer(owq_sibling);
+		OWQ_create_shallow_bitfield(owq_sibling, owq);
+		if (FS_ParseProperty_for_sibling("sensed", PN(owq_sibling)) == 0) {
+			OWQ_U(owq_sibling) = SENSED_state(followup_read);
+			OWQ_Cache_Add(owq_sibling);
+		}
+	}
+	// Use incidental information (latch) to add data to cache
+	{
+		OWQ_allocate_struct_and_pointer(owq_sibling);
+		OWQ_create_shallow_bitfield(owq_sibling, owq);
+		if (FS_ParseProperty_for_sibling("latch", PN(owq_sibling)) == 0) {
+			OWQ_U(owq_sibling) = LATCH_state(followup_read);
+			OWQ_Cache_Add(owq_sibling);
+		}
+	}
+
+	return 0;
 }
 
 /* read status byte */
@@ -186,14 +183,13 @@ static int OW_read(BYTE * data, const struct parsedname *pn)
 		TRXN_END,
 	};
 
-    if (BUS_transaction(t, pn)) {
+	if (BUS_transaction(t, pn)) {
 		return 1;
-    }
-    
-    // High nibble the complement of low nibble?
-    if ((data[0] & 0x0F) + ((data[0] >> 4) & 0x0F) != 0x0F) {
+	}
+	// High nibble the complement of low nibble?
+	if ((data[0] & 0x0F) + ((data[0] >> 4) & 0x0F) != 0x0F) {
 		return 1;
-    }
+	}
 
 	return 0;
 }
@@ -211,25 +207,24 @@ static int OW_write(BYTE data, BYTE * and_read, const struct parsedname *pn)
 		TRXN_END,
 	};
 
-    if (BUS_transaction(t, pn)) {
+	if (BUS_transaction(t, pn)) {
 		return 1;
-    }
-    if (q[0] != 0xAA) {
+	}
+	if (q[0] != 0xAA) {
 		return 1;
-    }
+	}
+	// next byte holds the status info byte -- useful for adding to the cache
+	and_read[0] = q[1];
 
-    // next byte holds the status info byte -- useful for adding to the cache
-    and_read[0] = q[1] ;
-    
 	return 0;
 }
 
-static UINT SENSED_state( UINT status_bit )
+static UINT SENSED_state(UINT status_bit)
 {
-    return ((status_bit>>0)&0x01)|((status_bit>>1)&0x02) ;
+	return ((status_bit >> 0) & 0x01) | ((status_bit >> 1) & 0x02);
 }
 
-static UINT LATCH_state( UINT status_bit )
+static UINT LATCH_state(UINT status_bit)
 {
-    return ((status_bit>>1)&0x01)|((status_bit>>2)&0x02) ;
+	return ((status_bit >> 1) & 0x01) | ((status_bit >> 2) & 0x02);
 }

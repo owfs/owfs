@@ -71,11 +71,13 @@ static void Zero_setroutines(struct interface_routines *f)
 int Zero_detect(struct connection_in *in)
 {
 //    if ( Server_detect(in) || ServerNOP(in) )
-//        if ( ServerNOP(in) ) return -1 ;
-	if (in->name == NULL)
+//        if ( ServerNOP(in) ) { return -1 ; }
+	if (in->name == NULL) {
 		return -1;
-	if (ClientAddr(in->name, in))
+	}
+	if (ClientAddr(in->name, in)) {
 		return -1;
+	}
 	in->file_descriptor = FD_PERSISTENT_NONE;	// No persistent connection yet
 	in->Adapter = adapter_tcp;
 	in->adapter_name = "tcp";
@@ -89,10 +91,12 @@ int Zero_detect(struct connection_in *in)
 // Actual tcp connection created as needed
 int Server_detect(struct connection_in *in)
 {
-	if (in->name == NULL)
+	if (in->name == NULL) {
 		return -1;
-	if (ClientAddr(in->name, in))
+	}
+	if (ClientAddr(in->name, in)) {
 		return -1;
+	}
 	in->file_descriptor = FD_PERSISTENT_NONE;	// No persistent connection yet
 	in->Adapter = adapter_tcp;
 	in->adapter_name = "tcp";
@@ -221,12 +225,12 @@ int ServerWrite(struct one_wire_query *owq)
 		} else {
 			int32_t sg = cm.sg & ~(BUSRET_MASK | PERSISTENT_MASK);
 			ret = cm.ret;
-            SGLOCK ;
+			SGLOCK;
 			if (SemiGlobal != sg) {
 				//printf("ServerRead: cm.sg changed!  SemiGlobal=%X cm.sg=%X\n", SemiGlobal, cm.sg);
 				SemiGlobal = sg;
 			}
-            SGUNLOCK ;
+			SGUNLOCK;
 		}
 	} else {
 		ret = -EIO;
@@ -526,10 +530,12 @@ static void *FromServerAlloc(int file_descriptor, struct client_msg *cm)
 
 	//printf("FromServerAlloc payload=%d size=%d ret=%d sg=%X offset=%d\n",cm->payload,cm->size,cm->ret,cm->sg,cm->offset);
 	//printf(">%.4d|%.4d\n",cm->ret,cm->payload);
-	if (cm->payload == 0)
+	if (cm->payload == 0) {
 		return NULL;
-	if (cm->ret < 0)
+	}
+	if (cm->ret < 0) {
 		return NULL;
+	}
 	if (cm->payload > MAX_OWSERVER_PROTOCOL_PACKET_SIZE) {
 		//printf("FromServerAlloc payload too large\n");
 		return NULL;
@@ -579,9 +585,9 @@ static int FromServer(int file_descriptor, struct client_msg *cm, char *msg, siz
 
 	//printf("FromServer payload=%d size=%d ret=%d sg=%d offset=%d\n",cm->payload,cm->size,cm->ret,cm->sg,cm->offset);
 	//printf(">%.4d|%.4d\n",cm->ret,cm->payload);
-	if (cm->payload == 0)
+	if (cm->payload == 0) {
 		return 0;				// No payload, done.
-
+	}
 	rtry = cm->payload < (ssize_t) size ? (size_t) cm->payload : size;
 	ret = tcp_read(file_descriptor, msg, rtry, &tv);	// read expected payload now.
 	if (ret != rtry) {
@@ -607,17 +613,20 @@ static int FromServer(int file_descriptor, struct client_msg *cm, char *msg, siz
 static int ToServerTwice(int file_descriptor, int persistent, struct server_msg *sm, struct serverpackage *sp, struct connection_in *in)
 {
 	int newfd;
-	if (ToServer(file_descriptor, sm, sp) == 0)
+	if (ToServer(file_descriptor, sm, sp) == 0) {
 		return file_descriptor;
+	}
 	if (persistent == 0) {
 		close(file_descriptor);
 		return FD_CURRENT_BAD;
 	}
 	newfd = PersistentReRequest(file_descriptor, in);
-	if (newfd < 0)
+	if (newfd < 0) {
 		return FD_CURRENT_BAD;
-	if (ToServer(newfd, sm, sp) == 0)
+	}
+	if (ToServer(newfd, sm, sp) == 0) {
 		return newfd;
+	}
 	close(newfd);
 	return FD_CURRENT_BAD;
 }
@@ -626,42 +635,39 @@ static int ToServerTwice(int file_descriptor, int persistent, struct server_msg 
 static int ToServer(int file_descriptor, struct server_msg *sm, struct serverpackage *sp)
 {
 	int payload = 0;
-    int tokens = 0 ;
-    struct iovec io[5] = { {NULL,0}, {NULL,0}, {NULL,0}, {NULL,0}, {NULL,0}, } ;
+	int tokens = 0;
+	struct iovec io[5] = { {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}, };
 
-    // First block to send, the header
-    io[0].iov_base = sm ;
-    io[0].iov_len = sizeof(struct server_msg) ;
+	// First block to send, the header
+	io[0].iov_base = sm;
+	io[0].iov_len = sizeof(struct server_msg);
 
-    // Next block, the path
+	// Next block, the path
 	if ((io[1].iov_base = sp->path)) {	// send path (if not null)
 		io[1].iov_len = payload = strlen(sp->path) + 1;
 	}
-
-    // next block, data (only for writes)
+	// next block, data (only for writes)
 	if ((io[2].iov_base = sp->data)) {	// send data (if datasize not zero)
 		payload += (io[2].iov_len = sp->datasize);
 	}
 
-    
-    sm->version = MakeServerprotocol(OWSERVER_PROTOCOL_VERSION) ;
-	if (Globals.opt == opt_server) {
-        tokens = sp->tokens ;
-        sm->version |= MakeServermessage ;
 
-        // next block prior tokens (if an owserver)
-        if (tokens > 0) {	// owserver: send prior tags
+	sm->version = MakeServerprotocol(OWSERVER_PROTOCOL_VERSION);
+	if (Globals.opt == opt_server) {
+		tokens = sp->tokens;
+		sm->version |= MakeServermessage;
+
+		// next block prior tokens (if an owserver)
+		if (tokens > 0) {		// owserver: send prior tags
 			io[3].iov_base = sp->tokenstring;
 			io[3].iov_len = tokens * sizeof(union antiloop);
 		}
-
-        // final block, new token (if an owserver)
+		// final block, new token (if an owserver)
 		++tokens;
 		sm->version |= MakeServertokens(tokens);
 		io[4].iov_base = &(Globals.Token);	// owserver: add our tag
 		io[4].iov_len = sizeof(union antiloop);
 	}
-
 	//printf("ToServer payload=%d size=%d type=%d tempscale=%X offset=%d\n",payload,sm->size,sm->type,sm->sg,sm->offset);
 	//printf("<%.4d|%.4d\n",sm->type,payload);
 	//printf("Scale=%s\n", TemperatureScaleName(SGTemperatureScale(sm->sg)));

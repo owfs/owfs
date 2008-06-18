@@ -36,21 +36,25 @@ int BUS_verify(BYTE search, const struct parsedname *pn)
 		UT_setbit(buffer, 3 * i + 10, UT_getbit(pn->sn, i));
 
 	// send/recieve the transfer buffer
-	if (BUS_sendback_data(buffer, buffer, 25, pn))
+	if (BUS_sendback_data(buffer, buffer, 25, pn)) {
 		return 1;
-	if (buffer[0] != search)
+	}
+	if (buffer[0] != search) {
 		return 1;
+	}
 	for (i = 0; (i < 64) && (goodbits < 64); i++) {
 		switch (UT_getbit(buffer, 3 * i + 8) << 1 | UT_getbit(buffer, 3 * i + 9)) {
 		case 0:
 			break;
 		case 1:
-			if (!UT_getbit(pn->sn, i))
+			if (!UT_getbit(pn->sn, i)) {
 				goodbits++;
+			}
 			break;
 		case 2:
-			if (UT_getbit(pn->sn, i))
+			if (UT_getbit(pn->sn, i)){
 				goodbits++;
+			}
 			break;
 		case 3:				// No device on line
 			return 1;

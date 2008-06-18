@@ -53,8 +53,9 @@ int DS9097_detect(struct connection_in *in)
 	struct parsedname pn;
 
 	/* open the COM port in 9600 Baud  */
-	if (COM_open(in))
+	if (COM_open(in)) {
 		return -ENODEV;
+	}
 
 	/* Set up low-level routines */
 	DS9097_setroutines(in);
@@ -80,8 +81,9 @@ static int DS9097_reset(const struct parsedname *pn)
 	int file_descriptor = pn->selected_connection->file_descriptor;
 	int ret;
 
-	if (file_descriptor < 0)
+	if (file_descriptor < 0) {
 		return -1;
+	}
 
 	/* 8 data bits */
 	tcgetattr(file_descriptor, &term);
@@ -93,8 +95,9 @@ static int DS9097_reset(const struct parsedname *pn)
 		ERROR_CONNECT("Cannot set attributes: %s\n", SAFESTRING(pn->selected_connection->name));
 		return -EIO;
 	}
-	if ((ret = DS9097_send_and_get(&resetbyte, &c, 1, pn)))
+	if ((ret = DS9097_send_and_get(&resetbyte, &c, 1, pn))) {
 		return ret;
+	}
 
 	switch (c) {
 	case 0:
@@ -205,8 +208,9 @@ int DS9097_sendback_bits(const BYTE * outbits, BYTE * inbits, const size_t lengt
 	size_t i = 0;
 	size_t start = 0;
 
-	if (length == 0)
+	if (length == 0) {
 		return 0;
+	}
 
 	/* Split into smaller packets? */
 	do {
@@ -246,8 +250,9 @@ static int DS9097_send_and_get(const BYTE * bussend, BYTE * busget, const size_t
 
 		/* send out string, and handle interrupted system call too */
 		while (sl > 0) {
-			if (!pn->selected_connection)
+			if (!pn->selected_connection) {
 				break;
+			}
 			r = write(pn->selected_connection->file_descriptor, &bussend[length - sl], sl);
 			if (r < 0) {
 				if (errno == EINTR) {
@@ -275,8 +280,9 @@ static int DS9097_send_and_get(const BYTE * bussend, BYTE * busget, const size_t
 			fd_set readset;
 			struct timeval tv;
 			//printf("SAG readlength=%d\n",gl);
-			if (!pn->selected_connection)
+			if (!pn->selected_connection) {
 				break;
+			}
 			/* I can't imagine that 5 seconds timeout is needed???
 			 * Any comments Paul ? */
 			/* We make it 10 * standard since 10 bytes required for 1 bit */

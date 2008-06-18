@@ -62,7 +62,7 @@ ssize_t OW_init(const char *params)
 	/* grab our executable name */
 	Globals.progname = strdup("OWCAPI");
 
-    ret = API_init(params) ;
+	ret = API_init(params);
 
 	if (ret) {
 		API_finish();
@@ -96,7 +96,7 @@ ssize_t OW_init_args(int argc, char **argv)
 		++optind;
 	}
 
-    if (ret || (ret = API_init(NULL))) {
+	if (ret || (ret = API_init(NULL))) {
 		API_finish();
 	}
 
@@ -106,7 +106,7 @@ ssize_t OW_init_args(int argc, char **argv)
 static void getdircallback(void *v, const struct parsedname *const pn_entry)
 {
 	struct charblob *cb = v;
-	const char * buf = FS_DirName(pn_entry);
+	const char *buf = FS_DirName(pn_entry);
 	CharblobAdd(buf, strlen(buf), cb);
 	if (IsDir(pn_entry))
 		CharblobAddChar('/', cb);
@@ -168,90 +168,90 @@ ssize_t OW_get(const char *path, char **buffer, size_t * buffer_length)
 {
 	//struct parsedname pn;
 	struct one_wire_query owq;
-	ssize_t ret = -EACCES;			/* current buffer string length */
+	ssize_t ret = -EACCES;		/* current buffer string length */
 
 	/* Check the parameters */
-    if (buffer == NULL) {
+	if (buffer == NULL) {
 		return ReturnAndErrno(-EINVAL);
-    }
+	}
 
-    if (path == NULL) {
+	if (path == NULL) {
 		path = "/";
-    }
+	}
 
 	*buffer = NULL;				// default return string on error
-    if ( buffer_length != NULL ) {
-        *buffer_length = 0 ;
-    }
+	if (buffer_length != NULL) {
+		*buffer_length = 0;
+	}
 
-    if (API_access_start()==0) {	/* Check for prior init */
-	   if (FS_OWQ_create(path, NULL, 0, 0, &owq)) {	/* Can we parse the input string */
-    		ret = -ENOENT;
-        } else {
-            if (IsDir(PN(&owq))) {	/* A directory of some kind */
-                ret = getdir(&owq);
-            } else {				/* A regular file */
-                ret = getval(&owq);
-            }
-            if ( ret >= 0 ) {
-                *buffer = OWQ_buffer(&owq);
-                if ( buffer_length != NULL ) {
-                    *buffer_length = OWQ_size(&owq) ;
-                }
-            }
-            FS_OWQ_destroy(&owq);
-        }
-        API_access_end() ;
+	if (API_access_start() == 0) {	/* Check for prior init */
+		if (FS_OWQ_create(path, NULL, 0, 0, &owq)) {	/* Can we parse the input string */
+			ret = -ENOENT;
+		} else {
+			if (IsDir(PN(&owq))) {	/* A directory of some kind */
+				ret = getdir(&owq);
+			} else {			/* A regular file */
+				ret = getval(&owq);
+			}
+			if (ret >= 0) {
+				*buffer = OWQ_buffer(&owq);
+				if (buffer_length != NULL) {
+					*buffer_length = OWQ_size(&owq);
+				}
+			}
+			FS_OWQ_destroy(&owq);
+		}
+		API_access_end();
 	}
 	return ReturnAndErrno(ret);
 }
 
 ssize_t OW_lread(const char *path, char *buffer, const size_t size, const off_t offset)
 {
-    ssize_t ret = -EACCES;         /* current buffer string length */
+	ssize_t ret = -EACCES;		/* current buffer string length */
 
-    /* Check the parameters */
-    if (buffer == NULL || path==NULL ) {
-        return ReturnAndErrno(-EINVAL);
-    }
-    
-    if ( API_access_start()==0 ) {
-        ret = FS_read(path, buffer, size, offset) ;
-        API_access_end() ;
-    }
-    return ReturnAndErrno(ret);
+	/* Check the parameters */
+	if (buffer == NULL || path == NULL) {
+		return ReturnAndErrno(-EINVAL);
+	}
+
+	if (API_access_start() == 0) {
+		ret = FS_read(path, buffer, size, offset);
+		API_access_end();
+	}
+	return ReturnAndErrno(ret);
 }
 
 ssize_t OW_lwrite(const char *path, const char *buffer, const size_t size, const off_t offset)
 {
-    ssize_t ret = -EACCES;         /* current buffer string length */
+	ssize_t ret = -EACCES;		/* current buffer string length */
 
-    /* Check the parameters */
-    if (buffer == NULL || path==NULL ) {
-        return ReturnAndErrno(-EINVAL);
-    }
-    
-    if ( API_access_start()==0 ) {
-        ret = FS_write(path, buffer, size, offset) ;
-        API_access_end() ;
-    }
-    return ReturnAndErrno(ret);
+	/* Check the parameters */
+	if (buffer == NULL || path == NULL) {
+		return ReturnAndErrno(-EINVAL);
+	}
+
+	if (API_access_start() == 0) {
+		ret = FS_write(path, buffer, size, offset);
+		API_access_end();
+	}
+	return ReturnAndErrno(ret);
 }
 
 ssize_t OW_put(const char *path, const char *buffer, size_t buffer_length)
 {
-	ssize_t ret = -EACCES ;
+	ssize_t ret = -EACCES;
 
 	/* Check the parameters */
-    if (buffer == NULL || path==NULL ) {
+	if (buffer == NULL || path == NULL) {
 		return ReturnAndErrno(-EINVAL);
-    }
-    
+	}
+
 	/* Check that we have done init, and that we can access */
-    if ( API_access_start()==0 ) {
+	if (API_access_start() == 0) {
 		ret = FS_write(path, buffer, buffer_length, 0);
-        API_access_end() ;
-    }
+		API_access_end();
+	}
 	return ReturnAndErrno(ret);
 }
 

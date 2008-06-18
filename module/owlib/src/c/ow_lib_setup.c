@@ -16,8 +16,8 @@ $Id$
 /* All ow library setup */
 void LibSetup(enum opt_program opt)
 {
-    /* Setup the multithreading synchronizing locks */
-    LockSetup();
+	/* Setup the multithreading synchronizing locks */
+	LockSetup();
 
 #if OW_ZERO
 	OW_Load_dnssd_library();

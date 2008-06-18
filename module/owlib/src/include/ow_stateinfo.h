@@ -46,18 +46,18 @@ $Id$
 
 /* CAnn stand alone -- separated out of ow.h for clarity */
 
-#ifndef OW_STATEINFO_H				/* tedious wrapper */
+#ifndef OW_STATEINFO_H			/* tedious wrapper */
 #define OW_STATEINFO_H
 
-enum lib_state { lib_state_pre, lib_state_setup, lib_state_started, lib_state_active, lib_state_finished, } ;
+enum lib_state { lib_state_pre, lib_state_setup, lib_state_started, lib_state_active, lib_state_finished, };
 
 /* Globals information (for local control) */
 struct stateinfo {
-    enum lib_state owlib_state ;
-	int lock_setup_done ;
-	time_t start_time ;
-	time_t dir_time ;
-    int shutdown_in_progress;
+	enum lib_state owlib_state;
+	int lock_setup_done;
+	time_t start_time;
+	time_t dir_time;
+	int shutdown_in_progress;
 };
 extern struct stateinfo StateInfo;
 

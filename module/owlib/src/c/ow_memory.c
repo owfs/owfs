@@ -95,8 +95,9 @@ static int OW_r_crc16(BYTE code, struct one_wire_query *owq, size_t page, size_t
 	p[0] = code;
 	p[1] = BYTE_MASK(offset);
 	p[2] = BYTE_MASK(offset >> 8);
-	if (BUS_transaction(t, PN(owq)))
+	if (BUS_transaction(t, PN(owq))) {
 		return 1;
+	}
 	memcpy(OWQ_buffer(owq), &p[3], size);
 	Set_OWQ_length(owq);
 	return 0;
@@ -136,8 +137,9 @@ int OW_r_mem_toss8(struct one_wire_query *owq, size_t page, size_t pagesize)
 	p[0] = _1W_READ_A5;
 	p[1] = BYTE_MASK(offset);
 	p[2] = BYTE_MASK(offset >> 8);
-	if (BUS_transaction(t, PN(owq)))
+	if (BUS_transaction(t, PN(owq))) {
 		return 1;
+	}
 	memcpy(OWQ_buffer(owq), &p[3], OWQ_size(owq));
 	Set_OWQ_length(owq);
 	return 0;
@@ -157,10 +159,12 @@ int OW_r_mem_counter_bytes(BYTE * extra, size_t page, size_t pagesize, struct pa
 		TRXN_END,
 	};
 
-	if (BUS_transaction(t, pn))
+	if (BUS_transaction(t, pn)) {
 		return 1;
-	if (extra)
+	}
+	if (extra) {
 		memcpy(extra, &p[3 + _1W_Throw_Away_Bytes], 8);
+	}
 	LEVEL_DEBUG("Counter Data: " SNformat "\n", SNvar(extra));
 	return 0;
 }

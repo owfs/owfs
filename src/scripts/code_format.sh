@@ -9,11 +9,16 @@ find . -name "*.[c|h]" | while read file; do
 
 echo "Indent file=$file"
 grep DeviceEntry $file
-/usr/bin/indent -kr -l150 -ts4 $file
+/usr/bin/indent -kr -l150 -ts4 -br $file
 /usr/bin/perl -i -ple 's/\(\s*([0-9]) ([A-F])/\(\1\2/ if /DeviceEntry/' $file
 grep DeviceEntry $file
 
 done
+
+if [ -f module/swig/tcl/version.h ]; then
+    echo "Fix module/swig/tcl/version.h"
+    sed -i 's/OWTCL_\([A-Z_]*\) = \([0-9]\) /OWTCL_\1 = \2\n/g' module/swig/tcl/version.h
+fi
 
 exit 0
 

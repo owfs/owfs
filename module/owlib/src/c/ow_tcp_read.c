@@ -33,8 +33,9 @@ int tcp_wait(int file_descriptor, const struct timeval *ptv)
 		// Read if it doesn't timeout first
 		rc = select(file_descriptor + 1, &readset, NULL, NULL, &tv);
 		if (rc < 0) {
-			if (errno == EINTR)
+			if (errno == EINTR) {
 				continue;		/* interrupted */
+			}
 			return -EIO;		/* error */
 		} else if (rc == 0) {
 			return -EAGAIN;		/* timeout */
@@ -114,12 +115,13 @@ void tcp_read_flush(int file_descriptor)
 
 	// Apparently you can test for GET_FL success like this
 	// see http://www.informit.com/articles/article.asp?p=99706&seqNum=13&rl=1
-	if (flags < 0)
+	if (flags < 0) {
 		return;
+	}
 
-	if (fcntl(file_descriptor, F_SETFL, flags | O_NONBLOCK) < 0)
-		return;
-
+	if (fcntl(file_descriptor, F_SETFL, flags | O_NONBLOCK) < 0) {
+ 		return;
+	}
 	while ((nread = read(file_descriptor, (BYTE *) buffer, 16)) > 0) {
 		Debug_Bytes("tcp_read_flush", (BYTE *) buffer, nread);
 		continue;

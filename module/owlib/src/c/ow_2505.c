@@ -119,47 +119,53 @@ static int OW_w_status(BYTE * data, size_t size, off_t offset, struct parsedname
 static int FS_r_memory(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-//    if ( OW_r_mem( buf, size, (size_t) offset, pn) ) return -EINVAL ;
-	if (OWQ_readwrite_paged(owq, 0, pagesize, OW_r_mem_simple))
+//    if ( OW_r_mem( buf, size, (size_t) offset, pn) ) { return -EINVAL ; }
+	if (OWQ_readwrite_paged(owq, 0, pagesize, OW_r_mem_simple)) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
 static int FS_r_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (OWQ_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_r_mem_simple))
+	if (OWQ_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_r_mem_simple)) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
 static int FS_r_status(struct one_wire_query *owq)
 {
 	size_t pagesize = PN(owq)->selected_filetype->suglen;
-	if (OWQ_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_r_mem_crc16_AA))
+	if (OWQ_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_r_mem_crc16_AA)) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
 static int FS_w_memory(struct one_wire_query *owq)
 {
-	if (OW_w_eprom_mem(OWQ_explode(owq)))
+	if (OW_w_eprom_mem(OWQ_explode(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
 static int FS_w_status(struct one_wire_query *owq)
 {
-	if (OW_w_status(OWQ_explode(owq)))
+	if (OW_w_status(OWQ_explode(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
 static int FS_w_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (OW_w_eprom_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq) + OWQ_pn(owq).extension * pagesize, PN(owq)))
+	if (OW_w_eprom_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq) + OWQ_pn(owq).extension * pagesize, PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -175,10 +181,12 @@ static int OW_w_status(BYTE * data, size_t size, off_t offset, struct parsedname
 		TRXN_END,
 	};
 
-	if (size == 0)
+	if (size == 0) {
 		return 0;
-	if (size == 1)
+	}
+	if (size == 1) {
 		return BUS_transaction(tfirst, pn) || (p[0] & (~data[0]));
+	}
 	BUSLOCK(pn);
 	if (BUS_transaction(tfirst, pn) || (p[0] & ~data[0])) {
 		ret = 1;

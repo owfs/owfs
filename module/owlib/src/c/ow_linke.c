@@ -58,12 +58,15 @@ int LINKE_detect(struct connection_in *in)
 	/* Set up low-level routines */
 	LINKE_setroutines(in);
 
-	if (in->name == NULL)
+	if (in->name == NULL) {
 		return -1;
-	if (ClientAddr(in->name, in))
+	}
+	if (ClientAddr(in->name, in)) {
 		return -1;
-	if ((pn.selected_connection->file_descriptor = ClientConnect(in)) < 0)
+	}
+	if ((pn.selected_connection->file_descriptor = ClientConnect(in)) < 0) {
 		return -EIO;
+	}
 
 	in->Adapter = adapter_LINK_E;
 	if (LINK_write(LINK_string(" "), 1, &pn) == 0) {
@@ -119,10 +122,12 @@ static int LINK_next_both(struct device_search *ds, const struct parsedname *pn)
 	char resp[21];
 	int ret;
 
-	if (!pn->selected_connection->AnyDevices)
+	if (!pn->selected_connection->AnyDevices) {
 		ds->LastDevice = 1;
-	if (ds->LastDevice)
+	}
+	if (ds->LastDevice) {
 		return -ENODEV;
+	}
 
 	++ds->index;
 	if (ds->index == 0) {
@@ -251,8 +256,9 @@ static int LINK_sendback_data(const BYTE * data, BYTE * resp, const size_t size,
 	size_t left = size;
 	BYTE *buf = pn->selected_connection->combuffer;
 
-	if (size == 0)
+	if (size == 0) {
 		return 0;
+	}
 
 	while (left > 0) {
 		buf[0] = 'b';			//put in byte mode
@@ -262,8 +268,9 @@ static int LINK_sendback_data(const BYTE * data, BYTE * resp, const size_t size,
 		bytes2string((char *) &buf[1], &data[size - left], this_length);
 		buf[total_length - 1] = '\r';	// take out of byte mode
 		if (LINK_write(buf, total_length, pn)
-			|| LINK_read(buf, total_length + 2, pn))
+			|| LINK_read(buf, total_length + 2, pn)) {
 			return -EIO;
+		}
 		string2bytes((char *) buf, &resp[size - left], this_length);
 		left -= this_length;
 	}
@@ -275,8 +282,9 @@ static int LINKE_preamble(const struct parsedname *pn)
 {
 	BYTE data[6];
 	struct timeval tvnetfirst = { Globals.timeout_network, 0, };
-	if (tcp_read(pn->selected_connection->file_descriptor, data, 6, &tvnetfirst) != 6)
+	if (tcp_read(pn->selected_connection->file_descriptor, data, 6, &tvnetfirst) != 6) {
 		return -EIO;
+	}
 	LEVEL_CONNECT("Good preamble\n");
 	return 0;
 }

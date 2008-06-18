@@ -44,9 +44,9 @@ int BUS_transaction(const struct transaction_log *tl, const struct parsedname *p
 {
 	int ret = 0;
 
-	if (tl == NULL)
+	if (tl == NULL) {
 		return 0;
-
+	}
 	BUSLOCK(pn);
 	ret = BUS_transaction_nolock(tl, pn);
 	BUSUNLOCK(pn);
@@ -207,19 +207,24 @@ static int Bundle_pack(const struct transaction_log *tl, const struct parsedname
 			break;
 		case -EINVAL:
 			LEVEL_DEBUG("Transaction Bundle: Item cannot be bundled\n");
-			if (Bundle_ship(tb, pn))
+			if (Bundle_ship(tb, pn)) {
 				return -EINVAL;
-			if (BUS_transaction_single(t_index, pn))
+			}
+			if (BUS_transaction_single(t_index, pn)) {
 				return -EINVAL;
+			}
 			break;
 		case -EAGAIN:
 			LEVEL_DEBUG("Transaction Bundle: Item too big\n");
-			if (Bundle_ship(tb, pn))
+			if (Bundle_ship(tb, pn)) {
 				return -EINVAL;
-			if (Pack_item(t_index, tb) == 0)
+			}
+			if (Pack_item(t_index, tb) == 0) {
 				break;
-			if (BUS_transaction_single(t_index, pn))
+			}
+			if (BUS_transaction_single(t_index, pn)) {
 				return -EINVAL;
+			}
 			break;
 		}
 	}
@@ -268,8 +273,9 @@ static int Pack_item(const struct transaction_log *tl, struct transaction_bundle
 	switch (tl->type) {
 	case trxn_select:			// select a 1-wire device (by unique ID)
 		LEVEL_DEBUG("Transaction Bundle: pack=SELECT\n");
-		if (tb->packets != 0)
+		if (tb->packets != 0) {
 			return -EAGAIN;		// select must be first
+		}
 		tb->select_first = 1;
 		break;
 	case trxn_compare:			// match two strings -- no actual 1-wire
@@ -277,33 +283,42 @@ static int Pack_item(const struct transaction_log *tl, struct transaction_bundle
 		break;
 	case trxn_read:
 		LEVEL_DEBUG("Transaction Bundle: pack=READ\n");
-		if (tl->size > tb->max_size)
+		if (tl->size > tb->max_size) {
 			return -EINVAL;		// too big for any bundle
-		if (tl->size + tb->mb.used > tb->max_size)
+		}
+		if (tl->size + tb->mb.used > tb->max_size) {
 			return -EAGAIN;		// too big for this partial bundle
-		if (MemblobChar(0xFF, tl->size, &tb->mb))
+		}
+		if (MemblobChar(0xFF, tl->size, &tb->mb)) {
 			return -EINVAL;
+		}
 		break;
 	case trxn_match:			// write data and match response
 	case trxn_modify:			// write data and read response. No match needed
 	case trxn_blind:			// write data and ignore response
 		LEVEL_DEBUG("Transaction Bundle: pack=MATCH MODIFY BLIND\n");
-		if (tl->size > tb->max_size)
+		if (tl->size > tb->max_size) {
 			return -EINVAL;		// too big for any bundle
-		if (tl->size + tb->mb.used > tb->max_size)
+		}
+		if (tl->size + tb->mb.used > tb->max_size) {
 			return -EAGAIN;		// too big for this partial bundle
-		if (MemblobAdd(tl->out, tl->size, &tb->mb))
+		}
+		if (MemblobAdd(tl->out, tl->size, &tb->mb)) {
 			return -EINVAL;
+		}
 		break;
 	case trxn_power:
 	case trxn_program:
 		LEVEL_DEBUG("Transaction Bundle: pack=POWER PROGRAM\n");
-		if (1 > tb->max_size)
+		if (1 > tb->max_size) {
 			return -EINVAL;		// too big for any bundle
-		if (1 + tb->mb.used > tb->max_size)
+		}
+		if (1 + tb->mb.used > tb->max_size) {
 			return -EAGAIN;		// too big for this partial bundle
-		if (MemblobAdd(tl->out, 1, &tb->mb))
+		}
+		if (MemblobAdd(tl->out, 1, &tb->mb)) {
 			return -EINVAL;
+		}
 		ret = -EINTR;			// needs delay
 		break;
 	case trxn_crc8:

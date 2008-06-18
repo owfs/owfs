@@ -76,8 +76,9 @@ int BUS_select(const struct parsedname *pn)
 		if (pn->selected_connection->branch.sn[0] || pn->selected_connection->buspath_bad) {	// need clear root branch */
 			//printf("SELECT_LOW root path will be cleared\n") ;
 			LEVEL_DEBUG("Clearing root branch\n");
-			if (Turnoff(0, pn))
+			if (Turnoff(0, pn)) {
 				return 1;
+			}
 			pn->selected_connection->branch.sn[0] = 0x00;	// flag as no branches turned on
 		}
 		if (pn->selected_connection->set_speed == bus_speed_overdrive) {	// overdrive?
@@ -88,23 +89,26 @@ int BUS_select(const struct parsedname *pn)
 		LEVEL_DEBUG("Clearing all branches to level %d\n", pl);
 		for (iclear = 0; iclear <= pl; ++iclear) {
 			// All lines off
-			if (Turnoff(iclear, pn))
+			if (Turnoff(iclear, pn)) {
 				return 1;
+			}
 		}
 		memcpy(pn->selected_connection->branch.sn, pn->bp[pl - 1].sn, 8);
 		pn->selected_connection->branch.branch = pn->bp[pl - 1].branch;
 	} else if (pn->selected_connection->branch.branch != pn->bp[pl - 1].branch) {	/* different branch */
 		LEVEL_DEBUG("Clearing last branches (level %d)\n", pl);
-		if (Turnoff(pl, pn))
+		if (Turnoff(pl, pn)) {
 			return 1;			// clear just last level
+		}
 		pn->selected_connection->branch.branch = pn->bp[pl - 1].branch;
 	}
 	pn->selected_connection->buspath_bad = 0;
 
 	/* proper path now "turned on" */
 	/* Now select */
-	if (BUS_reset(pn) || BUS_select_branch(pn))
+	if (BUS_reset(pn) || BUS_select_branch(pn)) {
 		return 1;
+	}
 
 	if ((pn->selected_device != NULL)
 		&& (pn->selected_device != DeviceThermostat)) {
@@ -133,8 +137,9 @@ static int BUS_Skip_Rom(const struct parsedname *pn)
 		TRXN_END,
 	};
 
-	if ((BUS_reset(pn)))
+	if ((BUS_reset(pn))) {
 		return 1;
+	}
 	skip[0] = (pn->selected_connection->set_speed == bus_speed_overdrive) ? _1W_OVERDRIVE_SKIP_ROM : _1W_SKIP_ROM;
 	return BUS_transaction_nolock(t, pn);
 }
@@ -142,8 +147,9 @@ static int BUS_Skip_Rom(const struct parsedname *pn)
 /* All the railroad switches are correctly set, just isolate the last segment */
 static int BUS_select_branch(const struct parsedname *pn)
 {
-	if (RootNotBranch(pn))
+	if (RootNotBranch(pn)) {
 		return 0;
+	}
 	return BUS_select_subbranch(&(pn->bp[pn->pathlength - 1]), pn);
 }
 
@@ -183,8 +189,9 @@ static int Turnoff(int depth, const struct parsedname *pn)
 
 	//printf("TURNOFF entry depth=%d\n",depth) ;
 
-	if ((BUS_reset(pn)))
+	if ((BUS_reset(pn))) {
 		return 1;
+	}
 
 	if ((pn->selected_connection->Adapter == adapter_fake)
 		|| (pn->selected_connection->Adapter == adapter_tester)) {
@@ -192,7 +199,8 @@ static int Turnoff(int depth, const struct parsedname *pn)
 		return 0;
 	}
 
-	if (depth && BUS_select_subbranch(&(pn->bp[depth - 1]), pn))
+	if (depth && BUS_select_subbranch(&(pn->bp[depth - 1]), pn)) {
 		return 1;
+	}
 	return BUS_transaction_nolock(t, pn);
 }

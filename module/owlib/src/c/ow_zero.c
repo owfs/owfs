@@ -31,8 +31,9 @@ static void RegisterBack(DNSServiceRef s, DNSServiceFlags f,
 	DNSServiceRef *sref = context;
 	LEVEL_DETAIL
 		("RegisterBack ref=%d flags=%d error=%d name=%s type=%s domain=%s\n", s, f, e, SAFESTRING(name), SAFESTRING(type), SAFESTRING(domain));
-	if (e == kDNSServiceErr_NoError)
+	if (e == kDNSServiceErr_NoError) {
 		sref[0] = s;
+	}
 	LEVEL_DEBUG("RegisterBack: done\n");
 }
 
@@ -43,8 +44,9 @@ static void *Announce(void *v)
 	DNSServiceRef sref;
 	DNSServiceErrorType err;
 
-	if (libdnssd == NULL)
+	if (libdnssd == NULL) {
 		return NULL;
+	}
 #if OW_MT
 	pthread_detach(pthread_self());
 #endif							/* OW_MT */
@@ -55,9 +57,10 @@ static void *Announce(void *v)
 		DNSServiceRegister(&sref, 0, 0,
 						   Globals.announce_name ? Globals.
 						   announce_name : as->name, as->type0, NULL, NULL, as->port, 0, NULL, RegisterBack, &(as->out->sref0));
-	if (err)
+	if (err) {
 		LEVEL_DEBUG("Announce: err=%d\n", err);
-
+	}
+		
 	//LEVEL_DEBUG("DNSServiceRequest attempt: index=%d, name=%s, port=%d, type=%s / %s\n",as->out->index,SAFESTRING(as->name),ntohs(as->port),SAFESTRING(as->type0),SAFESTRING(as->type1)) ;
 	LEVEL_DEBUG("Announce: 2\n");
 	if (err == kDNSServiceErr_NoError) {
@@ -95,13 +98,13 @@ void OW_Announce(struct connection_out *out)
 #endif
 	socklen_t sl = sizeof(sa);
 
-	if (libdnssd == NULL || Globals.announce_off)
+	if (libdnssd == NULL || Globals.announce_off) {
 		return;
-
+	}
 	as = malloc(sizeof(struct announce_struct));
-	if (as == NULL)
+	if (as == NULL) {
 		return;
-
+	}
 	as->out = out;
 	if (getsockname(out->file_descriptor, &sa, &sl)) {
 		ERROR_CONNECT("Could not get port number of device.\n");

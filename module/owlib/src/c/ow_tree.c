@@ -46,15 +46,17 @@ static void Device2Tree(const struct device *d, enum ePN_type type)
 	if ((d_copy = (struct device *) malloc(sizeof(struct device)))) {
 		memmove(d_copy, d, sizeof(struct device));
 		tsearch(d_copy, &Tree[type], device_compare);
-		if (d_copy->filetype_array)
+		if (d_copy->filetype_array) {
 			qsort(d_copy->filetype_array, (size_t) d_copy->count_of_filetypes, sizeof(struct filetype), file_compare);
+		}
 	} else {
 		LEVEL_DATA("Device2Tree:  Could not allocate memory for device %s\n", d->readable_name);
 	}
 #else							/* __FreeBSD__ */
 	tsearch(d, &Tree[type], device_compare);
-	if (d->filetype_array)
+	if (d->filetype_array) {
 		qsort(d->filetype_array, (size_t) d->count_of_filetypes, sizeof(struct filetype), file_compare);
+	}
 #endif							/* __FreeBSD__ */
 /*
 {
@@ -79,8 +81,9 @@ void DeviceDestroy(void)
 	for (i = 0; i < (sizeof(Tree) / sizeof(void *)); i++) {
 		if (Tree[i]) {
 			/* ePN_structure is just a duplicate of ePN_real */
-			if (i != ePN_structure)
+			if (i != ePN_structure) {
 				tdestroy(Tree[i], free_node);
+			}
 			Tree[i] = NULL;
 		}
 	}
@@ -192,8 +195,9 @@ void FS_devicefindhex(BYTE f, struct parsedname *pn)
 		pn->selected_device = p->key;
 	} else {
 		num2string(ID, f ^ 0x80);
-		if ((p = tfind(&d, &Tree[pn->type], device_compare)))
+		if ((p = tfind(&d, &Tree[pn->type], device_compare))) {
 			pn->selected_device = p->key;
+		}
 	}
 }
 

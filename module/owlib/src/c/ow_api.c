@@ -40,27 +40,27 @@ pthread_cond_t access_cond = PTHREAD_COND_INITIALIZER;
 
 int access_num = 0;
 
-void API_setup( enum opt_program opt )
+void API_setup(enum opt_program opt)
 {
-    static int deja_vue = 0 ;
-    // poor mans lock for the Lib Setup and Lock Setup
-    if ( ++deja_vue == 1 ) {
-        LibSetup(opt) ;
-        StateInfo.owlib_state = lib_state_setup ;
-    }
+	static int deja_vue = 0;
+	// poor mans lock for the Lib Setup and Lock Setup
+	if (++deja_vue == 1) {
+		LibSetup(opt);
+		StateInfo.owlib_state = lib_state_setup;
+	}
 }
 
-void API_set_error_level(const char * params)
+void API_set_error_level(const char *params)
 {
-	if(params != NULL) {
+	if (params != NULL) {
 		Globals.error_level = atoi(params);
 	}
 	return;
 }
 
-void API_set_error_print(const char * params)
+void API_set_error_print(const char *params)
 {
-	if(params != NULL) {
+	if (params != NULL) {
 		Globals.error_print = atoi(params);
 	}
 	return;
@@ -68,71 +68,69 @@ void API_set_error_print(const char * params)
 
 
 /* Swig ensures that API_LibSetup is called first, but still we check */
-int API_init( const char * command_line )
+int API_init(const char *command_line)
 {
-    int return_code = 0 ;
+	int return_code = 0;
 
-    if ( StateInfo.owlib_state == lib_state_pre ) {
-        LibSetup(Globals.opt) ; // use previous or default value
-        StateInfo.owlib_state = lib_state_setup ;
-    }
-    LIB_WLOCK ;
-    // stop if started
-    if ( StateInfo.owlib_state == lib_state_started ) {
-        LibStop() ;
-        StateInfo.owlib_state = lib_state_setup ;
-    }
-        
-    // now restart
-    if ( StateInfo.owlib_state == lib_state_setup ) {
-        return_code = owopt_packed( command_line ) ;
-        if ( return_code != 0 ) {
-            LIB_WUNLOCK ;
-            return return_code ;
-        }
-        
-        return_code = LibStart() ;
-        if ( return_code != 0 ) {
-            LIB_WUNLOCK ;
-            return return_code ;
-        }
-            
-        StateInfo.owlib_state = lib_state_started ;
-    }
-    LIB_WUNLOCK ;
-    return return_code ;
+	if (StateInfo.owlib_state == lib_state_pre) {
+		LibSetup(Globals.opt);	// use previous or default value
+		StateInfo.owlib_state = lib_state_setup;
+	}
+	LIB_WLOCK;
+	// stop if started
+	if (StateInfo.owlib_state == lib_state_started) {
+		LibStop();
+		StateInfo.owlib_state = lib_state_setup;
+	}
+	// now restart
+	if (StateInfo.owlib_state == lib_state_setup) {
+		return_code = owopt_packed(command_line);
+		if (return_code != 0) {
+			LIB_WUNLOCK;
+			return return_code;
+		}
+
+		return_code = LibStart();
+		if (return_code != 0) {
+			LIB_WUNLOCK;
+			return return_code;
+		}
+
+		StateInfo.owlib_state = lib_state_started;
+	}
+	LIB_WUNLOCK;
+	return return_code;
 }
 
-void API_finish( void )
+void API_finish(void)
 {
-    if ( StateInfo.owlib_state == lib_state_pre ) {
-        return ;
-    }
-    LIB_WLOCK ;
-    LibStop() ;
-    StateInfo.owlib_state = lib_state_pre ;
-    LIB_WUNLOCK ;
+	if (StateInfo.owlib_state == lib_state_pre) {
+		return;
+	}
+	LIB_WLOCK;
+	LibStop();
+	StateInfo.owlib_state = lib_state_pre;
+	LIB_WUNLOCK;
 }
 
 // called before read/write/dir operation -- tests setup state
 // pair with API_access_stop
-int API_access_start( void )
+int API_access_start(void)
 {
-    if ( StateInfo.owlib_state == lib_state_pre ) {
-        return -EACCES ;
-    }
-    LIB_RLOCK ;
-    if ( StateInfo.owlib_state != lib_state_started ) {
-        LIB_RUNLOCK ;
-        return -EACCES ;
-    }
-    return 0 ;
+	if (StateInfo.owlib_state == lib_state_pre) {
+		return -EACCES;
+	}
+	LIB_RLOCK;
+	if (StateInfo.owlib_state != lib_state_started) {
+		LIB_RUNLOCK;
+		return -EACCES;
+	}
+	return 0;
 }
 
 // called after read/write/dir operation
 // pair with API_access_start
-void API_access_end( void )
+void API_access_end(void)
 {
-    LIB_RUNLOCK ;
+	LIB_RUNLOCK;
 }
-

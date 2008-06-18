@@ -8,7 +8,7 @@
 
 #ifdef HAVE_SEMAPHORE_H
 #include <semaphore.h>
-#else /* HAVE_SEMAPHORE_H */
+#else							/* HAVE_SEMAPHORE_H */
 
 #include <pthread.h>
 #include <errno.h>

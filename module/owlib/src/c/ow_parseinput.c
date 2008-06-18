@@ -114,8 +114,9 @@ static int FS_input_yesno(struct one_wire_query *owq)
 	/* allocate more space if buffer is really long */
 	if (OWQ_size(owq) > DEFAULT_INPUT_BUFFER_LENGTH) {
 		input_buffer = malloc(OWQ_size(owq) + 1);
-		if (input_buffer == NULL)
+		if (input_buffer == NULL) {
 			return -ENOMEM;
+		}
 	}
 	memcpy(input_buffer, OWQ_buffer(owq), OWQ_size(owq));
 	input_buffer[OWQ_size(owq)] = '\0';	// make sure null-ended
@@ -155,8 +156,9 @@ static int FS_input_yesno(struct one_wire_query *owq)
 		}
 	}
 	/* free specially long buffer */
-	if (input_buffer != default_input_buffer)
+	if (input_buffer != default_input_buffer) {
 		free(input_buffer);
+	}
 	return ret;
 }
 
@@ -171,8 +173,9 @@ static int FS_input_integer(struct one_wire_query *owq)
 	/* allocate more space if buffer is really long */
 	if (OWQ_size(owq) > DEFAULT_INPUT_BUFFER_LENGTH) {
 		input_buffer = malloc(OWQ_size(owq) + 1);
-		if (input_buffer == NULL)
+		if (input_buffer == NULL) {
 			return -ENOMEM;
+		}
 	}
 
 	memcpy(input_buffer, OWQ_buffer(owq), OWQ_size(owq));
@@ -184,10 +187,12 @@ static int FS_input_integer(struct one_wire_query *owq)
 	if (input_buffer != default_input_buffer)
 		free(input_buffer);
 
-	if (errno)
+	if (errno) {
 		return -errno;			// conversion error
-	if (end == input_buffer)
+	}
+	if (end == input_buffer) {
 		return -EINVAL;			// nothing valid found for conversion
+	}
 	return 0;					// good return
 }
 
@@ -202,8 +207,9 @@ static int FS_input_unsigned(struct one_wire_query *owq)
 	/* allocate more space if buffer is really long */
 	if (OWQ_size(owq) > DEFAULT_INPUT_BUFFER_LENGTH) {
 		input_buffer = malloc(OWQ_size(owq) + 1);
-		if (input_buffer == NULL)
+		if (input_buffer == NULL) {
 			return -ENOMEM;
+		}
 	}
 
 	memcpy(input_buffer, OWQ_buffer(owq), OWQ_size(owq));
@@ -212,13 +218,16 @@ static int FS_input_unsigned(struct one_wire_query *owq)
 	OWQ_U(owq) = strtoul(input_buffer, &end, 10);
 
 	/* free specially long buffer */
-	if (input_buffer != default_input_buffer)
+	if (input_buffer != default_input_buffer) {
 		free(input_buffer);
+	}
 
-	if (errno)
+	if (errno) {
 		return -errno;			// conversion error
-	if (end == input_buffer)
+	}
+	if (end == input_buffer) {
 		return -EINVAL;			// nothing valid found for conversion
+	}
 	return 0;					// good return
 }
 
@@ -235,8 +244,9 @@ static int FS_input_float(struct one_wire_query *owq)
 	/* allocate more space if buffer is really long */
 	if (OWQ_size(owq) > DEFAULT_INPUT_BUFFER_LENGTH) {
 		input_buffer = malloc(OWQ_size(owq) + 1);
-		if (input_buffer == NULL)
+		if (input_buffer == NULL) {
 			return -ENOMEM;
+		}
 	}
 
 	memcpy(input_buffer, OWQ_buffer(owq), OWQ_size(owq));
@@ -245,13 +255,16 @@ static int FS_input_float(struct one_wire_query *owq)
 	F = strtod(input_buffer, &end);
 
 	/* free specially long buffer */
-	if (input_buffer != default_input_buffer)
+	if (input_buffer != default_input_buffer) {
 		free(input_buffer);
+	}
 
-	if (errno)
+	if (errno) {
 		return -errno;			// conversion error
-	if (end == input_buffer)
+	}
+	if (end == input_buffer) {
 		return -EINVAL;			// nothing valid found for conversion
+	}
 
 	switch (OWQ_pn(owq).selected_filetype->format) {
 	case ft_temperature:
@@ -279,8 +292,9 @@ static int FS_input_date(struct one_wire_query *owq)
 	/* allocate more space if buffer is really long */
 	if (OWQ_size(owq) > DEFAULT_INPUT_BUFFER_LENGTH) {
 		input_buffer = malloc(OWQ_size(owq) + 1);
-		if (input_buffer == NULL)
+		if (input_buffer == NULL) {
 			return -ENOMEM;
+		}
 	}
 
 	memcpy(input_buffer, OWQ_buffer(owq), OWQ_size(owq));
@@ -299,8 +313,9 @@ static int FS_input_date(struct one_wire_query *owq)
 	}
 
 	/* free specially long buffer */
-	if (input_buffer != default_input_buffer)
+	if (input_buffer != default_input_buffer) {
 		free(input_buffer);
+	}
 
 	return ret;
 }

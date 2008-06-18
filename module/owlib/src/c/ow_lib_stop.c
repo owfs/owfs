@@ -42,4 +42,3 @@ void LibStop(void)
 	opterr = 1;
 	optopt = '?';
 }
-

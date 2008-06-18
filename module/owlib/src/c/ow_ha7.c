@@ -82,23 +82,27 @@ int HA7_detect(struct connection_in *in)
 	DirblobInit(&(in->connin.ha7.main));
 	DirblobInit(&(in->connin.ha7.alarm));
 
-	if (in->name == NULL)
+	if (in->name == NULL) {
 		return -1;
+	}
 
 	/* Add the port if it isn't there already */
 	if (strchr(in->name, ':') == NULL) {
 		ASCII *temp = realloc(in->name, strlen(in->name) + 3);
-		if (temp == NULL)
+		if (temp == NULL) {
 			return -ENOMEM;
+		}
 		in->name = temp;
 		strcat(in->name, ":80");
 	}
 
-	if (ClientAddr(in->name, in))
+	if (ClientAddr(in->name, in)) {
 		return -1;
+	}
 
-	if ((file_descriptor = ClientConnect(in)) < 0)
+	if ((file_descriptor = ClientConnect(in)) < 0) {
 		return -EIO;
+	}
 
 	in->Adapter = adapter_HA7NET;
 
@@ -210,8 +214,9 @@ static int HA7_next_both(struct device_search *ds, const struct parsedname *pn)
 	}
 
 	if (++(ds->index) == 0) {
-		if (HA7_directory(ds->search, db, pn))
+		if (HA7_directory(ds->search, db, pn)) {
 			return -EIO;
+		}
 	}
 	ret = DirblobGet(ds->index, ds->sn, db);
 	switch (ret) {
@@ -251,8 +256,9 @@ static int HA7_read(int file_descriptor, struct memblob *mb)
 	// Look for happy response
 	if (strncmp("HTTP/1.1 200 OK", readin_area, 15)) {	//Bad HTTP return code
 		ASCII *p = strchr(&readin_area[15], '\n');
-		if (p == NULL)
+		if (p == NULL) {
 			p = &readin_area[15 + 32];
+		}
 		LEVEL_DATA("HA7 response problem:%.*s\n", p - readin_area - 15, &readin_area[15]);
 		return -EINVAL;
 	}
@@ -332,8 +338,9 @@ static int HA7_toHA7(int file_descriptor, const struct toHA7 *ha7, struct connec
 		+ 11 + 1;
 
 	full_command = malloc(probable_length);
-	if (full_command == NULL)
+	if (full_command == NULL) {
 		return -ENOMEM;
+	}
 	memset(full_command, 0, probable_length);
 
 	strcpy(full_command, "GET /1Wire/");

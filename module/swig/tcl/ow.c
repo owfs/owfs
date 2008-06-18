@@ -162,7 +162,7 @@ owtcl_ObjCmdProc(Owtcl_Set_error_level)
 	char *arg;
 	int arg_len;
 	owtcl_ArgObjIncr;
-	
+
 	(void) interp;				// suppress compiler warning
 	(void) objc;				// suppress compiler warning
 	(void) objv;				// suppress compiler warning
@@ -177,7 +177,7 @@ owtcl_ObjCmdProc(Owtcl_Set_error_level)
 		owtcl_Error(interp, "OWTCL", "DISCONNECTED", "owtcl disconnected");
 		owtcl_ArgObjDecr;
 		return TCL_ERROR;
-    }
+	}
 	arg = Tcl_GetStringFromObj(objv[1], &arg_len);
 
 	OW_set_error_level(arg);
@@ -209,7 +209,7 @@ owtcl_ObjCmdProc(Owtcl_Set_error_print)
 		owtcl_Error(interp, "OWTCL", "DISCONNECTED", "owtcl disconnected");
 		owtcl_ArgObjDecr;
 		return TCL_ERROR;
-    }
+	}
 	arg = Tcl_GetStringFromObj(objv[1], &arg_len);
 
 	OW_set_error_print(arg);

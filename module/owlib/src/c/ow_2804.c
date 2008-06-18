@@ -118,8 +118,9 @@ static int FS_r_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 	/* read is not a "paged" endeavor, the CRC comes after a full read */
-	if (OW_r_mem_simple(owq, 0, pagesize))
+	if (OW_r_mem_simple(owq, 0, pagesize)) {
 		return -EINVAL;
+	}
 	return OWQ_size(owq);
 }
 
@@ -128,8 +129,9 @@ static int FS_w_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 	/* write is "byte at a time" -- not paged */
-	if (OW_readwrite_paged(owq, 0, pagesize, OW_w_mem))
+	if (OW_readwrite_paged(owq, 0, pagesize, OW_w_mem)) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -137,8 +139,9 @@ static int FS_w_mem(struct one_wire_query *owq)
 static int FS_r_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (OW_r_mem_simple(owq, OWQ_pn(owq).extension, pagesize))
+	if (OW_r_mem_simple(owq, OWQ_pn(owq).extension, pagesize)) {
 		return -EINVAL;
+	}
 	return OWQ_size(owq);
 }
 
@@ -146,8 +149,9 @@ static int FS_w_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 	/* write is "byte at a time" -- not paged */
-	if (OW_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem))
+	if (OW_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem)) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -157,8 +161,9 @@ static int FS_r_pio(struct one_wire_query *owq)
 	BYTE data;
 	OWQ_allocate_struct_and_pointer(owq_pio);
 	OWQ_create_temporary(owq_pio, (char *) &data, 1, _ADDRESS_PIO_OUTPUT, PN(owq));
-	if (OW_r_mem_simple(owq_pio, 0, 0))
+	if (OW_r_mem_simple(owq_pio, 0, 0)) {
 		return -EINVAL;
+	}
 	OWQ_U(owq) = BYTE_INVERSE(data) & 0x03;	/* reverse bits */
 	return 0;
 }
@@ -169,8 +174,9 @@ static int FS_w_pio(struct one_wire_query *owq)
 	BYTE data = 0;
 	/* reverse bits */
 	data = BYTE_INVERSE(OWQ_U(owq)) | 0xFC;	/* Set bits 2-7 to "1" */
-	if (OW_w_pio(data, PN(owq)))
+	if (OW_w_pio(data, PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -180,8 +186,9 @@ static int FS_power(struct one_wire_query *owq)
 	BYTE data;
 	OWQ_allocate_struct_and_pointer(owq_power);
 	OWQ_create_temporary(owq_power, (char *) &data, 1, _ADDRESS_CONDITIONAL_SEARCH_CONTROL, PN(owq));
-	if (OW_r_mem_simple(owq_power, 0, 0))
+	if (OW_r_mem_simple(owq_power, 0, 0)) {
 		return -EINVAL;
+	}
 	OWQ_Y(owq) = UT_getbit(&data, 7);
 	return 0;
 }
@@ -192,8 +199,9 @@ static int FS_polarity(struct one_wire_query *owq)
 	BYTE data;
 	OWQ_allocate_struct_and_pointer(owq_polarity);
 	OWQ_create_temporary(owq_polarity, (char *) &data, 1, _ADDRESS_CONDITIONAL_SEARCH_CONTROL, PN(owq));
-	if (OW_r_mem_simple(owq_polarity, 0, 0))
+	if (OW_r_mem_simple(owq_polarity, 0, 0)) {
 		return -EINVAL;
+	}
 	OWQ_Y(owq) = UT_getbit(&data, 6);
 	return 0;
 }
@@ -204,8 +212,9 @@ static int FS_r_por(struct one_wire_query *owq)
 	BYTE data;
 	OWQ_allocate_struct_and_pointer(owq_por);
 	OWQ_create_temporary(owq_por, (char *) &data, 1, _ADDRESS_CONDITIONAL_SEARCH_CONTROL, PN(owq));
-	if (OW_r_mem_simple(owq_por, 0, 0))
+	if (OW_r_mem_simple(owq_por, 0, 0)) {
 		return -EINVAL;
+	}
 	OWQ_Y(owq) = UT_getbit(&data, 3);
 	return 0;
 }
@@ -217,16 +226,20 @@ static int FS_w_por(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	OWQ_allocate_struct_and_pointer(owq_por);
 	OWQ_create_temporary(owq_por, (char *) &data, 1, _ADDRESS_CONDITIONAL_SEARCH_CONTROL, pn);
-	if (OW_r_mem_simple(owq_por, 0, 0))
+	if (OW_r_mem_simple(owq_por, 0, 0)) {
 		return -EINVAL;			/* get current register */
+	}
 	if (UT_getbit(&data, 3)) {	/* needs resetting? bit3==1 */
 		data ^= 0x08;			/* flip bit 3 */
-		if (OW_w_reg(&data, 1, _ADDRESS_CONDITIONAL_SEARCH_CONTROL, pn))
+		if (OW_w_reg(&data, 1, _ADDRESS_CONDITIONAL_SEARCH_CONTROL, pn)) {
 			return -EINVAL;		/* reset */
-		if (FS_r_por(owq))
+		}
+		if (FS_r_por(owq)) {
 			return -EINVAL;		/* reread */
-		if (OWQ_Y(owq))
+		}
+		if (OWQ_Y(owq)) {
 			return -EINVAL;		/* not reset despite our try */
+		}
 	}
 	return 0;					/* good */
 }
@@ -237,8 +250,9 @@ static int FS_sense(struct one_wire_query *owq)
 	BYTE data;
 	OWQ_allocate_struct_and_pointer(owq_sense);
 	OWQ_create_temporary(owq_sense, (char *) &data, 1, _ADDRESS_PIO_LOGIC, PN(owq));
-	if (OW_r_mem_simple(owq_sense, 0, 0))
+	if (OW_r_mem_simple(owq_sense, 0, 0)) {
 		return -EINVAL;
+	}
 	OWQ_U(owq) = (data) & 0x03;
 	return 0;
 }
@@ -249,8 +263,9 @@ static int FS_r_latch(struct one_wire_query *owq)
 	BYTE data;
 	OWQ_allocate_struct_and_pointer(owq_latch);
 	OWQ_create_temporary(owq_latch, (char *) &data, 1, _ADDRESS_PIO_ACTIVITY, PN(owq));
-	if (OW_r_mem_simple(owq_latch, 0, 0))
+	if (OW_r_mem_simple(owq_latch, 0, 0)) {
 		return -EINVAL;
+	}
 	OWQ_U(owq) = data & 0x03;
 	return 0;
 }
@@ -258,8 +273,9 @@ static int FS_r_latch(struct one_wire_query *owq)
 /* 2804 switch activity latch*/
 static int FS_w_latch(struct one_wire_query *owq)
 {
-	if (OW_clear(PN(owq)))
+	if (OW_clear(PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -269,8 +285,9 @@ static int FS_r_s_alarm(struct one_wire_query *owq)
 	BYTE data[3];
 	OWQ_allocate_struct_and_pointer(owq_alarm);
 	OWQ_create_temporary(owq_alarm, (char *) data, 3, _ADDRESS_CONDITIONAL_SEARCH_PIO, PN(owq));
-	if (OW_r_mem_simple(owq_alarm, 0, 0))
+	if (OW_r_mem_simple(owq_alarm, 0, 0)) {
 		return -EINVAL;
+	}
 	OWQ_U(owq) = (data[2] & 0x03) * 100;
 	OWQ_U(owq) += UT_getbit(&data[1], 0) | (UT_getbit(&data[0], 0) << 1);
 	OWQ_U(owq) += UT_getbit(&data[1], 1) | (UT_getbit(&data[0], 1) << 1) * 10;
@@ -284,15 +301,17 @@ static int FS_w_s_alarm(struct one_wire_query *owq)
 	UINT U = OWQ_U(owq);
 	OWQ_allocate_struct_and_pointer(owq_alarm);
 	OWQ_create_temporary(owq_alarm, (char *) &data[2], 1, _ADDRESS_CONDITIONAL_SEARCH_CONTROL, PN(owq));
-	if (OW_r_mem_simple(owq_alarm, 0, 0))
+	if (OW_r_mem_simple(owq_alarm, 0, 0)) {
 		return -EINVAL;
+	}
 	data[2] |= (U / 100 % 10) & 0x03;
 	UT_setbit(&data[1], 0, (int) (U % 10) & 0x01);
 	UT_setbit(&data[1], 1, (int) (U / 10 % 10) & 0x01);
 	UT_setbit(&data[0], 0, ((int) (U % 10) & 0x02) >> 1);
 	UT_setbit(&data[0], 1, ((int) (U / 10 % 10) & 0x02) >> 1);
-	if (OW_w_reg(data, 3, _ADDRESS_CONDITIONAL_SEARCH_PIO, PN(owq)))
+	if (OW_w_reg(data, 3, _ADDRESS_CONDITIONAL_SEARCH_PIO, PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -336,9 +355,9 @@ static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 	};
 
 	if (OW_w_scratch(data, size, offset, pn)
-		|| BUS_transaction(tread, pn)
-		)
+		|| BUS_transaction(tread, pn)) {
 		return 1;
+	}
 	p[0] = _1W_COPY_SCRATCHPAD;
 	return BUS_transaction(tcopy, pn);
 }

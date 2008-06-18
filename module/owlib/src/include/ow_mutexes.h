@@ -54,7 +54,7 @@ $Id$
 
 #if OW_MT
 #include <pthread.h>
-#endif /* OW_MT */
+#endif							/* OW_MT */
 
 extern struct mutex {
 #if OW_MT
@@ -65,16 +65,16 @@ extern struct mutex {
 	pthread_mutex_t dir_mutex;
 	pthread_mutex_t libusb_mutex;
 	pthread_mutexattr_t *pmattr;
-    rwlock_t lib ;
-    rwlock_t cache ;
-    rwlock_t store ;
-    rwlock_t connin ;
- #ifdef __UCLIBC__
+	rwlock_t lib;
+	rwlock_t cache;
+	rwlock_t store;
+	rwlock_t connin;
+#ifdef __UCLIBC__
 	pthread_mutexattr_t mattr;
 	pthread_mutex_t uclibc_mutex;
- #endif							/* __UCLIBC__ */
+#endif							/* __UCLIBC__ */
 #endif							/* OW_MT */
-} Mutex ;
+} Mutex;
 
 
 #if OW_MT
@@ -123,10 +123,10 @@ extern struct mutex {
 #endif							/* __UCLIBC__ */
 
 #else							/* OW_MT */
-#define LIB_WLOCK     
-#define LIB_WUNLOCK   
-#define LIB_RLOCK     
-#define LIB_RUNLOCK   
+#define LIB_WLOCK
+#define LIB_WUNLOCK
+#define LIB_RLOCK
+#define LIB_RUNLOCK
 
 #define CACHE_WLOCK
 #define CACHE_WUNLOCK
@@ -140,7 +140,7 @@ extern struct mutex {
 
 #define CONNIN_WLOCK
 #define CONNIN_WUNLOCK
-#define CONNIN_RLOCK  
+#define CONNIN_RLOCK
 #define CONNIN_RUNLOCK
 
 #define STATLOCK

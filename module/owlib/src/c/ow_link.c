@@ -85,8 +85,9 @@ int LINK_detect(struct connection_in *in)
 
 
 	/* Open the com port */
-	if (COM_open(in))
+	if (COM_open(in)) {
 		return -ENODEV;
+	}
 
 	// set the baud rate to 9600. (Already set to 9600 in COM_open())
 	COM_speed(B9600, &pn);
@@ -169,10 +170,12 @@ static int LINK_next_both(struct device_search *ds, const struct parsedname *pn)
 	struct dirblob *db = (ds->search == _1W_CONDITIONAL_SEARCH_ROM) ?
 		&(pn->selected_connection->connin.link.alarm) : &(pn->selected_connection->connin.link.main);
 
-	if (!pn->selected_connection->AnyDevices)
+	if (!pn->selected_connection->AnyDevices) {
 		ds->LastDevice = 1;
-	if (ds->LastDevice)
+	}
+	if (ds->LastDevice) {
 		return -ENODEV;
+	}
 
 	COM_flush(pn);
 
@@ -348,8 +351,9 @@ static int LINK_sendback_data(const BYTE * data, BYTE * resp, const size_t size,
 	size_t left;
 	BYTE *buf = pn->selected_connection->combuffer;
 
-	if (size == 0)
+	if (size == 0) {
 		return 0;
+	}
 	if (LINK_write(LINK_string("b"), 1, pn)) {
 		LEVEL_DEBUG("LINK_sendback_data error sending b\n");
 		return -EIO;
@@ -359,8 +363,9 @@ static int LINK_sendback_data(const BYTE * data, BYTE * resp, const size_t size,
 		i = (left > 16) ? 16 : left;
 //        printf(">> size=%d, left=%d, i=%d\n",size,left,i);
 		bytes2string((char *) buf, &data[size - left], i);
-		if (LINK_write(buf, i << 1, pn) || LINK_read(buf, i << 1, pn))
+		if (LINK_write(buf, i << 1, pn) || LINK_read(buf, i << 1, pn)) {
 			return -EIO;
+		}
 		string2bytes((char *) buf, &resp[size - left], i);
 		left -= i;
 	}
@@ -371,7 +376,7 @@ static int LINK_sendback_data(const BYTE * data, BYTE * resp, const size_t size,
 static void byteprint( const BYTE * b, int size ) {
     int i ;
     for ( i=0; i<size; ++i ) printf( "%.2X ",b[i] ) ;
-    if ( size ) printf("\n") ;
+    if ( size ) { printf("\n") ; }
 }
 */
 
@@ -380,8 +385,9 @@ static int LINK_byte_bounce(const BYTE * out, BYTE * in, const struct parsedname
 	BYTE data[2];
 
 	num2string((char *) data, out[0]);
-	if (LINK_write(data, 2, pn) || LINK_read(data, 2, pn))
+	if (LINK_write(data, 2, pn) || LINK_read(data, 2, pn)) {
 		return -EIO;
+	}
 	in[0] = string2num((char *) data);
 	return 0;
 }
@@ -389,8 +395,9 @@ static int LINK_byte_bounce(const BYTE * out, BYTE * in, const struct parsedname
 static int LINK_CR(const struct parsedname *pn)
 {
 	BYTE data[3];
-	if (LINK_write(LINK_string("\r"), 1, pn) || LINK_read(data, 2, pn))
+	if (LINK_write(LINK_string("\r"), 1, pn) || LINK_read(data, 2, pn)) {
 		return -EIO;
+	}
 	LEVEL_DEBUG("LINK_CR return 0\n");
 	return 0;
 }
@@ -435,20 +442,24 @@ static int LINK_directory(struct device_search *ds, struct dirblob *db, const st
 
 	// Send the configuration command and check response
 	if (ds->search == _1W_CONDITIONAL_SEARCH_ROM) {
-		if ((ret = LINK_write(LINK_string("tEC"), 3, pn)))
+		if ((ret = LINK_write(LINK_string("tEC"), 3, pn))) {
 			return ret;
-		if ((ret = (LINK_read(LINK_string(resp), 5, pn))))
+		}
+		if ((ret = (LINK_read(LINK_string(resp), 5, pn)))) {
 			return ret;
+		}
 		if (strncmp(resp, ",EC", 3) != 0) {
 			LEVEL_DEBUG("Did not change to conditional search");
 			return -EIO;
 		}
 		LEVEL_DEBUG("LINK set for conditional search\n");
 	} else {
-		if ((ret = LINK_write(LINK_string("tF0"), 3, pn)))
+		if ((ret = LINK_write(LINK_string("tF0"), 3, pn))) {
 			return ret;
-		if ((ret = (LINK_read(LINK_string(resp), 5, pn))))
+		}
+		if ((ret = (LINK_read(LINK_string(resp), 5, pn)))) {
 			return ret;
+		}
 		if (strncmp(resp, ",F0", 3) != 0) {
 			LEVEL_DEBUG("Did not change to normal search");
 			return -EIO;
@@ -467,8 +478,9 @@ static int LINK_directory(struct device_search *ds, struct dirblob *db, const st
 	//in the resp buffer and get the rest of the response from the LINK
 	//device
 
-	if ((ret = LINK_read(LINK_string(resp), 1, pn)))
+	if ((ret = LINK_read(LINK_string(resp), 1, pn))) {
 		return ret;
+	}
 
 	if (resp[0] == 'E') {
 		if (ds->search == _1W_CONDITIONAL_SEARCH_ROM) {
@@ -477,8 +489,9 @@ static int LINK_directory(struct device_search *ds, struct dirblob *db, const st
 		}
 	}
 
-	if ((ret = LINK_read(LINK_string((resp + 1)), 19, pn)))
+	if ((ret = LINK_read(LINK_string((resp + 1)), 19, pn))) {
 		return ret;
+	}
 
 	// Check if we should start scanning
 	switch (resp[0]) {

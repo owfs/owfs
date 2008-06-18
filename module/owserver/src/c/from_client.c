@@ -55,24 +55,24 @@ int FromClient(struct handlerdata *hd)
 	}
 
 	/* translate endian state */
-	hd->sm.version = ntohl( hd->sm.version );
-	hd->sm.payload = ntohl( hd->sm.payload );
-	hd->sm.type    = ntohl( hd->sm.type    );
-	hd->sm.sg      = ntohl( hd->sm.sg      );
-    hd->sm.size    = ntohl( hd->sm.size    );
-    hd->sm.offset  = ntohl( hd->sm.offset  );
-    
+	hd->sm.version = ntohl(hd->sm.version);
+	hd->sm.payload = ntohl(hd->sm.payload);
+	hd->sm.type = ntohl(hd->sm.type);
+	hd->sm.sg = ntohl(hd->sm.sg);
+	hd->sm.size = ntohl(hd->sm.size);
+	hd->sm.offset = ntohl(hd->sm.offset);
+
 	LEVEL_DEBUG("FromClient payload=%d size=%d type=%d sg=0x%X offset=%d\n", hd->sm.payload, hd->sm.size, hd->sm.type, hd->sm.sg, hd->sm.offset);
 	//printf("<%.4d|%.4d\n",sm->type,sm->payload);
 
 	/* figure out length of rest of message: payload plus tokens */
 	trueload = hd->sm.payload;
-    if (isServermessage(hd->sm.version)) {
+	if (isServermessage(hd->sm.version)) {
 		trueload += sizeof(union antiloop) * Servertokens(hd->sm.version);
-    }
-    if (trueload == 0) {
+	}
+	if (trueload == 0) {
 		return 0;
-    }
+	}
 
 	/* valid size? */
 	if ((hd->sm.payload < 0) || (trueload > MAX_OWSERVER_PROTOCOL_PACKET_SIZE)) {
@@ -109,15 +109,15 @@ int FromClient(struct handlerdata *hd)
 		hd->sp.datasize = 0;
 	}
 
-    if (isServersidetap(hd->sm.version)) { /* side tap shouldn't come to owserver */
-        free(msg);
-        hd->sm.type = msg_error;
-        LEVEL_CALL("owserver shouldn't get sidetap messages\n");
-        return -EPROTO;
-    }
-        
+	if (isServersidetap(hd->sm.version)) {	/* side tap shouldn't come to owserver */
+		free(msg);
+		hd->sm.type = msg_error;
+		LEVEL_CALL("owserver shouldn't get sidetap messages\n");
+		return -EPROTO;
+	}
 
-    if (isServermessage(hd->sm.version)) {	/* make sure no loop */
+
+	if (isServermessage(hd->sm.version)) {	/* make sure no loop */
 		size_t i;
 		char *p = &msg[hd->sm.payload];	// end of normal buffer
 		hd->sp.tokenstring = (BYTE *) p;

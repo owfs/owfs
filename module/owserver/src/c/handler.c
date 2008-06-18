@@ -106,22 +106,22 @@ void Handler(int file_descriptor)
 			hd.sm.sg &= ~PERSISTENT_MASK;
 		}
 
-        /* Sidetap handling */
-        if ( count_sidebound_connections > 0 ) {
-            struct connection_side * side ;
-            SetupSideMessage( &hd ) ;
-            for ( side=head_sidebound_list ; side!=NULL ; side = side->next ) {
-                FromClientSide(side,&hd) ;
-            }
-        }
+		/* Sidetap handling */
+		if (count_sidebound_connections > 0) {
+			struct connection_side *side;
+			SetupSideMessage(&hd);
+			for (side = head_sidebound_list; side != NULL; side = side->next) {
+				FromClientSide(side, &hd);
+			}
+		}
 
-        /* Do the real work */
+		/* Do the real work */
 		SingleHandler(&hd);
 
 		/* Now see if we should reloop */
-        if (loop_persistent == 0) {
+		if (loop_persistent == 0) {
 			break;				/* easiest one */
-        }
+		}
 
 		/* Shorter wait */
 		if (tcp_wait(file_descriptor, &tv_low)) {	// timed out
@@ -134,14 +134,14 @@ void Handler(int file_descriptor)
 
 			PERSISTENCEUNLOCK;
 
-            if (loop_persistent == 0) {
+			if (loop_persistent == 0) {
 				break;			/* too many connections and we're slow */
-            }
+			}
 
 			/*  longer wait */
-            if (tcp_wait(file_descriptor, &tv_high)) {
+			if (tcp_wait(file_descriptor, &tv_high)) {
 				break;
-            }
+			}
 		}
 
 		LEVEL_DEBUG("OWSERVER tcp connection persistence -- reusing connection now.\n");
@@ -183,7 +183,7 @@ static void SingleHandler(struct handlerdata *hd)
 	//printf("OWSERVER pre-create\n");
 	// PTHREAD_CREATE_DETACHED doesn't work for older uclibc... call pthread_detach() instead.
 
-	if (Globals.pingcrazy) {		// extra pings
+	if (Globals.pingcrazy) {	// extra pings
 		TOCLIENTLOCK(hd);
 		ToClient(hd->file_descriptor, &ping_cm, NULL);	// send the ping
 		TOCLIENTUNLOCK(hd);
@@ -214,13 +214,13 @@ static void SingleHandler(struct handlerdata *hd)
 				char *c = NULL;	// dummy argument
 				ToClient(hd->file_descriptor, &ping_cm, c);	// send the ping
 				//printf("OWSERVER ping\n") ;
-                if ( count_sidebound_connections > 0 ) {
-                    struct connection_side * side ;
-                    for ( side=head_sidebound_list ; side!=NULL ; side = side->next ) {
-                        ToClientSide(side, &ping_cm, c, &(hd->sidem) );
-                    }
-                }
-                gettimeofday(&(hd->tv), NULL);	// reset timer
+				if (count_sidebound_connections > 0) {
+					struct connection_side *side;
+					for (side = head_sidebound_list; side != NULL; side = side->next) {
+						ToClientSide(side, &ping_cm, c, &(hd->sidem));
+					}
+				}
+				gettimeofday(&(hd->tv), NULL);	// reset timer
 			}
 		}
 

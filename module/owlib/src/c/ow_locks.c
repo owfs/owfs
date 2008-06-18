@@ -20,13 +20,13 @@ $Id$
 /* ------- Globalss ----------- */
 
 #if OW_MT
- #ifdef __UCLIBC__
-  #if ((__UCLIBC_MAJOR__ << 16)+(__UCLIBC_MINOR__ << 8)+(__UCLIBC_SUBLEVEL__) < 0x00091D)
+#ifdef __UCLIBC__
+#if ((__UCLIBC_MAJOR__ << 16)+(__UCLIBC_MINOR__ << 8)+(__UCLIBC_SUBLEVEL__) < 0x00091D)
 /* If uClibc < 0.9.29, then re-initialize internal pthread-structs */
 extern char *__pthread_initial_thread_bos;
 void __pthread_initialize(void);
-  #endif						/* UCLIBC_VERSION */
- #endif							/* __UCLIBC__ */
+#endif							/* UCLIBC_VERSION */
+#endif							/* __UCLIBC__ */
 #endif							/* OW_MT */
 
 struct mutex Mutex = {
@@ -47,15 +47,15 @@ struct mutex Mutex = {
 /* we create at start, and destroy at end */
 	.pmattr = NULL,
 #endif							/* OW_MT */
-} ;
+};
 
 /* Essentially sets up mutexes to protect global data/devices */
 void LockSetup(void)
 {
 
 #if OW_MT
- #ifdef __UCLIBC__
-  #if ((__UCLIBC_MAJOR__ << 16)+(__UCLIBC_MINOR__ << 8)+(__UCLIBC_SUBLEVEL__) < 0x00091D)
+#ifdef __UCLIBC__
+#if ((__UCLIBC_MAJOR__ << 16)+(__UCLIBC_MINOR__ << 8)+(__UCLIBC_SUBLEVEL__) < 0x00091D)
 	/* If uClibc < 0.9.29, then re-initialize internal pthread-structs
 	 * pthread and mutexes doesn't work after daemon() is called and
 	 *   the main-process is gone.
@@ -70,18 +70,18 @@ void LockSetup(void)
 	pthread_mutexattr_init(&Mutex.mattr);
 	pthread_mutexattr_settype(&Mutex.mattr, PTHREAD_MUTEX_ADAPTIVE_NP);
 	Mutex.pmattr = &Mutex.mattr;
-  #endif							/* UCLIBC_VERSION */
- #endif							/* __UCLIBC__ */
+#endif							/* UCLIBC_VERSION */
+#endif							/* __UCLIBC__ */
 
 	pthread_mutex_init(&Mutex.stat_mutex, Mutex.pmattr);
 	pthread_mutex_init(&Mutex.sg_mutex, Mutex.pmattr);
 	pthread_mutex_init(&Mutex.fstat_mutex, Mutex.pmattr);
 	pthread_mutex_init(&Mutex.dir_mutex, Mutex.pmattr);
 
-    rwlock_init( &Mutex.lib ) ;
-    rwlock_init( &Mutex.cache ) ;
-    rwlock_init( &Mutex.store ) ;
-    rwlock_init( &Mutex.connin ) ;
+	rwlock_init(&Mutex.lib);
+	rwlock_init(&Mutex.cache);
+	rwlock_init(&Mutex.store);
+	rwlock_init(&Mutex.connin);
 #ifdef __UCLIBC__
 	pthread_mutex_init(&Mutex.uclibc_mutex, Mutex.pmattr);
 #endif							/* __UCLIBC__ */
@@ -154,8 +154,9 @@ int LockGet(const struct parsedname *pn)
 		break;
 	}
 
-	if ((dlock = malloc(sizeof(struct devlock))) == NULL)
+	if ((dlock = malloc(sizeof(struct devlock))) == NULL) {
 		return -ENOMEM;
+	}
 	memcpy(dlock->sn, pn->sn, 8);
 
 	DEVLOCK(pn);
@@ -189,8 +190,9 @@ void LockRelease(const struct parsedname *pn)
 	int inindex;
 
 	/* Shouldn't call LockRelease() on DeviceSimultaneous. No sn exists */
-	if (pn->selected_device == DeviceSimultaneous)
+	if (pn->selected_device == DeviceSimultaneous) {
 		return;
+	}
 
 	inindex = pn->selected_connection->index;
 	if (pn->lock[inindex]) {
@@ -214,20 +216,23 @@ void LockRelease(const struct parsedname *pn)
 
 void BUS_lock(const struct parsedname *pn)
 {
-	if (pn)
+	if (pn) {
 		BUS_lock_in(pn->selected_connection);
+	}
 }
 
 void BUS_unlock(const struct parsedname *pn)
 {
-	if (pn)
+	if (pn) {
 		BUS_unlock_in(pn->selected_connection);
+	}
 }
 
 void BUS_lock_in(struct connection_in *in)
 {
-	if (!in)
+	if (!in) {
 		return;
+	}
 #if OW_MT
 	pthread_mutex_lock(&(in->bus_mutex));
 	if (in->busmode == bus_i2c && in->connin.i2c.channels > 1) {
@@ -242,8 +247,9 @@ void BUS_unlock_in(struct connection_in *in)
 {
 	struct timeval *t;
 	long sec, usec;
-	if (!in)
+	if (!in) {
 		return;
+	}
 
 	gettimeofday(&(in->last_unlock), NULL);
 

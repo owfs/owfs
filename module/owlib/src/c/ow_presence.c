@@ -77,7 +77,7 @@ int CheckPresence(struct parsedname *pn)
 
 	LEVEL_DETAIL("Checking presence of %s\n", SAFESTRING(pn->path));
 
-    bus_nr = CheckPresence_low(head_inbound_list, pn);	// check only allocated count_inbound_connections
+	bus_nr = CheckPresence_low(head_inbound_list, pn);	// check only allocated count_inbound_connections
 	if (bus_nr >= 0) {
 		SetKnownBus(bus_nr, pn);
 		Cache_Add_Device(bus_nr, pn);
@@ -150,10 +150,12 @@ static int CheckPresence_low(struct connection_in *in, const struct parsedname *
 	}
 	if (threadbad == 0) {		/* was a thread created? */
 		void *v;
-		if (pthread_join(thread, &v))
+		if (pthread_join(thread, &v)) {
 			return ret;			/* wait for it (or return only this result) */
-		if (cps.ret >= 0)
+		}
+		if (cps.ret >= 0) {
 			return cps.in->index;
+		}
 	}
 	//printf("Presence return = %d\n",ret) ;
 	return ret;

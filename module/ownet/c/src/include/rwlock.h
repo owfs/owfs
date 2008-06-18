@@ -19,19 +19,19 @@
 #include "sem.h"
 
 typedef struct {
-    pthread_mutex_t protect_reader_count;
-    int reader_count ;
-    sem_t allow_readers ;
-    sem_t no_processes ;
-} rwlock_t ;
+	pthread_mutex_t protect_reader_count;
+	int reader_count;
+	sem_t allow_readers;
+	sem_t no_processes;
+} rwlock_t;
 
-void rwlock_init( rwlock_t * rwlock ) ;
-inline void rwlock_write_lock( rwlock_t * rwlock ) ;
-inline void rwlock_write_unlock( rwlock_t * rwlock ) ;
-inline void rwlock_read_lock( rwlock_t * rwlock ) ;
-inline void rwlock_read_unlock( rwlock_t * rwlock ) ;
-void rwlock_destroy( rwlock_t * rwlock ) ;
+void rwlock_init(rwlock_t * rwlock);
+inline void rwlock_write_lock(rwlock_t * rwlock);
+inline void rwlock_write_unlock(rwlock_t * rwlock);
+inline void rwlock_read_lock(rwlock_t * rwlock);
+inline void rwlock_read_unlock(rwlock_t * rwlock);
+void rwlock_destroy(rwlock_t * rwlock);
 
-#endif /* OW_MT */
-        
+#endif							/* OW_MT */
+
 #endif							/* RWLOCK */

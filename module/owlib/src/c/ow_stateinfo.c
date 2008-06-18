@@ -14,8 +14,8 @@ $Id$
 #include "ow.h"
 
 struct stateinfo StateInfo = {
-    .owlib_state = lib_state_pre ,
-    .start_time = 0 ,
-    .dir_time =0 ,
-    .shutdown_in_progress = 0,
+	.owlib_state = lib_state_pre,
+	.start_time = 0,
+	.dir_time = 0,
+	.shutdown_in_progress = 0,
 };
