@@ -100,8 +100,9 @@ static int OW_w_2Dpage(BYTE * data, size_t size, off_t offset, struct parsedname
 
 static int FS_r_memory(struct one_wire_query *owq)
 {
-	/* read is not page-limited */
-	if (OW_r_mem_simple(owq, 0, 0)) {
+    size_t pagesize = 32;
+    /* read is not page-limited */
+    if (OW_r_mem_simple(owq, 0, pagesize)) {
 		return -EINVAL;
 	}
 	return OWQ_size(owq);
