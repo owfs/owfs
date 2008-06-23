@@ -104,16 +104,18 @@ static int OW_w_control(const BYTE cr, const struct parsedname *pn);
 static int FS_w_counter(struct one_wire_query *owq)
 {
 	_DATE d = (_DATE) OWQ_D(owq);
-	if (OW_w_clock(d, PN(owq)))
+	if (OW_w_clock(d, PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
 /* set clock */
 static int FS_w_date(struct one_wire_query *owq)
 {
-	if (OW_w_clock(OWQ_D(owq), PN(owq)))
+	if (OW_w_clock(OWQ_D(owq), PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -122,8 +124,9 @@ static int FS_w_run(struct one_wire_query *owq)
 {
 	BYTE cr;
 	if (OW_r_control(&cr, PN(owq))
-		|| OW_w_control((BYTE) (OWQ_Y(owq) ? cr | 0x0C : cr & 0xF3), PN(owq)))
+		|| OW_w_control((BYTE) (OWQ_Y(owq) ? cr | 0x0C : cr & 0xF3), PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -133,8 +136,9 @@ static int FS_w_enable(struct one_wire_query *owq)
 	BYTE cr;
 
 	if (OW_r_control(&cr, PN(owq))
-		|| OW_w_control((BYTE) (OWQ_Y(owq) ? cr | 0x80 : cr & 0x7F), PN(owq)))
+		|| OW_w_control((BYTE) (OWQ_Y(owq) ? cr | 0x80 : cr & 0x7F), PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -144,9 +148,9 @@ static int FS_w_flags(struct one_wire_query *owq)
 	BYTE cr;
 
 	if (OW_r_control(&cr, PN(owq))
-		|| OW_w_control((BYTE)
-						((cr & 0x0F) | ((((UINT) OWQ_I(owq)) & 0x0F) << 4)), PN(owq)))
+		|| OW_w_control((BYTE)((cr & 0x0F) | ((((UINT) OWQ_I(owq)) & 0x0F) << 4)), PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -156,9 +160,9 @@ static int FS_w_interval(struct one_wire_query *owq)
 	BYTE cr;
 
 	if (OW_r_control(&cr, PN(owq))
-		|| OW_w_control((BYTE)
-						((cr & 0x8F) | ((((UINT) OWQ_I(owq)) & 0x07) << 4)), PN(owq)))
+		|| OW_w_control((BYTE)((cr & 0x8F) | ((((UINT) OWQ_I(owq)) & 0x07) << 4)), PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -168,8 +172,9 @@ static int FS_w_itime(struct one_wire_query *owq)
 	BYTE cr;
 	int I = OWQ_I(owq);
 
-	if (OW_r_control(&cr, PN(owq)))
+	if (OW_r_control(&cr, PN(owq))) {
 		return -EINVAL;
+	}
 
 	if (I == 0) {
 		cr &= 0x7F;				/* disable */
@@ -191,8 +196,9 @@ static int FS_w_itime(struct one_wire_query *owq)
 		cr = (cr & 0x8F) | 0x70;	/* set interval */
 	}
 
-	if (OW_w_control(cr, PN(owq)))
+	if (OW_w_control(cr, PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -200,8 +206,9 @@ static int FS_w_itime(struct one_wire_query *owq)
 int FS_r_flags(struct one_wire_query *owq)
 {
 	BYTE cr;
-	if (OW_r_control(&cr, PN(owq)))
+	if (OW_r_control(&cr, PN(owq))) {
 		return -EINVAL;
+	}
 	OWQ_U(owq) = cr >> 4;
 	return 0;
 }
@@ -210,8 +217,9 @@ int FS_r_flags(struct one_wire_query *owq)
 int FS_r_interval(struct one_wire_query *owq)
 {
 	BYTE cr;
-	if (OW_r_control(&cr, PN(owq)))
+	if (OW_r_control(&cr, PN(owq))) {
 		return -EINVAL;
+	}
 	OWQ_I(owq) = (cr >> 4) & 0x07;
 	return 0;
 }
@@ -220,8 +228,9 @@ int FS_r_interval(struct one_wire_query *owq)
 int FS_r_itime(struct one_wire_query *owq)
 {
 	BYTE cr;
-	if (OW_r_control(&cr, PN(owq)))
+	if (OW_r_control(&cr, PN(owq))) {
 		return -EINVAL;
+	}
 	OWQ_I(owq) = itimes[(cr >> 4) & 0x07];
 	return 0;
 }
@@ -230,8 +239,9 @@ int FS_r_itime(struct one_wire_query *owq)
 int FS_r_run(struct one_wire_query *owq)
 {
 	BYTE cr;
-	if (OW_r_control(&cr, PN(owq)))
+	if (OW_r_control(&cr, PN(owq))) {
 		return -EINVAL;
+	}
 	OWQ_Y(owq) = ((cr & 0x08) != 0);
 	return 0;
 }
@@ -240,8 +250,9 @@ int FS_r_run(struct one_wire_query *owq)
 int FS_r_enable(struct one_wire_query *owq)
 {
 	BYTE cr;
-	if (OW_r_control(&cr, PN(owq)))
+	if (OW_r_control(&cr, PN(owq))) {
 		return -EINVAL;
+	}
 	OWQ_Y(owq) = ((cr & 0x80) != 0);
 	return 0;
 }
@@ -257,8 +268,9 @@ int FS_r_counter(struct one_wire_query *owq)
 /* read clock */
 int FS_r_date(struct one_wire_query *owq)
 {
-	if (OW_r_clock(&OWQ_D(owq), PN(owq)))
+	if (OW_r_clock(&OWQ_D(owq), PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -273,8 +285,9 @@ static int OW_r_control(BYTE * cr, const struct parsedname *pn)
 		TRXN_END,
 	};
 
-	if (BUS_transaction(t, pn))
+	if (BUS_transaction(t, pn)) {
 		return 1;
+	}
 
 	return 0;
 }
@@ -291,8 +304,9 @@ static int OW_r_clock(_DATE * d, const struct parsedname *pn)
 		TRXN_END,
 	};
 
-	if (BUS_transaction(t, pn))
+	if (BUS_transaction(t, pn)) {
 		return 1;
+	}
 
 //    d[0] = (((((((UINT) data[4])<<8)|data[3])<<8)|data[2])<<8)|data[1] ;
 	d[0] = UT_toDate(&data[1]);
@@ -316,13 +330,15 @@ static int OW_w_clock(const _DATE d, const struct parsedname *pn)
 	};
 
 	/* read in existing control byte to preserve bits 4-7 */
-	if (BUS_transaction(tread, pn))
+	if (BUS_transaction(tread, pn)) {
 		return 1;
+	}
 
 	UT_fromDate(d, &w[2]);
 
-	if (BUS_transaction(twrite, pn))
+	if (BUS_transaction(twrite, pn)) {
 		return 1;
+	}
 	return 0;
 }
 
@@ -336,8 +352,9 @@ static int OW_w_control(const BYTE cr, const struct parsedname *pn)
 	};
 
 	/* read in existing control byte to preserve bits 4-7 */
-	if (BUS_transaction(t, pn))
+	if (BUS_transaction(t, pn)) {
 		return 1;
+	}
 
 	return 0;
 }

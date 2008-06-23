@@ -32,8 +32,9 @@ int BUS_verify(BYTE search, const struct parsedname *pn)
 	buffer[0] = search;
 
 	// now set or clear apropriate bits for search
-	for (i = 0; i < 64; i++)
+	for (i = 0; i < 64; i++) {
 		UT_setbit(buffer, 3 * i + 10, UT_getbit(pn->sn, i));
+	}
 
 	// send/recieve the transfer buffer
 	if (BUS_sendback_data(buffer, buffer, 25, pn)) {

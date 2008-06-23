@@ -92,8 +92,9 @@ int DS1410_detect(struct connection_in *in)
 	FS_ParsedName(NULL, &pn);	// minimal parsename -- no destroy needed
 	pn.selected_connection = in;
 
-	if (DS1410_open(&pn))
+	if (DS1410_open(&pn)) {
 		return -EIO;			// Also exits "Passthru mode"
+	}
 
 	if (DS1410_ODcheck(&od, in->file_descriptor)) {
 		LEVEL_CONNECT("Cannot check Overdrive mode on DS1410E at %s\n", in->name);
@@ -109,8 +110,9 @@ static int DS1410_reset(const struct parsedname *pn)
 	int file_descriptor = pn->selected_connection->file_descriptor;
 	BYTE ad;
 	printf("DS1410E reset try\n");
-	if (DS1410bit(RESET, &ad, file_descriptor))
+	if (DS1410bit(RESET, &ad, file_descriptor)) {
 		return -EIO;
+	}
 	pn->selected_connection->AnyDevices = ad;
 	printf("DS1410 reset success, AnyDevices=%d\n", pn->selected_connection->AnyDevices);
 	return 0;
@@ -169,46 +171,46 @@ static int DS1410bit(BYTE out, BYTE * in, int file_descriptor)
 	if (0 || ioctl(file_descriptor, PPWDATA, &EC)
 		|| nanosleep(&usec4, NULL)
 		|| ioctl(file_descriptor, PPWDATA, &out)
-		|| ioctl(file_descriptor, PPRCONTROL, &cl)
-		)
+		|| ioctl(file_descriptor, PPRCONTROL, &cl)) {
 		return 1;
+	}
 	cl = (cl & 0x1C) | 0x06;
 	cl2 = cl & 0xFD;
 	if (0 || ioctl(file_descriptor, PPWCONTROL, &cl)
 		|| nanosleep(&usec4, NULL)
 		|| ioctl(file_descriptor, PPRSTATUS, &st)
 		|| nanosleep(&usec4, NULL)
-		|| ioctl(file_descriptor, PPWDATA, &FF)
-		)
+		|| ioctl(file_descriptor, PPWDATA, &FF)) {
 		return 1;
+	}
 	do {
 		if (0 || nanosleep(&usec4, NULL)
 			|| ioctl(file_descriptor, PPRSTATUS, &st)
-			|| (++i > 100)
-			)
+			|| (++i > 100)) {
 			return 1;
+		}
 	} while (((st ^ 0x80) & 0x90) == 0);
 	if (0 || ioctl(file_descriptor, PPWDATA, &FE)
 		|| nanosleep(&usec4, NULL)
-		|| ioctl(file_descriptor, PPRSTATUS, &st)
-		)
+		|| ioctl(file_descriptor, PPRSTATUS, &st)) {
 		return 1;
+	}
 	if (((st ^ 0x80) & 0x90) && (out == RESET)) {
 		if (0 || nanosleep(&usec400, NULL)
 			|| ioctl(file_descriptor, PPWDATA, &FF)
 			|| nanosleep(&usec4, NULL)
 			|| ioctl(file_descriptor, PPWDATA, &FE)
 			|| nanosleep(&usec4, NULL)
-			|| ioctl(file_descriptor, PPRSTATUS, &st)
-			)
+			|| ioctl(file_descriptor, PPRSTATUS, &st)) {
 			return 1;
+		}
 	}
 	in[0] = ((st ^ 0x80) & 0x90) ? 1 : 0;
 	if (0 || ioctl(file_descriptor, PPWCONTROL, &cl2)
 		|| ioctl(file_descriptor, PPWDATA, &CF)
-		|| nanosleep(&usec12, NULL)
-		)
+		|| nanosleep(&usec12, NULL)) {
 		return 1;
+	}
 	printf("DS1410 bit success %d->%d counter=%d\n", (int) out, (int) in[0], i);
 	return 0;
 }
@@ -224,34 +226,34 @@ static int DS1410_ODcheck(BYTE * od, int file_descriptor)
 		|| nanosleep(&usec4, NULL)
 		|| ioctl(file_descriptor, PPWDATA, &FF)
 		|| nanosleep(&usec4, NULL)
-		|| ioctl(file_descriptor, PPRCONTROL, &cl)
-		)
+		|| ioctl(file_descriptor, PPRCONTROL, &cl)) {
 		return 1;
+	}
 	cl = (cl & 0x1C) | 0x06;
 	cl2 = cl & 0xFD;
 	if (0 || ioctl(file_descriptor, PPWCONTROL, &cl)
 		|| nanosleep(&usec8, NULL)
 		|| nanosleep(&usec8, NULL)
 		|| ioctl(file_descriptor, PPRSTATUS, &st)
-		|| ioctl(file_descriptor, PPWDATA, &FF)
-		)
+		|| ioctl(file_descriptor, PPWDATA, &FF)) {
 		return 1;
+	}
 	od[0] = ((st ^ 0x80) & 0x90) ? 1 : 0;
 	do {
 		if (0 || nanosleep(&usec4, NULL)
 			|| ioctl(file_descriptor, PPRSTATUS, &st)
-			|| (++i > 200)
-			)
+			|| (++i > 200)) {
 			return 1;
+		}
 	} while (!((st ^ 0x80) & 0x90));
 	if (0 || ioctl(file_descriptor, PPWDATA, &FE)
 		|| nanosleep(&usec4, NULL)
 		|| ioctl(file_descriptor, PPRSTATUS, &st)
 		|| ioctl(file_descriptor, PPWCONTROL, &cl2)
 		|| ioctl(file_descriptor, PPWDATA, &CF)
-		|| nanosleep(&usec4, NULL)
-		)
+		|| nanosleep(&usec4, NULL)) {
 		return 1;
+	}
 	printf("DS1410 OD status %d\n", (int) od[0]);
 	return 0;
 }
@@ -264,9 +266,9 @@ static int DS1410_ODtoggle(BYTE * od, int file_descriptor)
 	if (0 || ioctl(file_descriptor, PPWDATA, &EC)
 		|| nanosleep(&usec4, NULL)
 		|| ioctl(file_descriptor, PPWDATA, &FC)
-		|| ioctl(file_descriptor, PPRCONTROL, &cl)
-		)
+		|| ioctl(file_descriptor, PPRCONTROL, &cl)) {
 		return 1;
+	}
 	cl2 = (cl | 0x04) & 0x1C;
 	cl = cl2 | 0x02;
 	cl2 &= 0xFD;
@@ -276,9 +278,9 @@ static int DS1410_ODtoggle(BYTE * od, int file_descriptor)
 		|| nanosleep(&usec8, NULL)
 		|| ioctl(file_descriptor, PPWCONTROL, &cl2)
 		|| ioctl(file_descriptor, PPWDATA, &CF)
-		|| nanosleep(&usec8, NULL)
-		)
+		|| nanosleep(&usec8, NULL)) {
 		return 1;
+	}
 	od[0] = ((st ^ 0x80) & 0x90) ? 1 : 0;
 	//printf("DS1410 OD toggle success %d\n",(int)od[0]);
 	return 0;
@@ -287,10 +289,12 @@ static int DS1410_ODon(const struct parsedname *pn)
 {
 	int file_descriptor = pn->selected_connection->file_descriptor;
 	BYTE od;
-	if (DS1410_ODtoggle(&od, file_descriptor))
+	if (DS1410_ODtoggle(&od, file_descriptor)) {
 		return 1;
-	if (od && DS1410_ODtoggle(&od, file_descriptor))
+	}
+	if (od && DS1410_ODtoggle(&od, file_descriptor)) {
 		return 1;
+	}
 	return 0;
 }
 
@@ -299,12 +303,15 @@ static int DS1410_ODoff(const struct parsedname *pn)
 	int file_descriptor = pn->selected_connection->file_descriptor;
 	BYTE od, cmd[] = { 0x3C, };
 	if (BUS_reset(pn) || BUS_send_data(cmd, 1, pn)
-		|| DS1410_ODtoggle(&od, file_descriptor))
+		|| DS1410_ODtoggle(&od, file_descriptor)) {
 		return 1;
-	if (od)
+	}
+	if (od) {
 		return 0;
-	if (DS1410_ODtoggle(&od, file_descriptor))
+	}
+	if (DS1410_ODtoggle(&od, file_descriptor)) {
 		return 1;
+	}
 	return 0;
 }
 
@@ -318,9 +325,9 @@ static int DS1410_PTtoggle(int file_descriptor)
 		|| DS1410_ODtoggle(&od[1], file_descriptor)
 		|| DS1410_ODtoggle(&od[2], file_descriptor)
 		|| DS1410_ODtoggle(&od[3], file_descriptor)
-		|| nanosleep(&msec16, NULL)
-		)
+		|| nanosleep(&msec16, NULL)) {
 		return 1;
+	}
 	tog[0] = od[0] ? '1' : '0';
 	tog[1] = od[1] ? '1' : '0';
 	tog[2] = od[2] ? '1' : '0';
@@ -337,12 +344,14 @@ static int DS1410_PTon(int file_descriptor)
 	LEVEL_CONNECT("Attempting to switch DS1410E into PassThru mode\n");
 	DS1410_PTtoggle(file_descriptor);
 	DS1410Present(&p, file_descriptor);
-	if (p == 0)
+	if (p == 0) {
 		return 0;
+	}
 	DS1410_PTtoggle(file_descriptor);
 	DS1410Present(&p, file_descriptor);
-	if (p == 0)
+	if (p == 0) {
 		return 0;
+	}
 	DS1410_PTtoggle(file_descriptor);
 	DS1410Present(&p, file_descriptor);
 	return p;
@@ -360,23 +369,27 @@ static int DS1410_PToff(const struct parsedname *pn)
 	if (ret) {					// always true the first time
 		DS1410_PTtoggle(file_descriptor);
 		DS1410Present(&p, file_descriptor);
-		if (p == 0)
+		if (p == 0) {
 			ret = 0;
+		}
 	}
 	if (ret) {					// second try
 		DS1410_PTtoggle(file_descriptor);
 		DS1410Present(&p, file_descriptor);
-		if (p == 0)
+		if (p == 0) {
 			ret = 0;
+		}
 	}
 	if (ret) {					// third try
 		DS1410_PTtoggle(file_descriptor);
 		DS1410Present(&p, file_descriptor);
-		if (p == 0)
+		if (p == 0) {
 			ret = 0;
+		}
 	}
-	if (DS1410_ODcheck(&p, file_descriptor) == 0 && p == 1)
+	if (DS1410_ODcheck(&p, file_descriptor) == 0 && p == 1) {
 		DS1410_ODoff(pn);		//leave OD mode
+	}
 	return ret;
 }
 
@@ -391,30 +404,30 @@ static int DS1410Present(BYTE * p, int file_descriptor)
 		|| ioctl(file_descriptor, PPWDATA, &EC)
 		|| nanosleep(&usec4, NULL)
 		|| ioctl(file_descriptor, PPWDATA, &FF)
-		|| ioctl(file_descriptor, PPRCONTROL, &cl)
-		)
+		|| ioctl(file_descriptor, PPRCONTROL, &cl)) {
 		return 1;
+	}
 	cl = (cl & 0x1C) | 0x06;
 	cl2 = cl & 0xFD;
 	if (0 || ioctl(file_descriptor, PPWCONTROL, &cl)
 		|| nanosleep(&usec8, NULL)
 		|| ioctl(file_descriptor, PPRSTATUS, &st)
-		|| ioctl(file_descriptor, PPWDATA, &FF)
-		)
+		|| ioctl(file_descriptor, PPWDATA, &FF)) {
 		return 1;
+	}
 	while (1) {
-		if (0 || ioctl(file_descriptor, PPRSTATUS, &st)
-			)
+		if (0 || ioctl(file_descriptor, PPRSTATUS, &st)) {
 			return 1;
+		}
 		if ((pass == 0) && ((st ^ 0x80) & 0x90) == 0) {
 			pass = 1;
 		} else if ((pass == 1) && ((st ^ 0x80) & 0x90) != 0) {
 			p[0] = 1;
 			break;
 		}
-		if (0 || nanosleep(&usec4, NULL)
-			)
+		if (0 || nanosleep(&usec4, NULL)) {
 			return 1;
+		}
 		if (++i > 200) {
 			p[0] = 0;
 			break;
@@ -426,9 +439,9 @@ static int DS1410Present(BYTE * p, int file_descriptor)
 		|| nanosleep(&usec4, NULL)
 		|| ioctl(file_descriptor, PPWCONTROL, &cl2)
 		|| ioctl(file_descriptor, PPWDATA, &CF)
-		|| nanosleep(&usec12, NULL)
-		)
+		|| nanosleep(&usec12, NULL)) {
 		return 1;
+	}
 	printf("DS1410 present success %d reached pass=%d counter=%d\n", (int) p[0], pass, i);
 	return 0;
 }

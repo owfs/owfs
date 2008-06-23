@@ -1057,10 +1057,11 @@ esac
 AC_MSG_CHECKING([if cflag _BSD_SOURCE is required])
 case "${host_cpu}-${host_os}" in
 	*)
-		# have to add this to support major() in sys/sysmacros.h
-		CFLAGS="$CFLAGS -D_BSD_SOURCE=1"
-		EXTRACFLAGS="$EXTRACFLAGS -D_BSD_SOURCE=1"
-		AC_MSG_RESULT([-D_BSD_SOURCE=1])
+		# have to add -D_BSD_SOURCE=1 to support major() in sys/sysmacros.h
+		# have to add -D_ISOC99_SOURCE=1 to support lrint() in bits/mathcalls.h
+		CFLAGS="$CFLAGS -D_BSD_SOURCE=1 -D_ISOC99_SOURCE=1"
+		EXTRACFLAGS="$EXTRACFLAGS -D_BSD_SOURCE=1 -D_ISOC99_SOURCE=1"
+		AC_MSG_RESULT([-D_BSD_SOURCE=1 -D_ISOC99_SOURCE=1])
 	;;
 esac
 

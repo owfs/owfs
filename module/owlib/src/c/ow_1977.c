@@ -115,32 +115,36 @@ static int OW_clear(struct parsedname *pn);
 static int FS_r_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 64;
-	if (OW_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_r_mem))
+	if (OW_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_r_mem)) {
 		return -EACCES;
+	}
 	return 0;
 }
 
 static int FS_w_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 64;
-	if (OW_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem))
+	if (OW_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem)) {
 		return -EACCES;
+	}
 	return 0;
 }
 
 static int FS_r_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 64;
-	if (OW_readwrite_paged(owq, 0, pagesize, OW_r_mem))
+	if (OW_readwrite_paged(owq, 0, pagesize, OW_r_mem)) {
 		return -EACCES;
+	}
 	return OWQ_size(owq);
 }
 
 static int FS_w_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 64;
-	if (OW_readwrite_paged(owq, 0, pagesize, OW_w_mem))
+	if (OW_readwrite_paged(owq, 0, pagesize, OW_w_mem)) {
 		return -EACCES;
+	}
 	return 0;
 }
 
@@ -152,8 +156,9 @@ static int FS_ver(struct one_wire_query *owq)
 static int FS_r_pwd(struct one_wire_query *owq)
 {
 	BYTE p;
-	if (OW_r_mem(&p, 1, 0x7FD0, PN(owq)))
+	if (OW_r_mem(&p, 1, 0x7FD0, PN(owq))) {
 		return -EACCES;
+	}
 	OWQ_Y(owq) = (p == _1W_READ_SCRATCHPAD);
 	return 0;
 }
@@ -161,8 +166,9 @@ static int FS_r_pwd(struct one_wire_query *owq)
 static int FS_w_pwd(struct one_wire_query *owq)
 {
 	BYTE p = OWQ_Y(owq) ? 0x00 : _1W_READ_SCRATCHPAD;
-	if (OW_w_mem(&p, 1, 0x7FD0, PN(owq)))
+	if (OW_w_mem(&p, 1, 0x7FD0, PN(owq))) {
 		return -EACCES;
+	}
 	return 0;
 }
 
@@ -180,8 +186,9 @@ static int FS_nset(struct one_wire_query *owq)
 	bzero(xfer.b, 8);
 	memcpy(&a[OWQ_offset(owq)], OWQ_buffer(owq), OWQ_size(owq));
 	xfer.i = strtoll(a, &end, 0);
-	if (end == a || errno)
+	if (end == a || errno) {
 		return -EINVAL;
+	}
 	OWQ_create_shallow_single(owq_scratch, owq);	// won't bother to destroy
 	OWQ_buffer(owq_scratch) = (char *) xfer.b;
 	OWQ_size(owq_scratch) = 8;
@@ -196,19 +203,22 @@ static int FS_set(struct one_wire_query *owq)
 	int ret;
 	int oldy;
 
-	if (OWQ_size(owq) < 8)
+	if (OWQ_size(owq) < 8) {
 		return -ERANGE;
+	}
 
 	OWQ_create_shallow_single(owq_scratch, owq);	// won't bother to destroy
 
 	/* disable passwords */
-	if (FS_r_pwd(owq_scratch))
+	if (FS_r_pwd(owq_scratch)) {
 		return -EACCES;
+	}
 	oldy = OWQ_Y(owq);
 	if (oldy) {
 		OWQ_Y(owq_scratch) = 0;
-		if (FS_w_pwd(owq_scratch))
+		if (FS_w_pwd(owq_scratch)) {
 			return -EACCES;
+		}
 	}
 
 	/* write password */
@@ -216,12 +226,14 @@ static int FS_set(struct one_wire_query *owq)
 	OWQ_size(owq_scratch) = 8;
 	ret = FS_w_mem(owq_scratch);
 	OW_clear(pn);
-	if (ret)
+	if (ret) {
 		return -EINVAL;
+	}
 
 	/* Verify */
-	if (OW_verify((BYTE *) OWQ_buffer(owq_scratch), OWQ_offset(owq_scratch), PN(owq)))
+	if (OW_verify((BYTE *) OWQ_buffer(owq_scratch), OWQ_offset(owq_scratch), PN(owq))) {
 		return -EINVAL;
+	}
 
 #if OW_CACHE
 	/* set cache */
@@ -232,8 +244,9 @@ static int FS_set(struct one_wire_query *owq)
 	/* reenable passwords */
 	if (oldy) {
 		OWQ_Y(owq_scratch) = 1;
-		if (FS_w_pwd(owq_scratch))
+		if (FS_w_pwd(owq_scratch)) {
 			return -EACCES;
+		}
 	}
 
 	return 0;
@@ -254,8 +267,9 @@ static int FS_nuse(struct one_wire_query *owq)
 	bzero(xfer.b, 8);
 	memcpy(&a[OWQ_offset(owq)], OWQ_buffer(owq), OWQ_size(owq));
 	xfer.i = strtoll(a, &end, 0);
-	if (end == a || errno)
+	if (end == a || errno) {
 		return -EINVAL;
+	}
 	OWQ_create_shallow_single(owq_scratch, owq);	// won't bother to destroy
 	OWQ_buffer(owq_scratch) = (char *) xfer.b;
 	OWQ_size(owq_scratch) = 8;
@@ -265,11 +279,13 @@ static int FS_nuse(struct one_wire_query *owq)
 
 static int FS_use(struct one_wire_query *owq)
 {
-	if (OWQ_size(owq) < 8)
+	if (OWQ_size(owq) < 8) {
 		return -ERANGE;
+	}
 
-	if (Cache_Add_Internal((BYTE *) OWQ_buffer(owq), 8, OWQ_pn(owq).selected_filetype->data.i ? InternalProp(FUL) : InternalProp(REA), PN(owq)))
+	if (Cache_Add_Internal((BYTE *) OWQ_buffer(owq), 8, OWQ_pn(owq).selected_filetype->data.i ? InternalProp(FUL) : InternalProp(REA), PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 #endif							/* OW_CACHE */
@@ -284,12 +300,13 @@ static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 
 	BUSLOCK(pn);
 	ret = BUS_select(pn) || BUS_send_data(p, size + 3, pn);
-	if (ret == 0 && ((offset + size) & 0x2F) == 0)
-		ret = BUS_readin_data(&p[size + 3], 2, pn)
-			|| CRC16(p, 1 + 2 + size + 2);
+	if (ret == 0 && ((offset + size) & 0x2F) == 0) {
+		ret = BUS_readin_data(&p[size + 3], 2, pn) || CRC16(p, 1 + 2 + size + 2);
+	}
 	BUSUNLOCK(pn);
-	if (ret)
+	if (ret) {
 		return 1;
+	}
 
 	/* Re-read scratchpad and compare */
 	/* Note that we tacitly shift the data one byte down for the E/S byte */
@@ -299,8 +316,9 @@ static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 		|| BUS_readin_data(&p[1], 3 + size, pn)
 		|| memcmp(&p[4], data, size);
 	BUSUNLOCK(pn);
-	if (ret)
+	if (ret) {
 		return 1;
+	}
 
 #if OW_CACHE
 	Cache_Get_Internal_Strict((void *) (&p[4]), 8, InternalProp(FUL), pn);
@@ -312,8 +330,9 @@ static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 	ret = BUS_select(pn) || BUS_send_data(p, 4 + 7, pn)
 		|| BUS_PowerByte(p[4 + 7], &p[4 + 7], 10, pn);
 	BUSUNLOCK(pn);
-	if (ret)
+	if (ret) {
 		return 1;
+	}
 
 	return 0;
 }
@@ -324,8 +343,9 @@ static int OW_r_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 
 #if OW_CACHE
 	if (Cache_Get_Internal_Strict((void *) pwd, sizeof(pwd), InternalProp(FUL), pn)
-		|| OW_r_pmem(data, pwd, size, offset, pn))
+		|| OW_r_pmem(data, pwd, size, offset, pn)) {
 		return 0;
+	}
 	Cache_Get_Internal_Strict((void *) pwd, sizeof(pwd), InternalProp(REA), pn);
 #endif							/* OW_CACHE */
 	return OW_r_pmem(data, pwd, size, offset, pn);
@@ -348,8 +368,9 @@ static int OW_r_pmem(BYTE * data, BYTE * pwd, size_t size, off_t offset, struct 
 	}
 	BUSUNLOCK(pn);
 
-	if (ret)
+	if (ret) {
 		return ret;
+	}
 	memcpy(data, &p[3], size);
 	return 0;
 }
@@ -365,8 +386,9 @@ static int OW_ver(UINT * u, struct parsedname *pn)
 		|| BUS_readin_data(b, 2, pn);
 	BUSUNLOCK(pn);
 
-	if (ret || b[0] != b[1])
+	if (ret || b[0] != b[1]) {
 		return 1;
+	}
 	u[0] = b[0];
 	return 0;
 }

@@ -271,11 +271,13 @@ static int FS_bitread(struct one_wire_query *owq)
 	BYTE d;
 	struct parsedname *pn = PN(owq);
 	struct BitRead *br;
-	if (pn->selected_filetype->data.v == NULL)
+	if (pn->selected_filetype->data.v == NULL) {
 		return -EINVAL;
+	}
 	br = ((struct BitRead *) (pn->selected_filetype->data.v));
-	if (OW_small_read(&d, 1, br->location, pn))
+	if (OW_small_read(&d, 1, br->location, pn)) {
 		return -EINVAL;
+	}
 	OWQ_Y(owq) = UT_getbit(&d, br->bit);
 	return 0;
 }
@@ -285,14 +287,17 @@ static int FS_bitwrite(struct one_wire_query *owq)
 	BYTE d;
 	struct parsedname *pn = PN(owq);
 	struct BitRead *br;
-	if (pn->selected_filetype->data.v == NULL)
+	if (pn->selected_filetype->data.v == NULL) {
 		return -EINVAL;
+	}
 	br = ((struct BitRead *) (pn->selected_filetype->data.v));
-	if (OW_small_read(&d, 1, br->location, pn))
+	if (OW_small_read(&d, 1, br->location, pn)) {
 		return -EINVAL;
+	}
 	UT_setbit(&d, br->bit, OWQ_Y(owq));
-	if (OW_w_mem(&d, 1, br->location, pn))
+	if (OW_w_mem(&d, 1, br->location, pn)) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -325,12 +330,14 @@ static int FS_r_histotemp(struct one_wire_query *owq)
 	int extension = OWQ_pn(owq).extension;
 	struct Version *v = (struct Version *) bsearch(PN(owq), Versions, VersionElements,
 												   sizeof(struct Version), VersionCmp);
-	if (v == NULL)
+	if (v == NULL) {
 		return -EINVAL;
+	}
 	if (extension == EXTENSION_ALL) {	/* ALL */
 		int i;
-		for (i = 0; i < HISTOGRAM_DATA_ELEMENTS; ++i)
+		for (i = 0; i < HISTOGRAM_DATA_ELEMENTS; ++i) {
 			OWQ_array_F(owq, i) = v->histolow + 4 * i * v->resolution;
+		}
 	} else {					/* element */
 		OWQ_F(owq) = v->histolow + 4 * extension * v->resolution;
 	}
@@ -341,8 +348,9 @@ static int FS_r_histogap(struct one_wire_query *owq)
 {
 	struct Version *v = (struct Version *) bsearch(PN(owq), Versions, VersionElements,
 												   sizeof(struct Version), VersionCmp);
-	if (v == NULL)
+	if (v == NULL) {
 		return -EINVAL;
+	}
 	OWQ_F(owq) = v->resolution * 4;
 	return 0;
 }
@@ -364,8 +372,9 @@ static int FS_r_resolution(struct one_wire_query *owq)
 {
 	struct Version *v = (struct Version *) bsearch(PN(owq), Versions, VersionElements,
 												   sizeof(struct Version), VersionCmp);
-	if (v == NULL)
+	if (v == NULL) {
 		return -EINVAL;
+	}
 	OWQ_F(owq) = v->resolution;
 	return 0;
 }
@@ -374,8 +383,9 @@ static int FS_r_rangelow(struct one_wire_query *owq)
 {
 	struct Version *v = (struct Version *) bsearch(PN(owq), Versions, VersionElements,
 												   sizeof(struct Version), VersionCmp);
-	if (v == NULL)
+	if (v == NULL) {
 		return -EINVAL;
+	}
 	OWQ_F(owq) = v->rangelow;
 	return 0;
 }
@@ -384,8 +394,9 @@ static int FS_r_rangehigh(struct one_wire_query *owq)
 {
 	struct Version *v = (struct Version *) bsearch(PN(owq), Versions, VersionElements,
 												   sizeof(struct Version), VersionCmp);
-	if (v == NULL)
+	if (v == NULL) {
 		return -EINVAL;
+	}
 	OWQ_F(owq) = v->rangehigh;
 	return 0;
 }
@@ -397,12 +408,15 @@ static int FS_r_temperature(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	struct Version *v = (struct Version *) bsearch(pn, Versions, VersionElements,
 												   sizeof(struct Version), VersionCmp);
-	if (v == NULL)
+	if (v == NULL) {
 		return -EINVAL;
-	if (OW_MIP(pn))
+	}
+	if (OW_MIP(pn)) {
 		return -EBUSY;			/* Mission in progress */
-	if (OW_temperature(&temp, v->delay, pn))
+	}
+	if (OW_temperature(&temp, v->delay, pn)) {
 		return -EINVAL;
+	}
 	OWQ_F(owq) = (_FLOAT) temp *v->resolution + v->histolow;
 	return 0;
 }
@@ -414,8 +428,9 @@ static int FS_r_3byte(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	size_t addr = pn->selected_filetype->data.s;
 	BYTE data[3];
-	if (OW_small_read(data, 3, addr, pn))
+	if (OW_small_read(data, 3, addr, pn)) {
 		return -EINVAL;
+	}
 	OWQ_U(owq) = (((((UINT) data[2]) << 8) | data[1]) << 8) | data[0];
 	return 0;
 }
@@ -425,8 +440,9 @@ static int FS_mdate(struct one_wire_query *owq)
 {
 	struct Mission mission;
 
-	if (OW_FillMission(&mission, PN(owq)))
+	if (OW_FillMission(&mission, PN(owq))) {
 		return -EINVAL;
+	}
 	/* Get date from chip */
 	OWQ_D(owq) = mission.start;
 	return 0;
@@ -437,8 +453,9 @@ static int FS_umdate(struct one_wire_query *owq)
 {
 	struct Mission mission;
 
-	if (OW_FillMission(&mission, PN(owq)))
+	if (OW_FillMission(&mission, PN(owq))) {
 		return -EINVAL;
+	}
 	/* Get date from chip */
 	OWQ_U(owq) = mission.start;
 	return 0;
@@ -452,13 +469,17 @@ static int FS_alarmelems(struct one_wire_query *owq)
 	int c[12];
 	int i;
 
-	if (OW_FillMission(&mission, pn))
+	if (OW_FillMission(&mission, pn)) {
 		return -EINVAL;
-	if (OW_alarmlog(t, c, pn->selected_filetype->data.s, pn))
+	}
+	if (OW_alarmlog(t, c, pn->selected_filetype->data.s, pn)) {
 		return -EINVAL;
-	for (i = 0; i < 12; ++i)
-		if (c[i] == 0)
+	}
+	for (i = 0; i < 12; ++i) {
+		if (c[i] == 0) {
 			break;
+		}
+	}
 	OWQ_U(owq) = i;
 	return 0;
 }
@@ -470,10 +491,12 @@ static int FS_r_alarmtemp(struct one_wire_query *owq)
 	BYTE data[1];
 	struct Version *v = (struct Version *) bsearch(pn, Versions, VersionElements,
 												   sizeof(struct Version), VersionCmp);
-	if (v == NULL)
+	if (v == NULL) {
 		return -EINVAL;
-	if (OW_small_read(data, 1, pn->selected_filetype->data.s, pn))
+	}
+	if (OW_small_read(data, 1, pn->selected_filetype->data.s, pn)) {
 		return -EINVAL;
+	}
 	OWQ_F(owq) = (_FLOAT) data[0] * v->resolution + v->histolow;
 	return 0;
 }
@@ -485,10 +508,12 @@ static int FS_w_alarmtemp(struct one_wire_query *owq)
 	BYTE data[1];
 	struct Version *v = (struct Version *) bsearch(pn, Versions, VersionElements,
 												   sizeof(struct Version), VersionCmp);
-	if (v == NULL)
+	if (v == NULL) {
 		return -EINVAL;
-	if (OW_MIP(pn))
+	}
+	if (OW_MIP(pn)) {
 		return -EBUSY;
+	}
 	data[0] = (OWQ_F(owq) - v->histolow) / v->resolution;
 	return (OW_w_mem(data, 1, pn->selected_filetype->data.s, pn)) ? -EINVAL : 0;
 }
@@ -501,12 +526,15 @@ static int FS_alarmudate(struct one_wire_query *owq)
 	int c[12];
 	int i;
 
-	if (OW_FillMission(&mission, pn))
+	if (OW_FillMission(&mission, pn)) {
 		return -EINVAL;
-	if (OW_alarmlog(t, c, pn->selected_filetype->data.s, pn))
+	}
+	if (OW_alarmlog(t, c, pn->selected_filetype->data.s, pn)) {
 		return -EINVAL;
-	for (i = 0; i < 12; ++i)
+	}
+	for (i = 0; i < 12; ++i) {
 		OWQ_array_U(owq, i) = mission.start + t[i] * mission.interval;
+	}
 	return 0;
 }
 
@@ -518,12 +546,15 @@ static int FS_alarmstart(struct one_wire_query *owq)
 	int c[12];
 	int i;
 
-	if (OW_FillMission(&mission, pn))
+	if (OW_FillMission(&mission, pn)) {
 		return -EINVAL;
-	if (OW_alarmlog(t, c, pn->selected_filetype->data.s, pn))
+	}
+	if (OW_alarmlog(t, c, pn->selected_filetype->data.s, pn)) {
 		return -EINVAL;
-	for (i = 0; i < 12; ++i)
+	}
+	for (i = 0; i < 12; ++i) {
 		OWQ_array_D(owq, i) = mission.start + t[i] * mission.interval;
+	}
 	return 0;
 }
 
@@ -535,12 +566,15 @@ static int FS_alarmend(struct one_wire_query *owq)
 	int c[12];
 	int i;
 
-	if (OW_FillMission(&mission, pn))
+	if (OW_FillMission(&mission, pn)) {
 		return -EINVAL;
-	if (OW_alarmlog(t, c, pn->selected_filetype->data.s, pn))
+	}
+	if (OW_alarmlog(t, c, pn->selected_filetype->data.s, pn)) {
 		return -EINVAL;
-	for (i = 0; i < 12; ++i)
+	}
+	for (i = 0; i < 12; ++i) {
 		OWQ_array_D(owq, i) = mission.start + (t[i] + c[i]) * mission.interval;
+	}
 	return 0;
 }
 
@@ -551,10 +585,12 @@ static int FS_alarmcnt(struct one_wire_query *owq)
 	int c[12];
 	int i;
 
-	if (OW_alarmlog(t, c, pn->selected_filetype->data.s, pn))
+	if (OW_alarmlog(t, c, pn->selected_filetype->data.s, pn)) {
 		return -EINVAL;
-	for (i = 0; i < 12; ++i)
+	}
+	for (i = 0; i < 12; ++i) {
 		OWQ_array_U(owq, i) = c[i];
+	}
 	return 0;
 }
 
@@ -564,8 +600,9 @@ static int FS_r_date(struct one_wire_query *owq)
 	BYTE data[7];
 
 	/* Get date from chip */
-	if (OW_small_read(data, 7, 0x0200, PN(owq)))
+	if (OW_small_read(data, 7, 0x0200, PN(owq))) {
 		return -EINVAL;
+	}
 	return OW_2date(&OWQ_D(owq), data);
 }
 
@@ -577,10 +614,12 @@ static int FS_r_counter(struct one_wire_query *owq)
 	int ret;
 
 	/* Get date from chip */
-	if (OW_small_read(data, 7, 0x0200, PN(owq)))
+	if (OW_small_read(data, 7, 0x0200, PN(owq))) {
 		return -EINVAL;
-	if ((ret = OW_2date(&d, data)))
+	}
+	if ((ret = OW_2date(&d, data))) {
 		return ret;
+	}
 	OWQ_U(owq) = (UINT) d;
 	return 0;
 }
@@ -598,8 +637,9 @@ static int FS_w_counter(struct one_wire_query *owq)
 	_DATE d = (_DATE) OWQ_U(owq);
 
 	/* Busy if in mission */
-	if (OW_MIP(pn))
+	if (OW_MIP(pn)) {
 		return -EBUSY;
+	}
 
 	OW_date(&d, data);
 	return OW_w_mem(data, 7, 0x0200, pn) ? -EINVAL : 0;
@@ -615,8 +655,9 @@ static int FS_w_run(struct one_wire_query *owq)
 static int FS_r_run(struct one_wire_query *owq)
 {
 	BYTE cr;
-	if (OW_small_read(&cr, 1, 0x020E, PN(owq)))
+	if (OW_small_read(&cr, 1, 0x020E, PN(owq))) {
 		return -EINVAL;
+	}
 	OWQ_Y(owq) = ((cr & 0x80) == 0);
 	return 0;
 }
@@ -627,8 +668,9 @@ static int FS_w_mip(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	if (OWQ_Y(owq)) {			/* start a mission! */
 		BYTE data;
-		if (OW_small_read(&data, 1, 0x020D, pn))
+		if (OW_small_read(&data, 1, 0x020D, pn)) {
 			return -EINVAL;
+		}
 		return OW_startmission((UINT) data, pn);
 	} else {
 		return OW_stopmission(pn);
@@ -639,8 +681,9 @@ static int FS_w_mip(struct one_wire_query *owq)
 static int FS_r_samplerate(struct one_wire_query *owq)
 {
 	BYTE data;
-	if (OW_small_read(&data, 1, 0x020D, PN(owq)))
+	if (OW_small_read(&data, 1, 0x020D, PN(owq))) {
 		return -EINVAL;
+	}
 	OWQ_U(owq) = data;
 	return 0;
 }
@@ -659,8 +702,9 @@ static int FS_w_samplerate(struct one_wire_query *owq)
 static int FS_r_atime(struct one_wire_query *owq)
 {
 	BYTE data;
-	if (OW_small_read(&data, 1, OWQ_pn(owq).selected_filetype->data.s, PN(owq)))
+	if (OW_small_read(&data, 1, OWQ_pn(owq).selected_filetype->data.s, PN(owq))) {
 		return -EFAULT;
+	}
 	OWQ_U(owq) = data & 0x7F;
 	return 0;
 }
@@ -671,11 +715,13 @@ static int FS_w_atime(struct one_wire_query *owq)
 {
 	BYTE data;
 	struct parsedname *pn = PN(owq);
-	if (OW_small_read(&data, 1, pn->selected_filetype->data.s, pn))
+	if (OW_small_read(&data, 1, pn->selected_filetype->data.s, pn)) {
 		return -EFAULT;
+	}
 	data = ((BYTE) OWQ_U(owq)) | (data & 0x80);	/* EM on */
-	if (OW_w_mem(&data, 1, pn->selected_filetype->data.s, pn))
+	if (OW_w_mem(&data, 1, pn->selected_filetype->data.s, pn)) {
 		return -EFAULT;
+	}
 	return 0;
 }
 
@@ -683,8 +729,9 @@ static int FS_w_atime(struct one_wire_query *owq)
 static int FS_r_atrig(struct one_wire_query *owq)
 {
 	BYTE data[4];
-	if (OW_small_read(data, 4, 0x0207, PN(owq)))
+	if (OW_small_read(data, 4, 0x0207, PN(owq))) {
 		return -EFAULT;
+	}
 	if (data[3] & 0x80) {
 		OWQ_U(owq) = 4;
 	} else if (data[2] & 0x80) {
@@ -702,16 +749,18 @@ static int FS_r_atrig(struct one_wire_query *owq)
 static int FS_r_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (OWQ_readwrite_paged(owq, 0, pagesize, OW_r_mem_crc16_A5))
+	if (OWQ_readwrite_paged(owq, 0, pagesize, OW_r_mem_crc16_A5)) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
 static int FS_w_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (OW_readwrite_paged(owq, 0, pagesize, OW_w_mem))
+	if (OW_readwrite_paged(owq, 0, pagesize, OW_w_mem)) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -719,8 +768,9 @@ static int FS_w_atrig(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	BYTE data[4];
-	if (OW_small_read(data, 4, 0x0207, pn))
+	if (OW_small_read(data, 4, 0x0207, pn)) {
 		return -EFAULT;
+	}
 	data[0] &= 0x7F;
 	data[1] &= 0x7F;
 	data[2] &= 0x7F;
@@ -735,23 +785,26 @@ static int FS_w_atrig(struct one_wire_query *owq)
 	case 4:
 		data[3] |= 0x80;
 	}
-	if (OW_w_mem(data, 4, 0x0207, pn))
+	if (OW_w_mem(data, 4, 0x0207, pn)) {
 		return -EFAULT;
+	}
 	return 0;
 }
 
 static int FS_r_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (OW_r_mem_crc16_A5(owq, OWQ_pn(owq).extension, pagesize))
+	if (OW_r_mem_crc16_A5(owq, OWQ_pn(owq).extension, pagesize)) {
 		return -EINVAL;
+	}
 	return OWQ_size(owq);
 }
 
 static int FS_w_page(struct one_wire_query *owq)
 {
-	if (OW_w_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) (OWQ_offset(owq) + ((OWQ_pn(owq).extension) << 5)), PN(owq)))
+	if (OW_w_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) (OWQ_offset(owq) + ((OWQ_pn(owq).extension) << 5)), PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -760,8 +813,9 @@ static int FS_logelements(struct one_wire_query *owq)
 {
 	struct Mission mission;
 
-	if (OW_FillMission(&mission, PN(owq)))
+	if (OW_FillMission(&mission, PN(owq))) {
 		return -EINVAL;
+	}
 
 	OWQ_U(owq) = (mission.samples > LOG_DATA_ELEMENTS) ? LOG_DATA_ELEMENTS : mission.samples;
 	return 0;
@@ -772,8 +826,9 @@ static int FS_r_logdate(struct one_wire_query *owq)
 {
 	struct Mission mission;
 
-	if (OW_FillMission(&mission, PN(owq)))
+	if (OW_FillMission(&mission, PN(owq))) {
 		return -EINVAL;
+	}
 
 	switch (OWQ_pn(owq).extension) {
 	case EXTENSION_ALL:
@@ -788,8 +843,9 @@ static int FS_r_logudate(struct one_wire_query *owq)
 {
 	struct Mission mission;
 
-	if (OW_FillMission(&mission, PN(owq)))
+	if (OW_FillMission(&mission, PN(owq))) {
 		return -EINVAL;
+	}
 
 	switch (OWQ_pn(owq).extension) {
 	case EXTENSION_ALL:
@@ -803,8 +859,9 @@ static int FS_r_logudate(struct one_wire_query *owq)
 static int FS_r_delay(struct one_wire_query *owq)
 {
 	BYTE data[2];
-	if (OW_small_read(data, 2, (size_t) 0x0212, PN(owq)))
+	if (OW_small_read(data, 2, (size_t) 0x0212, PN(owq))) {
 		return -EINVAL;
+	}
 	OWQ_U(owq) = (((UINT) data[1]) << 8) | data[0];
 	return 0;
 }
@@ -813,10 +870,12 @@ static int FS_r_delay(struct one_wire_query *owq)
 static int FS_w_delay(struct one_wire_query *owq)
 {
 	BYTE data[2] = { LOW_HIGH_ADDRESS(OWQ_U(owq)), };
-	if (OW_MIP(PN(owq)))
+	if (OW_MIP(PN(owq))) {
 		return -EBUSY;
-	if (OW_w_mem(data, 2, (size_t) 0x0212, PN(owq)))
+	}
+	if (OW_w_mem(data, 2, (size_t) 0x0212, PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -828,11 +887,13 @@ static int FS_r_logtemp(struct one_wire_query *owq)
 	struct Version *v = (struct Version *) bsearch(pn, Versions, VersionElements,
 												   sizeof(struct Version), VersionCmp);
 
-	if (v == NULL)
+	if (v == NULL) {
 		return -EINVAL;
+	}
 
-	if (OW_FillMission(&mission, pn))
+	if (OW_FillMission(&mission, pn)) {
 		return -EINVAL;
+	}
 
 	switch (pn->extension) {
 	case EXTENSION_ALL:
@@ -848,8 +909,9 @@ static int FS_easystart(struct one_wire_query *owq)
 	BYTE data[] = { 0x86, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, };
 
 	/* Stop clock, no rollover, no delay, temp alarms on, alarms cleared */
-	if (OW_w_mem(data, 7, 0x020E, PN(owq)))
+	if (OW_w_mem(data, 7, 0x020E, PN(owq))) {
 		return -EINVAL;
+	}
 
 	return OW_startmission(OWQ_U(owq), PN(owq));
 }
@@ -883,23 +945,27 @@ static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 	/* Copy to scratchpad -- use CRC16 if write to end of page, but don't force it */
 	memcpy(&p[3], data, size);
 	if ((offset + size) & 0x1F) {	/* to end of page */
-		if (BUS_transaction(tcopy, pn))
+		if (BUS_transaction(tcopy, pn)) {
 			return 1;
+		}
 	} else {
-		if (BUS_transaction(tcopy_crc, pn))
+		if (BUS_transaction(tcopy_crc, pn)) {
 			return 1;
+		}
 	}
 
 	/* Re-read scratchpad and compare */
 	/* Note: location of data has now shifted down a byte for E/S register */
 	p[0] = _1W_READ_SCRATCHPAD;
-	if (BUS_transaction(tread, pn))
+	if (BUS_transaction(tread, pn)) {
 		return 1;
+	}
 
 	/* write Scratchpad to SRAM */
 	p[0] = _1W_COPY_SCRATCHPAD;
-	if (BUS_transaction(twrite, pn))
+	if (BUS_transaction(twrite, pn)) {
 		return 1;
+	}
 
 	UT_delay(1);				/* 1 msec >> 2 usec per byte */
 	return 0;
@@ -916,14 +982,16 @@ static int OW_temperature(int *T, const UINT delay, struct parsedname *pn)
 	};
 
 	/* Mission not progress, force conversion */
-	if (BUS_transaction(t, pn))
+	if (BUS_transaction(t, pn)) {
 		return 1;
+	}
 
 	/* Thermochron is powered (internally by battery) -- no reason to hold bus */
 	UT_delay(delay);
 
-	if (OW_small_read(&data, 1, 0x0211, pn))
+	if (OW_small_read(&data, 1, 0x0211, pn)) {
 		return 1;				/* read temp register */
+	}
 	*T = (int) data;
 	return 0;
 }
@@ -939,14 +1007,17 @@ static int OW_clearmemory(struct parsedname *pn)
 		TRXN_END,
 	};
 	/* Clear memory flag */
-	if (OW_small_read(&flag, 1, 0x020E, pn))
+	if (OW_small_read(&flag, 1, 0x020E, pn)) {
 		return -EINVAL;
+	}
 	flag = (flag & 0x3F) | 0x40;
-	if (OW_w_mem(&flag, 1, 0x020E, pn))
+	if (OW_w_mem(&flag, 1, 0x020E, pn)) {
 		return -EINVAL;
+	}
 
-	if (BUS_transaction(t, pn))
+	if (BUS_transaction(t, pn)) {
 		return 1;
+	}
 
 	UT_delay(1);				/* wait 500 usec */
 	return 0;
@@ -959,8 +1030,9 @@ static int OW_2date(_DATE * d, const BYTE * data)
 
 	/* Prefill entries */
 	d[0] = time(NULL);
-	if (gmtime_r(d, &t) == NULL)
+	if (gmtime_r(d, &t) == NULL) {
 		return -EINVAL;
+	}
 
 	/* Get date from chip */
 	t.tm_sec = (data[0] & 0x0F) + 10 * (data[0] >> 4);	/* BCD->dec */
@@ -973,8 +1045,9 @@ static int OW_2date(_DATE * d, const BYTE * data)
 //printf("_DATE: sec=%d, min=%d, hour=%d, mday=%d, mon=%d, year=%d, wday=%d, isdst=%d\n",tm.tm_sec,tm.tm_min,tm.tm_hour,tm.tm_mday,tm.tm_mon,tm.tm_year,tm.tm_wday,tm.tm_isdst) ;
 
 	/* Pass through time_t again to validate */
-	if ((d[0] = mktime(&t)) == (time_t) - 1)
+	if ((d[0] = mktime(&t)) == (time_t) - 1) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -986,8 +1059,9 @@ static int OW_2mdate(_DATE * d, const BYTE * data)
 //printf("M_DATE data=%.2X %.2X %.2X %.2X %.2X\n",data[0],data[1],data[2],data[3],data[4]);
 	/* Prefill entries */
 	d[0] = time(NULL);
-	if (gmtime_r(d, &t) == NULL)
+	if (gmtime_r(d, &t) == NULL) {
 		return -EINVAL;
+	}
 	year = t.tm_year;
 //printf("M_DATE year=%d\n",year);
 
@@ -1005,8 +1079,9 @@ static int OW_2mdate(_DATE * d, const BYTE * data)
 //printf("M_DATE tm=(%d-%d-%d %d:%d:%d)\n",t.tm_year,t.tm_mon,t.tm_mday,t.tm_hour,t.tm_min,t.tm_sec);
 
 	/* Pass through time_t again to validate */
-	if ((d[0] = mktime(&t)) == (time_t) - 1)
+	if ((d[0] = mktime(&t)) == (time_t) - 1) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -1027,8 +1102,9 @@ static void OW_date(const _DATE * d, BYTE * data)
 	data[5] = tm.tm_mon + 6 * (tm.tm_mon / 10);	/* dec->bcd */
 	year = tm.tm_year % 100;
 	data[6] = year + 6 * (year / 10);	/* dec->bcd */
-	if (tm.tm_year > 99 && tm.tm_year < 200)
+	if (tm.tm_year > 99 && tm.tm_year < 200) {
 		data[5] |= 0x80;
+	}
 //printf("_DATE_WRITE data=%2X, %2X, %2X, %2X, %2X, %2X, %2X\n",data[0],data[1],data[2],data[3],data[4],data[5],data[6]);
 //printf("_DATE: sec=%d, min=%d, hour=%d, mday=%d, mon=%d, year=%d, wday=%d, isdst=%d\n",tm.tm_sec,tm.tm_min,tm.tm_hour,tm.tm_mday,tm.tm_mon,tm.tm_year,tm.tm_wday,tm.tm_isdst) ;
 }
@@ -1040,8 +1116,9 @@ static int OW_MIP(struct parsedname *pn)
 	BYTE data;
 	int ret = OW_small_read(&data, 1, 0x0214, pn);	/* read status register */
 
-	if (ret)
+	if (ret) {
 		return -EINVAL;
+	}
 	return UT_getbit(&data, 5);
 }
 
@@ -1050,8 +1127,9 @@ static int OW_FillMission(struct Mission *mission, struct parsedname *pn)
 	BYTE data[16];
 
 	/* Get date from chip */
-	if (OW_small_read(data, 16, 0x020D, pn))
+	if (OW_small_read(data, 16, 0x020D, pn)) {
 		return -EINVAL;
+	}
 	mission->interval = 60 * (int) data[0];
 	mission->rollover = UT_getbit(&data[1], 3);
 	mission->samples = (((((UINT) data[15]) << 8) | data[14]) << 8) | data[13];
@@ -1066,8 +1144,9 @@ static int OW_alarmlog(int *t, int *c, off_t offset, struct parsedname *pn)
 
 	OWQ_create_temporary(owq_alog, (char *) data, sizeof(data), offset, pn);
 
-	if (OWQ_readwrite_paged(owq_alog, 0, 32, OW_r_mem_crc16_A5))
+	if (OWQ_readwrite_paged(owq_alog, 0, 32, OW_r_mem_crc16_A5)) {
 		return -EINVAL;
+	}
 
 	for (i = 0; i < 12; ++i) {
 		t[i] = (((((UINT) data[j + 2]) << 8) | data[j + 1]) << 8) | data[j];
@@ -1088,28 +1167,34 @@ static int OW_startmission(UINT freq, struct parsedname *pn)
 	BYTE data;
 
 	/* stop the mission */
-	if (OW_stopmission(pn))
+	if (OW_stopmission(pn)) {
 		return -EINVAL;			/* stop */
+	}
 
-	if (freq == 0)
+	if (freq == 0) {
 		return 0;				/* stay stopped */
+	}
 
-	if (freq > 255)
+	if (freq > 255) {
 		return -ERANGE;			/* Bad interval */
+	}
 
-	if (OW_small_read(&data, 1, 0x020E, pn))
+	if (OW_small_read(&data, 1, 0x020E, pn)) {
 		return -EINVAL;
+	}
 	if ((data & 0x80)) {		/* clock stopped */
 		_DATE d = time(NULL);
 		/* start clock */
-		if (OW_w_date(&d, pn))
+		if (OW_w_date(&d, pn)) {
 			return -EINVAL;		/* set the clock to current time */
+		}
 		UT_delay(1000);			/* wait for the clock to count a second */
 	}
 
 	/* clear memory */
-	if (OW_clearmemory(pn))
+	if (OW_clearmemory(pn)) {
 		return -EINVAL;
+	}
 
 	/* finally, set the sample interval (to start the mission) */
 	data = BYTE_MASK(freq);
@@ -1122,12 +1207,14 @@ static int OW_w_date(_DATE * D, struct parsedname *pn)
 	BYTE data[7];
 
 	/* Busy if in mission */
-	if (OW_MIP(pn))
+	if (OW_MIP(pn)) {
 		return -EBUSY;
+	}
 
 	OW_date(D, data);
-	if (OW_w_mem(data, 7, 0x0200, pn))
+	if (OW_w_mem(data, 7, 0x0200, pn)) {
 		return -EINVAL;
+	}
 	return OW_w_run(1, pn);
 }
 
@@ -1136,11 +1223,13 @@ static int OW_w_run(int state, struct parsedname *pn)
 {
 	BYTE cr;
 
-	if (OW_small_read(&cr, 1, 0x020E, pn))
+	if (OW_small_read(&cr, 1, 0x020E, pn)) {
 		return -EINVAL;
+	}
 	cr = state ? cr & 0x7F : cr | 0x80;
-	if (OW_w_mem(&cr, 1, 0x020E, pn))
+	if (OW_w_mem(&cr, 1, 0x020E, pn)) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -1161,8 +1250,9 @@ static int OW_r_histogram_all(struct one_wire_query *owq)
 
 	OWQ_create_temporary(owq_histo, (char *) data, sizeof(data), 0x0800, PN(owq));
 
-	if (OWQ_readwrite_paged(owq_histo, 0, pagesize, OW_r_mem_crc16_A5))
+	if (OWQ_readwrite_paged(owq_histo, 0, pagesize, OW_r_mem_crc16_A5)) {
 		return -EINVAL;
+	}
 	for (i = 0; i < HISTOGRAM_DATA_ELEMENTS; ++i) {
 		OWQ_array_U(owq, i) = (((UINT) data[i * HISTOGRAM_DATA_SIZE + 1]) << 8) | data[i * HISTOGRAM_DATA_SIZE];
 	}
@@ -1172,8 +1262,9 @@ static int OW_r_histogram_all(struct one_wire_query *owq)
 static int OW_r_histogram_single(struct one_wire_query *owq)
 {
 	BYTE data[HISTOGRAM_DATA_SIZE];
-	if (OW_small_read(data, 2, (size_t) 0x800 + OWQ_pn(owq).extension * HISTOGRAM_DATA_SIZE, PN(owq)))
+	if (OW_small_read(data, 2, (size_t) 0x800 + OWQ_pn(owq).extension * HISTOGRAM_DATA_SIZE, PN(owq))) {
 		return -EINVAL;
+	}
 	OWQ_U(owq) = (((UINT) data[1]) << 8) | data[0];
 	return 0;
 }
@@ -1192,11 +1283,13 @@ static int OW_r_logtemp_single(struct Version *v, struct Mission *mission, struc
 	}
 
 	if (pass) {
-		if (OW_small_read(data, 1, (size_t) 0x1000 + ((pn->extension + off) % LOG_DATA_ELEMENTS), pn))
+		if (OW_small_read(data, 1, (size_t) 0x1000 + ((pn->extension + off) % LOG_DATA_ELEMENTS), pn)) {
 			return -EINVAL;
+		}
 	} else {
-		if (OW_small_read(data, 1, (size_t) 0x1000 + pn->extension, pn))
+		if (OW_small_read(data, 1, (size_t) 0x1000 + pn->extension, pn)) {
 			return -EINVAL;
+		}
 	}
 	OWQ_F(owq) = (_FLOAT) data[0] * v->resolution + v->histolow;
 
@@ -1219,14 +1312,17 @@ static int OW_r_logtemp_all(struct Version *v, struct Mission *mission, struct o
 	}
 
 	OWQ_create_temporary(owq_log, (char *) data, sizeof(data), 0x1000, PN(owq));
-	if (OWQ_readwrite_paged(owq_log, 0, pagesize, OW_r_mem_crc16_A5))
+	if (OWQ_readwrite_paged(owq_log, 0, pagesize, OW_r_mem_crc16_A5)) {
 		return -EINVAL;
+	}
 	if (pass) {
-		for (i = 0; i < LOG_DATA_ELEMENTS; ++i)
+		for (i = 0; i < LOG_DATA_ELEMENTS; ++i) {
 			OWQ_array_F(owq, i) = (_FLOAT) data[(i + off) % LOG_DATA_ELEMENTS] * v->resolution + v->histolow;
+		}
 	} else {
-		for (i = 0; i < LOG_DATA_ELEMENTS; ++i)
+		for (i = 0; i < LOG_DATA_ELEMENTS; ++i) {
 			OWQ_array_F(owq, i) = (_FLOAT) data[i] * v->resolution + v->histolow;
+		}
 	}
 
 	return 0;
@@ -1237,8 +1333,9 @@ static int OW_r_logdate_single(struct Mission *mission, struct one_wire_query *o
 	int extension = OWQ_pn(owq).extension;
 	int pass = 0;
 
-	if (mission->rollover)
+	if (mission->rollover) {
 		pass = mission->samples / LOG_DATA_ELEMENTS;	// samples/2048
+	}
 
 	if (pass) {
 		OWQ_D(owq) = mission->start + (mission->samples - LOG_DATA_ELEMENTS - extension) * mission->interval;
@@ -1253,8 +1350,9 @@ static int OW_r_logdate_all(struct Mission *mission, struct one_wire_query *owq)
 	int pass = 0;
 	int i;
 
-	if (mission->rollover)
+	if (mission->rollover) {
 		pass = mission->samples / LOG_DATA_ELEMENTS;	// samples/2048
+	}
 
 	if (pass) {
 		for (i = 0; i < LOG_DATA_ELEMENTS; ++i)
@@ -1271,8 +1369,9 @@ static int OW_r_logudate_single(struct Mission *mission, struct one_wire_query *
 	int extension = OWQ_pn(owq).extension;
 	int pass = 0;
 
-	if (mission->rollover)
+	if (mission->rollover) {
 		pass = mission->samples / LOG_DATA_ELEMENTS;	// samples/2048
+	}
 
 	if (pass) {
 		OWQ_U(owq) = mission->start + (mission->samples - LOG_DATA_ELEMENTS - extension) * mission->interval;
@@ -1287,15 +1386,18 @@ static int OW_r_logudate_all(struct Mission *mission, struct one_wire_query *owq
 	int pass = 0;
 	int i;
 
-	if (mission->rollover)
+	if (mission->rollover) {
 		pass = mission->samples / LOG_DATA_ELEMENTS;	// samples/2048
+	}
 
 	if (pass) {
-		for (i = 0; i < LOG_DATA_ELEMENTS; ++i)
+		for (i = 0; i < LOG_DATA_ELEMENTS; ++i) {
 			OWQ_array_U(owq, i) = mission->start + (mission->samples - LOG_DATA_ELEMENTS - i) * mission->interval;
+		}
 	} else {
-		for (i = 0; i < LOG_DATA_ELEMENTS; ++i)
+		for (i = 0; i < LOG_DATA_ELEMENTS; ++i) {
 			OWQ_array_U(owq, i) = mission->start + i * mission->interval;
+		}
 	}
 	return 0;
 }

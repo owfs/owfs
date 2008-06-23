@@ -7,7 +7,7 @@
 # $Id$
 
 # Start a test-server before running this script:
-#    owserver -p 1234 --fake 10,10
+#    owserver -p 4304 --fake 10,10
 
 
 use OWNet ;
@@ -18,7 +18,7 @@ die (
     ."Syntax:\n"
     ."\t$0 <host:port>\n"
     ."Example:\n"
-    ."\t$0 127.0.0.1:1234\n"
+    ."\t$0 127.0.0.1:4304\n"
     ) if ( $#ARGV != 0 ) ;
 
 my $ow ;

@@ -138,8 +138,9 @@ static int FS_w_password(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	size_t s = OWQ_size(owq);
 
-	if (s > 8)
+	if (s > 8) {
 		s = 8;
+	}
 	memset(global_passwd[pn->extension], 0, 8);
 	memcpy(global_passwd[pn->extension], (BYTE *) OWQ_buffer(owq), s);
 	//printf("Use password [%s] for subkey %d\n", global_passwd[pn->extension], pn->extension);
@@ -148,59 +149,68 @@ static int FS_w_password(struct one_wire_query *owq)
 
 static int FS_w_reset_password(struct one_wire_query *owq)
 {
-	if (OW_w_reset_password((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq)))
+	if (OW_w_reset_password((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
 static int FS_w_change_password(struct one_wire_query *owq)
 {
-	if (OW_w_change_password((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq)))
+	if (OW_w_change_password((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
 static int FS_r_page(struct one_wire_query *owq)
 {
-	if (OW_r_page((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq)))
+	if (OW_r_page((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq))) {
 		return -EINVAL;
+	}
 	return OWQ_size(owq);
 }
 
 static int FS_w_page(struct one_wire_query *owq)
 {
-	if (OW_w_page((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq)))
+	if (OW_w_page((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
 static int FS_r_ident(struct one_wire_query *owq)
 {
-	if (OW_r_ident((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq)))
+	if (OW_r_ident((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq))) {
 		return -EINVAL;
+	}
 	return OWQ_size(owq);
 }
 
 static int FS_w_ident(struct one_wire_query *owq)
 {
-	if (OWQ_offset(owq))
+	if (OWQ_offset(owq)) {
 		return -EINVAL;
-	if (OW_w_ident((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq)))
+	}
+	if (OW_w_ident((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
 static int FS_r_memory(struct one_wire_query *owq)
 {
-	if (OW_r_memory((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq)))
+	if (OW_r_memory((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq))) {
 		return -EINVAL;
+	}
 	return OWQ_size(owq);
 }
 
 static int FS_w_memory(struct one_wire_query *owq)
 {
-	if (OW_w_memory((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq)))
+	if (OW_w_memory((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -220,15 +230,17 @@ static int OW_w_reset_password(const BYTE * data, const size_t size, const off_t
 	};
 
 
-	if (offset)
+	if (offset) {
 		return -EINVAL;
+	}
 
 	memset(passwd, 0, 8);
 	memcpy(passwd, data, MIN(size, 8));
 	set_password[1] = pn->extension << 6;
 	set_password[2] = ~(set_password[1]);
-	if (BUS_transaction(tscratch, pn))
+	if (BUS_transaction(tscratch, pn)) {
 		return 1;
+	}
 	/* Verification is done... now send ident + password
 	 * Note: ALL saved data in subkey will be deleted during this operation
 	 */
@@ -258,8 +270,9 @@ static int OW_w_subkey(const BYTE * data, const size_t size, const off_t offset,
 	p[1] |= (0x10 + offset);	// + 0x10 -> 0x3F
 	p[2] = ~(p[1]);
 
-	if (BUS_transaction(tscratch, pn))
+	if (BUS_transaction(tscratch, pn)) {
 		return 1;
+	}
 	return 0;
 }
 
@@ -279,8 +292,9 @@ static int OW_r_subkey(BYTE * data, const size_t size, const off_t offset, const
 
 	memset(data, 0, 0x40);
 	memcpy(&data[8], global_passwd[extension], 8);
-	if (offset >= 0x30)
+	if (offset >= 0x30) {
 		return -EINVAL;
+	}
 
 	if (size != 0x40) {
 		/* Only allow reading whole subkey right now */
@@ -291,8 +305,9 @@ static int OW_r_subkey(BYTE * data, const size_t size, const off_t offset, const
 	p[1] |= (offset + 0x10);
 	p[2] = ~(p[1]);
 
-	if (BUS_transaction(tscratch, pn))
+	if (BUS_transaction(tscratch, pn)) {
 		return 1;
+	}
 
 	return 0;
 }
@@ -305,8 +320,9 @@ static int OW_r_memory(BYTE * data, const size_t size, const off_t offset, const
 
 	//printf("OW_r_memory\n");
 
-	if (offset)
+	if (offset) {
 		return 1;
+	}
 
 	for (i = 0; (i < 3) && (left > 0); i++) {
 		memset(all_data, 0, 0x40);
@@ -329,8 +345,9 @@ static int OW_w_memory(const BYTE * data, const size_t size, const off_t offset,
 
 	//printf("OW_w_memory\n");
 
-	if (offset)
+	if (offset) {
 		return 1;
+	}
 
 	for (i = 0; (i < 3) && (left > 0); i++) {
 		memset(all_data, 0, 0x40);
@@ -357,8 +374,9 @@ static int OW_r_ident(BYTE * data, const size_t size, const off_t offset, const 
 	BYTE all_data[0x40];
 	//printf("OW_r_ident\n");
 
-	if (OW_r_subkey(all_data, 0x40, 0, pn, pn->extension))
+	if (OW_r_subkey(all_data, 0x40, 0, pn, pn->extension)) {
 		return 1;
+	}
 
 	memcpy(data, &all_data[offset], size);
 	return 0;
@@ -385,20 +403,23 @@ static int OW_w_ident(const BYTE * data, const size_t size, const off_t offset, 
 
 	//printf("OW_w_ident\n");
 
-	if (offset)
+	if (offset) {
 		return -EINVAL;
+	}
 
 	write_scratch[1] = 0xC0 | offset;
 	write_scratch[2] = ~(write_scratch[1]);
 	memset(all_data, 0, 0x40);
 	memcpy(all_data, data, MIN(size, 8));
-	if (BUS_transaction(tscratch, pn))
+	if (BUS_transaction(tscratch, pn)) {
 		return 1;
+	}
 
 	copy_scratch[1] = pn->extension << 6;
 	copy_scratch[2] = ~(copy_scratch[1]);
-	if (BUS_transaction(tcopy, pn))
+	if (BUS_transaction(tcopy, pn)) {
 		return 1;
+	}
 
 	return 0;
 }
@@ -422,21 +443,24 @@ static int OW_w_change_password(const BYTE * data, const size_t size, const off_
 		TRXN_END,
 	};
 
-	if (offset)
+	if (offset) {
 		return -EINVAL;
+	}
 
 	write_scratch[1] = 0xC0 | offset;
 	write_scratch[2] = ~(write_scratch[1]);
 	memset(all_data, 0, 0x40);
 	memcpy(&all_data[0x08], data, MIN(size, 8));
-	if (BUS_transaction(tscratch, pn))
+	if (BUS_transaction(tscratch, pn)) {
 		return 1;
+	}
 
 	copy_scratch[1] = pn->extension << 6;
 	copy_scratch[2] = ~(copy_scratch[1]);
 
-	if (BUS_transaction(tcopy, pn))
+	if (BUS_transaction(tcopy, pn)) {
 		return 1;
+	}
 	memcpy(global_passwd[pn->extension], &all_data[0x08], 8);
 
 	return 0;
@@ -447,8 +471,9 @@ static int OW_r_page(BYTE * data, const size_t size, const off_t offset, const s
 	BYTE all_data[0x40];
 	int ret;
 
-	if (offset > 0x2F)
+	if (offset > 0x2F) {
 		return -EINVAL;
+	}
 
 	ret = OW_r_subkey(all_data, 0x40, 0, pn, pn->extension);
 	if (ret) {
@@ -486,8 +511,9 @@ static int OW_w_page(const BYTE * data, const size_t size, const off_t offset, c
 	memset(all_data, 0, 0x40);
 	memcpy(&all_data[0x10], data, size);
 
-	if (BUS_transaction(tscratch, pn))
+	if (BUS_transaction(tscratch, pn)) {
 		return 1;
+	}
 
 	/*
 	 * There are two possibilities to write memory.
@@ -504,8 +530,9 @@ static int OW_w_page(const BYTE * data, const size_t size, const off_t offset, c
 		copy_scratch[1] = (pn->extension << 6);
 		copy_scratch[2] = ~(copy_scratch[1]);
 		tcopy[2].out = cp_array[DATA + i];
-		if (BUS_transaction(tcopy, pn))
+		if (BUS_transaction(tcopy, pn)) {
 			return 1;
+		}
 		left -= nr_bytes;
 	}
 	return 0;

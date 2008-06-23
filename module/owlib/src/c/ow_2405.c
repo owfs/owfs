@@ -70,8 +70,9 @@ static int OW_w_PIO(int val, const struct parsedname *pn);
 static int FS_r_PIO(struct one_wire_query *owq)
 {
 	int num;
-	if (OW_r_PIO(&num, PN(owq)))
+	if (OW_r_PIO(&num, PN(owq))) {
 		return -EINVAL;
+	}
 	OWQ_Y(owq) = (num != 0);
 	return 0;
 }
@@ -80,8 +81,9 @@ static int FS_r_PIO(struct one_wire_query *owq)
 static int FS_r_sense(struct one_wire_query *owq)
 {
 	int num;
-	if (OW_r_sense(&num, PN(owq)))
+	if (OW_r_sense(&num, PN(owq))) {
 		return -EINVAL;
+	}
 	OWQ_Y(owq) = (num != 0);
 	return 0;
 }
@@ -89,8 +91,9 @@ static int FS_r_sense(struct one_wire_query *owq)
 /* write 2405 switch */
 static int FS_w_PIO(struct one_wire_query *owq)
 {
-	if (OW_w_PIO(OWQ_Y(owq), PN(owq)))
+	if (OW_w_PIO(OWQ_Y(owq), PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -104,8 +107,9 @@ static int OW_r_sense(int *val, const struct parsedname *pn)
 		TRXN_END,
 	};
 
-	if (BUS_transaction(r, pn))
+	if (BUS_transaction(r, pn)) {
 		return 1;
+	}
 
 	val[0] = (inp != 0);
 	return 0;
@@ -124,8 +128,9 @@ static int OW_r_PIO(int *val, const struct parsedname *pn)
 			TRXN_NVERIFY,
 			TRXN_END,
 		};
-		if (BUS_transaction(n, pn))
+		if (BUS_transaction(n, pn)) {
 			return -ENOENT;
+		}
 		val[0] = 0;
 	} else {
 		val[0] = 1;
@@ -138,16 +143,18 @@ static int OW_w_PIO(const int val, const struct parsedname *pn)
 {
 	int current;
 
-	if (OW_r_PIO(&current, pn))
+	if (OW_r_PIO(&current, pn)) {
 		return 1;
+	}
 
 	if (current != val) {
 		struct transaction_log n[] = {
 			TRXN_START,
 			TRXN_END,
 		};
-		if (BUS_transaction(n, pn))
+		if (BUS_transaction(n, pn)) {
 			return 1;
+		}
 	}
 	//printf("2405write current=%d new=%d\n",current,val) ;
 	return 0;

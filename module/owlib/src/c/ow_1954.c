@@ -99,50 +99,57 @@ static int OW_reset(struct one_wire_query *owq);
 /* 1954 */
 static int FS_w_ipr(struct one_wire_query *owq)
 {
-	if (OW_w_ipr(owq))
+	if (OW_w_ipr(owq)) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
 static int FS_r_ipr(struct one_wire_query *owq)
 {
-	if (OW_r_ipr(owq))
+	if (OW_r_ipr(owq)) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
 static int FS_w_io(struct one_wire_query *owq)
 {
-	if (OW_w_io(owq))
+	if (OW_w_io(owq)) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
 static int FS_r_io(struct one_wire_query *owq)
 {
-	if (OW_r_io(owq))
+	if (OW_r_io(owq)) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
 static int FS_w_status(struct one_wire_query *owq)
 {
-	if (OW_w_status(owq))
+	if (OW_w_status(owq)) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
 static int FS_r_status(struct one_wire_query *owq)
 {
-	if (OW_r_status(owq))
+	if (OW_r_status(owq)) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
 static int FS_reset(struct one_wire_query *owq)
 {
-	if (OW_reset(owq))
+	if (OW_reset(owq)) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -168,10 +175,12 @@ static int OW_r_ipr(struct one_wire_query *owq)
 		TRXN_WR_CRC16(p, 2, 128),
 		TRXN_END,
 	};
-	if (BUS_transaction(t, PN(owq)))
+	if (BUS_transaction(t, PN(owq))) {
 		return 1;
-	if (size > 128)
+	}
+	if (size > 128) {
 		size = 128;
+	}
 	memcpy(OWQ_buffer(owq), &p[2], size);
 	OWQ_length(owq) = size;
 	return 0;
@@ -202,10 +211,12 @@ static int OW_r_status(struct one_wire_query *owq)
 		TRXN_WR_CRC16(p, 1, 4),
 		TRXN_END,
 	};
-	if (BUS_transaction(t, PN(owq)))
+	if (BUS_transaction(t, PN(owq))) {
 		return 1;
-	if (size > 4)
+	}
+	if (size > 4) {
 		size = 4;
+	}
 	memcpy(OWQ_buffer(owq), &p[1], size);
 	OWQ_length(owq) = size;
 	return 0;
@@ -240,8 +251,9 @@ static int OW_r_io(struct one_wire_query *owq)
 		TRXN_COMPARE(release, zero, 2),
 		TRXN_END,
 	};
-	if (BUS_transaction(t, PN(owq)))
+	if (BUS_transaction(t, PN(owq))) {
 		return 1;
+	}
 	memcpy(OWQ_buffer(owq), &p[2], size);
 	OWQ_length(owq) = size;
 	return 0;
@@ -261,7 +273,8 @@ static int OW_reset(struct one_wire_query *owq)
 		TRXN_READ1(testbit),
 		TRXN_END,
 	};
-	if (BUS_transaction(t, PN(owq)) || testbit[0] & 0x80)
+	if (BUS_transaction(t, PN(owq)) || testbit[0] & 0x80) {
 		return 1;
+	}
 	return 0;
 };

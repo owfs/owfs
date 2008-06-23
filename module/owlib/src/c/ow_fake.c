@@ -88,8 +88,9 @@ int Fake_detect(struct connection_in *in)
 			BYTE sn[8];
 			for (current_device_start = strsep(&remaining_device_list, " ,"); current_device_start[0] != '\0'; ++current_device_start) {
 				// note that strsep updates "remaining_device_list" pointer
-				if (current_device_start[0] != ' ' && current_device_start[0] != ',')
+				if (current_device_start[0] != ' ' && current_device_start[0] != ',') {
 					break;
+				}
 			}
 			if ((isxdigit(current_device_start[0])
 				 && isxdigit(current_device_start[1]))
@@ -137,8 +138,9 @@ int Tester_detect(struct connection_in *in)
 		while (remaining_device_list) {
 			BYTE sn[8];
 			for (current_device_start = strsep(&remaining_device_list, " ,"); current_device_start[0]; ++current_device_start) {
-				if (current_device_start[0] != ' ' && current_device_start[0] != ',')
+				if (current_device_start[0] != ' ' && current_device_start[0] != ',') {
 					break;
+				}
 			}
 			if ((isxdigit(current_device_start[0])
 				 && isxdigit(current_device_start[1]))
@@ -226,8 +228,8 @@ void Namefindaction(const void *nodep, const VISIT which, const int depth)
 	switch (which) {
 	case leaf:
 	case postorder:
-		if (strcasecmp
-			(p->readable_name, global_namefind_struct.readable_name) == 0 || strcasecmp(p->family_code, global_namefind_struct.readable_name) == 0) {
+		if (strcasecmp(p->readable_name, global_namefind_struct.readable_name) == 0 ||
+			strcasecmp(p->family_code, global_namefind_struct.readable_name) == 0) {
 			global_namefind_struct.ret = p->family_code;
 		}
 	case preorder:

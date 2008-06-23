@@ -334,8 +334,9 @@ static int FS_Current(struct one_wire_query *owq)
 	}
 	if (OWQ_Y(owq_sibling) == 0) {	// IAD is off
 		OWQ_Y(owq_sibling) = 1;	// need to turn on IAD for current readings
-		if (FS_write_sibling("IAD", owq_sibling))
+		if (FS_write_sibling("IAD", owq_sibling)) {
 			return -EINVAL;
+		}
 	}
 
 	if (OW_current(&OWQ_F(owq), PN(owq))) {

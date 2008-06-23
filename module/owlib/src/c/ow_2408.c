@@ -143,8 +143,9 @@ static int OW_w_pios(const BYTE * data, const size_t size, const struct parsedna
 static int FS_power(struct one_wire_query *owq)
 {
 	BYTE data[6];
-	if (OW_r_reg(data, PN(owq)))
+	if (OW_r_reg(data, PN(owq))) {
 		return -EINVAL;
+	}
 	OWQ_Y(owq) = UT_getbit(&data[5], 7);
 	return 0;
 }
@@ -152,8 +153,9 @@ static int FS_power(struct one_wire_query *owq)
 static int FS_r_strobe(struct one_wire_query *owq)
 {
 	BYTE data[6];
-	if (OW_r_reg(data, PN(owq)))
+	if (OW_r_reg(data, PN(owq))) {
 		return -EINVAL;
+	}
 	OWQ_Y(owq) = UT_getbit(&data[5], 2);
 	return 0;
 }
@@ -162,8 +164,9 @@ static int FS_w_strobe(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	BYTE data[6];
-	if (OW_r_reg(data, pn))
+	if (OW_r_reg(data, pn)) {
 		return -EINVAL;
+	}
 	UT_setbit(&data[5], 2, OWQ_Y(owq));
 	return OW_w_control(data[5], pn) ? -EINVAL : 0;
 }
@@ -176,22 +179,26 @@ static int FS_Mclear(struct one_wire_query *owq)
 	if (Cache_Get_Internal_Strict(&init, sizeof(init), InternalProp(INI), pn)) {
 		OWQ_Y(owq) = 1;
 		if (FS_r_strobe(owq)	// set reset pin to strobe mode
-			|| OW_w_pio(0x30, pn))
+			|| OW_w_pio(0x30, pn)) {
 			return -EINVAL;
+		}
 		UT_delay(100);
 		// init
-		if (OW_w_pio(0x38, pn))
+		if (OW_w_pio(0x38, pn)) {
 			return -EINVAL;
+		}
 		UT_delay(10);
 		// Enable Display, Cursor, and Blinking
 		// Entry-mode: auto-increment, no shift
-		if (OW_w_pio(0x0F, pn) || OW_w_pio(0x06, pn))
+		if (OW_w_pio(0x0F, pn) || OW_w_pio(0x06, pn)) {
 			return -EINVAL;
+		}
 		Cache_Add_Internal(&init, sizeof(init), InternalProp(INI), pn);
 	}
 	// clear
-	if (OW_w_pio(0x01, pn))
+	if (OW_w_pio(0x01, pn)) {
 		return -EINVAL;
+	}
 	UT_delay(2);
 	return FS_Mhome(owq);
 }
@@ -199,8 +206,9 @@ static int FS_Mclear(struct one_wire_query *owq)
 static int FS_Mhome(struct one_wire_query *owq)
 {
 // home
-	if (OW_w_pio(0x02, PN(owq)))
+	if (OW_w_pio(0x02, PN(owq))) {
 		return -EINVAL;
+	}
 	UT_delay(2);
 	return 0;
 }
@@ -213,8 +221,9 @@ static int FS_Mscreen(struct one_wire_query *owq)
 	size_t i;
 	for (i = 0; i < size; ++i) {
 		// no upper ascii chars
-		if (OWQ_buffer(owq)[i] & 0x80)
+		if (OWQ_buffer(owq)[i] & 0x80) {
 			return -EINVAL;
+		}
 		data[i] = OWQ_buffer(owq)[i] | 0x80;
 	}
 	return OW_w_pios(data, size, pn);
@@ -222,8 +231,9 @@ static int FS_Mscreen(struct one_wire_query *owq)
 
 static int FS_Mmessage(struct one_wire_query *owq)
 {
-	if (FS_Mclear(owq))
+	if (FS_Mclear(owq)) {
 		return -EINVAL;
+	}
 	return FS_Mscreen(owq);
 }
 
@@ -232,8 +242,9 @@ static int FS_Mmessage(struct one_wire_query *owq)
 static int FS_sense(struct one_wire_query *owq)
 {
 	BYTE data[6];
-	if (OW_r_reg(data, PN(owq)))
+	if (OW_r_reg(data, PN(owq))) {
 		return -EINVAL;
+	}
 	OWQ_U(owq) = data[0];
 	return 0;
 }
@@ -243,8 +254,9 @@ static int FS_sense(struct one_wire_query *owq)
 static int FS_r_pio(struct one_wire_query *owq)
 {
 	BYTE data[6];
-	if (OW_r_reg(data, PN(owq)))
+	if (OW_r_reg(data, PN(owq))) {
 		return -EINVAL;
+	}
 	OWQ_U(owq) = BYTE_INVERSE(data[1]);	/* reverse bits */
 	return 0;
 }
@@ -265,8 +277,9 @@ static int FS_w_pio(struct one_wire_query *owq)
 static int FS_r_latch(struct one_wire_query *owq)
 {
 	BYTE data[6];
-	if (OW_r_reg(data, PN(owq)))
+	if (OW_r_reg(data, PN(owq))) {
 		return -EINVAL;
+	}
 	OWQ_U(owq) = data[2];
 	return 0;
 }
@@ -275,8 +288,9 @@ static int FS_r_latch(struct one_wire_query *owq)
 /* Actually resets them all */
 static int FS_w_latch(struct one_wire_query *owq)
 {
-	if (OW_c_latch(PN(owq)))
+	if (OW_c_latch(PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -287,13 +301,15 @@ static int FS_r_s_alarm(struct one_wire_query *owq)
 	BYTE d[6];
 	int i, p;
 	UINT U;
-	if (OW_r_reg(d, PN(owq)))
+	if (OW_r_reg(d, PN(owq))) {
 		return -EINVAL;
+	}
 	/* register 0x8D */
 	U = (d[5] & 0x03) * 100000000;
 	/* registers 0x8B and 0x8C */
-	for (i = 0, p = 1; i < 8; ++i, p *= 10)
+	for (i = 0, p = 1; i < 8; ++i, p *= 10) {
 		U += UT_getbit(&d[3], i) | (UT_getbit(&d[4], i) << 1) * p;
+	}
 	OWQ_U(owq) = U;
 	return 0;
 }
@@ -314,16 +330,18 @@ static int FS_w_s_alarm(struct one_wire_query *owq)
 		UT_setbit(&data[0], i, (((int) (U / p) % 10) & 0x02) >> 1);
 	}
 	data[2] = ((U / 100000000) % 10) & 0x03;
-	if (OW_w_s_alarm(data, PN(owq)))
+	if (OW_w_s_alarm(data, PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
 static int FS_r_por(struct one_wire_query *owq)
 {
 	BYTE data[6];
-	if (OW_r_reg(data, PN(owq)))
+	if (OW_r_reg(data, PN(owq))) {
 		return -EINVAL;
+	}
 	OWQ_Y(owq) = UT_getbit(&data[5], 3);
 	return 0;
 }
@@ -332,8 +350,9 @@ static int FS_w_por(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	BYTE data[6];
-	if (OW_r_reg(data, pn))
+	if (OW_r_reg(data, pn)) {
 		return -EINVAL;
+	}
 	UT_setbit(&data[5], 3, OWQ_Y(owq));
 	return OW_w_control(data[5], pn) ? -EINVAL : 0;
 }
@@ -358,15 +377,18 @@ static int FS_Hclear(struct one_wire_query *owq)
 			|| OW_r_reg(data, pn)
 			|| (data[5] != 0x84)	// not powered
 			|| OW_c_latch(pn)	// clear PIOs
-			|| OW_w_pios(start, 1, pn))
+			|| OW_w_pios(start, 1, pn)) {
 			return -EINVAL;
+		}
 		UT_delay(5);
-		if (OW_w_pios(next, 5, pn))
+		if (OW_w_pios(next, 5, pn)) {
 			return -EINVAL;
+		}
 		Cache_Add_Internal(&init, sizeof(init), InternalProp(INI), pn);
 	}
-	if (OW_w_pios(clear, 6, pn))
+	if (OW_w_pios(clear, 6, pn)) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -374,8 +396,9 @@ static int FS_Hhome(struct one_wire_query *owq)
 {
 	BYTE home[] = { 0x80, 0x00 };
 	// home
-	if (OW_w_pios(home, 2, PN(owq)))
+	if (OW_w_pios(home, 2, PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -403,9 +426,9 @@ static int FS_Hscreen(struct one_wire_query *owq)
 
 static int FS_Hmessage(struct one_wire_query *owq)
 {
-	if (FS_Hclear(owq) || FS_Hhome(owq)
-		|| FS_Hscreen(owq))
+	if (FS_Hclear(owq) || FS_Hhome(owq) || FS_Hscreen(owq)) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -430,8 +453,9 @@ static int OW_r_reg(BYTE * data, const struct parsedname *pn)
 	};
 
 	//printf( "R_REG read attempt\n");
-	if (BUS_transaction(t, pn))
+	if (BUS_transaction(t, pn)) {
 		return 1;
+	}
 	//printf( "R_REG read ok\n");
 
 	memcpy(data, &p[3], 6);
@@ -524,11 +548,13 @@ static int OW_c_latch(const struct parsedname *pn)
 	};
 
 	//printf( "C_LATCH attempt\n");
-	if (BUS_transaction(t, pn))
+	if (BUS_transaction(t, pn)) {
 		return 1;
+	}
 	//printf( "C_LATCH transact\n");
-	if (read_back[0] != 0xAA)
+	if (read_back[0] != 0xAA) {
 		return 1;
+	}
 	//printf( "C_LATCH 0xAA ok\n");
 
 	return 0;
@@ -553,8 +579,9 @@ static int OW_w_control(const BYTE data, const struct parsedname *pn)
 	};
 
 	//printf( "W_CONTROL attempt\n");
-	if (BUS_transaction(t, pn))
+	if (BUS_transaction(t, pn)) {
 		return 1;
+	}
 	//printf( "W_CONTROL ok, now check %.2X -> %.2X\n",data,check_string[3]);
 
 	return ((data & 0x0F) != (check_string[3] & 0x0F));
@@ -578,19 +605,22 @@ static int OW_w_s_alarm(const BYTE * data, const struct parsedname *pn)
 	};
 
 	// get the existing register contents
-	if (OW_r_reg(old_register, pn))
+	if (OW_r_reg(old_register, pn)) {
 		return -EINVAL;
+	}
 
 	//printf("S_ALARM 0x8B... = %.2X %.2X %.2X \n",data[0],data[1],data[2]) ;
 	control_value[0] = (data[2] & 0x03) | (old_register[5] & 0x0C);
 	//printf("S_ALARM adjusted 0x8B... = %.2X %.2X %.2X \n",data[0],data[1],cr) ;
 
-	if (BUS_transaction(t, pn))
+	if (BUS_transaction(t, pn)) {
 		return 1;
+	}
 
 	/* Re-Read registers */
-	if (OW_r_reg(new_register, pn))
+	if (OW_r_reg(new_register, pn)) {
 		return 1;
+	}
 	//printf("S_ALARM back 0x8B... = %.2X %.2X %.2X \n",d[3],d[4],d[5]) ;
 
 	return (data[0] != new_register[3]) || (data[1] != new_register[4])

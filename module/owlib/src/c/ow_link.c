@@ -375,7 +375,7 @@ static int LINK_sendback_data(const BYTE * data, BYTE * resp, const size_t size,
 /*
 static void byteprint( const BYTE * b, int size ) {
     int i ;
-    for ( i=0; i<size; ++i ) printf( "%.2X ",b[i] ) ;
+    for ( i=0; i<size; ++i ) { printf( "%.2X ",b[i] ) ; }
     if ( size ) { printf("\n") ; }
 }
 */

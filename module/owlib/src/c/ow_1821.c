@@ -115,8 +115,9 @@ static int OW_w_templimit(const _FLOAT T, const int Tindex, const struct parsedn
 
 static int FS_temperature(struct one_wire_query *owq)
 {
-	if (OW_temperature(&OWQ_F(owq), PN(owq)))
+	if (OW_temperature(&OWQ_F(owq), PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -124,8 +125,9 @@ static int FS_r_thf(struct one_wire_query *owq)
 {
 	BYTE data;
 
-	if (OW_r_status(&data, PN(owq)))
+	if (OW_r_status(&data, PN(owq))) {
 		return -EINVAL;
+	}
 	OWQ_Y(owq) = (data >> DS1821_STATUS_THF) & 0x01;
 //    OWQ_Y(owq) = (data & 0x10) >> 4;
 	return 0;
@@ -135,11 +137,13 @@ static int FS_w_thf(struct one_wire_query *owq)
 {
 	BYTE data;
 
-	if (OW_r_status(&data, PN(owq)))
+	if (OW_r_status(&data, PN(owq))) {
 		return -EINVAL;
+	}
 	UT_setbit(&data, DS1821_STATUS_THF, OWQ_Y(owq));
-	if (OW_w_status(&data, PN(owq)))
+	if (OW_w_status(&data, PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -148,8 +152,9 @@ static int FS_r_tlf(struct one_wire_query *owq)
 {
 	BYTE data;
 
-	if (OW_r_status(&data, PN(owq)))
+	if (OW_r_status(&data, PN(owq))) {
 		return -EINVAL;
+	}
 	OWQ_Y(owq) = (data >> DS1821_STATUS_TLF) & 0x01;
 //OWQ_Y(owq) = (data & 0x08) >> 3;
 	return 0;
@@ -159,11 +164,13 @@ static int FS_w_tlf(struct one_wire_query *owq)
 {
 	BYTE data;
 
-	if (OW_r_status(&data, PN(owq)))
+	if (OW_r_status(&data, PN(owq))) {
 		return -EINVAL;
+	}
 	UT_setbit(&data, DS1821_STATUS_TLF, OWQ_Y(owq));
-	if (OW_w_status(&data, PN(owq)))
+	if (OW_w_status(&data, PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -172,8 +179,9 @@ static int FS_r_thermomode(struct one_wire_query *owq)
 {
 	BYTE data;
 
-	if (OW_r_status(&data, PN(owq)))
+	if (OW_r_status(&data, PN(owq))) {
 		return -EINVAL;
+	}
 	OWQ_Y(owq) = (data >> DS1821_STATUS_TR) & 0x01;
 //    OWQ_Y(owq) = (data & 0x04) >> 2;
 	return 0;
@@ -183,11 +191,13 @@ static int FS_w_thermomode(struct one_wire_query *owq)
 {
 	BYTE data;
 
-	if (OW_r_status(&data, PN(owq)))
+	if (OW_r_status(&data, PN(owq))) {
 		return -EINVAL;
+	}
 	UT_setbit(&data, DS1821_STATUS_TR, OWQ_Y(owq));
-	if (OW_w_status(&data, PN(owq)))
+	if (OW_w_status(&data, PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -196,8 +206,9 @@ static int FS_r_polarity(struct one_wire_query *owq)
 {
 	BYTE data;
 
-	if (OW_r_status(&data, PN(owq)))
+	if (OW_r_status(&data, PN(owq))) {
 		return -EINVAL;
+	}
 	OWQ_Y(owq) = (data >> DS1821_STATUS_POL) & 0x01;
 	return 0;
 }
@@ -206,11 +217,13 @@ static int FS_w_polarity(struct one_wire_query *owq)
 {
 	BYTE data;
 
-	if (OW_r_status(&data, PN(owq)))
+	if (OW_r_status(&data, PN(owq))) {
 		return -EINVAL;
+	}
 	UT_setbit(&data, DS1821_STATUS_POL, OWQ_Y(owq));
-	if (OW_w_status(&data, PN(owq)))
+	if (OW_w_status(&data, PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -219,8 +232,9 @@ static int FS_r_oneshot(struct one_wire_query *owq)
 {
 	BYTE data;
 
-	if (OW_r_status(&data, PN(owq)))
+	if (OW_r_status(&data, PN(owq))) {
 		return -EINVAL;
+	}
 	OWQ_Y(owq) = (data >> DS1821_STATUS_1SHOT) & 0x01;
 
 	return 0;
@@ -255,14 +269,16 @@ static int FS_w_oneshot(struct one_wire_query *owq)
 
 	BYTE data;
 
-	if (OW_r_status(&data, PN(owq)))
+	if (OW_r_status(&data, PN(owq))) {
 		return -EINVAL;
+	}
 
 	int oneshotmode = (data >> DS1821_STATUS_1SHOT) & 0x01;
 
 	UT_setbit(&data, DS1821_STATUS_1SHOT, OWQ_Y(owq));
-	if (OW_w_status(&data, PN(owq)))
+	if (OW_w_status(&data, PN(owq))) {
 		return -EINVAL;
+	}
 
 	if (!oneshotmode && OWQ_Y(owq)) {
 		/* 1Shot mode was off and we are setting it on; i.e. we are ending continuous mode.
@@ -272,8 +288,9 @@ static int FS_w_oneshot(struct one_wire_query *owq)
 		 * so issue a STOP CONVERSION to halt the conversions.
 		 */
 		int ret = BUS_transaction(tstop, PN(owq));
-		if (ret)
+		if (ret) {
 			return ret;
+		}
 	} else if (oneshotmode && !OWQ_Y(owq)) {
 		/* 1Shot mode was on and we are turning it off; i.e. we are starting continuous mode.
 		 * Continuous conversions are probably not in progress.
@@ -289,8 +306,9 @@ static int FS_w_oneshot(struct one_wire_query *owq)
 		 * worry about it.
 		 */
 		UT_delay(1000);
-		if (ret)
+		if (ret) {
 			return ret;
+		}
 	}
 	// else ;   /* We are setting the bit to what it already was so do nothing special. */
 
@@ -300,15 +318,17 @@ static int FS_w_oneshot(struct one_wire_query *owq)
 
 static int FS_r_templimit(struct one_wire_query *owq)
 {
-	if (OW_r_templimit(&OWQ_F(owq), OWQ_pn(owq).selected_filetype->data.i, PN(owq)))
+	if (OW_r_templimit(&OWQ_F(owq), OWQ_pn(owq).selected_filetype->data.i, PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
 static int FS_w_templimit(struct one_wire_query *owq)
 {
-	if (OW_w_templimit(OWQ_F(owq), OWQ_pn(owq).selected_filetype->data.i, PN(owq)))
+	if (OW_w_templimit(OWQ_F(owq), OWQ_pn(owq).selected_filetype->data.i, PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -359,12 +379,14 @@ static int OW_temperature(_FLOAT * temp, const struct parsedname *pn)
 		TRXN_END,
 	};
 
-	if (OW_r_status(&status, pn))
+	if (OW_r_status(&status, pn)) {
 		return 1;
+	}
 
 	if ((status >> DS1821_STATUS_1SHOT) & 0x01) {	/* 1-shot, convert and wait 1 second */
-		if (BUS_transaction(t, pn))
+		if (BUS_transaction(t, pn)) {
 			return 1;
+		}
 		UT_delay(1000);
 		return OW_current_temperature(temp, pn);
 	} else {
@@ -399,8 +421,9 @@ static int OW_current_temperature(_FLOAT * temp, const struct parsedname *pn)
 		TRXN_END,
 	};
 
-	if (BUS_transaction(t, pn))
+	if (BUS_transaction(t, pn)) {
 		return 1;
+	}
 
 	if (count_per_c) {
 		/* Perform calculation to get high temperature resolution - see datasheet. */
@@ -426,8 +449,9 @@ static int OW_current_temperature_lowres(_FLOAT * temp, const struct parsedname 
 		TRXN_END,
 	};
 
-	if (BUS_transaction(t, pn))
+	if (BUS_transaction(t, pn)) {
 		return 1;
+	}
 	temp[0] = (_FLOAT) ((int8_t) temp_read);
 
 	return 0;
@@ -445,8 +469,9 @@ static int OW_r_templimit(_FLOAT * T, const int Tindex, const struct parsedname 
 		TRXN_END,
 	};
 
-	if (BUS_transaction(t, pn))
+	if (BUS_transaction(t, pn)) {
 		return 1;
+	}
 	T[0] = (_FLOAT) ((int8_t) data);
 	return 0;
 }

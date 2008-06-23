@@ -119,8 +119,9 @@ int FS_r_ID(struct one_wire_query *owq)
 	int sn_index, id_index;
 	ASCII id[12];
 	struct parsedname *pn = PN(owq);
-	for (sn_index = 6, id_index = 0; sn_index > 0; --sn_index, id_index += 2)
+	for (sn_index = 6, id_index = 0; sn_index > 0; --sn_index, id_index += 2) {
 		num2string(&id[id_index], pn->sn[sn_index]);
+	}
 	return Fowq_output_offset_and_size(id, 12, owq);
 }
 
@@ -145,7 +146,8 @@ int FS_r_address(struct one_wire_query *owq)
 	int sn_index, ad_index;
 	ASCII ad[16];
 	struct parsedname *pn = PN(owq);
-	for (sn_index = 7, ad_index = 0; sn_index >= 0; --sn_index, ad_index += 2)
+	for (sn_index = 7, ad_index = 0; sn_index >= 0; --sn_index, ad_index += 2) {
 		num2string(&ad[ad_index], pn->sn[sn_index]);
+	}
 	return Fowq_output_offset_and_size(ad, 16, owq);
 }

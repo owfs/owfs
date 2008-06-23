@@ -201,32 +201,36 @@ static void OW_date(const _DATE * d, BYTE * data);
 static int FS_r_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (OW_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_r_mem))
+	if (OW_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_r_mem)) {
 		return -EINVAL;
+	}		
 	return 0;
 }
 
 static int FS_w_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (OW_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem))
+	if (OW_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem)) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
 static int FS_r_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (OW_readwrite_paged(owq, 0, pagesize, OW_r_mem))
+	if (OW_readwrite_paged(owq, 0, pagesize, OW_r_mem)) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
 static int FS_w_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (OW_readwrite_paged(owq, 0, pagesize, OW_w_mem))
+	if (OW_readwrite_paged(owq, 0, pagesize, OW_w_mem)) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -235,8 +239,9 @@ static int FS_w_mem(struct one_wire_query *owq)
 static int FS_r_delay(struct one_wire_query *owq)
 {
 	BYTE data[3];
-	if (OW_r_mem(data, 3, 0x0216, PN(owq)))
+	if (OW_r_mem(data, 3, 0x0216, PN(owq))) {
 		return -EINVAL;
+	}
 	// should be 3 bytes!
 	//u[0] = (((UINT)data[2])<<16) | (((UINT)data[1])<<8) | data[0] ;
 	OWQ_U(owq) = (((UINT) data[1]) << 8) | data[0];
@@ -248,10 +253,12 @@ static int FS_w_delay(struct one_wire_query *owq)
 {
 	UINT U = OWQ_U(owq);
 	BYTE data[3] = { U & 0xFF, (U >> 8) & 0xFF, (U >> 16) & 0xFF };
-	if (OW_MIP(PN(owq)))
+	if (OW_MIP(PN(owq))) {
 		return -EBUSY;
-	if (OW_w_mem(data, 3, 0x0216, PN(owq)))
+	}
+	if (OW_w_mem(data, 3, 0x0216, PN(owq))) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -279,8 +286,9 @@ static int FS_enable_osc(struct one_wire_query *owq)
 static int FS_clearmem(struct one_wire_query *owq)
 {
 	memset(OWQ_buffer(owq), 0, 1);	// ??? why is this needed
-	if (OW_clearmemory(PN(owq)))
+	if (OW_clearmemory(PN(owq))) {
 		return -EINVAL;
+	}
 	return OWQ_size(owq);
 }
 
@@ -288,11 +296,13 @@ static int FS_clearmem(struct one_wire_query *owq)
 static int FS_r_run(struct one_wire_query *owq)
 {
 	BYTE cr;
-	if (OW_r_mem(&cr, 1, 0x0212, PN(owq)))
+	if (OW_r_mem(&cr, 1, 0x0212, PN(owq))) {
 		return -EINVAL;
+	}
 	// only bit 0 and 1 should be used!
-	if (cr & 0xFC)
+	if (cr & 0xFC) {
 		return -EINVAL;
+	}
 	OWQ_Y(owq) = (cr & 0x01);
 	return 0;
 }
@@ -304,19 +314,24 @@ static int FS_w_run(struct one_wire_query *owq)
 	BYTE cr;
 	BYTE check;
 
-	if (OW_r_mem(&cr, 1, 0x0212, pn))
+	if (OW_r_mem(&cr, 1, 0x0212, pn)) {
 		return -EINVAL;
+	}
 	// only bit 0 and 1 should be used!
-	if (cr & 0xFC)
+	if (cr & 0xFC) {
 		return -EINVAL;
+	}
 	cr = OWQ_Y(owq) ? (cr | 0x01) : (cr & 0xFE);
-	if (OW_w_mem(&cr, 1, 0x0212, pn))
+	if (OW_w_mem(&cr, 1, 0x0212, pn)) {
 		return -EINVAL;
+	}
 	/* Double check written value */
-	if (OW_r_mem(&check, 1, 0x0212, pn))
+	if (OW_r_mem(&check, 1, 0x0212, pn)) {
 		return -EINVAL;
-	if (check != cr)
+	}
+	if (check != cr) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -329,8 +344,9 @@ static int FS_w_mip(struct one_wire_query *owq)
 	printf("FS_w_mip:\n");
 	if (OWQ_Y(owq)) {			/* start a mission! */
 		printf("FS_w_mip: start\n");
-		if (OW_r_mem(data, 3, 0x0216, pn))
+		if (OW_r_mem(data, 3, 0x0216, pn)) {
 			return -EINVAL;
+		}
 		mdelay = data[0] | data[1] << 8 | data[2] << 16;
 		return OW_startmission(mdelay, pn);
 	} else {
@@ -344,11 +360,13 @@ static int FS_bitread(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	BYTE d;
 	struct BitRead *br;
-	if (pn->selected_filetype->data.v == NULL)
+	if (pn->selected_filetype->data.v == NULL) {
 		return -EINVAL;
+	}
 	br = ((struct BitRead *) (pn->selected_filetype->data.v));
-	if (OW_r_mem(&d, 1, br->location, pn))
+	if (OW_r_mem(&d, 1, br->location, pn)) {
 		return -EINVAL;
+	}
 	OWQ_Y(owq) = UT_getbit(&d, br->bit);
 	return 0;
 }
@@ -358,14 +376,17 @@ static int FS_bitwrite(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	BYTE d;
 	struct BitRead *br;
-	if (pn->selected_filetype->data.v == NULL)
+	if (pn->selected_filetype->data.v == NULL) {
 		return -EINVAL;
+	}
 	br = ((struct BitRead *) (pn->selected_filetype->data.v));
-	if (OW_r_mem(&d, 1, br->location, pn))
+	if (OW_r_mem(&d, 1, br->location, pn)) {
 		return -EINVAL;
+	}
 	UT_setbit(&d, br->bit, OWQ_Y(owq));
-	if (OW_w_mem(&d, 1, br->location, pn))
+	if (OW_w_mem(&d, 1, br->location, pn)) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -398,8 +419,9 @@ static int FS_r_temperature(struct one_wire_query *owq)
 		return -EINVAL;
 	}
 
-	if (OW_r_temperature(&OWQ_F(owq), delay, pn))
+	if (OW_r_temperature(&OWQ_F(owq), delay, pn)) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -417,8 +439,9 @@ static int FS_r_humid(struct one_wire_query *owq)
 		printf("FS_r_humid: conv\n");
 		return -EINVAL;
 	}
-	if (OW_r_humid(&OWQ_F(owq), delay, pn))
+	if (OW_r_humid(&OWQ_F(owq), delay, pn)) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -480,15 +503,18 @@ static int OW_oscillator(const int on, struct parsedname *pn)
 		return -EINVAL;
 	}
 	/* Only bit 0 and 1 are used... All other bits should be 0 */
-	if (d & 0xFC)
+	if (d & 0xFC) {
 		return -EINVAL;
+	}
 	if (on) {
-		if (d & 0x01)
+		if (d & 0x01) {
 			return 0;			// already on
+		}
 		d |= 0x01;
 	} else {
-		if (!(d & 0x01))
+		if (!(d & 0x01)) {
 			return 0;			// already off
+		}
 		d &= 0xFE;
 	}
 	if (OW_w_mem(&d, 1, 0x0212, pn)) {
@@ -499,8 +525,9 @@ static int OW_oscillator(const int on, struct parsedname *pn)
 		printf("OW_oscillator: error5\n");
 		return -EINVAL;
 	}
-	if (check != d)
+	if (check != d) {
 		return -EINVAL;			// failed to change value
+	}
 
 	UT_delay(1000);				// I just want to wait a second and let clock update
 
@@ -530,10 +557,12 @@ static int FS_r_counter(struct one_wire_query *owq)
 	int ret;
 
 	/* Get date from chip */
-	if (OW_r_mem(data, 6, 0x0200, PN(owq)))
+	if (OW_r_mem(data, 6, 0x0200, PN(owq))) {
 		return -EINVAL;
-	if ((ret = OW_2date(&d, data)))
+	}
+	if ((ret = OW_2date(&d, data))) {
 		return ret;
+	}
 	OWQ_U(owq) = (UINT) d;
 	return 0;
 }
@@ -557,8 +586,9 @@ static int FS_w_date(struct one_wire_query *owq)
 	}
 
 	OW_date(&OWQ_D(owq), data);
-	if (OW_w_mem(data, 6, 0x0200, pn))
+	if (OW_w_mem(data, 6, 0x0200, pn)) {
 		return -EINVAL;
+	}
 	OWQ_Y(owq) = 1;				// for turning on chip
 	return FS_w_run(owq);
 }
@@ -677,8 +707,9 @@ static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 		return 1;
 	}
 	BUSUNLOCK(pn);
-	if (ret)
+	if (ret) {
 		return 1;
+	}
 
 #if 0
 	// Loop waiting for completion
@@ -688,8 +719,9 @@ static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 		//           ret = BUS_read(p,1,pn) ;
 		BUSUNLOCK(pn);
 		printf("OW_w_mem: get ret=%d and %02X as result\n", ret, p[0]);
-		if (ret)
+		if (ret) {
 			return 1;
+		}
 		if (p[0] == 0xAA) {
 			return 0;
 		}
@@ -746,8 +778,9 @@ static int OW_flush(struct parsedname *pn, int lock)
 	int i = 0;
 	int ret;
 
-	if (lock)
+	if (lock) {
 		BUSLOCK(pn);
+	}
 	do {
 //    ret = BUS_read(&p,1,pn ) ;
 		if (ret) {
@@ -759,8 +792,9 @@ static int OW_flush(struct parsedname *pn, int lock)
 			fflush(stdout);
 		}
 	} while (ret == 0);
-	if (lock)
+	if (lock) {
 		BUSUNLOCK(pn);
+	}
 	//printf("flush: read %d bytes ret=%d\n", i, ret);
 	return 0;
 }
@@ -829,8 +863,9 @@ static int OW_r_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 
 	BUSUNLOCK(pn);
 
-	if (!ret)
+	if (!ret) {
 		memcpy(data, &p[3], size);
+	}
 	return ret;
 }
 
@@ -845,8 +880,9 @@ static int OW_MIP(struct parsedname *pn)
 		printf("OW_MIP: err1\n");
 		return -EINVAL;
 	}
-	if (UT_getbit(&data, 1))
+	if (UT_getbit(&data, 1)) {
 		return -EBUSY;
+	}
 	return 0;
 }
 
@@ -866,8 +902,9 @@ static void OW_date(const _DATE * d, BYTE * data)
 	data[4] = tm.tm_mon + 6 * (tm.tm_mon / 10);	/* dec->bcd */
 	year = tm.tm_year % 100;
 	data[5] = year + 6 * (year / 10);	/* dec->bcd */
-	if (tm.tm_year > 99 && tm.tm_year < 200)
+	if (tm.tm_year > 99 && tm.tm_year < 200) {
 		data[4] |= 0x80;
+	}
 //printf("_DATE_WRITE data=%2X, %2X, %2X, %2X, %2X, %2X\n",data[0],data[1],data[2],data[3],data[4],data[5]);
 //printf("_DATE: sec=%d, min=%d, hour=%d, mday=%d, mon=%d, year=%d, wday=%d, isdst=%d\n",tm.tm_sec,tm.tm_min,tm.tm_hour,tm.tm_mday,tm.tm_mon,tm.tm_year,tm.tm_wday,tm.tm_isdst) ;
 }
@@ -964,8 +1001,9 @@ static int OW_w_delay(unsigned long mdelay, struct parsedname *pn)
 	p[0] = mdelay & 0xFF;
 	p[1] = (mdelay >> 8) & 0xFF;
 	p[2] = (mdelay >> 16) & 0xFF;
-	if (OW_w_mem(p, 3, 0x0216, pn))
+	if (OW_w_mem(p, 3, 0x0216, pn)) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -976,26 +1014,32 @@ static int OW_startmission(unsigned long mdelay, struct parsedname *pn)
 	int ret;
 
 	/* stop the mission */
-	if (OW_stopmission(pn))
+	if (OW_stopmission(pn)) {
 		return -EINVAL;			/* stop */
+	}
 
-	if (mdelay == 0)
+	if (mdelay == 0) {
 		return 0;				/* stay stopped */
+	}
 
-	if (mdelay & 0xFF000000)
+	if (mdelay & 0xFF000000) {
 		return -ERANGE;			/* Bad interval */
+	}
 
-	if (OW_r_mem(&cc, 1, 0x0212, pn))
+	if (OW_r_mem(&cc, 1, 0x0212, pn)) {
 		return -EINVAL;
-	if (cc & 0xFC)
+	}
+	if (cc & 0xFC) {
 		return -EINVAL;
+	}
 	if (!(cc & 0x01)) {			/* clock stopped */
 		OWQ_allocate_struct_and_pointer(owq_dateset);
 		OWQ_create_temporary(owq_dateset, NULL, 0, 0, pn);
 		OWQ_D(owq_dateset) = time(NULL);
 		/* start clock */
-		if (FS_w_date(owq_dateset))
+		if (FS_w_date(owq_dateset)) {
 			return -EINVAL;		/* set the clock to current time */
+		}
 		UT_delay(1000);			/* wait for the clock to count a second */
 	}
 #if 1
@@ -1005,8 +1049,9 @@ static int OW_startmission(unsigned long mdelay, struct parsedname *pn)
 	} else {
 		cc &= 0xFD;				// Enable high speed sample (second)
 	}
-	if (OW_w_mem(&cc, 1, 0x0212, pn))
+	if (OW_w_mem(&cc, 1, 0x0212, pn)) {
 		return -EINVAL;
+	}
 #endif
 
 #if 1
@@ -1014,13 +1059,15 @@ static int OW_startmission(unsigned long mdelay, struct parsedname *pn)
 	p[0] = (mdelay & 0xFF);
 	p[1] = (mdelay & 0xFF00) >> 8;
 	p[2] = (mdelay & 0xFF0000) >> 16;
-	if (OW_w_mem(p, 3, 0x0216, pn))
+	if (OW_w_mem(p, 3, 0x0216, pn)) {
 		return -EINVAL;
+	}
 #endif
 
 	/* clear memory */
-	if (OW_clearmemory(pn))
+	if (OW_clearmemory(pn)) {
 		return -EINVAL;
+	}
 
 	data = 0xA0;				// Bit 6&7 always set
 	data |= 0x01;				// start Temp logging

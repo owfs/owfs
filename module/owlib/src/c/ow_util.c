@@ -55,16 +55,18 @@ void num2string(char *s, const BYTE n)
 void string2bytes(const char *str, BYTE * b, const int bytes)
 {
 	int i;
-	for (i = 0; i < bytes; ++i)
+	for (i = 0; i < bytes; ++i) {
 		b[i] = string2num(&str[i << 1]);
+	}
 }
 
 /* number(x bytes) to 2x hex digits */
 void bytes2string(char *str, const BYTE * b, const int bytes)
 {
 	int i;
-	for (i = 0; i < bytes; ++i)
+	for (i = 0; i < bytes; ++i) {
 		num2string(&str[i << 1], b[i]);
+	}
 }
 
 // #define UT_getbit(buf, loc)  ( ( (buf)[(loc)>>3]>>((loc)&0x7) ) &0x01 )

@@ -53,8 +53,9 @@ int FS_r_locator(struct one_wire_query *owq)
 	} else {
 		OW_locator(loc, pn);
 	}
-	for (i = 0; i < 8; ++i)
+	for (i = 0; i < 8; ++i) {
 		num2string(ad + (i << 1), loc[7 - i]);
+	}
 	return Fowq_output_offset_and_size(ad, 16, owq);
 }
 

@@ -56,7 +56,7 @@ from http://www.linuxjournal.com/article/6788
 
 // Constants for the OWNet class
 define('OWNET_DEFAULT_HOST'	,'127.0.0.1');
-define('OWNET_DEFAULT_PORT'	,1234);
+define('OWNET_DEFAULT_PORT'	,4304);
 define('OWNET_LINK_TYPE_SOCKET'	,0);
 define('OWNET_LINK_TYPE_STREAM'	,1);
 define('OWNET_LINK_TYPE_TCP'	,0);
@@ -681,8 +681,8 @@ EVERY FUNCTION TRIGGER AN ERROR! you should use @$ow->function to don't handle e
 $ow=new OWNet($host,$timeout=5,$use_swig_dir=true);
     in top of file we have some constants: (line 58)
         define('OWNET_DEFAULT_HOST'    ,'127.0.0.1');
-        define('OWNET_DEFAULT_PORT'    ,1234);   
-        i don't know what's the default OW port, i'm using today 1234 :)
+        define('OWNET_DEFAULT_PORT'    ,4304);   
+        i don't know what's the default OW port, i'm using today 4304 :)
     for OWNet($host) we can use this types of host value:
     "scheme://host:port" "scheme://host" "anything that can't be parsed with parseurl"
     if port isn't set we get default port, if host isn't set we get default host
@@ -733,7 +733,7 @@ END :)
 
 examples:
 
-$ow=new OWNet("tcp://172.16.1.100:1234");
+$ow=new OWNet("tcp://172.16.1.100:4304");
 var_dump($ow->get("/",OWNET_MSG_DIR,true));
 var_dump($ow->get("/10.E8C1C9000800/temperature",OWNET_MSG_READ,true));
 var_dump($ow->get("/10.E8C1C9000800",OWNET_MSG_PRESENCE,true));

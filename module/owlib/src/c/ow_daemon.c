@@ -151,8 +151,9 @@ int EnterBackground(void)
 			break;
 		}
 	} else {					// not background
-		if (Globals.opt != opt_owfs)
+		if (Globals.opt != opt_owfs) {
 			PIDstart();
+		}
 	}
 	//printf("Exit Background\n") ;
 
