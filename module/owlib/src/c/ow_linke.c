@@ -261,9 +261,9 @@ static int LINK_sendback_data(const BYTE * data, BYTE * resp, const size_t size,
 	}
 
 	while (left > 0) {
-		buf[0] = 'b';			//put in byte mode
 		size_t this_length = (left > 32) ? 32 : left;
 		size_t total_length = 2 * this_length + 2;
+		buf[0] = 'b';			//put in byte mode
 //        printf(">> size=%d, left=%d, i=%d\n",size,left,i);
 		bytes2string((char *) &buf[1], &data[size - left], this_length);
 		buf[total_length - 1] = '\r';	// take out of byte mode

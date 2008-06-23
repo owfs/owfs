@@ -268,12 +268,13 @@ static int FS_w_oneshot(struct one_wire_query *owq)
 	};
 
 	BYTE data;
-
+	int oneshotmode;
+	
 	if (OW_r_status(&data, PN(owq))) {
 		return -EINVAL;
 	}
 
-	int oneshotmode = (data >> DS1821_STATUS_1SHOT) & 0x01;
+	oneshotmode = (data >> DS1821_STATUS_1SHOT) & 0x01;
 
 	UT_setbit(&data, DS1821_STATUS_1SHOT, OWQ_Y(owq));
 	if (OW_w_status(&data, PN(owq))) {

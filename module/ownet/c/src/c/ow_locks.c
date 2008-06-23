@@ -28,7 +28,7 @@ void __pthread_initialize(void);
 #endif							/* OW_MT */
 #endif							/* __UCLIBC */
 
-struct mutex Mutex = {
+struct mutexes Mutex = {
 #if OW_MT
 #ifdef __UCLIBC__
 /* vsnprintf() doesn't seem to be thread-safe in uClibc

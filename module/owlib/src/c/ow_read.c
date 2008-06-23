@@ -146,10 +146,10 @@ static int FS_read_real(struct one_wire_query *owq)
 // This function probably need to be modified a bit...
 static int FS_r_simultaneous(struct one_wire_query *owq)
 {
+	OWQ_allocate_struct_and_pointer(owq_given);
 	if (SpecifiedBus(PN(owq))) {
 		return FS_r_given_bus(owq);
 	}
-	OWQ_allocate_struct_and_pointer(owq_given);
 	
 	memcpy(owq_given, owq, sizeof(struct one_wire_query));	// shallow copy
 	

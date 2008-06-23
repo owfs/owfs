@@ -29,7 +29,7 @@ void __pthread_initialize(void);
 #endif							/* __UCLIBC__ */
 #endif							/* OW_MT */
 
-struct mutex Mutex = {
+struct mutexes Mutex = {
 #if OW_MT
 	.stat_mutex = PTHREAD_MUTEX_INITIALIZER,
 	.sg_mutex = PTHREAD_MUTEX_INITIALIZER,

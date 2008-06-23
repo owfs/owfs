@@ -56,7 +56,7 @@ $Id$
 #include <pthread.h>
 #endif							/* OW_MT */
 
-extern struct mutex {
+extern struct mutexes {
 #if OW_MT
 	pthread_mutex_t stat_mutex;
 	pthread_mutex_t sg_mutex;

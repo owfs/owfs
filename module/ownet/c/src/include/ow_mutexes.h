@@ -55,7 +55,7 @@ $Id$
 #include <pthread.h>
 #endif							/* OW_MT */
 
-extern struct mutex {
+extern struct mutexes {
 #if OW_MT
 	pthread_mutexattr_t *pmattr;
 	rwlock_t lib;

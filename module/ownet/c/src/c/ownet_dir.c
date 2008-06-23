@@ -59,8 +59,8 @@ int OWNET_dirprocess(OWNET_HANDLE h,
 {
 	struct request_packet s_request_packet;
 	struct request_packet *rp = &s_request_packet;
-	memset(rp, 0, sizeof(struct request_packet));
 	int return_value;
+	memset(rp, 0, sizeof(struct request_packet));
 
 	CONNIN_RLOCK;
 	rp->owserver = find_connection_in(h);
