@@ -11,6 +11,12 @@
 /* Define to 1 if you have the `alarm' function. */
 #undef HAVE_ALARM
 
+/* Define to 1 if you have the <arpa/inet.h> header file. */
+#undef HAVE_ARPA_INET_H
+
+/* Broken glibc implementations use __ss_family instead of ss_family. */
+#undef HAVE_BROKEN_SS_FAMILY
+
 /* Define to 1 if you have the `daemon' function. */
 #undef HAVE_DAEMON
 
@@ -162,6 +168,12 @@
 /* Define to 1 if you have the `strtoul' function. */
 #undef HAVE_STRTOUL
 
+/* Define to 1 if the system has the type `struct addrinfo'. */
+#undef HAVE_STRUCT_ADDRINFO
+
+/* Define to 1 if the system has the type `struct sockaddr_storage'. */
+#undef HAVE_STRUCT_SOCKADDR_STORAGE
+
 /* Define to 1 if you have the <syslog.h> header file. */
 #undef HAVE_SYSLOG_H
 
@@ -248,6 +260,12 @@
 /* Define to 1 if the system has the type `_Bool'. */
 #undef HAVE__BOOL
 
+/* Define if ipv6 support is present and available. */
+#undef IPV6
+
+/* Define to 1 if your system has no in6addr_any. */
+#undef NO_IN6ADDR_ANY
+
 /* Name of package */
 #undef PACKAGE
 
@@ -282,8 +300,14 @@
 /* Define to the type of arg 5 for `select'. */
 #undef SELECT_TYPE_ARG5
 
+/* Define to 1 if sockaddr_in has a 'sin_len' member. */
+#undef SOCKADDR_IN_HAS_LEN
+
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
+
+/* Define to 1 if string.h may be included along with strings.h */
+#undef STRING_WITH_STRINGS
 
 /* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
 #undef TIME_WITH_SYS_TIME
@@ -305,6 +329,9 @@
 
 /* Define to `unsigned int' if <sys/types.h> does not define. */
 #undef size_t
+
+/* If we don't have a real socklen_t, unsigned int is good enough. */
+#undef socklen_t
 
 /* Define as `fork' if `vfork' does not work. */
 #undef vfork

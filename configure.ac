@@ -364,7 +364,7 @@ AC_LANG_RESTORE
 # Checks for header files.
 AC_HEADER_DIRENT
 AC_HEADER_STDC
-AC_CHECK_HEADERS([sys/mkdev.h sys/time.h sys/times.h sys/types.h sys/uio.h feature_tests.h fcntl.h netinet/in.h stdlib.h string.h strings.h sys/file.h syslog.h termios.h unistd.h limits.h stdint.h features.h getopt.h resolv.h semaphore.h])
+AC_CHECK_HEADERS([arpa/inet.h sys/mkdev.h sys/socket.h sys/time.h sys/times.h sys/types.h sys/uio.h feature_tests.h fcntl.h netinet/in.h stdlib.h string.h strings.h sys/file.h syslog.h termios.h unistd.h limits.h stdint.h features.h getopt.h resolv.h semaphore.h])
 AC_CHECK_HEADERS([linux/limits.h linux/types.h netdb.h dlfcn.h])
 
 # Test if debugging out enabled
@@ -1495,19 +1495,6 @@ AC_SUBST(ENABLE_PARPORT)
 AM_CONDITIONAL(ENABLE_PARPORT, test "${ENABLE_PARPORT}" = "true")
 
 
-
-# owftpd section
-AC_SUBST(HAVE_NEW_SS_FAMILY)
-AC_EGREP_HEADER(__ss_family,
-    [sys/socket.h],
-    [HAVE_NEW_SS_FAMILY=false],
-    [HAVE_NEW_SS_FAMILY=true] )
-AC_MSG_WARN([SS is ${HAVE_NEW_SS_FAMILY}])
-AM_CONDITIONAL(HAVE_NEW_SS_FAMILY, test "${HAVE_NEW_SS_FAMILY}" = "true")
-# end owftpd section
-
-
-
 if test "${HAVE_CYGWIN}" = "true" ; then
    OW_CYGWIN=1
 else
@@ -1521,6 +1508,112 @@ else
    OW_DARWIN=0
 fi
 AC_SUBST(OW_DARWIN)
+
+
+AC_CHECK_TYPES([struct sockaddr_storage], , ,
+[[
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+#ifdef HAVE_NETINET_IN_H
+#include <netinet/in.h>
+#endif
+#ifdef HAVE_ARPA_INET_H
+#include <arpa/inet.h>
+#endif
+]]
+)
+
+if test "$ac_cv_type_struct_sockaddr_storage" = no; then
+   AC_CHECK_MEMBER([struct sockaddr_in.sin_len],
+   [AC_DEFINE(SOCKADDR_IN_HAS_LEN, 1, [Define to 1 if sockaddr_in has a 'sin_len' member.])])
+fi
+AC_CHECK_TYPES([struct addrinfo], , , [[#include <netdb.h>]])
+AC_CHECK_TYPE(socklen_t, ,
+[AC_DEFINE([socklen_t], [unsigned int],
+[If we don't have a real socklen_t, unsigned int is good enough.])],
+[
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+])
+
+
+AC_MSG_CHECKING(for broken glibc with __ss_family)
+AC_COMPILE_IFELSE(
+[AC_LANG_PROGRAM(
+[
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+],
+[struct sockaddr_storage s; s.__ss_family = AF_INET;])],
+[
+	AC_MSG_RESULT(yes)
+	AC_DEFINE(HAVE_BROKEN_SS_FAMILY, 1, [Broken glibc implementations use __ss_family instead of ss_family.])
+],
+[AC_MSG_RESULT(no)])
+
+
+AC_MSG_CHECKING([for core ipv6 support])
+AC_COMPILE_IFELSE(
+[AC_LANG_PROGRAM(
+	[[#define IN_AUTOCONF
+	#include "include/stdinc.h"]],
+	[[struct sockaddr_in6 s;
+	  struct sockaddr_storage t;
+	    s.sin6_family = 0;]]
+	    )],
+[
+	if test "${HAVE_CYGWIN}" = "true" ; then
+	   AC_MSG_RESULT([no, Cygwin's ipv6 is incomplete])
+		have_v6=no
+	else
+		have_v6=yes
+		AC_DEFINE(IPV6, 1, [Define if ipv6 support is present and available.])
+		AC_MSG_RESULT(yes)
+		AC_MSG_CHECKING([for struct in6addr_any])
+		AC_COMPILE_IFELSE(
+			[AC_LANG_PROGRAM(
+				[[#define IN_AUTOCONF
+				  #include "include/stdinc.h"]],
+				  [[struct in6_addr a = in6addr_any;]]
+			)],
+			[AC_MSG_RESULT(yes)],
+			[
+				AC_MSG_RESULT(no)
+				AC_DEFINE(NO_IN6ADDR_ANY, 1, [Define to 1 if your system has no in6addr_any.])
+				inet_misc=1
+			]
+		)
+	fi
+],
+[AC_MSG_RESULT(no)
+have_v6="no"])
+
+
+AC_CACHE_CHECK([whether string.h and strings.h may both be included],
+gcc_cv_header_string,
+[
+    AC_COMPILE_IFELSE(
+    [#include <string.h>
+    #include <strings.h>],
+    [gcc_cv_header_string=yes],
+    [gcc_cv_header_string=no])
+])
+
+if test "$gcc_cv_header_string" = "yes"; then
+   AC_DEFINE(STRING_WITH_STRINGS, 1, [Define to 1 if string.h may be included along with strings.h])
+fi
 
 if test "${ENABLE_MT}" = "true" ; then
    OW_MT=1

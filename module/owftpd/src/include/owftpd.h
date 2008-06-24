@@ -21,14 +21,6 @@
 #define SAFAM(_x_)  (((struct sockaddr *)(_x_))->sa_family)
 #define cSAFAM(_x_)  (((const struct sockaddr *)(_x_))->sa_family)
 
-#ifdef HAVE_NEW_SS_FAMILY
-#define SSFAM(_x_)  (((struct sockaddr_storage *)(_x_))->ss_family)
-#define cSSFAM(_x_)  (((const struct sockaddr_storage *)(_x_))->ss_family)
-#else
-#define SSFAM(_x_)  (((struct sockaddr_storage *)(_x_))->__ss_family)
-#define cSSFAM(_x_)  (((const struct sockaddr_storage *)(_x_))->__ss_family)
-#endif
-
 #define SIN4ADDR(_x_)   (((struct sockaddr_in *)(_x_))->sin_addr)
 #define SIN4PORT(_x_)   (((struct sockaddr_in *)(_x_))->sin_port)
 #define SIN6ADDR(_x_)   (((struct sockaddr_in6 *)(_x_))->sin6_addr)
@@ -66,11 +58,23 @@
 #define IP_ADDRSTRLEN INET_ADDRSTRLEN
 #endif
 
-#ifdef INET6
+#if defined(INET6) && defined(HAVE_STRUCT_SOCKADDR_STORAGE)
 typedef struct sockaddr_storage sockaddr_storage_t;
+#define SSFAM(_x_)  (((sockaddr_storage_t *)(_x_))->ss_family)
+#define cSSFAM(_x_)  (((const sockaddr_storage_t *)(_x_))->ss_family)
 #else
 typedef struct sockaddr_in sockaddr_storage_t;
+#define SSFAM(_x_)  (((sockaddr_storage_t *)(_x_))->sin_family)
+#define cSSFAM(_x_)  (((const sockaddr_storage_t *)(_x_))->sin_family)
 #endif
+
+#ifdef HAVE_BROKEN_SS_FAMILY
+#undef SSFAM
+#undef cSSFAM
+#define SSFAM(_x_)  (((sockaddr_storage_t *)(_x_))->__ss_family)
+#define cSSFAM(_x_)  (((const sockaddr_storage_t *)(_x_))->__ss_family)
+#endif
+
 
 /* address to listen on (use NULL to listen on all addresses) */
 #define FTP_ADDRESS NULL

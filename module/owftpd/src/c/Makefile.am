@@ -12,10 +12,6 @@ owftpd_SOURCES = file_list.c \
                  daemon_assert.c
 owftpd_DEPENDENCIES = ../../../owlib/src/c/libow.la
 
-if HAVE_NEW_SS_FAMILY
-SS_FLAG = -DHAVE_NEW_SS_FAMILY
-endif
-
 AM_CFLAGS = -I../include \
 	-I../../../owlib/src/include \
 	-L../../../owlib/src/c \
@@ -29,7 +25,6 @@ AM_CFLAGS = -I../include \
 	-Wcast-align \
 	-Wstrict-prototypes \
 	-Wredundant-decls \
-	${SS_FLAG} \
 	${EXTRACFLAGS} \
 	${LIBUSB_CFLAGS} \
 	${PTHREAD_CFLAGS}

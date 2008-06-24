@@ -97,11 +97,17 @@ $Id$
 #include <ctype.h>
 #include <stdlib.h>
 #include <stdio.h>
-#ifdef HAVE_STRING_H
-#include <string.h>
-#endif
-#ifdef HAVE_STRINGS_H
-#include <strings.h>			/* for strcasecmp */
+#ifdef STRING_WITH_STRINGS
+# include <string.h>
+# include <strings.h>			/* for strcasecmp */
+#else
+# ifdef HAVE_STRING_H
+#  include <string.h>
+# else
+#  ifdef HAVE_STRINGS_H
+#   include <strings.h>			/* for strcasecmp */
+#  endif
+# endif
 #endif
 #include <dirent.h>
 #include <signal.h>
