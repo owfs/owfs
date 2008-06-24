@@ -52,7 +52,6 @@ struct mutexes Mutex = {
 /* Essentially sets up mutexes to protect global data/devices */
 void LockSetup(void)
 {
-
 #if OW_MT
 #ifdef __UCLIBC__
 #if ((__UCLIBC_MAJOR__ << 16)+(__UCLIBC_MINOR__ << 8)+(__UCLIBC_SUBLEVEL__) < 0x00091D)
@@ -78,10 +77,10 @@ void LockSetup(void)
 	pthread_mutex_init(&Mutex.fstat_mutex, Mutex.pmattr);
 	pthread_mutex_init(&Mutex.dir_mutex, Mutex.pmattr);
 
-	rwlock_init(&Mutex.lib);
-	rwlock_init(&Mutex.cache);
-	rwlock_init(&Mutex.store);
-	rwlock_init(&Mutex.connin);
+	my_rwlock_init(&Mutex.lib);
+	my_rwlock_init(&Mutex.cache);
+	my_rwlock_init(&Mutex.store);
+	my_rwlock_init(&Mutex.connin);
 #ifdef __UCLIBC__
 	pthread_mutex_init(&Mutex.uclibc_mutex, Mutex.pmattr);
 #endif							/* __UCLIBC__ */

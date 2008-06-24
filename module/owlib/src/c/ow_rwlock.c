@@ -19,54 +19,54 @@ $Id$
 
 #ifdef OW_MT
 
-void rwlock_init(rwlock_t * rwlock)
+void my_rwlock_init(my_rwlock_t * my_rwlock)
 {
-	pthread_mutex_init(&(rwlock->protect_reader_count), Mutex.pmattr);
-	sem_init(&(rwlock->allow_readers), 0, 1);
-	sem_init(&(rwlock->no_processes), 0, 1);
-	rwlock->reader_count = 1;
+	pthread_mutex_init(&(my_rwlock->protect_reader_count), Mutex.pmattr);
+	sem_init(&(my_rwlock->allow_readers), 0, 1);
+	sem_init(&(my_rwlock->no_processes), 0, 1);
+	my_rwlock->reader_count = 1;
 }
 
-inline void rwlock_write_lock(rwlock_t * rwlock)
+inline void my_rwlock_write_lock(my_rwlock_t * my_rwlock)
 {
-	sem_wait(&(rwlock->allow_readers));
+	sem_wait(&(my_rwlock->allow_readers));
 
-	sem_wait(&(rwlock->no_processes));
+	sem_wait(&(my_rwlock->no_processes));
 }
 
-inline void rwlock_write_unlock(rwlock_t * rwlock)
+inline void my_rwlock_write_unlock(my_rwlock_t * my_rwlock)
 {
-	sem_post(&(rwlock->allow_readers));
+	sem_post(&(my_rwlock->allow_readers));
 
-	sem_post(&(rwlock->no_processes));
+	sem_post(&(my_rwlock->no_processes));
 }
 
-inline void rwlock_read_lock(rwlock_t * rwlock)
+inline void my_rwlock_read_lock(my_rwlock_t * my_rwlock)
 {
-	sem_wait(&(rwlock->allow_readers));
-	sem_post(&(rwlock->allow_readers));
+	sem_wait(&(my_rwlock->allow_readers));
+	sem_post(&(my_rwlock->allow_readers));
 
-	pthread_mutex_lock(&(rwlock->protect_reader_count));
-	if (++rwlock->reader_count == 1) {
-		sem_wait(&(rwlock->no_processes));
+	pthread_mutex_lock(&(my_rwlock->protect_reader_count));
+	if (++my_rwlock->reader_count == 1) {
+		sem_wait(&(my_rwlock->no_processes));
 	}
-	pthread_mutex_unlock(&(rwlock->protect_reader_count));
+	pthread_mutex_unlock(&(my_rwlock->protect_reader_count));
 }
 
-inline void rwlock_read_unlock(rwlock_t * rwlock)
+inline void my_rwlock_read_unlock(my_rwlock_t * my_rwlock)
 {
-	pthread_mutex_lock(&(rwlock->protect_reader_count));
-	if (--rwlock->reader_count == 0) {
-		sem_post(&(rwlock->no_processes));
+	pthread_mutex_lock(&(my_rwlock->protect_reader_count));
+	if (--my_rwlock->reader_count == 0) {
+		sem_post(&(my_rwlock->no_processes));
 	}
-	pthread_mutex_unlock(&(rwlock->protect_reader_count));
+	pthread_mutex_unlock(&(my_rwlock->protect_reader_count));
 }
 
-void rwlock_destroy(rwlock_t * rwlock)
+void my_rwlock_destroy(my_rwlock_t * my_rwlock)
 {
-	pthread_mutex_destroy(&(rwlock->protect_reader_count));
-	sem_destroy(&(rwlock->allow_readers));
-	sem_destroy(&(rwlock->no_processes));
+	pthread_mutex_destroy(&(my_rwlock->protect_reader_count));
+	sem_destroy(&(my_rwlock->allow_readers));
+	sem_destroy(&(my_rwlock->no_processes));
 }
 
 #endif							/* OW_MT */

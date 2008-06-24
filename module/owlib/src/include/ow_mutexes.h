@@ -65,10 +65,10 @@ extern struct mutexes {
 	pthread_mutex_t dir_mutex;
 	pthread_mutex_t libusb_mutex;
 	pthread_mutexattr_t *pmattr;
-	rwlock_t lib;
-	rwlock_t cache;
-	rwlock_t store;
-	rwlock_t connin;
+	my_rwlock_t lib;
+	my_rwlock_t cache;
+	my_rwlock_t store;
+	my_rwlock_t connin;
 #ifdef __UCLIBC__
 	pthread_mutexattr_t mattr;
 	pthread_mutex_t uclibc_mutex;
@@ -78,25 +78,25 @@ extern struct mutexes {
 
 
 #if OW_MT
-#define LIB_WLOCK         rwlock_write_lock(   &Mutex.lib    ) ;
-#define LIB_WUNLOCK       rwlock_write_unlock( &Mutex.lib    ) ;
-#define LIB_RLOCK         rwlock_read_lock(    &Mutex.lib    ) ;
-#define LIB_RUNLOCK       rwlock_read_unlock(  &Mutex.lib    ) ;
+#define LIB_WLOCK         my_rwlock_write_lock(   &Mutex.lib    ) ;
+#define LIB_WUNLOCK       my_rwlock_write_unlock( &Mutex.lib    ) ;
+#define LIB_RLOCK         my_rwlock_read_lock(    &Mutex.lib    ) ;
+#define LIB_RUNLOCK       my_rwlock_read_unlock(  &Mutex.lib    ) ;
 
-#define CACHE_WLOCK       rwlock_write_lock(   &Mutex.cache  ) ;
-#define CACHE_WUNLOCK     rwlock_write_unlock( &Mutex.cache  ) ;
-#define CACHE_RLOCK       rwlock_read_lock(    &Mutex.cache  ) ;
-#define CACHE_RUNLOCK     rwlock_read_unlock(  &Mutex.cache  ) ;
+#define CACHE_WLOCK       my_rwlock_write_lock(   &Mutex.cache  ) ;
+#define CACHE_WUNLOCK     my_rwlock_write_unlock( &Mutex.cache  ) ;
+#define CACHE_RLOCK       my_rwlock_read_lock(    &Mutex.cache  ) ;
+#define CACHE_RUNLOCK     my_rwlock_read_unlock(  &Mutex.cache  ) ;
 
-#define STORE_WLOCK       rwlock_write_lock(   &Mutex.store ) ;
-#define STORE_WUNLOCK     rwlock_write_unlock( &Mutex.store ) ;
-#define STORE_RLOCK       rwlock_read_lock(    &Mutex.store ) ;
-#define STORE_RUNLOCK     rwlock_read_unlock(  &Mutex.store ) ;
+#define STORE_WLOCK       my_rwlock_write_lock(   &Mutex.store ) ;
+#define STORE_WUNLOCK     my_rwlock_write_unlock( &Mutex.store ) ;
+#define STORE_RLOCK       my_rwlock_read_lock(    &Mutex.store ) ;
+#define STORE_RUNLOCK     my_rwlock_read_unlock(  &Mutex.store ) ;
 
-#define CONNIN_WLOCK      rwlock_write_lock(   &Mutex.connin ) ;
-#define CONNIN_WUNLOCK    rwlock_write_unlock( &Mutex.connin ) ;
-#define CONNIN_RLOCK      rwlock_read_lock(    &Mutex.connin ) ;
-#define CONNIN_RUNLOCK    rwlock_read_unlock(  &Mutex.connin ) ;
+#define CONNIN_WLOCK      my_rwlock_write_lock(   &Mutex.connin ) ;
+#define CONNIN_WUNLOCK    my_rwlock_write_unlock( &Mutex.connin ) ;
+#define CONNIN_RLOCK      my_rwlock_read_lock(    &Mutex.connin ) ;
+#define CONNIN_RUNLOCK    my_rwlock_read_unlock(  &Mutex.connin ) ;
 
 #define STATLOCK          pthread_mutex_lock(  &Mutex.stat_mutex   )
 #define STATUNLOCK        pthread_mutex_unlock(&Mutex.stat_mutex   )
