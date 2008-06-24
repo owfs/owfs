@@ -28,6 +28,7 @@ static int FS_read_all_bits(struct one_wire_query *owq);
 static int FS_read_one_bit(struct one_wire_query *owq);
 static int FS_read_a_part(struct one_wire_query *owq);
 static int FS_read_mixed_part(struct one_wire_query *owq);
+static void adjust_file_size(struct one_wire_query *owq) ;
 
 
 /*
@@ -332,18 +333,11 @@ size_t FileLength_vascii(struct one_wire_query * owq)
 	return file_length;
 }
 
-/* Real read -- called from read
-   Integrates with cache -- read not called if cached value already set
-*/
-static int FS_r_local(struct one_wire_query *owq)
+/* Adjusts size so that size+offset do not point past end of real file length*/
+/* If offset is too large, size is set to 0 */
+static void adjust_file_size(struct one_wire_query *owq)
 {
-	struct parsedname *pn = PN(owq);
     size_t file_length = 0;
-
-	/* Readable? */
-	if (pn->selected_filetype->read == NO_READ_FUNCTION) {
-		return -ENOTSUP;
-	}
 
     /* Adjust file length -- especially important for fuse which uses 4k buffers */
     /* First file filelength */
@@ -352,20 +346,37 @@ static int FS_r_local(struct one_wire_query *owq)
     } else {
         file_length = FileLength(PN(owq));
     }
+    
     /* next adjust for offset */
     if ((unsigned long) OWQ_offset(owq) >= (unsigned long) file_length) {
-        // Mounting fuse with "direct_io" will cause a second read with offset
-        // at end-of-file... Just return 0 if offset == size
         // This check is done in FS_output_owq() too, since it's always called when this function
-        return 0;           // this is status ok... but 0 bytes were read...
-    }
-    // Finally adjust buffer length
-    if ( OWQ_size(owq) + OWQ_offset(owq) > file_length ) {
+        OWQ_size(owq) = 0 ;           // this is status ok... but 0 bytes were read...
+    } else if ( OWQ_size(owq) + OWQ_offset(owq) > file_length ) {
+        // Finally adjust buffer length
         OWQ_size(owq) = file_length - OWQ_offset(owq) ;
     }
-    
     LEVEL_DEBUG("FS_r_local: file_length=%lu offset=%lu size=%lu\n",
-					(unsigned long) file_length, (unsigned long) OWQ_offset(owq), (unsigned long) OWQ_size(owq));
+                (unsigned long) file_length, (unsigned long) OWQ_offset(owq), (unsigned long) OWQ_size(owq));
+}
+
+/* Real read -- called from read
+   Integrates with cache -- read not called if cached value already set
+*/
+static int FS_r_local(struct one_wire_query *owq)
+{
+	struct parsedname *pn = PN(owq);
+	
+    /* Readable? */
+	if (pn->selected_filetype->read == NO_READ_FUNCTION) {
+		return -ENOTSUP;
+	}
+
+    adjust_file_size(owq) ;
+    if ( OWQ_size(owq) == 0 ) {
+        // Mounting fuse with "direct_io" will cause a second read with offset
+        // at end-of-file... Just return 0 if offset == size
+        return 0 ;
+    }
 
 	/* Special case for "fake" adapter */
 	if (pn->selected_connection->Adapter == adapter_fake && pn->selected_filetype->change != fc_static && IsRealDir(pn)) {

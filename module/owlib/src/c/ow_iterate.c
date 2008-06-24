@@ -25,12 +25,12 @@ int OW_readwrite_paged(struct one_wire_query *owq, size_t page, size_t pagelen, 
 
 	/* successive pages, will start at page start */
 	OWQ_length(owq) = size;
-	while (size > 0) {
+    while (size > 0) {
 		size_t thispage = pagelen - (offset % pagelen);
 		if (thispage > size) {
 			thispage = size;
 		}
-		if (readwritefunc(buffer_position, thispage, offset, pn)) {
+        if (readwritefunc(buffer_position, thispage, offset, pn)) {
 			return 1;
 		}
 		buffer_position += thispage;
