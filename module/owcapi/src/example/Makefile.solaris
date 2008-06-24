@@ -1,0 +1,23 @@
+# Makefile for owcapi example program -- invoked separately from this directory
+# $Id$
+
+CFLAGS = -g -I/opt/owfs/include -I../../../../src/include -I../../../owlib/src/include
+
+OBJS = owcapiexample.o compat.o
+
+all:	owcapiexample
+
+# Compile-flags for Linux and Cygwin
+LDFLAGS = -L/opt/owfs/lib -R/opt/owfs/lib -lowcapi
+
+owcapiexample: $(OBJS)
+	gcc $(CFLAGS) -o $@ $(OBJS) $(LDFLAGS)
+
+compat.o: ../../../owlib/src/c/compat.c
+	gcc $(CFLAGS) -c -o $@ $<
+
+%.o: %.c
+	gcc $(CFLAGS) -c -o $@ $<
+
+clean:
+	$(RM) -f owcapiexample *.o *~ .~
