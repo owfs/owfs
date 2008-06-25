@@ -81,8 +81,9 @@ ssize_t OW_init_args(int argc, char **argv)
 
 	/* Proceed with init while lock held */
 	/* grab our executable name */
-	if (argc > 0)
+    if (argc > 0) {
 		Globals.progname = strdup(argv[0]);
+    }
 
 	while (((c = getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL)) != -1)
 		   && (ret == 0)
@@ -108,8 +109,9 @@ static void getdircallback(void *v, const struct parsedname *const pn_entry)
 	struct charblob *cb = v;
 	const char *buf = FS_DirName(pn_entry);
 	CharblobAdd(buf, strlen(buf), cb);
-	if (IsDir(pn_entry))
+    if (IsDir(pn_entry)) {
 		CharblobAddChar('/', cb);
+    }
 }
 
 /*
@@ -147,10 +149,12 @@ static ssize_t getval(struct one_wire_query *owq)
 {
 	ssize_t ret;
 	ssize_t s = FullFileLength(PN(owq));
-	if (s <= 0)
+    if (s <= 0) {
 		return -ENOENT;
-	if ((OWQ_buffer(owq) = malloc(s + 1)) == NULL)
+    }
+    if ((OWQ_buffer(owq) = malloc(s + 1)) == NULL) {
 		return -ENOMEM;
+    }
 	OWQ_size(owq) = s;
 	ret = FS_read_postparse(owq);
 	if (ret < 0) {
