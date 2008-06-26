@@ -141,8 +141,8 @@ proc TapAccept { sock addr port } {
                 }
             }
         "Client early end" {
-                StatusMessage "FAILURE reading client request"
-                CircBufferEntryRequest $current "network read error" $serve($sock.string)
+                StatusMessage "Client dropped connection"
+                CircBufferEntryRequest $current "Client done" $serve($sock.string)
                 CircBufferEntryResponse $current "<none>"
                 RequestStatsIncr $sock 1
                 set serve($sock.state) "Done with client"
