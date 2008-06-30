@@ -110,7 +110,7 @@ void FS_cache_sibling(char *property, struct one_wire_query *owq_shallow_copy);
 
 #else							/* OW_CACHE */
 
-#define MakeInternalProp(tag)
+#define MakeInternalProp(tag, change)
 #define InternalProp(tag)     NULL
 
 #define Cache_Open( void )
