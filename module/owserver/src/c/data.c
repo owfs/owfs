@@ -86,21 +86,23 @@ void *DataHandler(void *v)
 	/* Now Check message types and only parse valid messages */
 	switch ((enum msg_classification) hd->sm.type) {	// outer switch
 	case msg_read:				// good message
-	case msg_write:			// good message
+	case msg_write:				// good message
 	case msg_dir:				// good message
 	case msg_presence:			// good message
 	case msg_dirall:			// good message
 	case msg_get:				// good message
-		if (hd->sm.payload == 0) {	/* Bad string -- no trailing null */
+		if (hd->sm.payload == 0) {	/* Bad query -- no data after header */
 			cm.ret = -EBADMSG;
 		} else {
 			OWQ_allocate_struct_and_pointer(owq);
 			struct parsedname *pn = PN(owq);
 
-			/* Parse the path string */
+			/* Parse the path string and crete  query object */
 			LEVEL_CALL("owserver: parse path=%s\n", hd->sp.path);
-			if ((cm.ret = FS_OWQ_create(hd->sp.path, NULL, hd->sm.size, hd->sm.offset, owq)))
+			cm.ret = FS_OWQ_create(hd->sp.path, NULL, hd->sm.size, hd->sm.offset, owq) ;
+			if ( cm.ret != 0 ) {
 				break;
+			}
 
 			/* Use client persistent settings (temp scale, display mode ...) */
 			pn->sg = hd->sm.sg;
@@ -120,7 +122,7 @@ void *DataHandler(void *v)
 			case msg_read:
 				LEVEL_CALL("Read message\n");
 				retbuffer = ReadHandler(hd, &cm, owq);
-				LEVEL_DEBUG("Read message done retbuffer=%p\n", retbuffer);
+				LEVEL_DEBUG("Read message done value=%p\n", retbuffer);
 				break;
 			case msg_write:{
 					LEVEL_CALL("Write message\n");
@@ -128,6 +130,7 @@ void *DataHandler(void *v)
 						|| ((int) hd->sp.datasize < hd->sm.size)) {
 						cm.ret = -EMSGSIZE;
 					} else {
+						/* set buffer (size already set) */
 						OWQ_buffer(owq) = (ASCII *) hd->sp.data;
 						WriteHandler(hd, &cm, owq);
 					}
@@ -183,8 +186,9 @@ void *DataHandler(void *v)
 	}
 	timerclear(&(hd->tv));
 	TOCLIENTUNLOCK(hd);
-	if (retbuffer)
+	if (retbuffer) {
 		free(retbuffer);
+	}
 	LEVEL_DEBUG("RealHandler: done\n");
 	return NULL;
 }
