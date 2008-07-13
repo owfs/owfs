@@ -2,7 +2,7 @@ SUBDIRS = src module
 RPMMACROS = ${HOME}/.rpmmacros
 RPMDIR = ${HOME}/.rpm
 
-EXTRA_DIST = bootstrap
+EXTRA_DIST = bootstrap acx_pthread.m4
 
 clean-generic:
 
