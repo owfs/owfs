@@ -116,15 +116,19 @@ static int FS_w_TS(struct one_wire_query *owq)
 	SGLOCK;
 	switch (OWQ_buffer(owq)[0]) {
 	case 'C':
+	case 'c':
 		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_celsius);
 		break;
 	case 'F':
+	case 'f':
 		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_fahrenheit);
 		break;
 	case 'R':
+	case 'r':
 		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_rankine);
 		break;
 	case 'K':
+	case 'k':
 		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_kelvin);
 		break;
 	default:
