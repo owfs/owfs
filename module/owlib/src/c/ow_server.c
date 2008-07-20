@@ -668,9 +668,21 @@ static int ToServer(int file_descriptor, struct server_msg *sm, struct serverpac
 		io[4].iov_base = &(Globals.Token);	// owserver: add our tag
 		io[4].iov_len = sizeof(union antiloop);
 	}
-	//printf("ToServer payload=%d size=%d type=%d tempscale=%X offset=%d\n",payload,sm->size,sm->type,sm->sg,sm->offset);
-	//printf("<%.4d|%.4d\n",sm->type,payload);
-	//printf("Scale=%s\n", TemperatureScaleName(SGTemperatureScale(sm->sg)));
+	LEVEL_DEBUG("ToServer payload=%d size=%d type=%d SG=%X offset=%d\n",payload,sm->size,sm->type,sm->sg,sm->offset);
+    if (io[1].iov_base) {  // send path (if not null)
+       LEVEL_DEBUG("ToServer path=%s\n", sp->path);
+    }
+    // next block, data (only for writes)
+    if (io[2].iov_base) {  // send data (if datasize not zero)
+        LEVEL_DEBUG("ToServer data=%s\n", sp->data);
+    }
+    // next block, tokens
+    if (Globals.opt == opt_server) { 
+        LEVEL_DEBUG("ToServer tokens=%d\n", sp->tokens+1);
+    }
+
+
+    sm->version = MakeServerprotocol(OWSERVER_PROTOCOL_VERSION);
 
 	// encode in network order (just the header)
 	sm->version = htonl(sm->version);
