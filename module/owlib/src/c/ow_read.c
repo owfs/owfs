@@ -344,7 +344,7 @@ static void adjust_file_size(struct one_wire_query *owq)
     if (PN(owq)->selected_filetype->format == ft_vascii) {
         file_length = FileLength_vascii(owq);
     } else {
-        file_length = FileLength(PN(owq));
+        file_length = FullFileLength(PN(owq));
     }
     
     /* next adjust for offset */
@@ -395,7 +395,7 @@ static int FS_r_local(struct one_wire_query *owq)
 			return FS_read_lump(owq);
 		case EXTENSION_ALL:
 			if (OWQ_offset(owq) > 0) {
-				return 0;		// no aggregates can be offset -- too confusing
+				return -1;		// no aggregates can be offset -- too confusing
 			}
 			if (pn->selected_filetype->format == ft_bitfield) {
 				return FS_read_all_bits(owq);
