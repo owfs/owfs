@@ -348,19 +348,20 @@ rm -f $RPM_BUILD_ROOT%{perl_sitearch}/auto/OW/.packlist
 rm -f $RPM_BUILD_ROOT%{perl_sitearch}/auto/OWNet/.packlist
 %endif
 %if %{build_python}
+%define python_sitedir %(python -c "from distutils.sysconfig import get_python_lib; print get_python_lib(plat_specific=1)" 2>/dev/null|| echo @PYSITEDIR@)
 # Remove OpenSUSE info files
-rm -f $RPM_BUILD_ROOT@PYSITEDIR@/ow-*-info
-rm -f $RPM_BUILD_ROOT@PYSITEDIR@/ownet-*-info
+rm -f $RPM_BUILD_ROOT%{python_sitedir}/ow-*-info
+rm -f $RPM_BUILD_ROOT%{python_sitedir}/ownet-*-info
 %endif
 %if %{build_php}
-rm -f $RPM_BUILD_ROOT@PHPLIBDIR@/libowphp.la $RPM_BUILD_ROOT@PHPLIBDIR@/libowphp.a
+#don't use the PHPLIBDIR here... assume php-config works instead.
+%define php_extdir %(php-config --extension-dir 2>/dev/null || php5-config --extension-dir 2>/dev/null || php4-config --extension-dir 2>/dev/null || echo @PHPLIBDIR@)
+#don't use the PHPLIBDIR here... assume php-config works instead.
+rm -f $RPM_BUILD_ROOT%{php_extdir}/libowphp.la $RPM_BUILD_ROOT%{php_extdir}/libowphp.a
 %endif
 %if %{build_tcl}
 rm -f $RPM_BUILD_ROOT%{_libdir}/owtcl-*/ow.la $RPM_BUILD_ROOT%{_libdir}/owtcl-*/ow.a
 %endif
-
-#mv -f $RPM_BUILD_ROOT%{prefix}/bin/* $RPM_BUILD_ROOT%{prefix}/sbin
-#rm -rf $RPM_BUILD_ROOT%{prefix}/bin
 
 %post libs
 /sbin/ldconfig
@@ -493,13 +494,13 @@ fi
 %endif
 
 %if %{build_python}
-#%dir @PYSITEDIR@/ow
-#@PYSITEDIR@/ow/__init__.py*
-#@PYSITEDIR@/ow/_OW.so
+#%dir %{python_sitedir}/ow
+#%{python_sitedir}/ow/__init__.py*
+#%{python_sitedir}/ow/_OW.so
 # include ownet-python (it's a duplicate since it's in owfs-python too)
-%dir @PYSITEDIR@/ownet
-@PYSITEDIR@/ownet/__init__.py*
-@PYSITEDIR@/ownet/connection.py*
+%dir %{python_sitedir}/ownet
+%{python_sitedir}/ownet/__init__.py*/
+%{python_sitedir}/ownet/connection.py*
 %endif
 
 %endif
@@ -566,23 +567,23 @@ fi
 %if %{build_python}
 %files python
 %defattr(-,root,root)
-%dir @PYSITEDIR@/ow
-@PYSITEDIR@/ow/__init__.py*
-@PYSITEDIR@/ow/_OW.so
+%dir %{python_sitedir}/ow
+%{python_sitedir}/ow/__init__.py*
+%{python_sitedir}/ow/_OW.so
 #OpenSUSE info file
-#@PYSITEDIR@/ow-*info
-%dir @PYSITEDIR@/ownet
-@PYSITEDIR@/ownet/__init__.py*
-@PYSITEDIR@/ownet/connection.py*
+#%{python_sitedir}/ow-*info
+%dir %{python_sitedir}/ownet
+%{python_sitedir}/ownet/__init__.py*
+%{python_sitedir}/ownet/connection.py*
 #OpenSUSE info file
-#@PYSITEDIR@/ownet-*info
+#%{python_sitedir}/ownet-*info
 %endif
 
 %if %{build_php}
 %files php
 %defattr(-,root,root)
-%dir @PHPLIBDIR@
-@PHPLIBDIR@/libowphp.so*
+%dir %{php_extdir}
+%{php_extdir}/libowphp.so*
 %{prefix}/bin/ownet.php
 %endif
 
