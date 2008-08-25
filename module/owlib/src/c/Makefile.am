@@ -43,6 +43,7 @@ OWLIB_SOURCE = ow_dl.c           \
                ow_charblob.c     \
                ow_com.c          \
                ow_com_write.c    \
+               ow_com_read.c     \
                ow_connect.c      \
                ow_crc.c          \
                ow_daemon.c       \

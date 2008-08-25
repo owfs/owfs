@@ -18,12 +18,12 @@ $Id$
 #include <linux/limits.h>
 #endif
 
-int COM_write( char * data, size_t length, const struct parsedname * pn )
+int COM_write( const char * data, size_t length, const struct parsedname * pn )
 {
 	struct connection_in * connection = pn->selected_connection ;
 	ssize_t to_be_written = length ;
 
-	if ( length == 0 ) {
+	if ( length == 0 || data == NULL ) {
 		return 0 ;
 	}
 
@@ -37,7 +37,7 @@ int COM_write( char * data, size_t length, const struct parsedname * pn )
 		fd_set writeset;
 		struct timeval tv;
 
-		// use same timeout as read for serial
+		// use same timeout as read as for write
 		tv.tv_sec = Globals.timeout_serial;
 		tv.tv_usec = 0;
 		/* Initialize readset */
@@ -54,11 +54,12 @@ int COM_write( char * data, size_t length, const struct parsedname * pn )
 				return -EIO;	/* error */
 			}
 			update_max_delay(pn);
+			Debug_Bytes("Attempt serial write:",  &data[length - to_be_written], to_be_written);
 			write_result = write(connection->file_descriptor, &data[length - to_be_written], to_be_written);	/* write bytes */
 			if (write_result < 0) {
 				if (errno != EWOULDBLOCK) {
 					ERROR_CONNECT("Trouble writing to serial port: %s\n", SAFESTRING(connection->name));
-					STAT_ADD1_BUS(e_bus_read_errors, connection);
+					STAT_ADD1_BUS(e_bus_write_errors, connection);
 					return write_result;
 				}
 				/* write() was interrupted, try again */

@@ -238,70 +238,10 @@ int DS9097_sendback_bits(const BYTE * outbits, BYTE * inbits, const size_t lengt
 /* Indeed, will move to DS9097 */
 static int DS9097_send_and_get(const BYTE * bussend, BYTE * busget, const size_t length, const struct parsedname *pn)
 {
-	size_t gl = length;
-	ssize_t r;
-	int rc;
-
 	if ( COM_write( bussend, length, pn ) < 0 ) {
 		return -EIO ;
 	}	
 
 	/* get back string -- with timeout and partial read loop */
-	if (busget && length) {
-		while (gl > 0) {
-			fd_set readset;
-			struct timeval tv;
-			//printf("SAG readlength=%d\n",gl);
-			if (!pn->selected_connection) {
-				break;
-			}
-			/* I can't imagine that 5 seconds timeout is needed???
-			 * Any comments Paul ? */
-			/* We make it 10 * standard since 10 bytes required for 1 bit */
-			tv.tv_sec = Globals.timeout_serial;
-			tv.tv_usec = 0;
-			/* Initialize readset */
-			FD_ZERO(&readset);
-			FD_SET(pn->selected_connection->file_descriptor, &readset);
-
-			/* Read if it doesn't timeout first */
-			rc = select(pn->selected_connection->file_descriptor + 1, &readset, NULL, NULL, &tv);
-			if (rc > 0) {
-				//printf("SAG selected\n");
-				/* Is there something to read? */
-				if (FD_ISSET(pn->selected_connection->file_descriptor, &readset) == 0) {
-					STAT_ADD1_BUS(e_bus_read_errors, pn->selected_connection);
-					return -EIO;	/* error */
-				}
-				update_max_delay(pn);
-				r = read(pn->selected_connection->file_descriptor, &busget[length - gl], gl);	/* get available bytes */
-				//printf("SAG postread ret=%d\n",r);
-				if (r < 0) {
-					if (errno == EINTR) {
-						/* read() was interrupted, try again */
-						STAT_ADD1_BUS(e_bus_read_errors, pn->selected_connection);
-						continue;
-					}
-					STAT_ADD1_BUS(e_bus_read_errors, pn->selected_connection);
-					return r;
-				}
-				gl -= r;
-			} else if (rc < 0) {	/* select error */
-				if (errno == EINTR) {
-					/* select() was interrupted, try again */
-					continue;
-				}
-				STAT_ADD1_BUS(e_bus_read_errors, pn->selected_connection);
-				return -EINTR;
-			} else {			/* timed out */
-				STAT_ADD1_BUS(e_bus_timeouts, pn->selected_connection);
-				return -EAGAIN;
-			}
-		}
-	} else {
-		/* I'm not sure about this... Shouldn't flush buffer if
-		   user decide not to read any bytes. Any comments Paul ? */
-		//COM_flush(pn) ;
-	}
-	return 0;
+	return COM_read( busget, length, pn ) ;
 }
