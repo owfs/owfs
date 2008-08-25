@@ -754,31 +754,7 @@ static int DS2480_ProgramPulse(const struct parsedname *pn)
  */
 static int DS2480_write(const BYTE * buf, const size_t size, const struct parsedname *pn)
 {
-	ssize_t r, sl = size;
-
-	while (sl > 0) {
-		if (!pn->selected_connection) {
-			break;
-		}
-		r = write(pn->selected_connection->file_descriptor, &buf[size - sl], sl);
-		if (r < 0) {
-			if (errno == EINTR) {
-				STAT_ADD1_BUS(e_bus_write_errors, pn->selected_connection);
-				continue;
-			}
-			break;
-		}
-		sl -= r;
-	}
-	if (pn->selected_connection) {
-		tcdrain(pn->selected_connection->file_descriptor);
-		gettimeofday(&(pn->selected_connection->bus_write_time), NULL);
-	}
-	if (sl > 0) {
-		STAT_ADD1_BUS(e_bus_timeouts, pn->selected_connection);
-		return -EIO;
-	}
-	return 0;
+	return COM_write( buf, size, pn );
 }
 
 /* Assymetric */

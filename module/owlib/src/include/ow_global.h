@@ -78,7 +78,7 @@ struct global {
 	int timeout_stable;
 	int timeout_directory;
 	int timeout_presence;
-	int timeout_serial;
+	int timeout_serial; // serial read and write use the same timeout currently
 	int timeout_usb;
 	int timeout_network;
 	int timeout_server;

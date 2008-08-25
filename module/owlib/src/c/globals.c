@@ -14,7 +14,7 @@ $Id$
 #include "ow.h"
 #include "ow_devices.h"
 
-/* Globalss for port and bus communication */
+/* Globals for port and bus communication */
 /* connections globals stored in ow_connect.c */
 /* i.e. connection_in * head_inbound_list ...         */
 
@@ -30,6 +30,11 @@ int32_t SemiGlobal = ((uint8_t) fdi) << 24 | ((uint8_t) temp_celsius) << 16 | ((
 	<< 8;
 #endif
 
+// This structure is defined in ow_global.h
+// These are all the tunable constants and flags. Usually they have
+// 1 A command line entry (ow_opt.h)
+// 2 A help entry (ow_help.c)
+// An entry in /settings (ow_settings.c)
 struct global Globals = {
 	.announce_off = 0,
 	.announce_name = NULL,
@@ -61,7 +66,7 @@ struct global Globals = {
 	.timeout_stable = 300,
 	.timeout_directory = 60,
 	.timeout_presence = 120,
-	.timeout_serial = 5,
+	.timeout_serial = 5, // serial read and write use the same timeout currently
 	.timeout_usb = 5,			// 5 seconds
 	.timeout_network = 1,
 	.timeout_server = 10,

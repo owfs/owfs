@@ -240,39 +240,11 @@ static int DS9097_send_and_get(const BYTE * bussend, BYTE * busget, const size_t
 {
 	size_t gl = length;
 	ssize_t r;
-	size_t sl = length;
 	int rc;
 
-	if (sl > 0) {
-		/* first flush... should this really be done? Perhaps it's a good idea
-		 * so read function below doesn't get any other old result */
-		COM_flush(pn);
-
-		/* send out string, and handle interrupted system call too */
-		while (sl > 0) {
-			if (!pn->selected_connection) {
-				break;
-			}
-			r = write(pn->selected_connection->file_descriptor, &bussend[length - sl], sl);
-			if (r < 0) {
-				if (errno == EINTR) {
-					/* write() was interrupted, try again */
-					continue;
-				}
-				break;
-			}
-			sl -= r;
-		}
-		if (pn->selected_connection) {
-			tcdrain(pn->selected_connection->file_descriptor);	/* make sure everthing is sent */
-			gettimeofday(&(pn->selected_connection->bus_write_time), NULL);
-		}
-		if (sl > 0) {
-			STAT_ADD1_BUS(e_bus_write_errors, pn->selected_connection);
-			return -EIO;
-		}
-		//printf("SAG written\n");
-	}
+	if ( COM_write( bussend, length, pn ) < 0 ) {
+		return -EIO ;
+	}	
 
 	/* get back string -- with timeout and partial read loop */
 	if (busget && length) {

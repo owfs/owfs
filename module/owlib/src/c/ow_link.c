@@ -301,28 +301,7 @@ static int LINK_read(BYTE * buf, const size_t size, const struct parsedname *pn)
  */
 static int LINK_write(const BYTE * buf, const size_t size, const struct parsedname *pn)
 {
-	ssize_t left_to_write = size;
-
-	Debug_Bytes("LINK write", buf, size);
-//    COM_flush(pn) ;
-	//printf("Link write attempting %d bytes on %d\n",(int)size,pn->selected_connection->file_descriptor) ;
-	while (left_to_write > 0) {
-		ssize_t write_or_error = write(pn->selected_connection->file_descriptor, buf,
-									   left_to_write);
-		Debug_Bytes("Link write", buf, left_to_write);
-		//printf("Link write = %d\n",(int)write_or_error);
-		if (write_or_error < 0) {
-			ERROR_CONNECT("Trouble writing data to LINK: %s\n", SAFESTRING(pn->selected_connection->name));
-			STAT_ADD1_BUS(e_bus_write_errors, pn->selected_connection);
-			return write_or_error;
-		}
-		LEVEL_DEBUG("ltow %d woe %d\n", left_to_write, write_or_error);
-		left_to_write -= write_or_error;
-	}
-	tcdrain(pn->selected_connection->file_descriptor);
-	gettimeofday(&(pn->selected_connection->bus_write_time), NULL);
-
-	return 0;
+	return COM_write( buf, size, pn ) ;	
 }
 
 static int LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay, const struct parsedname *pn)

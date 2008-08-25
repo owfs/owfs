@@ -135,7 +135,7 @@ const struct option owopts_long[] = {
 	{"timeout_stable", required_argument, NULL, e_timeout_stable,},	// timeout -- unchanging cached values
 	{"timeout_directory", required_argument, NULL, e_timeout_directory,},	// timeout -- direcory cached values
 	{"timeout_presence", required_argument, NULL, e_timeout_presence,},	// timeout -- device location
-	{"timeout_serial", required_argument, NULL, e_timeout_serial,},	// timeout -- serial wait
+	{"timeout_serial", required_argument, NULL, e_timeout_serial,},	// timeout -- serial wait (read and write)
 	{"timeout_usb", required_argument, NULL, e_timeout_usb,},	// timeout -- usb wait
 	{"timeout_network", required_argument, NULL, e_timeout_network,},	// timeout -- tcp wait
 	{"timeout_server", required_argument, NULL, e_timeout_server,},	// timeout -- server wait
