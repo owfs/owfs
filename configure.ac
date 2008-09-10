@@ -283,6 +283,15 @@ if test "${ENABLE_MT}" = "true" ; then
     if test "$acx_pthread_ok" = "yes"; then
 	#CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
 	# can't set pthread flags for all compilations, since owshell doesn't need it.
+	if test "$cross_compiling" = yes; then
+	   # We need to link libow.so with -lpthread on some cross-platforms
+	   # since owtcl.so doesn't work otherwise. -pthread is not enough
+	   if test x"$PTHREAD_LIBS" = x -a "x$PTHREAD_CFLAGS" = "x-pthread"; then
+	      AC_MSG_RESULT([add -lpthread to PTHREAD_LIBS])
+	      PTHREAD_LIBS="-lpthread"
+	   fi
+	fi
+
 	ENABLE_MT="true"
     else
 	ENABLE_MT="false"
@@ -785,6 +794,11 @@ if test "${ENABLE_OWTCL}" = "true" ; then
         AC_SUBST(TCL_BUILD_STUB_LIB_SPEC)
         AC_SUBST(TCL_INCLUDE_SPEC)
         AC_SUBST(TCL_PACKAGE_PATH)
+	# guess that tcl will install the files under the first path in
+	# TCL_PACKAGE_PATH. TCL_BIN_DIR is usually correct, but this
+	# might contain staging_dir prefix when cross-compiling.
+	OWTCL_INSTALL_PATH="`echo ${TCL_PACKAGE_PATH} | cut -d' ' -f1`"
+	AC_SUBST(OWTCL_INSTALL_PATH)
     fi
 fi
 AC_SUBST(ENABLE_OWTCL)

@@ -7,7 +7,8 @@ EXTRA_DIST = owtclInitScript.h tcl.m4 ow.tcl example/owdir.tcl example/test.tcl
 pkglib_LTLIBRARIES = ow.la
 ow_la_SOURCES = ow.c
 ow_la_LDFLAGS = -module -release $(OWTCL_VERSION) -shared -shrext "$(TCL_SHLIB_SUFFIX)"
-ow_la_LIBADD = ../../owlib/src/c/libow.la ../../owcapi/src/c/libowcapi.la
+#ow_la_LIBADD = ../../owlib/src/c/libow.la ../../owcapi/src/c/libowcapi.la
+ow_la_LIBADD = $(TCL_LIB_SPEC) ../../owlib/src/c/libow.la ../../owcapi/src/c/libowcapi.la ${TCL_LIBS}
 ow_la_DEPENDENCIES = ../../owlib/src/c/libow.la ../../owcapi/src/c/libowcapi.la
 ow.lo: owtclInitScript.h ow.tcl.h version.h
 
@@ -20,13 +21,13 @@ PACKAGE = ow
 MAJOR_VERSION = $(OWTCL_MAJOR_VERSION)
 MINOR_VERSION = $(OWTCL_MINOR_VERSION)
 
-pkglibdir = $(TCL_BIN_DIR)/owtcl-$(OWTCL_VERSION)
+pkglibdir = @OWTCL_INSTALL_PATH@/owtcl-$(OWTCL_VERSION)
+#something like this. $(TCL_EXEC_PREFIX)/lib@LIBPOSTFIX@/owtcl-$(OWTCL_VERSION)
 datadir = $(pkglibdir)
 
 #SHLIB_SUFFIX = $(TCL_SHLIB_SUFFIX)
 
 LIBTOOL_DEPS = @LIBTOOL_DEPS@
-
 
 AM_CFLAGS = -I../../owlib/src/include \
 	-I ../../owcapi/src/include \
@@ -47,9 +48,10 @@ AM_CFLAGS = -I../../owlib/src/include \
 	$(TCL_INCLUDE_SPEC) \
 	-DTCL_PACKAGE_PATH=\"'$(TCL_PACKAGE_PATH)'\" \
 	-DOWTCL_PACKAGE_PATH=\"$(pkglibdir)\" \
-	$(TCL_LIB_SPEC)
+	${PIC_FLAGS}
 
-LDADD = -L../../owlib/src/c $(TCL_LIB_SPEC) -low ${PTHREAD_LIBS} ${LD_EXTRALIBS} ${OSLIBS}
+#LDADD = -L../../owlib/src/c $(TCL_LIB_SPEC) -low -lowcapi ${TCL_LIBS} ${PTHREAD_LIBS} ${LD_EXTRALIBS} ${OSLIBS}
+#LDADD = $(TCL_LIB_SPEC) ../../owlib/src/c/libow.la ../../owcapi/src/c/libowcapi.la ${TCL_LIBS} ${PTHREAD_CFLAGS} ${PTHREAD_LIBS}
 #SHLIB_LD = $(TCL_SHLIB_LD) $(LIBS) -low ${PTHREAD_LIBS} ${LD_EXTRALIBS} ${OSLIBS}
 
 clean-local:

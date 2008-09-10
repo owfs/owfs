@@ -69,8 +69,9 @@ AC_DEFUN([SC_PATH_TCLCONFIG],
 
 	    # check in a few common install locations
 	    if test x"${ac_cv_c_tclconfig}" = x ; then
-		for i in `ls -d ${libdir} 2>/dev/null` \
+		for i in \
 			`ls -d /usr/local/lib 2>/dev/null` \
+			`ls -d ${libdir} 2>/dev/null` \
 			`ls -d /usr/contrib/lib 2>/dev/null` \
 			`ls -d /usr/lib${LIBPOSTFIX} 2>/dev/null` \
 			../../tcl \
