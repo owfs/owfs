@@ -367,21 +367,31 @@ AM_CONDITIONAL(ENABLE_OWHTTPD, test "${ENABLE_OWHTTPD}" = "true")
 AC_MSG_CHECKING(if owftpd is enabled)
 ENABLE_OWFTPD="true"
 AC_ARG_ENABLE(owftpd,
-[  --enable-owftpd         Enable owftpd module (default false)],
+[  --enable-owftpd         Enable owftpd module (default true)],
 [
-    AC_MSG_RESULT([$enableval])
     if test ! "$enableval" = "yes" ; then
-        ENABLE_OWFTPD="false"
+	ENABLE_OWFTPD="false"
+	AC_MSG_ERROR([no])
     else
-        ENABLE_OWLIB="true"
+	if test ! "${ENABLE_MT}" = "true" ; then
+	    AC_MSG_ERROR([owftpd needs multithreading])
+	fi
+	ENABLE_OWLIB="true"
+	AC_MSG_RESULT([$enableval])
     fi
 ],
 [
-    ENABLE_OWLIB="true"
-    AC_MSG_RESULT([yes (default)])
+    if test "${ENABLE_MT}" = "true" ; then
+        ENABLE_OWLIB="true"
+    	AC_MSG_RESULT([yes (default)])
+    else
+	ENABLE_OWFTPD="false"
+    	AC_MSG_RESULT([no (multithreading needed)])
+    fi
 ])
 AC_SUBST(ENABLE_OWFTPD)
 AM_CONDITIONAL(ENABLE_OWFTPD, test "${ENABLE_OWFTPD}" = "true")
+
 
 #Check owserver
 AC_MSG_CHECKING(if owserver is enabled)

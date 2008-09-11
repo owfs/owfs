@@ -17,7 +17,7 @@ $Id$
 
 /* ------- Globalss ----------- */
 
-#ifdef OW_MT
+#if OW_MT
 
 void my_rwlock_init(my_rwlock_t * my_rwlock)
 {

@@ -297,11 +297,13 @@ FS_dir_all_connections(void (*dirfunc) (void *, const struct parsedname *), void
 
 	memcpy(pn_selected_connection, pn_directory, sizeof(struct parsedname));	//shallow copy
 
+#if 0
 	memcpy(pn_bus_directory, pn_directory, sizeof(struct parsedname));	// shallow copy
 
 	pn_bus_directory->state = ePS_bus;	// even stronger statement than SetKnownBus
 	pn_bus_directory->type = ePN_real;
-
+#endif
+	
 	for (bus_number = 0; bus_number < count_inbound_connections; ++bus_number) {
 		SetKnownBus(bus_number, pn_selected_connection);
 

@@ -13,7 +13,7 @@
 
 #include "owfs_config.h"
 
-#ifdef OW_MT
+#if OW_MT
 
 #include <pthread.h>
 #include "sem.h"
