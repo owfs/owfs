@@ -87,8 +87,9 @@ void owtcl_Error(Tcl_Interp * interp, char *error_family, char *error_code, char
 
 	va_end(argsPtr);
 #ifdef HAVE_VASPRINTF
-	if (buf)
+	if (buf) {
 		free(buf);
+	}
 #endif
 }
 
@@ -305,8 +306,9 @@ owtcl_ObjCmdProc(Owtcl_Get)
 	s = ss;						// to get around OW_get uses size_t
 	if (r < 0) {
 		owtcl_ErrorOWlib(interp);
-		if (buf)
+		if (buf != NULL) {
 			free(buf);
+		}
 		tcl_return = TCL_ERROR;
 		goto common_exit;
 	}
@@ -334,7 +336,8 @@ owtcl_ObjCmdProc(Owtcl_Get)
 		resultPtr = Tcl_NewStringObj(buf, -1);
 	}
 	Tcl_SetObjResult(interp, resultPtr);
-
+	free(buf);
+	
   common_exit:
 	owtcl_ArgObjDecr;
 	return tcl_return;
