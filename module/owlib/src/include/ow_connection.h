@@ -220,6 +220,7 @@ struct connin_i2c {
 	int channels;
 	int index;
 	int i2c_address;
+	int i2c_index ;
 	BYTE configreg;
 	BYTE configchip;
 	/* only one per chip, the bus entries for the other 7 channels point to the firt one */

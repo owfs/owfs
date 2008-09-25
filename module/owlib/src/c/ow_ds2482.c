@@ -45,6 +45,18 @@ $Id$
 // specifically lm-sensors-2.10.0
 #include "i2c-dev.h"
 
+enum ds2482_address { 
+	ds2482_any=-2, 
+	ds2482_all=-1, 
+	ds2482_18, ds2482_19, ds2482_1A, ds2482_1B, ds2482_1C, ds2482_1D, ds2482_1E, ds2482_1F, 
+	ds2482_too_far 
+	} ;
+
+static enum ds2482_address Parse_i2c_address( struct connection_in * in ) ;
+static int DS2482_detect_bus(enum ds2482_address chip_num, struct connection_in *in) ;
+static int DS2482_detect_sys(enum ds2482_address chip_num, struct connection_in *in) ;
+static int DS2482_detect_dir(enum ds2482_address chip_num, struct connection_in *in) ;
+static int DS2482_detect_single(int lowindex, int highindex, struct connection_in *in) ;
 static int DS2482_next_both(struct device_search *ds, const struct parsedname *pn);
 static int DS2482_triple(BYTE * bits, int direction, int file_descriptor);
 static int DS2482_send_and_get(int file_descriptor, const BYTE wr, BYTE * rd);
@@ -111,6 +123,35 @@ static int DS2482_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, cons
 #define DS2482_1wire_reset_usec   1125, 1250
 #define DS2482_1wire_write_usec   530, 585
 #define DS2482_1wire_triplet_usec   198, 219
+
+/* Search for a ":" in the name
+   Change it to a null,and parse the remaining text as either
+   null, a number, or nothing
+*/
+static enum ds2482_address Parse_i2c_address( struct connection_in * in )
+{ 
+	enum ds2482_address address ;
+	char * colon = strchr( in->name, ':' ) ;
+	if ( colon == NULL ) { // not found
+		return ds2482_any ;
+	}
+
+	colon[0] = 0x00 ; // set as null
+	++colon ;; // point beyond
+	
+	if ( strcasecmp(colon,"all")==0 ) {
+		return ds2482_all ;
+	}
+
+	address = atoi( colon ) ;
+	
+	if ( address < ds2482_18 || address >= ds2482_too_far ) {
+		return ds2482_any ; // bad entry ignored
+	}
+	
+	return address ;
+}
+
 /* Device-specific functions */
 static void DS2482_setroutines(struct connection_in *in)
 {
@@ -129,10 +170,183 @@ static void DS2482_setroutines(struct connection_in *in)
 	in->bundling_length = I2C_FIFO_SIZE;
 }
 
-/* All the rest of the program sees is the DS9907_detect and the entry in iroutines */
+/* All the rest of the program sees is the DS2482_detect and the entry in iroutines */
 /* Open a DS2482 */
 /* Try to see if there is a DS2482 device on the specified i2c bus */
 int DS2482_detect(struct connection_in *in)
+{
+	enum ds2482_address chip_num ;
+	int any ;
+	int all ;
+
+	// find the specific i2c address specified after the ":"
+	chip_num = Parse_i2c_address( in ) ;
+
+	any = ( in->name[0] == 0x00 ) ; // no adapter specified, so use any (the first good one )
+	all = ( strcasecmp( in->name, "all" ) == 0 ) ;
+	if ( !any && !all ) {
+		// traditional, actual bus specified
+		return DS2482_detect_bus( chip_num, in ) ;
+	}
+
+	switch ( DS2482_detect_sys( chip_num, in ) ) {
+		case -1:
+			return DS2482_detect_dir( chip_num, in ) ? -ENODEV : 0 ;
+		case 0:
+			return -ENODEV ;
+		default:
+			return 0 ;
+	}
+}
+
+/* All the rest of the program sees is the DS2482_detect and the entry in iroutines */
+/* Open a DS2482 */
+/* cycle through /sys/class/i2c-adapter */
+/* returns -1 -- no direcory could be opened 
+   else found -- number of directories found */
+static int DS2482_detect_sys(enum ds2482_address chip_num, struct connection_in *in)
+{
+	DIR * i2c_list_dir ;
+	struct dirent * i2c_bus ;
+	int found = 0 ;
+	int any = ( in->name[0] == 0x00 ) ; // no adapter specified, so use any (the first good one )
+	struct connection_in * all_in = in ;
+
+	// We'll look in this directory for available i2c adapters.
+	// This may be linux 2.6 specific
+	i2c_list_dir = opendir( "/sys/class/i2c-adapter" ) ;
+	if ( i2c_list_dir == NULL ) {
+		ERROR_CONNECT( "Cannot open /sys/class/i2c-adapter to find available i2c devices" ) ;
+		return -1 ;
+	}
+
+	while ( (i2c_bus=readdir(i2c_list_dir)) != NULL ) {
+		char * new_device = malloc( strlen(i2c_bus->d_name) + 7 ) ; // room for /dev/name
+		if ( new_device==NULL ) {
+			break ; // cannot make space
+		}
+
+		// Change name to real i2c bus name
+		free( in->name ) ;
+		in->name = new_device ;
+		strcpy( in->name, "/dev/" ) ;
+		strcat( in->name, i2c_bus->d_name ) ;
+
+		// Now look for the ds2482's
+		if ( DS2482_detect_bus( chip_num, all_in )!=0 ) {
+			continue ;
+		}
+
+		// at least one found
+		++found ;
+		if ( any ) {
+			break ;
+		}
+
+		// ALL? then set up a new connection_in slot
+		all_in = NewIn(all_in) ;
+		if ( all_in == NULL ) {
+			break ;
+		}
+	}
+
+	closedir( i2c_list_dir ) ;
+	return found ;
+}
+
+/* All the rest of the program sees is the DS2482_detect and the entry in iroutines */
+/* Open a DS2482 */
+/* cycle through /dev/i2c-n */
+/* returns -1 -- no direcory could be opened 
+   else found -- number of directories found */
+static int DS2482_detect_dir(enum ds2482_address chip_num, struct connection_in *in)
+{
+	int found = 0 ;
+	int any = ( in->name[0] == 0x00 ) ; // no adapter specified, so use any (the first good one )
+	struct connection_in * all_in = in ;
+	int bus = 0 ;
+
+	for ( bus=0 ; bus<99 ; ++bus ) { 
+		char dev_name[128] ;
+		char * new_device ;
+
+		if ( snprintf( dev_name, 128-1, "/dev/i2c-%d", bus ) < 0 ) {
+			break ;
+		}
+
+		if ( access(dev_name, F_OK) < 0 ) {
+			break ;
+		}
+		new_device = strdup( dev_name ) ;
+		if ( new_device==NULL ) {
+			break ; // cannot make space
+		}
+
+		// Change name to real i2c bus name
+		free( in->name ) ;
+		in->name = new_device ;
+
+		// Now look for the ds2482's
+		if ( DS2482_detect_bus( chip_num, all_in )!=0 ) {
+			continue ;
+		}
+
+		// at least one found
+		++found ;
+		if ( any ) {
+			break ;
+		}
+
+		// ALL? then set up a new connection_in slot
+		all_in = NewIn(all_in) ;
+		if ( all_in == NULL ) {
+			break ;
+		}
+	}
+
+	return found ;
+}
+
+/* Try to see if there is a DS2482 device on the specified i2c bus */
+static int DS2482_detect_bus(enum ds2482_address chip_num, struct connection_in *in)
+{
+	switch (chip_num) {
+		case ds2482_any:
+			// usual case, find the first adapter
+			return DS2482_detect_single( 0, 7, in ) ;
+		case ds2482_all:
+			// Look through all the possible i2c addresses
+			{
+				int start_chip = 0 ;
+				struct connection_in * all_in = in ;
+				do {
+					if ( DS2482_detect_single( start_chip, 7, all_in ) != 0 ) {
+						if ( in == all_in ) { //first time
+							return -ENODEV ;
+						}
+						return 0 ;
+					}
+					start_chip = all_in->connin.i2c.i2c_index + 1 ;
+					if ( start_chip > 7 ) {
+						return 0 ;
+					}
+					all_in = NewIn(all_in) ;
+					if ( all_in == NULL ) {
+						return -ENOMEM ;
+					}
+				} while (1) ;
+			}
+			break ;
+		default:
+			// specific i2c address
+			return DS2482_detect_single( chip_num, chip_num, in ) ;
+	}
+}
+
+/* All the rest of the program sees is the DS9907_detect and the entry in iroutines */
+/* Open a DS2482 */
+/* Try to see if there is a DS2482 device on the specified i2c bus */
+static int DS2482_detect_single(int lowindex, int highindex, struct connection_in *in)
 {
 	int test_address[8] = { 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, };	// the last 4 are -800 only
 	int i;
@@ -148,8 +362,7 @@ int DS2482_detect(struct connection_in *in)
 	/* Set up low-level routines */
 	DS2482_setroutines(in);
 
-	/* cycle though the possible addresses */
-	for (i = 0; i < 8; ++i) {
+	for (i = lowindex; i <= highindex; ++i) {
 		/* set the candidate address */
 		if (ioctl(file_descriptor, I2C_SLAVE, test_address[i]) < 0) {
 			ERROR_CONNECT("Cound not set trial i2c address to %.2X\n", test_address[i]);
@@ -164,6 +377,7 @@ int DS2482_detect(struct connection_in *in)
 			in->connin.i2c.head = in;
 			in->adapter_name = "DS2482-100";
 			in->connin.i2c.i2c_address = test_address[i];
+			in->connin.i2c.i2c_index = i;
 			in->connin.i2c.configreg = 0x00;	// default configuration setting
 #if OW_MT
 			pthread_mutex_init(&(in->connin.i2c.i2c_mutex), Mutex.pmattr);

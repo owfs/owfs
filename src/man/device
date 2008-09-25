@@ -8,40 +8,99 @@
 '\" Free for all use. No waranty. None. Use at your own risk.
 '\" $Id$
 '\"
-.SH DEVICE OPTIONS
-These options specify the 1-wire bus master the physically connects to the 1-wire bus. More than one can be specified. The result will be the logical union of all the specified bus masters. Individual adapters can be addressed as 
-.I bus.0 bus.1 ...
-.PP
-At least one device option is required. There is no default.
-.PP
-Note that your operating system will likely restrict access to physical ports to authorised users.
-.SS \-d /dev/ttyS0
-Serial adapter.  The address of the serial port is operating system-dependent. Adapters supported are the DS2480B-based 
-.I DS9097U
-, iButtonLink's
+.SH "DEVICE OPTIONS (1-wire Bus Master)"
+These options give the location of the 1-wire adapter that connects the program to the actual 1-wire bus and the
+.I iButtons
+or 1-wire devices on it. The bus master is either an actual physical device, or an 
+.B owserver (1). 
+.P
+At least one device option is required. There is no default. More than one device can be listed, and all will be used. (A logical union unless you explore the \fI/bus.n/\fR directories.)
+.SH "Serial devices"
+.I port 
+specifies a serial port, e.g. 
+.I /dev/ttyS0
+.TP
+\fI-d port\fI \fR|\fR \fI--device=port\fI
+DS2480B-based bus master (like the DS9097U or the LINK in emulation mode). If the adapter doesn't respond, a passive type (diode/resistor) circuit will be assumed.
+.TP
+\fI--link=port\fI
+.B iButtonLink
 .I LINK
-in emulation mode, or the passive
-.I DS9097
-.SS \-d /dev/i2c-0
-Use i2c adapter 0. Based on the DS2482-100 or the DS2482-800. The DS2482-800 is interesting, it actually has 8 separately addressable 1-wire bus lines, and will appear as 8 separate busses.
-.SS \-u \-\-usb
-USB adapter (based on the DS2490, like the DS9490R).
-.PP
-In general the operating system will assign the first avaliable adapter. Use the option:
-.I \-u2
-or
-.I --usb=2
-for the second adapter. To use all the available USB adapters: 
-.I -all
-or
-.I --usb=all
-.SS --LINK=/dev/ttyS0
+adapter (all versions) in non-emulation mode. Uses an ascii protocol over serial.
+.TP
+\fI--passive=port\fR | \fI--ha3=port\fR | \fI--ha4b=port
+Passive 1-wire adapters.
+.SH "USB devices"
+Multiple USB devices can be perplexing since the order of devices is not predictable. 
+.I ALL
+will use all the available USB adapters.
+.TP
+.I -u  \fR|\ \fI--usb\fR[\fI=ALL\fR]
+DS2490 based bus master (like the DS9490R).
+.SH "I2C devices"
+I2C is  2 wire protocol used for chip-to-chip communication. The busmasters:
+.I DS2482-100, DS2482-101
+and
+.I DS2482-800
+can specify (via pin voltages) a subset of addresses on the i2c bus. Those choices are
+.P
+.I i2c_address
+.TP
+0,1,2,3
+0x18,0x19,0x1A,0x1B
+.TP
+4,5,6,7
+0x1C,0x1D,0x1E,0x1F (DS2482-800 only)
+.P
+.I port
+for i2c masters have the form 
+.I /dev/i2c-0, /dev/i2c-1, ...
+.TP
+\fI-d port\fR | \fI--device=port
+This form only permits a specific 
+.I port 
+and the first available
+.I i2c_address
+.TP
+\fI--i2c=port\fR | \fI--i2c=port:i2c_address\fR | \fI--i2c=port:ALL
+Specific i2c
+.I port
+and the
+.I i2c_address
+is either the first, specific, or all or them. The 
+.I i2c_address
+is 0,1,2,...
+.TP
+\fI--i2c\fR | \fI--i2c=:\fR | \fI--i2c=ALL:ALL
+Search the available i2c buses for either the first, the first, or every i2c adapter.
+.SH "Network devices"
+These bus masters communicate via the tcp/ip network protocol. 
 The
-.I iButtonlink
-LINK adapter on serial port 0. The LINK uses it's own ascii communication protocol.
-.SS -s localhost:4304
-Connect to an owserver at the listed network location.
-.SS --fake=10,12,28
-Create a simulated bus with simulated devices (family codes 10,12 and 28 in this case). All the responses are random, and writing is not supported.
-.SS --tester=10,12,28
-Create a simulated bus with simulated devices (family codes 10,12 and 28 in this case). All the responses are predictable (see the web site for the algorithm) and thus useful for automated test scripts.
+.I network_address
+is of the form tcp_address:port
+.P
+E.g. 192.168.0.1:3000 or localhost:3000
+.TP
+.I --link=network_address
+LinkHubE network LINK adapter
+.TP
+.I --ha7net=network_address
+HA7Net network 1-wire adapter
+.TP
+.I --etherweather=network_address
+Etherweather adapter
+.TP
+\fI-s network_address\fR | \fI--server=network_address
+Location of an
+.B owserver (1)
+program that talks to the 1-wire bus. The default port of 4304 will be used by default.
+.SH "Simulated devices"
+Used for testing and development. 
+.I chips
+is a list of comma-separated family codes. e.g. 10,21,1B
+.TP
+.I --fake=chips
+Random address and random values for each read.
+.TP
+.I --tester=chips
+Predicable address and predictable values for each read. (See the website for the algorhythm).

@@ -93,6 +93,10 @@ const struct option owopts_long[] = {
 	{"SideTap", required_argument, NULL, e_sidetap},	/* sidetap address */
 	{"SIDE", required_argument, NULL, e_sidetap},	/* sidetap address */
 
+	{"passive", required_argument, NULL, e_passive},	/* DS9097 passive */
+	{"PASSIVE", required_argument, NULL, e_passive},	/* DS9097 passive */
+	{"i2c", optional_argument, NULL, e_i2c},	/* i2c adapters */
+	{"I2C", optional_argument, NULL, e_i2c},	/* i2c adapters */
 	{"HA7", optional_argument, NULL, e_ha7},	/* HA7Net */
 	{"ha7", optional_argument, NULL, e_ha7},	/* HA7Net */
 	{"HA7NET", optional_argument, NULL, e_ha7},
@@ -594,12 +598,16 @@ int owopt(const int option_char, const char *arg)
 			Globals.max_clients = (int) i;
 		}
 		break;
+	case e_i2c:
+		return OW_ArgI2C(arg);
 	case e_ha7:
 		return OW_ArgHA7(arg);
 	case e_fake:
 		return OW_ArgFake(arg);
 	case e_link:
 		return OW_ArgLink(arg);
+	case e_passive:
+		return OW_ArgPassive("Passive", arg);
 	case e_ha3:
 		return OW_ArgPassive("HA3", arg);
 	case e_ha4b:
@@ -808,7 +816,11 @@ static int OW_ArgI2C(const char *arg)
 	if (in == NULL) {
 		return 1;
 	}
-	in->name = strdup(arg);
+	if ( arg==NULL) {
+		in->name = strdup(":") ;
+	} else {
+		in->name = strdup(arg);
+    	}
 	in->busmode = bus_i2c;
 	return 0;
 #else							/* OW_I2C */
