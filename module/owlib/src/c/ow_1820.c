@@ -578,6 +578,7 @@ static int OW_22temp(_FLOAT * temp, const int resolution, const struct parsednam
 	BYTE pow;
 	int res = Resolutions[resolution - 9].config;
 	UINT delay = Resolutions[resolution - 9].delay;
+	UINT longdelay = delay * 1.5 ; // failsafe
 	BYTE mask = Resolutions[resolution - 9].mask;
 	int oldres;
 	struct transaction_log tunpowered[] = {
@@ -588,6 +589,12 @@ static int OW_22temp(_FLOAT * temp, const int resolution, const struct parsednam
 	struct transaction_log tpowered[] = {
 		TRXN_START,
 		TRXN_WRITE1(convert),
+		TRXN_END,
+	};
+	// failsafe
+	struct transaction_log tunpowered_long[] = {
+		TRXN_START,
+		{convert, convert, longdelay, trxn_power},
 		TRXN_END,
 	};
 	//LEVEL_DATA("OW_22temp\n");
@@ -614,6 +621,7 @@ static int OW_22temp(_FLOAT * temp, const int resolution, const struct parsednam
 	}
 
 	/* Conversion */
+	// first time
 	if (!pow) {					// unpowered, deliver power, no communication allowed
 		LEVEL_DEBUG("Unpowered temperature conversion -- %d msec\n", delay);
 		if (BUS_transaction(tunpowered, pn)) {
@@ -631,12 +639,37 @@ static int OW_22temp(_FLOAT * temp, const int resolution, const struct parsednam
 	} else {
 		LEVEL_DEBUG("Simultaneous temperature conversion\n");
 	}
+
 	if (OW_r_scratchpad(data, pn)) {
 		return 1;
 	}
-	//printf("Temperature Got bytes %.2X %.2X\n",data[0],data[1]) ;
 
-	//*temp = .0625*(((char)data[1])<<8|data[0]) ;
+	if ( data[1]!=0x05 && data[0]!=0x50 ) { // not 85C
+		temp[0] = (_FLOAT) ((int16_t) ((data[1] << 8) | (data[0] & mask))) * .0625;
+		return 0;
+	}
+	
+	// second time
+	LEVEL_DEBUG("Temp error. Try unpowered temperature conversion -- %d msec\n", delay);
+	if (BUS_transaction(tunpowered, pn)) {
+		return 1;
+	}
+	if (OW_r_scratchpad(data, pn)) {
+		return 1;
+	}
+	if ( data[1]!=0x05 && data[0]!=0x50 ) { // not 85C
+		temp[0] = (_FLOAT) ((int16_t) ((data[1] << 8) | (data[0] & mask))) * .0625;
+		return 0;
+	}
+
+	// third and last time
+	LEVEL_DEBUG("Temp error. Try unpowered long temperature conversion -- %d msec\n", longdelay);
+	if (BUS_transaction(tunpowered_long, pn)) {
+		return 1;
+	}
+	if (OW_r_scratchpad(data, pn)) {
+		return 1;
+	}
 	// Torsten Godau <tg@solarlabs.de> found a problem with 9-bit resolution
 	temp[0] = (_FLOAT) ((int16_t) ((data[1] << 8) | (data[0] & mask))) * .0625;
 	return 0;
