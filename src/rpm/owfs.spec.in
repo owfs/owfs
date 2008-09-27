@@ -511,6 +511,7 @@ fi
 %defattr(-,root,root)
 %{_mandir}/man1/ow*.1.gz
 %{_mandir}/man3/*.3.gz
+%{_mandir}/man3/*.3pm.gz
 %{_mandir}/man5/*.5.gz
 %{_mandir}/mann/*.n.gz
 %endif
