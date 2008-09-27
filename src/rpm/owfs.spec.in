@@ -511,7 +511,6 @@ fi
 %defattr(-,root,root)
 %{_mandir}/man1/ow*.1.gz
 %{_mandir}/man3/*.3.gz
-%{_mandir}/man3/*.3pm.gz
 %{_mandir}/man5/*.5.gz
 %{_mandir}/mann/*.n.gz
 %endif
@@ -562,8 +561,8 @@ fi
 %{perl_sitearch}/auto/OW/OW.bs
 %{perl_sitearch}/auto/OW/OW.so
 %{perl_sitearch}/OW.pm
-%{perl_sitelib}/OWNet.pm
-%{_mandir}/man3/OWNet.3pm.gz
+#%{perl_sitelib}/OWNet.pm
+%{_mandir}/man3/OWNet.3.gz
 %endif
 
 %if %{build_python}
