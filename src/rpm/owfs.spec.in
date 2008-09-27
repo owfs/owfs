@@ -561,8 +561,8 @@ fi
 %{perl_sitearch}/auto/OW/OW.bs
 %{perl_sitearch}/auto/OW/OW.so
 %{perl_sitearch}/OW.pm
-#%{perl_sitelib}/OWNet.pm
-%{_mandir}/man3/OWNet.3.gz
+%{perl_sitelib}/OWNet.pm
+%{_mandir}/man3/OWNet.3*
 %endif
 
 %if %{build_python}
