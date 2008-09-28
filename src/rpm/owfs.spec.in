@@ -340,15 +340,15 @@ mv -f $RPM_BUILD_ROOT%{prefix}/bin/owserver $RPM_BUILD_ROOT%{prefix}/sbin
 %if %{build_mon}
 %endif
 %if %{build_perl}
-%define perl_archlib %(eval "`perl -V:installarchlib`"; echo $installarchlib)
-%define perl_sitearch %(eval "`perl -V:installsitearch`"; echo $installsitearch)
-%define perl_sitelib %(eval "`perl -V:installsitelib`"; echo $installsitelib)
+%define perl_archlib %(eval "`@PERL@ -V:installarchlib`"; echo $installarchlib)
+%define perl_sitearch %(eval "`@PERL@ -V:installsitearch`"; echo $installsitearch)
+%define perl_sitelib %(eval "`@PERL@ -V:installsitelib`"; echo $installsitelib)
 rm -f $RPM_BUILD_ROOT%{perl_archlib}/perllocal.pod
 rm -f $RPM_BUILD_ROOT%{perl_sitearch}/auto/OW/.packlist
 rm -f $RPM_BUILD_ROOT%{perl_sitearch}/auto/OWNet/.packlist
 %endif
 %if %{build_python}
-%define python_sitedir %(python -c "from distutils.sysconfig import get_python_lib; print get_python_lib(plat_specific=1)" 2>/dev/null|| echo @PYSITEDIR@)
+%define python_sitedir %(@PYTHON@ -c "from distutils.sysconfig import get_python_lib; print get_python_lib(plat_specific=1)" 2>/dev/null|| echo @PYSITEDIR@)
 # Remove OpenSUSE info files
 rm -f $RPM_BUILD_ROOT%{python_sitedir}/ow-*-info
 rm -f $RPM_BUILD_ROOT%{python_sitedir}/ownet-*-info

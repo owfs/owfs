@@ -29,6 +29,7 @@ fi
 # perl -MExtUtils::Embed -e ccopts
 AC_MSG_CHECKING(for Perl5 header files)
 if test -n "$PERL"; then
+	PERL=`(which $PERL) 2>/dev/null`
 	# Make it possible to force a directory during cross-compilation
 	if test -z "$PERL5DIR"; then
 		PERL5DIR=`($PERL -e 'use Config; print $Config{archlib}, "\n";') 2>/dev/null`
