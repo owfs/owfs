@@ -13,6 +13,11 @@ $Id$
 
 #include "owshell.h"
 
+// globals
+int hexflag = 0 ;
+int size_of_data = -1 ;
+int offset_into_data = 0 ;
+
 static void OW_parsevalue(int *var, const ASCII * str);
 
 const struct option owopts_long[] = {
@@ -24,6 +29,21 @@ const struct option owopts_long[] = {
 	{"Rankine", no_argument, NULL, 'R'},
 	{"version", no_argument, NULL, 'V'},
 	{"format", required_argument, NULL, 'f'},
+
+	{"hex", no_argument, &hexflag, 1 },
+	{"HEX", no_argument, &hexflag, 1 },
+	{"hexidecimal", no_argument, &hexflag, 1 },
+	{"HEXIDECIMAL", no_argument, &hexflag, 1 },
+
+	{"size", required_argument, NULL, 300 },
+	{"SIZE", required_argument, NULL, 300 },
+	{"BYTES", required_argument, NULL, 300 },
+	{"bytes", required_argument, NULL, 300 },
+
+	{"offset", required_argument, NULL, 301 },
+	{"OFFSET", required_argument, NULL, 301 },
+	{"start", required_argument, NULL, 301 },
+	{"START", required_argument, NULL, 301 },
 
 	{"timeout_network", required_argument, NULL, 307,},	// timeout -- tcp wait
 	{"timeout_server", required_argument, NULL, 308,},	// timeout -- server wait
@@ -90,6 +110,20 @@ void owopt(const int c, const char *arg)
 		Exit(0);
 #endif
 		break;
+	case 300:
+		OW_parsevalue(&size_of_data, arg);
+		if ( size_of_data < 0 || size_of_data > 64000 ) {
+			fprintf(stderr, "Bad data size value. (%d).\n", size_of_data) ;
+			Exit(1);
+		}
+		break ;
+	case 301:
+		OW_parsevalue(&offset_into_data, arg);
+		if ( offset_into_data < 0 || offset_into_data > 64000 ) {
+			fprintf(stderr, "Bad data offset value. (%d).\n", offset_into_data) ;
+			Exit(1);
+		}
+		break ;
 	case 307:
 	case 308:
 		OW_parsevalue(&((int *) &Globals.timeout_volatile)[c - 301], arg);

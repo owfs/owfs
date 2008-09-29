@@ -280,6 +280,10 @@ struct serverpackage {
 extern time_t start_time;
 extern time_t dir_time;			/* time of last directory scan */
 
+extern int hexflag ; // read/write in hex mode?
+extern int size_of_data ;
+extern int offset_into_data ;
+
 ssize_t tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval *ptv);
 int ClientAddr(char *sname);
 int ClientConnect(void);

@@ -18,6 +18,7 @@ static int FromServer(int file_descriptor, struct client_msg *cm, char *msg, siz
 static void *FromServerAlloc(int file_descriptor, struct client_msg *cm);
 static int ToServer(int file_descriptor, struct server_msg *sm, struct serverpackage *sp);
 static uint32_t SetupSemi(void);
+static void WriteHex( char * buffer, int length ) ;
 
 void Server_detect(void)
 {
@@ -49,7 +50,11 @@ int ServerRead(ASCII * path)
 	sm.type = msg_read;
 	sm.size = size;
 	sm.sg = SetupSemi();
-	sm.offset = 0;
+	sm.offset = offset_into_data;
+
+	if ( size_of_data >=0 && size_of_data < 8096 ) {
+		sm.size = size_of_data ;
+	}
 
 	if (ToServer(connectfd, &sm, &sp)) {
 		fprintf(stderr, "Error sending request for %s\n", path);
@@ -61,6 +66,8 @@ int ServerRead(ASCII * path)
 		ret = cm.ret;
 		if (ret <= 0 || ret > size) {
 			fprintf(stderr, "Data error on %s\n", path);
+		} else if ( hexflag ) {
+			WriteHex( buf, ret ) ;
 		} else {
 			buf[ret] = '\0';
 			printf("%s", buf);
@@ -86,7 +93,7 @@ int ServerWrite(ASCII * path, ASCII * data)
 	sm.type = msg_write;
 	sm.size = size;
 	sm.sg = SetupSemi();
-	sm.offset = 0;
+	sm.offset = offset_into_data;
 
 	//printf("ServerRead path=%s\n", pn->path_busless);
 	//LEVEL_CALL("SERVER(%d)WRITE path=%s\n", pn->selected_connection->index, SAFESTRING(pn->path_busless));
@@ -349,4 +356,12 @@ static uint32_t SetupSemi(void)
 {
 	uint32_t sg = SemiGlobal | BUSRET_MASK;
 	return sg;
+}
+
+static void WriteHex( char * buffer, int length )
+{
+	int i ;
+	for ( i=0 ; i<length ; ++i ) {
+		printf("%.2X",buffer[i]);
+	}
 }

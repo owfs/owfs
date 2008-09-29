@@ -15,11 +15,6 @@
 .B owserver
 access
 .SH SYNOPSIS
-.B owget
-.I -s 
-[host:]port
-[directory] | filepath
-.br
 .B owdir
 .I -s 
 [host:]port
@@ -34,16 +29,7 @@ filepath
 .I -s 
 [host:]port
 filepath value
-.br
-.B owpresent
-.I -s 
-[host:]port
-filepath
 .PP
-.B owget
-.I --autoserver
-[directory] | filepath
-.br
 .B owdir
 .I --autoserver
 [directory]
@@ -55,40 +41,28 @@ filepath
 .B owwrite
 .I --autoserver
 filepath value
-.br
-.B owpresent
-.I --autoserver
-filepath
 .PP
-.B owget
-.I -C --celsius
-.I -K --kelvin
-.I -F --fahrenheit
-.I -R --rankine
-.I -f --format
-f[.]i[[.]c]
-.I -s 
-[host:]port
-[path] [path2 ...]
-.br
 .B owdir
-.I -C --celsius
-.I -K --kelvin
-.I -F --fahrenheit
-.I -R --rankine
 .I -f --format
 f[.]i[[.]c]
 .I -s 
 [host:]port
 [directory] [directory2 ...]
-.br
+.PP
 .B owread
 .I -C --celsius
 .I -K --kelvin
 .I -F --fahrenheit
 .I -R --rankine
-.I -f --format
-f[.]i[[.]c]
+[
+.I --hex
+] [
+.I --start=
+offset
+] [
+.I --size=
+bytes
+]
 .I -s 
 [host:]port
 filepath [filepath2 ...]
@@ -98,26 +72,17 @@ filepath [filepath2 ...]
 .I -K --kelvin
 .I -F --fahrenheit
 .I -R --rankine
-.I -f --format
-f[.]i[[.]c]
+[
+.I --hex
+] [
+.I --start=
+offset
+]
 .I -s 
 [host:]port
 filepath value [filepath2 value2 ...]
 .br
-.B owpresent
-.I -C --celsius
-.I -K --kelvin
-.I -F --fahrenheit
-.I -R --rankine
-.I -f --format
-f[.]i[[.]c]
-.I -s 
-[host:]port
-filepath [filepath2 ...]
 .PP
-.B owget
-.I \-V \-\-version
-.br
 .B owdir
 .I \-V \-\-version
 .br
@@ -127,12 +92,7 @@ filepath [filepath2 ...]
 .B owwrite
 .I \-V \-\-version
 .br
-.B owpresent
-.I \-V \-\-version
 .PP
-.B owget
-.I \-h | \-\-help
-.br
 .B owdir
 .I \-h | \-\-help
 .br
@@ -142,12 +102,10 @@ filepath [filepath2 ...]
 .B owwrite
 .I \-h | \-\-help
 .br
-.B owpresent
-.I \-h | \-\-help
 .SH "DESCRIPTION"
 .so description
 .SS OWSHELL programs
-.B owget owdir owread owwrite owpresent
+.B owdir owread owwrite
 are collectively called the
 .B owshell
 programs. They allow lightweight access to an
@@ -174,48 +132,30 @@ filesystem and perform direct file lists, reads and writes.
 performs a
 .I directory
 listing. With no argument, all the devices on the main 1-wire bus will be listed. Given the name of a 1-wire device, the available properties will be listed. It is the equivalent of
-.br
+.IP
 .I ls directory
-.br
+.P
 in the
 .B owfs (1)
 filesystem.
 .SS owread
 .B owread
-performs a
-.I file
-read. e.g. 28.0080BE21AA00/temperature gives the DS18B20 temperature. It is the equivalent of
-.br
+obtains for value of a 1-wire device property. e.g. 28.0080BE21AA00/temperature gives the DS18B20 temperature. It is the equivalent of
+.IP
 .I cat filepath
-.br
+.P
 in the
 .B owfs (1)
 filesystem.
-.SS owget
-.B owget
-combines the function of 
-.B owdir 
-and 
-.B owread
- depending on whether the arguments are directories or files. Multiple arguments are handled independently, printing on separate lines.
 .SS owwrite
 .B owwrite
-performs a
-.I file
-update. e.g. 29.3C80BE21AA00/PIO.3 is switch pin 3 of the DS2408. It is the equivalent of
-.br
+performs a change of a property, changing a 1-wire device setting or writing to memory. It is the equivalent of
+.IP
 .I echo "value" > filepath
-.br
+.P
 in the
 .B owfs (1)
 filesystem.
-.SS owpresent
-.B owpresent
-reports whether a particular 1-wire chip exists on 
-.I owserver. 
-e.g. 26.3C80BE21DD00 is a DS2438.
-.B owpresent
-prints 1 for device present, else 0.
 .SH STANDARD OPTIONS
 .SS \-\-autoserver
 Find an 
@@ -229,12 +169,23 @@ Connect via tcp (network) to an
 process that is connected to a physical 1-wire bus. This allows multiple processes to share the same bus. The
 .I owserver
 process can be local or remote.
+.SH DATA OPTIONS
+.SH \-\-hex
+Hexidecimal mode. For reading data, each byte of character will be displayed as two characrters 0-9ABCDEF. Most useful for reading memory locations. No spaces between data.
+.P
+Writing data in hexidecimal mode just means that the data should be given as one long hexidecimal string.
+.SH \-\-start=offset
+Read or write memory locations starting at the offset byte rather than the beginning. An offset of 0 means the beginning (and is the default).
+.P
+.SH \-\-size=bytes
+Read up to the specified number of bytes of a memory location.
 .SH HELP OPTIONS
 .SS \-h \-\-help
 Shows basic summary of options.
 .SS \-V \-\-version
 .I Version
 of this program and related libraries.
+.SH DISPLAY OPTIONS
 .SS \-f \-\-format "f[.]i[[.]c]"
 Display format for the 1-wire devices. Each device has a 8 byte address, consisting of:
 .TP

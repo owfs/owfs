@@ -8,14 +8,14 @@
 '\" Free for all use. No waranty. None. Use at your own risk.
 '\" $Id$
 '\"
-.SH "DEVICE OPTIONS (1-wire Bus Master)"
+.SH "Device Options (1-wire Bus Master)"
 These options give the location of the 1-wire adapter that connects the program to the actual 1-wire bus and the
 .I iButtons
 or 1-wire devices on it. The bus master is either an actual physical device, or an 
 .B owserver (1). 
 .P
 At least one device option is required. There is no default. More than one device can be listed, and all will be used. (A logical union unless you explore the \fI/bus.n/\fR directories.)
-.SH "Serial devices"
+.SH "* Serial devices"
 .I port 
 specifies a serial port, e.g. 
 .I /dev/ttyS0
@@ -30,14 +30,14 @@ adapter (all versions) in non-emulation mode. Uses an ascii protocol over serial
 .TP
 \fI--passive=port\fR | \fI--ha3=port\fR | \fI--ha4b=port
 Passive 1-wire adapters.
-.SH "USB devices"
+.SH "* USB devices"
 Multiple USB devices can be perplexing since the order of devices is not predictable. 
 .I ALL
 will use all the available USB adapters.
 .TP
 .I -u  \fR|\ \fI--usb\fR[\fI=ALL\fR]
 DS2490 based bus master (like the DS9490R).
-.SH "I2C devices"
+.SH "* I2C devices"
 I2C is  2 wire protocol used for chip-to-chip communication. The busmasters:
 .I DS2482-100, DS2482-101
 and
@@ -73,7 +73,7 @@ is 0,1,2,...
 .TP
 \fI--i2c\fR | \fI--i2c=:\fR | \fI--i2c=ALL:ALL
 Search the available i2c buses for either the first, the first, or every i2c adapter.
-.SH "Network devices"
+.SH "* Network devices"
 These bus masters communicate via the tcp/ip network protocol. 
 The
 .I network_address
@@ -94,7 +94,7 @@ Etherweather adapter
 Location of an
 .B owserver (1)
 program that talks to the 1-wire bus. The default port of 4304 will be used by default.
-.SH "Simulated devices"
+.SH "* Simulated devices"
 Used for testing and development. 
 .I chips
 is a list of comma-separated family codes. e.g. 10,21,1B
