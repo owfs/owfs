@@ -343,6 +343,7 @@ mv -f $RPM_BUILD_ROOT%{prefix}/bin/owserver $RPM_BUILD_ROOT%{prefix}/sbin
 %define perl_archlib %(eval "`@PERL@ -V:installarchlib`"; echo $installarchlib)
 %define perl_sitearch %(eval "`@PERL@ -V:installsitearch`"; echo $installsitearch)
 %define perl_sitelib %(eval "`@PERL@ -V:installsitelib`"; echo $installsitelib)
+%define perl_siteman3dir %(eval "`@PERL@ -V:siteman3dir`"; echo $siteman3dir)
 rm -f $RPM_BUILD_ROOT%{perl_archlib}/perllocal.pod
 rm -f $RPM_BUILD_ROOT%{perl_sitearch}/auto/OW/.packlist
 rm -f $RPM_BUILD_ROOT%{perl_sitearch}/auto/OWNet/.packlist
@@ -562,7 +563,8 @@ fi
 %{perl_sitearch}/auto/OW/OW.so
 %{perl_sitearch}/OW.pm
 %{perl_sitelib}/OWNet.pm
-%{_mandir}/man3/OWNet.3*
+#%{_mandir}/man3/OWNet.3*
+%{perl_siteman3dir}/OWNet.3*
 %endif
 
 %if %{build_python}
