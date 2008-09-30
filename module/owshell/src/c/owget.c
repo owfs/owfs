@@ -46,20 +46,26 @@ int main(int argc, char *argv[])
 		++paths_found;
 		if (dirall) {
 			rc = ServerDirall(argv[optind]);
-			if (rc < 0) {
+			if ( rc == -ENOTDIR ) {
+				rc = ServerRead(argv[optind]);
+			} else if (rc < 0) {
 				dirall = 0;
 				rc = ServerDir(argv[optind]);
 			}
 		} else {
 			rc = ServerDir(argv[optind]);
+			if ( rc == -ENOTDIR ) {
+				rc = ServerRead(argv[optind]);
+			}
 		}
 		++optind;
 	}
 	// Was anything requested?
 	if (paths_found == 0) {
 		rc = ServerDirall("/");
-		if (rc < 0)
+		if (rc < 0) {
 			rc = ServerDir("/");
+		}
 	}
 	if ( rc >= 0 ) {
 		errno = 0 ;

@@ -26,7 +26,7 @@ static char * HexConvert( char * input_string ) ;
 int main(int argc, char *argv[])
 {
 	int c;
-	int rc = -1;
+	int rc = -EINVAL;
 
 	Setup();
 	/* process command line arguments */
@@ -62,9 +62,15 @@ int main(int argc, char *argv[])
 
 	if (optind < argc) {
 		fprintf(stderr, "Unpaired <path> <value> entry: %s\n", argv[optind]);
-		rc = -1;
+		rc = -EINVAL;
 	}
-	Exit((rc >= 0 ? 0 : 1));
+	if ( rc >= 0 ) {
+		errno = 0 ;
+		Exit(0) ;
+	} else {
+		errno = -rc ;
+		Exit(1) ;
+	}
 	return 0;					// never reached
 }
 
@@ -103,6 +109,7 @@ static char * HexConvert( char * input_string )
 
 	if ( return_string == NULL ) {
 		fprintf(stderr,"Out of memory.\n") ;
+		errno = ENOMEM ;
 		Exit(1) ;
 	}
 

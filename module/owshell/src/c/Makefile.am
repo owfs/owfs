@@ -12,7 +12,10 @@ COMMON_OWSHELL_SOURCE = ow_opt.c   \
                getopt.c     \
                globals.c
 
-bin_PROGRAMS = owdir owread owwrite owpresent
+bin_PROGRAMS = owget owdir owread owwrite owpresent
+owget_SOURCES = ${COMMON_OWSHELL_SOURCE} \
+               owget.c
+
 owdir_SOURCES = ${COMMON_OWSHELL_SOURCE} \
                owdir.c
 

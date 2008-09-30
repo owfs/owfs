@@ -43,6 +43,12 @@ int main(int argc, char *argv[])
 		rc = ServerRead(argv[optind]);
 		++optind;
 	}
-	Exit((rc >= 0 ? 0 : 1));
+	if ( rc >= 0 ) {
+		errno = 0 ;
+		Exit(0) ;
+	} else {
+		errno = -rc ;
+		Exit(1) ;
+	}
 	return 0;					// never reached
 }

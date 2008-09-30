@@ -8,7 +8,7 @@ man_MANS = owfs.1 \
            owftpd.1 \
            owcapi.1 libowcapi.1 \
            ownet.1 ownetapi.1 libownet.1 ownetlib.1 \
-           owshell.1 owdir.1 owread.1 owwrite.1 owpresent.1 \
+           owshell.1 owdir.1 owread.1 owwrite.1 owget.1 owpresent.1 \
            owtap.1 owmon.1 \
            DS1427.3 \
            DS1821.3 DS1822.3 DS1825.3 DS18B20.3 DS18S20.3 DS28EA00.3 \

@@ -29,6 +29,12 @@ filepath
 .I -s 
 [host:]port
 filepath value
+.br
+.B owget
+.I -s 
+[host:]port
+[directory] | filepath
+.br
 .PP
 .B owdir
 .I --autoserver
@@ -41,6 +47,10 @@ filepath
 .B owwrite
 .I --autoserver
 filepath value
+.br
+.B owget
+.I --autoserver
+[directory] | filepath
 .PP
 .B owdir
 .I -f --format
@@ -81,7 +91,26 @@ offset
 .I -s 
 [host:]port
 filepath value [filepath2 value2 ...]
-.br
+.PP
+.B owget
+.I -f --format
+f[.]i[[.]c]
+.I -C --celsius
+.I -K --kelvin
+.I -F --fahrenheit
+.I -R --rankine
+[
+.I --hex
+] [
+.I --start=
+offset
+] [
+.I --size=
+bytes
+]
+.I -s 
+[host:]port
+[directory] | filepath
 .PP
 .B owdir
 .I \-V \-\-version
@@ -105,7 +134,9 @@ filepath value [filepath2 value2 ...]
 .SH "DESCRIPTION"
 .so description
 .SS OWSHELL programs
-.B owdir owread owwrite
+.B owdir owread owwrite 
+and 
+.B owget
 are collectively called the
 .B owshell
 programs. They allow lightweight access to an
@@ -156,6 +187,13 @@ performs a change of a property, changing a 1-wire device setting or writing to 
 in the
 .B owfs (1)
 filesystem.
+.SS owget
+.B owget (1)
+is a convenience program, combining the function of
+.B owdir (1)
+and
+.B owread (1)
+by first trying to read the argument as a directory, and if that fails as a 1-wire property.
 .SH STANDARD OPTIONS
 .SS \-\-autoserver
 Find an 
