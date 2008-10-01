@@ -134,52 +134,69 @@ DeviceEntryExtended(84, DS2404S, DEV_alarm);
 
 /* ------- Functions ------------ */
 
-/* DS1902 */
+/* DS2404 */
 static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
 static int OW_r_ulong(uint64_t * L, size_t size, off_t offset, struct parsedname *pn);
 static int OW_w_ulong(uint64_t * L, size_t size, off_t offset, struct parsedname *pn);
+static void OW_reset(struct parsedname *pn) ;
 
 static UINT Avals[] = { 0, 1, 10, 11, 100, 101, 110, 111, };
 
-/* 1902 */
+/* 2404 */
 static int FS_r_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (OW_r_mem_simple(owq, OWQ_pn(owq).extension, pagesize)) {
-		return -EINVAL;
+	int size_or_error = OW_r_mem_simple(owq, OWQ_pn(owq).extension, pagesize) ;
+
+	if (size_or_error==0) {
+		size_or_error = OWQ_size(owq);
+	} else {
+		size_or_error = -EINVAL ;
 	}
-	return OWQ_size(owq);
+	OW_reset(PN(owq)) ; // DS2404 needs this to release for 3-wire communication
+
+	return size_or_error ;
 }
 
 static int FS_r_memory(struct one_wire_query *owq)
 {
 	/* read is consecutive, unchecked. No paging */
-	if (OW_r_mem_simple(owq, 0, 0)) {
-		return -EINVAL;
+	int size_or_error = OW_r_mem_simple(owq, 0, 0) ;
+
+	if (size_or_error==0) {
+		size_or_error = OWQ_size(owq);
+	} else {
+		size_or_error = -EINVAL ;
 	}
-	return OWQ_size(owq);
+	OW_reset(PN(owq)) ; // DS2404 needs this to release for 3-wire communication
+
+	return size_or_error ;
 }
 
 static int FS_w_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
+	int error_code = OW_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem) ;
+
 	/* paged write */
-//    if ( OW_w_mem( buf, size, (size_t) offset, pn) ) { return -EFAULT ; }
-	if (OW_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem)) {
-		return -EFAULT;
+	if (error_code != 0) {
+		error_code = -EFAULT ;
 	}
-	return 0;
+	OW_reset(PN(owq)) ; // DS2404 needs this to release for 3-wire communication
+	return error_code ;
 }
 
 static int FS_w_memory(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
+	int error_code = OW_readwrite_paged(owq, 0, pagesize, OW_w_mem) ;
+
 	/* paged write */
-//    if ( OW_w_mem( buf, size, (size_t) offset, pn) ) { return -EFAULT ; }
-	if (OW_readwrite_paged(owq, 0, pagesize, OW_w_mem)) {
-		return -EFAULT;
+	if (error_code != 0) {
+		error_code = -EFAULT ;
 	}
-	return 0;
+	OW_reset(PN(owq)) ; // DS2404 needs this to release for 3-wire communication
+	return error_code ;
 }
 
 /* set clock */
@@ -424,4 +441,12 @@ static int OW_w_ulong(uint64_t * L, size_t size, off_t offset, struct parsedname
 		return -EINVAL;
 	}
 	return 0;
+}
+
+static void OW_reset(struct parsedname *pn)
+{
+	struct transaction_log t[] = {
+		TRXN_RESET,
+	};
+	BUS_transaction(t, pn) ;
 }

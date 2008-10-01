@@ -371,12 +371,12 @@ static int FS_r_local(struct one_wire_query *owq)
 		return -ENOTSUP;
 	}
 
-    adjust_file_size(owq) ;
-    if ( OWQ_size(owq) == 0 ) {
-        // Mounting fuse with "direct_io" will cause a second read with offset
-        // at end-of-file... Just return 0 if offset == size
-        return 0 ;
-    }
+	adjust_file_size(owq) ;
+	if ( OWQ_size(owq) == 0 ) {
+		// Mounting fuse with "direct_io" will cause a second read with offset
+		// at end-of-file... Just return 0 if offset == size
+		return 0 ;
+	}
 
 	/* Special case for "fake" adapter */
 	if (pn->selected_connection->Adapter == adapter_fake && pn->selected_filetype->change != fc_static && IsRealDir(pn)) {
