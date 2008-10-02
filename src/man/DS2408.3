@@ -21,7 +21,7 @@
 |
 .B LCD_M/[clear|home|screen|message]
 |
-.B LCD_H/[clear|home|screen|message]
+.B LCD_H/[clear|home|yxscreen|screen|message|onoff]
 |
 .B PIO.[0-7|ALL|BYTE]
 |
@@ -125,6 +125,29 @@ uses the Hobby-Boards design of Erik Vickery (see
 uses the Maxim public domain design (see
 .I DATASHEET
 )
+.SS LCD_H/yxscreen
+.I write-only, ascii text
+.br
+Writes to an LCD screen controlled by a
+.I DS2408
+using published designs. Like 
+.I LCD_H/screen 
+but the two first characters of the passed string allow positioning the cursor: "\\x02\\x04string" perl string write "string" at line 2 column 4.
+.P
+The positions are 1-based (i.e. the first position is 1,1). The positions should be ascii binary values (usually unprintable).
+.SS LCD_H/onoff
+.I write-only, unsigned
+.br
+Sets several screen display functions. The selected choices should be added together.
+.TP
+4
+Display on
+.TP
+2
+Cursor on
+.TP
+1
+Cursor blinking
 .SS LCD_H/message LCD_M/message
 .I write-only, ascii text
 .br

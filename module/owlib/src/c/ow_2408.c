@@ -83,7 +83,9 @@ WRITE_FUNCTION(FS_Mmessage);
 WRITE_FUNCTION(FS_Hclear);
 WRITE_FUNCTION(FS_Hhome);
 WRITE_FUNCTION(FS_Hscreen);
+WRITE_FUNCTION(FS_Hscreenyx);
 WRITE_FUNCTION(FS_Hmessage);
+WRITE_FUNCTION(FS_Honoff);
 
 /* ------- Structures ----------- */
 
@@ -106,7 +108,9 @@ struct filetype DS2408[] = {
   {"LCD_H/clear", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_Hclear, {v:NULL},},
   {"LCD_H/home", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_Hhome, {v:NULL},},
   {"LCD_H/screen", 128, NULL, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_Hscreen, {v:NULL},},
+  {"LCD_H/screenyx", 128, NULL, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_Hscreenyx, {v:NULL},},
   {"LCD_H/message", 128, NULL, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_Hmessage, {v:NULL},},
+  {"LCD_H/onoff", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_stable, NO_READ_FUNCTION, FS_Honoff, {v:NULL},},
 };
 
 DeviceEntryExtended(29, DS2408, DEV_alarm | DEV_resume | DEV_ovdr);
@@ -424,9 +428,78 @@ static int FS_Hscreen(struct one_wire_query *owq)
 	return OW_w_pios(data, j, PN(owq)) ? -EINVAL : 0;
 }
 
+static int FS_Hscreenyx(struct one_wire_query *owq)
+{
+	char *buf = OWQ_buffer(owq);
+	size_t size = OWQ_size(owq);
+	BYTE data[2 * size + 2];
+	size_t i, j = 0;
+	u_char ua_tmp;
+
+	if (size < 2) {
+		return -EINVAL;
+	}
+
+	if ((unsigned char)buf[1] > 20 || (unsigned char)buf[0] > 4) {
+		return -EINVAL;
+	}
+
+	if ((unsigned char)buf[1] < 1 || (unsigned char)buf[0] <1) {
+		return -EINVAL;
+	}
+
+	switch (buf[0]) {
+	case 2:
+		ua_tmp = 0x80 | 0x40;
+		break;
+	case 3:
+		ua_tmp = 0x80 + 20;
+		break;
+	case 4:
+		ua_tmp = (0x80 | 0x40) + 20;
+		break;
+	default:
+		ua_tmp = 0x80;
+		break;
+	}
+
+	ua_tmp += buf[1] - 1;
+
+	data[0] = (ua_tmp & 0xF0);
+	data[1] = (ua_tmp << 4) & 0xF0;
+
+	//printf("Hscreen test<%*s>\n",(int)size,buf) ;
+	for (i = 2, j = 2; i < size; ++i) {
+		if (buf[i]) {
+			data[j++] = (buf[i] & 0xF0) | 0x08;
+			data[j++] = ((buf[i] << 4) & 0xF0) | 0x08;
+		} else {				//null byte becomes space
+			data[j++] = 0x28;
+			data[j++] = 0x08;
+		}
+	}
+	return OW_w_pios(data, j, PN(owq)) ? -EINVAL : 0;
+}
+
 static int FS_Hmessage(struct one_wire_query *owq)
 {
 	if (FS_Hclear(owq) || FS_Hhome(owq) || FS_Hscreen(owq)) {
+		return -EINVAL;
+	}
+	return 0;
+}
+
+// 0x01 => blinking cursor on
+// 0x02 => cursor on
+// 0x04 => display on
+static int FS_Honoff(struct one_wire_query *owq)
+{
+	BYTE onoff[] = { 0x00, 0x00 };
+
+	onoff[1] = ((0x08 | OWQ_U(owq)) << 4) & 0xF0;
+
+	// onoff
+	if (OW_w_pios(onoff, 2, PN(owq))) {
 		return -EINVAL;
 	}
 	return 0;
