@@ -163,6 +163,7 @@ struct parsedname {
 	struct filetype *selected_filetype;	// device property
 	int extension;				// numerical extension (for array values) or -1
 	struct filetype *subdir;	// in-device grouping
+	int dirlength ;			// Length of just directory part of path
 	UINT pathlength;			// DS2409 branching depth
 	struct buspath *bp;			// DS2409 branching route
 	struct connection_in *selected_connection;	// which bus is assigned to this item
