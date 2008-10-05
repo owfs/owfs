@@ -136,9 +136,19 @@ enum ft_format {
 	ft_tempgap,
 };
 	/* property changability. Static unchanged, Stable we change, Volatile changes */
-enum fc_change { fc_local, fc_static, fc_stable, fc_Astable, fc_volatile,
-	fc_Avolatile, fc_second, fc_statistic, fc_persistent, fc_directory,
-	fc_presence,
+enum fc_change { 
+	fc_local, 
+	fc_static,       // doesn't change (e.g. chip property)
+	fc_stable,       // only changes if we write to the chip
+	fc_Astable,      // atomic stable
+	fc_volatile,     // changes on it's own (e.g. external pin voltage)
+	fc_Avolatile, 
+	fc_second,       // timer (changes every second)
+	fc_statistic,    // internally held statistic
+	fc_persistent,   // internal cumulative counter
+	fc_directory,    // directory listing
+	fc_presence,     // chip <-> bus pairing
+	fc_alias,        // an alias for another property -- cache that one instead
 };
 
 /* Predeclare one_wire_query */
@@ -155,6 +165,7 @@ struct one_wire_query;
 #define PROPERTY_LENGTH_STRUCTURE 30
 #define PROPERTY_LENGTH_DIRECTORY  8
 #define PROPERTY_LENGTH_SUBDIR     0
+#define PROPERTY_LENGTH_HIDDEN    -1
 
 #define NO_READ_FUNCTION NULL
 #define NO_WRITE_FUNCTION NULL

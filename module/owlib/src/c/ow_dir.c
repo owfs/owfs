@@ -345,6 +345,9 @@ static int FS_devdir(void (*dirfunc) (void *, const struct parsedname *), void *
 	for (; ft_pointer < lastft; ++ft_pointer) {	/* loop through filetypes */
 		char *slash = strchr(ft_pointer->name, '/');
 		char *namepart;
+		if ( ft_pointer->suglen == PROPERTY_LENGTH_HIDDEN ) { // hide hidden properties
+			continue ;
+		}
 		if (subdir_len > 0) {	/* subdir */
 			/* test start of name for directory name */
 			if (strncmp(ft_pointer->name, subdir_name, subdir_len) != 0) {
