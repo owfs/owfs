@@ -132,9 +132,21 @@ Writes to an LCD screen controlled by a
 .I DS2408
 using published designs. Like 
 .I LCD_H/screen 
-but the two first characters of the passed string allow positioning the cursor: "\\x02\\x04string" perl string write "string" at line 2 column 4.
+but starting at a particular screen position.
+.TP 
+2 binary bytes
+The two first characters of the passed string have the line and row: 
+e.g. "\\x02\\x04string" perl string writes "string" at line 2 column 4.
+.TP 
+ascii 2,12:
+Two numbers giving line and row:  Separate with a comma and end with a colon
+e.g. "2,4:string" writes "string" at line 2 column 4.
+.TP 
+ascii 12:
+Single column number on the (default) first line:  End with a colon
+e.g. "12:string" writes "string" at line 1 column 12.
 .P
-The positions are 1-based (i.e. the first position is 1,1). The positions should be ascii binary values (usually unprintable).
+The positions are 1-based (i.e. the first position is 1,1).
 .SS LCD_H/onoff
 .I write-only, unsigned
 .br

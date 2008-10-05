@@ -428,27 +428,67 @@ static int FS_Hscreen(struct one_wire_query *owq)
 	return OW_w_pios(data, j, PN(owq)) ? -EINVAL : 0;
 }
 
+struct yx {
+	int y ;
+	int x ;
+	char * string ;
+	int length ;
+	int used ;
+} ;
+
+static int binaryyx( struct yx * YX )
+{
+	if ( YX->length < 2 ) {
+		return -EINVAL ;
+	}
+
+	if ( YX->string[0] > '0' ) {
+		return -EINVAL;
+	}
+
+	YX->y = YX->string[0] ;
+	YX->x = YX->string[1] ;
+	YX->used = 2 ;
+
+	return 0 ; // next char
+}
+
+// format 3,4:
+// format 12:
+static int asciiyx( struct yx * YX )
+{
+	if ( YX->length < 2 || (memchr(YX->string,':',YX->length))==NULL ) {
+		return -EINVAL ;
+	}
+
+	if ( sscanf(YX->string, "%d,%d:", &YX->y, &YX->x ) < 2 ) {
+		YX->y = 1 ;
+		if ( sscanf(YX->string, "%d:", &YX->x ) < 1 ) {
+			return -EINVAL ;
+		}
+	}
+	YX->used = ( (char *)memchr(YX->string,':',YX->length) - YX->string ) + 1 ;
+	return 0 ;
+}
+
 static int FS_Hscreenyx(struct one_wire_query *owq)
 {
 	char *buf = OWQ_buffer(owq);
 	size_t size = OWQ_size(owq);
 	BYTE data[2 * size + 2];
-	size_t i, j = 0;
+	size_t i, data_index = 0;
 	u_char ua_tmp;
+	struct yx YX = { 0, 0, buf, size, 0 } ;
 
-	if (size < 2) {
+	if ( binaryyx( &YX )!= 0 || asciiyx( &YX ) != 0 ) {
+		return -EINVAL ;
+	}
+	
+	if ( YX.x > 20 || YX.y > 4 || YX.x < 1 || YX.y < 1 ) {
 		return -EINVAL;
 	}
 
-	if ((unsigned char)buf[1] > 20 || (unsigned char)buf[0] > 4) {
-		return -EINVAL;
-	}
-
-	if ((unsigned char)buf[1] < 1 || (unsigned char)buf[0] <1) {
-		return -EINVAL;
-	}
-
-	switch (buf[0]) {
+	switch (YX.y) {
 	case 2:
 		ua_tmp = 0x80 | 0x40;
 		break;
@@ -463,22 +503,22 @@ static int FS_Hscreenyx(struct one_wire_query *owq)
 		break;
 	}
 
-	ua_tmp += buf[1] - 1;
+	ua_tmp += YX.x - 1;
 
-	data[0] = (ua_tmp & 0xF0);
-	data[1] = (ua_tmp << 4) & 0xF0;
+	data[data_index++] = (ua_tmp & 0xF0);
+	data[data_index++] = (ua_tmp << 4) & 0xF0;
 
 	//printf("Hscreen test<%*s>\n",(int)size,buf) ;
-	for (i = 2, j = 2; i < size; ++i) {
+	for (i = YX.used; i < size; ++i) {
 		if (buf[i]) {
-			data[j++] = (buf[i] & 0xF0) | 0x08;
-			data[j++] = ((buf[i] << 4) & 0xF0) | 0x08;
+			data[data_index++] = (buf[i] & 0xF0) | 0x08;
+			data[data_index++] = ((buf[i] << 4) & 0xF0) | 0x08;
 		} else {				//null byte becomes space
-			data[j++] = 0x28;
-			data[j++] = 0x08;
+			data[data_index++] = 0x28;
+			data[data_index++] = 0x08;
 		}
 	}
-	return OW_w_pios(data, j, PN(owq)) ? -EINVAL : 0;
+	return OW_w_pios(data, data_index, PN(owq)) ? -EINVAL : 0;
 }
 
 static int FS_Hmessage(struct one_wire_query *owq)
@@ -577,11 +617,11 @@ static int OW_w_pios(const BYTE * data, const size_t size, const struct parsedna
 	// setup the array
 	// each byte takes 4 bytes after formatting
 	for (i = 0; i < size; ++i) {
-		int formatted_data_pointer = 4 * i;
-		formatted_data[formatted_data_pointer + 0] = data[i];
-		formatted_data[formatted_data_pointer + 1] = (BYTE) ~ data[i];
-		formatted_data[formatted_data_pointer + 2] = 0xFF;
-		formatted_data[formatted_data_pointer + 3] = 0xFF;
+		int formatted_data_index = 4 * i;
+		formatted_data[formatted_data_index + 0] = data[i];
+		formatted_data[formatted_data_index + 1] = (BYTE) ~ data[i];
+		formatted_data[formatted_data_index + 2] = 0xFF;
+		formatted_data[formatted_data_index + 3] = 0xFF;
 	}
 	//{ int j ; printf("IN  "); for (j=0 ; j<formatted_size ; ++j ) printf("%.2X ",formatted_data[j]); printf("\n") ; }
 	if (BUS_transaction(t, pn)) {
@@ -590,17 +630,17 @@ static int OW_w_pios(const BYTE * data, const size_t size, const struct parsedna
 	//{ int j ; printf("OUT "); for (j=0 ; j<formatted_size ; ++j ) printf("%.2X ",formatted_data[j]); printf("\n") ; }
 	// check the array
 	for (i = 0; i < size; ++i) {
-		int formatted_data_pointer = 4 * i;
-		if (formatted_data[formatted_data_pointer + 0] != data[i]) {
+		int formatted_data_index = 4 * i;
+		if (formatted_data[formatted_data_index + 0] != data[i]) {
 			return 1;
 		}
-		if (formatted_data[formatted_data_pointer + 1] != (BYTE) ~ data[i]) {
+		if (formatted_data[formatted_data_index + 1] != (BYTE) ~ data[i]) {
 			return 1;
 		}
-		if (formatted_data[formatted_data_pointer + 2] != 0xAA) {
+		if (formatted_data[formatted_data_index + 2] != 0xAA) {
 			return 1;
 		}
-		if (formatted_data[formatted_data_pointer + 3] != data[i]) {
+		if (formatted_data[formatted_data_index + 3] != data[i]) {
 			return 1;
 		}
 	}
