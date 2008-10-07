@@ -671,38 +671,10 @@ static int FS_read_mixed_part(struct one_wire_query *owq)
 	return 0;
 }
 
-/* Read another property from the same device,
-   e.g. a flag status like IAD for vis measurement in the DS2438
-   Some things are different
-   1. Bus is known (since the original device is already determined)
-   2. Read is local
-   3. Bus is already locked
-   4. Device is locked
-   5. Cache should be consulted
-
-   .BYTE and .n allowed
-
-owq_shallow_copy comes in as a single, not aggregate, even if the original value was an aggregate
+/* Used in sibling reads
+   Reads locally without locking the bus (since it's already locked)
 */
-int FS_read_sibling(char *property, struct one_wire_query *owq_shallow_copy)
+int FS_read_local( struct one_wire_query *owq)
 {
-	struct parsedname *pn = PN(owq_shallow_copy);	// already set up with native device and property
-
-	if (FS_ParseProperty_for_sibling(property, pn)) {
-		return -ENOENT;
-	}
-	/* There are a few types that are not supported: binary, ascii, aggregates (.ALL) */
-	switch (pn->selected_filetype->format) {
-	case ft_vascii:
-	case ft_ascii:
-	case ft_binary:
-		return -ENOTSUP;
-	default:
-		break;
-	}
-	if (pn->extension == EXTENSION_ALL) {
-		return -ENOTSUP;
-	}
-
-	return FS_r_local(owq_shallow_copy);
+	return FS_r_local(owq);
 }

@@ -81,15 +81,18 @@ static UINT LATCH_state(UINT status_bit);
 /* complement of sense */
 static int FS_r_pio(struct one_wire_query *owq)
 {
-	OWQ_allocate_struct_and_pointer(owq_sibling);
-	OWQ_create_shallow_bitfield(owq_sibling, owq);
+	int return_code = -EINVAL ;
+	struct one_wire_query * owq_sibling  = FS_OWQ_create_sibling( "sensed", owq ) ;
 
-	if (FS_read_sibling("sensed", owq_sibling) < 0) {
-		return -EINVAL;
+	if ( owq_sibling != NULL ) {
+		if ( FS_read_local( owq_sibling ) == 0 ) {
+			OWQ_U(owq) = OWQ_U(owq_sibling) ^ 0x03;
+			return_code = 0 ;
+		}
 	}
+	FS_OWQ_destroy_sibling(owq_sibling) ;
 
-	OWQ_U(owq) = OWQ_U(owq_sibling) ^ 0x03;
-	return 0;
+	return return_code ;
 }
 
 /* 2413 switch PIO sensed*/

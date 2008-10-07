@@ -104,12 +104,12 @@ DeviceEntryExtended(28, DS18B20, DEV_temp | DEV_alarm);
 struct filetype DS1822[] = {
 	F_STANDARD,
 //    {"scratchpad",     8,  NULL, ft_binary, fc_volatile,   FS_tempdata, NO_WRITE_FUNCTION, NULL, } ,//    {"scratchpad",     8,  NULL, ft_binary, fc_volatile,  {o:FS_tempdata} ,
-  {"temperature", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_slowtemp, NO_WRITE_FUNCTION, {i:12},},
+  {"temperature", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_alias, FS_slowtemp, NO_WRITE_FUNCTION, {i:12},},
   {"temperature9", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:9},},
   {"temperature10", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:10},},
   {"temperature11", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:11},},
   {"temperature12", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:12},},
-  {"fasttemp", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_fasttemp, NO_WRITE_FUNCTION, {i:9},},
+  {"fasttemp", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_alias, FS_fasttemp, NO_WRITE_FUNCTION, {i:9},},
   {"templow", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:1},},
   {"temphigh", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:0},},
   {"trim", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_volatile, FS_r_trim, FS_w_trim, {v:NULL},},
@@ -124,12 +124,12 @@ DeviceEntryExtended(22, DS1822, DEV_temp | DEV_alarm);
 struct filetype DS1825[] = {
 	F_STANDARD,
 //    {"scratchpad",     8,  NULL, ft_binary, fc_volatile,   FS_tempdata, NO_WRITE_FUNCTION, NULL, } ,//    {"scratchpad",     8,  NULL, ft_binary, fc_volatile,  {o:FS_tempdata} ,
-  {"temperature", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_slowtemp, NO_WRITE_FUNCTION, {i:12},},
+  {"temperature", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_alias, FS_slowtemp, NO_WRITE_FUNCTION, {i:12},},
   {"temperature9", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:9},},
   {"temperature10", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:10},},
   {"temperature11", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:11},},
   {"temperature12", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:12},},
-  {"fasttemp", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_fasttemp, NO_WRITE_FUNCTION, {i:9},},
+  {"fasttemp", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_alias, FS_fasttemp, NO_WRITE_FUNCTION, {i:9},},
   {"templow", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:1},},
   {"temphigh", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:0},},
   {"power", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, {v:NULL},},
@@ -143,12 +143,12 @@ struct aggregate A28EA00 = { 2, ag_letters, ag_aggregate, };
 struct filetype DS28EA00[] = {
 	F_STANDARD,
 //    {"scratchpad",     8,  NULL, ft_binary, fc_volatile,   FS_tempdata, NO_WRITE_FUNCTION, NULL, } ,//    {"scratchpad",     8,  NULL, ft_binary, fc_volatile,  {o:FS_tempdata} ,
-  {"temperature", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_slowtemp, NO_WRITE_FUNCTION, {i:12},},
+  {"temperature", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_alias, FS_slowtemp, NO_WRITE_FUNCTION, {i:12},},
   {"temperature9", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:9},},
   {"temperature10", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:10},},
   {"temperature11", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:11},},
   {"temperature12", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:12},},
-  {"fasttemp", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_fasttemp, NO_WRITE_FUNCTION, {i:9},},
+  {"fasttemp", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_alias, FS_fasttemp, NO_WRITE_FUNCTION, {i:9},},
   {"templow", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:1},},
   {"temphigh", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:0},},
   {"power", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, {v:NULL},},
@@ -263,29 +263,35 @@ static int FS_22temp(struct one_wire_query *owq)
 // use sibling function for fasttemp to keep cache value consistent
 static int FS_fasttemp(struct one_wire_query *owq)
 {
-	OWQ_allocate_struct_and_pointer(owq_sibling);
+	int return_code = -EINVAL ;
+	struct one_wire_query * owq_sibling  = FS_OWQ_create_sibling( "temperature9", owq ) ;
 
-	OWQ_create_shallow_single(owq_sibling, owq);
-
-	if (FS_read_sibling("temperature9", owq_sibling)) {
-		return -EINVAL;
+	if ( owq_sibling != NULL ) {
+		if ( FS_read_local( owq_sibling ) == 0 ) {
+			OWQ_F(owq) = OWQ_F(owq_sibling);
+			return_code = 0 ;
+		}
 	}
-	OWQ_F(owq) = OWQ_F(owq_sibling);
-	return 0;
+	FS_OWQ_destroy_sibling(owq_sibling) ;
+
+	return return_code ;
 }
 
 // use sibling function for temperature to keep cache value consistent
 static int FS_slowtemp(struct one_wire_query *owq)
 {
-	OWQ_allocate_struct_and_pointer(owq_sibling);
+	int return_code = -EINVAL ;
+	struct one_wire_query * owq_sibling  = FS_OWQ_create_sibling( "temperature12", owq ) ;
 
-	OWQ_create_shallow_single(owq_sibling, owq);
-
-	if (FS_read_sibling("temperature12", owq_sibling)) {
-		return -EINVAL;
+	if ( owq_sibling != NULL ) {
+		if ( FS_read_local( owq_sibling ) == 0 ) {
+			OWQ_F(owq) = OWQ_F(owq_sibling);
+			return_code = 0 ;
+		}
 	}
-	OWQ_F(owq) = OWQ_F(owq_sibling);
-	return 0;
+	FS_OWQ_destroy_sibling(owq_sibling) ;
+
+	return return_code ;
 }
 
 static int FS_power(struct one_wire_query *owq)

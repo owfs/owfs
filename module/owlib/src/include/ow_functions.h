@@ -182,7 +182,7 @@ int FS_dir_remote(void (*dirfunc) (void *, const struct parsedname *), void *v, 
 
 int FS_write(const char *path, const char *buf, const size_t size, const off_t offset);
 int FS_write_postparse(struct one_wire_query *owq);
-int FS_write_sibling(char *property, struct one_wire_query *owq_shallow_copy);
+int FS_write_local(struct one_wire_query *owq);
 
 int FS_read(const char *path, char *buf, const size_t size, const off_t offset);
 //int FS_read_postparse(char *buf, const size_t size, const off_t offset,
@@ -192,12 +192,7 @@ int FS_read_distribute(struct one_wire_query *owq);
 int FS_read_fake(struct one_wire_query *owq);
 int FS_read_tester(struct one_wire_query *owq);
 int FS_r_aggregate_all(struct one_wire_query *owq);
-int FS_read_sibling(char *property, struct one_wire_query *owq_shallow_copy);
-
-int Fowq_output_offset_and_size(char *string, size_t length, struct one_wire_query *owq);
-int Fowq_output_offset_and_size_z(char *string, struct one_wire_query *owq);
-struct one_wire_query *FS_OWQ_from_pn(const struct parsedname *pn);
-void FS_OWQ_from_pn_destroy(struct one_wire_query *owq);
+int FS_read_local( struct one_wire_query *owq);
 
 int FS_fstat(const char *path, struct stat *stbuf);
 int FS_fstat_postparse(struct stat *stbuf, const struct parsedname *pn);

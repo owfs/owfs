@@ -164,7 +164,6 @@ static int FS_ParsedName_anywhere(const char *path, enum parse_pass remote_statu
 
 		// break out next name in path, make sure pp->pathnext isn't NULL. (SIGSEGV in uClibc)
 		pp->pathnow = (pp->pathnext) ? strsep(&(pp->pathnext), "/") : NULL;
-
 		//LEVEL_DEBUG("PARSENAME pathnow=[%s] rest=[%s]\n",pathnow,pathnext) ;
 		if (pp->pathnow == NULL || pp->pathnow[0] == '\0') {
 			pe = parse_done;
@@ -195,6 +194,8 @@ static int FS_ParsedName_anywhere(const char *path, enum parse_pass remote_statu
 
 		case parse_prop:
 			//LEVEL_DEBUG("PARSENAME parse_prop\n") ;
+			pn->dirlength = pp->pathnow - pp->pathcpy ;
+			//printf("dirlength = %d which makes the path <%s> <%.*s>\n",pn->dirlength,pn->path,pn->dirlength,pn->path);
 			pp->pathlast = pp->pathnow;	/* Save for concatination if subdirectory later wanted */
 			pe = Parse_Property(pp->pathnow, pn);
 			break;
@@ -302,6 +303,7 @@ static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path,
 	}
 
 	pn->terminal_bus_number = -1;
+	pn->dirlength = strlen(path) ;
 
 	return 0;
 }

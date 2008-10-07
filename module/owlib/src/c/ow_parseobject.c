@@ -36,12 +36,37 @@ int FS_OWQ_create(const char *path, char *buffer, size_t size, off_t offset, str
 	return return_code ;
 }
 
+/* Create the Parsename structure and load the relevant fields */
+/* Clean up with FS_OWQ_destroy */
+struct one_wire_query *FS_OWQ_create_sibling(const char *sibling, struct one_wire_query *owq_original)
+{
+	char path[PATH_MAX] ;
+	struct parsedname s_pn ;
+	int dirlength = PN(owq_original)->dirlength ;
+
+	strncpy(path,PN(owq_original)->path,dirlength) ;
+	strcpy(&path[dirlength],sibling) ;
+
+	LEVEL_DEBUG("FS_OWQ_create of sibling %s\n", sibling);
+	
+	if ( FS_ParsedName( path, &s_pn ) == 0 ) {
+		struct one_wire_query *owq = FS_OWQ_from_pn( &s_pn ) ;
+		if ( owq != 0 ) {
+			return owq ;
+		}
+		FS_ParsedName_destroy( &s_pn );
+	}
+	return NULL ;
+}
+
 static int FS_OWQ_create_postparse(char *buffer, size_t size, off_t offset, const struct parsedname * pn, struct one_wire_query *owq)
 {
 	OWQ_buffer(owq) = buffer;
 	OWQ_size(owq) = size;
 	OWQ_offset(owq) = offset;
-	memcpy(PN(owq), pn, sizeof(struct parsedname));
+	if ( PN(owq) != pn ) {
+		memcpy(PN(owq), pn, sizeof(struct parsedname));
+	}
 	if (pn->extension == EXTENSION_ALL && pn->type != ePN_structure) {
 		OWQ_array(owq) = calloc((size_t) pn->selected_filetype->ag->elements, sizeof(union value_object));
 		if (OWQ_array(owq) == NULL) {
@@ -108,6 +133,20 @@ int FS_OWQ_create_plus(const char *path, const char *file, char *buffer, size_t 
 		FS_ParsedName_destroy(pn);
 	}
 	return return_code ;
+}
+
+// Safe to pass a NULL
+void FS_OWQ_destroy_sibling(struct one_wire_query *owq)
+{
+	if ( owq == NULL ) {
+		return ;
+	}
+
+	LEVEL_DEBUG("OWQ_destroy_sibling %s\n",PN(owq)->path) ;
+	if ( OWQ_buffer(owq) ) {
+		free( OWQ_buffer(owq) ) ;
+	}
+	FS_OWQ_destroy(owq) ;
 }
 
 void FS_OWQ_destroy(struct one_wire_query *owq)

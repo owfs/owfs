@@ -669,41 +669,53 @@ static int FS_w_vis_off(struct one_wire_query *owq)
 // Current bias -- using 25mOhm internal resistor
 static int FS_r_abias(struct one_wire_query *owq)
 {
-	OWQ_allocate_struct_and_pointer(owq_sibling);
-	OWQ_create_shallow_single(owq_sibling, owq);
+	int return_code = -EINVAL ;
+	struct one_wire_query * owq_sibling  = FS_OWQ_create_sibling( "vbias", owq ) ;
 
-	if (FS_read_sibling("vbias", owq_sibling)) {
-		return -EINVAL;
+	if ( owq_sibling != NULL ) {
+		if ( FS_read_local( owq_sibling ) == 0 ) {
+			OWQ_F(owq) = OWQ_F(owq_sibling) / .025;
+			return_code = 0 ;
+		}
 	}
+	FS_OWQ_destroy_sibling(owq_sibling) ;
 
-	OWQ_F(owq) = OWQ_F(owq_sibling) / .025;
-	return 0;
+	return return_code ;
 }
 
 // Current bias -- using 25mOhm internal resistor
 static int FS_w_abias(struct one_wire_query *owq)
 {
-	OWQ_allocate_struct_and_pointer(owq_sibling);
-	OWQ_create_shallow_single(owq_sibling, owq);
+	int return_code = -EINVAL ;
+	struct one_wire_query * owq_sibling  = FS_OWQ_create_sibling( "vbias", owq ) ;
 
 	OWQ_F(owq_sibling) = OWQ_F(owq) * .025;
 
-	return FS_write_sibling("vbias", owq_sibling) ? -EINVAL : 0;
+	if ( owq_sibling != NULL ) {
+		if ( FS_write_local( owq_sibling ) == 0 ) {
+			return_code = 0 ;
+		}
+	}
+	FS_OWQ_destroy_sibling(owq_sibling) ;
+
+	return return_code ;
 }
 
 // Read current using internal 25mOhm resistor and Vis
 static int FS_r_current(struct one_wire_query *owq)
 {
-	OWQ_allocate_struct_and_pointer(owq_sibling);
+	int return_code = -EINVAL ;
+	struct one_wire_query * owq_sibling  = FS_OWQ_create_sibling( "vis", owq ) ;
 
-	OWQ_create_shallow_single(owq_sibling, owq);
-
-	if (FS_read_sibling("vis", owq_sibling)) {
-		return -EINVAL;
+	if ( owq_sibling != NULL ) {
+		if ( FS_read_local( owq_sibling ) == 0 ) {
+			OWQ_F(owq) = OWQ_F(owq_sibling) / .025;
+			return_code = 0 ;
+		}
 	}
+	FS_OWQ_destroy_sibling(owq_sibling) ;
 
-	OWQ_F(owq) = OWQ_F(owq_sibling) / .025;
-	return 0;
+	return return_code ;
 }
 
 static int FS_r_vbias(struct one_wire_query *owq)
@@ -1048,21 +1060,33 @@ static int FS_rangehigh(struct one_wire_query *owq)
 static int FS_thermocouple(struct one_wire_query *owq)
 {
 	_FLOAT T_coldjunction, mV;
-	OWQ_allocate_struct_and_pointer(owq_sibling);
+	struct one_wire_query * owq_sibling ;
 
-	OWQ_create_shallow_single(owq_sibling, owq);
+	if ( (owq_sibling=FS_OWQ_create_sibling( "vis", owq )) != NULL ) {
+		if ( FS_read_local( owq_sibling ) ) {
+			FS_OWQ_destroy_sibling(owq_sibling) ;
+			return -EINVAL ;
+		}
+	} else {
+		return -EINVAL ;
+	}
 
 	/* Get measured voltage */
-	if (FS_read_sibling("vis", owq_sibling)) {
-		return -EINVAL;
-	}
 	mV = OWQ_F(owq_sibling) * 1000;	/* convert Volts to mVolts */
+	FS_OWQ_destroy_sibling(owq_sibling) ;
+
+	if ( (owq_sibling=FS_OWQ_create_sibling( "temperature", owq )) != NULL ) {
+		if ( FS_read_local( owq_sibling ) ) {
+			FS_OWQ_destroy_sibling(owq_sibling) ;
+			return -EINVAL ;
+		}
+	} else {
+		return -EINVAL ;
+	}
 
 	/* Get cold junction temperature */
-	if (FS_read_sibling("temperature", owq_sibling)) {
-		return -EINVAL;
-	}
 	T_coldjunction = OWQ_F(owq_sibling);
+	FS_OWQ_destroy_sibling(owq_sibling) ;
 
 	OWQ_F(owq) = ThermocoupleTemperature(mV, T_coldjunction, OWQ_pn(owq).selected_filetype->data.i);
 

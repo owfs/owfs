@@ -200,14 +200,18 @@ static int FS_channel(struct one_wire_query *owq)
 /* bits 2 and 3 */
 static int FS_sense(struct one_wire_query *owq)
 {
-	OWQ_allocate_struct_and_pointer(owq_sibling);
+	int return_code = -EINVAL ;
+	struct one_wire_query * owq_sibling  = FS_OWQ_create_sibling( "PIO.BYTE", owq ) ;
 
-	OWQ_create_shallow_single(owq_sibling, owq);
-	if (FS_read_sibling("PIO.BYTE", owq_sibling)) {
-		return -EINVAL;
+	if ( owq_sibling != NULL ) {
+		if ( FS_read_local( owq_sibling ) == 0 ) {
+			OWQ_U(owq) = BYTE_INVERSE(OWQ_U(owq_sibling)) & 0x03;
+			return_code = 0 ;
+		}
 	}
-	OWQ_U(owq) = BYTE_INVERSE(OWQ_U(owq_sibling)) & 0x03;
-	return 0;
+	FS_OWQ_destroy_sibling(owq_sibling) ;
+
+	return return_code ;
 }
 
 /* 2406 switch activity latch*/
@@ -487,34 +491,36 @@ static int FS_temp(struct one_wire_query *owq)
 
 static int FS_pressure(struct one_wire_query *owq)
 {
-	UINT D1;
-	_FLOAT TEMP, dT, OFF, SENS, X;
-	struct s_TAI8570 tai;
-	struct parsedname pn2;
-	OWQ_allocate_struct_and_pointer(owq_sibling);
+	int return_code = -EINVAL ;
+	struct one_wire_query * owq_sibling  = FS_OWQ_create_sibling( "TAI8570/temperature", owq ) ;
 
-	OWQ_create_shallow_single(owq_sibling, owq);
+	if ( owq_sibling != NULL ) {
+		if ( FS_read_local( owq_sibling ) == 0 ) {
+			struct parsedname pn2;
+			struct s_TAI8570 tai;
+			UINT D1;
+		
+			memcpy(&pn2, PN(owq), sizeof(struct parsedname));	//shallow copy
+			if (testTAI8570(&tai, owq)) {
+				return_code =  -ENOENT;
+			} else if (TAI8570_SenseValue(&D1, SEC_READD1, &tai, &pn2)) {
+				return_code = -EINVAL;
+			} else {
+				_FLOAT TEMP = OWQ_F(owq_sibling);
+				_FLOAT dT = (TEMP * 10. - 200.) * 1024. / (tai.C[5] + 50.);
+				_FLOAT OFF = 4. * tai.C[1] + ((tai.C[3] - 512.) * dT) / 4096.;
+				_FLOAT SENS = 24576. + tai.C[0] + (tai.C[2] * dT) / 1024.;
+				_FLOAT X = (SENS * (D1 - 7168.)) / 16384. - OFF;
 
-	if (FS_read_sibling("TAI8570/temperature", owq_sibling)) {
-		return -EINVAL;
+				LEVEL_DEBUG("TAI8570 Raw Pressure (D1) = %lu\n", D1);
+				OWQ_F(owq) = 250. + X / 32.;
+				return_code =  0;
+			}
+		}
 	}
-	TEMP = OWQ_F(owq_sibling);
+	FS_OWQ_destroy_sibling(owq_sibling) ;
 
-	memcpy(&pn2, PN(owq), sizeof(struct parsedname));	//shallow copy
-	if (testTAI8570(&tai, owq)) {
-		return -ENOENT;
-	}
-
-	if (TAI8570_SenseValue(&D1, SEC_READD1, &tai, &pn2)) {
-		return -EINVAL;
-	}
-	LEVEL_DEBUG("TAI8570 Raw Pressure (D1) = %lu\n", D1);
-	dT = (TEMP * 10. - 200.) * 1024. / (tai.C[5] + 50.);
-	OFF = 4. * tai.C[1] + ((tai.C[3] - 512.) * dT) / 4096.;
-	SENS = 24576. + tai.C[0] + (tai.C[2] * dT) / 1024.;
-	X = (SENS * (D1 - 7168.)) / 16384. - OFF;
-	OWQ_F(owq) = 250. + X / 32.;
-	return 0;
+	return return_code ;
 }
 
 // Read a page and confirm its a valid tmax page
@@ -794,15 +800,18 @@ static int testTAI8570(struct s_TAI8570 *tai, struct one_wire_query *owq)
 	UINT cal[4];
 	struct parsedname *pn = PN(owq);
 
-	OWQ_allocate_struct_and_pointer(owq_sibling);
-
-	OWQ_create_shallow_single(owq_sibling, owq);
+	struct one_wire_query * owq_power  = FS_OWQ_create_sibling( "power", owq ) ;
 
 	// see which DS2406 is powered
-	if (FS_read_sibling("power", owq_sibling)) {
-		return -EINVAL;
+	if ( owq_power == NULL ) {
+		return -EINVAL ;
 	}
-	pow = OWQ_Y(owq_sibling);
+	if ( FS_read_local( owq_power ) ) {
+		FS_OWQ_destroy_sibling(owq_power) ;
+		return -EINVAL ;
+	}
+	pow = OWQ_Y(owq_power);
+	FS_OWQ_destroy_sibling(owq_power) ;
 
 	// See if already cached
 	if (Cache_Get_Internal_Strict((void *) tai, sizeof(struct s_TAI8570), InternalProp(BAR), pn) == 0) {
