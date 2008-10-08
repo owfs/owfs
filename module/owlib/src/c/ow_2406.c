@@ -69,11 +69,13 @@ READ_FUNCTION(FS_sibling);
 READ_FUNCTION(FS_temp);
 READ_FUNCTION(FS_pressure);
 #endif							/* OW_TAI8570 */
+ READ_FUNCTION(FS_voltage);
 
 /* ------- Structures ----------- */
 
 struct aggregate A2406 = { 2, ag_letters, ag_aggregate, };
 struct aggregate A2406p = { 4, ag_numbers, ag_separate, };
+struct aggregate AT8Ac = { 8, ag_numbers, ag_separate, }; // 8 channel T8A volt meter
 struct filetype DS2406[] = {
 	F_STANDARD,
   {"memory", 128, NULL, ft_binary, fc_stable, FS_r_mem, FS_w_mem, {v:NULL},},
@@ -91,6 +93,8 @@ struct filetype DS2406[] = {
   {"TAI8570/pressure", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_volatile, FS_pressure, NO_WRITE_FUNCTION, {v:NULL},},
   {"TAI8570/sibling", 16, NULL, ft_ascii, fc_stable, FS_sibling, NO_WRITE_FUNCTION, {v:NULL},},
 #endif							/* OW_TAI8570 */
+   {"T8A", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
+   {"T8A/volt", PROPERTY_LENGTH_FLOAT, &AT8Ac, ft_float, fc_volatile, FS_voltage, NO_WRITE_FUNCTION, {v:NULL},},
 };
 
 DeviceEntryExtended(12, DS2406, DEV_alarm);
@@ -270,6 +274,58 @@ static int FS_w_pio(struct one_wire_query *owq)
     if (OW_w_pio(data, PN(owq))) {
 		return -EINVAL;
     }
+	return 0;
+}
+
+/* Support for EmbeddedDataSystems's T8A 8 channel A/D
+   Written by Chase Shimmin cshimmin@berkeley.edu */
+static int FS_voltage(struct one_wire_query *owq)
+{
+	// channel select byte, based on zero-indexed channel number
+	BYTE ch_select = (OWQ_pn(owq).extension << 2) + 0x02;
+	BYTE channel_info ;
+	BYTE data[8] = { ch_select, } ;
+
+	// this is the complete byte sequence we want to write to the ds2406 so it will
+	// select the appropriate channel and initiate adc, and also so it can write
+	// back the results to the trailing 0xFF bytes.
+	BYTE p[] = { _1W_CHANNEL_ACCESS, 
+		_DS2406_ALR|_DS2406_TOG|_DS2406_CHS0|_DS2406_CRC1, 0xFF, // Channel control
+	} ;
+
+	// most & least significant bytes. for the latter, we're actually only interested
+	// in the least significant nibble.
+	BYTE msb, lsb;
+
+	// 'modify' transaction -- so we can read back the trailing bytes.
+	struct transaction_log t[] = {
+		TRXN_START,
+		TRXN_WRITE3(p),
+		TRXN_READ1(&channel_info),
+		TRXN_WR_CRC16(data,1,7),
+		TRXN_END,
+	};
+
+	if (BUS_transaction(t, PN(owq))) {
+		return -EINVAL;
+	}
+
+	// grab the msb from the adc (in this case, it will be written in the 6th byte sent out)
+	// then take the ones complement and reverse bits.
+	msb = data[5];
+	msb = ~msb;
+	msb = ((msb * 0x0802LU & 0x22110LU) | (msb * 0x8020LU & 0x88440LU)) * 0x10101LU >> 16;
+	
+	// grab the lsb (8th byte), 1s complement, reverse it, and take the 4 original L.S. bits.
+	lsb = data[7];
+	lsb = ~lsb;
+	lsb = ((lsb * 0x0802LU & 0x22110LU) | (lsb * 0x8020LU & 0x88440LU)) * 0x10101LU >> 16;
+	lsb >>= 4;
+	lsb &= 0xF;
+
+	// convert the traslated and combined msb and lsb into voltages (this is a 0-5v 12-bit adc
+	// so multiply by 5 and divide by 2^12. Then write it into the float field in the OWQ union & return
+	OWQ_F(owq) = ((msb << 4) + lsb) * 5.0 / 4096;
 	return 0;
 }
 

@@ -34,6 +34,8 @@ Dual Switch, Write-once Memory
 .B set_alarm
 |
 .B TAI8570/[sibling|temperature|pressure]
+|
+.B T8A/volt.[0-7,ALL]
 .so standard_mini
 ]]
 .SH FAMILY CODE
@@ -196,6 +198,12 @@ Ambient
 measured by the
 .I TAI8570
 in prevailing temperature units (Centigrade is the default).
+.SS T8A/volt.[0-7|ALL]
+.I read-only, floating-point
+.br
+Uses the T8A (by
+.I Embedded Data Systems
+) 8 channel voltage convertor. Units in volts, 0 to 5V range. 12 bit resolution.
 .SH STANDARD PROPERTIES
 .so standard
 .SH ALARMS
@@ -258,6 +266,8 @@ http://pdfserv.maxim-ic.com/en/ds/DS2406.pdf
 http://pdfserv.maxim-ic.com/en/ds/DS2407.pdf
 .br
 http://www.aagelectronica.com/PDF%20Docs/(TAI8570)%20Pressure%20Sensor.pdf
+.br
+http://www.embeddeddatasystems.com/page/EDS/PROD/IO/T8A
 .br
 http://oww.sourceforge.net/hardware.html#bp
 .SH SEE ALSO
