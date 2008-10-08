@@ -415,7 +415,7 @@ static int FS_input_array_no_commas(struct one_wire_query *owq)
 {
 	int elements = OWQ_pn(owq).selected_filetype->ag->elements;
 	int extension;
-	int suglen = OWQ_pn(owq).selected_filetype->suglen;
+	int suglen = FileLength(PN(owq)) ;
 
 	if ((OWQ_offset(owq) != 0)
 		|| ((int) OWQ_size(owq) != suglen * elements)) {
