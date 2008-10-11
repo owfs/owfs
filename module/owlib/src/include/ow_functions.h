@@ -198,7 +198,7 @@ int FS_r_sibling_F(_FLOAT *F, const char * sibling, struct one_wire_query *owq) 
 int FS_r_sibling_U(  UINT *U, const char * sibling, struct one_wire_query *owq) ;
 int FS_r_sibling_Y(   INT *Y, const char * sibling, struct one_wire_query *owq) ;
 
-int FS_r_sibling_bitwork(UINT set_mask, UINT clear_mask, UINT toggle_mask, const char * sibling, struct one_wire_query *owq) ;
+int FS_r_sibling_bitwork(UINT set, UINT mask, const char * sibling, struct one_wire_query *owq) ;
 
 int FS_w_sibling_F(_FLOAT F, const char * sibling, struct one_wire_query *owq) ;
 int FS_w_sibling_U(  UINT U, const char * sibling, struct one_wire_query *owq) ;
