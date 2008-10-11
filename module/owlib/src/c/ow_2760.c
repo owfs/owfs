@@ -207,8 +207,8 @@ DeviceEntry(36, DS2740);
 struct filetype DS2751[] = {
 	F_STANDARD,
   {"amphours", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_volatile, FS_r_ah, FS_w_ah, {v:NULL},},
-  {"current", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_volatile, FS_r_current, NO_WRITE_FUNCTION, {v:NULL},},
-  {"currentbias", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_stable, FS_r_abias, FS_w_abias, {v:NULL},},
+  {"current", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_alias, FS_r_current, NO_WRITE_FUNCTION, {v:NULL},},
+  {"currentbias", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_alias, FS_r_abias, FS_w_abias, {v:NULL},},
   {"lock", PROPERTY_LENGTH_YESNO, &L2751, ft_yesno, fc_stable, FS_r_lock, FS_w_lock, {v:&P2751},},
   {"memory", 256, NULL, ft_binary, fc_volatile, FS_r_mem, FS_w_mem, {v:NULL},},
   {"pages", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
@@ -271,8 +271,8 @@ DeviceEntryExtended(35, DS2755, DEV_alarm);
 struct filetype DS2760[] = {
 	F_STANDARD,
   {"amphours", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_volatile, FS_r_ah, FS_w_ah, {v:NULL},},
-  {"current", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_volatile, FS_r_current, NO_WRITE_FUNCTION, {v:NULL},},
-  {"currentbias", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_stable, FS_r_abias, FS_w_abias, {v:NULL},},
+  {"current", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_alias, FS_r_current, NO_WRITE_FUNCTION, {v:NULL},},
+  {"currentbias", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_alias, FS_r_abias, FS_w_abias, {v:NULL},},
   {"lock", PROPERTY_LENGTH_YESNO, &L2760, ft_yesno, fc_stable, FS_r_lock, FS_w_lock, {v:&P2760},},
   {"memory", 256, NULL, ft_binary, fc_volatile, FS_r_mem, FS_w_mem, {v:NULL},},
   {"pages", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
@@ -308,8 +308,8 @@ DeviceEntry(30, DS2760);
 struct filetype DS2770[] = {
 	F_STANDARD,
   {"amphours", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_volatile, FS_r_ah, FS_w_ah, {v:NULL},},
-  {"current", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_volatile, FS_r_current, NO_WRITE_FUNCTION, {v:NULL},},
-  {"currentbias", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_stable, FS_r_abias, FS_w_abias, {v:NULL},},
+  {"current", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_alias, FS_r_current, NO_WRITE_FUNCTION, {v:NULL},},
+  {"currentbias", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_alias, FS_r_abias, FS_w_abias, {v:NULL},},
   {"lock", PROPERTY_LENGTH_YESNO, &L2770, ft_yesno, fc_stable, FS_r_lock, FS_w_lock, {v:&P2770},},
   {"memory", 256, NULL, ft_binary, fc_volatile, FS_r_mem, FS_w_mem, {v:NULL},},
   {"pages", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
@@ -669,53 +669,35 @@ static int FS_w_vis_off(struct one_wire_query *owq)
 // Current bias -- using 25mOhm internal resistor
 static int FS_r_abias(struct one_wire_query *owq)
 {
-	int return_code = -EINVAL ;
-	struct one_wire_query * owq_sibling  = FS_OWQ_create_sibling( "vbias", owq ) ;
+	_FLOAT vbias ;
 
-	if ( owq_sibling != NULL ) {
-		if ( FS_read_local( owq_sibling ) == 0 ) {
-			OWQ_F(owq) = OWQ_F(owq_sibling) / .025;
-			return_code = 0 ;
-		}
+	if ( FS_r_sibling_F( &vbias, "vbias", owq ) ) {
+		return -EINVAL ;
 	}
-	FS_OWQ_destroy_sibling(owq_sibling) ;
 
-	return return_code ;
+	OWQ_F(owq) = vbias / .025;
+
+	return 0 ;
 }
 
 // Current bias -- using 25mOhm internal resistor
 static int FS_w_abias(struct one_wire_query *owq)
 {
-	int return_code = -EINVAL ;
-	struct one_wire_query * owq_sibling  = FS_OWQ_create_sibling( "vbias", owq ) ;
-
-	OWQ_F(owq_sibling) = OWQ_F(owq) * .025;
-
-	if ( owq_sibling != NULL ) {
-		if ( FS_write_local( owq_sibling ) == 0 ) {
-			return_code = 0 ;
-		}
-	}
-	FS_OWQ_destroy_sibling(owq_sibling) ;
-
-	return return_code ;
+	return FS_w_sibling_F( OWQ_F(owq) * .025, "vbias", owq ) ;
 }
 
 // Read current using internal 25mOhm resistor and Vis
 static int FS_r_current(struct one_wire_query *owq)
 {
-	int return_code = -EINVAL ;
-	struct one_wire_query * owq_sibling  = FS_OWQ_create_sibling( "vis", owq ) ;
+	_FLOAT vis ;
 
-	if ( owq_sibling != NULL ) {
-		if ( FS_read_local( owq_sibling ) == 0 ) {
-			OWQ_F(owq) = OWQ_F(owq_sibling) / .025;
-			return_code = 0 ;
-		}
+	if ( FS_r_sibling_F( &vis, "vis", owq ) ) {
+		return -EINVAL ;
 	}
-	FS_OWQ_destroy_sibling(owq_sibling) ;
 
-	return return_code ;
+	OWQ_F(owq) = vis / .025;
+
+	return 0 ;
 }
 
 static int FS_r_vbias(struct one_wire_query *owq)
@@ -1059,34 +1041,18 @@ static int FS_rangehigh(struct one_wire_query *owq)
 
 static int FS_thermocouple(struct one_wire_query *owq)
 {
-	_FLOAT T_coldjunction, mV;
-	struct one_wire_query * owq_sibling ;
-
-	if ( (owq_sibling=FS_OWQ_create_sibling( "vis", owq )) != NULL ) {
-		if ( FS_read_local( owq_sibling ) ) {
-			FS_OWQ_destroy_sibling(owq_sibling) ;
-			return -EINVAL ;
-		}
-	} else {
-		return -EINVAL ;
-	}
+	_FLOAT T_coldjunction, vis, mV;
 
 	/* Get measured voltage */
-	mV = OWQ_F(owq_sibling) * 1000;	/* convert Volts to mVolts */
-	FS_OWQ_destroy_sibling(owq_sibling) ;
-
-	if ( (owq_sibling=FS_OWQ_create_sibling( "temperature", owq )) != NULL ) {
-		if ( FS_read_local( owq_sibling ) ) {
-			FS_OWQ_destroy_sibling(owq_sibling) ;
-			return -EINVAL ;
-		}
-	} else {
+	if ( FS_r_sibling_F( &vis, "vis", owq ) ) {
 		return -EINVAL ;
 	}
+	mV = vis * 1000;	/* convert Volts to mVolts */
 
 	/* Get cold junction temperature */
-	T_coldjunction = OWQ_F(owq_sibling);
-	FS_OWQ_destroy_sibling(owq_sibling) ;
+	if ( FS_r_sibling_F( &T_coldjunction, "temperature", owq ) ) {
+		return -EINVAL ;
+	}
 
 	OWQ_F(owq) = ThermocoupleTemperature(mV, T_coldjunction, OWQ_pn(owq).selected_filetype->data.i);
 

@@ -263,35 +263,29 @@ static int FS_22temp(struct one_wire_query *owq)
 // use sibling function for fasttemp to keep cache value consistent
 static int FS_fasttemp(struct one_wire_query *owq)
 {
-	int return_code = -EINVAL ;
-	struct one_wire_query * owq_sibling  = FS_OWQ_create_sibling( "temperature9", owq ) ;
+	_FLOAT temperature ;
 
-	if ( owq_sibling != NULL ) {
-		if ( FS_read_local( owq_sibling ) == 0 ) {
-			OWQ_F(owq) = OWQ_F(owq_sibling);
-			return_code = 0 ;
-		}
+	if ( FS_r_sibling_F( &temperature, "temperature9", owq ) ) {
+		return -EINVAL ;
 	}
-	FS_OWQ_destroy_sibling(owq_sibling) ;
 
-	return return_code ;
+	OWQ_F(owq) = temperature ;
+
+	return 0 ;
 }
 
 // use sibling function for temperature to keep cache value consistent
 static int FS_slowtemp(struct one_wire_query *owq)
 {
-	int return_code = -EINVAL ;
-	struct one_wire_query * owq_sibling  = FS_OWQ_create_sibling( "temperature12", owq ) ;
+	_FLOAT temperature ;
 
-	if ( owq_sibling != NULL ) {
-		if ( FS_read_local( owq_sibling ) == 0 ) {
-			OWQ_F(owq) = OWQ_F(owq_sibling);
-			return_code = 0 ;
-		}
+	if ( FS_r_sibling_F( &temperature, "temperature12", owq ) ) {
+		return -EINVAL ;
 	}
-	FS_OWQ_destroy_sibling(owq_sibling) ;
 
-	return return_code ;
+	OWQ_F(owq) = temperature ;
+
+	return 0 ;
 }
 
 static int FS_power(struct one_wire_query *owq)

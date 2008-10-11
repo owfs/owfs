@@ -140,10 +140,6 @@ static int OW_volts(_FLOAT * V, const int src, const struct parsedname *pn);
 static int OW_r_int(int *I, const UINT address, const struct parsedname *pn);
 static int OW_w_int(const int I, const UINT address, const struct parsedname *pn);
 static int OW_w_offset(const int I, const struct parsedname *pn);
-static int OW_Humid(struct one_wire_query *owq_T, struct one_wire_query *owq_VAD, struct one_wire_query *owq_VDD, struct one_wire_query *owq) ;
-static int OW_Humid_4000(struct one_wire_query *owq_T, struct one_wire_query *owq_VAD, struct one_wire_query *owq_VDD, struct one_wire_query *owq) ;
-static int OW_Humid_1735(struct one_wire_query *owq_VAD, struct one_wire_query *owq) ;
-static int OW_Current(struct one_wire_query *owq_IAD, struct one_wire_query *owq) ;
 
 /* 2438 A/D */
 static int FS_r_page(struct one_wire_query *owq)
@@ -229,46 +225,55 @@ static int FS_volts(struct one_wire_query *owq)
 
 static int FS_Humid(struct one_wire_query *owq)
 {
-	int return_code = -EINVAL ;
-	struct one_wire_query * owq_T   = NULL ;
-	struct one_wire_query * owq_VAD = NULL ;
-	struct one_wire_query * owq_VDD = NULL ;
-
+	_FLOAT T, VAD, VDD;
+	
 	if ( 
-		(owq_T = FS_OWQ_create_sibling( "temperature", owq ))!=NULL
-		&& (owq_VAD = FS_OWQ_create_sibling( "VAD", owq ))!=NULL
-		&& (owq_VDD = FS_OWQ_create_sibling( "VDD", owq ))!=NULL
-	   ) {
-		return_code = OW_Humid( owq_T, owq_VAD, owq_VDD, owq ) ;
+		FS_r_sibling_F( &T, "temperature", owq ) 
+		|| FS_r_sibling_F( &VAD, "VAD", owq ) 
+		|| FS_r_sibling_F( &VDD, "VDD", owq ) 
+	) {
+		return -EINVAL ;
 	}
 
-	FS_OWQ_destroy_sibling(owq_T) ;
-	FS_OWQ_destroy_sibling(owq_VAD) ;
-	FS_OWQ_destroy_sibling(owq_VDD) ;
+	//*H = (VAD/VDD-.16)/(.0062*(1.0546-.00216*T)) ;
+	/*
+	From: Vincent Fleming <vincef@penmax.com>
+	To: owfs-developers@lists.sourceforge.net
+	Date: Jun 7, 2006 8:53 PM
+	Subject: [Owfs-developers] Error in Humidity calculation in ow_2438.c
 
-	return return_code ;
+	OK, this is a nit, but it will make owfs a little more accurate (admittedly, it’s not very significant difference)…
+	The calculation given by Dallas for a DS2438/HIH-3610 combination is:
+	Sensor_RH = (VAD/VDD) -0.16 / 0.0062
+	And Honeywell gives the following:
+	VAD = VDD (0.0062(sensor_RH) + 0.16), but they specify that VDD = 5V dc, at 25 deg C.
+	Which is exactly what we have in owfs code (solved for Humidity, of course).
+	Honeywell’s documentation explains that the HIH-3600 series humidity sensors produce a liner voltage response to humidity that is in the range of 0.8 Vdc to 3.8 Vdc (typical) and is proportional to the input voltage.
+	So, the error is, their listed calculations don’t correctly adjust for varying input voltage.
+	The .16 constant is 1/5 of 0.8 – the minimum voltage produced.  When adjusting for voltage (such as (VAD/VDD) portion), this constant should also be divided by the input voltage, not by 5 (the calibrated input voltage), as shown in their documentation.
+	So, their documentation is a little wrong.
+	The level of error this produces would be proportional to how far from 5 Vdc your input voltage is.  In my case, I seem to have a constant 4.93 Vdc input, so it doesn’t have a great effect (about .25 degrees RH)
+	*/
+	OWQ_F(owq) = (VAD / VDD - (0.8 / VDD)) / (.0062 * (1.0546 - .00216 * T));
+
+	return 0;
 }
 
 static int FS_Humid_4000(struct one_wire_query *owq)
 {
-	int return_code = -EINVAL ;
-	struct one_wire_query * owq_T   = NULL ;
-	struct one_wire_query * owq_VAD = NULL ;
-	struct one_wire_query * owq_VDD = NULL ;
-
+	_FLOAT T, VAD, VDD;
+	
 	if ( 
-		(owq_T = FS_OWQ_create_sibling( "temperature", owq ))!=NULL
-		&& (owq_VAD = FS_OWQ_create_sibling( "VAD", owq ))!=NULL
-		&& (owq_VDD = FS_OWQ_create_sibling( "VDD", owq ))!=NULL
-	   ) {
-		return_code = OW_Humid_4000( owq_T, owq_VAD, owq_VDD, owq ) ;
+		FS_r_sibling_F( &T, "temperature", owq ) 
+		|| FS_r_sibling_F( &VAD, "VAD", owq ) 
+		|| FS_r_sibling_F( &VDD, "VDD", owq ) 
+	) {
+		return -EINVAL ;
 	}
 
-	FS_OWQ_destroy_sibling(owq_T) ;
-	FS_OWQ_destroy_sibling(owq_VAD) ;
-	FS_OWQ_destroy_sibling(owq_VDD) ;
+	OWQ_F(owq) = (VAD / VDD - (0.8 / VDD)) / (.0062 * (1.0305 + .000044 * T + .0000011 * T * T));
 
-	return return_code ;
+	return 0;
 }
 
 /*
@@ -282,29 +287,42 @@ static int FS_Humid_4000(struct one_wire_query *owq)
  */
 static int FS_Humid_1735(struct one_wire_query *owq)
 {
-	int return_code = -EINVAL ;
-	struct one_wire_query * owq_VAD  = FS_OWQ_create_sibling( "VAD", owq ) ;
-
-	if ( owq_VAD != NULL ) {
-		return_code = OW_Humid_1735(owq_VAD,owq) ;
+	_FLOAT VAD;
+	
+	if ( 
+		FS_r_sibling_F( &VAD, "VAD", owq ) 
+	) {
+		return -EINVAL ;
 	}
-	FS_OWQ_destroy_sibling(owq_VAD) ;
 
-	return return_code ;
+	OWQ_F(owq) = 38.92 * VAD - 41.98;
+
+	return 0 ;
 }
 
+// Read current register
+// turn on (temporary) A/D in scratchpad
 static int FS_Current(struct one_wire_query *owq)
 {
-	int return_code = -EINVAL ;
-	struct one_wire_query * owq_IAD = FS_OWQ_create_sibling( "IAD", owq ) ;
+	BYTE data[9];
+	INT iad ;
 
-	if ( owq_IAD != NULL ) {
-		return_code = OW_Current( owq_IAD, owq ) ;
+	if ( 
+		FS_r_sibling_Y( &iad, "IAD", owq ) 
+	) {
+		return -EINVAL ;
 	}
 
-	FS_OWQ_destroy_sibling(owq_IAD) ;
+	// Actual units are volts-- need to know sense resistor for current
+	if (OW_r_page(data, 0, PN(owq))) {
+		return -EINVAL ;
+	}
 
-	return return_code ;
+	LEVEL_DEBUG("DS2438 vis scratchpad " SNformat "\n", SNvar(data));
+	//F[0] = .0002441 * (_FLOAT) ((((int) data[6]) << 8) | data[5]);
+	OWQ_F(owq) = .0002441 * UT_int16(&data[5]);
+
+	return 0 ;
 }
 
 // status bit
@@ -577,110 +595,4 @@ static int OW_w_int(const int I, const UINT address, const struct parsedname *pn
 	data[address & 0x07] = BYTE_MASK(I);
 	data[(address & 0x07) + 1] = BYTE_MASK(I >> 8);
 	return OW_w_page(data, address >> 3, pn);
-}
-
-static int OW_Humid(struct one_wire_query *owq_T, struct one_wire_query *owq_VAD, struct one_wire_query *owq_VDD, struct one_wire_query *owq)
-{
-	_FLOAT T, VAD, VDD;
-	
-	if ( FS_read_local(owq_T) ) {
-		return -EINVAL ;
-	}
-	if ( FS_read_local(owq_VAD) ) {
-		return -EINVAL ;
-	}
-	if ( FS_read_local(owq_VDD) ) {
-		return -EINVAL ;
-	}
-
-	T   = OWQ_F(owq_T);
-	VAD = OWQ_F(owq_VAD);
-	VDD = OWQ_F(owq_VDD);
-
-	//*H = (VAD/VDD-.16)/(.0062*(1.0546-.00216*T)) ;
-	/*
-	From: Vincent Fleming <vincef@penmax.com>
-	To: owfs-developers@lists.sourceforge.net
-	Date: Jun 7, 2006 8:53 PM
-	Subject: [Owfs-developers] Error in Humidity calculation in ow_2438.c
-
-	OK, this is a nit, but it will make owfs a little more accurate (admittedly, it’s not very significant difference)…
-	The calculation given by Dallas for a DS2438/HIH-3610 combination is:
-	Sensor_RH = (VAD/VDD) -0.16 / 0.0062
-	And Honeywell gives the following:
-	VAD = VDD (0.0062(sensor_RH) + 0.16), but they specify that VDD = 5V dc, at 25 deg C.
-	Which is exactly what we have in owfs code (solved for Humidity, of course).
-	Honeywell’s documentation explains that the HIH-3600 series humidity sensors produce a liner voltage response to humidity that is in the range of 0.8 Vdc to 3.8 Vdc (typical) and is proportional to the input voltage.
-	So, the error is, their listed calculations don’t correctly adjust for varying input voltage.
-	The .16 constant is 1/5 of 0.8 – the minimum voltage produced.  When adjusting for voltage (such as (VAD/VDD) portion), this constant should also be divided by the input voltage, not by 5 (the calibrated input voltage), as shown in their documentation.
-	So, their documentation is a little wrong.
-	The level of error this produces would be proportional to how far from 5 Vdc your input voltage is.  In my case, I seem to have a constant 4.93 Vdc input, so it doesn’t have a great effect (about .25 degrees RH)
-	*/
-	OWQ_F(owq) = (VAD / VDD - (0.8 / VDD)) / (.0062 * (1.0546 - .00216 * T));
-	return 0;
-}
-
-static int OW_Humid_4000(struct one_wire_query *owq_T, struct one_wire_query *owq_VAD, struct one_wire_query *owq_VDD, struct one_wire_query *owq)
-{
-	_FLOAT T, VAD, VDD;
-	
-	if ( FS_read_local(owq_T) ) {
-		return -EINVAL ;
-	}
-	if ( FS_read_local(owq_VAD) ) {
-		return -EINVAL ;
-	}
-	if ( FS_read_local(owq_VDD) ) {
-		return -EINVAL ;
-	}
-
-	T   = OWQ_F(owq_T);
-	VAD = OWQ_F(owq_VAD);
-	VDD = OWQ_F(owq_VDD);
-
-	OWQ_F(owq) = (VAD / VDD - (0.8 / VDD)) / (.0062 * (1.0305 + .000044 * T + .0000011 * T * T));
-	return 0;
-}
-
-static int OW_Humid_1735(struct one_wire_query *owq_VAD, struct one_wire_query *owq)
-{
-	_FLOAT VAD ;
-
-	if ( FS_read_local(owq_VAD) ) {
-		return -EINVAL ;
-	}
-
-	VAD = OWQ_F(owq_VAD);
-	OWQ_F(owq) = 38.92 * VAD - 41.98;
-
-	return 0 ;
-}
-
-// Read current register
-// turn on (temporary) A/D in scratchpad
-static int OW_Current(struct one_wire_query *owq_IAD, struct one_wire_query *owq)
-{
-	BYTE data[9];
-
-	if ( FS_read_local(owq_IAD) ) {
-		return -EINVAL ;
-	}
-	if ( OWQ_Y(owq_IAD) == 0 ) { // IAD is off
-		// set current readings on source command
-		OWQ_Y(owq_IAD) = 1;	// need to turn on IAD for current readings
-		if (FS_write_local(owq_IAD) ) {
-			return -EINVAL ; ;
-		}
-	}
-
-	// Actual units are volts-- need to know sense resistor for current
-	if (OW_r_page(data, 0, PN(owq))) {
-		return -EINVAL ;
-	}
-
-	LEVEL_DEBUG("DS2438 vis scratchpad " SNformat "\n", SNvar(data));
-	//F[0] = .0002441 * (_FLOAT) ((((int) data[6]) << 8) | data[5]);
-	OWQ_F(owq) = .0002441 * UT_int16(&data[5]);
-
-	return 0 ;
 }

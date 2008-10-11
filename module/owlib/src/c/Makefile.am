@@ -97,6 +97,7 @@ OWLIB_SOURCE = ow_dl.c           \
                ow_server.c       \
                ow_select.c       \
                ow_settings.c     \
+               ow_sibling.c      \
                ow_sig_handlers.c \
                ow_simultaneous.c \
                ow_stateinfo.c    \

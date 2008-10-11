@@ -49,6 +49,8 @@ $Id$
 /* ------- Prototypes ----------- */
 
 /* DS2413 switch */
+READ_FUNCTION(FS_r_piostate);
+WRITE_FUNCTION(FS_w_piostate);
 READ_FUNCTION(FS_r_pio);
 WRITE_FUNCTION(FS_w_pio);
 READ_FUNCTION(FS_sense);
@@ -59,9 +61,10 @@ READ_FUNCTION(FS_r_latch);
 struct aggregate A2413 = { 2, ag_letters, ag_aggregate, };
 struct filetype DS2413[] = {
 	F_STANDARD,
-  {"PIO", PROPERTY_LENGTH_BITFIELD, &A2413, ft_bitfield, fc_volatile, FS_r_pio, FS_w_pio, {v:NULL},},
-  {"sensed", PROPERTY_LENGTH_BITFIELD, &A2413, ft_bitfield, fc_volatile, FS_sense, NO_WRITE_FUNCTION, {v:NULL},},
-  {"latch", PROPERTY_LENGTH_BITFIELD, &A2413, ft_bitfield, fc_volatile, FS_r_latch, FS_w_pio, {v:NULL},},
+  {"PIOstate", PROPERTY_LENGTH_HIDDEN, NULL, ft_unsigned, fc_volatile, FS_r_piostate, FS_w_piostate, {v:NULL}, },
+  {"PIO", PROPERTY_LENGTH_BITFIELD, &A2413, ft_bitfield, fc_alias, FS_r_pio, FS_w_pio, {v:NULL},},
+  {"sensed", PROPERTY_LENGTH_BITFIELD, &A2413, ft_bitfield, fc_alias, FS_sense, NO_WRITE_FUNCTION, {v:NULL},},
+  {"latch", PROPERTY_LENGTH_BITFIELD, &A2413, ft_bitfield, fc_alias, FS_r_latch, FS_w_pio, {v:NULL},},
 };
 
 DeviceEntryExtended(3A, DS2413, DEV_resume | DEV_ovdr);
@@ -69,52 +72,84 @@ DeviceEntryExtended(3A, DS2413, DEV_resume | DEV_ovdr);
 #define _1W_PIO_ACCESS_READ 0xF5
 #define _1W_PIO_ACCESS_WRITE 0x5A
 
+#define _1W_2413_LATCH_MASK 0x0A
+
 /* ------- Functions ------------ */
 
 /* DS2413 */
-static int OW_write(BYTE data, BYTE * and_read, const struct parsedname *pn);
+static int OW_write(BYTE data, const struct parsedname *pn);
 static int OW_read(BYTE * data, const struct parsedname *pn);
 static UINT SENSED_state(UINT status_bit);
 static UINT LATCH_state(UINT status_bit);
+static UINT LATCH_encode(UINT pio);
+
+static int FS_r_piostate(struct one_wire_query *owq)
+{
+	/* surrogate property
+	bit 0 PIOA pin state
+	bit 1 PIOA latch state
+	bit 2 PIOB pin state
+	bit 3 PIOB latch state
+	*/
+	BYTE piostate ;
+
+	if ( OW_read( &piostate, PN(owq) ) ) {
+		return -EINVAL ;
+	}
+
+	OWQ_U(owq) = piostate & 0x0F ;
+	return 0 ;
+}
+
+/*
+Write the latch state
+*/
+static int FS_w_piostate(struct one_wire_query *owq)
+{
+	/* surrogate property
+	bit 0 PIOA pin state
+	bit 1 PIOA latch state
+	bit 2 PIOB pin state
+	bit 3 PIOB latch state
+	*/
+	BYTE piostate = LATCH_state( OWQ_U(owq) ) ;
+
+	if ( OW_write( piostate, PN(owq) ) ) {
+		return -EINVAL ;
+	}
+
+	return 0 ;
+}
 
 /* 2413 switch */
 /* complement of sense */
+/* bits 0 and 2 */
 static int FS_r_pio(struct one_wire_query *owq)
 {
-	int return_code = -EINVAL ;
-	struct one_wire_query * owq_sibling  = FS_OWQ_create_sibling( "sensed", owq ) ;
+	UINT piostate ;
 
-	if ( owq_sibling != NULL ) {
-		if ( FS_read_local( owq_sibling ) == 0 ) {
-			OWQ_U(owq) = OWQ_U(owq_sibling) ^ 0x03;
-			return_code = 0 ;
-		}
+	if ( FS_r_sibling_U( &piostate, "piostate", owq ) ) {
+		return -EINVAL ;
 	}
-	FS_OWQ_destroy_sibling(owq_sibling) ;
 
-	return return_code ;
+	// bits 0->0 and 2->1
+	OWQ_U(owq) = SENSED_state( piostate ) ^ 0x03 ;
+
+	return 0;
 }
 
 /* 2413 switch PIO sensed*/
 /* bits 0 and 2 */
 static int FS_sense(struct one_wire_query *owq)
 {
-	BYTE data;
-	if (OW_read(&data, PN(owq))) {
-		return -EINVAL;
-	}
-	// bits 0->0 and 2->1
-	OWQ_U(owq) = SENSED_state(data);
+	UINT piostate ;
 
-	// Use incidental information (Latch) to add data to cache
-	{
-		OWQ_allocate_struct_and_pointer(owq_sibling);
-		OWQ_create_shallow_bitfield(owq_sibling, owq);
-		if (FS_ParseProperty_for_sibling("latch", PN(owq_sibling)) == 0) {
-			OWQ_U(owq_sibling) = LATCH_state(data);
-			OWQ_Cache_Add(owq_sibling);
-		}
+	if ( FS_r_sibling_U( &piostate, "piostate", owq ) ) {
+		return -EINVAL ;
 	}
+
+	// bits 0->0 and 2->1
+	OWQ_U(owq) = SENSED_state( piostate );
 
 	return 0;
 }
@@ -123,22 +158,14 @@ static int FS_sense(struct one_wire_query *owq)
 /* bites 1 and 3 */
 static int FS_r_latch(struct one_wire_query *owq)
 {
-	BYTE data;
-	if (OW_read(&data, PN(owq))) {
-		return -EINVAL;
-	}
-	// bits 1->0 and 3->1
-	OWQ_U(owq) = LATCH_state(data);
+	UINT piostate ;
 
-	// Use incidental information (sensed) to add data to cache
-	{
-		OWQ_allocate_struct_and_pointer(owq_sibling);
-		OWQ_create_shallow_bitfield(owq_sibling, owq);
-		if (FS_ParseProperty_for_sibling("sensed", PN(owq_sibling)) == 0) {
-			OWQ_U(owq_sibling) = SENSED_state(data);
-			OWQ_Cache_Add(owq_sibling);
-		}
+	if ( FS_r_sibling_U( &piostate, "piostate", owq ) ) {
+		return -EINVAL ;
 	}
+
+	// bits 0->0 and 2->1
+	OWQ_U(owq) = LATCH_state( piostate ) ^ 0x03 ;
 
 	return 0;
 }
@@ -147,29 +174,10 @@ static int FS_r_latch(struct one_wire_query *owq)
 static int FS_w_pio(struct one_wire_query *owq)
 {
 	/* mask and reverse bits */
-	BYTE data = (OWQ_U(owq) & 0x03) ^ 0x03;
-	BYTE followup_read;
+	UINT piostate = LATCH_encode(OWQ_U(owq)) ;
 
-	if (OW_write(data, &followup_read, PN(owq))) {
+	if ( FS_r_sibling_bitwork( piostate, (~piostate)&_1W_2413_LATCH_MASK, _1W_2413_LATCH_MASK, "piostate", owq) ) {
 		return -EINVAL;
-	}
-	// Use incidental information (sensed) to add data to cache
-	{
-		OWQ_allocate_struct_and_pointer(owq_sibling);
-		OWQ_create_shallow_bitfield(owq_sibling, owq);
-		if (FS_ParseProperty_for_sibling("sensed", PN(owq_sibling)) == 0) {
-			OWQ_U(owq_sibling) = SENSED_state(followup_read);
-			OWQ_Cache_Add(owq_sibling);
-		}
-	}
-	// Use incidental information (latch) to add data to cache
-	{
-		OWQ_allocate_struct_and_pointer(owq_sibling);
-		OWQ_create_shallow_bitfield(owq_sibling, owq);
-		if (FS_ParseProperty_for_sibling("latch", PN(owq_sibling)) == 0) {
-			OWQ_U(owq_sibling) = LATCH_state(followup_read);
-			OWQ_Cache_Add(owq_sibling);
-		}
 	}
 
 	return 0;
@@ -199,14 +207,14 @@ static int OW_read(BYTE * data, const struct parsedname *pn)
 
 /* write status byte */
 /* top 6 bits are set to 1, complement then sent */
-static int OW_write(BYTE data, BYTE * and_read, const struct parsedname *pn)
+static int OW_write(BYTE data, const struct parsedname *pn)
 {
 	BYTE p[] = { _1W_PIO_ACCESS_WRITE, data | 0xFC, data ^ 0x03, };
-	BYTE q[2];
+	BYTE q[1];
 	struct transaction_log t[] = {
 		TRXN_START,
 		TRXN_WRITE3(p),
-		TRXN_READ2(q),
+		TRXN_READ1(q),
 		TRXN_END,
 	};
 
@@ -216,18 +224,24 @@ static int OW_write(BYTE data, BYTE * and_read, const struct parsedname *pn)
 	if (q[0] != 0xAA) {
 		return 1;
 	}
-	// next byte holds the status info byte -- useful for adding to the cache
-	and_read[0] = q[1];
 
 	return 0;
 }
 
+// piostate -> sense
 static UINT SENSED_state(UINT status_bit)
 {
 	return ((status_bit >> 0) & 0x01) | ((status_bit >> 1) & 0x02);
 }
 
+// piostate -> latch
 static UINT LATCH_state(UINT status_bit)
 {
 	return ((status_bit >> 1) & 0x01) | ((status_bit >> 2) & 0x02);
+}
+
+// pio -> piostate_latch
+static UINT LATCH_encode(UINT pio)
+{
+	return ( ((pio & 0x01)<<1) | ((pio & 0x02)<<2) ) ;
 }

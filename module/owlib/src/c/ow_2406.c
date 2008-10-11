@@ -84,7 +84,7 @@ struct filetype DS2406[] = {
   {"power", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, {v:NULL},},
   {"channels", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_stable, FS_channel, NO_WRITE_FUNCTION, {v:NULL},},
   {"PIO", PROPERTY_LENGTH_BITFIELD, &A2406, ft_bitfield, fc_stable, FS_r_pio, FS_w_pio, {v:NULL},},
-  {"sensed", PROPERTY_LENGTH_BITFIELD, &A2406, ft_bitfield, fc_volatile, FS_sense, NO_WRITE_FUNCTION, {v:NULL},},
+  {"sensed", PROPERTY_LENGTH_BITFIELD, &A2406, ft_bitfield, fc_alias, FS_sense, NO_WRITE_FUNCTION, {v:NULL},},
   {"latch", PROPERTY_LENGTH_BITFIELD, &A2406, ft_bitfield, fc_volatile, FS_r_latch, FS_w_latch, {v:NULL},},
   {"set_alarm", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_stable, FS_r_s_alarm, FS_w_s_alarm, {v:NULL},},
 #if OW_TAI8570
@@ -204,18 +204,15 @@ static int FS_channel(struct one_wire_query *owq)
 /* bits 2 and 3 */
 static int FS_sense(struct one_wire_query *owq)
 {
-	int return_code = -EINVAL ;
-	struct one_wire_query * owq_sibling  = FS_OWQ_create_sibling( "PIO.BYTE", owq ) ;
+	UINT pio ;
 
-	if ( owq_sibling != NULL ) {
-		if ( FS_read_local( owq_sibling ) == 0 ) {
-			OWQ_U(owq) = BYTE_INVERSE(OWQ_U(owq_sibling)) & 0x03;
-			return_code = 0 ;
-		}
+	if ( FS_r_sibling_U( &pio, "PIO.BYTE", owq ) ) {
+		return -EINVAL ;
 	}
-	FS_OWQ_destroy_sibling(owq_sibling) ;
 
-	return return_code ;
+	OWQ_U(owq) = BYTE_INVERSE(pio) & 0x03;
+
+	return 0 ;
 }
 
 /* 2406 switch activity latch*/
@@ -528,15 +525,15 @@ static int FS_temp(struct one_wire_query *owq)
 	UINT D2;
 	int UT1, dT;
 	struct s_TAI8570 tai;
-	struct parsedname pn2;
+	struct parsedname pn_copy;
 
-	memcpy(&pn2, PN(owq), sizeof(struct parsedname));	//shallow copy
+	memcpy(&pn_copy, PN(owq), sizeof(struct parsedname));	//shallow copy
 	if (testTAI8570(&tai, owq)) {
 		return -ENOENT;
 	}
 
 	UT1 = 8 * tai.C[4] + 20224;
-	if (TAI8570_SenseValue(&D2, SEC_READD2, &tai, &pn2)) {
+	if (TAI8570_SenseValue(&D2, SEC_READD2, &tai, &pn_copy)) {
 		return -EINVAL;
 	}
 	LEVEL_DEBUG("TAI8570 Raw Temperature (D2) = %lu\n", D2);
@@ -547,36 +544,31 @@ static int FS_temp(struct one_wire_query *owq)
 
 static int FS_pressure(struct one_wire_query *owq)
 {
-	int return_code = -EINVAL ;
-	struct one_wire_query * owq_sibling  = FS_OWQ_create_sibling( "TAI8570/temperature", owq ) ;
+	_FLOAT TEMP ;
 
-	if ( owq_sibling != NULL ) {
-		if ( FS_read_local( owq_sibling ) == 0 ) {
-			struct parsedname pn2;
-			struct s_TAI8570 tai;
-			UINT D1;
-		
-			memcpy(&pn2, PN(owq), sizeof(struct parsedname));	//shallow copy
-			if (testTAI8570(&tai, owq)) {
-				return_code =  -ENOENT;
-			} else if (TAI8570_SenseValue(&D1, SEC_READD1, &tai, &pn2)) {
-				return_code = -EINVAL;
-			} else {
-				_FLOAT TEMP = OWQ_F(owq_sibling);
-				_FLOAT dT = (TEMP * 10. - 200.) * 1024. / (tai.C[5] + 50.);
-				_FLOAT OFF = 4. * tai.C[1] + ((tai.C[3] - 512.) * dT) / 4096.;
-				_FLOAT SENS = 24576. + tai.C[0] + (tai.C[2] * dT) / 1024.;
-				_FLOAT X = (SENS * (D1 - 7168.)) / 16384. - OFF;
+	if ( FS_r_sibling_F( &TEMP, "TAI8570/temperature", owq )==0 ) {
+		struct parsedname pn_copy;
+		struct s_TAI8570 tai;
+		UINT D1;
+	
+		memcpy(&pn_copy, PN(owq), sizeof(struct parsedname));	//shallow copy
+		if (testTAI8570(&tai, owq)) {
+			return -ENOENT;
+		} else if (TAI8570_SenseValue(&D1, SEC_READD1, &tai, &pn_copy)) {
+			return -EINVAL;
+		} else {
+			_FLOAT dT = (TEMP * 10. - 200.) * 1024. / (tai.C[5] + 50.);
+			_FLOAT OFF = 4. * tai.C[1] + ((tai.C[3] - 512.) * dT) / 4096.;
+			_FLOAT SENS = 24576. + tai.C[0] + (tai.C[2] * dT) / 1024.;
+			_FLOAT X = (SENS * (D1 - 7168.)) / 16384. - OFF;
 
-				LEVEL_DEBUG("TAI8570 Raw Pressure (D1) = %lu\n", D1);
-				OWQ_F(owq) = 250. + X / 32.;
-				return_code =  0;
-			}
+			LEVEL_DEBUG("TAI8570 Raw Pressure (D1) = %lu\n", D1);
+			OWQ_F(owq) = 250. + X / 32.;
+			return  0;
 		}
 	}
-	FS_OWQ_destroy_sibling(owq_sibling) ;
 
-	return return_code ;
+	return -EINVAL ;
 }
 
 // Read a page and confirm its a valid tmax page
@@ -856,19 +848,10 @@ static int testTAI8570(struct s_TAI8570 *tai, struct one_wire_query *owq)
 	UINT cal[4];
 	struct parsedname *pn = PN(owq);
 
-	struct one_wire_query * owq_power  = FS_OWQ_create_sibling( "power", owq ) ;
-
 	// see which DS2406 is powered
-	if ( owq_power == NULL ) {
+	if ( FS_r_sibling_Y( &pow, "power", owq ) ) {
 		return -EINVAL ;
 	}
-	if ( FS_read_local( owq_power ) ) {
-		FS_OWQ_destroy_sibling(owq_power) ;
-		return -EINVAL ;
-	}
-	pow = OWQ_Y(owq_power);
-	FS_OWQ_destroy_sibling(owq_power) ;
-
 	// See if already cached
 	if (Cache_Get_Internal_Strict((void *) tai, sizeof(struct s_TAI8570), InternalProp(BAR), pn) == 0) {
 		LEVEL_DEBUG("TAI8570 cache read: reader=" SNformat " writer=" SNformat "\n", SNvar(tai->reader), SNvar(tai->writer));
