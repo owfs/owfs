@@ -225,8 +225,5 @@ struct parsedname {
 #define SetSpecifiedBus(bus_number,pn) do { SetKnownBus(bus_number,pn); (pn)->state |= BusIsServer((pn)->selected_connection) ? ePS_busremote : ePS_buslocal ; } while(0)
 
 #define RootNotBranch(pn)         (((pn)->pathlength)==0)
-#define BYTE_MASK(x)        ((x)&0xFF)
-#define BYTE_INVERSE(x)     BYTE_MASK((x)^0xFF)
-#define LOW_HIGH_ADDRESS(x)         BYTE_MASK(x),BYTE_MASK((x)>>8)
 
 #endif							/* OW_PARSEDNAME_H */

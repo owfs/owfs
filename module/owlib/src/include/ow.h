@@ -214,6 +214,9 @@ $Id$
 #endif							/* EPROTO */
 
 
+/* BYTE manipulation macros */
+#include "ow_bitwork.h"
+
 /* Define our understanding of integers, floats, ... */
 #include "ow_localtypes.h"
 
