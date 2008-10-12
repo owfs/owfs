@@ -43,6 +43,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
+/* FLOAT */
 int FS_r_sibling_F(_FLOAT *F, const char * sibling, struct one_wire_query *owq)
 {
 	struct one_wire_query * owq_sibling  = FS_OWQ_create_sibling( sibling, owq ) ;
@@ -68,6 +69,39 @@ int FS_w_sibling_F(_FLOAT F, const char * sibling, struct one_wire_query *owq)
 
 	if ( owq_sibling != NULL ) {
 		OWQ_F(owq) = F ;
+		write_error = FS_write_local(owq_sibling) ;
+		FS_OWQ_destroy_sibling(owq_sibling) ;
+	}
+
+	return write_error ;
+}
+
+/* DATE */
+int FS_r_sibling_D(_DATE *D, const char * sibling, struct one_wire_query *owq)
+{
+	struct one_wire_query * owq_sibling  = FS_OWQ_create_sibling( sibling, owq ) ;
+
+	if ( owq_sibling == NULL ) {
+		return -EINVAL ;
+	}
+	if ( FS_read_local(owq_sibling) ) {
+		FS_OWQ_destroy_sibling(owq_sibling) ;
+		return -EINVAL ;
+	}
+
+	memcpy ( D, &OWQ_D(owq_sibling), sizeof( _DATE ) ) ;
+
+	FS_OWQ_destroy_sibling(owq_sibling) ;
+	return 0;
+}
+
+int FS_w_sibling_D(_DATE D, const char * sibling, struct one_wire_query *owq)
+{
+	int write_error = -EINVAL ;
+	struct one_wire_query * owq_sibling  = FS_OWQ_create_sibling( sibling, owq ) ;
+
+	if ( owq_sibling != NULL ) {
+		memcpy ( &OWQ_D(owq_sibling), D, sizeof( _DATE ) ) ;
 		write_error = FS_write_local(owq_sibling) ;
 		FS_OWQ_destroy_sibling(owq_sibling) ;
 	}
@@ -125,7 +159,21 @@ int FS_r_sibling_Y(INT *Y, const char * sibling, struct one_wire_query *owq)
 	return 0;
 }
 
-int FS_r_sibling_bitwork(UINT set, UINT mask, const char * sibling, struct one_wire_query *owq)
+int FS_w_sibling_Y(INT Y, const char * sibling, struct one_wire_query *owq)
+{
+	int write_error = -EINVAL ;
+	struct one_wire_query * owq_sibling  = FS_OWQ_create_sibling( sibling, owq ) ;
+
+	if ( owq_sibling != NULL ) {
+		OWQ_Y(owq) = Y ;
+		write_error = FS_write_local(owq_sibling) ;
+		FS_OWQ_destroy_sibling(owq_sibling) ;
+	}
+
+	return write_error ;
+}
+
+int FS_w_sibling_bitwork(UINT set, UINT mask, const char * sibling, struct one_wire_query *owq)
 {
 	struct one_wire_query * owq_sibling  = FS_OWQ_create_sibling( sibling, owq ) ;
 	UINT bitfield ;

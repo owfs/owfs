@@ -176,7 +176,7 @@ static int FS_w_pio(struct one_wire_query *owq)
 	/* mask and reverse bits */
 	UINT piostate = LATCH_encode(OWQ_U(owq)) ;
 
-	if ( FS_r_sibling_bitwork( piostate^0x03, _1W_2413_LATCH_MASK, "piostate", owq) ) {
+	if ( FS_w_sibling_bitwork( piostate^0x03, _1W_2413_LATCH_MASK, "piostate", owq) ) {
 		return -EINVAL;
 	}
 

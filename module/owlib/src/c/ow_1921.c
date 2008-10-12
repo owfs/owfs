@@ -94,6 +94,14 @@ WRITE_FUNCTION(FS_w_atime);
 READ_FUNCTION(FS_r_atrig);
 WRITE_FUNCTION(FS_w_atrig);
 WRITE_FUNCTION(FS_w_mip);
+READ_FUNCTION(FS_r_register);
+WRITE_FUNCTION(FS_w_register);
+READ_FUNCTION(FS_r_controlbit);
+WRITE_FUNCTION(FS_w_controlbit);
+READ_FUNCTION(FS_r_controlrbit);
+WRITE_FUNCTION(FS_w_controlrbit);
+READ_FUNCTION(FS_r_statusbit);
+WRITE_FUNCTION(FS_w_statusbit);
 
 /* ------- Structures ----------- */
 #define HISTOGRAM_DATA_ELEMENTS 63
@@ -110,6 +118,22 @@ static struct BitRead BitReads[] = {
 	{0x020E, 3,},				// rollover
 	{0x020E, 7,},				// clock running (reversed)
 };
+
+#define _ADDRESS_DS1921_STATUS_REGISTER 0x0214
+#define _MASK_DS1921_CLEARED 0x40
+#define _MASK_DS1921_MIP 0x20
+#define _MASK_DS1921_TEMP_LOW_STATUS 0x04
+#define _MASK_DS1921_TEMP_HIGH_STATUS 0x02
+#define _MASK_DS1921_TIMER_STATUS 0x01
+
+#define _ADDRESS_DS1921_CONTROL_REGISTER 0x020E
+#define _MASK_DS1921_CLOCK_ENABLE 0x80
+#define _MASK_DS1921_CLEAR_MEMORY 0x40
+#define _MASK_DS1921_MISSION_ENABLE 0x10
+#define _MASK_DS1921_ROLLOVER 0x08
+#define _MASK_DS1921_TEMP_LOW_ALARM 0x04
+#define _MASK_DS1921_TEMP_HIGH_ALARM 0x02
+#define _MASK_DS1921_TIMER_ALARM 0x01
 
 struct Mission {
 	_DATE start;
@@ -129,6 +153,9 @@ struct filetype DS1921[] = {
   {"pages", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
   {"pages/page", 32, &A1921p, ft_binary, fc_stable, FS_r_page, FS_w_page, {v:NULL},},
 
+  {"ControlRegister", PROPERTY_LENGTH_HIDDEN, NULL, ft_unsigned, fc_stable, FS_r_register, FS_w_register, {u:_ADDRESS_DS1921_CONTROL_REGISTER}, },
+  {"StatusRegister", PROPERTY_LENGTH_HIDDEN, NULL, ft_unsigned, fc_stable, FS_r_register, FS_w_register, {u:_ADDRESS_DS1921_STATUS_REGISTER}, },
+
   {"histogram", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
   {"histogram/counts", PROPERTY_LENGTH_UNSIGNED, &A1921h, ft_unsigned, fc_volatile, FS_r_histogram, NO_WRITE_FUNCTION, {v:NULL},},
   {"histogram/elements", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_r_histoelem, NO_WRITE_FUNCTION, {v:NULL},},
@@ -138,7 +165,7 @@ struct filetype DS1921[] = {
   {"clock", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
   {"clock/date", PROPERTY_LENGTH_DATE, NULL, ft_date, fc_second, FS_r_date, FS_w_date, {v:NULL},},
   {"clock/udate", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_second, FS_r_counter, FS_w_counter, {v:NULL},},
-  {"clock/running", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, FS_rbitread, FS_rbitwrite, {v:&BitReads[4]},},
+  {"clock/running", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_alias, FS_r_controlrbit, FS_w_controlrbit, {u:_MASK_DS1921_CLOCK_ENABLE},},
 
   {"about", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
   {"about/resolution", PROPERTY_LENGTH_TEMPGAP, NULL, ft_tempgap, fc_static, FS_r_resolution, NO_WRITE_FUNCTION, {v:NULL},},
@@ -151,15 +178,20 @@ struct filetype DS1921[] = {
   {"temperature", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_r_temperature, NO_WRITE_FUNCTION, {v:NULL},},
 
   {"mission", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
+  {"mission/enable", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_alias, FS_r_controlrbit, FS_w_controlrbit, {u:_MASK_DS1921_MISSION_ENABLE},},
+  {"mission/clear", PROPERTY_LENGTH_HIDDEN, NULL, ft_yesno, fc_alias, FS_r_controlbit, FS_w_controlbit, {u:_MASK_DS1921_CLEAR_MEMORY},},
   {"mission/running", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_bitread, FS_w_mip, {v:&BitReads[1]},},
   {"mission/frequency", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_samplerate, FS_w_samplerate, {v:NULL},},
   {"mission/samples", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_volatile, FS_r_3byte, NO_WRITE_FUNCTION, {s:0x021A},},
   {"mission/delay", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_volatile, FS_r_delay, FS_w_delay, {v:NULL},},
-  {"mission/rollover", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, FS_bitread, FS_bitwrite, {v:&BitReads[3]},},
+  {"mission/rollover", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_alias, FS_r_controlbit, FS_w_controlbit, {u:_MASK_DS1921_ROLLOVER},},
   {"mission/date", PROPERTY_LENGTH_DATE, NULL, ft_date, fc_volatile, FS_mdate, NO_WRITE_FUNCTION, {v:NULL},},
   {"mission/udate", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_volatile, FS_umdate, NO_WRITE_FUNCTION, {v:NULL},},
   {"mission/sampling", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_bitread, NO_WRITE_FUNCTION, {v:&BitReads[2]},},
   {"mission/easystart", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_stable, NO_READ_FUNCTION, FS_easystart, {v:NULL},},
+  {"mission/templow", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_alias, FS_r_statusbit, FS_w_statusbit, {u:_MASK_DS1921_TEMP_LOW_STATUS},},
+  {"mission/temphigh", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_alias, FS_r_statusbit, FS_w_statusbit, {u:_MASK_DS1921_TEMP_HIGH_STATUS},},
+  {"mission/timer", PROPERTY_LENGTH_HIDDEN, NULL, ft_yesno, fc_alias, FS_r_statusbit, FS_w_statusbit, {u:_MASK_DS1921_TIMER_STATUS},},
 
   {"overtemp", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
   {"overtemp/date", PROPERTY_LENGTH_DATE, &A1921m, ft_date, fc_volatile, FS_alarmstart, NO_WRITE_FUNCTION, {s:0x0250},},
@@ -186,13 +218,12 @@ struct filetype DS1921[] = {
 	// no entries in these directories yet
   {"set_alarm", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
   {"set_alarm/trigger", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
-  {"set_alarm/templow", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
-  {"set_alarm/temphigh", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
-  {"set_alarm/date", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
+  {"set_alarm/templow", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_alias, FS_r_controlbit, FS_w_controlbit, {u:_MASK_DS1921_TEMP_LOW_ALARM},},
+  {"set_alarm/temphigh", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_alias, FS_r_controlbit, FS_w_controlbit, {u:_MASK_DS1921_TEMP_HIGH_ALARM},},
+  {"set_alarm/date", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_alias, FS_r_controlbit, FS_w_controlbit, {u:_MASK_DS1921_TIMER_ALARM},},
 
   {"alarm_state", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_stable, FS_r_samplerate, FS_w_samplerate, {v:NULL},},
 
-  {"running", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, FS_r_run, FS_w_run, {v:NULL},},
   {"alarm_second", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_stable, FS_r_atime, FS_w_atime, {s:0x0207},},
   {"alarm_minute", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_stable, FS_r_atime, FS_w_atime, {s:0x0208},},
   {"alarm_hour", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_stable, FS_r_atime, FS_w_atime, {s:0x0209},},
@@ -265,6 +296,97 @@ static int OW_r_logdate_all(struct Mission *mission, struct one_wire_query *owq)
 static int OW_r_logdate_single(struct Mission *mission, struct one_wire_query *owq);
 static int OW_r_logudate_all(struct Mission *mission, struct one_wire_query *owq);
 static int OW_r_logudate_single(struct Mission *mission, struct one_wire_query *owq);
+
+static int FS_r_register(struct one_wire_query *owq)
+{
+	BYTE c ;
+
+	if ( OW_small_read( &c, 1, PN(owq)->selected_filetype->data.u, PN(owq) ) ) {
+		return -EINVAL ;
+	}
+
+	OWQ_U(owq) = c ;
+	return 0 ;
+}
+
+static int FS_w_register(struct one_wire_query *owq)
+{
+	BYTE c = OWQ_U(owq) & 0xFF ;
+
+	if ( OW_w_mem( &c, 1, PN(owq)->selected_filetype->data.u, PN(owq) ) ) {
+		return -EINVAL ;
+	}
+
+	return 0 ;
+}
+
+/* ControlRegister reversed */
+static int FS_r_controlrbit(struct one_wire_query *owq)
+{
+	UINT U ;
+	UINT mask = PN(owq)->selected_filetype->data.u ;
+
+	if ( FS_r_sibling_U( &U, "ControlRegister", owq ) ) {
+		return -EINVAL ;
+	}
+
+	OWQ_Y(owq) = ( (U & mask) == 0 ) ;
+
+	return 0 ;
+}
+
+/* ControlRegister reversed */
+static int FS_w_controlrbit(struct one_wire_query *owq)
+{
+	UINT mask = PN(owq)->selected_filetype->data.u ;
+	UINT Y = OWQ_Y(owq) ?  0 : mask ;
+
+	return FS_w_sibling_bitwork( Y, mask, "ControlRegister", owq ) ;
+}
+
+static int FS_r_controlbit(struct one_wire_query *owq)
+{
+	UINT U ;
+	UINT mask = PN(owq)->selected_filetype->data.u ;
+
+	if ( FS_r_sibling_U( &U, "ControlRegister", owq ) ) {
+		return -EINVAL ;
+	}
+
+	OWQ_Y(owq) = ( (U & mask) != 0 ) ;
+
+	return 0 ;
+}
+
+static int FS_w_controlbit(struct one_wire_query *owq)
+{
+	UINT mask = PN(owq)->selected_filetype->data.u ;
+	UINT Y = OWQ_Y(owq) ? mask : 0 ;
+
+	return FS_w_sibling_bitwork( Y, mask, "ControlRegister", owq ) ;
+}
+
+static int FS_r_statusbit(struct one_wire_query *owq)
+{
+	UINT U ;
+	UINT mask = PN(owq)->selected_filetype->data.u ;
+
+	if ( FS_r_sibling_U( &U, "StatusRegister", owq ) ) {
+		return -EINVAL ;
+	}
+
+	OWQ_Y(owq) = ( (U & mask) != 0 ) ;
+
+	return 0 ;
+}
+
+static int FS_w_statusbit(struct one_wire_query *owq)
+{
+	UINT mask = PN(owq)->selected_filetype->data.u ;
+	UINT Y = OWQ_Y(owq) ? mask : 0 ;
+
+	return FS_w_sibling_bitwork( Y, mask, "StatusRegister", owq ) ;
+}
 
 static int FS_bitread(struct one_wire_query *owq)
 {

@@ -197,11 +197,14 @@ int FS_read_local( struct one_wire_query *owq);
 int FS_r_sibling_F(_FLOAT *F, const char * sibling, struct one_wire_query *owq) ;
 int FS_r_sibling_U(  UINT *U, const char * sibling, struct one_wire_query *owq) ;
 int FS_r_sibling_Y(   INT *Y, const char * sibling, struct one_wire_query *owq) ;
+int FS_r_sibling_D( _DATE *D, const char * sibling, struct one_wire_query *owq) ;
 
-int FS_r_sibling_bitwork(UINT set, UINT mask, const char * sibling, struct one_wire_query *owq) ;
+int FS_w_sibling_bitwork(UINT set, UINT mask, const char * sibling, struct one_wire_query *owq) ;
 
 int FS_w_sibling_F(_FLOAT F, const char * sibling, struct one_wire_query *owq) ;
 int FS_w_sibling_U(  UINT U, const char * sibling, struct one_wire_query *owq) ;
+int FS_w_sibling_Y(   INT Y, const char * sibling, struct one_wire_query *owq) ;
+int FS_w_sibling_D( _DATE D, const char * sibling, struct one_wire_query *owq) ;
 
 int FS_fstat(const char *path, struct stat *stbuf);
 int FS_fstat_postparse(struct stat *stbuf, const struct parsedname *pn);
