@@ -124,7 +124,11 @@ struct filetype interface_statistics[] = {
   {"status_errors", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic, FS_stat_p, NO_WRITE_FUNCTION, {i:e_bus_status_errors},},
   {"select_errors", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic, FS_stat_p, NO_WRITE_FUNCTION, {i:e_bus_select_errors},},
   {"timeouts", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic, FS_stat_p, NO_WRITE_FUNCTION, {i:e_bus_timeouts},},
+  {"overdrive", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
+  {"overdrive/attempts", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic, FS_stat_p, NO_WRITE_FUNCTION, {i:e_bus_try_overdrive},},
+  {"overdrive/failures", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic, FS_stat_p, NO_WRITE_FUNCTION, {i:e_bus_failed_overdrive},},
   {"total_bus_time", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_statistic, FS_time, NO_WRITE_FUNCTION, {v:&total_bus_time},},
+  {"timeouts", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_statistic, FS_stat_p, NO_WRITE_FUNCTION, {i:e_bus_timeouts},},
 };
 struct device d_interface_statistics = { "statistics", "statistics", 0,
 	COUNT_OF_FILETYPES(interface_statistics), interface_statistics
@@ -173,7 +177,7 @@ static int FS_r_flextime(struct one_wire_query *owq)
 static int FS_w_overdrive(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
-	pn->selected_connection->set_speed = OWQ_Y(owq) ? bus_speed_overdrive : bus_speed_slow;
+	pn->selected_connection->set_speed = OWQ_Y(owq) ? bus_speed_try_overdrive : bus_speed_slow;
 	pn->selected_connection->changed_bus_settings = 1;
 	return 0;
 }

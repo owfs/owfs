@@ -180,7 +180,14 @@ struct interface_routines {
 #define SIDEUNLOCK(side)
 #endif							/* OW_MT */
 
-enum bus_speed { bus_speed_unknown, bus_speed_slow, bus_speed_overdrive };
+enum bus_speed {
+	bus_speed_slow=0,
+	bus_speed_failed_overdrive=1,
+	bus_speed_try_overdrive=10,
+	bus_speed_overdrive=11,
+};
+
+enum bus_flex { bus_no_flex, bus_yes_flex };
 
 struct connin_serial {
 	speed_t speed;
@@ -345,6 +352,8 @@ enum e_bus_stat {
 	e_bus_search_errors,
 	e_bus_status_errors,
 	e_bus_select_errors,
+	e_bus_try_overdrive,
+	e_bus_failed_overdrive,
 	e_bus_stat_last_marker
 };
 
