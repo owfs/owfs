@@ -361,8 +361,7 @@ rm -f $RPM_BUILD_ROOT%{python_sitedir}/ownet-*-info
 rm -f $RPM_BUILD_ROOT%{php_extdir}/libowphp.la $RPM_BUILD_ROOT%{php_extdir}/libowphp.a
 %endif
 %if %{build_tcl}
-%define tcl_install_path %(echo @OWTCL_INSTALL_PATH@)
-rm -f $RPM_BUILD_ROOT%{tcl_install_path}/owtcl-*/ow.la $RPM_BUILD_ROOT%{tcl_install_path}/owtcl-*/ow.a
+rm -f $RPM_BUILD_ROOT%{_libdir}/owtcl-*/ow.la $RPM_BUILD_ROOT%{_libdir}/owtcl-*/ow.a
 %endif
 
 %post libs
@@ -593,8 +592,8 @@ fi
 %if %{build_tcl}
 %files tcl
 %defattr(-,root,root)
-%dir %{tcl_install_path}/owtcl-*
-%{tcl_install_path}/owtcl-*/*
+%dir %{_libdir}/owtcl-*
+%{_libdir}/owtcl-*/*
 # ow-*.so ow.so ow.tcl pkgIndex.tcl
 %{_mandir}/mann/owtcl.n.gz
 %endif

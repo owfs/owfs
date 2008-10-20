@@ -73,7 +73,7 @@ darwin-relink: ow.la
 	  ../../owlib/src/c/.libs/libow.so \
 	  ${LIBUSB_LIBS} \
 	  ../../owcapi/src/c/.libs/libowcapi.so \
-	 -install_name /usr/lib/owtcl-$(OWTCL_VERSION)/ow-$(OWTCL_VERSION)$(TCL_SHLIB_SUFFIX) \
+	 -install_name $(pkglibdir)/ow-$(OWTCL_VERSION)$(TCL_SHLIB_SUFFIX) \
 	 -compatibility_version 1 -current_version 1.0
 	touch $@
 
