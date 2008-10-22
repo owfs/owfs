@@ -201,7 +201,7 @@ static void DS2480_setroutines(struct connection_in *in)
 int DS2480_detect(struct connection_in *in)
 {
 	struct parsedname pn;
-	BYTE timing = 0xC1;
+	BYTE timing ;
 	int ret;
 
 	FS_ParsedName(NULL, &pn);	// minimal parsename -- no destroy needed
@@ -240,6 +240,7 @@ int DS2480_detect(struct connection_in *in)
 	COM_flush(&pn);
 
 	// send the timing byte
+	timing = CMD_COMM | FUNCTSEL_RESET | in->connin.serial.USpeed ;
 	if (DS2480_write(&timing, 1, &pn)) {
 		return -EIO;
 	}
