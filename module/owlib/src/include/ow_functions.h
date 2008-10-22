@@ -148,6 +148,7 @@ void UT_delay_us(const unsigned long len);
 ssize_t tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval *ptv);
 void tcp_read_flush(int file_descriptor);
 int tcp_wait(int file_descriptor, const struct timeval *ptv);
+ssize_t udp_read(int file_descriptor, void *vptr, size_t n, const struct timeval * ptv, struct sockaddr_in *from, socklen_t *fromlen) ;
 
 int ClientAddr(char *sname, struct connection_in *in);
 int ClientConnect(struct connection_in *in);

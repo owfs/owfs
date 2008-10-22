@@ -21,7 +21,7 @@ $Id$
 /* Read "n" bytes from a descriptor. */
 /* Stolen from Unix Network Programming by Stevens, Fenner, Rudoff p89 */
 /* return < 0 if failure */
-ssize_t udp_read(int file_descriptor, void *vptr, size_t n, const struct timeval * ptv, struct sockaddr *from, socklen_t *fromlen)
+ssize_t udp_read(int file_descriptor, void *vptr, size_t n, const struct timeval * ptv, struct sockaddr_in *from, socklen_t *fromlen)
 {
 	size_t nleft;
 	ssize_t nread;
@@ -51,14 +51,13 @@ ssize_t udp_read(int file_descriptor, void *vptr, size_t n, const struct timeval
 					errno = 0;	// clear errno. We never use it anyway.
 					nread = 0;	/* and call read() again */
 				} else {
-					ERROR_DATA("Network data read error\n");
 					STAT_ADD1(NET_read_errors);
 					return (-1);
 				}
 			} else if (nread == 0) {
 				break;			/* EOF */
 			}
-			//Debug_Bytes( "NETREAD",ptr, nread ) ;
+			//Debug_Bytes( "UDPread",ptr, nread ) ;
 			nleft -= nread;
 			ptr += nread;
 		} else if (rc < 0) {	/* select error */
