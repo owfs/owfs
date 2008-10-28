@@ -16,13 +16,12 @@ $Id$
 #include "ow_connection.h"
 
 static int DS2480_next_both(struct device_search *ds, const struct parsedname *pn);
+#if 0
 static int DS2480_databit(int sendbit, int *getbit, const struct parsedname *pn);
+#endif
 static int DS2480_reset(const struct parsedname *pn);
 static int DS2480_read(BYTE * buf, const size_t size, const struct parsedname *pn);
 static int DS2480_write(const BYTE * buf, const size_t size, const struct parsedname *pn);
-static int DS2480_sendout_data(const BYTE * data, const size_t len, const struct parsedname *pn);
-static int DS2480_level(int new_level, const struct parsedname *pn);
-static int DS2480_level_low(int new_level, const struct parsedname *pn);
 static int DS2480_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname *pn);
 static int DS2480_ProgramPulse(const struct parsedname *pn);
 static int DS2480_sendout_cmd(const BYTE * cmd, const size_t len, const struct parsedname *pn);
@@ -31,6 +30,7 @@ static int DS2480_sendback_data(const BYTE * data, BYTE * resp, const size_t len
 static void DS2480_setroutines(struct connection_in *in);
 static int DS2480_configuration_code(BYTE parameter_code, BYTE value_code, const struct parsedname *pn);
 static int DS2480_stop_pulse(BYTE * response, const struct parsedname *pn);
+static int DS2480_reset_once(const struct parsedname *pn) ;
 
 static void DS2480_setroutines(struct connection_in *in)
 {
@@ -81,8 +81,9 @@ static void DS2480_setroutines(struct connection_in *in)
 
 // Command or config bit
 #define CMD_COMM                       0x81
+#define CMD_COMM_RESPONSE              0x80
 #define CMD_CONFIG                     0x01
-#define CMD_RESPONSE                   0x00
+#define CMD_CONFIG_RESPONSE            0x00
 
 // Function select bits
 #define FUNCTSEL_BIT                   0x00
@@ -188,8 +189,12 @@ static void DS2480_setroutines(struct connection_in *in)
 #define PARMSET_57600                  0x04
 #define PARMSET_115200                 0x06
 
-// DS2480B program voltage available
-#define DS2480PROG_MASK                0x20
+// Search defines
+#define SEARCH_BIT_ON		0x01
+#define	DS2404_family	0x04
+
+// Could probably be UART_FIFO_SIZE (160) but that will take some testing
+#define MAX_SEND_SIZE			64
 
 /* Reset and detect a DS2480B */
 /* returns 0=good
@@ -220,11 +225,12 @@ int DS2480_detect(struct connection_in *in)
 	// Send BREAK to reset device
 	tcsendbreak(in->file_descriptor, 0);
 
+
 	/* Reset the bus and adapter */
 	DS2480_reset(&pn);
 
 	// reset modes
-	in->connin.serial.UMode = MODSEL_COMMAND;
+	in->connin.serial.mode = ds2480b_command_mode ;
 	in->connin.serial.USpeed = SPEEDSEL_FLEX;
 
 	// set the baud rate to 9600. (Already set to 9600 in COM_open())
@@ -289,7 +295,6 @@ int DS2480_detect(struct connection_in *in)
 	default:
 		return -ENODEV;
 	}
-	//printf("2480Detect version=%d\n",in->Adapter) ;
 	return 0;
 	//printf("2480Detect response: %2X %2X %2X %2X %2X %2X\n",setup[0],setup[1],setup[2],setup[3],setup[4]);
 
@@ -301,7 +306,7 @@ int DS2480_detect(struct connection_in *in)
 static int DS2480_configuration_code(BYTE parameter_code, BYTE value_code, const struct parsedname *pn)
 {
 	BYTE send_code = CMD_CONFIG | parameter_code | value_code;
-	BYTE expected_response = CMD_RESPONSE | parameter_code | value_code;
+	BYTE expected_response = CMD_CONFIG_RESPONSE | parameter_code | value_code;
 	BYTE actual_response;
 
 	if (DS2480_sendback_cmd(&send_code, &actual_response, 1, pn)) {
@@ -339,8 +344,7 @@ int DS2480_baud(speed_t baud, const struct parsedname *pn)
 //--------------------------------------------------------------------------
 // Reset all of the devices on the 1-Wire Net and return the result.
 //
-// WARNING: Without setting the above global (FAMILY_CODE_04_ALARM_TOUCHRESET_COMPLIANCE)
-//          to TRUE, this routine will not function correctly on some
+//          This routine will not function correctly on some
 //          Alarm reset types of the DS1994/DS1427/DS2404 with
 //          Rev 1,2, and 3 of the DS2480/DS2480B.
 /* return 0=good
@@ -349,28 +353,44 @@ int DS2480_baud(speed_t baud, const struct parsedname *pn)
  */
 static int DS2480_reset(const struct parsedname *pn)
 {
+	int ret = DS2480_reset_once(pn) ;
+
+	// Some kind of problem (not including bus short)
+	// Try simple fixes
+	if ( ret < 0 ) {
+		BYTE dummy[1] ; //we don't check the pulse stop, since it's only a whim.
+		// perhaps the DS9097U wasn't in command mode, so missed the reset
+		// force a mode switch
+		pn->selected_connection->connin.serial.mode = ds2480b_data_mode ;
+		// Also make sure no power or programming pulse active
+		DS2480_stop_pulse(dummy,pn) ;
+		// And now reset again
+		ret = DS2480_reset_once(pn) ;
+	}
+	return ret ;
+}
+
+static int DS2480_reset_once(const struct parsedname *pn)
+{
 	int ret = 0;
-	BYTE buf = (BYTE) (CMD_COMM | FUNCTSEL_RESET | pn->selected_connection->connin.serial.USpeed);
+	BYTE reset_byte = (BYTE) (CMD_COMM | FUNCTSEL_RESET | pn->selected_connection->connin.serial.USpeed);
+	BYTE reset_response ;
 
 	//printf("DS2480_reset\n");
-	// make sure normal level
-	if (DS2480_level(MODE_NORMAL, pn)) {
-		return -EIO;
-	}
 	// flush the buffers
 	COM_flush(pn);
 
 	// send the packet
 	// read back the 1 byte response
-	if (DS2480_sendback_cmd(&buf, &buf, 1, pn)) {
+	if (DS2480_sendback_cmd(&reset_byte, &reset_response, 1, pn)) {
 		return -EIO;
 	}
 	/* The adapter type is encode in this response byte */
 	/* The known values coorespond to the types in enum adapter_type */
 	/* Other values are assigned for adapters that don't have this hardcoded value */
-	pn->selected_connection->Adapter = (buf & RB_CHIPID_MASK) >> 2;
+	pn->selected_connection->Adapter = (reset_response & RB_CHIPID_MASK) >> 2;
 
-	switch (buf & RB_RESET_MASK) {
+	switch (reset_response & RB_RESET_MASK) {
 	case RB_1WIRESHORT:
 		ret = BUS_RESET_SHORT;
 		break;
@@ -383,122 +403,19 @@ static int DS2480_reset(const struct parsedname *pn)
 		ret = BUS_RESET_OK;
 		pn->selected_connection->AnyDevices = 1;
 		// check if programming voltage available
-		pn->selected_connection->ProgramAvailable = ((buf & 0x20) == 0x20);
+		pn->selected_connection->ProgramAvailable = ((reset_response & PARMSEL_12VPULSE) == PARMSEL_12VPULSE);
 		if (pn->selected_connection->ds2404_compliance) {
 			// extra delay for alarming DS1994/DS2404 complience
 			UT_delay(5);
 		}
 		COM_flush(pn);
 		break;
+
 	}
 	return ret;
 }
 
-//--------------------------------------------------------------------------
-// Set the 1-Wire Net line level.  The values for new_level are
-// as follows:
-//
-// 'new_level' - new level defined as
-//                MODE_NORMAL     0x00
-//                MODE_STRONG5    0x02
-//                MODE_PROGRAM    0x04
-//                MODE_BREAK      0x08 (not supported)
-//
-//  ULEVEL     - global var - level set
-
-// Returns:    0 GOOD, !0 Error
-/* return 0=good
-  sendout_cmd,readin
-  -EIO response byte doesn't match
- */
-static int DS2480_level(int new_level, const struct parsedname *pn)
-{
-	int ret = DS2480_level_low(new_level, pn);
-	if (ret) {
-		STAT_ADD1_BUS(e_bus_errors, pn->selected_connection);
-	}
-	return ret;
-}
-
-static int DS2480_stop_pulse(BYTE * response, const struct parsedname *pn)
-{
-	BYTE cmd[1] = { MODE_STOP_PULSE, };
-	// read back the 8 byte response from setting time limit
-	return DS2480_sendback_cmd(cmd, response, 1, pn);
-}
-
-static int DS2480_level_low(int new_level, const struct parsedname *pn)
-{
-	int ret;
-	if (new_level == pn->selected_connection->connin.serial.ULevel) {	// check if need to change level
-		return 0;
-	} else if (new_level == MODE_NORMAL) {	// check if just putting back to normal
-		int docheck = 0;
-		BYTE c;
-		// check for disable strong pullup step
-		if (pn->selected_connection->connin.serial.ULevel == MODE_STRONG5) {
-			docheck = 1;
-		}
-
-		// check if correct mode
-		// stop pulse command
-		c = MODE_STOP_PULSE;
-
-		// flush the buffers
-		COM_flush(pn);
-
-		// send the packet
-		if ((ret = DS2480_sendout_cmd(&c, 1, pn))) {
-			return ret;
-		}
-		UT_delay(4);
-
-		// read back the 1 byte response
-		// check response byte
-		if ((ret = DS2480_read(&c, 1, pn))
-			|| (ret = ((c & 0xE0) == 0xE0) ? 0 : -EIO)) {
-			return ret;
-		}
-
-		// we don't want DS2480_databit to change level, so set ULevel here.
-		pn->selected_connection->connin.serial.ULevel = MODE_NORMAL;
-
-		// do extra bit for DS2480 disable strong pullup
-		if (!docheck || DS2480_databit(1, &docheck, pn)) {
-			STAT_ADD1(DS2480_level_docheck_errors);
-			pn->selected_connection->connin.serial.ULevel = MODE_STRONG5;	// it failed! restore ULevel
-			return -EIO;
-		}
-	} else if (new_level == MODE_STRONG5) {	// strong 5 volts
-		BYTE b[] = {
-			CMD_COMM | FUNCTSEL_CHMOD | SPEEDSEL_PULSE | BITPOL_5V,
-		};
-		// flush the buffers
-		COM_flush(pn);
-		// send the packet
-		if ((ret = DS2480_sendout_cmd(b, 1, pn))) {
-			return ret;
-		}
-	} else if (new_level == MODE_PROGRAM) {	// 12 volts
-		BYTE b[] = {
-			// add the command to begin the pulse
-			CMD_COMM | FUNCTSEL_CHMOD | SPEEDSEL_PULSE | BITPOL_12V,
-		};
-		// check if programming voltage available
-		if (!pn->selected_connection->ProgramAvailable) {
-			return 0;
-		}
-		// flush the buffers
-		COM_flush(pn);
-		// send the packet
-		if ((ret = DS2480_sendout_cmd(b, 1, pn))) {
-			return ret;
-		}
-	}
-	pn->selected_connection->connin.serial.ULevel = new_level;
-	return 0;
-}
-
+#if 0
 //--------------------------------------------------------------------------
 // Send 1 bit of communication to the 1-Wire Net and get the
 // result 1 bit read from the 1-Wire Net.  The parameter 'sendbit'
@@ -513,29 +430,28 @@ static int DS2480_level_low(int new_level, const struct parsedname *pn)
  */
 static int DS2480_databit(int sendbit, int *getbit, const struct parsedname *pn)
 {
-	BYTE readbuffer[10], sendpacket[10];
-	int ret;
-	UINT sendlen = 0;
-
-	// make sure normal level
-	if ((ret = DS2480_level(MODE_NORMAL, pn))) {
-		STAT_ADD1_BUS(e_bus_errors, pn->selected_connection);
-		return ret;
-	}
-	// check if correct mode
-	if (pn->selected_connection->connin.serial.UMode != MODSEL_COMMAND) {
-		pn->selected_connection->connin.serial.UMode = MODSEL_COMMAND;
-		sendpacket[sendlen++] = MODE_COMMAND;
-	}
+	BYTE readbuffer[1];
 	// construct the command
-	sendpacket[sendlen] = (sendbit != 0) ? BITPOL_ONE : BITPOL_ZERO;
-	sendpacket[sendlen++] |= CMD_COMM | FUNCTSEL_BIT | pn->selected_connection->connin.serial.USpeed;
+	BYTE sendpacket[1] = {
+		(sendbit != 0) ? BITPOL_ONE : BITPOL_ZERO
+		| CMD_COMM
+		| FUNCTSEL_BIT
+		| pn->selected_connection->connin.serial.USpeed,
+	} ;
+;
+	int ret;
+
+	// check if correct mode
+	ret = DS2480_into_command_mode( pn ) ;
+	if (ret) {
+		return ret ;
+	}
 
 	// flush the buffers
 	COM_flush(pn);
 
 	// send the packet
-	if ((ret = DS2480_write(sendpacket, sendlen, pn))
+	if ((ret = DS2480_write(sendpacket, 1, pn))
 		|| (ret = DS2480_read(readbuffer, 1, pn))) {
 		STAT_ADD1_BUS(e_bus_errors, pn->selected_connection);
 		return ret;
@@ -546,8 +462,19 @@ static int DS2480_databit(int sendbit, int *getbit, const struct parsedname *pn)
 
 	return 0;
 }
+static int DS2480_into_command_mode( const struct parsedname *pn )
+{
+	if (pn->selected_connection->connin.serial.mode != ds2480b_command_mode ) {
+		BYTE mc = MODE_COMMAND;
+		// change back to command mode
+		pn->selected_connection->connin.serial.mode = ds2480b_command_mode;
+		return DS2480_write(&mc, 1, pn);
+	}
+	return 0 ;
+}
+#endif
 
-/* search = 0xF0 normal 0xEC alarm */
+/* search = normal and alarm */
 static int DS2480_next_both(struct device_search *ds, const struct parsedname *pn)
 {
 	int ret;
@@ -558,7 +485,6 @@ static int DS2480_next_both(struct device_search *ds, const struct parsedname *p
 	BYTE searchoff = (BYTE) (CMD_COMM | FUNCTSEL_SEARCHOFF | pn->selected_connection->connin.serial.USpeed);
 	int i;
 
-//printf("NEXT\n");
 	if (!(pn->selected_connection->AnyDevices)) {
 		ds->LastDevice = 1;
 	}
@@ -611,7 +537,7 @@ static int DS2480_next_both(struct device_search *ds, const struct parsedname *p
 		// get the SerialNum bit
 		UT_setbit(sn, i, UT_get2bit(bitpairs, i) >> 1);
 		// check LastDiscrepancy
-		if (UT_get2bit(bitpairs, i) == 0x1) {
+		if (UT_get2bit(bitpairs, i) == SEARCH_BIT_ON ) {
 			mismatched = i;
 		}
 	}
@@ -630,7 +556,7 @@ static int DS2480_next_both(struct device_search *ds, const struct parsedname *p
 	// copy the SerialNum to the buffer
 	memcpy(ds->sn, sn, 8);
 
-	if ((sn[0] & 0x7F) == 0x04) {
+	if ((sn[0] & 0x7F) == DS2404_family) {
 		/* We found a DS1994/DS2404 which require longer delays */
 		pn->selected_connection->ds2404_compliance = 1;
 	}
@@ -680,24 +606,12 @@ static int DS2480_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, cons
 	COM_flush(pn);
 
 	// send the packet
-	// read back the 8 byte response from setting time limit
+	// read back the 8 byte response from sending the 5V pulse
 	ret = DS2480_sendback_cmd(cmd, respbits, 8, pn);
 
 	UT_delay(delay);
 
-	/* Make sure it's set back to normal mode since the command might be sent
-	 * correctly, but response is received with errors. Otherwise it will be
-	 * stuck in MODE_STRONG5. (but ULevel will be set to MODE_NORMAL)
-	 * Just hope the command will return ok and ignore return value.
-	 * Other read/write/dir functions will try to set it back to MODE_NORMAL
-	 * if it fails the first time here.
-	 */
-
-	// indicate the port is now at power delivery
-	pn->selected_connection->connin.serial.ULevel = MODE_STRONG5;
-
 	// return to normal level
-//  DS2480_level(MODE_NORMAL, pn);
 	DS2480_stop_pulse(response, pn);
 
 	resp[0] = ((respbits[7] & 1) << 7)
@@ -712,36 +626,40 @@ static int DS2480_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, cons
 	return ret;
 }
 
+static int DS2480_stop_pulse(BYTE * response, const struct parsedname *pn)
+{
+	BYTE cmd[1] = { MODE_STOP_PULSE, };
+	// read back the 8 byte response from setting time limit
+	return DS2480_sendback_cmd(cmd, response, 1, pn);
+}
+
 /* Send a 12v 480usec pulse on the 1wire bus to program the EPROM */
-/* Note, DS2480_reset must have been called at once in the past for ProgramAvailable setting */
-/* returns 0 if good
-   -EINVAL if not program pulse available
-   -EIO on error
- */
+// returns 0 if good
 static int DS2480_ProgramPulse(const struct parsedname *pn)
 {
 	int ret;
 	BYTE cmd[] = { CMD_COMM | FUNCTSEL_CHMOD | BITPOL_12V | SPEEDSEL_PULSE, };
 	BYTE response_mask = 0xFC;
-	BYTE resp[1];
+	BYTE command_resp[1];
+	BYTE stop_pulse[1] ;
 
 	COM_flush(pn);
 
 	// send the packet
-	// read back the 8 byte response from setting time limit
-	ret = DS2480_sendback_cmd(cmd, resp, 1, pn);
+	// read back the 8 byte response from sending the 12V pilse
+	ret = DS2480_sendback_cmd(cmd, command_resp, 1, pn);
 
 	if (ret == 0) {
 		UT_delay_us(520);
 	}
 	// return to normal level
-	DS2480_level(MODE_NORMAL, pn);
+	DS2480_stop_pulse(stop_pulse, pn);
 
 	if (ret) {
 		return ret;
 	}
 
-	if ((resp[0] & response_mask) != (cmd[0] & response_mask)) {
+	if ((command_resp[0] & response_mask) != (cmd[0] & response_mask)) {
 		ret = -EIO;
 	}
 
@@ -760,13 +678,9 @@ static int DS2480_write(const BYTE * buf, const size_t size, const struct parsed
 
 /* Assymetric */
 /* Read from DS2480 with timeout on each character */
-// NOTE: from PDkit, reead 1-byte at a time
-// NOTE: change timeout to 40msec from 10msec for LINK
+// NOTE: from PDkit, read 1-byte at a time
+// NOTE: change timeout to 40msec from 10msec for LINK (emulation mode)
 // returns 0=good 1=bad
-/* return 0=good,
-          -errno = read error
-          -EINTR = timeout
- */
 static int DS2480_read(BYTE * buf, const size_t size, const struct parsedname *pn)
 {
 	return COM_read(buf, size, pn) ;
@@ -776,110 +690,124 @@ static int DS2480_read(BYTE * buf, const size_t size, const struct parsedname *p
 // DS2480_sendout_cmd
 //  Send a command but expect no response
 //  puts into command mode if needed.
-/* return 0=good
-   COM_write
- */
+// Note most use is through DS2480_sendback_command
+// The only uses for this alone are the single byte search accelerators
+// so size checking will be done in sendback
+// return 0=good
 static int DS2480_sendout_cmd(const BYTE * cmd, const size_t len, const struct parsedname *pn)
 {
-	int ret;
-	BYTE mc = MODE_COMMAND;
-	if (pn->selected_connection->connin.serial.UMode != MODSEL_COMMAND) {
-		// change back to command mode
-		pn->selected_connection->connin.serial.UMode = MODSEL_COMMAND;
-		ret = DS2480_write(&mc, 1, pn);
-		if (ret) {
-			return ret;
-		}
-		ret = DS2480_write(cmd, (unsigned) len, pn);
+	if (pn->selected_connection->connin.serial.mode == ds2480b_command_mode ) {
+		// already in command mode -- very easy
+		return DS2480_write(cmd, (unsigned) len, pn);
 	} else {
-		ret = DS2480_write(cmd, (unsigned) len, pn);
+		// need to switch to command mode
+		// add to current string for efficiency
+		BYTE cmd_plus[len+1] ;
+		cmd_plus[0] = MODE_COMMAND ;
+		memcpy( &cmd_plus[1], cmd, len ) ;
+		// MODE_COMMAND is one of the reservred commands that does not generate a response byte
+		// page 6 of datasheet: http://datasheets.maxim-ic.com/en/ds/DS2480B.pdf
+		pn->selected_connection->connin.serial.mode = ds2480b_command_mode ;
+		return DS2480_write(cmd_plus, (unsigned) len+1, pn);
 	}
-	return ret;
 }
 
 //
 // DS2480_sendback_cmd
 //  Send a command and return response block
 //  puts into command mode if needed.
-/* return 0=good
-   sendback_cmd,sendout_cmd,readin
- */
+// return 0=good
 static int DS2480_sendback_cmd(const BYTE * cmd, BYTE * resp, const size_t len, const struct parsedname *pn)
 {
-	int ret;
-	if (len > 16) {
-		int clen = len - (len >> 1);
-		ret = DS2480_sendback_cmd(cmd, resp, clen, pn);
-		if (ret) {
-			return ret;
-		}
-		ret = DS2480_sendback_cmd(&cmd[clen], &resp[clen], len >> 1, pn);
-	} else {
-		ret = DS2480_sendout_cmd(cmd, len, pn);
-		if (ret) {
-			return ret;
-		}
-		ret = DS2480_read(resp, len, pn);
-	}
-	return ret;
-}
+	int bytes_so_far ;
+	int extra_byte_for_modeshift ;
 
+	// skip if nothing
+	// don't even switch to command mode
+	if ( len == 0 ) {
+		return 0 ;
+	}
 
-// DS2480_sendout_data
-//  Send data but expect no response
-//  puts into data mode if needed.
-// Repeat magic MODE_COMMAND byte to show true data
-/* return 0=good
-   COM_write, sendout_data
- */
-static int DS2480_sendout_data(const BYTE * data, const size_t len, const struct parsedname *pn)
-{
-	int ret;
-	if (pn->selected_connection->connin.serial.UMode != MODSEL_DATA) {
-		BYTE md = MODE_DATA;
-		// change back to command mode
-		pn->selected_connection->connin.serial.UMode = MODSEL_DATA;
-		ret = DS2480_write(&md, 1, pn);
-		if (ret) {
-			return ret;
+	extra_byte_for_modeshift = (pn->selected_connection->connin.serial.mode != ds2480b_command_mode) ? 1 : 0 ;
+
+	while ( bytes_so_far < len ) {
+		int ret;
+		int bytes_this_segment = len - bytes_so_far ;
+		if ( bytes_this_segment > MAX_SEND_SIZE - extra_byte_for_modeshift ) {
+			bytes_this_segment = MAX_SEND_SIZE - extra_byte_for_modeshift ;
+			extra_byte_for_modeshift = 0 ;
 		}
+		ret = DS2480_sendout_cmd( &cmd[bytes_so_far], bytes_this_segment, pn);
+		if ( ret ) {
+			return ret ;
+		}
+		ret = DS2480_read(       &resp[bytes_so_far], bytes_this_segment, pn);
+		if ( ret ) {
+			return ret ;
+		}
+		bytes_so_far += bytes_this_segment ;
 	}
-	if (len > 16) {
-		int dlen = len - (len >> 1);
-		ret = DS2480_sendout_data(data, dlen, pn);
-		if (ret) {
-			return ret;
-		}
-		ret = DS2480_sendout_data(&data[dlen], len >> 1, pn);
-	} else {
-		BYTE data2[32];
-		size_t i;
-		UINT j = 0;
-		for (i = 0; i < len; ++i) {
-			data2[j++] = data[i];
-			if (data[i] == MODE_COMMAND) {
-				data2[j++] = MODE_COMMAND;
-			}
-		}
-		ret = DS2480_write(data2, j, pn);
-	}
-	return ret;
+	return 0 ;
 }
 
 //
 // DS2480_sendback_data
 //  Send data and return response block
 //  puts into data mode if needed.
-/* return 0=good
-   sendout_data, readin
- */
+// Repeat magic MODE_COMMAND byte to show true data
+// return 0=good
 static int DS2480_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn)
 {
-	int ret;
-	ret = DS2480_sendout_data(data, len, pn);
-	if (ret) {
-		return ret;
+	BYTE sendout[MAX_SEND_SIZE] ;
+	int bytes_this_segment = 0 ;
+	int bytes_at_segment_start = 0 ;
+	int bytes_from_list = 0 ;
+
+	// skip if nothing
+	// don't even switch to data mode
+	if ( len == 0 ) {
+		return 0 ;
 	}
-	ret = DS2480_read(resp, len, pn);
-	return ret;
+
+	// switch mode if needed
+	if (pn->selected_connection->connin.serial.mode != ds2480b_data_mode) {
+		// this is one of the "reserved commands" that does not generate a resonse byte
+		// page 6 of the datasheet http://datasheets.maxim-ic.com/en/ds/DS2480B.pdf 
+		sendout[bytes_this_segment++] = MODE_DATA;
+		// change flag to data mode
+		pn->selected_connection->connin.serial.mode = ds2480b_data_mode;
+	}
+
+	while ( bytes_from_list < len )
+	{
+		BYTE current_char = data[bytes_from_list++] ;
+		// transfer this byte
+		sendout[ bytes_this_segment++ ] = current_char ;
+		// see about "doubling"
+		if ( current_char == MODE_COMMAND ) {
+			sendout[ bytes_this_segment++ ] = current_char ;
+		}
+
+		// Should we send off this data so far and queue up more?
+		// need room for potentially 2 characters
+		if ( bytes_this_segment > MAX_SEND_SIZE-2 || bytes_from_list == len ) {
+			// write out
+			int ret = DS2480_write(sendout, bytes_this_segment, pn ) ;
+			if ( ret ) {
+				return ret ;
+			}
+
+			// read in
+			// note that read and write sizes won't match because of doubled bytes and mode shift
+			ret = DS2480_read(&resp[bytes_at_segment_start], bytes_from_list - bytes_at_segment_start, pn);
+			if ( ret ) {
+				return ret ;
+			}
+
+			// move indexes for next segment
+			bytes_at_segment_start = bytes_from_list ;
+			bytes_this_segment = 0 ;
+		}
+	}
+	return 0 ;
 }
