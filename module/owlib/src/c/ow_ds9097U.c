@@ -257,11 +257,11 @@ int DS2480_detect(struct connection_in *in)
 	// flush the buffers
 	COM_flush(&pn);
 
-	// default W1LT = 10us
+	// default W1LT = 10us (write-1 low time)
 	if (DS2480_configuration_code(PARMSEL_WRITE1LOW, PARMSET_Write10us, &pn)) {
 		return -EINVAL;
 	}
-	// default DSO/WORT = 8us
+	// default DSO/WORT = 8us (data sample offset / write 0 recovery time )
 	if (DS2480_configuration_code(PARMSEL_SAMPLEOFFSET, PARMSET_SampOff8us, &pn)) {
 		return -EINVAL;
 	}
@@ -719,16 +719,8 @@ static int DS2480_sendout_cmd(const BYTE * cmd, const size_t len, const struct p
 // return 0=good
 static int DS2480_sendback_cmd(const BYTE * cmd, BYTE * resp, const size_t len, const struct parsedname *pn)
 {
-	int bytes_so_far ;
-	int extra_byte_for_modeshift ;
-
-	// skip if nothing
-	// don't even switch to command mode
-	if ( len == 0 ) {
-		return 0 ;
-	}
-
-	extra_byte_for_modeshift = (pn->selected_connection->connin.serial.mode != ds2480b_command_mode) ? 1 : 0 ;
+	int bytes_so_far = 0 ;
+	int extra_byte_for_modeshift  = (pn->selected_connection->connin.serial.mode != ds2480b_command_mode) ? 1 : 0 ;
 
 	while ( bytes_so_far < len ) {
 		int ret;

@@ -57,6 +57,8 @@ READ_FUNCTION(FS_r_overdrive);
 WRITE_FUNCTION(FS_w_overdrive);
 READ_FUNCTION(FS_r_flextime);
 WRITE_FUNCTION(FS_w_flextime);
+READ_FUNCTION(FS_r_reconnect);
+WRITE_FUNCTION(FS_w_reconnect);
 READ_FUNCTION(FS_r_ds2404_compliance);
 WRITE_FUNCTION(FS_w_ds2404_compliance);
 READ_FUNCTION(FS_r_pulldownslewrate);
@@ -90,6 +92,7 @@ struct filetype interface_settings[] = {
   {"datasampleoffset", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_r_datasampleoffset, FS_w_datasampleoffset, {v:NULL},},
   {"ds2404_compliance", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_static, FS_r_ds2404_compliance, FS_w_ds2404_compliance, {v:NULL},},
   {"overdrive", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_static, FS_r_overdrive, FS_w_overdrive, {v:NULL},},
+  {"reconnect", PROPERTY_LENGTH_YESNO, NULL, ft_integer, fc_static, FS_r_reconnect, FS_w_reconnect, {v:NULL},},
   {"flexible_timing", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_static, FS_r_flextime, FS_w_flextime, {v:NULL},},
   {"pulldownslewrate", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_r_pulldownslewrate, FS_w_pulldownslewrate, {v:NULL},},
 #ifdef DEBUG_DS2490
@@ -158,6 +161,22 @@ static int FS_r_overdrive(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	OWQ_Y(owq) = (pn->selected_connection->set_speed == bus_speed_overdrive);
+	return 0;
+}
+
+/* Just some tests to support overdrive */
+static int FS_r_reconnect(struct one_wire_query *owq)
+{
+	struct parsedname *pn = PN(owq);
+	OWQ_I(owq) = (pn->selected_connection->reconnect_state);
+	return 0;
+}
+
+/* Just some tests to support overdrive */
+static int FS_w_reconnect(struct one_wire_query *owq)
+{
+	struct parsedname *pn = PN(owq);
+	pn->selected_connection->reconnect_state = (OWQ_I(owq)!=0) ;
 	return 0;
 }
 

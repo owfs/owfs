@@ -191,10 +191,22 @@ enum bus_flex { bus_no_flex, bus_yes_flex };
 
 enum ds2480b_mode { ds2480b_data_mode, ds2480b_command_mode, } ;
 
+enum ds2480b_baud {
+	ds2480b_9600,
+	ds2480b_19200,
+	ds2480b_57600,
+	ds2480b_115200,
+	ds2480b_pol_9600,
+	ds2480b_pol_19200,
+	ds2480b_pol_57600,
+	ds2480b_pol_115200,
+} ;
+	
 struct connin_serial {
 	speed_t speed;
 	int USpeed;
 	enum ds2480b_mode mode ;
+	enum ds2480b_baud baud ;
 	int UMode;
 	struct termios oldSerialTio;	/*old serial port settings */
 };
