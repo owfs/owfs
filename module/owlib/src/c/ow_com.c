@@ -47,9 +47,9 @@ int COM_open(struct connection_in *in)
 		|| (tcgetattr(in->file_descriptor, &newSerialTio) < 0)) {
 		ERROR_CONNECT("Cannot get old port attributes: %s\n", SAFESTRING(in->name));
 	}
-	in->connin.serial.speed = B9600;
+	in->baudrate = B9600;
 	// set baud in structure
-	if (cfsetospeed(&newSerialTio, in->connin.serial.speed) < 0 || cfsetispeed(&newSerialTio, in->connin.serial.speed) < 0) {
+	if (cfsetospeed(&newSerialTio, in->baudrate) < 0 || cfsetispeed(&newSerialTio, in->baudrate) < 0) {
 		ERROR_CONNECT("Trouble setting port speed: %s\n", SAFESTRING(in->name));
 	}
 	// Set to non-canonical mode, and no RTS/CTS handshaking
@@ -132,6 +132,6 @@ void COM_speed(speed_t new_baud, const struct parsedname *pn)
 		}
 		return;
 	}
-	pn->selected_connection->connin.serial.speed = new_baud;
+	pn->selected_connection->baudrate = new_baud;
 	return;
 }

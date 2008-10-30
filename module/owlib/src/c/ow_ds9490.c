@@ -294,8 +294,8 @@ int DS9490_detect(struct connection_in *in)
 	pn.selected_connection = in;
 
 	in->changed_bus_settings = 1;	// Trigger needing new configuration
-	in->set_speed = bus_speed_slow;	// not overdrive at start
-	in->connin.usb.usb_flextime = Globals.usb_flextime;
+	in->speed = bus_speed_slow;	// not overdrive at start
+	in->flex = Globals.usb_flextime ? bus_yes_flex : bus_no_flex ;
 	// store timeout value -- sec -> msec
 	in->connin.usb.timeout = 1000 * Globals.timeout_usb;
 
@@ -831,8 +831,8 @@ static int DS9490_reset(const struct parsedname *pn)
 
 	memset(buffer, 0, 32);
 
-	USpeed = (pn->selected_connection->set_speed == bus_speed_slow) ?
-		(pn->selected_connection->connin.usb.usb_flextime ? ONEWIREBUSSPEED_FLEXIBLE : ONEWIREBUSSPEED_REGULAR)
+	USpeed = (pn->selected_connection->speed == bus_speed_slow) ?
+		(pn->selected_connection->flex==bus_yes_flex ? ONEWIREBUSSPEED_FLEXIBLE : ONEWIREBUSSPEED_REGULAR)
 		: ONEWIREBUSSPEED_OVERDRIVE;
 
 	if ((ret = USB_Control_Msg(COMM_CMD, COMM_1_WIRE_RESET | COMM_F | COMM_IM | COMM_SE, USpeed, pn)) < 0) {
@@ -840,7 +840,7 @@ static int DS9490_reset(const struct parsedname *pn)
 		return -EIO;			// fatal error... probably closed usb-handle
 	}
 
-	if (pn->selected_connection->ds2404_compliance && (pn->selected_connection->set_speed == bus_speed_slow)) {
+	if (pn->selected_connection->ds2404_compliance && (pn->selected_connection->speed == bus_speed_slow)) {
 		// extra delay for alarming DS1994/DS2404 complience
 		UT_delay(5);
 	}
@@ -1220,15 +1220,15 @@ static int DS9490_SetSpeed(const struct parsedname *pn)
 	// in case timeout value changed (via settings) -- sec -> msec
 	pn->selected_connection->connin.usb.timeout = 1000 * Globals.timeout_usb;
 
-	if (pn->selected_connection->set_speed == bus_speed_overdrive) {
+	if (pn->selected_connection->speed == bus_speed_overdrive) {
 		if (DS9490_overdrive(pn) == 0) {
 			return 0;
 		}
 	}
 	// Failed overdrive, switch to slow
-	pn->selected_connection->set_speed = bus_speed_slow;
+	pn->selected_connection->speed = bus_speed_slow;
 
-	if (pn->selected_connection->connin.usb.usb_flextime) {
+	if (pn->selected_connection->flex==bus_yes_flex) {
 		// default is to use flexible speed. This makes it possible
 		// to change slew-rate etc...
 		/* in regular and overdrive speed, slew rate is 15V/us. It's only

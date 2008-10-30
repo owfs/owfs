@@ -181,10 +181,8 @@ struct interface_routines {
 #endif							/* OW_MT */
 
 enum bus_speed {
-	bus_speed_slow=0,
-	bus_speed_failed_overdrive=1,
-	bus_speed_try_overdrive=10,
-	bus_speed_overdrive=11,
+	bus_speed_slow,
+	bus_speed_overdrive,
 };
 
 enum bus_flex { bus_no_flex, bus_yes_flex };
@@ -203,11 +201,8 @@ enum ds2480b_baud {
 } ;
 	
 struct connin_serial {
-	speed_t speed;
-	int USpeed;
 	enum ds2480b_mode mode ;
 	enum ds2480b_baud baud ;
-	int UMode;
 	struct termios oldSerialTio;	/*old serial port settings */
 };
 
@@ -220,11 +215,9 @@ struct connin_usb {
 	struct usb_device *dev;
 	struct usb_dev_handle *usb;
 	int usb_nr;
-	int UMode;
 	int datasampleoffset;
 	int writeonelowtime;
 	int pulldownslewrate;
-	int usb_flextime;
 	int timeout;
 	/* "Name" of the device, like "8146572300000051"
 	 * This is set to the first DS1420 id found on the 1-wire adapter which
@@ -279,10 +272,6 @@ struct connin_etherweather {
 
 struct connin_link {
 	struct connin_tcp tcp;		// mirror connin.server
-	speed_t speed;
-	int USpeed;
-	int ULevel;
-	int UMode;
 	struct termios oldSerialTio;	/*old serial port settings */
 	struct dirblob main;		/* main directory */
 	struct dirblob alarm;		/* alarm directory */
@@ -398,7 +387,9 @@ struct connection_in {
 	char *adapter_name;
 	int AnyDevices;
 	int ExtraReset;				// DS1994/DS2404 might need an extra reset
-	enum bus_speed set_speed;
+	enum bus_speed speed;
+	speed_t baudrate ;
+	enum bus_flex flex ;
 	int changed_bus_settings;
 	int ds2404_compliance;
 	int ProgramAvailable;

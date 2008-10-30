@@ -16,9 +16,7 @@ $Id$
 #include "ow_connection.h"
 
 static int DS2480_next_both(struct device_search *ds, const struct parsedname *pn);
-#if 0
-static int DS2480_databit(int sendbit, int *getbit, const struct parsedname *pn);
-#endif
+//static int DS2480_databit(int sendbit, int *getbit, const struct parsedname *pn);
 static int DS2480_reset(const struct parsedname *pn);
 static int DS2480_big_reset(const struct parsedname *pn) ;
 static int DS2480_read(BYTE * buf, const size_t size, const struct parsedname *pn);
@@ -33,6 +31,7 @@ static int DS2480_configuration_code(BYTE parameter_code, BYTE value_code, const
 static int DS2480_stop_pulse(BYTE * response, const struct parsedname *pn);
 static int DS2480_reset_once(const struct parsedname *pn) ;
 static int DS2480_set_baud(const struct parsedname *pn) ;
+static BYTE DS2480b_speed_byte( const struct parsedname * pn ) ;
 
 static void DS2480_setroutines(struct connection_in *in)
 {
@@ -217,6 +216,9 @@ int DS2480_detect(struct connection_in *in)
 	/* Set up low-level routines */
 	DS2480_setroutines(in);
 
+	in->speed = bus_speed_slow ;
+	in->flex = bus_yes_flex ;
+
 	ret = DS2480_big_reset(&pn) ;
 	if ( ret ) {
 		return ret ;
@@ -247,9 +249,8 @@ static int DS2480_big_reset(const struct parsedname *pn)
 {
 	int ret ;
 	BYTE timing ;
-	/* Open the com port in 9600 Baud.
-	 * This will set in->connin.serial.speed which is used below.
-	 * It might have been a bug before. */
+
+	// Open the com port in 9600 Baud.
 	if (COM_open(pn->selected_connection)) {
 		return -ENODEV;
 	}
@@ -263,7 +264,6 @@ static int DS2480_big_reset(const struct parsedname *pn)
 
 	// reset modes
 	pn->selected_connection->connin.serial.mode = ds2480b_command_mode ;
-	pn->selected_connection->connin.serial.USpeed = SPEEDSEL_FLEX;
 
 	// set the baud rate to 9600. (Already set to 9600 in COM_open())
 	COM_speed(B9600, pn);
@@ -278,7 +278,7 @@ static int DS2480_big_reset(const struct parsedname *pn)
 	COM_flush(pn);
 
 	// send the timing byte
-	timing = CMD_COMM | FUNCTSEL_RESET | pn->selected_connection->connin.serial.USpeed ;
+	timing = CMD_COMM | FUNCTSEL_RESET | DS2480b_speed_byte(pn) ;
 	if (DS2480_write(&timing, 1, pn)) {
 		return -EIO;
 	}
@@ -403,7 +403,7 @@ static int DS2480_set_baud(const struct parsedname *pn)
 		return -EIO;
 	}
 	// switch speed to listen to response
-	COM_speed(new_baud_rate,pn->selected_connection) ;
+	COM_speed(new_baud_rate,pn) ;
 
 	if (DS2480_read(&actual_response, 1, pn)) {
 		return -EIO;
@@ -412,6 +412,17 @@ static int DS2480_set_baud(const struct parsedname *pn)
 		return 0;
 	}
 	return -EINVAL;
+}
+
+static BYTE DS2480b_speed_byte( const struct parsedname * pn )
+{
+	if ( pn->selected_connection->speed == bus_speed_overdrive ) {
+		return SPEEDSEL_OD ;
+	} else if ( pn->selected_connection->flex == bus_yes_flex ) {
+		return SPEEDSEL_FLEX ;
+	} else {
+		return SPEEDSEL_STD ;
+	}
 }
 
 //--------------------------------------------------------------------------
@@ -453,7 +464,7 @@ static int DS2480_reset(const struct parsedname *pn)
 static int DS2480_reset_once(const struct parsedname *pn)
 {
 	int ret = 0;
-	BYTE reset_byte = (BYTE) (CMD_COMM | FUNCTSEL_RESET | pn->selected_connection->connin.serial.USpeed);
+	BYTE reset_byte = (BYTE) ( CMD_COMM | FUNCTSEL_RESET | DS2480b_speed_byte(pn) );
 	BYTE reset_response ;
 
 	//printf("DS2480_reset\n");
@@ -516,7 +527,7 @@ static int DS2480_databit(int sendbit, int *getbit, const struct parsedname *pn)
 		(sendbit != 0) ? BITPOL_ONE : BITPOL_ZERO
 		| CMD_COMM
 		| FUNCTSEL_BIT
-		| pn->selected_connection->connin.serial.USpeed,
+		| DS2480b_speed_byte(pn),
 	} ;
 ;
 	int ret;
@@ -561,8 +572,8 @@ static int DS2480_next_both(struct device_search *ds, const struct parsedname *p
 	int mismatched;
 	BYTE sn[8];
 	BYTE bitpairs[16];
-	BYTE searchon = (BYTE) (CMD_COMM | FUNCTSEL_SEARCHON | pn->selected_connection->connin.serial.USpeed);
-	BYTE searchoff = (BYTE) (CMD_COMM | FUNCTSEL_SEARCHOFF | pn->selected_connection->connin.serial.USpeed);
+	BYTE searchon = (BYTE) ( CMD_COMM | FUNCTSEL_SEARCHON | DS2480b_speed_byte(pn) );
+	BYTE searchoff = (BYTE) ( CMD_COMM | FUNCTSEL_SEARCHOFF | DS2480b_speed_byte(pn) );
 	int i;
 
 	if (!(pn->selected_connection->AnyDevices)) {
@@ -660,7 +671,7 @@ static int DS2480_next_both(struct device_search *ds, const struct parsedname *p
 static int DS2480_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname *pn)
 {
 	int ret;
-	BYTE bits = CMD_COMM | FUNCTSEL_BIT | pn->selected_connection->connin.serial.USpeed;
+	BYTE bits = CMD_COMM | FUNCTSEL_BIT | DS2480b_speed_byte(pn) ;
 	BYTE cmd[] = {
 		// bit 1
 		((byte & 0x01) ? BITPOL_ONE : BITPOL_ZERO) | bits | PRIME5V_FALSE,

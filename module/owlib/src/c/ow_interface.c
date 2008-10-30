@@ -57,6 +57,8 @@ READ_FUNCTION(FS_r_overdrive);
 WRITE_FUNCTION(FS_w_overdrive);
 READ_FUNCTION(FS_r_flextime);
 WRITE_FUNCTION(FS_w_flextime);
+READ_FUNCTION(FS_r_serialspeed);
+WRITE_FUNCTION(FS_w_serialspeed);
 READ_FUNCTION(FS_r_reconnect);
 WRITE_FUNCTION(FS_w_reconnect);
 READ_FUNCTION(FS_r_ds2404_compliance);
@@ -92,8 +94,9 @@ struct filetype interface_settings[] = {
   {"datasampleoffset", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_r_datasampleoffset, FS_w_datasampleoffset, {v:NULL},},
   {"ds2404_compliance", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_static, FS_r_ds2404_compliance, FS_w_ds2404_compliance, {v:NULL},},
   {"overdrive", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_static, FS_r_overdrive, FS_w_overdrive, {v:NULL},},
-  {"reconnect", PROPERTY_LENGTH_YESNO, NULL, ft_integer, fc_static, FS_r_reconnect, FS_w_reconnect, {v:NULL},},
+  {"reconnect", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_static, FS_r_reconnect, FS_w_reconnect, {v:NULL},},
   {"flexible_timing", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_static, FS_r_flextime, FS_w_flextime, {v:NULL},},
+  {"serial_speed", PROPERTY_LENGTH_INTEGER, NULL, ft_integer, fc_static, FS_r_serialspeed, FS_w_serialspeed, {v:NULL},},
   {"pulldownslewrate", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_r_pulldownslewrate, FS_w_pulldownslewrate, {v:NULL},},
 #ifdef DEBUG_DS2490
   {"ds2490status", 128, NULL, ft_vascii, fc_static, FS_r_ds2490status, NO_WRITE_FUNCTION, {v:NULL},},
@@ -157,18 +160,10 @@ static int FS_w_ds2404_compliance(struct one_wire_query *owq)
 }
 
 /* Just some tests to support overdrive */
-static int FS_r_overdrive(struct one_wire_query *owq)
-{
-	struct parsedname *pn = PN(owq);
-	OWQ_Y(owq) = (pn->selected_connection->set_speed == bus_speed_overdrive);
-	return 0;
-}
-
-/* Just some tests to support overdrive */
 static int FS_r_reconnect(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
-	OWQ_I(owq) = (pn->selected_connection->reconnect_state);
+	OWQ_Y(owq) = (pn->selected_connection->reconnect_state == reconnect_error);
 	return 0;
 }
 
@@ -176,7 +171,7 @@ static int FS_r_reconnect(struct one_wire_query *owq)
 static int FS_w_reconnect(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
-	pn->selected_connection->reconnect_state = (OWQ_I(owq)!=0) ;
+	pn->selected_connection->reconnect_state = OWQ_Y(owq) ? reconnect_error : reconnect_ok ;
 	return 0;
 }
 
@@ -184,34 +179,60 @@ static int FS_w_reconnect(struct one_wire_query *owq)
 static int FS_r_flextime(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
-	switch (pn->selected_connection->busmode) {
-	case bus_usb:
-		OWQ_Y(owq) = pn->selected_connection->connin.usb.usb_flextime;
-		return 0;
-	default:
-		return -EPERM;
-	}
-}
-
-static int FS_w_overdrive(struct one_wire_query *owq)
-{
-	struct parsedname *pn = PN(owq);
-	pn->selected_connection->set_speed = OWQ_Y(owq) ? bus_speed_try_overdrive : bus_speed_slow;
-	pn->selected_connection->changed_bus_settings = 1;
+	OWQ_Y(owq) = (pn->selected_connection->flex==bus_yes_flex);
 	return 0;
 }
 
 static int FS_w_flextime(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
+	pn->selected_connection->flex = OWQ_Y(owq) ? bus_yes_flex : bus_no_flex ;
+	pn->selected_connection->changed_bus_settings = 1;
+	return 0;
+}
+
+/* baud rate choice */
+static int FS_r_serialspeed(struct one_wire_query *owq)
+{
+	struct parsedname *pn = PN(owq);
 	switch (pn->selected_connection->busmode) {
-	case bus_usb:
-		pn->selected_connection->connin.usb.usb_flextime = OWQ_Y(owq);
-		pn->selected_connection->changed_bus_settings = 1;
-		return 0;
-	default:
-		return -EPERM;
+		case bus_serial:
+			OWQ_I(owq) = (pn->selected_connection->speed);
+			break ;
+		default:
+			return -EPERM ;
 	}
+	return 0;
+}
+
+static int FS_w_serialspeed(struct one_wire_query *owq)
+{
+	struct parsedname *pn = PN(owq);
+	switch (pn->selected_connection->busmode) {
+		case bus_serial:
+			pn->selected_connection->speed = OWQ_I(owq) ;
+			pn->selected_connection->changed_bus_settings = 1;
+			break ;
+		default:
+			return -EPERM ;
+	}
+	return 0;
+}
+
+/* Just some tests to support overdrive */
+static int FS_r_overdrive(struct one_wire_query *owq)
+{
+	struct parsedname *pn = PN(owq);
+	OWQ_Y(owq) = (pn->selected_connection->speed == bus_speed_overdrive);
+	return 0;
+}
+
+static int FS_w_overdrive(struct one_wire_query *owq)
+{
+	struct parsedname *pn = PN(owq);
+	pn->selected_connection->speed = OWQ_Y(owq) ? bus_speed_overdrive : bus_speed_slow;
+	pn->selected_connection->changed_bus_settings = 1;
+	return 0;
 }
 
 #ifdef DEBUG_DS2490
