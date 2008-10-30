@@ -152,10 +152,8 @@ int main(int argc, char **argv)
 	main_threadid = pthread_self();
 	LEVEL_DEBUG("main_threadid = %lu\n", (unsigned long int) main_threadid);
 #endif
-
 	/* Set up "Antiloop" -- a unique token */
 	SetupAntiloop();
-
 	ServerProcess(Handler, ow_exit);
 	return 0;
 }
