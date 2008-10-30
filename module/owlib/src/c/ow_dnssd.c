@@ -38,6 +38,12 @@ _DNSServiceReconfirmRecord DNSServiceReconfirmRecord;
 _DNSServiceCreateConnection DNSServiceCreateConnection;
 _DNSServiceEnumerateDomains DNSServiceEnumerateDomains;
 
+ #define DNSfunction_link( name )  name = (_##name) DL_sym( libdnssd, #name );\
+	if ( name == NULL ) {\
+		LEVEL_CONNECT("Zeroconf/Bonjour is disabled since "#name" isn't found\n");\
+		return -1;\
+	}
+
 int OW_Load_dnssd_library(void)
 {
 	int i = 0;
@@ -125,19 +131,19 @@ int OW_Load_dnssd_library(void)
 #endif
 
 	if (libdnssd == NULL) {
-		//fprintf(stderr, "Zeroconf/Bonjour is disabled since dnssd library isn't found\n");
+		LEVEL_CONNECT("Zeroconf/Bonjour is disabled since dnssd library isn't found\n");
 		return -1;
 	}
 
-	DNSServiceRefSockFD = (_DNSServiceRefSockFD) DL_sym(libdnssd, "DNSServiceRefSockFD");
-	DNSServiceProcessResult = (_DNSServiceProcessResult) DL_sym(libdnssd, "DNSServiceProcessResult");
-	DNSServiceRefDeallocate = (_DNSServiceRefDeallocate) DL_sym(libdnssd, "DNSServiceRefDeallocate");
-	DNSServiceResolve = (_DNSServiceResolve) DL_sym(libdnssd, "DNSServiceResolve");
-	DNSServiceBrowse = (_DNSServiceBrowse) DL_sym(libdnssd, "DNSServiceBrowse");
-	DNSServiceRegister = (_DNSServiceRegister) DL_sym(libdnssd, "DNSServiceRegister");
-	DNSServiceReconfirmRecord = (_DNSServiceReconfirmRecord) DL_sym(libdnssd, "DNSServiceReconfirmRecord");
-	DNSServiceCreateConnection = (_DNSServiceCreateConnection) DL_sym(libdnssd, "DNSServiceCreateConnection");
-	DNSServiceEnumerateDomains = (_DNSServiceEnumerateDomains) DL_sym(libdnssd, "DNSServiceEnumerateDomains");
+	DNSfunction_link(DNSServiceRefSockFD);
+	DNSfunction_link(DNSServiceProcessResult);
+	DNSfunction_link(DNSServiceRefDeallocate);
+	DNSfunction_link(DNSServiceResolve);
+	DNSfunction_link(DNSServiceBrowse);
+	DNSfunction_link(DNSServiceRegister);
+	DNSfunction_link(DNSServiceReconfirmRecord);
+	DNSfunction_link(DNSServiceCreateConnection);
+	DNSfunction_link(DNSServiceEnumerateDomains);
 
 	return 0;
 }
