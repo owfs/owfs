@@ -404,8 +404,6 @@ static int DS9490_setup_adapter(const struct parsedname *pn)
 		LEVEL_DATA("DS9490_setup_adapter: getstatus failed ret=%d\n", ret);
 		return ret;
 	}
-	// always set slewrate since we use flexible speed
-	//if((ret = DS9490_SetSpeed(pn->in)) < 0) return ret;
 
 	LEVEL_DATA("DS9490_setup_adapter: done (ret=%d)\n", ret);
 	return 0;
@@ -826,6 +824,8 @@ static int DS9490_reset(const struct parsedname *pn)
 
 	// Do we need to change settings?
 	if (!pn->selected_connection->changed_bus_settings) {
+		// Prevent recursive loops on reset
+		pn->selected_connection->changed_bus_settings = 0;
 		DS9490_SetSpeed(pn);	// reset paramters
 	}
 
@@ -1216,9 +1216,6 @@ static int USB_Control_Msg(BYTE bRequest, UINT wValue, UINT wIndex, const struct
 static int DS9490_SetSpeed(const struct parsedname *pn)
 {
 	int ret;
-
-	// Prevent recursive loops on reset
-	pn->selected_connection->changed_bus_settings = 0;
 
 	// in case timeout value changed (via settings) -- sec -> msec
 	pn->selected_connection->connin.usb.timeout = 1000 * Globals.timeout_usb;
