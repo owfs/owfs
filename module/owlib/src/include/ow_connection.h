@@ -509,12 +509,6 @@ struct connection_in *find_connection_in(int nr);
 void OW_Announce(struct connection_out *out);
 void OW_Browse(void);
 
-/* Low-level functions
-    slowly being abstracted and separated from individual
-    interface type details
-*/
-int DS2480_baud(speed_t baud, const struct parsedname *pn);
-
 int Server_detect(struct connection_in *in);
 int Zero_detect(struct connection_in *in);
 int DS2480_detect(struct connection_in *in);
