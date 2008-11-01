@@ -32,6 +32,7 @@ noinst_HEADERS =          \
         ow_2760.h \
         ow_2804.h \
         ow_2890.h \
+	ow_avahi.h        \
         ow_bitwork.h      \
         ow_cache.h        \
         ow_charblob.h     \
