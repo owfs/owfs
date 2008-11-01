@@ -46,7 +46,7 @@ ssize_t udp_read(int file_descriptor, void *vptr, size_t n, const struct timeval
 				return -EIO;	/* error */
 			}
 			//update_max_delay(pn);
-			if ((nread = recvfrom(file_descriptor, ptr, nleft, 0, from, fromlen)) < 0) {
+			if ((nread = recvfrom(file_descriptor, ptr, nleft, 0, (struct sockaddr *)from, fromlen)) < 0) {
 				if (errno == EINTR) {
 					errno = 0;	// clear errno. We never use it anyway.
 					nread = 0;	/* and call read() again */
