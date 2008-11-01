@@ -764,7 +764,7 @@ static int DS2480_ProgramPulse(const struct parsedname *pn)
  */
 static int DS2480_write(const BYTE * buf, const size_t size, const struct parsedname *pn)
 {
-	return COM_write( buf, size, pn );
+	return COM_write( (const char *)buf, size, pn );
 }
 
 /* Assymetric */
@@ -774,7 +774,7 @@ static int DS2480_write(const BYTE * buf, const size_t size, const struct parsed
 // returns 0=good 1=bad
 static int DS2480_read(BYTE * buf, const size_t size, const struct parsedname *pn)
 {
-	return COM_read(buf, size, pn) ;
+	return COM_read( (char *)buf, size, pn) ;
 }
 
 //
@@ -810,12 +810,12 @@ static int DS2480_sendout_cmd(const BYTE * cmd, const size_t len, const struct p
 // return 0=good
 static int DS2480_sendback_cmd(const BYTE * cmd, BYTE * resp, const size_t len, const struct parsedname *pn)
 {
-	int bytes_so_far = 0 ;
-	int extra_byte_for_modeshift  = (pn->selected_connection->connin.serial.mode != ds2480b_command_mode) ? 1 : 0 ;
+	size_t bytes_so_far = 0 ;
+	size_t extra_byte_for_modeshift  = (pn->selected_connection->connin.serial.mode != ds2480b_command_mode) ? 1 : 0 ;
 
 	while ( bytes_so_far < len ) {
 		int ret;
-		int bytes_this_segment = len - bytes_so_far ;
+		size_t bytes_this_segment = len - bytes_so_far ;
 		if ( bytes_this_segment > MAX_SEND_SIZE - extra_byte_for_modeshift ) {
 			bytes_this_segment = MAX_SEND_SIZE - extra_byte_for_modeshift ;
 			extra_byte_for_modeshift = 0 ;
@@ -842,9 +842,9 @@ static int DS2480_sendback_cmd(const BYTE * cmd, BYTE * resp, const size_t len, 
 static int DS2480_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn)
 {
 	BYTE sendout[MAX_SEND_SIZE] ;
-	int bytes_this_segment = 0 ;
-	int bytes_at_segment_start = 0 ;
-	int bytes_from_list = 0 ;
+	size_t bytes_this_segment = 0 ;
+	size_t bytes_at_segment_start = 0 ;
+	size_t bytes_from_list = 0 ;
 
 	// skip if nothing
 	// don't even switch to data mode
