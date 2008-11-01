@@ -39,5 +39,7 @@ typedef void *DLHANDLE;
 #endif							/* OW_ZERO */
 
 extern DLHANDLE libdnssd;
+extern DLHANDLE avahi_client ;
+extern DLHANDLE avahi_common ;
 
 #endif
