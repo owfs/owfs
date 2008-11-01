@@ -49,6 +49,7 @@ $Id$
 #ifndef OW_GLOBAL_H				/* tedious wrapper */
 #define OW_GLOBAL_H
 
+enum zero_support { zero_unknown, zero_none, zero_bonjour, zero_avahi, } ;
 
 /* Globals information (for local control) */
 struct global {
@@ -93,6 +94,7 @@ struct global {
 	int no_get;
 	int no_persistence;
 	int eightbit_serial;
+	enum zero_support zero ;
 };
 extern struct global Globals;
 
