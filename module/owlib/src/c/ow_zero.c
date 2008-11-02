@@ -102,9 +102,7 @@ void OW_Announce(struct connection_out *out)
 		pthread_t thread;
 		int err = pthread_create(&thread, NULL, OW_Avahi_Announce, (void *) out);
 		if (err) {
-			printf("Just before\n");
 			LEVEL_CONNECT("Avahi registration thread error %d.\n", err);
-			printf("Just after\n");
 		}
 #endif
 	} else if ( Globals.zero == zero_bonjour ) {

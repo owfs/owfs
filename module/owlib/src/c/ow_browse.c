@@ -19,10 +19,6 @@ $Id$
 
 #include "ow_connection.h"
 
-struct RefStruct {
-	DNSServiceRef sref;
-};
-
 struct BrowseStruct {
 	char *name;
 	char *type;
@@ -32,25 +28,12 @@ struct BrowseStruct {
 static struct connection_in *FindIn(struct BrowseStruct *bs);
 static struct BrowseStruct *BSCreate(const char *name, const char *type, const char *domain);
 static void BSKill(struct BrowseStruct *bs);
-static void *Process(void *v);
+static void * OW_Browse_Bonjour(void * v) ;
 static void ResolveBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 						DNSServiceErrorType e, const char *n, const char *host, uint16_t port, uint16_t tl, const char *t, void *c);
 static void BrowseBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 					   DNSServiceErrorType e, const char *name, const char *type, const char *domain, void *context);
 
-/* Look for new services with Bonjour -- will block so done in a separate thread */
-static void *Process(void *v)
-{
-	struct RefStruct *rs = v;
-	pthread_detach(pthread_self());
-	while (DNSServiceProcessResult(rs->sref) == kDNSServiceErr_NoError) {
-		//printf("DNSServiceProcessResult ref %ld\n",(long int)rs->sref) ;
-		continue;
-	}
-	DNSServiceRefDeallocate(rs->sref);
-	free(rs);
-	return NULL;
-}
 
 #if 0
 static void RequestBack(DNSServiceRef sr,
@@ -180,7 +163,7 @@ static struct connection_in *FindIn(struct BrowseStruct *bs)
 
 /* Sent back from Bounjour -- arbitrarily use it to set the Ref for Deallocation */
 static void BrowseBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
-					   DNSServiceErrorType e, const char *name, const char *type, const char *domain, void *context)
+			DNSServiceErrorType e, const char *name, const char *type, const char *domain, void *context)
 {
 	(void) context;
 	//printf("BrowseBack ref=%ld flags=%d index=%d, error=%d name=%s type=%s domain=%s\n",(long int)s,f,i,e,name,type,domain) ;
@@ -226,34 +209,54 @@ static void BrowseBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 						return;
 					}
 				}
-			}
-			BSKill(bs);
 		}
+		BSKill(bs);
 	}
-	return;
 }
-
-void OW_Browse(void)
+return;
+}
+			
+// Called in a thread			
+static void * OW_Browse_Bonjour(void * v)
 {
-	struct RefStruct *rs;
 	DNSServiceErrorType dnserr;
 
-	if ((rs = malloc(sizeof(struct RefStruct))) == NULL) {
-		return;
+	(void) v ;
+	
+	pthread_detach(pthread_self());
+	
+	dnserr = DNSServiceBrowse(&Globals.browse, 0, 0, "_owserver._tcp", NULL, BrowseBack, NULL);
+
+	if (dnserr != kDNSServiceErr_NoError) {
+		LEVEL_CONNECT("Bonjour: DNSServiceBrowse error = %d\n", dnserr);
+		return NULL ;
 	}
 
-	dnserr = DNSServiceBrowse(&Globals.browse, 0, 0, "_owserver._tcp", NULL, BrowseBack, NULL);
-	rs->sref = Globals.browse;
-	if (dnserr == kDNSServiceErr_NoError) {
-		pthread_t thread;
-		int err;
-		//printf("Browse %ld %s|%s|%s\n",(long int)Globals.browse,"","_owserver._tcp","") ;
-		err = pthread_create(&thread, 0, Process, (void *) rs);
+	// Blocks, which is why this is in it's own thread
+	while (DNSServiceProcessResult(Globals.browse) == kDNSServiceErr_NoError) {
+		//printf("DNSServiceProcessResult ref %ld\n",(long int)rs->sref) ;
+		continue;
+	}
+	DNSServiceRefDeallocate(Globals.browse);
+	Globals.browse = 0 ;
+	return NULL;
+}
+			
+void OW_Browse(void)
+{
+	pthread_t thread;
+	int err ;
+	
+	if ( Globals.zero == zero_avahi ) {
+		err = pthread_create(&thread, NULL, OW_Browse_Bonjour, NULL);
 		if (err) {
-			ERROR_CONNECT("Zeroconf/Bounjour browsing thread error %d).\n", err);
+			LEVEL_CONNECT("Avahi Browse thread error %d.\n", err);
 		}
-	} else {
-		LEVEL_CONNECT("DNSServiceBrowse error = %d\n", dnserr);
+	} else if ( Globals.zero == zero_bonjour ) {
+		err = pthread_create(&thread, NULL, OW_Browse_Bonjour, NULL);
+		if (err) {
+			LEVEL_CONNECT("Bonjour Browse thread error %d.\n", err);
+		}
 	}
 }
 
@@ -261,7 +264,7 @@ void OW_Browse(void)
 
 void OW_Browse(void)
 {
-	LEVEL_CONNECT("Zeroconf/Bonjour requires multithreading support (a compile-time configuration setting).\n");
+	LEVEL_CONNECT("Avahi and Bonjour requires multithreading support (a compile-time configuration setting).\n");
 }
 
 #endif							/* OW_MT */
@@ -272,7 +275,7 @@ void OW_Browse(void)
 
 void OW_Browse(void)
 {
-	LEVEL_CONNECT("OWFS is compiled without Zeroconf/Bonjour support.\n");
+	LEVEL_CONNECT("OWFS is compiled without Avahi or Bonjour support.\n");
 }
 
 #endif							/* OW_ZERO */

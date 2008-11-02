@@ -20,7 +20,7 @@ static void SigHandler(int signo, siginfo_t * info, void *context);
 static void SetupInboundConnections(void);
 static void SetupSideboundConnections(void);
 
-/* Start the owlib process -- actually only tests for backgrounding */
+/* Start the owlib process -- already in background */
 int LibStart(void)
 {
 	/* Initialize random number generator, make sure fake devices get the same
@@ -39,8 +39,8 @@ int LibStart(void)
 	// zeroconf/Bonjour look for new services
 	if (Globals.autoserver) {
 #if OW_ZERO
-		if (libdnssd == NULL) {
-			fprintf(stderr, "Zeroconf/Bonjour is disabled since dnssd library isn't found.\n");
+		if (Globals.zero == zero_none ) {
+			fprintf(stderr, "Zeroconf/Bonjour is disabled since Bonjour or Avahi library wasn't found.\n");
 			exit(0);
 		} else {
 			OW_Browse();
