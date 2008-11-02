@@ -45,6 +45,7 @@ void LibClose(void)
 	}
 
 	OW_Free_dnssd_library();
+	OW_Free_avahi_library();
 #endif
 	LEVEL_CALL("Finished Library cleanup\n");
 	if (log_available) {

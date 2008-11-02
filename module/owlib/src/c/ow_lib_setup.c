@@ -19,8 +19,18 @@ void LibSetup(enum opt_program opt)
 	/* Setup the multithreading synchronizing locks */
 	LockSetup();
 
+	Globals.zero = zero_none ;
 #if OW_ZERO
-	OW_Load_dnssd_library();
+#if OW_MT
+// Avahi only implemeentd with multithreading
+	if ( OW_Load_avahi_library() == 0 ) {
+		Globals.zero = zero_avahi ;
+		OW_Load_dnssd_library() ; // until avahi browse implemented
+	} else
+#endif
+	if ( OW_Load_dnssd_library() == 0 ) {
+		Globals.zero = zero_bonjour ;
+	}
 #endif
 
 	Globals.opt = opt;

@@ -2,6 +2,8 @@
 
 OWLIB_SOURCE = ow_dl.c           \
                ow_dnssd.c        \
+	       ow_avahi_announce.c\
+	       ow_avahi_link.c   \
                ow_browse.c       \
                compat.c          \
                getaddrinfo.c     \

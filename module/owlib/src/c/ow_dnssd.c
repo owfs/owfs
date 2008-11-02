@@ -148,14 +148,12 @@ int OW_Load_dnssd_library(void)
 	return 0;
 }
 
-int OW_Free_dnssd_library(void)
+void OW_Free_dnssd_library(void)
 {
-	int rc = -1;
 	if (libdnssd) {
-		rc = DL_close(libdnssd);
+		DL_close(libdnssd);
 		libdnssd = NULL;
 	}
-	return rc;
 }
 
 #endif							/* OW_ZERO */

@@ -1,0 +1,238 @@
+/*
+$Id$
+OWFS -- One-Wire filesystem
+OWHTTPD -- One-Wire Web Server
+Written 2003 Paul H Alfille
+email: palfille@earthlink.net
+Released under the GPL
+See the header file: ow.h for full attribution
+1wire/iButton system from Dallas Semiconductor
+*/
+
+
+//#include <unistd.h>
+//#include <stdint.h>
+//#include <stdio.h>
+//#include <sys/types.h>
+//#include <sys/socket.h>
+//#include <netinet/in.h>
+
+#include <config.h>
+#include "owfs_config.h"
+
+#if OW_ZERO
+
+#include "ow_avahi.h"
+#include "ow_connection.h"
+
+/* Special functions that need to be linked in dynamically
+-- libavahi-client.so
+avahi_client_errno
+avahi_client_free
+avahi_client_new
+avahi_entry_group_add_service
+avahi_entry_group_commit
+avahi_entry_group_is_empty
+avahi_entry_group_new
+avahi_entry_group_reset
+--libavahi-common.so
+avahi_simple_poll_free
+avahi_simple_poll_get
+avahi_simple_poll_loop
+avahi_simple_poll_new
+avahi_simple_poll_quit
+avahi_strerror
+*/
+
+
+struct announce_avahi_struct {
+	AvahiEntryGroup *group ;
+	AvahiSimplePoll *poll ;
+	AvahiClient *client ;
+	struct connection_out *out ;
+} ;
+
+static void entry_group_callback(AvahiEntryGroup *group, AvahiEntryGroupState state, AVAHI_GCC_UNUSED void * v) ;
+static void create_services(struct announce_avahi_struct * aas) ;
+static void client_callback(AvahiClient *client, AvahiClientState state, AVAHI_GCC_UNUSED void * v) ;
+	
+static void entry_group_callback(AvahiEntryGroup *group, AvahiEntryGroupState state, AVAHI_GCC_UNUSED void * v)
+{
+	struct announce_avahi_struct * aas = v ;
+	
+	aas->group = group ;
+	/* Called whenever the entry group state changes */
+	switch (state) {
+		case AVAHI_ENTRY_GROUP_ESTABLISHED :
+			/* The entry group has been established successfully */
+			break;
+
+		case AVAHI_ENTRY_GROUP_COLLISION :
+			// Shouldn't happen since we put the pid in the service name
+			LEVEL_DEBUG("Avahi announce: inexplicable service name collison\n");
+			avahi_simple_poll_quit(aas->poll);
+			break;
+
+		case AVAHI_ENTRY_GROUP_FAILURE :
+			LEVEL_DEBUG("Avahi announce: group failure: %s\n", avahi_strerror(avahi_client_errno(aas->client)));
+			avahi_simple_poll_quit(aas->poll);
+			break;
+
+		case AVAHI_ENTRY_GROUP_UNCOMMITED:
+		case AVAHI_ENTRY_GROUP_REGISTERING:
+			break ;
+	}
+}
+
+static void create_services(struct announce_avahi_struct * aas)
+{
+	/* If this is the first time we're called, let's create a new
+	* entry group if necessary */
+	if (aas->group==NULL) {
+		aas->group = avahi_entry_group_new(aas->client, entry_group_callback, aas) ;
+		if ( aas->group==NULL) {
+			LEVEL_DEBUG("Avahi announce: avahi_entry_group_new() failed: %s\n", avahi_strerror(avahi_client_errno(aas->client)));
+			avahi_simple_poll_quit(aas->poll);
+			return ;
+		}
+	}
+	    
+	/* If the group is empty (either because it was just created, or
+	* because it was reset previously, add our entries.  */
+	if (avahi_entry_group_is_empty(aas->group)) {
+		struct sockaddr sa;
+		//socklen_t sl = sizeof(sa);
+		socklen_t sl = 128;
+		int ret1 = 0 ;
+		int ret2 = 0 ;
+		uint16_t port ;
+		char * service_name ;
+		char name[63] ;
+		if (getsockname(aas->out->file_descriptor, &sa, &sl)) {
+			LEVEL_CONNECT("Avahi announce: Could not get port number of device.\n");
+			avahi_simple_poll_quit(aas->poll);
+			return;
+		}
+		port = ntohs(((struct sockaddr_in *) (&sa))->sin_port) ;
+		/* Add the service */
+		switch (Globals.opt) {
+			case opt_httpd:
+				service_name = (Globals.announce_name) ? Globals.announce_name : "OWFS (1-wire) Web" ;
+				snprintf(name,62,"%s %d",service_name,(int)port);
+				ret1 = avahi_entry_group_add_service( aas->group, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC, 0, name,"_http._tcp", NULL, NULL, port, NULL) ;
+				ret2 = avahi_entry_group_add_service( aas->group, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC, 0, name,"_owhttpd._tcp", NULL, NULL, port, NULL) ;
+				break ;
+			case opt_server:
+				service_name = (Globals.announce_name) ? Globals.announce_name : "OWFS (1-wire) Server" ;
+				snprintf(name,62,"%s %d",service_name,(int)port);
+				ret1 = avahi_entry_group_add_service( aas->group, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC, 0, name,"_owserver._tcp", NULL, NULL, port, NULL) ;
+				break;
+			case opt_ftpd:
+				service_name = (Globals.announce_name) ? Globals.announce_name : "OWFS (1-wire) FTP" ;
+				snprintf(name,62,"%s %d",service_name,(int)port);
+				ret1 = avahi_entry_group_add_service( aas->group, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC, 0, name,"_ftp._tcp", NULL, NULL, port, NULL) ;
+				break;
+			default:
+				break ;
+		}
+		if ( ret1 < 0 || ret2 < 0 ) {
+			LEVEL_DEBUG("Avahi announce: Failed to add a service: %s or %s\n", avahi_strerror(ret1), avahi_strerror(ret2));
+			avahi_simple_poll_quit(aas->poll);
+			return;
+		}
+
+		/* Tell the server to register the service */
+		ret1 = avahi_entry_group_commit(aas->group) ;
+		if ( ret1 < 0 ) {
+			LEVEL_DEBUG("Failed to commit entry group: %s\n", avahi_strerror(ret1));
+			avahi_simple_poll_quit(aas->poll);
+			return;
+		}
+	}
+}
+
+static void client_callback(AvahiClient *client, AvahiClientState state, AVAHI_GCC_UNUSED void * v)
+{
+	struct announce_avahi_struct * aas = v ;
+	if ( client==NULL ) {
+		LEVEL_DEBUG("Avahi announce: null client\n") ;
+		avahi_simple_poll_quit(aas->poll);
+		return ;
+	}
+	
+	//Set this link here so called routines can use it
+	aas->client = client ;
+
+	/* Called whenever the client or server state changes */
+	switch (state) {
+		case AVAHI_CLIENT_S_RUNNING:
+
+			/* The server has startup successfully and registered its host
+			* name on the network, so it's time to create our services */
+		create_services(aas);
+		break;
+
+		case AVAHI_CLIENT_FAILURE:
+
+			LEVEL_DEBUG( "Avahi announce: Client failure: %s\n", avahi_strerror(avahi_client_errno(client)));
+			avahi_simple_poll_quit(aas->poll);
+
+			break;
+
+		case AVAHI_CLIENT_S_COLLISION:
+			/* Let's drop our registered services. When the server is back
+			* in AVAHI_SERVER_RUNNING state we will register them
+			* again with the new host name. */
+
+		case AVAHI_CLIENT_S_REGISTERING:
+			/* The server records are now being established. This
+			* might be caused by a host name change. We need to wait
+			* for our own records to register until the host name is
+			* properly esatblished. */
+			if (aas->group != NULL) {
+				avahi_entry_group_reset(aas->group);
+			}
+
+			break;
+
+		case AVAHI_CLIENT_CONNECTING:
+			break ;
+	}
+}
+
+// Should be called in it's own thread
+void *OW_Avahi_Announce( void * v )
+{
+	struct connection_out *out = v ;
+	struct announce_avahi_struct aas = {
+		.group = NULL,
+		.poll = NULL,
+		.client = NULL,
+		.out = out ,
+	} ;
+	pthread_detach(pthread_self());
+	
+	aas.poll = avahi_simple_poll_new() ;
+	if ( aas.poll != NULL ) {
+		int error ;
+		/* Allocate a new client */
+		aas.client = avahi_client_new(avahi_simple_poll_get(aas.poll), 0, client_callback, (void *)(&aas), &error);
+		if (aas.client!=NULL) {
+			/* Run the main loop */
+			avahi_simple_poll_loop(aas.poll);
+			// done
+			avahi_client_free(aas.client);
+		} else {
+			LEVEL_CONNECT("Avahi announce: Failed to create client: %s\n", avahi_strerror(error)) ;
+		}
+			
+		avahi_simple_poll_free(aas.poll);
+	} else {
+		LEVEL_CONNECT("Avahi announce: Failed to create simple poll object.\n");
+	}
+
+	pthread_exit(NULL);
+	return NULL ;
+}
+
+#endif /* OW_ZERO */

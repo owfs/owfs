@@ -192,6 +192,7 @@ $Id$
 /* Zeroconf / Bonjour */
 #include "ow_dl.h"
 #include "ow_dnssd.h"
+#include "ow_avahi.h"
 #endif							/* OW_ZERO */
 
 /* Include some compatibility functions */
