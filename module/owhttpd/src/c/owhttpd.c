@@ -130,7 +130,7 @@ int main(int argc, char *argv[])
 		} else {
 			LEVEL_CONNECT("%s will try default port of 4304\n", argv[0]) ;
 		}
-		OW_ArgServer("0");		// make an ephemeral assignment
+		OW_ArgServer(NULL);		// make an ephemeral assignment
 	}
 
 	set_signal_handlers(exit_handler);

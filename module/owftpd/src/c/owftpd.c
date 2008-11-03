@@ -37,11 +37,7 @@ int main(int argc, char *argv[])
 
 	/* FTP on default port? */
 	if (count_outbound_connections == 0) {
-		if ( Globals.announce_off || Globals.zero==zero_none ) {
-			OW_ArgServer("0.0.0.0:21");	// well known port
-		} else {
-			OW_ArgServer("0.0.0.0:0");	// ephemeral port
-		}
+		OW_ArgServer(NULL);	// default or ephemeral port
 	}
 
 	/* non-option args are adapters */

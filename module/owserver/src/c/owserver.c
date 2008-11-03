@@ -126,10 +126,6 @@ int main(int argc, char **argv)
 	}
 
 	if (count_outbound_connections == 0) {
-		if (Globals.announce_off) {
-			LEVEL_DEFAULT("No TCP port specified (-p)\n%s -h for help\n", argv[0]);
-			ow_exit(1);
-		}
 		OW_ArgServer(NULL);		// make the default assignment
 	}
 

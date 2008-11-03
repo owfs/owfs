@@ -20,11 +20,11 @@ $Id$
 #include "ow_connection.h"
 
 /* Prototypes */
-static int ServerAddr(struct connection_out *out);
+static int ServerAddr(const char * default_port, struct connection_out *out);
 static int ServerListen(struct connection_out *out);
 
 
-static int ServerAddr(struct connection_out *out)
+static int ServerAddr(const char * default_port, struct connection_out *out)
 {
 	struct addrinfo hint;
 	int ret;
@@ -32,11 +32,11 @@ static int ServerAddr(struct connection_out *out)
 
 	if (out->name == NULL) {	// use defaults
 		out->host = strdup("0.0.0.0");
-		out->service = strdup(DEFAULT_PORT);
+		out->service = strdup(default_port);
 	} else if ((p = strrchr(out->name, ':')) == NULL) {
 		if (strchr(out->name, '.')) {	//probably an address
 			out->host = strdup(out->name);
-			out->service = strdup(DEFAULT_PORT);
+			out->service = strdup(default_port);
 		} else {				// assume a port
 			out->host = strdup("0.0.0.0");
 			out->service = strdup(out->name);
@@ -69,7 +69,7 @@ static int ServerListen(struct connection_out *out)
 {
 	if (out->ai == NULL) {
 		LEVEL_CONNECT("Server address not yet parsed [%s]\n", SAFESTRING(out->name));
-		return -1;
+		return -EIO;
 	}
 
 	if (out->ai_ok == NULL) {
@@ -85,16 +85,17 @@ static int ServerListen(struct connection_out *out)
 			ERROR_CONNECT("ServerListen: Socket problem [%s]\n", SAFESTRING(out->name));
 		} else if (setsockopt(file_descriptor, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof(on)) != 0) {
 			ERROR_CONNECT("ServerListen: SetSockOpt problem [%s]\n", SAFESTRING(out->name));
-			close(file_descriptor);
 		} else if (bind(file_descriptor, out->ai_ok->ai_addr, out->ai_ok->ai_addrlen) != 0) {
+			// this is where the default linking to a busy port shows up
 			ERROR_CONNECT("ServerListen: Bind problem [%s]\n", SAFESTRING(out->name));
-			close(file_descriptor);
 		} else if (listen(file_descriptor, 10) != 0) {
 			ERROR_CONNECT("ServerListen: Listen problem [%s]\n", SAFESTRING(out->name));
-			close(file_descriptor);
 		} else {
 			out->file_descriptor = file_descriptor;
 			return file_descriptor;
+		}
+		if ( file_descriptor >= 0 ) {
+			close( file_descriptor );
 		}
 	} while ((out->ai_ok = out->ai_ok->ai_next));
 	LEVEL_CONNECT("ServerListen: No good listen network sockets [%s]\n", SAFESTRING(out->name));
@@ -103,7 +104,36 @@ static int ServerListen(struct connection_out *out)
 
 int ServerOutSetup(struct connection_out *out)
 {
-	return ServerAddr(out) || (ServerListen(out) < 0);
+	if ( out->name == NULL ) { // NULL name means default attempt
+		char * default_port ;
+		// First time through, try default port
+		switch (Globals.opt) {
+			case opt_server:
+				default_port = "4304" ;
+				break ;
+			case opt_ftpd:
+				default_port = "21" ;
+				break ;
+			default:
+				default_port = NULL ;
+				break ;
+		}
+		if ( default_port != NULL ) { // one of the 2 cases above 
+			if ( ServerAddr( default_port, out ) < 0 ) {
+				return -1 ;
+			}
+			if ( ServerListen(out)  >= 0 ) {
+				return 0 ;
+			}
+			ERROR_CONNECT("Default port not successful. Try an ephemeral port\n");
+		}
+	}
+
+	// second time through, use ephemeral port
+	if ( ServerAddr( "0", out ) < 0 ) {
+		return -1 ;
+	}
+	return (ServerListen(out)<0) ? -1 : 0 ;
 }
 
 /*
@@ -296,8 +326,7 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 	} else if (count_outbound_connections > 1) {
 		LEVEL_CONNECT("More than one output device specified (%d). Library compiled non-threaded. Exiting.\n", count_inbound_connections);
 		Exit(1);
-	} else if (ServerAddr(head_outbound_list)
-			   || (ServerListen(head_outbound_list) < 0)) {
+	} else if (ServerOutSetup(head_outbound_list)) {
 		LEVEL_CONNECT("Cannot set up head_outbound_list [%s] -- will exit\n", SAFESTRING(head_outbound_list->name));
 		Exit(1);
 	} else {
