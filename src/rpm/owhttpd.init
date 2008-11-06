@@ -71,7 +71,7 @@ case "$1" in
 	start
 	;;
   condrestart)
-	if /sbin/pidof $owhttpd >/dev/null ; then
+	if [ -f ${lockfile} ]; then
 		stop
 		start
 	fi

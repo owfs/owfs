@@ -94,7 +94,7 @@ case "$1" in
 	start
 	;;
   condrestart)
-	if /sbin/pidof $owfs >/dev/null ; then
+	if [ -f ${lockfile} ]; then
 		stop
 		start
 	fi

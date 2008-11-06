@@ -65,14 +65,14 @@ case "$1" in
 	stop
 	;;
   status)
-	status $owftpd
+	status $owserver
 	;;
   restart)
 	stop
 	start
 	;;
   condrestart)
-	if /sbin/pidof $owserver >/dev/null ; then
+	if [ -f ${lockfile} ]; then
 		stop
 		start
 	fi
