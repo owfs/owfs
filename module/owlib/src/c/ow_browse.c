@@ -29,6 +29,7 @@ static struct connection_in *FindIn(struct BrowseStruct *bs);
 static struct BrowseStruct *BSCreate(const char *name, const char *type, const char *domain);
 static void BSKill(struct BrowseStruct *bs);
 static void * OW_Browse_Bonjour(void * v) ;
+static void ResolveWait( DNSServiceRef sref ) ;
 static void ResolveBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 						DNSServiceErrorType e, const char *n, const char *host, uint16_t port, uint16_t tl, const char *t, void *c);
 static void BrowseBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
@@ -160,60 +161,56 @@ static struct connection_in *FindIn(struct BrowseStruct *bs)
 	}
 	return now;
 }
+// Wait for a resolve, then return. Timeout after 2 minutes
+static void ResolveWait( DNSServiceRef sref )
+{
+	int file_descriptor = DNSServiceRefSockFD(sref);
+
+	if (file_descriptor >= 0) {
+		while (1) {
+			fd_set readfd;
+			struct timeval tv = { 120, 0 };
+			
+			FD_ZERO(&readfd);
+			FD_SET(file_descriptor, &readfd);
+			if (select(file_descriptor + 1, &readfd, NULL, NULL, &tv) > 0) {
+				if (FD_ISSET(file_descriptor, &readfd)) {
+					DNSServiceProcessResult(sref);
+				}
+			} else if (errno == EINTR) {
+				continue;
+			} else {
+				ERROR_CONNECT("Resolve timeout error\n");
+			}
+			break;
+		}
+	}
+}
 
 /* Sent back from Bounjour -- arbitrarily use it to set the Ref for Deallocation */
-static void BrowseBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
-			DNSServiceErrorType e, const char *name, const char *type, const char *domain, void *context)
+static void BrowseBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i, DNSServiceErrorType e, const char *name, const char *type, const char *domain, void *context)
 {
 	(void) context;
+	struct BrowseStruct * bs;
 	//printf("BrowseBack ref=%ld flags=%d index=%d, error=%d name=%s type=%s domain=%s\n",(long int)s,f,i,e,name,type,domain) ;
 	LEVEL_DETAIL("BrowseBack ref=%ld flags=%d index=%d, error=%d name=%s type=%s domain=%s\n", (long int) s, f, i, e, name, type, domain);
 
-	if (e == kDNSServiceErr_NoError) {
-		struct BrowseStruct *bs = BSCreate(name, type, domain);
-
-		if (bs) {
-			struct connection_in *in = FindIn(bs);
-
-			if (in) {
-				FreeClientAddr(in);
-				BUSUNLOCKIN(in);
-			}
-			if (f & kDNSServiceFlagsAdd) {	// Add
-				DNSServiceRef sr;
-
-				if (DNSServiceResolve(&sr, 0, 0, name, type, domain, ResolveBack, bs) == kDNSServiceErr_NoError) {
-					int file_descriptor = DNSServiceRefSockFD(sr);
-					DNSServiceErrorType err = kDNSServiceErr_Unknown;
-					if (file_descriptor >= 0) {
-						while (1) {
-							fd_set readfd;
-							struct timeval tv = { 120, 0 };
-
-							FD_ZERO(&readfd);
-							FD_SET(file_descriptor, &readfd);
-							if (select(file_descriptor + 1, &readfd, NULL, NULL, &tv) > 0) {
-								if (FD_ISSET(file_descriptor, &readfd)) {
-									err = DNSServiceProcessResult(sr);
-								}
-							} else if (errno == EINTR) {
-								continue;
-							} else {
-								ERROR_CONNECT("Resolve timeout error for %s\n", name);
-							}
-							break;
-						}
-					}
-					DNSServiceRefDeallocate(sr);
-					if (err == kDNSServiceErr_NoError) {
-						return;
-					}
-				}
-		}
-		BSKill(bs);
+	if (e != kDNSServiceErr_NoError) {
+		return ;
 	}
-}
-return;
+
+	bs = BSCreate( name, type, domain ) ;
+	
+	if (f & kDNSServiceFlagsAdd) {	// Add
+		DNSServiceRef sr;
+
+		if (DNSServiceResolve(&sr, 0, 0, name, type, domain, ResolveBack, (void *)bs) == kDNSServiceErr_NoError) {
+			ResolveWait(sr) ;
+			DNSServiceRefDeallocate(sr);
+		} else {
+			BSKill(bs) ;
+		}
+	}
 }
 			
 // Called in a thread			

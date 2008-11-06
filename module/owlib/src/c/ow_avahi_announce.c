@@ -24,6 +24,9 @@ See the header file: ow.h for full attribution
 
 #include "ow_avahi.h"
 #include "ow_connection.h"
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 /* Special functions that need to be linked in dynamically
 -- libavahi-client.so
@@ -118,18 +121,18 @@ static void create_services(struct announce_avahi_struct * aas)
 		switch (Globals.opt) {
 			case opt_httpd:
 				service_name = (Globals.announce_name) ? Globals.announce_name : "OWFS (1-wire) Web" ;
-				snprintf(name,62,"%s %d",service_name,(int)port);
+				snprintf(name,62,"%s <%d>",service_name,(int)port);
 				ret1 = avahi_entry_group_add_service( aas->group, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC, 0, name,"_http._tcp", NULL, NULL, port, NULL) ;
 				ret2 = avahi_entry_group_add_service( aas->group, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC, 0, name,"_owhttpd._tcp", NULL, NULL, port, NULL) ;
 				break ;
 			case opt_server:
 				service_name = (Globals.announce_name) ? Globals.announce_name : "OWFS (1-wire) Server" ;
-				snprintf(name,62,"%s %d",service_name,(int)port);
+				snprintf(name,62,"%s <%d>",service_name,(int)port);
 				ret1 = avahi_entry_group_add_service( aas->group, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC, 0, name,"_owserver._tcp", NULL, NULL, port, NULL) ;
 				break;
 			case opt_ftpd:
 				service_name = (Globals.announce_name) ? Globals.announce_name : "OWFS (1-wire) FTP" ;
-				snprintf(name,62,"%s %d",service_name,(int)port);
+				snprintf(name,62,"%s <%d>",service_name,(int)port);
 				ret1 = avahi_entry_group_add_service( aas->group, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC, 0, name,"_ftp._tcp", NULL, NULL, port, NULL) ;
 				break;
 			default:

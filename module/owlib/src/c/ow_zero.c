@@ -15,6 +15,9 @@ $Id$
 #if OW_ZERO
 
 #include "ow_connection.h"
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 /* Sent back from Bounjour -- arbitrarily use it to set the Ref for Deallocation */
 static void RegisterBack(DNSServiceRef s, DNSServiceFlags f,
@@ -61,24 +64,24 @@ static void *Announce(void *v)
 		return NULL;
 	}
 	port = ntohs(((struct sockaddr_in *) (&sa))->sin_port) ;
-
+	
 	/* Add the service */
 	switch (Globals.opt) {
 		case opt_httpd:
 			service_name = (Globals.announce_name) ? Globals.announce_name : "OWFS (1-wire) Web" ;
-			snprintf(name,62,"%s %d",service_name,(int)port);
+			snprintf(name,62,"%s <%d>",service_name,(int)port);
 			err = DNSServiceRegister(&sref, 0, 0, name,"_http._tcp", NULL, NULL, port, 0, NULL, RegisterBack, &(out->sref0)) ;
 			Announce_Post_Register(sref, err) ;
 			err = DNSServiceRegister(&sref, 0, 0, name,"_owhttpd._tcp", NULL, NULL, port, 0, NULL, RegisterBack, &(out->sref0)) ;
 			break ;
 		case opt_server:
 			service_name = (Globals.announce_name) ? Globals.announce_name : "OWFS (1-wire) Server" ;
-			snprintf(name,62,"%s %d",service_name,(int)port);
+			snprintf(name,62,"%s <%d>",service_name,(int)port);
 			err = DNSServiceRegister(&sref, 0, 0, name,"_owserver._tcp", NULL, NULL, port, 0, NULL, RegisterBack, &(out->sref0)) ;
 			break;
 		case opt_ftpd:
 			service_name = (Globals.announce_name) ? Globals.announce_name : "OWFS (1-wire) FTP" ;
-			snprintf(name,62,"%s %d",service_name,(int)port);
+			snprintf(name,62,"%s <%d>",service_name,(int)port);
 			err = DNSServiceRegister(&sref, 0, 0, name,"_owftp._tcp", NULL, NULL, port, 0, NULL, RegisterBack, &(out->sref0)) ;
 			break;
 		default:
