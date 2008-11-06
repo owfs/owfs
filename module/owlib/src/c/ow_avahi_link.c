@@ -84,6 +84,11 @@ int OW_Load_avahi_library(void)
 	DNSfunction_link(avahi_client,avahi_entry_group_new) ;
 	DNSfunction_link(avahi_client,avahi_entry_group_reset) ;
 
+	DNSfunction_link(avahi_client,avahi_service_resolver_free) ;
+	DNSfunction_link(avahi_client,avahi_service_resolver_new) ;
+	DNSfunction_link(avahi_client,avahi_service_browser_free) ;
+	DNSfunction_link(avahi_client,avahi_service_browser_new) ;
+
 	if (
 		(avahi_common=DL_open("libavahi-common.so", RTLD_LAZY)) == NULL
 		&&

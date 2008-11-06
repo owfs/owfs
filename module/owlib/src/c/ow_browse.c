@@ -245,7 +245,7 @@ void OW_Browse(void)
 	int err ;
 	
 	if ( Globals.zero == zero_avahi ) {
-		err = pthread_create(&thread, NULL, OW_Browse_Bonjour, NULL);
+		err = pthread_create(&thread, NULL, OW_Avahi_Browse, NULL);
 		if (err) {
 			LEVEL_CONNECT("Avahi Browse thread error %d.\n", err);
 		}
@@ -272,7 +272,7 @@ void OW_Browse(void)
 
 void OW_Browse(void)
 {
-	LEVEL_CONNECT("OWFS is compiled without Avahi or Bonjour support.\n");
+	LEVEL_CONNECT("OWFS was compiled without Avahi or Bonjour support.\n");
 }
 
 #endif							/* OW_ZERO */

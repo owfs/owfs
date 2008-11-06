@@ -275,9 +275,129 @@ struct AvahiClient {
 	void * record_browsers;
 };
 
+/* Browsing-specific */
+typedef enum {
+	AVAHI_BROWSER_NEW,
+	AVAHI_BROWSER_REMOVE,
+	AVAHI_BROWSER_CACHE_EXHAUSTED,
+	AVAHI_BROWSER_ALL_FOR_NOW,
+	AVAHI_BROWSER_FAILURE
+} AvahiBrowserEvent;
+
+/** Type of callback event when resolving */
+typedef enum {
+	AVAHI_RESOLVER_FOUND,
+	AVAHI_RESOLVER_FAILURE
+} AvahiResolverEvent;
+
+typedef enum {
+	AVAHI_LOOKUP_RESULT_CACHED = 1,
+	AVAHI_LOOKUP_RESULT_WIDE_AREA = 2,
+	AVAHI_LOOKUP_RESULT_MULTICAST = 4,
+	AVAHI_LOOKUP_RESULT_LOCAL = 8,
+	AVAHI_LOOKUP_RESULT_OUR_OWN = 16,
+	AVAHI_LOOKUP_RESULT_STATIC = 32
+} AvahiLookupResultFlags;
+
+struct AvahiServiceBrowser ;
+typedef struct AvahiServiceBrowser AvahiServiceBrowser;
+
+typedef void (*AvahiServiceBrowserCallback) (
+	AvahiServiceBrowser *b,
+	AvahiIfIndex interface,
+	AvahiProtocol protocol,
+	AvahiBrowserEvent event,
+	const char *name,
+	const char *type,
+	const char *domain,
+	AvahiLookupResultFlags flags,
+	void *userdata);
+
+struct AvahiServiceBrowser {
+	char *path;
+	AvahiClient *client;
+	AvahiServiceBrowserCallback callback;
+	void *userdata;
+	AvahiServiceBrowser *service_browsers_next;
+	AvahiServiceBrowser *service_browsers_prev ;
+	
+	char *type, *domain;
+	AvahiIfIndex interface;
+	AvahiProtocol protocol;
+};
+
+typedef struct AvahiServiceResolver AvahiServiceResolver;
+
+/** An IPv4 address */
+typedef struct AvahiIPv4Address {
+	uint32_t address; /**< Address data in network byte order. */
+} AvahiIPv4Address;
+
+/** An IPv6 address */
+typedef struct AvahiIPv6Address {
+	uint8_t address[16]; /**< Address data */
+} AvahiIPv6Address;
+
+/** Protocol (address family) independent address structure */
+typedef struct AvahiAddress {
+	AvahiProtocol proto; /**< Address family */
+	union {
+		AvahiIPv6Address ipv6;  /**< Address when IPv6 */
+		AvahiIPv4Address ipv4;  /**< Address when IPv4 */
+		uint8_t data[1];        /**< Type-independent data field */
+	} data;
+} AvahiAddress;
+
+AvahiServiceBrowser* (*avahi_service_browser_new) (
+	AvahiClient *client,
+	AvahiIfIndex interface,
+	AvahiProtocol protocol,
+	const char *type,
+	const char *domain,
+	int flags,
+	AvahiServiceBrowserCallback callback,
+	void *userdata);
+
+/** Cleans up and frees an AvahiServiceBrowser object */
+int (*avahi_service_browser_free) (AvahiServiceBrowser *);
+
+int (*avahi_service_resolver_free)(AvahiServiceResolver *r);
+
+typedef void (*AvahiServiceResolverCallback) (
+	AvahiServiceResolver *r,
+	AvahiIfIndex interface,
+	AvahiProtocol protocol,
+	AvahiResolverEvent event,
+	const char *name,
+	const char *type,
+	const char *domain,
+	const char *host_name,
+	const AvahiAddress *a,
+	uint16_t port,
+	void *txt,
+	AvahiLookupResultFlags flags,
+	void *userdata);
+					      
+AvahiServiceResolver * (*avahi_service_resolver_new)(
+	AvahiClient *client,
+	AvahiIfIndex interface,
+	AvahiProtocol protocol,
+	const char *name,
+	const char *type,
+	const char *domain,
+	AvahiProtocol aprotocol,
+	AvahiLookupResultFlags flags,
+	AvahiServiceResolverCallback callback,
+	void *userdata);
+						  
+
+/**********************************************/
+/* Prototypes */
+
 struct connection_out ;
 int OW_Load_avahi_library(void) ;
 void OW_Free_avahi_library(void) ;
 void *OW_Avahi_Announce( void * v ) ;
+void *OW_Avahi_Browse(void * v) ;
 
 #endif 	/* OW_AVAHI_H */
