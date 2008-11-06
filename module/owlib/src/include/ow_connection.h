@@ -277,6 +277,11 @@ struct connin_link {
 	struct dirblob alarm;		/* alarm directory */
 };
 
+struct connin_w1 {
+	// bus master name kept in name
+	// netlink fd kept in file_descriptor
+};
+
 //enum server_type { srv_unknown, srv_direct, srv_client, src_
 /* Network connection structure */
 enum bus_mode {
@@ -296,6 +301,7 @@ enum bus_mode {
 	bus_link,
 	bus_elink,
 	bus_etherweather,
+	bus_w1,
 };
 
 enum adapter_type {
@@ -319,6 +325,7 @@ enum adapter_type {
 	adapter_EtherWeather,
 	adapter_fake,
 	adapter_tester,
+	adapter_w1,
 };
 
 enum e_reconnect {
@@ -412,6 +419,7 @@ struct connection_in {
 		struct connin_fake tester;
 		struct connin_ha7 ha7;
 		struct connin_etherweather etherweather;
+		struct connin_w1 w1;
 	} connin;
 };
 extern struct connection_in *head_inbound_list;
