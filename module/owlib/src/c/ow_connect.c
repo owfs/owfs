@@ -127,78 +127,118 @@ struct connection_side *NewSide(void)
 	return now;
 }
 
-void FreeIn(void)
+void FreeInAll( void )
 {
-	struct connection_in *next = head_inbound_list;
-	struct connection_in *now;
-
-	head_inbound_list = NULL;
-	count_inbound_connections = 0;
-	while (next) {
-		now = next;
-		next = now->next;
-		LEVEL_DEBUG("FreeIn: busmode=%d\n", get_busmode(now));
-#if OW_MT
-		pthread_mutex_destroy(&(now->bus_mutex));
-		pthread_mutex_destroy(&(now->dev_mutex));
-		if (now->dev_db) {
-			tdestroy(now->dev_db, free);
-		}
-		now->dev_db = NULL;
-#endif							/* OW_MT */
-		switch (get_busmode(now)) {
-		case bus_zero:
-			if (now->connin.tcp.type) {
-				free(now->connin.tcp.type);
-			}
-			if (now->connin.tcp.domain) {
-				free(now->connin.tcp.domain);
-			}
-			if (now->connin.tcp.fqdn) {
-				free(now->connin.tcp.fqdn);
-			}
-			// fall through
-		case bus_server:
-			LEVEL_DEBUG("FreeClientAddr\n");
-			FreeClientAddr(now);
-			break;
-		case bus_link:
-		case bus_serial:
-		case bus_passive:
-			COM_close(now);
-			break;
-		case bus_usb:
-#if OW_USB
-			DS9490_close(now);
-			now->name = NULL;	// rather than a static data string;
-#endif
-			break;
-		case bus_elink:
-		case bus_ha7net:
-		case bus_etherweather:
-			BUS_close(now);
-			break;
-		case bus_fake:
-			DirblobClear(&(now->connin.fake.db));
-			break;
-		case bus_tester:
-			DirblobClear(&(now->connin.tester.db));
-			break;
-		case bus_i2c:
-#if OW_MT
-			if (now->connin.i2c.index == 0) {
-				pthread_mutex_destroy(&(now->connin.i2c.i2c_mutex));
-			}
-#endif							/* OW_MT */
-		default:
-			break;
-		}
-		if (now->name) {
-			free(now->name);
-			now->name = NULL;
-		}
-		free(now);
+	struct connection_in * now ;
+	for ( now = head_inbound_list ; now != NULL ; now = now->next ) {
+		FreeIn(now) ;
 	}
+	head_inbound_list = NULL ;
+}
+
+// Free the important parts of a connection_in structure
+// unlinking needs to be done elsewhere
+// Then free structure itself
+void FreeIn(struct connection_in * now)
+{
+
+	LEVEL_DEBUG("FreeIn: busmode=%d\n", get_busmode(now));
+#if OW_MT
+	pthread_mutex_trylock(&(now->bus_mutex));
+	pthread_mutex_unlock( &(now->bus_mutex));
+	pthread_mutex_destroy(&(now->bus_mutex));
+
+	pthread_mutex_trylock(&(now->dev_mutex));
+	pthread_mutex_unlock( &(now->dev_mutex));
+	pthread_mutex_destroy(&(now->dev_mutex));
+
+	if (now->dev_db) {
+		tdestroy(now->dev_db, free);
+	}
+	now->dev_db = NULL;
+#endif							/* OW_MT */
+	switch (get_busmode(now)) {
+	case bus_link:
+	case bus_serial:
+	case bus_passive:
+		COM_close(now);
+		break;
+	case bus_usb:
+#if OW_USB
+		DS9490_close(now);
+#endif
+		break;
+	case bus_zero:
+	case bus_server:
+		if (now->connin.tcp.host) {
+			free(now->connin.tcp.host);
+		}
+		if (now->connin.tcp.service) {
+			free(now->connin.tcp.service);
+		}
+		if (now->connin.tcp.type) {
+			free(now->connin.tcp.type);
+		}
+		if (now->connin.tcp.domain) {
+			free(now->connin.tcp.domain);
+		}
+		if (now->connin.tcp.name) {
+			free(now->connin.tcp.name);
+		}
+		LEVEL_DEBUG("FreeClientAddr\n");
+		FreeClientAddr(now);
+		break;
+	case bus_elink:
+	case bus_ha7net:
+	case bus_etherweather:
+		BUS_close(now);
+		break;
+	case bus_fake:
+		DirblobClear(&(now->connin.fake.db));
+		break;
+	case bus_tester:
+		DirblobClear(&(now->connin.tester.db));
+		break;
+	case bus_i2c:
+#if OW_MT
+		if (now->connin.i2c.index == 0) {
+			pthread_mutex_destroy(&(now->connin.i2c.i2c_mutex));
+		}
+#endif							/* OW_MT */
+	case bus_w1:
+	default:
+		break;
+	}
+	if (now->name) {
+		free(now->name);
+	}
+	free(now);
+}
+
+void RemoveIn( struct connection_in * removeIn )
+{
+	struct connection_in * now ;
+
+	if ( removeIn == NULL ) {
+		return ;
+	}
+
+	BUSLOCKIN(removeIn) ;
+	
+	CONNIN_WLOCK ;
+	if ( head_inbound_list == removeIn ) {
+		head_inbound_list = removeIn->next ;
+	} else {
+		for ( now = head_inbound_list ; now != NULL ; now = now->next ) {
+			if ( now->next == removeIn ) {
+				now->next = removeIn->next ;
+				break ;
+			}
+		}
+	}
+	CONNIN_WUNLOCK ;
+
+	FreeIn( removeIn ) ;
 }
 
 void FreeOut(void)

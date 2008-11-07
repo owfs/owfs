@@ -129,7 +129,6 @@ int ServerRead(struct one_wire_query *owq)
 	int connectfd;
 	int ret = 0;
 
-	//printf("ServerRead pn_file_entry->path=%s, size=%d, offset=%u\n",pn_file_entry->path,size,offset);
 	memset(&sm, 0, sizeof(struct server_msg));
 	memset(&cm, 0, sizeof(struct client_msg));
 	sm.type = msg_read;
@@ -243,6 +242,7 @@ int ServerWrite(struct one_wire_query *owq)
 int ServerDir(void (*dirfunc) (void *, const struct parsedname * const), void *v, const struct parsedname *pn_whole_directory, uint32_t * flags)
 {
 	int ret;
+
 	// Do we know this server doesn't support DIRALL?
 	if (pn_whole_directory->selected_connection->connin.tcp.no_dirall) {
 		return ServerDIR(dirfunc, v, pn_whole_directory, flags);

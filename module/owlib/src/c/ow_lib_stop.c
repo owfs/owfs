@@ -25,7 +25,7 @@ void LibStop(void)
 	Cache_Clear();
 #endif							/* OW_CACHE */
 	LEVEL_CALL("Closing input devices\n");
-	FreeIn();
+	FreeInAll();
 	LEVEL_CALL("Closing outout devices\n");
 	FreeOut();
 

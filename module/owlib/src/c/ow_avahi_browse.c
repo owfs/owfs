@@ -55,7 +55,6 @@ static void browse_callback(
 	AVAHI_GCC_UNUSED AvahiLookupResultFlags flags,
 	void* v) ;
 static void client_callback(AvahiClient *c, AvahiClientState state, void * v) ;
-void * OW_Avahi_Browse(void * v) ;
 
 static void resolve_callback(
 	AvahiServiceResolver *r,
@@ -73,6 +72,10 @@ static void resolve_callback(
 	void* v)
 {
 	struct browse_avahi_struct * bas = v;
+
+	(void) host_name ;
+	(void) txt ;
+	(void) flags ;
 	
 	/* Called whenever a service has been resolved successfully or timed out */
 	switch (event) {
@@ -96,7 +99,7 @@ static void AvahiBrowserNetName( const AvahiAddress *address, int port )
 		{
 			char name[INET_ADDRSTRLEN+1] ;
 			memset(name,0,sizeof(name)) ;
-			if ( inet_ntop( AF_INET, (void *)&(address->data.ipv4), name, sizeof(name)) != NULL ) {
+			if ( inet_ntop( AF_INET, (const void *)&(address->data.ipv4), name, sizeof(name)) != NULL ) {
 				LEVEL_DEBUG( "Address '%s' Port %d:\n", name, port);
 			}
 		}
@@ -105,13 +108,15 @@ static void AvahiBrowserNetName( const AvahiAddress *address, int port )
 		{
 			char name[INET6_ADDRSTRLEN+1] ;
 			memset(name,0,sizeof(name)) ;
-			if ( inet_ntop( AF_INET6, (void *)&(address->data.ipv6), name, sizeof(name)) != NULL ) {
+			if ( inet_ntop( AF_INET6, (const void *)&(address->data.ipv6), name, sizeof(name)) != NULL ) {
 				LEVEL_DEBUG( "Address '%s' Port %d:\n", name, port);
 			}
 			break ;
+		}
+		default:
+			LEVEL_DEBUG( "Unknown internet protocol\n");
+			break ;
 	}
-}
-
 }
 
 static void browse_callback(
@@ -127,6 +132,8 @@ static void browse_callback(
 {
 	
 	struct browse_avahi_struct * bas = v;
+	
+	bas->browser = b ;
 	
 	/* Called whenever a new services becomes available on the LAN or is removed from the LAN */
 	switch (event) {
@@ -177,6 +184,8 @@ void * OW_Avahi_Browse(void * v)
 	struct browse_avahi_struct bas ;
 	int error;
 	
+	(void) v ;
+
 	/* Allocate main loop object */
 	bas.poll = avahi_simple_poll_new() ;
 	if (bas.poll==NULL) {

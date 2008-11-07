@@ -253,7 +253,7 @@ struct connin_tcp {
 	struct addrinfo *ai_ok;
 	char *type;					// for zeroconf
 	char *domain;				// for zeroconf
-	char *fqdn;					// fully qualified domain name
+	char *name;					// zeroconf name
 	int no_dirall;				// flag that server doesn't support DIRALL
 };
 
@@ -494,7 +494,10 @@ void COM_break(const struct parsedname *pn);
 int COM_write( const char * data, size_t length, const struct parsedname * pn ) ;
 int COM_read( char * data, size_t length, const struct parsedname * pn ) ;
 
-void FreeIn(void);
+void FreeInAll(void);
+void FreeIn(struct connection_in * now);
+void RemoveIn( struct connection_in * remove ) ;
+
 void FreeOut(void);
 void FreeSide(void);
 void DelIn(struct connection_in *in);

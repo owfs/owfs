@@ -93,7 +93,7 @@ static void ResolveBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 			} else {
 				in->connin.tcp.type = strdup(bs->type);
 				in->connin.tcp.domain = strdup(bs->domain);
-				in->connin.tcp.fqdn = strdup(n);
+				in->connin.tcp.name = strdup(bs->name);
 			}
 			BUSUNLOCKIN(in);
 		}
