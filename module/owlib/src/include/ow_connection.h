@@ -424,6 +424,14 @@ struct connection_in {
 };
 extern struct connection_in *head_inbound_list;
 
+struct inbound_control {
+	int active ;
+	int next_index ;
+	struct connection_in * head ;
+	DIR * sys_w1 ;
+	int w1_netlink_fd ;
+} ;
+
 /* Network connection structure */
 struct connection_out {
 	struct connection_out *next;
