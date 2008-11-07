@@ -567,6 +567,9 @@ int BUS_select_and_sendback(const BYTE * data, BYTE * resp, const size_t len, co
 
 int TestConnection(const struct parsedname *pn);
 
+void ZeroAdd(const char * name, const char * type, const char * domain, const char * address, int port ) ;
+void ZeroDel(const char * name, const char * type, const char * domain ) ;
+
 #define STAT_ADD1_BUS( err, in )     STATLOCK; ++((in)->bus_stat[err]) ; STATUNLOCK
 
 #endif							/* OW_CONNECTION_H */
