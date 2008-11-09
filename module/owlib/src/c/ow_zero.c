@@ -69,22 +69,29 @@ static void *Announce(void *v)
 	switch (Globals.opt) {
 		case opt_httpd:
 			service_name = (Globals.announce_name) ? Globals.announce_name : "OWFS (1-wire) Web" ;
+			UCLIBCLOCK;
 			snprintf(name,62,"%s <%d>",service_name,(int)port);
+			UCLIBCUNLOCK;
 			err = DNSServiceRegister(&sref, 0, 0, name,"_http._tcp", NULL, NULL, port, 0, NULL, RegisterBack, &(out->sref0)) ;
 			Announce_Post_Register(sref, err) ;
 			err = DNSServiceRegister(&sref, 0, 0, name,"_owhttpd._tcp", NULL, NULL, port, 0, NULL, RegisterBack, &(out->sref0)) ;
 			break ;
 		case opt_server:
 			service_name = (Globals.announce_name) ? Globals.announce_name : "OWFS (1-wire) Server" ;
+			UCLIBCLOCK;
 			snprintf(name,62,"%s <%d>",service_name,(int)port);
+			UCLIBCUNLOCK;
 			err = DNSServiceRegister(&sref, 0, 0, name,"_owserver._tcp", NULL, NULL, port, 0, NULL, RegisterBack, &(out->sref0)) ;
 			break;
 		case opt_ftpd:
 			service_name = (Globals.announce_name) ? Globals.announce_name : "OWFS (1-wire) FTP" ;
+			UCLIBCLOCK;
 			snprintf(name,62,"%s <%d>",service_name,(int)port);
+			UCLIBCUNLOCK;
 			err = DNSServiceRegister(&sref, 0, 0, name,"_owftp._tcp", NULL, NULL, port, 0, NULL, RegisterBack, &(out->sref0)) ;
 			break;
 		default:
+			err = kDNSServiceErr_NoError ;
 			break ;
 	}
 		

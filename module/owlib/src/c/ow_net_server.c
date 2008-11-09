@@ -324,7 +324,7 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 		LEVEL_CONNECT("No output device (port) specified. Exiting.\n");
 		Exit(1);
 	} else if (count_outbound_connections > 1) {
-		LEVEL_CONNECT("More than one output device specified (%d). Library compiled non-threaded. Exiting.\n", count_inbound_connections);
+		LEVEL_CONNECT("More than one output device specified (%d). Library compiled non-threaded. Exiting.\n", count_outbound_connections);
 		Exit(1);
 	} else if (ServerOutSetup(head_outbound_list)) {
 		LEVEL_CONNECT("Cannot set up head_outbound_list [%s] -- will exit\n", SAFESTRING(head_outbound_list->name));

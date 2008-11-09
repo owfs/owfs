@@ -105,8 +105,10 @@ static int Get_HA7_response( struct addrinfo *now, char * name )
 		return 1 ;
 	}
 
+	UCLIBCLOCK ;
 	snprintf(name,INET_ADDRSTRLEN+20,"%s:%d",inet_ntoa(from.sin_addr),ntohs(ha7_response.port));
-
+	UCLIBCUNLOCK ;
+	
 	return 0 ;
 }
 
@@ -132,7 +134,10 @@ int FS_FindHA7(void)
 			continue ;
 		}
 		
-		if ((in = NewIn(NULL)) == NULL) {
+		CONNIN_WLOCK ;
+		in = NewIn(NULL) ;
+		CONNIN_WUNLOCK ;
+		if (in == NULL) {
 			continue;
 		}
 

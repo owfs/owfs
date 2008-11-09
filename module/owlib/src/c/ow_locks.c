@@ -80,7 +80,7 @@ void LockSetup(void)
 	my_rwlock_init(&Mutex.lib);
 	my_rwlock_init(&Mutex.cache);
 	my_rwlock_init(&Mutex.store);
-	my_rwlock_init(&Mutex.connin);
+	my_rwlock_init(&Inbound_Control.lock);
 #ifdef __UCLIBC__
 	pthread_mutex_init(&Mutex.uclibc_mutex, Mutex.pmattr);
 #endif							/* __UCLIBC__ */
@@ -110,12 +110,11 @@ static int dev_compare(const void *a, const void *b)
 
 /* Grabs a device slot, either one already matching, or an empty one */
 /* called per-adapter */
-int LockGet(const struct parsedname *pn)
+int LockGet(struct parsedname *pn)
 {
 #if OW_MT
 	struct devlock *dlock;
 	struct dev_opaque *opaque;
-	int inindex;
 
 	//printf("LockGet() pn->path=%s\n", pn->path);
 	if (pn->selected_device == DeviceSimultaneous) {
@@ -132,9 +131,8 @@ int LockGet(const struct parsedname *pn)
 			return -ENOTSUP;
 		}
 	}
-	inindex = pn->selected_connection->index;	// do this after testing pn->selected_device since pn->selected_connection is perhaps null
 
-	pn->lock[inindex] = NULL;
+	pn->lock = NULL;
 	/* Need locking? */
 	switch (pn->selected_filetype->format) {
 	case ft_directory:
@@ -159,7 +157,7 @@ int LockGet(const struct parsedname *pn)
 	memcpy(dlock->sn, pn->sn, 8);
 
 	DEVLOCK(pn);
-	/* in->dev_db points to the root of a tree of devices that are using this device */
+	/* in->dev_db points to the root of a tree of queries that are using this device */
 	if ((opaque = tsearch(dlock, &(pn->selected_connection->dev_db), dev_compare)) == NULL) {	// unfound and uncreatable
 		DEVUNLOCK(pn);
 		free(dlock);
@@ -169,13 +167,13 @@ int LockGet(const struct parsedname *pn)
 		pthread_mutex_init(&(dlock->lock), Mutex.pmattr);	// create a mutex
 		pthread_mutex_lock(&(dlock->lock));	// and set it
 		DEVUNLOCK(pn);
-		pn->lock[inindex] = dlock;
+		pn->lock = dlock;
 	} else {					// existing device slot
 		++(opaque->key->users);
 		DEVUNLOCK(pn);
 		free(dlock);
 		pthread_mutex_lock(&(opaque->key->lock));
-		pn->lock[inindex] = opaque->key;
+		pn->lock = opaque->key;
 	}
 #else							/* OW_MT */
 	(void) pn;					// suppress compiler warning in the trivial case.
@@ -183,30 +181,28 @@ int LockGet(const struct parsedname *pn)
 	return 0;
 }
 
-void LockRelease(const struct parsedname *pn)
+void LockRelease(struct parsedname *pn)
 {
 #if OW_MT
-	int inindex;
 
 	/* Shouldn't call LockRelease() on DeviceSimultaneous. No sn exists */
 	if (pn->selected_device == DeviceSimultaneous) {
 		return;
 	}
 
-	inindex = pn->selected_connection->index;
-	if (pn->lock[inindex]) {
-		pthread_mutex_unlock(&(pn->lock[inindex]->lock));
+	if (pn->lock) {
+		pthread_mutex_unlock(&(pn->lock->lock));
 		DEVLOCK(pn);
-		if (pn->lock[inindex]->users == 1) {
-			tdelete(pn->lock[inindex], &(pn->selected_connection->dev_db), dev_compare);
+		if (pn->lock->users == 1) {
+			tdelete(pn->lock, &(pn->selected_connection->dev_db), dev_compare);
 			DEVUNLOCK(pn);
-			pthread_mutex_destroy(&(pn->lock[inindex]->lock));
-			free(pn->lock[inindex]);
+			pthread_mutex_destroy(&(pn->lock->lock));
+			free(pn->lock);
 		} else {
-			--pn->lock[inindex]->users;
+			--pn->lock->users;
 			DEVUNLOCK(pn);
 		}
-		pn->lock[inindex] = NULL;
+		pn->lock = NULL;
 	}
 #else							/* OW_MT */
 	(void) pn;					// suppress compiler warning in the trivial case.

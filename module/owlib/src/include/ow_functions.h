@@ -138,8 +138,8 @@ int FS_poll_convert(const struct parsedname *pn);
 
 // ow_locks.c
 void LockSetup(void);
-int LockGet(const struct parsedname *pn);
-void LockRelease(const struct parsedname *pn);
+int LockGet(struct parsedname *pn);
+void LockRelease(struct parsedname *pn);
 
 /* 1-wire lowlevel */
 void UT_delay(const UINT len);

@@ -244,7 +244,9 @@ static int DS2482_detect_sys(enum ds2482_address chip_num, struct connection_in 
 		}
 
 		// ALL? then set up a new connection_in slot
+		CONNIN_WLOCK ;
 		all_in = NewIn(all_in) ;
+		CONNIN_WUNLOCK ;
 		if ( all_in == NULL ) {
 			break ;
 		}
@@ -265,13 +267,17 @@ static int DS2482_detect_dir(enum ds2482_address chip_num, struct connection_in 
 	int any = ( in->name[0] == 0x00 ) ; // no adapter specified, so use any (the first good one )
 	struct connection_in * all_in = in ;
 	int bus = 0 ;
+	int sn_ret ;
 
 	for ( bus=0 ; bus<99 ; ++bus ) { 
 		char dev_name[128] ;
 		char * new_device ;
 
-		if ( snprintf( dev_name, 128-1, "/dev/i2c-%d", bus ) < 0 ) {
-			break ;
+		UCLIBCLOCK ;
+		sn_ret = snprintf( dev_name, 128-1, "/dev/i2c-%d", bus ) ;
+		UCLIBCUNLOCK ;
+		if ( sn_ret < 0 ) {
+				break ;
 		}
 
 		if ( access(dev_name, F_OK) < 0 ) {
@@ -298,7 +304,9 @@ static int DS2482_detect_dir(enum ds2482_address chip_num, struct connection_in 
 		}
 
 		// ALL? then set up a new connection_in slot
+		CONNIN_WLOCK ;
 		all_in = NewIn(all_in) ;
+		CONNIN_WUNLOCK ;
 		if ( all_in == NULL ) {
 			break ;
 		}
@@ -330,7 +338,9 @@ static int DS2482_detect_bus(enum ds2482_address chip_num, struct connection_in 
 					if ( start_chip > 7 ) {
 						return 0 ;
 					}
+					CONNIN_WLOCK ;
 					all_in = NewIn(all_in) ;
+					CONNIN_WUNLOCK ;
 					if ( all_in == NULL ) {
 						return -ENOMEM ;
 					}
@@ -441,11 +451,13 @@ static int DS2482_redetect(const struct parsedname *pn)
 				/* loop through devices, matching those that have the same "head" */
 				/* BUSLOCK also locks the sister channels for this */
 				struct connection_in *in;
-				for (in = head_inbound_list; in; in = in->next) {
+				CONNIN_RLOCK ; // So no busses are added or removed from list diring this search
+				for (in = Inbound_Control.head; in; in = in->next) {
 					if (in == head) {
 						in->reconnect_state = reconnect_ok;
 					}
 				}
+				CONNIN_RUNLOCK ;
 			}
 			return 0;
 		}
@@ -665,7 +677,10 @@ static int CreateChannels(struct connection_in *in)
 	in->connin.i2c.index = 0;
 	in->adapter_name = name[0];
 	for (i = 1; i < 8; ++i) {
-		struct connection_in *added = NewIn(in);
+		struct connection_in *added ;
+		CONNIN_WLOCK ;
+		added = NewIn(in);
+		CONNIN_WUNLOCK ;
 		if (added == NULL) {
 			return -ENOMEM;
 		}

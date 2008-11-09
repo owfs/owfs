@@ -116,6 +116,8 @@ struct buspath {
 	BYTE branch;
 };
 
+// dynamically created access control for this 1-wire device
+// used to negotiate between different threads (queries)
 struct devlock {
 	BYTE sn[8];
 	UINT users;
@@ -169,7 +171,7 @@ struct parsedname {
 	struct connection_in *selected_connection;	// which bus is assigned to this item
 	int terminal_bus_number;	// last bus is list -- used for return trip
 	uint32_t sg;				// more state info, packed for network transmission
-	struct devlock **lock;		// need to clear dev lock?
+	struct devlock *lock;		// Lock which device?
 	int tokens;					/* for anti-loop work */
 	BYTE *tokenstring;			/* List of tokens from owservers passed */
 };

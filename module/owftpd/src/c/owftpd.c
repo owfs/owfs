@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* Need at least 1 adapter */
-	if (count_inbound_connections == 0 && !Globals.autoserver) {
+	if (Inbound_Control.active == 0 && !Globals.autoserver) {
 		LEVEL_DEFAULT("Need to specify at least one 1-wire adapter.\n");
 		ow_exit(1);
 	}

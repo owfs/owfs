@@ -128,7 +128,7 @@ int main(int argc, char *argv[])
 			LEVEL_DEFAULT("%s would be \"locked in\" so will quit.\nBonjour and Avahi not available.\n", argv[0]);
 			ow_exit(1);
 		} else {
-			LEVEL_CONNECT("%s will try default port of 4304\n", argv[0]) ;
+			LEVEL_CONNECT("%s will use an ephemeral port\n", argv[0]) ;
 		}
 		OW_ArgServer(NULL);		// make an ephemeral assignment
 	}

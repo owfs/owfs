@@ -66,7 +66,6 @@ struct global {
 	int error_level;
 	int error_print;
 	int readonly;
-	char *SimpleBusName;
 	int max_clients;			// for ftp
 	int autoserver;
 	size_t cache_size;			// max cache size (or 0 for no max) ;

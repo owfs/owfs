@@ -81,7 +81,7 @@ int BUS_select(const struct parsedname *pn)
 			}
 			pn->selected_connection->branch.sn[0] = 0x00;	// flag as no branches turned on
 		}
-		if (pn->selected_connection->set_speed == bus_speed_overdrive) {	// overdrive?
+		if (pn->selected_connection->speed == bus_speed_overdrive) {	// overdrive?
 			sent[0] = _1W_OVERDRIVE_MATCH_ROM;
 		}
 	} else if (memcmp(pn->selected_connection->branch.sn, pn->bp[pl - 1].sn, 8) || pn->selected_connection->buspath_bad) {	/* different path */
@@ -140,7 +140,7 @@ static int BUS_Skip_Rom(const struct parsedname *pn)
 	if ((BUS_reset(pn))) {
 		return 1;
 	}
-	skip[0] = (pn->selected_connection->set_speed == bus_speed_overdrive) ? _1W_OVERDRIVE_SKIP_ROM : _1W_SKIP_ROM;
+	skip[0] = (pn->selected_connection->speed == bus_speed_overdrive) ? _1W_OVERDRIVE_SKIP_ROM : _1W_SKIP_ROM;
 	return BUS_transaction_nolock(t, pn);
 }
 

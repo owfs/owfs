@@ -201,7 +201,6 @@ struct global {
 	int error_level;
 	int error_print;
 	int readonly;
-	char *SimpleBusName;
 	int max_clients;			// for ftp
 	int autoserver;
 	/* Special parameter to trigger William Robison <ibutton@n952.dyndns.ws> timings */

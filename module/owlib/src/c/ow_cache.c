@@ -15,6 +15,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 #include "ow_counters.h"
+#include "ow_connection.h"
 
 //#define CACHE_DEBUG
 
@@ -125,11 +126,11 @@ static void node_show(struct tree_node *tn)
 	int i;
 	char b[26];
 	ctime_r(&tn->expires, b);
-	printf("\tNode " SNformat
+	fprintf(stderr,"\tNode " SNformat
 		   " pointer=%p extension=%d length=%d start=%p expires=%s", SNvar(tn->tk.sn), tn->tk.p, tn->tk.extension, tn->dsize, tn, b ? b : "null\n");
 	for (i = 0; i < sizeof(struct tree_key); ++i)
 		printf("%.2X ", ((uint8_t *) tn)[i]);
-	printf("\n");
+	fprintf(stderr,"\n");
 }
 
 static void tree_show(const void *node, const VISIT which, const int depth)
@@ -146,12 +147,12 @@ static void tree_show(const void *node, const VISIT which, const int depth)
 			break;
 		}
 	} else {
-		printf("Node empty\n");
+		fprintf(stderr,"Node empty\n");
 	}
 }
 static void new_tree(void)
 {
-	printf("Walk the new tree:\n");
+	fprintf(stderr,"Walk the new tree:\n");
 	twalk(cache.new_db, tree_show);
 }
 #else							/* CACHE_DEBUG */
@@ -285,8 +286,19 @@ int Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn)
 	size_t size = db->devices * 8;
 	struct parsedname pn_directory;
 	//printf("Cache_Add_Dir\n") ;
-	if (!pn) {
+	if (pn==NULL || pn->selected_connection==NULL) {
 		return 0;				// do check here to avoid needless processing
+	}
+
+	switch ( pn->selected_connection->busmode ) {
+		case bus_fake:
+		case bus_tester:
+		case bus_w1:
+		case bus_bad:
+		case bus_unknown:
+			return 0 ;
+		default:
+			break ;
 	}
 
 	if (duration <= 0) {
@@ -344,6 +356,15 @@ int Cache_Add_Device(const int bus_nr, const struct parsedname *pn)
 	memcpy(TREE_DATA(tn), &bus_nr, sizeof(int));
 	return Add_Stat(&cache_dev, Cache_Add_Common(tn));
 }
+
+/* What do we cache?
+Type       sn             extension             p         What
+directory  0=root         0                     *in       dirblob
+           DS2409_branch  0                     *in       dirblob
+device     device sn      EXTENSION_DEVICE=-1   NULL      bus_nr
+internal   device sn      EXTENSION_INTERNAL=-2 ip->name  binary data
+property   device sn      extension             *ft       binary data
+*/
 
 /* Add an item to the cache */
 /* return 0 if good, 1 if not */

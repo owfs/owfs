@@ -30,12 +30,6 @@ int LibStart(void)
 	SetupInboundConnections();
 	SetupSideboundConnections();
 
-	/* Use first bus for http bus name */
-	{
-		struct connection_in *c_first = find_connection_in(0);
-		Globals.SimpleBusName = (c_first != NULL) ? c_first->name : "No connections";
-	}
-
 	// zeroconf/Bonjour look for new services
 	if (Globals.autoserver) {
 #if OW_ZERO
@@ -59,10 +53,9 @@ int LibStart(void)
 static void SetupInboundConnections(void)
 {
 	struct connection_in *in;
-	int ret = 0;
 
-	CONNIN_RLOCK;
-	for (in = head_inbound_list; in != NULL; in = in->next) {
+	for (in = Inbound_Control.head; in != NULL; in = in->next) {
+		int ret = -ENOPROTOOPT;;
 		BadAdapter_detect(in);	/* default "NOTSUP" calls */
 		switch (get_busmode(in)) {
 
@@ -89,31 +82,24 @@ static void SetupInboundConnections(void)
 			// Fall Through
 
 		case bus_passive:
-			if (DS9097_detect(in)) {
+			if ((ret = DS9097_detect(in))) {
 				LEVEL_DEFAULT("Cannot detect DS9097 (passive) interface on %s.\n", in->name);
-				ret = -ENODEV;
 			}
 			break;
 
 		case bus_i2c:
 #if OW_I2C
-			if (DS2482_detect(in)) {
+			if ((ret = DS2482_detect(in))) {
 				LEVEL_CONNECT("Cannot detect an i2c DS2482-x00 on %s\n", in->name);
-				ret = -ENODEV;
 			}
-#else							/* OW_I2C */
-			ret = -ENOPROTOOPT;
 #endif							/* OW_I2C */
 			break;
 
 		case bus_ha7net:
 #if OW_HA7
-			if (HA7_detect(in)) {
+			if ((ret = HA7_detect(in))) {
 				LEVEL_CONNECT("Cannot detect an HA7net server on %s\n", in->name);
-				ret = -ENODEV;
 			}
-#else							/* OW_HA7 */
-			ret = -ENOPROTOOPT;
 #endif							/* OW_HA7 */
 			break;
 
@@ -122,8 +108,6 @@ static void SetupInboundConnections(void)
 			if ((ret = DS1410_detect(in))) {
 				LEVEL_DEFAULT("Cannot detect the DS1410E parallel adapter\n");
 			}
-#else							/* OW_PARPORT */
-			ret = -ENOPROTOOPT;
 #endif							/* OW_PARPORT */
 			break;
 
@@ -135,8 +119,6 @@ static void SetupInboundConnections(void)
 			if ((ret = DS9490_detect(in))) {
 				LEVEL_DEFAULT("Cannot open USB adapter\n");
 			}
-#else							/* OW_USB */
-			ret = -ENOPROTOOPT;
 #endif							/* OW_USB */
 			break;
 
@@ -152,20 +134,23 @@ static void SetupInboundConnections(void)
 			break;
 
 		case bus_etherweather:
-			if (EtherWeather_detect(in)) {
+			if ((ret = EtherWeather_detect(in))) {
 				LEVEL_CONNECT("Cannot detect an EtherWeather server on %s\n", in->name);
-				ret = -ENODEV;
 			}
 			break;
 
 		case bus_fake:
 			Fake_detect(in);	// never fails
+			ret = 0 ;
 			break;
 
 		case bus_tester:
 			Tester_detect(in);	// never fails
+			ret = 0 ;
 			break;
 
+		case bus_w1:
+		case bus_bad:
 		default:
 			break;
 
@@ -175,6 +160,7 @@ static void SetupInboundConnections(void)
 			STAT_ADD1_BUS(e_bus_detect_errors, in);
 			BUS_close(in);		/* can use adapter's close */
 			BadAdapter_detect(in);	/* Set to default null assignments */
+			in->busmode = bus_bad ;
 		}
 	}
 	CONNIN_RUNLOCK;

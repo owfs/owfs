@@ -22,19 +22,30 @@ struct connection_out *head_outbound_list = NULL;
 int count_outbound_connections = 0;
 struct connection_side *head_sidebound_list = NULL;
 int count_sidebound_connections = 0;
-struct connection_in *head_inbound_list = NULL;
-int count_inbound_connections = 0;
+
+struct inbound_control Inbound_Control = {
+	.active = 0,
+	.next_index = 0 ,
+	.head = NULL,
+	.sys_w1 = NULL,
+	.w1_netlink_fd = -1 ,
+	.next_fake = 0 ,
+	.next_tester = 0 ,
+};
 
 struct connection_in *find_connection_in(int bus_number)
 {
 	struct connection_in *c_in;
-	// step through head_inbound_list linked list
+	// step through inbound linked list
 
-	for (c_in = head_inbound_list; c_in != NULL; c_in = c_in->next) {
+	CONNIN_RLOCK ;
+	for (c_in = Inbound_Control.head; c_in != NULL; c_in = c_in->next) {
 		if (c_in->index == bus_number) {
+			CONNIN_RUNLOCK ;
 			return c_in;
 		}
 	}
+	CONNIN_RUNLOCK ;
 	return NULL;
 }
 
@@ -51,7 +62,7 @@ int BusIsServer(struct connection_in *in)
 	return (in->busmode == bus_server) || (in->busmode == bus_zero);
 }
 
-/* Make a new head_inbound_list, and place it in the chain */
+/* Make a new connection_in entry, and place it in the chain */
 /* Based on a shallow copy of "in" if not NULL */
 struct connection_in *NewIn(const struct connection_in *in)
 {
@@ -63,9 +74,14 @@ struct connection_in *NewIn(const struct connection_in *in)
 		} else {
 			memset(now, 0, len);
 		}
-		now->next = head_inbound_list;	/* put in linked list at start */
-		head_inbound_list = now;
-		now->index = count_inbound_connections++;
+
+		// Housekeeping to place in linked list
+		// Locking done at a higher level
+		now->next = Inbound_Control.head;	/* put in linked list at start */
+		Inbound_Control.head = now;
+		now->index = Inbound_Control.next_index++;
+		++Inbound_Control.active ;
+
 #if OW_MT
 		pthread_mutex_init(&(now->bus_mutex), Mutex.pmattr);
 		pthread_mutex_init(&(now->dev_mutex), Mutex.pmattr);
@@ -130,10 +146,14 @@ struct connection_side *NewSide(void)
 void FreeInAll( void )
 {
 	struct connection_in * now ;
-	for ( now = head_inbound_list ; now != NULL ; now = now->next ) {
+	CONNIN_WLOCK ;
+	now = Inbound_Control.head ;
+	while ( now ) {
+		struct connection_in * next = now-> next ;
 		FreeIn(now) ;
+		now = next ;
 	}
-	head_inbound_list = NULL ;
+	CONNIN_WUNLOCK ;
 }
 
 // Free the important parts of a connection_in structure
@@ -143,6 +163,7 @@ void FreeIn(struct connection_in * now)
 {
 
 	LEVEL_DEBUG("FreeIn: busmode=%d\n", get_busmode(now));
+	--Inbound_Control.active ;
 #if OW_MT
 	pthread_mutex_trylock(&(now->bus_mutex));
 	pthread_mutex_unlock( &(now->bus_mutex));
@@ -206,6 +227,7 @@ void FreeIn(struct connection_in * now)
 		}
 #endif							/* OW_MT */
 	case bus_w1:
+	case bus_bad:
 	default:
 		break;
 	}
@@ -226,10 +248,10 @@ void RemoveIn( struct connection_in * removeIn )
 	BUSLOCKIN(removeIn) ;
 	
 	CONNIN_WLOCK ;
-	if ( head_inbound_list == removeIn ) {
-		head_inbound_list = removeIn->next ;
+	if ( Inbound_Control.head == removeIn ) {
+		Inbound_Control.head = removeIn->next ;
 	} else {
-		for ( now = head_inbound_list ; now != NULL ; now = now->next ) {
+		for ( now = Inbound_Control.head ; now != NULL ; now = now->next ) {
 			if ( now->next == removeIn ) {
 				now->next = removeIn->next ;
 				break ;

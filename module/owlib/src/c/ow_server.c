@@ -314,9 +314,12 @@ int ServerDIR(void (*dirfunc) (void *, const struct parsedname * const), void *v
 				if (SpecifiedRemoteBus(pn_whole_directory)) {
 					// Specified remote bus, add the bus to the path (in front)
 					char BigBuffer[cm.payload + 12];
-					if (snprintf(BigBuffer, cm.payload + 11, "/bus.%d/%s",
-								 pn_whole_directory->selected_connection->index, &return_path[(return_path[0] == '/') ? 1 : 0])
-						> 0) {
+					int sn_ret ;
+					char * no_leading_slash = &return_path[(return_path[0] == '/') ? 1 : 0] ;
+					UCLIBCLOCK ;
+					sn_ret = snprintf(BigBuffer, cm.payload + 11, "/bus.%d/%s",pn_whole_directory->selected_connection->index, no_leading_slash ) ;
+					UCLIBCUNLOCK ;
+					if (sn_ret > 0) {
 						ret = FS_ParsedName_BackFromRemote(BigBuffer, &pn_directory_element);
 					}
 				} else {
@@ -444,9 +447,12 @@ int ServerDIRALL(void (*dirfunc) (void *, const struct parsedname * const), void
 			if (SpecifiedRemoteBus(pn_whole_directory)) {
 				// Specified remote bus, add the bus to the path (in front)
 				char BigBuffer[path_length + 12];
-				if (snprintf(BigBuffer, path_length + 11, "/bus.%d/%s",
-							 pn_whole_directory->selected_connection->index, &current_file[(current_file[0] == '/') ? 1 : 0])
-					> 0) {
+				int sn_ret ;
+				char * no_leading_slash = &current_file[(current_file[0] == '/') ? 1 : 0] ;
+				UCLIBCLOCK ;
+				sn_ret = snprintf(BigBuffer, cm.payload + 11, "/bus.%d/%s",pn_whole_directory->selected_connection->index, no_leading_slash ) ;
+				UCLIBCUNLOCK ;
+				if (sn_ret > 0) {
 					ret = FS_ParsedName_BackFromRemote(BigBuffer, &pn_directory_element);
 				}
 			} else {

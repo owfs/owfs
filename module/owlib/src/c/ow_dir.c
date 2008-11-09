@@ -22,7 +22,7 @@ static int
 FS_dir_all_connections(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_directory, uint32_t * flags);
 static int FS_dir_all_connections_loop(void (*dirfunc)
 									    (void *, const struct parsedname * const),
-									   void *v, int bus_number, const struct parsedname *pn_directory, uint32_t * flags);
+									   void *v, struct connection_in * in, const struct parsedname *pn_directory, uint32_t * flags);
 static int FS_devdir(void (*dirfunc) (void *, const struct parsedname * const), void *v, const struct parsedname *pn2);
 static int FS_alarmdir(void (*dirfunc) (void *, const struct parsedname * const), void *v, const struct parsedname *pn2);
 static int FS_typedir(void (*dirfunc) (void *, const struct parsedname * const), void *v, const struct parsedname *pn_type_directory);
@@ -220,7 +220,7 @@ static void FS_simultaneous_entry(void (*dirfunc) (void *, const struct parsedna
 /* FS_dir_all_connections produces the data that can vary: device lists, etc. */
 #if OW_MT
 struct dir_all_connections_struct {
-	int bus_number;
+	struct connection_in * in;
 	const struct parsedname *pn_directory;
 	void (*dirfunc) (void *, const struct parsedname *);
 	void *v;
@@ -232,27 +232,30 @@ struct dir_all_connections_struct {
 static void *FS_dir_all_connections_callback(void *v)
 {
 	struct dir_all_connections_struct *dacs = v;
-	dacs->ret = FS_dir_all_connections_loop(dacs->dirfunc, dacs->v, dacs->bus_number, dacs->pn_directory, dacs->flags);
+	dacs->ret = FS_dir_all_connections_loop(dacs->dirfunc, dacs->v, dacs->in, dacs->pn_directory, dacs->flags);
 	pthread_exit(NULL);
 	return NULL;
 }
 static int FS_dir_all_connections_loop(void (*dirfunc)
-									    (void *, const struct parsedname *), void *v,
-									   int bus_number, const struct parsedname *pn_directory, uint32_t * flags)
+	(void *, const struct parsedname *), void *v,
+	struct connection_in * in, const struct parsedname *pn_directory, uint32_t * flags)
 {
 	int ret = 0;
-	struct dir_all_connections_struct dacs = { bus_number + 1, pn_directory, dirfunc, v, flags, 0 };
+	struct dir_all_connections_struct dacs = { NULL, pn_directory, dirfunc, v, flags, 0 };
 	struct parsedname s_pn_bus_directory;
 	struct parsedname *pn_bus_directory = &s_pn_bus_directory;
 	pthread_t thread;
 	int threadbad = 1;
 
-	threadbad = (bus_number + 1 >= count_inbound_connections)
-		|| pthread_create(&thread, NULL, FS_dir_all_connections_callback, (void *) (&dacs));
+	CONNIN_RLOCK ;
+	dacs.in = in->next ;
+	CONNIN_RUNLOCK ;
+
+	threadbad = (dacs.in==NULL) || pthread_create(&thread, NULL, FS_dir_all_connections_callback, (void *) (&dacs));
 
 	memcpy(pn_bus_directory, pn_directory, sizeof(struct parsedname));	// shallow copy
 
-	SetKnownBus(bus_number, pn_bus_directory);
+	SetKnownBus(in->index, pn_bus_directory);
 
 	if (TestConnection(pn_bus_directory)) {	// reconnect ok?
 		ret = -ECONNABORTED;
@@ -281,7 +284,16 @@ static int FS_dir_all_connections_loop(void (*dirfunc)
 static int
 FS_dir_all_connections(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_directory, uint32_t * flags)
 {
-	return FS_dir_all_connections_loop(dirfunc, v, 0, pn_directory, flags);
+	struct connection_in * in;
+	CONNIN_RLOCK ;
+	in = Inbound_Control.head ;
+	CONNIN_RUNLOCK ;
+	// Make sure head isn't NULL
+	if ( in == NULL ) {
+		return 0 ;
+	}
+	// Start iterating through buses
+	return FS_dir_all_connections_loop(dirfunc, v, in, pn_directory, flags);
 }
 #else							/* OW_MT */
 
@@ -291,28 +303,33 @@ static int
 FS_dir_all_connections(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_directory, uint32_t * flags)
 {
 	int ret = 0;
-	int bus_number;
+	struct connection_in * in;
 	struct parsedname s_pn_selected_connection;
 	struct parsedname *pn_selected_connection = &s_pn_selected_connection;
 
 	memcpy(pn_selected_connection, pn_directory, sizeof(struct parsedname));	//shallow copy
 
-	for (bus_number = 0; bus_number < count_inbound_connections; ++bus_number) {
-		SetKnownBus(bus_number, pn_selected_connection);
+	CONNIN_RLOCK ;
+	in = Inbound_Control.head ;
+	CONNIN_RUNLOCK ;
 
-		if (TestConnection(pn_selected_connection)) {
-			continue;
-		}
+	while (in) {
+		SetKnownBus(in->index, pn_selected_connection);
 
-		if (BusIsServer(pn_selected_connection->selected_connection)) {	/* is this a remote bus? */
-			ret |= ServerDir(dirfunc, v, pn_selected_connection, flags);
-		} else {				/* local bus */
-			if (IsAlarmDir(pn_selected_connection)) {	/* root or branch directory -- alarm state */
-				ret |= FS_alarmdir(dirfunc, v, pn_selected_connection);
-			} else {
-				ret = FS_cache2real(dirfunc, v, pn_selected_connection, flags);
+		if ( TestConnection(pn_selected_connection) == 0 ) {
+			if (BusIsServer(pn_selected_connection->selected_connection)) {	/* is this a remote bus? */
+				ret |= ServerDir(dirfunc, v, pn_selected_connection, flags);
+			} else {				/* local bus */
+				if (IsAlarmDir(pn_selected_connection)) {	/* root or branch directory -- alarm state */
+					ret |= FS_alarmdir(dirfunc, v, pn_selected_connection);
+				} else {
+					ret = FS_cache2real(dirfunc, v, pn_selected_connection, flags);
+				}
 			}
 		}
+		CONNIN_RLOCK ;
+		in = in->next ;
+		CONNIN_RUNLOCK ;
 	}
 
 	return ret;
@@ -329,8 +346,8 @@ static int FS_devdir(void (*dirfunc) (void *, const struct parsedname *), void *
 
 	STAT_ADD1(dir_dev.calls);
 
-	// Add subdir to name
-	if (pn_device_directory->subdir != NULL) {	/* head_inbound_list subdir, name prepends */
+	// Add subdir to name (SubDirectory is within a device, but an extra layer of grouping of properties)
+	if (pn_device_directory->subdir != NULL) {	
 		//printf("DIR device subdirectory\n");
 		strncpy(subdir_name, pn_device_directory->subdir->name, OW_FULLNAME_MAX);
 		strcat(subdir_name, "/");
@@ -635,17 +652,24 @@ static int FS_typedir(void (*dirfunc) (void *, const struct parsedname *), void 
 static int FS_busdir(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_directory)
 {
 	char bus[OW_FULLNAME_MAX];
-	int bus_number;
+	struct connection_in * in ;;
 
 	if (!RootNotBranch(pn_directory)) {
 		return 0;
 	}
 
-	for (bus_number = 0; bus_number < count_inbound_connections; ++bus_number) {
+	CONNIN_RLOCK ;
+	in = Inbound_Control.head ;
+	CONNIN_RUNLOCK ;
+
+	while ( in ) {
 		UCLIBCLOCK;
-		snprintf(bus, OW_FULLNAME_MAX, "bus.%d", bus_number);
+		snprintf(bus, OW_FULLNAME_MAX, "bus.%d", in->index);
 		UCLIBCUNLOCK;
 		FS_dir_plus(dirfunc, v, pn_directory, bus);
+		CONNIN_RLOCK ;
+		in = in->next ;
+		CONNIN_RUNLOCK ;
 	}
 
 	return 0;

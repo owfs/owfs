@@ -68,7 +68,7 @@ struct device d_sys_process = { "process", "process", ePN_system, COUNT_OF_FILET
 };
 
 struct filetype sys_connections[] = {
-  {"count_inbound_connections", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_in, NO_WRITE_FUNCTION, {v:NULL},},
+  {"count_current_buses", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_in, NO_WRITE_FUNCTION, {v:NULL},},
   {"count_outbound_connections", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_out, NO_WRITE_FUNCTION, {v:NULL},},
 };
 struct device d_sys_connections = { "connections", "connections", ePN_system,
@@ -109,15 +109,17 @@ static int FS_r_ds2490status(struct one_wire_query *owq)
 	if (pn->selected_connection->busmode == bus_usb) {
 #if OW_USB
 		ret = DS9490_getstatus(buffer, 0, PN(owq));
+		UCLIBCLOCK ;
 		if (ret < 0) {
-			sprintf(res, "DS9490_getstatus failed: %d\n", ret);
+			snprintf(res,255, "DS9490_getstatus failed: %d\n", ret);
 		} else {
-			sprintf(res,
+			snprintf(res,255,
 					"%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n",
 					buffer[0], buffer[1], buffer[2], buffer[3],
 					buffer[4], buffer[5], buffer[6], buffer[7],
 					buffer[8], buffer[9], buffer[10], buffer[11], buffer[12], buffer[13], buffer[14], buffer[15]);
 		}
+		UCLIBCUNLOCK ;
 		/*
 		   uchar    EnableFlags;
 		   uchar    OneWireSpeed;
@@ -160,7 +162,7 @@ static int FS_pid(struct one_wire_query *owq)
 
 static int FS_in(struct one_wire_query *owq)
 {
-	OWQ_U(owq) = count_inbound_connections;
+	OWQ_U(owq) = Inbound_Control.active;
 	return 0;
 }
 

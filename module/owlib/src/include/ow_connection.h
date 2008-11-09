@@ -71,15 +71,10 @@ See: http://www.iana.org/assignments/port-numbers
 
 /* Exposed connection info */
 extern int count_outbound_connections;
-extern int count_inbound_connections;
 extern int count_sidebound_connections;
 
 /* large enough for arrays of 2048 elements of ~49 bytes each */
 #define MAX_OWSERVER_PROTOCOL_PACKET_SIZE  100050
-
-/* Number of "fake" adapters */
-extern int global_count_fake_busses;
-extern int global_count_tester_busses;
 
 /* com port fifo info */
 /* The UART_FIFO_SIZE defines the amount of bytes that are written before
@@ -301,6 +296,7 @@ enum bus_mode {
 	bus_link,
 	bus_elink,
 	bus_etherweather,
+	bus_bad,
 	bus_w1,
 };
 
@@ -422,15 +418,19 @@ struct connection_in {
 		struct connin_w1 w1;
 	} connin;
 };
-extern struct connection_in *head_inbound_list;
 
-struct inbound_control {
-	int active ;
-	int next_index ;
-	struct connection_in * head ;
-	DIR * sys_w1 ;
-	int w1_netlink_fd ;
-} ;
+extern struct inbound_control {
+	int active ; // how many "bus" entries are currently in linked list
+	int next_index ; // increasing sequence number
+	struct connection_in * head ; // head of a linked list of "bus" entries
+#if OW_MT
+	my_rwlock_t lock; // RW lock of linked list
+#endif /* OW_MT */
+	int next_fake ; // count of fake buses
+	int next_tester ; // count tester buses
+	DIR * sys_w1 ; // w1 kernel module for reading sysfs
+	int w1_netlink_fd ; // w1 kernel module for netlink communication
+} Inbound_Control ; // Single global struct -- see ow_connect.c
 
 /* Network connection structure */
 struct connection_out {

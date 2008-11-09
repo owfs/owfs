@@ -77,7 +77,10 @@ int CheckPresence(struct parsedname *pn)
 
 	LEVEL_DETAIL("Checking presence of %s\n", SAFESTRING(pn->path));
 
-	bus_nr = CheckPresence_low(head_inbound_list, pn);	// check only allocated count_inbound_connections
+	if ( Inbound_Control.active == 0 ) {
+		return -1 ;
+	}
+	bus_nr = CheckPresence_low(Inbound_Control.head, pn);	// check only allocated inbound connections
 	if (bus_nr >= 0) {
 		SetKnownBus(bus_nr, pn);
 		Cache_Add_Device(bus_nr, pn);

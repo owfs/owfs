@@ -108,30 +108,30 @@ void _Debug_Bytes(const char *title, const unsigned char *buf, int length)
 {
 	int i;
 	/* title line */
-	printf("Byte buffer %s, length=%d", title ? title : "anonymous", (int) length);
+	fprintf(stderr,"Byte buffer %s, length=%d", title ? title : "anonymous", (int) length);
 	if (length < 0) {
-		printf("\n-- Attempt to write with bad length\n");
+		fprintf(stderr,"\n-- Attempt to write with bad length\n");
 		return;
 	}
 	if (buf == NULL) {
-		printf("\n-- NULL buffer\n");
+		fprintf(stderr,"\n-- NULL buffer\n");
 		return;
 	}
 #if 1
 	/* hex lines -- 16 bytes each */
 	for (i = 0; i < length; ++i) {
 		if ((i & 0x0F) == 0) {	// devisible by 16
-			printf("\n--%3.3d:",i);
+			fprintf(stderr,"\n--%3.3d:",i);
 		}
-		printf(" %.2X", buf[i]);
+		fprintf(stderr," %.2X", buf[i]);
 	}
 
 #endif
 	/* char line -- printable or . */
-	printf("\n   <");
+	fprintf(stderr,"\n   <");
 	for (i = 0; i < length; ++i) {
 		char c = buf[i];
-		printf("%c", isprint(c) ? c : '.');
+		fprintf(stderr,"%c", isprint(c) ? c : '.');
 	}
-	printf(">\n");
+	fprintf(stderr,">\n");
 }

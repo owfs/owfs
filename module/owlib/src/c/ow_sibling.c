@@ -101,7 +101,7 @@ int FS_w_sibling_D(_DATE D, const char * sibling, struct one_wire_query *owq)
 	struct one_wire_query * owq_sibling  = FS_OWQ_create_sibling( sibling, owq ) ;
 
 	if ( owq_sibling != NULL ) {
-		memcpy ( &OWQ_D(owq_sibling), D, sizeof( _DATE ) ) ;
+		OWQ_D(owq_sibling) = D ;
 		write_error = FS_write_local(owq_sibling) ;
 		FS_OWQ_destroy_sibling(owq_sibling) ;
 	}

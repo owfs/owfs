@@ -60,6 +60,7 @@ static int USB_init(struct usb_list *ul);
 static int USB_next(struct usb_list *ul);
 static int DS9490_reset(const struct parsedname *pn);
 static int DS9490_open(struct usb_list *ul, const struct parsedname *pn);
+static int DS9490_sub_open(struct usb_list *ul, const struct parsedname *pn);
 static int DS9490_reconnect(const struct parsedname *pn);
 int DS9490_getstatus(BYTE * buffer, int readlen, const struct parsedname *pn);
 static int DS9490_next_both(struct device_search *ds, const struct parsedname *pn);
@@ -288,7 +289,7 @@ int DS9490_detect(struct connection_in *in)
 	int ret;
 
 	DS9490_setroutines(in);		// set up close, reconnect, reset, ...
-	in->name = badUSBname;		// initialized
+	in->name = strdup(badUSBname);		// initialized
 
 	FS_ParsedName(NULL, &pn);	// minimal parsename -- no destroy needed
 	pn.selected_connection = in;
@@ -417,61 +418,85 @@ static int DS9490_setup_adapter(const struct parsedname *pn)
 */
 static int DS9490_open(struct usb_list *ul, const struct parsedname *pn)
 {
-	int ret = ENODEV;
-	usb_dev_handle *usb;
-
-	if (pn->selected_connection->name != badUSBname) {
+	int ret ;
+	
+	if (pn->selected_connection->name) {
 		free(pn->selected_connection->name);
+		pn->selected_connection->name = NULL;
 	}
+
+	if (pn->selected_connection->connin.usb.usb) {
+		LEVEL_DEFAULT("DS9490_open: usb.usb was NOT closed before DS9490_open() ?\n");
+		return -ENODEV ;
+	}
+	
 	pn->selected_connection->name = DS9490_device_name(ul);
 
-	pn->selected_connection->connin.usb.dev = ul->dev;
-
-	if (pn->selected_connection->name == badUSBname) {
-		ret = -ENOMEM;
-	} else if (pn->selected_connection->connin.usb.usb) {
-		LEVEL_DEFAULT("DS9490_open: usb.usb was NOT closed before DS9490_open() ?\n");
-	} else if (pn->selected_connection->connin.usb.dev && (usb = usb_open(pn->selected_connection->connin.usb.dev))) {
-		pn->selected_connection->connin.usb.usb = usb;
-#ifdef LIBUSB_HAS_DETACH_KERNEL_DRIVER_NP
-		usb_detach_kernel_driver_np(usb, 0);
-#endif							/* LIBUSB_HAS_DETACH_KERNEL_DRIVER_NP */
-		if ((ret = usb_set_configuration(usb, 1))) {
-			LEVEL_CONNECT("Failed to set configuration on USB DS9490 adapter at %s.\n", pn->selected_connection->name);
-		} else if ((ret = usb_claim_interface(usb, 0))) {
-			LEVEL_CONNECT("Failed to claim interface on USB DS9490 adapter at %s. ret=%d\n", pn->selected_connection->name, ret);
-		} else {
-			if ((ret = usb_set_altinterface(usb, 3))) {
-				LEVEL_CONNECT("Failed to set alt interface on USB DS9490 adapter at %s.\n", pn->selected_connection->name);
-			} else {
-				LEVEL_DEFAULT("Opened USB DS9490 adapter at %s.\n", pn->selected_connection->name);
-				DS9490_setroutines(pn->selected_connection);
-				pn->selected_connection->Adapter = adapter_DS9490;	/* OWFS assigned value */
-				pn->selected_connection->adapter_name = "DS9490";
-
-				// clear endpoints
-				if ((ret = (USB_CLEAR_HALT(usb, DS2490_EP3) || USB_CLEAR_HALT(usb, DS2490_EP2) || USB_CLEAR_HALT(usb, DS2490_EP1)))) {
-					LEVEL_DEFAULT("DS9490_open: USB_CLEAR_HALT failed ret=%d\n", ret);
-				} else if ((ret = DS9490_setup_adapter(pn))) {
-					LEVEL_DEFAULT("Error setting up USB DS9490 adapter at %s.\n", pn->selected_connection->name);
-				} else {		/* All GOOD */
-					return 0;
-				}
-			}
-			usb_release_interface(usb, 0);
-		}
-		usb_close(usb);
-		pn->selected_connection->connin.usb.usb = NULL;
+	if (pn->selected_connection->name == NULL) {
+		return -ENOMEM;
 	}
 
-	if (pn->selected_connection->name != badUSBname) {
+	ret = DS9490_sub_open( ul, pn ) ;
+	if ( ret ) {
 		free(pn->selected_connection->name);
+		pn->selected_connection->name = strdup(badUSBname) ;
+		pn->selected_connection->connin.usb.dev = NULL;	// this will force a re-scan next time
+		//LEVEL_CONNECT("Failed to open USB DS9490 adapter %s\n", name);
+		STAT_ADD1_BUS(e_bus_open_errors, pn->selected_connection);
+		return ret ;
 	}
-	pn->selected_connection->name = badUSBname;
 
-	pn->selected_connection->connin.usb.dev = NULL;	// this will force a re-scan next time
-	//LEVEL_CONNECT("Failed to open USB DS9490 adapter %s\n", name);
-	STAT_ADD1_BUS(e_bus_open_errors, pn->selected_connection);
+	return 0 ;
+}
+
+static int DS9490_sub_open(struct usb_list *ul, const struct parsedname *pn)
+{
+	int ret = ENODEV;
+	usb_dev_handle *usb;
+	
+	pn->selected_connection->connin.usb.dev = ul->dev;
+	
+	if (pn->selected_connection->connin.usb.dev ==NULL ) {
+		return -ENODEV ;
+	}
+	
+	usb = usb_open(pn->selected_connection->connin.usb.dev) ;
+	if (usb == NULL) {
+		return -ENODEV ;
+	}
+
+	pn->selected_connection->connin.usb.usb = usb;
+	#ifdef LIBUSB_HAS_DETACH_KERNEL_DRIVER_NP
+	usb_detach_kernel_driver_np(usb, 0);
+	#endif							/* LIBUSB_HAS_DETACH_KERNEL_DRIVER_NP */
+
+	if ((ret = usb_set_configuration(usb, 1))) {
+		LEVEL_CONNECT("Failed to set configuration on USB DS9490 adapter at %s.\n", pn->selected_connection->name);
+	} else if ((ret = usb_claim_interface(usb, 0))) {
+		LEVEL_CONNECT("Failed to claim interface on USB DS9490 adapter at %s. ret=%d\n", pn->selected_connection->name, ret);
+	} else {
+		if ((ret = usb_set_altinterface(usb, 3))) {
+			LEVEL_CONNECT("Failed to set alt interface on USB DS9490 adapter at %s.\n", pn->selected_connection->name);
+		} else {
+			LEVEL_DEFAULT("Opened USB DS9490 adapter at %s.\n", pn->selected_connection->name);
+			DS9490_setroutines(pn->selected_connection);
+			pn->selected_connection->Adapter = adapter_DS9490;	/* OWFS assigned value */
+			pn->selected_connection->adapter_name = "DS9490";
+
+			// clear endpoints
+			if ((ret = (USB_CLEAR_HALT(usb, DS2490_EP3) || USB_CLEAR_HALT(usb, DS2490_EP2) || USB_CLEAR_HALT(usb, DS2490_EP1)))) {
+				LEVEL_DEFAULT("DS9490_open: USB_CLEAR_HALT failed ret=%d\n", ret);
+			} else if ((ret = DS9490_setup_adapter(pn))) {
+				LEVEL_DEFAULT("Error setting up USB DS9490 adapter at %s.\n", pn->selected_connection->name);
+			} else {		/* All GOOD */
+				return 0;
+			}
+		}
+		usb_release_interface(usb, 0);
+	}
+	usb_close(usb);
+	pn->selected_connection->connin.usb.usb = NULL;
+
 	return ret;
 }
 
@@ -532,27 +557,33 @@ static int USB_next(struct usb_list *ul)
 static int usbdevice_in_use(char *name)
 {
 	struct connection_in *in;
-	for (in = head_inbound_list; in != NULL; in = in->next) {
+
+	CONNIN_RLOCK ; // So no busses are added or removed from list diring this search
+	for (in = Inbound_Control.head; in != NULL; in = in->next) {
 		if ((in->busmode == bus_usb) && (in->name != NULL)
 			&& (strcmp(in->name, name) == 0)) {
+			CONNIN_RUNLOCK ;
 			return 1;			// It seems to be in use already
 		}
 	}
-	return 0;					// not found in the current head_inbound_list
+	CONNIN_RUNLOCK ;
+	return 0;					// not found in the current inbound list
 }
 
 /* Construct the device name */
+/* Return NULL if there is a problem */
 static char *DS9490_device_name(const struct usb_list *ul)
 {
 	size_t len = 2 * PATH_MAX + 1;
 	char name[len + 1];
 	char *ret = NULL;
-	if (snprintf(name, len, "%s/%s", ul->bus->dirname, ul->dev->filename) > 0) {
+	int sn_ret ;
+	UCLIBCLOCK ;
+	sn_ret = snprintf(name, len, "%s/%s", ul->bus->dirname, ul->dev->filename) ;
+	UCLIBCUNLOCK ;
+	if (sn_ret > 0) {
 		name[len] = '\0';		// make sufre there is a trailing null
 		ret = strdup(name);
-	}
-	if (ret == NULL) {
-		return badUSBname;
 	}
 	return ret;
 }
@@ -575,12 +606,19 @@ static int DS9490_redetect_low(const struct parsedname *pn)
 	 * still called.
 	 */
 	USB_init(&ul);
+
+	// First clear the current name so it doesn't match
+	if ( pn->selected_connection->name ) {
+		free(pn->selected_connection->name) ;
+		pn->selected_connection->name = NULL ;
+	}
+
 	while (!USB_next(&ul)) {
 		char *name = DS9490_device_name(&ul);
 		struct device_search ds;
 		int found1420 = ((pn->selected_connection->connin.usb.ds1420_address[0] & 0x7F) == 0x01);
 
-		if (name == badUSBname) {
+		if (name == NULL) {
 			return -ENOMEM;
 		}
 
@@ -655,10 +693,10 @@ void DS9490_close(struct connection_in *in)
 	}
 	in->connin.usb.usb = NULL;
 	in->connin.usb.dev = NULL;
-	if (in->name && in->name != badUSBname) {
+	if (in->name) {
 		free(in->name);
 	}
-	in->name = badUSBname;
+	in->name = strdup(badUSBname);
 }
 
 /* DS9490_getstatus()

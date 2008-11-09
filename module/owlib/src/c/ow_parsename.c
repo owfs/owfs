@@ -77,7 +77,6 @@ void FS_ParsedName_destroy(struct parsedname *pn)
 		free(pn->lock);
 		pn->lock = NULL;
 	}
-	CONNIN_RUNLOCK;
 	//printf("PNDestroy done (%d)\n",BusIsServer(pn->selected_connection)) ;
 	// Tokenstring is part of a larger allocation and destroyed separately 
 }
@@ -261,12 +260,12 @@ static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path,
 		return -ENOMEM;
 	}
 
-	if (head_inbound_list == NULL) {
+	if (Inbound_Control.active == 0) {
+		printf("No buses available\n");
 		free(pp->pathcpy);
 		free(pn->path);
 		return -ENOENT;
 	}
-
 	/* connection_in list and start */
 	/* ---------------------------- */
 	/* -- This is important, the -- */
@@ -278,16 +277,8 @@ static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path,
 	/* ---------------------------- */
 
 	CONNIN_RLOCK;
-	pn->lock = calloc(count_inbound_connections, sizeof(struct devlock *));
-
-	if (pn->lock == NULL) {
-		free(pp->pathcpy);
-		free(pn->path);
-		CONNIN_RUNLOCK;
-		return -ENOMEM;
-	}
-
-	pn->selected_connection = head_inbound_list;
+	pn->selected_connection = Inbound_Control.head ; // Default bus assignment
+	CONNIN_RUNLOCK ;
 
 	/* Have to save pn->path at once */
 	strcpy(pn->path, path);
@@ -447,9 +438,6 @@ static enum parse_enum Parse_Bus(char *pathnow, enum parse_pass remote_status, s
 	   SetKnownBus will be be performed elsewhere since the sending bus number is used */
 	/* this will only be reached once, because a local bus.x triggers "SpecifiedBus" */
 	//printf("SPECIFIED BUS for ParsedName PRE (%d):\n\tpath=%s\n\tpath_busless=%s\n\tKnnownBus=%d\tSpecifiedBus=%d\n",bus_number,   SAFESTRING(pn->path),SAFESTRING(pn->path_busless),KnownBus(pn),SpecifiedBus(pn));
-	if (count_inbound_connections <= bus_number) {
-		bus_number = -1;
-	}
 	if (bus_number < 0) {
 		return parse_error;
 	}

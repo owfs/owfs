@@ -68,13 +68,17 @@ static void ResolveBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 	ASCII name[121];
 	struct BrowseStruct *bs = c;
 	struct connection_in *in;
+	int sn_ret ;
 	(void) tl;
 	(void) t;
 	//printf("ResolveBack ref=%ld flags=%d index=%d, error=%d name=%s host=%s port=%d\n",(long int)s,f,i,e,name,host,ntohs(port)) ;
 	//printf("ResolveBack ref=%ld flags=%d index=%d, error=%d name=%s type=%s domain=%s\n",(long int)s,f,i,e,bs->name,bs->type,bs->domain) ;
 	LEVEL_DETAIL("ResolveBack ref=%d flags=%d index=%d, error=%d name=%s host=%s port=%d\n", (long int) s, f, i, e, n, host, ntohs(port));
 	/* remove trailing .local. */
-	if (snprintf(name, 120, "%s:%d", SAFESTRING(host), ntohs(port)) < 0) {
+	UCLIBCLOCK;
+	sn_ret = snprintf(name, 120, "%s:%d", SAFESTRING(host), ntohs(port)) ;
+	UCLIBCUNLOCK;
+	if (sn_ret < 0) {
 		ERROR_CONNECT("Trouble with zeroconf resolve return %s\n", n);
 	} else {
 		if ((in = FindIn(bs)) == NULL) {	// new or old connection_in slot?
@@ -147,7 +151,7 @@ static struct connection_in *FindIn(struct BrowseStruct *bs)
 {
 	struct connection_in *now;
 	CONNIN_RLOCK;
-	now = head_inbound_list;
+	now = Inbound_Control.head;
 	CONNIN_RUNLOCK;
 	for (; now != NULL; now = now->next) {
 		if (now->busmode != bus_zero || strcasecmp(now->name, bs->name)

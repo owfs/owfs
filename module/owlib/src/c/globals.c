@@ -16,7 +16,7 @@ $Id$
 
 /* Globals for port and bus communication */
 /* connections globals stored in ow_connect.c */
-/* i.e. connection_in * head_inbound_list ...         */
+/* i.e. connection_in * Inbound_Control.head ...         */
 
 /* char * pid_file in ow_opt.c */
 
@@ -51,7 +51,6 @@ struct global Globals = {
 	.error_print = e_err_print_mixed,
 
 	.readonly = 0,
-	.SimpleBusName = "None",
 	.max_clients = 250,
 	.autoserver = 0,
 

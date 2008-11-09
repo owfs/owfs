@@ -68,7 +68,6 @@ extern struct mutexes {
 	my_rwlock_t lib;
 	my_rwlock_t cache;
 	my_rwlock_t store;
-	my_rwlock_t connin;
 #ifdef __UCLIBC__
 	pthread_mutexattr_t mattr;
 	pthread_mutex_t uclibc_mutex;
@@ -93,10 +92,10 @@ extern struct mutexes {
 #define STORE_RLOCK       my_rwlock_read_lock(    &Mutex.store ) ;
 #define STORE_RUNLOCK     my_rwlock_read_unlock(  &Mutex.store ) ;
 
-#define CONNIN_WLOCK      my_rwlock_write_lock(   &Mutex.connin ) ;
-#define CONNIN_WUNLOCK    my_rwlock_write_unlock( &Mutex.connin ) ;
-#define CONNIN_RLOCK      my_rwlock_read_lock(    &Mutex.connin ) ;
-#define CONNIN_RUNLOCK    my_rwlock_read_unlock(  &Mutex.connin ) ;
+#define CONNIN_WLOCK      my_rwlock_write_lock(   &Inbound_Control.lock ) ;
+#define CONNIN_WUNLOCK    my_rwlock_write_unlock( &Inbound_Control.lock ) ;
+#define CONNIN_RLOCK      my_rwlock_read_lock(    &Inbound_Control.lock ) ;
+#define CONNIN_RUNLOCK    my_rwlock_read_unlock(  &Inbound_Control.lock ) ;
 
 #define STATLOCK          pthread_mutex_lock(  &Mutex.stat_mutex   )
 #define STATUNLOCK        pthread_mutex_unlock(&Mutex.stat_mutex   )

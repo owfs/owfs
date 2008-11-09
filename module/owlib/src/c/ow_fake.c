@@ -15,9 +15,6 @@ $Id$
 #include "ow_connection.h"
 #include "ow_codes.h"
 
-int global_count_fake_busses = 0;
-int global_count_tester_busses = 0;
-
 /* All the remaining_device_list of the program sees is the Fake_detect and the entry in iroutines */
 
 static int Fake_reset(const struct parsedname *pn);
@@ -69,19 +66,21 @@ int Fake_detect(struct connection_in *in)
 	ASCII *newname;
 	ASCII *oldname = in->name;
 
-	in->file_descriptor = global_count_fake_busses;
+	in->file_descriptor = Inbound_Control.next_fake;
 	Fake_setroutines(in);		// set up close, reconnect, reset, ...
 
 	DirblobInit(&(in->connin.fake.db));
 	in->adapter_name = "Simulated-Random";
 	in->Adapter = adapter_fake;
-	in->connin.fake.bus_number_this_type = global_count_fake_busses;
-	LEVEL_CONNECT("Setting up Simulated (Fake) Bus Master (%d)\n", global_count_fake_busses);
+	in->connin.fake.bus_number_this_type = Inbound_Control.next_fake;
+	LEVEL_CONNECT("Setting up Simulated (Fake) Bus Master (%d)\n", Inbound_Control.next_fake);
 	if ((newname = (ASCII *) malloc(20))) {
 		const ASCII *current_device_start;
 		ASCII *remaining_device_list = in->name;
 
-		snprintf(newname, 18, "fake.%d", global_count_fake_busses);
+		UCLIBCLOCK ;
+		snprintf(newname, 18, "fake.%d", Inbound_Control.next_fake);
+		UCLIBCUNLOCK ;
 		in->name = newname;
 
 		while (remaining_device_list != NULL) {
@@ -111,7 +110,7 @@ int Fake_detect(struct connection_in *in)
 			free(oldname);
 		}
 	}
-	++global_count_fake_busses;
+	++Inbound_Control.next_fake;
 	return 0;
 }
 
@@ -120,19 +119,21 @@ int Tester_detect(struct connection_in *in)
 	ASCII *newname;
 	ASCII *oldname = in->name;
 
-	in->file_descriptor = global_count_tester_busses;
+	in->file_descriptor = Inbound_Control.next_tester;
 	Tester_setroutines(in);		// set up close, reconnect, reset, ...
 
 	DirblobInit(&(in->connin.tester.db));
 	in->adapter_name = "Simulated-Computed";
 	in->Adapter = adapter_tester;
-	in->connin.tester.bus_number_this_type = global_count_tester_busses;
-	LEVEL_CONNECT("Setting up Simulated (Testing) Bus Master (%d)\n", global_count_tester_busses);
+	in->connin.tester.bus_number_this_type = Inbound_Control.next_tester;
+	LEVEL_CONNECT("Setting up Simulated (Testing) Bus Master (%d)\n", Inbound_Control.next_tester);
 	if ((newname = (ASCII *) malloc(20))) {
 		const ASCII *current_device_start;
 		ASCII *remaining_device_list = in->name;
 
-		snprintf(newname, 18, "tester.%d", global_count_fake_busses);
+		UCLIBCLOCK ;
+		snprintf(newname, 18, "tester.%d", Inbound_Control.next_tester);
+		UCLIBCUNLOCK ;
 		in->name = newname;
 
 		while (remaining_device_list) {
@@ -147,8 +148,8 @@ int Tester_detect(struct connection_in *in)
 				|| (current_device_start = namefind(current_device_start))) {
 				unsigned int device_number = in->connin.tester.db.devices;
 				sn[0] = string2num(current_device_start);	// family code
-				sn[1] = BYTE_MASK(global_count_tester_busses >> 0);	// "bus" number
-				sn[2] = BYTE_MASK(global_count_tester_busses >> 8);	// "bus" number
+				sn[1] = BYTE_MASK(Inbound_Control.next_tester >> 0);	// "bus" number
+				sn[2] = BYTE_MASK(Inbound_Control.next_tester >> 8);	// "bus" number
 				sn[3] = sn[0];	// repeat family code
 				sn[4] = BYTE_INVERSE(sn[0]);	// family code complement
 				sn[5] = BYTE_MASK(device_number >> 0);	// "device" number
@@ -162,7 +163,7 @@ int Tester_detect(struct connection_in *in)
 			free(oldname);
 		}
 	}
-	++global_count_tester_busses;
+	++Inbound_Control.next_tester;
 	return 0;
 }
 

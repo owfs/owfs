@@ -182,12 +182,19 @@ static int FS_w_simultaneous(struct one_wire_query *owq)
 		return FS_w_given_bus(owq);
 	} else {
 		OWQ_allocate_struct_and_pointer(owq_given);
-		int bus_number;
+		struct connection_in * in;
 
 		memcpy(owq_given, owq, sizeof(struct one_wire_query));	// shallow copy
-		for (bus_number = 0; bus_number < count_inbound_connections; ++bus_number) {
-			SetKnownBus(bus_number, PN(owq_given));
+
+		CONNIN_RLOCK ;
+		in = Inbound_Control.head ;
+		CONNIN_RUNLOCK ;
+		while( in ) {
+			SetKnownBus(in->index, PN(owq_given));
 			FS_w_given_bus(owq_given);
+			CONNIN_RLOCK ;
+			in = in->next ;
+			CONNIN_RUNLOCK ;			
 		}
 		return 0;
 	}

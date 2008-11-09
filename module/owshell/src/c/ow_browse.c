@@ -68,6 +68,10 @@ static void ResolveBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 	(void) t;
 	(void) c;
 	(void) n;
+	(void) s;
+	(void) f;
+	(void) i;
+	(void) e;
 	//fprintf(stderr, "ResolveBack ref=%ld flags=%ld index=%ld, error=%d name=%s host=%s port=%d\n",(long int)s,(long int)f,(long int)i,(int)e,SAFESTRING(name),SAFESTRING(host),ntohs(port)) ;
 	if (snprintf(name, 120, "%s:%d", SAFESTRING(host), ntohs(port)) < 0) {
 		perror("Trouble with zeroconf resolve return\n");
@@ -84,6 +88,8 @@ static void BrowseBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 					   DNSServiceErrorType e, const char *name, const char *type, const char *domain, void *context)
 {
 	(void) context;
+	(void) i ;
+	(void) s ;
 	//fprintf(stderr, "BrowseBack ref=%ld flags=%ld index=%ld, error=%d name=%s type=%s domain=%s\n",(long int)s,(long int)f,(long int)i,(int)e,SAFESTRING(name),SAFESTRING(type),SAFESTRING(domain)) ;
 
 	if (e == kDNSServiceErr_NoError) {
