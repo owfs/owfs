@@ -327,7 +327,7 @@ enum adapter_type {
 enum e_reconnect {
 	reconnect_bad = -1,
 	reconnect_ok = 0,
-	reconnect_error = 5,
+	reconnect_error = 3,
 };
 
 struct device_search {

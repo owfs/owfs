@@ -24,6 +24,7 @@ int TestConnection(const struct parsedname *pn)
 	int ret = 0;
 	struct connection_in *selected_connection = pn->selected_connection;
 
+	//printf("Reconnect = %d / %d\n",selected_connection->reconnect_state,reconnect_error) ;
 	// Test without a lock -- efficient
 	if (pn == NULL || selected_connection == NULL || selected_connection->reconnect_state < reconnect_error) {
 		return 0;

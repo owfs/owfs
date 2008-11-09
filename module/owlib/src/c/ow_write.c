@@ -92,7 +92,7 @@ int FS_write_postparse(struct one_wire_query *owq)
 	}
 
 	if (pn->selected_connection == NULL) {
-		return -ENODEV;			// no busses
+		return -ENODEV;			// no buses
 	}
 
 	STATLOCK;

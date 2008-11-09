@@ -143,7 +143,7 @@ static int FS_ParsedName_anywhere(const char *path, enum parse_pass remote_statu
 						pn->state |= ePS_busveryremote;
 					}
 				}
-				// root busses are considered "real"
+				// root buses are considered "real"
 				if (pn->type == ePN_root) {
 					pn->type = ePN_real;	// default state
 				}
@@ -222,7 +222,7 @@ static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path,
 	}
 
 	memset(pn, 0, sizeof(struct parsedname));
-	pn->known_bus = NULL;		/* all busses */
+	pn->known_bus = NULL;		/* all buses */
 
 	/* Set the persistent state info (temp scale, ...) -- will be overwritten by client settings in the server */
 	SGLOCK;
@@ -422,7 +422,7 @@ static enum parse_enum Parse_Bus(char *pathnow, enum parse_pass remote_status, s
 	}
 	pn->terminal_bus_number = bus_number;
 
-	/* Should make a presence check on remote busses here, but
+	/* Should make a presence check on remote buses here, but
 	 * it's not a major problem if people use bad paths since
 	 * they will just end up with empty directory listings. */
 	if (SpecifiedLocalBus(pn)) {	/* already specified a "bus." */

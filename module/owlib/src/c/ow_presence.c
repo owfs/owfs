@@ -143,7 +143,7 @@ static int CheckPresence_low(struct connection_in *in, const struct parsedname *
 			TRXN_NVERIFY,
 			TRXN_END,
 		};
-		/* this can only be done on local busses */
+		/* this can only be done on local buses */
 		if (BUS_transaction(t, &pn2)) {
 			ret = -1;
 		} else {
@@ -195,7 +195,7 @@ static int CheckPresence_low(struct connection_in *in, const struct parsedname *
 			TRXN_NVERIFY,
 			TRXN_END,
 		};
-		/* this can only be done on local busses */
+		/* this can only be done on local buses */
 		if (BUS_transaction(t, &pn2) == 0) {
 			/* Device was found on this in-device, return it's index */
 			return in->index;
