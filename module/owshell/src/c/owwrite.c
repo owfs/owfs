@@ -97,6 +97,7 @@ static int HexVal( char c )
 			fprintf(stderr,"Unrecognized hex character %c\n",c) ;
 			Exit(1) ;
 	}
+	return -1 ; // never gets here
 }
 
 static char * HexConvert( char * input_string )
