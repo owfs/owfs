@@ -187,7 +187,7 @@ Summary: %{name}-shell gives light weight shell access to owserver and the 1-wir
 Group: Applications/System
 
 %description shell
-%{name}-shell is 4 small programs to easily access owserver (and thus the 1-wire system) from shell scripts. owdir, owread, owwrite and owpresent.
+%{name}-shell is 5 small programs to easily access owserver (and thus the 1-wire system) from shell scripts. owdir, owread, owwrite, owget  and owpresent.
 %endif
 
 %if %{build_man}
@@ -482,11 +482,12 @@ fi
 %{prefix}/bin/owdir
 %{prefix}/bin/owread
 %{prefix}/bin/owwrite
+%{prefix}/bin/owget
 %{prefix}/bin/owpresent
 %{_mandir}/man1/owshell.1.gz
 %{_mandir}/man1/owdir.1.gz
 %{_mandir}/man1/owread.1.gz
-%{_mandir}/man1/owwrite.1.gz
+%{_mandir}/man1/owget.1.gz
 %{_mandir}/man1/owpresent.1.gz
 
 %if %{build_php}
