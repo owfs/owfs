@@ -62,6 +62,7 @@ void FS_ParsedName_destroy(struct parsedname *pn)
 		return;
 	}
 	LEVEL_DEBUG("ParsedName_destroy %s\n", SAFESTRING(pn->path));
+	CONNIN_RUNLOCK ;
 	//printf("PNDestroy bp (%d)\n",BusIsServer(pn->selected_connection)) ;
 	if (pn->bp) {
 		free(pn->bp);
@@ -266,11 +267,11 @@ static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path,
 		free(pn->path);
 		return -ENOENT;
 	}
+
 	/* connection_in list and start */
 	/* ---------------------------- */
-	/* -- This is important, the -- */
-	/* -- lock array allocated one  */
-	/* -- per bus. But buses can -- */
+	/* -- This is important:     -- */
+	/* -- But buses can --          */
 	/* -- be added by Browse so  -- */
 	/* -- a reader/writer lock is - */
 	/* -- held until ParsedNameDestroy */
@@ -278,7 +279,6 @@ static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path,
 
 	CONNIN_RLOCK;
 	pn->selected_connection = Inbound_Control.head ; // Default bus assignment
-	CONNIN_RUNLOCK ;
 
 	/* Have to save pn->path at once */
 	strcpy(pn->path, path);

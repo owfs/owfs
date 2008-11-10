@@ -52,9 +52,7 @@ void HTTPtitle(FILE * out, const char *title)
 void HTTPheader(FILE * out, const char *head)
 {
 	struct connection_in * in ;
-	CONNIN_RLOCK ;
 	in = Inbound_Control.head ;
-	CONNIN_RUNLOCK ;
 	fprintf(out,
 			"<BODY " BODYCOLOR "><TABLE " TOPTABLE
 			"><TR><TD>OWFS on %s</TD><TD><A HREF='/'>Bus listing</A></TD><TD><A HREF='http://www.owfs.org'>OWFS homepage</A></TD><TD><A HREF='http://www.maxim-ic.com'>Dallas/Maxim</A></TD><TD>by <A HREF='mailto://palfille@earthlink.net'>Paul H Alfille</A></TD></TR></TABLE>\n",

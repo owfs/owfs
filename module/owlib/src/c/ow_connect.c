@@ -38,14 +38,11 @@ struct connection_in *find_connection_in(int bus_number)
 	struct connection_in *c_in;
 	// step through inbound linked list
 
-	CONNIN_RLOCK ;
 	for (c_in = Inbound_Control.head; c_in != NULL; c_in = c_in->next) {
 		if (c_in->index == bus_number) {
-			CONNIN_RUNLOCK ;
 			return c_in;
 		}
 	}
-	CONNIN_RUNLOCK ;
 	return NULL;
 }
 
@@ -146,14 +143,12 @@ struct connection_side *NewSide(void)
 void FreeInAll( void )
 {
 	struct connection_in * now ;
-	CONNIN_WLOCK ;
 	now = Inbound_Control.head ;
 	while ( now ) {
 		struct connection_in * next = now-> next ;
 		FreeIn(now) ;
 		now = next ;
 	}
-	CONNIN_WUNLOCK ;
 }
 
 // Free the important parts of a connection_in structure
@@ -167,12 +162,7 @@ void FreeIn(struct connection_in * now)
 	LEVEL_DEBUG("FreeIn: busmode=%d\n", get_busmode(now));
 	--Inbound_Control.active ;
 #if OW_MT
-	pthread_mutex_trylock(&(now->bus_mutex));
-	pthread_mutex_unlock( &(now->bus_mutex));
 	pthread_mutex_destroy(&(now->bus_mutex));
-
-	pthread_mutex_trylock(&(now->dev_mutex));
-	pthread_mutex_unlock( &(now->dev_mutex));
 	pthread_mutex_destroy(&(now->dev_mutex));
 
 	if (now->dev_db) {
@@ -241,9 +231,6 @@ void RemoveIn( struct connection_in * removeIn )
 		return ;
 	}
 
-	BUSLOCKIN(removeIn) ;
-	
-	CONNIN_WLOCK ;
 	if ( Inbound_Control.head == removeIn ) {
 		Inbound_Control.head = removeIn->next ;
 	} else {
@@ -254,7 +241,6 @@ void RemoveIn( struct connection_in * removeIn )
 			}
 		}
 	}
-	CONNIN_WUNLOCK ;
 
 	FreeIn( removeIn ) ;
 }

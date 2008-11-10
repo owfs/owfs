@@ -134,9 +134,7 @@ int FS_FindHA7(void)
 			continue ;
 		}
 		
-		CONNIN_WLOCK ;
 		in = NewIn(NULL) ;
-		CONNIN_WUNLOCK ;
 		if (in == NULL) {
 			continue;
 		}

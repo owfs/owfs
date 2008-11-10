@@ -163,7 +163,6 @@ static void SetupInboundConnections(void)
 			in->busmode = bus_bad ;
 		}
 	}
-	CONNIN_RUNLOCK;
 }
 
 static void SetupSideboundConnections(void)

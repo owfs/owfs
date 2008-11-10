@@ -186,15 +186,11 @@ static int FS_w_simultaneous(struct one_wire_query *owq)
 
 		memcpy(owq_given, owq, sizeof(struct one_wire_query));	// shallow copy
 
-		CONNIN_RLOCK ;
 		in = Inbound_Control.head ;
-		CONNIN_RUNLOCK ;
 		while( in ) {
 			SetKnownBus(in->index, PN(owq_given));
 			FS_w_given_bus(owq_given);
-			CONNIN_RLOCK ;
 			in = in->next ;
-			CONNIN_RUNLOCK ;			
 		}
 		return 0;
 	}

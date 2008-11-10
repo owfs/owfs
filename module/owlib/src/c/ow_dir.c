@@ -241,15 +241,11 @@ static int FS_dir_all_connections_loop(void (*dirfunc)
 	struct connection_in * in, const struct parsedname *pn_directory, uint32_t * flags)
 {
 	int ret = 0;
-	struct dir_all_connections_struct dacs = { NULL, pn_directory, dirfunc, v, flags, 0 };
+	struct dir_all_connections_struct dacs = { in->next, pn_directory, dirfunc, v, flags, 0 };
 	struct parsedname s_pn_bus_directory;
 	struct parsedname *pn_bus_directory = &s_pn_bus_directory;
 	pthread_t thread;
 	int threadbad = 1;
-
-	CONNIN_RLOCK ;
-	dacs.in = in->next ;
-	CONNIN_RUNLOCK ;
 
 	threadbad = (dacs.in==NULL) || pthread_create(&thread, NULL, FS_dir_all_connections_callback, (void *) (&dacs));
 
@@ -281,13 +277,11 @@ static int FS_dir_all_connections_loop(void (*dirfunc)
 	}
 	return ret;
 }
+
 static int
 FS_dir_all_connections(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_directory, uint32_t * flags)
 {
-	struct connection_in * in;
-	CONNIN_RLOCK ;
-	in = Inbound_Control.head ;
-	CONNIN_RUNLOCK ;
+	struct connection_in * in = Inbound_Control.head ;
 	// Make sure head isn't NULL
 	if ( in == NULL ) {
 		return 0 ;
@@ -309,27 +303,22 @@ FS_dir_all_connections(void (*dirfunc) (void *, const struct parsedname *), void
 
 	memcpy(pn_selected_connection, pn_directory, sizeof(struct parsedname));	//shallow copy
 
-	CONNIN_RLOCK ;
-	in = Inbound_Control.head ;
-	CONNIN_RUNLOCK ;
-
-	while (in) {
+	for (in = Inbound_Control.head ; in != NULL ; in = in->next ) {
 		SetKnownBus(in->index, pn_selected_connection);
 
-		if ( TestConnection(pn_selected_connection) == 0 ) {
-			if (BusIsServer(pn_selected_connection->selected_connection)) {	/* is this a remote bus? */
-				ret |= ServerDir(dirfunc, v, pn_selected_connection, flags);
-			} else {				/* local bus */
-				if (IsAlarmDir(pn_selected_connection)) {	/* root or branch directory -- alarm state */
-					ret |= FS_alarmdir(dirfunc, v, pn_selected_connection);
-				} else {
-					ret = FS_cache2real(dirfunc, v, pn_selected_connection, flags);
-				}
-			}
+		if ( TestConnection(pn_selected_connection) ) {
+			continue ;
 		}
-		CONNIN_RLOCK ;
-		in = in->next ;
-		CONNIN_RUNLOCK ;
+		if (BusIsServer(pn_selected_connection->selected_connection)) {	/* is this a remote bus? */
+			ret |= ServerDir(dirfunc, v, pn_selected_connection, flags);
+			continue ;
+		}
+		/* local bus */
+		if (IsAlarmDir(pn_selected_connection)) {	/* root or branch directory -- alarm state */
+			ret |= FS_alarmdir(dirfunc, v, pn_selected_connection);
+		} else {
+			ret = FS_cache2real(dirfunc, v, pn_selected_connection, flags);
+		}
 	}
 
 	return ret;
@@ -652,24 +641,17 @@ static int FS_typedir(void (*dirfunc) (void *, const struct parsedname *), void 
 static int FS_busdir(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_directory)
 {
 	char bus[OW_FULLNAME_MAX];
-	struct connection_in * in ;;
+	struct connection_in * in ;
 
 	if (!RootNotBranch(pn_directory)) {
 		return 0;
 	}
 
-	CONNIN_RLOCK ;
-	in = Inbound_Control.head ;
-	CONNIN_RUNLOCK ;
-
-	while ( in ) {
+	for ( in = Inbound_Control.head ; in != NULL ; in = in->next ) {
 		UCLIBCLOCK;
 		snprintf(bus, OW_FULLNAME_MAX, "bus.%d", in->index);
 		UCLIBCUNLOCK;
 		FS_dir_plus(dirfunc, v, pn_directory, bus);
-		CONNIN_RLOCK ;
-		in = in->next ;
-		CONNIN_RUNLOCK ;
 	}
 
 	return 0;

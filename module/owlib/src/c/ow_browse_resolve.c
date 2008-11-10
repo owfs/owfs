@@ -20,11 +20,15 @@ static struct connection_in *FindIn(const char * name, const char * type, const 
 
 void ZeroAdd(const char * name, const char * type, const char * domain, const char * host, const char * service)
 {
-	struct connection_in * in = FindIn( name, type, domain ) ;
+	struct connection_in * in ;
+
+	CONNIN_WLOCK ;
+	in = FindIn( name, type, domain ) ;
 	
 	if ( in != NULL ) {
 		if ( in->connin.tcp.host && strcmp(in->connin.tcp.host,host)==0 && in->connin.tcp.service && strcmp(in->connin.tcp.service,service)==0 ) {
 			LEVEL_DEBUG( "Zeroconf: Repeat add of %s (%s:%s) -- ignored\n",name,host,service) ;
+			CONNIN_WUNLOCK ;
 			return ;
 		} else {
 			LEVEL_DEBUG( "Zeroconf: Add a new connection replaces a previous entry\n" ) ;
@@ -33,19 +37,22 @@ void ZeroAdd(const char * name, const char * type, const char * domain, const ch
 	}
 	
 	CreateIn( name, type, domain, host, service ) ;
+	CONNIN_WUNLOCK ;
 }
 
 void ZeroDel(const char * name, const char * type, const char * domain )
 {
-	struct connection_in * in = FindIn( name, type, domain ) ;
+	struct connection_in * in ;
 	
+	CONNIN_WLOCK ;
+	in = FindIn( name, type, domain ) ;
 	if ( in != NULL ) {
 		LEVEL_DEBUG( "Zeroconf: Removing %s (bus.%d)\n",name,in->index) ;
 		RemoveIn( in ) ;
-		return ;
 	} else {
 		LEVEL_DEBUG("Couldn't find matching bus to remove\n");
 	}
+	CONNIN_WUNLOCK ;
 }	
 
 static int CreateIn(const char * name, const char * type, const char * domain, const char * host, const char * service )
@@ -53,9 +60,7 @@ static int CreateIn(const char * name, const char * type, const char * domain, c
 	char addr_name[128] ;
 	struct connection_in * in ;
 
-	CONNIN_WLOCK ;
 	in = NewIn(NULL) ;
-	CONNIN_WUNLOCK ;
 	if ( in == NULL ) {
 		return 1 ;
 	}
@@ -83,9 +88,7 @@ static int CreateIn(const char * name, const char * type, const char * domain, c
 static struct connection_in *FindIn(const char * name, const char * type, const char * domain)
 {
 	struct connection_in *now;
-	CONNIN_RLOCK;
 	now = Inbound_Control.head;
-	CONNIN_RUNLOCK;
 	while ( now != NULL ) {
 		//printf("Matching %d/%s/%s/%s/ to bus.%d %d/%s/%s/%s/\n",bus_zero,name,type,domain,now->index,now->busmode,now->connin.tcp.name,now->connin.tcp.type,now->connin.tcp.domain);
 		if (now->busmode == bus_zero
