@@ -142,8 +142,10 @@ static void create_services(struct announce_avahi_struct * aas)
 				ret1 = avahi_entry_group_add_service( aas->group, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC, 0, name,"_ftp._tcp", NULL, NULL, port, NULL) ;
 				break;
 			default:
-				break ;
+				avahi_simple_poll_quit(aas->poll);
+				return;
 		}
+		//printf("AVAHI ANNOUNCE: domain=<%s>\n",avahi_client_get_domain_name(aas->client) ) ;
 		if ( ret1 < 0 || ret2 < 0 ) {
 			LEVEL_DEBUG("Avahi announce: Failed to add a service: %s or %s\n", avahi_strerror(ret1), avahi_strerror(ret2));
 			avahi_simple_poll_quit(aas->poll);
@@ -157,6 +159,33 @@ static void create_services(struct announce_avahi_struct * aas)
 			avahi_simple_poll_quit(aas->poll);
 			return;
 		}
+		/* Record the service to prevent browsing to ourself */
+		if ( aas->out->zero.name ) {
+			free(aas->out->zero.name) ;
+		}
+		aas->out->zero.name = strdup(name) ;
+
+		if ( aas->out->zero.type ) {
+			free(aas->out->zero.type) ;
+		}
+		switch (Globals.opt) {
+			case opt_httpd:
+				aas->out->zero.type = strdup("_owhttpd._tcp") ;
+				break ;
+			case opt_server:
+				aas->out->zero.type = strdup("_owserver._tcp") ;
+				break;
+			case opt_ftpd:
+				aas->out->zero.type = strdup("_ftp._tcp") ;
+				break;
+			default:
+				break ;
+		}
+		
+		if ( aas->out->zero.domain ) {
+			free(aas->out->zero.domain) ;
+		}
+		aas->out->zero.domain = strdup(avahi_client_get_domain_name(aas->client)) ;
 	}
 }
 

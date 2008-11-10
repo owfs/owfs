@@ -22,6 +22,7 @@ struct inbound_control Inbound_Control = {
 	.active = 0,
 	.next_index = 0 ,
 	.head = NULL,
+	.w1_seq = 0,
 	.sys_w1 = NULL,
 	.w1_netlink_fd = -1 ,
 	.next_fake = 0 ,
@@ -264,6 +265,18 @@ void FreeOut(void)
 	while (next) {
 		now = next;
 		next = now->next;
+		if (now->zero.name) {
+			free(now->zero.name);
+			now->zero.name = NULL;
+		}
+		if (now->zero.type) {
+			free(now->zero.type);
+			now->zero.type = NULL;
+		}
+		if (now->zero.domain) {
+			free(now->zero.domain);
+			now->zero.domain = NULL;
+		}
 		if (now->name) {
 			free(now->name);
 			now->name = NULL;

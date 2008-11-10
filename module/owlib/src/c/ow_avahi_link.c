@@ -78,6 +78,7 @@ int OW_Load_avahi_library(void)
 	DNSfunction_link(avahi_client,avahi_client_errno) ;
 	DNSfunction_link(avahi_client,avahi_client_free) ;
 	DNSfunction_link(avahi_client,avahi_client_new) ;
+	DNSfunction_link(avahi_client,avahi_client_get_domain_name) ;
 	DNSfunction_link(avahi_client,avahi_entry_group_add_service) ;
 	DNSfunction_link(avahi_client,avahi_entry_group_commit) ;
 	DNSfunction_link(avahi_client,avahi_entry_group_is_empty) ;

@@ -275,6 +275,8 @@ struct AvahiClient {
 	void * record_browsers;
 };
 
+const char * (* avahi_client_get_domain_name)( AvahiClient *) ;
+
 /* Browsing-specific */
 typedef enum {
 	AVAHI_BROWSER_NEW,

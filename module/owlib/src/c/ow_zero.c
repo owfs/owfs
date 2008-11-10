@@ -19,17 +19,35 @@ $Id$
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-/* Sent back from Bounjour -- arbitrarily use it to set the Ref for Deallocation */
-static void RegisterBack(DNSServiceRef s, DNSServiceFlags f,
-						 DNSServiceErrorType e, const char *name, const char *type, const char *domain, void *context)
+static void RegisterBack(DNSServiceRef s, DNSServiceFlags f, DNSServiceErrorType e, const char *name, const char *type, const char *domain, void *v) ;
+static void Announce_Post_Register(DNSServiceRef sref, DNSServiceErrorType err) ;
+static void *Announce(void *v) ;
+
+/* Sent back from Bonjour -- arbitrarily use it to set the Ref for Deallocation */
+static void RegisterBack(DNSServiceRef s, DNSServiceFlags f, DNSServiceErrorType e, const char *name, const char *type, const char *domain, void *v)
 {
-	DNSServiceRef *sref = context;
+	struct connection_out * out = v ;
 	LEVEL_DETAIL
 		("RegisterBack ref=%d flags=%d error=%d name=%s type=%s domain=%s\n", s, f, e, SAFESTRING(name), SAFESTRING(type), SAFESTRING(domain));
-	if (e == kDNSServiceErr_NoError) {
-		sref[0] = s;
+	if (e != kDNSServiceErr_NoError) {
+		return ;
 	}
-	LEVEL_DEBUG("RegisterBack: done\n");
+	out->sref0 = s;
+	
+	if ( out->zero.name ) {
+		free(out->zero.name) ;
+	}
+	out->zero.name = strdup(name) ;
+	
+	if ( out->zero.type ) {
+		free(out->zero.type) ;
+	}
+	out->zero.type = strdup(type) ;
+	
+	if ( out->zero.domain ) {
+		free(out->zero.domain) ;
+	}
+	out->zero.domain = strdup(domain) ;
 }
 
 static void Announce_Post_Register(DNSServiceRef sref, DNSServiceErrorType err)
@@ -37,7 +55,7 @@ static void Announce_Post_Register(DNSServiceRef sref, DNSServiceErrorType err)
 	if (err == kDNSServiceErr_NoError) {
 		DNSServiceProcessResult(sref);
 	} else {
-		ERROR_CONNECT("Unsuccessful call to DNSServiceRegister err = %d\n", err);
+		LEVEL_CONNECT("Unsuccessful call to DNSServiceRegister err = %d\n", err);
 	}
 }
 
@@ -72,23 +90,23 @@ static void *Announce(void *v)
 			UCLIBCLOCK;
 			snprintf(name,62,"%s <%d>",service_name,(int)port);
 			UCLIBCUNLOCK;
-			err = DNSServiceRegister(&sref, 0, 0, name,"_http._tcp", NULL, NULL, port, 0, NULL, RegisterBack, &(out->sref0)) ;
+			err = DNSServiceRegister(&sref, 0, 0, name,"_http._tcp", NULL, NULL, port, 0, NULL, RegisterBack, out) ;
 			Announce_Post_Register(sref, err) ;
-			err = DNSServiceRegister(&sref, 0, 0, name,"_owhttpd._tcp", NULL, NULL, port, 0, NULL, RegisterBack, &(out->sref0)) ;
+			err = DNSServiceRegister(&sref, 0, 0, name,"_owhttpd._tcp", NULL, NULL, port, 0, NULL, RegisterBack, out) ;
 			break ;
 		case opt_server:
 			service_name = (Globals.announce_name) ? Globals.announce_name : "OWFS (1-wire) Server" ;
 			UCLIBCLOCK;
 			snprintf(name,62,"%s <%d>",service_name,(int)port);
 			UCLIBCUNLOCK;
-			err = DNSServiceRegister(&sref, 0, 0, name,"_owserver._tcp", NULL, NULL, port, 0, NULL, RegisterBack, &(out->sref0)) ;
+			err = DNSServiceRegister(&sref, 0, 0, name,"_owserver._tcp", NULL, NULL, port, 0, NULL, RegisterBack, out) ;
 			break;
 		case opt_ftpd:
 			service_name = (Globals.announce_name) ? Globals.announce_name : "OWFS (1-wire) FTP" ;
 			UCLIBCLOCK;
 			snprintf(name,62,"%s <%d>",service_name,(int)port);
 			UCLIBCUNLOCK;
-			err = DNSServiceRegister(&sref, 0, 0, name,"_owftp._tcp", NULL, NULL, port, 0, NULL, RegisterBack, &(out->sref0)) ;
+			err = DNSServiceRegister(&sref, 0, 0, name,"_owftp._tcp", NULL, NULL, port, 0, NULL, RegisterBack, out) ;
 			break;
 		default:
 			err = kDNSServiceErr_NoError ;

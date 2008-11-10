@@ -17,10 +17,17 @@ $Id$
 
 static int CreateIn(const char * name, const char * type, const char * domain, const char * host, const char * service ) ;
 static struct connection_in *FindIn(const char * name, const char * type, const char * domain);
+static struct connection_out *FindOut(const char * name, const char * type, const char * domain);
 
 void ZeroAdd(const char * name, const char * type, const char * domain, const char * host, const char * service)
 {
 	struct connection_in * in ;
+
+	// Don't add yourself
+	if ( FindOut(name,type,domain) != NULL ) {
+		LEVEL_DEBUG( "Zeroconf: Attempt add of ourselves -- ignored\n" ) ;
+		return ;
+	}
 
 	CONNIN_WLOCK ;
 	in = FindIn( name, type, domain ) ;
@@ -31,7 +38,7 @@ void ZeroAdd(const char * name, const char * type, const char * domain, const ch
 			CONNIN_WUNLOCK ;
 			return ;
 		} else {
-			LEVEL_DEBUG( "Zeroconf: Add a new connection replaces a previous entry\n" ) ;
+			LEVEL_DEBUG( "Zeroconf: The new connection replaces a previous entry\n" ) ;
 			RemoveIn(in) ;
 		}
 	}
@@ -50,7 +57,7 @@ void ZeroDel(const char * name, const char * type, const char * domain )
 		LEVEL_DEBUG( "Zeroconf: Removing %s (bus.%d)\n",name,in->index) ;
 		RemoveIn( in ) ;
 	} else {
-		LEVEL_DEBUG("Couldn't find matching bus to remove\n");
+		LEVEL_DEBUG("Zeroconf: Couldn't find matching bus to remove\n");
 	}
 	CONNIN_WUNLOCK ;
 }	
@@ -87,18 +94,46 @@ static int CreateIn(const char * name, const char * type, const char * domain, c
 // else NULL
 static struct connection_in *FindIn(const char * name, const char * type, const char * domain)
 {
-	struct connection_in *now;
-	now = Inbound_Control.head;
-	while ( now != NULL ) {
+	struct connection_in *now ;
+	for ( now = Inbound_Control.head ; now != NULL ; now = now->next ) {
 		//printf("Matching %d/%s/%s/%s/ to bus.%d %d/%s/%s/%s/\n",bus_zero,name,type,domain,now->index,now->busmode,now->connin.tcp.name,now->connin.tcp.type,now->connin.tcp.domain);
-		if (now->busmode == bus_zero
-			&& strcasecmp( now->connin.tcp.name  , name  ) == 0
+		if ( now->busmode != bus_zero
+			|| now->connin.tcp.name   == NULL
+			|| now->connin.tcp.type   == NULL
+			|| now->connin.tcp.domain == NULL
+			) {
+			continue ;
+		}
+		if (
+			   strcasecmp( now->connin.tcp.name  , name  ) == 0
 			&& strcasecmp( now->connin.tcp.type  , type  ) == 0
 			&& strcasecmp( now->connin.tcp.domain, domain) == 0
 			) {
 			return now ;
 		}
-		now = now->next ;
+	}
+	return NULL;
+}
+
+// Finds matching connection
+// returns it if found,
+// else NULL
+static struct connection_out *FindOut(const char * name, const char * type, const char * domain)
+{
+	struct connection_out *now ;
+	for ( now = Outbound_Control.head ; now != NULL ; now = now->next ) {
+		if (	   now->zero.name   == NULL
+			|| now->zero.type   == NULL
+			|| now->zero.domain == NULL
+			) {
+			continue ;
+		}
+		if (	   strcasecmp( now->zero.name  , name  ) == 0
+			&& strcasecmp( now->zero.type  , type  ) == 0
+			&& strcasecmp( now->zero.domain, domain) == 0
+			) {
+			return now ;
+		}
 	}
 	return NULL;
 }
