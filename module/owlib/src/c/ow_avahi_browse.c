@@ -23,13 +23,17 @@ See the header file: ow.h for full attribution
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+/* Structure */
 struct browse_avahi_struct {
 	AvahiServiceBrowser *browser ;
 	AvahiSimplePoll *poll ;
 	AvahiClient *client ;
+	char host[INET6_ADDRSTRLEN+1] ;
+	char service[10] ;
 } ;
 
-static void AvahiBrowserNetName( const AvahiAddress *address, int port ) ;
+/* Prototypes */
+static int AvahiBrowserNetName( const AvahiAddress *address, int port, struct browse_avahi_struct * bas ) ;
 static void resolve_callback(
 	AvahiServiceResolver *r,
 	AVAHI_GCC_UNUSED AvahiIfIndex interface,
@@ -56,6 +60,9 @@ static void browse_callback(
 	void* v) ;
 static void client_callback(AvahiClient *c, AvahiClientState state, void * v) ;
 
+/* Code */
+
+/* Resolve callback -- a new owserver was found and resolved, add it to the list */
 static void resolve_callback(
 	AvahiServiceResolver *r,
 	AVAHI_GCC_UNUSED AvahiIfIndex interface,
@@ -85,38 +92,42 @@ static void resolve_callback(
 
 		case AVAHI_RESOLVER_FOUND:
 			LEVEL_DEBUG( "Service '%s' of type '%s' in domain '%s':\n", name, type, domain);
-			AvahiBrowserNetName( address, port ) ;
+			if ( AvahiBrowserNetName( address, port, bas ) ) {
+				break ;
+			}
+			ZeroAdd( name, type, domain, bas->host, bas->service ) ;
 			break ;
 	}
-
+				
 	avahi_service_resolver_free(r);
 }
 
-static void AvahiBrowserNetName( const AvahiAddress *address, int port )
+static int AvahiBrowserNetName( const AvahiAddress *address, int port, struct browse_avahi_struct * bas )
 {
+	memset(bas->host,0,sizeof(bas->host)) ;
+	memset(bas->service,0,sizeof(bas->service)) ;
+	UCLIBCLOCK ;
+	snprintf(bas->service, sizeof(bas->service),"%d",port) ;
+	UCLIBCUNLOCK ;
 	switch (address->proto) {
 		case AVAHI_PROTO_INET:     /**< IPv4 */
-		{
-			char name[INET_ADDRSTRLEN+1] ;
-			memset(name,0,sizeof(name)) ;
-			if ( inet_ntop( AF_INET, (const void *)&(address->data.ipv4), name, sizeof(name)) != NULL ) {
-				LEVEL_DEBUG( "Address '%s' Port %d:\n", name, port);
+			if ( inet_ntop( AF_INET, (const void *)&(address->data.ipv4), bas->host, sizeof(bas->host)) != NULL ) {
+				LEVEL_DEBUG( "Address '%s' Port %d:\n", bas->host, port);
+				return 0 ;
 			}
-		}
 			break ;
 		case AVAHI_PROTO_INET6:   /**< IPv6 */
-		{
-			char name[INET6_ADDRSTRLEN+1] ;
-			memset(name,0,sizeof(name)) ;
-			if ( inet_ntop( AF_INET6, (const void *)&(address->data.ipv6), name, sizeof(name)) != NULL ) {
-				LEVEL_DEBUG( "Address '%s' Port %d:\n", name, port);
+			if ( inet_ntop( AF_INET6, (const void *)&(address->data.ipv6), bas->host, sizeof(bas->host)) != NULL ) {
+				LEVEL_DEBUG( "Address '%s' Port %d:\n", bas->host, port);
+				return 0 ;
 			}
 			break ;
-		}
 		default:
+			strncpy(bas->host,"Unknown address",sizeof(bas->host)) ;
 			LEVEL_DEBUG( "Unknown internet protocol\n");
 			break ;
 	}
+	return 1 ;
 }
 
 static void browse_callback(
@@ -158,6 +169,7 @@ static void browse_callback(
 
 		case AVAHI_BROWSER_REMOVE:
 			LEVEL_DEBUG( "(Browser) REMOVE: service '%s' of type '%s' in domain '%s'\n", name, type, domain);
+			ZeroDel(name, type, domain ) ;
 			break;
 
 		case AVAHI_BROWSER_ALL_FOR_NOW:

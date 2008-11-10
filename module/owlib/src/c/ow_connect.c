@@ -161,7 +161,9 @@ void FreeInAll( void )
 // Then free structure itself
 void FreeIn(struct connection_in * now)
 {
-
+	if ( now==NULL ) {
+		return ;
+	}
 	LEVEL_DEBUG("FreeIn: busmode=%d\n", get_busmode(now));
 	--Inbound_Control.active ;
 #if OW_MT
@@ -191,12 +193,6 @@ void FreeIn(struct connection_in * now)
 		break;
 	case bus_zero:
 	case bus_server:
-		if (now->connin.tcp.host) {
-			free(now->connin.tcp.host);
-		}
-		if (now->connin.tcp.service) {
-			free(now->connin.tcp.service);
-		}
 		if (now->connin.tcp.type) {
 			free(now->connin.tcp.type);
 		}

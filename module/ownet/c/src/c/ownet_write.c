@@ -30,7 +30,7 @@ int OWNET_put(OWNET_HANDLE h, const char *onewire_path, const char *value_string
 	}
 
 	rp->path = (onewire_path == NULL) ? "/" : onewire_path;
-	rp->write_value = value_string;
+	rp->write_value = (const unsigned char *) value_string;
 	rp->data_length = size;
 	rp->data_offset = 0;
 
@@ -55,7 +55,7 @@ int OWNET_lwrite(OWNET_HANDLE h, const char *onewire_path, const char *value_str
 	}
 
 	rp->path = (onewire_path == NULL) ? "/" : onewire_path;
-	rp->write_value = value_string;
+	rp->write_value = (const unsigned char *) value_string;
 	rp->data_length = size;
 	rp->data_offset = offset;
 

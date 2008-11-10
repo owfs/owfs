@@ -25,7 +25,6 @@ struct BrowseStruct {
 	char *domain;
 };
 
-static struct connection_in *FindIn(struct BrowseStruct *bs);
 static struct BrowseStruct *BSCreate(const char *name, const char *type, const char *domain);
 static void BSKill(struct BrowseStruct *bs);
 static void * OW_Browse_Bonjour(void * v) ;
@@ -36,87 +35,28 @@ static void BrowseBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 					   DNSServiceErrorType e, const char *name, const char *type, const char *domain, void *context);
 
 
-#if 0
-static void RequestBack(DNSServiceRef sr,
-						DNSServiceFlags flags,
-						uint32_t interfaceIndex,
-						DNSServiceErrorType errorCode,
-						const char *fullname, uint16_t rrtype, uint16_t rrclass, uint16_t rdlen, const void *rdata, uint32_t ttl, void *context)
-{
-	int i;
-	(void) context;
-	printf("DNSServiceRef %ld\n", (long int) sr);
-	printf("DNSServiceFlags %d\n", flags);
-	printf("interface %d\n", interfaceIndex);
-	printf("DNSServiceErrorType %d\n", errorCode);
-	printf("name <%s>\n", fullname);
-	printf("rrtype %d\n", rrtype);
-	printf("rrclass %d\n", rrclass);
-	printf("rdlen %d\n", rdlen);
-	printf("rdata ");
-	for (i = 0; i < rdlen; ++i)
-		printf(" %.2X", ((const BYTE *) rdata)[i]);
-	printf("\nttl %d\n", ttl);
-}
-
-		/* Resolved service -- add to connection_in */
-#endif							/* 0 */
-
 static void ResolveBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 						DNSServiceErrorType e, const char *n, const char *host, uint16_t port, uint16_t tl, const char *t, void *c)
 {
-	ASCII name[121];
 	struct BrowseStruct *bs = c;
-	struct connection_in *in;
+	char service[11] ;
 	int sn_ret ;
+
 	(void) tl;
 	(void) t;
-	//printf("ResolveBack ref=%ld flags=%d index=%d, error=%d name=%s host=%s port=%d\n",(long int)s,f,i,e,name,host,ntohs(port)) ;
-	//printf("ResolveBack ref=%ld flags=%d index=%d, error=%d name=%s type=%s domain=%s\n",(long int)s,f,i,e,bs->name,bs->type,bs->domain) ;
+
+	UCLIBCLOCK ;
+	sn_ret = snprintf(service, 10, "%d", ntohs(port) ) ;
+	UCLIBCUNLOCK ;
+
 	LEVEL_DETAIL("ResolveBack ref=%d flags=%d index=%d, error=%d name=%s host=%s port=%d\n", (long int) s, f, i, e, n, host, ntohs(port));
 	/* remove trailing .local. */
-	UCLIBCLOCK;
-	sn_ret = snprintf(name, 120, "%s:%d", SAFESTRING(host), ntohs(port)) ;
-	UCLIBCUNLOCK;
-	if (sn_ret < 0) {
-		ERROR_CONNECT("Trouble with zeroconf resolve return %s\n", n);
+	if ( sn_ret >-1 ) {
+		LEVEL_DETAIL("ResolveBack ref=%d flags=%d index=%d, error=%d name=%s host=%s port=%s\n", (long int) s, f, i, e, n, host, service);
+		ZeroAdd( bs->name, bs->type, bs->domain, host, service ) ;
 	} else {
-		if ((in = FindIn(bs)) == NULL) {	// new or old connection_in slot?
-			CONNIN_WLOCK;
-			in = NewIn(NULL);
-			if (in != NULL) {
-				BUSLOCKIN(in);
-				in->name = strdup(name);
-				in->busmode = bus_server;
-			}
-			CONNIN_WUNLOCK;
-		}
-		if (in != NULL) {
-			if (Zero_detect(in)) {
-				BadAdapter_detect(in);
-			} else {
-				in->connin.tcp.type = strdup(bs->type);
-				in->connin.tcp.domain = strdup(bs->domain);
-				in->connin.tcp.name = strdup(bs->name);
-			}
-			BUSUNLOCKIN(in);
-		}
+		LEVEL_DEBUG("Couldn't translate port %d\n",ntohs(port) ) ;
 	}
-#if 0
-	// test out RecordRequest and RecordReconfirm
-	do {
-		DNSServiceRef sr;
-		printf("\nRecord Request (of %s) = %d\n", n,
-			   DNSServiceQueryRecord(&sr, 0, 0, n, kDNSServiceType_SRV, kDNSServiceClass_IN, RequestBack, NULL));
-		printf("Process Request = %d\n", DNSServiceProcessResult(sr));
-		DNSServiceRefDeallocate(sr);
-		printf("Reconfirm %s\n", n);
-		DNSServiceReconfirmRecord(0, 0, n, kDNSServiceType_SRV, kDNSServiceClass_IN, 0, NULL);
-		printf("Record Request (of %s) = %d\n", n, DNSServiceQueryRecord(&sr, 0, 0, n, kDNSServiceType_SRV, kDNSServiceClass_IN, RequestBack, NULL));
-		printf("Process Request = %d\n\n", DNSServiceProcessResult(sr));
-		DNSServiceRefDeallocate(sr);
-	} while (0);
-#endif							/* 0 */
 	BSKill(bs);
 }
 
@@ -147,24 +87,6 @@ static void BSKill(struct BrowseStruct *bs)
 	}
 }
 
-static struct connection_in *FindIn(struct BrowseStruct *bs)
-{
-	struct connection_in *now;
-	CONNIN_RLOCK;
-	now = Inbound_Control.head;
-	CONNIN_RUNLOCK;
-	for (; now != NULL; now = now->next) {
-		if (now->busmode != bus_zero || strcasecmp(now->name, bs->name)
-			|| strcasecmp(now->connin.tcp.type, bs->type)
-			|| strcasecmp(now->connin.tcp.domain, bs->domain)
-			) {
-			continue;
-		}
-		BUSLOCKIN(now);
-		break;
-	}
-	return now;
-}
 // Wait for a resolve, then return. Timeout after 2 minutes
 static void ResolveWait( DNSServiceRef sref )
 {
@@ -214,6 +136,8 @@ static void BrowseBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i, DNSServic
 		} else {
 			BSKill(bs) ;
 		}
+	} else { // Remove
+		ZeroDel( name, type, domain ) ;
 	}
 }
 			
@@ -245,16 +169,15 @@ static void * OW_Browse_Bonjour(void * v)
 			
 void OW_Browse(void)
 {
-	pthread_t thread;
-	int err ;
-	
 	if ( Globals.zero == zero_avahi ) {
-		err = pthread_create(&thread, NULL, OW_Avahi_Browse, NULL);
+		pthread_t thread;
+		int err = pthread_create(&thread, NULL, OW_Avahi_Browse, NULL);
 		if (err) {
 			LEVEL_CONNECT("Avahi Browse thread error %d.\n", err);
 		}
 	} else if ( Globals.zero == zero_bonjour ) {
-		err = pthread_create(&thread, NULL, OW_Browse_Bonjour, NULL);
+		pthread_t thread;
+		int err = pthread_create(&thread, NULL, OW_Browse_Bonjour, NULL);
 		if (err) {
 			LEVEL_CONNECT("Bonjour Browse thread error %d.\n", err);
 		}

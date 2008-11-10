@@ -634,7 +634,7 @@ static int OW_w_pios(const BYTE * data, const size_t size, const struct parsedna
 		if (formatted_data[formatted_data_index + 0] != data[i]) {
 			return 1;
 		}
-		if (formatted_data[formatted_data_index + 1] != (BYTE) ~ data[i]) {
+		if (formatted_data[formatted_data_index + 1] != ~ ((BYTE) data[i]) ) {
 			return 1;
 		}
 		if (formatted_data[formatted_data_index + 2] != 0xAA) {

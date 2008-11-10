@@ -65,7 +65,7 @@ int OWNET_lread(OWNET_HANDLE h, const char *onewire_path, char *return_string, s
 	}
 
 	rp->path = (onewire_path == NULL) ? "/" : onewire_path;
-	rp->read_value = return_string;
+	rp->read_value = (unsigned char *)return_string;
 	rp->data_length = size;
 	rp->data_offset = offset;
 

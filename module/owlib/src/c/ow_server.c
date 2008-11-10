@@ -70,19 +70,16 @@ static void Zero_setroutines(struct interface_routines *f)
 // It differs in that the server must respond
 int Zero_detect(struct connection_in *in)
 {
-//    if ( Server_detect(in) || ServerNOP(in) )
-//        if ( ServerNOP(in) ) { return -1 ; }
+	in->busmode = bus_zero;
+	in->file_descriptor = FD_PERSISTENT_NONE;	// No persistent connection yet
 	if (in->name == NULL) {
 		return -1;
 	}
 	if (ClientAddr(in->name, in)) {
 		return -1;
 	}
-	in->file_descriptor = FD_PERSISTENT_NONE;	// No persistent connection yet
 	in->Adapter = adapter_tcp;
 	in->adapter_name = "tcp";
-	in->busmode = bus_zero;
-	in->reconnect_state = reconnect_ok;	// Special since slot reused
 	Zero_setroutines(&(in->iroutines));
 	return 0;
 }
