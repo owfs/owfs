@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
 		++optind;
 	}
 
-	if (count_outbound_connections == 0) {
+	if (Outbound_Control.active == 0) {
 		if (Globals.zero == zero_none) {
 			LEVEL_DEFAULT("%s would be \"locked in\" so will quit.\nBonjour and Avahi not available.\n", argv[0]);
 			ow_exit(1);

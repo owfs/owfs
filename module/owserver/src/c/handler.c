@@ -107,10 +107,10 @@ void Handler(int file_descriptor)
 		}
 
 		/* Sidetap handling */
-		if (count_sidebound_connections > 0) {
+		if (Sidebound_Control.active > 0) {
 			struct connection_side *side;
 			SetupSideMessage(&hd);
-			for (side = head_sidebound_list; side != NULL; side = side->next) {
+			for (side = Sidebound_Control.head; side != NULL; side = side->next) {
 				FromClientSide(side, &hd);
 			}
 		}
@@ -214,9 +214,9 @@ static void SingleHandler(struct handlerdata *hd)
 				char *c = NULL;	// dummy argument
 				ToClient(hd->file_descriptor, &ping_cm, c);	// send the ping
 				//printf("OWSERVER ping\n") ;
-				if (count_sidebound_connections > 0) {
+				if (Sidebound_Control.active > 0) {
 					struct connection_side *side;
-					for (side = head_sidebound_list; side != NULL; side = side->next) {
+					for (side = Sidebound_Control.head; side != NULL; side = side->next) {
 						ToClientSide(side, &ping_cm, c, &(hd->sidem));
 					}
 				}

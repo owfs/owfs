@@ -177,9 +177,9 @@ void *DataHandler(void *v)
 	TOCLIENTLOCK(hd);
 	if (cm.ret != -EIO) {
 		ToClient(hd->file_descriptor, &cm, retbuffer);
-		if (count_sidebound_connections > 0) {
+		if (Sidebound_Control.active > 0) {
 			struct connection_side *side;
-			for (side = head_sidebound_list; side != NULL; side = side->next) {
+			for (side = Sidebound_Control.head; side != NULL; side = side->next) {
 				ToClientSide(side, &cm, retbuffer, &(hd->sidem));
 			}
 		}

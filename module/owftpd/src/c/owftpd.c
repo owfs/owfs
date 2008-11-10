@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* FTP on default port? */
-	if (count_outbound_connections == 0) {
+	if (Outbound_Control.active == 0) {
 		OW_ArgServer(NULL);	// default or ephemeral port
 	}
 

@@ -69,10 +69,6 @@ See: http://www.iana.org/assignments/port-numbers
 #include <sys/ioctl.h>
 #include "ow_transaction.h"
 
-/* Exposed connection info */
-extern int count_outbound_connections;
-extern int count_sidebound_connections;
-
 /* large enough for arrays of 2048 elements of ~49 bytes each */
 #define MAX_OWSERVER_PROTOCOL_PACKET_SIZE  100050
 
@@ -454,7 +450,12 @@ struct connection_out {
 	DNSServiceRef sref1;
 #endif
 };
-extern struct connection_out *head_outbound_list;
+
+extern struct outbound_control {
+	int active ; // how many "bus" entries are currently in linked list
+	int next_index ; // increasing sequence number
+	struct connection_out * head ; // head of a linked list of "bus" entries
+} Outbound_Control ; // Single global struct -- see ow_connect.c
 
 /* Network connection structure */
 struct connection_side {
@@ -471,7 +472,13 @@ struct connection_side {
 	pthread_mutex_t side_mutex;
 #endif							/* OW_MT */
 };
-extern struct connection_side *head_sidebound_list;
+
+extern struct sidebound_control {
+	int active ; // how many "bus" entries are currently in linked list
+	int next_index ; // increasing sequence number
+	struct connection_side * head ; // head of a linked list of "bus" entries
+} Sidebound_Control ; // Single global struct -- see ow_connect.c
+
 
 #define  FD_PERSISTENT_IN_USE    -2
 #define  FD_PERSISTENT_NONE      -1

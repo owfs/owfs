@@ -17,12 +17,7 @@ $Id$
 /* Routines for handling a linked list of connections in and out */
 /* typical connection in would be gtmhe serial port or USB */
 
-/* Globalss */
-struct connection_out *head_outbound_list = NULL;
-int count_outbound_connections = 0;
-struct connection_side *head_sidebound_list = NULL;
-int count_sidebound_connections = 0;
-
+/* Globals */
 struct inbound_control Inbound_Control = {
 	.active = 0,
 	.next_index = 0 ,
@@ -31,6 +26,18 @@ struct inbound_control Inbound_Control = {
 	.w1_netlink_fd = -1 ,
 	.next_fake = 0 ,
 	.next_tester = 0 ,
+};
+
+struct outbound_control Outbound_Control = {
+	.active = 0,
+	.next_index = 0 ,
+	.head = NULL,
+};
+
+struct sidebound_control Sidebound_Control = {
+	.active = 0,
+	.next_index = 0 ,
+	.head = NULL,
 };
 
 struct connection_in *find_connection_in(int bus_number)
@@ -105,9 +112,10 @@ struct connection_out *NewOut(void)
 	struct connection_out *now = (struct connection_out *) malloc(len);
 	if (now) {
 		memset(now, 0, len);
-		now->next = head_outbound_list;
-		head_outbound_list = now;
-		now->index = count_outbound_connections++;
+		now->next = Outbound_Control.head;
+		Outbound_Control.head = now;
+		now->index = Outbound_Control.next_index++;
+		++Outbound_Control.active ;
 #if OW_MT
 		pthread_mutex_init(&(now->accept_mutex), Mutex.pmattr);
 		pthread_mutex_init(&(now->out_mutex), Mutex.pmattr);
@@ -127,9 +135,10 @@ struct connection_side *NewSide(void)
 	struct connection_side *now = (struct connection_side *) malloc(len);
 	if (now) {
 		memset(now, 0, len);
-		now->next = head_sidebound_list;
-		head_sidebound_list = now;
-		now->index = count_sidebound_connections++;
+		now->next = Sidebound_Control.head;
+		Sidebound_Control.head = now;
+		now->index = Sidebound_Control.next_index++;
+		++Sidebound_Control.active ;
 		now->file_descriptor = -1;
 #if OW_MT
 		pthread_mutex_init(&(now->side_mutex), Mutex.pmattr);
@@ -247,11 +256,11 @@ void RemoveIn( struct connection_in * removeIn )
 
 void FreeOut(void)
 {
-	struct connection_out *next = head_outbound_list;
+	struct connection_out *next = Outbound_Control.head;
 	struct connection_out *now;
 
-	head_outbound_list = NULL;
-	count_outbound_connections = 0;
+	Outbound_Control.head = NULL;
+	Outbound_Control.active = 0;
 	while (next) {
 		now = next;
 		next = now->next;
@@ -291,11 +300,11 @@ void FreeOut(void)
 
 void FreeSide(void)
 {
-	struct connection_side *next = head_sidebound_list;
+	struct connection_side *next = Sidebound_Control.head;
 	struct connection_side *now;
 
-	head_sidebound_list = NULL;
-	count_outbound_connections = 0;
+	Sidebound_Control.head = NULL;
+	Sidebound_Control.active = 0;
 	while (next) {
 		now = next;
 		next = now->next;

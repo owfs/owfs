@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
 		++optind;
 	}
 	while (optind < argc) {
-		if (count_outbound_connections) {
+		if (Outbound_Control.active) {
 			OW_ArgGeneric(argv[optind]);
 		} else {
 			OW_ArgServer(argv[optind]);
@@ -115,12 +115,12 @@ int main(int argc, char *argv[])
 		++optind;
 	}
 
-	if (count_outbound_connections == 0) {
+	if (Outbound_Control.active == 0) {
 		LEVEL_DEFAULT("No mount point specified.\nTry '%s -h' for help.\n", argv[0]);
 		ow_exit(1);
 	}
 	// FUSE directory mounting
-	LEVEL_CONNECT("fuse mount point: %s\n", head_outbound_list->name);
+	LEVEL_CONNECT("fuse mount point: %s\n", Outbound_Control.head->name);
 
 	// Signal handler is set in fuse library
 	//set_signal_handlers(exit_handler);
@@ -136,7 +136,7 @@ int main(int argc, char *argv[])
 #if FUSE_VERSION >= 14
 	/* Set up "command line" for main fuse routines */
 	Fuse_setup(&fuse_options);	// command line setup
-	Fuse_add(head_outbound_list->name, &fuse_options);	// mount point
+	Fuse_add(Outbound_Control.head->name, &fuse_options);	// mount point
 #if FUSE_VERSION >= 22
 	Fuse_add("-o", &fuse_options);	// add "-o direct_io" to prevent buffering
 	Fuse_add("direct_io", &fuse_options);

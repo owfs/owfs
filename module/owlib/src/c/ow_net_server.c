@@ -255,17 +255,17 @@ static void *ServerProcessOut(void *v)
 /* Setup Servers -- a thread for each port */
 void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (int errcode))
 {
-	struct connection_out *out = head_outbound_list;
+	struct connection_out *out ;
 	int err, signo;
 	sigset_t myset;
 
-	if (count_outbound_connections == 0) {
+	if (Outbound_Control.active == 0) {
 		LEVEL_CALL("No output devices defined\n");
 		Exit(1);
 	}
 
 	/* Start the head of a thread chain for each head_outbound_list */
-	for (out = head_outbound_list; out; out = out->next) {
+	for (out = Outbound_Control.head; out; out = out->next) {
 		OUTLOCK(out);
 		out->HandlerRoutine = HandlerRoutine;
 		out->Exit = Exit;
@@ -297,12 +297,12 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 	}
 	LEVEL_DEBUG("ow_net_server.c:ServerProcess() shutdown initiated\n");
 
-	for (out = head_outbound_list; out; out = out->next) {
+	for (out = Outbound_Control.head; out; out = out->next) {
 		OUTLOCK(out);
 		if (out->tid) {
-			LEVEL_DEBUG("Shutting down %d of %d thread %ld\n", out->index, count_outbound_connections, out->tid);
+			LEVEL_DEBUG("Shutting down %d of %d thread %ld\n", out->index, Outbound_Control.active, out->tid);
 			if (pthread_cancel(out->tid)) {
-				LEVEL_DEBUG("Can't kill %d of %d\n", out->index, count_outbound_connections);
+				LEVEL_DEBUG("Can't kill %d of %d\n", out->index, Outbound_Control.active);
 			}
 			out->tid = 0;
 		}
@@ -320,19 +320,19 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 // Non multithreaded
 void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (int errcode))
 {
-	if (count_outbound_connections == 0) {
+	if (Outbound_Control.active == 0) {
 		LEVEL_CONNECT("No output device (port) specified. Exiting.\n");
 		Exit(1);
-	} else if (count_outbound_connections > 1) {
-		LEVEL_CONNECT("More than one output device specified (%d). Library compiled non-threaded. Exiting.\n", count_outbound_connections);
+	} else if (Outbound_Control.active > 1) {
+		LEVEL_CONNECT("More than one output device specified (%d). Library compiled non-threaded. Exiting.\n", Outbound_Control.active);
 		Exit(1);
-	} else if (ServerOutSetup(head_outbound_list)) {
+	} else if (ServerOutSetup(Outbound_Control.head)) {
 		LEVEL_CONNECT("Cannot set up head_outbound_list [%s] -- will exit\n", SAFESTRING(head_outbound_list->name));
 		Exit(1);
 	} else {
-		OW_Announce(head_outbound_list);
+		OW_Announce(Outbound_Control.head);
 		while (1) {
-			int acceptfd = accept(head_outbound_list->file_descriptor, NULL, NULL);
+			int acceptfd = accept(Outbound_Control.head->file_descriptor, NULL, NULL);
 			if (StateInfo.shutdown_in_progress) {
 				break;
 			}

@@ -54,9 +54,9 @@ int ftp_listener_init(struct ftp_listener_s *f)
 	daemon_assert(f != NULL);
 
 	// For sone reason, there must be an IP address included
-	if (strchr(head_outbound_list->name, ':') == NULL) {
+	if (strchr(Outbound_Control.head->name, ':') == NULL) {
 		char *newname;
-		char *oldname = head_outbound_list->name;
+		char *oldname = Outbound_Control.head->name;
 		newname = malloc(8 + strlen(oldname));
 		if (newname == NULL) {
 			LEVEL_DEFAULT("Cannot allocate menory for port name\n");
@@ -65,23 +65,23 @@ int ftp_listener_init(struct ftp_listener_s *f)
 		strcpy(newname, "0.0.0.0:");
 		strcat(newname, oldname);
 		//printf("OWSERVER composite name <%s> -> <%s>\n",oldname,newname);
-		head_outbound_list->name = newname;
+		Outbound_Control.head->name = newname;
 		free(oldname);
 	}
 
-	if (ServerOutSetup(head_outbound_list))
+	if (ServerOutSetup(Outbound_Control.head))
 		return 0;
 
 	// Zeroconf/Bonjour start (since owftpd doesn't use ServerProcess yet)
-	OW_Announce(head_outbound_list);
+	OW_Announce(Outbound_Control.head);
 
 	/* prevent socket from blocking on accept() */
-	flags = fcntl(head_outbound_list->file_descriptor, F_GETFL);
+	flags = fcntl(Outbound_Control.head->file_descriptor, F_GETFL);
 	if (flags == -1) {
 		ERROR_CONNECT("Error getting flags on socket\n");
 		return 0;
 	}
-	if (fcntl(head_outbound_list->file_descriptor, F_SETFL, flags | O_NONBLOCK) != 0) {
+	if (fcntl(Outbound_Control.head->file_descriptor, F_SETFL, flags | O_NONBLOCK) != 0) {
 		ERROR_CONNECT("Error setting socket to non-blocking\n");
 		return 0;
 	}
@@ -94,7 +94,7 @@ int ftp_listener_init(struct ftp_listener_s *f)
 
 	/* now load the values into the structure, since we can't fail from
 	   here */
-	f->file_descriptor = head_outbound_list->file_descriptor;
+	f->file_descriptor = Outbound_Control.head->file_descriptor;
 	f->max_connections = Globals.max_clients;
 	f->num_connections = 0;
 	f->inactivity_timeout = Globals.timeout_ftp;

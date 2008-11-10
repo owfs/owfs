@@ -168,7 +168,7 @@ static int FS_in(struct one_wire_query *owq)
 
 static int FS_out(struct one_wire_query *owq)
 {
-	OWQ_U(owq) = count_outbound_connections;
+	OWQ_U(owq) = Outbound_Control.active;
 	return 0;
 }
 

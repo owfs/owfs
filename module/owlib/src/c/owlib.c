@@ -169,7 +169,7 @@ static void SetupSideboundConnections(void)
 {
 	struct connection_side *side;
 
-	for (side = head_sidebound_list; side != NULL; side = side->next) {
+	for (side = Sidebound_Control.head; side != NULL; side = side->next) {
 		SideAddr(side);
 	}
 }
