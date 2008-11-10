@@ -764,7 +764,7 @@ static int DS2480_ProgramPulse(const struct parsedname *pn)
  */
 static int DS2480_write(const BYTE * buf, const size_t size, const struct parsedname *pn)
 {
-	return COM_write( (const char *)buf, size, pn );
+	return COM_write( buf, size, pn );
 }
 
 /* Assymetric */
@@ -774,7 +774,7 @@ static int DS2480_write(const BYTE * buf, const size_t size, const struct parsed
 // returns 0=good 1=bad
 static int DS2480_read(BYTE * buf, const size_t size, const struct parsedname *pn)
 {
-	return COM_read( (char *)buf, size, pn) ;
+	return COM_read( buf, size, pn) ;
 }
 
 //

@@ -18,7 +18,7 @@ $Id$
 #include <linux/limits.h>
 #endif
 
-int COM_read( char * data, size_t length, const struct parsedname * pn )
+int COM_read( BYTE * data, size_t length, const struct parsedname * pn )
 {
 	struct connection_in * connection = pn->selected_connection ;
 	ssize_t to_be_read = length ;

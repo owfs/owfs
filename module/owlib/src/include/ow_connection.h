@@ -499,8 +499,8 @@ int COM_open(struct connection_in *in);
 void COM_flush(const struct parsedname *pn);
 void COM_close(struct connection_in *in);
 void COM_break(const struct parsedname *pn);
-int COM_write( const char * data, size_t length, const struct parsedname * pn ) ;
-int COM_read( char * data, size_t length, const struct parsedname * pn ) ;
+int COM_write( const BYTE * data, size_t length, const struct parsedname * pn ) ;
+int COM_read( BYTE * data, size_t length, const struct parsedname * pn ) ;
 
 void FreeInAll(void);
 void FreeIn(struct connection_in * now);

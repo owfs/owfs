@@ -558,15 +558,12 @@ static int usbdevice_in_use(char *name)
 {
 	struct connection_in *in;
 
-	CONNIN_RLOCK ; // So no busses are added or removed from list diring this search
 	for (in = Inbound_Control.head; in != NULL; in = in->next) {
 		if ((in->busmode == bus_usb) && (in->name != NULL)
 			&& (strcmp(in->name, name) == 0)) {
-			CONNIN_RUNLOCK ;
 			return 1;			// It seems to be in use already
 		}
 	}
-	CONNIN_RUNLOCK ;
 	return 0;					// not found in the current inbound list
 }
 
