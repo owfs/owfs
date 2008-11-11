@@ -426,7 +426,6 @@ extern struct inbound_control {
 	int next_fake ; // count of fake buses
 	int next_tester ; // count tester buses
 	unsigned int w1_seq ; // for removing buses
-	DIR * sys_w1 ; // w1 kernel module for reading sysfs
 	int w1_netlink_fd ; // w1 kernel module for netlink communication
 } Inbound_Control ; // Single global struct -- see ow_connect.c
 

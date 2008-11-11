@@ -15,35 +15,30 @@ $Id$
 
 #include "ow_connection.h"
 
+#define OW_W1 1
 #if OW_W1
 
 static struct connection_in * CreateIn(const char * name ) ;
 static struct connection_in *FindIn(const char * name ) ;
+static void W1_bus( void ) ;
 
-void W1Scan(const char * name, const char * type, const char * domain, const char * host, const char * service)
+void W1Scan( void )
 {
 	struct connection_in * in ;
 
 	CONNIN_WLOCK ;
 
 	++Inbound_Control.w1_seq ;
-	
-	for ( loop_through_w1_bus ) {
-		in = FindIn( name ) ;
 
-		if ( in == NULL ) {
-			in = CreateIn(name) ;
-		}
+	// read current w1 bus masters from sysfs
+	W1_bus() ;
 
-		if ( in != NULL ) {
-			in->connin.w1.seq = Inbound_Control.w1_seq ;
-		}
-	}
-	
+	// check for w1 bus masters that weren't found
 	for ( in = Inbound_Control.head ; in ; in = in->next ) {
 		if ( in->busmode == bus_w1
 			&& in->connin.w1.seq  != Inbound_Control.w1_seq
 			) {
+			LEVEL_DEBUG("w1 bus <%s> no longer found\n",in->name) ;
 			RemoveIn( in ) ;
 		}
 	}
@@ -57,8 +52,8 @@ static struct connection_in * CreateIn(const char * name )
 
 	in = NewIn(NULL) ;
 	if ( in != NULL ) {
-		in->name = strdup(addr_name) ;
-		W1_detect(in) ;
+		in->name = strdup(name) ;
+//		W1_detect(in) ;
 		LEVEL_DEBUG("Created a new bus.%d\n",in->index) ;
 	}
 
@@ -81,6 +76,35 @@ static struct connection_in *FindIn(const char * name)
 		}
 	}
 	return NULL;
+}
+
+static void W1_bus( void )
+{
+	DIR * sys_w1  = opendir("/sys/bus/devices") ;
+
+	if ( sys_w1 != NULL ) {
+		struct dirent * dent ;
+
+		while ( (dent = readdir( sys_w1)) != NULL ) {
+			if ( strncasecmp( "w1", dent->d_name, 2 ) == 0 ) {
+				struct connection_in * in =  FindIn( dent->d_name ) ;
+				if ( in != NULL ) {
+					LEVEL_DEBUG("w1 bus <%s> already known\n",dent->d_name) ;
+					in->connin.w1.seq = Inbound_Control.w1_seq ;
+					continue ;
+				}
+				in = CreateIn(dent->d_name) ;
+				if ( in != NULL ) {
+					LEVEL_DEBUG("w1 bus <%s> to be added\n",dent->d_name) ;
+					in->connin.w1.seq = Inbound_Control.w1_seq ;
+					continue ;
+				}
+				LEVEL_DEBUG("w1 bus <%s> couldn't be added\n",dent->d_name) ;
+			}
+		}
+		
+		closedir( sys_w1 ) ;
+	}
 }
 
 #endif /* OW_W1 */

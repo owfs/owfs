@@ -23,7 +23,6 @@ struct inbound_control Inbound_Control = {
 	.next_index = 0 ,
 	.head = NULL,
 	.w1_seq = 0,
-	.sys_w1 = NULL,
 	.w1_netlink_fd = -1 ,
 	.next_fake = 0 ,
 	.next_tester = 0 ,
