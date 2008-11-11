@@ -94,6 +94,7 @@ struct global {
 	int no_persistence;
 	int eightbit_serial;
 	enum zero_support zero ;
+	int w1 ;
 };
 extern struct global Globals;
 

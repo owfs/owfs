@@ -126,6 +126,12 @@ const struct option owopts_long[] = {
 	{"nozero", no_argument, &Globals.announce_off, 1},
 	{"autoserver", no_argument, &Globals.autoserver, 1},
 	{"noautoserver", no_argument, &Globals.autoserver, 0},
+	{"w1", no_argument, &Globals.w1, 1},
+	{"W1", no_argument, &Globals.w1, 1},
+	{"no_w1", no_argument, &Globals.w1, 0},
+	{"no_W1", no_argument, &Globals.w1, 0},
+	{"No_W1", no_argument, &Globals.w1, 0},
+	{"NO_W1", no_argument, &Globals.w1, 0},
 	{"announce", required_argument, NULL, e_announce},
 	{"allow_other", no_argument, NULL, e_allow_other},
 	{"altUSB", no_argument, &Globals.altUSB, 1},	/* Willy Robison's tweaks */

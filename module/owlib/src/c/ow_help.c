@@ -178,6 +178,8 @@ void ow_help_device(void)
 		   "                   use family codes in hex\n"
 		   "                   e.g. 1F,10,21 for DS2409,DS18B20,DS1921\n"
 		   "  --tester=list   List of devices to simulate (non-random ID, non-random data)\n"
+		   " Linux Kernel Device\n"
+		   "  --w1 | --no_w1  Scan for kernel-managed bus masters\n"
 		   "\n" " 1-wire device selection\n" "  --one-device     Only single device on bus, use ROM SKIP command\n");
 }
 

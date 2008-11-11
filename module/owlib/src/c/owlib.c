@@ -28,6 +28,9 @@ int LibStart(void)
 	srand(1);
 
 	SetupInboundConnections();
+	if ( Globals.w1 ) {
+		W1_Browse() ;
+	}
 	SetupSideboundConnections();
 
 	// zeroconf/Bonjour look for new services

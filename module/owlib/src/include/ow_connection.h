@@ -555,6 +555,7 @@ int FS_FindHA7(void);
 #endif							/* OW_HA7 */
 
 int W1_detect(struct connection_in * in) ;
+int W1_Browse( void ) ;
 
 #if OW_I2C
 int DS2482_detect(struct connection_in *in);

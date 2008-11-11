@@ -82,6 +82,7 @@ struct global Globals = {
 	.no_persistence = 0,
 	.eightbit_serial = 0,
 	.zero = zero_unknown ,
+	.w1 = 0 , // w1 kernel support
 };
 
 /* Statistics globals are stored in ow_stats.c */
