@@ -16,6 +16,7 @@ $Id$
 #include "ow_connection.h"
 #include "ow_codes.h"
 
+#define OW_W1 1
 #if OW_W1
 
 struct toW1 {
@@ -66,8 +67,6 @@ static void W1_setroutines(struct connection_in *in)
 int W1_detect(struct connection_in *in)
 {
 	struct parsedname pn;
-	int file_descriptor;
-	struct toW1 ha7;
 
 	FS_ParsedName(NULL, &pn);	// minimal parsename -- no destroy needed
 	pn.selected_connection = in;
@@ -76,74 +75,21 @@ int W1_detect(struct connection_in *in)
 	/* Set up low-level routines */
 	W1_setroutines(in);
 
-	in->connin.ha7.locked = 0;
-
-	/* Initialize dir-at-once structures */
-	DirblobInit(&(in->connin.ha7.main));
-	DirblobInit(&(in->connin.ha7.alarm));
-
 	if (in->name == NULL) {
 		return -1;
 	}
 
-	/* Add the port if it isn't there already */
-	if (strchr(in->name, ':') == NULL) {
-		ASCII *temp = realloc(in->name, strlen(in->name) + 3);
-		if (temp == NULL) {
-			return -ENOMEM;
-		}
-		in->name = temp;
-		strcat(in->name, ":80");
-	}
-
-	if (ClientAddr(in->name, in)) {
-		return -1;
-	}
-
-	if ((file_descriptor = ClientConnect(in)) < 0) {
-		return -EIO;
-	}
-
-	in->Adapter = adapter_W1NET;
-
-	toW1init(&ha7);
-	ha7.command = "ReleaseLock";
-	if (W1_toW1(file_descriptor, &ha7, in) == 0) {
-		struct memblob mb;
-		if (W1_read(file_descriptor, &mb) == 0) {
-			in->adapter_name = "W1Net";
-			in->busmode = bus_ha7net;
-			in->AnyDevices = 1;
-			MemblobClear(&mb);
-			close(file_descriptor);
-			return 0;
-		}
-	}
-	close(file_descriptor);
-	return -EIO;
+	in->Adapter = adapter_w1;
+	in->adapter_name = "w1";
+	in->busmode = bus_w1;
+	in->AnyDevices = 1;
+	return 0;
 }
 
 static int W1_reset(const struct parsedname *pn)
 {
-	struct memblob mb;
-	int file_descriptor = ClientConnect(pn->selected_connection);
-	int ret = BUS_RESET_OK;
-	struct toW1 ha7;
-
-	if (file_descriptor < 0) {
-		return -EIO;
-	}
-
-	toW1init(&ha7);
-	ha7.command = "Reset";
-	if (W1_toW1(file_descriptor, &ha7, pn->selected_connection)) {
-		ret = -EIO;
-	} else if (W1_read(file_descriptor, &mb)) {
-		ret = -EIO;
-	}
-	MemblobClear(&mb);
-	close(file_descriptor);
-	return ret;
+	// w1 doesn't use an explicit reset
+	return 0 ;
 }
 
 static int W1_directory(BYTE search, struct dirblob *db, const struct parsedname *pn)

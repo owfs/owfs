@@ -95,6 +95,7 @@ See: http://www.iana.org/assignments/port-numbers
 #define USB_FIFO_WRITE USB_FIFO_EACH
 #define USB_FIFO_SIZE ( USB_FIFO_EACH + USB_FIFO_EACH )
 #define HA7_FIFO_SIZE 128
+#define W1_FIFO_SIZE 128
 #define LINK_FIFO_SIZE UART_FIFO_SIZE
 #define LINKE_FIFO_SIZE 1500
 #define I2C_FIFO_SIZE 1
@@ -552,6 +553,8 @@ int EtherWeather_detect(struct connection_in *in);
 int HA7_detect(struct connection_in *in);
 int FS_FindHA7(void);
 #endif							/* OW_HA7 */
+
+int W1_detect(struct connection_in * in) ;
 
 #if OW_I2C
 int DS2482_detect(struct connection_in *in);
