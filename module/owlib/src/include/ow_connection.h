@@ -518,7 +518,7 @@ int COM_read( BYTE * data, size_t length, const struct parsedname * pn ) ;
 
 void FreeInAll(void);
 void FreeIn(struct connection_in * now);
-void RemoveIn( struct connection_in * remove ) ;
+void RemoveIn( struct connection_in * conn ) ;
 
 void FreeOut(void);
 void FreeSide(void);

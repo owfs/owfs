@@ -232,26 +232,26 @@ void FreeIn(struct connection_in * now)
 	free(now);
 }
 
-void RemoveIn( struct connection_in * removeIn )
+void RemoveIn( struct connection_in * conn )
 {
 	struct connection_in * now ;
 
-	if ( removeIn == NULL ) {
+	if ( conn == NULL ) {
 		return ;
 	}
 
-	if ( Inbound_Control.head == removeIn ) {
-		Inbound_Control.head = removeIn->next ;
+	if ( Inbound_Control.head == conn ) {
+		Inbound_Control.head = conn->next ;
 	} else {
 		for ( now = Inbound_Control.head ; now != NULL ; now = now->next ) {
-			if ( now->next == removeIn ) {
-				now->next = removeIn->next ;
+			if ( now->next == conn ) {
+				now->next = conn->next ;
 				break ;
 			}
 		}
 	}
 
-	FreeIn( removeIn ) ;
+	FreeIn( conn ) ;
 }
 
 void FreeOut(void)
