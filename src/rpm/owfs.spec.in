@@ -1,3 +1,5 @@
+#define cvs 20081115
+
 %define build_fs 1
 %define build_httpd 1
 %define build_capi 1
@@ -16,8 +18,18 @@
 
 %define debug_package   %{nil}
 
+%if %{defined cvs}
+%define cvsver cvs%{cvs}
+%else
+%define cvsver %nil
+%endif
+
+%if %{build_tcl}
+%define tcl_pkgpath %(echo 'puts [lindex $tcl_pkgPath 0]' | %{_bindir}/tclsh)
+%endif
+
 Name: owfs
-Version: @VERSION@
+Version: @VERSION@%{cvsver}
 Release: 1
 Summary: 1-Wire Virtual File System
 Source: %{name}-%{version}.tar.gz
@@ -204,7 +216,11 @@ Group: Documentation
 rm -rf $RPM_BUILD_ROOT
 
 %prep
+%if %{defined cvs}
+%setup -n owfs
+%else
 %setup
+%endif
 
 %build
 aclocal
@@ -593,14 +609,18 @@ fi
 %if %{build_tcl}
 %files tcl
 %defattr(-,root,root)
-%dir %{_libdir}/owtcl-*
-%{_libdir}/owtcl-*/*
+%dir %{tcl_pkgpath}/owtcl-*
+%{tcl_pkgpath}/owtcl-*/*
 # ow-*.so ow.so ow.tcl pkgIndex.tcl
 %{_mandir}/mann/owtcl.n.gz
 %endif
 
 
 %changelog
+
+* Sat Nov 15 2008 Serg Oskin <serg@oskin.ru>
+- Build pkgs from released and CVS sources.
+- Correct TCL install path
 
 * Tue Jan 19 2008 Christian Magnusson <mag@mag.cx>
 - x86_64 support, tested on i386 and x86_64
