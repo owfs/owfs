@@ -76,13 +76,15 @@ static void SetupInboundConnections(void)
 
 		case bus_serial:
 			/* Set up DS2480/LINK interface */
-			if (!DS2480_detect(in))
-				break;
-			LEVEL_CONNECT("Cannot detect DS2480 or LINK interface on %s.\n", in->name);
+			if ((ret = DS2480_detect(in))) {
+				LEVEL_CONNECT("Cannot detect DS2480 or LINK interface on %s.\n", in->name);
+			} else {
+				break ;
+			}
+			// Fall Through
 			BUS_close(in);
 			BadAdapter_detect(in);	/* reset the methods */
 			in->adapter_name = "DS9097";	// need to set adapter name for this approach to passive adapter
-			// Fall Through
 
 		case bus_passive:
 			if ((ret = DS9097_detect(in))) {
