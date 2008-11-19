@@ -109,6 +109,18 @@ static void W1_bus( const char * directory )
 }
 
 #if OW_MT
+
+#ifndef HAVE_SYS_INOTIFY_H
+int W1_Browse( void )
+{
+	LEVEL_CONNECT("Dynamic w1 support is not supported on this platform\n");
+	// Initial setup
+	W1Scan("/sys/bus/w1/devices") ;
+	return 0;
+}
+
+#else /* HAVE_SYS_INOTIFY_H */
+
 #include <sys/inotify.h>
 
 static void * OW_W1_Browse( void * v )
@@ -151,6 +163,7 @@ int W1_Browse( void )
 		LEVEL_CONNECT("Avahi registration thread error %d.\n", err);
 	}
 }
+#endif  /* HAVE_SYS_INOTIFY_H */
 
 #else /* OW_MT */
 int W1_Browse( void )
