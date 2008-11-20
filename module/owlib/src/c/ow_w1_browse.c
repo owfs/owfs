@@ -110,7 +110,6 @@ static void W1_bus( const char * directory )
 
 #if OW_MT
 
-#ifndef HAVE_SYS_INOTIFY_H
 int W1_Browse( void )
 {
 	LEVEL_CONNECT("Dynamic w1 support is not supported on this platform\n");
@@ -118,52 +117,6 @@ int W1_Browse( void )
 	W1Scan("/sys/bus/w1/devices") ;
 	return 0;
 }
-
-#else /* HAVE_SYS_INOTIFY_H */
-
-#include <sys/inotify.h>
-
-static void * OW_W1_Browse( void * v )
-{
-	const char * directory = v ;
-	int inotify_fd ;
-	int watch_fd ;
-	char buffer[ 256 + sizeof(struct inotify_event) ] ;
-
-	// Initial setup
-	W1Scan(directory) ;
-
-#if 0	
-	inotify_fd = inotify_init() ;
-	if ( inotify_fd  < 0 ) {
-		ERROR_CONNECT("W1: Can't set up inotify at all\n") ;
-		return NULL ;
-	}
-
-	watch_fd = inotify_add_watch( inotify_fd, directory, IN_CREATE | IN_DELETE ) ;
-	if ( watch_fd  < 0 ) {
-		ERROR_CONNECT("W1: Can't set up inotify watch on %s\n",directory) ;
-		close( inotify_fd ) ;
-		return NULL ;
-	}
-
-	while ( read( inotify_fd, buffer, sizeof(buffer) ) ) {
-		W1Scan(directory) ;
-	}
-#endif
-	// no way to get here
-	return NULL ;
-}
-
-int W1_Browse( void )
-{
-	pthread_t thread;
-	int err = pthread_create(&thread, NULL, OW_W1_Browse, "/sys/bus/w1/devices");
-	if (err) {
-		LEVEL_CONNECT("Avahi registration thread error %d.\n", err);
-	}
-}
-#endif  /* HAVE_SYS_INOTIFY_H */
 
 #else /* OW_MT */
 int W1_Browse( void )
