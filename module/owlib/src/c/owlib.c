@@ -29,7 +29,11 @@ int LibStart(void)
 
 	SetupInboundConnections();
 	if ( Globals.w1 ) {
+#if OW_W1
 		W1_Browse() ;
+#else /* OW_W1 */
+		LEVEL_DEFAULT("W1 (the linux kernel 1-wire system) is not supported\n");
+#endif /* OW_W1 */
 	}
 	SetupSideboundConnections();
 

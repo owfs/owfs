@@ -16,7 +16,6 @@ $Id$
 #include "ow_connection.h"
 #include "ow_codes.h"
 
-#define OW_W1 1
 #if OW_W1
 
 struct toW1 {

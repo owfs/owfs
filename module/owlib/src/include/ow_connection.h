@@ -270,9 +270,11 @@ struct connin_link {
 };
 
 struct connin_w1 {
+#if OW_W1
 	// bus master name kept in name
 	// netlink fd kept in file_descriptor
 	unsigned int seq ;
+#endif /* OW_W1 */
 };
 
 //enum server_type { srv_unknown, srv_direct, srv_client, src_
@@ -426,8 +428,10 @@ extern struct inbound_control {
 #endif /* OW_MT */
 	int next_fake ; // count of fake buses
 	int next_tester ; // count tester buses
+#if OW_W1
 	unsigned int w1_seq ; // for removing buses
 	int w1_netlink_fd ; // w1 kernel module for netlink communication
+#endif /* OW_W1 */
 } Inbound_Control ; // Single global struct -- see ow_connect.c
 
 /* Network connection structure */
@@ -554,8 +558,10 @@ int HA7_detect(struct connection_in *in);
 int FS_FindHA7(void);
 #endif							/* OW_HA7 */
 
+#if OW_W1
 int W1_detect(struct connection_in * in) ;
 int W1_Browse( void ) ;
+#endif /* OW_W1 */
 
 #if OW_I2C
 int DS2482_detect(struct connection_in *in);

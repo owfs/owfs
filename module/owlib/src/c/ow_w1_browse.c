@@ -15,7 +15,6 @@ $Id$
 
 #include "ow_connection.h"
 
-#define OW_W1 1
 #if OW_W1
 
 static void W1Scan( const char * directory ) ;

@@ -341,6 +341,24 @@ AC_SUBST(ENABLE_HA7)
 AM_CONDITIONAL(ENABLE_HA7, test "${ENABLE_HA7}" = "true")
 
 
+# Check for W1 (linux kernel module)
+ENABLE_W1="true"
+AC_MSG_CHECKING([if W1 is enabled])
+AC_ARG_ENABLE(w1,
+[  --enable-w1             Enable w1 support (default true)],
+[
+    AC_MSG_RESULT([$enableval])
+    if ! test "$enableval" = "yes" ; then
+        ENABLE_W1="false"
+    fi
+],
+[
+    AC_MSG_RESULT([yes (default)])
+])
+AC_SUBST(ENABLE_W1)
+AM_CONDITIONAL(ENABLE_W1, test "${ENABLE_W1}" = "true")
+
+
 # Check if the modules are enabled
 
 #Check owhttpd
@@ -1454,6 +1472,13 @@ else
 fi
 AC_SUBST(OW_HA7)
 
+if test "${ENABLE_W1}" = "true" ; then
+   OW_W1=1
+else
+   OW_W1=0
+fi
+AC_SUBST(OW_W1)
+
 if test "${ENABLE_CACHE}" = "true" ; then
    OW_CACHE=1
 else
@@ -1637,6 +1662,11 @@ if test "${ENABLE_HA7}" = "true"; then
     AC_MSG_RESULT([                   HA7Net is enabled])
 else
     AC_MSG_RESULT([                   HA7Net is DISABLED])
+fi
+if test "${ENABLE_W1}" = "true"; then
+    AC_MSG_RESULT([                       W1 is enabled])
+else
+    AC_MSG_RESULT([                       W1 is DISABLED])
 fi
 if test "${ENABLE_MT}" = "true"; then
     AC_MSG_RESULT([           Multithreading is enabled])
