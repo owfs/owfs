@@ -335,6 +335,7 @@ struct filetype DS2770[] = {
 
 DeviceEntry(2E, DS2770);
 
+/* DS2780 also includees the DS2775 DS2776 DS2784 */
 struct filetype DS2780[] = {
 	F_STANDARD,
   {"lock", PROPERTY_LENGTH_YESNO, &L2780, ft_yesno, fc_stable, FS_r_lock, FS_w_lock, {v:&P2780},},
