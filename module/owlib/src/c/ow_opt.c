@@ -154,6 +154,8 @@ const struct option owopts_long[] = {
 	{"timeout_ha7", required_argument, NULL, e_timeout_ha7,},	// timeout -- HA7Net wait
 	{"timeout_HA7Net", required_argument, NULL, e_timeout_ha7,},	// timeout -- HA7Net wait
 	{"timeout_ha7net", required_argument, NULL, e_timeout_ha7,},	// timeout -- HA7Net wait
+	{"timeout_w1", required_argument, NULL, e_timeout_w1,},	// timeout -- w1 netlink
+	{"timeout_W1", required_argument, NULL, e_timeout_w1,},	// timeout -- w1 netlink
 	{"timeout_persistent_low", required_argument, NULL, e_timeout_persistent_low,},
 	{"timeout_persistent_high", required_argument, NULL, e_timeout_persistent_high,},
 	{"clients_persistent_low", required_argument, NULL, e_clients_persistent_low,},
@@ -638,6 +640,7 @@ int owopt(const int option_char, const char *arg)
 	case e_timeout_server:
 	case e_timeout_ftp:
 	case e_timeout_ha7:
+	case e_timeout_w1:
 	case e_timeout_persistent_low:
 	case e_timeout_persistent_high:
 	case e_clients_persistent_low:
