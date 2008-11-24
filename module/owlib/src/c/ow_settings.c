@@ -66,6 +66,7 @@ struct filetype set_cache[] = {
   {"server", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, {v:&Globals.timeout_server},},
   {"ftp", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, {v:&Globals.timeout_ftp},},
   {"ha7", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, {v:&Globals.timeout_ha7},},
+  {"w1", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, {v:&Globals.timeout_w1},},
 }
 
 ;
