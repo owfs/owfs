@@ -1,8 +1,9 @@
 noinst_HEADERS =          \
-	compat_getopt.h       \
+	compat_getopt.h   \
         compat.h          \
         i2c-dev.h         \
         compat_netdb.h    \
+        connector.h       \
         ow.h              \
         ow_1820.h \
         ow_1821.h \
@@ -68,10 +69,10 @@ noinst_HEADERS =          \
         ow_system.h       \
         ow_thermocouple.h \
         ow_transaction.h  \
+        ow_w1,h           \
         ow_xxxx.h         \
         rwlock.h          \
         netlink.h         \
-        rtnetlink.h       \
         w1_netlink.h      \
         sem.h
 
