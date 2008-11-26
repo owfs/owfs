@@ -58,7 +58,7 @@ static int send_cmd( struct w1_netlink_msg *msg)
 	nlh->nlmsg_type = NLMSG_DONE;
 	nlh->nlmsg_len = NLMSG_LENGTH(sizeof(struct cn_msg) + sizeof(struct w1_netlink_msg) + msg->len);
 	nlh->nlmsg_flags = NLM_F_REQUEST;
-	nlh->nlmsg_pid = getpid() ;
+	nlh->nlmsg_pid = Inbound_Control.w1_pid ;
 	
 	cmsg = NLMSG_DATA(nlh);
 	

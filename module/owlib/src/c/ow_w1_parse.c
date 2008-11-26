@@ -52,7 +52,7 @@ int Netlink_Parse_Get( struct netlink_parse * nlp )
 	// first peek at message to get length and details
 	int recv_len = recv(Inbound_Control.nl_file_descriptor, &peek_nlm, sizeof(peek_nlm), MSG_PEEK );
 
-	LEVEL_DEBUG("Pre-parse header: %d bytes len=%d type=%d seq=%d pid=%d (our pid=%d)\n",recv_len,peek_nlm.nlmsg_len,peek_nlm.nlmsg_type,peek_nlm.nlmsg_seq,peek_nlm.nlmsg_pid,getpid());
+	LEVEL_DEBUG("Pre-parse header: %d bytes len=%d type=%d seq=%d pid=%d (our pid=%d)\n",recv_len,peek_nlm.nlmsg_len,peek_nlm.nlmsg_type,peek_nlm.nlmsg_seq,peek_nlm.nlmsg_pid,Inbound_Control.w1_pid);
 	if (recv_len == -1) {
 		ERROR_DEBUG("Netlink (w1) recv header error\n");
 		return -errno ;

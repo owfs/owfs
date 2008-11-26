@@ -45,10 +45,11 @@ int w1_bind( void )
 		ERROR_CONNECT("Netlink (w1) socket");
 		return -1;
 	}
-	
+
+	Inbound_Control.w1_pid = getpid() ;
 	l_local.nl_family = AF_NETLINK;
 	l_local.nl_groups = 23;
-	l_local.nl_pid    = getpid();
+	l_local.nl_pid    = Inbound_Control.w1_pid;
 	
 	if (bind(Inbound_Control.nl_file_descriptor, (struct sockaddr *)&l_local, sizeof(struct sockaddr_nl)) == -1) {
 		ERROR_CONNECT("Netlink (w1) bind");
