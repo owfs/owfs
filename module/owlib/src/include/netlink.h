@@ -1,8 +1,8 @@
 #ifndef __LINUX_NETLINK_H
 #define __LINUX_NETLINK_H
 
-#include <linux/socket.h> /* for sa_family_t */
-#include <linux/types.h>
+#include <sys/socket.h> /* for sa_family_t */
+#include <sys/types.h>
 
 #define NETLINK_ROUTE		0	/* Routing/device hook				*/
 #define NETLINK_UNUSED		1	/* Unused number				*/
@@ -28,17 +28,17 @@ struct sockaddr_nl
 {
 	sa_family_t	nl_family;	/* AF_NETLINK	*/
 	unsigned short	nl_pad;		/* zero		*/
-	__u32		nl_pid;		/* process pid	*/
-       	__u32		nl_groups;	/* multicast groups mask */
+	uint32_t		nl_pid;		/* process pid	*/
+       	uint32_t		nl_groups;	/* multicast groups mask */
 };
 
 struct nlmsghdr
 {
-	__u32		nlmsg_len;	/* Length of message including header */
-	__u16		nlmsg_type;	/* Message content */
-	__u16		nlmsg_flags;	/* Additional flags */
-	__u32		nlmsg_seq;	/* Sequence number */
-	__u32		nlmsg_pid;	/* Sending process PID */
+	uint32_t		nlmsg_len;	/* Length of message including header */
+	uint16_t		nlmsg_type;	/* Message content */
+	uint16_t		nlmsg_flags;	/* Additional flags */
+	uint32_t		nlmsg_seq;	/* Sequence number */
+	uint32_t		nlmsg_pid;	/* Sending process PID */
 };
 
 /* Flags values */
@@ -101,7 +101,7 @@ struct nlmsgerr
 
 struct nl_pktinfo
 {
-	__u32	group;
+	uint32_t	group;
 };
 
 #define NET_MAJOR 36		/* Major 36 is reserved for networking 						*/
@@ -122,8 +122,8 @@ enum {
 
 struct nlattr
 {
-	__u16           nla_len;
-	__u16           nla_type;
+	uint16_t           nla_len;
+	uint16_t           nla_type;
 };
 
 #define NLA_ALIGNTO		4
@@ -138,12 +138,12 @@ struct nlattr
 struct netlink_skb_parms
 {
 	struct ucred		creds;		/* Skb credentials	*/
-	__u32			pid;
-	__u32			dst_pid;
-	__u32			dst_group;
+	uint32_t			pid;
+	uint32_t			dst_pid;
+	uint32_t			dst_group;
 	kernel_cap_t		eff_cap;
-	__u32			loginuid;	/* Login (audit) uid */
-	__u32			sid;		/* SELinux security id */
+	uint32_t			loginuid;	/* Login (audit) uid */
+	uint32_t			sid;		/* SELinux security id */
 };
 
 #define NETLINK_CB(skb)		(*(struct netlink_skb_parms*)&((skb)->cb))
@@ -153,10 +153,10 @@ struct netlink_skb_parms
 extern struct sock *netlink_kernel_create(int unit, unsigned int groups, void (*input)(struct sock *sk, int len), struct module *module);
 extern void netlink_ack(struct sk_buff *in_skb, struct nlmsghdr *nlh, int err);
 extern int netlink_has_listeners(struct sock *sk, unsigned int group);
-extern int netlink_unicast(struct sock *ssk, struct sk_buff *skb, __u32 pid, int nonblock);
-extern int netlink_broadcast(struct sock *ssk, struct sk_buff *skb, __u32 pid,
-			     __u32 group, gfp_t allocation);
-extern void netlink_set_err(struct sock *ssk, __u32 pid, __u32 group, int code);
+extern int netlink_unicast(struct sock *ssk, struct sk_buff *skb, uint32_t pid, int nonblock);
+extern int netlink_broadcast(struct sock *ssk, struct sk_buff *skb, uint32_t pid,
+			     uint32_t group, gfp_t allocation);
+extern void netlink_set_err(struct sock *ssk, uint32_t pid, uint32_t group, int code);
 extern int netlink_register_notifier(struct notifier_block *nb);
 extern int netlink_unregister_notifier(struct notifier_block *nb);
 

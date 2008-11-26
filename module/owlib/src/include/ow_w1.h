@@ -7,18 +7,24 @@ Released under the GPLv2
 Much thanks to Evgeniy Polyakov
 */
 
+#if OW_W1
+#ifndef OW_W1_H
+#define OW_W1_H
 
-#ifndef W1_REPEATER_H
-#define W1_REPEATER_H
-
-extern int nl_file_descriptor ;
+#include <stdint.h>
+#include "netlink.h"
+#include "connector.h"
+#include "w1_netlink.h"
 
 int w1_bind( void ) ;
-void RemoveBus( int bus_master ) ;
-void AddBus( int bus_master ) ;
-int Avahi_link( void ) ;
-int w1_scan( void ) ;
-int w1_load_sysfs( const char * directory ) ;
+void w1_unbind( void ) ;
+
+void RemoveW1Bus( int bus_master ) ;
+void AddW1Bus( int bus_master ) ;
+
+int W1NLScan( void ) ;
+int W1NLList( void ) ;
+
 int Announce_Control_init( int allocated ) ;
 
 struct netlink_parse {
@@ -33,4 +39,5 @@ struct netlink_parse {
 void Netlink_Parse_Destroy( struct netlink_parse * nlp ) ;
 int Netlink_Parse_Get( struct netlink_parse * nlp ) ;
 
-#endif 	/* W1_REPEATER_H */
+#endif 	/* OW_W1_H */
+#endif /* OW_W1 */

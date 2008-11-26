@@ -11,32 +11,27 @@ $Id$
 
 #include <config.h>
 #include "owfs_config.h"
-#include "ow.h"
-
-#include "ow_connection.h"
 
 #if OW_W1
 
-static void W1Scan( const char * directory ) ;
-static struct connection_in * CreateIn(const char * name ) ;
-static struct connection_in *FindIn(const char * name ) ;
-static void W1_bus( const char * directory ) ;
+#include "ow_w1.h"
+#include "ow_connection.h"
 
-static void W1Scan( const char * directory )
+static void W1Clear( void ) ;
+static void W1SysList( const char * directory ) ;
+static void * W1_list( void * v ) ;
+
+// Remove stale connections
+static void W1Clear( void )
 {
 	struct connection_in * in ;
 
 	CONNIN_WLOCK ;
-
-	++Inbound_Control.w1_seq ;
-
-	// read current w1 bus masters from sysfs
-	W1_bus(directory) ;
-
+	
 	// check for w1 bus masters that weren't found
 	for ( in = Inbound_Control.head ; in ; in = in->next ) {
 		if ( in->busmode == bus_w1
-			&& in->connin.w1.seq  != Inbound_Control.w1_seq
+			&& in->connin.w1.entry_mark  != Inbound_Control.w1_entry_mark
 			) {
 			LEVEL_DEBUG("w1 bus <%s> no longer found\n",in->name) ;
 			RemoveIn( in ) ;
@@ -46,39 +41,7 @@ static void W1Scan( const char * directory )
 	CONNIN_WUNLOCK ;
 }
 
-static struct connection_in * CreateIn(const char * name )
-{
-	struct connection_in * in ;
-
-	in = NewIn(NULL) ;
-	if ( in != NULL ) {
-		in->name = strdup(name) ;
-		W1_detect(in) ;
-		LEVEL_DEBUG("Created a new bus.%d\n",in->index) ;
-	}
-
-	return in ;
-}
-
-// Finds matching connection
-// returns it if found,
-// else NULL
-static struct connection_in *FindIn(const char * name)
-{
-	struct connection_in *now ;
-	for ( now = Inbound_Control.head ; now != NULL ; now = now->next ) {
-		//printf("Matching %d/%s/%s/%s/ to bus.%d %d/%s/%s/%s/\n",bus_zero,name,type,domain,now->index,now->busmode,now->connin.tcp.name,now->connin.tcp.type,now->connin.tcp.domain);
-		if ( now->busmode == bus_w1
-			&& now->name   != NULL
-			&& strcasecmp( now->name  , name  ) == 0
-			) {
-			return now ;
-		}
-	}
-	return NULL;
-}
-
-static void W1_bus( const char * directory )
+static void W1SysList( const char * directory )
 {
 	DIR * sys_w1  = opendir(directory) ;
 
@@ -87,19 +50,13 @@ static void W1_bus( const char * directory )
 
 		while ( (dent = readdir( sys_w1)) != NULL ) {
 			if ( strncasecmp( "w1", dent->d_name, 2 ) == 0 ) {
-				struct connection_in * in =  FindIn( dent->d_name ) ;
-				if ( in != NULL ) {
-					LEVEL_DEBUG("w1 bus <%s> already known\n",dent->d_name) ;
-					in->connin.w1.seq = Inbound_Control.w1_seq ;
-					continue ;
+				int bus_master ;
+				//printf("About to scan %s\n",dent->d_name);
+				if ( sscanf( dent->d_name, "w1_bus_master%d", &bus_master) == 1 ) {
+					AddW1Bus( bus_master ) ;
+				} else {
+					ERROR_DEBUG("Can't interpret bus number in sysfs entry %s/%s\n",directory,dent->d_name);
 				}
-				in = CreateIn(dent->d_name) ;
-				if ( in != NULL ) {
-					LEVEL_DEBUG("w1 bus <%s> to be added\n",dent->d_name) ;
-					in->connin.w1.seq = Inbound_Control.w1_seq ;
-					continue ;
-				}
-				LEVEL_DEBUG("w1 bus <%s> couldn't be added\n",dent->d_name) ;
 			}
 		}
 		
@@ -107,14 +64,36 @@ static void W1_bus( const char * directory )
 	}
 }
 
+static void * W1_list( void * v )
+{
+	(void) v ;
+	
+	if ( Inbound_Control.nl_file_descriptor < 0 ) {
+		LEVEL_DEBUG("Cannot monitor w1 bus, No netlink connection.\n");
+	} else {
+		W1NLScan() ;
+	}
+	return NULL ;
+}
+	
 #if OW_MT
 
 int W1_Browse( void )
 {
-	LEVEL_CONNECT("Dynamic w1 support is not supported on this platform\n");
+	pthread_t thread ;
+	int err ;
+
+	++Inbound_Control.w1_entry_mark ;
+
 	// Initial setup
-	W1Scan("/sys/bus/w1/devices") ;
-	return 0;
+	if ( W1NLList() < 0 ) {
+		W1SysList("/sys/bus/w1/devices") ;
+	}
+
+	// And clear deadwood
+	W1Clear() ;
+
+	return pthread_create(&thread, NULL, W1_list, NULL);
 }
 
 #else /* OW_MT */
@@ -122,7 +101,7 @@ int W1_Browse( void )
 {
 	LEVEL_CONNECT("Dynamic w1 support requires multithreading (a compile-time option\n");
 	// Initial setup
-	W1Scan("/sys/bus/w1/devices") ;
+	W1SysScan("/sys/bus/w1/devices") ;
 }
 #endif /* OW_MT */
 

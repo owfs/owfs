@@ -9,8 +9,6 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
 */
 
 /*
- * 	w1d.c
- *
  * Copyright (c) 2004 Evgeniy Polyakov <johnpol@2ka.mipt.ru>
  * 
  *
@@ -29,24 +27,12 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-#include <errno.h>
+#include <config.h>
+#include "owfs_config.h"
 
-#include <asm/byteorder.h>
-#include <asm/types.h>
-
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-
-#include <linux/netlink.h>
-#include <linux/rtnetlink.h>
-
-#include "w1_netlink.h"
-#include "w1_repeater.h"
+#if OW_W1
+#include "ow_w1.h"
+#include "ow_connection.h"
 
 static void Netlink_Parse_Show( struct netlink_parse * nlp ) ;
 
@@ -64,49 +50,49 @@ int Netlink_Parse_Get( struct netlink_parse * nlp )
 	struct nlmsghdr peek_nlm ;
 
 	// first peek at message to get length and details
-	int recv_len = recv(nl_file_descriptor, &peek_nlm, sizeof(peek_nlm), MSG_PEEK );
+	int recv_len = recv(Inbound_Control.nl_file_descriptor, &peek_nlm, sizeof(peek_nlm), MSG_PEEK );
 
-	printf("Pre-parse header: %d bytes len=%d type=%d seq=%d pid=%d (our pid=%d)\n",recv_len,peek_nlm.nlmsg_len,peek_nlm.nlmsg_type,peek_nlm.nlmsg_seq,peek_nlm.nlmsg_pid,getpid());
+	LEVEL_DEBUG("Pre-parse header: %d bytes len=%d type=%d seq=%d pid=%d (our pid=%d)\n",recv_len,peek_nlm.nlmsg_len,peek_nlm.nlmsg_type,peek_nlm.nlmsg_seq,peek_nlm.nlmsg_pid,getpid());
 	if (recv_len == -1) {
-		perror("recv header error\n");
+		ERROR_DEBUG("Netlink (w1) recv header error\n");
 		return -errno ;
 	}
 	
 	// test pid
 	if ( peek_nlm.nlmsg_pid != 0 ) {
-		printf("Not our pid on message\n");
+		LEVEL_DEBUG("Netlink (w1) Not our pid on message\n");
 		// non-peek
-		recv(nl_file_descriptor, &peek_nlm, sizeof(peek_nlm), 0 );
+		recv(Inbound_Control.nl_file_descriptor, &peek_nlm, sizeof(peek_nlm), 0 );
 		return -EAGAIN ;
 	}
 	
 	// test type
 	if ( peek_nlm.nlmsg_type != NLMSG_DONE ) {
-		printf("Bad message type\n");
+		LEVEL_DEBUG("Netlink (w1) Bad message type\n");
 		// non-peek
-		recv(nl_file_descriptor, &peek_nlm, sizeof(peek_nlm), 0 );
+		recv(Inbound_Control.nl_file_descriptor, &peek_nlm, sizeof(peek_nlm), 0 );
 		return -EINVAL ;
 	}
 	
 	// test length
 	if ( peek_nlm.nlmsg_len < sizeof(struct nlmsghdr) + sizeof(struct cn_msg) + sizeof(struct w1_netlink_msg) ) {
-		printf("Bad message length (%d)\n",peek_nlm.nlmsg_len);
+		LEVEL_DEBUG("Netlink (w1) Bad message length (%d)\n",peek_nlm.nlmsg_len);
 		// non-peek
-		recv(nl_file_descriptor, &peek_nlm, sizeof(peek_nlm), 0 );
+		recv(Inbound_Control.nl_file_descriptor, &peek_nlm, sizeof(peek_nlm), 0 );
 		return -EMSGSIZE ;
 	}
 	
 	// allocate space
 	buffer = malloc( peek_nlm.nlmsg_len ) ;
 	if ( buffer == NULL ) {
-		printf("Cannot allocate %d byte buffer for netlink data\n",peek_nlm.nlmsg_len) ;
+		LEVEL_DEBUG("Netlink (w1) Cannot allocate %d byte buffer for data\n",peek_nlm.nlmsg_len) ;
 		return -ENOMEM ;
 	}
 
 	// read whole packet
-	recv_len = recv(nl_file_descriptor, buffer, peek_nlm.nlmsg_len, 0 );
+	recv_len = recv(Inbound_Control.nl_file_descriptor, buffer, peek_nlm.nlmsg_len, 0 );
 	if (recv_len == -1) {
-		perror("recv body error\n");
+		ERROR_DEBUG("Netlink (w1) recv body error\n");
 		free(buffer);
 		return -EIO ;
 	}
@@ -161,3 +147,5 @@ static void Netlink_Parse_Show( struct netlink_parse * nlp )
 		printf("\n");
 	}
 }
+
+#endif /* OW_W1 */

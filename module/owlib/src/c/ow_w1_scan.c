@@ -29,24 +29,12 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-#include <errno.h>
+#include <config.h>
+#include "owfs_config.h"
 
-#include <asm/byteorder.h>
-#include <asm/types.h>
-
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-
-#include <linux/netlink.h>
-#include <linux/rtnetlink.h>
-
-#include "w1_netlink.h"
-#include "w1_repeater.h"
+#if OW_W1
+#include "ow_w1.h"
+#include "ow_connection.h"
 
 static void w1_masters(struct netlink_parse * nlp)
 {
@@ -54,11 +42,11 @@ static void w1_masters(struct netlink_parse * nlp)
 		int bus_master = nlp->w1m->id.mst.id ;
 		switch (nlp->w1m->type) {
 			case W1_MASTER_ADD:
-				AddBus(bus_master) ;
+				AddW1Bus(bus_master) ;
 				//printf("Master has been added: w1_master%d.\n",	bus_master);
 					break;
 			case W1_MASTER_REMOVE:
-				RemoveBus(bus_master) ;
+				RemoveW1Bus(bus_master) ;
 				//printf("Master has been removed: w1_master%d.\n", bus_master);
 					break;
 			default:
@@ -68,7 +56,7 @@ static void w1_masters(struct netlink_parse * nlp)
 	}
 }
 
-int w1_scan( void )
+int W1NLScan( void )
 {
 	while (1)
 	{
@@ -76,20 +64,17 @@ int w1_scan( void )
 		
 		fd_set readset ;
 		FD_ZERO(&readset) ;
-		FD_SET(nl_file_descriptor,&readset) ;
+		FD_SET(Inbound_Control.nl_file_descriptor,&readset) ;
 		
-		select_value = select(nl_file_descriptor+1,&readset,NULL,NULL,NULL) ;
+		select_value = select(Inbound_Control.nl_file_descriptor+1,&readset,NULL,NULL,NULL) ;
 		
 		if ( select_value == -1 ) {
-			printf("Select returned -1\n");
+			ERROR_DEBUG("Select returned -1\n");
 			if (errno == EINTR) {
 				continue ;
-			} else {
-				break ;
 			}
 		} else if ( select_value == 0 ) {
-			printf("Select returned zero\n");
-			break;
+			LEVEL_DEBUG("Select returned zero\n");
 		} else {
 			struct netlink_parse nlp ;
 			
@@ -108,3 +93,4 @@ int w1_scan( void )
 	return 0;
 }
 
+#endif /* OW_W1 */

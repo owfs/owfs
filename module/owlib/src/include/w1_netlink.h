@@ -22,15 +22,12 @@
 #ifndef __W1_NETLINK_H
 #define __W1_NETLINK_H
 
-#include <asm/types.h>
-#include <linux/connector.h>
+//#include <sys/types.h>
 
 #ifndef CN_W1_IDX
 #define CN_W1_IDX      4
 #define CN_W1_VAL      1
 #endif
-
-#include "w1.h"
 
 enum w1_netlink_message_types {
 	W1_SLAVE_ADD = 0,
@@ -39,6 +36,7 @@ enum w1_netlink_message_types {
 	W1_MASTER_REMOVE,
 	W1_MASTER_CMD,
 	W1_SLAVE_CMD,
+	W1_LIST_MASTERS,
 };
 
 struct w1_netlink_msg
@@ -69,11 +67,4 @@ struct w1_netlink_cmd
 	__u8				data[0];
 };
 
-#ifdef __KERNEL__
-
-void w1_netlink_send(struct w1_master *, struct w1_netlink_msg *);
-int w1_init_netlink(void);
-void w1_fini_netlink(void);
-
-#endif /* __KERNEL__ */
 #endif /* __W1_NETLINK_H */

@@ -29,33 +29,20 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-#include <errno.h>
+#include <config.h>
+#include "owfs_config.h"
 
-#include <asm/byteorder.h>
-#include <asm/types.h>
+#if OW_W1
 
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-
-#include <linux/netlink.h>
-#include <linux/rtnetlink.h>
-
-#include "w1_netlink.h"
-#include "w1_repeater.h"
-
-static int netlink_seq = 1 ;
+#include "ow_w1.h"
+#include "ow_connection.h"
 
 static int send_cmd( struct w1_netlink_msg *msg)
 {
 	struct cn_msg *cmsg;
 	struct w1_netlink_msg *m;
 	struct nlmsghdr *nlh;
-	int seq = netlink_seq ++ ;
+	int seq = Inbound_Control.w1_seq ++ ;
 	
 	int size, err;
 	
@@ -86,9 +73,9 @@ static int send_cmd( struct w1_netlink_msg *msg)
 	memcpy(m, msg, sizeof(struct w1_netlink_msg));
 	memcpy(m+1, msg->data, msg->len);
 
-	err = send(nl_file_descriptor, nlh, size,  0);
+	err = send(Inbound_Control.nl_file_descriptor, nlh, size,  0);
 	if (err == -1) {
-		perror("Failed to send W1_LIST_MASTERS\n");
+		ERROR_CONNECT("Failed to send W1_LIST_MASTERS\n");
 	}
 	free(nlh);
 	
@@ -114,7 +101,7 @@ static void w1_parse_master_list(struct netlink_parse * nlp)
 	int i ;
 
 	for ( i=0  ;i<nlp->data_size/4 ; ++i ) {
-		AddBus( bus_master[i] ) ;
+		AddW1Bus( bus_master[i] ) ;
 	}
 }
 
@@ -125,18 +112,24 @@ static void w1_masters(struct netlink_parse * nlp)
 			w1_parse_master_list( nlp );
 				break;
 		default:
-			printf("Other command (Not master list)\n");
+			LEVEL_DEBUG("Other command (Not master list)\n");
 			break ;
 	}
 }
 
-int w1_load_netlink( void )
+int W1NLList( void )
 {
 	int repeat_loop = 1 ;
-	int seq = w1_list_masters() ;
+	int seq ;
 
+	if ( Inbound_Control.nl_file_descriptor == -1 && w1_bind() == -1 ) {
+		ERROR_DEBUG("Netlink problem -- are you root?\n");
+		return -1 ;
+	}
+	
+	seq = w1_list_masters() ;
 	if  (seq < 0 ) {
-		printf("Couldn't send the W1_LIST_MASTERS request\n");
+		LEVEL_CONNECT("Couldn't send the W1_LIST_MASTERS request\n");
 		return seq ;
 	}
 
@@ -147,17 +140,17 @@ int w1_load_netlink( void )
 		
 		fd_set readset ;
 		FD_ZERO(&readset) ;
-		FD_SET(nl_file_descriptor,&readset) ;
+		FD_SET(Inbound_Control.nl_file_descriptor,&readset) ;
 		
-		select_value = select(nl_file_descriptor+1,&readset,NULL,NULL,&tv) ;
+		select_value = select(Inbound_Control.nl_file_descriptor+1,&readset,NULL,NULL,&tv) ;
 		
 		if ( select_value == -1 ) {
 			if (errno != EINTR) {
-				perror("Select returned -1\n");
+				ERROR_CONNECT("Netlink (w1) Select returned -1\n");
 				return 1 ;
 			}
 		} else if ( select_value == 0 ) {
-			printf("Select returned zero (timeout)\n");
+			LEVEL_DEBUG("Select returned zero (timeout)\n");
 			return 1;
 		} else {
 			struct netlink_parse nlp ;
@@ -167,7 +160,7 @@ int w1_load_netlink( void )
 					break ;
 				case 0:
 					if ( nlp.nlm->nlmsg_seq != seq || nlp.w1m->type != W1_LIST_MASTERS ) {
-						printf("Non-matching netlink packet\n");
+						LEVEL_DEBUG("Non-matching netlink packet\n");
 						continue ;
 					}
 					w1_masters( &nlp );
@@ -181,3 +174,5 @@ int w1_load_netlink( void )
 	}
 	return 0;
 }
+
+#endif /* OW_W1 */

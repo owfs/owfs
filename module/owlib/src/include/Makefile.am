@@ -69,7 +69,7 @@ noinst_HEADERS =          \
         ow_system.h       \
         ow_thermocouple.h \
         ow_transaction.h  \
-        ow_w1,h           \
+        ow_w1.h           \
         ow_xxxx.h         \
         rwlock.h          \
         netlink.h         \
