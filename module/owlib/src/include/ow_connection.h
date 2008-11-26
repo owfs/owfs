@@ -274,6 +274,9 @@ struct connin_w1 {
 	// bus master name kept in name
 	// netlink fd kept in file_descriptor
 	unsigned int entry_mark ;
+	int id ; // equivalent to the number part of w1_bus_master23
+	struct dirblob main;		/* main directory */
+	struct dirblob alarm;		/* alarm directory */
 #endif /* OW_W1 */
 };
 

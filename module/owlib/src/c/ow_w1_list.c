@@ -37,51 +37,6 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
 #include "ow_w1.h"
 #include "ow_connection.h"
 
-static int send_cmd( struct w1_netlink_msg *msg)
-{
-	struct cn_msg *cmsg;
-	struct w1_netlink_msg *m;
-	struct nlmsghdr *nlh;
-	int seq = Inbound_Control.w1_seq ++ ;
-	
-	int size, err;
-	
-	size = sizeof(struct nlmsghdr) + sizeof(struct cn_msg) + sizeof(struct w1_netlink_msg) + msg->len;
-	
-	nlh = malloc(size);
-	if (!nlh)
-		return -ENOMEM;
-	
-	memset(nlh, 0, size);
-	
-	nlh->nlmsg_seq = seq;
-	nlh->nlmsg_type = NLMSG_DONE;
-	nlh->nlmsg_len = NLMSG_LENGTH(sizeof(struct cn_msg) + sizeof(struct w1_netlink_msg) + msg->len);
-	nlh->nlmsg_flags = NLM_F_REQUEST;
-	nlh->nlmsg_pid = Inbound_Control.w1_pid ;
-	
-	cmsg = NLMSG_DATA(nlh);
-	
-	cmsg->id.idx = CN_W1_IDX;
-	cmsg->id.val = CN_W1_VAL;
-	cmsg->seq = seq;
-	cmsg->ack = 1;
-	cmsg->flags = 0 ;
-	cmsg->len = sizeof(struct w1_netlink_msg) + msg->len;
-	
-	m = (struct w1_netlink_msg *)(cmsg + 1);
-	memcpy(m, msg, sizeof(struct w1_netlink_msg));
-	memcpy(m+1, msg->data, msg->len);
-
-	err = send(Inbound_Control.nl_file_descriptor, nlh, size,  0);
-	if (err == -1) {
-		ERROR_CONNECT("Failed to send W1_LIST_MASTERS\n");
-	}
-	free(nlh);
-	
-	return seq;
-}
-
 static int w1_list_masters( void )
 {
 	struct w1_netlink_msg w1lm;
@@ -92,7 +47,7 @@ static int w1_list_masters( void )
 	w1lm.len = 0;
 	w1lm.id.mst.id = 0;
 	
-	return send_cmd(&w1lm);
+	return W1_send_msg(&w1lm);
 }
 
 static void w1_parse_master_list(struct netlink_parse * nlp)
@@ -135,24 +90,7 @@ int W1NLList( void )
 
 	while (repeat_loop)
 	{
-		int select_value ;
-		struct timeval tv = { 5, 0 } ;
-		
-		fd_set readset ;
-		FD_ZERO(&readset) ;
-		FD_SET(Inbound_Control.nl_file_descriptor,&readset) ;
-		
-		select_value = select(Inbound_Control.nl_file_descriptor+1,&readset,NULL,NULL,&tv) ;
-		
-		if ( select_value == -1 ) {
-			if (errno != EINTR) {
-				ERROR_CONNECT("Netlink (w1) Select returned -1\n");
-				return 1 ;
-			}
-		} else if ( select_value == 0 ) {
-			LEVEL_DEBUG("Select returned zero (timeout)\n");
-			return 1;
-		} else {
+		if ( W1Select() == 0 ) {
 			struct netlink_parse nlp ;
 
 			switch ( Netlink_Parse_Get( &nlp ) ) {
@@ -170,6 +108,8 @@ int W1NLList( void )
 				default:
 					return  1;
 			}
+		} else {
+			return 1 ;
 		}
 	}
 	return 0;

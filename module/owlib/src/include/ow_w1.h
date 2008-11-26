@@ -21,6 +21,8 @@ void w1_unbind( void ) ;
 
 void RemoveW1Bus( int bus_master ) ;
 void AddW1Bus( int bus_master ) ;
+int W1_send_msg( struct w1_netlink_msg *msg) ;
+int W1Select( void ) ;
 
 int W1NLScan( void ) ;
 int W1NLList( void ) ;

@@ -11,12 +11,13 @@ $Id$
 
 #include <config.h>
 #include "owfs_config.h"
-#include "ow.h"
-#include "ow_counters.h"
-#include "ow_connection.h"
-#include "ow_codes.h"
 
 #if OW_W1
+
+#include "ow_w1.h"
+#include "ow_connection.h"
+#include "ow_codes.h"
+#include "ow_counters.h"
 
 struct toW1 {
 	ASCII *command;
@@ -32,8 +33,6 @@ static int W1_write(int file_descriptor, const ASCII * msg, size_t size, struct 
 static void toW1init(struct toW1 *ha7);
 static void setW1address(struct toW1 *ha7, const BYTE * sn);
 static int W1_toW1(int file_descriptor, const struct toW1 *ha7, struct connection_in *in);
-static int W1_getlock(int file_descriptor, struct connection_in *in);
-static int W1_releaselock(int file_descriptor, struct connection_in *in);
 static int W1_read(int file_descriptor, struct memblob *mb);
 static int W1_reset(const struct parsedname *pn);
 static int W1_next_both(struct device_search *ds, const struct parsedname *pn);
@@ -74,6 +73,10 @@ int W1_detect(struct connection_in *in)
 	/* Set up low-level routines */
 	W1_setroutines(in);
 
+	/* Initialize dir-at-once structures */
+	DirblobInit(&(in->connin.w1.main));
+	DirblobInit(&(in->connin.w1.alarm));
+
 	if (in->name == NULL) {
 		return -1;
 	}
@@ -88,7 +91,27 @@ int W1_detect(struct connection_in *in)
 static int W1_reset(const struct parsedname *pn)
 {
 	// w1 doesn't use an explicit reset
+	(void) pn ;
 	return 0 ;
+}
+
+static int w1_send_search( BYTE search, const struct parsedname *pn )
+{
+	struct {
+		struct w1_netlink_msg w1lm;
+		struct w1_netlink_cmd w1lc;
+	} msg ;
+	
+	memset(&msg, 0, sizeof(msg));
+	
+	msg.w1lm.type = W1_MASTER_CMD;
+	msg.w1lm.len = sizeof(msg.w1lc) ;
+	msg.w1lm.id.mst.id = pn->selected_connection->connin.w1.id;
+
+	msg.w1lc.cmd = (search==_1W_CONDITIONAL_SEARCH_ROM) ? W1_CMD_ALARM_SEARCH : W1_CMD_SEARCH ;
+	msg.w1lc.len = 0 ;
+	
+	return W1_send_msg( (struct w1_netlink_msg *) &msg );
 }
 
 static int W1_directory(BYTE search, struct dirblob *db, const struct parsedname *pn)
@@ -99,6 +122,14 @@ static int W1_directory(BYTE search, struct dirblob *db, const struct parsedname
 	struct memblob mb;
 
 	DirblobClear(db);
+printf("w1_directory\n");
+	w1_send_search( search, pn ) ;
+	{
+		struct netlink_parse nlp ;
+		if ( W1Select()  ==0 ) {
+			Netlink_Parse_Get( &nlp) ;
+		}
+	}
 	if ((file_descriptor = ClientConnect(pn->selected_connection)) < 0) {
 		db->troubled = 1;
 		return -EIO;
@@ -148,7 +179,7 @@ static int W1_directory(BYTE search, struct dirblob *db, const struct parsedname
 static int W1_next_both(struct device_search *ds, const struct parsedname *pn)
 {
 	struct dirblob *db = (ds->search == _1W_CONDITIONAL_SEARCH_ROM) ?
-		&(pn->selected_connection->connin.ha7.alarm) : &(pn->selected_connection->connin.ha7.main);
+		&(pn->selected_connection->connin.w1.alarm) : &(pn->selected_connection->connin.w1.main);
 	int ret = 0;
 
 	if (!pn->selected_connection->AnyDevices) {
@@ -157,7 +188,7 @@ static int W1_next_both(struct device_search *ds, const struct parsedname *pn)
 	if (ds->LastDevice) {
 		return -ENODEV;
 	}
-
+printf("ds->index = %d\n",ds->index);
 	if (++(ds->index) == 0) {
 		if (W1_directory(ds->search, db, pn)) {
 			return -EIO;
@@ -462,18 +493,6 @@ static void W1_close(struct connection_in *in)
 	DirblobClear(&(in->connin.ha7.main));
 	DirblobClear(&(in->connin.ha7.alarm));
 	FreeClientAddr(in);
-}
-
-static int W1_getlock(int file_descriptor, struct connection_in *in)
-{
-	(void) file_descriptor;
-	(void) in;
-}
-
-static int W1_releaselock(int file_descriptor, struct connection_in *in)
-{
-	(void) file_descriptor;
-	(void) in;
 }
 
 static void toW1init(struct toW1 *ha7)

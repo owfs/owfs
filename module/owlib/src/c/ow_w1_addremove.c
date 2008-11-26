@@ -75,6 +75,7 @@ void AddW1Bus( int bus_master )
 	} else if ( (in = CreateIn(name)) != NULL ) {
 		LEVEL_DEBUG("w1 bus <%s> to be added\n",name) ;
 		in->connin.w1.entry_mark = Inbound_Control.w1_entry_mark ;
+		in->connin.w1.id = bus_master ;
 	} else {
 		LEVEL_DEBUG("w1 bus <%s> couldn't be added\n",name) ;
 	}
