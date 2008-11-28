@@ -40,26 +40,28 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
 /* Wait for  a netlink packet */
 int W1Select( void )
 {
-	int select_value ;
-	struct timeval tv = { Globals.timeout_w1, 0 } ;
+	do {
+		int select_value ;
+		struct timeval tv = { Globals.timeout_w1, 0 } ;
 
-	fd_set readset ;
-	FD_ZERO(&readset) ;
-	FD_SET(Inbound_Control.nl_file_descriptor,&readset) ;
+		fd_set readset ;
+		FD_ZERO(&readset) ;
+		FD_SET(Inbound_Control.nl_file_descriptor,&readset) ;
 
-	select_value = select(Inbound_Control.nl_file_descriptor+1,&readset,NULL,NULL,&tv) ;
+		select_value = select(Inbound_Control.nl_file_descriptor+1,&readset,NULL,NULL,&tv) ;
 
-	if ( select_value == -1 ) {
-		if (errno != EINTR) {
-			ERROR_CONNECT("Netlink (w1) Select returned -1\n");
-			return -1 ;
+		if ( select_value == -1 ) {
+			if (errno != EINTR) {
+				ERROR_CONNECT("Netlink (w1) Select returned -1\n");
+				return -1 ;
+			}
+		} else if ( select_value == 0 ) {
+			LEVEL_DEBUG("Select returned zero (timeout)\n");
+			return -1;
+		} else {
+			return 0 ;
 		}
-	} else if ( select_value == 0 ) {
-		LEVEL_DEBUG("Select returned zero (timeout)\n");
-		return -1;
-	} else {
-		return 0 ;
-	}
+	} while (1) ;
 }
 
 #endif /* OW_W1 */

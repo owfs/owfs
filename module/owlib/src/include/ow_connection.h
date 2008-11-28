@@ -436,6 +436,9 @@ extern struct inbound_control {
 	unsigned int w1_entry_mark ; // for removing buses_mark ;
 	int nl_file_descriptor ; // w1 kernel module for netlink communication
 	int w1_pid ;
+#if OW_MT
+	pthread_mutex_t w1_mutex;	// mutex for w1 sequence number */
+#endif /* OW_MT */
 #endif /* OW_W1 */
 } Inbound_Control ; // Single global struct -- see ow_connect.c
 

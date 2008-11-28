@@ -188,6 +188,8 @@ void FreeIn(struct connection_in * now)
 		break;
 	case bus_usb:
 #if OW_USB
+		DirblobClear( &(now->connin.usb.main) ) ;
+		DirblobClear( &(now->connin.usb.alarm) ) ;
 		DS9490_close(now);
 #endif
 		break;
@@ -205,16 +207,18 @@ void FreeIn(struct connection_in * now)
 		LEVEL_DEBUG("FreeClientAddr\n");
 		FreeClientAddr(now);
 		break;
-	case bus_elink:
 	case bus_ha7net:
+		BUS_close(now);
+		break ;
+	case bus_elink:
 	case bus_etherweather:
 		BUS_close(now);
 		break;
 	case bus_fake:
-		DirblobClear(&(now->connin.fake.db));
+		DirblobClear( &(now->connin.fake.db) );
 		break;
 	case bus_tester:
-		DirblobClear(&(now->connin.tester.db));
+		DirblobClear( &(now->connin.tester.db) );
 		break;
 	case bus_i2c:
 #if OW_MT
@@ -223,6 +227,12 @@ void FreeIn(struct connection_in * now)
 		}
 #endif							/* OW_MT */
 	case bus_w1:
+		DirblobClear( &(now->connin.w1.main) );
+		DirblobClear( &(now->connin.w1.alarm) );
+#if OW_MT
+		pthread_mutex_destroy(&(Inbound_Control.w1_mutex));
+#endif							/* OW_MT */
+		break ;
 	case bus_bad:
 	default:
 		break;

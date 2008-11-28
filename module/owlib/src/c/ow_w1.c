@@ -77,6 +77,10 @@ int W1_detect(struct connection_in *in)
 	DirblobInit(&(in->connin.w1.main));
 	DirblobInit(&(in->connin.w1.alarm));
 
+	#if OW_MT
+	pthread_mutex_init(&(Inbound_Control.w1_mutex), Mutex.pmattr);
+	#endif							/* OW_MT */
+
 	if (in->name == NULL) {
 		return -1;
 	}
@@ -98,82 +102,57 @@ static int W1_reset(const struct parsedname *pn)
 static int w1_send_search( BYTE search, const struct parsedname *pn )
 {
 	struct {
-		struct w1_netlink_msg w1lm;
-		struct w1_netlink_cmd w1lc;
+		struct w1_netlink_msg w1m;
+		struct w1_netlink_cmd w1c;
 	} msg ;
 	
 	memset(&msg, 0, sizeof(msg));
 	
-	msg.w1lm.type = W1_MASTER_CMD;
-	msg.w1lm.len = sizeof(msg.w1lc) ;
-	msg.w1lm.id.mst.id = pn->selected_connection->connin.w1.id;
+	msg.w1m.type = W1_MASTER_CMD;
+	msg.w1m.len = sizeof(msg.w1c) ;
+	msg.w1m.id.mst.id = pn->selected_connection->connin.w1.id;
 
-	msg.w1lc.cmd = (search==_1W_CONDITIONAL_SEARCH_ROM) ? W1_CMD_ALARM_SEARCH : W1_CMD_SEARCH ;
-	msg.w1lc.len = 0 ;
+	msg.w1c.cmd = (search==_1W_CONDITIONAL_SEARCH_ROM) ? W1_CMD_ALARM_SEARCH : W1_CMD_SEARCH ;
+	msg.w1c.len = 0 ;
 	
 	return W1_send_msg( (struct w1_netlink_msg *) &msg );
 }
 
 static int W1_directory(BYTE search, struct dirblob *db, const struct parsedname *pn)
 {
-	int file_descriptor;
-	int ret = 0;
-	struct toW1 ha7;
-	struct memblob mb;
-
+	struct netlink_parse nlp ;
+	int seq ;
+	
 	DirblobClear(db);
-printf("w1_directory\n");
-	w1_send_search( search, pn ) ;
-	{
-		struct netlink_parse nlp ;
-		if ( W1Select()  ==0 ) {
-			Netlink_Parse_Get( &nlp) ;
+	printf("w1_directory\n");
+	seq = w1_send_search( search, pn ) ;
+	if ( seq < 0 ) {
+		return -EIO ;
+	}
+	do {
+		int i ;
+		if ( W1Select() != 0 ) {
+			return -EIO ;
 		}
-	}
-	if ((file_descriptor = ClientConnect(pn->selected_connection)) < 0) {
-		db->troubled = 1;
-		return -EIO;
-	}
-
-	toW1init(&ha7);
-	ha7.command = "Search";
-	if (search == _1W_CONDITIONAL_SEARCH_ROM) {
-		ha7.conditional[0] = '1';
-	}
-
-	if (W1_toW1(file_descriptor, &ha7, pn->selected_connection)) {
-		ret = -EIO;
-	} else if (W1_read(file_descriptor, &mb)) {
-		STAT_ADD1_BUS(e_bus_read_errors, pn->selected_connection);
-		ret = -EIO;
-	} else {
-		BYTE sn[8];
-		ASCII *p = (ASCII *) mb.memory_storage;
-		while ((p = strstr(p, "<INPUT CLASS=\"W1Value\" NAME=\"Address_"))
-			   && (p = strstr(p, "VALUE=\""))) {
-			p += 7;
-			if (strspn(p, "0123456789ABCDEF") < 16) {
-				ret = -EIO;
-				break;
-			}
-			sn[7] = string2num(&p[0]);
-			sn[6] = string2num(&p[2]);
-			sn[5] = string2num(&p[4]);
-			sn[4] = string2num(&p[6]);
-			sn[3] = string2num(&p[8]);
-			sn[2] = string2num(&p[10]);
-			sn[1] = string2num(&p[12]);
-			sn[0] = string2num(&p[14]);
-			if (CRC8(sn, 8)) {
-				ret = -EIO;
-				break;
-			}
-			DirblobAdd(sn, db);
+		if ( Netlink_Parse_Get( &nlp) ) {
+			return -EIO ;
 		}
-		MemblobClear(&mb);
-	}
-	close(file_descriptor);
-	return ret;
+		if ( nlp.nlm->nlmsg_seq != (unsigned) seq ) {
+			LEVEL_DEBUG("Netlink sequence number out of order: expected %d, got %d\n",seq,nlp.nlm->nlmsg_seq);
+			continue ;
+		}
+		++seq ;
+		if ( nlp.w1m->type != W1_MASTER_CMD ) {
+			return -EIO ;
+		}
+		for ( i = 0 ; i < nlp.w1c->len ; i += 8 ) {
+			DirblobAdd(&nlp.data[i], db);
+		}
+		if ( nlp.cn->ack == 0 ) {
+			break ;
+		}
+	} while (1) ;
+	return 0;
 }
 
 static int W1_next_both(struct device_search *ds, const struct parsedname *pn)
@@ -188,7 +167,6 @@ static int W1_next_both(struct device_search *ds, const struct parsedname *pn)
 	if (ds->LastDevice) {
 		return -ENODEV;
 	}
-printf("ds->index = %d\n",ds->index);
 	if (++(ds->index) == 0) {
 		if (W1_directory(ds->search, db, pn)) {
 			return -EIO;

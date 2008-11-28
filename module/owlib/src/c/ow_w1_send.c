@@ -42,7 +42,11 @@ int W1_send_msg( struct w1_netlink_msg *msg)
 	struct cn_msg *cn;
 	struct w1_netlink_msg *w1m;
 	struct nlmsghdr *nlm;
-	int seq = Inbound_Control.w1_seq ++ ;
+	int seq ;
+
+	pthread_mutex_lock( &Inbound_Control.w1_mutex ) ;
+	seq = Inbound_Control.w1_seq ++ ;
+	pthread_mutex_unlock( &Inbound_Control.w1_mutex ) ;
 	
 	int size, err;
 	
