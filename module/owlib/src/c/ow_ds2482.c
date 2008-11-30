@@ -806,10 +806,6 @@ static void DS2482_close(struct connection_in *in)
 		return;
 	}
 	head = in->connin.i2c.head;
-	if (head->connin.i2c.file_descriptor < 0) {
-		return;
-	}
-	close(head->connin.i2c.file_descriptor);
-	head->connin.i2c.file_descriptor = -1;
+	Test_and_Close( & (head->connin.i2c.file_descriptor) ) ;
 }
 #endif							/* OW_I2C */

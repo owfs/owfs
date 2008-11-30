@@ -36,8 +36,34 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
 #include "ow_w1.h"
 #include "ow_connection.h"
 
+static void Dispatch_Packet( struct netlink_parse * nlp)
+{
+	int bus = NL_BUS(nlp->nlm->nlmsg_pid) ;
+	struct connection_in * in ;
+
+	CONNIN_RLOCK ;
+	for ( in = Inbound_Control.head ; in != NULL ; in = in->next ) {
+		//printf("Matching %d/%s/%s/%s/ to bus.%d %d/%s/%s/%s/\n",bus_zero,name,type,domain,now->index,now->busmode,now->connin.tcp.name,now->connin.tcp.type,now->connin.tcp.domain);
+		if ( in->busmode == bus_w1 && in->connin.w1.id == bus ) {
+			break ;
+		}
+	}
+	if ( in == NULL ) {
+		CONNIN_RUNLOCK ;
+		LEVEL_DEBUG("Netlink message sent to non-existent w1_bus_master%d\n",bus) ;
+		return ;
+	}
+	/* We could have select and a timeout for safety, but this is internal communication */
+	write(in->connin.w1.write_file_descriptor, (const void *)nlp->nlm, nlp->nlm->nlmsg_len) ;
+	CONNIN_RUNLOCK ;
+}
 static void w1_masters(struct netlink_parse * nlp)
 {
+	int pid = NL_PID(nlp->nlm->nlmsg_pid) ;
+	if ( pid != 0 && pid != Inbound_Control.w1_pid ) {
+		LEVEL_DEBUG("Netlink packet PID doesn't match\n");
+		return ;
+	}
 	if (nlp->w1m) {
 		int bus_master = nlp->w1m->id.mst.id ;
 		switch (nlp->w1m->type) {
@@ -49,8 +75,13 @@ static void w1_masters(struct netlink_parse * nlp)
 				RemoveW1Bus(bus_master) ;
 				//printf("Master has been removed: w1_master%d.\n", bus_master);
 					break;
+			case W1_SLAVE_ADD:
+			case W1_SLAVE_REMOVE:
+				LEVEL_DEBUG("Netlink (w1) Slave announcements\n");
+				break ;
 			default:
-				//printf("Other command (Not master)\n");
+				LEVEL_DEBUG("Netlink (w1) Other command. Dispatch...\n");
+				Dispatch_Packet( nlp ) ;
 				break ;
 		}
 	}
@@ -64,9 +95,9 @@ int W1NLScan( void )
 		
 		fd_set readset ;
 		FD_ZERO(&readset) ;
-		FD_SET(Inbound_Control.nl_file_descriptor,&readset) ;
+		FD_SET(Inbound_Control.w1_file_descriptor,&readset) ;
 		
-		select_value = select(Inbound_Control.nl_file_descriptor+1,&readset,NULL,NULL,NULL) ;
+		select_value = select(Inbound_Control.w1_file_descriptor+1,&readset,NULL,NULL,NULL) ;
 		
 		if ( select_value == -1 ) {
 			ERROR_DEBUG("Select returned -1\n");

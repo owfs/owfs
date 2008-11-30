@@ -291,9 +291,6 @@ static int LINKE_preamble(const struct parsedname *pn)
 
 static void LINKE_close(struct connection_in *in)
 {
-	if (in->file_descriptor >= 0) {
-		close(in->file_descriptor);
-		in->file_descriptor = -1;
-	}
+	Test_and_Close( &(in->file_descriptor) ) ;
 	FreeClientAddr(in);
 }

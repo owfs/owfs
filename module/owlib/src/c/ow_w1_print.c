@@ -51,7 +51,7 @@ static void NLM_print( struct nlmsghdr * nlm )
 		default:
 			break ;
 	}
-	printf(") flags=%u seq=%u pid=%u\n",nlm->nlmsg_flags, nlm->nlmsg_seq, nlm->nlmsg_pid ) ;
+	printf(") flags=%u seq=%u pid=%u|%u\n",nlm->nlmsg_flags, nlm->nlmsg_seq, NL_BUS(nlm->nlmsg_pid), NL_PID(nlm->nlmsg_pid) ) ;
 }
 
 static void CN_print( struct cn_msg * cn )
@@ -104,14 +104,15 @@ static void W1C_print( struct w1_netlink_cmd * w1c )
 		printcase( W1_CMD_READ );
 		printcase( W1_CMD_WRITE );
 		printcase( W1_CMD_SEARCH );
-		printcase( W1_MASTER_REMOVE );
 		printcase( W1_CMD_ALARM_SEARCH );
-	};		default:
-	break ;
+		printcase( W1_CMD_TOUCH );
+		default:
+			break ;
+	}
 	printf(") len=%u\n", w1c->len) ;
 }
 
-void Netlink_Print( struct nlmsghdr * nlm, struct cn_msg * cn, struct w1_netlink_msg * w1m, struct w1_netlink_cmd * w1c, unsigned char data, int length )
+void Netlink_Print( struct nlmsghdr * nlm, struct cn_msg * cn, struct w1_netlink_msg * w1m, struct w1_netlink_cmd * w1c, unsigned char * data, int length )
 {
 	NLM_print( nlm ) ;
 	CN_print( cn ) ;

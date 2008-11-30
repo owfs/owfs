@@ -129,6 +129,8 @@ void UT_fromDate(const _DATE D, BYTE * data);
 _DATE UT_toDate(const BYTE * date);
 int FS_busless(char *path);
 
+void Test_and_Close( int * file_descriptor ) ;
+
 /* Cache  and Storage functions */
 #include "ow_cache.h"
 void FS_LoadDirectoryOnly(struct parsedname *pn_directory, const struct parsedname *pn_original);

@@ -120,6 +120,7 @@ OWLIB_SOURCE = ow_dl.c           \
                ow_w1_bind.c      \
                ow_w1_list.c      \
                ow_w1_parse.c     \
+               ow_w1_print.c     \
                ow_w1_scan.c      \
                ow_w1_select.c    \
                ow_w1_send.c      \

@@ -40,32 +40,29 @@ int w1_bind( void )
 {
 	struct sockaddr_nl l_local ;
 
-	Inbound_Control.nl_file_descriptor = socket(AF_NETLINK, SOCK_DGRAM, NETLINK_CONNECTOR);
-	if (Inbound_Control.nl_file_descriptor == -1) {
+	Inbound_Control.w1_file_descriptor = socket(AF_NETLINK, SOCK_DGRAM, NETLINK_CONNECTOR);
+	if (Inbound_Control.w1_file_descriptor == -1) {
 		ERROR_CONNECT("Netlink (w1) socket");
 		return -1;
 	}
 
-	Inbound_Control.w1_pid = getpid() ;
+	Inbound_Control.w1_pid = NL_PID(getpid()) ;
 	l_local.nl_family = AF_NETLINK;
 	l_local.nl_groups = 23;
-	l_local.nl_pid    = Inbound_Control.w1_pid;
+	l_local.nl_pid    = MAKE_NL_PID(0,Inbound_Control.w1_pid);
 	
-	if (bind(Inbound_Control.nl_file_descriptor, (struct sockaddr *)&l_local, sizeof(struct sockaddr_nl)) == -1) {
+	if (bind(Inbound_Control.w1_file_descriptor, (struct sockaddr *)&l_local, sizeof(struct sockaddr_nl)) == -1) {
 		ERROR_CONNECT("Netlink (w1) bind");
 		w1_unbind() ;
 		return -1;
 	}
 	
-	return Inbound_Control.nl_file_descriptor ;
+	return Inbound_Control.w1_file_descriptor ;
 }
 
 void w1_unbind( void )
 {
-	if ( Inbound_Control.nl_file_descriptor > -1 ) {
-		close(Inbound_Control.nl_file_descriptor);
-		Inbound_Control.nl_file_descriptor = -1 ;
-	}
+	Test_and_Close( &(Inbound_Control.w1_file_descriptor) );
 }
 
 #endif /* OW_W1 */

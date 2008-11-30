@@ -117,3 +117,15 @@ _DATE UT_toDate(const BYTE * data)
 {
 	return UT_uint32(data);
 }
+
+void Test_and_Close( int * file_descriptor )
+{
+	if ( file_descriptor == NULL ) {
+		return ;
+	}
+	if ( file_descriptor[0] > -1 ) {
+		close( file_descriptor[0] ) ;
+	}
+	file_descriptor[0] = -1 ;
+}
+

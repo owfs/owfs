@@ -19,7 +19,7 @@ $Id$
 
 static void W1Clear( void ) ;
 static void W1SysList( const char * directory ) ;
-static void * W1_list( void * v ) ;
+static void * W1_start_scan( void * v ) ;
 
 // Remove stale connections
 static void W1Clear( void )
@@ -64,11 +64,11 @@ static void W1SysList( const char * directory )
 	}
 }
 
-static void * W1_list( void * v )
+static void * W1_start_scan( void * v )
 {
 	(void) v ;
 	
-	if ( Inbound_Control.nl_file_descriptor < 0 ) {
+	if ( Inbound_Control.w1_file_descriptor < 0 ) {
 		LEVEL_DEBUG("Cannot monitor w1 bus, No netlink connection.\n");
 	} else {
 		W1NLScan() ;
@@ -81,19 +81,19 @@ static void * W1_list( void * v )
 int W1_Browse( void )
 {
 	pthread_t thread ;
-	int err ;
 
 	++Inbound_Control.w1_entry_mark ;
-
+	LEVEL_DEBUG("Calling for netlink w1 list\n");
 	// Initial setup
 	if ( W1NLList() < 0 ) {
+ 		LEVEL_DEBUG("Drop down to sysfs w1 list\n");
 		W1SysList("/sys/bus/w1/devices") ;
 	}
 
 	// And clear deadwood
 	W1Clear() ;
 
-	return pthread_create(&thread, NULL, W1_list, NULL);
+	return pthread_create(&thread, NULL, W1_start_scan, NULL);
 }
 
 #else /* OW_MT */

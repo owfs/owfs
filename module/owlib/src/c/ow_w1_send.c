@@ -37,47 +37,71 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
 #include "ow_w1.h"
 #include "ow_connection.h"
 
-int W1_send_msg( struct w1_netlink_msg *msg)
+/* If cmd is specified, msg length will be adjusted */
+int W1_send_msg( int bus, struct w1_netlink_msg *msg, struct w1_netlink_cmd *cmd)
 {
 	struct cn_msg *cn;
 	struct w1_netlink_msg *w1m;
+	struct w1_netlink_cmd *w1c;
 	struct nlmsghdr *nlm;
+	unsigned char * data ;
+	int length ;
 	int seq ;
 
 	pthread_mutex_lock( &Inbound_Control.w1_mutex ) ;
-	seq = Inbound_Control.w1_seq ++ ;
+	seq = ++Inbound_Control.w1_seq  ;
 	pthread_mutex_unlock( &Inbound_Control.w1_mutex ) ;
 	
 	int size, err;
 	
-	size = sizeof(struct nlmsghdr) + sizeof(struct cn_msg) + sizeof(struct w1_netlink_msg) + msg->len;
+	size = sizeof(struct nlmsghdr) + sizeof(struct cn_msg) + sizeof(struct w1_netlink_msg) ;
+	if ( cmd != NULL ) {
+		length = cmd->len ;
+		size += sizeof(struct w1_netlink_cmd) + length;
+	} else {
+		length = msg->len ;
+		size += length;
+	}
 	
 	nlm = malloc(size);
-	if (!nlm)
+	if (!nlm) {
 		return -ENOMEM;
+	}
 	
-	memset(nlm, 0, size);
-	
+	memset(nlm, 0, size);	
 	nlm->nlmsg_seq = seq;
 	nlm->nlmsg_type = NLMSG_DONE;
-	nlm->nlmsg_len = NLMSG_LENGTH(sizeof(struct cn_msg) + sizeof(struct w1_netlink_msg) + msg->len);
-	nlm->nlmsg_flags = NLM_F_REQUEST;
-	nlm->nlmsg_pid = Inbound_Control.w1_pid ;
+	nlm->nlmsg_len = size;
+	nlm->nlmsg_flags = 0;
+	//nlm->nlmsg_flags = NLM_F_REQUEST;
+	nlm->nlmsg_pid = MAKE_NL_PID( bus, Inbound_Control.w1_pid );
 	
-	cn = NLMSG_DATA(nlm);
+	cn = (struct cn_msg *)(nlm + 1);
 	
 	cn->id.idx = CN_W1_IDX;
 	cn->id.val = CN_W1_VAL;
 	cn->seq = seq;
-	cn->ack = 1;
+	cn->ack = 0;
 	cn->flags = 0 ;
-	cn->len = sizeof(struct w1_netlink_msg) + msg->len;
-	
-	w1m = (struct w1_netlink_msg *)(cn + 1);
-	memcpy(w1m, msg, sizeof(struct w1_netlink_msg));
-	memcpy(w1m+1, msg->data, msg->len);
+	cn->len = size - sizeof( struct nlmsghdr ) - sizeof( struct cn_msg ) ;
 
-	err = send(Inbound_Control.nl_file_descriptor, nlm, size,  0);
+	w1m = (struct w1_netlink_msg *)(cn + 1);
+	w1m->len = cn->len - sizeof( struct w1_netlink_msg ) ;
+	memcpy(w1m, msg, sizeof(struct w1_netlink_msg));
+	if ( cmd != NULL ) {
+		w1c = (struct w1_netlink_cmd *)(w1m + 1);
+		data = (unsigned char *)(w1c + 1);
+		memcpy(w1c, cmd, sizeof(struct w1_netlink_cmd));
+		memcpy(data, cmd->data, length);
+	} else {
+		w1c = NULL ;
+		data = (unsigned char *)(w1m + 1);
+		memcpy(data, msg->data, length);
+	}
+	LEVEL_DEBUG("Netlink send -----------------\n");
+	Netlink_Print( nlm, cn, w1m, w1c, data, length ) ;
+
+	err = send(Inbound_Control.w1_file_descriptor, nlm, size,  0);
 	if (err == -1) {
 		ERROR_CONNECT("Failed to send W1_LIST_MASTERS\n");
 	}

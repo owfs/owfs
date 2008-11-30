@@ -52,18 +52,23 @@ static struct connection_in *FindIn(const char * name)
 	return NULL;
 }
 
-void AddW1Bus( int bus_master )
+static void * AddBus( void * v )
 {
+	int bus_master = ((int *) v)[0] ;
 	char name[63] ;
 	int sn_ret ;
 	struct connection_in * in ;
 	
+#if OW_MT
+	pthread_detach(pthread_self());
+#endif /* OW_MT */
+
 	UCLIBCLOCK ;
 	sn_ret = snprintf(name,62,"w1_bus_master%d",bus_master) ;
 	UCLIBCLOCK ;
 	
 	if ( sn_ret < 0 ) {
-		return ;
+		return NULL ;
 	}
 	
 	CONNIN_WLOCK ;
@@ -81,32 +86,72 @@ void AddW1Bus( int bus_master )
 	}
 	
 	CONNIN_WUNLOCK ;
+	return NULL ;
 }
 
-void RemoveW1Bus( int bus_master )
+void * RemoveBus( void * v )
 {
+	int bus_master = ((int *) v)[0] ;
 	char name[63] ;
 	int sn_ret ;
 	struct connection_in * in ;
 	
+#if OW_MT
+	pthread_detach(pthread_self());
+#endif /* OW_MT */
+
 	UCLIBCLOCK ;
 	sn_ret = snprintf(name,62,"w1_bus_master%d",bus_master) ;
 	UCLIBCLOCK ;
 	
 	if ( sn_ret < 0 ) {
-		return ;
+		return NULL ;
 	}
-	
+
 	CONNIN_WLOCK ;
 	
 	in =  FindIn( name ) ;
 	if ( in != NULL ) {
 		RemoveIn(in) ;
 		LEVEL_DEBUG("Remove w1 bus: <%s>\n",name) ;
-		;
 	}
 
 	CONNIN_WUNLOCK ;
+	return NULL ;
 }
 
+#if OW_MT
+
+/* Need to run the add/remove in a separate thread so that netlink messatges can still be parsed and CONNIN_RLOCK won't deadlock */
+void AddW1Bus( int bus_master )
+{
+	pthread_t thread;
+	int err = pthread_create(&thread, NULL, AddBus, &bus_master );
+	if (err) {
+		LEVEL_CONNECT("W1 bus add thread error %d.\n", err);
+	}
+}
+
+void RemoveW1Bus( int bus_master )
+{
+	pthread_t thread;
+	int err = pthread_create(&thread, NULL, RemoveBus, &bus_master );
+	if (err) {
+		LEVEL_CONNECT("W1 bus add thread error %d.\n", err);
+	}
+}
+
+#else /* OW_MT */
+
+void AddW1Bus( int bus_master )
+{
+	AddBus( &bus_master) ;
+}
+
+void RemoveW1Bus( int bus_master )
+{
+	RemoveBus( &bus_master) ;
+}
+
+#endif /* OW_MT */
 #endif /* OW_W1 */

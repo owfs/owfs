@@ -65,6 +65,7 @@ static void W1_setroutines(struct connection_in *in)
 int W1_detect(struct connection_in *in)
 {
 	struct parsedname pn;
+	int pipe_fd[2] ;
 
 	FS_ParsedName(NULL, &pn);	// minimal parsename -- no destroy needed
 	pn.selected_connection = in;
@@ -77,6 +78,16 @@ int W1_detect(struct connection_in *in)
 	DirblobInit(&(in->connin.w1.main));
 	DirblobInit(&(in->connin.w1.alarm));
 
+	if ( pipe( pipe_fd ) == 0 ) {
+		in->connin.w1.read_file_descriptor = pipe_fd[0] ;
+		in->connin.w1.write_file_descriptor = pipe_fd[1] ;
+	} else {
+		ERROR_CONNECT("W1 pipe creation error\n");
+		in->connin.w1.read_file_descriptor = -1 ;
+		in->connin.w1.write_file_descriptor = -1 ;
+		return -1 ;
+	}
+	
 	#if OW_MT
 	pthread_mutex_init(&(Inbound_Control.w1_mutex), Mutex.pmattr);
 	#endif							/* OW_MT */
@@ -101,26 +112,23 @@ static int W1_reset(const struct parsedname *pn)
 
 static int w1_send_search( BYTE search, const struct parsedname *pn )
 {
-	struct {
-		struct w1_netlink_msg w1m;
-		struct w1_netlink_cmd w1c;
-	} msg ;
-	
-	memset(&msg, 0, sizeof(msg));
-	
-	msg.w1m.type = W1_MASTER_CMD;
-	msg.w1m.len = sizeof(msg.w1c) ;
-	msg.w1m.id.mst.id = pn->selected_connection->connin.w1.id;
+	struct w1_netlink_msg w1m;
+	struct w1_netlink_cmd w1c;
+	int id  = pn->selected_connection->connin.w1.id ;
+		
+	memset(&w1m, 0, sizeof(w1m));
+	w1m.type = W1_MASTER_CMD;
+	w1m.id.mst.id = id;
 
-	msg.w1c.cmd = (search==_1W_CONDITIONAL_SEARCH_ROM) ? W1_CMD_ALARM_SEARCH : W1_CMD_SEARCH ;
-	msg.w1c.len = 0 ;
+	memset(&w1c, 0, sizeof(w1c));
+	w1c.cmd = (search==_1W_CONDITIONAL_SEARCH_ROM) ? W1_CMD_ALARM_SEARCH : W1_CMD_SEARCH ;
+	w1c.len = 0 ;
 	
-	return W1_send_msg( (struct w1_netlink_msg *) &msg );
+	return W1_send_msg( id, &w1m, &w1c );
 }
 
 static int W1_directory(BYTE search, struct dirblob *db, const struct parsedname *pn)
 {
-	struct netlink_parse nlp ;
 	int seq ;
 	
 	DirblobClear(db);
@@ -131,23 +139,25 @@ static int W1_directory(BYTE search, struct dirblob *db, const struct parsedname
 	}
 	do {
 		int i ;
-		if ( W1Select() != 0 ) {
-			return -EIO ;
-		}
-		if ( Netlink_Parse_Get( &nlp) ) {
+		struct netlink_parse nlp ;
+		if ( Get_and_Parse_Pipe( pn->selected_connection->connin.w1.read_file_descriptor, &nlp ) != 0 ) {
 			return -EIO ;
 		}
 		if ( nlp.nlm->nlmsg_seq != (unsigned) seq ) {
 			LEVEL_DEBUG("Netlink sequence number out of order: expected %d, got %d\n",seq,nlp.nlm->nlmsg_seq);
+			free(&nlp.nlm) ;
 			continue ;
 		}
 		++seq ;
 		if ( nlp.w1m->type != W1_MASTER_CMD ) {
+			LEVEL_DEBUG("Not W1_MASTER_CMD\n");
+			free(&nlp.nlm) ;
 			return -EIO ;
 		}
 		for ( i = 0 ; i < nlp.w1c->len ; i += 8 ) {
 			DirblobAdd(&nlp.data[i], db);
 		}
+		free(&nlp.nlm) ;
 		if ( nlp.cn->ack == 0 ) {
 			break ;
 		}
@@ -470,6 +480,8 @@ static void W1_close(struct connection_in *in)
 {
 	DirblobClear(&(in->connin.ha7.main));
 	DirblobClear(&(in->connin.ha7.alarm));
+	Test_and_Close( &(in->connin.w1.read_file_descriptor) );
+	Test_and_Close( &(in->connin.w1.write_file_descriptor) );
 	FreeClientAddr(in);
 }
 

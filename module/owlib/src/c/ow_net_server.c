@@ -159,7 +159,7 @@ void *ServerProcessHandler(void *arg)
 		/* This will never be reached right now.
 		   The thread is killed when application is stopped.
 		   Should perhaps fix a signal handler for this. */
-		close(hp->acceptfd);
+		Test_and_Close( &(hp->acceptfd) );
 		free(hp);
 	}
 	pthread_exit(NULL);

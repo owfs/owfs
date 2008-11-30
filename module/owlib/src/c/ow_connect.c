@@ -22,9 +22,11 @@ struct inbound_control Inbound_Control = {
 	.active = 0,
 	.next_index = 0 ,
 	.head = NULL,
+#if OW_W1
 	.w1_seq = 0,
 	.w1_entry_mark = 0,
-	.nl_file_descriptor = -1 ,
+	.w1_file_descriptor = -1 ,
+#endif /* OW_W1 */
 	.next_fake = 0 ,
 	.next_tester = 0 ,
 };
@@ -334,10 +336,7 @@ void FreeSide(void)
 #if OW_MT
 		pthread_mutex_destroy(&(now->side_mutex));
 #endif							/* OW_MT */
-		if (now->file_descriptor > -1) {
-			close(now->file_descriptor);
-			now->file_descriptor = -1;
-		}
+		Test_and_Close( & (now->file_descriptor) ) ;
 		if (now->name) {
 			free(now->name);
 			now->name = NULL;

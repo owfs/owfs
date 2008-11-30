@@ -39,15 +39,14 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
 
 static int w1_list_masters( void )
 {
-	struct w1_netlink_msg w1lm;
+	struct w1_netlink_msg w1m;
 	
-	memset(&w1lm, 0, sizeof(w1lm));
+	memset(&w1m, 0, sizeof(w1m));
+	w1m.type = W1_LIST_MASTERS;
+	w1m.len = 0;
+	w1m.id.mst.id = 0;
 	
-	w1lm.type = W1_LIST_MASTERS;
-	w1lm.len = 0;
-	w1lm.id.mst.id = 0;
-	
-	return W1_send_msg(&w1lm);
+	return W1_send_msg( 0, &w1m, NULL );
 }
 
 static void w1_parse_master_list(struct netlink_parse * nlp)
@@ -77,7 +76,7 @@ int W1NLList( void )
 	int repeat_loop = 1 ;
 	int seq ;
 
-	if ( Inbound_Control.nl_file_descriptor == -1 && w1_bind() == -1 ) {
+	if ( Inbound_Control.w1_file_descriptor == -1 && w1_bind() == -1 ) {
 		ERROR_DEBUG("Netlink problem -- are you root?\n");
 		return -1 ;
 	}
