@@ -41,7 +41,7 @@ static int w1_list_masters( void )
 {
 	struct w1_netlink_msg w1m;
 	
-	memset(&w1m, 0, sizeof(w1m));
+	memset(&w1m, 0, W1_W1M_LENGTH);
 	w1m.type = W1_LIST_MASTERS;
 	w1m.len = 0;
 	w1m.id.mst.id = 0;

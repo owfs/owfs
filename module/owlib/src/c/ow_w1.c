@@ -116,11 +116,11 @@ static int w1_send_search( BYTE search, const struct parsedname *pn )
 	struct w1_netlink_cmd w1c;
 	int id  = pn->selected_connection->connin.w1.id ;
 		
-	memset(&w1m, 0, sizeof(w1m));
+	memset(&w1m, 0, W1_W1M_LENGTH);
 	w1m.type = W1_MASTER_CMD;
 	w1m.id.mst.id = id;
 
-	memset(&w1c, 0, sizeof(w1c));
+	memset(&w1c, 0, W1_W1C_LENGTH);
 	w1c.cmd = (search==_1W_CONDITIONAL_SEARCH_ROM) ? W1_CMD_ALARM_SEARCH : W1_CMD_SEARCH ;
 	w1c.len = 0 ;
 	

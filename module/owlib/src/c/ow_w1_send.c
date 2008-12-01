@@ -54,10 +54,10 @@ int W1_send_msg( int bus, struct w1_netlink_msg *msg, struct w1_netlink_cmd *cmd
 	
 	int size, err;
 	
-	size = sizeof(struct nlmsghdr) + sizeof(struct cn_msg) + sizeof(struct w1_netlink_msg) ;
+	size = W1_NLM_LENGTH + W1_CN_LENGTH + W1_W1M_LENGTH ;
 	if ( cmd != NULL ) {
 		length = cmd->len ;
-		size += sizeof(struct w1_netlink_cmd) + length;
+		size += W1_W1C_LENGTH + length;
 	} else {
 		length = msg->len ;
 		size += length;
@@ -83,15 +83,15 @@ int W1_send_msg( int bus, struct w1_netlink_msg *msg, struct w1_netlink_cmd *cmd
 	cn->seq = seq;
 	cn->ack = 0;
 	cn->flags = 0 ;
-	cn->len = size - sizeof( struct nlmsghdr ) - sizeof( struct cn_msg ) ;
+	cn->len = size - W1_NLM_LENGTH - W1_CN_LENGTH ;
 
 	w1m = (struct w1_netlink_msg *)(cn + 1);
-	w1m->len = cn->len - sizeof( struct w1_netlink_msg ) ;
-	memcpy(w1m, msg, sizeof(struct w1_netlink_msg));
+	memcpy(w1m, msg, W1_W1M_LENGTH);
+	w1m->len = cn->len - W1_W1M_LENGTH ;
 	if ( cmd != NULL ) {
 		w1c = (struct w1_netlink_cmd *)(w1m + 1);
 		data = (unsigned char *)(w1c + 1);
-		memcpy(w1c, cmd, sizeof(struct w1_netlink_cmd));
+		memcpy(w1c, cmd, W1_W1C_LENGTH);
 		memcpy(data, cmd->data, length);
 	} else {
 		w1c = NULL ;

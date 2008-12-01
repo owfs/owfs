@@ -50,7 +50,7 @@ int Netlink_Parse_Get( struct netlink_parse * nlp )
 	struct nlmsghdr peek_nlm ;
 	
 	// first peek at message to get length and details
-	int recv_len = recv(Inbound_Control.w1_file_descriptor, &peek_nlm, sizeof(peek_nlm), MSG_PEEK );
+	int recv_len = recv(Inbound_Control.w1_file_descriptor, &peek_nlm, W1_NLM_LENGTH, MSG_PEEK );
 	
 	LEVEL_DEBUG("Pre-parse header: %d bytes len=%d type=%d seq=%d pid=%d (our pid=%d)\n",recv_len,peek_nlm.nlmsg_len,peek_nlm.nlmsg_type,peek_nlm.nlmsg_seq,peek_nlm.nlmsg_pid,Inbound_Control.w1_pid);
 	if (recv_len == -1) {
@@ -62,7 +62,7 @@ int Netlink_Parse_Get( struct netlink_parse * nlp )
 	if ( peek_nlm.nlmsg_pid != 0 ) {
 		LEVEL_DEBUG("Netlink (w1) Not our pid on message\n");
 		// non-peek
-		recv(Inbound_Control.w1_file_descriptor, &peek_nlm, sizeof(peek_nlm), 0 );
+		recv(Inbound_Control.w1_file_descriptor, &peek_nlm, W1_NLM_LENGTH, 0 );
 		return -EAGAIN ;
 	}
 	
@@ -70,15 +70,15 @@ int Netlink_Parse_Get( struct netlink_parse * nlp )
 	if ( peek_nlm.nlmsg_type != NLMSG_DONE ) {
 		LEVEL_DEBUG("Netlink (w1) Bad message type\n");
 		// non-peek
-		recv(Inbound_Control.w1_file_descriptor, &peek_nlm, sizeof(peek_nlm), 0 );
+		recv(Inbound_Control.w1_file_descriptor, &peek_nlm, W1_NLM_LENGTH, 0 );
 		return -EINVAL ;
 	}
 	
 	// test length
-	if ( peek_nlm.nlmsg_len < sizeof(struct nlmsghdr) + sizeof(struct cn_msg) + sizeof(struct w1_netlink_msg) ) {
+	if ( peek_nlm.nlmsg_len < W1_NLM_LENGTH + W1_CN_LENGTH + W1_W1M_LENGTH ) {
 		LEVEL_DEBUG("Netlink (w1) Bad message length (%d)\n",peek_nlm.nlmsg_len);
 		// non-peek
-		recv(Inbound_Control.w1_file_descriptor, &peek_nlm, sizeof(peek_nlm), 0 );
+		recv(Inbound_Control.w1_file_descriptor, &peek_nlm, W1_NLM_LENGTH, 0 );
 		return -EMSGSIZE ;
 	}
 	
@@ -98,9 +98,9 @@ int Netlink_Parse_Get( struct netlink_parse * nlp )
 	}
 	
 	nlp->nlm = (struct nlmsghdr *)       &buffer[0] ;
-	nlp->cn  = (struct cn_msg *)         &buffer[sizeof(struct nlmsghdr)] ;
-	nlp->w1m = (struct w1_netlink_msg *) &buffer[sizeof(struct nlmsghdr) + sizeof(struct cn_msg)] ;
-	nlp->w1c = (struct w1_netlink_cmd *) &buffer[sizeof(struct nlmsghdr) + sizeof(struct cn_msg) + sizeof(struct w1_netlink_msg)] ;
+	nlp->cn  = (struct cn_msg *)         &buffer[W1_NLM_LENGTH] ;
+	nlp->w1m = (struct w1_netlink_msg *) &buffer[W1_NLM_LENGTH + W1_CN_LENGTH] ;
+	nlp->w1c = (struct w1_netlink_cmd *) &buffer[W1_NLM_LENGTH + W1_CN_LENGTH + W1_W1M_LENGTH] ;
 	
 	switch (nlp->w1m->type) {
 		case W1_SLAVE_ADD:
@@ -133,7 +133,7 @@ int Get_and_Parse_Pipe( int file_descriptor, struct netlink_parse * nlp )
 	struct timeval tv = { Globals.timeout_w1, 0 } ;
 	
 	// first read start of message to get length and details
-	if ( tcp_read( file_descriptor, &peek_nlm, sizeof(peek_nlm), &tv ) != 0 ) {
+	if ( tcp_read( file_descriptor, &peek_nlm, W1_NLM_LENGTH, &tv ) != 0 ) {
 		LEVEL_DEBUG("Pipe (w1) read header error\n");
 		return -1 ;
 	}
@@ -147,17 +147,17 @@ int Get_and_Parse_Pipe( int file_descriptor, struct netlink_parse * nlp )
 		return -ENOMEM ;
 	}
 	
-	memcpy( buffer, &peek_nlm, sizeof(peek_nlm) ) ;
+	memcpy( buffer, &peek_nlm, W1_NLM_LENGTH ) ;
 	// read rest of packet
-	if ( tcp_read( file_descriptor, &buffer[sizeof(peek_nlm)], sizeof(buffer)-sizeof(peek_nlm), &tv ) != 0 ) {
+	if ( tcp_read( file_descriptor, &buffer[W1_NLM_LENGTH], peek_nlm.nlmsg_len - W1_NLM_LENGTH, &tv ) != 0 ) {
 		LEVEL_DEBUG("Pipe (w1) read body error\n");
 		return -1 ;
 	}
 	
 	nlp->nlm = (struct nlmsghdr *)       &buffer[0] ;
-	nlp->cn  = (struct cn_msg *)         &buffer[sizeof(struct nlmsghdr)] ;
-	nlp->w1m = (struct w1_netlink_msg *) &buffer[sizeof(struct nlmsghdr) + sizeof(struct cn_msg)] ;
-	nlp->w1c = (struct w1_netlink_cmd *) &buffer[sizeof(struct nlmsghdr) + sizeof(struct cn_msg) + sizeof(struct w1_netlink_msg)] ;
+	nlp->cn  = (struct cn_msg *)         &buffer[W1_NLM_LENGTH] ;
+	nlp->w1m = (struct w1_netlink_msg *) &buffer[W1_NLM_LENGTH + W1_CN_LENGTH] ;
+	nlp->w1c = (struct w1_netlink_cmd *) &buffer[W1_NLM_LENGTH + W1_CN_LENGTH + W1_W1M_LENGTH] ;
 	
 	/* All piped packets have w1_netlink_cmd segments */
 	nlp->data = nlp->w1c->data ;

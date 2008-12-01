@@ -16,6 +16,11 @@ Much thanks to Evgeniy Polyakov
 #include "connector.h"
 #include "w1_netlink.h"
 
+#define W1_NLM_LENGTH	16
+#define W1_CN_LENGTH	20
+#define W1_W1M_LENGTH	12
+#define W1_W1C_LENGTH	4
+
 int w1_bind( void ) ;
 void w1_unbind( void ) ;
 
