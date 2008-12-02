@@ -23,11 +23,13 @@ struct inbound_control Inbound_Control = {
 	.next_index = 0,
 	.head = NULL,
 #if OW_MT
+#if 0
 	.lock = { PTHREAD_MUTEX_INITIALIZER,
 		  0,
 		  { PTHREAD_MUTEX_INITIALIZER, PTHREAD_COND_INITIALIZER, 0, 0, },
 		  { PTHREAD_MUTEX_INITIALIZER, PTHREAD_COND_INITIALIZER, 0, 0, },
 	},
+#endif
 #endif /* OW_MT */
 	.next_fake = 0,
 	.next_tester = 0,
