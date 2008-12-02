@@ -18,7 +18,9 @@ $Id$
 #include "ow.h"
 #include "ow_counters.h"
 #include "ow_connection.h"
+#ifdef HAVE_ARPA_INET_H
 #include <arpa/inet.h>
+#endif
 
 #if OW_HA7
 /* Multicast to discover HA7 servers */

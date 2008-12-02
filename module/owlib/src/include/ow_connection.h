@@ -64,9 +64,14 @@ See: http://www.iana.org/assignments/port-numbers
 */
 #define DEFAULT_PORT  "4304"
 
+#include <config.h>
+#include "owfs_config.h"
+
 #include "ow.h"
 #include "ow_counters.h"
+#ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
+#endif
 #include "ow_transaction.h"
 
 /* large enough for arrays of 2048 elements of ~49 bytes each */

@@ -11,7 +11,9 @@ Much thanks to Evgeniy Polyakov
 #ifndef OW_W1_H
 #define OW_W1_H
 
+#ifdef HAVE_STDINT_H
 #include <stdint.h>
+#endif
 #include "netlink.h"
 #include "connector.h"
 #include "w1_netlink.h"

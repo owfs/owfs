@@ -22,7 +22,12 @@
 #ifndef __CONNECTOR_H
 #define __CONNECTOR_H
 
+#include <config.h>
+#include "owfs_config.h"
+
+#ifdef HAVE_ASM_TYPES_H
 #include <asm/types.h>
+#endif
 
 #define CN_IDX_CONNECTOR		0xffffffff
 #define CN_VAL_CONNECTOR		0xffffffff

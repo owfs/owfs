@@ -164,6 +164,10 @@ $Id$
 #include <netinet/in.h>
 #endif							/* HAVE_NETINET_IN_H */
 
+#ifndef INET_ADDRSTRLEN
+#define INET_ADDRSTRLEN 16
+#endif
+
 #ifdef HAVE_NETDB_H
 #include <netdb.h>				/* for getaddrinfo */
 #endif							/* HAVE_NETDB_H */

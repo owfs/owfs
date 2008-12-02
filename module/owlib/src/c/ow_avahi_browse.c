@@ -9,9 +9,6 @@ See the header file: ow.h for full attribution
 1wire/iButton system from Dallas Semiconductor
 */
 
-
-//#include <arpa/inet.h>
-
 #include <config.h>
 #include "owfs_config.h"
 
@@ -19,16 +16,26 @@ See the header file: ow.h for full attribution
 
 #include "ow_avahi.h"
 #include "ow_connection.h"
+#ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
+#endif
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
+#endif
+#ifdef HAVE_ARPA_INET_H
 #include <arpa/inet.h>
+#endif
 
 /* Structure */
 struct browse_avahi_struct {
 	AvahiServiceBrowser *browser ;
 	AvahiSimplePoll *poll ;
 	AvahiClient *client ;
+#if __HAS_IPV6__
 	char host[INET6_ADDRSTRLEN+1] ;
+#else
+	char host[INET_ADDRSTRLEN+1] ;
+#endif
 	char service[10] ;
 } ;
 
@@ -116,12 +123,14 @@ static int AvahiBrowserNetName( const AvahiAddress *address, int port, struct br
 				return 0 ;
 			}
 			break ;
+#if __HAS_IPV6__
 		case AVAHI_PROTO_INET6:   /**< IPv6 */
 			if ( inet_ntop( AF_INET6, (const void *)&(address->data.ipv6), bas->host, sizeof(bas->host)) != NULL ) {
 				LEVEL_DEBUG( "Address '%s' Port %d:\n", bas->host, port);
 				return 0 ;
 			}
 			break ;
+#endif
 		default:
 			strncpy(bas->host,"Unknown address",sizeof(bas->host)) ;
 			LEVEL_DEBUG( "Unknown internet protocol\n");

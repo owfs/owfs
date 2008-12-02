@@ -20,26 +20,37 @@ $Id$
 /* Globals */
 struct inbound_control Inbound_Control = {
 	.active = 0,
-	.next_index = 0 ,
+	.next_index = 0,
 	.head = NULL,
+#if OW_MT
+	.lock = { PTHREAD_MUTEX_INITIALIZER,
+		  0,
+		  { PTHREAD_MUTEX_INITIALIZER, PTHREAD_COND_INITIALIZER, 0, 0, },
+		  { PTHREAD_MUTEX_INITIALIZER, PTHREAD_COND_INITIALIZER, 0, 0, },
+	},
+#endif /* OW_MT */
+	.next_fake = 0,
+	.next_tester = 0,
 #if OW_W1
 	.w1_seq = 0,
 	.w1_entry_mark = 0,
-	.w1_file_descriptor = -1 ,
+	.w1_file_descriptor = -1,
+	.w1_pid = 0,
+#if OW_MT
+	.w1_mutex = NULL,
+#endif /* OW_MT */
 #endif /* OW_W1 */
-	.next_fake = 0 ,
-	.next_tester = 0 ,
 };
 
 struct outbound_control Outbound_Control = {
 	.active = 0,
-	.next_index = 0 ,
+	.next_index = 0,
 	.head = NULL,
 };
 
 struct sidebound_control Sidebound_Control = {
 	.active = 0,
-	.next_index = 0 ,
+	.next_index = 0,
 	.head = NULL,
 };
 
@@ -229,11 +240,13 @@ void FreeIn(struct connection_in * now)
 		}
 #endif							/* OW_MT */
 	case bus_w1:
+#if OW_W1
 		DirblobClear( &(now->connin.w1.main) );
 		DirblobClear( &(now->connin.w1.alarm) );
 #if OW_MT
 		pthread_mutex_destroy(&(Inbound_Control.w1_mutex));
 #endif							/* OW_MT */
+#endif							/* OW_W1 */
 		break ;
 	case bus_bad:
 	default:

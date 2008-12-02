@@ -10,13 +10,6 @@ See the header file: ow.h for full attribution
 */
 
 
-//#include <unistd.h>
-//#include <stdint.h>
-//#include <stdio.h>
-//#include <sys/types.h>
-//#include <sys/socket.h>
-//#include <netinet/in.h>
-
 #include <config.h>
 #include "owfs_config.h"
 
@@ -24,9 +17,15 @@ See the header file: ow.h for full attribution
 
 #include "ow_avahi.h"
 #include "ow_connection.h"
+#ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
+#endif
+#ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
+#endif
+#ifdef HAVE_ARPA_INET_H
 #include <arpa/inet.h>
+#endif
 
 /* Special functions that need to be linked in dynamically
 -- libavahi-client.so

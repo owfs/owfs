@@ -116,8 +116,8 @@ static void ResolveWait( DNSServiceRef sref )
 /* Sent back from Bounjour -- arbitrarily use it to set the Ref for Deallocation */
 static void BrowseBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i, DNSServiceErrorType e, const char *name, const char *type, const char *domain, void *context)
 {
+	struct BrowseStruct *bs;
 	(void) context;
-	struct BrowseStruct * bs;
 	//printf("BrowseBack ref=%ld flags=%d index=%d, error=%d name=%s type=%s domain=%s\n",(long int)s,f,i,e,name,type,domain) ;
 	LEVEL_DETAIL("BrowseBack ref=%ld flags=%d index=%d, error=%d name=%s type=%s domain=%s\n", (long int) s, f, i, e, name, type, domain);
 
