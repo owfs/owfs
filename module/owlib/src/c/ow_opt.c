@@ -140,7 +140,15 @@ const struct option owopts_long[] = {
 	{"USB_flextime", no_argument, &Globals.usb_flextime, 1},
 	{"usb_regulartime", no_argument, &Globals.usb_flextime, 0},
 	{"USB_regulartime", no_argument, &Globals.usb_flextime, 0},
-
+	{"serial_flex", no_argument, &Globals.serial_flextime, 1},
+	{"serial_flextime", no_argument, &Globals.serial_flextime, 1},
+	{"serial_regulartime", no_argument, &Globals.serial_flextime, 0},
+	{"serial_regular", no_argument, &Globals.serial_flextime, 0},
+	{"serial_standardtime", no_argument, &Globals.serial_flextime, 0},
+	{"serial_standard", no_argument, &Globals.serial_flextime, 0},
+	{"serial_stdtime", no_argument, &Globals.serial_flextime, 0},
+	{"serial_std", no_argument, &Globals.serial_flextime, 0},
+	
 	{"timeout_volatile", required_argument, NULL, e_timeout_volatile,},	// timeout -- changing cached values
 	{"timeout_stable", required_argument, NULL, e_timeout_stable,},	// timeout -- unchanging cached values
 	{"timeout_directory", required_argument, NULL, e_timeout_directory,},	// timeout -- direcory cached values

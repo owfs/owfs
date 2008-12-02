@@ -217,7 +217,7 @@ int DS2480_detect(struct connection_in *in)
 	DS2480_setroutines(in);
 
 	in->speed = bus_speed_slow ;
-	in->flex = bus_yes_flex ;
+	in->flex = Globals.serial_flextime ? bus_yes_flex : bus_no_flex ;
 
 	ret = DS2480_big_reset(&pn) ;
 	if ( ret ) {

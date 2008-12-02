@@ -73,6 +73,7 @@ struct global {
 	/* Special parameter to trigger William Robison <ibutton@n952.dyndns.ws> timings */
 	int altUSB;
 	int usb_flextime;
+	int serial_flextime;
 	/* timeouts -- order must match ow_opt.c values for correct indexing */
 	int timeout_volatile;
 	int timeout_stable;
