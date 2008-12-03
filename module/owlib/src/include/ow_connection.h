@@ -196,7 +196,7 @@ enum ds2480b_baud {
 	ds2480b_pol_57600,
 	ds2480b_pol_115200,
 } ;
-	
+
 struct connin_serial {
 	enum ds2480b_mode mode ;
 	enum ds2480b_baud baud ;

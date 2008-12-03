@@ -12,7 +12,7 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
  * 	w1d.c
  *
  * Copyright (c) 2004 Evgeniy Polyakov <johnpol@2ka.mipt.ru>
- * 
+ *
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -51,9 +51,9 @@ int W1_send_msg( int bus, struct w1_netlink_msg *msg, struct w1_netlink_cmd *cmd
 	pthread_mutex_lock( &Inbound_Control.w1_mutex ) ;
 	seq = ++Inbound_Control.w1_seq  ;
 	pthread_mutex_unlock( &Inbound_Control.w1_mutex ) ;
-	
+
 	int size, err;
-	
+
 	size = W1_NLM_LENGTH + W1_CN_LENGTH + W1_W1M_LENGTH ;
 	if ( cmd != NULL ) {
 		length = cmd->len ;
@@ -62,25 +62,25 @@ int W1_send_msg( int bus, struct w1_netlink_msg *msg, struct w1_netlink_cmd *cmd
 		length = msg->len ;
 		size += length;
 	}
-	
+
 	nlm = malloc(size);
 	if (!nlm) {
 		return -ENOMEM;
 	}
-	
-	memset(nlm, 0, size);	
-	nlm->nlmsg_seq = seq;
+
+	memset(nlm, 0, size);
+	nlm->nlmsg_seq = MAKE_NL_SEQ( bus, seq );
 	nlm->nlmsg_type = NLMSG_DONE;
 	nlm->nlmsg_len = size;
 	nlm->nlmsg_flags = 0;
 	//nlm->nlmsg_flags = NLM_F_REQUEST;
-	nlm->nlmsg_pid = MAKE_NL_PID( bus, Inbound_Control.w1_pid );
-	
+	nlm->nlmsg_pid = Inbound_Control.w1_pid ;
+
 	cn = (struct cn_msg *)(nlm + 1);
-	
+
 	cn->id.idx = CN_W1_IDX;
 	cn->id.val = CN_W1_VAL;
-	cn->seq = seq;
+	cn->seq = nlm->seq;
 	cn->ack = 0;
 	cn->flags = 0 ;
 	cn->len = size - W1_NLM_LENGTH - W1_CN_LENGTH ;
@@ -106,7 +106,7 @@ int W1_send_msg( int bus, struct w1_netlink_msg *msg, struct w1_netlink_cmd *cmd
 		ERROR_CONNECT("Failed to send W1_LIST_MASTERS\n");
 	}
 	free(nlm);
-	
+
 	return seq;
 }
 

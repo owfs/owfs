@@ -10,7 +10,7 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
 
 /*
  * Copyright (c) 2004 Evgeniy Polyakov <johnpol@2ka.mipt.ru>
- * 
+ *
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -51,7 +51,7 @@ static void NLM_print( struct nlmsghdr * nlm )
 		default:
 			break ;
 	}
-	printf(") flags=%u seq=%u pid=%u|%u\n",nlm->nlmsg_flags, nlm->nlmsg_seq, NL_BUS(nlm->nlmsg_pid), NL_PID(nlm->nlmsg_pid) ) ;
+	printf(") flags=%u seq=%u|%u pid=%u\n",nlm->nlmsg_flags, NL_BUS(nlm->nlmsg_seq), NL_SEQ(nlm->nlmsg_seq), nlm->nlmsg_pid ) ;
 }
 
 static void CN_print( struct cn_msg * cn )
@@ -69,7 +69,7 @@ static void CN_print( struct cn_msg * cn )
 		default:
 			break ;
 	}
-	printf(") seq=%u ack=%u len=%u flags=%u\n",cn->seq,cn->ack,cn->len,cn->flags) ;
+	printf(") seq=%u|%u ack=%u len=%u flags=%u\n",NL_BUS(cn->seq),NL_SEQ(cn->seq),cn->ack,cn->len,cn->flags) ;
 }
 
 static void W1M_print( struct w1_netlink_msg * w1m )

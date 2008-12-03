@@ -34,9 +34,9 @@ int W1Select( void ) ;
 int W1NLScan( void ) ;
 int W1NLList( void ) ;
 
-#define MAKE_NL_PID( bus, pid )  ( ((bus) & 0xFFFF) << 16 ) | ((pid) & 0xFFFF)
-#define NL_PID( pid )  ((pid) & 0xFFFF)
-#define NL_BUS( pid )  (((pid) >> 16 ) & 0xFFFF)
+#define MAKE_NL_SEQ( bus, seq )  ( ((bus) & 0xFFFF) << 16 ) | ((seq) & 0xFFFF)
+#define NL_SEQ( seq )  ((seq) & 0xFFFF)
+#define NL_BUS( seq )  (((seq) >> 16 ) & 0xFFFF)
 
 int Announce_Control_init( int allocated ) ;
 

@@ -12,7 +12,7 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
  * 	w1d.c
  *
  * Copyright (c) 2004 Evgeniy Polyakov <johnpol@2ka.mipt.ru>
- * 
+ *
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
 
 static void Dispatch_Packet( struct netlink_parse * nlp)
 {
-	int bus = NL_BUS(nlp->nlm->nlmsg_pid) ;
+	int bus = NL_BUS(nlp->nlm->nlmsg_seq) ;
 	struct connection_in * in ;
 
 	CONNIN_RLOCK ;
@@ -59,9 +59,8 @@ static void Dispatch_Packet( struct netlink_parse * nlp)
 }
 static void w1_masters(struct netlink_parse * nlp)
 {
-	int pid = NL_PID(nlp->nlm->nlmsg_pid) ;
-	if ( pid != 0 && pid != Inbound_Control.w1_pid ) {
-		LEVEL_DEBUG("Netlink packet PID doesn't match\n");
+    if ( nlp->nlm->nlmsg_pid != 0 ) {
+		LEVEL_DEBUG("Netlink packet PID not from kernel\n");
 		return ;
 	}
 	if (nlp->w1m) {
@@ -92,13 +91,13 @@ int W1NLScan( void )
 	while (1)
 	{
 		int select_value ;
-		
+
 		fd_set readset ;
 		FD_ZERO(&readset) ;
 		FD_SET(Inbound_Control.w1_file_descriptor,&readset) ;
-		
+
 		select_value = select(Inbound_Control.w1_file_descriptor+1,&readset,NULL,NULL,NULL) ;
-		
+
 		if ( select_value == -1 ) {
 			ERROR_DEBUG("Select returned -1\n");
 			if (errno == EINTR) {
@@ -108,7 +107,7 @@ int W1NLScan( void )
 			LEVEL_DEBUG("Select returned zero\n");
 		} else {
 			struct netlink_parse nlp ;
-			
+
 			switch ( Netlink_Parse_Get( &nlp ) ) {
 				case -EAGAIN:
 					break ;
