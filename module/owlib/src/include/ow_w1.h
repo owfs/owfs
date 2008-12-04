@@ -23,12 +23,14 @@ Much thanks to Evgeniy Polyakov
 #define W1_W1M_LENGTH	12
 #define W1_W1C_LENGTH	4
 
+struct connection_in ;
+
 int w1_bind( void ) ;
 void w1_unbind( void ) ;
 
 void RemoveW1Bus( int bus_master ) ;
 void AddW1Bus( int bus_master ) ;
-int W1_send_msg( const struct connection * in, struct w1_netlink_msg *msg, struct w1_netlink_cmd *cmd) ;
+int W1_send_msg( struct connection_in * in, struct w1_netlink_msg *msg, struct w1_netlink_cmd *cmd) ;
 int W1Select( void ) ;
 
 int W1NLScan( void ) ;
