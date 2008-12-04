@@ -12,7 +12,7 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
  * 	w1d.c
  *
  * Copyright (c) 2004 Evgeniy Polyakov <johnpol@2ka.mipt.ru>
- * 
+ *
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,13 +40,13 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
 static int w1_list_masters( void )
 {
 	struct w1_netlink_msg w1m;
-	
+
 	memset(&w1m, 0, W1_W1M_LENGTH);
 	w1m.type = W1_LIST_MASTERS;
 	w1m.len = 0;
 	w1m.id.mst.id = 0;
-	
-	return W1_send_msg( 0, &w1m, NULL );
+
+	return W1_send_msg( NULL, &w1m, NULL );
 }
 
 static void w1_parse_master_list(struct netlink_parse * nlp)
@@ -80,7 +80,7 @@ int W1NLList( void )
 		ERROR_DEBUG("Netlink problem -- are you root?\n");
 		return -1 ;
 	}
-	
+
 	seq = w1_list_masters() ;
 	if  (seq < 0 ) {
 		LEVEL_CONNECT("Couldn't send the W1_LIST_MASTERS request\n");

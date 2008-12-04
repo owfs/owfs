@@ -87,7 +87,7 @@ int W1_detect(struct connection_in *in)
 		in->connin.w1.write_file_descriptor = -1 ;
 		return -1 ;
 	}
-	
+
 	#if OW_MT
 	pthread_mutex_init(&(Inbound_Control.w1_mutex), Mutex.pmattr);
 	#endif							/* OW_MT */
@@ -114,23 +114,22 @@ static int w1_send_search( BYTE search, const struct parsedname *pn )
 {
 	struct w1_netlink_msg w1m;
 	struct w1_netlink_cmd w1c;
-	int id  = pn->selected_connection->connin.w1.id ;
-		
+
 	memset(&w1m, 0, W1_W1M_LENGTH);
 	w1m.type = W1_MASTER_CMD;
-	w1m.id.mst.id = id;
+    w1m.id.mst.id = pn->selected_connection->connin.w1.id ;
 
 	memset(&w1c, 0, W1_W1C_LENGTH);
 	w1c.cmd = (search==_1W_CONDITIONAL_SEARCH_ROM) ? W1_CMD_ALARM_SEARCH : W1_CMD_SEARCH ;
 	w1c.len = 0 ;
-	
-	return W1_send_msg( id, &w1m, &w1c );
+
+	return W1_send_msg( pn->selected_connection, &w1m, &w1c );
 }
 
 static int W1_directory(BYTE search, struct dirblob *db, const struct parsedname *pn)
 {
 	int seq ;
-	
+
 	DirblobClear(db);
 	printf("w1_directory\n");
 	seq = w1_send_search( search, pn ) ;

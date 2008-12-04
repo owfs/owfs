@@ -38,7 +38,7 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
 #include "ow_connection.h"
 
 /* If cmd is specified, msg length will be adjusted */
-int W1_send_msg( int bus, struct w1_netlink_msg *msg, struct w1_netlink_cmd *cmd)
+int W1_send_msg( const struct connection * in, struct w1_netlink_msg *msg, struct w1_netlink_cmd *cmd)
 {
 	struct cn_msg *cn;
 	struct w1_netlink_msg *w1m;
@@ -46,13 +46,18 @@ int W1_send_msg( int bus, struct w1_netlink_msg *msg, struct w1_netlink_cmd *cmd
 	struct nlmsghdr *nlm;
 	unsigned char * data ;
 	int length ;
-	int seq ;
+	unsigned int seq ;
+    int bus ;
+    int size, err;
 
-	pthread_mutex_lock( &Inbound_Control.w1_mutex ) ;
-	seq = ++Inbound_Control.w1_seq  ;
-	pthread_mutex_unlock( &Inbound_Control.w1_mutex ) ;
-
-	int size, err;
+    // NULL connection for initial LIST_MASTERS, not assigned to a specific bus
+    if ( in ) {
+        seq = ++in->connin.w1.seq ;
+        bus = in->connin.w1.id;
+    } else {
+        seq = 0 ;
+        bus = 0 ;
+    }
 
 	size = W1_NLM_LENGTH + W1_CN_LENGTH + W1_W1M_LENGTH ;
 	if ( cmd != NULL ) {
@@ -80,7 +85,7 @@ int W1_send_msg( int bus, struct w1_netlink_msg *msg, struct w1_netlink_cmd *cmd
 
 	cn->id.idx = CN_W1_IDX;
 	cn->id.val = CN_W1_VAL;
-	cn->seq = nlm->seq;
+	cn->seq = nlm->nlmsg_seq;
 	cn->ack = 0;
 	cn->flags = 0 ;
 	cn->len = size - W1_NLM_LENGTH - W1_CN_LENGTH ;

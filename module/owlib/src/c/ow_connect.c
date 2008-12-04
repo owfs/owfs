@@ -34,7 +34,6 @@ struct inbound_control Inbound_Control = {
 	.next_fake = 0,
 	.next_tester = 0,
 #if OW_W1
-	.w1_seq = 0,
 	.w1_entry_mark = 0,
 	.w1_file_descriptor = -1,
 	.w1_pid = 0,

@@ -280,6 +280,7 @@ struct connin_w1 {
 	// netlink fd kept in file_descriptor
 	unsigned int entry_mark ;
 	int id ; // equivalent to the number part of w1_bus_master23
+    unsigned int seq ;
 	int read_file_descriptor ;
 	int write_file_descriptor ;
 	struct dirblob main;		/* main directory */
@@ -439,7 +440,6 @@ extern struct inbound_control {
 	int next_fake ; // count of fake buses
 	int next_tester ; // count tester buses
 #if OW_W1
-	unsigned int w1_seq ; // seq number to netlink
 	unsigned int w1_entry_mark ; // for removing buses_mark ;
 	int w1_file_descriptor ; // w1 kernel module for netlink communication
 	int w1_pid ;
