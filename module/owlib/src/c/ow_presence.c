@@ -83,7 +83,7 @@ int CheckPresence(struct parsedname *pn)
 	bus_nr = CheckPresence_low(Inbound_Control.head, pn);	// check only allocated inbound connections
 	if (bus_nr >= 0) {
 		SetKnownBus(bus_nr, pn);
-		Cache_Add_Device(bus_nr, pn);
+		Cache_Add_Device(bus_nr, pn->sn);
 		return bus_nr;
 	}
 	UnsetKnownBus(pn);

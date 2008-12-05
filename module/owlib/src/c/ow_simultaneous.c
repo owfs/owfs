@@ -246,6 +246,5 @@ static void OW_single2cache(BYTE * sn, const struct parsedname *pn2)
 	if (DirblobPure(&db)) {
 		Cache_Add_Dir(&db, pn2);	// Directory cache
 	}
-	memcpy(pn2->sn, sn, 8);
-	Cache_Add_Device(pn2->selected_connection->index, pn2);	// Device cache
+	Cache_Add_Device(pn2->selected_connection->index, sn);	// Device cache
 }

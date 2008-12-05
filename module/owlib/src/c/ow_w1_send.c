@@ -47,17 +47,17 @@ int W1_send_msg( struct connection_in * in, struct w1_netlink_msg *msg, struct w
 	unsigned char * data ;
 	int length ;
 	unsigned int seq ;
-    int bus ;
-    int size, err;
+	int bus ;
+	int size, err;
 
-    // NULL connection for initial LIST_MASTERS, not assigned to a specific bus
-    if ( in ) {
-        seq = ++in->connin.w1.seq ;
-        bus = in->connin.w1.id;
-    } else {
-        seq = 0 ;
-        bus = 0 ;
-    }
+	// NULL connection for initial LIST_MASTERS, not assigned to a specific bus
+	if ( in ) {
+		seq = ++in->connin.w1.seq ;
+		bus = in->connin.w1.id;
+	} else {
+		seq = 0 ;
+		bus = 0 ;
+	}
 
 	size = W1_NLM_LENGTH + W1_CN_LENGTH + W1_W1M_LENGTH ;
 	if ( cmd != NULL ) {
@@ -107,10 +107,11 @@ int W1_send_msg( struct connection_in * in, struct w1_netlink_msg *msg, struct w
 	Netlink_Print( nlm, cn, w1m, w1c, data, length ) ;
 
 	err = send(Inbound_Control.w1_file_descriptor, nlm, size,  0);
+	free(nlm);
 	if (err == -1) {
 		ERROR_CONNECT("Failed to send W1_LIST_MASTERS\n");
+		return -1 ;
 	}
-	free(nlm);
 
 	return seq;
 }

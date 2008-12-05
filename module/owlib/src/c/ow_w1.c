@@ -117,7 +117,7 @@ static int w1_send_search( BYTE search, const struct parsedname *pn )
 
 	memset(&w1m, 0, W1_W1M_LENGTH);
 	w1m.type = W1_MASTER_CMD;
-    w1m.id.mst.id = pn->selected_connection->connin.w1.id ;
+	w1m.id.mst.id = pn->selected_connection->connin.w1.id ;
 
 	memset(&w1c, 0, W1_W1C_LENGTH);
 	w1c.cmd = (search==_1W_CONDITIONAL_SEARCH_ROM) ? W1_CMD_ALARM_SEARCH : W1_CMD_SEARCH ;
@@ -142,21 +142,20 @@ static int W1_directory(BYTE search, struct dirblob *db, const struct parsedname
 		if ( Get_and_Parse_Pipe( pn->selected_connection->connin.w1.read_file_descriptor, &nlp ) != 0 ) {
 			return -EIO ;
 		}
-		if ( nlp.nlm->nlmsg_seq != (unsigned) seq ) {
-			LEVEL_DEBUG("Netlink sequence number out of order: expected %d, got %d\n",seq,nlp.nlm->nlmsg_seq);
-			free(&nlp.nlm) ;
+		if ( NL_SEQ(nlp.nlm->nlmsg_seq) != (unsigned) seq ) {
+			LEVEL_DEBUG("Netlink sequence number out of order: expected %d\n",seq);
+			free(nlp.nlm) ;
 			continue ;
 		}
-		++seq ;
 		if ( nlp.w1m->type != W1_MASTER_CMD ) {
 			LEVEL_DEBUG("Not W1_MASTER_CMD\n");
-			free(&nlp.nlm) ;
+			free(nlp.nlm) ;
 			return -EIO ;
 		}
 		for ( i = 0 ; i < nlp.w1c->len ; i += 8 ) {
 			DirblobAdd(&nlp.data[i], db);
 		}
-		free(&nlp.nlm) ;
+		free(nlp.nlm) ;
 		if ( nlp.cn->ack == 0 ) {
 			break ;
 		}

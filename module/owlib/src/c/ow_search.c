@@ -81,10 +81,11 @@ int BUS_next(struct device_search *ds, const struct parsedname *pn)
 	}
 
 	ret = BUS_next_both(ds, pn);
-	LEVEL_DEBUG("BUS_next return = %d " SNformat "\n", ret, SNvar(ds->sn));
+	LEVEL_DEBUG("BUS_next return = %d | " SNformat "\n", ret, SNvar(ds->sn));
 	if (ret && ret != -ENODEV) {	// true error
 		STAT_ADD1_BUS(e_bus_search_errors, pn->selected_connection);
 	}
+	Cache_Add_Device(pn->selected_connection->index,ds->sn) ;
 	return ret;
 }
 

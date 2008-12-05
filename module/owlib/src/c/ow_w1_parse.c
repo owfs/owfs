@@ -52,7 +52,7 @@ int Netlink_Parse_Get( struct netlink_parse * nlp )
 	// first peek at message to get length and details
 	int recv_len = recv(Inbound_Control.w1_file_descriptor, &peek_nlm, W1_NLM_LENGTH, MSG_PEEK );
 	
-	LEVEL_DEBUG("Pre-parse header: %d bytes len=%d type=%d seq=%d pid=%d (our pid=%d)\n",recv_len,peek_nlm.nlmsg_len,peek_nlm.nlmsg_type,peek_nlm.nlmsg_seq,peek_nlm.nlmsg_pid,Inbound_Control.w1_pid);
+	LEVEL_DEBUG("Pre-parse header: %u bytes len=%u type=%u seq=%u|%u pid=%u\n",recv_len,peek_nlm.nlmsg_len,peek_nlm.nlmsg_type,NL_BUS(peek_nlm.nlmsg_seq),NL_SEQ(peek_nlm.nlmsg_seq),peek_nlm.nlmsg_pid);
 	if (recv_len == -1) {
 		ERROR_DEBUG("Netlink (w1) recv header error\n");
 		return -errno ;
@@ -133,12 +133,12 @@ int Get_and_Parse_Pipe( int file_descriptor, struct netlink_parse * nlp )
 	struct timeval tv = { Globals.timeout_w1, 0 } ;
 	
 	// first read start of message to get length and details
-	if ( tcp_read( file_descriptor, &peek_nlm, W1_NLM_LENGTH, &tv ) != 0 ) {
+	if ( tcp_read( file_descriptor, &peek_nlm, W1_NLM_LENGTH, &tv ) != W1_NLM_LENGTH ) {
 		LEVEL_DEBUG("Pipe (w1) read header error\n");
 		return -1 ;
 	}
 
-	LEVEL_DEBUG("Pipe header: len=%d type=%d seq=%d pid=%d (our pid=%d)\n",peek_nlm.nlmsg_len,peek_nlm.nlmsg_type,peek_nlm.nlmsg_seq,peek_nlm.nlmsg_pid,Inbound_Control.w1_pid);
+	LEVEL_DEBUG("Pipe header: len=%u type=%u seq=%u|%u pid=%u \n",peek_nlm.nlmsg_len,peek_nlm.nlmsg_type,NL_BUS(peek_nlm.nlmsg_seq),NL_SEQ(peek_nlm.nlmsg_seq),peek_nlm.nlmsg_pid);
 	
 	// allocate space
 	buffer = malloc( peek_nlm.nlmsg_len ) ;
@@ -149,7 +149,7 @@ int Get_and_Parse_Pipe( int file_descriptor, struct netlink_parse * nlp )
 	
 	memcpy( buffer, &peek_nlm, W1_NLM_LENGTH ) ;
 	// read rest of packet
-	if ( tcp_read( file_descriptor, &buffer[W1_NLM_LENGTH], peek_nlm.nlmsg_len - W1_NLM_LENGTH, &tv ) != 0 ) {
+	if ( tcp_read( file_descriptor, &buffer[W1_NLM_LENGTH], peek_nlm.nlmsg_len - W1_NLM_LENGTH, &tv ) != peek_nlm.nlmsg_len - W1_NLM_LENGTH ) {
 		LEVEL_DEBUG("Pipe (w1) read body error\n");
 		return -1 ;
 	}

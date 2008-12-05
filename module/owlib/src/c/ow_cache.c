@@ -327,14 +327,11 @@ int Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn)
 
 /* Add a device entry to the cache */
 /* return 0 if good, 1 if not */
-int Cache_Add_Device(const int bus_nr, const struct parsedname *pn)
+int Cache_Add_Device(const int bus_nr, const BYTE * sn)
 {
 	time_t duration = TimeOut(fc_presence);
 	struct tree_node *tn;
 	//printf("Cache_Add_Device\n");
-	if (!pn) {
-		return 0;				// do check here to avoid needless processing
-	}
 
 	if (duration <= 0) {
 		return 0;				/* in case timeout set to 0 */
@@ -346,8 +343,8 @@ int Cache_Add_Device(const int bus_nr, const struct parsedname *pn)
 	}
 	memset(&tn->tk, 0, sizeof(struct tree_key));
 
-	LEVEL_DEBUG("Cache_Add_Device " SNformat " bus=%d\n", SNvar(pn->sn), (int) bus_nr);
-	memcpy(tn->tk.sn, pn->sn, 8);
+	LEVEL_DEBUG("Cache_Add_Device " SNformat " bus=%d\n", SNvar(sn), (int) bus_nr);
+	memcpy(tn->tk.sn, sn, 8);
 	tn->tk.p = NULL;			// value connected to all in-devices
 	//tn->tk.p.selected_connection = pn->selected_connection ;
 	tn->tk.extension = EXTENSION_DEVICE;

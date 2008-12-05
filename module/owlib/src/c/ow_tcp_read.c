@@ -57,7 +57,7 @@ ssize_t tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval
 	size_t nleft;
 	ssize_t nread;
 	char *ptr;
-	//printf("NetRead attempt %d bytes Time:(%ld,%ld)\n",(int)n,ptv->tv_sec,ptv->tv_usec ) ;
+	printf("NetRead attempt %d bytes Time:(%ld,%ld)\n",(int)n,ptv->tv_sec,ptv->tv_usec ) ;
 	ptr = vptr;
 	nleft = n;
 	while (nleft > 0) {
@@ -74,6 +74,7 @@ ssize_t tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval
 		if (rc > 0) {
 			/* Is there something to read? */
 			if (FD_ISSET(file_descriptor, &readset) == 0) {
+				LEVEL_DEBUG("tcp_error -- nothing avialable to read\n");
 				return -EIO;	/* error */
 			}
 			//update_max_delay(pn);
@@ -89,7 +90,7 @@ ssize_t tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval
 			} else if (nread == 0) {
 				break;			/* EOF */
 			}
-			//Debug_Bytes( "NETREAD",ptr, nread ) ;
+			Debug_Bytes( "NETREAD",ptr, nread ) ;
 			nleft -= nread;
 			ptr += nread;
 		} else if (rc < 0) {	/* select error */
@@ -104,6 +105,7 @@ ssize_t tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval
 			return -EAGAIN;
 		}
 	}
+	printf("tcp_read n=%d nleft=%d n-nleft=%d\n",(int)n, (int) nleft, (int) (n-nleft) ) ;
 	return (n - nleft);			/* return >= 0 */
 }
 

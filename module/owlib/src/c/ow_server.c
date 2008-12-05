@@ -336,7 +336,7 @@ int ServerDIR(void (*dirfunc) (void *, const struct parsedname * const), void *v
 				 */
 				if (IsRealDir(pn_whole_directory)) {
 					/* If we get a device then cache the bus_nr */
-					Cache_Add_Device(pn_whole_directory->selected_connection->index, &pn_directory_element);
+					Cache_Add_Device(pn_whole_directory->selected_connection->index, pn_directory_element.sn);
 				}
 				/* Add to cache Blob -- snlist is also a flag for cachable */
 				if (DirblobPure(&db)) {	/* only add if there is a blob allocated successfully */
@@ -467,7 +467,7 @@ int ServerDIRALL(void (*dirfunc) (void *, const struct parsedname * const), void
 			 */
 			if (IsRealDir(pn_whole_directory)) {
 				/* If we get a device then cache the bus_nr */
-				Cache_Add_Device(pn_whole_directory->selected_connection->index, &pn_directory_element);
+				Cache_Add_Device(pn_whole_directory->selected_connection->index, pn_directory_element.sn);
 			}
 			/* Add to cache Blob -- snlist is also a flag for cachable */
 			if (DirblobPure(&db)) {	/* only add if there is a blob allocated successfully */

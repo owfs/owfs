@@ -88,7 +88,7 @@ void Cache_Clear(void);
 int OWQ_Cache_Add(const struct one_wire_query *owq);
 int Cache_Add(const void *data, const size_t datasize, const struct parsedname *pn);
 int Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn);
-int Cache_Add_Device(const int bus_nr, const struct parsedname *pn);
+int Cache_Add_Device(const int bus_nr, const BYTE *sn);
 int Cache_Add_Internal(const void *data, const size_t datasize, const struct internal_prop *ip, const struct parsedname *pn);
 
 int OWQ_Cache_Get(struct one_wire_query *owq);
@@ -119,7 +119,7 @@ void FS_cache_sibling(char *property, struct one_wire_query *owq_shallow_copy);
 
 #define Cache_Add(data,datasize,pn )        (1)
 #define Cache_Add_Dir(db,pn )               (1)
-#define Cache_Add_Device(bus_nr,pn )        (1)
+#define Cache_Add_Device(bus_nr,sn )        (1)
 #define Cache_Add_Internal(data,datasize,ip,pn )    (1)
 #define OWQ_Cache_Add( owq )                (1)
 
