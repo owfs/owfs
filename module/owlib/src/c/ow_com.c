@@ -72,21 +72,20 @@ int COM_open(struct connection_in *in)
 
 void COM_close(struct connection_in *in)
 {
-	int file_descriptor;
 	if (in == NULL) {
 		return;
 	}
-	file_descriptor = in->file_descriptor;
+
 	// restore tty settings
-	if (file_descriptor > -1) {
+	if (in->file_descriptor > -1) {
 		LEVEL_DEBUG("COM_close: flush\n");
-		tcflush(file_descriptor, TCIOFLUSH);
+		tcflush(in->file_descriptor, TCIOFLUSH);
 		LEVEL_DEBUG("COM_close: restore\n");
-		if (tcsetattr(file_descriptor, TCSANOW, &in->connin.serial.oldSerialTio) < 0) {
+		if (tcsetattr(in->file_descriptor, TCSANOW, &in->connin.serial.oldSerialTio) < 0) {
 			ERROR_CONNECT("Cannot restore port attributes: %s\n", SAFESTRING(in->name));
 		}
 		LEVEL_DEBUG("COM_close: close\n");
-		close(file_descriptor);
+		close(in->file_descriptor);
 		in->file_descriptor = -1;
 	}
 }

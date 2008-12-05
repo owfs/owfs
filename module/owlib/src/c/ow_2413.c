@@ -198,7 +198,7 @@ static int OW_read(BYTE * data, const struct parsedname *pn)
 		return 1;
 	}
 	// High nibble the complement of low nibble?
-	if ((data[0] & 0x0F) + ((data[0] >> 4) & 0x0F) != 0x0F) {
+	if ((data[0] & 0x0F) | ((data[0] >> 4) & 0x0F) != 0x0F) {
 		return 1;
 	}
 

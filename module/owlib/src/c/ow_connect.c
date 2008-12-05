@@ -38,7 +38,7 @@ struct inbound_control Inbound_Control = {
 	.w1_file_descriptor = -1,
 	.w1_pid = 0,
 #if OW_MT
-	.w1_mutex = NULL,
+	.w1_mutex = PTHREAD_MUTEX_INITIALIZER,
 #endif /* OW_MT */
 #endif /* OW_W1 */
 };

@@ -261,13 +261,14 @@ static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path,
 		return -ENOMEM;
 	}
 
+#if 0
 	if (Inbound_Control.active == 0) {
 		printf("No buses available\n");
 		free(pp->pathcpy);
 		free(pn->path);
 		return -ENOENT;
 	}
-
+#endif
 	/* connection_in list and start */
 	/* ---------------------------- */
 	/* -- This is important:     -- */
