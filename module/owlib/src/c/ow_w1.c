@@ -345,28 +345,57 @@ static int W1_toW1(int file_descriptor, const struct toW1 *ha7, struct connectio
 	return ret;
 }
 
+static int w1_send_touch( const BYTE * data, size_t size, const struct parsedname *pn )
+{
+    struct w1_netlink_msg w1m;
+    struct w1_netlink_cmd w1c;
+
+    memset(&w1m, 0, W1_W1M_LENGTH);
+    w1m.type = W1_SLAVE_CMD;
+    memcpy( w1m.id.id, pn->sn, 8) ;
+
+    memset(&w1c, 0, W1_W1C_LENGTH);
+    w1c.cmd = W1_CMD_TOUCH_BLOCK ;
+    w1c.len = size ;
+
+    memcpy( w1c.data, data, size ) ;
+
+    return W1_send_msg( pn->selected_connection, &w1m, &w1c );
+}
+
 // Reset, select, and read/write data
 /* return 0=good
    sendout_data, readin
  */
 static int W1_select_and_sendback(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
 {
-	size_t location = 0;
-	int also_address = 1;
+    int seq = w1_send_touch(data,size,pn) ;
 
-	while (location < size) {
-		size_t block = size - location;
-		if (block > 32) {
-			block = 32;
-		}
-		// Don't add address (that's the "0")
-		if (W1_sendback_block(&data[location], &resp[location], block, also_address, pn)) {
-			return -EIO;
-		}
-		location += block;
-		also_address = 0;		//for subsequent blocks
-	}
-	return 0;
+    if ( seq < 0 ) {
+        return -EIO ;
+    }
+
+    do {
+        int i ;
+        struct netlink_parse nlp ;
+        if ( Get_and_Parse_Pipe( pn->selected_connection->connin.w1.read_file_descriptor, &nlp ) != 0 ) {
+            return -EIO ;
+        }
+        if ( NL_SEQ(nlp.nlm->nlmsg_seq) != (unsigned) seq ) {
+            LEVEL_DEBUG("Netlink sequence number out of order: expected %d\n",seq);
+            free(nlp.nlm) ;
+            continue ;
+        }
+        if ( nlp.w1c.len == size ) {}
+        for ( i = 0 ; i < nlp.w1c->len ; i += 8 ) {
+            DirblobAdd(&nlp.data[i], db);
+        }
+        free(nlp.nlm) ;
+        if ( nlp.cn->ack == 0 ) {
+            break ;
+        }
+    } while (1) ;
+    return 0;
 }
 
 // DS2480_sendback_data
