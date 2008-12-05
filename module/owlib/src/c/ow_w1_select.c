@@ -12,7 +12,7 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
  * 	w1d.c
  *
  * Copyright (c) 2004 Evgeniy Polyakov <johnpol@2ka.mipt.ru>
- * 
+ *
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -42,14 +42,15 @@ int W1Select( void )
 {
 	do {
 		int select_value ;
-		struct timeval tv = { Globals.timeout_w1, 0 } ;
-		
+//		struct timeval tv = { Globals.timeout_w1, 0 } ;
+
 		fd_set readset ;
 		FD_ZERO(&readset) ;
 		FD_SET(Inbound_Control.w1_file_descriptor,&readset) ;
-		
-		select_value = select(Inbound_Control.w1_file_descriptor+1,&readset,NULL,NULL,&tv) ;
-		
+
+    //select_value = select(Inbound_Control.w1_file_descriptor+1,&readset,NULL,NULL,&tv) ;
+    select_value = select(Inbound_Control.w1_file_descriptor+1,&readset,NULL,NULL,NULL) ;
+
 		if ( select_value == -1 ) {
 			if (errno != EINTR) {
 				ERROR_CONNECT("Netlink (w1) Select returned -1\n");

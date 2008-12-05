@@ -27,7 +27,7 @@ static void W1Clear( void )
 	struct connection_in * in ;
 
 	CONNIN_WLOCK ;
-	
+
 	// check for w1 bus masters that weren't found
 	for ( in = Inbound_Control.head ; in ; in = in->next ) {
 		if ( in->busmode == bus_w1
@@ -37,7 +37,7 @@ static void W1Clear( void )
 			RemoveIn( in ) ;
 		}
 	}
-		
+
 	CONNIN_WUNLOCK ;
 }
 
@@ -59,7 +59,7 @@ static void W1SysList( const char * directory )
 				}
 			}
 		}
-		
+
 		closedir( sys_w1 ) ;
 	}
 }
@@ -67,7 +67,7 @@ static void W1SysList( const char * directory )
 static void * W1_start_scan( void * v )
 {
 	(void) v ;
-	
+
 	if ( Inbound_Control.w1_file_descriptor < 0 ) {
 		LEVEL_DEBUG("Cannot monitor w1 bus, No netlink connection.\n");
 	} else {
@@ -75,17 +75,29 @@ static void * W1_start_scan( void * v )
 	}
 	return NULL ;
 }
-	
+
 #if OW_MT
 
 int W1_Browse( void )
 {
-	pthread_t thread ;
+    pthread_t thread_scan ;
+    pthread_t thread_dispatch ;
 
-	++Inbound_Control.w1_entry_mark ;
-	LEVEL_DEBUG("Calling for netlink w1 list\n");
-	// Initial setup
-	if ( W1NLList() < 0 ) {
+    ++Inbound_Control.w1_entry_mark ;
+    LEVEL_DEBUG("Calling for netlink w1 list\n");
+
+    // Initial setup
+    if ( Inbound_Control.w1_file_descriptor == -1 && w1_bind() == -1 ) {
+        ERROR_DEBUG("Netlink problem -- are you root?\n");
+        return -1 ;
+    }
+
+    if ( pthread_create(&thread_dispatch, NULL, W1_Dispatch, NULL) != 0 ) {
+        ERROR_DEBUG("Couldn't create netlink monitopring thread\n");
+        return -1 ;
+    }
+
+    if ( W1NLList() < 0 ) {
  		LEVEL_DEBUG("Drop down to sysfs w1 list\n");
 		W1SysList("/sys/bus/w1/devices") ;
 	}
@@ -93,7 +105,7 @@ int W1_Browse( void )
 	// And clear deadwood
 	W1Clear() ;
 
-	return pthread_create(&thread, NULL, W1_start_scan, NULL);
+	return pthread_create(&thread_scan, NULL, W1_start_scan, NULL);
 }
 
 #else /* OW_MT */

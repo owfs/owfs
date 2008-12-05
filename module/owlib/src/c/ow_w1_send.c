@@ -55,7 +55,7 @@ int W1_send_msg( struct connection_in * in, struct w1_netlink_msg *msg, struct w
 		seq = ++in->connin.w1.seq ;
 		bus = in->connin.w1.id;
 	} else {
-		seq = 0 ;
+		seq = ++Inbound_Control.w1_seq ;
 		bus = 0 ;
 	}
 

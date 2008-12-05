@@ -118,13 +118,14 @@ OWLIB_SOURCE = ow_dl.c           \
                ow_w1.c           \
                ow_w1_addremove.c \
                ow_w1_bind.c      \
+               ow_w1_browse.c    \
+               ow_w1_dispatch.c  \
                ow_w1_list.c      \
                ow_w1_parse.c     \
                ow_w1_print.c     \
                ow_w1_scan.c      \
                ow_w1_select.c    \
                ow_w1_send.c      \
-               ow_w1_browse.c    \
                ow_write.c        \
                ow_zero.c         \
                owlib.c           \

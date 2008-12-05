@@ -39,6 +39,7 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
 int w1_bind( void )
 {
 	struct sockaddr_nl l_local ;
+    int pipe_fd[2] ;]
 
 	Inbound_Control.w1_file_descriptor = socket(AF_NETLINK, SOCK_DGRAM, NETLINK_CONNECTOR);
 	if (Inbound_Control.w1_file_descriptor == -1) {
@@ -57,12 +58,25 @@ int w1_bind( void )
 		return -1;
 	}
 
-	return Inbound_Control.w1_file_descriptor ;
+
+    if ( pipe( pipe_fd ) == 0 ) {
+        Inbound_Control.w1_read_file_descriptor = pipe_fd[0] ;
+        Inbound_Control.w1_write_file_descriptor = pipe_fd[1] ;
+    } else {
+        ERROR_CONNECT("W1 pipe creation error\n");
+        Inbound_Control.w1_read_file_descriptor = -1 ;
+        Inbound_Control.w1._write_file_descriptor = -1 ;
+        w1_unbind() ;
+        return -1 ;
+    }
+    return Inbound_Control.w1_file_descriptor ;
 }
 
 void w1_unbind( void )
 {
-	Test_and_Close( &(Inbound_Control.w1_file_descriptor) );
+    Test_and_Close( &(Inbound_Control.w1_file_descriptor) );
+    Test_and_Close( &(Inbound_Control.w1_read_file_descriptor) );
+    Test_and_Close( &(Inbound_Control.w1_write_file_descriptor) );
 }
 
 #endif /* OW_W1 */

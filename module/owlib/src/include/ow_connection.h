@@ -441,8 +441,11 @@ extern struct inbound_control {
 	int next_tester ; // count tester buses
 #if OW_W1
 	unsigned int w1_entry_mark ; // for removing buses_mark ;
+    int w1_seq ;
 	int w1_file_descriptor ; // w1 kernel module for netlink communication
 	int w1_pid ;
+    int w1_read_file_descriptor ;
+    int w1_write_file_descriptor ;
 #if OW_MT
 	pthread_mutex_t w1_mutex;	// mutex for w1 sequence number */
 #endif /* OW_MT */
