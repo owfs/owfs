@@ -87,30 +87,23 @@ int W1NLList( void )
 		return seq ;
 	}
 
-	while (repeat_loop)
-	{
-		if ( W1Select() == 0 ) {
-			struct netlink_parse nlp ;
+    do {
+        int i ;
+        struct netlink_parse nlp ;
+        if ( Get_and_Parse_Pipe( Inbound_Control.w1_read_file_descriptor, &nlp ) != 0 ) {
+            return -EIO ;
+        }
+        if ( NL_SEQ(nlp.nlm->nlmsg_seq) == (unsigned) seq ) {
+            LEVEL_DEBUG("Netlink sequence number out of order: expected %d\n",seq);
+        } else {
+            w1_masters( &nlp );
+        }
+        free(nlp.nlm) ;
+        if ( nlp.cn->ack == 0 ) {
+            break ;
+        }
+    } while (1) ;
 
-			switch ( Netlink_Parse_Get( &nlp ) ) {
-				case -EAGAIN:
-					break ;
-				case 0:
-					if ( nlp.nlm->nlmsg_seq != seq || nlp.w1m->type != W1_LIST_MASTERS ) {
-						LEVEL_DEBUG("Non-matching netlink packet\n");
-						continue ;
-					}
-					w1_masters( &nlp );
-					repeat_loop = nlp.cn->ack ;
-					Netlink_Parse_Destroy(&nlp) ;
-					break ;
-				default:
-					return  1;
-			}
-		} else {
-			return 1 ;
-		}
-	}
 	return 0;
 }
 
