@@ -36,89 +36,53 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
 #include "ow_w1.h"
 #include "ow_connection.h"
 
-static void Dispatch_Packet( struct netlink_parse * nlp)
-{
-	int bus = NL_BUS(nlp->nlm->nlmsg_seq) ;
-	struct connection_in * in ;
-
-	CONNIN_RLOCK ;
-	for ( in = Inbound_Control.head ; in != NULL ; in = in->next ) {
-		//printf("Matching %d/%s/%s/%s/ to bus.%d %d/%s/%s/%s/\n",bus_zero,name,type,domain,now->index,now->busmode,now->connin.tcp.name,now->connin.tcp.type,now->connin.tcp.domain);
-		if ( in->busmode == bus_w1 && in->connin.w1.id == bus ) {
-			break ;
-		}
-	}
-	if ( in == NULL ) {
-		CONNIN_RUNLOCK ;
-		LEVEL_DEBUG("Netlink message sent to non-existent w1_bus_master%d\n",bus) ;
-		return ;
-	}
-	/* We could have select and a timeout for safety, but this is internal communication */
-	write(in->connin.w1.write_file_descriptor, (const void *)nlp->nlm, nlp->nlm->nlmsg_len) ;
-	CONNIN_RUNLOCK ;
-}
 static void w1_masters(struct netlink_parse * nlp)
 {
-    if ( nlp->nlm->nlmsg_pid != 0 ) {
-		LEVEL_DEBUG("Netlink packet PID not from kernel\n");
-		return ;
-	}
-	if (nlp->w1m) {
-		int bus_master = nlp->w1m->id.mst.id ;
-		switch (nlp->w1m->type) {
-			case W1_MASTER_ADD:
-				AddW1Bus(bus_master) ;
-				//printf("Master has been added: w1_master%d.\n",	bus_master);
-					break;
-			case W1_MASTER_REMOVE:
-				RemoveW1Bus(bus_master) ;
-				//printf("Master has been removed: w1_master%d.\n", bus_master);
-					break;
-			case W1_SLAVE_ADD:
-			case W1_SLAVE_REMOVE:
-				LEVEL_DEBUG("Netlink (w1) Slave announcements\n");
-				break ;
-			default:
-				LEVEL_DEBUG("Netlink (w1) Other command. Dispatch...\n");
-				Dispatch_Packet( nlp ) ;
-				break ;
-		}
-	}
+    int bus_master = nlp->w1m->id.mst.id ;
+    switch (nlp->w1m->type) {
+        case W1_MASTER_ADD:
+            AddW1Bus(bus_master) ;
+            //printf("Master has been added: w1_master%d.\n",	bus_master);
+                break;
+        case W1_MASTER_REMOVE:
+            RemoveW1Bus(bus_master) ;
+            //printf("Master has been removed: w1_master%d.\n", bus_master);
+                break;
+        case W1_SLAVE_ADD:
+        case W1_SLAVE_REMOVE:
+            LEVEL_DEBUG("Netlink (w1) Slave announcements\n");
+            break ;
+        default:
+            LEVEL_DEBUG("Netlink (w1) Other command. Dispatch...\n");
+            break ;
+    }
 }
 
 int W1NLScan( void )
 {
 	while (1)
 	{
-		int select_value ;
+        struct netlink_parse nlp ;
+        int select_value ;
 
 		fd_set readset ;
 		FD_ZERO(&readset) ;
-		FD_SET(Inbound_Control.w1_file_descriptor,&readset) ;
+		FD_SET(Inbound_Control.w1_read_file_descriptor,&readset) ;
 
-		select_value = select(Inbound_Control.w1_file_descriptor+1,&readset,NULL,NULL,NULL) ;
-
-		if ( select_value == -1 ) {
-			ERROR_DEBUG("Select returned -1\n");
-			if (errno == EINTR) {
-				continue ;
-			}
-		} else if ( select_value == 0 ) {
-			LEVEL_DEBUG("Select returned zero\n");
-		} else {
-			struct netlink_parse nlp ;
-
-			switch ( Netlink_Parse_Get( &nlp ) ) {
-				case -EAGAIN:
-					break ;
-				case 0:
-					w1_masters( &nlp );
-					Netlink_Parse_Destroy(&nlp) ;
-					break ;
-				default:
-					return  1;
-			}
-		}
+		switch ( select(Inbound_Control.w1_read_file_descriptor+1,&readset,NULL,NULL,NULL)) {
+        case -1:
+                ERROR_DEBUG("Select returned -1\n");
+                break ;
+		case 0:
+                LEVEL_DEBUG("Select returned zero\n");
+                break ;
+        default:
+            if ( Get_and_Parse_Pipe( Inbound_Control.w1_read_file_descriptor, &nlp ) == 0 ) {
+                w1_masters( &nlp );
+                Netlink_Parse_Destroy(&nlp) ;
+            }
+            break ;
+        }
 	}
 	return 0;
 }
