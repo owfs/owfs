@@ -37,48 +37,84 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
 #include "ow_w1.h"
 #include "ow_connection.h"
 
+static int W1_write_pipe( int file_descriptor, struct netlink_parse * nlp )
+{
+	int size = nlp->nlm->nlmsg_len ;
+	do {
+		int select_value ;
+		struct timeval tv = { Globals.timeout_w1, 0 } ;
+		
+		fd_set writeset ;
+		FD_ZERO(&writeset) ;
+		FD_SET(file_descriptor,&writeset) ;
+		
+		select_value = select(file_descriptor+1,NULL,&writeset,NULL,&tv) ;
+		
+		if ( select_value == -1 ) {
+			if (errno != EINTR) {
+				ERROR_CONNECT("Pipe (w1) Select returned -1\n");
+				return -1 ;
+			}
+		} else if ( select_value == 0 ) {
+			LEVEL_DEBUG("Select returned zero (timeout)\n");
+			return -1;
+		} else {
+			int write_ret = write( file_descriptor, (const void *)nlp->nlm, size ) ;
+			if (write_ret < 0 ) {
+				ERROR_DEBUG("Trouble writing to pipe\n");
+			} else if ( write_ret < size ) {
+				LEVEL_DEBUG("Only able to write %d of %d bytes to pipe\n",write_ret, size);
+				return -1 ;
+			}
+			return 0 ;
+		}
+	} while (1) ;
+}
+
+
 static void Dispatch_Packet( struct netlink_parse * nlp)
 {
-    int bus = NL_BUS(nlp->nlm->nlmsg_seq) ;
-    struct connection_in * in ;
+	int bus = NL_BUS(nlp->nlm->nlmsg_seq) ;
+	struct connection_in * in ;
 
-    if ( bus == 0 ) {
-        write(Inbound_Control.w1_write_descriptor, (const void *)nlp->nlm, nlp->nlm->nlmsg_len) ;
-        return ;
-    }
+	if ( bus == 0 ) {
+		LEVEL_DEBUG("Sending this packet to root bus\n");
+		W1_write_pipe(Inbound_Control.w1_write_file_descriptor, nlp) ;
+		return ;
+	}
 
 
-    CONNIN_RLOCK ;
-    for ( in = Inbound_Control.head ; in != NULL ; in = in->next ) {
-        //printf("Matching %d/%s/%s/%s/ to bus.%d %d/%s/%s/%s/\n",bus_zero,name,type,domain,now->index,now->busmode,now->connin.tcp.name,now->connin.tcp.type,now->connin.tcp.domain);
-        if ( in->busmode == bus_w1 && in->connin.w1.id == bus ) {
-            break ;
-        }
-    }
-    if ( in == NULL ) {
-        LEVEL_DEBUG("Netlink message sent to non-existent w1_bus_master%d\n",bus) ;
-    } else {
-        /* We could have select and a timeout for safety, but this is internal communication */
-        write(in->connin.w1.write_file_descriptor, (const void *)nlp->nlm, nlp->nlm->nlmsg_len) ;
-    }
-    CONNIN_RUNLOCK ;
+	CONNIN_RLOCK ;
+	for ( in = Inbound_Control.head ; in != NULL ; in = in->next ) {
+		//printf("Matching %d/%s/%s/%s/ to bus.%d %d/%s/%s/%s/\n",bus_zero,name,type,domain,now->index,now->busmode,now->connin.tcp.name,now->connin.tcp.type,now->connin.tcp.domain);
+		if ( in->busmode == bus_w1 && in->connin.w1.id == bus ) {
+			break ;
+		}
+	}
+	if ( in == NULL ) {
+		LEVEL_DEBUG("Netlink message sent to non-existent w1_bus_master%d\n",bus) ;
+	} else {
+		/* We could have select and a timeout for safety, but this is internal communication */
+		LEVEL_DEBUG("Sending this packet to w1_bus_master%d\n",bus);
+		W1_write_pipe(in->connin.w1.write_file_descriptor, nlp) ;
+	}
+	CONNIN_RUNLOCK ;
 }
 
 void * W1_Dispatch( void * v )
 {
-    (void) v;
+	(void) v;
 
 #if OW_MT
-    pthread_detach(pthread_self());
+	pthread_detach(pthread_self());
 #endif                          /* OW_MT */
 
-    while (Inbound_Control.w1_file_descriptor > -1 )
-	{
-		if ( W1Select() == 0 ) {
+	while (Inbound_Control.w1_file_descriptor > -1 ) {
+		if ( W1Select_no_timeout() == 0 ) {
 			struct netlink_parse nlp ;
 			if ( Netlink_Parse_Get( &nlp ) == 0 ) {
-                Dispatch_Packet( &nlp ) ;
-                Netlink_Parse_Destroy(&nlp) ;
+				Dispatch_Packet( &nlp ) ;
+				Netlink_Parse_Destroy(&nlp) ;
 			}
 		}
 	}

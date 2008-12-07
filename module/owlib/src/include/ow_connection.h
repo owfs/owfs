@@ -64,14 +64,9 @@ See: http://www.iana.org/assignments/port-numbers
 */
 #define DEFAULT_PORT  "4304"
 
-#include <config.h>
-#include "owfs_config.h"
-
 #include "ow.h"
 #include "ow_counters.h"
-#ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
-#endif
 #include "ow_transaction.h"
 
 /* large enough for arrays of 2048 elements of ~49 bytes each */
@@ -196,7 +191,7 @@ enum ds2480b_baud {
 	ds2480b_pol_57600,
 	ds2480b_pol_115200,
 } ;
-
+	
 struct connin_serial {
 	enum ds2480b_mode mode ;
 	enum ds2480b_baud baud ;
@@ -279,8 +274,8 @@ struct connin_w1 {
 	// bus master name kept in name
 	// netlink fd kept in file_descriptor
 	unsigned int entry_mark ;
+	unsigned int seq ;
 	int id ; // equivalent to the number part of w1_bus_master23
-    unsigned int seq ;
 	int read_file_descriptor ;
 	int write_file_descriptor ;
 	struct dirblob main;		/* main directory */
@@ -440,12 +435,13 @@ extern struct inbound_control {
 	int next_fake ; // count of fake buses
 	int next_tester ; // count tester buses
 #if OW_W1
+	unsigned int w1_seq ; // seq number to netlink
 	unsigned int w1_entry_mark ; // for removing buses_mark ;
-    int w1_seq ;
 	int w1_file_descriptor ; // w1 kernel module for netlink communication
+	int w1_read_file_descriptor ; // w1 pipe
+	int w1_write_file_descriptor ; // w1 pipe
 	int w1_pid ;
-    int w1_read_file_descriptor ;
-    int w1_write_file_descriptor ;
+	int w1_bus_masters ;
 #if OW_MT
 	pthread_mutex_t w1_mutex;	// mutex for w1 sequence number */
 #endif /* OW_MT */

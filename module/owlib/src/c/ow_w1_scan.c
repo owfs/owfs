@@ -38,51 +38,50 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
 
 static void w1_masters(struct netlink_parse * nlp)
 {
-    int bus_master = nlp->w1m->id.mst.id ;
-    switch (nlp->w1m->type) {
-        case W1_MASTER_ADD:
-            AddW1Bus(bus_master) ;
-            //printf("Master has been added: w1_master%d.\n",	bus_master);
-                break;
-        case W1_MASTER_REMOVE:
-            RemoveW1Bus(bus_master) ;
-            //printf("Master has been removed: w1_master%d.\n", bus_master);
-                break;
-        case W1_SLAVE_ADD:
-        case W1_SLAVE_REMOVE:
-            LEVEL_DEBUG("Netlink (w1) Slave announcements\n");
-            break ;
-        default:
-            LEVEL_DEBUG("Netlink (w1) Other command. Dispatch...\n");
-            break ;
-    }
+    if ( nlp->nlm->nlmsg_pid != 0 ) {
+		LEVEL_DEBUG("Netlink packet PID not from kernel\n");
+		return ;
+	}
+	if (nlp->w1m) {
+		int bus_master = nlp->w1m->id.mst.id ;
+		switch (nlp->w1m->type) {
+			case W1_MASTER_ADD:
+				AddW1Bus(bus_master) ;
+				//printf("Master has been added: w1_master%d.\n",	bus_master);
+					break;
+			case W1_MASTER_REMOVE:
+				RemoveW1Bus(bus_master) ;
+				//printf("Master has been removed: w1_master%d.\n", bus_master);
+					break;
+			case W1_SLAVE_ADD:
+			case W1_SLAVE_REMOVE:
+				LEVEL_DEBUG("Netlink (w1) Slave announcements\n");
+				break ;
+			default:
+				LEVEL_DEBUG("Netlink (w1) Other command.\n");
+				break ;
+		}
+	}
 }
 
 int W1NLScan( void )
 {
 	while (1)
 	{
-        struct netlink_parse nlp ;
-        int select_value ;
+		if ( W1PipeSelect_no_timeout( Inbound_Control.w1_read_file_descriptor ) == 0 ) {
+			struct netlink_parse nlp ;
 
-		fd_set readset ;
-		FD_ZERO(&readset) ;
-		FD_SET(Inbound_Control.w1_read_file_descriptor,&readset) ;
-
-		switch ( select(Inbound_Control.w1_read_file_descriptor+1,&readset,NULL,NULL,NULL)) {
-        case -1:
-                ERROR_DEBUG("Select returned -1\n");
-                break ;
-		case 0:
-                LEVEL_DEBUG("Select returned zero\n");
-                break ;
-        default:
-            if ( Get_and_Parse_Pipe( Inbound_Control.w1_read_file_descriptor, &nlp ) == 0 ) {
-                w1_masters( &nlp );
-                Netlink_Parse_Destroy(&nlp) ;
-            }
-            break ;
-        }
+			switch ( Get_and_Parse_Pipe( Inbound_Control.w1_read_file_descriptor, &nlp ) ) {
+				case -EAGAIN:
+					break ;
+				case 0:
+					w1_masters( &nlp );
+					Netlink_Parse_Destroy(&nlp) ;
+					break ;
+				default:
+					return  1;
+			}
+		}
 	}
 	return 0;
 }

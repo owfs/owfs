@@ -74,36 +74,39 @@ static void w1_masters(struct netlink_parse * nlp)
 int W1NLList( void )
 {
 	int repeat_loop = 1 ;
-	int seq ;
+	int seq = w1_list_masters() ;
 
-	if ( Inbound_Control.w1_file_descriptor == -1 && w1_bind() == -1 ) {
-		ERROR_DEBUG("Netlink problem -- are you root?\n");
-		return -1 ;
-	}
-
-	seq = w1_list_masters() ;
 	if  (seq < 0 ) {
 		LEVEL_CONNECT("Couldn't send the W1_LIST_MASTERS request\n");
 		return seq ;
 	}
 
-    do {
-        int i ;
-        struct netlink_parse nlp ;
-        if ( Get_and_Parse_Pipe( Inbound_Control.w1_read_file_descriptor, &nlp ) != 0 ) {
-            return -EIO ;
-        }
-        if ( NL_SEQ(nlp.nlm->nlmsg_seq) == (unsigned) seq ) {
-            LEVEL_DEBUG("Netlink sequence number out of order: expected %d\n",seq);
-        } else {
-            w1_masters( &nlp );
-        }
-        free(nlp.nlm) ;
-        if ( nlp.cn->ack == 0 ) {
-            break ;
-        }
-    } while (1) ;
+	while (repeat_loop)
+	{
+		if ( W1PipeSelect_timeout(Inbound_Control.w1_read_file_descriptor) == 0 ) {
+			struct netlink_parse nlp ;
 
+			switch ( Get_and_Parse_Pipe( Inbound_Control.w1_read_file_descriptor, &nlp ) ) {
+				case -EAGAIN:
+					break ;
+				case 0:
+					if ( nlp.nlm->nlmsg_seq != seq || nlp.w1m->type != W1_LIST_MASTERS ) {
+						LEVEL_DEBUG("Non-matching netlink packet\n");
+						continue ;
+					}
+					w1_masters( &nlp );
+					repeat_loop = nlp.cn->ack ;
+					Netlink_Parse_Destroy(&nlp) ;
+					break ;
+				default:
+					LEVEL_DEBUG("Error parsing LIST_MASTERS pipe-d netlink packet\n");
+					return  1;
+			}
+		} else {
+			// No responses -- timeout  --bad w1 version or not loaded or no masters
+			return 1 ;
+		}
+	}
 	return 0;
 }
 

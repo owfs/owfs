@@ -93,7 +93,7 @@ int W1_Browse( void )
     }
 
     if ( pthread_create(&thread_dispatch, NULL, W1_Dispatch, NULL) != 0 ) {
-        ERROR_DEBUG("Couldn't create netlink monitopring thread\n");
+        ERROR_DEBUG("Couldn't create netlink monitoring thread\n");
         return -1 ;
     }
 

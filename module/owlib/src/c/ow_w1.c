@@ -136,9 +136,9 @@ static int W1_directory(BYTE search, struct dirblob *db, const struct parsedname
 	if ( seq < 0 ) {
 		return -EIO ;
 	}
-	do {
-		int i ;
+	while ( W1PipeSelect_timeout(pn->selected_connection->connin.w1.read_file_descriptor)  ==0 ) {
 		struct netlink_parse nlp ;
+		int i ;
 		if ( Get_and_Parse_Pipe( pn->selected_connection->connin.w1.read_file_descriptor, &nlp ) != 0 ) {
 			return -EIO ;
 		}
@@ -147,11 +147,6 @@ static int W1_directory(BYTE search, struct dirblob *db, const struct parsedname
 			free(nlp.nlm) ;
 			continue ;
 		}
-		if ( nlp.w1m->type != W1_MASTER_CMD ) {
-			LEVEL_DEBUG("Not W1_MASTER_CMD\n");
-			free(nlp.nlm) ;
-			return -EIO ;
-		}
 		for ( i = 0 ; i < nlp.w1c->len ; i += 8 ) {
 			DirblobAdd(&nlp.data[i], db);
 		}
@@ -159,7 +154,7 @@ static int W1_directory(BYTE search, struct dirblob *db, const struct parsedname
 		if ( nlp.cn->ack == 0 ) {
 			break ;
 		}
-	} while (1) ;
+	} 
 	return 0;
 }
 
@@ -355,7 +350,7 @@ static int w1_send_touch( const BYTE * data, size_t size, const struct parsednam
     memcpy( w1m.id.id, pn->sn, 8) ;
 
     memset(&w1c, 0, W1_W1C_LENGTH);
-    w1c.cmd = W1_CMD_TOUCH_BLOCK ;
+    w1c.cmd = W1_CMD_TOUCH ;
     w1c.len = size ;
 
     memcpy( w1c.data, data, size ) ;
@@ -369,33 +364,31 @@ static int w1_send_touch( const BYTE * data, size_t size, const struct parsednam
  */
 static int W1_select_and_sendback(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
 {
-    int seq = w1_send_touch(data,size,pn) ;
+	int seq = w1_send_touch(data,size,pn) ;
+	int ret = -EINVAL ;
 
-    if ( seq < 0 ) {
-        return -EIO ;
-    }
+	if ( seq < 0 ) {
+		return -EIO ;
+	}
 
-    do {
-        int i ;
-        struct netlink_parse nlp ;
-        if ( Get_and_Parse_Pipe( pn->selected_connection->connin.w1.read_file_descriptor, &nlp ) != 0 ) {
-            return -EIO ;
-        }
-        if ( NL_SEQ(nlp.nlm->nlmsg_seq) != (unsigned) seq ) {
-            LEVEL_DEBUG("Netlink sequence number out of order: expected %d\n",seq);
-            free(nlp.nlm) ;
-            continue ;
-        }
-        if ( nlp.w1c.len == size ) {}
-        for ( i = 0 ; i < nlp.w1c->len ; i += 8 ) {
-            DirblobAdd(&nlp.data[i], db);
-        }
-        free(nlp.nlm) ;
-        if ( nlp.cn->ack == 0 ) {
-            break ;
-        }
-    } while (1) ;
-    return 0;
+	while ( W1PipeSelect_timeout(pn->selected_connection->connin.w1.read_file_descriptor)  ==0 ) {
+		struct netlink_parse nlp ;
+		int i ;
+		if ( Get_and_Parse_Pipe( pn->selected_connection->connin.w1.read_file_descriptor, &nlp ) != 0 ) {
+			return -EIO ;
+		}
+		if ( NL_SEQ(nlp.nlm->nlmsg_seq) != (unsigned) seq ) {
+			LEVEL_DEBUG("Netlink sequence number out of order: expected %d\n",seq);
+			free(nlp.nlm) ;
+			continue ;
+		}
+		if ( nlp.w1c->len == size ) {
+			memcpy(resp, nlp.w1c->data, size ) ;
+			ret = 0 ;
+		}
+		free(nlp.nlm) ;
+	}
+	return ret ;
 }
 
 // DS2480_sendback_data

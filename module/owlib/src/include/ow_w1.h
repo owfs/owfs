@@ -31,7 +31,10 @@ void w1_unbind( void ) ;
 void RemoveW1Bus( int bus_master ) ;
 void AddW1Bus( int bus_master ) ;
 int W1_send_msg( struct connection_in * in, struct w1_netlink_msg *msg, struct w1_netlink_cmd *cmd) ;
-int W1Select( void ) ;
+int W1PipeSelect_timeout( int file_descriptor ) ;
+int W1PipeSelect_no_timeout( int file_descriptor ) ;
+int W1Select_no_timeout( void ) ;
+void * W1_Dispatch( void * v ) ;
 
 int W1NLScan( void ) ;
 int W1NLList( void ) ;
