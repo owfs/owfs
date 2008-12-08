@@ -42,7 +42,7 @@ int W1PipeSelect_timeout( int file_descriptor )
 {
 	do {
 		int select_value ;
-		struct timeval tv = { Globals.timeout_w1 *  Inbound_Control.w1_bus_masters, 0 } ;
+		struct timeval tv = { Globals.timeout_w1, 0 } ;
 		
 		fd_set readset ;
 		FD_ZERO(&readset) ;

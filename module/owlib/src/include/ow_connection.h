@@ -280,6 +280,7 @@ struct connin_w1 {
 	int write_file_descriptor ;
 	struct dirblob main;		/* main directory */
 	struct dirblob alarm;		/* alarm directory */
+	int awaiting_response ; // Waiting for a netlink response (piped)
 #endif /* OW_W1 */
 };
 
@@ -441,7 +442,6 @@ extern struct inbound_control {
 	int w1_read_file_descriptor ; // w1 pipe
 	int w1_write_file_descriptor ; // w1 pipe
 	int w1_pid ;
-	int w1_bus_masters ;
 #if OW_MT
 	pthread_mutex_t w1_mutex;	// mutex for w1 sequence number */
 #endif /* OW_MT */

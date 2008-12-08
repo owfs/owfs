@@ -38,7 +38,6 @@ struct inbound_control Inbound_Control = {
 	.w1_entry_mark = 0,
 	.w1_file_descriptor = -1,
 	.w1_pid = 0,
-	.w1_bus_masters = 1, //  start with at least 1 for the root pipe
 #if OW_MT
 	.w1_mutex = PTHREAD_MUTEX_INITIALIZER,
 #endif /* OW_MT */

@@ -39,9 +39,9 @@ void * W1_Dispatch( void * v ) ;
 int W1NLScan( void ) ;
 int W1NLList( void ) ;
 
-#define MAKE_NL_SEQ( bus, seq )  ( ((bus) & 0xFFFF) << 16 ) | ((seq) & 0xFFFF)
-#define NL_SEQ( seq )  ((seq) & 0xFFFF)
-#define NL_BUS( seq )  (((seq) >> 16 ) & 0xFFFF)
+#define MAKE_NL_SEQ( bus, seq )  ((uint32_t)(( ((bus) & 0xFFFF) << 16 ) | ((seq) & 0xFFFF)))
+#define NL_SEQ( seq )  ((uint32_t)((seq) & 0xFFFF))
+#define NL_BUS( seq )  ((uint32_t)(((seq) >> 16 ) & 0xFFFF))
 
 int Announce_Control_init( int allocated ) ;
 

@@ -112,7 +112,9 @@ int W1_send_msg( struct connection_in * in, struct w1_netlink_msg *msg, struct w
 		ERROR_CONNECT("Failed to send W1_LIST_MASTERS\n");
 		return -1 ;
 	}
-
+	if ( in ) {
+		in->connin.w1.awaiting_response = 1 ;
+	}
 	return seq;
 }
 

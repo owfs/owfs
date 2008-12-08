@@ -78,6 +78,8 @@ int W1_detect(struct connection_in *in)
 	DirblobInit(&(in->connin.w1.main));
 	DirblobInit(&(in->connin.w1.alarm));
 
+	in->connin.w1.awaiting_response = 0 ; // start out with no expectations.
+
 	if ( pipe( pipe_fd ) == 0 ) {
 		in->connin.w1.read_file_descriptor = pipe_fd[0] ;
 		in->connin.w1.write_file_descriptor = pipe_fd[1] ;
@@ -129,21 +131,24 @@ static int w1_send_search( BYTE search, const struct parsedname *pn )
 static int W1_directory(BYTE search, struct dirblob *db, const struct parsedname *pn)
 {
 	int seq ;
+	int ret ;
 
 	DirblobClear(db);
-	printf("w1_directory\n");
 	seq = w1_send_search( search, pn ) ;
 	if ( seq < 0 ) {
 		return -EIO ;
 	}
+
 	while ( W1PipeSelect_timeout(pn->selected_connection->connin.w1.read_file_descriptor)  ==0 ) {
 		struct netlink_parse nlp ;
 		int i ;
 		if ( Get_and_Parse_Pipe( pn->selected_connection->connin.w1.read_file_descriptor, &nlp ) != 0 ) {
-			return -EIO ;
+			LEVEL_DEBUG("Error reading pipe for w1_bus_master%d\n",pn->selected_connection->connin.w1.id);
+			ret = -EIO ;
+			break ;
 		}
-		if ( NL_SEQ(nlp.nlm->nlmsg_seq) != (unsigned) seq ) {
-			LEVEL_DEBUG("Netlink sequence number out of order: expected %d\n",seq);
+		if ( nlp.nlm->nlmsg_seq != MAKE_NL_SEQ( pn->selected_connection->connin.w1.id, seq ) ) {
+			LEVEL_DEBUG("Netlink sequence number out of order: expected %u|%u Got %u|%u\n",pn->selected_connection->connin.w1.id,seq,NL_BUS(nlp.nlm->nlmsg_seq),NL_SEQ(nlp.nlm->nlmsg_seq));
 			free(nlp.nlm) ;
 			continue ;
 		}
@@ -155,6 +160,7 @@ static int W1_directory(BYTE search, struct dirblob *db, const struct parsedname
 			break ;
 		}
 	} 
+	pn->selected_connection->connin.w1.awaiting_response = 0 ;
 	return 0;
 }
 
@@ -375,19 +381,18 @@ static int W1_select_and_sendback(const BYTE * data, BYTE * resp, const size_t s
 		struct netlink_parse nlp ;
 		int i ;
 		if ( Get_and_Parse_Pipe( pn->selected_connection->connin.w1.read_file_descriptor, &nlp ) != 0 ) {
-			return -EIO ;
+			ret  =-EIO ;
+			break ;
 		}
-		if ( NL_SEQ(nlp.nlm->nlmsg_seq) != (unsigned) seq ) {
-			LEVEL_DEBUG("Netlink sequence number out of order: expected %d\n",seq);
-			free(nlp.nlm) ;
-			continue ;
-		}
-		if ( nlp.w1c->len == size ) {
+		if ( nlp.nlm->nlmsg_seq != MAKE_NL_SEQ( pn->selected_connection->connin.w1.id, seq ) ) {
+			LEVEL_DEBUG("Netlink sequence number out of order: expected %u|%u Got %u|%u\n",pn->selected_connection->connin.w1.id,seq,NL_BUS(nlp.nlm->nlmsg_seq),NL_SEQ(nlp.nlm->nlmsg_seq));
+		} else if ( nlp.w1c->len == size ) {
 			memcpy(resp, nlp.w1c->data, size ) ;
 			ret = 0 ;
 		}
 		free(nlp.nlm) ;
 	}
+	pn->selected_connection->connin.w1.awaiting_response = 0 ;
 	return ret ;
 }
 

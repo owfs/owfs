@@ -81,7 +81,6 @@ static void * AddBus( void * v )
 		LEVEL_DEBUG("w1 bus <%s> to be added\n",name) ;
 		in->connin.w1.entry_mark = Inbound_Control.w1_entry_mark ;
 		in->connin.w1.id = bus_master ;
-		++Inbound_Control.w1_bus_masters ;
 	} else {
 		LEVEL_DEBUG("w1 bus <%s> couldn't be added\n",name) ;
 	}
@@ -114,7 +113,6 @@ void * RemoveBus( void * v )
 	in =  FindIn( name ) ;
 	if ( in != NULL ) {
 		RemoveIn(in) ;
-		--Inbound_Control.w1_bus_masters ;
 		LEVEL_DEBUG("Remove w1 bus: <%s>\n",name) ;
 	}
 
