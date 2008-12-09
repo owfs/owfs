@@ -58,7 +58,7 @@ static void W1_setroutines(struct connection_in *in)
 	// Bundle transactions
 	//
 	in->iroutines.flags = ADAP_FLAG_dirgulp | ADAP_FLAG_bundle | ADAP_FLAG_dir_auto_reset;
-	in->bundling_length = W1_FIFO_SIZE;	// arbitrary number
+	in->bundling_length = 4096 - W1_NLM_LENGTH - W1_CN_LENGTH - W1_W1M_LENGTH - W1_W1C_LENGTH ;
 }
 
 int W1_detect(struct connection_in *in)
