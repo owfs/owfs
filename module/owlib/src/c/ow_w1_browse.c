@@ -87,6 +87,9 @@ int W1_Browse( void )
     LEVEL_DEBUG("Calling for netlink w1 list\n");
 
     // Initial setup
+    pthread_mutex_init(&(Inbound_Control.w1_mutex), Mutex.pmattr);
+    pthread_mutex_init(&(Inbound_Control.w1_read_mutex), Mutex.pmattr);
+    gettimeofday(&Inbound_Control.w1_last_read,NULL);
     if ( Inbound_Control.w1_file_descriptor == -1 && w1_bind() == -1 ) {
         ERROR_DEBUG("Netlink problem -- are you root?\n");
         return -1 ;

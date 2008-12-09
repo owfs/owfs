@@ -107,7 +107,12 @@ int Netlink_Parse_Get( struct netlink_parse * nlp )
 {
 	unsigned char * buffer ;
 	struct nlmsghdr peek_nlm ;
-	
+
+	// Set time of last read
+	pthread_mutex_lock(&Inbound_Control.w1_read_mutex) ;
+	gettimeofday(&Inbound_Control.w1_last_read,NULL);
+	pthread_mutex_unlock(&Inbound_Control.w1_read_mutex) ;
+
 	// first peek at message to get length and details
 	int recv_len = recv(Inbound_Control.w1_file_descriptor, &peek_nlm, W1_NLM_LENGTH, MSG_PEEK );
 	

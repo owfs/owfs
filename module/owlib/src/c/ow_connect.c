@@ -38,9 +38,6 @@ struct inbound_control Inbound_Control = {
 	.w1_entry_mark = 0,
 	.w1_file_descriptor = -1,
 	.w1_pid = 0,
-#if OW_MT
-	.w1_mutex = PTHREAD_MUTEX_INITIALIZER,
-#endif /* OW_MT */
 #endif /* OW_W1 */
 };
 
@@ -247,6 +244,7 @@ void FreeIn(struct connection_in * now)
 		DirblobClear( &(now->connin.w1.alarm) );
 #if OW_MT
 		pthread_mutex_destroy(&(Inbound_Control.w1_mutex));
+		pthread_mutex_destroy(&(Inbound_Control.w1_read_mutex));
 #endif							/* OW_MT */
 #endif							/* OW_W1 */
 		break ;

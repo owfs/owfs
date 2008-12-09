@@ -255,18 +255,18 @@ static int DS2480_big_reset(const struct parsedname *pn)
 		return -ENODEV;
 	}
 
-	// Send BREAK to reset device
-	tcsendbreak(pn->selected_connection->file_descriptor, 0);
+//	// Send BREAK to reset device
+//	tcsendbreak(pn->selected_connection->file_descriptor, 0);
 
 
-	/* Reset the bus and adapter */
-	DS2480_reset_once(pn);
+//	/* Reset the bus and adapter */
+//	DS2480_reset_once(pn);
 
 	// reset modes
 	pn->selected_connection->connin.serial.mode = ds2480b_command_mode ;
 
-	// set the baud rate to 9600. (Already set to 9600 in COM_open())
-	COM_speed(B9600, pn);
+//	// set the baud rate to 9600. (Already set to 9600 in COM_open())
+//	COM_speed(B9600, pn);
 
 	// send a break to reset the DS2480
 	COM_break(pn);
@@ -307,7 +307,7 @@ static int DS2480_big_reset(const struct parsedname *pn)
 	}
 
 	/* Apparently need to reset again to get the version number properly */
-	if ((ret = DS2480_reset(pn))) {
+	if ((ret = DS2480_reset(pn))<0) {
 		return ret;
 	}
 
@@ -392,7 +392,7 @@ static int DS2480_set_baud(const struct parsedname *pn)
 		new_baud_rate = B9600 ;
 		pn->selected_connection->connin.serial.baud = ds2480b_9600 ;
 		break ;
-}
+	}
 	send_code = CMD_CONFIG | PARMSEL_BAUDRATE | value_code;
 	expected_response = CMD_CONFIG_RESPONSE | PARMSEL_BAUDRATE | value_code;
 
@@ -439,7 +439,7 @@ static int DS2480_reset(const struct parsedname *pn)
 {
 	int ret ;
 
-	if (!pn->selected_connection->changed_bus_settings) {
+	if (pn->selected_connection->changed_bus_settings != 0) {
 		pn->selected_connection->changed_bus_settings = 0 ;
 		DS2480_set_baud(pn);	// reset paramters
 	}

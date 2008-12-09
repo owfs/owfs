@@ -90,10 +90,6 @@ int W1_detect(struct connection_in *in)
 		return -1 ;
 	}
 
-	#if OW_MT
-	pthread_mutex_init(&(Inbound_Control.w1_mutex), Mutex.pmattr);
-	#endif							/* OW_MT */
-
 	if (in->name == NULL) {
 		return -1;
 	}

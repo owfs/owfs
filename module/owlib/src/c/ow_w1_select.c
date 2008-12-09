@@ -55,6 +55,17 @@ int W1PipeSelect_timeout( int file_descriptor )
 				return -1 ;
 			}
 		} else if ( select_value == 0 ) {
+			struct timeval now ;
+			struct timeval diff ;
+			gettimeofday(&now,NULL);
+			// Set time of last read
+			pthread_mutex_lock(&Inbound_Control.w1_read_mutex) ;
+			timersub(&now,&Inbound_Control.w1_last_read,&diff);
+			pthread_mutex_unlock(&Inbound_Control.w1_read_mutex) ;
+			if ( diff.tv_sec <= Globals.timeout_w1 ) {
+				LEVEL_DEBUG("Select legal timeout -- try again\n");
+				continue ;
+			}
 			LEVEL_DEBUG("Select returned zero (timeout)\n");
 			return -1;
 		} else {

@@ -72,10 +72,6 @@ int COM_open(struct connection_in *in)
 
 void COM_close(struct connection_in *in)
 {
-	if (in == NULL) {
-		return;
-	}
-
 	// restore tty settings
 	if (in->file_descriptor > -1) {
 		LEVEL_DEBUG("COM_close: flush\n");
@@ -92,26 +88,17 @@ void COM_close(struct connection_in *in)
 
 void COM_flush(const struct parsedname *pn)
 {
-	if (!pn || !pn->selected_connection || (pn->selected_connection->file_descriptor < 0)) {
-		return;
-	}
 	tcflush(pn->selected_connection->file_descriptor, TCIOFLUSH);
 }
 
 void COM_break(const struct parsedname *pn)
 {
-	if (!pn || !pn->selected_connection || (pn->selected_connection->file_descriptor < 0)) {
-		return;
-	}
 	tcsendbreak(pn->selected_connection->file_descriptor, 0);
 }
 
 void COM_speed(speed_t new_baud, const struct parsedname *pn)
 {
 	struct termios t;
-	if (!pn || !pn->selected_connection || (pn->selected_connection->file_descriptor < 0)) {
-		return;
-	}
 
 	// read the attribute structure
 	if (tcgetattr(pn->selected_connection->file_descriptor, &t) < 0) {
@@ -126,7 +113,7 @@ void COM_speed(speed_t new_baud, const struct parsedname *pn)
 	if (tcsetattr(pn->selected_connection->file_descriptor, TCSAFLUSH, &t)
 		< 0) {
 		ERROR_CONNECT("Could not set com port attributes: %s\n", SAFESTRING(pn->selected_connection->name));
-		if (new_baud != B9600) {
+		if (new_baud != B9600) { // cannot do infinite recursion
 			COM_speed(B9600, pn);
 		}
 		return;

@@ -37,36 +37,6 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
 #include "ow_w1.h"
 #include "ow_connection.h"
 
-static struct {
-	struct nlmsghdr	nlm ;
-	struct cn_msg 	cn ;
-	struct w1_netlink_msg	w1m ;
-} nl_wait = {
-	{
-		.nlmsg_len = W1_NLM_LENGTH + W1_CN_LENGTH + W1_W1M_LENGTH,
-		.nlmsg_seq = MAKE_NL_SEQ(0,0),
-		.nlmsg_type = NLMSG_DONE,
-		.nlmsg_pid = 0,
-	} ,
-	{
-		.seq = MAKE_NL_SEQ(0,0),
-		.len = W1_W1M_LENGTH,
-		.ack = 0,
-	} ,
-	{
-		.len = 0,
-		.type = W1_MASTER_CMD,
-	} ,
-};
-static struct netlink_parse nlp_wait = {
-	&nl_wait.nlm,
-	&nl_wait.cn,
-	&nl_wait.w1m,
-	NULL,
-	NULL,
-	0,
-} ;
-
 static int W1_write_pipe( int file_descriptor, struct netlink_parse * nlp )
 {
 	int size = nlp->nlm->nlmsg_len ;
@@ -106,28 +76,25 @@ static void Dispatch_Packet( struct netlink_parse * nlp)
 {
 	int bus = NL_BUS(nlp->nlm->nlmsg_seq) ;
 	struct connection_in * in ;
-	struct connection_in * target = NULL ;
+	
+	if ( bus == 0 ) {
+		LEVEL_DEBUG("Sending this packet to root bus\n");
+		W1_write_pipe(Inbound_Control.w1_write_file_descriptor, nlp) ;
+		return ;
+	}
 	
 	CONNIN_RLOCK ;
 	for ( in = Inbound_Control.head ; in != NULL ; in = in->next ) {
 		//printf("Matching %d/%s/%s/%s/ to bus.%d %d/%s/%s/%s/\n",bus_zero,name,type,domain,now->index,now->busmode,now->connin.tcp.name,now->connin.tcp.type,now->connin.tcp.domain);
-		if ( in->busmode != bus_w1 ) {
-			continue ;
-		} else if ( in->connin.w1.id == bus ) {
-			target = in ; // defer until after pause messages
-		} else if ( in->connin.w1.awaiting_response ) {
-			LEVEL_DEBUG("Sending a pause to w1_bus_master%d\n",in->connin.w1.id);
-			W1_write_pipe(in->connin.w1.write_file_descriptor, &nlp_wait ) ;
+		if ( in->busmode == bus_w1 && in->connin.w1.id == bus ) {
+			LEVEL_DEBUG("Sending this packet to w1_bus_master%d\n",bus);
+			W1_write_pipe(in->connin.w1.write_file_descriptor, nlp) ;
+			CONNIN_RUNLOCK ;
+			return ;
 		}
 	}
 	CONNIN_RUNLOCK ;
-	if ( bus == 0 ) {
-		LEVEL_DEBUG("Sending this packet to root bus\n");
-		W1_write_pipe(Inbound_Control.w1_write_file_descriptor, nlp) ;
-	} else if ( target != NULL ) {
-		LEVEL_DEBUG("Sending this packet to w1_bus_master%d\n",bus);
-		W1_write_pipe(target->connin.w1.write_file_descriptor, nlp) ;
-	}
+	LEVEL_DEBUG("W1 netlink message for non-existent bus\n");
 }
 
 void * W1_Dispatch( void * v )

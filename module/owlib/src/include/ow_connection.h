@@ -442,8 +442,11 @@ extern struct inbound_control {
 	int w1_read_file_descriptor ; // w1 pipe
 	int w1_write_file_descriptor ; // w1 pipe
 	int w1_pid ;
+	struct timeval w1_last_read ;
+	
 #if OW_MT
 	pthread_mutex_t w1_mutex;	// mutex for w1 sequence number */
+	pthread_mutex_t w1_read_mutex;  // mutex for w1 netlink read time
 #endif /* OW_MT */
 #endif /* OW_W1 */
 } Inbound_Control ; // Single global struct -- see ow_connect.c
