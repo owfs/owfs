@@ -38,13 +38,13 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
 #include "ow_connection.h"
 
 /* If cmd is specified, msg length will be adjusted */
-int W1_send_msg( struct connection_in * in, struct w1_netlink_msg *msg, struct w1_netlink_cmd *cmd)
+int W1_send_msg( struct connection_in * in, struct w1_netlink_msg *msg, struct w1_netlink_cmd *cmd, unsigned char * data)
 {
 	struct cn_msg *cn;
 	struct w1_netlink_msg *w1m;
 	struct w1_netlink_cmd *w1c;
 	struct nlmsghdr *nlm;
-	unsigned char * data ;
+	unsigned char * pdata ;
 	int length ;
 	unsigned int seq ;
 	int bus ;
@@ -95,16 +95,17 @@ int W1_send_msg( struct connection_in * in, struct w1_netlink_msg *msg, struct w
 	w1m->len = cn->len - W1_W1M_LENGTH ;
 	if ( cmd != NULL ) {
 		w1c = (struct w1_netlink_cmd *)(w1m + 1);
-		data = (unsigned char *)(w1c + 1);
+		pdata = (unsigned char *)(w1c + 1);
 		memcpy(w1c, cmd, W1_W1C_LENGTH);
-		memcpy(data, cmd->data, length);
 	} else {
 		w1c = NULL ;
-		data = (unsigned char *)(w1m + 1);
-		memcpy(data, msg->data, length);
+		pdata = (unsigned char *)(w1m + 1);
+	}
+	if ( length > 0 ) {
+		memcpy(pdata, data, length);
 	}
 	LEVEL_DEBUG("Netlink send -----------------\n");
-	Netlink_Print( nlm, cn, w1m, w1c, data, length ) ;
+	Netlink_Print( nlm, cn, w1m, w1c, pdata, length ) ;
 
 	err = send(Inbound_Control.w1_file_descriptor, nlm, size,  0);
 	free(nlm);

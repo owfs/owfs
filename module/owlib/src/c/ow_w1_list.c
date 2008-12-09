@@ -46,7 +46,7 @@ static int w1_list_masters( void )
 	w1m.len = 0;
 	w1m.id.mst.id = 0;
 
-	return W1_send_msg( NULL, &w1m, NULL );
+	return W1_send_msg( NULL, &w1m, NULL, NULL );
 }
 
 static void w1_parse_master_list(struct netlink_parse * nlp)
