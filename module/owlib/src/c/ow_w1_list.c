@@ -90,7 +90,7 @@ int W1NLList( void )
 				case -EAGAIN:
 					break ;
 				case 0:
-					if ( nlp.nlm->nlmsg_seq != seq || nlp.w1m->type != W1_LIST_MASTERS ) {
+					if ( nlp.nlm->nlmsg_seq != (unsigned int) seq || nlp.w1m->type != W1_LIST_MASTERS ) {
 						LEVEL_DEBUG("Non-matching netlink packet\n");
 						continue ;
 					}
