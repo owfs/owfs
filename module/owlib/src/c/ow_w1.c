@@ -55,7 +55,7 @@ static void W1_setroutines(struct connection_in *in)
 	in->iroutines.transaction = NULL;
 	// Directory obtained in a single gulp (W1_LIST_SLAVES)
 	// Bundle transactions
-	// 
+	//
 	in->iroutines.flags = ADAP_FLAG_dirgulp | ADAP_FLAG_bundle | ADAP_FLAG_dir_auto_reset;
 	in->bundling_length = W1_FIFO_SIZE;	// arbitrary number
 }
@@ -99,11 +99,26 @@ int W1_detect(struct connection_in *in)
 	return 0;
 }
 
+/* Send blindly, no response expected */
+static int w1_send_reset( const struct parsedname *pn )
+{
+    struct w1_netlink_msg w1m;
+    struct w1_netlink_cmd w1c;
+
+    memset(&w1m, 0, W1_W1M_LENGTH);
+    w1m.type = W1_MASTER_CMD;
+    w1m.id.mst.id = pn->selected_connection->connin.w1.id ;
+
+    memset(&w1c, 0, W1_W1C_LENGTH);
+    w1c.cmd = W1_CMD_RESET ;
+    w1c.len = 0 ;
+
+    return W1_send_msg( pn->selected_connection, &w1m, &w1c, NULL );
+}
+
 static int W1_reset(const struct parsedname *pn)
 {
-	// w1 doesn't use an explicit reset
-	(void) pn ;
-	return -ENOTSUP ;
+    return w1_send_reset(pn) ? -EIO : BUS_RESET_OK ;
 }
 
 static int w1_send_search( BYTE search, const struct parsedname *pn )
@@ -153,7 +168,7 @@ static int W1_directory(BYTE search, struct dirblob *db, const struct parsedname
 		if ( nlp.cn->ack == 0 ) {
 			break ;
 		}
-	} 
+	}
 	pn->selected_connection->connin.w1.awaiting_response = 0 ;
 	return 0;
 }
@@ -193,11 +208,11 @@ static int W1_next_both(struct device_search *ds, const struct parsedname *pn)
 static int sendback(int seq, BYTE * resp, const size_t size, const struct parsedname *pn)
 {
 	int ret = -EINVAL ;
-	
+
 	if ( seq < 0 ) {
 		return -EIO ;
 	}
-	
+
 	while ( W1PipeSelect_timeout(pn->selected_connection->connin.w1.read_file_descriptor)  ==0 ) {
 		struct netlink_parse nlp ;
 		if ( Get_and_Parse_Pipe( pn->selected_connection->connin.w1.read_file_descriptor, &nlp ) != 0 ) {
@@ -221,15 +236,15 @@ static int w1_send_selecttouch( const BYTE * data, size_t size, const struct par
 {
 	struct w1_netlink_msg w1m;
 	struct w1_netlink_cmd w1c;
-	
+
 	memset(&w1m, 0, W1_W1M_LENGTH);
 	w1m.type = W1_SLAVE_CMD;
 	memcpy( w1m.id.id, pn->sn, 8) ;
-	
+
 	memset(&w1c, 0, W1_W1C_LENGTH);
 	w1c.cmd = W1_CMD_TOUCH ;
 	w1c.len = size ;
-	
+
 	return W1_send_msg( pn->selected_connection, &w1m, &w1c, data );
 }
 
@@ -246,11 +261,11 @@ static int w1_send_touch( const BYTE * data, size_t size, const struct parsednam
 {
 	struct w1_netlink_msg w1m;
 	struct w1_netlink_cmd w1c;
-	
+
 	memset(&w1m, 0, W1_W1M_LENGTH);
 	w1m.type = W1_MASTER_CMD;
 	w1m.id.mst.id = pn->selected_connection->connin.w1.id ;
-	
+
 	memset(&w1c, 0, W1_W1C_LENGTH);
 	w1c.cmd = W1_CMD_TOUCH ;
 	w1c.len = size ;
