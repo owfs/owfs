@@ -274,7 +274,6 @@ static void W1_close(struct connection_in *in)
 	DirblobClear(&(in->connin.w1.alarm));
 	Test_and_Close( &(in->connin.w1.read_file_descriptor) );
 	Test_and_Close( &(in->connin.w1.write_file_descriptor) );
-	FreeClientAddr(in);
 }
 
 #endif							/* OW_W1 */
