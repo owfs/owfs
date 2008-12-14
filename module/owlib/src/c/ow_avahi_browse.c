@@ -12,6 +12,10 @@ See the header file: ow.h for full attribution
 #include <config.h>
 #include "owfs_config.h"
 
+#ifdef HAVE_STDLIB_H
+#include "stdlib.h"  // need this for NULL
+#endif
+
 #if OW_ZERO
 
 #include "ow_avahi.h"
