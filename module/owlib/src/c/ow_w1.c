@@ -31,13 +31,10 @@ struct toW1 {
 //static void byteprint( const BYTE * b, int size ) ;
 static int W1_reset(const struct parsedname *pn);
 static int W1_next_both(struct device_search *ds, const struct parsedname *pn);
-static int sendback(int seq, BYTE * resp, const size_t size, const struct parsedname *pn) ;
 static int W1_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 static int W1_select_and_sendback(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
-static int W1_sendback_block(const BYTE * data, BYTE * resp, const size_t size, int also_address, const struct parsedname *pn);
 static void W1_setroutines(struct connection_in *in);
 static void W1_close(struct connection_in *in);
-static int W1_directory(BYTE search, struct dirblob *db, const struct parsedname *pn);
 
 static void W1_setroutines(struct connection_in *in)
 {
@@ -75,8 +72,6 @@ int W1_detect(struct connection_in *in)
 	/* Initialize dir-at-once structures */
 	DirblobInit(&(in->connin.w1.main));
 	DirblobInit(&(in->connin.w1.alarm));
-
-	in->connin.w1.awaiting_response = 0 ; // start out with no expectations.
 
 	if ( pipe( pipe_fd ) == 0 ) {
 		in->connin.w1.read_file_descriptor = pipe_fd[0] ;
@@ -118,7 +113,7 @@ static int w1_send_reset( const struct parsedname *pn )
 
 static int W1_reset(const struct parsedname *pn)
 {
-    return w1_send_reset(pn) ? -EIO : BUS_RESET_OK ;
+	return W1_Process_Response( NULL, w1_send_reset(pn), NULL, pn ) == nrs_complete ? BUS_RESET_OK : -EIO ;
 }
 
 static int w1_send_search( BYTE search, const struct parsedname *pn )
@@ -136,58 +131,29 @@ static int w1_send_search( BYTE search, const struct parsedname *pn )
 
 	return W1_send_msg( pn->selected_connection, &w1m, &w1c, NULL );
 }
-
-static int W1_directory(BYTE search, struct dirblob *db, const struct parsedname *pn)
+	
+static void search_callback( struct netlink_parse * nlp, void * v, const struct parsedname * pn )
 {
-	int seq ;
-	int ret ;
-
-	DirblobClear(db);
-	seq = w1_send_search( search, pn ) ;
-	if ( seq < 0 ) {
-		return -EIO ;
+	int i ;
+	struct dirblob *db = v ;
+	(void) pn ;
+	for ( i = 0 ; i < nlp->w1c->len ; i += 8 ) {
+		DirblobAdd(&nlp->data[i], db);
 	}
-
-	while ( W1PipeSelect_timeout(pn->selected_connection->connin.w1.read_file_descriptor)  ==0 ) {
-		struct netlink_parse nlp ;
-		int i ;
-		if ( Get_and_Parse_Pipe( pn->selected_connection->connin.w1.read_file_descriptor, &nlp ) != 0 ) {
-			LEVEL_DEBUG("Error reading pipe for w1_bus_master%d\n",pn->selected_connection->connin.w1.id);
-			ret = -EIO ;
-			break ;
-		}
-		if ( NL_SEQ(nlp.nlm->nlmsg_seq) != (unsigned int) seq ) {
-			LEVEL_DEBUG("Netlink sequence number out of order\n");
-			free(nlp.nlm) ;
-			continue ;
-		}
-		for ( i = 0 ; i < nlp.w1c->len ; i += 8 ) {
-			DirblobAdd(&nlp.data[i], db);
-		}
-		free(nlp.nlm) ;
-		if ( nlp.cn->ack == 0 ) {
-			break ;
-		}
-	}
-	pn->selected_connection->connin.w1.awaiting_response = 0 ;
-	return 0;
 }
 
 static int W1_next_both(struct device_search *ds, const struct parsedname *pn)
 {
 	struct dirblob *db = (ds->search == _1W_CONDITIONAL_SEARCH_ROM) ?
 		&(pn->selected_connection->connin.w1.alarm) : &(pn->selected_connection->connin.w1.main);
-	int ret = 0;
+	int ret ;
 
-	if (!pn->selected_connection->AnyDevices) {
-		ds->LastDevice = 1;
-	}
 	if (ds->LastDevice) {
 		return -ENODEV;
 	}
 	if (++(ds->index) == 0) {
-		if (W1_directory(ds->search, db, pn)) {
-			return -EIO;
+		if ( W1_Process_Response( search_callback, w1_send_search(ds->search,pn), db, pn ) != nrs_complete) {
+			return -EIO ;
 		}
 	}
 	ret = DirblobGet(ds->index, ds->sn, db);
@@ -203,33 +169,6 @@ static int W1_next_both(struct device_search *ds, const struct parsedname *pn)
 		break;
 	}
 	return ret;
-}
-
-static int sendback(int seq, BYTE * resp, const size_t size, const struct parsedname *pn)
-{
-	int ret = -EINVAL ;
-
-	if ( seq < 0 ) {
-		return -EIO ;
-	}
-
-	while ( W1PipeSelect_timeout(pn->selected_connection->connin.w1.read_file_descriptor)  ==0 ) {
-		struct netlink_parse nlp ;
-		if ( Get_and_Parse_Pipe( pn->selected_connection->connin.w1.read_file_descriptor, &nlp ) != 0 ) {
-			LEVEL_DEBUG("Error reading pipe for w1_bus_master%d\n",pn->selected_connection->connin.w1.id);
-			ret  =-EIO ;
-			break ;
-		}
-		if ( NL_SEQ(nlp.nlm->nlmsg_seq) != (unsigned int) seq ) {
-			LEVEL_DEBUG("Netlink sequence number out of order\n");
-		} else if ( nlp.w1c->len == size ) {
-			memcpy(resp, nlp.w1c->data, size ) ;
-			ret = 0 ;
-		}
-		free(nlp.nlm) ;
-	}
-	pn->selected_connection->connin.w1.awaiting_response = 0 ;
-	return ret ;
 }
 
 static int w1_send_selecttouch( const BYTE * data, size_t size, const struct parsedname *pn )
@@ -248,13 +187,19 @@ static int w1_send_selecttouch( const BYTE * data, size_t size, const struct par
 	return W1_send_msg( pn->selected_connection, &w1m, &w1c, data );
 }
 
+static void touch( struct netlink_parse * nlp, void * v, const struct parsedname * pn )
+{
+	(void) pn ;
+	memcpy( v, nlp->data, nlp->data_size ) ;
+}
+
 // Reset, select, and read/write data
 /* return 0=good
 sendout_data, readin
 */
 static int W1_select_and_sendback(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
 {
-	return sendback( w1_send_selecttouch(data,size,pn), resp, size, pn) ;
+	return W1_Process_Response( touch, w1_send_selecttouch(data,size,pn), resp, pn)==nrs_complete ? 0 : -EIO ;
 }
 
 static int w1_send_touch( const BYTE * data, size_t size, const struct parsedname *pn )
@@ -280,7 +225,7 @@ sendout_data, readin
 */
 static int W1_sendback_data(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
 {
-	return sendback( w1_send_touch(data,size,pn), resp, size, pn) ;
+	return W1_Process_Response( touch, w1_send_touch(data,size,pn), resp, pn)==nrs_complete ? 0 : -EIO ;
 }
 
 static void W1_close(struct connection_in *in)
