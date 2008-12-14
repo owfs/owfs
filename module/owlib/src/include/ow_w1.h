@@ -23,7 +23,15 @@ Much thanks to Evgeniy Polyakov
 #define W1_W1M_LENGTH	12
 #define W1_W1C_LENGTH	4
 
+enum Netlink_Read_Status {
+	nrs_complete = 0 ,
+	nrs_bad_send,
+	nrs_nodev,
+	nrs_timeout,
+} ;
+
 struct connection_in ;
+struct parsedname ;
 
 int w1_bind( void ) ;
 void w1_unbind( void ) ;
@@ -58,6 +66,7 @@ void Netlink_Parse_Destroy( struct netlink_parse * nlp ) ;
 int Netlink_Parse_Get( struct netlink_parse * nlp ) ;
 int Get_and_Parse_Pipe( int file_descriptor, struct netlink_parse * nlp ) ;
 void Netlink_Print( struct nlmsghdr * nlm, struct cn_msg * cn, struct w1_netlink_msg * w1m, struct w1_netlink_cmd * w1c, unsigned char * data, int length ) ;
+enum Netlink_Read_Status W1_Process_Response( void (* nrs_callback)( struct netlink_parse * nlp, void  *v, const struct parsedname * pn), int seq, void * v, const struct parsedname * pn ) ;
 
 #endif 	/* OW_W1_H */
 #endif /* OW_W1 */

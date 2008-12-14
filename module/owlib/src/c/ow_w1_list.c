@@ -59,8 +59,10 @@ static void w1_parse_master_list(struct netlink_parse * nlp)
 	}
 }
 
-static void w1_masters(struct netlink_parse * nlp)
+static void w1_masters(struct netlink_parse * nlp, void * v, const struct parsedname * pn)
 {
+	(void) pn ;
+	(void) v ;
 	switch (nlp->w1m->type) {
 		case W1_LIST_MASTERS:
 			w1_parse_master_list( nlp );
@@ -73,41 +75,7 @@ static void w1_masters(struct netlink_parse * nlp)
 
 int W1NLList( void )
 {
-	int repeat_loop = 1 ;
-	int seq = w1_list_masters() ;
-
-	if  (seq < 0 ) {
-		LEVEL_CONNECT("Couldn't send the W1_LIST_MASTERS request\n");
-		return seq ;
-	}
-
-	while (repeat_loop)
-	{
-		if ( W1PipeSelect_timeout(Inbound_Control.w1_read_file_descriptor) == 0 ) {
-			struct netlink_parse nlp ;
-
-			switch ( Get_and_Parse_Pipe( Inbound_Control.w1_read_file_descriptor, &nlp ) ) {
-				case -EAGAIN:
-					break ;
-				case 0:
-					if ( nlp.nlm->nlmsg_seq != (unsigned int) seq || nlp.w1m->type != W1_LIST_MASTERS ) {
-						LEVEL_DEBUG("Non-matching netlink packet\n");
-						continue ;
-					}
-					w1_masters( &nlp );
-					repeat_loop = nlp.cn->ack ;
-					Netlink_Parse_Destroy(&nlp) ;
-					break ;
-				default:
-					LEVEL_DEBUG("Error parsing LIST_MASTERS pipe-d netlink packet\n");
-					return  1;
-			}
-		} else {
-			// No responses -- timeout  --bad w1 version or not loaded or no masters
-			return 1 ;
-		}
-	}
-	return 0;
+	return W1_Process_Response( w1_masters, w1_list_masters(), NULL, NULL )==nrs_complete ? 0 : 1 ;
 }
 
 #endif /* OW_W1 */

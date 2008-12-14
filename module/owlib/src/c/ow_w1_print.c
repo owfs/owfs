@@ -106,6 +106,7 @@ static void W1C_print( struct w1_netlink_cmd * w1c )
 		printcase( W1_CMD_SEARCH );
 		printcase( W1_CMD_ALARM_SEARCH );
 		printcase( W1_CMD_TOUCH );
+		printcase( W1_CMD_RESET );
 		default:
 			break ;
 	}

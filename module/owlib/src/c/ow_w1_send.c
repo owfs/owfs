@@ -86,7 +86,7 @@ int W1_send_msg( struct connection_in * in, struct w1_netlink_msg *msg, struct w
 	cn->id.idx = CN_W1_IDX;
 	cn->id.val = CN_W1_VAL;
 	cn->seq = nlm->nlmsg_seq;
-	cn->ack = 0;
+	cn->ack = cn->seq; // intentionally non-zero ;
 	cn->flags = 0 ;
 	cn->len = size - W1_NLM_LENGTH - W1_CN_LENGTH ;
 
@@ -112,9 +112,6 @@ int W1_send_msg( struct connection_in * in, struct w1_netlink_msg *msg, struct w
 	if (err == -1) {
 		ERROR_CONNECT("Failed to send W1_LIST_MASTERS\n");
 		return -1 ;
-	}
-	if ( in ) {
-		in->connin.w1.awaiting_response = 1 ;
 	}
 	return seq;
 }

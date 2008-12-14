@@ -189,4 +189,50 @@ static void Netlink_Parse_Show( struct netlink_parse * nlp )
 	Netlink_Print( nlp->nlm, nlp->cn, nlp->w1m, nlp->w1c, nlp->data, nlp->data_size ) ;
 }
 
+enum Netlink_Read_Status W1_Process_Response( void (* nrs_callback)( struct netlink_parse * nlp, void * v, const struct parsedname * pn), int seq, void * v, const struct parsedname * pn )
+{
+	int file_descriptor ;
+	int bus ;
+
+	if ( seq < 0 ) {
+		return nrs_bad_send ;
+	}
+
+	if ( pn == NULL ) {
+		file_descriptor = Inbound_Control.w1_read_file_descriptor ;
+		bus = 0 ;
+	} else {
+		file_descriptor = pn->selected_connection->connin.w1.read_file_descriptor ;
+		bus = pn->selected_connection->connin.w1.id ;
+	}
+
+	while ( W1PipeSelect_timeout(file_descriptor)  == 0 ) {
+		struct netlink_parse nlp ;
+		if ( Get_and_Parse_Pipe( file_descriptor, &nlp ) != 0 ) {
+			LEVEL_DEBUG("Error reading pipe for w1_bus_master%d\n",bus);
+			return -EIO ;
+			break ;
+		}
+		if ( NL_SEQ(nlp.nlm->nlmsg_seq) != (unsigned int) seq ) {
+			LEVEL_DEBUG("Netlink sequence number out of order\n");
+			free(nlp.nlm) ;
+			continue ;
+		}
+		if ( nlp.w1m->status ) {
+			free(nlp.nlm) ;
+			return nrs_nodev ;
+		}
+		if ( nrs_callback == NULL ) { // status message
+			free(nlp.nlm) ;
+			return nrs_complete ;
+		}
+		nrs_callback( &nlp, v, pn ) ;
+		free(nlp.nlm) ;
+		if ( nlp.cn->ack == 0 ) {
+			nrs_callback = NULL ; // now look for status message
+		}
+	}
+	return nrs_timeout ;
+}
+
 #endif /* OW_W1 */

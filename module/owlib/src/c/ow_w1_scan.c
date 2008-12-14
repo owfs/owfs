@@ -38,7 +38,7 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
 
 static void w1_masters(struct netlink_parse * nlp)
 {
-    if ( nlp->nlm->nlmsg_pid != 0 ) {
+	if ( nlp->nlm->nlmsg_pid != 0 ) {
 		LEVEL_DEBUG("Netlink packet PID not from kernel\n");
 		return ;
 	}
