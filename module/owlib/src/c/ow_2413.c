@@ -61,7 +61,7 @@ READ_FUNCTION(FS_r_latch);
 struct aggregate A2413 = { 2, ag_letters, ag_aggregate, };
 struct filetype DS2413[] = {
 	F_STANDARD,
-  {"piostate", PROPERTY_LENGTH_HIDDEN, NULL, ft_unsigned, fc_volatile, FS_r_piostate, FS_w_piostate, {v:NULL}, },
+	{"piostate", PROPERTY_LENGTH_HIDDEN, NULL, ft_unsigned, fc_volatile, FS_r_piostate, NO_WRITE_FUNCTION, {v:NULL}, },
   {"PIO", PROPERTY_LENGTH_BITFIELD, &A2413, ft_bitfield, fc_alias, FS_r_pio, FS_w_pio, {v:NULL},},
   {"sensed", PROPERTY_LENGTH_BITFIELD, &A2413, ft_bitfield, fc_alias, FS_sense, NO_WRITE_FUNCTION, {v:NULL},},
   {"latch", PROPERTY_LENGTH_BITFIELD, &A2413, ft_bitfield, fc_alias, FS_r_latch, FS_w_pio, {v:NULL},},
@@ -101,26 +101,6 @@ static int FS_r_piostate(struct one_wire_query *owq)
 	return 0 ;
 }
 
-/*
-Write the latch state
-*/
-static int FS_w_piostate(struct one_wire_query *owq)
-{
-	/* surrogate property
-	bit 0 PIOA pin state
-	bit 1 PIOA latch state
-	bit 2 PIOB pin state
-	bit 3 PIOB latch state
-	*/
-	BYTE piostate = LATCH_state( OWQ_U(owq) ) ;
-
-	if ( OW_write( piostate, PN(owq) ) ) {
-		return -EINVAL ;
-	}
-
-	return 0 ;
-}
-
 /* 2413 switch */
 /* complement of sense */
 /* bits 0 and 2 */
@@ -147,7 +127,7 @@ static int FS_sense(struct one_wire_query *owq)
 	if ( FS_r_sibling_U( &piostate, "piostate", owq ) ) {
 		return -EINVAL ;
 	}
-
+	
 	// bits 0->0 and 2->1
 	OWQ_U(owq) = SENSED_state( piostate );
 
@@ -174,13 +154,9 @@ static int FS_r_latch(struct one_wire_query *owq)
 static int FS_w_pio(struct one_wire_query *owq)
 {
 	/* mask and reverse bits */
-	UINT piostate = LATCH_encode(OWQ_U(owq)) ;
+	UINT pio = (OWQ_U(owq)^0x03) & 0x03 ;
 
-	if ( FS_w_sibling_bitwork( piostate^0x03, _1W_2413_LATCH_MASK, "piostate", owq) ) {
-		return -EINVAL;
-	}
-
-	return 0;
+	return OW_write( pio, PN(owq) ) ? -EINVAL : 0 ;
 }
 
 /* read status byte */
