@@ -114,7 +114,7 @@ void * W1_Dispatch( void * v )
 			}
 		}
 	}
-	return 0;
+	return NULL;
 }
 
 #endif /* OW_W1 */

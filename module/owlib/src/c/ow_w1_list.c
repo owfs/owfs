@@ -73,9 +73,9 @@ static void w1_masters(struct netlink_parse * nlp, void * v, const struct parsed
 	}
 }
 
-int W1NLList( void )
+enum Netlink_Read_Status W1NLList( void )
 {
-	return W1_Process_Response( w1_masters, w1_list_masters(), NULL, NULL )==nrs_complete ? 0 : 1 ;
+	return W1_Process_Response( w1_masters, w1_list_masters(), NULL, NULL ) ;
 }
 
 #endif /* OW_W1 */

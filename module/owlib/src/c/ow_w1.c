@@ -152,6 +152,7 @@ static int W1_next_both(struct device_search *ds, const struct parsedname *pn)
 		return -ENODEV;
 	}
 	if (++(ds->index) == 0) {
+		DirblobClear(db);
 		if ( W1_Process_Response( search_callback, w1_send_search(ds->search,pn), db, pn ) != nrs_complete) {
 			return -EIO ;
 		}
@@ -187,10 +188,19 @@ static int w1_send_selecttouch( const BYTE * data, size_t size, const struct par
 	return W1_send_msg( pn->selected_connection, &w1m, &w1c, data );
 }
 
+struct touch_struct {
+	BYTE * resp ;
+	size_t size ;
+} ;
+
 static void touch( struct netlink_parse * nlp, void * v, const struct parsedname * pn )
 {
 	(void) pn ;
-	memcpy( v, nlp->data, nlp->data_size ) ;
+	struct touch_struct * ts = v ;
+	if ( nlp->data == NULL || ts->size != nlp->data_size ) {
+		return ;
+	}
+	memcpy( ts->resp, nlp->data, nlp->data_size ) ;
 }
 
 // Reset, select, and read/write data
@@ -199,7 +209,8 @@ sendout_data, readin
 */
 static int W1_select_and_sendback(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
 {
-	return W1_Process_Response( touch, w1_send_selecttouch(data,size,pn), resp, pn)==nrs_complete ? 0 : -EIO ;
+	struct touch_struct ts = { resp, size, } ;
+	return W1_Process_Response( touch, w1_send_selecttouch(data,size,pn), &ts, pn)==nrs_complete ? 0 : -EIO ;
 }
 
 static int w1_send_touch( const BYTE * data, size_t size, const struct parsedname *pn )
@@ -225,7 +236,8 @@ sendout_data, readin
 */
 static int W1_sendback_data(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
 {
-	return W1_Process_Response( touch, w1_send_touch(data,size,pn), resp, pn)==nrs_complete ? 0 : -EIO ;
+	struct touch_struct ts = { resp, size, } ;
+	return W1_Process_Response( touch, w1_send_touch(data,size,pn), &ts, pn)==nrs_complete ? 0 : -EIO ;
 }
 
 static void W1_close(struct connection_in *in)

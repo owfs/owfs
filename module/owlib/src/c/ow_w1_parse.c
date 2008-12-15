@@ -228,9 +228,15 @@ enum Netlink_Read_Status W1_Process_Response( void (* nrs_callback)( struct netl
 		}
 		nrs_callback( &nlp, v, pn ) ;
 		free(nlp.nlm) ;
-		if ( nlp.cn->ack == 0 ) {
-			nrs_callback = NULL ; // now look for status message
+		if ( nlp.cn->ack != 0 ) {
+			if ( nlp.w1m->type == W1_LIST_MASTERS ) {
+				continue ; // look for more data
+			}
+			if ( nlp.w1c && (nlp.w1c->cmd==W1_CMD_SEARCH || nlp.w1c->cmd==W1_CMD_ALARM_SEARCH) ) {
+				continue ; // look for more data
+			}
 		}
+		nrs_callback = NULL ; // now look for status message
 	}
 	return nrs_timeout ;
 }

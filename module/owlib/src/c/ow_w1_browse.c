@@ -90,6 +90,8 @@ int W1_Browse( void )
     pthread_mutex_init(&(Inbound_Control.w1_mutex), Mutex.pmattr);
     pthread_mutex_init(&(Inbound_Control.w1_read_mutex), Mutex.pmattr);
     gettimeofday(&Inbound_Control.w1_last_read,NULL);
+    ++Inbound_Control.w1_last_read.tv_sec ;
+    
     if ( Inbound_Control.w1_file_descriptor == -1 && w1_bind() == -1 ) {
         ERROR_DEBUG("Netlink problem -- are you root?\n");
         return -1 ;
@@ -100,7 +102,7 @@ int W1_Browse( void )
         return -1 ;
     }
 
-    if ( W1NLList() < 0 ) {
+    if ( W1NLList() != nrs_complete ) {
  		LEVEL_DEBUG("Drop down to sysfs w1 list\n");
 		W1SysList("/sys/bus/w1/devices") ;
 	}

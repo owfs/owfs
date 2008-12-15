@@ -79,6 +79,7 @@ int W1NLScan( void )
 					Netlink_Parse_Destroy(&nlp) ;
 					break ;
 				default:
+					LEVEL_CONNECT("Fatal error scanning W1 bus\n");
 					return  1;
 			}
 		}
