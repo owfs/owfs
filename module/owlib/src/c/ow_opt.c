@@ -37,6 +37,7 @@ static int OW_ArgSerial(const char *arg);
 static int OW_ArgParallel(const char *arg);
 static int OW_ArgI2C(const char *arg);
 static int OW_ArgHA7(const char *arg);
+static int OW_ArgHA7E(const char *arg);
 static int OW_ArgEtherWeather(const char *arg);
 static int OW_ArgFake(const char *arg);
 static int OW_ArgTester(const char *arg);
@@ -114,10 +115,13 @@ const struct option owopts_long[] = {
 	{"ha4b", required_argument, NULL, e_ha4b},
 	{"HA5", required_argument, NULL, e_ha5},
 	{"ha5", required_argument, NULL, e_ha5},
-	{"ha7e", required_argument, NULL, e_ha7e},
-	{"HA7e", required_argument, NULL, e_ha7e},
-	{"HA7E", required_argument, NULL, e_ha7e},
-	{"TESTER", required_argument, NULL, e_tester},	/* Tester */
+    {"ha7e", required_argument, NULL, e_ha7e},
+    {"HA7e", required_argument, NULL, e_ha7e},
+    {"HA7E", required_argument, NULL, e_ha7e},
+    {"ha7s", required_argument, NULL, e_ha7e},
+    {"HA7s", required_argument, NULL, e_ha7e},
+    {"HA7S", required_argument, NULL, e_ha7e},
+    {"TESTER", required_argument, NULL, e_tester},	/* Tester */
 	{"Tester", required_argument, NULL, e_tester},	/* Tester */
 	{"tester", required_argument, NULL, e_tester},	/* Tester */
 	{"etherweather", required_argument, NULL, e_etherweather},	/* EtherWeather */
@@ -148,7 +152,7 @@ const struct option owopts_long[] = {
 	{"serial_standard", no_argument, &Globals.serial_flextime, 0},
 	{"serial_stdtime", no_argument, &Globals.serial_flextime, 0},
 	{"serial_std", no_argument, &Globals.serial_flextime, 0},
-	
+
 	{"timeout_volatile", required_argument, NULL, e_timeout_volatile,},	// timeout -- changing cached values
 	{"timeout_stable", required_argument, NULL, e_timeout_stable,},	// timeout -- unchanging cached values
 	{"timeout_directory", required_argument, NULL, e_timeout_directory,},	// timeout -- direcory cached values
@@ -616,9 +620,11 @@ int owopt(const int option_char, const char *arg)
 		break;
 	case e_i2c:
 		return OW_ArgI2C(arg);
-	case e_ha7:
-		return OW_ArgHA7(arg);
-	case e_fake:
+    case e_ha7:
+        return OW_ArgHA7(arg);
+    case e_ha7e:
+        return OW_ArgHA7E(arg);
+    case e_fake:
 		return OW_ArgFake(arg);
 	case e_link:
 		return OW_ArgLink(arg);
@@ -794,20 +800,31 @@ static int OW_ArgPassive(char *adapter_type_name, const char *arg)
 	}
 	in->name = strdup(arg);
 	in->busmode = bus_passive;
-	// special set name of adapter here 
+	// special set name of adapter here
 	in->adapter_name = adapter_type_name;
 	return 0;
 }
 
 static int OW_ArgLink(const char *arg)
 {
-	struct connection_in *in = NewIn(NULL);
-	if (in == NULL) {
-		return 1;
-	}
-	in->name = strdup(arg);
-	in->busmode = (arg[0] == '/') ? bus_link : bus_elink;
-	return 0;
+    struct connection_in *in = NewIn(NULL);
+    if (in == NULL) {
+        return 1;
+    }
+    in->name = strdup(arg);
+    in->busmode = (arg[0] == '/') ? bus_link : bus_elink;
+    return 0;
+}
+
+static int OW_ArgHA7E(const char *arg)
+{
+    struct connection_in *in = NewIn(NULL);
+    if (in == NULL) {
+        return 1;
+    }
+    in->name = strdup(arg);
+    in->busmode = bus_ha7e ;
+    return 0;
 }
 
 static int OW_ArgParallel(const char *arg)

@@ -104,15 +104,21 @@ static void SetupInboundConnections(void)
 #endif							/* OW_I2C */
 			break;
 
-		case bus_ha7net:
+            case bus_ha7net:
 #if OW_HA7
-			if ((ret = HA7_detect(in))) {
-				LEVEL_CONNECT("Cannot detect an HA7net server on %s\n", in->name);
-			}
-#endif							/* OW_HA7 */
-			break;
+                if ((ret = HA7_detect(in))) {
+                    LEVEL_CONNECT("Cannot detect an HA7net server on %s\n", in->name);
+                }
+#endif                          /* OW_HA7 */
+                break;
 
-		case bus_parallel:
+            case bus_ha7e:
+                if ((ret = HA7E_detect(in))) {
+                    LEVEL_CONNECT("Cannot detect an HA7E/HA7S on %s\n", in->name);
+                }
+                break;
+
+            case bus_parallel:
 #if OW_PARPORT
 			if ((ret = DS1410_detect(in))) {
 				LEVEL_DEFAULT("Cannot detect the DS1410E parallel adapter\n");

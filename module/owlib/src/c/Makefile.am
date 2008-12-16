@@ -62,6 +62,7 @@ OWLIB_SOURCE = ow_dl.c           \
                ow_eprom_write.c  \
                ow_etherweather.c \
                ow_ha7.c          \
+               ow_ha7e.c         \
                ow_fake.c         \
                ow_fakeread.c     \
                ow_filelength.c   \

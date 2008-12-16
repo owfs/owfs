@@ -191,7 +191,7 @@ enum ds2480b_baud {
 	ds2480b_pol_57600,
 	ds2480b_pol_115200,
 } ;
-	
+
 struct connin_serial {
 	enum ds2480b_mode mode ;
 	enum ds2480b_baud baud ;
@@ -263,10 +263,17 @@ struct connin_etherweather {
 };
 
 struct connin_link {
-	struct connin_tcp tcp;		// mirror connin.server
-	struct termios oldSerialTio;	/*old serial port settings */
-	struct dirblob main;		/* main directory */
-	struct dirblob alarm;		/* alarm directory */
+    struct connin_tcp tcp;      // mirror connin.server
+    struct termios oldSerialTio;    /*old serial port settings */
+    struct dirblob main;        /* main directory */
+    struct dirblob alarm;       /* alarm directory */
+};
+
+struct connin_ha7e {
+    struct termios oldSerialTio;    /*old serial port settings */
+    unsigned char sn[8] ;       /* last address */
+    struct dirblob main;        /* main directory */
+    struct dirblob alarm;       /* alarm directory */
 };
 
 struct connin_w1 {
@@ -420,6 +427,7 @@ struct connection_in {
 		struct connin_fake fake;
 		struct connin_fake tester;
 		struct connin_ha7 ha7;
+        struct connin_ha7e ha7e ;
 		struct connin_etherweather etherweather;
 		struct connin_w1 w1;
 	} connin;
@@ -442,7 +450,7 @@ extern struct inbound_control {
 	int w1_write_file_descriptor ; // w1 pipe
 	int w1_pid ;
 	struct timeval w1_last_read ;
-	
+
 #if OW_MT
 	pthread_mutex_t w1_mutex;	// mutex for w1 sequence number */
 	pthread_mutex_t w1_read_mutex;  // mutex for w1 netlink read time
@@ -563,6 +571,7 @@ int DS1410_detect(struct connection_in *in);
 
 int DS9097_detect(struct connection_in *in);
 int LINK_detect(struct connection_in *in);
+int HA7E_detect(struct connection_in *in);
 int BadAdapter_detect(struct connection_in *in);
 int LINKE_detect(struct connection_in *in);
 int Fake_detect(struct connection_in *in);
