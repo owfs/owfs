@@ -22,17 +22,6 @@ struct HA7E_id {
 	enum adapter_type Adapter;
 };
 
-// Steven Bauer added code for the VM links
-static struct HA7E_id HA7E_id_tbl[] = {
-	{"1.0", "HA7E v1.0", adapter_HA7E_10},
-	{"1.1", "HA7E v1.1", adapter_HA7E_11},
-	{"1.2", "HA7E v1.2", adapter_HA7E_12},
-	{"VM12a", "HA7E OEM v1.2a", adapter_HA7E_12},
-	{"VM12", "HA7E OEM v1.2", adapter_HA7E_12},
-	{"0", "0", 0}
-};
-
-
 //static void byteprint( const BYTE * b, int size ) ;
 static int HA7E_read(BYTE * buf, const size_t size, const struct parsedname *pn);
 static int HA7E_write(const BYTE * buf, const size_t size, const struct parsedname *pn);
@@ -80,8 +69,8 @@ int HA7E_detect(struct connection_in *in)
 	HA7E_setroutines(in);
 
 	/* Initialize dir-at-once structures */
-	DirblobInit(&(in->connin.link.main));
-	DirblobInit(&(in->connin.link.alarm));
+	DirblobInit(&(in->connin.ha7e.main));
+	DirblobInit(&(in->connin.ha7e.alarm));
 
 
 	/* Open the com port */
@@ -92,32 +81,13 @@ int HA7E_detect(struct connection_in *in)
 	// set the baud rate to 9600. (Already set to 9600 in COM_open())
 	COM_speed(B9600, &pn);
 	//COM_flush(&pn);
-	if (HA7E_reset(&pn) == BUS_RESET_OK && HA7E_write(HA7E_string(" "), 1, &pn) == 0) {
-
-		BYTE version_read_in[36] = "(none)";
-		char *version_pointer = (char *) version_read_in;
-
-		/* read the version string */
-		LEVEL_DEBUG("Checking HA7E version\n");
-
-		memset(version_read_in, 0, 36);
-		HA7E_read(version_read_in, 36, &pn);	// ignore return value -- will time out, probably
-		Debug_Bytes("Read version from link", version_read_in, 36);
+	if (HA7E_reset(&pn) == BUS_RESET_OK ) {
 
 		COM_flush(&pn);
 
-		/* Now find the dot for the version parsing */
-		if (version_pointer) {
-			int version_index;
-			for (version_index = 0; HA7E_id_tbl[version_index].verstring[0] != '0'; version_index++) {
-				if (strstr(version_pointer, HA7E_id_tbl[version_index].verstring) != NULL) {
-					LEVEL_DEBUG("Link version Found %s\n", HA7E_id_tbl[version_index].verstring);
-					in->Adapter = HA7E_id_tbl[version_index].Adapter;
-					in->adapter_name = HA7E_id_tbl[version_index].name;
-					return 0;
-				}
-			}
-		}
+        in->Adapter = adapter_HA7E ;
+		in->adapter_name = "HA7E/S";
+        return 0;
 	}
 	LEVEL_DEFAULT("HA7E detection error\n");
 	return -ENODEV;

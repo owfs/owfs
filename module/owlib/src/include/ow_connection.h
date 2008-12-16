@@ -97,6 +97,7 @@ See: http://www.iana.org/assignments/port-numbers
 #define HA7_FIFO_SIZE 128
 #define W1_FIFO_SIZE 128
 #define LINK_FIFO_SIZE UART_FIFO_SIZE
+#define HA7E_FIFO_SIZE UART_FIFO_SIZE
 #define LINKE_FIFO_SIZE 1500
 #define I2C_FIFO_SIZE 1
 
