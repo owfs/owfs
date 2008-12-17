@@ -27,7 +27,6 @@ static int HA7E_read(BYTE * buf, const size_t size, const struct parsedname *pn)
 static int HA7E_write(const BYTE * buf, const size_t size, const struct parsedname *pn);
 static int HA7E_reset(const struct parsedname *pn);
 static int HA7E_next_both(struct device_search *ds, const struct parsedname *pn);
-static int HA7E_PowerByte(const BYTE data, BYTE * resp, const UINT delay, const struct parsedname *pn);
 static int HA7E_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 static int HA7E_byte_bounce(const BYTE * out, BYTE * in, const struct parsedname *pn);
 static int HA7E_CR(const struct parsedname *pn);
@@ -40,7 +39,7 @@ static void HA7E_setroutines(struct connection_in *in)
 	in->iroutines.detect = HA7E_detect;
 	in->iroutines.reset = HA7E_reset;
 	in->iroutines.next_both = HA7E_next_both;
-	in->iroutines.PowerByte = HA7E_PowerByte;
+	in->iroutines.PowerByte = NULL;
 //    in->iroutines.ProgramPulse = ;
 	in->iroutines.sendback_data = HA7E_sendback_data;
 //    in->iroutines.sendback_bits = ;
@@ -85,9 +84,9 @@ int HA7E_detect(struct connection_in *in)
 
 		COM_flush(&pn);
 
-        in->Adapter = adapter_HA7E ;
+		in->Adapter = adapter_HA7E ;
 		in->adapter_name = "HA7E/S";
-        return 0;
+		return 0;
 	}
 	LEVEL_DEFAULT("HA7E detection error\n");
 	return -ENODEV;
@@ -95,43 +94,25 @@ int HA7E_detect(struct connection_in *in)
 
 static int HA7E_reset(const struct parsedname *pn)
 {
-	BYTE resp[5];
-	int ret;
+	BYTE resp[1];
 
 	COM_flush(pn);
 	//if (HA7E_write(HA7E_string("\rr"), 2, pn) || HA7E_read(resp, 4, pn, 1)) {
 	//Response is 3 bytes:  1 byte for code + \r\n
-	if (HA7E_write(HA7E_string("r"), 1, pn) || HA7E_read(resp, 3, pn)) {
+	if (HA7E_write("R\r", 2, pn) || HA7E_read(resp, 1, pn)) {
 		LEVEL_DEBUG("Error resetting HA7E device\n");
 		return -EIO;
 	}
 
 	switch (resp[0]) {
+		case '\r':
+			LEVEL_DEBUG("HA7E reset ok, devices Present\n");
+			return BUS_RESET_OK;
 
-	case 'P':
-		LEVEL_DEBUG("HA7E reset ok, devices Present\n");
-		ret = BUS_RESET_OK;
-		pn->selected_connection->AnyDevices = 1;
-		break;
-
-	case 'N':
-		LEVEL_DEBUG("HA7E reset ok, devices Not present\n");
-		ret = BUS_RESET_OK;
-		pn->selected_connection->AnyDevices = 0;
-		break;
-
-	case 'S':
-		LEVEL_DEBUG("HA7E reset short, Short circuit on 1-wire bus!\n");
-		ret = BUS_RESET_SHORT;
-		break;
-
-	default:
-		LEVEL_DEBUG("HA7E reset bad, Unknown HA7E response %c\n", resp[0]);
-		ret = -EIO;
-		break;
+		default:
+			LEVEL_DEBUG("HA7E reset bad, Unknown HA7E response %.2X\n", resp[0]);
+			return -EIO;
 	}
-
-	return ret;
 }
 
 static int HA7E_next_both(struct device_search *ds, const struct parsedname *pn)
@@ -200,20 +181,6 @@ static int HA7E_read(BYTE * buf, const size_t size, const struct parsedname *pn)
 static int HA7E_write(const BYTE * buf, const size_t size, const struct parsedname *pn)
 {
 	return COM_write( buf, size, pn ) ;
-}
-
-static int HA7E_PowerByte(const BYTE data, BYTE * resp, const UINT delay, const struct parsedname *pn)
-{
-
-	if (HA7E_write(HA7E_string("p"), 1, pn)
-		|| HA7E_byte_bounce(&data, resp, pn)) {
-		return -EIO;			// send just the <CR>
-	}
-	// delay
-	UT_delay(delay);
-
-	// flush the buffers
-	return HA7E_CR(pn);			// send just the <CR>
 }
 
 // DS2480_sendback_data
@@ -287,8 +254,8 @@ static int HA7E_CR(const struct parsedname *pn)
 
 static void HA7E_close(struct connection_in *in)
 {
-	DirblobClear(&(in->connin.link.main));
-	DirblobClear(&(in->connin.link.alarm));
+	DirblobClear(&(in->connin.ha7e.main));
+	DirblobClear(&(in->connin.ha7e.alarm));
 	COM_close(in);
 
 }
@@ -306,8 +273,9 @@ static void HA7E_close(struct connection_in *in)
 /************************************************************************/
 static int HA7E_directory(struct device_search *ds, struct dirblob *db, const struct parsedname *pn)
 {
-	char resp[21];
+	char resp[17];
 	BYTE sn[8];
+	char *first, *next, *current ;
 	int ret;
 
 	DirblobClear(db);
@@ -319,86 +287,43 @@ static int HA7E_directory(struct device_search *ds, struct dirblob *db, const st
 
 	// Send the configuration command and check response
 	if (ds->search == _1W_CONDITIONAL_SEARCH_ROM) {
-		if ((ret = HA7E_write(HA7E_string("tEC"), 3, pn))) {
-			return ret;
-		}
-		if ((ret = (HA7E_read(HA7E_string(resp), 5, pn)))) {
-			return ret;
-		}
-		if (strncmp(resp, ",EC", 3) != 0) {
-			LEVEL_DEBUG("Did not change to conditional search");
-			return -EIO;
-		}
-		LEVEL_DEBUG("HA7E set for conditional search\n");
+		first = "C\r" ;
+		next = "c\r" ;
 	} else {
-		if ((ret = HA7E_write(HA7E_string("tF0"), 3, pn))) {
+		first = "S\r" ;
+		next = "s\r" ;
+	}
+	current = first ;
+
+	while (1) {
+		if ((ret = HA7E_write(current, 2, pn))) {
 			return ret;
 		}
-		if ((ret = (HA7E_read(HA7E_string(resp), 5, pn)))) {
+		current = next ; // set up for next pass
+		//One needs to check the first character returned.
+		//If nothing is found, the link will timeout rather then have a quick
+		//return.  This happens when looking at the alarm directory and
+		//there are no alarms pending
+		//So we grab the first character and check it.  If not an E leave it
+		//in the resp buffer and get the rest of the response from the HA7E
+		//device
+		if ((ret = (HA7E_read(resp, 1, pn)))) {
 			return ret;
 		}
-		if (strncmp(resp, ",F0", 3) != 0) {
-			LEVEL_DEBUG("Did not change to normal search");
-			return -EIO;
+		if ( resp[0] == '\r' ) {
+			return 0 ; // end of list
 		}
-		LEVEL_DEBUG("HA7E set for normal search\n");
-	}
-
-	if ((ret = HA7E_write(HA7E_string("f"), 1, pn))) {
-		return ret;
-	}
-	//One needs to check the first character returned.
-	//If nothing is found, the link will timeout rather then have a quick
-	//return.  This happens when looking at the alarm directory and
-	//there are no alarms pending
-	//So we grab the first character and check it.  If not an E leave it
-	//in the resp buffer and get the rest of the response from the HA7E
-	//device
-
-	if ((ret = HA7E_read(HA7E_string(resp), 1, pn))) {
-		return ret;
-	}
-
-	if (resp[0] == 'E') {
-		if (ds->search == _1W_CONDITIONAL_SEARCH_ROM) {
-			LEVEL_DEBUG("HA7E returned E: No devices in alarm\n");
-			return 0;
+		if ((ret = (HA7E_read(&resp[1], 16, pn)))) {
+			return ret;
 		}
-	}
-
-	if ((ret = HA7E_read(HA7E_string((resp + 1)), 19, pn))) {
-		return ret;
-	}
-
-	// Check if we should start scanning
-	switch (resp[0]) {
-	case '-':
-	case '+':
-		if (ds->search != _1W_CONDITIONAL_SEARCH_ROM) {
-			pn->selected_connection->AnyDevices = 1;
-		}
-		break;
-	case 'N':
-		LEVEL_DEBUG("HA7E returned N: Empty bus\n");
-		if (ds->search != _1W_CONDITIONAL_SEARCH_ROM) {
-			pn->selected_connection->AnyDevices = 0;
-		}
-	case 'X':
-	default:
-		LEVEL_DEBUG("HA7E_search default case\n");
-		return -EIO;
-	}
-
-	/* Join the loop after the first query -- subsequent handled differently */
-	while ((resp[0] == '+') || (resp[0] == '-')) {
-		sn[7] = string2num(&resp[2]);
-		sn[6] = string2num(&resp[4]);
-		sn[5] = string2num(&resp[6]);
-		sn[4] = string2num(&resp[8]);
-		sn[3] = string2num(&resp[10]);
-		sn[2] = string2num(&resp[12]);
-		sn[1] = string2num(&resp[14]);
-		sn[0] = string2num(&resp[16]);
+		sn[7] = string2num(&resp[0]);
+		sn[6] = string2num(&resp[2]);
+		sn[5] = string2num(&resp[4]);
+		sn[4] = string2num(&resp[6]);
+		sn[3] = string2num(&resp[8]);
+		sn[2] = string2num(&resp[10]);
+		sn[1] = string2num(&resp[12]);
+		sn[0] = string2num(&resp[14]);
 		LEVEL_DEBUG("HA7E_directory SN found: " SNformat "\n", SNvar(sn));
 
 		// CRC check
@@ -410,22 +335,5 @@ static int HA7E_directory(struct device_search *ds, struct dirblob *db, const st
 		}
 
 		DirblobAdd(sn, db);
-
-		switch (resp[0]) {
-		case '+':
-			// get next element
-			if ((ret = HA7E_write(HA7E_string("n"), 1, pn))) {
-				return ret;
-			}
-			if ((ret = HA7E_read(HA7E_string((resp)), 20, pn))) {
-				return ret;
-			}
-			break;
-		case '-':
-			return 0;
-		default:
-			break;
-		}
 	}
-	return 0;
 }
