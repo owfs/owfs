@@ -57,11 +57,11 @@ int ToClient(int file_descriptor, struct client_msg *original_cm, char *data)
 	/* If payload==0, no extra data
 	   If payload <0, flag to show a delay message, again no data
 	 */
-	if (data && original_cm->payload > 0) {
+	if (data && (original_cm->payload > 0)) {
 		++nio;
 		//printf("ToClient <%*s>\n",original_cm->payload,data) ;
 	}
-
+	
 	cm->version = htonl(original_cm->version);
 	cm->payload = htonl(original_cm->payload);
 	cm->ret = htonl(original_cm->ret);
@@ -69,6 +69,7 @@ int ToClient(int file_descriptor, struct client_msg *original_cm, char *data)
 	cm->size = htonl(original_cm->size);
 	cm->offset = htonl(original_cm->offset);
 
+	Debug_Writev(io, nio);
 	ret = writev(file_descriptor, io, nio) != (ssize_t) (io[0].iov_len + io[1].iov_len);
 
 	return ret;
