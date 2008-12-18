@@ -22,6 +22,10 @@ $Id$
 #include <ow.h>
 #include <stdarg.h>
 
+#ifdef HAVE_SYS_UIO_H
+#include <sys/uio.h>
+#endif
+
 /* See man page for explanation */
 int log_available = 0;
 
@@ -123,7 +127,10 @@ void _Debug_Bytes(const char *title, const unsigned char *buf, int length)
 		if ((i & 0x0F) == 0) {	// devisible by 16
 			fprintf(stderr,"\n--%3.3d:",i);
 		}
-		fprintf(stderr," %.2X", buf[i]);
+		fprintf(stderr," %.2X", (unsigned char)buf[i]);
+
+		if(i >= 63) break;
+		/* Sorry for this, but I think it's better to strip off all huge 8192 packages in the debug-output. */
 	}
 
 #endif
@@ -132,6 +139,48 @@ void _Debug_Bytes(const char *title, const unsigned char *buf, int length)
 	for (i = 0; i < length; ++i) {
 		char c = buf[i];
 		fprintf(stderr,"%c", isprint(c) ? c : '.');
+		if(i >= 63) break;
+		/* Sorry for this, but I think it's better to strip off all huge 8192 packages in the debug-output. */
 	}
 	fprintf(stderr,">\n");
+}
+
+/* Purely a debugging routine -- print an arbitrary buffer of bytes */
+void _Debug_Writev(struct iovec *io, int iosz)
+{
+	/* title line */
+	int i, ionr = 0;
+	char *buf;
+	int length;
+	
+	while(ionr < iosz) {
+		buf = io[ionr].iov_base;
+		length = io[ionr].iov_len;
+		
+		fprintf(stderr,"Writev byte buffer ionr=%d/%d length=%d", ionr+1, iosz, (int) length);
+		if (length <= 0) {
+			fprintf(stderr,"\n-- Attempt to write with bad length\n");
+		}
+		if (buf == NULL) {
+			fprintf(stderr,"\n-- NULL buffer\n");
+		}
+#if 1
+		/* hex lines -- 16 bytes each */
+		for (i = 0; i < length; ++i) {
+			if ((i & 0x0F) == 0) {	// devisible by 16
+				fprintf(stderr,"\n--%3.3d:",i);
+			}
+			fprintf(stderr," %.2X", (unsigned char)buf[i]);
+		}
+		
+#endif
+		/* char line -- printable or . */
+		fprintf(stderr,"\n   <");
+		for (i = 0; i < length; ++i) {
+			char c = buf[i];
+			fprintf(stderr,"%c", isprint(c) ? c : '.');
+		}
+		fprintf(stderr,">\n");
+		ionr++;
+	}
 }

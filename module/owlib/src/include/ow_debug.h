@@ -16,6 +16,10 @@
 #include <config.h>
 #include <owfs_config.h>
 
+#ifdef HAVE_SYS_UIO_H
+#include <sys/uio.h>
+#endif
+
 /* error functions */
 enum e_err_level { e_err_default, e_err_connect, e_err_call, e_err_data,
 	e_err_detail, e_err_debug, e_err_beyond,
@@ -27,6 +31,7 @@ enum e_err_print { e_err_print_mixed, e_err_print_syslog,
 
 void err_msg(enum e_err_type errnoflag, enum e_err_level level, const char *fmt, ...);
 void _Debug_Bytes(const char *title, const unsigned char *buf, int length);
+void _Debug_Writev(struct iovec *io, int iosz);
 
 extern int log_available;
 
@@ -61,6 +66,8 @@ extern int log_available;
     _print_owq(owq)
 #define Debug_Bytes(title,buf,length)    if (Globals.error_level>=e_err_beyond) \
     _Debug_Bytes(title,buf,length)
+#define Debug_Writev(io,iosz)    if (Globals.error_level>=e_err_beyond) \
+    _Debug_Writev(io, iosz)
 #else
 #define LEVEL_DEFAULT(...)    { } while (0);
 #define LEVEL_CONNECT(...)    { } while (0);
@@ -77,6 +84,7 @@ extern int log_available;
 #define ERROR_DEBUG(...)      { } while (0);
 
 #define Debug_Bytes(title,buf,length)    { } while (0);
+#define Debug_Writev(io, iosz)    { } while (0);
 #define Debug_OWQ(owq)        { } while (0);
 #endif
 
