@@ -19,7 +19,6 @@ $Id$
 
 static int FromServer(int file_descriptor, struct client_msg *cm, char *msg, size_t size);
 static void *FromServerAlloc(int file_descriptor, struct client_msg *cm);
-//static int ToServer( int file_descriptor, struct server_msg * sm, char * path, char * data, size_t datasize ) ;
 static int ToServer(int file_descriptor, struct server_msg *sm, struct serverpackage *sp);
 static void Server_setroutines(struct interface_routines *f);
 static void Zero_setroutines(struct interface_routines *f);
@@ -443,36 +442,43 @@ static int ToServerTwice(int file_descriptor, int persistent, struct server_msg 
 static int ToServer(int file_descriptor, struct server_msg *sm, struct serverpackage *sp)
 {
 	int payload = 0;
-	struct iovec io[5] = {
-		{sm, sizeof(struct server_msg),},	// send "server message" header structure
-	};
-	if ((io[1].iov_base = sp->path)) {	// send path (if not null)
-		io[1].iov_len = payload = strlen(sp->path) + 1;
-	} else {
-		io[1].iov_len = payload = 0;
+	int nio = 0;
+	struct iovec io[5] = { {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}, };
+
+	// First block to send, the header
+	io[nio].iov_base = sm;
+	io[nio].iov_len = sizeof(struct server_msg);
+	nio++;
+
+	// Next block, the path
+	if ((io[nio].iov_base = sp->path)) {	// send path (if not null)
+		io[nio].iov_len = payload = strlen(sp->path) + 1;
+		nio++;
+		LEVEL_DEBUG("ToServer path=%s\n", sp->path);
 	}
-	if ((io[2].iov_base = sp->data)) {	// send data (if datasize not zero)
-		payload += (io[2].iov_len = sp->datasize);
-	} else {
-		io[2].iov_len = 0;
+
+	// next block, data (only for writes)
+	if ((sp->datasize>0) && (io[nio].iov_base = sp->data)) {	// send data only for writes (if datasize not zero)
+		payload += (io[nio].iov_len = sp->datasize);
+		nio++;
+        LEVEL_DEBUG("ToServer data=%s\n", sp->data);
 	}
+
 	if (1) {					// if not being called from owserver, that's it
-		io[3].iov_base = io[4].iov_base = NULL;
-		io[3].iov_len = io[4].iov_len = 0;
 		sp->tokens = 0;
-		sm->version = 0;
+		sm->version = 0; // shouldn't this be MakeServerprotocol(OWSERVER_PROTOCOL_VERSION);
 	} else {
+		/* I guess this can't happen since it's ownet */
 		if (sp->tokens > 0) {	// owserver: send prior tags
-			io[3].iov_base = sp->tokenstring;
-			io[3].iov_len = sp->tokens * sizeof(union antiloop);
-		} else {
-			io[3].iov_base = NULL;
-			io[3].iov_len = 0;
+			io[nio].iov_base = sp->tokenstring;
+			io[nio].iov_len = sp->tokens * sizeof(union antiloop);
+			nio++;
 		}
 		++sp->tokens;
 		sm->version = Servermessage + (sp->tokens);
-		io[4].iov_base = &(Globals.Token);	// owserver: add our tag
-		io[4].iov_len = sizeof(union antiloop);
+		io[nio].iov_base = &(Globals.Token);	// owserver: add our tag
+		io[nio].iov_len = sizeof(union antiloop);
+		nio++;
 	}
 
 	//printf("ToServer payload=%d size=%d type=%d tempscale=%X offset=%d\n",payload,sm->size,sm->type,sm->sg,sm->offset);
@@ -487,7 +493,8 @@ static int ToServer(int file_descriptor, struct server_msg *sm, struct serverpac
 	sm->sg = htonl(sm->sg);
 	sm->offset = htonl(sm->offset);
 
-	return writev(file_descriptor, io, 5) != (ssize_t) (payload + sizeof(struct server_msg) + sp->tokens * sizeof(union antiloop));
+	Debug_Writev(io, nio);
+	return writev(file_descriptor, io, nio) != (ssize_t) (payload + sizeof(struct server_msg) + sp->tokens * sizeof(union antiloop));
 }
 
 /* flag the sg for "virtual root" -- the remote bus was specifically requested */
