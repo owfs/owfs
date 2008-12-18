@@ -88,22 +88,22 @@ struct serverpackage {
 #define OWSERVER_PROTOCOL_VERSION   0
 
 // lower 16 bits is token size (only FROM owserver of course)
-#define Servertokens(version)    ((version)&0xFFFF)
-#define MakeServertokens(tokens)  ( (tokens) )
+#define Servertokens(version)		((version)&0xFFFF)
+#define MakeServertokens(tokens)	(tokens)
 
 // bit 17 is FROM server flag
-#define ServermessageMASK       (((int32_t)1)<<16)
-#define isServermessage( version )    ( ( (version) & ServermessageMASK ) == ServermessageMASK )
-#define MakeServermessage ( ServermessageMASK )
+#define ServermessageMASK		(((int32_t)1)<<16)
+#define MakeServermessage		ServermessageMASK
+#define isServermessage(version)	(((version) & ServermessageMASK) == ServermessageMASK)
 
 //owserver protocol
-#define ServerprotocolMASK ((0xFF)<<17)
-#define Serverprotocol(version) (( (version) & ServerprotocolMASK) >> 17 )
-#define MakeServerprotocol(protocol) ( (protocol) << 17 )
+#define ServerprotocolMASK		((0xFF)<<17)
+#define Serverprotocol(version) (((version) & ServerprotocolMASK) >> 17 )
+#define MakeServerprotocol(protocol) ((protocol) << 17)
 
 // bit 32 set is Sidetap flag
-#define ServersidetapMASK   (((int32_t)1)<<31)
-#define MakeServersidetap ( ServersidetapMASK )
-#define isServersidetap(version)  ( ( (version) & ServersidetapMASK ) == ServersidetapMASK )
+#define ServersidetapMASK		(((int32_t)1)<<31)
+#define MakeServersidetap		ServersidetapMASK
+#define isServersidetap(version)	(((version) & ServersidetapMASK) == ServersidetapMASK)
 
 #endif							/* OW_MESSAGE_H */
