@@ -14,6 +14,48 @@ $Id$
 
 #include "owshell.h"
 
+#if 0
+/* Purely a debugging routine -- print an arbitrary buffer of bytes */
+void _Debug_Writev(struct iovec *io, int iosz)
+{
+	/* title line */
+	int i, ionr = 0;
+	char *buf;
+	int length;
+	
+	while(ionr < iosz) {
+		buf = io[ionr].iov_base;
+		length = io[ionr].iov_len;
+		
+		fprintf(stderr,"Writev byte buffer ionr=%d/%d length=%d", ionr+1, iosz, (int) length);
+		if (length <= 0) {
+			fprintf(stderr,"\n-- Attempt to write with bad length\n");
+		}
+		if (buf == NULL) {
+			fprintf(stderr,"\n-- NULL buffer\n");
+		}
+#if 1
+		/* hex lines -- 16 bytes each */
+		for (i = 0; i < length; ++i) {
+			if ((i & 0x0F) == 0) {	// devisible by 16
+				fprintf(stderr,"\n--%3.3d:",i);
+			}
+			fprintf(stderr," %.2X", (unsigned char)buf[i]);
+		}
+		
+#endif
+		/* char line -- printable or . */
+		fprintf(stderr,"\n   <");
+		for (i = 0; i < length; ++i) {
+			char c = buf[i];
+			fprintf(stderr,"%c", isprint(c) ? c : '.');
+		}
+		fprintf(stderr,">\n");
+		ionr++;
+	}
+}
+#endif
+
 static int FromServer(int file_descriptor, struct client_msg *cm, char *msg, size_t size);
 static void *FromServerAlloc(int file_descriptor, struct client_msg *cm);
 static int ToServer(int file_descriptor, struct server_msg *sm, struct serverpackage *sp);
@@ -302,40 +344,46 @@ static int FromServer(int file_descriptor, struct client_msg *cm, char *msg, siz
 }
 
 // should be const char * data but iovec has problems with const arguments
-//static int ToServer( int file_descriptor, struct server_msg * sm, const char * path, const char * data, int datasize ) {
 static int ToServer(int file_descriptor, struct server_msg *sm, struct serverpackage *sp)
 {
 	int payload = 0;
-	struct iovec io[5] = {
-		{sm, sizeof(struct server_msg),},	// send "server message" header structure
-	};
-	if ((io[1].iov_base = sp->path)) {	// send path (if not null)
-		io[1].iov_len = payload = strlen(sp->path) + 1;
-	} else {
-		io[1].iov_len = payload = 0;
+	int nio = 0;
+	struct iovec io[5] = { {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}, };
+
+	// First block to send, the header
+	io[nio].iov_base = sm;
+	io[nio].iov_len = sizeof(struct server_msg);
+	nio++;
+
+	// Next block, the path
+	if ((io[nio].iov_base = sp->path)) {	// send path (if not null)
+		io[nio].iov_len = payload = strlen(sp->path) + 1;
+		nio++;
+		//LEVEL_DEBUG("ToServer path=%s\n", sp->path);
 	}
-	if ((io[2].iov_base = sp->data)) {	// send data (if datasize not zero)
-		payload += (io[2].iov_len = sp->datasize);
-	} else {
-		io[2].iov_len = 0;
+
+	// next block, data (only for writes)
+	if ((sp->datasize>0) && (io[nio].iov_base = sp->data)) {	// send data only for writes (if datasize not zero)
+		payload += (io[nio].iov_len = sp->datasize);
+		nio++;
+        //LEVEL_DEBUG("ToServer data=%s\n", sp->data);
 	}
+
 	if (Globals.opt != opt_server) {	// if not being called from owserver, that's it
-		io[3].iov_base = io[4].iov_base = NULL;
-		io[3].iov_len = io[4].iov_len = 0;
 		sp->tokens = 0;
-		sm->version = 0;
+		sm->version = 0; // shouldn't this be MakeServerprotocol(OWSERVER_PROTOCOL_VERSION);
 	} else {
+		/* I guess this can't happen since it's owshell */
 		if (sp->tokens > 0) {	// owserver: send prior tags
-			io[3].iov_base = sp->tokenstring;
-			io[3].iov_len = sp->tokens * sizeof(union antiloop);
-		} else {
-			io[3].iov_base = NULL;
-			io[3].iov_len = 0;
+			io[nio].iov_base = sp->tokenstring;
+			io[nio].iov_len = sp->tokens * sizeof(union antiloop);
+			nio++;
 		}
 		++sp->tokens;
 		sm->version = Servermessage + (sp->tokens);
-		io[4].iov_base = &(Globals.Token);	// owserver: add our tag
-		io[4].iov_len = sizeof(union antiloop);
+		io[nio].iov_base = &(Globals.Token);	// owserver: add our tag
+		io[nio].iov_len = sizeof(union antiloop);
+		nio++;
 	}
 
 	//printf("ToServer payload=%d size=%d type=%d tempscale=%X offset=%d\n",payload,sm->size,sm->type,sm->sg,sm->offset);
@@ -350,7 +398,8 @@ static int ToServer(int file_descriptor, struct server_msg *sm, struct serverpac
 	sm->sg = htonl(sm->sg);
 	sm->offset = htonl(sm->offset);
 
-	return writev(file_descriptor, io, 5) != (ssize_t) (payload + sizeof(struct server_msg) + sp->tokens * sizeof(union antiloop));
+	//Debug_Writev(io, nio);
+	return writev(file_descriptor, io, nio) != (ssize_t) (payload + sizeof(struct server_msg) + sp->tokens * sizeof(union antiloop));
 }
 
 /* flag the sg for "virtual root" -- the remote bus was specifically requested */

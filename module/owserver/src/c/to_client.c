@@ -60,6 +60,8 @@ int ToClient(int file_descriptor, struct client_msg *original_cm, char *data)
 	if (data && (original_cm->payload > 0)) {
 		++nio;
 		//printf("ToClient <%*s>\n",original_cm->payload,data) ;
+	} else {
+		io[1].iov_len = 0;
 	}
 	
 	cm->version = htonl(original_cm->version);
