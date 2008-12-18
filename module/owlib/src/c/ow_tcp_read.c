@@ -57,7 +57,7 @@ ssize_t tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval
 	size_t nleft;
 	ssize_t nread;
 	char *ptr;
-	printf("NetRead attempt %d bytes Time:(%ld,%ld)\n",(int)n,ptv->tv_sec,ptv->tv_usec ) ;
+	LEVEL_DEBUG("NetRead attempt %d bytes Time:(%ld,%ld)\n",(int)n,ptv->tv_sec,ptv->tv_usec ) ;
 	ptr = vptr;
 	nleft = n;
 	while (nleft > 0) {
@@ -83,7 +83,7 @@ ssize_t tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval
 					errno = 0;	// clear errno. We never use it anyway.
 					nread = 0;	/* and call read() again */
 				} else {
-					ERROR_DATA("Network data read error\n");
+					ERROR_DATA("Network data read error errno=%d %s\n", errno, strerror(errno));
 					STAT_ADD1(NET_read_errors);
 					return (-1);
 				}
@@ -105,7 +105,7 @@ ssize_t tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval
 			return -EAGAIN;
 		}
 	}
-	printf("tcp_read n=%d nleft=%d n-nleft=%d\n",(int)n, (int) nleft, (int) (n-nleft) ) ;
+	LEVEL_DEBUG("tcp_read n=%d nleft=%d n-nleft=%d\n",(int)n, (int) nleft, (int) (n-nleft) ) ;
 	return (n - nleft);			/* return >= 0 */
 }
 
