@@ -98,9 +98,10 @@ void *DataHandler(void *v)
 			struct parsedname *pn = PN(owq);
 
 			/* Parse the path string and crete  query object */
-			LEVEL_CALL("owserver: parse path=%s\n", hd->sp.path);
+			LEVEL_CALL("DataHandler: parse path=%s\n", hd->sp.path);
 			cm.ret = FS_OWQ_create(hd->sp.path, NULL, hd->sm.size, hd->sm.offset, owq) ;
 			if ( cm.ret != 0 ) {
+				LEVEL_DEBUG("DataHandler: FS_OWQ_create failed cm.ret=%d\n", cm.ret);
 				break;
 			}
 
@@ -124,16 +125,15 @@ void *DataHandler(void *v)
 				retbuffer = ReadHandler(hd, &cm, owq);
 				LEVEL_DEBUG("Read message done value=%p\n", retbuffer);
 				break;
-			case msg_write:{
-					LEVEL_CALL("Write message\n");
-					if ((hd->sp.datasize <= 0)
-						|| ((int) hd->sp.datasize < hd->sm.size)) {
-						cm.ret = -EMSGSIZE;
-					} else {
-						/* set buffer (size already set) */
-						OWQ_buffer(owq) = (ASCII *) hd->sp.data;
-						WriteHandler(hd, &cm, owq);
-					}
+			case msg_write:
+				LEVEL_CALL("Write message\n");
+				if ((hd->sp.datasize <= 0)
+					|| ((int) hd->sp.datasize < hd->sm.size)) {
+					cm.ret = -EMSGSIZE;
+				} else {
+					/* set buffer (size already set) */
+					OWQ_buffer(owq) = (ASCII *) hd->sp.data;
+					WriteHandler(hd, &cm, owq);
 				}
 				break;
 			case msg_dir:
@@ -158,7 +158,7 @@ void *DataHandler(void *v)
 				break;
 			}
 			FS_OWQ_destroy(owq);
-			LEVEL_DEBUG("RealHandler: FS_ParsedName_destroy done\n");
+			LEVEL_DEBUG("DataHandler: FS_ParsedName_destroy done\n");
 		}
 		break;
 	case msg_nop:				// "bad" message
@@ -172,7 +172,7 @@ void *DataHandler(void *v)
 		LEVEL_CALL("No message\n");
 		break;
 	}
-	LEVEL_DEBUG("RealHandler: cm.ret=%d\n", cm.ret);
+	LEVEL_DEBUG("DataHandler: cm.ret=%d\n", cm.ret);
 
 	TOCLIENTLOCK(hd);
 	if (cm.ret != -EIO) {
@@ -189,6 +189,6 @@ void *DataHandler(void *v)
 	if (retbuffer) {
 		free(retbuffer);
 	}
-	LEVEL_DEBUG("RealHandler: done\n");
+	LEVEL_DEBUG("DataHandler: done\n");
 	return NULL;
 }
