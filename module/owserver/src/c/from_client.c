@@ -63,12 +63,14 @@ int FromClient(struct handlerdata *hd)
 	hd->sm.offset = ntohl(hd->sm.offset);
 
 	LEVEL_DEBUG("FromClient payload=%d size=%d type=%d sg=0x%X offset=%d\n", hd->sm.payload, hd->sm.size, hd->sm.type, hd->sm.sg, hd->sm.offset);
-	//printf("<%.4d|%.4d\n",sm->type,sm->payload);
 
 	/* figure out length of rest of message: payload plus tokens */
 	trueload = hd->sm.payload;
 	if (isServermessage(hd->sm.version)) {
 		trueload += sizeof(union antiloop) * Servertokens(hd->sm.version);
+		LEVEL_DEBUG("FromClient (servermessage) payload=%d nrtokens=%d trueload=%d size=%d type=%d sg=0x%X offset=%d\n", hd->sm.payload, Servertokens(hd->sm.version), trueload, hd->sm.size, hd->sm.type, hd->sm.sg, hd->sm.offset);
+	} else {
+		LEVEL_DEBUG("FromClient (no servermessage) payload=%d size=%d type=%d sg=0x%X offset=%d\n", hd->sm.payload, hd->sm.size, hd->sm.type, hd->sm.sg, hd->sm.offset);
 	}
 	if (trueload == 0) {
 		return 0;
