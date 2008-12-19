@@ -193,13 +193,13 @@ void fatal_error(char *file, int row, const char *fmt, ...)
 	va_start(ap, fmt);
 
 	if(Globals.fatal_debug) {
-		ERROR_DEFAULT("%s:%d ", file, row);
+		LEVEL_DEFAULT("%s:%d ", file, row);
 #ifdef HAVE_VSNPRINTF
 		vsnprintf(tmp, sizeof(tmp), fmt, ap);
 #else
 		vsprintf(tmp, fmt, ap);
 #endif
-		ERROR_DEFAULT(tmp);
+		LEVEL_DEFAULT(tmp);
 	}
 
 
