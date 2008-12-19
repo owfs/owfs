@@ -640,9 +640,10 @@ static int ToServer(int file_descriptor, struct server_msg *sm, struct serverpac
 	int tokens = 0;
 	int nio = 0;
 	struct iovec io[5] = { {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}, };
+	struct server_msg local_sm ;
 
 	// First block to send, the header
-	io[nio].iov_base = sm;
+	io[nio].iov_base = &local_sm;
 	io[nio].iov_len = sizeof(struct server_msg);
 	nio++;
 	
@@ -679,17 +680,15 @@ static int ToServer(int file_descriptor, struct server_msg *sm, struct serverpac
 		nio++;
         LEVEL_DEBUG("ToServer tokens=%d\n", tokens);
 	}
-	LEVEL_DEBUG("ToServer payload=%d size=%d type=%d SG=%X offset=%d\n",payload,sm->size,sm->type,sm->sg,sm->offset);
-
-    sm->version = MakeServerprotocol(OWSERVER_PROTOCOL_VERSION);
+	LEVEL_DEBUG("ToServer version=%u payload=%d size=%d type=%d SG=%X offset=%d\n",sm->version,payload,sm->size,sm->type,sm->sg,sm->offset);
 
 	// encode in network order (just the header)
-	sm->version = htonl(sm->version);
-	sm->payload = htonl(payload);
-	sm->size = htonl(sm->size);
-	sm->type = htonl(sm->type);
-	sm->sg = htonl(sm->sg);
-	sm->offset = htonl(sm->offset);
+	local_sm.version = htonl(sm->version);
+	local_sm.payload = htonl(payload);
+	local_sm.size = htonl(sm->size);
+	local_sm.type = htonl(sm->type);
+	local_sm.sg = htonl(sm->sg);
+	local_sm.offset = htonl(sm->offset);
 
 	Debug_Writev(io, nio);
 	return writev(file_descriptor, io, nio) != (ssize_t) (payload + sizeof(struct server_msg) + tokens * sizeof(union antiloop));

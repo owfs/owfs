@@ -88,7 +88,7 @@ struct serverpackage {
 #define OWSERVER_PROTOCOL_VERSION   0
 
 // lower 16 bits is token size (only FROM owserver of course)
-#define Servertokens(version)		((version)&0xFFFF)
+#define Servertokens(tokens)		((tokens)&0xFFFF)
 #define MakeServertokens(tokens)	(tokens)
 
 // bit 17 is FROM server flag
