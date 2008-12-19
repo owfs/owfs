@@ -87,8 +87,8 @@ int W1_Browse( void )
     LEVEL_DEBUG("Calling for netlink w1 list\n");
 
     // Initial setup
-    pthread_mutex_init(&(Inbound_Control.w1_mutex), Mutex.pmattr);
-    pthread_mutex_init(&(Inbound_Control.w1_read_mutex), Mutex.pmattr);
+    my_pthread_mutex_init(&(Inbound_Control.w1_mutex), Mutex.pmattr);
+    my_pthread_mutex_init(&(Inbound_Control.w1_read_mutex), Mutex.pmattr);
     gettimeofday(&Inbound_Control.w1_last_read,NULL);
     ++Inbound_Control.w1_last_read.tv_sec ;
     

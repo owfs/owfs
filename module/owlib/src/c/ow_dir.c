@@ -586,11 +586,11 @@ static int FS_cache2real(void (*dirfunc) (void *, const struct parsedname *), vo
 #if OW_MT
 // must lock a global struct for walking through tree -- limitation of "twalk"
 pthread_mutex_t Typedirmutex = PTHREAD_MUTEX_INITIALIZER;
-#define TYPEDIRMUTEXLOCK  pthread_mutex_lock(&Typedirmutex)
-#define TYPEDIRMUTEXUNLOCK  pthread_mutex_unlock(&Typedirmutex)
+#define TYPEDIRMUTEXLOCK		my_pthread_mutex_lock(&Typedirmutex)
+#define TYPEDIRMUTEXUNLOCK		my_pthread_mutex_unlock(&Typedirmutex)
 #else							/* OW_MT */
-#define TYPEDIRMUTEXLOCK
-#define TYPEDIRMUTEXUNLOCK
+#define TYPEDIRMUTEXLOCK		return_ok()
+#define TYPEDIRMUTEXUNLOCK		return_ok()
 #endif							/* OW_MT */
 
 // struct for walking through tree -- cannot send data except globally

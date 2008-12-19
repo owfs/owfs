@@ -23,17 +23,17 @@ $Id$
 pthread_mutex_t init_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t access_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t access_cond = PTHREAD_COND_INITIALIZER;
-#define INITLOCK       pthread_mutex_lock(    &init_mutex   )
-#define INITUNLOCK     pthread_mutex_unlock(  &init_mutex   )
-#define ACCESSLOCK     pthread_mutex_lock(  &access_mutex   )
-#define ACCESSUNLOCK   pthread_mutex_unlock(&access_mutex   )
-#define ACCESSWAIT     pthread_cond_wait(    &access_cond, &access_mutex )
-#define ACCESSSIGNAL   pthread_cond_signal(  &access_cond )
+#define INITLOCK       my_pthread_mutex_lock(    &init_mutex   )
+#define INITUNLOCK     my_pthread_mutex_unlock(  &init_mutex   )
+#define ACCESSLOCK     my_pthread_mutex_lock(  &access_mutex   )
+#define ACCESSUNLOCK   my_pthread_mutex_unlock(&access_mutex   )
+#define ACCESSWAIT     my_pthread_cond_wait(    &access_cond, &access_mutex )
+#define ACCESSSIGNAL   my_pthread_cond_signal(  &access_cond )
 #else							/* OW_MT */
-#define INITLOCK
-#define INITUNLOCK
-#define ACCESSLOCK
-#define ACCESSUNLOCK
+#define INITLOCK		return_ok()
+#define INITUNLOCK		return_ok()
+#define ACCESSLOCK		return_ok()
+#define ACCESSUNLOCK	return_ok()
 #define ACCESSWAIT
 #define ACCESSSIGNAL
 #endif							/* OW_MT */

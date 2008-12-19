@@ -60,7 +60,7 @@ struct connection_in *NewIn(void)
 	for (now = head_inbound_list; now != NULL; now = now->next) {
 		if (now->state == connection_vacant) {
 #if OW_MT
-			pthread_mutex_init(&(now->bus_mutex), Mutex.pmattr);
+			my_pthread_mutex_init(&(now->bus_mutex), Mutex.pmattr);
 #endif							/* OW_MT */
 			now->state = connection_pending;
 			return now;
@@ -74,7 +74,7 @@ struct connection_in *NewIn(void)
 		now->index = count_inbound_connections++;
 		now->state = connection_pending;
 #if OW_MT
-		pthread_mutex_init(&(now->bus_mutex), Mutex.pmattr);
+		my_pthread_mutex_init(&(now->bus_mutex), Mutex.pmattr);
 #endif							/* OW_MT */
 	}
 	return now;
@@ -117,7 +117,7 @@ void FreeIn(struct connection_in *target)
 		}
 		BUSUNLOCKIN(target);
 #if OW_MT
-		pthread_mutex_destroy(&(target->bus_mutex));
+		my_pthread_mutex_destroy(&(target->bus_mutex));
 #endif
 	}
 	target->state = connection_vacant;

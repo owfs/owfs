@@ -163,14 +163,14 @@ struct interface_routines {
 #define SIDELOCK(side)        pthread_mutex_lock(  &((side)->side_mutex) )
 #define SIDEUNLOCK(side)      pthread_mutex_unlock(&((side)->side_mutex) )
 #else							/* OW_MT */
-#define DEVLOCK(pn)
-#define DEVUNLOCK(pn)
-#define ACCEPTLOCK(out)
-#define ACCEPTUNLOCK(out)
-#define OUTLOCK(out)
-#define OUTUNLOCK(out)
-#define SIDELOCK(side)
-#define SIDEUNLOCK(side)
+#define DEVLOCK(pn)           return_ok()
+#define DEVUNLOCK(pn)         return_ok()
+#define ACCEPTLOCK(out)       return_ok()
+#define ACCEPTUNLOCK(out)     return_ok()
+#define OUTLOCK(out)          return_ok()
+#define OUTUNLOCK(out)        return_ok()
+#define SIDELOCK(side)        return_ok()
+#define SIDEUNLOCK(side)      return_ok()
 #endif							/* OW_MT */
 
 enum bus_speed {

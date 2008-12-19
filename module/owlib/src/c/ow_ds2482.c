@@ -384,7 +384,7 @@ static int DS2482_detect_single(int lowindex, int highindex, struct connection_i
 			in->connin.i2c.i2c_index = i;
 			in->connin.i2c.configreg = 0x00;	// default configuration setting
 #if OW_MT
-			pthread_mutex_init(&(in->connin.i2c.i2c_mutex), Mutex.pmattr);
+			my_pthread_mutex_init(&(in->connin.i2c.i2c_mutex), Mutex.pmattr);
 #endif							/* OW_MT */
 			in->busmode = bus_i2c;
 			in->Adapter = adapter_DS2482_100;

@@ -262,7 +262,7 @@ struct hostent *gethostbyname_r(const char *name, struct hostent *result, char *
 	(void) buflen;				// not used
 
 #ifdef HAVE_PTHREAD
-	pthread_mutex_lock(&gethostbyname_lock);
+	my_pthread_mutex_lock(&gethostbyname_lock);
 #endif
 	res = gethostbyname(name);
 	if (res) {
@@ -271,7 +271,7 @@ struct hostent *gethostbyname_r(const char *name, struct hostent *result, char *
 		*h_errnop = errno;
 	}
 #ifdef HAVE_PTHREAD
-	pthread_mutex_unlock(&gethostbyname_lock);
+	my_pthread_mutex_unlock(&gethostbyname_lock);
 #endif
 	return res;
 }
@@ -288,13 +288,13 @@ struct servent *getservbyname_r(const char *name, const char *proto, struct serv
 	(void) buflen;				// not used
 
 #ifdef HAVE_PTHREAD
-	pthread_mutex_lock(&getservbyname_lock);
+	my_pthread_mutex_lock(&getservbyname_lock);
 #endif
 	res = getservbyname(name, proto);
 	if (res)
 		memcpy(result, res, sizeof(struct servent));
 #ifdef HAVE_PTHREAD
-	pthread_mutex_unlock(&getservbyname_lock);
+	my_pthread_mutex_unlock(&getservbyname_lock);
 #endif
 	return res;
 }
@@ -466,7 +466,7 @@ struct hostent *gethostbyaddr_r(const char *name, int len, int type, struct host
 	(void) buflen;				// not used
 
 #ifdef HAVE_PTHREAD
-	pthread_mutex_lock(&gethostbyaddr_lock);
+	my_pthread_mutex_lock(&gethostbyaddr_lock);
 #endif
 	res = gethostbyaddr(name, len, type);
 	if (res) {
@@ -475,7 +475,7 @@ struct hostent *gethostbyaddr_r(const char *name, int len, int type, struct host
 		*h_errnop = errno;
 	}
 #ifdef HAVE_PTHREAD
-	pthread_mutex_unlock(&gethostbyaddr_lock);
+	my_pthread_mutex_unlock(&gethostbyaddr_lock);
 #endif
 	return res;
 }

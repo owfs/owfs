@@ -20,7 +20,6 @@ $Id$
 #include <config.h>
 #include <owfs_config.h>
 #include <ow.h>
-#include <stdarg.h>
 
 #ifdef HAVE_SYS_UIO_H
 #include <sys/uio.h>
@@ -184,3 +183,40 @@ void _Debug_Writev(struct iovec *io, int iosz)
 		ionr++;
 	}
 }
+
+void fatal_error(char *file, int row, const char *fmt, ...)
+{
+	va_list ap;
+	FILE *fp;
+	char filename[64];
+	char tmp[256];
+	va_start(ap, fmt);
+
+	if(Globals.fatal_debug) {
+		ERROR_DEFAULT("%s:%d ", file, row);
+#ifdef HAVE_VSNPRINTF
+		vsnprintf(tmp, sizeof(tmp), fmt, ap);
+#else
+		vsprintf(tmp, fmt, ap);
+#endif
+		ERROR_DEFAULT(tmp);
+	}
+
+
+	if(Globals.fatal_debug_file != NULL) {
+		sprintf(filename, "%s.%d", Globals.fatal_debug_file, getpid());
+		if((fp = fopen(filename, "a")) != NULL) {
+			if(!Globals.fatal_debug) {
+#ifdef HAVE_VSNPRINTF
+				vsnprintf(tmp, sizeof(tmp), fmt, ap);
+#else
+				vsprintf(tmp, fmt, ap);
+#endif
+			}
+			fprintf(fp, "%s:%d %s\n", file, row, tmp);
+			fclose(fp);
+		}
+	}
+}
+
+

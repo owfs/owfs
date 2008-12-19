@@ -65,6 +65,8 @@ struct global {
 	int now_background;
 	int error_level;
 	int error_print;
+	int fatal_debug;
+	ASCII *fatal_debug_file;
 	int readonly;
 	int max_clients;			// for ftp
 	int autoserver;

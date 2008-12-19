@@ -59,9 +59,9 @@ int W1PipeSelect_timeout( int file_descriptor )
 			struct timeval diff ;
 			gettimeofday(&now,NULL);
 			// Set time of last read
-			pthread_mutex_lock(&Inbound_Control.w1_read_mutex) ;
+			my_pthread_mutex_lock(&Inbound_Control.w1_read_mutex) ;
 			timersub(&now,&Inbound_Control.w1_last_read,&diff);
-			pthread_mutex_unlock(&Inbound_Control.w1_read_mutex) ;
+			my_pthread_mutex_unlock(&Inbound_Control.w1_read_mutex) ;
 			if ( diff.tv_sec <= Globals.timeout_w1 ) {
 				LEVEL_DEBUG("Select legal timeout -- try again\n");
 				continue ;

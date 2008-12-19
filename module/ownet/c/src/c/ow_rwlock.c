@@ -15,8 +15,6 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
-/* ------- Globalss ----------- */
-
 #if OW_MT
 
 void rwlock_init(rwlock_t * rwlock)

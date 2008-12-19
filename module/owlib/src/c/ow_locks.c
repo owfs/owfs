@@ -84,20 +84,20 @@ void LockSetup(void)
 #endif							/* UCLIBC_VERSION */
 #endif							/* __UCLIBC__ */
 
-	pthread_mutex_init(&Mutex.stat_mutex, Mutex.pmattr);
-	pthread_mutex_init(&Mutex.sg_mutex, Mutex.pmattr);
-	pthread_mutex_init(&Mutex.fstat_mutex, Mutex.pmattr);
-	pthread_mutex_init(&Mutex.dir_mutex, Mutex.pmattr);
+	my_pthread_mutex_init(&Mutex.stat_mutex, Mutex.pmattr);
+	my_pthread_mutex_init(&Mutex.sg_mutex, Mutex.pmattr);
+	my_pthread_mutex_init(&Mutex.fstat_mutex, Mutex.pmattr);
+	my_pthread_mutex_init(&Mutex.dir_mutex, Mutex.pmattr);
 
 	my_rwlock_init(&Mutex.lib);
 	my_rwlock_init(&Mutex.cache);
 	my_rwlock_init(&Mutex.store);
 	my_rwlock_init(&Inbound_Control.lock);
 #ifdef __UCLIBC__
-	pthread_mutex_init(&Mutex.uclibc_mutex, Mutex.pmattr);
+	my_pthread_mutex_init(&Mutex.uclibc_mutex, Mutex.pmattr);
 #endif							/* __UCLIBC__ */
 #if OW_USB
-	pthread_mutex_init(&Mutex.libusb_mutex, Mutex.pmattr);
+	my_pthread_mutex_init(&Mutex.libusb_mutex, Mutex.pmattr);
 #endif							/* OW_USB */
 #endif							/* OW_MT */
 }
@@ -122,6 +122,7 @@ static int dev_compare(const void *a, const void *b)
 	return memcmp(&((const struct devlock *) a)->sn, &((const struct devlock *) b)->sn, 8);
 }
 #endif
+
 
 /* Grabs a device lock, either one already matching, or creates one */
 /* called per-adapter */
@@ -182,15 +183,15 @@ int LockGet(struct parsedname *pn)
 		return -ENOMEM;
 	} else if (dlock == opaque->key) {	// new device slot
 		dlock->users = 1;
-		pthread_mutex_init(&(dlock->lock), Mutex.pmattr);	// create a mutex
-		pthread_mutex_lock(&(dlock->lock));	// and set it
+		my_pthread_mutex_init(&(dlock->lock), Mutex.pmattr);	// create a mutex
+		my_pthread_mutex_lock(&(dlock->lock));	// and set it
 		DEVUNLOCK(pn);
 		pn->lock = dlock; // use this new devlock
 	} else {					// existing device slot
 		++(opaque->key->users);
 		DEVUNLOCK(pn);
 		free(dlock); // kill the allocated devlock (since there already is a matching devlock)
-		pthread_mutex_lock(&(opaque->key->lock));
+		my_pthread_mutex_lock(&(opaque->key->lock));
 		pn->lock = opaque->key;
 	}
 #else							/* OW_MT */
@@ -203,12 +204,12 @@ void LockRelease(struct parsedname *pn)
 {
 #if OW_MT
 	if (pn->lock) {
-		pthread_mutex_unlock(&(pn->lock->lock));
+		my_pthread_mutex_unlock(&(pn->lock->lock));
 		DEVLOCK(pn);
 		--pn->lock->users;
 		if (pn->lock->users == 0) {
 			tdelete(pn->lock, &(pn->selected_connection->dev_db), dev_compare);
-			pthread_mutex_destroy(&(pn->lock->lock));
+			my_pthread_mutex_destroy(&(pn->lock->lock));
 			free(pn->lock);
 		}
 		DEVUNLOCK(pn);
@@ -239,9 +240,9 @@ void BUS_lock_in(struct connection_in *in)
 		return;
 	}
 #if OW_MT
-	pthread_mutex_lock(&(in->bus_mutex));
+	my_pthread_mutex_lock(&(in->bus_mutex));
 	if (in->busmode == bus_i2c && in->connin.i2c.channels > 1) {
-		pthread_mutex_lock(&(in->connin.i2c.head->connin.i2c.i2c_mutex));
+		my_pthread_mutex_lock(&(in->connin.i2c.head->connin.i2c.i2c_mutex));
 	}
 #endif							/* OW_MT */
 	gettimeofday(&(in->last_lock), NULL);	/* for statistics */
@@ -288,8 +289,8 @@ void BUS_unlock_in(struct connection_in *in)
 	STATUNLOCK;
 #if OW_MT
 	if (in->busmode == bus_i2c && in->connin.i2c.channels > 1) {
-		pthread_mutex_unlock(&(in->connin.i2c.head->connin.i2c.i2c_mutex));
+		my_pthread_mutex_unlock(&(in->connin.i2c.head->connin.i2c.i2c_mutex));
 	}
-	pthread_mutex_unlock(&(in->bus_mutex));
+	my_pthread_mutex_unlock(&(in->bus_mutex));
 #endif							/* OW_MT */
 }

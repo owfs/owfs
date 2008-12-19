@@ -100,8 +100,8 @@ struct connection_in *NewIn(const struct connection_in *in)
 		++Inbound_Control.active ;
 
 #if OW_MT
-		pthread_mutex_init(&(now->bus_mutex), Mutex.pmattr);
-		pthread_mutex_init(&(now->dev_mutex), Mutex.pmattr);
+		my_pthread_mutex_init(&(now->bus_mutex), Mutex.pmattr);
+		my_pthread_mutex_init(&(now->dev_mutex), Mutex.pmattr);
 		now->dev_db = NULL;
 #endif							/* OW_MT */
 		/* Support DS1994/DS2404 which require longer delays, and is automatically
@@ -130,8 +130,8 @@ struct connection_out *NewOut(void)
 		now->index = Outbound_Control.next_index++;
 		++Outbound_Control.active ;
 #if OW_MT
-		pthread_mutex_init(&(now->accept_mutex), Mutex.pmattr);
-		pthread_mutex_init(&(now->out_mutex), Mutex.pmattr);
+		my_pthread_mutex_init(&(now->accept_mutex), Mutex.pmattr);
+		my_pthread_mutex_init(&(now->out_mutex), Mutex.pmattr);
 #endif							/* OW_MT */
 		// Zero sref's -- done with struct memset
 		//now->sref0 = 0 ;
@@ -154,7 +154,7 @@ struct connection_side *NewSide(void)
 		++Sidebound_Control.active ;
 		now->file_descriptor = -1;
 #if OW_MT
-		pthread_mutex_init(&(now->side_mutex), Mutex.pmattr);
+		my_pthread_mutex_init(&(now->side_mutex), Mutex.pmattr);
 #endif							/* OW_MT */
 	} else {
 		LEVEL_DEFAULT("Cannot allocate memory for sidetap structure,\n");
@@ -184,8 +184,8 @@ void FreeIn(struct connection_in * now)
 	LEVEL_DEBUG("FreeIn: busmode=%d\n", get_busmode(now));
 	--Inbound_Control.active ;
 #if OW_MT
-	pthread_mutex_destroy(&(now->bus_mutex));
-	pthread_mutex_destroy(&(now->dev_mutex));
+	my_pthread_mutex_destroy(&(now->bus_mutex));
+	my_pthread_mutex_destroy(&(now->dev_mutex));
 
 	if (now->dev_db) {
 		tdestroy(now->dev_db, free);
@@ -235,7 +235,7 @@ void FreeIn(struct connection_in * now)
 	case bus_i2c:
 #if OW_MT
 		if (now->connin.i2c.index == 0) {
-			pthread_mutex_destroy(&(now->connin.i2c.i2c_mutex));
+			my_pthread_mutex_destroy(&(now->connin.i2c.i2c_mutex));
 		}
 #endif							/* OW_MT */
 	case bus_w1:
@@ -243,8 +243,8 @@ void FreeIn(struct connection_in * now)
 		DirblobClear( &(now->connin.w1.main) );
 		DirblobClear( &(now->connin.w1.alarm) );
 #if OW_MT
-		pthread_mutex_destroy(&(Inbound_Control.w1_mutex));
-		pthread_mutex_destroy(&(Inbound_Control.w1_read_mutex));
+		my_pthread_mutex_destroy(&(Inbound_Control.w1_mutex));
+		my_pthread_mutex_destroy(&(Inbound_Control.w1_read_mutex));
 #endif							/* OW_MT */
 #endif							/* OW_W1 */
 		break ;
@@ -319,8 +319,8 @@ void FreeOut(void)
 			now->ai = NULL;
 		}
 #if OW_MT
-		pthread_mutex_destroy(&(now->accept_mutex));
-		pthread_mutex_destroy(&(now->out_mutex));
+		my_pthread_mutex_destroy(&(now->accept_mutex));
+		my_pthread_mutex_destroy(&(now->out_mutex));
 #endif							/* OW_MT */
 #if OW_ZERO
 		if (libdnssd != NULL) {
@@ -347,7 +347,7 @@ void FreeSide(void)
 		now = next;
 		next = now->next;
 #if OW_MT
-		pthread_mutex_destroy(&(now->side_mutex));
+		my_pthread_mutex_destroy(&(now->side_mutex));
 #endif							/* OW_MT */
 		Test_and_Close( & (now->file_descriptor) ) ;
 		if (now->name) {

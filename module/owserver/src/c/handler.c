@@ -46,8 +46,8 @@ int persistent_connections = 0;
 static void SingleHandler(struct handlerdata *hd);
 
 pthread_mutex_t persistence_mutex = PTHREAD_MUTEX_INITIALIZER;
-#define PERSISTENCELOCK    pthread_mutex_lock(   &persistence_mutex ) ;
-#define PERSISTENCEUNLOCK  pthread_mutex_unlock( &persistence_mutex ) ;
+#define PERSISTENCELOCK    my_pthread_mutex_lock(   &persistence_mutex ) ;
+#define PERSISTENCEUNLOCK  my_pthread_mutex_unlock( &persistence_mutex ) ;
 
 /*
  * Main routine for actually handling a request
@@ -61,7 +61,7 @@ void Handler(int file_descriptor)
 	int persistent = 0;
 
 	hd.file_descriptor = file_descriptor;
-	pthread_mutex_init(&hd.to_client, Mutex.pmattr);
+	my_pthread_mutex_init(&hd.to_client, Mutex.pmattr);
 
 	timersub(&tv_high, &tv_low, &tv_high);	// just the delta
 
@@ -148,7 +148,7 @@ void Handler(int file_descriptor)
 	}
 
 	LEVEL_DEBUG("OWSERVER handler done\n");
-	pthread_mutex_destroy(&hd.to_client);
+	my_pthread_mutex_destroy(&hd.to_client);
 	// restore the persistent count
 	if (persistent) {
 

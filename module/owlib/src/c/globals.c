@@ -49,7 +49,9 @@ struct global Globals = {
 
 	.error_level = e_err_default,
 	.error_print = e_err_print_mixed,
-
+	.fatal_debug = 0,
+	.fatal_debug_file = NULL,
+	
 	.readonly = 0,
 	.max_clients = 250,
 	.autoserver = 0,

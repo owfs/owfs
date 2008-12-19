@@ -210,11 +210,11 @@ static int Fake_next_both(struct device_search *ds, const struct parsedname *pn)
 /* Need to lock struct global_namefind_struct since twalk requires global data -- can't pass void pointer */
 #if OW_MT
 pthread_mutex_t Namefindmutex = PTHREAD_MUTEX_INITIALIZER;
-#define NAMEFINDMUTEXLOCK pthread_mutex_lock(&Namefindmutex)
-#define NAMEFINDMUTEXUNLOCK pthread_mutex_unlock(&Namefindmutex)
+#define NAMEFINDMUTEXLOCK		my_pthread_mutex_lock(&Namefindmutex)
+#define NAMEFINDMUTEXUNLOCK		my_pthread_mutex_unlock(&Namefindmutex)
 #else							/* OW_MT */
-#define NAMEFINDMUTEXLOCK
-#define NAMEFINDMUTEXUNLOCK
+#define NAMEFINDMUTEXLOCK		return_ok()
+#define NAMEFINDMUTEXUNLOCK		return_ok()
 #endif							/* OW_MT */
 
 struct {

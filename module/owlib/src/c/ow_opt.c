@@ -69,6 +69,10 @@ const struct option owopts_long[] = {
 	{"pid-file", required_argument, NULL, 'P'},
 	{"background", no_argument, &Globals.want_background, 1},
 	{"foreground", no_argument, &Globals.want_background, 0},
+	{"fatal_debug", no_argument, &Globals.fatal_debug, 1},
+	{"fatal-debug", no_argument, &Globals.fatal_debug, 1},
+	{"fatal_debug_file", required_argument, NULL, e_fatal_debug_file},
+	{"fatal-debug-file", required_argument, NULL, e_fatal_debug_file},
 	{"error_print", required_argument, NULL, e_error_print},
 	{"error-print", required_argument, NULL, e_error_print},
 	{"errorprint", required_argument, NULL, e_error_print},
@@ -568,6 +572,15 @@ int owopt(const int option_char, const char *arg)
 			return 1;
 		} else if ((pid_file = strdup(arg)) == NULL) {
 			fprintf(stderr, "Insufficient memory to store the PID filename: %s\n", arg);
+			return 1;
+		}
+		break;
+	case e_fatal_debug_file:
+		if (arg == NULL || strlen(arg) == 0) {
+			LEVEL_DEFAULT("No fatal_debug_file specified\n");
+			return 1;
+		} else if ((Globals.fatal_debug_file = strdup(arg)) == NULL) {
+			fprintf(stderr, "Insufficient memory to store the fatal_debug_file: %s\n", arg);
 			return 1;
 		}
 		break;
