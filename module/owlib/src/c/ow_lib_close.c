@@ -47,6 +47,12 @@ void LibClose(void)
 	OW_Free_dnssd_library();
 	OW_Free_avahi_library();
 #endif
+
+	if (Globals.fatal_debug_file) {
+		free(Globals.fatal_debug_file);
+		Globals.fatal_debug_file = NULL;
+	}
+
 	LEVEL_CALL("Finished Library cleanup\n");
 	if (log_available) {
 		closelog();
