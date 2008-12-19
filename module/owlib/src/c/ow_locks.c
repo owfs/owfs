@@ -49,6 +49,18 @@ struct mutexes Mutex = {
 #endif							/* OW_MT */
 };
 
+// dynamically created access control for a 1-wire device
+// used to negotiate between different threads (queries)
+struct devlock {
+	BYTE sn[8];
+	UINT users;
+	pthread_mutex_t lock;
+};
+/*
+We keep a finite number of devlocks, organized in a tree for faster searching.
+The have a mutex and a counter to negotiate between threads and total lifetime.
+*/
+
 /* Essentially sets up mutexes to protect global data/devices */
 void LockSetup(void)
 {
@@ -93,6 +105,8 @@ void LockSetup(void)
 /* Bad bad C library */
 /* implementation of tfind, tsearch returns an opaque structure */
 /* you have to know that the first element is a pointer to your data */
+
+/* This is a tree element for the devlocks */
 struct dev_opaque {
 	struct devlock *key;
 	void *other;
@@ -102,14 +116,16 @@ struct dev_opaque {
 /* compilation error in gcc version 4.0.0 20050519 if dev_compare
  * is defined as an embedded function
  */
+/* Use the serial numbers to find the right devlock */
 static int dev_compare(const void *a, const void *b)
 {
 	return memcmp(&((const struct devlock *) a)->sn, &((const struct devlock *) b)->sn, 8);
 }
 #endif
 
-/* Grabs a device slot, either one already matching, or an empty one */
+/* Grabs a device lock, either one already matching, or creates one */
 /* called per-adapter */
+/* The device locks (delock) are kept in a tree */
 int LockGet(struct parsedname *pn)
 {
 #if OW_MT
@@ -124,6 +140,7 @@ int LockGet(struct parsedname *pn)
 
 	/* pn->selected_connection is null when "cat /tmp/1wire/system/adapter/pulldownslewrate.0"
 	 * and you have owfs -s & owserver -u started. */
+	// need to check to see if this is still relevant
 	if (pn->selected_connection == NULL) {
 		if ((pn->type == ePN_settings) || (pn->type == ePN_system)) {
 			/* Probably trying to read/write some adapter settings which
@@ -132,25 +149,26 @@ int LockGet(struct parsedname *pn)
 		}
 	}
 
-	pn->lock = NULL;
 	/* Need locking? */
 	switch (pn->selected_filetype->format) {
-	case ft_directory:
-	case ft_subdir:
-		return 0;
-	default:
-		break;
-	}
-	switch (pn->selected_filetype->change) {
-	case fc_static:
-	case fc_Astable:
-	case fc_Avolatile:
-	case fc_statistic:
-		return 0;
-	default:
-		break;
+		case ft_directory:
+		case ft_subdir:
+			return 0;
+		default:
+			break;
 	}
 
+	switch (pn->selected_filetype->change) {
+		case fc_static:
+		case fc_Astable:
+		case fc_Avolatile:
+		case fc_statistic:
+			return 0;
+		default:
+			break;
+	}
+
+	// Create a devlock block to add to the tree
 	if ((dlock = malloc(sizeof(struct devlock))) == NULL) {
 		return -ENOMEM;
 	}
@@ -160,18 +178,18 @@ int LockGet(struct parsedname *pn)
 	/* in->dev_db points to the root of a tree of queries that are using this device */
 	if ((opaque = tsearch(dlock, &(pn->selected_connection->dev_db), dev_compare)) == NULL) {	// unfound and uncreatable
 		DEVUNLOCK(pn);
-		free(dlock);
+		free(dlock); // kill the allocated devlock
 		return -ENOMEM;
 	} else if (dlock == opaque->key) {	// new device slot
 		dlock->users = 1;
 		pthread_mutex_init(&(dlock->lock), Mutex.pmattr);	// create a mutex
 		pthread_mutex_lock(&(dlock->lock));	// and set it
 		DEVUNLOCK(pn);
-		pn->lock = dlock;
+		pn->lock = dlock; // use this new devlock
 	} else {					// existing device slot
 		++(opaque->key->users);
 		DEVUNLOCK(pn);
-		free(dlock);
+		free(dlock); // kill the allocated devlock (since there already is a matching devlock)
 		pthread_mutex_lock(&(opaque->key->lock));
 		pn->lock = opaque->key;
 	}
@@ -184,24 +202,16 @@ int LockGet(struct parsedname *pn)
 void LockRelease(struct parsedname *pn)
 {
 #if OW_MT
-
-	/* Shouldn't call LockRelease() on DeviceSimultaneous. No sn exists */
-	if (pn->selected_device == DeviceSimultaneous) {
-		return;
-	}
-
 	if (pn->lock) {
 		pthread_mutex_unlock(&(pn->lock->lock));
 		DEVLOCK(pn);
-		if (pn->lock->users == 1) {
+		--pn->lock->users;
+		if (pn->lock->users == 0) {
 			tdelete(pn->lock, &(pn->selected_connection->dev_db), dev_compare);
-			DEVUNLOCK(pn);
 			pthread_mutex_destroy(&(pn->lock->lock));
 			free(pn->lock);
-		} else {
-			--pn->lock->users;
-			DEVUNLOCK(pn);
 		}
+		DEVUNLOCK(pn);
 		pn->lock = NULL;
 	}
 #else							/* OW_MT */

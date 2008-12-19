@@ -116,13 +116,7 @@ struct buspath {
 	BYTE branch;
 };
 
-// dynamically created access control for this 1-wire device
-// used to negotiate between different threads (queries)
-struct devlock {
-	BYTE sn[8];
-	UINT users;
-	pthread_mutex_t lock;
-};
+struct devlock ; // defined in ow_locks.c -- a device-specific lock
 
 #define EXTENSION_BYTE	-2
 #define EXTENSION_ALL	-1
@@ -155,25 +149,25 @@ enum ePS_state {
 };
 
 struct parsedname {
-	char *path;					// text-more device name
+	char *path;				// text-more device name
 	char *path_busless;			// pointer to path without first bus
 	struct connection_in *known_bus;	// where this device is located
-	enum ePN_type type;			// global branch
-	enum ePS_state state;		// global branch
-	BYTE sn[8];					// 64-bit serial number
-	struct device *selected_device;	// 1-wire device
+	enum ePN_type type;			// real? settings? ...
+	enum ePS_state state;			// alarm?
+	BYTE sn[8];				// 64-bit serial number
+	struct device *selected_device;		// 1-wire device
 	struct filetype *selected_filetype;	// device property
 	int extension;				// numerical extension (for array values) or -1
-	struct filetype *subdir;	// in-device grouping
-	int dirlength ;			// Length of just directory part of path
+	struct filetype *subdir;		// in-device grouping
+	int dirlength ;				// Length of just directory part of path
 	UINT pathlength;			// DS2409 branching depth
 	struct buspath *bp;			// DS2409 branching route
 	struct connection_in *selected_connection;	// which bus is assigned to this item
-	int terminal_bus_number;	// last bus is list -- used for return trip
+	int terminal_bus_number;		// last bus is list -- used for return trip
 	uint32_t sg;				// more state info, packed for network transmission
-	struct devlock *lock;		// Lock which device?
-	int tokens;					/* for anti-loop work */
-	BYTE *tokenstring;			/* List of tokens from owservers passed */
+	struct devlock *lock;			// pointer to a device-specific lock
+	int tokens;				// for anti-loop work
+	BYTE *tokenstring;			// List of tokens from owservers passed
 };
 
 /* ---- end Parsedname ----------------- */

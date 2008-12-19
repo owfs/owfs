@@ -249,6 +249,9 @@ static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path,
 	pn->state = ePS_normal;
 	pn->type = ePN_root;
 
+	/* No device lock yet assigned */
+	pn->lock = NULL ;
+
 	/* make a copy for destructive parsing */
 	pp->pathcpy = strdup(path);
 	if (pp->pathcpy == NULL) {
