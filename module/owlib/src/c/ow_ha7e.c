@@ -23,8 +23,6 @@ struct HA7E_id {
 };
 
 //static void byteprint( const BYTE * b, int size ) ;
-static int HA7E_read(BYTE * buf, const size_t size, const struct parsedname *pn);
-static int HA7E_write(const BYTE * buf, const size_t size, const struct parsedname *pn);
 static int HA7E_reset(const struct parsedname *pn);
 static int HA7E_next_both(struct device_search *ds, const struct parsedname *pn);
 static int HA7E_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
@@ -33,6 +31,7 @@ static int HA7E_CR(const struct parsedname *pn);
 static void HA7E_setroutines(struct connection_in *in);
 static void HA7E_close(struct connection_in *in);
 static int HA7E_directory(struct device_search *ds, struct dirblob *db, const struct parsedname *pn);
+static int HA7E_select( const struct parsedname * pn ) ;
 
 static void HA7E_setroutines(struct connection_in *in)
 {
@@ -43,7 +42,7 @@ static void HA7E_setroutines(struct connection_in *in)
 //    in->iroutines.ProgramPulse = ;
 	in->iroutines.sendback_data = HA7E_sendback_data;
 //    in->iroutines.sendback_bits = ;
-	in->iroutines.select = NULL;
+	in->iroutines.select = HA7E_select ;
 	in->iroutines.reconnect = NULL;
 	in->iroutines.close = HA7E_close;
 	in->iroutines.transaction = NULL;
@@ -97,22 +96,15 @@ static int HA7E_reset(const struct parsedname *pn)
 	BYTE resp[1];
 
 	COM_flush(pn);
-	//if (HA7E_write(HA7E_string("\rr"), 2, pn) || HA7E_read(resp, 4, pn, 1)) {
-	//Response is 3 bytes:  1 byte for code + \r\n
-	if (HA7E_write("R\r", 2, pn) || HA7E_read(resp, 1, pn)) {
-		LEVEL_DEBUG("Error resetting HA7E device\n");
-		return -EIO;
-	}
-
-	switch (resp[0]) {
-		case '\r':
-			LEVEL_DEBUG("HA7E reset ok, devices Present\n");
-			return BUS_RESET_OK;
-
-		default:
-			LEVEL_DEBUG("HA7E reset bad, Unknown HA7E response %.2X\n", resp[0]);
-			return -EIO;
-	}
+    if (COM_write("R", 1, pn)) {
+        LEVEL_DEBUG("Error sending HA7E reset\n");
+        return -EIO;
+    }
+    if (COM_read(resp, 1, pn) || resp[0]!=0x0D) {
+        LEVEL_DEBUG("Error reading HA7E reset\n");
+        return -EIO;
+    }
+    return BUS_RESET_OK;
 }
 
 static int HA7E_next_both(struct device_search *ds, const struct parsedname *pn)
@@ -131,7 +123,10 @@ static int HA7E_next_both(struct device_search *ds, const struct parsedname *pn)
 	COM_flush(pn);
 
 	if (ds->index == -1) {
-		if (HA7E_directory(ds, db, pn)) {
+        BUSLOCK(pn) ;
+        ret = HA7E_directory(ds, db, pn) ;
+        BUSUNLOCK(pn) ;
+        if (ret) {
 			return -EIO;
 		}
 	}
@@ -158,32 +153,29 @@ static int HA7E_next_both(struct device_search *ds, const struct parsedname *pn)
 	return ret;
 }
 
-/* Assymetric */
-/* Read from HA7E with timeout on each character */
-// NOTE: from PDkit, reead 1-byte at a time
-// NOTE: change timeout to 40msec from 10msec for HA7E
-// returns 0=good 1=bad
-/* return 0=good,
-          -errno = read error
-          -EINTR = timeout
- */
-static int HA7E_read(BYTE * buf, const size_t size, const struct parsedname *pn)
+static int HA7E_select( const struct parsedname * pn )
 {
-	return COM_read( buf, size, pn ) ;
+    char send_address[18] ;
+    char resp_address[17] ;
+    UCLIBCLOCK ;
+    snprintf( send_address, 18, "A%.2X%.2X%.2X%.2X%.2X%.2X%.2X%.2X%c",pn->sn[7],pn->sn[6],pn->sn[5],pn->sn[4],pn->sn[3],pn->sn[2],pn->sn[1],pn->sn[0],0x0D) ;
+    UCLIBCUNLOCK ;
+
+    if ( COM_write(send_address,18,pn) ) {
+        LEVEL_DEBUG("Error with sending HA7E select\n") ;
+        return -EIO ;
+    }
+    if ( COM_read(resp_address,17,pn) ) {
+        LEVEL_DEBUG("Error with reading HA7E select\n") ;
+        return -EIO ;
+    }
+    if ( memcmp( &resp_address[0],&send_address[1],17) ) {
+        LEVEL_DEBUG("Error with HA7E select response\n") ;
+        return -EIO ;
+    }
+    return 0 ;
 }
 
-//
-// Write a string to the serial port
-/* return 0=good,
-          -EIO = error
-   Special processing for the remote hub (add 0x0A)
- */
-static int HA7E_write(const BYTE * buf, const size_t size, const struct parsedname *pn)
-{
-	return COM_write( buf, size, pn ) ;
-}
-
-// DS2480_sendback_data
 //  Send data and return response block
 //  puts into data mode if needed.
 /* return 0=good
@@ -198,7 +190,7 @@ static int HA7E_sendback_data(const BYTE * data, BYTE * resp, const size_t size,
 	if (size == 0) {
 		return 0;
 	}
-	if (HA7E_write(HA7E_string("b"), 1, pn)) {
+	if (COM_write(HA7E_string("b"), 1, pn)) {
 		LEVEL_DEBUG("HA7E_sendback_data error sending b\n");
 		return -EIO;
 	}
@@ -207,7 +199,7 @@ static int HA7E_sendback_data(const BYTE * data, BYTE * resp, const size_t size,
 		i = (left > 16) ? 16 : left;
 //        printf(">> size=%d, left=%d, i=%d\n",size,left,i);
 		bytes2string((char *) buf, &data[size - left], i);
-		if (HA7E_write(buf, i << 1, pn) || HA7E_read(buf, i << 1, pn)) {
+		if (COM_write(buf, i << 1, pn) || COM_read(buf, i << 1, pn)) {
 			return -EIO;
 		}
 		string2bytes((char *) buf, &resp[size - left], i);
@@ -229,7 +221,7 @@ static int HA7E_byte_bounce(const BYTE * out, BYTE * in, const struct parsedname
 	BYTE data[2];
 
 	num2string((char *) data, out[0]);
-	if (HA7E_write(data, 2, pn) || HA7E_read(data, 2, pn)) {
+	if (COM_write(data, 2, pn) || COM_read(data, 2, pn)) {
 		return -EIO;
 	}
 	in[0] = string2num((char *) data);
@@ -239,7 +231,7 @@ static int HA7E_byte_bounce(const BYTE * out, BYTE * in, const struct parsedname
 static int HA7E_CR(const struct parsedname *pn)
 {
 	BYTE data[3];
-	if (HA7E_write(HA7E_string("\r"), 1, pn) || HA7E_read(data, 2, pn)) {
+	if (COM_write(HA7E_string("\r"), 1, pn) || COM_read(data, 2, pn)) {
 		return -EIO;
 	}
 	LEVEL_DEBUG("HA7E_CR return 0\n");
@@ -287,16 +279,16 @@ static int HA7E_directory(struct device_search *ds, struct dirblob *db, const st
 
 	// Send the configuration command and check response
 	if (ds->search == _1W_CONDITIONAL_SEARCH_ROM) {
-		first = "C\r" ;
-		next = "c\r" ;
+		first = "C" ;
+		next = "c" ;
 	} else {
-		first = "S\r" ;
-		next = "s\r" ;
+		first = "S" ;
+		next = "s" ;
 	}
 	current = first ;
 
 	while (1) {
-		if ((ret = HA7E_write(current, 2, pn))) {
+		if ((ret = COM_write(current, 1, pn))) {
 			return ret;
 		}
 		current = next ; // set up for next pass
@@ -307,13 +299,13 @@ static int HA7E_directory(struct device_search *ds, struct dirblob *db, const st
 		//So we grab the first character and check it.  If not an E leave it
 		//in the resp buffer and get the rest of the response from the HA7E
 		//device
-		if ((ret = (HA7E_read(resp, 1, pn)))) {
+		if ((ret = (COM_read(resp, 1, pn)))) {
 			return ret;
 		}
-		if ( resp[0] == '\r' ) {
+		if ( resp[0] == 0x0D ) {
 			return 0 ; // end of list
 		}
-		if ((ret = (HA7E_read(&resp[1], 16, pn)))) {
+		if ((ret = (COM_read(&resp[1], 16, pn)))) {
 			return ret;
 		}
 		sn[7] = string2num(&resp[0]);
@@ -324,7 +316,11 @@ static int HA7E_directory(struct device_search *ds, struct dirblob *db, const st
 		sn[2] = string2num(&resp[10]);
 		sn[1] = string2num(&resp[12]);
 		sn[0] = string2num(&resp[14]);
-		LEVEL_DEBUG("HA7E_directory SN found: " SNformat "\n", SNvar(sn));
+		memcpy( pn->selected_connection->connin.ha7e.sn, sn, 8) ;
+        LEVEL_DEBUG("HA7E_directory SN found: " SNformat "\n", SNvar(sn));
+        if ( resp[17]!=0x0D ) {
+            return -EIO ;
+        }
 
 		// CRC check
 		if (CRC8(sn, 8) || (sn[0] == 0)) {
