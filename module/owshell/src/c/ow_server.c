@@ -101,20 +101,20 @@ int ServerRead(ASCII * path)
 	}
 
 	if (ToServer(connectfd, &sm, &sp)) {
-		fprintf(stderr, "Error sending request for %s\n", path);
+		fprintf(stderr, "ServerRead: Error sending request for %s\n", path);
 		ret = -EIO;
 	} else if (FromServer(connectfd, &cm, buf, size) < 0) {
-		fprintf(stderr, "Error receiving data on %s\n", path);
+		fprintf(stderr, "ServerRead: Error receiving data on %s\n", path);
 		ret = -EIO;
 	} else {
 		ret = cm.ret;
 		if (ret <= 0 || ret > size) {
-			fprintf(stderr, "Data error on %s\n", path);
+			fprintf(stderr, "ServerRead: Data error on %s\n", path);
 		} else if ( hexflag ) {
 			WriteHex( buf, ret ) ;
 		} else {
 			buf[ret] = '\0';
-			printf("%s", buf);
+			//printf("%s", buf);
 		}
 	}
 	close(connectfd);
@@ -178,7 +178,7 @@ int ServerDirall(ASCII * path)
 		for (p = path2; *p; ++p)
 			if (*p == ',')
 				*p = '\n';
-		printf("%s\n", path2);
+		//printf("%s\n", path2);
 		free(path2);
 	}
 	close(connectfd);
@@ -207,7 +207,7 @@ int ServerDir(ASCII * path)
 		char *path2;
 		while ((path2 = FromServerAlloc(connectfd, &cm))) {
 			path2[cm.payload - 1] = '\0';	/* Ensure trailing null */
-			printf("%s\n", path2);
+			//printf("%s\n", path2);
 			free(path2);
 		}
 	}
@@ -239,7 +239,7 @@ int ServerPresence(ASCII * path)
 		ret = cm.ret;
 	}
 	close(connectfd);
-	printf((ret >= 0) ? "1" : "0");
+	//printf((ret >= 0) ? "1" : "0");
 	return ret;
 }
 
