@@ -77,7 +77,7 @@ int CheckPresence(struct parsedname *pn)
 
 	LEVEL_DETAIL("Checking presence of %s\n", SAFESTRING(pn->path));
 
-	if ( Inbound_Control.active == 0 ) {
+	if ( Inbound_Control.active == 0 ) { // No adapters
 		return -1 ;
 	}
 	bus_nr = CheckPresence_low(Inbound_Control.head, pn);	// check only allocated inbound connections
@@ -100,9 +100,9 @@ struct checkpresence_struct {
 	int ret;
 };
 
-static void *CheckPresence_callback(void *vp)
+static void *CheckPresence_callback(void *v)
 {
-	struct checkpresence_struct *cps = (struct checkpresence_struct *) vp;
+	struct checkpresence_struct *cps = (struct checkpresence_struct *) v;
 	cps->ret = CheckPresence_low(cps->in, cps->pn);
 	pthread_exit(NULL);
 	return NULL;

@@ -256,6 +256,10 @@ static int HA7E_select( const struct parsedname * pn )
 	num2string( &send_address[15], pn->sn[0] ) ;
 	send_address[17] = 0x0D;
 
+	if ( (pn->selected_device==NULL) || (pn->selected_device==DeviceThermostat) ) {
+		return HA7E_reset(pn) ;
+	}
+	
 	if ( memcmp( pn->sn, pn->selected_connection->connin.ha7e.sn, 8 ) ) {
 		if ( COM_write((BYTE*)send_address,18,pn) ) {
 			LEVEL_DEBUG("Error with sending HA7E A-ddress\n") ;
