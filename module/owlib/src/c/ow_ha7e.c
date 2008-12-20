@@ -60,7 +60,7 @@ int HA7E_detect(struct connection_in *in)
 	DirblobInit(&(in->connin.ha7e.alarm));
 	
 	// Poison current "Address" for adapter
-	pn->selected_connection->connin.ha7e.sn[0] = 0 ; // so won't match
+	in->connin.ha7e.sn[0] = 0 ; // so won't match
 	
 	/* Open the com port */
 	if (COM_open(in)) {
