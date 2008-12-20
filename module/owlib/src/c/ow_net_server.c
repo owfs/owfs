@@ -181,10 +181,11 @@ static void ServerProcessAccept(void *vp)
 
 	do {
 		acceptfd = accept(out->file_descriptor, NULL, NULL);
-		//LEVEL_DEBUG("ServerProcessAccept %s[%lu] accept %d\n",SAFESTRING(out->name),(unsigned long int)pthread_self(),out->index) ;
 		if (StateInfo.shutdown_in_progress) {
+			LEVEL_DEBUG("ServerProcessAccept shutdown_in_progress %s[%lu] accept %d\n",SAFESTRING(out->name),(unsigned long int)pthread_self(),out->index) ;
 			break;
 		}
+		LEVEL_DEBUG("ServerProcessAccept %s[%lu] accept %d fd=%d\n",SAFESTRING(out->name),(unsigned long int)pthread_self(),out->index, acceptfd) ;
 		if (acceptfd < 0) {
 			if (errno == EINTR) {
 				LEVEL_DEBUG("ow_net_server.c: accept interrupted\n");
@@ -195,7 +196,8 @@ static void ServerProcessAccept(void *vp)
 		break;
 	} while (1);
 	ACCEPTUNLOCK(out);
-	//LEVEL_DEBUG("ServerProcessAccept %s[%lu] unlock %d\n",SAFESTRING(out->name),(unsigned long int)pthread_self(),out->index) ;
+	
+	LEVEL_DEBUG("ServerProcessAccept %s[%lu] unlock %d\n",SAFESTRING(out->name),(unsigned long int)pthread_self(),out->index) ;
 
 	if (StateInfo.shutdown_in_progress) {
 		LEVEL_DEBUG
@@ -226,6 +228,13 @@ static void ServerProcessAccept(void *vp)
 	return;
 }
 
+void ServerProcessCleanup(void *param)
+{
+  struct connection_out *out = (struct connection_out *)param;
+  LEVEL_DEBUG("ServerProcessCleanup: cleaning up blocked thread %d\n", out->tid);
+  ACCEPTUNLOCK(out);
+  LEVEL_DEBUG("ServerProcessCleanup: unlocked accept mutex\n");
+}
 
 /* For a given port (connecion_out) set up listening */
 static void *ServerProcessOut(void *v)
@@ -241,10 +250,16 @@ static void *ServerProcessOut(void *v)
 
 	OW_Announce(out);
 
+	pthread_cleanup_push(ServerProcessCleanup, v);
+	
 	while (!StateInfo.shutdown_in_progress) {
 		ServerProcessAccept(v);
 	}
+
 	LEVEL_DEBUG("ServerProcessOut = %lu CLOSING (%s)\n", (unsigned long int) pthread_self(), SAFESTRING(out->name));
+
+	pthread_cleanup_pop(0);
+
 	OUTLOCK(out);
 	out->tid = 0;
 	OUTUNLOCK(out);
@@ -304,9 +319,15 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 			if (pthread_cancel(out->tid)) {
 				LEVEL_DEBUG("Can't kill %d of %d\n", out->index, Outbound_Control.active);
 			}
-			out->tid = 0;
 		}
 		OUTUNLOCK(out);
+	}
+
+	LEVEL_DEBUG("ow_net_server.c:ServerProcess() all threads cancelled\n");
+
+	for (out = Outbound_Control.head; out; out = out->next) {
+		pthread_join(out->tid, NULL);
+		out->tid = 0;
 	}
 
 	LEVEL_DEBUG("ow_net_server.c:ServerProcess() shutdown done\n");
