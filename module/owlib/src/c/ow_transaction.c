@@ -253,11 +253,15 @@ static int Bundle_ship(struct transaction_bundle *tb, const struct parsedname *p
 // Execute a bundle transaction (actual bytes on 1-wire bus)
 static int Bundle_enroute(struct transaction_bundle *tb, const struct parsedname *pn)
 {
+	int ret ;
 	if (tb->select_first) {
-		return BUS_select_and_sendback(tb->mb.memory_storage, tb->mb.memory_storage, tb->mb.used, pn);
+		ret = BUS_select_and_sendback(tb->mb.memory_storage, tb->mb.memory_storage, tb->mb.used, pn);
+		LEVEL_DEBUG("Transaction Execute select and sendback = %d\n",ret ) ;
 	} else {
-		return BUS_sendback_data(tb->mb.memory_storage, tb->mb.memory_storage, tb->mb.used, pn);
+		ret = BUS_sendback_data(tb->mb.memory_storage, tb->mb.memory_storage, tb->mb.used, pn);
+		LEVEL_DEBUG("Transaction Execute sendback = %d\n",ret ) ;
 	}
+	return ret ;
 }
 
 /* See if the item can be packed
