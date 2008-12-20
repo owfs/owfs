@@ -80,9 +80,10 @@ int HA7E_detect(struct connection_in *in)
 	COM_speed(B9600, &pn);
 	//COM_flush(&pn);
 	if (HA7E_reset(&pn) == BUS_RESET_OK ) {
-
-		COM_flush(&pn);
-
+		in->Adapter = adapter_HA7E ;
+		in->adapter_name = "HA7E/S";
+		return 0;
+	} else if (HA7E_reset(&pn) == BUS_RESET_OK ) {
 		in->Adapter = adapter_HA7E ;
 		in->adapter_name = "HA7E/S";
 		return 0;
@@ -96,15 +97,19 @@ static int HA7E_reset(const struct parsedname *pn)
 	BYTE resp[1];
 
 	COM_flush(pn);
-    if (COM_write((BYTE*)"R", 1, pn)) {
-        LEVEL_DEBUG("Error sending HA7E reset\n");
-        return -EIO;
-    }
-    if (COM_read(resp, 1, pn) || resp[0]!=0x0D) {
-        LEVEL_DEBUG("Error reading HA7E reset\n");
-        return -EIO;
-    }
-    return BUS_RESET_OK;
+	if (COM_write((BYTE*)"R", 1, pn)) {
+		LEVEL_DEBUG("Error sending HA7E reset\n");
+		return -EIO;
+	}
+	if (COM_read(resp, 1, pn)) {
+		LEVEL_DEBUG("Error reading HA7E reset\n");
+		return -EIO;
+	}
+	if (resp[0]!=0x0D) {
+		LEVEL_DEBUG("Error HA7E reset bad <cr>\n");
+		return -EIO;
+	}
+	return BUS_RESET_OK;
 }
 
 static int HA7E_next_both(struct device_search *ds, const struct parsedname *pn)
