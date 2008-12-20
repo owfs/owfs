@@ -120,9 +120,6 @@ static int HA7E_next_both(struct device_search *ds, const struct parsedname *pn)
 	struct dirblob *db = (ds->search == _1W_CONDITIONAL_SEARCH_ROM) ?
 		&(pn->selected_connection->connin.link.alarm) : &(pn->selected_connection->connin.link.main);
 
-	if (!pn->selected_connection->AnyDevices) {
-		ds->LastDevice = 1;
-	}
 	if (ds->LastDevice) {
 		return -ENODEV;
 	}
@@ -130,12 +127,15 @@ static int HA7E_next_both(struct device_search *ds, const struct parsedname *pn)
 	COM_flush(pn);
 
 	if (ds->index == -1) {
-        BUSLOCK(pn) ;
-        ret = HA7E_directory(ds, db, pn) ;
-        BUSUNLOCK(pn) ;
-        if (ret) {
+		printf("First pass -- fill the dirblob\n");
+		BUSLOCK(pn) ;
+		ret = HA7E_directory(ds, db, pn) ;
+		BUSUNLOCK(pn) ;
+		if (ret) {
 			return -EIO;
 		}
+	} else {
+		printf("Not First pass\n");
 	}
 	// LOOK FOR NEXT ELEMENT
 	++ds->index;
