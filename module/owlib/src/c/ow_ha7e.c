@@ -46,7 +46,7 @@ static void HA7E_setroutines(struct connection_in *in)
 	in->iroutines.reconnect = NULL;
 	in->iroutines.close = HA7E_close;
 	in->iroutines.transaction = NULL;
-	in->iroutines.flags = ADAP_FLAG_2409path;
+	in->iroutines.flags = ADAP_FLAG_2409path | ADAP_FLAG_dir_auto_reset ;
 	in->bundling_length = HA7E_FIFO_SIZE;
 }
 
@@ -82,10 +82,12 @@ int HA7E_detect(struct connection_in *in)
 	if (HA7E_reset(&pn) == BUS_RESET_OK ) {
 		in->Adapter = adapter_HA7E ;
 		in->adapter_name = "HA7E/S";
+		in->AnyDevices = 1 ;
 		return 0;
 	} else if (HA7E_reset(&pn) == BUS_RESET_OK ) {
 		in->Adapter = adapter_HA7E ;
 		in->adapter_name = "HA7E/S";
+		in->AnyDevices = 1 ;
 		return 0;
 	}
 	LEVEL_DEFAULT("HA7E detection error\n");
