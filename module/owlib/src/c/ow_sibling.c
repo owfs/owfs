@@ -204,3 +204,15 @@ int FS_w_sibling_bitwork(UINT set, UINT mask, const char * sibling, struct one_w
 	FS_OWQ_destroy_sibling(owq_sibling) ;
 	return 0;
 }
+
+/* Delete entry in cache */
+void FS_del_sibling(const char * sibling, struct one_wire_query *owq)
+{
+	struct one_wire_query * owq_sibling  = FS_OWQ_create_sibling( sibling, owq ) ;
+	
+	if ( owq_sibling != NULL ) {
+		Cache_Del(PN(owq_sibling)) ;
+		FS_OWQ_destroy_sibling(owq_sibling) ;
+	}
+
+}
