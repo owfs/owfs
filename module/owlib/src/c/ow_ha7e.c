@@ -128,9 +128,7 @@ static int HA7E_next_both(struct device_search *ds, const struct parsedname *pn)
 
 	if (ds->index == -1) {
 		printf("First pass -- fill the dirblob\n");
-		BUSLOCK(pn) ;
 		ret = HA7E_directory(ds, db, pn) ;
-		BUSUNLOCK(pn) ;
 		if (ret) {
 			return -EIO;
 		}
