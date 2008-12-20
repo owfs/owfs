@@ -176,6 +176,7 @@ static int HA7E_select( const struct parsedname * pn )
 	snprintf( send_address, 18, "A%.2X%.2X%.2X%.2X%.2X%.2X%.2X%.2X%c",pn->sn[7],pn->sn[6],pn->sn[5],pn->sn[4],pn->sn[3],pn->sn[2],pn->sn[1],pn->sn[0],0x0D) ;
 	UCLIBCUNLOCK ;
 
+	printf("SELECT SEND STRING=%.18s\n",send_address);
 	if ( memcmp( pn->sn, pn->selected_connection->connin.ha7e.sn, 8 ) ) {
 		if ( COM_write((BYTE*)send_address,18,pn) ) {
 			LEVEL_DEBUG("Error with sending HA7E A-ddress\n") ;
@@ -191,6 +192,7 @@ static int HA7E_select( const struct parsedname * pn )
 		LEVEL_DEBUG("Error with reading HA7E select\n") ;
 		return HA7E_resync(pn) ;
 	}
+	printf("SELECT RESP STRING=%.17s\n",resp_address);
 	if ( memcmp( &resp_address[0],&send_address[1],17) ) {
 		LEVEL_DEBUG("Error with HA7E select response\n") ;
 		return HA7E_resync(pn) ;
