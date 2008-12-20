@@ -173,8 +173,9 @@ static int HA7E_select( const struct parsedname * pn )
 	char resp_address[17] ;
 
 	UCLIBCLOCK ;
-	snprintf( send_address, 18, "A%.2X%.2X%.2X%.2X%.2X%.2X%.2X%.2X%c",pn->sn[7],pn->sn[6],pn->sn[5],pn->sn[4],pn->sn[3],pn->sn[2],pn->sn[1],pn->sn[0],0x0D) ;
+	snprintf( send_address, 18, "A%.2X%.2X%.2X%.2X%.2X%.2X%.2X%.2X",pn->sn[7],pn->sn[6],pn->sn[5],pn->sn[4],pn->sn[3],pn->sn[2],pn->sn[1],pn->sn[0],0x0D) ;
 	UCLIBCUNLOCK ;
+	send_address[17] = 0x0D;
 
 	printf("SELECT SEND STRING=%.18s\n",send_address);
 	if ( memcmp( pn->sn, pn->selected_connection->connin.ha7e.sn, 8 ) ) {
