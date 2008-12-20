@@ -173,9 +173,15 @@ static int HA7E_select( const struct parsedname * pn )
 	char send_address[18] ;
 	char resp_address[17] ;
 
-	UCLIBCLOCK ;
-	snprintf( send_address, 18, "A%.2X%.2X%.2X%.2X%.2X%.2X%.2X%.2X",pn->sn[7],pn->sn[6],pn->sn[5],pn->sn[4],pn->sn[3],pn->sn[2],pn->sn[1],pn->sn[0],0x0D) ;
-	UCLIBCUNLOCK ;
+	send_address[0] = 'A' ;
+	num2string( &send_address[ 1], pn->sn[7] ) ;
+	num2string( &send_address[ 3], pn->sn[6] ) ;
+	num2string( &send_address[ 5], pn->sn[5] ) ;
+	num2string( &send_address[ 7], pn->sn[4] ) ;
+	num2string( &send_address[ 9], pn->sn[3] ) ;
+	num2string( &send_address[11], pn->sn[2] ) ;
+	num2string( &send_address[13], pn->sn[1] ) ;
+	num2string( &send_address[15], pn->sn[0] ) ;
 	send_address[17] = 0x0D;
 
 	printf("SELECT SEND STRING=%.18s\n",send_address);
@@ -210,7 +216,7 @@ static int HA7E_sendback_part(const BYTE * data, BYTE * resp, const size_t size,
 
 	send_data[0] = 'W' ;
 	num2string( &send_data[1], size ) ;
-	bytes2string(&send_data[3], data, size)
+	bytes2string(&send_data[3], data, size) ;
 	send_data[3+2*size] = 0x0D ;
 	
 	if ( COM_write((BYTE*)send_data,size*2+4,pn) ) {
