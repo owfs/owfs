@@ -207,20 +207,11 @@ static int HA7E_sendback_part(const BYTE * data, BYTE * resp, const size_t size,
 {
 	char send_data[1+2+32*2+1] ;
 	char get_data[32*2+1] ;
-	size_t i ;
-	char * send_pointer = send_data ;
 
-	*(send_pointer++) = 'W' ;
-
-	num2string( send_pointer, size ) ;
-	send_pointer += 2 ;
-
-	for ( i=0 ; i<size ; ++i ) {
-		num2string( send_pointer, data[1] ) ;
-		send_pointer += 2 ;
-	}
-
-	*send_pointer = 0x0D ;
+	send_data[0] = 'W' ;
+	num2string( &send_data[1], size ) ;
+	bytes2string(&send_data[3], data, size)
+	send_data[3+2*size] = 0x0D ;
 	
 	if ( COM_write((BYTE*)send_data,size*2+4,pn) ) {
 		LEVEL_DEBUG("Error with sending HA7E block\n") ;
@@ -231,9 +222,7 @@ static int HA7E_sendback_part(const BYTE * data, BYTE * resp, const size_t size,
 		return HA7E_resync(pn) ;
 	}
 
-	for ( i=0 ; i<size ; ++i ) {
-		resp[i] = string2num( &get_data[2*i] ) ;
-	}
+	string2bytes(get_data, resp, size) ;
 	return 0 ;
 }
 	
@@ -244,9 +233,9 @@ static int HA7E_sendback_data(const BYTE * data, BYTE * resp, const size_t size,
 	int left;
 
 	for ( left=size ; left>0 ; left -= 32 ) {
-		size_t start = size - left ;
+		size_t pass_start = size - left ;
 		size_t pass_size = (left>32)?32:left ;
-		if ( HA7E_sendback_part( &data[start], &resp[start], pass_size, pn ) ) {
+		if ( HA7E_sendback_part( &data[pass_start], &resp[pass_start], pass_size, pn ) ) {
 			return -EIO ;
 		}
 	}
