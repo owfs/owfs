@@ -51,7 +51,7 @@ AM_INIT_AUTOMAKE(${PACKAGE}, ${VERSION})dnl
 # Process config.h.in
 AH_TOP([
 #ifndef OWCONFIG_H
-#define OWCONFIG_H
+	#define OWCONFIG_H
 ])
 AH_BOTTOM([#endif])
 AM_CONFIG_HEADER(src/include/config.h)
@@ -88,10 +88,10 @@ AC_MSG_CHECKING([if debian-system is used])
 AC_ARG_ENABLE(debian,
 [  --enable-debian         Enable debian-system (default false)],
 [
-    AC_MSG_RESULT([$enableval])
-    if test "$enableval" = "yes" ; then
-        HAVE_DEBIAN="true"
-    fi
+	AC_MSG_RESULT([$enableval])
+	if test "$enableval" = "yes" ; then
+		HAVE_DEBIAN="true"
+	fi
 ],
 [
     AC_MSG_RESULT([no (default)])
@@ -105,18 +105,18 @@ HAVE_CYGWIN="false"
 
 AC_MSG_CHECKING([for special host])
 case "$host" in
-  *-*-cygwin*)
-    HAVE_CYGWIN="true"
-    CFLAGS="$CFLAGS -mwin32 -g"
-    AC_MSG_RESULT([Cygwin])
-    ;;
-  *-darwin*)
-    HAVE_DARWIN="true"
-    AC_MSG_RESULT([Darwin])
-    ;;
-  *)
-    AC_MSG_RESULT([Other host])
-    ;;
+	*-*-cygwin*)
+		HAVE_CYGWIN="true"
+		CFLAGS="$CFLAGS -mwin32 -g"
+		AC_MSG_RESULT([Cygwin])
+		;;
+	*-darwin*)
+		HAVE_DARWIN="true"
+		AC_MSG_RESULT([Darwin])
+		;;
+	*)
+		AC_MSG_RESULT([Other host])
+		;;
 esac
 AC_SUBST(HAVE_DARWIN)
 AM_CONDITIONAL(HAVE_DARWIN, test "${HAVE_DARWIN}" = "true")
@@ -125,7 +125,7 @@ AM_CONDITIONAL(HAVE_CYGWIN, test "${HAVE_CYGWIN}" = "true")
 
 PIC_FLAGS=""
 if test "$lt_prog_compiler_pic_works" = yes; then
-   PIC_FLAGS="$lt_prog_compiler_pic"
+	PIC_FLAGS="$lt_prog_compiler_pic"
 fi
 AC_SUBST(PIC_FLAGS)
 
@@ -133,21 +133,21 @@ AC_SUBST(PIC_FLAGS)
 # Should perhaps support cross-compiling to other cpu-type too?
 LIBPOSTFIX=
 case "${host_os}" in
-  *linux* )
-    case "${host_cpu}" in
-      powerpc64 | s390x | x86_64 )
-        LIBPOSTFIX="64"
-	CFLAGS="$CFLAGS -m64"
-        ;;
-    esac
-    ;;
+	*linux* )
+	case "${host_cpu}" in
+		powerpc64 | s390x | x86_64 )
+		LIBPOSTFIX="64"
+		CFLAGS="$CFLAGS -m64"
+		;;
+	esac
+	;;
 esac
 AC_SUBST(LIBPOSTFIX)
 
 
 
 if test "$cross_compiling" != yes; then
-OW_CHECK_NESTED_FUNCTIONS
+	OW_CHECK_NESTED_FUNCTIONS
 fi
 
 OWFSROOT="`pwd`"
@@ -167,13 +167,13 @@ AC_MSG_CHECKING([if debug-output is enabled])
 AC_ARG_ENABLE(debug,
 [  --enable-debug          Enable debug-output (default true)],
 [
-    AC_MSG_RESULT([$enableval])
-    if ! test "$enableval" = "yes" ; then
-        ENABLE_DEBUG="false"
-    fi
+	AC_MSG_RESULT([$enableval])
+	if ! test "$enableval" = "yes" ; then
+		ENABLE_DEBUG="false"
+	fi
 ],
 [
-    AC_MSG_RESULT([yes (default)])
+	AC_MSG_RESULT([yes (default)])
 ])
 AC_SUBST(ENABLE_DEBUG)
 AM_CONDITIONAL(ENABLE_DEBUG, test "${ENABLE_DEBUG}" = "true")
@@ -184,13 +184,13 @@ AC_MSG_CHECKING([if OWSHELL support is enabled])
 AC_ARG_ENABLE(owshell,
 [  --enable-owshell        Enable owshell support (default true)],
 [
-    AC_MSG_RESULT([$enableval])
-    if ! test "$enableval" = "yes" ; then
-        ENABLE_OWSHELL="false"
-    fi
+	AC_MSG_RESULT([$enableval])
+	if ! test "$enableval" = "yes" ; then
+		ENABLE_OWSHELL="false"
+	fi
 ],
 [
-    AC_MSG_RESULT([yes (default)])
+	AC_MSG_RESULT([yes (default)])
 ])
 AC_SUBST(ENABLE_OWSHELL)
 AM_CONDITIONAL(ENABLE_OWSHELL, test "${ENABLE_OWSHELL}" = "true")
@@ -201,10 +201,10 @@ AC_MSG_CHECKING([if OWLIB support is enabled])
 AC_ARG_ENABLE(owlib,
 [  --enable-owlib          Enable owlib support (default true)],
 [
-    AC_MSG_RESULT([$enableval])
-    if ! test "$enableval" = "yes" ; then
-        ENABLE_OWLIB="false"
-    fi
+	AC_MSG_RESULT([$enableval])
+	if ! test "$enableval" = "yes" ; then
+		ENABLE_OWLIB="false"
+	fi
 ],
 [
     AC_MSG_RESULT([yes (default)])
@@ -218,13 +218,13 @@ AC_MSG_CHECKING([if OWNETLIB support is enabled])
 AC_ARG_ENABLE(ownetlib,
 [  --enable-ownetlib       Enable ownetlib support (default true)],
 [
-    AC_MSG_RESULT([$enableval])
-    if ! test "$enableval" = "yes" ; then
-        ENABLE_OWNETLIB="false"
-    fi
+	AC_MSG_RESULT([$enableval])
+	if ! test "$enableval" = "yes" ; then
+		ENABLE_OWNETLIB="false"
+	fi
 ],
 [
-    AC_MSG_RESULT([yes (default)])
+	AC_MSG_RESULT([yes (default)])
 ])
 AC_SUBST(ENABLE_OWNETLIB)
 AM_CONDITIONAL(ENABLE_OWNETLIB, test "${ENABLE_OWNETLIB}" = "true")
@@ -235,13 +235,13 @@ AC_MSG_CHECKING([if TAI8570 barometer support is enabled])
 AC_ARG_ENABLE(tai8570,
 [  --enable-tai8570        Enable tai8570 barometer support (default true)],
 [
-    AC_MSG_RESULT([$enableval])
-    if ! test "$enableval" = "yes" ; then
-        ENABLE_TAI8570="false"
-    fi
+	AC_MSG_RESULT([$enableval])
+	if ! test "$enableval" = "yes" ; then
+		ENABLE_TAI8570="false"
+	fi
 ],
 [
-    AC_MSG_RESULT([yes (default)])
+	AC_MSG_RESULT([yes (default)])
 ])
 AC_SUBST(ENABLE_TAI8570)
 AM_CONDITIONAL(ENABLE_TAI8570, test "${ENABLE_TAI8570}" = "true")
@@ -252,13 +252,13 @@ AC_MSG_CHECKING([if thermocouple support is enabled])
 AC_ARG_ENABLE(thermocouple,
 [  --enable-thermocouple   Enable thermocouple support (default true)],
 [
-    AC_MSG_RESULT([$enableval])
-    if ! test "$enableval" = "yes" ; then
-        ENABLE_THERMOCOUPLE="false"
-    fi
+	AC_MSG_RESULT([$enableval])
+	if ! test "$enableval" = "yes" ; then
+		ENABLE_THERMOCOUPLE="false"
+	fi
 ],
 [
-    AC_MSG_RESULT([yes (default)])
+	AC_MSG_RESULT([yes (default)])
 ])
 AC_SUBST(ENABLE_THERMOCOUPLE)
 AM_CONDITIONAL(ENABLE_THERMOCOUPLE, test "${ENABLE_THERMOCOUPLE}" = "true")
@@ -269,36 +269,36 @@ AC_MSG_CHECKING([if multithreading is enabled])
 AC_ARG_ENABLE(mt,
 [  --enable-mt             Enable multithreading support (default true)],
 [
-    AC_MSG_RESULT([$enableval])
-    if ! test "$enableval" = "yes" ; then
-        ENABLE_MT="false"
-    fi
+	AC_MSG_RESULT([$enableval])
+	if ! test "$enableval" = "yes" ; then
+		ENABLE_MT="false"
+	fi
 ],
 [
-    AC_MSG_RESULT([yes (default)])
+	AC_MSG_RESULT([yes (default)])
 ])
 
 if test "${ENABLE_MT}" = "true" ; then
-    ACX_PTHREAD
-    if test "$acx_pthread_ok" = "yes"; then
-	#CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
-	# can't set pthread flags for all compilations, since owshell doesn't need it.
-	if test "$cross_compiling" = yes; then
-	   # We need to link libow.so with -lpthread on some cross-platforms
-	   # since owtcl.so doesn't work otherwise. -pthread is not enough
-	   if test x"$PTHREAD_LIBS" = x -a "x$PTHREAD_CFLAGS" = "x-pthread"; then
-	      AC_MSG_RESULT([add -lpthread to PTHREAD_LIBS])
-	      PTHREAD_LIBS="-lpthread"
-	   fi
-	fi
+	ACX_PTHREAD
+	if test "$acx_pthread_ok" = "yes"; then
+		#CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+		# can't set pthread flags for all compilations, since owshell doesn't need it.
+		if test "$cross_compiling" = yes; then
+			# We need to link libow.so with -lpthread on some cross-platforms
+			# since owtcl.so doesn't work otherwise. -pthread is not enough
+			if test x"$PTHREAD_LIBS" = x -a "x$PTHREAD_CFLAGS" = "x-pthread"; then
+				AC_MSG_RESULT([add -lpthread to PTHREAD_LIBS])
+				PTHREAD_LIBS="-lpthread"
+			fi
+		fi
 
-	ENABLE_MT="true"
-    else
-	ENABLE_MT="false"
-	PTHREAD_CFLAGS=""
-	PTHREAD_LIBS=""
-	PTHREAD_CC=""
-    fi
+		ENABLE_MT="true"
+	else
+		ENABLE_MT="false"
+		PTHREAD_CFLAGS=""
+		PTHREAD_LIBS=""
+		PTHREAD_CC=""
+	fi
 fi
 AC_SUBST(ENABLE_MT)
 AM_CONDITIONAL(ENABLE_MT, test "${ENABLE_MT}" = "true")
@@ -310,13 +310,13 @@ AC_MSG_CHECKING([if i2c(DS2482-x00) is enabled])
 AC_ARG_ENABLE(i2c,
 [  --enable-i2c            Enable i2c (DS2482-x00) support (default true)],
 [
-    AC_MSG_RESULT([$enableval])
-    if ! test "$enableval" = "yes" ; then
-        ENABLE_I2C="false"
-    fi
+	AC_MSG_RESULT([$enableval])
+	if ! test "$enableval" = "yes" ; then
+		ENABLE_I2C="false"
+	fi
 ],
 [
-    AC_MSG_RESULT([yes (default)])
+	AC_MSG_RESULT([yes (default)])
 ])
 
 AC_SUBST(ENABLE_I2C)
@@ -329,10 +329,10 @@ AC_MSG_CHECKING([if HA7Net is enabled])
 AC_ARG_ENABLE(ha7,
 [  --enable-ha7            Enable ha7 support (default true)],
 [
-    AC_MSG_RESULT([$enableval])
-    if ! test "$enableval" = "yes" ; then
-        ENABLE_HA7="false"
-    fi
+	AC_MSG_RESULT([$enableval])
+	if ! test "$enableval" = "yes" ; then
+		ENABLE_HA7="false"
+	fi
 ],
 [
     AC_MSG_RESULT([yes (default)])
@@ -347,13 +347,13 @@ AC_MSG_CHECKING([if W1 is enabled])
 AC_ARG_ENABLE(w1,
 [  --enable-w1             Enable w1 support (default true)],
 [
-    AC_MSG_RESULT([$enableval])
-    if ! test "$enableval" = "yes" ; then
-        ENABLE_W1="false"
-    fi
+	AC_MSG_RESULT([$enableval])
+	if ! test "$enableval" = "yes" ; then
+		ENABLE_W1="false"
+	fi
 ],
 [
-    AC_MSG_RESULT([yes (default)])
+	AC_MSG_RESULT([yes (default)])
 ])
 AC_SUBST(ENABLE_W1)
 AM_CONDITIONAL(ENABLE_W1, test "${ENABLE_W1}" = "true")
@@ -367,16 +367,16 @@ ENABLE_OWHTTPD="true"
 AC_ARG_ENABLE(owhttpd,
 [  --enable-owhttpd        Enable owhttpd module (default true)],
 [
-    AC_MSG_RESULT([$enableval])
-    if test ! "$enableval" = "yes" ; then
-        ENABLE_OWHTTPD="false"
-    else
-        ENABLE_OWLIB="true"
-    fi
+	AC_MSG_RESULT([$enableval])
+	if test ! "$enableval" = "yes" ; then
+		ENABLE_OWHTTPD="false"
+	else
+		ENABLE_OWLIB="true"
+	fi
 ],
 [
-    ENABLE_OWLIB="true"
-    AC_MSG_RESULT([yes (default)])
+	ENABLE_OWLIB="true"
+	AC_MSG_RESULT([yes (default)])
 ])
 AC_SUBST(ENABLE_OWHTTPD)
 AM_CONDITIONAL(ENABLE_OWHTTPD, test "${ENABLE_OWHTTPD}" = "true")
@@ -387,25 +387,24 @@ ENABLE_OWFTPD="true"
 AC_ARG_ENABLE(owftpd,
 [  --enable-owftpd         Enable owftpd module (default true)],
 [
-    if test ! "$enableval" = "yes" ; then
-	ENABLE_OWFTPD="false"
-	AC_MSG_ERROR([no])
-    else
-	if test ! "${ENABLE_MT}" = "true" ; then
-	    AC_MSG_ERROR([owftpd needs multithreading])
-	fi
-	ENABLE_OWLIB="true"
 	AC_MSG_RESULT([$enableval])
-    fi
+	if test ! "$enableval" = "yes" ; then
+		ENABLE_OWFTPD="false"
+	else
+#		if test ! "${ENABLE_MT}" = "true" ; then
+#			AC_MSG_ERROR([owftpd needs multithreading])
+#		fi
+		ENABLE_OWLIB="true"
+	fi
 ],
 [
-    if test "${ENABLE_MT}" = "true" ; then
-        ENABLE_OWLIB="true"
-    	AC_MSG_RESULT([yes (default)])
-    else
-	ENABLE_OWFTPD="false"
-    	AC_MSG_RESULT([no (multithreading needed)])
-    fi
+	if test "${ENABLE_MT}" = "true" ; then
+		ENABLE_OWLIB="true"
+		AC_MSG_RESULT([yes (default)])
+	else
+		ENABLE_OWFTPD="false"
+		AC_MSG_RESULT([no (multithreading needed)])
+	fi
 ])
 AC_SUBST(ENABLE_OWFTPD)
 AM_CONDITIONAL(ENABLE_OWFTPD, test "${ENABLE_OWFTPD}" = "true")
@@ -417,16 +416,16 @@ ENABLE_OWSERVER="true"
 AC_ARG_ENABLE(owserver,
 [  --enable-owserver       Enable owserver module (default true)],
 [
-    AC_MSG_RESULT([$enableval])
-    if test ! "$enableval" = "yes" ; then
-        ENABLE_OWSERVER="false"
-    else
-        ENABLE_OWLIB="true"
-    fi
+	AC_MSG_RESULT([$enableval])
+	if test ! "$enableval" = "yes" ; then
+		ENABLE_OWSERVER="false"
+	else
+		ENABLE_OWLIB="true"
+	fi
 ],
 [
-    ENABLE_OWLIB="true"
-    AC_MSG_RESULT([yes (default)])
+	ENABLE_OWLIB="true"
+	AC_MSG_RESULT([yes (default)])
 ])
 AC_SUBST(ENABLE_OWSERVER)
 AM_CONDITIONAL(ENABLE_OWSERVER, test "${ENABLE_OWSERVER}" = "true")
@@ -437,16 +436,16 @@ ENABLE_OWNET="true"
 AC_ARG_ENABLE(ownet,
 [  --enable-ownet          Enable ownet module (default true)],
 [
-    AC_MSG_RESULT([$enableval])
-    if test ! "$enableval" = "yes" ; then
-        ENABLE_OWNET="false"
-    else
-        ENABLE_OWLIB="true"
-    fi
+	AC_MSG_RESULT([$enableval])
+	if test ! "$enableval" = "yes" ; then
+		ENABLE_OWNET="false"
+	else
+		ENABLE_OWLIB="true"
+	fi
 ],
 [
-    ENABLE_OWLIB="true"
-    AC_MSG_RESULT([yes (default)])
+	ENABLE_OWLIB="true"
+	AC_MSG_RESULT([yes (default)])
 ])
 AC_SUBST(ENABLE_OWNET)
 AM_CONDITIONAL(ENABLE_OWNET, test "${ENABLE_OWNET}" = "true")
@@ -458,13 +457,13 @@ ENABLE_OWTAP="true"
 AC_ARG_ENABLE(owtap,
 [  --enable-owtap          Enable owtap module (default true)],
 [
-    AC_MSG_RESULT([$enableval])
-    if test ! "$enableval" = "yes" ; then
-        ENABLE_OWTAP="false"
-    fi
+	AC_MSG_RESULT([$enableval])
+	if test ! "$enableval" = "yes" ; then
+		ENABLE_OWTAP="false"
+	fi
 ],
 [
-    AC_MSG_RESULT([yes (default)])
+	AC_MSG_RESULT([yes (default)])
 ])
 AC_SUBST(ENABLE_OWTAP)
 AM_CONDITIONAL(ENABLE_OWTAP, test "${ENABLE_OWTAP}" = "true")
@@ -475,13 +474,13 @@ ENABLE_OWSIDE="true"
 AC_ARG_ENABLE(owside,
 [  --enable-owside          Enable owside module (default true)],
 [
-    AC_MSG_RESULT([$enableval])
-    if test ! "$enableval" = "yes" ; then
-        ENABLE_OWSIDE="false"
-    fi
+	AC_MSG_RESULT([$enableval])
+	if test ! "$enableval" = "yes" ; then
+		ENABLE_OWSIDE="false"
+	fi
 ],
 [
-    AC_MSG_RESULT([yes (default)])
+	AC_MSG_RESULT([yes (default)])
 ])
 AC_SUBST(ENABLE_OWSIDE)
 AM_CONDITIONAL(ENABLE_OWSIDE, test "${ENABLE_OWSIDE}" = "true")
@@ -492,13 +491,13 @@ ENABLE_OWMON="true"
 AC_ARG_ENABLE(owmon,
 [  --enable-owmon          Enable owmon module (default true)],
 [
-    AC_MSG_RESULT([$enableval])
-    if test ! "$enableval" = "yes" ; then
-        ENABLE_OWMON="false"
-    fi
+	AC_MSG_RESULT([$enableval])
+	if test ! "$enableval" = "yes" ; then
+		ENABLE_OWMON="false"
+	fi
 ],
 [
-    AC_MSG_RESULT([yes (default)])
+	AC_MSG_RESULT([yes (default)])
 ])
 AC_SUBST(ENABLE_OWMON)
 AM_CONDITIONAL(ENABLE_OWMON, test "${ENABLE_OWMON}" = "true")
@@ -509,16 +508,16 @@ ENABLE_OWCAPI="true"
 AC_ARG_ENABLE(owcapi,
 [  --enable-owcapi         Enable owcapi module (default true)],
 [
-    AC_MSG_RESULT([$enableval])
-    if test ! "$enableval" = "yes" ; then
-        ENABLE_OWCAPI="false"
-    else
-        ENABLE_OWLIB="true"
-    fi
+	AC_MSG_RESULT([$enableval])
+	if test ! "$enableval" = "yes" ; then
+		ENABLE_OWCAPI="false"
+	else
+		ENABLE_OWLIB="true"
+	fi
 ],
 [
-    ENABLE_OWLIB="true"
-    AC_MSG_RESULT([yes (default)])
+	ENABLE_OWLIB="true"
+	AC_MSG_RESULT([yes (default)])
 ])
 AC_SUBST(ENABLE_OWCAPI)
 AM_CONDITIONAL(ENABLE_OWCAPI, test "${ENABLE_OWCAPI}" = "true")
@@ -527,39 +526,39 @@ AM_CONDITIONAL(ENABLE_OWCAPI, test "${ENABLE_OWCAPI}" = "true")
 #Check swig
 AC_MSG_CHECKING(if swig is enabled)
 if test -z "$SWIG"  ; then
-     ENABLE_SWIG="false"
+	ENABLE_SWIG="false"
 else
-     ENABLE_SWIG="auto"
+	ENABLE_SWIG="auto"
 fi
 AC_ARG_ENABLE(swig,
 [  --enable-swig           Enable swig (default auto)],
 [
-    if test "$enableval" = "no"; then
-        ENABLE_SWIG="false"
-        SWIG=""
-	AC_MSG_RESULT([no])
-    else
-        if test -z "$SWIG"; then
-	   AC_MSG_ERROR([Swig is not found and could not be enabled])
+	if test "$enableval" = "no"; then
+		ENABLE_SWIG="false"
+		SWIG=""
+		AC_MSG_RESULT([no])
+	else
+		if test -z "$SWIG"; then
+			AC_MSG_ERROR([Swig is not found and could not be enabled])
+		fi
+		ENABLE_OWLIB="true"
+		ENABLE_SWIG="true"
+		AC_MSG_RESULT([yes])
 	fi
-        ENABLE_OWLIB="true"
-        ENABLE_SWIG="true"
-	AC_MSG_RESULT([yes])
-    fi
 ],
 [
-    AC_MSG_RESULT([auto (default)])
+	AC_MSG_RESULT([auto (default)])
 ])
 if test "${HAVE_CYGWIN}" = "true"; then
-    if test ! "$ENABLE_SWIG" = "true"; then
-       ENABLE_SWIG="false"
-       SWIG=""
-       AC_MSG_RESULT([(Disable swig by default in Cygwin)])
-    fi
+	if test ! "$ENABLE_SWIG" = "true"; then
+		ENABLE_SWIG="false"
+		SWIG=""
+		AC_MSG_RESULT([(Disable swig by default in Cygwin)])
+	fi
 else
-    if test "$ENABLE_SWIG" = "auto"; then
-       ENABLE_SWIG="true"
-    fi
+	if test "$ENABLE_SWIG" = "auto"; then
+		ENABLE_SWIG="true"
+	fi
 fi
 AC_SUBST(ENABLE_SWIG)
 AM_CONDITIONAL(ENABLE_SWIG, test "${ENABLE_SWIG}" = "true")
@@ -570,55 +569,55 @@ ENABLE_OWPERL="true"
 AC_ARG_ENABLE(owperl,
 [  --enable-owperl         Enable owperl module (default true)],
 [
-    AC_MSG_RESULT([$enableval])
-    if test ! "$enableval" = "yes" ; then
-        ENABLE_OWPERL="false"
-    else
-        if test -z "$SWIG"  ; then
-            AC_MSG_WARN([Cannot find swig program. Look for it at http://www.swig.org or use CPAN])
-            AC_MSG_WARN([OWPERL is disabled because swig is not found])
-            ENABLE_OWPERL="false"
-        fi
-    fi
+	AC_MSG_RESULT([$enableval])
+	if test ! "$enableval" = "yes" ; then
+		ENABLE_OWPERL="false"
+	else
+		if test -z "$SWIG"  ; then
+			AC_MSG_WARN([Cannot find swig program. Look for it at http://www.swig.org or use CPAN])
+			AC_MSG_WARN([OWPERL is disabled because swig is not found])
+			ENABLE_OWPERL="false"
+		fi
+	fi
 ],
 [
-    if test -z "$SWIG" ; then
-        AC_MSG_RESULT([no (swig disabled)])
-    else
-        AC_MSG_RESULT([yes (default)])
-    fi
+	if test -z "$SWIG" ; then
+		AC_MSG_RESULT([no (swig disabled)])
+	else
+		AC_MSG_RESULT([yes (default)])
+	fi
 ])
 
 PERL=""
 if test "${ENABLE_OWPERL}" = "true"; then
-    m4_include(module/swig/perl5/perl5.m4)
-    AC_MSG_RESULT(Looking for location of Perl executable)
-    SC_PATH_PERL5
-    AC_SUBST(PERL5EXT)
-    AC_SUBST(PERL5DYNAMICLINKING)
-    AC_SUBST(PERL5LIB)
-    AC_SUBST(PERL5DIR)
-    AC_SUBST(PERL5NAME)
-    AC_SUBST(PERL5CCFLAGS)
-    if test -z "${PERL}" ; then
-        AC_MSG_WARN([Cannot find perl binary.])
-        AC_MSG_WARN([OWPERL is disabled because perl binary is not found])
-        ENABLE_OWPERL="false"
-    else
-	if test -z "${PERL5NAME}" ; then
-	    AC_MSG_WARN([Cannot find perl library. Install perl-devel package.])
-            AC_MSG_WARN([OWPERL is disabled because perl library is not found])
-            ENABLE_OWPERL="false"
+	m4_include(module/swig/perl5/perl5.m4)
+	AC_MSG_RESULT(Looking for location of Perl executable)
+	SC_PATH_PERL5
+	AC_SUBST(PERL5EXT)
+	AC_SUBST(PERL5DYNAMICLINKING)
+	AC_SUBST(PERL5LIB)
+	AC_SUBST(PERL5DIR)
+	AC_SUBST(PERL5NAME)
+	AC_SUBST(PERL5CCFLAGS)
+	if test -z "${PERL}" ; then
+		AC_MSG_WARN([Cannot find perl binary.])
+		AC_MSG_WARN([OWPERL is disabled because perl binary is not found])
+		ENABLE_OWPERL="false"
+	else
+		if test -z "${PERL5NAME}" ; then
+			AC_MSG_WARN([Cannot find perl library. Install perl-devel package.])
+			AC_MSG_WARN([OWPERL is disabled because perl library is not found])
+			ENABLE_OWPERL="false"
+		fi
 	fi
-    fi
 fi
 AC_SUBST(PERL)
 AC_SUBST(ENABLE_OWPERL)
 AM_CONDITIONAL(ENABLE_OWPERL, test "${ENABLE_OWPERL}" = "true")
 if test -z "$PERL" ; then
-    ENABLE_PERL="false"
+	ENABLE_PERL="false"
 else
-    ENABLE_PERL="true"
+	ENABLE_PERL="true"
 fi
 AC_SUBST(ENABLE_PERL)
 AM_CONDITIONAL(ENABLE_PERL, test "${ENABLE_PERL}" = "true")
@@ -629,65 +628,65 @@ ENABLE_OWPHP="true"
 AC_ARG_ENABLE(owphp,
 [  --enable-owphp          Enable owphp module (default true)],
 [
-    AC_MSG_RESULT([$enableval])
-    if test "$enableval" = "no" ; then
-        ENABLE_OWPHP="false"
-    fi
-    if test "$enableval" = "yes" ; then
-        ENABLE_OWPHP="true"
-    fi
-    if test -z "$SWIG"  ; then
-        AC_MSG_WARN([Cannot find swig program. Look for it at http://www.swig.org or use CPAN])
-        AC_MSG_WARN([OWPHP is disabled because swig is not found])
-        ENABLE_OWPHP="false"
-    fi
+	AC_MSG_RESULT([$enableval])
+	if test "$enableval" = "no" ; then
+		ENABLE_OWPHP="false"
+	fi
+	if test "$enableval" = "yes" ; then
+		ENABLE_OWPHP="true"
+	fi
+	if test -z "$SWIG"  ; then
+		AC_MSG_WARN([Cannot find swig program. Look for it at http://www.swig.org or use CPAN])
+		AC_MSG_WARN([OWPHP is disabled because swig is not found])
+		ENABLE_OWPHP="false"
+	fi
 ],
 [
-    if test -z "$SWIG" ; then
-        AC_MSG_RESULT([no (swig disabled)])
-    else
-        AC_MSG_RESULT([yes (default)])
-    fi
+	if test -z "$SWIG" ; then
+		AC_MSG_RESULT([no (swig disabled)])
+	else
+		AC_MSG_RESULT([yes (default)])
+	fi
 ])
 
 PHP=""
 if test "${ENABLE_OWPHP}" = "true" ; then
-    m4_include(module/swig/php/php.m4)
-    AC_MSG_RESULT(Looking for location of Php executable)
-    SC_PATH_PHP
-    AC_SUBST(PHPCONFIG)
-    AC_SUBST(PHPINC)
-    AC_SUBST(PHPEXT)
-    AC_SUBST(PHPLIBDIR)
-    if test -z "${PHP}" ; then
-        AC_MSG_WARN([Cannot find php binary. Install php or php5 package])
-        AC_MSG_WARN([OWPHP is disabled because php binary is not found])
-        ENABLE_OWPHP="false"
-    else
-        if test -z "${PHPCONFIG}" ; then
-            AC_MSG_WARN([Cannot find php-config binary. Install php-devel or php5-dev package])
-            AC_MSG_WARN([include and library paths will be guessed])
-        fi
-        if test -z "${PHPINC}" ; then
-            AC_MSG_WARN([Cannot find php include-file. Install php-devel or php5-dev package])
-            AC_MSG_WARN([OWPHP is disabled because php include-file is not found])
-            ENABLE_OWPHP="false"
-        else
-            if test -z "${PHPLIBDIR}" ; then
-                AC_MSG_WARN([Cannot find php extension-dir. Install php-devel or php5-dev package])
-                AC_MSG_WARN([OWPHP is disabled because php extension-dir is not found])
-                ENABLE_OWPHP="false"
-            fi
-        fi
-    fi
+	m4_include(module/swig/php/php.m4)
+	AC_MSG_RESULT(Looking for location of Php executable)
+	SC_PATH_PHP
+	AC_SUBST(PHPCONFIG)
+	AC_SUBST(PHPINC)
+	AC_SUBST(PHPEXT)
+	AC_SUBST(PHPLIBDIR)
+	if test -z "${PHP}" ; then
+		AC_MSG_WARN([Cannot find php binary. Install php or php5 package])
+		AC_MSG_WARN([OWPHP is disabled because php binary is not found])
+		ENABLE_OWPHP="false"
+	else
+		if test -z "${PHPCONFIG}" ; then
+			AC_MSG_WARN([Cannot find php-config binary. Install php-devel or php5-dev package])
+			AC_MSG_WARN([include and library paths will be guessed])
+		fi
+		if test -z "${PHPINC}" ; then
+			AC_MSG_WARN([Cannot find php include-file. Install php-devel or php5-dev package])
+			AC_MSG_WARN([OWPHP is disabled because php include-file is not found])
+			ENABLE_OWPHP="false"
+		else
+			if test -z "${PHPLIBDIR}" ; then
+				AC_MSG_WARN([Cannot find php extension-dir. Install php-devel or php5-dev package])
+				AC_MSG_WARN([OWPHP is disabled because php extension-dir is not found])
+				ENABLE_OWPHP="false"
+			fi
+		fi
+	fi
 fi
 AC_SUBST(PHP)
 AC_SUBST(ENABLE_OWPHP)
 AM_CONDITIONAL(ENABLE_OWPHP, test "${ENABLE_OWPHP}" = "true")
 if test -z "$PHP" ; then
-    ENABLE_PHP="false"
+	ENABLE_PHP="false"
 else
-    ENABLE_PHP="true"
+	ENABLE_PHP="true"
 fi
 AC_SUBST(ENABLE_PHP)
 AM_CONDITIONAL(ENABLE_PHP, test "${ENABLE_PHP}" = "true")
@@ -699,63 +698,63 @@ ENABLE_OWPYTHON="true"
 AC_ARG_ENABLE(owpython,
 [  --enable-owpython       Enable owpython module (default true)],
 [
-    AC_MSG_RESULT([$enableval])
-    if test "$enableval" = "no" ; then
-        ENABLE_OWPYTHON="false"
-    fi
-    if test "$enableval" = "yes" ; then
-        ENABLE_OWPYTHON="true"
-        if test -z "$SWIG"  ; then
-            AC_MSG_WARN([Cannot find swig program. Look for it at http://www.swig.org or use CPAN])
-            AC_MSG_WARN([OWPYTHON is disabled because swig is not found])
-            ENABLE_OWPYTHON="false"
-        fi
-    fi
+	AC_MSG_RESULT([$enableval])
+	if test "$enableval" = "no" ; then
+		ENABLE_OWPYTHON="false"
+	fi
+	if test "$enableval" = "yes" ; then
+		ENABLE_OWPYTHON="true"
+		if test -z "$SWIG"  ; then
+			AC_MSG_WARN([Cannot find swig program. Look for it at http://www.swig.org or use CPAN])
+			AC_MSG_WARN([OWPYTHON is disabled because swig is not found])
+			ENABLE_OWPYTHON="false"
+		fi
+	fi
 ],
 [
-    if test -z "$SWIG" ; then
-        AC_MSG_RESULT([no (swig disabled)])
-    else
-        AC_MSG_RESULT([yes (default)])
-    fi
+	if test -z "$SWIG" ; then
+		AC_MSG_RESULT([no (swig disabled)])
+	else
+		AC_MSG_RESULT([yes (default)])
+	fi
 ])
 
 PYTHON=""
 if test "${ENABLE_OWPYTHON}" = "true" ; then
-    m4_include(module/swig/python/python.m4)
-    AC_MSG_RESULT(Looking for location of Python executable)
-    SC_PATH_PYTHON
-    AC_SUBST(PYCFLAGS)
-    AC_SUBST(PYLDFLAGS)
-    AC_SUBST(PYLIB)
-    AC_SUBST(PYVERSION)
-    AC_SUBST(PYSITEDIR)
-    AC_SUBST(PYTHONDYNAMICLINKING)
-    if test -z "${PYTHON}" ; then
-        AC_MSG_WARN([Cannot find python binary. Install python package.])
-        AC_MSG_WARN([OWPYTHON is disabled because python binary is not found])
-        ENABLE_OWPYTHON="false"
-    else
-        if test -z "${PYLDFLAGS}" ; then
-            AC_MSG_WARN([Cannot find python library. Install python-devel package.])
-            AC_MSG_WARN([OWPYTHON is disabled because python library is not found])
-            ENABLE_OWPYTHON="false"
-        else
-            if test -z "${PYCFLAGS}" ; then
-                AC_MSG_WARN([Cannot find python include-file. Install python-devel package.])
-                AC_MSG_WARN([OWPYTHON is disabled because python include-file is not found])
-                ENABLE_OWPYTHON="false"
-             fi
-        fi
-    fi
+	m4_include(module/swig/python/python.m4)
+	AC_MSG_RESULT(Looking for location of Python executable)
+	SC_PATH_PYTHON
+	AC_SUBST(PYCFLAGS)
+	AC_SUBST(PYLDFLAGS)
+	AC_SUBST(PYLIB)
+	AC_SUBST(PYVERSION)
+	AC_SUBST(PYSITEDIR)
+	AC_SUBST(PYTHONDYNAMICLINKING)
+	if test -z "${PYTHON}" ; then
+		AC_MSG_WARN([Cannot find python binary. Install python package.])
+		AC_MSG_WARN([OWPYTHON is disabled because python binary is not found])
+		ENABLE_OWPYTHON="false"
+	else
+		if test -z "${PYLDFLAGS}" ; then
+			AC_MSG_WARN([Cannot find python library. Install python-devel package.])
+			AC_MSG_WARN([OWPYTHON is disabled because python library is not found])
+			ENABLE_OWPYTHON="false"
+		else
+			if test -z "${PYCFLAGS}" ; then
+				AC_MSG_WARN([Cannot find python include-file. Install python-devel package.])
+				AC_MSG_WARN([OWPYTHON is disabled because python include-file is not found])
+				ENABLE_OWPYTHON="false"
+			fi
+		fi
+	fi
 fi
 AC_SUBST(ENABLE_OWPYTHON)
 AM_CONDITIONAL(ENABLE_OWPYTHON, test "${ENABLE_OWPYTHON}" = "true")
 AC_SUBST(PYTHON)
 if test -z "$PYTHON" ; then
-    ENABLE_PYTHON="false"
+	ENABLE_PYTHON="false"
 else
-    ENABLE_PYTHON="true"
+	ENABLE_PYTHON="true"
 fi
 AC_SUBST(ENABLE_PYTHON)
 AM_CONDITIONAL(ENABLE_PYTHON, test "${ENABLE_PYTHON}" = "true")
@@ -763,108 +762,108 @@ AM_CONDITIONAL(ENABLE_PYTHON, test "${ENABLE_PYTHON}" = "true")
 #Check owtcl
 AC_MSG_CHECKING(if owtcl is enabled)
 if test -z "$SWIG" ; then
-    ENABLE_OWTCL="false"
+	ENABLE_OWTCL="false"
 else
-    ENABLE_OWTCL="true"
+	ENABLE_OWTCL="true"
 fi
 AC_ARG_ENABLE(owtcl,
 [  --enable-owtcl          Enable owtcl module (default true)],
 [
-    AC_MSG_RESULT([$enableval])
-    if test "$enableval" = "no" ; then
-        ENABLE_OWTCL="false"
-    fi
-    if test "$enableval" = "yes" ; then
-        ENABLE_OWTCL="true"
-        if test -z "$SWIG"  ; then
-            AC_MSG_WARN([Cannot find swig program. Look for it at http://www.swig.org or use CPAN])
-            AC_MSG_WARN([OWTCL is disabled because swig is not found])
-            ENABLE_OWTCL="false"
-        fi
-    fi
+	AC_MSG_RESULT([$enableval])
+	if test "$enableval" = "no" ; then
+		ENABLE_OWTCL="false"
+	fi
+	if test "$enableval" = "yes" ; then
+		ENABLE_OWTCL="true"
+		if test -z "$SWIG"  ; then
+			AC_MSG_WARN([Cannot find swig program. Look for it at http://www.swig.org or use CPAN])
+			AC_MSG_WARN([OWTCL is disabled because swig is not found])
+			ENABLE_OWTCL="false"
+		fi
+	fi
 ],
 [
-    if test -z "$SWIG" ; then
-        AC_MSG_RESULT([no (swig disabled)])
-    else
-        AC_MSG_RESULT([yes (default)])
-    fi
+	if test -z "$SWIG" ; then
+		AC_MSG_RESULT([no (swig disabled)])
+	else
+		AC_MSG_RESULT([yes (default)])
+	fi
 ])
 
 if test "${ENABLE_OWTCL}" = "true" ; then
-    m4_include(module/swig/tcl/tcl.m4)
-    AC_MSG_RESULT(Looking for tclConfig.sh)
-    SC_PATH_TCLCONFIG
-    if test -z "$TCL_BIN_DIR" -o ! -f "$TCL_BIN_DIR/tclConfig.sh" ; then
-        AC_MSG_WARN([OWTCL is disabled because tclConfig.sh is not found])
-        ENABLE_OWTCL="false"
-    else
-        SC_LOAD_TCLCONFIG
-        AC_SUBST(TCL_BIN_DIR)
-        AC_SUBST(TCL_SHLIB_CFLAGS)
-        AC_SUBST(TCL_SHLIB_LD)
-        AC_SUBST(TCL_SHLIB_LD_LIBS)
-        AC_SUBST(TCL_SHLIB_SUFFIX)
-        AC_SUBST(TCL_VERSION)
-        AC_SUBST(TCL_PREFIX)
-        AC_SUBST(TCL_EXEC_PREFIX)
-        AC_SUBST(TCL_CFLAGS)
-        AC_SUBST(TCL_DEFS)
-        AC_SUBST(TCL_LIB_SPEC)
-        AC_SUBST(TCL_LIBS)
-        AC_SUBST(TCL_LD_FLAGS)
-        AC_SUBST(TCL_COMPAT_OBJS)
-        AC_SUBST(TCL_LD_SEARCH_FLAGS)
-        AC_SUBST(TCL_SRC_DIR)
-        AC_SUBST(TCL_LIB_SPEC)
-        AC_SUBST(TCL_STUB_LIB_SPEC)
-        AC_SUBST(TCL_BUILD_LIB_SPEC)
-        AC_SUBST(TCL_BUILD_STUB_LIB_SPEC)
-        AC_SUBST(TCL_INCLUDE_SPEC)
-        AC_SUBST(TCL_PACKAGE_PATH)
-	# guess that tcl will install the files under the first path in
-	# TCL_PACKAGE_PATH. TCL_BIN_DIR is usually correct, but this
-	# might contain staging_dir prefix when cross-compiling.
-	OWTCL_INSTALL_PATH="`echo ${TCL_PACKAGE_PATH} | cut -d' ' -f1`"
-	AC_SUBST(OWTCL_INSTALL_PATH)
-    fi
+	m4_include(module/swig/tcl/tcl.m4)
+	AC_MSG_RESULT(Looking for tclConfig.sh)
+	SC_PATH_TCLCONFIG
+	if test -z "$TCL_BIN_DIR" -o ! -f "$TCL_BIN_DIR/tclConfig.sh" ; then
+		AC_MSG_WARN([OWTCL is disabled because tclConfig.sh is not found])
+		ENABLE_OWTCL="false"
+	else
+		SC_LOAD_TCLCONFIG
+		AC_SUBST(TCL_BIN_DIR)
+		AC_SUBST(TCL_SHLIB_CFLAGS)
+		AC_SUBST(TCL_SHLIB_LD)
+		AC_SUBST(TCL_SHLIB_LD_LIBS)
+		AC_SUBST(TCL_SHLIB_SUFFIX)
+		AC_SUBST(TCL_VERSION)
+		AC_SUBST(TCL_PREFIX)
+		AC_SUBST(TCL_EXEC_PREFIX)
+		AC_SUBST(TCL_CFLAGS)
+		AC_SUBST(TCL_DEFS)
+		AC_SUBST(TCL_LIB_SPEC)
+		AC_SUBST(TCL_LIBS)
+		AC_SUBST(TCL_LD_FLAGS)
+		AC_SUBST(TCL_COMPAT_OBJS)
+		AC_SUBST(TCL_LD_SEARCH_FLAGS)
+		AC_SUBST(TCL_SRC_DIR)
+		AC_SUBST(TCL_LIB_SPEC)
+		AC_SUBST(TCL_STUB_LIB_SPEC)
+		AC_SUBST(TCL_BUILD_LIB_SPEC)
+		AC_SUBST(TCL_BUILD_STUB_LIB_SPEC)
+		AC_SUBST(TCL_INCLUDE_SPEC)
+		AC_SUBST(TCL_PACKAGE_PATH)
+		# guess that tcl will install the files under the first path in
+		# TCL_PACKAGE_PATH. TCL_BIN_DIR is usually correct, but this
+		# might contain staging_dir prefix when cross-compiling.
+		OWTCL_INSTALL_PATH="`echo ${TCL_PACKAGE_PATH} | cut -d' ' -f1`"
+		AC_SUBST(OWTCL_INSTALL_PATH)
+	fi
 fi
 AC_SUBST(ENABLE_OWTCL)
 AM_CONDITIONAL(ENABLE_OWTCL, test "${ENABLE_OWTCL}" = "true")
 
 
 AC_DEFUN([ACX_EXPAND], [
-  EXP_VAR=[$1]
-  FROM_VAR=[$2]
+	EXP_VAR=[$1]
+	FROM_VAR=[$2]
 
-  dnl first expand prefix and exec_prefix if necessary
-  prefix_save=$prefix
-  exec_prefix_save=$exec_prefix
+	dnl first expand prefix and exec_prefix if necessary
+	prefix_save=$prefix
+	exec_prefix_save=$exec_prefix
 
-  dnl if no prefix given, then use /usr/local, the default prefix
-  if test "x$prefix" = "xNONE"; then
-    prefix=$ac_default_prefix
-  fi
-  dnl if no exec_prefix given, then use prefix
-  if test "x$exec_prefix" = "xNONE"; then
-    exec_prefix=$prefix
-  fi
+	dnl if no prefix given, then use /usr/local, the default prefix
+	if test "x$prefix" = "xNONE"; then
+		prefix=$ac_default_prefix
+	fi
+	dnl if no exec_prefix given, then use prefix
+	if test "x$exec_prefix" = "xNONE"; then
+		exec_prefix=$prefix
+	fi
 
-  full_var="$FROM_VAR"
-  dnl loop until it doesn't change anymore
-  while true; do
-    new_full_var="`eval echo $full_var`"
-    if test "x$new_full_var"="x$full_var"; then break; fi
-    full_var=$new_full_var
-  done
+	full_var="$FROM_VAR"
+	dnl loop until it doesn't change anymore
+	while true; do
+		new_full_var="`eval echo $full_var`"
+		if test "x$new_full_var"="x$full_var"; then break; fi
+		full_var=$new_full_var
+	done
 
-  dnl clean up
-  full_var=$new_full_var
-  AC_SUBST([$1], "$full_var")
+	dnl clean up
+	full_var=$new_full_var
+	AC_SUBST([$1], "$full_var")
 
-  dnl restore prefix and exec_prefix
-  prefix=$prefix_save
-  exec_prefix=$exec_prefix_save
+	dnl restore prefix and exec_prefix
+	prefix=$prefix_save
+	exec_prefix=$exec_prefix_save
 ]) dnl ACX_EXPAND
 
 ACX_EXPAND(LIBDIR, $libdir)
@@ -916,18 +915,18 @@ case "${host_cpu}-${host_os}" in
 		OSLIBS="-Wl,-framework -Wl,IOKit -Wl,-framework -Wl,CoreFoundation"
 		EXTRALIBS=""
 		AC_MSG_RESULT([${OSLIBS}])
-	;;
+		;;
 	*-solaris*)
 		OSLIBS=""
 		EXTRALIBS=" -lsocket -lnsl "
 		LIBS="$LIBS -lsocket -lnsl"
 		AC_MSG_RESULT([${EXTRALIBS}])
-	;;
+		;;
 	*)
 		OSLIBS=""
 		EXTRALIBS="-Wl,--rpath -Wl,$libdir"
 		AC_MSG_RESULT([${EXTRALIBS}])
-	;;
+		;;
 esac
 
 #Check for profiling
@@ -936,15 +935,15 @@ ENABLE_PROFILING="false"
 AC_ARG_ENABLE(profiling,
 [  --enable-profiling      Enable profiling (default false)],
 [
-AC_MSG_RESULT([$enableval])
-    if test "$enableval" = "yes" ; then
-        ENABLE_PROFILING=true
-        EXTRALIBS="$EXTRALIBS -pg"
-        EXTRACFLAGS="$EXTRACFLAGS -pg"
-    fi
+	AC_MSG_RESULT([$enableval])
+	if test "$enableval" = "yes" ; then
+		ENABLE_PROFILING=true
+		EXTRALIBS="$EXTRALIBS -pg"
+		EXTRACFLAGS="$EXTRACFLAGS -pg"
+	fi
 ],
 [
-    AC_MSG_RESULT([no (default)])
+	AC_MSG_RESULT([no (default)])
 ])
 AC_SUBST(EXTRACFLAGS)
 AC_SUBST(ENABLE_PROFILING)
@@ -973,13 +972,13 @@ ENABLE_OWFS="auto"
 AC_ARG_ENABLE(owfs,
 [  --enable-owfs           Enable owfs module (default auto)],
 [
-    AC_MSG_RESULT([$enableval])
-    if test "$enableval" = "yes" ; then
-        ENABLE_OWFS="true"
-    fi
-    if test "$enableval" = "no" ; then
-        ENABLE_OWFS="false"
-    fi
+	AC_MSG_RESULT([$enableval])
+	if test "$enableval" = "yes" ; then
+		ENABLE_OWFS="true"
+	fi
+	if test "$enableval" = "no" ; then
+		ENABLE_OWFS="false"
+	fi
 ],
 [
     AC_MSG_RESULT([auto (default)])
@@ -988,17 +987,17 @@ AC_ARG_ENABLE(owfs,
 # We need fuse only if OWFS is enabled
 if test "${ENABLE_OWFS}" != "false" ; then
 
-    save_LD_EXTRALIBS="$LD_EXTRALIBS"
-    save_CPPFLAGS="$CPPFLAGS"
-    save_LDFLAGS="$LDFLAGS"
-    FUSE_FLAGS="-DFUSE_USE_VERSION=26"
-    FUSE_INCLUDES="-I${fuse_include_path}"
-    FUSE_LIBS="-L${fuse_lib_path}"
-    LD_EXTRALIBS="$save_LD_EXTRALIBS -Wl,--rpath -Wl,${fuse_lib_path}"
-    CPPFLAGS="$save_CPPFLAGS -D_FILE_OFFSET_BITS=64 $FUSE_FLAGS $FUSE_INCLUDES"
-    LDFLAGS="$save_LDFLAGS $FUSE_LIBS"
+	save_LD_EXTRALIBS="$LD_EXTRALIBS"
+	save_CPPFLAGS="$CPPFLAGS"
+	save_LDFLAGS="$LDFLAGS"
+	FUSE_FLAGS="-DFUSE_USE_VERSION=26"
+	FUSE_INCLUDES="-I${fuse_include_path}"
+	FUSE_LIBS="-L${fuse_lib_path}"
+	LD_EXTRALIBS="$save_LD_EXTRALIBS -Wl,--rpath -Wl,${fuse_lib_path}"
+	CPPFLAGS="$save_CPPFLAGS -D_FILE_OFFSET_BITS=64 $FUSE_FLAGS $FUSE_INCLUDES"
+	LDFLAGS="$save_LDFLAGS $FUSE_LIBS"
 
-    AC_CHECK_HEADER(fuse.h,,[
+	AC_CHECK_HEADER(fuse.h,,[
 	AC_MSG_WARN([
 	Can't find fuse.h - Add the search path with --with-fuseinclude])
 
@@ -1012,93 +1011,93 @@ if test "${ENABLE_OWFS}" != "false" ; then
 	AC_MSG_WARN([Install FUSE-2.2 or later to enable owfs - download it from http://fuse.sourceforge.net/])
 
 	if test "${ENABLE_OWFS}" = "auto"; then
-	    AC_MSG_WARN([OWFS is disabled because fuse.h is not found.])
-	    ENABLE_OWFS="false"
+		AC_MSG_WARN([OWFS is disabled because fuse.h is not found.])
+		ENABLE_OWFS="false"
 	else
-	    AC_MSG_ERROR([Configure without --enable-owfs to detect fuse automatically.])
+		AC_MSG_ERROR([Configure without --enable-owfs to detect fuse automatically.])
 	fi
-    ])
+	])
 
-    if test "${ENABLE_OWFS}" != "false"; then
-        save_CFLAGS="$CFLAGS"
-        save_LIBS="$LIBS"
-        CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
-        LIBS="$LIBS $PTHREAD_LIBS"
+	if test "${ENABLE_OWFS}" != "false"; then
+	save_CFLAGS="$CFLAGS"
+	save_LIBS="$LIBS"
+	CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+	LIBS="$LIBS $PTHREAD_LIBS"
 	AC_CHECK_LIB(fuse,fuse_main, [FUSE_LIBS="$FUSE_LIBS -lfuse"],[
-	    AC_MSG_WARN([
+		AC_MSG_WARN([
 	Can't find libfuse.a - add the search path with --with-fuselib])
 		AC_MSG_WARN([Running ldconfig or adding "/usr/local/lib" to /etc/ld.so.conf might also solve the problem, otherwise re-install fuse.])
-	    	if test "${ENABLE_OWFS}" = "auto"; then
+		if test "${ENABLE_OWFS}" = "auto"; then
 			AC_MSG_WARN([OWFS is disabled because libfuse.a is not found.])
 			ENABLE_OWFS="false"
 		else
 			AC_MSG_ERROR([Can't enable OWFS])
 		fi
-	    ],)
-        CFLAGS="$save_CFLAGS"
-        LIBS="$save_LIBS"
-    fi
+		],)
+	CFLAGS="$save_CFLAGS"
+	LIBS="$save_LIBS"
+	fi
 
 
-    if test "${ENABLE_OWFS}" != "false"; then
-	    # check for a supported FUSE_MAJOR_VERSION.
-	    AC_MSG_CHECKING([For supported FUSE API version])
-	    AC_COMPILE_IFELSE([
-	    AC_LANG_PROGRAM([[#include <fuse.h>]],
-	    [[
-	    #ifndef FUSE_MAJOR_VERSION
+	if test "${ENABLE_OWFS}" != "false"; then
+		# check for a supported FUSE_MAJOR_VERSION.
+		AC_MSG_CHECKING([For supported FUSE API version])
+		AC_COMPILE_IFELSE([
+		AC_LANG_PROGRAM([[#include <fuse.h>]],
+		[[
+		#ifndef FUSE_MAJOR_VERSION
 		#error "FUSE_MAJOR_VERSION not defined"
-	    #endif
-	    ]])],
-	    [AC_MSG_RESULT([yes])],
-	    [AC_MSG_RESULT([no])
+		#endif
+		]])],
+		[AC_MSG_RESULT([yes])],
+		[AC_MSG_RESULT([no])
 		AC_MSG_WARN([OWFS is disabled since fuse.h is too old])
-	        if test "${ENABLE_OWFS}" = "true"; then
-		   AC_MSG_ERROR([You have to install fuse first (fuse-2.2 or later recommended) - download it from http://fuse.sourceforge.net/])
+		if test "${ENABLE_OWFS}" = "true"; then
+			AC_MSG_ERROR([You have to install fuse first (fuse-2.2 or later recommended) - download it from http://fuse.sourceforge.net/])
 		else
-		   ENABLE_OWFS="false"
+			ENABLE_OWFS="false"
 		fi
-	    ])
-    fi
+		])
+	fi
 
 
-    # Use newest FUSE API if version is newer than 2.2
-    if test "${ENABLE_OWFS}" != "false"; then
-	    # check for a supported FUSE_MAJOR_VERSION.
-	    AC_MSG_CHECKING([For FUSE version ])
-	    AC_COMPILE_IFELSE([
-	    AC_LANG_PROGRAM([[#include <fuse.h>]],
-	    [[
-	    #ifndef FUSE_VERSION
-	     #ifndef FUSE_MAJOR_VERSION
-	       #define FUSE_VERSION 11
-	     #else /* FUSE_MAJOR_VERSION */
-	       #undef FUSE_MAKE_VERSION
-	     #define FUSE_MAKE_VERSION(maj,min)  ((maj) * 10 + (min))
-	     #define FUSE_VERSION FUSE_MAKE_VERSION(FUSE_MAJOR_VERSION,FUSE_MINOR_VERSION)
-	     #endif /* FUSE_MAJOR_VERSION */
-	    #endif /* FUSE_VERSION */
-	    #if (FUSE_VERSION >= 22)
-		/* Fuse > 2.2 is ok */
-	    #else
-		#error "Fuse < 2.2"
-	    #endif
-	    ]])],
-	    [AC_MSG_RESULT([2.2 or later])
-	    ],
-	    [AC_MSG_RESULT([<2.2])
-	    FUSE_FLAGS=""
-	    ])
-    fi
+	# Use newest FUSE API if version is newer than 2.2
+	if test "${ENABLE_OWFS}" != "false"; then
+		# check for a supported FUSE_MAJOR_VERSION.
+		AC_MSG_CHECKING([For FUSE version ])
+		AC_COMPILE_IFELSE([
+		AC_LANG_PROGRAM([[#include <fuse.h>]],
+		[[
+		#ifndef FUSE_VERSION
+			#ifndef FUSE_MAJOR_VERSION
+				#define FUSE_VERSION 11
+			#else /* FUSE_MAJOR_VERSION */
+				#undef FUSE_MAKE_VERSION
+				#define FUSE_MAKE_VERSION(maj,min)  ((maj) * 10 + (min))
+				#define FUSE_VERSION FUSE_MAKE_VERSION(FUSE_MAJOR_VERSION,FUSE_MINOR_VERSION)
+			#endif /* FUSE_MAJOR_VERSION */
+		#endif /* FUSE_VERSION */
+		#if (FUSE_VERSION >= 22)
+			/* Fuse > 2.2 is ok */
+		#else
+			#error "Fuse < 2.2"
+		#endif
+		]])],
+		[AC_MSG_RESULT([2.2 or later])
+		],
+		[AC_MSG_RESULT([<2.2])
+		FUSE_FLAGS=""
+		])
+	fi
 
-    CPPFLAGS="$save_CPPFLAGS"
-    LDFLAGS="$save_LDFLAGS"
-    LD_EXTRALIBS="$save_LD_EXTRALIBS"
+	CPPFLAGS="$save_CPPFLAGS"
+	LDFLAGS="$save_LDFLAGS"
+	LD_EXTRALIBS="$save_LD_EXTRALIBS"
 
-    if test "${ENABLE_OWFS}" != "false"; then
-        ENABLE_OWLIB="true"
-        ENABLE_OWFS="true"
-    fi
+	if test "${ENABLE_OWFS}" != "false"; then
+		ENABLE_OWLIB="true"
+		ENABLE_OWFS="true"
+	fi
 else
     ENABLE_OWFS="false"
 fi
@@ -1114,14 +1113,14 @@ ENABLE_CACHE="true"
 AC_ARG_ENABLE(cache,
 [  --enable-cache          Enable caching (default true)],
 [
-    AC_MSG_RESULT([$enableval])
+	AC_MSG_RESULT([$enableval])
 
-    if test ! "$enableval" = "yes" ; then
-        ENABLE_CACHE=false
-    fi
+	if test ! "$enableval" = "yes" ; then
+		ENABLE_CACHE=false
+	fi
 ],
 [
-    AC_MSG_RESULT([yes (default)])
+	AC_MSG_RESULT([yes (default)])
 ])
 AC_SUBST(ENABLE_CACHE)
 AM_CONDITIONAL(ENABLE_CACHE, test "${ENABLE_CACHE}" = "true")
@@ -1132,14 +1131,14 @@ ENABLE_ZERO="true"
 AC_ARG_ENABLE(zero,
 [  --enable-zero           Enable zeroconf/bonjour (default true)],
 [
-    AC_MSG_RESULT([$enableval])
+	AC_MSG_RESULT([$enableval])
 
-    if test ! "$enableval" = "yes" ; then
-        ENABLE_ZERO=false
-    fi
+	if test ! "$enableval" = "yes" ; then
+		ENABLE_ZERO=false
+	fi
 ],
 [
-    AC_MSG_RESULT([yes (default)])
+	AC_MSG_RESULT([yes (default)])
 ])
 AC_SUBST(ENABLE_ZERO)
 AM_CONDITIONAL(ENABLE_ZERO, test "${ENABLE_ZERO}" = "true")
@@ -1193,21 +1192,21 @@ AC_ARG_WITH(libusb-config,
             [  --with-libusb-config=PATH Specify full path to libusb-config])
 dnl Check if user passed a specific php-config program.
 if test "X$with_libusb_config" != "X" ; then
-    LIBUSB_CONFIG=$with_libusb_config
+	LIBUSB_CONFIG=$with_libusb_config
 fi
 
 if test "$cross_compiling" != yes; then
- if test "X$LIBUSB_CONFIG" == "X" ; then
-   dirs="/usr/bin /usr/local/bin /opt/local/bin"
-   for i in $dirs; do
-       echo $i/libusb-config
-       if test -x $i/libusb-config; then
-	  AC_MSG_RESULT($i/libusb-config is found)
-	  LIBUSB_CONFIG="$i/libusb-config"
-	  break;
-       fi
-   done
- fi
+	if test "X$LIBUSB_CONFIG" == "X" ; then
+		dirs="/usr/bin /usr/local/bin /opt/local/bin"
+		for i in $dirs; do
+			echo $i/libusb-config
+			if test -x $i/libusb-config; then
+				AC_MSG_RESULT($i/libusb-config is found)
+				LIBUSB_CONFIG="$i/libusb-config"
+				break;
+			fi
+		done
+	fi
 fi
 
 # Check for USB enabled
@@ -1217,76 +1216,76 @@ AC_MSG_CHECKING([if usb support is enabled])
 AC_ARG_ENABLE(usb,
 [  --enable-usb            Enable 1-Wire usb DS2490 support (default auto)],
 [
-    AC_MSG_RESULT([$enableval])
+	AC_MSG_RESULT([$enableval])
 
-    if ! test "$enableval" = "yes" ; then
-        ENABLE_USB=false
-    fi
+	if ! test "$enableval" = "yes" ; then
+		ENABLE_USB=false
+	fi
 ],
 [
-    AC_MSG_RESULT([auto (default)])
+	AC_MSG_RESULT([auto (default)])
 ])
 
 if test "${ENABLE_USB}" != "false"; then
 
-  # Include libusb if the usb is enabled
-  if test "X${LIBUSB_CONFIG}" != "X" ; then
+	# Include libusb if the usb is enabled
+	if test "X${LIBUSB_CONFIG}" != "X" ; then
 
-    LIBUSB_CFLAGS=`$LIBUSB_CONFIG --cflags`
-    LIBUSB_LIBS=`$LIBUSB_CONFIG --libs`
+		LIBUSB_CFLAGS=`$LIBUSB_CONFIG --cflags`
+		LIBUSB_LIBS=`$LIBUSB_CONFIG --libs`
 
-    save_CPPFLAGS="$CPPFLAGS"
-    save_LDFLAGS="$LDFLAGS"
-    CPPFLAGS="$save_CPPFLAGS $LIBUSB_CFLAGS"
-    LDFLAGS="$save_LDFLAGS $LIBUSB_LIBS"
+		save_CPPFLAGS="$CPPFLAGS"
+		save_LDFLAGS="$LDFLAGS"
+		CPPFLAGS="$save_CPPFLAGS $LIBUSB_CFLAGS"
+		LDFLAGS="$save_LDFLAGS $LIBUSB_LIBS"
 
-    AC_MSG_CHECKING([if libusb compiles with includes+lib ])
-    AC_COMPILE_IFELSE([
-	AC_LANG_PROGRAM([[#include <usb.h>]],
-	[[
-	    usb_open(NULL);
-	]])],
-	[AC_MSG_RESULT([ok])],
-	[AC_MSG_RESULT([compilation error])
-	LIBUSB_CFLAGS=""
-	LIBUSB_LDFLAGS=""
-	LIBUSB_CONFIG=""
-    ])
+		AC_MSG_CHECKING([if libusb compiles with includes+lib ])
+		AC_COMPILE_IFELSE([
+		AC_LANG_PROGRAM([[#include <usb.h>]],
+		[[
+			usb_open(NULL);
+		]])],
+		[AC_MSG_RESULT([ok])],
+		[AC_MSG_RESULT([compilation error])
+		LIBUSB_CFLAGS=""
+		LIBUSB_LDFLAGS=""
+		LIBUSB_CONFIG=""
+		])
 
-    if test "X${LIBUSB_CONFIG}" != "X" ; then
-       ACX_USB_INTERRUPT_READ
-    fi
+		if test "X${LIBUSB_CONFIG}" != "X" ; then
+			ACX_USB_INTERRUPT_READ
+		fi
 
-    CPPFLAGS="$save_CPPFLAGS"
-    LDFLAGS="$save_LDFLAGS"
+		CPPFLAGS="$save_CPPFLAGS"
+		LDFLAGS="$save_LDFLAGS"
 
-  #LIBUSB_CONFIG
-  fi
+		#LIBUSB_CONFIG
+	fi
 
-  # last test to see if libusb is found after AC_CHECK_LIB
-  if test "X${LIBUSB_CONFIG}" == "X"; then
+	# last test to see if libusb is found after AC_CHECK_LIB
+	if test "X${LIBUSB_CONFIG}" == "X"; then
 
-       AC_CHECK_LIB(usb,usb_open,[
-	    LIBUSB_LIBS="-lusb"],[
-	    AC_MSG_WARN([Can't find libusb])
-	        if test "${ENABLE_USB}" = "true" ; then
-		        AC_MSG_ERROR([libusb must be installed to use a USB adapter])
-		else
-	                AC_MSG_WARN([libusb not found, usb will be disabled])
-			ENABLE_USB=false
-	        fi
-        ],)
+		AC_CHECK_LIB(usb,usb_open,[
+			LIBUSB_LIBS="-lusb"],[
+			AC_MSG_WARN([Can't find libusb])
+			if test "${ENABLE_USB}" = "true" ; then
+				AC_MSG_ERROR([libusb must be installed to use a USB adapter])
+			else
+				AC_MSG_WARN([libusb not found, usb will be disabled])
+				ENABLE_USB=false
+			fi
+		],)
 
-       if test "${ENABLE_USB}" != "false" ; then
-          ACX_USB_INTERRUPT_READ
-       fi
-  fi
+		if test "${ENABLE_USB}" != "false" ; then
+			ACX_USB_INTERRUPT_READ
+		fi
+	fi
 
-  if test "${ENABLE_USB}" != "false" ; then
-      ENABLE_USB=true
-  fi
+	if test "${ENABLE_USB}" != "false" ; then
+	ENABLE_USB=true
+	fi
 
-# ENABLE_USB
+	# ENABLE_USB
 fi
 
 AC_SUBST(LIBUSB_CFLAGS)
@@ -1301,30 +1300,30 @@ AC_MSG_CHECKING([if parallel port support is enabled])
 AC_ARG_ENABLE(parport,
 [  --enable-parport        Enable 1-Wire parallel port DS1410E support (default auto)],
 [
-    AC_MSG_RESULT([$enableval])
+	AC_MSG_RESULT([$enableval])
 
-    if ! test "$enableval" = "yes" ; then
-        ENABLE_PARPORT=false
-    fi
+	if ! test "$enableval" = "yes" ; then
+		ENABLE_PARPORT=false
+	fi
 ],
 [
-    AC_MSG_RESULT([yes (default)])
+	AC_MSG_RESULT([yes (default)])
 ])
 
 # Include linux/ppdev.h if the parallel port is enabled
 if test "${ENABLE_PARPORT}" != "false" ; then
 
-    AC_CHECK_HEADER(linux/ppdev.h,,[
-    if test "${ENABLE_PARPORT}" = "true" ; then
-        AC_MSG_ERROR([ppdev.h must be installed to use parallel port adapter])
-    else
-            AC_MSG_WARN([ppdev.h not found, parallel port will be disabled])
-            ENABLE_PARPORT=false
-    fi
-    ])
-    if test "${ENABLE_PARPORT}" != "false" ; then
-        ENABLE_PARPORT=true
-    fi
+	AC_CHECK_HEADER(linux/ppdev.h,,[
+		if test "${ENABLE_PARPORT}" = "true" ; then
+			AC_MSG_ERROR([ppdev.h must be installed to use parallel port adapter])
+		else
+			AC_MSG_WARN([ppdev.h not found, parallel port will be disabled])
+			ENABLE_PARPORT=false
+		fi
+	])
+	if test "${ENABLE_PARPORT}" != "false" ; then
+		ENABLE_PARPORT=true
+	fi
 fi
 
 AC_SUBST(ENABLE_PARPORT)
@@ -1332,52 +1331,52 @@ AM_CONDITIONAL(ENABLE_PARPORT, test "${ENABLE_PARPORT}" = "true")
 
 
 if test "${HAVE_CYGWIN}" = "true" ; then
-   OW_CYGWIN=1
+	OW_CYGWIN=1
 else
-   OW_CYGWIN=0
+	OW_CYGWIN=0
 fi
 AC_SUBST(OW_CYGWIN)
 
 if test "${HAVE_DARWIN}" = "true" ; then
-   OW_DARWIN=1
+	OW_DARWIN=1
 else
-   OW_DARWIN=0
+	OW_DARWIN=0
 fi
 AC_SUBST(OW_DARWIN)
 
 
 AC_CHECK_TYPES([struct sockaddr_storage], , ,
 [[
-#ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-#ifdef HAVE_SYS_SOCKET_H
-#include <sys/socket.h>
-#endif
-#ifdef HAVE_NETINET_IN_H
-#include <netinet/in.h>
-#endif
-#ifdef HAVE_ARPA_INET_H
-#include <arpa/inet.h>
-#endif
+	#ifdef HAVE_SYS_TYPES_H
+		#include <sys/types.h>
+	#endif
+	#ifdef HAVE_SYS_SOCKET_H
+		#include <sys/socket.h>
+	#endif
+	#ifdef HAVE_NETINET_IN_H
+		#include <netinet/in.h>
+	#endif
+	#ifdef HAVE_ARPA_INET_H
+		#include <arpa/inet.h>
+	#endif
 ]]
 )
 
 if test "$ac_cv_type_struct_sockaddr_storage" = no; then
-   AC_CHECK_MEMBER([struct sockaddr_in.sin_len],
-   [AC_DEFINE(SOCKADDR_IN_HAS_LEN, 1, [Define to 1 if sockaddr_in has a 'sin_len' member.])])
+	AC_CHECK_MEMBER([struct sockaddr_in.sin_len],
+	[AC_DEFINE(SOCKADDR_IN_HAS_LEN, 1, [Define to 1 if sockaddr_in has a 'sin_len' member.])])
 fi
 AC_CHECK_TYPES([struct addrinfo], , , [[#include <netdb.h>]])
 AC_CHECK_TYPE(socklen_t, ,
 [AC_DEFINE([socklen_t], [unsigned int],
 [If we don't have a real socklen_t, unsigned int is good enough.])],
 [
-#ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-#ifdef HAVE_SYS_SOCKET_H
-#include <sys/socket.h>
-#endif
+	#ifdef HAVE_SYS_TYPES_H
+		#include <sys/types.h>
+	#endif
+	#ifdef HAVE_SYS_SOCKET_H
+		#include <sys/socket.h>
+	#endif
 ])
 
 
@@ -1385,12 +1384,12 @@ AC_MSG_CHECKING(for broken glibc with __ss_family)
 AC_COMPILE_IFELSE(
 [AC_LANG_PROGRAM(
 [
-#ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-#ifdef HAVE_SYS_SOCKET_H
-#include <sys/socket.h>
-#endif
+	#ifdef HAVE_SYS_TYPES_H
+		#include <sys/types.h>
+	#endif
+	#ifdef HAVE_SYS_SOCKET_H
+		#include <sys/socket.h>
+	#endif
 ],
 [struct sockaddr_storage s; s.__ss_family = AF_INET;])],
 [
@@ -1411,7 +1410,7 @@ AC_COMPILE_IFELSE(
 	    )],
 [
 	if test "${HAVE_CYGWIN}" = "true" ; then
-	   AC_MSG_RESULT([no, Cygwin's ipv6 is incomplete])
+		AC_MSG_RESULT([no, Cygwin's ipv6 is incomplete])
 		have_v6=no
 	else
 		have_v6=yes
@@ -1440,91 +1439,91 @@ have_v6="no"])
 AC_CACHE_CHECK([whether string.h and strings.h may both be included],
 gcc_cv_header_string,
 [
-    AC_COMPILE_IFELSE(
-    [#include <string.h>
-    #include <strings.h>],
-    [gcc_cv_header_string=yes],
-    [gcc_cv_header_string=no])
+	AC_COMPILE_IFELSE(
+	[#include <string.h>
+	#include <strings.h>],
+	[gcc_cv_header_string=yes],
+	[gcc_cv_header_string=no])
 ])
 
 if test "$gcc_cv_header_string" = "yes"; then
-   AC_DEFINE(STRING_WITH_STRINGS, 1, [Define to 1 if string.h may be included along with strings.h])
+	AC_DEFINE(STRING_WITH_STRINGS, 1, [Define to 1 if string.h may be included along with strings.h])
 fi
 
 if test "${ENABLE_MT}" = "true" ; then
-   OW_MT=1
+	OW_MT=1
 else
-   OW_MT=0
+	OW_MT=0
 fi
 AC_SUBST(OW_MT)
 
 if test "${ENABLE_I2C}" = "true" ; then
-   OW_I2C=1
+	OW_I2C=1
 else
-   OW_I2C=0
+	OW_I2C=0
 fi
 AC_SUBST(OW_I2C)
 
 if test "${ENABLE_HA7}" = "true" ; then
-   OW_HA7=1
+	OW_HA7=1
 else
-   OW_HA7=0
+	OW_HA7=0
 fi
 AC_SUBST(OW_HA7)
 
 if test "${ENABLE_W1}" = "true" ; then
-   OW_W1=1
+	OW_W1=1
 else
-   OW_W1=0
+	OW_W1=0
 fi
 AC_SUBST(OW_W1)
 
 if test "${ENABLE_CACHE}" = "true" ; then
-   OW_CACHE=1
+	OW_CACHE=1
 else
-   OW_CACHE=0
+	OW_CACHE=0
 fi
 AC_SUBST(OW_CACHE)
 
 if test "${ENABLE_USB}" = "true" ; then
-   OW_USB=1
+	OW_USB=1
 else
-   OW_USB=0
+	OW_USB=0
 fi
 AC_SUBST(OW_USB)
 
 if test "${ENABLE_ZERO}" = "true" ; then
-   OW_ZERO=1
+	OW_ZERO=1
 else
-   OW_ZERO=0
+	OW_ZERO=0
 fi
 AC_SUBST(OW_ZERO)
 
 if test "${ENABLE_PARPORT}" = "true" ; then
-   OW_PARPORT=1
+	OW_PARPORT=1
 else
-   OW_PARPORT=0
+	OW_PARPORT=0
 fi
 AC_SUBST(OW_PARPORT)
 
 if test "${ENABLE_DEBUG}" = "true" ; then
-   OW_DEBUG=1
+	OW_DEBUG=1
 else
-   OW_DEBUG=0
+	OW_DEBUG=0
 fi
 AC_SUBST(OW_DEBUG)
 
 if test "${ENABLE_TAI8570}" = "true" ; then
-   OW_TAI8570=1
+	OW_TAI8570=1
 else
-   OW_TAI8570=0
+	OW_TAI8570=0
 fi
 AC_SUBST(OW_TAI8570)
 
 if test "${ENABLE_THERMOCOUPLE}" = "true" ; then
-   OW_THERMOCOUPLE=1
+	OW_THERMOCOUPLE=1
 else
-   OW_THERMOCOUPLE=0
+	OW_THERMOCOUPLE=0
 fi
 AC_SUBST(OW_THERMOCOUPLE)
 
@@ -1551,7 +1550,7 @@ AC_TYPE_SIGNAL
 AC_CHECK_FUNCS([accept daemon getaddrinfo freeaddrinfo gethostbyname2_r gethostbyaddr_r gethostbyname_r getservbyname_r getopt getopt_long gettimeofday inet_ntop inet_pton memchr memset select socket strcasecmp strchr strdup strncasecmp strtol strtoul twalk tsearch tfind tdelete tdestroy vasprintf strsep vsprintf vsnprintf])
 
 if test "${ENABLE_ZERO}" = "true" ; then
-   AC_SEARCH_LIBS(dlopen, dl, AC_DEFINE(HAVE_DLOPEN, 1, [Define if you have dlopen]))
+	AC_SEARCH_LIBS(dlopen, dl, AC_DEFINE(HAVE_DLOPEN, 1, [Define if you have dlopen]))
 fi
 
 AC_SEARCH_LIBS(lrint, m, AC_DEFINE(HAVE_LRINT, 1, [Define if you have lrint]))
@@ -1560,73 +1559,86 @@ AC_SEARCH_LIBS(nanosleep, rt posix4, AC_DEFINE(HAVE_NANOSLEEP, 1, [Define if you
 
 
 AC_CONFIG_FILES([
-    Makefile
-    module/Makefile
-    module/owlib/Makefile
-    module/owlib/src/Makefile
-    module/owlib/src/include/Makefile
-    module/owlib/src/c/Makefile
-    module/owfs/Makefile
-    module/owfs/src/Makefile
-    module/owfs/src/include/Makefile
-    module/owfs/src/c/Makefile
-    module/owhttpd/Makefile
-    module/owhttpd/src/Makefile
-    module/owhttpd/src/include/Makefile
-    module/owhttpd/src/c/Makefile
-    module/owserver/Makefile
-    module/owserver/src/Makefile
-    module/owserver/src/include/Makefile
-    module/owserver/src/c/Makefile
-    module/owftpd/Makefile
-    module/owftpd/src/Makefile
-    module/owftpd/src/include/Makefile
-    module/owftpd/src/c/Makefile
-    module/ownet/Makefile
-    module/ownet/php/Makefile
-    module/ownet/php/examples/ownet_example.php
-    module/ownet/python/Makefile
-    module/ownet/perl5/Makefile
-    module/ownet/c/Makefile
-    module/ownet/c/src/Makefile
-    module/ownet/c/src/include/Makefile
-    module/ownet/c/src/c/Makefile
-    module/ownet/c/src/example/Makefile
-    module/owshell/Makefile
-    module/owshell/src/Makefile
-    module/owshell/src/include/Makefile
-    module/owshell/src/c/Makefile
-    module/owcapi/Makefile
-    module/owcapi/src/Makefile
-    module/owcapi/src/include/Makefile
-    module/owcapi/src/c/Makefile
-    module/owcapi/src/example/Makefile
-    module/owcapi/src/example++/Makefile
-    module/owtap/Makefile
-    module/owside/Makefile
-    module/owmon/Makefile
-    module/swig/Makefile
-    module/swig/perl5/Makefile
-    module/swig/perl5/OW/Makefile.linux
-    module/swig/perl5/OW/Makefile.osx
-    module/swig/php/Makefile
-    module/swig/php/example/load_php_OW.php
-    module/swig/python/Makefile
-    module/swig/python/ow/Makefile
-    module/swig/python/setup.py
-    module/swig/tcl/Makefile
-    src/Makefile
-    src/include/Makefile
-    src/man/Makefile
-    src/rpm/Makefile
-    src/rpm/owfs.spec
-    src/scripts/Makefile
-    src/scripts/windows/Makefile
-    src/scripts/windows/owfs.nsi
-    src/scripts/usb/Makefile
-    src/scripts/usb/cygwin/Makefile
-    src/scripts/usb/windows/Makefile
-    src/include/owfs_config.h
+	Makefile
+	module/Makefile
+
+	module/owlib/Makefile
+	module/owlib/src/Makefile
+	module/owlib/src/include/Makefile
+	module/owlib/src/c/Makefile
+
+	module/owfs/Makefile
+	module/owfs/src/Makefile
+	module/owfs/src/include/Makefile
+	module/owfs/src/c/Makefile
+
+	module/owhttpd/Makefile
+	module/owhttpd/src/Makefile
+	module/owhttpd/src/include/Makefile
+	module/owhttpd/src/c/Makefile
+
+	module/owserver/Makefile
+	module/owserver/src/Makefile
+	module/owserver/src/include/Makefile
+	module/owserver/src/c/Makefile
+
+	module/owftpd/Makefile
+	module/owftpd/src/Makefile
+	module/owftpd/src/include/Makefile
+	module/owftpd/src/c/Makefile
+
+	module/ownet/Makefile
+	module/ownet/php/Makefile
+	module/ownet/php/examples/ownet_example.php
+	module/ownet/python/Makefile
+	module/ownet/perl5/Makefile
+	module/ownet/c/Makefile
+	module/ownet/c/src/Makefile
+	module/ownet/c/src/include/Makefile
+	module/ownet/c/src/c/Makefile
+	module/ownet/c/src/example/Makefile
+
+	module/owshell/Makefile
+	module/owshell/src/Makefile
+	module/owshell/src/include/Makefile
+	module/owshell/src/c/Makefile
+
+	module/owcapi/Makefile
+	module/owcapi/src/Makefile
+	module/owcapi/src/include/Makefile
+	module/owcapi/src/c/Makefile
+	module/owcapi/src/example/Makefile
+	module/owcapi/src/example++/Makefile
+
+	module/owtap/Makefile
+
+	module/owside/Makefile
+
+	module/owmon/Makefile
+
+	module/swig/Makefile
+	module/swig/perl5/Makefile
+	module/swig/perl5/OW/Makefile.linux
+	module/swig/perl5/OW/Makefile.osx
+	module/swig/php/Makefile
+	module/swig/php/example/load_php_OW.php
+	module/swig/python/Makefile
+	module/swig/python/ow/Makefile
+	module/swig/python/setup.py
+	module/swig/tcl/Makefile
+
+	src/Makefile
+	src/include/Makefile
+	src/man/Makefile
+	src/rpm/Makefile
+	src/rpm/owfs.spec
+	src/scripts/Makefile
+	src/scripts/windows/Makefile
+	src/scripts/windows/owfs.nsi
+	src/scripts/usb/Makefile
+	src/scripts/usb/cygwin/Makefile
+	src/scripts/usb/windows/Makefile
+	src/include/owfs_config.h
 ])
 AC_OUTPUT
 
@@ -1644,152 +1656,152 @@ AC_MSG_RESULT()
 AC_MSG_RESULT([Compile-time options:])
 
 if test "${ENABLE_CACHE}" = "true"; then
-    AC_MSG_RESULT([                  Caching is enabled])
+	AC_MSG_RESULT([                  Caching is enabled])
 else
-    AC_MSG_RESULT([                  Caching is DISABLED])
+	AC_MSG_RESULT([                  Caching is DISABLED])
 fi
 if test "${ENABLE_USB}" = "true"; then
-    AC_MSG_RESULT([                      USB is enabled])
+	AC_MSG_RESULT([                      USB is enabled])
 else
-    AC_MSG_RESULT([                      USB is DISABLED])
+	AC_MSG_RESULT([                      USB is DISABLED])
 fi
 if test "${ENABLE_I2C}" = "true"; then
-    AC_MSG_RESULT([                      I2C is enabled])
+	AC_MSG_RESULT([                      I2C is enabled])
 else
-    AC_MSG_RESULT([                      I2C is DISABLED])
+	AC_MSG_RESULT([                      I2C is DISABLED])
 fi
 if test "${ENABLE_HA7}" = "true"; then
-    AC_MSG_RESULT([                   HA7Net is enabled])
+	AC_MSG_RESULT([                   HA7Net is enabled])
 else
-    AC_MSG_RESULT([                   HA7Net is DISABLED])
+	AC_MSG_RESULT([                   HA7Net is DISABLED])
 fi
 if test "${ENABLE_W1}" = "true"; then
-    AC_MSG_RESULT([                       W1 is enabled])
+	AC_MSG_RESULT([                       W1 is enabled])
 else
-    AC_MSG_RESULT([                       W1 is DISABLED])
+	AC_MSG_RESULT([                       W1 is DISABLED])
 fi
 if test "${ENABLE_MT}" = "true"; then
-    AC_MSG_RESULT([           Multithreading is enabled])
+	AC_MSG_RESULT([           Multithreading is enabled])
 else
-    AC_MSG_RESULT([           Multithreading is DISABLED])
+	AC_MSG_RESULT([           Multithreading is DISABLED])
 fi
 if test "${ENABLE_PARPORT}" = "true"; then
-    AC_MSG_RESULT([    Parallel port DS1410E is enabled])
+	AC_MSG_RESULT([    Parallel port DS1410E is enabled])
 else
-    AC_MSG_RESULT([    Parallel port DS1410E is DISABLED])
+	AC_MSG_RESULT([    Parallel port DS1410E is DISABLED])
 fi
 if test "${ENABLE_TAI8570}" = "true"; then
-    AC_MSG_RESULT([        TAI8570 barometer is enabled])
+	AC_MSG_RESULT([        TAI8570 barometer is enabled])
 else
-    AC_MSG_RESULT([        TAI8570 barometer is DISABLED])
+	AC_MSG_RESULT([        TAI8570 barometer is DISABLED])
 fi
 if test "${ENABLE_THERMOCOUPLE}" = "true"; then
-    AC_MSG_RESULT([             Thermocouple is enabled])
+	AC_MSG_RESULT([             Thermocouple is enabled])
 else
-    AC_MSG_RESULT([             Thermocouple is DISABLED])
+	AC_MSG_RESULT([             Thermocouple is DISABLED])
 fi
 if test "${ENABLE_ZERO}" = "true"; then
-    AC_MSG_RESULT([         Zeroconf/Bonjour is enabled])
+	AC_MSG_RESULT([         Zeroconf/Bonjour is enabled])
 else
-    AC_MSG_RESULT([         Zeroconf/Bonjour is DISABLED])
+	AC_MSG_RESULT([         Zeroconf/Bonjour is DISABLED])
 fi
 if test "${ENABLE_DEBUG}" = "true"; then
-    AC_MSG_RESULT([             Debug-output is enabled])
+	AC_MSG_RESULT([             Debug-output is enabled])
 else
-    AC_MSG_RESULT([             Debug-output is DISABLED])
+	AC_MSG_RESULT([             Debug-output is DISABLED])
 fi
 if test "${ENABLE_PROFILING}" = "true"; then
-    AC_MSG_RESULT([                Profiling is enabled])
+	AC_MSG_RESULT([                Profiling is enabled])
 else
-    AC_MSG_RESULT([                Profiling is DISABLED])
+	AC_MSG_RESULT([                Profiling is DISABLED])
 fi
 
 AC_MSG_RESULT()
 AC_MSG_RESULT([Module configuration:])
 
 if test "${ENABLE_OWLIB}" = "true"; then
-    AC_MSG_RESULT([                    owlib is enabled])
+	AC_MSG_RESULT([                    owlib is enabled])
 else
-    AC_MSG_RESULT([                    owlib is DISABLED])
+	AC_MSG_RESULT([                    owlib is DISABLED])
 fi
 if test "${ENABLE_OWSHELL}" = "true"; then
-    AC_MSG_RESULT([                  owshell is enabled])
+	AC_MSG_RESULT([                  owshell is enabled])
 else
-    AC_MSG_RESULT([                  owshell is DISABLED])
+	AC_MSG_RESULT([                  owshell is DISABLED])
 fi
 if test "${ENABLE_OWFS}" = "true"; then
-    AC_MSG_RESULT([                     owfs is enabled])
+	AC_MSG_RESULT([                     owfs is enabled])
 else
-    AC_MSG_RESULT([                     owfs is DISABLED])
+	AC_MSG_RESULT([                     owfs is DISABLED])
 fi
 if test "${ENABLE_OWHTTPD}" = "true"; then
-    AC_MSG_RESULT([                  owhttpd is enabled])
+	AC_MSG_RESULT([                  owhttpd is enabled])
 else
-    AC_MSG_RESULT([                  owhttpd is DISABLED])
+	AC_MSG_RESULT([                  owhttpd is DISABLED])
 fi
 if test "${ENABLE_OWFTPD}" = "true"; then
-    AC_MSG_RESULT([                   owftpd is enabled])
+	AC_MSG_RESULT([                   owftpd is enabled])
 else
-    AC_MSG_RESULT([                   owftpd is DISABLED])
+	AC_MSG_RESULT([                   owftpd is DISABLED])
 fi
 if test "${ENABLE_OWSERVER}" = "true"; then
-    AC_MSG_RESULT([                 owserver is enabled])
+	AC_MSG_RESULT([                 owserver is enabled])
 else
-    AC_MSG_RESULT([                 owserver is DISABLED])
+	AC_MSG_RESULT([                 owserver is DISABLED])
 fi
 if test "${ENABLE_OWNET}" = "true"; then
-    AC_MSG_RESULT([                    ownet is enabled])
+	AC_MSG_RESULT([                    ownet is enabled])
 else
-    AC_MSG_RESULT([                    ownet is DISABLED])
+	AC_MSG_RESULT([                    ownet is DISABLED])
 fi
 if test "${ENABLE_OWNETLIB}" = "true"; then
-    AC_MSG_RESULT([                 ownetlib is enabled])
+	AC_MSG_RESULT([                 ownetlib is enabled])
 else
-    AC_MSG_RESULT([                 ownetlib is DISABLED])
+	AC_MSG_RESULT([                 ownetlib is DISABLED])
 fi
 if test "${ENABLE_OWTAP}" = "true"; then
-    AC_MSG_RESULT([                    owtap is enabled])
+	AC_MSG_RESULT([                    owtap is enabled])
 else
-    AC_MSG_RESULT([                    owtap is DISABLED])
+	AC_MSG_RESULT([                    owtap is DISABLED])
 fi
 if test "${ENABLE_OWSIDE}" = "true"; then
-    AC_MSG_RESULT([                   owside is enabled])
+	AC_MSG_RESULT([                   owside is enabled])
 else
-    AC_MSG_RESULT([                   owside is DISABLED])
+	AC_MSG_RESULT([                   owside is DISABLED])
 fi
 if test "${ENABLE_OWMON}" = "true"; then
-    AC_MSG_RESULT([                    owmon is enabled])
+	AC_MSG_RESULT([                    owmon is enabled])
 else
-    AC_MSG_RESULT([                    owmon is DISABLED])
+	AC_MSG_RESULT([                    owmon is DISABLED])
 fi
 if test "${ENABLE_OWCAPI}" = "true"; then
-    AC_MSG_RESULT([                   owcapi is enabled])
+	AC_MSG_RESULT([                   owcapi is enabled])
 else
-    AC_MSG_RESULT([                   owcapi is DISABLED])
+	AC_MSG_RESULT([                   owcapi is DISABLED])
 fi
 if test "${ENABLE_SWIG}" = "true"; then
-    AC_MSG_RESULT([                     swig is enabled])
+	AC_MSG_RESULT([                     swig is enabled])
 else
-    AC_MSG_RESULT([                     swig is DISABLED])
+	AC_MSG_RESULT([                     swig is DISABLED])
 fi
 if test "${ENABLE_OWPERL}" = "true" -a "${ENABLE_SWIG}" = "true"; then
-    AC_MSG_RESULT([                   owperl is enabled])
+	AC_MSG_RESULT([                   owperl is enabled])
 else
-    AC_MSG_RESULT([                   owperl is DISABLED])
+	AC_MSG_RESULT([                   owperl is DISABLED])
 fi
 if test "${ENABLE_OWPHP}" = "true" -a "${ENABLE_SWIG}" = "true"; then
-    AC_MSG_RESULT([                    owphp is enabled])
+	AC_MSG_RESULT([                    owphp is enabled])
 else
-    AC_MSG_RESULT([                    owphp is DISABLED])
+	AC_MSG_RESULT([                    owphp is DISABLED])
 fi
 if test "${ENABLE_OWPYTHON}" = "true" -a "${ENABLE_SWIG}" = "true"; then
-    AC_MSG_RESULT([                 owpython is enabled])
+	AC_MSG_RESULT([                 owpython is enabled])
 else
-    AC_MSG_RESULT([                 owpython is DISABLED])
+	AC_MSG_RESULT([                 owpython is DISABLED])
 fi
 if test "${ENABLE_OWTCL}" = "true" -a "${ENABLE_SWIG}" = "true"; then
-    AC_MSG_RESULT([                    owtcl is enabled])
+	AC_MSG_RESULT([                    owtcl is enabled])
 else
-    AC_MSG_RESULT([                    owtcl is DISABLED])
+	AC_MSG_RESULT([                    owtcl is DISABLED])
 fi
 AC_MSG_RESULT()
