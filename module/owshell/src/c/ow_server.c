@@ -114,7 +114,7 @@ int ServerRead(ASCII * path)
 			WriteHex( buf, ret ) ;
 		} else {
 			buf[ret] = '\0';
-			//printf("%s", buf);
+			printf("%s", buf);
 		}
 	}
 	close(connectfd);
