@@ -49,13 +49,6 @@ struct mutexes Mutex = {
 #endif							/* OW_MT */
 };
 
-// dynamically created access control for a 1-wire device
-// used to negotiate between different threads (queries)
-struct devlock {
-	BYTE sn[8];
-	UINT users;
-	pthread_mutex_t lock;
-};
 /*
 We keep a finite number of devlocks, organized in a tree for faster searching.
 The have a mutex and a counter to negotiate between threads and total lifetime.
@@ -177,7 +170,7 @@ int LockGet(struct parsedname *pn)
 
 	DEVLOCK(pn);
 	/* in->dev_db points to the root of a tree of queries that are using this device */
-	if ((opaque = tsearch(dlock, &(pn->selected_connection->dev_db), dev_compare)) == NULL) {	// unfound and uncreatable
+	if ((opaque = (struct dev_opaque *)tsearch(dlock, &(pn->selected_connection->dev_db), dev_compare)) == NULL) {	// unfound and uncreatable
 		DEVUNLOCK(pn);
 		free(dlock); // kill the allocated devlock
 		return -ENOMEM;
@@ -192,7 +185,12 @@ int LockGet(struct parsedname *pn)
 		DEVUNLOCK(pn);
 		free(dlock); // kill the allocated devlock (since there already is a matching devlock)
 		my_pthread_mutex_lock(&(opaque->key->lock));
-		pn->lock = opaque->key;
+
+		pn->lock = (struct devlock *)opaque->key; /* Serg: Invalid read of size 8 */
+		/* Why should a pointer compare fail?  Unaligned memory?
+		   Perhaps try to copy the pointer with memcpy() instead. Will this help?
+		*/
+		//memcpy(pn->lock, opaque->key, sizeof(struct devlock *));
 	}
 #else							/* OW_MT */
 	(void) pn;					// suppress compiler warning in the trivial case.
@@ -204,11 +202,11 @@ void LockRelease(struct parsedname *pn)
 {
 #if OW_MT
 	if (pn->lock) {
-		my_pthread_mutex_unlock(&(pn->lock->lock));
+		my_pthread_mutex_unlock(&(pn->lock->lock));		/* Serg: This coredump on his 64-bit server */
 		DEVLOCK(pn);
 		--pn->lock->users;
 		if (pn->lock->users == 0) {
-			tdelete(pn->lock, &(pn->selected_connection->dev_db), dev_compare);
+			tdelete(pn->lock, &(pn->selected_connection->dev_db), dev_compare); /* Serg: Address 0x5A0D750 is 0 bytes inside a block of size 32 free'd */
 			my_pthread_mutex_destroy(&(pn->lock->lock));
 			free(pn->lock);
 		}

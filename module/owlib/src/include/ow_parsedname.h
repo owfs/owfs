@@ -116,7 +116,13 @@ struct buspath {
 	BYTE branch;
 };
 
-struct devlock ; // defined in ow_locks.c -- a device-specific lock
+// dynamically created access control for a 1-wire device
+// used to negotiate between different threads (queries)
+struct devlock {
+	pthread_mutex_t lock;
+	BYTE sn[8];
+	UINT users;
+};
 
 #define EXTENSION_BYTE	-2
 #define EXTENSION_ALL	-1
