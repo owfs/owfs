@@ -119,13 +119,13 @@ const struct option owopts_long[] = {
 	{"ha4b", required_argument, NULL, e_ha4b},
 	{"HA5", required_argument, NULL, e_ha5},
 	{"ha5", required_argument, NULL, e_ha5},
-    {"ha7e", required_argument, NULL, e_ha7e},
-    {"HA7e", required_argument, NULL, e_ha7e},
-    {"HA7E", required_argument, NULL, e_ha7e},
-    {"ha7s", required_argument, NULL, e_ha7e},
-    {"HA7s", required_argument, NULL, e_ha7e},
-    {"HA7S", required_argument, NULL, e_ha7e},
-    {"TESTER", required_argument, NULL, e_tester},	/* Tester */
+	{"ha7e", required_argument, NULL, e_ha7e},
+	{"HA7e", required_argument, NULL, e_ha7e},
+	{"HA7E", required_argument, NULL, e_ha7e},
+	{"ha7s", required_argument, NULL, e_ha7e},
+	{"HA7s", required_argument, NULL, e_ha7e},
+	{"HA7S", required_argument, NULL, e_ha7e},
+	{"TESTER", required_argument, NULL, e_tester},	/* Tester */
 	{"Tester", required_argument, NULL, e_tester},	/* Tester */
 	{"tester", required_argument, NULL, e_tester},	/* Tester */
 	{"etherweather", required_argument, NULL, e_etherweather},	/* EtherWeather */

@@ -28,6 +28,13 @@ DS2480B-based bus master (like the DS9097U or the LINK in emulation mode). If th
 .I LINK
 adapter (all versions) in non-emulation mode. Uses an ascii protocol over serial.
 .TP
+\fI--ha7e=port\fI
+.B Embedded Data Systems
+.I HA7E
+adapter (and
+.I HA7S
+} in native ascii mode.
+.TP
 \fI--passive=port\fR | \fI--ha3=port\fR | \fI--ha4b=port
 Passive 1-wire adapters.
 .SH "* USB devices"
@@ -84,8 +91,8 @@ E.g. 192.168.0.1:3000 or localhost:3000
 .I --link=network_address
 LinkHubE network LINK adapter
 .TP
-.I --ha7net=network_address
-HA7Net network 1-wire adapter
+.I --ha7net=network_address | --ha7net
+HA7Net network 1-wire adapter with specified tcp address or discovered by udp multicast
 .TP
 .I --etherweather=network_address
 Etherweather adapter
