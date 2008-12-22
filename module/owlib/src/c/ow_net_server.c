@@ -231,7 +231,7 @@ static void ServerProcessAccept(void *vp)
 void ServerProcessCleanup(void *param)
 {
   struct connection_out *out = (struct connection_out *)param;
-  LEVEL_DEBUG("ServerProcessCleanup: cleaning up blocked thread %d\n", out->tid);
+  LEVEL_DEBUG("ServerProcessCleanup: cleaning up blocked thread %lu\n", out->tid);
   ACCEPTUNLOCK(out);
   LEVEL_DEBUG("ServerProcessCleanup: unlocked accept mutex\n");
 }
@@ -260,6 +260,8 @@ static void *ServerProcessOut(void *v)
 
 	pthread_cleanup_pop(0);
 
+	LEVEL_DEBUG("ServerProcessOut = %lu CLOSING (pop done) (%s)\n", (unsigned long int) pthread_self(), SAFESTRING(out->name));
+
 	OUTLOCK(out);
 	out->tid = 0;
 	OUTUNLOCK(out);
@@ -270,8 +272,8 @@ static void *ServerProcessOut(void *v)
 /* Setup Servers -- a thread for each port */
 void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (int errcode))
 {
-	struct connection_out *out ;
 	int err, signo;
+	struct connection_out *out ;
 	sigset_t myset;
 
 	if (Outbound_Control.active == 0) {
@@ -307,15 +309,17 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 			LEVEL_DEBUG("ServerProcess: break signo=%d\n", signo);
 			break;
 		} else {
-			LEVEL_DEBUG("ServerProcess: sigwait error %n\n", err);
+			LEVEL_DEBUG("ServerProcess: sigwait error %d\n", err);
 		}
 	}
+
+	StateInfo.shutdown_in_progress = 1;
 	LEVEL_DEBUG("ow_net_server.c:ServerProcess() shutdown initiated\n");
 
 	for (out = Outbound_Control.head; out; out = out->next) {
 		OUTLOCK(out);
 		if (out->tid) {
-			LEVEL_DEBUG("Shutting down %d of %d thread %ld\n", out->index, Outbound_Control.active, out->tid);
+			LEVEL_DEBUG("Shutting down %d of %d thread %lu\n", out->index, Outbound_Control.active, out->tid);
 			if (pthread_cancel(out->tid)) {
 				LEVEL_DEBUG("Can't kill %d of %d\n", out->index, Outbound_Control.active);
 			}
@@ -326,8 +330,13 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 	LEVEL_DEBUG("ow_net_server.c:ServerProcess() all threads cancelled\n");
 
 	for (out = Outbound_Control.head; out; out = out->next) {
-		pthread_join(out->tid, NULL);
-		out->tid = 0;
+		if(out->tid > 0) {
+			LEVEL_DEBUG("ow_net_server.c:ServerProcess() pthread_join(%lu)\n", out->tid);
+			pthread_join(out->tid, NULL);
+			out->tid = 0;
+		} else {
+			LEVEL_DEBUG("ow_net_server.c:ServerProcess() tid==0?\n");
+		}
 	}
 
 	LEVEL_DEBUG("ow_net_server.c:ServerProcess() shutdown done\n");

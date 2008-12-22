@@ -15,7 +15,7 @@ $Id$
 #include "ow_devices.h"
 #include "ow_pid.h"
 
-static void SetSignals(void);
+static void IgnoreSignals(void);
 static void SigHandler(int signo, siginfo_t * info, void *context);
 static void SetupInboundConnections(void);
 static void SetupSideboundConnections(void);
@@ -51,8 +51,9 @@ int LibStart(void)
 		exit(0);
 #endif
 	}
+
 	// Signal handlers
-	SetSignals();
+	IgnoreSignals();
 
 	return 0;
 }
@@ -189,47 +190,14 @@ static void SetupSideboundConnections(void)
 	}
 }
 
-static void SigHandler(int signo, siginfo_t * info, void *context)
-{
-	(void) context;
-#if OW_MT
-	if (info) {
-		LEVEL_DEBUG
-			("Signal handler for %d, errno %d, code %d, pid=%ld, self=%lu\n",
-			 signo, info->si_errno, info->si_code, (long int) info->si_pid, pthread_self());
-	} else {
-		LEVEL_DEBUG("Signal handler for %d, self=%lu\n", signo, pthread_self());
-	}
-#else							/* OW_MT */
-	if (info) {
-		LEVEL_DEBUG("Signal handler for %d, errno %d, code %d, pid=%ld\n", signo, info->si_errno, info->si_code, (long int) info->si_pid);
-	} else {
-		LEVEL_DEBUG("Signal handler for %d\n", signo);
-	}
-#endif							/* OW_MT */
-	return;
-}
 
-static void SetSignals(void)
+static void IgnoreSignals(void)
 {
 	struct sigaction sa;
-
+	int i = 0;
+	
 	memset(&sa, 0, sizeof(struct sigaction));
 	sigemptyset(&(sa.sa_mask));
-
-	sa.sa_flags = SA_SIGINFO;
-	sa.sa_sigaction = SigHandler;
-	if (sigaction(SIGHUP, &sa, NULL) == -1) {
-		LEVEL_DEFAULT("Cannot handle SIGHUP\n");
-		exit(0);
-	}
-	// more like a test to see if signals are handled correctly
-	sa.sa_flags = SA_SIGINFO;
-	sa.sa_sigaction = SigHandler;
-	if (sigaction(SIGUSR1, &sa, NULL) == -1) {
-		LEVEL_DEFAULT("Cannot handle SIGUSR1\n");
-		exit(0);
-	}
 
 	sa.sa_flags = 0;
 	sa.sa_handler = SIG_IGN;
@@ -238,3 +206,4 @@ static void SetSignals(void)
 		exit(0);
 	}
 }
+

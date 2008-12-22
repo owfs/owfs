@@ -47,9 +47,11 @@ extern pthread_mutex_t persistence_mutex;
 
 static void ow_exit(int e)
 {
-	LEVEL_DEBUG("ow_exit %d\n", e);
-	if (IS_MAINTHREAD) {
+    if (IS_MAINTHREAD) {
+		LEVEL_DEBUG("ow_exit %d\n", e);
 		LibClose();
+	} else {
+		LEVEL_DEBUG("ow_exit (not mainthread) %d\n", e);
 	}
 #ifdef __UCLIBC__
 	/* Process never die on WRT54G router with uClibc if exit() is used */
@@ -129,6 +131,7 @@ int main(int argc, char **argv)
 		OW_ArgServer(NULL);		// make the default assignment
 	}
 
+	//set_exit_signal_handlers(exit_handler);
 	set_signal_handlers(exit_handler);
 
 	/* become a daemon if not told otherwise */

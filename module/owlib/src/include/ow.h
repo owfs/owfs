@@ -296,7 +296,9 @@ enum temp_type { temp_celsius, temp_fahrenheit, temp_kelvin, temp_rankine,
 };
 
 extern void set_signal_handlers(void (*exit_handler)
-								 (int signo, siginfo_t * info, void *context));
+	(int signo, siginfo_t * info, void *context));
+void set_exit_signal_handlers(void (*exit_handler)
+	(int signo, siginfo_t * info, void *context));
 
 #ifndef SI_FROMUSER
 #define SI_FROMUSER(siptr)      ((siptr)->si_code <= 0)

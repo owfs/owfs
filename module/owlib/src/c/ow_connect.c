@@ -162,17 +162,6 @@ struct connection_side *NewSide(void)
 	return now;
 }
 
-void FreeInAll( void )
-{
-	struct connection_in * now ;
-	now = Inbound_Control.head ;
-	while ( now ) {
-		struct connection_in * next = now-> next ;
-		FreeIn(now) ;
-		now = next ;
-	}
-}
-
 // Free the important parts of a connection_in structure
 // unlinking needs to be done elsewhere
 // Then free structure itself
@@ -181,7 +170,7 @@ void FreeIn(struct connection_in * now)
 	if ( now==NULL ) {
 		return ;
 	}
-	LEVEL_DEBUG("FreeIn: busmode=%d\n", get_busmode(now));
+	//LEVEL_DEBUG("FreeIn: %p next=%p busmode=%d\n", now, now->next, (int)get_busmode(now));
 	--Inbound_Control.active ;
 #if OW_MT
 	my_pthread_mutex_destroy(&(now->bus_mutex));
@@ -253,9 +242,22 @@ void FreeIn(struct connection_in * now)
 		break;
 	}
 	if (now->name) {
+		//LEVEL_DEBUG("Free name [%s]\n", now->name);
 		free(now->name);
 	}
 	free(now);
+}
+
+void FreeInAll( void )
+{
+	struct connection_in *next ;
+
+	while ( Inbound_Control.head ) {
+		next = Inbound_Control.head->next;
+		//LEVEL_DEBUG("FreeInAll: %p next=%p\n", Inbound_Control.head, Inbound_Control.head->next);
+		FreeIn(Inbound_Control.head);
+		Inbound_Control.head = next;
+	}
 }
 
 void RemoveIn( struct connection_in * conn )

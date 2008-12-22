@@ -5,15 +5,69 @@
 #include "owftpd.h"
 #include <pwd.h>
 
-/* put our executable name here where everybody can see it */
-static void ow_exit(int e);
+#if OW_MT
+pthread_t main_threadid;
+#define IS_MAINTHREAD (main_threadid == pthread_self())
+#else
+#define IS_MAINTHREAD 1
+#endif
+
+static void ow_exit(int e)
+{
+	LEVEL_DEBUG("ow_exit %d\n", e);
+	if (IS_MAINTHREAD) {
+		LibClose();
+	}
+
+#ifdef __UCLIBC__
+	/* Process never die on WRT54G router with uClibc if exit() is used */
+	_exit(e);
+#else
+	exit(e);
+#endif
+}
+
+static void exit_handler(int signo, siginfo_t * info, void *context)
+{
+	(void) context;
+#if OW_MT
+	if (info) {
+		LEVEL_DEBUG
+			("exit_handler: for %d, errno %d, code %d, pid=%ld, self=%lu main=%lu\n",
+			 signo, info->si_errno, info->si_code, (long int) info->si_pid, pthread_self(), main_threadid);
+	} else {
+		LEVEL_DEBUG("exit_handler: for %d, self=%lu, main=%lu\n", signo, pthread_self(), main_threadid);
+	}
+	if (!StateInfo.shutdown_in_progress) {
+		StateInfo.shutdown_in_progress = 1;
+
+		if (info != NULL) {
+			if (SI_FROMUSER(info)) {
+				LEVEL_DEBUG("exit_handler: kill from user\n");
+			}
+			if (SI_FROMKERNEL(info)) {
+				LEVEL_DEBUG("exit_handler: kill from kernel\n");
+			}
+		}
+		if (!IS_MAINTHREAD) {
+			LEVEL_DEBUG("exit_handler: kill mainthread %lu self=%d signo=%d\n", main_threadid, pthread_self(), signo);
+			pthread_kill(main_threadid, signo);
+		}
+	}
+#else
+	(void) signo;
+	(void) info;
+	StateInfo.shutdown_in_progress = 1;
+#endif
+	return;
+}
 
 int main(int argc, char *argv[])
 {
 	int c;
+	int err, signo;
 	struct ftp_listener_s ftp_listener;
-	sigset_t term_signal;
-	int sig;
+	sigset_t myset;
 
 	/* Set up owlib */
 	LibSetup(opt_ftpd);
@@ -23,6 +77,10 @@ int main(int argc, char *argv[])
 		Globals.progname = strdup(argv[0]);
 	}
 
+#if OW_MT
+	main_threadid = pthread_self();
+#endif
+	
 	/* check our command-line arguments */
 	while ((c = getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL)) != -1) {
 		switch (c) {
@@ -58,13 +116,17 @@ int main(int argc, char *argv[])
 		ow_exit(1);
 	}
 
+#if OW_MT
+	main_threadid = pthread_self();
+	LEVEL_DEBUG("main_threadid = %lu\n", (unsigned long int) main_threadid);
+#endif
+
 	/* Set up adapters */
 	if (LibStart()) {
 		ow_exit(1);
 	}
 
-	/* avoid SIGPIPE on socket activity */
-	signal(SIGPIPE, SIG_IGN);
+	set_signal_handlers(exit_handler);
 
 	/* create our main listener */
 	if (!ftp_listener_init(&ftp_listener)) {
@@ -78,26 +140,33 @@ int main(int argc, char *argv[])
 		ow_exit(1);
 	}
 
-	/* wait for a SIGTERM and exit gracefully */
-	sigemptyset(&term_signal);
-	sigaddset(&term_signal, SIGTERM);
-	sigaddset(&term_signal, SIGINT);
-	pthread_sigmask(SIG_BLOCK, &term_signal, NULL);
-	sigwait(&term_signal, &sig);
-	if (sig == SIGTERM) {
-		LEVEL_CONNECT("SIGTERM received, shutting down");
-	} else {
-		LEVEL_CONNECT("SIGINT received, shutting down");
+
+	(void) sigemptyset(&myset);
+	(void) sigaddset(&myset, SIGHUP);
+	(void) sigaddset(&myset, SIGINT);
+	(void) sigaddset(&myset, SIGTERM);
+	(void) pthread_sigmask(SIG_BLOCK, &myset, NULL);
+
+	while (!StateInfo.shutdown_in_progress) {
+		if ((err = sigwait(&myset, &signo)) == 0) {
+			if (signo == SIGHUP) {
+				LEVEL_DEBUG("owftpd: ignore signo=%d\n", signo);
+				continue;
+			}
+			LEVEL_DEBUG("owftpd: break signo=%d\n", signo);
+			break;
+		} else {
+			LEVEL_DEBUG("owftpd: sigwait error %d\n", err);
+		}
 	}
+
+	StateInfo.shutdown_in_progress = 1;
+	LEVEL_DEBUG("owftpd shutdown initiated\n");
+
 	ftp_listener_stop(&ftp_listener);
-	LEVEL_CONNECT("All connections finished, FTP server exiting");
+	LEVEL_CONNECT("All connections finished, FTP server exiting\n");
+
 	ow_exit(0);
 	return 0;
 }
 
-static void ow_exit(int e)
-{
-	LibClose();
-	/* Process never die on WRT54G router with uClibc if exit() is used */
-	_exit(e);
-}

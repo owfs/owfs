@@ -53,18 +53,20 @@ int ftp_listener_init(struct ftp_listener_s *f)
 
 	daemon_assert(f != NULL);
 
+	LEVEL_DEBUG("ftp_listener_init: name=[%s]\n", Outbound_Control.head->name);
+	
 	// For sone reason, there must be an IP address included
 	if (strchr(Outbound_Control.head->name, ':') == NULL) {
 		char *newname;
 		char *oldname = Outbound_Control.head->name;
-		newname = malloc(8 + strlen(oldname));
+		newname = malloc(8 + strlen(oldname) + 1); // "0.0.0.0:" + null-char.
 		if (newname == NULL) {
 			LEVEL_DEFAULT("Cannot allocate menory for port name\n");
 			return 0;
 		}
 		strcpy(newname, "0.0.0.0:");
 		strcat(newname, oldname);
-		//printf("OWSERVER composite name <%s> -> <%s>\n",oldname,newname);
+		//LEVEL_DEBUG("OWSERVER composite name <%s> -> <%s>\n",oldname,newname);
 		Outbound_Control.head->name = newname;
 		free(oldname);
 	}

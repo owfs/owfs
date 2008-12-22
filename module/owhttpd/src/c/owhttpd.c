@@ -133,6 +133,7 @@ int main(int argc, char *argv[])
 		OW_ArgServer(NULL);		// make an ephemeral assignment
 	}
 
+	//set_exit_signal_handlers(exit_handler);
 	set_signal_handlers(exit_handler);
 
 	/* become a daemon if not told otherwise */

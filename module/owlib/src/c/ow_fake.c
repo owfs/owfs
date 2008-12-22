@@ -63,7 +63,6 @@ static void Tester_setroutines(struct connection_in *in)
 /* It does call lower level functions for higher ones, which of course is pointless since the lower ones don't work either */
 int Fake_detect(struct connection_in *in)
 {
-	ASCII *newname;
 	ASCII *oldname = in->name;
 
 	in->file_descriptor = Inbound_Control.next_fake;
@@ -74,14 +73,13 @@ int Fake_detect(struct connection_in *in)
 	in->Adapter = adapter_fake;
 	in->connin.fake.bus_number_this_type = Inbound_Control.next_fake;
 	LEVEL_CONNECT("Setting up Simulated (Fake) Bus Master (%d)\n", Inbound_Control.next_fake);
-	if ((newname = (ASCII *) malloc(20))) {
+	if ((in->name = (ASCII *) malloc(20))) {
 		const ASCII *current_device_start;
 		ASCII *remaining_device_list = in->name;
 
 		UCLIBCLOCK ;
-		snprintf(newname, 18, "fake.%d", Inbound_Control.next_fake);
+		snprintf(in->name, 18, "fake.%d", Inbound_Control.next_fake);
 		UCLIBCUNLOCK ;
-		in->name = newname;
 
 		while (remaining_device_list != NULL) {
 			BYTE sn[8];
@@ -116,7 +114,6 @@ int Fake_detect(struct connection_in *in)
 
 int Tester_detect(struct connection_in *in)
 {
-	ASCII *newname;
 	ASCII *oldname = in->name;
 
 	in->file_descriptor = Inbound_Control.next_tester;
@@ -127,14 +124,13 @@ int Tester_detect(struct connection_in *in)
 	in->Adapter = adapter_tester;
 	in->connin.tester.bus_number_this_type = Inbound_Control.next_tester;
 	LEVEL_CONNECT("Setting up Simulated (Testing) Bus Master (%d)\n", Inbound_Control.next_tester);
-	if ((newname = (ASCII *) malloc(20))) {
+	if ((in->name = (ASCII *) malloc(20))) {
 		const ASCII *current_device_start;
 		ASCII *remaining_device_list = in->name;
 
 		UCLIBCLOCK ;
-		snprintf(newname, 18, "tester.%d", Inbound_Control.next_tester);
+		snprintf(in->name, 18, "tester.%d", Inbound_Control.next_tester);
 		UCLIBCUNLOCK ;
-		in->name = newname;
 
 		while (remaining_device_list) {
 			BYTE sn[8];
