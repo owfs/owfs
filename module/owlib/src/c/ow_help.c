@@ -180,7 +180,7 @@ void ow_help_device(void)
 		   " Simulated\n"
 		   "  --fake=list     List of devices to simulate (random ID, random data)\n"
 		   "                   use family codes in hex\n"
-		   "                   e.g. 1F,10,21 for DS2409,DS18B20,DS1921\n"
+		   "                   e.g. 1F,10,21 for DS2409,DS18S20,DS1921\n"
 		   "  --tester=list   List of devices to simulate (non-random ID, non-random data)\n"
 		   "\n"
 		   " Linux Kernel Device\n"
