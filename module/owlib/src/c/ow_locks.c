@@ -71,8 +71,8 @@ void LockSetup(void)
 	__pthread_initialize();
 
 	/* global mutex attribute */
-	pthread_mutexattr_init(&Mutex.mattr);
-	pthread_mutexattr_settype(&Mutex.mattr, PTHREAD_MUTEX_ADAPTIVE_NP);
+	my_pthread_mutexattr_init(&Mutex.mattr);
+	my_pthread_mutexattr_settype(&Mutex.mattr, PTHREAD_MUTEX_ADAPTIVE_NP);
 	Mutex.pmattr = &Mutex.mattr;
 #endif							/* UCLIBC_VERSION */
 #endif							/* __UCLIBC__ */
