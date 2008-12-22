@@ -255,6 +255,8 @@ static int DS2480_big_reset(const struct parsedname *pn)
 		return -ENODEV;
 	}
 
+	COM_slurp( pn->selected_connection->file_descriptor ) ;
+
 //	// Send BREAK to reset device
 //	tcsendbreak(pn->selected_connection->file_descriptor, 0);
 

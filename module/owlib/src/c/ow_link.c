@@ -91,6 +91,9 @@ int LINK_detect(struct connection_in *in)
 
 	// set the baud rate to 9600. (Already set to 9600 in COM_open())
 	COM_speed(B9600, &pn);
+
+	COM_slurp( in->file_descriptor ) ;
+	
 	//COM_flush(&pn);
 	if (LINK_reset(&pn) == BUS_RESET_OK && LINK_write(LINK_string(" "), 1, &pn) == 0) {
 

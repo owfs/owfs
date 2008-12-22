@@ -2,7 +2,7 @@
 
 
 #ifndef OWCONFIG_H
-#define OWCONFIG_H
+	#define OWCONFIG_H
 
 
 /* Define to 1 if you have the `accept' function. */
