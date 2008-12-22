@@ -25,7 +25,7 @@ void LibClose(void)
 
 #if OW_MT
 	if (Mutex.pmattr) {
-		pthread_mutexattr_destroy(Mutex.pmattr);
+		my_pthread_mutexattr_destroy(Mutex.pmattr);
 		Mutex.pmattr = NULL;
 	}
 #endif							/* OW_MT */

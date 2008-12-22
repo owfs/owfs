@@ -35,6 +35,9 @@ extern const char mutex_init_failed[];
 extern const char mutex_destroy_failed[];
 extern const char mutex_lock_failed[];
 extern const char mutex_unlock_failed[];
+extern const char mutex_attr_init_failed[];
+extern const char mutex_attr_destroy_failed[];
+extern const char mutex_attr_settype_failed[];
 extern const char rwlock_init_failed[];
 extern const char rwlock_read_lock_failed[];
 extern const char rwlock_read_unlock_failed[];
@@ -147,6 +150,31 @@ extern int log_available;
 		FATAL_ERROR(mutex_unlock_failed, mrc, strerror(mrc)); \
 	} \
 }
+
+#define my_pthread_mutexattr_init(attr) \
+{ \
+	int mrc = pthread_mutexattr_init(attr);	\
+	if(mrc != 0) { \
+		FATAL_ERROR(mutex_attr_init_failed, mrc, strerror(mrc)); \
+	} \
+}
+
+#define my_pthread_mutexattr_destroy(attr) \
+{ \
+	int mrc = pthread_mutexattr_destroy(attr);	\
+	if(mrc != 0) { \
+		FATAL_ERROR(mutex_attr_destroy_failed, mrc, strerror(mrc)); \
+	} \
+}
+
+#define my_pthread_mutexattr_settype(attr, typ) \
+{ \
+	int mrc = pthread_mutexattr_settype(attr, typ);	\
+	if(mrc != 0) { \
+		FATAL_ERROR(mutex_attr_settype_failed, mrc, strerror(mrc)); \
+	} \
+}
+
 #endif /* OW_MT */
 
 #endif							/* OW_DEBUG_H */
