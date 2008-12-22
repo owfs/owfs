@@ -190,7 +190,7 @@ int LockGet(struct parsedname *pn)
 		/* Why should a pointer compare fail?  Unaligned memory?
 		   Perhaps try to copy the pointer with memcpy() instead. Will this help?
 		*/
-		//memcpy(pn->lock, opaque->key, sizeof(struct devlock *));
+		//memcpy(&(pn->lock), &(opaque->key), sizeof(struct devlock *));
 	}
 #else							/* OW_MT */
 	(void) pn;					// suppress compiler warning in the trivial case.
