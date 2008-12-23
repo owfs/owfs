@@ -145,10 +145,20 @@ struct interface_routines {
 #define BUS_close(in)                       (((in)->iroutines.close(in)))
 
 /* placed in iroutines.flags */
+
+// Adapter supports overdrive mode
 #define ADAP_FLAG_overdrive     0x00000001
+
+// Adapter supports the DS2409 microlan hub
 #define ADAP_FLAG_2409path      0x00000010
+
+// Adapter gets a direcory all ad once rather than one at a time
 #define ADAP_FLAG_dirgulp       0x00000100
+
+// Adapter benefits from coalescing reads and writes into a longer string
 #define ADAP_FLAG_bundle        0x00001000
+
+// Adapter sutomatically performs a reset before read/writes
 #define ADAP_FLAG_dir_auto_reset 0x00002000
 
 #define AdapterSupports2409(pn)	(((pn)->selected_connection->iroutines.flags&ADAP_FLAG_2409path)!=0)

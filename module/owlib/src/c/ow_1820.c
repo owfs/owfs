@@ -60,6 +60,7 @@ READ_FUNCTION(FS_r_trimvalid);
 READ_FUNCTION(FS_r_blanket);
 WRITE_FUNCTION(FS_w_blanket);
 READ_FUNCTION(FS_r_ad);
+READ_FUNCTION(FS_r_piostate);
 READ_FUNCTION(FS_r_pio);
 READ_FUNCTION(FS_r_latch);
 WRITE_FUNCTION(FS_w_pio);
@@ -68,14 +69,14 @@ READ_FUNCTION(FS_sense);
 /* -------- Structures ---------- */
 struct filetype DS18S20[] = {
 	F_STANDARD,
-  {"temperature", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_10temp, NO_WRITE_FUNCTION, {v:NULL},},
-  {"templow", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:1},},
-  {"temphigh", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:0},},
-  {"trim", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_volatile, FS_r_trim, FS_w_trim, {v:NULL},},
-  {"die", 2, NULL, ft_ascii, fc_static, FS_r_die, NO_WRITE_FUNCTION, {i:1},},
-  {"trimvalid", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_trimvalid, NO_WRITE_FUNCTION, {v:NULL},},
-  {"trimblanket", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_blanket, FS_w_blanket, {v:NULL},},
-  {"power", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, {v:NULL},},
+	{"temperature", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_10temp, NO_WRITE_FUNCTION, {v:NULL},},
+	{"templow", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:1},},
+	{"temphigh", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:0},},
+	{"trim", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_volatile, FS_r_trim, FS_w_trim, {v:NULL},},
+	{"die", 2, NULL, ft_ascii, fc_static, FS_r_die, NO_WRITE_FUNCTION, {i:1},},
+	{"trimvalid", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_trimvalid, NO_WRITE_FUNCTION, {v:NULL},},
+	{"trimblanket", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_blanket, FS_w_blanket, {v:NULL},},
+	{"power", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, {v:NULL},},
 }
 
 ;
@@ -84,19 +85,19 @@ DeviceEntryExtended(10, DS18S20, DEV_temp | DEV_alarm);
 struct filetype DS18B20[] = {
 	F_STANDARD,
 //    {"scratchpad",     8,  NULL, ft_binary, fc_volatile,   FS_tempdata, NO_WRITE_FUNCTION, NULL, } ,//    {"scratchpad",     8,  NULL, ft_binary, fc_volatile,  {o:FS_tempdata} ,
-  {"temperature", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_slowtemp, NO_WRITE_FUNCTION, {i:12},},
-  {"temperature9", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:9},},
-  {"temperature10", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:10},},
-  {"temperature11", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:11},},
-  {"temperature12", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:12},},
-  {"fasttemp", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_fasttemp, NO_WRITE_FUNCTION, {i:9},},
-  {"templow", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:1},},
-  {"temphigh", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:0},},
-  {"trim", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_volatile, FS_r_trim, FS_w_trim, {v:NULL},},
-  {"die", 2, NULL, ft_ascii, fc_static, FS_r_die, NO_WRITE_FUNCTION, {i:2},},
-  {"trimvalid", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_trimvalid, NO_WRITE_FUNCTION, {v:NULL},},
-  {"trimblanket", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_blanket, FS_w_blanket, {v:NULL},},
-  {"power", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, {v:NULL},},
+	{"temperature", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_slowtemp, NO_WRITE_FUNCTION, {i:12},},
+	{"temperature9", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:9},},
+	{"temperature10", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:10},},
+	{"temperature11", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:11},},
+	{"temperature12", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:12},},
+	{"fasttemp", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_fasttemp, NO_WRITE_FUNCTION, {i:9},},
+	{"templow", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:1},},
+	{"temphigh", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:0},},
+	{"trim", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_volatile, FS_r_trim, FS_w_trim, {v:NULL},},
+	{"die", 2, NULL, ft_ascii, fc_static, FS_r_die, NO_WRITE_FUNCTION, {i:2},},
+	{"trimvalid", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_trimvalid, NO_WRITE_FUNCTION, {v:NULL},},
+	{"trimblanket", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_blanket, FS_w_blanket, {v:NULL},},
+	{"power", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, {v:NULL},},
 };
 
 DeviceEntryExtended(28, DS18B20, DEV_temp | DEV_alarm);
@@ -104,19 +105,19 @@ DeviceEntryExtended(28, DS18B20, DEV_temp | DEV_alarm);
 struct filetype DS1822[] = {
 	F_STANDARD,
 //    {"scratchpad",     8,  NULL, ft_binary, fc_volatile,   FS_tempdata, NO_WRITE_FUNCTION, NULL, } ,//    {"scratchpad",     8,  NULL, ft_binary, fc_volatile,  {o:FS_tempdata} ,
-  {"temperature", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_alias, FS_slowtemp, NO_WRITE_FUNCTION, {i:12},},
-  {"temperature9", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:9},},
-  {"temperature10", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:10},},
-  {"temperature11", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:11},},
-  {"temperature12", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:12},},
-  {"fasttemp", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_alias, FS_fasttemp, NO_WRITE_FUNCTION, {i:9},},
-  {"templow", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:1},},
-  {"temphigh", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:0},},
-  {"trim", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_volatile, FS_r_trim, FS_w_trim, {v:NULL},},
-  {"die", 2, NULL, ft_ascii, fc_static, FS_r_die, NO_WRITE_FUNCTION, {i:0},},
-  {"trimvalid", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_trimvalid, NO_WRITE_FUNCTION, {v:NULL},},
-  {"trimblanket", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_blanket, FS_w_blanket, {v:NULL},},
-  {"power", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, {v:NULL},},
+	{"temperature", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_alias, FS_slowtemp, NO_WRITE_FUNCTION, {i:12},},
+	{"temperature9", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:9},},
+	{"temperature10", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:10},},
+	{"temperature11", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:11},},
+	{"temperature12", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:12},},
+	{"fasttemp", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_alias, FS_fasttemp, NO_WRITE_FUNCTION, {i:9},},
+	{"templow", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:1},},
+	{"temphigh", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:0},},
+	{"trim", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_volatile, FS_r_trim, FS_w_trim, {v:NULL},},
+	{"die", 2, NULL, ft_ascii, fc_static, FS_r_die, NO_WRITE_FUNCTION, {i:0},},
+	{"trimvalid", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_trimvalid, NO_WRITE_FUNCTION, {v:NULL},},
+	{"trimblanket", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_blanket, FS_w_blanket, {v:NULL},},
+	{"power", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, {v:NULL},},
 };
 
 DeviceEntryExtended(22, DS1822, DEV_temp | DEV_alarm);
@@ -124,16 +125,16 @@ DeviceEntryExtended(22, DS1822, DEV_temp | DEV_alarm);
 struct filetype DS1825[] = {
 	F_STANDARD,
 //    {"scratchpad",     8,  NULL, ft_binary, fc_volatile,   FS_tempdata, NO_WRITE_FUNCTION, NULL, } ,//    {"scratchpad",     8,  NULL, ft_binary, fc_volatile,  {o:FS_tempdata} ,
-  {"temperature", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_alias, FS_slowtemp, NO_WRITE_FUNCTION, {i:12},},
-  {"temperature9", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:9},},
-  {"temperature10", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:10},},
-  {"temperature11", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:11},},
-  {"temperature12", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:12},},
-  {"fasttemp", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_alias, FS_fasttemp, NO_WRITE_FUNCTION, {i:9},},
-  {"templow", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:1},},
-  {"temphigh", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:0},},
-  {"power", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, {v:NULL},},
-  {"prog_addr", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_stable, FS_r_ad, NO_WRITE_FUNCTION, {v:NULL},},
+	{"temperature", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_alias, FS_slowtemp, NO_WRITE_FUNCTION, {i:12},},
+	{"temperature9", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:9},},
+	{"temperature10", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:10},},
+	{"temperature11", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:11},},
+	{"temperature12", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:12},},
+	{"fasttemp", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_alias, FS_fasttemp, NO_WRITE_FUNCTION, {i:9},},
+	{"templow", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:1},},
+	{"temphigh", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:0},},
+	{"power", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, {v:NULL},},
+	{"prog_addr", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_stable, FS_r_ad, NO_WRITE_FUNCTION, {v:NULL},},
 };
 
 DeviceEntryExtended(3B, DS1825, DEV_temp | DEV_alarm);
@@ -143,18 +144,19 @@ struct aggregate A28EA00 = { 2, ag_letters, ag_aggregate, };
 struct filetype DS28EA00[] = {
 	F_STANDARD,
 //    {"scratchpad",     8,  NULL, ft_binary, fc_volatile,   FS_tempdata, NO_WRITE_FUNCTION, NULL, } ,//    {"scratchpad",     8,  NULL, ft_binary, fc_volatile,  {o:FS_tempdata} ,
-  {"temperature", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_alias, FS_slowtemp, NO_WRITE_FUNCTION, {i:12},},
-  {"temperature9", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:9},},
-  {"temperature10", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:10},},
-  {"temperature11", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:11},},
-  {"temperature12", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:12},},
-  {"fasttemp", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_alias, FS_fasttemp, NO_WRITE_FUNCTION, {i:9},},
-  {"templow", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:1},},
-  {"temphigh", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:0},},
-  {"power", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, {v:NULL},},
-  {"PIO", PROPERTY_LENGTH_BITFIELD, &A28EA00, ft_bitfield, fc_volatile, FS_r_pio, NO_WRITE_FUNCTION, {v:NULL},},
-  {"latch", PROPERTY_LENGTH_BITFIELD, &A28EA00, ft_bitfield, fc_stable, FS_r_latch, FS_w_pio, {v:NULL},},
-  {"sensed", PROPERTY_LENGTH_BITFIELD, &A28EA00, ft_bitfield, fc_volatile, FS_sense, NO_WRITE_FUNCTION, {v:NULL},},
+	{"temperature", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_alias, FS_slowtemp, NO_WRITE_FUNCTION, {i:12},},
+	{"temperature9", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:9},},
+	{"temperature10", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:10},},
+	{"temperature11", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:11},},
+	{"temperature12", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_22temp, NO_WRITE_FUNCTION, {i:12},},
+	{"fasttemp", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_alias, FS_fasttemp, NO_WRITE_FUNCTION, {i:9},},
+	{"templow", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:1},},
+	{"temphigh", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:0},},
+	{"power", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, {v:NULL},},
+	{"piostate", PROPERTY_LENGTH_HIDDEN, NULL, ft_unsigned, fc_volatile, FS_r_piostate, NO_WRITE_FUNCTION, {v:NULL}, },
+	{"PIO", PROPERTY_LENGTH_BITFIELD, &A28EA00, ft_bitfield, fc_alias, FS_r_pio, FS_w_pio, {v:NULL},},
+	{"latch", PROPERTY_LENGTH_BITFIELD, &A28EA00, ft_bitfield, fc_alias, FS_r_latch, FS_w_pio, {v:NULL},},
+	{"sensed", PROPERTY_LENGTH_BITFIELD, &A28EA00, ft_bitfield, fc_alias, FS_sense, NO_WRITE_FUNCTION, {v:NULL},},
 };
 
 DeviceEntryExtended(42, DS28EA00, DEV_temp | DEV_alarm | DEV_chain);
@@ -232,8 +234,8 @@ static int OW_w_scratchpad(const BYTE * data, const struct parsedname *pn);
 static int OW_r_trim(BYTE * trim, const struct parsedname *pn);
 static int OW_w_trim(const BYTE * trim, const struct parsedname *pn);
 static enum eDie OW_die(const struct parsedname *pn);
-static int OW_read_pio(BYTE * pio, BYTE * latch, const struct parsedname *pn);
 static int OW_w_pio(BYTE pio, const struct parsedname *pn);
+static int OW_read_piostate(UINT * piostate, const struct parsedname *pn) ;
 
 static int FS_10temp(struct one_wire_query *owq)
 {
@@ -304,6 +306,7 @@ static int FS_w_pio(struct one_wire_query *owq)
 {
 	BYTE data = BYTE_INVERSE(OWQ_U(owq) & 0x03);	/* reverse bits, set unused to 1s */
 	//printf("Write pio raw=%X, stored=%X\n",OWQ_U(owq),data) ;
+	FS_del_sibling( "piostate", owq ) ;
 	if (OW_w_pio(data, PN(owq))) {
 		return -EINVAL;
 	}
@@ -312,34 +315,51 @@ static int FS_w_pio(struct one_wire_query *owq)
 
 static int FS_sense(struct one_wire_query *owq)
 {
-	BYTE pio, latch;
-	if (OW_read_pio(&pio, &latch, PN(owq))) {
-		return -EINVAL;
+	UINT piostate ;
+	
+	if ( FS_r_sibling_U( &piostate, "piostate", owq ) ) {
+		return -EINVAL ;
 	}
-	OWQ_U(owq) = pio & 0x03;	/* don't reverse bits */
-	//printf("Read sense raw_pio=%X, raw_latch=%X, returned=%X\n",pio,latch,OWQ_U(owq)) ;
+	
+	// bits 0->0 and 2->1
+	OWQ_U(owq) = ( (piostate & 0x01) | ((piostate & 0x03)>>1) ) & 0x03  ;
+	
 	return 0;
 }
 
 static int FS_r_pio(struct one_wire_query *owq)
 {
-	BYTE pio, latch;
-	if (OW_read_pio(&pio, &latch, PN(owq))) {
+	UINT piostate ;
+	
+	if ( FS_r_sibling_U( &piostate, "piostate", owq ) ) {
+		return -EINVAL ;
+	}
+	
+	// bits 0->0 and 2->1
+	OWQ_U(owq) = BYTE_INVERSE( (piostate & 0x01) | ((piostate & 0x04)>>1) ) & 0x03  ;
+	
+	return 0;
+}
+
+static int FS_r_piostate(struct one_wire_query *owq)
+{
+	if (OW_read_piostate(&(OWQ_U(owq)), PN(owq))) {
 		return -EINVAL;
 	}
-	OWQ_U(owq) = BYTE_INVERSE(pio) & 0x03;	/* reverse bits */
-	//printf("Read pio raw_pio=%X, raw_latch=%X, returned=%X\n",pio,latch,OWQ_U(owq)) ;
 	return 0;
 }
 
 static int FS_r_latch(struct one_wire_query *owq)
 {
-	BYTE pio, latch;
-	if (OW_read_pio(&pio, &latch, PN(owq))) {
-		return -EINVAL;
+	UINT piostate ;
+	
+	if ( FS_r_sibling_U( &piostate, "piostate", owq ) ) {
+		return -EINVAL ;
 	}
-	OWQ_U(owq) = BYTE_INVERSE(latch) & 0x03;	/* reverse bits */
-	//printf("Read latch raw_pio=%X, raw_latch=%X, returned=%X\n",pio,latch,OWQ_U(owq)) ;
+	
+	// bits 0->0 and 2->1
+	OWQ_U(owq) = BYTE_INVERSE( ((piostate & 0x02)>>1) | ((piostate & 0x08)>>2) ) & 0x03  ;
+	
 	return 0;
 }
 
@@ -865,35 +885,31 @@ int FS_poll_convert(const struct parsedname *pn)
 	return 1;
 }
 
-/* read PIO pins for the DS28EA00 and rearrange slightly */
-static int OW_read_pio(BYTE * pio, BYTE * latch, const struct parsedname *pn)
+/* read PIO pins for the DS28EA00 */
+static int OW_read_piostate(UINT * piostate, const struct parsedname *pn)
 {
-	BYTE data;
+	BYTE data[1];
 	BYTE cmd[] = { _1W_PIO_ACCESS_READ, };
 	struct transaction_log t[] = {
 		TRXN_START,
 		TRXN_WRITE1(cmd),
-		TRXN_READ1(&data),
+		TRXN_READ1(data),
 		TRXN_END,
 	};
 	if (BUS_transaction(t, pn)) {
 		return 1;
 	}
 	/* compare lower and upper nibble to be complements */
-	//printf("READ.PIO data=%X data$0x0F=%X data>>4=%X ^=%X\n",data,(data&0x0F),data>>4,(data&0x0F)^(data>>4));
-	if (((data & 0x0F) ^ (data >> 4)) != 0x0F) {
+	// High nibble the complement of low nibble?
+	// Fix thanks to josef_heiler
+	if ((data[0] & 0x0F) != ((~data[0] >> 4) & 0x0F)) {
 		return 1;
 	}
-
-	// PIO bits 0 and 2 (move to consecutive bits)
-	pio[0] = (data & 0x01) | ((data & 0x04) >> 1);
-	// latch bits 1 and 3 (move to consecutive bits)
-	latch[0] = ((data & 0x02) >> 1) | ((data & 0x08) >> 2);
-	//printf("READ.PIO pio=%X latch=%X\n",pio[0],latch[0]);
-
+	
+	piostate[0] = data[0] & 0x0F ;
+	
 	return 0;
 }
-
 /* Write to PIO -- both channels. Already inverted and other fields set to 1 */
 static int OW_w_pio(BYTE pio, const struct parsedname *pn)
 {
