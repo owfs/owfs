@@ -335,7 +335,7 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 			pthread_join(out->tid, NULL);
 			out->tid = 0;
 		} else {
-			LEVEL_DEBUG("ow_net_server.c:ServerProcess() tid==0?\n");
+			LEVEL_DEBUG("ow_net_server.c:ServerProcess() thread already removed\n");
 		}
 	}
 
