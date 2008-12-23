@@ -299,6 +299,7 @@ static int FS_r_alarm(struct one_wire_query *owq)
 {
 	BYTE c;
 	OWQ_allocate_struct_and_pointer(owq_alarm);
+
 	OWQ_create_temporary(owq_alarm, (char *) &c, 1, 0x0200, PN(owq));
 	if (OW_r_mem_simple(owq_alarm, 0, 0)) {
 		return -EINVAL;
@@ -311,6 +312,7 @@ static int FS_r_set_alarm(struct one_wire_query *owq)
 {
 	BYTE c;
 	OWQ_allocate_struct_and_pointer(owq_alarm);
+
 	OWQ_create_temporary(owq_alarm, (char *) &c, 1, 0x0200, PN(owq));
 	if (OW_r_mem_simple(owq_alarm, 0, 0)) {
 		return -EINVAL;
@@ -323,9 +325,10 @@ static int FS_r_set_alarm(struct one_wire_query *owq)
 static int FS_w_flag(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
-	OWQ_allocate_struct_and_pointer(owq_flag);
 	BYTE cr;
 	BYTE fl = pn->selected_filetype->data.c;
+	OWQ_allocate_struct_and_pointer(owq_flag);
+	
 	OWQ_create_temporary(owq_flag, (char *) &cr, 1, 0x0201, pn);
 	if (OW_r_mem_simple(owq_flag, 0, 0)) {
 		return -EINVAL;
@@ -350,9 +353,10 @@ static int FS_w_flag(struct one_wire_query *owq)
 static int FS_r_flag(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
-	OWQ_allocate_struct_and_pointer(owq_flag);
 	BYTE cr;
 	BYTE fl = pn->selected_filetype->data.c;
+	OWQ_allocate_struct_and_pointer(owq_flag);
+
 	OWQ_create_temporary(owq_flag, (char *) &cr, 1, 0x0201, pn);
 	if (OW_r_mem_simple(owq_flag, 0, 0)) {
 		return -EINVAL;
@@ -410,6 +414,7 @@ static int OW_r_ulong(uint64_t * L, size_t size, off_t offset, struct parsedname
 {
 	BYTE data[5] = { 0x00, 0x00, 0x00, 0x00, 0x00, };
 	OWQ_allocate_struct_and_pointer(owq_ulong);
+
 	OWQ_create_temporary(owq_ulong, (char *) data, size, offset, pn);
 	if (size > 5) {
 		return -ERANGE;

@@ -160,6 +160,7 @@ static int FS_r_pio(struct one_wire_query *owq)
 {
 	BYTE data;
 	OWQ_allocate_struct_and_pointer(owq_pio);
+
 	OWQ_create_temporary(owq_pio, (char *) &data, 1, _ADDRESS_PIO_OUTPUT, PN(owq));
 	if (OW_r_mem_simple(owq_pio, 0, 0)) {
 		return -EINVAL;
@@ -185,6 +186,7 @@ static int FS_power(struct one_wire_query *owq)
 {
 	BYTE data;
 	OWQ_allocate_struct_and_pointer(owq_power);
+
 	OWQ_create_temporary(owq_power, (char *) &data, 1, _ADDRESS_CONDITIONAL_SEARCH_CONTROL, PN(owq));
 	if (OW_r_mem_simple(owq_power, 0, 0)) {
 		return -EINVAL;
@@ -198,6 +200,7 @@ static int FS_polarity(struct one_wire_query *owq)
 {
 	BYTE data;
 	OWQ_allocate_struct_and_pointer(owq_polarity);
+
 	OWQ_create_temporary(owq_polarity, (char *) &data, 1, _ADDRESS_CONDITIONAL_SEARCH_CONTROL, PN(owq));
 	if (OW_r_mem_simple(owq_polarity, 0, 0)) {
 		return -EINVAL;
@@ -211,6 +214,7 @@ static int FS_r_por(struct one_wire_query *owq)
 {
 	BYTE data;
 	OWQ_allocate_struct_and_pointer(owq_por);
+
 	OWQ_create_temporary(owq_por, (char *) &data, 1, _ADDRESS_CONDITIONAL_SEARCH_CONTROL, PN(owq));
 	if (OW_r_mem_simple(owq_por, 0, 0)) {
 		return -EINVAL;
@@ -225,6 +229,7 @@ static int FS_w_por(struct one_wire_query *owq)
 	BYTE data;
 	struct parsedname *pn = PN(owq);
 	OWQ_allocate_struct_and_pointer(owq_por);
+
 	OWQ_create_temporary(owq_por, (char *) &data, 1, _ADDRESS_CONDITIONAL_SEARCH_CONTROL, pn);
 	if (OW_r_mem_simple(owq_por, 0, 0)) {
 		return -EINVAL;			/* get current register */
@@ -249,6 +254,7 @@ static int FS_sense(struct one_wire_query *owq)
 {
 	BYTE data;
 	OWQ_allocate_struct_and_pointer(owq_sense);
+
 	OWQ_create_temporary(owq_sense, (char *) &data, 1, _ADDRESS_PIO_LOGIC, PN(owq));
 	if (OW_r_mem_simple(owq_sense, 0, 0)) {
 		return -EINVAL;
@@ -262,6 +268,7 @@ static int FS_r_latch(struct one_wire_query *owq)
 {
 	BYTE data;
 	OWQ_allocate_struct_and_pointer(owq_latch);
+
 	OWQ_create_temporary(owq_latch, (char *) &data, 1, _ADDRESS_PIO_ACTIVITY, PN(owq));
 	if (OW_r_mem_simple(owq_latch, 0, 0)) {
 		return -EINVAL;
@@ -284,6 +291,7 @@ static int FS_r_s_alarm(struct one_wire_query *owq)
 {
 	BYTE data[3];
 	OWQ_allocate_struct_and_pointer(owq_alarm);
+
 	OWQ_create_temporary(owq_alarm, (char *) data, 3, _ADDRESS_CONDITIONAL_SEARCH_PIO, PN(owq));
 	if (OW_r_mem_simple(owq_alarm, 0, 0)) {
 		return -EINVAL;
@@ -300,6 +308,7 @@ static int FS_w_s_alarm(struct one_wire_query *owq)
 	BYTE data[3] = { 0, 0, 0, };
 	UINT U = OWQ_U(owq);
 	OWQ_allocate_struct_and_pointer(owq_alarm);
+
 	OWQ_create_temporary(owq_alarm, (char *) &data[2], 1, _ADDRESS_CONDITIONAL_SEARCH_CONTROL, PN(owq));
 	if (OW_r_mem_simple(owq_alarm, 0, 0)) {
 		return -EINVAL;

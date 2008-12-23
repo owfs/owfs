@@ -52,7 +52,9 @@ struct one_wire_query {
 
 #define OWQ_explode(owq)	(BYTE *)OWQ_buffer(owq),OWQ_size(owq),OWQ_offset(owq),PN(owq)
 
-#define OWQ_allocate_struct_and_pointer( owq_name )	struct one_wire_query struct_##owq_name ; struct one_wire_query * owq_name = & struct_##owq_name
+//#define OWQ_allocate_struct_and_pointer( owq_name )	struct one_wire_query struct_##owq_name ; struct one_wire_query * owq_name = & struct_##owq_name
+// perhaps it would be nice to clear the memory try trace errors. OWQ_allocate_struct_and_pointer() needs to be defined as the last local variable now...
+#define OWQ_allocate_struct_and_pointer( owq_name )	struct one_wire_query struct_##owq_name ; struct one_wire_query * owq_name = & struct_##owq_name; if (Globals.error_level>=e_err_debug) { memset(&struct_##owq_name, 0, sizeof(struct one_wire_query)); }
 
 int FS_OWQ_create(const char *path, char *buffer, size_t size, off_t offset, struct one_wire_query *owq);
 int FS_OWQ_create_plus(const char *path, const char *file, char *buffer, size_t size, off_t offset, struct one_wire_query *owq);

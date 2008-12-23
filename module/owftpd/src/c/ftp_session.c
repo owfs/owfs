@@ -1056,11 +1056,12 @@ static void do_stor(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 	struct timeval transfer_time;
 	struct timeval limit_time = { Globals.timeout_ftp, 0 };
 
-	OWQ_allocate_struct_and_pointer(owq);
-	struct parsedname *pn = PN(owq);
-
 	size_t size_read;
 	int need_pn_destroy = 1;
+	struct parsedname *pn;
+	OWQ_allocate_struct_and_pointer(owq);
+
+	pn = PN(owq);
 
 	daemon_assert(invariant(f));
 	daemon_assert(cmd != NULL);

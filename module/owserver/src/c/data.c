@@ -94,9 +94,10 @@ void *DataHandler(void *v)
 		if (hd->sm.payload == 0) {	/* Bad query -- no data after header */
 			cm.ret = -EBADMSG;
 		} else {
+			struct parsedname *pn;
 			OWQ_allocate_struct_and_pointer(owq);
-			struct parsedname *pn = PN(owq);
-
+			pn = PN(owq);
+			
 			/* Parse the path string and crete  query object */
 			LEVEL_CALL("DataHandler: parse path=%s\n", hd->sp.path);
 			cm.ret = FS_OWQ_create(hd->sp.path, NULL, hd->sm.size, hd->sm.offset, owq) ;

@@ -1366,9 +1366,9 @@ static int OW_small_read(BYTE * buffer, size_t size, off_t location, struct pars
 static int OW_r_histogram_all(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	OWQ_allocate_struct_and_pointer(owq_histo);
 	int i;
 	BYTE data[HISTOGRAM_DATA_ELEMENTS * HISTOGRAM_DATA_SIZE];
+	OWQ_allocate_struct_and_pointer(owq_histo);
 
 	OWQ_create_temporary(owq_histo, (char *) data, sizeof(data), 0x0800, PN(owq));
 

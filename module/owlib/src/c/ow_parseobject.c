@@ -86,6 +86,7 @@ struct one_wire_query *FS_OWQ_from_pn(const struct parsedname *pn)
 	if (buffer != NULL) {
 		struct one_wire_query *owq = malloc(sizeof(struct one_wire_query));
 		if (owq != NULL) {
+			if (Globals.error_level>=e_err_debug) { memset(buffer, 0, size); } // keep valgrind happy
 			if ( FS_OWQ_create_postparse( buffer, size, 0, pn, owq ) == 0 ) {
 				return owq ;
 			}
