@@ -51,7 +51,7 @@ struct one_wire_query *FS_OWQ_create_sibling(const char *sibling, struct one_wir
 	
 	if ( FS_ParsedName( path, &s_pn ) == 0 ) {
 		struct one_wire_query *owq = FS_OWQ_from_pn( &s_pn ) ;
-		if ( owq != 0 ) {
+		if ( owq != NULL ) {
 			return owq ;
 		}
 		FS_ParsedName_destroy( &s_pn );
