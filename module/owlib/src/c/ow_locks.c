@@ -210,8 +210,8 @@ void LockRelease(struct parsedname *pn)
 			my_pthread_mutex_destroy(&(pn->lock->lock));
 			free(pn->lock);
 		}
-		DEVUNLOCK(pn);
 		pn->lock = NULL;
+		DEVUNLOCK(pn);
 	}
 #else							/* OW_MT */
 	(void) pn;					// suppress compiler warning in the trivial case.

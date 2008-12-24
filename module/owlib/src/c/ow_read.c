@@ -603,8 +603,7 @@ static int FS_read_a_part(struct one_wire_query *owq)
 			for (extension_index = 0; extension_index < extension; ++extension_index) {
 				prior_length += OWQ_array_length(owq_all, extension_index);
 			}
-			return_status = Fowq_output_offset_and_size(&OWQ_buffer(owq_all)
-														[prior_length], OWQ_array_length(owq_all, extension), owq);
+			return_status = Fowq_output_offset_and_size(&OWQ_buffer(owq_all)[prior_length], OWQ_array_length(owq_all, extension), owq);
 			if (return_status < 0) {
 				OWQ_destroy_shallow_aggregate(owq_all);
 				return return_status;
@@ -648,8 +647,7 @@ static int FS_read_mixed_part(struct one_wire_query *owq)
 			for (extension_index = 0; extension_index < extension; ++extension_index) {
 				prior_length += OWQ_array_length(owq_all, extension_index);
 			}
-			return_status = Fowq_output_offset_and_size(&OWQ_buffer(owq_all)
-														[prior_length], OWQ_array_length(owq_all, extension), owq);
+			return_status = Fowq_output_offset_and_size(&OWQ_buffer(owq_all)[prior_length], OWQ_array_length(owq_all, extension), owq);
 			if (return_status < 0) {
 				OWQ_destroy_shallow_aggregate(owq_all);
 				return return_status;

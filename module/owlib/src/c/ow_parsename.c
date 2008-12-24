@@ -235,7 +235,14 @@ static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path,
 	pp->pathlast = NULL;
 	pp->pathcpy = NULL;
 	pp->pathnext = NULL;
+	
+	/* Default attributes */
+	pn->state = ePS_normal;
+	pn->type = ePN_root;
 
+	/* No device lock yet assigned */
+	pn->lock = NULL ;
+	
 	/* minimal structure for setup use */
 	if (path == NULL) {
 		return 0;
@@ -244,13 +251,6 @@ static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path,
 	if (strlen(path) > PATH_MAX) {
 		return -EBADF;
 	}
-
-	/* Default attributes */
-	pn->state = ePS_normal;
-	pn->type = ePN_root;
-
-	/* No device lock yet assigned */
-	pn->lock = NULL ;
 
 	/* make a copy for destructive parsing */
 	pp->pathcpy = strdup(path);
@@ -264,14 +264,6 @@ static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path,
 		return -ENOMEM;
 	}
 
-#if 0
-	if (Inbound_Control.active == 0) {
-		printf("No buses available\n");
-		free(pp->pathcpy);
-		free(pn->path);
-		return -ENOENT;
-	}
-#endif
 	/* connection_in list and start */
 	/* ---------------------------- */
 	/* -- This is important:     -- */
@@ -297,7 +289,6 @@ static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path,
 		++pp->pathnext;
 	}
 
-	pn->terminal_bus_number = -1;
 	pn->dirlength = strlen(path) ;
 
 	return 0;
@@ -424,7 +415,6 @@ static enum parse_enum Parse_Bus(char *pathnow, enum parse_pass remote_status, s
 	if (bus_number < 0) {
 		return parse_error;
 	}
-	pn->terminal_bus_number = bus_number;
 
 	/* Should make a presence check on remote buses here, but
 	 * it's not a major problem if people use bad paths since

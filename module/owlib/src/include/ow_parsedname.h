@@ -169,7 +169,6 @@ struct parsedname {
 	UINT pathlength;			// DS2409 branching depth
 	struct buspath *bp;			// DS2409 branching route
 	struct connection_in *selected_connection;	// which bus is assigned to this item
-	int terminal_bus_number;		// last bus is list -- used for return trip
 	uint32_t sg;				// more state info, packed for network transmission
 	struct devlock *lock;			// pointer to a device-specific lock
 	int tokens;				// for anti-loop work
