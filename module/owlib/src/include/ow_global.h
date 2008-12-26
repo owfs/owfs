@@ -99,6 +99,7 @@ struct global {
 	int eightbit_serial;
 	enum zero_support zero ;
 	int w1 ;
+    int ha5_checksum ;
 };
 extern struct global Globals;
 

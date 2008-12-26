@@ -186,7 +186,9 @@ const struct option owopts_long[] = {
 	{"no_persistence", no_argument, &Globals.no_persistence, 1},
 	{"8bit", no_argument, &Globals.eightbit_serial, 1},
 	{"6bit", no_argument, &Globals.eightbit_serial, 0},
-	{0, 0, 0, 0},
+    {"ha5_checksum", no_argument, &Globals.ha5_checksum, 1},
+    {"ha5_no_checksum", no_argument, &Globals.ha5_checksum, 0},
+    {0, 0, 0, 0},
 };
 
 // Called after "ParseTheLine" has filled the lineparse structure

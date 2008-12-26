@@ -51,7 +51,7 @@ struct global Globals = {
 	.error_print = e_err_print_mixed,
 	.fatal_debug = 0,
 	.fatal_debug_file = NULL,
-	
+
 	.readonly = 0,
 	.max_clients = 250,
 	.autoserver = 0,
@@ -87,6 +87,7 @@ struct global Globals = {
 	.eightbit_serial = 0,
 	.zero = zero_unknown ,
 	.w1 = 0 , // w1 kernel support
+    .ha5_checksum = 1,
 };
 
 /* Statistics globals are stored in ow_stats.c */

@@ -287,6 +287,14 @@ struct connin_ha7e {
     struct dirblob alarm;       /* alarm directory */
 };
 
+struct connin_ha5 {
+    struct termios oldSerialTio;    /*old serial port settings */
+    unsigned char sn[8] ;       /* last address */
+    struct dirblob main;        /* main directory */
+    struct dirblob alarm;       /* alarm directory */
+    char channel ;
+};
+
 struct connin_w1 {
 #if OW_W1
 	// bus master name kept in name
@@ -417,6 +425,7 @@ struct connection_in {
 	enum bus_speed speed;
 	speed_t baudrate ;
 	enum bus_flex flex ;
+    int checksum ;
 	int changed_bus_settings;
 	int ds2404_compliance;
 	int ProgramAvailable;

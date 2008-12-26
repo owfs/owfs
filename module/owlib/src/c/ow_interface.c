@@ -61,6 +61,8 @@ READ_FUNCTION(FS_r_serialspeed);
 WRITE_FUNCTION(FS_w_serialspeed);
 READ_FUNCTION(FS_r_reconnect);
 WRITE_FUNCTION(FS_w_reconnect);
+READ_FUNCTION(FS_r_checksum);
+WRITE_FUNCTION(FS_w_checksum);
 READ_FUNCTION(FS_r_ds2404_compliance);
 WRITE_FUNCTION(FS_w_ds2404_compliance);
 READ_FUNCTION(FS_r_pulldownslewrate);
@@ -93,6 +95,7 @@ struct filetype interface_settings[] = {
 	// variable length
   {"datasampleoffset", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_r_datasampleoffset, FS_w_datasampleoffset, {v:NULL},},
   {"ds2404_compliance", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_static, FS_r_ds2404_compliance, FS_w_ds2404_compliance, {v:NULL},},
+  {"checksum", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_static, FS_r_checksum, FS_w_checksum, {v:NULL},},
   {"overdrive", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_static, FS_r_overdrive, FS_w_overdrive, {v:NULL},},
   {"reconnect", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_static, FS_r_reconnect, FS_w_reconnect, {v:NULL},},
   {"flexible_timing", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_static, FS_r_flextime, FS_w_flextime, {v:NULL},},
@@ -178,17 +181,32 @@ static int FS_w_reconnect(struct one_wire_query *owq)
 /* Just some tests to support flextime */
 static int FS_r_flextime(struct one_wire_query *owq)
 {
-	struct parsedname *pn = PN(owq);
-	OWQ_Y(owq) = (pn->selected_connection->flex==bus_yes_flex);
-	return 0;
+    struct parsedname *pn = PN(owq);
+    OWQ_Y(owq) = (pn->selected_connection->flex==bus_yes_flex);
+    return 0;
 }
 
 static int FS_w_flextime(struct one_wire_query *owq)
 {
-	struct parsedname *pn = PN(owq);
-	pn->selected_connection->flex = OWQ_Y(owq) ? bus_yes_flex : bus_no_flex ;
-	pn->selected_connection->changed_bus_settings = 1;
-	return 0;
+    struct parsedname *pn = PN(owq);
+    pn->selected_connection->checksum = OWQ_Y(owq) ? bus_yes_flex : bus_no_flex ;
+    pn->selected_connection->changed_bus_settings = 1;
+    return 0;
+}
+
+/* Just some tests for ha5 checksum */
+static int FS_r_checksum(struct one_wire_query *owq)
+{
+    struct parsedname *pn = PN(owq);
+    OWQ_Y(owq) = pn->selected_connection->checksum;
+    return 0;
+}
+
+static int FS_w_checksum(struct one_wire_query *owq)
+{
+    struct parsedname *pn = PN(owq);
+    pn->selected_connection->checksum = OWQ_Y(owq) ;
+    return 0;
 }
 
 /* baud rate choice */
@@ -314,7 +332,7 @@ static int FS_w_pulldownslewrate(struct one_wire_query *owq)
 	if (OWQ_U(owq) > 7) {
 		return -ENOTSUP;
 	}
-	
+
 	pn->selected_connection->connin.usb.pulldownslewrate = OWQ_U(owq);
 	pn->selected_connection->changed_bus_settings = 1;	// force a reset
 
@@ -378,7 +396,7 @@ static int FS_w_datasampleoffset(struct one_wire_query *owq)
 	if (pn->selected_connection->busmode != bus_usb){
 		return -ENOTSUP;
 	}
-	
+
 	if ((OWQ_U(owq) < 3) || (OWQ_U(owq) > 10)) {
 		return -ENOTSUP;
 	}
