@@ -189,7 +189,7 @@ static int FS_r_flextime(struct one_wire_query *owq)
 static int FS_w_flextime(struct one_wire_query *owq)
 {
     struct parsedname *pn = PN(owq);
-    pn->selected_connection->checksum = OWQ_Y(owq) ? bus_yes_flex : bus_no_flex ;
+    pn->selected_connection->flex = OWQ_Y(owq) ? bus_yes_flex : bus_no_flex ;
     pn->selected_connection->changed_bus_settings = 1;
     return 0;
 }
@@ -197,16 +197,27 @@ static int FS_w_flextime(struct one_wire_query *owq)
 /* Just some tests for ha5 checksum */
 static int FS_r_checksum(struct one_wire_query *owq)
 {
-    struct parsedname *pn = PN(owq);
-    OWQ_Y(owq) = pn->selected_connection->checksum;
-    return 0;
+	struct parsedname *pn = PN(owq);
+	switch ( pn->selected_connection->busmode ) {
+		case bus_ha5:
+			OWQ_Y(owq) = pn->selected_connection->connin.ha5.checksum;
+			return 0;
+		default:
+			return -ENOTSUP ;
+	}
 }
 
 static int FS_w_checksum(struct one_wire_query *owq)
 {
-    struct parsedname *pn = PN(owq);
-    pn->selected_connection->checksum = OWQ_Y(owq) ;
-    return 0;
+	struct parsedname *pn = PN(owq);
+	switch ( pn->selected_connection->busmode ) {
+		case bus_ha5:
+			pn->selected_connection->connin.ha5.checksum = OWQ_Y(owq) ;
+			break ;
+		default:
+			break ;
+	}
+	return 0 ;
 }
 
 /* baud rate choice */

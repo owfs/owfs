@@ -137,7 +137,7 @@ static enum ds2482_address Parse_i2c_address( struct connection_in * in )
 	}
 
 	colon[0] = 0x00 ; // set as null
-	++colon ;; // point beyond
+	++colon ; // point beyond
 	
 	if ( strcasecmp(colon,"all")==0 ) {
 		return ds2482_all ;
@@ -180,6 +180,7 @@ int DS2482_detect(struct connection_in *in)
 	int all ;
 
 	// find the specific i2c address specified after the ":"
+	// Alters the name by changing ':' to NULL
 	chip_num = Parse_i2c_address( in ) ;
 
 	any = ( in->name[0] == 0x00 ) ; // no adapter specified, so use any (the first good one )
@@ -202,7 +203,7 @@ int DS2482_detect(struct connection_in *in)
 /* All the rest of the program sees is the DS2482_detect and the entry in iroutines */
 /* Open a DS2482 */
 /* cycle through /sys/class/i2c-adapter */
-/* returns -1 -- no direcory could be opened 
+/* returns -1 -- no directory could be opened 
    else found -- number of directories found */
 static int DS2482_detect_sys(enum ds2482_address chip_num, struct connection_in *in)
 {
@@ -227,7 +228,9 @@ static int DS2482_detect_sys(enum ds2482_address chip_num, struct connection_in 
 		}
 
 		// Change name to real i2c bus name
-		free( in->name ) ;
+		if ( in->name ) {
+			free( in->name ) ;
+		}
 		in->name = new_device ;
 		strcpy( in->name, "/dev/" ) ;
 		strcat( in->name, i2c_bus->d_name ) ;
@@ -374,7 +377,7 @@ static int DS2482_detect_single(int lowindex, int highindex, struct connection_i
 			BYTE c;
 			LEVEL_CONNECT("Found an i2c device at %s address %d\n", in->name, test_address[i]);
 			/* Provisional setup as a DS2482-100 ( 1 channel ) */
-			in->connin.i2c.file_descriptor = file_descriptor;
+			in->file_descriptor = file_descriptor;
 			in->connin.i2c.index = 0;
 			in->connin.i2c.channels = 1;
 			in->connin.i2c.current = 0;
@@ -406,8 +409,7 @@ static int DS2482_detect_single(int lowindex, int highindex, struct connection_i
 		}
 	}
 	/* fellthough, no device found */
-	close(file_descriptor);
-	in->connin.i2c.file_descriptor = -1;
+	Test_and_Close( &(in->file_descriptor) ) ;
 	return -ENODEV;
 }
 
@@ -438,7 +440,7 @@ static int DS2482_redetect(const struct parsedname *pn)
 			LEVEL_CONNECT("i2c device at %s address %d cannot be reset. Not a DS2482.\n", head->name, address);
 		} else {
 			head->connin.i2c.current = 0;
-			head->connin.i2c.file_descriptor = file_descriptor;
+			head->file_descriptor = file_descriptor;
 			head->connin.i2c.configchip = 0x00;	// default configuration register after RESET
 			LEVEL_CONNECT("i2c device at %s address %d reset successfully\n", head->name, address);
 			if (head->connin.i2c.channels > 1) {	// need to reset other 8 channels?
@@ -494,7 +496,7 @@ static int DS2482_next_both(struct device_search *ds, const struct parsedname *p
 	int search_direction = 0;	/* initialization just to forestall incorrect compiler warning */
 	int bit_number;
 	int last_zero = -1;
-	int file_descriptor = pn->selected_connection->connin.i2c.head->connin.i2c.file_descriptor;
+	int file_descriptor = pn->selected_connection->connin.i2c.head->file_descriptor;
 	BYTE bits[3];
 	int ret;
 
@@ -559,7 +561,7 @@ static int DS2482_next_both(struct device_search *ds, const struct parsedname *p
 static int DS2482_reset(const struct parsedname *pn)
 {
 	BYTE c;
-	int file_descriptor = pn->selected_connection->connin.i2c.head->connin.i2c.file_descriptor;
+	int file_descriptor = pn->selected_connection->connin.i2c.head->file_descriptor;
 
 	/* Make sure we're using the correct channel */
 	if (DS2482_channel_select(pn)) {
@@ -586,7 +588,7 @@ static int DS2482_reset(const struct parsedname *pn)
 
 static int DS2482_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn)
 {
-	int file_descriptor = pn->selected_connection->connin.i2c.head->connin.i2c.file_descriptor;
+	int file_descriptor = pn->selected_connection->connin.i2c.head->file_descriptor;
 	size_t i;
 
 	/* Make sure we're using the correct channel */
@@ -707,7 +709,7 @@ static int DS2482_channel_select(const struct parsedname *pn)
 {
 	struct connection_in *head = pn->selected_connection->connin.i2c.head;
 	int chan = pn->selected_connection->connin.i2c.index;
-	int file_descriptor = head->connin.i2c.file_descriptor;
+	int file_descriptor = head->file_descriptor;
 	BYTE config = pn->selected_connection->connin.i2c.configreg;
 	int read_back;
 	/**
@@ -760,7 +762,7 @@ static int DS2482_channel_select(const struct parsedname *pn)
 static int SetConfiguration(BYTE c, struct connection_in *in)
 {
 	struct connection_in *head = in->connin.i2c.head;
-	int file_descriptor = head->connin.i2c.file_descriptor;
+	int file_descriptor = head->file_descriptor;
 	int read_back;
 
 	/* Write, readback, and compare configuration register */
@@ -790,7 +792,7 @@ static int DS2482_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, cons
 	}
 
 	/* send and get byte (and trigger strong pull-up */
-	if (DS2482_send_and_get(pn->selected_connection->connin.i2c.head->connin.i2c.file_descriptor, byte, resp)) {
+	if (DS2482_send_and_get(pn->selected_connection->connin.i2c.head->file_descriptor, byte, resp)) {
 		return -1;
 	}
 
@@ -801,11 +803,9 @@ static int DS2482_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, cons
 
 static void DS2482_close(struct connection_in *in)
 {
-	struct connection_in *head;
 	if (in == NULL) {
 		return;
 	}
-	head = in->connin.i2c.head;
-	Test_and_Close( & (head->connin.i2c.file_descriptor) ) ;
+	Test_and_Close( & (in->connin.i2c.head->file_descriptor) ) ;
 }
 #endif							/* OW_I2C */
