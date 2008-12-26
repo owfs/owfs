@@ -43,7 +43,7 @@ int COM_open(struct connection_in *in)
 		return -ENODEV;
 	}
 
-	if ((tcgetattr(in->file_descriptor, &in->connin.serial.oldSerialTio) < 0)
+	if ((tcgetattr(in->file_descriptor, &in->oldSerialTio) < 0)
 		|| (tcgetattr(in->file_descriptor, &newSerialTio) < 0)) {
 		ERROR_CONNECT("Cannot get old port attributes: %s\n", SAFESTRING(in->name));
 	}
@@ -77,7 +77,7 @@ void COM_close(struct connection_in *in)
 		LEVEL_DEBUG("COM_close: flush\n");
 		tcflush(in->file_descriptor, TCIOFLUSH);
 		LEVEL_DEBUG("COM_close: restore\n");
-		if (tcsetattr(in->file_descriptor, TCSANOW, &in->connin.serial.oldSerialTio) < 0) {
+		if (tcsetattr(in->file_descriptor, TCSANOW, &in->oldSerialTio) < 0) {
 			ERROR_CONNECT("Cannot restore port attributes: %s\n", SAFESTRING(in->name));
 		}
 		LEVEL_DEBUG("COM_close: close\n");

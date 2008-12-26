@@ -206,7 +206,6 @@ enum ds2480b_baud {
 struct connin_serial {
 	enum ds2480b_mode mode ;
 	enum ds2480b_baud baud ;
-	struct termios oldSerialTio;	/*old serial port settings */
 };
 
 struct connin_fake {
@@ -275,24 +274,30 @@ struct connin_etherweather {
 
 struct connin_link {
     struct connin_tcp tcp;      // mirror connin.server
-    struct termios oldSerialTio;    /*old serial port settings */
     struct dirblob main;        /* main directory */
     struct dirblob alarm;       /* alarm directory */
 };
 
 struct connin_ha7e {
-    struct termios oldSerialTio;    /*old serial port settings */
     unsigned char sn[8] ;       /* last address */
     struct dirblob main;        /* main directory */
     struct dirblob alarm;       /* alarm directory */
 };
 
 struct connin_ha5 {
-    struct termios oldSerialTio;    /*old serial port settings */
     unsigned char sn[8] ;       /* last address */
     struct dirblob main;        /* main directory */
     struct dirblob alarm;       /* alarm directory */
     char channel ;
+    int channels;
+    int index;
+    int HA5_index ;
+    /* only one per serial, the bus entries for the other channels point to the firt one */
+#if OW_MT
+    pthread_mutex_t ha5_mutex;  // second level mutex for the entire chip */
+#endif                          /* OW_MT */
+    int current;
+    struct connection_in *head;
 };
 
 struct connin_w1 {
@@ -400,6 +405,7 @@ struct connection_in {
 	int index;
 	char *name;
 	int file_descriptor;
+    struct termios oldSerialTio;    /*old serial port settings */
 #if OW_MT
 	pthread_mutex_t bus_mutex;
 	pthread_mutex_t dev_mutex;
@@ -446,7 +452,8 @@ struct connection_in {
 		struct connin_i2c i2c;
 		struct connin_fake fake;
 		struct connin_fake tester;
-		struct connin_ha7 ha7;
+        struct connin_ha7 ha5;
+        struct connin_ha7 ha7;
         struct connin_ha7e ha7e ;
 		struct connin_etherweather etherweather;
 		struct connin_w1 w1;
@@ -592,6 +599,7 @@ int DS1410_detect(struct connection_in *in);
 
 int DS9097_detect(struct connection_in *in);
 int LINK_detect(struct connection_in *in);
+int HA5_detect(struct connection_in *in);
 int HA7E_detect(struct connection_in *in);
 int BadAdapter_detect(struct connection_in *in);
 int LINKE_detect(struct connection_in *in);

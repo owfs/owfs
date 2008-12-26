@@ -113,6 +113,12 @@ static void SetupInboundConnections(void)
 #endif                          /* OW_HA7 */
                 break;
 
+            case bus_ha5:
+                if ((ret = HA5_detect(in))) {
+                    LEVEL_CONNECT("Cannot detect an HA5 on %s\n", in->name);
+                }
+                break;
+
             case bus_ha7e:
                 if ((ret = HA7E_detect(in))) {
                     LEVEL_CONNECT("Cannot detect an HA7E/HA7S on %s\n", in->name);
@@ -195,7 +201,7 @@ static void IgnoreSignals(void)
 {
 	struct sigaction sa;
 	int i = 0;
-	
+
 	memset(&sa, 0, sizeof(struct sigaction));
 	sigemptyset(&(sa.sa_mask));
 
