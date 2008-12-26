@@ -50,7 +50,6 @@ $Id$
 
 /* DS2413 switch */
 READ_FUNCTION(FS_r_piostate);
-WRITE_FUNCTION(FS_w_piostate);
 READ_FUNCTION(FS_r_pio);
 WRITE_FUNCTION(FS_w_pio);
 READ_FUNCTION(FS_sense);
@@ -81,7 +80,6 @@ static int OW_write(BYTE data, const struct parsedname *pn);
 static int OW_read(BYTE * data, const struct parsedname *pn);
 static UINT SENSED_state(UINT status_bit);
 static UINT LATCH_state(UINT status_bit);
-static UINT LATCH_encode(UINT pio);
 
 static int FS_r_piostate(struct one_wire_query *owq)
 {
@@ -217,10 +215,4 @@ static UINT SENSED_state(UINT status_bit)
 static UINT LATCH_state(UINT status_bit)
 {
 	return ((status_bit >> 1) & 0x01) | ((status_bit >> 2) & 0x02);
-}
-
-// pio -> piostate_latch
-static UINT LATCH_encode(UINT pio)
-{
-	return ( ((pio & 0x01)<<1) | ((pio & 0x02)<<2) ) ;
 }
