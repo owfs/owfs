@@ -41,7 +41,7 @@ static void HA7E_setroutines(struct connection_in *in)
 	in->iroutines.reconnect = NULL;
 	in->iroutines.close = HA7E_close;
 	in->iroutines.transaction = NULL;
-	in->iroutines.flags = ADAP_FLAG_2409path | ADAP_FLAG_dir_auto_reset ;
+	in->iroutines.flags = ADAP_FLAG_dirgulp | ADAP_FLAG_bundle | ADAP_FLAG_dir_auto_reset;
 	in->bundling_length = HA7E_FIFO_SIZE;
 }
 

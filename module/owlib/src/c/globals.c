@@ -87,7 +87,7 @@ struct global Globals = {
 	.eightbit_serial = 0,
 	.zero = zero_unknown ,
 	.w1 = 0 , // w1 kernel support
-    .ha5_checksum = 1,
+	.ha5_checksum = 1,
 };
 
 /* Statistics globals are stored in ow_stats.c */

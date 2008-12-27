@@ -289,6 +289,11 @@ struct connin_ha5 {
 	struct dirblob main;        /* main directory */
 	struct dirblob alarm;       /* alarm directory */
 	int checksum ;              /* flag to use checksum byte in communication */
+	char channel ;
+#if OW_MT
+	pthread_mutex_t lock;	// second level mutex for the entire chip */
+#endif							/* OW_MT */
+	struct connection_in *head;
 };
 
 struct connin_w1 {
