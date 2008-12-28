@@ -162,7 +162,7 @@ void ow_help_device(void)
 	"  --HA5=dev:ah     Serial HA5 adapter Channel a and h ( of a-z))\n"
 	"  --HA7E=dev      Serial HA7E adapter\n"
 	"  --HA7S=dev      Serial HA7S adapter\n"
-	"  --ha5_checksum | --ha5_no_checksum\n"
+	"  --checksum | --no_checksum for HA5\n"
 	"\n"
 	" i2c devices\n"
 	"  -d dev          DS2482-x00 adapter (dev is /dev/i2c-0)\n"

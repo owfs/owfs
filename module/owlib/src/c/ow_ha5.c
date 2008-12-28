@@ -77,7 +77,7 @@ int HA5_detect(struct connection_in *in)
 		return -ENODEV;
 	}
 	
-	in->connin.ha5.checksum = Globals.ha5_checksum ;
+	in->connin.ha5.checksum = Globals.checksum ;
 	in->Adapter = adapter_HA5 ;
 	in->adapter_name = "HA5";
 

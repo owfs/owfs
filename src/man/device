@@ -9,9 +9,7 @@
 '\" $Id$
 '\"
 .SH "Device Options (1-wire Bus Master)"
-These options give the location of the 1-wire adapter that connects the program to the actual 1-wire bus and the
-.I iButtons
-or 1-wire devices on it. The bus master is either an actual physical device, or an 
+These options specify the device (bus master) connecting the computer to the 1-wire bus. The 1-wire slaves are connected to the 1-wire bus, and the bus master connects to a port on the computer and controls the 1-wire bus. The bus master is either an actual physical device, the kernel w1 module, or an 
 .B owserver (1). 
 .P
 At least one device option is required. There is no default. More than one device can be listed, and all will be used. (A logical union unless you explore the \fI/bus.n/\fR directories.)
@@ -20,8 +18,16 @@ At least one device option is required. There is no default. More than one devic
 specifies a serial port, e.g. 
 .I /dev/ttyS0
 .TP
+\fI--timeout_serial=5\fI
+Timeout (in seconds) for all serial communications. 5 second default. Can be altered dynamically under 
+.I /settings/timeout/serial
+.TP
 \fI-d port\fI \fR|\fR \fI--device=port\fI
-DS2480B-based bus master (like the DS9097U or the LINK in emulation mode). If the adapter doesn't respond, a passive type (diode/resistor) circuit will be assumed.
+DS2480B-based bus master (like the DS9097U or the LINK in emulation mode). If the adapter doesn't respond, a passive type (DS9907E or diode/resistor) circuit will be assumed.
+.br
+.I --serial_flextime | --serial_regulartime
+.br
+Changes details of bus timing (see datasheet).
 .TP
 \fI--link=port\fI
 .B iButtonLink
@@ -31,12 +37,25 @@ adapter (all versions) in non-emulation mode. Uses an ascii protocol over serial
 \fI--ha7e=port\fI
 .B Embedded Data Systems
 .I HA7E
-adapter (and
+adapter ( and
 .I HA7S
-} in native ascii mode.
+) in native ascii mode.
 .TP
-\fI--passive=port\fR | \fI--ha3=port\fR | \fI--ha4b=port
-Passive 1-wire adapters.
+\fI--ha5=port | --ha5=port:a | --ha5=port:acg\fI
+.B Embedded Data Systems
+.I HA5
+mutidrop adapter in native ascii mode. Up to 26 adapters can share the same port, each with an assigned letter. If no letter specified, the program will scan for the first response (which may be slow).
+.br
+.I --checksum | --no_checksum
+.br
+Turn on (default) or off the checksum feature of the HA5 communication. 
+.TP
+\fI--passive=port\fR | \fI--ha2=port\fR | \fI--ha3=port\fR | \fI--ha4b=port
+Passive 1-wire adapters. Powered off the serial port and using passive electrical components (resitors and diodes).
+.br
+.I --8bit | --6bit
+.br
+Synthesize the 1-wire waveforme using a 6-bit (default) serial word, or 8-bit word. Not all UART devices support 6 bit operation.
 .SH "* USB devices"
 Multiple USB devices can be perplexing since the order of devices is not predictable. 
 .I ALL
