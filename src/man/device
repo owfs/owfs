@@ -13,14 +13,12 @@ These options specify the device (bus master) connecting the computer to the 1-w
 .B owserver (1). 
 .P
 At least one device option is required. There is no default. More than one device can be listed, and all will be used. (A logical union unless you explore the \fI/bus.n/\fR directories.)
+.P
+Linux and BSD enforce a security system restricting access to hardware ports. You must have sufficient rights to access the given port or access will silently fail. 
 .SH "* Serial devices"
 .I port 
 specifies a serial port, e.g. 
 .I /dev/ttyS0
-.TP
-\fI--timeout_serial=5\fI
-Timeout (in seconds) for all serial communications. 5 second default. Can be altered dynamically under 
-.I /settings/timeout/serial
 .TP
 \fI-d port\fI \fR|\fR \fI--device=port\fI
 DS2480B-based bus master (like the DS9097U or the LINK in emulation mode). If the adapter doesn't respond, a passive type (DS9907E or diode/resistor) circuit will be assumed.
@@ -56,15 +54,35 @@ Passive 1-wire adapters. Powered off the serial port and using passive electrica
 .I --8bit | --6bit
 .br
 Synthesize the 1-wire waveforme using a 6-bit (default) serial word, or 8-bit word. Not all UART devices support 6 bit operation.
-.SH "* USB devices"
-Multiple USB devices can be perplexing since the order of devices is not predictable. 
-.I ALL
-will use all the available USB adapters.
 .TP
-.I -u  \fR|\ \fI--usb\fR[\fI=ALL\fR]
+\fI--timeout_serial=5\fI
+Timeout (in seconds) for all serial communications. 5 second default. Can be altered dynamically under 
+.I /settings/timeout/serial
+.SH "* USB devices"
+The only supported true USB bus masters are based on the DS2490 chip. The most common is the DS9490R which has an included 1-wire ID slave with family code 81.
+.P
+There are also bus masters based on the serial chip with a USB to serial conversion built in. These are supported by the serial bus master protocol. 
+.TP
+.I -u  \fR|\ \fI--usb
 DS2490 based bus master (like the DS9490R).
+.TP
+.I -u2  \fR|\ \fI--usb=2
+Use the second USB bus master. (The order isn't predicatble, however, since the operating system does not conssitently order USB devices).
+.TP
+.I -uall  \fR|\ \fI--usb=ALL
+Use all the USB devices.
+.TP
+.I --usb_flextime | --usb_regulartime
+Changes the details of 1-wire waveform timing for certain network configurations.
+.TP
+.I --altusb
+Willy Robion's alternative USB timing. 
+.TP
+.I --timeout_usb=5
+Timeout for USB communications. This has a 5 second default and can be changed dynamically under
+.I /settings/timeout/usb
 .SH "* I2C devices"
-I2C is  2 wire protocol used for chip-to-chip communication. The busmasters:
+I2C is  2 wire protocol used for chip-to-chip communication. The bus masters:
 .I DS2482-100, DS2482-101
 and
 .I DS2482-800
@@ -83,7 +101,7 @@ for i2c masters have the form
 .I /dev/i2c-0, /dev/i2c-1, ...
 .TP
 \fI-d port\fR | \fI--device=port
-This form only permits a specific 
+This simple form only permits a specific 
 .I port 
 and the first available
 .I i2c_address
@@ -99,8 +117,14 @@ is 0,1,2,...
 .TP
 \fI--i2c\fR | \fI--i2c=:\fR | \fI--i2c=ALL:ALL
 Search the available i2c buses for either the first, the first, or every i2c adapter.
+.P
+The
+.I DS2482-800
+masters 8 1-wire buses and so will generate 8
+.I /bus.n
+entries.
 .SH "* Network devices"
-These bus masters communicate via the tcp/ip network protocol. 
+These bus masters communicate via the tcp/ip network protocol and so can be located anywhere on the network.
 The
 .I network_address
 is of the form tcp_address:port
@@ -108,10 +132,15 @@ is of the form tcp_address:port
 E.g. 192.168.0.1:3000 or localhost:3000
 .TP
 .I --link=network_address
-LinkHubE network LINK adapter
+LinkHubE network LINK adapter by 
+.B iButtonLink
 .TP
 .I --ha7net=network_address | --ha7net
-HA7Net network 1-wire adapter with specified tcp address or discovered by udp multicast
+HA7Net network 1-wire adapter with specified tcp address or discovered by udp multicast. By
+.B Embedded Data Systems
+.br
+.I --timeout_ha7=60
+specific timeout for HA7Net communications (60 second default).
 .TP
 .I --etherweather=network_address
 Etherweather adapter
@@ -119,7 +148,11 @@ Etherweather adapter
 \fI-s network_address\fR | \fI--server=network_address
 Location of an
 .B owserver (1)
-program that talks to the 1-wire bus. The default port of 4304 will be used by default.
+program that talks to the 1-wire bus. The default port is 4304.
+.TP
+.I --timeout_network=5
+Timeout for network bus master communications. This has a 1 second default and can be changed dynamically under
+.I /settings/timeout/network
 .SH "* Simulated devices"
 Used for testing and development. 
 .I chips
@@ -129,4 +162,17 @@ is a list of comma-separated family codes. e.g. 10,21,1B
 Random address and random values for each read.
 .TP
 .I --tester=chips
-Predicable address and predictable values for each read. (See the website for the algorhythm).
+Predictable address and predictable values for each read. (See the website for the algorhythm).
+.SH "* w1 kernel module"
+This a linux-specific option for using the operating system's access to bus masters. Root access is required and the implementation was still in progress as of owfs v2.7p12 and linux 2.6.30.
+.P
+Bus masters are recognized and added dynamically. Details of the physical bus master are not accessible, bu they include USB, i2c and a number of GPIO designs on embedded boards.
+.P
+Access is restrict to superuser due to the netlink broadcast protocol employed by w1. Multitasking must be configured (threads) on the compilation.
+.TP
+.I --w1
+Use the linux kernel w1 virtual bus master.
+.TP
+.I --timeout_w1=10
+Timeout for w1 netlink communications. This has a 10 second default and can be changed dynamically under
+.I /settings/timeout/w1

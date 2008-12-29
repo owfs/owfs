@@ -192,7 +192,7 @@ void ow_help_device(void)
 	"  --tester=list   List of devices to simulate (non-random ID, non-random data)\n"
 	"\n"
 	" Linux Kernel Device\n"
-	"  --w1 | --no_w1  Scan for kernel-managed bus masters\n"
+	"  --w1            Scan for kernel-managed bus masters\n"
 	"\n" " 1-wire device selection\n" "  --one-device     Only single device on bus, use ROM SKIP command\n");
 }
 
