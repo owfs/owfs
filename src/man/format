@@ -12,9 +12,10 @@
 Choose the representation of the 1-wire unique identifiers. OWFS uses these identifiers as unique directory names.
 .PP
 Although several display formats are selectable, all must be in 
-.I family-code-first
+.I family-id-crc8
 form, unlike some other programs and the labelling on iButtons, which are
-.I CRC8-first.
+.I crc8-id-family
+form.
 .SS \-f \-\-format="f[.]i[[.]c]"
 Display format for the 1-wire devices. Each device has a 8byte address, consisting of:
 .TP
@@ -35,3 +36,14 @@ and
 .I fi.c
 .PP
 All formats are accepted as input, but the output will be in the specified format.
+.PP
+The address elements can be retrieved from a device entry in owfs by the 
+.I family, id and crc8
+properties, and as a whole with
+.I address.
+The reversed id and address can be retrieved as
+.I r_id
+and 
+.I r_address.
+
+

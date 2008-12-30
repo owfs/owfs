@@ -46,7 +46,7 @@ Sends options to the fuse-mount process. Options should be quoted, e.g. "\"-o al
 .SH EXAMPLE
 .TP
 owfs -d /dev/ttyS0 -m /mnt/1wire
-Adapter on serial port
+Bus master on serial port
 .TP
 owfs -F -u -m /mnt/1wire
 USB adapter, temperatures reported in Fahrenheit
@@ -54,7 +54,7 @@ USB adapter, temperatures reported in Fahrenheit
 owfs -s 10.0.1.2:4304 -m /mnt/1wire
 Connect to an 
 .B owserver (1)
- process that was started on another machine at tcp port 4304
+process that was started on another machine at tcp port 4304
 .SH SEE ALSO
 .so seealso
 .SH AVAILABILITY

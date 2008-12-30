@@ -9,73 +9,48 @@
 '\" $Id$
 '\"
 .SH TIME OPTIONS
-These options affect the times that data stays in memory, and the times that the program will wait for network or external device responses. Default values are shown.
+Timeouts for the bus masters were previously listed in
+.I Device options.
+Timeouts for the cache affect the time that data stays in memory. Default values are shown.
 .SS --timeout_volatile=15
 Seconds until a 
 .I volatile 
 property expires in the cache. Volatile properties are those (like temperature) that change on their own.
 .PP
-Can be changed within the program at 
+Can be changed dynamically at 
 .I /settings/timeout/volatile
 .SS --timeout_stable=300
 Seconds until a 
 .I stable 
 property expires in the cache. Stable properties are those that shouldn't change unless explicitly changed. Memory contents for example.
 .PP
-Can be changed within the program at 
+Can be changed dynamically at 
 .I /settings/timeout/stable
 .SS --timeout_directory=60
 Seconds until a 
 .I directory 
 listing expires in the cache. Directory lists are the 1-wire devices found on the bus.
 .PP
-Can be changed within the program at 
+Can be changed dynamically at 
 .I /settings/timeout/directory
 .SS --timeout_presence=120
 Seconds until the
 .I presence
 and bus location of a 1-wire device expires in the cache.
 .PP
-Can be changed within the program at 
+Can be changed dynamically at 
 .I /settings/timeout/presence
-.SS --timeout_serial=5
-Seconds until the expected response from the
-.I serial
-port adapter is deemed tardy. Applies to the LINK, DS9097U and DS9097 (passive) adapter.
-.PP
-Can be changed within the program at 
-.I /settings/timeout/serial
-.SS --timeout_usb=5
-Seconds until the expected response from the
-.I usb
-port adapter is deemed tardy. Applies to the DS9490.
-.PP
-Can be changed within the program at 
-.I /settings/timeout/network
-.SS --timeout_network=1
-Seconds until the expected response from the
-.I tcp
-port adapter is deemed tardy. Includes the
-.B LINK-HUB-E
-and
-.B HA7Net
-.PP
-Can be changed within the program at 
-.I /settings/timeout/network
+.P
+.B There are also timeouts for specific program responses:
 .SS --timeout_server=5
 Seconds until the expected response from the
 .B owserver (1)
 is deemed tardy.
 .PP
-Can be changed within the program at 
+Can be changed dynamically at 
 .I /settings/timeout/server
 .SS --timeout_ftp=900
 Seconds that an ftp session is kept alive.
 .PP
-Can be changed within the program at 
+Can be changed dynamically at 
 .I /settings/timeout/ftp
-.SS --timeout_ha7=60
-Seconds that the program will wait for a (tcp) response from the HA7Net adapter.
-.PP
-Can be changed within the program at 
-.I /settings/timeout/ha7
