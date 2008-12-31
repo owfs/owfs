@@ -122,6 +122,7 @@ int FS_FindHA7(void)
 	int ret = -ENOENT;
 	int n ;
 
+	LEVEL_DEBUG("Attempting udp multicast search for the HA7Net bus master at 224.1.2.3:4567\n");
 	Setup_HA7_hint( &hint ) ;
 	if ((n = getaddrinfo("224.1.2.3", "4567", &hint, &ai))) {
 		LEVEL_CONNECT("Couldn't set up HA7 broadcast message %s\n", gai_strerror(n));
@@ -144,7 +145,7 @@ int FS_FindHA7(void)
 		in->name = strdup(name);
 		in->busmode = bus_ha7net;
 
-		LEVEL_CONNECT("HA7Net adapter discovered at s\n",in->name);
+		LEVEL_CONNECT("HA7Net adapter discovered at %s\n",in->name);
 		ret = 0 ; // at least one good HA7
 	}
 	freeaddrinfo(ai);

@@ -24,13 +24,13 @@ $Id$
 ssize_t udp_read(int file_descriptor, void *vptr, size_t n, const struct timeval * ptv, struct sockaddr_in *from, socklen_t *fromlen)
 {
 	size_t nleft;
-	ssize_t nread;
 	char *ptr;
-	//printf("NetRead attempt %d bytes Time:(%ld,%ld)\n",(int)n,ptv->tv_sec,ptv->tv_usec ) ;
+
 	ptr = vptr;
 	nleft = n;
+
 	while (nleft > 0) {
-		int rc;
+		int select_result;
 		fd_set readset;
 		struct timeval tv = { ptv->tv_sec, ptv->tv_usec, };
 
@@ -39,36 +39,37 @@ ssize_t udp_read(int file_descriptor, void *vptr, size_t n, const struct timeval
 		FD_SET(file_descriptor, &readset);
 
 		/* Read if it doesn't timeout first */
-		rc = select(file_descriptor + 1, &readset, NULL, NULL, &tv);
-		if (rc > 0) {
+		select_result = select(file_descriptor + 1, &readset, NULL, NULL, &tv);
+		if (select_result > 0) {
+			ssize_t read_or_error;
 			/* Is there something to read? */
 			if (FD_ISSET(file_descriptor, &readset) == 0) {
 				return -EIO;	/* error */
 			}
-			//update_max_delay(pn);
-			if ((nread = recvfrom(file_descriptor, ptr, nleft, 0, (struct sockaddr *)from, fromlen)) < 0) {
+			read_or_error = recvfrom(file_descriptor, ptr, nleft, 0, (struct sockaddr *)from, fromlen) ;
+			if ( read_or_error < 0 ) {
 				if (errno == EINTR) {
 					errno = 0;	// clear errno. We never use it anyway.
-					nread = 0;	/* and call read() again */
 				} else {
-					STAT_ADD1(NET_read_errors);
-					return (-1);
+					ERROR_DATA("udp read error\n");
+					return -EIO;
 				}
-			} else if (nread == 0) {
+			} else if (read_or_error == 0) {
 				break;			/* EOF */
+			} else {
+				//Debug_Bytes( "UDPread",ptr, nread ) ;
+				nleft -= read_or_error;
+				ptr += read_or_error;
 			}
-			//Debug_Bytes( "UDPread",ptr, nread ) ;
-			nleft -= nread;
-			ptr += nread;
-		} else if (rc < 0) {	/* select error */
+		} else if (select_result < 0) {	/* select error */
 			if (errno == EINTR) {
 				/* select() was interrupted, try again */
 				continue;
 			}
-			ERROR_DATA("Selection error (network)\n");
-			return -EINTR;
+			ERROR_DATA("udp read selection error (network)\n");
+			return -EIO;
 		} else {				/* timed out */
-			LEVEL_CONNECT("TIMEOUT after %d bytes\n", n - nleft);
+			LEVEL_CONNECT("udp read timeout after %d bytes\n", n - nleft);
 			return -EAGAIN;
 		}
 	}
