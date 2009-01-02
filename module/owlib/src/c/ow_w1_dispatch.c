@@ -114,6 +114,7 @@ void * W1_Dispatch( void * v )
 			}
 		}
 	}
+	LEVEL_DEBUG("W1 Dispatch: Normal exit.\n");
 	return NULL;
 }
 

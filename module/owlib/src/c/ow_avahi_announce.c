@@ -268,6 +268,7 @@ void *OW_Avahi_Announce( void * v )
 		LEVEL_CONNECT("Avahi announce: Failed to create simple poll object.\n");
 	}
 
+	LEVEL_DEBUG("Avahi announce: Normal exit.\n");
 	pthread_exit(NULL);
 	return NULL ;
 }

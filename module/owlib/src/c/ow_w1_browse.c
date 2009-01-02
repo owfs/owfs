@@ -68,11 +68,16 @@ static void * W1_start_scan( void * v )
 {
 	(void) v ;
 
+	#if OW_MT
+	pthread_detach(pthread_self());
+	#endif							/* OW_MT */
+
 	if ( Inbound_Control.w1_file_descriptor < 0 ) {
 		LEVEL_DEBUG("Cannot monitor w1 bus, No netlink connection.\n");
 	} else {
 		W1NLScan() ;
 	}
+	LEVEL_DEBUG("W1 scan: Normal exit.\n");
 	return NULL ;
 }
 

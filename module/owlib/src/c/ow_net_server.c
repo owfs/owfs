@@ -162,6 +162,7 @@ void *ServerProcessHandler(void *arg)
 		Test_and_Close( &(hp->acceptfd) );
 		free(hp);
 	}
+	LEVEL_DEBUG("Server Handler: Normal exit.\n");
 	pthread_exit(NULL);
 	return NULL;
 }
@@ -243,6 +244,8 @@ static void *ServerProcessOut(void *v)
 
 	LEVEL_DEBUG("ServerProcessOut = %lu\n", (unsigned long int) pthread_self());
 
+	pthread_detach(pthread_self());
+
 	if (ServerOutSetup(out)) {
 		LEVEL_CONNECT("Cannot set up server socket on %s, index=%d -- will exit\n", SAFESTRING(out->name), out->index);
 		(out->Exit) (1);
@@ -265,6 +268,8 @@ static void *ServerProcessOut(void *v)
 	OUTLOCK(out);
 	out->tid = 0;
 	OUTUNLOCK(out);
+
+	LEVEL_DEBUG("Server out: Normal exit.\n");
 	pthread_exit(NULL);
 	return NULL;
 }
@@ -281,6 +286,12 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 		Exit(1);
 	}
 
+	(void) sigemptyset(&myset);
+	(void) sigaddset(&myset, SIGHUP);
+	(void) sigaddset(&myset, SIGINT);
+	(void) sigaddset(&myset, SIGTERM);
+	(void) pthread_sigmask(SIG_BLOCK, &myset, NULL);
+	
 	/* Start the head of a thread chain for each head_outbound_list */
 	for (out = Outbound_Control.head; out; out = out->next) {
 		OUTLOCK(out);
@@ -293,12 +304,6 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 		}
 		OUTUNLOCK(out);
 	}
-
-	(void) sigemptyset(&myset);
-	(void) sigaddset(&myset, SIGHUP);
-	(void) sigaddset(&myset, SIGINT);
-	(void) sigaddset(&myset, SIGTERM);
-	(void) pthread_sigmask(SIG_BLOCK, &myset, NULL);
 
 	while (!StateInfo.shutdown_in_progress) {
 		if ((err = sigwait(&myset, &signo)) == 0) {
@@ -314,26 +319,16 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 	}
 
 	StateInfo.shutdown_in_progress = 1;
+
 	LEVEL_DEBUG("ow_net_server.c:ServerProcess() shutdown initiated\n");
-
-	for (out = Outbound_Control.head; out; out = out->next) {
-		OUTLOCK(out);
-		if (out->tid) {
-			LEVEL_DEBUG("Shutting down %d of %d thread %lu\n", out->index, Outbound_Control.active, out->tid);
-			if (pthread_cancel(out->tid)) {
-				LEVEL_DEBUG("Can't kill %d of %d\n", out->index, Outbound_Control.active);
-			}
-		}
-		OUTUNLOCK(out);
-	}
-
 	LEVEL_DEBUG("ow_net_server.c:ServerProcess() all threads cancelled\n");
 
 	for (out = Outbound_Control.head; out; out = out->next) {
 		if(out->tid > 0) {
-			LEVEL_DEBUG("ow_net_server.c:ServerProcess() pthread_join(%lu)\n", out->tid);
-			pthread_join(out->tid, NULL);
+			OUTLOCK(out);
+			pthread_cancel(out->tid);
 			out->tid = 0;
+			OUTUNLOCK(out);
 		} else {
 			LEVEL_DEBUG("ow_net_server.c:ServerProcess() thread already removed\n");
 		}

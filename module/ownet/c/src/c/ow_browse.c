@@ -43,12 +43,18 @@ static void *Process(void *v)
 {
 	struct RefStruct *rs = v;
 	pthread_detach(pthread_self());
+
+	#if OW_MT
+	pthread_detach(pthread_self());
+	#endif							/* OW_MT */
+
 	while (DNSServiceProcessResult(rs->sref) == kDNSServiceErr_NoError) {
 		//printf("DNSServiceProcessResult ref %ld\n",(long int)rs->sref) ;
 		continue;
 	}
 	DNSServiceRefDeallocate(rs->sref);
 	free(rs);
+	LEVEL_DEBUG("Browse: Normal exit.\n");
 	return NULL;
 }
 

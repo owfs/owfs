@@ -86,6 +86,7 @@ static void * AddBus( void * v )
 	}
 	
 	CONNIN_WUNLOCK ;
+	LEVEL_DEBUG("Add bus: Normal exit.\n");
 	return NULL ;
 }
 
@@ -117,6 +118,7 @@ void * RemoveBus( void * v )
 	}
 
 	CONNIN_WUNLOCK ;
+	LEVEL_DEBUG("Remove bus: Normal exit.\n");
 	return NULL ;
 }
 

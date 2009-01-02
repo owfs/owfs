@@ -115,6 +115,7 @@ static void *Announce(void *v)
 		
 	Announce_Post_Register(sref, err) ;	
 #if OW_MT
+	LEVEL_DEBUG("Bonjour announce: Normal exit\n");
 	pthread_exit(NULL);
 #endif
 	return NULL;

@@ -104,6 +104,7 @@ static void *CheckPresence_callback(void *v)
 {
 	struct checkpresence_struct *cps = (struct checkpresence_struct *) v;
 	cps->ret = CheckPresence_low(cps->in, cps->pn);
+	LEVEL_DEBUG("Check Presence: <%s> Normal exit\n",SAFESTRING(cps->in->name));
 	pthread_exit(NULL);
 	return NULL;
 }
