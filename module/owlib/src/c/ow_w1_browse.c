@@ -19,7 +19,6 @@ $Id$
 
 static void W1Clear( void ) ;
 static void W1SysList( const char * directory ) ;
-static void * W1_start_scan( void * v ) ;
 
 // Remove stale connections
 static void W1Clear( void )
@@ -64,13 +63,13 @@ static void W1SysList( const char * directory )
 	}
 }
 
+#if OW_MT
+
 static void * W1_start_scan( void * v )
 {
 	(void) v ;
 
-	#if OW_MT
 	pthread_detach(pthread_self());
-	#endif							/* OW_MT */
 
 	if ( Inbound_Control.w1_file_descriptor < 0 ) {
 		LEVEL_DEBUG("Cannot monitor w1 bus, No netlink connection.\n");
@@ -80,8 +79,6 @@ static void * W1_start_scan( void * v )
 	LEVEL_DEBUG("W1 scan: Normal exit.\n");
 	return NULL ;
 }
-
-#if OW_MT
 
 int W1_Browse( void )
 {
