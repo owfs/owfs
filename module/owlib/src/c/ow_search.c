@@ -35,7 +35,7 @@ int BUS_first(struct device_search *ds, const struct parsedname *pn)
 	ds->search = _1W_SEARCH_ROM;
 
 	if (!pn->selected_connection->AnyDevices) {
-		LEVEL_DATA("BUS_first: Empty bus -- no presence pulse\n");
+		LEVEL_DEBUG("BUS_first: Empty bus -- no presence pulse\n");
 	}
 
 	return BUS_next(ds, pn);

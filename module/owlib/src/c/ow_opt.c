@@ -36,6 +36,7 @@ static int OW_parsevalue(long long int *var, const ASCII * str);
 static int OW_ArgSerial(const char *arg);
 static int OW_ArgParallel(const char *arg);
 static int OW_ArgI2C(const char *arg);
+static int OW_ArgHA5( const char *arg);
 static int OW_ArgHA7(const char *arg);
 static int OW_ArgHA7E(const char *arg);
 static int OW_ArgEtherWeather(const char *arg);
@@ -631,11 +632,13 @@ int owopt(const int option_char, const char *arg)
 		break;
 	case e_i2c:
 		return OW_ArgI2C(arg);
-    case e_ha7:
-        return OW_ArgHA7(arg);
-    case e_ha7e:
-        return OW_ArgHA7E(arg);
-    case e_fake:
+	case e_ha5:
+		return OW_ArgHA5(arg);
+	case e_ha7:
+		return OW_ArgHA7(arg);
+	case e_ha7e:
+		return OW_ArgHA7E(arg);
+	case e_fake:
 		return OW_ArgFake(arg);
 	case e_link:
 		return OW_ArgLink(arg);
@@ -697,6 +700,18 @@ int OW_ArgNet(const char *arg)
 	in->busmode = bus_server;
 	return 0;
 }
+
+static int OW_ArgHA5( const char *arg)
+{
+	struct connection_in *in = NewIn(NULL);
+	if (in == NULL) {
+		return 1;
+	}
+	in->name = strdup(arg);
+	in->busmode = bus_ha5;
+	return 0;
+}
+
 
 static int OW_ArgHA7(const char *arg)
 {

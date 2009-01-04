@@ -69,14 +69,16 @@ int COM_read( BYTE * data, size_t length, const struct parsedname * pn )
 				Debug_Bytes("Serial read:", &data[length - to_be_read], read_result);
 				to_be_read -= read_result ;
 			}
-		} else {			/* timed out or select error */
+		} else if ( select_result == 0 ) { // timeout
+			return -EAGAIN ;
+		} else {			/* select error */
 			if ( errno == EINTR ) {
 				STAT_ADD1_BUS(e_bus_timeouts, connection);
 				continue ;
 			}
 			ERROR_CONNECT("Select or timeout error serial port: %s\n", SAFESTRING(connection->name));
 			STAT_ADD1_BUS(e_bus_timeouts, connection);
-			return -errno;
+			return -EIO;
 		}
 	}
 	

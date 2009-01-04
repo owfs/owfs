@@ -37,6 +37,8 @@ static int AddChecksum( unsigned char * check_string, int length, struct connect
 static int TestChecksum( unsigned char * check_string, int length ) ;
 static int HA5_find_channel(struct parsedname *pn) ;
 
+#define CR_char		(0x0D)
+
 static void HA5_setroutines(struct connection_in *in)
 {
 	in->iroutines.detect = HA5_detect;
@@ -58,6 +60,7 @@ static void HA5_setroutines(struct connection_in *in)
 int HA5_detect(struct connection_in *in)
 {
 	struct parsedname pn;
+	int no_colon_exists ;
 	
 	FS_ParsedName(NULL, &pn);	// minimal parsename -- no destroy needed
 	pn.selected_connection = in;
@@ -72,10 +75,16 @@ int HA5_detect(struct connection_in *in)
 	// Poison current "Address" for adapter
 	in->connin.ha5.sn[0] = 0 ; // so won't match
 	
+	no_colon_exists = Parse_first_ha5_address(in) ;
+
 	/* Open the com port */
 	if (COM_open(in)) {
+		LEVEL_DEBUG("HA5: Cannot open serial port -- Permissions problem?\n");
 		return -ENODEV;
 	}
+	
+	/* Set com port speed*/
+	COM_speed(B115200,&pn) ;
 	
 	in->connin.ha5.checksum = Globals.checksum ;
 	in->Adapter = adapter_HA5 ;
@@ -88,7 +97,7 @@ int HA5_detect(struct connection_in *in)
 #endif							/* OW_MT */
 
 	/* Find the channels */
-	if ( Parse_first_ha5_address(in) ) {
+	if ( no_colon_exists ) {
 		if ( HA5_find_channel(&pn) ) {
 			HA5_close(in) ;
 			return -ENODEV ;
@@ -102,7 +111,6 @@ int HA5_detect(struct connection_in *in)
 			}
 			added->connin.ha5.channel = next_char ;
 			pn.selected_connection = added ;
-			HA5_reset(&pn) ;
 		}
 	}
 
@@ -163,7 +171,7 @@ static int HA5_find_channel(struct parsedname *pn)
 
 	for ( in->connin.ha5.channel = 'a' ; in->connin.ha5.channel <= 'z' ; ++in->connin.ha5.channel ) {
 		if ( HA5_test_channel(pn) == 0 ) {
-			LEVEL_DEBUG("HA5 adapter found on port %s at channel %c\n", in->name, in->connin.ha5.channel ) ;
+			LEVEL_CONNECT("HA5 adapter found on port %s at channel %c\n", in->name, in->connin.ha5.channel ) ;
 			return 0 ;
 		}
 	}
@@ -173,22 +181,26 @@ static int HA5_find_channel(struct parsedname *pn)
 	return 0;
 }
 
+/* Adds bytes to end of string -- either 1 byte for <CR> or 3 bytes for <checksum><CR> */
+/* length if length of string without checksum/CR */
+/* check_string must have enough space allocated */
 static int AddChecksum( unsigned char * check_string, int length, struct connection_in * in )
 {
 	if ( in->connin.ha5.checksum ) {
 		int i ;
-		unsigned char sum = 0 ;
+		unsigned int sum = 0 ;
 		for ( i=0 ; i<length ; ++i ) {
 			sum += check_string[i] ;
 		}
-		num2string( (char *) & check_string[length], sum & 0xFF ) ;
-		check_string[length+2] = 0x0D ;
+		num2string((char *) &check_string[length], sum & 0xFF) ;
+		check_string[length+2] = CR_char ;
 		return length+3 ;
 	} else {
-		check_string[length] = 0x0D ;
+		check_string[length] = CR_char ;
 		return length+1 ;
 	}
 }
+
 
 static int TestChecksum( unsigned char * check_string, int length )
 {
@@ -244,7 +256,7 @@ static int HA5_reset_wrapped(const struct parsedname *pn)
 	struct connection_in * in = pn->selected_connection ;
 	int reset_length ;
 	BYTE reset[5] ;
-	BYTE resp[4];
+	BYTE resp[2];
 	
 	reset[0] = in->connin.ha5.channel ;
 	reset[1] = 'R' ;
@@ -254,20 +266,10 @@ static int HA5_reset_wrapped(const struct parsedname *pn)
 		LEVEL_DEBUG("Error sending HA5 reset\n");
 		return -EIO;
 	}
-	if ( in->connin.ha5.checksum ) {
-		if (COM_read(resp, 4, pn)) {
-			LEVEL_DEBUG("Error reading HA5 reset\n");
-			return -EIO;
-		}
-		if ( TestChecksum( resp, 1 ) ) {
-			LEVEL_DEBUG("HA5 reset checksum error\n");
-			return -EIO;
-		}
-	} else {
-		if (COM_read(resp, 2, pn)) {
-			LEVEL_DEBUG("Error reading HA5 reset\n");
-			return -EIO;
-		}
+	// For some reason, the HA5 doesn't use a checksum for RESET response.
+	if (COM_read(resp, 2, pn)) {
+		LEVEL_DEBUG("Error reading HA5 reset\n");
+		return -EIO;
 	}
 		
 	switch( resp[0] ) {
@@ -289,7 +291,7 @@ static int HA5_next_both(struct device_search *ds, const struct parsedname *pn)
 	int ret = 0;
 	struct connection_in * in = pn->selected_connection ;
 	struct dirblob *db = (ds->search == _1W_CONDITIONAL_SEARCH_ROM) ?
-		&(in->connin.link.alarm) : &(in->connin.link.main);
+		&(in->connin.ha5.alarm) : &(in->connin.ha5.main);
 
 	if (ds->LastDevice) {
 		return -ENODEV;
@@ -347,7 +349,7 @@ static int HA5_directory(struct device_search *ds, struct dirblob *db, const str
 	struct connection_in * in = pn->selected_connection ;
 
 	DirblobClear(db);
-
+	
 	//Depending on the search type, the HA5 search function
 	//needs to be selected
 	//tEC -- Conditional searching
@@ -360,7 +362,7 @@ static int HA5_directory(struct device_search *ds, struct dirblob *db, const str
 	query[3] = 'F' ;
 	query[4] = 'F' ;
 	query_length = AddChecksum( query, 5, in ) ;
-
+	
 	if (COM_write( query, query_length, pn)) {
 		return HA5_resync(pn) ;
 	}
@@ -369,7 +371,7 @@ static int HA5_directory(struct device_search *ds, struct dirblob *db, const str
 		return HA5_resync(pn) ;
 	}
 
-	while ( resp[0] != 0x0D ) {
+	while ( resp[0] != CR_char ) {
 		BYTE sn[8];
 		char wrap_char ;
 		//One needs to check the first character returned.
@@ -379,12 +381,12 @@ static int HA5_directory(struct device_search *ds, struct dirblob *db, const str
 		//So we grab the first character and check it.  If not an E leave it
 		//in the resp buffer and get the rest of the response from the HA5
 		//device
-
+		
 		if ( in->connin.ha5.checksum ) {
 			if (COM_read(&resp[1], 19, pn)) {
 				return HA5_resync(pn) ;
 			}
-			if ( resp[18]!=0x0D ) {
+			if ( resp[18]!=CR_char ) {
 				return HA5_resync(pn) ;
 			}
 			wrap_char = resp[19] ;
@@ -395,7 +397,7 @@ static int HA5_directory(struct device_search *ds, struct dirblob *db, const str
 			if (COM_read(&resp[1], 17, pn)) {
 				return HA5_resync(pn) ;
 			}
-			if ( resp[16]!=0x0D ) {
+			if ( resp[16]!=CR_char ) {
 				return HA5_resync(pn) ;
 			}
 			wrap_char = resp[17] ;
