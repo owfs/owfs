@@ -18,6 +18,8 @@ See the header file: ow.h for full attribution
 
 #if OW_ZERO
 
+//#if OW_MT /* this doesn't seem to be used if OW_MT is 0 */
+
 #include "ow_avahi.h"
 #include "ow_connection.h"
 #ifdef HAVE_SYS_SOCKET_H
@@ -211,6 +213,10 @@ void * OW_Avahi_Browse(void * v)
 	
 	(void) v ;
 
+#if OW_MT
+	pthread_detach(pthread_self());
+#endif
+	
 	/* Allocate main loop object */
 	bas.poll = avahi_simple_poll_new() ;
 	if (bas.poll==NULL) {
@@ -247,6 +253,8 @@ void * OW_Avahi_Browse(void * v)
     
 	return NULL;
 }
+//#endif /* OW_MT */
+
 #else /* OW_ZERO */
 void * OW_Avahi_Browse(void * v) {
 	return NULL ;
