@@ -631,10 +631,11 @@ static int OW_w_pios(const BYTE * data, const size_t size, const struct parsedna
 	// check the array
 	for (i = 0; i < size; ++i) {
 		int formatted_data_index = 4 * i;
+		BYTE rdata = ((BYTE)~data[i]);  // get rid of warning: comparison of promoted ~unsigned with unsigned
 		if (formatted_data[formatted_data_index + 0] != data[i]) {
 			return 1;
 		}
-		if (formatted_data[formatted_data_index + 1] != ~ ((BYTE) data[i]) ) {
+		if (formatted_data[formatted_data_index + 1] != rdata) {
 			return 1;
 		}
 		if (formatted_data[formatted_data_index + 2] != 0xAA) {
