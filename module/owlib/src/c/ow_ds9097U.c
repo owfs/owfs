@@ -249,6 +249,8 @@ static int DS2480_big_reset(const struct parsedname *pn)
 {
 	int ret ;
 	BYTE timing ;
+	BYTE single_bit = CMD_COMM | BITPOL_ONE |  DS2480b_speed_byte(pn) ;
+	BYTE single_bit_response ;
 
 	// Open the com port in 9600 Baud.
 	if (COM_open(pn->selected_connection)) {
@@ -307,7 +309,13 @@ static int DS2480_big_reset(const struct parsedname *pn)
 	if (DS2480_configuration_code(PARMSEL_12VPULSE, PARMSET_512us, pn)) {
 		return -EINVAL;
 	}
-
+	
+	// Send a single bit
+	// It seems to help digitemp -- not sure why
+	if (DS2480_sendback_cmd(&single_bit, &single_bit_response, 1, pn)) {
+		return -EIO;
+	}
+	
 	/* Apparently need to reset again to get the version number properly */
 	if ((ret = DS2480_reset(pn))<0) {
 		return ret;
