@@ -76,6 +76,7 @@ void LockSetup(void)
 
 void BUS_lock_in(struct connection_in *in)
 {
+	//printf("BUS_lock_in: in=%p\n", in);
 	if (!in)
 		return;
 #if OW_MT
@@ -85,6 +86,7 @@ void BUS_lock_in(struct connection_in *in)
 
 void BUS_unlock_in(struct connection_in *in)
 {
+	//printf("BUS_unlock_in: in=%p\n", in);
 	if (!in)
 		return;
 

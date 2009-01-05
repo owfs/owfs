@@ -115,7 +115,6 @@ void FreeIn(struct connection_in *target)
 			free(target->name);
 			target->name = NULL;
 		}
-		BUSUNLOCKIN(target);
 #if OW_MT
 		my_pthread_mutex_destroy(&(target->bus_mutex));
 #endif
