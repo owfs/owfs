@@ -2,6 +2,7 @@ Makefile
 Makefile.in
 .deps
 .libs
+owget
 owdir
 owread
 owwrite

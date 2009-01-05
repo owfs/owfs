@@ -16,7 +16,6 @@ $Id$
 #include "ow_pid.h"
 
 static void IgnoreSignals(void);
-static void SigHandler(int signo, siginfo_t * info, void *context);
 static void SetupInboundConnections(void);
 static void SetupSideboundConnections(void);
 
@@ -200,7 +199,6 @@ static void SetupSideboundConnections(void)
 static void IgnoreSignals(void)
 {
 	struct sigaction sa;
-	int i = 0;
 
 	memset(&sa, 0, sizeof(struct sigaction));
 	sigemptyset(&(sa.sa_mask));

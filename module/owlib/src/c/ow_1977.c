@@ -398,7 +398,7 @@ static int OW_verify(BYTE * pwd, off_t offset, struct parsedname *pn)
 	int ret;
 	BYTE p[1 + 2 + 8] = { _1W_READ_MEMORY_WITH_PASSWORD, LOW_HIGH_ADDRESS(offset), };
 	BYTE c;
-
+#warning "OW_verify: pwd is unused?"
 	BUSLOCK(pn);
 	ret = BUS_select(pn) || BUS_send_data(p, 3 + 7, pn)
 		|| BUS_PowerByte(p[3 + 7], &p[3 + 7], 5, pn)

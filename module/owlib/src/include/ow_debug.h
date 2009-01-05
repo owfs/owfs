@@ -14,13 +14,17 @@
 #define OW_DEBUG_H
 
 #include <config.h>
-#include <owfs_config.h>
+#include "owfs_config.h"
 
 #ifdef HAVE_SYS_UIO_H
 #include <sys/uio.h>
 #endif
 
 #include <stdarg.h>
+
+/* module/ownet/c/src/include/ow_debug.h & module/owlib/src/include/ow_debug.h
+   are identical except this define */
+//#define OWNETC_OW_DEBUG 1
 
 /* error functions */
 enum e_err_level { e_err_default, e_err_connect, e_err_call, e_err_data,
@@ -31,6 +35,7 @@ enum e_err_print { e_err_print_mixed, e_err_print_syslog,
 	e_err_print_console,
 };
 
+#if OW_MT
 extern const char mutex_init_failed[];
 extern const char mutex_destroy_failed[];
 extern const char mutex_lock_failed[];
@@ -44,6 +49,7 @@ extern const char rwlock_read_unlock_failed[];
 extern const char cond_timedwait_failed[];
 extern const char cond_signal_failed[];
 extern const char cond_wait_failed[];
+#endif
 
 void err_msg(enum e_err_type errnoflag, enum e_err_level level, const char *fmt, ...);
 void _Debug_Bytes(const char *title, const unsigned char *buf, int length);

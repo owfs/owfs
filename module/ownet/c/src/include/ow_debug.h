@@ -14,15 +14,48 @@
 #define OW_DEBUG_H
 
 #include <config.h>
-#include <owfs_config.h>
+#include "owfs_config.h"
+
+#ifdef HAVE_SYS_UIO_H
+#include <sys/uio.h>
+#endif
+
+#include <stdarg.h>
+
+/* module/ownet/c/src/include/ow_debug.h & module/owlib/src/include/ow_debug.h
+   are identical except this define */
+#define OWNETC_OW_DEBUG 1
 
 /* error functions */
-enum e_err_level { e_err_default, e_err_connect, e_err_call, e_err_data, e_err_detail, e_err_debug, e_err_beyond, };
+enum e_err_level { e_err_default, e_err_connect, e_err_call, e_err_data,
+	e_err_detail, e_err_debug, e_err_beyond,
+};
 enum e_err_type { e_err_type_level, e_err_type_error, };
-enum e_err_print { e_err_print_mixed, e_err_print_syslog, e_err_print_console, };
+enum e_err_print { e_err_print_mixed, e_err_print_syslog,
+	e_err_print_console,
+};
+
+#if OW_MT
+extern const char mutex_init_failed[];
+extern const char mutex_destroy_failed[];
+extern const char mutex_lock_failed[];
+extern const char mutex_unlock_failed[];
+extern const char mutex_attr_init_failed[];
+extern const char mutex_attr_destroy_failed[];
+extern const char mutex_attr_settype_failed[];
+extern const char rwlock_init_failed[];
+extern const char rwlock_read_lock_failed[];
+extern const char rwlock_read_unlock_failed[];
+extern const char cond_timedwait_failed[];
+extern const char cond_signal_failed[];
+extern const char cond_wait_failed[];
+#endif
 
 void err_msg(enum e_err_type errnoflag, enum e_err_level level, const char *fmt, ...);
 void _Debug_Bytes(const char *title, const unsigned char *buf, int length);
+void _Debug_Writev(struct iovec *io, int iosz);
+void fatal_error(char *file, int row, const char *fmt, ...);
+static inline int return_ok(void) { return 0; }
 
 extern int log_available;
 
@@ -53,10 +86,14 @@ extern int log_available;
 #define ERROR_DEBUG(...)      if (Globals.error_level>=e_err_debug) \
     err_msg(e_err_type_error,e_err_debug,__VA_ARGS__)
 
+#define FATAL_ERROR(...) fatal_error(__FILE__, __LINE__, __VA_ARGS__)
+
 #define Debug_OWQ(owq)        if (Globals.error_level>=e_err_debug) \
     _print_owq(owq)
 #define Debug_Bytes(title,buf,length)    if (Globals.error_level>=e_err_beyond) \
     _Debug_Bytes(title,buf,length)
+#define Debug_Writev(io,iosz)    if (Globals.error_level>=e_err_beyond) \
+    _Debug_Writev(io, iosz)
 #else
 #define LEVEL_DEFAULT(...)    { } while (0);
 #define LEVEL_CONNECT(...)    { } while (0);
@@ -72,7 +109,10 @@ extern int log_available;
 #define ERROR_DETAIL(...)     { } while (0);
 #define ERROR_DEBUG(...)      { } while (0);
 
+#define FATAL_ERROR(...)      { } while (0);
+
 #define Debug_Bytes(title,buf,length)    { } while (0);
+#define Debug_Writev(io, iosz)    { } while (0);
 #define Debug_OWQ(owq)        { } while (0);
 #endif
 
@@ -82,5 +122,65 @@ extern int log_available;
 /* Easy way to show 64bit serial numbers */
 #define SNformat	"%.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X"
 #define SNvar(sn)	(sn)[0],(sn)[1],(sn)[2],(sn)[3],(sn)[4],(sn)[5],(sn)[6],(sn)[7]
+
+#if OW_MT
+/* Need to define those functions to get FILE and LINE information */
+#define my_pthread_mutex_init(mutex, attr) \
+{ \
+	int mrc = pthread_mutex_init(mutex, attr);	\
+	if(mrc != 0) { \
+		FATAL_ERROR(mutex_init_failed, mrc, strerror(mrc)); \
+	} \
+}
+
+#define my_pthread_mutex_destroy(mutex) \
+{ \
+	int mrc = pthread_mutex_destroy(mutex); \
+	if(mrc != 0) { \
+		FATAL_ERROR(mutex_destroy_failed, mrc, strerror(mrc)); \
+	} \
+}
+
+#define my_pthread_mutex_lock(mutex) \
+{ \
+	int mrc = pthread_mutex_lock(mutex); \
+	if(mrc != 0) { \
+		FATAL_ERROR(mutex_lock_failed, mrc, strerror(mrc)); \
+	} \
+}
+
+#define my_pthread_mutex_unlock(mutex) \
+{ \
+	int mrc = pthread_mutex_unlock(mutex); \
+	if(mrc != 0) { \
+		FATAL_ERROR(mutex_unlock_failed, mrc, strerror(mrc)); \
+	} \
+}
+
+#define my_pthread_mutexattr_init(attr) \
+{ \
+	int mrc = pthread_mutexattr_init(attr);	\
+	if(mrc != 0) { \
+		FATAL_ERROR(mutex_attr_init_failed, mrc, strerror(mrc)); \
+	} \
+}
+
+#define my_pthread_mutexattr_destroy(attr) \
+{ \
+	int mrc = pthread_mutexattr_destroy(attr);	\
+	if(mrc != 0) { \
+		FATAL_ERROR(mutex_attr_destroy_failed, mrc, strerror(mrc)); \
+	} \
+}
+
+#define my_pthread_mutexattr_settype(attr, typ) \
+{ \
+	int mrc = pthread_mutexattr_settype(attr, typ);	\
+	if(mrc != 0) { \
+		FATAL_ERROR(mutex_attr_settype_failed, mrc, strerror(mrc)); \
+	} \
+}
+
+#endif /* OW_MT */
 
 #endif							/* OW_DEBUG_H */

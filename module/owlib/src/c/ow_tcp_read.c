@@ -90,7 +90,7 @@ ssize_t tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval
 			} else if (nread == 0) {
 				break;			/* EOF */
 			}
-			Debug_Bytes( "NETREAD",ptr, nread ) ;
+			Debug_Bytes("NETREAD", (unsigned char *)ptr, nread ) ;
 			nleft -= nread;
 			ptr += nread;
 		} else if (rc < 0) {	/* select error */

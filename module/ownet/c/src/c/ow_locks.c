@@ -59,17 +59,17 @@ void LockSetup(void)
 
 #endif							/* UCLIBC_VERSION */
 	/* global mutex attribute */
-	pthread_mutexattr_init(&Mutex.mattr);
-	pthread_mutexattr_settype(&Mutex.mattr, PTHREAD_MUTEX_ADAPTIVE_NP);
+	my_pthread_mutexattr_init(&Mutex.mattr);
+	my_pthread_mutexattr_settype(&Mutex.mattr, PTHREAD_MUTEX_ADAPTIVE_NP);
 	Mutex.pmattr = &Mutex.mattr;
 #endif							/* OW_MT */
 #endif							/* __UCLIBC */
 
 #if OW_MT
-	rwlock_init(&Mutex.lib);
-	rwlock_init(&Mutex.connin);
+	my_rwlock_init(&Mutex.lib);
+	my_rwlock_init(&Mutex.connin);
 #ifdef __UCLIBC__
-	pthread_mutex_init(&Mutex.uclibc_mutex, Mutex.pmattr);
+	my_pthread_mutex_init(&Mutex.uclibc_mutex, Mutex.pmattr);
 #endif							/* UCLIBC */
 #endif							/* OW_MT */
 }
@@ -79,7 +79,7 @@ void BUS_lock_in(struct connection_in *in)
 	if (!in)
 		return;
 #if OW_MT
-	pthread_mutex_lock(&(in->bus_mutex));
+	my_pthread_mutex_lock(&(in->bus_mutex));
 #endif							/* OW_MT */
 }
 
@@ -89,6 +89,6 @@ void BUS_unlock_in(struct connection_in *in)
 		return;
 
 #if OW_MT
-	pthread_mutex_unlock(&(in->bus_mutex));
+	my_pthread_mutex_unlock(&(in->bus_mutex));
 #endif							/* OW_MT */
 }

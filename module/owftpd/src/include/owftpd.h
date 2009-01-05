@@ -6,9 +6,9 @@
 #define OWFTPD_H
 
 #include <config.h>
-#include <owfs_config.h>
-#include <ow.h>
-#include <ow_connection.h>
+#include "owfs_config.h"
+#include "ow.h"
+#include "ow_connection.h"
 
 #ifdef HAVE_LIMITS_H
 #include <limits.h>

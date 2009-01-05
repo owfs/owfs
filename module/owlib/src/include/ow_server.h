@@ -55,7 +55,7 @@ $Id$
 #define OW_SERVER_H
 
 #include <config.h>
-#include <owfs_config.h>
+#include "owfs_config.h"
 #include "ow.h"
 #include "ow_connection.h"
 

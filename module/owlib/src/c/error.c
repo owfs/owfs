@@ -18,11 +18,30 @@ $Id$
 */
 
 #include <config.h>
-#include <owfs_config.h>
-#include <ow.h>
+#include "owfs_config.h"
+#include "ow.h"
+#include <stdarg.h>
 
 #ifdef HAVE_SYS_UIO_H
 #include <sys/uio.h>
+#endif
+
+/* module/ownet/c/src/c/error.c & module/owlib/src/c/error.c are identical */
+
+#if OW_MT
+const char mutex_init_failed[] = "mutex_init failed rc=%d [%s]";
+const char mutex_destroy_failed[] = "mutex_destroy failed rc=%d [%s]";
+const char mutex_lock_failed[] = "mutex_lock failed rc=%d [%s]";
+const char mutex_unlock_failed[] = "mutex_unlock failed rc=%d [%s]";
+const char mutex_attr_init_failed[] = "mutex_attr_init failed rc=%d [%s]";
+const char mutex_attr_destroy_failed[] = "mutex_attr_destroy failed rc=%d [%s]";
+const char mutex_attr_settype_failed[] = "mutex_attr_settype failed rc=%d [%s]";
+const char rwlock_init_failed[] = "rwlock_init failed rc=%d [%s]";
+const char rwlock_read_lock_failed[] = "rwlock_read_lock failed rc=%d [%s]";
+const char rwlock_read_unlock_failed[] = "rwlock_read_unlock failed rc=%d [%s]";
+const char cond_timedwait_failed[] = "cond_timedwait failed rc=%d [%s]";
+const char cond_signal_failed[] = "cond_signal failed rc=%d [%s]";
+const char cond_wait_failed[] = "cond_wait failed rc=%d [%s]";
 #endif
 
 /* See man page for explanation */
@@ -187,11 +206,20 @@ void _Debug_Writev(struct iovec *io, int iosz)
 void fatal_error(char *file, int row, const char *fmt, ...)
 {
 	va_list ap;
-	FILE *fp;
-	char filename[64];
 	char tmp[256];
 	va_start(ap, fmt);
 
+#ifdef OWNETC_OW_DEBUG
+	{
+		fprintf(stderr, "%s:%d ", file, row);
+#ifdef HAVE_VSNPRINTF
+		vsnprintf(tmp, sizeof(tmp), fmt, ap);
+#else
+		vsprintf(tmp, fmt, ap);
+#endif
+		fprintf(stderr, tmp);
+	}
+#else /* OWNETC_OW_DEBUG */
 	if(Globals.fatal_debug) {
 		LEVEL_DEFAULT("%s:%d ", file, row);
 #ifdef HAVE_VSNPRINTF
@@ -204,6 +232,8 @@ void fatal_error(char *file, int row, const char *fmt, ...)
 
 
 	if(Globals.fatal_debug_file != NULL) {
+		FILE *fp;
+		char filename[64];
 		sprintf(filename, "%s.%d", Globals.fatal_debug_file, getpid());
 		if((fp = fopen(filename, "a")) != NULL) {
 			if(!Globals.fatal_debug) {
@@ -217,6 +247,8 @@ void fatal_error(char *file, int row, const char *fmt, ...)
 			fclose(fp);
 		}
 	}
+#endif /* OWNETC_OW_DEBUG */
+	va_end(ap);
 }
 
 
