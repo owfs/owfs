@@ -57,7 +57,7 @@ static void Show(FILE * out, const struct parsedname *pn_entry)
 			ShowReadonly(out, owq);
 		}
 	} else {					// Writeable
-		if (pn_entry->selected_filetype->write == NO_READ_FUNCTION) {
+		if (pn_entry->selected_filetype->read == NO_READ_FUNCTION) {
 			ShowWriteonly(out, owq);
 		} else {
 			ShowReadWrite(out, owq);
