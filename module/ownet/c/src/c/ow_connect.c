@@ -121,3 +121,17 @@ void FreeIn(struct connection_in *target)
 	}
 	target->state = connection_vacant;
 }
+
+void FreeInAll( void )
+{
+	struct connection_in *next ;
+
+	while ( head_inbound_list ) {
+		next = head_inbound_list->next;
+		//LEVEL_DEBUG("FreeInAll: %p next=%p\n", Inbound_Control.head, Inbound_Control.head->next);
+		FreeIn(head_inbound_list);
+		free(head_inbound_list);
+		head_inbound_list = next;
+	}
+}
+

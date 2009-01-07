@@ -69,7 +69,16 @@ extern "C" {
 						 void *passed_on_value);
 
 
-/* int OWNET_get( OWNET_HANDLE h, const char * onewire_path, 
+/* int OWNET_present( OWNET_HANDLE h, const char * onewire_path)
+   Check if a one-wire device is present
+
+   returns = 0 on success,
+   returns <0 on error
+*/
+	
+	int OWNET_present(OWNET_HANDLE h, const char *onewire_path);
+
+/* int OWNET_read( OWNET_HANDLE h, const char * onewire_path, 
         unsigned char ** return_string )
    Read a value from a one-wire device property
    return_string has the result but must be free-ed by the calling program.
@@ -77,7 +86,7 @@ extern "C" {
    returns length of result on success,
    returns <0 on error
 */
-	int OWNET_get(OWNET_HANDLE h, const char *onewire_path, char **return_string);
+	int OWNET_read(OWNET_HANDLE h, const char *onewire_path, char **return_string);
 
 /* int OWNET_lread( OWNET_HANDLE h, const char * onewire_path, 
         unsigned char * return_string, size_t size, off_t offset )
@@ -119,6 +128,11 @@ extern "C" {
    close all owserver connections
 */
 	void OWNET_closeall(void);
+
+/* void OWNET_finish( void )
+   close all owserver connections and free all memory
+*/
+	void OWNET_finish(void);
 
 /* get and set temperature scale
    Note that temperature scale applies to all HANDLES

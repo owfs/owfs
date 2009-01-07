@@ -30,6 +30,10 @@ The full set of initialization options is extensive. They correspond roughly to 
 and
 .B owftpd (1)
 .SS Get data
+.B int OW_present(
+.I const char * path
+.B )
+.br
 .B int OW_get(
 .I const char * path, char ** buffer, size_t * buffer_length
 .B )
@@ -110,6 +114,25 @@ will be set.
 does not need to be called if
 .I OW_init
 fails.
+.TP
+.I Sequence
+One of the
+.I init
+functions must be called before accessing the 1-wire bus.
+.I OW_finish
+is optional.
+.SS OW_present
+.I OW_present
+is used to check presence of a 1-wire device.
+.TP
+.I Arguments
+.I path
+is the path to the directory or file (property).
+.TP
+.I Returns
+0 on success. -1 on error (and
+.I errno
+is set).
 .TP
 .I Sequence
 One of the

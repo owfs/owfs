@@ -39,3 +39,14 @@ void OWNET_closeall(void)
 	}
 	CONNIN_WUNLOCK;
 }
+
+/* void OWNET_finish( void )
+   close all owserver connections and free all memory
+*/
+void OWNET_finish(void)
+{
+	CONNIN_WLOCK;
+	FreeInAll();
+	head_inbound_list = NULL;
+	CONNIN_WUNLOCK;
+}

@@ -203,7 +203,7 @@ enum bus_mode get_busmode(struct connection_in *c);
 int BusIsServer(struct connection_in *in);
 
 void FreeIn(struct connection_in *target);
-void DelIn(struct connection_in *in);
+void FreeInAll(void);
 
 struct connection_in *NewIn(void);
 struct connection_in *find_connection_in(OWNET_HANDLE handle);

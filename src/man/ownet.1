@@ -60,6 +60,38 @@ Apply function
 .I dirfunc
 to each directory element, along with an arbitrary passed_on_value.
 .SS Get data
+.B int OWNET_read( OWNET_HANDLE 
+.I owserver_handle 
+.B , const char * 
+.I onewire_path
+.B , const char ** 
+.I return_string
+.B )
+.br
+Read a value (of specified size) from a 1-wire device.
+.PP
+.B int OWNET_lread( OWNET_HANDLE 
+.I owserver_handle 
+.B , const char * 
+.I onewire_path
+.B , const char ** 
+.I return_string
+.B , size_t 
+.I size
+.B , off_t 
+.I offset
+.B )
+.br
+Read a value (of specified size and offset) from a 1-wire device.
+.PP
+.B int OWNET_present( OWNET_HANDLE 
+.I owserver_handle 
+.B , const char * 
+.I onewire_path
+.B )
+.br
+Check if a 1-wire device is present.
+.SS Set data
 .B int OWNET_put( OWNET_HANDLE 
 .I owserver_handle 
 .B , const char * 
@@ -95,6 +127,10 @@ Close the connection to a particular owserver.
 .B void OWNET_closeall( void )
 .br
 Close all open owserver connections.
+.PP
+.B void OWNET_finish( void )
+.br
+Close all open owserver connections and free all memory.
 .SS Temperature scale
 .B void OWNET_set_temperature_scale( char 
 .I temperature_scale

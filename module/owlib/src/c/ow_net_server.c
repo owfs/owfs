@@ -234,6 +234,11 @@ void ServerProcessCleanup(void *param)
   struct connection_out *out = (struct connection_out *)param;
   LEVEL_DEBUG("ServerProcessCleanup: cleaning up blocked thread %lu\n", out->tid);
   ACCEPTUNLOCK(out);
+#ifdef AVOID_PTHREAD_JOIN
+  /* Just a test to avoid calling pthread_join when exit after Ctrl-C.
+   * Busy while-loop will wait until out->tid == 0 */
+  out->tid = 0;
+#endif
   LEVEL_DEBUG("ServerProcessCleanup: unlocked accept mutex\n");
 }
 
@@ -332,19 +337,37 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 	
 	LEVEL_DEBUG("ow_net_server.c:ServerProcess() all threads cancelled\n");
 
+#ifdef AVOID_PTHREAD_JOIN
+	/* Just a test to avoid calling pthread_join when exit after Ctrl-C.
+	 * Busy while-loop will wait until out->tid == 0 */
 	for (out = Outbound_Control.head; out; out = out->next) {
+		pthread_t t = out->tid;
+		while(1) {
+			if(out->tid == 0) {
+				LEVEL_DEBUG("ow_net_server.c: thread %lu is gone\n", t);
+				break;
+			}
+			LEVEL_DEBUG("ow_net_server.c: sleep and wait for thread %lu to exit\n", t);
+			usleep(100000);
+		}
+	}
+#else
+	for (out = Outbound_Control.head; out; out = out->next) {
+		OUTLOCK(out);
 		if(out->tid > 0) {
-			OUTLOCK(out);
+			LEVEL_DEBUG("ow_net_server.c: join %lu\n", out->tid);
 			pthread_join(out->tid, NULL);
+			LEVEL_DEBUG("ow_net_server.c: join %lu done\n", out->tid);
 			out->tid = 0;
-			OUTUNLOCK(out);
 		} else {
 			LEVEL_DEBUG("ow_net_server.c:ServerProcess() thread already removed\n");
 		}
+		OUTUNLOCK(out);
 	}
 
 	LEVEL_DEBUG("ow_net_server.c:ServerProcess() shutdown done\n");
-
+#endif
+	
 	/* Cleanup that may never be reached */
 	Exit(0);
 }

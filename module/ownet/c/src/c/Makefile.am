@@ -17,6 +17,7 @@ LIBOWNET_SOURCE =	    \
         ownet_dir.c     \
         ownet_init.c    \
         ownet_read.c    \
+        ownet_present.c    \
         ownet_setget.c  \
         ownet_write.c   \
         ow_rwlock.c     \

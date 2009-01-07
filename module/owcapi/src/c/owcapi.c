@@ -170,7 +170,6 @@ static ssize_t getval(struct one_wire_query *owq)
 
 ssize_t OW_get(const char *path, char **buffer, size_t * buffer_length)
 {
-	//struct parsedname pn;
 	struct one_wire_query owq;
 	ssize_t ret = -EACCES;		/* current buffer string length */
 
@@ -203,6 +202,26 @@ ssize_t OW_get(const char *path, char **buffer, size_t * buffer_length)
 					*buffer_length = OWQ_size(&owq);
 				}
 			}
+			FS_OWQ_destroy(&owq);
+		}
+		API_access_end();
+	}
+	return ReturnAndErrno(ret);
+}
+
+int OW_present(const char *path)
+{
+	struct one_wire_query owq;
+	ssize_t ret = -ENOENT;		/* current buffer string length */
+
+	if (path == NULL) {
+		path = "/";
+	}
+
+	if (API_access_start() == 0) {	/* Check for prior init */
+		if (FS_OWQ_create(path, NULL, 0, 0, &owq)) {	/* Can we parse the input string */
+			ret = -ENOENT;
+		} else {
 			FS_OWQ_destroy(&owq);
 		}
 		API_access_end();
