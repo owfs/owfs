@@ -417,7 +417,7 @@ static int OW_w_gpio(BYTE data, const struct parsedname *pn)
 	   we can't know the set state of the pin, i.e. sensed and set
 	   are confused */
 	/* Datasheet says bit 7 should be 1 */
-	BYTE w[] = { _LCD_COMMAND_GPIO_WRITE_BYTE, 0x80 & data, };
+	BYTE w[] = { _LCD_COMMAND_GPIO_WRITE_BYTE, 0x80 | data, };
 	// 20uS
 	return LCD_2byte(w, 1, pn);
 }
