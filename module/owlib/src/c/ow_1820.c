@@ -323,6 +323,7 @@ static int FS_sense(struct one_wire_query *owq)
 	
 	// bits 0->0 and 2->1
 	OWQ_U(owq) = ( (piostate & 0x01) | ((piostate & 0x03)>>1) ) & 0x03  ;
+	// (piostate & 0x03) should be (piostate & 0x04)  or???   /Christian
 	
 	return 0;
 }
@@ -358,6 +359,7 @@ static int FS_r_latch(struct one_wire_query *owq)
 	}
 	
 	// bits 0->0 and 2->1
+	// shouldn't this comment be: bits 1->0 and 3->1  /Christian
 	OWQ_U(owq) = BYTE_INVERSE( ((piostate & 0x02)>>1) | ((piostate & 0x08)>>2) ) & 0x03  ;
 	
 	return 0;
