@@ -15,9 +15,9 @@ $Id$
 #include "ow_connection.h"
 
 /* Routines for handling a linked list of connections in and out */
-/* typical connection in would be gthe serial port or USB */
+/* typical connection in would be the serial port or USB */
 
-/* Globalss */
+/* Globals */
 struct connection_in *head_inbound_list = NULL;
 int count_inbound_connections = 0;
 
