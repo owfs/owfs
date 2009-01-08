@@ -167,6 +167,20 @@ void *ServerProcessHandler(void *arg)
 	return NULL;
 }
 
+void ServerProcessAcceptUnlock(void *param)
+{
+  struct connection_out *out = (struct connection_out *)param;
+  LEVEL_DEBUG("ServerProcessAcceptUnlock: unlock %lu\n", out->tid);
+  ACCEPTUNLOCK(out);
+  LEVEL_DEBUG("ServerProcessAcceptUnlock: unlock %lu done\n", out->tid);
+  //#define AVOID_PTHREAD_JOIN
+#ifdef AVOID_PTHREAD_JOIN
+  /* Just a test to avoid calling pthread_join when exit after Ctrl-C.
+   * Busy while-loop will wait until out->tid == 0 */
+  out->tid = 0;
+#endif
+}
+
 static void ServerProcessAccept(void *vp)
 {
 	struct connection_out *out = (struct connection_out *) vp;
@@ -177,6 +191,8 @@ static void ServerProcessAccept(void *vp)
 	LEVEL_DEBUG("ServerProcessAccept %s[%lu] try lock %d\n", SAFESTRING(out->name), (unsigned long int) pthread_self(), out->index);
 
 	ACCEPTLOCK(out);
+
+	pthread_cleanup_push(ServerProcessAcceptUnlock, out);
 
 	LEVEL_DEBUG("ServerProcessAccept %s[%lu] locked %d\n", SAFESTRING(out->name), (unsigned long int) pthread_self(), out->index);
 
@@ -196,13 +212,14 @@ static void ServerProcessAccept(void *vp)
 		}
 		break;
 	} while (1);
-	ACCEPTUNLOCK(out);
+
+	pthread_cleanup_pop(1);  // Call ACCEPTUNLOCK
 	
 	LEVEL_DEBUG("ServerProcessAccept %s[%lu] unlock %d\n",SAFESTRING(out->name),(unsigned long int)pthread_self(),out->index) ;
 
 	if (StateInfo.shutdown_in_progress) {
-		LEVEL_DEBUG
-			("ServerProcessAccept %s[%lu] shutdown_in_progress %d return\n", SAFESTRING(out->name), (unsigned long int) pthread_self(), out->index);
+		LEVEL_DEBUG("ServerProcessAccept %s[%lu] shutdown_in_progress %d return\n",
+			    SAFESTRING(out->name), (unsigned long int) pthread_self(), out->index);
 		if (acceptfd >= 0) {
 			close(acceptfd);
 		}
@@ -229,19 +246,6 @@ static void ServerProcessAccept(void *vp)
 	return;
 }
 
-void ServerProcessCleanup(void *param)
-{
-  struct connection_out *out = (struct connection_out *)param;
-  LEVEL_DEBUG("ServerProcessCleanup: cleaning up blocked thread %lu\n", out->tid);
-  ACCEPTUNLOCK(out);
-#ifdef AVOID_PTHREAD_JOIN
-  /* Just a test to avoid calling pthread_join when exit after Ctrl-C.
-   * Busy while-loop will wait until out->tid == 0 */
-  out->tid = 0;
-#endif
-  LEVEL_DEBUG("ServerProcessCleanup: unlocked accept mutex\n");
-}
-
 /* For a given port (connecion_out) set up listening */
 static void *ServerProcessOut(void *v)
 {
@@ -259,17 +263,11 @@ static void *ServerProcessOut(void *v)
 
 	OW_Announce(out);
 
-	pthread_cleanup_push(ServerProcessCleanup, v);
-	
 	while (!StateInfo.shutdown_in_progress) {
 		ServerProcessAccept(v);
 	}
 
 	LEVEL_DEBUG("ServerProcessOut = %lu CLOSING (%s)\n", (unsigned long int) pthread_self(), SAFESTRING(out->name));
-
-	pthread_cleanup_pop(0);
-
-	LEVEL_DEBUG("ServerProcessOut = %lu CLOSING (pop done) (%s)\n", (unsigned long int) pthread_self(), SAFESTRING(out->name));
 
 	LEVEL_DEBUG("Server out: Normal exit.\n");
 	pthread_exit(NULL);
@@ -279,7 +277,7 @@ static void *ServerProcessOut(void *v)
 /* Setup Servers -- a thread for each port */
 void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (int errcode))
 {
-	int err, signo;
+	int rc, signo;
 	struct connection_out *out ;
 	sigset_t myset;
 
@@ -308,28 +306,28 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 	(void) pthread_sigmask(SIG_BLOCK, &myset, NULL);
 	
 	while (!StateInfo.shutdown_in_progress) {
-		if ((err = sigwait(&myset, &signo)) == 0) {
+		if ((rc = sigwait(&myset, &signo)) == 0) {
 			if (signo == SIGHUP) {
 				LEVEL_DEBUG("ServerProcess: ignore signo=%d\n", signo);
+				// perhaps do some reload-thing here...
 				continue;
 			}
 			LEVEL_DEBUG("ServerProcess: break signo=%d\n", signo);
 			break;
 		} else {
-			LEVEL_DEBUG("ServerProcess: sigwait error %d\n", err);
+			LEVEL_DEBUG("ServerProcess: sigwait error %d\n", rc);
 		}
 	}
 
 	StateInfo.shutdown_in_progress = 1;
-
 	LEVEL_DEBUG("ow_net_server.c:ServerProcess() shutdown initiated\n");
 
 	for (out = Outbound_Control.head; out; out = out->next) {
 		OUTLOCK(out);
 		if(out->tid > 0) {
 			LEVEL_DEBUG("Shutting down %d of %d thread %lu\n", out->index, Outbound_Control.active, out->tid);
-			if (pthread_cancel(out->tid)) {
-				LEVEL_DEBUG("Can't cancel %d of %d\n", out->index, Outbound_Control.active);
+			if ((rc = pthread_cancel(out->tid))) {
+				LEVEL_DEBUG("pthread_cancel (%d of %d) failed rc=%d [%s]\n", out->index, Outbound_Control.active, rc, strerror(rc));
 			}
 		}
 		OUTUNLOCK(out);
@@ -356,8 +354,11 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 		OUTLOCK(out);
 		if(out->tid > 0) {
 			LEVEL_DEBUG("ow_net_server.c: join %lu\n", out->tid);
-			pthread_join(out->tid, NULL);
-			LEVEL_DEBUG("ow_net_server.c: join %lu done\n", out->tid);
+			if((rc = pthread_join(out->tid, NULL))) {
+			  LEVEL_DEBUG("ow_net_server.c: join %lu failed rc=%d [%s]\n", out->tid, rc, strerror(rc));
+			} else {
+			  LEVEL_DEBUG("ow_net_server.c: join %lu done\n", out->tid);
+			}
 			out->tid = 0;
 		} else {
 			LEVEL_DEBUG("ow_net_server.c:ServerProcess() thread already removed\n");
