@@ -1402,7 +1402,7 @@ have_af_netlink="no"])
 
 if test "${have_af_netlink}" != "yes" ; then
    if test "${ENABLE_W1}" != "false" ; then
-      AC_WARN_CHECKING([Disable w1 since AF_NETLINK not found])
+      AC_MSG_WARN([Disable w1 since AF_NETLINK not found])
       ENABLE_W1="false"
    fi
 fi
