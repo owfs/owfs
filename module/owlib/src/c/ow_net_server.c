@@ -170,10 +170,14 @@ void *ServerProcessHandler(void *arg)
 void ServerProcessAcceptUnlock(void *param)
 {
   struct connection_out *out = (struct connection_out *)param;
+  if(out == NULL) {
+    LEVEL_DEBUG("ServerProcessAcceptUnlock: out==NULL\n");
+    return;
+  }
   LEVEL_DEBUG("ServerProcessAcceptUnlock: unlock %lu\n", out->tid);
   ACCEPTUNLOCK(out);
   LEVEL_DEBUG("ServerProcessAcceptUnlock: unlock %lu done\n", out->tid);
-  //#define AVOID_PTHREAD_JOIN
+#define AVOID_PTHREAD_JOIN
 #ifdef AVOID_PTHREAD_JOIN
   /* Just a test to avoid calling pthread_join when exit after Ctrl-C.
    * Busy while-loop will wait until out->tid == 0 */
@@ -192,7 +196,7 @@ static void ServerProcessAccept(void *vp)
 
 	ACCEPTLOCK(out);
 
-	pthread_cleanup_push(ServerProcessAcceptUnlock, out);
+	pthread_cleanup_push(ServerProcessAcceptUnlock, vp);
 
 	LEVEL_DEBUG("ServerProcessAccept %s[%lu] locked %d\n", SAFESTRING(out->name), (unsigned long int) pthread_self(), out->index);
 
