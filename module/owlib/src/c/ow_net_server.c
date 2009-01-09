@@ -177,7 +177,7 @@ void ServerProcessAcceptUnlock(void *param)
   LEVEL_DEBUG("ServerProcessAcceptUnlock: unlock %lu\n", out->tid);
   ACCEPTUNLOCK(out);
   LEVEL_DEBUG("ServerProcessAcceptUnlock: unlock %lu done\n", out->tid);
-#define AVOID_PTHREAD_JOIN
+  //#define AVOID_PTHREAD_JOIN
 #ifdef AVOID_PTHREAD_JOIN
   /* Just a test to avoid calling pthread_join when exit after Ctrl-C.
    * Busy while-loop will wait until out->tid == 0 */
@@ -257,6 +257,16 @@ static void *ServerProcessOut(void *v)
 
 	LEVEL_DEBUG("ServerProcessOut = %lu\n", (unsigned long int) pthread_self());
 
+#if 1
+	{
+		sigset_t new;
+		sigemptyset(&new);
+		sigaddset(&new, SIGINT);
+		sigaddset(&new, SIGTERM);
+		pthread_sigmask(SIG_UNBLOCK, &new, NULL);
+	}
+#endif
+
 	// This thread is terminated with pthread_cancel()+pthread_join(), and should not be detached.
 	//pthread_detach(pthread_self());
 
@@ -290,6 +300,14 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 		Exit(1);
 	}
 
+#if 1
+	(void) sigemptyset(&myset);
+	(void) sigaddset(&myset, SIGHUP);
+	(void) sigaddset(&myset, SIGINT);
+	(void) sigaddset(&myset, SIGTERM);
+	(void) pthread_sigmask(SIG_BLOCK, &myset, NULL);
+#endif
+
 	/* Start the head of a thread chain for each head_outbound_list */
 	for (out = Outbound_Control.head; out; out = out->next) {
 		OUTLOCK(out);
@@ -303,12 +321,14 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 		OUTUNLOCK(out);
 	}
 
+#if 1
 	(void) sigemptyset(&myset);
 	(void) sigaddset(&myset, SIGHUP);
 	(void) sigaddset(&myset, SIGINT);
 	(void) sigaddset(&myset, SIGTERM);
-	(void) pthread_sigmask(SIG_BLOCK, &myset, NULL);
-	
+	(void) pthread_sigmask(SIG_UNBLOCK, &myset, NULL);
+#endif
+
 	while (!StateInfo.shutdown_in_progress) {
 		if ((rc = sigwait(&myset, &signo)) == 0) {
 			if (signo == SIGHUP) {
@@ -333,6 +353,11 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 			if ((rc = pthread_cancel(out->tid))) {
 				LEVEL_DEBUG("pthread_cancel (%d of %d) failed rc=%d [%s]\n", out->index, Outbound_Control.active, rc, strerror(rc));
 			}
+#if 0
+			if((rc = pthread_kill(out->tid, signo))) {
+			  LEVEL_DEBUG("pthread_kill (%d of %d) failed rc=%d [%s]\n", out->index, Outbound_Control.active, rc, strerror(rc));
+			}
+#endif
 		}
 		OUTUNLOCK(out);
 	}

@@ -126,6 +126,7 @@ int main(int argc, char *argv[])
 		ow_exit(1);
 	}
 
+	//set_exit_signal_handlers(exit_handler);
 	set_signal_handlers(exit_handler);
 
 	/* create our main listener */

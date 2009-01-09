@@ -86,6 +86,8 @@ static void exit_handler(int signo, siginfo_t * info, void *context)
 		if (!IS_MAINTHREAD) {
 			LEVEL_DEBUG("exit_handler: kill mainthread %lu self=%d signo=%d\n", main_threadid, pthread_self(), signo);
 			pthread_kill(main_threadid, signo);
+		} else {
+			LEVEL_DEBUG("exit_handler: ignore signal, mainthread %lu self=%d signo=%d\n", main_threadid, pthread_self(), signo);
 		}
 	}
 #else
@@ -131,9 +133,10 @@ int main(int argc, char **argv)
 		OW_ArgServer(NULL);		// make the default assignment
 	}
 
+
 	//set_exit_signal_handlers(exit_handler);
 	set_signal_handlers(exit_handler);
-
+	
 	/* become a daemon if not told otherwise */
 	if (EnterBackground()) {
 		ow_exit(1);
