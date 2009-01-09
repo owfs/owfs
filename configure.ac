@@ -159,7 +159,7 @@ m4_include(acx_pthread.m4)
 AC_HEADER_DIRENT
 AC_HEADER_STDC
 AC_CHECK_HEADERS([asm/types.h arpa/inet.h sys/ioctl.h sys/mkdev.h sys/socket.h sys/time.h sys/times.h sys/types.h sys/uio.h feature_tests.h fcntl.h netinet/in.h stdlib.h string.h strings.h sys/file.h syslog.h termios.h unistd.h limits.h stdint.h features.h getopt.h resolv.h semaphore.h])
-AC_CHECK_HEADERS([linux/limits.h linux/types.h netdb.h dlfcn.h])
+AC_CHECK_HEADERS([linux/limits.h linux/netlink.h linux/types.h netdb.h dlfcn.h])
 
 # Test if debugging out enabled
 ENABLE_DEBUG="true"
@@ -1378,6 +1378,34 @@ AC_CHECK_TYPE(socklen_t, ,
 		#include <sys/socket.h>
 	#endif
 ])
+
+
+AC_MSG_CHECKING(for AF_NETLINK)
+AC_COMPILE_IFELSE(
+[AC_LANG_PROGRAM(
+[
+	#ifdef HAVE_SYS_TYPES_H
+		#include <sys/types.h>
+	#endif
+	#ifdef HAVE_SYS_SOCKET_H
+		#include <sys/socket.h>
+	#endif
+],
+[int ss_family = AF_NETLINK;])],
+[
+	AC_MSG_RESULT(yes)
+	have_af_netlink="yes"
+	AC_DEFINE(HAVE_AF_NETLINK, 1, [Have AF_NETLINK in socket.h])
+],
+[AC_MSG_RESULT(no)
+have_af_netlink="no"])
+
+if test "${have_af_netlink}" != "yes" ; then
+   if test "${ENABLE_W1}" != "false" ; then
+      AC_WARN_CHECKING([Disable w1 since AF_NETLINK not found])
+      ENABLE_W1="false"
+   fi
+fi
 
 
 AC_MSG_CHECKING(for broken glibc with __ss_family)
