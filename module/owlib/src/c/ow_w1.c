@@ -195,8 +195,8 @@ struct touch_struct {
 
 static void touch( struct netlink_parse * nlp, void * v, const struct parsedname * pn )
 {
-	(void) pn ;
 	struct touch_struct * ts = v ;
+	(void) pn ;
 	if ( nlp->data == NULL || ts->size != nlp->data_size ) {
 		return ;
 	}
