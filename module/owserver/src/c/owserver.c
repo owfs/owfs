@@ -134,8 +134,8 @@ int main(int argc, char **argv)
 	}
 
 
-	//set_exit_signal_handlers(exit_handler);
-	set_signal_handlers(exit_handler);
+	set_exit_signal_handlers(exit_handler);
+	set_signal_handlers(NULL);
 	
 	/* become a daemon if not told otherwise */
 	if (EnterBackground()) {
@@ -148,10 +148,10 @@ int main(int argc, char **argv)
 	if (LibStart()) {
 		ow_exit(1);
 	}
-#if OW_MT
-	my_pthread_mutex_init(&persistence_mutex, Mutex.pmattr);
 
+#if OW_MT
 	main_threadid = pthread_self();
+	my_pthread_mutex_init(&persistence_mutex, Mutex.pmattr);
 	LEVEL_DEBUG("main_threadid = %lu\n", (unsigned long int) main_threadid);
 #endif
 	/* Set up "Antiloop" -- a unique token */

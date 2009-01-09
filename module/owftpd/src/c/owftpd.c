@@ -111,8 +111,16 @@ int main(int argc, char *argv[])
 		ow_exit(1);
 	}
 
+	set_exit_signal_handlers(exit_handler);
+	set_signal_handlers(NULL);
+
 	/* become a daemon if not told otherwise */
 	if (EnterBackground()) {
+		ow_exit(1);
+	}
+
+	/* Set up adapters */
+	if (LibStart()) {
 		ow_exit(1);
 	}
 
@@ -120,14 +128,6 @@ int main(int argc, char *argv[])
 	main_threadid = pthread_self();
 	LEVEL_DEBUG("main_threadid = %lu\n", (unsigned long int) main_threadid);
 #endif
-
-	/* Set up adapters */
-	if (LibStart()) {
-		ow_exit(1);
-	}
-
-	//set_exit_signal_handlers(exit_handler);
-	set_signal_handlers(exit_handler);
 
 	/* create our main listener */
 	if (!ftp_listener_init(&ftp_listener)) {

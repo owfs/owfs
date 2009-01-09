@@ -38,7 +38,7 @@ void set_signal_handlers(void (*handler)
 	(int signo, siginfo_t * info, void *context))
 {
 	struct sigaction sa;
-	int sigs[] = { SIGHUP, SIGINT, 0 };
+	int sigs[] = { SIGHUP, 0 };
 	int i = 0;
 	
 	memset(&sa, 0, sizeof(struct sigaction));
