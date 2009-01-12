@@ -33,10 +33,13 @@ static void exit_handler(int signo, siginfo_t * info, void *context)
 #if OW_MT
 	if (info) {
 		LEVEL_DEBUG
-			("exit_handler: for %d, errno %d, code %d, pid=%ld, self=%lu main=%lu\n",
+			("exit_handler: for signo=%d, errno %d, code %d, pid=%ld, self=%lu main=%lu\n",
 			 signo, info->si_errno, info->si_code, (long int) info->si_pid, pthread_self(), main_threadid);
 	} else {
-		LEVEL_DEBUG("exit_handler: for %d, self=%lu, main=%lu\n", signo, pthread_self(), main_threadid);
+		LEVEL_DEBUG("exit_handler: for signo=%d, self=%lu, main=%lu\n", signo, pthread_self(), main_threadid);
+	}
+	if (StateInfo.shutdown_in_progress) {
+	  LEVEL_DEBUG("exit_handler: shutdown already in progress. signo=%d, self=%lu, main=%lu\n", signo, pthread_self(), main_threadid);
 	}
 	if (!StateInfo.shutdown_in_progress) {
 		StateInfo.shutdown_in_progress = 1;
@@ -50,8 +53,10 @@ static void exit_handler(int signo, siginfo_t * info, void *context)
 			}
 		}
 		if (!IS_MAINTHREAD) {
-			LEVEL_DEBUG("exit_handler: kill mainthread %lu self=%d signo=%d\n", main_threadid, pthread_self(), signo);
+			LEVEL_DEBUG("exit_handler: kill mainthread %lu self=%lu signo=%d\n", main_threadid, pthread_self(), signo);
 			pthread_kill(main_threadid, signo);
+		} else {
+			LEVEL_DEBUG("exit_handler: ignore signal, mainthread %lu self=%lu signo=%d\n", main_threadid, pthread_self(), signo);
 		}
 	}
 #else

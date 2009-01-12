@@ -257,16 +257,6 @@ static void *ServerProcessOut(void *v)
 
 	LEVEL_DEBUG("ServerProcessOut = %lu\n", (unsigned long int) pthread_self());
 
-#if 1
-	{
-		sigset_t new;
-		sigemptyset(&new);
-		sigaddset(&new, SIGINT);
-		sigaddset(&new, SIGTERM);
-		pthread_sigmask(SIG_UNBLOCK, &new, NULL);
-	}
-#endif
-
 	// This thread is terminated with pthread_cancel()+pthread_join(), and should not be detached.
 	//pthread_detach(pthread_self());
 
@@ -301,11 +291,11 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 	}
 
 #if 1
-	(void) sigemptyset(&myset);
-	(void) sigaddset(&myset, SIGHUP);
-	(void) sigaddset(&myset, SIGINT);
-	(void) sigaddset(&myset, SIGTERM);
-	(void) pthread_sigmask(SIG_BLOCK, &myset, NULL);
+	sigemptyset(&myset);
+	sigaddset(&myset, SIGHUP);
+	sigaddset(&myset, SIGINT);
+	// SIGTERM is used to kill all outprocesses which hang in accept()
+	pthread_sigmask(SIG_BLOCK, &myset, NULL);
 #endif
 
 	/* Start the head of a thread chain for each head_outbound_list */
@@ -322,11 +312,10 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 	}
 
 #if 1
-	(void) sigemptyset(&myset);
-	(void) sigaddset(&myset, SIGHUP);
-	(void) sigaddset(&myset, SIGINT);
-	(void) sigaddset(&myset, SIGTERM);
-	(void) pthread_sigmask(SIG_UNBLOCK, &myset, NULL);
+	sigemptyset(&myset);
+	sigaddset(&myset, SIGHUP);
+	sigaddset(&myset, SIGINT);
+	sigaddset(&myset, SIGTERM);
 #endif
 
 	while (!StateInfo.shutdown_in_progress) {
@@ -337,7 +326,7 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 				continue;
 			}
 			LEVEL_DEBUG("ServerProcess: break signo=%d\n", signo);
-			break;
+			StateInfo.shutdown_in_progress = 1;
 		} else {
 			LEVEL_DEBUG("ServerProcess: sigwait error %d\n", rc);
 		}
@@ -350,12 +339,21 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 		OUTLOCK(out);
 		if(out->tid > 0) {
 			LEVEL_DEBUG("Shutting down %d of %d thread %lu\n", out->index, Outbound_Control.active, out->tid);
-			if ((rc = pthread_cancel(out->tid))) {
-				LEVEL_DEBUG("pthread_cancel (%d of %d) failed rc=%d [%s]\n", out->index, Outbound_Control.active, rc, strerror(rc));
-			}
 #if 0
+			if ((rc = pthread_cancel(out->tid))) {
+			  LEVEL_DEBUG("pthread_cancel (%d of %d) failed tid=%d rc=%d [%s]\n", out->index, Outbound_Control.active, out->tid, rc, strerror(rc));
+			} else {
+			  LEVEL_DEBUG("pthread_cancel (%d of %d) tid=%d rc=%d [%s]\n", out->index, Outbound_Control.active, out->tid, rc, strerror(rc));
+			}
+#endif
+#if 1
+			/* accept() is not a cancellation point under Solaris,
+			 * so I send a SIGTERM to abort the systemcall. */
+			signo = SIGTERM;
 			if((rc = pthread_kill(out->tid, signo))) {
-			  LEVEL_DEBUG("pthread_kill (%d of %d) failed rc=%d [%s]\n", out->index, Outbound_Control.active, rc, strerror(rc));
+			  LEVEL_DEBUG("pthread_kill (%d of %d) tid=%d signo=%d failed rc=%d [%s]\n", out->index, Outbound_Control.active, out->tid, signo, rc, strerror(rc));
+			} else {
+			  LEVEL_DEBUG("pthread_kill (%d of %d) tid=%d signo=%d rc=%d [%s]\n", out->index, Outbound_Control.active, out->tid, signo, rc, strerror(rc));
 			}
 #endif
 		}
