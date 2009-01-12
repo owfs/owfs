@@ -160,6 +160,8 @@ int main(int argc, char **argv)
 	/* Set up "Antiloop" -- a unique token */
 	SetupAntiloop();
 	ServerProcess(Handler, ow_exit);
+	LEVEL_DEBUG("ServerProcess done\n");
+	ow_exit(0);
 	return 0;
 }
 

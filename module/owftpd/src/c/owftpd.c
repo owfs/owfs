@@ -134,6 +134,12 @@ int main(int argc, char *argv[])
 	LEVEL_DEBUG("main_threadid = %lu\n", (unsigned long int) main_threadid);
 #endif
 
+	sigemptyset(&myset);
+	sigaddset(&myset, SIGHUP);
+	sigaddset(&myset, SIGINT);
+	// SIGTERM is used to kill all outprocesses which hang in accept()
+	pthread_sigmask(SIG_BLOCK, &myset, NULL);
+
 	/* create our main listener */
 	if (!ftp_listener_init(&ftp_listener)) {
 		LEVEL_CONNECT("Problem initializing FTP listener\n");
@@ -146,12 +152,10 @@ int main(int argc, char *argv[])
 		ow_exit(1);
 	}
 
-
-	(void) sigemptyset(&myset);
-	(void) sigaddset(&myset, SIGHUP);
-	(void) sigaddset(&myset, SIGINT);
-	(void) sigaddset(&myset, SIGTERM);
-	(void) pthread_sigmask(SIG_BLOCK, &myset, NULL);
+	sigemptyset(&myset);
+	sigaddset(&myset, SIGHUP);
+	sigaddset(&myset, SIGINT);
+	sigaddset(&myset, SIGTERM);
 
 	while (!StateInfo.shutdown_in_progress) {
 		if ((err = sigwait(&myset, &signo)) == 0) {

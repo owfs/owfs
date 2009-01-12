@@ -497,7 +497,7 @@ struct connection_out {
 		char *domain;				// for zeroconf
 		char *name;					// zeroconf name
 	} zero ;
-	#if OW_MT
+#if OW_MT
 	pthread_mutex_t accept_mutex;
 	pthread_mutex_t out_mutex;
 	pthread_t tid;

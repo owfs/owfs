@@ -177,12 +177,6 @@ void ServerProcessAcceptUnlock(void *param)
   LEVEL_DEBUG("ServerProcessAcceptUnlock: unlock %lu\n", out->tid);
   ACCEPTUNLOCK(out);
   LEVEL_DEBUG("ServerProcessAcceptUnlock: unlock %lu done\n", out->tid);
-  //#define AVOID_PTHREAD_JOIN
-#ifdef AVOID_PTHREAD_JOIN
-  /* Just a test to avoid calling pthread_join when exit after Ctrl-C.
-   * Busy while-loop will wait until out->tid == 0 */
-  out->tid = 0;
-#endif
 }
 
 static void ServerProcessAccept(void *vp)
@@ -261,11 +255,20 @@ static void *ServerProcessOut(void *v)
 	//pthread_detach(pthread_self());
 
 	if (ServerOutSetup(out)) {
-		LEVEL_CONNECT("Cannot set up server socket on %s, index=%d -- will exit\n", SAFESTRING(out->name), out->index);
-		(out->Exit) (1);
+		LEVEL_CONNECT("Cannot set up server socket on %s, index=%d\n", SAFESTRING(out->name), out->index);
+		STATLOCK;
+		Outbound_Control.active--; // failed to setup... decrease nr
+		STATUNLOCK;
+		OUTUNLOCK(out);
+		pthread_exit(NULL);
+		return NULL;
 	}
 
 	OW_Announce(out);
+
+	LEVEL_DEBUG("Output device %s setup is done. index=%d\n", SAFESTRING(out->name), out->index);
+
+	OUTUNLOCK(out);
 
 	while (!StateInfo.shutdown_in_progress) {
 		ServerProcessAccept(v);
@@ -290,33 +293,42 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 		Exit(1);
 	}
 
-#if 1
 	sigemptyset(&myset);
 	sigaddset(&myset, SIGHUP);
 	sigaddset(&myset, SIGINT);
 	// SIGTERM is used to kill all outprocesses which hang in accept()
 	pthread_sigmask(SIG_BLOCK, &myset, NULL);
-#endif
 
 	/* Start the head of a thread chain for each head_outbound_list */
 	for (out = Outbound_Control.head; out; out = out->next) {
 		OUTLOCK(out);
 		out->HandlerRoutine = HandlerRoutine;
 		out->Exit = Exit;
+		
 		if (pthread_create(&(out->tid), NULL, ServerProcessOut, (void *) (out))) {
 			OUTUNLOCK(out);
 			ERROR_CONNECT("Could not create a thread for %s\n", SAFESTRING(out->name));
-			Exit(1);
+			return;
 		}
-		OUTUNLOCK(out);
 	}
 
-#if 1
+	for (out = Outbound_Control.head; out; out = out->next) {
+		LEVEL_DEBUG("Wait for output device %d to setup.\n", out->index);
+		// Should perhaps wait for a cond-signal, but this works..
+		OUTLOCK(out);
+		LEVEL_DEBUG("Output device %d setup done.\n", out->index);
+		OUTUNLOCK(out);
+	}
+		
+	if (Outbound_Control.active == 0) {
+		LEVEL_CALL("No output devices could be created.\n");
+		return;
+	}
+
 	sigemptyset(&myset);
 	sigaddset(&myset, SIGHUP);
 	sigaddset(&myset, SIGINT);
 	sigaddset(&myset, SIGTERM);
-#endif
 
 	while (!StateInfo.shutdown_in_progress) {
 		if ((rc = sigwait(&myset, &signo)) == 0) {
@@ -336,14 +348,13 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 	LEVEL_DEBUG("ow_net_server.c:ServerProcess() shutdown initiated\n");
 
 	for (out = Outbound_Control.head; out; out = out->next) {
-		OUTLOCK(out);
 		if(out->tid > 0) {
 			LEVEL_DEBUG("Shutting down %d of %d thread %lu\n", out->index, Outbound_Control.active, out->tid);
 #if 0
 			if ((rc = pthread_cancel(out->tid))) {
-			  LEVEL_DEBUG("pthread_cancel (%d of %d) failed tid=%d rc=%d [%s]\n", out->index, Outbound_Control.active, out->tid, rc, strerror(rc));
+			  LEVEL_DEBUG("pthread_cancel (%d of %d) failed tid=%lu rc=%d [%s]\n", out->index, Outbound_Control.active, out->tid, rc, strerror(rc));
 			} else {
-			  LEVEL_DEBUG("pthread_cancel (%d of %d) tid=%d rc=%d [%s]\n", out->index, Outbound_Control.active, out->tid, rc, strerror(rc));
+			  LEVEL_DEBUG("pthread_cancel (%d of %d) tid=%lu rc=%d [%s]\n", out->index, Outbound_Control.active, out->tid, rc, strerror(rc));
 			}
 #endif
 #if 1
@@ -351,34 +362,17 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 			 * so I send a SIGTERM to abort the systemcall. */
 			signo = SIGTERM;
 			if((rc = pthread_kill(out->tid, signo))) {
-			  LEVEL_DEBUG("pthread_kill (%d of %d) tid=%d signo=%d failed rc=%d [%s]\n", out->index, Outbound_Control.active, out->tid, signo, rc, strerror(rc));
+			  LEVEL_DEBUG("pthread_kill (%d of %d) tid=%lu signo=%d failed rc=%d [%s]\n", out->index, Outbound_Control.active, out->tid, signo, rc, strerror(rc));
 			} else {
-			  LEVEL_DEBUG("pthread_kill (%d of %d) tid=%d signo=%d rc=%d [%s]\n", out->index, Outbound_Control.active, out->tid, signo, rc, strerror(rc));
+			  LEVEL_DEBUG("pthread_kill (%d of %d) tid=%lu signo=%d rc=%d [%s]\n", out->index, Outbound_Control.active, out->tid, signo, rc, strerror(rc));
 			}
 #endif
 		}
-		OUTUNLOCK(out);
 	}
 	
 	LEVEL_DEBUG("ow_net_server.c:ServerProcess() all threads cancelled\n");
 
-#ifdef AVOID_PTHREAD_JOIN
-	/* Just a test to avoid calling pthread_join when exit after Ctrl-C.
-	 * Busy while-loop will wait until out->tid == 0 */
 	for (out = Outbound_Control.head; out; out = out->next) {
-		pthread_t t = out->tid;
-		while(1) {
-			if(out->tid == 0) {
-				LEVEL_DEBUG("ow_net_server.c: thread %lu is gone\n", t);
-				break;
-			}
-			LEVEL_DEBUG("ow_net_server.c: sleep and wait for thread %lu to exit\n", t);
-			usleep(100000);
-		}
-	}
-#else
-	for (out = Outbound_Control.head; out; out = out->next) {
-		OUTLOCK(out);
 		if(out->tid > 0) {
 			LEVEL_DEBUG("ow_net_server.c: join %lu\n", out->tid);
 			if((rc = pthread_join(out->tid, NULL))) {
@@ -390,14 +384,12 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 		} else {
 			LEVEL_DEBUG("ow_net_server.c:ServerProcess() thread already removed\n");
 		}
-		OUTUNLOCK(out);
 	}
 
 	LEVEL_DEBUG("ow_net_server.c:ServerProcess() shutdown done\n");
-#endif
 	
 	/* Cleanup that may never be reached */
-	Exit(0);
+	return;
 }
 
 #else							/* OW_MT */

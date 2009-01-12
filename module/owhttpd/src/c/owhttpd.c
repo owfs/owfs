@@ -157,6 +157,8 @@ int main(int argc, char *argv[])
 #endif
 
 	ServerProcess(Acceptor, ow_exit);
+	LEVEL_DEBUG("ServerProcess done\n");
+	ow_exit(0);
 	return 0;
 }
 
