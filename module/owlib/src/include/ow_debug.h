@@ -146,7 +146,6 @@ extern int log_available;
 #define my_pthread_mutex_lock(mutex) \
 { \
 	int mrc = pthread_mutex_lock(mutex);		\
-	printf("my_pthread_mutex_lock: %p\n", mutex); \
 	if(mrc != 0) {												\
 		FATAL_ERROR(mutex_lock_failed, mrc, strerror(mrc)); \
 	} \
@@ -155,7 +154,6 @@ extern int log_available;
 #define my_pthread_mutex_unlock(mutex) \
 { \
 	int mrc = pthread_mutex_unlock(mutex); \
-	printf("my_pthread_mutex_unlock: %p\n", mutex); \
 	if(mrc != 0) { \
 		FATAL_ERROR(mutex_unlock_failed, mrc, strerror(mrc)); \
 	} \
