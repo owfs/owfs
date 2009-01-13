@@ -16,6 +16,7 @@ $Id$
 #include "ow_pid.h"
 
 static void IgnoreSignals(void);
+static void SigHandler(int signo, siginfo_t * info, void *context);
 static void SetupInboundConnections(void);
 static void SetupSideboundConnections(void);
 
@@ -171,6 +172,11 @@ static void SetupInboundConnections(void)
 			break;
 
 		case bus_w1:
+			/* w1 is different: it is a dynamic list of adapters */
+			/* the scanning starts with "W1_Browse" in LibStart and continues in it's own thread */
+			/* No connection_in entries should have been created for w1 yet */
+			ret = 0 ;
+			break ;
 		case bus_bad:
 		default:
 			break;
@@ -199,6 +205,7 @@ static void SetupSideboundConnections(void)
 static void IgnoreSignals(void)
 {
 	struct sigaction sa;
+	int i = 0;
 
 	memset(&sa, 0, sizeof(struct sigaction));
 	sigemptyset(&(sa.sa_mask));
