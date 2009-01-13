@@ -169,14 +169,14 @@ void *ServerProcessHandler(void *arg)
 
 void ServerProcessAcceptUnlock(void *param)
 {
-  struct connection_out *out = (struct connection_out *)param;
-  if(out == NULL) {
-    LEVEL_DEBUG("ServerProcessAcceptUnlock: out==NULL\n");
-    return;
-  }
-  LEVEL_DEBUG("ServerProcessAcceptUnlock: unlock %lu\n", out->tid);
-  ACCEPTUNLOCK(out);
-  LEVEL_DEBUG("ServerProcessAcceptUnlock: unlock %lu done\n", out->tid);
+	struct connection_out *out = (struct connection_out *)param;
+	if(out == NULL) {
+		LEVEL_DEBUG("ServerProcessAcceptUnlock: out==NULL\n");
+		return;
+	}
+	LEVEL_DEBUG("ServerProcessAcceptUnlock: unlock %lu\n", out->tid);
+	ACCEPTUNLOCK(out);
+	LEVEL_DEBUG("ServerProcessAcceptUnlock: unlock %lu done\n", out->tid);
 }
 
 static void ServerProcessAccept(void *vp)
@@ -254,11 +254,14 @@ static void *ServerProcessOut(void *v)
 	// This thread is terminated with pthread_cancel()+pthread_join(), and should not be detached.
 	//pthread_detach(pthread_self());
 
+	OUTLOCK(out);
+
 	if (ServerOutSetup(out)) {
 		LEVEL_CONNECT("Cannot set up server socket on %s, index=%d\n", SAFESTRING(out->name), out->index);
 		STATLOCK;
 		Outbound_Control.active--; // failed to setup... decrease nr
 		STATUNLOCK;
+		my_pthread_cond_signal(&(out->setup_cond));
 		OUTUNLOCK(out);
 		pthread_exit(NULL);
 		return NULL;
@@ -268,6 +271,7 @@ static void *ServerProcessOut(void *v)
 
 	LEVEL_DEBUG("Output device %s setup is done. index=%d\n", SAFESTRING(out->name), out->index);
 
+	my_pthread_cond_signal(&(out->setup_cond));
 	OUTUNLOCK(out);
 
 	while (!StateInfo.shutdown_in_progress) {
@@ -315,11 +319,12 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 	for (out = Outbound_Control.head; out; out = out->next) {
 		LEVEL_DEBUG("Wait for output device %d to setup.\n", out->index);
 		// Should perhaps wait for a cond-signal, but this works..
-		OUTLOCK(out);
+		my_pthread_cond_wait(&(out->setup_cond), &(out->out_mutex));
 		LEVEL_DEBUG("Output device %d setup done.\n", out->index);
 		OUTUNLOCK(out);
 	}
-		
+
+
 	if (Outbound_Control.active == 0) {
 		LEVEL_CALL("No output devices could be created.\n");
 		return;
@@ -351,15 +356,14 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 		if(out->tid > 0) {
 			LEVEL_DEBUG("Shutting down %d of %d thread %lu\n", out->index, Outbound_Control.active, out->tid);
 #if 0
+			/* accept() is not a cancellation point under Solaris,
+			 * so I send a SIGTERM to abort the systemcall. */
 			if ((rc = pthread_cancel(out->tid))) {
 			  LEVEL_DEBUG("pthread_cancel (%d of %d) failed tid=%lu rc=%d [%s]\n", out->index, Outbound_Control.active, out->tid, rc, strerror(rc));
 			} else {
 			  LEVEL_DEBUG("pthread_cancel (%d of %d) tid=%lu rc=%d [%s]\n", out->index, Outbound_Control.active, out->tid, rc, strerror(rc));
 			}
-#endif
-#if 1
-			/* accept() is not a cancellation point under Solaris,
-			 * so I send a SIGTERM to abort the systemcall. */
+#else
 			signo = SIGTERM;
 			if((rc = pthread_kill(out->tid, signo))) {
 			  LEVEL_DEBUG("pthread_kill (%d of %d) tid=%lu signo=%d failed rc=%d [%s]\n", out->index, Outbound_Control.active, out->tid, signo, rc, strerror(rc));

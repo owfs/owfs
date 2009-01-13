@@ -40,15 +40,17 @@ extern const char mutex_init_failed[];
 extern const char mutex_destroy_failed[];
 extern const char mutex_lock_failed[];
 extern const char mutex_unlock_failed[];
-extern const char mutex_attr_init_failed[];
-extern const char mutex_attr_destroy_failed[];
-extern const char mutex_attr_settype_failed[];
+extern const char mutexattr_init_failed[];
+extern const char mutexattr_destroy_failed[];
+extern const char mutexattr_settype_failed[];
 extern const char rwlock_init_failed[];
 extern const char rwlock_read_lock_failed[];
 extern const char rwlock_read_unlock_failed[];
 extern const char cond_timedwait_failed[];
 extern const char cond_signal_failed[];
 extern const char cond_wait_failed[];
+extern const char cond_init_failed[];
+extern const char cond_destroy_failed[];
 #endif
 
 void err_msg(enum e_err_type errnoflag, enum e_err_level level, const char *fmt, ...);
@@ -143,8 +145,9 @@ extern int log_available;
 
 #define my_pthread_mutex_lock(mutex) \
 { \
-	int mrc = pthread_mutex_lock(mutex); \
-	if(mrc != 0) { \
+	int mrc = pthread_mutex_lock(mutex);		\
+	printf("my_pthread_mutex_lock: %p\n", mutex); \
+	if(mrc != 0) {												\
 		FATAL_ERROR(mutex_lock_failed, mrc, strerror(mrc)); \
 	} \
 }
@@ -152,6 +155,7 @@ extern int log_available;
 #define my_pthread_mutex_unlock(mutex) \
 { \
 	int mrc = pthread_mutex_unlock(mutex); \
+	printf("my_pthread_mutex_unlock: %p\n", mutex); \
 	if(mrc != 0) { \
 		FATAL_ERROR(mutex_unlock_failed, mrc, strerror(mrc)); \
 	} \
@@ -161,7 +165,7 @@ extern int log_available;
 { \
 	int mrc = pthread_mutexattr_init(attr);	\
 	if(mrc != 0) { \
-		FATAL_ERROR(mutex_attr_init_failed, mrc, strerror(mrc)); \
+		FATAL_ERROR(mutexattr_init_failed, mrc, strerror(mrc)); \
 	} \
 }
 
@@ -169,7 +173,7 @@ extern int log_available;
 { \
 	int mrc = pthread_mutexattr_destroy(attr);	\
 	if(mrc != 0) { \
-		FATAL_ERROR(mutex_attr_destroy_failed, mrc, strerror(mrc)); \
+		FATAL_ERROR(mutexattr_destroy_failed, mrc, strerror(mrc)); \
 	} \
 }
 
@@ -177,7 +181,47 @@ extern int log_available;
 { \
 	int mrc = pthread_mutexattr_settype(attr, typ);	\
 	if(mrc != 0) { \
-		FATAL_ERROR(mutex_attr_settype_failed, mrc, strerror(mrc)); \
+		FATAL_ERROR(mutexattr_settype_failed, mrc, strerror(mrc)); \
+	} \
+}
+
+#define my_pthread_cond_timedwait(cond, mutex, abstime)	\
+{ \
+	int mrc = pthread_cond_timedwait(cond, mutex, abstime);	\
+	if(mrc != 0) { \
+		FATAL_ERROR(cond_timedwait_failed, mrc, strerror(mrc)); \
+	} \
+}
+
+#define my_pthread_cond_wait(cond, mutex)	\
+{ \
+	int mrc = pthread_cond_wait(cond, mutex);	\
+	if(mrc != 0) { \
+		FATAL_ERROR(cond_wait_failed, mrc, strerror(mrc)); \
+	} \
+}
+
+#define my_pthread_cond_signal(cond)	\
+{ \
+	int mrc = pthread_cond_signal(cond);	\
+	if(mrc != 0) { \
+		FATAL_ERROR(cond_signal_failed, mrc, strerror(mrc)); \
+	} \
+}
+
+#define my_pthread_cond_init(cond, attr)			\
+{ \
+	int mrc = pthread_cond_init(cond, attr);			\
+	if(mrc != 0) { \
+		FATAL_ERROR(cond_init_failed, mrc, strerror(mrc)); \
+	} \
+}
+
+#define my_pthread_cond_destroy(cond)	\
+{ \
+	int mrc = pthread_cond_destroy(cond);	\
+	if(mrc != 0) { \
+		FATAL_ERROR(cond_destroy_failed, mrc, strerror(mrc)); \
 	} \
 }
 

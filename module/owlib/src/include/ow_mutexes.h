@@ -78,12 +78,6 @@ extern struct mutexes {
 
 
 #if OW_MT
-inline int my_pthread_cond_timedwait(pthread_cond_t *cond,
-	pthread_mutex_t *mutex, const struct timespec *abstime);
-inline int my_pthread_cond_wait(pthread_cond_t *cond,
-	pthread_mutex_t *mutex);
-inline int my_pthread_cond_signal(pthread_cond_t *cond);
-
 #define LIB_WLOCK         my_rwlock_write_lock(   &Mutex.lib    ) ;
 #define LIB_WUNLOCK       my_rwlock_write_unlock( &Mutex.lib    ) ;
 #define LIB_RLOCK         my_rwlock_read_lock(    &Mutex.lib    ) ;

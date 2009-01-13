@@ -132,6 +132,7 @@ struct connection_out *NewOut(void)
 #if OW_MT
 		my_pthread_mutex_init(&(now->accept_mutex), Mutex.pmattr);
 		my_pthread_mutex_init(&(now->out_mutex), Mutex.pmattr);
+		my_pthread_cond_init(&(now->setup_cond), NULL);
 #endif							/* OW_MT */
 		// Zero sref's -- done with struct memset
 		//now->sref0 = 0 ;
@@ -323,6 +324,7 @@ void FreeOut(void)
 #if OW_MT
 		my_pthread_mutex_destroy(&(now->accept_mutex));
 		my_pthread_mutex_destroy(&(now->out_mutex));
+		my_pthread_cond_destroy(&(now->setup_cond));
 #endif							/* OW_MT */
 #if OW_ZERO
 		if (libdnssd != NULL) {

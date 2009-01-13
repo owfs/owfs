@@ -33,15 +33,17 @@ const char mutex_init_failed[] = "mutex_init failed rc=%d [%s]";
 const char mutex_destroy_failed[] = "mutex_destroy failed rc=%d [%s]";
 const char mutex_lock_failed[] = "mutex_lock failed rc=%d [%s]";
 const char mutex_unlock_failed[] = "mutex_unlock failed rc=%d [%s]";
-const char mutex_attr_init_failed[] = "mutex_attr_init failed rc=%d [%s]";
-const char mutex_attr_destroy_failed[] = "mutex_attr_destroy failed rc=%d [%s]";
-const char mutex_attr_settype_failed[] = "mutex_attr_settype failed rc=%d [%s]";
+const char mutexattr_init_failed[] = "mutexattr_init failed rc=%d [%s]";
+const char mutexattr_destroy_failed[] = "mutexattr_destroy failed rc=%d [%s]";
+const char mutexattr_settype_failed[] = "mutexattr_settype failed rc=%d [%s]";
 const char rwlock_init_failed[] = "rwlock_init failed rc=%d [%s]";
 const char rwlock_read_lock_failed[] = "rwlock_read_lock failed rc=%d [%s]";
 const char rwlock_read_unlock_failed[] = "rwlock_read_unlock failed rc=%d [%s]";
 const char cond_timedwait_failed[] = "cond_timedwait failed rc=%d [%s]";
 const char cond_signal_failed[] = "cond_signal failed rc=%d [%s]";
 const char cond_wait_failed[] = "cond_wait failed rc=%d [%s]";
+const char cond_init_failed[] = "cond_init failed rc=%d [%s]";
+const char cond_destroy_failed[] = "cond_destroy failed rc=%d [%s]";
 #endif
 
 /* See man page for explanation */

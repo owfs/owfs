@@ -17,41 +17,6 @@ $Id$
 
 #if OW_MT
 
-inline int my_pthread_cond_timedwait(pthread_cond_t *cond,
-	pthread_mutex_t *mutex,
-	const struct timespec *abstime)
-{
-	int rc = pthread_cond_timedwait(cond, mutex, abstime);
-	if(rc != 0) {
-		/* FILE and LINE will not show corrct value until it's a define */
-		FATAL_ERROR(cond_timedwait_failed, rc, strerror(rc));
-	}
-	return rc;
-}
-
-inline int my_pthread_cond_wait(pthread_cond_t *cond,
-	pthread_mutex_t *mutex)
-{
-	int rc = pthread_cond_wait(cond, mutex);
-	if(rc != 0) {
-		/* FILE and LINE will not show corrct value until it's a define */
-		FATAL_ERROR(cond_wait_failed, rc, strerror(rc));
-	}
-	return rc;
-}
-
-inline int my_pthread_cond_signal(pthread_cond_t *cond)
-{
-	int rc = pthread_cond_signal(cond);
-	if(rc != 0) {
-		/* FILE and LINE will not show corrct value until it's a define */
-		FATAL_ERROR(cond_signal_failed, rc, strerror(rc));
-	}
-	return rc;
-}
-
-
-
 void my_rwlock_init(my_rwlock_t * my_rwlock)
 {
 	my_pthread_mutex_init(&(my_rwlock->protect_reader_count), Mutex.pmattr);
