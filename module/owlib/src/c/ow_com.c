@@ -42,7 +42,9 @@ int COM_open(struct connection_in *in)
 		ERROR_DEFAULT("Cannot open port: %s\n", SAFESTRING(in->name));
 		return -ENODEV;
 	}
-
+	//valgrind warn about uninitialized memory in tcsetattr(), so clear all.
+	memset(&newSerialTio, 0, sizeof(struct termios));
+	memset(&(in->oldSerialTio), 0, sizeof(struct termios));
 	if ((tcgetattr(in->file_descriptor, &in->oldSerialTio) < 0)
 		|| (tcgetattr(in->file_descriptor, &newSerialTio) < 0)) {
 		ERROR_CONNECT("Cannot get old port attributes: %s\n", SAFESTRING(in->name));
@@ -101,6 +103,8 @@ void COM_speed(speed_t new_baud, const struct parsedname *pn)
 	struct termios t;
 
 	// read the attribute structure
+	//valgrind warn about uninitialized memory in tcsetattr(), so clear all.
+	memset(&t, 0, sizeof(struct termios));
 	if (tcgetattr(pn->selected_connection->file_descriptor, &t) < 0) {
 		ERROR_CONNECT("Could not get com port attributes: %s\n", SAFESTRING(pn->selected_connection->name));
 		return;

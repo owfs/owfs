@@ -86,6 +86,8 @@ static int DS9097_reset(const struct parsedname *pn)
 	}
 
 	/* 8 data bits */
+	//valgrind warn about uninitialized memory in tcsetattr(), so clear all.
+	memset(&term, 0, sizeof(struct termios));
 	tcgetattr(file_descriptor, &term);
 	term.c_cflag = CS8 | CREAD | HUPCL | CLOCAL;
 	if (cfsetospeed(&term, B9600) < 0 || cfsetispeed(&term, B9600) < 0) {
