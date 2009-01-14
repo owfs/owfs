@@ -204,7 +204,6 @@ static void SetupSideboundConnections(void)
 static void IgnoreSignals(void)
 {
 	struct sigaction sa;
-	int i = 0;
 
 	memset(&sa, 0, sizeof(struct sigaction));
 	sigemptyset(&(sa.sa_mask));
