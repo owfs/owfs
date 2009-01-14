@@ -16,7 +16,6 @@ $Id$
 #include "ow_pid.h"
 
 static void IgnoreSignals(void);
-static void SigHandler(int signo, siginfo_t * info, void *context);
 static void SetupInboundConnections(void);
 static void SetupSideboundConnections(void);
 
