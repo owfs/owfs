@@ -128,8 +128,3 @@ static char * HexConvert( char * input_string )
 
 	return return_string ; //freed in calling function
 }
-
-		
-
-
-	
