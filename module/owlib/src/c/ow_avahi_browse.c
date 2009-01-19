@@ -20,6 +20,10 @@ See the header file: ow.h for full attribution
 
 //#if OW_MT /* this doesn't seem to be used if OW_MT is 0 */
 
+#if OW_CYGWIN
+// not used for cygwin
+#else
+
 #include "ow_avahi.h"
 #include "ow_connection.h"
 #ifdef HAVE_SYS_SOCKET_H
@@ -254,6 +258,8 @@ void * OW_Avahi_Browse(void * v)
 	return NULL;
 }
 //#endif /* OW_MT */
+
+#endif /* OW_CYGWIN */
 
 #else /* OW_ZERO */
 void * OW_Avahi_Browse(void * v) {

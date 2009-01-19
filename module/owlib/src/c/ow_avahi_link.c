@@ -11,13 +11,16 @@ See the header file: ow.h for full attribution
 
 #include <config.h>
 #include "owfs_config.h"
-//#include <dlfcn.h>
-
-#include "ow.h"
-#include "ow_avahi.h"
-#include "ow_dl.h"
 
 #if OW_ZERO
+
+#include "ow.h"
+
+#if !OW_CYGWIN
+#include "ow_avahi.h"
+#endif
+
+#include "ow_dl.h"
 
 DLHANDLE avahi_client = NULL;
 DLHANDLE avahi_common = NULL;
@@ -41,12 +44,8 @@ avahi_simple_poll_quit
 avahi_strerror
 */
 
-#if OW_CYGWIN
-
 #ifdef HAVE_DLFCN_H
 #include <dlfcn.h>
-#endif
-
 #endif
 
 #define DNSfunction_link( lib , name )  name = DL_sym( lib, #name );\

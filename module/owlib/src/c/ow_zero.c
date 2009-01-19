@@ -127,12 +127,14 @@ void OW_Announce(struct connection_out *out)
 		return;
 	} else if ( Globals.zero == zero_avahi ) {
 #if OW_MT
+#if !OW_CYGWIN
 		// avahi only implemented with multithreading
 		pthread_t thread;
 		int err = pthread_create(&thread, NULL, OW_Avahi_Announce, (void *) out);
 		if (err) {
 			LEVEL_CONNECT("Avahi registration thread error %d.\n", err);
 		}
+#endif
 #endif
 	} else if ( Globals.zero == zero_bonjour ) {
 #if OW_MT

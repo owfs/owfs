@@ -47,6 +47,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <config.h>
 #include "owfs_config.h"
 
+#include "ow_debug.h"
+
 #ifdef HAVE_PTHREAD
 #include <pthread.h>
 #endif
@@ -271,7 +273,7 @@ struct hostent *gethostbyname_r(const char *name, struct hostent *result, char *
 		*h_errnop = errno;
 	}
 #ifdef HAVE_PTHREAD
-	mt_pthread_mutex_unlock(&gethostbyname_lock);
+	my_pthread_mutex_unlock(&gethostbyname_lock);
 #endif
 	return res;
 }
