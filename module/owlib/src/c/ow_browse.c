@@ -137,6 +137,7 @@ static void BrowseBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i, DNSServic
 			BSKill(bs) ;
 		}
 	} else { // Remove
+		BSKill(bs) ;
 		ZeroDel( name, type, domain ) ;
 	}
 }
