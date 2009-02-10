@@ -350,7 +350,7 @@ static int DS2482_detect_bus(enum ds2482_address chip_num, struct connection_in 
 	}
 }
 
-/* All the rest of the program sees is the DS9907_detect and the entry in iroutines */
+/* All the rest of the program sees is the DS2482_detect and the entry in iroutines */
 /* Open a DS2482 */
 /* Try to see if there is a DS2482 device on the specified i2c bus */
 static int DS2482_detect_single(int lowindex, int highindex, struct connection_in *in)
@@ -385,8 +385,14 @@ static int DS2482_detect_single(int lowindex, int highindex, struct connection_i
 			in->adapter_name = "DS2482-100";
 			in->connin.i2c.i2c_address = test_address[i];
 			in->connin.i2c.i2c_index = i;
-			in->connin.i2c.configreg = 0x00;	// default configuration setting
-#if OW_MT
+			in->connin.i2c.configreg = 0x00 ;	// default configuration setting desired
+			if ( Globals.i2c_APU ) {
+				in->connin.i2c.configreg |= DS2482_REG_CFG_APU ;
+			}
+			if ( Globals.i2c_PPM ) {
+				in->connin.i2c.configreg |= DS2482_REG_CFG_PPM ;
+			}
+			#if OW_MT
 			my_pthread_mutex_init(&(in->connin.i2c.i2c_mutex), Mutex.pmattr);
 #endif							/* OW_MT */
 			in->busmode = bus_i2c;
@@ -636,6 +642,8 @@ static int DS2482_send_and_get(int file_descriptor, const BYTE wr, BYTE * rd)
 	return 0;
 }
 
+/* It's a DS2482 -- whether 1 channel or 8 channel not yet determined */
+/* All general stored data will be assigned to this "head" channel */
 static int HeadChannel(struct connection_in *in)
 {
 	struct parsedname pn;
@@ -652,6 +660,7 @@ static int HeadChannel(struct connection_in *in)
 	/* Must be a DS2482-800 */
 	in->connin.i2c.channels = 8;
 	in->Adapter = adapter_DS2482_800;
+	
 	return CreateChannels(in);
 }
 
@@ -711,7 +720,6 @@ static int DS2482_channel_select(const struct parsedname *pn)
 	int chan = pn->selected_connection->connin.i2c.index;
 	int file_descriptor = head->file_descriptor;
 	BYTE config = pn->selected_connection->connin.i2c.configreg;
-	int read_back;
 	/**
      * Write and verify codes for the CHANNEL_SELECT command (DS2482-800 only).
      * To set the channel, write the value at the index of the channel.
@@ -728,30 +736,30 @@ static int DS2482_channel_select(const struct parsedname *pn)
 	/* Already properly selected? */
 	/* All `100 (1 channel) will be caught here */
 	if (chan == head->connin.i2c.current) {
-		return 0;
-	}
+		int read_back;
 
-	/* Select command */
-	if (i2c_smbus_write_byte_data(file_descriptor, DS2482_CMD_CHANNEL_SELECT, W_chan[chan]) < 0) {
-		return -EIO;
-	}
+		/* Select command */
+		if (i2c_smbus_write_byte_data(file_descriptor, DS2482_CMD_CHANNEL_SELECT, W_chan[chan]) < 0) {
+			return -EIO;
+		}
 
-	/* Read back and confirm */
-	read_back = i2c_smbus_read_byte(file_descriptor);
-	if (read_back < 0) {
-		return -ENODEV;
-	}
-	if (((BYTE) read_back) != R_chan[chan]) {
-		return -ENODEV;
-	}
+		/* Read back and confirm */
+		read_back = i2c_smbus_read_byte(file_descriptor);
+		if (read_back < 0) {
+			return -ENODEV;
+		}
+		if (((BYTE) read_back) != R_chan[chan]) {
+			return -ENODEV;
+		}
 
-	/* Set the channel in head */
-	head->connin.i2c.current = pn->selected_connection->connin.i2c.index;
+		/* Set the channel in head */
+		head->connin.i2c.current = pn->selected_connection->connin.i2c.index;
+	}
 
 	/* Now check the configuration register */
 	/* This is since configuration is per chip, not just channel */
-	if (config != head->connin.i2c.configchip) {
-		return SetConfiguration(config, pn->selected_connection);
+	if (pn->selected_connection->connin.i2c.configreg != head->connin.i2c.configchip) {
+		return SetConfiguration(pn->selected_connection->connin.i2c.configreg, pn->selected_connection);
 	}
 
 	return 0;

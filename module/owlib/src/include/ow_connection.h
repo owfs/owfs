@@ -240,7 +240,7 @@ struct connin_i2c {
 	int i2c_index ;
 	BYTE configreg;
 	BYTE configchip;
-	/* only one per chip, the bus entries for the other 7 channels point to the firt one */
+	/* only one per chip, the bus entries for the other 7 channels point to the first one */
 #if OW_MT
 	pthread_mutex_t i2c_mutex;	// second level mutex for the entire chip */
 #endif							/* OW_MT */

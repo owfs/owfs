@@ -100,6 +100,8 @@ struct global {
 	enum zero_support zero ;
 	int w1 ;
 	int checksum ;
+	int i2c_APU ;
+	int i2c_PPM ;
 };
 extern struct global Globals;
 

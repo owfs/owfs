@@ -71,6 +71,10 @@ READ_FUNCTION(FS_r_writeonelowtime);
 WRITE_FUNCTION(FS_w_writeonelowtime);
 READ_FUNCTION(FS_r_datasampleoffset);
 WRITE_FUNCTION(FS_w_datasampleoffset);
+READ_FUNCTION(FS_r_APU);
+WRITE_FUNCTION(FS_w_APU);
+READ_FUNCTION(FS_r_PPM);
+WRITE_FUNCTION(FS_w_PPM);
 //#define DEBUG_DS2490
 #ifdef DEBUG_DS2490
 READ_FUNCTION(FS_r_ds2490status);
@@ -106,6 +110,8 @@ struct filetype interface_settings[] = {
 #endif
   {"version", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_version, NO_WRITE_FUNCTION, {v:NULL},},
   {"writeonelowtime", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_r_writeonelowtime, FS_w_writeonelowtime, {v:NULL},},
+  {"ActivePullUp", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_static, FS_r_APU, FS_w_APU, {v:NULL},},
+  {"PulsePresenceMask", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_static, FS_r_PPM, FS_w_PPM, {v:NULL},},
 };
 struct device d_interface_settings = { "settings", "settings", ePN_interface,
 	COUNT_OF_FILETYPES(interface_settings), interface_settings
@@ -192,6 +198,68 @@ static int FS_w_flextime(struct one_wire_query *owq)
     pn->selected_connection->flex = OWQ_Y(owq) ? bus_yes_flex : bus_no_flex ;
     pn->selected_connection->changed_bus_settings = 1;
     return 0;
+}
+
+/* DS2482 APU setting */
+#define DS2482_REG_CFG_APU     0x01
+static int FS_r_APU(struct one_wire_query *owq)
+{
+	struct parsedname *pn = PN(owq);
+	switch ( pn->selected_connection->busmode ) {
+		case bus_i2c:
+			OWQ_Y(owq) = ( (pn->selected_connection->connin.i2c.configreg | DS2482_REG_CFG_APU) != 0x00 ) ;
+			return 0;
+		default:
+			return -ENOTSUP ;
+	}
+}
+
+static int FS_w_APU(struct one_wire_query *owq)
+{
+	struct parsedname *pn = PN(owq);
+	switch ( pn->selected_connection->busmode ) {
+		case bus_i2c:
+			if ( OWQ_Y(owq) ) {
+				pn->selected_connection->connin.i2c.configreg |= DS2482_REG_CFG_APU ;
+			} else {
+				pn->selected_connection->connin.i2c.configreg &= ~DS2482_REG_CFG_APU ;
+			}
+			break ;
+		default:
+			break ;
+	}
+	return 0 ;
+}
+
+/* DS2482 PPM setting */
+#define DS2482_REG_CFG_PPM     0x02
+static int FS_r_PPM(struct one_wire_query *owq)
+{
+	struct parsedname *pn = PN(owq);
+	switch ( pn->selected_connection->busmode ) {
+		case bus_i2c:
+			OWQ_Y(owq) = ( (pn->selected_connection->connin.i2c.configreg | DS2482_REG_CFG_PPM) != 0x00 ) ;
+			return 0;
+		default:
+			return -ENOTSUP ;
+	}
+}
+
+static int FS_w_PPM(struct one_wire_query *owq)
+{
+	struct parsedname *pn = PN(owq);
+	switch ( pn->selected_connection->busmode ) {
+		case bus_i2c:
+			if ( OWQ_Y(owq) ) {
+				pn->selected_connection->connin.i2c.configreg |= DS2482_REG_CFG_PPM ;
+			} else {
+				pn->selected_connection->connin.i2c.configreg &= ~DS2482_REG_CFG_PPM ;
+			}
+			break ;
+		default:
+			break ;
+	}
+	return 0 ;
 }
 
 /* Just some tests for ha5 checksum */

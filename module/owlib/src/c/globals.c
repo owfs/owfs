@@ -88,6 +88,8 @@ struct global Globals = {
 	.zero = zero_unknown ,
 	.w1 = 0 , // w1 kernel support
 	.checksum = 1,
+	.i2c_APU = 1 ,
+	.i2c_PPM = 1 ,
 };
 
 /* Statistics globals are stored in ow_stats.c */

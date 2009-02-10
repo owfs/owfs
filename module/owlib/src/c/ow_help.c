@@ -169,6 +169,8 @@ void ow_help_device(void)
 	"  --i2c=dev       DS2482-x00 adapter (dev is /dev/i2c-0)\n"
 	" --i2c=dev:0     DS2482-x00 adapter address 0 of 0-7\n"
 	" --i2c=ALL:ALL   DS2482-x00 adapter ALL is wildcard\n"
+	" --ActivePullUp         | --no_ActivePullUp          See datasheet on APU\n"
+	" --PresencePulseMasking | --no_PresencePulseMasking  See datasheet on PPM\n"
 	"\n"
 	"USB\n"
 	"  -u              DS9490R or PuceBaboon adapter\n"

@@ -228,6 +228,7 @@ void FreeIn(struct connection_in * now)
 			my_pthread_mutex_destroy(&(now->connin.i2c.i2c_mutex));
 		}
 #endif							/* OW_MT */
+		break ;
 	case bus_w1:
 #if OW_W1
 		DirblobClear( &(now->connin.w1.main) );
@@ -249,6 +250,7 @@ void FreeIn(struct connection_in * now)
 	free(now);
 }
 
+/* Free all connection_in in reverse order (Added to head on creation, head-first deletion) */
 void FreeInAll( void )
 {
 	struct connection_in *next ;
