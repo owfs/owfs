@@ -484,7 +484,7 @@ static int DS2482_readstatus(BYTE * c, int file_descriptor, unsigned long int mi
 			return 1;
 		}
 		if ((ret & DS2482_REG_STS_1WB) == 0x00) {
-			c[0] = (BYTE) ret;
+			c[0] = (BYTE) ret;`
 			LEVEL_DEBUG("DS2482 read status ok\n");
 			return 0;
 		}
@@ -734,7 +734,7 @@ static int DS2482_channel_select(const struct parsedname *pn)
 
 	/* Already properly selected? */
 	/* All `100 (1 channel) will be caught here */
-	if (chan == head->connin.i2c.current) {
+	if (chan != head->connin.i2c.current) {
 		int read_back;
 
 		/* Select command */
@@ -745,10 +745,10 @@ static int DS2482_channel_select(const struct parsedname *pn)
 		/* Read back and confirm */
 		read_back = i2c_smbus_read_byte(file_descriptor);
 		if (read_back < 0) {
-			return -ENODEV;
+			return -ENODEV; // flag for DS2482-100 vs -800 detection
 		}
 		if (((BYTE) read_back) != R_chan[chan]) {
-			return -ENODEV;
+			return -ENODEV; // flag for DS2482-100 vs -800 detection
 		}
 
 		/* Set the channel in head */
