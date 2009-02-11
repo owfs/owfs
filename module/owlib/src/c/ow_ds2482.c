@@ -556,8 +556,7 @@ static int DS2482_next_both(struct device_search *ds, const struct parsedname *p
 	// if the search was successful then
 
 	ds->LastDiscrepancy = last_zero;
-//    printf("Post, lastdiscrep=%d\n",si->LastDiscrepancy) ;
-	ds->LastDevice = (last_zero < 0);
+`	ds->LastDevice = (last_zero < 0);
 	LEVEL_DEBUG("DS2482_next_both SN found: " SNformat "\n", SNvar(ds->sn));
 	return 0;
 }
