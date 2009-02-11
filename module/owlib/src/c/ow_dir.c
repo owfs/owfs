@@ -115,7 +115,7 @@ static int FS_dir_both(void (*dirfunc) (void *, const struct parsedname *), void
 
 	} else if (NotRealDir(pn_raw_directory)) {
 		//printf("NOT_REAL_DIR\n");
-		// structure, statistics, system or setrings dir -- not bus-specific
+		// structure, statistics, system or settings dir -- not bus-specific
 		ret = FS_typedir(dirfunc, v, pn_raw_directory);
 
 	} else if (SpecifiedLocalBus(pn_raw_directory)) {
@@ -139,14 +139,7 @@ static int FS_dir_both(void (*dirfunc) (void *, const struct parsedname *), void
 			}
 		}
 
-	} else if (IsAlarmDir(pn_raw_directory)) {	/* root or branch directory -- alarm state */
-		//printf("ALARM_DIR\n");
-		LEVEL_DEBUG("ALARM directory\n");
-		ret = FS_alarmdir(dirfunc, v, pn_raw_directory);
-		LEVEL_DEBUG("Return from ALARM is %d\n", ret);
-
-	} else {
-		//printf("KNOWN_BUS\n");
+	} else { // standard directory search -- all busses
 		// Not specified bus, so scan through all and print union
 		ret = FS_dir_all_connections(dirfunc, v, pn_raw_directory, flags);
 		if ((Globals.opt != opt_server)
@@ -457,7 +450,8 @@ static int FS_realdir(void (*dirfunc) (void *, const struct parsedname *), void 
 	BUSLOCK(pn_whole_directory);
 
 	/* it appears that plugging in a new device sends a "presence pulse" that screws up BUS_first */
-	if ((ret = BUS_first(&ds, pn_whole_directory))) {
+	ret = BUS_first(&ds, pn_whole_directory) ;
+	if (ret) {
 		BUSUNLOCK(pn_whole_directory);
 		if (ret == -ENODEV) {
 			if (RootNotBranch(pn_whole_directory)) {
