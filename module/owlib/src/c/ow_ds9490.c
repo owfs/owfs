@@ -1077,7 +1077,7 @@ static int DS9490_directory(struct device_search *ds, struct dirblob *db, const 
 		 * getting stuck in loop in FS_realdir() and FS_alarmdir()
 		 * which ends when ret!=0 */
 		LEVEL_DATA("USBdirectory: ReadBufferstatus == 0\n");
-		return -ENOENT;
+		return -ENODEV;
 	} else if ((bytes_back % 8 != 0)
 			   || (bytes_back > (DS2490_DIR_GULP_ELEMENTS + 1) * 8)) {
 		LEVEL_DATA("USBdirectory: ReadBufferstatus %d not valid\n", bytes_back);
