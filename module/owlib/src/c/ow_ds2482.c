@@ -484,7 +484,7 @@ static int DS2482_readstatus(BYTE * c, int file_descriptor, unsigned long int mi
 			return 1;
 		}
 		if ((ret & DS2482_REG_STS_1WB) == 0x00) {
-			c[0] = (BYTE) ret;`
+			c[0] = (BYTE) ret;
 			LEVEL_DEBUG("DS2482 read status ok\n");
 			return 0;
 		}
