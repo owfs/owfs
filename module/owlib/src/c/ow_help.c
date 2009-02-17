@@ -156,6 +156,7 @@ void ow_help_device(void)
 	"  -d dev          DS9097U or DS9097 adapter (or LINK in emulation mode)\n"
 	"  --8bit          Open 8bit (instead of 6) serial-port with DS9097\n"
 	"  --serial_flextime | --serial_regulartime (timing adjustments for DS2480B)\n"
+	"  --straight_polarity | --reverse_polarity (for DS2480B based adapters)\n"
 	"  --LINK=dev      Serial LINK adapter (non-emulation)\n"
 	"  --HA3=dev       Serial HA3 adapter\n"
 	"  --HA4B=dev      Serial HA4B adapter\n"

@@ -63,6 +63,7 @@ struct global Globals = {
 	.altUSB = 0,
 	.usb_flextime = 1,
 	.serial_flextime = 1,
+	.serial_reverse = 0,  // 1 is "reverse" polarity
 
 	.timeout_volatile = 15,
 	.timeout_stable = 300,

@@ -20,38 +20,44 @@ Linux and BSD enforce a security system restricting access to hardware ports. Yo
 specifies a serial port, e.g. 
 .I /dev/ttyS0
 .TP
-\fI-d port\fI \fR|\fR \fI--device=port\fI
+\fI-d port\fI \fR|\fR \fI--device=port\fI \fB(DS2480B)\fB
 DS2480B-based bus master (like the DS9097U or the LINK in emulation mode). If the adapter doesn't respond, a passive type (DS9907E or diode/resistor) circuit will be assumed.
-.br
-.I --serial_flextime | --serial_regulartime
-.br
-Changes details of bus timing (see datasheet).
 .TP
-\fI--link=port\fI
+.I --serial_flextime | --serial_regulartime \fB(DS2480B)\fB
+.br
+Changes details of bus timing (see DS2480B datasheet). Some devices, like the
+.I Swart LCD
+cannot work with
+.I flextime.
+.TP
+\fI--straight_polarity\fI  \fR|\fR \fI--reverse_polarity\fI \fB(DS2480B)\fB
+Reverse polarity of the DS2480B output transistors? Not needed for the DS9097U, but required for some other designs.
+.TP
+\fI--link=port\fI \fB(LINK)\fB
 .B iButtonLink
 .I LINK
 adapter (all versions) in non-emulation mode. Uses an ascii protocol over serial.
 .TP
-\fI--ha7e=port\fI
+\fI--ha7e=port\fI \fB(HA7E)\fB
 .B Embedded Data Systems
 .I HA7E
 adapter ( and
 .I HA7S
 ) in native ascii mode.
 .TP
-\fI--ha5=port | --ha5=port:a | --ha5=port:acg\fI
+\fI--ha5=port | --ha5=port:a | --ha5=port:acg\fI \fB(HA5)\fB
 .B Embedded Data Systems
 .I HA5
 mutidrop adapter in native ascii mode. Up to 26 adapters can share the same port, each with an assigned letter. If no letter specified, the program will scan for the first response (which may be slow).
-.br
-.I --checksum | --no_checksum
+.TP
+.I --checksum | --no_checksum \fB(HA5)\fB
 .br
 Turn on (default) or off the checksum feature of the HA5 communication. 
 .TP
-\fI--passive=port\fR | \fI--ha2=port\fR | \fI--ha3=port\fR | \fI--ha4b=port
+\fI--passive=port\fR | \fI--ha2=port\fR | \fI--ha3=port\fR | \fI--ha4b=port \fB(Passive)\fB
 Passive 1-wire adapters. Powered off the serial port and using passive electrical components (resitors and diodes).
-.br
-.I --8bit | --6bit
+.TP
+.I --8bit | --6bit \fB(Passive)\fB
 .br
 Synthesize the 1-wire waveforme using a 6-bit (default) serial word, or 8-bit word. Not all UART devices support 6 bit operation.
 .TP

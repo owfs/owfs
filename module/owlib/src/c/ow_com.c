@@ -114,8 +114,7 @@ void COM_speed(speed_t new_baud, const struct parsedname *pn)
 		ERROR_CONNECT("Trouble setting port speed: %s\n", SAFESTRING(pn->selected_connection->name));
 	}
 	// change baud on port
-	if (tcsetattr(pn->selected_connection->file_descriptor, TCSAFLUSH, &t)
-		< 0) {
+	if (tcsetattr(pn->selected_connection->file_descriptor, TCSAFLUSH, &t) < 0) {
 		ERROR_CONNECT("Could not set com port attributes: %s\n", SAFESTRING(pn->selected_connection->name));
 		if (new_baud != B9600) { // cannot do infinite recursion
 			COM_speed(B9600, pn);

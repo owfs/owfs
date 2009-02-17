@@ -153,7 +153,10 @@ const struct option owopts_long[] = {
 	{"serial_standard", no_argument, &Globals.serial_flextime, 0},
 	{"serial_stdtime", no_argument, &Globals.serial_flextime, 0},
 	{"serial_std", no_argument, &Globals.serial_flextime, 0},
-
+	{"reverse", no_argument, &Globals.serial_reverse, 1},
+	{"reverse_polarity", no_argument, &Globals.serial_reverse, 1},
+	{"straight_polarity", no_argument, &Globals.serial_reverse, 0},
+	
 	{"timeout_volatile", required_argument, NULL, e_timeout_volatile,},	// timeout -- changing cached values
 	{"timeout_stable", required_argument, NULL, e_timeout_stable,},	// timeout -- unchanging cached values
 	{"timeout_directory", required_argument, NULL, e_timeout_directory,},	// timeout -- direcory cached values

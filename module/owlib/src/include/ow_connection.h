@@ -198,15 +198,12 @@ enum ds2480b_baud {
 	ds2480b_19200,
 	ds2480b_57600,
 	ds2480b_115200,
-	ds2480b_pol_9600,
-	ds2480b_pol_19200,
-	ds2480b_pol_57600,
-	ds2480b_pol_115200,
 } ;
 
 struct connin_serial {
 	enum ds2480b_mode mode ;
 	enum ds2480b_baud baud ;
+	int reverse_polarity ;
 };
 
 struct connin_fake {

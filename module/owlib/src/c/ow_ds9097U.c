@@ -218,6 +218,8 @@ int DS2480_detect(struct connection_in *in)
 
 	in->speed = bus_speed_slow ;
 	in->flex = Globals.serial_flextime ? bus_yes_flex : bus_no_flex ;
+	in->connin.serial.reverse_polarity = Globals.serial_reverse ;
+	in->connin.serial.baud = ds2480b_9600 ;
 
 	ret = DS2480_big_reset(&pn) ;
 	if ( ret ) {
@@ -310,6 +312,11 @@ static int DS2480_big_reset(const struct parsedname *pn)
 		return -EINVAL;
 	}
 	
+	// Set BAUD rate
+	if (DS2480_set_baud(pn)) {
+		return -EINVAL;
+	}
+	
 	// Send a single bit
 	// It seems to help digitemp -- not sure why
 	if (DS2480_sendback_cmd(&single_bit, &single_bit_response, 1, pn)) {
@@ -375,37 +382,17 @@ static int DS2480_set_baud(const struct parsedname *pn)
 		new_baud_rate = B115200 ;
 		break ;
 #endif
-	case ds2480b_pol_9600:
-		value_code = PARMSET_REVERSE_POLARITY | PARMSET_9600 ;
-		new_baud_rate = B9600 ;
-		break ;
-	case ds2480b_pol_19200:
-		value_code = PARMSET_REVERSE_POLARITY | PARMSET_19200 ;
-		new_baud_rate = B19200 ;
-		break ;
-#ifdef B57600
-		/* MacOSX support max 38400 in termios.h ? */
-	case ds2480b_pol_57600:
-		value_code = PARMSET_REVERSE_POLARITY | PARMSET_57600 ;
-		new_baud_rate = B57600 ;
-		break ;
-#endif
-#ifdef B115200
-		/* MacOSX support max 38400 in termios.h ? */
-	case ds2480b_pol_115200:
-		value_code = PARMSET_REVERSE_POLARITY | PARMSET_115200 ;
-		new_baud_rate = B115200 ;
-		break ;
-#endif
 	default:
 		value_code = PARMSET_9600 ;
 		new_baud_rate = B9600 ;
 		pn->selected_connection->connin.serial.baud = ds2480b_9600 ;
 		break ;
 	}
+	if ( pn->selected_connection->connin.serial.reverse_polarity ) {
+		value_code |= PARMSET_REVERSE_POLARITY ;
+	}
 	send_code = CMD_CONFIG | PARMSEL_BAUDRATE | value_code;
 	expected_response = CMD_CONFIG_RESPONSE | PARMSEL_BAUDRATE | value_code;
-
 
 	if (DS2480_sendout_cmd(&send_code, 1, pn)) {
 		// uh oh -- undefined state -- not sure what the bus speed is.
@@ -415,13 +402,12 @@ static int DS2480_set_baud(const struct parsedname *pn)
 	// switch speed to listen to response
 	COM_speed(new_baud_rate,pn) ;
 
-	if (DS2480_read(&actual_response, 1, pn)) {
-		return -EIO;
-	}
-	if (expected_response == actual_response) {
-		return 0;
-	}
-	return -EINVAL;
+	// Have to discard response
+	DS2480_read(&actual_response, 1, pn) ;
+	//printf("Set baud read GOOD %.2X (%.2X->%.2X) %.2X\n",send_code,actual_response,expected_response,value_code);
+	COM_flush(pn) ;
+
+	return 0 ;
 }
 
 static BYTE DS2480b_speed_byte( const struct parsedname * pn )
@@ -515,65 +501,6 @@ static int DS2480_reset_once(const struct parsedname *pn)
 	}
 	return ret;
 }
-
-#if 0
-//--------------------------------------------------------------------------
-// Send 1 bit of communication to the 1-Wire Net and get the
-// result 1 bit read from the 1-Wire Net.  The parameter 'sendbit'
-// least significant bit is used and the least significant bit
-// of the response is the return bit.
-//
-// 'sendbit' - the least significant bit is the bit to send
-//
-// 'getbit' - the least significant bit is the bit received
-/* return 0=good
-   -EIO bad
- */
-static int DS2480_databit(int sendbit, int *getbit, const struct parsedname *pn)
-{
-	BYTE readbuffer[1];
-	// construct the command
-	BYTE sendpacket[1] = {
-		(sendbit != 0) ? BITPOL_ONE : BITPOL_ZERO
-		| CMD_COMM
-		| FUNCTSEL_BIT
-		| DS2480b_speed_byte(pn),
-	} ;
-;
-	int ret;
-
-	// check if correct mode
-	ret = DS2480_into_command_mode( pn ) ;
-	if (ret) {
-		return ret ;
-	}
-
-	// flush the buffers
-	COM_flush(pn);
-
-	// send the packet
-	if ((ret = DS2480_write(sendpacket, 1, pn))
-		|| (ret = DS2480_read(readbuffer, 1, pn))) {
-		STAT_ADD1_BUS(e_bus_errors, pn->selected_connection);
-		return ret;
-	}
-	// interpret the response
-	*getbit = ((readbuffer[0] & 0xE0) == 0x80)
-		&& ((readbuffer[0] & RB_BIT_MASK) == RB_BIT_ONE);
-
-	return 0;
-}
-static int DS2480_into_command_mode( const struct parsedname *pn )
-{
-	if (pn->selected_connection->connin.serial.mode != ds2480b_command_mode ) {
-		BYTE mc = MODE_COMMAND;
-		// change back to command mode
-		pn->selected_connection->connin.serial.mode = ds2480b_command_mode;
-		return DS2480_write(&mc, 1, pn);
-	}
-	return 0 ;
-}
-#endif
 
 /* search = normal and alarm */
 static int DS2480_next_both(struct device_search *ds, const struct parsedname *pn)

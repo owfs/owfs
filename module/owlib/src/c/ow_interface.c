@@ -57,6 +57,8 @@ READ_FUNCTION(FS_r_overdrive);
 WRITE_FUNCTION(FS_w_overdrive);
 READ_FUNCTION(FS_r_flextime);
 WRITE_FUNCTION(FS_w_flextime);
+READ_FUNCTION(FS_r_reverse);
+WRITE_FUNCTION(FS_w_reverse);
 READ_FUNCTION(FS_r_serialspeed);
 WRITE_FUNCTION(FS_w_serialspeed);
 READ_FUNCTION(FS_r_reconnect);
@@ -103,6 +105,7 @@ struct filetype interface_settings[] = {
   {"overdrive", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_static, FS_r_overdrive, FS_w_overdrive, {v:NULL},},
   {"reconnect", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_static, FS_r_reconnect, FS_w_reconnect, {v:NULL},},
   {"flexible_timing", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_static, FS_r_flextime, FS_w_flextime, {v:NULL},},
+  {"reverse_polarity", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_static, FS_r_reverse, FS_w_reverse, {v:NULL},},
   {"serial_speed", PROPERTY_LENGTH_INTEGER, NULL, ft_integer, fc_static, FS_r_serialspeed, FS_w_serialspeed, {v:NULL},},
   {"pulldownslewrate", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_r_pulldownslewrate, FS_w_pulldownslewrate, {v:NULL},},
 #ifdef DEBUG_DS2490
@@ -224,6 +227,33 @@ static int FS_w_APU(struct one_wire_query *owq)
 			} else {
 				pn->selected_connection->connin.i2c.configreg &= ~DS2482_REG_CFG_APU ;
 			}
+			break ;
+		default:
+			break ;
+	}
+	return 0 ;
+}
+
+/* DS2480B reverse_polarity setting */
+static int FS_r_reverse(struct one_wire_query *owq)
+{
+	struct parsedname *pn = PN(owq);
+	switch ( pn->selected_connection->busmode ) {
+		case bus_serial:
+			OWQ_Y(owq) = ( pn->selected_connection->connin.serial.reverse_polarity ) ;
+			return 0;
+		default:
+			return -ENOTSUP ;
+	}
+}
+
+static int FS_w_reverse(struct one_wire_query *owq)
+{
+	struct parsedname *pn = PN(owq);
+	switch ( pn->selected_connection->busmode ) {
+		case bus_serial:
+			pn->selected_connection->connin.serial.reverse_polarity = OWQ_Y(owq) ;
+			pn->selected_connection->changed_bus_settings = 1 ;
 			break ;
 		default:
 			break ;
