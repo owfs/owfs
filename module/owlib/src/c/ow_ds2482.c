@@ -172,7 +172,7 @@ static void DS2482_setroutines(struct connection_in *in)
 
 /* All the rest of the program sees is the DS2482_detect and the entry in iroutines */
 /* Open a DS2482 */
-/* Try to see if there is a DS2482 device on the specified i2c bus */
+/* Top level detect routine */
 int DS2482_detect(struct connection_in *in)
 {
 	enum ds2482_address chip_num ;
@@ -191,7 +191,7 @@ int DS2482_detect(struct connection_in *in)
 	}
 
 	switch ( DS2482_detect_sys( chip_num, in ) ) {
-		case -1:
+		case -ENOTSUP:
 			return DS2482_detect_dir( chip_num, in ) ? -ENODEV : 0 ;
 		case 0:
 			return -ENODEV ;
@@ -200,8 +200,7 @@ int DS2482_detect(struct connection_in *in)
 	}
 }
 
-/* All the rest of the program sees is the DS2482_detect and the entry in iroutines */
-/* Open a DS2482 */
+/* Use sysfs to find i2c adapters */
 /* cycle through /sys/class/i2c-adapter */
 /* returns -1 -- no directory could be opened 
    else found -- number of directories found */
@@ -218,9 +217,10 @@ static int DS2482_detect_sys(enum ds2482_address chip_num, struct connection_in 
 	i2c_list_dir = opendir( "/sys/class/i2c-adapter" ) ;
 	if ( i2c_list_dir == NULL ) {
 		ERROR_CONNECT( "Cannot open /sys/class/i2c-adapter to find available i2c devices" ) ;
-		return -1 ;
+		return -ENOTSUP ; // flag that the sysfs method doesn't work.
 	}
 
+	/* cycle through entries in /sys/class/i2c-adapter */
 	while ( (i2c_bus=readdir(i2c_list_dir)) != NULL ) {
 		char * new_device = malloc( strlen(i2c_bus->d_name) + 7 ) ; // room for /dev/name
 		if ( new_device==NULL ) {
@@ -237,16 +237,16 @@ static int DS2482_detect_sys(enum ds2482_address chip_num, struct connection_in 
 
 		// Now look for the ds2482's
 		if ( DS2482_detect_bus( chip_num, all_in )!=0 ) {
-			continue ;
+			continue ; // none found on this i2c bus
 		}
 
-		// at least one found
+		// at least one found on this i2c bus
 		++found ;
-		if ( any ) {
+		if ( any ) { // found one -- that's enough
 			break ;
 		}
 
-		// ALL? then set up a new connection_in slot
+		// ALL? then set up a new connection_in slot for the next one
 		all_in = NewIn(all_in) ;
 		if ( all_in == NULL ) {
 			break ;
@@ -257,8 +257,7 @@ static int DS2482_detect_sys(enum ds2482_address chip_num, struct connection_in 
 	return found ;
 }
 
-/* All the rest of the program sees is the DS2482_detect and the entry in iroutines */
-/* Open a DS2482 */
+/* non sysfs method -- try by bus name */
 /* cycle through /dev/i2c-n */
 /* returns -1 -- no direcory could be opened 
    else found -- number of directories found */
@@ -282,7 +281,7 @@ static int DS2482_detect_dir(enum ds2482_address chip_num, struct connection_in 
 		}
 
 		if ( access(dev_name, F_OK) < 0 ) {
-			break ;
+			continue ;
 		}
 		new_device = strdup( dev_name ) ;
 		if ( new_device==NULL ) {
@@ -315,6 +314,7 @@ static int DS2482_detect_dir(enum ds2482_address chip_num, struct connection_in 
 }
 
 /* Try to see if there is a DS2482 device on the specified i2c bus */
+/* Includes  a fix from Pascal Baerten */
 static int DS2482_detect_bus(enum ds2482_address chip_num, struct connection_in *in)
 {
 	switch (chip_num) {
@@ -331,6 +331,8 @@ static int DS2482_detect_bus(enum ds2482_address chip_num, struct connection_in 
 						if ( in == all_in ) { //first time
 							return -ENODEV ;
 						}
+						LEVEL_DEBUG("Cleaning excess allocated i2c structure\n");
+						RemoveIn(all_in); //Pascal Baerten :this removes the false DS2482-100 provisioned
 						return 0 ;
 					}
 					start_chip = all_in->connin.i2c.i2c_index + 1 ;
@@ -350,8 +352,6 @@ static int DS2482_detect_bus(enum ds2482_address chip_num, struct connection_in 
 	}
 }
 
-/* All the rest of the program sees is the DS2482_detect and the entry in iroutines */
-/* Open a DS2482 */
 /* Try to see if there is a DS2482 device on the specified i2c bus */
 static int DS2482_detect_single(int lowindex, int highindex, struct connection_in *in)
 {
@@ -394,7 +394,7 @@ static int DS2482_detect_single(int lowindex, int highindex, struct connection_i
 			}
 			#if OW_MT
 			my_pthread_mutex_init(&(in->connin.i2c.i2c_mutex), Mutex.pmattr);
-#endif							/* OW_MT */
+			#endif							/* OW_MT */
 			in->busmode = bus_i2c;
 			in->Adapter = adapter_DS2482_100;
 
@@ -404,7 +404,7 @@ static int DS2482_detect_single(int lowindex, int highindex, struct connection_i
 				|| (c != (DS2482_REG_STS_LL | DS2482_REG_STS_RST))	// make sure status is properly set
 				) {
 				LEVEL_CONNECT("i2c device at %s address %d cannot be reset. Not a DS2482.\n", in->name, test_address[i]);
-				continue;;
+				continue;
 			}
 			LEVEL_CONNECT("i2c device at %s address %d appears to be DS2482-x00\n", in->name, test_address[i]);
 			in->connin.i2c.configchip = 0x00;	// default configuration register after RESET
@@ -414,8 +414,9 @@ static int DS2482_detect_single(int lowindex, int highindex, struct connection_i
 			return HeadChannel(in);
 		}
 	}
-	/* fellthough, no device found */
+	/* fell though, no device found */
 	Test_and_Close( &(in->file_descriptor) ) ;
+	in->busmode = bus_bad;
 	return -ENODEV;
 }
 
