@@ -327,7 +327,7 @@ static int FS_r_serialspeed(struct one_wire_query *owq)
 			OWQ_I(owq) = (pn->selected_connection->speed);
 			break ;
 		default:
-			return -EPERM ;
+			return -ENOTSUP ;
 	}
 	return 0;
 }
@@ -341,7 +341,7 @@ static int FS_w_serialspeed(struct one_wire_query *owq)
 			pn->selected_connection->changed_bus_settings = 1;
 			break ;
 		default:
-			return -EPERM ;
+			break ;
 	}
 	return 0;
 }
