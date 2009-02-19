@@ -210,7 +210,7 @@ static int FS_r_APU(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	switch ( pn->selected_connection->busmode ) {
 		case bus_i2c:
-			OWQ_Y(owq) = ( (pn->selected_connection->connin.i2c.configreg | DS2482_REG_CFG_APU) != 0x00 ) ;
+			OWQ_Y(owq) = ( (pn->selected_connection->connin.i2c.configreg & DS2482_REG_CFG_APU) != 0x00 ) ;
 			return 0;
 		default:
 			return -ENOTSUP ;
@@ -268,7 +268,7 @@ static int FS_r_PPM(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	switch ( pn->selected_connection->busmode ) {
 		case bus_i2c:
-			OWQ_Y(owq) = ( (pn->selected_connection->connin.i2c.configreg | DS2482_REG_CFG_PPM) != 0x00 ) ;
+			OWQ_Y(owq) = ( (pn->selected_connection->connin.i2c.configreg & DS2482_REG_CFG_PPM) != 0x00 ) ;
 			return 0;
 		default:
 			return -ENOTSUP ;
