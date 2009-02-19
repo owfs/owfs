@@ -78,10 +78,6 @@ int HA7_detect(struct connection_in *in)
 
 	in->connin.ha7.locked = 0;
 
-	/* Initialize dir-at-once structures */
-	DirblobInit(&(in->connin.ha7.main));
-	DirblobInit(&(in->connin.ha7.alarm));
-
 	if (in->name == NULL) {
 		return -1;
 	}
@@ -203,7 +199,7 @@ static int HA7_directory(BYTE search, struct dirblob *db, const struct parsednam
 static int HA7_next_both(struct device_search *ds, const struct parsedname *pn)
 {
 	struct dirblob *db = (ds->search == _1W_CONDITIONAL_SEARCH_ROM) ?
-		&(pn->selected_connection->connin.ha7.alarm) : &(pn->selected_connection->connin.ha7.main);
+		&(pn->selected_connection->alarm) : &(pn->selected_connection->main);
 	int ret = 0;
 
 	if (!pn->selected_connection->AnyDevices) {
@@ -514,8 +510,6 @@ static int HA7_select(const struct parsedname *pn)
 
 static void HA7_close(struct connection_in *in)
 {
-	DirblobClear(&(in->connin.ha7.main));
-	DirblobClear(&(in->connin.ha7.alarm));
 	FreeClientAddr(in);
 }
 

@@ -69,10 +69,6 @@ int W1_detect(struct connection_in *in)
 	/* Set up low-level routines */
 	W1_setroutines(in);
 
-	/* Initialize dir-at-once structures */
-	DirblobInit(&(in->connin.w1.main));
-	DirblobInit(&(in->connin.w1.alarm));
-
 	if ( pipe( pipe_fd ) == 0 ) {
 		in->connin.w1.read_file_descriptor = pipe_fd[0] ;
 		in->connin.w1.write_file_descriptor = pipe_fd[1] ;
@@ -145,7 +141,7 @@ static void search_callback( struct netlink_parse * nlp, void * v, const struct 
 static int W1_next_both(struct device_search *ds, const struct parsedname *pn)
 {
 	struct dirblob *db = (ds->search == _1W_CONDITIONAL_SEARCH_ROM) ?
-		&(pn->selected_connection->connin.w1.alarm) : &(pn->selected_connection->connin.w1.main);
+		&(pn->selected_connection->alarm) : &(pn->selected_connection->main);
 	int ret ;
 
 	if (ds->LastDevice) {
@@ -242,8 +238,6 @@ static int W1_sendback_data(const BYTE * data, BYTE * resp, const size_t size, c
 
 static void W1_close(struct connection_in *in)
 {
-	DirblobClear(&(in->connin.w1.main));
-	DirblobClear(&(in->connin.w1.alarm));
 	Test_and_Close( &(in->connin.w1.read_file_descriptor) );
 	Test_and_Close( &(in->connin.w1.write_file_descriptor) );
 }

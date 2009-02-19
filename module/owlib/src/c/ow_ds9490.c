@@ -987,7 +987,7 @@ static int DS9490_sendback_data(const BYTE * data, BYTE * resp, size_t len, cons
 static int DS9490_next_both(struct device_search *ds, const struct parsedname *pn)
 {
 	struct dirblob *db = (ds->search == _1W_CONDITIONAL_SEARCH_ROM) ?
-		&(pn->selected_connection->connin.link.alarm) : &(pn->selected_connection->connin.link.main);
+		&(pn->selected_connection->alarm) : &(pn->selected_connection->main);
 	int ret;
 
 	if (!pn->selected_connection->AnyDevices) {

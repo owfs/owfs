@@ -99,6 +99,10 @@ struct connection_in *NewIn(const struct connection_in *in)
 		now->index = Inbound_Control.next_index++;
 		++Inbound_Control.active ;
 
+		/* Initialize dir-at-once structures */
+		DirblobInit(&(now->main));
+		DirblobInit(&(now->alarm));
+	
 #if OW_MT
 		my_pthread_mutex_init(&(now->bus_mutex), Mutex.pmattr);
 		my_pthread_mutex_init(&(now->dev_mutex), Mutex.pmattr);
@@ -190,8 +194,6 @@ void FreeIn(struct connection_in * now)
 		break;
 	case bus_usb:
 #if OW_USB
-		DirblobClear( &(now->connin.usb.main) ) ;
-		DirblobClear( &(now->connin.usb.alarm) ) ;
 		DS9490_close(now);
 #endif
 		break;
@@ -217,10 +219,8 @@ void FreeIn(struct connection_in * now)
 		BUS_close(now);
 		break;
 	case bus_fake:
-		DirblobClear( &(now->connin.fake.db) );
 		break;
 	case bus_tester:
-		DirblobClear( &(now->connin.tester.db) );
 		break;
 	case bus_i2c:
 #if OW_MT
@@ -231,8 +231,6 @@ void FreeIn(struct connection_in * now)
 		break ;
 	case bus_w1:
 #if OW_W1
-		DirblobClear( &(now->connin.w1.main) );
-		DirblobClear( &(now->connin.w1.alarm) );
 #if OW_MT
 		my_pthread_mutex_destroy(&(Inbound_Control.w1_mutex));
 		my_pthread_mutex_destroy(&(Inbound_Control.w1_read_mutex));
@@ -247,6 +245,8 @@ void FreeIn(struct connection_in * now)
 		//LEVEL_DEBUG("Free name [%s]\n", now->name);
 		free(now->name);
 	}
+	DirblobClear(&(now->main));
+	DirblobClear(&(now->alarm));
 	free(now);
 }
 

@@ -159,38 +159,45 @@ static int FS_r_convert(struct one_wire_query *owq)
 static int FS_r_present(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
-	if (pn->selected_connection->Adapter == adapter_fake) {	// fake adapter -- simple memory look
-		OWQ_Y(owq) = (pn->selected_connection->connin.fake.db.devices > 0);
-	} else {					// real adapter
-		struct parsedname pn_directory;
-		BYTE read_ROM[] = { _1W_READ_ROM, };
-		BYTE resp[8];
-		BYTE match[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, };
-		struct transaction_log t[] = {
-			TRXN_START,
-			TRXN_WRITE1(read_ROM),
-			TRXN_READ(resp, 8),
-			TRXN_END,
-		};
 
-		/* check if DS2400 compatibility is needed */
-		if (pn->selected_filetype->data.i) {
-			read_ROM[0] = 0x0F;
-		}
+	switch (pn->selected_connection->Adapter) {
+		case adapter_fake:
+		case adapter_tester:
+			// fake adapter -- simple memory look
+			OWQ_Y(owq) = (pn->selected_connection->main.devices > 0);
+		default:
+		{
+			struct parsedname pn_directory;
+			BYTE read_ROM[] = { _1W_READ_ROM, };
+			BYTE resp[8];
+			BYTE match[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, };
+			struct transaction_log t[] = {
+				TRXN_START,
+				TRXN_WRITE1(read_ROM),
+				TRXN_READ(resp, 8),
+				TRXN_END,
+			};
 
-		FS_LoadDirectoryOnly(&pn_directory, pn);
-		if (BUS_transaction(t, &pn_directory)) {
-			return -EINVAL;
-		}
-		if (memcmp(resp, match, 8)) {	// some device(s) complained
-			OWQ_Y(owq) = 1;		// YES present
-			if (CRC8(resp, 8)) {
-				return 0;		// crc8 error -- more than one device
+			/* check if DS2400 compatibility is needed */
+			if (pn->selected_filetype->data.i) {
+				read_ROM[0] = 0x0F;
 			}
-			OW_single2cache(resp, &pn_directory);
-		} else {				// no devices
-			OWQ_Y(owq) = 0;
+
+			FS_LoadDirectoryOnly(&pn_directory, pn);
+			if (BUS_transaction(t, &pn_directory)) {
+				return -EINVAL;
+			}
+			if (memcmp(resp, match, 8)) {	// some device(s) complained
+				OWQ_Y(owq) = 1;		// YES present
+				if (CRC8(resp, 8)) {
+					return 0;		// crc8 error -- more than one device
+				}
+				OW_single2cache(resp, &pn_directory);
+			} else {				// no devices
+				OWQ_Y(owq) = 0;
+			}
 		}
+			break ;
 	}
 	return 0;
 }
@@ -200,37 +207,45 @@ static int FS_r_single(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	ASCII ad[30] = { 0x00, };	// long enough -- default "blank"
 	BYTE resp[8];
-	if (pn->selected_connection->Adapter == adapter_fake) {	// fake adapter -- look in memory
-		if (pn->selected_connection->connin.fake.db.devices == 1) {
-			DirblobGet(0, resp, &(pn->selected_connection->connin.fake.db));
-			FS_devicename(ad, sizeof(ad), resp, pn);
-		}
-	} else {					// real adapter
-		struct parsedname pn_directory;
-		BYTE read_ROM[] = { _1W_READ_ROM, };
-		BYTE match[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, };
-		struct transaction_log t[] = {
-			TRXN_START,
-			TRXN_WRITE1(read_ROM),
-			TRXN_READ(resp, 8),
-			TRXN_END,
-		};
 
-		/* check if DS2400 compatibility is needed */
-		if (pn->selected_filetype->data.i) {
-			read_ROM[0] = 0x0F;
-		}
+	switch (pn->selected_connection->Adapter) {
+		case adapter_fake:
+		case adapter_tester:
+			if (pn->selected_connection->main.devices == 1) {
+				DirblobGet(0, resp, &(pn->selected_connection->main));
+				FS_devicename(ad, sizeof(ad), resp, pn);
+			}
+			break ;
+		default:
+		{
+			struct parsedname pn_directory;
+			BYTE read_ROM[] = { _1W_READ_ROM, };
+			BYTE match[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, };
+			struct transaction_log t[] = {
+				TRXN_START,
+				TRXN_WRITE1(read_ROM),
+				TRXN_READ(resp, 8),
+				TRXN_END,
+			};
 
-		FS_LoadDirectoryOnly(&pn_directory, pn);
-		if (BUS_transaction(t, &pn_directory)) {
-			return -EINVAL;
+			/* check if DS2400 compatibility is needed */
+			if (pn->selected_filetype->data.i) {
+				read_ROM[0] = 0x0F;
+			}
+
+			FS_LoadDirectoryOnly(&pn_directory, pn);
+			if (BUS_transaction(t, &pn_directory)) {
+				return -EINVAL;
+			}
+			LEVEL_DEBUG("FS_r_single (simultaneous) dat=" SNformat " crc8c=%02x\n", SNvar(resp), CRC8(resp, 7));
+			if ((memcmp(resp, match, 8) != 0) && (CRC8(resp, 8) == 0)) {	// non-empty, and no CRC error
+				OW_single2cache(resp, &pn_directory);
+				/* Return device id. */
+				FS_devicename(ad, sizeof(ad), resp, pn);
+			}
 		}
-		LEVEL_DEBUG("FS_r_single (simultaneous) dat=" SNformat " crc8c=%02x\n", SNvar(resp), CRC8(resp, 7));
-		if ((memcmp(resp, match, 8) != 0) && (CRC8(resp, 8) == 0)) {	// non-empty, and no CRC error
-			OW_single2cache(resp, &pn_directory);
-			/* Return device id. */
-			FS_devicename(ad, sizeof(ad), resp, pn);
-		}
+			break ;
+		
 	}
 	Fowq_output_offset_and_size_z(ad, owq);
 	return 0;

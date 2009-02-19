@@ -43,7 +43,6 @@ static int LINK_sendback_data(const BYTE * data, BYTE * resp, const size_t len, 
 static int LINK_byte_bounce(const BYTE * out, BYTE * in, const struct parsedname *pn);
 static int LINK_CR(const struct parsedname *pn);
 static void LINK_setroutines(struct connection_in *in);
-static void LINK_close(struct connection_in *in);
 static int LINK_directory(struct device_search *ds, struct dirblob *db, const struct parsedname *pn);
 
 static void LINK_setroutines(struct connection_in *in)
@@ -57,7 +56,7 @@ static void LINK_setroutines(struct connection_in *in)
 //    in->iroutines.sendback_bits = ;
 	in->iroutines.select = NULL;
 	in->iroutines.reconnect = NULL;
-	in->iroutines.close = LINK_close;
+	in->iroutines.close = COM_close;
 	in->iroutines.transaction = NULL;
 	in->iroutines.flags = ADAP_FLAG_2409path;
 	in->bundling_length = LINK_FIFO_SIZE;
@@ -78,10 +77,6 @@ int LINK_detect(struct connection_in *in)
 
 	/* Set up low-level routines */
 	LINK_setroutines(in);
-
-	/* Initialize dir-at-once structures */
-	DirblobInit(&(in->connin.link.main));
-	DirblobInit(&(in->connin.link.alarm));
 
 
 	/* Open the com port */
@@ -171,7 +166,7 @@ static int LINK_next_both(struct device_search *ds, const struct parsedname *pn)
 {
 	int ret = 0;
 	struct dirblob *db = (ds->search == _1W_CONDITIONAL_SEARCH_ROM) ?
-		&(pn->selected_connection->connin.link.alarm) : &(pn->selected_connection->connin.link.main);
+		&(pn->selected_connection->alarm) : &(pn->selected_connection->main);
 
 	if (!pn->selected_connection->AnyDevices) {
 		ds->LastDevice = 1;
@@ -310,20 +305,6 @@ static int LINK_CR(const struct parsedname *pn)
 	}
 	LEVEL_DEBUG("LINK_CR return 0\n");
 	return 0;
-}
-
-/********************************************************/
-/* LINK_close  ** clean local resources before      	*/
-/*                closing the serial port           	*/
-/*							*/
-/********************************************************/
-
-static void LINK_close(struct connection_in *in)
-{
-	DirblobClear(&(in->connin.link.main));
-	DirblobClear(&(in->connin.link.alarm));
-	COM_close(in);
-
 }
 
 /************************************************************************/

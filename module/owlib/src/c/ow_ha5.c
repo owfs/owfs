@@ -68,10 +68,6 @@ int HA5_detect(struct connection_in *in)
 	/* Set up low-level routines */
 	HA5_setroutines(in);
 	
-	/* Initialize dir-at-once structures */
-	DirblobInit(&(in->connin.ha5.main));
-	DirblobInit(&(in->connin.ha5.alarm));
-	
 	// Poison current "Address" for adapter
 	in->connin.ha5.sn[0] = 0 ; // so won't match
 	
@@ -291,7 +287,7 @@ static int HA5_next_both(struct device_search *ds, const struct parsedname *pn)
 	int ret = 0;
 	struct connection_in * in = pn->selected_connection ;
 	struct dirblob *db = (ds->search == _1W_CONDITIONAL_SEARCH_ROM) ?
-		&(in->connin.ha5.alarm) : &(in->connin.ha5.main);
+		&(in->alarm) : &(in->main);
 
 	if (ds->LastDevice) {
 		return -ENODEV;
@@ -607,8 +603,6 @@ static int HA5_select_and_sendback(const BYTE * data, BYTE * resp, const size_t 
 
 static void HA5_close(struct connection_in *in)
 {
-	DirblobClear(&(in->connin.ha5.main));
-	DirblobClear(&(in->connin.ha5.alarm));
 	HA5_powerdown(in) ;
 	if ( in->connin.ha5.head == in ) {
 		my_pthread_mutex_destroy(&(in->connin.ha5.lock));

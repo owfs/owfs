@@ -54,10 +54,6 @@ int HA7E_detect(struct connection_in *in)
 
 	/* Set up low-level routines */
 	HA7E_setroutines(in);
-
-	/* Initialize dir-at-once structures */
-	DirblobInit(&(in->connin.ha7e.main));
-	DirblobInit(&(in->connin.ha7e.alarm));
 	
 	// Poison current "Address" for adapter
 	in->connin.ha7e.sn[0] = 0 ; // so won't match
@@ -110,7 +106,7 @@ static int HA7E_next_both(struct device_search *ds, const struct parsedname *pn)
 {
 	int ret = 0;
 	struct dirblob *db = (ds->search == _1W_CONDITIONAL_SEARCH_ROM) ?
-		&(pn->selected_connection->connin.link.alarm) : &(pn->selected_connection->connin.link.main);
+		&(pn->selected_connection->alarm) : &(pn->selected_connection->main);
 
 	if (ds->LastDevice) {
 		return -ENODEV;
@@ -332,8 +328,6 @@ static int HA7E_sendback_data(const BYTE * data, BYTE * resp, const size_t size,
 
 static void HA7E_close(struct connection_in *in)
 {
-	DirblobClear(&(in->connin.ha7e.main));
-	DirblobClear(&(in->connin.ha7e.alarm));
 	HA7E_powerdown(in) ;
 	COM_close(in);
 

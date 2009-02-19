@@ -135,10 +135,8 @@ static int CheckPresence_low(struct connection_in *in, const struct parsedname *
 			ret = -1;
 		}
 		//printf("CheckPresence_low: ServerPresence(%s) pn->selected_connection->index=%d ret=%d\n", pn->path, pn->selected_connection->index, ret);
-	} else if (get_busmode(in) == bus_fake) {
-		ret = (DirblobSearch(pn2.sn, &(in->connin.fake.db)) < 0) ? -1 : in->index;
-	} else if (get_busmode(in) == bus_tester) {
-		ret = (DirblobSearch(pn2.sn, &(in->connin.tester.db)) < 0) ? -1 : in->index;
+	} else if ( (get_busmode(in) == bus_fake) || (get_busmode(in) == bus_tester) ) {
+		ret = (DirblobSearch(pn2.sn, &(in->main)) < 0) ? -1 : in->index;
 	} else {
 		struct transaction_log t[] = {
 			TRXN_NVERIFY,
@@ -181,13 +179,8 @@ static int CheckPresence_low(struct connection_in *in, const struct parsedname *
 			/* Device was found on this in-device, return it's index */
 			return in->index;
 		}
-	} else if (get_busmode(in) == bus_fake) {
-		int ret = DirblobSearch(pn2.sn, &(in->connin.fake.db));
-		if (ret >= 0) {
-			return ret;
-		}
-	} else if (get_busmode(in) == bus_tester) {
-		int ret = DirblobSearch(pn2.sn, &(in->connin.tester.db));
+	} else if ( (get_busmode(in) == bus_fake) || (get_busmode(in) == bus_tester) ) {
+		int ret = DirblobSearch(pn2.sn, &(in->main));
 		if (ret >= 0) {
 			return ret;
 		}

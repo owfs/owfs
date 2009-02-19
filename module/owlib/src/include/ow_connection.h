@@ -207,7 +207,6 @@ struct connin_serial {
 };
 
 struct connin_fake {
-	struct dirblob db;
 	int bus_number_this_type;
 };
 
@@ -226,8 +225,6 @@ struct connin_usb {
 	 * if it's disconnected and later reconnected again.
 	 */
 	BYTE ds1420_address[8];
-	struct dirblob main;		/* main directory */
-	struct dirblob alarm;		/* alarm directory */
 };
 
 struct connin_i2c {
@@ -261,8 +258,6 @@ struct connin_ha7 {
 	ASCII lock[10];
 	int locked;
 	int found;
-	struct dirblob main;		/* main directory */
-	struct dirblob alarm;		/* alarm directory */
 };
 
 struct connin_etherweather {
@@ -271,20 +266,14 @@ struct connin_etherweather {
 
 struct connin_link {
 	struct connin_tcp tcp;      // mirror connin.server
-	struct dirblob main;        /* main directory */
-	struct dirblob alarm;       /* alarm directory */
 };
 
 struct connin_ha7e {
 	unsigned char sn[8] ;       /* last address */
-	struct dirblob main;        /* main directory */
-	struct dirblob alarm;       /* alarm directory */
 };
 
 struct connin_ha5 {
 	unsigned char sn[8] ;       /* last address */
-	struct dirblob main;        /* main directory */
-	struct dirblob alarm;       /* alarm directory */
 	int checksum ;              /* flag to use checksum byte in communication */
 	char channel ;
 #if OW_MT
@@ -302,8 +291,6 @@ struct connin_w1 {
 	int id ; // equivalent to the number part of w1_bus_master23
 	int read_file_descriptor ;
 	int write_file_descriptor ;
-	struct dirblob main;		/* main directory */
-	struct dirblob alarm;		/* alarm directory */
 #endif /* OW_W1 */
 };
 
@@ -399,6 +386,9 @@ struct connection_in {
 	char *name;
 	int file_descriptor;
 	struct termios oldSerialTio;    /*old serial port settings */
+	// For adapters that maintain dir-at-once (or dirgulp): 
+	struct dirblob main;        /* main directory */
+	struct dirblob alarm;       /* alarm directory */
 #if OW_MT
 	pthread_mutex_t bus_mutex;
 	pthread_mutex_t dev_mutex;

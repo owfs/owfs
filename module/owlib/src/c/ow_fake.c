@@ -69,7 +69,6 @@ int Fake_detect(struct connection_in *in)
 	in->file_descriptor = Inbound_Control.next_fake;
 	Fake_setroutines(in);		// set up close, reconnect, reset, ...
 
-	DirblobInit(&(in->connin.fake.db));
 	in->adapter_name = "Simulated-Random";
 	in->Adapter = adapter_fake;
 	in->connin.fake.bus_number_this_type = Inbound_Control.next_fake;
@@ -102,10 +101,10 @@ int Fake_detect(struct connection_in *in)
 				sn[5] = BYTE_MASK(rand());
 				sn[6] = BYTE_MASK(rand());
 				sn[7] = CRC8compute(sn, 7, 0);
-				DirblobAdd(sn, &(in->connin.fake.db));	// Ignore bad return
+				DirblobAdd(sn, &(in->main));	// Ignore bad return
 			}
 		}
-		in->AnyDevices = (in->connin.fake.db.devices > 0);
+		in->AnyDevices = (in->main.devices > 0);
 		if (oldname) {
 			free(oldname);
 		}
@@ -122,7 +121,6 @@ int Tester_detect(struct connection_in *in)
 	in->file_descriptor = Inbound_Control.next_tester;
 	Tester_setroutines(in);		// set up close, reconnect, reset, ...
 
-	DirblobInit(&(in->connin.tester.db));
 	in->adapter_name = "Simulated-Computed";
 	in->Adapter = adapter_tester;
 	in->connin.tester.bus_number_this_type = Inbound_Control.next_tester;
@@ -146,7 +144,7 @@ int Tester_detect(struct connection_in *in)
 			if ((isxdigit(current_device_start[0])
 				 && isxdigit(current_device_start[1]))
 				|| (current_device_start = namefind(current_device_start))) {
-				unsigned int device_number = in->connin.tester.db.devices;
+				unsigned int device_number = in->main.devices;
 				sn[0] = string2num(current_device_start);	// family code
 				sn[1] = BYTE_MASK(Inbound_Control.next_tester >> 0);	// "bus" number
 				sn[2] = BYTE_MASK(Inbound_Control.next_tester >> 8);	// "bus" number
@@ -155,10 +153,10 @@ int Tester_detect(struct connection_in *in)
 				sn[5] = BYTE_MASK(device_number >> 0);	// "device" number
 				sn[6] = BYTE_MASK(device_number >> 8);	// "device" number
 				sn[7] = CRC8compute(sn, 7, 0);	// CRC
-				DirblobAdd(sn, &(in->connin.tester.db));	// Ignore bad return
+				DirblobAdd(sn, &(in->main));	// Ignore bad return
 			}
 		}
-		in->AnyDevices = (in->connin.tester.db.devices > 0);
+		in->AnyDevices = (in->main.devices > 0);
 		if (oldname) {
 			free(oldname);
 		}
@@ -200,7 +198,7 @@ static int Fake_next_both(struct device_search *ds, const struct parsedname *pn)
 		ds->LastDevice = 1;
 		return -ENODEV;
 	}
-	if (DirblobGet(++ds->index, ds->sn, &(pn->selected_connection->connin.fake.db))) {
+	if (DirblobGet(++ds->index, ds->sn, &(pn->selected_connection->main))) {
 		ds->LastDevice = 1;
 		return -ENODEV;
 	}
