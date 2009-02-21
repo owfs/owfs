@@ -243,6 +243,10 @@ int ServerDir(void (*dirfunc) (void *, const struct parsedname * const), void *v
 	if (pn_whole_directory->selected_connection->connin.tcp.no_dirall) {
 		return ServerDIR(dirfunc, v, pn_whole_directory, flags);
 	}
+	// Did we ask for no DIRALL explicitly?
+	if (Globals.no_dirall) {
+		return ServerDIR(dirfunc, v, pn_whole_directory, flags);
+	}
 	// device directories have lower latency with DIR
 	if (IsRealDir(pn_whole_directory) || IsAlarmDir(pn_whole_directory)) {
 		return ServerDIR(dirfunc, v, pn_whole_directory, flags);

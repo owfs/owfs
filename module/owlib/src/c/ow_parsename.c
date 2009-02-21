@@ -423,7 +423,7 @@ static enum parse_enum Parse_Bus(char *pathnow, enum parse_pass remote_status, s
 		/* too many levels of bus for a non-remote adapter */
 		return parse_error;
 	} else if (SpecifiedRemoteBus(pn)) {	/* already specified a "bus." */
-		/* Let the remote bus do the heavy listing */
+		/* Let the remote bus do the heavy lifting */
 		pn->state |= ePS_busveryremote;
 		return parse_first;
 	}
@@ -440,10 +440,12 @@ static enum parse_enum Parse_Bus(char *pathnow, enum parse_pass remote_status, s
 	 * pn->selected_connection to point at that device at once. */
 	SetSpecifiedBus(bus_number, pn);
 
+	#if 0
 	// return trip, so bus_pathless not needed.
 	if (remote_status == parse_pass_post_remote) {
 		return parse_first;
 	}
+	#endif
 
 	if (SpecifiedLocalBus(pn)) {
 		/* don't return bus-list for local paths. */
