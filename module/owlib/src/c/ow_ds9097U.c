@@ -27,7 +27,8 @@ static int DS2480_sendout_cmd(const BYTE * cmd, const size_t len, const struct p
 static int DS2480_sendback_cmd(const BYTE * cmd, BYTE * resp, const size_t len, const struct parsedname *pn);
 static int DS2480_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 static void DS2480_setroutines(struct connection_in *in);
-static int DS2480_configuration_code(BYTE parameter_code, BYTE value_code, const struct parsedname *pn);
+static int DS2480_configuration_write(BYTE parameter_code, BYTE value_code, const struct parsedname *pn);
+static int DS2480_configuration_read(BYTE parameter_code, BYTE value_code, const struct parsedname *pn);
 static int DS2480_stop_pulse(BYTE * response, const struct parsedname *pn);
 static int DS2480_reset_once(const struct parsedname *pn) ;
 static int DS2480_set_baud(const struct parsedname *pn) ;
@@ -219,7 +220,7 @@ int DS2480_detect(struct connection_in *in)
 	in->speed = bus_speed_slow ;
 	in->flex = Globals.serial_flextime ? bus_yes_flex : bus_no_flex ;
 	in->connin.serial.reverse_polarity = Globals.serial_reverse ;
-	in->connin.serial.baud = ds2480b_9600 ;
+	in->baud = Globals.baud ;
 
 	ret = DS2480_big_reset(&pn) ;
 	if ( ret ) {
@@ -272,16 +273,18 @@ static int DS2480_big_reset(const struct parsedname *pn)
 	pn->selected_connection->connin.serial.mode = ds2480b_command_mode ;
 
 //	// set the baud rate to 9600. (Already set to 9600 in COM_open())
-//	COM_speed(B9600, pn);
-
+//	COM_speed(B9600, in);
+	pn->selected_connection->baud = Globals.baud ;
+	++pn->selected_connection->changed_bus_settings ;
+	
 	// send a break to reset the DS2480
-	COM_break(pn);
+	COM_break(pn->selected_connection);
 
 	// delay to let line settle
 	UT_delay(2);
 
 	// flush the buffers
-	COM_flush(pn);
+	COM_flush(pn->selected_connection);
 
 	// send the timing byte
 	timing = CMD_COMM | FUNCTSEL_RESET | DS2480b_speed_byte(pn) ;
@@ -293,36 +296,33 @@ static int DS2480_big_reset(const struct parsedname *pn)
 	UT_delay(4);
 
 	// flush the buffers
-	COM_flush(pn);
+	COM_flush(pn->selected_connection);
 
 	// default W1LT = 10us (write-1 low time)
-	if (DS2480_configuration_code(PARMSEL_WRITE1LOW, PARMSET_Write10us, pn)) {
+	if (DS2480_configuration_write(PARMSEL_WRITE1LOW, PARMSET_Write10us, pn)) {
 		return -EINVAL;
 	}
 	// default DSO/WORT = 8us (data sample offset / write 0 recovery time )
-	if (DS2480_configuration_code(PARMSEL_SAMPLEOFFSET, PARMSET_SampOff8us, pn)) {
+	if (DS2480_configuration_write(PARMSEL_SAMPLEOFFSET, PARMSET_SampOff8us, pn)) {
 		return -EINVAL;
 	}
 	// Strong pullup duration = infinite
-	if (DS2480_configuration_code(PARMSEL_5VPULSE, PARMSET_infinite, pn)) {
+	if (DS2480_configuration_write(PARMSEL_5VPULSE, PARMSET_infinite, pn)) {
 		return -EINVAL;
 	}
 	// Program pulse duration = 512usec
-	if (DS2480_configuration_code(PARMSEL_12VPULSE, PARMSET_512us, pn)) {
+	if (DS2480_configuration_write(PARMSEL_12VPULSE, PARMSET_512us, pn)) {
 		return -EINVAL;
 	}
 	
-	// Set BAUD rate
-	if (DS2480_set_baud(pn)) {
-		return -EINVAL;
-	}
-	
+#if 0
 	// Send a single bit
 	// It seems to help digitemp -- not sure why
 	if (DS2480_sendback_cmd(&single_bit, &single_bit_response, 1, pn)) {
 		return -EIO;
 	}
-	
+#endif
+
 	/* Apparently need to reset again to get the version number properly */
 	if ((ret = DS2480_reset(pn))<0) {
 		return ret;
@@ -333,12 +333,29 @@ static int DS2480_big_reset(const struct parsedname *pn)
 
 // configuration of DS2480B -- parameter code is already shifted in the defines (by 4 bites)
 // configuration of DS2480B -- value code is already shifted in the defines (by 1 bit)
-static int DS2480_configuration_code(BYTE parameter_code, BYTE value_code, const struct parsedname *pn)
+static int DS2480_configuration_write(BYTE parameter_code, BYTE value_code, const struct parsedname *pn)
 {
 	BYTE send_code = CMD_CONFIG | parameter_code | value_code;
 	BYTE expected_response = CMD_CONFIG_RESPONSE | parameter_code | value_code;
 	BYTE actual_response;
+	
+	if (DS2480_sendback_cmd(&send_code, &actual_response, 1, pn)) {
+		return -EIO;
+	}
+	if (expected_response == actual_response) {
+		return 0;
+	}
+	return -EINVAL;
+}
 
+// configuration of DS2480B -- parameter code is already shifted in the defines (by 4 bites)
+// configuration of DS2480B -- value code is already shifted in the defines (by 1 bit)
+static int DS2480_configuration_read(BYTE parameter_code, BYTE value_code, const struct parsedname *pn)
+{
+	BYTE send_code = CMD_CONFIG | PARMSEL_PARMREAD | (parameter_code>>3);
+	BYTE expected_response = CMD_CONFIG_RESPONSE | PARMSEL_PARMREAD | value_code;
+	BYTE actual_response;
+	
 	if (DS2480_sendback_cmd(&send_code, &actual_response, 1, pn)) {
 		return -EIO;
 	}
@@ -355,58 +372,60 @@ static int DS2480_set_baud(const struct parsedname *pn)
 {
 	BYTE value_code ;
 	BYTE send_code ;
-	BYTE expected_response ;
-	BYTE actual_response;
-	speed_t new_baud_rate ;
 
-	switch ( pn->selected_connection->connin.serial.baud ) {
-	case ds2480b_9600:
+	OW_BaudRestrict( &(pn->selected_connection->baud), B9600, B19200, B57600, B115200, 0 ) ;
+
+	// Find rate parameter
+	switch ( pn->selected_connection->baud ) {
+	case B9600:
 		value_code = PARMSET_9600 ;
-		new_baud_rate = B9600 ;
 		break ;
-	case ds2480b_19200:
+	case B19200:
 		value_code = PARMSET_19200 ;
-		new_baud_rate = B19200 ;
 		break ;
 #ifdef B57600
 		/* MacOSX support max 38400 in termios.h ? */
-	case ds2480b_57600:
+	case B57600:
 		value_code = PARMSET_57600 ;
-		new_baud_rate = B57600 ;
 		break ;
 #endif
 #ifdef B115200
 		/* MacOSX support max 38400 in termios.h ? */
-	case ds2480b_115200:
+	case B115200:
 		value_code = PARMSET_115200 ;
-		new_baud_rate = B115200 ;
 		break ;
 #endif
-	default:
-		value_code = PARMSET_9600 ;
-		new_baud_rate = B9600 ;
-		pn->selected_connection->connin.serial.baud = ds2480b_9600 ;
-		break ;
 	}
+
+	// Add polarity
 	if ( pn->selected_connection->connin.serial.reverse_polarity ) {
 		value_code |= PARMSET_REVERSE_POLARITY ;
 	}
 	send_code = CMD_CONFIG | PARMSEL_BAUDRATE | value_code;
-	expected_response = CMD_CONFIG_RESPONSE | PARMSEL_BAUDRATE | value_code;
 
+	// Send configuration change
+	COM_flush(pn->selected_connection);
+	UT_delay(5);
 	if (DS2480_sendout_cmd(&send_code, 1, pn)) {
 		// uh oh -- undefined state -- not sure what the bus speed is.
 		pn->selected_connection->reconnect_state = reconnect_error ;
 		return -EIO;
 	}
-	// switch speed to listen to response
-	COM_speed(new_baud_rate,pn) ;
 
-	// Have to discard response
-	DS2480_read(&actual_response, 1, pn) ;
-	//printf("Set baud read GOOD %.2X (%.2X->%.2X) %.2X\n",send_code,actual_response,expected_response,value_code);
-	COM_flush(pn) ;
-
+	// Change OS view of rate
+	UT_delay(5);
+	COM_speed(pn->selected_connection->baud,pn->selected_connection) ;
+	UT_delay(5);
+	COM_slurp(pn->selected_connection->file_descriptor);
+	COM_flush(pn->selected_connection);
+	
+	// Check rate
+	if ( DS2480_configuration_read( PARMSEL_BAUDRATE, value_code, pn ) ) {
+		// Not reset -- change back to default
+		LEVEL_CONNECT("Unable to change baud rate for bus master %s\n",SAFESTRING(pn->selected_connection->name)) ;
+		pn->selected_connection->baud = B9600 ;
+		++pn->selected_connection->changed_bus_settings ;
+	}
 	return 0 ;
 }
 
@@ -435,8 +454,8 @@ static int DS2480_reset(const struct parsedname *pn)
 {
 	int ret ;
 
-	if (pn->selected_connection->changed_bus_settings != 0) {
-		pn->selected_connection->changed_bus_settings = 0 ;
+	if (pn->selected_connection->changed_bus_settings > 0) {
+		--pn->selected_connection->changed_bus_settings ;
 		DS2480_set_baud(pn);	// reset paramters
 	}
 
@@ -465,7 +484,7 @@ static int DS2480_reset_once(const struct parsedname *pn)
 
 	//printf("DS2480_reset\n");
 	// flush the buffers
-	COM_flush(pn);
+	COM_flush(pn->selected_connection);
 
 	// send the packet
 	// read back the 1 byte response
@@ -495,7 +514,7 @@ static int DS2480_reset_once(const struct parsedname *pn)
 			// extra delay for alarming DS1994/DS2404 complience
 			UT_delay(5);
 		}
-		COM_flush(pn);
+		COM_flush(pn->selected_connection);
 		break;
 
 	}
@@ -546,7 +565,7 @@ static int DS2480_next_both(struct device_search *ds, const struct parsedname *p
 	// after last discrepancy so leave zeros
 
 	// flush the buffers
-	COM_flush(pn);
+	COM_flush(pn->selected_connection);
 
 	// search ON
 	// change back to command mode
@@ -631,7 +650,7 @@ static int DS2480_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, cons
 	BYTE response[1];
 
 	// flush the buffers
-	COM_flush(pn);
+	COM_flush(pn->selected_connection);
 
 	// send the packet
 	// read back the 8 byte response from sending the 5V pulse
@@ -671,7 +690,7 @@ static int DS2480_ProgramPulse(const struct parsedname *pn)
 	BYTE command_resp[1];
 	BYTE stop_pulse[1] ;
 
-	COM_flush(pn);
+	COM_flush(pn->selected_connection);
 
 	// send the packet
 	// read back the 8 byte response from sending the 12V pilse

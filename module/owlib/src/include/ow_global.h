@@ -103,6 +103,7 @@ struct global {
 	int checksum ;
 	int i2c_APU ;
 	int i2c_PPM ;
+	int baud ;
 };
 extern struct global Globals;
 

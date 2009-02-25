@@ -91,6 +91,7 @@ enum e_long_option { e_error_print = 257, e_error_level,
 	e_timeout_serial, e_timeout_usb, e_timeout_network, e_timeout_server, e_timeout_ftp, e_timeout_ha7, e_timeout_w1,
 	e_timeout_persistent_low, e_timeout_persistent_high, e_clients_persistent_low, e_clients_persistent_high,
 	e_fatal_debug_file,
+	e_baud,
 };
 
 #endif							/* OW_OPT_H */

@@ -156,6 +156,10 @@ const struct option owopts_long[] = {
 	{"reverse", no_argument, &Globals.serial_reverse, 1},
 	{"reverse_polarity", no_argument, &Globals.serial_reverse, 1},
 	{"straight_polarity", no_argument, &Globals.serial_reverse, 0},
+	{"baud_rate", required_argument, NULL, e_baud},
+	{"baud", required_argument, NULL, e_baud},
+	{"Baud", required_argument, NULL, e_baud},
+	{"BAUD", required_argument, NULL, e_baud},
 	
 	{"timeout_volatile", required_argument, NULL, e_timeout_volatile,},	// timeout -- changing cached values
 	{"timeout_stable", required_argument, NULL, e_timeout_stable,},	// timeout -- unchanging cached values
@@ -498,6 +502,7 @@ int owopt_packed(const char *params)
 int owopt(const int option_char, const char *arg)
 {
 	static int config_depth = 0;
+	long long int arg_to_integer ;
 	//printf("Option %c (%d) Argument=%s\n",c,c,SAFESTRING(arg)) ;
 	switch (option_char) {
 	case 'c':
@@ -519,13 +524,10 @@ int owopt(const int option_char, const char *arg)
 	case 'd':
 		return OW_ArgDevice(arg);
 	case 't':
-		{
-			long long int i;
-			if (OW_parsevalue(&i, arg)) {
-				return 1;
-			}
-			Globals.timeout_volatile = (int) i;
+		if (OW_parsevalue(&arg_to_integer, arg)) {
+			return 1;
 		}
+		Globals.timeout_volatile = (int) arg_to_integer;
 		break;
 	case 'r':
 		Globals.readonly = 1;
@@ -603,31 +605,22 @@ int owopt(const int option_char, const char *arg)
 		}
 		break;
 	case e_error_print:
-		{
-			long long int i;
-			if (OW_parsevalue(&i, arg)) {
-				return 1;
-			}
-			Globals.error_print = (int) i;
+		if (OW_parsevalue(&arg_to_integer, arg)) {
+			return 1;
 		}
+		Globals.error_print = (int) arg_to_integer;
 		break;
 	case e_error_level:
-		{
-			long long int i;
-			if (OW_parsevalue(&i, arg)) {
-				return 1;
-			}
-			Globals.error_level = (int) i;
+		if (OW_parsevalue(&arg_to_integer, arg)) {
+			return 1;
 		}
+		Globals.error_level = (int) arg_to_integer;
 		break;
 	case e_cache_size:
-		{
-			long long int i;
-			if (OW_parsevalue(&i, arg)) {
-				return 1;
-			}
-			Globals.cache_size = (size_t) i;
+		if (OW_parsevalue(&arg_to_integer, arg)) {
+			return 1;
 		}
+		Globals.cache_size = (size_t) arg_to_integer;
 		break;
 	case e_fuse_opt:			/* fuse_opt, handled in owfs.c */
 		break;
@@ -641,13 +634,10 @@ int owopt(const int option_char, const char *arg)
 			return 0;
 		}
 	case e_max_clients:
-		{
-			long long int i;
-			if (OW_parsevalue(&i, arg)) {
-				return 1;
-			}
-			Globals.max_clients = (int) i;
+		if (OW_parsevalue(&arg_to_integer, arg)) {
+			return 1;
 		}
+		Globals.max_clients = (int) arg_to_integer;
 		break;
 	case e_i2c:
 		return OW_ArgI2C(arg);
@@ -692,15 +682,18 @@ int owopt(const int option_char, const char *arg)
 	case e_timeout_persistent_high:
 	case e_clients_persistent_low:
 	case e_clients_persistent_high:
-		{
-			long long int i;
-			if (OW_parsevalue(&i, arg)) {
-				return 1;
-			}
-			// Using the character as a numeric value -- convenient but risky
-			(&Globals.timeout_volatile)[option_char - e_timeout_volatile] = (int) i;
+		if (OW_parsevalue(&arg_to_integer, arg)) {
+			return 1;
 		}
+		// Using the character as a numeric value -- convenient but risky
+		(&Globals.timeout_volatile)[option_char - e_timeout_volatile] = (int) arg_to_integer;
 		break;
+	case e_baud:
+		if (OW_parsevalue(&arg_to_integer, arg)) {
+			return 1;
+		}
+		Globals.baud = OW_MakeBaud( arg_to_integer ) ;
+		break ;
 	case 0:
 		break;
 	default:

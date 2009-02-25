@@ -80,7 +80,7 @@ int HA5_detect(struct connection_in *in)
 	}
 	
 	/* Set com port speed*/
-	COM_speed(B115200,&pn) ;
+	COM_speed(B115200,in) ;
 	
 	in->connin.ha5.checksum = Globals.checksum ;
 	in->Adapter = adapter_HA5 ;
@@ -293,7 +293,7 @@ static int HA5_next_both(struct device_search *ds, const struct parsedname *pn)
 		return -ENODEV;
 	}
 
-	COM_flush(pn);
+	COM_flush(pn->selected_connection);
 
 	if (ds->index == -1) {
 
@@ -426,9 +426,9 @@ static int HA5_directory(struct device_search *ds, struct dirblob *db, const str
 
 static int HA5_resync( const struct parsedname * pn )
 {
-	COM_flush(pn);
+	COM_flush(pn->selected_connection);
 	HA5_reset(pn);
-	COM_flush(pn);
+	COM_flush(pn->selected_connection);
 
 	// Poison current "Address" for adapter
 	pn->selected_connection->connin.ha5.sn[0] = 0 ; // so won't match

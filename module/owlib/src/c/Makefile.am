@@ -5,6 +5,7 @@ OWLIB_SOURCE = ow_dl.c           \
 	       ow_avahi_announce.c\
                ow_avahi_browse.c \
 	       ow_avahi_link.c   \
+               ow_baud.c         \
                ow_browse.c       \
                ow_browse_resolve.c\
                compat.c          \

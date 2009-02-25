@@ -294,7 +294,7 @@ int DS9490_detect(struct connection_in *in)
 	FS_ParsedName(NULL, &pn);	// minimal parsename -- no destroy needed
 	pn.selected_connection = in;
 
-	in->changed_bus_settings = 1;	// Trigger needing new configuration
+	++in->changed_bus_settings ;	// Trigger needing new configuration
 	in->speed = bus_speed_slow;	// not overdrive at start
 	in->flex = Globals.usb_flextime ? bus_yes_flex : bus_no_flex ;
 	// store timeout value -- sec -> msec
@@ -859,9 +859,9 @@ static int DS9490_reset(const struct parsedname *pn)
 	}
 
 	// Do we need to change settings?
-	if (!pn->selected_connection->changed_bus_settings) {
+	if (pn->selected_connection->changed_bus_settings > 0) {
 		// Prevent recursive loops on reset
-		pn->selected_connection->changed_bus_settings = 0;
+		--pn->selected_connection->changed_bus_settings;
 		DS9490_SetSpeed(pn);	// reset paramters
 	}
 

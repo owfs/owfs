@@ -193,16 +193,8 @@ enum bus_flex { bus_no_flex, bus_yes_flex };
 
 enum ds2480b_mode { ds2480b_data_mode, ds2480b_command_mode, } ;
 
-enum ds2480b_baud {
-	ds2480b_9600,
-	ds2480b_19200,
-	ds2480b_57600,
-	ds2480b_115200,
-} ;
-
 struct connin_serial {
 	enum ds2480b_mode mode ;
-	enum ds2480b_baud baud ;
 	int reverse_polarity ;
 };
 
@@ -385,6 +377,7 @@ struct connection_in {
 	int index;
 	char *name;
 	int file_descriptor;
+	speed_t baud; // baud rate in the form of B9600
 	struct termios oldSerialTio;    /*old serial port settings */
 	// For adapters that maintain dir-at-once (or dirgulp): 
 	struct dirblob main;        /* main directory */
@@ -412,7 +405,6 @@ struct connection_in {
 	int AnyDevices;
 	int ExtraReset;				// DS1994/DS2404 might need an extra reset
 	enum bus_speed speed;
-	speed_t baudrate ;
 	enum bus_flex flex ;
 	int changed_bus_settings;
 	int ds2404_compliance;
@@ -546,11 +538,11 @@ int BusIsServer(struct connection_in *in);
 #define ONEWIREBUSSPEED_OVERDRIVE      0x02
 
 /* Serial port */
-void COM_speed(speed_t new_baud, const struct parsedname *pn);
+void COM_speed(speed_t new_baud, struct connection_in *in);
 int COM_open(struct connection_in *in);
-void COM_flush(const struct parsedname *pn);
+void COM_flush(struct connection_in *in);
 void COM_close(struct connection_in *in);
-void COM_break(const struct parsedname *pn);
+void COM_break(struct connection_in *in);
 int COM_write( const BYTE * data, size_t length, const struct parsedname * pn ) ;
 int COM_read( BYTE * data, size_t length, const struct parsedname * pn ) ;
 void COM_slurp( int file_descriptor ) ;

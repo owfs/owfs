@@ -64,7 +64,7 @@ int HA7E_detect(struct connection_in *in)
 	}
 
 	// set the baud rate to 9600. (Already set to 9600 in COM_open())
-	COM_speed(B9600, &pn);
+	COM_speed(B9600, in);
 	COM_slurp(in->file_descriptor) ;
 
 	if (HA7E_reset(&pn) == BUS_RESET_OK ) {
@@ -86,7 +86,7 @@ static int HA7E_reset(const struct parsedname *pn)
 {
 	BYTE resp[1];
 	
-	COM_flush(pn);
+	COM_flush(pn->selected_connection);
 	if (COM_write((BYTE*)"R", 1, pn)) {
 		LEVEL_DEBUG("Error sending HA7E reset\n");
 		return -EIO;
@@ -112,7 +112,7 @@ static int HA7E_next_both(struct device_search *ds, const struct parsedname *pn)
 		return -ENODEV;
 	}
 
-	COM_flush(pn);
+	COM_flush(pn->selected_connection);
 
 	if (ds->index == -1) {
 		if (HA7E_directory(ds, db, pn)) {
@@ -226,9 +226,9 @@ static int HA7E_directory(struct device_search *ds, struct dirblob *db, const st
 
 static int HA7E_resync( const struct parsedname * pn )
 {
-	COM_flush(pn);
+	COM_flush(pn->selected_connection);
 	HA7E_reset(pn);
-	COM_flush(pn);
+	COM_flush(pn->selected_connection);
 
 	// Poison current "Address" for adapter
 	pn->selected_connection->connin.ha7e.sn[0] = 0 ; // so won't match

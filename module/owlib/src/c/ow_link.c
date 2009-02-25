@@ -85,11 +85,11 @@ int LINK_detect(struct connection_in *in)
 	}
 
 	// set the baud rate to 9600. (Already set to 9600 in COM_open())
-	COM_speed(B9600, &pn);
+	COM_speed(B9600, in);
 
 	COM_slurp( in->file_descriptor ) ;
 	
-	//COM_flush(&pn);
+	//COM_flush(in);
 	if (LINK_reset(&pn) == BUS_RESET_OK && LINK_write(LINK_string(" "), 1, &pn) == 0) {
 
 		BYTE version_read_in[36] = "(none)";
@@ -102,7 +102,7 @@ int LINK_detect(struct connection_in *in)
 		LINK_read(version_read_in, 36, &pn);	// ignore return value -- will time out, probably
 		Debug_Bytes("Read version from link", version_read_in, 36);
 
-		COM_flush(&pn);
+		COM_flush(in);
 
 		/* Now find the dot for the version parsing */
 		if (version_pointer) {
@@ -126,7 +126,7 @@ static int LINK_reset(const struct parsedname *pn)
 	BYTE resp[5];
 	int ret;
 
-	COM_flush(pn);
+	COM_flush(pn->selected_connection);
 	//if (LINK_write(LINK_string("\rr"), 2, pn) || LINK_read(resp, 4, pn, 1)) {
 	//Response is 3 bytes:  1 byte for code + \r\n
 	if (LINK_write(LINK_string("r"), 1, pn) || LINK_read(resp, 3, pn)) {
@@ -175,7 +175,7 @@ static int LINK_next_both(struct device_search *ds, const struct parsedname *pn)
 		return -ENODEV;
 	}
 
-	COM_flush(pn);
+	COM_flush(pn->selected_connection);
 
 	if (ds->index == -1) {
 		if (LINK_directory(ds, db, pn)) {

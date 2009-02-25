@@ -171,6 +171,10 @@ int OW_ArgDevice(const char *arg);
 int OW_ArgGeneric(const char *arg);
 int OW_ArgSide(const char *arg);
 
+speed_t OW_MakeBaud( int raw_baud ) ;
+int OW_BaudRate( speed_t B_baud ) ;
+void OW_BaudRestrict( speed_t * B_baud, ... ) ;
+
 void ow_help(const char *arg);
 
 void update_max_delay(const struct parsedname *pn);

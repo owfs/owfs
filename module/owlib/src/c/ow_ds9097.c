@@ -170,7 +170,7 @@ static int DS9097_reset(const struct parsedname *pn)
 		return -EFAULT;
 	}
 	/* Flush the input and output buffers */
-	COM_flush(pn);
+	COM_flush(pn->selected_connection);
 	return ret;
 }
 

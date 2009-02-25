@@ -77,6 +77,8 @@ READ_FUNCTION(FS_r_APU);
 WRITE_FUNCTION(FS_w_APU);
 READ_FUNCTION(FS_r_PPM);
 WRITE_FUNCTION(FS_w_PPM);
+READ_FUNCTION(FS_r_baud);
+WRITE_FUNCTION(FS_w_baud);
 //#define DEBUG_DS2490
 #ifdef DEBUG_DS2490
 READ_FUNCTION(FS_r_ds2490status);
@@ -99,9 +101,10 @@ struct filetype interface_settings[] = {
 	// variable length
   {"address", 512, NULL, ft_vascii, fc_static, FS_port, NO_WRITE_FUNCTION, {v:NULL},},
 	// variable length
+  {"baudrate", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_r_baud, FS_w_baud, {v:NULL},},
+  {"checksum", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_static, FS_r_checksum, FS_w_checksum, {v:NULL},},
   {"datasampleoffset", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_r_datasampleoffset, FS_w_datasampleoffset, {v:NULL},},
   {"ds2404_compliance", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_static, FS_r_ds2404_compliance, FS_w_ds2404_compliance, {v:NULL},},
-  {"checksum", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_static, FS_r_checksum, FS_w_checksum, {v:NULL},},
   {"overdrive", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_static, FS_r_overdrive, FS_w_overdrive, {v:NULL},},
   {"reconnect", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_static, FS_r_reconnect, FS_w_reconnect, {v:NULL},},
   {"flexible_timing", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_static, FS_r_flextime, FS_w_flextime, {v:NULL},},
@@ -199,7 +202,7 @@ static int FS_w_flextime(struct one_wire_query *owq)
 {
     struct parsedname *pn = PN(owq);
     pn->selected_connection->flex = OWQ_Y(owq) ? bus_yes_flex : bus_no_flex ;
-    pn->selected_connection->changed_bus_settings = 1;
+    ++pn->selected_connection->changed_bus_settings ;
     return 0;
 }
 
@@ -253,7 +256,34 @@ static int FS_w_reverse(struct one_wire_query *owq)
 	switch ( pn->selected_connection->busmode ) {
 		case bus_serial:
 			pn->selected_connection->connin.serial.reverse_polarity = OWQ_Y(owq) ;
-			pn->selected_connection->changed_bus_settings = 1 ;
+			++pn->selected_connection->changed_bus_settings ;
+			break ;
+		default:
+			break ;
+	}
+	return 0 ;
+}
+
+/* Serial baud rate */
+static int FS_r_baud(struct one_wire_query *owq)
+{
+	struct parsedname *pn = PN(owq);
+	switch ( pn->selected_connection->busmode ) {
+		case bus_serial:
+			OWQ_U(owq) = OW_BaudRate( pn->selected_connection->baud ) ;
+			return 0;
+		default:
+			return -ENOTSUP ;
+	}
+}
+
+static int FS_w_baud(struct one_wire_query *owq)
+{
+	struct parsedname *pn = PN(owq);
+	switch ( pn->selected_connection->busmode ) {
+		case bus_serial:
+			pn->selected_connection->baud = OW_MakeBaud( (speed_t) OWQ_U(owq) ) ;
+			++pn->selected_connection->changed_bus_settings ;
 			break ;
 		default:
 			break ;
@@ -338,7 +368,7 @@ static int FS_w_serialspeed(struct one_wire_query *owq)
 	switch (pn->selected_connection->busmode) {
 		case bus_serial:
 			pn->selected_connection->speed = OWQ_I(owq) ;
-			pn->selected_connection->changed_bus_settings = 1;
+			++pn->selected_connection->changed_bus_settings;
 			break ;
 		default:
 			break ;
@@ -358,7 +388,7 @@ static int FS_w_overdrive(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	pn->selected_connection->speed = OWQ_Y(owq) ? bus_speed_overdrive : bus_speed_slow;
-	pn->selected_connection->changed_bus_settings = 1;
+	++pn->selected_connection->changed_bus_settings;
 	return 0;
 }
 
@@ -443,7 +473,7 @@ static int FS_w_pulldownslewrate(struct one_wire_query *owq)
 	}
 
 	pn->selected_connection->connin.usb.pulldownslewrate = OWQ_U(owq);
-	pn->selected_connection->changed_bus_settings = 1;	// force a reset
+	++pn->selected_connection->changed_bus_settings;	// force a reset
 
 	LEVEL_DEBUG("Set slewrate to %d\n", pn->selected_connection->connin.usb.pulldownslewrate);
 
@@ -478,7 +508,7 @@ static int FS_w_writeonelowtime(struct one_wire_query *owq)
 	}
 
 	pn->selected_connection->connin.usb.writeonelowtime = OWQ_U(owq) - 8;
-	pn->selected_connection->changed_bus_settings = 0;	// force a reset
+	++pn->selected_connection->changed_bus_settings;	// force a reset
 
 	return 0;
 }
@@ -511,7 +541,7 @@ static int FS_w_datasampleoffset(struct one_wire_query *owq)
 	}
 
 	pn->selected_connection->connin.usb.datasampleoffset = OWQ_U(owq) - 3;
-	pn->selected_connection->changed_bus_settings = 0;	// force a reset
+	++pn->selected_connection->changed_bus_settings;	// force a reset
 
 	return 0;
 }

@@ -47,7 +47,7 @@ static enum parse_enum Parse_NonReal(char *pathnow, struct parsedname *pn);
 static enum parse_enum Parse_RealDevice(char *filename, enum parse_pass remote_status, struct parsedname *pn);
 static enum parse_enum Parse_NonRealDevice(char *filename, struct parsedname *pn);
 static enum parse_enum Parse_Property(char *filename, struct parsedname *pn);
-static enum parse_enum Parse_Bus(char *pathnow, enum parse_pass remote_status, struct parsedname *pn);
+static enum parse_enum Parse_Bus(char *pathnow, struct parsedname *pn);
 static int FS_ParsedName_anywhere(const char *path, enum parse_pass remote_status, struct parsedname *pn);
 static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path, struct parsedname *pn);
 
@@ -298,7 +298,7 @@ static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path,
 static enum parse_enum Parse_Unspecified(char *pathnow, enum parse_pass remote_status, struct parsedname *pn)
 {
 	if (strncasecmp(pathnow, "bus.", 4) == 0) {
-		return Parse_Bus(pathnow, remote_status, pn);
+		return Parse_Bus(pathnow, pn);
 
 	} else if (strcasecmp(pathnow, "settings") == 0) {
 		if (SpecifiedLocalBus(pn)) {
@@ -402,7 +402,7 @@ static enum parse_enum Parse_NonReal(char *pathnow, struct parsedname *pn)
 }
 
 /* We've reached a /bus.n entry */
-static enum parse_enum Parse_Bus(char *pathnow, enum parse_pass remote_status, struct parsedname *pn)
+static enum parse_enum Parse_Bus(char *pathnow, struct parsedname *pn)
 {
 	char *found;
 	int bus_number;
@@ -439,13 +439,6 @@ static enum parse_enum Parse_Bus(char *pathnow, enum parse_pass remote_status, s
 	/* Since we are going to use a specific in-device now, set
 	 * pn->selected_connection to point at that device at once. */
 	SetSpecifiedBus(bus_number, pn);
-
-	#if 0
-	// return trip, so bus_pathless not needed.
-	if (remote_status == parse_pass_post_remote) {
-		return parse_first;
-	}
-	#endif
 
 	if (SpecifiedLocalBus(pn)) {
 		/* don't return bus-list for local paths. */

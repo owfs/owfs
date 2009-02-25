@@ -91,6 +91,7 @@ struct global Globals = {
 	.checksum = 1,
 	.i2c_APU = 1 ,
 	.i2c_PPM = 1 ,
+	.baud = B9600 ,
 };
 
 /* Statistics globals are stored in ow_stats.c */
