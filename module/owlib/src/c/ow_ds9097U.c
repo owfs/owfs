@@ -31,7 +31,7 @@ static int DS2480_configuration_write(BYTE parameter_code, BYTE value_code, cons
 static int DS2480_configuration_read(BYTE parameter_code, BYTE value_code, const struct parsedname *pn);
 static int DS2480_stop_pulse(BYTE * response, const struct parsedname *pn);
 static int DS2480_reset_once(const struct parsedname *pn) ;
-static int DS2480_set_baud(const struct parsedname *pn) ;
+static void DS2480_set_baud(const struct parsedname *pn) ;
 static BYTE DS2480b_speed_byte( const struct parsedname * pn ) ;
 
 static void DS2480_setroutines(struct connection_in *in)
@@ -315,13 +315,11 @@ static int DS2480_big_reset(const struct parsedname *pn)
 		return -EINVAL;
 	}
 	
-#if 0
 	// Send a single bit
-	// It seems to help digitemp -- not sure why
+	// The datasheet wants this
 	if (DS2480_sendback_cmd(&single_bit, &single_bit_response, 1, pn)) {
 		return -EIO;
 	}
-#endif
 
 	/* Apparently need to reset again to get the version number properly */
 	if ((ret = DS2480_reset(pn))<0) {
@@ -368,7 +366,7 @@ static int DS2480_configuration_read(BYTE parameter_code, BYTE value_code, const
 // configuration of DS2480B -- parameter code is already shifted in the defines (by 4 bites)
 // configuration of DS2480B -- value code is already shifted in the defines (by 1 bit)
 // Set Baud rate -- can't use DS2480_conficuration_code because return byte is in a different speed
-static int DS2480_set_baud(const struct parsedname *pn)
+static void DS2480_set_baud(const struct parsedname *pn)
 {
 	BYTE value_code ;
 	BYTE send_code ;
@@ -409,7 +407,9 @@ static int DS2480_set_baud(const struct parsedname *pn)
 	if (DS2480_sendout_cmd(&send_code, 1, pn)) {
 		// uh oh -- undefined state -- not sure what the bus speed is.
 		pn->selected_connection->reconnect_state = reconnect_error ;
-		return -EIO;
+		pn->selected_connection->baud = B9600 ;
+		++pn->selected_connection->changed_bus_settings ;
+		return;
 	}
 
 	// Change OS view of rate
@@ -426,7 +426,6 @@ static int DS2480_set_baud(const struct parsedname *pn)
 		pn->selected_connection->baud = B9600 ;
 		++pn->selected_connection->changed_bus_settings ;
 	}
-	return 0 ;
 }
 
 static BYTE DS2480b_speed_byte( const struct parsedname * pn )

@@ -270,6 +270,7 @@ static int FS_r_baud(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	switch ( pn->selected_connection->busmode ) {
 		case bus_serial:
+		case bus_link:
 			OWQ_U(owq) = OW_BaudRate( pn->selected_connection->baud ) ;
 			return 0;
 		default:
@@ -282,6 +283,7 @@ static int FS_w_baud(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	switch ( pn->selected_connection->busmode ) {
 		case bus_serial:
+		case bus_link:
 			pn->selected_connection->baud = OW_MakeBaud( (speed_t) OWQ_U(owq) ) ;
 			++pn->selected_connection->changed_bus_settings ;
 			break ;

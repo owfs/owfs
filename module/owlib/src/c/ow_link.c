@@ -34,6 +34,7 @@ static struct LINK_id LINK_id_tbl[] = {
 
 
 //static void byteprint( const BYTE * b, int size ) ;
+static void LINK_set_baud(const struct parsedname *pn) ;
 static int LINK_read(BYTE * buf, const size_t size, const struct parsedname *pn);
 static int LINK_write(const BYTE * buf, const size_t size, const struct parsedname *pn);
 static int LINK_reset(const struct parsedname *pn);
@@ -84,9 +85,6 @@ int LINK_detect(struct connection_in *in)
 		return -ENODEV;
 	}
 
-	// set the baud rate to 9600. (Already set to 9600 in COM_open())
-	COM_speed(B9600, in);
-
 	COM_slurp( in->file_descriptor ) ;
 	
 	//COM_flush(in);
@@ -112,6 +110,10 @@ int LINK_detect(struct connection_in *in)
 					LEVEL_DEBUG("Link version Found %s\n", LINK_id_tbl[version_index].verstring);
 					in->Adapter = LINK_id_tbl[version_index].Adapter;
 					in->adapter_name = LINK_id_tbl[version_index].name;
+
+					in->baud = Globals.baud ;
+					++in->changed_bus_settings ;
+					
 					return 0;
 				}
 			}
@@ -121,13 +123,64 @@ int LINK_detect(struct connection_in *in)
 	return -ENODEV;
 }
 
+static void LINK_set_baud(const struct parsedname *pn)
+{
+	char * speed_code ;
+	
+	OW_BaudRestrict( &(pn->selected_connection->baud), B9600, B19200, B38400, B57600, 0 ) ;
+	
+	// Find rate parameter
+	switch ( pn->selected_connection->baud ) {
+		case B9600:
+			COM_break(pn->selected_connection) ;
+			return ;
+		case B19200:
+			speed_code = "," ;
+			break ;
+		case B38400:
+			speed_code = "`" ;
+			break ;
+#ifdef B57600
+		/* MacOSX support max 38400 in termios.h ? */
+		case B57600:
+			speed_code = "^" ;
+			break ;
+#endif
+	}
+	
+	COM_flush(pn->selected_connection);
+	if ( LINK_write(LINK_string(speed_code), 1, pn) ) {
+		pn->selected_connection->baud = B9600 ;
+		++pn->selected_connection->changed_bus_settings ;
+		return ;
+	}
+	
+	
+	// Send configuration change
+	COM_flush(pn->selected_connection);
+	
+	// Change OS view of rate
+	UT_delay(5);
+	COM_speed(pn->selected_connection->baud,pn->selected_connection) ;
+	UT_delay(5);
+	COM_slurp(pn->selected_connection->file_descriptor);
+	
+	return 0 ;
+}
+
+
 static int LINK_reset(const struct parsedname *pn)
 {
 	BYTE resp[5];
 	int ret;
 
-	COM_flush(pn->selected_connection);
-	//if (LINK_write(LINK_string("\rr"), 2, pn) || LINK_read(resp, 4, pn, 1)) {
+	if (pn->selected_connection->changed_bus_settings > 0) {
+		--pn->selected_connection->changed_bus_settings ;
+		LINK_set_baud(pn);	// reset paramters
+	} else {
+		COM_flush(pn->selected_connection);
+	}
+	
 	//Response is 3 bytes:  1 byte for code + \r\n
 	if (LINK_write(LINK_string("r"), 1, pn) || LINK_read(resp, 3, pn)) {
 		LEVEL_DEBUG("Error resetting LINK device\n");
