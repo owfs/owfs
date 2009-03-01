@@ -6,7 +6,7 @@ man_SO =   addressing.3so \
            cmdline_mini.1so \
            configuration.1so \
            description.1so description.3so description.5so description.nso \
-           format \
+           format.1so format.5so \
            help \
            job_control \
            persistent_thresholds \

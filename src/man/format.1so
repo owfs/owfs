@@ -45,5 +45,3 @@ The reversed id and address can be retrieved as
 .I r_id
 and 
 .I r_address.
-
-
