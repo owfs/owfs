@@ -11,10 +11,10 @@ man_SO =   addressing.3so \
            job_control.1so \
            persistent_thresholds.1so \
            seealso.1so seealso.3so seealso.5so seealso.nso \
-           standard standard_mini \
-           temperature temperature_errata temperature_threshold \
-           temperatures temperatures_mini \
-           timeout
+           standard.3so standard_mini.3so \
+           temperature.1so temperature_errata.3so temperature_threshold.3so \
+           temperatures_mini.3so \
+           timeout.1so
 
 man_MANS = ${man_SO} \
            owfs.1 \

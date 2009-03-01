@@ -35,7 +35,7 @@ Non-volatile memory with password protection.
 |
 .B settings/reset_password.[0-2|ALL]
 |
-.so standard_mini
+.so standard.3so_mini
 ]]
 .SH FAMILY CODE
 .PP
@@ -94,7 +94,7 @@ Memory is split into 3 pages and each page has a unique password (8 bytes).
 .I ALL
 is an aggregate of the ident. Each page is accessed sequentially. Writing to this file will change the password on the page. NOTE: Currently used password have to be set to correct password before changing password. Data in the corresponding page is NOT effected.
 .SH STANDARD PROPERTIES
-.so standard
+.so standard.3so
 .SH ALARMS
 None.
 .SH DESCRIPTION
