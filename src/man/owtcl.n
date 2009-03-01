@@ -252,7 +252,7 @@ Owtcl \- OWFS library access commands for Tcl
 \fB::OW::isdir\fI \fIpath
 \fR
 .SH DESCRIPTION
-.so description
+.so description.nso
 .SS owtcl
 .B owtcl (3)
 is a Tcl extension that provides an interface to OWFS. The underlying interface to the 1-wire bus is identical to 

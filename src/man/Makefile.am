@@ -5,7 +5,7 @@ mandir = @mandir@
 man_SO =   addressing.3so \
            cmdline_mini.1so \
            configuration.1so \
-           description \
+           description.1so description.3so description.5so description.nso \
            format \
            help \
            job_control \

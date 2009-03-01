@@ -1,0 +1,43 @@
+'\"
+'\" Copyright (c) 2003-2004 Paul H Alfille, MD
+'\" (palfille@earthlink.net)
+'\"
+'\" Program manual page for the OWFS -- 1-wire filesystem package
+'\" Based on Dallas Semiconductor, Inc's datasheets, and trial and error.
+'\"
+'\" Free for all use. No waranty. None. Use at your own risk.
+'\" $Id$
+'\"
+.SS 1-Wire
+.I 1-wire 
+is a wiring protocol and series of devices designed and manufactured
+by Dallas Semiconductor, Inc. The bus is a low-power low-speed low-connector
+scheme where the data line can also provide power.
+.PP
+Each device is uniquely and unalterably numbered during manufacture. There are a wide variety
+of devices, including memory, sensors (humidity, temperature, voltage,
+contact, current), switches, timers and data loggers. More complex devices (like
+thermocouple sensors) can be built with these basic devices. There are also
+1-wire devices that have encryption included.
+.PP
+The 1-wire scheme uses a single 
+.I bus master
+and multiple
+.I slaves
+on the same wire. The bus master initiates all communication. The slaves can be 
+individually discovered and addressed using their unique ID.
+.PP
+Bus masters come in a variety of configurations including serial, parallel, i2c, network or USB
+adapters.
+.SS OWFS design
+.I OWFS
+is a suite of programs that designed to make the 1-wire bus and its
+devices easily accessible. The underlying priciple is to create a virtual
+filesystem, with the unique ID being the directory, and the individual
+properties of the device are represented as simple files that can be read and written.
+.PP 
+Details of the individual slave or master design are hidden behind a consistent interface. The goal is to 
+provide an easy set of tools for a software designer to create monitoring or control applications. There 
+are some performance enhancements in the implementation, including data caching, parallel access to bus 
+masters, and aggregation of device communication. Still the fundemental goal has been ease of use, flexibility 
+and correctness rather than speed.
