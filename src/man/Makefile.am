@@ -10,7 +10,7 @@ man_SO =   addressing.3so \
            help.1so \
            job_control.1so \
            persistent_thresholds.1so \
-           seealso \
+           seealso.1so seealso.3so seealso.5so seealso.nso \
            standard standard_mini \
            temperature temperature_errata temperature_threshold \
            temperatures temperatures_mini \

@@ -299,7 +299,7 @@ If \fIpath\fR is the directory - return 1. Otherwise return 0.
 Synonym of \fB::OW::isdirectory
 
 .SH SEE ALSO
-.so seealso
+.so seealso.nso
 .SH AVAILABILITY
 http://www.owfs.org
 .SH AUTHOR
