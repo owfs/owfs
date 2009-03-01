@@ -3,8 +3,8 @@
 mandir = @mandir@
 
 man_SO =   addressing.3so \
-           cmdline2_mini cmdline_mini.1so \
-           configuration \
+           cmdline_mini.1so \
+           configuration.1so \
            description \
            format \
            help \
