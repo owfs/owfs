@@ -2,7 +2,22 @@
 
 mandir = @mandir@
 
-man_MANS = owfs.1 \
+man_SO =   addressing.3so \
+           cmdline2_mini cmdline_mini.1so \
+           configuration \
+           description \
+           format \
+           help \
+           job_control \
+           persistent_thresholds \
+           seealso \
+           standard standard_mini \
+           temperature temperature_errata temperature_threshold \
+           temperatures temperatures_mini \
+           timeout
+
+man_MANS = ${man_SO} \
+           owfs.1 \
            owhttpd.1 \
            owserver.1 \
            owftpd.1 \
@@ -32,21 +47,7 @@ man_MANS = owfs.1 \
            owfs.5 owfs.conf.5 \
            owtcl.n
 
-
-EXTRA_DIST = ${man_MANS} \
-           addressing \
-           cmdline cmdline2_mini cmdline_mini \
-           configuration \
-           description \
-           format \
-           help \
-           job_control \
-           persistent_thresholds \
-           seealso \
-           standard standard_mini \
-           temperature temperature_errata temperature_threshold \
-           temperatures temperatures_mini \
-           timeout
+EXTRA_DIST = ${man_MANS}
 
 clean-generic:
 
