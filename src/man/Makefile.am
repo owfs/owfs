@@ -7,7 +7,7 @@ man_SO =   addressing.3so \
            configuration.1so \
            description.1so description.3so description.5so description.nso \
            format.1so format.5so \
-           help \
+           help.1so \
            job_control \
            persistent_thresholds \
            seealso \
