@@ -8,8 +8,8 @@ man_SO =   addressing.3so \
            description.1so description.3so description.5so description.nso \
            format.1so format.5so \
            help.1so \
-           job_control \
-           persistent_thresholds \
+           job_control.1so \
+           persistent_thresholds.1so \
            seealso \
            standard standard_mini \
            temperature temperature_errata temperature_threshold \
