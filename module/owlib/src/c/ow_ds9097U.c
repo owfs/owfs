@@ -276,7 +276,7 @@ static int DS2480_big_reset(const struct parsedname *pn)
 //	COM_speed(B9600, in);
 	pn->selected_connection->baud = Globals.baud ;
 	++pn->selected_connection->changed_bus_settings ;
-	
+
 	// send a break to reset the DS2480
 	COM_break(pn->selected_connection);
 
@@ -314,7 +314,7 @@ static int DS2480_big_reset(const struct parsedname *pn)
 	if (DS2480_configuration_write(PARMSEL_12VPULSE, PARMSET_512us, pn)) {
 		return -EINVAL;
 	}
-	
+
 	// Send a single bit
 	// The datasheet wants this
 	if (DS2480_sendback_cmd(&single_bit, &single_bit_response, 1, pn)) {
@@ -336,14 +336,15 @@ static int DS2480_configuration_write(BYTE parameter_code, BYTE value_code, cons
 	BYTE send_code = CMD_CONFIG | parameter_code | value_code;
 	BYTE expected_response = CMD_CONFIG_RESPONSE | parameter_code | value_code;
 	BYTE actual_response;
-	
+
 	if (DS2480_sendback_cmd(&send_code, &actual_response, 1, pn)) {
 		return -EIO;
 	}
 	if (expected_response == actual_response) {
 		return 0;
 	}
-	return -EINVAL;
+    LEVEL_DEBUG("Configuration write, wrong response (%.2X not %.2X)\n",actual_response,expected_response) ;
+    return -EINVAL;
 }
 
 // configuration of DS2480B -- parameter code is already shifted in the defines (by 4 bites)
@@ -353,14 +354,15 @@ static int DS2480_configuration_read(BYTE parameter_code, BYTE value_code, const
 	BYTE send_code = CMD_CONFIG | PARMSEL_PARMREAD | (parameter_code>>3);
 	BYTE expected_response = CMD_CONFIG_RESPONSE | PARMSEL_PARMREAD | value_code;
 	BYTE actual_response;
-	
+
 	if (DS2480_sendback_cmd(&send_code, &actual_response, 1, pn)) {
 		return -EIO;
 	}
 	if (expected_response == actual_response) {
 		return 0;
 	}
-	return -EINVAL;
+    LEVEL_DEBUG("Configuration read, wrong response (%.2X not %.2X)\n",actual_response,expected_response) ;
+    return -EINVAL;
 }
 
 // configuration of DS2480B -- parameter code is already shifted in the defines (by 4 bites)
@@ -418,7 +420,7 @@ static void DS2480_set_baud(const struct parsedname *pn)
 	UT_delay(5);
 	COM_slurp(pn->selected_connection->file_descriptor);
 	COM_flush(pn->selected_connection);
-	
+
 	// Check rate
 	if ( DS2480_configuration_read( PARMSEL_BAUDRATE, value_code, pn ) ) {
 		// Not reset -- change back to default
@@ -777,11 +779,13 @@ static int DS2480_sendback_cmd(const BYTE * cmd, BYTE * resp, const size_t len, 
 		}
 		ret = DS2480_sendout_cmd( &cmd[bytes_so_far], bytes_this_segment, pn);
 		if ( ret ) {
+            LEVEL_DEBUG("Sendback cmd: write error\n") ;
 			return ret ;
 		}
 		ret = DS2480_read(       &resp[bytes_so_far], bytes_this_segment, pn);
 		if ( ret ) {
-			return ret ;
+            LEVEL_DEBUG("Sendback cmd: read error\n") ;
+            return ret ;
 		}
 		bytes_so_far += bytes_this_segment ;
 	}
@@ -810,7 +814,7 @@ static int DS2480_sendback_data(const BYTE * data, BYTE * resp, const size_t len
 	// switch mode if needed
 	if (pn->selected_connection->connin.serial.mode != ds2480b_data_mode) {
 		// this is one of the "reserved commands" that does not generate a resonse byte
-		// page 6 of the datasheet http://datasheets.maxim-ic.com/en/ds/DS2480B.pdf 
+		// page 6 of the datasheet http://datasheets.maxim-ic.com/en/ds/DS2480B.pdf
 		sendout[bytes_this_segment++] = MODE_DATA;
 		// change flag to data mode
 		pn->selected_connection->connin.serial.mode = ds2480b_data_mode;

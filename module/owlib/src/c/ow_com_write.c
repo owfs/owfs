@@ -50,6 +50,7 @@ int COM_write( const BYTE * data, size_t length, const struct parsedname * pn )
 			ssize_t write_result ;
 
 			if (FD_ISSET(connection->file_descriptor, &writeset) == 0) {
+				ERROR_CONNECT("Select no FD found (write) serial port: %s\n", SAFESTRING(connection->name));
 				STAT_ADD1_BUS(e_bus_write_errors, connection);
 				return -EIO;	/* error */
 			}
@@ -68,6 +69,7 @@ int COM_write( const BYTE * data, size_t length, const struct parsedname * pn )
 				to_be_written -= write_result ;	
 			}
 		} else {			/* timed out or select error */
+			ERROR_CONNECT("Select/timeout error (write) serial port: %s\n", SAFESTRING(connection->name));
 			STAT_ADD1_BUS(e_bus_timeouts, connection);
 			return -errno;
 		}
