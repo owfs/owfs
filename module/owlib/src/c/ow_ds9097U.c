@@ -219,9 +219,7 @@ int DS2480_detect(struct connection_in *in)
 
 	in->speed = bus_speed_slow ;
 	in->flex = Globals.serial_flextime ? bus_yes_flex : bus_no_flex ;
-	in->connin.serial.reverse_polarity = Globals.serial_reverse ;
-	in->baud = Globals.baud ;
-
+	
 	ret = DS2480_big_reset(&pn) ;
 	if ( ret ) {
 		return ret ;
@@ -254,12 +252,16 @@ static int DS2480_big_reset(const struct parsedname *pn)
 	BYTE timing ;
 	BYTE single_bit = CMD_COMM | BITPOL_ONE |  DS2480b_speed_byte(pn) ;
 	BYTE single_bit_response ;
-
+	BYTE reset_byte = (BYTE) ( CMD_COMM | FUNCTSEL_RESET | SPEEDSEL_STD );
+	
 	// Open the com port in 9600 Baud.
 	if (COM_open(pn->selected_connection)) {
 		return -ENODEV;
 	}
 
+
+	// send a break to reset the DS2480
+	COM_break(pn->selected_connection);
 	COM_slurp( pn->selected_connection->file_descriptor ) ;
 
 //	// Send BREAK to reset device
@@ -271,14 +273,15 @@ static int DS2480_big_reset(const struct parsedname *pn)
 
 	// reset modes
 	pn->selected_connection->connin.serial.mode = ds2480b_command_mode ;
+	
+	// send the timing byte
+	DS2480_write( &reset_byte, 1, pn ) ;
 
-//	// set the baud rate to 9600. (Already set to 9600 in COM_open())
+	//	// set the baud rate to 9600. (Already set to 9600 in COM_open())
 //	COM_speed(B9600, in);
+	pn->selected_connection->connin.serial.reverse_polarity = Globals.serial_reverse ;
 	pn->selected_connection->baud = Globals.baud ;
 	++pn->selected_connection->changed_bus_settings ;
-
-	// send a break to reset the DS2480
-	COM_break(pn->selected_connection);
 
 	// delay to let line settle
 	UT_delay(2);
@@ -287,10 +290,7 @@ static int DS2480_big_reset(const struct parsedname *pn)
 	COM_flush(pn->selected_connection);
 
 	// send the timing byte
-	timing = CMD_COMM | FUNCTSEL_RESET | DS2480b_speed_byte(pn) ;
-	if (DS2480_write(&timing, 1, pn)) {
-		return -EIO;
-	}
+	BUS_reset(pn) ;
 
 	// delay to let line settle
 	UT_delay(4);
