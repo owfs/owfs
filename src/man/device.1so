@@ -14,7 +14,7 @@ These options specify the device (bus master) connecting the computer to the 1-w
 .P
 At least one device option is required. There is no default. More than one device can be listed, and all will be used. (A logical union unless you explore the \fI/bus.n/\fR directories.)
 .P
-Linux and BSD enforce a security system restricting access to hardware ports. You must have sufficient rights to access the given port or access will silently fail. 
+Linux and BSD enforce a security policy restricting access to hardware ports. You must have sufficient rights to access the given port or access will silently fail.
 .SH "* Serial devices"
 .I port 
 specifies a serial port, e.g. 
@@ -29,6 +29,23 @@ Changes details of bus timing (see DS2480B datasheet). Some devices, like the
 .I Swart LCD
 cannot work with
 .I flextime.
+.TP
+\fI--baud=\fI\fR1200|9600|19200|38400|57600|115200\fR \fB(DS2480B,LINK,HA5)\fB
+Sets the initial serial port communication speed for all bus masters. Not all serial devices support all speeds. You can change the individual bus master speed for the
+.B LINK
+and
+.B DS2880B
+in the interface/settings directory. The
+.B HA5
+speed is set in hardware, so the command line buad rate should match that rate.
+.br
+Usually the default settings (9600 for
+.B LINK
+and
+.B DS2480B
+) and 115200 for the
+.B HA5
+are sane and shouldn't be changed.
 .TP
 \fI--straight_polarity\fI  \fR|\fR \fI--reverse_polarity\fI \fB(DS2480B)\fB
 Reverse polarity of the DS2480B output transistors? Not needed for the DS9097U, but required for some other designs.
