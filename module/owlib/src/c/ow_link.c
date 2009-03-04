@@ -85,7 +85,9 @@ int LINK_detect(struct connection_in *in)
 		return -ENODEV;
 	}
 
+	COM_break( in ) ;
 	COM_slurp( in->file_descriptor ) ;
+	UT_delay(100) ; // based on http://morpheus.wcf.net/phpbb2/viewtopic.php?t=89&sid=3ab680415917a0ebb1ef020bdc6903ad
 	
 	//COM_flush(in);
 	if (LINK_reset(&pn) == BUS_RESET_OK && LINK_write(LINK_string(" "), 1, &pn) == 0) {
@@ -129,6 +131,7 @@ static void LINK_set_baud(const struct parsedname *pn)
 	
 	OW_BaudRestrict( &(pn->selected_connection->baud), B9600, B19200, B38400, B57600, 0 ) ;
 	
+	printf("LINK change baud to %d\n",OW_BaudRate(pn->selected_connection->baud));
 	// Find rate parameter
 	switch ( pn->selected_connection->baud ) {
 		case B9600:
@@ -148,8 +151,10 @@ static void LINK_set_baud(const struct parsedname *pn)
 #endif
 	}
 	
+	printf("LINK change baud string %s\n",speed_code);
 	COM_flush(pn->selected_connection);
 	if ( LINK_write(LINK_string(speed_code), 1, pn) ) {
+		printf("LINK change baud error\n");
 		pn->selected_connection->baud = B9600 ;
 		++pn->selected_connection->changed_bus_settings ;
 		return ;
@@ -297,11 +302,9 @@ static int LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay, const 
 	return LINK_CR(pn);			// send just the <CR>
 }
 
-// DS2480_sendback_data
+// LINK_sendback_data
 //  Send data and return response block
-//  puts into data mode if needed.
 /* return 0=good
-   sendout_data, readin
  */
 static int LINK_sendback_data(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
 {
