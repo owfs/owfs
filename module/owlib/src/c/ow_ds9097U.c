@@ -223,8 +223,8 @@ int DS2480_detect(struct connection_in *in)
 	
 	// Now set desired baud and polarity
 	// BUS_reset will do the actual changes
-	pn->selected_connection->connin.serial.reverse_polarity = Globals.serial_reverse ;
-	pn->selected_connection->baud = Globals.baud ;
+	in->connin.serial.reverse_polarity = Globals.serial_reverse ;
+	in->baud = Globals.baud ;
 
 	ret = DS2480_big_reset(&pn) ;
 	if ( ret ) {
