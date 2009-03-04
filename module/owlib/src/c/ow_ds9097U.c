@@ -45,7 +45,7 @@ static void DS2480_setroutines(struct connection_in *in)
 	in->iroutines.sendback_data = DS2480_sendback_data;
 //    in->iroutines.sendback_bits = ;
 	in->iroutines.select = NULL;
-	in->iroutines.reconnect = NULL;	// use "detect"
+	in->iroutines.reconnect = DS2480_big_reset ;
 	in->iroutines.close = COM_close;
 	in->iroutines.transaction = NULL;
 	in->iroutines.flags = 0;
@@ -221,6 +221,11 @@ int DS2480_detect(struct connection_in *in)
 	in->speed = bus_speed_slow ;
 	in->flex = Globals.serial_flextime ? bus_yes_flex : bus_no_flex ;
 	
+	// Now set desired baud and polarity
+	// BUS_reset will do the actual changes
+	pn->selected_connection->connin.serial.reverse_polarity |= Globals.serial_reverse ;
+	pn->selected_connection->baud = Globals.baud ;
+
 	ret = DS2480_big_reset(&pn) ;
 	if ( ret ) {
 		return ret ;
@@ -276,7 +281,7 @@ static int DS2480_big_reset(const struct parsedname *pn)
 
 	// Now set desired baud and polarity
 	// BUS_reset will do the actual changes
-	pn->selected_connection->connin.serial.reverse_polarity = Globals.serial_reverse ;
+	pn->selected_connection->connin.serial.reverse_polarity |= Globals.serial_reverse ;
 	pn->selected_connection->baud = Globals.baud ;
 	++pn->selected_connection->changed_bus_settings ;
 
