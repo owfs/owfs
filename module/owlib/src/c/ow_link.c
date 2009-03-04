@@ -131,7 +131,7 @@ static void LINK_set_baud(const struct parsedname *pn)
 	
 	OW_BaudRestrict( &(pn->selected_connection->baud), B9600, B19200, B38400, B57600, 0 ) ;
 	
-	printf("LINK change baud to %d\n",OW_BaudRate(pn->selected_connection->baud));
+	LEVEL_DEBUG("LINK attempt change baud to %d\n",OW_BaudRate(pn->selected_connection->baud));
 	// Find rate parameter
 	switch ( pn->selected_connection->baud ) {
 		case B9600:
@@ -151,10 +151,10 @@ static void LINK_set_baud(const struct parsedname *pn)
 #endif
 	}
 	
-	printf("LINK change baud string %s\n",speed_code);
+	LEVEL_DEBUG("LINK change baud string <%s>\n",speed_code);
 	COM_flush(pn->selected_connection);
 	if ( LINK_write(LINK_string(speed_code), 1, pn) ) {
-		printf("LINK change baud error\n");
+		LEVEL_DEBUG("LINK change baud error -- will return to 9600\n");
 		pn->selected_connection->baud = B9600 ;
 		++pn->selected_connection->changed_bus_settings ;
 		return ;
@@ -170,7 +170,7 @@ static void LINK_set_baud(const struct parsedname *pn)
 	UT_delay(5);
 	COM_slurp(pn->selected_connection->file_descriptor);
 	
-	return 0 ;
+	return ;
 }
 
 
