@@ -64,7 +64,10 @@ int HA7E_detect(struct connection_in *in)
 	}
 
 	// set the baud rate to 9600. (Already set to 9600 in COM_open())
-	COM_speed(B9600, in);
+	in->baud = B9600 ;
+	// allowable speeds
+	OW_BaudRestrict( &(in->baud), B9600, 0 ) ;
+	COM_speed(in->baud, in);
 	COM_slurp(in->file_descriptor) ;
 
 	if (HA7E_reset(&pn) == BUS_RESET_OK ) {

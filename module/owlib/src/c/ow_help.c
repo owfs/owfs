@@ -155,7 +155,7 @@ void ow_help_device(void)
 	" Serial devices (dev is port name, e.g. /dev/ttyS0)\n"
 	"  -d dev          DS9097U or DS9097 adapter (or LINK in emulation mode)\n"
 	"  --8bit          Open 8bit (instead of 6) serial-port with DS9097\n"
-	"  --baud=9600|19200|38400|57600|115200    Speed of communication to adapter\n"
+	"  --baud=1200|9600|19200|38400|57600|115200    Speed of communication to adapter\n"
 	"  --serial_flextime | --serial_regulartime (timing adjustments for DS2480B)\n"
 	"  --straight_polarity | --reverse_polarity (for DS2480B based adapters)\n"
 	"  --LINK=dev      Serial LINK adapter (non-emulation)\n"

@@ -271,6 +271,8 @@ static int FS_r_baud(struct one_wire_query *owq)
 	switch ( pn->selected_connection->busmode ) {
 		case bus_serial:
 		case bus_link:
+		case bus_ha5:
+		case bus_ha7e:
 			OWQ_U(owq) = OW_BaudRate( pn->selected_connection->baud ) ;
 			return 0;
 		default:

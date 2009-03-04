@@ -79,8 +79,18 @@ int HA5_detect(struct connection_in *in)
 		return -ENODEV;
 	}
 	
+	// 9600 isn't valid for the HA5, so we can tell that this value was actually selected
+	if ( Globals.baud != B9600 ) {
+		in->baud = Globals.baud ;
+	} else {
+		in->baud = B115200 ; // works at this fast rate
+	}
+
+	// allowable speeds
+	OW_BaudRestrict( &(in->baud), B1200, B19200, B38400, B115200, 0 ) ;
+		
 	/* Set com port speed*/
-	COM_speed(B115200,in) ;
+	COM_speed(in->baud,in) ;
 	
 	in->connin.ha5.checksum = Globals.checksum ;
 	in->Adapter = adapter_HA5 ;
