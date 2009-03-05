@@ -272,20 +272,31 @@ static int DS2480_big_reset(const struct parsedname *pn)
 	
 	// send the timing byte (A reset command at 9600 baud)
 	DS2480_write( &reset_byte, 1, pn ) ;
+
 	// delay to let line settle
 	UT_delay(4);
 	// flush the buffers
 	COM_flush(pn->selected_connection);
 	// ignore response
 	COM_slurp( pn->selected_connection->file_descriptor ) ;
-
 	// Now set desired baud and polarity
 	// BUS_reset will do the actual changes
 	pn->selected_connection->changed_bus_settings = 1 ; // Force a mode change
-
 	// Send a reset again
 	BUS_reset(pn) ;
-
+	
+	// delay to let line settle
+	UT_delay(4);
+	// flush the buffers
+	COM_flush(pn->selected_connection);
+	// ignore response
+	COM_slurp( pn->selected_connection->file_descriptor ) ;
+	// Now set desired baud and polarity
+	// BUS_reset will do the actual changes
+	pn->selected_connection->changed_bus_settings = 1 ; // Force a mode change
+	// Send a reset again
+	BUS_reset(pn) ;
+	
 	// delay to let line settle
 	UT_delay(4);
 
