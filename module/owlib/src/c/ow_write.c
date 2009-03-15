@@ -234,9 +234,13 @@ static int FS_w_local(struct one_wire_query *owq)
 	}
 
 	/* Special case for "fake" adapter */
-	if (pn->selected_connection->Adapter == adapter_fake && IsRealDir(pn)) {
+	if ( (get_busmode(pn->selected_connection) == bus_fake || get_busmode(pn->selected_connection) == bus_tester) && IsRealDir(pn)) {
 		return 0;
 	}
+
+	/* Special case for "mock" adapter */
+	// Need to write to store cache, but not execute real writes
+	// return Mock_write()
 
 	/* Array properties? Write all together if aggregate */
 	if (pn->selected_filetype->ag) {

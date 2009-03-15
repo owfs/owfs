@@ -302,6 +302,7 @@ enum bus_mode {
 	bus_ha7e,
 	bus_fake,
 	bus_tester,
+	bus_mock,
 	bus_link,
 	bus_elink,
 	bus_etherweather,
@@ -330,6 +331,7 @@ enum adapter_type {
 	adapter_EtherWeather,
 	adapter_fake,
 	adapter_tester,
+	adapter_mock,
 	adapter_w1,
 };
 
@@ -426,6 +428,7 @@ struct connection_in {
 		struct connin_i2c i2c;
 		struct connin_fake fake;
 		struct connin_fake tester;
+		struct connin_fake mock;
 		struct connin_ha5 ha5;
 		struct connin_ha7 ha7;
 		struct connin_ha7e ha7e ;
@@ -443,6 +446,7 @@ extern struct inbound_control {
 #endif /* OW_MT */
 	int next_fake ; // count of fake buses
 	int next_tester ; // count tester buses
+	int next_mock ; // count mock buses
 #if OW_W1
 	unsigned int w1_seq ; // seq number to netlink
 	unsigned int w1_entry_mark ; // for removing buses_mark ;
@@ -580,6 +584,7 @@ int BadAdapter_detect(struct connection_in *in);
 int LINKE_detect(struct connection_in *in);
 int Fake_detect(struct connection_in *in);
 int Tester_detect(struct connection_in *in);
+int Mock_detect(struct connection_in *in);
 int EtherWeather_detect(struct connection_in *in);
 
 #if OW_HA7

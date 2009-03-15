@@ -170,6 +170,11 @@ static void SetupInboundConnections(void)
 			ret = 0 ;
 			break;
 
+		case bus_mock:
+			Mock_detect(in);	// never fails
+			ret = 0 ;
+			break;
+
 		case bus_w1:
 			/* w1 is different: it is a dynamic list of adapters */
 			/* the scanning starts with "W1_Browse" in LibStart and continues in it's own thread */

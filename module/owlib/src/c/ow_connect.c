@@ -33,6 +33,7 @@ struct inbound_control Inbound_Control = {
 #endif /* OW_MT */
 	.next_fake = 0,
 	.next_tester = 0,
+	.next_mock = 0,
 #if OW_W1
 	.w1_seq = 0,
 	.w1_entry_mark = 0,
@@ -221,6 +222,8 @@ void FreeIn(struct connection_in * now)
 	case bus_fake:
 		break;
 	case bus_tester:
+		break;
+	case bus_mock:
 		break;
 	case bus_i2c:
 #if OW_MT

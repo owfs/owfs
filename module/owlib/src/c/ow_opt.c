@@ -42,6 +42,7 @@ static int OW_ArgHA7E(const char *arg);
 static int OW_ArgEtherWeather(const char *arg);
 static int OW_ArgFake(const char *arg);
 static int OW_ArgTester(const char *arg);
+static int OW_ArgMock(const char *arg);
 static int OW_ArgLink(const char *arg);
 static int OW_ArgPassive(char *adapter_type_name, const char *arg);
 
@@ -129,6 +130,9 @@ const struct option owopts_long[] = {
 	{"TESTER", required_argument, NULL, e_tester},	/* Tester */
 	{"Tester", required_argument, NULL, e_tester},	/* Tester */
 	{"tester", required_argument, NULL, e_tester},	/* Tester */
+	{"mock", required_argument, NULL, e_mock},	/* Mock */
+	{"Mock", required_argument, NULL, e_mock},	/* Mock */
+	{"MOCK", required_argument, NULL, e_mock},	/* Mock */
 	{"etherweather", required_argument, NULL, e_etherweather},	/* EtherWeather */
 	{"EtherWeather", required_argument, NULL, e_etherweather},	/* EtherWeather */
 	{"zero", no_argument, &Globals.announce_off, 0},
@@ -659,6 +663,8 @@ int owopt(const int option_char, const char *arg)
 		return OW_ArgPassive("HA4B", arg);
 	case e_tester:
 		return OW_ArgTester(arg);
+	case e_mock:
+		return OW_ArgMock(arg);
 	case e_etherweather:
 		return OW_ArgEtherWeather(arg);
 	case e_announce:
@@ -765,6 +771,17 @@ static int OW_ArgFake(const char *arg)
 	}
 	in->name = strdup(arg);
 	in->busmode = bus_fake;
+	return 0;
+}
+
+static int OW_ArgMock(const char *arg)
+{
+	struct connection_in *in = NewIn(NULL);
+	if (in == NULL) {
+		return 1;
+	}
+	in->name = strdup(arg);
+	in->busmode = bus_mock;
 	return 0;
 }
 

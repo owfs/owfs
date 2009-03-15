@@ -283,7 +283,7 @@ int Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn)
 {
 	time_t duration = TimeOut(fc_directory);
 	struct tree_node *tn;
-	size_t size = db->devices * 8;
+	size_t size = DirblobElements(db) * 8;
 	struct parsedname pn_directory;
 	//printf("Cache_Add_Dir\n") ;
 	if (pn==NULL || pn->selected_connection==NULL) {
@@ -293,6 +293,7 @@ int Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn)
 	switch ( pn->selected_connection->busmode ) {
 		case bus_fake:
 		case bus_tester:
+		case bus_mock:
 		case bus_w1:
 		case bus_bad:
 		case bus_unknown:
@@ -312,7 +313,7 @@ int Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn)
 	}
 	memset(&tn->tk, 0, sizeof(struct tree_key));
 
-	LEVEL_DEBUG("Cache_Add_Dir " SNformat " elements=%d\n", SNvar(pn->sn), (int) (db->devices));
+	LEVEL_DEBUG("Cache_Add_Dir " SNformat " elements=%d\n", SNvar(pn->sn), DirblobElements(db));
 	FS_LoadDirectoryOnly(&pn_directory, pn);
 	memcpy(tn->tk.sn, pn_directory.sn, 8);
 	tn->tk.p = pn->selected_connection;
@@ -679,9 +680,7 @@ static int Cache_Get_Common_Dir(struct dirblob *db, time_t duration, const struc
 		LEVEL_DEBUG("dir found in cache\n");
 		if (opaque->key->expires >= now) {
 			size = opaque->key->dsize;
-			if ((db->snlist = (BYTE *) malloc(size))) {
-				memcpy(db->snlist, TREE_DATA(opaque->key), size);
-				db->allocated = db->devices = size / 8;
+			if (DirblobRecreate(TREE_DATA(opaque->key), size, db) == 0) {
 				//printf("Cache: snlist=%p, devices=%lu, size=%lu\n",*snlist,devices[0],size) ;
 				ret = 0;
 			} else {

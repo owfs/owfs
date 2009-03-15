@@ -26,13 +26,17 @@ int FS_locator(struct one_wire_query *owq)
 	BYTE loc[8];
 	ASCII ad[16];
 
-	if (get_busmode(pn->selected_connection) == bus_fake) {
-		if (pn->sn[7] & 0x01) {	// 50% chance of locator
-			loc[0] = 0xFE;
-			loc[7] = CRC8compute(loc, 7, 0);
-		}
-	} else {
-		OW_locator(loc, pn);
+	switch (get_busmode(pn->selected_connection)) {
+		case bus_fake:
+		case bus_tester:
+		case bus_mock:
+			if (pn->sn[7] & 0x01) {	// 50% chance of locator
+				loc[0] = 0xFE;
+				loc[7] = CRC8compute(loc, 7, 0);
+			}
+			break ;
+		default:
+			OW_locator(loc, pn);
 	}
 	bytes2string(ad, loc, 8);
 	return Fowq_output_offset_and_size(ad, 16, owq);

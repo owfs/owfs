@@ -26,6 +26,7 @@ static const ASCII *namefind(const char *name);
 static void Fake_setroutines(struct connection_in *in);
 static void Tester_setroutines(struct connection_in *in);
 static int Fake_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
+static void GetNextByte( ASCII ** strpointer, BYTE default_byte, BYTE * sn ) ;
 
 static void Fake_setroutines(struct connection_in *in)
 {
@@ -56,6 +57,19 @@ static void Tester_setroutines(struct connection_in *in)
 {
 	Fake_setroutines(in);
 	in->iroutines.detect = Fake_detect;
+}
+
+static void GetNextByte( ASCII ** strpointer, BYTE default_byte, BYTE * sn )
+{
+	if ( (*strpointer)[0] == '.' ) {
+		++strpointer ;
+	}
+	if ((isxdigit((*strpointer)[0]) && isxdigit((*strpointer)[1])) {
+		*sn = string2num(*strpointer) ;
+		strpointer += 2 ;
+	} else {
+		*sn = default_byte ;
+	}
 }
 
 /* Device-specific functions */
@@ -94,22 +108,77 @@ int Fake_detect(struct connection_in *in)
 				 && isxdigit(current_device_start[1]))
 				|| (current_device_start = namefind(current_device_start))) {
 				sn[0] = string2num(current_device_start);
-				sn[1] = BYTE_MASK(rand());
-				sn[2] = BYTE_MASK(rand());
-				sn[3] = BYTE_MASK(rand());
-				sn[4] = BYTE_MASK(rand());
-				sn[5] = BYTE_MASK(rand());
-				sn[6] = BYTE_MASK(rand());
+				GetNextByte(&current_device_start,BYTE_MASK(rand()),&sn[1]);
+				GetNextByte(&current_device_start,BYTE_MASK(rand()),&sn[2]);
+				GetNextByte(&current_device_start,BYTE_MASK(rand()),&sn[3]);
+				GetNextByte(&current_device_start,BYTE_MASK(rand()),&sn[4]);
+				GetNextByte(&current_device_start,BYTE_MASK(rand()),&sn[5]);
+				GetNextByte(&current_device_start,BYTE_MASK(rand()),&sn[6]);
 				sn[7] = CRC8compute(sn, 7, 0);
 				DirblobAdd(sn, &(in->main));	// Ignore bad return
 			}
 		}
-		in->AnyDevices = (in->main.devices > 0);
+		in->AnyDevices = (DirblobElements(in->main) > 0);
 		if (oldname) {
 			free(oldname);
 		}
 	}
 	++Inbound_Control.next_fake;
+	return 0;
+}
+
+/* Device-specific functions */
+/* Note, the "Bad"adapter" ha not function, and returns "-ENOTSUP" (not supported) for most functions */
+/* It does call lower level functions for higher ones, which of course is pointless since the lower ones don't work either */
+int Mock_detect(struct connection_in *in)
+{
+	ASCII *newname;
+	ASCII *oldname = in->name;
+	
+	in->file_descriptor = Inbound_Control.next_mock;
+	Fake_setroutines(in);		// set up close, reconnect, reset, ...
+
+	in->adapter_name = "Simulated-Mock";
+	in->Adapter = adapter_mock;
+	in->connin.mock.bus_number_this_type = Inbound_Control.next_mock;
+	LEVEL_CONNECT("Setting up Simulated (Mock) Bus Master (%d)\n", Inbound_Control.next_mock);
+	if ((newname = (ASCII *) malloc(20))) {
+		const ASCII *current_device_start;
+		ASCII *remaining_device_list = in->name;
+
+		UCLIBCLOCK ;
+		snprintf(newname, 18, "mock.%d", Inbound_Control.next_mock);
+		UCLIBCUNLOCK ;
+		in->name = newname;
+		
+		while (remaining_device_list != NULL) {
+			BYTE sn[8];
+			for (current_device_start = strsep(&remaining_device_list, " ,"); current_device_start[0] != '\0'; ++current_device_start) {
+				// note that strsep updates "remaining_device_list" pointer
+				if (current_device_start[0] != ' ' && current_device_start[0] != ',') {
+					break;
+				}
+			}
+			if ((isxdigit(current_device_start[0])
+				 && isxdigit(current_device_start[1]))
+				|| (current_device_start = namefind(current_device_start))) {
+				sn[0] = string2num(current_device_start);
+				GetNextByte(&current_device_start,BYTE_MASK(rand()),&sn[1]);
+				GetNextByte(&current_device_start,BYTE_MASK(rand()),&sn[2]);
+				GetNextByte(&current_device_start,BYTE_MASK(rand()),&sn[3]);
+				GetNextByte(&current_device_start,BYTE_MASK(rand()),&sn[4]);
+				GetNextByte(&current_device_start,BYTE_MASK(rand()),&sn[5]);
+				GetNextByte(&current_device_start,BYTE_MASK(rand()),&sn[6]);
+				sn[7] = CRC8compute(sn, 7, 0);
+				DirblobAdd(sn, &(in->main));	// Ignore bad return
+			}
+		}
+		in->AnyDevices = (DirblobElements(in->main) > 0);
+		if (oldname) {
+			free(oldname);
+		}
+	}
+	++Inbound_Control.next_mock;
 	return 0;
 }
 
@@ -144,19 +213,25 @@ int Tester_detect(struct connection_in *in)
 			if ((isxdigit(current_device_start[0])
 				 && isxdigit(current_device_start[1]))
 				|| (current_device_start = namefind(current_device_start))) {
-				unsigned int device_number = in->main.devices;
-				sn[0] = string2num(current_device_start);	// family code
-				sn[1] = BYTE_MASK(Inbound_Control.next_tester >> 0);	// "bus" number
-				sn[2] = BYTE_MASK(Inbound_Control.next_tester >> 8);	// "bus" number
-				sn[3] = sn[0];	// repeat family code
-				sn[4] = BYTE_INVERSE(sn[0]);	// family code complement
-				sn[5] = BYTE_MASK(device_number >> 0);	// "device" number
-				sn[6] = BYTE_MASK(device_number >> 8);	// "device" number
-				sn[7] = CRC8compute(sn, 7, 0);	// CRC
+				unsigned int device_number = DirblobElements(in->main);
+				// family code
+				sn[0] = string2num(current_device_start);
+				// "bus number"
+				GetNextByte(&current_device_start, BYTE_MASK(Inbound_Control.next_tester >> 0), &sn[1]);
+				GetNextByte(&current_device_start, BYTE_MASK(Inbound_Control.next_tester >> 8), &sn[2]);
+				// repeat family code
+				GetNextByte(&current_device_start, sn[0], &sn[3]);
+				// family code complement
+				GetNextByte(&current_device_start, BYTE_INVERSE(sn[0]), &sn[4]);
+				// "device" number
+				GetNextByte(&current_device_start, BYTE_MASK(device_number >> 0), &sn[5]);
+				GetNextByte(&current_device_start, BYTE_MASK(device_number >> 8), &sn[6]);
+				// CRC8
+				sn[7] = CRC8compute(sn, 7, 0);
 				DirblobAdd(sn, &(in->main));	// Ignore bad return
 			}
 		}
-		in->AnyDevices = (in->main.devices > 0);
+		in->AnyDevices = (DirblobElements(in->main) > 0);
 		if (oldname) {
 			free(oldname);
 		}
@@ -193,7 +268,6 @@ static void Fake_close(struct connection_in *in)
 
 static int Fake_next_both(struct device_search *ds, const struct parsedname *pn)
 {
-	//printf("Fake_next_both Index=%d, devices=%d, LastDevice=%d, AnyDevice=%d\n",ds->index,pn->selected_connection->connin.fake.devices,ds->LastDevice,pn->selected_connection->AnyDevices);
 	if (ds->search == _1W_CONDITIONAL_SEARCH_ROM) {	// alarm not supported
 		ds->LastDevice = 1;
 		return -ENODEV;
@@ -252,3 +326,4 @@ static const ASCII *namefind(const char *name)
 
 	return ret;
 }
+
