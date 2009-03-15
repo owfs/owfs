@@ -26,7 +26,7 @@ static const ASCII *namefind(const char *name);
 static void Fake_setroutines(struct connection_in *in);
 static void Tester_setroutines(struct connection_in *in);
 static int Fake_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
-static void GetNextByte( ASCII ** strpointer, BYTE default_byte, BYTE * sn ) ;
+static void GetNextByte( const ASCII ** strpointer, BYTE default_byte, BYTE * sn ) ;
 
 static void Fake_setroutines(struct connection_in *in)
 {
@@ -59,12 +59,12 @@ static void Tester_setroutines(struct connection_in *in)
 	in->iroutines.detect = Fake_detect;
 }
 
-static void GetNextByte( ASCII ** strpointer, BYTE default_byte, BYTE * sn )
+static void GetNextByte( const ASCII ** strpointer, BYTE default_byte, BYTE * sn )
 {
 	if ( (*strpointer)[0] == '.' ) {
 		++strpointer ;
 	}
-	if ((isxdigit((*strpointer)[0]) && isxdigit((*strpointer)[1])) {
+	if ( isxdigit((*strpointer)[0]) && isxdigit((*strpointer)[1]) ) {
 		*sn = string2num(*strpointer) ;
 		strpointer += 2 ;
 	} else {
@@ -118,7 +118,7 @@ int Fake_detect(struct connection_in *in)
 				DirblobAdd(sn, &(in->main));	// Ignore bad return
 			}
 		}
-		in->AnyDevices = (DirblobElements(in->main) > 0);
+		in->AnyDevices = (DirblobElements(&(in->main)) > 0);
 		if (oldname) {
 			free(oldname);
 		}
@@ -173,7 +173,7 @@ int Mock_detect(struct connection_in *in)
 				DirblobAdd(sn, &(in->main));	// Ignore bad return
 			}
 		}
-		in->AnyDevices = (DirblobElements(in->main) > 0);
+		in->AnyDevices = (DirblobElements(&(in->main)) > 0);
 		if (oldname) {
 			free(oldname);
 		}
@@ -213,7 +213,7 @@ int Tester_detect(struct connection_in *in)
 			if ((isxdigit(current_device_start[0])
 				 && isxdigit(current_device_start[1]))
 				|| (current_device_start = namefind(current_device_start))) {
-				unsigned int device_number = DirblobElements(in->main);
+				unsigned int device_number = DirblobElements(&(in->main));
 				// family code
 				sn[0] = string2num(current_device_start);
 				// "bus number"
@@ -231,7 +231,7 @@ int Tester_detect(struct connection_in *in)
 				DirblobAdd(sn, &(in->main));	// Ignore bad return
 			}
 		}
-		in->AnyDevices = (DirblobElements(in->main) > 0);
+		in->AnyDevices = (DirblobElements(&(in->main)) > 0);
 		if (oldname) {
 			free(oldname);
 		}

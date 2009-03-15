@@ -358,7 +358,7 @@ int ServerDIR(void (*dirfunc) (void *, const struct parsedname * const), void *v
 				Cache_Add_Dir(&db, pn_whole_directory);	// end with a null entry
 				if (RootNotBranch(pn_whole_directory)) {
 					BUSLOCK(pn_whole_directory);
-					pn_whole_directory->selected_connection->last_root_devs = DirblobElements(db);	// root dir estimated length
+					pn_whole_directory->selected_connection->last_root_devs = DirblobElements(&db);	// root dir estimated length
 					BUSUNLOCK(pn_whole_directory);
 				}
 			}
@@ -488,7 +488,7 @@ int ServerDIRALL(void (*dirfunc) (void *, const struct parsedname * const), void
 			Cache_Add_Dir(&db, pn_whole_directory);	// end with a null entry
 			if (RootNotBranch(pn_whole_directory)) {
 				BUSLOCK(pn_whole_directory);
-				pn_whole_directory->selected_connection->last_root_devs = DirblobElements(db);	// root dir estimated length
+				pn_whole_directory->selected_connection->last_root_devs = DirblobElements(&db);	// root dir estimated length
 				BUSUNLOCK(pn_whole_directory);
 			}
 		}

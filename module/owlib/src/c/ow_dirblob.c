@@ -121,7 +121,7 @@ int DirblobSearch(BYTE * sn, const struct dirblob *db)
 }
 
 // used in cache, fixes up a dirblob when retrieved from the cache
-int DirblobRecreate( BYTE * snlist, int size, const struct dirblob *db)
+int DirblobRecreate( BYTE * snlist, int size, struct dirblob *db)
 {
 	DirblobInit( db ) ;	
 
