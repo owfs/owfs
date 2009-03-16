@@ -62,11 +62,11 @@ static void Tester_setroutines(struct connection_in *in)
 static void GetNextByte( const ASCII ** strpointer, BYTE default_byte, BYTE * sn )
 {
 	if ( (*strpointer)[0] == '.' ) {
-		++strpointer ;
+		++*strpointer ;
 	}
 	if ( isxdigit((*strpointer)[0]) && isxdigit((*strpointer)[1]) ) {
 		*sn = string2num(*strpointer) ;
-		strpointer += 2 ;
+		*strpointer += 2 ;
 	} else {
 		*sn = default_byte ;
 	}
@@ -108,6 +108,7 @@ int Fake_detect(struct connection_in *in)
 				 && isxdigit(current_device_start[1]))
 				|| (current_device_start = namefind(current_device_start))) {
 				sn[0] = string2num(current_device_start);
+				current_device_start +=  2;
 				GetNextByte(&current_device_start,BYTE_MASK(rand()),&sn[1]);
 				GetNextByte(&current_device_start,BYTE_MASK(rand()),&sn[2]);
 				GetNextByte(&current_device_start,BYTE_MASK(rand()),&sn[3]);
@@ -163,6 +164,7 @@ int Mock_detect(struct connection_in *in)
 				 && isxdigit(current_device_start[1]))
 				|| (current_device_start = namefind(current_device_start))) {
 				sn[0] = string2num(current_device_start);
+				current_device_start +=  2;
 				GetNextByte(&current_device_start,BYTE_MASK(rand()),&sn[1]);
 				GetNextByte(&current_device_start,BYTE_MASK(rand()),&sn[2]);
 				GetNextByte(&current_device_start,BYTE_MASK(rand()),&sn[3]);
@@ -216,6 +218,7 @@ int Tester_detect(struct connection_in *in)
 				unsigned int device_number = DirblobElements(&(in->main));
 				// family code
 				sn[0] = string2num(current_device_start);
+				current_device_start +=  2;
 				// "bus number"
 				GetNextByte(&current_device_start, BYTE_MASK(Inbound_Control.next_tester >> 0), &sn[1]);
 				GetNextByte(&current_device_start, BYTE_MASK(Inbound_Control.next_tester >> 8), &sn[2]);
