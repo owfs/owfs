@@ -243,7 +243,7 @@ static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path,
 	/* No device lock yet assigned */
 	pn->lock = NULL ;
 	
-	/* minimal structure for setup use */
+	/* minimal structure for initial bus "detect" use -- really has connection and SemiGlobal only */
 	if (path == NULL) {
 		return 0;
 	}

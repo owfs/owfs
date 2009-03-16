@@ -25,8 +25,12 @@ static int Fake_next_both(struct device_search *ds, const struct parsedname *pn)
 static const ASCII *namefind(const char *name);
 static void Fake_setroutines(struct connection_in *in);
 static void Tester_setroutines(struct connection_in *in);
+static void Mock_setroutines(struct connection_in *in);
 static int Fake_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 static void GetNextByte( const ASCII ** strpointer, BYTE default_byte, BYTE * sn ) ;
+static void GetDeviceName(const ASCII ** strpointer, struct connection_in * in) ;
+static void GetAllDeviceNames( ASCII * remaining_device_list, struct connection_in * in ) ;
+static void SetConninData( int index, const char * name, struct connection_in *in ) ;
 
 static void Fake_setroutines(struct connection_in *in)
 {
@@ -56,7 +60,13 @@ static int Fake_sendback_data(const BYTE * data, BYTE * resp, const size_t len, 
 static void Tester_setroutines(struct connection_in *in)
 {
 	Fake_setroutines(in);
-	in->iroutines.detect = Fake_detect;
+	in->iroutines.detect = Tester_detect;
+}
+
+static void Mock_setroutines(struct connection_in *in)
+{
+	Fake_setroutines(in);
+	in->iroutines.detect = Mock_detect;
 }
 
 static void GetNextByte( const ASCII ** strpointer, BYTE default_byte, BYTE * sn )
@@ -72,174 +82,140 @@ static void GetNextByte( const ASCII ** strpointer, BYTE default_byte, BYTE * sn
 	}
 }
 
+static void GetDeviceName(const ASCII ** strpointer, struct connection_in * in)
+{
+	if ((isxdigit((*strpointer)[0])
+		&& isxdigit((*strpointer)[1]))
+		|| ((*strpointer) = namefind((*strpointer)))
+	) {
+		BYTE sn[8] ;
+		BYTE sn1, sn2 ,sn3, sn4, sn5, sn6 ;
+
+		sn[0] = string2num(*strpointer);
+		*strpointer +=  2;
+		
+		switch (in->busmode) {
+			case bus_fake:
+			case bus_mock:
+				sn1  = BYTE_MASK(rand()) ;
+				sn2  = BYTE_MASK(rand()) ;
+				sn3  = BYTE_MASK(rand()) ;
+				sn4  = BYTE_MASK(rand()) ;
+				sn5  = BYTE_MASK(rand()) ;
+				sn6  = BYTE_MASK(rand()) ;
+				break ;
+			case bus_tester:
+				// "bus number"
+				sn1 = BYTE_MASK(in->connin.tester.index >> 0) ;
+				sn2 = BYTE_MASK(in->connin.tester.index >> 8) ;
+				// repeat family code
+				sn3 = sn[0] ;
+				// family code complement
+				sn4 = BYTE_INVERSE(sn[0]) ;
+				// "device" number
+				sn5 = BYTE_MASK(DirblobElements(&(in->main)) >> 0) ;
+				sn6 = BYTE_MASK(DirblobElements(&(in->main)) >> 8) ;
+				break ;
+			default: // should never occur
+				return ;
+		}
+
+		GetNextByte(strpointer,sn1,&sn[1]);
+		GetNextByte(strpointer,sn2,&sn[2]);
+		GetNextByte(strpointer,sn3,&sn[3]);
+		GetNextByte(strpointer,sn4,&sn[4]);
+		GetNextByte(strpointer,sn5,&sn[5]);
+		GetNextByte(strpointer,sn6,&sn[6]);
+		sn[7] = CRC8compute(sn, 7, 0);
+		DirblobAdd(sn, &(in->main));	// Ignore bad return
+	}	
+}
+
+static void GetAllDeviceNames( ASCII * remaining_device_list, struct connection_in * in )
+{
+	while (remaining_device_list != NULL) {
+		const ASCII *current_device_start;
+		for (current_device_start = strsep(&remaining_device_list, " ,"); current_device_start[0] != '\0'; ++current_device_start) {
+			// note that strsep updates "remaining_device_list" pointer
+			if (current_device_start[0] != ' ' && current_device_start[0] != ',') {
+				break;
+			}
+		}
+		GetDeviceName( &current_device_start, in ) ;
+	}
+	in->AnyDevices = (DirblobElements(&(in->main)) > 0);
+}
+
+static void SetConninData( int index, const char * name, struct connection_in *in )
+{
+	struct parsedname pn;
+	ASCII *oldname = in->name; // destructively parsed and deleted at the end.
+	char newname[20] ;
+	
+	FS_ParsedName(NULL, &pn);	// minimal parsename -- no destroy needed
+	pn.selected_connection = in;
+	
+	in->file_descriptor = index;
+	in->connin.fake.index = index;
+	in->connin.fake.templow = fromTemperature(Globals.templow,&pn);
+	in->connin.fake.temphigh = fromTemperature(Globals.temphigh,&pn);
+	LEVEL_CONNECT("Setting up %s Bus Master (%d)\n", in->adapter_name, index);
+
+	UCLIBCLOCK ;
+	snprintf(newname, 18, "%s.%d", name, index);
+	UCLIBCUNLOCK ;
+
+	GetAllDeviceNames( oldname, in ) ;
+	if (oldname) {
+		free(oldname);
+	}
+	
+	in->name = strdup(newname);
+}
+
 /* Device-specific functions */
-/* Note, the "Bad"adapter" ha not function, and returns "-ENOTSUP" (not supported) for most functions */
-/* It does call lower level functions for higher ones, which of course is pointless since the lower ones don't work either */
+/* Since this is simulated bus master, it's creation cannot fail */
+/* in->name starts with a list of devices which is destructovely parsed and freed */
+/* in->name end with a name-index format */
 int Fake_detect(struct connection_in *in)
 {
-	ASCII *newname;
-	ASCII *oldname = in->name;
-	
-	in->file_descriptor = Inbound_Control.next_fake;
 	Fake_setroutines(in);		// set up close, reconnect, reset, ...
-
+	
 	in->adapter_name = "Simulated-Random";
 	in->Adapter = adapter_fake;
-	in->connin.fake.bus_number_this_type = Inbound_Control.next_fake;
-	LEVEL_CONNECT("Setting up Simulated (Fake) Bus Master (%d)\n", Inbound_Control.next_fake);
-	if ((newname = (ASCII *) malloc(20))) {
-		const ASCII *current_device_start;
-		ASCII *remaining_device_list = in->name;
 
-		UCLIBCLOCK ;
-		snprintf(newname, 18, "fake.%d", Inbound_Control.next_fake);
-		UCLIBCUNLOCK ;
-		in->name = newname;
-		
-		while (remaining_device_list != NULL) {
-			BYTE sn[8];
-			for (current_device_start = strsep(&remaining_device_list, " ,"); current_device_start[0] != '\0'; ++current_device_start) {
-				// note that strsep updates "remaining_device_list" pointer
-				if (current_device_start[0] != ' ' && current_device_start[0] != ',') {
-					break;
-				}
-			}
-			if ((isxdigit(current_device_start[0])
-				 && isxdigit(current_device_start[1]))
-				|| (current_device_start = namefind(current_device_start))) {
-				sn[0] = string2num(current_device_start);
-				current_device_start +=  2;
-				GetNextByte(&current_device_start,BYTE_MASK(rand()),&sn[1]);
-				GetNextByte(&current_device_start,BYTE_MASK(rand()),&sn[2]);
-				GetNextByte(&current_device_start,BYTE_MASK(rand()),&sn[3]);
-				GetNextByte(&current_device_start,BYTE_MASK(rand()),&sn[4]);
-				GetNextByte(&current_device_start,BYTE_MASK(rand()),&sn[5]);
-				GetNextByte(&current_device_start,BYTE_MASK(rand()),&sn[6]);
-				sn[7] = CRC8compute(sn, 7, 0);
-				DirblobAdd(sn, &(in->main));	// Ignore bad return
-			}
-		}
-		in->AnyDevices = (DirblobElements(&(in->main)) > 0);
-		if (oldname) {
-			free(oldname);
-		}
-	}
-	++Inbound_Control.next_fake;
+	SetConninData( Inbound_Control.next_fake++, "fake", in  );
+	
 	return 0;
 }
 
 /* Device-specific functions */
-/* Note, the "Bad"adapter" ha not function, and returns "-ENOTSUP" (not supported) for most functions */
-/* It does call lower level functions for higher ones, which of course is pointless since the lower ones don't work either */
+/* Since this is simulated bus master, it's creation cannot fail */
+/* in->name starts with a list of devices which is destructovely parsed and freed */
+/* in->name end with a name-index format */
 int Mock_detect(struct connection_in *in)
 {
-	ASCII *newname;
-	ASCII *oldname = in->name;
-	
-	in->file_descriptor = Inbound_Control.next_mock;
-	Fake_setroutines(in);		// set up close, reconnect, reset, ...
+	Mock_setroutines(in);		// set up close, reconnect, reset, ...
 
 	in->adapter_name = "Simulated-Mock";
 	in->Adapter = adapter_mock;
-	in->connin.mock.bus_number_this_type = Inbound_Control.next_mock;
-	LEVEL_CONNECT("Setting up Simulated (Mock) Bus Master (%d)\n", Inbound_Control.next_mock);
-	if ((newname = (ASCII *) malloc(20))) {
-		const ASCII *current_device_start;
-		ASCII *remaining_device_list = in->name;
+	SetConninData( Inbound_Control.next_mock++, "mock", in  );
 
-		UCLIBCLOCK ;
-		snprintf(newname, 18, "mock.%d", Inbound_Control.next_mock);
-		UCLIBCUNLOCK ;
-		in->name = newname;
-		
-		while (remaining_device_list != NULL) {
-			BYTE sn[8];
-			for (current_device_start = strsep(&remaining_device_list, " ,"); current_device_start[0] != '\0'; ++current_device_start) {
-				// note that strsep updates "remaining_device_list" pointer
-				if (current_device_start[0] != ' ' && current_device_start[0] != ',') {
-					break;
-				}
-			}
-			if ((isxdigit(current_device_start[0])
-				 && isxdigit(current_device_start[1]))
-				|| (current_device_start = namefind(current_device_start))) {
-				sn[0] = string2num(current_device_start);
-				current_device_start +=  2;
-				GetNextByte(&current_device_start,BYTE_MASK(rand()),&sn[1]);
-				GetNextByte(&current_device_start,BYTE_MASK(rand()),&sn[2]);
-				GetNextByte(&current_device_start,BYTE_MASK(rand()),&sn[3]);
-				GetNextByte(&current_device_start,BYTE_MASK(rand()),&sn[4]);
-				GetNextByte(&current_device_start,BYTE_MASK(rand()),&sn[5]);
-				GetNextByte(&current_device_start,BYTE_MASK(rand()),&sn[6]);
-				sn[7] = CRC8compute(sn, 7, 0);
-				DirblobAdd(sn, &(in->main));	// Ignore bad return
-			}
-		}
-		in->AnyDevices = (DirblobElements(&(in->main)) > 0);
-		if (oldname) {
-			free(oldname);
-		}
-	}
-	++Inbound_Control.next_mock;
 	return 0;
 }
 
+/* Device-specific functions */
+/* Since this is simulated bus master, it's creation cannot fail */
+/* in->name starts with a list of devices which is destructovely parsed and freed */
+/* in->name end with a name-index format */
 int Tester_detect(struct connection_in *in)
 {
-	ASCII *newname;
-	ASCII *oldname = in->name;
-
-	in->file_descriptor = Inbound_Control.next_tester;
 	Tester_setroutines(in);		// set up close, reconnect, reset, ...
-
+	
 	in->adapter_name = "Simulated-Computed";
 	in->Adapter = adapter_tester;
-	in->connin.tester.bus_number_this_type = Inbound_Control.next_tester;
-	LEVEL_CONNECT("Setting up Simulated (Testing) Bus Master (%d)\n", Inbound_Control.next_tester);
-	if ((newname = (ASCII *) malloc(20))) {
-		const ASCII *current_device_start;
-		ASCII *remaining_device_list = in->name;
-
-		UCLIBCLOCK ;
-		snprintf(newname, 18, "tester.%d", Inbound_Control.next_tester);
-		UCLIBCUNLOCK ;
-		in->name = newname;
-
-		while (remaining_device_list) {
-			BYTE sn[8];
-			for (current_device_start = strsep(&remaining_device_list, " ,"); current_device_start[0]; ++current_device_start) {
-				if (current_device_start[0] != ' ' && current_device_start[0] != ',') {
-					break;
-				}
-			}
-			if ((isxdigit(current_device_start[0])
-				 && isxdigit(current_device_start[1]))
-				|| (current_device_start = namefind(current_device_start))) {
-				unsigned int device_number = DirblobElements(&(in->main));
-				// family code
-				sn[0] = string2num(current_device_start);
-				current_device_start +=  2;
-				// "bus number"
-				GetNextByte(&current_device_start, BYTE_MASK(Inbound_Control.next_tester >> 0), &sn[1]);
-				GetNextByte(&current_device_start, BYTE_MASK(Inbound_Control.next_tester >> 8), &sn[2]);
-				// repeat family code
-				GetNextByte(&current_device_start, sn[0], &sn[3]);
-				// family code complement
-				GetNextByte(&current_device_start, BYTE_INVERSE(sn[0]), &sn[4]);
-				// "device" number
-				GetNextByte(&current_device_start, BYTE_MASK(device_number >> 0), &sn[5]);
-				GetNextByte(&current_device_start, BYTE_MASK(device_number >> 8), &sn[6]);
-				// CRC8
-				sn[7] = CRC8compute(sn, 7, 0);
-				DirblobAdd(sn, &(in->main));	// Ignore bad return
-			}
-		}
-		in->AnyDevices = (DirblobElements(&(in->main)) > 0);
-		if (oldname) {
-			free(oldname);
-		}
-	}
-	++Inbound_Control.next_tester;
+	SetConninData( Inbound_Control.next_tester++, "tester", in  );
+	
 	return 0;
 }
 

@@ -104,6 +104,8 @@ struct global {
 	int i2c_APU ;
 	int i2c_PPM ;
 	int baud ;
+	_FLOAT templow ;
+	_FLOAT temphigh ;
 };
 extern struct global Globals;
 

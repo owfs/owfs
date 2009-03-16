@@ -31,7 +31,8 @@ struct lineparse {
 static void ParseTheLine(struct lineparse *lp);
 static int ConfigurationFile(const ASCII * file);
 static int ParseInterp(struct lineparse *lp);
-static int OW_parsevalue(long long int *var, const ASCII * str);
+static int OW_parsevalue_I(long long int *var, const ASCII * str);
+static int OW_parsevalue_F(_FLOAT *var, const ASCII * str);
 
 static int OW_ArgSerial(const char *arg);
 static int OW_ArgParallel(const char *arg);
@@ -184,6 +185,17 @@ const struct option owopts_long[] = {
 	{"timeout_persistent_high", required_argument, NULL, e_timeout_persistent_high,},
 	{"clients_persistent_low", required_argument, NULL, e_clients_persistent_low,},
 	{"clients_persistent_high", required_argument, NULL, e_clients_persistent_high,},
+
+	{"temperature_low", required_argument, NULL, e_templow,},
+	{"low_temperature", required_argument, NULL, e_templow,},
+	{"templow", required_argument, NULL, e_templow,},
+
+	{"temperature_high", required_argument, NULL, e_temphigh,},
+	{"high_temperature", required_argument, NULL, e_temphigh,},
+	{"temphigh", required_argument, NULL, e_temphigh,},
+	{"temperature_hi", required_argument, NULL, e_temphigh,},
+	{"hi_temperature", required_argument, NULL, e_temphigh,},
+	{"temphi", required_argument, NULL, e_temphigh,},
 
 	{"one_device", no_argument, &Globals.one_device, 1},
 	{"1_device", no_argument, &Globals.one_device, 1},
@@ -505,8 +517,13 @@ int owopt_packed(const char *params)
 /* return 0 if ok */
 int owopt(const int option_char, const char *arg)
 {
+	// depth of nesting for config files
 	static int config_depth = 0;
+
+	// utility variables for parsing options
 	long long int arg_to_integer ;
+	_FLOAT arg_to_float ;
+
 	//printf("Option %c (%d) Argument=%s\n",c,c,SAFESTRING(arg)) ;
 	switch (option_char) {
 	case 'c':
@@ -528,7 +545,7 @@ int owopt(const int option_char, const char *arg)
 	case 'd':
 		return OW_ArgDevice(arg);
 	case 't':
-		if (OW_parsevalue(&arg_to_integer, arg)) {
+		if (OW_parsevalue_I(&arg_to_integer, arg)) {
 			return 1;
 		}
 		Globals.timeout_volatile = (int) arg_to_integer;
@@ -609,19 +626,19 @@ int owopt(const int option_char, const char *arg)
 		}
 		break;
 	case e_error_print:
-		if (OW_parsevalue(&arg_to_integer, arg)) {
+		if (OW_parsevalue_I(&arg_to_integer, arg)) {
 			return 1;
 		}
 		Globals.error_print = (int) arg_to_integer;
 		break;
 	case e_error_level:
-		if (OW_parsevalue(&arg_to_integer, arg)) {
+		if (OW_parsevalue_I(&arg_to_integer, arg)) {
 			return 1;
 		}
 		Globals.error_level = (int) arg_to_integer;
 		break;
 	case e_cache_size:
-		if (OW_parsevalue(&arg_to_integer, arg)) {
+		if (OW_parsevalue_I(&arg_to_integer, arg)) {
 			return 1;
 		}
 		Globals.cache_size = (size_t) arg_to_integer;
@@ -638,7 +655,7 @@ int owopt(const int option_char, const char *arg)
 			return 0;
 		}
 	case e_max_clients:
-		if (OW_parsevalue(&arg_to_integer, arg)) {
+		if (OW_parsevalue_I(&arg_to_integer, arg)) {
 			return 1;
 		}
 		Globals.max_clients = (int) arg_to_integer;
@@ -688,18 +705,30 @@ int owopt(const int option_char, const char *arg)
 	case e_timeout_persistent_high:
 	case e_clients_persistent_low:
 	case e_clients_persistent_high:
-		if (OW_parsevalue(&arg_to_integer, arg)) {
+		if (OW_parsevalue_I(&arg_to_integer, arg)) {
 			return 1;
 		}
 		// Using the character as a numeric value -- convenient but risky
 		(&Globals.timeout_volatile)[option_char - e_timeout_volatile] = (int) arg_to_integer;
 		break;
 	case e_baud:
-		if (OW_parsevalue(&arg_to_integer, arg)) {
+		if (OW_parsevalue_I(&arg_to_integer, arg)) {
 			return 1;
 		}
 		Globals.baud = OW_MakeBaud( arg_to_integer ) ;
 		break ;
+	case e_templow:
+		if (OW_parsevalue_F(&arg_to_float, arg)) {
+			return 1;
+		}
+		Globals.templow = arg_to_float;
+		break;
+	case e_temphigh:
+		if (OW_parsevalue_F(&arg_to_float, arg)) {
+			return 1;
+		}
+		Globals.temphigh = arg_to_float;
+		break;
 	case 0:
 		break;
 	default:
@@ -979,12 +1008,23 @@ int OW_ArgGeneric(const char *arg)
 	return 1;
 }
 
-static int OW_parsevalue(long long int *var, const ASCII * str)
+static int OW_parsevalue_I(long long int *var, const ASCII * str)
 {
 	errno = 0;
 	var[0] = strtol(str, NULL, 10);
 	if (errno) {
-		ERROR_DETAIL("Bad configuration value %s\n", str);
+		ERROR_DETAIL("Bad integer configuration value %s\n", str);
+		return 1;
+	}
+	return 0;
+}
+
+static int OW_parsevalue_F(_FLOAT *var, const ASCII * str)
+{
+	errno = 0;
+	var[0] = (_FLOAT) strtod(str, NULL);
+	if (errno) {
+		ERROR_DETAIL("Bad floating point configuration value %s\n", str);
 		return 1;
 	}
 	return 0;

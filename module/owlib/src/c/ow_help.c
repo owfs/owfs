@@ -194,6 +194,7 @@ void ow_help_device(void)
 	"                   use family codes in hex\n"
 	"                   e.g. 1F,10,21 for DS2409,DS18S20,DS1921\n"
 	"  --tester=list   List of devices to simulate (non-random ID, non-random data)\n"
+	"  --temperature_low=0.0   --temperature_high=100.0 temperature range for fake readings\n"
 	"\n"
 	" Linux Kernel Device\n"
 	"  --w1            Scan for kernel-managed bus masters\n"

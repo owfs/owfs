@@ -70,6 +70,7 @@ enum e_long_option { e_error_print = 257, e_error_level,
 	e_timeout_persistent_low, e_timeout_persistent_high, e_clients_persistent_low, e_clients_persistent_high,
 	e_fatal_debug_file,
 	e_baud,
+	e_templow, e_temphigh,
 };
 
 #endif							/* OW_OPT_H */

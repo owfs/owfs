@@ -199,7 +199,9 @@ struct connin_serial {
 };
 
 struct connin_fake {
-	int bus_number_this_type;
+	int index;
+	_FLOAT templow;
+	_FLOAT temphigh;
 };
 
 struct connin_usb {

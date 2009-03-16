@@ -73,6 +73,12 @@ static int FS_read_fake_single(struct one_wire_query *owq)
 		OWQ_U(owq) = Random_u;
 		break;
 	case ft_temperature:
+		{
+			_FLOAT low  = OWQ_pn(owq).selected_connection->connin.fake.templow ;
+			_FLOAT high = OWQ_pn(owq).selected_connection->connin.fake.temphigh ;
+			OWQ_F(owq) = low + (high-low)*Random_f/100.;
+		}
+		break;
 	case ft_tempgap:
 	case ft_float:
 		OWQ_F(owq) = Random_f;

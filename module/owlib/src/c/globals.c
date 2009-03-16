@@ -92,6 +92,9 @@ struct global Globals = {
 	.i2c_APU = 1 ,
 	.i2c_PPM = 1 ,
 	.baud = B9600 ,
+
+	.templow = 0.0,
+	.temphigh = 100.0,
 };
 
 /* Statistics globals are stored in ow_stats.c */
