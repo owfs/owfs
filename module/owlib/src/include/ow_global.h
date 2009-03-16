@@ -49,6 +49,9 @@ $Id$
 #ifndef OW_GLOBAL_H				/* tedious wrapper */
 #define OW_GLOBAL_H
 
+// some improbably sub-absolute-zero number
+#define GLOBAL_UNTOUCHED_TEMP_LIMIT	(-999.)
+
 enum zero_support { zero_unknown, zero_none, zero_bonjour, zero_avahi, } ;
 
 /* Globals information (for local control) */

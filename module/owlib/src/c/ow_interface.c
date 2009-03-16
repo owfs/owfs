@@ -59,8 +59,6 @@ READ_FUNCTION(FS_r_flextime);
 WRITE_FUNCTION(FS_w_flextime);
 READ_FUNCTION(FS_r_reverse);
 WRITE_FUNCTION(FS_w_reverse);
-READ_FUNCTION(FS_r_serialspeed);
-WRITE_FUNCTION(FS_w_serialspeed);
 READ_FUNCTION(FS_r_reconnect);
 WRITE_FUNCTION(FS_w_reconnect);
 READ_FUNCTION(FS_r_checksum);
@@ -79,6 +77,8 @@ READ_FUNCTION(FS_r_PPM);
 WRITE_FUNCTION(FS_w_PPM);
 READ_FUNCTION(FS_r_baud);
 WRITE_FUNCTION(FS_w_baud);
+READ_FUNCTION(FS_r_templimit);
+WRITE_FUNCTION(FS_w_templimit);
 //#define DEBUG_DS2490
 #ifdef DEBUG_DS2490
 READ_FUNCTION(FS_r_ds2490status);
@@ -100,24 +100,29 @@ struct filetype interface_settings[] = {
   {"name", 128, NULL, ft_vascii, fc_static, FS_name, NO_WRITE_FUNCTION, {v:NULL},},
 	// variable length
   {"address", 512, NULL, ft_vascii, fc_static, FS_port, NO_WRITE_FUNCTION, {v:NULL},},
-	// variable length
-  {"baudrate", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_r_baud, FS_w_baud, {v:NULL},},
-  {"checksum", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_static, FS_r_checksum, FS_w_checksum, {v:NULL},},
-  {"datasampleoffset", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_r_datasampleoffset, FS_w_datasampleoffset, {v:NULL},},
-  {"ds2404_compliance", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_static, FS_r_ds2404_compliance, FS_w_ds2404_compliance, {v:NULL},},
   {"overdrive", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_static, FS_r_overdrive, FS_w_overdrive, {v:NULL},},
-  {"reconnect", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_static, FS_r_reconnect, FS_w_reconnect, {v:NULL},},
-  {"flexible_timing", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_static, FS_r_flextime, FS_w_flextime, {v:NULL},},
-  {"reverse_polarity", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_static, FS_r_reverse, FS_w_reverse, {v:NULL},},
-  {"serial_speed", PROPERTY_LENGTH_INTEGER, NULL, ft_integer, fc_static, FS_r_serialspeed, FS_w_serialspeed, {v:NULL},},
-  {"pulldownslewrate", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_r_pulldownslewrate, FS_w_pulldownslewrate, {v:NULL},},
-#ifdef DEBUG_DS2490
-  {"ds2490status", 128, NULL, ft_vascii, fc_static, FS_r_ds2490status, NO_WRITE_FUNCTION, {v:NULL},},
-#endif
   {"version", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_version, NO_WRITE_FUNCTION, {v:NULL},},
-  {"writeonelowtime", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_r_writeonelowtime, FS_w_writeonelowtime, {v:NULL},},
-  {"ActivePullUp", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_static, FS_r_APU, FS_w_APU, {v:NULL},},
-  {"PulsePresenceMask", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_static, FS_r_PPM, FS_w_PPM, {v:NULL},},
+  // variable length
+  {"flexible_timing", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_static, FS_r_flextime, FS_w_flextime, {v:NULL},},
+  {"ds2404_compliance", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_static, FS_r_ds2404_compliance, FS_w_ds2404_compliance, {v:NULL},},
+  {"reconnect", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_static, FS_r_reconnect, FS_w_reconnect, {v:NULL},},
+  {"usb", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
+  #ifdef DEBUG_DS2490
+  {"usb/ds2490status", 128, NULL, ft_vascii, fc_static, FS_r_ds2490status, NO_WRITE_FUNCTION, {v:NULL},},
+  #endif
+  {"usb/pulldownslewrate", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_r_pulldownslewrate, FS_w_pulldownslewrate, {v:NULL},},
+  {"usb/writeonelowtime", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_r_writeonelowtime, FS_w_writeonelowtime, {v:NULL},},
+  {"usb/datasampleoffset", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_r_datasampleoffset, FS_w_datasampleoffset, {v:NULL},},
+  {"serial", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
+  {"serial/reverse_polarity", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_static, FS_r_reverse, FS_w_reverse, {v:NULL},},
+  {"serial/baudrate", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_r_baud, FS_w_baud, {v:NULL},},
+  {"serial/checksum", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_static, FS_r_checksum, FS_w_checksum, {v:NULL},},
+  {"i2c", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
+  {"i2c/ActivePullUp", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_static, FS_r_APU, FS_w_APU, {v:NULL},},
+  {"i2c/PulsePresenceMask", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_static, FS_r_PPM, FS_w_PPM, {v:NULL},},
+  {"simulated", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
+  {"simulated/templow", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:1},},
+  {"simulated/temphigh", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:0},},
 };
 struct device d_interface_settings = { "settings", "settings", ePN_interface,
 	COUNT_OF_FILETYPES(interface_settings), interface_settings
@@ -264,6 +269,40 @@ static int FS_w_reverse(struct one_wire_query *owq)
 	return 0 ;
 }
 
+/* fake adapter temperature limits */
+static int FS_r_templimit(struct one_wire_query *owq)
+{
+	struct parsedname *pn = PN(owq);
+	switch ( pn->selected_connection->busmode ) {
+		case bus_fake:
+		case bus_mock:
+		case bus_tester:
+			OWQ_F(owq) = pn->selected_filetype->data.i ? pn->selected_connection->connin.fake.templow : pn->selected_connection->connin.fake.temphigh;
+			return 0;
+		default:
+			return -ENOTSUP ;
+	}
+}
+
+static int FS_w_templimit(struct one_wire_query *owq)
+{
+	struct parsedname *pn = PN(owq);
+	switch ( pn->selected_connection->busmode ) {
+		case bus_fake:
+		case bus_mock:
+		case bus_tester:
+			if (pn->selected_filetype->data.i) {
+				pn->selected_connection->connin.fake.templow = OWQ_F(owq);
+			} else {
+				pn->selected_connection->connin.fake.temphigh = OWQ_F(owq);
+			}
+			return 0;
+		default:
+			break ;
+	}
+	return 0 ;
+}
+
 /* Serial baud rate */
 static int FS_r_baud(struct one_wire_query *owq)
 {
@@ -350,34 +389,6 @@ static int FS_w_checksum(struct one_wire_query *owq)
 			break ;
 	}
 	return 0 ;
-}
-
-/* baud rate choice */
-static int FS_r_serialspeed(struct one_wire_query *owq)
-{
-	struct parsedname *pn = PN(owq);
-	switch (pn->selected_connection->busmode) {
-		case bus_serial:
-			OWQ_I(owq) = (pn->selected_connection->speed);
-			break ;
-		default:
-			return -ENOTSUP ;
-	}
-	return 0;
-}
-
-static int FS_w_serialspeed(struct one_wire_query *owq)
-{
-	struct parsedname *pn = PN(owq);
-	switch (pn->selected_connection->busmode) {
-		case bus_serial:
-			pn->selected_connection->speed = OWQ_I(owq) ;
-			++pn->selected_connection->changed_bus_settings;
-			break ;
-		default:
-			break ;
-	}
-	return 0;
 }
 
 /* Just some tests to support overdrive */

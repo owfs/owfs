@@ -16,6 +16,7 @@ $Id$
 #include "ow_pid.h"
 
 static void IgnoreSignals(void);
+static void SetupTemperatureLimits( void );
 static void SetupInboundConnections(void);
 static void SetupSideboundConnections(void);
 
@@ -26,6 +27,8 @@ int LibStart(void)
 	 * id each time */
 	srand(1);
 
+	SetupTemperatureLimits() ;
+	
 	SetupInboundConnections();
 	if ( Globals.w1 ) {
 #if OW_W1
@@ -34,6 +37,7 @@ int LibStart(void)
 		LEVEL_DEFAULT("W1 (the linux kernel 1-wire system) is not supported\n");
 #endif /* OW_W1 */
 	}
+
 	SetupSideboundConnections();
 
 	// zeroconf/Bonjour look for new services
@@ -55,6 +59,30 @@ int LibStart(void)
 	IgnoreSignals();
 
 	return 0;
+}
+
+// only changes FAKE and MOCK temp limits
+// do it here after options are parsed to allow correction forr temperature scale
+static void SetupTemperatureLimits( void )
+{
+	struct parsedname pn;
+	
+	FS_ParsedName(NULL, &pn);	// minimal parsename -- no destroy needed
+
+	printf("Globals temp limits %g %g\n",Globals.templow,Globals.temphigh);
+	if ( Globals.templow < GLOBAL_UNTOUCHED_TEMP_LIMIT + 1 ) {
+		Globals.templow = 0. ; // freezing point
+	} else {
+		Globals.templow = fromTemperature(Globals.templow,&pn) ; // internal scale
+	}
+	
+	printf("Globals temp limits %g %g\n",Globals.templow,Globals.temphigh);
+	if ( Globals.temphigh < GLOBAL_UNTOUCHED_TEMP_LIMIT + 1 ) {
+		Globals.temphigh = 100. ; // boiling point
+	} else {
+		Globals.temphigh = fromTemperature(Globals.temphigh,&pn) ; // internal scale
+	}
+	printf("Globals temp limits %g %g\n",Globals.templow,Globals.temphigh);
 }
 
 static void SetupInboundConnections(void)

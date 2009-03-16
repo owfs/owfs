@@ -20,6 +20,9 @@ $Id$
 
 /* char * pid_file in ow_opt.c */
 
+// some improbably sub-absolute-zero number
+#define GLOBAL_UNTOUCHED_TEMP_LIMIT	(-999.)
+
 /* State information, sent to remote or kept locally */
 /* cacheenabled, presencecheck, tempscale, devform */
 #if OW_CACHE
@@ -93,8 +96,8 @@ struct global Globals = {
 	.i2c_PPM = 1 ,
 	.baud = B9600 ,
 
-	.templow = 0.0,
-	.temphigh = 100.0,
+	.templow = GLOBAL_UNTOUCHED_TEMP_LIMIT,
+	.temphigh = GLOBAL_UNTOUCHED_TEMP_LIMIT,
 };
 
 /* Statistics globals are stored in ow_stats.c */
