@@ -177,14 +177,32 @@ program that talks to the 1-wire bus. The default port is 4304.
 Timeout for network bus master communications. This has a 1 second default and can be changed dynamically under
 .I /settings/timeout/network
 .SH "* Simulated devices"
-Used for testing and development. 
-.I chips
-is a list of comma-separated family codes. e.g. 10,21,1B
+Used for testing and development. No actual hardware is needed. Useful for separating the hardware development from the rest of the software design.
 .TP
-.I --fake=chips
-Random address and random values for each read.
+.I devices
+is a list of comma-separated 1-wire devices in the following formats. Note that a valid CRC8 code is created automatically.
 .TP
-.I --tester=chips
+10,05,21
+Hexidecimal
+.I family codes
+(the DS18S20, DS2405 and DS1921 in this example).
+.TP
+10.12AB23431211
+A more complete hexidecimal unique address. Useful when an actual hardware device should be simulated.
+.TP
+DS2408,DS2489
+The 1-wire device name. (Full ID cannot be speciifed in this format).
+.TP
+.I --fake=devices
+Random address and random values for each read. The device ID is also random (unless specified).
+.TP
+.I --temperature_low=12 --temperature_high=44
+Specify the temperature limits for the
+.I fake
+adapter simulation. These should be in the same temperature scale that is specified in the command line. It is possible to change the limits dynamically for each adapter under
+.I /bus.x/interface/settings/simulated/[temperature_low|temperature_high]
+.TP
+.I --tester=devices
 Predictable address and predictable values for each read. (See the website for the algorhythm).
 .SH "* w1 kernel module"
 This a linux-specific option for using the operating system's access to bus masters. Root access is required and the implementation was still in progress as of owfs v2.7p12 and linux 2.6.30.

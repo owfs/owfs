@@ -77,7 +77,6 @@ static int FS_read_fake_single(struct one_wire_query *owq)
 			_FLOAT low  = OWQ_pn(owq).selected_connection->connin.fake.templow ;
 			_FLOAT high = OWQ_pn(owq).selected_connection->connin.fake.temphigh ;
 			OWQ_F(owq) = low + (high-low)*Random_f/100.;
-			printf("Fake read of temperature: low=%g high=%g reading=%g\n",low,high,OWQ_F(owq));
 		}
 		break;
 	case ft_tempgap:

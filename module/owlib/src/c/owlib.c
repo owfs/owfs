@@ -69,20 +69,18 @@ static void SetupTemperatureLimits( void )
 	
 	FS_ParsedName(NULL, &pn);	// minimal parsename -- no destroy needed
 
-	printf("Globals temp limits %g %g\n",Globals.templow,Globals.temphigh);
 	if ( Globals.templow < GLOBAL_UNTOUCHED_TEMP_LIMIT + 1 ) {
 		Globals.templow = 0. ; // freezing point
 	} else {
 		Globals.templow = fromTemperature(Globals.templow,&pn) ; // internal scale
 	}
 	
-	printf("Globals temp limits %g %g\n",Globals.templow,Globals.temphigh);
 	if ( Globals.temphigh < GLOBAL_UNTOUCHED_TEMP_LIMIT + 1 ) {
 		Globals.temphigh = 100. ; // boiling point
 	} else {
 		Globals.temphigh = fromTemperature(Globals.temphigh,&pn) ; // internal scale
 	}
-	printf("Globals temp limits %g %g\n",Globals.templow,Globals.temphigh);
+	LEVEL_DEBUG("Globals temp limits %gC %gC (for simulated adapters)\n",Globals.templow,Globals.temphigh);
 }
 
 static void SetupInboundConnections(void)

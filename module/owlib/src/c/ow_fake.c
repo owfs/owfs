@@ -24,11 +24,10 @@ static void Fake_close(struct connection_in *in);
 static int Fake_next_both(struct device_search *ds, const struct parsedname *pn);
 static const ASCII *namefind(const char *name);
 static void Fake_setroutines(struct connection_in *in);
-static void Tester_setroutines(struct connection_in *in);
-static void Mock_setroutines(struct connection_in *in);
 static int Fake_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 static void GetNextByte( const ASCII ** strpointer, BYTE default_byte, BYTE * sn ) ;
 static void GetDeviceName(const ASCII ** strpointer, struct connection_in * in) ;
+static void GetDefaultDeviceName(BYTE * dn, const BYTE * sn, const struct connection_in * in) ;
 static void GetAllDeviceNames( ASCII * remaining_device_list, struct connection_in * in ) ;
 static void SetConninData( int index, const char * name, struct connection_in *in ) ;
 
@@ -57,18 +56,6 @@ static int Fake_sendback_data(const BYTE * data, BYTE * resp, const size_t len, 
 	return 0;
 }
 
-static void Tester_setroutines(struct connection_in *in)
-{
-	Fake_setroutines(in);
-	in->iroutines.detect = Tester_detect;
-}
-
-static void Mock_setroutines(struct connection_in *in)
-{
-	Fake_setroutines(in);
-	in->iroutines.detect = Mock_detect;
-}
-
 static void GetNextByte( const ASCII ** strpointer, BYTE default_byte, BYTE * sn )
 {
 	if ( (*strpointer)[0] == '.' ) {
@@ -82,53 +69,72 @@ static void GetNextByte( const ASCII ** strpointer, BYTE default_byte, BYTE * sn
 	}
 }
 
+// set up default device ID
+static void GetDefaultDeviceName(BYTE * dn, const BYTE * sn, const struct connection_in * in)
+{
+	switch (in->busmode) {
+		case bus_fake:
+		case bus_mock:
+			dn[1]  = BYTE_MASK(rand()) ;
+			dn[2]  = BYTE_MASK(rand()) ;
+			dn[3]  = BYTE_MASK(rand()) ;
+			dn[4]  = BYTE_MASK(rand()) ;
+			dn[5]  = BYTE_MASK(rand()) ;
+			dn[6]  = BYTE_MASK(rand()) ;
+			break ;
+		case bus_tester:
+			// "bus number"
+			dn[1] = BYTE_MASK(in->connin.tester.index >> 0) ;
+			dn[2] = BYTE_MASK(in->connin.tester.index >> 8) ;
+			// repeat family code
+			dn[3] = sn[0] ;
+			// family code complement
+			dn[4] = BYTE_INVERSE(sn[0]) ;
+			// "device" number
+			dn[5] = BYTE_MASK(DirblobElements(&(in->main)) >> 0) ;
+			dn[6] = BYTE_MASK(DirblobElements(&(in->main)) >> 8) ;
+			break ;
+	}
+}
+
 static void GetDeviceName(const ASCII ** strpointer, struct connection_in * in)
 {
-	if ((isxdigit((*strpointer)[0])
-		&& isxdigit((*strpointer)[1]))
-		|| ((*strpointer) = namefind((*strpointer)))
-	) {
-		BYTE sn[8] ;
-		BYTE sn1, sn2 ,sn3, sn4, sn5, sn6 ;
+	BYTE sn[8] ;
+	BYTE dn[8] ;
 
+	if ( isxdigit((*strpointer)[0])	&& isxdigit((*strpointer)[1]) ) {
+		// family code specified
 		sn[0] = string2num(*strpointer);
 		*strpointer +=  2;
 		
-		switch (in->busmode) {
-			case bus_fake:
-			case bus_mock:
-				sn1  = BYTE_MASK(rand()) ;
-				sn2  = BYTE_MASK(rand()) ;
-				sn3  = BYTE_MASK(rand()) ;
-				sn4  = BYTE_MASK(rand()) ;
-				sn5  = BYTE_MASK(rand()) ;
-				sn6  = BYTE_MASK(rand()) ;
-				break ;
-			case bus_tester:
-				// "bus number"
-				sn1 = BYTE_MASK(in->connin.tester.index >> 0) ;
-				sn2 = BYTE_MASK(in->connin.tester.index >> 8) ;
-				// repeat family code
-				sn3 = sn[0] ;
-				// family code complement
-				sn4 = BYTE_INVERSE(sn[0]) ;
-				// "device" number
-				sn5 = BYTE_MASK(DirblobElements(&(in->main)) >> 0) ;
-				sn6 = BYTE_MASK(DirblobElements(&(in->main)) >> 8) ;
-				break ;
-			default: // should never occur
-				return ;
+		GetDefaultDeviceName( dn, sn, in ) ;
+		// Choice of default or specified ID
+		GetNextByte(strpointer,dn[1],&sn[1]);
+		GetNextByte(strpointer,dn[2],&sn[2]);
+		GetNextByte(strpointer,dn[3],&sn[3]);
+		GetNextByte(strpointer,dn[4],&sn[4]);
+		GetNextByte(strpointer,dn[5],&sn[5]);
+		GetNextByte(strpointer,dn[6],&sn[6]);
+	} else {
+		ASCII * name_to_familycode = namefind((*strpointer)) ;
+		if (  name_to_familycode != NULL) {
+			// device name specified (e.g. DS2401)
+			sn[0] = string2num(name_to_familycode);
+			GetDefaultDeviceName( dn, sn, in ) ;
+			sn[1] = dn[1] ;
+			sn[2] = dn[2] ;
+			sn[3] = dn[3] ;
+			sn[4] = dn[4] ;
+			sn[5] = dn[5] ;
+			sn[6] = dn[6] ;
+		} else {
+			// Bad device name
+			LEVEL_DEFAULT("Device %d <%s> not recognized for %s %d -- ignored\n",DirblobElements(&(in->main))+1,*strpointer,in->adapter_name,in->connin.fake.index);
+			return ;
 		}
-
-		GetNextByte(strpointer,sn1,&sn[1]);
-		GetNextByte(strpointer,sn2,&sn[2]);
-		GetNextByte(strpointer,sn3,&sn[3]);
-		GetNextByte(strpointer,sn4,&sn[4]);
-		GetNextByte(strpointer,sn5,&sn[5]);
-		GetNextByte(strpointer,sn6,&sn[6]);
-		sn[7] = CRC8compute(sn, 7, 0);
-		DirblobAdd(sn, &(in->main));	// Ignore bad return
-	}	
+	}
+	sn[7] = CRC8compute(sn, 7, 0);
+	DirblobAdd(sn, &(in->main));	// Ignore bad return
 }
 
 static void GetAllDeviceNames( ASCII * remaining_device_list, struct connection_in * in )
@@ -148,17 +154,13 @@ static void GetAllDeviceNames( ASCII * remaining_device_list, struct connection_
 
 static void SetConninData( int index, const char * name, struct connection_in *in )
 {
-	struct parsedname pn;
 	ASCII *oldname = in->name; // destructively parsed and deleted at the end.
 	char newname[20] ;
 	
-	FS_ParsedName(NULL, &pn);	// minimal parsename -- no destroy needed
-	pn.selected_connection = in;
-	
 	in->file_descriptor = index;
 	in->connin.fake.index = index;
-	in->connin.fake.templow = fromTemperature(Globals.templow,&pn);
-	in->connin.fake.temphigh = fromTemperature(Globals.temphigh,&pn);
+	in->connin.fake.templow = Globals.templow;
+	in->connin.fake.temphigh = Globals.temphigh;
 	LEVEL_CONNECT("Setting up %s Bus Master (%d)\n", in->adapter_name, index);
 
 	UCLIBCLOCK ;
@@ -180,6 +182,7 @@ static void SetConninData( int index, const char * name, struct connection_in *i
 int Fake_detect(struct connection_in *in)
 {
 	Fake_setroutines(in);		// set up close, reconnect, reset, ...
+	in->iroutines.detect = Fake_detect;
 	
 	in->adapter_name = "Simulated-Random";
 	in->Adapter = adapter_fake;
@@ -195,8 +198,9 @@ int Fake_detect(struct connection_in *in)
 /* in->name end with a name-index format */
 int Mock_detect(struct connection_in *in)
 {
-	Mock_setroutines(in);		// set up close, reconnect, reset, ...
-
+	Fake_setroutines(in);		// set up close, reconnect, reset, ...
+	in->iroutines.detect = Mock_detect;
+	
 	in->adapter_name = "Simulated-Mock";
 	in->Adapter = adapter_mock;
 	SetConninData( Inbound_Control.next_mock++, "mock", in  );
@@ -210,7 +214,8 @@ int Mock_detect(struct connection_in *in)
 /* in->name end with a name-index format */
 int Tester_detect(struct connection_in *in)
 {
-	Tester_setroutines(in);		// set up close, reconnect, reset, ...
+	Fake_setroutines(in);		// set up close, reconnect, reset, ...
+	in->iroutines.detect = Tester_detect;
 	
 	in->adapter_name = "Simulated-Computed";
 	in->Adapter = adapter_tester;
@@ -259,6 +264,7 @@ static int Fake_next_both(struct device_search *ds, const struct parsedname *pn)
 }
 
 /* Need to lock struct global_namefind_struct since twalk requires global data -- can't pass void pointer */
+/* Except all *_detect routines are done sequentially, not concurrently */
 #if OW_MT
 pthread_mutex_t Namefindmutex = PTHREAD_MUTEX_INITIALIZER;
 #define NAMEFINDMUTEXLOCK		my_pthread_mutex_lock(&Namefindmutex)
@@ -305,4 +311,3 @@ static const ASCII *namefind(const char *name)
 
 	return ret;
 }
-
