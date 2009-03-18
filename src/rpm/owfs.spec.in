@@ -526,10 +526,14 @@ fi
 %if %{build_man}
 %files man
 %defattr(-,root,root)
-%{_mandir}/man1/ow*.1.gz
+%{_mandir}/man1/*.1.gz
+%{_mandir}/man1/*.1so.gz
 %{_mandir}/man3/*.3.gz
+%{_mandir}/man3/*.3so.gz
 %{_mandir}/man5/*.5.gz
+%{_mandir}/man5/*.5so.gz
 %{_mandir}/mann/*.n.gz
+%{_mandir}/mann/*.nso.gz
 %endif
 
 %if %{build_ftpd}
