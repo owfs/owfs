@@ -93,9 +93,6 @@
 /* Define to 1 if you have the <linux/limits.h> header file. */
 #undef HAVE_LINUX_LIMITS_H
 
-/* Define to 1 if you have the <linux/netlink.h> header file. */
-#undef HAVE_LINUX_NETLINK_H
-
 /* Define to 1 if you have the <linux/types.h> header file. */
 #undef HAVE_LINUX_TYPES_H
 
@@ -274,6 +271,10 @@
 
 /* Define if ipv6 support is present and available. */
 #undef IPV6
+
+/* Define to the sub-directory in which libtool stores uninstalled libraries.
+   */
+#undef LT_OBJDIR
 
 /* Define to 1 if your system has no in6addr_any. */
 #undef NO_IN6ADDR_ANY
