@@ -29,4 +29,4 @@ endif
 	@CC@ $(CFLAGS) -c -o $@ $<
 
 clean:
-	$(RM) -f owcapiexample *.o *~ .~
+	$(RM) -f owcapiexample *.o *~ .~ Makefile

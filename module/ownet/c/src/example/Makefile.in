@@ -38,4 +38,4 @@ endif
 	@CC@ $(CFLAGS) -c -o $@ $<
 
 clean:
-	$(RM) -f $(EXAMPLEA) $(EXAMPLEB) *.o *~ .~
+	$(RM) -f $(EXAMPLEA) $(EXAMPLEB) *.o *~ .~ Makefile
