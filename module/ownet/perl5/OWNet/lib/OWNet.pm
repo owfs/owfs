@@ -680,6 +680,8 @@ An example owserver invocation for a serial adapter and explicitly the default p
 
 =head2 Object properties (All private)
 
+=over
+
 =item ADDR
 
 literal sting for the IP address, in dotted-quad or host format. This property is also used to indicate a substantiated object.
@@ -700,7 +702,11 @@ Print error messages? Set by "-v" in object invocation.
 
 Socket address (object) for communication. Stays defined for persistent connections, else deleted between calls.
 
+=back
+
 =head2 Private methods
+
+=over
 
 =item _self
 
@@ -737,6 +743,8 @@ Employs NET::Rendezvous (an earlier name or Apple's Bonjour)
 This module is loaded only if available using the method of http://sial.org/blog/2006/12/optional_perl_module_loading.html
 
 Bounjour details for owserver at: 
+
+=back
 
 =head1 AUTHOR
 
