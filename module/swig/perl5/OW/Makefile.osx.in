@@ -16,4 +16,5 @@ WriteMakefile(
     'LIBS'      =>	q[-L../../../owlib/src/c/.libs -low @PTHREAD_LIBS@ @LIBS@],
     'OBJECT'	=>	'ow_wrap.o',
     'NAME'      =>	'OW',
+	'POLLUTE'	=>  1,
 ) ;

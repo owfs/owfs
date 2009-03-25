@@ -8,5 +8,6 @@ WriteMakefile(
     PREREQ_PM         => {}, # e.g., Module::Name => 1.1
     ($] >= 5.008 ?     ## Add these new keywords supported since 5.008
       (ABSTRACT       => 'Light-weight connection to owserver to access the Dallas 1-wire system for monitoring and control',
+	POLLUTE => 1,
        AUTHOR         => 'Paul H Alfille <paul.alfille@gmail.com>') : ()),
 );
