@@ -170,20 +170,19 @@ static void FS_getdir_callback(void *v, const struct parsedname *pn_entry)
 static int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler)
 {
 	struct parsedname pn;
-	int ret;
-	struct getdirstruct gds = { h, filler, };
+	int ret = FS_ParsedName(path, &pn);
 
 	LEVEL_CALL("GETDIR path=%s\n", SAFESTRING(path));
 
-	if ((ret = FS_ParsedName(path, &pn))) {
+	if (ret) { // bad ParseName
 		return ret;
 	}
 
 	if (pn.selected_filetype) {
 		ret = -ENOENT;
 	} else {					/* Good pn */
+		struct getdirstruct gds = { h, filler, };
 		/* Call directory spanning function */
-//        FS_dir( directory, &pn ) ;
 		FS_dir(FS_getdir_callback, &gds, &pn);
 		FILLER(h, ".");
 		FILLER(h, "..");
