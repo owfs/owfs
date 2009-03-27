@@ -11,18 +11,7 @@ $Id$
 
 #include <config.h>
 #include "owfs_config.h"
-
-int FS_r_piostate(struct one_wire_query *owq)
-{
-	BYTE piostate ;
-
-	if ( OW_read( &piostate, PN(owq) ) ) {
-		return -EINVAL ;
-	}
-
-	OWQ_U(owq) = piostate & 0x0F ;
-	return 0 ;
-}
+#include "ow.h"
 
 int FS_generic_r_pio(struct one_wire_query *owq)
 {
@@ -44,7 +33,7 @@ int FS_generic_r_sense(struct one_wire_query *owq)
 	if ( FS_r_sibling_U( &piostate, "piostate", owq ) ) {
 		return -EINVAL ;
 	}
-	
+
 	// bits 0->0 and 2->1
 	OWQ_U(owq) = piostate ;
 
@@ -54,6 +43,6 @@ int FS_generic_r_sense(struct one_wire_query *owq)
 static int FS_generic_w_pio(struct one_wire_query *owq)
 {
 	FS_del_sibling( "piostate", owq ) ;
-	
+
 	return 0 ;
 }
