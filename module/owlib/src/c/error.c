@@ -46,19 +46,45 @@ const char cond_init_failed[] = "cond_init failed rc=%d [%s]";
 const char cond_destroy_failed[] = "cond_destroy failed rc=%d [%s]";
 #endif
 
+static void err_format(char * format, int errno_save, const char * level_string, const char * file, int line, const char * func, const char * fmt);
+
 /* See man page for explanation */
 int log_available = 0;
 
 /* Print message and return to caller
  * Caller specifies "errnoflag" and "level" */
 #define MAXLINE     1023
-void err_msg(enum e_err_type errnoflag, enum e_err_level level, const char *fmt, ...)
+void err_msg(enum e_err_type errnoflag, enum e_err_level level, const char * file, int line, const char * func, const char *fmt, ...)
 {
-	int errno_save = errno;		/* value caller might want printed */
-	int n;
+	int errno_save = (errnoflag==e_err_type_error)?errno:0;		/* value caller might want printed */
+	char format[MAXLINE + 1];
 	char buf[MAXLINE + 1];
 	enum e_err_print sl;		// 2=console 1=syslog
 	va_list ap;
+	const char * level_string ;
+
+	switch (level) {
+	case e_err_default:
+		level_string = "DEFAULT: ";
+		break;
+	case e_err_connect:
+		level_string = "CONNECT: ";
+		break;
+	case e_err_call:
+		level_string = "   CALL: ";
+		break;
+	case e_err_data:
+		level_string = "   DATA: ";
+		break;
+	case e_err_detail:
+		level_string = " DETAIL: ";
+		break;
+	case e_err_debug:
+	case e_err_beyond:
+	default:
+		level_string = "  DEBUG: ";
+		break;
+	}
 
 	/* Print where? */
 	switch (Globals.error_print) {
@@ -76,22 +102,19 @@ void err_msg(enum e_err_type errnoflag, enum e_err_level level, const char *fmt,
 	}
 
 	va_start(ap, fmt);
+	err_format( format, errno_save, level_string, file, line, func, fmt) ;
+
 	UCLIBCLOCK;
 	/* Create output string */
 #ifdef    HAVE_VSNPRINTF
-	vsnprintf(buf, MAXLINE, fmt, ap);	/* safe */
+	vsnprintf(buf, MAXLINE, format, ap);	/* safe */
 #else
-	vsprintf(buf, fmt, ap);		/* not safe */
+	vsprintf(buf, format, ap);		/* not safe */
 #endif
-	n = strlen(buf);
-	if (errnoflag == e_err_type_error) {
-		snprintf(buf + n, MAXLINE - n, " -> %s\n", strerror(errno_save));
-	}
 	UCLIBCUNLOCK;
 	va_end(ap);
 
 	if (sl == e_err_print_syslog) {	/* All output to syslog */
-		strcat(buf, "\n");
 		if (!log_available) {
 			openlog("OWFS", LOG_PID, LOG_DAEMON);
 			log_available = 1;
@@ -99,28 +122,6 @@ void err_msg(enum e_err_type errnoflag, enum e_err_level level, const char *fmt,
 		syslog(level <= e_err_default ? LOG_INFO : LOG_NOTICE, buf);
 	} else {
 		fflush(stdout);			/* in case stdout and stderr are the same */
-		switch (level) {
-		case e_err_default:
-			fputs("DEFAULT: ", stderr);
-			break;
-		case e_err_connect:
-			fputs("CONNECT: ", stderr);
-			break;
-		case e_err_call:
-			fputs("   CALL: ", stderr);
-			break;
-		case e_err_data:
-			fputs("   DATA: ", stderr);
-			break;
-		case e_err_detail:
-			fputs(" DETAIL: ", stderr);
-			break;
-		case e_err_debug:
-		case e_err_beyond:
-		default:
-			fputs("  DEBUG: ", stderr);
-			break;
-		}
 		fputs(buf, stderr);
 		fflush(stderr);
 	}
@@ -205,31 +206,34 @@ void _Debug_Writev(struct iovec *io, int iosz)
 	}
 }
 
-void fatal_error(char *file, int row, const char *fmt, ...)
+void fatal_error(const char * fil, int line, const char * func, const char *file, int row, const char *fmt, ...)
 {
 	va_list ap;
-	char tmp[256];
+	char format[MAXLINE + 1];
+	char buf[MAXLINE + 1];
 	va_start(ap, fmt);
+
+	err_format( format, 0, "FATAL ERROR: ", fil, line, func, fmt) ;
 
 #ifdef OWNETC_OW_DEBUG
 	{
 		fprintf(stderr, "%s:%d ", file, row);
 #ifdef HAVE_VSNPRINTF
-		vsnprintf(tmp, sizeof(tmp), fmt, ap);
+		vsnprintf(buf, MAXLINE, format, ap);
 #else
-		vsprintf(tmp, fmt, ap);
+		vsprintf(buf, fmt, ap);
 #endif
-		fprintf(stderr, tmp);
+		fprintf(stderr, buf);
 	}
 #else /* OWNETC_OW_DEBUG */
 	if(Globals.fatal_debug) {
 		LEVEL_DEFAULT("%s:%d ", file, row);
 #ifdef HAVE_VSNPRINTF
-		vsnprintf(tmp, sizeof(tmp), fmt, ap);
+		vsnprintf(buf, MAXLINE, format, ap);
 #else
-		vsprintf(tmp, fmt, ap);
+		vsprintf(buf, format, ap);
 #endif
-		LEVEL_DEFAULT(tmp);
+		LEVEL_DEFAULT(buf);
 	}
 
 
@@ -240,12 +244,12 @@ void fatal_error(char *file, int row, const char *fmt, ...)
 		if((fp = fopen(filename, "a")) != NULL) {
 			if(!Globals.fatal_debug) {
 #ifdef HAVE_VSNPRINTF
-				vsnprintf(tmp, sizeof(tmp), fmt, ap);
+				vsnprintf(buf, MAXLINE, format, ap);
 #else
-				vsprintf(tmp, fmt, ap);
+				vsprintf(buf, format, ap);
 #endif
 			}
-			fprintf(fp, "%s:%d %s\n", file, row, tmp);
+			fprintf(fp, "%s:%d %s\n", file, row, buf);
 			fclose(fp);
 		}
 	}
@@ -253,4 +257,22 @@ void fatal_error(char *file, int row, const char *fmt, ...)
 	va_end(ap);
 }
 
-
+static void err_format(char * format, int errno_save, const char * level_string, const char * file, int line, const char * func, const char * fmt)
+{
+	UCLIBCLOCK;
+	/* Create output string */
+#ifdef    HAVE_VSNPRINTF
+	if (errno_save) {
+		snprintf(format, MAXLINE, "%s%s:%s(%d) [%s] %s", level_string,file,func,line,fmt,strerror(errno_save),fmt);	/* safe */
+	} else {
+		snprintf(format, MAXLINE, "%s%s:%s(%d) %s ", level_string,file,func,line,fmt);	/* safe */
+	}
+#else
+	if (errno_save) {
+		sprintf(format, "%s%s:%s(%d) [%s] %s", level_string,file,func,line,strerror(errno_save),fmt);		/* not safe */
+	} else {
+		sprintf(format, "%s%s:%s(%d) %s", level_string,file,func,line,fmt);		/* not safe */
+	}
+#endif
+	UCLIBCUNLOCK;
+}
