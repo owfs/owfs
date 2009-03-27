@@ -191,7 +191,7 @@ void FS_del_sibling(const char * sibling, struct one_wire_query *owq) ;
 
 int FS_generic_r_pio(struct one_wire_query *owq);
 int FS_generic_r_sense(struct one_wire_query *owq);
-static int FS_generic_w_pio(struct one_wire_query *owq);
+int FS_generic_w_pio(struct one_wire_query *owq);
 
 
 int FS_fstat(const char *path, struct stat *stbuf);

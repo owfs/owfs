@@ -104,48 +104,39 @@ static int FS_r_piostate(struct one_wire_query *owq)
 /* bits 0 and 2 */
 static int FS_r_pio(struct one_wire_query *owq)
 {
-	UINT piostate ;
-
-	if ( FS_r_sibling_U( &piostate, "piostate", owq ) ) {
-		return -EINVAL ;
+	if ( FS_generic_r_pio( owq ) == 0 ) {
+		UINT piostate = OWQ_U(owq) ;
+        	// bits 0->0 and 2->1
+		OWQ_U(owq) = SENSED_state( piostate ) & 0x03 ;
+		return 0 ;
 	}
-
-	// bits 0->0 and 2->1
-	OWQ_U(owq) = SENSED_state( piostate ) ^ 0x03 ;
-
-	return 0;
+	return -EINVAL ;
 }
 
 /* 2413 switch PIO sensed*/
 /* bits 0 and 2 */
 static int FS_sense(struct one_wire_query *owq)
 {
-	UINT piostate ;
-
-	if ( FS_r_sibling_U( &piostate, "piostate", owq ) ) {
-		return -EINVAL ;
+	if ( FS_generic_r_sense( owq ) == 0 ) {
+		UINT piostate = OWQ_U(owq) ;
+        	// bits 0->0 and 2->1
+		OWQ_U(owq) = SENSED_state( piostate ) & 0x03 ;
+		return 0 ;
 	}
-	
-	// bits 0->0 and 2->1
-	OWQ_U(owq) = SENSED_state( piostate );
-
-	return 0;
+	return -EINVAL ;
 }
 
 /* 2413 switch activity latch*/
 /* bites 1 and 3 */
 static int FS_r_latch(struct one_wire_query *owq)
 {
-	UINT piostate ;
-
-	if ( FS_r_sibling_U( &piostate, "piostate", owq ) ) {
-		return -EINVAL ;
+	if ( FS_generic_r_pio( owq ) == 0 ) {
+		UINT piostate = OWQ_U(owq) ;
+        	// bits 0->0 and 2->1
+		OWQ_U(owq) = LATCH_state( piostate ) & 0x03 ;
+		return 0 ;
 	}
-
-	// bits 0->0 and 2->1
-	OWQ_U(owq) = LATCH_state( piostate ) ^ 0x03 ;
-
-	return 0;
+	return -EINVAL ;
 }
 
 /* write 2413 switch -- 2 values*/
@@ -154,8 +145,8 @@ static int FS_w_pio(struct one_wire_query *owq)
 	/* mask and reverse bits */
 	UINT pio = (OWQ_U(owq)^0x03) & 0x03 ;
 
-	FS_del_sibling( "piostate", owq ) ;
-	
+	FS_generic_w_pio( owq ) ;
+
 	return OW_write( pio, PN(owq) ) ? -EINVAL : 0 ;
 }
 

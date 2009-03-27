@@ -40,7 +40,7 @@ int FS_generic_r_sense(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_generic_w_pio(struct one_wire_query *owq)
+int FS_generic_w_pio(struct one_wire_query *owq)
 {
 	FS_del_sibling( "piostate", owq ) ;
 
