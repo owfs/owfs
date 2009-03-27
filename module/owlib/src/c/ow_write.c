@@ -384,6 +384,8 @@ static int FS_write_mixed_part(struct one_wire_query *owq)
 	OWQ_pn(owq_copy).extension = EXTENSION_ALL;
 	OWQ_Cache_Del(owq_copy);
 
+	OWQ_destroy_shallow_aggregate(owq_copy);
+
 	return write_error;
 }
 
