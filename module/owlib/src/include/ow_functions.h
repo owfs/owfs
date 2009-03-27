@@ -189,6 +189,11 @@ int FS_w_sibling_D( _DATE D, const char * sibling, struct one_wire_query *owq) ;
 
 void FS_del_sibling(const char * sibling, struct one_wire_query *owq) ;
 
+int FS_generic_r_pio(struct one_wire_query *owq);
+int FS_generic_r_sense(struct one_wire_query *owq);
+static int FS_generic_w_pio(struct one_wire_query *owq);
+
+
 int FS_fstat(const char *path, struct stat *stbuf);
 int FS_fstat_postparse(struct stat *stbuf, const struct parsedname *pn);
 
