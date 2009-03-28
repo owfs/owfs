@@ -35,7 +35,7 @@ int BUS_first(struct device_search *ds, const struct parsedname *pn)
 	ds->search = _1W_SEARCH_ROM;
 
 	if (!pn->selected_connection->AnyDevices) {
-		LEVEL_DEBUG("BUS_first: Empty bus -- no presence pulse\n");
+		LEVEL_DEBUG("Empty bus -- no presence pulse\n");
 	}
 
 	return BUS_next(ds, pn);
@@ -81,7 +81,7 @@ int BUS_next(struct device_search *ds, const struct parsedname *pn)
 	}
 
 	ret = BUS_next_both(ds, pn);
-	LEVEL_DEBUG("BUS_next return = %d | " SNformat "\n", ret, SNvar(ds->sn));
+	LEVEL_DEBUG("return = %d | " SNformat "\n", ret, SNvar(ds->sn));
 	if (ret && ret != -ENODEV) {	// true error
 		STAT_ADD1_BUS(e_bus_search_errors, pn->selected_connection);
 	} else if ( ret == 0 ) {

@@ -19,7 +19,7 @@ int FS_fstat(const char *path, struct stat *stbuf)
 	struct parsedname pn;
 	int ret = 0;
 
-	LEVEL_CALL("FSTAT path=%s\n", SAFESTRING(path));
+	LEVEL_CALL("path=%s\n", SAFESTRING(path));
 
 	/* Bad path */
 	if (FS_ParsedName(path, &pn)) {

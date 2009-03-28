@@ -203,7 +203,7 @@ static int FS_r_page(struct one_wire_query *owq)
 	size_t pagesize = 32;
 	if (OW_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_r_mem)) {
 		return -EINVAL;
-	}		
+	}
 	return 0;
 }
 
@@ -616,10 +616,8 @@ static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 	BYTE p[3 + 1 + 32 + 2] = { _1W_WRITE_SCRATCHPAD, LOW_HIGH_ADDRESS(offset), };
 	BYTE passwd[8];
 	int rest = 32 - (offset & 0x1F);
-	int ret;
-	int i;
 
-	LEVEL_DEBUG("OW_w_mem: size=%ld offset=%X rest=%ld\n", size, offset, rest);
+	LEVEL_DEBUG("size=%ld offset=%X rest=%ld\n", size, offset, rest);
 
 	memset(passwd, 0xFF, 8);	// dummy password
 
@@ -627,11 +625,7 @@ static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 	memcpy(&p[3], data, size);
 
 	BUSLOCK(pn);
-	ret = BUS_select(pn) || BUS_send_data(p, 3 + rest, pn);
-	if (ret) {
-		printf("OW_w_mem: err1\n");
-	}
-	if (ret) {
+	if (BUS_select(pn)!=0 || BUS_send_data(p, 3 + rest, pn)!=0) {
 		BUSUNLOCK(pn);
 		return 1;
 	}
@@ -639,101 +633,47 @@ static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 	/* Note: location of data has now shifted down a byte for E/S register */
 	//ret = BUS_select(pn) || BUS_send_data( p,3,pn) || BUS_readin_data( &p[3],1+rest+2,pn) || CRC16(p,4+rest+2) || memcmp(&p[4], data, size) ;
 
-	ret = BUS_select(pn);
-	if (ret) {
-		printf("OW_w_mem: err3\n");
+	if (BUS_select(pn)!=0) {
 		BUSUNLOCK(pn);
 		return 1;
 	}
 	p[0] = _1W_READ_SCRATCHPAD;
-	ret = BUS_send_data(p, 1, pn);
-	if (ret) {
-		printf("OW_w_mem: err4\n");
+	if (BUS_send_data(p, 1, pn)!=0) {
 		BUSUNLOCK(pn);
 		return 1;
 	}
 	// read TAL TAH E/S + rest bytes
-	ret = BUS_readin_data(&p[1], 3 + rest, pn);
-	if (ret) {
-		printf("OW_w_mem: err5\n");
+	if (BUS_readin_data(&p[1], 3 + rest, pn)!=0) {
 		BUSUNLOCK(pn);
 		return 1;
 	}
-	ret = CRC16(p, 4 + rest);
-	if (ret) {
-		printf("OW_w_mem: crc err1\n");
-	}
-#if 1
-	{
-		printf("OW_w_mem: sz=%d ", 4 + rest);
-		for (i = 0; i < 4 + rest; i++) {
-			printf("%02X", p[i]);
-		}
-		printf("\n");
-	}
-	if (ret) {
-		printf("OW_w_mem: err6\n");
+	if (CRC16(p, 4 + rest)!=0) {
 		BUSUNLOCK(pn);
 		return 1;
 	}
-	ret = memcmp(&p[4], data, size);
-	if (ret) {
-		printf("OW_w_mem: err7\n");
+	if (memcmp(&p[4], data, size)!=0) {
 		BUSUNLOCK(pn);
 		return 1;
 	}
-#endif
 
 	/* Copy Scratchpad to SRAM */
-	//ret = BUS_select(pn) || BUS_send_data( p,4,pn) || BUS_send_data( passwd,8,pn) ;
-	ret = BUS_select(pn);
-	if (ret) {
-		printf("OW_w_mem: err8\n");
+	if (BUS_select(pn)!=0) {
 		BUSUNLOCK(pn);
 		return 1;
 	}
 	// send _1W_COPY_SCRATCHPAD_WITH_PASSWORD    TAL TAH E/S
 	p[0] = _1W_COPY_SCRATCHPAD_WITH_PASSWORD;
-	ret = BUS_send_data(p, 4, pn);
-	if (ret) {
-		printf("OW_w_mem: err9\n");
+	if (BUS_send_data(p, 4, pn)!=0) {
 		BUSUNLOCK(pn);
 		return 1;
 	}
-	ret = BUS_send_data(passwd, 8, pn);
-	if (ret) {
-		printf("OW_w_mem: err10\n");
+	if (BUS_send_data(passwd, 8, pn)!=0) {
 		BUSUNLOCK(pn);
 		return 1;
 	}
 	BUSUNLOCK(pn);
-	if (ret) {
-		return 1;
-	}
-
-#if 0
-	// Loop waiting for completion
-	for (i = 0; i < 10; ++i) {
-		UT_delay(1);
-		BUSLOCK(pn);
-		//           ret = BUS_read(p,1,pn) ;
-		BUSUNLOCK(pn);
-		printf("OW_w_mem: get ret=%d and %02X as result\n", ret, p[0]);
-		if (ret) {
-			return 1;
-		}
-		if (p[0] == 0xAA) {
-			return 0;
-		}
-		if (p[0] == 0xFF) {
-			return 1;
-		}
-	}
-	return 1;					// timeout
-#else
 	UT_delay(1);
 	return 0;
-#endif
 }
 
 static int OW_clearmemory(struct parsedname *pn)

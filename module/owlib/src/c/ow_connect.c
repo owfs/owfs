@@ -103,7 +103,7 @@ struct connection_in *NewIn(const struct connection_in *in)
 		/* Initialize dir-at-once structures */
 		DirblobInit(&(now->main));
 		DirblobInit(&(now->alarm));
-	
+
 #if OW_MT
 		my_pthread_mutex_init(&(now->bus_mutex), Mutex.pmattr);
 		my_pthread_mutex_init(&(now->dev_mutex), Mutex.pmattr);
@@ -176,7 +176,7 @@ void FreeIn(struct connection_in * now)
 	if ( now==NULL ) {
 		return ;
 	}
-	//LEVEL_DEBUG("FreeIn: %p next=%p busmode=%d\n", now, now->next, (int)get_busmode(now));
+	//LEVEL_DEBUG("%p next=%p busmode=%d\n", now, now->next, (int)get_busmode(now));
 	--Inbound_Control.active ;
 #if OW_MT
 	my_pthread_mutex_destroy(&(now->bus_mutex));
@@ -209,7 +209,7 @@ void FreeIn(struct connection_in * now)
 		if (now->connin.tcp.name) {
 			free(now->connin.tcp.name);
 		}
-		LEVEL_DEBUG("FreeClientAddr\n");
+		LEVEL_DEBUG("\n");
 		FreeClientAddr(now);
 		break;
 	case bus_ha7net:
@@ -245,7 +245,7 @@ void FreeIn(struct connection_in * now)
 		break;
 	}
 	if (now->name) {
-		//LEVEL_DEBUG("Free name [%s]\n", now->name);
+		//LEVEL_DEBUG("[%s]\n", now->name);
 		free(now->name);
 	}
 	DirblobClear(&(now->main));
@@ -260,7 +260,7 @@ void FreeInAll( void )
 
 	while ( Inbound_Control.head ) {
 		next = Inbound_Control.head->next;
-		//LEVEL_DEBUG("FreeInAll: %p next=%p\n", Inbound_Control.head, Inbound_Control.head->next);
+		//LEVEL_DEBUG("%p next=%p\n", Inbound_Control.head, Inbound_Control.head->next);
 		FreeIn(Inbound_Control.head);
 		Inbound_Control.head = next;
 	}

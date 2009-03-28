@@ -43,13 +43,13 @@ static int W1_write_pipe( int file_descriptor, struct netlink_parse * nlp )
 	do {
 		int select_value ;
 		struct timeval tv = { Globals.timeout_w1, 0 } ;
-		
+
 		fd_set writeset ;
 		FD_ZERO(&writeset) ;
 		FD_SET(file_descriptor,&writeset) ;
-		
+
 		select_value = select(file_descriptor+1,NULL,&writeset,NULL,&tv) ;
-		
+
 		if ( select_value == -1 ) {
 			if (errno != EINTR) {
 				ERROR_CONNECT("Pipe (w1) Select returned -1\n");
@@ -76,13 +76,13 @@ static void Dispatch_Packet( struct netlink_parse * nlp)
 {
 	int bus = NL_BUS(nlp->nlm->nlmsg_seq) ;
 	struct connection_in * in ;
-	
+
 	if ( bus == 0 ) {
 		LEVEL_DEBUG("Sending this packet to root bus\n");
 		W1_write_pipe(Inbound_Control.w1_write_file_descriptor, nlp) ;
 		return ;
 	}
-	
+
 	CONNIN_RLOCK ;
 	for ( in = Inbound_Control.head ; in != NULL ; in = in->next ) {
 		//printf("Matching %d/%s/%s/%s/ to bus.%d %d/%s/%s/%s/\n",bus_zero,name,type,domain,now->index,now->busmode,now->connin.tcp.name,now->connin.tcp.type,now->connin.tcp.domain);
@@ -114,7 +114,7 @@ void * W1_Dispatch( void * v )
 			}
 		}
 	}
-	LEVEL_DEBUG("W1 Dispatch: Normal exit.\n");
+	LEVEL_DEBUG("Normal exit.\n");
 	return NULL;
 }
 

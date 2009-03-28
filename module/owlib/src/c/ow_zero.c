@@ -33,17 +33,17 @@ static void RegisterBack(DNSServiceRef s, DNSServiceFlags f, DNSServiceErrorType
 		return ;
 	}
 	out->sref0 = s;
-	
+
 	if ( out->zero.name ) {
 		free(out->zero.name) ;
 	}
 	out->zero.name = strdup(name) ;
-	
+
 	if ( out->zero.type ) {
 		free(out->zero.type) ;
 	}
 	out->zero.type = strdup(type) ;
-	
+
 	if ( out->zero.domain ) {
 		free(out->zero.domain) ;
 	}
@@ -78,11 +78,11 @@ static void *Announce(void *v)
 	#endif							/* OW_MT */
 
 	if (getsockname(out->file_descriptor, &sa, &sl)) {
-		LEVEL_CONNECT("Bonjour announce: Could not get port number of device.\n");
+		LEVEL_CONNECT("Could not get port number of device.\n");
 		return NULL;
 	}
 	port = ntohs(((struct sockaddr_in *) (&sa))->sin_port) ;
-	
+
 	/* Add the service */
 	switch (Globals.opt) {
 		case opt_httpd:
@@ -112,10 +112,10 @@ static void *Announce(void *v)
 			err = kDNSServiceErr_NoError ;
 			break ;
 	}
-		
-	Announce_Post_Register(sref, err) ;	
+
+	Announce_Post_Register(sref, err) ;
 #if OW_MT
-	LEVEL_DEBUG("Bonjour announce: Normal exit\n");
+	LEVEL_DEBUG("Normal exit\n");
 	pthread_exit(NULL);
 #endif
 	return NULL;
@@ -147,7 +147,7 @@ void OW_Announce(struct connection_out *out)
 		Announce(out);
 #endif							/* OW_MT */
 	}
-	LEVEL_DEBUG("OW_Announce: end\n");
+	LEVEL_DEBUG("end\n");
 }
 
 #else							/* OW_ZERO */

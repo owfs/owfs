@@ -316,28 +316,28 @@ static int FS_w_pio(struct one_wire_query *owq)
 static int FS_sense(struct one_wire_query *owq)
 {
 	UINT piostate ;
-	
+
 	if ( FS_r_sibling_U( &piostate, "piostate", owq ) ) {
 		return -EINVAL ;
 	}
-	
+
 	// bits 0->0 and 2->1
 	OWQ_U(owq) = ( (piostate & 0x01) | ((piostate & 0x04)>>1) ) & 0x03  ;
-	
+
 	return 0;
 }
 
 static int FS_r_pio(struct one_wire_query *owq)
 {
 	UINT piostate ;
-	
+
 	if ( FS_r_sibling_U( &piostate, "piostate", owq ) ) {
 		return -EINVAL ;
 	}
-	
+
 	// bits 0->0 and 2->1
 	OWQ_U(owq) = BYTE_INVERSE( (piostate & 0x01) | ((piostate & 0x04)>>1) ) & 0x03  ;
-	
+
 	return 0;
 }
 
@@ -352,14 +352,14 @@ static int FS_r_piostate(struct one_wire_query *owq)
 static int FS_r_latch(struct one_wire_query *owq)
 {
 	UINT piostate ;
-	
+
 	if ( FS_r_sibling_U( &piostate, "piostate", owq ) ) {
 		return -EINVAL ;
 	}
-	
+
 	// bits 1->0 and 3->1
 	OWQ_U(owq) = BYTE_INVERSE( ((piostate & 0x02)>>1) | ((piostate & 0x08)>>2) ) & 0x03  ;
-	
+
 	return 0;
 }
 
@@ -617,7 +617,7 @@ static int OW_22temp(_FLOAT * temp, const int resolution, const struct parsednam
 		{convert, convert, longdelay, trxn_power},
 		TRXN_END,
 	};
-	//LEVEL_DATA("OW_22temp\n");
+	//LEVEL_DATA("\n");
 	/* powered? */
 	if (OW_power(&pow, pn)) {
 		pow = 0x00;				/* assume unpowered if cannot tell */
@@ -668,7 +668,7 @@ static int OW_22temp(_FLOAT * temp, const int resolution, const struct parsednam
 		temp[0] = (_FLOAT) ((int16_t) ((data[1] << 8) | (data[0] & mask))) * .0625;
 		return 0;
 	}
-	
+
 	// second time
 	LEVEL_DEBUG("Temp error. Try unpowered temperature conversion -- %d msec\n", delay);
 	if (BUS_transaction(tunpowered, pn)) {
@@ -872,16 +872,16 @@ int FS_poll_convert(const struct parsedname *pn)
 	// subsequent polling is slower since the DS18x20 is a slower converter
 	for (i = 0; i < 22; ++i) {
 		if (BUS_transaction_nolock(t, pn)) {
-			LEVEL_DEBUG("FS_poll_convert: BUS_transaction failed\n");
+			LEVEL_DEBUG("BUS_transaction failed\n");
 			break;
 		}
 		if (p[0] != 0) {
-			LEVEL_DEBUG("FS_poll_convert: BUS_transaction done after %dms\n", (i + 1) * 50);
+			LEVEL_DEBUG("BUS_transaction done after %dms\n", (i + 1) * 50);
 			return 0;
 		}
 		t[0].size = 50;			// 50 msec for rest of delays
 	}
-	LEVEL_DEBUG("FS_poll_convert: failed\n");
+	LEVEL_DEBUG("failed\n");
 	return 1;
 }
 
@@ -905,9 +905,9 @@ static int OW_read_piostate(UINT * piostate, const struct parsedname *pn)
 	if ((data[0] & 0x0F) != ((~data[0] >> 4) & 0x0F)) {
 		return 1;
 	}
-	
+
 	piostate[0] = data[0] & 0x0F ;
-	
+
 	return 0;
 }
 /* Write to PIO -- both channels. Already inverted and other fields set to 1 */

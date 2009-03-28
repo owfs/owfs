@@ -82,14 +82,14 @@ static int ServerListen(struct connection_out *out)
 
 		//printf("ServerListen file_descriptor=%d\n",file_descriptor);
 		if (file_descriptor < 0) {
-			ERROR_CONNECT("ServerListen: Socket problem [%s]\n", SAFESTRING(out->name));
+			ERROR_CONNECT("Socket problem [%s]\n", SAFESTRING(out->name));
 		} else if (setsockopt(file_descriptor, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof(on)) != 0) {
-			ERROR_CONNECT("ServerListen: SetSockOpt problem [%s]\n", SAFESTRING(out->name));
+			ERROR_CONNECT("SetSockOpt problem [%s]\n", SAFESTRING(out->name));
 		} else if (bind(file_descriptor, out->ai_ok->ai_addr, out->ai_ok->ai_addrlen) != 0) {
 			// this is where the default linking to a busy port shows up
-			ERROR_CONNECT("ServerListen: Bind problem [%s]\n", SAFESTRING(out->name));
+			ERROR_CONNECT("Bind problem [%s]\n", SAFESTRING(out->name));
 		} else if (listen(file_descriptor, 10) != 0) {
-			ERROR_CONNECT("ServerListen: Listen problem [%s]\n", SAFESTRING(out->name));
+			ERROR_CONNECT("Listen problem [%s]\n", SAFESTRING(out->name));
 		} else {
 			out->file_descriptor = file_descriptor;
 			return file_descriptor;
@@ -98,7 +98,7 @@ static int ServerListen(struct connection_out *out)
 			close( file_descriptor );
 		}
 	} while ((out->ai_ok = out->ai_ok->ai_next));
-	LEVEL_CONNECT("ServerListen: No good listen network sockets [%s]\n", SAFESTRING(out->name));
+	LEVEL_CONNECT("No good listen network sockets [%s]\n", SAFESTRING(out->name));
 	return -1;
 }
 
@@ -118,7 +118,7 @@ int ServerOutSetup(struct connection_out *out)
 				default_port = NULL ;
 				break ;
 		}
-		if ( default_port != NULL ) { // one of the 2 cases above 
+		if ( default_port != NULL ) { // one of the 2 cases above
 			if ( ServerAddr( default_port, out ) < 0 ) {
 				return -1 ;
 			}
@@ -137,7 +137,7 @@ int ServerOutSetup(struct connection_out *out)
 }
 
 /*
- Loops through count_outbound_connections, starting a detached thread for each 
+ Loops through count_outbound_connections, starting a detached thread for each
  Each loop spawn threads for accepting connections
  Uses my non-patented "pre-threaded technique"
  */
@@ -162,7 +162,7 @@ void *ServerProcessHandler(void *arg)
 		Test_and_Close( &(hp->acceptfd) );
 		free(hp);
 	}
-	LEVEL_DEBUG("Server Handler: Normal exit.\n");
+	LEVEL_DEBUG("Normal exit.\n");
 	pthread_exit(NULL);
 	return NULL;
 }
@@ -171,12 +171,12 @@ void ServerProcessAcceptUnlock(void *param)
 {
 	struct connection_out *out = (struct connection_out *)param;
 	if(out == NULL) {
-		LEVEL_DEBUG("ServerProcessAcceptUnlock: out==NULL\n");
+		LEVEL_DEBUG("out==NULL\n");
 		return;
 	}
-	LEVEL_DEBUG("ServerProcessAcceptUnlock: unlock %lu\n", out->tid);
+	LEVEL_DEBUG("unlock %lu\n", out->tid);
 	ACCEPTUNLOCK(out);
-	LEVEL_DEBUG("ServerProcessAcceptUnlock: unlock %lu done\n", out->tid);
+	LEVEL_DEBUG("unlock %lu done\n", out->tid);
 }
 
 static void ServerProcessAccept(void *vp)
@@ -186,37 +186,37 @@ static void ServerProcessAccept(void *vp)
 	int acceptfd;
 	int ret;
 
-	LEVEL_DEBUG("ServerProcessAccept %s[%lu] try lock %d\n", SAFESTRING(out->name), (unsigned long int) pthread_self(), out->index);
+	LEVEL_DEBUG("%s[%lu] try lock %d\n", SAFESTRING(out->name), (unsigned long int) pthread_self(), out->index);
 
 	ACCEPTLOCK(out);
 
 	pthread_cleanup_push(ServerProcessAcceptUnlock, vp);
 
-	LEVEL_DEBUG("ServerProcessAccept %s[%lu] locked %d\n", SAFESTRING(out->name), (unsigned long int) pthread_self(), out->index);
+	LEVEL_DEBUG("%s[%lu] locked %d\n", SAFESTRING(out->name), (unsigned long int) pthread_self(), out->index);
 
 	do {
 		acceptfd = accept(out->file_descriptor, NULL, NULL);
 		if (StateInfo.shutdown_in_progress) {
-			LEVEL_DEBUG("ServerProcessAccept shutdown_in_progress %s[%lu] accept %d\n",SAFESTRING(out->name),(unsigned long int)pthread_self(),out->index) ;
+			LEVEL_DEBUG("shutdown_in_progress %s[%lu] accept %d\n",SAFESTRING(out->name),(unsigned long int)pthread_self(),out->index) ;
 			break;
 		}
-		LEVEL_DEBUG("ServerProcessAccept %s[%lu] accept %d fd=%d\n",SAFESTRING(out->name),(unsigned long int)pthread_self(),out->index, acceptfd) ;
+		LEVEL_DEBUG("%s[%lu] accept %d fd=%d\n",SAFESTRING(out->name),(unsigned long int)pthread_self(),out->index, acceptfd) ;
 		if (acceptfd < 0) {
 			if (errno == EINTR) {
-				LEVEL_DEBUG("ow_net_server.c: accept interrupted\n");
+				LEVEL_DEBUG("interrupted\n");
 				continue;
 			}
-			LEVEL_DEBUG("ow_net_server.c: accept error %d [%s]\n", errno, strerror(errno));
+			LEVEL_DEBUG("error %d [%s]\n", errno, strerror(errno));
 		}
 		break;
 	} while (1);
 
 	pthread_cleanup_pop(1);  // Call ACCEPTUNLOCK
-	
-	LEVEL_DEBUG("ServerProcessAccept %s[%lu] unlock %d\n",SAFESTRING(out->name),(unsigned long int)pthread_self(),out->index) ;
+
+	LEVEL_DEBUG(" %s[%lu] unlock %d\n",SAFESTRING(out->name),(unsigned long int)pthread_self(),out->index) ;
 
 	if (StateInfo.shutdown_in_progress) {
-		LEVEL_DEBUG("ServerProcessAccept %s[%lu] shutdown_in_progress %d return\n",
+		LEVEL_DEBUG("%s[%lu] shutdown_in_progress %d return\n",
 			    SAFESTRING(out->name), (unsigned long int) pthread_self(), out->index);
 		if (acceptfd >= 0) {
 			close(acceptfd);
@@ -225,7 +225,7 @@ static void ServerProcessAccept(void *vp)
 	}
 
 	if (acceptfd < 0) {
-		ERROR_CONNECT("ServerProcessAccept: accept() problem %d (%d)\n", out->file_descriptor, out->index);
+		ERROR_CONNECT("accept() problem %d (%d)\n", out->file_descriptor, out->index);
 	} else {
 		struct HandlerThread_data *hp;
 		hp = malloc(sizeof(struct HandlerThread_data));
@@ -234,13 +234,13 @@ static void ServerProcessAccept(void *vp)
 			hp->acceptfd = acceptfd;
 			ret = pthread_create(&tid, NULL, ServerProcessHandler, hp);
 			if (ret) {
-				LEVEL_DEBUG("ServerProcessAccept %s[%lu] create failed ret=%d\n", SAFESTRING(out->name), (unsigned long int) pthread_self(), ret);
+				LEVEL_DEBUG("%s[%lu] create failed ret=%d\n", SAFESTRING(out->name), (unsigned long int) pthread_self(), ret);
 				close(acceptfd);
 				free(hp);
 			}
 		}
 	}
-	LEVEL_DEBUG("ServerProcessAccept = %lu CLOSING\n", (unsigned long int) pthread_self());
+	LEVEL_DEBUG("%lu CLOSING\n", (unsigned long int) pthread_self());
 	return;
 }
 
@@ -249,7 +249,7 @@ static void *ServerProcessOut(void *v)
 {
 	struct connection_out *out = (struct connection_out *) v;
 
-	LEVEL_DEBUG("ServerProcessOut = %lu\n", (unsigned long int) pthread_self());
+	LEVEL_DEBUG("%lu\n", (unsigned long int) pthread_self());
 
 	// This thread is terminated with pthread_cancel()+pthread_join(), and should not be detached.
 	//pthread_detach(pthread_self());
@@ -278,9 +278,9 @@ static void *ServerProcessOut(void *v)
 		ServerProcessAccept(v);
 	}
 
-	LEVEL_DEBUG("ServerProcessOut = %lu CLOSING (%s)\n", (unsigned long int) pthread_self(), SAFESTRING(out->name));
+	LEVEL_DEBUG("%lu CLOSING (%s)\n", (unsigned long int) pthread_self(), SAFESTRING(out->name));
 
-	LEVEL_DEBUG("Server out: Normal exit.\n");
+	LEVEL_DEBUG("Normal exit.\n");
 	pthread_exit(NULL);
 	return NULL;
 }
@@ -308,7 +308,7 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 		OUTLOCK(out);
 		out->HandlerRoutine = HandlerRoutine;
 		out->Exit = Exit;
-		
+
 		if (pthread_create(&(out->tid), NULL, ServerProcessOut, (void *) (out))) {
 			OUTUNLOCK(out);
 			ERROR_CONNECT("Could not create a thread for %s\n", SAFESTRING(out->name));
@@ -338,14 +338,14 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 	while (!StateInfo.shutdown_in_progress) {
 		if ((rc = sigwait(&myset, &signo)) == 0) {
 			if (signo == SIGHUP) {
-				LEVEL_DEBUG("ServerProcess: ignore signo=%d\n", signo);
+				LEVEL_DEBUG("ignore signo=%d\n", signo);
 				// perhaps do some reload-thing here...
 				continue;
 			}
-			LEVEL_DEBUG("ServerProcess: break signo=%d\n", signo);
+			LEVEL_DEBUG("break signo=%d\n", signo);
 			StateInfo.shutdown_in_progress = 1;
 		} else {
-			LEVEL_DEBUG("ServerProcess: sigwait error %d\n", rc);
+			LEVEL_DEBUG("sigwait error %d\n", rc);
 		}
 	}
 
@@ -373,25 +373,25 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 #endif
 		}
 	}
-	
+
 	LEVEL_DEBUG("ow_net_server.c:ServerProcess() all threads cancelled\n");
 
 	for (out = Outbound_Control.head; out; out = out->next) {
 		if(out->tid > 0) {
-			LEVEL_DEBUG("ow_net_server.c: join %lu\n", out->tid);
+			LEVEL_DEBUG("join %lu\n", out->tid);
 			if((rc = pthread_join(out->tid, NULL))) {
-			  LEVEL_DEBUG("ow_net_server.c: join %lu failed rc=%d [%s]\n", out->tid, rc, strerror(rc));
+			  LEVEL_DEBUG("join %lu failed rc=%d [%s]\n", out->tid, rc, strerror(rc));
 			} else {
-			  LEVEL_DEBUG("ow_net_server.c: join %lu done\n", out->tid);
+			  LEVEL_DEBUG("join %lu done\n", out->tid);
 			}
 			out->tid = 0;
 		} else {
-			LEVEL_DEBUG("ow_net_server.c:ServerProcess() thread already removed\n");
+			LEVEL_DEBUG("thread already removed\n");
 		}
 	}
 
-	LEVEL_DEBUG("ow_net_server.c:ServerProcess() shutdown done\n");
-	
+	LEVEL_DEBUG("shutdown done\n");
+
 	/* Cleanup that may never be reached */
 	return;
 }

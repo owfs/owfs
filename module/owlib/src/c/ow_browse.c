@@ -49,10 +49,10 @@ static void ResolveBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 	sn_ret = snprintf(service, 10, "%d", ntohs(port) ) ;
 	UCLIBCUNLOCK ;
 
-	LEVEL_DETAIL("ResolveBack ref=%d flags=%d index=%d, error=%d name=%s host=%s port=%d\n", (long int) s, f, i, e, n, host, ntohs(port));
+	LEVEL_DETAIL("ref=%d flags=%d index=%d, error=%d name=%s host=%s port=%d\n", (long int) s, f, i, e, n, host, ntohs(port));
 	/* remove trailing .local. */
 	if ( sn_ret >-1 ) {
-		LEVEL_DETAIL("ResolveBack ref=%d flags=%d index=%d, error=%d name=%s host=%s port=%s\n", (long int) s, f, i, e, n, host, service);
+		LEVEL_DETAIL("ref=%d flags=%d index=%d, error=%d name=%s host=%s port=%s\n", (long int) s, f, i, e, n, host, service);
 		ZeroAdd( bs->name, bs->type, bs->domain, host, service ) ;
 	} else {
 		LEVEL_DEBUG("Couldn't translate port %d\n",ntohs(port) ) ;
@@ -96,7 +96,7 @@ static void ResolveWait( DNSServiceRef sref )
 		while (1) {
 			fd_set readfd;
 			struct timeval tv = { 120, 0 };
-			
+
 			FD_ZERO(&readfd);
 			FD_SET(file_descriptor, &readfd);
 			if (select(file_descriptor + 1, &readfd, NULL, NULL, &tv) > 0) {
@@ -119,14 +119,14 @@ static void BrowseBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i, DNSServic
 	struct BrowseStruct *bs;
 	(void) context;
 	//printf("BrowseBack ref=%ld flags=%d index=%d, error=%d name=%s type=%s domain=%s\n",(long int)s,f,i,e,name,type,domain) ;
-	LEVEL_DETAIL("BrowseBack ref=%ld flags=%d index=%d, error=%d name=%s type=%s domain=%s\n", (long int) s, f, i, e, name, type, domain);
+	LEVEL_DETAIL("ref=%ld flags=%d index=%d, error=%d name=%s type=%s domain=%s\n", (long int) s, f, i, e, name, type, domain);
 
 	if (e != kDNSServiceErr_NoError) {
 		return ;
 	}
 
 	bs = BSCreate( name, type, domain ) ;
-	
+
 	if (f & kDNSServiceFlagsAdd) {	// Add
 		DNSServiceRef sr;
 
@@ -141,20 +141,20 @@ static void BrowseBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i, DNSServic
 		ZeroDel( name, type, domain ) ;
 	}
 }
-			
-// Called in a thread			
+
+// Called in a thread
 static void * OW_Browse_Bonjour(void * v)
 {
 	DNSServiceErrorType dnserr;
 
 	(void) v ;
-	
+
 	pthread_detach(pthread_self());
-	
+
 	dnserr = DNSServiceBrowse(&Globals.browse, 0, 0, "_owserver._tcp", NULL, BrowseBack, NULL);
 
 	if (dnserr != kDNSServiceErr_NoError) {
-		LEVEL_CONNECT("Bonjour: DNSServiceBrowse error = %d\n", dnserr);
+		LEVEL_CONNECT("DNSServiceBrowse error = %d\n", dnserr);
 		return NULL ;
 	}
 
@@ -167,7 +167,7 @@ static void * OW_Browse_Bonjour(void * v)
 	Globals.browse = 0 ;
 	return NULL;
 }
-			
+
 void OW_Browse(void)
 {
 	if ( Globals.zero == zero_avahi ) {

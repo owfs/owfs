@@ -76,7 +76,7 @@ static void * W1_start_scan( void * v )
 	} else {
 		W1NLScan() ;
 	}
-	LEVEL_DEBUG("W1 scan: Normal exit.\n");
+	LEVEL_DEBUG("Normal exit.\n");
 	return NULL ;
 }
 
@@ -93,7 +93,7 @@ int W1_Browse( void )
     my_pthread_mutex_init(&(Inbound_Control.w1_read_mutex), Mutex.pmattr);
     gettimeofday(&Inbound_Control.w1_last_read,NULL);
     ++Inbound_Control.w1_last_read.tv_sec ;
-    
+
     if ( Inbound_Control.w1_file_descriptor == -1 && w1_bind() == -1 ) {
         ERROR_DEBUG("Netlink problem -- are you root?\n");
         return -1 ;

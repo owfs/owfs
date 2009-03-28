@@ -481,7 +481,7 @@ static int FS_w_pulldownslewrate(struct one_wire_query *owq)
 		return -ENOTSUP;
 	}
 
-	LEVEL_DEBUG("FS_w_pulldownslewrate\n");
+	LEVEL_DEBUG("start\n");
 
 	if (OWQ_U(owq) > 7) {
 		return -ENOTSUP;

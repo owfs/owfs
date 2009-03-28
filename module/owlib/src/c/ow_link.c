@@ -88,7 +88,7 @@ int LINK_detect(struct connection_in *in)
 	COM_break( in ) ;
 	COM_slurp( in->file_descriptor ) ;
 	UT_delay(100) ; // based on http://morpheus.wcf.net/phpbb2/viewtopic.php?t=89&sid=3ab680415917a0ebb1ef020bdc6903ad
-	
+
 	//COM_flush(in);
 	if (LINK_reset(&pn) == BUS_RESET_OK && LINK_write(LINK_string(" "), 1, &pn) == 0) {
 
@@ -115,7 +115,7 @@ int LINK_detect(struct connection_in *in)
 
 					in->baud = Globals.baud ;
 					++in->changed_bus_settings ;
-					
+
 					return 0;
 				}
 			}
@@ -128,10 +128,10 @@ int LINK_detect(struct connection_in *in)
 static void LINK_set_baud(const struct parsedname *pn)
 {
 	char * speed_code ;
-	
+
 	OW_BaudRestrict( &(pn->selected_connection->baud), B9600, B19200, B38400, B57600, 0 ) ;
-	
-	LEVEL_DEBUG("LINK attempt change baud to %d\n",OW_BaudRate(pn->selected_connection->baud));
+
+	LEVEL_DEBUG("to %d\n",OW_BaudRate(pn->selected_connection->baud));
 	// Find rate parameter
 	switch ( pn->selected_connection->baud ) {
 		case B9600:
@@ -150,7 +150,7 @@ static void LINK_set_baud(const struct parsedname *pn)
 			break ;
 #endif
 	}
-	
+
 	LEVEL_DEBUG("LINK change baud string <%s>\n",speed_code);
 	COM_flush(pn->selected_connection);
 	if ( LINK_write(LINK_string(speed_code), 1, pn) ) {
@@ -159,17 +159,17 @@ static void LINK_set_baud(const struct parsedname *pn)
 		++pn->selected_connection->changed_bus_settings ;
 		return ;
 	}
-	
-	
+
+
 	// Send configuration change
 	COM_flush(pn->selected_connection);
-	
+
 	// Change OS view of rate
 	UT_delay(5);
 	COM_speed(pn->selected_connection->baud,pn->selected_connection) ;
 	UT_delay(5);
 	COM_slurp(pn->selected_connection->file_descriptor);
-	
+
 	return ;
 }
 
@@ -185,7 +185,7 @@ static int LINK_reset(const struct parsedname *pn)
 	} else {
 		COM_flush(pn->selected_connection);
 	}
-	
+
 	//Response is 3 bytes:  1 byte for code + \r\n
 	if (LINK_write(LINK_string("r"), 1, pn) || LINK_read(resp, 3, pn)) {
 		LEVEL_DEBUG("Error resetting LINK device\n");
@@ -195,24 +195,24 @@ static int LINK_reset(const struct parsedname *pn)
 	switch (resp[0]) {
 
 	case 'P':
-		LEVEL_DEBUG("LINK reset ok, devices Present\n");
+		LEVEL_DEBUG("ok, devices Present\n");
 		ret = BUS_RESET_OK;
 		pn->selected_connection->AnyDevices = 1;
 		break;
 
 	case 'N':
-		LEVEL_DEBUG("LINK reset ok, devices Not present\n");
+		LEVEL_DEBUG("ok, devices Not present\n");
 		ret = BUS_RESET_OK;
 		pn->selected_connection->AnyDevices = 0;
 		break;
 
 	case 'S':
-		LEVEL_DEBUG("LINK reset short, Short circuit on 1-wire bus!\n");
+		LEVEL_DEBUG("short, Short circuit on 1-wire bus!\n");
 		ret = BUS_RESET_SHORT;
 		break;
 
 	default:
-		LEVEL_DEBUG("LINK reset bad, Unknown LINK response %c\n", resp[0]);
+		LEVEL_DEBUG("bad, Unknown LINK response %c\n", resp[0]);
 		ret = -EIO;
 		break;
 	}
@@ -259,7 +259,7 @@ static int LINK_next_both(struct device_search *ds, const struct parsedname *pn)
 		break;
 	}
 
-	LEVEL_DEBUG("LINK_next_both SN found: " SNformat "\n", SNvar(ds->sn));
+	LEVEL_DEBUG("SN found: " SNformat "\n", SNvar(ds->sn));
 	return ret;
 }
 
@@ -274,7 +274,7 @@ static int LINK_next_both(struct device_search *ds, const struct parsedname *pn)
  */
 static int LINK_read(BYTE * buf, const size_t size, const struct parsedname *pn)
 {
-	return COM_read( buf, size, pn ) ;	
+	return COM_read( buf, size, pn ) ;
 }
 
 //
@@ -285,7 +285,7 @@ static int LINK_read(BYTE * buf, const size_t size, const struct parsedname *pn)
  */
 static int LINK_write(const BYTE * buf, const size_t size, const struct parsedname *pn)
 {
-	return COM_write( buf, size, pn ) ;	
+	return COM_write( buf, size, pn ) ;
 }
 
 static int LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay, const struct parsedname *pn)
@@ -316,7 +316,7 @@ static int LINK_sendback_data(const BYTE * data, BYTE * resp, const size_t size,
 		return 0;
 	}
 	if (LINK_write(LINK_string("b"), 1, pn)) {
-		LEVEL_DEBUG("LINK_sendback_data error sending b\n");
+		LEVEL_DEBUG("error sending b\n");
 		return -EIO;
 	}
 //    for ( i=0; ret==0 && i<size ; ++i ) ret = LINK_byte_bounce( &data[i], &resp[i], pn ) ;
@@ -359,7 +359,7 @@ static int LINK_CR(const struct parsedname *pn)
 	if (LINK_write(LINK_string("\r"), 1, pn) || LINK_read(data, 2, pn)) {
 		return -EIO;
 	}
-	LEVEL_DEBUG("LINK_CR return 0\n");
+	LEVEL_DEBUG("eturn 0\n");
 	return 0;
 }
 
@@ -418,7 +418,7 @@ static int LINK_directory(struct device_search *ds, struct dirblob *db, const st
 		return ret;
 	}
 	//One needs to check the first character returned.
-	//If nothing is found, the link will timeout rather then have a quick 
+	//If nothing is found, the link will timeout rather then have a quick
 	//return.  This happens when looking at the alarm directory and
 	//there are no alarms pending
 	//So we grab the first character and check it.  If not an E leave it
@@ -469,7 +469,7 @@ static int LINK_directory(struct device_search *ds, struct dirblob *db, const st
 		sn[2] = string2num(&resp[12]);
 		sn[1] = string2num(&resp[14]);
 		sn[0] = string2num(&resp[16]);
-		LEVEL_DEBUG("LINK_directory SN found: " SNformat "\n", SNvar(sn));
+		LEVEL_DEBUG("SN found: " SNformat "\n", SNvar(sn));
 
 		// CRC check
 		if (CRC8(sn, 8) || (sn[0] == 0)) {

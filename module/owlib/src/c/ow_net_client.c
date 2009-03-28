@@ -53,7 +53,7 @@ int ClientAddr(char *sname, struct connection_in *in)
 //printf("ClientAddr: [%s] [%s]\n", in->connin.tcp.host, in->connin.tcp.service);
 
 	if ((ret = getaddrinfo(in->connin.tcp.host, in->connin.tcp.service, &hint, &in->connin.tcp.ai))) {
-		LEVEL_CONNECT("GetAddrInfo error %s\n", gai_strerror(ret));
+		LEVEL_CONNECT("error %s\n", gai_strerror(ret));
 		return -1;
 	}
 	return 0;
@@ -115,7 +115,7 @@ int ClientConnect(struct connection_in *in)
 	} while ((ai = ai->ai_next));
 	in->connin.tcp.ai_ok = NULL;
 
-	ERROR_CONNECT("ClientConnect: Socket problem\n");
+	ERROR_CONNECT("Socket problem\n");
 	STAT_ADD1(NET_connection_errors);
 	return -1;
 }

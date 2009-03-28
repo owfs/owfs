@@ -100,20 +100,20 @@ static int EtherWeather_command(struct connection_in *in, char command, int data
 	}
 	// Read the response header
 	if (tcp_read(in->file_descriptor, packet, 2, &tvnet) != 2) {
-		LEVEL_CONNECT("EtherWeather_command header read error\n");
+		LEVEL_CONNECT("header read error\n");
 		free(packet);
 		return -EIO;
 	}
 	// Make sure it was echoed properly
 	if (packet[0] != (datalen + 1) || packet[1] != command) {
-		LEVEL_CONNECT("EtherWeather_command invalid header\n");
+		LEVEL_CONNECT("invalid header\n");
 		free(packet);
 		return -EIO;
 	}
 	// Then read any data
 	if (datalen > 0) {
 		if (tcp_read(in->file_descriptor, odata, datalen, &tvnet) != (ssize_t) datalen) {
-			LEVEL_CONNECT("EtherWeather_command data read error\n");
+			LEVEL_CONNECT("data read error\n");
 			free(packet);
 			return -EIO;
 		}
@@ -194,7 +194,7 @@ static int EtherWeather_next_both(struct device_search *ds, const struct parsedn
 
 	ds->LastDevice = (sendbuf[8] == 0xFE);
 
-	LEVEL_DEBUG("EtherWeather_next_both SN found: " SNformat "\n", SNvar(ds->sn));
+	LEVEL_DEBUG("SN found: " SNformat "\n", SNvar(ds->sn));
 
 	return 0;
 }

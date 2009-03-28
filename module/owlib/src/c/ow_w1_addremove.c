@@ -58,7 +58,7 @@ static void * AddBus( void * v )
 	char name[63] ;
 	int sn_ret ;
 	struct connection_in * in ;
-	
+
 #if OW_MT
 	pthread_detach(pthread_self());
 #endif /* OW_MT */
@@ -66,13 +66,13 @@ static void * AddBus( void * v )
 	UCLIBCLOCK ;
 	sn_ret = snprintf(name,62,"w1_bus_master%d",bus_master) ;
 	UCLIBCLOCK ;
-	
+
 	if ( sn_ret < 0 ) {
 		return NULL ;
 	}
-	
+
 	CONNIN_WLOCK ;
-	
+
 	if ( (in = FindIn(name)) != NULL ) {
 		LEVEL_DEBUG("w1 bus <%s> already known\n",name) ;
 		in->connin.w1.entry_mark = Inbound_Control.w1_entry_mark ;
@@ -84,9 +84,9 @@ static void * AddBus( void * v )
 	} else {
 		LEVEL_DEBUG("w1 bus <%s> couldn't be added\n",name) ;
 	}
-	
+
 	CONNIN_WUNLOCK ;
-	LEVEL_DEBUG("Add bus: Normal exit.\n");
+	LEVEL_DEBUG("Normal exit.\n");
 	return NULL ;
 }
 
@@ -96,7 +96,7 @@ void * RemoveBus( void * v )
 	char name[63] ;
 	int sn_ret ;
 	struct connection_in * in ;
-	
+
 #if OW_MT
 	pthread_detach(pthread_self());
 #endif /* OW_MT */
@@ -104,21 +104,21 @@ void * RemoveBus( void * v )
 	UCLIBCLOCK ;
 	sn_ret = snprintf(name,62,"w1_bus_master%d",bus_master) ;
 	UCLIBCLOCK ;
-	
+
 	if ( sn_ret < 0 ) {
 		return NULL ;
 	}
 
 	CONNIN_WLOCK ;
-	
+
 	in =  FindIn( name ) ;
 	if ( in != NULL ) {
 		RemoveIn(in) ;
-		LEVEL_DEBUG("Remove w1 bus: <%s>\n",name) ;
+		LEVEL_DEBUG("<%s>\n",name) ;
 	}
 
 	CONNIN_WUNLOCK ;
-	LEVEL_DEBUG("Remove bus: Normal exit.\n");
+	LEVEL_DEBUG("Normal exit.\n");
 	return NULL ;
 }
 

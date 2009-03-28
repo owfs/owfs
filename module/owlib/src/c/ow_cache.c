@@ -248,19 +248,19 @@ int Cache_Add(const void *data, const size_t datasize, const struct parsedname *
 	if (!pn || IsAlarmDir(pn)) {
 		return 0;				// do check here to avoid needless processing
 	}
-	
+
 	duration = TimeOut(pn->selected_filetype->change);
 	if (duration <= 0) {
 		return 0;				/* in case timeout set to 0 */
 	}
-	
+
 	tn = (struct tree_node *) malloc(sizeof(struct tree_node) + datasize);
 	if (!tn) {
 		return -ENOMEM;
 	}
 	memset(&tn->tk, 0, sizeof(struct tree_key));
 
-	LEVEL_DEBUG("Cache_Add " SNformat " size=%d\n", SNvar(pn->sn), (int) datasize);
+	LEVEL_DEBUG(SNformat " size=%d\n", SNvar(pn->sn), (int) datasize);
 	memcpy(tn->tk.sn, pn->sn, 8);
 	tn->tk.p = pn->selected_filetype;
 	tn->tk.extension = pn->extension;
@@ -313,7 +313,7 @@ int Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn)
 	}
 	memset(&tn->tk, 0, sizeof(struct tree_key));
 
-	LEVEL_DEBUG("Cache_Add_Dir " SNformat " elements=%d\n", SNvar(pn->sn), DirblobElements(db));
+	LEVEL_DEBUG(SNformat " elements=%d\n", SNvar(pn->sn), DirblobElements(db));
 	FS_LoadDirectoryOnly(&pn_directory, pn);
 	memcpy(tn->tk.sn, pn_directory.sn, 8);
 	tn->tk.p = pn->selected_connection;
@@ -344,7 +344,7 @@ int Cache_Add_Device(const int bus_nr, const BYTE * sn)
 	}
 	memset(&tn->tk, 0, sizeof(struct tree_key));
 
-	LEVEL_DEBUG("Cache_Add_Device " SNformat " bus=%d\n", SNvar(sn), (int) bus_nr);
+	LEVEL_DEBUG(SNformat " bus=%d\n", SNvar(sn), (int) bus_nr);
 	memcpy(tn->tk.sn, sn, 8);
 	tn->tk.p = NULL;			// value connected to all in-devices
 	//tn->tk.p.selected_connection = pn->selected_connection ;
@@ -386,7 +386,7 @@ int Cache_Add_Internal(const void *data, const size_t datasize, const struct int
 	}
 	memset(&tn->tk, 0, sizeof(struct tree_key));
 
-	LEVEL_DEBUG("Cache_Add_Internal " SNformat " size=%d\n", SNvar(pn->sn), (int) datasize);
+	LEVEL_DEBUG(SNformat " size=%d\n", SNvar(pn->sn), (int) datasize);
 	memcpy(tn->tk.sn, pn->sn, 8);
 	tn->tk.p = ip->name;
 	tn->tk.extension = EXTENSION_INTERNAL;
@@ -448,7 +448,7 @@ static int Cache_Add_Common(struct tree_node *tn)
 	CACHE_WUNLOCK;
 	/* flipped old database is now out of circulation -- can be destroyed without a lock */
 	if (flip) {
-		LEVEL_DEBUG("Cache_Add_Common: flip cache. tdestroy() will be called.\n");
+		LEVEL_DEBUG("flip cache. tdestroy() will be called.\n");
 		tdestroy(flip, free);
 		STATLOCK;
 		++cache_flips;			/* statistics */
@@ -628,7 +628,7 @@ int Cache_Get(void *data, size_t * dsize, const struct parsedname *pn)
 		return 1;
 	}
 
-	LEVEL_DEBUG("Cache_Get " SNformat " size=%d IsUncachedDir=%d\n", SNvar(pn->sn), (int) dsize[0], IsUncachedDir(pn));
+	LEVEL_DEBUG(SNformat " size=%d IsUncachedDir=%d\n", SNvar(pn->sn), (int) dsize[0], IsUncachedDir(pn));
 	memset(&tn.tk, 0, sizeof(struct tree_key));
 	memcpy(tn.tk.sn, pn->sn, 8);
 	tn.tk.p = pn->selected_filetype;
@@ -653,7 +653,7 @@ int Cache_Get_Dir(struct dirblob *db, const struct parsedname *pn)
 		return 1;
 	}
 
-	LEVEL_DEBUG("Cache_Get_Dir " SNformat "\n", SNvar(pn->sn));
+	LEVEL_DEBUG(SNformat "\n", SNvar(pn->sn));
 	//printf("GetDir tn=%p\n",tn) ;
 	memset(&tn.tk, 0, sizeof(struct tree_key));
 	FS_LoadDirectoryOnly(&pn_directory, pn);
@@ -712,7 +712,7 @@ int Cache_Get_Device(void *bus_nr, const struct parsedname *pn)
 		return 1;
 	}
 
-	LEVEL_DEBUG("Cache_Get_Device " SNformat "\n", SNvar(pn->sn));
+	LEVEL_DEBUG(SNformat "\n", SNvar(pn->sn));
 	memset(&tn.tk, 0, sizeof(struct tree_key));
 	memcpy(tn.tk.sn, pn->sn, 8);
 	tn.tk.p = NULL;				// value connected to all in-devices
@@ -745,7 +745,7 @@ int Cache_Get_Internal(void *data, size_t * dsize, const struct internal_prop *i
 		return 1;				/* in case timeout set to 0 */
 	}
 
-	LEVEL_DEBUG("Cache_Get_Internal " SNformat " size=%d\n", SNvar(pn->sn), (int) dsize[0]);
+	LEVEL_DEBUG(SNformat " size=%d\n", SNvar(pn->sn), (int) dsize[0]);
 	memset(&tn.tk, 0, sizeof(struct tree_key));
 	memcpy(tn.tk.sn, pn->sn, 8);
 	tn.tk.p = ip->name;
@@ -887,7 +887,7 @@ int Cache_Del(const struct parsedname *pn)
 	if (duration <= 0) {
 		return 1;				/* in case timeout set to 0 */
 	}
-	
+
 	memset(&tn.tk, 0, sizeof(struct tree_key));
 	memcpy(tn.tk.sn, pn->sn, 8);
 	tn.tk.p = pn->selected_filetype;

@@ -64,7 +64,7 @@ int FS_write(const char *path, const char *buf, const size_t size, const off_t o
 	int write_return;
 	OWQ_allocate_struct_and_pointer(owq);
 
-	LEVEL_CALL("WRITE path=%s size=%d offset=%d\n", SAFESTRING(path), (int) size, (int) offset);
+	LEVEL_CALL("path=%s size=%d offset=%d\n", SAFESTRING(path), (int) size, (int) offset);
 
 	// parsable path?
 	if (FS_OWQ_create(path, buf, size, offset, owq)) {

@@ -50,7 +50,7 @@ static void Device2Tree(const struct device *d, enum ePN_type type)
 			qsort(d_copy->filetype_array, (size_t) d_copy->count_of_filetypes, sizeof(struct filetype), file_compare);
 		}
 	} else {
-		LEVEL_DATA("Device2Tree:  Could not allocate memory for device %s\n", d->readable_name);
+		LEVEL_DATA("Could not allocate memory for device %s\n", d->readable_name);
 	}
 #else							/* __FreeBSD__ */
 	tsearch(d, &Tree[type], device_compare);

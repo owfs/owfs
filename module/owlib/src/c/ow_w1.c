@@ -64,7 +64,7 @@ int W1_detect(struct connection_in *in)
 
 	FS_ParsedName(NULL, &pn);	// minimal parsename -- no destroy needed
 	pn.selected_connection = in;
-	LEVEL_CONNECT("W1 detect\n");
+	LEVEL_CONNECT("start\n");
 
 	/* Set up low-level routines */
 	W1_setroutines(in);
@@ -127,7 +127,7 @@ static int w1_send_search( BYTE search, const struct parsedname *pn )
 
 	return W1_send_msg( pn->selected_connection, &w1m, &w1c, NULL );
 }
-	
+
 static void search_callback( struct netlink_parse * nlp, void * v, const struct parsedname * pn )
 {
 	int i ;

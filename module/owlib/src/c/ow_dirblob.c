@@ -40,7 +40,7 @@ $Id$
 /*
     A "dirblob" is a structure holding a list of 1-wire serial numbers
     (8 bytes each) with some housekeeping information
-    
+
     It is used for directory caches, and some "all at once" adapters types
 
     Most interesting, it allocates memory dynamically.
@@ -64,12 +64,12 @@ void DirblobInit(struct dirblob *db)
 	db->troubled = 0;
 }
 
-int DirblobPure(struct dirblob *db)
+int DirblobPure(const struct dirblob *db)
 {
 	return !db->troubled;
 }
 
-int DirblobElements(struct dirblob *db)
+int DirblobElements(const struct dirblob *db)
 {
 	return db->devices;
 }
@@ -123,14 +123,14 @@ int DirblobSearch(BYTE * sn, const struct dirblob *db)
 // used in cache, fixes up a dirblob when retrieved from the cache
 int DirblobRecreate( BYTE * snlist, int size, struct dirblob *db)
 {
-	DirblobInit( db ) ;	
+	DirblobInit( db ) ;
 
 	if ( size == 0 ) {
 		return 0 ;
-	}	
+	}
 
 	db->snlist = (BYTE *) malloc(size) ;
-	
+
 	if ( db->snlist == NULL ) {
 		db->troubled = 1 ;
 		return -ENOMEM ;

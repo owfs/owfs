@@ -122,7 +122,7 @@ static int FS_w_convert(struct one_wire_query *owq)
 				ret = BUS_transaction_nolock(t, &pn_directory)
 					|| FS_poll_convert(&pn_directory);
 				BUSUNLOCK(&pn_directory);
-				LEVEL_DEBUG("CONVERT (simultaneous temp) ret=%d\n", ret);
+				LEVEL_DEBUG("(temp) ret=%d\n", ret);
 			}
 			break;
 		case simul_volt:{
@@ -134,7 +134,7 @@ static int FS_w_convert(struct one_wire_query *owq)
 					TRXN_END,
 				};
 				ret = BUS_transaction(t, &pn_directory);
-				LEVEL_DEBUG("CONVERT (simultaneous volt) ret=%d\n", ret);
+				LEVEL_DEBUG("(volt) ret=%d\n", ret);
 			}
 			break;
 		}
@@ -237,7 +237,7 @@ static int FS_r_single(struct one_wire_query *owq)
 			if (BUS_transaction(t, &pn_directory)) {
 				return -EINVAL;
 			}
-			LEVEL_DEBUG("FS_r_single (simultaneous) dat=" SNformat " crc8c=%02x\n", SNvar(resp), CRC8(resp, 7));
+			LEVEL_DEBUG("dat=" SNformat " crc8c=%02x\n", SNvar(resp), CRC8(resp, 7));
 			if ((memcmp(resp, match, 8) != 0) && (CRC8(resp, 8) == 0)) {	// non-empty, and no CRC error
 				OW_single2cache(resp, &pn_directory);
 				/* Return device id. */
@@ -245,7 +245,7 @@ static int FS_r_single(struct one_wire_query *owq)
 			}
 		}
 			break ;
-		
+
 	}
 	Fowq_output_offset_and_size_z(ad, owq);
 	return 0;

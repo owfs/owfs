@@ -61,24 +61,24 @@ int HA5_detect(struct connection_in *in)
 {
 	struct parsedname pn;
 	int no_colon_exists ;
-	
+
 	FS_ParsedName(NULL, &pn);	// minimal parsename -- no destroy needed
 	pn.selected_connection = in;
-	
+
 	/* Set up low-level routines */
 	HA5_setroutines(in);
-	
+
 	// Poison current "Address" for adapter
 	in->connin.ha5.sn[0] = 0 ; // so won't match
-	
+
 	no_colon_exists = Parse_first_ha5_address(in) ;
 
 	/* Open the com port */
 	if (COM_open(in)) {
-		LEVEL_DEBUG("HA5: Cannot open serial port -- Permissions problem?\n");
+		LEVEL_DEBUG("cannot open serial port -- Permissions problem?\n");
 		return -ENODEV;
 	}
-	
+
 	// 9600 isn't valid for the HA5, so we can tell that this value was actually selected
 	if ( Globals.baud != B9600 ) {
 		in->baud = Globals.baud ;
@@ -88,10 +88,10 @@ int HA5_detect(struct connection_in *in)
 
 	// allowable speeds
 	OW_BaudRestrict( &(in->baud), B1200, B19200, B38400, B115200, 0 ) ;
-		
+
 	/* Set com port speed*/
 	COM_speed(in->baud,in) ;
-	
+
 	in->connin.ha5.checksum = Globals.checksum ;
 	in->Adapter = adapter_HA5 ;
 	in->adapter_name = "HA5";
@@ -121,7 +121,7 @@ int HA5_detect(struct connection_in *in)
 	}
 
 	COM_slurp(in->file_descriptor) ;
-	
+
 	pn.selected_connection = in;
 	HA5_reset(&pn) ;
 	return 0;
@@ -138,9 +138,9 @@ static int Parse_first_ha5_address( struct connection_in * in )
 	if ( colon == NULL ) { // not found
 		return 1 ;
 	}
-	
+
 	colon[0] = 0x00 ; // set as null
-	
+
 	if ( isalpha( colon[1] ) ) {
 		in->connin.ha5.channel = tolower( colon[1] ) ;
 		colon[1] = ':' ;
@@ -160,7 +160,7 @@ static char Parse_next_ha5_address( char * name )
 	if ( colon[0] == '\0' ) { // not found
 		return 0 ;
 	}
-	
+
 	if ( isalpha( colon[0] ) ) {
 		return_char = tolower( colon[0] ) ;
 		colon[0] = ':' ;
@@ -183,7 +183,7 @@ static int HA5_find_channel(struct parsedname *pn)
 	}
 	in->connin.ha5.channel = 'a' ;
 	LEVEL_DEBUG("HA5 adapter not found on port %s so set to channel %c\n", in->name, in->connin.ha5.channel ) ;
-	
+
 	return 0;
 }
 
@@ -240,7 +240,7 @@ static int HA5_test_channel( struct parsedname  *pn )
 	if ( COM_read( test_response, 1, pn ) ) {
 		return 1 ;
 	}
-	
+
 	COM_slurp(in->file_descriptor) ;
 	return 0 ;
 }
@@ -263,11 +263,11 @@ static int HA5_reset_wrapped(const struct parsedname *pn)
 	int reset_length ;
 	BYTE reset[5] ;
 	BYTE resp[2];
-	
+
 	reset[0] = in->connin.ha5.channel ;
 	reset[1] = 'R' ;
 	reset_length = AddChecksum( reset, 2, in ) ;
-	
+
 	if (COM_write(reset, reset_length, pn)) {
 		LEVEL_DEBUG("Error sending HA5 reset\n");
 		return -EIO;
@@ -277,7 +277,7 @@ static int HA5_reset_wrapped(const struct parsedname *pn)
 		LEVEL_DEBUG("Error reading HA5 reset\n");
 		return -EIO;
 	}
-		
+
 	switch( resp[0] ) {
 		case 'P':
 			in->AnyDevices = 1 ;
@@ -334,7 +334,7 @@ static int HA5_next_both(struct device_search *ds, const struct parsedname *pn)
 		break;
 	}
 
-	LEVEL_DEBUG("HA5_next_both SN found: " SNformat "\n", SNvar(ds->sn));
+	LEVEL_DEBUG("SN found: " SNformat "\n", SNvar(ds->sn));
 	return ret;
 }
 
@@ -355,7 +355,7 @@ static int HA5_directory(struct device_search *ds, struct dirblob *db, const str
 	struct connection_in * in = pn->selected_connection ;
 
 	DirblobClear(db);
-	
+
 	//Depending on the search type, the HA5 search function
 	//needs to be selected
 	//tEC -- Conditional searching
@@ -368,11 +368,11 @@ static int HA5_directory(struct device_search *ds, struct dirblob *db, const str
 	query[3] = 'F' ;
 	query[4] = 'F' ;
 	query_length = AddChecksum( query, 5, in ) ;
-	
+
 	if (COM_write( query, query_length, pn)) {
 		return HA5_resync(pn) ;
 	}
-	
+
 	if (COM_read(resp, 1, pn)) {
 		return HA5_resync(pn) ;
 	}
@@ -387,7 +387,7 @@ static int HA5_directory(struct device_search *ds, struct dirblob *db, const str
 		//So we grab the first character and check it.  If not an E leave it
 		//in the resp buffer and get the rest of the response from the HA5
 		//device
-		
+
 		if ( in->connin.ha5.checksum ) {
 			if (COM_read(&resp[1], 19, pn)) {
 				return HA5_resync(pn) ;
@@ -420,7 +420,7 @@ static int HA5_directory(struct device_search *ds, struct dirblob *db, const str
 		// Set as current "Address" for adapter
 		memcpy( pn->selected_connection->connin.ha5.sn, sn, 8) ;
 
-		LEVEL_DEBUG("HA5_directory SN found: " SNformat "\n", SNvar(sn));
+		LEVEL_DEBUG("SN found: " SNformat "\n", SNvar(sn));
 		// CRC check
 		if (CRC8(sn, 8) || (sn[0] == 0)) {
 			/* A minor "error" and should perhaps only return -1 */
@@ -454,7 +454,7 @@ static int HA5_select( const struct parsedname * pn )
 	if ( (pn->selected_device==NULL) || (pn->selected_device==DeviceThermostat) ) {
 		return HA5_reset(pn) ;
 	}
-	
+
 	pthread_mutex_lock( &in->connin.ha5.head->connin.ha5.lock ) ;
 	ret = HA5_select_wrapped(pn) ;
 	pthread_mutex_unlock( &in->connin.ha5.head->connin.ha5.lock ) ;
@@ -468,7 +468,7 @@ static int HA5_select_wrapped( const struct parsedname * pn )
 	unsigned char send_address[21] ;
 	unsigned char resp_address[19] ;
 	int send_length ;
-	
+
 	send_address[0] = in->connin.ha5.channel ;
 	send_address[1] = 'A' ;
 	num2string( (char *)&send_address[ 2], pn->sn[7] ) ;
@@ -481,7 +481,7 @@ static int HA5_select_wrapped( const struct parsedname * pn )
 	num2string( (char *)&send_address[16], pn->sn[0] ) ;
 
 	send_length = AddChecksum( send_address, 18, in ) ;
-	
+
 	if ( COM_write( send_address, send_length, pn) ) {
 		LEVEL_DEBUG("Error with sending HA5 A-ddress\n") ;
 		return HA5_resync(pn) ;
@@ -506,10 +506,10 @@ static int HA5_select_wrapped( const struct parsedname * pn )
 		LEVEL_DEBUG("Error with HA5 select response\n") ;
 		return HA5_resync(pn) ;
 	}
-	
+
 	// Set as current "Address" for adapter
 	memcpy( in->connin.ha5.sn, pn->sn, 8) ;
-	
+
 	return 0 ;
 }
 
@@ -555,16 +555,16 @@ static int HA5_sendback_data(const BYTE * data, BYTE * resp, const size_t size, 
 {
 	struct connection_in * in = pn->selected_connection ;
 	int left;
-	
+
 	for ( left=size ; left>0 ; left -= 32 ) {
 		int ret ;
 		size_t pass_start = size - left ;
 		size_t pass_size = (left>32)?32:left ;
-		
+
 		pthread_mutex_lock( &in->connin.ha5.head->connin.ha5.lock ) ;
 		ret = HA5_sendback_part( 'W', &data[pass_start], &resp[pass_start], pass_size, pn ) ;
 		pthread_mutex_unlock( &in->connin.ha5.head->connin.ha5.lock ) ;
-		
+
 		if ( ret ) {
 			return -EIO ;
 		}
@@ -588,12 +588,12 @@ static int HA5_select_and_sendback(const BYTE * data, BYTE * resp, const size_t 
 		// Same device
 		block_cmd = 'J' ;
 	}
-	
+
 	for ( left=size ; left>0 ; left -= 32 ) {
 		int ret ;
 		size_t pass_start = size - left ;
 		size_t pass_size = (left>32)?32:left ;
-		
+
 		pthread_mutex_lock( &in->connin.ha5.head->connin.ha5.lock ) ;
 		ret = HA5_sendback_part( block_cmd, &data[pass_start], &resp[pass_start], pass_size, pn ) ;
 		pthread_mutex_unlock( &in->connin.ha5.head->connin.ha5.lock ) ;

@@ -105,7 +105,7 @@ DeviceEntryExtended(12, DS2406, DEV_alarm);
 #define _1W_WRITE_STATUS 0x55
 #define _1W_READ_STATUS 0xAA
 #define _1W_CHANNEL_ACCESS 0xF5
-    
+
 #define _DS2406_ALR  0x80
 #define _DS2406_IM   0x40
 #define _DS2406_TOG  0x20
@@ -267,7 +267,7 @@ static int FS_w_s_alarm(struct one_wire_query *owq)
 static int FS_w_pio(struct one_wire_query *owq)
 {
     BYTE data = BYTE_INVERSE(OWQ_U(owq)) & 0x03 ; /* reverse bits */
-	
+
     if (OW_w_pio(data, PN(owq))) {
 		return -EINVAL;
     }
@@ -286,7 +286,7 @@ static int FS_voltage(struct one_wire_query *owq)
 	// this is the complete byte sequence we want to write to the ds2406 so it will
 	// select the appropriate channel and initiate adc, and also so it can write
 	// back the results to the trailing 0xFF bytes.
-	BYTE p[] = { _1W_CHANNEL_ACCESS, 
+	BYTE p[] = { _1W_CHANNEL_ACCESS,
 		_DS2406_ALR|_DS2406_TOG|_DS2406_CHS0|_DS2406_CRC1, 0xFF, // Channel control
 	} ;
 
@@ -312,7 +312,7 @@ static int FS_voltage(struct one_wire_query *owq)
 	msb = data[5];
 	msb = ~msb;
 	msb = ((msb * 0x0802LU & 0x22110LU) | (msb * 0x8020LU & 0x88440LU)) * 0x10101LU >> 16;
-	
+
 	// grab the lsb (8th byte), 1s complement, reverse it, and take the 4 original L.S. bits.
 	lsb = data[7];
 	lsb = ~lsb;
@@ -550,7 +550,7 @@ static int FS_pressure(struct one_wire_query *owq)
 		struct parsedname pn_copy;
 		struct s_TAI8570 tai;
 		UINT D1;
-	
+
 		memcpy(&pn_copy, PN(owq), sizeof(struct parsedname));	//shallow copy
 		if (testTAI8570(&tai, owq)) {
 			return -ENOENT;
@@ -866,7 +866,7 @@ static int testTAI8570(struct s_TAI8570 *tai, struct one_wire_query *owq)
 		return 1;				// read page
 	}
 	if (memcmp("8570", &data[8], 4)) {	// check dir entry
-		LEVEL_DETAIL("No 8670 Tmex file\n");
+		LEVEL_DETAIL("No 8570 Tmex file\n");
 		return 1;
 	}
 	// See if page 1 is readable

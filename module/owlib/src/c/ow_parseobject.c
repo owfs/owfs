@@ -23,8 +23,8 @@ int FS_OWQ_create(const char *path, char *buffer, size_t size, off_t offset, str
 	struct parsedname *pn = PN(owq);
 	int return_code ;
 
-	LEVEL_DEBUG("FS_OWQ_create of %s\n", path);
-	
+	LEVEL_DEBUG("%s\n", path);
+
 	return_code = FS_ParsedName(path, pn) ;
 	if ( return_code == 0 ) {
 		return_code = FS_OWQ_create_postparse( buffer, size, offset, pn, owq ) ;
@@ -47,8 +47,8 @@ struct one_wire_query *FS_OWQ_create_sibling(const char *sibling, struct one_wir
 	strncpy(path,PN(owq_original)->path,dirlength) ;
 	strcpy(&path[dirlength],sibling) ;
 
-	LEVEL_DEBUG("FS_OWQ_create of sibling %s\n", sibling);
-	
+	LEVEL_DEBUG("sibling %s\n", sibling);
+
 	if ( FS_ParsedName( path, &s_pn ) == 0 ) {
 		struct one_wire_query *owq = FS_OWQ_from_pn( &s_pn ) ;
 		if ( owq != NULL ) {
@@ -101,8 +101,8 @@ void FS_OWQ_from_pn_destroy(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 
-	LEVEL_DEBUG("FS_OWQ_from_pn_destroy of %s\n", pn->path);
-	
+	LEVEL_DEBUG("%s\n", pn->path);
+
 	if (pn->extension == EXTENSION_ALL && pn->type != ePN_structure) {
 		if (OWQ_array(owq)) {
 			free(OWQ_array(owq));
@@ -123,7 +123,7 @@ int FS_OWQ_create_plus(const char *path, const char *file, char *buffer, size_t 
 	struct parsedname *pn = PN(owq);
 	int return_code ;
 
-	LEVEL_DEBUG("FS_OWQ_create_plus of %s + %s\n", path, file);
+	LEVEL_DEBUG("%s + %s\n", path, file);
 
 	return_code = FS_ParsedNamePlus(path, file, pn) ;
 	if ( return_code == 0 ) {
@@ -143,7 +143,7 @@ void FS_OWQ_destroy_sibling(struct one_wire_query *owq)
 		return ;
 	}
 
-	LEVEL_DEBUG("OWQ_destroy_sibling %s\n",PN(owq)->path) ;
+	LEVEL_DEBUG("%s\n",PN(owq)->path) ;
 	if ( OWQ_buffer(owq) ) {
 		free( OWQ_buffer(owq) ) ;
 	}
@@ -154,7 +154,7 @@ void FS_OWQ_destroy(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 
-	LEVEL_DEBUG("FS_OWQ_destroy of %s\n", pn->path);
+	LEVEL_DEBUG("%s\n", pn->path);
 	if (pn->extension == EXTENSION_ALL && pn->type != ePN_structure) {
 		if (OWQ_array(owq)) {
 			free(OWQ_array(owq));

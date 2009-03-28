@@ -80,14 +80,14 @@ static int BUS_transaction_single(const struct transaction_log *t, const struct 
 	switch (t->type) {
 	case trxn_select:			// select a 1-wire device (by unique ID)
 		ret = BUS_select(pn);
-		LEVEL_DEBUG("  Transaction select = %d\n", ret);
+		LEVEL_DEBUG("select = %d\n", ret);
 		break;
 	case trxn_compare:			// match two strings -- no actual 1-wire
 		if ((t->in == NULL) || (t->out == NULL)
 			|| (memcmp(t->in, t->out, t->size) != 0)) {
 			ret = -EINVAL;
 		}
-		LEVEL_DEBUG("  Transaction compare = %d\n", ret);
+		LEVEL_DEBUG("compare = %d\n", ret);
 		break;
 	case trxn_match:			// send data and compare response
 		assert(t->in == NULL);	// else use trxn_compare
@@ -95,7 +95,7 @@ static int BUS_transaction_single(const struct transaction_log *t, const struct 
 			break;
 		} else {
 			ret = BUS_send_data(t->out, t->size, pn);
-			LEVEL_DEBUG("  Transaction send = %d\n", ret);
+			LEVEL_DEBUG("send = %d\n", ret);
 		}
 		break;
 	case trxn_read:
@@ -104,12 +104,12 @@ static int BUS_transaction_single(const struct transaction_log *t, const struct 
 			break;
 		} else if (t->out == NULL) {
 			ret = BUS_readin_data(t->in, t->size, pn);
-			LEVEL_DEBUG("  Transaction readin = %d\n", ret);
+			LEVEL_DEBUG("readin = %d\n", ret);
 		}
 		break;
 	case trxn_modify:			// write data and read response. No match needed
 		ret = BUS_sendback_data(t->out, t->in, t->size, pn);
-		LEVEL_DEBUG("  Transaction modify = %d\n", ret);
+		LEVEL_DEBUG("modify = %d\n", ret);
 		break;
 	case trxn_blind:			// write data ignore response
 		{
@@ -121,50 +121,50 @@ static int BUS_transaction_single(const struct transaction_log *t, const struct 
 				ret = -ENOMEM;
 			}
 		}
-		LEVEL_DEBUG("  Transaction blind = %d\n", ret);
+		LEVEL_DEBUG("blind = %d\n", ret);
 		break;
 	case trxn_power:
 		ret = BUS_PowerByte(t->out[0], t->in, t->size, pn);
-		LEVEL_DEBUG("  Transaction power (%d usec) = %d\n", t->size, ret);
+		LEVEL_DEBUG("power (%d usec) = %d\n", t->size, ret);
 		break;
 	case trxn_program:
 		ret = BUS_ProgramPulse(pn);
-		LEVEL_DEBUG("  Transaction program pulse = %d\n", ret);
+		LEVEL_DEBUG("program pulse = %d\n", ret);
 		break;
 	case trxn_crc8:
 		ret = CRC8(t->out, t->size);
-		LEVEL_DEBUG("  Transaction CRC8 = %d\n", ret);
+		LEVEL_DEBUG("CRC8 = %d\n", ret);
 		break;
 	case trxn_crc8seeded:
 		ret = CRC8seeded(t->out, t->size, ((UINT *) (t->in))[0]);
-		LEVEL_DEBUG("  Transaction CRC8 = %d\n", ret);
+		LEVEL_DEBUG("seeded CRC8 = %d\n", ret);
 		break;
 	case trxn_crc16:
 		ret = CRC16(t->out, t->size);
-		LEVEL_DEBUG("  Transaction CRC16 = %d\n", ret);
+		LEVEL_DEBUG("CRC16 = %d\n", ret);
 		break;
 	case trxn_crc16seeded:
 		ret = CRC16seeded(t->out, t->size, ((UINT *) (t->in))[0]);
-		LEVEL_DEBUG("  Transaction CRC16 = %d\n", ret);
+		LEVEL_DEBUG("seeded CRC16 = %d\n", ret);
 		break;
 	case trxn_delay:
 		if (t->size > 0) {
 			UT_delay(t->size);
 		}
-		LEVEL_DEBUG("  Transaction Delay %d\n", t->size);
+		LEVEL_DEBUG("Delay %d\n", t->size);
 		break;
 	case trxn_udelay:
 		if (t->size > 0) {
 			UT_delay_us(t->size);
 		}
-		LEVEL_DEBUG("  Transaction Micro Delay %d\n", t->size);
+		LEVEL_DEBUG("Micro Delay %d\n", t->size);
 		break;
 	case trxn_reset:
 		ret = BUS_reset(pn);
-		LEVEL_DEBUG("  Transaction reset = %d\n", ret);
+		LEVEL_DEBUG("reset = %d\n", ret);
 		break;
 	case trxn_end:
-		LEVEL_DEBUG("  Transaction end = %d\n", ret);
+		LEVEL_DEBUG("end = %d\n", ret);
 		return -ESRCH;			// special "end" flag
 	case trxn_verify:
 		{
@@ -172,7 +172,7 @@ static int BUS_transaction_single(const struct transaction_log *t, const struct 
 			memcpy(&pn2, pn, sizeof(struct parsedname));	//shallow copy
 			pn2.selected_device = NULL;
 			ret = BUS_select(&pn2) || BUS_verify(t->size, pn);
-			LEVEL_DEBUG("  Transaction verify = %d\n", ret);
+			LEVEL_DEBUG("verify = %d\n", ret);
 		}
 		break;
 	case trxn_nop:
@@ -192,21 +192,21 @@ static void Bundle_init(struct transaction_bundle *tb, const struct parsedname *
 
 static int Bundle_pack(const struct transaction_log *tl, const struct parsedname *pn)
 {
-	struct transaction_log *t_index;
+	const struct transaction_log *t_index;
 	struct transaction_bundle s_tb;
 	struct transaction_bundle *tb = &s_tb;
 
-	LEVEL_DEBUG("Transaction Bundle: Start\n");
+	LEVEL_DEBUG("start\n");
 
 	Bundle_init(tb, pn);
 
 	for (t_index = tl; t_index->type != trxn_end; ++t_index) {
 		switch (Pack_item(t_index, tb)) {
 		case 0:
-			LEVEL_DEBUG("Transaction Bundle: Item added\n");
+			LEVEL_DEBUG("Item added\n");
 			break;
 		case -EINVAL:
-			LEVEL_DEBUG("Transaction Bundle: Item cannot be bundled\n");
+			LEVEL_DEBUG("Item cannot be bundled\n");
 			if (Bundle_ship(tb, pn)) {
 				return -EINVAL;
 			}
@@ -215,7 +215,7 @@ static int Bundle_pack(const struct transaction_log *tl, const struct parsedname
 			}
 			break;
 		case -EAGAIN:
-			LEVEL_DEBUG("Transaction Bundle: Item too big\n");
+			LEVEL_DEBUG("Item too big\n");
 			if (Bundle_ship(tb, pn)) {
 				return -EINVAL;
 			}
@@ -234,7 +234,7 @@ static int Bundle_pack(const struct transaction_log *tl, const struct parsedname
 // Take a bundle, execute the transaction, unpack, and clear the memoblob
 static int Bundle_ship(struct transaction_bundle *tb, const struct parsedname *pn)
 {
-	LEVEL_DEBUG("Transaction Bundle: Ship Packets=%d\n", tb->packets);
+	LEVEL_DEBUG("Ship Packets=%d\n", tb->packets);
 	if (tb->packets == 0) {
 		return 0;
 	}
@@ -256,10 +256,10 @@ static int Bundle_enroute(struct transaction_bundle *tb, const struct parsedname
 	int ret ;
 	if (tb->select_first) {
 		ret = BUS_select_and_sendback(tb->mb.memory_storage, tb->mb.memory_storage, tb->mb.used, pn);
-		LEVEL_DEBUG("Transaction Execute select and sendback = %d\n",ret ) ;
+		LEVEL_DEBUG("select and sendback = %d\n",ret ) ;
 	} else {
 		ret = BUS_sendback_data(tb->mb.memory_storage, tb->mb.memory_storage, tb->mb.used, pn);
-		LEVEL_DEBUG("Transaction Execute sendback = %d\n",ret ) ;
+		LEVEL_DEBUG("sendback = %d\n",ret ) ;
 	}
 	return ret ;
 }
@@ -276,17 +276,17 @@ static int Pack_item(const struct transaction_log *tl, struct transaction_bundle
 	//printf("PACK_ITEM used=%d size=%d max=%d\n",tb->mb.used,tl->size,tb->max_size);
 	switch (tl->type) {
 	case trxn_select:			// select a 1-wire device (by unique ID)
-		LEVEL_DEBUG("Transaction Bundle: pack=SELECT\n");
+		LEVEL_DEBUG("pack=SELECT\n");
 		if (tb->packets != 0) {
 			return -EAGAIN;		// select must be first
 		}
 		tb->select_first = 1;
 		break;
 	case trxn_compare:			// match two strings -- no actual 1-wire
-		LEVEL_DEBUG("Transaction Bundle: pack=COMPARE\n");
+		LEVEL_DEBUG("pack=COMPARE\n");
 		break;
 	case trxn_read:
-		LEVEL_DEBUG("Transaction Bundle: pack=READ\n");
+		LEVEL_DEBUG(" pack=READ\n");
 		if (tl->size > tb->max_size) {
 			return -EINVAL;		// too big for any bundle
 		}
@@ -300,7 +300,7 @@ static int Pack_item(const struct transaction_log *tl, struct transaction_bundle
 	case trxn_match:			// write data and match response
 	case trxn_modify:			// write data and read response. No match needed
 	case trxn_blind:			// write data and ignore response
-		LEVEL_DEBUG("Transaction Bundle: pack=MATCH MODIFY BLIND\n");
+		LEVEL_DEBUG("pack=MATCH MODIFY BLIND\n");
 		if (tl->size > tb->max_size) {
 			return -EINVAL;		// too big for any bundle
 		}
@@ -313,7 +313,7 @@ static int Pack_item(const struct transaction_log *tl, struct transaction_bundle
 		break;
 	case trxn_power:
 	case trxn_program:
-		LEVEL_DEBUG("Transaction Bundle: pack=POWER PROGRAM\n");
+		LEVEL_DEBUG("pack=POWER PROGRAM\n");
 		if (1 > tb->max_size) {
 			return -EINVAL;		// too big for any bundle
 		}
@@ -329,20 +329,20 @@ static int Pack_item(const struct transaction_log *tl, struct transaction_bundle
 	case trxn_crc8seeded:
 	case trxn_crc16:
 	case trxn_crc16seeded:
-		LEVEL_DEBUG("Transaction Bundle: pack=CRC*\n");
+		LEVEL_DEBUG("pack=CRC*\n");
 		break;
 	case trxn_delay:
 	case trxn_udelay:
-		LEVEL_DEBUG("Transaction Bundle: pack=(U)DELAYS\n");
+		LEVEL_DEBUG("pack=(U)DELAYS\n");
 		ret = -EINTR;
 		break;
 	case trxn_reset:
 	case trxn_end:
 	case trxn_verify:
-		LEVEL_DEBUG("Transaction Bundle: pack=RESET END VERIFY\n");
+		LEVEL_DEBUG("pack=RESET END VERIFY\n");
 		return -EINVAL;
 	case trxn_nop:
-		LEVEL_DEBUG("Transaction Bundle: pack=NOP\n");
+		LEVEL_DEBUG("pack=NOP\n");
 		break;
 	}
 	if (tb->packets == 0) {
@@ -359,19 +359,19 @@ static int Bundle_unpack(struct transaction_bundle *tb)
 	BYTE *data = tb->mb.memory_storage;
 	int ret = 0;
 
-	LEVEL_DEBUG("Transaction Bundle: unpacking\n");
+	LEVEL_DEBUG("unpacking\n");
 
 	for (packet_index = 0, tl = tb->start; packet_index < tb->packets; ++packet_index, ++tl) {
 		switch (tl->type) {
 		case trxn_compare:		// match two strings -- no actual 1-wire
-			LEVEL_DEBUG("Transaction Bundle: unpacking #%d COMPARE\n", packet_index);
+			LEVEL_DEBUG("unpacking #%d COMPARE\n", packet_index);
 			if ((tl->in == NULL) || (tl->out == NULL)
 				|| (memcmp(tl->in, tl->out, tl->size) != 0)) {
 				ret = -EINVAL;
 			}
 			break;
 		case trxn_match:		// send data and compare response
-			LEVEL_DEBUG("Transaction Bundle: unpacking #%d MATCH\n", packet_index);
+			LEVEL_DEBUG("unpacking #%d MATCH\n", packet_index);
 			if (memcmp(tl->out, data, tl->size) != 0) {
 				ret = -EINVAL;
 			}
@@ -379,63 +379,63 @@ static int Bundle_unpack(struct transaction_bundle *tb)
 			break;
 		case trxn_read:
 		case trxn_modify:		// write data and read response. No match needed
-			LEVEL_DEBUG("Transaction Bundle: unpacking #%d READ MODIFY\n", packet_index);
+			LEVEL_DEBUG("unpacking #%d READ MODIFY\n", packet_index);
 			memmove(tl->in, data, tl->size);
 			data += tl->size;
 			break;
 		case trxn_blind:
-			LEVEL_DEBUG("Transaction Bundle: unpacking #%d BLIND\n", packet_index);
+			LEVEL_DEBUG("unpacking #%d BLIND\n", packet_index);
 			data += tl->size;
 			break;
 		case trxn_power:
 		case trxn_program:
-			LEVEL_DEBUG("Transaction Bundle: unpacking #%d POWER PROGRAM\n", packet_index);
+			LEVEL_DEBUG("unpacking #%d POWER PROGRAM\n", packet_index);
 			memmove(tl->in, data, 1);
 			data += 1;
 			UT_delay(tl->size);
 			break;
 		case trxn_crc8:
-			LEVEL_DEBUG("Transaction Bundle: unpacking #%d CRC8\n", packet_index);
+			LEVEL_DEBUG("unpacking #%d CRC8\n", packet_index);
 			if (CRC8(tl->out, tl->size) != 0) {
 				ret = -EINVAL;
 			}
 			break;
 		case trxn_crc8seeded:
-			LEVEL_DEBUG("Transaction Bundle: unpacking #%d CRC8 SEEDED\n", packet_index);
+			LEVEL_DEBUG("unpacking #%d CRC8 SEEDED\n", packet_index);
 			if (CRC8seeded(tl->out, tl->size, ((UINT *) (tl->in))[0]) != 0) {
 				ret = -EINVAL;
 			}
 			break;
 		case trxn_crc16:
-			LEVEL_DEBUG("Transaction Bundle: unpacking #%d CRC16\n", packet_index);
+			LEVEL_DEBUG("npacking #%d CRC16\n", packet_index);
 			if (CRC16(tl->out, tl->size) != 0) {
 				ret = -EINVAL;
 			}
 			break;
 		case trxn_crc16seeded:
-			LEVEL_DEBUG("Transaction Bundle: unpacking #%d CRC16 SEEDED\n", packet_index);
+			LEVEL_DEBUG("unpacking #%d CRC16 SEEDED\n", packet_index);
 			if (CRC16seeded(tl->out, tl->size, ((UINT *) (tl->in))[0]) != 0) {
 				ret = -EINVAL;
 			}
 			break;
 		case trxn_delay:
-			LEVEL_DEBUG("Transaction Bundle: unpacking #%d DELAY\n", packet_index);
+			LEVEL_DEBUG("unpacking #%d DELAY\n", packet_index);
 			UT_delay(tl->size);
 			break;
 		case trxn_udelay:
-			LEVEL_DEBUG("Transaction Bundle: unpacking #%d UDELAY\n", packet_index);
+			LEVEL_DEBUG("unpacking #%d UDELAY\n", packet_index);
 			UT_delay_us(tl->size);
 			break;
 		case trxn_reset:
 		case trxn_end:
 		case trxn_verify:
 			// should never get here
-			LEVEL_DEBUG("Transaction Bundle: unpacking #%d RESET END VERIFY\n", packet_index);
+			LEVEL_DEBUG("unpacking #%d RESET END VERIFY\n", packet_index);
 			ret = -EINVAL;
 			break;
 		case trxn_nop:
 		case trxn_select:
-			LEVEL_DEBUG("Transaction Bundle: unpacking #%d NOP or SELECT\n", packet_index);
+			LEVEL_DEBUG("unpacking #%d NOP or SELECT\n", packet_index);
 			break;
 		}
 		if (ret != 0) {

@@ -61,7 +61,7 @@ static int FS_dir_plus(void (*dirfunc) (void *, const struct parsedname *), void
 int FS_dir(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_directory)
 {
 	uint32_t flags;
-	LEVEL_DEBUG("In FS_dir(%s)\n", pn_directory->path);
+	LEVEL_DEBUG("path=%s\n", pn_directory->path);
 
 	return FS_dir_both(dirfunc, v, pn_directory, &flags);
 }
@@ -71,7 +71,7 @@ int FS_dir(void (*dirfunc) (void *, const struct parsedname *), void *v, const s
 /* More checking is done, and the flags are returned */
 int FS_dir_remote(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_directory, uint32_t * flags)
 {
-	LEVEL_DEBUG("In FS_dir_remote(%s)\n", pn_directory->path);
+	LEVEL_DEBUG("path=%s\n", pn_directory->path);
 	return FS_dir_both(dirfunc, v, pn_directory, flags);
 }
 
@@ -84,7 +84,7 @@ static int FS_dir_both(void (*dirfunc) (void *, const struct parsedname *), void
 	flags[0] = 0;
 	if (pn_raw_directory == NULL || pn_raw_directory->selected_connection == NULL)
 		return -ENODEV;
-	LEVEL_CALL("DIRECTORY path=%s\n", SAFESTRING(pn_raw_directory->path));
+	LEVEL_CALL("path=%s\n", SAFESTRING(pn_raw_directory->path));
 
 	STATLOCK;
 	AVERAGE_IN(&dir_avg);
@@ -166,7 +166,7 @@ static int FS_dir_both(void (*dirfunc) (void *, const struct parsedname *), void
 	AVERAGE_OUT(&all_avg);
 	STATUNLOCK;
 
-	LEVEL_DEBUG("FS_dir_both out ret=%d\n", ret);
+	LEVEL_DEBUG("ret=%d\n", ret);
 	return ret;
 }
 
@@ -329,7 +329,7 @@ static int FS_devdir(void (*dirfunc) (void *, const struct parsedname *), void *
 	STAT_ADD1(dir_dev.calls);
 
 	// Add subdir to name (SubDirectory is within a device, but an extra layer of grouping of properties)
-	if (pn_device_directory->subdir != NULL) {	
+	if (pn_device_directory->subdir != NULL) {
 		//printf("DIR device subdirectory\n");
 		strncpy(subdir_name, pn_device_directory->subdir->name, OW_FULLNAME_MAX);
 		strcat(subdir_name, "/");
@@ -400,7 +400,7 @@ static int FS_alarmdir(void (*dirfunc) (void *, const struct parsedname *), void
 	ret = BUS_first_alarm(&ds, pn_alarm_directory);
 	if (ret) {
 		BUSUNLOCK(pn_alarm_directory);
-		LEVEL_DEBUG("FS_alarmdir BUS_first_alarm = %d\n", ret);
+		LEVEL_DEBUG("BUS_first_alarm = %d\n", ret);
 		if (ret == -ENODEV) {
 			return 0;			/* no more alarms is ok */
 		}
@@ -617,7 +617,7 @@ static int FS_typedir(void (*dirfunc) (void *, const struct parsedname *), void 
 
 	memcpy(pn_type_device, pn_type_directory, sizeof(struct parsedname));	// shallow copy
 
-	LEVEL_DEBUG("FS_typedir called on %s\n", pn_type_directory->path);
+	LEVEL_DEBUG("called on %s\n", pn_type_directory->path);
 
 	TYPEDIRMUTEXLOCK;
 

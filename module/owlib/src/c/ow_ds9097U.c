@@ -220,7 +220,7 @@ int DS2480_detect(struct connection_in *in)
 
 	in->speed = bus_speed_slow ;
 	in->flex = Globals.serial_flextime ? bus_yes_flex : bus_no_flex ;
-	
+
 	// Now set desired baud and polarity
 	// BUS_reset will do the actual changes
 	in->connin.serial.reverse_polarity = Globals.serial_reverse ;
@@ -258,7 +258,7 @@ static int DS2480_big_reset(const struct parsedname *pn)
 	BYTE single_bit = CMD_COMM | BITPOL_ONE |  DS2480b_speed_byte(pn) ;
 	BYTE single_bit_response ;
 	BYTE reset_byte = (BYTE) ( CMD_COMM | FUNCTSEL_RESET | SPEEDSEL_STD );
-	
+
 	// Open the com port in 9600 Baud.
 	if (COM_open(pn->selected_connection)) {
 		return -ENODEV;
@@ -269,7 +269,7 @@ static int DS2480_big_reset(const struct parsedname *pn)
 
 	// It's in command mode now
 	pn->selected_connection->connin.serial.mode = ds2480b_command_mode ;
-	
+
 	// send the timing byte (A reset command at 9600 baud)
 	DS2480_write( &reset_byte, 1, pn ) ;
 
@@ -284,7 +284,7 @@ static int DS2480_big_reset(const struct parsedname *pn)
 	pn->selected_connection->changed_bus_settings = 1 ; // Force a mode change
 	// Send a reset again
 	BUS_reset(pn) ;
-	
+
 	// delay to let line settle
 	UT_delay(4);
 	// flush the buffers
@@ -296,7 +296,7 @@ static int DS2480_big_reset(const struct parsedname *pn)
 	pn->selected_connection->changed_bus_settings = 1 ; // Force a mode change
 	// Send a reset again
 	BUS_reset(pn) ;
-	
+
 	// delay to let line settle
 	UT_delay(4);
 
@@ -345,7 +345,7 @@ static int DS2480_configuration_write(BYTE parameter_code, BYTE value_code, cons
 	if (expected_response == actual_response) {
 		return 0;
 	}
-    LEVEL_DEBUG("Configuration write, wrong response (%.2X not %.2X)\n",actual_response,expected_response) ;
+    LEVEL_DEBUG("wrong response (%.2X not %.2X)\n",actual_response,expected_response) ;
     return -EINVAL;
 }
 
@@ -363,7 +363,7 @@ static int DS2480_configuration_read(BYTE parameter_code, BYTE value_code, const
 	if (expected_response == actual_response) {
 		return 0;
 	}
-    LEVEL_DEBUG("Configuration read, wrong response (%.2X not %.2X)\n",actual_response,expected_response) ;
+    LEVEL_DEBUG("wrong response (%.2X not %.2X)\n",actual_response,expected_response) ;
     return -EINVAL;
 }
 
@@ -374,29 +374,29 @@ static void DS2480_set_baud_control(const struct parsedname *pn)
 {
 	// restrict allowable baud rates based on device capabilities
 	OW_BaudRestrict( &(pn->selected_connection->baud), B9600, B19200, B57600, B115200, 0 ) ;
-	
+
 	if ( DS2480_set_baud(pn) == 0 ) {
 		return ;
 	}
 	LEVEL_DEBUG("Failed first attempt at resetting baud rate of bus master %s\n",SAFESTRING(pn->selected_connection->name)) ;
-	
+
 	if ( DS2480_set_baud(pn) == 0 ) {
 		return ;
 	}
 	LEVEL_DEBUG("Failed second attempt at resetting baud rate of bus master %s\n",SAFESTRING(pn->selected_connection->name)) ;
-	
+
 	// uh oh -- undefined state -- not sure what the bus speed is.
 	pn->selected_connection->reconnect_state = reconnect_error ;
 	pn->selected_connection->baud = B9600 ;
 	++pn->selected_connection->changed_bus_settings ;
 	return;
 }
-	
+
 static int DS2480_set_baud(const struct parsedname *pn)
 {
 	BYTE value_code ;
 	BYTE send_code ;
-	
+
 	// Find rate parameter
 	switch ( pn->selected_connection->baud ) {
 		case B9600:
@@ -418,13 +418,13 @@ static int DS2480_set_baud(const struct parsedname *pn)
 			break ;
 #endif
 	}
-	
+
 	// Add polarity
 	if ( pn->selected_connection->connin.serial.reverse_polarity ) {
 		value_code |= PARMSET_REVERSE_POLARITY ;
 	}
 	send_code = CMD_CONFIG | PARMSEL_BAUDRATE | value_code;
-	
+
 	// Send configuration change
 	COM_flush(pn->selected_connection);
 	UT_delay(5);
@@ -432,13 +432,13 @@ static int DS2480_set_baud(const struct parsedname *pn)
 		// uh oh -- undefined state -- not sure what the bus speed is.
 		return 1;
 	}
-	
+
 	// Change OS view of rate
 	UT_delay(5);
 	COM_speed(pn->selected_connection->baud,pn->selected_connection) ;
 	UT_delay(5);
 	COM_slurp(pn->selected_connection->file_descriptor);
-	
+
 	// Check rate
 	if ( DS2480_configuration_read( PARMSEL_BAUDRATE, value_code, pn ) ) {
 		// Can't read new setting
@@ -629,7 +629,7 @@ static int DS2480_next_both(struct device_search *ds, const struct parsedname *p
 	// set the count
 	ds->LastDiscrepancy = mismatched;
 
-	LEVEL_DEBUG("DS9097U_next_both SN found: " SNformat "\n", SNvar(ds->sn));
+	LEVEL_DEBUG("SN found: " SNformat "\n", SNvar(ds->sn));
 	return 0;
 }
 
@@ -797,12 +797,12 @@ static int DS2480_sendback_cmd(const BYTE * cmd, BYTE * resp, const size_t len, 
 		}
 		ret = DS2480_sendout_cmd( &cmd[bytes_so_far], bytes_this_segment, pn);
 		if ( ret ) {
-            LEVEL_DEBUG("Sendback cmd: write error\n") ;
+            LEVEL_DEBUG("write error\n") ;
 			return ret ;
 		}
 		ret = DS2480_read(       &resp[bytes_so_far], bytes_this_segment, pn);
 		if ( ret ) {
-            LEVEL_DEBUG("Sendback cmd: read error\n") ;
+            LEVEL_DEBUG("read error\n") ;
             return ret ;
 		}
 		bytes_so_far += bytes_this_segment ;

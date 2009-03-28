@@ -95,7 +95,7 @@ int OW_Load_dnssd_library(void)
 #if 0
 			char *derr;
 			derr = DL_error();
-			fprintf(stderr, "DL_open [%s] failed [%s]\n", libdirs[i], derr);
+			fprintf(stderr, "%s failed [%s]\n", libdirs[i], derr);
 #endif
 			i++;
 			continue;

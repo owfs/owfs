@@ -54,10 +54,10 @@ int HA7E_detect(struct connection_in *in)
 
 	/* Set up low-level routines */
 	HA7E_setroutines(in);
-	
+
 	// Poison current "Address" for adapter
 	in->connin.ha7e.sn[0] = 0 ; // so won't match
-	
+
 	/* Open the com port */
 	if (COM_open(in)) {
 		return -ENODEV;
@@ -81,14 +81,14 @@ int HA7E_detect(struct connection_in *in)
 		in->AnyDevices = 1 ;
 		return 0;
 	}
-	LEVEL_DEFAULT("HA7E detection error\n");
+	LEVEL_DEFAULT("error\n");
 	return -ENODEV;
 }
 
 static int HA7E_reset(const struct parsedname *pn)
 {
 	BYTE resp[1];
-	
+
 	COM_flush(pn->selected_connection);
 	if (COM_write((BYTE*)"R", 1, pn)) {
 		LEVEL_DEBUG("Error sending HA7E reset\n");
@@ -141,7 +141,7 @@ static int HA7E_next_both(struct device_search *ds, const struct parsedname *pn)
 		break;
 	}
 
-	LEVEL_DEBUG("HA7E_next_both SN found: " SNformat "\n", SNvar(ds->sn));
+	LEVEL_DEBUG("SN found: " SNformat "\n", SNvar(ds->sn));
 	return ret;
 }
 
@@ -159,14 +159,14 @@ static int HA7E_directory(struct device_search *ds, struct dirblob *db, const st
 	char resp[17];
 	BYTE sn[8];
 	char *first, *next, *current ;
-	
+
 	DirblobClear(db);
-	
+
 	//Depending on the search type, the HA7E search function
 	//needs to be selected
 	//tEC -- Conditional searching
 	//tF0 -- Normal searching
-	
+
 	// Send the configuration command and check response
 	if (ds->search == _1W_CONDITIONAL_SEARCH_ROM) {
 		first = "C" ;
@@ -176,7 +176,7 @@ static int HA7E_directory(struct device_search *ds, struct dirblob *db, const st
 		next = "s" ;
 	}
 	current = first ;
-	
+
 	while (1) {
 		if (COM_write((BYTE*)current, 1, pn)) {
 			return HA7E_resync(pn) ;
@@ -210,11 +210,11 @@ static int HA7E_directory(struct device_search *ds, struct dirblob *db, const st
 		// Set as current "Address" for adapter
 		memcpy( pn->selected_connection->connin.ha7e.sn, sn, 8) ;
 
-		LEVEL_DEBUG("HA7E_directory SN found: " SNformat "\n", SNvar(sn));
+		LEVEL_DEBUG("SN found: " SNformat "\n", SNvar(sn));
 		if ( resp[16]!=0x0D ) {
 			return HA7E_resync(pn) ;
 		}
-		
+
 		// CRC check
 		if (CRC8(sn, 8) || (sn[0] == 0)) {
 			/* A minor "error" and should perhaps only return -1 */
@@ -222,7 +222,7 @@ static int HA7E_directory(struct device_search *ds, struct dirblob *db, const st
 			LEVEL_DEBUG("sn = %s\n", sn);
 			return HA7E_resync(pn) ;
 		}
-		
+
 		DirblobAdd(sn, db);
 	}
 }
@@ -258,7 +258,7 @@ static int HA7E_select( const struct parsedname * pn )
 	if ( (pn->selected_device==NULL) || (pn->selected_device==DeviceThermostat) ) {
 		return HA7E_reset(pn) ;
 	}
-	
+
 	if ( memcmp( pn->sn, pn->selected_connection->connin.ha7e.sn, 8 ) ) {
 		if ( COM_write((BYTE*)send_address,18,pn) ) {
 			LEVEL_DEBUG("Error with sending HA7E A-ddress\n") ;
@@ -281,7 +281,7 @@ static int HA7E_select( const struct parsedname * pn )
 
 	// Set as current "Address" for adapter
 	memcpy( pn->selected_connection->connin.ha7e.sn, pn->sn, 8) ;
-	
+
 	return 0 ;
 }
 
@@ -295,7 +295,7 @@ static int HA7E_sendback_part(const BYTE * data, BYTE * resp, const size_t size,
 	num2string( &send_data[1], size ) ;
 	bytes2string(&send_data[3], data, size) ;
 	send_data[3+2*size] = 0x0D ;
-	
+
 	if ( COM_write((BYTE*)send_data,size*2+4,pn) ) {
 		LEVEL_DEBUG("Error with sending HA7E block\n") ;
 		return HA7E_resync(pn) ;
@@ -339,10 +339,10 @@ static void HA7E_close(struct connection_in *in)
 static void HA7E_powerdown(struct connection_in * in)
 {
 	struct parsedname pn;
-	
+
 	FS_ParsedName(NULL, &pn);	// minimal parsename -- no destroy needed
 	pn.selected_connection = in;
-	
+
 	COM_write((BYTE*)"P", 1, &pn) ;
 	if ( in->file_descriptor > -1 ) {
 		COM_slurp(in->file_descriptor) ;

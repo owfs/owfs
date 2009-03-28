@@ -71,7 +71,7 @@ int HA7_detect(struct connection_in *in)
 
 	FS_ParsedName(NULL, &pn);	// minimal parsename -- no destroy needed
 	pn.selected_connection = in;
-	LEVEL_CONNECT("HA7 detect\n");
+	LEVEL_CONNECT("start\n");
 
 	/* Set up low-level routines */
 	HA7_setroutines(in);
@@ -242,7 +242,7 @@ static int HA7_read(int file_descriptor, struct memblob *mb)
 
 	// Read first block of data from HA7
 	if ((read_size = tcp_read(file_descriptor, readin_area, HA7_READ_BUFFER_LENGTH, &tvnet)) < 0) {
-		LEVEL_CONNECT("HA7_read (ethernet) error = %d\n", read_size);
+		LEVEL_CONNECT("(ethernet) error = %d\n", read_size);
 		//write(1, readin_area, read_size);
 		return -EIO;
 	}
@@ -255,12 +255,12 @@ static int HA7_read(int file_descriptor, struct memblob *mb)
 		if (p == NULL) {
 			p = &readin_area[15 + 32];
 		}
-		LEVEL_DATA("HA7 response problem:%.*s\n", p - readin_area - 15, &readin_area[15]);
+		LEVEL_DATA("response problem:%.*s\n", p - readin_area - 15, &readin_area[15]);
 		return -EINVAL;
 	}
 	// Look for "<body>"
 	if ((start = strstr(readin_area, "<body>")) == NULL) {
-		LEVEL_DATA("HA7 response: No HTTP body to parse\n");
+		LEVEL_DATA("esponse: No HTTP body to parse\n");
 		MemblobClear(mb);
 		return -EINVAL;
 	}

@@ -10,7 +10,7 @@ $Id$
  */
 /* i2c support for the DS2482-100 and DS2482-800 1-wire host adapters */
 /* Stolen shamelessly from Ben Gardners kernel module */
-/* Actually, Dallas datasheet has the information, 
+/* Actually, Dallas datasheet has the information,
    the module code showed a nice implementation,
    the eventual format is owfs-specific (using similar primatives, data structures)
    Testing by Jan Kandziora and Daniel Höper.
@@ -45,11 +45,11 @@ $Id$
 // specifically lm-sensors-2.10.0
 #include "i2c-dev.h"
 
-enum ds2482_address { 
-	ds2482_any=-2, 
-	ds2482_all=-1, 
-	ds2482_18, ds2482_19, ds2482_1A, ds2482_1B, ds2482_1C, ds2482_1D, ds2482_1E, ds2482_1F, 
-	ds2482_too_far 
+enum ds2482_address {
+	ds2482_any=-2,
+	ds2482_all=-1,
+	ds2482_18, ds2482_19, ds2482_1A, ds2482_1B, ds2482_1C, ds2482_1D, ds2482_1E, ds2482_1F,
+	ds2482_too_far
 	} ;
 
 static enum ds2482_address Parse_i2c_address( struct connection_in * in ) ;
@@ -129,7 +129,7 @@ static int DS2482_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, cons
    null, a number, or nothing
 */
 static enum ds2482_address Parse_i2c_address( struct connection_in * in )
-{ 
+{
 	enum ds2482_address address ;
 	char * colon = strchr( in->name, ':' ) ;
 	if ( colon == NULL ) { // not found
@@ -138,17 +138,17 @@ static enum ds2482_address Parse_i2c_address( struct connection_in * in )
 
 	colon[0] = 0x00 ; // set as null
 	++colon ; // point beyond
-	
+
 	if ( strcasecmp(colon,"all")==0 ) {
 		return ds2482_all ;
 	}
 
 	address = atoi( colon ) ;
-	
+
 	if ( address < ds2482_18 || address >= ds2482_too_far ) {
 		return ds2482_any ; // bad entry ignored
 	}
-	
+
 	return address ;
 }
 
@@ -202,7 +202,7 @@ int DS2482_detect(struct connection_in *in)
 
 /* Use sysfs to find i2c adapters */
 /* cycle through /sys/class/i2c-adapter */
-/* returns -1 -- no directory could be opened 
+/* returns -1 -- no directory could be opened
    else found -- number of directories found */
 static int DS2482_detect_sys(enum ds2482_address chip_num, struct connection_in *in)
 {
@@ -259,7 +259,7 @@ static int DS2482_detect_sys(enum ds2482_address chip_num, struct connection_in 
 
 /* non sysfs method -- try by bus name */
 /* cycle through /dev/i2c-n */
-/* returns -1 -- no direcory could be opened 
+/* returns -1 -- no direcory could be opened
    else found -- number of directories found */
 static int DS2482_detect_dir(enum ds2482_address chip_num, struct connection_in *in)
 {
@@ -269,7 +269,7 @@ static int DS2482_detect_dir(enum ds2482_address chip_num, struct connection_in 
 	int bus = 0 ;
 	int sn_ret ;
 
-	for ( bus=0 ; bus<99 ; ++bus ) { 
+	for ( bus=0 ; bus<99 ; ++bus ) {
 		char dev_name[128] ;
 		char * new_device ;
 
@@ -481,16 +481,16 @@ static int DS2482_readstatus(BYTE * c, int file_descriptor, unsigned long int mi
 	do {
 		int ret = i2c_smbus_read_byte(file_descriptor);
 		if (ret < 0) {
-			LEVEL_DEBUG("Reading DS2482 status problem min=%lu max=%lu i=%d ret=%d\n", min_usec, max_usec, i, ret);
+			LEVEL_DEBUG("problem min=%lu max=%lu i=%d ret=%d\n", min_usec, max_usec, i, ret);
 			return 1;
 		}
 		if ((ret & DS2482_REG_STS_1WB) == 0x00) {
 			c[0] = (BYTE) ret;
-			LEVEL_DEBUG("DS2482 read status ok\n");
+			LEVEL_DEBUG("ok\n");
 			return 0;
 		}
 		if (i++ == 3) {
-			LEVEL_DEBUG("Reading DS2482 status still busy min=%lu max=%lu i=%d ret=%d\n", min_usec, max_usec, i, ret);
+			LEVEL_DEBUG("still busy min=%lu max=%lu i=%d ret=%d\n", min_usec, max_usec, i, ret);
 			return 1;
 		}
 		UT_delay_us(delta_usec);	// increment up to three times
@@ -523,7 +523,7 @@ static int DS2482_next_both(struct device_search *ds, const struct parsedname *p
 	}
 	// loop to do the search
 	for (bit_number = 0; bit_number < 64; ++bit_number) {
-		LEVEL_DEBUG("DS2482 search bit number %d\n", bit_number);
+		LEVEL_DEBUG("bit number %d\n", bit_number);
 		/* Set the direction bit */
 		if (bit_number < ds->LastDiscrepancy) {
 			search_direction = UT_getbit(ds->sn, bit_number);
@@ -558,7 +558,7 @@ static int DS2482_next_both(struct device_search *ds, const struct parsedname *p
 
 	ds->LastDiscrepancy = last_zero;
 	ds->LastDevice = (last_zero < 0);
-	LEVEL_DEBUG("DS2482_next_both SN found: " SNformat "\n", SNvar(ds->sn));
+	LEVEL_DEBUG("SN found: " SNformat "\n", SNvar(ds->sn));
 	return 0;
 }
 
@@ -588,7 +588,7 @@ static int DS2482_reset(const struct parsedname *pn)
 	}
 
 	pn->selected_connection->AnyDevices = (c & DS2482_REG_STS_PPD) != 0;
-	LEVEL_DEBUG("DS2482 Reset\n");
+	LEVEL_DEBUG("\n");
 	return (c & DS2482_REG_STS_SD) ? BUS_RESET_SHORT : BUS_RESET_OK;
 }
 
@@ -660,7 +660,7 @@ static int HeadChannel(struct connection_in *in)
 	/* Must be a DS2482-800 */
 	in->connin.i2c.channels = 8;
 	in->Adapter = adapter_DS2482_800;
-	
+
 	return CreateChannels(in);
 }
 

@@ -61,7 +61,7 @@ void FS_ParsedName_destroy(struct parsedname *pn)
 	if (!pn) {
 		return;
 	}
-	LEVEL_DEBUG("ParsedName_destroy %s\n", SAFESTRING(pn->path));
+	LEVEL_DEBUG("%s\n", SAFESTRING(pn->path));
 	CONNIN_RUNLOCK ;
 	//printf("PNDestroy bp (%d)\n",BusIsServer(pn->selected_connection)) ;
 	if (pn->bp) {
@@ -79,7 +79,7 @@ void FS_ParsedName_destroy(struct parsedname *pn)
 		pn->lock = NULL;
 	}
 	//printf("PNDestroy done (%d)\n",BusIsServer(pn->selected_connection)) ;
-	// Tokenstring is part of a larger allocation and destroyed separately 
+	// Tokenstring is part of a larger allocation and destroyed separately
 }
 
 /* Parse a path to check it's validity and attach to the propery data structures */
@@ -106,7 +106,7 @@ static int FS_ParsedName_anywhere(const char *path, enum parse_pass remote_statu
 	// Even on normal glibc, errno isn't cleared on good system calls
 	errno = 0;
 
-	LEVEL_CALL("PARSENAME path=[%s]\n", SAFESTRING(path));
+	LEVEL_CALL("path=[%s]\n", SAFESTRING(path));
 
 	ret = FS_ParsedName_setup(pp, path, pn);
 	if (ret) {
@@ -235,14 +235,14 @@ static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path,
 	pp->pathlast = NULL;
 	pp->pathcpy = NULL;
 	pp->pathnext = NULL;
-	
+
 	/* Default attributes */
 	pn->state = ePS_normal;
 	pn->type = ePN_root;
 
 	/* No device lock yet assigned */
 	pn->lock = NULL ;
-	
+
 	/* minimal structure for initial bus "detect" use -- really has connection and SemiGlobal only */
 	if (path == NULL) {
 		return 0;

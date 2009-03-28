@@ -132,7 +132,7 @@ int ServerRead(struct one_wire_query *owq)
 	sm.offset = OWQ_offset(owq);
 
 	//printf("ServerRead path=%s\n", pn_file_entry->path_busless);
-	LEVEL_CALL("SERVER(%d)READ path=%s\n", pn_file_entry->selected_connection->index, SAFESTRING(pn_file_entry->path_busless));
+	LEVEL_CALL("SERVER(%d) path=%s\n", pn_file_entry->selected_connection->index, SAFESTRING(pn_file_entry->path_busless));
 
 	connectfd = PersistentStart(&persistent, pn_file_entry->selected_connection);
 	if (connectfd > FD_CURRENT_BAD) {
@@ -169,7 +169,7 @@ int ServerPresence(const struct parsedname *pn_file_entry)
 	sm.type = msg_presence;
 
 	//printf("ServerPresence path=%s\n", pn_file_entry->path_busless);
-	LEVEL_CALL("SERVER(%d)PRESENCE path=%s\n", pn_file_entry->selected_connection->index, SAFESTRING(pn_file_entry->path_busless));
+	LEVEL_CALL("SERVER(%d) path=%s\n", pn_file_entry->selected_connection->index, SAFESTRING(pn_file_entry->path_busless));
 
 	connectfd = PersistentStart(&persistent, pn_file_entry->selected_connection);
 	if (connectfd > FD_CURRENT_BAD) {
@@ -208,7 +208,7 @@ int ServerWrite(struct one_wire_query *owq)
 	sm.offset = OWQ_offset(owq);
 
 	//printf("ServerRead path=%s\n", pn_file_entry->path_busless);
-	LEVEL_CALL("SERVER(%d)WRITE path=%s\n", pn_file_entry->selected_connection->index, SAFESTRING(pn_file_entry->path_busless));
+	LEVEL_CALL("SERVER(%d) path=%s\n", pn_file_entry->selected_connection->index, SAFESTRING(pn_file_entry->path_busless));
 
 	connectfd = PersistentStart(&persistent, pn_file_entry->selected_connection);
 	if (connectfd > FD_CURRENT_BAD) {
@@ -275,7 +275,7 @@ int ServerDIR(void (*dirfunc) (void *, const struct parsedname * const), void *v
 	memset(&cm, 0, sizeof(struct client_msg));
 	sm.type = msg_dir;
 
-	LEVEL_CALL("SERVER(%d)DIR path=%s path_busless=%s\n",
+	LEVEL_CALL("SERVER(%d) path=%s path_busless=%s\n",
 			   pn_whole_directory->selected_connection->index, SAFESTRING(pn_whole_directory->path), SAFESTRING(pn_whole_directory->path_busless));
 
 	connectfd = PersistentStart(&persistent, pn_whole_directory->selected_connection);
@@ -307,7 +307,7 @@ int ServerDIR(void (*dirfunc) (void *, const struct parsedname * const), void *v
 			while ((return_path = FromServerAlloc(connectfd, &cm))) {
 				struct parsedname pn_directory_element;
 				return_path[cm.payload - 1] = '\0';	/* Ensure trailing null */
-				LEVEL_DEBUG("ServerDir: got=[%s]\n", return_path);
+				LEVEL_DEBUG("got=[%s]\n", return_path);
 
 				ret = -EINVAL;
 
@@ -394,7 +394,7 @@ int ServerDIRALL(void (*dirfunc) (void *, const struct parsedname * const), void
 	memset(&cm, 0, sizeof(struct client_msg));
 	sm.type = msg_dirall;
 
-	LEVEL_CALL("SERVER(%d)DIRALL path=%s path_busless=%s\n",
+	LEVEL_CALL("SERVER(%d) path=%s path_busless=%s\n",
 			   pn_whole_directory->selected_connection->index, SAFESTRING(pn_whole_directory->path), SAFESTRING(pn_whole_directory->path_busless));
 
 	// Get a file descriptor, possibly a persistent one
@@ -412,14 +412,14 @@ int ServerDIRALL(void (*dirfunc) (void *, const struct parsedname * const), void
 	}
 	// Success, get data
 	comma_separated_list = FromServerAlloc(connectfd, &cm);
-	LEVEL_DEBUG("DIRALL got %s\n", SAFESTRING(comma_separated_list));
+	LEVEL_DEBUG("got %s\n", SAFESTRING(comma_separated_list));
 	if (cm.ret == 0) {
 		ASCII *current_file;
 		ASCII *rest_of_comma_list = comma_separated_list;
 		size_t devices = 0;
 		struct dirblob db;
 
-		LEVEL_DEBUG("DIRALL start parsing\n");
+		LEVEL_DEBUG("start parsing\n");
 
 		/* If cacheable, try to allocate a blob for storage */
 		/* only for "read devices" and not alarm */
@@ -440,7 +440,7 @@ int ServerDIRALL(void (*dirfunc) (void *, const struct parsedname * const), void
 		while ((current_file = strsep(&rest_of_comma_list, ",")) != NULL) {
 			struct parsedname pn_directory_element;
 			int path_length = strlen(current_file);
-			LEVEL_DEBUG("ServerDirall: got=[%s]\n", current_file);
+			LEVEL_DEBUG("got=[%s]\n", current_file);
 
 			ret = -EINVAL;
 
@@ -650,18 +650,18 @@ static int ToServer(int file_descriptor, struct server_msg *sm, struct serverpac
 	io[nio].iov_base = &local_sm;
 	io[nio].iov_len = sizeof(struct server_msg);
 	nio++;
-	
+
 	// Next block, the path
 	if ((io[nio].iov_base = sp->path)) {	// send path (if not null)
 		io[nio].iov_len = payload = strlen(sp->path) + 1;
 		nio++;
-		LEVEL_DEBUG("ToServer path=%s\n", sp->path);
+		LEVEL_DEBUG("path=%s\n", sp->path);
 	}
 	// next block, data (only for writes)
 	if ((sp->datasize>0) && (io[nio].iov_base = sp->data)) {	// send data only for writes (if datasize not zero)
 		payload += (io[nio].iov_len = sp->datasize);
 		nio++;
-        LEVEL_DEBUG("ToServer data=%s\n", sp->data);
+        LEVEL_DEBUG("data=%s\n", sp->data);
 	}
 
 
@@ -682,9 +682,9 @@ static int ToServer(int file_descriptor, struct server_msg *sm, struct serverpac
 		io[nio].iov_base = &(Globals.Token);	// owserver: add our tag
 		io[nio].iov_len = sizeof(union antiloop);
 		nio++;
-        LEVEL_DEBUG("ToServer tokens=%d\n", tokens);
+        LEVEL_DEBUG("tokens=%d\n", tokens);
 	}
-	LEVEL_DEBUG("ToServer version=%u payload=%d size=%d type=%d SG=%X offset=%d\n",sm->version,payload,sm->size,sm->type,sm->sg,sm->offset);
+	LEVEL_DEBUG("version=%u payload=%d size=%d type=%d SG=%X offset=%d\n",sm->version,payload,sm->size,sm->type,sm->sg,sm->offset);
 
 	// encode in network order (just the header)
 	local_sm.version = htonl(sm->version);
