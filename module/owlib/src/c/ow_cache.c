@@ -254,7 +254,7 @@ int Cache_Add(const void *data, const size_t datasize, const struct parsedname *
 		return 0;				/* in case timeout set to 0 */
 	}
 
-	tn = (struct tree_node *) malloc(sizeof(struct tree_node) + datasize);
+	tn = (struct tree_node *) owmalloc(sizeof(struct tree_node) + datasize);
 	if (!tn) {
 		return -ENOMEM;
 	}
@@ -306,7 +306,7 @@ int Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn)
 		return 0;				/* in case timeout set to 0 */
 	}
 
-	tn = (struct tree_node *) malloc(sizeof(struct tree_node) + size);
+	tn = (struct tree_node *) owmalloc(sizeof(struct tree_node) + size);
 	//printf("AddDir tn=%p\n",tn) ;
 	if (!tn) {
 		return -ENOMEM;
@@ -338,7 +338,7 @@ int Cache_Add_Device(const int bus_nr, const BYTE * sn)
 		return 0;				/* in case timeout set to 0 */
 	}
 
-	tn = (struct tree_node *) malloc(sizeof(struct tree_node) + sizeof(int));
+	tn = (struct tree_node *) owmalloc(sizeof(struct tree_node) + sizeof(int));
 	if (!tn) {
 		return -ENOMEM;
 	}
@@ -380,7 +380,7 @@ int Cache_Add_Internal(const void *data, const size_t datasize, const struct int
 		return 0;				/* in case timeout set to 0 */
 	}
 
-	tn = (struct tree_node *) malloc(sizeof(struct tree_node) + datasize);
+	tn = (struct tree_node *) owmalloc(sizeof(struct tree_node) + datasize);
 	if (!tn) {
 		return -ENOMEM;
 	}
@@ -430,12 +430,12 @@ static int Cache_Add_Common(struct tree_node *tn)
 	}
 	if (Globals.cache_size && (cache.old_ram + cache.new_ram > Globals.cache_size)) {
 		// failed size test
-		free(tn);
+		owfree(tn);
 	} else if ((opaque = tsearch(tn, &cache.new_db, tree_compare))) {
 		//printf("Cache_Add_Common to %p\n",opaque);
 		if (tn != opaque->key) {
 			cache.new_ram += sizeof(tn) - sizeof(opaque->key);
-			free(opaque->key);
+			owfree(opaque->key);
 			opaque->key = tn;
 			state = just_update;
 		} else {
@@ -443,7 +443,7 @@ static int Cache_Add_Common(struct tree_node *tn)
 			cache.new_ram += sizeof(tn);
 		}
 	} else {					// nothing found or added?!? free our memory segment
-		free(tn);
+		owfree(tn);
 	}
 	CACHE_WUNLOCK;
 	/* flipped old database is now out of circulation -- can be destroyed without a lock */
@@ -516,14 +516,14 @@ static int Cache_Add_Store(struct tree_node *tn)
 	if ((opaque = tsearch(tn, &cache.store, tree_compare))) {
 		//printf("CACHE ADD pointer=%p, key=%p\n",tn,opaque->key);
 		if (tn != opaque->key) {
-			free(opaque->key);
+			owfree(opaque->key);
 			opaque->key = tn;
 			state = just_update;
 		} else {
 			state = yes_add;
 		}
 	} else {					// nothing found or added?!? free our memory segment
-		free(tn);
+		owfree(tn);
 	}
 	STORE_WUNLOCK;
 	switch (state) {
@@ -990,7 +990,7 @@ static int Cache_Del_Store(const struct tree_node *tn)
 		return 1;
 	}
 
-	free(tn_found);
+	owfree(tn_found);
 	STATLOCK;
 	AVERAGE_OUT(&store_avg);
 	STATUNLOCK;

@@ -65,17 +65,17 @@ void FS_ParsedName_destroy(struct parsedname *pn)
 	CONNIN_RUNLOCK ;
 	//printf("PNDestroy bp (%d)\n",BusIsServer(pn->selected_connection)) ;
 	if (pn->bp) {
-		free(pn->bp);
+		owfree(pn->bp);
 		pn->bp = NULL;
 	}
 	//printf("PNDestroy path (%d)\n",BusIsServer(pn->selected_connection)) ;
 	if (pn->path) {
-		free(pn->path);
+		owfree(pn->path);
 		pn->path = NULL;
 	}
 	//printf("PNDestroy lock (%d)\n",BusIsServer(pn->selected_connection)) ;
 	if (pn->lock) {
-		free(pn->lock);
+		owfree(pn->lock);
 		pn->lock = NULL;
 	}
 	//printf("PNDestroy done (%d)\n",BusIsServer(pn->selected_connection)) ;
@@ -127,7 +127,7 @@ static int FS_ParsedName_anywhere(const char *path, enum parse_pass remote_statu
 			//LEVEL_DEBUG("PARSENAME parse_done\n") ;
 			//printf("PARSENAME end ret=%d\n",ret) ;
 			if (pp->pathcpy) {
-				free(pp->pathcpy);
+				owfree(pp->pathcpy);
 			}
 			if (ret) {
 				FS_ParsedName_destroy(pn);
@@ -253,14 +253,14 @@ static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path,
 	}
 
 	/* make a copy for destructive parsing */
-	pp->pathcpy = strdup(path);
+	pp->pathcpy = owstrdup(path);
 	if (pp->pathcpy == NULL) {
 		return -ENOMEM;
 	}
 
-	pn->path = (char *) malloc(2 * strlen(path) + 2);
+	pn->path = (char *) owmalloc(2 * strlen(path) + 2);
 	if (pn->path == NULL) {
-		free(pp->pathcpy);
+		owfree(pp->pathcpy);
 		return -ENOMEM;
 	}
 
@@ -626,9 +626,9 @@ static int BranchAdd(struct parsedname *pn)
 	//printf("BRANCHADD\n");
 	if ((pn->pathlength % BRANCH_INCR) == 0) {
 		void *temp = pn->bp;
-		if ((pn->bp = realloc(temp, (BRANCH_INCR + pn->pathlength) * sizeof(struct buspath))) == NULL) {
+		if ((pn->bp = owrealloc(temp, (BRANCH_INCR + pn->pathlength) * sizeof(struct buspath))) == NULL) {
 			if (temp) {
-				free(temp);
+				owfree(temp);
 			}
 			return -ENOMEM;
 		}
@@ -656,7 +656,7 @@ int FS_ParsedNamePlus(const char *path, const char *file, struct parsedname *pn)
 	} else {
 		int ret = 0;
 		char *fullpath;
-		fullpath = malloc(strlen(file) + strlen(path) + 2);
+		fullpath = owmalloc(strlen(file) + strlen(path) + 2);
 		if (fullpath == NULL) {
 			return -ENOMEM;
 		}
@@ -668,7 +668,7 @@ int FS_ParsedNamePlus(const char *path, const char *file, struct parsedname *pn)
 		//printf("PARSENAMEPLUS path=%s pre\n",fullpath) ;
 		ret = FS_ParsedName(fullpath, pn);
 		//printf("PARSENAMEPLUS path=%s post\n",fullpath) ;
-		free(fullpath);
+		owfree(fullpath);
 		//printf("PARSENAMEPLUS free\n") ;
 		return ret;
 	}
@@ -696,12 +696,12 @@ int FS_ParsedNamePlusExt(const char *path, const char *file, int extension, enum
 int FS_ParseProperty_for_sibling(char *filename, struct parsedname *pn)
 {
 	// need to make a copy of filename since a static string can't be modified by strsep
-	char *filename_copy = strdup(filename);
+	char *filename_copy = owstrdup(filename);
 	int ret;
 	if (filename_copy == NULL) {
 		return 1;
 	}
 	ret = (Parse_Property(filename_copy, pn) == parse_done) ? 0 : 1;
-	free(filename_copy);
+	owfree(filename_copy);
 	return ret;
 }

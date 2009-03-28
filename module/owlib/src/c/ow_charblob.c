@@ -35,14 +35,14 @@ $Id$
 
 /*
     A "charblob" is a structure holding a list of files
-    
+
     Most interesting, it allocates memory dynamically.
 */
 
 void CharblobClear(struct charblob *cb)
 {
 	if (cb->blob) {
-		free(cb->blob);
+		owfree(cb->blob);
 	}
 	CharblobInit(cb);
 }
@@ -72,7 +72,7 @@ int CharblobAdd(const ASCII * a, size_t s, struct charblob *cb)
 	}
 	if (cb->used + s > cb->allocated) {
 		int newalloc = cb->allocated + incr;
-		ASCII *temp = realloc(cb->blob, newalloc);
+		ASCII *temp = owrealloc(cb->blob, newalloc);
 		if (temp) {
 			memset(&temp[cb->allocated], 0, incr);	// set the new memory to blank
 			cb->allocated = newalloc;
@@ -92,7 +92,7 @@ int CharblobAddChar(const ASCII a, struct charblob *cb)
 	// make more room? -- blocks of 1k
 	if (cb->used + 1 > cb->allocated) {
 		int newalloc = cb->allocated + 1024;
-		ASCII *temp = realloc(cb->blob, newalloc);
+		ASCII *temp = owrealloc(cb->blob, newalloc);
 		if (temp) {
 			memset(&temp[cb->allocated], 0, 1024);	// set the new memory to blank
 			cb->allocated = newalloc;

@@ -49,7 +49,7 @@ static int Test_HA7_response( struct HA7_response * ha7_response )
 	ntohs(ha7_response->sslport),
 	ha7_response->serial_num,
 	ha7_response->dev_name) ;
-	
+
 	if (memcmp("HA", ha7_response->signature, 2)) {
 		LEVEL_CONNECT("HA7 response signature error\n");
 		return 1;
@@ -110,7 +110,7 @@ static int Get_HA7_response( struct addrinfo *now, char * name )
 	UCLIBCLOCK ;
 	snprintf(name,INET_ADDRSTRLEN+20,"%s:%d",inet_ntoa(from.sin_addr),ntohs(ha7_response.port));
 	UCLIBCUNLOCK ;
-	
+
 	return 0 ;
 }
 
@@ -136,13 +136,13 @@ int FS_FindHA7(void)
 		if ( Get_HA7_response( now, name ) ) {
 			continue ;
 		}
-		
+
 		in = NewIn(NULL) ;
 		if (in == NULL) {
 			continue;
 		}
 
-		in->name = strdup(name);
+		in->name = owstrdup(name);
 		in->busmode = bus_ha7net;
 
 		LEVEL_CONNECT("HA7Net adapter discovered at %s\n",in->name);

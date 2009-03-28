@@ -62,11 +62,11 @@ static void ResolveBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 
 static struct BrowseStruct *BSCreate(const char *name, const char *type, const char *domain)
 {
-	struct BrowseStruct *bs = malloc(sizeof(struct BrowseStruct));
+	struct BrowseStruct *bs = owmalloc(sizeof(struct BrowseStruct));
 	if (bs) {
-		bs->name = name ? strdup(name) : NULL;
-		bs->type = type ? strdup(type) : NULL;
-		bs->domain = domain ? strdup(domain) : NULL;
+		bs->name = name ? owstrdup(name) : NULL;
+		bs->type = type ? owstrdup(type) : NULL;
+		bs->domain = domain ? owstrdup(domain) : NULL;
 	}
 	return bs;
 }
@@ -75,15 +75,15 @@ static void BSKill(struct BrowseStruct *bs)
 {
 	if (bs) {
 		if (bs->name) {
-			free(bs->name);
+			owfree(bs->name);
 		}
 		if (bs->type) {
-			free(bs->type);
+			owfree(bs->type);
 		}
 		if (bs->domain) {
-			free(bs->domain);
+			owfree(bs->domain);
 		}
-		free(bs);
+		owfree(bs);
 	}
 }
 

@@ -32,7 +32,7 @@ int BUS_send_data(const BYTE * data, const size_t len, const struct parsedname *
 		return 0;
 	}
 
-	resp = malloc(len);
+	resp = owmalloc(len);
 	if (resp == NULL) {
 		return -ENOMEM;
 	}
@@ -43,7 +43,7 @@ int BUS_send_data(const BYTE * data, const size_t len, const struct parsedname *
 			STAT_ADD1_BUS(e_bus_errors, pn->selected_connection);
 		}
 	}
-	free(resp);
+	owfree(resp);
 	return ret;
 }
 

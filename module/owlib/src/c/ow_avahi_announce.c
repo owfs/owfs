@@ -160,31 +160,31 @@ static void create_services(struct announce_avahi_struct * aas)
 		}
 		/* Record the service to prevent browsing to ourself */
 		if ( aas->out->zero.name ) {
-			free(aas->out->zero.name) ;
+			owfree(aas->out->zero.name) ;
 		}
-		aas->out->zero.name = strdup(name) ;
+		aas->out->zero.name = owstrdup(name) ;
 
 		if ( aas->out->zero.type ) {
-			free(aas->out->zero.type) ;
+			owfree(aas->out->zero.type) ;
 		}
 		switch (Globals.opt) {
 			case opt_httpd:
-				aas->out->zero.type = strdup("_owhttpd._tcp") ;
+				aas->out->zero.type = owstrdup("_owhttpd._tcp") ;
 				break ;
 			case opt_server:
-				aas->out->zero.type = strdup("_owserver._tcp") ;
+				aas->out->zero.type = owstrdup("_owserver._tcp") ;
 				break;
 			case opt_ftpd:
-				aas->out->zero.type = strdup("_ftp._tcp") ;
+				aas->out->zero.type = owstrdup("_ftp._tcp") ;
 				break;
 			default:
 				break ;
 		}
 
 		if ( aas->out->zero.domain ) {
-			free(aas->out->zero.domain) ;
+			owfree(aas->out->zero.domain) ;
 		}
-		aas->out->zero.domain = strdup(avahi_client_get_domain_name(aas->client)) ;
+		aas->out->zero.domain = owstrdup(avahi_client_get_domain_name(aas->client)) ;
 	}
 }
 

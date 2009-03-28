@@ -68,7 +68,7 @@ int W1_send_msg( struct connection_in * in, struct w1_netlink_msg *msg, struct w
 		size += length;
 	}
 
-	nlm = malloc(size);
+	nlm = owmalloc(size);
 	if (!nlm) {
 		return -ENOMEM;
 	}
@@ -108,7 +108,7 @@ int W1_send_msg( struct connection_in * in, struct w1_netlink_msg *msg, struct w
 	Netlink_Print( nlm, cn, w1m, w1c, pdata, length ) ;
 
 	err = send(Inbound_Control.w1_file_descriptor, nlm, size,  0);
-	free(nlm);
+	owfree(nlm);
 	if (err == -1) {
 		ERROR_CONNECT("Failed to send W1_LIST_MASTERS\n");
 		return -1 ;

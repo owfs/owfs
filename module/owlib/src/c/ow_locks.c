@@ -163,7 +163,7 @@ int LockGet(struct parsedname *pn)
 	}
 
 	// Create a devlock block to add to the tree
-	if ((dlock = malloc(sizeof(struct devlock))) == NULL) {
+	if ((dlock = owmalloc(sizeof(struct devlock))) == NULL) {
 		return -ENOMEM;
 	}
 	memcpy(dlock->sn, pn->sn, 8);
@@ -172,7 +172,7 @@ int LockGet(struct parsedname *pn)
 	/* in->dev_db points to the root of a tree of queries that are using this device */
 	if ((opaque = (struct dev_opaque *)tsearch(dlock, &(pn->selected_connection->dev_db), dev_compare)) == NULL) {	// unfound and uncreatable
 		DEVUNLOCK(pn);
-		free(dlock); // kill the allocated devlock
+		owfree(dlock); // kill the allocated devlock
 		return -ENOMEM;
 	} else if (dlock == opaque->key) {	// new device slot
 		dlock->users = 1;
@@ -183,7 +183,7 @@ int LockGet(struct parsedname *pn)
 	} else {					// existing device slot
 		++(opaque->key->users);
 		DEVUNLOCK(pn);
-		free(dlock); // kill the allocated devlock (since there already is a matching devlock)
+		owfree(dlock); // kill the allocated devlock (since there already is a matching devlock)
 		my_pthread_mutex_lock(&(opaque->key->lock));
 
 		pn->lock = (struct devlock *)opaque->key; /* Serg: Invalid read of size 8 */
@@ -208,7 +208,7 @@ void LockRelease(struct parsedname *pn)
 		if (pn->lock->users == 0) {
 			tdelete(pn->lock, &(pn->selected_connection->dev_db), dev_compare); /* Serg: Address 0x5A0D750 is 0 bytes inside a block of size 32 free'd */
 			my_pthread_mutex_destroy(&(pn->lock->lock));
-			free(pn->lock);
+			owfree(pn->lock);
 		}
 		pn->lock = NULL;
 		DEVUNLOCK(pn);

@@ -113,7 +113,7 @@ static int FS_input_yesno(struct one_wire_query *owq)
 
 	/* allocate more space if buffer is really long */
 	if (OWQ_size(owq) > DEFAULT_INPUT_BUFFER_LENGTH) {
-		input_buffer = malloc(OWQ_size(owq) + 1);
+		input_buffer = owmalloc(OWQ_size(owq) + 1);
 		if (input_buffer == NULL) {
 			return -ENOMEM;
 		}
@@ -157,7 +157,7 @@ static int FS_input_yesno(struct one_wire_query *owq)
 	}
 	/* free specially long buffer */
 	if (input_buffer != default_input_buffer) {
-		free(input_buffer);
+		owfree(input_buffer);
 	}
 	return ret;
 }
@@ -172,7 +172,7 @@ static int FS_input_integer(struct one_wire_query *owq)
 
 	/* allocate more space if buffer is really long */
 	if (OWQ_size(owq) > DEFAULT_INPUT_BUFFER_LENGTH) {
-		input_buffer = malloc(OWQ_size(owq) + 1);
+		input_buffer = owmalloc(OWQ_size(owq) + 1);
 		if (input_buffer == NULL) {
 			return -ENOMEM;
 		}
@@ -185,7 +185,7 @@ static int FS_input_integer(struct one_wire_query *owq)
 
 	/* free specially long buffer */
 	if (input_buffer != default_input_buffer)
-		free(input_buffer);
+		owfree(input_buffer);
 
 	if (errno) {
 		return -errno;			// conversion error
@@ -206,7 +206,7 @@ static int FS_input_unsigned(struct one_wire_query *owq)
 
 	/* allocate more space if buffer is really long */
 	if (OWQ_size(owq) > DEFAULT_INPUT_BUFFER_LENGTH) {
-		input_buffer = malloc(OWQ_size(owq) + 1);
+		input_buffer = owmalloc(OWQ_size(owq) + 1);
 		if (input_buffer == NULL) {
 			return -ENOMEM;
 		}
@@ -219,7 +219,7 @@ static int FS_input_unsigned(struct one_wire_query *owq)
 
 	/* free specially long buffer */
 	if (input_buffer != default_input_buffer) {
-		free(input_buffer);
+		owfree(input_buffer);
 	}
 
 	if (errno) {
@@ -243,7 +243,7 @@ static int FS_input_float(struct one_wire_query *owq)
 
 	/* allocate more space if buffer is really long */
 	if (OWQ_size(owq) > DEFAULT_INPUT_BUFFER_LENGTH) {
-		input_buffer = malloc(OWQ_size(owq) + 1);
+		input_buffer = owmalloc(OWQ_size(owq) + 1);
 		if (input_buffer == NULL) {
 			return -ENOMEM;
 		}
@@ -256,7 +256,7 @@ static int FS_input_float(struct one_wire_query *owq)
 
 	/* free specially long buffer */
 	if (input_buffer != default_input_buffer) {
-		free(input_buffer);
+		owfree(input_buffer);
 	}
 
 	if (errno) {
@@ -291,7 +291,7 @@ static int FS_input_date(struct one_wire_query *owq)
 
 	/* allocate more space if buffer is really long */
 	if (OWQ_size(owq) > DEFAULT_INPUT_BUFFER_LENGTH) {
-		input_buffer = malloc(OWQ_size(owq) + 1);
+		input_buffer = owmalloc(OWQ_size(owq) + 1);
 		if (input_buffer == NULL) {
 			return -ENOMEM;
 		}
@@ -314,7 +314,7 @@ static int FS_input_date(struct one_wire_query *owq)
 
 	/* free specially long buffer */
 	if (input_buffer != default_input_buffer) {
-		free(input_buffer);
+		owfree(input_buffer);
 	}
 
 	return ret;

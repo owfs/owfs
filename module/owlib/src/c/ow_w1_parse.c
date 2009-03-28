@@ -39,7 +39,7 @@ static void Netlink_Parse_Show( struct netlink_parse * nlp ) ;
 void Netlink_Parse_Destroy( struct netlink_parse * nlp )
 {
 	if ( nlp && nlp->nlm ) {
-		free( nlp->nlm ) ;
+		owfree( nlp->nlm ) ;
 		nlp->nlm = NULL ;
 	}
 }
@@ -123,7 +123,7 @@ int Netlink_Parse_Get( struct netlink_parse * nlp )
 	}
 
 	// allocate space
-	buffer = malloc( peek_nlm.nlmsg_len ) ;
+	buffer = owmalloc( peek_nlm.nlmsg_len ) ;
 	if ( buffer == NULL ) {
 		LEVEL_DEBUG("Netlink (w1) Cannot allocate %d byte buffer for data\n",peek_nlm.nlmsg_len) ;
 		return -ENOMEM ;
@@ -133,7 +133,7 @@ int Netlink_Parse_Get( struct netlink_parse * nlp )
 	recv_len = recv(Inbound_Control.w1_file_descriptor, buffer, peek_nlm.nlmsg_len, 0 );
 	if (recv_len == -1) {
 		ERROR_DEBUG("Netlink (w1) recv body error\n");
-		free(buffer);
+		owfree(buffer);
 		return -EIO ;
 	}
 
@@ -142,7 +142,7 @@ int Netlink_Parse_Get( struct netlink_parse * nlp )
 		Netlink_Parse_Show( nlp ) ;
 		return 0 ;
 	}
-	free( buffer ) ;
+	owfree( buffer ) ;
 	return -EINVAL ;
 }
 
@@ -161,7 +161,7 @@ int Get_and_Parse_Pipe( int file_descriptor, struct netlink_parse * nlp )
 	LEVEL_DEBUG("Pipe header: len=%u type=%u seq=%u|%u pid=%u \n",peek_nlm.nlmsg_len,peek_nlm.nlmsg_type,NL_BUS(peek_nlm.nlmsg_seq),NL_SEQ(peek_nlm.nlmsg_seq),peek_nlm.nlmsg_pid);
 
 	// allocate space
-	buffer = malloc( peek_nlm.nlmsg_len ) ;
+	buffer = owmalloc( peek_nlm.nlmsg_len ) ;
 	if ( buffer == NULL ) {
 		LEVEL_DEBUG("Netlink (w1) Cannot allocate %d byte buffer for data\n",peek_nlm.nlmsg_len) ;
 		return -ENOMEM ;
@@ -171,7 +171,7 @@ int Get_and_Parse_Pipe( int file_descriptor, struct netlink_parse * nlp )
 	// read rest of packet
 	if ( read( file_descriptor, &buffer[W1_NLM_LENGTH], peek_nlm.nlmsg_len - W1_NLM_LENGTH ) != (ssize_t) peek_nlm.nlmsg_len - W1_NLM_LENGTH ) {
 		ERROR_DEBUG("Pipe (w1) read body error\n");
-		free(buffer) ;
+		owfree(buffer) ;
 		return -1 ;
 	}
 
@@ -180,7 +180,7 @@ int Get_and_Parse_Pipe( int file_descriptor, struct netlink_parse * nlp )
 		Netlink_Parse_Show( nlp ) ;
 		return 0 ;
 	}
-	free(buffer) ;
+	owfree(buffer) ;
 	return -EINVAL ;
 }
 
@@ -215,19 +215,19 @@ enum Netlink_Read_Status W1_Process_Response( void (* nrs_callback)( struct netl
 		}
 		if ( NL_SEQ(nlp.nlm->nlmsg_seq) != (unsigned int) seq ) {
 			LEVEL_DEBUG("Netlink sequence number out of order\n");
-			free(nlp.nlm) ;
+			owfree(nlp.nlm) ;
 			continue ;
 		}
 		if ( nlp.w1m->status ) {
-			free(nlp.nlm) ;
+			owfree(nlp.nlm) ;
 			return nrs_nodev ;
 		}
 		if ( nrs_callback == NULL ) { // status message
-			free(nlp.nlm) ;
+			owfree(nlp.nlm) ;
 			return nrs_complete ;
 		}
 		nrs_callback( &nlp, v, pn ) ;
-		free(nlp.nlm) ;
+		owfree(nlp.nlm) ;
 		if ( nlp.cn->ack != 0 ) {
 			if ( nlp.w1m->type == W1_LIST_MASTERS ) {
 				continue ; // look for more data

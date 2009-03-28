@@ -289,7 +289,7 @@ int DS9490_detect(struct connection_in *in)
 	int ret;
 
 	DS9490_setroutines(in);		// set up close, reconnect, reset, ...
-	in->name = strdup(badUSBname);		// initialized
+	in->name = owstrdup(badUSBname);		// initialized
 
 	FS_ParsedName(NULL, &pn);	// minimal parsename -- no destroy needed
 	pn.selected_connection = in;
@@ -422,7 +422,7 @@ static int DS9490_open(struct usb_list *ul, const struct parsedname *pn)
 	int ret ;
 
 	if (pn->selected_connection->name) {
-		free(pn->selected_connection->name);
+		owfree(pn->selected_connection->name);
 		pn->selected_connection->name = NULL;
 	}
 
@@ -439,8 +439,8 @@ static int DS9490_open(struct usb_list *ul, const struct parsedname *pn)
 
 	ret = DS9490_sub_open( ul, pn ) ;
 	if ( ret ) {
-		free(pn->selected_connection->name);
-		pn->selected_connection->name = strdup(badUSBname) ;
+		owfree(pn->selected_connection->name);
+		pn->selected_connection->name = owstrdup(badUSBname) ;
 		pn->selected_connection->connin.usb.dev = NULL;	// this will force a re-scan next time
 		//LEVEL_CONNECT("Failed to open USB DS9490 adapter %s\n", name);
 		STAT_ADD1_BUS(e_bus_open_errors, pn->selected_connection);
@@ -581,7 +581,7 @@ static char *DS9490_device_name(const struct usb_list *ul)
 	UCLIBCUNLOCK ;
 	if (sn_ret > 0) {
 		name[len] = '\0';		// make sufre there is a trailing null
-		ret = strdup(name);
+		ret = owstrdup(name);
 	}
 	return ret;
 }
@@ -607,7 +607,7 @@ static int DS9490_redetect_low(const struct parsedname *pn)
 
 	// First clear the current name so it doesn't match
 	if ( pn->selected_connection->name ) {
-		free(pn->selected_connection->name) ;
+		owfree(pn->selected_connection->name) ;
 		pn->selected_connection->name = NULL ;
 	}
 
@@ -621,17 +621,17 @@ static int DS9490_redetect_low(const struct parsedname *pn)
 		}
 
 		if (usbdevice_in_use(name)) {
-			free(name);
+			owfree(name);
 			continue;
 		}
 
 		if (DS9490_open(&ul, pn)) {
 			LEVEL_CONNECT("Cant open USB adapter [%s], Find next...\n", name);
-			free(name);
+			owfree(name);
 			continue;
 		}
 
-		free(name);				// use pn->selected_connection->name created in DS9490_open instead
+		owfree(name);				// use pn->selected_connection->name created in DS9490_open instead
 
 		/* We are looking for devices in the root (not the branch
 		 * pn eventually points to */
@@ -692,9 +692,9 @@ void DS9490_close(struct connection_in *in)
 	in->connin.usb.usb = NULL;
 	in->connin.usb.dev = NULL;
 	if (in->name) {
-		free(in->name);
+		owfree(in->name);
 	}
-	in->name = strdup(badUSBname);
+	in->name = owstrdup(badUSBname);
 }
 
 /* DS9490_getstatus()

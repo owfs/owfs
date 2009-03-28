@@ -27,7 +27,7 @@ void PIDstart(void)
 		FILE *pid = fopen(pid_file, "w+");
 		if (pid == NULL) {
 			ERROR_CONNECT("Cannot open PID file: %s\n", pid_file);
-			free(pid_file);
+			owfree(pid_file);
 			pid_file = NULL;
 		} else {
 			fprintf(pid, "%lu", (unsigned long int) pid_num);
@@ -44,7 +44,7 @@ void PIDstop(void)
 		if (unlink(pid_file)) {
 			ERROR_CONNECT("Cannot remove PID file: %s\n", pid_file);
 		}
-		free(pid_file);
+		owfree(pid_file);
 		pid_file = NULL;
 	}
 }

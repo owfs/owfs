@@ -165,7 +165,7 @@ const struct option owopts_long[] = {
 	{"baud", required_argument, NULL, e_baud},
 	{"Baud", required_argument, NULL, e_baud},
 	{"BAUD", required_argument, NULL, e_baud},
-	
+
 	{"timeout_volatile", required_argument, NULL, e_timeout_volatile,},	// timeout -- changing cached values
 	{"timeout_stable", required_argument, NULL, e_timeout_stable,},	// timeout -- unchanging cached values
 	{"timeout_directory", required_argument, NULL, e_timeout_directory,},	// timeout -- direcory cached values
@@ -467,7 +467,7 @@ int owopt_packed(const char *params)
 	if (params == NULL) {
 		return 0;
 	}
-	current_location_in_params_copy = params_copy = strdup(params);
+	current_location_in_params_copy = params_copy = owstrdup(params);
 	if (params_copy == NULL) {
 		return -ENOMEM;
 	}
@@ -477,7 +477,7 @@ int owopt_packed(const char *params)
 		 next_location_in_params_copy != NULL; next_location_in_params_copy = strsep(&current_location_in_params_copy, " ")) {
 		// make room
 		if (argc >= allocated - 1) {
-			char **larger_argv = realloc(argv, (allocated + 10) * sizeof(char *));
+			char **larger_argv = owrealloc(argv, (allocated + 10) * sizeof(char *));
 			if (larger_argv != NULL) {
 				allocated += 10;
 				argv = larger_argv;
@@ -507,9 +507,9 @@ int owopt_packed(const char *params)
 	}
 
 	if (argv != NULL) {
-		free(argv);
+		owfree(argv);
 	}
-	free(params_copy);
+	owfree(params_copy);
 	return ret;
 }
 
@@ -611,7 +611,7 @@ int owopt(const int option_char, const char *arg)
 		if (arg == NULL || strlen(arg) == 0) {
 			LEVEL_DEFAULT("No PID file specified\n");
 			return 1;
-		} else if ((pid_file = strdup(arg)) == NULL) {
+		} else if ((pid_file = owstrdup(arg)) == NULL) {
 			fprintf(stderr, "Insufficient memory to store the PID filename: %s\n", arg);
 			return 1;
 		}
@@ -620,7 +620,7 @@ int owopt(const int option_char, const char *arg)
 		if (arg == NULL || strlen(arg) == 0) {
 			LEVEL_DEFAULT("No fatal_debug_file specified\n");
 			return 1;
-		} else if ((Globals.fatal_debug_file = strdup(arg)) == NULL) {
+		} else if ((Globals.fatal_debug_file = owstrdup(arg)) == NULL) {
 			fprintf(stderr, "Insufficient memory to store the fatal_debug_file: %s\n", arg);
 			return 1;
 		}
@@ -685,7 +685,7 @@ int owopt(const int option_char, const char *arg)
 	case e_etherweather:
 		return OW_ArgEtherWeather(arg);
 	case e_announce:
-		Globals.announce_name = strdup(arg);
+		Globals.announce_name = owstrdup(arg);
 		break;
 	case e_allow_other:		/* allow_other */
 		break;
@@ -743,7 +743,7 @@ int OW_ArgNet(const char *arg)
 	if (in == NULL) {
 		return 1;
 	}
-	in->name = strdup(arg);
+	in->name = owstrdup(arg);
 	in->busmode = bus_server;
 	return 0;
 }
@@ -754,7 +754,7 @@ static int OW_ArgHA5( const char *arg)
 	if (in == NULL) {
 		return 1;
 	}
-	in->name = strdup(arg);
+	in->name = owstrdup(arg);
 	in->busmode = bus_ha5;
 	return 0;
 }
@@ -768,7 +768,7 @@ static int OW_ArgHA7(const char *arg)
 		if (in == NULL) {
 			return 1;
 		}
-		in->name = arg ? strdup(arg) : NULL;
+		in->name = arg ? owstrdup(arg) : NULL;
 		in->busmode = bus_ha7net;
 		return 0;
 	} else {					// Try multicast discovery
@@ -787,7 +787,7 @@ static int OW_ArgEtherWeather(const char *arg)
 	if (in == NULL) {
 		return 1;
 	}
-	in->name = arg ? strdup(arg) : NULL;
+	in->name = arg ? owstrdup(arg) : NULL;
 	in->busmode = bus_etherweather;
 	return 0;
 }
@@ -798,7 +798,7 @@ static int OW_ArgFake(const char *arg)
 	if (in == NULL) {
 		return 1;
 	}
-	in->name = strdup(arg);
+	in->name = owstrdup(arg);
 	in->busmode = bus_fake;
 	return 0;
 }
@@ -809,7 +809,7 @@ static int OW_ArgMock(const char *arg)
 	if (in == NULL) {
 		return 1;
 	}
-	in->name = strdup(arg);
+	in->name = owstrdup(arg);
 	in->busmode = bus_mock;
 	return 0;
 }
@@ -820,7 +820,7 @@ static int OW_ArgTester(const char *arg)
 	if (in == NULL) {
 		return 1;
 	}
-	in->name = strdup(arg);
+	in->name = owstrdup(arg);
 	in->busmode = bus_tester;
 	return 0;
 }
@@ -831,7 +831,7 @@ int OW_ArgServer(const char *arg)
 	if (out == NULL) {
 		return 1;
 	}
-	out->name = (arg != NULL) ? strdup(arg) : NULL;
+	out->name = (arg != NULL) ? owstrdup(arg) : NULL;
 	return 0;
 }
 
@@ -841,7 +841,7 @@ int OW_ArgSide(const char *arg)
 	if (side == NULL) {
 		return 1;
 	}
-	side->name = arg ? strdup(arg) : NULL;
+	side->name = arg ? owstrdup(arg) : NULL;
 	return 0;
 }
 
@@ -871,7 +871,7 @@ static int OW_ArgSerial(const char *arg)
 	if (in == NULL) {
 		return 1;
 	}
-	in->name = strdup(arg);
+	in->name = owstrdup(arg);
 	in->busmode = bus_serial;
 	return 0;
 }
@@ -882,7 +882,7 @@ static int OW_ArgPassive(char *adapter_type_name, const char *arg)
 	if (in == NULL) {
 		return 1;
 	}
-	in->name = strdup(arg);
+	in->name = owstrdup(arg);
 	in->busmode = bus_passive;
 	// special set name of adapter here
 	in->adapter_name = adapter_type_name;
@@ -895,7 +895,7 @@ static int OW_ArgLink(const char *arg)
     if (in == NULL) {
         return 1;
     }
-    in->name = strdup(arg);
+    in->name = owstrdup(arg);
     in->busmode = (arg[0] == '/') ? bus_link : bus_elink;
     return 0;
 }
@@ -906,7 +906,7 @@ static int OW_ArgHA7E(const char *arg)
     if (in == NULL) {
         return 1;
     }
-    in->name = strdup(arg);
+    in->name = owstrdup(arg);
     in->busmode = bus_ha7e ;
     return 0;
 }
@@ -918,7 +918,7 @@ static int OW_ArgParallel(const char *arg)
 	if (in == NULL) {
 		return 1;
 	}
-	in->name = strdup(arg);
+	in->name = owstrdup(arg);
 	in->busmode = bus_parallel;
 	return 0;
 #else							/* OW_PARPORT */
@@ -935,9 +935,9 @@ static int OW_ArgI2C(const char *arg)
 		return 1;
 	}
 	if ( arg==NULL) {
-		in->name = strdup(":") ;
+		in->name = owstrdup(":") ;
 	} else {
-		in->name = strdup(arg);
+		in->name = owstrdup(arg);
     	}
 	in->busmode = bus_i2c;
 	return 0;

@@ -83,7 +83,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *    the public header since we don't want people to use them.  */
 #define AI_V4MAPPED     0x0008	/* IPv4-mapped addresses are acceptable.  */
 #define AI_ALL          0x0010	/* Return both IPv4 and IPv6 addresses.  */
-#define AI_ADDRCONFIG   0x0020	/* Use configuration of this host to choose 
+#define AI_ADDRCONFIG   0x0020	/* Use configuration of this host to choose
 								   returned address type.  */
 #define AI_DEFAULT    (AI_V4MAPPED | AI_ADDRCONFIG)
 
@@ -198,7 +198,7 @@ static int gaih_local(const char *name, const struct gaih_service *service, cons
 		}
 	}
 
-	*pai = malloc(sizeof(struct addrinfo) + sizeof(struct sockaddr_un)
+	*pai = owmalloc(sizeof(struct addrinfo) + sizeof(struct sockaddr_un)
 				  + ((req->ai_flags & AI_CANONNAME)
 					 ? (strlen(utsname.nodename) + 1) : 0));
 	if (*pai == NULL)
@@ -568,7 +568,7 @@ static int gaih_inet(const char *name, const struct gaih_service *service, const
 						? req->ai_protocol : tp->protocol);
 		st->port = 0;
 	} else {
-		/* 
+		/*
 		 * Neither socket type nor protocol is set.  Return all socket types
 		 * we know about.
 		 */
@@ -780,7 +780,7 @@ static int gaih_inet(const char *name, const struct gaih_service *service, const
 			}
 
 			for (st2 = st; st2 != NULL; st2 = st2->next) {
-				*pai = malloc(sizeof(struct addrinfo) + socklen + namelen);
+				*pai = owmalloc(sizeof(struct addrinfo) + socklen + namelen);
 				if (*pai == NULL)
 					return -EAI_MEMORY;
 
@@ -946,7 +946,7 @@ void freeaddrinfo(struct addrinfo *ai)
 	while (ai != NULL) {
 		p = ai;
 		ai = ai->ai_next;
-		free(p);
+		owfree(p);
 	}
 }
 

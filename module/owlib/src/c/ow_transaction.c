@@ -113,10 +113,10 @@ static int BUS_transaction_single(const struct transaction_log *t, const struct 
 		break;
 	case trxn_blind:			// write data ignore response
 		{
-			BYTE *dummy = malloc(t->size);
+			BYTE *dummy = owmalloc(t->size);
 			if (dummy != NULL) {
 				ret = BUS_sendback_data(t->out, dummy, t->size, pn);
-				free(dummy);
+				owfree(dummy);
 			} else {
 				ret = -ENOMEM;
 			}

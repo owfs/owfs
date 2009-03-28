@@ -26,20 +26,20 @@ void SideAddr(struct connection_side *side)
 	int ret;
 
 	if (side->name == NULL || side->name[0] == '\0') {
-		side->name = strdup("4305");	// arbitrary
+		side->name = owstrdup("4305");	// arbitrary
 	}
 	if ((p = strrchr(side->name, ':'))) {	/* : exists */
 		p[0] = '\0';			/* Separate tokens in the string */
-		side->host = strdup(side->name);
-		side->service = strdup(&p[1]);
+		side->host = owstrdup(side->name);
+		side->service = owstrdup(&p[1]);
 		p[0] = ':';				/* restore name string */
 	} else {
 #if OW_CYGWIN
-		side->host = strdup("127.0.0.1");
+		side->host = owstrdup("127.0.0.1");
 #else
 		side->host = NULL;
 #endif
-		side->service = strdup(side->name);
+		side->service = owstrdup(side->name);
 	}
 
 	memset(&hint, 0, sizeof(struct addrinfo));
@@ -63,11 +63,11 @@ void SideAddr(struct connection_side *side)
 void FreeSideAddr(struct connection_side *side)
 {
 	if (side->host) {
-		free(side->host);
+		owfree(side->host);
 		side->host = NULL;
 	}
 	if (side->service) {
-		free(side->service);
+		owfree(side->service);
 		side->service = NULL;
 	}
 	if (side->ai) {

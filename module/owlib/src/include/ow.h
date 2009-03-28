@@ -220,6 +220,8 @@ $Id$
 #define EPROTO EIO
 #endif							/* EPROTO */
 
+/* Allocation wrappers for debugging */
+#include "ow_alloc.h"
 
 /* BYTE manipulation macros */
 #include "ow_bitwork.h"

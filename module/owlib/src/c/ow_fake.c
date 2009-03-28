@@ -73,15 +73,6 @@ static void GetNextByte( const ASCII ** strpointer, BYTE default_byte, BYTE * sn
 static void GetDefaultDeviceName(BYTE * dn, const BYTE * sn, const struct connection_in * in)
 {
 	switch (in->busmode) {
-		case bus_fake:
-		case bus_mock:
-			dn[1]  = BYTE_MASK(rand()) ;
-			dn[2]  = BYTE_MASK(rand()) ;
-			dn[3]  = BYTE_MASK(rand()) ;
-			dn[4]  = BYTE_MASK(rand()) ;
-			dn[5]  = BYTE_MASK(rand()) ;
-			dn[6]  = BYTE_MASK(rand()) ;
-			break ;
 		case bus_tester:
 			// "bus number"
 			dn[1] = BYTE_MASK(in->connin.tester.index >> 0) ;
@@ -93,6 +84,16 @@ static void GetDefaultDeviceName(BYTE * dn, const BYTE * sn, const struct connec
 			// "device" number
 			dn[5] = BYTE_MASK(DirblobElements(&(in->main)) >> 0) ;
 			dn[6] = BYTE_MASK(DirblobElements(&(in->main)) >> 8) ;
+			break ;
+		case bus_fake:
+		case bus_mock:
+		default: // only for compiler warning
+			dn[1]  = BYTE_MASK(rand()) ;
+			dn[2]  = BYTE_MASK(rand()) ;
+			dn[3]  = BYTE_MASK(rand()) ;
+			dn[4]  = BYTE_MASK(rand()) ;
+			dn[5]  = BYTE_MASK(rand()) ;
+			dn[6]  = BYTE_MASK(rand()) ;
 			break ;
 	}
 }
@@ -106,7 +107,7 @@ static void GetDeviceName(const ASCII ** strpointer, struct connection_in * in)
 		// family code specified
 		sn[0] = string2num(*strpointer);
 		*strpointer +=  2;
-		
+
 		GetDefaultDeviceName( dn, sn, in ) ;
 		// Choice of default or specified ID
 		GetNextByte(strpointer,dn[1],&sn[1]);
@@ -156,7 +157,7 @@ static void SetConninData( int index, const char * name, struct connection_in *i
 {
 	ASCII *oldname = in->name; // destructively parsed and deleted at the end.
 	char newname[20] ;
-	
+
 	in->file_descriptor = index;
 	in->connin.fake.index = index;
 	in->connin.fake.templow = Globals.templow;
@@ -169,10 +170,10 @@ static void SetConninData( int index, const char * name, struct connection_in *i
 
 	GetAllDeviceNames( oldname, in ) ;
 	if (oldname) {
-		free(oldname);
+		owfree(oldname);
 	}
-	
-	in->name = strdup(newname);
+
+	in->name = owstrdup(newname);
 }
 
 /* Device-specific functions */
@@ -183,12 +184,12 @@ int Fake_detect(struct connection_in *in)
 {
 	Fake_setroutines(in);		// set up close, reconnect, reset, ...
 	in->iroutines.detect = Fake_detect;
-	
+
 	in->adapter_name = "Simulated-Random";
 	in->Adapter = adapter_fake;
 
 	SetConninData( Inbound_Control.next_fake++, "fake", in  );
-	
+
 	return 0;
 }
 
@@ -200,7 +201,7 @@ int Mock_detect(struct connection_in *in)
 {
 	Fake_setroutines(in);		// set up close, reconnect, reset, ...
 	in->iroutines.detect = Mock_detect;
-	
+
 	in->adapter_name = "Simulated-Mock";
 	in->Adapter = adapter_mock;
 	SetConninData( Inbound_Control.next_mock++, "mock", in  );
@@ -216,11 +217,11 @@ int Tester_detect(struct connection_in *in)
 {
 	Fake_setroutines(in);		// set up close, reconnect, reset, ...
 	in->iroutines.detect = Tester_detect;
-	
+
 	in->adapter_name = "Simulated-Computed";
 	in->Adapter = adapter_tester;
 	SetConninData( Inbound_Control.next_tester++, "tester", in  );
-	
+
 	return 0;
 }
 

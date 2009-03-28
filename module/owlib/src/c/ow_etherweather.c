@@ -56,7 +56,7 @@ static int EtherWeather_command(struct connection_in *in, char command, int data
 	struct timeval tvnet = { 0, 200000, };
 
 	// The packet's length field includes the command byte.
-	packet = malloc(datalen + 2);
+	packet = owmalloc(datalen + 2);
 	packet[0] = datalen + 1;
 	packet[1] = command;
 	memcpy(packet + 2, idata, datalen);
@@ -91,7 +91,7 @@ static int EtherWeather_command(struct connection_in *in, char command, int data
 
 	if (left > 0) {
 		STAT_ADD1_BUS(e_bus_write_errors, in);
-		free(packet);
+		owfree(packet);
 		return -EIO;
 	}
 	// Allow extra time for powered bytes
@@ -101,25 +101,25 @@ static int EtherWeather_command(struct connection_in *in, char command, int data
 	// Read the response header
 	if (tcp_read(in->file_descriptor, packet, 2, &tvnet) != 2) {
 		LEVEL_CONNECT("header read error\n");
-		free(packet);
+		owfree(packet);
 		return -EIO;
 	}
 	// Make sure it was echoed properly
 	if (packet[0] != (datalen + 1) || packet[1] != command) {
 		LEVEL_CONNECT("invalid header\n");
-		free(packet);
+		owfree(packet);
 		return -EIO;
 	}
 	// Then read any data
 	if (datalen > 0) {
 		if (tcp_read(in->file_descriptor, odata, datalen, &tvnet) != (ssize_t) datalen) {
 			LEVEL_CONNECT("data read error\n");
-			free(packet);
+			owfree(packet);
 			return -EIO;
 		}
 	}
 
-	free(packet);
+	owfree(packet);
 	return 0;
 }
 
@@ -266,7 +266,7 @@ int EtherWeather_detect(struct connection_in *in)
 
 	/* Add the port if it isn't there already */
 	if (strchr(in->name, ':') == NULL) {
-		ASCII *temp = realloc(in->name, strlen(in->name) + 3);
+		ASCII *temp = owrealloc(in->name, strlen(in->name) + 3);
 		if (temp == NULL) {
 			return -ENOMEM;
 		}

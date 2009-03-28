@@ -30,16 +30,16 @@ int ClientAddr(char *sname, struct connection_in *in)
 	}
 	if ((p = strrchr(sname, ':'))) {	/* : exists */
 		p[0] = '\0';			/* Separate tokens in the string */
-		in->connin.tcp.host = strdup(sname);
-		in->connin.tcp.service = strdup(&p[1]);
+		in->connin.tcp.host = owstrdup(sname);
+		in->connin.tcp.service = owstrdup(&p[1]);
 		p[0] = ':';				/* restore name string */
 	} else {
 #if OW_CYGWIN
-		in->connin.tcp.host = strdup("127.0.0.1");
+		in->connin.tcp.host = owstrdup("127.0.0.1");
 #else
 		in->connin.tcp.host = NULL;
 #endif
-		in->connin.tcp.service = strdup(sname);
+		in->connin.tcp.service = owstrdup(sname);
 	}
 
 	memset(&hint, 0, sizeof(struct addrinfo));
@@ -62,11 +62,11 @@ int ClientAddr(char *sname, struct connection_in *in)
 void FreeClientAddr(struct connection_in *in)
 {
 	if (in->connin.tcp.host) {
-		free(in->connin.tcp.host);
+		owfree(in->connin.tcp.host);
 		in->connin.tcp.host = NULL;
 	}
 	if (in->connin.tcp.service) {
-		free(in->connin.tcp.service);
+		owfree(in->connin.tcp.service);
 		in->connin.tcp.service = NULL;
 	}
 	if (in->connin.tcp.ai) {

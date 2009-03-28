@@ -85,7 +85,7 @@ int BusIsServer(struct connection_in *in)
 struct connection_in *NewIn(const struct connection_in *in)
 {
 	size_t len = sizeof(struct connection_in);
-	struct connection_in *now = (struct connection_in *) malloc(len);
+	struct connection_in *now = (struct connection_in *) owmalloc(len);
 	if (now) {
 		if (in) {
 			memcpy(now, in, len);
@@ -127,7 +127,7 @@ struct connection_in *NewIn(const struct connection_in *in)
 struct connection_out *NewOut(void)
 {
 	size_t len = sizeof(struct connection_out);
-	struct connection_out *now = (struct connection_out *) malloc(len);
+	struct connection_out *now = (struct connection_out *) owmalloc(len);
 	if (now) {
 		memset(now, 0, len);
 		now->next = Outbound_Control.head;
@@ -151,7 +151,7 @@ struct connection_out *NewOut(void)
 struct connection_side *NewSide(void)
 {
 	size_t len = sizeof(struct connection_side);
-	struct connection_side *now = (struct connection_side *) malloc(len);
+	struct connection_side *now = (struct connection_side *) owmalloc(len);
 	if (now) {
 		memset(now, 0, len);
 		now->next = Sidebound_Control.head;
@@ -201,13 +201,13 @@ void FreeIn(struct connection_in * now)
 	case bus_zero:
 	case bus_server:
 		if (now->connin.tcp.type) {
-			free(now->connin.tcp.type);
+			owfree(now->connin.tcp.type);
 		}
 		if (now->connin.tcp.domain) {
-			free(now->connin.tcp.domain);
+			owfree(now->connin.tcp.domain);
 		}
 		if (now->connin.tcp.name) {
-			free(now->connin.tcp.name);
+			owfree(now->connin.tcp.name);
 		}
 		LEVEL_DEBUG("\n");
 		FreeClientAddr(now);
@@ -246,11 +246,11 @@ void FreeIn(struct connection_in * now)
 	}
 	if (now->name) {
 		//LEVEL_DEBUG("[%s]\n", now->name);
-		free(now->name);
+		owfree(now->name);
 	}
 	DirblobClear(&(now->main));
 	DirblobClear(&(now->alarm));
-	free(now);
+	owfree(now);
 }
 
 /* Free all connection_in in reverse order (Added to head on creation, head-first deletion) */
@@ -299,27 +299,27 @@ void FreeOut(void)
 		now = next;
 		next = now->next;
 		if (now->zero.name) {
-			free(now->zero.name);
+			owfree(now->zero.name);
 			now->zero.name = NULL;
 		}
 		if (now->zero.type) {
-			free(now->zero.type);
+			owfree(now->zero.type);
 			now->zero.type = NULL;
 		}
 		if (now->zero.domain) {
-			free(now->zero.domain);
+			owfree(now->zero.domain);
 			now->zero.domain = NULL;
 		}
 		if (now->name) {
-			free(now->name);
+			owfree(now->name);
 			now->name = NULL;
 		}
 		if (now->host) {
-			free(now->host);
+			owfree(now->host);
 			now->host = NULL;
 		}
 		if (now->service) {
-			free(now->service);
+			owfree(now->service);
 			now->service = NULL;
 		}
 		if (now->ai) {
@@ -341,7 +341,7 @@ void FreeOut(void)
 			}
 		}
 #endif
-		free(now);
+		owfree(now);
 	}
 }
 
@@ -360,21 +360,21 @@ void FreeSide(void)
 #endif							/* OW_MT */
 		Test_and_Close( & (now->file_descriptor) ) ;
 		if (now->name) {
-			free(now->name);
+			owfree(now->name);
 			now->name = NULL;
 		}
 		if (now->host) {
-			free(now->host);
+			owfree(now->host);
 			now->host = NULL;
 		}
 		if (now->service) {
-			free(now->service);
+			owfree(now->service);
 			now->service = NULL;
 		}
 		if (now->ai) {
 			freeaddrinfo(now->ai);
 			now->ai = NULL;
 		}
-		free(now);
+		owfree(now);
 	}
 }

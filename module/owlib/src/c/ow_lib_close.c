@@ -31,12 +31,12 @@ void LibClose(void)
 #endif							/* OW_MT */
 
 	if (Globals.announce_name) {
-		free(Globals.announce_name);
+		owfree(Globals.announce_name);
 		Globals.announce_name = NULL;
 	}
 
 	if (Globals.progname) {
-		free(Globals.progname);
+		owfree(Globals.progname);
 		Globals.progname = NULL;
 	}
 #if OW_ZERO
@@ -49,7 +49,7 @@ void LibClose(void)
 #endif
 
 	if (Globals.fatal_debug_file) {
-		free(Globals.fatal_debug_file);
+		owfree(Globals.fatal_debug_file);
 		Globals.fatal_debug_file = NULL;
 	}
 

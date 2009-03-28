@@ -26,7 +26,7 @@ static struct connection_in * CreateIn(const char * name )
 
 	in = NewIn(NULL) ;
 	if ( in != NULL ) {
-		in->name = strdup(name) ;
+		in->name = owstrdup(name) ;
 		W1_detect(in) ;
 		LEVEL_DEBUG("Created a new bus.%d\n",in->index) ;
 	}

@@ -75,10 +75,10 @@ static int CreateIn(const char * name, const char * type, const char * domain, c
 	UCLIBCLOCK;
 	snprintf(addr_name,128,"%s:%s",host,service) ;
 	UCLIBCUNLOCK;
-	in->name = strdup(addr_name) ;
-	in->connin.tcp.name   = strdup( name  ) ;
-	in->connin.tcp.type   = strdup( type  ) ;
-	in->connin.tcp.domain = strdup( domain) ;
+	in->name = owstrdup(addr_name) ;
+	in->connin.tcp.name   = owstrdup( name  ) ;
+	in->connin.tcp.type   = owstrdup( type  ) ;
+	in->connin.tcp.domain = owstrdup( domain) ;
 
 	if ( Zero_detect(in) != 0 ) {
 		LEVEL_DEBUG("Created a new bus.%d\n",in->index) ;

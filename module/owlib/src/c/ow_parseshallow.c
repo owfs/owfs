@@ -37,7 +37,7 @@ int OWQ_create_shallow_aggregate(struct one_wire_query *owq_shallow, struct one_
 	memcpy(owq_shallow, owq_original, sizeof(struct one_wire_query));
 
 	/* allocate new value_object array space */
-	OWQ_array(owq_shallow) = calloc((size_t) pn->selected_filetype->ag->elements, sizeof(union value_object));
+	OWQ_array(owq_shallow) = owcalloc((size_t) pn->selected_filetype->ag->elements, sizeof(union value_object));
 	if (OWQ_array(owq_shallow) == NULL) {
 		return -ENOMEM;
 	}
@@ -54,9 +54,9 @@ int OWQ_create_shallow_aggregate(struct one_wire_query *owq_shallow, struct one_
 	case ft_vascii:
 		/* allocate larger buffer space */
 		OWQ_size(owq_shallow) = FullFileLength(PN(owq_shallow));
-		OWQ_buffer(owq_shallow) = malloc(OWQ_size(owq_shallow));
+		OWQ_buffer(owq_shallow) = owmalloc(OWQ_size(owq_shallow));
 		if (OWQ_buffer(owq_shallow) == NULL) {
-			free(OWQ_array(owq_shallow));
+			owfree(OWQ_array(owq_shallow));
 			return -ENOMEM;
 		}
 		break;
@@ -70,14 +70,14 @@ int OWQ_create_shallow_aggregate(struct one_wire_query *owq_shallow, struct one_
 void OWQ_destroy_shallow_aggregate(struct one_wire_query *owq_shallow)
 {
 	if (OWQ_array(owq_shallow)) {
-		free(OWQ_array(owq_shallow));
+		owfree(OWQ_array(owq_shallow));
 		OWQ_array(owq_shallow) = NULL;
 	}
 	switch (OWQ_pn(owq_shallow).selected_filetype->format) {
 	case ft_binary:
 	case ft_ascii:
 	case ft_vascii:
-		free(OWQ_buffer(owq_shallow));
+		owfree(OWQ_buffer(owq_shallow));
 		break;
 	default:
 		break;

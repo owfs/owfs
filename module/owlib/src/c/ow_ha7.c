@@ -84,7 +84,7 @@ int HA7_detect(struct connection_in *in)
 
 	/* Add the port if it isn't there already */
 	if (strchr(in->name, ':') == NULL) {
-		ASCII *temp = realloc(in->name, strlen(in->name) + 3);
+		ASCII *temp = owrealloc(in->name, strlen(in->name) + 3);
 		if (temp == NULL) {
 			return -ENOMEM;
 		}
@@ -333,7 +333,7 @@ static int HA7_toHA7(int file_descriptor, const struct toHA7 *ha7, struct connec
 		+ ((ha7->lock[0]) ? 1 + 7 + 10 : 0)
 		+ 11 + 1;
 
-	full_command = malloc(probable_length);
+	full_command = owmalloc(probable_length);
 	if (full_command == NULL) {
 		return -ENOMEM;
 	}
@@ -375,7 +375,7 @@ static int HA7_toHA7(int file_descriptor, const struct toHA7 *ha7, struct connec
 	LEVEL_DEBUG("To HA7 %s", full_command);
 
 	ret = HA7_write(file_descriptor, full_command, probable_length, in);
-	free(full_command);
+	owfree(full_command);
 	return ret;
 }
 

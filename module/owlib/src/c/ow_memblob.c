@@ -60,7 +60,7 @@ static int MemblobIncrease(size_t length, struct memblob *mb);
 /*
     A "memblob" is a structure holding a list of 1-wire serial numbers
     (8 bytes each) with some housekeeping information
-    
+
     It is used for directory caches, and some "all at once" adapters types
 
     Most interesting, it allocates memory dynamically.
@@ -69,7 +69,7 @@ static int MemblobIncrease(size_t length, struct memblob *mb);
 void MemblobClear(struct memblob *mb)
 {
 	if (mb->memory_storage != NULL) {
-		free(mb->memory_storage);
+		owfree(mb->memory_storage);
 		mb->memory_storage = NULL;
 	}
 	mb->used = 0;
@@ -91,7 +91,7 @@ static int MemblobIncrease(size_t length, struct memblob *mb)
 		|| (mb->memory_storage == NULL)) {
 		size_t increment = ((length / mb->increment) + 1) * mb->increment;
 		size_t newalloc = mb->allocated + increment;
-		BYTE *try_bigger_block = realloc(mb->memory_storage, newalloc);
+		BYTE *try_bigger_block = owrealloc(mb->memory_storage, newalloc);
 		if (try_bigger_block != NULL) {
 			mb->allocated = newalloc;
 			mb->memory_storage = try_bigger_block;

@@ -222,14 +222,14 @@ static int DS2482_detect_sys(enum ds2482_address chip_num, struct connection_in 
 
 	/* cycle through entries in /sys/class/i2c-adapter */
 	while ( (i2c_bus=readdir(i2c_list_dir)) != NULL ) {
-		char * new_device = malloc( strlen(i2c_bus->d_name) + 7 ) ; // room for /dev/name
+		char * new_device = owmalloc( strlen(i2c_bus->d_name) + 7 ) ; // room for /dev/name
 		if ( new_device==NULL ) {
 			break ; // cannot make space
 		}
 
 		// Change name to real i2c bus name
 		if ( in->name ) {
-			free( in->name ) ;
+			owfree( in->name ) ;
 		}
 		in->name = new_device ;
 		strcpy( in->name, "/dev/" ) ;
@@ -283,13 +283,13 @@ static int DS2482_detect_dir(enum ds2482_address chip_num, struct connection_in 
 		if ( access(dev_name, F_OK) < 0 ) {
 			continue ;
 		}
-		new_device = strdup( dev_name ) ;
+		new_device = owstrdup( dev_name ) ;
 		if ( new_device==NULL ) {
 			break ; // cannot make space
 		}
 
 		// Change name to real i2c bus name
-		free( in->name ) ;
+		owfree( in->name ) ;
 		in->name = new_device ;
 
 		// Now look for the ds2482's

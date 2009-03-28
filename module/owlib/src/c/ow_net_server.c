@@ -31,21 +31,21 @@ static int ServerAddr(const char * default_port, struct connection_out *out)
 	char *p;
 
 	if (out->name == NULL) {	// use defaults
-		out->host = strdup("0.0.0.0");
-		out->service = strdup(default_port);
+		out->host = owstrdup("0.0.0.0");
+		out->service = owstrdup(default_port);
 	} else if ((p = strrchr(out->name, ':')) == NULL) {
 		if (strchr(out->name, '.')) {	//probably an address
-			out->host = strdup(out->name);
-			out->service = strdup(default_port);
+			out->host = owstrdup(out->name);
+			out->service = owstrdup(default_port);
 		} else {				// assume a port
-			out->host = strdup("0.0.0.0");
-			out->service = strdup(out->name);
+			out->host = owstrdup("0.0.0.0");
+			out->service = owstrdup(out->name);
 		}
 	} else {
 		p[0] = '\0';
-		out->host = strdup(out->name);
+		out->host = owstrdup(out->name);
 		p[0] = ':';
-		out->service = strdup(&p[1]);
+		out->service = owstrdup(&p[1]);
 	}
 	memset(&hint, 0, sizeof(struct addrinfo));
 	hint.ai_flags = AI_PASSIVE;
@@ -160,7 +160,7 @@ void *ServerProcessHandler(void *arg)
 		   The thread is killed when application is stopped.
 		   Should perhaps fix a signal handler for this. */
 		Test_and_Close( &(hp->acceptfd) );
-		free(hp);
+		owfree(hp);
 	}
 	LEVEL_DEBUG("Normal exit.\n");
 	pthread_exit(NULL);
@@ -228,7 +228,7 @@ static void ServerProcessAccept(void *vp)
 		ERROR_CONNECT("accept() problem %d (%d)\n", out->file_descriptor, out->index);
 	} else {
 		struct HandlerThread_data *hp;
-		hp = malloc(sizeof(struct HandlerThread_data));
+		hp = owmalloc(sizeof(struct HandlerThread_data));
 		if (hp) {
 			hp->HandlerRoutine = out->HandlerRoutine;
 			hp->acceptfd = acceptfd;
@@ -236,7 +236,7 @@ static void ServerProcessAccept(void *vp)
 			if (ret) {
 				LEVEL_DEBUG("%s[%lu] create failed ret=%d\n", SAFESTRING(out->name), (unsigned long int) pthread_self(), ret);
 				close(acceptfd);
-				free(hp);
+				owfree(hp);
 			}
 		}
 	}

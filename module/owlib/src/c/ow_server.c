@@ -326,7 +326,7 @@ int ServerDIR(void (*dirfunc) (void *, const struct parsedname * const), void *v
 					ret = FS_ParsedName_BackFromRemote(return_path, &pn_directory_element);
 				}
 
-				free(return_path);
+				owfree(return_path);
 
 				if (ret) {
 					cm.ret = ret;
@@ -502,7 +502,7 @@ int ServerDIRALL(void (*dirfunc) (void *, const struct parsedname * const), void
 	}
 	// free the allocated memory
 	if (comma_separated_list != NULL) {
-		free(comma_separated_list);
+		owfree(comma_separated_list);
 	}
 	ret = cm.ret;
 
@@ -547,14 +547,14 @@ static void *FromServerAlloc(int file_descriptor, struct client_msg *cm)
 		return NULL;
 	}
 
-	if ((msg = (char *) malloc((size_t) cm->payload + 1))) {
+	if ((msg = (char *) owmalloc((size_t) cm->payload + 1))) {
 		ret = tcp_read(file_descriptor, msg, (size_t) (cm->payload), &tv);
 		if (ret != cm->payload) {
 			//printf("FromServer couldn't read payload\n");
 			cm->payload = 0;
 			cm->offset = 0;
 			cm->ret = -EIO;
-			free(msg);
+			owfree(msg);
 			msg = NULL;
 		}
 		//printf("FromServer payload read ok\n");

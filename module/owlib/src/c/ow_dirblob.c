@@ -49,7 +49,7 @@ $Id$
 void DirblobClear(struct dirblob *db)
 {
 	if (db->snlist != NULL) {
-		free(db->snlist);
+		owfree(db->snlist);
 		db->snlist = NULL;
 	}
 	db->allocated = db->devices;
@@ -79,7 +79,7 @@ int DirblobAdd(BYTE * sn, struct dirblob *db)
 	// make more room? -- blocks of 10 devices (80byte)
 	if ((db->devices >= db->allocated) || (db->snlist == NULL)) {
 		int newalloc = db->allocated + DIRBLOB_ALLOCATION_INCREMENT;
-		BYTE *try_bigger_block = realloc(db->snlist, DIRBLOB_ELEMENT_LENGTH * newalloc);
+		BYTE *try_bigger_block = owrealloc(db->snlist, DIRBLOB_ELEMENT_LENGTH * newalloc);
 		if (try_bigger_block != NULL) {
 			db->allocated = newalloc;
 			db->snlist = try_bigger_block;
@@ -129,7 +129,7 @@ int DirblobRecreate( BYTE * snlist, int size, struct dirblob *db)
 		return 0 ;
 	}
 
-	db->snlist = (BYTE *) malloc(size) ;
+	db->snlist = (BYTE *) owmalloc(size) ;
 
 	if ( db->snlist == NULL ) {
 		db->troubled = 1 ;

@@ -115,7 +115,7 @@ static void tdestroy_recurse_(node * root, void (*freefct) (void *))
 		root->key = NULL;
 	}
 	/* Free the node itself.  */
-	free(root);
+	owfree(root);
 }
 
 void tdestroy(void *vroot, void (*freefct) (void *))
@@ -159,7 +159,7 @@ void *tsearch(__const void *key, void **vrootp, __compar_fn_t compar)
 		rootp = (r < 0) ? &(*rootp)->left :	/* T3: follow left branch */
 			&(*rootp)->right;	/* T4: follow right branch */
 	}
-	q = (node *) malloc(sizeof(node));	/* T5: key not found */
+	q = (node *) owmalloc(sizeof(node));	/* T5: key not found */
 	if (q != (struct node_t *) 0) {	/* make new node */
 		*rootp = q;				/* link new node to old */
 		q->key = (void *) key;	/* initialize new node */
@@ -245,7 +245,7 @@ void *tdelete(__const void *key, void **vrootp, __compar_fn_t compar)
 			q->right = (*rootp)->right;
 		}
 	}
-	free((struct node_t *) *rootp);	/* D4: Free node */
+	owfree((struct node_t *) *rootp);	/* D4: Free node */
 	*rootp = q;					/* link parent to new node */
 	return (p);
 }
@@ -283,7 +283,7 @@ static void trecurse(__const void *vroot, __action_fn_t action, int level)
 	}
 }
 
-/* void twalk(root, action)		Walk the nodes of a tree 
+/* void twalk(root, action)		Walk the nodes of a tree
 node	*root;			Root of the tree to be walked
 void	(*action)();		Function to be called at each node
 PTR

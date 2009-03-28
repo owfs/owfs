@@ -68,7 +68,7 @@ static int FS_OWQ_create_postparse(char *buffer, size_t size, off_t offset, cons
 		memcpy(PN(owq), pn, sizeof(struct parsedname));
 	}
 	if (pn->extension == EXTENSION_ALL && pn->type != ePN_structure) {
-		OWQ_array(owq) = calloc((size_t) pn->selected_filetype->ag->elements, sizeof(union value_object));
+		OWQ_array(owq) = owcalloc((size_t) pn->selected_filetype->ag->elements, sizeof(union value_object));
 		if (OWQ_array(owq) == NULL) {
 			return -ENOMEM;
 		}
@@ -81,18 +81,18 @@ static int FS_OWQ_create_postparse(char *buffer, size_t size, off_t offset, cons
 struct one_wire_query *FS_OWQ_from_pn(const struct parsedname *pn)
 {
 	size_t size = FullFileLength(pn);
-	char *buffer = malloc(size);
+	char *buffer = owmalloc(size);
 
 	if (buffer != NULL) {
-		struct one_wire_query *owq = malloc(sizeof(struct one_wire_query));
+		struct one_wire_query *owq = owmalloc(sizeof(struct one_wire_query));
 		if (owq != NULL) {
 			if (Globals.error_level>=e_err_debug) { memset(buffer, 0, size); } // keep valgrind happy
 			if ( FS_OWQ_create_postparse( buffer, size, 0, pn, owq ) == 0 ) {
 				return owq ;
 			}
-			free(owq);
+			owfree(owq);
 		}
-		free(buffer);
+		owfree(buffer);
 	}
 	return NULL;
 }
@@ -105,15 +105,15 @@ void FS_OWQ_from_pn_destroy(struct one_wire_query *owq)
 
 	if (pn->extension == EXTENSION_ALL && pn->type != ePN_structure) {
 		if (OWQ_array(owq)) {
-			free(OWQ_array(owq));
+			owfree(OWQ_array(owq));
 			OWQ_array(owq) = NULL;
 		}
 	}
 	if ( OWQ_buffer(owq) != NULL ) {
-		free( OWQ_buffer(owq) ) ;
+		owfree( OWQ_buffer(owq) ) ;
 	}
 	if ( owq ) {
-		free(owq) ;
+		owfree(owq) ;
 	}
 }
 
@@ -145,7 +145,7 @@ void FS_OWQ_destroy_sibling(struct one_wire_query *owq)
 
 	LEVEL_DEBUG("%s\n",PN(owq)->path) ;
 	if ( OWQ_buffer(owq) ) {
-		free( OWQ_buffer(owq) ) ;
+		owfree( OWQ_buffer(owq) ) ;
 	}
 	FS_OWQ_destroy(owq) ;
 }
@@ -157,7 +157,7 @@ void FS_OWQ_destroy(struct one_wire_query *owq)
 	LEVEL_DEBUG("%s\n", pn->path);
 	if (pn->extension == EXTENSION_ALL && pn->type != ePN_structure) {
 		if (OWQ_array(owq)) {
-			free(OWQ_array(owq));
+			owfree(OWQ_array(owq));
 			OWQ_array(owq) = NULL;
 		}
 	}

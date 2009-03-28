@@ -5,34 +5,35 @@ noinst_HEADERS =          \
         compat_netdb.h    \
         connector.h       \
         ow.h              \
-        ow_1820.h \
-        ow_1821.h \
-        ow_1921.h \
-        ow_1923.h \
-        ow_1954.h \
-        ow_1963.h \
-        ow_1977.h \
-        ow_1991.h \
-        ow_1993.h \
-        ow_2401.h \
-        ow_2404.h \
-        ow_2405.h \
-        ow_2406.h \
-        ow_2408.h \
-        ow_2409.h \
-        ow_2413.h \
-        ow_2415.h \
-        ow_2423.h \
-        ow_2430.h \
-        ow_2433.h \
-        ow_2436.h \
-        ow_2438.h \
-        ow_2450.h \
-        ow_2502.h \
-        ow_2505.h \
-        ow_2760.h \
-        ow_2804.h \
-        ow_2890.h \
+        ow_1820.h         \
+        ow_1821.h         \
+        ow_1921.h         \
+        ow_1923.h         \
+        ow_1954.h         \
+        ow_1963.h         \
+        ow_1977.h         \
+        ow_1991.h         \
+        ow_1993.h         \
+        ow_2401.h         \
+        ow_2404.h         \
+        ow_2405.h         \
+        ow_2406.h         \
+        ow_2408.h         \
+        ow_2409.h         \
+        ow_2413.h         \
+        ow_2415.h         \
+        ow_2423.h         \
+        ow_2430.h         \
+        ow_2433.h         \
+        ow_2436.h         \
+        ow_2438.h         \
+        ow_2450.h         \
+        ow_2502.h         \
+        ow_2505.h         \
+        ow_2760.h         \
+        ow_2804.h         \
+        ow_2890.h         \
+        ow_alloc.h        \
         ow_avahi.h        \
         ow_bitwork.h      \
         ow_cache.h        \
