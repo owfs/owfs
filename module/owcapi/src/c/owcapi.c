@@ -60,7 +60,7 @@ ssize_t OW_init(const char *params)
 
 	/* Proceed with init while lock held */
 	/* grab our executable name */
-	Globals.progname = strdup("OWCAPI");
+	Globals.progname = owstrdup("OWCAPI");
 
 	ret = API_init(params);
 
@@ -82,7 +82,7 @@ ssize_t OW_init_args(int argc, char **argv)
 	/* Proceed with init while lock held */
 	/* grab our executable name */
     if (argc > 0) {
-		Globals.progname = strdup(argv[0]);
+		Globals.progname = owstrdup(argv[0]);
     }
 
 	while (((c = getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL)) != -1)
@@ -129,7 +129,7 @@ static ssize_t getdir(struct one_wire_query *owq)
 	if (ret < 0) {
 		OWQ_buffer(owq) = NULL;
 		OWQ_size(owq) = 0;
-	} else if ((OWQ_buffer(owq) = strdup(cb.blob))) {
+	} else if ((OWQ_buffer(owq) = owstrdup(cb.blob))) {
 		ret = cb.used;
 		OWQ_size(owq) = ret;
 	} else {
@@ -152,13 +152,13 @@ static ssize_t getval(struct one_wire_query *owq)
     if (s <= 0) {
 		return -ENOENT;
     }
-    if ((OWQ_buffer(owq) = malloc(s + 1)) == NULL) {
+    if ((OWQ_buffer(owq) = owmalloc(s + 1)) == NULL) {
 		return -ENOMEM;
     }
 	OWQ_size(owq) = s;
 	ret = FS_read_postparse(owq);
 	if (ret < 0) {
-		free(OWQ_buffer(owq));
+		owfree(OWQ_buffer(owq));
 		OWQ_buffer(owq) = NULL;
 		OWQ_size(owq) = 0;
 	} else {

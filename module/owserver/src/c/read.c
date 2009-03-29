@@ -65,15 +65,15 @@ void *ReadHandler(struct handlerdata *hd, struct client_msg *cm, struct one_wire
 	} else if ((hd->sm.size <= 0) || (hd->sm.size > MAX_OWSERVER_PROTOCOL_PACKET_SIZE)) {
 		cm->ret = -EMSGSIZE;
 		LEVEL_DEBUG("ReadHandler: error hd->sm.size == %d\n", hd->sm.size);
-	} else if ((retbuffer = (char *) malloc((size_t) hd->sm.size + 1)) == NULL) {	// allocate return buffer
+	} else if ((retbuffer = (char *) owmalloc((size_t) hd->sm.size + 1)) == NULL) {	// allocate return buffer
 		LEVEL_DEBUG("ReadHandler: can't allocate memory\n");
 		cm->ret = -ENOBUFS;
 	} else {
 		struct parsedname *pn = PN(owq);
 		char *path = "";
-		
+
 		if (Globals.error_level>=e_err_debug) { memset(retbuffer, 0,  hd->sm.size + 1); }  // keep valgrind happy
-		
+
 		if (pn) {
 			if (pn->path)
 				path = pn->path;
@@ -95,7 +95,7 @@ void *ReadHandler(struct handlerdata *hd, struct client_msg *cm, struct one_wire
 
 		if (read_or_error <= 0) {
 			LEVEL_DEBUG("ReadHandler: FS_read_postparse error %d\n", read_or_error);
-			free(retbuffer);
+			owfree(retbuffer);
 			retbuffer = NULL;
 			cm->ret = read_or_error;
 		} else {

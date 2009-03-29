@@ -26,7 +26,7 @@ int Fuse_setup(struct Fuse_option *fo)
 	int i;
 	fo->max_options = 10;
 	fo->argc = 0;
-	fo->argv = (char **) calloc(fo->max_options + 1, sizeof(char *));
+	fo->argv = (char **) owcalloc(fo->max_options + 1, sizeof(char *));
 	if (fo->argv == NULL)
 		return -ENOMEM;
 	for (i = 0; i <= fo->max_options; ++i)
@@ -41,8 +41,8 @@ void Fuse_cleanup(struct Fuse_option *fo)
 	if (fo->argv) {
 		for (i = 0; i < fo->max_options; ++i)
 			if (fo->argv[i])
-				free(fo->argv[i]);
-		free(fo->argv);
+				owfree(fo->argv[i]);
+		owfree(fo->argv);
 	}
 }
 
@@ -65,16 +65,16 @@ int Fuse_add(char *opt, struct Fuse_option *fo)
 		int i = fo->max_options;
 		void *temp = fo->argv;
 		fo->max_options += 10;
-		fo->argv = (char **) realloc(temp, (fo->max_options + 1) * sizeof(char *));
+		fo->argv = (char **) owrealloc(temp, (fo->max_options + 1) * sizeof(char *));
 		if (fo->argv == NULL) {
 			if (temp)
-				free(temp);
+				owfree(temp);
 			return -ENOMEM;		// allocated ok?
 		}
 		for (; i <= fo->max_options; ++i)
 			fo->argv[i] = NULL;	// now clear the new pointers
 	}
-	fo->argv[fo->argc++] = strdup(opt);
+	fo->argv[fo->argc++] = owstrdup(opt);
 	//LEVEL_DEBUG("Added option %d %s\n",fo->argc-1,fo->argv[fo->argc-1]);
 	return 0;
 }
@@ -87,7 +87,7 @@ char *Fuse_arg(char *opt_arg, char *entryname)
 		fprintf(stderr, "Put the %s value in quotes. \"%s\"\n", entryname, opt_arg);
 		return NULL;
 	}
-	ret = strdup(&opt_arg[1]);	// start after first quote
+	ret = owstrdup(&opt_arg[1]);	// start after first quote
 	if (ret == NULL) {
 		fprintf(stderr, "Insufficient memory to store %s options: %s\n", entryname, opt_arg);
 		return NULL;

@@ -83,7 +83,7 @@ int FromClient(struct handlerdata *hd)
 	}
 
 	/* Can allocate space? */
-	if ((msg = (char *) malloc(trueload)) == NULL) {	/* create a buffer */
+	if ((msg = (char *) owmalloc(trueload)) == NULL) {	/* create a buffer */
 		hd->sm.type = msg_error;
 		return -ENOMEM;
 	}
@@ -91,7 +91,7 @@ int FromClient(struct handlerdata *hd)
 	/* read in data */
 	if (tcp_read(hd->file_descriptor, msg, trueload, &tv) != trueload) {	/* read in the expected data */
 		hd->sm.type = msg_error;
-		free(msg);
+		owfree(msg);
 		return -EIO;
 	}
 
@@ -100,7 +100,7 @@ int FromClient(struct handlerdata *hd)
 		int pathlen;
 		if (memchr(msg, 0, (size_t) hd->sm.payload) == NULL) {
 			hd->sm.type = msg_error;
-			free(msg);
+			owfree(msg);
 			return -EINVAL;
 		}
 		pathlen = strlen(msg) + 1;
@@ -112,7 +112,7 @@ int FromClient(struct handlerdata *hd)
 	}
 
 	if (isServersidetap(hd->sm.version)) {	/* side tap shouldn't come to owserver */
-		free(msg);
+		owfree(msg);
 		hd->sm.type = msg_error;
 		LEVEL_CALL("owserver shouldn't get sidetap messages\n");
 		return -EPROTO;
@@ -126,7 +126,7 @@ int FromClient(struct handlerdata *hd)
 		hd->sp.tokens = Servertokens(hd->sm.version);
 		for (i = 0; i < hd->sp.tokens; ++i, p += sizeof(union antiloop)) {
 			if (memcmp(p, &(Globals.Token), sizeof(union antiloop)) == 0) {
-				free(msg);
+				owfree(msg);
 				hd->sm.type = msg_error;
 				LEVEL_CALL("owserver loop suppression\n");
 				return -ELOOP;

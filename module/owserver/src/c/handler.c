@@ -229,7 +229,7 @@ static void SingleHandler(struct handlerdata *hd)
 	} while (loop);
   HandlerDone:
 	if (hd->sp.path) {
-		free(hd->sp.path);
+		owfree(hd->sp.path);
 		hd->sp.path = NULL;
 	}
 //printf("OWSERVER single handler done\n" ) ;
@@ -244,7 +244,7 @@ void Handler(int file_descriptor)
 		DataHandler(&hd);
 	}
 	if (hd.sp.path) {
-		free(hd.sp.path);
+		owfree(hd.sp.path);
 		hd.sp.path = NULL;
 	}
 //printf("OWSERVER handler done\n" ) ;

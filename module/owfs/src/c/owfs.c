@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
 
 	/* grab our executable name */
 	if (argc > 0) {
-		Globals.progname = strdup(argv[0]);
+		Globals.progname = owstrdup(argv[0]);
 	}
 	//mtrace() ;
 	/* process command line arguments */
@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
 			break;
 		case e_fuse_opt:		/* fuse_mnt_opt */
 			if (fuse_mnt_opt) {
-				free(fuse_mnt_opt);
+				owfree(fuse_mnt_opt);
 			}
 			fuse_mnt_opt = Fuse_arg(optarg, "FUSE mount options");
 			if (fuse_mnt_opt == NULL) {
@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
 			break;
 		case e_fuse_open_opt:	/* fuse_open_opt */
 			if (fuse_open_opt) {
-				free(fuse_open_opt);
+				owfree(fuse_open_opt);
 			}
 			fuse_open_opt = Fuse_arg(optarg, "FUSE open options");
 			if (fuse_open_opt == NULL) {

@@ -110,7 +110,7 @@ int main(int argc, char **argv)
 
 	/* grab our executable name */
 	if (argc > 0) {
-		Globals.progname = strdup(argv[0]);
+		Globals.progname = owstrdup(argv[0]);
 	}
 
 	while ((c = getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL)) != -1) {
@@ -139,7 +139,7 @@ int main(int argc, char **argv)
 
 	set_exit_signal_handlers(exit_handler);
 	set_signal_handlers(NULL);
-	
+
 	/* become a daemon if not told otherwise */
 	if (EnterBackground()) {
 		ow_exit(1);

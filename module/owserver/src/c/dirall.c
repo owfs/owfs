@@ -76,7 +76,7 @@ void *DirallHandler(struct handlerdata *hd, struct client_msg *cm, const struct 
 		cm->size = cm->payload = 0;
 	} else if (cb.blob == NULL) {	// empty
 		cm->size = cm->payload = 0;
-	} else if ((ret = strdup(cb.blob)) != NULL) {	// try to copy
+	} else if ((ret = owstrdup(cb.blob)) != NULL) {	// try to copy
 		cm->payload = cb.used + 1;
 		cm->size = cb.used;
 	} else {					// couldn't copy

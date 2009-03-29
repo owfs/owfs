@@ -47,32 +47,28 @@ $Id$
 int FS_r_sibling_F(_FLOAT *F, const char * sibling, struct one_wire_query *owq)
 {
 	struct one_wire_query * owq_sibling  = FS_OWQ_create_sibling( sibling, owq ) ;
+	int sib_status ;
 
 	if ( owq_sibling == NULL ) {
 		return -EINVAL ;
 	}
-	if ( FS_read_local(owq_sibling) ) {
-		FS_OWQ_destroy_sibling(owq_sibling) ;
-		return -EINVAL ;
-	}
-
-	*F = OWQ_F(owq_sibling) ;
-
+	sib_status = FS_read_local(owq_sibling) ;
+	F[0] = OWQ_F(owq_sibling) ;
 	FS_OWQ_destroy_sibling(owq_sibling) ;
-	return 0;
+	return sib_status?-EINVAL:0;
 }
 
 int FS_w_sibling_F(_FLOAT F, const char * sibling, struct one_wire_query *owq)
 {
-	int write_error = -EINVAL ;
+	int write_error;
 	struct one_wire_query * owq_sibling  = FS_OWQ_create_sibling( sibling, owq ) ;
 
-	if ( owq_sibling != NULL ) {
-		OWQ_F(owq) = F ;
-		write_error = FS_write_local(owq_sibling) ;
-		FS_OWQ_destroy_sibling(owq_sibling) ;
+	if ( owq_sibling == NULL ) {
+		return -EINVAL ;
 	}
-
+	OWQ_F(owq) = F ;
+	write_error = FS_write_local(owq_sibling) ;
+	FS_OWQ_destroy_sibling(owq_sibling) ;
 	return write_error ;
 }
 
@@ -80,108 +76,97 @@ int FS_w_sibling_F(_FLOAT F, const char * sibling, struct one_wire_query *owq)
 int FS_r_sibling_D(_DATE *D, const char * sibling, struct one_wire_query *owq)
 {
 	struct one_wire_query * owq_sibling  = FS_OWQ_create_sibling( sibling, owq ) ;
+	int sib_status ;
 
 	if ( owq_sibling == NULL ) {
 		return -EINVAL ;
 	}
-	if ( FS_read_local(owq_sibling) ) {
-		FS_OWQ_destroy_sibling(owq_sibling) ;
-		return -EINVAL ;
-	}
-
+	sib_status = FS_read_local(owq_sibling) ;
 	memcpy ( D, &OWQ_D(owq_sibling), sizeof( _DATE ) ) ;
-
 	FS_OWQ_destroy_sibling(owq_sibling) ;
-	return 0;
+	return sib_status?-EINVAL:0;
 }
 
 int FS_w_sibling_D(_DATE D, const char * sibling, struct one_wire_query *owq)
 {
-	int write_error = -EINVAL ;
+	int write_error;
 	struct one_wire_query * owq_sibling  = FS_OWQ_create_sibling( sibling, owq ) ;
 
-	if ( owq_sibling != NULL ) {
-		OWQ_D(owq_sibling) = D ;
-		write_error = FS_write_local(owq_sibling) ;
-		FS_OWQ_destroy_sibling(owq_sibling) ;
+	if ( owq_sibling == NULL ) {
+		return -EINVAL ;
 	}
-
+	OWQ_D(owq_sibling) = D ;
+	write_error = FS_write_local(owq_sibling) ;
+	FS_OWQ_destroy_sibling(owq_sibling) ;
 	return write_error ;
 }
 
 int FS_r_sibling_U(UINT *U, const char * sibling, struct one_wire_query *owq)
 {
 	struct one_wire_query * owq_sibling  = FS_OWQ_create_sibling( sibling, owq ) ;
+	int sib_status ;
 
 	if ( owq_sibling == NULL ) {
 		return -EINVAL ;
 	}
-	if ( FS_read_local(owq_sibling) ) {
-		FS_OWQ_destroy_sibling(owq_sibling) ;
-		return -EINVAL ;
-	}
-
-	*U = OWQ_U(owq_sibling) ;
-
+	sib_status = FS_read_local(owq_sibling) ;
+	U[0] = OWQ_U(owq_sibling) ;
 	FS_OWQ_destroy_sibling(owq_sibling) ;
-	return 0;
+	return sib_status?-EINVAL:0;
 }
 
 int FS_w_sibling_U(UINT U, const char * sibling, struct one_wire_query *owq)
 {
-	int write_error = -EINVAL ;
+	int write_error;
 	struct one_wire_query * owq_sibling  = FS_OWQ_create_sibling( sibling, owq ) ;
 
-	if ( owq_sibling != NULL ) {
-		OWQ_U(owq) = U ;
-		write_error = FS_write_local(owq_sibling) ;
-		FS_OWQ_destroy_sibling(owq_sibling) ;
+	if ( owq_sibling == NULL ) {
+		return -EINVAL ;
 	}
-
+	OWQ_U(owq) = U ;
+	write_error = FS_write_local(owq_sibling) ;
+	FS_OWQ_destroy_sibling(owq_sibling) ;
 	return write_error ;
 }
 
 int FS_r_sibling_Y(INT *Y, const char * sibling, struct one_wire_query *owq)
 {
 	struct one_wire_query * owq_sibling  = FS_OWQ_create_sibling( sibling, owq ) ;
+	int sib_status ;
 
 	if ( owq_sibling == NULL ) {
 		return -EINVAL ;
 	}
-	if ( FS_read_local(owq_sibling) ) {
-		FS_OWQ_destroy_sibling(owq_sibling) ;
-		return -EINVAL ;
-	}
-
-	*Y = OWQ_Y(owq_sibling) ;
-
+	sib_status = FS_read_local(owq_sibling) ;
+	Y[0] = OWQ_Y(owq_sibling) ;
 	FS_OWQ_destroy_sibling(owq_sibling) ;
-	return 0;
+	return sib_status?-EINVAL:0;
 }
 
 int FS_w_sibling_Y(INT Y, const char * sibling, struct one_wire_query *owq)
 {
-	int write_error = -EINVAL ;
+	int write_error;
 	struct one_wire_query * owq_sibling  = FS_OWQ_create_sibling( sibling, owq ) ;
 
-	if ( owq_sibling != NULL ) {
-		OWQ_Y(owq) = Y ;
-		write_error = FS_write_local(owq_sibling) ;
-		FS_OWQ_destroy_sibling(owq_sibling) ;
+	if ( owq_sibling == NULL ) {
+		return -EINVAL ;
 	}
-
+	OWQ_Y(owq) = Y ;
+	write_error = FS_write_local(owq_sibling) ;
+	FS_OWQ_destroy_sibling(owq_sibling) ;
 	return write_error ;
 }
 
 int FS_w_sibling_bitwork(UINT set, UINT mask, const char * sibling, struct one_wire_query *owq)
 {
+	int write_error;
 	struct one_wire_query * owq_sibling  = FS_OWQ_create_sibling( sibling, owq ) ;
 	UINT bitfield ;
 
 	if ( owq_sibling == NULL ) {
 		return -EINVAL ;
 	}
-	if ( FS_read_local(owq_sibling) ) {
+	if ( FS_read_local(owq_sibling) != 0 ) {
 		FS_OWQ_destroy_sibling(owq_sibling) ;
 		return -EINVAL ;
 	}
@@ -196,23 +181,19 @@ int FS_w_sibling_bitwork(UINT set, UINT mask, const char * sibling, struct one_w
 
 	OWQ_U(owq_sibling) = bitfield ;
 
-	if ( FS_write_local(owq_sibling) ) {
-		FS_OWQ_destroy_sibling(owq_sibling) ;
-		return -EINVAL ;
-	}
-
+	write_error = FS_write_local(owq_sibling);
 	FS_OWQ_destroy_sibling(owq_sibling) ;
-	return 0;
+	return write_error;
 }
 
 /* Delete entry in cache */
 void FS_del_sibling(const char * sibling, struct one_wire_query *owq)
 {
 	struct one_wire_query * owq_sibling  = FS_OWQ_create_sibling( sibling, owq ) ;
-	
-	if ( owq_sibling != NULL ) {
-		Cache_Del(PN(owq_sibling)) ;
-		FS_OWQ_destroy_sibling(owq_sibling) ;
-	}
 
+	if ( owq_sibling == NULL ) {
+		return ;
+	}
+	Cache_Del(PN(owq_sibling)) ;
+	FS_OWQ_destroy_sibling(owq_sibling) ;
 }
