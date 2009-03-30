@@ -263,7 +263,7 @@ static void err_format(char * format, int errno_save, const char * level_string,
 	/* Create output string */
 #ifdef    HAVE_VSNPRINTF
 	if (errno_save) {
-		snprintf(format, MAXLINE, "%s%s:%s(%d) [%s] %s", level_string,file,func,line,fmt,strerror(errno_save),fmt);	/* safe */
+		snprintf(format, MAXLINE, "%s%s:%s(%d) [%s] %s", level_string,file,func,line,strerror(errno_save),fmt);	/* safe */
 	} else {
 		snprintf(format, MAXLINE, "%s%s:%s(%d) %s ", level_string,file,func,line,fmt);	/* safe */
 	}
