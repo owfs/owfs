@@ -379,14 +379,23 @@ static int FS_r_local(struct one_wire_query *owq)
 		return 0 ;
 	}
 
-	/* Special case for "fake" adapter */
-	if (pn->selected_connection->Adapter == adapter_fake && pn->selected_filetype->change != fc_static && IsRealDir(pn)) {
-		return FS_read_fake(owq);
-	}
-
-	/* Special case for "tester" adapter */
-	if (pn->selected_connection->Adapter == adapter_tester && pn->selected_filetype->change != fc_static) {
-		return FS_read_tester(owq);
+	if (pn->selected_filetype->change != fc_static && IsRealDir(pn)) {
+		switch (pn->selected_connection->Adapter) {
+			case adapter_fake:
+				/* Special case for "fake" adapter */
+				return FS_read_fake(owq);
+			case adapter_tester:
+				/* Special case for "tester" adapter */
+				return FS_read_tester(owq);
+			case adapter_mock:
+				/* Special case for "mock" adapter */
+				if (OWQ_Cache_Get(owq)) {	// non-zero means not found
+					return FS_read_fake(owq);
+				}
+				return 0;
+			default:
+				break ;
+		}
 	}
 
 	/* Array property? Read separately? Read together and manually separate? */

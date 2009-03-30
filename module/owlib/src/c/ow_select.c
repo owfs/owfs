@@ -194,8 +194,9 @@ static int Turnoff(int depth, const struct parsedname *pn)
 	}
 
 	if ((pn->selected_connection->Adapter == adapter_fake)
+		|| (pn->selected_connection->Adapter == adapter_mock)
 		|| (pn->selected_connection->Adapter == adapter_tester)) {
-		LEVEL_DEBUG("return on fake adapter");
+		LEVEL_DEBUG("return on fake adapter\n");
 		return 0;
 	}
 

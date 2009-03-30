@@ -228,14 +228,24 @@ static int FS_w_local(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	//printf("FS_w_local\n");
 
+	/* Special case for "fake" adapter */
+	if ( IsRealDir(pn) ) {
+		switch (get_busmode(pn->selected_connection)) {
+			case bus_mock:
+				// Mock -- write even "unwritable" to the cache for testing
+				OWQ_Cache_Add(owq);
+				// fall through
+			case bus_fake:
+			case bus_tester:
+				return (pn->selected_filetype->write == NO_WRITE_FUNCTION) ? -ENOTSUP : 0 ;
+			default:
+				break ;
+		}
+	}
+
 	/* Writable? */
 	if (pn->selected_filetype->write == NO_WRITE_FUNCTION) {
 		return -ENOTSUP;
-	}
-
-	/* Special case for "fake" adapter */
-	if ( (get_busmode(pn->selected_connection) == bus_fake || get_busmode(pn->selected_connection) == bus_tester) && IsRealDir(pn)) {
-		return 0;
 	}
 
 	/* Special case for "mock" adapter */

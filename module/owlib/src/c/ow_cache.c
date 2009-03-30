@@ -73,6 +73,8 @@ struct tree_opaque {
 
 #define TREE_DATA(tn)    ( (BYTE *)(tn) + sizeof(struct tree_node) )
 
+static int Cache_Type_Store( const struct parsedname * pn ) ;
+
 static int Cache_Add_Common(struct tree_node *tn);
 static int Cache_Add_Store(struct tree_node *tn);
 
@@ -159,6 +161,11 @@ static void new_tree(void)
 #define new_tree()
 #define node_show(tn)
 #endif							/* CACHE_DEBUG */
+
+static int Cache_Type_Store( const struct parsedname * pn )
+{
+	return (pn->selected_filetype->change==fc_persistent) || (pn->selected_connection->busmode==bus_mock) ;
+}
 
 /* DB cache creation code */
 /* Note: done in single-threaded mode so locking not yet needed */
@@ -269,12 +276,9 @@ int Cache_Add(const void *data, const size_t datasize, const struct parsedname *
 	if (datasize) {
 		memcpy(TREE_DATA(tn), data, datasize);
 	}
-	switch (pn->selected_filetype->change) {
-	case fc_persistent:
-		return Add_Stat(&cache_sto, Cache_Add_Store(tn));
-	default:
-		return Add_Stat(&cache_ext, Cache_Add_Common(tn));
-	}
+	return Cache_Type_Store(pn)?
+		Add_Stat(&cache_sto, Cache_Add_Store(tn)) :
+		Add_Stat(&cache_ext, Cache_Add_Common(tn)) ;
 }
 
 /* Add a directory entry to the cache */
@@ -633,12 +637,9 @@ int Cache_Get(void *data, size_t * dsize, const struct parsedname *pn)
 	memcpy(tn.tk.sn, pn->sn, 8);
 	tn.tk.p = pn->selected_filetype;
 	tn.tk.extension = pn->extension;
-	switch (pn->selected_filetype->change) {
-	case fc_persistent:
-		return Get_Stat(&cache_sto, Cache_Get_Store(data, dsize, duration, &tn));
-	default:
-		return Get_Stat(&cache_ext, Cache_Get_Common(data, dsize, duration, &tn));
-	}
+	return Cache_Type_Store(pn) ?
+		Get_Stat(&cache_sto, Cache_Get_Store(data, dsize, duration, &tn)) :
+		Get_Stat(&cache_ext, Cache_Get_Common(data, dsize, duration, &tn));
 }
 
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
