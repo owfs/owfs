@@ -64,7 +64,7 @@ static void Show(FILE * out, const struct parsedname *pn_entry)
 		}
 	}
 	fprintf(out, "</TD></TR>\r\n");
-	FS_OWQ_destroy_sibling(owq);
+	FS_OWQ_destroy_not_pn(owq);
 }
 
 
@@ -222,7 +222,7 @@ static void ShowText(FILE * out, const struct parsedname *pn_entry)
 		}
 	}
 	fprintf(out, "\r\n");
-	FS_OWQ_destroy_sibling(owq);
+	FS_OWQ_destroy_not_pn(owq);
 }
 
 /* Device entry -- table line for a filetype */

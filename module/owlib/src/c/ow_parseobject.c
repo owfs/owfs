@@ -78,6 +78,8 @@ static int FS_OWQ_create_postparse(char *buffer, size_t size, off_t offset, cons
 	return 0;
 }
 
+// Creates an owq from pn, making the buffer be filesize and part of the allocation
+// Destroy with FS_OWQ_destroy_not_pn
 struct one_wire_query *FS_OWQ_from_pn(const struct parsedname *pn)
 {
 	size_t size = FullFileLength(pn);
@@ -114,7 +116,7 @@ int FS_OWQ_create_plus(const char *path, const char *file, char *buffer, size_t 
 }
 
 // Safe to pass a NULL
-void FS_OWQ_destroy_sibling(struct one_wire_query *owq)
+void FS_OWQ_destroy_not_pn(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 
