@@ -61,6 +61,7 @@ int FS_OWQ_create_plus(const char *path, const char *file, char *buffer, size_t 
 void FS_OWQ_destroy(struct one_wire_query *owq);
 
 struct one_wire_query *FS_OWQ_create_sibling(const char *sibling, struct one_wire_query *owq_original) ;
+void FS_OWQ_destroy_sibling(struct one_wire_query *owq) ;
 void FS_OWQ_destroy_not_pn(struct one_wire_query *owq) ;
 
 void OWQ_create_shallow_single(struct one_wire_query *owq_shallow, struct one_wire_query *owq_original);

@@ -37,7 +37,7 @@ int FS_OWQ_create(const char *path, char *buffer, size_t size, off_t offset, str
 }
 
 /* Create the Parsename structure and load the relevant fields */
-/* Clean up with FS_OWQ_destroy */
+/* Clean up with FS_OWQ_destroy_sibling */
 struct one_wire_query *FS_OWQ_create_sibling(const char *sibling, struct one_wire_query *owq_original)
 {
 	char path[PATH_MAX] ;
@@ -146,4 +146,10 @@ void FS_OWQ_destroy(struct one_wire_query *owq)
 		}
 	}
 	FS_ParsedName_destroy(pn);
+}
+
+void FS_OWQ_destroy_sibling(struct one_wire_query *owq)
+{
+	FS_OWQ_destroy(owq) ;
+	free(owq) ;
 }
