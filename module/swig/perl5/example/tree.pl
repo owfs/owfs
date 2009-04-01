@@ -3,7 +3,9 @@
 # OWFS test program
 # See owfs.sourceforge.net for details
 # {copyright} 2004 Paul H. Alfille
-# GPL license
+# GPL v2 license
+
+# $Id$
 
 use OW ;
 
@@ -24,7 +26,7 @@ OW::init($ARGV[0]) or die "Cannot open 1wire port $ARGV[0]" ;
 #OW::set_error_print(2);
 #OW::set_error_level(9);
 
-# for "paging" 
+# for "paging"
 #my $lin = 0 ;
 
 sub treelevel {

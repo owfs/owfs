@@ -3,7 +3,9 @@
 # OWFS test program
 # See owfs.sourceforge.net for details
 # {copyright} 2004 Paul H. Alfille
-# GPL license
+# GPL v2 license
+
+# $Id$
 
 use OW ;
 
