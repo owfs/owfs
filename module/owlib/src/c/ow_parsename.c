@@ -33,7 +33,7 @@ enum parse_pass {
 };
 
 struct parsedname_pointers {
-	char *pathcpy;
+	char pathcpy[PATH_MAX+1];
 	char *pathnow;
 	char *pathnext;
 	char *pathlast;
@@ -126,9 +126,6 @@ static int FS_ParsedName_anywhere(const char *path, enum parse_pass remote_statu
 		case parse_done:		// the only exit!
 			//LEVEL_DEBUG("PARSENAME parse_done\n") ;
 			//printf("PARSENAME end ret=%d\n",ret) ;
-			if (pp->pathcpy) {
-				owfree(pp->pathcpy);
-			}
 			if (ret) {
 				FS_ParsedName_destroy(pn);
 			} else {
@@ -233,7 +230,6 @@ static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path,
 	// initialization
 	pp->pathnow = NULL;
 	pp->pathlast = NULL;
-	pp->pathcpy = NULL;
 	pp->pathnext = NULL;
 
 	/* Default attributes */
@@ -252,17 +248,13 @@ static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path,
 		return -EBADF;
 	}
 
-	/* make a copy for destructive parsing */
-	pp->pathcpy = owstrdup(path);
-	if (pp->pathcpy == NULL) {
+	pn->path = (char *) owmalloc(2 * strlen(path) + 2);
+	if (pn->path == NULL) {
 		return -ENOMEM;
 	}
 
-	pn->path = (char *) owmalloc(2 * strlen(path) + 2);
-	if (pn->path == NULL) {
-		owfree(pp->pathcpy);
-		return -ENOMEM;
-	}
+	/* make a copy for destructive parsing */
+	strcpy(pp->pathcpy,path);
 
 	/* connection_in list and start */
 	/* ---------------------------- */
