@@ -55,6 +55,8 @@ READ_FUNCTION(FS_r_mem);
 WRITE_FUNCTION(FS_w_mem);
 READ_FUNCTION(FS_r_page);
 WRITE_FUNCTION(FS_w_page);
+READ_FUNCTION(FS_r_infobyte);
+READ_FUNCTION(FS_r_flipflop);
 READ_FUNCTION(FS_r_pio);
 WRITE_FUNCTION(FS_w_pio);
 READ_FUNCTION(FS_sense);
@@ -86,7 +88,9 @@ struct filetype DS2406[] = {
   {"PIO", PROPERTY_LENGTH_BITFIELD, &A2406, ft_bitfield, fc_stable, FS_r_pio, FS_w_pio, {v:NULL},},
   {"sensed", PROPERTY_LENGTH_BITFIELD, &A2406, ft_bitfield, fc_alias, FS_sense, NO_WRITE_FUNCTION, {v:NULL},},
   {"latch", PROPERTY_LENGTH_BITFIELD, &A2406, ft_bitfield, fc_volatile, FS_r_latch, FS_w_latch, {v:NULL},},
+  {"flipflop", PROPERTY_LENGTH_BITFIELD, &A2406, ft_bitfield, fc_volatile, FS_r_flipflop, NO_WRITE_FUNCTION, {v:NULL},},
   {"set_alarm", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_stable, FS_r_s_alarm, FS_w_s_alarm, {v:NULL},},
+  {"infobyte", PROPERTY_LENGTH_HIDDEN, NULL, ft_unsigned, fc_volatile, FS_r_infobyte, NO_WRITE_FUNCTION, {v:NULL}, },
 #if OW_TAI8570
   {"TAI8570", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
   {"TAI8570/temperature", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_temp, NO_WRITE_FUNCTION, {v:NULL},},
@@ -125,9 +129,9 @@ static int OW_r_mem(BYTE * data, const size_t size, const off_t offset, const st
 static int OW_w_s_alarm(const BYTE data, const struct parsedname *pn);
 static int OW_r_control(BYTE * data, const struct parsedname *pn);
 static int OW_w_control(const BYTE data, const struct parsedname *pn);
-static int OW_power(int *y, struct parsedname *pn);
 static int OW_w_pio(const BYTE data, const struct parsedname *pn);
 static int OW_access(BYTE * data, const struct parsedname *pn);
+static int OW_syncaccess(BYTE * data, const struct parsedname *pn);
 static int OW_clear(const struct parsedname *pn);
 static int OW_full_access(BYTE * data, const struct parsedname *pn);
 
@@ -172,31 +176,63 @@ static int FS_w_mem(struct one_wire_query *owq)
 /* 2406 switch */
 static int FS_r_pio(struct one_wire_query *owq)
 {
+	UINT infobyte ;
+
+	if ( FS_r_sibling_U( &infobyte, "infobyte", owq ) ) {
+		return -EINVAL ;
+	}
+
+	OWQ_U(owq) = BYTE_INVERSE(infobyte>>2) & 0x03;	/* reverse bits */
+	return 0;
+}
+
+/* 2406 switch */
+static int FS_r_flipflop(struct one_wire_query *owq)
+{
+	UINT infobyte ;
+
+	if ( FS_r_sibling_U( &infobyte, "infobyte", owq ) ) {
+		return -EINVAL ;
+	}
+
+	OWQ_U(owq) = BYTE_INVERSE(infobyte>>0) & 0x03;	/* reverse bits */
+	return 0;
+}
+
+/* 2406 switch */
+static int FS_r_infobyte(struct one_wire_query *owq)
+{
 	BYTE data;
-	if (OW_access(&data, PN(owq))) {
+	if (OW_syncaccess(&data, PN(owq))) {
 		return -EINVAL;
 	}
-	OWQ_U(owq) = BYTE_INVERSE(data>>2) & 0x03;	/* reverse bits */
+	OWQ_U(owq) = data;	/* reverse bits */
 	return 0;
 }
 
 /* 2406 switch -- is Vcc powered?*/
 static int FS_power(struct one_wire_query *owq)
 {
-	if (OW_power(&OWQ_Y(owq), PN(owq))) {
-		return -EINVAL;
+	UINT infobyte ;
+
+	if ( FS_r_sibling_U( &infobyte, "infobyte", owq ) ) {
+		return -EINVAL ;
 	}
+
+	OWQ_Y(owq) = (infobyte & 0x80) ? 1 : 0;
 	return 0;
 }
 
 /* 2406 switch -- number of channels (actually, if Vcc powered)*/
 static int FS_channel(struct one_wire_query *owq)
 {
-	BYTE data;
-	if (OW_access(&data, PN(owq))) {
-		return -EINVAL;
+	UINT infobyte ;
+
+	if ( FS_r_sibling_U( &infobyte, "infobyte", owq ) ) {
+		return -EINVAL ;
 	}
-	OWQ_U(owq) = (data & 0x40) ? 2 : 1;
+
+	OWQ_U(owq) = (infobyte & 0x40) ? 2 : 1;
 	return 0;
 }
 
@@ -204,13 +240,13 @@ static int FS_channel(struct one_wire_query *owq)
 /* bits 2 and 3 */
 static int FS_sense(struct one_wire_query *owq)
 {
-	UINT pio ;
+	UINT infobyte ;
 
-	if ( FS_r_sibling_U( &pio, "PIO.BYTE", owq ) ) {
+	if ( FS_r_sibling_U( &infobyte, "infobyte", owq ) ) {
 		return -EINVAL ;
 	}
 
-	OWQ_U(owq) = BYTE_INVERSE(pio) & 0x03;
+	OWQ_U(owq) = (infobyte>>2) & 0x03;
 
 	return 0 ;
 }
@@ -219,19 +255,22 @@ static int FS_sense(struct one_wire_query *owq)
 /* bites 4 and 5 */
 static int FS_r_latch(struct one_wire_query *owq)
 {
-	BYTE data;
-	if (OW_access(&data, PN(owq))) {
-		return -EINVAL;
+	UINT infobyte ;
+
+	if ( FS_r_sibling_U( &infobyte, "infobyte", owq ) ) {
+		return -EINVAL ;
 	}
-	OWQ_U(owq) = (data >> 4) & 0x03;
-//    y[0] = UT_getbit(&data,4) ;
-//    y[1] = UT_getbit(&data,5) ;
+
+	OWQ_U(owq) = (infobyte >> 4) & 0x03;
+
 	return 0;
 }
 
 /* 2406 switch activity latch*/
 static int FS_w_latch(struct one_wire_query *owq)
 {
+	FS_del_sibling( "infobyte", owq ) ;
+
 	if (OW_clear(PN(owq))) {
 		return -EINVAL;
 	}
@@ -266,11 +305,13 @@ static int FS_w_s_alarm(struct one_wire_query *owq)
 /* write 2406 switch -- 2 values*/
 static int FS_w_pio(struct one_wire_query *owq)
 {
-    BYTE data = BYTE_INVERSE(OWQ_U(owq)) & 0x03 ; /* reverse bits */
+	BYTE data = BYTE_INVERSE(OWQ_U(owq)) & 0x03 ; /* reverse bits */
 
-    if (OW_w_pio(data, PN(owq))) {
+	FS_del_sibling( "infobyte", owq ) ;
+
+	if (OW_w_pio(data, PN(owq))) {
 		return -EINVAL;
-    }
+	}
 	return 0;
 }
 
@@ -302,6 +343,8 @@ static int FS_voltage(struct one_wire_query *owq)
 		TRXN_WR_CRC16(data,1,7),
 		TRXN_END,
 	};
+
+	FS_del_sibling( "infobyte", owq ) ;
 
 	if (BUS_transaction(t, PN(owq))) {
 		return -EINVAL;
@@ -341,17 +384,6 @@ static int OW_r_mem(BYTE * data, const size_t size, const off_t offset, const st
 	}
 
 	memcpy(data, &p[3], size);
-	return 0;
-}
-
-/* is Vcc powered?*/
-static int OW_power(int *y, struct parsedname *pn)
-{
-	BYTE data;
-	if (OW_access(&data, pn)) {
-		return -EINVAL;
-	}
-	*y = UT_getbit(&data, 7);
 	return 0;
 }
 
@@ -396,12 +428,13 @@ static int OW_w_control(const BYTE data, const struct parsedname *pn)
 /* write alarm settings */
 static int OW_w_s_alarm(const BYTE data, const struct parsedname *pn)
 {
-	BYTE b;
-	if (OW_r_control(&b, pn)) {
+	BYTE b[1];
+	if (OW_r_control(b, pn)) {
 		return 1;
 	}
-	b = (b & 0xE0) | (data & 0x1F);
-	return OW_w_control(b, pn);
+	UT_setbit(b,5,UT_getbit(&data,0));
+	UT_setbit(b,6,UT_getbit(&data,1));
+	return OW_w_control(b[0], pn);
 }
 
 /* set PIO state bits: bit0=A bit1=B, value: open=1 closed=0 */
@@ -413,6 +446,16 @@ static int OW_w_pio(const BYTE data, const struct parsedname *pn)
 	}
 	b = (b & 0x9F) | ((data << 5) & 0x60);
 	return OW_w_control(b, pn);
+}
+
+static int OW_syncaccess(BYTE * data, const struct parsedname *pn)
+{
+    BYTE d[2] = { _DS2406_IM|_DS2406_CHS1|_DS2406_CHS0|_DS2406_CRC0, 0xFF, };
+    if (OW_full_access(d, pn)) {
+		return 1;
+    }
+	data[0] = d[0];
+	return 0;
 }
 
 static int OW_access(BYTE * data, const struct parsedname *pn)
@@ -513,6 +556,8 @@ static int FS_sibling(struct one_wire_query *owq)
 	ASCII sib[16];
 	struct s_TAI8570 tai;
 
+	FS_del_sibling( "infobyte", owq ) ;
+
 	if (testTAI8570(&tai, owq)) {
 		return -ENOENT;
 	}
@@ -526,6 +571,8 @@ static int FS_temp(struct one_wire_query *owq)
 	int UT1, dT;
 	struct s_TAI8570 tai;
 	struct parsedname pn_copy;
+
+	FS_del_sibling( "infobyte", owq ) ;
 
 	memcpy(&pn_copy, PN(owq), sizeof(struct parsedname));	//shallow copy
 	if (testTAI8570(&tai, owq)) {
@@ -545,6 +592,8 @@ static int FS_temp(struct one_wire_query *owq)
 static int FS_pressure(struct one_wire_query *owq)
 {
 	_FLOAT TEMP ;
+
+	FS_del_sibling( "infobyte", owq ) ;
 
 	if ( FS_r_sibling_F( &TEMP, "TAI8570/temperature", owq )==0 ) {
 		struct parsedname pn_copy;

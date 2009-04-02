@@ -109,7 +109,6 @@ DeviceEntryExtended(1C, DS28E04, DEV_alarm | DEV_resume | DEV_ovdr);
 static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
 static int OW_w_scratch(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
 static int OW_w_pio(BYTE data, struct parsedname *pn);
-//static int OW_access( BYTE * data , const struct parsedname * pn ) ;
 static int OW_clear(struct parsedname *pn);
 static int OW_w_reg(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
 
