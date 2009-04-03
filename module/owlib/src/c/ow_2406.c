@@ -182,7 +182,7 @@ static int FS_r_pio(struct one_wire_query *owq)
 		return -EINVAL ;
 	}
 
-	OWQ_U(owq) = BYTE_INVERSE(infobyte>>2) & 0x03;	/* reverse bits */
+	OWQ_U(owq) = BYTE_INVERSE(infobyte>>0) & 0x03;	/* reverse bits */
 	return 0;
 }
 
@@ -195,7 +195,7 @@ static int FS_r_flipflop(struct one_wire_query *owq)
 		return -EINVAL ;
 	}
 
-	OWQ_U(owq) = BYTE_INVERSE(infobyte>>0) & 0x03;	/* reverse bits */
+	OWQ_U(owq) = (infobyte>>0) & 0x03;	/* reverse bits */
 	return 0;
 }
 
@@ -507,7 +507,7 @@ struct s_TAI8570 {
 //static struct internal_prop ip_bar = { "BAR", fc_persistent };
 MakeInternalProp(BAR, fc_persistent);
 
-// Read from the TSI8570 microcontroller vias the paired DS2406s
+// Read from the TAI8570 microcontroller vias the paired DS2406s
 // Updated by Simon Melhuish, with ref. to AAG C++ code
 static BYTE SEC_READW4[] = { 0x0E, 0x0E, 0x0E, 0x04, 0x0E, 0x0E, 0x04, 0x0E, 0x04, 0x04, 0x04,
 	0x04, 0x00
