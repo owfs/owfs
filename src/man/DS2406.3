@@ -82,9 +82,11 @@ State of the open-drain output (
 .br
 Writing zero will turn off the switch, non-zero will turn on the switch. Reading the
 .I PIO
-state will return the switch setting. To determine the actual logic level at the switch, refer to the
+state will return the switch setting (flipflop in the data sheet). To determine the actual logic level at the switch, refer to the
 .I sensed
 property.
+.br
+Note that the actual pin setting for the chip uses the opposite polarity -- 0 for conducting, 1 for non-conducting. However, to turn a connected device on (i.e. to deliver power) we use the software concept of 1 as conducting or "on".
 .br
 .I ALL
 references both channels simultaneously, comma separated.
