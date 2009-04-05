@@ -274,7 +274,7 @@ static int LINK_next_both(struct device_search *ds, const struct parsedname *pn)
  */
 static int LINK_read(BYTE * buf, const size_t size, const struct parsedname *pn)
 {
-	return COM_read( buf, size, pn ) ;
+	return COM_read( buf, size, pn->selected_connection ) ;
 }
 
 //
@@ -285,7 +285,7 @@ static int LINK_read(BYTE * buf, const size_t size, const struct parsedname *pn)
  */
 static int LINK_write(const BYTE * buf, const size_t size, const struct parsedname *pn)
 {
-	return COM_write( buf, size, pn ) ;
+	return COM_write( buf, size, pn->selected_connection ) ;
 }
 
 static int LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay, const struct parsedname *pn)

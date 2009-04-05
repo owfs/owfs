@@ -54,17 +54,17 @@ $Id$
  * command to the bus, and reading the answer.
  * This will probably not work with simultanious reading...
  */
-void update_max_delay(const struct parsedname *pn)
+void update_max_delay(struct connection_in *connection)
 {
 	long sec, usec;
 	struct timeval *r, *w;
 	struct timeval last_delay;
-	if (pn == NULL || pn->selected_connection == NULL) {
+	if (connection == NULL) {
 		return;
 	}
-	gettimeofday(&(pn->selected_connection->bus_read_time), NULL);
-	r = &pn->selected_connection->bus_read_time;
-	w = &pn->selected_connection->bus_write_time;
+	gettimeofday(&(connection->bus_read_time), NULL);
+	r = &(connection->bus_read_time);
+	w = &(connection->bus_write_time);
 
 	sec = r->tv_sec - w->tv_sec;
 	if ((sec >= 0) && (sec <= 5)) {
@@ -88,7 +88,7 @@ void update_max_delay(const struct parsedname *pn)
 	}
 	/* DS9097(1410)_send_and_get() call this function many times, therefore
 	 * I reset bus_write_time after every calls */
-	gettimeofday(&(pn->selected_connection->bus_write_time), NULL);
+	gettimeofday(&(connection->bus_write_time), NULL);
 	return;
 }
 

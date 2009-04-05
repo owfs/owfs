@@ -90,11 +90,11 @@ static int HA7E_reset(const struct parsedname *pn)
 	BYTE resp[1];
 
 	COM_flush(pn->selected_connection);
-	if (COM_write((BYTE*)"R", 1, pn)) {
+	if (COM_write((BYTE*)"R", 1, pn->selected_connection)) {
 		LEVEL_DEBUG("Error sending HA7E reset\n");
 		return -EIO;
 	}
-	if (COM_read(resp, 1, pn)) {
+	if (COM_read(resp, 1, pn->selected_connection)) {
 		LEVEL_DEBUG("Error reading HA7E reset\n");
 		return -EIO;
 	}
@@ -178,7 +178,7 @@ static int HA7E_directory(struct device_search *ds, struct dirblob *db, const st
 	current = first ;
 
 	while (1) {
-		if (COM_write((BYTE*)current, 1, pn)) {
+		if (COM_write((BYTE*)current, 1, pn->selected_connection)) {
 			return HA7E_resync(pn) ;
 		}
 		current = next ; // set up for next pass
@@ -189,13 +189,13 @@ static int HA7E_directory(struct device_search *ds, struct dirblob *db, const st
 		//So we grab the first character and check it.  If not an E leave it
 		//in the resp buffer and get the rest of the response from the HA7E
 		//device
-		if (COM_read((BYTE*)resp, 1, pn)) {
+		if (COM_read((BYTE*)resp, 1, pn->selected_connection)) {
 			return HA7E_resync(pn) ;
 		}
 		if ( resp[0] == 0x0D ) {
 			return 0 ; // end of list
 		}
-		if (COM_read((BYTE*)&resp[1], 16, pn)) {
+		if (COM_read((BYTE*)&resp[1], 16, pn->selected_connection)) {
 			return HA7E_resync(pn) ;
 		}
 		sn[7] = string2num(&resp[0]);
@@ -260,17 +260,17 @@ static int HA7E_select( const struct parsedname * pn )
 	}
 
 	if ( memcmp( pn->sn, pn->selected_connection->connin.ha7e.sn, 8 ) ) {
-		if ( COM_write((BYTE*)send_address,18,pn) ) {
+		if ( COM_write((BYTE*)send_address,18,pn->selected_connection) ) {
 			LEVEL_DEBUG("Error with sending HA7E A-ddress\n") ;
 			return HA7E_resync(pn) ;
 		}
 	} else {
-		if ( COM_write((BYTE*)"M",1,pn) ) {
+		if ( COM_write((BYTE*)"M",1,pn->selected_connection) ) {
 			LEVEL_DEBUG("Error with sending HA7E M-atch\n") ;
 			return HA7E_resync(pn) ;
 		}
 	}
-	if ( COM_read((BYTE*)resp_address,17,pn) ) {
+	if ( COM_read((BYTE*)resp_address,17,pn->selected_connection) ) {
 		LEVEL_DEBUG("Error with reading HA7E select\n") ;
 		return HA7E_resync(pn) ;
 	}
@@ -296,11 +296,11 @@ static int HA7E_sendback_part(const BYTE * data, BYTE * resp, const size_t size,
 	bytes2string(&send_data[3], data, size) ;
 	send_data[3+2*size] = 0x0D ;
 
-	if ( COM_write((BYTE*)send_data,size*2+4,pn) ) {
+	if ( COM_write((BYTE*)send_data,size*2+4,pn->selected_connection) ) {
 		LEVEL_DEBUG("Error with sending HA7E block\n") ;
 		return HA7E_resync(pn) ;
 	}
-	if ( COM_read((BYTE*)get_data,size*2+1,pn) ) {
+	if ( COM_read((BYTE*)get_data,size*2+1,pn->selected_connection) ) {
 		LEVEL_DEBUG("Error with reading HA7E block\n") ;
 		return HA7E_resync(pn) ;
 	}
@@ -343,7 +343,7 @@ static void HA7E_powerdown(struct connection_in * in)
 	FS_ParsedName(NULL, &pn);	// minimal parsename -- no destroy needed
 	pn.selected_connection = in;
 
-	COM_write((BYTE*)"P", 1, &pn) ;
+	COM_write((BYTE*)"P", 1, in) ;
 	if ( in->file_descriptor > -1 ) {
 		COM_slurp(in->file_descriptor) ;
 	}

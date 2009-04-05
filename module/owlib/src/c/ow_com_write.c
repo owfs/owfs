@@ -18,9 +18,8 @@ $Id$
 #include <linux/limits.h>
 #endif
 
-int COM_write( const BYTE * data, size_t length, const struct parsedname * pn )
+int COM_write( const BYTE * data, size_t length, struct connection_in *connection)
 {
-	struct connection_in * connection = pn->selected_connection ;
 	ssize_t to_be_written = length ;
 
 	if ( length == 0 || data == NULL ) {
@@ -54,7 +53,7 @@ int COM_write( const BYTE * data, size_t length, const struct parsedname * pn )
 				STAT_ADD1_BUS(e_bus_write_errors, connection);
 				return -EIO;	/* error */
 			}
-			update_max_delay(pn);
+			update_max_delay(connection);
 			Debug_Bytes("Attempt serial write:",  &data[length - to_be_written], to_be_written);
 			write_result = write(connection->file_descriptor, &data[length - to_be_written], to_be_written);	/* write bytes */
 			if (write_result < 0) {

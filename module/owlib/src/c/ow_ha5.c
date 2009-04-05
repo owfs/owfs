@@ -234,10 +234,10 @@ static int HA5_test_channel( struct parsedname  *pn )
 	test_string[1] = 'R' ;
 	string_length = AddChecksum( test_string, 2, in ) ;
 
-	if ( COM_write( test_string, string_length, pn ) ) {
+	if ( COM_write( test_string, string_length, pn->selected_connection ) ) {
 		return 1 ;
 	}
-	if ( COM_read( test_response, 1, pn ) ) {
+	if ( COM_read( test_response, 1, pn->selected_connection ) ) {
 		return 1 ;
 	}
 
@@ -268,12 +268,12 @@ static int HA5_reset_wrapped(const struct parsedname *pn)
 	reset[1] = 'R' ;
 	reset_length = AddChecksum( reset, 2, in ) ;
 
-	if (COM_write(reset, reset_length, pn)) {
+	if (COM_write(reset, reset_length, pn->selected_connection)) {
 		LEVEL_DEBUG("Error sending HA5 reset\n");
 		return -EIO;
 	}
 	// For some reason, the HA5 doesn't use a checksum for RESET response.
-	if (COM_read(resp, 2, pn)) {
+	if (COM_read(resp, 2, pn->selected_connection)) {
 		LEVEL_DEBUG("Error reading HA5 reset\n");
 		return -EIO;
 	}
@@ -369,11 +369,11 @@ static int HA5_directory(struct device_search *ds, struct dirblob *db, const str
 	query[4] = 'F' ;
 	query_length = AddChecksum( query, 5, in ) ;
 
-	if (COM_write( query, query_length, pn)) {
+	if (COM_write( query, query_length, pn->selected_connection)) {
 		return HA5_resync(pn) ;
 	}
 
-	if (COM_read(resp, 1, pn)) {
+	if (COM_read(resp, 1, pn->selected_connection)) {
 		return HA5_resync(pn) ;
 	}
 
@@ -389,7 +389,7 @@ static int HA5_directory(struct device_search *ds, struct dirblob *db, const str
 		//device
 
 		if ( in->connin.ha5.checksum ) {
-			if (COM_read(&resp[1], 19, pn)) {
+			if (COM_read(&resp[1], 19, pn->selected_connection)) {
 				return HA5_resync(pn) ;
 			}
 			if ( resp[18]!=CR_char ) {
@@ -400,7 +400,7 @@ static int HA5_directory(struct device_search *ds, struct dirblob *db, const str
 				return HA5_resync(pn) ;
 			}
 		} else {
-			if (COM_read(&resp[1], 17, pn)) {
+			if (COM_read(&resp[1], 17, pn->selected_connection)) {
 				return HA5_resync(pn) ;
 			}
 			if ( resp[16]!=CR_char ) {
@@ -482,13 +482,13 @@ static int HA5_select_wrapped( const struct parsedname * pn )
 
 	send_length = AddChecksum( send_address, 18, in ) ;
 
-	if ( COM_write( send_address, send_length, pn) ) {
+	if ( COM_write( send_address, send_length, pn->selected_connection) ) {
 		LEVEL_DEBUG("Error with sending HA5 A-ddress\n") ;
 		return HA5_resync(pn) ;
 	}
 
 	if ( in->connin.ha5.checksum ) {
-		if ( COM_read(resp_address,19,pn) ) {
+		if ( COM_read(resp_address,19,pn->selected_connection) ) {
 			LEVEL_DEBUG("Error with reading HA5 select\n") ;
 			return HA5_resync(pn) ;
 		}
@@ -497,7 +497,7 @@ static int HA5_select_wrapped( const struct parsedname * pn )
 			return HA5_resync(pn) ;
 		}
 	} else {
-		if ( COM_read(resp_address,17,pn) ) {
+		if ( COM_read(resp_address,17,pn->selected_connection) ) {
 			LEVEL_DEBUG("Error with reading HA5 select\n") ;
 			return HA5_resync(pn) ;
 		}
@@ -527,13 +527,13 @@ static int HA5_sendback_part(char cmd, const BYTE * data, BYTE * resp, const siz
 	bytes2string( (char *)&send_data[4], data, size) ;
 	send_length = AddChecksum( send_data, 4+size*2, in ) ;
 
-	if ( COM_write( send_data, send_length, pn) ) {
+	if ( COM_write( send_data, send_length, pn->selected_connection) ) {
 		LEVEL_DEBUG("Error with sending HA5 block\n") ;
 		return HA5_resync(pn) ;
 	}
 
 	if ( in->connin.ha5.checksum ) {
-		if ( COM_read( get_data, size*2+3, pn) ) {
+		if ( COM_read( get_data, size*2+3, pn->selected_connection) ) {
 			LEVEL_DEBUG("Error with reading HA5 block\n") ;
 			return HA5_resync(pn) ;
 		}
@@ -542,7 +542,7 @@ static int HA5_sendback_part(char cmd, const BYTE * data, BYTE * resp, const siz
 			return HA5_resync(pn) ;
 		}
 	} else {
-		if ( COM_read( get_data, size*2+1, pn) ) {
+		if ( COM_read( get_data, size*2+1, pn->selected_connection) ) {
 			LEVEL_DEBUG("Error with reading HA5 block\n") ;
 			return HA5_resync(pn) ;
 		}
@@ -627,7 +627,7 @@ static void HA5_powerdown(struct connection_in * in)
 	FS_ParsedName(NULL, &pn);	// minimal parsename -- no destroy needed
 	pn.selected_connection = in;
 
-	COM_write((BYTE*)"P", 1, &pn) ;
+	COM_write((BYTE*)"P", 1, in) ;
 	if ( in->file_descriptor > -1 ) {
 		COM_slurp(in->file_descriptor) ;
 	}

@@ -150,7 +150,7 @@ void OW_BaudRestrict( speed_t * B_baud, ... ) ;
 
 void ow_help(const char *arg);
 
-void update_max_delay(const struct parsedname *pn);
+void update_max_delay(struct connection_in *connection);
 
 int ServerPresence(const struct parsedname *pn);
 int ServerRead(struct one_wire_query *owq);

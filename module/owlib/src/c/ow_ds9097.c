@@ -240,10 +240,10 @@ int DS9097_sendback_bits(const BYTE * outbits, BYTE * inbits, const size_t lengt
 /* Indeed, will move to DS9097 */
 static int DS9097_send_and_get(const BYTE * bussend, BYTE * busget, const size_t length, const struct parsedname *pn)
 {
-	if ( COM_write( bussend, length, pn ) < 0 ) {
+	if ( COM_write( bussend, length, pn->selected_connection ) < 0 ) {
 		return -EIO ;
 	}	
 
 	/* get back string -- with timeout and partial read loop */
-	return COM_read( busget, length, pn ) ;
+	return COM_read( busget, length, pn->selected_connection ) ;
 }

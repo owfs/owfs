@@ -18,9 +18,8 @@ $Id$
 #include <linux/limits.h>
 #endif
 
-int COM_read( BYTE * data, size_t length, const struct parsedname * pn )
+int COM_read( BYTE * data, size_t length, struct connection_in *connection)
 {
-	struct connection_in * connection = pn->selected_connection ;
 	ssize_t to_be_read = length ;
 	
 	if ( length == 0 || data == NULL ) {
@@ -54,7 +53,7 @@ int COM_read( BYTE * data, size_t length, const struct parsedname * pn )
 				STAT_ADD1_BUS(e_bus_read_errors, connection);
 				return -EIO;	/* error */
 			}
-			update_max_delay(pn);
+			update_max_delay(connection);
 			read_result = read(connection->file_descriptor, &data[length - to_be_read], to_be_read);	/* read bytes */
 			if (read_result < 0) {
 				if (errno != EWOULDBLOCK) {
