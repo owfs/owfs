@@ -23,13 +23,14 @@ $Id$
 #include <limits.h>
 
 #define EXTENSION_DEVICE	-1
-#define EXTENSION_INTERNAL	-2
+#define EXTENSION_INTERNAL  -2
+#define EXTENSION_ALIAS     -3
 
 /* Put the globals into a struct to declutter the namespace */
 static struct {
-	void *new_db;				// current cache database
-	void *old_db;				// older cache database
-	void *store;				// persistent database
+	void *temporary_tree_new;				// current cache database
+	void *temporary_tree_old;				// older cache database
+	void *permanent_tree;				// persistent database
 	size_t old_ram;				// cache size
 	size_t new_ram;				// cache size
 	time_t retired;				// start time of older
@@ -155,7 +156,7 @@ static void tree_show(const void *node, const VISIT which, const int depth)
 static void new_tree(void)
 {
 	fprintf(stderr,"Walk the new tree:\n");
-	twalk(cache.new_db, tree_show);
+	twalk(cache.temporary_tree_new, tree_show);
 }
 #else							/* CACHE_DEBUG */
 #define new_tree()
@@ -185,12 +186,12 @@ void Cache_Open(void)
 /* Note: done in single-threaded mode so locking not yet needed */
 void Cache_Close(void)
 {
-	tdestroy(cache.new_db, free);
-	cache.new_db = NULL;
-	tdestroy(cache.old_db, free);
-	cache.old_db = NULL;
-	tdestroy(cache.store, free);
-	cache.store = NULL;
+	tdestroy(cache.temporary_tree_new, free);
+	cache.temporary_tree_new = NULL;
+	tdestroy(cache.temporary_tree_old, free);
+	cache.temporary_tree_old = NULL;
+	tdestroy(cache.permanent_tree, free);
+	cache.permanent_tree = NULL;
 }
 
 static int Add_Stat(struct cache *scache, const int result)
@@ -422,11 +423,11 @@ static int Cache_Add_Common(struct tree_node *tn)
 	LEVEL_DEBUG("Add to cache sn " SNformat " pointer=%p index=%d size=%d\n", SNvar(tn->tk.sn), tn->tk.p, tn->tk.extension, tn->dsize);
 	CACHE_WLOCK;
 	if (cache.killed < time(NULL)) {	// old database has timed out
-		flip = cache.old_db;
+		flip = cache.temporary_tree_old;
 		/* Flip caches! old = new. New truncated, reset time and counters and flag */
-		cache.old_db = cache.new_db;
+		cache.temporary_tree_old = cache.temporary_tree_new;
 		cache.old_ram = cache.new_ram;
-		cache.new_db = NULL;
+		cache.temporary_tree_new = NULL;
 		cache.new_ram = 0;
 		cache.added = 0;
 		cache.retired = time(NULL);
@@ -435,7 +436,7 @@ static int Cache_Add_Common(struct tree_node *tn)
 	if (Globals.cache_size && (cache.old_ram + cache.new_ram > Globals.cache_size)) {
 		// failed size test
 		owfree(tn);
-	} else if ((opaque = tsearch(tn, &cache.new_db, tree_compare))) {
+	} else if ((opaque = tsearch(tn, &cache.temporary_tree_new, tree_compare))) {
 		//printf("Cache_Add_Common to %p\n",opaque);
 		if (tn != opaque->key) {
 			cache.new_ram += sizeof(tn) - sizeof(opaque->key);
@@ -489,10 +490,10 @@ void Cache_Clear(void)
 	void *c_new = NULL;
 	void *c_old = NULL;
 	CACHE_WLOCK;
-	c_old = cache.old_db;
-	c_new = cache.new_db;
-	cache.old_db = NULL;
-	cache.new_db = NULL;
+	c_old = cache.temporary_tree_old;
+	c_new = cache.temporary_tree_new;
+	cache.temporary_tree_old = NULL;
+	cache.temporary_tree_new = NULL;
 	cache.old_ram = 0;
 	cache.new_ram = 0;
 	cache.added = 0;
@@ -517,7 +518,7 @@ static int Cache_Add_Store(struct tree_node *tn)
 	enum { no_add, yes_add, just_update } state = no_add;
 	//printf("Cache_Add_Store\n") ;
 	STORE_WLOCK;
-	if ((opaque = tsearch(tn, &cache.store, tree_compare))) {
+	if ((opaque = tsearch(tn, &cache.permanent_tree, tree_compare))) {
 		//printf("CACHE ADD pointer=%p, key=%p\n",tn,opaque->key);
 		if (tn != opaque->key) {
 			owfree(opaque->key);
@@ -674,9 +675,9 @@ static int Cache_Get_Common_Dir(struct dirblob *db, time_t duration, const struc
 	//printf("Cache_Get_Common_Dir\n") ;
 	LEVEL_DEBUG("Get from cache sn " SNformat " pointer=%p extension=%d\n", SNvar(tn->tk.sn), tn->tk.p, tn->tk.extension);
 	CACHE_RLOCK;
-	if ((opaque = tfind(tn, &cache.new_db, tree_compare))
+	if ((opaque = tfind(tn, &cache.temporary_tree_new, tree_compare))
 		|| ((cache.retired + duration > now)
-			&& (opaque = tfind(tn, &cache.old_db, tree_compare)))
+			&& (opaque = tfind(tn, &cache.temporary_tree_old, tree_compare)))
 		) {
 		LEVEL_DEBUG("dir found in cache\n");
 		if (opaque->key->expires >= now) {
@@ -800,9 +801,9 @@ static int Cache_Get_Common(void *data, size_t * dsize, time_t duration, const s
 	//printf("\nTree (old):\n");
 	new_tree();
 	CACHE_RLOCK;
-	if ((opaque = tfind(tn, &cache.new_db, tree_compare))
+	if ((opaque = tfind(tn, &cache.temporary_tree_new, tree_compare))
 		|| ((cache.retired + duration > now)
-			&& (opaque = tfind(tn, &cache.old_db, tree_compare)))
+			&& (opaque = tfind(tn, &cache.temporary_tree_old, tree_compare)))
 		) {
 		//printf("CACHE GET 2 opaque=%p tn=%p\n",opaque,opaque->key);
 		LEVEL_DEBUG("value found in cache\n");
@@ -818,7 +819,7 @@ static int Cache_Get_Common(void *data, size_t * dsize, time_t duration, const s
 				}
 				ret = 0;
 				//printf("CACHE GOT\n");
-				//twalk(cache.new_db,tree_show) ;
+				//twalk(cache.temporary_tree_new,tree_show) ;
 			} else {
 				ret = -EMSGSIZE;
 			}
@@ -845,7 +846,7 @@ static int Cache_Get_Store(void *data, size_t * dsize, time_t duration, const st
 	(void) duration;
 	//printf("Cache_Get_Store\n") ;
 	STORE_RLOCK;
-	if ((opaque = tfind(tn, &cache.store, tree_compare))) {
+	if ((opaque = tfind(tn, &cache.permanent_tree, tree_compare))) {
 		if ((ssize_t) dsize[0] >= opaque->key->dsize) {
 			dsize[0] = opaque->key->dsize;
 			if (dsize[0]) {
@@ -966,9 +967,9 @@ static int Cache_Del_Common(const struct tree_node *tn)
 	int ret = 1;
 	LEVEL_DEBUG("Delete from cache sn " SNformat " in=%p index=%d\n", SNvar(tn->tk.sn), tn->tk.p, tn->tk.extension);
 	CACHE_WLOCK;
-	if ((opaque = tfind(tn, &cache.new_db, tree_compare))
+	if ((opaque = tfind(tn, &cache.temporary_tree_new, tree_compare))
 		|| ((cache.killed > now)
-			&& (opaque = tfind(tn, &cache.old_db, tree_compare)))
+			&& (opaque = tfind(tn, &cache.temporary_tree_old, tree_compare)))
 		) {
 		opaque->key->expires = now - 1;
 		ret = 0;
@@ -982,9 +983,9 @@ static int Cache_Del_Store(const struct tree_node *tn)
 	struct tree_opaque *opaque;
 	struct tree_node *tn_found = NULL;
 	STORE_WLOCK;
-	if ((opaque = tfind(tn, &cache.store, tree_compare))) {
+	if ((opaque = tfind(tn, &cache.permanent_tree, tree_compare))) {
 		tn_found = opaque->key;
-		tdelete(tn, &cache.store, tree_compare);
+		tdelete(tn, &cache.permanent_tree, tree_compare);
 	}
 	STORE_WUNLOCK;
 	if (!tn_found) {

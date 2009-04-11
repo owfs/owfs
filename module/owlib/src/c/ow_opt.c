@@ -48,6 +48,9 @@ static int OW_ArgLink(const char *arg);
 static int OW_ArgPassive(char *adapter_type_name, const char *arg);
 
 const struct option owopts_long[] = {
+	{"alias", required_argument, NULL, 'a'},
+	{"aliases", required_argument, NULL, 'a'},
+	{"aliasfile", required_argument, NULL, 'a'},
 	{"configuration", required_argument, NULL, 'c'},
 	{"device", required_argument, NULL, 'd'},
 	{"usb", optional_argument, NULL, 'u'},
