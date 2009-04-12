@@ -73,6 +73,7 @@ struct tree_opaque {
 };
 
 #define TREE_DATA(tn)    ( (BYTE *)(tn) + sizeof(struct tree_node) )
+#define CONST_TREE_DATA(tn)    ( (const BYTE *)(tn) + sizeof(struct tree_node) )
 
 static int Cache_Type_Store( const struct parsedname * pn ) ;
 
@@ -91,6 +92,7 @@ static int Get_Stat(struct cache *scache, const int result);
 static int Del_Stat(struct cache *scache, const int result);
 static int tree_compare(const void *a, const void *b);
 static time_t TimeOut(const enum fc_change change);
+static void Aliasfindaction(const void *node, const VISIT which, const int depth) ;
 
 /* used for the sort/search b-tree routines */
 static int tree_compare(const void *a, const void *b)
@@ -408,6 +410,29 @@ int Cache_Add_Internal(const void *data, const size_t datasize, const struct int
 	default:
 		return Add_Stat(&cache_int, Cache_Add_Common(tn));
 	}
+}
+
+/* Add an item to the cache */
+/* return 0 if good, 1 if not */
+int Cache_Add_Alias(const ASCII *name, const BYTE * sn)
+{
+	struct tree_node *tn;
+	size_t size = strlen(name) ;
+
+	tn = (struct tree_node *) owmalloc(sizeof(struct tree_node) + size + 1 );
+	if (!tn) {
+		return -ENOMEM;
+	}
+	memset(&tn->tk, 0, sizeof(struct tree_key));
+
+	LEVEL_DEBUG("Adding " SNformat " alias=%s\n", SNvar(sn), name);
+	memcpy(tn->tk.sn, sn, 8);
+	tn->tk.p = NULL;
+	tn->tk.extension = EXTENSION_ALIAS;
+	tn->expires = time(NULL);
+	tn->dsize = size+1;
+	strcpy((ASCII *)TREE_DATA(tn), name);
+	return Add_Stat(&cache_sto, Cache_Add_Store(tn));
 }
 
 /* Add an item to the cache */
@@ -758,6 +783,91 @@ int Cache_Get_Internal(void *data, size_t * dsize, const struct internal_prop *i
 	default:
 		return Get_Stat(&cache_int, Cache_Get_Common(data, dsize, duration, &tn));
 	}
+}
+
+/* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
+/* allocates space for the name */
+void Cache_Get_Alias(ASCII * name, const BYTE * sn)
+{
+	struct tree_node tn;
+	struct tree_opaque *opaque;
+
+	name = NULL ;
+
+	memset(&tn.tk, 0, sizeof(struct tree_key));
+	memcpy(tn.tk.sn, sn, 8);
+	tn.tk.p = NULL;
+	tn.tk.extension = EXTENSION_ALIAS;
+
+	STORE_RLOCK;
+	if ((opaque = tfind(&tn, &cache.permanent_tree, tree_compare))) {
+		name = owstrdup((ASCII *)TREE_DATA(opaque->key));
+		LEVEL_DEBUG("Retrieving " SNformat " alias=%s\n", SNvar(sn), SAFESTRING(name) );
+	}
+	STORE_RUNLOCK;
+}
+
+#if OW_MT
+pthread_mutex_t Aliasfindmutex = PTHREAD_MUTEX_INITIALIZER;
+#define ALIASFINDMUTEXLOCK		my_pthread_mutex_lock(&Aliasfindmutex)
+#define ALIASFINDMUTEXUNLOCK		my_pthread_mutex_unlock(&Aliasfindmutex)
+#else							/* OW_MT */
+#define ALIASFINDMUTEXLOCK		return_ok()
+#define ALIASFINDMUTEXUNLOCK		return_ok()
+#endif							/* OW_MT */
+
+struct {
+	const ASCII *name;
+	size_t dsize ;
+	BYTE * sn;
+	int ret ;
+} global_aliasfind_struct;
+
+static void Aliasfindaction(const void *node, const VISIT which, const int depth)
+{
+	const struct tree_node *p = *(struct tree_node * const *) node;
+	(void) depth;
+	if ( global_aliasfind_struct.ret==0 ) {
+		return ;
+	}
+
+	//printf("Comparing %s|%s with %s\n",p->name ,p->code , Namefindname ) ;
+	switch (which) {
+	case leaf:
+	case postorder:
+		if ( p->tk.extension != EXTENSION_ALIAS
+			|| p->dsize != global_aliasfind_struct.dsize
+			|| memcmp(global_aliasfind_struct.name,(const ASCII *)CONST_TREE_DATA(p),global_aliasfind_struct.dsize)!=0
+			) {
+			return ;
+		}
+		global_aliasfind_struct.ret = 0 ;
+		memcpy(global_aliasfind_struct.sn,p->tk.sn,8) ;
+		return ;
+	case preorder:
+	case endorder:
+		break;
+	}
+}
+/* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
+/* Gets serial number from name */
+int Cache_Get_SerialNumber(const ASCII * name, BYTE * sn)
+{
+	int ret;
+
+	ALIASFINDMUTEXLOCK;
+
+	global_aliasfind_struct.ret = 11  ;// not yet found
+	global_aliasfind_struct.dsize = strlen(name) + 1 ;
+	global_aliasfind_struct.name = name ;
+	global_aliasfind_struct.sn = sn ;
+	twalk(Tree[ePN_real], Aliasfindaction);
+	ret = global_aliasfind_struct.ret ;
+
+	ALIASFINDMUTEXUNLOCK;
+	LEVEL_DEBUG("Retrieving %s from " SNformat " %s\n", SAFESTRING(name), SNvar(sn));
+
+	return ret;
 }
 
 /* Do the processing for finding the correct "current" time

@@ -64,7 +64,7 @@ int EnterBackground(void);
 /* Initial sorting or the device and filetype lists */
 void DeviceSort(void);
 void DeviceDestroy(void);
-//  int filecmp(const void * name , const void * ex ) 
+//  int filecmp(const void * name , const void * ex )
 /* Pasename processing -- URL/path comprehension */
 int filecmp(const void *name, const void *ex);
 int FS_ParsedNamePlus(const char *path, const char *file, struct parsedname *pn);
@@ -143,6 +143,7 @@ int OW_ArgUSB(const char *arg);
 int OW_ArgDevice(const char *arg);
 int OW_ArgGeneric(const char *arg);
 int OW_ArgSide(const char *arg);
+int AliasFile(const ASCII * file) ;
 
 speed_t OW_MakeBaud( int raw_baud ) ;
 int OW_BaudRate( speed_t B_baud ) ;

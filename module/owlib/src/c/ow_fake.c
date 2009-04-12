@@ -279,7 +279,7 @@ struct {
 	const ASCII *readable_name;
 	const ASCII *ret;
 } global_namefind_struct;
-void Namefindaction(const void *nodep, const VISIT which, const int depth)
+static void Namefindaction(const void *nodep, const VISIT which, const int depth)
 {
 	const struct device *p = *(struct device * const *) nodep;
 	(void) depth;
