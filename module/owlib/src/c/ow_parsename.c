@@ -463,43 +463,14 @@ static enum parse_enum Parse_Bus(char *pathnow, struct parsedname *pn)
  */
 static enum parse_enum Parse_RealDevice(char *filename, enum parse_pass remote_status, struct parsedname *pn)
 {
-	//printf("DevicePart: %s %s\n", filename, pn->path);
+	int bus_nr ;
+	if ( Parse_SerialNumber(filename,pn->sn)  ) {
+		// Not a serial number, look for an alias if not rerturning from owserver
+		if (remote_status == parse_pass_post_remote || Cache_Get_SerialNumber(filename,pn->sn)!=0) {
+			return parse_error;
+		}
+	}
 
-	ASCII ID[14];
-	int bus_nr;
-	int i;
-	//printf("NP hex = %s\n",filename ) ;
-	//printf("NP cmp'ed %s\n",ID ) ;
-	for (i = 0; i < 14; ++i, ++filename) {	/* get ID number */
-		if (*filename == '.') {
-			++filename;
-		}
-		if (isxdigit(*filename)) {
-			ID[i] = *filename;
-		} else {
-			return parse_error;
-		}
-	}
-	//printf("NP0\n");
-	pn->sn[0] = string2num(&ID[0]);
-	pn->sn[1] = string2num(&ID[2]);
-	pn->sn[2] = string2num(&ID[4]);
-	pn->sn[3] = string2num(&ID[6]);
-	pn->sn[4] = string2num(&ID[8]);
-	pn->sn[5] = string2num(&ID[10]);
-	pn->sn[6] = string2num(&ID[12]);
-	pn->sn[7] = CRC8compute(pn->sn, 7, 0);
-	if (*filename == '.') {
-		++filename;
-	}
-	//printf("NP1\n");
-	if (isxdigit(filename[0]) && isxdigit(filename[1])) {
-		char crc[2];
-		num2string(crc, pn->sn[7]);
-		if (strncasecmp(crc, filename, 2)) {
-			return parse_error;
-		}
-	}
 	/* Search for known 1-wire device -- keyed to device name (family code in HEX) */
 	FS_devicefindhex(pn->sn[0], pn);
 

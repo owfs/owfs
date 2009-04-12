@@ -73,6 +73,7 @@ int FS_ParsedName(const char *fn, struct parsedname *pn);
 int FS_ParsedName_BackFromRemote(const char *fn, struct parsedname *pn);
 void FS_ParsedName_destroy(struct parsedname *pn);
 int FS_ParseProperty_for_sibling(char *filename, struct parsedname *pn);
+int Parse_SerialNumber(char *sn_char, BYTE * sn) ;
 
 size_t FileLength(const struct parsedname *pn);
 size_t FullFileLength(const struct parsedname *pn);

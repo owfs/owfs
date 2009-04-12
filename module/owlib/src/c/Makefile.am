@@ -95,6 +95,7 @@ OWLIB_SOURCE = ow_dl.c           \
                ow_parseobject.c  \
                ow_parseoutput.c  \
                ow_parseshallow.c \
+               ow_parse_sn.c     \
                ow_pid.c          \
                ow_pio.c          \
                ow_presence.c     \
