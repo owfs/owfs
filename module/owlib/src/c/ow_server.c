@@ -218,7 +218,7 @@ int ServerWrite(struct one_wire_query *owq)
 		} else if (FromServer(connectfd, &cm, NULL, 0) < 0) {
 			ret = -EIO;
 		} else {
-			int32_t sg = cm.sg & ~(BUSRET_MASK | PERSISTENT_MASK);
+			int32_t sg = cm.sg & ~(SHOULD_RETURN_BUS_LIST | PERSISTENT_MASK);
 			ret = cm.ret;
 			SGLOCK;
 			if (SemiGlobal != sg) {
@@ -708,9 +708,12 @@ static uint32_t SetupSemi(int persistent, const struct parsedname *pn)
 		sg |= PERSISTENT_MASK;
 	}
 
-	sg &= ~BUSRET_MASK;
+	/* from owlib to owserver never wants alias */
+	sg &= ~ALIAS_REQUEST ;
+
+	sg &= ~SHOULD_RETURN_BUS_LIST;
 	if (SpecifiedBus(pn)) {
-		sg |= BUSRET_MASK;
+		sg |= SHOULD_RETURN_BUS_LIST;
 	}
 
 	return sg;

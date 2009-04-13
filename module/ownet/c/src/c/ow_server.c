@@ -192,7 +192,7 @@ int ServerWrite(struct request_packet *rp)
 		} else if (FromServer(connectfd, &cm, NULL, 0) < 0) {
 			ret = -EIO;
 		} else {
-			uint32_t sg = cm.sg & ~(BUSRET_MASK | PERSISTENT_MASK);
+			uint32_t sg = cm.sg & ~(SHOULD_RETURN_BUS_LIST | PERSISTENT_MASK);
 			ret = cm.ret;
 			if (ow_Global.sg != sg) {
 				//printf("ServerRead: cm.sg changed!  SemiGlobal=%X cm.sg=%X\n", SemiGlobal, cm.sg);
@@ -507,7 +507,8 @@ static uint32_t SetupSemi(int persistent)
 		sg |= PERSISTENT_MASK;
 	}
 
-	sg |= BUSRET_MASK;
+	/* End user -- add full bus list and apply aliases */
+	sg |= SHOULD_RETURN_BUS_LIST | ALIAS_REQUEST ;
 
 	return sg;
 }

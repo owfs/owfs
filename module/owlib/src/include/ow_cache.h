@@ -71,7 +71,7 @@ int Cache_Get_Dir(struct dirblob *db, const struct parsedname *pn);
 int Cache_Get_Device(void *bus_nr, const struct parsedname *pn);
 int Cache_Get_Internal(void *data, size_t * dsize, const struct internal_prop *ip, const struct parsedname *pn);
 int Cache_Get_Internal_Strict(void *data, size_t dsize, const struct internal_prop *ip, const struct parsedname *pn);
-void Cache_Get_Alias(ASCII * name, const BYTE * sn) ;
+int Cache_Get_Alias(ASCII * name, size_t length, const BYTE * sn) ;
 int Cache_Get_SerialNumber(const ASCII * name, BYTE * sn) ;
 
 int OWQ_Cache_Del(const struct one_wire_query *owq);
@@ -107,7 +107,7 @@ void FS_cache_sibling(char *property, struct one_wire_query *owq_shallow_copy);
 #define Cache_Get_Device(bus_nr,pn )        (1)
 #define Cache_Get_Internal(data,dsize,ip,pn )       (1)
 #define Cache_Get_Internal_Strict(data,dsize,ip,pn )       (1)
-#define Cache_Get_Alias(name, sn)
+#define Cache_Get_Alias(name, length, sn)   (1)
 #define Cache_Get_SerialNumber(name, sn)    (1)
 
 #define Cache_Del(pn )                      (1)

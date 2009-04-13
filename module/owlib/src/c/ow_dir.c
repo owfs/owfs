@@ -18,8 +18,7 @@ $Id$
 #include "ow.h"
 
 static int FS_dir_both(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_directory, uint32_t * flags);
-static int
-FS_dir_all_connections(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_directory, uint32_t * flags);
+static int FS_dir_all_connections(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_directory, uint32_t * flags);
 static int FS_dir_all_connections_loop(void (*dirfunc)
 									    (void *, const struct parsedname * const),
 									   void *v, struct connection_in * in, const struct parsedname *pn_directory, uint32_t * flags);
@@ -58,10 +57,11 @@ static int FS_dir_plus(void (*dirfunc) (void *, const struct parsedname *), void
 /* path is the path which "pn_directory" parses */
 /* FS_dir produces the "invariant" portion of the directory, passing on to
    FS_dir_all_connections the variable part */
-int FS_dir(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_directory)
+int FS_dir(void (*dirfunc) (void *, const struct parsedname *), void *v, struct parsedname *pn_directory)
 {
 	uint32_t flags;
 	LEVEL_DEBUG("path=%s\n", pn_directory->path);
+	pn_directory->sg |= ALIAS_REQUEST ; // All local directory queries want alias translation
 
 	return FS_dir_both(dirfunc, v, pn_directory, &flags);
 }
@@ -532,7 +532,7 @@ void FS_LoadDirectoryOnly(struct parsedname *pn_directory, const struct parsedna
 /* A directory of devices -- either main or branch */
 /* not within a device, nor alarm state */
 /* Also, adapters and stats handled elsewhere */
-/* Cache2Real try the cache first, else can directory from bus (and add to cache) */
+/* Cache2Real try the cache first, else get directory from bus (and add to cache) */
 static int FS_cache2real(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_real_directory, uint32_t * flags)
 {
 	size_t dindex;

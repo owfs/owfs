@@ -178,10 +178,10 @@ struct parsedname {
 /* ---- end Parsedname ----------------- */
 #define CACHE_MASK     ( (UINT) 0x00000001 )
 #define CACHE_BIT      0
-#define BUSRET_MASK    ( (UINT) 0x00000002 )
-#define BUSRET_BIT     1
+#define SHOULD_RETURN_BUS_LIST    ( (UINT) 0x00000002 )
 #define PERSISTENT_MASK    ( (UINT) 0x00000004 )
 #define PERSISTENT_BIT     2
+#define ALIAS_REQUEST      ( (UINT) 0x00000008 )
 #define TEMPSCALE_MASK ( (UINT) 0x00FF0000 )
 #define TEMPSCALE_BIT  16
 #define DEVFORMAT_MASK ( (UINT) 0xFF000000 )
@@ -216,7 +216,7 @@ struct parsedname {
                                         (pn)->selected_connection=NULL; \
                                     } while(0)
 
-#define ShouldReturnBusList(ppn)  ( ((ppn)->sg & BUSRET_MASK) )
+#define ShouldReturnBusList(ppn)  ( ((ppn)->sg & SHOULD_RETURN_BUS_LIST) )
 
 #define SpecifiedVeryRemoteBus(pn)     ((((pn)->state) & ePS_busveryremote) != 0 )
 #define SpecifiedRemoteBus(pn)         ((((pn)->state) & ePS_busremote) != 0 )

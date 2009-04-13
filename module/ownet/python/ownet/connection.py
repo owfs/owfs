@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 ::BOH
 $Id$
@@ -214,7 +215,7 @@ class Connection(object):
                            socket.htonl(0),           #version
                            socket.htonl(payload_len), #payload length
                            socket.htonl(function),    #type of function call
-                           socket.htonl(258),         #format flags
+                           socket.htonl(258),         #format flags -- 266 for alias upport
                            socket.htonl(data_len),    #size of data element for read or write
                            socket.htonl(0),           #offset for read or write
                            )

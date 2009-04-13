@@ -113,7 +113,6 @@ static int FS_ParsedName_anywhere(const char *path, enum parse_pass remote_statu
 		return ret;
 	}
 	//printf("1pathnow=[%s] pathnext=[%s] pn->type=%d\n", pathnow, pathnext, pn->type);
-
 	if (path == NULL) {
 		return 0;
 	}
@@ -224,7 +223,7 @@ static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path,
 
 	/* Set the persistent state info (temp scale, ...) -- will be overwritten by client settings in the server */
 	SGLOCK;
-	pn->sg = SemiGlobal | (1 << BUSRET_BIT);	// initial flag as the bus-returning level, will change if a bus is specified
+	pn->sg = SemiGlobal | SHOULD_RETURN_BUS_LIST;	// initial flag as the bus-returning level, will change if a bus is specified
 	SGUNLOCK;
 
 	// initialization
@@ -434,7 +433,7 @@ static enum parse_enum Parse_Bus(char *pathnow, struct parsedname *pn)
 
 	if (SpecifiedLocalBus(pn)) {
 		/* don't return bus-list for local paths. */
-		pn->sg &= (~BUSRET_MASK);
+		pn->sg &= (~SHOULD_RETURN_BUS_LIST);
 	}
 
 	/* Create the path without the "bus.x" part in pn->path_busless */
@@ -466,7 +465,7 @@ static enum parse_enum Parse_RealDevice(char *filename, enum parse_pass remote_s
 	int bus_nr ;
 	if ( Parse_SerialNumber(filename,pn->sn)  ) {
 		// Not a serial number, look for an alias if not rerturning from owserver
-		if (remote_status == parse_pass_post_remote || Cache_Get_SerialNumber(filename,pn->sn)!=0) {
+		if (remote_status == parse_pass_post_remote || Cache_Get_SerialNumber(filename,pn->sn)) {
 			return parse_error;
 		}
 	}
@@ -474,6 +473,7 @@ static enum parse_enum Parse_RealDevice(char *filename, enum parse_pass remote_s
 	/* Search for known 1-wire device -- keyed to device name (family code in HEX) */
 	FS_devicefindhex(pn->sn[0], pn);
 
+	// returning from owserver -- don't need to check presence (it's implied)
 	if (remote_status == parse_pass_post_remote) {
 		return parse_prop;
 	}

@@ -786,13 +786,12 @@ int Cache_Get_Internal(void *data, size_t * dsize, const struct internal_prop *i
 }
 
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
-/* allocates space for the name */
-void Cache_Get_Alias(ASCII * name, const BYTE * sn)
+/* space already allocated in buffer */
+int Cache_Get_Alias(ASCII * name, size_t length, const BYTE * sn)
 {
 	struct tree_node tn;
 	struct tree_opaque *opaque;
-
-	name = NULL ;
+	int ret = -ENOENT ;
 
 	memset(&tn.tk, 0, sizeof(struct tree_key));
 	memcpy(tn.tk.sn, sn, 8);
@@ -801,10 +800,16 @@ void Cache_Get_Alias(ASCII * name, const BYTE * sn)
 
 	STORE_RLOCK;
 	if ((opaque = tfind(&tn, &cache.permanent_tree, tree_compare))) {
-		name = owstrdup((ASCII *)TREE_DATA(opaque->key));
-		LEVEL_DEBUG("Retrieving " SNformat " alias=%s\n", SNvar(sn), SAFESTRING(name) );
+		if ( opaque->key->dsize < length ) {
+			strncpy(name,(ASCII *)TREE_DATA(opaque->key),length);
+			ret = 0 ;
+			LEVEL_DEBUG("Retrieving " SNformat " alias=%s\n", SNvar(sn), SAFESTRING(name) );
+		} else {
+			ret = -EMSGSIZE ;
+		}
 	}
 	STORE_RUNLOCK;
+	return ret ;
 }
 
 #if OW_MT
@@ -835,10 +840,14 @@ static void Aliasfindaction(const void *node, const VISIT which, const int depth
 	switch (which) {
 	case leaf:
 	case postorder:
-		if ( p->tk.extension != EXTENSION_ALIAS
-			|| p->dsize != global_aliasfind_struct.dsize
-			|| memcmp(global_aliasfind_struct.name,(const ASCII *)CONST_TREE_DATA(p),global_aliasfind_struct.dsize)!=0
-			) {
+		if ( p->tk.extension != EXTENSION_ALIAS ) {
+			return ;
+		}
+		//printf("Compare %s and %s\n",global_aliasfind_struct.name,(const ASCII *)CONST_TREE_DATA(p));
+		if ( p->dsize != global_aliasfind_struct.dsize ) {
+			return ;
+		}
+		if ( memcmp(global_aliasfind_struct.name,(const ASCII *)CONST_TREE_DATA(p),global_aliasfind_struct.dsize) ) {
 			return ;
 		}
 		global_aliasfind_struct.ret = 0 ;
@@ -854,18 +863,20 @@ static void Aliasfindaction(const void *node, const VISIT which, const int depth
 int Cache_Get_SerialNumber(const ASCII * name, BYTE * sn)
 {
 	int ret;
-
 	ALIASFINDMUTEXLOCK;
 
 	global_aliasfind_struct.ret = 11  ;// not yet found
 	global_aliasfind_struct.dsize = strlen(name) + 1 ;
 	global_aliasfind_struct.name = name ;
 	global_aliasfind_struct.sn = sn ;
-	twalk(Tree[ePN_real], Aliasfindaction);
+	twalk(cache.permanent_tree, Aliasfindaction);
 	ret = global_aliasfind_struct.ret ;
-
 	ALIASFINDMUTEXUNLOCK;
-	LEVEL_DEBUG("Retrieving %s from " SNformat " %s\n", SAFESTRING(name), SNvar(sn));
+	if (ret) {
+		LEVEL_DEBUG("Antialiasing %s unsuccesssful\n", SAFESTRING(name));
+	} else {
+		LEVEL_DEBUG("Antialiased %s as " SNformat "\n", SAFESTRING(name), SNvar(sn));
+	}
 
 	return ret;
 }

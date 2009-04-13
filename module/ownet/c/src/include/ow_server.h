@@ -46,10 +46,10 @@ extern struct ow_global {
 	int autoserver;
 } ow_Global;
 
-#define BUSRET_MASK    ( (UINT) 0x00000002 )
-#define BUSRET_BIT     1
+#define SHOULD_RETURN_BUS_LIST    ( (UINT) 0x00000002 )
 #define PERSISTENT_MASK    ( (UINT) 0x00000004 )
 #define PERSISTENT_BIT     2
+#define ALIAS_REQUEST      ( (UINT) 0x00000008 )
 #define TEMPSCALE_MASK ( (UINT) 0x00FF0000 )
 #define TEMPSCALE_BIT  16
 #define DEVFORMAT_MASK ( (UINT) 0xFF000000 )

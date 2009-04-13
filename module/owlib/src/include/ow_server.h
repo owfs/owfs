@@ -77,20 +77,6 @@ extern struct ow_global {
 	int autoserver;
 } ow_Global;
 
-#define BUSRET_MASK    ( (UINT) 0x00000002 )
-#define BUSRET_BIT     1
-#define PERSISTENT_MASK    ( (UINT) 0x00000004 )
-#define PERSISTENT_BIT     2
-#define TEMPSCALE_MASK ( (UINT) 0x00FF0000 )
-#define TEMPSCALE_BIT  16
-#define DEVFORMAT_MASK ( (UINT) 0xFF000000 )
-#define DEVFORMAT_BIT  24
-#define IsPersistent         ( ow_Global.sg & PERSISTENT_MASK )
-#define SetPersistent(b)      UT_Setbit(ow_Global.sg,PERSISTENT_BIT,(b))
-#define TemperatureScale     ( (enum temp_type) ((ow_Global.sg & TEMPSCALE_MASK) >> TEMPSCALE_BIT) )
-#define SGTemperatureScale(sg)    ( (enum temp_type)(((sg) & TEMPSCALE_MASK) >> TEMPSCALE_BIT) )
-#define DeviceFormat         ( (enum deviceformat) ((ow_Global.sg & DEVFORMAT_MASK) >> DEVFORMAT_BIT) )
-
 int ServerPresence(struct request_packet *rp);
 int ServerRead(struct request_packet *rp);
 int ServerWrite(struct request_packet *rp);

@@ -302,8 +302,8 @@ int ServerPresence(ASCII * path);
 
 #define CACHE_MASK     ( (UINT) 0x00000001 )
 #define CACHE_BIT      0
-#define BUSRET_MASK    ( (UINT) 0x00000002 )
-#define BUSRET_BIT     1
+#define SHOULD_RETURN_BUS_LIST    ( (UINT) 0x00000002 )
+#define ALIAS_REQUEST      ( (UINT) 0x00000008 )
 #define TEMPSCALE_MASK ( (UINT) 0x00FF0000 )
 #define TEMPSCALE_BIT  16
 #define DEVFORMAT_MASK ( (UINT) 0xFF000000 )

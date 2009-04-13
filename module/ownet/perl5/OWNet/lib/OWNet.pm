@@ -4,7 +4,7 @@ package OWNet ;
 # $Id$
 #
 # Paul H Alfille -- copyright 2007
-# Part of the OWFS suite: 
+# Part of the OWFS suite:
 #  http://www.owfs.org
 #  http://owfs.sourceforge.net
 
@@ -24,13 +24,13 @@ B<OWNet> is a perl module that connects to B<owserver> and allows reading, writi
 Then the following perl program prints the temperature:
 
  use OWNet ;
- print OWNET::read( "localhost:3000" , "/10.67C6697351FF/temperature" ) ."\n" ; 
+ print OWNET::read( "localhost:3000" , "/10.67C6697351FF/temperature" ) ."\n" ;
 
 There is the alternative object oriented form:
 
  use OWNet ;
  my $owserver = OWNET->new( "localhost:4304" ) ;
- print $owserver->read( "/10.67C6697351FF/temperature" ) ."\n" ; 
+ print $owserver->read( "/10.67C6697351FF/temperature" ) ."\n" ;
 
 =head1 SYNTAX
 
@@ -154,7 +154,7 @@ BEGIN { }
 
 use 5.008 ;
 use warnings ;
-use strict ;	
+use strict ;
 
 use IO::Socket::INET ;
 use bytes ;
@@ -167,7 +167,8 @@ my $msg_dirall = 7 ;
 my $msg_get = 8 ;
 
 my $persistence_bit = 0x04 ;
-my $default_sg = 0x102 ;
+# PresenceCheck, Return bus list,  and apply aliases
+my $default_sg = 0x100 + 0x2 + 0x8 ;
 my $default_block = 4096 ;
 
 #if ( !defined(&MSG_DONTWAIT) ) {
@@ -228,8 +229,8 @@ sub _new($$) {
 sub _Sock($) {
     my $self = shift ;
     # persistent socket already there?
-    if ( defined($self->{SOCK} && $self->{PERSIST} != 0  ) ) { 
-        return 1 ; 
+    if ( defined($self->{SOCK} && $self->{PERSIST} != 0  ) ) {
+        return 1 ;
     }
     # defaults
     my $addr = $self->{ADDR} ;
@@ -270,8 +271,8 @@ sub _self($) {
 
 sub _BonjourLookup($) {
     my $self = shift ;
-    eval { require Net::Rendezvous; }; 
-    if ($@) { 
+    eval { require Net::Rendezvous; };
+    if ($@) {
         print "$@\n" if $self->{VERBOSE} ;
         return ;
     }
@@ -299,7 +300,7 @@ sub _BonjourLookup($) {
 sub _ToServer ($$$$$;$) {
     my ($self, $payload_length, $msg_type, $size, $offset, $payload_data) = @_ ;
     my $f = "N6" ;
-    $f .= 'Z'.$payload_length if ( $payload_length > 0 ) ; 
+    $f .= 'Z'.$payload_length if ( $payload_length > 0 ) ;
     my $message = pack($f,$self->{VER},$payload_length,$msg_type,$self->{SG}|$self->{PERSIST},$size,$offset,$payload_data) ;
 
     # try to send
@@ -363,7 +364,7 @@ sub _FromServer($) {
 	#print "From Server, size = $siz, ret = $ret payload = $pay \n" ;
     } while $payload_length > 66000 ;
     $payload_data = _FromServerLow( $self,$payload_length ) ;
-    if ( !defined($payload_data) ) { 
+    if ( !defined($payload_data) ) {
     	warn("Trouble getting payload $!") if $self->{VERBOSE} ;
       return ;
     } ;
@@ -428,7 +429,7 @@ Error (and undef return value) if:
 
 =item 2 (Object form) Not called with a valid OWNet object
 
-=item 3 Bad I<path> 
+=item 3 Bad I<path>
 
 =item 4 I<path> not a readable device property
 
@@ -469,7 +470,7 @@ Error (and undef return value) if:
 
 =item 2 (Object form) Not called with a valid OWNet object
 
-=item 3 Bad I<path> 
+=item 3 Bad I<path>
 
 =item 4 I<path> not a writable device property
 
@@ -517,7 +518,7 @@ Error (and undef return value) if:
 
 =item 2 (Object form) Not called with a valid OWNet object
 
-=item 3 Bad I<path> 
+=item 3 Bad I<path>
 
 =item 4 I<path> not a device
 
@@ -558,7 +559,7 @@ Error (and undef return value) if:
 
 =item 2 (Object form) Not called with a valid OWNet object
 
-=item 3 Bad I<path> 
+=item 3 Bad I<path>
 
 =item 4 I<path> not a directory
 
@@ -612,7 +613,7 @@ I<1-wire> is a protocol allowing simple connection of inexpensive devices. Each 
 
 =head2 Programs
 
-Connection to the 1-wire bus is either done by bit-banging a digital pin on the processor, or by using a bus master -- USB, serial, i2c, parallel. The heavy-weight I<OWFS> programs: B<owserver> B<owfs> B<owhttpd> B<owftpd> and the heavy-weight perl module B<OW> all link in the full I<OWFS> library and can connect directly to the bus master(s) and/or to B<owserver>.  
+Connection to the 1-wire bus is either done by bit-banging a digital pin on the processor, or by using a bus master -- USB, serial, i2c, parallel. The heavy-weight I<OWFS> programs: B<owserver> B<owfs> B<owhttpd> B<owftpd> and the heavy-weight perl module B<OW> all link in the full I<OWFS> library and can connect directly to the bus master(s) and/or to B<owserver>.
 
 B<OWNet> is a light-weight module. It connects only to an B<owserver>, does not link in the I<OWFS> library, and should be more portable..
 
@@ -633,7 +634,7 @@ An example owserver invocation for a serial adapter and explicitly the default p
 =head2 OWNet
 
  use OWNet ;
- 
+
  # Create owserver object
  my $owserver = OWNet->new('localhost:4304 -v -F') ; #default location, verbose errors, Fahrenheit degrees
  # my $owserver = OWNet->new() ; #simpler, again default location, no error messages, default Celsius
@@ -650,25 +651,25 @@ An example owserver invocation for a serial adapter and explicitly the default p
    my $path = shift ;
 
    print "$path\t" ;
-  
+
    # first try to read
    my $value = $ow->read($path) ;
-   if ( defined($value) ) { 
-     print "$value\n"; 
+   if ( defined($value) ) {
+     print "$value\n";
      return ;
-   } 
+   }
 
    # not readable, try as directory
    my $dirstring = $ow->dir($path) ;
-   if ( defined($dirstring) ) { 
-     print "<directory>\n" ; 
+   if ( defined($dirstring) ) {
+     print "<directory>\n" ;
      my @dir = split /,/ ,  $ow->dir($path) ;
      foreach (@dir) {
         Tree($ow,$_) ;
      }
      return ;
    }
-  
+
    # can't read, not directory
    print "<write-only>\n" ;
    return ;
@@ -742,7 +743,7 @@ Uses the mDNS service discovery protocol to find an available owserver.
 Employs NET::Rendezvous (an earlier name or Apple's Bonjour)
 This module is loaded only if available using the method of http://sial.org/blog/2006/12/optional_perl_module_loading.html
 
-Bounjour details for owserver at: 
+Bounjour details for owserver at:
 
 =back
 

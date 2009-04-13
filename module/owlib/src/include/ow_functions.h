@@ -160,7 +160,7 @@ int ServerWrite(struct one_wire_query *owq);
 int ServerDir(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn, uint32_t * flags);
 
 /* High-level callback functions */
-int FS_dir(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn);
+int FS_dir(void (*dirfunc) (void *, const struct parsedname *), void *v, struct parsedname *pn);
 int FS_dir_remote(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn, uint32_t * flags);
 
 int FS_write(const char *path, const char *buf, const size_t size, const off_t offset);

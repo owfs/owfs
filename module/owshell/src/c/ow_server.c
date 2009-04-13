@@ -22,11 +22,11 @@ void _Debug_Writev(struct iovec *io, int iosz)
 	int i, ionr = 0;
 	char *buf;
 	int length;
-	
+
 	while(ionr < iosz) {
 		buf = io[ionr].iov_base;
 		length = io[ionr].iov_len;
-		
+
 		fprintf(stderr,"Writev byte buffer ionr=%d/%d length=%d", ionr+1, iosz, (int) length);
 		if (length <= 0) {
 			fprintf(stderr,"\n-- Attempt to write with bad length\n");
@@ -42,7 +42,7 @@ void _Debug_Writev(struct iovec *io, int iosz)
 			}
 			fprintf(stderr," %.2X", (unsigned char)buf[i]);
 		}
-		
+
 #endif
 		/* char line -- printable or . */
 		fprintf(stderr,"\n   <");
@@ -403,9 +403,10 @@ static int ToServer(int file_descriptor, struct server_msg *sm, struct serverpac
 }
 
 /* flag the sg for "virtual root" -- the remote bus was specifically requested */
+/* Also ALIAS_REQUEST means that aliases will be applied */
 static uint32_t SetupSemi(void)
 {
-	uint32_t sg = SemiGlobal | BUSRET_MASK;
+	uint32_t sg = SemiGlobal | SHOULD_RETURN_BUS_LIST | ALIAS_REQUEST ;
 	return sg;
 }
 

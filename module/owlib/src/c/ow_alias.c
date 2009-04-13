@@ -37,7 +37,7 @@ int AliasFile(const ASCII * file)
 				char * sn_char = NULL ;
 				char * name_char = NULL ;
 				while ( a_line ) {
-					sn_char = strsep( &a_line, " \t=\n");
+					sn_char = strsep( &a_line, "/ \t=\n");
 					if ( strlen(sn_char) ) {
 						break ;
 					}
