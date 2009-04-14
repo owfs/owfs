@@ -125,6 +125,11 @@ int ServerRead(struct one_wire_query *owq)
 	int connectfd;
 	int ret = 0;
 
+	// Special handling of alias property. alias should only be asked on local machine.
+	if ( pn_file_entry->selected_filetype->change == fc_alias ) {
+		return FS_alias(owq) ;
+	}
+
 	memset(&sm, 0, sizeof(struct server_msg));
 	memset(&cm, 0, sizeof(struct client_msg));
 	sm.type = msg_read;
