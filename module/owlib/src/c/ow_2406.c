@@ -86,7 +86,7 @@ struct filetype DS2406[] = {
   {"power", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, {v:NULL},},
   {"channels", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_stable, FS_channel, NO_WRITE_FUNCTION, {v:NULL},},
   {"PIO", PROPERTY_LENGTH_BITFIELD, &A2406, ft_bitfield, fc_stable, FS_r_pio, FS_w_pio, {v:NULL},},
-  {"sensed", PROPERTY_LENGTH_BITFIELD, &A2406, ft_bitfield, fc_alias, FS_sense, NO_WRITE_FUNCTION, {v:NULL},},
+  {"sensed", PROPERTY_LENGTH_BITFIELD, &A2406, ft_bitfield, fc_link, FS_sense, NO_WRITE_FUNCTION, {v:NULL},},
   {"latch", PROPERTY_LENGTH_BITFIELD, &A2406, ft_bitfield, fc_volatile, FS_r_latch, FS_w_latch, {v:NULL},},
   {"flipflop", PROPERTY_LENGTH_BITFIELD, &A2406, ft_bitfield, fc_volatile, FS_r_flipflop, NO_WRITE_FUNCTION, {v:NULL},},
   {"set_alarm", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_stable, FS_r_s_alarm, FS_w_s_alarm, {v:NULL},},

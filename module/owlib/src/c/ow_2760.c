@@ -233,8 +233,8 @@ DeviceEntry(36, DS2740);
 struct filetype DS2751[] = {
 	F_STANDARD,
   {"amphours", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_volatile, FS_r_ah, FS_w_ah, {v:NULL},},
-  {"current", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_alias, FS_r_current, NO_WRITE_FUNCTION, {v:NULL},},
-  {"currentbias", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_alias, FS_r_abias, FS_w_abias, {v:NULL},},
+  {"current", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_link, FS_r_current, NO_WRITE_FUNCTION, {v:NULL},},
+  {"currentbias", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_link, FS_r_abias, FS_w_abias, {v:NULL},},
   {"lock", PROPERTY_LENGTH_YESNO, &L2751, ft_yesno, fc_stable, FS_r_lock, FS_w_lock, {v:&P2751},},
   {"memory", 256, NULL, ft_binary, fc_volatile, FS_r_mem, FS_w_mem, {v:NULL},},
   {"pages", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
@@ -297,8 +297,8 @@ DeviceEntryExtended(35, DS2755, DEV_alarm);
 struct filetype DS2760[] = {
 	F_STANDARD,
   {"amphours", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_volatile, FS_r_ah, FS_w_ah, {v:NULL},},
-  {"current", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_alias, FS_r_current, NO_WRITE_FUNCTION, {v:NULL},},
-  {"currentbias", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_alias, FS_r_abias, FS_w_abias, {v:NULL},},
+  {"current", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_link, FS_r_current, NO_WRITE_FUNCTION, {v:NULL},},
+  {"currentbias", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_link, FS_r_abias, FS_w_abias, {v:NULL},},
   {"lock", PROPERTY_LENGTH_YESNO, &L2760, ft_yesno, fc_stable, FS_r_lock, FS_w_lock, {v:&P2760},},
   {"memory", 256, NULL, ft_binary, fc_volatile, FS_r_mem, FS_w_mem, {v:NULL},},
   {"pages", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
@@ -334,8 +334,8 @@ DeviceEntry(30, DS2760);
 struct filetype DS2770[] = {
 	F_STANDARD,
   {"amphours", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_volatile, FS_r_ah, FS_w_ah, {v:NULL},},
-  {"current", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_alias, FS_r_current, NO_WRITE_FUNCTION, {v:NULL},},
-  {"currentbias", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_alias, FS_r_abias, FS_w_abias, {v:NULL},},
+  {"current", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_link, FS_r_current, NO_WRITE_FUNCTION, {v:NULL},},
+  {"currentbias", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_link, FS_r_abias, FS_w_abias, {v:NULL},},
   {"lock", PROPERTY_LENGTH_YESNO, &L2770, ft_yesno, fc_stable, FS_r_lock, FS_w_lock, {v:&P2770},},
   {"memory", 256, NULL, ft_binary, fc_volatile, FS_r_mem, FS_w_mem, {v:NULL},},
   {"pages", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},

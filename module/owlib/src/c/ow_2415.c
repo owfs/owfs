@@ -69,9 +69,9 @@ struct aggregate A2415 = { 4, ag_numbers, ag_aggregate, };
 struct filetype DS2415[] = {
 	F_STANDARD,
   {"ControlRegister", PROPERTY_LENGTH_HIDDEN, NULL, ft_unsigned, fc_stable, FS_r_control, FS_w_control, {v:NULL}, },
-  {"user", PROPERTY_LENGTH_UNSIGNED, &A2415, ft_bitfield, fc_alias, FS_r_user, FS_w_user, {v:NULL},},
-  {"running", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_alias, FS_r_run, FS_w_run, {v:NULL},},
-  {"udate", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_alias, FS_r_counter, FS_w_counter, {v:NULL},},
+  {"user", PROPERTY_LENGTH_UNSIGNED, &A2415, ft_bitfield, fc_link, FS_r_user, FS_w_user, {v:NULL},},
+  {"running", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_link, FS_r_run, FS_w_run, {v:NULL},},
+  {"udate", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_link, FS_r_counter, FS_w_counter, {v:NULL},},
   {"date", PROPERTY_LENGTH_DATE, NULL, ft_date, fc_second, FS_r_date, FS_w_date, {v:NULL},},
 };
 
@@ -80,11 +80,11 @@ DeviceEntry(24, DS2415);
 struct filetype DS2417[] = {
 	F_STANDARD,
   {"ControlRegister", PROPERTY_LENGTH_HIDDEN, NULL, ft_unsigned, fc_stable, FS_r_control, FS_w_control, {v:NULL}, },
-  {"enable", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_alias, FS_r_enable, FS_w_enable, {v:NULL},},
-  {"interval", PROPERTY_LENGTH_INTEGER, NULL, ft_integer, fc_alias, FS_r_interval, FS_w_interval, {v:NULL},},
-  {"itime", PROPERTY_LENGTH_INTEGER, NULL, ft_integer, fc_alias, FS_r_itime, FS_w_itime, {v:NULL},},
-  {"running", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_alias, FS_r_run, FS_w_run, {v:NULL},},
-  {"udate", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_alias, FS_r_counter, FS_w_counter, {v:NULL},},
+  {"enable", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_link, FS_r_enable, FS_w_enable, {v:NULL},},
+  {"interval", PROPERTY_LENGTH_INTEGER, NULL, ft_integer, fc_link, FS_r_interval, FS_w_interval, {v:NULL},},
+  {"itime", PROPERTY_LENGTH_INTEGER, NULL, ft_integer, fc_link, FS_r_itime, FS_w_itime, {v:NULL},},
+  {"running", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_link, FS_r_run, FS_w_run, {v:NULL},},
+  {"udate", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_link, FS_r_counter, FS_w_counter, {v:NULL},},
   {"date", PROPERTY_LENGTH_DATE, NULL, ft_date, fc_second, FS_r_date, FS_w_date, {v:NULL},},
 };
 
@@ -113,7 +113,7 @@ static int OW_w_control(const BYTE cr, const struct parsedname *pn);
 static int FS_r_interval(struct one_wire_query *owq)
 {
 	UINT U ;
-	
+
 	if ( FS_r_sibling_U( &U, "ControlRegister", owq ) ) {
 		return -EINVAL ;
 	}
@@ -126,7 +126,7 @@ static int FS_r_interval(struct one_wire_query *owq)
 static int FS_w_interval(struct one_wire_query *owq)
 {
 	UINT U = ( OWQ_U(owq) << 4 ) & _MASK_DS2417_IS ; // Move to upper nibble
-	
+
 	return FS_w_sibling_bitwork( U, _MASK_DS2417_IS, "ControlRegister", owq ) ;
 }
 
@@ -134,7 +134,7 @@ static int FS_w_interval(struct one_wire_query *owq)
 static int FS_r_user(struct one_wire_query *owq)
 {
 	UINT U ;
-	
+
 	if ( FS_r_sibling_U( &U, "ControlRegister", owq ) ) {
 		return -EINVAL ;
 	}
@@ -147,7 +147,7 @@ static int FS_r_user(struct one_wire_query *owq)
 static int FS_w_user(struct one_wire_query *owq)
 {
 	UINT U = ( OWQ_U(owq) << 4 ) & _MASK_DS2415_USER ; // Move to upper nibble
-	
+
 	return FS_w_sibling_bitwork( U, _MASK_DS2415_USER, "ControlRegister", owq ) ;
 }
 
@@ -155,7 +155,7 @@ static int FS_w_user(struct one_wire_query *owq)
 static int FS_r_run(struct one_wire_query *owq)
 {
 	UINT U ;
-	
+
 	if ( FS_r_sibling_U( &U, "ControlRegister", owq ) ) {
 		return -EINVAL ;
 	}
@@ -168,7 +168,7 @@ static int FS_r_run(struct one_wire_query *owq)
 static int FS_w_run(struct one_wire_query *owq)
 {
 	UINT U = OWQ_Y(owq) ? _MASK_DS2415_OSC : 0 ;
-	
+
 	return FS_w_sibling_bitwork( U, _MASK_DS2415_OSC, "ControlRegister", owq ) ;
 }
 
@@ -177,7 +177,7 @@ static int FS_w_run(struct one_wire_query *owq)
 static int FS_r_enable(struct one_wire_query *owq)
 {
 	UINT U ;
-	
+
 	if ( FS_r_sibling_U( &U, "ControlRegister", owq ) ) {
 		return -EINVAL ;
 	}
@@ -190,7 +190,7 @@ static int FS_r_enable(struct one_wire_query *owq)
 static int FS_w_enable(struct one_wire_query *owq)
 {
 	UINT U = OWQ_Y(owq) ? _MASK_DS2417_IE : 0 ;
-	
+
 	return FS_w_sibling_bitwork( U, _MASK_DS2417_IE, "ControlRegister", owq ) ;
 }
 

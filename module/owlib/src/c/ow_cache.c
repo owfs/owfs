@@ -117,6 +117,7 @@ static time_t TimeOut(const enum fc_change change)
 		return Globals.timeout_presence;
 	case fc_directory:
 		return Globals.timeout_directory;
+	case fc_link:
 	case fc_alias:
 	default:					/* static or statistic */
 		return 0;

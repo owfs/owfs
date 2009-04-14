@@ -114,7 +114,7 @@ struct filetype DS2438[] = {
   {"endcharge/udate", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_volatile, FS_r_counter, FS_w_counter, {s:0x14},},
   {"endcharge/date", PROPERTY_LENGTH_DATE, NULL, ft_date, fc_volatile, FS_r_date, FS_w_date, {s:0x14},},
   {"HTM1735", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
-  {"HTM1735/humidity", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_alias, FS_Humid_1735, NO_WRITE_FUNCTION, {v:NULL},},
+  {"HTM1735/humidity", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_link, FS_Humid_1735, NO_WRITE_FUNCTION, {v:NULL},},
   {"HIH4000", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
   {"HIH4000/humidity", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_volatile, FS_Humid_4000, NO_WRITE_FUNCTION, {v:NULL},},
   {"MultiSensor", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
@@ -226,11 +226,11 @@ static int FS_volts(struct one_wire_query *owq)
 static int FS_Humid(struct one_wire_query *owq)
 {
 	_FLOAT T, VAD, VDD;
-	
-	if ( 
-		FS_r_sibling_F( &T, "temperature", owq ) 
-		|| FS_r_sibling_F( &VAD, "VAD", owq ) 
-		|| FS_r_sibling_F( &VDD, "VDD", owq ) 
+
+	if (
+		FS_r_sibling_F( &T, "temperature", owq )
+		|| FS_r_sibling_F( &VAD, "VAD", owq )
+		|| FS_r_sibling_F( &VDD, "VDD", owq )
 	) {
 		return -EINVAL ;
 	}
@@ -262,11 +262,11 @@ static int FS_Humid(struct one_wire_query *owq)
 static int FS_Humid_4000(struct one_wire_query *owq)
 {
 	_FLOAT T, VAD, VDD;
-	
-	if ( 
-		FS_r_sibling_F( &T, "temperature", owq ) 
-		|| FS_r_sibling_F( &VAD, "VAD", owq ) 
-		|| FS_r_sibling_F( &VDD, "VDD", owq ) 
+
+	if (
+		FS_r_sibling_F( &T, "temperature", owq )
+		|| FS_r_sibling_F( &VAD, "VAD", owq )
+		|| FS_r_sibling_F( &VDD, "VDD", owq )
 	) {
 		return -EINVAL ;
 	}
@@ -288,9 +288,9 @@ static int FS_Humid_4000(struct one_wire_query *owq)
 static int FS_Humid_1735(struct one_wire_query *owq)
 {
 	_FLOAT VAD;
-	
-	if ( 
-		FS_r_sibling_F( &VAD, "VAD", owq ) 
+
+	if (
+		FS_r_sibling_F( &VAD, "VAD", owq )
 	) {
 		return -EINVAL ;
 	}
@@ -307,8 +307,8 @@ static int FS_Current(struct one_wire_query *owq)
 	BYTE data[9];
 	INT iad ;
 
-	if ( 
-		FS_r_sibling_Y( &iad, "IAD", owq ) 
+	if (
+		FS_r_sibling_Y( &iad, "IAD", owq )
 	) {
 		return -EINVAL ;
 	}
