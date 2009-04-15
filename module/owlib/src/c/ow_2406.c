@@ -119,6 +119,10 @@ DeviceEntryExtended(12, DS2406, DEV_alarm);
 #define _DS2406_CRC1 0x02
 #define _DS2406_CRC0 0x01
 
+#define _DS2406_POWER_BIT     0x80
+#define _DS2406_FLIPFLOP_BITS 0x60
+#define _DS2406_ALARM_BITS    0x1F
+
 #define _ADDRESS_STATUS_MEMORY_SRAM 0x0007
 
 /* ------- Functions ------------ */
@@ -219,7 +223,7 @@ static int FS_power(struct one_wire_query *owq)
 		return -EINVAL ;
 	}
 
-	OWQ_Y(owq) = (infobyte & 0x80) ? 1 : 0;
+	OWQ_Y(owq) = (infobyte & _DS2406_POWER_BIT) ? 1 : 0;
 	return 0;
 }
 
@@ -432,20 +436,19 @@ static int OW_w_s_alarm(const BYTE data, const struct parsedname *pn)
 	if (OW_r_control(b, pn)) {
 		return 1;
 	}
-	UT_setbit(b,5,UT_getbit(&data,0));
-	UT_setbit(b,6,UT_getbit(&data,1));
+    b[0] = ( b[0] & ~_DS2406_ALARM_BITS) | (data & _DS2406_ALARM_BITS) ;
 	return OW_w_control(b[0], pn);
 }
 
 /* set PIO state bits: bit0=A bit1=B, value: open=1 closed=0 */
 static int OW_w_pio(const BYTE data, const struct parsedname *pn)
 {
-	BYTE b;
-	if (OW_r_control(&b, pn)) {
+	BYTE b[1];
+	if (OW_r_control(b, pn)) {
 		return 1;
 	}
-	b = (b & 0x9F) | ((data << 5) & 0x60);
-	return OW_w_control(b, pn);
+    b[0] = ( b[0] & ~_DS2406_FLIPFLOP_BITS) | ((data<<5) & _DS2406_FLIPFLOP_BITS) ;
+    return OW_w_control(b[0], pn);
 }
 
 static int OW_syncaccess(BYTE * data, const struct parsedname *pn)
