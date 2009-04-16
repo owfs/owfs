@@ -15,21 +15,24 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
+static int Test_Add_Alias( char * name, BYTE * sn ) ;
+
 int AliasFile(const ASCII * file)
 {
 	FILE *alias_file_pointer = fopen(file, "r");
 
 	if (alias_file_pointer) {
 		int ret = 0;
-		ASCII alias_line[260] ;
+		int alias_line_max = PROPERTY_LENGTH_ALIAS+16+32 ;  // alias name + serial number + whitespace
+		ASCII alias_line[alias_line_max] ;
 		int line_number = 0;
 
 		while (fgets(alias_line, 258, alias_file_pointer)) {
 			++line_number;
 			BYTE sn[8] ;
 			// check line length
-			if (strlen(alias_line) > 255) {
-				LEVEL_DEFAULT("Alias file (%s:%d) Line too long (>255 characters).\n", SAFESTRING(file), line_number);
+			if (strlen(alias_line) > alias_line_max-1) {
+				LEVEL_DEFAULT("Alias file (%s:%d) Line too long (>%d characters).\n", SAFESTRING(file), line_number, alias_line_max-1);
 				ret = 1;
 				break;
 			} else {
@@ -50,16 +53,16 @@ int AliasFile(const ASCII * file)
 					a_line += strspn(a_line," \t=") ;
 				}
 				while ( a_line ) {
-					name_char = strsep( &a_line, "/\n");
-					if ( strlen(name_char) ) {
-						size_t len = strlen(name_char) ;
+					name_char = strsep( &a_line, "\n");
+					size_t len = strlen(name_char) ;
+					if ( len > 0 ) {
 						while ( len>0 ) {
 							if ( name_char[len-1] != ' ' && name_char[len-1] != '\t' ) {
 								break ;
 							}
 							name_char[--len] = '\0'  ;
 						}
-						Cache_Add_Alias( name_char, sn) ;
+						Test_Add_Alias( name_char, sn) ;
 						break ;
 					}
 				}
@@ -72,4 +75,36 @@ int AliasFile(const ASCII * file)
 		return 1;
 	}
 	return 1 ;
+}
+
+static int Test_Add_Alias( char * name, BYTE * sn )
+{
+	BYTE sn_stored[8] ;
+	if ( strlen(name) > PROPERTY_LENGTH_ALIAS ) {
+		LEVEL_CALL("Alias too long: sn=" SNformat ", alias=%s max length=%d\n", SNvar(sn), name,  PROPERTY_LENGTH_ALIAS ) ;
+		return 1 ;
+	}
+
+	if ( strcmp( name, "interface" )==0
+	|| strcmp( name, "settings" )==0
+	|| strcmp( name, "uncached" )==0
+	|| strcmp( name, "text" )==0
+	|| strcmp( name, "alarm" )==0
+	|| strcmp( name, "statistics" )==0
+	|| strcmp( name, "simultaneous" )==0
+	|| strcmp( name, "structure" )==0
+	|| strncmp( name, "bus.", 4 )==0
+	) {
+		LEVEL_CALL("Alias copies intrinsic filename: %s\n",name ) ;
+		return 1 ;
+	}
+	if ( Cache_Get_SerialNumber( name, sn_stored )==0 && memcmp(sn,sn_stored,8)!=0 ) {
+		LEVEL_CALL("Alias redefines a previous alias: %s " SNformat " and " SNformat "\n",name,SNvar(sn),SNvar(sn_stored) ) ;
+		return 1 ;
+	}
+	if ( strchr( name, '/' ) ) {
+		LEVEL_CALL("Alias contains confusin path separator \'/\': %s\n",name ) ;
+		return 1 ;
+	}
+	return Cache_Add_Alias( name, sn) ;
 }
