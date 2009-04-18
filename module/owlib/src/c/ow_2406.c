@@ -288,7 +288,7 @@ static int FS_r_s_alarm(struct one_wire_query *owq)
 	if (OW_r_control(&data, PN(owq))) {
 		return -EINVAL;
 	}
-	OWQ_U(owq) = (data & 0x01) + ((data & 0x06) >> 1) * 10 + ((data & 0x18) >> 3) * 100;
+	OWQ_U(owq) = (data & 0x01) + ((data >> 1) & 0x03) * 10 + ((data >>3) & 0x03) * 100;
 	return 0;
 }
 
