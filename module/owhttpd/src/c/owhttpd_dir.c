@@ -63,18 +63,13 @@ static void ShowDirCallback(void *v, const struct parsedname *pn_entry)
 	/* Misnamed. Actually all directory */
 void ShowDir(FILE * out, const struct parsedname *const pn)
 {
-	int b = Backup(pn->path);
+	int b = Backup(pn->path); // length of string to get to higher level
 	if (pn->state & ePS_text) {
 		ShowDirText(out, pn);
 		return;
 	}
 
 	HTTPstart(out, "200 OK", ct_html);
-
-	//printf("ShowDir=%s\n", pn->path) ;
-
-//    if(pn->state & ePS_text) {
-
 	HTTPtitle(out, "Directory");
 
 	if (NotRealDir(pn)) {

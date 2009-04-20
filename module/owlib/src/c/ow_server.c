@@ -310,11 +310,10 @@ int ServerDIR(void (*dirfunc) (void *, const struct parsedname * const), void *v
 			}
 
 			while ((return_path = FromServerAlloc(connectfd, &cm))) {
-				struct parsedname pn_directory_element;
+				struct parsedname s_pn_directory_element;
+				struct parsedname * pn_directory_element = & s_pn_directory_element ;
 				return_path[cm.payload - 1] = '\0';	/* Ensure trailing null */
 				LEVEL_DEBUG("got=[%s]\n", return_path);
-
-				ret = -EINVAL;
 
 				if (SpecifiedRemoteBus(pn_whole_directory)) {
 					// Specified remote bus, add the bus to the path (in front)
@@ -325,15 +324,18 @@ int ServerDIR(void (*dirfunc) (void *, const struct parsedname * const), void *v
 					sn_ret = snprintf(BigBuffer, cm.payload + 11, "/bus.%d/%s",pn_whole_directory->selected_connection->index, no_leading_slash ) ;
 					UCLIBCUNLOCK ;
 					if (sn_ret > 0) {
-						ret = FS_ParsedName_BackFromRemote(BigBuffer, &pn_directory_element);
+						ret = FS_ParsedName_BackFromRemote(BigBuffer, pn_directory_element);
+					} else {
+						ret = -EINVAL ;
 					}
 				} else {
-					ret = FS_ParsedName_BackFromRemote(return_path, &pn_directory_element);
+					ret = FS_ParsedName_BackFromRemote(return_path, pn_directory_element);
 				}
 
 				owfree(return_path);
 
 				if (ret) {
+					DirblobPoison(&db); // don't cache a mistake
 					cm.ret = ret;
 					break;
 				}
@@ -344,19 +346,18 @@ int ServerDIR(void (*dirfunc) (void *, const struct parsedname * const), void *v
 				 */
 				if (IsRealDir(pn_whole_directory)) {
 					/* If we get a device then cache the bus_nr */
-					Cache_Add_Device(pn_whole_directory->selected_connection->index, pn_directory_element.sn);
+					Cache_Add_Device(pn_whole_directory->selected_connection->index, pn_directory_element->sn);
 				}
 				/* Add to cache Blob -- snlist is also a flag for cachable */
-				if (DirblobPure(&db)) {	/* only add if there is a blob allocated successfully */
-					DirblobAdd(pn_directory_element.sn, &db);
-				}
+				DirblobAdd(pn_directory_element->sn, &db);
 				++devices;
-
+				FS_alias_subst(dirfunc,v,pn_directory_element);
+#if 0
 				DIRLOCK;
-				dirfunc(v, &pn_directory_element);
+				dirfunc(v, pn_directory_element);
 				DIRUNLOCK;
-
-				FS_ParsedName_destroy(&pn_directory_element);	// destroy the last parsed name
+#endif
+				FS_ParsedName_destroy(pn_directory_element);	// destroy the last parsed name
 			}
 			/* Add to the cache (full list as a single element */
 			if (DirblobPure(&db)) {
@@ -482,10 +483,12 @@ int ServerDIRALL(void (*dirfunc) (void *, const struct parsedname * const), void
 				DirblobAdd(pn_directory_element.sn, &db);
 			}
 			++devices;
+			FS_alias_subst(dirfunc,v,&pn_directory_element) ;
+#if 0
 			DIRLOCK;
 			dirfunc(v, &pn_directory_element);
 			DIRUNLOCK;
-
+#endif
 			FS_ParsedName_destroy(&pn_directory_element);	// destroy the last parsed name
 		}
 		/* Add to the cache (full list as a single element */

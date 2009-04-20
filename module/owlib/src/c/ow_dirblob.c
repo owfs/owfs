@@ -69,6 +69,11 @@ int DirblobPure(const struct dirblob *db)
 	return !db->troubled;
 }
 
+void DirblobPoison(struct dirblob *db)
+{
+	db->troubled = 1;
+}
+
 int DirblobElements(const struct dirblob *db)
 {
 	return db->devices;
@@ -76,6 +81,9 @@ int DirblobElements(const struct dirblob *db)
 
 int DirblobAdd(BYTE * sn, struct dirblob *db)
 {
+	if ( db->troubled ) {
+		return -EINVAL ;
+	}
 	// make more room? -- blocks of 10 devices (80byte)
 	if ((db->devices >= db->allocated) || (db->snlist == NULL)) {
 		int newalloc = db->allocated + DIRBLOB_ALLOCATION_INCREMENT;

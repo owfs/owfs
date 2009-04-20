@@ -27,13 +27,7 @@ char *ePN_name[] = {
 /* device display format */
 void FS_devicename(char *buffer, const size_t length, const BYTE * sn, const struct parsedname *pn)
 {
-	if ( pn->sg & ALIAS_REQUEST ) {
-		if ( Cache_Get_Alias(buffer,length,sn)==0 ) {
-			return ;
-		}
-	}
 	UCLIBCLOCK;
-	//printf("dev format sg=%X DeviceFormat = %d\n",pn->si->sg,DeviceFormat(pn)) ;
 	switch (DeviceFormat(pn)) {
 	case fi:
 		snprintf(buffer, length, "%02X%02X%02X%02X%02X%02X%02X", sn[0], sn[1], sn[2], sn[3], sn[4], sn[5], sn[6]);

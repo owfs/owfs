@@ -34,7 +34,7 @@ static void FS_interface_dir(void (*dirfunc) (void *, const struct parsedname *)
 static void FS_alarm_entry(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_root_directory);
 static void FS_simultaneous_entry(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_root_directory);
 static void FS_uncached_dir(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_root_directory);
-static int FS_dir_plus(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_directory, const char *file);
+static int FS_dir_plus(void (*dirfunc) (void *, const struct parsedname *), void *v, uint32_t * flags, const struct parsedname *pn_directory, const char *file) ;
 
 /* Calls dirfunc() for each element in directory */
 /* void * data is arbitrary user data passed along -- e.g. output file descriptor */
@@ -173,26 +173,31 @@ static int FS_dir_both(void (*dirfunc) (void *, const struct parsedname *), void
 /* status settings sustem */
 static void FS_stype_dir(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_root_directory)
 {
-	FS_dir_plus(dirfunc, v, pn_root_directory, ePN_name[ePN_settings]);
-	FS_dir_plus(dirfunc, v, pn_root_directory, ePN_name[ePN_system]);
-	FS_dir_plus(dirfunc, v, pn_root_directory, ePN_name[ePN_statistics]);
-	FS_dir_plus(dirfunc, v, pn_root_directory, ePN_name[ePN_structure]);
+	uint32_t ignoreflag ;
+	FS_dir_plus(dirfunc, v, &ignoreflag, pn_root_directory, ePN_name[ePN_settings]);
+	FS_dir_plus(dirfunc, v, &ignoreflag, pn_root_directory, ePN_name[ePN_system]);
+	FS_dir_plus(dirfunc, v, &ignoreflag, pn_root_directory, ePN_name[ePN_statistics]);
+	FS_dir_plus(dirfunc, v, &ignoreflag, pn_root_directory, ePN_name[ePN_structure]);
 }
 
 /* interface (only for bus directories) */
 static void FS_interface_dir(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_root_directory)
 {
-	FS_dir_plus(dirfunc, v, pn_root_directory, ePN_name[ePN_interface]);
+	uint32_t ignoreflag ;
+	FS_dir_plus(dirfunc, v, &ignoreflag, pn_root_directory, ePN_name[ePN_interface]);
 }
 
 static void FS_alarm_entry(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_root_directory)
 {
-	FS_dir_plus(dirfunc, v, pn_root_directory, "alarm");
+	uint32_t ignoreflag ;
+	FS_dir_plus(dirfunc, v, &ignoreflag, pn_root_directory, "alarm");
 }
 
 /* status settings sustem */
 static void FS_uncached_dir(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_root_directory)
 {
+	uint32_t ignoreflag ;
+
 	if (!IsLocalCacheEnabled(pn_root_directory)) {	/* cached */
 		return;
 	}
@@ -201,12 +206,13 @@ static void FS_uncached_dir(void (*dirfunc) (void *, const struct parsedname *),
 		return;
 	}
 
-	FS_dir_plus(dirfunc, v, pn_root_directory, "uncached");
+	FS_dir_plus(dirfunc, v, &ignoreflag, pn_root_directory, "uncached");
 }
 
 static void FS_simultaneous_entry(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_root_directory)
 {
-	FS_dir_plus(dirfunc, v, pn_root_directory, "simultaneous");
+	uint32_t ignoreflag ;
+	FS_dir_plus(dirfunc, v, &ignoreflag, pn_root_directory, "simultaneous");
 }
 
 /* path is the path which "pn_directory" parses */
@@ -325,6 +331,7 @@ static int FS_devdir(void (*dirfunc) (void *, const struct parsedname *), void *
 	struct filetype *ft_pointer;	/* first filetype struct */
 	char subdir_name[OW_FULLNAME_MAX + 1];
 	size_t subdir_len;
+	uint32_t ignoreflag ;
 
 	STAT_ADD1(dir_dev.calls);
 
@@ -365,15 +372,18 @@ static int FS_devdir(void (*dirfunc) (void *, const struct parsedname *), void *
 			struct parsedname *pn_file_entry = &s_pn_file_entry;
 			for (extension = first_extension; extension < ft_pointer->ag->elements; ++extension) {
 				if (FS_ParsedNamePlusExt(pn_device_directory->path, namepart, extension, ft_pointer->ag->letters, pn_file_entry) == 0) {
+					FS_alias_subst( dirfunc, v, pn_file_entry) ;
+#if 0
 					DIRLOCK;
 					dirfunc(v, pn_file_entry);
 					DIRUNLOCK;
+#endif
 					FS_ParsedName_destroy(pn_file_entry);
 				}
 				STAT_ADD1(dir_dev.entries);
 			}
 		} else {
-			FS_dir_plus(dirfunc, v, pn_device_directory, namepart);
+			FS_dir_plus(dirfunc, v, &ignoreflag, pn_device_directory, namepart);
 			STAT_ADD1(dir_dev.entries);
 		}
 	}
@@ -385,6 +395,7 @@ static int FS_alarmdir(void (*dirfunc) (void *, const struct parsedname *), void
 {
 	int ret;
 	struct device_search ds;	// holds search state
+	uint32_t ignoreflag ;
 
 	/* cache from Server if this is a remote bus */
 	if (BusIsServer(pn_alarm_directory->selected_connection)) {
@@ -407,12 +418,11 @@ static int FS_alarmdir(void (*dirfunc) (void *, const struct parsedname *), void
 		return ret;
 	}
 	while (ret == 0) {
-		char dev[OW_FULLNAME_MAX + 1];
+		char dev[PROPERTY_LENGTH_ALIAS + 1];
 
 		STAT_ADD1(dir_main.entries);
-		FS_devicename(dev, OW_FULLNAME_MAX, ds.sn, pn_alarm_directory);
-
-		FS_dir_plus(dirfunc, v, pn_alarm_directory, dev);
+		FS_devicename(dev, PROPERTY_LENGTH_ALIAS, ds.sn, pn_alarm_directory);
+		FS_dir_plus(dirfunc, v, &ignoreflag, pn_alarm_directory, dev);
 
 		ret = BUS_next(&ds, pn_alarm_directory);
 		//printf("ALARM sn: "SNformat" ret=%d\n",SNvar(sn),ret);
@@ -466,25 +476,19 @@ static int FS_realdir(void (*dirfunc) (void *, const struct parsedname *), void 
 		db.allocated = pn_whole_directory->selected_connection->last_root_devs;	// root dir estimated length
 	}
 	do {
-		struct parsedname s_pn_real_device;
-		struct parsedname *pn_real_device = &s_pn_real_device;
-		char dev[OW_FULLNAME_MAX + 1];
+		char dev[PROPERTY_LENGTH_ALIAS + 1];
 
 		BUSUNLOCK(pn_whole_directory);
 
-		FS_devicename(dev, OW_FULLNAME_MAX, ds.sn, pn_whole_directory);
-		if (DirblobPure(&db)) {	/* only add if there is a blob allocated successfully */
-			DirblobAdd(ds.sn, &db);
+		FS_devicename(dev, PROPERTY_LENGTH_ALIAS, ds.sn, pn_whole_directory);
+		ret = FS_dir_plus(dirfunc, v, flags, pn_whole_directory, dev);
+		if ( ret ) {
+			DirblobPoison(&db);
+			break ;
 		}
-		++devices;
 
-		if (FS_ParsedNamePlus(pn_whole_directory->path, dev, pn_real_device) == 0) {
-			DIRLOCK;
-			dirfunc(v, pn_real_device);
-			flags[0] |= pn_real_device->selected_device->flags;
-			DIRUNLOCK;
-			FS_ParsedName_destroy(pn_real_device);
-		}
+		DirblobAdd(ds.sn, &db);
+		++devices;
 
 		BUSLOCK(pn_whole_directory);
 	} while ((ret = BUS_next(&ds, pn_whole_directory)) == 0);
@@ -554,18 +558,10 @@ static int FS_cache2real(void (*dirfunc) (void *, const struct parsedname *), vo
 
 	/* Get directory from the cache */
 	for (dindex = 0; DirblobGet(dindex, sn, &db) == 0; ++dindex) {
-		struct parsedname s_pn_real_device;
-		struct parsedname *pn_real_device = &s_pn_real_device;
-		char dev[OW_FULLNAME_MAX + 1];
+		char dev[PROPERTY_LENGTH_ALIAS + 1];
 
-		FS_devicename(dev, OW_FULLNAME_MAX, sn, pn_real_directory);
-		if (FS_ParsedNamePlus(pn_real_directory->path, dev, pn_real_device) == 0) {
-			DIRLOCK;
-			dirfunc(v, pn_real_device);
-			flags[0] |= pn_real_device->selected_device->flags;
-			DIRUNLOCK;
-			FS_ParsedName_destroy(pn_real_device);
-		}
+		FS_devicename(dev, PROPERTY_LENGTH_ALIAS, sn, pn_real_directory);
+		FS_dir_plus(dirfunc, v, flags, pn_real_directory, dev);
 	}
 	DirblobClear(&db);			/* allocated in Cache_Get_Dir */
 
@@ -596,11 +592,12 @@ struct {
 
 static void Typediraction(const void *t, const VISIT which, const int depth)
 {
+	uint32_t ignoreflag ;
 	(void) depth;
 	switch (which) {
 	case leaf:
 	case postorder:
-		FS_dir_plus(typedir_action_struct.dirfunc, typedir_action_struct.v, typedir_action_struct.pn_directory,
+		FS_dir_plus(typedir_action_struct.dirfunc, typedir_action_struct.v, &ignoreflag, typedir_action_struct.pn_directory,
 					((const struct device_opaque *) t)->key->family_code);
 	default:
 		break;
@@ -636,6 +633,7 @@ static int FS_busdir(void (*dirfunc) (void *, const struct parsedname *), void *
 {
 	char bus[OW_FULLNAME_MAX];
 	struct connection_in * in ;
+	uint32_t ignoreflag ;
 
 	if (!RootNotBranch(pn_directory)) {
 		return 0;
@@ -645,23 +643,28 @@ static int FS_busdir(void (*dirfunc) (void *, const struct parsedname *), void *
 		UCLIBCLOCK;
 		snprintf(bus, OW_FULLNAME_MAX, "bus.%d", in->index);
 		UCLIBCUNLOCK;
-		FS_dir_plus(dirfunc, v, pn_directory, bus);
+		FS_dir_plus(dirfunc, v, &ignoreflag, pn_directory, bus);
 	}
 
 	return 0;
 }
 
 /* Parse and show */
-static int FS_dir_plus(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_directory, const char *file)
+static int FS_dir_plus(void (*dirfunc) (void *, const struct parsedname *), void *v, uint32_t * flags, const struct parsedname *pn_directory, const char *file)
 {
 	struct parsedname s_pn_plus_directory;
 	struct parsedname *pn_plus_directory = &s_pn_plus_directory;
 
 	if (FS_ParsedNamePlus(pn_directory->path, file, pn_plus_directory) == 0) {
+		FS_alias_subst( dirfunc, v, pn_plus_directory) ;
+#if 0
 		DIRLOCK;
 		dirfunc(v, pn_plus_directory);
 		DIRUNLOCK;
-		FS_ParsedName_destroy(pn_plus_directory);
+#endif
+		if ( pn_plus_directory->selected_device ){
+			flags[0] |= pn_plus_directory->selected_device->flags;
+		}
 		return 0;
 	}
 	return -ENOENT;

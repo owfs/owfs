@@ -108,3 +108,51 @@ static int Test_Add_Alias( char * name, BYTE * sn )
 	}
 	return Cache_Add_Alias( name, sn) ;
 }
+
+void FS_alias_subst(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn)
+{
+	if ( pn->sg | ALIAS_REQUEST) {
+		struct parsedname s_pn_copy ;
+		struct parsedname * pn_copy = & s_pn_copy ;
+		ASCII path[PATH_MAX+1] ;
+		ASCII * pcurrent = pn->path ;
+		ASCII * pnext ;
+		BYTE sn[8] ;
+		ASCII * pathstart ;
+		enum alias_parse_state { aps_initial, aps_next, aps_last } aps = aps_initial ;
+
+		// Shallow copy
+		memcpy( pn_copy, pn, sizeof(struct parsedname) ) ;
+		memset( path, 0, sizeof(path) ) ;
+
+		while ( aps != aps_last ) {
+			pnext = strchr(pcurrent,'/') ;
+			if ( aps != aps_initial ) {
+				strcat( path, "/") ;
+			}
+			// point to end
+			pathstart = & path[strlen(path)] ;
+			if ( pnext == NULL ) {
+				strcpy(pathstart,pcurrent) ;
+				aps = aps_last ;
+			} else {
+				strncpy(pathstart,pcurrent, pnext-pcurrent) ;
+				pcurrent = pnext + 1 ; // past '/'
+				aps = aps_next ;
+			}
+			if ( Parse_SerialNumber(pathstart,sn)==0 ) {
+				Cache_Get_Alias(pathstart,PATH_MAX - (pathstart-path),sn) ;
+			}
+		}
+
+		pn_copy->path = path ;
+
+		DIRLOCK;
+		dirfunc(v, pn_copy);
+		DIRUNLOCK;
+	} else {
+		DIRLOCK;
+		dirfunc(v, pn);
+		DIRUNLOCK;
+	}
+}

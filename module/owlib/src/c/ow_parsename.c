@@ -464,8 +464,8 @@ static enum parse_enum Parse_RealDevice(char *filename, enum parse_pass remote_s
 {
 	int bus_nr ;
 	if ( Parse_SerialNumber(filename,pn->sn)  ) {
-		// Not a serial number, look for an alias if not rerturning from owserver
-		if (remote_status == parse_pass_post_remote || Cache_Get_SerialNumber(filename,pn->sn)) {
+		// Not a serial number, look for an alias
+		if (Cache_Get_SerialNumber(filename,pn->sn)) {
 			return parse_error;
 		}
 	}

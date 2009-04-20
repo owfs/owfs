@@ -43,6 +43,7 @@ struct dirblob {
 void DirblobClear(struct dirblob *db);
 void DirblobInit(struct dirblob *db);
 int DirblobPure(const struct dirblob *db);
+void DirblobPoison(struct dirblob *db);
 int DirblobElements(const struct dirblob *db);
 int DirblobAdd(BYTE * sn, struct dirblob *db);
 int DirblobGet(int dev, BYTE * sn, const struct dirblob *db);
