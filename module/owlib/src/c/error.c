@@ -173,11 +173,11 @@ void _Debug_Writev(struct iovec *io, int iosz)
 	int i, ionr = 0;
 	char *buf;
 	int length;
-	
+
 	while(ionr < iosz) {
 		buf = io[ionr].iov_base;
 		length = io[ionr].iov_len;
-		
+
 		fprintf(stderr,"Writev byte buffer ionr=%d/%d length=%d", ionr+1, iosz, (int) length);
 		if (length <= 0) {
 			fprintf(stderr,"\n-- Attempt to write with bad length\n");
@@ -193,7 +193,7 @@ void _Debug_Writev(struct iovec *io, int iosz)
 			}
 			fprintf(stderr," %.2X", (unsigned char)buf[i]);
 		}
-		
+
 #endif
 		/* char line -- printable or . */
 		fprintf(stderr,"\n   <");
@@ -265,7 +265,7 @@ static void err_format(char * format, int errno_save, const char * level_string,
 	if (errno_save) {
 		snprintf(format, MAXLINE, "%s%s:%s(%d) [%s] %s", level_string,file,func,line,strerror(errno_save),fmt);	/* safe */
 	} else {
-		snprintf(format, MAXLINE, "%s%s:%s(%d) %s ", level_string,file,func,line,fmt);	/* safe */
+		snprintf(format, MAXLINE, "%s%s:%s(%d) %s", level_string,file,func,line,fmt);	/* safe */
 	}
 #else
 	if (errno_save) {

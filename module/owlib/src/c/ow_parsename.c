@@ -422,7 +422,6 @@ static enum parse_enum Parse_Bus(char *pathnow, struct parsedname *pn)
 	/* on return from remote directory ow_server.c:ServerDir
 	   SetKnownBus will be be performed elsewhere since the sending bus number is used */
 	/* this will only be reached once, because a local bus.x triggers "SpecifiedBus" */
-	//printf("SPECIFIED BUS for ParsedName PRE (%d):\n\tpath=%s\n\tpath_busless=%s\n\tKnnownBus=%d\tSpecifiedBus=%d\n",bus_number,   SAFESTRING(pn->path),SAFESTRING(pn->path_busless),KnownBus(pn),SpecifiedBus(pn));
 	if (bus_number < 0) {
 		return parse_error;
 	}
@@ -437,21 +436,22 @@ static enum parse_enum Parse_Bus(char *pathnow, struct parsedname *pn)
 	}
 
 	/* Create the path without the "bus.x" part in pn->path_busless */
-	if (!(found = strstr(pn->path, "/bus."))) {	// no bus
-		int length = pn->path_busless - pn->path - 1;
-		strncpy(pn->path_busless, pn->path, length);	// just copy path
-	} else {
+	if ( strncmp(pn->path,"bus.",4) == 0 ) {
+		 // at start?
+		if ((found = strchr(pn->path, '/'))) {	// more after bus
+			strcpy(pn->path_busless,found+1);	// copy rest
+		} else {
+			pn->path_busless[0] = '\0';	// add final null
+		}
+	} else if ( (found = strstr(pn->path, "/bus.")) ) {
+		// later
 		int length = found - pn->path;
-		strncpy(pn->path_busless, pn->path, length);
 		if ((found = strchr(found + 1, '/'))) {	// more after bus
 			strcpy(&(pn->path_busless[length]), found);	// copy rest
-
 		} else {
 			pn->path_busless[length] = '\0';	// add final null
 		}
 	}
-	//printf("SPECIFIED BUS for ParsedName POST (%d):\n\tpath=%s\n\tpath_busless=%s\n\tKnnownBus=%d\tSpecifiedBus=%d\n",bus_number,SAFESTRING(pn->path),SAFESTRING(pn->path_busless),KnownBus(pn),SpecifiedBus(pn));
-	//LEVEL_DEBUG("PARSENAME test path=%s, path_busless=%s\n",pn->path, pn->path_busless ) ;
 	return parse_first;
 }
 
