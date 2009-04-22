@@ -6,7 +6,7 @@ man_SO =   addressing.3so \
            cmdline_mini.1so \
            configuration.1so \
            description.1so description.3so description.5so description.nso \
-	   device.1so \
+           device.1so \
            format.1so format.5so \
            help.1so \
            job_control.1so \
@@ -37,7 +37,8 @@ man_MANS = ${man_SO} \
            DS2430A.3 DS2431.3 DS2433.3 DS2436.3 DS2437.3 DS2438.3 \
            DS2450.3 \
            DS2502.3 DS2502-E48.3 DS2502-UNW.3 DS2505.3 DS2505-UNW.3 DS2506.3 DS2506-UNW.3 \
-           DS2720.3 DS2740.3 DS2751.3 DS2755.3 DS2756.3 DS2760.3 DS2761.3 DS2762.3 DS2770.3 DS2780.3 DS2781.3 DS2788.3 \
+           DS2720.3 DS2740.3 DS2751.3 DS2755.3 DS2756.3 DS2760.3 DS2761.3 DS2762.3 DS2770.3 \
+           DS2780.3 DS2781.3 DS2788.3 \
            DS2804.3 DS28E04.3 DS28EA00.3 DS28EC20.3 \
            DS2890.3 \
            Thermachron.3 \
