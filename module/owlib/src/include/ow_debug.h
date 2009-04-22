@@ -56,7 +56,7 @@ extern const char cond_destroy_failed[];
 void err_msg(enum e_err_type errnoflag, enum e_err_level level, const char * file, int line, const char * func, const char *fmt, ...);
 void _Debug_Bytes(const char *title, const unsigned char *buf, int length);
 void _Debug_Writev(struct iovec *io, int iosz);
-void fatal_error(const char * fil, int line, const char * func, const char *file, int row, const char *fmt, ...);
+void fatal_error(const char * file, int line, const char * func, const char *fmt, ...);
 static inline int return_ok(void) { return 0; }
 
 extern int log_available;

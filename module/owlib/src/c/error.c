@@ -29,21 +29,21 @@ $Id$
 /* module/ownet/c/src/c/error.c & module/owlib/src/c/error.c are identical */
 
 #if OW_MT
-const char mutex_init_failed[] = "mutex_init failed rc=%d [%s]";
-const char mutex_destroy_failed[] = "mutex_destroy failed rc=%d [%s]";
-const char mutex_lock_failed[] = "mutex_lock failed rc=%d [%s]";
-const char mutex_unlock_failed[] = "mutex_unlock failed rc=%d [%s]";
-const char mutexattr_init_failed[] = "mutexattr_init failed rc=%d [%s]";
-const char mutexattr_destroy_failed[] = "mutexattr_destroy failed rc=%d [%s]";
-const char mutexattr_settype_failed[] = "mutexattr_settype failed rc=%d [%s]";
-const char rwlock_init_failed[] = "rwlock_init failed rc=%d [%s]";
-const char rwlock_read_lock_failed[] = "rwlock_read_lock failed rc=%d [%s]";
-const char rwlock_read_unlock_failed[] = "rwlock_read_unlock failed rc=%d [%s]";
-const char cond_timedwait_failed[] = "cond_timedwait failed rc=%d [%s]";
-const char cond_signal_failed[] = "cond_signal failed rc=%d [%s]";
-const char cond_wait_failed[] = "cond_wait failed rc=%d [%s]";
-const char cond_init_failed[] = "cond_init failed rc=%d [%s]";
-const char cond_destroy_failed[] = "cond_destroy failed rc=%d [%s]";
+const char mutex_init_failed[] = "mutex_init failed rc=%d [%s]\n";
+const char mutex_destroy_failed[] = "mutex_destroy failed rc=%d [%s]\n";
+const char mutex_lock_failed[] = "mutex_lock failed rc=%d [%s]\n";
+const char mutex_unlock_failed[] = "mutex_unlock failed rc=%d [%s]\n";
+const char mutexattr_init_failed[] = "mutexattr_init failed rc=%d [%s]\n";
+const char mutexattr_destroy_failed[] = "mutexattr_destroy failed rc=%d [%s]\n";
+const char mutexattr_settype_failed[] = "mutexattr_settype failed rc=%d [%s]\n";
+const char rwlock_init_failed[] = "rwlock_init failed rc=%d [%s]\n";
+const char rwlock_read_lock_failed[] = "rwlock_read_lock failed rc=%d [%s]\n";
+const char rwlock_read_unlock_failed[] = "rwlock_read_unlock failed rc=%d [%s]\n";
+const char cond_timedwait_failed[] = "cond_timedwait failed rc=%d [%s]\n";
+const char cond_signal_failed[] = "cond_signal failed rc=%d [%s]\n";
+const char cond_wait_failed[] = "cond_wait failed rc=%d [%s]\n";
+const char cond_init_failed[] = "cond_init failed rc=%d [%s]\n";
+const char cond_destroy_failed[] = "cond_destroy failed rc=%d [%s]\n";
 #endif
 
 static void err_format(char * format, int errno_save, const char * level_string, const char * file, int line, const char * func, const char * fmt);
@@ -206,18 +206,19 @@ void _Debug_Writev(struct iovec *io, int iosz)
 	}
 }
 
-void fatal_error(const char * fil, int line, const char * func, const char *file, int row, const char *fmt, ...)
+void fatal_error(const char * file, int line, const char * func, const char *fmt, ...)
 {
 	va_list ap;
 	char format[MAXLINE + 1];
 	char buf[MAXLINE + 1];
+	enum e_err_print sl;		// 2=console 1=syslog
 	va_start(ap, fmt);
 
-	err_format( format, 0, "FATAL ERROR: ", fil, line, func, fmt) ;
+	err_format( format, 0, "FATAL ERROR: ", file, line, func, fmt) ;
 
 #ifdef OWNETC_OW_DEBUG
 	{
-		fprintf(stderr, "%s:%d ", file, row);
+		fprintf(stderr, "%s:%d ", file, line);
 #ifdef HAVE_VSNPRINTF
 		vsnprintf(buf, MAXLINE, format, ap);
 #else
@@ -227,13 +228,38 @@ void fatal_error(const char * fil, int line, const char * func, const char *file
 	}
 #else /* OWNETC_OW_DEBUG */
 	if(Globals.fatal_debug) {
-		LEVEL_DEFAULT("%s:%d ", file, row);
+
 #ifdef HAVE_VSNPRINTF
 		vsnprintf(buf, MAXLINE, format, ap);
 #else
 		vsprintf(buf, format, ap);
 #endif
-		LEVEL_DEFAULT(buf);
+		/* Print where? */
+		switch (Globals.error_print) {
+			case e_err_print_mixed:
+				sl = Globals.now_background ? e_err_print_syslog : e_err_print_console;
+				break;
+			case e_err_print_syslog:
+				sl = e_err_print_syslog;
+				break;
+			case e_err_print_console:
+				sl = e_err_print_console;
+				break;
+			default:
+				return;
+		}
+
+		if (sl == e_err_print_syslog) {	/* All output to syslog */
+			if (!log_available) {
+				openlog("OWFS", LOG_PID, LOG_DAEMON);
+				log_available = 1;
+			}
+			syslog(LOG_INFO, buf);
+		} else {
+			fflush(stdout);			/* in case stdout and stderr are the same */
+			fputs(buf, stderr);
+			fflush(stderr);
+		}
 	}
 
 
@@ -249,7 +275,7 @@ void fatal_error(const char * fil, int line, const char * func, const char *file
 				vsprintf(buf, format, ap);
 #endif
 			}
-			fprintf(fp, "%s:%d %s\n", file, row, buf);
+			fprintf(fp, "%s:%d %s\n", file, line, buf);
 			fclose(fp);
 		}
 	}
