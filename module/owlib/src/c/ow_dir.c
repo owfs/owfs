@@ -294,7 +294,7 @@ FS_dir_all_connections(void (*dirfunc) (void *, const struct parsedname *), void
 /* FS_dir_all_connections produces the data that can vary: device lists, etc. */
 static int
 FS_dir_all_connections(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_directory, uint32_t * flags)
-{
+{http://www.h-online.com/open/MySQL-founder-and-ex-CEO-react-to-Oracle-Sun--/news/113116
 	int ret = 0;
 	struct connection_in * in;
 	struct parsedname s_pn_selected_connection;
@@ -373,11 +373,6 @@ static int FS_devdir(void (*dirfunc) (void *, const struct parsedname *), void *
 			for (extension = first_extension; extension < ft_pointer->ag->elements; ++extension) {
 				if (FS_ParsedNamePlusExt(pn_device_directory->path, namepart, extension, ft_pointer->ag->letters, pn_file_entry) == 0) {
 					FS_alias_subst( dirfunc, v, pn_file_entry) ;
-#if 0
-					DIRLOCK;
-					dirfunc(v, pn_file_entry);
-					DIRUNLOCK;
-#endif
 					FS_ParsedName_destroy(pn_file_entry);
 				}
 				STAT_ADD1(dir_dev.entries);
@@ -399,8 +394,7 @@ static int FS_alarmdir(void (*dirfunc) (void *, const struct parsedname *), void
 
 	/* cache from Server if this is a remote bus */
 	if (BusIsServer(pn_alarm_directory->selected_connection)) {
-		uint32_t flags;
-		return ServerDir(dirfunc, v, pn_alarm_directory, &flags);
+		return ServerDir(dirfunc, v, pn_alarm_directory, &ignoreflag);
 	}
 
 	/* STATISCTICS */
@@ -454,8 +448,6 @@ static int FS_realdir(void (*dirfunc) (void *, const struct parsedname *), void 
 	STAT_ADD1(dir_main.calls);
 
 	DirblobInit(&db);			// set up a fresh dirblob
-
-	flags[0] = 0;				/* start out with no flags set */
 
 	BUSLOCK(pn_whole_directory);
 
@@ -657,11 +649,6 @@ static int FS_dir_plus(void (*dirfunc) (void *, const struct parsedname *), void
 
 	if (FS_ParsedNamePlus(pn_directory->path, file, pn_plus_directory) == 0) {
 		FS_alias_subst( dirfunc, v, pn_plus_directory) ;
-#if 0
-		DIRLOCK;
-		dirfunc(v, pn_plus_directory);
-		DIRUNLOCK;
-#endif
 		if ( pn_plus_directory->selected_device ){
 			flags[0] |= pn_plus_directory->selected_device->flags;
 		}

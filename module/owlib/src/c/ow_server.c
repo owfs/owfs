@@ -16,6 +16,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 #include "ow_connection.h"
+#include "ow_xxxx.h" // for FS_Alias
 
 static int FromServer(int file_descriptor, struct client_msg *cm, char *msg, size_t size);
 static void *FromServerAlloc(int file_descriptor, struct client_msg *cm);
@@ -352,11 +353,6 @@ int ServerDIR(void (*dirfunc) (void *, const struct parsedname * const), void *v
 				DirblobAdd(pn_directory_element->sn, &db);
 				++devices;
 				FS_alias_subst(dirfunc,v,pn_directory_element);
-#if 0
-				DIRLOCK;
-				dirfunc(v, pn_directory_element);
-				DIRUNLOCK;
-#endif
 				FS_ParsedName_destroy(pn_directory_element);	// destroy the last parsed name
 			}
 			/* Add to the cache (full list as a single element */
@@ -444,7 +440,8 @@ int ServerDIRALL(void (*dirfunc) (void *, const struct parsedname * const), void
 		}
 
 		while ((current_file = strsep(&rest_of_comma_list, ",")) != NULL) {
-			struct parsedname pn_directory_element;
+			struct parsedname s_pn_directory_element;
+			struct parsedname * pn_directory_element = & s_pn_directory_element ;
 			int path_length = strlen(current_file);
 			LEVEL_DEBUG("got=[%s]\n", current_file);
 
@@ -459,10 +456,10 @@ int ServerDIRALL(void (*dirfunc) (void *, const struct parsedname * const), void
 				sn_ret = snprintf(BigBuffer, cm.payload + 11, "/bus.%d/%s",pn_whole_directory->selected_connection->index, no_leading_slash ) ;
 				UCLIBCUNLOCK ;
 				if (sn_ret > 0) {
-					ret = FS_ParsedName_BackFromRemote(BigBuffer, &pn_directory_element);
+					ret = FS_ParsedName_BackFromRemote(BigBuffer, pn_directory_element);
 				}
 			} else {
-				ret = FS_ParsedName_BackFromRemote(current_file, &pn_directory_element);
+				ret = FS_ParsedName_BackFromRemote(current_file, pn_directory_element);
 			}
 
 			if (ret) {
@@ -476,20 +473,15 @@ int ServerDIRALL(void (*dirfunc) (void *, const struct parsedname * const), void
 			 */
 			if (IsRealDir(pn_whole_directory)) {
 				/* If we get a device then cache the bus_nr */
-				Cache_Add_Device(pn_whole_directory->selected_connection->index, pn_directory_element.sn);
+				Cache_Add_Device(pn_whole_directory->selected_connection->index, pn_directory_element->sn);
 			}
 			/* Add to cache Blob -- snlist is also a flag for cachable */
 			if (DirblobPure(&db)) {	/* only add if there is a blob allocated successfully */
-				DirblobAdd(pn_directory_element.sn, &db);
+				DirblobAdd(pn_directory_element->sn, &db);
 			}
 			++devices;
-			FS_alias_subst(dirfunc,v,&pn_directory_element) ;
-#if 0
-			DIRLOCK;
-			dirfunc(v, &pn_directory_element);
-			DIRUNLOCK;
-#endif
-			FS_ParsedName_destroy(&pn_directory_element);	// destroy the last parsed name
+			FS_alias_subst(dirfunc,v,pn_directory_element) ;
+			FS_ParsedName_destroy(pn_directory_element);	// destroy the last parsed name
 		}
 		/* Add to the cache (full list as a single element */
 		if (DirblobPure(&db)) {

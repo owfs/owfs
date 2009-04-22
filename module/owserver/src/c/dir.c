@@ -94,6 +94,6 @@ void DirHandler(struct handlerdata *hd, struct client_msg *cm, const struct pars
 	// Finished -- send some flags and set up for a null element to tell client we're done
 	cm->offset = flags;			/* send the flags in the offset slot */
 	/* Now null entry to show end of directory listing */
-	cm->payload = cm->size = cm->offset = 0;
+	cm->payload = cm->size = 0;
 	//printf("DirHandler: DIR done ret=%d flags=%d\n", cm->ret, flags);
 }
