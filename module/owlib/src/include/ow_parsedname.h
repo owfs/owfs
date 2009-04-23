@@ -169,10 +169,6 @@ struct parsedname {
 #define      IsRealDir(pn)    ( ((pn)->type) == ePN_real )
 
 #define KnownBus(pn)          ((((pn)->state) & ePS_bus) != 0 )
-#define SetKnownBus(bus_number,pn)  do { (pn)->state |= ePS_bus; \
-                                        (pn)->selected_connection=find_connection_in(bus_number); \
-                                        (pn)->known_bus=(pn)->selected_connection; \
-                                    } while(0)
 #define UnsetKnownBus(pn)           do { (pn)->state &= ~ePS_bus; \
                                         (pn)->known_bus=NULL; \
                                         (pn)->selected_connection=NULL; \
@@ -184,8 +180,6 @@ struct parsedname {
 #define SpecifiedRemoteBus(pn)         ((((pn)->state) & ePS_busremote) != 0 )
 #define SpecifiedLocalBus(pn)          ((((pn)->state) & ePS_buslocal) != 0 )
 #define SpecifiedBus(pn)          ( SpecifiedLocalBus(pn) || SpecifiedRemoteBus(pn) )
-
-#define SetSpecifiedBus(bus_number,pn) do { SetKnownBus(bus_number,pn); (pn)->state |= BusIsServer((pn)->selected_connection) ? ePS_busremote : ePS_buslocal ; } while(0)
 
 #define RootNotBranch(pn)         (((pn)->pathlength)==0)
 

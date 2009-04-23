@@ -112,7 +112,6 @@ static int FS_ParsedName_anywhere(const char *path, enum parse_pass remote_statu
 	if (ret) {
 		return ret;
 	}
-	//printf("1pathnow=[%s] pathnext=[%s] pn->type=%d\n", pathnow, pathnext, pn->type);
 	if (path == NULL) {
 		return 0;
 	}
@@ -247,13 +246,19 @@ static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path,
 		return -EBADF;
 	}
 
-	pn->path = (char *) owmalloc(2 * strlen(path) + 2);
+	pn->path = (char *) owmalloc(2 * strlen(path) + 4);
 	if (pn->path == NULL) {
 		return -ENOMEM;
 	}
 
+	/* Have to save pn->path at once */
+	strcpy(pn->path, "/"); // initial slash
+	strcpy(pn->path+1, path[0]=='/'?path+1:path);
+	pn->path_busless = pn->path + strlen(pn->path) + 1;
+	strcpy(pn->path_busless, pn->path);
+
 	/* make a copy for destructive parsing */
-	strcpy(pp->pathcpy,path);
+	strcpy(pp->pathcpy,pn->path);
 
 	/* connection_in list and start */
 	/* ---------------------------- */
@@ -267,20 +272,14 @@ static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path,
 	CONNIN_RLOCK;
 	pn->selected_connection = Inbound_Control.head ; // Default bus assignment
 
-	/* Have to save pn->path at once */
-	strcpy(pn->path, path);
-	pn->path_busless = pn->path + strlen(path) + 1;
-	strcpy(pn->path_busless, path);
 
 	/* pointer to rest of path after current token peeled off */
 	pp->pathnext = pp->pathcpy;
 
 	/* remove initial "/" */
-	if (pp->pathnext[0] == '/') {
-		++pp->pathnext;
-	}
+	++pp->pathnext;
 
-	pn->dirlength = strlen(path) ;
+	pn->dirlength = strlen(pn->path) ;
 
 	return 0;
 }
@@ -419,16 +418,12 @@ static enum parse_enum Parse_Bus(char *pathnow, struct parsedname *pn)
 		return parse_first;
 	}
 
-	/* on return from remote directory ow_server.c:ServerDir
-	   SetKnownBus will be be performed elsewhere since the sending bus number is used */
-	/* this will only be reached once, because a local bus.x triggers "SpecifiedBus" */
-	if (bus_number < 0) {
-		return parse_error;
-	}
-
 	/* Since we are going to use a specific in-device now, set
 	 * pn->selected_connection to point at that device at once. */
-	SetSpecifiedBus(bus_number, pn);
+	if ( SetKnownBus(bus_number, pn) ) {
+		return parse_error ; // bus doesn't exist
+	}
+	pn->state |= BusIsServer((pn)->selected_connection) ? ePS_busremote : ePS_buslocal ;
 
 	if (SpecifiedLocalBus(pn)) {
 		/* don't return bus-list for local paths. */
@@ -436,15 +431,7 @@ static enum parse_enum Parse_Bus(char *pathnow, struct parsedname *pn)
 	}
 
 	/* Create the path without the "bus.x" part in pn->path_busless */
-	if ( strncmp(pn->path,"bus.",4) == 0 ) {
-		 // at start?
-		if ((found = strchr(pn->path, '/'))) {	// more after bus
-			strcpy(pn->path_busless,found+1);	// copy rest
-		} else {
-			pn->path_busless[0] = '\0';	// add final null
-		}
-	} else if ( (found = strstr(pn->path, "/bus.")) ) {
-		// later
+	if ( (found = strstr(pn->path, "/bus.")) ) {
 		int length = found - pn->path;
 		if ((found = strchr(found + 1, '/'))) {	// more after bus
 			strcpy(&(pn->path_busless[length]), found);	// copy rest

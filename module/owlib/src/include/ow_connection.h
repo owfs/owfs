@@ -383,7 +383,7 @@ struct connection_in {
 	int file_descriptor;
 	speed_t baud; // baud rate in the form of B9600
 	struct termios oldSerialTio;    /*old serial port settings */
-	// For adapters that maintain dir-at-once (or dirgulp): 
+	// For adapters that maintain dir-at-once (or dirgulp):
 	struct dirblob main;        /* main directory */
 	struct dirblob alarm;       /* alarm directory */
 #if OW_MT
@@ -565,6 +565,7 @@ struct connection_in *NewIn(const struct connection_in *in);
 struct connection_out *NewOut(void);
 struct connection_side *NewSide(void);
 struct connection_in *find_connection_in(int nr);
+int SetKnownBus( int bus_number, struct parsedname * pn) ;
 
 /* Bonjour registration */
 void OW_Announce(struct connection_out *out);

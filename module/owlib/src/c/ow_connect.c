@@ -67,6 +67,18 @@ struct connection_in *find_connection_in(int bus_number)
 	return NULL;
 }
 
+int SetKnownBus( int bus_number, struct parsedname * pn)
+{
+	struct connection_in * found = find_connection_in( bus_number ) ;
+	if ( found==NULL ) {
+		return 1 ;
+	}
+	pn->state |= ePS_bus;
+	pn->selected_connection=found ;
+	pn->known_bus=found;
+	return 0 ;
+}
+
 enum bus_mode get_busmode(struct connection_in *in)
 {
 	if (in == NULL) {
