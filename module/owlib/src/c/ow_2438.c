@@ -177,7 +177,8 @@ static int FS_MStype(struct one_wire_query *owq)
 {
 	BYTE data[8];
 	ASCII *t;
-	if (OW_r_page(data, 0, PN(owq))) {
+	// Read pasge 3 for type -- Michael Markstaller
+	if (OW_r_page(data, 3, PN(owq))) {
 		return -EINVAL;
 	}
 	switch (data[0]) {
