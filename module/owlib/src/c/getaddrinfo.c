@@ -48,6 +48,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "owfs_config.h"
 
 #include "ow_debug.h"
+#include "ow_alloc.h"
 
 #ifdef HAVE_PTHREAD
 #include <pthread.h>
