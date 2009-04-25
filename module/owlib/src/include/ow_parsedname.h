@@ -138,8 +138,6 @@ struct parsedname {
 };
 
 /* ---- end Parsedname ----------------- */
-#define CACHE_MASK     ( (UINT) 0x00000001 )
-#define CACHE_BIT      0
 #define SHOULD_RETURN_BUS_LIST    ( (UINT) 0x00000002 )
 #define PERSISTENT_MASK    ( (UINT) 0x00000004 )
 #define PERSISTENT_BIT     2
@@ -148,7 +146,6 @@ struct parsedname {
 #define TEMPSCALE_BIT  16
 #define DEVFORMAT_MASK ( (UINT) 0xFF000000 )
 #define DEVFORMAT_BIT  24
-#define IsLocalCacheEnabled(ppn)  ( ((ppn)->sg &  CACHE_MASK) )
 #define IsPersistent(ppn)         ( ((ppn)->sg & PERSISTENT_MASK) )
 #define SetPersistent(ppn,b)      UT_Setbit(((ppn)->sg),PERSISTENT_BIT,(b))
 #define TemperatureScale(ppn)     ( (enum temp_type) (((ppn)->sg & TEMPSCALE_MASK) >> TEMPSCALE_BIT) )

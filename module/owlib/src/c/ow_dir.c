@@ -198,11 +198,7 @@ static void FS_uncached_dir(void (*dirfunc) (void *, const struct parsedname *),
 {
 	uint32_t ignoreflag ;
 
-	if (!IsLocalCacheEnabled(pn_root_directory)) {	/* cached */
-		return;
-	}
-
-	if (IsUncachedDir(pn_root_directory)) {	/* cached */
+	if (IsUncachedDir(pn_root_directory)) {	/* already uncached */
 		return;
 	}
 

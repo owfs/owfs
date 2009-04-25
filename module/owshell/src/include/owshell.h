@@ -300,8 +300,6 @@ int ServerDir(ASCII * path);
 int ServerDirall(ASCII * path);
 int ServerPresence(ASCII * path);
 
-#define CACHE_MASK     ( (UINT) 0x00000001 )
-#define CACHE_BIT      0
 #define SHOULD_RETURN_BUS_LIST    ( (UINT) 0x00000002 )
 #define ALIAS_REQUEST      ( (UINT) 0x00000008 )
 #define TEMPSCALE_MASK ( (UINT) 0x00FF0000 )

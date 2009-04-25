@@ -326,7 +326,7 @@ void ShowDevice(FILE * out, const struct parsedname *pn)
 	HTTPtitle(out, &pn->path[1]);
 	HTTPheader(out, &pn->path[1]);
 
-	if (IsLocalCacheEnabled(pn) && NotUncachedDir(pn) && IsRealDir(pn)) {
+	if (NotUncachedDir(pn) && IsRealDir(pn)) {
 		fprintf(out, "<BR><small><A href='/uncached%s'>uncached version</A></small>", pn->path);
 	}
 	fprintf(out, "<TABLE BGCOLOR=\"#DDDDDD\" BORDER=1>");

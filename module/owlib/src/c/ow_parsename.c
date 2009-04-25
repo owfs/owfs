@@ -82,6 +82,12 @@ void FS_ParsedName_destroy(struct parsedname *pn)
 	// Tokenstring is part of a larger allocation and destroyed separately
 }
 
+// Path is either NULL (in which case a minimal structure is created that doesn't need Destroy -- used for Bus Master setups)
+// Or Path is a full "filename" type string of form: 10.1243Ab000 or uncached/bus.0/statistics etc.
+// The Path passed in isn't altered, but 2 copies are made -- one with the full path, the other (busless) has the first bus.n removed.
+// An initial / is added to the path, and the full length has to be less than MAX_PATH (2048)
+// For efficiency, the two path copies are allocated in the same call, and so can be removed together.
+
 /* Parse a path to check it's validity and attach to the propery data structures */
 int FS_ParsedName(const char *path, struct parsedname *pn)
 {
@@ -257,13 +263,16 @@ static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path,
 	pn->path_busless = pn->path + strlen(pn->path) + 1;
 	strcpy(pn->path_busless, pn->path);
 
-	/* make a copy for destructive parsing */
-	strcpy(pp->pathcpy,pn->path);
+	/* make a copy for destructive parsing  without initial '/'*/
+	strcpy(pp->pathcpy,&pn->path[1]);
+	/* pointer to rest of path after current token peeled off */
+	pp->pathnext = pp->pathcpy;
+	pn->dirlength = strlen(pn->path) ;
 
 	/* connection_in list and start */
 	/* ---------------------------- */
 	/* -- This is important:     -- */
-	/* -- But buses can --          */
+	/* --     Buses can --          */
 	/* -- be added by Browse so  -- */
 	/* -- a reader/writer lock is - */
 	/* -- held until ParsedNameDestroy */
@@ -271,15 +280,6 @@ static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path,
 
 	CONNIN_RLOCK;
 	pn->selected_connection = Inbound_Control.head ; // Default bus assignment
-
-
-	/* pointer to rest of path after current token peeled off */
-	pp->pathnext = pp->pathcpy;
-
-	/* remove initial "/" */
-	++pp->pathnext;
-
-	pn->dirlength = strlen(pn->path) ;
 
 	return 0;
 }
