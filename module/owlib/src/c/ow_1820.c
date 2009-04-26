@@ -72,10 +72,11 @@ struct filetype DS18S20[] = {
 	{"temperature", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_10temp, NO_WRITE_FUNCTION, {v:NULL},},
 	{"templow", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:1},},
 	{"temphigh", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:0},},
-	{"trim", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_volatile, FS_r_trim, FS_w_trim, {v:NULL},},
-	{"die", 2, NULL, ft_ascii, fc_static, FS_r_die, NO_WRITE_FUNCTION, {i:1},},
-	{"trimvalid", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_trimvalid, NO_WRITE_FUNCTION, {v:NULL},},
-	{"trimblanket", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_blanket, FS_w_blanket, {v:NULL},},
+	{"errata", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_stable, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
+	{"errata/trim", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_volatile, FS_r_trim, FS_w_trim, {v:NULL},},
+	{"errata/die", 2, NULL, ft_ascii, fc_static, FS_r_die, NO_WRITE_FUNCTION, {i:1},},
+	{"errata/trimvalid", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_trimvalid, NO_WRITE_FUNCTION, {v:NULL},},
+	{"errata/trimblanket", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_blanket, FS_w_blanket, {v:NULL},},
 	{"power", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, {v:NULL},},
 }
 
@@ -93,10 +94,11 @@ struct filetype DS18B20[] = {
 	{"fasttemp", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_volatile, FS_fasttemp, NO_WRITE_FUNCTION, {i:9},},
 	{"templow", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:1},},
 	{"temphigh", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:0},},
-	{"trim", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_volatile, FS_r_trim, FS_w_trim, {v:NULL},},
-	{"die", 2, NULL, ft_ascii, fc_static, FS_r_die, NO_WRITE_FUNCTION, {i:2},},
-	{"trimvalid", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_trimvalid, NO_WRITE_FUNCTION, {v:NULL},},
-	{"trimblanket", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_blanket, FS_w_blanket, {v:NULL},},
+	{"errata", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_stable, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
+	{"errata/trim", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_volatile, FS_r_trim, FS_w_trim, {v:NULL},},
+	{"errata/die", 2, NULL, ft_ascii, fc_static, FS_r_die, NO_WRITE_FUNCTION, {i:2},},
+	{"errata/trimvalid", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_trimvalid, NO_WRITE_FUNCTION, {v:NULL},},
+	{"errata/trimblanket", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_blanket, FS_w_blanket, {v:NULL},},
 	{"power", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, {v:NULL},},
 };
 
@@ -113,10 +115,11 @@ struct filetype DS1822[] = {
 	{"fasttemp", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_link, FS_fasttemp, NO_WRITE_FUNCTION, {i:9},},
 	{"templow", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:1},},
 	{"temphigh", PROPERTY_LENGTH_TEMP, NULL, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:0},},
-	{"trim", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_volatile, FS_r_trim, FS_w_trim, {v:NULL},},
-	{"die", 2, NULL, ft_ascii, fc_static, FS_r_die, NO_WRITE_FUNCTION, {i:0},},
-	{"trimvalid", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_trimvalid, NO_WRITE_FUNCTION, {v:NULL},},
-	{"trimblanket", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_blanket, FS_w_blanket, {v:NULL},},
+	{"errata", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_stable, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
+	{"errata/trim", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_volatile, FS_r_trim, FS_w_trim, {v:NULL},},
+	{"errata/die", 2, NULL, ft_ascii, fc_static, FS_r_die, NO_WRITE_FUNCTION, {i:0},},
+	{"errata/trimvalid", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_trimvalid, NO_WRITE_FUNCTION, {v:NULL},},
+	{"errata/trimblanket", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_blanket, FS_w_blanket, {v:NULL},},
 	{"power", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, {v:NULL},},
 };
 
@@ -207,19 +210,27 @@ struct die_limits DIE[] = {
    POW -- power
 */
 
-#define _1W_WRITE_SCRATCHPAD 0x4E
-#define _1W_READ_SCRATCHPAD 0xBE
-#define _1W_COPY_SCRATCHPAD 0x48
-#define _1W_CONVERT_T 0x44
-#define _1W_READ_POWERMODE 0xB4
-#define _1W_RECALL_EEPROM 0xB8
-#define _1W_PIO_ACCESS_READ 0xF5
-#define _1W_PIO_ACCESS_WRITE 0xA5
-#define _1W_CHAIN_COMMAND 0x99
-#define _1W_CHAIN_SUBCOMMAND_OFF 0x3C
-#define _1W_CHAIN_SUBCOMMAND_ON 0x5A
+#define _1W_WRITE_SCRATCHPAD      0x4E
+#define _1W_READ_SCRATCHPAD       0xBE
+#define _1W_COPY_SCRATCHPAD       0x48
+#define _1W_CONVERT_T             0x44
+#define _1W_READ_POWERMODE        0xB4
+#define _1W_RECALL_EEPROM         0xB8
+#define _1W_PIO_ACCESS_READ       0xF5
+#define _1W_PIO_ACCESS_WRITE      0xA5
+#define _1W_CHAIN_COMMAND         0x99
+#define _1W_CHAIN_SUBCOMMAND_OFF  0x3C
+#define _1W_CHAIN_SUBCOMMAND_ON   0x5A
 #define _1W_CHAIN_SUBCOMMAND_DONE 0x96
 
+#define _1W_READ_TRIM_1           0x93
+#define _1W_READ_TRIM_2           0x68
+#define _1W_WRITE_TRIM_1          0x95
+#define _1W_WRITE_TRIM_2          0x63
+#define _1W_ACTIVATE_TRIM_1       0x94
+#define _1W_ACTIVATE_TRIM_2       0x64
+#define _DEFAULT_BLANKET_TRIM_1   0x9D
+#define _DEFAULT_BLANKET_TRIM_2   0xBB
 
 /* ------- Functions ------------ */
 
@@ -458,11 +469,11 @@ static int FS_r_trimvalid(struct one_wire_query *owq)
 	return 0;
 }
 
-/* Put in a black trim value if non-zero */
+/* Put in a blank trim value if non-zero */
 static int FS_r_blanket(struct one_wire_query *owq)
 {
 	BYTE trim[2];
-	BYTE blanket[] = { 0x9D, 0xBB };
+	BYTE blanket[] = { _DEFAULT_BLANKET_TRIM_1, _DEFAULT_BLANKET_TRIM_2 };
 	switch (OW_die(PN(owq))) {
 	case eB7:
 	case eC2:
@@ -476,10 +487,10 @@ static int FS_r_blanket(struct one_wire_query *owq)
 	}
 }
 
-/* Put in a black trim value if non-zero */
+/* Put in a blank trim value if non-zero */
 static int FS_w_blanket(struct one_wire_query *owq)
 {
-	BYTE blanket[] = { 0x9D, 0xBB };
+	BYTE blanket[] = { _DEFAULT_BLANKET_TRIM_1, _DEFAULT_BLANKET_TRIM_2 };
 	switch (OW_die(PN(owq))) {
 	case eB7:
 	case eC2:
@@ -778,8 +789,8 @@ static int OW_w_scratchpad(const BYTE * data, const struct parsedname *pn)
 /* Trim values -- undocumented except in AN247.pdf */
 static int OW_r_trim(BYTE * trim, const struct parsedname *pn)
 {
-	BYTE cmd0[] = { 0x93, };
-	BYTE cmd1[] = { 0x68, };
+	BYTE cmd0[] = { _1W_READ_TRIM_1, };
+	BYTE cmd1[] = { _1W_READ_TRIM_2, };
 	struct transaction_log t0[] = {
 		TRXN_START,
 		TRXN_WRITE1(cmd0),
@@ -802,10 +813,10 @@ static int OW_r_trim(BYTE * trim, const struct parsedname *pn)
 
 static int OW_w_trim(const BYTE * trim, const struct parsedname *pn)
 {
-	BYTE cmd0[] = { 0x95, trim[0], };
-	BYTE cmd1[] = { 0x63, trim[1], };
-	BYTE cmd2[] = { 0x94, };
-	BYTE cmd3[] = { 0x64, };
+	BYTE cmd0[] = { _1W_WRITE_TRIM_1, trim[0], };
+	BYTE cmd1[] = { _1W_WRITE_TRIM_2, trim[1], };
+	BYTE cmd2[] = { _1W_ACTIVATE_TRIM_1, };
+	BYTE cmd3[] = { _1W_ACTIVATE_TRIM_2, };
 	struct transaction_log t0[] = {
 		TRXN_START,
 		TRXN_WRITE2(cmd0),
@@ -881,7 +892,7 @@ int FS_poll_convert(const struct parsedname *pn)
 		}
 		t[0].size = 50;			// 50 msec for rest of delays
 	}
-	LEVEL_DEBUG("failed\n");
+	LEVEL_DEBUG("Temperature measurement failed\n");
 	return 1;
 }
 
