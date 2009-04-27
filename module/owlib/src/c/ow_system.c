@@ -95,55 +95,6 @@ struct device d_sys_configure = { "configuration", "configuration", ePN_system,
 
 /* ------- Functions ------------ */
 
-#ifdef DEBUG_DS2490
-static int FS_r_ds2490status(struct one_wire_query *owq)
-{
-	struct parsedname *pn = PN(owq);
-	char res[256];
-	char buffer[32 + 1];
-	int ret;
-
-	SetKnownBus(pn->extension, pn);
-
-	res[0] = '\0';
-	if (pn->selected_connection->busmode == bus_usb) {
-#if OW_USB
-		ret = DS9490_getstatus(buffer, 0, PN(owq));
-		UCLIBCLOCK ;
-		if (ret < 0) {
-			snprintf(res,255, "DS9490_getstatus failed: %d\n", ret);
-		} else {
-			snprintf(res,255,
-					"%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n",
-					buffer[0], buffer[1], buffer[2], buffer[3],
-					buffer[4], buffer[5], buffer[6], buffer[7],
-					buffer[8], buffer[9], buffer[10], buffer[11], buffer[12], buffer[13], buffer[14], buffer[15]);
-		}
-		UCLIBCUNLOCK ;
-		/*
-		   uchar    EnableFlags;
-		   uchar    OneWireSpeed;
-		   uchar    StrongPullUpDuration;
-		   uchar    ProgPulseDuration;
-		   uchar    PullDownSlewRate;
-		   uchar    Write1LowTime;
-		   uchar    DSOW0RecoveryTime;
-		   uchar    Reserved1;
-		   uchar    StatusFlags;
-		   uchar    CurrentCommCmd1;
-		   uchar    CurrentCommCmd2;
-		   uchar    CommBufferStatus;  // Buffer for COMM commands
-		   uchar    WriteBufferStatus; // Buffer we write to
-		   uchar    ReadBufferStatus;  // Buffer we read from
-		 */
-#endif
-	}
-	Fowq_output_offset_and_size_z(res, owq);
-	return 0;
-}
-#endif
-
-
 static int FS_pidfile(struct one_wire_query *owq)
 {
 	char *name = "";

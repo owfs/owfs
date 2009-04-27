@@ -29,7 +29,7 @@ static void GetNextByte( const ASCII ** strpointer, BYTE default_byte, BYTE * sn
 static void GetDeviceName(const ASCII ** strpointer, struct connection_in * in) ;
 static void GetDefaultDeviceName(BYTE * dn, const BYTE * sn, const struct connection_in * in) ;
 static void GetAllDeviceNames( ASCII * remaining_device_list, struct connection_in * in ) ;
-static void SetConninData( int index, const char * name, struct connection_in *in ) ;
+static void SetConninData( int indx, const char * name, struct connection_in *in ) ;
 
 static void Fake_setroutines(struct connection_in *in)
 {
@@ -153,19 +153,19 @@ static void GetAllDeviceNames( ASCII * remaining_device_list, struct connection_
 	in->AnyDevices = (DirblobElements(&(in->main)) > 0);
 }
 
-static void SetConninData( int index, const char * name, struct connection_in *in )
+static void SetConninData( int indx, const char * name, struct connection_in *in )
 {
 	ASCII *oldname = in->name; // destructively parsed and deleted at the end.
 	char newname[20] ;
 
-	in->file_descriptor = index;
-	in->connin.fake.index = index;
+	in->file_descriptor = indx;
+	in->connin.fake.index = indx;
 	in->connin.fake.templow = Globals.templow;
 	in->connin.fake.temphigh = Globals.temphigh;
-	LEVEL_CONNECT("Setting up %s Bus Master (%d)\n", in->adapter_name, index);
+	LEVEL_CONNECT("Setting up %s Bus Master (%d)\n", in->adapter_name, indx);
 
 	UCLIBCLOCK ;
-	snprintf(newname, 18, "%s.%d", name, index);
+	snprintf(newname, 18, "%s.%d", name, indx);
 	UCLIBCUNLOCK ;
 
 	GetAllDeviceNames( oldname, in ) ;

@@ -13,7 +13,8 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
-int Parse_SerialNumber(char *sn_char, BYTE * sn){
+int Parse_SerialNumber(char *sn_char, BYTE * sn)
+{
 	ASCII ID[14];
 	int i;
 

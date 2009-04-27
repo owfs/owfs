@@ -109,7 +109,7 @@ int ServerOutSetup(struct connection_out *out)
 		// First time through, try default port
 		switch (Globals.opt) {
 			case opt_server:
-				default_port = "4304" ;
+				default_port = DEFAULT_PORT ;
 				break ;
 			case opt_ftpd:
 				default_port = "21" ;
@@ -254,14 +254,14 @@ static void *ServerProcessOut(void *v)
 	// This thread is terminated with pthread_cancel()+pthread_join(), and should not be detached.
 	//pthread_detach(pthread_self());
 
-	OUTLOCK(out);
-
 	if (ServerOutSetup(out)) {
 		LEVEL_CONNECT("Cannot set up server socket on %s, index=%d\n", SAFESTRING(out->name), out->index);
 		STATLOCK;
 		Outbound_Control.active--; // failed to setup... decrease nr
 		STATUNLOCK;
+		OUTLOCK(out);
 		my_pthread_cond_signal(&(out->setup_cond));
+		out->tid = 0;
 		OUTUNLOCK(out);
 		pthread_exit(NULL);
 		return NULL;
@@ -269,6 +269,7 @@ static void *ServerProcessOut(void *v)
 
 	OW_Announce(out);
 
+	OUTLOCK(out);
 	LEVEL_DEBUG("Output device %s setup is done. index=%d\n", SAFESTRING(out->name), out->index);
 
 	my_pthread_cond_signal(&(out->setup_cond));
@@ -350,7 +351,7 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 	}
 
 	StateInfo.shutdown_in_progress = 1;
-	LEVEL_DEBUG("ow_net_server.c:ServerProcess() shutdown initiated\n");
+	LEVEL_DEBUG("shutdown initiated\n");
 
 	for (out = Outbound_Control.head; out; out = out->next) {
 		if(out->tid > 0) {
@@ -374,7 +375,7 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 		}
 	}
 
-	LEVEL_DEBUG("ow_net_server.c:ServerProcess() all threads cancelled\n");
+	LEVEL_DEBUG("all threads cancelled\n");
 
 	for (out = Outbound_Control.head; out; out = out->next) {
 		if(out->tid > 0) {

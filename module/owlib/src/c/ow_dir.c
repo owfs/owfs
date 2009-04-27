@@ -82,8 +82,23 @@ static int FS_dir_both(void (*dirfunc) (void *, const struct parsedname *), void
 
 	/* initialize flags */
 	flags[0] = 0;
+#if 0
 	if (pn_raw_directory == NULL || pn_raw_directory->selected_connection == NULL)
 		return -ENODEV;
+#else
+	/* pn_raw_directory->selected_connection Could be NULL here...
+	 * It will then return a root-directory containing
+	 * /uncached,/settings,/system,/statistics,/structure
+	 * instead of an empty directory.
+	 */
+	if (pn_raw_directory == NULL) {
+		LEVEL_CALL("return ENODEV pn_raw_directory=%p selected_connection=%p\n",
+			pn_raw_directory,
+			(pn_raw_directory ? pn_raw_directory->selected_connection : NULL));
+		return -ENODEV;
+	}
+#endif
+	
 	LEVEL_CALL("path=%s\n", SAFESTRING(pn_raw_directory->path));
 
 	STATLOCK;

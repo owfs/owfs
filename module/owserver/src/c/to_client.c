@@ -52,6 +52,14 @@ int ToClient(int file_descriptor, struct client_msg *original_cm, char *data)
 		{data, original_cm->payload,},
 	};
 
+	if(original_cm->payload < 0) {
+		LEVEL_DEBUG("Send empty package\n");
+	} else {
+		LEVEL_DEBUG("payload=%d size=%d, ret=%d, sg=0x%X offset=%d \n",
+			original_cm->payload, original_cm->size, original_cm->ret,
+			original_cm->sg, original_cm->offset);
+	}
+	
 	LEVEL_DEBUG("ToClient payload=%d size=%d, ret=%d, sg=0x%X offset=%d \n", original_cm->payload, original_cm->size, original_cm->ret,
 				original_cm->sg, original_cm->offset);
 	/* If payload==0, no extra data
@@ -71,7 +79,9 @@ int ToClient(int file_descriptor, struct client_msg *original_cm, char *data)
 	cm->size = htonl(original_cm->size);
 	cm->offset = htonl(original_cm->offset);
 
-	Debug_Writev(io, nio);
+	if(original_cm->payload >= 0) {
+		Debug_Writev(io, nio);
+	}
 	ret = writev(file_descriptor, io, nio) != (ssize_t) (io[0].iov_len + io[1].iov_len);
 
 	return ret;

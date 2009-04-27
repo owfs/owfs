@@ -151,5 +151,5 @@ void FS_OWQ_destroy(struct one_wire_query *owq)
 void FS_OWQ_destroy_sibling(struct one_wire_query *owq)
 {
 	FS_OWQ_destroy(owq) ;
-	free(owq) ;
+	owfree(owq) ;
 }

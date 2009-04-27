@@ -75,8 +75,9 @@ void *ReadHandler(struct handlerdata *hd, struct client_msg *cm, struct one_wire
 		if (Globals.error_level>=e_err_debug) { memset(retbuffer, 0,  hd->sm.size + 1); }  // keep valgrind happy
 
 		if (pn) {
-			if (pn->path)
+			if (pn->path) {
 				path = pn->path;
+			}
 			LEVEL_DEBUG("ReadHandler: call FS_read_postparse on %s\n", path);
 		} else {
 			LEVEL_DEBUG("ReadHandler: call FS_read_postparse pn==NULL\n");
@@ -84,8 +85,9 @@ void *ReadHandler(struct handlerdata *hd, struct client_msg *cm, struct one_wire
 		OWQ_buffer(owq) = retbuffer;
 		read_or_error = FS_read_postparse(owq);
 		if (pn) {
-			if (pn->path)
+			if (pn->path) {
 				path = pn->path;
+			}
 			LEVEL_DEBUG("ReadHandler: FS_read_postparse read on %s return = %d\n", path, read_or_error);
 		} else {
 			LEVEL_DEBUG("ReadHandler: FS_read_postparse pn==NULL return = %d\n", read_or_error);
@@ -109,7 +111,8 @@ void *ReadHandler(struct handlerdata *hd, struct client_msg *cm, struct one_wire
 		}
 	}
 	LEVEL_DEBUG("ReadHandler: To Client cm->payload=%d cm->size=%d cm->offset=%d\n", cm->payload, cm->size, cm->offset);
-	if (cm->size > 0 && retbuffer)
+	if ((cm->size > 0) && retbuffer) {
 		LEVEL_DEBUG("ReadHandler: return size=%d [%*s]\n", cm->size, cm->size, retbuffer);
+	}
 	return retbuffer;
 }
