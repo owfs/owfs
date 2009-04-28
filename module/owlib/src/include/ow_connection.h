@@ -557,7 +557,7 @@ void FreeInAll(void);
 void FreeIn(struct connection_in * now);
 void RemoveIn( struct connection_in * conn ) ;
 
-void FreeOut(void);
+void FreeOutAll(void);
 void FreeSide(void);
 void DelIn(struct connection_in *in);
 

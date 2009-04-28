@@ -26,7 +26,7 @@ int ClientAddr(char *sname, struct connection_in *in)
 	int ret;
 
 	if (sname == NULL || sname[0] == '\0') {
-		sname = "4304";
+		sname = DEFAULT_PORT;
 	}
 	if ((p = strrchr(sname, ':'))) {	/* : exists */
 		p[0] = '\0';			/* Separate tokens in the string */
@@ -50,7 +50,7 @@ int ClientAddr(char *sname, struct connection_in *in)
 	hint.ai_family = AF_UNSPEC;
 #endif
 
-//printf("ClientAddr: [%s] [%s]\n", in->connin.tcp.host, in->connin.tcp.service);
+	LEVEL_DEBUG("[%s] [%s]\n", in->connin.tcp.host, in->connin.tcp.service);
 
 	if ((ret = getaddrinfo(in->connin.tcp.host, in->connin.tcp.service, &hint, &in->connin.tcp.ai))) {
 		LEVEL_CONNECT("error %s\n", gai_strerror(ret));

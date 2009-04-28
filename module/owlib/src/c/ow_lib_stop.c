@@ -27,7 +27,7 @@ void LibStop(void)
 	LEVEL_CALL("Closing input devices\n");
 	FreeInAll();
 	LEVEL_CALL("Closing outout devices\n");
-	FreeOut();
+	FreeOutAll();
 
 
 	/* Have to reset more internal variables, and this should be fixed

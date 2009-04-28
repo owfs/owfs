@@ -300,7 +300,7 @@ void RemoveIn( struct connection_in * conn )
 	FreeIn( conn ) ;
 }
 
-void FreeOut(void)
+void FreeOutAll(void)
 {
 	struct connection_out *next = Outbound_Control.head;
 	struct connection_out *now;
