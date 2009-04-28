@@ -24,28 +24,36 @@ int ClientAddr(char *sname, struct connection_in *in)
 	struct addrinfo hint;
 	char *p;
 	int ret;
-
-	if (sname == NULL || sname[0] == '\0') {
-		sname = DEFAULT_PORT;
-	}
-	if ((p = strrchr(sname, ':'))) {	/* : exists */
-		p[0] = '\0';			/* Separate tokens in the string */
-		in->connin.tcp.host = owstrdup(sname);
-		in->connin.tcp.service = owstrdup(&p[1]);
-		p[0] = ':';				/* restore name string */
-	} else {
-#if OW_CYGWIN
-		in->connin.tcp.host = owstrdup("127.0.0.1");
-#else
+	
+    if (sname == NULL || sname[0] == '\0') {
+		/* probably not a good idea to set localhost:DEFAULT_PORT
+		 * The user have probably typed wrong address */
 		in->connin.tcp.host = NULL;
-#endif
-		in->connin.tcp.service = owstrdup(sname);
+		in->connin.tcp.service = owstrdup(DEFAULT_PORT);
+	}
+	if ((p = strrchr(sname, ':')) == NULL) {    /* : NOT exist */
+		if (strchr(sname, '.')) {   //probably an address
+			in->connin.tcp.host = owstrdup(sname);
+			in->connin.tcp.service = owstrdup(DEFAULT_PORT);
+		} else {                // assume a port
+			in->connin.tcp.host = NULL;
+			in->connin.tcp.service = owstrdup(sname);
+		}
+	} else {
+		p[0] = '\0';            /* Separate tokens in the string */
+		in->connin.tcp.host = owstrdup(sname);
+		p[0] = ':';             /* restore name string */
+		in->connin.tcp.service = owstrdup(&p[1]);
 	}
 
 	memset(&hint, 0, sizeof(struct addrinfo));
 	hint.ai_socktype = SOCK_STREAM;
 #if OW_CYGWIN
 	hint.ai_family = AF_INET;
+	if(in->connin.tcp.host == NULL) {
+		/* getaddrinfo doesn't work with host=NULL for cygwin */
+		in->connin.tcp.host = owstrdup("127.0.0.1");
+	}
 #else
 	hint.ai_family = AF_UNSPEC;
 #endif
