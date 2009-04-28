@@ -50,7 +50,7 @@ int ClientAddr(char *sname, struct connection_in *in)
 	hint.ai_family = AF_UNSPEC;
 #endif
 
-	LEVEL_DEBUG("[%s] [%s]\n", in->connin.tcp.host, in->connin.tcp.service);
+	LEVEL_DEBUG("[%s] [%s]\n", SAFESTRING(in->connin.tcp.host), in->connin.tcp.service);
 
 	if ((ret = getaddrinfo(in->connin.tcp.host, in->connin.tcp.service, &hint, &in->connin.tcp.ai))) {
 		LEVEL_CONNECT("error %s\n", gai_strerror(ret));
