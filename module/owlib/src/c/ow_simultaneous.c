@@ -56,8 +56,8 @@ READ_FUNCTION(FS_r_single);
 
 /* -------- Structures ---------- */
 struct filetype simultaneous[] = {
-  {"temperature", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_convert, FS_w_convert, {i:simul_temp},},
-  {"voltage", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_convert, FS_w_convert, {i:simul_volt},},
+  {"temperature", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_link, FS_r_convert, FS_w_convert, {i:simul_temp},},
+  {"voltage", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_link, FS_r_convert, FS_w_convert, {i:simul_volt},},
   {"present", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_present, NO_WRITE_FUNCTION, {i:0},},
   {"present_ds2400", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_present, NO_WRITE_FUNCTION, {i:1},},
   {"single", 18, NULL, ft_ascii, fc_volatile, FS_r_single, NO_WRITE_FUNCTION, {i:0},},
@@ -65,6 +65,8 @@ struct filetype simultaneous[] = {
 };
 
 DeviceEntry(simultaneous, simultaneous);
+
+#define _1W_CONVERT_T             0x44
 
 /* ------- Functions ------------ */
 static void OW_single2cache(BYTE * sn, const struct parsedname *pn2);
@@ -112,7 +114,7 @@ static int FS_w_convert(struct one_wire_query *owq)
 		int ret = 1;			// set just to block compiler errors
 		switch (type) {
 		case simul_temp:{
-				const BYTE cmd_temp[] = { _1W_SKIP_ROM, 0x44 };
+				const BYTE cmd_temp[] = { _1W_SKIP_ROM, _1W_CONVERT_T };
 				struct transaction_log t[] = {
 					TRXN_START,
 					TRXN_WRITE2(cmd_temp),

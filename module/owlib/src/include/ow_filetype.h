@@ -104,6 +104,8 @@ enum fc_change {
 	fc_stable,       // only changes if we write to the chip
 	fc_Astable,      // atomic stable
 	fc_volatile,     // changes on it's own (e.g. external pin voltage)
+	fc_simultaneous_temperature, // volatile with a twist
+	fc_simultaneous_voltage, // volatile with a twist
 	fc_Avolatile,
 	fc_second,       // timer (changes every second)
 	fc_statistic,    // internally held statistic

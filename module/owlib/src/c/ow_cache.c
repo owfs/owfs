@@ -109,6 +109,8 @@ static time_t TimeOut(const enum fc_change change)
 		return 1;
 	case fc_volatile:
 	case fc_Avolatile:
+	case fc_simultaneous_temperature:
+	case fc_simultaneous_voltage:
 		return Globals.timeout_volatile;
 	case fc_stable:
 	case fc_Astable:
