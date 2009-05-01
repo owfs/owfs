@@ -83,6 +83,7 @@ static int Cache_Add_Store(struct tree_node *tn);
 static int Cache_Get_Common(void *data, size_t * dsize, time_t duration, const struct tree_node *tn);
 static int Cache_Get_Common_Dir(struct dirblob *db, time_t duration, const struct tree_node *tn);
 static int Cache_Get_Store(void *data, size_t * dsize, time_t duration, const struct tree_node *tn);
+static int OWQ_Cache_Get_post_fc(struct one_wire_query *owq) ;
 
 static int Cache_Del_Common(const struct tree_node *tn);
 static int Cache_Del_Store(const struct tree_node *tn);
@@ -601,6 +602,14 @@ int Cache_Get_Strict(void *data, size_t dsize, const struct parsedname *pn)
 
 
 int OWQ_Cache_Get(struct one_wire_query *owq)
+{
+	switch (OWQ_pn(owq).selected_filetype->change) {
+	default:
+		return OWQ_Cache_Get_post_fc(owq) ;
+	}
+}
+
+static int OWQ_Cache_Get_post_fc(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	if (pn->extension == EXTENSION_ALL) {

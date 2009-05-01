@@ -124,7 +124,7 @@ static int FS_w_convert(struct one_wire_query *owq)
 				ret = BUS_transaction_nolock(t, &pn_directory)
 					|| FS_poll_convert(&pn_directory);
 				BUSUNLOCK(&pn_directory);
-				LEVEL_DEBUG("(temp) ret=%d\n", ret);
+				LEVEL_DEBUG("Temperature convert ret=%d\n", ret);
 			}
 			break;
 		case simul_volt:{
@@ -136,7 +136,7 @@ static int FS_w_convert(struct one_wire_query *owq)
 					TRXN_END,
 				};
 				ret = BUS_transaction(t, &pn_directory);
-				LEVEL_DEBUG("(volt) ret=%d\n", ret);
+				LEVEL_DEBUG("Voltage convert ret=%d\n", ret);
 			}
 			break;
 		}
