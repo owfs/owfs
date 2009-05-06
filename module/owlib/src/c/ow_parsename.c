@@ -195,7 +195,8 @@ static int FS_ParsedName_anywhere(const char *path, enum parse_pass remote_statu
 
 		case parse_prop:
 			//LEVEL_DEBUG("PARSENAME parse_prop\n") ;
-			pn->dirlength = pp->pathnow - pp->pathcpy ;
+			pn->dirlength = pp->pathnow - pp->pathcpy + 1 ;
+			LEVEL_DEBUG("Dirlength=%d <%*s>\n",pn->dirlength,pn->dirlength,pn->path) ;
 			//printf("dirlength = %d which makes the path <%s> <%.*s>\n",pn->dirlength,pn->path,pn->dirlength,pn->path);
 			pp->pathlast = pp->pathnow;	/* Save for concatination if subdirectory later wanted */
 			pe = Parse_Property(pp->pathnow, pn);

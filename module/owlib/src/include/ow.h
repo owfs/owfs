@@ -284,8 +284,6 @@ struct connection_side;
 /* Parsedname -- path converted into components */
 #include "ow_parsedname.h"
 
-enum simul_type { simul_temp, simul_volt, };
-
 /* "Object-type" structure for the anctual owfs query --
   holds name, flags, values, and path */
 #include "ow_onewirequery.h"

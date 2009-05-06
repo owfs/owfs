@@ -64,6 +64,7 @@ struct connection_in *find_connection_in(int bus_number)
 			return c_in;
 		}
 	}
+	LEVEL_DEBUG("Couldn't find bus number %d\n",bus_number);
 	return NULL;
 }
 

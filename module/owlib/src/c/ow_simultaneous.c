@@ -66,15 +66,16 @@ struct filetype simultaneous[] = {
 
 DeviceEntry(simultaneous, simultaneous);
 
-#define _1W_CONVERT_T             0x44
-
-/* ------- Functions ------------ */
-static void OW_single2cache(BYTE * sn, const struct parsedname *pn2);
-
+// in this order: enum sumul_type { simul_temp, simul_volt, } ;
 struct internal_prop ipSimul[] = {
 	{"temperature", fc_volatile},
 	{"voltage", fc_volatile},
 };
+
+#define _1W_CONVERT_T             0x44
+
+/* ------- Functions ------------ */
+static void OW_single2cache(BYTE * sn, const struct parsedname *pn2);
 
 /* returns 0 if valid conversion exists */
 int Simul_Test(const enum simul_type type, const struct parsedname *pn)
@@ -105,7 +106,6 @@ static int FS_w_convert(struct one_wire_query *owq)
 	}
 
 	Cache_Del_Internal(&ipSimul[type], &pn_directory);	// remove existing entry
-	CookTheCache();				// make sure all volatile entries are invalidated
 
 	/* Since writing to /simultaneous/temperature is done recursive to all
 	 * adapters, we have to fake a successful write even if it's detected

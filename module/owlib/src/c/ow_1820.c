@@ -533,6 +533,7 @@ static int OW_10temp(_FLOAT * temp, const struct parsedname *pn)
 			return 1;
 		}
 	} else if (Simul_Test(simul_temp, pn)) {	// powered
+		// Simultaneous not valid, so do a conversion
 		int ret;
 		BUSLOCK(pn);
 		ret = BUS_transaction_nolock(tpowered, pn) || FS_poll_convert(pn);
@@ -540,6 +541,8 @@ static int OW_10temp(_FLOAT * temp, const struct parsedname *pn)
 		if (ret) {
 			return ret;
 		}
+	} else {
+		LEVEL_DEBUG("Simultaneous temperature conversion is valid\n");
 	}
 
 	if (OW_r_scratchpad(data, pn)) {
@@ -587,7 +590,7 @@ static int OW_power(BYTE * data, const struct parsedname *pn)
 		TRXN_READ1(data),
 		TRXN_END,
 	};
-	//printf("POWER "SNformat", before check\n",SNvar(pn->sn)) ;
+
 	if (IsUncachedDir(pn)
 		|| Cache_Get_Internal_Strict(data, sizeof(BYTE), InternalProp(POW), pn)) {
 		//printf("POWER "SNformat", need to ask\n",SNvar(pn->sn)) ;
@@ -607,11 +610,12 @@ static int OW_22temp(_FLOAT * temp, const int resolution, const struct parsednam
 	BYTE data[9];
 	BYTE convert[] = { _1W_CONVERT_T, };
 	BYTE pow;
-	int res = Resolutions[resolution - 9].config;
 	UINT delay = Resolutions[resolution - 9].delay;
 	UINT longdelay = delay * 1.5 ; // failsafe
 	BYTE mask = Resolutions[resolution - 9].mask;
-	int oldres;
+	int stored_resolution ;
+	int must_convert = 0 ;
+
 	struct transaction_log tunpowered[] = {
 		TRXN_START,
 		{convert, convert, delay, trxn_power},
@@ -628,22 +632,19 @@ static int OW_22temp(_FLOAT * temp, const int resolution, const struct parsednam
 		{convert, convert, longdelay, trxn_power},
 		TRXN_END,
 	};
-	//LEVEL_DATA("\n");
-	/* powered? */
-	if (OW_power(&pow, pn)) {
-		pow = 0x00;				/* assume unpowered if cannot tell */
-	}
 
 	/* Resolution */
-	if (Cache_Get_Internal_Strict(&oldres, sizeof(oldres), InternalProp(RES), pn)
-		|| oldres != resolution) {
+	if (Cache_Get_Internal_Strict(&stored_resolution, sizeof(stored_resolution), InternalProp(RES), pn)
+		|| stored_resolution != resolution) {
+		BYTE resolution_register = Resolutions[resolution - 9].config;
 		/* Get existing settings */
 		if (OW_r_scratchpad(data, pn)) {
 			return 1;
 		}
-		/* Put in new settings */
-		if ((data[4] | 0x0F) != res) {	// ignore lower nibble
-			data[4] = (res & 0xF0) | (data[4] & 0x0F);
+		/* Put in new settings (if different) */
+		if ((data[4] | 0x1F) != resolution_register) {	// ignore lower 5 bits
+			must_convert = 1 ; // resolution has changed
+			data[4] = (resolution_register & 0x60) | 0x1F ;
 			if (OW_w_scratchpad(&data[2], pn)) {
 				return 1;
 			}
@@ -653,12 +654,21 @@ static int OW_22temp(_FLOAT * temp, const int resolution, const struct parsednam
 
 	/* Conversion */
 	// first time
+	/* powered? */
+	if (OW_power(&pow, pn)) {
+		pow = 0x00;				/* assume unpowered if cannot tell */
+	}
+
 	if (!pow) {					// unpowered, deliver power, no communication allowed
 		LEVEL_DEBUG("Unpowered temperature conversion -- %d msec\n", delay);
+		// If not powered, no Simultaneous for this chip
+		must_convert = 1 ;
 		if (BUS_transaction(tunpowered, pn)) {
 			return 1;
 		}
-	} else if (Simul_Test(simul_temp, pn)) {	// powered, so release bus immediately after issuing convert
+	} else if ( must_convert || Simul_Test(simul_temp, pn) ) {
+		// No Simultaneous active, so need to "convert"
+		// powered, so release bus immediately after issuing convert
 		int ret;
 		LEVEL_DEBUG("Powered temperature conversion\n");
 		BUSLOCK(pn);

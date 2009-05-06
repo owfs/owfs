@@ -71,6 +71,7 @@ int CheckPresence(struct parsedname *pn)
 	}
 
 	if (Cache_Get_Device(&bus_nr, pn) == 0) {
+		LEVEL_DEBUG("Found device on bus %d\n",bus_nr);
 		SetKnownBus(bus_nr, pn);
 		return bus_nr;
 	}

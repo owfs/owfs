@@ -52,6 +52,10 @@ struct internal_prop {
 #define MakeInternalProp(tag,change)  static char ip_name_##tag[] = #tag ; static struct internal_prop ip_##tag = { ip_name_##tag , change }
 #define InternalProp(tag)     (& ip_##tag)
 
+extern struct internal_prop ipSimul[] ;
+
+enum simul_type { simul_temp, simul_volt, };
+
 /* Cache  and Storage functions */
 void Cache_Open(void);
 void Cache_Close(void);
@@ -79,7 +83,6 @@ int Cache_Del(const struct parsedname *pn);
 int Cache_Del_Dir(const struct parsedname *pn);
 int Cache_Del_Device(const struct parsedname *pn);
 int Cache_Del_Internal(const struct internal_prop *ip, const struct parsedname *pn);
-void CookTheCache(void);
 
 void FS_cache_sibling(char *property, struct one_wire_query *owq_shallow_copy);
 
@@ -115,7 +118,6 @@ void FS_cache_sibling(char *property, struct one_wire_query *owq_shallow_copy);
 #define Cache_Del_Device(pn )               (1)
 #define Cache_Del_Internal(ip,pn )          (1)
 #define OWQ_Cache_Del( owq )                (1)
-#define CookTheCache()
 
 #define FS_cache_sibling( property, owq_shallow_copy)
 
