@@ -718,12 +718,12 @@ static int DS2482_channel_select(const struct parsedname *pn)
 	struct connection_in *head = pn->selected_connection->connin.i2c.head;
 	int chan = pn->selected_connection->connin.i2c.index;
 	int file_descriptor = head->file_descriptor;
-	BYTE config = pn->selected_connection->connin.i2c.configreg;
-	/**
-     * Write and verify codes for the CHANNEL_SELECT command (DS2482-800 only).
-     * To set the channel, write the value at the index of the channel.
-     * Read and compare against the corresponding value to verify the change.
-     */
+
+	/*
+		Write and verify codes for the CHANNEL_SELECT command (DS2482-800 only).
+		To set the channel, write the value at the index of the channel.
+		Read and compare against the corresponding value to verify the change.
+	*/
 	static const BYTE W_chan[8] = { 0xF0, 0xE1, 0xD2, 0xC3, 0xB4, 0xA5, 0x96, 0x87 };
 	static const BYTE R_chan[8] = { 0xB8, 0xB1, 0xAA, 0xA3, 0x9C, 0x95, 0x8E, 0x87 };
 

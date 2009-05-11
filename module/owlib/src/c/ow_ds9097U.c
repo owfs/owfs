@@ -394,7 +394,7 @@ static void DS2480_set_baud_control(const struct parsedname *pn)
 
 static int DS2480_set_baud(const struct parsedname *pn)
 {
-	BYTE value_code ;
+	BYTE value_code = 0 ;
 	BYTE send_code ;
 
 	// Find rate parameter
