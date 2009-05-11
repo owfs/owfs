@@ -135,9 +135,7 @@ static int FS_dir_both(void (*dirfunc) (void *, const struct parsedname *), void
 
 	} else if (SpecifiedLocalBus(pn_raw_directory)) {
 		if (IsAlarmDir(pn_raw_directory)) {	/* root or branch directory -- alarm state */
-			LEVEL_DEBUG("ALARM directory\n");
 			ret = FS_alarmdir(dirfunc, v, pn_raw_directory);
-			LEVEL_DEBUG("Return from ALARM is %d\n", ret);
 		} else {
 			if (pn_raw_directory->pathlength == 0) {
 				// only add funny directories for non-micro hub (DS2409) branches
@@ -154,6 +152,10 @@ static int FS_dir_both(void (*dirfunc) (void *, const struct parsedname *), void
 			}
 		}
 
+	} else if ( IsAlarmDir(pn_raw_directory)) { // alarm for all busses
+		// Not specified bus, so scan through all and print union
+		ret = FS_dir_all_connections(dirfunc, v, pn_raw_directory, flags);
+		// add no chaff to alarm directory -- no "uncached", "bus.x" etc
 	} else { // standard directory search -- all busses
 		// Not specified bus, so scan through all and print union
 		ret = FS_dir_all_connections(dirfunc, v, pn_raw_directory, flags);

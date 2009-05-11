@@ -84,7 +84,7 @@ static void DS2480_setroutines(struct connection_in *in)
 
 // Command or config bit
 #define CMD_COMM                       0x81
-#define CMD_COMM_RESPintONSE              0x80
+#define CMD_COMM_RESPONSE              0x80
 #define CMD_CONFIG                     0x01
 #define CMD_CONFIG_RESPONSE            0x00
 
@@ -610,6 +610,10 @@ static int DS2480_next_both(struct device_search *ds, const struct parsedname *p
 
 	// CRC check
 	if (CRC8(sn, 8) || (ds->LastDiscrepancy == 63) || (sn[0] == 0)) {
+		if ( sn[0]==0xFF && sn[1]==0xFF && sn[2]==0xFF && sn[3]==0xFF && sn[4]==0xFF && sn[5]==0xFF && sn[6]==0xFF && sn[7]==0xFF ) {
+			// special case for no alarm present
+			return -ENODEV ;
+		}
 		return -EIO;
 	}
 

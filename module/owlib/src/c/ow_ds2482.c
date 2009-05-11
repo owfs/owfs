@@ -555,7 +555,6 @@ static int DS2482_next_both(struct device_search *ds, const struct parsedname *p
 		pn->selected_connection->ds2404_compliance = 1;
 	}
 	// if the search was successful then
-
 	ds->LastDiscrepancy = last_zero;
 	ds->LastDevice = (last_zero < 0);
 	LEVEL_DEBUG("SN found: " SNformat "\n", SNvar(ds->sn));
