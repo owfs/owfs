@@ -136,27 +136,6 @@ READ_FUNCTION(FS_rangehigh);
 #define F_thermocouple
 #endif							/* OW_THERMOCOUPLE */
 
-struct LockPage {
-	int pages;
-	size_t reg;
-	size_t size;
-	off_t offset[3];
-};
-
-#define Pages2720   2
-#define Pages2751   2
-#define Pages2755   3
-#define Pages2760	2
-#define Pages2770	3
-#define Pages2780	2
-
-#define Size2720	4
-#define Size2751       16
-#define Size2755       32
-#define Size2760       16
-#define Size2770       16
-#define Size2780       16
-
 #define _1W_DS27XX_PROTECT_REG 0x00
 
 #define _1W_DS27XX_STATUS_REG 0x01
@@ -183,6 +162,27 @@ struct LockPage {
 
 #define _1W_DS2780_PARAM_REG 0x60
 
+struct LockPage {
+	int pages;
+	size_t reg;
+	size_t size;
+	off_t offset[3];
+};
+
+#define Pages2720	2
+#define Pages2751	2
+#define Pages2755	3
+#define Pages2760	2
+#define Pages2770	3
+#define Pages2780	2
+
+#define Size2720	4
+#define Size2751	16
+#define Size2755	32
+#define Size2760	16
+#define Size2770	16
+#define Size2780	16
+
 struct LockPage P2720 = { Pages2720, 0x07, Size2720, {0x20, 0x30, 0x00,}, };
 struct LockPage P2751 = { Pages2751, 0x07, Size2751, {0x20, 0x30, 0x00,}, };
 struct LockPage P2755 = { Pages2755, 0x07, Size2755, {0x20, 0x40, 0x60,}, };
@@ -198,7 +198,7 @@ struct aggregate L2770 = { Pages2770, ag_numbers, ag_separate };
 struct aggregate L2780 = { Pages2780, ag_numbers, ag_separate };
 
 struct filetype DS2720[] = {
-	F_STANDARD,
+  F_STANDARD,
   {"lock", PROPERTY_LENGTH_YESNO, &L2720, ft_yesno, fc_stable, FS_r_lock, FS_w_lock, {v:&P2720},},
   {"memory", 256, NULL, ft_binary, fc_volatile, FS_r_mem, FS_w_mem, {v:NULL},},
   {"pages", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
@@ -218,7 +218,7 @@ struct filetype DS2720[] = {
 DeviceEntry(31, DS2720);
 
 struct filetype DS2740[] = {
-	F_STANDARD,
+  F_STANDARD,
   {"memory", 256, NULL, ft_binary, fc_volatile, FS_r_mem, FS_w_mem, {v:NULL},},
   {"PIO", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_pio, FS_w_pio, {u:(_1W_DS2760_SPECIAL_REG << 8) | 6},},
   {"vis", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_volatile, FS_r_vis, NO_WRITE_FUNCTION, {v:NULL},},
@@ -231,7 +231,7 @@ struct filetype DS2740[] = {
 DeviceEntry(36, DS2740);
 
 struct filetype DS2751[] = {
-	F_STANDARD,
+  F_STANDARD,
   {"amphours", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_volatile, FS_r_ah, FS_w_ah, {v:NULL},},
   {"current", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_link, FS_r_current, NO_WRITE_FUNCTION, {v:NULL},},
   {"currentbias", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_link, FS_r_abias, FS_w_abias, {v:NULL},},
@@ -251,14 +251,13 @@ struct filetype DS2751[] = {
   {"pmod", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, FS_r_bit, NO_WRITE_FUNCTION, {u:(_1W_DS27XX_STATUS_REG << 8) | 5},},
   {"por", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, FS_r_bit, FS_w_bit, {u:(_1W_DS2760_SPECIAL_REG << 8) | 0},},
   {"uven", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, FS_r_bit, FS_w_bit, {u:(_1W_DS27XX_STATUS_REG << 8) | 3},},
-
-	F_thermocouple
+  F_thermocouple
 };
 
 DeviceEntry(51, DS2751);
 
 struct filetype DS2755[] = {
-	F_STANDARD,
+  F_STANDARD,
   {"lock", PROPERTY_LENGTH_YESNO, &L2755, ft_yesno, fc_stable, FS_r_lock, FS_w_lock, {v:&P2751},},
   {"memory", 256, NULL, ft_binary, fc_volatile, FS_r_mem, FS_w_mem, {v:NULL},},
   {"pages", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
@@ -288,14 +287,13 @@ struct filetype DS2755[] = {
   {"uben", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, FS_r_bit, FS_w_bit, {u:(_1W_DS27XX_STATUS_REG << 8) | 1},},
   {"ovd", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, FS_r_bit, FS_w_bit, {u:(_1W_DS27XX_STATUS_REG << 8) | 0},},
   {"por", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, FS_r_bit, FS_w_bit, {u:(_1W_DS2760_SPECIAL_REG << 8) | 0},},
-
-	F_thermocouple
+  F_thermocouple
 };
 
 DeviceEntryExtended(35, DS2755, DEV_alarm);
 
 struct filetype DS2760[] = {
-	F_STANDARD,
+  F_STANDARD,
   {"amphours", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_volatile, FS_r_ah, FS_w_ah, {v:NULL},},
   {"current", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_link, FS_r_current, NO_WRITE_FUNCTION, {v:NULL},},
   {"currentbias", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_link, FS_r_abias, FS_w_abias, {v:NULL},},
@@ -325,14 +323,13 @@ struct filetype DS2760[] = {
   {"pmod", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, FS_r_bit, NO_WRITE_FUNCTION, {u:(_1W_DS27XX_STATUS_REG << 8) | 5},},
   {"swen", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, FS_r_bit, NO_WRITE_FUNCTION, {u:(_1W_DS27XX_STATUS_REG << 8) | 3},},
   {"uv", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_bit, FS_w_bit, {u:(_1W_DS27XX_PROTECT_REG << 8) | 6},},
-
-	F_thermocouple
+  F_thermocouple
 };
 
 DeviceEntry(30, DS2760);
 
 struct filetype DS2770[] = {
-	F_STANDARD,
+  F_STANDARD,
   {"amphours", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_volatile, FS_r_ah, FS_w_ah, {v:NULL},},
   {"current", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_link, FS_r_current, NO_WRITE_FUNCTION, {v:NULL},},
   {"currentbias", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_link, FS_r_abias, FS_w_abias, {v:NULL},},
@@ -355,15 +352,14 @@ struct filetype DS2770[] = {
   {"pmod", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, FS_r_bit, FS_w_bit, {u:(_1W_DS27XX_STATUS_REG << 8) | 5},},
   {"refresh", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_refresh, {v:NULL},},
   {"timer", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_volatile, FS_r_timer, FS_w_timer, {v:NULL},},
-
-	F_thermocouple
+  F_thermocouple
 };
 
 DeviceEntry(2E, DS2770);
 
 /* DS2780 also includees the DS2775 DS2776 DS2784 */
 struct filetype DS2780[] = {
-	F_STANDARD,
+  F_STANDARD,
   {"lock", PROPERTY_LENGTH_YESNO, &L2780, ft_yesno, fc_stable, FS_r_lock, FS_w_lock, {v:&P2780},},
   {"memory", 256, NULL, ft_binary, fc_volatile, FS_r_mem, FS_w_mem, {v:NULL},},
   {"pages", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
@@ -388,14 +384,13 @@ struct filetype DS2780[] = {
   {"pmod", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_bit, FS_w_bit, {u:(_1W_DS2780_PARAM_REG << 8) | 5},},
   {"rnaop", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_bit, FS_w_bit, {u:(_1W_DS2780_PARAM_REG << 8) | 4},},
   {"dc", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_bit, FS_w_bit, {u:(_1W_DS2780_PARAM_REG << 8) | 3},},
-
-	F_thermocouple
+  F_thermocouple
 };
 
 DeviceEntry(32, DS2780);
 
 struct filetype DS2781[] = {
-	F_STANDARD,
+  F_STANDARD,
   {"lock", PROPERTY_LENGTH_YESNO, &L2780, ft_yesno, fc_stable, FS_r_lock, FS_w_lock, {v:&P2780},},
   {"memory", 256, NULL, ft_binary, fc_volatile, FS_r_mem, FS_w_mem, {v:NULL},},
   {"pages", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
@@ -418,8 +413,7 @@ struct filetype DS2781[] = {
   {"sef", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_bit, FS_w_bit, {u:(_1W_DS27XX_STATUS_REG << 8) | 5},},
   {"uven", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_bit, FS_w_bit, {u:(_1W_DS2780_PARAM_REG << 8) | 6},},
   {"uvf", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_bit, FS_w_bit, {u:(_1W_DS27XX_STATUS_REG << 8) | 2},},
-
-	F_thermocouple
+  F_thermocouple
 };
 
 DeviceEntry(3D, DS2781);
@@ -977,7 +971,7 @@ static int OW_w_sram(const BYTE * data, const size_t size, const off_t offset, c
 	struct transaction_log t[] = {
 		TRXN_START,
 		TRXN_WRITE2(p),
-		TRXN_READ(data, size),
+		TRXN_WRITE(data, size),
 		TRXN_END,
 	};
 
