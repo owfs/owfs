@@ -22,15 +22,23 @@ $Id$
 #if OW_CACHE
 #include <limits.h>
 
-#define EXTENSION_DEVICE	-1
 #define EXTENSION_INTERNAL  -2
-#define EXTENSION_ALIAS     -3
 
 // Directories are bus-specific, but buses are dynamic
 // The numbering is sequential, however, so use that and an arbitrary
 // generic unique address for directories.
 int DirMarkerLoc ;
 void * Directory_Marker = &DirMarkerLoc ;
+
+// Devices are sn-based
+// generic unique address for devices.
+int DevMarkerLoc ;
+void * Device_Marker = &DevMarkerLoc ;
+
+// Aliases are sn-based
+// generic unique address for devices.
+int AliasMarkerLoc ;
+void * Alias_Marker = &AliasMarkerLoc ;
 
 /* Put the globals into a struct to declutter the namespace */
 static struct {
@@ -375,7 +383,6 @@ int Cache_Add_Device(const int bus_nr, const BYTE * sn)
 {
 	time_t duration = TimeOut(fc_presence);
 	struct tree_node *tn;
-	//printf("Cache_Add_Device\n");
 
 	if (duration <= 0) {
 		return 0;				/* in case timeout set to 0 */
@@ -389,9 +396,8 @@ int Cache_Add_Device(const int bus_nr, const BYTE * sn)
 
 	LEVEL_DEBUG(SNformat " bus=%d\n", SNvar(sn), (int) bus_nr);
 	memcpy(tn->tk.sn, sn, 8);
-	tn->tk.p = NULL;			// value connected to all in-devices
-	//tn->tk.p.selected_connection = pn->selected_connection ;
-	tn->tk.extension = EXTENSION_DEVICE;
+	tn->tk.p = Device_Marker;	// value connected to all devices
+	tn->tk.extension = 0;
 	tn->expires = duration + time(NULL);
 	tn->dsize = sizeof(int);
 	memcpy(TREE_DATA(tn), &bus_nr, sizeof(int));
@@ -463,8 +469,8 @@ int Cache_Add_Alias(const ASCII *name, const BYTE * sn)
 
 	LEVEL_DEBUG("Adding " SNformat " alias=%s\n", SNvar(sn), name);
 	memcpy(tn->tk.sn, sn, 8);
-	tn->tk.p = NULL;
-	tn->tk.extension = EXTENSION_ALIAS;
+	tn->tk.p = Alias_Marker;
+	tn->tk.extension = 0;
 	tn->expires = time(NULL);
 	tn->dsize = size+1;
 	strcpy((ASCII *)TREE_DATA(tn), name);
@@ -788,8 +794,8 @@ int Cache_Get_Device(void *bus_nr, const struct parsedname *pn)
 	LEVEL_DEBUG(SNformat "\n", SNvar(pn->sn));
 	memset(&tn.tk, 0, sizeof(struct tree_key));
 	memcpy(tn.tk.sn, pn->sn, 8);
-	tn.tk.p = NULL;				// value connected to all in-devices
-	tn.tk.extension = EXTENSION_DEVICE;
+	tn.tk.p = Device_Marker;
+	tn.tk.extension = 0;
 	return Get_Stat(&cache_dev, Cache_Get_Common(bus_nr, &size, &duration, &tn));
 }
 
@@ -898,8 +904,8 @@ int Cache_Get_Alias(ASCII * name, size_t length, const BYTE * sn)
 
 	memset(&tn.tk, 0, sizeof(struct tree_key));
 	memcpy(tn.tk.sn, sn, 8);
-	tn.tk.p = NULL;
-	tn.tk.extension = EXTENSION_ALIAS;
+	tn.tk.p = Alias_Marker;
+	tn.tk.extension = 0;
 
 	STORE_RLOCK;
 	if ((opaque = tfind(&tn, &cache.permanent_tree, tree_compare))) {
@@ -943,7 +949,7 @@ static void Aliasfindaction(const void *node, const VISIT which, const int depth
 	switch (which) {
 	case leaf:
 	case postorder:
-		if ( p->tk.extension != EXTENSION_ALIAS ) {
+		if ( p->tk.p != Alias_Marker ) {
 			return ;
 		}
 		//printf("Compare %s and %s\n",global_aliasfind_struct.name,(const ASCII *)CONST_TREE_DATA(p));
@@ -1122,8 +1128,8 @@ int Cache_Del_Device(const struct parsedname *pn)
 
 	memset(&tn.tk, 0, sizeof(struct tree_key));
 	memcpy(tn.tk.sn, pn->sn, 8);
-	tn.tk.p = pn->selected_connection;
-	tn.tk.extension = EXTENSION_DEVICE;
+	tn.tk.p = Device_Marker;
+	tn.tk.extension = 0;
 	return Del_Stat(&cache_dev, Cache_Del_Common(&tn));
 }
 

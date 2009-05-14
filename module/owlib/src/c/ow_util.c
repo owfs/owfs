@@ -115,7 +115,7 @@ void UT_fromDate(const _DATE d, BYTE * data)
 
 _DATE UT_toDate(const BYTE * data)
 {
-	return UT_uint32(data);
+	return (_DATE) UT_uint32(data);
 }
 
 void Test_and_Close( int * file_descriptor )
@@ -128,4 +128,3 @@ void Test_and_Close( int * file_descriptor )
 	}
 	file_descriptor[0] = -1 ;
 }
-

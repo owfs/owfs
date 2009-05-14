@@ -213,6 +213,7 @@ static int FS_r_single(struct one_wire_query *owq)
 	switch (pn->selected_connection->Adapter) {
 		case adapter_fake:
 		case adapter_tester:
+		case adapter_mock:
 			if (DirblobElements(&(pn->selected_connection->main)) == 1) {
 				DirblobGet(0, resp, &(pn->selected_connection->main));
 				FS_devicename(ad, sizeof(ad), resp, pn);
@@ -253,15 +254,14 @@ static int FS_r_single(struct one_wire_query *owq)
 	return 0;
 }
 
-// called with pn copy
 // Do cache for single item
-static void OW_single2cache(BYTE * sn, const struct parsedname *pn2)
+static void OW_single2cache(BYTE * sn, const struct parsedname *pn)
 {
 	struct dirblob db;
 	DirblobInit(&db);
 	DirblobAdd(sn, &db);
 	if (DirblobPure(&db)) {
-		Cache_Add_Dir(&db, pn2);	// Directory cache
+		Cache_Add_Dir(&db, pn);	// Directory cache
 	}
-	Cache_Add_Device(pn2->selected_connection->index, sn);	// Device cache
+	Cache_Add_Device(pn->selected_connection->index, sn);	// Device cache
 }
