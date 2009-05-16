@@ -174,26 +174,60 @@ int FS_write_postparse(struct one_wire_query *owq)
 	return write_or_error;
 }
 
+#if OW_MT
+struct simultaneous_struct {
+	struct connection_in *in;
+	const struct one_wire_query *owq ;
+};
+
+static void * Simultaneous_write(void * v)
+{
+	struct simultaneous_struct *ss = (struct simultaneous_struct *) v;
+	struct simultaneous_struct ss_next = { ss->in->next, ss->owq };
+	pthread_t thread;
+	int threadbad = 1;
+	OWQ_allocate_struct_and_pointer(owq_copy);
+	
+	
+	threadbad = (ss->in->next == NULL)
+	|| pthread_create(&thread, NULL, Simultaneous_write, (void *) (&ss_next));
+	
+	memcpy(owq_copy, ss->owq, sizeof(struct one_wire_query));	// shallow copy
+	
+	SetKnownBus(ss->in->index, PN(owq_copy));
+	
+	FS_w_given_bus(owq_copy);
+
+	if (threadbad == 0) {		/* was a thread created? */
+		void *v_ignore;
+		pthread_join(thread, &v_ignore) ;
+	}
+	return NULL ;
+}
+#endif /* OW_MT */
+
 /* This function is only used by "Simultaneous" */
-/* It certainly could use pthreads, but might be overkill */
 static int FS_w_simultaneous(struct one_wire_query *owq)
 {
 	if (SpecifiedBus(PN(owq))) {
 		return FS_w_given_bus(owq);
-	} else {
+	} else if (Inbound_Control.head) {
+#if OW_MT
+		struct simultaneous_struct ss = { Inbound_Control.head, owq };
+		Simultaneous_write( (void *) (&ss) ) ;
+#else /* OW_MT */
 		struct connection_in * in;
 		OWQ_allocate_struct_and_pointer(owq_given);
-
+		
 		memcpy(owq_given, owq, sizeof(struct one_wire_query));	// shallow copy
-
-		in = Inbound_Control.head ;
-		while( in ) {
+		
+		for( in=Inbound_Control.head; in ; in=in->next ) {
 			SetKnownBus(in->index, PN(owq_given));
 			FS_w_given_bus(owq_given);
-			in = in->next ;
 		}
-		return 0;
+#endif /* OW_MT */
 	}
+	return 0;
 }
 
 /* return 0 if ok, else negative */
