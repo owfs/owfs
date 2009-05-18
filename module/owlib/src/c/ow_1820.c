@@ -532,7 +532,7 @@ static int OW_10temp(_FLOAT * temp, const struct parsedname *pn)
 		if (BUS_transaction(tunpowered, pn)) {
 			return 1;
 		}
-	} else if (Simul_Test(simul_temp, pn)) {	// powered
+	} else if (FS_Test_Simultaneous( simul_temp, delay, pn)) {	// powered
 		// Simultaneous not valid, so do a conversion
 		int ret;
 		BUSLOCK(pn);
@@ -541,8 +541,6 @@ static int OW_10temp(_FLOAT * temp, const struct parsedname *pn)
 		if (ret) {
 			return ret;
 		}
-	} else {
-		LEVEL_DEBUG("Simultaneous temperature conversion is valid\n");
 	}
 
 	if (OW_r_scratchpad(data, pn)) {
@@ -583,25 +581,23 @@ static int OW_10temp(_FLOAT * temp, const struct parsedname *pn)
 
 static int OW_power(BYTE * data, const struct parsedname *pn)
 {
-	BYTE b4[] = { _1W_READ_POWERMODE, };
-	struct transaction_log tpower[] = {
-		TRXN_START,
-		TRXN_WRITE1(b4),
-		TRXN_READ1(data),
-		TRXN_END,
-	};
-
+data[0] = 1 ;
+return 0 ;
 	if (IsUncachedDir(pn)
 		|| Cache_Get_Internal_Strict(data, sizeof(BYTE), InternalProp(POW), pn)) {
-		//printf("POWER "SNformat", need to ask\n",SNvar(pn->sn)) ;
+		BYTE b4[] = { _1W_READ_POWERMODE, };
+		struct transaction_log tpower[] = {
+			TRXN_START,
+			TRXN_WRITE1(b4),
+			TRXN_READ1(data),
+			TRXN_END,
+		};
+	
 		if (BUS_transaction(tpower, pn)) {
 			return 1;
 		}
-		//printf("POWER "SNformat", asked\n",SNvar(pn->sn)) ;
 		Cache_Add_Internal(data, sizeof(BYTE), InternalProp(POW), pn);
-		//printf("POWER "SNformat", cached\n",SNvar(pn->sn)) ;
 	}
-	//printf("POWER "SNformat", done\n",SNvar(pn->sn)) ;
 	return 0;
 }
 
@@ -666,7 +662,7 @@ static int OW_22temp(_FLOAT * temp, const int resolution, const struct parsednam
 		if (BUS_transaction(tunpowered, pn)) {
 			return 1;
 		}
-	} else if ( must_convert || Simul_Test(simul_temp, pn) ) {
+	} else if ( must_convert || FS_Test_Simultaneous( simul_temp, delay, pn) ) {
 		// No Simultaneous active, so need to "convert"
 		// powered, so release bus immediately after issuing convert
 		int ret;
@@ -677,8 +673,6 @@ static int OW_22temp(_FLOAT * temp, const int resolution, const struct parsednam
 		if (ret) {
 			return ret;
 		}
-	} else {
-		LEVEL_DEBUG("Simultaneous temperature conversion\n");
 	}
 
 	if (OW_r_scratchpad(data, pn)) {

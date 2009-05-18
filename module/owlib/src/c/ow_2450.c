@@ -522,6 +522,7 @@ static int OW_convert(struct parsedname *pn)
 {
 	BYTE convert[] = { _1W_CONVERT, 0x0F, 0x00, 0xFF, 0xFF, };
 	BYTE power;
+	UINT delay = 6 ;
 	struct transaction_log tpower[] = {
 		TRXN_START,
 		TRXN_WR_CRC16(convert, 3, 0),
@@ -531,7 +532,7 @@ static int OW_convert(struct parsedname *pn)
 		TRXN_START,
 		TRXN_WRITE3(convert),
 		TRXN_READ1(&convert[3]),
-		{&convert[4], &convert[4], 6, trxn_power},
+		{&convert[4], &convert[4], delay, trxn_power},
 		TRXN_CRC16(convert, 5),
 		TRXN_END,
 	};
@@ -542,7 +543,7 @@ static int OW_convert(struct parsedname *pn)
 	}
 
 	/* See if a conversion was globally triggered */
-	if ((power == _1W_2450_POWERED) && Simul_Test(simul_volt, pn) == 0) {
+	if ((power == _1W_2450_POWERED) && FS_Test_Simultaneous( simul_volt, delay, pn) == 0) {
 		return 0;
 	}
 
@@ -552,7 +553,7 @@ static int OW_convert(struct parsedname *pn)
 		if (BUS_transaction(tpower, pn)) {
 			return 1;
 		}
-		UT_delay(6);			/* don't need to hold line for conversion! */
+		UT_delay(delay);			/* don't need to hold line for conversion! */
 	} else {
 		if (BUS_transaction(tdead, pn)) {
 			return 1;

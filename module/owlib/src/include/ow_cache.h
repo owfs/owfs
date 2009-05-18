@@ -54,7 +54,7 @@ struct internal_prop {
 
 extern struct internal_prop ipSimul[] ;
 
-enum simul_type { simul_temp, simul_volt, };
+enum simul_type { simul_temp, simul_volt, simul_end };
 
 /* Cache  and Storage functions */
 void Cache_Open(void);
@@ -67,6 +67,7 @@ int Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn);
 int Cache_Add_Device(const int bus_nr, const BYTE *sn);
 int Cache_Add_Internal(const void *data, const size_t datasize, const struct internal_prop *ip, const struct parsedname *pn);
 int Cache_Add_Alias(const ASCII *name, const BYTE * sn) ;
+int Cache_Add_Simul(const enum simul_type type, const struct parsedname *pn);
 
 int OWQ_Cache_Get(struct one_wire_query *owq);
 int Cache_Get(void *data, size_t * dsize, const struct parsedname *pn);
@@ -77,12 +78,14 @@ int Cache_Get_Internal(void *data, size_t * dsize, const struct internal_prop *i
 int Cache_Get_Internal_Strict(void *data, size_t dsize, const struct internal_prop *ip, const struct parsedname *pn);
 int Cache_Get_Alias(ASCII * name, size_t length, const BYTE * sn) ;
 int Cache_Get_SerialNumber(const ASCII * name, BYTE * sn) ;
+int Cache_Get_Simul_Time(enum simul_type type, time_t * start_time, const struct parsedname * pn);
 
 int OWQ_Cache_Del(const struct one_wire_query *owq);
 int Cache_Del(const struct parsedname *pn);
 int Cache_Del_Dir(const struct parsedname *pn);
 int Cache_Del_Device(const struct parsedname *pn);
 int Cache_Del_Internal(const struct internal_prop *ip, const struct parsedname *pn);
+int Cache_Del_Simul(enum simul_type type, const struct parsedname *pn) ;
 
 void FS_cache_sibling(char *property, struct one_wire_query *owq_shallow_copy);
 
@@ -101,6 +104,7 @@ void FS_cache_sibling(char *property, struct one_wire_query *owq_shallow_copy);
 #define Cache_Add_Internal(data,datasize,ip,pn )    (1)
 #define OWQ_Cache_Add( owq )                (1)
 #define Cache_Add_Alias(name, sn)           (1)
+#define Cache_Add_Simul(type,pn)            (1)
 
 #define Cache_Get(data,dsize,pn )           (1)
 #define Cache_Get_Dir(db,pn )               (1)
@@ -112,12 +116,14 @@ void FS_cache_sibling(char *property, struct one_wire_query *owq_shallow_copy);
 #define Cache_Get_Internal_Strict(data,dsize,ip,pn )       (1)
 #define Cache_Get_Alias(name, length, sn)   (1)
 #define Cache_Get_SerialNumber(name, sn)    (1)
+#define Cache_Get_Simul_Time(type,time,pn)  (1)
 
 #define Cache_Del(pn )                      (1)
 #define Cache_Del_Dir(pn )                  (1)
 #define Cache_Del_Device(pn )               (1)
 #define Cache_Del_Internal(ip,pn )          (1)
 #define OWQ_Cache_Del( owq )                (1)
+#define Cache_Del_Simul(type,pn)            (1)
 
 #define FS_cache_sibling( property, owq_shallow_copy)
 

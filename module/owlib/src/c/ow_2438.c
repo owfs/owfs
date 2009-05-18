@@ -476,6 +476,7 @@ static int OW_w_page(const BYTE * p, const int page, const struct parsedname *pn
 static int OW_temp(_FLOAT * T, const struct parsedname *pn)
 {
 	BYTE data[9];
+	UINT delay = 10 ;
 	static BYTE t[] = { _1W_CONVERT_T, };
 	struct transaction_log tconvert[] = {
 		TRXN_START,
@@ -483,12 +484,13 @@ static int OW_temp(_FLOAT * T, const struct parsedname *pn)
 		TRXN_END,
 	};
 	// write conversion command
-	if (Simul_Test(simul_temp, pn) != 0) {
+	if (FS_Test_Simultaneous( simul_temp, delay, pn) != 0) {
 		if (BUS_transaction(tconvert, pn)) {
 			return 1;
 		}
-		UT_delay(10);
+		UT_delay(delay);
 	}
+
 	// read back registers
 	if (OW_r_page(data, 0, pn)) {
 		return 1;

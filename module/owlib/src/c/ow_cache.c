@@ -40,6 +40,11 @@ void * Device_Marker = &DevMarkerLoc ;
 int AliasMarkerLoc ;
 void * Alias_Marker = &AliasMarkerLoc ;
 
+// Simultaneous Dir are bus-based
+// generic unique address for Simultaneous.
+int SimulMarkerLoc[simul_end] ;
+void * Simul_Marker[] = { &SimulMarkerLoc[simul_temp], &SimulMarkerLoc[simul_volt], } ;
+
 /* Put the globals into a struct to declutter the namespace */
 static struct {
 	void *temporary_tree_new;				// current cache database
@@ -338,7 +343,7 @@ int Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn)
 	if (pn==NULL || pn->selected_connection==NULL) {
 		return 0;				// do check here to avoid needless processing
 	}
-
+	
 	switch ( pn->selected_connection->busmode ) {
 		case bus_fake:
 		case bus_tester:
@@ -350,19 +355,19 @@ int Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn)
 		default:
 			break ;
 	}
-
+	
 	if (duration <= 0) {
 		return 0;				/* in case timeout set to 0 */
 	}
-
+	
 	// allocate space for the node and data
 	tn = (struct tree_node *) owmalloc(sizeof(struct tree_node) + size);
 	if (!tn) {
 		return -ENOMEM;
 	}
-
+	
 	LEVEL_DEBUG(SNformat " elements=%d\n", SNvar(pn->sn), DirblobElements(db));
-
+	
 	// populate node with directory name and dirblob
 	memset(&tn->tk, 0, sizeof(struct tree_key));
 	FS_LoadDirectoryOnly(&pn_directory, pn);
@@ -374,6 +379,53 @@ int Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn)
 	if (size) {
 		memcpy(TREE_DATA(tn), db->snlist, size);
 	}
+	return Add_Stat(&cache_dir, Cache_Add_Common(tn));
+}
+
+/* Add a Simultaneous entry to the cache */
+/* return 0 if good, 1 if not */
+int Cache_Add_Simul(const enum simul_type type, const struct parsedname *pn)
+{
+	time_t duration = TimeOut(fc_volatile);
+	struct tree_node *tn;
+	struct parsedname pn_directory;
+	//printf("Cache_Add_Dir\n") ;
+	if (pn==NULL || pn->selected_connection==NULL) {
+		return 0;				// do check here to avoid needless processing
+	}
+	
+	switch ( pn->selected_connection->busmode ) {
+		case bus_fake:
+		case bus_tester:
+		case bus_mock:
+		case bus_bad:
+		case bus_unknown:
+			return 0 ;
+		default:
+			break ;
+	}
+	
+	if (duration <= 0) {
+		return 0;				/* in case timeout set to 0 */
+	}
+	
+	// allocate space for the node and data
+	tn = (struct tree_node *) owmalloc(sizeof(struct tree_node));
+	if (!tn) {
+		return -ENOMEM;
+	}
+	
+	LEVEL_DEBUG(SNformat "\n", SNvar(pn->sn));
+	
+	// populate node with directory name and dirblob
+	memset(&tn->tk, 0, sizeof(struct tree_key));
+	FS_LoadDirectoryOnly(&pn_directory, pn);
+	memcpy(tn->tk.sn, pn_directory.sn, 8);
+	tn->tk.p = Simul_Marker[type] ;
+	LEVEL_DEBUG("Simultaneous add type=%d\n",type);
+	tn->tk.extension = pn->selected_connection->index ;
+	tn->expires = duration + time(NULL);
+	tn->dsize = 0;
 	return Add_Stat(&cache_dir, Cache_Add_Common(tn));
 }
 
@@ -733,7 +785,6 @@ int Cache_Get_Dir(struct dirblob *db, const struct parsedname *pn)
 	}
 
 	LEVEL_DEBUG(SNformat "\n", SNvar(pn->sn));
-	//printf("GetDir tn=%p\n",tn) ;
 	memset(&tn.tk, 0, sizeof(struct tree_key));
 	FS_LoadDirectoryOnly(&pn_directory, pn);
 	memcpy(tn.tk.sn, pn_directory.sn, 8);
@@ -818,29 +869,61 @@ int Cache_Get_Internal(void *data, size_t * dsize, const struct internal_prop *i
 	if (!pn) {
 		return 1;				// do check here to avoid needless processing
 	}
-
+	
 	duration = TimeOut(ip->change);
 	if (duration <= 0) {
 		return 1;				/* in case timeout set to 0 */
 	}
-
+	
 	LEVEL_DEBUG(SNformat " size=%d\n", SNvar(pn->sn), (int) dsize[0]);
 	memset(&tn.tk, 0, sizeof(struct tree_key));
 	memcpy(tn.tk.sn, pn->sn, 8);
 	tn.tk.p = ip->name;
 	tn.tk.extension = EXTENSION_INTERNAL;
 	switch (ip->change) {
-	case fc_persistent:
-		return Get_Stat(&cache_sto, Cache_Get_Store(data, dsize, &duration, &tn));
-	default:
-		return Get_Stat(&cache_int, Cache_Get_Common(data, dsize, &duration, &tn));
+		case fc_persistent:
+			return Get_Stat(&cache_sto, Cache_Get_Store(data, dsize, &duration, &tn));
+		default:
+			return Get_Stat(&cache_int, Cache_Get_Common(data, dsize, &duration, &tn));
 	}
 }
 
 /* Test for a  simultaneous property
-	If the property isn't independently cached, return false (1)
-	If the simultaneous conversion is more recent, return false (1)
-	Else return the cached value and true (0)
+If the property isn't independently cached, return false (1)
+If the simultaneous conversion is more recent, return false (1)
+Else return the cached value and true (0)
+*/
+int Cache_Get_Simul_Time(enum simul_type type, time_t * start_time, const struct parsedname * pn)
+{
+	// valid cached primary data -- see if a simultaneous conversion should be used instead
+	struct tree_node tn_simul;
+	time_t duration ;
+	time_t duration_simul ;
+	size_t dsize_simul = 0 ;
+	struct parsedname pn_directory ;
+
+	duration = duration_simul = TimeOut(ipSimul[type].change);
+	if (duration_simul <= 0) {
+		return 1;
+	}
+	
+	FS_LoadDirectoryOnly(&pn_directory, pn);
+
+	memset(&tn_simul.tk, 0, sizeof(struct tree_key));
+	memcpy(tn_simul.tk.sn, pn_directory.sn, 8);
+	tn_simul.tk.p = Simul_Marker[type];
+	tn_simul.tk.extension = pn->selected_connection->index;
+	if ( Get_Stat(&cache_int, Cache_Get_Common(NULL, &dsize_simul, &duration_simul, &tn_simul)) ) {
+		return 1 ;
+	}
+	start_time[0] = duration_simul - duration + time(NULL) ;
+	return 0 ;
+}
+
+/* Test for a simultaneous property
+If the property isn't independently cached, return false (1)
+If the simultaneous conversion is more recent, return false (1)
+Else return the cached value and true (0)
 */
 static int Cache_Get_Simultaneous(enum simul_type type, struct one_wire_query *owq)
 {
@@ -848,46 +931,38 @@ static int Cache_Get_Simultaneous(enum simul_type type, struct one_wire_query *o
 	time_t duration;
 	struct parsedname * pn = PN(owq) ;
 	size_t dsize = sizeof(union value_object) ;
-
+	
 	duration = TimeOut(pn->selected_filetype->change);
 	if (duration <= 0) {
 		return 1;
 	}
-
+	
 	memset(&tn.tk, 0, sizeof(struct tree_key));
 	memcpy(tn.tk.sn, pn->sn, 8);
 	tn.tk.p = pn->selected_filetype;
 	tn.tk.extension = pn->extension;
-
+	
 	if ( Get_Stat(&cache_ext, Cache_Get_Common(&OWQ_val(owq), &dsize, &duration, &tn)) == 0 ) {
 		// valid cached primary data -- see if a simultaneous conversion should be used instead
-		struct tree_node tn_simul;
+		time_t start_time ;
 		time_t duration_simul;
-		size_t dsize_simul = 0 ;
-		struct parsedname pn_directory ;
-
-		FS_LoadDirectoryOnly(&pn_directory, PN(owq));
-
+		
 		duration_simul = TimeOut(ipSimul[type].change);
 		if (duration_simul <= 0) {
 			return 0; /* use cached property */
 		}
-
-		memset(&tn_simul.tk, 0, sizeof(struct tree_key));
-		memcpy(tn_simul.tk.sn, pn_directory.sn, 8);
-		tn_simul.tk.p = ipSimul[type].name;
-		tn_simul.tk.extension = EXTENSION_INTERNAL;
-		if ( Get_Stat(&cache_int, Cache_Get_Common(NULL, &dsize_simul, &duration_simul, &tn_simul)) ) {
+		
+		if ( Cache_Get_Simul_Time(type,&start_time,pn) ) {
 			// Simul not found
+			LEVEL_DEBUG("Simultaneous conversion not found.\n") ;
 			return 0 ;
-		} else {
-			LEVEL_DEBUG("No simultaneous conversions active.\n") ;
 		}
-		if ( duration_simul > duration ) {
+		if ( start_time-time(NULL)+duration_simul > duration ) {
 			LEVEL_DEBUG("Simultaneous conversion is newer than previous reading.\n") ;
 			return 1 ; // Simul is newer
 		}
 		// Cached data is newer, so use it
+		LEVEL_DEBUG("Simultaneous conversion is older than actual reading.\n") ;
 		return 0 ;
 	}
 	// fall through -- no cached primary data so simultaneous is irrelevant
@@ -1105,15 +1180,24 @@ int Cache_Del_Dir(const struct parsedname *pn)
 {
 	struct tree_node tn;
 	struct parsedname pn_directory;
-	time_t duration = TimeOut(fc_directory);
-	if (duration <= 0) {
-		return 1;
-	}
-
+	
 	memset(&tn.tk, 0, sizeof(struct tree_key));
 	FS_LoadDirectoryOnly(&pn_directory, pn);
 	memcpy(tn.tk.sn, pn_directory.sn, 8);
 	tn.tk.p = Directory_Marker ;
+	tn.tk.extension = pn->selected_connection->index ;
+	return Del_Stat(&cache_dir, Cache_Del_Common(&tn));
+}
+
+int Cache_Del_Simul(enum simul_type type, const struct parsedname *pn)
+{
+	struct tree_node tn;
+	struct parsedname pn_directory;
+	
+	memset(&tn.tk, 0, sizeof(struct tree_key));
+	FS_LoadDirectoryOnly(&pn_directory, pn);
+	memcpy(tn.tk.sn, pn_directory.sn, 8);
+	tn.tk.p = Simul_Marker[type] ;
 	tn.tk.extension = pn->selected_connection->index ;
 	return Del_Stat(&cache_dir, Cache_Del_Common(&tn));
 }

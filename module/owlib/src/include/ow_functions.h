@@ -110,7 +110,7 @@ void Test_and_Close( int * file_descriptor ) ;
 #include "ow_cache.h"
 void FS_LoadDirectoryOnly(struct parsedname *pn_directory, const struct parsedname *pn_original);
 
-int Simul_Test(const enum simul_type type, const struct parsedname *pn);
+int FS_Test_Simultaneous( enum simul_type type, UINT delay, const struct parsedname * pn) ;
 int FS_poll_convert(const struct parsedname *pn);
 
 // ow_locks.c
