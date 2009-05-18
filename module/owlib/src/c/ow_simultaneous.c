@@ -59,10 +59,10 @@ READ_FUNCTION(FS_r_single);
 struct filetype simultaneous[] = {
   {"temperature", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_link, FS_r_convert, FS_w_convert_temp, {i:simul_temp},},
   {"voltage", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_link, FS_r_convert, FS_w_convert_volt, {i:simul_volt},},
-  {"present", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_present, NO_WRITE_FUNCTION, {i:0},},
-  {"present_ds2400", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_present, NO_WRITE_FUNCTION, {i:1},},
-  {"single", 18, NULL, ft_ascii, fc_volatile, FS_r_single, NO_WRITE_FUNCTION, {i:0},},
-  {"single_ds2400", 18, NULL, ft_ascii, fc_volatile, FS_r_single, NO_WRITE_FUNCTION, {i:1},},
+  {"present", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_present, NO_WRITE_FUNCTION, {i:_1W_READ_ROM},},
+  {"present_ds2400", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_present, NO_WRITE_FUNCTION, {i:_1W_OLD_READ_ROM},},
+  {"single", 18, NULL, ft_ascii, fc_volatile, FS_r_single, NO_WRITE_FUNCTION, {i:_1W_READ_ROM},},
+  {"single_ds2400", 18, NULL, ft_ascii, fc_volatile, FS_r_single, NO_WRITE_FUNCTION, {i:_1W_OLD_READ_ROM},},
 };
 
 DeviceEntry(simultaneous, simultaneous);
@@ -206,8 +206,9 @@ static int FS_r_present(struct one_wire_query *owq)
 		default:
 		{
 			struct parsedname pn_directory;
-			BYTE read_ROM[] = { _1W_READ_ROM, };
+			BYTE read_ROM[1] ;
 			BYTE resp[8];
+			BYTE collisions[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, };
 			BYTE match[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, };
 			struct transaction_log t[] = {
 				TRXN_START,
@@ -217,16 +218,16 @@ static int FS_r_present(struct one_wire_query *owq)
 			};
 
 			/* check if DS2400 compatibility is needed */
-			if (pn->selected_filetype->data.i) {
-				read_ROM[0] = 0x0F;
-			}
+			read_ROM[0] = _1W_READ_ROM;
 
 			FS_LoadDirectoryOnly(&pn_directory, pn);
 			if (BUS_transaction(t, &pn_directory)) {
 				return -EINVAL;
 			}
-			if (memcmp(resp, match, 8)) {	// some device(s) complained
+			if (memcmp(resp, collisions, 8)) {	// all devices
 				OWQ_Y(owq) = 1;		// YES present
+			} else if (memcmp(resp, match, 8)) {	// some device(s) complained
+					OWQ_Y(owq) = 1;		// YES present
 				if (CRC8(resp, 8)) {
 					return 0;		// crc8 error -- more than one device
 				}
@@ -258,7 +259,7 @@ static int FS_r_single(struct one_wire_query *owq)
 		default:
 		{
 			struct parsedname pn_directory;
-			BYTE read_ROM[] = { _1W_READ_ROM, };
+			BYTE read_ROM[1] ;
 			BYTE match[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, };
 			BYTE collisions[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, };
 			struct transaction_log t[] = {
@@ -269,9 +270,7 @@ static int FS_r_single(struct one_wire_query *owq)
 			};
 
 			/* check if DS2400 compatibility is needed */
-			if (pn->selected_filetype->data.i) {
-				read_ROM[0] = 0x0F;
-			}
+			read_ROM[0] = pn->selected_filetype->data.i;
 
 			FS_LoadDirectoryOnly(&pn_directory, pn);
 			if (BUS_transaction(t, &pn_directory)) {

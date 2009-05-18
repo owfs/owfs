@@ -15,6 +15,7 @@
 
 /* 1-wire ROM commands */
 #define _1W_READ_ROM               0x33
+#define _1W_OLD_READ_ROM           0x0F
 #define _1W_MATCH_ROM              0x55
 #define _1W_SKIP_ROM               0xCC
 #define _1W_SEARCH_ROM             0xF0
