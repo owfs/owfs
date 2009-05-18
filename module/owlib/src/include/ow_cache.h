@@ -47,14 +47,14 @@ struct internal_prop {
 	enum fc_change change;
 };
 
+enum simul_type { simul_temp, simul_volt, simul_end };
+
 #if OW_CACHE
 
 #define MakeInternalProp(tag,change)  static char ip_name_##tag[] = #tag ; static struct internal_prop ip_##tag = { ip_name_##tag , change }
 #define InternalProp(tag)     (& ip_##tag)
 
 extern struct internal_prop ipSimul[] ;
-
-enum simul_type { simul_temp, simul_volt, simul_end };
 
 /* Cache  and Storage functions */
 void Cache_Open(void);

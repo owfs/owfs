@@ -581,8 +581,11 @@ static int OW_10temp(_FLOAT * temp, const struct parsedname *pn)
 
 static int OW_power(BYTE * data, const struct parsedname *pn)
 {
-data[0] = 1 ;
-return 0 ;
+#if 0
+	/* Debug code removed */
+	data[0] = 1 ;
+	return 0 ;
+#endif
 	if (IsUncachedDir(pn)
 		|| Cache_Get_Internal_Strict(data, sizeof(BYTE), InternalProp(POW), pn)) {
 		BYTE b4[] = { _1W_READ_POWERMODE, };
