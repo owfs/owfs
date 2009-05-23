@@ -78,6 +78,7 @@ int Parse_SerialNumber(char *sn_char, BYTE * sn) ;
 size_t FileLength(const struct parsedname *pn);
 size_t FullFileLength(const struct parsedname *pn);
 int CheckPresence(struct parsedname *pn);
+int ReCheckPresence(struct parsedname *pn);
 void FS_devicename(char *buffer, const size_t length, const BYTE * sn, const struct parsedname *pn);
 void FS_devicefind(const char *code, struct parsedname *pn);
 void FS_devicefindhex(BYTE f, struct parsedname *pn);

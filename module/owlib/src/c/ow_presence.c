@@ -46,7 +46,8 @@ $Id$
 #include "ow_connection.h"
 
 /* ------- Prototypes ------------ */
-static int CheckPresence_low(struct connection_in *in, const struct parsedname *pn);
+static int CheckPresence_low(const struct parsedname *pn);
+static int CheckThisConnection(struct connection_in *in, const struct parsedname *pn);
 
 /* ------- Functions ------------ */
 
@@ -54,41 +55,73 @@ static int CheckPresence_low(struct connection_in *in, const struct parsedname *
 int CheckPresence(struct parsedname *pn)
 {
 	int bus_nr;
-
+	
 	if (NotRealDir(pn)) {
 		return 0;
 	}
-
+	
 	if ((pn->selected_device == DeviceSimultaneous)
 		|| (pn->selected_device == DeviceThermostat)) {
 		return 0;
 	}
-
+	
 	/* If set, already found bus. */
 	/* Use UnsetKnownBus to clear and allow a new search */
 	if (KnownBus(pn)) {
 		return pn->known_bus->index;
 	}
-
+	
 	if (Cache_Get_Device(&bus_nr, pn) == 0) {
 		LEVEL_DEBUG("Found device on bus %d\n",bus_nr);
 		SetKnownBus(bus_nr, pn);
 		return bus_nr;
 	}
-
+	
 	LEVEL_DETAIL("Checking presence of %s\n", SAFESTRING(pn->path));
-
+	
 	if ( Inbound_Control.active == 0 ) { // No adapters
 		return -1 ;
 	}
-	bus_nr = CheckPresence_low(Inbound_Control.head, pn);	// check only allocated inbound connections
+	bus_nr = CheckPresence_low(pn);	// check only allocated inbound connections
 	if (bus_nr >= 0) {
 		SetKnownBus(bus_nr, pn);
-		Cache_Add_Device(bus_nr, pn->sn);
 		return bus_nr;
 	}
 	UnsetKnownBus(pn);
 	return -1;
+}
+
+/* See if a cached location is accurate -- called with "Known Bus" set */
+int ReCheckPresence(struct parsedname *pn)
+{
+	int bus_nr;
+	
+	if (NotRealDir(pn)) {
+		return 0;
+	}
+	
+	if ((pn->selected_device == DeviceSimultaneous)
+		|| (pn->selected_device == DeviceThermostat)) {
+		return 0;
+	}
+	
+	if (KnownBus(pn)) {
+		if ( CheckThisConnection(pn->known_bus->index,pn) >= 0 ) {
+			return pn->known_bus->index ;
+		}
+	}
+	
+	if (Cache_Get_Device(&bus_nr, pn) == 0) {
+		LEVEL_DEBUG("Found device on bus %d\n",bus_nr);
+		if ( CheckThisConnection(bus_nr,pn) >= 0 ) {
+			SetKnownBus(bus_nr, pn);
+			return bus_nr ;
+		}
+	}
+	
+	UnsetKnownBus(pn);
+	Cache_Del_Device(pn) ;
+	return CheckPresence(pn);
 }
 
 /* Check if device exists -- -1 no, >=0 yes (bus number) */
@@ -98,108 +131,54 @@ int CheckPresence(struct parsedname *pn)
 struct checkpresence_struct {
 	struct connection_in *in;
 	const struct parsedname *pn;
-	int ret;
+	int bus_nr;
 };
 
-static void *CheckPresence_callback(void *v)
+static void * CheckPresence_callback(void * v)
 {
-	struct checkpresence_struct *cps = (struct checkpresence_struct *) v;
-	cps->ret = CheckPresence_low(cps->in, cps->pn);
-	LEVEL_DEBUG("<%s> Normal exit\n",SAFESTRING(cps->in->name));
-	pthread_exit(NULL);
-	return NULL;
-}
-
-static int CheckPresence_low(struct connection_in *in, const struct parsedname *pn)
-{
-	int ret = 0;
+	int bus_nr = 0;
 	pthread_t thread;
 	int threadbad = 1;
-	struct parsedname pn2;
-	struct checkpresence_struct cps = { in->next, pn, 0 };
-
-	threadbad = (in->next == NULL)
-		|| pthread_create(&thread, NULL, CheckPresence_callback, (void *) (&cps));
-
-	memcpy(&pn2, pn, sizeof(struct parsedname));	// shallow copy
-	pn2.selected_connection = in;
-
-	//printf("CheckPresence_low:\n");
-	if (TestConnection(&pn2)) {	// reconnect successful?
-		ret = -ECONNABORTED;
-	} else if (BusIsServer(in)) {
-		//printf("CheckPresence_low: call ServerPresence\n");
-		if (ServerPresence(&pn2) >= 0) {
-			/* Device was found on this in-device, return it's index */
-			ret = in->index;
-		} else {
-			ret = -1;
-		}
-		//printf("CheckPresence_low: ServerPresence(%s) pn->selected_connection->index=%d ret=%d\n", pn->path, pn->selected_connection->index, ret);
-	} else if ( (get_busmode(in) == bus_fake) || (get_busmode(in) == bus_tester) || (get_busmode(in) == bus_mock) ) {
-		ret = (DirblobSearch(pn2.sn, &(in->main)) < 0) ? -1 : in->index;
-	} else {
-		struct transaction_log t[] = {
-			TRXN_NVERIFY,
-			TRXN_END,
-		};
-		/* this can only be done on local buses */
-		if (BUS_transaction(t, &pn2)) {
-			ret = -1;
-		} else {
-			/* Device was found on this in-device, return it's index */
-			ret = in->index;
-		}
-	}
+	struct checkpresence_struct * cps = (struct checkpresence_struct *) v ;
+	struct checkpresence_struct next_cps = { cps->in->next, cps->pn, -ENOENT };
+	
+	threadbad = (next_cps.in == NULL)
+	|| pthread_create(&thread, NULL, CheckPresence_callback, (void *) (&next_cps));
+	
+	cps->bus_nr = CheckThisConnection( cps->in, cps->pn ) ;
+	
 	if (threadbad == 0) {		/* was a thread created? */
-		void *v;
-		if (pthread_join(thread, &v)) {
-			return ret;			/* wait for it (or return only this result) */
-		}
-		if (cps.ret >= 0) {
-			return cps.in->index;
+		void *vv;
+		if (pthread_join(thread, &vv)) {
+			if ( next_cps.bus_nr >= 0 ) {
+				cps->bus_nr = next_cps.bus_nr ;
+			}
 		}
 	}
-	//printf("Presence return = %d\n",ret) ;
-	return ret;
+	return NULL ;
+}
+
+static int CheckPresence_low(const struct parsedname *pn)
+{
+	struct checkpresence_struct cps = { Inbound_Control.head , pn, -ENOENT };
+		
+	if ( cps.in != NULL ) {
+		CheckPresence_callback( (void *) (&cps) ) ;
+	}
+	return cps.bus_nr;
 }
 
 #else							/* OW_MT */
 
-static int CheckPresence_low(struct connection_in *in, const struct parsedname *pn)
+static int CheckPresence_low(const struct parsedname *pn)
 {
-	struct parsedname pn2;
-
-	memcpy(&pn2, pn, sizeof(struct parsedname));	// shallow copy
-	pn2.selected_connection = in;
-
-	if (TestConnection(&pn2)) {	// reconnect successful?
-		return -ECONNABORTED;
-	} else if (BusIsServer(in)) {
-		if (ServerPresence(&pn2) >= 0) {
-			/* Device was found on this in-device, return it's index */
-			return in->index;
+	struct connection_in * in ;
+	
+	for ( in=Inbound_Control.head ; in ; in=in->next ) {
+		int bus_nr = CheckThisConnection( in, pn ) ;
+		if ( bus_nr >= 0 ) {
+			return bus_nr ;
 		}
-	} else if ( (get_busmode(in) == bus_fake) || (get_busmode(in) == bus_tester) || (get_busmode(in) == bus_mock) ) {
-		int ret = DirblobSearch(pn2.sn, &(in->main));
-		if (ret >= 0) {
-			return ret;
-		}
-	} else {
-		struct transaction_log t[] = {
-			TRXN_NVERIFY,
-			TRXN_END,
-		};
-		/* this can only be done on local buses */
-		if (BUS_transaction(t, &pn2) == 0) {
-			/* Device was found on this in-device, return it's index */
-			return in->index;
-		}
-	}
-
-	/* recurse to next bus number */
-	if (in->next) {
-		return CheckPresence_low(in->next, pn);
 	}
 	return -ENOENT;				// no success
 }
@@ -226,3 +205,45 @@ int FS_present(struct one_wire_query *owq)
 	}
 	return 0;
 }
+
+static int CheckThisConnection(struct connection_in *in, const struct parsedname *pn)
+{
+	struct parsedname s_pn_copy;
+	struct parsedname * pn_copy = &s_pn_copy ;
+	
+	memcpy(pn_copy, pn, sizeof(struct parsedname));	// shallow copy
+	pn_copy->selected_connection = in;
+	
+	if (TestConnection(pn_copy)) {	// reconnect successful?
+		return -ECONNABORTED;
+	} else if (BusIsServer(in)) {
+		//printf("CheckPresence_low: call ServerPresence\n");
+		if (ServerPresence(pn_copy) >= 0) {
+			/* Device was found on this in-device, return it's index */
+			LEVEL_DEBUG("Presence found on server bus %s\n",SAFESTRING(in->name)) ;
+			Cache_Add_Device(in->index,pn_copy->sn) ; // add or update cache */
+			return in->index;
+		}
+		//printf("CheckPresence_low: ServerPresence(%s) pn->selected_connection->index=%d ret=%d\n", pn->path, pn->selected_connection->index, ret);
+	} else if ( (get_busmode(in) == bus_fake) || (get_busmode(in) == bus_tester) || (get_busmode(in) == bus_mock) ) {
+		if ( DirblobSearch(pn_copy->sn, &(in->main)) >= 0 ) {
+			LEVEL_DEBUG("Presence found on fake-like bus %s\n",SAFESTRING(in->name)) ;
+			return in->index;
+		}
+	} else {
+		struct transaction_log t[] = {
+			TRXN_NVERIFY,
+			TRXN_END,
+		};
+		/* this can only be done on local buses */
+		if (BUS_transaction(t, pn_copy) == 0 ) {
+			/* Device was found on this in-device, return it's index */
+			LEVEL_DEBUG("Presence found on local bus %s\n",SAFESTRING(in->name)) ;
+			Cache_Add_Device(in->index,pn_copy->sn) ; // add or update cache */
+			return in->index ;
+		}
+	}
+	LEVEL_DEBUG("Presence NOT found on bus %s\n",SAFESTRING(in->name)) ;
+	return -1 ;
+}
+

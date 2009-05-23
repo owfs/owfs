@@ -135,18 +135,31 @@ int FS_write_postparse(struct one_wire_query *owq)
 			/* if not a specified bus, relook for chip location */
 			if (write_or_error < 0) {	// second look -- initial write gave an error
 				STAT_ADD1(write_tries[1]);
-				if (Globals.opt == opt_server) {	// called from owserver
-					Cache_Del_Device(pn);
-				} else if (SpecifiedBus(pn)) {
+				if (SpecifiedBus(pn)) {
 					write_or_error = TestConnection(pn) ? -ECONNABORTED : FS_w_given_bus(owq);
 					if (write_or_error < 0) {	// third try
 						STAT_ADD1(write_tries[2]);
 						write_or_error = TestConnection(pn) ? -ECONNABORTED : FS_w_given_bus(owq);
 					}
+				} else if (BusIsServer(pn->selected_connection)) {
+					int bus_nr = pn->selected_connection->index ; // current selected bus
+					int busloc_or_error = ReCheckPresence(pn) ;
+					// special handling or remote
+					// only repeat if the bus number is wrong
+					// because the remote does the rewrites
+					if ( bus_nr != busloc_or_error ) {
+						if (busloc_or_error < 0) {
+							write_or_error = -ENOENT;
+						} else {
+							write_or_error = FS_w_given_bus(owq);
+							if (write_or_error < 0) {	// third try
+								STAT_ADD1(write_tries[2]);
+								write_or_error = TestConnection(pn) ? -ECONNABORTED : FS_w_given_bus(owq);
+							}
+						}
+					}				
 				} else {
-					int busloc_or_error;
-					UnsetKnownBus(pn);	// eliminate cached location
-					busloc_or_error = CheckPresence(pn);
+					int busloc_or_error = ReCheckPresence(pn);
 					if (busloc_or_error < 0) {
 						write_or_error = -ENOENT;
 					} else {

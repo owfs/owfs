@@ -112,10 +112,7 @@ static int FS_read_real(struct one_wire_query *owq)
 	/* if not a specified bus, relook for chip location */
 	if (read_or_error < 0) {	//error
 		STAT_ADD1(read_tries[1]);
-		if (Globals.opt == opt_server) {	// called from owserver
-			// Only one try (repeated remotely)
-			Cache_Del_Device(pn);
-		} else if (SpecifiedBus(pn)) {	// this bus or bust!
+		if (SpecifiedBus(pn)) {	// this bus or bust!
 			if (TestConnection(pn)) {
 				read_or_error = -ECONNABORTED;
 			} else {
@@ -125,10 +122,25 @@ static int FS_read_real(struct one_wire_query *owq)
 					read_or_error = FS_read_distribute(owq);
 				}
 			}
+		} else if (BusIsServer(pn->selected_connection)) {
+			int bus_nr = pn->selected_connection->index ; // current selected bus
+			int busloc_or_error = ReCheckPresence(pn) ;
+			// special handling or remote
+			// only repeat if the bus number is wrong
+			// because the remote does the rereads
+			if ( bus_nr != busloc_or_error ) {
+				if (busloc_or_error < 0) {
+					read_or_error = -ENOENT;
+				} else {
+					read_or_error = FS_read_distribute(owq);
+					if (read_or_error < 0) {	// third try
+						STAT_ADD1(read_tries[2]);
+						read_or_error = FS_read_distribute(owq);
+					}
+				}
+			}
 		} else {
-			int busloc_or_error;
-			UnsetKnownBus(pn);	// eliminate cached presence
-			busloc_or_error = CheckPresence(pn);	// search again
+			int busloc_or_error = ReCheckPresence(pn);	// search again
 			if (busloc_or_error < 0) {
 				read_or_error = -ENOENT;
 			} else {
