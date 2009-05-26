@@ -61,6 +61,7 @@ int main(int argc, char **argv)
 
     ssize_t dir_return ;
     char *dir_buffer = NULL;
+    char *dir_buffer_copy = NULL;
     size_t dir_length ;
     char ** d_buffer ;
     char * dir_member ;
@@ -100,6 +101,7 @@ int main(int argc, char **argv)
 
     /* ------------- GO THROUGH DIR ------------------ */
     d_buffer = &dir_buffer ;
+	dir_buffer_copy = dir_buffer;
     while ( (dir_member=strsep(d_buffer,","))!=NULL ) {
         switch ( dir_member[0] ) {
             case '1':
@@ -130,9 +132,10 @@ cleanup:
     /* ------------- DONE -- CLEANUP ----------------- */
     OW_finish();
 
-    if (dir_buffer) {
-        free(dir_buffer);
-        dir_buffer = NULL;
+    if (dir_buffer_copy) {
+        free(dir_buffer_copy);
+        dir_buffer_copy = NULL;
     }
+
     return 0 ;
 }
