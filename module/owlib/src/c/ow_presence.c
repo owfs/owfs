@@ -47,7 +47,7 @@ $Id$
 
 /* ------- Prototypes ------------ */
 static int CheckPresence_low(const struct parsedname *pn);
-static int CheckThisConnection(struct connection_in *in, const struct parsedname *pn);
+static int CheckThisConnection(int bus_nr, const struct parsedname *pn) ;
 
 /* ------- Functions ------------ */
 
@@ -145,11 +145,11 @@ static void * CheckPresence_callback(void * v)
 	threadbad = (next_cps.in == NULL)
 	|| pthread_create(&thread, NULL, CheckPresence_callback, (void *) (&next_cps));
 	
-	cps->bus_nr = CheckThisConnection( cps->in, cps->pn ) ;
+	cps->bus_nr = CheckThisConnection( cps->in->index, cps->pn ) ;
 	
 	if (threadbad == 0) {		/* was a thread created? */
 		void *vv;
-		if (pthread_join(thread, &vv)) {
+		if (pthread_join(thread, &vv)==0) {
 			if ( next_cps.bus_nr >= 0 ) {
 				cps->bus_nr = next_cps.bus_nr ;
 			}
@@ -175,7 +175,7 @@ static int CheckPresence_low(const struct parsedname *pn)
 	struct connection_in * in ;
 	
 	for ( in=Inbound_Control.head ; in ; in=in->next ) {
-		int bus_nr = CheckThisConnection( in, pn ) ;
+		int bus_nr = CheckThisConnection( in->index, pn ) ;
 		if ( bus_nr >= 0 ) {
 			return bus_nr ;
 		}
@@ -206,10 +206,15 @@ int FS_present(struct one_wire_query *owq)
 	return 0;
 }
 
-static int CheckThisConnection(struct connection_in *in, const struct parsedname *pn)
+static int CheckThisConnection(int bus_nr, const struct parsedname *pn)
 {
 	struct parsedname s_pn_copy;
 	struct parsedname * pn_copy = &s_pn_copy ;
+	struct connection_in * in = find_connection_in(bus_nr) ;
+
+	if ( in == NULL ) {
+		return -ENOENT ;
+	}
 	
 	memcpy(pn_copy, pn, sizeof(struct parsedname));	// shallow copy
 	pn_copy->selected_connection = in;
