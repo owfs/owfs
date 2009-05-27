@@ -276,11 +276,13 @@ static int FS_r_single(struct one_wire_query *owq)
 			if (BUS_transaction(t, &pn_directory)) {
 				return -EINVAL;
 			}
-			LEVEL_DEBUG("dat=" SNformat " crc8c=%02x\n", SNvar(resp), CRC8(resp, 7));
+			LEVEL_DEBUG("dat=" SNformat " crc8=%02x\n", SNvar(resp), CRC8(resp, 7));
 			if ((memcmp(resp, collisions, 8) != 0) && (memcmp(resp, match, 8) != 0) && (CRC8(resp, 8) == 0)) {	// non-empty, and no CRC error
 				OW_single2cache(resp, &pn_directory);
 				/* Return device id. */
 				FS_devicename(ad, sizeof(ad), resp, pn);
+			} else {
+				return -EINVAL ;
 			}
 		}
 			break ;
