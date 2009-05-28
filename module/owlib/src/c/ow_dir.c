@@ -665,6 +665,7 @@ static int FS_dir_plus(void (*dirfunc) (void *, const struct parsedname *), void
 		if ( pn_plus_directory->selected_device ){
 			flags[0] |= pn_plus_directory->selected_device->flags;
 		}
+		FS_ParsedName_destroy(pn_plus_directory) ;
 		return 0;
 	}
 	return -ENOENT;
