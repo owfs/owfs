@@ -40,7 +40,8 @@ int handle_socket(FILE * out)
 	char linecopy[PATH_MAX + 1];
 	char *str;
 	struct urlparse up;
-	struct parsedname pn;
+	struct parsedname s_pn;
+	struct parsedname * pn = &s_pn ;
 
 	str = fgets(up.line, PATH_MAX, out);
 	LEVEL_CALL("PreParse line=%s\n", up.line);
@@ -72,15 +73,15 @@ int handle_socket(FILE * out)
 		Bad404(out);
 	} else if (strcasecmp(up.file, "/favicon.ico") == 0) {
 		Favicon(out);
-	} else if (FS_ParsedName(up.file, &pn)) {
+	} else if (FS_ParsedName(up.file, pn)) {
 		/* Can't understand the file name = URL */
 		Bad404(out);
 	} else {
 		/* Root directory -- show the bus */
 		if (pn.selected_device == NULL) {	/* directory! */
-			ShowDir(out, &pn);
+			ShowDir(out, pn);
 		} else if (up.request == NULL) {
-			ShowDevice(out, &pn);
+			ShowDevice(out, pn);
 		} else {				/* First write new values, then show */
 			OWQ_allocate_struct_and_pointer(owq_write);
 
@@ -90,10 +91,10 @@ int handle_socket(FILE * out)
 				/* Single device, show it's properties */
 				ChangeData(owq_write);
 				FS_OWQ_destroy(owq_write);
-				ShowDevice(out, &pn);
+				ShowDevice(out, pn);
 			}
 		}
-		FS_ParsedName_destroy(&pn);
+		FS_ParsedName_destroy(pn);
 	}
 //printf("Done\n");
 	return 0;
