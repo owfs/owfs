@@ -113,6 +113,9 @@ struct tree_opaque {
 #define TREE_DATA(tn)    ( (BYTE *)(tn) + sizeof(struct tree_node) )
 #define CONST_TREE_DATA(tn)    ( (const BYTE *)(tn) + sizeof(struct tree_node) )
 
+static void * GetFlippedTree( void ) ;
+static void DeleteFlippedTree( void * retired_tree ) ;
+
 static int Cache_Type_Store( const struct parsedname * pn ) ;
 
 static int Cache_Add_Common(struct tree_node *tn);
@@ -529,6 +532,32 @@ int Cache_Add_Alias(const ASCII *name, const BYTE * sn)
 	return Add_Stat(&cache_sto, Cache_Add_Store(tn));
 }
 
+/* Moves new to old tree, initializes new tree, and returns former old tree location */
+static void * GetFlippedTree( void )
+{
+	void * flip = cache.temporary_tree_old;
+	/* Flip caches! old = new. New truncated, reset time and counters and flag */
+	cache.temporary_tree_old = cache.temporary_tree_new;
+	cache.old_ram = cache.new_ram;
+	cache.temporary_tree_new = NULL;
+	cache.new_ram = 0;
+	cache.added = 0;
+	cache.retired = time(NULL);
+	cache.killed = cache.retired + cache.lifespan;
+	return flip ;
+}
+
+static void DeleteFlippedTree( void * retired_tree )
+{
+	LEVEL_DEBUG("flip cache. tdestroy() will be called.\n");
+	tdestroy(retired_tree, free);
+	STATLOCK;
+	++cache_flips;			/* statistics */
+	memcpy(&old_avg, &new_avg, sizeof(struct average));
+	AVERAGE_CLEAR(&new_avg);
+	STATUNLOCK;
+}
+
 /* Add an item to the cache */
 /* retire the cache (flip) if too old, and start a new one (keep the old one for a while) */
 /* return 0 if good, 1 if not */
@@ -536,21 +565,13 @@ static int Cache_Add_Common(struct tree_node *tn)
 {
 	struct tree_opaque *opaque;
 	enum { no_add, yes_add, just_update } state = no_add;
-	void *flip = NULL;
-	//printf("Cache_Add_Common\n") ;
+	void *retired_tree = NULL;
+
 	node_show(tn);
 	LEVEL_DEBUG("Add to cache sn " SNformat " pointer=%p index=%d size=%d\n", SNvar(tn->tk.sn), tn->tk.p, tn->tk.extension, tn->dsize);
 	CACHE_WLOCK;
 	if (cache.killed < time(NULL)) {	// old database has timed out
-		flip = cache.temporary_tree_old;
-		/* Flip caches! old = new. New truncated, reset time and counters and flag */
-		cache.temporary_tree_old = cache.temporary_tree_new;
-		cache.old_ram = cache.new_ram;
-		cache.temporary_tree_new = NULL;
-		cache.new_ram = 0;
-		cache.added = 0;
-		cache.retired = time(NULL);
-		cache.killed = cache.retired + cache.lifespan;
+		retired_tree = GetFlippedTree() ;
 	}
 	if (Globals.cache_size && (cache.old_ram + cache.new_ram > Globals.cache_size)) {
 		// failed size test
@@ -571,15 +592,8 @@ static int Cache_Add_Common(struct tree_node *tn)
 	}
 	CACHE_WUNLOCK;
 	/* flipped old database is now out of circulation -- can be destroyed without a lock */
-	if (flip) {
-		LEVEL_DEBUG("flip cache. tdestroy() will be called.\n");
-		tdestroy(flip, free);
-		STATLOCK;
-		++cache_flips;			/* statistics */
-		memcpy(&old_avg, &new_avg, sizeof(struct average));
-		AVERAGE_CLEAR(&new_avg);
-		STATUNLOCK;
-		//printf("FLIP points to: %p\n",flip);
+	if (retired_tree) {
+		DeleteFlippedTree( retired_tree ) ;
 	}
 	/* Added or updated, update statistics */
 	switch (state) {
