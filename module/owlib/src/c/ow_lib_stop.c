@@ -20,10 +20,8 @@ $Id$
 void LibStop(void)
 {
 	char *argv[1] = { NULL };
-#if OW_CACHE
 	LEVEL_CALL("Clear Cache\n");
 	Cache_Clear();
-#endif							/* OW_CACHE */
 	LEVEL_CALL("Closing input devices\n");
 	FreeInAll();
 	LEVEL_CALL("Closing outout devices\n");

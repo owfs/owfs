@@ -196,7 +196,7 @@ void FreeIn(struct connection_in * now)
 	my_pthread_mutex_destroy(&(now->dev_mutex));
 
 	if (now->dev_db) {
-		tdestroy(now->dev_db, free);
+		tdestroy(now->dev_db, owfree_func);
 	}
 	now->dev_db = NULL;
 #endif							/* OW_MT */

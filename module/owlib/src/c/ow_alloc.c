@@ -54,6 +54,11 @@ void  OWfree(const char * file, int line, const char * func, void *ptr)
 	free(ptr);
 }
 
+void  OWtreefree(void *ptr)
+{
+	OWfree("BinaryTree", 0, "tdestroy", ptr) ;
+}
+
 void *OWrealloc(const char * file, int line, const char * func, void *ptr, size_t size)
 {
 	void * v = realloc(ptr,size);

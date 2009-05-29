@@ -37,20 +37,25 @@ $Id$
 #define OW_ALLOC_H
 
 #ifndef OW_ALLOC_DEBUG
+	// Standard C library definitions
 	#define owmalloc(size)        malloc(size)
 	#define owcalloc(nmemb,size)  calloc(nmemb,size)
 	#define owfree(ptr)           free(ptr)
+	#define owfree_func           free
 	#define owrealloc(ptr,size)   realloc(ptr,size)
 	#define owstrdup(s)           strdup(s)
 #else  /* OW_ALLOC_DEBUG */
+	// Special wrapper functions to check memory allocation
 	#define owmalloc(size)        OWmalloc(__FILE__,__LINE__,__func__,size)
 	#define owcalloc(nmemb,size)  OWcalloc(__FILE__,__LINE__,__func__,nmemb,size)
 	#define owfree(ptr)           OWfree(__FILE__,__LINE__,__func__,ptr)
+	#define owfree_func           OWtreefree
 	#define owrealloc(ptr,size)   OWrealloc(__FILE__,__LINE__,__func__,ptr,size)
 	#define owstrdup(s)           OWstrdup(__FILE__,__LINE__,__func__,s)
 	void *OWcalloc(const char * file, int line, const char * func, size_t nmemb, size_t size);
 	void *OWmalloc(const char * file, int line, const char * func, size_t size);
 	void  OWfree(const char * file, int line, const char * func, void *ptr);
+	void  OWtreefree(void *ptr);
 	void *OWrealloc(const char * file, int line, const char * func, void *ptr, size_t size);
 	char *OWstrdup(const char * file, int line, const char * func, const char *s);
 #endif  /* OW_ALLOC_DEBUG */

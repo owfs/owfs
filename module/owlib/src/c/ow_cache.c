@@ -234,12 +234,34 @@ void Cache_Open(void)
 /* Note: done in a simgle single thread mode so locking not needed */
 void Cache_Close(void)
 {
-	tdestroy(cache.temporary_tree_new, free);
-	cache.temporary_tree_new = NULL;
-	tdestroy(cache.temporary_tree_old, free);
-	cache.temporary_tree_old = NULL;
-	tdestroy(cache.permanent_tree, free);
+	Cache_Clear() ;
+	tdestroy(cache.permanent_tree, owfree_func);
 	cache.permanent_tree = NULL;
+}
+
+/* Clear the cache (a change was made that might give stale information) */
+void Cache_Clear(void)
+{
+	void *c_new = NULL;
+	void *c_old = NULL;
+	CACHE_WLOCK;
+	c_old = cache.temporary_tree_old;
+	c_new = cache.temporary_tree_new;
+	cache.temporary_tree_old = NULL;
+	cache.temporary_tree_new = NULL;
+	cache.old_ram = 0;
+	cache.new_ram = 0;
+	cache.added = 0;
+	cache.retired = time(NULL);
+	cache.killed = cache.retired + cache.lifespan;
+	CACHE_WUNLOCK;
+	/* flipped old database is now out of circulation -- can be destroyed without a lock */
+	if (c_new) {
+		tdestroy(c_new, owfree_func);
+	}
+	if (c_old) {
+		tdestroy(c_old, owfree_func);
+	}
 }
 
 /* Wrapper to perform a cache function and add statistics */
@@ -550,7 +572,7 @@ static void * GetFlippedTree( void )
 static void DeleteFlippedTree( void * retired_tree )
 {
 	LEVEL_DEBUG("flip cache. tdestroy() will be called.\n");
-	tdestroy(retired_tree, free);
+	tdestroy(retired_tree, owfree_func);
 	STATLOCK;
 	++cache_flips;			/* statistics */
 	memcpy(&old_avg, &new_avg, sizeof(struct average));
@@ -614,31 +636,6 @@ static int Cache_Add_Common(struct tree_node *tn)
 	default:
 		//printf("CACHECommon: Error\n");
 		return 1;
-	}
-}
-
-/* Clear the cache (a change was made that might give stale information) */
-void Cache_Clear(void)
-{
-	void *c_new = NULL;
-	void *c_old = NULL;
-	CACHE_WLOCK;
-	c_old = cache.temporary_tree_old;
-	c_new = cache.temporary_tree_new;
-	cache.temporary_tree_old = NULL;
-	cache.temporary_tree_new = NULL;
-	cache.old_ram = 0;
-	cache.new_ram = 0;
-	cache.added = 0;
-	cache.retired = time(NULL);
-	cache.killed = cache.retired + cache.lifespan;
-	CACHE_WUNLOCK;
-	/* flipped old database is now out of circulation -- can be destroyed without a lock */
-	if (c_new) {
-		tdestroy(c_new, free);
-	}
-	if (c_old) {
-		tdestroy(c_old, free);
 	}
 }
 
