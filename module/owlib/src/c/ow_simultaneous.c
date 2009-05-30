@@ -282,7 +282,13 @@ static int FS_r_single(struct one_wire_query *owq)
 				/* Return device id. */
 				FS_devicename(ad, sizeof(ad), resp, pn);
 			} else {
-				return -EINVAL ;
+				/* Jan Kandziora:
+				I think it's not really an error if no iButton is connected to a lock. As
+				EINVAL is given if something went wrong with the host adapter (e.g. pulled
+				from the host), too, those errors are then obscured by catching the "no key
+				connected" EINVAL.
+				*/
+				ad[0] = '\0' ;
 			}
 		}
 			break ;
