@@ -122,17 +122,25 @@ static void getdircallback(void *v, const struct parsedname *const pn_entry)
 static ssize_t getdir(struct one_wire_query *owq)
 {
 	struct charblob cb;
-	int ret;
+	ssize_t ret;
 
 	CharblobInit(&cb);
 	ret = FS_dir(getdircallback, &cb, PN(owq));
 	if (ret < 0) {
+		// error in directory read
 		OWQ_buffer(owq) = NULL;
 		OWQ_size(owq) = 0;
+	} else if ( cb.used == 0 ) {
+		// empty directory
+		ret = 0 ;
+		OWQ_size(owq) = ret;
+		OWQ_buffer(owq) = NULL ;
 	} else if ((OWQ_buffer(owq) = owstrdup(cb.blob))) {
+		// able to copy directory (blob)
 		ret = cb.used;
 		OWQ_size(owq) = ret;
 	} else {
+		// Unable to copy directory blob
 		ret = -ENOMEM;
 		OWQ_size(owq) = 0;
 	}
@@ -149,12 +157,12 @@ static ssize_t getval(struct one_wire_query *owq)
 {
 	ssize_t ret;
 	ssize_t s = FullFileLength(PN(owq));
-    if (s <= 0) {
+	if (s <= 0) {
 		return -ENOENT;
-    }
-    if ((OWQ_buffer(owq) = owmalloc(s + 1)) == NULL) {
+	}
+	if ((OWQ_buffer(owq) = owmalloc(s + 1)) == NULL) {
 		return -ENOMEM;
-    }
+	}
 	OWQ_size(owq) = s;
 	ret = FS_read_postparse(owq);
 	if (ret < 0) {
@@ -191,6 +199,7 @@ ssize_t OW_get(const char *path, char **buffer, size_t * buffer_length)
 		if (FS_OWQ_create(path, NULL, 0, 0, &owq)) {	/* Can we parse the input string */
 			ret = -ENOENT;
 		} else {
+			// the buffer is allocated by getdir or getval
 			if (IsDir(PN(&owq))) {	/* A directory of some kind */
 				ret = getdir(&owq);
 			} else {			/* A regular file */
