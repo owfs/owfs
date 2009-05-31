@@ -40,46 +40,41 @@ $Id$
 /* Send fully configured message back to client.
    data is optional and length depends on "payload"
  */
-int ToClient(int file_descriptor, struct client_msg *original_cm, char *data)
+int ToClient(int file_descriptor, struct client_msg *machine_order_cm, char *data)
 {
 	// note data should be (const char *) but iovec complains about const arguments 
 	int nio = 1;
 	int ret;
 	struct client_msg s_cm;
-	struct client_msg *cm = &s_cm;
+	struct client_msg *network_order_cm = &s_cm;
 	struct iovec io[] = {
-		{cm, sizeof(struct client_msg),},
-		{data, original_cm->payload,},
+		{network_order_cm, sizeof(struct client_msg),},
+		{data, machine_order_cm->payload,},
 	};
 
-	if(original_cm->payload < 0) {
-		LEVEL_DEBUG("Send empty package\n");
-	} else {
-		LEVEL_DEBUG("payload=%d size=%d, ret=%d, sg=0x%X offset=%d \n",
-			original_cm->payload, original_cm->size, original_cm->ret,
-			original_cm->sg, original_cm->offset);
+	if(machine_order_cm->payload < 0) {
+		LEVEL_DEBUG("Send delay message\n");
 	}
 	
-	LEVEL_DEBUG("ToClient payload=%d size=%d, ret=%d, sg=0x%X offset=%d \n", original_cm->payload, original_cm->size, original_cm->ret,
-				original_cm->sg, original_cm->offset);
+	LEVEL_DEBUG("payload=%d size=%d, ret=%d, sg=0x%X offset=%d \n", machine_order_cm->payload, machine_order_cm->size, machine_order_cm->ret,
+				machine_order_cm->sg, machine_order_cm->offset);
 	/* If payload==0, no extra data
 	   If payload <0, flag to show a delay message, again no data
 	 */
-	if (data && (original_cm->payload > 0)) {
+	if (data && (machine_order_cm->payload > 0)) {
 		++nio;
-		//printf("ToClient <%*s>\n",original_cm->payload,data) ;
 	} else {
 		io[1].iov_len = 0;
 	}
 	
-	cm->version = htonl(original_cm->version);
-	cm->payload = htonl(original_cm->payload);
-	cm->ret = htonl(original_cm->ret);
-	cm->sg = htonl(original_cm->sg);
-	cm->size = htonl(original_cm->size);
-	cm->offset = htonl(original_cm->offset);
+	network_order_cm->version = htonl(machine_order_cm->version);
+	network_order_cm->payload = htonl(machine_order_cm->payload);
+	network_order_cm->ret = htonl(machine_order_cm->ret);
+	network_order_cm->sg = htonl(machine_order_cm->sg);
+	network_order_cm->size = htonl(machine_order_cm->size);
+	network_order_cm->offset = htonl(machine_order_cm->offset);
 
-	if(original_cm->payload >= 0) {
+	if(machine_order_cm->payload >= 0) {
 		Debug_Writev(io, nio);
 	}
 	ret = writev(file_descriptor, io, nio) != (ssize_t) (io[0].iov_len + io[1].iov_len);
