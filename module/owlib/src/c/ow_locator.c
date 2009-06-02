@@ -18,24 +18,16 @@ $Id$
 /* ------- Prototypes ----------- */
 static int OW_locator(BYTE * loc, const struct parsedname *pn);
 static int OW_fake_locator(BYTE * loc, const struct parsedname *pn);
+static void OW_any_locator(BYTE * loc, const struct parsedname *pn);
 /* ------- Functions ------------ */
 
 
 int FS_locator(struct one_wire_query *owq)
 {
-	struct parsedname *pn = PN(owq);
 	BYTE loc[8];
 	ASCII ad[16];
 
-	switch (get_busmode(pn->selected_connection)) {
-		case bus_fake:
-		case bus_tester:
-		case bus_mock:
-			OW_fake_locator(loc, pn);
-			break ;
-		default:
-			OW_locator(loc, pn);
-	}
+	OW_any_locator(loc, PN(owq) ) ;
 	bytes2string(ad, loc, 8);
 	return Fowq_output_offset_and_size(ad, 16, owq);
 }
@@ -43,11 +35,19 @@ int FS_locator(struct one_wire_query *owq)
 // reversed address
 int FS_r_locator(struct one_wire_query *owq)
 {
-	struct parsedname *pn = PN(owq);
 	BYTE loc[8];
 	ASCII ad[16];
 	size_t i;
 
+	OW_any_locator(loc, PN(owq) ) ;
+	for (i = 0; i < 8; ++i) {
+		num2string(ad + (i << 1), loc[7 - i]);
+	}
+	return Fowq_output_offset_and_size(ad, 16, owq);
+}
+
+static void OW_any_locator(BYTE * loc, const struct parsedname *pn);
+{	
 	switch (get_busmode(pn->selected_connection)) {
 		case bus_fake:
 		case bus_tester:
@@ -58,10 +58,6 @@ int FS_r_locator(struct one_wire_query *owq)
 			OW_locator(loc, pn);
 			break ;
 	}
-	for (i = 0; i < 8; ++i) {
-		num2string(ad + (i << 1), loc[7 - i]);
-	}
-	return Fowq_output_offset_and_size(ad, 16, owq);
 }
 
 static int OW_locator(BYTE * loc, const struct parsedname *pn)
