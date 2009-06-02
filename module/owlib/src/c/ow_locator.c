@@ -48,6 +48,7 @@ int FS_r_locator(struct one_wire_query *owq)
 
 static void OW_any_locator(BYTE * loc, const struct parsedname *pn);
 {	
+	memset( loc, 0xFF, 8 ) ; // default if no locator
 	switch (get_busmode(pn->selected_connection)) {
 		case bus_fake:
 		case bus_tester:
@@ -70,7 +71,6 @@ static int OW_locator(BYTE * loc, const struct parsedname *pn)
 	};
 	
 	if (BUS_transaction(t, pn)) {
-		memset(loc, 0xFF, 8);
 		return 1;
 	}
 	memcpy(loc, &addr[2], 8);
@@ -89,7 +89,5 @@ static int OW_fake_locator(BYTE * loc, const struct parsedname *pn)
 		loc[5] = pn->sn[5] ;
 		loc[6] = pn->sn[6] ;
 		loc[7] = CRC8compute(loc, 7, 0);
-	} else {
-		memset( loc, 0xFF, 8 ) ;
 	}
 }
