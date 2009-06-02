@@ -16,7 +16,8 @@ $Id$
 #include "ow_xxxx.h"
 
 /* ------- Prototypes ----------- */
-static int OW_locator(BYTE * addr, const struct parsedname *pn);
+static int OW_locator(BYTE * loc, const struct parsedname *pn);
+static int OW_fake_locator(BYTE * loc, const struct parsedname *pn);
 /* ------- Functions ------------ */
 
 
@@ -30,10 +31,7 @@ int FS_locator(struct one_wire_query *owq)
 		case bus_fake:
 		case bus_tester:
 		case bus_mock:
-			if (pn->sn[7] & 0x01) {	// 50% chance of locator
-				loc[0] = 0xFE;
-				loc[7] = CRC8compute(loc, 7, 0);
-			}
+			OW_fake_locator(loc, pn);
 			break ;
 		default:
 			OW_locator(loc, pn);
@@ -42,6 +40,7 @@ int FS_locator(struct one_wire_query *owq)
 	return Fowq_output_offset_and_size(ad, 16, owq);
 }
 
+// reversed address
 int FS_r_locator(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
@@ -49,13 +48,15 @@ int FS_r_locator(struct one_wire_query *owq)
 	ASCII ad[16];
 	size_t i;
 
-	if (get_busmode(pn->selected_connection) == bus_fake) {
-		if (pn->sn[7] & 0x01) {	// 50% chance of locator
-			loc[0] = 0xFE;
-			loc[7] = CRC8compute(loc, 7, 0);
-		}
-	} else {
-		OW_locator(loc, pn);
+	switch (get_busmode(pn->selected_connection)) {
+		case bus_fake:
+		case bus_tester:
+		case bus_mock:
+			OW_fake_locator(loc, pn);
+			break ;
+		default:
+			OW_locator(loc, pn);
+			break ;
 	}
 	for (i = 0; i < 8; ++i) {
 		num2string(ad + (i << 1), loc[7 - i]);
@@ -63,18 +64,36 @@ int FS_r_locator(struct one_wire_query *owq)
 	return Fowq_output_offset_and_size(ad, 16, owq);
 }
 
-static int OW_locator(BYTE * addr, const struct parsedname *pn)
+static int OW_locator(BYTE * loc, const struct parsedname *pn)
 {
-	BYTE loc[10] = { 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, };	// key and 8 byte default
+	BYTE addr[10] = { 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, };	// key and 8 byte default
 	struct transaction_log t[] = {
 		TRXN_NVERIFY,
-		TRXN_MODIFY(loc, loc, 10),
+		TRXN_MODIFY(addr, addr, 10),
 		TRXN_END,
 	};
-
-	memset(addr, 0xFF, 8);
-	if (BUS_transaction(t, pn))
+	
+	if (BUS_transaction(t, pn)) {
+		memset(loc, 0xFF, 8);
 		return 1;
-	memcpy(addr, &loc[2], 8);
+	}
+	memcpy(loc, &addr[2], 8);
 	return 0;
+}
+
+static int OW_fake_locator(BYTE * loc, const struct parsedname *pn)
+{
+	if (pn->sn[7] & 0x01) {	// 50% chance of locator
+		// start with 0xFE and use rest of sn (with valid CRC8)
+		loc[0] = 0xFE;
+		loc[1] = pn->sn[1] ;
+		loc[2] = pn->sn[2] ;
+		loc[3] = pn->sn[3] ;
+		loc[4] = pn->sn[4] ;
+		loc[5] = pn->sn[5] ;
+		loc[6] = pn->sn[6] ;
+		loc[7] = CRC8compute(loc, 7, 0);
+	} else {
+		memset( loc, 0xFF, 8 ) ;
+	}
 }
