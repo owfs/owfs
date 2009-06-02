@@ -46,7 +46,7 @@ int FS_r_locator(struct one_wire_query *owq)
 	return Fowq_output_offset_and_size(ad, 16, owq);
 }
 
-static void OW_any_locator(BYTE * loc, const struct parsedname *pn);
+static void OW_any_locator(BYTE * loc, const struct parsedname *pn)
 {	
 	memset( loc, 0xFF, 8 ) ; // default if no locator
 	switch (get_busmode(pn->selected_connection)) {
