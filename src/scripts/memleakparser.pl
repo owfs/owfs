@@ -29,26 +29,30 @@ my @status ;
 foreach my $line (@lines) {
 	$line =~ /^([0123456789abcdefABCDEFxXS]+) / ;
 	$addr[++$#addr] = $1 ;
-	if ($line =~ m/FREE/) {
-		$status[++$#status] = 1 ;
+	if ($line =~ m/\(nil\)/) {
+		$status[++$#status] = "nil" ;
+	} elsif ($line =~ m/FREE/) {
+		$status[++$#status] = "free" ;
 	} else {
-		$status[++$#status] = 0 ;
+		$status[++$#status] = "alloc" ;
 	}
 }
 
-my $count = $#lines ;
-foreach (my $index = 0; $index <= $count ; ++$index) {
-	if ($status[$index] == 0) {
-		$lines[$index]="! ".$lines[$index] ;
-	} elsif ($status[$index] == 1) {
-		for (my $j = $index+1 ; $j <= $count ; ++$j) {
-			if ($addr[$index] eq $addr[$j]) {
-				if ($status[$j]==0) {
-					$lines[$index]="< ".$lines[$index] ;
-					$lines[$j]="> ".$lines[$j] ;
-					$status[$j] = -1 ;
+my $total_lines = $#lines ;
+foreach (my $back_to_front = 0; $back_to_front <= $total_lines ; ++$back_to_front) {
+	if ($status[$back_to_front] eq "nil") {
+		$lines[$back_to_front]="= ".$lines[$back_to_front] ;
+	} elsif ($status[$back_to_front] eq "alloc") {
+		$lines[$back_to_front]="! ".$lines[$back_to_front] ;
+	} elsif ($status[$back_to_front] eq "free") {
+		for (my $prior_line = $back_to_front+1 ; $prior_line <= $total_lines ; ++$prior_line) {
+			if ($addr[$back_to_front] eq $addr[$prior_line]) {
+				if ($status[$prior_line] eq "alloc") {
+					$lines[$back_to_front]="< ".$lines[$back_to_front] ;
+					$lines[$prior_line]="> ".$lines[$prior_line] ;
+					$status[$prior_line] = "matched" ;
 				} else {
-					$lines[$index]="! ".$lines[$index] ;
+					$lines[$back_to_front]="! ".$lines[$back_to_front] ;
 				}
 				last ;
 			}
