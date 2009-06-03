@@ -154,7 +154,7 @@ Requires: tcl >= 8.1
 %package perl
 Summary: %{name}-perl is a Perl interface for the 1-wire filesystem
 Group: System Environment/Libraries
-Requires: %{name}-libs = %{version}
+Requires: %{name}-libs = %{version}, swig
 
 %description perl
 %{name}-perl is a Perl interface for the 1-wire filesystem
@@ -165,7 +165,7 @@ Requires: %{name}-libs = %{version}
 Summary: %{name}-python is a python interface for the 1-wire filesystem
 Group: System Environment/Libraries
 Requires: %{name}-libs = %{version}, python >= 2.0
-BuildRequires: python-devel >= 2.0
+BuildRequires: python-devel >= 2.0, swig
 
 %description python
 %{name}-python is a Python interface for the 1-wire filesystem
@@ -176,7 +176,7 @@ BuildRequires: python-devel >= 2.0
 Summary: %{name}-php is a php interface for the 1-wire filesystem
 Group: System Environment/Libraries
 Requires: %{name}-libs = %{version}, php >= 4.3.0
-BuildRequires: php-devel >= 4.3.0
+BuildRequires: php-devel >= 4.3.0, swig
 
 %description php
 %{name}-php is a php interface for the 1-wire filesystem
@@ -187,7 +187,7 @@ BuildRequires: php-devel >= 4.3.0
 Summary: %{name}-tcl is a Tcl interface for the 1-wire filesystem
 Group: System Environment/Libraries
 Requires: %{name}-libs = %{version}, tcl >= 8.1
-BuildRequires: tcl-devel >= 8.1
+BuildRequires: tcl-devel >= 8.1, swig
 
 %description tcl
 %{name}-tcl is a Tcl interface for the 1-wire filesystem
