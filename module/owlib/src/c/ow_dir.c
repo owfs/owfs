@@ -307,7 +307,7 @@ FS_dir_all_connections(void (*dirfunc) (void *, const struct parsedname *), void
 /* FS_dir_all_connections produces the data that can vary: device lists, etc. */
 static int
 FS_dir_all_connections(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_directory, uint32_t * flags)
-{http://www.h-online.com/open/MySQL-founder-and-ex-CEO-react-to-Oracle-Sun--/news/113116
+{
 	int ret = 0;
 	struct connection_in * in;
 	struct parsedname s_pn_selected_connection;
