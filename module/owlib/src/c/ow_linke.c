@@ -69,6 +69,14 @@ int LINKE_detect(struct connection_in *in)
 	}
 
 	in->Adapter = adapter_LINK_E;
+	TCP_slurp( in->file_descriptor ) ;
+	tcp_read_flush(in->file_descriptor);
+	{
+		BYTE data[6] ;
+		struct timeval tvnetfirst = { Globals.timeout_network, 0, };
+		tcp_read(in->file_descriptor, data, 6, &tvnetfirst ) ;
+	}
+	LEVEL_DEBUG("Slurp in initial bytes\n");
 	if (LINK_write(LINK_string(" "), 1, &pn) == 0) {
 		char buf[18];
 		if (LINKE_preamble(&pn) || LINK_read((BYTE *) buf, 18, &pn)
@@ -88,7 +96,7 @@ static int LINK_reset(const struct parsedname *pn)
 	tcp_read_flush(pn->selected_connection->file_descriptor);
 
 	// Send 'r' reset
-	if (LINK_write(LINK_string("r"), 1, pn) || LINK_read(resp, 4, pn)) {
+	if (LINK_write(LINK_string("r"), 1, pn) || LINKE_preamble(pn) || LINK_read(resp, 4, pn)) {
 		return -EIO;
 	}
 
@@ -138,7 +146,7 @@ static int LINK_next_both(struct device_search *ds, const struct parsedname *pn)
 			return ret;
 	}
 
-	if ((ret = LINK_read(LINK_string(resp), 21, pn))) {
+	if ((ret = LINKE_preamble(pn) || LINK_read(LINK_string(resp), 21, pn))) {
 		return ret;
 	}
 
@@ -201,7 +209,7 @@ static int LINK_read(BYTE * buf, const size_t size, const struct parsedname *pn)
 static int LINK_write(const BYTE * buf, const size_t size, const struct parsedname *pn)
 {
 	ssize_t r;
-	//Debug_Bytes( "LINK write", buf, size) ;
+	Debug_Bytes( "LINK write", buf, size) ;
 	r = write(pn->selected_connection->file_descriptor, buf, size);
 
 	if (r < 0) {
@@ -278,11 +286,12 @@ static int LINK_sendback_data(const BYTE * data, BYTE * resp, const size_t size,
 }
 
 /* read the telnet-formatted start of a response line from the Link-Hub-E */
+#define preamble_length 7
 static int LINKE_preamble(const struct parsedname *pn)
 {
-	BYTE data[6];
+	BYTE data[preamble_length];
 	struct timeval tvnetfirst = { Globals.timeout_network, 0, };
-	if (tcp_read(pn->selected_connection->file_descriptor, data, 6, &tvnetfirst) != 6) {
+	if (tcp_read(pn->selected_connection->file_descriptor, data, preamble_length, &tvnetfirst) != preamble_length) {
 		return -EIO;
 	}
 	LEVEL_CONNECT("Good preamble\n");
