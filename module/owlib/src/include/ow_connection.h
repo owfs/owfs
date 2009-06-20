@@ -551,7 +551,10 @@ void COM_close(struct connection_in *in);
 void COM_break(struct connection_in *in);
 int COM_write( const BYTE * data, size_t length, struct connection_in *connection);
 int COM_read( BYTE * data, size_t length, struct connection_in *connection);
-void COM_slurp( int file_descriptor ) ;
+void Slurp( int file_descriptor, unsigned long usec ) ;
+
+#define COM_slurp( file_descriptor ) Slurp( file_descriptor, 1000 )
+#define TCP_slurp( file_descriptor ) Slurp( file_descriptor, 100000 )
 
 void FreeInAll(void);
 void FreeIn(struct connection_in * now);

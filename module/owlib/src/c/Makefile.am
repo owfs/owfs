@@ -111,6 +111,7 @@ OWLIB_SOURCE = ow_dl.c           \
                ow_sibling.c      \
                ow_sig_handlers.c \
                ow_simultaneous.c \
+               ow_slurp.c        \
                ow_stateinfo.c    \
                ow_system.c       \
                ow_tcp_read.c     \

@@ -87,31 +87,3 @@ int COM_read( BYTE * data, size_t length, struct connection_in *connection)
 	
 	return to_be_read ;
 }
-
-/* slurp up any pending chars -- used at the start to clear the com buffer */
-void COM_slurp( int file_descriptor )
-{
-	BYTE data[1] ;
-	while (1) {
-		fd_set readset;
-		struct timeval tv;
-		
-		// very short timeout
-		tv.tv_sec = 0;
-		tv.tv_usec = 1000;
-		/* Initialize readset */
-		FD_ZERO(&readset);
-		FD_SET(file_descriptor, &readset);
-		
-		/* Read if it doesn't timeout first */
-		if ( select(file_descriptor + 1, &readset, NULL, NULL, &tv) < 1 ) {
-			return ;
-		}
-		if (FD_ISSET(file_descriptor, &readset) == 0) {
-			return ;
-		}
-		if ( read(file_descriptor, data, 1) != 1 ) {
-			return ;
-		}
-	}
-}
