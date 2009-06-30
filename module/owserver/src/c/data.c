@@ -71,11 +71,13 @@ void *DataHandler(void *v)
 	switch ((enum msg_classification) hd->sm.type) {
 	case msg_dirall:
 		if (Globals.no_dirall) {
+			LEVEL_DEBUG("DIRALL messsage rejected.\n") ;
 			hd->sm.type = msg_error;
 		}
 		break;
 	case msg_get:
 		if (Globals.no_get) {
+			LEVEL_DEBUG("GET messsage rejected.\n") ;
 			hd->sm.type = msg_error;
 		}
 		break;
@@ -92,6 +94,7 @@ void *DataHandler(void *v)
 	case msg_dirall:			// good message
 	case msg_get:				// good message
 		if (hd->sm.payload == 0) {	/* Bad query -- no data after header */
+			LEVEL_DEBUG("No payload -- ignore.\n") ;
 			cm.ret = -EBADMSG;
 		} else {
 			struct parsedname *pn;
