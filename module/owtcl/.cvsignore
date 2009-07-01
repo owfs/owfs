@@ -1,0 +1,9 @@
+Makefile.in
+Makefile
+.deps
+.libs
+ow.tcl.h
+pkgIndex.tcl
+*.o
+*.lo
+*.la
