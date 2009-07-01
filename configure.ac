@@ -791,7 +791,7 @@ AC_ARG_ENABLE(owtcl,
 ])
 
 if test "${ENABLE_OWTCL}" = "true" ; then
-	m4_include(module/swig/tcl/tcl.m4)
+	m4_include(module/owtcl/tcl.m4)
 	AC_MSG_RESULT(Looking for tclConfig.sh)
 	SC_PATH_TCLCONFIG
 	if test -z "$TCL_BIN_DIR" -o ! -f "$TCL_BIN_DIR/tclConfig.sh" ; then
