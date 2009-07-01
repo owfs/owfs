@@ -14,9 +14,9 @@ if ENABLE_PYTHON
 endif
 endif
 
-if ENABLE_OWTCL
-  SWIG_SUBDIRTCL = tcl
-endif
+#if ENABLE_OWTCL
+#  SWIG_SUBDIRTCL = tcl
+#endif
 
 if ENABLE_OWPHP
 if ENABLE_PHP
