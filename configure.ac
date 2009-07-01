@@ -1653,7 +1653,8 @@ AC_CONFIG_FILES([
 	module/swig/python/Makefile
 	module/swig/python/ow/Makefile
 	module/swig/python/setup.py
-	module/swig/tcl/Makefile
+
+	module/owtcl/Makefile
 
 	src/Makefile
 	src/include/Makefile
@@ -1827,7 +1828,8 @@ if test "${ENABLE_OWPYTHON}" = "true" -a "${ENABLE_SWIG}" = "true"; then
 else
 	AC_MSG_RESULT([                 owpython is DISABLED])
 fi
-if test "${ENABLE_OWTCL}" = "true" -a "${ENABLE_SWIG}" = "true"; then
+#if test "${ENABLE_OWTCL}" = "true" -a "${ENABLE_SWIG}" = "true"; then
+if test "${ENABLE_OWTCL}" = "true"; then
 	AC_MSG_RESULT([                    owtcl is enabled])
 else
 	AC_MSG_RESULT([                    owtcl is DISABLED])

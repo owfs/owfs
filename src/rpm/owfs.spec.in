@@ -187,7 +187,7 @@ BuildRequires: php-devel >= 4.3.0, swig
 Summary: %{name}-tcl is a Tcl interface for the 1-wire filesystem
 Group: System Environment/Libraries
 Requires: %{name}-libs = %{version}, tcl >= 8.1
-BuildRequires: tcl-devel >= 8.1, swig
+BuildRequires: tcl-devel >= 8.1
 
 %description tcl
 %{name}-tcl is a Tcl interface for the 1-wire filesystem

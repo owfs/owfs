@@ -7,9 +7,9 @@ EXTRA_DIST = owtclInitScript.h tcl.m4 ow.tcl example/owdir.tcl example/test.tcl
 pkglib_LTLIBRARIES = ow.la
 ow_la_SOURCES = ow.c
 ow_la_LDFLAGS = -module -release $(OWTCL_VERSION) -shared -shrext "$(TCL_SHLIB_SUFFIX)"
-#ow_la_LIBADD = ../../owlib/src/c/libow.la ../../owcapi/src/c/libowcapi.la
-ow_la_LIBADD = $(TCL_LIB_SPEC) ../../owlib/src/c/libow.la ../../owcapi/src/c/libowcapi.la ${TCL_LIBS}
-ow_la_DEPENDENCIES = ../../owlib/src/c/libow.la ../../owcapi/src/c/libowcapi.la
+#ow_la_LIBADD = ../owlib/src/c/libow.la ../owcapi/src/c/libowcapi.la
+ow_la_LIBADD = $(TCL_LIB_SPEC) ../owlib/src/c/libow.la ../owcapi/src/c/libowcapi.la ${TCL_LIBS}
+ow_la_DEPENDENCIES = ../owlib/src/c/libow.la ../owcapi/src/c/libowcapi.la
 ow.lo: owtclInitScript.h ow.tcl.h version.h
 
 data_DATA = ow.tcl pkgIndex.tcl
@@ -29,8 +29,8 @@ datadir = $(pkglibdir)
 
 LIBTOOL_DEPS = @LIBTOOL_DEPS@
 
-AM_CFLAGS = -I../../owlib/src/include \
-	-I ../../owcapi/src/include \
+AM_CFLAGS = -I../owlib/src/include \
+	-I../owcapi/src/include \
 	-fexceptions \
 	-Wall \
 	-W \
@@ -50,8 +50,8 @@ AM_CFLAGS = -I../../owlib/src/include \
 	-DOWTCL_PACKAGE_PATH=\"$(pkglibdir)\" \
 	${PIC_FLAGS}
 
-#LDADD = -L../../owlib/src/c $(TCL_LIB_SPEC) -low -lowcapi ${TCL_LIBS} ${PTHREAD_LIBS} ${LD_EXTRALIBS} ${OSLIBS}
-#LDADD = $(TCL_LIB_SPEC) ../../owlib/src/c/libow.la ../../owcapi/src/c/libowcapi.la ${TCL_LIBS} ${PTHREAD_CFLAGS} ${PTHREAD_LIBS}
+#LDADD = -L../owlib/src/c $(TCL_LIB_SPEC) -low -lowcapi ${TCL_LIBS} ${PTHREAD_LIBS} ${LD_EXTRALIBS} ${OSLIBS}
+#LDADD = $(TCL_LIB_SPEC) ../owlib/src/c/libow.la ../owcapi/src/c/libowcapi.la ${TCL_LIBS} ${PTHREAD_CFLAGS} ${PTHREAD_LIBS}
 #SHLIB_LD = $(TCL_SHLIB_LD) $(LIBS) -low ${PTHREAD_LIBS} ${LD_EXTRALIBS} ${OSLIBS}
 
 clean-local:
@@ -70,9 +70,9 @@ darwin-relink: ow.la
 	gcc -dynamiclib -flat_namespace -undefined suppress \
 	  -o .libs/ow-$(OWTCL_VERSION)$(TCL_SHLIB_SUFFIX) \
 	  .libs/ow.o \
-	  ../../owlib/src/c/.libs/libow.so \
+	  ../owlib/src/c/.libs/libow.so \
 	  ${LIBUSB_LIBS} \
-	  ../../owcapi/src/c/.libs/libowcapi.so \
+	  ../owcapi/src/c/.libs/libowcapi.so \
 	 -install_name $(pkglibdir)/ow-$(OWTCL_VERSION)$(TCL_SHLIB_SUFFIX) \
 	 -compatibility_version 1 -current_version 1.0
 	touch $@
@@ -82,4 +82,3 @@ pkgIndex.tcl:
 	echo 'package ifneeded $(PACKAGE) $(OWTCL_VERSION)\
 	     [list load [file join $$dir $(PACKAGE)$(TCL_SHLIB_SUFFIX)] $(PACKAGE)]'\
 	) > pkgIndex.tcl
-
