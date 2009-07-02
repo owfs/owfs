@@ -1828,7 +1828,6 @@ if test "${ENABLE_OWPYTHON}" = "true" -a "${ENABLE_SWIG}" = "true"; then
 else
 	AC_MSG_RESULT([                 owpython is DISABLED])
 fi
-#if test "${ENABLE_OWTCL}" = "true" -a "${ENABLE_SWIG}" = "true"; then
 if test "${ENABLE_OWTCL}" = "true"; then
 	AC_MSG_RESULT([                    owtcl is enabled])
 else
