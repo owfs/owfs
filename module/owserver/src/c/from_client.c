@@ -42,6 +42,7 @@ int FromClient(struct handlerdata *hd)
 {
 	char *msg;
 	ssize_t trueload;
+	size_t actual_read ;
 	struct timeval tv = { Globals.timeout_server, 0, };
 	//printf("FromClient\n");
 
@@ -49,7 +50,8 @@ int FromClient(struct handlerdata *hd)
 	memset(&hd->sp, 0, sizeof(struct serverpackage));
 
 	/* read header */
-	if (tcp_read(hd->file_descriptor, &hd->sm, sizeof(struct server_msg), &tv) != sizeof(struct server_msg)) {
+	tcp_read(hd->file_descriptor, &hd->sm, sizeof(struct server_msg), &tv, &actual_read) ;
+	if (actual_read != sizeof(struct server_msg)) {
 		hd->sm.type = msg_error;
 		return -EIO;
 	}
@@ -89,7 +91,8 @@ int FromClient(struct handlerdata *hd)
 	}
 
 	/* read in data */
-	if (tcp_read(hd->file_descriptor, msg, trueload, &tv) != trueload) {	/* read in the expected data */
+	tcp_read(hd->file_descriptor, msg, trueload, &tv, &actual_read) ;
+	if ((size_t)actual_read != trueload) {	/* read in the expected data */
 		hd->sm.type = msg_error;
 		owfree(msg);
 		return -EIO;

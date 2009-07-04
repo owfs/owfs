@@ -17,7 +17,7 @@ $Id$
 
 /* ------- Prototypes ----------- */
 static int OW_locator(BYTE * loc, const struct parsedname *pn);
-static int OW_fake_locator(BYTE * loc, const struct parsedname *pn);
+static void OW_fake_locator(BYTE * loc, const struct parsedname *pn);
 static void OW_any_locator(BYTE * loc, const struct parsedname *pn);
 /* ------- Functions ------------ */
 
@@ -77,7 +77,7 @@ static int OW_locator(BYTE * loc, const struct parsedname *pn)
 	return 0;
 }
 
-static int OW_fake_locator(BYTE * loc, const struct parsedname *pn)
+static void OW_fake_locator(BYTE * loc, const struct parsedname *pn)
 {
 	if (pn->sn[7] & 0x01) {	// 50% chance of locator
 		// start with 0xFE and use rest of sn (with valid CRC8)

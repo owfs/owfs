@@ -15,27 +15,46 @@ $Id$
 #include "ow_counters.h"
 #include "ow_connection.h"
 
-static struct timeval tvnet = { 0, 200000, };
+/* Telnet handling concepts from Jerry Scharf:
+
+You should request the number of bytes you expect. When you scan it,
+start looking for FF FA codes. If that shows up, see if the F0 is in the
+read buffer. If so, move the char pointer back to where the FF point was
+and ask for the rest of the string (expected - FF...F0 bytes.) If the F0
+isn't in the read buffer, start reading byte by byte into a separate
+variable looking for F0. Once you find that, then do the move the
+pointer and read the rest piece as above. Finally, don't forget to scan
+the rest of the strings for more FF FA blocks. It's most sloppy when the
+FF is the last character of the initial read buffer...
+
+You can also scan and remove the patterns FF F1 - FF F9 as these are 2
+byte commands that the transmitter can send at any time. It is also
+possible that you could see FF FB xx - FF FE xx 3 byte codes, but this
+would be in response to FF FA codes that you would send, so that seems
+unlikely. Handling these would be just the same as the FF FA codes above.
+
+*/
+
+static struct timeval tvnet = { 0, 300000, };
 
 //static void byteprint( const BYTE * b, int size ) ;
-static int LINK_write(const BYTE * buf, const size_t size, const struct parsedname *pn);
-static int LINK_read(BYTE * buf, const size_t size, const struct parsedname *pn);
-static int LINK_reset(const struct parsedname *pn);
-static int LINK_next_both(struct device_search *ds, const struct parsedname *pn);
-static int LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay, const struct parsedname *pn);
-static int LINK_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
+static int LINKE_write(const BYTE * buf, const size_t size, const struct parsedname *pn);
+static int LINKE_read(BYTE * buf, const size_t size, const struct parsedname *pn);
+static int LINKE_reset(const struct parsedname *pn);
+static int LINKE_next_both(struct device_search *ds, const struct parsedname *pn);
+static int LINKE_PowerByte(const BYTE data, BYTE * resp, const UINT delay, const struct parsedname *pn);
+static int LINKE_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 static void LINKE_setroutines(struct connection_in *in);
-static int LINKE_preamble(const struct parsedname *pn);
 static void LINKE_close(struct connection_in *in);
 
 static void LINKE_setroutines(struct connection_in *in)
 {
 	in->iroutines.detect = LINKE_detect;
-	in->iroutines.reset = LINK_reset;
-	in->iroutines.next_both = LINK_next_both;
-	in->iroutines.PowerByte = LINK_PowerByte;
+	in->iroutines.reset = LINKE_reset;
+	in->iroutines.next_both = LINKE_next_both;
+	in->iroutines.PowerByte = LINKE_PowerByte;
 //    in->iroutines.ProgramPulse = ;
-	in->iroutines.sendback_data = LINK_sendback_data;
+	in->iroutines.sendback_data = LINKE_sendback_data;
 //    in->iroutines.sendback_bits = ;
 	in->iroutines.select = NULL;
 	in->iroutines.reconnect = NULL;
@@ -69,17 +88,19 @@ int LINKE_detect(struct connection_in *in)
 	}
 
 	in->Adapter = adapter_LINK_E;
+	in->connin.link.default_discard = 0 ;
+	if (1) {
+		BYTE data[6] ;
+		size_t read_size ;
+		struct timeval tvnetfirst = { Globals.timeout_network, 0, };
+		tcp_read(in->file_descriptor, data, 6, &tvnetfirst, &read_size ) ;
+	}
 	TCP_slurp( in->file_descriptor ) ;
 	tcp_read_flush(in->file_descriptor);
-	{
-		BYTE data[6] ;
-		struct timeval tvnetfirst = { Globals.timeout_network, 0, };
-		tcp_read(in->file_descriptor, data, 6, &tvnetfirst ) ;
-	}
 	LEVEL_DEBUG("Slurp in initial bytes\n");
-	if (LINK_write(LINK_string(" "), 1, &pn) == 0) {
+	if (LINKE_write(LINK_string(" "), 1, &pn) == 0) {
 		char buf[18];
-		if (LINKE_preamble(&pn) || LINK_read((BYTE *) buf, 18, &pn)
+		if (LINKE_read((BYTE *) buf, 18, &pn)
 			|| strncmp(buf, "Link", 4))
 			return -ENODEV;
 		in->adapter_name = "Link-Hub-E";
@@ -88,7 +109,7 @@ int LINKE_detect(struct connection_in *in)
 	return -EIO;
 }
 
-static int LINK_reset(const struct parsedname *pn)
+static int LINKE_reset(const struct parsedname *pn)
 {
 	BYTE resp[8];
 	int ret;
@@ -96,7 +117,7 @@ static int LINK_reset(const struct parsedname *pn)
 	tcp_read_flush(pn->selected_connection->file_descriptor);
 
 	// Send 'r' reset
-	if (LINK_write(LINK_string("r"), 1, pn) || LINKE_preamble(pn) || LINK_read(resp, 4, pn)) {
+	if (LINKE_write(LINK_string("r"), 1, pn) || LINKE_read(resp, 4, pn)) {
 		return -EIO;
 	}
 
@@ -125,7 +146,7 @@ static int LINK_reset(const struct parsedname *pn)
 	return ret;
 }
 
-static int LINK_next_both(struct device_search *ds, const struct parsedname *pn)
+static int LINKE_next_both(struct device_search *ds, const struct parsedname *pn)
 {
 	char resp[21];
 	int ret;
@@ -139,14 +160,14 @@ static int LINK_next_both(struct device_search *ds, const struct parsedname *pn)
 
 	++ds->index;
 	if (ds->index == 0) {
-		if ((ret = LINK_write(LINK_string("f"), 1, pn)))
+		if ((ret = LINKE_write(LINK_string("f"), 1, pn)))
 			return ret;
 	} else {
-		if ((ret = LINK_write(LINK_string("n"), 1, pn)))
+		if ((ret = LINKE_write(LINK_string("n"), 1, pn)))
 			return ret;
 	}
 
-	if ((ret = LINKE_preamble(pn) || LINK_read(LINK_string(resp), 21, pn))) {
+	if ((ret = LINKE_read(LINK_string(resp), 21, pn))) {
 		return ret;
 	}
 
@@ -183,7 +204,7 @@ static int LINK_next_both(struct device_search *ds, const struct parsedname *pn)
 		pn->selected_connection->ds2404_compliance = 1;
 	}
 
-	LEVEL_DEBUG("LINK_next_both SN found: " SNformat "\n", SNvar(ds->sn));
+	LEVEL_DEBUG("LINKE_next_both SN found: " SNformat "\n", SNvar(ds->sn));
 	return 0;
 }
 
@@ -191,13 +212,97 @@ static int LINK_next_both(struct device_search *ds, const struct parsedname *pn)
    0=good else bad
    Note that buffer length should 1 exta char long for ethernet reads
 */
-static int LINK_read(BYTE * buf, const size_t size, const struct parsedname *pn)
+static int LINKE_read(BYTE * buf, const size_t size, const struct parsedname *pn)
 {
-	if (tcp_read(pn->selected_connection->file_descriptor, buf, size, &tvnet) != (ssize_t) size) {
-		LEVEL_CONNECT("LINK_read (ethernet) error\n");
+	// temporary buffer (guess the extra escape chars based on prior experience
+	size_t allocated_size = size + pn->selected_connection->connin.link.default_discard ;
+	BYTE readin_buf[allocated_size] ;
+
+	size_t actual_readin ;
+	struct timeval tvnetfirst = { Globals.timeout_network, 0, };
+
+	// state machine forescape chars -- has to handle buffer exhaustion
+	enum { linke_regular, linke_ff, linke_fffa, } linke_read_state = linke_regular ;
+
+	size_t current_index = 0 ;
+	size_t total_discard = 0 ;
+	size_t still_needed = size ;
+	
+	// initial read
+	//printf("LINKE_READ getting default_discard = %d\n",pn->selected_connection->connin.link.default_discard);
+	tcp_read(pn->selected_connection->file_descriptor, readin_buf, allocated_size, &tvnetfirst, &actual_readin) ;
+	if (actual_readin < size) {
+		LEVEL_CONNECT("LINKE_read (ethernet) error\n");
 		return -EIO;
 	}
-	return 0;
+
+	// loop and look for escape sequances
+	while ( still_needed > 0 ) {
+		if ( current_index >= allocated_size ) {
+			// need to read more -- just read what we think we need -- escape chars may require repeat
+			tcp_read(pn->selected_connection->file_descriptor, readin_buf, still_needed, &tvnet, &actual_readin) ;
+			if (actual_readin != still_needed ) {
+				LEVEL_CONNECT("LINKE_read (ethernet) error\n");
+				return -EIO;
+			}
+			current_index = 0 ;
+			allocated_size = still_needed ;
+		}
+		switch ( linke_read_state ) {
+			case linke_regular :
+				//printf("LINKE_READ regular char=%.2X index=%d disacard=%d size=%d allocated=%d\n",readin_buf[current_index],current_index,total_discard,size,allocated_size);
+				if ( readin_buf[current_index] == 0xFF ) {
+					linke_read_state = linke_ff ;
+					++ total_discard ;
+				} else {
+					buf[size - still_needed] = readin_buf[current_index] ;
+					-- still_needed ;
+				}
+				break ;
+			case linke_ff:
+				//printf("LINKE_READ FF      char=%.2X index=%d disacard=%d size=%d allocated=%d\n",readin_buf[current_index],current_index,total_discard,size,allocated_size);
+				++ total_discard ;
+				switch ( readin_buf[current_index] ) {
+					case 0xFA:
+						//start looking for F0 
+						linke_read_state = linke_fffa ;
+						break ;
+					case 0xF1:
+					case 0xF2:
+					case 0xF3:
+					case 0xF4:
+					case 0xF5:
+					case 0xF6:
+					case 0xF7:
+					case 0xF8:
+					case 0xF9:
+						// 2 byte sequence
+						linke_read_state = linke_regular ;
+						break ;
+					default:
+						LEVEL_DEBUG("Unexpected telnet sequence from LinkHub-E\n");
+						return -EIO ;
+				}
+				break ;
+			case linke_fffa:
+				//printf("LINKE_READ FFFA   char=%.2X index=%d disacard=%d size=%d allocated=%d\n",readin_buf[current_index],current_index,total_discard,size,allocated_size);
+				++ total_discard ;
+				switch ( readin_buf[current_index] ) {
+					case 0xF0:
+						// end of escape sequence
+						linke_read_state = linke_regular ;
+						break ;
+					default:
+						// stay in this mode
+						break ;
+				}
+				break ;
+		}
+		++ current_index ;
+	}
+	pn->selected_connection->connin.link.default_discard = total_discard ;
+	//printf("LINKE_READ setting default_discard = %d\n",pn->selected_connection->connin.link.default_discard);
+	return 0 ;
 }
 
 //
@@ -206,22 +311,22 @@ static int LINK_read(BYTE * buf, const size_t size, const struct parsedname *pn)
           -EIO = error
    Special processing for the remote hub (add 0x0A)
  */
-static int LINK_write(const BYTE * buf, const size_t size, const struct parsedname *pn)
+static int LINKE_write(const BYTE * buf, const size_t size, const struct parsedname *pn)
 {
-	ssize_t r;
+	ssize_t write_or_error;
 	Debug_Bytes( "LINK write", buf, size) ;
-	r = write(pn->selected_connection->file_descriptor, buf, size);
+	write_or_error = write(pn->selected_connection->file_descriptor, buf, size);
 
-	if (r < 0) {
+	if (write_or_error < 0) {
 		ERROR_CONNECT("Trouble writing data to LINK: %s\n", SAFESTRING(pn->selected_connection->name));
-		return r;
+		return write_or_error;
 	}
 
 	tcdrain(pn->selected_connection->file_descriptor);
 	gettimeofday(&(pn->selected_connection->bus_write_time), NULL);
 
-	if (r < (ssize_t) size) {
-		LEVEL_CONNECT("Short write to LINK -- intended %d, sent %d\n", (int) size, (int) r);
+	if (write_or_error < (ssize_t) size) {
+		LEVEL_CONNECT("Short write to LINK -- intended %d, sent %d\n", (int) size, (int) write_or_error);
 		STAT_ADD1_BUS(e_bus_write_errors, pn->selected_connection);
 		return -EIO;
 	}
@@ -229,14 +334,13 @@ static int LINK_write(const BYTE * buf, const size_t size, const struct parsedna
 	return 0;
 }
 
-static int LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay, const struct parsedname *pn)
+static int LINKE_PowerByte(const BYTE data, BYTE * resp, const UINT delay, const struct parsedname *pn)
 {
 	ASCII buf[3] = "pxx";
 
 	num2string(&buf[1], data);
 
-	if (LINK_write(LINK_string(buf), 3, pn)
-		|| LINK_read(LINK_string(buf), 2, pn)) {
+	if (LINKE_write(LINK_string(buf), 3, pn) || LINKE_read(LINK_string(buf), 2, pn)) {
 		return -EIO;			// send just the <CR>
 	}
 
@@ -245,8 +349,7 @@ static int LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay, const 
 	// delay
 	UT_delay(delay);
 
-	if (LINK_write(LINK_string("\r"), 1, pn)
-		|| LINK_read(LINK_string(buf), 3, pn)) {
+	if (LINKE_write(LINK_string("\r"), 1, pn) || LINKE_read(LINK_string(buf), 3, pn)) {
 		return -EIO;			// send just the <CR>
 	}
 
@@ -259,15 +362,16 @@ static int LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay, const 
    sendout_data, readin
  */
 // Assume buffer length (combuffer) is 1 + 32*2 + 1
-static int LINK_sendback_data(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
+static int LINKE_sendback_data(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
 {
 	size_t left = size;
-	BYTE *buf = pn->selected_connection->combuffer;
+	BYTE buf[66] ;
 
 	if (size == 0) {
 		return 0;
 	}
 
+	Debug_Bytes( "ELINK sendback send", data, size) ;
 	while (left > 0) {
 		size_t this_length = (left > 32) ? 32 : left;
 		size_t total_length = 2 * this_length + 2;
@@ -275,26 +379,12 @@ static int LINK_sendback_data(const BYTE * data, BYTE * resp, const size_t size,
 //        printf(">> size=%d, left=%d, i=%d\n",size,left,i);
 		bytes2string((char *) &buf[1], &data[size - left], this_length);
 		buf[total_length - 1] = '\r';	// take out of byte mode
-		if (LINK_write(buf, total_length, pn)
-			|| LINK_read(buf, total_length + 2, pn)) {
+		if (LINKE_write(buf, total_length, pn) || LINKE_read(buf, total_length + 1, pn)) {
 			return -EIO;
 		}
 		string2bytes((char *) buf, &resp[size - left], this_length);
 		left -= this_length;
 	}
-	return 0;
-}
-
-/* read the telnet-formatted start of a response line from the Link-Hub-E */
-#define preamble_length 7
-static int LINKE_preamble(const struct parsedname *pn)
-{
-	BYTE data[preamble_length];
-	struct timeval tvnetfirst = { Globals.timeout_network, 0, };
-	if (tcp_read(pn->selected_connection->file_descriptor, data, preamble_length, &tvnetfirst) != preamble_length) {
-		return -EIO;
-	}
-	LEVEL_CONNECT("Good preamble\n");
 	return 0;
 }
 

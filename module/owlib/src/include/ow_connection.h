@@ -260,6 +260,7 @@ struct connin_etherweather {
 
 struct connin_link {
 	struct connin_tcp tcp;      // mirror connin.server
+	size_t default_discard ; // linkhub-etelnet escape chars
 };
 
 struct connin_ha7e {

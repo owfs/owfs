@@ -165,19 +165,31 @@ void Handler(int file_descriptor)
  * Routine for handling a single request
    returns 0 if ok, else non-zero for error
  */
+unsigned long handler_count = 0 ;
+struct client_msg ping_cm = {
+	.version = 0 ,
+	.payload = -1 ,
+	.ret     = 0 ,
+	.sg      = 0 ,
+	.size    = 0 ,
+	.offset  = 0 ,
+};
+
 static void SingleHandler(struct handlerdata *hd)
 {
-	struct client_msg ping_cm;
 	struct timeval now;			// timer calculation
 	struct timeval delta = { Globals.timeout_network, 500000 };	// 1.5 seconds ping interval
 	struct timeval result;		// timer calculation
 	pthread_t thread;			// hanler thread id (not used)
 	int loop = 1;				// ping loop flap
+	struct timeval this_handler_start ;
+	struct timeval this_handler_stop ;
+	unsigned long this_handler_count = ++handler_count ;
 
+	gettimeofday(&this_handler_start,0) ; // start for timing query handling
 	timerclear(&hd->tv);
+	LEVEL_DEBUG("START handler {%lu} %s\n",this_handler_count,hd->sp.path) ;
 
-	memset(&ping_cm, 0, sizeof(struct client_msg));
-	ping_cm.payload = -1;		/* flag for delay message */
 	gettimeofday(&(hd->tv), NULL);
 
 	//printf("OWSERVER pre-create\n");
@@ -189,6 +201,7 @@ static void SingleHandler(struct handlerdata *hd)
 		TOCLIENTUNLOCK(hd);
 		LEVEL_DEBUG("Extra ping (pingcrazy mode)\n");
 	}
+
 	if (pthread_create(&thread, NULL, DataHandler, hd)) {
 		LEVEL_DEBUG("OWSERVER:handler() can't create new thread\n");
 		DataHandler(hd);		// do it without pings
@@ -197,23 +210,24 @@ static void SingleHandler(struct handlerdata *hd)
 
 	do {						// ping loop
 #ifdef HAVE_NANOSLEEP
-		struct timespec nano = { 0, 100000000 };	// .1 seconds (Note second element NANOsec)
+		struct timespec nano = { 0, 200000000 };	// .1 seconds (Note second element NANOsec)
 		nanosleep(&nano, NULL);
 #else							/* HAVE_NANOSLEEP */
-		usleep((unsigned long) 100000);
+		usleep((unsigned long) 200000);
 #endif							/* HAVE_NANOSLEEP */
 
 		TOCLIENTLOCK(hd);
 
 		if (!timerisset(&(hd->tv))) {	// flag that the other thread is done
+			LEVEL_DEBUG("UNPING handler {%lu} %s\n",this_handler_count,hd->sp.path) ;
 			loop = 0;
 		} else {				// check timing -- ping if expired
 			gettimeofday(&now, NULL);	// current time
 			timersub(&now, &delta, &result);	// less delay
 			if (timercmp(&(hd->tv), &result, <) || Globals.pingcrazy) {	// test against last message time
 				char *c = NULL;	// dummy argument
+				LEVEL_DEBUG("PING handler {%lu} %s\n",this_handler_count,hd->sp.path) ;
 				ToClient(hd->file_descriptor, &ping_cm, c);	// send the ping
-				//printf("OWSERVER ping\n") ;
 				if (Sidebound_Control.active > 0) {
 					struct connection_side *side;
 					for (side = Sidebound_Control.head; side != NULL; side = side->next) {
@@ -221,18 +235,26 @@ static void SingleHandler(struct handlerdata *hd)
 					}
 				}
 				gettimeofday(&(hd->tv), NULL);	// reset timer
+			} else {
+				LEVEL_DEBUG("NOPING handler {%lu} %s\n",this_handler_count,hd->sp.path) ;
 			}
 		}
 
 		TOCLIENTUNLOCK(hd);
 
 	} while (loop);
-  HandlerDone:
+
+HandlerDone:
+	gettimeofday(&this_handler_stop,0); // not for end of handling
+	printf("OWSERVER TIMING: Query %6lu Seconds %12.2f Path %s\n",
+		this_handler_count,
+		1.0*(this_handler_stop.tv_sec-this_handler_start.tv_sec)+.000001*(this_handler_stop.tv_usec-this_handler_start.tv_usec),
+		hd->sp.path) ;
+	LEVEL_DEBUG("STOP handler {%lu} %s\n",this_handler_count,hd->sp.path) ;
 	if (hd->sp.path) {
 		owfree(hd->sp.path);
 		hd->sp.path = NULL;
 	}
-//printf("OWSERVER single handler done\n" ) ;
 }
 
 #else							/* no OW_MT */

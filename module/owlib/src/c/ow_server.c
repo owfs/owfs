@@ -515,13 +515,13 @@ int ServerDIRALL(void (*dirfunc) (void *, const struct parsedname * const), void
 static void *FromServerAlloc(int file_descriptor, struct client_msg *cm)
 {
 	char *msg;
-	int ret;
 	struct timeval tv = { Globals.timeout_network + 1, 0, };
+	size_t actual_size ;
 
 	do {						/* loop until non delay message (payload>=0) */
 		//printf("OW_SERVER loop1\n");
-		ret = tcp_read(file_descriptor, cm, sizeof(struct client_msg), &tv);
-		if (ret != sizeof(struct client_msg)) {
+		tcp_read(file_descriptor, cm, sizeof(struct client_msg), &tv, &actual_size);
+		if (actual_size != sizeof(struct client_msg)) {
 			memset(cm, 0, sizeof(struct client_msg));
 			cm->ret = -EIO;
 			return NULL;
@@ -548,8 +548,8 @@ static void *FromServerAlloc(int file_descriptor, struct client_msg *cm)
 	}
 
 	if ((msg = (char *) owmalloc((size_t) cm->payload + 1))) {
-		ret = tcp_read(file_descriptor, msg, (size_t) (cm->payload), &tv);
-		if (ret != cm->payload) {
+		tcp_read(file_descriptor, msg, (size_t) (cm->payload), &tv, &actual_size);
+		if ((ssize_t)actual_size != cm->payload) {
 			//printf("FromServer couldn't read payload\n");
 			cm->payload = 0;
 			cm->offset = 0;
@@ -568,13 +568,13 @@ static void *FromServerAlloc(int file_descriptor, struct client_msg *cm)
 static int FromServer(int file_descriptor, struct client_msg *cm, char *msg, size_t size)
 {
 	size_t rtry;
-	size_t ret;
+	size_t actual_read ;
 	struct timeval tv = { Globals.timeout_network + 1, 0, };
 
 	do {						// read regular header, or delay (delay when payload<0)
 		//printf("OW_SERVER loop2\n");
-		ret = tcp_read(file_descriptor, cm, sizeof(struct client_msg), &tv);
-		if (ret != sizeof(struct client_msg)) {
+		tcp_read(file_descriptor, cm, sizeof(struct client_msg), &tv, &actual_read);
+		if (actual_read != sizeof(struct client_msg)) {
 			//printf("OW_SERVER loop2 bad\n");
 			cm->size = 0;
 			cm->ret = -EIO;
@@ -595,20 +595,16 @@ static int FromServer(int file_descriptor, struct client_msg *cm, char *msg, siz
 		return 0;				// No payload, done.
 	}
 	rtry = cm->payload < (ssize_t) size ? (size_t) cm->payload : size;
-	ret = tcp_read(file_descriptor, msg, rtry, &tv);	// read expected payload now.
-	if (ret != rtry) {
+	tcp_read(file_descriptor, msg, rtry, &tv, &actual_read);	// read expected payload now.
+	if (actual_read != rtry) {
 		cm->ret = -EIO;
 		return -EIO;
 	}
 
 	if (cm->payload > (ssize_t) size) {	// Uh oh. payload bigger than expected. read it in and discard
-		size_t d = cm->payload - size;
-		char extra[d];
-		ret = tcp_read(file_descriptor, extra, d, &tv);
-		if (ret != d) {
-			cm->ret = -EIO;
-			return -EIO;
-		}
+		size_t extra_length = cm->payload - size ;
+		char extra[extra_length] ;
+		tcp_read(file_descriptor, extra, extra_length, &tv, &actual_read);
 		return size;
 	}
 	return cm->payload;

@@ -136,7 +136,6 @@ struct checkpresence_struct {
 
 static void * CheckPresence_callback(void * v)
 {
-	int bus_nr = 0;
 	pthread_t thread;
 	int threadbad = 1;
 	struct checkpresence_struct * cps = (struct checkpresence_struct *) v ;

@@ -1119,8 +1119,9 @@ static void do_stor(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 
 	{
 		/* we're golden, read the file */
-		ssize_t size_actual = tcp_read(socket_fd, OWQ_buffer(owq), size_read, &limit_time);
-		if (size_actual < 0) {
+		size_t size_actual ;
+		int read_return = tcp_read(socket_fd, OWQ_buffer(owq), size_read, &limit_time, &size_actual) ;
+		if (read_return != 0 && read_return != -EAGAIN) {
 			reply(f, 550, "Error reading from data connection; %s.", strerror(errno));
 			goto exit_stor;
 		}

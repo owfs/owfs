@@ -16,7 +16,8 @@ $Id$
 #include "ow_connection.h"
 #include "ow_codes.h"
 
-static int Turnoff(int depth, const struct parsedname *pn);
+static int Turnoff(const struct parsedname *pn);
+static int BUS_reselect_branch(const struct parsedname *pn) ;
 static int BUS_select_branch(const struct parsedname *pn);
 static int BUS_select_subbranch(const struct buspath *bp, const struct parsedname *pn);
 static int BUS_Skip_Rom(const struct parsedname *pn);
@@ -72,44 +73,35 @@ int BUS_select(const struct parsedname *pn)
 
 	/* Very messy, we may need to clear all the DS2409 couplers up the the current branch */
 	if (RootNotBranch(pn)) {	/* no branches, overdrive possible */
-		//printf("SELECT_LOW root path\n") ;
+		printf("SELECT_LOW root path\n") ;
 		if (pn->selected_connection->branch.sn[0] || pn->selected_connection->buspath_bad) {	// need clear root branch */
-			//printf("SELECT_LOW root path will be cleared\n") ;
 			LEVEL_DEBUG("Clearing root branch\n");
-			if (Turnoff(0, pn)) {
-				return 1;
-			}
-			pn->selected_connection->branch.sn[0] = 0x00;	// flag as no branches turned on
+			BUS_select_branch(pn) ;
+		} else {
+			LEVEL_DEBUG("Continuing root branch\n");
+			BUS_reselect_branch(pn) ;
 		}
+		pn->selected_connection->branch.sn[0] = 0x00;	// flag as no branches turned on
 		if (pn->selected_connection->speed == bus_speed_overdrive) {	// overdrive?
 			sent[0] = _1W_OVERDRIVE_MATCH_ROM;
 		}
-	} else if (memcmp(pn->selected_connection->branch.sn, pn->bp[pl - 1].sn, 8) || pn->selected_connection->buspath_bad) {	/* different path */
-		int iclear;
-		LEVEL_DEBUG("Clearing all branches to level %d\n", pl);
-		for (iclear = 0; iclear <= pl; ++iclear) {
-			// All lines off
-			if (Turnoff(iclear, pn)) {
-				return 1;
-			}
+	} else {
+		if ( memcmp(pn->selected_connection->branch.sn, pn->bp[pl - 1].sn, 8)
+		     || pn->selected_connection->buspath_bad
+		     || pn->selected_connection->branch.branch != pn->bp[pl - 1].branch) {
+			/* different path */
+			LEVEL_DEBUG("Clearing all branches to level %d\n", pn->pathlength);
+			BUS_select_branch(pn) ;
+		} else {
+			LEVEL_DEBUG("Reselecting branch at level %d\n", pn->pathlength);
+			BUS_reselect_branch(pn) ;
 		}
 		memcpy(pn->selected_connection->branch.sn, pn->bp[pl - 1].sn, 8);
-		pn->selected_connection->branch.branch = pn->bp[pl - 1].branch;
-	} else if (pn->selected_connection->branch.branch != pn->bp[pl - 1].branch) {	/* different branch */
-		LEVEL_DEBUG("Clearing last branches (level %d)\n", pl);
-		if (Turnoff(pl, pn)) {
-			return 1;			// clear just last level
-		}
 		pn->selected_connection->branch.branch = pn->bp[pl - 1].branch;
 	}
 	pn->selected_connection->buspath_bad = 0;
 
 	/* proper path now "turned on" */
-	/* Now select */
-	if (BUS_reset(pn) || BUS_select_branch(pn)) {
-		return 1;
-	}
-
 	if ((pn->selected_device != NULL)
 		&& (pn->selected_device != DeviceThermostat)) {
 		//printf("Really select %s\n",pn->selected_device->code);
@@ -147,10 +139,52 @@ static int BUS_Skip_Rom(const struct parsedname *pn)
 /* All the railroad switches are correctly set, just isolate the last segment */
 static int BUS_select_branch(const struct parsedname *pn)
 {
-	if (RootNotBranch(pn)) {
+	int level ;
+	int turnoff_level ;
+	if ((pn->selected_connection->Adapter == adapter_fake)
+		|| (pn->selected_connection->Adapter == adapter_mock)
+		|| (pn->selected_connection->Adapter == adapter_tester)) {
+		LEVEL_DEBUG("No sub-branches for fake adapter\n");
 		return 0;
 	}
-	return BUS_select_subbranch(&(pn->bp[pn->pathlength - 1]), pn);
+	
+	// step through turning off levels
+	for ( turnoff_level=0 ; turnoff_level<(int)pn->pathlength ; ++turnoff_level ) {
+printf("turoff_level=%d\n",turnoff_level);
+
+		if ((BUS_reset(pn))) {
+			return 1;
+		}
+		for ( level=0 ; level<turnoff_level ; ++level ) {
+			printf("turoff_level level=%d\n",level);
+			if ( BUS_select_subbranch(&(pn->bp[level]), pn) ) {
+				return 1 ;
+			}
+		}
+		Turnoff(pn) ;
+	}
+	// now select levels
+	if ((BUS_reset(pn))) {
+		return 1;
+	}
+	for ( level=0 ; level<(int)pn->pathlength ; ++level ) {
+		printf("level level=%d\n",level);
+		if ( BUS_select_subbranch(&(pn->bp[level]), pn) ) {
+			return 1 ;
+		}
+	}
+	return 0 ;
+}
+
+static int BUS_reselect_branch(const struct parsedname *pn)
+{
+	if ((BUS_reset(pn))) {
+		return 1;
+	}
+	if ( pn->pathlength != 0 && BUS_select_subbranch(&(pn->bp[pn->pathlength-1]), pn) ) {
+		return 1 ;
+	}
+	return 0 ;
 }
 
 /* Select the specific branch */
@@ -174,34 +208,18 @@ static int BUS_select_subbranch(const struct buspath *bp, const struct parsednam
 		LEVEL_CONNECT("Select subbranch error for %s on bus %s\n", pn->selected_device->readable_name, pn->selected_connection->name);
 		return 1;
 	}
-	//printf("subbranch stop\n");
+	printf("subbranch stop\n");
 	return 0;
 }
 
 /* find every DS2409 (family code 1F) and switch off, at this depth */
-static int Turnoff(int depth, const struct parsedname *pn)
+static int Turnoff(const struct parsedname *pn)
 {
 	BYTE sent[2] = { _1W_SKIP_ROM, _1W_ALL_LINES_OFF, };
 	struct transaction_log t[] = {
 		TRXN_WRITE2(sent),
 		TRXN_END,
 	};
-
-	//printf("TURNOFF entry depth=%d\n",depth) ;
-
-	if ((BUS_reset(pn))) {
-		return 1;
-	}
-
-	if ((pn->selected_connection->Adapter == adapter_fake)
-		|| (pn->selected_connection->Adapter == adapter_mock)
-		|| (pn->selected_connection->Adapter == adapter_tester)) {
-		LEVEL_DEBUG("return on fake adapter\n");
-		return 0;
-	}
-
-	if (depth && BUS_select_subbranch(&(pn->bp[depth - 1]), pn)) {
-		return 1;
-	}
+	printf("Attempting turnoff\n");
 	return BUS_transaction_nolock(t, pn);
 }

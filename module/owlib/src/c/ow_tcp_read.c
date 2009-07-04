@@ -52,14 +52,14 @@ int tcp_wait(int file_descriptor, const struct timeval *ptv)
 /* Read "n" bytes from a descriptor. */
 /* Stolen from Unix Network Programming by Stevens, Fenner, Rudoff p89 */
 /* return < 0 if failure */
-ssize_t tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval * ptv)
+int tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval * ptv, size_t * chars_in)
 {
 	size_t nleft;
 	ssize_t nread;
-	char *ptr;
+
 	LEVEL_DEBUG("attempt %d bytes Time:(%ld,%ld)\n",(int)n,ptv->tv_sec,ptv->tv_usec ) ;
-	ptr = vptr;
 	nleft = n;
+	*chars_in = 0 ;
 	while (nleft > 0) {
 		int rc;
 		fd_set readset;
@@ -78,21 +78,21 @@ ssize_t tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval
 				return -EIO;	/* error */
 			}
 			//update_max_delay(pn);
-			if ((nread = read(file_descriptor, ptr, nleft)) < 0) {
+			errno = 0 ;
+			if ((nread = read(file_descriptor, &vptr[*chars_in], nleft)) < 0) {
 				if (errno == EINTR) {
-					errno = 0;	// clear errno. We never use it anyway.
 					nread = 0;	/* and call read() again */
 				} else {
-					ERROR_DATA("Network data read error errno=%d %s\n", errno, strerror(errno));
+					LEVEL_DATA("Network data read error errno=%d %s\n", errno, strerror(errno));
 					STAT_ADD1(NET_read_errors);
-					return (-1);
+					return -EIO;
 				}
 			} else if (nread == 0) {
 				break;			/* EOF */
 			}
-			Debug_Bytes("NETREAD", (unsigned char *)ptr, nread ) ;
+			Debug_Bytes("NETREAD", (unsigned char *)&vptr[*chars_in], nread ) ;
 			nleft -= nread;
-			ptr += nread;
+			*chars_in += nread ;
 		} else if (rc < 0) {	/* select error */
 			if (errno == EINTR) {
 				/* select() was interrupted, try again */
@@ -106,7 +106,7 @@ ssize_t tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval
 		}
 	}
 	LEVEL_DEBUG("n=%d nleft=%d n-nleft=%d\n",(int)n, (int) nleft, (int) (n-nleft) ) ;
-	return (n - nleft);			/* return >= 0 */
+	return 0;
 }
 
 void tcp_read_flush(int file_descriptor)

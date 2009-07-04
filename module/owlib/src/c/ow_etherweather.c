@@ -51,6 +51,7 @@ static int EtherWeather_command(struct connection_in *in, char command, int data
 {
 	ssize_t res;
 	ssize_t left = datalen;
+	size_t readin_size ;
 	BYTE *packet;
 
 	struct timeval tvnet = { 0, 200000, };
@@ -99,7 +100,8 @@ static int EtherWeather_command(struct connection_in *in, char command, int data
 		tvnet.tv_sec += 2;
 	}
 	// Read the response header
-	if (tcp_read(in->file_descriptor, packet, 2, &tvnet) != 2) {
+	tcp_read(in->file_descriptor, packet, 2, &tvnet, &readin_size) ;
+	if (readin_size != 2) {
 		LEVEL_CONNECT("header read error\n");
 		owfree(packet);
 		return -EIO;
@@ -112,7 +114,8 @@ static int EtherWeather_command(struct connection_in *in, char command, int data
 	}
 	// Then read any data
 	if (datalen > 0) {
-		if (tcp_read(in->file_descriptor, odata, datalen, &tvnet) != (ssize_t) datalen) {
+		tcp_read(in->file_descriptor, odata, datalen, &tvnet, &readin_size );
+		if (readin_size != (size_t) datalen) {
 			LEVEL_CONNECT("data read error\n");
 			owfree(packet);
 			return -EIO;

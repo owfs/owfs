@@ -235,13 +235,14 @@ static int HA7_read(int file_descriptor, struct memblob *mb)
 {
 	ASCII readin_area[HA7_READ_BUFFER_LENGTH + 1];
 	ASCII *start;
-	ssize_t read_size;
+	size_t read_size;
 	struct timeval tvnet = { Globals.timeout_ha7, 0, };
 
 	MemblobInit(mb, HA7_READ_BUFFER_LENGTH);
 
 	// Read first block of data from HA7
-	if ((read_size = tcp_read(file_descriptor, readin_area, HA7_READ_BUFFER_LENGTH, &tvnet)) < 0) {
+	tcp_read(file_descriptor, readin_area, HA7_READ_BUFFER_LENGTH, &tvnet, &read_size) ;
+	if ( read_size == 0) {
 		LEVEL_CONNECT("(ethernet) error = %d\n", read_size);
 		//write(1, readin_area, read_size);
 		return -EIO;
@@ -271,7 +272,8 @@ static int HA7_read(int file_descriptor, struct memblob *mb)
 	}
 	// loop through reading in HA7_READ_BUFFER_LENGTH blocks
 	while (read_size == HA7_READ_BUFFER_LENGTH) {	// full read, so presume more waiting
-		if ((read_size = tcp_read(file_descriptor, readin_area, HA7_READ_BUFFER_LENGTH, &tvnet)) < 0) {
+		tcp_read(file_descriptor, readin_area, HA7_READ_BUFFER_LENGTH, &tvnet, &read_size) ;
+		if (read_size == 0) {
 			LEVEL_DATA("Couldn't get rest of HA7 data (err=%d)\n", read_size);
 			MemblobClear(mb);
 			return -EIO;

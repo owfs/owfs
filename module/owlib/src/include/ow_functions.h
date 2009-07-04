@@ -123,7 +123,7 @@ void LockRelease(struct parsedname *pn);
 void UT_delay(const UINT len);
 void UT_delay_us(const unsigned long len);
 
-ssize_t tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval *ptv);
+int tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval *ptv, size_t * actual_read);
 void tcp_read_flush(int file_descriptor);
 int tcp_wait(int file_descriptor, const struct timeval *ptv);
 ssize_t udp_read(int file_descriptor, void *vptr, size_t n, const struct timeval * ptv, struct sockaddr_in *from, socklen_t *fromlen) ;

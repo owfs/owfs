@@ -14,48 +14,6 @@ $Id$
 
 #include "owshell.h"
 
-#if 0
-/* Purely a debugging routine -- print an arbitrary buffer of bytes */
-void _Debug_Writev(struct iovec *io, int iosz)
-{
-	/* title line */
-	int i, ionr = 0;
-	char *buf;
-	int length;
-
-	while(ionr < iosz) {
-		buf = io[ionr].iov_base;
-		length = io[ionr].iov_len;
-
-		fprintf(stderr,"Writev byte buffer ionr=%d/%d length=%d", ionr+1, iosz, (int) length);
-		if (length <= 0) {
-			fprintf(stderr,"\n-- Attempt to write with bad length\n");
-		}
-		if (buf == NULL) {
-			fprintf(stderr,"\n-- NULL buffer\n");
-		}
-#if 1
-		/* hex lines -- 16 bytes each */
-		for (i = 0; i < length; ++i) {
-			if ((i & 0x0F) == 0) {	// devisible by 16
-				fprintf(stderr,"\n--%3.3d:",i);
-			}
-			fprintf(stderr," %.2X", (unsigned char)buf[i]);
-		}
-
-#endif
-		/* char line -- printable or . */
-		fprintf(stderr,"\n   <");
-		for (i = 0; i < length; ++i) {
-			char c = buf[i];
-			fprintf(stderr,"%c", isprint(c) ? c : '.');
-		}
-		fprintf(stderr,">\n");
-		ionr++;
-	}
-}
-#endif
-
 static int FromServer(int file_descriptor, struct client_msg *cm, char *msg, size_t size);
 static void *FromServerAlloc(int file_descriptor, struct client_msg *cm);
 static int ToServer(int file_descriptor, struct server_msg *sm, struct serverpackage *sp);
@@ -86,9 +44,10 @@ int ServerRead(ASCII * path)
 	char buf[size + 1];
 	int ret = 0;
 
-	if (connectfd < 0)
+	if (connectfd < 0) {
 		return -EIO;
-	//printf("ServerRead pn->path=%s, size=%d, offset=%u\n",pn->path,size,offset);
+	}
+	//printf("Read <%s>\n",path);
 	memset(&sm, 0, sizeof(struct server_msg));
 	memset(&cm, 0, sizeof(struct client_msg));
 	sm.type = msg_read;
@@ -130,17 +89,15 @@ int ServerWrite(ASCII * path, ASCII * data)
 	int connectfd = ClientConnect();
 	int ret = 0;
 
-	if (connectfd < 0)
+	if (connectfd < 0) {
 		return -EIO;
-	//printf("ServerWrite path=%s, buf=%*s, size=%d, offset=%d\n",path,size,buf,size,offset);
+	}
+	//printf("Write <%s> <%s>\n",path,data);
 	memset(&sm, 0, sizeof(struct server_msg));
 	sm.type = msg_write;
 	sm.size = size;
 	sm.sg = SetupSemi();
 	sm.offset = offset_into_data;
-
-	//printf("ServerRead path=%s\n", pn->path_busless);
-	//LEVEL_CALL("SERVER(%d)WRITE path=%s\n", pn->selected_connection->index, SAFESTRING(pn->path_busless));
 
 	if (ToServer(connectfd, &sm, &sp)) {
 		ret = -EIO;
@@ -160,11 +117,12 @@ int ServerDirall(ASCII * path)
 	struct serverpackage sp = { path, NULL, 0, NULL, 0, };
 	char *path2;
 	int connectfd = ClientConnect();
-	//printf("DirALL <%s>\n",path ) ;
 
-	if (connectfd < 0)
+	if (connectfd < 0) {
 		return -EIO;
-
+	}
+	//printf("DirALL <%s>\n",path ) ;
+	
 	memset(&sm, 0, sizeof(struct server_msg));
 	sm.type = msg_dirall;
 
@@ -192,10 +150,11 @@ int ServerDir(ASCII * path)
 	struct serverpackage sp = { path, NULL, 0, NULL, 0, };
 	int connectfd = ClientConnect();
 
-	//printf("Dir <%s>\n", path ) ;
-	if (connectfd < 0)
+	if (connectfd < 0) {
 		return -EIO;
-
+	}
+	//printf("Dir <%s>\n", path ) ;
+	
 	memset(&sm, 0, sizeof(struct server_msg));
 	sm.type = msg_dir;
 
@@ -223,9 +182,10 @@ int ServerPresence(ASCII * path)
 	int connectfd = ClientConnect();
 	int ret = 0;
 
-	if (connectfd < 0)
+	if (connectfd < 0) {
 		return -EIO;
-	//printf("ServerPresence pn->path=%s\n",pn->path);
+	}
+	//printf("Presence <%s>\n",path);
 	memset(&sm, 0, sizeof(struct server_msg));
 	sm.type = msg_presence;
 
@@ -264,30 +224,29 @@ static void *FromServerAlloc(int file_descriptor, struct client_msg *cm)
 		cm->sg = ntohl(cm->sg);
 		cm->offset = ntohl(cm->offset);
 	} while (cm->payload < 0);
-	//printf("OW_SERVER loop1 done\n");
 
-//printf("FromServerAlloc payload=%d size=%d ret=%d sg=%X offset=%d\n",cm->payload,cm->size,cm->ret,cm->sg,cm->offset);
-//printf(">%.4d|%.4d\n",cm->ret,cm->payload);
+	//printf("FromServerAlloc payload=%d size=%d ret=%d sg=%X offset=%d\n",cm->payload,cm->size,cm->ret,cm->sg,cm->offset);
+	//printf(">%.4d|%.4d\n",cm->ret,cm->payload);
 	if (cm->payload == 0)
 		return NULL;
 	if (cm->ret < 0)
 		return NULL;
 	if (cm->payload > MAX_OWSERVER_PROTOCOL_PACKET_SIZE) {
-//printf("FromServerAlloc payload too large\n");
+		//printf("FromServerAlloc payload too large\n");
 		return NULL;
 	}
 
 	if ((msg = (char *) malloc((size_t) cm->payload))) {
 		ret = tcp_read(file_descriptor, msg, (size_t) (cm->payload), &tv);
 		if (ret != cm->payload) {
-//printf("FromServer couldn't read payload\n");
+			//printf("FromServer couldn't read payload\n");
 			cm->payload = 0;
 			cm->offset = 0;
 			cm->ret = -EIO;
 			free(msg);
 			msg = NULL;
 		}
-//printf("FromServer payload read ok\n");
+		//printf("FromServer payload read ok\n");
 	}
 	return msg;
 }
@@ -318,8 +277,8 @@ static int FromServer(int file_descriptor, struct client_msg *cm, char *msg, siz
 	} while (cm->payload < 0);	// flag to show a delay message
 	//printf("OW_SERVER loop2 done\n");
 
-//printf("FromServer payload=%d size=%d ret=%d sg=%d offset=%d\n",cm->payload,cm->size,cm->ret,cm->sg,cm->offset);
-//printf(">%.4d|%.4d\n",cm->ret,cm->payload);
+	//printf("FromServer payload=%d size=%d ret=%d sg=%d offset=%d\n",cm->payload,cm->size,cm->ret,cm->sg,cm->offset);
+	//printf(">%.4d|%.4d\n",cm->ret,cm->payload);
 	if (cm->payload == 0)
 		return 0;				// No payload, done.
 
@@ -359,7 +318,7 @@ static int ToServer(int file_descriptor, struct server_msg *sm, struct serverpac
 	if ((io[nio].iov_base = sp->path)) {	// send path (if not null)
 		io[nio].iov_len = payload = strlen(sp->path) + 1;
 		nio++;
-		//LEVEL_DEBUG("ToServer path=%s\n", sp->path);
+		//printf("ToServer path=%s\n", sp->path);
 	}
 
 	// next block, data (only for writes)

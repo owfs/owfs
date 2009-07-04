@@ -86,8 +86,8 @@ DeviceEntry(1B, DS2436);
 /* ------- Functions ------------ */
 
 /* DS2436 */
-static int OW_r_page(BYTE * p, const size_t size, const off_t offset, const struct parsedname *pn);
-static int OW_w_page(const BYTE * p, const size_t size, const off_t offset, const struct parsedname *pn);
+static int OW_r_page(BYTE * p, size_t size, off_t offset, const struct parsedname *pn);
+static int OW_w_page(const BYTE * p, size_t size, off_t offset, const struct parsedname *pn);
 static int OW_temp(_FLOAT * T, const struct parsedname *pn);
 static int OW_volts(_FLOAT * V, const struct parsedname *pn);
 
@@ -134,7 +134,7 @@ static int FS_volts(struct one_wire_query *owq)
 
 /* DS2436 simple battery */
 /* only called for a single page, and that page is 0,1,2 only*/
-static int OW_r_page(BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn)
+static int OW_r_page(BYTE * data, size_t size, off_t offset, const struct parsedname *pn)
 {
 	int pagesize = 32;
 	int page = offset / pagesize;
@@ -167,7 +167,7 @@ static int OW_r_page(BYTE * data, const size_t size, const off_t offset, const s
 }
 
 /* only called for a single page, and that page is 0,1,2 only*/
-static int OW_w_page(const BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn)
+static int OW_w_page(const BYTE * data, size_t size, off_t offset, const struct parsedname *pn)
 {
 	int pagesize = 32;
 	int page = offset / pagesize;
