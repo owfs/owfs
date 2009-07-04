@@ -279,6 +279,13 @@ static int LINKE_read(BYTE * buf, const size_t size, const struct parsedname *pn
 						// 2 byte sequence
 						linke_read_state = linke_regular ;
 						break ;
+					case 0xFF:
+						// escape the FF character
+						buf[size - still_needed] = 0xFF ;
+						-- total_discard ;
+						-- still_needed ;
+						linke_read_state = linke_fffa ;
+						break ;
 					default:
 						LEVEL_DEBUG("Unexpected telnet sequence from LinkHub-E\n");
 						return -EIO ;
