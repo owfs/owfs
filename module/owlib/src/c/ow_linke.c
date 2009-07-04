@@ -66,7 +66,6 @@ static void LINKE_setroutines(struct connection_in *in)
 
 #define LINK_string(x)  ((BYTE *)(x))
 
-
 int LINKE_detect(struct connection_in *in)
 {
 	struct parsedname pn;
@@ -218,19 +217,19 @@ static int LINKE_read(BYTE * buf, const size_t size, const struct parsedname *pn
 	size_t allocated_size = size + pn->selected_connection->connin.link.default_discard ;
 	BYTE readin_buf[allocated_size] ;
 
+	// state machine for telnet escape chars
+	// handles TELNET protocol, specifically RFC854
+	// http://www.ietf.org/rfc/rfc854.txt
+	enum { linke_regular, linke_ff, linke_fffa, linke_fffb, } linke_read_state = linke_regular ;
+
 	size_t actual_readin ;
-	struct timeval tvnetfirst = { Globals.timeout_network, 0, };
-
-	// state machine forescape chars -- has to handle buffer exhaustion
-	enum { linke_regular, linke_ff, linke_fffa, } linke_read_state = linke_regular ;
-
 	size_t current_index = 0 ;
 	size_t total_discard = 0 ;
 	size_t still_needed = size ;
 	
 	// initial read
 	//printf("LINKE_READ getting default_discard = %d\n",pn->selected_connection->connin.link.default_discard);
-	tcp_read(pn->selected_connection->file_descriptor, readin_buf, allocated_size, &tvnetfirst, &actual_readin) ;
+	tcp_read(pn->selected_connection->file_descriptor, readin_buf, allocated_size, &tvnet, &actual_readin) ;
 	if (actual_readin < size) {
 		LEVEL_CONNECT("LINKE_read (ethernet) error\n");
 		return -EIO;
@@ -252,21 +251,21 @@ static int LINKE_read(BYTE * buf, const size_t size, const struct parsedname *pn
 			case linke_regular :
 				//printf("LINKE_READ regular char=%.2X index=%d disacard=%d size=%d allocated=%d\n",readin_buf[current_index],current_index,total_discard,size,allocated_size);
 				if ( readin_buf[current_index] == 0xFF ) {
-					linke_read_state = linke_ff ;
+					// starting escape sequence
+					// following bytes will better characterize
 					++ total_discard ;
+					linke_read_state = linke_ff ;
 				} else {
+					// normal processing
+					// move byte to response and decrement needed bytes
+					// stay in current state
 					buf[size - still_needed] = readin_buf[current_index] ;
 					-- still_needed ;
 				}
 				break ;
 			case linke_ff:
 				//printf("LINKE_READ FF      char=%.2X index=%d disacard=%d size=%d allocated=%d\n",readin_buf[current_index],current_index,total_discard,size,allocated_size);
-				++ total_discard ;
 				switch ( readin_buf[current_index] ) {
-					case 0xFA:
-						//start looking for F0 
-						linke_read_state = linke_fffa ;
-						break ;
 					case 0xF1:
 					case 0xF2:
 					case 0xF3:
@@ -277,14 +276,31 @@ static int LINKE_read(BYTE * buf, const size_t size, const struct parsedname *pn
 					case 0xF8:
 					case 0xF9:
 						// 2 byte sequence
+						// just read 2nd character
+						++ total_discard ;
 						linke_read_state = linke_regular ;
+						break ;
+					case 0xFA:
+						// multibyte squence
+						// start scanning for 0xF0
+						++ total_discard ;
+						linke_read_state = linke_fffa ;
+						break ;
+					case 0xFB:
+					case 0xFC:
+					case 0xFD:
+					case 0xFE:
+						// 3 byte sequence
+						// just read 2nd char
+						++ total_discard ;
+						linke_read_state = linke_fffb ;
 						break ;
 					case 0xFF:
 						// escape the FF character
+						// make this a single regular FF char
 						buf[size - still_needed] = 0xFF ;
-						-- total_discard ;
 						-- still_needed ;
-						linke_read_state = linke_fffa ;
+						linke_read_state = linke_regular ;
 						break ;
 					default:
 						LEVEL_DEBUG("Unexpected telnet sequence from LinkHub-E\n");
@@ -293,20 +309,28 @@ static int LINKE_read(BYTE * buf, const size_t size, const struct parsedname *pn
 				break ;
 			case linke_fffa:
 				//printf("LINKE_READ FFFA   char=%.2X index=%d disacard=%d size=%d allocated=%d\n",readin_buf[current_index],current_index,total_discard,size,allocated_size);
-				++ total_discard ;
 				switch ( readin_buf[current_index] ) {
 					case 0xF0:
 						// end of escape sequence
+						++ total_discard ;
 						linke_read_state = linke_regular ;
 						break ;
 					default:
 						// stay in this mode
+						++ total_discard ;
 						break ;
 				}
+				break ;
+			case linke_fffb:
+				// 3 byte sequence
+				// now reading 3rd char
+				++ total_discard ;
+				linke_read_state = linke_regular ;
 				break ;
 		}
 		++ current_index ;
 	}
+	// store this extra length for the next read attempt
 	pn->selected_connection->connin.link.default_discard = total_discard ;
 	//printf("LINKE_READ setting default_discard = %d\n",pn->selected_connection->connin.link.default_discard);
 	return 0 ;
