@@ -33,26 +33,34 @@ int ClientAddr(char *sname)
 	char *p;
 	int ret;
 
-	if (sname == NULL)
-		return -1;
-	if ((p = strrchr(sname, ':'))) {	/* : exists */
+	if (sname == NULL || sname[0] == '\0') {
+		/* probably not a good idea to set localhost:DEFAULT_PORT
+		 * The user have probably typed wrong address */
+		owserver_connection->host = NULL;
+		owserver_connection->service = strdup(OWSERVER_DEFAULT_PORT);
+	} else if ((p = strrchr(sname, ':')) == NULL) {	/* : NOT exist */
+		if (strchr(sname, '.') || isalpha(sname[0])) {	//probably an address
+			owserver_connection->host = strdup(sname);
+			owserver_connection->service = strdup(OWSERVER_DEFAULT_PORT);
+		} else {				// assume a port
+			owserver_connection->host = NULL;
+			owserver_connection->service = strdup(sname);
+		}
+	} else {
 		p[0] = '\0';			/* Separate tokens in the string */
 		owserver_connection->host = strdup(sname);
-		owserver_connection->service = strdup(&p[1]);
 		p[0] = ':';				/* restore name string */
-	} else {
-#if OW_CYGWIN
-		owserver_connection->host = strdup("127.0.0.1");
-#else
-		owserver_connection->host = NULL;
-#endif
-		owserver_connection->service = strdup(sname);
+		owserver_connection->service = strdup(&p[1]);
 	}
 
 	memset(&hint, 0, sizeof(struct addrinfo));
 	hint.ai_socktype = SOCK_STREAM;
 #if OW_CYGWIN
 	hint.ai_family = AF_INET;
+	if(owserver_connection->host == NULL) {
+		/* getaddrinfo doesn't work with host=NULL for cygwin */
+		owserver_connection->host = strdup("127.0.0.1");
+	}
 #else
 	hint.ai_family = AF_UNSPEC;
 #endif
