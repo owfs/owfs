@@ -67,7 +67,6 @@ int ToClient(int file_descriptor, struct client_msg *machine_order_cm, char *dat
 		LEVEL_DEBUG("Bad data pointer -- NULL\n") ;
 		io[1].iov_len = 0;
 	} else {
-		Debug_Writev(io, nio);
 		++nio;
 	}
 
@@ -78,5 +77,9 @@ int ToClient(int file_descriptor, struct client_msg *machine_order_cm, char *dat
 	network_order_cm->size = htonl(machine_order_cm->size);
 	network_order_cm->offset = htonl(machine_order_cm->offset);
 
+	if(machine_order_cm->payload >= 0) {
+		Debug_Writev(io, nio);  // debug output of network package after it's created.
+	}
+	
 	return writev(file_descriptor, io, nio) != (ssize_t) (io[0].iov_len + io[1].iov_len);
 }

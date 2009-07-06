@@ -72,6 +72,7 @@ extern struct mutexes {
 	pthread_mutexattr_t mattr;
 	pthread_mutex_t uclibc_mutex;
 #endif							/* __UCLIBC__ */
+	sem_t accept_sem;
 #endif							/* OW_MT */
 } Mutex;
 

@@ -92,6 +92,8 @@ void LockSetup(void)
 #if OW_USB
 	my_pthread_mutex_init(&Mutex.libusb_mutex, Mutex.pmattr);
 #endif							/* OW_USB */
+	/* This will give us 10 concurrent Handler threads, and 10 in queue due to listen() */
+	sem_init(&Mutex.accept_sem, 0, 10);
 #endif							/* OW_MT */
 }
 

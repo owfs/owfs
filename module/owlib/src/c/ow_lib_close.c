@@ -24,6 +24,8 @@ void LibClose(void)
 	DeviceDestroy();
 
 #if OW_MT
+	sem_destroy(&Mutex.accept_sem);
+
 	if (Mutex.pmattr) {
 		my_pthread_mutexattr_destroy(Mutex.pmattr);
 		Mutex.pmattr = NULL;

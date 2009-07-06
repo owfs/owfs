@@ -163,6 +163,7 @@ void *ServerProcessHandler(void *arg)
 		owfree(hp);
 	}
 	LEVEL_DEBUG("Normal exit.\n");
+	sem_post(&Mutex.accept_sem);
 	pthread_exit(NULL);
 	return NULL;
 }
@@ -226,17 +227,20 @@ static void ServerProcessAccept(void *vp)
 
 	if (acceptfd < 0) {
 		ERROR_CONNECT("accept() problem %d (%d)\n", out->file_descriptor, out->index);
+		sem_post(&Mutex.accept_sem); /* Make sure to increase the semaphore on failure */
 	} else {
 		struct HandlerThread_data *hp;
 		hp = owmalloc(sizeof(struct HandlerThread_data));
 		if (hp) {
 			hp->HandlerRoutine = out->HandlerRoutine;
 			hp->acceptfd = acceptfd;
+			/* Semaphore will be increased when ProcessHandler ends */
 			ret = pthread_create(&tid, NULL, ServerProcessHandler, hp);
 			if (ret) {
 				LEVEL_DEBUG("%s[%lu] create failed ret=%d\n", SAFESTRING(out->name), (unsigned long int) pthread_self(), ret);
 				close(acceptfd);
 				owfree(hp);
+				sem_post(&Mutex.accept_sem); /* Make sure to increase the semaphore on failure */
 			}
 		}
 	}
@@ -276,6 +280,11 @@ static void *ServerProcessOut(void *v)
 	OUTUNLOCK(out);
 
 	while (!StateInfo.shutdown_in_progress) {
+        int rc = sem_wait(&Mutex.accept_sem);
+		if(rc < 0) {
+			/* signal handler interrupts the call */
+			break;
+		}
 		ServerProcessAccept(v);
 	}
 
