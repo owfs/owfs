@@ -102,22 +102,35 @@ void ow_help_cache(void)
 	"\n"
 	" Cache\n"
 	"  --cache_size n   Size in bytes of max cache memory. 0 for no limit.\n"
+	"  --max_connections   [%3d] Nr of allowed concurrent connections\n"
 	"\n"
 	" Cache timing         [default] (in seconds)\n"
-	"  --timeout_volatile  [ 15] Expiration time for changing data (e.g. temperature)\n"
-	"  --timeout_stable    [300] Expiration time for stable data (e.g. temperature limit)\n"
-	"  --timeout_directory  [ 60] Expiration of directory lists\n"
-	"  --timeout_presence  [120] Expiration of known 1-wire device location\n"
+	"  --timeout_volatile  [%3d] Expiration time for changing data (e.g. temperature)\n"
+	"  --timeout_stable    [%3d] Expiration time for stable data (e.g. temperature limit)\n"
+	"  --timeout_directory [%3d] Expiration of directory lists\n"
+	"  --timeout_presence  [%3d] Expiration of known 1-wire device location\n"
 	" \n"
 	" Communication timing [default] (in seconds)\n"
-	"  --timeout_serial    [  5] Timeout for serial port\n"
-	"  --timeout_usb       [  5] Timeout for USB transaction\n"
-	"  --timeout_network   [  1] Timeout for each network transaction\n"
-	"  --timeout_server    [ 10] Timeout for first server connection\n"
-	"  --timeout_ftp       [900] Timeout for FTP session\n"
-	"  --timeout_ha7       [ 60] Timeout for HA7Net adapter\n"
-	"  --timeout_w1        [  5] Timeout for w1 kernel netlink\n"
-	);
+	"  --timeout_serial    [%3d] Timeout for serial port\n"
+	"  --timeout_usb       [%3d] Timeout for USB transaction\n"
+	"  --timeout_network   [%3d] Timeout for each network transaction\n"
+	"  --timeout_server    [%3d] Timeout for first server connection\n"
+	"  --timeout_ftp       [%3d] Timeout for FTP session\n"
+	"  --timeout_ha7       [%3d] Timeout for HA7Net adapter\n"
+	"  --timeout_w1        [%3d] Timeout for w1 kernel netlink\n"
+	, Globals.concurrent_connections
+	, Globals.timeout_volatile
+	, Globals.timeout_stable
+	, Globals.timeout_directory
+	, Globals.timeout_presence
+	, Globals.timeout_serial
+	, Globals.timeout_usb
+	, Globals.timeout_network
+	, Globals.timeout_server
+	, Globals.timeout_ftp
+	, Globals.timeout_ha7
+	, Globals.timeout_w1
+		   );
 }
 
 void ow_help_program(void)

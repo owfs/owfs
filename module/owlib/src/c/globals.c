@@ -55,6 +55,7 @@ struct global Globals = {
 	.fatal_debug = 0,
 	.fatal_debug_file = NULL,
 
+	.concurrent_connections = 10,
 	.readonly = 0,
 	.max_clients = 250,
 	.autoserver = 0,

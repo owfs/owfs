@@ -69,6 +69,7 @@ struct global {
 	int error_level;
 	int error_print;
 	int fatal_debug;
+	int concurrent_connections;
 	ASCII *fatal_debug_file;
 	int readonly;
 	int max_clients;			// for ftp
