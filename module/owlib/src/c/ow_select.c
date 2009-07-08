@@ -73,7 +73,7 @@ int BUS_select(const struct parsedname *pn)
 
 	/* Very messy, we may need to clear all the DS2409 couplers up the the current branch */
 	if (RootNotBranch(pn)) {	/* no branches, overdrive possible */
-		printf("SELECT_LOW root path\n") ;
+		//printf("SELECT_LOW root path\n") ;
 		if (pn->selected_connection->branch.sn[0] || pn->selected_connection->buspath_bad) {	// need clear root branch */
 			LEVEL_DEBUG("Clearing root branch\n");
 			BUS_select_branch(pn) ;
@@ -150,13 +150,13 @@ static int BUS_select_branch(const struct parsedname *pn)
 	
 	// step through turning off levels
 	for ( turnoff_level=0 ; turnoff_level<(int)pn->pathlength ; ++turnoff_level ) {
-printf("turoff_level=%d\n",turnoff_level);
+		//printf("turoff_level=%d\n",turnoff_level);
 
 		if ((BUS_reset(pn))) {
 			return 1;
 		}
 		for ( level=0 ; level<turnoff_level ; ++level ) {
-			printf("turoff_level level=%d\n",level);
+			//printf("turoff_level level=%d\n",level);
 			if ( BUS_select_subbranch(&(pn->bp[level]), pn) ) {
 				return 1 ;
 			}
@@ -168,7 +168,7 @@ printf("turoff_level=%d\n",turnoff_level);
 		return 1;
 	}
 	for ( level=0 ; level<(int)pn->pathlength ; ++level ) {
-		printf("level level=%d\n",level);
+		//printf("level level=%d\n",level);
 		if ( BUS_select_subbranch(&(pn->bp[level]), pn) ) {
 			return 1 ;
 		}
@@ -208,7 +208,7 @@ static int BUS_select_subbranch(const struct buspath *bp, const struct parsednam
 		LEVEL_CONNECT("Select subbranch error for %s on bus %s\n", pn->selected_device->readable_name, pn->selected_connection->name);
 		return 1;
 	}
-	printf("subbranch stop\n");
+	//printf("subbranch stop\n");
 	return 0;
 }
 
@@ -220,6 +220,6 @@ static int Turnoff(const struct parsedname *pn)
 		TRXN_WRITE2(sent),
 		TRXN_END,
 	};
-	printf("Attempting turnoff\n");
+	//printf("Attempting turnoff\n");
 	return BUS_transaction_nolock(t, pn);
 }

@@ -246,7 +246,7 @@ static void SingleHandler(struct handlerdata *hd)
 
 HandlerDone:
 	gettimeofday(&this_handler_stop,0); // not for end of handling
-	printf("OWSERVER TIMING: Query %6lu Seconds %12.2f Path %s\n",
+	LEVEL_DEBUG("OWSERVER TIMING: Query %6lu Seconds %12.2f Path %s\n",
 		this_handler_count,
 		1.0*(this_handler_stop.tv_sec-this_handler_start.tv_sec)+.000001*(this_handler_stop.tv_usec-this_handler_start.tv_usec),
 		hd->sp.path) ;

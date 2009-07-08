@@ -1097,7 +1097,9 @@ static int Cache_Get_Common(void *data, size_t * dsize, time_t * duration, const
 		//printf("CACHE GET 2 opaque=%p tn=%p\n",opaque,opaque->key);
 		duration[0] = opaque->key->expires - now ;
 		LEVEL_DEBUG("value found in cache. Remaining life: %d seconds.\n",duration[0]);
-		if (duration[0] >= 0) {
+		if (duration[0] > 0) {
+			// Compared with >= before, but fc_second(1) always cache for 2 seconds in that case.
+			// Very noticable when reading time-data like "/26.80A742000000/date" for example.
 			//printf("CACHE GET 3 buffer size=%lu stored size=%d\n",*dsize,opaque->key->dsize);
 			if ( dsize[0] >= opaque->key->dsize) {
 				//printf("CACHE GET 4\n");

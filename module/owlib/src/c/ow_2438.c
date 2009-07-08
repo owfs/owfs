@@ -156,6 +156,7 @@ static int FS_r_page(struct one_wire_query *owq)
 static int FS_w_page(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
+	LEVEL_DEBUG("size=%d offset=%d\n", OWQ_size(owq), OWQ_offset(owq));
 	if (OWQ_size(owq) != 8) {	/* partial page */
 		BYTE data[8];
 		if (OW_r_page(data, pn->extension, pn)) {
