@@ -1,4 +1,8 @@
-#define cvs 20081115
+# Use --define 'cvs 1' on the command line to enable CVS version
+%{!?cvs:%define CVSVERSION %{nil}}
+%{?cvs:%define CVSVERSION %(echo "_cvs_`date +"%Y%m%d"`")}
+%{!?cvs:%define CVS 0}
+%{?cvs:%define CVS 1}
 
 %define build_fs 1
 %define build_httpd 1
@@ -18,19 +22,25 @@
 
 %define debug_package   %{nil}
 
-%if %{defined cvs}
-%define cvsver cvs%{cvs}
-%else
-%define cvsver %nil
-%endif
+# include some mandriva defines
+# Look at http://wiki.mandriva.com/en/Policies/Release_Tag
+%define rel 3
+
+# define the mkrel macro if it is not already defined
+# %{?!mkrel:%define mkrel(c:) %{-c:0.%{-c''}.}%{!?''with''unstable:%(perl -e '$''="%{1}";m/(.\'''\\D\+)?(\\d+)$/;$rel=${2}-1;re;print "$1$rel";').%{?subrel:%subrel}%{!?subrel:1}.%{?distversion:%distversion}}%{?''with_unstable:%{1}}%{?distsuffix:%distsuffix}%{?!distsuffix:mdk}}
+
+# For mandriva mkrel could be used. It doesn't work on older distributions though.
+# the define above fails with different syntax errors on FC1 atleast.
+#%define release %mkrel %rel
+%define release 1
 
 %if %{build_tcl}
 %define tcl_pkgpath %(echo 'puts [lindex $tcl_pkgPath 0]' | %{_bindir}/tclsh)
 %endif
 
 Name: owfs
-Version: @VERSION@%{cvsver}
-Release: 1
+Version: @VERSION@%{?cvs:%{CVSVERSION}}
+Release: %release
 Summary: 1-Wire Virtual File System
 Source: %{name}-%{version}.tar.gz
 #Copyright: GPL
@@ -39,6 +49,7 @@ Group: System Environment/Libraries
 URL: http://sourceforge.net/projects/owfs
 Buildroot: %{_tmppath}/%{name}-root
 Prefix: /usr
+Requires: %{name}-libs = %{version}-%{release}
 Packager: Serg Oskin <serg@oskin.ru>
 Summary: Virtual filesystem on top of %{name}-libs providing access to 1-Wire networks.
 
@@ -59,7 +70,7 @@ BuildRequires: libusb-devel
 %package capi
 Summary: C-API to develop third-part applications which access 1-Wire networks.
 Group: System Environment/Libraries
-Requires: %{name}-libs = %{version}
+Requires: %{name}-libs = %{version}-%{release}
 
 %description capi
 %{name}-capi library on top of libow providing an easy API to develop third-part applications to access to 1-Wire networks.
@@ -69,7 +80,7 @@ Requires: %{name}-libs = %{version}
 %package ownet
 Summary: C-API to develop third-part applications which access 1-Wire networks.
 Group: System Environment/Libraries
-Requires: %{name}-libs = %{version}
+Requires: %{name}-libs = %{version}-%{release}
 
 %description ownet
 %{name}-ownet library provids an easy API to develop third-part applications to access to 1-Wire networks. It doesn't depend on owlib, and only supports remote-server connections. This library doesn't include any 1-wire adapter support, except server connections.
@@ -79,7 +90,7 @@ Requires: %{name}-libs = %{version}
 %package fs
 Summary: Virtual filesystem on top of %{name}-libs providing access to 1-Wire networks.
 Group: System Environment/Daemon
-Requires: %{name}-libs = %{version}, fuse >= 1.0
+Requires: %{name}-libs = %{version}-%{release}, fuse >= 1.0
 #BuildRequires: fuse-devel >= 1.0
 
 %description fs
@@ -90,7 +101,7 @@ Requires: %{name}-libs = %{version}, fuse >= 1.0
 %package httpd
 Summary: HTTP daemon providing access to 1-Wire networks.
 Group: System Environment/Daemon
-Requires: %{name}-libs = %{version}
+Requires: %{name}-libs = %{version}-%{release}
 
 %description httpd
 %{name}-httpd is a HTTP daemon on top of %{name} providing access to 1-Wire networks.
@@ -100,7 +111,7 @@ Requires: %{name}-libs = %{version}
 %package ftpd
 Summary: FTP daemon providing access to 1-Wire networks.
 Group: System Environment/Daemon
-Requires: %{name}-libs = %{version}
+Requires: %{name}-libs = %{version}-%{release}
 
 %description ftpd
 %{name}-ftpd is a FTP daemon on top of %{name} providing access to 1-Wire networks.
@@ -110,7 +121,7 @@ Requires: %{name}-libs = %{version}
 %package server
 Summary: Backend server (daemon) for 1-wire control
 Group: System Environment/Daemon
-Requires: %{name}-libs = %{version}
+Requires: %{name}-libs = %{version}-%{release}
 
 %description server
 %{name}-server is the backend component of the OWFS 1-wire bus control system.
@@ -154,7 +165,9 @@ Requires: tcl >= 8.1
 %package perl
 Summary: %{name}-perl is a Perl interface for the 1-wire filesystem
 Group: System Environment/Libraries
-Requires: %{name}-libs = %{version}, swig
+Requires: %{name}-libs = %{version}-%{release}, perl
+BuildRequires: swig
+# FC1 doesn't have perl-devel, but should be added
 
 %description perl
 %{name}-perl is a Perl interface for the 1-wire filesystem
@@ -164,7 +177,7 @@ Requires: %{name}-libs = %{version}, swig
 %package python
 Summary: %{name}-python is a python interface for the 1-wire filesystem
 Group: System Environment/Libraries
-Requires: %{name}-libs = %{version}, python >= 2.0
+Requires: %{name}-libs = %{version}-%{release}, python >= 2.0
 BuildRequires: python-devel >= 2.0, swig
 
 %description python
@@ -175,8 +188,9 @@ BuildRequires: python-devel >= 2.0, swig
 %package php
 Summary: %{name}-php is a php interface for the 1-wire filesystem
 Group: System Environment/Libraries
-Requires: %{name}-libs = %{version}, php >= 4.3.0
+Requires: %{name}-libs = %{version}-%{release}, php >= 4.3.0
 BuildRequires: php-devel >= 4.3.0, swig
+# FC1 doesn't have php-cli >= 4.3.0, but should be added
 
 %description php
 %{name}-php is a php interface for the 1-wire filesystem
@@ -186,7 +200,7 @@ BuildRequires: php-devel >= 4.3.0, swig
 %package tcl
 Summary: %{name}-tcl is a Tcl interface for the 1-wire filesystem
 Group: System Environment/Libraries
-Requires: %{name}-libs = %{version}, tcl >= 8.1
+Requires: %{name}-libs = %{version}-%{release}, tcl >= 8.1
 BuildRequires: tcl-devel >= 8.1
 
 %description tcl
@@ -216,10 +230,10 @@ Group: Documentation
 rm -rf $RPM_BUILD_ROOT
 
 %prep
-%if %{defined cvs}
-%setup -n owfs
-%else
+%if %{CVS} == 0
 %setup
+%else
+%setup -n owfs-@VERSION@
 %endif
 
 %build
@@ -231,6 +245,7 @@ automake -a -c
 ./configure \
 	--prefix=%{prefix} \
 	--libdir=%{_libdir} \
+	--disable-static \
 	--enable-usb \
 	--enable-cache \
 	--enable-mt \
@@ -448,9 +463,8 @@ fi
 %{prefix}/include/owfs/owfs_config.h
 %{_libdir}/libow-*.so*
 %{_libdir}/libow.so
-%{_libdir}/libow.a
 %{_libdir}/libow.la
-%{_mandir}/man3/*.3.gz
+%{_mandir}/man3/*.3.*
 
 %if %{build_capi}
 %files capi
@@ -458,9 +472,8 @@ fi
 %{prefix}/include/owfs/owcapi.h
 %{_libdir}/libowcapi-*.so*
 %{_libdir}/libowcapi.so
-%{_libdir}/libowcapi.a
 %{_libdir}/libowcapi.la
-%{_mandir}/man1/*owcapi.1.gz
+%{_mandir}/man1/*owcapi.1.*
 %endif
 
 %if %{build_ownet}
@@ -469,9 +482,8 @@ fi
 %{prefix}/include/owfs/ownetapi.h
 %{_libdir}/libownet-*.so*
 %{_libdir}/libownet.so
-%{_libdir}/libownet.a
 %{_libdir}/libownet.la
-%{_mandir}/man1/*ownet*.1.gz
+%{_mandir}/man1/*ownet*.1.*
 %endif
 
 %if %{build_fs}
@@ -480,7 +492,7 @@ fi
 %attr(0755,root,root) /etc/rc.d/init.d/owfs
 %config /etc/sysconfig/owfs
 %{prefix}/sbin/owfs
-%{_mandir}/man1/owfs.1.gz
+%{_mandir}/man1/owfs.1.*
 %endif
 
 %if %{build_httpd}
@@ -489,7 +501,7 @@ fi
 %attr(0755,root,root) /etc/rc.d/init.d/owhttpd
 %config /etc/sysconfig/owhttpd
 %{prefix}/sbin/owhttpd
-%{_mandir}/man1/owhttpd.1.gz
+%{_mandir}/man1/owhttpd.1.*
 %endif
 
 %if %{build_shell}
@@ -500,11 +512,11 @@ fi
 %{prefix}/bin/owwrite
 %{prefix}/bin/owget
 %{prefix}/bin/owpresent
-%{_mandir}/man1/owshell.1.gz
-%{_mandir}/man1/owdir.1.gz
-%{_mandir}/man1/owread.1.gz
-%{_mandir}/man1/owget.1.gz
-%{_mandir}/man1/owpresent.1.gz
+%{_mandir}/man1/owshell.1.*
+%{_mandir}/man1/owdir.1.*
+%{_mandir}/man1/owread.1.*
+%{_mandir}/man1/owget.1.*
+%{_mandir}/man1/owpresent.1.*
 
 %if %{build_php}
 # include ownet-php (it's a duplicate since it's in owfs-php too)
@@ -526,14 +538,14 @@ fi
 %if %{build_man}
 %files man
 %defattr(-,root,root)
-%{_mandir}/man1/*.1.gz
-%{_mandir}/man1/*.1so.gz
-%{_mandir}/man3/*.3.gz
-%{_mandir}/man3/*.3so.gz
-%{_mandir}/man5/*.5.gz
-%{_mandir}/man5/*.5so.gz
-%{_mandir}/mann/*.n.gz
-%{_mandir}/mann/*.nso.gz
+%{_mandir}/man1/*.1.*
+%{_mandir}/man1/*.1so.*
+%{_mandir}/man3/*.3.*
+%{_mandir}/man3/*.3so.*
+%{_mandir}/man5/*.5.*
+%{_mandir}/man5/*.5so.*
+%{_mandir}/mann/*.n.*
+%{_mandir}/mann/*.nso.*
 %endif
 
 %if %{build_ftpd}
@@ -542,7 +554,7 @@ fi
 %attr(0755,root,root) /etc/rc.d/init.d/owftpd
 %config /etc/sysconfig/owftpd
 %{prefix}/sbin/owftpd
-%{_mandir}/man1/owftpd.1.gz
+%{_mandir}/man1/owftpd.1.*
 %endif
 
 %if %{build_server}
@@ -551,39 +563,37 @@ fi
 %attr(0755,root,root) /etc/rc.d/init.d/owserver
 %config /etc/sysconfig/owserver
 %{prefix}/sbin/owserver
-%{_mandir}/man1/owserver.1.gz
+%{_mandir}/man1/owserver.1.*
 %endif
 
 %if %{build_side}
 %files side
 %defattr(-,root,root)
 %{prefix}/bin/owside
-#%{_mandir}/man1/owside.1.gz
+#%{_mandir}/man1/owside.1.*
 %endif
 
 %if %{build_tap}
 %files tap
 %defattr(-,root,root)
 %{prefix}/bin/owtap
-%{_mandir}/man1/owtap.1.gz
+%{_mandir}/man1/owtap.1.*
 %endif
 
 %if %{build_mon}
 %files mon
 %defattr(-,root,root)
 %{prefix}/bin/owmon
-#%{_mandir}/man1/owmon.1.gz
+#%{_mandir}/man1/owmon.1.*
 %endif
 
 %if %{build_perl}
 %files perl
 %defattr(-,root,root)
 %dir %{perl_sitearch}/auto/OW
-%{perl_sitearch}/auto/OW/OW.bs
-%{perl_sitearch}/auto/OW/OW.so
+%{perl_sitearch}/auto/OW/OW.*
 %{perl_sitearch}/OW.pm
 %{perl_sitelib}/OWNet.pm
-#%{_mandir}/man3/OWNet.3*
 %{perl_siteman3dir}/OWNet.3*
 %endif
 
@@ -616,7 +626,7 @@ fi
 %dir %{tcl_pkgpath}/owtcl-*
 %{tcl_pkgpath}/owtcl-*/*
 # ow-*.so ow.so ow.tcl pkgIndex.tcl
-%{_mandir}/mann/owtcl.n.gz
+%{_mandir}/mann/owtcl.n.*
 %endif
 
 
