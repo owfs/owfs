@@ -71,7 +71,7 @@ int ToClientSide(struct connection_side *side, struct client_msg *original_cm, c
 	cm->version = htonl(original_cm->version);
 	cm->payload = htonl(original_cm->payload);
 	cm->ret = htonl(original_cm->ret);
-	cm->sg = htonl(original_cm->sg);
+	cm->control_flags = htonl(original_cm->control_flags);
 	cm->size = htonl(original_cm->size);
 	cm->offset = htonl(original_cm->offset);
 
@@ -125,7 +125,7 @@ int FromClientSide(struct connection_side *side, struct handlerdata *hd)
 	sm->version = htonl(hd->sm.version);
 	sm->payload = htonl(hd->sm.payload);
 	sm->type = htonl(hd->sm.type);
-	sm->sg = htonl(hd->sm.sg);
+	sm->control_flags = htonl(hd->sm.control_flags);
 	sm->size = htonl(hd->sm.size);
 	sm->offset = htonl(hd->sm.offset);
 

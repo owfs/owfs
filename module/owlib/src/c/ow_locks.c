@@ -32,7 +32,7 @@ void __pthread_initialize(void);
 struct mutexes Mutex = {
 #if OW_MT
 	.stat_mutex = PTHREAD_MUTEX_INITIALIZER,
-	.sg_mutex = PTHREAD_MUTEX_INITIALIZER,
+	.controlflags_mutex = PTHREAD_MUTEX_INITIALIZER,
 	.fstat_mutex = PTHREAD_MUTEX_INITIALIZER,
 	.dir_mutex = PTHREAD_MUTEX_INITIALIZER,
 #ifdef __UCLIBC__
@@ -78,7 +78,7 @@ void LockSetup(void)
 #endif							/* __UCLIBC__ */
 
 	my_pthread_mutex_init(&Mutex.stat_mutex, Mutex.pmattr);
-	my_pthread_mutex_init(&Mutex.sg_mutex, Mutex.pmattr);
+	my_pthread_mutex_init(&Mutex.controlflags_mutex, Mutex.pmattr);
 	my_pthread_mutex_init(&Mutex.fstat_mutex, Mutex.pmattr);
 	my_pthread_mutex_init(&Mutex.dir_mutex, Mutex.pmattr);
 

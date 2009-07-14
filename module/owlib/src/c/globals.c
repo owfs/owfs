@@ -26,10 +26,10 @@ $Id$
 /* State information, sent to remote or kept locally */
 /* cacheenabled, presencecheck, tempscale, devform */
 #if OW_CACHE
-int32_t SemiGlobal = ((uint8_t) fdi) << 24 | ((uint8_t) temp_celsius) << 16 | ((uint8_t) 1)
+int32_t LocalControlFlags = ((uint8_t) fdi) << 24 | ((uint8_t) temp_celsius) << 16 | ((uint8_t) 1)
 	<< 8 | ((uint8_t) 1);
 #else
-int32_t SemiGlobal = ((uint8_t) fdi) << 24 | ((uint8_t) temp_celsius) << 16 | ((uint8_t) 1)
+int32_t LocalControlFlags = ((uint8_t) fdi) << 24 | ((uint8_t) temp_celsius) << 16 | ((uint8_t) 1)
 	<< 8;
 #endif
 

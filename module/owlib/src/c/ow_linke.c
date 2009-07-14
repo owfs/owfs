@@ -299,6 +299,7 @@ static int LINKE_read(BYTE * buf, const size_t size, const struct parsedname *pn
 						// escape the FF character
 						// make this a single regular FF char
 						buf[size - still_needed] = 0xFF ;
+						-- total_discard ;
 						-- still_needed ;
 						linke_read_state = linke_regular ;
 						break ;
@@ -331,8 +332,8 @@ static int LINKE_read(BYTE * buf, const size_t size, const struct parsedname *pn
 		++ current_index ;
 	}
 	// store this extra length for the next read attempt
+	//printf("LINKE_READ setting default_discard = %d to %d\n",pn->selected_connection->connin.link.default_discard,total_discard);
 	pn->selected_connection->connin.link.default_discard = total_discard ;
-	//printf("LINKE_READ setting default_discard = %d\n",pn->selected_connection->connin.link.default_discard);
 	return 0 ;
 }
 

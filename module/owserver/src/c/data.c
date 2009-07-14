@@ -65,7 +65,7 @@ void *DataHandler(void *v)
 	//printf("OWSERVER message type = %d\n",sm.type ) ;
 	memset(&cm, 0, sizeof(struct client_msg));
 	cm.version = MakeServerprotocol(OWSERVER_PROTOCOL_VERSION);
-	cm.sg = hd->sm.sg;			// default flag return -- includes persistence state
+	cm.control_flags = hd->sm.control_flags;			// default flag return -- includes persistence state
 
 	/* Pre-handling for special testing mode to exclude certain messsages */
 	switch ((enum msg_classification) hd->sm.type) {
@@ -110,7 +110,7 @@ void *DataHandler(void *v)
 			}
 
 			/* Use client persistent settings (temp scale, display mode ...) */
-			pn->sg = hd->sm.sg;
+			pn->control_flags = hd->sm.control_flags;
 			/* Antilooping tags */
 			pn->tokens = hd->sp.tokens;
 			pn->tokenstring = hd->sp.tokenstring;

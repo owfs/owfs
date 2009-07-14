@@ -67,7 +67,7 @@ void Handler(int file_descriptor)
 
 	while (FromClient(&hd) == 0) {
 		// Was persistence requested?
-		int loop_persistent = ((hd.sm.sg & PERSISTENT_MASK) != 0);
+		int loop_persistent = ((hd.sm.control_flags & PERSISTENT_MASK) != 0);
 
 		/* Persistence suppression? */
 		if (Globals.no_persistence) {
@@ -101,9 +101,9 @@ void Handler(int file_descriptor)
 
 		/* now set the sg flag because it usually is copied back to the client */
 		if (loop_persistent) {
-			hd.sm.sg |= PERSISTENT_MASK;
+			hd.sm.control_flags |= PERSISTENT_MASK;
 		} else {
-			hd.sm.sg &= ~PERSISTENT_MASK;
+			hd.sm.control_flags &= ~PERSISTENT_MASK;
 		}
 
 		/* Sidetap handling */
@@ -170,7 +170,7 @@ struct client_msg ping_cm = {
 	.version = 0 ,
 	.payload = -1 ,
 	.ret     = 0 ,
-	.sg      = 0 ,
+	.control_flags = 0 ,
 	.size    = 0 ,
 	.offset  = 0 ,
 };

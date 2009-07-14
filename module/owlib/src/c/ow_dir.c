@@ -61,7 +61,7 @@ int FS_dir(void (*dirfunc) (void *, const struct parsedname *), void *v, struct 
 {
 	uint32_t flags;
 	LEVEL_DEBUG("path=%s\n", pn_directory->path);
-	pn_directory->sg |= ALIAS_REQUEST ; // All local directory queries want alias translation
+	pn_directory->control_flags |= ALIAS_REQUEST ; // All local directory queries want alias translation
 
 	return FS_dir_both(dirfunc, v, pn_directory, &flags);
 }

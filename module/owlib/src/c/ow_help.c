@@ -70,6 +70,7 @@ void ow_help_job(void)
 	" Permission\n"
 	" -r --readonly     Don't allow writing to 1-wire devices\n"
 	" -w --write        Allow writing to 1-wire\n"
+	" --safemode        Even more restrictive: readonly, no uncached, ...\n"
 	"\n"
 	" Development tests (owserver only)\n"
 	"  --pingcrazy      Add lots of keep-alive messages to the owserver protocol\n"

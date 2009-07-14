@@ -111,7 +111,7 @@ static int Test_Add_Alias( char * name, BYTE * sn )
 
 void FS_alias_subst(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn)
 {
-	if ( pn->sg | ALIAS_REQUEST) {
+	if ( pn->control_flags | ALIAS_REQUEST) {
 		struct parsedname s_pn_copy ;
 		struct parsedname * pn_copy = & s_pn_copy ;
 		ASCII path[PATH_MAX+1] ;

@@ -60,6 +60,9 @@ const struct option owopts_long[] = {
 	{"mountpoint", required_argument, NULL, 'm'},
 	{"server", required_argument, NULL, 's'},
 	{"readonly", no_argument, NULL, 'r'},
+	{"safemode", no_argument, NULL, e_safemode},
+	{"safe_mode", no_argument, NULL, e_safemode},
+	{"safe", no_argument, NULL, e_safemode},
 	{"write", no_argument, NULL, 'w'},
 	{"Celsius", no_argument, NULL, 'C'},
 	{"celsius", no_argument, NULL, 'C'},
@@ -302,7 +305,7 @@ static int ParseInterp(struct lineparse *lp)
 
 // Parse the configuration file line
 // Basically look for lines of form opt=val
-// optional white space
+// optional white space1
 // optional '='
 // optional val
 // Comment with #
@@ -566,16 +569,16 @@ int owopt(const int option_char, const char *arg)
 		Globals.readonly = 0;
 		break;
 	case 'C':
-		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_celsius);
+		set_controlflags(&LocalControlFlags, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_celsius);
 		break;
 	case 'F':
-		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_fahrenheit);
+		set_controlflags(&LocalControlFlags, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_fahrenheit);
 		break;
 	case 'R':
-		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_rankine);
+		set_controlflags(&LocalControlFlags, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_rankine);
 		break;
 	case 'K':
-		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_kelvin);
+		set_controlflags(&LocalControlFlags, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_kelvin);
 		break;
 	case 'V':
 		printf("libow version:\n\t" VERSION "\n");
@@ -600,17 +603,17 @@ int owopt(const int option_char, const char *arg)
 		}
 	case 'f':
 		if (!strcasecmp(arg, "f.i")) {
-			set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fdi);
+			set_controlflags(&LocalControlFlags, DEVFORMAT_MASK, DEVFORMAT_BIT, fdi);
 		} else if (!strcasecmp(arg, "fi")) {
-			set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fi);
+			set_controlflags(&LocalControlFlags, DEVFORMAT_MASK, DEVFORMAT_BIT, fi);
 		} else if (!strcasecmp(arg, "f.i.c")) {
-			set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fdidc);
+			set_controlflags(&LocalControlFlags, DEVFORMAT_MASK, DEVFORMAT_BIT, fdidc);
 		} else if (!strcasecmp(arg, "f.ic")) {
-			set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fdic);
+			set_controlflags(&LocalControlFlags, DEVFORMAT_MASK, DEVFORMAT_BIT, fdic);
 		} else if (!strcasecmp(arg, "fi.c")) {
-			set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fidc);
+			set_controlflags(&LocalControlFlags, DEVFORMAT_MASK, DEVFORMAT_BIT, fidc);
 		} else if (!strcasecmp(arg, "fic")) {
-			set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fic);
+			set_controlflags(&LocalControlFlags, DEVFORMAT_MASK, DEVFORMAT_BIT, fic);
 		} else {
 			LEVEL_DEFAULT("Unrecognized format type %s\n", arg);
 			return 1;
@@ -743,6 +746,9 @@ int owopt(const int option_char, const char *arg)
 			return 1;
 		}
 		Globals.temphigh = arg_to_float;
+		break;
+	case e_safemode:
+		LocalControlFlags |= SAFEMODE ;
 		break;
 	case 0:
 		break;

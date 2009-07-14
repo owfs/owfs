@@ -24,7 +24,7 @@ static int ToServer(int file_descriptor, struct server_msg *sm, struct serverpac
 static void Server_setroutines(struct interface_routines *f);
 static void Zero_setroutines(struct interface_routines *f);
 static void Server_close(struct connection_in *in);
-static uint32_t SetupSemi(int persistent, const struct parsedname *pn);
+static uint32_t SetupControlFlags(int persistent, const struct parsedname *pn);
 static int ConnectToServer(struct connection_in *in);
 static int ToServerTwice(int file_descriptor, int persistent, struct server_msg *sm, struct serverpackage *sp, struct connection_in *in);
 
@@ -142,7 +142,7 @@ int ServerRead(struct one_wire_query *owq)
 
 	connectfd = PersistentStart(&persistent, pn_file_entry->selected_connection);
 	if (connectfd > FD_CURRENT_BAD) {
-		sm.sg = SetupSemi(persistent, pn_file_entry);
+		sm.control_flags = SetupControlFlags(persistent, pn_file_entry);
 		if ((connectfd = ToServerTwice(connectfd, persistent, &sm, &sp, pn_file_entry->selected_connection)) < 0) {
 			ret = -EIO;
 		} else if (FromServer(connectfd, &cm, OWQ_buffer(owq), OWQ_size(owq))
@@ -154,7 +154,7 @@ int ServerRead(struct one_wire_query *owq)
 	} else {
 		ret = -EIO;
 	}
-	PersistentEnd(connectfd, persistent, cm.sg & PERSISTENT_MASK, pn_file_entry->selected_connection);
+	PersistentEnd(connectfd, persistent, cm.control_flags & PERSISTENT_MASK, pn_file_entry->selected_connection);
 	return ret;
 }
 
@@ -179,7 +179,7 @@ int ServerPresence(const struct parsedname *pn_file_entry)
 
 	connectfd = PersistentStart(&persistent, pn_file_entry->selected_connection);
 	if (connectfd > FD_CURRENT_BAD) {
-		sm.sg = SetupSemi(persistent, pn_file_entry);
+		sm.control_flags = SetupControlFlags(persistent, pn_file_entry);
 		if ((connectfd = ToServerTwice(connectfd, persistent, &sm, &sp, pn_file_entry->selected_connection)) < 0) {
 			ret = -EIO;
 		} else if (FromServer(connectfd, &cm, NULL, 0) < 0) {
@@ -190,7 +190,7 @@ int ServerPresence(const struct parsedname *pn_file_entry)
 	} else {
 		ret = -EIO;
 	}
-	PersistentEnd(connectfd, persistent, cm.sg & PERSISTENT_MASK, pn_file_entry->selected_connection);
+	PersistentEnd(connectfd, persistent, cm.control_flags & PERSISTENT_MASK, pn_file_entry->selected_connection);
 	return ret;
 }
 
@@ -218,25 +218,28 @@ int ServerWrite(struct one_wire_query *owq)
 
 	connectfd = PersistentStart(&persistent, pn_file_entry->selected_connection);
 	if (connectfd > FD_CURRENT_BAD) {
-		sm.sg = SetupSemi(persistent, pn_file_entry);
+		sm.control_flags = SetupControlFlags(persistent, pn_file_entry);
 		if ((connectfd = ToServerTwice(connectfd, persistent, &sm, &sp, pn_file_entry->selected_connection)) < 0) {
 			ret = -EIO;
 		} else if (FromServer(connectfd, &cm, NULL, 0) < 0) {
 			ret = -EIO;
 		} else {
-			int32_t sg = cm.sg & ~(SHOULD_RETURN_BUS_LIST | PERSISTENT_MASK);
+			int32_t control_flags = cm.control_flags & ~(SHOULD_RETURN_BUS_LIST | PERSISTENT_MASK | SAFEMODE);
+			// keep current safemode
+			control_flags |=  LocalControlFlags & SAFEMODE ;
 			ret = cm.ret;
-			SGLOCK;
-			if (SemiGlobal != sg) {
-				//printf("ServerRead: cm.sg changed!  SemiGlobal=%X cm.sg=%X\n", SemiGlobal, cm.sg);
-				SemiGlobal = sg;
+			CONTROLFLAGSLOCK;
+			if (LocalControlFlags != control_flags) {
+				// replace control flags (except safemode persists)
+				//printf("ServerRead: cm.control_flags changed!  controlflags=%X cm.control_flags=%X\n", SemiGlobal, cm.control_flags);
+				LocalControlFlags = control_flags;
 			}
-			SGUNLOCK;
+			CONTROLFLAGSUNLOCK;
 		}
 	} else {
 		ret = -EIO;
 	}
-	PersistentEnd(connectfd, persistent, cm.sg & PERSISTENT_MASK, pn_file_entry->selected_connection);
+	PersistentEnd(connectfd, persistent, cm.control_flags & PERSISTENT_MASK, pn_file_entry->selected_connection);
 	return ret;
 }
 
@@ -286,7 +289,7 @@ int ServerDIR(void (*dirfunc) (void *, const struct parsedname * const), void *v
 
 	connectfd = PersistentStart(&persistent, pn_whole_directory->selected_connection);
 	if (connectfd > FD_CURRENT_BAD) {
-		sm.sg = SetupSemi(persistent, pn_whole_directory);
+		sm.control_flags = SetupControlFlags(persistent, pn_whole_directory);
 		if ((connectfd = ToServerTwice(connectfd, persistent, &sm, &sp, pn_whole_directory->selected_connection)) < 0) {
 			ret = -EIO;
 		} else {
@@ -375,7 +378,7 @@ int ServerDIR(void (*dirfunc) (void *, const struct parsedname * const), void *v
 	} else {
 		ret = -EIO;
 	}
-	PersistentEnd(connectfd, persistent, cm.sg & PERSISTENT_MASK, pn_whole_directory->selected_connection);
+	PersistentEnd(connectfd, persistent, cm.control_flags & PERSISTENT_MASK, pn_whole_directory->selected_connection);
 	return ret;
 }
 
@@ -402,14 +405,14 @@ int ServerDIRALL(void (*dirfunc) (void *, const struct parsedname * const), void
 	// Get a file descriptor, possibly a persistent one
 	connectfd = PersistentStart(&persistent, pn_whole_directory->selected_connection);
 	if (connectfd < 0) {
-		PersistentEnd(connectfd, persistent, cm.sg & PERSISTENT_MASK, pn_whole_directory->selected_connection);
+		PersistentEnd(connectfd, persistent, cm.control_flags & PERSISTENT_MASK, pn_whole_directory->selected_connection);
 		return -EIO;
 	}
 	// Now try to get header. If fails, may need a new non-persistent file_descriptor
-	sm.sg = SetupSemi(persistent, pn_whole_directory);
+	sm.control_flags = SetupControlFlags(persistent, pn_whole_directory);
 	connectfd = ToServerTwice(connectfd, persistent, &sm, &sp, pn_whole_directory->selected_connection);
 	if (connectfd < 0) {
-		PersistentEnd(connectfd, persistent, cm.sg & PERSISTENT_MASK, pn_whole_directory->selected_connection);
+		PersistentEnd(connectfd, persistent, cm.control_flags & PERSISTENT_MASK, pn_whole_directory->selected_connection);
 		return -EIO;
 	}
 	// Success, get data
@@ -506,7 +509,7 @@ int ServerDIRALL(void (*dirfunc) (void *, const struct parsedname * const), void
 	}
 	ret = cm.ret;
 
-	PersistentEnd(connectfd, persistent, cm.sg & PERSISTENT_MASK, pn_whole_directory->selected_connection);
+	PersistentEnd(connectfd, persistent, cm.control_flags & PERSISTENT_MASK, pn_whole_directory->selected_connection);
 	return ret;
 }
 
@@ -529,12 +532,12 @@ static void *FromServerAlloc(int file_descriptor, struct client_msg *cm)
 		cm->payload = ntohl(cm->payload);
 		cm->size = ntohl(cm->size);
 		cm->ret = ntohl(cm->ret);
-		cm->sg = ntohl(cm->sg);
+		cm->control_flags = ntohl(cm->control_flags);
 		cm->offset = ntohl(cm->offset);
 	} while (cm->payload < 0);
 	//printf("OW_SERVER loop1 done\n");
 
-	//printf("FromServerAlloc payload=%d size=%d ret=%d sg=%X offset=%d\n",cm->payload,cm->size,cm->ret,cm->sg,cm->offset);
+	//printf("FromServerAlloc payload=%d size=%d ret=%d sg=%X offset=%d\n",cm->payload,cm->size,cm->ret,cm->control_flags,cm->offset);
 	//printf(">%.4d|%.4d\n",cm->ret,cm->payload);
 	if (cm->payload == 0) {
 		return NULL;
@@ -584,12 +587,12 @@ static int FromServer(int file_descriptor, struct client_msg *cm, char *msg, siz
 		cm->payload = ntohl(cm->payload);
 		cm->size = ntohl(cm->size);
 		cm->ret = ntohl(cm->ret);
-		cm->sg = ntohl(cm->sg);
+		cm->control_flags = ntohl(cm->control_flags);
 		cm->offset = ntohl(cm->offset);
 	} while (cm->payload < 0);	// flag to show a delay message
 	//printf("OW_SERVER loop2 done\n");
 
-	//printf("FromServer payload=%d size=%d ret=%d sg=%d offset=%d\n",cm->payload,cm->size,cm->ret,cm->sg,cm->offset);
+	//printf("FromServer payload=%d size=%d ret=%d sg=%d offset=%d\n",cm->payload,cm->size,cm->ret,cm->control_flags,cm->offset);
 	//printf(">%.4d|%.4d\n",cm->ret,cm->payload);
 	if (cm->payload == 0) {
 		return 0;				// No payload, done.
@@ -680,14 +683,14 @@ static int ToServer(int file_descriptor, struct server_msg *sm, struct serverpac
 		nio++;
         LEVEL_DEBUG("tokens=%d\n", tokens);
 	}
-	LEVEL_DEBUG("version=%u payload=%d size=%d type=%d SG=%X offset=%d\n",sm->version,payload,sm->size,sm->type,sm->sg,sm->offset);
+	LEVEL_DEBUG("version=%u payload=%d size=%d type=%d SG=%X offset=%d\n",sm->version,payload,sm->size,sm->type,sm->control_flags,sm->offset);
 
 	// encode in network order (just the header)
 	local_sm.version = htonl(sm->version);
 	local_sm.payload = htonl(payload);
 	local_sm.size = htonl(sm->size);
 	local_sm.type = htonl(sm->type);
-	local_sm.sg = htonl(sm->sg);
+	local_sm.control_flags = htonl(sm->control_flags);
 	local_sm.offset = htonl(sm->offset);
 
 	Debug_Writev(io, nio);
@@ -695,24 +698,24 @@ static int ToServer(int file_descriptor, struct server_msg *sm, struct serverpac
 }
 
 /* flag the sg for "virtual root" -- the remote bus was specifically requested */
-static uint32_t SetupSemi(int persistent, const struct parsedname *pn)
+static uint32_t SetupControlFlags(int persistent, const struct parsedname *pn)
 {
-	uint32_t sg = pn->sg;
+	uint32_t control_flags = pn->control_flags;
 
-	sg &= ~PERSISTENT_MASK;
+	control_flags &= ~PERSISTENT_MASK;
 	if (persistent) {
-		sg |= PERSISTENT_MASK;
+		control_flags |= PERSISTENT_MASK;
 	}
 
 	/* from owlib to owserver never wants alias */
-	sg &= ~ALIAS_REQUEST ;
+	control_flags &= ~ALIAS_REQUEST ;
 
-	sg &= ~SHOULD_RETURN_BUS_LIST;
+	control_flags &= ~SHOULD_RETURN_BUS_LIST;
 	if (SpecifiedBus(pn)) {
-		sg |= SHOULD_RETURN_BUS_LIST;
+		control_flags |= SHOULD_RETURN_BUS_LIST;
 	}
 
-	return sg;
+	return control_flags;
 }
 
 /* Wrapper for ClientConnect */

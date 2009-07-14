@@ -59,7 +59,7 @@ $Id$
 extern struct mutexes {
 #if OW_MT
 	pthread_mutex_t stat_mutex;
-	pthread_mutex_t sg_mutex;
+	pthread_mutex_t controlflags_mutex;
 	pthread_mutex_t fstat_mutex;
 	pthread_mutex_t simul_mutex;
 	pthread_mutex_t dir_mutex;
@@ -101,8 +101,8 @@ extern struct mutexes {
 
 #define STATLOCK          my_pthread_mutex_lock(  &Mutex.stat_mutex   )
 #define STATUNLOCK        my_pthread_mutex_unlock(&Mutex.stat_mutex   )
-#define SGLOCK            my_pthread_mutex_lock(  &Mutex.sg_mutex  )
-#define SGUNLOCK          my_pthread_mutex_unlock(&Mutex.sg_mutex  )
+#define CONTROLFLAGSLOCK  my_pthread_mutex_lock(  &Mutex.controlflags_mutex  )
+#define CONTROLFLAGSUNLOCK  my_pthread_mutex_unlock(&Mutex.controlflags_mutex  )
 #define FSTATLOCK         my_pthread_mutex_lock(  &Mutex.fstat_mutex  )
 #define FSTATUNLOCK       my_pthread_mutex_unlock(&Mutex.fstat_mutex  )
 #define SIMULLOCK         my_pthread_mutex_lock(  &Mutex.simul_mutex  )
@@ -146,8 +146,8 @@ extern struct mutexes {
 
 #define STATLOCK			return_ok()
 #define STATUNLOCK			return_ok()
-#define SGLOCK				return_ok()
-#define SGUNLOCK			return_ok()
+#define CONTROLFLAGSLOCK		return_ok()
+#define CONTROLFLAGSUNLOCK		return_ok()
 #define FSTATLOCK			return_ok()
 #define FSTATUNLOCK			return_ok()
 #define SIMULLOCK			return_ok()

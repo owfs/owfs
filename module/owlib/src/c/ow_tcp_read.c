@@ -56,6 +56,7 @@ int tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval * p
 {
 	size_t nleft;
 	ssize_t nread;
+	BYTE * buffer = vptr ;
 
 	LEVEL_DEBUG("attempt %d bytes Time:(%ld,%ld)\n",(int)n,ptv->tv_sec,ptv->tv_usec ) ;
 	nleft = n;
@@ -79,7 +80,7 @@ int tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval * p
 			}
 			//update_max_delay(pn);
 			errno = 0 ;
-			if ((nread = read(file_descriptor, &vptr[*chars_in], nleft)) < 0) {
+			if ((nread = read(file_descriptor, &buffer[*chars_in], nleft)) < 0) {
 				if (errno == EINTR) {
 					nread = 0;	/* and call read() again */
 				} else {
@@ -90,7 +91,7 @@ int tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval * p
 			} else if (nread == 0) {
 				break;			/* EOF */
 			}
-			Debug_Bytes("NETREAD", (unsigned char *)&vptr[*chars_in], nread ) ;
+			Debug_Bytes("NETREAD", &buffer[*chars_in], nread ) ;
 			nleft -= nread;
 			*chars_in += nread ;
 		} else if (rc < 0) {	/* select error */

@@ -53,7 +53,7 @@ int ToClient(int file_descriptor, struct client_msg *machine_order_cm, char *dat
 	};
 
 	LEVEL_DEBUG("payload=%d size=%d, ret=%d, sg=0x%X offset=%d \n", machine_order_cm->payload, machine_order_cm->size, machine_order_cm->ret,
-		     machine_order_cm->sg, machine_order_cm->offset);
+		     machine_order_cm->control_flags, machine_order_cm->offset);
 
 	/* If payload==0, no extra data
 		If payload <0, flag to show a delay message, again no data
@@ -73,7 +73,7 @@ int ToClient(int file_descriptor, struct client_msg *machine_order_cm, char *dat
 	network_order_cm->version = htonl(machine_order_cm->version);
 	network_order_cm->payload = htonl(machine_order_cm->payload);
 	network_order_cm->ret = htonl(machine_order_cm->ret);
-	network_order_cm->sg = htonl(machine_order_cm->sg);
+	network_order_cm->control_flags = htonl(machine_order_cm->control_flags);
 	network_order_cm->size = htonl(machine_order_cm->size);
 	network_order_cm->offset = htonl(machine_order_cm->offset);
 

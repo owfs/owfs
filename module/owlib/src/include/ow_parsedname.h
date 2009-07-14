@@ -66,12 +66,12 @@ filetype and extension correspond to property
 subdir points to in-device groupings
 */
 
-/* Semi-global information (for remote control) */
+/* LocalControlFlags information (for remote control) */
 	/* bit0: cacheenabled  bit1: return bus-list */
 	/* presencecheck */
 	/* tempscale */
 	/* device format */
-extern int32_t SemiGlobal;
+extern int32_t LocalControlFlags;
 
 struct buspath {
 	BYTE sn[8];
@@ -131,7 +131,7 @@ struct parsedname {
 	UINT pathlength;			// DS2409 branching depth
 	struct buspath *bp;			// DS2409 branching route
 	struct connection_in *selected_connection;	// which bus is assigned to this item
-	uint32_t sg;				// more state info, packed for network transmission
+	uint32_t control_flags;				// more state info, packed for network transmission
 	struct devlock *lock;			// pointer to a device-specific lock
 	int tokens;				// for anti-loop work
 	BYTE *tokenstring;			// List of tokens from owservers passed
@@ -142,16 +142,17 @@ struct parsedname {
 #define PERSISTENT_MASK    ( (UINT) 0x00000004 )
 #define PERSISTENT_BIT     2
 #define ALIAS_REQUEST      ( (UINT) 0x00000008 )
+#define SAFEMODE      ( (UINT) 0x00000010 )
 #define TEMPSCALE_MASK ( (UINT) 0x00FF0000 )
 #define TEMPSCALE_BIT  16
 #define DEVFORMAT_MASK ( (UINT) 0xFF000000 )
 #define DEVFORMAT_BIT  24
-#define IsPersistent(ppn)         ( ((ppn)->sg & PERSISTENT_MASK) )
-#define SetPersistent(ppn,b)      UT_Setbit(((ppn)->sg),PERSISTENT_BIT,(b))
-#define TemperatureScale(ppn)     ( (enum temp_type) (((ppn)->sg & TEMPSCALE_MASK) >> TEMPSCALE_BIT) )
+#define IsPersistent(ppn)         ( ((ppn)->control_flags & PERSISTENT_MASK) )
+#define SetPersistent(ppn,b)      UT_Setbit(((ppn)->control_flags),PERSISTENT_BIT,(b))
+#define TemperatureScale(ppn)     ( (enum temp_type) (((ppn)->control_flags & TEMPSCALE_MASK) >> TEMPSCALE_BIT) )
 #define SGTemperatureScale(sg)    ( (enum temp_type)(((sg) & TEMPSCALE_MASK) >> TEMPSCALE_BIT) )
-#define DeviceFormat(ppn)         ( (enum deviceformat) (((ppn)->sg & DEVFORMAT_MASK) >> DEVFORMAT_BIT) )
-#define set_semiglobal(s, mask, bit, val) do { *(s) = (*(s) & ~(mask)) | ((val)<<bit); } while(0)
+#define DeviceFormat(ppn)         ( (enum deviceformat) (((ppn)->control_flags & DEVFORMAT_MASK) >> DEVFORMAT_BIT) )
+#define set_controlflags(s, mask, bit, val) do { *(s) = (*(s) & ~(mask)) | ((val)<<bit); } while(0)
 
 #define IsDir( pn )    ( ((pn)->selected_device)==NULL \
                       || ((pn)->selected_filetype)==NULL  \
@@ -165,13 +166,15 @@ struct parsedname {
 #define     NotRealDir(pn)    ( ((pn)->type) != ePN_real )
 #define      IsRealDir(pn)    ( ((pn)->type) == ePN_real )
 
+#define     InSafeMode(pn)    ( (((pn)->control_flags) & SAFEMODE ) != 0 )
+
 #define KnownBus(pn)          ((((pn)->state) & ePS_bus) != 0 )
 #define UnsetKnownBus(pn)           do { (pn)->state &= ~ePS_bus; \
                                         (pn)->known_bus=NULL; \
                                         (pn)->selected_connection=NULL; \
                                     } while(0)
 
-#define ShouldReturnBusList(ppn)  ( ((ppn)->sg & SHOULD_RETURN_BUS_LIST) )
+#define ShouldReturnBusList(ppn)  ( ((ppn)->control_flags & SHOULD_RETURN_BUS_LIST) )
 
 #define SpecifiedVeryRemoteBus(pn)     ((((pn)->state) & ePS_busveryremote) != 0 )
 #define SpecifiedRemoteBus(pn)         ((((pn)->state) & ePS_busremote) != 0 )

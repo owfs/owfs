@@ -62,8 +62,8 @@ void WriteHandler(struct handlerdata *hd, struct client_msg *cm, struct one_wire
 	} else {
 		cm->size = ret;
 		cm->ret = 0;
-		cm->sg = OWQ_pn(owq).sg;
+		cm->control_flags = OWQ_pn(owq).control_flags;
 		if (hd->persistent)
-			cm->sg |= PERSISTENT_MASK;
+			cm->control_flags |= PERSISTENT_MASK;
 	}
 }

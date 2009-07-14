@@ -228,9 +228,9 @@ static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path,
 	pn->known_bus = NULL;		/* all buses */
 
 	/* Set the persistent state info (temp scale, ...) -- will be overwritten by client settings in the server */
-	SGLOCK;
-	pn->sg = SemiGlobal | SHOULD_RETURN_BUS_LIST;	// initial flag as the bus-returning level, will change if a bus is specified
-	SGUNLOCK;
+	CONTROLFLAGSLOCK;
+	pn->control_flags = LocalControlFlags | SHOULD_RETURN_BUS_LIST;	// initial flag as the bus-returning level, will change if a bus is specified
+	CONTROLFLAGSUNLOCK;
 
 	// initialization
 	pp->pathnow = NULL;
@@ -244,7 +244,7 @@ static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path,
 	/* No device lock yet assigned */
 	pn->lock = NULL ;
 
-	/* minimal structure for initial bus "detect" use -- really has connection and SemiGlobal only */
+	/* minimal structure for initial bus "detect" use -- really has connection and LocalControlFlags only */
 	if (path == NULL) {
 		return 0;
 	}
@@ -428,7 +428,7 @@ static enum parse_enum Parse_Bus(char *pathnow, struct parsedname *pn)
 
 	if (SpecifiedLocalBus(pn)) {
 		/* don't return bus-list for local paths. */
-		pn->sg &= (~SHOULD_RETURN_BUS_LIST);
+		pn->control_flags &= (~SHOULD_RETURN_BUS_LIST);
 	}
 
 	/* Create the path without the "bus.x" part in pn->path_busless */

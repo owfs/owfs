@@ -60,19 +60,19 @@ int FromClient(struct handlerdata *hd)
 	hd->sm.version = ntohl(hd->sm.version);
 	hd->sm.payload = ntohl(hd->sm.payload);
 	hd->sm.type = ntohl(hd->sm.type);
-	hd->sm.sg = ntohl(hd->sm.sg);
+	hd->sm.control_flags = ntohl(hd->sm.control_flags);
 	hd->sm.size = ntohl(hd->sm.size);
 	hd->sm.offset = ntohl(hd->sm.offset);
 
-	LEVEL_DEBUG("FromClient payload=%d size=%d type=%d sg=0x%X offset=%d\n", hd->sm.payload, hd->sm.size, hd->sm.type, hd->sm.sg, hd->sm.offset);
+	LEVEL_DEBUG("FromClient payload=%d size=%d type=%d sg=0x%X offset=%d\n", hd->sm.payload, hd->sm.size, hd->sm.type, hd->sm.control_flags, hd->sm.offset);
 
 	/* figure out length of rest of message: payload plus tokens */
 	trueload = hd->sm.payload;
 	if (isServermessage(hd->sm.version)) {
 		trueload += sizeof(union antiloop) * Servertokens(hd->sm.version);
-		LEVEL_DEBUG("FromClient (servermessage) payload=%d nrtokens=%d trueload=%d size=%d type=%d sg=0x%X offset=%d\n", hd->sm.payload, Servertokens(hd->sm.version), trueload, hd->sm.size, hd->sm.type, hd->sm.sg, hd->sm.offset);
+		LEVEL_DEBUG("FromClient (servermessage) payload=%d nrtokens=%d trueload=%d size=%d type=%d controlflags=0x%X offset=%d\n", hd->sm.payload, Servertokens(hd->sm.version), trueload, hd->sm.size, hd->sm.type, hd->sm.control_flags, hd->sm.offset);
 	} else {
-		LEVEL_DEBUG("FromClient (no servermessage) payload=%d size=%d type=%d sg=0x%X offset=%d\n", hd->sm.payload, hd->sm.size, hd->sm.type, hd->sm.sg, hd->sm.offset);
+		LEVEL_DEBUG("FromClient (no servermessage) payload=%d size=%d type=%d controlflags=0x%X offset=%d\n", hd->sm.payload, hd->sm.size, hd->sm.type, hd->sm.control_flags, hd->sm.offset);
 	}
 	if (trueload == 0) {
 		return 0;
@@ -92,7 +92,7 @@ int FromClient(struct handlerdata *hd)
 
 	/* read in data */
 	tcp_read(hd->file_descriptor, msg, trueload, &tv, &actual_read) ;
-	if ((size_t)actual_read != trueload) {	/* read in the expected data */
+	if ((ssize_t)actual_read != trueload) {	/* read in the expected data */
 		hd->sm.type = msg_error;
 		owfree(msg);
 		return -EIO;
