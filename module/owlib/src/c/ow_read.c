@@ -512,25 +512,41 @@ static int FS_read_from_parts(struct one_wire_query *owq)
 
 	STAT_ADD1(read_array);		/* statistics */
 
+	// Check that there is enough space for the combined message
+	switch (pn->selected_filetype->format) {
+		case ft_ascii:
+		case ft_vascii:
+		case ft_binary:
+			// sneaky! Move owq_single buffer location within owq buffer
+			if ( OWQ_size(owq) < FullFileLength(pn) || OWQ_offset(owq) != 0 ) {
+				return -EMSGSIZE ;
+			}
+			break;
+		default:
+			break;
+	}
+
 	/* shallow copy */
+	// Use owq buffer and file length
 	OWQ_create_temporary(owq_single, OWQ_buffer(owq), FileLength(pn), 0, pn);
 
 	/* Loop through F_r_single, just to get data */
 	for (extension = 0; extension < elements; ++extension) {
+		int lump_read ;
+		
 		OWQ_pn(owq_single).extension = extension;
-		if (OWQ_Cache_Get(owq_single)) {	// non-zero if not there
-			int single_or_error = (pn->selected_filetype->read) (owq_single);
-			if (single_or_error < 0) {
-				return single_or_error;
-			}
-			OWQ_Cache_Add(owq_single);
+		lump_read = FS_read_lump(owq_single);
+		if (lump_read < 0) {
+			return lump_read;
 		}
-		//printf("FS_read_from_parts extension=%d, length=%d, <%.*s> %p\n",(int)extension,(int)OWQ_length(owq_single),(int)OWQ_length(owq_single),OWQ_buffer(owq_single),OWQ_buffer(owq_single)) ;
+		
+		// copy object (single to mixed array)
 		memcpy(&OWQ_array(owq)[extension], &OWQ_val(owq_single), sizeof(union value_object));
 		switch (pn->selected_filetype->format) {
 		case ft_ascii:
 		case ft_vascii:
 		case ft_binary:
+			// sneaky! Move owq_single buffer location within owq buffer
 			OWQ_buffer(owq_single) += OWQ_length(owq_single);
 			break;
 		default:
