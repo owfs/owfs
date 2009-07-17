@@ -243,12 +243,12 @@ static int FS_r_given_bus(struct one_wire_query *owq)
 		STAT_ADD1(read_calls);	/* statistics */
 		if (LockGet(pn) == 0) {
 			read_status = FS_r_local(owq);	// this returns status
+			LockRelease(pn);
 			LEVEL_DEBUG("FS_r_local return=%d\n", read_status);
 			if (read_status >= 0) {
 				// local success -- now format in buffer
 				read_status = FS_output_owq(owq);	// this returns nr. bytes
 			}
-			LockRelease(pn);
 		} else {
 			read_status = -EADDRINUSE;
 		}
@@ -373,24 +373,25 @@ static void adjust_file_size(struct one_wire_query *owq)
 }
 
 /* Real read -- called from read
-   Integrates with cache -- read not called if cached value already set
+Integrates with cache -- read not called if cached value already set
 */
 static int FS_r_local(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
-
-    /* Readable? */
+	
+	/* Readable? */
 	if (pn->selected_filetype->read == NO_READ_FUNCTION) {
 		return -ENOTSUP;
 	}
-
+	
+	// Check buffer length
 	adjust_file_size(owq) ;
 	if ( OWQ_size(owq) == 0 ) {
 		// Mounting fuse with "direct_io" will cause a second read with offset
 		// at end-of-file... Just return 0 if offset == size
 		return 0 ;
 	}
-
+	
 	if (pn->selected_filetype->change != fc_static && IsRealDir(pn)) {
 		switch (pn->selected_connection->Adapter) {
 			case adapter_fake:
@@ -409,42 +410,42 @@ static int FS_r_local(struct one_wire_query *owq)
 				break ;
 		}
 	}
-
+	
 	/* Array property? Read separately? Read together and manually separate? */
 	if (pn->selected_filetype->ag) {	/* array property */
 		switch (pn->extension) {
-		case EXTENSION_BYTE:
-			return FS_read_lump(owq);
-		case EXTENSION_ALL:
-			if (OWQ_offset(owq) > 0) {
-				return -1;		// no aggregates can be offset -- too confusing
-			}
-			if (pn->selected_filetype->format == ft_bitfield) {
-				return FS_read_all_bits(owq);
-			}
-			switch (pn->selected_filetype->ag->combined) {
-			case ag_separate:	/* separate reads, artificially combined into a single array */
+			case EXTENSION_BYTE:
+				return FS_read_lump(owq);
+			case EXTENSION_ALL:
+				if (OWQ_offset(owq) > 0) {
+					return -1;		// no aggregates can be offset -- too confusing
+				}
+				if (pn->selected_filetype->format == ft_bitfield) {
+					return FS_read_all_bits(owq);
+				}
+				switch (pn->selected_filetype->ag->combined) {
+					case ag_separate:	/* separate reads, artificially combined into a single array */
 				return FS_read_from_parts(owq);
-			case ag_mixed:		/* mixed mode, ALL read handled differently */
+					case ag_mixed:		/* mixed mode, ALL read handled differently */
 			case ag_aggregate:	/* natively an array */
 				/* return ALL if required   (comma separated) */
 				return FS_read_lump(owq);
-			}
-		default:
-			if (pn->selected_filetype->format == ft_bitfield) {
-				return FS_read_one_bit(owq);
-			}
-			switch (pn->selected_filetype->ag->combined) {
-			case ag_separate:	/* separate reads, artificially combined into a single array */
+				}
+			default:
+				if (pn->selected_filetype->format == ft_bitfield) {
+					return FS_read_one_bit(owq);
+				}
+				switch (pn->selected_filetype->ag->combined) {
+					case ag_separate:	/* separate reads, artificially combined into a single array */
 				return FS_read_lump(owq);
-			case ag_mixed:		/* mixed mode, ALL read handled differently */
+					case ag_mixed:		/* mixed mode, ALL read handled differently */
 				return FS_read_mixed_part(owq);
-			case ag_aggregate:	/* natively an array */
+					case ag_aggregate:	/* natively an array */
 				return FS_read_a_part(owq);
-			}
+				}
 		}
 	}
-
+	
 	/* Normal read. */
 	return FS_read_lump(owq);
 }

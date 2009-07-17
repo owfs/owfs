@@ -1171,23 +1171,82 @@ int Cache_Del(const struct parsedname *pn)
 	if (!pn) {
 		return 1;				// do check here to avoid needless processing
 	}
-
+	
 	duration = TimeOut(pn->selected_filetype->change);
 	if (duration <= 0) {
 		return 1;				/* in case timeout set to 0 */
 	}
-
+	
 	memset(&tn.tk, 0, sizeof(struct tree_key));
 	memcpy(tn.tk.sn, pn->sn, 8);
 	tn.tk.p = pn->selected_filetype;
 	tn.tk.extension = pn->extension;
 	switch (pn->selected_filetype->change) {
-	case fc_persistent:
-		return Del_Stat(&cache_sto, Cache_Del_Store(&tn));
-	default:
-		return Del_Stat(&cache_ext, Cache_Del_Common(&tn));
+		case fc_persistent:
+			return Del_Stat(&cache_sto, Cache_Del_Store(&tn));
+		default:
+			return Del_Stat(&cache_ext, Cache_Del_Common(&tn));
 	}
 }
+
+int Cache_Del_Mixed_Individual(const struct parsedname *pn)
+{
+	struct tree_node tn;
+	time_t duration;
+	//printf("Cache_Del\n") ;
+	if (!pn) {
+		return 1;				// do check here to avoid needless processing
+	}
+	if (pn->selected_filetype->ag==NULL || pn->selected_filetype->ag->combined!=ag_mixed) {
+		return 1 ;
+	}
+	duration = TimeOut(pn->selected_filetype->change);
+	if (duration <= 0) {
+		return 1;				/* in case timeout set to 0 */
+	}
+	
+	memset(&tn.tk, 0, sizeof(struct tree_key));
+	memcpy(tn.tk.sn, pn->sn, 8);
+	tn.tk.p = pn->selected_filetype;
+	for ( tn.tk.extension = pn->selected_filetype->ag->elements-1 ; tn.tk.extension >= 0 ; --tn.tk.extension ) {
+		switch (pn->selected_filetype->change) {
+			case fc_persistent:
+				Del_Stat(&cache_sto, Cache_Del_Store(&tn));
+			default:
+				Del_Stat(&cache_ext, Cache_Del_Common(&tn));
+		}
+	}
+	return 0 ;
+}
+
+int Cache_Del_Mixed_Aggregate(const struct parsedname *pn)
+{
+	struct tree_node tn;
+	time_t duration;
+	//printf("Cache_Del\n") ;
+	if (!pn) {
+		return 1;				// do check here to avoid needless processing
+	}
+	if (pn->selected_filetype->ag==NULL || pn->selected_filetype->ag->combined!=ag_mixed) {
+		return 1 ;
+	}
+	duration = TimeOut(pn->selected_filetype->change);
+	if (duration <= 0) {
+		return 1;				/* in case timeout set to 0 */
+	}
+	
+	memset(&tn.tk, 0, sizeof(struct tree_key));
+	memcpy(tn.tk.sn, pn->sn, 8);
+	tn.tk.p = pn->selected_filetype;
+	tn.tk.extension = EXTENSION_ALL ;
+	switch (pn->selected_filetype->change) {
+		case fc_persistent:
+			return Del_Stat(&cache_sto, Cache_Del_Store(&tn));
+		default:
+			return Del_Stat(&cache_ext, Cache_Del_Common(&tn));
+	}
+}
+
 
 int Cache_Del_Dir(const struct parsedname *pn)
 {
