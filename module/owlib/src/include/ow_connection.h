@@ -260,7 +260,6 @@ struct connin_etherweather {
 
 struct connin_link {
 	struct connin_tcp tcp;      // mirror connin.server
-	size_t default_discard ; // linkhub-etelnet escape chars
 };
 
 struct connin_ha7e {
@@ -409,6 +408,7 @@ struct connection_in {
 	char *adapter_name;
 	int AnyDevices;
 	int ExtraReset;				// DS1994/DS2404 might need an extra reset
+	size_t default_discard ; // linkhub-telnet escape chars
 	enum bus_speed speed;
 	enum bus_flex flex ;
 	int changed_bus_settings;
@@ -553,6 +553,8 @@ void COM_break(struct connection_in *in);
 int COM_write( const BYTE * data, size_t length, struct connection_in *connection);
 int COM_read( BYTE * data, size_t length, struct connection_in *connection);
 void Slurp( int file_descriptor, unsigned long usec ) ;
+
+int telnet_read(BYTE * buf, const size_t size, const struct parsedname *pn) ;
 
 #define COM_slurp( file_descriptor ) Slurp( file_descriptor, 1000 )
 #define TCP_slurp( file_descriptor ) Slurp( file_descriptor, 100000 )

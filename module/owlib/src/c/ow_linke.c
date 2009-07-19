@@ -39,7 +39,6 @@ static struct timeval tvnet = { 0, 300000, };
 
 //static void byteprint( const BYTE * b, int size ) ;
 static int LINKE_write(const BYTE * buf, const size_t size, const struct parsedname *pn);
-static int LINKE_read(BYTE * buf, const size_t size, const struct parsedname *pn);
 static int LINKE_reset(const struct parsedname *pn);
 static int LINKE_next_both(struct device_search *ds, const struct parsedname *pn);
 static int LINKE_PowerByte(const BYTE data, BYTE * resp, const UINT delay, const struct parsedname *pn);
@@ -87,7 +86,7 @@ int LINKE_detect(struct connection_in *in)
 	}
 
 	in->Adapter = adapter_LINK_E;
-	in->connin.link.default_discard = 0 ;
+	in->default_discard = 0 ;
 	if (1) {
 		BYTE data[6] ;
 		size_t read_size ;
@@ -99,7 +98,7 @@ int LINKE_detect(struct connection_in *in)
 	LEVEL_DEBUG("Slurp in initial bytes\n");
 	if (LINKE_write(LINK_string(" "), 1, &pn) == 0) {
 		char buf[18];
-		if (LINKE_read((BYTE *) buf, 18, &pn)
+		if (telnet_read((BYTE *) buf, 18, &pn)
 			|| strncmp(buf, "Link", 4))
 			return -ENODEV;
 		in->adapter_name = "Link-Hub-E";
@@ -116,7 +115,7 @@ static int LINKE_reset(const struct parsedname *pn)
 	tcp_read_flush(pn->selected_connection->file_descriptor);
 
 	// Send 'r' reset
-	if (LINKE_write(LINK_string("r"), 1, pn) || LINKE_read(resp, 4, pn)) {
+	if (LINKE_write(LINK_string("r"), 1, pn) || telnet_read(resp, 4, pn)) {
 		return -EIO;
 	}
 
@@ -166,7 +165,7 @@ static int LINKE_next_both(struct device_search *ds, const struct parsedname *pn
 			return ret;
 	}
 
-	if ((ret = LINKE_read(LINK_string(resp), 21, pn))) {
+	if ((ret = telnet_read(LINK_string(resp), 21, pn))) {
 		return ret;
 	}
 
@@ -207,136 +206,6 @@ static int LINKE_next_both(struct device_search *ds, const struct parsedname *pn
 	return 0;
 }
 
-/* Read from Link or Link-E
-   0=good else bad
-   Note that buffer length should 1 exta char long for ethernet reads
-*/
-static int LINKE_read(BYTE * buf, const size_t size, const struct parsedname *pn)
-{
-	// temporary buffer (guess the extra escape chars based on prior experience
-	size_t allocated_size = size + pn->selected_connection->connin.link.default_discard ;
-	BYTE readin_buf[allocated_size] ;
-
-	// state machine for telnet escape chars
-	// handles TELNET protocol, specifically RFC854
-	// http://www.ietf.org/rfc/rfc854.txt
-	enum { linke_regular, linke_ff, linke_fffa, linke_fffb, } linke_read_state = linke_regular ;
-
-	size_t actual_readin ;
-	size_t current_index = 0 ;
-	size_t total_discard = 0 ;
-	size_t still_needed = size ;
-	
-	// initial read
-	//printf("LINKE_READ getting default_discard = %d\n",pn->selected_connection->connin.link.default_discard);
-	tcp_read(pn->selected_connection->file_descriptor, readin_buf, allocated_size, &tvnet, &actual_readin) ;
-	if (actual_readin < size) {
-		LEVEL_CONNECT("LINKE_read (ethernet) error\n");
-		return -EIO;
-	}
-
-	// loop and look for escape sequances
-	while ( still_needed > 0 ) {
-		if ( current_index >= allocated_size ) {
-			// need to read more -- just read what we think we need -- escape chars may require repeat
-			tcp_read(pn->selected_connection->file_descriptor, readin_buf, still_needed, &tvnet, &actual_readin) ;
-			if (actual_readin != still_needed ) {
-				LEVEL_CONNECT("LINKE_read (ethernet) error\n");
-				return -EIO;
-			}
-			current_index = 0 ;
-			allocated_size = still_needed ;
-		}
-		switch ( linke_read_state ) {
-			case linke_regular :
-				//printf("LINKE_READ regular char=%.2X index=%d disacard=%d size=%d allocated=%d\n",readin_buf[current_index],current_index,total_discard,size,allocated_size);
-				if ( readin_buf[current_index] == 0xFF ) {
-					// starting escape sequence
-					// following bytes will better characterize
-					++ total_discard ;
-					linke_read_state = linke_ff ;
-				} else {
-					// normal processing
-					// move byte to response and decrement needed bytes
-					// stay in current state
-					buf[size - still_needed] = readin_buf[current_index] ;
-					-- still_needed ;
-				}
-				break ;
-			case linke_ff:
-				//printf("LINKE_READ FF      char=%.2X index=%d disacard=%d size=%d allocated=%d\n",readin_buf[current_index],current_index,total_discard,size,allocated_size);
-				switch ( readin_buf[current_index] ) {
-					case 0xF1:
-					case 0xF2:
-					case 0xF3:
-					case 0xF4:
-					case 0xF5:
-					case 0xF6:
-					case 0xF7:
-					case 0xF8:
-					case 0xF9:
-						// 2 byte sequence
-						// just read 2nd character
-						++ total_discard ;
-						linke_read_state = linke_regular ;
-						break ;
-					case 0xFA:
-						// multibyte squence
-						// start scanning for 0xF0
-						++ total_discard ;
-						linke_read_state = linke_fffa ;
-						break ;
-					case 0xFB:
-					case 0xFC:
-					case 0xFD:
-					case 0xFE:
-						// 3 byte sequence
-						// just read 2nd char
-						++ total_discard ;
-						linke_read_state = linke_fffb ;
-						break ;
-					case 0xFF:
-						// escape the FF character
-						// make this a single regular FF char
-						buf[size - still_needed] = 0xFF ;
-						-- total_discard ;
-						-- still_needed ;
-						linke_read_state = linke_regular ;
-						break ;
-					default:
-						LEVEL_DEBUG("Unexpected telnet sequence from LinkHub-E\n");
-						return -EIO ;
-				}
-				break ;
-			case linke_fffa:
-				//printf("LINKE_READ FFFA   char=%.2X index=%d disacard=%d size=%d allocated=%d\n",readin_buf[current_index],current_index,total_discard,size,allocated_size);
-				switch ( readin_buf[current_index] ) {
-					case 0xF0:
-						// end of escape sequence
-						++ total_discard ;
-						linke_read_state = linke_regular ;
-						break ;
-					default:
-						// stay in this mode
-						++ total_discard ;
-						break ;
-				}
-				break ;
-			case linke_fffb:
-				// 3 byte sequence
-				// now reading 3rd char
-				++ total_discard ;
-				linke_read_state = linke_regular ;
-				break ;
-		}
-		++ current_index ;
-	}
-	// store this extra length for the next read attempt
-	//printf("LINKE_READ setting default_discard = %d to %d\n",pn->selected_connection->connin.link.default_discard,total_discard);
-	pn->selected_connection->connin.link.default_discard = total_discard ;
-	return 0 ;
-}
-
 //
 // Write a string to the serial port
 /* return 0=good,
@@ -372,7 +241,7 @@ static int LINKE_PowerByte(const BYTE data, BYTE * resp, const UINT delay, const
 
 	num2string(&buf[1], data);
 
-	if (LINKE_write(LINK_string(buf), 3, pn) || LINKE_read(LINK_string(buf), 2, pn)) {
+	if (LINKE_write(LINK_string(buf), 3, pn) || telnet_read(LINK_string(buf), 2, pn)) {
 		return -EIO;			// send just the <CR>
 	}
 
@@ -381,7 +250,7 @@ static int LINKE_PowerByte(const BYTE data, BYTE * resp, const UINT delay, const
 	// delay
 	UT_delay(delay);
 
-	if (LINKE_write(LINK_string("\r"), 1, pn) || LINKE_read(LINK_string(buf), 3, pn)) {
+	if (LINKE_write(LINK_string("\r"), 1, pn) || telnet_read(LINK_string(buf), 3, pn)) {
 		return -EIO;			// send just the <CR>
 	}
 
@@ -411,7 +280,7 @@ static int LINKE_sendback_data(const BYTE * data, BYTE * resp, const size_t size
 //        printf(">> size=%d, left=%d, i=%d\n",size,left,i);
 		bytes2string((char *) &buf[1], &data[size - left], this_length);
 		buf[total_length - 1] = '\r';	// take out of byte mode
-		if (LINKE_write(buf, total_length, pn) || LINKE_read(buf, total_length + 1, pn)) {
+		if (LINKE_write(buf, total_length, pn) || telnet_read(buf, total_length + 1, pn)) {
 			return -EIO;
 		}
 		string2bytes((char *) buf, &resp[size - left], this_length);

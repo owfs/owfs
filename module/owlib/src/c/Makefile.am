@@ -101,6 +101,7 @@ OWLIB_SOURCE = ow_dl.c           \
                ow_presence.c     \
                ow_printparse.c   \
                ow_read.c         \
+               ow_read_telnet.c  \
                ow_reconnect.c    \
                ow_rwlock.c       \
                ow_stats.c        \
