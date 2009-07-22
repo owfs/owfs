@@ -293,6 +293,7 @@ struct connin_w1 {
 enum bus_mode {
 	bus_unknown = 0,
 	bus_serial,
+	bus_eserial,
 	bus_passive,
 	bus_usb,
 	bus_parallel,
@@ -335,6 +336,7 @@ enum adapter_type {
 	adapter_tester,
 	adapter_mock,
 	adapter_w1,
+	adapter_eDS9097U,
 };
 
 enum e_reconnect {
@@ -418,7 +420,7 @@ struct connection_in {
 	int buspath_bad;			// should the current DS2409 branches be cleared?
 	struct buspath branch;		// Branch currently selected
 	BYTE combuffer[MAX_FIFO_SIZE];
-
+	e1000
 	/* Static buffer for conmmunication */
 	/* Since only used during actual transfer to/from the adapter,
 	   should be protected from contention even when multithreading allowed */

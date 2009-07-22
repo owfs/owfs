@@ -894,6 +894,7 @@ static int OW_ArgSerial(const char *arg)
 	}
 	in->name = owstrdup(arg);
 	in->busmode = bus_serial;
+	in->busmode = (arg[0] == '/') ? bus_serial : bus_eserial;
 	return 0;
 }
 

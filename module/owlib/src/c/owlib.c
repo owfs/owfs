@@ -121,7 +121,15 @@ static void SetupInboundConnections(void)
 				LEVEL_DEFAULT("Cannot detect DS9097 (passive) interface on %s.\n", in->name);
 			}
 			break;
-
+			
+		case bus_eserial:
+#if 0
+			if ((ret = eDS9097_detect(in))) {
+				LEVEL_DEFAULT("Cannot detect DS9097 (passive) interface on %s.\n", in->name);
+			}
+#endif
+			break;
+			
 		case bus_i2c:
 #if OW_I2C
 			if ((ret = DS2482_detect(in))) {
