@@ -41,6 +41,7 @@ static int OW_ArgHA5( const char *arg);
 static int OW_ArgHA7(const char *arg);
 static int OW_ArgHA7E(const char *arg);
 static int OW_ArgEtherWeather(const char *arg);
+static int OW_ArgXport(const char *arg);
 static int OW_ArgFake(const char *arg);
 static int OW_ArgTester(const char *arg);
 static int OW_ArgMock(const char *arg);
@@ -138,6 +139,11 @@ const struct option owopts_long[] = {
 	{"ha7s", required_argument, NULL, e_ha7e},
 	{"HA7s", required_argument, NULL, e_ha7e},
 	{"HA7S", required_argument, NULL, e_ha7e},
+	{"xport", required_argument, NULL, e_xport, },
+	{"Xport", required_argument, NULL, e_xport, },
+	{"XPort", required_argument, NULL, e_xport, },
+	{"XPORT", required_argument, NULL, e_xport, },
+	{"telnet", required_argument, NULL, e_xport, },
 	{"TESTER", required_argument, NULL, e_tester},	/* Tester */
 	{"Tester", required_argument, NULL, e_tester},	/* Tester */
 	{"tester", required_argument, NULL, e_tester},	/* Tester */
@@ -696,6 +702,8 @@ int owopt(const int option_char, const char *arg)
 		return OW_ArgPassive("HA3", arg);
 	case e_ha4b:
 		return OW_ArgPassive("HA4B", arg);
+	case e_xport:
+		return OW_Xport(arg);
 	case e_tester:
 		return OW_ArgTester(arg);
 	case e_mock:
@@ -813,6 +821,17 @@ static int OW_ArgEtherWeather(const char *arg)
 	return 0;
 }
 
+static int OW_ArgXport(const char *arg)
+{
+	struct connection_in *in = NewIn(NULL);
+	if (in == NULL) {
+		return 1;
+	}
+	in->name = arg ? owstrdup(arg) : NULL;
+	in->busmode = bus_xport;
+	return 0;
+}
+
 static int OW_ArgFake(const char *arg)
 {
 	struct connection_in *in = NewIn(NULL);
@@ -894,7 +913,6 @@ static int OW_ArgSerial(const char *arg)
 	}
 	in->name = owstrdup(arg);
 	in->busmode = bus_serial;
-	in->busmode = (arg[0] == '/') ? bus_serial : bus_eserial;
 	return 0;
 }
 

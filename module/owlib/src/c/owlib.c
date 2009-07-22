@@ -122,10 +122,10 @@ static void SetupInboundConnections(void)
 			}
 			break;
 			
-		case bus_eserial:
+		case bus_xport:
 #if 0
-			if ((ret = eDS9097_detect(in))) {
-				LEVEL_DEFAULT("Cannot detect DS9097 (passive) interface on %s.\n", in->name);
+			if ((ret = xport_detect(in))) {
+				LEVEL_DEFAULT("Cannot detect Xport (DS2480B via telnet) interface on %s.\n", in->name);
 			}
 #endif
 			break;
