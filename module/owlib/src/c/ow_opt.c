@@ -703,7 +703,7 @@ int owopt(const int option_char, const char *arg)
 	case e_ha4b:
 		return OW_ArgPassive("HA4B", arg);
 	case e_xport:
-		return OW_Xport(arg);
+		return OW_ArgXport(arg);
 	case e_tester:
 		return OW_ArgTester(arg);
 	case e_mock:
