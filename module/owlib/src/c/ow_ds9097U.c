@@ -243,6 +243,7 @@ int DS2480_detect(struct connection_in *in)
 	case adapter_LINK_10:
 	case adapter_LINK_11:
 	case adapter_LINK_12:
+    case adapter_LINK_14:
 		in->adapter_name = "LINK(emulate mode)";
 		break;
 	default:

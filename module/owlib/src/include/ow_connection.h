@@ -325,6 +325,7 @@ enum adapter_type {
 	adapter_LINK_10,
 	adapter_LINK_11,
 	adapter_LINK_12,
+    adapter_LINK_14,
 	adapter_LINK_E,
 	adapter_DS2482_100,
 	adapter_DS2482_800,

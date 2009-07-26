@@ -29,6 +29,7 @@ static struct LINK_id LINK_id_tbl[] = {
 	{"1.2", "LINK v1.2", adapter_LINK_12},
 	{"VM12a", "LINK OEM v1.2a", adapter_LINK_12},
 	{"VM12", "LINK OEM v1.2", adapter_LINK_12},
+    {"1.4", "LinkUSB V1.4", adapter_LINK_14},
 	{"0", "0", 0}
 };
 
@@ -115,7 +116,7 @@ int LINK_detect(struct connection_in *in)
 
 					in->baud = Globals.baud ;
 					++in->changed_bus_settings ;
-
+                    BUS_reset(&pn) ; // extra reset
 					return 0;
 				}
 			}
