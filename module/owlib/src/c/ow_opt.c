@@ -741,7 +741,7 @@ int owopt(const int option_char, const char *arg)
 		if (OW_parsevalue_I(&arg_to_integer, arg)) {
 			return 1;
 		}
-		Globals.baud = OW_MakeBaud( arg_to_integer ) ;
+		Globals.baud = COM_MakeBaud( arg_to_integer ) ;
 		break ;
 	case e_templow:
 		if (OW_parsevalue_F(&arg_to_float, arg)) {

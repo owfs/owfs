@@ -130,9 +130,9 @@ static void LINK_set_baud(const struct parsedname *pn)
 {
 	char * speed_code ;
 
-	OW_BaudRestrict( &(pn->selected_connection->baud), B9600, B19200, B38400, B57600, 0 ) ;
+	COM_BaudRestrict( &(pn->selected_connection->baud), B9600, B19200, B38400, B57600, 0 ) ;
 
-	LEVEL_DEBUG("to %d\n",OW_BaudRate(pn->selected_connection->baud));
+	LEVEL_DEBUG("to %d\n",COM_BaudRate(pn->selected_connection->baud));
 	// Find rate parameter
 	switch ( pn->selected_connection->baud ) {
 		case B9600:

@@ -16,7 +16,7 @@ $Id$
 #include "ow.h"
 #include "ow_connection.h"
 
-speed_t OW_MakeBaud( int raw_baud )
+speed_t COM_MakeBaud( int raw_baud )
 {
 	switch ( raw_baud ) {
 		case 12:
@@ -58,7 +58,7 @@ speed_t OW_MakeBaud( int raw_baud )
 	}
 }
 
-int OW_BaudRate( speed_t B_baud )
+int COM_BaudRate( speed_t B_baud )
 {
 	switch ( B_baud ) {
 		case B1200:
@@ -86,22 +86,22 @@ int OW_BaudRate( speed_t B_baud )
 
 // Find the best choice for baud rate among allowable choices.
 // Must end list with a 0
-void OW_BaudRestrict( speed_t * B_baud, ... )
+void COM_BaudRestrict( speed_t * B_baud, ... )
 {
 	va_list baud_list ;
 
 	speed_t B_original = B_baud[0] ;
-	int original_baudrate = OW_BaudRate( B_original ) ;
+	int original_baudrate = COM_BaudRate( B_original ) ;
 
 	speed_t B_best = B9600 ;
-	int best_baudrate = OW_BaudRate( B_best ) ;
+	int best_baudrate = COM_BaudRate( B_best ) ;
 
 	speed_t B_current ;
 	
 	va_start( baud_list, B_baud ) ;
 
 	while ( (B_current=va_arg( baud_list, speed_t)) ) {
-		int current_baudrate = OW_BaudRate( B_current ) ;
+		int current_baudrate = COM_BaudRate( B_current ) ;
 
 		if ( current_baudrate == original_baudrate ) {
 			// perfect match

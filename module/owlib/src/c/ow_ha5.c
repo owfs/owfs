@@ -87,7 +87,7 @@ int HA5_detect(struct connection_in *in)
 	}
 
 	// allowable speeds
-	OW_BaudRestrict( &(in->baud), B1200, B19200, B38400, B115200, 0 ) ;
+	COM_BaudRestrict( &(in->baud), B1200, B19200, B38400, B115200, 0 ) ;
 
 	/* Set com port speed*/
 	COM_speed(in->baud,in) ;

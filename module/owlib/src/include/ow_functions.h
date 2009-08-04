@@ -147,9 +147,9 @@ int OW_ArgGeneric(const char *arg);
 int OW_ArgSide(const char *arg);
 int AliasFile(const ASCII * file) ;
 
-speed_t OW_MakeBaud( int raw_baud ) ;
-int OW_BaudRate( speed_t B_baud ) ;
-void OW_BaudRestrict( speed_t * B_baud, ... ) ;
+speed_t COM_MakeBaud( int raw_baud ) ;
+int COM_BaudRate( speed_t B_baud ) ;
+void COM_BaudRestrict( speed_t * B_baud, ... ) ;
 
 void ow_help(const char *arg);
 

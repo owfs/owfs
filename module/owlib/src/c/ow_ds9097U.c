@@ -374,7 +374,7 @@ static int DS2480_configuration_read(BYTE parameter_code, BYTE value_code, const
 static void DS2480_set_baud_control(const struct parsedname *pn)
 {
 	// restrict allowable baud rates based on device capabilities
-	OW_BaudRestrict( &(pn->selected_connection->baud), B9600, B19200, B57600, B115200, 0 ) ;
+	COM_BaudRestrict( &(pn->selected_connection->baud), B9600, B19200, B57600, B115200, 0 ) ;
 
 	if ( DS2480_set_baud(pn) == 0 ) {
 		return ;
