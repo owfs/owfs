@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
 
 	/* non-option arguments */
 	while (optind < argc) {
-		OW_ArgGeneric(argv[optind]);
+		ARG_Generic(argv[optind]);
 		++optind;
 	}
 
@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
 		} else {
 			LEVEL_CONNECT("%s will use an ephemeral port\n", argv[0]) ;
 		}
-		OW_ArgServer(NULL);		// make an ephemeral assignment
+		ARG_Server(NULL);		// make an ephemeral assignment
 	}
 
 	set_exit_signal_handlers(exit_handler);

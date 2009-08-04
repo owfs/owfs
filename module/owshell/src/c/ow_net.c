@@ -23,7 +23,7 @@ void DefaultOwserver(void)
 	}
 #endif							/* OW_ZERO */
 	if (count_inbound_connections == 0) {
-		OW_ArgNet(OWSERVER_DEFAULT_PORT);
+		ARG_Net(OWSERVER_DEFAULT_PORT);
 	}
 }
 

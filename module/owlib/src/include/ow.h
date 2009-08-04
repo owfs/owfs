@@ -323,6 +323,7 @@ void set_exit_signal_handlers(void (*exit_handler)
 /* -------------------------------------------- */
 /* Prototypes */
 /* Separated out to ow_functions.h for clarity */
+#include "ow_arg.h"
 #include "ow_functions.h"
 
 #endif							/* OW_H */

@@ -3,6 +3,7 @@
 OWLIB_SOURCE = ow_dl.c           \
                ow_dnssd.c        \
                ow_alias.c        \
+	       ow_arg.c          \
 	       ow_avahi_announce.c\
                ow_avahi_browse.c \
 	       ow_avahi_link.c   \

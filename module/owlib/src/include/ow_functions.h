@@ -139,12 +139,6 @@ void FreeSideAddr(struct connection_side *side);
 void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (int errcode));
 int ServerOutSetup(struct connection_out *out);
 
-int OW_ArgNet(const char *arg);
-int OW_ArgServer(const char *arg);
-int OW_ArgUSB(const char *arg);
-int OW_ArgDevice(const char *arg);
-int OW_ArgGeneric(const char *arg);
-int OW_ArgSide(const char *arg);
 int AliasFile(const ASCII * file) ;
 
 speed_t COM_MakeBaud( int raw_baud ) ;

@@ -34,20 +34,6 @@ static int ParseInterp(struct lineparse *lp);
 static int OW_parsevalue_I(long long int *var, const ASCII * str);
 static int OW_parsevalue_F(_FLOAT *var, const ASCII * str);
 
-static int OW_ArgSerial(const char *arg);
-static int OW_ArgParallel(const char *arg);
-static int OW_ArgI2C(const char *arg);
-static int OW_ArgHA5( const char *arg);
-static int OW_ArgHA7(const char *arg);
-static int OW_ArgHA7E(const char *arg);
-static int OW_ArgEtherWeather(const char *arg);
-static int OW_ArgXport(const char *arg);
-static int OW_ArgFake(const char *arg);
-static int OW_ArgTester(const char *arg);
-static int OW_ArgMock(const char *arg);
-static int OW_ArgLink(const char *arg);
-static int OW_ArgPassive(char *adapter_type_name, const char *arg);
-
 const struct option owopts_long[] = {
 	{"alias", required_argument, NULL, 'a'},
 	{"aliases", required_argument, NULL, 'a'},
@@ -518,7 +504,7 @@ int owopt_packed(const char *params)
 	/* non-option arguments */
 	while ((ret == 0) && (optind < argc)) {
 		//printf("optind = %d arg=%s\n",optind,SAFESTRING(argv[optind]));
-		OW_ArgGeneric(argv[optind]);
+		ARG_Generic(argv[optind]);
 		++optind;
 	}
 
@@ -559,9 +545,9 @@ int owopt(const int option_char, const char *arg)
 		ow_help(arg);
 		return 1;
 	case 'u':
-		return OW_ArgUSB(arg);
+		return ARG_USB(arg);
 	case 'd':
-		return OW_ArgDevice(arg);
+		return ARG_Device(arg);
 	case 't':
 		if (OW_parsevalue_I(&arg_to_integer, arg)) {
 			return 1;
@@ -590,20 +576,20 @@ int owopt(const int option_char, const char *arg)
 		printf("libow version:\n\t" VERSION "\n");
 		return 1;
 	case 's':
-		return OW_ArgNet(arg);
+		return ARG_Net(arg);
 	case 'p':
 		switch (Globals.opt) {
 		case opt_httpd:
 		case opt_server:
 		case opt_ftpd:
-			return OW_ArgServer(arg);
+			return ARG_Server(arg);
 		default:
 			return 0;
 		}
 	case 'm':
 		switch (Globals.opt) {
 		case opt_owfs:
-			return OW_ArgServer(arg);
+			return ARG_Server(arg);
 		default:
 			return 0;
 		}
@@ -674,7 +660,7 @@ int owopt(const int option_char, const char *arg)
 	case e_sidetap:			/* sidetap address */
 		switch (Globals.opt) {
 		case opt_server:
-			return OW_ArgSide(arg);
+			return ARG_Side(arg);
 		default:
 			return 0;
 		}
@@ -685,31 +671,31 @@ int owopt(const int option_char, const char *arg)
 		Globals.max_clients = (int) arg_to_integer;
 		break;
 	case e_i2c:
-		return OW_ArgI2C(arg);
+		return ARG_I2C(arg);
 	case e_ha5:
-		return OW_ArgHA5(arg);
+		return ARG_HA5(arg);
 	case e_ha7:
-		return OW_ArgHA7(arg);
+		return ARG_HA7(arg);
 	case e_ha7e:
-		return OW_ArgHA7E(arg);
+		return ARG_HA7E(arg);
 	case e_fake:
-		return OW_ArgFake(arg);
+		return ARG_Fake(arg);
 	case e_link:
-		return OW_ArgLink(arg);
+		return ARG_Link(arg);
 	case e_passive:
-		return OW_ArgPassive("Passive", arg);
+		return ARG_Passive("Passive", arg);
 	case e_ha3:
-		return OW_ArgPassive("HA3", arg);
+		return ARG_Passive("HA3", arg);
 	case e_ha4b:
-		return OW_ArgPassive("HA4B", arg);
+		return ARG_Passive("HA4B", arg);
 	case e_xport:
-		return OW_ArgXport(arg);
+		return ARG_Xport(arg);
 	case e_tester:
-		return OW_ArgTester(arg);
+		return ARG_Tester(arg);
 	case e_mock:
-		return OW_ArgMock(arg);
+		return ARG_Mock(arg);
 	case e_etherweather:
-		return OW_ArgEtherWeather(arg);
+		return ARG_EtherWeather(arg);
 	case e_announce:
 		Globals.announce_name = owstrdup(arg);
 		break;
@@ -764,288 +750,6 @@ int owopt(const int option_char, const char *arg)
 		return 1;
 	}
 	return 0;
-}
-
-int OW_ArgNet(const char *arg)
-{
-	struct connection_in *in = NewIn(NULL);
-	if (in == NULL) {
-		return 1;
-	}
-	in->name = owstrdup(arg);
-	in->busmode = bus_server;
-	return 0;
-}
-
-static int OW_ArgHA5( const char *arg)
-{
-	struct connection_in *in = NewIn(NULL);
-	if (in == NULL) {
-		return 1;
-	}
-	in->name = owstrdup(arg);
-	in->busmode = bus_ha5;
-	return 0;
-}
-
-
-static int OW_ArgHA7(const char *arg)
-{
-#if OW_HA7
-	if (arg) {
-		struct connection_in *in = NewIn(NULL);
-		if (in == NULL) {
-			return 1;
-		}
-		in->name = arg ? owstrdup(arg) : NULL;
-		in->busmode = bus_ha7net;
-		return 0;
-	} else {					// Try multicast discovery
-		//printf("Find HA7\n");
-		return FS_FindHA7();
-	}
-#else							/* OW_HA7 */
-	LEVEL_DEFAULT("HA7 support (intentionally) not included in compilation. Reconfigure and recompile.\n");
-	return 1;
-#endif							/* OW_HA7 */
-}
-
-static int OW_ArgEtherWeather(const char *arg)
-{
-	struct connection_in *in = NewIn(NULL);
-	if (in == NULL) {
-		return 1;
-	}
-	in->name = arg ? owstrdup(arg) : NULL;
-	in->busmode = bus_etherweather;
-	return 0;
-}
-
-static int OW_ArgXport(const char *arg)
-{
-	struct connection_in *in = NewIn(NULL);
-	if (in == NULL) {
-		return 1;
-	}
-	in->name = arg ? owstrdup(arg) : NULL;
-	in->busmode = bus_xport;
-	return 0;
-}
-
-static int OW_ArgFake(const char *arg)
-{
-	struct connection_in *in = NewIn(NULL);
-	if (in == NULL) {
-		return 1;
-	}
-	in->name = owstrdup(arg);
-	in->busmode = bus_fake;
-	return 0;
-}
-
-static int OW_ArgMock(const char *arg)
-{
-	struct connection_in *in = NewIn(NULL);
-	if (in == NULL) {
-		return 1;
-	}
-	in->name = owstrdup(arg);
-	in->busmode = bus_mock;
-	return 0;
-}
-
-static int OW_ArgTester(const char *arg)
-{
-	struct connection_in *in = NewIn(NULL);
-	if (in == NULL) {
-		return 1;
-	}
-	in->name = owstrdup(arg);
-	in->busmode = bus_tester;
-	return 0;
-}
-
-int OW_ArgServer(const char *arg)
-{
-	struct connection_out *out = NewOut();
-	if (out == NULL) {
-		return 1;
-	}
-	out->name = (arg != NULL) ? owstrdup(arg) : NULL;
-	return 0;
-}
-
-int OW_ArgSide(const char *arg)
-{
-	struct connection_side *side = NewSide();
-	if (side == NULL) {
-		return 1;
-	}
-	side->name = arg ? owstrdup(arg) : NULL;
-	return 0;
-}
-
-int OW_ArgDevice(const char *arg)
-{
-	struct stat sbuf;
-	if (stat(arg, &sbuf)) {
-		LEVEL_DEFAULT("Cannot access device %s\n", arg);
-		return 1;
-	}
-	if (!S_ISCHR(sbuf.st_mode)) {
-		LEVEL_DEFAULT("Not a \"character\" device %s (st_mode=%x)\n", arg, sbuf.st_mode);
-		return 1;
-	}
-	if (major(sbuf.st_rdev) == 99) {
-		return OW_ArgParallel(arg);
-	}
-	if (major(sbuf.st_rdev) == 89) {
-		return OW_ArgI2C(arg);
-	}
-	return OW_ArgSerial(arg);
-}
-
-static int OW_ArgSerial(const char *arg)
-{
-	struct connection_in *in = NewIn(NULL);
-	if (in == NULL) {
-		return 1;
-	}
-	in->name = owstrdup(arg);
-	in->busmode = bus_serial;
-	return 0;
-}
-
-static int OW_ArgPassive(char *adapter_type_name, const char *arg)
-{
-	struct connection_in *in = NewIn(NULL);
-	if (in == NULL) {
-		return 1;
-	}
-	in->name = owstrdup(arg);
-	in->busmode = bus_passive;
-	// special set name of adapter here
-	in->adapter_name = adapter_type_name;
-	return 0;
-}
-
-static int OW_ArgLink(const char *arg)
-{
-    struct connection_in *in = NewIn(NULL);
-    if (in == NULL) {
-        return 1;
-    }
-    in->name = owstrdup(arg);
-    in->busmode = (arg[0] == '/') ? bus_link : bus_elink;
-    return 0;
-}
-
-static int OW_ArgHA7E(const char *arg)
-{
-    struct connection_in *in = NewIn(NULL);
-    if (in == NULL) {
-        return 1;
-    }
-    in->name = owstrdup(arg);
-    in->busmode = bus_ha7e ;
-    return 0;
-}
-
-static int OW_ArgParallel(const char *arg)
-{
-#if OW_PARPORT
-	struct connection_in *in = NewIn(NULL);
-	if (in == NULL) {
-		return 1;
-	}
-	in->name = owstrdup(arg);
-	in->busmode = bus_parallel;
-	return 0;
-#else							/* OW_PARPORT */
-	LEVEL_DEFAULT("Parallel port support (intentionally) not included in compilation. For DS1410E. That's ok, it doesn't work anyways.\n");
-	return 1;
-#endif							/* OW_PARPORT */
-}
-
-static int OW_ArgI2C(const char *arg)
-{
-#if OW_I2C
-	struct connection_in *in = NewIn(NULL);
-	if (in == NULL) {
-		return 1;
-	}
-	if ( arg==NULL) {
-		in->name = owstrdup(":") ;
-	} else {
-		in->name = owstrdup(arg);
-    	}
-	in->busmode = bus_i2c;
-	return 0;
-#else							/* OW_I2C */
-	LEVEL_DEFAULT("I2C (smbus DS2482-X00) support (intentionally) not included in compilation. Reconfigure and recompile.\n");
-	return 1;
-#endif							/* OW_I2C */
-}
-
-int OW_ArgUSB(const char *arg)
-{
-#if OW_USB
-	struct connection_in *in = NewIn(NULL);
-	if (in == NULL) {
-		return 1;
-	}
-	in->busmode = bus_usb;
-	if (arg == NULL) {
-		in->connin.usb.usb_nr = 1;
-	} else if (strcasecmp(arg, "all") == 0) {
-		int number_of_usb_adapters;
-		number_of_usb_adapters = DS9490_enumerate();
-		LEVEL_CONNECT("All USB adapters requested, %d found.\n", number_of_usb_adapters);
-		// first one
-		in->connin.usb.usb_nr = 1;
-		// cycle through rest
-		if (number_of_usb_adapters > 1) {
-			int usb_adapter_index;
-			for (usb_adapter_index = 2; usb_adapter_index <= number_of_usb_adapters; ++usb_adapter_index) {
-				struct connection_in *in2 = NewIn(NULL);
-				if (in2 == NULL) {
-					return 1;
-				}
-				in2->busmode = bus_usb;
-				in2->connin.usb.usb_nr = usb_adapter_index;
-			}
-		}
-	} else {
-		in->connin.usb.usb_nr = atoi(arg);
-		//printf("ArgUSB file_descriptor=%d\n",in->file_descriptor);
-		if (in->connin.usb.usb_nr < 1) {
-			LEVEL_CONNECT("USB option %s implies no USB detection.\n", arg);
-			in->connin.usb.usb_nr = 0;
-		} else if (in->connin.usb.usb_nr > 1) {
-			LEVEL_CONNECT("USB adapter %d requested.\n", in->connin.usb.usb_nr);
-		}
-	}
-	return 0;
-#else							/* OW_USB */
-	LEVEL_DEFAULT("USB support (intentionally) not included in compilation. Check LIBUSB, then reconfigure and recompile.\n");
-	return 1;
-#endif							/* OW_USB */
-}
-
-int OW_ArgGeneric(const char *arg)
-{
-	if (arg && arg[0]) {
-		switch (arg[0]) {
-		case '/':
-			return OW_ArgDevice(arg);
-		case 'u':
-		case 'U':
-			return OW_ArgUSB(&arg[1]);
-		default:
-			return OW_ArgNet(arg);
-		}
-	}
-	return 1;
 }
 
 static int OW_parsevalue_I(long long int *var, const ASCII * str)

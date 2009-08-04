@@ -100,13 +100,13 @@ int main(int argc, char *argv[])
 
 	/* FTP on default port? */
 	if (Outbound_Control.active == 0) {
-		OW_ArgServer(NULL);	// default or ephemeral port
+		ARG_Server(NULL);	// default or ephemeral port
 	}
 
 	/* non-option args are adapters */
 	while (optind < argc) {
 		//printf("Adapter(%d): %s\n",optind,argv[optind]);
-		OW_ArgGeneric(argv[optind]);
+		ARG_Generic(argv[optind]);
 		++optind;
 	}
 

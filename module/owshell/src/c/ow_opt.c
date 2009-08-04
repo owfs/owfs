@@ -77,7 +77,7 @@ void owopt(const int c, const char *arg)
 		printf("owshell version:\n\t" VERSION "\n");
 		Exit(0);
 	case 's':
-		OW_ArgNet(arg);
+		ARG_Net(arg);
 		break;
 	case 'f':
 		if (!strcasecmp(arg, "f.i"))
@@ -134,7 +134,7 @@ void owopt(const int c, const char *arg)
 	}
 }
 
-void OW_ArgNet(const char *arg)
+void ARG_Net(const char *arg)
 {
 	++count_inbound_connections;
 	if (count_inbound_connections > 1) {

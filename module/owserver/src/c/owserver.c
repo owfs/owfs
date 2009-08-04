@@ -128,12 +128,12 @@ int main(int argc, char **argv)
 
 	/* non-option arguments */
 	while (optind < argc) {
-		OW_ArgGeneric(argv[optind]);
+		ARG_Generic(argv[optind]);
 		++optind;
 	}
 
 	if (Outbound_Control.active == 0) {
-		OW_ArgServer(NULL);		// make the default assignment
+		ARG_Server(NULL);		// make the default assignment
 	}
 
 

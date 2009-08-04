@@ -103,14 +103,14 @@ int main(int argc, char *argv[])
 
 	/* non-option arguments */
 	while (optind < argc - 1) {
-		OW_ArgGeneric(argv[optind]);
+		ARG_Generic(argv[optind]);
 		++optind;
 	}
 	while (optind < argc) {
 		if (Outbound_Control.active) {
-			OW_ArgGeneric(argv[optind]);
+			ARG_Generic(argv[optind]);
 		} else {
-			OW_ArgServer(argv[optind]);
+			ARG_Server(argv[optind]);
 		}
 		++optind;
 	}

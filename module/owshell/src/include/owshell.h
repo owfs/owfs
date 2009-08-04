@@ -288,7 +288,7 @@ int ClientAddr(char *sname);
 int ClientConnect(void);
 
 void DefaultOwserver(void);
-void OW_ArgNet(const char *arg);
+void ARG_Net(const char *arg);
 void Setup(void);
 void ow_help(void);
 void OW_Browse(void);

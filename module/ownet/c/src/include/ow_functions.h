@@ -79,8 +79,8 @@ int ClientAddr(char *sname, struct connection_in *in);
 int ClientConnect(struct connection_in *in);
 void FreeClientAddr(struct connection_in *in);
 
-int OW_ArgNet(const char *arg);
-int OW_ArgGeneric(const char *arg);
+int ARG_Net(const char *arg);
+int ARG_Generic(const char *arg);
 
 void BUS_lock_in(struct connection_in *in);
 void BUS_unlock_in(struct connection_in *in);

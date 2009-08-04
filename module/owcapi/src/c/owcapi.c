@@ -93,7 +93,7 @@ ssize_t OW_init_args(int argc, char **argv)
 
 	/* non-option arguments */
 	while (optind < argc) {
-		OW_ArgGeneric(argv[optind]);
+		ARG_Generic(argv[optind]);
 		++optind;
 	}
 
