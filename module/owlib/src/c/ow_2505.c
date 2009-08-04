@@ -146,7 +146,7 @@ static int FS_r_status(struct one_wire_query *owq)
 
 static int FS_w_memory(struct one_wire_query *owq)
 {
-	if (OW_w_eprom_mem(OWQ_explode(owq))) {
+	if (COMMON_write_eprom_mem(OWQ_explode(owq))) {
 		return -EINVAL;
 	}
 	return 0;
@@ -163,7 +163,7 @@ static int FS_w_status(struct one_wire_query *owq)
 static int FS_w_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (OW_w_eprom_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq) + OWQ_pn(owq).extension * pagesize, PN(owq))) {
+	if (COMMON_write_eprom_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq) + OWQ_pn(owq).extension * pagesize, PN(owq))) {
 		return -EINVAL;
 	}
 	return 0;

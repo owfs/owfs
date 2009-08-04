@@ -47,26 +47,36 @@ $Id$
 #include "ow_xxxx.h"
 
 /* ------- Prototypes ----------- */
-static int OW_w_eprom_mem_byte(BYTE data, off_t offset, const struct parsedname *pn);
-static int OW_w_eprom_status_byte(BYTE data, off_t offset, const struct parsedname *pn);
+static int OW_write_eprom_byte(BYTE code, BYTE data, off_t offset, const struct parsedname *pn);
 
 #define _1W_WRITE_MEMORY         0x0F
 #define _1W_WRITE_STATUS         0x55
 
-int OW_w_eprom_mem(const BYTE * data, size_t size, off_t offset, const struct parsedname *pn)
+int COMMON_write_eprom_mem(const BYTE * data, size_t size, off_t offset, const struct parsedname *pn)
 {
 	int byte_number;
 	for (byte_number = 0; byte_number < (int) size; ++byte_number) {
-		if (OW_w_eprom_mem_byte(data[byte_number], offset + byte_number, pn))
+		if (OW_write_eprom_byte(_1W_WRITE_MEMORY, data[byte_number], offset + byte_number, pn)) {
 			return 1;
-		LEVEL_DEBUG("Wrote EPROM byte %d -- no errors\n", (int) offset + byte_number);
+		}
 	}
 	return 0;
 }
 
-static int OW_w_eprom_mem_byte(BYTE data, off_t offset, const struct parsedname *pn)
+int COMMON_write_eprom_status(const BYTE * data, size_t size, off_t offset, const struct parsedname *pn)
 {
-	BYTE p[6] = { _1W_WRITE_MEMORY, LOW_HIGH_ADDRESS(offset), data, };
+	int byte_number;
+	for (byte_number = 0; byte_number < (int) size; ++byte_number) {
+		if (OW_write_eprom_byte(_1W_WRITE_STATUS, data[byte_number], offset + byte_number, pn)) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+static int OW_write_eprom_byte(BYTE code, BYTE data, off_t offset, const struct parsedname *pn)
+{
+	BYTE p[6] = { code, LOW_HIGH_ADDRESS(offset), data, };
 	struct transaction_log t[] = {
 		TRXN_START,
 		TRXN_WR_CRC16(p, 4, 0),
@@ -74,29 +84,9 @@ static int OW_w_eprom_mem_byte(BYTE data, off_t offset, const struct parsedname 
 		TRXN_END,
 	};
 
-	return BUS_transaction(t, pn);
-}
-
-int OW_w_eprom_status(const BYTE * data, size_t size, off_t offset, const struct parsedname *pn)
-{
-	int byte_number;
-	for (byte_number = 0; byte_number < (int) size; ++byte_number) {
-		if (OW_w_eprom_status_byte(data[byte_number], offset + byte_number, pn))
-			return 1;
-		LEVEL_DEBUG("Wrote EPROM byte %d -- no errors\n", (int) offset + byte_number);
+	if (BUS_transaction(t, pn)) {
+		LEVEL_DEBUG("Error writing to EPROM byte %d\n", (int) offset);
+		return 1;
 	}
-	return 0;
-}
-
-static int OW_w_eprom_status_byte(BYTE data, off_t offset, const struct parsedname *pn)
-{
-	BYTE p[6] = { _1W_WRITE_STATUS, LOW_HIGH_ADDRESS(offset), data, };
-	struct transaction_log t[] = {
-		TRXN_START,
-		TRXN_WR_CRC16(p, 4, 0),
-		TRXN_PROGRAM,
-		TRXN_END,
-	};
-
-	return BUS_transaction(t, pn);
+	return 0 ;
 }
