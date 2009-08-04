@@ -542,7 +542,7 @@ int owopt(const int option_char, const char *arg)
 			return ret;
 		}
 	case 'h':
-		ow_help(arg);
+		FS_help(arg);
 		return 1;
 	case 'u':
 		return ARG_USB(arg);

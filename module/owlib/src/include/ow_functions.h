@@ -145,7 +145,7 @@ speed_t COM_MakeBaud( int raw_baud ) ;
 int COM_BaudRate( speed_t B_baud ) ;
 void COM_BaudRestrict( speed_t * B_baud, ... ) ;
 
-void ow_help(const char *arg);
+void FS_help(const char *arg);
 
 void update_max_delay(struct connection_in *connection);
 

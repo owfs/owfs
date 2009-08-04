@@ -217,7 +217,7 @@ void ow_help_device(void)
 	"\n" " 1-wire device selection\n" "  --one-device     Only single device on bus, use ROM SKIP command\n");
 }
 
-void ow_help(const char *arg)
+void FS_help(const char *arg)
 {
 	printf("1-WIRE access programs         by Paul H Alfille and others.\n" "\n");
 	if (arg) {
