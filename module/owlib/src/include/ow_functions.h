@@ -205,12 +205,11 @@ int FS_fstat_postparse(struct stat *stbuf, const struct parsedname *pn);
 int COMMON_readwrite_paged(struct one_wire_query *owq, size_t page, size_t pagelen, int (*readwritefunc) (BYTE *, size_t, off_t, struct parsedname *));
 int COMMON_OWQ_readwrite_paged(struct one_wire_query *owq, size_t page, size_t pagelen, int (*readwritefunc) (struct one_wire_query *, size_t, size_t));
 
-int OW_r_mem_simple(struct one_wire_query *owq, size_t page, size_t pagesize);
-int OW_r_mem_crc16_A5(struct one_wire_query *owq, size_t page, size_t pagesize);
-int OW_r_mem_crc16_AA(struct one_wire_query *owq, size_t page, size_t pagesize);
-int OW_r_mem_crc16_F0(struct one_wire_query *owq, size_t page, size_t pagesize);
-int OW_r_mem_toss8(struct one_wire_query *owq, size_t page, size_t pagesize);
-int OW_r_mem_counter_bytes(BYTE * extra, size_t page, size_t pagesize, struct parsedname *pn);
+int COMMON_read_memory_F0(struct one_wire_query *owq, size_t page, size_t pagesize);
+int COMMON_read_memory_crc16_A5(struct one_wire_query *owq, size_t page, size_t pagesize);
+int COMMON_read_memory_crc16_AA(struct one_wire_query *owq, size_t page, size_t pagesize);
+int COMMON_read_memory_toss_counter(struct one_wire_query *owq, size_t page, size_t pagesize);
+int COMMON_read_memory_plus_counter(BYTE * extra, size_t page, size_t pagesize, struct parsedname *pn);
 
 int OW_w_eprom_mem(const BYTE * data, size_t size, off_t offset, const struct parsedname *pn);
 int OW_w_eprom_status(const BYTE * data, size_t size, off_t offset, const struct parsedname *pn);

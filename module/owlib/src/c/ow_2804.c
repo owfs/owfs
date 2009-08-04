@@ -117,7 +117,7 @@ static int FS_r_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 	/* read is not a "paged" endeavor, the CRC comes after a full read */
-	if (OW_r_mem_simple(owq, 0, pagesize)) {
+	if (COMMON_read_memory_F0(owq, 0, pagesize)) {
 		return -EINVAL;
 	}
 	return OWQ_size(owq);
@@ -138,7 +138,7 @@ static int FS_w_mem(struct one_wire_query *owq)
 static int FS_r_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (OW_r_mem_simple(owq, OWQ_pn(owq).extension, pagesize)) {
+	if (COMMON_read_memory_F0(owq, OWQ_pn(owq).extension, pagesize)) {
 		return -EINVAL;
 	}
 	return OWQ_size(owq);
@@ -161,7 +161,7 @@ static int FS_r_pio(struct one_wire_query *owq)
 	OWQ_allocate_struct_and_pointer(owq_pio);
 
 	OWQ_create_temporary(owq_pio, (char *) &data, 1, _ADDRESS_PIO_OUTPUT, PN(owq));
-	if (OW_r_mem_simple(owq_pio, 0, 0)) {
+	if (COMMON_read_memory_F0(owq_pio, 0, 0)) {
 		return -EINVAL;
 	}
 	OWQ_U(owq) = BYTE_INVERSE(data) & 0x03;	/* reverse bits */
@@ -187,7 +187,7 @@ static int FS_power(struct one_wire_query *owq)
 	OWQ_allocate_struct_and_pointer(owq_power);
 
 	OWQ_create_temporary(owq_power, (char *) &data, 1, _ADDRESS_CONDITIONAL_SEARCH_CONTROL, PN(owq));
-	if (OW_r_mem_simple(owq_power, 0, 0)) {
+	if (COMMON_read_memory_F0(owq_power, 0, 0)) {
 		return -EINVAL;
 	}
 	OWQ_Y(owq) = UT_getbit(&data, 7);
@@ -201,7 +201,7 @@ static int FS_polarity(struct one_wire_query *owq)
 	OWQ_allocate_struct_and_pointer(owq_polarity);
 
 	OWQ_create_temporary(owq_polarity, (char *) &data, 1, _ADDRESS_CONDITIONAL_SEARCH_CONTROL, PN(owq));
-	if (OW_r_mem_simple(owq_polarity, 0, 0)) {
+	if (COMMON_read_memory_F0(owq_polarity, 0, 0)) {
 		return -EINVAL;
 	}
 	OWQ_Y(owq) = UT_getbit(&data, 6);
@@ -215,7 +215,7 @@ static int FS_r_por(struct one_wire_query *owq)
 	OWQ_allocate_struct_and_pointer(owq_por);
 
 	OWQ_create_temporary(owq_por, (char *) &data, 1, _ADDRESS_CONDITIONAL_SEARCH_CONTROL, PN(owq));
-	if (OW_r_mem_simple(owq_por, 0, 0)) {
+	if (COMMON_read_memory_F0(owq_por, 0, 0)) {
 		return -EINVAL;
 	}
 	OWQ_Y(owq) = UT_getbit(&data, 3);
@@ -230,7 +230,7 @@ static int FS_w_por(struct one_wire_query *owq)
 	OWQ_allocate_struct_and_pointer(owq_por);
 
 	OWQ_create_temporary(owq_por, (char *) &data, 1, _ADDRESS_CONDITIONAL_SEARCH_CONTROL, pn);
-	if (OW_r_mem_simple(owq_por, 0, 0)) {
+	if (COMMON_read_memory_F0(owq_por, 0, 0)) {
 		return -EINVAL;			/* get current register */
 	}
 	if (UT_getbit(&data, 3)) {	/* needs resetting? bit3==1 */
@@ -255,7 +255,7 @@ static int FS_sense(struct one_wire_query *owq)
 	OWQ_allocate_struct_and_pointer(owq_sense);
 
 	OWQ_create_temporary(owq_sense, (char *) &data, 1, _ADDRESS_PIO_LOGIC, PN(owq));
-	if (OW_r_mem_simple(owq_sense, 0, 0)) {
+	if (COMMON_read_memory_F0(owq_sense, 0, 0)) {
 		return -EINVAL;
 	}
 	OWQ_U(owq) = (data) & 0x03;
@@ -269,7 +269,7 @@ static int FS_r_latch(struct one_wire_query *owq)
 	OWQ_allocate_struct_and_pointer(owq_latch);
 
 	OWQ_create_temporary(owq_latch, (char *) &data, 1, _ADDRESS_PIO_ACTIVITY, PN(owq));
-	if (OW_r_mem_simple(owq_latch, 0, 0)) {
+	if (COMMON_read_memory_F0(owq_latch, 0, 0)) {
 		return -EINVAL;
 	}
 	OWQ_U(owq) = data & 0x03;
@@ -292,7 +292,7 @@ static int FS_r_s_alarm(struct one_wire_query *owq)
 	OWQ_allocate_struct_and_pointer(owq_alarm);
 
 	OWQ_create_temporary(owq_alarm, (char *) data, 3, _ADDRESS_CONDITIONAL_SEARCH_PIO, PN(owq));
-	if (OW_r_mem_simple(owq_alarm, 0, 0)) {
+	if (COMMON_read_memory_F0(owq_alarm, 0, 0)) {
 		return -EINVAL;
 	}
 	OWQ_U(owq) = (data[2] & 0x03) * 100;
@@ -309,7 +309,7 @@ static int FS_w_s_alarm(struct one_wire_query *owq)
 	OWQ_allocate_struct_and_pointer(owq_alarm);
 
 	OWQ_create_temporary(owq_alarm, (char *) &data[2], 1, _ADDRESS_CONDITIONAL_SEARCH_CONTROL, PN(owq));
-	if (OW_r_mem_simple(owq_alarm, 0, 0)) {
+	if (COMMON_read_memory_F0(owq_alarm, 0, 0)) {
 		return -EINVAL;
 	}
 	data[2] |= (U / 100 % 10) & 0x03;

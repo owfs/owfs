@@ -84,7 +84,7 @@ static int OW_r_status(BYTE * data, const struct parsedname *pn);
 /* DS2430A memory */
 static int FS_r_memory(struct one_wire_query *owq)
 {
-	if (OW_r_mem_simple(owq, 0, 0)) {
+	if (COMMON_read_memory_F0(owq, 0, 0)) {
 		return -EINVAL;
 	}
 	return 0;

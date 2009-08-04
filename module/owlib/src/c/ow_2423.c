@@ -97,7 +97,7 @@ static int OW_r_counter(struct one_wire_query *owq, size_t page, size_t pagesize
 static int FS_r_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (COMMON_OWQ_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_r_mem_toss8)) {
+	if (COMMON_OWQ_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, COMMON_read_memory_toss_counter)) {
 		return -EINVAL;
 	}
 	return 0;
@@ -115,7 +115,7 @@ static int FS_w_page(struct one_wire_query *owq)
 static int FS_r_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (COMMON_OWQ_readwrite_paged(owq, 0, pagesize, OW_r_mem_toss8)) {
+	if (COMMON_OWQ_readwrite_paged(owq, 0, pagesize, COMMON_read_memory_toss_counter)) {
 		return -EINVAL;
 	}
 	return 0;
@@ -268,7 +268,7 @@ static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 static int OW_r_counter(struct one_wire_query *owq, size_t page, size_t pagesize)
 {
 	BYTE extra[8];
-	if (OW_r_mem_counter_bytes(extra, page, pagesize, PN(owq))) {
+	if (COMMON_read_memory_plus_counter(extra, page, pagesize, PN(owq))) {
 		return 1;
 	}
 #if 0

@@ -64,7 +64,7 @@ static void Set_OWQ_length(struct one_wire_query *owq)
 }
 
 /* No CRC -- 0xF0 code */
-int OW_r_mem_simple(struct one_wire_query *owq, size_t page, size_t pagesize)
+int COMMON_read_memory_F0(struct one_wire_query *owq, size_t page, size_t pagesize)
 {
 	off_t offset = OWQ_offset(owq) + page * pagesize;
 	BYTE p[3] = { _1W_READ_F0, LOW_HIGH_ADDRESS(offset), };
@@ -104,26 +104,20 @@ static int OW_r_crc16(BYTE code, struct one_wire_query *owq, size_t page, size_t
 }
 
 /* read up to end of page to CRC16 -- 0xA5 code */
-int OW_r_mem_crc16_A5(struct one_wire_query *owq, size_t page, size_t pagesize)
+int COMMON_read_memory_crc16_A5(struct one_wire_query *owq, size_t page, size_t pagesize)
 {
 	return OW_r_crc16(_1W_READ_A5, owq, page, pagesize);
 }
 
 /* read up to end of page to CRC16 -- 0xA5 code */
-int OW_r_mem_crc16_AA(struct one_wire_query *owq, size_t page, size_t pagesize)
+int COMMON_read_memory_crc16_AA(struct one_wire_query *owq, size_t page, size_t pagesize)
 {
 	return OW_r_crc16(_1W_READ_AA, owq, page, pagesize);
 }
 
-/* read up to end of page to CRC16 -- 0xF0 code */
-int OW_r_mem_crc16_F0(struct one_wire_query *owq, size_t page, size_t pagesize)
-{
-	return OW_r_crc16(_1W_READ_F0, owq, page, pagesize);
-}
-
 /* read up to end of page to CRC16 -- 0xA5 code */
 /* Extra 8 bytes, (for counter) too -- discarded */
-int OW_r_mem_toss8(struct one_wire_query *owq, size_t page, size_t pagesize)
+int COMMON_read_memory_toss_counter(struct one_wire_query *owq, size_t page, size_t pagesize)
 {
 	off_t offset = OWQ_offset(owq) + page * pagesize;
 	BYTE p[3 + pagesize + 8 + 2];
@@ -149,7 +143,7 @@ int OW_r_mem_toss8(struct one_wire_query *owq, size_t page, size_t pagesize)
 
 /*  0xA5 code */
 /* Extra 8 bytes, too */
-int OW_r_mem_counter_bytes(BYTE * extra, size_t page, size_t pagesize, struct parsedname *pn)
+int COMMON_read_memory_plus_counter(BYTE * extra, size_t page, size_t pagesize, struct parsedname *pn)
 {
 	off_t offset = (page + 1) * pagesize - _1W_Throw_Away_Bytes;	// last byte of page
 	BYTE p[3 + _1W_Throw_Away_Bytes + 8 + 2] = { _1W_READ_A5, LOW_HIGH_ADDRESS(offset), };

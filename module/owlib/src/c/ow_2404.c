@@ -146,7 +146,7 @@ static UINT Avals[] = { 0, 1, 10, 11, 100, 101, 110, 111, };
 static int FS_r_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	int size_or_error = OW_r_mem_simple(owq, OWQ_pn(owq).extension, pagesize) ;
+	int size_or_error = COMMON_read_memory_F0(owq, OWQ_pn(owq).extension, pagesize) ;
 
 	if (size_or_error==0) {
 		size_or_error = OWQ_size(owq);
@@ -161,7 +161,7 @@ static int FS_r_page(struct one_wire_query *owq)
 static int FS_r_memory(struct one_wire_query *owq)
 {
 	/* read is consecutive, unchecked. No paging */
-	int size_or_error = OW_r_mem_simple(owq, 0, 0) ;
+	int size_or_error = COMMON_read_memory_F0(owq, 0, 0) ;
 
 	if (size_or_error==0) {
 		size_or_error = OWQ_size(owq);
@@ -301,7 +301,7 @@ static int FS_r_alarm(struct one_wire_query *owq)
 	OWQ_allocate_struct_and_pointer(owq_alarm);
 
 	OWQ_create_temporary(owq_alarm, (char *) &c, 1, 0x0200, PN(owq));
-	if (OW_r_mem_simple(owq_alarm, 0, 0)) {
+	if (COMMON_read_memory_F0(owq_alarm, 0, 0)) {
 		return -EINVAL;
 	}
 	OWQ_U(owq) = Avals[c & 0x07];
@@ -314,7 +314,7 @@ static int FS_r_set_alarm(struct one_wire_query *owq)
 	OWQ_allocate_struct_and_pointer(owq_alarm);
 
 	OWQ_create_temporary(owq_alarm, (char *) &c, 1, 0x0200, PN(owq));
-	if (OW_r_mem_simple(owq_alarm, 0, 0)) {
+	if (COMMON_read_memory_F0(owq_alarm, 0, 0)) {
 		return -EINVAL;
 	}
 	OWQ_U(owq) = Avals[(c >> 3) & 0x07];
@@ -330,7 +330,7 @@ static int FS_w_flag(struct one_wire_query *owq)
 	OWQ_allocate_struct_and_pointer(owq_flag);
 	
 	OWQ_create_temporary(owq_flag, (char *) &cr, 1, 0x0201, pn);
-	if (OW_r_mem_simple(owq_flag, 0, 0)) {
+	if (COMMON_read_memory_F0(owq_flag, 0, 0)) {
 		return -EINVAL;
 	}
 	if (OWQ_Y(owq)) {
@@ -358,7 +358,7 @@ static int FS_r_flag(struct one_wire_query *owq)
 	OWQ_allocate_struct_and_pointer(owq_flag);
 
 	OWQ_create_temporary(owq_flag, (char *) &cr, 1, 0x0201, pn);
-	if (OW_r_mem_simple(owq_flag, 0, 0)) {
+	if (COMMON_read_memory_F0(owq_flag, 0, 0)) {
 		return -EINVAL;
 	}
 	OWQ_Y(owq) = (cr & fl) ? 1 : 0;
@@ -419,7 +419,7 @@ static int OW_r_ulong(uint64_t * L, size_t size, off_t offset, struct parsedname
 	if (size > 5) {
 		return -ERANGE;
 	}
-	if (OW_r_mem_simple(owq_ulong, 0, 0)) {
+	if (COMMON_read_memory_F0(owq_ulong, 0, 0)) {
 		return -EINVAL;
 	}
 	L[0] = ((uint64_t) data[0])

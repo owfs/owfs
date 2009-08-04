@@ -871,7 +871,7 @@ static int FS_r_atrig(struct one_wire_query *owq)
 static int FS_r_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (COMMON_OWQ_readwrite_paged(owq, 0, pagesize, OW_r_mem_crc16_A5)) {
+	if (COMMON_OWQ_readwrite_paged(owq, 0, pagesize, COMMON_read_memory_crc16_A5)) {
 		return -EINVAL;
 	}
 	return 0;
@@ -916,7 +916,7 @@ static int FS_w_atrig(struct one_wire_query *owq)
 static int FS_r_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (OW_r_mem_crc16_A5(owq, OWQ_pn(owq).extension, pagesize)) {
+	if (COMMON_read_memory_crc16_A5(owq, OWQ_pn(owq).extension, pagesize)) {
 		return -EINVAL;
 	}
 	return OWQ_size(owq);
@@ -1266,7 +1266,7 @@ static int OW_alarmlog(int *t, int *c, off_t offset, struct parsedname *pn)
 
 	OWQ_create_temporary(owq_alog, (char *) data, sizeof(data), offset, pn);
 
-	if (COMMON_OWQ_readwrite_paged(owq_alog, 0, 32, OW_r_mem_crc16_A5)) {
+	if (COMMON_OWQ_readwrite_paged(owq_alog, 0, 32, COMMON_read_memory_crc16_A5)) {
 		return -EINVAL;
 	}
 
@@ -1359,7 +1359,7 @@ static int OW_small_read(BYTE * buffer, size_t size, off_t location, struct pars
 {
 	OWQ_allocate_struct_and_pointer(owq_small);
 	OWQ_create_temporary(owq_small, (char *) buffer, size, location, pn);
-	return OW_r_mem_crc16_A5(owq_small, 0, 32);
+	return COMMON_read_memory_crc16_A5(owq_small, 0, 32);
 }
 
 #define HISTOGRAM_DATA_SIZE 2
@@ -1372,7 +1372,7 @@ static int OW_r_histogram_all(struct one_wire_query *owq)
 
 	OWQ_create_temporary(owq_histo, (char *) data, sizeof(data), 0x0800, PN(owq));
 
-	if (COMMON_OWQ_readwrite_paged(owq_histo, 0, pagesize, OW_r_mem_crc16_A5)) {
+	if (COMMON_OWQ_readwrite_paged(owq_histo, 0, pagesize, COMMON_read_memory_crc16_A5)) {
 		return -EINVAL;
 	}
 	for (i = 0; i < HISTOGRAM_DATA_ELEMENTS; ++i) {
@@ -1434,7 +1434,7 @@ static int OW_r_logtemp_all(struct Version *v, struct Mission *mission, struct o
 	}
 
 	OWQ_create_temporary(owq_log, (char *) data, sizeof(data), 0x1000, PN(owq));
-	if (COMMON_OWQ_readwrite_paged(owq_log, 0, pagesize, OW_r_mem_crc16_A5)) {
+	if (COMMON_OWQ_readwrite_paged(owq_log, 0, pagesize, COMMON_read_memory_crc16_A5)) {
 		return -EINVAL;
 	}
 	if (pass) {

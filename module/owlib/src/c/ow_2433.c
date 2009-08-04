@@ -102,7 +102,7 @@ static int FS_r_memory(struct one_wire_query *owq)
 {
     size_t pagesize = 32;
     /* read is not page-limited */
-    if (OW_r_mem_simple(owq, 0, pagesize)) {
+    if (COMMON_read_memory_F0(owq, 0, pagesize)) {
 		return -EINVAL;
 	}
 	return OWQ_size(owq);
@@ -132,7 +132,7 @@ static int FS_w_memory2D(struct one_wire_query *owq)
 static int FS_r_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (OW_r_mem_simple(owq, OWQ_pn(owq).extension, pagesize)) {
+	if (COMMON_read_memory_F0(owq, OWQ_pn(owq).extension, pagesize)) {
 		return -EINVAL;
 	}
 	return OWQ_size(owq);
@@ -243,7 +243,7 @@ static int OW_w_2Dpage(BYTE * data, size_t size, off_t offset, struct parsedname
 	if (size != 8) {			// incomplete page
 		OWQ_allocate_struct_and_pointer(owq_old);
 		OWQ_create_temporary(owq_old, (char *) &p[3], 8, offset - pageoff, pn);
-		if (OW_r_mem_simple(owq_old, 0, 0)) {
+		if (COMMON_read_memory_F0(owq_old, 0, 0)) {
 			return 1;
 		}
 	}

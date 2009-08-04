@@ -130,7 +130,7 @@ static int OW_w_por(const int por, struct parsedname *pn);
 static int FS_r_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 8;
-	if (COMMON_OWQ_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_r_mem_crc16_AA)) {
+	if (COMMON_OWQ_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, COMMON_read_memory_crc16_AA)) {
 		return -EINVAL;
 	}
 	LEVEL_DEBUG("returning from FS_r_page length=%d\n", (int) OWQ_length(owq));
@@ -300,7 +300,7 @@ static int FS_w_PIO(struct one_wire_query *owq)
 static int FS_r_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 8;
-	if (COMMON_OWQ_readwrite_paged(owq, 0, pagesize, OW_r_mem_crc16_AA)) {
+	if (COMMON_OWQ_readwrite_paged(owq, 0, pagesize, COMMON_read_memory_crc16_AA)) {
 		return -EINVAL;
 	}
 	return 0;
@@ -373,7 +373,7 @@ static int OW_r_mem(BYTE * p, size_t size, off_t offset, struct parsedname *pn)
 	OWQ_allocate_struct_and_pointer(owq_read);
 
 	OWQ_create_temporary(owq_read, (char *) p, size, offset, pn);
-	return OW_r_mem_crc16_AA(owq_read, 0, pagesize);
+	return COMMON_read_memory_crc16_AA(owq_read, 0, pagesize);
 }
 
 /* write to 2450 */
