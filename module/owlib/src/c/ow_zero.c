@@ -121,7 +121,7 @@ static void *Announce(void *v)
 	return NULL;
 }
 
-void OW_Announce(struct connection_out *out)
+void ZeroConf_Announce(struct connection_out *out)
 {
 	if ( Globals.announce_off) {
 		return;
@@ -152,7 +152,7 @@ void OW_Announce(struct connection_out *out)
 
 #else							/* OW_ZERO */
 
-void OW_Announce(struct connection_out *out)
+void ZeroConf_Announce(struct connection_out *out)
 {
 	(void) out;
 	return;

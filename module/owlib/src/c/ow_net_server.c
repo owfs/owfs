@@ -271,7 +271,7 @@ static void *ServerProcessOut(void *v)
 		return NULL;
 	}
 
-	OW_Announce(out);
+	ZeroConf_Announce(out);
 
 	OUTLOCK(out);
 	LEVEL_DEBUG("Output device %s setup is done. index=%d\n", SAFESTRING(out->name), out->index);
@@ -421,7 +421,7 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 		LEVEL_CONNECT("Cannot set up head_outbound_list [%s] -- will exit\n", SAFESTRING(head_outbound_list->name));
 		Exit(1);
 	} else {
-		OW_Announce(Outbound_Control.head);
+		ZeroConf_Announce(Outbound_Control.head);
 		while (1) {
 			int acceptfd = accept(Outbound_Control.head->file_descriptor, NULL, NULL);
 			if (StateInfo.shutdown_in_progress) {

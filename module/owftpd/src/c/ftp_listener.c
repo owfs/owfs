@@ -75,7 +75,7 @@ int ftp_listener_init(struct ftp_listener_s *f)
 		return 0;
 
 	// Zeroconf/Bonjour start (since owftpd doesn't use ServerProcess yet)
-	OW_Announce(Outbound_Control.head);
+	ZeroConf_Announce(Outbound_Control.head);
 
 	/* prevent socket from blocking on accept() */
 	flags = fcntl(Outbound_Control.head->file_descriptor, F_GETFL);

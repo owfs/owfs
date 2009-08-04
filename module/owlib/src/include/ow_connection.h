@@ -577,7 +577,7 @@ struct connection_in *find_connection_in(int nr);
 int SetKnownBus( int bus_number, struct parsedname * pn) ;
 
 /* Bonjour registration */
-void OW_Announce(struct connection_out *out);
+void ZeroConf_Announce(struct connection_out *out);
 void OW_Browse(void);
 
 int Server_detect(struct connection_in *in);
