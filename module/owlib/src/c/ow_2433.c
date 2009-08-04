@@ -112,7 +112,7 @@ static int FS_w_memory(struct one_wire_query *owq)
 {
 	/* paged access */
 	size_t pagesize = 32;
-	if (OW_readwrite_paged(owq, 0, pagesize, OW_w_23page)) {
+	if (COMMON_readwrite_paged(owq, 0, pagesize, OW_w_23page)) {
 		return -EFAULT;
 	}
 	return 0;
@@ -123,7 +123,7 @@ static int FS_w_memory2D(struct one_wire_query *owq)
 {
 	/* paged access */
 	size_t pagesize = 8;
-	if (OW_readwrite_paged(owq, 0, pagesize, OW_w_2Dpage)) {
+	if (COMMON_readwrite_paged(owq, 0, pagesize, OW_w_2Dpage)) {
 		return -EFAULT;
 	}
 	return 0;
@@ -142,7 +142,7 @@ static int FS_w_page(struct one_wire_query *owq)
 {
 	/* paged access */
 	size_t pagesize = 32;
-	if (OW_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_23page)) {
+	if (COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_23page)) {
 		return -EFAULT;
 	}
 	return 0;
@@ -152,7 +152,7 @@ static int FS_w_page2D(struct one_wire_query *owq)
 {
 	/* paged access */
 	size_t pagesize = 8;
-	if (OW_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_2Dpage)) {
+	if (COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_2Dpage)) {
 		return -EFAULT;
 	}
 	return 0;

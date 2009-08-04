@@ -342,7 +342,7 @@ static int FS_w_screenX(struct one_wire_query *owq)
 static int FS_r_memory(struct one_wire_query *owq)
 {
 //    if ( OW_r_memory(buf,size,offset,pn) ) { return -EFAULT ; }
-	if (OW_readwrite_paged(owq, 0, _LCD_PAGE_SIZE, OW_r_memory)) {
+	if (COMMON_readwrite_paged(owq, 0, _LCD_PAGE_SIZE, OW_r_memory)) {
 		return -EFAULT;
 	}
 	return 0;
@@ -351,7 +351,7 @@ static int FS_r_memory(struct one_wire_query *owq)
 static int FS_w_memory(struct one_wire_query *owq)
 {
 //    if ( OW_w_memory(buf,size,offset,pn) ) { return -EFAULT ; }
-	if (OW_readwrite_paged(owq, 0, _LCD_PAGE_SIZE, OW_w_memory)) {
+	if (COMMON_readwrite_paged(owq, 0, _LCD_PAGE_SIZE, OW_w_memory)) {
 		return -EFAULT;
 	}
 	return 0;

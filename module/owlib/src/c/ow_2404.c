@@ -176,7 +176,7 @@ static int FS_r_memory(struct one_wire_query *owq)
 static int FS_w_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	int error_code = OW_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem) ;
+	int error_code = COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem) ;
 
 	/* paged write */
 	if (error_code != 0) {
@@ -189,7 +189,7 @@ static int FS_w_page(struct one_wire_query *owq)
 static int FS_w_memory(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	int error_code = OW_readwrite_paged(owq, 0, pagesize, OW_w_mem) ;
+	int error_code = COMMON_readwrite_paged(owq, 0, pagesize, OW_w_mem) ;
 
 	/* paged write */
 	if (error_code != 0) {

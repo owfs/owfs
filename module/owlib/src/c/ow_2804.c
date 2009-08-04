@@ -128,7 +128,7 @@ static int FS_w_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 	/* write is "byte at a time" -- not paged */
-	if (OW_readwrite_paged(owq, 0, pagesize, OW_w_mem)) {
+	if (COMMON_readwrite_paged(owq, 0, pagesize, OW_w_mem)) {
 		return -EINVAL;
 	}
 	return 0;
@@ -148,7 +148,7 @@ static int FS_w_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 	/* write is "byte at a time" -- not paged */
-	if (OW_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem)) {
+	if (COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem)) {
 		return -EINVAL;
 	}
 	return 0;

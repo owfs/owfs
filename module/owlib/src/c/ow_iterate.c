@@ -16,7 +16,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
-int OW_readwrite_paged(struct one_wire_query *owq, size_t page, size_t pagelen, int (*readwritefunc) (BYTE *, size_t, off_t, struct parsedname *))
+int COMMON_readwrite_paged(struct one_wire_query *owq, size_t page, size_t pagelen, int (*readwritefunc) (BYTE *, size_t, off_t, struct parsedname *))
 {
 	size_t size = OWQ_size(owq);
 	off_t offset = OWQ_offset(owq) + pagelen * page;
@@ -25,13 +25,13 @@ int OW_readwrite_paged(struct one_wire_query *owq, size_t page, size_t pagelen, 
 
 	/* successive pages, will start at page start */
 	OWQ_length(owq) = size;
-    while (size > 0) {
+	while (size > 0) {
 		size_t thispage = pagelen - (offset % pagelen);
 		if (thispage > size) {
 			thispage = size;
 		}
-        if (readwritefunc(buffer_position, thispage, offset, pn)) {
-			return 1;
+		if (readwritefunc(buffer_position, thispage, offset, pn)) {
+				return 1;
 		}
 		buffer_position += thispage;
 		size -= thispage;
@@ -41,7 +41,9 @@ int OW_readwrite_paged(struct one_wire_query *owq, size_t page, size_t pagelen, 
 	return 0;
 }
 
-int OWQ_readwrite_paged(struct one_wire_query *owq, size_t page, size_t pagelen, int (*readwritefunc) (struct one_wire_query *, size_t, size_t))
+
+// The same as COMMON_readwrite_paged above except the results are nicely placed in the OWQ buffers with sizes and offsets.
+int COMMON_OWQ_readwrite_paged(struct one_wire_query *owq, size_t page, size_t pagelen, int (*readwritefunc) (struct one_wire_query *, size_t, size_t))
 {
 	size_t size = OWQ_size(owq);
 	off_t offset = OWQ_offset(owq) + pagelen * page;

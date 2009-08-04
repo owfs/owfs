@@ -115,7 +115,7 @@ static int OW_clear(struct parsedname *pn);
 static int FS_r_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 64;
-	if (OW_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_r_mem)) {
+	if (COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_r_mem)) {
 		return -EACCES;
 	}
 	return 0;
@@ -124,7 +124,7 @@ static int FS_r_page(struct one_wire_query *owq)
 static int FS_w_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 64;
-	if (OW_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem)) {
+	if (COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem)) {
 		return -EACCES;
 	}
 	return 0;
@@ -133,7 +133,7 @@ static int FS_w_page(struct one_wire_query *owq)
 static int FS_r_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 64;
-	if (OW_readwrite_paged(owq, 0, pagesize, OW_r_mem)) {
+	if (COMMON_readwrite_paged(owq, 0, pagesize, OW_r_mem)) {
 		return -EACCES;
 	}
 	return OWQ_size(owq);
@@ -142,7 +142,7 @@ static int FS_r_mem(struct one_wire_query *owq)
 static int FS_w_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 64;
-	if (OW_readwrite_paged(owq, 0, pagesize, OW_w_mem)) {
+	if (COMMON_readwrite_paged(owq, 0, pagesize, OW_w_mem)) {
 		return -EACCES;
 	}
 	return 0;
