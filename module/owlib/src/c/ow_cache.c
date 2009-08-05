@@ -180,8 +180,9 @@ static void node_show(struct tree_node *tn)
 	ctime_r(&tn->expires, b);
 	fprintf(stderr,"\tNode " SNformat
 		   " pointer=%p extension=%d length=%d start=%p expires=%s", SNvar(tn->tk.sn), tn->tk.p, tn->tk.extension, tn->dsize, tn, b ? b : "null\n");
-	for (i = 0; i < sizeof(struct tree_key); ++i)
-		printf("%.2X ", ((uint8_t *) tn)[i]);
+	for (i = 0; i < sizeof(struct tree_key); ++i) {
+		fprintf(stderr,"%.2X ", ((uint8_t *) tn)[i]);
+	}
 	fprintf(stderr,"\n");
 }
 
