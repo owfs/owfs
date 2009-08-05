@@ -128,7 +128,7 @@ struct connection_in *NewIn(const struct connection_in *in)
 		 */
 		now->ds2404_compliance = 0;
 		/* Flag first pass as need to clear all branches if DS2409 present */
-		now->buspath_bad = 1;
+		now->branch.sn[0] = BUSPATH_BAD ;
 		/* Arbitrary guess at root directory size for allocating cache blob */
 		now->last_root_devs = 10;
 	} else {

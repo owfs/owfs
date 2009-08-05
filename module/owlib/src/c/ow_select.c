@@ -18,9 +18,10 @@ $Id$
 
 static int Turnoff(const struct parsedname *pn);
 static int BUS_reselect_branch(const struct parsedname *pn) ;
-static int BUS_select_branch(const struct parsedname *pn);
 static int BUS_select_subbranch(const struct buspath *bp, const struct parsedname *pn);
 static int BUS_Skip_Rom(const struct parsedname *pn);
+static int BUS_select_opening(const struct parsedname *pn) ;
+static int BUS_select_closing(const struct parsedname *pn) ;
 
 /* DS2409 commands */
 #define _1W_STATUS_READ_WRITE  0x5A
@@ -41,27 +42,28 @@ static int BUS_Skip_Rom(const struct parsedname *pn);
    Return 0=good, else
     reset, send_data, sendback_data
  */
+
 /* Now you might wonder, why the low in BUS_select_low?
    There is a vague thought that higher level selection -- specifically
    for the DS9490 with it's intrinsic path commands might be implemented.
    Obviously not yet.
    Well, you asked
 */
+
 int BUS_select(const struct parsedname *pn)
 {
 	int ret;
 	// match Serial Number command 0x55
 	BYTE sent[9] = { _1W_MATCH_ROM, };
 	int pl = pn->pathlength;
-	//printf("SELECT WORK: pathlength=%d path=%s\n",pn->pathlength,pn->path);
-	// if declared only a single device, we can use faster SKIP ROM command
+
 	if (Globals.one_device) {
 		return BUS_Skip_Rom(pn);
 	}
 
-	if (!RootNotBranch(pn) && AdapterSupports2409(pn)) {
+	if (!RootNotBranch(pn) && !AdapterSupports2409(pn)) {
 		LEVEL_CALL("Attempt to use a branched path (DS2409 main or aux) when adapter doesn't support it.\n");
-		return -ENOTSUP;		/* cannot do branching with LINK ascii */
+		return -ENOTSUP;		/* cannot do branching with eg. LINK ascii */
 	}
 	/* Adapter-specific select routine? */
 	if (pn->selected_connection->iroutines.select) {
@@ -73,34 +75,37 @@ int BUS_select(const struct parsedname *pn)
 
 	/* Very messy, we may need to clear all the DS2409 couplers up the the current branch */
 	if (RootNotBranch(pn)) {	/* no branches, overdrive possible */
-		//printf("SELECT_LOW root path\n") ;
-		if (pn->selected_connection->branch.sn[0] || pn->selected_connection->buspath_bad) {	// need clear root branch */
+		if (pn->selected_connection->branch.sn[0]) {	// need clear root branch */
 			LEVEL_DEBUG("Clearing root branch\n");
-			BUS_select_branch(pn) ;
+			BUS_select_closing(pn) ;
 		} else {
 			LEVEL_DEBUG("Continuing root branch\n");
-			BUS_reselect_branch(pn) ;
+			//BUS_reselect_branch(pn) ;
 		}
 		pn->selected_connection->branch.sn[0] = 0x00;	// flag as no branches turned on
 		if (pn->selected_connection->speed == bus_speed_overdrive) {	// overdrive?
 			sent[0] = _1W_OVERDRIVE_MATCH_ROM;
 		}
 	} else {
-		if ( memcmp(pn->selected_connection->branch.sn, pn->bp[pl - 1].sn, 8)
-		     || pn->selected_connection->buspath_bad
-		     || pn->selected_connection->branch.branch != pn->bp[pl - 1].branch) {
+		if ( (memcmp(pn->selected_connection->branch.sn, pn->bp[pl - 1].sn, 8) != 0)
+			|| ( pn->selected_connection->branch.branch != pn->bp[pl - 1].branch) )
+		{
 			/* different path */
 			LEVEL_DEBUG("Clearing all branches to level %d\n", pn->pathlength);
-			BUS_select_branch(pn) ;
+			BUS_select_closing(pn) ;
 		} else {
 			LEVEL_DEBUG("Reselecting branch at level %d\n", pn->pathlength);
-			BUS_reselect_branch(pn) ;
+			//BUS_reselect_branch(pn) ;
 		}
 		memcpy(pn->selected_connection->branch.sn, pn->bp[pl - 1].sn, 8);
 		pn->selected_connection->branch.branch = pn->bp[pl - 1].branch;
 	}
-	pn->selected_connection->buspath_bad = 0;
 
+	if ( BUS_select_opening(pn) ) {
+		pn->selected_connection->branch.sn[0] = BUSPATH_BAD ;
+		return -EIO ;
+	}
+	
 	/* proper path now "turned on" */
 	if ((pn->selected_device != NULL)
 		&& (pn->selected_device != DeviceThermostat)) {
@@ -136,41 +141,40 @@ static int BUS_Skip_Rom(const struct parsedname *pn)
 	return BUS_transaction_nolock(t, pn);
 }
 
-/* All the railroad switches are correctly set, just isolate the last segment */
-static int BUS_select_branch(const struct parsedname *pn)
+/* All the railroad switches need to be opened in order */
+static int BUS_select_opening(const struct parsedname *pn)
 {
 	int level ;
-	int turnoff_level ;
-	if ((pn->selected_connection->Adapter == adapter_fake)
-		|| (pn->selected_connection->Adapter == adapter_mock)
-		|| (pn->selected_connection->Adapter == adapter_tester)) {
-		LEVEL_DEBUG("No sub-branches for fake adapter\n");
-		return 0;
-	}
-	
-	// step through turning off levels
-	for ( turnoff_level=0 ; turnoff_level<(int)pn->pathlength ; ++turnoff_level ) {
-		//printf("turoff_level=%d\n",turnoff_level);
 
-		if ((BUS_reset(pn))) {
-			return 1;
-		}
-		for ( level=0 ; level<turnoff_level ; ++level ) {
-			//printf("turoff_level level=%d\n",level);
-			if ( BUS_select_subbranch(&(pn->bp[level]), pn) ) {
-				return 1 ;
-			}
-		}
-		Turnoff(pn) ;
-	}
-	// now select levels
 	if ((BUS_reset(pn))) {
 		return 1;
 	}
 	for ( level=0 ; level<(int)pn->pathlength ; ++level ) {
-		//printf("level level=%d\n",level);
 		if ( BUS_select_subbranch(&(pn->bp[level]), pn) ) {
 			return 1 ;
+		}
+	}
+	return 0 ;
+}
+
+/* All need to be closed at every level */
+static int BUS_select_closing(const struct parsedname *pn)
+{
+	int turnoff_level ;
+	
+	// step through turning off levels
+	for ( turnoff_level=0 ; turnoff_level<=(int)pn->pathlength ; ++turnoff_level ) {
+		int level ;
+		if ((BUS_reset(pn))) {
+			return 1;
+		}
+		if ( Turnoff(pn) ) {
+			return 1 ;
+		}
+		for ( level=0 ; level<turnoff_level ; ++level ) {
+			if ( BUS_select_subbranch(&(pn->bp[level]), pn) ) {
+				return 1 ;
+			}
 		}
 	}
 	return 0 ;
@@ -205,7 +209,7 @@ static int BUS_select_subbranch(const struct buspath *bp, const struct parsednam
 	LEVEL_DEBUG("Selecting subbranch " SNformat "\n", SNvar(bp->sn));
 	if (BUS_transaction_nolock(t, pn) || (resp[1] != branch[bp->branch])) {
 		STAT_ADD1_BUS(e_bus_select_errors, pn->selected_connection);
-		LEVEL_CONNECT("Select subbranch error for %s on bus %s\n", pn->selected_device->readable_name, pn->selected_connection->name);
+		LEVEL_CONNECT("Select subbranch error on bus %s\n", pn->selected_connection->name);
 		return 1;
 	}
 	//printf("subbranch stop\n");

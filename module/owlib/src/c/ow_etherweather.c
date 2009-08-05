@@ -247,7 +247,7 @@ static void EtherWeather_setroutines(struct connection_in *in)
 	in->iroutines.reconnect = NULL;
 	in->iroutines.close = EtherWeather_close;
 	in->iroutines.transaction = NULL;
-	in->iroutines.flags = ADAP_FLAG_overdrive | ADAP_FLAG_dirgulp | ADAP_FLAG_2409path;
+	in->iroutines.flags = ADAP_FLAG_overdrive | ADAP_FLAG_dirgulp | ADAP_FLAG_no2409path;
 }
 
 int EtherWeather_detect(struct connection_in *in)

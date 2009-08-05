@@ -60,7 +60,7 @@ static void LINK_setroutines(struct connection_in *in)
 	in->iroutines.reconnect = NULL;
 	in->iroutines.close = COM_close;
 	in->iroutines.transaction = NULL;
-	in->iroutines.flags = ADAP_FLAG_2409path;
+	in->iroutines.flags = ADAP_FLAG_no2409path;
 	in->bundling_length = LINK_FIFO_SIZE;
 }
 

@@ -59,7 +59,7 @@ static void LINKE_setroutines(struct connection_in *in)
 	in->iroutines.reconnect = NULL;
 	in->iroutines.close = LINKE_close;
 	in->iroutines.transaction = NULL;
-	in->iroutines.flags = ADAP_FLAG_2409path;
+	in->iroutines.flags = ADAP_FLAG_no2409path;
 	in->bundling_length = LINKE_FIFO_SIZE;
 }
 

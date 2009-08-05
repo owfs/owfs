@@ -150,8 +150,8 @@ struct interface_routines {
 // Adapter supports overdrive mode
 #define ADAP_FLAG_overdrive     0x00000001
 
-// Adapter supports the DS2409 microlan hub
-#define ADAP_FLAG_2409path      0x00000010
+// Adapter doesn't support the DS2409 microlan hub
+#define ADAP_FLAG_no2409path      0x00000010
 
 // Adapter gets a direcory all ad once rather than one at a time
 #define ADAP_FLAG_dirgulp       0x00000100
@@ -162,7 +162,7 @@ struct interface_routines {
 // Adapter sutomatically performs a reset before read/writes
 #define ADAP_FLAG_dir_auto_reset 0x00002000
 
-#define AdapterSupports2409(pn)	(((pn)->selected_connection->iroutines.flags&ADAP_FLAG_2409path)!=0)
+#define AdapterSupports2409(pn)	(((pn)->selected_connection->iroutines.flags&ADAP_FLAG_no2409path)==0)
 
 #if OW_MT
 #define DEVLOCK(pn)           my_pthread_mutex_lock( &(((pn)->selected_connection)->dev_mutex) )
@@ -379,6 +379,9 @@ enum e_bus_stat {
 	e_bus_stat_last_marker
 };
 
+// flag to pn->selected_connection->branch.sn[0] to force select from root dir
+#define BUSPATH_BAD	0xFF
+
 struct connection_in {
 	struct connection_in *next;
 	int index;
@@ -418,7 +421,6 @@ struct connection_in {
 	int ds2404_compliance;
 	int ProgramAvailable;
 	size_t last_root_devs;
-	int buspath_bad;			// should the current DS2409 branches be cleared?
 	struct buspath branch;		// Branch currently selected
 	BYTE combuffer[MAX_FIFO_SIZE];
 

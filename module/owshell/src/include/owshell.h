@@ -310,11 +310,6 @@ int ServerPresence(ASCII * path);
 
 struct connection_in;
 
-/* placed in iroutines.flags */
-#define ADAP_FLAG_overdrive     0x00000001
-#define ADAP_FLAG_2409path      0x00000010
-#define ADAP_FLAG_dirgulp       0x00000100
-
 struct device_search {
 	int LastDiscrepancy;		// for search
 	int LastDevice;				// for search

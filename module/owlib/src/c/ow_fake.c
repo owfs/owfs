@@ -44,7 +44,7 @@ static void Fake_setroutines(struct connection_in *in)
 	in->iroutines.reconnect = NULL;
 	in->iroutines.close = Fake_close;
 	in->iroutines.transaction = NULL;
-	in->iroutines.flags = ADAP_FLAG_2409path;
+	in->iroutines.flags = ADAP_FLAG_no2409path;
 }
 
 static int Fake_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn)
