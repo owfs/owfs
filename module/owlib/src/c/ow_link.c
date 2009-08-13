@@ -22,18 +22,6 @@ struct LINK_id {
 	enum adapter_type Adapter;
 };
 
-// Steven Bauer added code for the VM links
-static struct LINK_id LINK_id_tbl[] = {
-	{"1.0", "LINK v1.0", adapter_LINK_10},
-	{"1.1", "LINK v1.1", adapter_LINK_11},
-	{"1.2", "LINK v1.2", adapter_LINK_12},
-	{"VM12a", "LINK OEM v1.2a", adapter_LINK_12},
-	{"VM12", "LINK OEM v1.2", adapter_LINK_12},
-    {"1.4", "LinkUSB V1.4", adapter_LINK_14},
-	{"0", "0", 0}
-};
-
-
 //static void byteprint( const BYTE * b, int size ) ;
 static void LINK_set_baud(const struct parsedname *pn) ;
 static int LINK_read(BYTE * buf, const size_t size, const struct parsedname *pn);
@@ -46,6 +34,9 @@ static int LINK_byte_bounce(const BYTE * out, BYTE * in, const struct parsedname
 static int LINK_CR(const struct parsedname *pn);
 static void LINK_setroutines(struct connection_in *in);
 static int LINK_directory(struct device_search *ds, struct dirblob *db, const struct parsedname *pn);
+
+static int LinkVersion_knownstring( const char * reported_string, struct connection_in * in ) ;
+static int LinkVersion_unknownstring( const char * reported_string, struct connection_in * in ) ;
 
 static void LINK_setroutines(struct connection_in *in)
 {
@@ -65,6 +56,56 @@ static void LINK_setroutines(struct connection_in *in)
 }
 
 #define LINK_string(x)  ((BYTE *)(x))
+
+static int LinkVersion_knownstring( const char * reported_string, struct connection_in * in )
+{
+	// Steven Bauer added code for the VM links
+	struct LINK_id LINK_id_tbl[] = {
+		{"1.0", "LINK v1.0", adapter_LINK_10},
+		{"1.1", "LINK v1.1", adapter_LINK_11},
+		{"1.2", "LINK v1.2", adapter_LINK_12},
+		{"VM12a", "LINK OEM v1.2a", adapter_LINK_12},
+		{"VM12", "LINK OEM v1.2", adapter_LINK_12},
+		{"1.3", "LinkUSB V1.3", adapter_LINK_13},
+		{"1.4", "LinkUSB V1.4", adapter_LINK_14},
+		{"0", "0", 0}
+	};
+
+	int version_index;
+
+	for (version_index = 0; LINK_id_tbl[version_index].verstring[0] != '0'; version_index++) {
+		if (strstr(reported_string, LINK_id_tbl[version_index].verstring) != NULL) {
+			LEVEL_DEBUG("Link version Found %s\n", LINK_id_tbl[version_index].verstring);
+			in->Adapter = LINK_id_tbl[version_index].Adapter;
+			in->adapter_name = LINK_id_tbl[version_index].name;
+			return 0;
+		}
+	}
+	return 1 ;
+}
+
+static int LinkVersion_unknownstring( const char * reported_string, struct connection_in * in )
+{
+	const char * version_pointer;
+	
+	// Apparently strcasestr isn't available by default, will hard code:
+	for ( version_pointer = reported_string ; version_pointer != '\0' ; ++version_pointer )  {
+		switch ( *version_pointer ) {
+			case 'l':
+			case 'L':
+				if ( strncasecmp( "link", version_pointer, 4 ) == 0 ) {
+					LEVEL_DEBUG("Link version is unrecognized: %s (but that's ok).\n", reported_string);
+					in->Adapter = adapter_LINK_other;
+					in->adapter_name = "Other LINK";
+					return 0;
+				}
+				break ;
+			default:
+				break ;
+		}
+	}
+	return 1 ;
+}
 
 /* Called from DS2480_detect, and is set up to DS9097U emulation by default */
 // bus locking done at a higher level
@@ -93,33 +134,23 @@ int LINK_detect(struct connection_in *in)
 	//COM_flush(in);
 	if (LINK_reset(&pn) == BUS_RESET_OK && LINK_write(LINK_string(" "), 1, &pn) == 0) {
 
-		BYTE version_read_in[36] = "(none)";
-		char *version_pointer = (char *) version_read_in;
+		char version_read_in[36] = "(none)";
 
 		/* read the version string */
 		LEVEL_DEBUG("Checking LINK version\n");
 
 		memset(version_read_in, 0, 36);
-		LINK_read(version_read_in, 36, &pn);	// ignore return value -- will time out, probably
-		Debug_Bytes("Read version from link", version_read_in, 36);
+		LINK_read((BYTE *)version_read_in, 36, &pn);	// ignore return value -- will time out, probably
+		Debug_Bytes("Read version from link", (BYTE*)version_read_in, 36);
 
 		COM_flush(in);
 
 		/* Now find the dot for the version parsing */
-		if (version_pointer) {
-			int version_index;
-			for (version_index = 0; LINK_id_tbl[version_index].verstring[0] != '0'; version_index++) {
-				if (strstr(version_pointer, LINK_id_tbl[version_index].verstring) != NULL) {
-					LEVEL_DEBUG("Link version Found %s\n", LINK_id_tbl[version_index].verstring);
-					in->Adapter = LINK_id_tbl[version_index].Adapter;
-					in->adapter_name = LINK_id_tbl[version_index].name;
-
-					in->baud = Globals.baud ;
-					++in->changed_bus_settings ;
-                    BUS_reset(&pn) ; // extra reset
-					return 0;
-				}
-			}
+		if ( version_read_in!=NULL && ( LinkVersion_knownstring(version_read_in,in)==0 || LinkVersion_unknownstring(version_read_in,in)==0 )) {
+			in->baud = Globals.baud ;
+			++in->changed_bus_settings ;
+			BUS_reset(&pn) ; // extra reset
+			return 0;
 		}
 	}
 	LEVEL_DEFAULT("LINK detection error\n");
@@ -226,6 +257,11 @@ static int LINK_next_both(struct device_search *ds, const struct parsedname *pn)
 	int ret = 0;
 	struct dirblob *db = (ds->search == _1W_CONDITIONAL_SEARCH_ROM) ?
 		&(pn->selected_connection->alarm) : &(pn->selected_connection->main);
+
+	//Special case for DS2409 hub, use low-level code
+	if ( pn->pathlength>0 ) {
+		return -ENOTSUP ;
+	}
 
 	if (!pn->selected_connection->AnyDevices) {
 		ds->LastDevice = 1;
@@ -421,7 +457,7 @@ static int LINK_directory(struct device_search *ds, struct dirblob *db, const st
 	//One needs to check the first character returned.
 	//If nothing is found, the link will timeout rather then have a quick
 	//return.  This happens when looking at the alarm directory and
-	//there are no alarms pending
+	//there are no alarms pendingLinkVersion_knownstring(version_read_in,in)==0
 	//So we grab the first character and check it.  If not an E leave it
 	//in the resp buffer and get the rest of the response from the LINK
 	//device

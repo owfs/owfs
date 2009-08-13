@@ -325,7 +325,9 @@ enum adapter_type {
 	adapter_LINK_10,
 	adapter_LINK_11,
 	adapter_LINK_12,
-    adapter_LINK_14,
+	adapter_LINK_13,
+	adapter_LINK_14,
+	adapter_LINK_other,
 	adapter_LINK_E,
 	adapter_DS2482_100,
 	adapter_DS2482_800,
@@ -343,7 +345,7 @@ enum adapter_type {
 enum e_reconnect {
 	reconnect_bad = -1,
 	reconnect_ok = 0,
-	reconnect_error = 3,
+	reconnect_error = 2,
 };
 
 struct device_search {
@@ -630,6 +632,7 @@ int BUS_next(struct device_search *ds, const struct parsedname *pn);
 int BUS_first_alarm(struct device_search *ds, const struct parsedname *pn);
 
 int BUS_select(const struct parsedname *pn);
+int BUS_next_both_bitbang(struct device_search *ds, const struct parsedname *pn) ;
 
 int BUS_sendout_cmd(const BYTE * cmd, const size_t len, const struct parsedname *pn);
 int BUS_send_cmd(const BYTE * cmd, const size_t len, const struct parsedname *pn);

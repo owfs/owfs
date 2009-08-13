@@ -72,6 +72,7 @@ int BUS_next(struct device_search *ds, const struct parsedname *pn)
 {
 	int ret;
 
+#if 0
 	if (!RootNotBranch(pn)		// branch directory
 		|| (pn->selected_connection->iroutines.flags & ADAP_FLAG_dir_auto_reset) == 0	// needs this flag
 		) {
@@ -79,7 +80,7 @@ int BUS_next(struct device_search *ds, const struct parsedname *pn)
 			return 1;
 		}
 	}
-
+#endif
 	ret = BUS_next_both(ds, pn);
 	LEVEL_DEBUG("return = %d | " SNformat "\n", ret, SNvar(ds->sn));
 	if (ret && ret != -ENODEV) {	// true error
@@ -98,12 +99,23 @@ int BUS_next_both(struct device_search *ds, const struct parsedname *pn)
 	if (pn->selected_connection->iroutines.next_both) {
 		return (pn->selected_connection->iroutines.next_both) (ds, pn);
 	} else {
+		return BUS_next_both_bitbang( ds, pn ) ;
+	}
+}
+
+/* Low level search routines -- bit banging */
+/* Not used by more advanced adapters */
+int BUS_next_both_bitbang(struct device_search *ds, const struct parsedname *pn)
+{
+	if ( BUS_select(pn) ) {
+		return -EIO ;
+	} else {
 		int search_direction = 0;	/* initialization just to forestall incorrect compiler warning */
 		int bit_number;
 		int last_zero = -1;
 		BYTE bits[3];
 		int ret;
-
+		
 		// initialize for search
 		// if the last call was not the last one
 		if (!pn->selected_connection->AnyDevices) {
@@ -112,7 +124,7 @@ int BUS_next_both(struct device_search *ds, const struct parsedname *pn)
 		if (ds->LastDevice) {
 			return -ENODEV;
 		}
-
+		
 		/* Appropriate search command */
 		if ((ret = BUS_send_data(&(ds->search), 1, pn))) {
 			return ret;
@@ -167,11 +179,11 @@ int BUS_next_both(struct device_search *ds, const struct parsedname *pn)
 			// check for Last discrepancy in family
 			//if (last_zero < 9) si->LastFamilyDiscrepancy = last_zero;
 			UT_setbit(ds->sn, bit_number, search_direction);
-
+			
 			// serial number search direction write bit
 			//if ( (ret=DS9097_sendback_bits(&search_direction,bits,1)) ) return ret ;
 		}						// loop until through serial number bits
-
+		
 		if (CRC8(ds->sn, 8) || (bit_number < 64) || (ds->sn[0] == 0)) {
 			/* A minor "error" */
 			return -EIO;
@@ -181,7 +193,7 @@ int BUS_next_both(struct device_search *ds, const struct parsedname *pn)
 			pn->selected_connection->ds2404_compliance = 1;
 		}
 		// if the search was successful then
-
+		
 		ds->LastDiscrepancy = last_zero;
 		//    printf("Post, lastdiscrep=%d\n",si->LastDiscrepancy) ;
 		ds->LastDevice = (last_zero < 0);

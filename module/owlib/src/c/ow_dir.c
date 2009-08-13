@@ -462,12 +462,17 @@ static int FS_realdir(void (*dirfunc) (void *, const struct parsedname *), void 
 
 	DirblobInit(&db);			// set up a fresh dirblob
 
-	BUSLOCK(pn_whole_directory);
-
+	// This is called from the reconnection routine -- we use a flag to avoid mutex doubling and deadlock
+	if ( NotReconnect(pn_whole_directory) ) {
+		BUSLOCK(pn_whole_directory);
+	}
+	
 	/* it appears that plugging in a new device sends a "presence pulse" that screws up BUS_first */
 	ret = BUS_first(&ds, pn_whole_directory) ;
 	if (ret) {
-		BUSUNLOCK(pn_whole_directory);
+		if ( NotReconnect(pn_whole_directory) ) {
+			BUSUNLOCK(pn_whole_directory);
+		}
 		if (ret == -ENODEV) {
 			if (RootNotBranch(pn_whole_directory)) {
 				pn_whole_directory->selected_connection->last_root_devs = 0;	// root dir estimated length
@@ -483,8 +488,10 @@ static int FS_realdir(void (*dirfunc) (void *, const struct parsedname *), void 
 	do {
 		char dev[PROPERTY_LENGTH_ALIAS + 1];
 
-		BUSUNLOCK(pn_whole_directory);
-
+		if ( NotReconnect(pn_whole_directory) ) {
+			BUSUNLOCK(pn_whole_directory);
+		}
+		
 		FS_devicename(dev, PROPERTY_LENGTH_ALIAS, ds.sn, pn_whole_directory);
 		ret = FS_dir_plus(dirfunc, v, flags, pn_whole_directory, dev);
 		if ( ret ) {
@@ -495,13 +502,17 @@ static int FS_realdir(void (*dirfunc) (void *, const struct parsedname *), void 
 		DirblobAdd(ds.sn, &db);
 		++devices;
 
-		BUSLOCK(pn_whole_directory);
+		if ( NotReconnect(pn_whole_directory) ) {
+			BUSLOCK(pn_whole_directory);
+		}
 	} while ((ret = BUS_next(&ds, pn_whole_directory)) == 0);
 	/* BUS still locked */
 	if (RootNotBranch(pn_whole_directory) && ret == -ENODEV) {
 		pn_whole_directory->selected_connection->last_root_devs = devices;	// root dir estimated length
 	}
-	BUSUNLOCK(pn_whole_directory);
+	if ( NotReconnect(pn_whole_directory) ) {
+		BUSUNLOCK(pn_whole_directory);
+	}
 
 	/* Add to the cache (full list as a single element */
 	if (DirblobPure(&db) && ret == -ENODEV) {
@@ -549,7 +560,6 @@ static int FS_cache2real(void (*dirfunc) (void *, const struct parsedname *), vo
 	BYTE sn[8];
 
 	/* Test to see whether we should get the directory "directly" */
-	//printf("Pre test cache for dir\n") ;
 	if (SpecifiedBus(pn_real_directory) || IsUncachedDir(pn_real_directory)
 		|| Cache_Get_Dir(&db, pn_real_directory)) {
 		//printf("FS_cache2real: didn't find anything at bus %d\n", pn_real_directory->selected_connection->index);

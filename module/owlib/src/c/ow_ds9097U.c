@@ -243,7 +243,9 @@ int DS2480_detect(struct connection_in *in)
 	case adapter_LINK_10:
 	case adapter_LINK_11:
 	case adapter_LINK_12:
-    case adapter_LINK_14:
+	case adapter_LINK_13:
+	case adapter_LINK_14:
+	case adapter_LINK_other:
 		in->adapter_name = "LINK(emulate mode)";
 		break;
 	default:
@@ -557,6 +559,10 @@ static int DS2480_next_both(struct device_search *ds, const struct parsedname *p
 	}
 	if (ds->LastDevice) {
 		return -ENODEV;
+	}
+
+	if ( BUS_select(pn) ) {
+		return -EIO ;
 	}
 
 	// build the command stream

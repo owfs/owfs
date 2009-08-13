@@ -79,7 +79,7 @@ int DirblobElements(const struct dirblob *db)
 	return db->devices;
 }
 
-int DirblobAdd(BYTE * sn, struct dirblob *db)
+int DirblobAdd(const BYTE * sn, struct dirblob *db)
 {
 	if ( db->troubled ) {
 		return -EINVAL ;

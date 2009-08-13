@@ -45,7 +45,7 @@ void DirblobInit(struct dirblob *db);
 int DirblobPure(const struct dirblob *db);
 void DirblobPoison(struct dirblob *db);
 int DirblobElements(const struct dirblob *db);
-int DirblobAdd(BYTE * sn, struct dirblob *db);
+int DirblobAdd(const BYTE * sn, struct dirblob *db);
 int DirblobGet(int dev, BYTE * sn, const struct dirblob *db);
 int DirblobSearch(BYTE * sn, const struct dirblob *db);
 int DirblobRecreate( BYTE * snlist, int size, struct dirblob *db);

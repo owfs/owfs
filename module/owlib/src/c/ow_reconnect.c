@@ -46,7 +46,7 @@ int TestConnection(const struct parsedname *pn)
 			) {
 			STAT_ADD1_BUS(e_bus_reconnect_errors, selected_connection);
 			LEVEL_DEFAULT("Failed to reconnect %s adapter!\n", selected_connection->adapter_name);
-			selected_connection->reconnect_state = reconnect_ok +1 ;
+			selected_connection->reconnect_state = reconnect_ok + 1 ;
 			// delay to slow thrashing
 			UT_delay(200);
 			ret = -EIO;

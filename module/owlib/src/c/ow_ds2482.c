@@ -516,6 +516,10 @@ static int DS2482_next_both(struct device_search *ds, const struct parsedname *p
 		return -ENODEV;
 	}
 
+	if ( BUS_select(pn) ) {
+		return -EIO ;
+	}
+
 	/* Make sure we're using the correct channel */
 	/* Appropriate search command */
 	if ((ret = BUS_send_data(&(ds->search), 1, pn))) {

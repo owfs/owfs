@@ -158,6 +158,10 @@ static int EtherWeather_next_both(struct device_search *ds, const struct parsedn
 		return -ENODEV;
 	}
 
+	if ( BUS_select(pn) ) {
+		return -EIO ;
+	}
+
 	memcpy(sendbuf, ds->sn, 8);
 	if (ds->LastDiscrepancy == -1) {
 		sendbuf[8] = 0x40;
