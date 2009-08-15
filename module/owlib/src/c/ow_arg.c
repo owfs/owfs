@@ -146,9 +146,9 @@ int ARG_Link(const char *arg)
 	}
 	in->name = owstrdup(arg);
 	// try to figure out serial vs network from name.
-	if ( strchr( '/', arg ) ) {
+	if ( strchr( arg, '/' ) ) {
 		in->busmode = bus_link ; // serial
-	} else if ( strchr( ':', arg ) ) {
+	} else if ( strchr( arg, ':' ) ) {
 		in->busmode = bus_elink ; // network
 	} else { 
 		in->busmode = bus_elink;
