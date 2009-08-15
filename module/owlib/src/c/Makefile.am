@@ -80,7 +80,6 @@ OWLIB_SOURCE = ow_dl.c           \
                ow_lib_setup.c    \
                ow_lib_stop.c     \
                ow_link.c         \
-               ow_linke.c        \
                ow_locator.c      \
                ow_locks.c        \
                ow_memblob.c      \

@@ -16,27 +16,72 @@ $Id$
 #include "ow_connection.h"
 #include "ow_codes.h"
 
+/* Telnet handling concepts from Jerry Scharf:
+
+You should request the number of bytes you expect. When you scan it,
+start looking for FF FA codes. If that shows up, see if the F0 is in the
+read buffer. If so, move the char pointer back to where the FF point was
+and ask for the rest of the string (expected - FF...F0 bytes.) If the F0
+isn't in the read buffer, start reading byte by byte into a separate
+variable looking for F0. Once you find that, then do the move the
+pointer and read the rest piece as above. Finally, don't forget to scan
+the rest of the strings for more FF FA blocks. It's most sloppy when the
+FF is the last character of the initial read buffer...
+
+You can also scan and remove the patterns FF F1 - FF F9 as these are 2
+byte commands that the transmitter can send at any time. It is also
+possible that you could see FF FB xx - FF FE xx 3 byte codes, but this
+would be in response to FF FA codes that you would send, so that seems
+unlikely. Handling these would be just the same as the FF FA codes above.
+
+*/
 struct LINK_id {
 	char verstring[36];
 	char name[30];
 	enum adapter_type Adapter;
 };
 
+// Steven Bauer added code for the VM links
+struct LINK_id LINKE_id_tbl[] = {
+	{"1.0", "LinkHub-E v1.0", adapter_LINK_E},
+	{"1.1", "LinkHub-E v1.1", adapter_LINK_E},
+	{"0", "0", 0}
+};
+
+struct LINK_id LINK_id_tbl[] = {
+	{"1.0", "LINK v1.0", adapter_LINK_10},
+	{"1.1", "LINK v1.1", adapter_LINK_11},
+	{"1.2", "LINK v1.2", adapter_LINK_12},
+	{"VM12a", "LINK OEM v1.2a", adapter_LINK_12},
+	{"VM12", "LINK OEM v1.2", adapter_LINK_12},
+	{"1.3", "LinkUSB V1.3", adapter_LINK_13},
+	{"1.4", "LinkUSB V1.4", adapter_LINK_14},
+	{"0", "0", 0}
+};
+
+#define MAX_LINK_VERSION_LENGTH	36
+
+static int LINK_serial_detect(struct parsedname * pn_minimal) ;
+static int LINK_net_detect(struct parsedname * pn_minimal) ;
+
 //static void byteprint( const BYTE * b, int size ) ;
 static void LINK_set_baud(const struct parsedname *pn) ;
-static int LINK_read(BYTE * buf, const size_t size, const struct parsedname *pn);
+static int LINK_read(BYTE * buf, const size_t size, int extra_net, const struct parsedname *pn);
 static int LINK_write(const BYTE * buf, const size_t size, const struct parsedname *pn);
 static int LINK_reset(const struct parsedname *pn);
 static int LINK_next_both(struct device_search *ds, const struct parsedname *pn);
-static int LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay, const struct parsedname *pn);
 static int LINK_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
-static int LINK_byte_bounce(const BYTE * out, BYTE * in, const struct parsedname *pn);
-static int LINK_CR(const struct parsedname *pn);
 static void LINK_setroutines(struct connection_in *in);
 static int LINK_directory(struct device_search *ds, struct dirblob *db, const struct parsedname *pn);
+static int LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay, const struct parsedname *pn);
+static void LINK_close(struct connection_in *in) ;
 
-static int LinkVersion_knownstring( const char * reported_string, struct connection_in * in ) ;
+static int LinkVersion_knownstring( const char * reported_string, struct LINK_id * tbl, struct connection_in * in ) ;
 static int LinkVersion_unknownstring( const char * reported_string, struct connection_in * in ) ;
+static void LINK_flush( struct connection_in * in ) ;
+
+//static void byteprint( const BYTE * b, int size ) ;
+static void LINKE_setroutines(struct connection_in *in);
 
 static void LINK_setroutines(struct connection_in *in)
 {
@@ -49,39 +94,46 @@ static void LINK_setroutines(struct connection_in *in)
 //    in->iroutines.sendback_bits = ;
 	in->iroutines.select = NULL;
 	in->iroutines.reconnect = NULL;
-	in->iroutines.close = COM_close;
+	in->iroutines.close = LINK_close;
 	in->iroutines.transaction = NULL;
 	in->iroutines.flags = ADAP_FLAG_no2409path;
 	in->bundling_length = LINK_FIFO_SIZE;
 }
 
+static void LINKE_setroutines(struct connection_in *in)
+{
+	in->iroutines.detect = LINK_detect;
+	in->iroutines.reset = LINK_reset;
+	in->iroutines.next_both = LINK_next_both;
+	in->iroutines.PowerByte = LINK_PowerByte;
+	//    in->iroutines.ProgramPulse = ;
+	in->iroutines.sendback_data = LINK_sendback_data;
+	//    in->iroutines.sendback_bits = ;
+	in->iroutines.select = NULL;
+	in->iroutines.reconnect = NULL;
+	in->iroutines.close = LINK_close;
+	in->iroutines.transaction = NULL;
+	in->iroutines.flags = ADAP_FLAG_no2409path;
+	in->bundling_length = LINKE_FIFO_SIZE;
+}
+
+
 #define LINK_string(x)  ((BYTE *)(x))
 
-static int LinkVersion_knownstring( const char * reported_string, struct connection_in * in )
+static int LinkVersion_knownstring( const char * reported_string, struct LINK_id * tbl, struct connection_in * in )
 {
-	// Steven Bauer added code for the VM links
-	struct LINK_id LINK_id_tbl[] = {
-		{"1.0", "LINK v1.0", adapter_LINK_10},
-		{"1.1", "LINK v1.1", adapter_LINK_11},
-		{"1.2", "LINK v1.2", adapter_LINK_12},
-		{"VM12a", "LINK OEM v1.2a", adapter_LINK_12},
-		{"VM12", "LINK OEM v1.2", adapter_LINK_12},
-		{"1.3", "LinkUSB V1.3", adapter_LINK_13},
-		{"1.4", "LinkUSB V1.4", adapter_LINK_14},
-		{"0", "0", 0}
-	};
-
 	int version_index;
 
-	for (version_index = 0; LINK_id_tbl[version_index].verstring[0] != '0'; version_index++) {
-		if (strstr(reported_string, LINK_id_tbl[version_index].verstring) != NULL) {
-			LEVEL_DEBUG("Link version Found %s\n", LINK_id_tbl[version_index].verstring);
-			in->Adapter = LINK_id_tbl[version_index].Adapter;
-			in->adapter_name = LINK_id_tbl[version_index].name;
+	// loop through LINK version string table looking for a match
+	for (version_index = 0; tbl[version_index].verstring[0] != '0'; version_index++) {
+		if (strstr(reported_string, tbl[version_index].verstring) != NULL) {
+			LEVEL_DEBUG("Link version Found %s\n", tbl[version_index].verstring);
+			in->Adapter = tbl[version_index].Adapter;
+			in->adapter_name = tbl[version_index].name;
 			return 0;
 		}
 	}
-	return 1 ;
+	return LinkVersion_unknownstring(reported_string,in) ;
 }
 
 static int LinkVersion_unknownstring( const char * reported_string, struct connection_in * in )
@@ -107,10 +159,7 @@ static int LinkVersion_unknownstring( const char * reported_string, struct conne
 	return 1 ;
 }
 
-/* Called from DS2480_detect, and is set up to DS9097U emulation by default */
 // bus locking done at a higher level
-// Looks up the device by comparing the version strings to the ones in the
-// LINK_id_table
 int LINK_detect(struct connection_in *in)
 {
 	struct parsedname pn;
@@ -118,38 +167,105 @@ int LINK_detect(struct connection_in *in)
 	FS_ParsedName(NULL, &pn);	// minimal parsename -- no destroy needed
 	pn.selected_connection = in;
 
+	if (in->name == NULL) {
+		return -ENODEV;
+	}
+
+	switch( in->busmode ) {
+		case bus_elink:
+			return LINK_net_detect( &pn ) ;
+		case bus_link:
+			return LINK_serial_detect(&pn) ;
+		default:
+			return -ENODEV ;
+	}
+}
+
+static int LINK_serial_detect(struct parsedname * pn_minimal)
+{
+	struct connection_in * in =  pn_minimal->selected_connection ;
+	
 	/* Set up low-level routines */
 	LINK_setroutines(in);
-
-
+	
 	/* Open the com port */
 	if (COM_open(in)) {
 		return -ENODEV;
 	}
-
+	
 	COM_break( in ) ;
 	COM_slurp( in->file_descriptor ) ;
 	UT_delay(100) ; // based on http://morpheus.wcf.net/phpbb2/viewtopic.php?t=89&sid=3ab680415917a0ebb1ef020bdc6903ad
-
+	
 	//COM_flush(in);
-	if (LINK_reset(&pn) == BUS_RESET_OK && LINK_write(LINK_string(" "), 1, &pn) == 0) {
+	if (LINK_reset(pn_minimal) == BUS_RESET_OK && LINK_write(LINK_string(" "), 1, pn_minimal) == 0) {
+		
+		char version_read_in[MAX_LINK_VERSION_LENGTH] ;
+		memset(version_read_in, 0, MAX_LINK_VERSION_LENGTH);
+		
+		/* read the version string */
+		LEVEL_DEBUG("Checking LINK version\n");
+		
+		LINK_read((BYTE *)version_read_in, MAX_LINK_VERSION_LENGTH, 0, pn_minimal);	// ignore return value -- will time out, probably
+		Debug_Bytes("Read version from link", (BYTE*)version_read_in, MAX_LINK_VERSION_LENGTH);
+		
+		LINK_flush(in);
+		
+		/* Now find the dot for the version parsing */
+		if ( version_read_in!=NULL && LinkVersion_knownstring(version_read_in,LINK_id_tbl,in)==0 ) {
+			in->baud = Globals.baud ;
+			++in->changed_bus_settings ;
+			BUS_reset(pn_minimal) ; // extra reset
+			return 0;
+		}
+	}
+	LEVEL_DEFAULT("LINK detection error\n");
+	return -ENODEV;
+}
 
-		char version_read_in[36] = "(none)";
+static int LINK_net_detect(struct parsedname * pn_minimal)
+{
+	struct connection_in * in =  pn_minimal->selected_connection ;
+	
+	LINKE_setroutines(in);
+	
+	if (ClientAddr(in->name, in)) {
+		return -ENODEV;
+	}
+	if ((in->file_descriptor = ClientConnect(in)) < 0) {
+		return -EIO;
+	}
+	
+	in->default_discard = 0 ;
 
+	if (1) {
+		BYTE data[1] ;
+		size_t read_size ;
+		struct timeval tvnetfirst = { Globals.timeout_network, 0, };
+		tcp_read(in->file_descriptor, data, 1, &tvnetfirst, &read_size ) ;
+	}
+	LEVEL_DEBUG("Slurp in initial bytes\n");
+	TCP_slurp( in->file_descriptor ) ;
+	LINK_flush(in);
+
+	if (LINK_write(LINK_string(" "), 1, pn_minimal) == 0) {
+		char version_read_in[MAX_LINK_VERSION_LENGTH] ;
+		int version_index ;
+		memset(version_read_in, 0, MAX_LINK_VERSION_LENGTH);
+		
 		/* read the version string */
 		LEVEL_DEBUG("Checking LINK version\n");
 
-		memset(version_read_in, 0, 36);
-		LINK_read((BYTE *)version_read_in, 36, &pn);	// ignore return value -- will time out, probably
-		Debug_Bytes("Read version from link", (BYTE*)version_read_in, 36);
-
-		COM_flush(in);
-
+		// need to read 1 char at a time to get a short string
+		for ( version_index=0 ; version_index<MAX_LINK_VERSION_LENGTH ; ++version_index ) {
+			if ( LINK_read((BYTE *)&version_read_in[version_index], 1, 0, pn_minimal) ) {
+				break ;	// ignore return value -- will time out, probably
+			}
+		}
+		Debug_Bytes("Read version from link", (BYTE*)version_read_in, MAX_LINK_VERSION_LENGTH);
 		/* Now find the dot for the version parsing */
-		if ( version_read_in!=NULL && ( LinkVersion_knownstring(version_read_in,in)==0 || LinkVersion_unknownstring(version_read_in,in)==0 )) {
-			in->baud = Globals.baud ;
-			++in->changed_bus_settings ;
-			BUS_reset(&pn) ; // extra reset
+		if ( version_read_in!=NULL && LinkVersion_knownstring(version_read_in,LINKE_id_tbl,in)==0 ) {
+			BUS_reset(pn_minimal) ; // extra reset
 			return 0;
 		}
 	}
@@ -160,6 +276,10 @@ int LINK_detect(struct connection_in *in)
 static void LINK_set_baud(const struct parsedname *pn)
 {
 	char * speed_code ;
+
+	if ( pn->selected_connection->busmode == bus_elink ) {
+		return ;
+	}
 
 	COM_BaudRestrict( &(pn->selected_connection->baud), B9600, B19200, B38400, B57600, 0 ) ;
 
@@ -184,7 +304,7 @@ static void LINK_set_baud(const struct parsedname *pn)
 	}
 
 	LEVEL_DEBUG("LINK change baud string <%s>\n",speed_code);
-	COM_flush(pn->selected_connection);
+	LINK_flush(pn->selected_connection);
 	if ( LINK_write(LINK_string(speed_code), 1, pn) ) {
 		LEVEL_DEBUG("LINK change baud error -- will return to 9600\n");
 		pn->selected_connection->baud = B9600 ;
@@ -194,7 +314,7 @@ static void LINK_set_baud(const struct parsedname *pn)
 
 
 	// Send configuration change
-	COM_flush(pn->selected_connection);
+	LINK_flush(pn->selected_connection);
 
 	// Change OS view of rate
 	UT_delay(5);
@@ -205,21 +325,32 @@ static void LINK_set_baud(const struct parsedname *pn)
 	return ;
 }
 
+static void LINK_flush( struct connection_in * in )
+{
+	switch( in->busmode ) {
+		case bus_elink:
+			tcp_read_flush(in->file_descriptor) ;
+			break ;
+		default:
+			COM_flush(in) ;
+			break ;
+	}
+}
 
 static int LINK_reset(const struct parsedname *pn)
 {
-	BYTE resp[5];
+	BYTE resp[3+1];
 	int ret;
 
 	if (pn->selected_connection->changed_bus_settings > 0) {
 		--pn->selected_connection->changed_bus_settings ;
 		LINK_set_baud(pn);	// reset paramters
 	} else {
-		COM_flush(pn->selected_connection);
+		LINK_flush(pn->selected_connection);
 	}
 
 	//Response is 3 bytes:  1 byte for code + \r\n
-	if (LINK_write(LINK_string("r"), 1, pn) || LINK_read(resp, 3, pn)) {
+	if (LINK_write(LINK_string("r"), 1, pn) || LINK_read(resp, 3, 1, pn)) {
 		LEVEL_DEBUG("Error resetting LINK device\n");
 		return -EIO;
 	}
@@ -231,7 +362,6 @@ static int LINK_reset(const struct parsedname *pn)
 		ret = BUS_RESET_OK;
 		pn->selected_connection->AnyDevices = 1;
 		break;
-
 	case 'N':
 		LEVEL_DEBUG("ok, devices Not present\n");
 		ret = BUS_RESET_OK;
@@ -263,14 +393,14 @@ static int LINK_next_both(struct device_search *ds, const struct parsedname *pn)
 		return -ENOTSUP ;
 	}
 
-	if (!pn->selected_connection->AnyDevices) {
-		ds->LastDevice = 1;
-	}
+//	if (!pn->selected_connection->AnyDevices) {
+//		ds->LastDevice = 1;
+//	}
 	if (ds->LastDevice) {
 		return -ENODEV;
 	}
 
-	COM_flush(pn->selected_connection);
+	LINK_flush(pn->selected_connection);
 
 	if (ds->index == -1) {
 		if (LINK_directory(ds, db, pn)) {
@@ -309,65 +439,25 @@ static int LINK_next_both(struct device_search *ds, const struct parsedname *pn)
           -errno = read error
           -EINTR = timeout
  */
-static int LINK_read(BYTE * buf, const size_t size, const struct parsedname *pn)
+static int LINK_read(BYTE * buf, const size_t size, int extra_net_byte, const struct parsedname *pn)
 {
-	return COM_read( buf, size, pn->selected_connection ) ;
+	struct connection_in * in = pn->selected_connection ;
+	switch ( in->busmode ) {
+		case bus_elink:
+			// Only need to add an extra byte sometimes
+			return telnet_read( buf, size+extra_net_byte, pn ) ;
+		default:
+			return COM_read( buf, size, in ) ;
+	}
 }
 
-//
 // Write a string to the serial port
-/* return 0=good,
-          -EIO = error
-   Special processing for the remote hub (add 0x0A)
- */
+// return 0=good,
+//          -EIO = error
+//Special processing for the remote hub (add 0x0A)
 static int LINK_write(const BYTE * buf, const size_t size, const struct parsedname *pn)
 {
 	return COM_write( buf, size, pn->selected_connection ) ;
-}
-
-static int LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay, const struct parsedname *pn)
-{
-
-	if (LINK_write(LINK_string("p"), 1, pn)
-		|| LINK_byte_bounce(&data, resp, pn)) {
-		return -EIO;			// send just the <CR>
-	}
-	// delay
-	UT_delay(delay);
-
-	// flush the buffers
-	return LINK_CR(pn);			// send just the <CR>
-}
-
-// LINK_sendback_data
-//  Send data and return response block
-/* return 0=good
- */
-static int LINK_sendback_data(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
-{
-	size_t i;
-	size_t left;
-	BYTE *buf = pn->selected_connection->combuffer;
-
-	if (size == 0) {
-		return 0;
-	}
-	if (LINK_write(LINK_string("b"), 1, pn)) {
-		LEVEL_DEBUG("error sending b\n");
-		return -EIO;
-	}
-//    for ( i=0; ret==0 && i<size ; ++i ) ret = LINK_byte_bounce( &data[i], &resp[i], pn ) ;
-	for (left = size; left;) {
-		i = (left > 16) ? 16 : left;
-//        printf(">> size=%d, left=%d, i=%d\n",size,left,i);
-		bytes2string((char *) buf, &data[size - left], i);
-		if (LINK_write(buf, i << 1, pn) || LINK_read(buf, i << 1, pn)) {
-			return -EIO;
-		}
-		string2bytes((char *) buf, &resp[size - left], i);
-		left -= i;
-	}
-	return LINK_CR(pn);
 }
 
 /*
@@ -377,28 +467,6 @@ static void byteprint( const BYTE * b, int size ) {
     if ( size ) { printf("\n") ; }
 }
 */
-
-static int LINK_byte_bounce(const BYTE * out, BYTE * in, const struct parsedname *pn)
-{
-	BYTE data[2];
-
-	num2string((char *) data, out[0]);
-	if (LINK_write(data, 2, pn) || LINK_read(data, 2, pn)) {
-		return -EIO;
-	}
-	in[0] = string2num((char *) data);
-	return 0;
-}
-
-static int LINK_CR(const struct parsedname *pn)
-{
-	BYTE data[3];
-	if (LINK_write(LINK_string("\r"), 1, pn) || LINK_read(data, 2, pn)) {
-		return -EIO;
-	}
-	LEVEL_DEBUG("eturn 0\n");
-	return 0;
-}
 
 /************************************************************************/
 /*									                                     */
@@ -414,7 +482,6 @@ static int LINK_CR(const struct parsedname *pn)
 static int LINK_directory(struct device_search *ds, struct dirblob *db, const struct parsedname *pn)
 {
 	char resp[21];
-	BYTE sn[8];
 	int ret;
 
 	DirblobClear(db);
@@ -429,10 +496,10 @@ static int LINK_directory(struct device_search *ds, struct dirblob *db, const st
 		if ((ret = LINK_write(LINK_string("tEC"), 3, pn))) {
 			return ret;
 		}
-		if ((ret = (LINK_read(LINK_string(resp), 5, pn)))) {
+		if ((ret = (LINK_read(LINK_string(resp), 5, 1, pn)))) {
 			return ret;
 		}
-		if (strncmp(resp, ",EC", 3) != 0) {
+		if (strstr(resp, "EC") == NULL) {
 			LEVEL_DEBUG("Did not change to conditional search");
 			return -EIO;
 		}
@@ -441,10 +508,10 @@ static int LINK_directory(struct device_search *ds, struct dirblob *db, const st
 		if ((ret = LINK_write(LINK_string("tF0"), 3, pn))) {
 			return ret;
 		}
-		if ((ret = (LINK_read(LINK_string(resp), 5, pn)))) {
+		if ((ret = (LINK_read(LINK_string(resp), 5, 1, pn)))) {
 			return ret;
 		}
-		if (strncmp(resp, ",F0", 3) != 0) {
+		if (strstr(resp, "F0") == NULL) {
 			LEVEL_DEBUG("Did not change to normal search");
 			return -EIO;
 		}
@@ -457,23 +524,31 @@ static int LINK_directory(struct device_search *ds, struct dirblob *db, const st
 	//One needs to check the first character returned.
 	//If nothing is found, the link will timeout rather then have a quick
 	//return.  This happens when looking at the alarm directory and
-	//there are no alarms pendingLinkVersion_knownstring(version_read_in,in)==0
+	//there are no alarms pending
 	//So we grab the first character and check it.  If not an E leave it
 	//in the resp buffer and get the rest of the response from the LINK
 	//device
 
-	if ((ret = LINK_read(LINK_string(resp), 1, pn))) {
+	if ((ret = LINK_read(LINK_string(resp), 1, 0, pn))) {
 		return ret;
 	}
-
-	if (resp[0] == 'E') {
-		if (ds->search == _1W_CONDITIONAL_SEARCH_ROM) {
+	
+	switch (resp[0]) {
+		case 'E':
 			LEVEL_DEBUG("LINK returned E: No devices in alarm\n");
-			return 0;
-		}
+			// pass through
+		case 'N':
+			// remove extra 2 bytes
+			LEVEL_DEBUG("LINK returned E or N: Empty bus\n");
+			if ((ret = LINK_read(LINK_string(&resp[1]), 2, 1, pn))) {
+				return ret;
+			}
+			return 0 ;
+		default:
+			break ;
 	}
-
-	if ((ret = LINK_read(LINK_string((resp + 1)), 19, pn))) {
+	
+	if ((ret = LINK_read(LINK_string(&resp[1]), 19, 1, pn))) {
 		return ret;
 	}
 
@@ -485,12 +560,6 @@ static int LINK_directory(struct device_search *ds, struct dirblob *db, const st
 			pn->selected_connection->AnyDevices = 1;
 		}
 		break;
-	case 'N':
-		LEVEL_DEBUG("LINK returned N: Empty bus\n");
-		if (ds->search != _1W_CONDITIONAL_SEARCH_ROM) {
-			pn->selected_connection->AnyDevices = 0;
-		}
-	case 'X':
 	default:
 		LEVEL_DEBUG("LINK_search default case\n");
 		return -EIO;
@@ -498,6 +567,8 @@ static int LINK_directory(struct device_search *ds, struct dirblob *db, const st
 
 	/* Join the loop after the first query -- subsequent handled differently */
 	while ((resp[0] == '+') || (resp[0] == '-')) {
+		BYTE sn[8];
+
 		sn[7] = string2num(&resp[2]);
 		sn[6] = string2num(&resp[4]);
 		sn[5] = string2num(&resp[6]);
@@ -524,7 +595,7 @@ static int LINK_directory(struct device_search *ds, struct dirblob *db, const st
 			if ((ret = LINK_write(LINK_string("n"), 1, pn))) {
 				return ret;
 			}
-			if ((ret = LINK_read(LINK_string((resp)), 20, pn))) {
+			if ((ret = LINK_read(LINK_string((resp)), 20, 1, pn))) {
 				return ret;
 			}
 			break;
@@ -533,6 +604,76 @@ static int LINK_directory(struct device_search *ds, struct dirblob *db, const st
 		default:
 			break;
 		}
+	}
+
+	return 0;
+}
+
+static void LINK_close(struct connection_in *in)
+{
+	switch( in->busmode ) {
+		case bus_elink:
+			Test_and_Close( &(in->file_descriptor) ) ;
+			FreeClientAddr(in);
+			break ;
+		case bus_link:
+			COM_close(in) ;
+			break ;
+		default:
+			break ;
+	}
+}
+
+
+static int LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay, const struct parsedname *pn)
+{
+	ASCII buf[3] = "pxx";
+	BYTE discard[3] ;
+	
+	num2string(&buf[1], data);
+	
+	if (LINK_write(LINK_string(buf), 3, pn) || LINK_read(LINK_string(buf), 2, 0, pn)) {
+		return -EIO;			// send just the <CR>
+	}
+	
+	resp[0] = string2num(buf);
+	
+	// delay
+	UT_delay(delay);
+	
+	// flush the buffers
+	if (LINK_write(LINK_string("\r"), 1, pn) || LINK_read(discard, 2, 1, pn)) {
+		return -EIO;
+	}
+	return 0 ;
+}
+
+//  _sendback_data
+//  Send data and return response block
+//  return 0=good
+// Assume buffer length (combuffer) is 1 + 32*2 + 1
+static int LINK_sendback_data(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
+{
+	size_t left = size;
+	BYTE buf[66] ;
+	
+	if (size == 0) {
+		return 0;
+	}
+	
+	Debug_Bytes( "ELINK sendback send", data, size) ;
+	while (left > 0) {
+		size_t this_length = (left > 32) ? 32 : left;
+		size_t total_length = 2 * this_length + 2;
+		buf[0] = 'b';			//put in byte mode
+		//        printf(">> size=%d, left=%d, i=%d\n",size,left,i);
+		bytes2string((char *) &buf[1], &data[size - left], this_length);
+		buf[total_length - 1] = '\r';	// take out of byte mode
+		if (LINK_write(buf, total_length, pn) || LINK_read(buf, total_length, 1, pn)) {
+			return -EIO;
+		}
+		string2bytes((char *) buf, &resp[size - left], this_length);
+		left -= this_length;
 	}
 	return 0;
 }
