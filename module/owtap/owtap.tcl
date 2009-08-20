@@ -1300,7 +1300,7 @@ proc DetailFlags { flags } {
         5 {set F " fic"}
         default {set F " ?format"}
     }
-    return $T$F[expr {$flags&0x04?" persist":""}][expr {$flags&0x02?" bus":""}][expr {$flags&0x01?" cache":""}]
+    return $T$F[expr {$flags&0x10?" safe":""}][expr {$flags&0x08?" alias":""}][expr {$flags&0x04?" persist":""}][expr {$flags&0x02?" bus":""}][expr {$flags&0x01?" cache":""}]
 }
 
 proc WebResponse { sock } {
