@@ -54,8 +54,8 @@ enum ds2482_address {
 
 static enum ds2482_address Parse_i2c_address( struct connection_in * in ) ;
 static int DS2482_detect_bus(enum ds2482_address chip_num, struct connection_in *in) ;
-static int DS2482_detect_sys(enum ds2482_address chip_num, struct connection_in *in) ;
-static int DS2482_detect_dir(enum ds2482_address chip_num, struct connection_in *in) ;
+static int DS2482_detect_sys( int any, enum ds2482_address chip_num, struct connection_in *in) ;
+static int DS2482_detect_dir( int any, enum ds2482_address chip_num, struct connection_in *in) ;
 static int DS2482_detect_single(int lowindex, int highindex, struct connection_in *in) ;
 static int DS2482_next_both(struct device_search *ds, const struct parsedname *pn);
 static int DS2482_triple(BYTE * bits, int direction, int file_descriptor);
@@ -190,34 +190,35 @@ int DS2482_detect(struct connection_in *in)
 		return DS2482_detect_bus( chip_num, in ) ;
 	}
 
-	switch ( DS2482_detect_sys( chip_num, in ) ) {
-		case -ENOTSUP:
-			return DS2482_detect_dir( chip_num, in ) ? -ENODEV : 0 ;
-		case 0:
-			return -ENODEV ;
-		default:
-			return 0 ;
+	if ( DS2482_detect_sys( any, chip_num, in ) == 0 ) {
+		// No adapters found!
+		return -ENODEV ;
 	}
+
+	return 0 ;
 }
 
+#define SYSFS_I2C_Path "/sys/class/i2c-adapter"
+
 /* Use sysfs to find i2c adapters */
-/* cycle through /sys/class/i2c-adapter */
+/* cycle through SYSFS_I2C_Path */
 /* returns -1 -- no directory could be opened
    else found -- number of directories found */
-static int DS2482_detect_sys(enum ds2482_address chip_num, struct connection_in *in)
+// any is flag -- either find the first, or ALL
+static int DS2482_detect_sys( int any, enum ds2482_address chip_num, struct connection_in *in_original)
 {
 	DIR * i2c_list_dir ;
 	struct dirent * i2c_bus ;
 	int found = 0 ;
-	int any = ( in->name[0] == 0x00 ) ; // no adapter specified, so use any (the first good one )
-	struct connection_in * all_in = in ;
+	struct connection_in * in_current = in_original ;
 
 	// We'll look in this directory for available i2c adapters.
 	// This may be linux 2.6 specific
-	i2c_list_dir = opendir( "/sys/class/i2c-adapter" ) ;
+	i2c_list_dir = opendir( SYSFS_I2C_Path ) ;
 	if ( i2c_list_dir == NULL ) {
-		ERROR_CONNECT( "Cannot open /sys/class/i2c-adapter to find available i2c devices" ) ;
-		return -ENOTSUP ; // flag that the sysfs method doesn't work.
+		ERROR_CONNECT( "Cannot open %d to find available i2c devices",SYSFS_I2C_Path ) ;
+		// Use the cruder approach of trying all possible numbers
+		return DS2482_detect_dir( any, chip_num, in_original ) ;
 	}
 
 	/* cycle through entries in /sys/class/i2c-adapter */
@@ -228,15 +229,15 @@ static int DS2482_detect_sys(enum ds2482_address chip_num, struct connection_in 
 		}
 
 		// Change name to real i2c bus name
-		if ( in->name ) {
-			owfree( in->name ) ;
+		if ( in_current->name ) {
+			owfree( in_current->name ) ;
 		}
-		in->name = new_device ;
-		strcpy( in->name, "/dev/" ) ;
-		strcat( in->name, i2c_bus->d_name ) ;
+		in_current->name = new_device ;
+		strcpy( in_current->name, "/dev/" ) ;
+		strcat( in_current->name, i2c_bus->d_name ) ;
 
 		// Now look for the ds2482's
-		if ( DS2482_detect_bus( chip_num, all_in )!=0 ) {
+		if ( DS2482_detect_bus( chip_num, in_current )!=0 ) {
 			continue ; // none found on this i2c bus
 		}
 
@@ -247,8 +248,8 @@ static int DS2482_detect_sys(enum ds2482_address chip_num, struct connection_in 
 		}
 
 		// ALL? then set up a new connection_in slot for the next one
-		all_in = NewIn(all_in) ;
-		if ( all_in == NULL ) {
+		in_current = NewIn(in_current) ;
+		if ( in_current == NULL ) {
 			break ;
 		}
 	}
@@ -261,11 +262,11 @@ static int DS2482_detect_sys(enum ds2482_address chip_num, struct connection_in 
 /* cycle through /dev/i2c-n */
 /* returns -1 -- no direcory could be opened
    else found -- number of directories found */
-static int DS2482_detect_dir(enum ds2482_address chip_num, struct connection_in *in)
+// any is flag -- either find the first, or ALL
+static int DS2482_detect_dir( int any, enum ds2482_address chip_num, struct connection_in *in_original)
 {
 	int found = 0 ;
-	int any = ( in->name[0] == 0x00 ) ; // no adapter specified, so use any (the first good one )
-	struct connection_in * all_in = in ;
+	struct connection_in * in_current = in_original ;
 	int bus = 0 ;
 	int sn_ret ;
 
@@ -289,11 +290,13 @@ static int DS2482_detect_dir(enum ds2482_address chip_num, struct connection_in 
 		}
 
 		// Change name to real i2c bus name
-		owfree( in->name ) ;
-		in->name = new_device ;
+		if ( in_current ) {
+			owfree( in_current->name ) ;
+		}
+		in_current->name = new_device ;
 
 		// Now look for the ds2482's
-		if ( DS2482_detect_bus( chip_num, all_in )!=0 ) {
+		if ( DS2482_detect_bus( chip_num, in_current )!=0 ) {
 			continue ;
 		}
 
@@ -304,8 +307,8 @@ static int DS2482_detect_dir(enum ds2482_address chip_num, struct connection_in 
 		}
 
 		// ALL? then set up a new connection_in slot
-		all_in = NewIn(all_in) ;
-		if ( all_in == NULL ) {
+		in_current = NewIn(in_current) ;
+		if ( in_current == NULL ) {
 			break ;
 		}
 	}
@@ -315,20 +318,20 @@ static int DS2482_detect_dir(enum ds2482_address chip_num, struct connection_in 
 
 /* Try to see if there is a DS2482 device on the specified i2c bus */
 /* Includes  a fix from Pascal Baerten */
-static int DS2482_detect_bus(enum ds2482_address chip_num, struct connection_in *in)
+static int DS2482_detect_bus(enum ds2482_address chip_num, struct connection_in * in_original)
 {
 	switch (chip_num) {
 		case ds2482_any:
 			// usual case, find the first adapter
-			return DS2482_detect_single( 0, 7, in ) ;
+			return DS2482_detect_single( 0, 7, in_original ) ;
 		case ds2482_all:
 			// Look through all the possible i2c addresses
 			{
 				int start_chip = 0 ;
-				struct connection_in * all_in = in ;
+				struct connection_in * all_in = in_original ;
 				do {
 					if ( DS2482_detect_single( start_chip, 7, all_in ) != 0 ) {
-						if ( in == all_in ) { //first time
+						if ( in_original == all_in ) { //first time
 							return -ENODEV ;
 						}
 						LEVEL_DEBUG("Cleaning excess allocated i2c structure\n");
@@ -348,7 +351,7 @@ static int DS2482_detect_bus(enum ds2482_address chip_num, struct connection_in 
 			break ;
 		default:
 			// specific i2c address
-			return DS2482_detect_single( chip_num, chip_num, in ) ;
+			return DS2482_detect_single( chip_num, chip_num, in_original ) ;
 	}
 }
 
