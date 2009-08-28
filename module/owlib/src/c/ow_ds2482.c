@@ -378,7 +378,7 @@ static int DS2482_detect_single(int lowindex, int highindex, struct connection_i
 			ERROR_CONNECT("Cound not set trial i2c address to %.2X\n", test_address[i]);
 		} else {
 			BYTE c;
-			LEVEL_CONNECT("Found an i2c device at %s address %d\n", in->name, test_address[i]);
+			LEVEL_CONNECT("Found an i2c device at %s address %.2X\n", in->name, test_address[i]);
 			/* Provisional setup as a DS2482-100 ( 1 channel ) */
 			in->file_descriptor = file_descriptor;
 			in->connin.i2c.index = 0;
@@ -406,10 +406,10 @@ static int DS2482_detect_single(int lowindex, int highindex, struct connection_i
 				|| DS2482_readstatus(&c, file_descriptor, DS2482_Chip_reset_usec)	// pause .5 usec then read status
 				|| (c != (DS2482_REG_STS_LL | DS2482_REG_STS_RST))	// make sure status is properly set
 				) {
-				LEVEL_CONNECT("i2c device at %s address %d cannot be reset. Not a DS2482.\n", in->name, test_address[i]);
+				LEVEL_CONNECT("i2c device at %s address %.2X cannot be reset. Not a DS2482.\n", in->name, test_address[i]);
 				continue;
 			}
-			LEVEL_CONNECT("i2c device at %s address %d appears to be DS2482-x00\n", in->name, test_address[i]);
+			LEVEL_CONNECT("i2c device at %s address %.2X appears to be DS2482-x00\n", in->name, test_address[i]);
 			in->connin.i2c.configchip = 0x00;	// default configuration register after RESET
 			// Note, only the lower nibble of the device config stored
 
