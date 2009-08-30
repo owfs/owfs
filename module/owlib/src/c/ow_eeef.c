@@ -42,6 +42,7 @@ $Id$
 #include <config.h>
 #include "owfs_config.h"
 #include "ow_eeef.h"
+#include <math.h>
 
 /* ------- Prototypes ----------- */
 
@@ -68,28 +69,28 @@ struct filetype HobbyBoards_EE[] = {
     {"in_case", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, FS_r_in_case, FS_w_in_case, {v:NULL},},
     {"version", 4, NULL, ft_ascii, fc_stable, FS_version, NO_WRITE_FUNCTION, {v:NULL},},
     {"type_number", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_stable, FS_type_number, NO_WRITE_FUNCTION, {v:NULL},},
-    {"type", PROPERTY_LENGTH_TYPE, NULL, ft_ASCII, fc_LINK, FS_localtype, NO_WRITE_FUNCTION, {v:NULL},},
+    {"type", PROPERTY_LENGTH_TYPE, NULL, ft_ascii, fc_link, FS_localtype, NO_WRITE_FUNCTION, {v:NULL},},
     {"UVI", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
     {"UVI/UVI", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_volatile, FS_UVI, NO_WRITE_FUNCTION, {v:NULL},},
     {"UVI/valid", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_link, FS_UVI_valid, NO_WRITE_FUNCTION, {v:NULL},},
     {"UVI/UVI_offset", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_stable, FS_r_UVI_offset, FS_w_UVI_offset, {v:NULL},},
 };
 
-DeviceEntry(EE, Hobby_Boards_generic);
+DeviceEntry(EE, HobbyBoards_EE);
 
 struct filetype HobbyBoards_EF[] = {
     F_STANDARD_NO_TYPE,
     {"in_case", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, FS_r_in_case, FS_w_in_case, {v:NULL},},
-    {"version", 4, NULL, ft_ascii, fc_stable, FS_version, NO_WRITE_FUNCTION, {v:NULL},},
+    {"version", 5, NULL, ft_ascii, fc_stable, FS_version, NO_WRITE_FUNCTION, {v:NULL},},
     {"type_number", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_stable, FS_type_number, NO_WRITE_FUNCTION, {v:NULL},},
-    {"type", PROPERTY_LENGTH_TYPE, NULL, ft_ASCII, fc_LINK, FS_localtype, NO_WRITE_FUNCTION, {v:NULL},},
+    {"type", PROPERTY_LENGTH_TYPE, NULL, ft_ascii, fc_link, FS_localtype, NO_WRITE_FUNCTION, {v:NULL},},
     {"UVI", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
     {"UVI/UVI", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_volatile, FS_UVI, NO_WRITE_FUNCTION, {v:NULL},},
     {"UVI/valid", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_link, FS_UVI_valid, NO_WRITE_FUNCTION, {v:NULL},},
     {"UVI/UVI_offset", PROPERTY_LENGTH_FLOAT, NULL, ft_float, fc_stable, FS_r_UVI_offset, FS_w_UVI_offset, {v:NULL},},
 };
 
-DeviceEntry(EE, Hobby_Boards_generic);
+DeviceEntry(EE, HobbyBoards_EF);
 
 
 #define _EEEF_READ_VERSION 0x11
@@ -105,86 +106,281 @@ DeviceEntry(EE, Hobby_Boards_generic);
 
 /* ------- Functions ------------ */
 
-/* DS2502 */
-static int OW_r_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
-static int OW_r_data(BYTE * data, struct parsedname *pn);
+/* prototypes */
+static int OW_version(BYTE * major, BYTE * minor, struct parsedname * pn) ;
+static int OW_type(BYTE * type_number, struct parsedname * pn) ;
 
-/* 2502 memory */
-static int FS_r_memory(struct one_wire_query *owq)
+static int OW_UVI(_FLOAT * UVI, struct parsedname * pn) ;
+static int OW_r_UVI_offset(_FLOAT * UVI, struct parsedname * pn) ;
+
+static int OW_temperature(_FLOAT * T, struct parsedname * pn) ;
+static int OW_r_temperature_offset(_FLOAT * T, struct parsedname * pn) ;
+
+static int OW_read(BYTE command, BYTE * bytes, size_t size, struct parsedname * pn) ;
+static int OW_write(BYTE command, BYTE byte, struct parsedname * pn);
+
+// returns major/minor as 2 hex bytes (ascii)
+static int FS_version(struct one_wire_query *owq)
 {
-	size_t pagesize = 32;
-	if (COMMON_readwrite_paged(owq, 0, pagesize, OW_r_mem)) {
-		return -EINVAL;
-	}
-	return 0;
+    char v[5];
+    BYTE major, minor ;
+
+    if (OW_version(&major,&minor,PN(owq))) {
+        return -EINVAL ;
+    }
+
+    UCLIBCLOCK;
+    snprintf(v,4,"%.2X.%.2X",major,minor);
+    UCLIBCUNLOCK;
+
+    return Fowq_output_offset_and_size(v, 5, owq);
 }
 
-static int FS_r_page(struct one_wire_query *owq)
+static int FS_type_number(struct one_wire_query *owq)
 {
-	size_t pagesize = 32;
-	if (COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_r_mem)) {
-		return -EINVAL;
-	}
-	return 0;
+    BYTE type_number ;
+
+    if (OW_type(&type_number,PN(owq))) {
+        return -EINVAL ;
+    }
+
+    OWQ_U(owq) = type_number ;
+
+    return 0;
 }
 
-static int FS_r_param(struct one_wire_query *owq)
+static int FS_temperature(struct one_wire_query *owq)
 {
-	struct parsedname *pn = PN(owq);
-	BYTE data[32];
-	if (OW_r_data(data, pn)) {
-		return -EINVAL;
-	}
-	return Fowq_output_offset_and_size((ASCII *) & data[pn->selected_filetype->data.i], FileLength(pn), owq);
+    _FLOAT T ;
+
+    if (OW_temperature(&T,PN(owq))) {
+        return -EINVAL ;
+    }
+
+    OWQ_F(owq) = T ;
+
+    return 0;
 }
 
-static int FS_w_memory(struct one_wire_query *owq)
+static int FS_UVI(struct one_wire_query *owq)
 {
-	if (COMMON_write_eprom_mem(OWQ_explode(owq))) {
-		return -EINVAL;
-	}
-	return 0;
+    _FLOAT UVI ;
+
+    if (OW_UVI(&UVI,PN(owq))) {
+        return -EINVAL ;
+    }
+
+    OWQ_F(owq) = UVI ;
+
+    return 0;
 }
 
-static int FS_w_page(struct one_wire_query *owq)
+static int FS_r_UVI_offset(struct one_wire_query *owq)
 {
-	size_t pagesize = 32;
-	OWQ_offset(owq) += OWQ_pn(owq).extension * pagesize;
-	if (COMMON_write_eprom_mem(OWQ_explode(owq))) {
-		return -EINVAL;
-	}
-	return 0;
+    _FLOAT UVI ;
+
+    if (OW_r_UVI_offset(&UVI,PN(owq))) {
+        return -EINVAL ;
+    }
+
+    OWQ_F(owq) = UVI ;
+
+    return 0;
 }
 
-static int OW_r_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
+static int FS_r_temperature_offset(struct one_wire_query *owq)
 {
-	BYTE p[4] = { _1W_READ_DATA_CRC8, LOW_HIGH_ADDRESS(offset), };
-	BYTE q[33];
-	int rest = 33 - (offset & 0x1F);
-	struct transaction_log t[] = {
-		TRXN_START,
-		TRXN_WRITE3(p),
-		TRXN_READ1(&p[3]),
-		TRXN_CRC8(p, 4),
-		TRXN_READ(q, rest),
-		TRXN_CRC8(q, rest),
-		TRXN_END,
-	};
-	if (BUS_transaction(t, pn)) {
-		return 1;
-	}
+    _FLOAT T ;
 
-	memcpy(data, q, size);
-	return 0;
+    if (OW_r_temperature_offset(&T,PN(owq))) {
+        return -EINVAL ;
+    }
+
+    OWQ_F(owq) = T ;
+
+    return 0;
 }
 
-static int OW_r_data(BYTE * data, struct parsedname *pn)
+static int FS_w_temperature_offset(struct one_wire_query *owq)
 {
-	BYTE p[32];
+    signed char c ;
 
-	if (OW_r_mem(p, 32, 0, pn) || CRC16(p, 3 + p[0])) {
-		return 1;
-	}
-	memcpy(data, &p[1], p[0]);
-	return 0;
+#ifdef HAVE_LRINT
+    c = lrint(2.0*OWQ_F(owq));    // round off
+#else
+    c = 2.0*OWQ_F(owq);
+#endif
+
+    if (OW_write(_EEEF_SET_TEMPERATURE_OFFSET,(BYTE)c,PN(owq))) {
+        return -EINVAL ;
+    }
+
+    return 0;
 }
+
+static int FS_w_UVI_offset(struct one_wire_query *owq)
+{
+    unsigned char c ;
+
+#ifdef HAVE_LRINT
+    c = lrint(10.0*OWQ_F(owq));    // round off
+#else
+    c = 10.0*OWQ_F(owq)+.49;
+#endif
+
+    if (OW_write(_EEEF_SET_UVI_OFFSET,(BYTE)c,PN(owq))) {
+        return -EINVAL ;
+    }
+
+    return 0;
+}
+
+static int FS_localtype(struct one_wire_query *owq)
+{
+    UINT type_number ;
+    if ( FS_r_sibling_U( &type_number, "type_number", owq ) ) {
+        return -EINVAL ;
+    }
+
+    switch (type_number) {
+        case 0x01:
+            return Fowq_output_offset_and_size_z("Hobby_Boards_UVI", owq) ;
+        default:
+            return FS_type(owq);
+    }
+}
+
+static int FS_UVI_valid(struct one_wire_query *owq)
+{
+    UINT type_number ;
+    if ( FS_r_sibling_U( &type_number, "type_number", owq ) ) {
+        return -EINVAL ;
+    }
+
+    switch (type_number) {
+        case 0x01:
+            OWQ_Y(owq) = 1 ;
+            break ;
+        default:
+            OWQ_Y(owq) = 0 ;
+            break ;
+    }
+    return 0 ;
+}
+
+static int FS_r_in_case(struct one_wire_query *owq)
+{
+    BYTE in_case ;
+    if ( OW_read(_EEEF_READ_IN_CASE,&in_case,1,PN(owq))) {
+        return -EINVAL ;
+    }
+    switch(in_case) {
+        case 0x00:
+            OWQ_Y(owq) = 0 ;
+            break ;
+        case 0xFF:
+            OWQ_Y(owq) = 1 ;
+            break ;
+        default:
+            return -EINVAL ;
+    }
+    return 0 ;
+}
+
+static int FS_w_in_case(struct one_wire_query *owq)
+{
+    BYTE in_case = OWQ_Y(owq) ? 0xFF : 0x00 ;
+    if ( OW_write(_EEEF_SET_IN_CASE,in_case,PN(owq))) {
+        return -EINVAL ;
+    }
+    return 0 ;
+}
+
+static int OW_version(BYTE * major, BYTE * minor, struct parsedname * pn)
+{
+    BYTE response[2] ;
+    if (OW_read(_EEEF_READ_VERSION, response, 2, pn)) {
+        return 1;
+    }
+    *minor = response[0] ;
+    *major = response[1] ;
+    return 0 ;
+}
+
+static int OW_type(BYTE * type_number, struct parsedname * pn)
+{
+    if (OW_read(_EEEF_READ_VERSION, type_number, 1, pn)) {
+        return 1;
+    }
+    return 0 ;
+}
+
+static int OW_UVI(_FLOAT * UVI, struct parsedname * pn)
+{
+    BYTE u[1] ;
+    if (OW_read(_EEEF_READ_UVI, u, 1, pn)) {
+        return 1;
+    }
+    if (u[0]==0xFF) {
+        return 1;
+    }
+    UVI[0] = 0.1 * ((_FLOAT) u[0]) ;
+    return 0 ;
+}
+
+static int OW_r_UVI_offset(_FLOAT * UVI, struct parsedname * pn)
+{
+    BYTE u[1] ;
+    if (OW_read(_EEEF_READ_UVI_OFFSET, u, 1, pn)) {
+        return 1;
+    }
+    if (u[0]==0xFF) {
+        return 1;
+    }
+    UVI[0] = 0.1 * ((_FLOAT) u[0]) ;
+    return 0 ;
+}
+
+static int OW_r_temperature_offset(_FLOAT * T, struct parsedname * pn)
+{
+    BYTE t[1] ;
+    if (OW_read(_EEEF_READ_TEMPERATURE_OFFSET, t, 1, pn)) {
+        return 1;
+    }
+    T[0] = 0.5 * ((_FLOAT) ((signed char)t[0])) ;
+    return 0 ;
+}
+
+static int OW_temperature(_FLOAT * temperature, struct parsedname * pn)
+{
+    BYTE t[2] ;
+    if (OW_read(_EEEF_READ_TEMPERATURE, t, 2, pn)) {
+        return 1;
+    }
+    temperature[0] = (_FLOAT) 0.5 * UT_int16(t) ;
+    return 0 ;
+}
+
+static int OW_read(BYTE command, BYTE * bytes, size_t size, struct parsedname * pn)
+{
+    BYTE c[] = { command,} ;
+    struct transaction_log t[] = {
+        TRXN_START,
+        TRXN_WRITE1(c),
+        TRXN_READ(bytes,size),
+        TRXN_END,
+    };
+    return BUS_transaction(t, pn) ;
+}
+
+static int OW_write(BYTE command, BYTE byte, struct parsedname * pn)
+{
+    BYTE c[] = { command, byte, } ;
+    struct transaction_log t[] = {
+        TRXN_START,
+        TRXN_WRITE2(c),
+        TRXN_END,
+    };
+    return BUS_transaction(t, pn) ;
+}
+
