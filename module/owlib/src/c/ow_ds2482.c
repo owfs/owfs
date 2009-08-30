@@ -124,6 +124,11 @@ static int DS2482_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, cons
 #define DS2482_1wire_write_usec   530, 585
 #define DS2482_1wire_triplet_usec   198, 219
 
+/* Defines for making messages more explicit */
+#define I2Cformat "I2C bus %s, address %.2X channel %d/%d"
+#define I2Cvar(in)  (in)->name,(in)->connin.i2c.i2c_address, (in)->connin.i2c.index, (in)->connin.i2c.channels
+
+
 /* Search for a ":" in the name
    Change it to a null,and parse the remaining text as either
    null, a number, or nothing
@@ -573,7 +578,8 @@ static int DS2482_next_both(struct device_search *ds, const struct parsedname *p
 static int DS2482_reset(const struct parsedname *pn)
 {
 	BYTE c;
-	int file_descriptor = pn->selected_connection->connin.i2c.head->file_descriptor;
+    struct connection_in * in = pn->selected_connection ;
+	int file_descriptor = in->connin.i2c.head->file_descriptor;
 
 	/* Make sure we're using the correct channel */
 	if (DS2482_channel_select(pn)) {
@@ -593,8 +599,8 @@ static int DS2482_reset(const struct parsedname *pn)
 		return -EIO;			// 8 * Tslot
 	}
 
-	pn->selected_connection->AnyDevices = (c & DS2482_REG_STS_PPD) != 0;
-	LEVEL_DEBUG("\n");
+	in->AnyDevices = (c & DS2482_REG_STS_PPD) != 0;
+    LEVEL_DEBUG("DS2482 "I2Cformat" Any devices found on reset? %s\n",I2Cvar(in),in->AnyDevices?"Yes":"No");
 	return (c & DS2482_REG_STS_SD) ? BUS_RESET_SHORT : BUS_RESET_OK;
 }
 
@@ -659,10 +665,10 @@ static int HeadChannel(struct connection_in *in)
 	pn.selected_connection = in;
 	if (DS2482_channel_select(&pn)) {	/* Couldn't switch */
 		in->connin.i2c.index = 0;	/* restore correct value */
-		LEVEL_CONNECT("DS2482-100 (Single channel).");
+		LEVEL_CONNECT("DS2482-100 (Single channel)\n");
 		return 0;				/* happy as DS2482-100 */
 	}
-	LEVEL_CONNECT("DS2482-800 (Eight channels).");
+	LEVEL_CONNECT("DS2482-800 (Eight channels)\n");
 	/* Must be a DS2482-800 */
 	in->connin.i2c.channels = 8;
 	in->Adapter = adapter_DS2482_800;
@@ -735,7 +741,7 @@ static int DS2482_channel_select(const struct parsedname *pn)
 	static const BYTE R_chan[8] = { 0xB8, 0xB1, 0xAA, 0xA3, 0x9C, 0x95, 0x8E, 0x87 };
 
 	if (file_descriptor < 0) {
-		LEVEL_CONNECT("Calling a closed i2c channel (%d)\n", chan);
+		LEVEL_CONNECT("Calling a closed i2c channel (%d) "I2Cformat" \n", chan,I2Cvar(pn->selected_connection));
 		return -EINVAL;
 	}
 
@@ -785,7 +791,7 @@ static int SetConfiguration(BYTE c, struct connection_in *in)
 		|| (read_back = i2c_smbus_read_byte(file_descriptor)) < 0 || ((BYTE) read_back != c)
 		) {
 		head->connin.i2c.configchip = 0xFF;	// bad value to trigger retry
-		LEVEL_CONNECT("Trouble changing DS2482 configuration register\n");
+		LEVEL_CONNECT("Trouble changing DS2482 configuration register "I2Cformat" \n",I2Cvar(in));
 		return -EINVAL;
 	}
 	/* Clear the strong pull-up power bit(register is automatically cleared by reset) */
