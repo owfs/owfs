@@ -48,6 +48,7 @@ noinst_HEADERS =          \
         ow_dirblob.h      \
         ow_dl.h           \
         ow_dnssd.h        \
+        ow_eeef.h         \
         ow_filetype.h     \
         ow_functions.h    \
         ow_global.h       \

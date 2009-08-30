@@ -149,6 +149,8 @@ void DeviceSort(void)
 	Device2Tree(&d_DS28EA00, ePN_real);
 	Device2Tree(&d_DS28EC20, ePN_real);
 	Device2Tree(&d_DS28E04, ePN_real);
+	Device2Tree(&d_HobbyBoards_EE, ePN_real);
+	Device2Tree(&d_HobbyBoards_EF, ePN_real);
 	Device2Tree(&d_LCD, ePN_real);
 	Device2Tree(&d_stats_cache, ePN_statistics);
 	Device2Tree(&d_stats_directory, ePN_statistics);
