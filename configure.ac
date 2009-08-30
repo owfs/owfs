@@ -761,11 +761,7 @@ AM_CONDITIONAL(ENABLE_PYTHON, test "${ENABLE_PYTHON}" = "true")
 
 #Check owtcl
 AC_MSG_CHECKING(if owtcl is enabled)
-if test -z "$SWIG" ; then
-	ENABLE_OWTCL="false"
-else
-	ENABLE_OWTCL="true"
-fi
+ENABLE_OWTCL="true"
 AC_ARG_ENABLE(owtcl,
 [  --enable-owtcl          Enable owtcl module (default true)],
 [
@@ -775,19 +771,10 @@ AC_ARG_ENABLE(owtcl,
 	fi
 	if test "$enableval" = "yes" ; then
 		ENABLE_OWTCL="true"
-		if test -z "$SWIG"  ; then
-			AC_MSG_WARN([Cannot find swig program. Look for it at http://www.swig.org or use CPAN])
-			AC_MSG_WARN([OWTCL is disabled because swig is not found])
-			ENABLE_OWTCL="false"
-		fi
 	fi
 ],
 [
-	if test -z "$SWIG" ; then
-		AC_MSG_RESULT([no (swig disabled)])
-	else
-		AC_MSG_RESULT([yes (default)])
-	fi
+	AC_MSG_RESULT([yes (default)])
 ])
 
 if test "${ENABLE_OWTCL}" = "true" ; then
