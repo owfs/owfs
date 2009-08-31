@@ -360,12 +360,12 @@ static int LINK_reset(const struct parsedname *pn)
 	case 'P':
 		LEVEL_DEBUG("ok, devices Present\n");
 		ret = BUS_RESET_OK;
-		pn->selected_connection->AnyDevices = 1;
+		pn->selected_connection->AnyDevices = anydevices_yes;
 		break;
 	case 'N':
 		LEVEL_DEBUG("ok, devices Not present\n");
 		ret = BUS_RESET_OK;
-		pn->selected_connection->AnyDevices = 0;
+		pn->selected_connection->AnyDevices = anydevices_no;
 		break;
 
 	case 'S':
@@ -543,6 +543,9 @@ static int LINK_directory(struct device_search *ds, struct dirblob *db, const st
 			if ((ret = LINK_read(LINK_string(&resp[1]), 2, 1, pn))) {
 				return ret;
 			}
+			if (ds->search != _1W_CONDITIONAL_SEARCH_ROM) {
+				pn->selected_connection->AnyDevices = anydevices_no;
+			}
 			return 0 ;
 		default:
 			break ;
@@ -557,7 +560,7 @@ static int LINK_directory(struct device_search *ds, struct dirblob *db, const st
 	case '-':
 	case '+':
 		if (ds->search != _1W_CONDITIONAL_SEARCH_ROM) {
-			pn->selected_connection->AnyDevices = 1;
+			pn->selected_connection->AnyDevices = anydevices_yes;
 		}
 		break;
 	default:

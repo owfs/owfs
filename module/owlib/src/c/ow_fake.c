@@ -150,7 +150,7 @@ static void GetAllDeviceNames( ASCII * remaining_device_list, struct connection_
 		}
 		GetDeviceName( &current_device_start, in ) ;
 	}
-	in->AnyDevices = (DirblobElements(&(in->main)) > 0);
+	in->AnyDevices = (DirblobElements(&(in->main)) > 0) ? anydevices_yes : anydevices_no ;
 }
 
 static void SetConninData( int indx, const char * name, struct connection_in *in )

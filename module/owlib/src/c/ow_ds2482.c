@@ -517,7 +517,7 @@ static int DS2482_next_both(struct device_search *ds, const struct parsedname *p
 
 	// initialize for search
 	// if the last call was not the last one
-	if (!pn->selected_connection->AnyDevices) {
+	if (pn->selected_connection->AnyDevices == anydevices_no) {
 		ds->LastDevice = 1;
 	}
 	if (ds->LastDevice) {
@@ -578,7 +578,7 @@ static int DS2482_next_both(struct device_search *ds, const struct parsedname *p
 static int DS2482_reset(const struct parsedname *pn)
 {
 	BYTE c;
-    struct connection_in * in = pn->selected_connection ;
+	struct connection_in * in = pn->selected_connection ;
 	int file_descriptor = in->connin.i2c.head->file_descriptor;
 
 	/* Make sure we're using the correct channel */
@@ -599,8 +599,8 @@ static int DS2482_reset(const struct parsedname *pn)
 		return -EIO;			// 8 * Tslot
 	}
 
-	in->AnyDevices = (c & DS2482_REG_STS_PPD) != 0;
-    LEVEL_DEBUG("DS2482 "I2Cformat" Any devices found on reset? %s\n",I2Cvar(in),in->AnyDevices?"Yes":"No");
+	in->AnyDevices = (c & DS2482_REG_STS_PPD) ? anydevices_yes : anydevices_no ;
+	LEVEL_DEBUG("DS2482 "I2Cformat" Any devices found on reset? %s\n",I2Cvar(in),in->AnyDevices==anydevices_yes?"Yes":"No");
 	return (c & DS2482_REG_STS_SD) ? BUS_RESET_SHORT : BUS_RESET_OK;
 }
 

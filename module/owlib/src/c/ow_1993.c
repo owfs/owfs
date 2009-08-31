@@ -56,9 +56,9 @@ WRITE_FUNCTION(FS_w_memory);
 struct aggregate A1992 = { 4, ag_numbers, ag_separate, };
 struct filetype DS1992[] = {
 	F_STANDARD,
-	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
-  {"pages/page", 32, &A1992, ft_binary, fc_stable, FS_r_page, FS_w_page, NO_PROPERTY_DATA,},
-  {"memory", 128, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, NO_PROPERTY_DATA,},
+	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+  {"pages/page", 32, &A1992, ft_binary, fc_stable, FS_r_page, FS_w_page, NO_FILETYPE_DATA,},
+  {"memory", 128, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, NO_FILETYPE_DATA,},
 };
 
 DeviceEntry(08, DS1992);
@@ -66,9 +66,9 @@ DeviceEntry(08, DS1992);
 struct aggregate A1993 = { 16, ag_numbers, ag_separate, };
 struct filetype DS1993[] = {
 	F_STANDARD,
-	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
-  {"pages/page", 32, &A1993, ft_binary, fc_stable, FS_r_page, FS_w_page, NO_PROPERTY_DATA,},
-  {"memory", 512, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, NO_PROPERTY_DATA,},
+	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+  {"pages/page", 32, &A1993, ft_binary, fc_stable, FS_r_page, FS_w_page, NO_FILETYPE_DATA,},
+  {"memory", 512, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, NO_FILETYPE_DATA,},
 };
 
 DeviceEntry(06, DS1993);
@@ -76,9 +76,9 @@ DeviceEntry(06, DS1993);
 struct aggregate A1995 = { 64, ag_numbers, ag_separate, };
 struct filetype DS1995[] = {
 	F_STANDARD,
-	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
-  {"pages/page", 32, &A1995, ft_binary, fc_stable, FS_r_page, FS_w_page, NO_PROPERTY_DATA,},
-  {"memory", 2048, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, NO_PROPERTY_DATA,},
+	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+  {"pages/page", 32, &A1995, ft_binary, fc_stable, FS_r_page, FS_w_page, NO_FILETYPE_DATA,},
+  {"memory", 2048, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, NO_FILETYPE_DATA,},
 };
 
 DeviceEntryExtended(0A, DS1995, DEV_ovdr);
@@ -86,9 +86,9 @@ DeviceEntryExtended(0A, DS1995, DEV_ovdr);
 struct aggregate A1996 = { 256, ag_numbers, ag_separate, };
 struct filetype DS1996[] = {
 	F_STANDARD,
-	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
-  {"pages/page", 32, &A1996, ft_binary, fc_stable, FS_r_page, FS_w_page, NO_PROPERTY_DATA,},
-  {"memory", 8192, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, NO_PROPERTY_DATA,},
+	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+  {"pages/page", 32, &A1996, ft_binary, fc_stable, FS_r_page, FS_w_page, NO_FILETYPE_DATA,},
+  {"memory", 8192, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, NO_FILETYPE_DATA,},
 };
 
 DeviceEntryExtended(0C, DS1996, DEV_ovdr);

@@ -134,6 +134,7 @@ struct connection_in *NewIn(const struct connection_in *in)
 	} else {
 		LEVEL_DEFAULT("Cannot allocate memory for adapter structure,\n");
 	}
+	now->AnyDevices = anydevices_unknown ;
 	return now;
 }
 

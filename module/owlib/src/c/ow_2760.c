@@ -92,42 +92,42 @@ READ_FUNCTION(FS_rangehigh);
 
 
 #define F_thermocouple  \
-{"typeB"            ,PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir  , fc_volatile,   NO_READ_FUNCTION, NO_WRITE_FUNCTION     , NO_PROPERTY_DATA, } , \
+{"typeB"            ,PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir  , fc_volatile,   NO_READ_FUNCTION, NO_WRITE_FUNCTION     , NO_FILETYPE_DATA, } , \
 {"typeB/temperature",PROPERTY_LENGTH_TEMP, NON_AGGREGATE,ft_temperature, fc_volatile,   FS_thermocouple, NO_WRITE_FUNCTION  , {i:e_type_b}, } , \
 {"typeB/range_low"  ,PROPERTY_LENGTH_TEMP, NON_AGGREGATE,ft_temperature, fc_static  ,   FS_rangelow, NO_WRITE_FUNCTION     , {i:e_type_b}, } , \
 {"typeB/range_high" ,PROPERTY_LENGTH_TEMP, NON_AGGREGATE,ft_temperature, fc_static  ,   FS_rangehigh, NO_WRITE_FUNCTION     , {i:e_type_b}, } , \
     \
-    {"typeE"            ,PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir  , fc_volatile,   NO_READ_FUNCTION, NO_WRITE_FUNCTION     , NO_PROPERTY_DATA, } , \
+    {"typeE"            ,PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir  , fc_volatile,   NO_READ_FUNCTION, NO_WRITE_FUNCTION     , NO_FILETYPE_DATA, } , \
     {"typeE/temperature",PROPERTY_LENGTH_TEMP, NON_AGGREGATE,ft_temperature, fc_volatile,   FS_thermocouple, NO_WRITE_FUNCTION  , {i:e_type_e}, } , \
     {"typeE/range_low"  ,PROPERTY_LENGTH_TEMP, NON_AGGREGATE,ft_temperature, fc_static  ,   FS_rangelow, NO_WRITE_FUNCTION     , {i:e_type_e}, } , \
     {"typeE/range_high" ,PROPERTY_LENGTH_TEMP, NON_AGGREGATE,ft_temperature, fc_static  ,   FS_rangehigh, NO_WRITE_FUNCTION     , {i:e_type_e}, } , \
     \
-    {"typeJ"            ,PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir  , fc_volatile,   NO_READ_FUNCTION, NO_WRITE_FUNCTION     , NO_PROPERTY_DATA, } , \
+    {"typeJ"            ,PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir  , fc_volatile,   NO_READ_FUNCTION, NO_WRITE_FUNCTION     , NO_FILETYPE_DATA, } , \
     {"typeJ/temperature",PROPERTY_LENGTH_TEMP, NON_AGGREGATE,ft_temperature, fc_volatile,   FS_thermocouple, NO_WRITE_FUNCTION  , {i:e_type_j}, } , \
     {"typeJ/range_low"  ,PROPERTY_LENGTH_TEMP, NON_AGGREGATE,ft_temperature, fc_static  ,   FS_rangelow, NO_WRITE_FUNCTION     , {i:e_type_j}, } , \
     {"typeJ/range_high" ,PROPERTY_LENGTH_TEMP, NON_AGGREGATE,ft_temperature, fc_static  ,   FS_rangehigh, NO_WRITE_FUNCTION     , {i:e_type_j}, } , \
     \
-    {"typeK"            ,PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir  , fc_volatile,   NO_READ_FUNCTION, NO_WRITE_FUNCTION     , NO_PROPERTY_DATA, } , \
+    {"typeK"            ,PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir  , fc_volatile,   NO_READ_FUNCTION, NO_WRITE_FUNCTION     , NO_FILETYPE_DATA, } , \
     {"typeK/temperature",PROPERTY_LENGTH_TEMP, NON_AGGREGATE,ft_temperature, fc_volatile,   FS_thermocouple, NO_WRITE_FUNCTION  , {i:e_type_k}, } , \
     {"typeK/range_low"  ,PROPERTY_LENGTH_TEMP, NON_AGGREGATE,ft_temperature, fc_static  ,   FS_rangelow, NO_WRITE_FUNCTION     , {i:e_type_k}, } , \
     {"typeK/range_high" ,PROPERTY_LENGTH_TEMP, NON_AGGREGATE,ft_temperature, fc_static  ,   FS_rangehigh, NO_WRITE_FUNCTION     , {i:e_type_k}, } , \
     \
-    {"typeN"            ,PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir  , fc_volatile,   NO_READ_FUNCTION, NO_WRITE_FUNCTION     , NO_PROPERTY_DATA, } , \
+    {"typeN"            ,PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir  , fc_volatile,   NO_READ_FUNCTION, NO_WRITE_FUNCTION     , NO_FILETYPE_DATA, } , \
     {"typeN/temperature",PROPERTY_LENGTH_TEMP, NON_AGGREGATE,ft_temperature, fc_volatile,   FS_thermocouple, NO_WRITE_FUNCTION  , {i:e_type_n}, } , \
     {"typeN/range_low"  ,PROPERTY_LENGTH_TEMP, NON_AGGREGATE,ft_temperature, fc_static  ,   FS_rangelow, NO_WRITE_FUNCTION     , {i:e_type_n}, } , \
     {"typeN/range_high" ,PROPERTY_LENGTH_TEMP, NON_AGGREGATE,ft_temperature, fc_static  ,   FS_rangehigh, NO_WRITE_FUNCTION     , {i:e_type_n}, } , \
     \
-    {"typeR"            ,PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir  , fc_volatile,   NO_READ_FUNCTION, NO_WRITE_FUNCTION     , NO_PROPERTY_DATA, } , \
+    {"typeR"            ,PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir  , fc_volatile,   NO_READ_FUNCTION, NO_WRITE_FUNCTION     , NO_FILETYPE_DATA, } , \
     {"typeR/temperature",PROPERTY_LENGTH_TEMP, NON_AGGREGATE,ft_temperature, fc_volatile,   FS_thermocouple, NO_WRITE_FUNCTION  , {i:e_type_r}, } , \
     {"typeR/range_low"  ,PROPERTY_LENGTH_TEMP, NON_AGGREGATE,ft_temperature, fc_static  ,   FS_rangelow, NO_WRITE_FUNCTION     , {i:e_type_r}, } , \
     {"typeR/range_high" ,PROPERTY_LENGTH_TEMP, NON_AGGREGATE,ft_temperature, fc_static  ,   FS_rangehigh, NO_WRITE_FUNCTION     , {i:e_type_r}, } , \
     \
-    {"typeS"            ,PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir  , fc_volatile,   NO_READ_FUNCTION, NO_WRITE_FUNCTION     , NO_PROPERTY_DATA, } , \
+    {"typeS"            ,PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir  , fc_volatile,   NO_READ_FUNCTION, NO_WRITE_FUNCTION     , NO_FILETYPE_DATA, } , \
     {"typeS/temperature",PROPERTY_LENGTH_TEMP, NON_AGGREGATE,ft_temperature, fc_volatile,   FS_thermocouple, NO_WRITE_FUNCTION  , {i:e_type_s}, } , \
     {"typeS/range_low"  ,PROPERTY_LENGTH_TEMP, NON_AGGREGATE,ft_temperature, fc_static  ,   FS_rangelow, NO_WRITE_FUNCTION     , {i:e_type_s}, } , \
     {"typeS/range_high" ,PROPERTY_LENGTH_TEMP, NON_AGGREGATE,ft_temperature, fc_static  ,   FS_rangehigh, NO_WRITE_FUNCTION     , {i:e_type_s}, } , \
     \
-    {"typeT"            ,PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir  , fc_volatile,   NO_READ_FUNCTION, NO_WRITE_FUNCTION     , NO_PROPERTY_DATA, } , \
+    {"typeT"            ,PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir  , fc_volatile,   NO_READ_FUNCTION, NO_WRITE_FUNCTION     , NO_FILETYPE_DATA, } , \
     {"typeT/temperature",PROPERTY_LENGTH_TEMP, NON_AGGREGATE,ft_temperature, fc_volatile,   FS_thermocouple, NO_WRITE_FUNCTION  , {i:e_type_t}, } , \
     {"typeT/range_low"  ,PROPERTY_LENGTH_TEMP, NON_AGGREGATE,ft_temperature, fc_static  ,   FS_rangelow, NO_WRITE_FUNCTION     , {i:e_type_t}, } , \
     {"typeT/range_high" ,PROPERTY_LENGTH_TEMP, NON_AGGREGATE,ft_temperature, fc_static  ,   FS_rangehigh, NO_WRITE_FUNCTION     , {i:e_type_t}, } ,
@@ -200,8 +200,8 @@ struct aggregate L2780 = { Pages2780, ag_numbers, ag_separate };
 struct filetype DS2720[] = {
   F_STANDARD,
   {"lock", PROPERTY_LENGTH_YESNO, &L2720, ft_yesno, fc_stable, FS_r_lock, FS_w_lock, {v:&P2720},},
-  {"memory", 256, NULL, ft_binary, fc_volatile, FS_r_mem, FS_w_mem, NO_PROPERTY_DATA,},
-  {"pages", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
+  {"memory", 256, NULL, ft_binary, fc_volatile, FS_r_mem, FS_w_mem, NO_FILETYPE_DATA,},
+  {"pages", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
   {"pages/page", Size2720, &L2720, ft_binary, fc_volatile, FS_r_page, FS_w_page, {v:&P2720},},
 
 {"cc", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_bit, FS_w_bit, {u:(_1W_DS27XX_PROTECT_REG << 8) | 3},},
@@ -219,11 +219,11 @@ DeviceEntry(31, DS2720);
 
 struct filetype DS2740[] = {
   F_STANDARD,
-  {"memory", 256, NON_AGGREGATE, ft_binary, fc_volatile, FS_r_mem, FS_w_mem, NO_PROPERTY_DATA,},
+  {"memory", 256, NON_AGGREGATE, ft_binary, fc_volatile, FS_r_mem, FS_w_mem, NO_FILETYPE_DATA,},
   {"PIO", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_pio, FS_w_pio, {u:(_1W_DS2760_SPECIAL_REG << 8) | 6},},
-  {"vis", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_vis, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
+  {"vis", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_vis, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
   {"vis_B", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_vis, NO_WRITE_FUNCTION, {f:1.5625E-6},},
-  {"volthours", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_vh, FS_w_vh, NO_PROPERTY_DATA,},
+  {"volthours", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_vh, FS_w_vh, NO_FILETYPE_DATA,},
 
 {"smod", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_bit, FS_w_bit, {u:(_1W_DS27XX_STATUS_REG << 8) | 6},},
 };
@@ -232,20 +232,20 @@ DeviceEntry(36, DS2740);
 
 struct filetype DS2751[] = {
   F_STANDARD,
-  {"amphours", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_ah, FS_w_ah, NO_PROPERTY_DATA,},
-  {"current", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_link, FS_r_current, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
-  {"currentbias", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_link, FS_r_abias, FS_w_abias, NO_PROPERTY_DATA,},
+  {"amphours", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_ah, FS_w_ah, NO_FILETYPE_DATA,},
+  {"current", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_link, FS_r_current, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+  {"currentbias", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_link, FS_r_abias, FS_w_abias, NO_FILETYPE_DATA,},
   {"lock", PROPERTY_LENGTH_YESNO, &L2751, ft_yesno, fc_stable, FS_r_lock, FS_w_lock, {v:&P2751},},
-  {"memory", 256, NON_AGGREGATE, ft_binary, fc_volatile, FS_r_mem, FS_w_mem, NO_PROPERTY_DATA,},
-  {"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
+  {"memory", 256, NON_AGGREGATE, ft_binary, fc_volatile, FS_r_mem, FS_w_mem, NO_FILETYPE_DATA,},
+  {"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
   {"pages/page", Size2751, &L2751, ft_binary, fc_volatile, FS_r_page, FS_w_page, {v:&P2751},},
   {"PIO", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, NO_READ_FUNCTION, FS_w_pio, {u:(_1W_DS2760_SPECIAL_REG << 8) | 6},},
   {"sensed", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_bit, NO_WRITE_FUNCTION, {u:(_1W_DS2760_SPECIAL_REG << 8) | 6},},
-  {"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_r_temp, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
-  {"vbias", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_vbias, FS_w_vbias, NO_PROPERTY_DATA,},
-  {"vis", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_vis, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
-  {"volt", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_volt, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
-  {"volthours", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_vh, FS_w_vh, NO_PROPERTY_DATA,},
+  {"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_r_temp, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+  {"vbias", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_vbias, FS_w_vbias, NO_FILETYPE_DATA,},
+  {"vis", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_vis, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+  {"volt", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_volt, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+  {"volthours", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_vh, FS_w_vh, NO_FILETYPE_DATA,},
 
 {"defaultpmod", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_bit, FS_w_bit, {u:(_1W_DS27XX_STATUS_REG_INIT << 8) | 5},},
 {"pmod", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_bit, NO_WRITE_FUNCTION, {u:(_1W_DS27XX_STATUS_REG << 8) | 5},},
@@ -259,17 +259,17 @@ DeviceEntry(51, DS2751);
 struct filetype DS2755[] = {
   F_STANDARD,
   {"lock", PROPERTY_LENGTH_YESNO, &L2755, ft_yesno, fc_stable, FS_r_lock, FS_w_lock, {v:&P2751},},
-  {"memory", 256, NON_AGGREGATE, ft_binary, fc_volatile, FS_r_mem, FS_w_mem, NO_PROPERTY_DATA,},
-  {"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
+  {"memory", 256, NON_AGGREGATE, ft_binary, fc_volatile, FS_r_mem, FS_w_mem, NO_FILETYPE_DATA,},
+  {"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
   {"pages/page", Size2755, &L2755, ft_binary, fc_volatile, FS_r_page, FS_w_page, {v:&P2755},},
   {"PIO", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, NO_READ_FUNCTION, FS_w_pio, {u:(_1W_DS2760_SPECIAL_REG << 8) | 6},},
   {"sensed", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_bit, NO_WRITE_FUNCTION, {u:(_1W_DS2760_SPECIAL_REG << 8) | 6},},
-  {"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_r_temp, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
-  {"vbias", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_vbias, FS_w_vbias, NO_PROPERTY_DATA,},
-  {"vis", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_vis, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
-  {"vis_avg", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_vis_avg, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
-  {"volt", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_volt, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
-  {"volthours", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_vh, FS_w_vh, NO_PROPERTY_DATA,},
+  {"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_r_temp, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+  {"vbias", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_vbias, FS_w_vbias, NO_FILETYPE_DATA,},
+  {"vis", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_vis, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+  {"vis_avg", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_vis_avg, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+  {"volt", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_volt, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+  {"volthours", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_vh, FS_w_vh, NO_FILETYPE_DATA,},
 
 {"alarm_set", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_float, fc_volatile, FS_r_templim, FS_w_templim, {u:0x85},},
 
@@ -290,20 +290,20 @@ DeviceEntryExtended(35, DS2755, DEV_alarm);
 
 struct filetype DS2760[] = {
   F_STANDARD,
-  {"amphours", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_ah, FS_w_ah, NO_PROPERTY_DATA,},
-  {"current", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_link, FS_r_current, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
-  {"currentbias", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_link, FS_r_abias, FS_w_abias, NO_PROPERTY_DATA,},
+  {"amphours", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_ah, FS_w_ah, NO_FILETYPE_DATA,},
+  {"current", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_link, FS_r_current, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+  {"currentbias", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_link, FS_r_abias, FS_w_abias, NO_FILETYPE_DATA,},
   {"lock", PROPERTY_LENGTH_YESNO, &L2760, ft_yesno, fc_stable, FS_r_lock, FS_w_lock, {v:&P2760},},
-  {"memory", 256, NON_AGGREGATE, ft_binary, fc_volatile, FS_r_mem, FS_w_mem, NO_PROPERTY_DATA,},
-  {"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
+  {"memory", 256, NON_AGGREGATE, ft_binary, fc_volatile, FS_r_mem, FS_w_mem, NO_FILETYPE_DATA,},
+  {"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
   {"pages/page", Size2760, &L2760, ft_binary, fc_volatile, FS_r_page, FS_w_page, {v:&P2760},},
   {"PIO", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, NO_READ_FUNCTION, FS_w_pio, {u:(_1W_DS2760_SPECIAL_REG << 8) | 6},},
   {"sensed", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_bit, NO_WRITE_FUNCTION, {u:(_1W_DS2760_SPECIAL_REG << 8) | 6},},
-  {"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_r_temp, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
-  {"vbias", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_vbias, FS_w_vbias, NO_PROPERTY_DATA,},
-  {"vis", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_vis, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
-  {"volt", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_volt, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
-  {"volthours", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_vh, FS_w_vh, NO_PROPERTY_DATA,},
+  {"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_r_temp, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+  {"vbias", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_vbias, FS_w_vbias, NO_FILETYPE_DATA,},
+  {"vis", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_vis, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+  {"volt", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_volt, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+  {"volthours", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_vh, FS_w_vh, NO_FILETYPE_DATA,},
 
 {"cc", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_bit, FS_w_bit, {u:(_1W_DS27XX_PROTECT_REG << 8) | 3},},
 {"ce", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_bit, FS_w_bit, {u:(_1W_DS27XX_PROTECT_REG << 8) | 1},},
@@ -326,28 +326,28 @@ DeviceEntry(30, DS2760);
 
 struct filetype DS2770[] = {
   F_STANDARD,
-  {"amphours", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_ah, FS_w_ah, NO_PROPERTY_DATA,},
-  {"current", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_link, FS_r_current, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
-  {"currentbias", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_link, FS_r_abias, FS_w_abias, NO_PROPERTY_DATA,},
+  {"amphours", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_ah, FS_w_ah, NO_FILETYPE_DATA,},
+  {"current", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_link, FS_r_current, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+  {"currentbias", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_link, FS_r_abias, FS_w_abias, NO_FILETYPE_DATA,},
   {"lock", PROPERTY_LENGTH_YESNO, &L2770, ft_yesno, fc_stable, FS_r_lock, FS_w_lock, {v:&P2770},},
-  {"memory", 256, NON_AGGREGATE, ft_binary, fc_volatile, FS_r_mem, FS_w_mem, NO_PROPERTY_DATA,},
-  {"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
+  {"memory", 256, NON_AGGREGATE, ft_binary, fc_volatile, FS_r_mem, FS_w_mem, NO_FILETYPE_DATA,},
+  {"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
   {"pages/page", Size2770, &L2770, ft_binary, fc_volatile, FS_r_page, FS_w_page, {v:&P2770},},
-  {"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_r_temp, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
-  {"vbias", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_vbias, FS_w_vbias, NO_PROPERTY_DATA,},
-  {"vis", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_vis, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
-  {"volt", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_volt, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
-  {"volthours", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_vh, FS_w_vh, NO_PROPERTY_DATA,},
+  {"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_r_temp, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+  {"vbias", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_vbias, FS_w_vbias, NO_FILETYPE_DATA,},
+  {"vis", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_vis, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+  {"volt", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_volt, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+  {"volthours", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_vh, FS_w_vh, NO_FILETYPE_DATA,},
 
-{"charge", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_charge, NO_PROPERTY_DATA,},
+{"charge", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_charge, NO_FILETYPE_DATA,},
 {"cini", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_bit, FS_w_bit, {u:(_1W_DS27XX_STATUS_REG << 8) | 1},},
 {"cstat1", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_bit, FS_w_bit, {u:(_1W_DS27XX_STATUS_REG << 8) | 7},},
 {"cstat0", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_bit, FS_w_bit, {u:(_1W_DS27XX_STATUS_REG << 8) | 6},},
 {"ctype", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_bit, FS_w_bit, {u:(_1W_DS27XX_STATUS_REG << 8) | 0},},
 {"defaultpmod", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_bit, FS_w_bit, {u:(_1W_DS27XX_STATUS_REG_INIT << 8) | 5},},
 {"pmod", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_bit, FS_w_bit, {u:(_1W_DS27XX_STATUS_REG << 8) | 5},},
-{"refresh", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_refresh, NO_PROPERTY_DATA,},
-{"timer", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_timer, FS_w_timer, NO_PROPERTY_DATA,},
+{"refresh", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_refresh, NO_FILETYPE_DATA,},
+{"timer", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_timer, FS_w_timer, NO_FILETYPE_DATA,},
   F_thermocouple
 };
 
@@ -357,17 +357,17 @@ DeviceEntry(2E, DS2770);
 struct filetype DS2780[] = {
   F_STANDARD,
   {"lock", PROPERTY_LENGTH_YESNO, &L2780, ft_yesno, fc_stable, FS_r_lock, FS_w_lock, {v:&P2780},},
-  {"memory", 256, NON_AGGREGATE, ft_binary, fc_volatile, FS_r_mem, FS_w_mem, NO_PROPERTY_DATA,},
-  {"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
+  {"memory", 256, NON_AGGREGATE, ft_binary, fc_volatile, FS_r_mem, FS_w_mem, NO_FILETYPE_DATA,},
+  {"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
   {"pages/page", Size2780, &L2780, ft_binary, fc_volatile, FS_r_page, FS_w_page, {v:&P2780},},
   {"PIO", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, NO_READ_FUNCTION, FS_w_pio, {u:(_1W_DS2780_SPECIAL_REG << 8) | 0},},
   {"sensed", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_bit, NO_WRITE_FUNCTION, {u:(_1W_DS2780_SPECIAL_REG << 8) | 0},},
-  {"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_r_temp, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
-  {"vbias", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_vbias, FS_w_vbias, NO_PROPERTY_DATA,},
-  {"vis", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_vis, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
-  {"vis_avg", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_vis_avg, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
-  {"volt", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_volt, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
-  {"volthours", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_vh, FS_w_vh, NO_PROPERTY_DATA,},
+  {"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_r_temp, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+  {"vbias", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_vbias, FS_w_vbias, NO_FILETYPE_DATA,},
+  {"vis", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_vis, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+  {"vis_avg", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_vis_avg, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+  {"volt", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_volt, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+  {"volthours", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_vh, FS_w_vh, NO_FILETYPE_DATA,},
 
 {"chgtf", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_bit, FS_w_bit, {u:(_1W_DS27XX_STATUS_REG << 8) | 7},},
 {"aef", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_bit, FS_w_bit, {u:(_1W_DS27XX_STATUS_REG << 8) | 6},},
@@ -388,18 +388,18 @@ DeviceEntry(32, DS2780);
 struct filetype DS2781[] = {
   F_STANDARD,
   {"lock", PROPERTY_LENGTH_YESNO, &L2780, ft_yesno, fc_stable, FS_r_lock, FS_w_lock, {v:&P2780},},
-  {"memory", 256, NON_AGGREGATE, ft_binary, fc_volatile, FS_r_mem, FS_w_mem, NO_PROPERTY_DATA,},
-  {"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
+  {"memory", 256, NON_AGGREGATE, ft_binary, fc_volatile, FS_r_mem, FS_w_mem, NO_FILETYPE_DATA,},
+  {"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
   {"pages/page", Size2780, &L2780, ft_binary, fc_volatile, FS_r_page, FS_w_page, {v:&P2780},},
   {"PIO", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, NO_READ_FUNCTION, FS_w_pio, {u:(_1W_DS2780_SPECIAL_REG << 8) | 0},},
   {"sensed", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_bit, NO_WRITE_FUNCTION, {u:(_1W_DS2780_SPECIAL_REG << 8) | 0},},
-  {"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_r_temp, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
-  {"vbias", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_vbias, FS_w_vbias, NO_PROPERTY_DATA,},
-  {"vis", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_vis, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
-  {"vis_offset", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_vis_off, FS_w_vis_off, NO_PROPERTY_DATA,},
-  {"vis_avg", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_vis_avg, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
-  {"volt", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_volt, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
-  {"volthours", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_vh, FS_w_vh, NO_PROPERTY_DATA,},
+  {"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_r_temp, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+  {"vbias", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_vbias, FS_w_vbias, NO_FILETYPE_DATA,},
+  {"vis", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_vis, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+  {"vis_offset", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_vis_off, FS_w_vis_off, NO_FILETYPE_DATA,},
+  {"vis_avg", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_vis_avg, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+  {"volt", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_volt, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+  {"volthours", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_vh, FS_w_vh, NO_FILETYPE_DATA,},
 
 {"aef", PROPERTY_LENGTH_YESNO,NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_bit, FS_w_bit, {u:(_1W_DS27XX_STATUS_REG << 8) | 4},},
 {"pmod", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_bit, FS_w_bit, {u:(_1W_DS2780_PARAM_REG << 8) | 5},},

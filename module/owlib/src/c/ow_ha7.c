@@ -109,7 +109,7 @@ int HA7_detect(struct connection_in *in)
 		if (HA7_read(file_descriptor, &mb) == 0) {
 			in->adapter_name = "HA7Net";
 			in->busmode = bus_ha7net;
-			in->AnyDevices = 1;
+			in->AnyDevices = anydevices_yes;
 			MemblobClear(&mb);
 			close(file_descriptor);
 			return 0;
@@ -202,7 +202,7 @@ static int HA7_next_both(struct device_search *ds, const struct parsedname *pn)
 		&(pn->selected_connection->alarm) : &(pn->selected_connection->main);
 	int ret = 0;
 
-	if (!pn->selected_connection->AnyDevices) {
+	if (pn->selected_connection->AnyDevices == anydevices_no) {
 		ds->LastDevice = 1;
 	}
 	if (ds->LastDevice) {

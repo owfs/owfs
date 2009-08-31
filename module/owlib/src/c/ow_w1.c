@@ -86,7 +86,6 @@ int W1_detect(struct connection_in *in)
 	in->Adapter = adapter_w1;
 	in->adapter_name = "w1";
 	in->busmode = bus_w1;
-	in->AnyDevices = 1;
 	return 0;
 }
 

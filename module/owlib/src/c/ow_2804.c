@@ -71,16 +71,16 @@ struct aggregate A2804 = { 2, ag_numbers, ag_aggregate, };
 struct aggregate A2804p = { 16, ag_numbers, ag_separate, };
 struct filetype DS28E04[] = {
 	F_STANDARD,
-	{"memory", 550, NON_AGGREGATE, ft_binary, fc_stable, FS_r_mem, FS_w_mem, NO_PROPERTY_DATA,},
-	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
-  {"pages/page", 32, &A2804p, ft_binary, fc_stable, FS_r_page, FS_w_page, NO_PROPERTY_DATA,},
-  {"polarity", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_polarity, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
-  {"power", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
-  {"por", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_por, FS_w_por, NO_PROPERTY_DATA,},
-  {"PIO", PROPERTY_LENGTH_BITFIELD, &A2804, ft_bitfield, fc_stable, FS_r_pio, FS_w_pio, NO_PROPERTY_DATA,},
-  {"sensed", PROPERTY_LENGTH_BITFIELD, &A2804, ft_bitfield, fc_volatile, FS_sense, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
-  {"latch", PROPERTY_LENGTH_BITFIELD, &A2804, ft_bitfield, fc_volatile, FS_r_latch, FS_w_latch, NO_PROPERTY_DATA,},
-  {"set_alarm", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_s_alarm, FS_w_s_alarm, NO_PROPERTY_DATA,},
+	{"memory", 550, NON_AGGREGATE, ft_binary, fc_stable, FS_r_mem, FS_w_mem, NO_FILETYPE_DATA,},
+	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+  {"pages/page", 32, &A2804p, ft_binary, fc_stable, FS_r_page, FS_w_page, NO_FILETYPE_DATA,},
+  {"polarity", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_polarity, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+  {"power", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+  {"por", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_por, FS_w_por, NO_FILETYPE_DATA,},
+  {"PIO", PROPERTY_LENGTH_BITFIELD, &A2804, ft_bitfield, fc_stable, FS_r_pio, FS_w_pio, NO_FILETYPE_DATA,},
+  {"sensed", PROPERTY_LENGTH_BITFIELD, &A2804, ft_bitfield, fc_volatile, FS_sense, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+  {"latch", PROPERTY_LENGTH_BITFIELD, &A2804, ft_bitfield, fc_volatile, FS_r_latch, FS_w_latch, NO_FILETYPE_DATA,},
+  {"set_alarm", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_s_alarm, FS_w_s_alarm, NO_FILETYPE_DATA,},
 };
 
 DeviceEntryExtended(1C, DS28E04, DEV_alarm | DEV_resume | DEV_ovdr);

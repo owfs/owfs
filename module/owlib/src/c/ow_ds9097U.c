@@ -524,12 +524,12 @@ static int DS2480_reset_once(const struct parsedname *pn)
 		break;
 	case RB_NOPRESENCE:
 		ret = BUS_RESET_OK;
-		pn->selected_connection->AnyDevices = 0;
+		pn->selected_connection->AnyDevices = anydevices_no ;
 		break;
 	case RB_PRESENCE:
 	case RB_ALARMPRESENCE:
 		ret = BUS_RESET_OK;
-		pn->selected_connection->AnyDevices = 1;
+		pn->selected_connection->AnyDevices = anydevices_yes ;
 		// check if programming voltage available
 		pn->selected_connection->ProgramAvailable = ((reset_response & PARMSEL_12VPULSE) == PARMSEL_12VPULSE);
 		if (pn->selected_connection->ds2404_compliance) {
@@ -554,7 +554,7 @@ static int DS2480_next_both(struct device_search *ds, const struct parsedname *p
 	BYTE searchoff = (BYTE) ( CMD_COMM | FUNCTSEL_SEARCHOFF | DS2480b_speed_byte(pn) );
 	int i;
 
-	if (!(pn->selected_connection->AnyDevices)) {
+	if ( pn->selected_connection->AnyDevices == anydevices_no ) {
 		ds->LastDevice = 1;
 	}
 	if (ds->LastDevice) {

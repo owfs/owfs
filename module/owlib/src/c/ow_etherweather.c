@@ -151,7 +151,7 @@ static int EtherWeather_next_both(struct device_search *ds, const struct parsedn
 	BYTE sendbuf[9];
 
 	// if the last call was not the last one
-	if (!pn->selected_connection->AnyDevices) {
+	if (pn->selected_connection->AnyDevices == anydevices_no) {
 		ds->LastDevice = 1;
 	}
 	if (ds->LastDevice) {
@@ -297,7 +297,6 @@ int EtherWeather_detect(struct connection_in *in)
 
 	in->adapter_name = "EtherWeather";
 	in->busmode = bus_etherweather;
-	in->AnyDevices = 1;
 
 	return 0;
 }

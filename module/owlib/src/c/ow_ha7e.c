@@ -73,12 +73,10 @@ int HA7E_detect(struct connection_in *in)
 	if (HA7E_reset(&pn) == BUS_RESET_OK ) {
 		in->Adapter = adapter_HA7E ;
 		in->adapter_name = "HA7E/S";
-		in->AnyDevices = 1 ;
 		return 0;
 	} else if (HA7E_reset(&pn) == BUS_RESET_OK ) {
 		in->Adapter = adapter_HA7E ;
 		in->adapter_name = "HA7E/S";
-		in->AnyDevices = 1 ;
 		return 0;
 	}
 	LEVEL_DEFAULT("error\n");

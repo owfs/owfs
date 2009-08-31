@@ -107,11 +107,11 @@ static int DS9097_reset(const struct parsedname *pn)
 		break;
 	case 0xF0:
 		ret = BUS_RESET_OK;
-		pn->selected_connection->AnyDevices = 0;
+		pn->selected_connection->AnyDevices = anydevices_no ;
 		break;
 	default:
 		ret = BUS_RESET_OK;
-		pn->selected_connection->AnyDevices = 1;
+		pn->selected_connection->AnyDevices = anydevices_yes ;
 		pn->selected_connection->ProgramAvailable = 0;	/* from digitemp docs */
 		if (pn->selected_connection->ds2404_compliance) {
 			// extra delay for alarming DS1994/DS2404 compliance

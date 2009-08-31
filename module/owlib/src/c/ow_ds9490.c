@@ -365,7 +365,6 @@ static int DS9490_root_dir( struct dirblob * db, struct connection_in * in )
 	DirblobInit( db ) ;
 
 	/* First time pretend there are devices */
-	pn_root.selected_connection->AnyDevices = 1;
 	++pn_root.selected_connection->changed_bus_settings ;	// Trigger needing new configuration
 	pn_root.selected_connection->speed = bus_speed_slow;	// not overdrive at start
 	pn_root.selected_connection->flex = Globals.usb_flextime ? bus_yes_flex : bus_no_flex ;
@@ -965,7 +964,6 @@ static int DS9490_reset(const struct parsedname *pn)
 		if (ret == -1) {
 			/* Short detected, but otherwise no bigger "problem"?
 			 * Make sure 1-wires won't be scanned */
-			pn->selected_connection->AnyDevices = 0;
 			LEVEL_DATA("short detected\n", ret);
 			return BUS_RESET_SHORT;
 		}
@@ -973,7 +971,7 @@ static int DS9490_reset(const struct parsedname *pn)
 		return ret;
 	}
 	//USBpowered = (buffer[8]&STATUSFLAGS_PMOD) == STATUSFLAGS_PMOD ;
-	pn->selected_connection->AnyDevices = 1;
+	pn->selected_connection->AnyDevices = anydevices_yes ;
 	for (i = 0; i < ret; i++) {
 		BYTE val = buffer[16 + i];
 		//LEVEL_DATA("Status bytes[%d]: %X\n", i, val);
@@ -981,7 +979,7 @@ static int DS9490_reset(const struct parsedname *pn)
 			// check for NRS bit (0x01)
 			if (val & COMMCMDERRORRESULT_NRS) {
 				// empty bus detected, no presence pulse detected
-				pn->selected_connection->AnyDevices = 0;
+				pn->selected_connection->AnyDevices = anydevices_no;
 				LEVEL_DATA("no presense pulse detected\n");
 			}
 		}
@@ -1071,7 +1069,7 @@ static int DS9490_next_both(struct device_search *ds, const struct parsedname *p
 	int ret;
 	int dir_gulp_elements = (pn->pathlength==0) ? DS2490_DIR_GULP_ELEMENTS : 1 ;
 
-	if (!pn->selected_connection->AnyDevices) {
+	if (pn->selected_connection->AnyDevices == anydevices_no) {
 		return -ENODEV;
 	}
 

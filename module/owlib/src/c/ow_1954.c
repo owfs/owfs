@@ -60,10 +60,10 @@ WRITE_FUNCTION(FS_reset);
 
 struct filetype DS1954[] = {
 	F_STANDARD,
-	{"ipr", 128, NON_AGGREGATE, ft_binary, fc_volatile, FS_r_ipr, FS_w_ipr, NO_PROPERTY_DATA,},
-	{"io_buffer", 8, NON_AGGREGATE, ft_binary, fc_volatile, FS_r_io, FS_w_io, NO_PROPERTY_DATA,},
-	{"status", 4, NON_AGGREGATE, ft_binary, fc_volatile, FS_r_status, FS_w_status, NO_PROPERTY_DATA,},
-	{"reset", 1, NON_AGGREGATE, ft_yesno, fc_volatile, NO_READ_FUNCTION, FS_reset, NO_PROPERTY_DATA,},
+	{"ipr", 128, NON_AGGREGATE, ft_binary, fc_volatile, FS_r_ipr, FS_w_ipr, NO_FILETYPE_DATA,},
+	{"io_buffer", 8, NON_AGGREGATE, ft_binary, fc_volatile, FS_r_io, FS_w_io, NO_FILETYPE_DATA,},
+	{"status", 4, NON_AGGREGATE, ft_binary, fc_volatile, FS_r_status, FS_w_status, NO_FILETYPE_DATA,},
+	{"reset", 1, NON_AGGREGATE, ft_yesno, fc_volatile, NO_READ_FUNCTION, FS_reset, NO_FILETYPE_DATA,},
 };
 
 DeviceEntryExtended(16, DS1954, DEV_ovdr);

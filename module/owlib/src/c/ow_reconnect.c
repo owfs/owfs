@@ -22,37 +22,41 @@ $Id$
 int TestConnection(const struct parsedname *pn)
 {
 	int ret = 0;
-	struct connection_in *selected_connection = pn->selected_connection;
+	struct connection_in *in = pn->selected_connection;
 
 	//printf("Reconnect = %d / %d\n",selected_connection->reconnect_state,reconnect_error) ;
 	// Test without a lock -- efficient
-	if (pn == NULL || selected_connection == NULL || selected_connection->reconnect_state < reconnect_error) {
+	if (pn == NULL || in == NULL || in->reconnect_state < reconnect_error) {
 		return 0;
 	}
 	// Lock the bus
 	BUSLOCK(pn);
 	// Test again
-	if (selected_connection->reconnect_state >= reconnect_error) {
+	if (in->reconnect_state >= reconnect_error) {
 		// Add Statistics
-		STAT_ADD1_BUS(e_bus_reconnects, selected_connection);
+		STAT_ADD1_BUS(e_bus_reconnects, in);
 
 		// Close the bus (should leave enough reconnection information available)
-		BUS_close(selected_connection);	// already locked
+		BUS_close(in);	// already locked
 
 		// Call reconnection
-		if ((selected_connection->iroutines.reconnect)
-			? (selected_connection->iroutines.reconnect) (pn)	// call bus-specific reconnect
-			: BUS_detect(selected_connection)	// call initial opener
-			) {
-			STAT_ADD1_BUS(e_bus_reconnect_errors, selected_connection);
-			LEVEL_DEFAULT("Failed to reconnect %s adapter!\n", selected_connection->adapter_name);
-			selected_connection->reconnect_state = reconnect_ok + 1 ;
+		in->AnyDevices = anydevices_unknown ;
+		if ( in->iroutines.reconnect != NULL ) {
+			// reconnect method exists
+			ret = (in->iroutines.reconnect) (pn) ;	// call bus-specific reconnect
+		} else {
+			ret = BUS_detect(in) ;	// call initial opener
+		}
+		if ( ret != 0 ) {
+			STAT_ADD1_BUS(e_bus_reconnect_errors, in);
+			LEVEL_DEFAULT("Failed to reconnect %s adapter!\n", in->adapter_name);
+			in->reconnect_state = reconnect_ok + 1 ;
 			// delay to slow thrashing
 			UT_delay(200);
 			ret = -EIO;
 		} else {
-			LEVEL_DEFAULT("%s adapter reconnected\n", selected_connection->adapter_name);
-			selected_connection->reconnect_state = reconnect_ok;
+			LEVEL_DEFAULT("%s adapter reconnected\n", in->adapter_name);
+			in->reconnect_state = reconnect_ok;
 		}
 	}
 	BUSUNLOCK(pn);

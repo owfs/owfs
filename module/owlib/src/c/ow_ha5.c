@@ -280,10 +280,10 @@ static int HA5_reset_wrapped(const struct parsedname *pn)
 
 	switch( resp[0] ) {
 		case 'P':
-			in->AnyDevices = 1 ;
+			in->AnyDevices = anydevices_yes ;
 			break ;
 		case 'N':
-			in->AnyDevices = 0 ;
+			in->AnyDevices = anydevices_no ;
 			break ;
 		default:
 			LEVEL_DEBUG("Error HA5 reset bad response %c (0x%.2X)\n", resp[0], resp[0]);

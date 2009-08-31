@@ -33,11 +33,6 @@ int BUS_first(struct device_search *ds, const struct parsedname *pn)
 	BUS_first_both(ds);
 	pn->selected_connection->ExtraReset = 0;
 	ds->search = _1W_SEARCH_ROM;
-
-	if (!pn->selected_connection->AnyDevices) {
-		LEVEL_DEBUG("Empty bus -- no presence pulse\n");
-	}
-
 	return BUS_next(ds, pn);
 }
 
@@ -118,7 +113,7 @@ int BUS_next_both_bitbang(struct device_search *ds, const struct parsedname *pn)
 		
 		// initialize for search
 		// if the last call was not the last one
-		if (!pn->selected_connection->AnyDevices) {
+		if (pn->selected_connection->AnyDevices == anydevices_no) {
 			ds->LastDevice = 1;
 		}
 		if (ds->LastDevice) {
