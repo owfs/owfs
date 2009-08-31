@@ -58,9 +58,9 @@ WRITE_FUNCTION(FS_w_memory2D);
 struct aggregate A2431 = { 4, ag_numbers, ag_separate, };
 struct filetype DS2431[] = {
 	F_STANDARD,
-	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
-  {"pages/page", 32, &A2431, ft_binary, fc_stable, FS_r_page, FS_w_page2D, {v:NULL},},
-  {"memory", 128, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory2D, {v:NULL},},
+	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
+  {"pages/page", 32, &A2431, ft_binary, fc_stable, FS_r_page, FS_w_page2D, NO_PROPERTY_DATA,},
+  {"memory", 128, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory2D, NO_PROPERTY_DATA,},
 };
 
 DeviceEntryExtended(2D, DS2431, DEV_ovdr | DEV_resume);
@@ -68,9 +68,9 @@ DeviceEntryExtended(2D, DS2431, DEV_ovdr | DEV_resume);
 struct aggregate A2433 = { 16, ag_numbers, ag_separate, };
 struct filetype DS2433[] = {
 	F_STANDARD,
-	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
-  {"pages/page", 32, &A2433, ft_binary, fc_stable, FS_r_page, FS_w_page, {v:NULL},},
-  {"memory", 512, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, {v:NULL},},
+	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
+  {"pages/page", 32, &A2433, ft_binary, fc_stable, FS_r_page, FS_w_page, NO_PROPERTY_DATA,},
+  {"memory", 512, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, NO_PROPERTY_DATA,},
 };
 
 DeviceEntryExtended(23, DS2433, DEV_ovdr);
@@ -78,9 +78,9 @@ DeviceEntryExtended(23, DS2433, DEV_ovdr);
 struct aggregate A28EC20 = { 80, ag_numbers, ag_separate, };
 struct filetype DS28EC20[] = {
 	F_STANDARD,
-	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
-  {"pages/page", 32, &A28EC20, ft_binary, fc_stable, FS_r_page, FS_w_page, {v:NULL},},
-  {"memory", 2560, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, {v:NULL},},
+	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
+  {"pages/page", 32, &A28EC20, ft_binary, fc_stable, FS_r_page, FS_w_page, NO_PROPERTY_DATA,},
+  {"memory", 2560, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, NO_PROPERTY_DATA,},
 };
 
 DeviceEntryExtended(43, DS28EC20, DEV_ovdr | DEV_resume);

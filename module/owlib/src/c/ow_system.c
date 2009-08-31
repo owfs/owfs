@@ -59,17 +59,17 @@ READ_FUNCTION(FS_define);
 /* -------- Structures ---------- */
 /* special entry -- picked off by parsing before filetypes tried */
 struct filetype sys_process[] = {
-	{"pidfile", 128, NON_AGGREGATE, ft_vascii, fc_static, FS_pidfile, NO_WRITE_FUNCTION, {v:NULL},},
+	{"pidfile", 128, NON_AGGREGATE, ft_vascii, fc_static, FS_pidfile, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
 	// variable length
-	{"pid", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_pid, NO_WRITE_FUNCTION, {v:NULL},},
+	{"pid", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_pid, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
 };
 struct device d_sys_process = { "process", "process", ePN_system, COUNT_OF_FILETYPES(sys_process),
 	sys_process
 };
 
 struct filetype sys_connections[] = {
-	{"count_current_buses", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_in, NO_WRITE_FUNCTION, {v:NULL},},
-	{"count_outbound_connections", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_out, NO_WRITE_FUNCTION, {v:NULL},},
+	{"count_current_buses", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_in, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
+	{"count_outbound_connections", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_out, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
 };
 struct device d_sys_connections = { "connections", "connections", ePN_system,
 	COUNT_OF_FILETYPES(sys_connections),

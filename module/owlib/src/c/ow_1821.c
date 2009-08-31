@@ -64,14 +64,14 @@ WRITE_FUNCTION(FS_w_thf);
 /* -------- Structures ---------- */
 struct filetype DS1821[] = {
 	F_type,
-	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_temperature, NO_WRITE_FUNCTION, {v:NULL},},
-	{"polarity", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_polarity, FS_w_polarity, {v:NULL},},
+	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_temperature, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
+	{"polarity", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_polarity, FS_w_polarity, NO_PROPERTY_DATA,},
 	{"templow", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:1},},
 	{"temphigh", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, {i:0},},
-	{"templowflag", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_tlf, FS_w_tlf, {v:NULL},},
-	{"temphighflag", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_thf, FS_w_thf, {v:NULL},},
-	{"thermostatmode", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_thermomode, FS_w_thermomode, {v:NULL},},
-	{"1shot", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_oneshot, FS_w_oneshot, {v:NULL},}
+	{"templowflag", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_tlf, FS_w_tlf, NO_PROPERTY_DATA,},
+	{"temphighflag", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_thf, FS_w_thf, NO_PROPERTY_DATA,},
+	{"thermostatmode", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_thermomode, FS_w_thermomode, NO_PROPERTY_DATA,},
+	{"1shot", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_oneshot, FS_w_oneshot, NO_PROPERTY_DATA,}
 }
 
 ;

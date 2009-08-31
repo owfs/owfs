@@ -56,9 +56,9 @@ WRITE_FUNCTION(FS_w_application);
 
 struct filetype DS2430A[] = {
 	F_STANDARD,
-	{"memory", 16, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, {v:NULL},},
-	{"application", 8, NON_AGGREGATE, ft_binary, fc_stable, FS_r_application, FS_w_application, {v:NULL},},
-	{"lock", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_lock, NO_WRITE_FUNCTION, {v:NULL},},
+	{"memory", 16, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, NO_PROPERTY_DATA,},
+	{"application", 8, NON_AGGREGATE, ft_binary, fc_stable, FS_r_application, FS_w_application, NO_PROPERTY_DATA,},
+	{"lock", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_lock, NO_WRITE_FUNCTION, NO_PROPERTY_DATA,},
 };
 
 DeviceEntry(14, DS2430A);
