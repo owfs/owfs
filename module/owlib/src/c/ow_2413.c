@@ -60,7 +60,7 @@ READ_FUNCTION(FS_r_latch);
 struct aggregate A2413 = { 2, ag_letters, ag_aggregate, };
 struct filetype DS2413[] = {
 	F_STANDARD,
-	{"piostate", PROPERTY_LENGTH_HIDDEN, NULL, ft_unsigned, fc_volatile, FS_r_piostate, NO_WRITE_FUNCTION, {v:NULL}, },
+	{"piostate", PROPERTY_LENGTH_HIDDEN, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_piostate, NO_WRITE_FUNCTION, {v:NULL}, },
 	{"PIO", PROPERTY_LENGTH_BITFIELD, &A2413, ft_bitfield, fc_link, FS_r_pio, FS_w_pio, {v:NULL},},
 	{"sensed", PROPERTY_LENGTH_BITFIELD, &A2413, ft_bitfield, fc_link, FS_sense, NO_WRITE_FUNCTION, {v:NULL},},
 	{"latch", PROPERTY_LENGTH_BITFIELD, &A2413, ft_bitfield, fc_link, FS_r_latch, FS_w_pio, {v:NULL},},

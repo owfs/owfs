@@ -348,6 +348,12 @@ enum e_reconnect {
 	reconnect_error = 2,
 };
 
+enum e_anydevices {
+	anydevices_no = 0 ,
+	anydevices_yes ,
+	anydevices_unknown ,
+};	
+
 struct device_search {
 	int LastDiscrepancy;		// for search
 	int LastDevice;				// for search
@@ -414,7 +420,7 @@ struct connection_in {
 	struct interface_routines iroutines;
 	enum adapter_type Adapter;
 	char *adapter_name;
-	int AnyDevices;
+	enum e_anydevices AnyDevices;
 	int ExtraReset;				// DS1994/DS2404 might need an extra reset
 	size_t default_discard ; // linkhub-telnet escape chars
 	enum bus_speed speed;

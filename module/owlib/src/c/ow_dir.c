@@ -378,7 +378,7 @@ static int FS_devdir(void (*dirfunc) (void *, const struct parsedname *), void *
 			}
 		}
 		namepart = (slash == NULL) ? ft_pointer->name : slash + 1;
-		if (ft_pointer->ag) {
+		if (ft_pointer->ag!=NON_AGGREGATE) {
 			int extension;
 			int first_extension = (ft_pointer->format == ft_bitfield) ? -2 : -1;
 			struct parsedname s_pn_file_entry;

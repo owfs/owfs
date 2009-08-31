@@ -300,7 +300,7 @@ static int FS_w_local(struct one_wire_query *owq)
 	// return Mock_write()
 
 	/* Array properties? Write all together if aggregate */
-	if (pn->selected_filetype->ag) {
+	if (pn->selected_filetype->ag != NON_AGGREGATE) {
 		switch (pn->extension) {
 		case EXTENSION_BYTE:
 			return FS_write_single_lump(owq);

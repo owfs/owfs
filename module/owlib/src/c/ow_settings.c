@@ -56,17 +56,17 @@ WRITE_FUNCTION(FS_w_TS);
 /* -------- Structures ---------- */
 
 struct filetype set_cache[] = {
-  {"volatile", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, {v:&Globals.timeout_volatile},},
-  {"stable", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, {v:&Globals.timeout_stable},},
-  {"directory", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, {v:&Globals.timeout_directory},},
-  {"presence", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, {v:&Globals.timeout_presence},},
-  {"serial", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, {v:&Globals.timeout_serial},},
-  {"usb", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, {v:&Globals.timeout_usb},},
-  {"network", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, {v:&Globals.timeout_network},},
-  {"server", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, {v:&Globals.timeout_server},},
-  {"ftp", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, {v:&Globals.timeout_ftp},},
-  {"ha7", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, {v:&Globals.timeout_ha7},},
-  {"w1", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, {v:&Globals.timeout_w1},},
+	{"volatile", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, {v:&Globals.timeout_volatile},},
+	{"stable", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, {v:&Globals.timeout_stable},},
+	{"directory", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, {v:&Globals.timeout_directory},},
+	{"presence", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, {v:&Globals.timeout_presence},},
+	{"serial", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, {v:&Globals.timeout_serial},},
+	{"usb", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, {v:&Globals.timeout_usb},},
+	{"network", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, {v:&Globals.timeout_network},},
+	{"server", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, {v:&Globals.timeout_server},},
+	{"ftp", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, {v:&Globals.timeout_ftp},},
+	{"ha7", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, {v:&Globals.timeout_ha7},},
+	{"w1", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, {v:&Globals.timeout_w1},},
 }
 
 ;

@@ -60,34 +60,34 @@ WRITE_FUNCTION(FS_w_change_password);
 struct aggregate A1991 = { 3, ag_numbers, ag_separate, };
 struct filetype DS1991[] = {
 	F_STANDARD,
-  {"settings", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
+	{"settings", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
   {"settings/reset_password", 8, &A1991, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_reset_password, {v:NULL},},
   {"settings/change_password", 8, &A1991, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_change_password, {v:NULL},},
   {"settings/password", 8, &A1991, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_password, {v:NULL},},
   {"settings/ident", 8, &A1991, ft_binary, fc_volatile, FS_r_ident, FS_w_ident, {v:NULL},},
   {"settings/page", 48, &A1991, ft_binary, fc_volatile, FS_r_page, FS_w_page, {v:NULL},},
-  {"pages", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
+  {"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
   {"pages/page", 48, &A1991, ft_binary, fc_volatile, FS_r_page, FS_w_page, {v:NULL},},
   {"pages/password", 8, &A1991, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_password, {v:NULL},},
   {"pages/ident", 8, &A1991, ft_binary, fc_volatile, FS_r_ident, FS_w_ident, {v:NULL},},
-  {"memory", 144, NULL, ft_binary, fc_volatile, FS_r_memory, FS_w_memory, {v:NULL},},
+  {"memory", 144, NON_AGGREGATE, ft_binary, fc_volatile, FS_r_memory, FS_w_memory, {v:NULL},},
 };
 
 DeviceEntry(02, DS1991);
 
 struct filetype DS1425[] = {
 	F_STANDARD,
-  {"settings", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
+	{"settings", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
   {"settings/reset_password", 8, &A1991, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_reset_password, {v:NULL},},
   {"settings/change_password", 8, &A1991, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_change_password, {v:NULL},},
   {"settings/password", 8, &A1991, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_password, {v:NULL},},
   {"settings/ident", 8, &A1991, ft_binary, fc_volatile, FS_r_ident, FS_w_ident, {v:NULL},},
   {"settings/page", 48, &A1991, ft_binary, fc_volatile, FS_r_page, FS_w_page, {v:NULL},},
-  {"pages", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
+  {"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
   {"pages/page", 48, &A1991, ft_binary, fc_volatile, FS_r_page, FS_w_page, {v:NULL},},
   {"pages/password", 8, &A1991, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_password, {v:NULL},},
   {"pages/ident", 8, &A1991, ft_binary, fc_volatile, FS_r_ident, FS_w_ident, {v:NULL},},
-  {"memory", 144, NULL, ft_binary, fc_volatile, FS_r_memory, FS_w_memory, {v:NULL},},
+  {"memory", 144, NON_AGGREGATE, ft_binary, fc_volatile, FS_r_memory, FS_w_memory, {v:NULL},},
 };
 
 DeviceEntry(82, DS1425);

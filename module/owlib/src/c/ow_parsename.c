@@ -505,12 +505,12 @@ static enum parse_enum Parse_Property(char *filename, struct parsedname *pn)
 		//printf("FP known filetype %s\n",pn->selected_filetype->name) ;
 		/* Filetype found, now process extension */
 		if (dot == NULL || dot[0] == '\0') {	/* no extension */
-			if (pn->selected_filetype->ag) {
+			if (pn->selected_filetype->ag != NON_AGGREGATE) {
 				return parse_error;	/* aggregate filetypes need an extension */
 			}
 			pn->extension = 0;	/* default when no aggregate */
 
-		} else if (pn->selected_filetype->ag == NULL) {
+		} else if (pn->selected_filetype->ag == NON_AGGREGATE) {
 			return parse_error;	/* An extension not allowed when non-aggregate */
 
 		} else if (strcasecmp(dot, "ALL") == 0) {

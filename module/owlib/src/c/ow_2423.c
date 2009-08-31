@@ -64,11 +64,11 @@ struct aggregate A2423c = { 2, ag_letters, ag_separate, };
 struct filetype DS2423[] = {
 	F_STANDARD,
   {"memory", 512, NULL, ft_binary, fc_stable, FS_r_mem, FS_w_mem, {v:NULL},},
-  {"pages", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
+  {"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
   {"pages/page", 32, &A2423, ft_binary, fc_stable, FS_r_page, FS_w_page, {v:NULL},},
   {"counters", PROPERTY_LENGTH_UNSIGNED, &A2423c, ft_unsigned, fc_volatile, FS_counter, NO_WRITE_FUNCTION, {v:NULL},},
 #if OW_CACHE
-  {"mincount", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_volatile, FS_r_mincount, FS_w_mincount, {v:NULL},},
+{"mincount", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_mincount, FS_w_mincount, {v:NULL},},
 #endif							/*OW_CACHE */
   {"pages/count", PROPERTY_LENGTH_UNSIGNED, &A2423, ft_unsigned, fc_volatile, FS_pagecount, NO_WRITE_FUNCTION, {v:NULL},},
 };

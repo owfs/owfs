@@ -1198,7 +1198,7 @@ int Cache_Del_Mixed_Individual(const struct parsedname *pn)
 	if (!pn) {
 		return 1;				// do check here to avoid needless processing
 	}
-	if (pn->selected_filetype->ag==NULL || pn->selected_filetype->ag->combined!=ag_mixed) {
+	if (pn->selected_filetype->ag==NON_AGGREGATE || pn->selected_filetype->ag->combined!=ag_mixed) {
 		return 1 ;
 	}
 	duration = TimeOut(pn->selected_filetype->change);
@@ -1228,7 +1228,7 @@ int Cache_Del_Mixed_Aggregate(const struct parsedname *pn)
 	if (!pn) {
 		return 1;				// do check here to avoid needless processing
 	}
-	if (pn->selected_filetype->ag==NULL || pn->selected_filetype->ag->combined!=ag_mixed) {
+	if (pn->selected_filetype->ag==NON_AGGREGATE || pn->selected_filetype->ag->combined!=ag_mixed) {
 		return 1 ;
 	}
 	duration = TimeOut(pn->selected_filetype->change);

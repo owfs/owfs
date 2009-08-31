@@ -310,7 +310,7 @@ size_t FileLength_vascii(struct one_wire_query * owq)
 	size_t file_length = 0;
 
 	// This is to avoid returning suglen on system/adapter/name.ALL etc with variable length
-	if (PN(owq)->selected_filetype->ag) {	/* array property */
+	if (PN(owq)->selected_filetype->ag != NON_AGGREGATE) {	/* array property */
 		switch (PN(owq)->extension) {
 		case EXTENSION_ALL:
 			if (PN(owq)->selected_filetype->format == ft_bitfield) {
@@ -412,7 +412,7 @@ static int FS_r_local(struct one_wire_query *owq)
 	}
 	
 	/* Array property? Read separately? Read together and manually separate? */
-	if (pn->selected_filetype->ag) {	/* array property */
+	if (pn->selected_filetype->ag != NON_AGGREGATE) {	/* array property */
 		switch (pn->extension) {
 			case EXTENSION_BYTE:
 				return FS_read_lump(owq);

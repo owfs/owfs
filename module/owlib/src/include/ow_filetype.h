@@ -135,6 +135,8 @@ struct one_wire_query;
 #define PROPERTY_LENGTH_ADDRESS   16
 #define PROPERTY_LENGTH_TYPE      32
 
+#define NON_AGGREGATE	NULL
+
 #define NO_READ_FUNCTION NULL
 #define NO_WRITE_FUNCTION NULL
 /* filetype gives -file types- for chip properties */

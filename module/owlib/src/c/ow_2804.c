@@ -71,16 +71,16 @@ struct aggregate A2804 = { 2, ag_numbers, ag_aggregate, };
 struct aggregate A2804p = { 16, ag_numbers, ag_separate, };
 struct filetype DS28E04[] = {
 	F_STANDARD,
-  {"memory", 550, NULL, ft_binary, fc_stable, FS_r_mem, FS_w_mem, {v:NULL},},
-  {"pages", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
+	{"memory", 550, NON_AGGREGATE, ft_binary, fc_stable, FS_r_mem, FS_w_mem, {v:NULL},},
+	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, {v:NULL},},
   {"pages/page", 32, &A2804p, ft_binary, fc_stable, FS_r_page, FS_w_page, {v:NULL},},
-  {"polarity", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_polarity, NO_WRITE_FUNCTION, {v:NULL},},
-  {"power", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, {v:NULL},},
-  {"por", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_por, FS_w_por, {v:NULL},},
+  {"polarity", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_polarity, NO_WRITE_FUNCTION, {v:NULL},},
+  {"power", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, {v:NULL},},
+  {"por", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_por, FS_w_por, {v:NULL},},
   {"PIO", PROPERTY_LENGTH_BITFIELD, &A2804, ft_bitfield, fc_stable, FS_r_pio, FS_w_pio, {v:NULL},},
   {"sensed", PROPERTY_LENGTH_BITFIELD, &A2804, ft_bitfield, fc_volatile, FS_sense, NO_WRITE_FUNCTION, {v:NULL},},
   {"latch", PROPERTY_LENGTH_BITFIELD, &A2804, ft_bitfield, fc_volatile, FS_r_latch, FS_w_latch, {v:NULL},},
-  {"set_alarm", PROPERTY_LENGTH_UNSIGNED, NULL, ft_unsigned, fc_stable, FS_r_s_alarm, FS_w_s_alarm, {v:NULL},},
+  {"set_alarm", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_s_alarm, FS_w_s_alarm, {v:NULL},},
 };
 
 DeviceEntryExtended(1C, DS28E04, DEV_alarm | DEV_resume | DEV_ovdr);
