@@ -67,7 +67,7 @@ struct filetype HobbyBoards_EE[] = {
     {"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_temperature, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
     {"temperature_offset", PROPERTY_LENGTH_TEMPGAP, NON_AGGREGATE, ft_tempgap, fc_stable, FS_r_temperature_offset, FS_w_temperature_offset, NO_FILETYPE_DATA,},
     {"UVI/in_case", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_in_case, FS_w_in_case, NO_FILETYPE_DATA,},
-    {"version", 4, NON_AGGREGATE, ft_ascii, fc_stable, FS_version, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+    {"version", 5, NON_AGGREGATE, ft_ascii, fc_stable, FS_version, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
     {"type_number", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_type_number, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
     {"type", PROPERTY_LENGTH_TYPE, NON_AGGREGATE, ft_ascii, fc_link, FS_localtype, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
     {"UVI", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
@@ -122,7 +122,7 @@ static int OW_write(BYTE command, BYTE byte, struct parsedname * pn);
 // returns major/minor as 2 hex bytes (ascii)
 static int FS_version(struct one_wire_query *owq)
 {
-    char v[5];
+    char v[6];
     BYTE major, minor ;
 
     if (OW_version(&major,&minor,PN(owq))) {
@@ -130,7 +130,7 @@ static int FS_version(struct one_wire_query *owq)
     }
 
     UCLIBCLOCK;
-    snprintf(v,4,"%.2X.%.2X",major,minor);
+    snprintf(v,6,"%.2X.%.2X",major,minor);
     UCLIBCUNLOCK;
 
     return Fowq_output_offset_and_size(v, 5, owq);
@@ -309,7 +309,7 @@ static int OW_version(BYTE * major, BYTE * minor, struct parsedname * pn)
 
 static int OW_type(BYTE * type_number, struct parsedname * pn)
 {
-    if (OW_read(_EEEF_READ_VERSION, type_number, 1, pn)) {
+    if (OW_read(_EEEF_READ_TYPE, type_number, 1, pn)) {
         return 1;
     }
     return 0 ;
@@ -337,7 +337,7 @@ static int OW_r_UVI_offset(_FLOAT * UVI, struct parsedname * pn)
     if (u[0]==0xFF) {
         return 1;
     }
-    UVI[0] = 0.1 * ((_FLOAT) u[0]) ;
+    UVI[0] = 0.1 * ((_FLOAT) ((signed char) u[0])) ;
     return 0 ;
 }
 
@@ -381,6 +381,6 @@ static int OW_write(BYTE command, BYTE byte, struct parsedname * pn)
         TRXN_WRITE2(c),
         TRXN_END,
     };
-    return BUS_transaction(t, pn) ;
+    return  BUS_transaction(t, pn) ;
 }
 
