@@ -41,6 +41,7 @@ man_MANS = ${man_SO} \
            DS2780.3 DS2781.3 DS2788.3 \
            DS2804.3 DS28E04.3 DS28EA00.3 DS28EC20.3 \
            DS2890.3 \
+	   EEEF.3 UVI.3 \
            Thermachron.3 \
            LCD.3 \
            OWNet.3 \
