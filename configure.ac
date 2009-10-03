@@ -881,9 +881,11 @@ case "${host_cpu}-${host_os}" in
 	*)
 		# have to add -D_BSD_SOURCE=1 to support major() in sys/sysmacros.h
 		# have to add -D_ISOC99_SOURCE=1 to support lrint() in bits/mathcalls.h
-		CFLAGS="$CFLAGS -D_BSD_SOURCE=1 -D_ISOC99_SOURCE=1"
-		EXTRACFLAGS="$EXTRACFLAGS -D_BSD_SOURCE=1 -D_ISOC99_SOURCE=1"
-		AC_MSG_RESULT([-D_BSD_SOURCE=1 -D_ISOC99_SOURCE=1])
+                # have to add -D_POSIX_C_SOURCE=200112L for sem_timedwait
+                # have to add -D_POSIX_C_SOURCE=199309L for clock_gettime()
+		CFLAGS="$CFLAGS -D_BSD_SOURCE=1 -D_ISOC99_SOURCE=1 -D_POSIX_C_SOURCE=200112L"
+		EXTRACFLAGS="$EXTRACFLAGS -D_BSD_SOURCE=1 -D_ISOC99_SOURCE=1 -D_POSIX_C_SOURCE=200112L"
+		AC_MSG_RESULT([-D_BSD_SOURCE=1 -D_ISOC99_SOURCE=1 -D_POSIX_C_SOURCE=200112L])
 	;;
 esac
 
@@ -1451,6 +1453,30 @@ AC_COMPILE_IFELSE(
 have_v6="no"])
 
 
+AC_CACHE_CHECK(if sem_timedwait exists,ac_cv_sem_timedwait, [
+   save_LIBS="$LIBS"; LIBS="$LIBS $PTHREAD_LIBS" ; save_CFLAGS="$CFLAGS"; CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+AC_TRY_LINK([
+#if HAVE_STDLIB_H
+#include <stdlib.h>
+#endif
+#if HAVE_SEMAPHORE_H
+#include <semaphore.h>
+#endif
+],
+    [sem_timedwait(NULL, NULL)],[
+    ac_cv_sem_timedwait="yes"],[
+    AC_MSG_WARN([Can't find sem_timedwait])
+    ac_cv_sem_timedwait="no"
+])
+LIBS="$save_LIBS"
+CFLAGS="$save_CFLAGS"
+])
+
+if test "$ac_cv_sem_timedwait" = "yes"; then
+    AC_DEFINE(HAVE_SEM_TIMEDWAIT, 1, [Define to 1 if you have the `sem_timedwait' function.])
+fi
+
+
 AC_CACHE_CHECK([whether string.h and strings.h may both be included],
 gcc_cv_header_string,
 [
@@ -1571,6 +1597,8 @@ fi
 AC_SEARCH_LIBS(lrint, m, AC_DEFINE(HAVE_LRINT, 1, [Define if you have lrint]))
 
 AC_SEARCH_LIBS(nanosleep, rt posix4, AC_DEFINE(HAVE_NANOSLEEP, 1, [Define if you have nanosleep]))
+# clock_gettime needed if real-time wait is needed for sem_timedwait. gettimeofday is enough.
+#AC_SEARCH_LIBS(clock_gettime, rt posix4, AC_DEFINE(HAVE_CLOCK_GETTIME, 1, [Define if you have clock_gettime]))
 
 
 AC_CONFIG_FILES([

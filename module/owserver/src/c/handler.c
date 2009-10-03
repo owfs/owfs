@@ -191,7 +191,10 @@ static void SingleHandler(struct handlerdata *hd)
 	LEVEL_DEBUG("START handler {%lu} %s\n",this_handler_count,hd->sp.path) ;
 
 	gettimeofday(&(hd->tv), NULL);
-
+#if OW_MT && defined(HAVE_SEM_TIMEDWAIT)
+	sem_init(&(hd->complete_sem), 0, 0);
+#endif
+		
 	//printf("OWSERVER pre-create\n");
 	// PTHREAD_CREATE_DETACHED doesn't work for older uclibc... call pthread_detach() instead.
 
@@ -209,12 +212,87 @@ static void SingleHandler(struct handlerdata *hd)
 	}
 
 	do {						// ping loop
+#if OW_MT && defined(HAVE_SEM_TIMEDWAIT)
+		int timeout = 100;  // max wait before testing hd->tv manually
+		int rc, err = 0;
+		struct timespec tspec_end;
+		struct timeval tv_start, tv_end, tv_now, elapsed, left;
+		
+#ifdef USE_CLOCKGETTIME
+		/* This require -lrt, and precision (nanoseconds) is a bit unneeded */
+		if (clock_gettime(CLOCK_REALTIME, &tspec_end) == -1) {
+			LEVEL_DEFAULT("clock_gettime failed\n");
+		}
+		LEVEL_DEBUG("clock_gettime returned time(NULL)=%ld %ld.%ld\n", time(NULL), tspec_end.tv_sec, tspec_end.tv_nsec);
+#else
+		/* micro seconds are good enough for this timeout */
+		gettimeofday(&tv_start, NULL);
+		tspec_end.tv_sec = tv_start.tv_sec;
+		tspec_end.tv_nsec = tv_start.tv_usec*1000;
+#endif
+		tspec_end.tv_nsec += timeout*1000*1000;  // This is our end-time to wait until...
+		if(tspec_end.tv_nsec >= 1000*1000*1000) {
+			tspec_end.tv_nsec -= 1000*1000*1000;
+			tspec_end.tv_sec += 1;
+		}
+		tv_end.tv_sec = tspec_end.tv_sec;
+		tv_end.tv_usec = tspec_end.tv_nsec/1000;
+
+		while(1) {
+#if 0
+			// This should be enough, but it doesn't work during debugging with gdb.
+			while (((rc = sem_timedwait(&(hd->complete_sem), &tspec_end)) == -1) && ((err = errno) == EINTR)) {
+				LEVEL_DEFAULT("restart sem_timedwait since EINTR\n");
+				continue;       /* Restart if interrupted by handler */
+			}
+#else
+			rc = sem_timedwait(&(hd->complete_sem), &tspec_end);
+#endif
+
+			if(rc < 0) {
+				err = errno;
+				gettimeofday(&tv_now, NULL);
+				timersub(&tv_now, &tv_start, &elapsed);  // total waiting time...
+				timersub(&tv_end, &tv_now,   &left);  // time left of "timeout"
+			
+				if(err == EINTR) {
+					LEVEL_CALL("restart sem_timedwait since EINTR. elapsed=%ld.%03ld left=%ld.%03ld\n", elapsed.tv_sec, elapsed.tv_usec/1000, left.tv_sec, left.tv_usec/1000);
+					continue;
+				}
+				if(err == ETIMEDOUT) {
+					if(left.tv_sec >= 0) {
+						/* Debugging the application with gdb will result into strange behavior from sem_timedwait.
+						 * It might return too early with ETIMEDOUT even if there are more time left.
+						 */
+						LEVEL_CALL("Too early ETIMEDOUT from sem_timedwait elapsed=%ld.%03ld left=%ld.%03ld\n", elapsed.tv_sec, elapsed.tv_usec/1000, left.tv_sec, left.tv_usec/1000);
+						//Too early ETIMEDOUT from sem_timedwait elapsed=0.022 left=179.977
+						//sem_timedwait ok  time=0.077
+						// Call sem_timedwait and wait again. tspec_end should be untouched and contain correct end-time.
+						continue;
+					} else {
+						LEVEL_CALL("sem_timedwait timeout time=%ld.%03ld (timeout=%d ms)\n", elapsed.tv_sec, elapsed.tv_usec/1000, timeout);
+					}
+				} else {
+					LEVEL_DEFAULT("sem_timedwait error %d rc=%d time=%ld.%03ld\n", err, elapsed.tv_sec, elapsed.tv_usec/1000);
+				}
+			} else {
+				//LEVEL_DEFAULT("sem_timedwait ok  time=%ld.%03ld\n", elapsed.tv_sec, elapsed.tv_usec/1000);
+			}
+			break;
+		}
+	
+#else
+		
+		// This will delay all persistant connections. (and result into cpu-usage)
+		// Replace into a timed semaphore
 #ifdef HAVE_NANOSLEEP
-		struct timespec nano = { 0, 200000000 };	// .1 seconds (Note second element NANOsec)
+		struct timespec nano = { 0, 1000*1000 };	// .001 seconds (Note second element NANOsec)
 		nanosleep(&nano, NULL);
 #else							/* HAVE_NANOSLEEP */
-		usleep((unsigned long) 200000);
+		usleep((unsigned long) 1000);
 #endif							/* HAVE_NANOSLEEP */
+
+#endif
 
 		TOCLIENTLOCK(hd);
 
@@ -251,6 +329,9 @@ HandlerDone:
 		1.0*(this_handler_stop.tv_sec-this_handler_start.tv_sec)+.000001*(this_handler_stop.tv_usec-this_handler_start.tv_usec),
 		hd->sp.path) ;
 	LEVEL_DEBUG("STOP handler {%lu} %s\n",this_handler_count,hd->sp.path) ;
+#if OW_MT && defined(HAVE_SEM_TIMEDWAIT)
+	sem_destroy(&(hd->complete_sem));
+#endif
 	if (hd->sp.path) {
 		owfree(hd->sp.path);
 		hd->sp.path = NULL;

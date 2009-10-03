@@ -189,6 +189,9 @@ void *DataHandler(void *v)
 		}
 	}
 	timerclear(&(hd->tv));
+#if OW_MT && defined(HAVE_SEM_TIMEDWAIT)
+	sem_post(&(hd->complete_sem));
+#endif
 	TOCLIENTUNLOCK(hd);
 	if (retbuffer) {
 		owfree(retbuffer);

@@ -75,6 +75,9 @@ struct handlerdata {
 	int persistent;
 #if OW_MT
 	pthread_mutex_t to_client;
+#ifdef HAVE_SEM_TIMEDWAIT
+	sem_t complete_sem;
+#endif
 #endif							/* OW_MT */
 	struct timeval tv;
 	struct server_msg sm;
