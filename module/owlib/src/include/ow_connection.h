@@ -193,7 +193,19 @@ enum bus_flex { bus_no_flex, bus_yes_flex };
 
 enum ds2480b_mode { ds2480b_data_mode, ds2480b_command_mode, } ;
 
+struct connin_tcp {
+	char *host;
+	char *service;
+	struct addrinfo *ai;
+	struct addrinfo *ai_ok;
+	char *type;					// for zeroconf
+	char *domain;				// for zeroconf
+	char *name;					// zeroconf name
+	int no_dirall;				// flag that server doesn't support DIRALL
+};
+
 struct connin_serial {
+	struct connin_tcp tcp;      // mirror connin.server
 	enum ds2480b_mode mode ;
 	int reverse_polarity ;
 };
@@ -221,6 +233,12 @@ struct connin_usb {
 	BYTE ds1420_address[8];
 };
 
+#define CHANGED_USB_SPEED  0x001
+#define CHANGED_USB_SLEW   0x002
+#define CHANGED_USB_LOW    0x004
+#define CHANGED_USB_OFFSET 0x008
+
+
 struct connin_i2c {
 	int channels;
 	int index;
@@ -234,17 +252,6 @@ struct connin_i2c {
 #endif							/* OW_MT */
 	int current;
 	struct connection_in *head;
-};
-
-struct connin_tcp {
-	char *host;
-	char *service;
-	struct addrinfo *ai;
-	struct addrinfo *ai_ok;
-	char *type;					// for zeroconf
-	char *domain;				// for zeroconf
-	char *name;					// zeroconf name
-	int no_dirall;				// flag that server doesn't support DIRALL
 };
 
 struct connin_ha7 {

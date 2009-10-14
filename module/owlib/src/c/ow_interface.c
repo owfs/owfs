@@ -207,7 +207,7 @@ static int FS_w_flextime(struct one_wire_query *owq)
 {
     struct parsedname *pn = PN(owq);
     pn->selected_connection->flex = OWQ_Y(owq) ? bus_yes_flex : bus_no_flex ;
-    ++pn->selected_connection->changed_bus_settings ;
+    pn->selected_connection->changed_bus_settings |= CHANGED_USB_SPEED ;
     return 0;
 }
 
@@ -403,7 +403,7 @@ static int FS_w_overdrive(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	pn->selected_connection->speed = OWQ_Y(owq) ? bus_speed_overdrive : bus_speed_slow;
-	++pn->selected_connection->changed_bus_settings;
+	pn->selected_connection->changed_bus_settings |= CHANGED_USB_SPEED ;
 	return 0;
 }
 
@@ -467,7 +467,7 @@ static int FS_r_pulldownslewrate(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	if (pn->selected_connection->busmode != bus_usb) {
-		OWQ_U(owq) = 3;
+		return -ENOTSUP;
 	} else {
 		OWQ_U(owq) = pn->selected_connection->connin.usb.pulldownslewrate;
 	}
@@ -481,14 +481,12 @@ static int FS_w_pulldownslewrate(struct one_wire_query *owq)
 		return -ENOTSUP;
 	}
 
-	LEVEL_DEBUG("start\n");
-
 	if (OWQ_U(owq) > 7) {
 		return -ENOTSUP;
 	}
 
 	pn->selected_connection->connin.usb.pulldownslewrate = OWQ_U(owq);
-	++pn->selected_connection->changed_bus_settings;	// force a reset
+	pn->selected_connection->changed_bus_settings |= CHANGED_USB_SLEW ;	// force a reset
 
 	LEVEL_DEBUG("Set slewrate to %d\n", pn->selected_connection->connin.usb.pulldownslewrate);
 
@@ -523,7 +521,7 @@ static int FS_w_writeonelowtime(struct one_wire_query *owq)
 	}
 
 	pn->selected_connection->connin.usb.writeonelowtime = OWQ_U(owq) - 8;
-	++pn->selected_connection->changed_bus_settings;	// force a reset
+	pn->selected_connection->changed_bus_settings |= CHANGED_USB_LOW ;	// force a reset
 
 	return 0;
 }
@@ -556,7 +554,7 @@ static int FS_w_datasampleoffset(struct one_wire_query *owq)
 	}
 
 	pn->selected_connection->connin.usb.datasampleoffset = OWQ_U(owq) - 3;
-	++pn->selected_connection->changed_bus_settings;	// force a reset
+	pn->selected_connection->changed_bus_settings |= CHANGED_USB_OFFSET;	// force a reset
 
 	return 0;
 }
