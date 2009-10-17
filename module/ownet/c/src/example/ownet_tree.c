@@ -73,8 +73,8 @@ void Show_element(void *v, const char *filename)
 	};
 
 	// space in to level (for example)
-	int index;
-	for (index = 0; index < this_pass->depth; ++index) {
+	int indent_index;
+	for (indent_index = 0; indent_index < this_pass->depth; ++indent_index) {
 		printf(" ");
 	}
 
