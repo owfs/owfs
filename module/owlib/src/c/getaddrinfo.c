@@ -47,9 +47,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <config.h>
 #include "owfs_config.h"
 
-#include "ow_debug.h"
-#include "ow_alloc.h"
-
 #ifdef HAVE_PTHREAD
 #include <pthread.h>
 #endif
@@ -79,6 +76,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/un.h>
 #include <sys/utsname.h>
 #include <net/if.h>
+
+#include "ow_debug.h"
+#include "ow_alloc.h"
 
 /* The following declarations and definitions have been removed from
  *    the public header since we don't want people to use them.  */
