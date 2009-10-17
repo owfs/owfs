@@ -211,7 +211,7 @@ $Id$
 #define PATH_MAX 2048
 #endif
 
-/* Some errnos are not defined for MacOSX and gcc3.3 */
+/* Some errnos are not defined for MacOSX and gcc3.3 or openbsd */
 #ifndef EBADMSG
 #define EBADMSG ENOMSG
 #endif							/* EBADMSG */
@@ -219,6 +219,10 @@ $Id$
 #ifndef EPROTO
 #define EPROTO EIO
 #endif							/* EPROTO */
+
+#ifndef ENOTSUP
+#define ENOTSUP EOPNOTSUP
+#endif							/* ENOTSUP */
 
 /* Allocation wrappers for debugging */
 #include "ow_alloc.h"
