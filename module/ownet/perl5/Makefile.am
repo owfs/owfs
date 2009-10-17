@@ -13,7 +13,8 @@ else
 endif
 
 install-data-local: OWNet/Makefile
-	$(MAKE) -C OWNet install DESTDIR="$(DESTDIR)"
+	(cd OWNET && $(MAKE) install DESTDIR="$(DESTDIR)"
+#	$(MAKE) -C OWNet install DESTDIR="$(DESTDIR)"
 #	( cd OWNet; $(MAKE) ; $(MAKE) test; $(MAKE) install )
 
 clean-generic:
