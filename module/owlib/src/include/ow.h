@@ -221,7 +221,7 @@ $Id$
 #endif							/* EPROTO */
 
 #ifndef ENOTSUP
-#define ENOTSUP EOPNOTSUP
+#define ENOTSUP EOPNOTSUPP
 #endif							/* ENOTSUP */
 
 /* Allocation wrappers for debugging */
