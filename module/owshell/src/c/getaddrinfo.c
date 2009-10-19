@@ -62,9 +62,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <errno.h>
 #include <netdb.h>
 #include "compat_netdb.h"
-#ifdef HAVE_RESOLV_H
-#include <resolv.h>
-#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -77,8 +75,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/utsname.h>
 #include <net/if.h>
 
+#ifdef HAVE_RESOLV_H
+#include <resolv.h>
+#endif
+
 #include "ow_debug.h"
 
+
+/* The following declarations and definitions have been removed from
  *    the public header since we don't want people to use them.  */
 #define AI_V4MAPPED     0x0008	/* IPv4-mapped addresses are acceptable.  */
 #define AI_ALL          0x0010	/* Return both IPv4 and IPv6 addresses.  */

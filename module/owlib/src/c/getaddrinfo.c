@@ -62,9 +62,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <errno.h>
 #include <netdb.h>
 #include "compat_netdb.h"
-#ifdef HAVE_RESOLV_H
-#include <resolv.h>
-#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -76,6 +74,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/un.h>
 #include <sys/utsname.h>
 #include <net/if.h>
+
+#ifdef HAVE_RESOLV_H
+#include <resolv.h>
+#endif
 
 #include "ow_debug.h"
 #include "ow_alloc.h"
