@@ -36,6 +36,7 @@ noinst_HEADERS =          \
         ow_alloc.h        \
         ow_arg.h          \
         ow_avahi.h        \
+	ow_bae.h          \
         ow_bitwork.h      \
         ow_cache.h        \
         ow_charblob.h     \

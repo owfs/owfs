@@ -96,6 +96,7 @@ void DeviceSort(void)
 	/* Sort the filetypes for the unrecognized device */
 	qsort(NoDevice.filetype_array, (size_t) NoDevice.count_of_filetypes, sizeof(struct filetype), file_compare);
 
+	Device2Tree(&d_BAE, ePN_real);
 	Device2Tree(&d_DS1420, ePN_real);
 	Device2Tree(&d_DS1425, ePN_real);
 	Device2Tree(&d_DS18S20, ePN_real);

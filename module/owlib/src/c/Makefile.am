@@ -46,6 +46,7 @@ OWLIB_SOURCE = ow_dl.c           \
                ow_alloc.c        \
                ow_api.c          \
                ow_badadapter.c   \
+               ow_bae.c          \
                ow_bus.c          \
                ow_cache.c        \
                ow_charblob.c     \
