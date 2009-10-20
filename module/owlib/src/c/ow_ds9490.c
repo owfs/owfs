@@ -90,7 +90,7 @@ static void SetupDiscrepancy(const struct device_search *ds, BYTE * discrepancy)
 static int FindDiscrepancy(BYTE * last_sn);
 static int DS9490_directory(struct device_search *ds, struct dirblob *db, const struct parsedname *pn);
 static int DS9490_SetSpeed(const struct parsedname *pn);
-static void DS9490_SetFlexParameters(const struct parsedname *pn) ;
+static void DS9490_SetFlexParameters(struct connection_in *in) ;
 
 /* Device-specific routines */
 static void DS9490_setroutines(struct connection_in *in)
@@ -309,8 +309,10 @@ int DS9490_detect(struct connection_in *in)
 	if (ret) {
 		fprintf(stderr, "Could not open the USB adapter. Is there a problem with permissions?\n");
 		LEVEL_DEFAULT("Could not open the USB adapter. Is there a problem with permissions?\n");
+        return ret ;
 	}
-	return ret;
+    DS9490_SetFlexParameters (in);
+	return 0;
 }
 
 /* Open a DS9490  -- low level code (to allow for repeats)  */
@@ -1356,7 +1358,6 @@ static int DS9490_SetSpeed(const struct parsedname *pn)
 				LEVEL_DATA("set overdrive speed\n");
 			}
 		} else if (in->flex==bus_yes_flex) {
-			DS9490_SetFlexParameters(pn) ;
 			if (USB_Control_Msg(MODE_CMD, MOD_1WIRE_SPEED, ONEWIREBUSSPEED_FLEXIBLE, pn) < 0) {
 				++ ret;
 			} else {
@@ -1366,7 +1367,7 @@ static int DS9490_SetSpeed(const struct parsedname *pn)
 			if (USB_Control_Msg(MODE_CMD, MOD_1WIRE_SPEED, ONEWIREBUSSPEED_REGULAR, pn) < 0) {
 				++ ret;
 			} else {
-				LEVEL_DATA("set flexible speed\n");
+				LEVEL_DATA("set regular speed\n");
 			}
 		}
 	}
@@ -1397,10 +1398,8 @@ static int DS9490_SetSpeed(const struct parsedname *pn)
 	return ret;
 }
 
-static void DS9490_SetFlexParameters(const struct parsedname *pn)
+static void DS9490_SetFlexParameters(struct connection_in *in)
 {
-	struct connection_in * in = pn->selected_connection ;
-	
 	/* in regular and overdrive speed, slew rate is 15V/us. It's only
 	* suitable for short 1-wire busses. Use flexible speed instead. */
 
