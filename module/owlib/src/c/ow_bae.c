@@ -124,7 +124,7 @@ static int FS_w_mem(struct one_wire_query *owq)
 		if ( bolus > pagesize ) {
 			bolus = pagesize ;
 		}
-		if ( OW_w_mem(data, bolus, location, OWQ_PN(owq) ) {
+		if ( OW_w_mem(data, bolus, location, PN(owq)  ) ) {
 			return -EINVAL ;
 		}
 		remain -= bolus ;
@@ -158,6 +158,6 @@ static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 	}
 
 	/* Copy Scratchpad to SRAM */
-	return BUS_transaction(tcommit, pn)) {
+	return BUS_transaction(tcommit, pn) ;
 }
 
