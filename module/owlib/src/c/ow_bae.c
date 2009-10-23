@@ -52,17 +52,19 @@ READ_FUNCTION(FS_r_mem);
 WRITE_FUNCTION(FS_w_mem);
 READ_FUNCTION(FS_r_page);
 WRITE_FUNCTION(FS_w_page);
-//WRITE_FUNCTION(FS_writebyte);
+WRITE_FUNCTION(FS_w_extended);
+WRITE_FUNCTION(FS_writebyte);
 
 /* ------- Structures ----------- */
 
-struct aggregate Abae = { 11, ag_numbers, ag_separate, };
+struct aggregate Abae = { 8, ag_numbers, ag_separate, };
 struct filetype BAE[] = {
 	F_STANDARD,
-  {"memory", 88, NULL, ft_binary, fc_stable, FS_r_mem, FS_w_mem, NO_FILETYPE_DATA,},
+  {"memory", 64, NULL, ft_binary, fc_stable, FS_r_mem, FS_w_mem, NO_FILETYPE_DATA,},
   {"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
   {"pages/page", 8, &Abae, ft_binary, fc_stable, FS_r_page, FS_w_page, NO_FILETYPE_DATA,},
-//  {"writebyte", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_writebyte, NO_WRITE_FUNCTION, NO_FILETYPE_DATA, },
+  {"command", 32, NULL, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_extended, NO_FILETYPE_DATA,},
+  {"writebyte", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_writebyte, NO_WRITE_FUNCTION, NO_FILETYPE_DATA, },
 };
 
 DeviceEntryExtended(FC, BAE, DEV_resume | DEV_alarm );
@@ -72,22 +74,28 @@ DeviceEntryExtended(FC, BAE, DEV_resume | DEV_alarm );
 
 #define _1W_READ_MEMORY 0xAA
 
-#define _1W_WRITE_SCRATCHPAD 0x55
-#define _1W_COPY_SCRATCHPAD 0xBC
+#define _1W_READ_VERSION 0x11
+#define _1W_READ_TYPE 0x12
 #define _1W_EXTENDED_COMMAND 0x13
+#define _1W_READ_BLOCK_WITH_LEN 0x14
+#define _1W_WRITE_BLOCK_WITH_LEN 0x15
+
+#define _1W_WRITE_SCRATCHPAD 0x55
+#define _1W_CONFIRM_WRITE 0xBC
 
 /* Note, read and write page sizes are differnt -- 32 bytes for write and no page boundary. 8 Bytes for read */
 
 /* ------- Functions ------------ */
 
-/* DS2423 */
 static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
+static int OW_w_mem_with_code(BYTE code, BYTE * data, size_t size, off_t offset, struct parsedname *pn);
+static int BAE_r_memory_crc16_14(struct one_wire_query *owq, size_t page, size_t pagesize) ;
 
-/* 2423A/D Counter */
+/* 8 byte pages with CRC */
 static int FS_r_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 8;
-	if (COMMON_OWQ_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, COMMON_read_memory_crc16_AA)) {
+	if (COMMON_OWQ_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, BAE_r_memory_crc16_14)) {
 		return -EINVAL;
 	}
 	return 0;
@@ -105,7 +113,7 @@ static int FS_w_page(struct one_wire_query *owq)
 static int FS_r_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 8;
-	if (COMMON_OWQ_readwrite_paged(owq, 0, pagesize, COMMON_read_memory_crc16_AA)) {
+	if (COMMON_OWQ_readwrite_paged(owq, 0, pagesize, BAE_r_memory_crc16_14)) {
 		return -EINVAL;
 	}
 	return 0;
@@ -115,9 +123,9 @@ static int FS_w_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 32; // different from read page size
 	size_t remain = OWQ_size(owq) ;
-	BYTE * data = OWQ_buffer(owq) ;
+	BYTE * data = (BYTE *) OWQ_buffer(owq) ;
 	off_t location = OWQ_offset(owq) ;
-
+	
 	// Write data 32 bytes at a time ignoring page boundaries
 	while ( remain > 0 ) {
 		size_t bolus = remain ;
@@ -135,10 +143,39 @@ static int FS_w_mem(struct one_wire_query *owq)
 	return 0;
 }
 
+static int FS_w_extended(struct one_wire_query *owq)
+{
+	// Write data 32 bytes maximum
+	if ( OW_w_mem_with_code(_1W_EXTENDED_COMMAND, (BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq), PN(owq)  ) ) {
+		return -EINVAL ;
+	}
+	
+	return 0;
+}
+
+static int FS_writebyte(struct one_wire_query *owq)
+{
+	off_t location = OWQ_U(owq)>>8 ;
+	BYTE data = OWQ_U(owq) & 0xFF ;
+	
+	// Write 1 byte ,
+	if ( OW_w_mem_with_code(_1W_WRITE_BLOCK_WITH_LEN, &data, 1, location, PN(owq)  ) ) {
+		return -EINVAL ;
+	}
+	
+	return 0;
+}
+
 static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
 {
-	BYTE p[1 + 2 + 1 + 32 + 2] = { _1W_WRITE_SCRATCHPAD, LOW_HIGH_ADDRESS(offset), BYTE_MASK(size), };
-	BYTE q[] = { _1W_COPY_SCRATCHPAD, } ;
+	return OW_w_mem_with_code(_1W_WRITE_BLOCK_WITH_LEN, data, size, offset, pn) ;
+}
+
+/* Used for both memory and extended command writes */
+static int OW_w_mem_with_code(BYTE code, BYTE * data, size_t size, off_t offset, struct parsedname *pn)
+{
+	BYTE p[1 + 2 + 1 + 32 + 2] = { code, LOW_HIGH_ADDRESS(offset), BYTE_MASK(size), };
+	BYTE q[] = { _1W_CONFIRM_WRITE, } ;
 	struct transaction_log tcopy_crc[] = {
 		TRXN_START,
 		TRXN_WR_CRC16(p, 1+ 2 + 1 + size, 0),
@@ -159,5 +196,30 @@ static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 
 	/* Copy Scratchpad to SRAM */
 	return BUS_transaction(tcommit, pn) ;
+}
+
+/* read up to LEN of page to CRC16 -- 0x14 BAE code*/
+static int BAE_r_memory_crc16_14(struct one_wire_query *owq, size_t page, size_t pagesize)
+{
+	off_t offset = OWQ_offset(owq) + page * pagesize;
+	size_t size = OWQ_size(owq);
+	BYTE p[1+2+1 + pagesize + 2] ;
+	struct transaction_log t[] = {
+		TRXN_START,
+		TRXN_WR_CRC16(p, 4, size),
+		TRXN_END,
+	};
+	
+	p[0] = _1W_READ_BLOCK_WITH_LEN ;
+	p[1] =  BYTE_MASK(offset) ;
+	p[2] = BYTE_MASK(offset>>8) ; ;
+	p[3] = BYTE_MASK(size) ;
+
+	if (BUS_transaction(t, PN(owq))) {
+		return 1;
+	}
+	memcpy(OWQ_buffer(owq), &p[4], size);
+	OWQ_length(owq) = OWQ_size(owq);
+	return 0;
 }
 
