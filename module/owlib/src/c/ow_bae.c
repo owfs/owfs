@@ -80,7 +80,6 @@ DeviceEntryExtended(FC, BAE, DEV_resume | DEV_alarm );
 #define _1W_READ_BLOCK_WITH_LEN 0x14
 #define _1W_WRITE_BLOCK_WITH_LEN 0x15
 
-#define _1W_WRITE_SCRATCHPAD 0x55
 #define _1W_CONFIRM_WRITE 0xBC
 
 /* Note, read and write page sizes are differnt -- 32 bytes for write and no page boundary. 8 Bytes for read */
