@@ -192,7 +192,7 @@ static int FS_r_date(struct one_wire_query *owq)
 	}
 	counter = UT_uint32(data) ;
 	OWQ_D(owq) = (_DATE) counter ;
-	LEVEL_DEBUG("Counter Data: %d %d %d %d (%Ld) \n", (counter>>24) & 0xff,(counter>>16) & 0xff,(counter>>8) & 0xff, counter & 0xff, counter );
+	LEVEL_DEBUG("Counter Data: %.2X %.2X %.2X %.2X (%Ld) \n", data[0], data[1], data[2], data[3],  counter );
 	return 0;
 }
 
