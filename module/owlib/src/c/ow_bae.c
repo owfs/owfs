@@ -54,10 +54,17 @@ READ_FUNCTION(FS_r_page);
 WRITE_FUNCTION(FS_w_page);
 WRITE_FUNCTION(FS_w_extended);
 WRITE_FUNCTION(FS_writebyte);
+
+WRITE_FUNCTION(FS_w_date);
+READ_FUNCTION(FS_r_date);
+WRITE_FUNCTION(FS_w_counter);
+READ_FUNCTION(FS_r_counter);
+
 READ_FUNCTION(FS_version_state) ;
 READ_FUNCTION(FS_version) ;
 READ_FUNCTION(FS_version_device) ;
 READ_FUNCTION(FS_version_bootstrap) ;
+
 READ_FUNCTION(FS_type_state) ;
 READ_FUNCTION(FS_localtype) ;
 READ_FUNCTION(FS_type_device) ;
@@ -72,6 +79,8 @@ struct filetype BAE[] = {
   {"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
   {"pages/page", 8, &Abae, ft_binary, fc_stable, FS_r_page, FS_w_page, NO_FILETYPE_DATA,},
   {"command", 32, NULL, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_extended, NO_FILETYPE_DATA,},
+  {"udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_counter, FS_w_counter, NO_FILETYPE_DATA,},
+  {"date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_second, FS_r_date, FS_w_date, NO_FILETYPE_DATA,},
   {"writebyte", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, NO_READ_FUNCTION, FS_writebyte, NO_FILETYPE_DATA, },
   {"versionstate", PROPERTY_LENGTH_HIDDEN, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_version_state, NO_WRITE_FUNCTION, NO_FILETYPE_DATA, },
   {"version", 5, NON_AGGREGATE, ft_ascii, fc_link, FS_version, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
@@ -85,6 +94,7 @@ struct filetype BAE[] = {
 
 DeviceEntryExtended(FC, BAE, DEV_resume | DEV_alarm );
 
+/* BAE command codes */
 #define _1W_ERASE_FIRMWARE 0xBB
 #define _1W_FLASH_FIRMWARE 0xBA
 
@@ -98,6 +108,41 @@ DeviceEntryExtended(FC, BAE, DEV_resume | DEV_alarm );
 
 #define _1W_CONFIRM_WRITE 0xBC
 
+/* BAE registers */
+#define _FC02_ADC  50    /* u8 */
+#define _FC02_ADCAN  24    /* u16 */
+#define _FC02_ADCAP  22    /* u16 */
+#define _FC02_ADCC  2    /* u8 */
+#define _FC02_ADCTOTN  36    /* u32 */
+#define _FC02_ADCTOTP  32    /* u32 */
+#define _FC02_ALAN  66    /* u16 */
+#define _FC02_ALAP  64    /* u16 */
+#define _FC02_ALARM  52    /* u8 */
+#define _FC02_ALARMC  6    /* u8 */
+#define _FC02_ALCD  68    /* u16 */
+#define _FC02_ALCT  70    /* u32 */
+#define _FC02_ALRT  74    /* u32 */
+#define _FC02_CNT  51    /* u8 */
+#define _FC02_CNTC  3    /* u8 */
+#define _FC02_COUNT  44    /* u32 */
+#define _FC02_DUTY1  14    /* u16 */
+#define _FC02_DUTY2  16    /* u16 */
+#define _FC02_DUTY3  18    /* u16 */
+#define _FC02_DUTY4  20    /* u16 */
+#define _FC02_MAXAN  28    /* u16 */
+#define _FC02_MAXAP  26    /* u16 */
+#define _FC02_MOD1  10    /* u16 */
+#define _FC02_MOD2  12    /* u16 */
+#define _FC02_MSIZE  0    /* u16 */
+#define _FC02_OUT  48    /* u8 */
+#define _FC02_OUTC  4    /* u8 */
+#define _FC02_PIO  49    /* u8 */
+#define _FC02_PIOC  5    /* u8 */
+#define _FC02_RTC  40    /* u32 */
+#define _FC02_RTCC  7    /* u8 */
+#define _FC02_TPM1C  8    /* u8 */
+#define _FC02_TPM2C  9    /* u8 */
+
 /* Note, read and write page sizes are differnt -- 32 bytes for write and no page boundary. 8 Bytes for read */
 
 /* ------- Functions ------------ */
@@ -105,7 +150,10 @@ DeviceEntryExtended(FC, BAE, DEV_resume | DEV_alarm );
 static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
 static int OW_w_extended(BYTE * data, size_t size, UINT * return_code, struct parsedname *pn);
 static int OW_version( UINT * version, struct parsedname * pn ) ;
+static int OW_type( UINT * localtype, struct parsedname * pn ) ;
 static int BAE_r_memory_crc16_14(struct one_wire_query *owq, size_t page, size_t pagesize) ;
+static int OW_read(size_t position, size_t size ,BYTE *bytes, struct parsedname * pn);
+
 
 /* 8 byte pages with CRC */
 static int FS_r_page(struct one_wire_query *owq)
@@ -133,6 +181,49 @@ static int FS_r_mem(struct one_wire_query *owq)
 		return -EINVAL;
 	}
 	return 0;
+}
+
+static int FS_r_date(struct one_wire_query *owq)
+{
+	UINT counter;
+	BYTE data[4] ; //register representation
+	if (OW_read( _FC02_RTC, 4, data, PN(owq))) {
+		return -EINVAL;
+	}
+	counter = UT_uint32(data) ;
+	OWQ_D(owq) = (_DATE) counter ;
+	LEVEL_DEBUG("Counter Data: %d %d %d %d (%Ld) \n", (counter>>24) & 0xff,(counter>>16) & 0xff,(counter>>8) & 0xff, counter & 0xff, counter );
+	return 0;
+}
+
+static int FS_w_date(struct one_wire_query *owq)
+{
+	BYTE data[4] ; //register representation
+
+	UT_uint32_to_bytes( OWQ_D(owq), data ) ;
+	if (OW_w_mem( data, 4, _FC02_RTC, PN(owq))) {
+		return -EINVAL;
+	}
+	return 0;
+}
+
+int FS_r_counter(struct one_wire_query *owq)
+{
+	_DATE D ;
+	
+	if ( FS_r_sibling_D( &D, "date", owq ) ) {
+		return -EINVAL ;
+	}
+	
+	OWQ_U(owq) = (UINT) D ;
+	return 0;
+}
+
+static int FS_w_counter(struct one_wire_query *owq)
+{
+	_DATE D = (_DATE) OWQ_D(owq);
+	
+	return FS_w_sibling_D( D, "date", owq ) ;
 }
 
 static int FS_w_mem(struct one_wire_query *owq)
@@ -243,7 +334,7 @@ static int FS_version_bootstrap(struct one_wire_query *owq)
 static int FS_type_state(struct one_wire_query *owq)
 {
 	UINT t ;
-	if ( OW_version( &t, PN(owq) ) ) {
+	if ( OW_type( &t, PN(owq) ) ) {
 		return -EINVAL ;
 	}
 	OWQ_U(owq) = t ;
@@ -253,14 +344,14 @@ static int FS_type_state(struct one_wire_query *owq)
 static int FS_localtype(struct one_wire_query *owq)
 {
 	char t[6];
-	UINT version ;
+	UINT localtype ;
 	
-	if ( FS_r_sibling_U( &version, "versionstate", owq ) ) {
+	if ( FS_r_sibling_U( &localtype, "typestate", owq ) ) {
 		return -EINVAL ;
 	}
 	
 	UCLIBCLOCK;
-	snprintf(t,6,"%.2X.%.2X",version&0xFF, (version>>8)&0xFF);
+	snprintf(t,6,"%.2X.%.2X",localtype&0xFF, (localtype>>8)&0xFF);
 	UCLIBCUNLOCK;
 	
 	return Fowq_output_offset_and_size(t, 5, owq);
@@ -335,11 +426,20 @@ static int OW_w_extended(BYTE * data, size_t size, UINT * return_code, struct pa
 }
 
 /* read up to LEN of page to CRC16 -- 0x14 BAE code*/
+/* Assumes request doesn't cross page boundaries */
 static int BAE_r_memory_crc16_14(struct one_wire_query *owq, size_t page, size_t pagesize)
 {
 	off_t offset = OWQ_offset(owq) + page * pagesize;
 	size_t size = OWQ_size(owq);
-	BYTE p[1+2+1 + pagesize + 2] ;
+
+	OWQ_length(owq) = size;
+	return OW_read(offset, size, (BYTE *) OWQ_buffer(owq), PN(owq) ) ;
+}
+
+//read bytes[size] from position
+static int OW_read(size_t position, size_t size ,BYTE *bytes, struct parsedname * pn)
+{
+	BYTE p[1+2+1 + size + 2] ;
 	struct transaction_log t[] = {
 		TRXN_START,
 		TRXN_WR_CRC16(p, 4, size),
@@ -347,15 +447,14 @@ static int BAE_r_memory_crc16_14(struct one_wire_query *owq, size_t page, size_t
 	};
 	
 	p[0] = _1W_READ_BLOCK_WITH_LEN ;
-	p[1] =  BYTE_MASK(offset) ;
-	p[2] = BYTE_MASK(offset>>8) ; ;
+	p[1] = BYTE_MASK(position) ;
+	p[2] = BYTE_MASK(position>>8) ; ;
 	p[3] = BYTE_MASK(size) ;
-
-	if (BUS_transaction(t, PN(owq))) {
+	
+	if (BUS_transaction(t, pn)) {
 		return 1;
 	}
-	memcpy(OWQ_buffer(owq), &p[4], size);
-	OWQ_length(owq) = OWQ_size(owq);
+	memcpy(bytes, &p[4], size);
 	return 0;
 }
 
@@ -372,11 +471,11 @@ static int OW_version( UINT * version, struct parsedname * pn )
 		return 1;
 	}
 
-	version[0] = (p[2]<<8) + p[1] ;
+	version[0] = UT_uint16(&p[1]) ;
 	return 0 ;
 };
 
-static int OW_type( UINT * type, struct parsedname * pn )
+static int OW_type( UINT * localtype, struct parsedname * pn )
 {
 	BYTE p[5] = { _1W_READ_TYPE, } ;
 	struct transaction_log t[] = {
@@ -389,7 +488,7 @@ static int OW_type( UINT * type, struct parsedname * pn )
 		return 1;
 	}
 	
-	type[0] = (p[2]<<8) + p[1] ;
+	localtype[0] = UT_uint16(&p[1]) ;
 	return 0 ;
 };
 
