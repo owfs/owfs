@@ -54,6 +54,14 @@ READ_FUNCTION(FS_r_page);
 WRITE_FUNCTION(FS_w_page);
 WRITE_FUNCTION(FS_w_extended);
 WRITE_FUNCTION(FS_writebyte);
+READ_FUNCTION(FS_version_state) ;
+READ_FUNCTION(FS_version) ;
+READ_FUNCTION(FS_version_device) ;
+READ_FUNCTION(FS_version_bootstrap) ;
+READ_FUNCTION(FS_type_state) ;
+READ_FUNCTION(FS_localtype) ;
+READ_FUNCTION(FS_type_device) ;
+READ_FUNCTION(FS_type_chip) ;
 
 /* ------- Structures ----------- */
 
@@ -64,7 +72,15 @@ struct filetype BAE[] = {
   {"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
   {"pages/page", 8, &Abae, ft_binary, fc_stable, FS_r_page, FS_w_page, NO_FILETYPE_DATA,},
   {"command", 32, NULL, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_extended, NO_FILETYPE_DATA,},
-  {"writebyte", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_writebyte, NO_WRITE_FUNCTION, NO_FILETYPE_DATA, },
+  {"writebyte", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, NO_READ_FUNCTION, FS_writebyte, NO_FILETYPE_DATA, },
+  {"versionstate", PROPERTY_LENGTH_HIDDEN, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_version_state, NO_WRITE_FUNCTION, NO_FILETYPE_DATA, },
+  {"version", 5, NON_AGGREGATE, ft_ascii, fc_link, FS_version, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+  {"device_version", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_version_device, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+  {"bootstrap_version", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_version_bootstrap, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+  {"typestate", PROPERTY_LENGTH_HIDDEN, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_type_state, NO_WRITE_FUNCTION, NO_FILETYPE_DATA, },
+  {"localtype", 5, NON_AGGREGATE, ft_ascii, fc_link, FS_localtype, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+  {"device_type", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_type_device, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+  {"chip_type", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_type_chip, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
 };
 
 DeviceEntryExtended(FC, BAE, DEV_resume | DEV_alarm );
@@ -87,7 +103,8 @@ DeviceEntryExtended(FC, BAE, DEV_resume | DEV_alarm );
 /* ------- Functions ------------ */
 
 static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
-static int OW_w_mem_with_code(BYTE code, BYTE * data, size_t size, off_t offset, struct parsedname *pn);
+static int OW_w_extended(BYTE * data, size_t size, UINT * return_code, struct parsedname *pn);
+static int OW_version( UINT * version, struct parsedname * pn ) ;
 static int BAE_r_memory_crc16_14(struct one_wire_query *owq, size_t page, size_t pagesize) ;
 
 /* 8 byte pages with CRC */
@@ -144,8 +161,14 @@ static int FS_w_mem(struct one_wire_query *owq)
 
 static int FS_w_extended(struct one_wire_query *owq)
 {
+	UINT ret ;
 	// Write data 32 bytes maximum
-	if ( OW_w_mem_with_code(_1W_EXTENDED_COMMAND, (BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq), PN(owq)  ) ) {
+	if ( OW_w_extended( (BYTE *) OWQ_buffer(owq), OWQ_size(owq), &ret, PN(owq)  ) ) {
+		return -EINVAL ;
+	}
+
+	if ( ret == 0xFFFF ) {
+		LEVEL_DEBUG("Bad return code for extended command\n") ;
 		return -EINVAL ;
 	}
 	
@@ -158,43 +181,157 @@ static int FS_writebyte(struct one_wire_query *owq)
 	BYTE data = OWQ_U(owq) & 0xFF ;
 	
 	// Write 1 byte ,
-	if ( OW_w_mem_with_code(_1W_WRITE_BLOCK_WITH_LEN, &data, 1, location, PN(owq)  ) ) {
+	if ( OW_w_mem( &data, 1, location, PN(owq)  ) ) {
 		return -EINVAL ;
 	}
 	
 	return 0;
 }
 
-static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
+static int FS_version_state(struct one_wire_query *owq)
 {
-	return OW_w_mem_with_code(_1W_WRITE_BLOCK_WITH_LEN, data, size, offset, pn) ;
+	UINT v ;
+	if ( OW_version( &v, PN(owq) ) ) {
+		return -EINVAL ;
+	}
+	OWQ_U(owq) = v ;
+	return 0 ;
 }
 
-/* Used for both memory and extended command writes */
-static int OW_w_mem_with_code(BYTE code, BYTE * data, size_t size, off_t offset, struct parsedname *pn)
+static int FS_version(struct one_wire_query *owq)
 {
-	BYTE p[1 + 2 + 1 + 32 + 2] = { code, LOW_HIGH_ADDRESS(offset), BYTE_MASK(size), };
+	char v[6];
+	UINT version ;
+	
+	if ( FS_r_sibling_U( &version, "versionstate", owq ) ) {
+		return -EINVAL ;
+	}
+	
+	UCLIBCLOCK;
+	snprintf(v,6,"%.2X.%.2X",version&0xFF, (version>>8)&0xFF);
+	UCLIBCUNLOCK;
+	
+	return Fowq_output_offset_and_size(v, 5, owq);
+}
+
+static int FS_version_device(struct one_wire_query *owq)
+{
+	UINT version ;
+	
+	if ( FS_r_sibling_U( &version, "versionstate", owq ) ) {
+		return -EINVAL ;
+	}
+	
+	OWQ_U(owq) = version & 0xFF ;
+	
+	return 0 ;
+}
+
+static int FS_version_bootstrap(struct one_wire_query *owq)
+{
+	UINT version ;
+	
+	if ( FS_r_sibling_U( &version, "versionstate", owq ) ) {
+		return -EINVAL ;
+	}
+	
+	OWQ_U(owq) = (version>>8) & 0xFF ;
+	
+	return 0 ;
+}
+
+static int FS_type_state(struct one_wire_query *owq)
+{
+	UINT t ;
+	if ( OW_version( &t, PN(owq) ) ) {
+		return -EINVAL ;
+	}
+	OWQ_U(owq) = t ;
+	return 0 ;
+}
+
+static int FS_localtype(struct one_wire_query *owq)
+{
+	char t[6];
+	UINT version ;
+	
+	if ( FS_r_sibling_U( &version, "versionstate", owq ) ) {
+		return -EINVAL ;
+	}
+	
+	UCLIBCLOCK;
+	snprintf(t,6,"%.2X.%.2X",version&0xFF, (version>>8)&0xFF);
+	UCLIBCUNLOCK;
+	
+	return Fowq_output_offset_and_size(t, 5, owq);
+}
+
+static int FS_type_device(struct one_wire_query *owq)
+{
+	UINT t ;
+	
+	if ( FS_r_sibling_U( &t, "typestate", owq ) ) {
+		return -EINVAL ;
+	}
+	
+	OWQ_U(owq) = t & 0xFF ;
+	
+	return 0 ;
+}
+
+static int FS_type_chip(struct one_wire_query *owq)
+{
+	UINT t ;
+	
+	if ( FS_r_sibling_U( &t, "typestate", owq ) ) {
+		return -EINVAL ;
+	}
+	
+	OWQ_U(owq) = (t>>8) & 0xFF ;
+	
+	return 0 ;
+}
+
+static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
+{
+	BYTE p[1 + 2 + 1 + 32 + 2] = { _1W_WRITE_BLOCK_WITH_LEN, LOW_HIGH_ADDRESS(offset), BYTE_MASK(size), };
 	BYTE q[] = { _1W_CONFIRM_WRITE, } ;
-	struct transaction_log tcopy_crc[] = {
+	struct transaction_log t[] = {
 		TRXN_START,
 		TRXN_WR_CRC16(p, 1+ 2 + 1 + size, 0),
-		TRXN_END,
-	};
-	struct transaction_log tcommit[] = {
-		TRXN_START,
 		TRXN_WRITE1(q),
 		TRXN_END,
 	};
-
+	
 	/* Copy to scratchpad */
-	memcpy(&p[3], data, size);
+	memcpy(&p[4], data, size);
+	
+	return BUS_transaction(t, pn) ;
+}
 
-	if (BUS_transaction(tcopy_crc, pn)) {
-		return 1;
+static int OW_w_extended(BYTE * data, size_t size, UINT * return_code, struct parsedname *pn)
+{
+	BYTE p[1 + 1 + 32 + 2] = { _1W_EXTENDED_COMMAND, BYTE_MASK(size), };
+	BYTE q[] = { _1W_CONFIRM_WRITE, } ;
+	BYTE r[2] ;
+	int ret ;
+	struct transaction_log t[] = {
+		TRXN_START,
+		TRXN_WR_CRC16(p, 1+ 1 + size, 0),
+		TRXN_WRITE1(q),
+		TRXN_READ2(r),
+		TRXN_END,
+	};
+	
+	/* Copy to scratchpad */
+	memcpy(&p[4], data, size);
+	
+	ret = BUS_transaction(t, pn) ;
+	if (ret) {
+		return 1 ;
 	}
-
-	/* Copy Scratchpad to SRAM */
-	return BUS_transaction(tcommit, pn) ;
+	return_code[0] = (r[1]<<8) + r[0] ;
+	return 0 ;
 }
 
 /* read up to LEN of page to CRC16 -- 0x14 BAE code*/
@@ -221,4 +358,38 @@ static int BAE_r_memory_crc16_14(struct one_wire_query *owq, size_t page, size_t
 	OWQ_length(owq) = OWQ_size(owq);
 	return 0;
 }
+
+static int OW_version( UINT * version, struct parsedname * pn )
+{
+	BYTE p[5] = { _1W_READ_VERSION, } ;
+	struct transaction_log t[] = {
+		TRXN_START,
+		TRXN_WR_CRC16(p, 1, 2),
+		TRXN_END,
+	} ;
+		
+	if (BUS_transaction(t, pn)) {
+		return 1;
+	}
+
+	version[0] = (p[2]<<8) + p[1] ;
+	return 0 ;
+};
+
+static int OW_type( UINT * type, struct parsedname * pn )
+{
+	BYTE p[5] = { _1W_READ_TYPE, } ;
+	struct transaction_log t[] = {
+		TRXN_START,
+		TRXN_WR_CRC16(p, 1, 2),
+		TRXN_END,
+	} ;
+	
+	if (BUS_transaction(t, pn)) {
+		return 1;
+	}
+	
+	type[0] = (p[2]<<8) + p[1] ;
+	return 0 ;
+};
 
