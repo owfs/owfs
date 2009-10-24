@@ -46,4 +46,18 @@ static inline int32_t UT_int32(BYTE * p)
 	return (((int32_t) p[3]) << 24) | (((uint32_t) p[2]) << 16) | (((uint32_t) p[1]) << 8) | ((uint32_t) p[0]);
 }
 
+static inline void UT_uint16_to_bytes( uint16_t num, BYTES * p )
+{
+	p[0] = num&0xFF ;
+	p[1] = (num>>8)&0xFF ;
+}
+
+static inline void UT_uint32_to_bytes( uint16_t num, BYTES * p )
+{
+	p[0] = num&0xFF ;
+	p[1] = (num>>8)&0xFF ;
+	p[2] = (num>>16)&0xFF ;
+	p[3] = (num>>32)&0xFF ;
+}
+
 #endif							/* OW_INTEGER_H */
