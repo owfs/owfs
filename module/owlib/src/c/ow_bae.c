@@ -50,8 +50,6 @@ $Id$
 /* BAE */
 READ_FUNCTION(FS_r_mem);
 WRITE_FUNCTION(FS_w_mem);
-READ_FUNCTION(FS_r_page);
-WRITE_FUNCTION(FS_w_page);
 WRITE_FUNCTION(FS_w_extended);
 WRITE_FUNCTION(FS_writebyte);
 
@@ -72,12 +70,11 @@ READ_FUNCTION(FS_type_chip) ;
 
 /* ------- Structures ----------- */
 
-struct aggregate Abae = { 8, ag_numbers, ag_separate, };
+#define _FC02_MEMORY_SIZE 192
+
 struct filetype BAE[] = {
 	F_STANDARD,
-  {"memory", 64, NULL, ft_binary, fc_stable, FS_r_mem, FS_w_mem, NO_FILETYPE_DATA,},
-  {"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
-  {"pages/page", 8, &Abae, ft_binary, fc_stable, FS_r_page, FS_w_page, NO_FILETYPE_DATA,},
+	{"memory", _FC02_MEMORY_SIZE, NULL, ft_binary, fc_stable, FS_r_mem, FS_w_mem, NO_FILETYPE_DATA,},
   {"command", 32, NULL, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_extended, NO_FILETYPE_DATA,},
   {"udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_counter, FS_w_counter, NO_FILETYPE_DATA,},
   {"date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_second, FS_r_date, FS_w_date, NO_FILETYPE_DATA,},
@@ -149,8 +146,7 @@ static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 static int OW_w_extended(BYTE * data, size_t size, UINT * return_code, struct parsedname *pn);
 static int OW_version( UINT * version, struct parsedname * pn ) ;
 static int OW_type( UINT * localtype, struct parsedname * pn ) ;
-static int BAE_r_memory_crc16_14(struct one_wire_query *owq, size_t page, size_t pagesize) ;
-static int OW_read(size_t position, size_t size ,BYTE *bytes, struct parsedname * pn);
+static int OW_r_mem(BYTE *bytes, size_t size, off_t offset, struct parsedname * pn);
 
 static uint16_t BAE_uint16(BYTE * p);
 static uint32_t BAE_uint32(BYTE * p);
@@ -158,31 +154,12 @@ static void BAE_uint16_to_bytes( uint16_t num, unsigned char * p );
 static void BAE_uint32_to_bytes( uint32_t num, unsigned char * p );
 
 
-/* 8 byte pages with CRC */
-static int FS_r_page(struct one_wire_query *owq)
-{
-	size_t pagesize = 8;
-	if (COMMON_OWQ_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, BAE_r_memory_crc16_14)) {
-		return -EINVAL;
-	}
-	return 0;
-}
-
-static int FS_w_page(struct one_wire_query *owq)
-{
-	size_t pagesize = 8;
-	if (COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem)) {
-		return -EINVAL;
-	}
-	return 0;
-}
-
 static int FS_r_mem(struct one_wire_query *owq)
 {
-	size_t pagesize = 8;
-	if (COMMON_OWQ_readwrite_paged(owq, 0, pagesize, BAE_r_memory_crc16_14)) {
+	if (OW_r_mem( (BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq), PN(owq))) {
 		return -EINVAL;
 	}
+	OWQ_length(owq) = OWQ_size(owq) ;
 	return 0;
 }
 
@@ -190,7 +167,7 @@ static int FS_r_date(struct one_wire_query *owq)
 {
 	UINT counter;
 	BYTE data[4] ; //register representation
-	if (OW_read( _FC02_RTC, 4, data, PN(owq))) {
+	if (OW_r_mem( data, 4, _FC02_RTC, PN(owq))) {
 		return -EINVAL;
 	}
 	counter = BAE_uint32(data) ;
@@ -413,6 +390,7 @@ static int OW_w_extended(BYTE * data, size_t size, UINT * return_code, struct pa
 		TRXN_START,
 		TRXN_WR_CRC16(p, 1+ 1 + size, 0),
 		TRXN_WRITE1(q),
+		TRXN_DELAY(10),
 		TRXN_READ2(r),
 		TRXN_END,
 	};
@@ -428,19 +406,8 @@ static int OW_w_extended(BYTE * data, size_t size, UINT * return_code, struct pa
 	return 0 ;
 }
 
-/* read up to LEN of page to CRC16 -- 0x14 BAE code*/
-/* Assumes request doesn't cross page boundaries */
-static int BAE_r_memory_crc16_14(struct one_wire_query *owq, size_t page, size_t pagesize)
-{
-	off_t offset = OWQ_offset(owq) + page * pagesize;
-	size_t size = OWQ_size(owq);
-
-	OWQ_length(owq) = size;
-	return OW_read(offset, size, (BYTE *) OWQ_buffer(owq), PN(owq) ) ;
-}
-
 //read bytes[size] from position
-static int OW_read(size_t position, size_t size ,BYTE *bytes, struct parsedname * pn)
+static int OW_r_mem(BYTE * data, size_t size, off_t offset, struct parsedname * pn)
 {
 	BYTE p[1+2+1 + size + 2] ;
 	struct transaction_log t[] = {
@@ -450,14 +417,14 @@ static int OW_read(size_t position, size_t size ,BYTE *bytes, struct parsedname 
 	};
 	
 	p[0] = _1W_READ_BLOCK_WITH_LEN ;
-	p[1] = BYTE_MASK(position) ;
-	p[2] = BYTE_MASK(position>>8) ; ;
+	p[1] = BYTE_MASK(offset) ;
+	p[2] = BYTE_MASK(offset>>8) ; ;
 	p[3] = BYTE_MASK(size) ;
 	
 	if (BUS_transaction(t, pn)) {
 		return 1;
 	}
-	memcpy(bytes, &p[4], size);
+	memcpy(data, &p[4], size);
 	return 0;
 }
 
