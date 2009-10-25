@@ -154,6 +154,11 @@ static int OW_type( UINT * localtype, struct parsedname * pn ) ;
 static int BAE_r_memory_crc16_14(struct one_wire_query *owq, size_t page, size_t pagesize) ;
 static int OW_read(size_t position, size_t size ,BYTE *bytes, struct parsedname * pn);
 
+static uint16_t BAE_uint16(BYTE * p);
+static uint32_t BAE_uint32(BYTE * p);
+static void BAE_uint16_to_bytes( uint16_t num, unsigned char * p );
+static void BAE_uint32_to_bytes( uint32_t num, unsigned char * p );
+
 
 /* 8 byte pages with CRC */
 static int FS_r_page(struct one_wire_query *owq)
@@ -190,7 +195,7 @@ static int FS_r_date(struct one_wire_query *owq)
 	if (OW_read( _FC02_RTC, 4, data, PN(owq))) {
 		return -EINVAL;
 	}
-	counter = UT_uint32(data) ;
+	counter = BAE_uint32(data) ;
 	OWQ_D(owq) = (_DATE) counter ;
 	LEVEL_DEBUG("Counter Data: %.2X %.2X %.2X %.2X (%Ld) \n", data[0], data[1], data[2], data[3],  counter );
 	return 0;
@@ -200,7 +205,7 @@ static int FS_w_date(struct one_wire_query *owq)
 {
 	BYTE data[4] ; //register representation
 
-	UT_uint32_to_bytes( OWQ_D(owq), data ) ;
+	BAE_uint32_to_bytes( OWQ_D(owq), data ) ;
 	if (OW_w_mem( data, 4, _FC02_RTC, PN(owq))) {
 		return -EINVAL;
 	}
@@ -471,7 +476,7 @@ static int OW_version( UINT * version, struct parsedname * pn )
 		return 1;
 	}
 
-	version[0] = UT_uint16(&p[1]) ;
+	version[0] = BAE_uint16(&p[1]) ;
 	return 0 ;
 };
 
@@ -488,7 +493,31 @@ static int OW_type( UINT * localtype, struct parsedname * pn )
 		return 1;
 	}
 	
-	localtype[0] = UT_uint16(&p[1]) ;
+	localtype[0] = BAE_uint16(&p[1]) ;
 	return 0 ;
 };
+
+/* Routines to play with byte <-> integer */
+{
+	return (((uint16_t) p[0]) << 8) | ((uint16_t) p[1]);
+}
+
+static uint32_t BAE_uint32(BYTE * p)
+{
+	return (((uint32_t) p[0]) << 24) | (((uint32_t) p[1]) << 16) | (((uint32_t) p[2]) << 8) | ((uint32_t) p[3]);
+}
+
+static void BAE_uint16_to_bytes( uint16_t num, unsigned char * p )
+{
+	p[1] = num&0xFF ;
+	p[0] = (num>>8)&0xFF ;
+}
+
+static void BAE_uint32_to_bytes( uint32_t num, unsigned char * p )
+{
+	p[3] = num&0xFF ;
+	p[2] = (num>>8)&0xFF ;
+	p[1] = (num>>16)&0xFF ;
+	p[0] = (num>>24)&0xFF ;
+}
 
