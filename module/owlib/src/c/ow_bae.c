@@ -98,8 +98,6 @@ DeviceEntryExtended(FC, BAE, DEV_resume | DEV_alarm );
 #define _1W_ERASE_FIRMWARE 0xBB
 #define _1W_FLASH_FIRMWARE 0xBA
 
-#define _1W_READ_MEMORY 0xAA
-
 #define _1W_READ_VERSION 0x11
 #define _1W_READ_TYPE 0x12
 #define _1W_EXTENDED_COMMAND 0x13
@@ -498,6 +496,8 @@ static int OW_type( UINT * localtype, struct parsedname * pn )
 };
 
 /* Routines to play with byte <-> integer */
+
+static uint16_t BAE_uint16(BYTE * p)
 {
 	return (((uint16_t) p[0]) << 8) | ((uint16_t) p[1]);
 }
