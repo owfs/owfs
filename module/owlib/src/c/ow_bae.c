@@ -557,7 +557,7 @@ static int OW_initiate_flash( BYTE * data, struct parsedname * pn )
 
 static int OW_write_flash( BYTE * data, struct parsedname * pn )
 {
-	BYTE p[1+1+1+32+2] = { _1W_EXTENDED_COMMAND, _1W_FLASH_FIRMWARE, 4, data[0], data[1], data[2], data[3], } ;
+	BYTE p[1+1+1+32+2] = { _1W_EXTENDED_COMMAND, _1W_FLASH_FIRMWARE, 4,  } ;
 	BYTE q[] = { _1W_CONFIRM_WRITE, } ;
 	struct transaction_log t[] = {
 		TRXN_START,
