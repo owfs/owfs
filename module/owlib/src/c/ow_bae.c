@@ -50,6 +50,7 @@ $Id$
 /* BAE */
 READ_FUNCTION(FS_r_mem);
 WRITE_FUNCTION(FS_w_mem);
+WRITE_FUNCTION(FS_w_flash);
 WRITE_FUNCTION(FS_w_extended);
 WRITE_FUNCTION(FS_writebyte);
 
@@ -71,11 +72,13 @@ READ_FUNCTION(FS_type_chip) ;
 /* ------- Structures ----------- */
 
 #define _FC02_MEMORY_SIZE 192
+#define _FC02_FUNCTION_FLASH_SIZE 4096
 
 struct filetype BAE[] = {
 	F_STANDARD,
 	{"memory", _FC02_MEMORY_SIZE, NULL, ft_binary, fc_stable, FS_r_mem, FS_w_mem, NO_FILETYPE_DATA,},
-  {"command", 32, NULL, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_extended, NO_FILETYPE_DATA,},
+	{"flash", _FC02_MEMORY_SIZE, NULL, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_flash, NO_FILETYPE_DATA,},
+	{"command", 32, NULL, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_extended, NO_FILETYPE_DATA,},
   {"udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_counter, FS_w_counter, NO_FILETYPE_DATA,},
   {"date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_second, FS_r_date, FS_w_date, NO_FILETYPE_DATA,},
   {"writebyte", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, NO_READ_FUNCTION, FS_writebyte, NO_FILETYPE_DATA, },
@@ -148,12 +151,15 @@ static int OW_version( UINT * version, struct parsedname * pn ) ;
 static int OW_type( UINT * localtype, struct parsedname * pn ) ;
 static int OW_r_mem(BYTE *bytes, size_t size, off_t offset, struct parsedname * pn);
 
+static int OW_initiate_flash(BYTE * data, struct parsedname *pn);
+static int OW_write_flash(BYTE * data, struct parsedname *pn);
+
 static uint16_t BAE_uint16(BYTE * p);
 static uint32_t BAE_uint32(BYTE * p);
 static void BAE_uint16_to_bytes( uint16_t num, unsigned char * p );
 static void BAE_uint32_to_bytes( uint32_t num, unsigned char * p );
 
-
+/* BAE memory functions */
 static int FS_r_mem(struct one_wire_query *owq)
 {
 	if (OW_r_mem( (BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq), PN(owq))) {
@@ -163,6 +169,68 @@ static int FS_r_mem(struct one_wire_query *owq)
 	return 0;
 }
 
+static int FS_w_mem(struct one_wire_query *owq)
+{
+	size_t pagesize = 32; // different from read page size
+	size_t remain = OWQ_size(owq) ;
+	BYTE * data = (BYTE *) OWQ_buffer(owq) ;
+	off_t location = OWQ_offset(owq) ;
+	
+	// Write data 32 bytes at a time ignoring page boundaries
+	while ( remain > 0 ) {
+		size_t bolus = remain ;
+		if ( bolus > pagesize ) {
+			bolus = pagesize ;
+		}
+		if ( OW_w_mem(data, bolus, location, PN(owq)  ) ) {
+			return -EINVAL ;
+		}
+		remain -= bolus ;
+		data += bolus ;
+		location += bolus ;
+	}
+	
+	return 0;
+}
+
+/* BAE flash functions */
+static int FS_w_flash(struct one_wire_query *owq)
+{
+	struct parsedname * pn = PN(owq) ;
+	BYTE * rom_image = (BYTE *) OWQ_buffer(owq) ;
+
+	size_t rom_offset ;
+
+	// test size
+	if ( OWQ_size(owq) != _FC02_FUNCTION_FLASH_SIZE ) {
+		LEVEL_DEBUG("Flash size of %d is not the expected %d.\n", (int)OWQ_size(owq), (int)_FC02_FUNCTION_FLASH_SIZE ) ;
+		return -EBADMSG ;
+	}
+
+	// start flash process
+	if ( OW_initiate_flash( rom_image, pn ) ) {
+		LEVEL_DEBUG("Unsuccessful flash initialization\n");
+		return -EFAULT ;
+	}
+
+	// loop though pages, up to 5 attempts for each page
+	for ( rom_offset=0 ; rom_offset<_FC02_FUNCTION_FLASH_SIZE ; rom_offset += 32 ) {
+		int tries = 0 ;
+		LEVEL_DEBUG("Flash up to %d bytes.\n",rom_offset);
+		while ( OW_write_flash( &rom_image[rom_offset], pn ) ) {
+			++tries ;
+			if ( tries > 4 ) {
+				LEVEL_DEBUG( "Too many attempts writing flash at offset %d.\n", rom_offset ) ;
+				return -EIO ;
+			}
+		}
+	}
+	
+	LEVEL_DEBUG("Successfully flashed full rom.\n") ;
+	return 0;
+}
+
+/* BAE flash/counter functions */
 static int FS_r_date(struct one_wire_query *owq)
 {
 	UINT counter;
@@ -206,30 +274,7 @@ static int FS_w_counter(struct one_wire_query *owq)
 	return FS_w_sibling_D( D, "date", owq ) ;
 }
 
-static int FS_w_mem(struct one_wire_query *owq)
-{
-	size_t pagesize = 32; // different from read page size
-	size_t remain = OWQ_size(owq) ;
-	BYTE * data = (BYTE *) OWQ_buffer(owq) ;
-	off_t location = OWQ_offset(owq) ;
-	
-	// Write data 32 bytes at a time ignoring page boundaries
-	while ( remain > 0 ) {
-		size_t bolus = remain ;
-		if ( bolus > pagesize ) {
-			bolus = pagesize ;
-		}
-		if ( OW_w_mem(data, bolus, location, PN(owq)  ) ) {
-			return -EINVAL ;
-		}
-		remain -= bolus ;
-		data += bolus ;
-		location += bolus ;
-	}
-	
-	return 0;
-}
-
+/* BAE extended command */
 static int FS_w_extended(struct one_wire_query *owq)
 {
 	UINT ret ;
@@ -259,6 +304,7 @@ static int FS_writebyte(struct one_wire_query *owq)
 	return 0;
 }
 
+/* BAE version */
 static int FS_version_state(struct one_wire_query *owq)
 {
 	UINT v ;
@@ -311,6 +357,7 @@ static int FS_version_bootstrap(struct one_wire_query *owq)
 	return 0 ;
 }
 
+/* BAE type */
 static int FS_type_state(struct one_wire_query *owq)
 {
 	UINT t ;
@@ -363,6 +410,7 @@ static int FS_type_chip(struct one_wire_query *owq)
 	return 0 ;
 }
 
+/* Lower level functions */
 static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
 {
 	BYTE p[1 + 2 + 1 + 32 + 2] = { _1W_WRITE_BLOCK_WITH_LEN, LOW_HIGH_ADDRESS(offset), BYTE_MASK(size), };
@@ -488,3 +536,39 @@ static void BAE_uint32_to_bytes( uint32_t num, unsigned char * p )
 	p[0] = (num>>24)&0xFF ;
 }
 
+static int OW_initiate_flash( BYTE * data, struct parsedname * pn )
+{
+	BYTE p[1+1+1+4+2] = { _1W_EXTENDED_COMMAND, _1W_ERASE_FIRMWARE, 4, } ;
+	BYTE q[] = { _1W_CONFIRM_WRITE, } ;
+	struct transaction_log t[] = {
+		TRXN_START,
+		TRXN_WR_CRC16(p, 1+1+1+4, 0),
+		TRXN_WRITE1(q),
+		TRXN_DELAY(100),
+		TRXN_END,
+	} ;
+
+	memcpy(&p[3], data, 4 ) ;
+	if (BUS_transaction(t, pn)) {
+		return 1;
+	}
+	return 0 ;
+}
+
+static int OW_write_flash( BYTE * data, struct parsedname * pn )
+{
+	BYTE p[1+1+1+32+2] = { _1W_EXTENDED_COMMAND, _1W_FLASH_FIRMWARE, 4, data[0], data[1], data[2], data[3], } ;
+	BYTE q[] = { _1W_CONFIRM_WRITE, } ;
+	struct transaction_log t[] = {
+		TRXN_START,
+		TRXN_WR_CRC16(p, 1+1+1+32, 0),
+		TRXN_WRITE1(q),
+		TRXN_END,
+	} ;
+	
+	memcpy(&p[3], data, 32 ) ;
+	if (BUS_transaction(t, pn)) {
+		return 1;
+	}
+	return 0 ;
+}
