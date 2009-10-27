@@ -50,6 +50,7 @@ $Id$
 /* BAE */
 READ_FUNCTION(FS_r_mem);
 WRITE_FUNCTION(FS_w_mem);
+READ_FUNCTION(FS_r_flash);
 WRITE_FUNCTION(FS_w_flash);
 WRITE_FUNCTION(FS_w_extended);
 WRITE_FUNCTION(FS_writebyte);
@@ -72,12 +73,13 @@ READ_FUNCTION(FS_type_chip) ;
 /* ------- Structures ----------- */
 
 #define _FC02_MEMORY_SIZE 192
-#define _FC02_FUNCTION_FLASH_SIZE 4096
+#define _FC02_FUNCTION_FLASH_SIZE 0x1000
+#define _FC02_FUNCTION_FLASH_OFFSET 0xE000
 
 struct filetype BAE[] = {
 	F_STANDARD,
 	{"memory", _FC02_MEMORY_SIZE, NULL, ft_binary, fc_stable, FS_r_mem, FS_w_mem, NO_FILETYPE_DATA,},
-	{"flash", _FC02_MEMORY_SIZE, NULL, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_flash, NO_FILETYPE_DATA,},
+	{"flash", _FC02_FUNCTION_FLASH_SIZE, NULL, ft_binary, fc_stable, FS_r_flash, FS_w_flash, NO_FILETYPE_DATA,},
 	{"command", 32, NULL, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_extended, NO_FILETYPE_DATA,},
   {"udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_counter, FS_w_counter, NO_FILETYPE_DATA,},
   {"date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_second, FS_r_date, FS_w_date, NO_FILETYPE_DATA,},
@@ -207,6 +209,11 @@ static int FS_w_flash(struct one_wire_query *owq)
 		return -EBADMSG ;
 	}
 
+	if ( OWQ_offset(owq) != 0 ) {
+		LEVEL_DEBUG("Can only write flash from start of buffer.\n") ;
+		return -ERANGE ;
+	}
+
 	// start flash process
 	if ( OW_initiate_flash( rom_image, pn ) ) {
 		LEVEL_DEBUG("Unsuccessful flash initialization\n");
@@ -220,7 +227,7 @@ static int FS_w_flash(struct one_wire_query *owq)
 		while ( OW_write_flash( &rom_image[rom_offset], pn ) ) {
 			++tries ;
 			if ( tries > 4 ) {
-				LEVEL_DEBUG( "Too many attempts writing flash at offset %d.\n", rom_offset ) ;
+				LEVEL_DEBUG( "Too many failures writing flash at offset %d.\n", rom_offset ) ;
 				return -EIO ;
 			}
 		}
@@ -230,7 +237,16 @@ static int FS_w_flash(struct one_wire_query *owq)
 	return 0;
 }
 
-/* BAE flash/counter functions */
+static int FS_r_flash( struct one_wire_query *owq)
+{
+	if ( OW_r_mem( (BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq)+_FC02_FUNCTION_FLASH_OFFSET, PN(owq) ) ) {
+		return -EINVAL ;
+	}
+	OWQ_length(owq) = OWQ_size(owq) ;
+	return 0 ;
+}
+
+/* BAE date/counter functions */
 static int FS_r_date(struct one_wire_query *owq)
 {
 	UINT counter;
