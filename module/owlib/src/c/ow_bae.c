@@ -57,8 +57,6 @@ WRITE_FUNCTION(FS_writebyte);
 
 WRITE_FUNCTION(FS_w_date);
 READ_FUNCTION(FS_r_date);
-WRITE_FUNCTION(FS_w_counter);
-READ_FUNCTION(FS_r_counter);
 
 READ_FUNCTION(FS_version_state) ;
 READ_FUNCTION(FS_version) ;
@@ -70,43 +68,21 @@ READ_FUNCTION(FS_localtype) ;
 READ_FUNCTION(FS_type_device) ;
 READ_FUNCTION(FS_type_chip) ;
 
+READ_FUNCTION(FS_r_8) ;
+WRITE_FUNCTION(FS_w_8) ;
+READ_FUNCTION(FS_r_16) ;
+WRITE_FUNCTION(FS_w_16) ;
+READ_FUNCTION(FS_r_32) ;
+WRITE_FUNCTION(FS_w_32) ;
+
 /* ------- Structures ----------- */
 
 #define _FC02_MEMORY_SIZE 192
 #define _FC02_FUNCTION_FLASH_SIZE 0x1000
 #define _FC02_FUNCTION_FLASH_OFFSET 0xE000
 
-struct filetype BAE[] = {
-	F_STANDARD,
-	{"memory", _FC02_MEMORY_SIZE, NULL, ft_binary, fc_stable, FS_r_mem, FS_w_mem, NO_FILETYPE_DATA,},
-	{"flash", _FC02_FUNCTION_FLASH_SIZE, NULL, ft_binary, fc_stable, FS_r_flash, FS_w_flash, NO_FILETYPE_DATA,},
-	{"command", 32, NULL, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_extended, NO_FILETYPE_DATA,},
-  {"udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_counter, FS_w_counter, NO_FILETYPE_DATA,},
-  {"date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_second, FS_r_date, FS_w_date, NO_FILETYPE_DATA,},
-  {"writebyte", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, NO_READ_FUNCTION, FS_writebyte, NO_FILETYPE_DATA, },
-  {"versionstate", PROPERTY_LENGTH_HIDDEN, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_version_state, NO_WRITE_FUNCTION, NO_FILETYPE_DATA, },
-  {"version", 5, NON_AGGREGATE, ft_ascii, fc_link, FS_version, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
-  {"device_version", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_version_device, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
-  {"bootstrap_version", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_version_bootstrap, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
-  {"typestate", PROPERTY_LENGTH_HIDDEN, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_type_state, NO_WRITE_FUNCTION, NO_FILETYPE_DATA, },
-  {"localtype", 5, NON_AGGREGATE, ft_ascii, fc_link, FS_localtype, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
-  {"device_type", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_type_device, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
-  {"chip_type", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_type_chip, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
-};
-
-DeviceEntryExtended(FC, BAE, DEV_resume | DEV_alarm );
-
-/* BAE command codes */
-#define _1W_ERASE_FIRMWARE 0xBB
-#define _1W_FLASH_FIRMWARE 0xBA
-
-#define _1W_READ_VERSION 0x11
-#define _1W_READ_TYPE 0x12
-#define _1W_EXTENDED_COMMAND 0x13
-#define _1W_READ_BLOCK_WITH_LEN 0x14
-#define _1W_WRITE_BLOCK_WITH_LEN 0x15
-
-#define _1W_CONFIRM_WRITE 0xBC
+#define _FC02_MAX_WRITE_GULP	32
+#define _FC02_MAX_READ_GULP	32
 
 /* BAE registers */
 #define _FC02_ADC  50    /* u8 */
@@ -143,7 +119,71 @@ DeviceEntryExtended(FC, BAE, DEV_resume | DEV_alarm );
 #define _FC02_TPM1C  8    /* u8 */
 #define _FC02_TPM2C  9    /* u8 */
 
-/* Note, read and write page sizes are differnt -- 32 bytes for write and no page boundary. 8 Bytes for read */
+
+struct filetype BAE[] = {
+	F_STANDARD,
+	{"memory", _FC02_MEMORY_SIZE, NULL, ft_binary, fc_stable, FS_r_mem, FS_w_mem, NO_FILETYPE_DATA,},
+	{"flash", _FC02_FUNCTION_FLASH_SIZE, NULL, ft_binary, fc_stable, FS_r_flash, FS_w_flash, NO_FILETYPE_DATA,},
+	{"command", 32, NULL, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_extended, NO_FILETYPE_DATA,},
+  {"writebyte", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, NO_READ_FUNCTION, FS_writebyte, NO_FILETYPE_DATA, },
+  {"versionstate", PROPERTY_LENGTH_HIDDEN, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_version_state, NO_WRITE_FUNCTION, NO_FILETYPE_DATA, },
+  {"version", 5, NON_AGGREGATE, ft_ascii, fc_link, FS_version, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+  {"device_version", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_version_device, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+  {"bootstrap_version", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_version_bootstrap, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+  {"typestate", PROPERTY_LENGTH_HIDDEN, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_type_state, NO_WRITE_FUNCTION, NO_FILETYPE_DATA, },
+  {"localtype", 5, NON_AGGREGATE, ft_ascii, fc_link, FS_localtype, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+  {"device_type", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_type_device, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+  {"chip_type", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_type_chip, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+
+  {"910", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+  {"910/adcc", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, {u:_FC02_ADCC,}, },
+  {"910/cntc", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, {u:_FC02_CNTC,}, },
+  {"910/outs", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, {u:_FC02_OUTC,}, },
+  {"910/pioc", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, {u:_FC02_PIOC,}, },
+  {"910/alarmc", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, {u:_FC02_ALARMC,}, },
+  {"910/rtcc", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, {u:_FC02_RTCC,}, },
+  {"910/tpm1c", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, {u:_FC02_TPM1C,}, },
+  {"910/tpm2c", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, {u:_FC02_TPM2C,}, },
+  {"910/mod1", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, {u:_FC02_MOD1,}, },
+  {"910/mod2", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, {u:_FC02_MOD2,}, },
+  {"910/duty1", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, {u:_FC02_DUTY1,}, },
+  {"910/duty2", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, {u:_FC02_DUTY2,}, },
+  {"910/duty3", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, {u:_FC02_DUTY3,}, },
+  {"910/duty4", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, {u:_FC02_DUTY4,}, },
+  {"910/alap", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, {u:_FC02_ALAP,}, },
+  {"910/alan", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, {u:_FC02_ALAN,}, },
+  {"910/alcd", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, {u:_FC02_ALCD,}, },
+  {"910/alct", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_32, FS_w_32, {u:_FC02_ALCT,}, },
+  {"910/alrt", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_32, FS_w_32, {u:_FC02_ALRT,}, },
+  {"910/adcap", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, NO_WRITE_FUNCTION, {u:_FC02_ADCAP,}, },
+  {"910/adcan", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, NO_WRITE_FUNCTION, {u:_FC02_ADCAN,}, },
+  {"910/maxap", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, {u:_FC02_MAXAP,}, },
+  {"910/maxan", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, {u:_FC02_MAXAN,}, },
+  {"910/adctotp", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_32, FS_w_32, {u:_FC02_ADCTOTP,}, },
+  {"910/adctotn", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_32, FS_w_32, {u:_FC02_ADCTOTN,}, },
+  {"910/udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_32, FS_w_32, {u:_FC02_RTC,}, },
+  {"910/date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_link, FS_r_date, FS_w_date, NO_FILETYPE_DATA,},
+  {"910/count", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_32, FS_w_32, {u:_FC02_COUNT,}, },
+  {"910/out", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, {u:_FC02_OUT,}, },
+  {"910/pio", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, {u:_FC02_PIO,}, },
+  {"910/adc", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, NO_WRITE_FUNCTION, {u:_FC02_ADC,}, },
+  {"910/cnt", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, NO_WRITE_FUNCTION, {u:_FC02_CNT,}, },
+  {"910/alarm", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, {u:_FC02_ALARM,}, },
+};
+
+DeviceEntryExtended(FC, BAE, DEV_resume | DEV_alarm );
+
+/* <AE command codes */
+#define _1W_ERASE_FIRMWARE 0xBB
+#define _1W_FLASH_FIRMWARE 0xBA
+
+#define _1W_READ_VERSION 0x11
+#define _1W_READ_TYPE 0x12
+#define _1W_EXTENDED_COMMAND 0x13
+#define _1W_READ_BLOCK_WITH_LEN 0x14
+#define _1W_WRITE_BLOCK_WITH_LEN 0x15
+
+#define _1W_CONFIRM_WRITE 0xBC
 
 /* ------- Functions ------------ */
 
@@ -152,6 +192,7 @@ static int OW_w_extended(BYTE * data, size_t size, UINT * return_code, struct pa
 static int OW_version( UINT * version, struct parsedname * pn ) ;
 static int OW_type( UINT * localtype, struct parsedname * pn ) ;
 static int OW_r_mem(BYTE *bytes, size_t size, off_t offset, struct parsedname * pn);
+static int OW_r_mem_small(BYTE *bytes, size_t size, off_t offset, struct parsedname * pn);
 
 static int OW_initiate_flash(BYTE * data, struct parsedname *pn);
 static int OW_write_flash(BYTE * data, struct parsedname *pn);
@@ -173,16 +214,15 @@ static int FS_r_mem(struct one_wire_query *owq)
 
 static int FS_w_mem(struct one_wire_query *owq)
 {
-	size_t pagesize = 32; // different from read page size
 	size_t remain = OWQ_size(owq) ;
 	BYTE * data = (BYTE *) OWQ_buffer(owq) ;
 	off_t location = OWQ_offset(owq) ;
 	
-	// Write data 32 bytes at a time ignoring page boundaries
+	// Write data 32 bytes (_FC02_MAX_WRITE_GULP) at a time ignoring page boundaries
 	while ( remain > 0 ) {
 		size_t bolus = remain ;
-		if ( bolus > pagesize ) {
-			bolus = pagesize ;
+		if ( bolus > _FC02_MAX_WRITE_GULP ) {
+			bolus = _FC02_MAX_WRITE_GULP ;
 		}
 		if ( OW_w_mem(data, bolus, location, PN(owq)  ) ) {
 			return -EINVAL ;
@@ -221,7 +261,7 @@ static int FS_w_flash(struct one_wire_query *owq)
 	}
 
 	// loop though pages, up to 5 attempts for each page
-	for ( rom_offset=0 ; rom_offset<_FC02_FUNCTION_FLASH_SIZE ; rom_offset += 32 ) {
+	for ( rom_offset=0 ; rom_offset<_FC02_FUNCTION_FLASH_SIZE ; rom_offset += _FC02_MAX_WRITE_GULP ) {
 		int tries = 0 ;
 		LEVEL_DEBUG("Flash up to %d bytes.\n",rom_offset);
 		while ( OW_write_flash( &rom_image[rom_offset], pn ) ) {
@@ -249,45 +289,20 @@ static int FS_r_flash( struct one_wire_query *owq)
 /* BAE date/counter functions */
 static int FS_r_date(struct one_wire_query *owq)
 {
-	UINT counter;
-	BYTE data[4] ; //register representation
-	if (OW_r_mem( data, 4, _FC02_RTC, PN(owq))) {
-		return -EINVAL;
+	UINT u ;
+	if ( FS_r_sibling_U( &u, "udate", owq ) ) {
+		return -EINVAL ;
 	}
-	counter = BAE_uint32(data) ;
-	OWQ_D(owq) = (_DATE) counter ;
-	LEVEL_DEBUG("Counter Data: %.2X %.2X %.2X %.2X (%Ld) \n", data[0], data[1], data[2], data[3],  counter );
+	
+	OWQ_D(owq) = (_DATE) u ;
 	return 0;
 }
 
 static int FS_w_date(struct one_wire_query *owq)
 {
-	BYTE data[4] ; //register representation
+	UINT u = (UINT) OWQ_D(owq) ; //register representation
 
-	BAE_uint32_to_bytes( OWQ_D(owq), data ) ;
-	if (OW_w_mem( data, 4, _FC02_RTC, PN(owq))) {
-		return -EINVAL;
-	}
-	return 0;
-}
-
-int FS_r_counter(struct one_wire_query *owq)
-{
-	_DATE D ;
-	
-	if ( FS_r_sibling_D( &D, "date", owq ) ) {
-		return -EINVAL ;
-	}
-	
-	OWQ_U(owq) = (UINT) D ;
-	return 0;
-}
-
-static int FS_w_counter(struct one_wire_query *owq)
-{
-	_DATE D = (_DATE) OWQ_D(owq);
-	
-	return FS_w_sibling_D( D, "date", owq ) ;
+	return FS_w_sibling_U( u, "udate", owq ) ;
 }
 
 /* BAE extended command */
@@ -426,10 +441,86 @@ static int FS_type_chip(struct one_wire_query *owq)
 	return 0 ;
 }
 
+/* read an 8 bit value from a register stored in filetype.data */
+static int FS_r_8(struct one_wire_query *owq)
+{
+	struct parsedname * pn = PN(owq) ;
+	BYTE data[1] ; // 8/8 = 1
+	if ( OW_r_mem_small(data, 1, pn->selected_filetype->data.u, pn ) ) {
+		return -EINVAL ;
+	}
+	OWQ_U(owq) = data[0] ;
+	return 0 ;
+}
+
+/* write an 8 bit value from a register stored in filetype.data */
+static int FS_w_8(struct one_wire_query *owq)
+{
+	struct parsedname * pn = PN(owq) ;
+	BYTE data[1] ; // 8/8 = 1
+	
+	data[0] = BYTE_MASK( OWQ_U(owq) ) ;
+	if ( OW_w_mem(data, 1, pn->selected_filetype->data.u, pn ) ) {
+		return -EINVAL ;
+	}
+	return 0 ;
+}
+
+/* read a 16 bit value from a register stored in filetype.data */
+static int FS_r_16(struct one_wire_query *owq)
+{
+	struct parsedname * pn = PN(owq) ;
+	BYTE data[2] ; // 16/8 = 2
+	if ( OW_r_mem_small(data, 2, pn->selected_filetype->data.u, pn ) ) {
+		return -EINVAL ;
+	}
+	OWQ_U(owq) = BAE_uint16(data) ;
+	return 0 ;
+}
+
+/* write a 16 bit value from a register stored in filetype.data */
+static int FS_w_16(struct one_wire_query *owq)
+{
+	struct parsedname * pn = PN(owq) ;
+	BYTE data[2] ; // 16/8 = 2
+
+	BAE_uint16_to_bytes( OWQ_U(owq), data ) ;
+	if ( OW_w_mem(data, 2, pn->selected_filetype->data.u, pn ) ) {
+		return -EINVAL ;
+	}
+	return 0 ;
+}
+
+/* read a 32 bit value from a register stored in filetype.data */
+static int FS_r_32(struct one_wire_query *owq)
+{
+	struct parsedname * pn = PN(owq) ;
+	BYTE data[4] ; // 32/8 = 4
+	if ( OW_r_mem_small(data, 4, pn->selected_filetype->data.u, pn ) ) {
+		return -EINVAL ;
+	}
+	OWQ_U(owq) = BAE_uint32(data) ;
+	return 0 ;
+}
+
+/* write a 32 bit value from a register stored in filetype.data */
+static int FS_w_32(struct one_wire_query *owq)
+{
+	struct parsedname * pn = PN(owq) ;
+	BYTE data[4] ; // 32/8 = 2
+	
+	BAE_uint32_to_bytes( OWQ_U(owq), data ) ;
+	if ( OW_w_mem(data, 4, pn->selected_filetype->data.u, pn ) ) {
+		return -EINVAL ;
+	}
+	return 0 ;
+}
+
 /* Lower level functions */
+/* size in already constrained to 32 bytes (_FC02_MAX_WRITE_GULP) */
 static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
 {
-	BYTE p[1 + 2 + 1 + 32 + 2] = { _1W_WRITE_BLOCK_WITH_LEN, LOW_HIGH_ADDRESS(offset), BYTE_MASK(size), };
+	BYTE p[1 + 2 + 1 + _FC02_MAX_WRITE_GULP + 2] = { _1W_WRITE_BLOCK_WITH_LEN, LOW_HIGH_ADDRESS(offset), BYTE_MASK(size), };
 	BYTE q[] = { _1W_CONFIRM_WRITE, } ;
 	struct transaction_log t[] = {
 		TRXN_START,
@@ -446,7 +537,7 @@ static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 
 static int OW_w_extended(BYTE * data, size_t size, UINT * return_code, struct parsedname *pn)
 {
-	BYTE p[1 + 1 + 32 + 2] = { _1W_EXTENDED_COMMAND, BYTE_MASK(size), };
+	BYTE p[1 + 1 + _FC02_MAX_WRITE_GULP + 2] = { _1W_EXTENDED_COMMAND, BYTE_MASK(size), };
 	BYTE q[] = { _1W_CONFIRM_WRITE, } ;
 	BYTE r[2] ;
 	int ret ;
@@ -473,18 +564,33 @@ static int OW_w_extended(BYTE * data, size_t size, UINT * return_code, struct pa
 //read bytes[size] from position
 static int OW_r_mem(BYTE * data, size_t size, off_t offset, struct parsedname * pn)
 {
-	BYTE p[1+2+1 + size + 2] ;
+	size_t remain = size ;
+	off_t location = 0 ;
+	
+	while ( remain > 0 ) {
+		size_t bolus = remain ;
+		if ( bolus > _FC02_MAX_READ_GULP ) {
+			bolus = _FC02_MAX_READ_GULP ;
+		}
+		if ( OW_r_mem_small( &data[location], bolus, offset+location, pn )) {
+			return 1 ;
+		}
+		remain -= bolus ;
+		location += bolus ;
+	}
+	return 0 ;	
+}
+
+/* Already constrained to _FC02_MAX_READ_GULP aliquots */
+static int OW_r_mem_small(BYTE * data, size_t size, off_t offset, struct parsedname * pn)
+{
+	BYTE p[1+2+1 + _FC02_MAX_READ_GULP + 2] = { _FC02_MAX_WRITE_GULP, LOW_HIGH_ADDRESS(offset), BYTE_MASK(size), } ;
 	struct transaction_log t[] = {
 		TRXN_START,
 		TRXN_WR_CRC16(p, 4, size),
 		TRXN_END,
 	};
-	
-	p[0] = _1W_READ_BLOCK_WITH_LEN ;
-	p[1] = BYTE_MASK(offset) ;
-	p[2] = BYTE_MASK(offset>>8) ; ;
-	p[3] = BYTE_MASK(size) ;
-	
+		
 	if (BUS_transaction(t, pn)) {
 		return 1;
 	}
@@ -527,7 +633,6 @@ static int OW_type( UINT * localtype, struct parsedname * pn )
 };
 
 /* Routines to play with byte <-> integer */
-
 static uint16_t BAE_uint16(BYTE * p)
 {
 	return (((uint16_t) p[0]) << 8) | ((uint16_t) p[1]);
