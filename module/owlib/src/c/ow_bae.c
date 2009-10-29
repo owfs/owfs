@@ -123,7 +123,6 @@ WRITE_FUNCTION(FS_w_32) ;
 struct filetype BAE[] = {
 	F_STANDARD,
 	{"memory", _FC02_MEMORY_SIZE, NULL, ft_binary, fc_stable, FS_r_mem, FS_w_mem, NO_FILETYPE_DATA,},
-	{"flash", _FC02_FUNCTION_FLASH_SIZE, NULL, ft_binary, fc_stable, FS_r_flash, FS_w_flash, NO_FILETYPE_DATA,},
 	{"command", 32, NULL, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_extended, NO_FILETYPE_DATA,},
   {"writebyte", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, NO_READ_FUNCTION, FS_writebyte, NO_FILETYPE_DATA, },
   {"versionstate", PROPERTY_LENGTH_HIDDEN, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_version_state, NO_WRITE_FUNCTION, NO_FILETYPE_DATA, },
@@ -135,26 +134,29 @@ struct filetype BAE[] = {
   {"device_type", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_type_device, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
   {"chip_type", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_type_chip, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
 
+  {"firmware", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+  {"firmware/function", _FC02_FUNCTION_FLASH_SIZE, NULL, ft_binary, fc_stable, FS_r_flash, FS_w_flash, NO_FILETYPE_DATA,},
+  
   {"910", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
-  {"910/adcc", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, {u:_FC02_ADCC,}, },
-  {"910/cntc", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, {u:_FC02_CNTC,}, },
-  {"910/outs", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, {u:_FC02_OUTC,}, },
-  {"910/pioc", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, {u:_FC02_PIOC,}, },
-  {"910/alarmc", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, {u:_FC02_ALARMC,}, },
-  {"910/rtcc", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, {u:_FC02_RTCC,}, },
-  {"910/tpm1c", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, {u:_FC02_TPM1C,}, },
-  {"910/tpm2c", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, {u:_FC02_TPM2C,}, },
-  {"910/mod1", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, {u:_FC02_MOD1,}, },
-  {"910/mod2", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, {u:_FC02_MOD2,}, },
-  {"910/duty1", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, {u:_FC02_DUTY1,}, },
-  {"910/duty2", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, {u:_FC02_DUTY2,}, },
-  {"910/duty3", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, {u:_FC02_DUTY3,}, },
-  {"910/duty4", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, {u:_FC02_DUTY4,}, },
-  {"910/alap", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, {u:_FC02_ALAP,}, },
-  {"910/alan", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, {u:_FC02_ALAN,}, },
-  {"910/alcd", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, {u:_FC02_ALCD,}, },
-  {"910/alct", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_32, FS_w_32, {u:_FC02_ALCT,}, },
-  {"910/alrt", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_32, FS_w_32, {u:_FC02_ALRT,}, },
+  {"910/adcc", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_8, FS_w_8, {u:_FC02_ADCC,}, },
+  {"910/cntc", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_8, FS_w_8, {u:_FC02_CNTC,}, },
+  {"910/outs", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_8, FS_w_8, {u:_FC02_OUTC,}, },
+  {"910/pioc", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_8, FS_w_8, {u:_FC02_PIOC,}, },
+  {"910/alarmc", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_8, FS_w_8, {u:_FC02_ALARMC,}, },
+  {"910/rtcc", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_8, FS_w_8, {u:_FC02_RTCC,}, },
+  {"910/tpm1c", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_8, FS_w_8, {u:_FC02_TPM1C,}, },
+  {"910/tpm2c", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_8, FS_w_8, {u:_FC02_TPM2C,}, },
+  {"910/mod1", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_16, FS_w_16, {u:_FC02_MOD1,}, },
+  {"910/mod2", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_16, FS_w_16, {u:_FC02_MOD2,}, },
+  {"910/duty1", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_16, FS_w_16, {u:_FC02_DUTY1,}, },
+  {"910/duty2", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_16, FS_w_16, {u:_FC02_DUTY2,}, },
+  {"910/duty3", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_16, FS_w_16, {u:_FC02_DUTY3,}, },
+  {"910/duty4", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_16, FS_w_16, {u:_FC02_DUTY4,}, },
+  {"910/alap", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_16, FS_w_16, {u:_FC02_ALAP,}, },
+  {"910/alan", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_16, FS_w_16, {u:_FC02_ALAN,}, },
+  {"910/alcd", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_16, FS_w_16, {u:_FC02_ALCD,}, },
+  {"910/alct", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_32, FS_w_32, {u:_FC02_ALCT,}, },
+  {"910/alrt", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_32, FS_w_32, {u:_FC02_ALRT,}, },
   {"910/adcap", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, NO_WRITE_FUNCTION, {u:_FC02_ADCAP,}, },
   {"910/adcan", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, NO_WRITE_FUNCTION, {u:_FC02_ADCAN,}, },
   {"910/maxap", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, {u:_FC02_MAXAP,}, },
@@ -164,7 +166,7 @@ struct filetype BAE[] = {
   {"910/udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_32, FS_w_32, {u:_FC02_RTC,}, },
   {"910/date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_link, FS_r_date, FS_w_date, NO_FILETYPE_DATA,},
   {"910/count", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_32, FS_w_32, {u:_FC02_COUNT,}, },
-  {"910/out", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, {u:_FC02_OUT,}, },
+  {"910/out", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_8, FS_w_8, {u:_FC02_OUT,}, },
   {"910/pio", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, {u:_FC02_PIO,}, },
   {"910/adc", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, NO_WRITE_FUNCTION, {u:_FC02_ADC,}, },
   {"910/cnt", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, NO_WRITE_FUNCTION, {u:_FC02_CNT,}, },
@@ -290,7 +292,7 @@ static int FS_r_flash( struct one_wire_query *owq)
 static int FS_r_date(struct one_wire_query *owq)
 {
 	UINT u ;
-	if ( FS_r_sibling_U( &u, "udate", owq ) ) {
+	if ( FS_r_sibling_U( &u, "910/udate", owq ) ) {
 		return -EINVAL ;
 	}
 	
@@ -302,7 +304,7 @@ static int FS_w_date(struct one_wire_query *owq)
 {
 	UINT u = (UINT) OWQ_D(owq) ; //register representation
 
-	return FS_w_sibling_U( u, "udate", owq ) ;
+	return FS_w_sibling_U( u, "910/udate", owq ) ;
 }
 
 /* BAE extended command */
@@ -584,7 +586,7 @@ static int OW_r_mem(BYTE * data, size_t size, off_t offset, struct parsedname * 
 /* Already constrained to _FC02_MAX_READ_GULP aliquots */
 static int OW_r_mem_small(BYTE * data, size_t size, off_t offset, struct parsedname * pn)
 {
-	BYTE p[1+2+1 + _FC02_MAX_READ_GULP + 2] = { _FC02_MAX_WRITE_GULP, LOW_HIGH_ADDRESS(offset), BYTE_MASK(size), } ;
+	BYTE p[1+2+1 + _FC02_MAX_READ_GULP + 2] = { _1W_READ_BLOCK_WITH_LEN, LOW_HIGH_ADDRESS(offset), BYTE_MASK(size), } ;
 	struct transaction_log t[] = {
 		TRXN_START,
 		TRXN_WR_CRC16(p, 4, size),
