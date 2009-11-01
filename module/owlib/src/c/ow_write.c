@@ -26,6 +26,7 @@ static int FS_write_a_bit(struct one_wire_query *owq);
 static int FS_write_in_parts(struct one_wire_query *owq);
 static int FS_write_a_part(struct one_wire_query *owq);
 static int FS_write_mixed_part(struct one_wire_query *owq);
+static void FS_write_add_to_cache( struct one_wire_query *owq);
 
 /* ---------------------------------------------- */
 /* Filesystem callback functions                  */
@@ -280,7 +281,7 @@ static int FS_w_local(struct one_wire_query *owq)
 		switch (get_busmode(pn->selected_connection)) {
 			case bus_mock:
 				// Mock -- write even "unwritable" to the cache for testing
-				OWQ_Cache_Add(owq);
+				FS_write_add_to_cache(owq);
 				// fall through
 			case bus_fake:
 			case bus_tester:
@@ -345,7 +346,7 @@ static int FS_write_single_lump(struct one_wire_query *owq)
 		return write_error;
 	}
 
-	OWQ_Cache_Add(owq);
+	FS_write_add_to_cache(owq);
 
 	return 0;
 }
@@ -426,7 +427,7 @@ static int FS_write_aggregate_lump(struct one_wire_query *owq)
 		return write_error;
 	}
 
-	OWQ_Cache_Add(owq);
+	FS_write_add_to_cache(owq);
 
 	return 0;
 }
@@ -537,4 +538,15 @@ static int FS_write_a_bit(struct one_wire_query *owq)
 int FS_write_local(struct one_wire_query *owq)
 {
 	return FS_w_local(owq);
+}
+
+// special case for fc_read_stable that actually doesn't add a written value, since the chip can modify it on writing
+// i.e. The chip can decide the written value is out of range and use a valid entry instead.
+static void FS_write_add_to_cache( struct one_wire_query *owq)
+{
+	if ( OWQ_pn(owq).selected_filetype->change == fc_read_stable ) {
+		OWQ_Cache_Del(owq) ;
+	} else {
+		OWQ_Cache_Add(owq) ;
+	}
 }

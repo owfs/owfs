@@ -157,6 +157,7 @@ static time_t TimeOut(const enum fc_change change)
 	case fc_simultaneous_voltage:
 		return Globals.timeout_volatile;
 	case fc_stable:
+	case fc_read_stable:
 	case fc_Astable:
 		return Globals.timeout_stable;
 	case fc_presence:

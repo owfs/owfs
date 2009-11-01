@@ -102,6 +102,7 @@ enum fc_change {
 	fc_local,
 	fc_static,       // doesn't change (e.g. chip property)
 	fc_stable,       // only changes if we write to the chip
+	fc_read_stable,  // stable after a read, not a write
 	fc_Astable,      // atomic stable
 	fc_volatile,     // changes on it's own (e.g. external pin voltage)
 	fc_simultaneous_temperature, // volatile with a twist
@@ -157,6 +158,7 @@ struct filetype {
 		_FLOAT f;
 		size_t s;
 		BYTE c;
+		ASCII *a;
 	} data;						// extra data pointer (used for separating similar but differently name functions)
 };
 
