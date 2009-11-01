@@ -79,7 +79,7 @@ WRITE_FUNCTION(FS_w_32) ;
 
 #define _FC02_MEMORY_SIZE 192
 #define _FC02_FUNCTION_FLASH_SIZE 0x1000
-#define _FC02_FUNCTION_FLASH_OFFSET 0xE000
+#define _FC02_FUNCTION_FLASH_OFFSET 0xE200
 
 #define _FC02_MAX_WRITE_GULP	32
 #define _FC02_MAX_READ_GULP	32
@@ -372,7 +372,7 @@ static int FS_version_device(struct one_wire_query *owq)
 		return -EINVAL ;
 	}
 	
-	OWQ_U(owq) = version & 0xFF ;
+	OWQ_U(owq) = (version>>8) & 0xFF ;
 	
 	return 0 ;
 }
@@ -385,7 +385,7 @@ static int FS_version_bootstrap(struct one_wire_query *owq)
 		return -EINVAL ;
 	}
 	
-	OWQ_U(owq) = (version>>8) & 0xFF ;
+	OWQ_U(owq) = version & 0xFF ;
 	
 	return 0 ;
 }
@@ -425,7 +425,7 @@ static int FS_type_device(struct one_wire_query *owq)
 		return -EINVAL ;
 	}
 	
-	OWQ_U(owq) = t & 0xFF ;
+	OWQ_U(owq) = (t>>8) & 0xFF ;
 	
 	return 0 ;
 }
@@ -438,7 +438,7 @@ static int FS_type_chip(struct one_wire_query *owq)
 		return -EINVAL ;
 	}
 	
-	OWQ_U(owq) = (t>>8) & 0xFF ;
+	OWQ_U(owq) = t & 0xFF ;
 	
 	return 0 ;
 }
@@ -667,7 +667,7 @@ static int OW_initiate_flash( BYTE * data, struct parsedname * pn )
 		TRXN_START,
 		TRXN_WR_CRC16(p, 1+1+1+4, 0),
 		TRXN_WRITE1(q),
-		TRXN_DELAY(100),
+		TRXN_DELAY(180),
 		TRXN_END,
 	} ;
 
@@ -680,7 +680,7 @@ static int OW_initiate_flash( BYTE * data, struct parsedname * pn )
 
 static int OW_write_flash( BYTE * data, struct parsedname * pn )
 {
-	BYTE p[1+1+1+32+2] = { _1W_EXTENDED_COMMAND, _1W_FLASH_FIRMWARE, 4,  } ;
+	BYTE p[1+1+1+32+2] = { _1W_EXTENDED_COMMAND, _1W_FLASH_FIRMWARE, 32,  } ;
 	BYTE q[] = { _1W_CONFIRM_WRITE, } ;
 	struct transaction_log t[] = {
 		TRXN_START,
