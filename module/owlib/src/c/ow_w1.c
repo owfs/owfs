@@ -192,7 +192,7 @@ static void touch( struct netlink_parse * nlp, void * v, const struct parsedname
 {
 	struct touch_struct * ts = v ;
 	(void) pn ;
-	if ( nlp->data == NULL || ts->size != nlp->data_size ) {
+	if ( nlp->data == NULL || ts->size != (size_t)nlp->data_size ) {
 		return ;
 	}
 	memcpy( ts->resp, nlp->data, nlp->data_size ) ;

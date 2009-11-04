@@ -52,9 +52,11 @@ static int w1_list_masters( void )
 static void w1_parse_master_list(struct netlink_parse * nlp)
 {
 	int * bus_master = (int *) nlp->data ;
+	int num_masters = nlp->data_size / 4 ;
 	int i ;
 
-	for ( i=0  ;i<nlp->data_size/4 ; ++i ) {
+	
+	for ( i=0  ;i<num_masters ; ++i ) {
 		AddW1Bus( bus_master[i] ) ;
 	}
 }
