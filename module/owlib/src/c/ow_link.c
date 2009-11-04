@@ -102,21 +102,9 @@ static void LINK_setroutines(struct connection_in *in)
 
 static void LINKE_setroutines(struct connection_in *in)
 {
-	in->iroutines.detect = LINK_detect;
-	in->iroutines.reset = LINK_reset;
-	in->iroutines.next_both = LINK_next_both;
-	in->iroutines.PowerByte = LINK_PowerByte;
-	//    in->iroutines.ProgramPulse = ;
-	in->iroutines.sendback_data = LINK_sendback_data;
-	//    in->iroutines.sendback_bits = ;
-	in->iroutines.select = NULL;
-	in->iroutines.reconnect = NULL;
-	in->iroutines.close = LINK_close;
-	in->iroutines.transaction = NULL;
-	in->iroutines.flags = ADAP_FLAG_no2409path;
+	LINK_setroutines(in) ;
 	in->bundling_length = LINKE_FIFO_SIZE;
 }
-
 
 #define LINK_string(x)  ((BYTE *)(x))
 
@@ -626,7 +614,6 @@ static void LINK_close(struct connection_in *in)
 			break ;
 	}
 }
-
 
 static int LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay, const struct parsedname *pn)
 {
