@@ -20,4 +20,3 @@ int DS1410_detect(struct connection_in *in)
 	(void) in;
 	return 0;
 }
-#endif							/* 0 */
