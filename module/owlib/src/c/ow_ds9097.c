@@ -45,7 +45,6 @@ static void DS9097_setroutines(struct connection_in *in)
 	in->bundling_length = UART_FIFO_SIZE / 10;
 }
 
-/* Open a DS9097 after an unsucessful DS2480_detect attempt */
 /* _detect is a bit of a misnomer, no detection is actually done */
 // no bus locking here (higher up)
 int DS9097_detect(struct connection_in *in)

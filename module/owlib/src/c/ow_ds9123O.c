@@ -109,7 +109,6 @@ DS9123OwithOther.frm:7090:            WriteToPIC doowrx8, nullcmd, nullcmd, null
 */
 
 
-/* Open a DS9123O after an unsucessful DS2480_detect attempt */
 /* _detect is a bit of a misnomer, no detection is actually done */
 /* Note, devfd alread allocated */
 /* Note, terminal settings already saved */
