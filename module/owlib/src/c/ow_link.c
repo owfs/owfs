@@ -263,7 +263,7 @@ static int LINK_net_detect(struct parsedname * pn_minimal)
 
 static void LINK_set_baud(const struct parsedname *pn)
 {
-	char * speed_code ;
+	char * speed_code ; // 
 
 	if ( pn->selected_connection->busmode == bus_elink ) {
 		return ;
@@ -289,6 +289,9 @@ static void LINK_set_baud(const struct parsedname *pn)
 			speed_code = "^" ;
 			break ;
 #endif
+		default:
+			LEVEL_DEBUG("Unrecognized baud rate\n");
+			return ;
 	}
 
 	LEVEL_DEBUG("LINK change baud string <%s>\n",speed_code);
