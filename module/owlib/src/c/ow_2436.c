@@ -186,7 +186,7 @@ static int OW_w_page(const BYTE * data, size_t size, off_t offset, const struct 
 		TRXN_START,
 		TRXN_WRITE2(scratchin),
 		TRXN_READ(p, size),
-		TRXN_COMPARE(p, data, size),
+		TRXN_COMPARE(data, p, size),
 		TRXN_END,
 	};
 	struct transaction_log tcopy[] = {
