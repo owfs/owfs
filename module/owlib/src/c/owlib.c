@@ -123,11 +123,9 @@ static void SetupInboundConnections(void)
 			break;
 			
 		case bus_xport:
-#if 0
-			if ((ret = xport_detect(in))) {
-				LEVEL_DEFAULT("Cannot detect Xport (DS2480B via telnet) interface on %s.\n", in->name);
+			if ((ret = DS2480_detect(in))) {
+				LEVEL_DEFAULT("Cannot detect DS2480B via telnet interface on %s.\n", in->name);
 			}
-#endif
 			break;
 			
 		case bus_i2c:
