@@ -172,7 +172,7 @@ static int FS_w_page(struct one_wire_query *owq)
 static int OW_w_status(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
 {
 	BYTE p[6] = { _1W_WRITE_STATUS, LOW_HIGH_ADDRESS(offset), data[0] };
-	int ret;
+	int ret = 0;
 	struct transaction_log tfirst[] = {
 		TRXN_START,
 		TRXN_WR_CRC16(p, 4, 0),
