@@ -126,6 +126,8 @@ const struct option owopts_long[] = {
 	{"HA7s", required_argument, NULL, e_ha7e},
 	{"HA7S", required_argument, NULL, e_ha7e},
 	{"xport", required_argument, NULL, e_xport, },
+	{"telnet", required_argument, NULL, e_xport, },
+	{"TELNET", required_argument, NULL, e_xport, },
 	{"Xport", required_argument, NULL, e_xport, },
 	{"XPort", required_argument, NULL, e_xport, },
 	{"XPORT", required_argument, NULL, e_xport, },
