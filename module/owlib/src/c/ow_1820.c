@@ -247,6 +247,7 @@ static int OW_w_trim(const BYTE * trim, const struct parsedname *pn);
 static enum eDie OW_die(const struct parsedname *pn);
 static int OW_w_pio(BYTE pio, const struct parsedname *pn);
 static int OW_read_piostate(UINT * piostate, const struct parsedname *pn) ;
+static _FLOAT OW_masked_temperature( BYTE * data, BYTE mask ) ;
 
 static int FS_10temp(struct one_wire_query *owq)
 {
@@ -677,8 +678,8 @@ static int OW_22temp(_FLOAT * temp, const int resolution, const struct parsednam
 		return 1;
 	}
 
-	if ( data[1]!=0x05 && data[0]!=0x50 ) { // not 85C
-		temp[0] = (_FLOAT) ((int16_t) ((data[1] << 8) | (data[0] & mask))) * .0625;
+	if ( data[1]!=0x05 || data[0]!=0x50 ) { // not 85C
+		temp[0] = OW_masked_temperature( data, mask) ;
 		return 0;
 	}
 
@@ -690,8 +691,8 @@ static int OW_22temp(_FLOAT * temp, const int resolution, const struct parsednam
 	if (OW_r_scratchpad(data, pn)) {
 		return 1;
 	}
-	if ( data[1]!=0x05 && data[0]!=0x50 ) { // not 85C
-		temp[0] = (_FLOAT) ((int16_t) ((data[1] << 8) | (data[0] & mask))) * .0625;
+	if ( data[1]!=0x05 || data[0]!=0x50 ) { // not 85C
+		temp[0] = OW_masked_temperature( data, mask) ;
 		return 0;
 	}
 
@@ -703,8 +704,7 @@ static int OW_22temp(_FLOAT * temp, const int resolution, const struct parsednam
 	if (OW_r_scratchpad(data, pn)) {
 		return 1;
 	}
-	// Torsten Godau <tg@solarlabs.de> found a problem with 9-bit resolution
-	temp[0] = (_FLOAT) ((int16_t) ((data[1] << 8) | (data[0] & mask))) * .0625;
+	temp[0] = OW_masked_temperature( data, mask) ;
 	return 0;
 }
 
@@ -870,13 +870,13 @@ static enum eDie OW_die(const struct parsedname *pn)
 }
 
 /* Powered temperature measurements -- need to poll line since it is held low during measurement */
-/* We check every 50 msec (arbitrary) up to 1.25 seconds */
+/* We check every 10 msec (arbitrary) up to 1.25 seconds */
 int FS_poll_convert(const struct parsedname *pn)
 {
 	int i;
 	BYTE p[1];
 	struct transaction_log t[] = {
-		{NULL, NULL, 50, trxn_delay,},
+		{NULL, NULL, 10, trxn_delay,},
 		TRXN_READ1(p),
 		TRXN_END,
 	};
@@ -889,7 +889,7 @@ int FS_poll_convert(const struct parsedname *pn)
 			break;
 		}
 		if (p[0] != 0) {
-			LEVEL_DEBUG("BUS_transaction done after %dms\n", (i + 1) * 50);
+			LEVEL_DEBUG("BUS_transaction done after %dms\n", (i + 1) * 10);
 			return 0;
 		}
 		t[0].size = 50;			// 50 msec for rest of delays
@@ -933,4 +933,10 @@ static int OW_w_pio(BYTE pio, const struct parsedname *pn)
 		TRXN_END,
 	};
 	return BUS_transaction(t, pn);
+}
+
+static _FLOAT OW_masked_temperature( BYTE * data, BYTE mask )
+{
+	// Torsten Godau <tg@solarlabs.de> found a problem with 9-bit resolution
+	return (_FLOAT) ((int16_t) ((data[1] << 8) | (data[0] & mask))) * .0625 ;
 }
