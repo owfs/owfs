@@ -567,7 +567,7 @@ int BusIsServer(struct connection_in *in);
 /* Serial port */
 void COM_speed(speed_t new_baud, struct connection_in *in);
 int COM_open(struct connection_in *in);
-void COM_flush(struct connection_in *in);
+void COM_flush( const struct connection_in *in);
 void COM_close(struct connection_in *in);
 void COM_break(struct connection_in *in);
 int COM_write( const BYTE * data, size_t length, struct connection_in *connection);

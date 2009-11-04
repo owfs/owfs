@@ -281,7 +281,6 @@ static int DS2480_big_reset(const struct parsedname *pn)
 // do the com port and configuration stuff
 static int DS2480_big_reset_serial(const struct parsedname *pn)
 {
-	int ret ;
 	BYTE reset_byte = (BYTE) ( CMD_COMM | FUNCTSEL_RESET | SPEEDSEL_STD );
 
 	// Open the com port in 9600 Baud.
@@ -324,7 +323,6 @@ static int DS2480_big_reset_serial(const struct parsedname *pn)
 // do the com port and configuration stuff
 static int DS2480_big_reset_net(const struct parsedname *pn)
 {
-	int ret ;
 	BYTE reset_byte = (BYTE) ( CMD_COMM | FUNCTSEL_RESET | SPEEDSEL_STD );
 	struct connection_in * in =  pn->selected_connection ;
 

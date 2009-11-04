@@ -89,7 +89,7 @@ void COM_close(struct connection_in *in)
 	}
 }
 
-void COM_flush(struct connection_in *in)
+void COM_flush( const struct connection_in *in)
 {
 	tcflush(in->file_descriptor, TCIOFLUSH);
 }
