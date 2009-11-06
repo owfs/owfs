@@ -161,24 +161,3 @@ int BUS_ProgramPulse(const struct parsedname *pn)
 	}
 	return ret;
 }
-
-// RESET called with bus locked
-int BUS_reset(const struct parsedname *pn)
-{
-	int ret = (pn->selected_connection->iroutines.reset) (pn);
-	/* Shorted 1-wire bus or minor error shouldn't cause a reconnect */
-	if (ret == BUS_RESET_OK) {
-		pn->selected_connection->reconnect_state = reconnect_ok;	// Flag as good!
-	} else if (ret == BUS_RESET_SHORT) {
-		pn->selected_connection->AnyDevices = anydevices_unknown;
-		STAT_ADD1_BUS(e_bus_short_errors, pn->selected_connection);
-		LEVEL_CONNECT("1-wire bus short circuit.\n");
-		return 1;
-	} else {
-		pn->selected_connection->reconnect_state++;	// Flag for eventual reconnection
-		STAT_ADD1_BUS(e_bus_reset_errors, pn->selected_connection);
-	}
-	STAT_ADD1_BUS(e_bus_resets, pn->selected_connection);
-
-	return ret;
-}
