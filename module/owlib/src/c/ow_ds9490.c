@@ -902,16 +902,15 @@ static int DS9490_overdrive(const struct parsedname *pn)
 	BYTE resp;
 	int i;
 
-	LEVEL_DATA("set overdrive speed\n");
-
 	// we need to change speed to overdrive
 	for (i = 0; i < 3; i++) {
+		LEVEL_DATA("set overdrive speed. Attempt %d\n",i);
 		if ((ret = BUS_reset(pn)) < 0) {
 			continue;
 		}
 		if (((ret = DS9490_sendback_data(&sp, &resp, 1, pn)) < 0)
 			|| (_1W_OVERDRIVE_SKIP_ROM != resp)) {
-			LEVEL_DEBUG("error sending ret=%d %.2X/0x%02X\n", ret, _1W_OVERDRIVE_SKIP_ROM, resp);
+			LEVEL_DEBUG("error setting overdrive ret=%d %.2X/0x%02X\n", ret, _1W_OVERDRIVE_SKIP_ROM, resp);
 			continue;
 		}
 		if ((ret = USB_Control_Msg(MODE_CMD, MOD_1WIRE_SPEED, ONEWIREBUSSPEED_OVERDRIVE, pn)) == 0) {

@@ -307,6 +307,7 @@ static int DS2480_big_reset_serial(const struct parsedname *pn)
 	// BUS_reset will do the actual changes
 	pn->selected_connection->changed_bus_settings = 1 ; // Force a mode change
 	// Send a reset again
+	LEVEL_DEBUG("Send the initial reset to the bus master.\n");
 	BUS_reset(pn) ;
 
 	// delay to let line settle

@@ -30,6 +30,7 @@ int BUS_reset(const struct parsedname *pn)
 		return 1;
 	} else {
 		pn->selected_connection->reconnect_state++;	// Flag for eventual reconnection
+		LEVEL_DEBUG("Reset error. Reconnection %d/%d\n",pn->selected_connection->reconnect_state,reconnect_error); 
 		STAT_ADD1_BUS(e_bus_reset_errors, pn->selected_connection);
 	}
 	STAT_ADD1_BUS(e_bus_resets, pn->selected_connection);
