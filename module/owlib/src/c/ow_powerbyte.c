@@ -28,7 +28,7 @@ int BUS_PowerByte(BYTE data, BYTE * resp, UINT delay, const struct parsedname *p
 {
 	int ret;
 
-	if (pn->selected_connection->iroutines.PowerByte) {
+	if ( FunctionExists(pn->selected_connection->iroutines.PowerByte) ) {
 		ret = (pn->selected_connection->iroutines.PowerByte) (data, resp, delay, pn);
 	} else {
 		// send the packet

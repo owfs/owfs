@@ -66,7 +66,7 @@ int BUS_select(const struct parsedname *pn)
 		return -ENOTSUP;		/* cannot do branching with eg. LINK ascii */
 	}
 	/* Adapter-specific select routine? */
-	if (pn->selected_connection->iroutines.select) {
+	if ( FunctionExists(pn->selected_connection->iroutines.select) ) {
 		return (pn->selected_connection->iroutines.select) (pn);
 	}
 

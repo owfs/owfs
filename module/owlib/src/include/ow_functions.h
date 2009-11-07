@@ -43,6 +43,8 @@ $Id$
 #ifndef OW_FUNCTION_H			/* tedious wrapper */
 #define OW_FUNCTION_H
 
+#define FunctionExists(func)	((func) != NULL)
+
 _FLOAT Temperature(_FLOAT C, const struct parsedname *pn);
 _FLOAT TemperatureGap(_FLOAT C, const struct parsedname *pn);
 _FLOAT fromTemperature(_FLOAT T, const struct parsedname *pn);

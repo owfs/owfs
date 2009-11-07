@@ -41,7 +41,7 @@ int TestConnection(const struct parsedname *pn)
 
 		// Call reconnection
 		in->AnyDevices = anydevices_unknown ;
-		if ( in->iroutines.reconnect != NULL ) {
+		if ( FunctionExists(in->iroutines.reconnect) ) {
 			// reconnect method exists
 			ret = (in->iroutines.reconnect) (pn) ;	// call bus-specific reconnect
 		} else {

@@ -91,7 +91,7 @@ int BUS_next(struct device_search *ds, const struct parsedname *pn)
 /* Not used by more advanced adapters */
 int BUS_next_both(struct device_search *ds, const struct parsedname *pn)
 {
-	if (pn->selected_connection->iroutines.next_both) {
+	if ( FunctionExists(pn->selected_connection->iroutines.next_both) ) {
 		return (pn->selected_connection->iroutines.next_both) (ds, pn);
 	} else {
 		return BUS_next_both_bitbang( ds, pn ) ;

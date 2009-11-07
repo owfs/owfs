@@ -68,7 +68,7 @@ int BUS_readin_data(BYTE * data, const size_t len, const struct parsedname *pn)
 /* send bytes, and read back -- calls lower level bit routine */
 int BUS_select_and_sendback(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn)
 {
-	if (pn->selected_connection->iroutines.select_and_sendback) {
+	if ( FunctionExists(pn->selected_connection->iroutines.select_and_sendback) ) {
 		return (pn->selected_connection->iroutines.select_and_sendback) (data, resp, len, pn);
 	} else {
 		int ret = BUS_select(pn);
@@ -92,7 +92,7 @@ int BUS_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const st
 	if (len == 0) {
 		return 0;
 	}
-	if (pn->selected_connection->iroutines.sendback_data) {
+	if ( FunctionExists(pn->selected_connection->iroutines.sendback_data) ) {
 		return (pn->selected_connection->iroutines.sendback_data) (data, resp, len, pn);
 	}
 

@@ -20,7 +20,7 @@ int BUS_ProgramPulse(const struct parsedname *pn)
 {
 	int ret;
 
-	if (pn->selected_connection->iroutines.ProgramPulse) {
+	if ( FunctionExists(pn->selected_connection->iroutines.ProgramPulse) ) {
 		ret = (pn->selected_connection->iroutines.ProgramPulse) (pn);
 	} else {
 		ret = -ENOTSUP;
