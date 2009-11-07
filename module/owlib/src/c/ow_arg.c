@@ -308,7 +308,7 @@ int ARG_USB(const char *arg)
 	} else if (strcasecmp(arg, "all") == 0) {
 		int number_of_usb_adapters;
 		number_of_usb_adapters = DS9490_enumerate();
-		LEVEL_CONNECT("All USB adapters requested, %d found.\n", number_of_usb_adapters);
+		LEVEL_CONNECT("All USB bus masters requested, %d found.\n", number_of_usb_adapters);
 		// first one
 		in->connin.usb.usb_nr = 1;
 		// cycle through rest
@@ -330,7 +330,7 @@ int ARG_USB(const char *arg)
 			LEVEL_CONNECT("USB option %s implies no USB detection.\n", arg);
 			in->connin.usb.usb_nr = 0;
 		} else if (in->connin.usb.usb_nr > 1) {
-			LEVEL_CONNECT("USB adapter %d requested.\n", in->connin.usb.usb_nr);
+			LEVEL_CONNECT("USB bus master %d requested.\n", in->connin.usb.usb_nr);
 		}
 	}
 	return 0;

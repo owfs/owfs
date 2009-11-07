@@ -177,12 +177,12 @@ static int HA5_find_channel(struct parsedname *pn)
 
 	for ( in->connin.ha5.channel = 'a' ; in->connin.ha5.channel <= 'z' ; ++in->connin.ha5.channel ) {
 		if ( HA5_test_channel(pn) == 0 ) {
-			LEVEL_CONNECT("HA5 adapter found on port %s at channel %c\n", in->name, in->connin.ha5.channel ) ;
+			LEVEL_CONNECT("HA5 bus master found on port %s at channel %c\n", in->name, in->connin.ha5.channel ) ;
 			return 0 ;
 		}
 	}
 	in->connin.ha5.channel = 'a' ;
-	LEVEL_DEBUG("HA5 adapter not found on port %s so set to channel %c\n", in->name, in->connin.ha5.channel ) ;
+	LEVEL_DEBUG("HA5 bus master not found on port %s so set to channel %c\n", in->name, in->connin.ha5.channel ) ;
 
 	return 0;
 }

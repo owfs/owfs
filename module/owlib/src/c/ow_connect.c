@@ -132,7 +132,7 @@ struct connection_in *NewIn(const struct connection_in *in)
 		/* Arbitrary guess at root directory size for allocating cache blob */
 		now->last_root_devs = 10;
 	} else {
-		LEVEL_DEFAULT("Cannot allocate memory for adapter structure,\n");
+		LEVEL_DEFAULT("Cannot allocate memory for bus master structure,\n");
 	}
 	now->AnyDevices = anydevices_unknown ;
 	return now;

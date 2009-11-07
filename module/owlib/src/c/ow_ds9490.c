@@ -307,8 +307,8 @@ int DS9490_detect(struct connection_in *in)
 	
 	ret = DS9490_detect_low(in);
 	if (ret) {
-		fprintf(stderr, "Could not open the USB adapter. Is there a problem with permissions?\n");
-		LEVEL_DEFAULT("Could not open the USB adapter. Is there a problem with permissions?\n");
+		fprintf(stderr, "Could not open the USB bus master. Is there a problem with permissions?\n");
+		LEVEL_DEFAULT("Could not open the USB bus master. Is there a problem with permissions?\n");
         return ret ;
 	}
     DS9490_SetFlexParameters (in);
@@ -338,7 +338,7 @@ static int DS9490_detect_low(struct connection_in * in)
 		}
 	}
 
-	LEVEL_CONNECT("No available USB DS9490 adapter found\n");
+	LEVEL_CONNECT("No available USB DS9490 bus master found\n");
 	return -ENODEV;
 }
 
@@ -515,7 +515,7 @@ static int DS9490_open(struct usb_list *ul, struct connection_in *in)
 		owfree(in->name);
 		in->name = owstrdup(badUSBname) ;
 		in->connin.usb.dev = NULL;	// this will force a re-scan next time
-		//LEVEL_CONNECT("Failed to open USB DS9490 adapter %s\n", name);
+		//LEVEL_CONNECT("Failed to open USB DS9490 bus master %s\n", name);
 		STAT_ADD1_BUS(e_bus_open_errors, in);
 		return ret ;
 	}
@@ -545,14 +545,14 @@ static int DS9490_sub_open(struct usb_list *ul, struct connection_in *in)
 	#endif							/* LIBUSB_HAS_DETACH_KERNEL_DRIVER_NP */
 
 	if ((ret = usb_set_configuration(usb, 1))) {
-		LEVEL_CONNECT("Failed to set configuration on USB DS9490 adapter at %s.\n", in->name);
+		LEVEL_CONNECT("Failed to set configuration on USB DS9490 bus master at %s.\n", in->name);
 	} else if ((ret = usb_claim_interface(usb, 0))) {
-		LEVEL_CONNECT("Failed to claim interface on USB DS9490 adapter at %s. ret=%d\n", in->name, ret);
+		LEVEL_CONNECT("Failed to claim interface on USB DS9490 bus master at %s. ret=%d\n", in->name, ret);
 	} else {
 		if ((ret = usb_set_altinterface(usb, 3))) {
-			LEVEL_CONNECT("Failed to set alt interface on USB DS9490 adapter at %s.\n", in->name);
+			LEVEL_CONNECT("Failed to set alt interface on USB DS9490 bus master at %s.\n", in->name);
 		} else {
-			LEVEL_DEFAULT("Opened USB DS9490 adapter at %s.\n", in->name);
+			LEVEL_DEFAULT("Opened USB DS9490 bus master at %s.\n", in->name);
 			DS9490_setroutines(in);
 			in->Adapter = adapter_DS9490;	/* OWFS assigned value */
 			in->adapter_name = "DS9490";
@@ -561,7 +561,7 @@ static int DS9490_sub_open(struct usb_list *ul, struct connection_in *in)
 			if ((ret = (USB_CLEAR_HALT(usb, DS2490_EP3) || USB_CLEAR_HALT(usb, DS2490_EP2) || USB_CLEAR_HALT(usb, DS2490_EP1)))) {
 				LEVEL_DEFAULT("DS9490_open: USB_CLEAR_HALT failed ret=%d\n", ret);
 			} else if ((ret = DS9490_setup_adapter(in))) {
-				LEVEL_DEFAULT("Error setting up USB DS9490 adapter at %s.\n", in->name);
+				LEVEL_DEFAULT("Error setting up USB DS9490 bus master at %s.\n", in->name);
 			} else {		/* All GOOD */
 				return 0;
 			}
@@ -588,7 +588,7 @@ static int DS9490_reconnect(const struct parsedname *pn)
 	LIBUSBLOCK;
 	DS9490_close( in) ;
 	if (DS9490_redetect_low(in)==0) {
-		LEVEL_DEFAULT("Found USB DS9490 adapter after USB rescan as [%s]\n", SAFESTRING(in->name));
+		LEVEL_DEFAULT("Found USB DS9490 bus master after USB rescan as [%s]\n", SAFESTRING(in->name));
 		ret = 0;
 	} else {
 		ret = -EIO;
@@ -620,7 +620,7 @@ static int USB_next(struct usb_list *ul)
 			if (ul->dev->descriptor.idVendor != 0x04FA || ul->dev->descriptor.idProduct != 0x2490) {
 				continue;		// not DS9490
 			}
-			LEVEL_CONNECT("Adapter found: %s/%s\n", ul->bus->dirname, ul->dev->filename);
+			LEVEL_CONNECT("Bus master found: %s/%s\n", ul->bus->dirname, ul->dev->filename);
 			return 0;
 		} else {
 			ul->bus = ul->bus->next;
@@ -690,7 +690,7 @@ static int DS9490_redetect_low(struct connection_in * in)
 	while (USB_next(&ul)==0) {
 		// try to open the DS9490
 		if (DS9490_open(&ul, in)) {
-			LEVEL_CONNECT("Cant open USB adapter, Find next...\n");
+			LEVEL_CONNECT("Cannot open USB bus master, Find next...\n");
 			continue;
 		}
 
@@ -699,7 +699,7 @@ static int DS9490_redetect_low(struct connection_in * in)
 		}
 		DS9490_close(in);
 	}
-	//LEVEL_CONNECT("No available USB DS9490 adapter found\n");
+	//LEVEL_CONNECT("No available USB DS9490 bus master found\n");
 	return -ENODEV;
 	
 }
@@ -718,7 +718,7 @@ static int DS9490_redetect_found( struct connection_in * in)
 
 	// Special case -- originally untagged adapter
 	if ( in->connin.usb.ds1420_address[0] == '\0' ) {
-		LEVEL_CONNECT("Since originally untagged adapter, we will use first available slot.\n");
+		LEVEL_CONNECT("Since originally untagged bus master, we will use first available slot.\n");
 		return 0 ;
 	}
 
@@ -746,7 +746,7 @@ static int DS9490_redetect_found( struct connection_in * in)
 		++device_number ;
 	}
 	// Couldn't find correct ds1420 chip on this adapter
-	LEVEL_CONNECT("Couldn't find correct ds1420 chip on this adapter [%s] (want: " SNformat ")\n", SAFESTRING(in->name), SNvar(in->connin.usb.ds1420_address));
+	LEVEL_CONNECT("Couldn't find correct ds1420 chip on this bus master [%s] (want: " SNformat ")\n", SAFESTRING(in->name), SNvar(in->connin.usb.ds1420_address));
 	DirblobClear( &db ) ;
 	return -ENODEV;
 }
@@ -770,7 +770,7 @@ void DS9490_close(struct connection_in *in)
 			in->connin.usb.dev = NULL;	// force a re-scan
 			LEVEL_CONNECT("usb_close() failed ret=%d\n", ret);
 		}
-		LEVEL_CONNECT("Closed USB DS9490 adapter at %s. ret=%d\n", in->name, ret);
+		LEVEL_CONNECT("Closed USB DS9490 bus master at %s. ret=%d\n", in->name, ret);
 	}
 	in->connin.usb.usb = NULL;
 	in->connin.usb.dev = NULL;

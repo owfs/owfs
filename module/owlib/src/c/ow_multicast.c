@@ -145,7 +145,7 @@ int FS_FindHA7(void)
 		in->name = owstrdup(name);
 		in->busmode = bus_ha7net;
 
-		LEVEL_CONNECT("HA7Net adapter discovered at %s\n",in->name);
+		LEVEL_CONNECT("HA7Net bus master discovered at %s\n",in->name);
 		ret = 0 ; // at least one good HA7
 	}
 	freeaddrinfo(ai);

@@ -159,7 +159,7 @@ static void SetupInboundConnections(void)
 		case bus_parallel:
 #if OW_PARPORT
 			if ((ret = DS1410_detect(in))) {
-				LEVEL_DEFAULT("Cannot detect the DS1410E parallel adapter\n");
+				LEVEL_DEFAULT("Cannot detect the DS1410E parallel bus master\n");
 			}
 #endif							/* OW_PARPORT */
 			break;
@@ -170,7 +170,7 @@ static void SetupInboundConnections(void)
 			 * adapter just in case it's disconnected. It's done in the
 			 * DS9490_next_both() if not set. */
 			if ((ret = DS9490_detect(in))) {
-				LEVEL_DEFAULT("Cannot open USB adapter\n");
+				LEVEL_DEFAULT("Cannot open USB bus master\n");
 			}
 #endif							/* OW_USB */
 			break;
@@ -178,7 +178,7 @@ static void SetupInboundConnections(void)
 		case bus_link:
 		case bus_elink:
 			if ((ret = LINK_detect(in))) {
-				LEVEL_CONNECT("Cannot open LINK adapter at %s\n", in->name);
+				LEVEL_CONNECT("Cannot open LINK bus master at %s\n", in->name);
 			}
 			break;
 

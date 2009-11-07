@@ -62,7 +62,7 @@ int BUS_select(const struct parsedname *pn)
 	}
 
 	if (!RootNotBranch(pn) && !AdapterSupports2409(pn)) {
-		LEVEL_CALL("Attempt to use a branched path (DS2409 main or aux) when adapter doesn't support it.\n");
+		LEVEL_CALL("Attempt to use a branched path (DS2409 main or aux) when bus master doesn't support it.\n");
 		return -ENOTSUP;		/* cannot do branching with eg. LINK ascii */
 	}
 	/* Adapter-specific select routine? */
