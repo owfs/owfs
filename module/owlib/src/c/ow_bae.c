@@ -541,7 +541,7 @@ static int OW_w_extended(BYTE * data, size_t size, struct parsedname *pn)
 	BYTE q[] = { _1W_CONFIRM_WRITE, } ;
 	struct transaction_log t[] = {
 		TRXN_START,
-		TRXN_WR_CRC16(p, 1+size, 0),
+		TRXN_WR_CRC16(p, 1+1+size, 0),
 		TRXN_WRITE1(q),
 		TRXN_DELAY(2),
 		TRXN_END,
@@ -651,7 +651,7 @@ static void BAE_uint32_to_bytes( uint32_t num, unsigned char * p )
 
 static int OW_initiate_flash( BYTE * data, struct parsedname * pn )
 {
-	BYTE p[1+1+1+4+2] = { _1W_EXTENDED_COMMAND, _1W_ERASE_FIRMWARE, 4, } ;
+	BYTE p[1+1+1+4+2] = { _1W_EXTENDED_COMMAND, 5,_1W_ERASE_FIRMWARE, } ;
 	BYTE q[] = { _1W_CONFIRM_WRITE, } ;
 	struct transaction_log t[] = {
 		TRXN_START,
@@ -670,7 +670,7 @@ static int OW_initiate_flash( BYTE * data, struct parsedname * pn )
 
 static int OW_write_flash( BYTE * data, struct parsedname * pn )
 {
-	BYTE p[1+1+1+32+2] = { _1W_EXTENDED_COMMAND, _1W_FLASH_FIRMWARE, 32,  } ;
+	BYTE p[1+1+1+32+2] = { _1W_EXTENDED_COMMAND, 33,_1W_FLASH_FIRMWARE,  } ;
 	BYTE q[] = { _1W_CONFIRM_WRITE, } ;
 	struct transaction_log t[] = {
 		TRXN_START,
