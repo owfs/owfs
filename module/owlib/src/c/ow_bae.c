@@ -190,7 +190,7 @@ DeviceEntryExtended(FC, BAE, DEV_resume | DEV_alarm );
 /* ------- Functions ------------ */
 
 static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
-static int OW_w_extended(BYTE * data, size_t size, UINT * return_code, struct parsedname *pn);
+static int OW_w_extended(BYTE * data, size_t size, struct parsedname *pn);
 static int OW_version( UINT * version, struct parsedname * pn ) ;
 static int OW_type( UINT * localtype, struct parsedname * pn ) ;
 static int OW_r_mem(BYTE *bytes, size_t size, off_t offset, struct parsedname * pn);
@@ -310,17 +310,10 @@ static int FS_w_date(struct one_wire_query *owq)
 /* BAE extended command */
 static int FS_w_extended(struct one_wire_query *owq)
 {
-	UINT ret ;
 	// Write data 32 bytes maximum
-	if ( OW_w_extended( (BYTE *) OWQ_buffer(owq), OWQ_size(owq), &ret, PN(owq)  ) ) {
+	if ( OW_w_extended( (BYTE *) OWQ_buffer(owq), OWQ_size(owq), PN(owq)  ) ) {
 		return -EINVAL ;
 	}
-
-	if ( ret == 0xFFFF ) {
-		LEVEL_DEBUG("Bad return code for extended command\n") ;
-		return -EINVAL ;
-	}
-	
 	return 0;
 }
 
@@ -537,30 +530,23 @@ static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 	return BUS_transaction(t, pn) ;
 }
 
-static int OW_w_extended(BYTE * data, size_t size, UINT * return_code, struct parsedname *pn)
+// Extended command -- has command, 2 bytes, and payload
+static int OW_w_extended(BYTE * data, size_t size, struct parsedname *pn)
 {
-	BYTE p[1 + 1 + _FC02_MAX_WRITE_GULP + 2] = { _1W_EXTENDED_COMMAND, BYTE_MASK(size), };
+	BYTE p[1 + 1 + 1 + _FC02_MAX_WRITE_GULP + 2] = { _1W_EXTENDED_COMMAND, };
 	BYTE q[] = { _1W_CONFIRM_WRITE, } ;
-	BYTE r[2] ;
-	int ret ;
 	struct transaction_log t[] = {
 		TRXN_START,
-		TRXN_WR_CRC16(p, 1+ 1 + size, 0),
+		TRXN_WR_CRC16(p, 1+size, 0),
 		TRXN_WRITE1(q),
-		TRXN_DELAY(10),
-		TRXN_READ2(r),
+		TRXN_DELAY(2),
 		TRXN_END,
 	};
 	
 	/* Copy to scratchpad */
-	memcpy(&p[4], data, size);
+	memcpy(&p[1], data, size);
 	
-	ret = BUS_transaction(t, pn) ;
-	if (ret) {
-		return 1 ;
-	}
-	return_code[0] = (r[1]<<8) + r[0] ;
-	return 0 ;
+	return BUS_transaction(t, pn) ;
 }
 
 //read bytes[size] from position
@@ -686,6 +672,7 @@ static int OW_write_flash( BYTE * data, struct parsedname * pn )
 		TRXN_START,
 		TRXN_WR_CRC16(p, 1+1+1+32, 0),
 		TRXN_WRITE1(q),
+		TRXN_DELAY(2),
 		TRXN_END,
 	} ;
 	
