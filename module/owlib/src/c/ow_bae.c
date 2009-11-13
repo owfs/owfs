@@ -78,7 +78,7 @@ WRITE_FUNCTION(FS_w_32) ;
 /* ------- Structures ----------- */
 
 #define _FC02_MEMORY_SIZE 192
-#define _FC02_FUNCTION_FLASH_SIZE 0x1000
+#define _FC02_FUNCTION_FLASH_SIZE 0x10000
 #define _FC02_FUNCTION_FLASH_OFFSET 0xE200
 
 #define _FC02_MAX_WRITE_GULP	32
@@ -247,8 +247,12 @@ static int FS_w_flash(struct one_wire_query *owq)
 	size_t rom_offset ;
 
 	// test size
-	if ( OWQ_size(owq) != _FC02_FUNCTION_FLASH_SIZE ) {
-		LEVEL_DEBUG("Flash size of %d is not the expected %d.\n", (int)OWQ_size(owq), (int)_FC02_FUNCTION_FLASH_SIZE ) ;
+	if ( OWQ_size(owq) > _FC02_FUNCTION_FLASH_SIZE ) {
+		LEVEL_DEBUG("Flash size of %d is too large (max %d) .\n", (int)OWQ_size(owq), (int)_FC02_FUNCTION_FLASH_SIZE ) ;
+		return -EBADMSG ;
+	}
+	if ( OWQ_size(owq) % 0x200 ) {
+		LEVEL_DEBUG("Flash size of %d is not a multiple of 512.\n", (int)OWQ_size(owq) ) ;
 		return -EBADMSG ;
 	}
 
@@ -264,7 +268,7 @@ static int FS_w_flash(struct one_wire_query *owq)
 	}
 
 	// loop though pages, up to 5 attempts for each page
-	for ( rom_offset=0 ; rom_offset<_FC02_FUNCTION_FLASH_SIZE ; rom_offset += _FC02_MAX_WRITE_GULP ) {
+	for ( rom_offset=0 ; rom_offset<OWQ_size(owq) ; rom_offset += _FC02_MAX_WRITE_GULP ) {
 		int tries = 0 ;
 		LEVEL_DEBUG("Flash up to %d bytes.\n",rom_offset);
 		while ( OW_write_flash( &rom_image[rom_offset], pn ) ) {
@@ -537,7 +541,7 @@ static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 // Extended command -- insert length, The first byte of the payload is a subcommand but that is invisible to us.
 static int OW_w_extended(BYTE * data, size_t size, struct parsedname *pn)
 {
-	BYTE p[1 + 1 + _FC02_MAX_COMMAND_GULP + 2] = { _1W_EXTENDED_COMMAND, BYTE_MASK(size), };
+	BYTE p[1 + 1 + _FC02_MAX_COMMAND_GULP + 2] = { _1W_EXTENDED_COMMAND, BYTE_MASK(size-1), };
 	BYTE q[] = { _1W_CONFIRM_WRITE, } ;
 	struct transaction_log t[] = {
 		TRXN_START,
@@ -651,17 +655,17 @@ static void BAE_uint32_to_bytes( uint32_t num, unsigned char * p )
 
 static int OW_initiate_flash( BYTE * data, struct parsedname * pn )
 {
-	BYTE p[1+1+1+4+2] = { _1W_EXTENDED_COMMAND, 5,_1W_ERASE_FIRMWARE, } ;
+	BYTE p[1+1+1+32+2] = { _1W_EXTENDED_COMMAND, 32,_1W_ERASE_FIRMWARE, } ;
 	BYTE q[] = { _1W_CONFIRM_WRITE, } ;
 	struct transaction_log t[] = {
 		TRXN_START,
-		TRXN_WR_CRC16(p, 1+1+1+4, 0),
+		TRXN_WR_CRC16(p, 1+1+1+32, 0),
 		TRXN_WRITE1(q),
 		TRXN_DELAY(180),
 		TRXN_END,
 	} ;
 
-	memcpy(&p[3], data, 4 ) ;
+	memcpy(&p[3], data, 32 ) ;
 	if (BUS_transaction(t, pn)) {
 		return 1;
 	}
@@ -670,7 +674,7 @@ static int OW_initiate_flash( BYTE * data, struct parsedname * pn )
 
 static int OW_write_flash( BYTE * data, struct parsedname * pn )
 {
-	BYTE p[1+1+1+32+2] = { _1W_EXTENDED_COMMAND, 33,_1W_FLASH_FIRMWARE,  } ;
+	BYTE p[1+1+1+32+2] = { _1W_EXTENDED_COMMAND, 32,_1W_FLASH_FIRMWARE,  } ;
 	BYTE q[] = { _1W_CONFIRM_WRITE, } ;
 	struct transaction_log t[] = {
 		TRXN_START,
