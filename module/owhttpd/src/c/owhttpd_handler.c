@@ -42,17 +42,25 @@ int handle_socket(FILE * out)
 	struct urlparse up;
 	struct parsedname s_pn;
 	struct parsedname * pn = &s_pn ;
+	int content_length = -1 ;
 
 	str = fgets(up.line, PATH_MAX, out);
 	LEVEL_CALL("PreParse line=%s\n", up.line);
-	URLparse(&up);				/* Braek up URL */
+	URLparse(&up);				/* Brake up URL */
 
 	/* read lines until blank */
 	if (up.version) {
 		do {
 			str = fgets(linecopy, PATH_MAX, out);
-		} while (str != NULL && strcmp(linecopy, "\r\n")
-				 && strcmp(linecopy, "\n"));
+			LEVEL_DEBUG("More data:%s",SAFESTRING(str));
+			if ( str==NULL ) {
+				break ;
+			}
+			if ( strlen(linecopy)>17 && strncasecmp(linecopy,"Content-Length:", 15)==0 ) {
+				sscanf(&linecopy[16],"%d",&content_length) ;
+			}
+		} while (strcmp(linecopy, "\r\n") && strcmp(linecopy, "\n"));
+//		} while (str != NULL);
 	}
 
 	LEVEL_CALL
@@ -65,9 +73,26 @@ int handle_socket(FILE * out)
 	fflush(out);
 
 	/* Good command line? */
-	if (up.cmd == NULL || strcmp(up.cmd, "GET") != 0) {
+	if (up.cmd == NULL) {
 		Bad400(out);
-
+		
+	} else if (strcmp(up.cmd, "POST") == 0) {
+		if ( content_length < 0 ) {
+			LEVEL_DEFAULT("Uploading a file with no 'Content-Length' field in the HTTP data\n");
+			Bad400(out) ;
+		} else {
+			LEVEL_CALL("POST length=%d\n",content_length);
+			do {
+				str = fgets(linecopy, PATH_MAX, out);
+				LEVEL_DEBUG("Post data:%s",SAFESTRING(str));
+			} while (str != NULL && strcmp(linecopy, "\r\n") && strcmp(linecopy, "\n"));
+			
+		}
+		Bad400(out);
+		
+	} else if (strcmp(up.cmd, "GET") != 0) {
+		Bad400(out);
+		
 		/* Can't understand the file name = URL */
 	} else if (up.file == NULL) {
 		Bad404(out);
@@ -82,6 +107,9 @@ int handle_socket(FILE * out)
 			ShowDir(out, pn);
 		} else if (up.request == NULL) {
 			ShowDevice(out, pn);
+		} else if (up.value==NULL) {
+			LEVEL_DEBUG("Null value for write command -- Bad URL\n");
+			Bad400(out);
 		} else {				/* First write new values, then show */
 			OWQ_allocate_struct_and_pointer(owq_write);
 
@@ -177,6 +205,7 @@ static void URLparse(struct urlparse *up)
 
 static void Bad400(FILE * out)
 {
+	LEVEL_CALL("Return a 400 HTTP error code\n");
 	HTTPstart(out, "400 Bad Request", ct_html);
 	HTTPtitle(out, "Error 400 -- Bad request");
 	HTTPheader(out, "Unrecognized Request");
@@ -187,6 +216,7 @@ static void Bad400(FILE * out)
 
 static void Bad404(FILE * out)
 {
+	LEVEL_CALL("Return a 404 HTTP error code\n");
 	HTTPstart(out, "404 File not found", ct_html);
 	HTTPtitle(out, "Error 400 -- Item doesn't exist");
 	HTTPheader(out, "Non-existent Device");

@@ -90,6 +90,7 @@ static void ShowReadWrite(FILE * out, struct one_wire_query *owq)
 				}
 			}
 			fprintf(out, "</TEXTAREA><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM></CODE>");
+			fprintf(out,"<BR><FORM METHOD='POST' ENCTYPE='multipart/form-data'>Load from file: <INPUT TYPE=FILE NAME='%s' SIZE=30><INPUT TYPE=SUBMIT VALUE='UPLOAD'><\FORM>",file);
 			break;
 		}
 	case ft_yesno:

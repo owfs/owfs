@@ -45,6 +45,7 @@ void HTTPheader(FILE * out, const char *head);
 void HTTPfoot(FILE * out);
 
 /* in owhttpd_write.c */
+void PostData(struct one_wire_query *owq);
 void ChangeData(struct one_wire_query *owq);
 
 /* in owhttpd_read.c */
