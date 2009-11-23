@@ -361,34 +361,47 @@ static int FS_w_por(struct one_wire_query *owq)
 	return OW_w_control(data[5], pn) ? -EINVAL : 0;
 }
 
+#define LCD_SECOND_ROW_ADDRESS   0x40
+#define LCD_COMMAND_CLEAR_DISPLAY     0x01
+#define LCD_COMMAND_RETURN_HOME       0x02
+#define LCD_COMMAND_RIGHT_TO_LEFT     0x06
+#define LCD_COMMAND_DISPLAY_ON        0x0C
+#define LCD_COMMAND_DISPLAY_OFF       0x08
+#define LCD_COMMAND_4_BIT             0x20
+#define LCD_COMMAND_4_BIT_2_LINES     0x28
+#define LCD_COMMAND_ATTENTION         0x30
+#define LCD_COMMAND_SET_DDRAM_ADDRESS 0x80
+
+// structure holding the information to be placed on the LCD screen
+struct yx {
+	int y ;
+	int x ;
+	char * string ; // input string including coordinates
+	size_t length ; // length of string
+	int index ; // counter into string
+} ;
+static int Parseyx( struct yx * YX ) ;
+static int binaryyx( struct yx * YX ) ;
+static int asciiyx( struct yx * YX ) ;
+static int OW_Hprintyx(struct yx * YX, struct parsedname * pn) ;
+static int OW_Hinit(struct parsedname * pn) ;
+
+#define LCD_LINE_START           2
+#define LCD_LINE_END             20
+#define LCD_FIRST_ROW            1
+#define LCD_LAST_ROW             4
+
 static int FS_Hclear(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
-	int init = 1;
-	// clear, display on, mode
-	BYTE start[] = { 0x30, };
-	BYTE next[] = { 0x30, 0x30, 0x20, NIBBLE_CTRL(0x28), };
-	// 20 -- 4bit interface
-	// 28 -- 4bit, 2 line
-	BYTE clear[] = { NIBBLE_CTRL(0x01), NIBBLE_CTRL(0x0C), NIBBLE_CTRL(0x06), };
-	// 01 -- display clear
-	// 0C -- display on
-	// 06 -- entry mode set
-
-	if (Cache_Get_Internal_Strict(&init, sizeof(init), InternalProp(INI), pn)) {
-		BYTE data[6];
-		if (OW_w_control(0x04, pn)	// strobe
-			|| OW_r_reg(data, pn)
-			|| (data[5] != 0x84)	// not powered
-			|| OW_c_latch(pn)	// clear PIOs
-			|| OW_w_pios(start, 1, pn)) {
-			return -EINVAL;
-		}
-		UT_delay(5);
-		if (OW_w_pios(next, 5, pn)) {
-			return -EINVAL;
-		}
-		Cache_Add_Internal(&init, sizeof(init), InternalProp(INI), pn);
+	BYTE clear[] = {
+		NIBBLE_CTRL(LCD_COMMAND_CLEAR_DISPLAY),
+		NIBBLE_CTRL(LCD_COMMAND_DISPLAY_ON),
+		NIBBLE_CTRL(LCD_COMMAND_RIGHT_TO_LEFT),
+	};
+	
+	if ( OW_Hinit(pn) ) {
+		return -EINVAL ;
 	}
 	if (OW_w_pios(clear, 6, pn)) {
 		return -EINVAL;
@@ -396,137 +409,193 @@ static int FS_Hclear(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_Hhome(struct one_wire_query *owq)
+static int OW_Hinit(struct parsedname * pn)
 {
-	BYTE home[] = { 0x80, 0x00 };
-	// home
-	if (OW_w_pios(home, 2, PN(owq))) {
-		return -EINVAL;
+	int init = 1;
+	// clear, display on, mode
+	BYTE start[] = { LCD_COMMAND_ATTENTION, };
+	BYTE next[] = {
+		LCD_COMMAND_ATTENTION,
+		LCD_COMMAND_ATTENTION,
+		LCD_COMMAND_4_BIT,
+		NIBBLE_CTRL(LCD_COMMAND_4_BIT_2_LINES),
+	};
+	BYTE data[6];
+
+	// already done?
+	if (Cache_Get_Internal_Strict(&init, sizeof(init), InternalProp(INI), pn)==0) {
+		return 0;
 	}
+	
+	if (OW_w_control(0x04, pn)	// strobe
+		|| OW_r_reg(data, pn)) {
+		LEVEL_DEBUG("Trouble sending strobe to Hobbyboard LCD\n") ;
+		return 1;
+	}
+	if ( data[5] != 0x84 )	{
+		LEVEL_DEBUG("LCD is not powered\n"); // not powered
+		return 1 ;
+	}
+	if ( OW_c_latch(pn) ) {
+		LEVEL_DEBUG("Trouble clearing latches\n") ;
+		return 1 ;
+	}// clear PIOs
+	if ( OW_w_pios(start, 1, pn)) {
+		return 1;
+	}
+	UT_delay(5);
+	if (OW_w_pios(next, 5, pn)) {
+		return 1;
+	}
+	Cache_Add_Internal(&init, sizeof(init), InternalProp(INI), pn);
 	return 0;
 }
 
-static int FS_Hscreen(struct one_wire_query *owq)
-{
-	char *buf = OWQ_buffer(owq);
-	size_t size = OWQ_size(owq);
-	BYTE data[2 * size + 2];
-	size_t i, j = 0;
-
-	data[0] = 0x80;
-	data[1] = 0x00;
-	//printf("Hscreen test<%*s>\n",(int)size,buf) ;
-	for (i = 0, j = 2; i < size; ++i) {
-		if (buf[i]) {
-			data[j++] = (buf[i] & 0xF0) | 0x08;
-			data[j++] = ((buf[i] << 4) & 0xF0) | 0x08;
-		} else {				//null byte becomes space
-			data[j++] = 0x28;
-			data[j++] = 0x08;
-		}
-	}
-	return OW_w_pios(data, j, PN(owq)) ? -EINVAL : 0;
-}
-
-struct yx {
-	int y ;
-	int x ;
-	char * string ;
-	int length ;
-	int used ;
-} ;
-
-static int binaryyx( struct yx * YX )
+static int Parseyx( struct yx * YX )
 {
 	if ( YX->length < 2 ) {
 		return -EINVAL ;
 	}
 
 	if ( YX->string[0] > '0' ) {
-		return -EINVAL;
+		return asciiyx(YX);
 	}
+	return binaryyx( YX ) ;
+}
 
+// Extract coordinates from binary string and point coordinates. string and length already set.
+static int binaryyx( struct yx * YX )
+{
 	YX->y = YX->string[0] ;
 	YX->x = YX->string[1] ;
-	YX->used = 2 ;
+	YX->index = 2 ;
 
 	return 0 ; // next char
 }
 
-// format 3,4:
-// format 12:
+// Extract coordinates from ascii string and point past colon. string and length already set.
 static int asciiyx( struct yx * YX )
 {
-	if ( YX->length < 2 || (memchr(YX->string,':',YX->length))==NULL ) {
+	char * colon = memchr( YX->string, ':', YX->length ) ; // position of mandatory colon
+	if ( colon==NULL ) {
+		LEVEL_DEBUG("No colon in screen text. Should be 'y.x:text'\n");
 		return -EINVAL ;
 	}
 
-	if ( sscanf(YX->string, "%d,%d:", &YX->y, &YX->x ) < 2 ) {
+	colon[0] = '\0' ; // for safety
+	if ( sscanf(YX->string, "%d,%d", &YX->y, &YX->x ) < 2 ) {
 		YX->y = 1 ;
-		if ( sscanf(YX->string, "%d:", &YX->x ) < 1 ) {
+		if ( sscanf(YX->string, "%d", &YX->x ) < 1 ) {
 			return -EINVAL ;
 		}
 	}
-	YX->used = ( (char *)memchr(YX->string,':',YX->length) - YX->string ) + 1 ;
+	YX->index = ( colon - YX->string ) + 1 ;
 	return 0 ;
 }
 
+// put in home position
+static int FS_Hhome(struct one_wire_query *owq)
+{
+	struct parsedname *pn = PN(owq);
+	struct yx YX = { 1, 1, "", 0, 0 } ;
+	if ( OW_Hinit(pn) ) {
+		return -EINVAL ;
+	}
+	return OW_Hprintyx(&YX, pn) ? -EINVAL : 0;
+}
+
+// Print from home position
+static int FS_Hmessage(struct one_wire_query *owq)
+{
+	struct parsedname *pn = PN(owq);
+	struct yx YX = { 1, 1, OWQ_buffer(owq), OWQ_size(owq), 0 } ;
+	if ( OW_Hinit(pn) ) {
+		return -EINVAL ;
+	}
+	if (FS_Hclear(owq)) {
+		return -EINVAL;
+	}
+	return OW_Hprintyx(&YX, pn) ? -EINVAL : 0;
+}
+
+// print from current position
+static int FS_Hscreen(struct one_wire_query *owq)
+{
+	struct parsedname *pn = PN(owq);
+	// y=0 is flag to do no position setting
+	struct yx YX = { 0, 0, OWQ_buffer(owq), OWQ_size(owq), 0 } ;
+	if ( OW_Hinit(pn) ) {
+		return -EINVAL ;
+	}
+	return OW_Hprintyx(&YX, pn) ? -EINVAL : 0;
+}
+
+// print from specified positionh --
+// either in ascii format "y.x:text" or "x:text"
+// or binary (first 2 bytes are y and x)
 static int FS_Hscreenyx(struct one_wire_query *owq)
 {
-	char *buf = OWQ_buffer(owq);
-	size_t size = OWQ_size(owq);
-	BYTE data[2 * size + 2];
-	size_t i, data_index = 0;
-	u_char ua_tmp;
-	struct yx YX = { 0, 0, buf, size, 0 } ;
+	struct parsedname *pn = PN(owq);
+	struct yx YX = { 0, 0, OWQ_buffer(owq), OWQ_size(owq), 0 } ;
 
-	if ( binaryyx( &YX )!= 0 || asciiyx( &YX ) != 0 ) {
+	if ( Parseyx( &YX ) != 0 ) {
 		return -EINVAL ;
 	}
 	
-	if ( YX.x > 20 || YX.y > 4 || YX.x < 1 || YX.y < 1 ) {
-		return -EINVAL;
+	if ( OW_Hinit(pn) ) {
+		return -EINVAL ;
 	}
-
-	switch (YX.y) {
-	case 2:
-		ua_tmp = 0x80 | 0x40;
-		break;
-	case 3:
-		ua_tmp = 0x80 + 20;
-		break;
-	case 4:
-		ua_tmp = (0x80 | 0x40) + 20;
-		break;
-	default:
-		ua_tmp = 0x80;
-		break;
-	}
-
-	ua_tmp += YX.x - 1;
-
-	data[data_index++] = (ua_tmp & 0xF0);
-	data[data_index++] = (ua_tmp << 4) & 0xF0;
-
-	//printf("Hscreen test<%*s>\n",(int)size,buf) ;
-	for (i = YX.used; i < size; ++i) {
-		if (buf[i]) {
-			data[data_index++] = (buf[i] & 0xF0) | 0x08;
-			data[data_index++] = ((buf[i] << 4) & 0xF0) | 0x08;
-		} else {				//null byte becomes space
-			data[data_index++] = 0x28;
-			data[data_index++] = 0x08;
-		}
-	}
-	return OW_w_pios(data, data_index, PN(owq)) ? -EINVAL : 0;
+	return OW_Hprintyx(&YX, pn) ? -EINVAL : 0;
 }
 
-static int FS_Hmessage(struct one_wire_query *owq)
+// YX structure is set with y,x,string,length, and start position of text 
+static int OW_Hprintyx(struct yx * YX, struct parsedname * pn)
 {
-	if (FS_Hclear(owq) || FS_Hhome(owq) || FS_Hscreen(owq)) {
-		return -EINVAL;
+	size_t translated_length = 2 + 2 * YX->length;
+	BYTE translated_data[translated_length];
+	size_t i, translate_index ;
+	u_char chip_command;
+
+	if ( YX->x > LCD_LINE_END || YX->y > LCD_LAST_ROW || YX->x < LCD_LINE_START || YX->y < LCD_FIRST_ROW ) {
+		LEVEL_DEBUG("Bad screen coordinates y=%d x=%d\n",YX->y,YX->x);
+		return 1;
 	}
-	return 0;
+	
+	switch (YX->y) {
+		case 1:
+			chip_command = LCD_COMMAND_SET_DDRAM_ADDRESS;
+			break;
+		case 2:
+			chip_command = LCD_COMMAND_SET_DDRAM_ADDRESS | LCD_SECOND_ROW_ADDRESS;
+			break;
+		case 3:
+			chip_command = LCD_COMMAND_SET_DDRAM_ADDRESS + LCD_LINE_END;
+			break;
+		case 4:
+			chip_command = (LCD_COMMAND_SET_DDRAM_ADDRESS | LCD_SECOND_ROW_ADDRESS) + LCD_LINE_START;
+			break;
+		default: // do noop
+			chip_command = LCD_COMMAND_DISPLAY_ON;
+			break;
+	}
+	
+	chip_command += YX->x - 1; // 0 index
+	
+	// Initial location (2 half bytes)
+	translated_data[0] = (chip_command & 0xF0);
+	translated_data[1] = (chip_command << 4) & 0xF0;
+	
+	//printf("Hscreen test<%*s>\n",(int)size,buf) ;
+	for (i = YX->index, translate_index = 2; i < YX->length; ++i, translate_index +=2) {
+		if (YX->string[i]) {
+			translated_data[translate_index] = (YX->string[i] & 0xF0) | 0x08;
+			translated_data[translate_index+1] = ((YX->string[i] << 4) & 0xF0) | 0x08;
+		} else {				//null byte becomes space
+			translated_data[translate_index] = 0x28;
+			translated_data[translate_index+1] = 0x08;
+		}
+	}
+	return OW_w_pios(translated_data, translated_length, pn) ;
 }
 
 // 0x01 => blinking cursor on
@@ -534,12 +603,16 @@ static int FS_Hmessage(struct one_wire_query *owq)
 // 0x04 => display on
 static int FS_Honoff(struct one_wire_query *owq)
 {
+	struct parsedname *pn = PN(owq);
 	BYTE onoff[] = { 0x00, 0x00 };
 
 	onoff[1] = ((0x08 | OWQ_U(owq)) << 4) & 0xF0;
 
+	if ( OW_Hinit(pn) ) {
+		return -EINVAL ;
+	}
 	// onoff
-	if (OW_w_pios(onoff, 2, PN(owq))) {
+	if (OW_w_pios(onoff, 2, pn)) {
 		return -EINVAL;
 	}
 	return 0;
