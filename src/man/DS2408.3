@@ -61,128 +61,6 @@ states, accessed simultaneously, comma separated.
 .br
 .I BYTE
 references all channels simultaneously as a single byte. Channel 0 is bit 0.
-.SS LCD_H/clear LCD_M/clear
-.I write-only, yes-no
-.br
-Clears an LCD screen controlled by a
-.I DS2408
-using published designs.
-.br
-.I clear
-will initialize and clear the screen.
-.br
-.I LCD_H
-uses the Hobby-Boards design of Erik Vickery (see
-.I DATASHEET
-)
-.br
-.I LCD_M
-uses the Maxim public domain design (see
-.I DATASHEET
-)
-.SS LCD_H/home LCD_M/home
-.I write-only, yes-no
-.br
-Positions the cursor of an LCD screen controlled by a
-.I DS2408
-using published designs. The screen must have been initialized with the
-.I clear
-or
-.I message
-command first.
-.br
-.I home
-will set the cursor to the upper left position, but leave the current text intact.
-.br
-.I LCD_H
-uses the Hobby-Boards design of Erik Vickery (see
-.I DATASHEET
-)
-.br
-.I LCD_M
-uses the Maxim public domain design (see
-.I DATASHEET
-)
-.SS LCD_H/screen LCD_M/screen
-.I write-only, ascii text
-.br
-Writes to an LCD screen controlled by a
-.I DS2408
-using published designs. The screen must have been initialized with the
-.I clear
-or
-.I message
-command first.
-.br
-Text will appear starting at the current location.
-.br
-.I LCD_H
-uses the Hobby-Boards design of Erik Vickery (see
-.I DATASHEET
-)
-.br
-.I LCD_M
-uses the Maxim public domain design (see
-.I DATASHEET
-)
-.SS LCD_H/yxscreen
-.I write-only, ascii text
-.br
-Writes to an LCD screen controlled by a
-.I DS2408
-using published designs. Like 
-.I LCD_H/screen 
-but starting at a particular screen position.
-.TP 
-2 binary bytes
-The two first characters of the passed string have the line and row: 
-e.g. "\\x02\\x04string" perl string writes "string" at line 2 column 4.
-.TP 
-ascii 2,12:
-Two numbers giving line and row:  Separate with a comma and end with a colon
-e.g. "2,4:string" writes "string" at line 2 column 4.
-.TP 
-ascii 12:
-Single column number on the (default) first line:  End with a colon
-e.g. "12:string" writes "string" at line 1 column 12.
-.P
-The positions are 1-based (i.e. the first position is 1,1).
-.SS LCD_H/onoff
-.I write-only, unsigned
-.br
-Sets several screen display functions. The selected choices should be added together.
-.TP
-4
-Display on
-.TP
-2
-Cursor on
-.TP
-1
-Cursor blinking
-.SS LCD_H/message LCD_M/message
-.I write-only, ascii text
-.br
-Writes to an LCD screen controlled by a
-.I DS2408
-using published designs.
-.br
-.I message
-combines the actions of
-.I clear, home
-and
-.I screen
-so is the easiest way to display a message.
-.br
-.I LCD_H
-uses the Hobby-Boards design of Erik Vickery (see
-.I DATASHEET
-)
-.br
-.I LCD_M
-uses the Maxim public domain design (see
-.I DATASHEET
-)
 .SS PIO.0 ...  PIO.7 PIO.ALL PIO.BYTE
 .I read-write, yes-no
 .br
@@ -285,6 +163,155 @@ Responds on Conditional Search when sensed.7 and sensed.6 are set to 0.
 .TP
 000000000 (0)
 Never responds to Conditional Search.
+.SH LCD_H LCD SCREEN PROPERITES
+This mode uses the 
+.I DS2408
+attached to a Hitachi HD44780 LCD controller in 4-bit mode. See 
+.I DATASHEET
+for published details. Based on a commercial product from
+.I HobbyBoards
+by Erik Vickery.
+.SS LCD_H/clear
+.I write-only, yes-no
+.br
+This will
+.I clear
+the screen and place the cursor at the start.
+.SS LCD_H/home
+.I write-only, yes-no
+.br
+Positions the cursor in the
+.I home
+(upper left) position, but leaves the current text intact.
+.SS LCD_H/screen
+.I write-only, ascii text
+.br
+Writes to the LCD 
+.I screen
+at the current position.
+.SS LCD_H/screenyc
+.I write-only, ascii text
+.br
+Writes to an LCD screen at a specified location. The controller doesn't know the true LCD dimensions, but typical selections are:
+2x16 2x20 4x16 and 4x20.
+.TP
+Y (row)
+range 1 to 2 (or 4)
+.TP
+X (column)
+range 1 to 16 (or 20)
+.P
+There are two formats allowed for the
+.I screenyx
+text, either ascii (readable text) or a binary form.
+.TP 
+2 binary bytes
+The two first characters of the passed string have the line and row: 
+e.g. "\\x02\\x04string" perl string writes "string" at line 2 column 4.
+.TP 
+ascii 2,12:
+Two numbers giving line and row:  Separate with a comma and end with a colon
+e.g. "2,4:string" writes "string" at line 2 column 4.
+.TP 
+ascii 12:
+Single column number on the (default) first line:  End with a colon
+e.g. "12:string" writes "string" at line 1 column 12.
+.P
+The positions are 1-based (i.e. the first position is 1,1).
+.SS LCD_H/onoff
+.I write-only, unsigned
+.br
+Sets several screen display functions. The selected choices should be added together.
+.TP
+4
+Display on
+.TP
+2
+Cursor on
+.TP
+1
+Cursor blinking
+.SS LCD_H/message
+.I write-only, ascii text
+.br
+Writes a
+.I message
+to the LCD screen after clearing the screen first.
+This is the easiest way to display a message.
+.SH LCD_M LCD SCREEN PROPERITES
+This mode uses the 
+.I DS2408
+attached to a Hitachi HD44780 LCD controller in 8-bit mode. See 
+.I DATASHEET
+for published details. Based on a design from Maxim and a commercial product from
+.I AAG.
+.SS LCD_M/clear
+.I write-only, yes-no
+.br
+This will
+.I clear
+the screen and place the cursor at the start.
+.SS LCD_M/home
+.I write-only, yes-no
+.br
+Positions the cursor in the
+.I home
+(upper left) position, but leaves the current text intact.
+.SS LCD_M/screen
+.I write-only, ascii text
+.br
+Writes to the LCD 
+.I screen
+at the current position.
+.SS LCD_M/screenyc
+.I write-only, ascii text
+.br
+Writes to an LCD screen at a specified location. The controller doesn't know the true LCD dimensions, but typical selections are:
+2x16 2x20 4x16 and 4x20.
+.TP
+Y (row)
+range 1 to 2 (or 4)
+.TP
+X (column)
+range 1 to 16 (or 20)
+.P
+There are two formats allowed for the
+.I screenyx
+text, either ascii (readable text) or a binary form.
+.TP 
+2 binary bytes
+The two first characters of the passed string have the line and row: 
+e.g. "\\x02\\x04string" perl string writes "string" at line 2 column 4.
+.TP 
+ascii 2,12:
+Two numbers giving line and row:  Separate with a comma and end with a colon
+e.g. "2,4:string" writes "string" at line 2 column 4.
+.TP 
+ascii 12:
+Single column number on the (default) first line:  End with a colon
+e.g. "12:string" writes "string" at line 1 column 12.
+.P
+The positions are 1-based (i.e. the first position is 1,1).
+.SS LCD_M/onoff
+.I write-only, unsigned
+.br
+Sets several screen display functions. The selected choices should be added together.
+.TP
+4
+Display on
+.TP
+2
+Cursor on
+.TP
+1
+Cursor blinking
+.SS LCD_M/message
+.I write-only, ascii text
+.br
+Writes a
+.I message
+to the LCD screen after clearing the screen first.
+This is the easiest way to display a message.
 .SH STANDARD PROPERTIES
 .so standard.3so
 .SH ALARMS
