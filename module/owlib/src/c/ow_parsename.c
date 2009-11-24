@@ -105,7 +105,7 @@ static int FS_ParsedName_anywhere(const char *path, enum parse_pass remote_statu
 {
 	struct parsedname_pointers s_pp;
 	struct parsedname_pointers *pp = &s_pp;
-	int ret = 0;
+	int parse_error_status = 0;
 	enum parse_enum pe = parse_first;
 
 	// To make the debug output useful it's cleared here.
@@ -114,9 +114,9 @@ static int FS_ParsedName_anywhere(const char *path, enum parse_pass remote_statu
 
 	LEVEL_CALL("path=[%s]\n", SAFESTRING(path));
 
-	ret = FS_ParsedName_setup(pp, path, pn);
-	if (ret) {
-		return ret;
+	parse_error_status = FS_ParsedName_setup(pp, path, pn);
+	if (parse_error_status) {
+		return parse_error_status;
 	}
 	if (path == NULL) {
 		return 0;
@@ -129,33 +129,33 @@ static int FS_ParsedName_anywhere(const char *path, enum parse_pass remote_statu
 
 		case parse_done:		// the only exit!
 			//LEVEL_DEBUG("PARSENAME parse_done\n") ;
-			//printf("PARSENAME end ret=%d\n",ret) ;
-			if (ret) {
+			//printf("PARSENAME end parse_error_status=%d\n",parse_error_status) ;
+			if (parse_error_status) {
 				FS_ParsedName_destroy(pn);
-			} else {
-				//printf("%s: Parse %s before corrections: %.4X -- state = %d\n",(back_from_remote)?"BACK":"FORE",pn->path,pn->state,pn->type) ;
-				if (SpecifiedRemoteBus(pn) && !SpecifiedVeryRemoteBus(pn)) {
-					// promote interface of remote bus to local
-					if (pn->type == ePN_interface) {
-						pn->state &= ~ePS_busremote;
-						pn->state |= ePS_buslocal;
+				return parse_error_status ;
+			}
+			//printf("%s: Parse %s before corrections: %.4X -- state = %d\n",(back_from_remote)?"BACK":"FORE",pn->path,pn->state,pn->type) ;
+			if (SpecifiedRemoteBus(pn) && !SpecifiedVeryRemoteBus(pn)) {
+				// promote interface of remote bus to local
+				if (pn->type == ePN_interface) {
+					pn->state &= ~ePS_busremote;
+					pn->state |= ePS_buslocal;
 
-						// non-root remote bus
-					} else if (pn->type != ePN_root) {
-						pn->state |= ePS_busveryremote;
-					}
-				}
-				// root buses are considered "real"
-				if (pn->type == ePN_root) {
-					pn->type = ePN_real;	// default state
+					// non-root remote bus
+				} else if (pn->type != ePN_root) {
+					pn->state |= ePS_busveryremote;
 				}
 			}
+			// root buses are considered "real"
+			if (pn->type == ePN_root) {
+				pn->type = ePN_real;	// default state
+			}
 			//printf("%s: Parse %s after  corrections: %.4X -- state = %d\n\n",(back_from_remote)?"BACK":"FORE",pn->path,pn->state,pn->type) ;
-			return ret;
+			return 0;
 
 		case parse_error:
 			//LEVEL_DEBUG("PARSENAME parse_error\n") ;
-			ret = -ENOENT;
+			parse_error_status = -ENOENT;
 			pe = parse_done;
 			continue;
 
@@ -165,7 +165,7 @@ static int FS_ParsedName_anywhere(const char *path, enum parse_pass remote_statu
 
 		// break out next name in path, make sure pp->pathnext isn't NULL. (SIGSEGV in uClibc)
 		pp->pathnow = (pp->pathnext) ? strsep(&(pp->pathnext), "/") : NULL;
-		//LEVEL_DEBUG("PARSENAME pathnow=[%s] rest=[%s]\n",pathnow,pathnext) ;
+		//LEVEL_DEBUG("PARSENAME pathnow=[%s] rest=[%s]\n",pp->pathnow,pp->pathnext) ;
 		if (pp->pathnow == NULL || pp->pathnow[0] == '\0') {
 			pe = parse_done;
 			continue;
@@ -196,7 +196,7 @@ static int FS_ParsedName_anywhere(const char *path, enum parse_pass remote_statu
 		case parse_prop:
 			//LEVEL_DEBUG("PARSENAME parse_prop\n") ;
 			pn->dirlength = pp->pathnow - pp->pathcpy + 1 ;
-			LEVEL_DEBUG("Dirlength=%d <%*s>\n",pn->dirlength,pn->dirlength,pn->path) ;
+			//LEVEL_DEBUG("Dirlength=%d <%*s>\n",pn->dirlength,pn->dirlength,pn->path) ;
 			//printf("dirlength = %d which makes the path <%s> <%.*s>\n",pn->dirlength,pn->path,pn->dirlength,pn->path);
 			pp->pathlast = pp->pathnow;	/* Save for concatination if subdirectory later wanted */
 			pe = Parse_Property(pp->pathnow, pn);
@@ -600,29 +600,31 @@ int filecmp(const void *name, const void *ex)
 /* Parse a path/file combination */
 int FS_ParsedNamePlus(const char *path, const char *file, struct parsedname *pn)
 {
-	if (path == NULL || path[0] == '\0') {
-		return FS_ParsedName(file, pn);
-	} else if (file == NULL || file[0] == '\0') {
-		return FS_ParsedName(path, pn);
-	} else {
-		int ret = 0;
-		char *fullpath;
-		fullpath = owmalloc(strlen(file) + strlen(path) + 2);
-		if (fullpath == NULL) {
-			return -ENOMEM;
-		}
-		strcpy(fullpath, path);
-		if (fullpath[strlen(fullpath) - 1] != '/') {
-			strcat(fullpath, "/");
-		}
-		strcat(fullpath, file);
-		//printf("PARSENAMEPLUS path=%s pre\n",fullpath) ;
-		ret = FS_ParsedName(fullpath, pn);
-		//printf("PARSENAMEPLUS path=%s post\n",fullpath) ;
-		owfree(fullpath);
-		//printf("PARSENAMEPLUS free\n") ;
-		return ret;
+	int ret = 0;
+	char *fullpath;
+
+	if (path == NULL) {
+		path = "" ;
 	}
+	if (file == NULL) {
+		file = "" ;
+	}
+
+	fullpath = owmalloc(strlen(file) + strlen(path) + 2);
+	if (fullpath == NULL) {
+		return -ENOMEM;
+	}
+	strcpy(fullpath, path);
+	if (fullpath[strlen(fullpath) - 1] != '/') {
+		strcat(fullpath, "/");
+	}
+	strcat(fullpath, file);
+	//printf("PARSENAMEPLUS path=%s pre\n",fullpath) ;
+	ret = FS_ParsedName(fullpath, pn);
+	//printf("PARSENAMEPLUS path=%s post\n",fullpath) ;
+	owfree(fullpath);
+	//printf("PARSENAMEPLUS free\n") ;
+	return ret;
 }
 
 /* Parse a path/file combination */
