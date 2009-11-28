@@ -9,6 +9,9 @@ $Id$
  * Based on chttpd. copyright(c) 0x7d0 greg olszewski <noop@nwonknu.org>
  *
  */
+#define _GNU_SOURCE
+#include <stdio.h> // for getline
+#undef _GNU_SOURCE
 
 #include "owhttpd.h"
 
@@ -16,7 +19,7 @@ $Id$
 
 /* ------------ Protoypes ---------------- */
 struct urlparse {
-	char line[PATH_MAX + 1];
+	char line[LINE_MAX + 1];
 	char *cmd;
 	char *file;
 	char *version;
@@ -24,108 +27,178 @@ struct urlparse {
 	char *value;
 };
 
+enum http_return { http_ok, http_dir, http_icon, http_400, http_404 } ;
+
 	/* Error page functions */
 static void Bad400(FILE * out);
 static void Bad404(FILE * out);
 
 /* URL parsing function */
 static void URLparse(struct urlparse *up);
-
+static enum http_return handle_GET(FILE * out, struct urlparse * up) ;
+static enum http_return handle_POST(FILE * out, struct urlparse * up) ;
+static int ReadToCRLF( FILE * out ) ;
+static void TrimBoundary( char ** boundary ) ;
+static int GetPostData( char * boundary, struct memblob * mb, FILE * out ) ;
+static char * GetPostPath( FILE * out ) ;
 
 /* --------------- Functions ---------------- */
 
 /* Main handler for a web page */
 int handle_socket(FILE * out)
 {
-	char linecopy[PATH_MAX + 1];
-	char *str;
+	enum http_return http_code ;
+
 	struct urlparse up;
+
 	struct parsedname s_pn;
 	struct parsedname * pn = &s_pn ;
-	int content_length = -1 ;
+	
+	if ( fgets(up.line, LINE_MAX, out) ) {
+		LEVEL_CALL("PreParse line=%s\n", up.line);
+		URLparse(&up);				/* Brake up URL */
 
-	str = fgets(up.line, PATH_MAX, out);
-	LEVEL_CALL("PreParse line=%s\n", up.line);
-	URLparse(&up);				/* Brake up URL */
+		LEVEL_CALL
+		("WLcmd: %s\tfile: %s\trequest: %s\tvalue: %s\tversion: %s \n",
+		SAFESTRING(up.cmd), SAFESTRING(up.file), SAFESTRING(up.request), SAFESTRING(up.value), SAFESTRING(up.version));
 
-	/* read lines until blank */
-	if (up.version) {
-		do {
-			str = fgets(linecopy, PATH_MAX, out);
-			LEVEL_DEBUG("More data:%s",SAFESTRING(str));
-			if ( str==NULL ) {
-				break ;
-			}
-			if ( strlen(linecopy)>17 && strncasecmp(linecopy,"Content-Length:", 15)==0 ) {
-				sscanf(&linecopy[16],"%d",&content_length) ;
-			}
-		} while (strcmp(linecopy, "\r\n") && strcmp(linecopy, "\n"));
-//		} while (str != NULL);
+		if (up.cmd == NULL) {
+			// No command line in request
+			pn = NULL ;
+			http_code = http_400 ;
+		} else if (up.file == NULL) {
+			// could not parse a path from the request
+			pn = NULL ;
+			http_code = http_404 ;
+		} else if (strcasecmp(up.file, "/favicon.ico") == 0) {
+			// secial case for the icon
+			pn = NULL ;
+			http_code = http_icon ;
+		} else 	if (FS_ParsedName(up.file, pn)) {
+			// Can't understand the file name = URL
+			pn = NULL ;
+			http_code = http_404 ;
+		} else if (pn->selected_device == NULL) {
+			// directory!
+			http_code = http_dir ;
+		} else if (strcmp(up.cmd, "POST") == 0) {
+			LEVEL_DEBUG("http POST request\n");
+			http_code = handle_POST( out, &up ) ;
+		} else if (strcmp(up.cmd, "GET") == 0) {
+			LEVEL_DEBUG("http GET request\n");
+			http_code = handle_GET( out, &up ) ;
+		} else {
+			http_code = http_400 ;
+		}
+	} else {
+		LEVEL_DEBUG("No http data\n");
+		pn = NULL ;
+		http_code = http_400 ;
 	}
 
-	LEVEL_CALL
-		("WLcmd: %s\tfile: %s\trequest: %s\tvalue: %s\tversion: %s \n",
-		 SAFESTRING(up.cmd), SAFESTRING(up.file), SAFESTRING(up.request), SAFESTRING(up.value), SAFESTRING(up.version));
 	/*
-	 * This is necessary for some stupid *
-	 * * operating system such as SunOS
-	 */
+	* This is necessary for some stupid *
+	* * operating system such as SunOS
+	*/
 	fflush(out);
-
-	/* Good command line? */
-	if (up.cmd == NULL) {
-		Bad400(out);
-		
-	} else if (strcmp(up.cmd, "POST") == 0) {
-		if ( content_length < 0 ) {
-			LEVEL_DEFAULT("Uploading a file with no 'Content-Length' field in the HTTP data\n");
-			Bad400(out) ;
-		} else {
-			LEVEL_CALL("POST length=%d\n",content_length);
-			do {
-				str = fgets(linecopy, PATH_MAX, out);
-				LEVEL_DEBUG("Post data:%s",SAFESTRING(str));
-			} while (str != NULL && strcmp(linecopy, "\r\n") && strcmp(linecopy, "\n"));
-			
-		}
-		Bad400(out);
-		
-	} else if (strcmp(up.cmd, "GET") != 0) {
-		Bad400(out);
-		
-		/* Can't understand the file name = URL */
-	} else if (up.file == NULL) {
-		Bad404(out);
-	} else if (strcasecmp(up.file, "/favicon.ico") == 0) {
-		Favicon(out);
-	} else if (FS_ParsedName(up.file, pn)) {
-		/* Can't understand the file name = URL */
-		Bad404(out);
-	} else {
-		/* Root directory -- show the bus */
-		if (pn->selected_device == NULL) {	/* directory! */
-			ShowDir(out, pn);
-		} else if (up.request == NULL) {
-			ShowDevice(out, pn);
-		} else if (up.value==NULL) {
-			LEVEL_DEBUG("Null value for write command -- Bad URL\n");
+	switch ( http_code ) {
+		case http_icon:
+			Favicon(out);
+			break ;
+		case http_400:
 			Bad400(out);
-		} else {				/* First write new values, then show */
-			OWQ_allocate_struct_and_pointer(owq_write);
-
-			if (FS_OWQ_create_plus(up.file, up.request, up.value, strlen(up.value), 0, owq_write)) {
-				Bad404(out);
-			} else {
-				/* Single device, show it's properties */
-				ChangeData(owq_write);
-				FS_OWQ_destroy(owq_write);
-				ShowDevice(out, pn);
-			}
-		}
+			break ;
+		case http_404:
+			Bad404(out);
+			break ;
+		case http_dir:
+			ShowDir(out, pn);
+			break ;
+		case http_ok:
+			ShowDevice(out, pn);
+			break ;
+	}
+	if ( pn ) {
 		FS_ParsedName_destroy(pn);
 	}
-//printf("Done\n");
-	return 0;
+	
+	return 0 ;
+}	
+
+static enum http_return handle_GET(FILE * out, struct urlparse * up)
+{
+	/* read lines until blank */
+	if (up->version) {
+		ReadToCRLF( out ) ;
+	}
+	
+	if (up->request == NULL) {
+		return http_ok ;
+	} else if (up->value==NULL) {
+		LEVEL_DEBUG("Null value for write command -- Bad URL\n");
+		return http_400 ;
+	} else {				/* First write new values, then show */
+		OWQ_allocate_struct_and_pointer(owq_write);
+
+		if (FS_OWQ_create_plus(up->file, up->request, up->value, strlen(up->value), 0, owq_write)) {
+			return http_404 ;
+		} else {
+			/* Single device, show it's properties */
+			ChangeData(owq_write);
+			FS_OWQ_destroy(owq_write);
+			return http_ok ;
+		}
+	}
+}
+
+static enum http_return handle_POST(FILE * out, struct urlparse * up)
+{
+	enum http_return http_code ;
+
+	char * boundary = NULL ;
+	size_t boundary_length ;
+	
+	/* read lines until blank */
+	if (up->version) {
+		ReadToCRLF( out ) ;
+	}
+	
+	if ( getline(&boundary,&boundary_length,out) > 2 ) {
+		char * post_path  = GetPostPath( out ) ;
+
+		TrimBoundary( &boundary) ;
+		LEVEL_CALL("POST boundary=%s\n",boundary);
+
+		if ( post_path ) {
+			struct memblob mb ;
+			if ( GetPostData( boundary, &mb, out ) == 0 ) {
+				struct one_wire_query * owq = FS_OWQ_create_from_path( post_path, mb.used ) ;
+				if ( owq ) {
+					LEVEL_DEBUG("File upload %s for %ld bytes\n",post_path,mb.used);
+					memcpy( OWQ_buffer(owq), mb.memory_storage, mb.used ) ;
+					ChangeData(owq);
+					FS_OWQ_destroy_sibling(owq) ;
+					http_code = http_ok ;
+				} else {
+					LEVEL_DEBUG("Can't create %s\n",post_path);
+					http_code = http_404 ;
+				}
+			} else {
+				LEVEL_DEBUG("Can't read full binary data from file upload\n");
+				http_code = http_404 ;
+			}
+			MemblobClear( &mb ) ;
+			owfree(post_path ) ;
+		} else {
+			LEVEL_DEBUG("Can't read property name from file upload\n");
+			http_code = http_404 ;
+		}
+	}
+	if ( boundary ) {
+		free(boundary) ; // allocated in getline with malloc, not owmalloc
+	}
+
+	return http_code ;
 }
 
 /* URL handler for a web page */
@@ -223,4 +296,105 @@ static void Bad404(FILE * out)
 	fprintf(out, "<P>The 1-wire web server is carefully constrained for security and stability. Your requested device is not recognized.</P>");
 	fprintf(out, "<P>Navigate from the <A HREF=\"/\">Main page</A> for best results.</P>");
 	HTTPfoot(out);
+}
+
+static int ReadToCRLF( FILE * out )
+{
+	char * text_in = NULL ;
+	size_t length_in = 0 ;
+
+	/* read lines until blank */
+	while (getline(&text_in, &length_in, out)>0)  {
+		LEVEL_DEBUG("More data:%s",text_in);
+		if ( strcmp(text_in, "\r\n")==0 || strcmp(text_in, "\n")==0 ) {
+			if ( text_in ) {
+				free( text_in) ;
+			}
+			return 0 ;
+		}
+	}
+	if ( text_in ) {
+		free( text_in) ;
+	}
+	return 1 ;
+}
+
+static void TrimBoundary( char ** boundary )
+{
+	char * remove_char ;
+	
+	remove_char = strrchr( *boundary, '\n' ) ;
+	if ( remove_char ) {
+		*remove_char = '\0' ;
+	}
+	
+	remove_char = strrchr( *boundary, '\r' ) ;
+	if ( remove_char ) {
+		*remove_char = '\0' ;
+	}
+}
+
+static char * GetPostPath( FILE * out )
+{
+	char * text_in = NULL ;
+	size_t length_in = 0 ;
+	char * path_found = NULL ;
+	
+	/* read lines until blank */
+	while (getline(&text_in, &length_in, out)>-1)  {
+		char * namestart ;
+		LEVEL_DEBUG("Post data:%s",SAFESTRING(text_in));
+		if ( strcmp(text_in, "\r\n")==0 || strcmp(text_in, "\n")==0 ) {
+			if ( text_in ) {
+				free( text_in) ;
+			}
+			return path_found ;
+		}
+
+		namestart = strstr(text_in," name=\"") ;
+		if (namestart != NULL ) {
+			char * nameend ;
+			namestart += 7 ;
+			nameend = strchr(namestart,'\"') ;
+			if ( nameend != NULL ) {
+				nameend[0] = '\0' ;
+				if( path_found ) {
+					owfree(path_found);
+				}
+				path_found = owstrdup( namestart ) ;
+			}
+		}
+	}
+	if ( text_in ) {
+		free( text_in) ;
+	}
+	return path_found ;
+}
+
+static int GetPostData( char * boundary, struct memblob * mb, FILE * out )
+{
+	char * data = NULL ;
+	size_t data_length ;
+
+	ssize_t read_this_pass ;
+
+	MemblobInit( mb, 1000 ) ; // increqment in 1K amounts (arbitrary)
+	while ( (read_this_pass = getline(&data, &data_length, out)) > -1 ) {
+		Debug_Bytes(boundary,(BYTE *)data,(size_t)read_this_pass);
+		if ( strstr( data, boundary ) != NULL ) {
+			free(data) ; // allocated by getline with malloc, not owmalloc
+			LEVEL_DEBUG("Read in POST file upload of %ld bytes\n",mb->used);
+			return 0 ;
+		}
+		if ( MemblobAdd( (BYTE *)data, (size_t)read_this_pass, mb ) ) {
+			LEVEL_DEBUG("Data size too large\n");
+			free(data) ; // allocated by getline with malloc, not owmalloc
+			return 1 ;
+		}
+	}
+	if ( data ) {
+		free(data) ; // allocated by getline with malloc, not owmalloc
+	}
+	LEVEL_DEBUG("HTTP error -- no ending MIME boundary\n");
+	return 1 ;
 }

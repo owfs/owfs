@@ -36,6 +36,28 @@ int FS_OWQ_create(const char *path, char *buffer, size_t size, off_t offset, str
 	return return_code ;
 }
 
+/* Create the Parsename structure and create the buffer */
+/* Destroy with FS_OWQ_destroy_sibling */
+struct one_wire_query * FS_OWQ_create_from_path(const char *path, size_t size)
+{
+	struct one_wire_query * owq ;
+	
+	LEVEL_DEBUG("%s\n", path);
+
+	owq = owmalloc( sizeof( struct one_wire_query ) + size ) ;
+	if ( owq == NULL ) {
+		return NULL ;
+	}
+	if ( FS_ParsedName( path, PN(owq) ) ) {
+		owfree(owq) ;
+		return NULL ;
+	}
+
+	OWQ_buffer(owq) = &owq[1] ;
+	OWQ_size(owq) = size ;
+	return owq ;
+}
+
 /* Create the Parsename structure and load the relevant fields */
 /* Clean up with FS_OWQ_destroy_sibling */
 struct one_wire_query *FS_OWQ_create_sibling(const char *sibling, struct one_wire_query *owq_original)

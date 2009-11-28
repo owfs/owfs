@@ -18,15 +18,16 @@ $Id$
 //static void Show(FILE * out, const char *const path, const char *const file);
 //static void ShowText(FILE * out, const char *path, const char *file);
 
-static void Show(FILE * out, const struct parsedname *pn_entry);
-static void ShowDirectory(FILE * out, const struct parsedname *pn_entry);
+static void Show(FILE * out, struct parsedname *pn_entry);
+static void ShowDirectory(FILE * out, struct parsedname *pn_entry);
 static void ShowReadWrite(FILE * out, struct one_wire_query *owq);
 static void ShowReadonly(FILE * out, struct one_wire_query *owq);
 static void ShowWriteonly(FILE * out, struct one_wire_query *owq);
 static void ShowStructure(FILE * out, struct one_wire_query *owq);
+static void Upload( FILE * out, const struct parsedname * pn ) ;
 
-static void ShowText(FILE * out, const struct parsedname *pn_entry);
-static void ShowTextDirectory(FILE * out, const struct parsedname *pn_entry);
+static void ShowText(FILE * out, struct parsedname *pn_entry);
+static void ShowTextDirectory(FILE * out, struct parsedname *pn_entry);
 static void ShowTextReadWrite(FILE * out, struct one_wire_query *owq);
 static void ShowTextReadonly(FILE * out, struct one_wire_query *owq);
 static void ShowTextWriteonly(FILE * out, struct one_wire_query *owq);
@@ -35,7 +36,7 @@ static void ShowTextStructure(FILE * out, struct one_wire_query *owq);
 /* --------------- Functions ---------------- */
 
 /* Device entry -- table line for a filetype */
-static void Show(FILE * out, const struct parsedname *pn_entry)
+static void Show(FILE * out, struct parsedname *pn_entry)
 {
 	struct one_wire_query *owq = FS_OWQ_from_pn(pn_entry);
 
@@ -90,7 +91,7 @@ static void ShowReadWrite(FILE * out, struct one_wire_query *owq)
 				}
 			}
 			fprintf(out, "</TEXTAREA><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM></CODE>");
-			fprintf(out,"<BR><FORM METHOD='POST' ENCTYPE='multipart/form-data'>Load from file: <INPUT TYPE=FILE NAME='%s' SIZE=30><INPUT TYPE=SUBMIT VALUE='UPLOAD'><\FORM>",file);
+			Upload( out, PN(owq) ) ;
 			break;
 		}
 	case ft_yesno:
@@ -108,6 +109,11 @@ static void ShowReadWrite(FILE * out, struct one_wire_query *owq)
 				file, read_return, OWQ_buffer(owq));
 		break;
 	}
+}
+
+static void Upload( FILE * out, const struct parsedname * pn )
+{
+	fprintf(out,"<BR><FORM METHOD='POST' ENCTYPE='multipart/form-data'>Load from file: <INPUT TYPE=FILE NAME='%s' SIZE=30><INPUT TYPE=SUBMIT VALUE='UPLOAD'></FORM>",pn->path);
 }
 
 /* Device entry -- table line for a filetype */
@@ -174,6 +180,7 @@ static void ShowWriteonly(FILE * out, struct one_wire_query *owq)
 		fprintf(out,
 				"<CODE><FORM METHOD='GET'><TEXTAREA NAME='%s' COLS='64' ROWS='%-d'></TEXTAREA><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM></CODE>",
 				file, (int) (OWQ_size(owq) >> 5));
+		Upload(out,PN(owq)) ;
 		break;
 	case ft_yesno:
 	case ft_bitfield:
@@ -189,13 +196,13 @@ static void ShowWriteonly(FILE * out, struct one_wire_query *owq)
 	}
 }
 
-static void ShowDirectory(FILE * out, const struct parsedname *pn_entry)
+static void ShowDirectory(FILE * out, struct parsedname *pn_entry)
 {
 	fprintf(out, "<A HREF='%s'>%s</A>", pn_entry->path, FS_DirName(pn_entry));
 }
 
 /* Device entry -- table line for a filetype */
-static void ShowText(FILE * out, const struct parsedname *pn_entry)
+static void ShowText(FILE * out, struct parsedname *pn_entry)
 {
 	struct one_wire_query *owq = FS_OWQ_from_pn(pn_entry);
 
@@ -282,7 +289,7 @@ static void ShowTextWriteonly(FILE * out, struct one_wire_query *owq)
 	fprintf(out, "(writeonly)");
 }
 
-static void ShowTextDirectory(FILE * out, const struct parsedname *pn_entry)
+static void ShowTextDirectory(FILE * out, struct parsedname *pn_entry)
 {
 	(void) out;
 	(void) pn_entry;
@@ -302,7 +309,7 @@ static void ShowDeviceCallback(void *v, const struct parsedname *const pn_entry)
 	Show(out, pn_entry);
 }
 
-static void ShowDeviceText(FILE * out, const struct parsedname *pn)
+static void ShowDeviceText(FILE * out, struct parsedname *pn)
 {
 	HTTPstart(out, "200 OK", ct_text);
 
@@ -315,7 +322,7 @@ static void ShowDeviceText(FILE * out, const struct parsedname *pn)
 	}
 }
 
-void ShowDevice(FILE * out, const struct parsedname *pn)
+void ShowDevice(FILE * out, struct parsedname *pn)
 {
 	if (pn->state & ePS_text) {
 		ShowDeviceText(out, pn);
