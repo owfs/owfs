@@ -72,14 +72,20 @@ int handle_socket(FILE * out)
 			http_code = http_404 ;
 		} else if (strcasecmp(up.file, "/favicon.ico") == 0) {
 			// secial case for the icon
+			LEVEL_DEBUG("http icon request\n");
+			ReadToCRLF(out) ;
 			pn = NULL ;
 			http_code = http_icon ;
 		} else 	if (FS_ParsedName(up.file, pn)) {
 			// Can't understand the file name = URL
+			LEVEL_DEBUG("http %s not understaood\n",up.file);
+			ReadToCRLF(out) ;
 			pn = NULL ;
 			http_code = http_404 ;
 		} else if (pn->selected_device == NULL) {
 			// directory!
+			LEVEL_DEBUG("http directory request\n");
+			ReadToCRLF(out) ;
 			http_code = http_dir ;
 		} else if (strcmp(up.cmd, "POST") == 0) {
 			LEVEL_DEBUG("http POST request\n");
@@ -88,6 +94,7 @@ int handle_socket(FILE * out)
 			LEVEL_DEBUG("http GET request\n");
 			http_code = handle_GET( out, &up ) ;
 		} else {
+			ReadToCRLF(out) ;
 			http_code = http_400 ;
 		}
 	} else {
@@ -290,7 +297,7 @@ static void Bad400(FILE * out)
 static void Bad404(FILE * out)
 {
 	LEVEL_CALL("Return a 404 HTTP error code\n");
-	HTTPstart(out, "404 File not found", ct_html);
+	HTTPstart(out, "404 Not Found", ct_html);
 	HTTPtitle(out, "Error 400 -- Item doesn't exist");
 	HTTPheader(out, "Non-existent Device");
 	fprintf(out, "<P>The 1-wire web server is carefully constrained for security and stability. Your requested device is not recognized.</P>");
