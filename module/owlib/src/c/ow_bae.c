@@ -68,6 +68,12 @@ READ_FUNCTION(FS_localtype) ;
 READ_FUNCTION(FS_type_device) ;
 READ_FUNCTION(FS_type_chip) ;
 
+WRITE_FUNCTION(FS_eeprom_erase);
+READ_FUNCTION(FS_eeprom_r_page);
+WRITE_FUNCTION(FS_eeprom_w_page);
+READ_FUNCTION(FS_eeprom_r_mem);
+WRITE_FUNCTION(FS_eeprom_w_mem);
+
 READ_FUNCTION(FS_r_8) ;
 WRITE_FUNCTION(FS_w_8) ;
 READ_FUNCTION(FS_r_16) ;
@@ -80,6 +86,9 @@ WRITE_FUNCTION(FS_w_32) ;
 #define _FC02_MEMORY_SIZE 192
 #define _FC02_FUNCTION_FLASH_SIZE 0x10000
 #define _FC02_FUNCTION_FLASH_OFFSET 0xE200
+#define _FC02_EEPROM_OFFSET 0xE000
+#define _FC02_EEPROM_PAGE_SIZE       512
+#define _FC02_EEPROM_PAGES       2
 
 #define _FC02_MAX_WRITE_GULP	32
 #define _FC02_MAX_READ_GULP	32
@@ -120,7 +129,7 @@ WRITE_FUNCTION(FS_w_32) ;
 #define _FC02_TPM1C  8    /* u8 */
 #define _FC02_TPM2C  9    /* u8 */
 
-
+struct aggregate ABAEeeprom = { _FC02_EEPROM_PAGES, ag_numbers, ag_separate, };
 struct filetype BAE[] = {
 	F_STANDARD,
 	{"memory", _FC02_MEMORY_SIZE, NULL, ft_binary, fc_read_stable, FS_r_mem, FS_w_mem, NO_FILETYPE_DATA,},
@@ -138,6 +147,12 @@ struct filetype BAE[] = {
 	{"firmware", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
 	{"firmware/function", _FC02_FUNCTION_FLASH_SIZE, NULL, ft_binary, fc_stable, FS_r_flash, FS_w_flash, NO_FILETYPE_DATA,},
 
+	{"eeprom",PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+	{"eeprom/erase",_FC02_EEPROM_PAGE_SIZE, &ABAEeeprom, ft_binary, fc_stable, NO_READ_FUNCTION, FS_eeprom_erase, NO_FILETYPE_DATA,},
+	{"eeprom/memory",_FC02_EEPROM_PAGE_SIZE*_FC02_EEPROM_PAGES, NON_AGGREGATE, ft_binary, fc_stable, FS_eeprom_r_mem, FS_eeprom_w_mem, NO_FILETYPE_DATA,},
+	{"eeprom/page",_FC02_EEPROM_PAGE_SIZE, &ABAEeeprom, ft_binary, fc_stable, FS_eeprom_r_page, FS_eeprom_w_page, NO_FILETYPE_DATA,},
+	
+	
 	{"910", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
 	{"910/adcc", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_read_stable, FS_r_8, FS_w_8, {u:_FC02_ADCC,}, },
 	{"910/cntc", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_read_stable, FS_r_8, FS_w_8, {u:_FC02_CNTC,}, },
@@ -185,6 +200,7 @@ DeviceEntryExtended(FC, BAE, DEV_resume | DEV_alarm );
 #define _1W_EXTENDED_COMMAND 0x13
 #define _1W_READ_BLOCK_WITH_LEN 0x14
 #define _1W_WRITE_BLOCK_WITH_LEN 0x15
+#define _1W_ERASE_EEPROM_PAGE 0x16
 
 #define _1W_CONFIRM_WRITE 0xBC
 
@@ -196,6 +212,7 @@ static int OW_version( UINT * version, struct parsedname * pn ) ;
 static int OW_type( UINT * localtype, struct parsedname * pn ) ;
 static int OW_r_mem(BYTE *bytes, size_t size, off_t offset, struct parsedname * pn);
 static int OW_r_mem_small(BYTE *bytes, size_t size, off_t offset, struct parsedname * pn);
+static int OW_eeprom_erase( off_t offset, struct parsedname * pn ) ;
 
 static int OW_initiate_flash(BYTE * data, struct parsedname *pn);
 static int OW_write_flash(BYTE * data, struct parsedname *pn);
@@ -213,6 +230,18 @@ static int FS_r_mem(struct one_wire_query *owq)
 	}
 	OWQ_length(owq) = OWQ_size(owq) ;
 	return 0;
+}
+
+static int FS_eeprom_r_mem(struct one_wire_query *owq)
+{
+	OWQ_offset(owq) += _FC02_EEPROM_OFFSET ;
+	return FS_r_mem(owq) ;
+}
+
+static int FS_eeprom_r_page(struct one_wire_query *owq)
+{
+	OWQ_offset(owq) += _FC02_EEPROM_PAGE_SIZE * OWQ_pn(owq).extension ;
+	return FS_eeprom_r_mem(owq) ;
 }
 
 static int FS_w_mem(struct one_wire_query *owq)
@@ -237,6 +266,26 @@ static int FS_w_mem(struct one_wire_query *owq)
 	
 	return 0;
 }
+
+static int FS_eeprom_w_mem(struct one_wire_query *owq)
+{
+	OWQ_offset(owq) += _FC02_EEPROM_OFFSET ;
+	return FS_w_mem(owq) ;
+}
+
+static int FS_eeprom_w_page(struct one_wire_query *owq)
+{
+	OWQ_offset(owq) += _FC02_EEPROM_PAGE_SIZE * OWQ_pn(owq).extension ;
+	return FS_eeprom_w_mem(owq) ;
+}
+
+static int FS_eeprom_erase(struct one_wire_query *owq)
+{
+	struct parsedname * pn = PN(owq) ;
+	off_t offset = _FC02_EEPROM_PAGE_SIZE * pn->extension + _FC02_EEPROM_OFFSET ;
+	return OW_eeprom_erase(offset,pn) ? -EINVAL : 0 ;
+}
+
 
 /* BAE flash functions */
 static int FS_w_flash(struct one_wire_query *owq)
@@ -685,6 +734,23 @@ static int OW_write_flash( BYTE * data, struct parsedname * pn )
 	} ;
 	
 	memcpy(&p[3], data, 32 ) ;
+	if (BUS_transaction(t, pn)) {
+		return 1;
+	}
+	return 0 ;
+}
+
+static int OW_eeprom_erase( off_t offset, struct parsedname * pn )
+{
+	BYTE p[1+2+2] = { _1W_ERASE_EEPROM_PAGE, LOW_HIGH_ADDRESS(offset), } ;
+	BYTE q[] = { _1W_CONFIRM_WRITE, } ;
+	struct transaction_log t[] = {
+		TRXN_START,
+		TRXN_WR_CRC16(p, 1+2, 0),
+		TRXN_WRITE1(q),
+		TRXN_END,
+	} ;
+	
 	if (BUS_transaction(t, pn)) {
 		return 1;
 	}

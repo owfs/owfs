@@ -113,7 +113,7 @@ static void ShowReadWrite(FILE * out, struct one_wire_query *owq)
 
 static void Upload( FILE * out, const struct parsedname * pn )
 {
-	fprintf(out,"<BR><FORM METHOD='POST' ENCTYPE='multipart/form-data'>Load from file: <INPUT TYPE=FILE NAME='%s' SIZE=30><INPUT TYPE=SUBMIT VALUE='UPLOAD'></FORM>",pn->path);
+	fprintf(out,"<FORM METHOD='POST' ENCTYPE='multipart/form-data'>Load from file: <INPUT TYPE=FILE NAME='%s' SIZE=30><INPUT TYPE=SUBMIT VALUE='UPLOAD'></FORM>",pn->path);
 }
 
 /* Device entry -- table line for a filetype */
