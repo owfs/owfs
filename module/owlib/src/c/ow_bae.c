@@ -148,7 +148,7 @@ struct filetype BAE[] = {
 	{"firmware/function", _FC02_FUNCTION_FLASH_SIZE, NULL, ft_binary, fc_stable, FS_r_flash, FS_w_flash, NO_FILETYPE_DATA,},
 
 	{"eeprom",PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
-	{"eeprom/erase",_FC02_EEPROM_PAGE_SIZE, &ABAEeeprom, ft_binary, fc_stable, NO_READ_FUNCTION, FS_eeprom_erase, NO_FILETYPE_DATA,},
+	{"eeprom/erase", PROPERTY_LENGTH_YESNO, &ABAEeeprom, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_eeprom_erase, NO_FILETYPE_DATA,},
 	{"eeprom/memory",_FC02_EEPROM_PAGE_SIZE*_FC02_EEPROM_PAGES, NON_AGGREGATE, ft_binary, fc_stable, FS_eeprom_r_mem, FS_eeprom_w_mem, NO_FILETYPE_DATA,},
 	{"eeprom/page",_FC02_EEPROM_PAGE_SIZE, &ABAEeeprom, ft_binary, fc_stable, FS_eeprom_r_page, FS_eeprom_w_page, NO_FILETYPE_DATA,},
 	
@@ -282,8 +282,12 @@ static int FS_eeprom_w_page(struct one_wire_query *owq)
 static int FS_eeprom_erase(struct one_wire_query *owq)
 {
 	struct parsedname * pn = PN(owq) ;
-	off_t offset = _FC02_EEPROM_PAGE_SIZE * pn->extension + _FC02_EEPROM_OFFSET ;
-	return OW_eeprom_erase(offset,pn) ? -EINVAL : 0 ;
+	if (OWQ_Y(owq)) {
+		off_t offset = _FC02_EEPROM_PAGE_SIZE * pn->extension + _FC02_EEPROM_OFFSET ;
+		return OW_eeprom_erase(offset,pn) ? -EINVAL : 0 ;
+	} else{
+		return 0 ;
+	}
 }
 
 
