@@ -84,8 +84,8 @@ WRITE_FUNCTION(FS_w_32) ;
 /* ------- Structures ----------- */
 
 #define _FC02_MEMORY_SIZE 192
-#define _FC02_FUNCTION_FLASH_SIZE 0x10000
-#define _FC02_FUNCTION_FLASH_OFFSET 0xE200
+#define _FC02_FUNCTION_FLASH_SIZE 0x1000
+#define _FC02_FUNCTION_FLASH_OFFSET 0xE400
 #define _FC02_EEPROM_OFFSET 0xE000
 #define _FC02_EEPROM_PAGE_SIZE       512
 #define _FC02_EEPROM_PAGES       2
@@ -192,8 +192,8 @@ struct filetype BAE[] = {
 DeviceEntryExtended(FC, BAE, DEV_resume | DEV_alarm );
 
 /* <AE command codes */
-#define _1W_ERASE_FIRMWARE 0xBB
-#define _1W_FLASH_FIRMWARE 0xBA
+#define _1W_ECMD_ERASE_FIRMWARE 0xBB
+#define _1W_ECMD_FLASH_FIRMWARE 0xBA
 
 #define _1W_READ_VERSION 0x11
 #define _1W_READ_TYPE 0x12
@@ -708,7 +708,7 @@ static void BAE_uint32_to_bytes( uint32_t num, unsigned char * p )
 
 static int OW_initiate_flash( BYTE * data, struct parsedname * pn )
 {
-	BYTE p[1+1+1+32+2] = { _1W_EXTENDED_COMMAND, 32,_1W_ERASE_FIRMWARE, } ;
+	BYTE p[1+1+1+32+2] = { _1W_EXTENDED_COMMAND, 32,_1W_ECMD_ERASE_FIRMWARE, } ;
 	BYTE q[] = { _1W_CONFIRM_WRITE, } ;
 	struct transaction_log t[] = {
 		TRXN_START,
@@ -727,7 +727,7 @@ static int OW_initiate_flash( BYTE * data, struct parsedname * pn )
 
 static int OW_write_flash( BYTE * data, struct parsedname * pn )
 {
-	BYTE p[1+1+1+32+2] = { _1W_EXTENDED_COMMAND, 32,_1W_FLASH_FIRMWARE,  } ;
+	BYTE p[1+1+1+32+2] = { _1W_EXTENDED_COMMAND, 32,_1W_ECMD_FLASH_FIRMWARE,  } ;
 	BYTE q[] = { _1W_CONFIRM_WRITE, } ;
 	struct transaction_log t[] = {
 		TRXN_START,
