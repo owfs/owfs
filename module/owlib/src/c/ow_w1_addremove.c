@@ -19,6 +19,17 @@ $Id$
 
 static struct connection_in * CreateIn(const char * name ) ;
 static struct connection_in *FindIn(const char * name ) ;
+static int w1_bus_name( int bus_master, char * name ) ;
+
+/* Concoct a name for this w1 bus, buffer needs at least 63 chars */
+static int w1_bus_name( int bus_master, char * name )
+{
+	int sn_ret ;
+	UCLIBCLOCK ;
+	sn_ret = snprintf(name,62,"w1_bus_master%d",bus_master) ;
+	UCLIBCLOCK ;
+	return sn_ret ;
+}
 
 static struct connection_in * CreateIn(const char * name )
 {
@@ -52,22 +63,18 @@ static struct connection_in *FindIn(const char * name)
 	return NULL;
 }
 
+/* (Dynamically) Add a new w1 bus to the list of connections */
 static void * AddBus( void * v )
 {
-	int bus_master = ((int *) v)[0] ;
+	int bus_master = (int) v ;
 	char name[63] ;
-	int sn_ret ;
 	struct connection_in * in ;
 
 #if OW_MT
 	pthread_detach(pthread_self());
 #endif /* OW_MT */
 
-	UCLIBCLOCK ;
-	sn_ret = snprintf(name,62,"w1_bus_master%d",bus_master) ;
-	UCLIBCLOCK ;
-
-	if ( sn_ret < 0 ) {
+	if ( w1_bus_name( bus_master, name ) < 0 ) {
 		return NULL ;
 	}
 
@@ -92,20 +99,15 @@ static void * AddBus( void * v )
 
 void * RemoveBus( void * v )
 {
-	int bus_master = ((int *) v)[0] ;
+	int bus_master = (int) v ;
 	char name[63] ;
-	int sn_ret ;
 	struct connection_in * in ;
 
 #if OW_MT
 	pthread_detach(pthread_self());
 #endif /* OW_MT */
 
-	UCLIBCLOCK ;
-	sn_ret = snprintf(name,62,"w1_bus_master%d",bus_master) ;
-	UCLIBCLOCK ;
-
-	if ( sn_ret < 0 ) {
+	if ( w1_bus_name( bus_master, name ) < 0 ) {
 		return NULL ;
 	}
 
@@ -128,7 +130,7 @@ void * RemoveBus( void * v )
 void AddW1Bus( int bus_master )
 {
 	pthread_t thread;
-	int err = pthread_create(&thread, NULL, AddBus, &bus_master );
+	int err = pthread_create(&thread, NULL, AddBus, bus_master );
 	if (err) {
 		LEVEL_CONNECT("W1 bus add thread error %d.\n", err);
 	}
@@ -137,7 +139,7 @@ void AddW1Bus( int bus_master )
 void RemoveW1Bus( int bus_master )
 {
 	pthread_t thread;
-	int err = pthread_create(&thread, NULL, RemoveBus, &bus_master );
+	int err = pthread_create(&thread, NULL, RemoveBus, bus_master );
 	if (err) {
 		LEVEL_CONNECT("W1 bus add thread error %d.\n", err);
 	}
@@ -147,12 +149,12 @@ void RemoveW1Bus( int bus_master )
 
 void AddW1Bus( int bus_master )
 {
-	AddBus( &bus_master) ;
+	AddBus( bus_master) ;
 }
 
 void RemoveW1Bus( int bus_master )
 {
-	RemoveBus( &bus_master) ;
+	RemoveBus( bus_master) ;
 }
 
 #endif /* OW_MT */
