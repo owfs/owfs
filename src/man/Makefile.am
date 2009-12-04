@@ -2,23 +2,7 @@
 
 mandir = @mandir@
 
-man_SO =   addressing.3so \
-           cmdline_mini.1so \
-           configuration.1so \
-           description.1so description.3so description.5so description.nso \
-           device.1so \
-           format.1so format.5so \
-           help.1so \
-           job_control.1so \
-           persistent_thresholds.1so \
-           seealso.1so seealso.3so seealso.5so seealso.nso \
-           standard.3so standard_mini.3so \
-           temperature.1so temperature_errata.3so temperature_threshold.3so \
-           temperatures_mini.3so \
-           timeout.1so
-
-man_MANS = ${man_SO} \
-           owfs.1 \
+man_MANS = owfs.1 \
            owhttpd.1 \
            owserver.1 \
            owftpd.1 \
@@ -51,6 +35,27 @@ man_MANS = ${man_SO} \
            owtcl.n
 
 EXTRA_DIST = ${man_MANS}
+
+install-data-am: install-man install-so-man
+
+install-so-man:
+	for i in $(man_MANS); do \
+	    case $$i in \
+		*.1*) mandirr=$(man1dir) ;; \
+		*.3*) mandirr=$(man3dir) ;; \
+		*.5*) mandirr=$(man5dir) ;; \
+		*.n*) mandirr=$(manndir) ;; \
+	    esac; \
+	    i=$$mandirr/$$i; \
+	    list="$$list $$i"; \
+	done; \
+	for manfile in $$list; do \
+	    for i in `sed -n '2,$$ s/^.so //p' $(DESTDIR)/$$manfile`; do \
+			sed -i "/$$i/r $(srcdir)/$$i" $(DESTDIR)/$$manfile; \
+			sed -i "/$$i/d" $(DESTDIR)/$$manfile; \
+	    done; \
+		sed -i '/^.\\\"/d' $(DESTDIR)/$$manfile; \
+	done
 
 clean-generic:
 
