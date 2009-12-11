@@ -15,7 +15,6 @@ $Id$
 
 /* Length of a property element */
 /* based on property type in most cases, except ascii and binary, which are explicitly sized */
-/* Thus the HIDDEN attribute doesn't cause problems */
 size_t FileLength(const struct parsedname *pn)
 {
 	if (pn->type == ePN_structure) {

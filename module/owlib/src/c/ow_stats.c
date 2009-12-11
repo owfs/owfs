@@ -132,47 +132,47 @@ READ_FUNCTION(FS_time);
 
 /* -------- Structures ---------- */
 struct filetype stats_cache[] = {
-	{"flips", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&cache_flips},},
-	{"additions", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&cache_adds},},
-	{"primary", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_statistic, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
-	{"primary/now", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&new_avg.current},},
-	{"primary/sum", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&new_avg.sum},},
-	{"primary/num", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&new_avg.count},},
-	{"primary/max", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&new_avg.max},},
-	{"secondary", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_statistic, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
-	{"secondary/now", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&old_avg.current},},
-	{"secondary/sum", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&old_avg.sum},},
-	{"secondary/num", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&old_avg.count},},
-	{"secondary/max", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&old_avg.max},},
-	{"persistent", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_statistic, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
-	{"persistent/now", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&store_avg.current,},},
-	{"persistent/sum", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&store_avg.sum},},
-	{"persistent/num", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&store_avg.count},},
-	{"persistent/max", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&store_avg.max},},
-	{"external", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_statistic, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
-	{"external/tries", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&cache_ext.tries},},
-	{"external/hits", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&cache_ext.hits},},
-	{"external/added", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&cache_ext.adds,},},
-	{"external/expired", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&cache_ext.expires,},},
-	{"external/deleted", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&cache_ext.deletes,},},
-	{"internal", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_statistic, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
-	{"internal/tries", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&cache_int.tries},},
-	{"internal/hits", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&cache_int.hits},},
-	{"internal/added", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&cache_int.adds,},},
-	{"internal/expired", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&cache_int.expires,},},
-	{"internal/deleted", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&cache_int.deletes,},},
-	{"directory", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_statistic, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
-	{"directory/tries", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&cache_dir.tries},},
-	{"directory/hits", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&cache_dir.hits},},
-	{"directory/added", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&cache_dir.adds},},
-	{"directory/expired", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&cache_dir.expires,},},
-	{"directory/deleted", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&cache_dir.deletes,},},
-	{"device", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_statistic, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
-	{"device/tries", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&cache_dev.tries},},
-	{"device/hits", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&cache_dev.hits},},
-	{"device/added", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&cache_dev.adds},},
-	{"device/expired", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&cache_dev.expires,},},
-	{"device/deleted", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&cache_dev.deletes,},},
+	{"flips", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&cache_flips},},
+	{"additions", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&cache_adds},},
+	{"primary", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_statistic, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"primary/now", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&new_avg.current},},
+	{"primary/sum", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&new_avg.sum},},
+	{"primary/num", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&new_avg.count},},
+	{"primary/max", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&new_avg.max},},
+	{"secondary", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_statistic, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"secondary/now", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&old_avg.current},},
+	{"secondary/sum", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&old_avg.sum},},
+	{"secondary/num", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&old_avg.count},},
+	{"secondary/max", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&old_avg.max},},
+	{"persistent", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_statistic, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"persistent/now", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&store_avg.current,},},
+	{"persistent/sum", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&store_avg.sum},},
+	{"persistent/num", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&store_avg.count},},
+	{"persistent/max", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&store_avg.max},},
+	{"external", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_statistic, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"external/tries", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&cache_ext.tries},},
+	{"external/hits", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&cache_ext.hits},},
+	{"external/added", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&cache_ext.adds,},},
+	{"external/expired", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&cache_ext.expires,},},
+	{"external/deleted", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&cache_ext.deletes,},},
+	{"internal", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_statistic, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"internal/tries", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&cache_int.tries},},
+	{"internal/hits", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&cache_int.hits},},
+	{"internal/added", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&cache_int.adds,},},
+	{"internal/expired", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&cache_int.expires,},},
+	{"internal/deleted", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&cache_int.deletes,},},
+	{"directory", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_statistic, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"directory/tries", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&cache_dir.tries},},
+	{"directory/hits", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&cache_dir.hits},},
+	{"directory/added", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&cache_dir.adds},},
+	{"directory/expired", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&cache_dir.expires,},},
+	{"directory/deleted", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&cache_dir.deletes,},},
+	{"device", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_statistic, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"device/tries", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&cache_dev.tries},},
+	{"device/hits", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&cache_dev.hits},},
+	{"device/added", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&cache_dev.adds},},
+	{"device/expired", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&cache_dev.expires,},},
+	{"device/deleted", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&cache_dev.deletes,},},
 };
 
 struct device d_stats_cache = { "cache", "cache", 0, COUNT_OF_FILETYPES(stats_cache), stats_cache };
@@ -181,35 +181,35 @@ struct device d_stats_cache = { "cache", "cache", 0, COUNT_OF_FILETYPES(stats_ca
 
 struct aggregate Aread = { 3, ag_numbers, ag_separate, };
 struct filetype stats_read[] = {
-	{"calls", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&read_calls},},
-	{"cachesuccess", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&read_cache},},
-	{"cachebytes", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&read_cachebytes},},
-	{"success", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&read_success},},
-	{"bytes", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&read_bytes},},
-  {"tries", PROPERTY_LENGTH_UNSIGNED, &Aread, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&read_tries},},
+	{"calls", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&read_calls},},
+	{"cachesuccess", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&read_cache},},
+	{"cachebytes", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&read_cachebytes},},
+	{"success", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&read_success},},
+	{"bytes", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&read_bytes},},
+  {"tries", PROPERTY_LENGTH_UNSIGNED, &Aread, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&read_tries},},
 }
 
 ;
 struct device d_stats_read = { "read", "read", 0, COUNT_OF_FILETYPES(stats_read), stats_read };
 
 struct filetype stats_write[] = {
-	{"calls", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&write_calls},},
-	{"success", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&write_success},},
-	{"bytes", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&write_bytes},},
-  {"tries", PROPERTY_LENGTH_UNSIGNED, &Aread, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&write_tries},},
+	{"calls", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&write_calls},},
+	{"success", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&write_success},},
+	{"bytes", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&write_bytes},},
+  {"tries", PROPERTY_LENGTH_UNSIGNED, &Aread, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&write_tries},},
 }
 
 ;
 struct device d_stats_write = { "write", "write", 0, COUNT_OF_FILETYPES(stats_write), stats_write };
 
 struct filetype stats_directory[] = {
-	{"maxdepth", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&dir_depth},},
-	{"bus", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_statistic, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
-	{"bus/calls", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&dir_main.calls},},
-	{"bus/entries", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&dir_main.entries},},
-	{"device", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_statistic, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
-	{"device/calls", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&dir_dev.calls},},
-	{"device/entries", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&dir_dev.entries},},
+	{"maxdepth", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&dir_depth},},
+	{"bus", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_statistic, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"bus/calls", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&dir_main.calls},},
+	{"bus/entries", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&dir_main.entries},},
+	{"device", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_statistic, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"device/calls", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&dir_dev.calls},},
+	{"device/entries", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&dir_dev.entries},},
 }
 
 ;
@@ -218,26 +218,26 @@ struct device d_stats_directory = { "directory", "directory", 0, COUNT_OF_FILETY
 };
 
 struct filetype stats_thread[] = {
-	{"directory", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_statistic, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
-	{"directory/now", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&dir_avg.current},},
-	{"directory/sum", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&dir_avg.sum},},
-	{"directory/num", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&dir_avg.count},},
-	{"directory/max", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&dir_avg.max},},
-	{"overall", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_statistic, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
-	{"overall/now", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&all_avg.current},},
-	{"overall/sum", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&all_avg.sum},},
-	{"overall/num", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&all_avg.count},},
-	{"overall/max", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&all_avg.max},},
-	{"read", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_statistic, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
-	{"read/now", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&read_avg.current},},
-	{"read/sum", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&read_avg.sum},},
-	{"read/num", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&read_avg.count},},
-	{"read/max", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&read_avg.max},},
-	{"write", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_statistic, NO_READ_FUNCTION, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
-	{"write/now", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&write_avg.current,},},
-	{"write/sum", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&write_avg.sum},},
-	{"write/num", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&write_avg.count},},
-	{"write/max", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, {v:&write_avg.max},},
+	{"directory", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_statistic, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"directory/now", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&dir_avg.current},},
+	{"directory/sum", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&dir_avg.sum},},
+	{"directory/num", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&dir_avg.count},},
+	{"directory/max", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&dir_avg.max},},
+	{"overall", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_statistic, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"overall/now", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&all_avg.current},},
+	{"overall/sum", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&all_avg.sum},},
+	{"overall/num", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&all_avg.count},},
+	{"overall/max", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&all_avg.max},},
+	{"read", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_statistic, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"read/now", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&read_avg.current},},
+	{"read/sum", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&read_avg.sum},},
+	{"read/num", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&read_avg.count},},
+	{"read/max", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&read_avg.max},},
+	{"write", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_statistic, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"write/now", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&write_avg.current,},},
+	{"write/sum", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&write_avg.sum},},
+	{"write/num", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&write_avg.count},},
+	{"write/max", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&write_avg.max},},
 }
 
 ;
@@ -245,10 +245,10 @@ struct device d_stats_thread = { "threads", "threads", 0, COUNT_OF_FILETYPES(sta
 	stats_thread
 };
 
-#define FS_stat_ROW(var) {"" #var "",PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE  , ft_unsigned, fc_statistic,   FS_stat, NO_WRITE_FUNCTION, {v: & var,} }
+#define FS_stat_ROW(var) {"" #var "",PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE  , ft_unsigned, fc_statistic,   FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v: & var,} }
 
 struct filetype stats_errors[] = {
-	{"max_delay", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_statistic, FS_time, NO_WRITE_FUNCTION, {v:&max_delay},},
+	{"max_delay", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_statistic, FS_time, NO_WRITE_FUNCTION, VISIBLE, {v:&max_delay},},
 
 // ow_net.c
 	FS_stat_ROW(NET_accept_errors),

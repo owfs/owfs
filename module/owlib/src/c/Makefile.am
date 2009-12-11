@@ -129,6 +129,7 @@ OWLIB_SOURCE = ow_dl.c           \
                ow_udp_read.c     \
                ow_util.c         \
                ow_verify.c       \
+	       ow_visibility.c   \
                ow_w1.c           \
                ow_w1_addremove.c \
                ow_w1_bind.c      \

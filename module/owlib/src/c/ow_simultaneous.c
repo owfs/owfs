@@ -57,12 +57,12 @@ READ_FUNCTION(FS_r_single);
 
 /* -------- Structures ---------- */
 struct filetype simultaneous[] = {
-	{"temperature", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_convert, FS_w_convert_temp, {i:simul_temp},},
-	{"voltage", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_convert, FS_w_convert_volt, {i:simul_volt},},
-	{"present", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_present, NO_WRITE_FUNCTION, {i:_1W_READ_ROM},},
-	{"present_ds2400", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_present, NO_WRITE_FUNCTION, {i:_1W_OLD_READ_ROM},},
-	{"single", 18, NON_AGGREGATE, ft_ascii, fc_volatile, FS_r_single, NO_WRITE_FUNCTION, {i:_1W_READ_ROM},},
-	{"single_ds2400", 18, NON_AGGREGATE, ft_ascii, fc_volatile, FS_r_single, NO_WRITE_FUNCTION, {i:_1W_OLD_READ_ROM},},
+	{"temperature", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_convert, FS_w_convert_temp, VISIBLE, {i:simul_temp},},
+	{"voltage", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_convert, FS_w_convert_volt, VISIBLE, {i:simul_volt},},
+	{"present", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_present, NO_WRITE_FUNCTION, VISIBLE, {i:_1W_READ_ROM},},
+	{"present_ds2400", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_present, NO_WRITE_FUNCTION, VISIBLE, {i:_1W_OLD_READ_ROM},},
+	{"single", 18, NON_AGGREGATE, ft_ascii, fc_volatile, FS_r_single, NO_WRITE_FUNCTION, VISIBLE, {i:_1W_READ_ROM},},
+	{"single_ds2400", 18, NON_AGGREGATE, ft_ascii, fc_volatile, FS_r_single, NO_WRITE_FUNCTION, VISIBLE, {i:_1W_OLD_READ_ROM},},
 };
 
 DeviceEntry(simultaneous, simultaneous);

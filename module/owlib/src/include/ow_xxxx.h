@@ -35,27 +35,27 @@ int FS_present(struct one_wire_query *owq);
 /* ------- Structures ----------- */
 
 #define F_address  \
-{"address"   ,  PROPERTY_LENGTH_ADDRESS,  NON_AGGREGATE, ft_ascii , fc_static  , FS_address  , NO_WRITE_FUNCTION, {v:NULL}, }
+{"address"   ,  PROPERTY_LENGTH_ADDRESS,  NON_AGGREGATE, ft_ascii , fc_static  , FS_address  , NO_WRITE_FUNCTION, VISIBLE, {v:NULL}, }
 #define F_r_address  \
-{"r_address" ,  PROPERTY_LENGTH_ADDRESS,  NON_AGGREGATE, ft_ascii , fc_static  , FS_r_address, NO_WRITE_FUNCTION, {v:NULL}, }
+{"r_address" ,  PROPERTY_LENGTH_ADDRESS,  NON_AGGREGATE, ft_ascii , fc_static  , FS_r_address, NO_WRITE_FUNCTION, VISIBLE, {v:NULL}, }
 #define F_crc8     \
-{"crc8"      ,   2,  NON_AGGREGATE, ft_ascii , fc_static  , FS_crc8     , NO_WRITE_FUNCTION, {v:NULL}, }
+{"crc8"      ,   2,  NON_AGGREGATE, ft_ascii , fc_static  , FS_crc8     , NO_WRITE_FUNCTION, VISIBLE, {v:NULL}, }
 #define F_id       \
-{"id"        ,  12,  NON_AGGREGATE, ft_ascii , fc_static  , FS_ID       , NO_WRITE_FUNCTION, {v:NULL}, }
+{"id"        ,  12,  NON_AGGREGATE, ft_ascii , fc_static  , FS_ID       , NO_WRITE_FUNCTION, VISIBLE, {v:NULL}, }
 #define F_r_id       \
-{"r_id"      ,  12,  NON_AGGREGATE, ft_ascii , fc_static  , FS_r_ID     , NO_WRITE_FUNCTION, {v:NULL}, }
+{"r_id"      ,  12,  NON_AGGREGATE, ft_ascii , fc_static  , FS_r_ID     , NO_WRITE_FUNCTION, VISIBLE, {v:NULL}, }
 #define F_code     \
-{"family"    ,   2,  NON_AGGREGATE, ft_ascii , fc_static  , FS_code     , NO_WRITE_FUNCTION, {v:NULL}, }
+{"family"    ,   2,  NON_AGGREGATE, ft_ascii , fc_static  , FS_code     , NO_WRITE_FUNCTION, VISIBLE, {v:NULL}, }
 #define F_present  \
-{"present"   ,   PROPERTY_LENGTH_YESNO,  NON_AGGREGATE, ft_yesno , fc_volatile, FS_present  , NO_WRITE_FUNCTION, {v:NULL}, }
+{"present"   ,   PROPERTY_LENGTH_YESNO,  NON_AGGREGATE, ft_yesno , fc_volatile, FS_present  , NO_WRITE_FUNCTION, VISIBLE, {v:NULL}, }
 #define F_type     \
-{"type"      ,  PROPERTY_LENGTH_TYPE,  NON_AGGREGATE, ft_vascii, fc_static  , FS_type     , NO_WRITE_FUNCTION, {v:NULL}, }
+{"type"      ,  PROPERTY_LENGTH_TYPE,  NON_AGGREGATE, ft_vascii, fc_static  , FS_type     , NO_WRITE_FUNCTION, VISIBLE, {v:NULL}, }
 #define F_alias     \
-{"alias"      ,PROPERTY_LENGTH_ALIAS,  NON_AGGREGATE, ft_vascii, fc_alias   , FS_alias    , NO_WRITE_FUNCTION, {v:NULL}, }
+{"alias"      ,PROPERTY_LENGTH_ALIAS,  NON_AGGREGATE, ft_vascii, fc_alias   , FS_alias    , NO_WRITE_FUNCTION, VISIBLE, {v:NULL}, }
 #define F_locator  \
-{"locator"   ,  PROPERTY_LENGTH_ADDRESS,  NON_AGGREGATE, ft_ascii , fc_directory,FS_locator  , NO_WRITE_FUNCTION, {v:NULL}, }
+{"locator"   ,  PROPERTY_LENGTH_ADDRESS,  NON_AGGREGATE, ft_ascii , fc_directory,FS_locator  , NO_WRITE_FUNCTION, VISIBLE, {v:NULL}, }
 #define F_r_locator \
-{"r_locator" ,  PROPERTY_LENGTH_ADDRESS,  NON_AGGREGATE, ft_ascii , fc_directory,FS_r_locator, NO_WRITE_FUNCTION, {v:NULL}, }
+{"r_locator" ,  PROPERTY_LENGTH_ADDRESS,  NON_AGGREGATE, ft_ascii , fc_directory,FS_r_locator, NO_WRITE_FUNCTION, VISIBLE, {v:NULL}, }
 
 #define F_STANDARD_NO_TYPE          F_address,F_code,F_crc8,F_id,F_locator,F_present,F_r_address,F_r_id,F_r_locator,F_alias
 

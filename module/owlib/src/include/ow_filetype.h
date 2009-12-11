@@ -119,6 +119,8 @@ enum fc_change {
 
 /* Predeclare one_wire_query */
 struct one_wire_query;
+/* Predeclare parsedname */
+struct parsedname;
 
 #define PROPERTY_LENGTH_INTEGER   12
 #define PROPERTY_LENGTH_UNSIGNED  12
@@ -131,7 +133,6 @@ struct one_wire_query;
 #define PROPERTY_LENGTH_STRUCTURE 30
 #define PROPERTY_LENGTH_DIRECTORY  8
 #define PROPERTY_LENGTH_SUBDIR     0
-#define PROPERTY_LENGTH_HIDDEN    -1
 #define PROPERTY_LENGTH_ALIAS    256
 #define PROPERTY_LENGTH_ADDRESS   16
 #define PROPERTY_LENGTH_TYPE      32
@@ -142,6 +143,13 @@ struct one_wire_query;
 
 #define NO_READ_FUNCTION NULL
 #define NO_WRITE_FUNCTION NULL
+
+int AlwaysVisible( struct parsedname * pn ) ;
+#define VISIBLE AlwaysVisible
+
+int NeverVisible( struct parsedname * pn ) ; 
+#define INVISIBLE NeverVisible
+
 /* filetype gives -file types- for chip properties */
 struct filetype {
 	char *name;
@@ -151,6 +159,7 @@ struct filetype {
 	enum fc_change change;		// volatility
 	int (*read) (struct one_wire_query *);	// read callback function
 	int (*write) (struct one_wire_query *);	// write callback function
+	int (*visible) (struct parsedname *);	// Show in a directory listing?
 	union {
 		void *v;
 		int i;
@@ -159,7 +168,7 @@ struct filetype {
 		size_t s;
 		BYTE c;
 		ASCII *a;
-	} data;						// extra data pointer (used for separating similar but differently name functions)
+	} data;						// extra data pointer (used for separating similar but differently named functions)
 };
 
 /* --------- end Filetype -------------------- */

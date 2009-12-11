@@ -31,7 +31,7 @@ int AliasFile(const ASCII * file)
 			++line_number;
 			BYTE sn[8] ;
 			// check line length
-			if (strlen(alias_line) > alias_line_max-1) {
+			if ((int)strlen(alias_line) > alias_line_max-1) {
 				LEVEL_DEFAULT("Alias file (%s:%d) Line too long (>%d characters).\n", SAFESTRING(file), line_number, alias_line_max-1);
 				ret = 1;
 				break;

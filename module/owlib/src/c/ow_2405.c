@@ -54,8 +54,8 @@ WRITE_FUNCTION(FS_w_PIO);
 
 struct filetype DS2405[] = {
 	F_STANDARD,
-  {"PIO", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, FS_r_PIO, FS_w_PIO, NO_FILETYPE_DATA,},
-  {"sensed", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_sense, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+	{"PIO", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, FS_r_PIO, FS_w_PIO, VISIBLE, NO_FILETYPE_DATA,},
+	{"sensed", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_sense, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 };
 
 DeviceEntryExtended(05, DS2405, DEV_alarm);

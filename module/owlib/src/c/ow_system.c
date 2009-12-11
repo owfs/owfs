@@ -59,17 +59,17 @@ READ_FUNCTION(FS_define);
 /* -------- Structures ---------- */
 /* special entry -- picked off by parsing before filetypes tried */
 struct filetype sys_process[] = {
-	{"pidfile", 128, NON_AGGREGATE, ft_vascii, fc_static, FS_pidfile, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+	{"pidfile", 128, NON_AGGREGATE, ft_vascii, fc_static, FS_pidfile, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	// variable length
-	{"pid", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_pid, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+	{"pid", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_pid, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 };
 struct device d_sys_process = { "process", "process", ePN_system, COUNT_OF_FILETYPES(sys_process),
 	sys_process
 };
 
 struct filetype sys_connections[] = {
-	{"count_current_buses", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_in, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
-	{"count_outbound_connections", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_out, NO_WRITE_FUNCTION, NO_FILETYPE_DATA,},
+	{"count_current_buses", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_in, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"count_outbound_connections", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_out, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 };
 struct device d_sys_connections = { "connections", "connections", ePN_system,
 	COUNT_OF_FILETYPES(sys_connections),
@@ -77,16 +77,16 @@ struct device d_sys_connections = { "connections", "connections", ePN_system,
 };
 
 struct filetype sys_configure[] = {
-	{"threaded", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_integer, fc_static, FS_define, NO_WRITE_FUNCTION, {i:OW_MT},},
-	{"tai8570", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_integer, fc_static, FS_define, NO_WRITE_FUNCTION, {i:OW_TAI8570},},
-	{"thermocouples", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_integer, fc_static, FS_define, NO_WRITE_FUNCTION, {i:OW_THERMOCOUPLE},},
-	{"parport", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_integer, fc_static, FS_define, NO_WRITE_FUNCTION, {i:OW_PARPORT},},
-	{"USB", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_integer, fc_static, FS_define, NO_WRITE_FUNCTION, {i:OW_USB},},
-	{"i2c", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_integer, fc_static, FS_define, NO_WRITE_FUNCTION, {i:OW_I2C},},
-	{"cache", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_integer, fc_static, FS_define, NO_WRITE_FUNCTION, {i:OW_CACHE},},
-	{"HA7Net", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_integer, fc_static, FS_define, NO_WRITE_FUNCTION, {i:OW_HA7},},
-	{"DebugInfo", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_integer, fc_static, FS_define, NO_WRITE_FUNCTION, {i:OW_DEBUG},},
-	{"zeroconf", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_integer, fc_static, FS_define, NO_WRITE_FUNCTION, {i:1},},
+	{"threaded", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_integer, fc_static, FS_define, NO_WRITE_FUNCTION, VISIBLE, {i:OW_MT},},
+	{"tai8570", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_integer, fc_static, FS_define, NO_WRITE_FUNCTION, VISIBLE, {i:OW_TAI8570},},
+	{"thermocouples", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_integer, fc_static, FS_define, NO_WRITE_FUNCTION, VISIBLE, {i:OW_THERMOCOUPLE},},
+	{"parport", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_integer, fc_static, FS_define, NO_WRITE_FUNCTION, VISIBLE, {i:OW_PARPORT},},
+	{"USB", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_integer, fc_static, FS_define, NO_WRITE_FUNCTION, VISIBLE, {i:OW_USB},},
+	{"i2c", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_integer, fc_static, FS_define, NO_WRITE_FUNCTION, VISIBLE, {i:OW_I2C},},
+	{"cache", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_integer, fc_static, FS_define, NO_WRITE_FUNCTION, VISIBLE, {i:OW_CACHE},},
+	{"HA7Net", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_integer, fc_static, FS_define, NO_WRITE_FUNCTION, VISIBLE, {i:OW_HA7},},
+	{"DebugInfo", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_integer, fc_static, FS_define, NO_WRITE_FUNCTION, VISIBLE, {i:OW_DEBUG},},
+	{"zeroconf", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_integer, fc_static, FS_define, NO_WRITE_FUNCTION, VISIBLE, {i:1},},
 };
 struct device d_sys_configure = { "configuration", "configuration", ePN_system,
 	COUNT_OF_FILETYPES(sys_configure),

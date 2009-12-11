@@ -364,7 +364,7 @@ static int FS_devdir(void (*dirfunc) (void *, const struct parsedname *), void *
 	for (; ft_pointer < lastft; ++ft_pointer) {	/* loop through filetypes */
 		char *slash = strchr(ft_pointer->name, '/');
 		char *namepart;
-		if ( ft_pointer->suglen == PROPERTY_LENGTH_HIDDEN ) { // hide hidden properties
+ 		if ( ! ft_pointer->visible(pn_device_directory) ) { // hide hidden properties
 			continue ;
 		}
 		if (subdir_len > 0) {	/* subdir */

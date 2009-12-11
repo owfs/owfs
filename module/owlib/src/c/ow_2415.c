@@ -68,24 +68,24 @@ WRITE_FUNCTION(FS_w_user);
 struct aggregate A2415 = { 4, ag_numbers, ag_aggregate, };
 struct filetype DS2415[] = {
 	F_STANDARD,
-	{"ControlRegister", PROPERTY_LENGTH_HIDDEN, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_control, FS_w_control, NO_FILETYPE_DATA, },
-  {"user", PROPERTY_LENGTH_UNSIGNED, &A2415, ft_bitfield, fc_link, FS_r_user, FS_w_user, NO_FILETYPE_DATA,},
-  {"running", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_run, FS_w_run, NO_FILETYPE_DATA,},
-  {"udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_counter, FS_w_counter, NO_FILETYPE_DATA,},
-  {"date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_second, FS_r_date, FS_w_date, NO_FILETYPE_DATA,},
+	{"ControlRegister", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_control, FS_w_control, INVISIBLE, NO_FILETYPE_DATA, },
+  {"user", PROPERTY_LENGTH_UNSIGNED, &A2415, ft_bitfield, fc_link, FS_r_user, FS_w_user, VISIBLE, NO_FILETYPE_DATA,},
+  {"running", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_run, FS_w_run, VISIBLE, NO_FILETYPE_DATA,},
+  {"udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_counter, FS_w_counter, VISIBLE, NO_FILETYPE_DATA,},
+  {"date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_second, FS_r_date, FS_w_date, VISIBLE, NO_FILETYPE_DATA,},
 };
 
 DeviceEntry(24, DS2415);
 
 struct filetype DS2417[] = {
 	F_STANDARD,
-	{"ControlRegister", PROPERTY_LENGTH_HIDDEN, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_control, FS_w_control, NO_FILETYPE_DATA, },
-	{"enable", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_enable, FS_w_enable, NO_FILETYPE_DATA,},
-	{"interval", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_integer, fc_link, FS_r_interval, FS_w_interval, NO_FILETYPE_DATA,},
-	{"itime", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_integer, fc_link, FS_r_itime, FS_w_itime, NO_FILETYPE_DATA,},
-	{"running", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_run, FS_w_run, NO_FILETYPE_DATA,},
-	{"udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_counter, FS_w_counter, NO_FILETYPE_DATA,},
-	{"date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_second, FS_r_date, FS_w_date, NO_FILETYPE_DATA,},
+	{"ControlRegister", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_control, FS_w_control, INVISIBLE, NO_FILETYPE_DATA, },
+	{"enable", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_enable, FS_w_enable, VISIBLE, NO_FILETYPE_DATA,},
+	{"interval", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_integer, fc_link, FS_r_interval, FS_w_interval, VISIBLE, NO_FILETYPE_DATA,},
+	{"itime", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_integer, fc_link, FS_r_itime, FS_w_itime, VISIBLE, NO_FILETYPE_DATA,},
+	{"running", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_run, FS_w_run, VISIBLE, NO_FILETYPE_DATA,},
+	{"udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_counter, FS_w_counter, VISIBLE, NO_FILETYPE_DATA,},
+	{"date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_second, FS_r_date, FS_w_date, VISIBLE, NO_FILETYPE_DATA,},
 };
 
 DeviceEntry(27, DS2417);
