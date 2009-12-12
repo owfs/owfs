@@ -13,7 +13,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 #include "ow_connection.h"
-#include "ow_xxxx.h"
+#include "ow_standard.h"
 
 /* ------- Prototypes ----------- */
 static int OW_locator(BYTE * loc, const struct parsedname *pn);

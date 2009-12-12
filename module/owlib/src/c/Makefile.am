@@ -13,7 +13,6 @@ OWLIB_SOURCE = ow_dl.c           \
                compat.c          \
                getaddrinfo.c     \
                getopt.c          \
-               ow_xxxx.c         \
                ow_none.c         \
                ow_1820.c         \
                ow_1821.c         \
@@ -67,6 +66,12 @@ OWLIB_SOURCE = ow_dl.c           \
                ow_eeef.c         \
                ow_eprom_write.c  \
                ow_etherweather.c \
+               ow_fs_address.c   \
+               ow_fs_alias.c     \
+               ow_fs_code.c      \
+               ow_fs_crc8.c      \
+               ow_fs_id.c        \
+               ow_fs_type.c      \
                ow_ha5.c          \
                ow_ha7.c          \
                ow_ha7e.c         \
@@ -84,6 +89,7 @@ OWLIB_SOURCE = ow_dl.c           \
                ow_link.c         \
                ow_locator.c      \
                ow_locks.c        \
+               ow_max_delay.c    \
                ow_memblob.c      \
                ow_memory.c       \
                ow_multicast.c    \

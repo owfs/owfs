@@ -44,7 +44,7 @@ $Id$
 
 #include <config.h>
 #include "owfs_config.h"
-#include "ow_xxxx.h"
+#include "ow_standard.h"
 
 /* ------- Prototypes ----------- */
 static int OW_write_eprom_byte(BYTE code, BYTE data, off_t offset, const struct parsedname *pn);

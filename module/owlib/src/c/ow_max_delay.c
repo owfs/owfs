@@ -41,8 +41,7 @@ $Id$
 
 #include <config.h>
 #include "owfs_config.h"
-#include "ow_xxxx.h"
-#include "ow_counters.h"
+#include "ow.h"
 #include "ow_connection.h"
 
 /* ------- Prototypes ------------ */
@@ -90,74 +89,4 @@ void update_max_delay(struct connection_in *connection)
 	 * I reset bus_write_time after every calls */
 	gettimeofday(&(connection->bus_write_time), NULL);
 	return;
-}
-
-int FS_alias(struct one_wire_query *owq)
-{
-	char alias[PROPERTY_LENGTH_ALIAS+1] ;
-	struct parsedname *pn = PN(owq);
-	if ( Cache_Get_Alias( alias, PROPERTY_LENGTH_ALIAS+1, pn->sn) == 0 ) {
-		return Fowq_output_offset_and_size_z(alias, owq);
-	}
-	return Fowq_output_offset_and_size_z("", owq);
-}
-
-int FS_type(struct one_wire_query *owq)
-{
-	struct parsedname *pn = PN(owq);
-	return Fowq_output_offset_and_size_z(pn->selected_device->readable_name, owq);
-}
-
-int FS_code(struct one_wire_query *owq)
-{
-	ASCII code[2];
-	struct parsedname *pn = PN(owq);
-	num2string(code, pn->sn[0]);
-	return Fowq_output_offset_and_size(code, 2, owq);
-}
-
-int FS_ID(struct one_wire_query *owq)
-{
-	ASCII id[12];
-	struct parsedname *pn = PN(owq);
-	bytes2string(id, &(pn->sn[1]), 6);
-	return Fowq_output_offset_and_size(id, 12, owq);
-}
-
-int FS_r_ID(struct one_wire_query *owq)
-{
-	int sn_index, id_index;
-	ASCII id[12];
-	struct parsedname *pn = PN(owq);
-	for (sn_index = 6, id_index = 0; sn_index > 0; --sn_index, id_index += 2) {
-		num2string(&id[id_index], pn->sn[sn_index]);
-	}
-	return Fowq_output_offset_and_size(id, 12, owq);
-}
-
-int FS_crc8(struct one_wire_query *owq)
-{
-	ASCII crc[2];
-	struct parsedname *pn = PN(owq);
-	num2string(crc, pn->sn[7]);
-	return Fowq_output_offset_and_size(crc, 2, owq);
-}
-
-int FS_address(struct one_wire_query *owq)
-{
-	ASCII ad[16];
-	struct parsedname *pn = PN(owq);
-	bytes2string(ad, pn->sn, 8);
-	return Fowq_output_offset_and_size(ad, 16, owq);
-}
-
-int FS_r_address(struct one_wire_query *owq)
-{
-	int sn_index, ad_index;
-	ASCII ad[16];
-	struct parsedname *pn = PN(owq);
-	for (sn_index = 7, ad_index = 0; sn_index >= 0; --sn_index, ad_index += 2) {
-		num2string(&ad[ad_index], pn->sn[sn_index]);
-	}
-	return Fowq_output_offset_and_size(ad, 16, owq);
 }

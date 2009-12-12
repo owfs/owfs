@@ -41,7 +41,7 @@ $Id$
 
 #include <config.h>
 #include "owfs_config.h"
-#include "ow_xxxx.h"
+#include "ow_standard.h"
 #include "ow_counters.h"
 #include "ow_connection.h"
 

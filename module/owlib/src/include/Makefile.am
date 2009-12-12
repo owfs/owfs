@@ -67,14 +67,14 @@ noinst_HEADERS =          \
         ow_pid.h          \
         ow_settings.h     \
         ow_simultaneous.h \
-        ow_stateinfo.h    \
+	ow_standard.h     \
+	ow_stateinfo.h    \
         ow_stats.h        \
         ow_stub.h         \
         ow_system.h       \
         ow_thermocouple.h \
         ow_transaction.h  \
         ow_w1.h           \
-        ow_xxxx.h         \
         rwlock.h          \
         netlink.h         \
         w1_netlink.h      \

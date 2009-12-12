@@ -9,8 +9,8 @@ $Id$
 	1wire/iButton system from Dallas Semiconductor
 */
 
-#ifndef OW_XXXX_H
-#define OW_XXXX_H
+#ifndef OW_STANDARD_H
+#define OW_STANDARD_H
 
 #ifndef OWFS_CONFIG_H
 #error Please make sure owfs_config.h is included *before* this header file
@@ -61,4 +61,4 @@ int FS_present(struct one_wire_query *owq);
 
 #define F_STANDARD F_STANDARD_NO_TYPE,F_type
 
-#endif
+#endif /* OW_STANDARD_H */

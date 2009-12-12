@@ -17,7 +17,7 @@ $Id$
 #endif
 //  specific read/write code for each device
 
-#include "ow_xxxx.h"			// Needed for all devices -- should be before other devices
+#include "ow_standard.h"			// Needed for all devices -- should be before other devices
 #include "ow_none.h"			// Non-existent devices
 #include "ow_1820.h"			// thermometer
 #include "ow_1821.h"			// thermostat

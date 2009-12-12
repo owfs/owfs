@@ -16,7 +16,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 #include "ow_connection.h"
-#include "ow_xxxx.h" // for FS_Alias
+#include "ow_standard.h" // for FS_Alias
 
 static int FromServer(int file_descriptor, struct client_msg *cm, char *msg, size_t size);
 static void *FromServerAlloc(int file_descriptor, struct client_msg *cm);

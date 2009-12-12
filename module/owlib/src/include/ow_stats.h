@@ -15,7 +15,7 @@ $Id$
 #ifndef OWFS_CONFIG_H
 #error Please make sure owfs_config.h is included *before* this header file
 #endif
-#include "ow_xxxx.h"
+#include "ow_standard.h"
 
 /* -------- Structures ---------- */
 DeviceHeader(stats_cache);
