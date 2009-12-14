@@ -34,37 +34,34 @@ static int file_compare(const void *a, const void *b)
 void *Tree[ePN_max_type];
 
 
-// FreeBSD fix from Robert Nilsson
-/*  In order for DeviceDestroy to work on FreeBSD we must copy the keys.
-    Otherwise, tdestroy will attempt to free implicitly allocated structures.
-*/
 static void Device2Tree(const struct device *d, enum ePN_type type)
 {
+	struct device *d_copy = d ;
 #ifdef __FreeBSD__
-	struct device *d_copy;
-
+	// FreeBSD fix from Robert Nilsson
+	/*  In order for DeviceDestroy to work on FreeBSD we must copy the keys.
+	    Otherwise, tdestroy will attempt to free implicitly allocated structures.
+	*/
 	if ((d_copy = (struct device *) owmalloc(sizeof(struct device)))) {
 		memmove(d_copy, d, sizeof(struct device));
-		tsearch(d_copy, &Tree[type], device_compare);
-		if (d_copy->filetype_array) {
-			qsort(d_copy->filetype_array, (size_t) d_copy->count_of_filetypes, sizeof(struct filetype), file_compare);
-		}
 	} else {
 		LEVEL_DATA("Could not allocate memory for device %s\n", d->readable_name);
-	}
-#else							/* __FreeBSD__ */
-	tsearch(d, &Tree[type], device_compare);
-	if (d->filetype_array) {
-		qsort(d->filetype_array, (size_t) d->count_of_filetypes, sizeof(struct filetype), file_compare);
+		return ;
 	}
 #endif							/* __FreeBSD__ */
+	// Add in the device into the appropriate red/black tree
+	tsearch(d_copy, &Tree[type], device_compare);
+	// Sort all the file types alphabetically for search and listing
+	if (d_copy->filetype_array) {
+		qsort(d_copy->filetype_array, (size_t) d_copy->count_of_filetypes, sizeof(struct filetype), file_compare);
+	}
 /*
-{
-int i ;
-printf("Device(%d) %s: ",type,d->name);
-for(i=0;i<d->nft;++i){ printf( "%s ",d->selected_filetype[i].name);}
-printf("\n");
-}
+	{
+		int i ;
+		printf("Device(%d) %s: ",type,d->name);
+		for(i=0;i<d->nft;++i){ printf( "%s ",d->selected_filetype[i].name);}
+		printf("\n");
+	}
 */
 }
 
