@@ -317,11 +317,13 @@ static int FS_w_local(struct one_wire_query *owq)
 				return FS_write_in_parts(owq);
 			}
 		default:
+			// Just write one field of an array
 			if (pn->selected_filetype->format == ft_bitfield) {
 				return FS_write_a_bit(owq);
 			}
 			switch (pn->selected_filetype->ag->combined) {
 			case ag_aggregate:
+				// need to read it all and overwrite just a part
 				return FS_write_a_part(owq);
 			case ag_mixed:
 				return FS_write_mixed_part(owq);
@@ -351,6 +353,7 @@ static int FS_write_single_lump(struct one_wire_query *owq)
 	return 0;
 }
 
+/* Write just one field of an aggregate property -- but a property that is handled as one big object */
 static int FS_write_a_part(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
@@ -362,14 +365,16 @@ static int FS_write_a_part(struct one_wire_query *owq)
 		return -ENOMEM;
 	}
 
+	// First fill the whole array with current values
 	if (OWQ_Cache_Get(owq_all)) {
-		write_error = (pn->selected_filetype->write) (owq_all);
-		if (write_error < 0) {
+		int read_error = (pn->selected_filetype->read) (owq_all);
+		if (read_error < 0) {
 			OWQ_destroy_shallow_aggregate(owq_all);
-			return write_error;
+			return read_error;
 		}
 	}
 
+	// Copy ascii/binary field
 	switch (pn->selected_filetype->format) {
 	case ft_binary:
 	case ft_ascii:
@@ -403,8 +408,10 @@ static int FS_write_a_part(struct one_wire_query *owq)
 	default:
 		break;
 	}
+	// Copy value field
 	memcpy(&OWQ_array(owq_all)[pn->extension], &OWQ_val(owq), sizeof(union value_object));
 
+	// Write whole thing out
 	write_error = FS_write_aggregate_lump(owq_all);
 
 	OWQ_destroy_shallow_aggregate(owq_all);
