@@ -26,6 +26,15 @@ Voltage * 4  and Memory.
 .PP
 .B 20
 [.]XXXXXXXXXXXX[XX][/[
+.B CO2/ppm
+|
+.B CO2/power
+|
+.B CO2/status
+]
+.PP
+.B 20
+[.]XXXXXXXXXXXX[XX][/[
 .B alarm/high.[A-D|ALL]
 |
 .B alarm/low.[A-D|ALL]
@@ -182,6 +191,21 @@ Output (
 .br
 .I ALL
 is an aggregate of the voltages. Readings are made separately.
+.SH CO2 (Carbon Dioxide) SENSOR PROPERTIES
+The CO2 sensor is a device constructed from a SenseAir K30 and a
+.I DS2450
+.SS CO2/power
+.I read-only, floating point
+.br
+Supply voltage to the CO2 sensor (should be around 5V)
+.SS CO2/ppm
+.I read-only, unsigned
+.br
+CO2 level in ppm (parts per million). Range 0-5000.
+.SS CO2/status
+.I read-only, yes-no
+.br
+Is the internal voltage correct (around 3.2V)?
 .SH STANDARD PROPERTIES
 .so standard.3so
 .SH ALARMS
@@ -200,7 +224,14 @@ and
 .SH ADDRESSING
 .so addressing.3so
 .SH DATASHEET
+.TP
+DS2450
 http://pdfserv.maxim-ic.com/en/ds/DS2450.pdf
+.TP
+CO2 sensor
+http://www.senseair.se/Datablad/k30%20.pdf
+.TP CO2 device
+https://www.m.nu/co2meter-version-2-p-259.html?language=en
 .SH SEE ALSO
 .so seealso.3so
 .SH AVAILABILITY
