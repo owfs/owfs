@@ -117,7 +117,7 @@ int FS_write_postparse(struct one_wire_query *owq)
 		write_or_error = FS_w_given_bus(owq);
 		break;
 	default:					// ePN_real
-//printf("FS_write_postparse: pid=%ld call FS_w_given_bus size=%ld\n", pthread_self(), size);
+	//LEVEL_DEBUG(pid=%ld call FS_w_given_bus size=%ld\n", pthread_self(), size);
 
 		/* handle DeviceSimultaneous */
 		if (pn->selected_device == DeviceSimultaneous) {
@@ -419,6 +419,7 @@ static int FS_write_a_part(struct one_wire_query *owq)
 	return write_error;
 }
 
+// Write a whole aggregate array (treated as a single large value )
 static int FS_write_aggregate_lump(struct one_wire_query *owq)
 {
 	int write_error;

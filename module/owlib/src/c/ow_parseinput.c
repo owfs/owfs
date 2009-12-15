@@ -27,6 +27,7 @@ static int FS_input_ascii(struct one_wire_query *owq);
 static int FS_input_array_with_commas(struct one_wire_query *owq);
 static int FS_input_ascii_array(struct one_wire_query *owq);
 static int FS_input_array_no_commas(struct one_wire_query *owq);
+static size_t FS_check_length(struct one_wire_query *owq);
 
 /* ---------------------------------------------- */
 /* Filesystem callback functions                  */
@@ -320,9 +321,33 @@ static int FS_input_date(struct one_wire_query *owq)
 	return ret;
 }
 
+static size_t FS_check_length(struct one_wire_query *owq)
+{
+	/* need to check property length */
+	size_t size = OWQ_size(owq) ;
+	size_t filelength = FileLength(PN(owq)) ;
+	off_t offset = OWQ_offset(owq) ;
+	
+	// check overall length
+	if ( filelength < size ) {
+		size = filelength ;
+	}
+	
+	// check overall offset
+	if ( offset > filelength ) {
+		size = 0 ;
+	// and check offset plus size
+	} else if ( offset + size > filelength ) {
+		// cannot be negative despite compiler warnings
+		size = filelength - offset ;
+	}
+
+	return size ;
+}
+
 static int FS_input_ascii(struct one_wire_query *owq)
 {
-	OWQ_length(owq) = OWQ_size(owq);
+	OWQ_length(owq) = OWQ_size(owq) = FS_check_length(owq) ;
 	return 0;
 }
 
@@ -337,7 +362,7 @@ static int FS_input_array_with_commas(struct one_wire_query *owq)
 	char *buffer_position;
 	OWQ_allocate_struct_and_pointer(owq_single);
 
-	if (OWQ_offset(owq)) {
+	if (OWQ_offset(owq)!=0) {
 		return -EINVAL;
 	}
 
@@ -377,23 +402,30 @@ static int FS_input_array_with_commas(struct one_wire_query *owq)
 }
 
 /* returns 0 if ok */
-/* creates a new allocated memory area IF no error */
+/* Basically pack the entries onto the buffer array and find the position with the cumulative length entries */
 static int FS_input_ascii_array(struct one_wire_query *owq)
 {
 	int elements = OWQ_pn(owq).selected_filetype->ag->elements;
 	int extension;
 	char *end = OWQ_buffer(owq) + OWQ_size(owq);
 	char *buffer_position = OWQ_buffer(owq);
+	size_t suglen = OWQ_pn(owq).selected_filetype->suglen;
 
-	if (OWQ_offset(owq)) {
+	if (OWQ_offset(owq)!=0) {
 		return -EINVAL;
 	}
 
 	for (extension = 0; extension < elements; ++extension) {
 		char *comma;
+		size_t allowed_length = suglen ;
+		size_t entry_length ;
 		// find end of buffer span
 		if (extension == elements - 1) {	// last element
-			OWQ_array_length(owq, extension) = end - buffer_position;
+			entry_length = end - buffer_position ;
+			if ( entry_length < suglen ) {
+				allowed_length = entry_length ;
+			}
+			OWQ_array_length(owq, extension) = allowed_length ;
 			return 0;
 		}
 		// pre-terminal element
@@ -401,9 +433,18 @@ static int FS_input_ascii_array(struct one_wire_query *owq)
 		if (comma == NULL) {
 			return -EINVAL;
 		}
-		OWQ_array_length(owq, extension) = comma - buffer_position;
-		memmove(comma, comma + 1, end - comma - 1);
-		--end;
+		entry_length = comma - buffer_position;
+		if ( entry_length < suglen ) {
+			allowed_length = entry_length ;
+		}
+		// Set the entry size
+		OWQ_array_length(owq, extension) = allowed_length ;
+		// move the rest of the buffer (after the comma) to the end of this entry
+		memmove(buffer_position + allowed_length, comma + 1, end - comma - 1);
+		// shorten the buffer length by the comma and discarded chars
+		end -= entry_length - allowed_length - 1 ;
+		// move the buffer start to the start of the next entry
+		buffer_position += allowed_length ;
 	}
 	return -ERANGE;				// never reach !
 }
