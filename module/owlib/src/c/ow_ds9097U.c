@@ -271,10 +271,10 @@ static int DS2480_big_reset(const struct parsedname *pn)
 {
 	switch (pn->selected_connection->busmode) {
 		case bus_xport:
-			printf("Xport\n");
+			//printf("Xport\n");
 			return DS2480_big_reset_net(pn) ;
 		default:
-			printf("Serial\n");
+			//printf("Serial\n");
 			return DS2480_big_reset_serial(pn) ;
 	}
 }
@@ -576,7 +576,7 @@ static int DS2480_reset(const struct parsedname *pn)
 		--pn->selected_connection->changed_bus_settings ;
 		DS2480_set_baud_control(pn);	// reset paramters
 	}
-printf("reset after speed\n");
+	//printf("reset after speed\n");
 	ret = DS2480_reset_once(pn) ;
 
 	// Some kind of problem (not including bus short)
@@ -591,7 +591,7 @@ printf("reset after speed\n");
 		// And now reset again
 		ret = DS2480_reset_once(pn) ;
 	}
-	printf("reset done\n");
+	//printf("reset done\n");
 	return ret ;
 }
 
