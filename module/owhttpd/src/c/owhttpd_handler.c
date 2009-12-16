@@ -132,6 +132,7 @@ int handle_socket(FILE * out)
 	return 0 ;
 }	
 
+/* The HTTP request is a GET message */
 static enum http_return handle_GET(FILE * out, struct urlparse * up)
 {
 	/* read lines until blank */
@@ -140,8 +141,10 @@ static enum http_return handle_GET(FILE * out, struct urlparse * up)
 	}
 	
 	if (up->request == NULL) {
+		// NO request -- just a read or dir, not a write
 		return http_ok ;
 	} else if (up->value==NULL) {
+		// write without a value
 		LEVEL_DEBUG("Null value for write command -- Bad URL\n");
 		return http_400 ;
 	} else {				/* First write new values, then show */
@@ -149,15 +152,15 @@ static enum http_return handle_GET(FILE * out, struct urlparse * up)
 
 		if (FS_OWQ_create_plus(up->file, up->request, up->value, strlen(up->value), 0, owq_write)) {
 			return http_404 ;
-		} else {
-			/* Single device, show it's properties */
-			ChangeData(owq_write);
-			FS_OWQ_destroy(owq_write);
-			return http_ok ;
 		}
+		/* Execute the write */
+		ChangeData(owq_write);
+		FS_OWQ_destroy(owq_write);
+		return http_ok ;
 	}
 }
 
+/* The HTTP request is a POST message */
 static enum http_return handle_POST(FILE * out, struct urlparse * up)
 {
 	enum http_return http_code ;
@@ -170,6 +173,7 @@ static enum http_return handle_POST(FILE * out, struct urlparse * up)
 		ReadToCRLF( out ) ;
 	}
 	
+	// use getline because it handles null chars
 	if ( getline(&boundary,&boundary_length,out) > 2 ) {
 		char * post_path  = GetPostPath( out ) ;
 
@@ -183,6 +187,14 @@ static enum http_return handle_POST(FILE * out, struct urlparse * up)
 				if ( owq ) {
 					LEVEL_DEBUG("File upload %s for %ld bytes\n",post_path,mb.used);
 					memcpy( OWQ_buffer(owq), mb.memory_storage, mb.used ) ;
+					{
+						FILE * F = fopen("/home/paul/test.bin","w") ;
+						if ( F ) {
+							fwrite(mb.memory_storage,mb.used,1,F);
+							fclose(F) ;
+						}
+						
+					}
 					ChangeData(owq);
 					FS_OWQ_destroy_sibling(owq) ;
 					http_code = http_ok ;
@@ -378,6 +390,7 @@ static char * GetPostPath( FILE * out )
 	return path_found ;
 }
 
+// read data from file upload
 static int GetPostData( char * boundary, struct memblob * mb, FILE * out )
 {
 	char * data = NULL ;
@@ -390,6 +403,7 @@ static int GetPostData( char * boundary, struct memblob * mb, FILE * out )
 		Debug_Bytes(boundary,(BYTE *)data,(size_t)read_this_pass);
 		if ( strstr( data, boundary ) != NULL ) {
 			free(data) ; // allocated by getline with malloc, not owmalloc
+			mb->used -= 2 ; // trim off final 0x0A 0x0D
 			LEVEL_DEBUG("Read in POST file upload of %ld bytes\n",mb->used);
 			return 0 ;
 		}
