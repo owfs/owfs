@@ -539,13 +539,13 @@ fi
 %files man
 %defattr(-,root,root)
 %{_mandir}/man1/*.1.*
-%{_mandir}/man1/*.1so.*
+%{_mandir}/man1/*.1so
 %{_mandir}/man3/*.3.*
-%{_mandir}/man3/*.3so.*
+%{_mandir}/man3/*.3so
 %{_mandir}/man5/*.5.*
-%{_mandir}/man5/*.5so.*
+%{_mandir}/man5/*.5so
 %{_mandir}/mann/*.n.*
-%{_mandir}/mann/*.nso.*
+%{_mandir}/mann/*.nso
 %endif
 
 %if %{build_ftpd}
