@@ -49,10 +49,10 @@ install-so-man:
 	    i=$$mandirr/$$i; \
 	    list="$$list $$i"; \
 	done; \
-	echo $i \
-	echo $list \
-	echo $(DESTDIR) \
-	echo $(srcdir) \
+	echo $i; \
+	echo $list; \
+	echo $(DESTDIR); \
+	echo $(srcdir)' \
 	for manfile in $$list; do \
 	    for i in `sed -n '2,$$ s/^.so //p' $(DESTDIR)/$$manfile`; do \
 			sed -i "/$$i/r $(srcdir)/$$i" $(DESTDIR)/$$manfile; \
