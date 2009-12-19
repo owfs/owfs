@@ -46,8 +46,8 @@ install-so-man:
 		*.5*) mandirr=$(man5dir) ;; \
 		*.n*) mandirr=$(manndir) ;; \
 	    esac; \
-	    i=$$mandirr/$$i; \
-	    list="$$list $$i"; \
+	    # i=$$mandirr/$$i; \
+	    list="$list $mandir/$i"; \
 	done; \
 	echo $(i); \
 	echo $(list); \
