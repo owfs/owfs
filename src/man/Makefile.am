@@ -46,7 +46,7 @@ install-so-man:
 		*.5*) mandirr=$(man5dir) ;; \
 		*.n*) mandirr=$(manndir) ;; \
 	    esac; \
-	    list="$list $mandir/$i"; \
+	    list="$(list) $(mandir)/$(i)"; \
 	done; \
 	for manfile in $$list; do \
 	    for i in `sed -n '2,$$ s/^.so //p' $(DESTDIR)/$$manfile`; do \
