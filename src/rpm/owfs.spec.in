@@ -322,9 +322,9 @@ make
 case "$RPM_BUILD_ROOT" in *-root) rm -rf $RPM_BUILD_ROOT ;; esac
 make install \
 	DESTDIR=$RPM_BUILD_ROOT
-pushd src/man
-make install-so-man
-popd
+#pushd src/man
+#make install-so-man
+#popd
 
 install -d -m 755 $RPM_BUILD_ROOT%{prefix}/include/owfs
 mv -f $RPM_BUILD_ROOT%{prefix}/include/*.h $RPM_BUILD_ROOT%{prefix}/include/owfs
@@ -542,13 +542,13 @@ fi
 %files man
 %defattr(-,root,root)
 %{_mandir}/man1/*.1.*
-%{_mandir}/man1/*.1so
+#%{_mandir}/man1/*.1so
 %{_mandir}/man3/*.3.*
-%{_mandir}/man3/*.3so
+#%{_mandir}/man3/*.3so
 %{_mandir}/man5/*.5.*
-%{_mandir}/man5/*.5so
+#%{_mandir}/man5/*.5so
 %{_mandir}/mann/*.n.*
-%{_mandir}/mann/*.nso
+#%{_mandir}/mann/*.nso
 %endif
 
 %if %{build_ftpd}

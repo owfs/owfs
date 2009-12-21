@@ -25,7 +25,7 @@ man_MANS = owfs.1 \
            DS2780.3 DS2781.3 DS2788.3 \
            DS2804.3 DS28E04.3 DS28EA00.3 DS28EC20.3 \
            DS2890.3 \
-	   EEEF.3 UVI.3 \
+           EEEF.3 UVI.3 \
            Thermachron.3 \
            LCD.3 \
            OWNet.3 \
@@ -46,7 +46,8 @@ install-so-man:
 		*.5*) mandirr=$(man5dir) ;; \
 		*.n*) mandirr=$(manndir) ;; \
 	    esac; \
-	    list="$(list) $(mandir)/$(i)"; \
+        i=$$mandirr/$$i; \
+        list="$$list $$i"; \
 	done; \
 	for manfile in $$list; do \
 	    for i in `sed -n '2,$$ s/^.so //p' $(DESTDIR)/$$manfile`; do \
