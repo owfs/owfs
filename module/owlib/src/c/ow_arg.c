@@ -148,6 +148,17 @@ int ARG_HA7E(const char *arg)
 	return 0;
 }
 
+int ARG_ENET(const char *arg)
+{
+	struct connection_in *in = NewIn(NULL);
+	if (in == NULL) {
+		return 1;
+	}
+	in->name = (arg!=NULL) ? owstrdup(arg) : NULL;
+	in->busmode = bus_enet ;
+	return 0;
+}
+
 int ARG_I2C(const char *arg)
 {
 	#if OW_I2C

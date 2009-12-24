@@ -310,6 +310,7 @@ enum bus_mode {
 	bus_ha7net,
 	bus_ha5,
 	bus_ha7e,
+	bus_enet,
 	bus_fake,
 	bus_tester,
 	bus_mock,
@@ -341,6 +342,7 @@ enum adapter_type {
 	adapter_HA7NET,
 	adapter_HA5,
 	adapter_HA7E,
+	adapter_ENET,
 	adapter_EtherWeather,
 	adapter_fake,
 	adapter_tester,
@@ -455,6 +457,7 @@ struct connection_in {
 		struct connin_ha5 ha5;
 		struct connin_ha7 ha7;
 		struct connin_ha7e ha7e ;
+		struct connin_ha7e enet ;
 		struct connin_etherweather etherweather;
 		struct connin_w1 w1;
 	} connin;
@@ -608,6 +611,7 @@ int DS1410_detect(struct connection_in *in);
 int DS9097_detect(struct connection_in *in);
 int LINK_detect(struct connection_in *in);
 int HA7E_detect(struct connection_in *in);
+int OWServer_Enet_detect(struct connection_in *in);
 int HA5_detect(struct connection_in *in);
 int BadAdapter_detect(struct connection_in *in);
 int LINKE_detect(struct connection_in *in);

@@ -202,6 +202,7 @@ void ow_help_device(void)
 	"  --LINK=address  LINK-HUB-E network LINK\n"
 	"  --HA7NET=address HA7NET bus master\n"
 	"  --HA7NET        HA7NET bus master address auto-discovered\n"
+	"  --ENET=address  OWServer-Enet bus master\n"
 	"  --etherweather=address EtherWeather\n"
 	"  --autoserver    Find owserver using zeroconf\n"
 	"\n"

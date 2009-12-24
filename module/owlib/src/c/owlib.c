@@ -144,6 +144,14 @@ static void SetupInboundConnections(void)
 #endif                          /* OW_HA7 */
                 break;
 
+		case bus_enet:
+#if OW_HA7
+			if ((ret = OWServer_Enet_detect(in))) {
+			LEVEL_CONNECT("Cannot detect an OWServer_Enet on %s\n", in->name);
+			}
+#endif                          /* OW_HA7 */
+                break;
+
 		case bus_ha5:
 			if ((ret = HA5_detect(in))) {
 				LEVEL_CONNECT("Cannot detect an HA5 on %s\n", in->name);

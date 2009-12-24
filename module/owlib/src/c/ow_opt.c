@@ -107,6 +107,10 @@ const struct option owopts_long[] = {
 	{"HA7NET", optional_argument, NULL, e_ha7},
 	{"HA7Net", optional_argument, NULL, e_ha7},
 	{"ha7net", optional_argument, NULL, e_ha7},
+	{"enet", optional_argument, NULL, e_enet},
+	{"Enet", optional_argument, NULL, e_enet},
+	{"ENET", optional_argument, NULL, e_enet},
+	{"OW-Server-Enet", optional_argument, NULL, e_enet},
 	{"FAKE", required_argument, NULL, e_fake},	/* Fake */
 	{"Fake", required_argument, NULL, e_fake},	/* Fake */
 	{"fake", required_argument, NULL, e_fake},	/* Fake */
@@ -680,6 +684,8 @@ int owopt(const int option_char, const char *arg)
 		return ARG_HA7(arg);
 	case e_ha7e:
 		return ARG_HA7E(arg);
+	case e_enet:
+		return ARG_ENET(arg);
 	case e_fake:
 		return ARG_Fake(arg);
 	case e_link:
