@@ -52,6 +52,7 @@ WRITE_FUNCTION(FS_w_status);
 READ_FUNCTION(FS_r_memory);
 WRITE_FUNCTION(FS_w_memory);
 
+#define _EDS_WRITE_STATUS 0x00  //TODO set correct value here
 #define _EDS_WRITE_SCRATCHPAD 0x0F
 #define _EDS_READ_SCRATCHPAD 0xAA
 #define _EDS_COPY_SCRATCHPAD 0x55
@@ -76,6 +77,7 @@ DeviceEntryExtended(7E, EDS, DEV_alarm);
 
 /* ------- Functions ------------ */
 static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn) ;
+static int OW_w_status(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
 
 /* 2505 memory */
 static int FS_r_memory(struct one_wire_query *owq)
@@ -110,15 +112,15 @@ static int FS_w_memory(struct one_wire_query *owq)
 {
 	size_t size = OWQ_size(owq) ;
 	off_t start = OWQ_offset(owq) ;
-	BYTE * position = OWQ_buffer(owq) ;
+	BYTE * position = (BYTE *)OWQ_buffer(owq) ;
 	size_t write_size = _EDS_PAGESIZE - (start % _EDS_PAGESIZE) ;
 	
 	while ( size > 0 ) {
 		if ( write_size > size ) {
 			write_size = size ;
 		}
-		if ( OW_w_mem(position, write_size, start, pn ) {
-			retirn -EINVAL ;
+		if ( OW_w_mem(position, write_size, start, PN(owq))) {
+			return -EINVAL ;
 		}
 		position += write_size ;
 		start += write_size ;
@@ -138,13 +140,13 @@ static int FS_w_status(struct one_wire_query *owq)
 
 static int FS_w_page(struct one_wire_query *owq)
 {
-	struct parsename * pn = PN(owq) ;
+	struct parsedname * pn = PN(owq) ;
 	return OW_w_mem(OWQ_buffer(owq),OWQ_size(owq),OWQ_offset(owq) + _EDS_PAGESIZE * pn->extension,pn) ? -EINVAL : 0 ;
 }
 
 static int OW_w_status(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
 {
-	BYTE p[6] = { _1W_WRITE_STATUS, LOW_HIGH_ADDRESS(offset), data[0] };
+	BYTE p[6] = { _EDS_WRITE_STATUS, LOW_HIGH_ADDRESS(offset), data[0] };
 	int ret = 0;
 	struct transaction_log tfirst[] = {
 		TRXN_START,
@@ -225,13 +227,13 @@ static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 
 	/* Re-read scratchpad and compare */
 	/* Note: location of data has now shifted down a byte for E/S register */
-	p[0] = _1W_READ_SCRATCHPAD;
+	p[0] = _EDS_READ_SCRATCHPAD;
 	if (BUS_transaction(tread, pn)) {
 		return 1;
 	}
 
 	/* write Scratchpad to SRAM */
-	p[0] = _1W_COPY_SCRATCHPAD;
+	p[0] = _EDS_COPY_SCRATCHPAD;
 	if (BUS_transaction(twrite, pn)) {
 		return 1;
 	}

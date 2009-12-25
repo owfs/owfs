@@ -95,21 +95,21 @@ WRITE_FUNCTION(FS_w_32) ;
 #define _FC02_MAX_COMMAND_GULP	255
 
 /* BAE registers */
-#define _FC02_ADC        50   /* u8 */ 
+#define _FC02_ADC        50   /* u8 */
 #define _FC02_ADCAN      24   /* u16 */
 #define _FC02_ADCAP      22   /* u16 */
-#define _FC02_ADCC       2    /* u8 */ 
+#define _FC02_ADCC       2    /* u8 */
 #define _FC02_ADCTOTN    36   /* u32 */
 #define _FC02_ADCTOTP    32   /* u32 */
 #define _FC02_ALAN       66   /* u16 */
 #define _FC02_ALAP       64   /* u16 */
-#define _FC02_ALARM      52   /* u8 */ 
-#define _FC02_ALARMC     6    /* u8 */ 
+#define _FC02_ALARM      52   /* u8 */
+#define _FC02_ALARMC     6    /* u8 */
 #define _FC02_ALCPS      68   /* u16 */
 #define _FC02_ALCT       70   /* u32 */
 #define _FC02_ALRT       74   /* u32 */
-#define _FC02_CNT        51   /* u8 */ 
-#define _FC02_CNTC       3    /* u8 */ 
+#define _FC02_CNT        51   /* u8 */
+#define _FC02_CNTC       3    /* u8 */
 #define _FC02_COUNT      44   /* u32 */
 #define _FC02_CPS        30   /* u16 */
 #define _FC02_DUTY1      14   /* u16 */
@@ -119,39 +119,41 @@ WRITE_FUNCTION(FS_w_32) ;
 #define _FC02_MAXAN      28   /* u16 */
 #define _FC02_MAXAP      26   /* u16 */
 #define _FC02_MAXCPS     94   /* u16 */
-#define _FC02_MOD1       10   /* u16 */
-#define _FC02_MOD2       12   /* u16 */
-#define _FC02_MSIZE      0    /* u16 */
-#define _FC02_OUT        48   /* u8 */ 
-#define _FC02_OUTC       4    /* u8 */ 
-#define _FC02_OVRUNCNT   86   /* u32 */
+#define _FC02_OUT        48   /* u8 */
+#define _FC02_OUTC       4    /* u8 */
+#define _FC02_OVRUNCNT   92   /* u16 */
 #define _FC02_PC0        54   /* u16 */
 #define _FC02_PC1        56   /* u16 */
 #define _FC02_PC2        58   /* u16 */
 #define _FC02_PC3        60   /* u16 */
-#define _FC02_PIO        49   /* u8 */ 
-#define _FC02_PIOC       5    /* u8 */ 
-#define _FC02_RESETCNT   78   /* u32 */
+#define _FC02_PERIOD1    10   /* u16 */
+#define _FC02_PERIOD2    12   /* u16 */
+#define _FC02_PIO        49   /* u8 */
+#define _FC02_PIOC       5    /* u8 */
+#define _FC02_RESETCNT   86   /* u16 */
 #define _FC02_RTC        40   /* u32 */
-#define _FC02_RTCC       7    /* u8 */ 
-#define _FC02_SELECTCNT  82   /* u32 */
-#define _FC02_STALLEDCNT 90   /* u32 */
-#define _FC02_TPM1C      8    /* u8 */ 
-#define _FC02_TPM2C      9    /* u8 */ 
-#define _FC02_U16_I      112  /* u16 */
-#define _FC02_U16_J      114  /* u16 */
-#define _FC02_U16_K      116  /* u16 */
-#define _FC02_U16_L      118  /* u16 */
-#define _FC02_U32_M      120  /* u32 */
-#define _FC02_U32_N      124  /* u32 */
-#define _FC02_U8_A       104  /* u8 */ 
-#define _FC02_U8_B       105  /* u8 */ 
-#define _FC02_U8_C       106  /* u8 */ 
-#define _FC02_U8_D       107  /* u8 */ 
-#define _FC02_U8_E       108  /* u8 */ 
-#define _FC02_U8_F       109  /* u8 */ 
-#define _FC02_U8_G       110  /* u8 */ 
-#define _FC02_U8_H       111  /* u8 */ 
+#define _FC02_RTCC       7    /* u8 */
+#define _FC02_SELECTCNT  88   /* u16 */
+#define _FC02_STALLEDCNT 90   /* u16 */
+#define _FC02_TPM1C      8    /* u8 */
+#define _FC02_TPM2C      9    /* u8 */
+#define _FC02_USERA      96   /* u8 */
+#define _FC02_USERB      97   /* u8 */
+#define _FC02_USERC      98   /* u8 */
+#define _FC02_USERD      99   /* u8 */
+#define _FC02_USERE      100  /* u8 */
+#define _FC02_USERF      101  /* u8 */
+#define _FC02_USERG      102  /* u8 */
+#define _FC02_USERH      103  /* u8 */
+#define _FC02_USERI      104  /* u16 */
+#define _FC02_USERJ      106  /* u16 */
+#define _FC02_USERK      108  /* u16 */
+#define _FC02_USERL      110  /* u16 */
+#define _FC02_USERM      112  /* u32 */
+#define _FC02_USERN      116  /* u32 */
+#define _FC02_USERO      120  /* u32 */
+#define _FC02_USERP      124  /* u32 */
+
 
 /* Placeholder for special vsibility code for firmware types "personalities" */
 #define VISIBLE_910 VISIBLE
@@ -189,8 +191,8 @@ struct filetype BAE[] = {
 	{"910/rtcc", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_read_stable, FS_r_8, FS_w_8, VISIBLE_910, {u:_FC02_RTCC,}, },
 	{"910/tpm1c", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_read_stable, FS_r_8, FS_w_8, VISIBLE_910, {u:_FC02_TPM1C,}, },
 	{"910/tpm2c", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_read_stable, FS_r_8, FS_w_8, VISIBLE_910, {u:_FC02_TPM2C,}, },
-	{"910/mod1", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_read_stable, FS_r_16, FS_w_16, VISIBLE_910, {u:_FC02_MOD1,}, },
-	{"910/mod2", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_read_stable, FS_r_16, FS_w_16, VISIBLE_910, {u:_FC02_MOD2,}, },
+	{"910/period1", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_read_stable, FS_r_16, FS_w_16, VISIBLE_910, {u:_FC02_PERIOD1,}, },
+	{"910/period2", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_read_stable, FS_r_16, FS_w_16, VISIBLE_910, {u:_FC02_PERIOD2,}, },
 	{"910/duty1", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_read_stable, FS_r_16, FS_w_16, VISIBLE_910, {u:_FC02_DUTY1,}, },
 	{"910/duty2", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_read_stable, FS_r_16, FS_w_16, VISIBLE_910, {u:_FC02_DUTY2,}, },
 	{"910/duty3", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_read_stable, FS_r_16, FS_w_16, VISIBLE_910, {u:_FC02_DUTY3,}, },
@@ -215,31 +217,32 @@ struct filetype BAE[] = {
 	{"910/adc", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, NO_WRITE_FUNCTION, VISIBLE_910, {u:_FC02_ADC,}, },
 	{"910/cnt", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, NO_WRITE_FUNCTION, VISIBLE_910, {u:_FC02_CNT,}, },
 	{"910/alarm", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_910, {u:_FC02_ALARM,}, },
-	{"910/ovruncnt", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_32, FS_w_32, VISIBLE_910, {u:_FC02_OVRUNCNT,}, },
-	{"910/resetcnt", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_32, FS_w_32, VISIBLE_910, {u:_FC02_RESETCNT,}, },
-	{"910/selectcnt", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_32, FS_w_32, VISIBLE_910, {u:_FC02_SELECTCNT,}, },
-	{"910/stalledcnt", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_32, FS_w_32, VISIBLE_910, {u:_FC02_STALLEDCNT,}, },
+	{"910/ovruncnt", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_910, {u:_FC02_OVRUNCNT,}, },
+	{"910/resetcnt", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_910, {u:_FC02_RESETCNT,}, },
+	{"910/selectcnt", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_910, {u:_FC02_SELECTCNT,}, },
+	{"910/stalledcnt", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_910, {u:_FC02_STALLEDCNT,}, },
 
-	{"910/u8_a", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_910, {u:_FC02_U8_A,}, },
-	{"910/u8_b", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_910, {u:_FC02_U8_B,}, },
-	{"910/u8_c", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_910, {u:_FC02_U8_C,}, },
-	{"910/u8_d", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_910, {u:_FC02_U8_D,}, },
-	{"910/u8_e", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_910, {u:_FC02_U8_E,}, },
-	{"910/u8_f", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_910, {u:_FC02_U8_F,}, },
-	{"910/u8_g", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_910, {u:_FC02_U8_G,}, },
-	{"910/u8_h", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_910, {u:_FC02_U8_H,}, },
-	{"910/u16_i", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_910, {u:_FC02_U16_I,}, },
-	{"910/u16_j", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_910, {u:_FC02_U16_J,}, },
-	{"910/u16_k", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_910, {u:_FC02_U16_K,}, },
-	{"910/u16_l", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_910, {u:_FC02_U16_L,}, },
-	{"910/u32_m", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_32, FS_w_32, VISIBLE_910, {u:_FC02_U32_M,}, },
-	{"910/u32_n", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_32, FS_w_32, VISIBLE_910, {u:_FC02_U32_N,}, },
+	{"910/usera", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_910, {u:_FC02_USERA,}, },
+	{"910/userb", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_910, {u:_FC02_USERB,}, },
+	{"910/userc", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_910, {u:_FC02_USERC,}, },
+	{"910/userd", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_910, {u:_FC02_USERD,}, },
+	{"910/usere", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_910, {u:_FC02_USERE,}, },
+	{"910/userf", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_910, {u:_FC02_USERF,}, },
+	{"910/userg", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_910, {u:_FC02_USERG,}, },
+	{"910/userh", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_910, {u:_FC02_USERH,}, },
+	{"910/useri", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_910, {u:_FC02_USERI,}, },
+	{"910/userj", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_910, {u:_FC02_USERJ,}, },
+	{"910/userk", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_910, {u:_FC02_USERK,}, },
+	{"910/userl", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_910, {u:_FC02_USERL,}, },
+	{"910/userm", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_32, FS_w_32, VISIBLE_910, {u:_FC02_USERM,}, },
+	{"910/usern", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_32, FS_w_32, VISIBLE_910, {u:_FC02_USERN,}, },
+	{"910/usero", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_32, FS_w_32, VISIBLE_910, {u:_FC02_USERO,}, },
+	{"910/userp", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_32, FS_w_32, VISIBLE_910, {u:_FC02_USERP,}, },
 
 	{"910/pc0", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_910, {u:_FC02_PC0,}, },
-	{"910/pc1", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_910, {u:_FC02_PC0,}, },
-	{"910/pc2", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_910, {u:_FC02_PC0,}, },
-	{"910/pc3", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_910, {u:_FC02_PC0,}, },
-	
+	{"910/pc1", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_910, {u:_FC02_PC1,}, },
+	{"910/pc2", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_910, {u:_FC02_PC2,}, },
+	{"910/pc3", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_910, {u:_FC02_PC3,}, },
 
 };
 
