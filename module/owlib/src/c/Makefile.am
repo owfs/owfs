@@ -63,6 +63,7 @@ OWLIB_SOURCE = ow_dl.c           \
                ow_ds1410.c       \
                ow_ds9097U.c      \
                ow_ds9490.c       \
+	       ow_eds.c          \
                ow_eeef.c         \
                ow_eprom_write.c  \
                ow_etherweather.c \
@@ -118,7 +119,7 @@ OWLIB_SOURCE = ow_dl.c           \
                ow_stats.c        \
                ow_search.c       \
                ow_server.c       \
-			   ow_server_enet.c  \
+	       ow_server_enet.c  \
                ow_select.c       \
                ow_settings.c     \
                ow_sibling.c      \
