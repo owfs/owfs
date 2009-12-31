@@ -38,12 +38,18 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
 #include "ow_connection.h"
 
 /* If cmd is specified, msg length will be adjusted */
+/* Build a netlink message, rather tediously, from all the components
+ * making the internal flags, length fields and headers be correct */
 int W1_send_msg( struct connection_in * in, struct w1_netlink_msg *msg, struct w1_netlink_cmd *cmd, const unsigned char * data)
 {
-	struct cn_msg *cn;
-	struct w1_netlink_msg *w1m;
-	struct w1_netlink_cmd *w1c;
+	// outer structure -- nlm = netlink messsage
 	struct nlmsghdr *nlm;
+	// second structure -- cn = connection message
+	struct cn_msg *cn;
+	// third structure w1m = w1 message to the bus master
+	struct w1_netlink_msg *w1m;
+	// optional fourth w1c = w1 command to a device
+	struct w1_netlink_cmd *w1c;
 	unsigned char * pdata ;
 	int length ;
 	unsigned int seq ;
@@ -59,6 +65,7 @@ int W1_send_msg( struct connection_in * in, struct w1_netlink_msg *msg, struct w
 		bus = 0 ;
 	}
 
+	// figure out the full message length and allocate space
 	size = W1_NLM_LENGTH + W1_CN_LENGTH + W1_W1M_LENGTH ;
 	if ( cmd != NULL ) {
 		length = cmd->len ;
@@ -73,6 +80,7 @@ int W1_send_msg( struct connection_in * in, struct w1_netlink_msg *msg, struct w
 		return -ENOMEM;
 	}
 
+	// set the nlm fields
 	memset(nlm, 0, size);
 	nlm->nlmsg_seq = MAKE_NL_SEQ( bus, seq );
 	nlm->nlmsg_type = NLMSG_DONE;
@@ -81,8 +89,8 @@ int W1_send_msg( struct connection_in * in, struct w1_netlink_msg *msg, struct w
 	//nlm->nlmsg_flags = NLM_F_REQUEST;
 	nlm->nlmsg_pid = Inbound_Control.w1_pid ;
 
+	// set the cn fields
 	cn = (struct cn_msg *)(nlm + 1);
-
 	cn->id.idx = CN_W1_IDX;
 	cn->id.val = CN_W1_VAL;
 	cn->seq = nlm->nlmsg_seq;
@@ -90,6 +98,7 @@ int W1_send_msg( struct connection_in * in, struct w1_netlink_msg *msg, struct w
 	cn->flags = 0 ;
 	cn->len = size - W1_NLM_LENGTH - W1_CN_LENGTH ;
 
+	// set the w1m (and optionally w1c) fields
 	w1m = (struct w1_netlink_msg *)(cn + 1);
 	memcpy(w1m, msg, W1_W1M_LENGTH);
 	w1m->len = cn->len - W1_W1M_LENGTH ;
@@ -110,7 +119,7 @@ int W1_send_msg( struct connection_in * in, struct w1_netlink_msg *msg, struct w
 	err = send(Inbound_Control.w1_file_descriptor, nlm, size,  0);
 	owfree(nlm);
 	if (err == -1) {
-		ERROR_CONNECT("Failed to send W1_LIST_MASTERS\n");
+		ERROR_CONNECT("Failed to send w1 netlink message\n");
 		return -1 ;
 	}
 	return seq;

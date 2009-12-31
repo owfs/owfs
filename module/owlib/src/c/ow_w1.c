@@ -103,6 +103,7 @@ static int w1_send_reset( const struct parsedname *pn )
     w1c.cmd = W1_CMD_RESET ;
     w1c.len = 0 ;
 
+	LEVEL_DEBUG("Sending w1 reset message\n");
     return W1_send_msg( pn->selected_connection, &w1m, &w1c, NULL );
 }
 
@@ -124,6 +125,7 @@ static int w1_send_search( BYTE search, const struct parsedname *pn )
 	w1c.cmd = (search==_1W_CONDITIONAL_SEARCH_ROM) ? W1_CMD_ALARM_SEARCH : W1_CMD_SEARCH ;
 	w1c.len = 0 ;
 
+	LEVEL_DEBUG("Sending w1 search (list devices) message\n");
 	return W1_send_msg( pn->selected_connection, &w1m, &w1c, NULL );
 }
 
@@ -155,10 +157,6 @@ static int W1_next_both(struct device_search *ds, const struct parsedname *pn)
 	ret = DirblobGet(ds->index, ds->sn, db);
 	switch (ret) {
 	case 0:
-		if ((ds->sn[0] & 0x7F) == 0x04) {
-			/* We found a DS1994/DS2404 which require longer delays */
-			pn->selected_connection->ds2404_compliance = 1;
-		}
 		break;
 	case -ENODEV:
 		ds->LastDevice = 1;
@@ -180,6 +178,7 @@ static int w1_send_selecttouch( const BYTE * data, size_t size, const struct par
 	w1c.cmd = W1_CMD_TOUCH ;
 	w1c.len = size ;
 
+	LEVEL_DEBUG("Sending w1 select message for "SNformat"\n",SNvar(pn->sn));
 	return W1_send_msg( pn->selected_connection, &w1m, &w1c, data );
 }
 
@@ -199,9 +198,6 @@ static void touch( struct netlink_parse * nlp, void * v, const struct parsedname
 }
 
 // Reset, select, and read/write data
-/* return 0=good
-sendout_data, readin
-*/
 static int W1_select_and_sendback(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
 {
 	struct touch_struct ts = { resp, size, } ;
@@ -221,14 +217,11 @@ static int w1_send_touch( const BYTE * data, size_t size, const struct parsednam
 	w1c.cmd = W1_CMD_TOUCH ;
 	w1c.len = size ;
 
+	LEVEL_DEBUG("Sending w1 send/receive data message for "SNformat"\n",SNvar(pn->sn));
 	return W1_send_msg( pn->selected_connection, &w1m, &w1c, data );
 }
 
-// DS2480_sendback_data
 //  Send data and return response block
-/* return 0=good
-sendout_data, readin
-*/
 static int W1_sendback_data(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
 {
 	struct touch_struct ts = { resp, size, } ;

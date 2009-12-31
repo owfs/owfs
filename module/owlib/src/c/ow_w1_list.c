@@ -46,6 +46,7 @@ static int w1_list_masters( void )
 	w1m.len = 0;
 	w1m.id.mst.id = 0;
 
+	LEVEL_DEBUG("Sending w1 bus master list message\n");
 	return W1_send_msg( NULL, &w1m, NULL, NULL );
 }
 

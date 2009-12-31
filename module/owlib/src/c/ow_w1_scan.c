@@ -47,11 +47,11 @@ static void w1_masters(struct netlink_parse * nlp)
 		switch (nlp->w1m->type) {
 			case W1_MASTER_ADD:
 				AddW1Bus(bus_master) ;
-				//printf("Master has been added: w1_master%d.\n",	bus_master);
+				LEVEL_DEBUG("Master has been added: w1_master%d.\n",	bus_master);
 					break;
 			case W1_MASTER_REMOVE:
 				RemoveW1Bus(bus_master) ;
-				//printf("Master has been removed: w1_master%d.\n", bus_master);
+				LEVEL_DEBUG("Master has been removed: w1_master%d.\n", bus_master);
 					break;
 			case W1_SLAVE_ADD:
 			case W1_SLAVE_REMOVE:
@@ -68,20 +68,18 @@ int W1NLScan( void )
 {
 	while (1)
 	{
-		if ( W1PipeSelect_no_timeout( Inbound_Control.w1_read_file_descriptor ) == 0 ) {
-			struct netlink_parse nlp ;
+		struct netlink_parse nlp ;
 
-			switch ( Get_and_Parse_Pipe( Inbound_Control.w1_read_file_descriptor, &nlp ) ) {
-				case -EAGAIN:
-					break ;
-				case 0:
-					w1_masters( &nlp );
-					Netlink_Parse_Destroy(&nlp) ;
-					break ;
-				default:
-					LEVEL_CONNECT("Fatal error scanning W1 bus\n");
-					return  1;
-			}
+		switch ( Get_and_Parse_Pipe( Inbound_Control.w1_read_file_descriptor, &nlp ) ) {
+			case -EAGAIN:
+				break ;
+			case 0:
+				w1_masters( &nlp );
+				Netlink_Parse_Destroy(&nlp) ;
+				break ;
+			default:
+				LEVEL_CONNECT("Fatal error scanning W1 bus\n");
+				return  1;
 		}
 	}
 	return 0;

@@ -5,7 +5,7 @@ Written 2008 Paul H Alfille
 email: paul.alfille@gmail.com
 Released under the GPLv2
 Much thanks to Evgeniy Polyakov
-This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
+This file itself  is a modestly modified version of w1d by Evgeniy Polyakov
 */
 
 /*
@@ -108,13 +108,14 @@ int Netlink_Parse_Get( struct netlink_parse * nlp )
 	unsigned char * buffer ;
 	struct nlmsghdr peek_nlm ;
 
+	// first peek at message to get length and details
+	LEVEL_DEBUG("About to peek at message\n");
+	int recv_len = recv(Inbound_Control.w1_file_descriptor, &peek_nlm, W1_NLM_LENGTH, MSG_PEEK );
+
 	// Set time of last read
 	my_pthread_mutex_lock(&Inbound_Control.w1_read_mutex) ;
 	gettimeofday(&Inbound_Control.w1_last_read,NULL);
 	my_pthread_mutex_unlock(&Inbound_Control.w1_read_mutex) ;
-
-	// first peek at message to get length and details
-	int recv_len = recv(Inbound_Control.w1_file_descriptor, &peek_nlm, W1_NLM_LENGTH, MSG_PEEK );
 
 	LEVEL_DEBUG("Pre-parse header: %u bytes len=%u type=%u seq=%u|%u pid=%u\n",recv_len,peek_nlm.nlmsg_len,peek_nlm.nlmsg_type,NL_BUS(peek_nlm.nlmsg_seq),NL_SEQ(peek_nlm.nlmsg_seq),peek_nlm.nlmsg_pid);
 	if (recv_len == -1) {
@@ -206,8 +207,10 @@ enum Netlink_Read_Status W1_Process_Response( void (* nrs_callback)( struct netl
 		bus = pn->selected_connection->connin.w1.id ;
 	}
 
+	
 	while ( W1PipeSelect_timeout(file_descriptor)  == 0 ) {
 		struct netlink_parse nlp ;
+		LEVEL_DEBUG("Loop waiting for netlink piped message\n");
 		if ( Get_and_Parse_Pipe( file_descriptor, &nlp ) != 0 ) {
 			LEVEL_DEBUG("Error reading pipe for w1_bus_master%d\n",bus);
 			return -EIO ;
@@ -218,7 +221,7 @@ enum Netlink_Read_Status W1_Process_Response( void (* nrs_callback)( struct netl
 			owfree(nlp.nlm) ;
 			continue ;
 		}
-		if ( nlp.w1m->status ) {
+		if ( nlp.w1m->status != 0) {
 			owfree(nlp.nlm) ;
 			return nrs_nodev ;
 		}
@@ -226,7 +229,9 @@ enum Netlink_Read_Status W1_Process_Response( void (* nrs_callback)( struct netl
 			owfree(nlp.nlm) ;
 			return nrs_complete ;
 		}
+		LEVEL_DEBUG("About to call nrs_callback\n");
 		nrs_callback( &nlp, v, pn ) ;
+		LEVEL_DEBUG("Called nrs_callback\n");
 		owfree(nlp.nlm) ;
 		if ( nlp.cn->ack != 0 ) {
 			if ( nlp.w1m->type == W1_LIST_MASTERS ) {

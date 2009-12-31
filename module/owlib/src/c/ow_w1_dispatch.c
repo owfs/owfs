@@ -37,6 +37,7 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
 #include "ow_w1.h"
 #include "ow_connection.h"
 
+// write to an internal pipe (in another thread). Use a timepout in case that thread has terminated.
 static int W1_write_pipe( int file_descriptor, struct netlink_parse * nlp )
 {
 	int size = nlp->nlm->nlmsg_len ;
@@ -71,7 +72,7 @@ static int W1_write_pipe( int file_descriptor, struct netlink_parse * nlp )
 	} while (1) ;
 }
 
-
+// Get the w1 bus id from the nlm sequence number and dispatch to that bus
 static void Dispatch_Packet( struct netlink_parse * nlp)
 {
 	int bus = NL_BUS(nlp->nlm->nlmsg_seq) ;
@@ -97,6 +98,7 @@ static void Dispatch_Packet( struct netlink_parse * nlp)
 	LEVEL_DEBUG("W1 netlink message for non-existent bus\n");
 }
 
+// Infinite loop waiting for netlink packets, to be sent to internal pipes as appropriate
 void * W1_Dispatch( void * v )
 {
 	(void) v;
@@ -106,12 +108,11 @@ void * W1_Dispatch( void * v )
 #endif                          /* OW_MT */
 
 	while (Inbound_Control.w1_file_descriptor > -1 ) {
-		if ( W1Select_no_timeout() == 0 ) {
-			struct netlink_parse nlp ;
-			if ( Netlink_Parse_Get( &nlp ) == 0 ) {
-				Dispatch_Packet( &nlp ) ;
-				Netlink_Parse_Destroy(&nlp) ;
-			}
+		struct netlink_parse nlp ;
+		LEVEL_DEBUG("Dispatch loop\n");
+		if ( Netlink_Parse_Get( &nlp ) == 0 ) {
+			Dispatch_Packet( &nlp ) ;
+			Netlink_Parse_Destroy(&nlp) ;
 		}
 	}
 	LEVEL_DEBUG("Normal exit.\n");
