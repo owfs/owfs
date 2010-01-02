@@ -22,6 +22,7 @@ void LibClose(void)
 	LibStop();
 	PIDstop();
 	DeviceDestroy();
+	SpecialCase_close();
 
 #if OW_MT
 	sem_destroy(&Mutex.accept_sem);

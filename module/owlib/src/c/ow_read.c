@@ -15,6 +15,7 @@ $ID: $
 #include "ow.h"
 #include "ow_counters.h"
 #include "ow_connection.h"
+#include "ow_specialcase.h"
 
 /* ------- Prototypes ----------- */
 static int FS_r_virtual(struct one_wire_query *owq);
@@ -492,7 +493,10 @@ static int FS_structure(struct one_wire_query *owq)
 static int FS_read_lump(struct one_wire_query *owq)
 {
 	if (OWQ_Cache_Get(owq)) {	// non-zero means not found
-		int read_error = (OWQ_pn(owq).selected_filetype->read) (owq);
+		int read_error = SpecialCase_read(owq);
+		if ( read_error == -ENOENT ) {
+			read_error = (OWQ_pn(owq).selected_filetype->read) (owq);
+		}
 		if (read_error < 0) {
 			return read_error;
 		}

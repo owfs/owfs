@@ -66,9 +66,8 @@ int EnterBackground(void);
 /* Initial sorting or the device and filetype lists */
 void DeviceSort(void);
 void DeviceDestroy(void);
-//  int filecmp(const void * name , const void * ex )
 /* Pasename processing -- URL/path comprehension */
-int filecmp(const void *name, const void *ex);
+int filetype_cmp(const void *name, const void *ex);
 int FS_ParsedNamePlus(const char *path, const char *file, struct parsedname *pn);
 int FS_ParsedNamePlusExt(const char *path, const char *file, int extension, enum ag_index alphanumeric, struct parsedname *pn);
 int FS_ParsedName(const char *fn, struct parsedname *pn);

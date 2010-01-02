@@ -501,7 +501,7 @@ static enum parse_enum Parse_Property(char *filename, struct parsedname *pn)
 	/* Match to known filetypes for this device */
 	if ((pn->selected_filetype =
 		 bsearch(filename, pn->selected_device->filetype_array,
-				 (size_t) pn->selected_device->count_of_filetypes, sizeof(struct filetype), filecmp))) {
+				 (size_t) pn->selected_device->count_of_filetypes, sizeof(struct filetype), filetype_cmp))) {
 		//printf("FP known filetype %s\n",pn->selected_filetype->name) ;
 		/* Filetype found, now process extension */
 		if (dot == NULL || dot[0] == '\0') {	/* no extension */
@@ -592,7 +592,7 @@ static int BranchAdd(struct parsedname *pn)
 	return 0;
 }
 
-int filecmp(const void *name, const void *ex)
+int filetype_cmp(const void *name, const void *ex)
 {
 	return strcmp((const char *) name, ((const struct filetype *) ex)->name);
 }

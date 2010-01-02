@@ -68,6 +68,7 @@ noinst_HEADERS =          \
         ow_pid.h          \
         ow_settings.h     \
         ow_simultaneous.h \
+	ow_specialcase.h  \
 	ow_standard.h     \
 	ow_stateinfo.h    \
         ow_stats.h        \

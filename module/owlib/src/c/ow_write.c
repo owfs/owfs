@@ -14,6 +14,7 @@ $Id$
 #include "ow.h"
 #include "ow_counters.h"
 #include "ow_connection.h"
+#include "ow_specialcase.h"
 
 /* ------- Prototypes ----------- */
 static int FS_w_given_bus(struct one_wire_query *owq);
@@ -342,7 +343,10 @@ static int FS_write_single_lump(struct one_wire_query *owq)
 
 	OWQ_create_shallow_single(owq_copy, owq);
 
-	write_error = (OWQ_pn(owq).selected_filetype->write) (owq_copy);
+	write_error = SpecialCase_write(owq_copy);
+	if ( write_error == -ENOENT) {
+		write_error = (OWQ_pn(owq).selected_filetype->write) (owq_copy);
+	}
 
 	if (write_error < 0) {
 		return write_error;
@@ -427,7 +431,10 @@ static int FS_write_aggregate_lump(struct one_wire_query *owq)
 
 	OWQ_create_shallow_aggregate(owq_copy, owq);
 
-	write_error = (OWQ_pn(owq).selected_filetype->write) (owq_copy);
+	write_error = SpecialCase_write(owq_copy);
+	if ( write_error == -ENOENT) {
+		write_error = (OWQ_pn(owq).selected_filetype->write) (owq_copy);
+	}
 
 	OWQ_destroy_shallow_aggregate(owq_copy);
 
