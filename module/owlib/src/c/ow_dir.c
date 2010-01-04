@@ -492,13 +492,18 @@ static int FS_realdir(void (*dirfunc) (void *, const struct parsedname *), void 
 			BUSUNLOCK(pn_whole_directory);
 		}
 		
+		/* Add to device cache */
+		Cache_Add_Device(pn_whole_directory->selected_connection->index,ds.sn) ;
+		
+		/* Get proper device name (including alias subst) */
 		FS_devicename(dev, PROPERTY_LENGTH_ALIAS, ds.sn, pn_whole_directory);
+		
+		/* Execute callback function */
 		ret = FS_dir_plus(dirfunc, v, flags, pn_whole_directory, dev);
 		if ( ret ) {
 			DirblobPoison(&db);
 			break ;
 		}
-
 		DirblobAdd(ds.sn, &db);
 		++devices;
 
@@ -568,7 +573,7 @@ static int FS_cache2real(void (*dirfunc) (void *, const struct parsedname *), vo
 	//printf("Post test cache for dir, snlist=%p, devices=%lu\n",snlist,devices) ;
 	/* We have a cached list in snlist. Note that we have to free this memory */
 
-	/* STATISCTICS */
+	/* STATISTICS */
 	STAT_ADD1(dir_main.calls);
 
 	/* Get directory from the cache */

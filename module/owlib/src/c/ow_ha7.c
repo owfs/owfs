@@ -93,7 +93,7 @@ int HA7_detect(struct connection_in *in)
 	}
 
 	if (ClientAddr(in->name, in)) {
-		return -1;
+		return -EIO;
 	}
 
 	if ((file_descriptor = ClientConnect(in)) < 0) {
@@ -405,7 +405,6 @@ static int HA7_select_and_sendback(const BYTE * data, BYTE * resp, const size_t 
 	return 0;
 }
 
-// DS2480_sendback_data
 //  Send data and return response block
 /* return 0=good
    sendout_data, readin

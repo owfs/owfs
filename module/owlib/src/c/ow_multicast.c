@@ -85,6 +85,7 @@ static int Get_HA7_response( struct addrinfo *now, char * name )
 	int on = 1;
 
 	if ((file_descriptor = socket(now->ai_family, now->ai_socktype, now->ai_protocol)) < 0) {
+		ERROR_DEBUG("Cannot get socket file descriptor for broadcast.\n");
 		return 1;
 	}
 	if (setsockopt(file_descriptor, SOL_SOCKET, SO_BROADCAST, &on, sizeof(on)) == -1) {

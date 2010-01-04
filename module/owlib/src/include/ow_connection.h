@@ -159,8 +159,11 @@ struct interface_routines {
 // Adapter benefits from coalescing reads and writes into a longer string
 #define ADAP_FLAG_bundle        0x00001000
 
-// Adapter sutomatically performs a reset before read/writes
+// Adapter automatically performs a reset before read/writes
 #define ADAP_FLAG_dir_auto_reset 0x00002000
+
+// Adapter doesn't support "presence" -- use the last dirblob instead.
+#define ADAP_FLAG_presence_from_dirblob 0x00004000
 
 #define AdapterSupports2409(pn)	(((pn)->selected_connection->iroutines.flags&ADAP_FLAG_no2409path)==0)
 

@@ -189,12 +189,8 @@ int FS_present(struct one_wire_query *owq)
 
 	if (NotRealDir(pn) || pn->selected_device == DeviceSimultaneous || pn->selected_device == DeviceThermostat) {
 		OWQ_Y(owq) = 1;
-	} else if (get_busmode(pn->selected_connection) == bus_fake) {
-		OWQ_Y(owq) = 1;
-	} else if (get_busmode(pn->selected_connection) == bus_tester) {
-		OWQ_Y(owq) = 1;
-	} else if (get_busmode(pn->selected_connection) == bus_mock) {
-		OWQ_Y(owq) = 1;
+	} else if ( pn->selected_connection->iroutines.flags & ADAP_FLAG_presence_from_dirblob ) {
+		OWQ_Y(owq) = (DirblobSearch(pn->sn, &(pn->selected_connection->main)) >= 0);
 	} else {
 		struct transaction_log t[] = {
 			TRXN_NVERIFY,
@@ -229,7 +225,7 @@ static int CheckThisConnection(int bus_nr, const struct parsedname *pn)
 			return in->index;
 		}
 		//printf("CheckPresence_low: ServerPresence(%s) pn->selected_connection->index=%d ret=%d\n", pn->path, pn->selected_connection->index, ret);
-	} else if ( (get_busmode(in) == bus_fake) || (get_busmode(in) == bus_tester) || (get_busmode(in) == bus_mock) ) {
+	} else if ( in->iroutines.flags & ADAP_FLAG_presence_from_dirblob ) {
 		if ( DirblobSearch(pn_copy->sn, &(in->main)) >= 0 ) {
 			LEVEL_DEBUG("Presence found on fake-like bus %s\n",SAFESTRING(in->name)) ;
 			return in->index;
