@@ -279,7 +279,7 @@ static int Add_a_property(const char * tag, const char * property, const char * 
 	case ft_tempgap:
 	printf("get the float\n");
 		OWQ_F(owq) = xml_float(tag,buffer) ;
-		LEVEL_DEBUG("%s given value %g from tag %s\n",path,(int)OWQ_F(owq),tag) ;
+		LEVEL_DEBUG("%s given value %lg from tag %s\n",path,OWQ_F(owq),tag) ;
 		break ;
 	default:
 		ret = -EINVAL ;
@@ -308,11 +308,15 @@ static _FLOAT xml_float( const char * tag, char ** buffer)
 {
 	size_t length ;
 	buffer[0] = find_xml_string(tag,&length, buffer[0]) ;
-	printf("found the string %s, length %d\n",buffer[0],length);
+	printf("found the string %s, length %lu\n",buffer[0],length);
 	if ( buffer[0] != NULL ){
-		return strtod( buffer[0], buffer) ;
+		_FLOAT F ;
+		if ( sscanf(buffer[0],"%lg",&F) == 1 ) {
+			printf("Value %lg\n",F) ;
+			return F ;
+		}
 	}
-	return 0 ;
+	return 0. ;
 }
 
 static char * xml_string( const char * tag, char ** buffer)
