@@ -33,6 +33,7 @@ static void toENETinit(struct toENET *enet) ;
 static int ENET_send_detail(int file_descriptor, struct connection_in *in) ;
 static int ENET_get_detail(const struct parsedname * pn ) ;
 static int OWServer_Enet_read(int file_descriptor, struct memblob *mb) ;
+static int Add_a_property(const char * tag, const char * property, const char * romid, char ** buffer) ;
 static int parse_detail_record(char * detail, const struct parsedname *pn) ;
 static char * find_xml_string( const char * tag, size_t * length, char * buffer) ;
 
@@ -208,29 +209,88 @@ static int parse_detail_record(char * detail, const struct parsedname *pn)
 		}
 		Cache_Add_Device(in->index,sn) ;
 		DirblobAdd(sn, db);
+		switch ( sn[0] ) {
+			case 0x10: //DS18S20
+			Add_a_property("Temperature", "temperature", romid, &detail ) ;
+			break ;
+			default:
+			break ;
+		}
+			
 	}
 	return 0 ;
 }
 
+#define enet_data_length 1000
 static int Add_a_property(const char * tag, const char * property, const char * romid, char ** buffer)
 {
 	char path[PATH_MAX] ;
-	struct parsedname s_pn ;
-	struct parsedname * pn = &s_pn ;
+	OWQ_allocate_struct_and_pointer(owq) ;
 	int ret = 0 ;
 	
+	if ( buffer[0] == NULL ) {
+		return -EINVAL ;
+	}
+	printf("About to create %s from %s\n",property,tag);
 	strncpy( path, romid, 16 ) ;
 	path[16] = '\0' ;
 	strcat(path,"/");
 	strcat(path,property) ;
 	
-	if ( FS_ParsedName(path,pn) ) {
+	owq = FS_OWQ_create_from_path(path,enet_data_length) ;
+	printf("Created OWQ for %s from %s\n",path,tag);
+	
+	if ( owq==NULL ) {
 		LEVEL_DEBUG("Couldn't understand path %s\n",path);
 		return -EINVAL ;
 	}
-//	switch ()
-	// still in progress
-	FS_ParsedName_destroy(pn) ;
+	
+	switch (PN(owq)->selected_filetype->format) {
+	case ft_ascii:
+	case ft_vascii:
+	case ft_binary:
+	{
+		char * data = xml_string(tag,buffer) ;
+		if ( data != NULL ) {
+			strncpy(OWQ_buffer(owq),data,enet_data_length);
+			OWQ_length(owq) = strlen(data) ;
+		} else {
+			ret = -EINVAL ;
+		}
+		LEVEL_DEBUG("%s given value <%s> from tag %s\n",path,data,tag) ;
+		break ;
+	}
+	case ft_integer:
+		OWQ_I(owq) = xml_integer(tag,buffer) ;
+		LEVEL_DEBUG("%s given value %d from tag %s\n",path,(int)OWQ_I(owq),tag) ;
+		break ;
+	case ft_unsigned:
+		OWQ_U(owq) = xml_integer(tag,buffer) ;
+		LEVEL_DEBUG("%s given value %d from tag %s\n",path,(int)OWQ_U(owq),tag) ;
+		break ;
+	case ft_yesno:
+		OWQ_Y(owq) = (xml_integer(tag,buffer) != 0) ;
+		LEVEL_DEBUG("%s given value %d from tag %s\n",path,(int)OWQ_Y(owq),tag) ;
+		break ;
+	case ft_date:
+	case ft_float:
+		break ;
+	case ft_temperature:
+	case ft_tempgap:
+	printf("get the float\n");
+		OWQ_F(owq) = xml_float(tag,buffer) ;
+		LEVEL_DEBUG("%s given value %g from tag %s\n",path,(int)OWQ_F(owq),tag) ;
+		break ;
+	default:
+		ret = -EINVAL ;
+		break;
+	}
+	if ( buffer[0] != NULL ) {
+		OWQ_Cache_Add(owq) ;
+	} else {
+		ret = -EINVAL ;
+	}
+	FS_OWQ_destroy_sibling(owq) ;
 	return ret ;
 }
 
@@ -248,6 +308,7 @@ static _FLOAT xml_float( const char * tag, char ** buffer)
 {
 	size_t length ;
 	buffer[0] = find_xml_string(tag,&length, buffer[0]) ;
+	printf("found the string %s, length %d\n",buffer[0],length);
 	if ( buffer[0] != NULL ){
 		return strtod( buffer[0], buffer) ;
 	}
