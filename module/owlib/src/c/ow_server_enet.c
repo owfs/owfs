@@ -210,10 +210,47 @@ static int parse_detail_record(char * detail, const struct parsedname *pn)
 		Cache_Add_Device(in->index,sn) ;
 		DirblobAdd(sn, db);
 		switch ( sn[0] ) {
-			case 0x10: //DS18S20
+		case 0x10: //DS18S20
 			Add_a_property("Temperature", "temperature", romid, &detail ) ;
+			Add_a_property("UserByte1", "templow", romid, &detail ) ;
+			Add_a_property("UserByte2", "temphigh", romid, &detail ) ;
 			break ;
-			default:
+		case 0x28: //DS18B20
+			Add_a_property("Temperature", "temperature", romid, &detail ) ;
+			Add_a_property("UserByte1", "templow", romid, &detail ) ;
+			Add_a_property("UserByte2", "temphigh", romid, &detail ) ;
+			Add_a_property("PwrSupply", "power", romid, &detail ) ;
+			break ;
+		case 0x1D: //DS2423
+			Add_a_property("CounterA", "counters.A", romid, &detail ) ;
+			Add_a_property("CounterB", "counters.B", romid, &detail ) ;
+			break ;
+		case 0x26: //DS2438
+			Add_a_property("Temperature", "temperature", romid, &detail ) ;
+			Add_a_property("SupplyVoltage", "VDD", romid, &detail ) ;
+			Add_a_property("Current", "vis", romid, &detail ) ;
+			Add_a_property("PinVoltage", "VAD", romid, &detail ) ;
+			break ;
+		case 0x29: //DS2408
+			Add_a_property("PIOLogicState", "sensed", romid, &detail ) ;
+			Add_a_property("PIOOutputLatchState", "PIO", romid, &detail ) ;
+			Add_a_property("PIOActivityLatchState", "latch", romid, &detail ) ;
+			Add_a_property("RSTZConfiguration", "strobe", romid, &detail ) ;
+			Add_a_property("PowerOnResetLatch", "por", romid, &detail ) ;
+			Add_a_property("VCCPowerStatus", "power", romid, &detail ) ;
+			break ;
+		case 0x20: //DS2450
+			Add_a_property("ChannelAConversionValue", "volt.A", romid, &detail ) ;
+			Add_a_property("ChannelBConversionValue", "volt.B", romid, &detail ) ;
+			Add_a_property("ChannelCConversionValue", "volt.C", romid, &detail ) ;
+			Add_a_property("ChannelDConversionValue", "volt.D", romid, &detail ) ;
+			Add_a_property("ChannelAOutputControl", "PIO.A", romid, &detail ) ;
+			Add_a_property("ChannelBOutputControl", "PIO.B", romid, &detail ) ;
+			Add_a_property("ChannelCOutputControl", "PIO.C", romid, &detail ) ;
+			Add_a_property("ChannelDOutputControl", "PIO.D", romid, &detail ) ;
+			Add_a_property("VCCControl", "power", romid, &detail ) ;
+			break ;
+		default:
 			break ;
 		}
 			
@@ -226,6 +263,7 @@ static int Add_a_property(const char * tag, const char * property, const char * 
 {
 	char path[PATH_MAX] ;
 	OWQ_allocate_struct_and_pointer(owq) ;
+	char * buffer_pointer = buffer[0] ;
 	int ret = 0 ;
 	
 	if ( buffer[0] == NULL ) {
@@ -250,7 +288,7 @@ static int Add_a_property(const char * tag, const char * property, const char * 
 	case ft_vascii:
 	case ft_binary:
 	{
-		char * data = xml_string(tag,buffer) ;
+		char * data = xml_string(tag,&buffer_pointer) ;
 		if ( data != NULL ) {
 			strncpy(OWQ_buffer(owq),data,enet_data_length);
 			OWQ_length(owq) = strlen(data) ;
@@ -261,15 +299,15 @@ static int Add_a_property(const char * tag, const char * property, const char * 
 		break ;
 	}
 	case ft_integer:
-		OWQ_I(owq) = xml_integer(tag,buffer) ;
+		OWQ_I(owq) = xml_integer(tag,&buffer_pointer) ;
 		LEVEL_DEBUG("%s given value %d from tag %s\n",path,(int)OWQ_I(owq),tag) ;
 		break ;
 	case ft_unsigned:
-		OWQ_U(owq) = xml_integer(tag,buffer) ;
+		OWQ_U(owq) = xml_integer(tag,&buffer_pointer) ;
 		LEVEL_DEBUG("%s given value %d from tag %s\n",path,(int)OWQ_U(owq),tag) ;
 		break ;
 	case ft_yesno:
-		OWQ_Y(owq) = (xml_integer(tag,buffer) != 0) ;
+		OWQ_Y(owq) = (xml_integer(tag,&buffer_pointer) != 0) ;
 		LEVEL_DEBUG("%s given value %d from tag %s\n",path,(int)OWQ_Y(owq),tag) ;
 		break ;
 	case ft_date:
@@ -278,14 +316,14 @@ static int Add_a_property(const char * tag, const char * property, const char * 
 	case ft_temperature:
 	case ft_tempgap:
 	printf("get the float\n");
-		OWQ_F(owq) = xml_float(tag,buffer) ;
+		OWQ_F(owq) = xml_float(tag,&buffer_pointer) ;
 		LEVEL_DEBUG("%s given value %lg from tag %s\n",path,OWQ_F(owq),tag) ;
 		break ;
 	default:
 		ret = -EINVAL ;
 		break;
 	}
-	if ( buffer[0] != NULL ) {
+	if ( buffer_pointer != NULL ) {
 		OWQ_Cache_Add(owq) ;
 	} else {
 		ret = -EINVAL ;
