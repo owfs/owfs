@@ -17,6 +17,7 @@ $Id$
 #include "ow_counters.h"
 #include "ow_connection.h"
 #include "ow_codes.h"
+#include "ow_specialcase.h"
 
 struct toENET {
 	ASCII *command;
@@ -36,6 +37,9 @@ static int OWServer_Enet_read(int file_descriptor, struct memblob *mb) ;
 static int Add_a_property(const char * tag, const char * property, const char * romid, char ** buffer) ;
 static int parse_detail_record(char * detail, const struct parsedname *pn) ;
 static char * find_xml_string( const char * tag, size_t * length, char * buffer) ;
+
+static int SpecialRead( struct one_wire_query * owq ) ;
+static void ENET_SpecialCases( struct connection_in * in ) ;
 
 static int xml_integer( const char * tag, char ** buffer) ;
 static char * xml_string( const char * tag, char ** buffer) ;
@@ -96,6 +100,7 @@ int OWServer_Enet_detect(struct connection_in *in)
 	in->busmode = bus_enet;
 
 	if (ENET_get_detail(&pn) == 0) {
+		ENET_SpecialCases(in) ; // load the special access functions
 		return 0;
 	}
 	return -ENODEV;
@@ -256,6 +261,44 @@ static int parse_detail_record(char * detail, const struct parsedname *pn)
 			
 	}
 	return 0 ;
+}
+
+static int SpecialRead( struct one_wire_query * owq )
+{
+	struct parsedname * pn = PN(owq) ;
+	enum ePS_state state = pn->state ;
+	if ( ENET_get_detail(pn) != 0 ) {
+		return -EINVAL ;
+	}
+	pn->state |= ~ePS_uncached ; // turn off uncached
+	if (OWQ_Cache_Get(owq)) {
+		// Not found even after re-reading detail
+		pn->state = state ;
+		return -EINVAL ;
+	}
+	pn->state = state ;
+	return 0 ;
+}
+
+static void ENET_SpecialCases( struct connection_in * in )
+{
+	SpecialCase_add( in, 0x10, "temperature", SpecialRead, NO_WRITE_FUNCTION ) ;
+	SpecialCase_add( in, 0x10, "templow",     SpecialRead, NO_WRITE_FUNCTION ) ;
+	SpecialCase_add( in, 0x10, "temphigh",    SpecialRead, NO_WRITE_FUNCTION ) ;
+	
+	SpecialCase_add( in, 0x28, "temperature", SpecialRead, NO_WRITE_FUNCTION ) ;
+	SpecialCase_add( in, 0x28, "templow",     SpecialRead, NO_WRITE_FUNCTION ) ;
+	SpecialCase_add( in, 0x28, "temphigh",    SpecialRead, NO_WRITE_FUNCTION ) ;
+	SpecialCase_add( in, 0x28, "power",       SpecialRead, NO_WRITE_FUNCTION ) ;
+	
+	SpecialCase_add( in, 0x1D, "counters.A",  SpecialRead, NO_WRITE_FUNCTION ) ;
+	SpecialCase_add( in, 0x1D, "counters.B",  SpecialRead, NO_WRITE_FUNCTION ) ;	
+
+	SpecialCase_add( in, 0x26, "temperature", SpecialRead, NO_WRITE_FUNCTION ) ;	
+	SpecialCase_add( in, 0x26, "VAD",         SpecialRead, NO_WRITE_FUNCTION ) ;	
+	SpecialCase_add( in, 0x26, "VDD",         SpecialRead, NO_WRITE_FUNCTION ) ;	
+	SpecialCase_add( in, 0x26, "vis",         SpecialRead, NO_WRITE_FUNCTION ) ;	
+
 }
 
 #define enet_data_length 1000
