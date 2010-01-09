@@ -29,6 +29,11 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+/* w1 list
+ * Routines to read the list of w1 masters
+ * This is called from ow_w1_browse
+ */
+
 #include <config.h>
 #include "owfs_config.h"
 

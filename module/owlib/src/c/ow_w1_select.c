@@ -37,7 +37,7 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
 #include "ow_w1.h"
 #include "ow_connection.h"
 
-/* Wait for  a netlink packet */
+/* Wait for a netlink packet */
 int W1PipeSelect_timeout( int file_descriptor )
 {
 	do {

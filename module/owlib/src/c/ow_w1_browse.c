@@ -9,6 +9,11 @@ $Id$
 	1wire/iButton system from Dallas Semiconductor
 */
 
+/* w1 browse for existing and new bus masters
+ * w1 is different: it is a dynamic list of adapters
+ * the scanning starts with "W1_Browse" in LibStart and continues in it's own thread 
+ */
+
 #include <config.h>
 #include "owfs_config.h"
 

@@ -40,6 +40,7 @@ struct specialcase_key {
 	enum adapter_type adapter ;
 	unsigned char family_code ;
 	struct filetype * filetype ;
+	int extension ;
 } ;
 
 struct specialcase {

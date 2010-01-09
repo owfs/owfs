@@ -188,4 +188,18 @@ struct parsedname {
 
 #define RootNotBranch(pn)         (((pn)->pathlength)==0)
 
+enum parse_enum {
+	parse_first,
+	parse_done,
+	parse_error,
+	parse_real,
+	parse_branch,
+	parse_nonreal,
+	parse_prop,
+	parse_subprop
+};
+
+enum parse_enum Parse_Property(char *filename, struct parsedname *pn);
+
+
 #endif							/* OW_PARSEDNAME_H */

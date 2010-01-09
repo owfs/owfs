@@ -16,17 +16,6 @@ $Id$
 
 static int BranchAdd(struct parsedname *pn);
 
-enum parse_enum {
-	parse_first,
-	parse_done,
-	parse_error,
-	parse_real,
-	parse_branch,
-	parse_nonreal,
-	parse_prop,
-	parse_subprop
-};
-
 enum parse_pass {
 	parse_pass_pre_remote,
 	parse_pass_post_remote,
@@ -39,14 +28,12 @@ struct parsedname_pointers {
 	char *pathlast;
 };
 
-
 static enum parse_enum Parse_Unspecified(char *pathnow, enum parse_pass remote_status, struct parsedname *pn);
 static enum parse_enum Parse_Branch(char *pathnow, enum parse_pass remote_status, struct parsedname *pn);
 static enum parse_enum Parse_Real(char *pathnow, enum parse_pass remote_status, struct parsedname *pn);
 static enum parse_enum Parse_NonReal(char *pathnow, struct parsedname *pn);
 static enum parse_enum Parse_RealDevice(char *filename, enum parse_pass remote_status, struct parsedname *pn);
 static enum parse_enum Parse_NonRealDevice(char *filename, struct parsedname *pn);
-static enum parse_enum Parse_Property(char *filename, struct parsedname *pn);
 static enum parse_enum Parse_Bus(char *pathnow, struct parsedname *pn);
 static int FS_ParsedName_anywhere(const char *path, enum parse_pass remote_status, struct parsedname *pn);
 static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path, struct parsedname *pn);
@@ -490,7 +477,7 @@ static enum parse_enum Parse_NonRealDevice(char *filename, struct parsedname *pn
 	return (pn->selected_device == &NoDevice) ? parse_error : parse_prop;
 }
 
-static enum parse_enum Parse_Property(char *filename, struct parsedname *pn)
+enum parse_enum Parse_Property(char *filename, struct parsedname *pn)
 {
 	char *dot = filename;
 

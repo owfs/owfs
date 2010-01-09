@@ -55,6 +55,8 @@ static void w1_masters(struct netlink_parse * nlp)
 					break;
 			case W1_SLAVE_ADD:
 			case W1_SLAVE_REMOVE:
+			// ignored since thre is no bus attribution and real use will discover the change.
+			// at some point we could make the w1 master lists static and only changed when triggered by one of these messages.
 				LEVEL_DEBUG("Netlink (w1) Slave announcements\n");
 				break ;
 			default:

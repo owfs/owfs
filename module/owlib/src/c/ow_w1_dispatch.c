@@ -56,6 +56,7 @@ static int W1_write_pipe( int file_descriptor, struct netlink_parse * nlp )
 				ERROR_CONNECT("Pipe (w1) Select returned -1\n");
 				return -1 ;
 			}
+			// repeat path for EINTR
 		} else if ( select_value == 0 ) {
 			LEVEL_DEBUG("Select returned zero (timeout)\n");
 			return -1;

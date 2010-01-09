@@ -49,42 +49,39 @@ static int specialcase_compare(const void *a, const void *b)
 
 void SpecialCase_add( struct connection_in * in, unsigned char family_code, const char * property, int (*read_func) (struct one_wire_query *), int (*write_func) (struct one_wire_query *))
 {
-	char *dot = owstrdup(property);
-	char * filename  = strsep(&dot, ".");
-	
-	if ( filename != NULL ) {
-		/* Search for known 1-wire device */
-		struct parsedname pn ; // carrier for finding device -- not actually formally created. No deallocation needed.
-		pn.type = ePN_real ;
-		FS_devicefindhex( family_code, &pn);
-		if ( pn.selected_device != &NoDevice ) {
-			/* Search for known device filetype */
-			struct filetype * ft = bsearch(filename, pn.selected_device->filetype_array, (size_t) pn.selected_device->count_of_filetypes, sizeof(struct filetype), filetype_cmp) ;
-			if (ft != NULL ) {
-				/* Create the item */
-				struct specialcase * sc = owmalloc( sizeof(struct specialcase) ) ;
-				if ( sc != NULL ) {
-					sc->key.adapter = in->Adapter ;
-					sc->key.family_code = family_code ;
-					sc->key.filetype = ft ;
-					sc->read = read_func ;
-					sc->write = write_func ;
-					// Add into the red/black tree
-					tsearch(sc, &SpecialCase, specialcase_compare);
-				} else {
-					LEVEL_DEBUG("Attempt to add special handling ran out of memory. Family type %s. Property %s\n",family_code,property) ;
-				}
+	/* Search for known 1-wire device */
+	struct parsedname pn ; // carrier for finding device -- not actually formally created. No deallocation needed.
+	pn.type = ePN_real ;
+	FS_devicefindhex( family_code, &pn);
+	if ( pn.selected_device != &NoDevice ) {
+		/* Search for known device filetype */
+		enum parse_enum pe = parse_error ;
+		char * filename = owstrdup(property) ;
+		if ( filename != NULL ) {
+			pe = Parse_Property(filename, &pn) ;
+			owfree(filename) ;
+		}
+		if (pe == parse_done ) {
+			/* Create the item */
+			struct specialcase * sc = owmalloc( sizeof(struct specialcase) ) ;
+			if ( sc != NULL ) {
+				sc->key.adapter = in->Adapter ;
+				sc->key.family_code = family_code ;
+				sc->key.filetype = pn.selected_filetype ;
+				sc->key.extension = pn.extension ;
+				sc->read = read_func ;
+				sc->write = write_func ;
+				// Add into the red/black tree
+				tsearch(sc, &SpecialCase, specialcase_compare);
 			} else {
-				LEVEL_DEBUG("Attempt to add special handling for unrecognized file type. Family type %s. Property %s\n",family_code,property) ;
+				LEVEL_DEBUG("Attempt to add special handling ran out of memory. Family type %s. Property %s\n",family_code,property) ;
 			}
 		} else {
-			LEVEL_DEBUG("Attempt to add special handling for unrecognized family type %s. Property %s\n",family_code,property) ;
+			LEVEL_DEBUG("Attempt to add special handling for unrecognized file type. Family type %s. Property %s\n",family_code,property) ;
 		}
-		owfree(filename) ;
 	} else {
-		LEVEL_DEBUG("Attempt to add special handling for a NULL property. Family type %s. Property %s\n",family_code,property) ;
+		LEVEL_DEBUG("Attempt to add special handling for unrecognized family type %s. Property %s\n",family_code,property) ;
 	}
-	
 	return ;	
 }
 
@@ -95,6 +92,7 @@ static void * SpecialCase_look( struct one_wire_query * owq )
 	sc.key.adapter = pn->selected_connection->Adapter ;
 	sc.key.family_code = pn->sn[0] ;
 	sc.key.filetype =  pn->selected_filetype ;
+	sc.key.extension = pn->extension ;
 
 	// find in the red/black tree
 	return tfind(&sc, &SpecialCase, specialcase_compare);
