@@ -66,6 +66,7 @@ static int FS_read_tester_single(struct one_wire_query *owq)
 	case ft_unsigned:
 		OWQ_U(owq) = calculated_value;
 		break;
+	case ft_pressure:
 	case ft_temperature:
 	case ft_tempgap:
 	case ft_float:
@@ -138,6 +139,7 @@ static int FS_read_tester_array(struct one_wire_query *owq)
 		case ft_yesno:
 		case ft_bitfield:
 		case ft_unsigned:
+		case ft_pressure:
 		case ft_temperature:
 		case ft_tempgap:
 		case ft_float:

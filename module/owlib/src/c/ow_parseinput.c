@@ -83,6 +83,7 @@ int FS_input_owq(struct one_wire_query *owq)
 			return FS_input_yesno(owq);
 		case ft_unsigned:
 			return FS_input_unsigned(owq);
+		case ft_pressure:
 		case ft_temperature:
 		case ft_tempgap:
 		case ft_float:
@@ -268,6 +269,9 @@ static int FS_input_float(struct one_wire_query *owq)
 	}
 
 	switch (OWQ_pn(owq).selected_filetype->format) {
+	case ft_pressure:
+		OWQ_F(owq) = fromPressure(F, PN(owq));
+		break;
 	case ft_temperature:
 		OWQ_F(owq) = fromTemperature(F, PN(owq));
 		break;

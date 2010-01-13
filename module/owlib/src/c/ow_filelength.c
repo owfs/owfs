@@ -33,9 +33,13 @@ size_t FileLength(const struct parsedname *pn)
 	case ft_unsigned:
 		return PROPERTY_LENGTH_UNSIGNED;
 	case ft_float:
-	case ft_temperature:
-	case ft_tempgap:
 		return PROPERTY_LENGTH_FLOAT;
+	case ft_pressure:
+		return PROPERTY_LENGTH_PRESSURE;
+	case ft_temperature:
+		return PROPERTY_LENGTH_TEMP;
+	case ft_tempgap:
+		return PROPERTY_LENGTH_TEMPGAP;
 	case ft_date:
 		return PROPERTY_LENGTH_DATE;
 	case ft_bitfield:

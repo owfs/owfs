@@ -52,6 +52,8 @@ READ_FUNCTION(FS_r_timeout);
 WRITE_FUNCTION(FS_w_timeout);
 READ_FUNCTION(FS_r_TS);
 WRITE_FUNCTION(FS_w_TS);
+READ_FUNCTION(FS_r_PS);
+WRITE_FUNCTION(FS_w_PS);
 
 /* -------- Structures ---------- */
 
@@ -74,7 +76,8 @@ struct device d_set_cache = { "timeout", "timeout", ePN_settings, COUNT_OF_FILET
 	set_cache
 };
 struct filetype set_units[] = {
-// 	{"temperature_scale", 1, NULL, ft_ascii, fc_static, FS_r_TS, FS_w_TS, VISIBLE, NO_FILETYPE_DATA,},
+ 	{"temperature_scale", 1, NULL, ft_ascii, fc_static, FS_r_TS, FS_w_TS, VISIBLE, NO_FILETYPE_DATA,},
+ 	{"pressure_scale", 12, NULL, ft_ascii, fc_static, FS_r_PS, FS_w_PS, VISIBLE, NO_FILETYPE_DATA,},
 }
 
 ;
@@ -139,8 +142,34 @@ static int FS_w_TS(struct one_wire_query *owq)
 	return ret;
 }
 
+static int FS_w_PS(struct one_wire_query *owq)
+{
+	int ret = -EINVAL ;
+	enum pressure_type pindex ;
+	if (OWQ_size(owq) == 0 || OWQ_offset(owq) > 0) {
+		return 0;				/* do nothing */
+	}
+
+	CONTROLFLAGSLOCK;
+	for ( pindex = 0 ; pindex < pressure_end_mark ; ++pindex ) {
+		if ( strcasecmp(  OWQ_buffer(owq), PressureScaleName(pindex) ) == 0 ) {
+			set_controlflags(&LocalControlFlags, PRESSURESCALE_MASK, PRESSURESCALE_BIT, pindex);
+			ret = 0 ;
+			break;
+		}
+	}
+	CONTROLFLAGSUNLOCK;
+	return ret;
+}
+
 static int FS_r_TS(struct one_wire_query *owq)
 {
 	Fowq_output_offset_and_size_z(TemperatureScaleName(TemperatureScale(PN(owq))), owq);
+	return 0;
+}
+
+static int FS_r_PS(struct one_wire_query *owq)
+{
+	Fowq_output_offset_and_size_z(PressureScaleName(PressureScale(PN(owq))), owq);
 	return 0;
 }

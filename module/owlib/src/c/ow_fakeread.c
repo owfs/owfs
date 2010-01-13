@@ -80,6 +80,7 @@ static int FS_read_fake_single(struct one_wire_query *owq)
 		}
 		break;
 	case ft_tempgap:
+	case ft_pressure:
 	case ft_float:
 		OWQ_F(owq) = Random_f;
 		break;
@@ -125,6 +126,7 @@ static int FS_read_fake_array(struct one_wire_query *owq)
 		case ft_yesno:
 		case ft_bitfield:
 		case ft_unsigned:
+		case ft_pressure:
 		case ft_temperature:
 		case ft_tempgap:
 		case ft_float:

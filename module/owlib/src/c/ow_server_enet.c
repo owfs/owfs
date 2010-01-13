@@ -356,6 +356,7 @@ static int Add_a_property(const char * tag, const char * property, const char * 
 	case ft_date:
 	case ft_float:
 		break ;
+	case ft_pressure:
 	case ft_temperature:
 	case ft_tempgap:
 	printf("get the float\n");

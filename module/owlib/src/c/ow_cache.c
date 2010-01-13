@@ -290,6 +290,7 @@ int OWQ_Cache_Add(const struct one_wire_query *owq)
 		case ft_yesno:
 		case ft_date:
 		case ft_float:
+		case ft_pressure:
 		case ft_temperature:
 		case ft_tempgap:
 			return Cache_Add(OWQ_array(owq), (pn->selected_filetype->ag->elements) * sizeof(union value_object), pn);
@@ -310,6 +311,7 @@ int OWQ_Cache_Add(const struct one_wire_query *owq)
 		case ft_yesno:
 		case ft_date:
 		case ft_float:
+		case ft_pressure:
 		case ft_temperature:
 		case ft_tempgap:
 			return Cache_Add(&OWQ_val(owq), sizeof(union value_object), pn);
@@ -728,6 +730,7 @@ int OWQ_Cache_Get(struct one_wire_query *owq)
 		case ft_yesno:
 		case ft_date:
 		case ft_float:
+		case ft_pressure:
 		case ft_temperature:
 		case ft_tempgap:
 			return Cache_Get_Strict(OWQ_array(owq), (pn->selected_filetype->ag->elements) * sizeof(union value_object), pn);
@@ -749,6 +752,7 @@ int OWQ_Cache_Get(struct one_wire_query *owq)
 		case ft_yesno:
 		case ft_date:
 		case ft_float:
+		case ft_pressure:
 		case ft_temperature:
 		case ft_tempgap:
 			return Cache_Get_Strict(&OWQ_val(owq), sizeof(union value_object), pn);

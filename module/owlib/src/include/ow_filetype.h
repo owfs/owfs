@@ -96,6 +96,7 @@ enum ft_format {
 	ft_bitfield,
 	ft_temperature,
 	ft_tempgap,
+	ft_pressure,
 };
 	/* property changability. Static unchanged, Stable we change, Volatile changes */
 enum fc_change {
@@ -126,6 +127,7 @@ struct parsedname;
 #define PROPERTY_LENGTH_UNSIGNED  12
 #define PROPERTY_LENGTH_BITFIELD  12
 #define PROPERTY_LENGTH_FLOAT     12
+#define PROPERTY_LENGTH_PRESSURE  12
 #define PROPERTY_LENGTH_TEMP      12
 #define PROPERTY_LENGTH_TEMPGAP   12
 #define PROPERTY_LENGTH_DATE      24
