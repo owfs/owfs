@@ -45,12 +45,6 @@ $Id$
 
 #define FunctionExists(func)	((func) != NULL)
 
-_FLOAT Temperature(_FLOAT C, const struct parsedname *pn);
-_FLOAT TemperatureGap(_FLOAT C, const struct parsedname *pn);
-_FLOAT fromTemperature(_FLOAT T, const struct parsedname *pn);
-_FLOAT fromTempGap(_FLOAT T, const struct parsedname *pn);
-const char *TemperatureScaleName(enum temp_type t);
-
 /* Prototypes */
 #define  READ_FUNCTION( fname )  static int fname( struct one_wire_query * owq )
 #define  WRITE_FUNCTION( fname )  static int fname( struct one_wire_query * owq )

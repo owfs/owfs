@@ -66,6 +66,7 @@ noinst_HEADERS =          \
         ow_opt.h          \
         ow_parsedname.h   \
         ow_pid.h          \
+        ow_pressure.h     \
         ow_settings.h     \
         ow_simultaneous.h \
 	ow_specialcase.h  \
@@ -74,6 +75,7 @@ noinst_HEADERS =          \
         ow_stats.h        \
         ow_stub.h         \
         ow_system.h       \
+        ow_temperature.h  \
         ow_thermocouple.h \
         ow_transaction.h  \
         ow_w1.h           \

@@ -109,6 +109,7 @@ OWLIB_SOURCE = ow_dl.c           \
                ow_pio.c          \
 	       ow_powerbyte.c    \
                ow_presence.c     \
+               ow_pressure.c     \
                ow_printparse.c   \
 	       ow_programpulse.c \
                ow_read.c         \

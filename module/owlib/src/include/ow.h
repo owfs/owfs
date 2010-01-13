@@ -297,9 +297,6 @@ struct connection_side;
 
 /* device display format */
 enum deviceformat { fdi, fi, fdidc, fdic, fidc, fic };
-/* Gobal temperature scale */
-enum temp_type { temp_celsius, temp_fahrenheit, temp_kelvin, temp_rankine,
-};
 
 extern void set_signal_handlers(void (*exit_handler)
 	(int signo, siginfo_t * info, void *context));
@@ -329,5 +326,11 @@ void set_exit_signal_handlers(void (*exit_handler)
 /* Separated out to ow_functions.h for clarity */
 #include "ow_arg.h"
 #include "ow_functions.h"
+
+/* Temerature scale handling */
+#include "ow_temperature.h"
+
+/* Pressure scale handling */
+#include "ow_pressure.h"
 
 #endif							/* OW_H */

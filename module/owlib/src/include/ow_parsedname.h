@@ -144,14 +144,18 @@ struct parsedname {
 #define PERSISTENT_BIT     2
 #define ALIAS_REQUEST      ( (UINT) 0x00000008 )
 #define SAFEMODE      ( (UINT) 0x00000010 )
-#define TEMPSCALE_MASK ( (UINT) 0x00FF0000 )
+#define TEMPSCALE_MASK ( (UINT) 0x00030000 )
 #define TEMPSCALE_BIT  16
+#define PRESSURESCALE_MASK ( (UINT) 0x001C0000 )
+#define PRESSURESCALE_BIT  18
 #define DEVFORMAT_MASK ( (UINT) 0xFF000000 )
 #define DEVFORMAT_BIT  24
 #define IsPersistent(ppn)         ( ((ppn)->control_flags & PERSISTENT_MASK) )
 #define SetPersistent(ppn,b)      UT_Setbit(((ppn)->control_flags),PERSISTENT_BIT,(b))
 #define TemperatureScale(ppn)     ( (enum temp_type) (((ppn)->control_flags & TEMPSCALE_MASK) >> TEMPSCALE_BIT) )
+#define PressureScale(ppn)     ( (enum pressure_type) (((ppn)->control_flags & PRESSURESCALE_MASK) >> PRESSURESCALE_BIT) )
 #define SGTemperatureScale(sg)    ( (enum temp_type)(((sg) & TEMPSCALE_MASK) >> TEMPSCALE_BIT) )
+#define SGPressureScale(sg)    ( (enum pressure_type)(((sg) & PRESSURESCALE_MASK) >> PRESSURESCALE_BIT) )
 #define DeviceFormat(ppn)         ( (enum deviceformat) (((ppn)->control_flags & DEVFORMAT_MASK) >> DEVFORMAT_BIT) )
 #define set_controlflags(s, mask, bit, val) do { *(s) = (*(s) & ~(mask)) | ((val)<<bit); } while(0)
 
