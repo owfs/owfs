@@ -51,6 +51,7 @@ const struct option owopts_long[] = {
 	{"safe_mode", no_argument, NULL, e_safemode},
 	{"safe", no_argument, NULL, e_safemode},
 	{"write", no_argument, NULL, 'w'},
+
 	{"Celsius", no_argument, NULL, 'C'},
 	{"celsius", no_argument, NULL, 'C'},
 	{"Fahrenheit", no_argument, NULL, 'F'},
@@ -59,6 +60,22 @@ const struct option owopts_long[] = {
 	{"kelvin", no_argument, NULL, 'K'},
 	{"Rankine", no_argument, NULL, 'R'},
 	{"rankine", no_argument, NULL, 'R'},
+
+	{"mbar", no_argument, NULL, e_pressure_mbar},
+	{"millibar", no_argument, NULL, e_pressure_mbar},
+	{"mBar", no_argument, NULL, e_pressure_mbar},
+	{"atm", no_argument, NULL, e_pressure_atm},
+	{"mmhg", no_argument, NULL, e_pressure_mmhg},
+	{"mmHg", no_argument, NULL, e_pressure_mmhg},
+	{"inhg", no_argument, NULL, e_pressure_inhg},
+	{"inHg", no_argument, NULL, e_pressure_inhg},
+	{"psi", no_argument, NULL, e_pressure_psi},
+	{"psia", no_argument, NULL, e_pressure_psi},
+	{"psig", no_argument, NULL, e_pressure_psi},
+	{"Pa", no_argument, NULL, e_pressure_Pa},
+	{"pa", no_argument, NULL, e_pressure_Pa},
+	{"pascal", no_argument, NULL, e_pressure_Pa},
+
 	{"version", no_argument, NULL, 'V'},
 	{"format", required_argument, NULL, 'f'},
 	{"pid_file", required_argument, NULL, 'P'},
@@ -708,6 +725,15 @@ int owopt(const int option_char, const char *arg)
 		Globals.announce_name = owstrdup(arg);
 		break;
 	case e_allow_other:		/* allow_other */
+		break;
+		// Pressure scale
+	case e_pressure_mbar: 
+	case e_pressure_atm: 
+	case e_pressure_mmhg: 
+	case e_pressure_inhg: 
+	case e_pressure_psi: 
+	case e_pressure_Pa:
+		set_controlflags(&LocalControlFlags, PRESSURESCALE_MASK, PRESSURESCALE_BIT, option_char-e_pressure_mbar);
 		break;
 		// TIMEOUTS
 	case e_timeout_volatile:
