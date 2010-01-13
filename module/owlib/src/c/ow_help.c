@@ -94,6 +94,9 @@ void ow_help_temperature(void)
 	"  -C --Celsius        Celsius(default) temperature scale\n"
 	"  -F --Fahrenheit     Fahrenheit temperature scale\n"
 	"  -K --Kelvin         Kelvin temperature scale\n" "  -R --Rankine        Rankine temperature scale\n"
+	"\n"
+	" Pressure scale\n"
+	"  --atm --mbar --inHg --mmHg --Pa --psi (mbar is the default)\n"
 	);
 }
 

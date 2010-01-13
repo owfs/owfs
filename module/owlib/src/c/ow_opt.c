@@ -67,6 +67,7 @@ const struct option owopts_long[] = {
 	{"atm", no_argument, NULL, e_pressure_atm},
 	{"mmhg", no_argument, NULL, e_pressure_mmhg},
 	{"mmHg", no_argument, NULL, e_pressure_mmhg},
+	{"torr", no_argument, NULL, e_pressure_mmhg},
 	{"inhg", no_argument, NULL, e_pressure_inhg},
 	{"inHg", no_argument, NULL, e_pressure_inhg},
 	{"psi", no_argument, NULL, e_pressure_psi},
