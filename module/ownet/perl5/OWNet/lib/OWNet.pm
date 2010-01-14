@@ -94,6 +94,24 @@ Temperature scale can also be specified in the I<address>. Same syntax as the ot
 
 =back
 
+Pressure scale can also be specified in the I<address>. Same syntax as the other OWFS programs:
+
+=over
+
+=item --mbar     millibar (default)
+
+=item --atm      atmosphere
+
+=item --mmHg     mm Mercury
+
+=item -inHg      inch Mercury
+
+=item --psi      pounds per inch^2
+
+=item --Pa       pascal
+
+=back
+
 Device display format (1-wire unique address) can also be specified in the I<address>, with the general form of -ff[.]i[[.]c] (I<f>amily I<i>d I<c>rc):
 
 =over
@@ -180,12 +198,24 @@ our $VERSION=(split(/ /,q[$Revision$]))[1] ;
 sub _new($$) {
     my ($self,$addr) = @_ ;
 
+    $addr =~ s/--/-/g ;
+
     my $tempscale = 0 ;
     TEMPSCALE: {
-        $tempscale = 0x00000 , last TEMPSCALE if $addr =~ /-C/ ;
-        $tempscale = 0x10000 , last TEMPSCALE if $addr =~ /-F/ ;
-        $tempscale = 0x20000 , last TEMPSCALE if $addr =~ /-K/ ;
-        $tempscale = 0x30000 , last TEMPSCALE if $addr =~ /-R/ ;
+        $tempscale = 0x00000 , last TEMPSCALE if $addr =~ /-C/i ;
+        $tempscale = 0x10000 , last TEMPSCALE if $addr =~ /-F/i ;
+        $tempscale = 0x20000 , last TEMPSCALE if $addr =~ /-K/i ;
+        $tempscale = 0x30000 , last TEMPSCALE if $addr =~ /-R/i ;
+    }
+
+    my $presscale = 0 ;
+    PRESSCALE: {
+        $presscale = 0x000000 , last TEMPSCALE if $addr =~ /-mbar/i ;
+        $presscale = 0x040000 , last TEMPSCALE if $addr =~ /-atm/i ;
+        $presscale = 0x080000 , last TEMPSCALE if $addr =~ /-mmhg/i ;
+        $presscale = 0x0C0000 , last TEMPSCALE if $addr =~ /-inhg/i ;
+        $presscale = 0x100000 , last TEMPSCALE if $addr =~ /-psi/i ;
+        $presscale = 0x140000 , last TEMPSCALE if $addr =~ /-pa/i ;
     }
 
     my $format = 0 ;
@@ -222,7 +252,7 @@ sub _new($$) {
 
     $self->{ADDR} = $addr ;
     $self->{PORT} = $port ;
-    $self->{SG} = $default_sg + $tempscale + $format ;
+    $self->{SG} = $default_sg + $tempscale + $presscale + $format ;
     $self->{VER} = 0 ;
 }
 

@@ -170,17 +170,18 @@ static void *watcher(void *void_w)
 			watched = w->oldest;
 
 			/*******************************************************
-	     This might seem like a memory leak, but in oftpd the 
-	     struct watched_s structure is held in the thread itself, so
-	     canceling the thread effectively frees the memory.  I'm
-	     not sure whether this is elegant or a hack.  :)
-             *******************************************************/
+			This might seem like a memory leak, but in oftpd the 
+			struct watched_s structure is held in the thread itself, so
+			canceling the thread effectively frees the memory.  I'm
+			not sure whether this is elegant or a hack.  :)
+			*******************************************************/
 			delete(w, watched);
 
 			pthread_cancel(watched->watched_thread);
 		}
 		pthread_mutex_unlock(&w->mutex);
 	}
+	return NULL ;
 }
 
 #ifndef NDEBUG

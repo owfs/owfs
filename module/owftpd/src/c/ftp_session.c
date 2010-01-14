@@ -1501,7 +1501,7 @@ static void netscape_hack(int file_descriptor)
 	ns_timeout.tv_usec = 0;
 	select_ret = select(file_descriptor + 1, &readfds, NULL, NULL, &ns_timeout);
 	if (select_ret > 0) {
-		read(file_descriptor, &c, 1);
+		(void) read(file_descriptor, &c, 1);
 	}
 }
 

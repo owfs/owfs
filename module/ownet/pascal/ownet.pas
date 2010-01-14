@@ -60,6 +60,21 @@ Const
     // Temperature format: (R) Rankine
     OWNET_FLAG_T_R = $0030000;
 
+    // ################################
+    // pressure scale format
+    // ################################
+    // Pressure format: mbar
+    OWNET_FLAG_P_mbar = $0000000;
+    // Pressure format: atm
+    OWNET_FLAG_P_atm  = $0040000;
+    // Pressure format: mmHg
+    OWNET_FLAG_P_mmHg = $0080000;
+    // Pressure format: inHg
+    OWNET_FLAG_P_inHg = $00C0000;
+    // Pressure format: psi
+    OWNET_FLAG_P_psi  = $0100000;
+    // Pressure format: Pa
+    OWNET_FLAG_P_Pa   = $0140000;
 
     OWNET_PROT_STRUCT_SIZE = 6;
 
