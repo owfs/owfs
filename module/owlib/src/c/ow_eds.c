@@ -47,62 +47,125 @@ $Id$
 
 READ_FUNCTION(FS_r_page);
 WRITE_FUNCTION(FS_w_page);
-READ_FUNCTION(FS_r_status);
-WRITE_FUNCTION(FS_w_status);
 READ_FUNCTION(FS_r_memory);
 WRITE_FUNCTION(FS_w_memory);
+READ_FUNCTION(FS_r_tag);
 
-#define _EDS_WRITE_STATUS 0x00  //TODO set correct value here
+static int EDS_visibie(struct parsedname * pn) ;
+
+
 #define _EDS_WRITE_SCRATCHPAD 0x0F
 #define _EDS_READ_SCRATCHPAD 0xAA
 #define _EDS_COPY_SCRATCHPAD 0x55
-#define _EDS_READ_MEMMORYNO_CRC 0xF0
+#define _EDS_READ_MEMMORY_NO_CRC 0xF0
 #define _EDS_READ_MEMORY_WITH_CRC 0xA5
 #define _EDS_CLEAR_ALARMS 0x33
 
 #define _EDS_PAGES 3
 #define _EDS_PAGESIZE 32
 
+#define _EDS0064   0x0001
+#define _EDS0065   0x0002
+#define _EDS0066   0x0004
+#define _EDS0067   0x0008
+#define _EDS0068   0x0010
+#define _EDS0069   0x0020
+
+struct eds_types {
+	char * name ;
+	unsigned bit ;
+} EDS_types[] = {
+	{ "EDS0064", _EDS0064 },
+	{ "EDS0065", _EDS0065 },
+	{ "EDS0066", _EDS0066 },
+	{ "EDS0067", _EDS0067 },
+	{ "EDS0068", _EDS0068 },
+	{ "EDS0069", _EDS0069,},
+} ;
+#define N_eds_types (sizeof(EDS_types) / sizeof( struct eds_types))
+
+#define _EDS_TAG_LENGTH 8
+
 /* ------- Structures ----------- */
 
 struct aggregate AEDS = { _EDS_PAGES, ag_numbers, ag_separate, };
 struct filetype EDS[] = {
 	F_STANDARD,
+	{"tag", _EDS_TAG_LENGTH, NON_AGGREGATE, ft_ascii, fc_stable, FS_r_tag, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA,},
 	{"memory", _EDS_PAGES * _EDS_PAGESIZE, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages/page", _EDS_PAGESIZE, &AEDS, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
 };
 
-DeviceEntryExtended(7E, EDS, DEV_alarm);
+DeviceEntryExtended(7E, EDS, DEV_temp | DEV_alarm);
 
 /* ------- Functions ------------ */
 static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn) ;
-static int OW_w_status(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
 
-/* 2505 memory */
+/* Persistent storage */
+//static struct internal_prop ip_cum = { "CUM", fc_persistent };
+MakeInternalProp(TAG, fc_persistent);	// cumulative
+
+/* EDS memory */
+// Only used to set visibility for specific 
+static int FS_r_tag(struct one_wire_query *owq)
+{
+	UINT tag = 0x0000 ;
+	size_t size = _EDS_TAG_LENGTH ;
+	BYTE data[size] ;
+	struct one_wire_query * owq_sib = FS_OWQ_from_pn( PN(owq) ) ;
+	int ret = -EINVAL ;
+
+	if ( owq_sib==NULL ) {
+		return -ENOMEM ;
+	}
+
+	if ( FS_r_sibling_binary(data,&size,"memory",owq) == 0 	) {
+		int i = N_eds_types ;
+		ret = 0 ;
+		while ( --i >= 0 ) {
+			if ( strncasecmp( (char *) data, EDS_types[i].name, _EDS_TAG_LENGTH ) == 0 ) {
+				tag = EDS_types[i].bit ;
+				break ;
+			}
+		}
+		Cache_Add_Internal(&tag, sizeof(UINT), InternalProp(TAG), PN(owq)) ;
+	}
+	FS_OWQ_destroy_not_pn(owq_sib) ;
+	Fowq_output_offset_and_size_z( (char *) data, owq ) ;
+	return ret ;
+}
+
 static int FS_r_memory(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 //    if ( OW_r_mem( buf, size, (size_t) offset, pn) ) { return -EINVAL ; }
 	if (COMMON_OWQ_readwrite_paged(owq, 0, pagesize, COMMON_read_memory_F0)) {
-		return -EINVAL;
+		return -EINVAL ;
 	}
 	return 0;
+}
+
+static int EDS_visibie(struct parsedname * pn) {
+	UINT tag ;
+	if (Cache_Get_Internal_Strict(&tag, sizeof(UINT), InternalProp(TAG), pn) != 0 ) {	// tag doesn't (yet) exist
+		struct one_wire_query * owq = FS_OWQ_from_pn( pn ) ;
+		size_t size = _EDS_TAG_LENGTH ;
+		BYTE data[size] ;
+		FS_r_sibling_binary(data,&size,"tag",owq) ;
+		FS_OWQ_destroy_not_pn(owq) ;
+	}
+	if (Cache_Get_Internal_Strict(&tag, sizeof(UINT), InternalProp(TAG), pn) != 0 ) {	// tag doesn't (yet) exist
+		LEVEL_DEBUG("Cannot check visibility tag type for this entry\n");
+		return 1 ; // assume visible
+	}
+	return ( tag & pn->selected_filetype->data.u ) ? 1 : 0 ;
 }
 
 static int FS_r_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 	if (COMMON_OWQ_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, COMMON_read_memory_F0)) {
-		return -EINVAL;
-	}
-	return 0;
-}
-
-static int FS_r_status(struct one_wire_query *owq)
-{
-	size_t pagesize = FileLength(PN(owq)) ;
-	if (COMMON_OWQ_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, COMMON_read_memory_crc16_AA)) {
 		return -EINVAL;
 	}
 	return 0;
@@ -130,61 +193,10 @@ static int FS_w_memory(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_status(struct one_wire_query *owq)
-{
-	if (OW_w_status(OWQ_explode(owq))) {
-		return -EINVAL;
-	}
-	return 0;
-}
-
 static int FS_w_page(struct one_wire_query *owq)
 {
 	struct parsedname * pn = PN(owq) ;
-	return OW_w_mem(OWQ_buffer(owq),OWQ_size(owq),OWQ_offset(owq) + _EDS_PAGESIZE * pn->extension,pn) ? -EINVAL : 0 ;
-}
-
-static int OW_w_status(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
-{
-	BYTE p[6] = { _EDS_WRITE_STATUS, LOW_HIGH_ADDRESS(offset), data[0] };
-	int ret = 0;
-	struct transaction_log tfirst[] = {
-		TRXN_START,
-		TRXN_WR_CRC16(p, 4, 0),
-		TRXN_PROGRAM,
-		TRXN_READ1(p),
-		TRXN_END,
-	};
-
-	if (size == 0) {
-		return 0;
-	}
-	if (size == 1) {
-		return BUS_transaction(tfirst, pn) || (p[0] & (~data[0]));
-	}
-	BUSLOCK(pn);
-	if (BUS_transaction(tfirst, pn) || (p[0] & ~data[0])) {
-		ret = 1;
-	} else {
-		size_t i;
-		const BYTE *d = &data[1];
-		UINT s = offset + 1;
-		struct transaction_log trest[] = {
-			//TRXN_WR_CRC16_SEEDED( p, &s, 1, 0 ) ,
-			TRXN_WR_CRC16_SEEDED(p, p, 1, 0),
-			TRXN_PROGRAM,
-			TRXN_READ1(p),
-			TRXN_END,
-		};
-		for (i = 0; i < size; ++i, ++d, ++s) {
-			if (BUS_transaction(trest, pn) || (p[0] & ~d[0])) {
-				ret = 1;
-				break;
-			}
-		}
-	}
-	BUSUNLOCK(pn);
-	return ret;
+	return OW_w_mem( (BYTE *) OWQ_buffer(owq),OWQ_size(owq),OWQ_offset(owq) + _EDS_PAGESIZE * pn->extension,pn) ? -EINVAL : 0 ;
 }
 
 static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
@@ -240,4 +252,3 @@ static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 
 	return 0;
 }
-
