@@ -45,17 +45,16 @@ $Id$
 
 /* ------- Prototypes ------------ */
 
-// Returns boolian rather than error, so 1=vidible, 0 = invisible
-int AlwaysVisible( struct parsedname * pn )
+enum e_visibility AlwaysVisible( struct parsedname * pn )
 {
 	(void) pn ;
-	return 1 ;
+	return visible_always ;
 }
 
 int NeverVisible( struct parsedname * pn )
 {
 	(void) pn ;
-	return 0 ;
+	return visible_never ;
 }
 
 

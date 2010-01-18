@@ -51,7 +51,7 @@ READ_FUNCTION(FS_r_memory);
 WRITE_FUNCTION(FS_w_memory);
 READ_FUNCTION(FS_r_tag);
 
-static int EDS_visibie(struct parsedname * pn) ;
+static enum e_visibility EDS_visibie(struct parsedname * pn) ;
 
 
 #define _EDS_WRITE_SCRATCHPAD 0x0F
@@ -146,7 +146,7 @@ static int FS_r_memory(struct one_wire_query *owq)
 	return 0;
 }
 
-static int EDS_visibie(struct parsedname * pn) {
+static enum e_visibility EDS_visibie(struct parsedname * pn) {
 	UINT tag ;
 	if (Cache_Get_Internal_Strict(&tag, sizeof(UINT), InternalProp(TAG), pn) != 0 ) {	// tag doesn't (yet) exist
 		struct one_wire_query * owq = FS_OWQ_from_pn( pn ) ;
@@ -157,9 +157,9 @@ static int EDS_visibie(struct parsedname * pn) {
 	}
 	if (Cache_Get_Internal_Strict(&tag, sizeof(UINT), InternalProp(TAG), pn) != 0 ) {	// tag doesn't (yet) exist
 		LEVEL_DEBUG("Cannot check visibility tag type for this entry\n");
-		return 1 ; // assume visible
+		return visible_now ; // assume visible
 	}
-	return ( tag & pn->selected_filetype->data.u ) ? 1 : 0 ;
+	return ( tag & pn->selected_filetype->data.u ) ? visible_now : visible_not_now ;
 }
 
 static int FS_r_page(struct one_wire_query *owq)
