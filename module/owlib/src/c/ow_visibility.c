@@ -51,7 +51,7 @@ enum e_visibility AlwaysVisible( struct parsedname * pn )
 	return visible_always ;
 }
 
-int NeverVisible( struct parsedname * pn )
+enum e_visibility NeverVisible( struct parsedname * pn )
 {
 	(void) pn ;
 	return visible_never ;

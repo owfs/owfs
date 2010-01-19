@@ -50,11 +50,8 @@ void WriteHandler(struct handlerdata *hd, struct client_msg *cm, struct one_wire
 	int ret;
 
 	LEVEL_DEBUG("WriteHandler: hd->sm.payload=%d hd->sm.size=%d hd->sm.offset=%d OWQ_size=%d OWQ_offset=%d\n", hd->sm.payload, hd->sm.size, hd->sm.offset, OWQ_size(owq), OWQ_offset(owq));
-	if (hd->sm.payload >= PATH_MAX) {
-		ret = -EMSGSIZE;
-	} else {
-		ret = FS_write_postparse(owq);
-	}
+	ret = FS_write_postparse(owq);
+
 	//printf("Handler: WRITE done\n");
 	if (ret < 0) {
 		cm->size = 0;
