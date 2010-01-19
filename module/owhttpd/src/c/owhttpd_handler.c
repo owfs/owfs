@@ -187,7 +187,8 @@ static enum http_return handle_POST(FILE * out, struct urlparse * up)
 				if ( owq ) {
 					LEVEL_DEBUG("File upload %s for %ld bytes\n",post_path,mb.used);
 					memcpy( OWQ_buffer(owq), mb.memory_storage, mb.used ) ;
-					ChangeData(owq);
+					OWQ_length(owq) = mb.used ;
+					PostData(owq);
 					FS_OWQ_destroy_sibling(owq) ;
 					http_code = http_ok ;
 				} else {

@@ -25,7 +25,7 @@ static void hex_only(char *str);
 void PostData(struct one_wire_query *owq)
 {
 	/* Do command processing and make changes to 1-wire devices */
-	LEVEL_DETAIL("Uploaded Data path=%s size=%s\n", PN(owq)->path, OWQ_size(owq));
+	LEVEL_DETAIL("Uploaded Data path=%s size=%ld\n", PN(owq)->path, OWQ_size(owq));
 	FS_write_postparse(owq);
 }
 

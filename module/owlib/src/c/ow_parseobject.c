@@ -53,8 +53,9 @@ struct one_wire_query * FS_OWQ_create_from_path(const char *path, size_t size)
 		return NULL ;
 	}
 
-	OWQ_buffer(owq) = &owq[1] ;
+	OWQ_buffer(owq) = (char*)&owq[1] ;
 	OWQ_size(owq) = size ;
+	//LEVEL_DEBUG("owq=%p, buffer=%p, size=%d, struct=%d\n",(void*)owq,(void*)OWQ_buffer(owq),(int)size,(int) sizeof(struct one_wire_query));
 	return owq ;
 }
 
