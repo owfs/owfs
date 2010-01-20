@@ -832,7 +832,7 @@ static int FS_r_temp(struct one_wire_query *owq)
 	switch (pn->sn[0]) {
 	case 0x32:					//DS2780
 	case 0x3D:					//DS2781
-		off = _1W_DS2760_TEMPERATURE;
+		off = _1W_DS2780_TEMPERATURE;
 		break;
 	default:
 		off = _1W_DS2760_TEMPERATURE;
