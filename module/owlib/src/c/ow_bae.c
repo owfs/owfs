@@ -291,14 +291,12 @@ static int FS_r_mem(struct one_wire_query *owq)
 
 static int FS_eeprom_r_mem(struct one_wire_query *owq)
 {
-	OWQ_offset(owq) += _FC02_EEPROM_OFFSET ;
-	return FS_r_mem(owq) ;
+	return COMMON_offset_process(FS_r_mem,owq, _FC02_EEPROM_OFFSET) ;
 }
 
 static int FS_eeprom_r_page(struct one_wire_query *owq)
 {
-	OWQ_offset(owq) += _FC02_EEPROM_PAGE_SIZE * OWQ_pn(owq).extension ;
-	return FS_eeprom_r_mem(owq) ;
+	return COMMON_offset_process(FS_eeprom_r_mem,owq, _FC02_EEPROM_PAGE_SIZE * OWQ_pn(owq).extension) ;
 }
 
 static int FS_w_mem(struct one_wire_query *owq)
@@ -326,14 +324,12 @@ static int FS_w_mem(struct one_wire_query *owq)
 
 static int FS_eeprom_w_mem(struct one_wire_query *owq)
 {
-	OWQ_offset(owq) += _FC02_EEPROM_OFFSET ;
-	return FS_w_mem(owq) ;
+	return COMMON_offset_process(FS_w_mem,owq, _FC02_EEPROM_OFFSET) ;
 }
 
 static int FS_eeprom_w_page(struct one_wire_query *owq)
 {
-	OWQ_offset(owq) += _FC02_EEPROM_PAGE_SIZE * OWQ_pn(owq).extension ;
-	return FS_eeprom_w_mem(owq) ;
+	return COMMON_offset_process(FS_eeprom_w_mem,owq, _FC02_EEPROM_PAGE_SIZE * OWQ_pn(owq).extension) ;
 }
 
 static int FS_eeprom_erase(struct one_wire_query *owq)
@@ -696,7 +692,7 @@ static int OW_r_mem_small(BYTE * data, size_t size, off_t offset, struct parsedn
 		TRXN_WR_CRC16(p, 4, size),
 		TRXN_END,
 	};
-		
+	//printf("About to read memory location %X length %d\n",(unsigned int)offset,(unsigned int) size)	;	
 	if (BUS_transaction(t, pn)) {
 		return 1;
 	}

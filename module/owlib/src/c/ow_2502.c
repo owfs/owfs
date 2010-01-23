@@ -119,7 +119,7 @@ static int FS_r_param(struct one_wire_query *owq)
 
 static int FS_w_memory(struct one_wire_query *owq)
 {
-	if (COMMON_write_eprom_mem(OWQ_explode(owq))) {
+	if (COMMON_write_eprom_mem_owq(owq)) {
 		return -EINVAL;
 	}
 	return 0;
@@ -129,7 +129,7 @@ static int FS_w_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 	OWQ_offset(owq) += OWQ_pn(owq).extension * pagesize;
-	if (COMMON_write_eprom_mem(OWQ_explode(owq))) {
+	if (COMMON_write_eprom_mem_owq(owq)) {
 		return -EINVAL;
 	}
 	return 0;

@@ -78,13 +78,15 @@ static void ShowReadWrite(FILE * out, struct one_wire_query *owq)
 		fprintf(out, "Error: %s", strerror(-read_return));
 		return;
 	}
-
+LEVEL_DEBUG("About to show a read-write property\n");
 	switch (PN(owq)->selected_filetype->format) {
 	case ft_binary:
+LEVEL_DEBUG("About to show a binary read-write property\n");
 		{
 			int i = 0;
 			fprintf(out, "<CODE><FORM METHOD='GET'><TEXTAREA NAME='%s' COLS='64' ROWS='%-d'>", file, read_return >> 5);
 			while (i < read_return) {
+				printf("x");
 				fprintf(out, "%.2hhX", OWQ_buffer(owq)[i]);
 				if (((++i) < read_return) && (i & 0x1F) == 0) {
 					fprintf(out, "\r\n");

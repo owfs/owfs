@@ -68,6 +68,7 @@ int COMMON_OWQ_readwrite_paged(struct one_wire_query *owq, size_t page, size_t p
 		OWQ_buffer(owq_page) += thispage;
 		size -= thispage;
 		offset += thispage;
+		// This is permitted (changing OWQ_offset and not restoring) since owq_page is a scratch var
 		OWQ_offset(owq_page) = offset;
 	}
 

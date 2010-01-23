@@ -47,12 +47,19 @@ $Id$
 #include "ow_standard.h"
 
 /* ------- Prototypes ----------- */
+static int COMMON_write_eprom_mem(const BYTE * data, size_t size, off_t offset, const struct parsedname *pn);
 static int OW_write_eprom_byte(BYTE code, BYTE data, off_t offset, const struct parsedname *pn);
 
 #define _1W_WRITE_MEMORY         0x0F
 #define _1W_WRITE_STATUS         0x55
 
-int COMMON_write_eprom_mem(const BYTE * data, size_t size, off_t offset, const struct parsedname *pn)
+// use owq instead of components
+int COMMON_write_eprom_mem_owq(struct one_wire_query * owq)
+{
+	return COMMON_write_eprom_mem( OWQ_explode(owq));
+}
+
+static int COMMON_write_eprom_mem(const BYTE * data, size_t size, off_t offset, const struct parsedname *pn)
 {
 	int byte_number;
 	for (byte_number = 0; byte_number < (int) size; ++byte_number) {

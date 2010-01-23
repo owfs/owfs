@@ -161,7 +161,8 @@ static int FS_r_page(struct one_wire_query *owq)
 
 static int FS_w_page(struct one_wire_query *owq)
 {
-	if (COMMON_write_eprom_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) (OWQ_offset(owq) + (OWQ_pn(owq).extension << 5)), PN(owq))) {
+	size_t pagesize = 32;
+	if (COMMON_offset_process( COMMON_write_eprom_mem_owq, owq, pagesize * OWQ_pn(owq).extension )) {
 		return -EINVAL;
 	}
 	return 0;
@@ -171,7 +172,7 @@ static int FS_w_page(struct one_wire_query *owq)
 static int FS_w_mem(struct one_wire_query *owq)
 {
 	/* write is "byte at a time" -- not paged */
-	if (COMMON_write_eprom_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq))) {
+	if (COMMON_write_eprom_mem_owq(owq)) {
 		return -EINVAL;
 	}
 	return 0;

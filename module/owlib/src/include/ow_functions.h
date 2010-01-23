@@ -201,8 +201,10 @@ int COMMON_read_memory_crc16_AA(struct one_wire_query *owq, size_t page, size_t 
 int COMMON_read_memory_toss_counter(struct one_wire_query *owq, size_t page, size_t pagesize);
 int COMMON_read_memory_plus_counter(BYTE * extra, size_t page, size_t pagesize, struct parsedname *pn);
 
-int COMMON_write_eprom_mem(const BYTE * data, size_t size, off_t offset, const struct parsedname *pn);
+int COMMON_write_eprom_mem_owq(struct one_wire_query * owq) ;
 int COMMON_write_eprom_status(const BYTE * data, size_t size, off_t offset, const struct parsedname *pn);
+
+int COMMON_offset_process( int (*func) (struct one_wire_query *), struct one_wire_query * owq, off_t shift_offset) ;
 
 void BUS_lock(const struct parsedname *pn);
 void BUS_unlock(const struct parsedname *pn);

@@ -142,6 +142,7 @@ static enum http_return handle_GET(FILE * out, struct urlparse * up)
 	
 	if (up->request == NULL) {
 		// NO request -- just a read or dir, not a write
+		LEVEL_DEBUG("Simple GET request -- read a value or directory\n");
 		return http_ok ;
 	} else if (up->value==NULL) {
 		// write without a value
