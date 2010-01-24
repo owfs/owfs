@@ -150,7 +150,22 @@ static enum http_return handle_GET(FILE * out, struct urlparse * up)
 		return http_400 ;
 	} else {				/* First write new values, then show */
 		OWQ_allocate_struct_and_pointer(owq_write);
+		size_t req_leng = strlen(up->request) ;
+		size_t fil_leng = strlen(up->file) ;
 
+		// see if the URL includes the property twice -- happens if only a property is shown
+		if ( req_leng <= fil_leng && strcasecmp(up->request,&up->file[fil_leng-req_leng])==0 ) {
+			struct parsedname s_pn ;
+			if ( FS_ParsedName(up->file,&s_pn)==0 ) {
+				if ( s_pn.selected_filetype != NULL ) {
+					LEVEL_DEBUG("Property name %s duplicated on command line. Not a problem.\n",up->request) ;
+					up->file[fil_leng-req_leng-1] = '\0';
+				}
+				FS_ParsedName_destroy(&s_pn);
+			}
+		}
+		
+		// Create the owq to write to.
 		if (FS_OWQ_create_plus(up->file, up->request, up->value, strlen(up->value), 0, owq_write)) {
 			return http_404 ;
 		}
