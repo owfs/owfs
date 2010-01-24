@@ -15,7 +15,8 @@ $Id$
 // #include <libgen.h>  /* for dirname() */
 	/* string format functions */
 static int hex_convert(char *str);
-static int httpunescape(BYTE * httpstr);
+static int httpunescape(BYTE * httpstr);\
+
 static void hex_only(char *str);
 
 /* --------------- Functions ---------------- */
@@ -83,27 +84,29 @@ static int httpunescape(BYTE * httpstr)
 /* reads an as ascii hex string, strips out non-hex, converts in place */
 static void hex_only(char *str)
 {
-	char *uc = str;
-	char *hx = str;
-	while (*uc) {
-		if (isxdigit(*uc))
-			*hx++ = *uc;
-		uc++;
+	char *leader = str;
+	char *trailer = str;
+
+	while (*leader) {
+		if (isxdigit(*leader)) {
+			*trailer++ = *leader;
+		}
+		leader++;
 	}
-	*hx = '\0';
+	*trailer = '\0';
 }
 
-/* reads an as ascii hex string, strips out non-hex, converts in place */
+/* reads an as ascii hex string, converts in place */
 /* returns length */
 static int hex_convert(char *str)
 {
-	char *uc = str;
-	BYTE *hx = (BYTE *) str;
-	int return_length = 0;
-	for (; *uc; uc += 2) {
-		*hx++ = string2num(uc);
-		++return_length;
+	char *leader = str;
+	BYTE *trailer = (BYTE *) str;
+
+	while (*leader) {
+		*trailer++ = string2num(leader);
+		leader += 2 ;
 	}
-	*hx = '\0';
-	return return_length;
+
+	return trailer - ((BYTE *) str);
 }
