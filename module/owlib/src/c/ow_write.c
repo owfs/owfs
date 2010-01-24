@@ -86,14 +86,17 @@ int FS_write_postparse(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 
 	if (Globals.readonly) {
+		LEVEL_DEBUG("Attempt to write but readonly set on command line.\n");
 		return -EROFS;			// read-only invokation
 	}
 
 	if (IsDir(pn)) {
+		LEVEL_DEBUG("Attempt to write to a directory.\n");
 		return -EISDIR;			// not a file
 	}
 
 	if (pn->selected_connection == NULL) {
+		LEVEL_DEBUG("Attempt to write but no 1-wire bus master.\n");
 		return -ENODEV;			// no buses
 	}
 
@@ -106,11 +109,13 @@ int FS_write_postparse(struct one_wire_query *owq)
 	input_or_error = FS_input_owq(owq);
 	Debug_OWQ(owq);
 	if (input_or_error < 0) {
+		LEVEL_DEBUG("Error interpretting input value.\n") ;
 		return input_or_error;
 	}
 	switch (pn->type) {
 	case ePN_structure:
 	case ePN_statistics:
+		LEVEL_DEBUG("Cannomt write in this type of directory.\n") ;
 		write_or_error = -ENOTSUP;
 		break;
 	case ePN_system:
