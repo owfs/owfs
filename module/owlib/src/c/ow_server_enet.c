@@ -119,22 +119,22 @@ static int OWServer_Enet_read(int file_descriptor, struct memblob *mb)
 
 	while (	tcp_read(file_descriptor, readin_area, HA7_READ_BUFFER_LENGTH, &tvnet, &read_size) == 0 ) {
 		// make sure null terminated (allocated extra byte in readin_area to always have room)
-		printf("read_size = %d\n",(int)read_size) ;
+		//printf("read_size = %d\n",(int)read_size) ;
 		readin_area[read_size] = '\0';
-		printf("%s\n",readin_area);
+		//printf("%s\n",readin_area);
 		if ( first_pass ) {
 			first_pass = 0 ;
 			if ( read_size < 38 ) {
-				LEVEL_DEBUG("Got a very short read from details.xml\n") ;
+				LEVEL_DEBUG("Got a very short read from details.xml") ;
 				return -EIO ;
 			}
 			// Look for happy response
 			if (strncmp("HTTP/1.1 200 OK", readin_area, 15)) {	//Bad HTTP return code
-				LEVEL_DATA("Bad HTTP response from the ENET server\n");
+				LEVEL_DATA("Bad HTTP response from the ENET server");
 				return -EINVAL;
 			}
 			if (strstr(readin_area,"<?xml version=\"1.0\" encoding=\"UTF-8\"?>")==NULL) {	//Bad XML header
-				LEVEL_DATA("response problem with XML: %s\n", readin_area);
+				LEVEL_DATA("response problem with XML: %s", readin_area);
 				return -EINVAL;
 			}
 		}
@@ -152,7 +152,7 @@ static int OWServer_Enet_read(int file_descriptor, struct memblob *mb)
 		MemblobClear(mb);
 		return -ENOMEM;
 	}
-	printf("READ FROM ENET:\n%s\n",mb->memory_storage);
+	LEVEL_DEBUG("READ FROM ENET:\n%s",mb->memory_storage);
 	return 0;
 }
 
@@ -172,7 +172,7 @@ static int ENET_get_detail(const struct parsedname *pn) {
 			MemblobClear(&mb);
 		}
 	} else {
-		LEVEL_DEBUG("Cannot get details.xml from OW-SERVER-ENET\n");
+		LEVEL_DEBUG("Cannot get details.xml from OW-SERVER-ENET");
 	}
 	close(file_descriptor);
 	return ret ;
@@ -188,7 +188,7 @@ static int parse_detail_record(char * detail, const struct parsedname *pn)
 	if ( detail==NULL) {
 		return -EINVAL ;
 	}
-	printf("devices=%d\n",devices) ;
+	LEVEL_DEBUG("devices=%d\n",devices) ;
 		
 	for ( d=0 ; d<devices ; ++d ) {
 		char * romid = xml_string( "ROMId", &detail) ;
@@ -205,7 +205,7 @@ static int parse_detail_record(char * detail, const struct parsedname *pn)
 		sn[6] = string2num(&romid[12]);
 		sn[7] = string2num(&romid[14]);
 
-		LEVEL_DEBUG("SN found: " SNformat "\n", SNvar(sn));
+		LEVEL_DEBUG("SN found: " SNformat, SNvar(sn));
 		// CRC check
 		if (CRC8(sn, 8) || (sn[0] == 0)) {
 			/* A minor "error" and should perhaps only return -1 */
@@ -312,17 +312,17 @@ static int Add_a_property(const char * tag, const char * property, const char * 
 	if ( buffer[0] == NULL ) {
 		return -EINVAL ;
 	}
-	printf("About to create %s from %s\n",property,tag);
+	//printf("About to create %s from %s\n",property,tag);
 	strncpy( path, romid, 16 ) ;
 	path[16] = '\0' ;
 	strcat(path,"/");
 	strcat(path,property) ;
 	
 	owq = FS_OWQ_create_from_path(path,enet_data_length) ;
-	printf("Created OWQ for %s from %s\n",path,tag);
+	//printf("Created OWQ for %s from %s",path,tag);
 	
 	if ( owq==NULL ) {
-		LEVEL_DEBUG("Couldn't understand path %s\n",path);
+		LEVEL_DEBUG("Couldn't understand path %s",path);
 		return -EINVAL ;
 	}
 	
@@ -338,20 +338,20 @@ static int Add_a_property(const char * tag, const char * property, const char * 
 		} else {
 			ret = -EINVAL ;
 		}
-		LEVEL_DEBUG("%s given value <%s> from tag %s\n",path,data,tag) ;
+		LEVEL_DEBUG("%s given value <%s> from tag %s",path,data,tag) ;
 		break ;
 	}
 	case ft_integer:
 		OWQ_I(owq) = xml_integer(tag,&buffer_pointer) ;
-		LEVEL_DEBUG("%s given value %d from tag %s\n",path,(int)OWQ_I(owq),tag) ;
+		LEVEL_DEBUG("%s given value %d from tag %s",path,(int)OWQ_I(owq),tag) ;
 		break ;
 	case ft_unsigned:
 		OWQ_U(owq) = xml_integer(tag,&buffer_pointer) ;
-		LEVEL_DEBUG("%s given value %d from tag %s\n",path,(int)OWQ_U(owq),tag) ;
+		LEVEL_DEBUG("%s given value %d from tag %s",path,(int)OWQ_U(owq),tag) ;
 		break ;
 	case ft_yesno:
 		OWQ_Y(owq) = (xml_integer(tag,&buffer_pointer) != 0) ;
-		LEVEL_DEBUG("%s given value %d from tag %s\n",path,(int)OWQ_Y(owq),tag) ;
+		LEVEL_DEBUG("%s given value %d from tag %s",path,(int)OWQ_Y(owq),tag) ;
 		break ;
 	case ft_date:
 	case ft_float:
@@ -359,9 +359,9 @@ static int Add_a_property(const char * tag, const char * property, const char * 
 	case ft_pressure:
 	case ft_temperature:
 	case ft_tempgap:
-	printf("get the float\n");
+		//printf("get the float\n");
 		OWQ_F(owq) = xml_float(tag,&buffer_pointer) ;
-		LEVEL_DEBUG("%s given value %lg from tag %s\n",path,OWQ_F(owq),tag) ;
+		LEVEL_DEBUG("%s given value %lg from tag %s",path,OWQ_F(owq),tag) ;
 		break ;
 	default:
 		ret = -EINVAL ;
@@ -390,11 +390,11 @@ static _FLOAT xml_float( const char * tag, char ** buffer)
 {
 	size_t length ;
 	buffer[0] = find_xml_string(tag,&length, buffer[0]) ;
-	printf("found the string %s, length %lu\n",buffer[0],length);
+	//printf("found the string %s, length %lu\n",buffer[0],length);
 	if ( buffer[0] != NULL ){
 		_FLOAT F ;
 		if ( sscanf(buffer[0],"%lg",&F) == 1 ) {
-			printf("Value %lg\n",F) ;
+			//printf("Value %lg\n",F) ;
 			return F ;
 		}
 	}
@@ -426,7 +426,7 @@ static char * find_xml_string( const char * tag, size_t * length, char * buffer)
 	strcat(tag1,tag);
 	found1 = strstr( buffer, tag1 ) ;
 	if ( found1 == NULL ) {
-		LEVEL_DEBUG("No opening XML tag %s in %s\n",tag1,buffer) ;
+		LEVEL_DEBUG("No opening XML tag %s in %s",tag1,buffer) ;
 		return NULL ;
 	}
 	data = found1 + strlen(tag1) ;
@@ -434,7 +434,7 @@ static char * find_xml_string( const char * tag, size_t * length, char * buffer)
 	case ' ':
 		data = strchr(data,'>') ;
 		if ( data == NULL ) {
-			LEVEL_DEBUG("Bad opening XML tag %s in %s\n",tag1,buffer) ;
+			LEVEL_DEBUG("Bad opening XML tag %s in %s",tag1,buffer) ;
 			return NULL ;
 		}
 		// fall through
@@ -442,7 +442,7 @@ static char * find_xml_string( const char * tag, size_t * length, char * buffer)
 		++data ;
 		break ;
 	default :
-		LEVEL_DEBUG("No opening XML tag %s in %s\n",tag1,buffer) ;
+		LEVEL_DEBUG("No opening XML tag %s in %s",tag1,buffer) ;
 		return NULL ;
 	}
 	
@@ -451,7 +451,7 @@ static char * find_xml_string( const char * tag, size_t * length, char * buffer)
 	strcat(tag2,">") ;
 	found2 = strstr( data, tag2 ) ;
 	if ( found2 == NULL) {
-		LEVEL_DEBUG("No closing XML tag %s in %s\n",tag2,buffer) ;
+		LEVEL_DEBUG("No closing XML tag %s in %s",tag2,buffer) ;
 		return NULL ;
 	}
 	*length = found2 - data ;
@@ -485,7 +485,7 @@ static int OWServer_Enet_next_both(struct device_search *ds, const struct parsed
 	// LOOK FOR NEXT ELEMENT
 	++ds->index;
 
-	LEVEL_DEBUG("Index %d\n", ds->index);
+	LEVEL_DEBUG("Index %d", ds->index);
 
 	ret = DirblobGet(ds->index, ds->sn, db);
 	LEVEL_DEBUG("DirblobGet %d\n", ret);
@@ -497,7 +497,7 @@ static int OWServer_Enet_next_both(struct device_search *ds, const struct parsed
 		break;
 	}
 
-	LEVEL_DEBUG("SN found: " SNformat "\n", SNvar(ds->sn));
+	LEVEL_DEBUG("SN found: " SNformat, SNvar(ds->sn));
 	return ret;
 }
 
@@ -540,7 +540,7 @@ static int ENET_write(int file_descriptor, const ASCII * msg, size_t length, str
 			if (errno == EINTR) {
 				continue;
 			}
-			ERROR_CONNECT("Trouble writing data to OW-SERVER-ENET: %s\n", SAFESTRING(in->name));
+			ERROR_CONNECT("Trouble writing data to OW-SERVER-ENET: %s", SAFESTRING(in->name));
 			break;
 		}
 		sl -= r;

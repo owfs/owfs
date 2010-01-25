@@ -26,7 +26,7 @@ static void hex_only(char *str);
 void PostData(struct one_wire_query *owq)
 {
 	/* Do command processing and make changes to 1-wire devices */
-	LEVEL_DETAIL("Uploaded Data path=%s size=%ld\n", PN(owq)->path, OWQ_size(owq));
+	LEVEL_DETAIL("Uploaded Data path=%s size=%ld", PN(owq)->path, OWQ_size(owq));
 	FS_write_postparse(owq);
 }
 
@@ -38,7 +38,7 @@ void ChangeData(struct one_wire_query *owq)
 	
 	/* Do command processing and make changes to 1-wire devices */
 	httpunescape((BYTE *) value_string);
-	LEVEL_DETAIL("New data path=%s value=%s\n", pn->path, value_string);
+	LEVEL_DETAIL("New data path=%s value=%s", pn->path, value_string);
 	switch (pn->selected_filetype->format) {
 		case ft_binary:
 			hex_only(value_string);

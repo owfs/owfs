@@ -64,7 +64,7 @@ struct connection_in *find_connection_in(int bus_number)
 			return c_in;
 		}
 	}
-	LEVEL_DEBUG("Couldn't find bus number %d\n",bus_number);
+	LEVEL_DEBUG("Couldn't find bus number %d",bus_number);
 	return NULL;
 }
 
@@ -132,7 +132,7 @@ struct connection_in *NewIn(const struct connection_in *in)
 		/* Arbitrary guess at root directory size for allocating cache blob */
 		now->last_root_devs = 10;
 	} else {
-		LEVEL_DEFAULT("Cannot allocate memory for bus master structure,\n");
+		LEVEL_DEFAULT("Cannot allocate memory for bus master structure,");
 	}
 	now->AnyDevices = anydevices_unknown ;
 	return now;
@@ -157,7 +157,7 @@ struct connection_out *NewOut(void)
 		//now->sref0 = 0 ;
 		//now->sref1 = 0 ;
 	} else {
-		LEVEL_DEFAULT("Cannot allocate memory for server structure,\n");
+		LEVEL_DEFAULT("Cannot allocate memory for server structure,");
 	}
 	return now;
 }
@@ -177,7 +177,7 @@ struct connection_side *NewSide(void)
 		my_pthread_mutex_init(&(now->side_mutex), Mutex.pmattr);
 #endif							/* OW_MT */
 	} else {
-		LEVEL_DEFAULT("Cannot allocate memory for sidetap structure,\n");
+		LEVEL_DEFAULT("Cannot allocate memory for sidetap structure,");
 	}
 	return now;
 }
@@ -223,7 +223,6 @@ void FreeIn(struct connection_in * now)
 		if (now->connin.tcp.name) {
 			owfree(now->connin.tcp.name);
 		}
-		LEVEL_DEBUG("\n");
 		FreeClientAddr(now);
 		break;
 	case bus_ha7net:
@@ -274,7 +273,7 @@ void FreeInAll( void )
 
 	while ( Inbound_Control.head ) {
 		next = Inbound_Control.head->next;
-		//LEVEL_DEBUG("%p next=%p\n", Inbound_Control.head, Inbound_Control.head->next);
+		//LEVEL_DEBUG("%p next=%p", Inbound_Control.head, Inbound_Control.head->next);
 		FreeIn(Inbound_Control.head);
 		Inbound_Control.head = next;
 	}

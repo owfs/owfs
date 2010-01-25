@@ -71,13 +71,13 @@ void *DataHandler(void *v)
 	switch ((enum msg_classification) hd->sm.type) {
 	case msg_dirall:
 		if (Globals.no_dirall) {
-			LEVEL_DEBUG("DIRALL messsage rejected.\n") ;
+			LEVEL_DEBUG("DIRALL messsage rejected.") ;
 			hd->sm.type = msg_error;
 		}
 		break;
 	case msg_get:
 		if (Globals.no_get) {
-			LEVEL_DEBUG("GET messsage rejected.\n") ;
+			LEVEL_DEBUG("GET messsage rejected.") ;
 			hd->sm.type = msg_error;
 		}
 		break;
@@ -94,7 +94,7 @@ void *DataHandler(void *v)
 	case msg_dirall:			// good message
 	case msg_get:				// good message
 		if (hd->sm.payload == 0) {	/* Bad query -- no data after header */
-			LEVEL_DEBUG("No payload -- ignore.\n") ;
+			LEVEL_DEBUG("No payload -- ignore.") ;
 			cm.ret = -EBADMSG;
 		} else {
 			struct parsedname *pn;
@@ -102,10 +102,10 @@ void *DataHandler(void *v)
 			pn = PN(owq);
 
 			/* Parse the path string and crete  query object */
-			LEVEL_CALL("DataHandler: parse path=%s\n", hd->sp.path);
+			LEVEL_CALL("DataHandler: parse path=%s", hd->sp.path);
 			cm.ret = FS_OWQ_create(hd->sp.path, NULL, hd->sm.size, hd->sm.offset, owq) ;
 			if ( cm.ret != 0 ) {
-				LEVEL_DEBUG("DataHandler: FS_OWQ_create failed cm.ret=%d\n", cm.ret);
+				LEVEL_DEBUG("DataHandler: FS_OWQ_create failed cm.ret=%d", cm.ret);
 				break;
 			}
 
@@ -119,18 +119,18 @@ void *DataHandler(void *v)
 
 			switch ((enum msg_classification) hd->sm.type) {
 			case msg_presence:
-				LEVEL_CALL("Presence message on %s bus number=%d\n", SAFESTRING(pn->path), pn->known_bus->index);
+				LEVEL_CALL("Presence message on %s bus number=%d", SAFESTRING(pn->path), pn->known_bus->index);
 				// Basically, if we were able to ParsedName it's here!
 				cm.size = cm.payload = 0;
 				cm.ret = 0;		// good answer
 				break;
 			case msg_read:
-				LEVEL_CALL("Read message\n");
+				LEVEL_CALL("Read message");
 				retbuffer = ReadHandler(hd, &cm, owq);
-				LEVEL_DEBUG("Read message done value=%p\n", retbuffer);
+				LEVEL_DEBUG("Read message done value=%p", retbuffer);
 				break;
 			case msg_write:
-				LEVEL_CALL("Write message\n");
+				LEVEL_CALL("Write message");
 				if ((hd->sp.datasize <= 0)
 					|| ((int) hd->sp.datasize < hd->sm.size)) {
 					cm.ret = -EMSGSIZE;
@@ -141,42 +141,42 @@ void *DataHandler(void *v)
 				}
 				break;
 			case msg_dir:
-				LEVEL_CALL("Directory message (one at a time)\n");
+				LEVEL_CALL("Directory message (one at a time)");
 				DirHandler(hd, &cm, pn);
 				break;
 			case msg_dirall:
-				LEVEL_CALL("Directory message (all at once)\n");
+				LEVEL_CALL("Directory message (all at once)");
 				retbuffer = DirallHandler(hd, &cm, pn);
 				break;
 			case msg_get:
 				if (IsDir(pn)) {
-					LEVEL_CALL("Get -> Directory message (all at once)\n");
+					LEVEL_CALL("Get -> Directory message (all at once)");
 					retbuffer = DirallHandler(hd, &cm, pn);
 				} else {
-					LEVEL_CALL("Get -> Read message\n");
+					LEVEL_CALL("Get -> Read message");
 					retbuffer = ReadHandler(hd, &cm, owq);
 				}
 				break;
 			default:			// never reached
-				LEVEL_CALL("Error: unknown message %d\n", (int) hd->sm.type);
+				LEVEL_CALL("Error: unknown message %d", (int) hd->sm.type);
 				break;
 			}
 			FS_OWQ_destroy(owq);
-			LEVEL_DEBUG("DataHandler: FS_ParsedName_destroy done\n");
+			LEVEL_DEBUG("DataHandler: FS_ParsedName_destroy done");
 		}
 		break;
 	case msg_nop:				// "bad" message
-		LEVEL_CALL("NOP message\n");
+		LEVEL_CALL("NOP message");
 		cm.ret = 0;
 		break;
 	case msg_size:				// no longer used
 	case msg_error:
 	default:					// "bad" message
 		cm.ret = -ENOMSG;
-		LEVEL_CALL("No message\n");
+		LEVEL_CALL("No message");
 		break;
 	}
-	LEVEL_DEBUG("DataHandler: cm.ret=%d\n", cm.ret);
+	LEVEL_DEBUG("DataHandler: cm.ret=%d", cm.ret);
 
 	TOCLIENTLOCK(hd);
 	if (cm.ret != -EIO) {
@@ -196,6 +196,6 @@ void *DataHandler(void *v)
 	if (retbuffer) {
 		owfree(retbuffer);
 	}
-	LEVEL_DEBUG("DataHandler: done\n");
+	LEVEL_DEBUG("DataHandler: done");
 	return NULL;
 }

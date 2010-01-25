@@ -83,6 +83,7 @@ struct aggregate {
      There is also the directory type, ft_directory reflects a branch type, which restarts the parsing process.
 */
 enum ft_format {
+	ft_unknown,
 	ft_directory,
 	ft_subdir,
 	ft_integer,

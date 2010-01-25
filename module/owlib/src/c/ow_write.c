@@ -66,7 +66,7 @@ int FS_write(const char *path, const char *buf, const size_t size, const off_t o
 	int write_return;
 	OWQ_allocate_struct_and_pointer(owq);
 
-	LEVEL_CALL("path=%s size=%d offset=%d\n", SAFESTRING(path), (int) size, (int) offset);
+	LEVEL_CALL("path=%s size=%d offset=%d", SAFESTRING(path), (int) size, (int) offset);
 
 	// parsable path?
 	if (FS_OWQ_create(path, buf, size, offset, owq)) {
@@ -86,17 +86,17 @@ int FS_write_postparse(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 
 	if (Globals.readonly) {
-		LEVEL_DEBUG("Attempt to write but readonly set on command line.\n");
+		LEVEL_DEBUG("Attempt to write but readonly set on command line.");
 		return -EROFS;			// read-only invokation
 	}
 
 	if (IsDir(pn)) {
-		LEVEL_DEBUG("Attempt to write to a directory.\n");
+		LEVEL_DEBUG("Attempt to write to a directory.");
 		return -EISDIR;			// not a file
 	}
 
 	if (pn->selected_connection == NULL) {
-		LEVEL_DEBUG("Attempt to write but no 1-wire bus master.\n");
+		LEVEL_DEBUG("Attempt to write but no 1-wire bus master.");
 		return -ENODEV;			// no buses
 	}
 
@@ -109,13 +109,13 @@ int FS_write_postparse(struct one_wire_query *owq)
 	input_or_error = FS_input_owq(owq);
 	Debug_OWQ(owq);
 	if (input_or_error < 0) {
-		LEVEL_DEBUG("Error interpretting input value.\n") ;
+		LEVEL_DEBUG("Error interpretting input value.") ;
 		return input_or_error;
 	}
 	switch (pn->type) {
 	case ePN_structure:
 	case ePN_statistics:
-		LEVEL_DEBUG("Cannomt write in this type of directory.\n") ;
+		LEVEL_DEBUG("Cannomt write in this type of directory.") ;
 		write_or_error = -ENOTSUP;
 		break;
 	case ePN_system:
@@ -123,7 +123,7 @@ int FS_write_postparse(struct one_wire_query *owq)
 		write_or_error = FS_w_given_bus(owq);
 		break;
 	default:					// ePN_real
-	//LEVEL_DEBUG(pid=%ld call FS_w_given_bus size=%ld\n", pthread_self(), size);
+	//LEVEL_DEBUG(pid=%ld call FS_w_given_bus size=%ld", pthread_self(), size);
 
 		/* handle DeviceSimultaneous */
 		if (pn->selected_device == DeviceSimultaneous) {

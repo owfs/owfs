@@ -130,7 +130,7 @@ static void GetDeviceName(const ASCII ** strpointer, struct connection_in * in)
 			sn[6] = dn[6] ;
 		} else {
 			// Bad device name
-			LEVEL_DEFAULT("Device %d <%s> not recognized for %s %d -- ignored\n",DirblobElements(&(in->main))+1,*strpointer,in->adapter_name,in->connin.fake.index);
+			LEVEL_DEFAULT("Device %d <%s> not recognized for %s %d -- ignored",DirblobElements(&(in->main))+1,*strpointer,in->adapter_name,in->connin.fake.index);
 			return ;
 		}
 	}
@@ -162,7 +162,7 @@ static void SetConninData( int indx, const char * name, struct connection_in *in
 	in->connin.fake.index = indx;
 	in->connin.fake.templow = Globals.templow;
 	in->connin.fake.temphigh = Globals.temphigh;
-	LEVEL_CONNECT("Setting up %s Bus Master (%d)\n", in->adapter_name, indx);
+	LEVEL_CONNECT("Setting up %s Bus Master (%d)", in->adapter_name, indx);
 
 	UCLIBCLOCK ;
 	snprintf(newname, 18, "%s.%d", name, indx);

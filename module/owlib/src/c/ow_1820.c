@@ -655,7 +655,7 @@ static int OW_22temp(_FLOAT * temp, const int resolution, const struct parsednam
 	}
 
 	if (!pow) {					// unpowered, deliver power, no communication allowed
-		LEVEL_DEBUG("Unpowered temperature conversion -- %d msec\n", delay);
+		LEVEL_DEBUG("Unpowered temperature conversion -- %d msec", delay);
 		// If not powered, no Simultaneous for this chip
 		must_convert = 1 ;
 		if (BUS_transaction(tunpowered, pn)) {
@@ -665,7 +665,7 @@ static int OW_22temp(_FLOAT * temp, const int resolution, const struct parsednam
 		// No Simultaneous active, so need to "convert"
 		// powered, so release bus immediately after issuing convert
 		int ret;
-		LEVEL_DEBUG("Powered temperature conversion\n");
+		LEVEL_DEBUG("Powered temperature conversion");
 		BUSLOCK(pn);
 		ret = BUS_transaction_nolock(tpowered, pn) || FS_poll_convert(pn);
 		BUSUNLOCK(pn);
@@ -684,7 +684,7 @@ static int OW_22temp(_FLOAT * temp, const int resolution, const struct parsednam
 	}
 
 	// second time
-	LEVEL_DEBUG("Temp error. Try unpowered temperature conversion -- %d msec\n", delay);
+	LEVEL_DEBUG("Temp error. Try unpowered temperature conversion -- %d msec", delay);
 	if (BUS_transaction(tunpowered, pn)) {
 		return 1;
 	}
@@ -697,7 +697,7 @@ static int OW_22temp(_FLOAT * temp, const int resolution, const struct parsednam
 	}
 
 	// third and last time
-	LEVEL_DEBUG("Temp error. Try unpowered long temperature conversion -- %d msec\n", longdelay);
+	LEVEL_DEBUG("Temp error. Try unpowered long temperature conversion -- %d msec", longdelay);
 	if (BUS_transaction(tunpowered_long, pn)) {
 		return 1;
 	}
@@ -885,16 +885,16 @@ int FS_poll_convert(const struct parsedname *pn)
 	// subsequent polling is slower since the DS18x20 is a slower converter
 	for (i = 0; i < 22; ++i) {
 		if (BUS_transaction_nolock(t, pn)) {
-			LEVEL_DEBUG("BUS_transaction failed\n");
+			LEVEL_DEBUG("BUS_transaction failed");
 			break;
 		}
 		if (p[0] != 0) {
-			LEVEL_DEBUG("BUS_transaction done after %dms\n", (i + 1) * 10);
+			LEVEL_DEBUG("BUS_transaction done after %dms", (i + 1) * 10);
 			return 0;
 		}
 		t[0].size = 50;			// 50 msec for rest of delays
 	}
-	LEVEL_DEBUG("Temperature measurement failed\n");
+	LEVEL_DEBUG("Temperature measurement failed");
 	return 1;
 }
 

@@ -75,7 +75,7 @@ int HA5_detect(struct connection_in *in)
 
 	/* Open the com port */
 	if (COM_open(in)) {
-		LEVEL_DEBUG("cannot open serial port -- Permissions problem?\n");
+		LEVEL_DEBUG("cannot open serial port -- Permissions problem?");
 		return -ENODEV;
 	}
 
@@ -177,12 +177,12 @@ static int HA5_find_channel(struct parsedname *pn)
 
 	for ( in->connin.ha5.channel = 'a' ; in->connin.ha5.channel <= 'z' ; ++in->connin.ha5.channel ) {
 		if ( HA5_test_channel(pn) == 0 ) {
-			LEVEL_CONNECT("HA5 bus master found on port %s at channel %c\n", in->name, in->connin.ha5.channel ) ;
+			LEVEL_CONNECT("HA5 bus master found on port %s at channel %c", in->name, in->connin.ha5.channel ) ;
 			return 0 ;
 		}
 	}
 	in->connin.ha5.channel = 'a' ;
-	LEVEL_DEBUG("HA5 bus master not found on port %s so set to channel %c\n", in->name, in->connin.ha5.channel ) ;
+	LEVEL_DEBUG("HA5 bus master not found on port %s so set to channel %c", in->name, in->connin.ha5.channel ) ;
 
 	return 0;
 }
@@ -269,12 +269,12 @@ static int HA5_reset_wrapped(const struct parsedname *pn)
 	reset_length = AddChecksum( reset, 2, in ) ;
 
 	if (COM_write(reset, reset_length, pn->selected_connection)) {
-		LEVEL_DEBUG("Error sending HA5 reset\n");
+		LEVEL_DEBUG("Error sending HA5 reset");
 		return -EIO;
 	}
 	// For some reason, the HA5 doesn't use a checksum for RESET response.
 	if (COM_read(resp, 2, pn->selected_connection)) {
-		LEVEL_DEBUG("Error reading HA5 reset\n");
+		LEVEL_DEBUG("Error reading HA5 reset");
 		return -EIO;
 	}
 
@@ -286,7 +286,7 @@ static int HA5_reset_wrapped(const struct parsedname *pn)
 			in->AnyDevices = anydevices_no ;
 			break ;
 		default:
-			LEVEL_DEBUG("Error HA5 reset bad response %c (0x%.2X)\n", resp[0], resp[0]);
+			LEVEL_DEBUG("Error HA5 reset bad response %c (0x%.2X)", resp[0], resp[0]);
 			return -EIO;
 	}
 	return BUS_RESET_OK;
@@ -318,10 +318,10 @@ static int HA5_next_both(struct device_search *ds, const struct parsedname *pn)
 	// LOOK FOR NEXT ELEMENT
 	++ds->index;
 
-	LEVEL_DEBUG("Index %d\n", ds->index);
+	LEVEL_DEBUG("Index %d", ds->index);
 
 	ret = DirblobGet(ds->index, ds->sn, db);
-	LEVEL_DEBUG("DirblobGet %d\n", ret);
+	LEVEL_DEBUG("DirblobGet %d", ret);
 	switch (ret) {
 	case 0:
 		if ((ds->sn[0] & 0x7F) == 0x04) {
@@ -334,7 +334,7 @@ static int HA5_next_both(struct device_search *ds, const struct parsedname *pn)
 		break;
 	}
 
-	LEVEL_DEBUG("SN found: " SNformat "\n", SNvar(ds->sn));
+	LEVEL_DEBUG("SN found: " SNformat, SNvar(ds->sn));
 	return ret;
 }
 
@@ -420,12 +420,12 @@ static int HA5_directory(struct device_search *ds, struct dirblob *db, const str
 		// Set as current "Address" for adapter
 		memcpy( pn->selected_connection->connin.ha5.sn, sn, 8) ;
 
-		LEVEL_DEBUG("SN found: " SNformat "\n", SNvar(sn));
+		LEVEL_DEBUG("SN found: " SNformat, SNvar(sn));
 		// CRC check
 		if (CRC8(sn, 8) || (sn[0] == 0)) {
 			/* A minor "error" and should perhaps only return -1 */
 			/* to avoid reconnect */
-			LEVEL_DEBUG("sn = %s\n", sn);
+			LEVEL_DEBUG("sn = %s", sn);
 			return HA5_resync(pn) ;
 		}
 		DirblobAdd(sn, db);
@@ -483,27 +483,27 @@ static int HA5_select_wrapped( const struct parsedname * pn )
 	send_length = AddChecksum( send_address, 18, in ) ;
 
 	if ( COM_write( send_address, send_length, pn->selected_connection) ) {
-		LEVEL_DEBUG("Error with sending HA5 A-ddress\n") ;
+		LEVEL_DEBUG("Error with sending HA5 A-ddress") ;
 		return HA5_resync(pn) ;
 	}
 
 	if ( in->connin.ha5.checksum ) {
 		if ( COM_read(resp_address,19,pn->selected_connection) ) {
-			LEVEL_DEBUG("Error with reading HA5 select\n") ;
+			LEVEL_DEBUG("Error with reading HA5 select") ;
 			return HA5_resync(pn) ;
 		}
 		if ( TestChecksum( resp_address, 16) ) {
-			LEVEL_DEBUG("HA5 select checksum error\n") ;
+			LEVEL_DEBUG("HA5 select checksum error") ;
 			return HA5_resync(pn) ;
 		}
 	} else {
 		if ( COM_read(resp_address,17,pn->selected_connection) ) {
-			LEVEL_DEBUG("Error with reading HA5 select\n") ;
+			LEVEL_DEBUG("Error with reading HA5 select") ;
 			return HA5_resync(pn) ;
 		}
 	}
 	if ( memcmp( &resp_address[0],&send_address[2],16) ) {
-		LEVEL_DEBUG("Error with HA5 select response\n") ;
+		LEVEL_DEBUG("Error with HA5 select response") ;
 		return HA5_resync(pn) ;
 	}
 
@@ -528,22 +528,22 @@ static int HA5_sendback_part(char cmd, const BYTE * data, BYTE * resp, const siz
 	send_length = AddChecksum( send_data, 4+size*2, in ) ;
 
 	if ( COM_write( send_data, send_length, pn->selected_connection) ) {
-		LEVEL_DEBUG("Error with sending HA5 block\n") ;
+		LEVEL_DEBUG("Error with sending HA5 block") ;
 		return HA5_resync(pn) ;
 	}
 
 	if ( in->connin.ha5.checksum ) {
 		if ( COM_read( get_data, size*2+3, pn->selected_connection) ) {
-			LEVEL_DEBUG("Error with reading HA5 block\n") ;
+			LEVEL_DEBUG("Error with reading HA5 block") ;
 			return HA5_resync(pn) ;
 		}
 		if ( TestChecksum( get_data, size*2) ) {
-			LEVEL_DEBUG("HA5 block read checksum error\n") ;
+			LEVEL_DEBUG("HA5 block read checksum error") ;
 			return HA5_resync(pn) ;
 		}
 	} else {
 		if ( COM_read( get_data, size*2+1, pn->selected_connection) ) {
-			LEVEL_DEBUG("Error with reading HA5 block\n") ;
+			LEVEL_DEBUG("Error with reading HA5 block") ;
 			return HA5_resync(pn) ;
 		}
 	}

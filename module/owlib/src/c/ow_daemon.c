@@ -58,7 +58,7 @@ static int my_daemon(int nochdir, int noclose)
 		act.sa_flags = SA_RESTART;
 		sigaction(SIGCHLD, &act, NULL);
 //printf("owlib: my_daemon: pid=%d fork error\n", getpid());
-		LEVEL_CALL("Libsetup ok\n");
+		LEVEL_CALL("Libsetup ok");
 
 		return (-1);
 	case 0:
@@ -133,7 +133,7 @@ int EnterBackground(void)
 				   my_daemon(1, 0)
 #endif							/* HAVE_DAEMON */
 				) {
-				LEVEL_DEFAULT("Cannot enter background mode, quitting.\n");
+				LEVEL_DEFAULT("Cannot enter background mode, quitting.");
 				return 1;
 			} else {
 				Globals.now_background = 1;

@@ -61,7 +61,7 @@ int ToClientSide(struct connection_side *side, struct client_msg *original_cm, c
 	if (side->file_descriptor < 0) {
 		return 0;
 	}
-	LEVEL_DEBUG("ToClient data sent to Sidetap \n");
+	LEVEL_DEBUG("ToClient data sent to Sidetap ");
 
 	if (data && original_cm->payload > 0) {
 		++nio;
@@ -107,7 +107,7 @@ int FromClientSide(struct connection_side *side, struct handlerdata *hd)
 	if (!side->good_entry) {
 		return 0;
 	}
-	LEVEL_DEBUG("FromClient data sent to Sidetap \n");
+	LEVEL_DEBUG("FromClient data sent to Sidetap ");
 
 	SIDELOCK(side);
 
@@ -149,11 +149,11 @@ int SetupSideMessage(struct handlerdata *hd)
 	socklen_t peerlength = sizeof(union address);
 	memset(&(hd->sidem), 0, sizeof(struct side_msg));
 	if (getsockname(hd->file_descriptor, &(hd->sidem.host.sock), &hostlength)) {
-		ERROR_CALL("Can't get socket host address for Sidetap info\n");
+		ERROR_CALL("Can't get socket host address for Sidetap info");
 		return -1;
 	}
 	if (getpeername(hd->file_descriptor, &(hd->sidem.peer.sock), &peerlength)) {
-		ERROR_CALL("Can't get socket peer address for Sidetap info\n");
+		ERROR_CALL("Can't get socket peer address for Sidetap info");
 		return -1;
 	}
 #if 0

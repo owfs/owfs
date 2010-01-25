@@ -28,7 +28,7 @@ pthread_t main_threadid;
 static void ow_exit(int e)
 {
 	StateInfo.shutdown_in_progress = 1;
-	LEVEL_DEBUG("owfs: ow_exit(%d)\n", e);
+	LEVEL_DEBUG("owfs: ow_exit(%d)", e);
 	if (IS_MAINTHREAD) {
 		LibClose();
 	}
@@ -116,11 +116,11 @@ int main(int argc, char *argv[])
 	}
 
 	if (Outbound_Control.active == 0) {
-		LEVEL_DEFAULT("No mount point specified.\nTry '%s -h' for help.\n", argv[0]);
+		LEVEL_DEFAULT("No mount point specified.\nTry '%s -h' for help.", argv[0]);
 		ow_exit(1);
 	}
 	// FUSE directory mounting
-	LEVEL_CONNECT("fuse mount point: %s\n", Outbound_Control.head->name);
+	LEVEL_CONNECT("fuse mount point: %s", Outbound_Control.head->name);
 
 	// Signal handler is set in fuse library
 	//set_signal_handlers(exit_handler);
@@ -148,9 +148,9 @@ int main(int argc, char *argv[])
 		}
 	}
 	Fuse_parse(fuse_mnt_opt, &fuse_options);
-	LEVEL_DEBUG("fuse_mnt_opt=[%s]\n", fuse_mnt_opt);
+	LEVEL_DEBUG("fuse_mnt_opt=[%s]", fuse_mnt_opt);
 	Fuse_parse(fuse_open_opt, &fuse_options);
-	LEVEL_DEBUG("fuse_open_opt=[%s]\n", fuse_open_opt);
+	LEVEL_DEBUG("fuse_open_opt=[%s]", fuse_open_opt);
 	if (allow_other) {
 		Fuse_add("-o", &fuse_options);	// add "-o allow_other" to permit other users access
 		Fuse_add("allow_other", &fuse_options);
@@ -163,7 +163,7 @@ int main(int argc, char *argv[])
 	{
 		int i;
 		for (i = 0; i < fuse_options.argc; i++) {
-			LEVEL_DEBUG("fuse_options.argv[%d]=[%s]\n", i, fuse_options.argv[i]);
+			LEVEL_DEBUG("fuse_options.argv[%d]=[%s]", i, fuse_options.argv[i]);
 		}
 	}
 #endif

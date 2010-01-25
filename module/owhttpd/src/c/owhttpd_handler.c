@@ -55,11 +55,11 @@ int handle_socket(FILE * out)
 	struct parsedname * pn = &s_pn ;
 	
 	if ( fgets(up.line, LINE_MAX, out) ) {
-		LEVEL_CALL("PreParse line=%s\n", up.line);
+		LEVEL_CALL("PreParse line=%s", up.line);
 		URLparse(&up);				/* Brake up URL */
 
 		LEVEL_CALL
-		("WLcmd: %s\tfile: %s\trequest: %s\tvalue: %s\tversion: %s \n",
+		("WLcmd: %s\tfile: %s\trequest: %s\tvalue: %s\tversion: %s",
 		SAFESTRING(up.cmd), SAFESTRING(up.file), SAFESTRING(up.request), SAFESTRING(up.value), SAFESTRING(up.version));
 
 		if (up.cmd == NULL) {
@@ -72,33 +72,33 @@ int handle_socket(FILE * out)
 			http_code = http_404 ;
 		} else if (strcasecmp(up.file, "/favicon.ico") == 0) {
 			// secial case for the icon
-			LEVEL_DEBUG("http icon request\n");
+			LEVEL_DEBUG("http icon request.");
 			ReadToCRLF(out) ;
 			pn = NULL ;
 			http_code = http_icon ;
 		} else 	if (FS_ParsedName(up.file, pn)) {
 			// Can't understand the file name = URL
-			LEVEL_DEBUG("http %s not understaood\n",up.file);
+			LEVEL_DEBUG("http %s not understaood.",up.file);
 			ReadToCRLF(out) ;
 			pn = NULL ;
 			http_code = http_404 ;
 		} else if (pn->selected_device == NULL) {
 			// directory!
-			LEVEL_DEBUG("http directory request\n");
+			LEVEL_DEBUG("http directory request.");
 			ReadToCRLF(out) ;
 			http_code = http_dir ;
 		} else if (strcmp(up.cmd, "POST") == 0) {
-			LEVEL_DEBUG("http POST request\n");
+			LEVEL_DEBUG("http POST request.");
 			http_code = handle_POST( out, &up ) ;
 		} else if (strcmp(up.cmd, "GET") == 0) {
-			LEVEL_DEBUG("http GET request\n");
+			LEVEL_DEBUG("http GET request.");
 			http_code = handle_GET( out, &up ) ;
 		} else {
 			ReadToCRLF(out) ;
 			http_code = http_400 ;
 		}
 	} else {
-		LEVEL_DEBUG("No http data\n");
+		LEVEL_DEBUG("No http data.");
 		pn = NULL ;
 		http_code = http_400 ;
 	}
@@ -142,11 +142,11 @@ static enum http_return handle_GET(FILE * out, struct urlparse * up)
 	
 	if (up->request == NULL) {
 		// NO request -- just a read or dir, not a write
-		LEVEL_DEBUG("Simple GET request -- read a value or directory\n");
+		LEVEL_DEBUG("Simple GET request -- read a value or directory");
 		return http_ok ;
 	} else if (up->value==NULL) {
 		// write without a value
-		LEVEL_DEBUG("Null value for write command -- Bad URL\n");
+		LEVEL_DEBUG("Null value for write command -- Bad URL.");
 		return http_400 ;
 	} else {				/* First write new values, then show */
 		OWQ_allocate_struct_and_pointer(owq_write);
@@ -158,7 +158,7 @@ static enum http_return handle_GET(FILE * out, struct urlparse * up)
 			struct parsedname s_pn ;
 			if ( FS_ParsedName(up->file,&s_pn)==0 ) {
 				if ( s_pn.selected_filetype != NULL ) {
-					LEVEL_DEBUG("Property name %s duplicated on command line. Not a problem.\n",up->request) ;
+					LEVEL_DEBUG("Property name %s duplicated on command line. Not a problem.",up->request) ;
 					up->file[fil_leng-req_leng-1] = '\0';
 				}
 				FS_ParsedName_destroy(&s_pn);
@@ -194,7 +194,7 @@ static enum http_return handle_POST(FILE * out, struct urlparse * up)
 		char * post_path  = GetPostPath( out ) ;
 
 		TrimBoundary( &boundary) ;
-		LEVEL_CALL("POST boundary=%s\n",boundary);
+		LEVEL_CALL("POST boundary=%s",boundary);
 
 		if ( post_path ) {
 			struct memblob mb ;
@@ -208,17 +208,17 @@ static enum http_return handle_POST(FILE * out, struct urlparse * up)
 					FS_OWQ_destroy_sibling(owq) ;
 					http_code = http_ok ;
 				} else {
-					LEVEL_DEBUG("Can't create %s\n",post_path);
+					LEVEL_DEBUG("Can't create %s",post_path);
 					http_code = http_404 ;
 				}
 			} else {
-				LEVEL_DEBUG("Can't read full binary data from file upload\n");
+				LEVEL_DEBUG("Can't read full binary data from file upload");
 				http_code = http_404 ;
 			}
 			MemblobClear( &mb ) ;
 			owfree(post_path ) ;
 		} else {
-			LEVEL_DEBUG("Can't read property name from file upload\n");
+			LEVEL_DEBUG("Can't read property name from file upload");
 			http_code = http_404 ;
 		}
 	}
@@ -300,13 +300,13 @@ static void URLparse(struct urlparse *up)
 			up->value[1] = '\0';
 		}
 	}
-	LEVEL_DEBUG("URL parse file=%s, request=%s, value=%s\n", SAFESTRING(up->file), SAFESTRING(up->request), SAFESTRING(up->value));
+	LEVEL_DEBUG("URL parse file=%s, request=%s, value=%s", SAFESTRING(up->file), SAFESTRING(up->request), SAFESTRING(up->value));
 }
 
 
 static void Bad400(FILE * out)
 {
-	LEVEL_CALL("Return a 400 HTTP error code\n");
+	LEVEL_CALL("Return a 400 HTTP error code");
 	HTTPstart(out, "400 Bad Request", ct_html);
 	HTTPtitle(out, "Error 400 -- Bad request");
 	HTTPheader(out, "Unrecognized Request");
@@ -317,7 +317,7 @@ static void Bad400(FILE * out)
 
 static void Bad404(FILE * out)
 {
-	LEVEL_CALL("Return a 404 HTTP error code\n");
+	LEVEL_CALL("Return a 404 HTTP error code");
 	HTTPstart(out, "404 Not Found", ct_html);
 	HTTPtitle(out, "Error 400 -- Item doesn't exist");
 	HTTPheader(out, "Non-existent Device");
@@ -413,11 +413,11 @@ static int GetPostData( char * boundary, struct memblob * mb, FILE * out )
 		if ( strstr( data, boundary ) != NULL ) {
 			free(data) ; // allocated by getline with malloc, not owmalloc
 			mb->used -= 2 ; // trim off final 0x0A 0x0D
-			LEVEL_DEBUG("Read in POST file upload of %ld bytes\n",mb->used);
+			LEVEL_DEBUG("Read in POST file upload of %ld bytes",mb->used);
 			return 0 ;
 		}
 		if ( MemblobAdd( (BYTE *)data, (size_t)read_this_pass, mb ) ) {
-			LEVEL_DEBUG("Data size too large\n");
+			LEVEL_DEBUG("Data size too large");
 			free(data) ; // allocated by getline with malloc, not owmalloc
 			return 1 ;
 		}
@@ -425,6 +425,6 @@ static int GetPostData( char * boundary, struct memblob * mb, FILE * out )
 	if ( data ) {
 		free(data) ; // allocated by getline with malloc, not owmalloc
 	}
-	LEVEL_DEBUG("HTTP error -- no ending MIME boundary\n");
+	LEVEL_DEBUG("HTTP error -- no ending MIME boundary");
 	return 1 ;
 }

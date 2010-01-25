@@ -49,12 +49,12 @@ int ARG_Device(const char *arg)
 			case arg_addr_other:
 				return ARG_Xport(arg) ;
 			default:
-				LEVEL_DEFAULT("Cannot access device %s\n", arg);
+				LEVEL_DEFAULT("Cannot access device %s", arg);
 				return 1;
 		}
 	}
 	if (!S_ISCHR(sbuf.st_mode)) {
-		LEVEL_DEFAULT("Not a \"character\" device %s (st_mode=%x)\n", arg, sbuf.st_mode);
+		LEVEL_DEFAULT("Not a \"character\" device %s (st_mode=%x)", arg, sbuf.st_mode);
 		return 1;
 	}
 	if (major(sbuf.st_rdev) == 99) {
@@ -132,7 +132,7 @@ int ARG_HA7(const char *arg)
 		return FS_FindHA7();
 	}
 #else							/* OW_HA7 */
-	LEVEL_DEFAULT("HA7 support (intentionally) not included in compilation. Reconfigure and recompile.\n");
+	LEVEL_DEFAULT("HA7 support (intentionally) not included in compilation. Reconfigure and recompile.");
 	return 1;
 #endif							/* OW_HA7 */
 }
@@ -170,7 +170,7 @@ int ARG_I2C(const char *arg)
 	in->busmode = bus_i2c;
 	return 0;
 	#else							/* OW_I2C */
-	LEVEL_DEFAULT("I2C (smbus DS2482-X00) support (intentionally) not included in compilation. Reconfigure and recompile.\n");
+	LEVEL_DEFAULT("I2C (smbus DS2482-X00) support (intentionally) not included in compilation. Reconfigure and recompile.");
 	return 1;
 	#endif							/* OW_I2C */
 }
@@ -184,7 +184,7 @@ int ARG_Link(const char *arg)
 	in->name = (arg!=NULL) ? owstrdup(arg) : NULL;
 	switch( ArgType(arg) ) {
 		case arg_addr_null:
-			LEVEL_DEFAULT("LINK error. Please include either a serial device or network address in the command line specification\n");
+			LEVEL_DEFAULT("LINK error. Please include either a serial device or network address in the command line specification");
 			return 1 ;
 		case arg_addr_device:
 			in->busmode = bus_link ; // serial
@@ -232,7 +232,7 @@ int ARG_Parallel(const char *arg)
 	in->busmode = bus_parallel;
 	return 0;
 	#else							/* OW_PARPORT */
-	LEVEL_DEFAULT("Parallel port support (intentionally) not included in compilation. For DS1410E. That's ok, it doesn't work anyways.\n");
+	LEVEL_DEFAULT("Parallel port support (intentionally) not included in compilation. For DS1410E. That's ok, it doesn't work anyways.");
 	return 1;
 	#endif							/* OW_PARPORT */
 }
@@ -259,7 +259,7 @@ int ARG_Serial(const char *arg)
 	in->name = (arg!=NULL) ? owstrdup(arg) : NULL;
 	switch( ArgType(arg) ) {
 		case arg_addr_null:
-			LEVEL_DEFAULT("LINK error. Please include either a serial device or network address in the command line specification\n");
+			LEVEL_DEFAULT("LINK error. Please include either a serial device or network address in the command line specification");
 			return 1 ;
 		case arg_addr_device:
 			in->busmode = bus_serial;
@@ -319,7 +319,7 @@ int ARG_USB(const char *arg)
 	} else if (strcasecmp(arg, "all") == 0) {
 		int number_of_usb_adapters;
 		number_of_usb_adapters = DS9490_enumerate();
-		LEVEL_CONNECT("All USB bus masters requested, %d found.\n", number_of_usb_adapters);
+		LEVEL_CONNECT("All USB bus masters requested, %d found.", number_of_usb_adapters);
 		// first one
 		in->connin.usb.usb_nr = 1;
 		// cycle through rest
@@ -338,15 +338,15 @@ int ARG_USB(const char *arg)
 		in->connin.usb.usb_nr = atoi(arg);
 		//printf("ArgUSB file_descriptor=%d\n",in->file_descriptor);
 		if (in->connin.usb.usb_nr < 1) {
-			LEVEL_CONNECT("USB option %s implies no USB detection.\n", arg);
+			LEVEL_CONNECT("USB option %s implies no USB detection.", arg);
 			in->connin.usb.usb_nr = 0;
 		} else if (in->connin.usb.usb_nr > 1) {
-			LEVEL_CONNECT("USB bus master %d requested.\n", in->connin.usb.usb_nr);
+			LEVEL_CONNECT("USB bus master %d requested.", in->connin.usb.usb_nr);
 		}
 	}
 	return 0;
 #else							/* OW_USB */
-	LEVEL_DEFAULT("USB support (intentionally) not included in compilation. Check LIBUSB, then reconfigure and recompile.\n");
+	LEVEL_DEFAULT("USB support (intentionally) not included in compilation. Check LIBUSB, then reconfigure and recompile.");
 	return 1;
 #endif							/* OW_USB */
 }

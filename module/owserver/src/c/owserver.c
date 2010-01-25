@@ -48,10 +48,10 @@ extern pthread_mutex_t persistence_mutex;
 static void ow_exit(int e)
 {
     if (IS_MAINTHREAD) {
-		LEVEL_DEBUG("ow_exit %d\n", e);
+		LEVEL_DEBUG("ow_exit %d", e);
 		LibClose();
 	} else {
-		LEVEL_DEBUG("ow_exit (not mainthread) %d\n", e);
+		LEVEL_DEBUG("ow_exit (not mainthread) %d", e);
 	}
 #ifdef __UCLIBC__
 	/* Process never die on WRT54G router with uClibc if exit() is used */
@@ -67,30 +67,30 @@ static void exit_handler(int signo, siginfo_t * info, void *context)
 #if OW_MT
 	if (info) {
 		LEVEL_DEBUG
-			("exit_handler: for signo=%d, errno %d, code %d, pid=%ld, self=%lu main=%lu\n",
+			("exit_handler: for signo=%d, errno %d, code %d, pid=%ld, self=%lu main=%lu",
 			 signo, info->si_errno, info->si_code, (long int) info->si_pid, pthread_self(), main_threadid);
 	} else {
-		LEVEL_DEBUG("exit_handler: for signo=%d, self=%lu, main=%lu\n", signo, pthread_self(), main_threadid);
+		LEVEL_DEBUG("exit_handler: for signo=%d, self=%lu, main=%lu", signo, pthread_self(), main_threadid);
 	}
 	if (StateInfo.shutdown_in_progress) {
-	  LEVEL_DEBUG("exit_handler: shutdown already in progress. signo=%d, self=%lu, main=%lu\n", signo, pthread_self(), main_threadid);
+	  LEVEL_DEBUG("exit_handler: shutdown already in progress. signo=%d, self=%lu, main=%lu", signo, pthread_self(), main_threadid);
 	}
 	if (!StateInfo.shutdown_in_progress) {
 		StateInfo.shutdown_in_progress = 1;
 
 		if (info != NULL) {
 			if (SI_FROMUSER(info)) {
-				LEVEL_DEBUG("exit_handler: kill from user\n");
+				LEVEL_DEBUG("exit_handler: kill from user");
 			}
 			if (SI_FROMKERNEL(info)) {
-				LEVEL_DEBUG("exit_handler: kill from kernel\n");
+				LEVEL_DEBUG("exit_handler: kill from kernel");
 			}
 		}
 		if (!IS_MAINTHREAD) {
-			LEVEL_DEBUG("exit_handler: kill mainthread %lu self=%lu signo=%d\n", main_threadid, pthread_self(), signo);
+			LEVEL_DEBUG("exit_handler: kill mainthread %lu self=%lu signo=%d", main_threadid, pthread_self(), signo);
 			pthread_kill(main_threadid, signo);
 		} else {
-			LEVEL_DEBUG("exit_handler: ignore signal, mainthread %lu self=%lu signo=%d\n", main_threadid, pthread_self(), signo);
+			LEVEL_DEBUG("exit_handler: ignore signal, mainthread %lu self=%lu signo=%d", main_threadid, pthread_self(), signo);
 		}
 	}
 #else
@@ -155,12 +155,12 @@ int main(int argc, char **argv)
 #if OW_MT
 	main_threadid = pthread_self();
 	my_pthread_mutex_init(&persistence_mutex, Mutex.pmattr);
-	LEVEL_DEBUG("main_threadid = %lu\n", (unsigned long int) main_threadid);
+	LEVEL_DEBUG("main_threadid = %lu", (unsigned long int) main_threadid);
 #endif
 	/* Set up "Antiloop" -- a unique token */
 	SetupAntiloop();
 	ServerProcess(Handler, ow_exit);
-	LEVEL_DEBUG("ServerProcess done\n");
+	LEVEL_DEBUG("ServerProcess done");
 	ow_exit(0);
 	return 0;
 }

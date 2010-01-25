@@ -64,15 +64,15 @@ int FromClient(struct handlerdata *hd)
 	hd->sm.size = ntohl(hd->sm.size);
 	hd->sm.offset = ntohl(hd->sm.offset);
 
-	LEVEL_DEBUG("FromClient payload=%d size=%d type=%d sg=0x%X offset=%d\n", hd->sm.payload, hd->sm.size, hd->sm.type, hd->sm.control_flags, hd->sm.offset);
+	LEVEL_DEBUG("FromClient payload=%d size=%d type=%d sg=0x%X offset=%d", hd->sm.payload, hd->sm.size, hd->sm.type, hd->sm.control_flags, hd->sm.offset);
 
 	/* figure out length of rest of message: payload plus tokens */
 	trueload = hd->sm.payload;
 	if (isServermessage(hd->sm.version)) {
 		trueload += sizeof(union antiloop) * Servertokens(hd->sm.version);
-		LEVEL_DEBUG("FromClient (servermessage) payload=%d nrtokens=%d trueload=%d size=%d type=%d controlflags=0x%X offset=%d\n", hd->sm.payload, Servertokens(hd->sm.version), trueload, hd->sm.size, hd->sm.type, hd->sm.control_flags, hd->sm.offset);
+		LEVEL_DEBUG("FromClient (servermessage) payload=%d nrtokens=%d trueload=%d size=%d type=%d controlflags=0x%X offset=%d", hd->sm.payload, Servertokens(hd->sm.version), trueload, hd->sm.size, hd->sm.type, hd->sm.control_flags, hd->sm.offset);
 	} else {
-		LEVEL_DEBUG("FromClient (no servermessage) payload=%d size=%d type=%d controlflags=0x%X offset=%d\n", hd->sm.payload, hd->sm.size, hd->sm.type, hd->sm.control_flags, hd->sm.offset);
+		LEVEL_DEBUG("FromClient (no servermessage) payload=%d size=%d type=%d controlflags=0x%X offset=%d", hd->sm.payload, hd->sm.size, hd->sm.type, hd->sm.control_flags, hd->sm.offset);
 	}
 	if (trueload == 0) {
 		return 0;
@@ -117,7 +117,7 @@ int FromClient(struct handlerdata *hd)
 	if (isServersidetap(hd->sm.version)) {	/* side tap shouldn't come to owserver */
 		owfree(msg);
 		hd->sm.type = msg_error;
-		LEVEL_CALL("owserver shouldn't get sidetap messages\n");
+		LEVEL_CALL("owserver shouldn't get sidetap messages");
 		return -EPROTO;
 	}
 
@@ -131,7 +131,7 @@ int FromClient(struct handlerdata *hd)
 			if (memcmp(p, &(Globals.Token), sizeof(union antiloop)) == 0) {
 				owfree(msg);
 				hd->sm.type = msg_error;
-				LEVEL_CALL("owserver loop suppression\n");
+				LEVEL_CALL("owserver loop suppression");
 				return -ELOOP;
 			}
 		}

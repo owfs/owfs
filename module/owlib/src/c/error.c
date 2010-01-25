@@ -15,6 +15,8 @@ $Id$
   Addison-Wesley Professional Computing Series
   Addison-Wesley, Boston 2003
   http://www.unpbook.com
+  * 
+  * Although it's been considerably modified over time -- don't blame the authors''
 */
 
 #include <config.h>
@@ -47,13 +49,20 @@ const char cond_destroy_failed[] = "cond_destroy failed rc=%d [%s]\n";
 #endif
 
 static void err_format(char * format, int errno_save, const char * level_string, const char * file, int line, const char * func, const char * fmt);
+static void hex_print( const char * buf, int length ) ;
+static void ascii_print( const char * buf, int length ) ;
 
 /* See man page for explanation */
 int log_available = 0;
 
+/* Limits for prettier byte printing */
+#define HEX_PRINT_BYTES_PER_LINE 16
+#define HEX_PRINT_MAX_LINES       4
+
 /* Print message and return to caller
  * Caller specifies "errnoflag" and "level" */
 #define MAXLINE     1023
+
 void err_msg(enum e_err_type errnoflag, enum e_err_level level, const char * file, int line, const char * func, const char *fmt, ...)
 {
 	int errno_save = (errnoflag==e_err_type_error)?errno:0;		/* value caller might want printed */
@@ -119,7 +128,7 @@ void err_msg(enum e_err_type errnoflag, enum e_err_level level, const char * fil
 			openlog("OWFS", LOG_PID, LOG_DAEMON);
 			log_available = 1;
 		}
-		syslog(level <= e_err_default ? LOG_INFO : LOG_NOTICE, buf);
+		syslog(level <= e_err_default ? LOG_INFO : LOG_NOTICE, (char *) buf);
 	} else {
 		fflush(stdout);			/* in case stdout and stderr are the same */
 		fputs(buf, stderr);
@@ -131,7 +140,6 @@ void err_msg(enum e_err_type errnoflag, enum e_err_level level, const char * fil
 /* Purely a debugging routine -- print an arbitrary buffer of bytes */
 void _Debug_Bytes(const char *title, const unsigned char *buf, int length)
 {
-	int i;
 	/* title line */
 	fprintf(stderr,"Byte buffer %s, length=%d", title ? title : "anonymous", (int) length);
 	if (length < 0) {
@@ -142,67 +150,30 @@ void _Debug_Bytes(const char *title, const unsigned char *buf, int length)
 		fprintf(stderr,"\n-- NULL buffer\n");
 		return;
 	}
-#if 1
-	/* hex lines -- 16 bytes each */
-	for (i = 0; i < length; ++i) {
-		if ((i & 0x0F) == 0) {	// devisible by 16
-			fprintf(stderr,"\n--%3.3d:",i);
-		}
-		fprintf(stderr," %.2X", (unsigned char)buf[i]);
 
-		if(i >= 63) break;
-		/* Sorry for this, but I think it's better to strip off all huge 8192 packages in the debug-output. */
-	}
-
-#endif
-	/* char line -- printable or . */
-	fprintf(stderr,"\n   <");
-	for (i = 0; i < length; ++i) {
-		char c = buf[i];
-		fprintf(stderr,"%c", isprint(c) ? c : '.');
-		if(i >= 63) break;
-		/* Sorry for this, but I think it's better to strip off all huge 8192 packages in the debug-output. */
-	}
-	fprintf(stderr,">\n");
+	hex_print( buf, length ) ;
+	ascii_print( buf, length ) ;
 }
 
 /* Purely a debugging routine -- print an arbitrary buffer of bytes */
 void _Debug_Writev(struct iovec *io, int iosz)
 {
-	/* title line */
-	int i, ionr = 0;
-	char *buf;
-	int length;
+	int ionr;
 
-	while(ionr < iosz) {
-		buf = io[ionr].iov_base;
-		length = io[ionr].iov_len;
+	for ( ionr=0; ionr < iosz; ++ionr ) {
+		char * buf = io[ionr].iov_base;
+		int length = io[ionr].iov_len;
 
+		/* title line */
 		fprintf(stderr,"Writev byte buffer ionr=%d/%d length=%d", ionr+1, iosz, (int) length);
 		if (length <= 0) {
 			fprintf(stderr,"\n-- Attempt to write with bad length\n");
-		}
-		if (buf == NULL) {
+		} else if (buf == NULL) {
 			fprintf(stderr,"\n-- NULL buffer\n");
+		} else {
+			hex_print(buf,length) ;
+			ascii_print(buf,length) ;
 		}
-#if 1
-		/* hex lines -- 16 bytes each */
-		for (i = 0; i < length; ++i) {
-			if ((i & 0x0F) == 0) {	// devisible by 16
-				fprintf(stderr,"\n--%3.3d:",i);
-			}
-			fprintf(stderr," %.2X", (unsigned char)buf[i]);
-		}
-
-#endif
-		/* char line -- printable or . */
-		fprintf(stderr,"\n   <");
-		for (i = 0; i < length; ++i) {
-			char c = buf[i];
-			fprintf(stderr,"%c", isprint(c) ? c : '.');
-		}
-		fprintf(stderr,">\n");
-		ionr++;
 	}
 }
 
@@ -254,7 +225,7 @@ void fatal_error(const char * file, int line, const char * func, const char *fmt
 				openlog("OWFS", LOG_PID, LOG_DAEMON);
 				log_available = 1;
 			}
-			syslog(LOG_INFO, buf);
+			syslog(LOG_USER|LOG_INFO, (char *) buf);
 		} else {
 			fflush(stdout);			/* in case stdout and stderr are the same */
 			fputs(buf, stderr);
@@ -289,16 +260,51 @@ static void err_format(char * format, int errno_save, const char * level_string,
 	/* Create output string */
 #ifdef    HAVE_VSNPRINTF
 	if (errno_save) {
-		snprintf(format, MAXLINE, "%s%s:%s(%d) [%s] %s", level_string,file,func,line,strerror(errno_save),fmt);	/* safe */
+		snprintf(format, MAXLINE, "%s%s:%s(%d) [%s] %s\n", level_string,file,func,line,strerror(errno_save),fmt);	/* safe */
 	} else {
-		snprintf(format, MAXLINE, "%s%s:%s(%d) %s", level_string,file,func,line,fmt);	/* safe */
+		snprintf(format, MAXLINE, "%s%s:%s(%d) %s\n", level_string,file,func,line,fmt);	/* safe */
 	}
 #else
 	if (errno_save) {
-		sprintf(format, "%s%s:%s(%d) [%s] %s", level_string,file,func,line,strerror(errno_save),fmt);		/* not safe */
+		sprintf(format, "%s%s:%s(%d) [%s] %s\n", level_string,file,func,line,strerror(errno_save),fmt);		/* not safe */
 	} else {
-		sprintf(format, "%s%s:%s(%d) %s", level_string,file,func,line,fmt);		/* not safe */
+		sprintf(format, "%s%s:%s(%d) %s\n", level_string,file,func,line,fmt);		/* not safe */
 	}
 #endif
 	UCLIBCUNLOCK;
+}
+
+
+static void hex_print( const char * buf, int length )
+{
+	int i = 0 ;
+	/* hex lines */
+	for (i = 0; i < length; ++i) {
+		if ((i % HEX_PRINT_BYTES_PER_LINE) == 0) {	// switch lines
+			fprintf(stderr,"\n--%3.3d:",i);
+		}
+		fprintf(stderr," %.2X", (unsigned char)buf[i]);
+
+		if( i >= ( HEX_PRINT_BYTES_PER_LINE * HEX_PRINT_MAX_LINES -1 ) ) {
+			/* Sorry for this, but I think it's better to strip off all huge 8192 packages in the debug-output. */
+			fprintf(stderr,"\n--%3.3d: == abridged ==",i);
+			break;
+		}
+	}
+}
+
+static void ascii_print( const char * buf, int length )
+{	
+	int i ;
+	/* char line -- printable or . */
+	fprintf(stderr,"\n   <");
+	for (i = 0; i < length; ++i) {
+		char c = buf[i];
+		fprintf(stderr,"%c", isprint(c) ? c : '.');
+		if(i >= ( HEX_PRINT_BYTES_PER_LINE * HEX_PRINT_MAX_LINES -1 )) {
+			/* Sorry for this, but I think it's better to strip off all huge 8192 packages in the debug-output. */
+			break;
+		}
+	}
+	fprintf(stderr,">\n");
 }

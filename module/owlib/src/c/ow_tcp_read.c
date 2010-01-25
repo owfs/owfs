@@ -58,7 +58,7 @@ int tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval * p
 	ssize_t nread;
 	BYTE * buffer = vptr ;
 
-	LEVEL_DEBUG("attempt %d bytes Time:(%ld,%ld)\n",(int)n,ptv->tv_sec,ptv->tv_usec ) ;
+	LEVEL_DEBUG("attempt %d bytes Time:(%ld,%ld)n",(int)n,ptv->tv_sec,ptv->tv_usec ) ;
 	nleft = n;
 	*chars_in = 0 ;
 	while (nleft > 0) {
@@ -75,7 +75,7 @@ int tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval * p
 		if (rc > 0) {
 			/* Is there something to read? */
 			if (FD_ISSET(file_descriptor, &readset) == 0) {
-				LEVEL_DEBUG("tcp_error -- nothing avialable to read\n");
+				LEVEL_DEBUG("tcp_error -- nothing avialable to read");
 				return -EIO;	/* error */
 			}
 			//update_max_delay(pn);
@@ -84,7 +84,7 @@ int tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval * p
 				if (errno == EINTR) {
 					nread = 0;	/* and call read() again */
 				} else {
-					LEVEL_DATA("Network data read error errno=%d %s\n", errno, strerror(errno));
+					LEVEL_DATA("Network data read error errno=%d %s", errno, strerror(errno));
 					STAT_ADD1(NET_read_errors);
 					return -EIO;
 				}
@@ -99,14 +99,14 @@ int tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval * p
 				/* select() was interrupted, try again */
 				continue;
 			}
-			ERROR_DATA("Selection error (network)\n");
+			ERROR_DATA("Selection error (network)");
 			return -EINTR;
 		} else {				/* timed out */
-			LEVEL_CONNECT("TIMEOUT after %d bytes\n", n - nleft);
+			LEVEL_CONNECT("TIMEOUT after %d bytes", n - nleft);
 			return -EAGAIN;
 		}
 	}
-	LEVEL_DEBUG("n=%d nleft=%d n-nleft=%d\n",(int)n, (int) nleft, (int) (n-nleft) ) ;
+	LEVEL_DEBUG("n=%d nleft=%d n-nleft=%d",(int)n, (int) nleft, (int) (n-nleft) ) ;
 	return 0;
 }
 

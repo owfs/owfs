@@ -84,16 +84,16 @@ int FS_Test_Simultaneous( enum simul_type type, UINT delay, const struct parsedn
 	time_t remaining_delay ;
 
 	if ( Cache_Get_Simul_Time(type, &start_time, pn) ) {
-		LEVEL_DEBUG("No simultaneous conversion currently valid\n");
+		LEVEL_DEBUG("No simultaneous conversion currently valid");
 		return 1 ; // No simultaneous valid
 	}
 
 	remaining_delay = delay - 1000* (time(NULL) - start_time) ;
 	if ( remaining_delay > 0 ) {
-		LEVEL_DEBUG("Simultaneous conversion requires %d msec delay\n",(int) remaining_delay);
+		LEVEL_DEBUG("Simultaneous conversion requires %d msec delay",(int) remaining_delay);
 		UT_delay(remaining_delay) ;
 	} else {
-		LEVEL_DEBUG("Simultaneous conversion, no delay\n");
+		LEVEL_DEBUG("Simultaneous conversion, no delay");
 	}
 	return 0 ;
 }
@@ -143,7 +143,7 @@ static int FS_w_convert_temp(struct one_wire_query *owq)
 		}
 			break ;
 	}
-	LEVEL_DEBUG("Temperature convert ret=%d\n", ret);
+	LEVEL_DEBUG("Temperature convert ret=%d", ret);
 	if (ret) {
 		Cache_Del_Simul(simul_temp, pn);
 	}
@@ -175,7 +175,7 @@ static int FS_w_convert_volt(struct one_wire_query *owq)
 			TRXN_END,
 		};
 		ret = BUS_transaction(t, &pn_directory);
-		LEVEL_DEBUG("Voltage convert ret=%d\n", ret);
+		LEVEL_DEBUG("Voltage convert ret=%d", ret);
 		if (ret == 0) {
 			Cache_Add_Internal(NULL, 0, &ipSimul[simul_volt], &pn_directory);
 		}
@@ -276,7 +276,7 @@ static int FS_r_single(struct one_wire_query *owq)
 			if (BUS_transaction(t, &pn_directory)) {
 				return -EINVAL;
 			}
-			LEVEL_DEBUG("dat=" SNformat " crc8=%02x\n", SNvar(resp), CRC8(resp, 7));
+			LEVEL_DEBUG("dat=" SNformat " crc8=%02x", SNvar(resp), CRC8(resp, 7));
 			if ((memcmp(resp, collisions, 8) != 0) && (memcmp(resp, match, 8) != 0) && (CRC8(resp, 8) == 0)) {	// non-empty, and no CRC error
 				OW_single2cache(resp, &pn_directory);
 				/* Return device id. */

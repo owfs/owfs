@@ -52,7 +52,7 @@ int FS_read(const char *path, char *buf, const size_t size, const off_t offset)
 	int read_or_error;
 	OWQ_allocate_struct_and_pointer(owq);
 
-	LEVEL_CALL("path=%s size=%d offset=%d\n", SAFESTRING(path), (int) size, (int) offset);
+	LEVEL_CALL("path=%s size=%d offset=%d", SAFESTRING(path), (int) size, (int) offset);
 	// Parseable path?
 	if (FS_OWQ_create(path, buf, size, offset, owq)) {
 		return -ENOENT;
@@ -76,7 +76,7 @@ int FS_read_postparse(struct one_wire_query *owq)
 	}
 
 	/* Normal read. Try three times */
-	LEVEL_DEBUG("%s\n", pn->path);
+	LEVEL_DEBUG("%s", pn->path);
 	STATLOCK;
 	AVERAGE_IN(&read_avg);
 	AVERAGE_IN(&all_avg);
@@ -95,7 +95,7 @@ int FS_read_postparse(struct one_wire_query *owq)
 	AVERAGE_OUT(&read_avg);
 	AVERAGE_OUT(&all_avg);
 	STATUNLOCK;
-	LEVEL_DEBUG("%s return %d\n", pn->path, read_or_error);
+	LEVEL_DEBUG("%s return %d", pn->path, read_or_error);
 	return read_or_error;
 }
 
@@ -194,7 +194,7 @@ int FS_read_distribute(struct one_wire_query *owq)
 {
 	int r = 0;
 
-	LEVEL_DEBUG("%s\n", OWQ_pn(owq).path);
+	LEVEL_DEBUG("%s", OWQ_pn(owq).path);
 	STATLOCK;
 	AVERAGE_IN(&read_avg);
 	AVERAGE_IN(&all_avg);
@@ -216,7 +216,7 @@ int FS_read_distribute(struct one_wire_query *owq)
 	AVERAGE_OUT(&all_avg);
 	STATUNLOCK;
 
-	LEVEL_DEBUG("%s return %d\n", OWQ_pn(owq).path, r);
+	LEVEL_DEBUG("%s return %d", OWQ_pn(owq).path, r);
 	//printf("FS_read_distribute: pid=%ld return %d\n", pthread_self(), r);
 	return r;
 }
@@ -227,17 +227,17 @@ static int FS_r_given_bus(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	int read_status = 0;
 
-	LEVEL_DEBUG("start\n");
+	LEVEL_DEBUG("start");
 	Debug_OWQ(owq);
 
 	if (KnownBus(pn) && BusIsServer(pn->selected_connection)) {
 		/* The bus is not local... use a network connection instead */
 #if OW_MT
-		LEVEL_DEBUG("pid=%ld call ServerRead\n", pthread_self());
+		LEVEL_DEBUG("pid=%ld call ServerRead", pthread_self());
 #endif							/* OW_MT */
 		// Read afar -- returns already formatted in buffer
 		read_status = ServerRead(owq);
-		LEVEL_DEBUG("back from server\n");
+		LEVEL_DEBUG("back from server");
 		Debug_OWQ(owq);
 		//printf("FS_r_given_bus pid=%ld r=%d\n",pthread_self(), r);
 	} else {
@@ -245,7 +245,7 @@ static int FS_r_given_bus(struct one_wire_query *owq)
 		if (LockGet(pn) == 0) {
 			read_status = FS_r_local(owq);	// this returns status
 			LockRelease(pn);
-			LEVEL_DEBUG("FS_r_local return=%d\n", read_status);
+			LEVEL_DEBUG("FS_r_local return=%d", read_status);
 			if (read_status >= 0) {
 				// local success -- now format in buffer
 				read_status = FS_output_owq(owq);	// this returns nr. bytes
@@ -254,7 +254,7 @@ static int FS_r_given_bus(struct one_wire_query *owq)
 			read_status = -EADDRINUSE;
 		}
 	}
-	LEVEL_DEBUG("return %d\n", read_status);
+	LEVEL_DEBUG("return %d", read_status);
 	return read_status;
 }
 
@@ -265,14 +265,14 @@ static int FS_r_virtual(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	int read_status = 0;
-	LEVEL_DEBUG("start\n");
+	LEVEL_DEBUG("start");
 	Debug_OWQ(owq);
 
 	if (SpecifiedRemoteBus(pn)) {
 		/* The bus is not local... use a network connection instead */
 		// Read afar -- returns already formatted in buffer
 		read_status = ServerRead(owq);
-		LEVEL_DEBUG("back from server\n");
+		LEVEL_DEBUG("back from server");
 		Debug_OWQ(owq);
 	} else {
 		/* local bus -- any special locking needs? */
@@ -302,7 +302,7 @@ static int FS_r_virtual(struct one_wire_query *owq)
 			read_status = FS_output_owq(owq);	// this returns nr. bytes
 		}
 	}
-	LEVEL_DEBUG("return %d\n", read_status);
+	LEVEL_DEBUG("return %d", read_status);
 	return read_status;
 }
 
@@ -321,7 +321,7 @@ size_t FileLength_vascii(struct one_wire_query * owq)
 			case ag_separate:	/* separate reads, artificially combined into a single array */
 				// this is probably the only case needed
 				file_length = FS_read_from_parts(owq);
-				LEVEL_DEBUG("change1 file_length = %d\n", file_length);
+				LEVEL_DEBUG("change1 file_length = %d", file_length);
 				return file_length;
 				break;
 			case ag_mixed:		/* mixed mode, ALL read handled differently */
@@ -330,14 +330,14 @@ size_t FileLength_vascii(struct one_wire_query * owq)
 			default:
 				// don't think this will happen...
 				file_length = FS_read_lump(owq);
-				LEVEL_DEBUG("change2 file_length = %d\n", file_length);
+				LEVEL_DEBUG("change2 file_length = %d", file_length);
 				break;
 			}
 			break;
 		default:
 			// don't think this will happen...
 			file_length = FileLength(PN(owq));
-			LEVEL_DEBUG("change3 file_length = %d\n", file_length);
+			LEVEL_DEBUG("change3 file_length = %d", file_length);
 			break;
 		}
 	} else {
@@ -369,7 +369,7 @@ static void adjust_file_size(struct one_wire_query *owq)
         // Finally adjust buffer length
         OWQ_size(owq) = file_length - OWQ_offset(owq) ;
     }
-    LEVEL_DEBUG("file_length=%lu offset=%lu size=%lu\n",
+    LEVEL_DEBUG("file_length=%lu offset=%lu size=%lu",
                 (unsigned long) file_length, (unsigned long) OWQ_offset(owq), (unsigned long) OWQ_size(owq));
 }
 
@@ -461,7 +461,7 @@ static int FS_structure(struct one_wire_query *owq)
 	OWQ_create_shallow_single(owq_real, owq);	/* shallow copy */
 	OWQ_pn(owq_real).type = ePN_real;	/* "real" type to get return length, rather than "structure" length */
 
-	LEVEL_DEBUG("start\n");
+	LEVEL_DEBUG("start");
 	UCLIBCLOCK;
 	output_length = snprintf(OWQ_buffer(owq),
 							 OWQ_size(owq),
@@ -478,7 +478,7 @@ static int FS_structure(struct one_wire_query *owq)
 							 : ((OWQ_pn(owq_real).selected_filetype->write == NO_WRITE_FUNCTION) ? "ro" : "rw"), (int) FullFileLength(PN(owq_real))
 		);
 	UCLIBCUNLOCK;
-	LEVEL_DEBUG("length=%d\n", output_length);
+	LEVEL_DEBUG("length=%d", output_length);
 
 	if (output_length < 0) {
 		return -EFAULT;

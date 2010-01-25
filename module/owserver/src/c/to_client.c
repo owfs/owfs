@@ -52,7 +52,7 @@ int ToClient(int file_descriptor, struct client_msg *machine_order_cm, char *dat
 		{data, machine_order_cm->payload,},
 	};
 
-	LEVEL_DEBUG("payload=%d size=%d, ret=%d, sg=0x%X offset=%d \n", machine_order_cm->payload, machine_order_cm->size, machine_order_cm->ret,
+	LEVEL_DEBUG("payload=%d size=%d, ret=%d, sg=0x%X offset=%d ", machine_order_cm->payload, machine_order_cm->size, machine_order_cm->ret,
 		     machine_order_cm->control_flags, machine_order_cm->offset);
 
 	/* If payload==0, no extra data
@@ -60,11 +60,11 @@ int ToClient(int file_descriptor, struct client_msg *machine_order_cm, char *dat
 	*/
 	if(machine_order_cm->payload < 0) {
 		io[1].iov_len = 0;
-		LEVEL_DEBUG("Send delay message\n");
+		LEVEL_DEBUG("Send delay message");
 	} else if ( machine_order_cm->payload == 0 ) {
 		io[1].iov_len = 0;
 	} else if ( data == NULL ) {
-		LEVEL_DEBUG("Bad data pointer -- NULL\n") ;
+		LEVEL_DEBUG("Bad data pointer -- NULL") ;
 		io[1].iov_len = 0;
 	} else {
 		++nio;

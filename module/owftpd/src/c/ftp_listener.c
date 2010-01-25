@@ -53,7 +53,7 @@ int ftp_listener_init(struct ftp_listener_s *f)
 
 	daemon_assert(f != NULL);
 
-	LEVEL_DEBUG("ftp_listener_init: name=[%s]\n", Outbound_Control.head->name);
+	LEVEL_DEBUG("ftp_listener_init: name=[%s]", Outbound_Control.head->name);
 	
 	// For sone reason, there must be an IP address included
 	if (strchr(Outbound_Control.head->name, ':') == NULL) {
@@ -61,7 +61,7 @@ int ftp_listener_init(struct ftp_listener_s *f)
 		char *oldname = Outbound_Control.head->name;
 		newname = malloc(8 + strlen(oldname) + 1); // "0.0.0.0:" + null-char.
 		if (newname == NULL) {
-			LEVEL_DEFAULT("Cannot allocate menory for port name\n");
+			LEVEL_DEFAULT("Cannot allocate menory for port name");
 			return 0;
 		}
 		strcpy(newname, "0.0.0.0:");
@@ -80,17 +80,17 @@ int ftp_listener_init(struct ftp_listener_s *f)
 	/* prevent socket from blocking on accept() */
 	flags = fcntl(Outbound_Control.head->file_descriptor, F_GETFL);
 	if (flags == -1) {
-		ERROR_CONNECT("Error getting flags on socket\n");
+		ERROR_CONNECT("Error getting flags on socket");
 		return 0;
 	}
 	if (fcntl(Outbound_Control.head->file_descriptor, F_SETFL, flags | O_NONBLOCK) != 0) {
-		ERROR_CONNECT("Error setting socket to non-blocking\n");
+		ERROR_CONNECT("Error setting socket to non-blocking");
 		return 0;
 	}
 
 	/* create a pipe to wake up our listening thread */
 	if (pipe(pipefds) != 0) {
-		ERROR_CONNECT("Error creating pipe for internal use\n");
+		ERROR_CONNECT("Error creating pipe for internal use");
 		return 0;
 	}
 
@@ -130,7 +130,7 @@ int ftp_listener_start(struct ftp_listener_s *f)
 		ret_val = 1;
 	} else {
 		errno = error_code;
-		ERROR_CONNECT("Unable to create thread\n");
+		ERROR_CONNECT("Unable to create thread");
 		ret_val = 0;
 	}
 
@@ -193,7 +193,7 @@ static void *connection_acceptor(void *v)
 	daemon_assert(invariant(f));
 
 	if (!watchdog_init(&f->watchdog, f->inactivity_timeout)) {
-		LEVEL_CONNECT("Error initializing watchdog thread\n");
+		LEVEL_CONNECT("Error initializing watchdog thread");
 		return NULL;
 	}
 
@@ -209,7 +209,7 @@ static void *connection_acceptor(void *v)
 		/* if data arrived on our pipe, we've been asked to exit */
 		if (FD_ISSET(f->shutdown_request_recv_fd, &readfds)) {
 			close(f->file_descriptor);
-			LEVEL_CONNECT("Listener no longer accepting connections\n");
+			LEVEL_CONNECT("Listener no longer accepting connections");
 			pthread_exit(NULL);
 		}
 
@@ -219,14 +219,14 @@ static void *connection_acceptor(void *v)
 		if (file_descriptor >= 0) {
 			tcp_nodelay = 1;
 			if (setsockopt(file_descriptor, IPPROTO_TCP, TCP_NODELAY, (void *) &tcp_nodelay, sizeof(int)) != 0) {
-				ERROR_CONNECT("Error in setsockopt(), FTP server dropping connection\n");
+				ERROR_CONNECT("Error in setsockopt(), FTP server dropping connection");
 				close(file_descriptor);
 				continue;
 			}
 
 			addr_len = sizeof(sockaddr_storage_t);
 			if (getsockname(file_descriptor, (struct sockaddr *) &server_addr, &addr_len) == -1) {
-				ERROR_CONNECT("Error in getsockname(), FTP server dropping connection\n");
+				ERROR_CONNECT("Error in getsockname(), FTP server dropping connection");
 				close(file_descriptor);
 				continue;
 			}
@@ -234,7 +234,7 @@ static void *connection_acceptor(void *v)
 			info = (struct connection_info_s *)
 				malloc(sizeof(struct connection_info_s));
 			if (info == NULL) {
-				LEVEL_CONNECT("Out of memory, FTP server dropping connection\n");
+				LEVEL_CONNECT("Out of memory, FTP server dropping connection");
 				close(file_descriptor);
 				continue;
 			}
@@ -243,7 +243,7 @@ static void *connection_acceptor(void *v)
 			telnet_session_init(&info->telnet_session, file_descriptor, file_descriptor);
 
 			if (!ftp_session_init(&info->ftp_session, &client_addr, &server_addr, &info->telnet_session, f->dir)) {
-				LEVEL_CONNECT("Eerror initializing FTP session, FTP server exiting\n");
+				LEVEL_CONNECT("Eerror initializing FTP session, FTP server exiting");
 				close(file_descriptor);
 				telnet_session_destroy(&info->telnet_session);
 				free(info);
@@ -255,7 +255,7 @@ static void *connection_acceptor(void *v)
 
 			if (error_code != 0) {
 				errno = error_code;
-				ERROR_CONNECT("Error creating new thread\n");
+				ERROR_CONNECT("Error creating new thread");
 				close(file_descriptor);
 				telnet_session_destroy(&info->telnet_session);
 				free(info);
@@ -264,13 +264,13 @@ static void *connection_acceptor(void *v)
 			num_error = 0;
 		} else {
 			if ((errno == ECONNABORTED) || (errno == ECONNRESET)) {
-				ERROR_CONNECT("Interruption accepting FTP connection\n");
+				ERROR_CONNECT("Interruption accepting FTP connection");
 			} else {
-				ERROR_CONNECT("Error accepting FTP connection\n");
+				ERROR_CONNECT("Error accepting FTP connection");
 				++num_error;
 			}
 			if (num_error >= MAX_ACCEPT_ERROR) {
-				LEVEL_CONNECT("Too many consecutive errors, FTP server exiting\n");
+				LEVEL_CONNECT("Too many consecutive errors, FTP server exiting");
 				return NULL;
 			}
 		}
@@ -291,7 +291,7 @@ static char *addr2string(const sockaddr_storage_t * s)
 		int error;
 		error = getnameinfo((struct sockaddr *) s, sizeof(sockaddr_storage_t), addr, sizeof(addr), NULL, 0, NI_NUMERICHOST);
 		if (error != 0) {
-			LEVEL_CONNECT("getnameinfo error; %s\n", gai_strerror(error));
+			LEVEL_CONNECT("getnameinfo error; %s", gai_strerror(error));
 			ret_val = "Unknown IP";
 		} else {
 			ret_val = addr;
@@ -328,7 +328,7 @@ static void *connection_handler(void *v)
 	/* process global data */
 	pthread_mutex_lock(&f->mutex);
 	num_connections = ++f->num_connections;
-	ERROR_DEBUG("%s port %d connection\n", addr2string(&info->ftp_session.client_addr), ntohs(SINPORT(&info->ftp_session.client_addr)));
+	ERROR_DEBUG("%s port %d connection", addr2string(&info->ftp_session.client_addr), ntohs(SINPORT(&info->ftp_session.client_addr)));
 	pthread_mutex_unlock(&f->mutex);
 
 	/* handle the session */
@@ -345,7 +345,7 @@ static void *connection_handler(void *v)
 		/* log the rejection */
 		pthread_mutex_lock(&f->mutex);
 		LEVEL_CONNECT
-			("%s port %d exceeds max users (%d), dropping connection\n",
+			("%s port %d exceeds max users (%d), dropping connection",
 			 addr2string(&info->ftp_session.client_addr), ntohs(SINPORT(&info->ftp_session.client_addr)), num_connections);
 		pthread_mutex_unlock(&f->mutex);
 
@@ -373,7 +373,7 @@ static void connection_handler_cleanup(void *v)
 	f->num_connections--;
 	pthread_cond_signal(&f->shutdown_cond);
 
-	LEVEL_CONNECT("%s port %d disconnected\n", addr2string(&info->ftp_session.client_addr), ntohs(SINPORT(&info->ftp_session.client_addr)));
+	LEVEL_CONNECT("%s port %d disconnected", addr2string(&info->ftp_session.client_addr), ntohs(SINPORT(&info->ftp_session.client_addr)));
 
 	pthread_mutex_unlock(&f->mutex);
 

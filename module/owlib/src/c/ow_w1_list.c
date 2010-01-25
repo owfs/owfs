@@ -51,7 +51,7 @@ static int w1_list_masters( void )
 	w1m.len = 0;
 	w1m.id.mst.id = 0;
 
-	LEVEL_DEBUG("Sending w1 bus master list message\n");
+	LEVEL_DEBUG("Sending w1 bus master list message");
 	return W1_send_msg( NULL, &w1m, NULL, NULL );
 }
 
@@ -76,7 +76,7 @@ static void w1_masters(struct netlink_parse * nlp, void * v, const struct parsed
 			w1_parse_master_list( nlp );
 				break;
 		default:
-			LEVEL_DEBUG("Other command (Not master list)\n");
+			LEVEL_DEBUG("Other command (Not master list)");
 			break ;
 	}
 }

@@ -156,7 +156,7 @@ static enum e_visibility EDS_visibie(struct parsedname * pn) {
 		FS_OWQ_destroy_not_pn(owq) ;
 	}
 	if (Cache_Get_Internal_Strict(&tag, sizeof(UINT), InternalProp(TAG), pn) != 0 ) {	// tag doesn't (yet) exist
-		LEVEL_DEBUG("Cannot check visibility tag type for this entry\n");
+		LEVEL_DEBUG("Cannot check visibility tag type for this entry");
 		return visible_now ; // assume visible
 	}
 	return ( tag & pn->selected_filetype->data.u ) ? visible_now : visible_not_now ;

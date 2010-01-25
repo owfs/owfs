@@ -324,7 +324,7 @@ static void reply(struct ftp_session_s *f, int code, const char *fmt, ...)
 	va_end(ap);
 
 	/* log our reply */
-	LEVEL_DATA("%s %s\n", f->client_addr_str, buf);
+	LEVEL_DATA("%s %s", f->client_addr_str, buf);
 
 	/* send the output to the other side */
 	telnet_session_println(f->telnet_session, buf);
@@ -442,7 +442,7 @@ static void change_dir(struct ftp_session_s *f, char *new_dir)
 	cps.rest = new_dir;
 	cps.pse = parse_status_init;
 
-	LEVEL_DEBUG("CD dir=%s, file=%s\n", SAFESTRING(cps.buffer), SAFESTRING(new_dir));
+	LEVEL_DEBUG("CD dir=%s, file=%s", SAFESTRING(cps.buffer), SAFESTRING(new_dir));
 	FileLexCD(&cps);
 
 	switch (cps.solutions) {
@@ -1026,7 +1026,7 @@ static void do_retr(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 	}
 
 	/* note the transfer */
-	LEVEL_DATA("%s retrieved \"%s\", %ld bytes in %d.%06d seconds\n",
+	LEVEL_DATA("%s retrieved \"%s\", %ld bytes in %d.%06d seconds",
 			   f->client_addr_str, OWQ_pn(&owq).path, size_write, transfer_time.tv_sec, transfer_time.tv_usec);
 
   exit_retr:
@@ -1162,7 +1162,7 @@ static void do_stor(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 	}
 
 	/* note the transfer */
-	LEVEL_DATA("%s stored \"%s\", %ld bytes in %d.%06d seconds\n",
+	LEVEL_DATA("%s stored \"%s\", %ld bytes in %d.%06d seconds",
 			   f->client_addr_str, pn->path, OWQ_size(owq), transfer_time.tv_sec, transfer_time.tv_usec);
 
   exit_stor:

@@ -354,39 +354,39 @@ static int FS_w_flash(struct one_wire_query *owq)
 
 	// test size
 	if ( OWQ_size(owq) > _FC02_FUNCTION_FLASH_SIZE ) {
-		LEVEL_DEBUG("Flash size of %d is too large (max %d) .\n", (int)OWQ_size(owq), (int)_FC02_FUNCTION_FLASH_SIZE ) ;
+		LEVEL_DEBUG("Flash size of %d is too large (max %d) .", (int)OWQ_size(owq), (int)_FC02_FUNCTION_FLASH_SIZE ) ;
 		return -EBADMSG ;
 	}
 	if ( OWQ_size(owq) % 0x200 ) {
-		LEVEL_DEBUG("Flash size of %d is not a multiple of 512.\n", (int)OWQ_size(owq) ) ;
+		LEVEL_DEBUG("Flash size of %d is not a multiple of 512.", (int)OWQ_size(owq) ) ;
 		return -EBADMSG ;
 	}
 
 	if ( OWQ_offset(owq) != 0 ) {
-		LEVEL_DEBUG("Can only write flash from start of buffer.\n") ;
+		LEVEL_DEBUG("Can only write flash from start of buffer.") ;
 		return -ERANGE ;
 	}
 
 	// start flash process
 	if ( OW_initiate_flash( rom_image, pn ) ) {
-		LEVEL_DEBUG("Unsuccessful flash initialization\n");
+		LEVEL_DEBUG("Unsuccessful flash initialization");
 		return -EFAULT ;
 	}
 
 	// loop though pages, up to 5 attempts for each page
 	for ( rom_offset=0 ; rom_offset<OWQ_size(owq) ; rom_offset += _FC02_MAX_WRITE_GULP ) {
 		int tries = 0 ;
-		LEVEL_DEBUG("Flash up to %d bytes.\n",rom_offset);
+		LEVEL_DEBUG("Flash up to %d bytes.",rom_offset);
 		while ( OW_write_flash( &rom_image[rom_offset], pn ) ) {
 			++tries ;
 			if ( tries > 4 ) {
-				LEVEL_DEBUG( "Too many failures writing flash at offset %d.\n", rom_offset ) ;
+				LEVEL_DEBUG( "Too many failures writing flash at offset %d.", rom_offset ) ;
 				return -EIO ;
 			}
 		}
 	}
 	
-	LEVEL_DEBUG("Successfully flashed full rom.\n") ;
+	LEVEL_DEBUG("Successfully flashed full rom.") ;
 	return 0;
 }
 
@@ -634,12 +634,18 @@ static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 	struct transaction_log t[] = {
 		TRXN_START,
 		TRXN_WR_CRC16(p, 1+ 2 + 1 + size, 0),
+//		TRXN_WRITE(p, 1+ 2 + 1 + size +2),
 		TRXN_WRITE1(q),
 		TRXN_END,
 	};
 	
 	/* Copy to scratchpad */
 	memcpy(&p[4], data, size);
+//	p[4+size+0] = 0xFF;
+//	p[4+size+1] = 0xFF;
+
+	printf("Write to BAE size=%d offset=%x\n",(int)size,(unsigned int)offset) ;
+	Debug_Bytes("BAE write",p,1+2+1+size) ;
 	
 	return BUS_transaction(t, pn) ;
 }

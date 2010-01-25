@@ -159,6 +159,6 @@ int COMMON_read_memory_plus_counter(BYTE * extra, size_t page, size_t pagesize, 
 	if (extra) {
 		memcpy(extra, &p[3 + _1W_Throw_Away_Bytes], 8);
 	}
-	LEVEL_DEBUG("Counter Data: " SNformat "\n", SNvar(extra));
+	LEVEL_DEBUG("Counter Data: " SNformat, SNvar(extra));
 	return 0;
 }

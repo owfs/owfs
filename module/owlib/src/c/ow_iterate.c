@@ -62,7 +62,7 @@ int COMMON_OWQ_readwrite_paged(struct one_wire_query *owq, size_t page, size_t p
 		}
 		OWQ_size(owq_page) = thispage;
 		if (readwritefunc(owq_page, 0, pagelen)) {
-			LEVEL_DEBUG("error at offset %ld\n", (long) offset);
+			LEVEL_DEBUG("error at offset %ld", (long) offset);
 			return 1;
 		}
 		OWQ_buffer(owq_page) += thispage;

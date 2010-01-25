@@ -115,7 +115,7 @@ static int LinkVersion_knownstring( const char * reported_string, struct LINK_id
 	// loop through LINK version string table looking for a match
 	for (version_index = 0; tbl[version_index].verstring[0] != '0'; version_index++) {
 		if (strstr(reported_string, tbl[version_index].verstring) != NULL) {
-			LEVEL_DEBUG("Link version Found %s\n", tbl[version_index].verstring);
+			LEVEL_DEBUG("Link version Found %s", tbl[version_index].verstring);
 			in->Adapter = tbl[version_index].Adapter;
 			in->adapter_name = tbl[version_index].name;
 			return 0;
@@ -134,7 +134,7 @@ static int LinkVersion_unknownstring( const char * reported_string, struct conne
 			case 'l':
 			case 'L':
 				if ( strncasecmp( "link", version_pointer, 4 ) == 0 ) {
-					LEVEL_DEBUG("Link version is unrecognized: %s (but that's ok).\n", reported_string);
+					LEVEL_DEBUG("Link version is unrecognized: %s (but that's ok).", reported_string);
 					in->Adapter = adapter_LINK_other;
 					in->adapter_name = "Other LINK";
 					return 0;
@@ -192,7 +192,7 @@ static int LINK_serial_detect(struct parsedname * pn_minimal)
 		memset(version_read_in, 0, MAX_LINK_VERSION_LENGTH);
 		
 		/* read the version string */
-		LEVEL_DEBUG("Checking LINK version\n");
+		LEVEL_DEBUG("Checking LINK version");
 		
 		LINK_read((BYTE *)version_read_in, MAX_LINK_VERSION_LENGTH, 0, pn_minimal);	// ignore return value -- will time out, probably
 		Debug_Bytes("Read version from link", (BYTE*)version_read_in, MAX_LINK_VERSION_LENGTH);
@@ -207,7 +207,7 @@ static int LINK_serial_detect(struct parsedname * pn_minimal)
 			return 0;
 		}
 	}
-	LEVEL_DEFAULT("LINK detection error\n");
+	LEVEL_DEFAULT("LINK detection error");
 	return -ENODEV;
 }
 
@@ -232,7 +232,7 @@ static int LINK_net_detect(struct parsedname * pn_minimal)
 		struct timeval tvnetfirst = { Globals.timeout_network, 0, };
 		tcp_read(in->file_descriptor, data, 1, &tvnetfirst, &read_size ) ;
 	}
-	LEVEL_DEBUG("Slurp in initial bytes\n");
+	LEVEL_DEBUG("Slurp in initial bytes");
 	TCP_slurp( in->file_descriptor ) ;
 	LINK_flush(in);
 
@@ -242,7 +242,7 @@ static int LINK_net_detect(struct parsedname * pn_minimal)
 		memset(version_read_in, 0, MAX_LINK_VERSION_LENGTH);
 		
 		/* read the version string */
-		LEVEL_DEBUG("Checking LINK version\n");
+		LEVEL_DEBUG("Checking LINK version");
 
 		// need to read 1 char at a time to get a short string
 		for ( version_index=0 ; version_index<MAX_LINK_VERSION_LENGTH ; ++version_index ) {
@@ -257,7 +257,7 @@ static int LINK_net_detect(struct parsedname * pn_minimal)
 			return 0;
 		}
 	}
-	LEVEL_DEFAULT("LINK detection error\n");
+	LEVEL_DEFAULT("LINK detection error");
 	return -ENODEV;
 }
 
@@ -271,7 +271,7 @@ static void LINK_set_baud(const struct parsedname *pn)
 
 	COM_BaudRestrict( &(pn->selected_connection->baud), B9600, B19200, B38400, B57600, 0 ) ;
 
-	LEVEL_DEBUG("to %d\n",COM_BaudRate(pn->selected_connection->baud));
+	LEVEL_DEBUG("to %d",COM_BaudRate(pn->selected_connection->baud));
 	// Find rate parameter
 	switch ( pn->selected_connection->baud ) {
 		case B9600:
@@ -290,14 +290,14 @@ static void LINK_set_baud(const struct parsedname *pn)
 			break ;
 #endif
 		default:
-			LEVEL_DEBUG("Unrecognized baud rate\n");
+			LEVEL_DEBUG("Unrecognized baud rate");
 			return ;
 	}
 
-	LEVEL_DEBUG("LINK change baud string <%s>\n",speed_code);
+	LEVEL_DEBUG("LINK change baud string <%s>",speed_code);
 	LINK_flush(pn->selected_connection);
 	if ( LINK_write(LINK_string(speed_code), 1, pn) ) {
-		LEVEL_DEBUG("LINK change baud error -- will return to 9600\n");
+		LEVEL_DEBUG("LINK change baud error -- will return to 9600");
 		pn->selected_connection->baud = B9600 ;
 		++pn->selected_connection->changed_bus_settings ;
 		return ;
@@ -342,30 +342,30 @@ static int LINK_reset(const struct parsedname *pn)
 
 	//Response is 3 bytes:  1 byte for code + \r\n
 	if (LINK_write(LINK_string("r"), 1, pn) || LINK_read(resp, 3, 1, pn)) {
-		LEVEL_DEBUG("Error resetting LINK device\n");
+		LEVEL_DEBUG("Error resetting LINK device");
 		return -EIO;
 	}
 
 	switch (resp[0]) {
 
 	case 'P':
-		LEVEL_DEBUG("ok, devices Present\n");
+		LEVEL_DEBUG("ok, devices Present");
 		ret = BUS_RESET_OK;
 		pn->selected_connection->AnyDevices = anydevices_yes;
 		break;
 	case 'N':
-		LEVEL_DEBUG("ok, devices Not present\n");
+		LEVEL_DEBUG("ok, devices Not present");
 		ret = BUS_RESET_OK;
 		pn->selected_connection->AnyDevices = anydevices_no;
 		break;
 
 	case 'S':
-		LEVEL_DEBUG("short, Short circuit on 1-wire bus!\n");
+		LEVEL_DEBUG("short, Short circuit on 1-wire bus!");
 		ret = BUS_RESET_SHORT;
 		break;
 
 	default:
-		LEVEL_DEBUG("bad, Unknown LINK response %c\n", resp[0]);
+		LEVEL_DEBUG("bad, Unknown LINK response %c", resp[0]);
 		ret = -EIO;
 		break;
 	}
@@ -401,10 +401,10 @@ static int LINK_next_both(struct device_search *ds, const struct parsedname *pn)
 	// LOOK FOR NEXT ELEMENT
 	++ds->index;
 
-	LEVEL_DEBUG("Index %d\n", ds->index);
+	LEVEL_DEBUG("Index %d", ds->index);
 
 	ret = DirblobGet(ds->index, ds->sn, db);
-	LEVEL_DEBUG("DirblobGet %d\n", ret);
+	LEVEL_DEBUG("DirblobGet %d", ret);
 	switch (ret) {
 	case 0:
 		if ((ds->sn[0] & 0x7F) == 0x04) {
@@ -417,7 +417,7 @@ static int LINK_next_both(struct device_search *ds, const struct parsedname *pn)
 		break;
 	}
 
-	LEVEL_DEBUG("SN found: " SNformat "\n", SNvar(ds->sn));
+	LEVEL_DEBUG("SN found: " SNformat "", SNvar(ds->sn));
 	return ret;
 }
 
@@ -494,7 +494,7 @@ static int LINK_directory(struct device_search *ds, struct dirblob *db, const st
 			LEVEL_DEBUG("Did not change to conditional search");
 			return -EIO;
 		}
-		LEVEL_DEBUG("LINK set for conditional search\n");
+		LEVEL_DEBUG("LINK set for conditional search");
 	} else {
 		if ((ret = LINK_write(LINK_string("tF0"), 3, pn))) {
 			return ret;
@@ -506,7 +506,7 @@ static int LINK_directory(struct device_search *ds, struct dirblob *db, const st
 			LEVEL_DEBUG("Did not change to normal search");
 			return -EIO;
 		}
-		LEVEL_DEBUG("LINK set for normal search\n");
+		LEVEL_DEBUG("LINK set for normal search");
 	}
 
 	if ((ret = LINK_write(LINK_string("f"), 1, pn))) {
@@ -526,11 +526,11 @@ static int LINK_directory(struct device_search *ds, struct dirblob *db, const st
 	
 	switch (resp[0]) {
 		case 'E':
-			LEVEL_DEBUG("LINK returned E: No devices in alarm\n");
+			LEVEL_DEBUG("LINK returned E: No devices in alarm");
 			// pass through
 		case 'N':
 			// remove extra 2 bytes
-			LEVEL_DEBUG("LINK returned E or N: Empty bus\n");
+			LEVEL_DEBUG("LINK returned E or N: Empty bus");
 			if ((ret = LINK_read(LINK_string(&resp[1]), 2, 1, pn))) {
 				return ret;
 			}
@@ -555,7 +555,7 @@ static int LINK_directory(struct device_search *ds, struct dirblob *db, const st
 		}
 		break;
 	default:
-		LEVEL_DEBUG("LINK_search default case\n");
+		LEVEL_DEBUG("LINK_search default case");
 		return -EIO;
 	}
 
@@ -571,13 +571,13 @@ static int LINK_directory(struct device_search *ds, struct dirblob *db, const st
 		sn[2] = string2num(&resp[12]);
 		sn[1] = string2num(&resp[14]);
 		sn[0] = string2num(&resp[16]);
-		LEVEL_DEBUG("SN found: " SNformat "\n", SNvar(sn));
+		LEVEL_DEBUG("SN found: " SNformat, SNvar(sn));
 
 		// CRC check
 		if (CRC8(sn, 8) || (sn[0] == 0)) {
 			/* A minor "error" and should perhaps only return -1 */
 			/* to avoid reconnect */
-			LEVEL_DEBUG("sn = %s\n", sn);
+			LEVEL_DEBUG("sn = %s", sn);
 			return -EIO;
 		}
 

@@ -49,13 +49,13 @@ int TestConnection(const struct parsedname *pn)
 		}
 		if ( ret != 0 ) {
 			STAT_ADD1_BUS(e_bus_reconnect_errors, in);
-			LEVEL_DEFAULT("Failed to reconnect %s bus master!\n", in->adapter_name);
+			LEVEL_DEFAULT("Failed to reconnect %s bus master!", in->adapter_name);
 			in->reconnect_state = reconnect_ok + 1 ;
 			// delay to slow thrashing
 			UT_delay(200);
 			ret = -EIO;
 		} else {
-			LEVEL_DEFAULT("%s bus master reconnected\n", in->adapter_name);
+			LEVEL_DEFAULT("%s bus master reconnected", in->adapter_name);
 			in->reconnect_state = reconnect_ok;
 		}
 	}

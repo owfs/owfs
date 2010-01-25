@@ -429,15 +429,15 @@ static int OW_Hinit(struct parsedname * pn)
 	
 	if (OW_w_control(0x04, pn)	// strobe
 		|| OW_r_reg(data, pn)) {
-		LEVEL_DEBUG("Trouble sending strobe to Hobbyboard LCD\n") ;
+		LEVEL_DEBUG("Trouble sending strobe to Hobbyboard LCD") ;
 		return 1;
 	}
 	if ( data[5] != 0x84 )	{
-		LEVEL_DEBUG("LCD is not powered\n"); // not powered
+		LEVEL_DEBUG("LCD is not powered"); // not powered
 		return 1 ;
 	}
 	if ( OW_c_latch(pn) ) {
-		LEVEL_DEBUG("Trouble clearing latches\n") ;
+		LEVEL_DEBUG("Trouble clearing latches") ;
 		return 1 ;
 	}// clear PIOs
 	if ( OW_w_pios(start, 1, pn)) {
@@ -478,7 +478,7 @@ static int asciiyx( struct yx * YX )
 {
 	char * colon = memchr( YX->string, ':', YX->length ) ; // position of mandatory colon
 	if ( colon==NULL ) {
-		LEVEL_DEBUG("No colon in screen text. Should be 'y.x:text'\n");
+		LEVEL_DEBUG("No colon in screen text. Should be 'y.x:text'");
 		return -EINVAL ;
 	}
 
@@ -557,7 +557,7 @@ static int OW_Hprintyx(struct yx * YX, struct parsedname * pn)
 	u_char chip_command;
 
 	if ( YX->x > LCD_LINE_END || YX->y > LCD_LAST_ROW || YX->x < LCD_LINE_START || YX->y < LCD_FIRST_ROW ) {
-		LEVEL_DEBUG("Bad screen coordinates y=%d x=%d\n",YX->y,YX->x);
+		LEVEL_DEBUG("Bad screen coordinates y=%d x=%d",YX->y,YX->x);
 		return 1;
 	}
 	

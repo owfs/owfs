@@ -141,7 +141,7 @@ static int FS_r_page(struct one_wire_query *owq)
 	if (COMMON_OWQ_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, COMMON_read_memory_crc16_AA)) {
 		return -EINVAL;
 	}
-	LEVEL_DEBUG("returning from FS_r_page length=%d\n", (int) OWQ_length(owq));
+	LEVEL_DEBUG("returning from FS_r_page length=%d", (int) OWQ_length(owq));
 	return 0;
 }
 
@@ -461,12 +461,12 @@ static int OW_volts(_FLOAT * f, const int resolution, struct parsedname *pn)
 	//printf("writeback=%d\n",writeback);
 	// Start A/D process if needed
 	if (OW_convert(pn)) {
-		LEVEL_DEFAULT("Failed to start conversion\n");
+		LEVEL_DEFAULT("Failed to start conversion");
 		return 1;
 	}
 	// read data
 	if (OW_r_mem(data, 8, _ADDRESS_CONVERSION_PAGE, pn)) {
-		LEVEL_DEFAULT("OW_r_mem Failed\n");
+		LEVEL_DEFAULT("OW_r_mem Failed");
 		return 1;
 	}
 	//printf("2450 data = %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7]) ;
@@ -509,12 +509,12 @@ static int OW_1_volts(_FLOAT * f, const int element, const int resolution, struc
 	}
 	// Start A/D process
 	if (OW_convert(pn)) {
-		LEVEL_DEFAULT("Failed to start conversion\n");
+		LEVEL_DEFAULT("Failed to start conversion");
 		return 1;
 	}
 	// read data
 	if (OW_r_mem(data, 2, _ADDRESS_CONVERSION_PAGE + (element << 1), pn)) {
-		LEVEL_DEFAULT("OW_r_mem failed\n");
+		LEVEL_DEFAULT("OW_r_mem failed");
 		return 1;
 	}
 //printf("2450 data = %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7]) ;

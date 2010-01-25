@@ -34,25 +34,25 @@ int COM_open(struct connection_in *in)
 {
 	struct termios newSerialTio;	/*new serial port settings */
 	if (in == NULL) {
-		LEVEL_DEBUG("Attempt to open a NULL serial device\n");
+		LEVEL_DEBUG("Attempt to open a NULL serial device");
 		return -ENODEV;
 	}
 //    if ((in->file_descriptor = open(in->name, O_RDWR | O_NONBLOCK )) < 0) {
 	if ((in->file_descriptor = open(in->name, O_RDWR | O_NONBLOCK | O_NOCTTY)) < 0) {
-		ERROR_DEFAULT("Cannot open port: %s\n", SAFESTRING(in->name));
+		ERROR_DEFAULT("Cannot open port: %s", SAFESTRING(in->name));
 		return -ENODEV;
 	}
 	// valgrind warns about uninitialized memory in tcsetattr(), so clear all.
 	memset(&(in->oldSerialTio), 0, sizeof(struct termios));
 	if ((tcgetattr(in->file_descriptor, &in->oldSerialTio) < 0)) {
-		ERROR_CONNECT("Cannot get old port attributes: %s\n", SAFESTRING(in->name));
+		ERROR_CONNECT("Cannot get old port attributes: %s", SAFESTRING(in->name));
 	}
 
 	// set baud in structure
 	COM_speed( B9600, in ) ;
 	memset(&newSerialTio, 0, sizeof(struct termios));
 	if ((tcgetattr(in->file_descriptor, &newSerialTio) < 0)) {
-		ERROR_CONNECT("Cannot get new port attributes: %s\n", SAFESTRING(in->name));
+		ERROR_CONNECT("Cannot get new port attributes: %s", SAFESTRING(in->name));
 	}
 	
 	// Set to non-canonical mode, and no RTS/CTS handshaking
@@ -65,7 +65,7 @@ int COM_open(struct connection_in *in)
 	newSerialTio.c_cc[VMIN] = 0;
 	newSerialTio.c_cc[VTIME] = 3;
 	if (tcsetattr(in->file_descriptor, TCSAFLUSH, &newSerialTio)) {
-		ERROR_CONNECT("Cannot set port attributes: %s\n", SAFESTRING(in->name));
+		ERROR_CONNECT("Cannot set port attributes: %s", SAFESTRING(in->name));
 		return -EIO;
 	}
 	tcflush(in->file_descriptor, TCIOFLUSH);
@@ -77,13 +77,13 @@ void COM_close(struct connection_in *in)
 {
 	// restore tty settings
 	if (in->file_descriptor > -1) {
-		LEVEL_DEBUG("COM_close: flush\n");
+		LEVEL_DEBUG("COM_close: flush");
 		tcflush(in->file_descriptor, TCIOFLUSH);
-		LEVEL_DEBUG("COM_close: restore\n");
+		LEVEL_DEBUG("COM_close: restore");
 		if (tcsetattr(in->file_descriptor, TCSANOW, &in->oldSerialTio) < 0) {
-			ERROR_CONNECT("Cannot restore port attributes: %s\n", SAFESTRING(in->name));
+			ERROR_CONNECT("Cannot restore port attributes: %s", SAFESTRING(in->name));
 		}
-		LEVEL_DEBUG("COM_close: close\n");
+		LEVEL_DEBUG("COM_close: close");
 		close(in->file_descriptor);
 		in->file_descriptor = -1;
 	}
@@ -107,17 +107,17 @@ void COM_speed(speed_t new_baud, struct connection_in *in)
 	// valgrind warns about uninitialized memory in tcsetattr(), so clear all.
 	memset(&t, 0, sizeof(struct termios));
 	if (tcgetattr(in->file_descriptor, &t) < 0) {
-		ERROR_CONNECT("Could not get com port attributes: %s\n", SAFESTRING(in->name));
+		ERROR_CONNECT("Could not get com port attributes: %s", SAFESTRING(in->name));
 		return;
 	}
 	// set baud in structure
 	if (cfsetospeed(&t, new_baud) < 0 || cfsetispeed(&t, new_baud) < 0) {
-		ERROR_CONNECT("Trouble setting port speed: %s\n", SAFESTRING(in->name));
+		ERROR_CONNECT("Trouble setting port speed: %s", SAFESTRING(in->name));
 	}
 	// change baud on port
 	in->baud = new_baud ;
 	if (tcsetattr(in->file_descriptor, TCSAFLUSH, &t) < 0) {
-		ERROR_CONNECT("Could not set com port attributes: %s\n", SAFESTRING(in->name));
+		ERROR_CONNECT("Could not set com port attributes: %s", SAFESTRING(in->name));
 		if (new_baud != B9600) { // avoid infinite recursion
 			COM_speed(B9600, in);
 		}

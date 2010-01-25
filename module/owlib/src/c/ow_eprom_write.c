@@ -92,7 +92,7 @@ static int OW_write_eprom_byte(BYTE code, BYTE data, off_t offset, const struct 
 	};
 
 	if (BUS_transaction(t, pn)) {
-		LEVEL_DEBUG("Error writing to EPROM byte %d\n", (int) offset);
+		LEVEL_DEBUG("Error writing to EPROM byte %d", (int) offset);
 		return 1;
 	}
 	return 0 ;

@@ -23,7 +23,7 @@ int FS_OWQ_create(const char *path, char *buffer, size_t size, off_t offset, str
 	struct parsedname *pn = PN(owq);
 	int return_code ;
 
-	LEVEL_DEBUG("%s\n", path);
+	LEVEL_DEBUG("%s", path);
 
 	return_code = FS_ParsedName(path, pn) ;
 	if ( return_code == 0 ) {
@@ -42,7 +42,7 @@ struct one_wire_query * FS_OWQ_create_from_path(const char *path, size_t size)
 {
 	struct one_wire_query * owq ;
 	
-	LEVEL_DEBUG("%s\n", path);
+	LEVEL_DEBUG("%s", path);
 
 	owq = owmalloc( sizeof( struct one_wire_query ) + size ) ;
 	if ( owq == NULL ) {
@@ -55,7 +55,7 @@ struct one_wire_query * FS_OWQ_create_from_path(const char *path, size_t size)
 
 	OWQ_buffer(owq) = (char*)&owq[1] ;
 	OWQ_size(owq) = size ;
-	//LEVEL_DEBUG("owq=%p, buffer=%p, size=%d, struct=%d\n",(void*)owq,(void*)OWQ_buffer(owq),(int)size,(int) sizeof(struct one_wire_query));
+	//LEVEL_DEBUG("owq=%p, buffer=%p, size=%d, struct=%d",(void*)owq,(void*)OWQ_buffer(owq),(int)size,(int) sizeof(struct one_wire_query));
 	return owq ;
 }
 
@@ -70,7 +70,7 @@ struct one_wire_query *FS_OWQ_create_sibling(const char *sibling, struct one_wir
 	strncpy(path,PN(owq_original)->path,dirlength) ;
 	strcpy(&path[dirlength],sibling) ;
 
-	LEVEL_DEBUG("sibling %s\n", sibling);
+	LEVEL_DEBUG("sibling %s", sibling);
 
 	if ( FS_ParsedName( path, &s_pn ) == 0 ) {
 		struct one_wire_query *owq = FS_OWQ_from_pn( &s_pn ) ;
@@ -125,7 +125,7 @@ int FS_OWQ_create_plus(const char *path, const char *file, char *buffer, size_t 
 	struct parsedname *pn = PN(owq);
 	int return_code ;
 
-	LEVEL_DEBUG("%s + %s\n", path, file);
+	LEVEL_DEBUG("%s + %s", path, file);
 
 	return_code = FS_ParsedNamePlus(path, file, pn) ;
 	if ( return_code == 0 ) {
@@ -143,7 +143,7 @@ void FS_OWQ_destroy_not_pn(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 
-	LEVEL_DEBUG("%s\n", pn->path);
+	LEVEL_DEBUG("%s", pn->path);
 
 	if (pn->extension == EXTENSION_ALL && pn->type != ePN_structure) {
 		if (OWQ_array(owq)) {
@@ -161,7 +161,7 @@ void FS_OWQ_destroy(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 
-	LEVEL_DEBUG("%s\n", pn->path);
+	LEVEL_DEBUG("%s", pn->path);
 	if (pn->extension == EXTENSION_ALL && pn->type != ePN_structure) {
 		if (OWQ_array(owq)) {
 			owfree(OWQ_array(owq));

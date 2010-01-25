@@ -25,7 +25,7 @@ void ZeroAdd(const char * name, const char * type, const char * domain, const ch
 
 	// Don't add yourself
 	if ( FindOut(name,type,domain) != NULL ) {
-		LEVEL_DEBUG( "Attempt to add ourselves -- ignored\n" ) ;
+		LEVEL_DEBUG( "Attempt to add ourselves -- ignored" ) ;
 		return ;
 	}
 
@@ -34,11 +34,11 @@ void ZeroAdd(const char * name, const char * type, const char * domain, const ch
 
 	if ( in != NULL ) {
 		if ( in->connin.tcp.host && strcmp(in->connin.tcp.host,host)==0 && in->connin.tcp.service && strcmp(in->connin.tcp.service,service)==0 ) {
-			LEVEL_DEBUG( "Repeat add of %s (%s:%s) -- ignored\n",name,host,service) ;
+			LEVEL_DEBUG( "Repeat add of %s (%s:%s) -- ignored",name,host,service) ;
 			CONNIN_WUNLOCK ;
 			return ;
 		} else {
-			LEVEL_DEBUG( "The new connection replaces a previous entry\n" ) ;
+			LEVEL_DEBUG( "The new connection replaces a previous entry" ) ;
 			RemoveIn(in) ;
 		}
 	}
@@ -54,10 +54,10 @@ void ZeroDel(const char * name, const char * type, const char * domain )
 	CONNIN_WLOCK ;
 	in = FindIn( name, type, domain ) ;
 	if ( in != NULL ) {
-		LEVEL_DEBUG( "Removing %s (bus.%d)\n",name,in->index) ;
+		LEVEL_DEBUG( "Removing %s (bus.%d)",name,in->index) ;
 		RemoveIn( in ) ;
 	} else {
-		LEVEL_DEBUG("Couldn't find matching bus to remove\n");
+		LEVEL_DEBUG("Couldn't find matching bus to remove");
 	}
 	CONNIN_WUNLOCK ;
 }
@@ -81,11 +81,11 @@ static int CreateIn(const char * name, const char * type, const char * domain, c
 	in->connin.tcp.domain = owstrdup( domain) ;
 
 	if ( Zero_detect(in) != 0 ) {
-		LEVEL_DEBUG("Created a new bus.%d\n",in->index) ;
+		LEVEL_DEBUG("Created a new bus.%d",in->index) ;
 		RemoveIn(in) ;
 		return 1 ;
 	}
-	LEVEL_DEBUG("Created a new bus.%d\n",in->index) ;
+	LEVEL_DEBUG("Created a new bus.%d",in->index) ;
 	return 0 ;
 }
 

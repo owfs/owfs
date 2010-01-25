@@ -39,7 +39,7 @@ static struct connection_in * CreateIn(const char * name )
 	if ( in != NULL ) {
 		in->name = owstrdup(name) ;
 		W1_detect(in) ;
-		LEVEL_DEBUG("Created a new bus.%d\n",in->index) ;
+		LEVEL_DEBUG("Created a new bus.%d",in->index) ;
 	}
 
 	return in ;
@@ -81,19 +81,19 @@ static void * AddBus( void * v )
 	CONNIN_WLOCK ;
 
 	if ( (in = FindIn(name)) != NULL ) {
-		LEVEL_DEBUG("w1 bus <%s> already known\n",name) ;
+		LEVEL_DEBUG("w1 bus <%s> already known",name) ;
 		in->connin.w1.entry_mark = Inbound_Control.w1_entry_mark ;
 		;
 	} else if ( (in = CreateIn(name)) != NULL ) {
-		LEVEL_DEBUG("w1 bus <%s> to be added\n",name) ;
+		LEVEL_DEBUG("w1 bus <%s> to be added",name) ;
 		in->connin.w1.entry_mark = Inbound_Control.w1_entry_mark ;
 		in->connin.w1.id = bus_master ;
 	} else {
-		LEVEL_DEBUG("w1 bus <%s> couldn't be added\n",name) ;
+		LEVEL_DEBUG("w1 bus <%s> couldn't be added",name) ;
 	}
 
 	CONNIN_WUNLOCK ;
-	LEVEL_DEBUG("Normal exit.\n");
+	LEVEL_DEBUG("Normal exit.");
 	return NULL ;
 }
 
@@ -116,11 +116,11 @@ void * RemoveBus( void * v )
 	in =  FindIn( name ) ;
 	if ( in != NULL ) {
 		RemoveIn(in) ;
-		LEVEL_DEBUG("<%s>\n",name) ;
+		LEVEL_DEBUG("<%s>",name) ;
 	}
 
 	CONNIN_WUNLOCK ;
-	LEVEL_DEBUG("Normal exit.\n");
+	LEVEL_DEBUG("Normal exit.");
 	return NULL ;
 }
 
@@ -132,7 +132,7 @@ void AddW1Bus( int bus_master )
 	pthread_t thread;
 	int err = pthread_create(&thread, NULL, AddBus, bus_master );
 	if (err) {
-		LEVEL_CONNECT("W1 bus add thread error %d.\n", err);
+		LEVEL_CONNECT("W1 bus add thread error %d.", err);
 	}
 }
 
@@ -141,7 +141,7 @@ void RemoveW1Bus( int bus_master )
 	pthread_t thread;
 	int err = pthread_create(&thread, NULL, RemoveBus, bus_master );
 	if (err) {
-		LEVEL_CONNECT("W1 bus add thread error %d.\n", err);
+		LEVEL_CONNECT("W1 bus add thread error %d.", err);
 	}
 }
 

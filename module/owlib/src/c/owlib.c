@@ -34,7 +34,7 @@ int LibStart(void)
 #if OW_W1
 		W1_Browse() ;
 #else /* OW_W1 */
-		LEVEL_DEFAULT("W1 (the linux kernel 1-wire system) is not supported\n");
+		LEVEL_DEFAULT("W1 (the linux kernel 1-wire system) is not supported");
 #endif /* OW_W1 */
 	}
 
@@ -80,7 +80,7 @@ static void SetupTemperatureLimits( void )
 	} else {
 		Globals.temphigh = fromTemperature(Globals.temphigh,&pn) ; // internal scale
 	}
-	LEVEL_DEBUG("Globals temp limits %gC %gC (for simulated adapters)\n",Globals.templow,Globals.temphigh);
+	LEVEL_DEBUG("Globals temp limits %gC %gC (for simulated adapters)",Globals.templow,Globals.temphigh);
 }
 
 static void SetupInboundConnections(void)
@@ -94,20 +94,20 @@ static void SetupInboundConnections(void)
 
 		case bus_zero:
 			if ((ret = Zero_detect(in))) {
-				LEVEL_CONNECT("Cannot open server at %s\n", in->name);
+				LEVEL_CONNECT("Cannot open server at %s", in->name);
 			}
 			break;
 
 		case bus_server:
 			if ((ret = Server_detect(in))) {
-				LEVEL_CONNECT("Cannot open server at %s\n", in->name);
+				LEVEL_CONNECT("Cannot open server at %s", in->name);
 			}
 			break;
 
 		case bus_serial:
 			/* Set up DS2480/LINK interface */
 			if ((ret = DS2480_detect(in))) {
-				LEVEL_CONNECT("Cannot detect DS2480 or LINK interface on %s.\n", in->name);
+				LEVEL_CONNECT("Cannot detect DS2480 or LINK interface on %s.", in->name);
 			} else {
 				break ;
 			}
@@ -118,20 +118,20 @@ static void SetupInboundConnections(void)
 
 		case bus_passive:
 			if ((ret = DS9097_detect(in))) {
-				LEVEL_DEFAULT("Cannot detect DS9097 (passive) interface on %s.\n", in->name);
+				LEVEL_DEFAULT("Cannot detect DS9097 (passive) interface on %s.", in->name);
 			}
 			break;
 			
 		case bus_xport:
 			if ((ret = DS2480_detect(in))) {
-				LEVEL_DEFAULT("Cannot detect DS2480B via telnet interface on %s.\n", in->name);
+				LEVEL_DEFAULT("Cannot detect DS2480B via telnet interface on %s.", in->name);
 			}
 			break;
 			
 		case bus_i2c:
 #if OW_I2C
 			if ((ret = DS2482_detect(in))) {
-				LEVEL_CONNECT("Cannot detect an i2c DS2482-x00 on %s\n", in->name);
+				LEVEL_CONNECT("Cannot detect an i2c DS2482-x00 on %s", in->name);
 			}
 #endif							/* OW_I2C */
 			break;
@@ -139,7 +139,7 @@ static void SetupInboundConnections(void)
 		case bus_ha7net:
 #if OW_HA7
 			if ((ret = HA7_detect(in))) {
-			LEVEL_CONNECT("Cannot detect an HA7net server on %s\n", in->name);
+			LEVEL_CONNECT("Cannot detect an HA7net server on %s", in->name);
 			}
 #endif                          /* OW_HA7 */
                 break;
@@ -147,27 +147,27 @@ static void SetupInboundConnections(void)
 		case bus_enet:
 #if OW_HA7
 			if ((ret = OWServer_Enet_detect(in))) {
-			LEVEL_CONNECT("Cannot detect an OWServer_Enet on %s\n", in->name);
+			LEVEL_CONNECT("Cannot detect an OWServer_Enet on %s", in->name);
 			}
 #endif                          /* OW_HA7 */
                 break;
 
 		case bus_ha5:
 			if ((ret = HA5_detect(in))) {
-				LEVEL_CONNECT("Cannot detect an HA5 on %s\n", in->name);
+				LEVEL_CONNECT("Cannot detect an HA5 on %s", in->name);
 			}
 			break;
 
 		case bus_ha7e:
 			if ((ret = HA7E_detect(in))) {
-			LEVEL_CONNECT("Cannot detect an HA7E/HA7S on %s\n", in->name);
+			LEVEL_CONNECT("Cannot detect an HA7E/HA7S on %s", in->name);
 			}
 			break;
 
 		case bus_parallel:
 #if OW_PARPORT
 			if ((ret = DS1410_detect(in))) {
-				LEVEL_DEFAULT("Cannot detect the DS1410E parallel bus master\n");
+				LEVEL_DEFAULT("Cannot detect the DS1410E parallel bus master");
 			}
 #endif							/* OW_PARPORT */
 			break;
@@ -178,7 +178,7 @@ static void SetupInboundConnections(void)
 			 * adapter just in case it's disconnected. It's done in the
 			 * DS9490_next_both() if not set. */
 			if ((ret = DS9490_detect(in))) {
-				LEVEL_DEFAULT("Cannot open USB bus master\n");
+				LEVEL_DEFAULT("Cannot open USB bus master");
 			}
 #endif							/* OW_USB */
 			break;
@@ -186,13 +186,13 @@ static void SetupInboundConnections(void)
 		case bus_link:
 		case bus_elink:
 			if ((ret = LINK_detect(in))) {
-				LEVEL_CONNECT("Cannot open LINK bus master at %s\n", in->name);
+				LEVEL_CONNECT("Cannot open LINK bus master at %s", in->name);
 			}
 			break;
 
 		case bus_etherweather:
 			if ((ret = EtherWeather_detect(in))) {
-				LEVEL_CONNECT("Cannot detect an EtherWeather server on %s\n", in->name);
+				LEVEL_CONNECT("Cannot detect an EtherWeather server on %s", in->name);
 			}
 			break;
 
@@ -252,7 +252,7 @@ static void IgnoreSignals(void)
 	sa.sa_flags = 0;
 	sa.sa_handler = SIG_IGN;
 	if (sigaction(SIGPIPE, &sa, NULL) == -1) {
-		LEVEL_DEFAULT("Cannot ignore SIGPIPE\n");
+		LEVEL_DEFAULT("Cannot ignore SIGPIPE");
 		exit(0);
 	}
 }

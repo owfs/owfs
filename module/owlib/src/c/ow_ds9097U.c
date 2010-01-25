@@ -307,7 +307,7 @@ static int DS2480_big_reset_serial(const struct parsedname *pn)
 	// BUS_reset will do the actual changes
 	pn->selected_connection->changed_bus_settings = 1 ; // Force a mode change
 	// Send a reset again
-	LEVEL_DEBUG("Send the initial reset to the bus master.\n");
+	LEVEL_DEBUG("Send the initial reset to the bus master.");
 	BUS_reset(pn) ;
 
 	// delay to let line settle
@@ -342,7 +342,7 @@ static int DS2480_big_reset_net(const struct parsedname *pn)
 		struct timeval tvnetfirst = { Globals.timeout_network, 0, };
 		tcp_read(in->file_descriptor, data, 1, &tvnetfirst, &read_size ) ;
 	}
-	LEVEL_DEBUG("Slurp in initial bytes\n");
+	LEVEL_DEBUG("Slurp in initial bytes");
 	DS2480_slurp( in ) ;
 	DS2480_flush(in);
 
@@ -436,7 +436,7 @@ static int DS2480_configuration_write(BYTE parameter_code, BYTE value_code, cons
 	if (expected_response == actual_response) {
 		return 0;
 	}
-    LEVEL_DEBUG("wrong response (%.2X not %.2X)\n",actual_response,expected_response) ;
+    LEVEL_DEBUG("wrong response (%.2X not %.2X)",actual_response,expected_response) ;
     return -EINVAL;
 }
 
@@ -454,7 +454,7 @@ static int DS2480_configuration_read(BYTE parameter_code, BYTE value_code, const
 	if (expected_response == actual_response) {
 		return 0;
 	}
-    LEVEL_DEBUG("wrong response (%.2X not %.2X)\n",actual_response,expected_response) ;
+    LEVEL_DEBUG("wrong response (%.2X not %.2X)",actual_response,expected_response) ;
     return -EINVAL;
 }
 
@@ -477,12 +477,12 @@ static void DS2480_set_baud_control(const struct parsedname *pn)
 	if ( DS2480_set_baud(pn) == 0 ) {
 		return ;
 	}
-	LEVEL_DEBUG("Failed first attempt at resetting baud rate of bus master %s\n",SAFESTRING(in->name)) ;
+	LEVEL_DEBUG("Failed first attempt at resetting baud rate of bus master %s",SAFESTRING(in->name)) ;
 
 	if ( DS2480_set_baud(pn) == 0 ) {
 		return ;
 	}
-	LEVEL_DEBUG("Failed second attempt at resetting baud rate of bus master %s\n",SAFESTRING(in->name)) ;
+	LEVEL_DEBUG("Failed second attempt at resetting baud rate of bus master %s",SAFESTRING(in->name)) ;
 
 	// uh oh -- undefined state -- not sure what the bus speed is.
 	in->reconnect_state = reconnect_error ;
@@ -737,7 +737,7 @@ static int DS2480_next_both(struct device_search *ds, const struct parsedname *p
 	// set the count
 	ds->LastDiscrepancy = mismatched;
 
-	LEVEL_DEBUG("SN found: " SNformat "\n", SNvar(ds->sn));
+	LEVEL_DEBUG("SN found: " SNformat, SNvar(ds->sn));
 	return 0;
 }
 
@@ -931,12 +931,12 @@ static int DS2480_sendback_cmd(const BYTE * cmd, BYTE * resp, const size_t len, 
 		}
 		ret = DS2480_sendout_cmd( &cmd[bytes_so_far], bytes_this_segment, pn);
 		if ( ret ) {
-            LEVEL_DEBUG("write error\n") ;
+            LEVEL_DEBUG("write error") ;
 			return ret ;
 		}
 		ret = DS2480_read( &resp[bytes_so_far], bytes_this_segment, pn);
 		if ( ret ) {
-            LEVEL_DEBUG("read error\n") ;
+            LEVEL_DEBUG("read error") ;
             return ret ;
 		}
 		bytes_so_far += bytes_this_segment ;

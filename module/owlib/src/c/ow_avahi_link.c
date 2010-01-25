@@ -50,7 +50,7 @@ avahi_strerror
 
 #define DNSfunction_link( lib , name )  name = DL_sym( lib, #name );\
 	if ( name == NULL ) {\
-		LEVEL_CONNECT("Avahi is disabled since "#name" isn't found\n");\
+		LEVEL_CONNECT("Avahi is disabled since "#name" isn't found");\
 		return -1;\
 	}
 	
@@ -71,7 +71,7 @@ int OW_Load_avahi_library(void)
 		&&
 		(avahi_client=DL_open("/opt/owfs/lib/libavahi-client.so", RTLD_LAZY)) == NULL
 	) {
-		LEVEL_CONNECT("No Avahi support. Library libavahi-client couldn't be loaded.\n") ;
+		LEVEL_CONNECT("No Avahi support. Library libavahi-client couldn't be loaded.") ;
 		return -1 ;
 	}
 	DNSfunction_link(avahi_client,avahi_client_errno) ;
@@ -96,7 +96,7 @@ int OW_Load_avahi_library(void)
 		&&
 		(avahi_common=DL_open("/opt/owfs/lib/libavahi-common.so", RTLD_LAZY)) == NULL
 		) {
-		LEVEL_CONNECT("No Avahi support. Library libavahi-commonn couldn't be loaded.\n") ;
+		LEVEL_CONNECT("No Avahi support. Library libavahi-commonn couldn't be loaded.") ;
 		return -1 ;
 	}
 	DNSfunction_link(avahi_common,avahi_simple_poll_free) ;

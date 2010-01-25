@@ -61,7 +61,7 @@ int telnet_read(BYTE * buf, const size_t size, const struct parsedname *pn)
 	//printf("LINKE_READ getting default_discard = %d\n",pn->selected_connection->default_discard);
 	tcp_read(pn->selected_connection->file_descriptor, readin_buf, allocated_size, &tvnet, &actual_readin) ;
 	if (actual_readin < size) {
-		LEVEL_CONNECT("Telnet (ethernet) error\n");
+		LEVEL_CONNECT("Telnet (ethernet) error");
 		return -EIO;
 	}
 
@@ -71,7 +71,7 @@ int telnet_read(BYTE * buf, const size_t size, const struct parsedname *pn)
 			// need to read more -- just read what we think we need -- escape chars may require repeat
 			tcp_read(pn->selected_connection->file_descriptor, readin_buf, still_needed, &tvnet, &actual_readin) ;
 			if (actual_readin != still_needed ) {
-				LEVEL_CONNECT("Telnet (ethernet) error\n");
+				LEVEL_CONNECT("Telnet (ethernet) error");
 				return -EIO;
 			}
 			current_index = 0 ;
@@ -134,7 +134,7 @@ int telnet_read(BYTE * buf, const size_t size, const struct parsedname *pn)
 						telnet_read_state = telnet_regular ;
 						break ;
 					default:
-						LEVEL_DEBUG("Unexpected telnet sequence\n");
+						LEVEL_DEBUG("Unexpected telnet sequence");
 						return -EIO ;
 				}
 				break ;

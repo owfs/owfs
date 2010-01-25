@@ -19,7 +19,7 @@ int FS_fstat(const char *path, struct stat *stbuf)
 	struct parsedname pn;
 	int ret = 0;
 
-	LEVEL_CALL("path=%s\n", SAFESTRING(path));
+	LEVEL_CALL("path=%s", SAFESTRING(path));
 
 	/* Bad path */
 	if (FS_ParsedName(path, &pn)) {
@@ -36,7 +36,7 @@ int FS_fstat_postparse(struct stat *stbuf, const struct parsedname *pn)
 {
 	memset(stbuf, 0, sizeof(struct stat));
 
-	LEVEL_CALL("ATTRIBUTES path=%s\n", SAFESTRING(pn->path));
+	LEVEL_CALL("ATTRIBUTES path=%s", SAFESTRING(pn->path));
 	if (KnownBus(pn) && pn->known_bus == NULL) {
 		/* check for presence of first in-device at least since FS_ParsedName
 		 * doesn't do it yet. */

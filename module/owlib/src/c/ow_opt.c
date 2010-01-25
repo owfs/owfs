@@ -259,7 +259,7 @@ static int ParseInterp(struct lineparse *lp)
 	size_t option_name_length;
 	const struct option *long_option_pointer;
 
-	LEVEL_DEBUG("Configuration file (%s:%d) Program=%s%s, Option=%s, Value=%s\n", SAFESTRING(lp->file), lp->line_number,
+	LEVEL_DEBUG("Configuration file (%s:%d) Program=%s%s, Option=%s, Value=%s", SAFESTRING(lp->file), lp->line_number,
 				lp->reverse_prog ? "Not " : "", SAFESTRING(lp->prog), SAFESTRING(lp->opt), SAFESTRING(lp->val));
 	// Check for program specification
 	if (lp->prog != NULL) {
@@ -284,7 +284,7 @@ static int ParseInterp(struct lineparse *lp)
 				return 0;
 			}
 		} else {
-			LEVEL_DEFAULT("Configuration file (%s:%d) Unrecognized program %s. Option=%s, Value=%s\n", SAFESTRING(lp->file), lp->line_number,
+			LEVEL_DEFAULT("Configuration file (%s:%d) Unrecognized program %s. Option=%s, Value=%s", SAFESTRING(lp->file), lp->line_number,
 						  SAFESTRING(lp->prog), SAFESTRING(lp->opt), SAFESTRING(lp->val));
 			return 0;
 		}
@@ -303,7 +303,7 @@ static int ParseInterp(struct lineparse *lp)
 	// long option -- search in owopts_long array
 	for (long_option_pointer = owopts_long; long_option_pointer->name != NULL; ++long_option_pointer) {
 		if (strncasecmp(lp->opt, long_option_pointer->name, option_name_length) == 0) {
-			LEVEL_DEBUG("Configuration file (%s:%d) Option %s recognized as %s. Value=%s\n", SAFESTRING(lp->file), lp->line_number, lp->opt,
+			LEVEL_DEBUG("Configuration file (%s:%d) Option %s recognized as %s. Value=%s", SAFESTRING(lp->file), lp->line_number, lp->opt,
 						long_option_pointer->name, SAFESTRING(lp->val));
 			if (long_option_pointer->flag != NULL) {	// immediate value mode
 				//printf("flag c=%d flag=%p long_option_pointer->flag=%p\n",c,flag,long_option_pointer->flag);
@@ -314,7 +314,7 @@ static int ParseInterp(struct lineparse *lp)
 			}
 		}
 	}
-	LEVEL_DEFAULT("Configuration file (%s:%d) Unrecognized option %s. Value=%s\n", SAFESTRING(lp->file), lp->line_number, SAFESTRING(lp->opt),
+	LEVEL_DEFAULT("Configuration file (%s:%d) Unrecognized option %s. Value=%s", SAFESTRING(lp->file), lp->line_number, SAFESTRING(lp->opt),
 				  SAFESTRING(lp->val));
 	return 0;
 }
@@ -461,7 +461,7 @@ static int ConfigurationFile(const ASCII * file)
 			++lp.line_number;
 			// check line length
 			if (strlen(lp.line) > 250) {
-				LEVEL_DEFAULT("Configuration file (%s:%d) Line too long (>250 characters).\n", SAFESTRING(lp.file), lp.line_number);
+				LEVEL_DEFAULT("Configuration file (%s:%d) Line too long (>250 characters).", SAFESTRING(lp.file), lp.line_number);
 				ret = 1;
 				break;
 			}
@@ -474,7 +474,7 @@ static int ConfigurationFile(const ASCII * file)
 		fclose(configuration_file_pointer);
 		return ret;
 	} else {
-		ERROR_DEFAULT("Cannot process configuration file %s\n", file);
+		ERROR_DEFAULT("Cannot process configuration file %s", file);
 		return 1;
 	}
 }
@@ -556,7 +556,7 @@ int owopt(const int option_char, const char *arg)
 		return AliasFile(arg) ;
 	case 'c':
 		if (config_depth > 4) {
-			LEVEL_DEFAULT("Configuration file layered too deeply (>%d)\n", config_depth);
+			LEVEL_DEFAULT("Configuration file layered too deeply (>%d)", config_depth);
 			return 1;
 		} else {
 			int ret;
@@ -631,25 +631,25 @@ int owopt(const int option_char, const char *arg)
 		} else if (!strcasecmp(arg, "fic")) {
 			set_controlflags(&LocalControlFlags, DEVFORMAT_MASK, DEVFORMAT_BIT, fic);
 		} else {
-			LEVEL_DEFAULT("Unrecognized format type %s\n", arg);
+			LEVEL_DEFAULT("Unrecognized format type %s", arg);
 			return 1;
 		}
 		break;
 	case 'P':
 		if (arg == NULL || strlen(arg) == 0) {
-			LEVEL_DEFAULT("No PID file specified\n");
+			LEVEL_DEFAULT("No PID file specified");
 			return 1;
 		} else if ((pid_file = owstrdup(arg)) == NULL) {
-			fprintf(stderr, "Insufficient memory to store the PID filename: %s\n", arg);
+			fprintf(stderr, "Insufficient memory to store the PID filename: %s", arg);
 			return 1;
 		}
 		break;
 	case e_fatal_debug_file:
 		if (arg == NULL || strlen(arg) == 0) {
-			LEVEL_DEFAULT("No fatal_debug_file specified\n");
+			LEVEL_DEFAULT("No fatal_debug_file specified");
 			return 1;
 		} else if ((Globals.fatal_debug_file = owstrdup(arg)) == NULL) {
-			fprintf(stderr, "Insufficient memory to store the fatal_debug_file: %s\n", arg);
+			LEVEL_DEBUG(stderr, "Insufficient memory to store the fatal_debug_file: %s", arg);
 			return 1;
 		}
 		break;

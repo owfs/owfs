@@ -343,7 +343,7 @@ int Cache_Add(const void *data, const size_t datasize, const struct parsedname *
 		return -ENOMEM;
 	}
 
-	LEVEL_DEBUG(SNformat " size=%d\n", SNvar(pn->sn), (int) datasize);
+	LEVEL_DEBUG(SNformat " size=%d", SNvar(pn->sn), (int) datasize);
 
 	// populate the node structure with data
 	memset(&tn->tk, 0, sizeof(struct tree_key));
@@ -395,7 +395,7 @@ int Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn)
 		return -ENOMEM;
 	}
 	
-	LEVEL_DEBUG(SNformat " elements=%d\n", SNvar(pn->sn), DirblobElements(db));
+	LEVEL_DEBUG(SNformat " elements=%d", SNvar(pn->sn), DirblobElements(db));
 	
 	// populate node with directory name and dirblob
 	memset(&tn->tk, 0, sizeof(struct tree_key));
@@ -444,14 +444,14 @@ int Cache_Add_Simul(const enum simul_type type, const struct parsedname *pn)
 		return -ENOMEM;
 	}
 	
-	LEVEL_DEBUG(SNformat "\n", SNvar(pn->sn));
+	LEVEL_DEBUG(SNformat, SNvar(pn->sn));
 	
 	// populate node with directory name and dirblob
 	memset(&tn->tk, 0, sizeof(struct tree_key));
 	FS_LoadDirectoryOnly(&pn_directory, pn);
 	memcpy(tn->tk.sn, pn_directory.sn, 8);
 	tn->tk.p = Simul_Marker[type] ;
-	LEVEL_DEBUG("Simultaneous add type=%d\n",type);
+	LEVEL_DEBUG("Simultaneous add type=%d",type);
 	tn->tk.extension = pn->selected_connection->index ;
 	tn->expires = duration + time(NULL);
 	tn->dsize = 0;
@@ -475,7 +475,7 @@ int Cache_Add_Device(const int bus_nr, const BYTE * sn)
 	}
 	memset(&tn->tk, 0, sizeof(struct tree_key));
 
-	LEVEL_DEBUG(SNformat " bus=%d\n", SNvar(sn), (int) bus_nr);
+	LEVEL_DEBUG(SNformat " bus=%d", SNvar(sn), (int) bus_nr);
 	memcpy(tn->tk.sn, sn, 8);
 	tn->tk.p = Device_Marker;	// value connected to all devices
 	tn->tk.extension = 0;
@@ -516,7 +516,7 @@ int Cache_Add_Internal(const void *data, const size_t datasize, const struct int
 	}
 	memset(&tn->tk, 0, sizeof(struct tree_key));
 
-	LEVEL_DEBUG(SNformat " size=%d\n", SNvar(pn->sn), (int) datasize);
+	LEVEL_DEBUG(SNformat " size=%d", SNvar(pn->sn), (int) datasize);
 	memcpy(tn->tk.sn, pn->sn, 8);
 	tn->tk.p = ip->name;
 	tn->tk.extension = EXTENSION_INTERNAL;
@@ -548,7 +548,7 @@ int Cache_Add_Alias(const ASCII *name, const BYTE * sn)
 	}
 	memset(&tn->tk, 0, sizeof(struct tree_key));
 
-	LEVEL_DEBUG("Adding " SNformat " alias=%s\n", SNvar(sn), name);
+	LEVEL_DEBUG("Adding " SNformat " alias=%s", SNvar(sn), name);
 	memcpy(tn->tk.sn, sn, 8);
 	tn->tk.p = Alias_Marker;
 	tn->tk.extension = 0;
@@ -575,7 +575,7 @@ static void * GetFlippedTree( void )
 
 static void DeleteFlippedTree( void * retired_tree )
 {
-	LEVEL_DEBUG("flip cache. tdestroy() will be called.\n");
+	LEVEL_DEBUG("flip cache. tdestroy() will be called.");
 	tdestroy(retired_tree, owfree_func);
 	STATLOCK;
 	++cache_flips;			/* statistics */
@@ -594,7 +594,7 @@ static int Cache_Add_Common(struct tree_node *tn)
 	void *retired_tree = NULL;
 
 	node_show(tn);
-	LEVEL_DEBUG("Add to cache sn " SNformat " pointer=%p index=%d size=%d\n", SNvar(tn->tk.sn), tn->tk.p, tn->tk.extension, tn->dsize);
+	LEVEL_DEBUG("Add to cache sn " SNformat " pointer=%p index=%d size=%d", SNvar(tn->tk.sn), tn->tk.p, tn->tk.extension, tn->dsize);
 	CACHE_WLOCK;
 	if (cache.killed < time(NULL)) {	// old database has timed out
 		retired_tree = GetFlippedTree() ;
@@ -779,7 +779,7 @@ int Cache_Get(void *data, size_t * dsize, const struct parsedname *pn)
 		return 1;
 	}
 
-	LEVEL_DEBUG(SNformat " size=%d IsUncachedDir=%d\n", SNvar(pn->sn), (int) dsize[0], IsUncachedDir(pn));
+	LEVEL_DEBUG(SNformat " size=%d IsUncachedDir=%d", SNvar(pn->sn), (int) dsize[0], IsUncachedDir(pn));
 	memset(&tn.tk, 0, sizeof(struct tree_key));
 	memcpy(tn.tk.sn, pn->sn, 8);
 	tn.tk.p = pn->selected_filetype;
@@ -801,7 +801,7 @@ int Cache_Get_Dir(struct dirblob *db, const struct parsedname *pn)
 		return 1;
 	}
 
-	LEVEL_DEBUG(SNformat "\n", SNvar(pn->sn));
+	LEVEL_DEBUG(SNformat, SNvar(pn->sn));
 	memset(&tn.tk, 0, sizeof(struct tree_key));
 	FS_LoadDirectoryOnly(&pn_directory, pn);
 	memcpy(tn.tk.sn, pn_directory.sn, 8);
@@ -817,13 +817,13 @@ static int Cache_Get_Common_Dir(struct dirblob *db, time_t * duration, const str
 	time_t now = time(NULL);
 	size_t size;
 	struct tree_opaque *opaque;
-	LEVEL_DEBUG("Get from cache sn " SNformat " pointer=%p extension=%d\n", SNvar(tn->tk.sn), tn->tk.p, tn->tk.extension);
+	LEVEL_DEBUG("Get from cache sn " SNformat " pointer=%p extension=%d", SNvar(tn->tk.sn), tn->tk.p, tn->tk.extension);
 	CACHE_RLOCK;
 	if ((opaque = tfind(tn, &cache.temporary_tree_new, tree_compare))
 		|| ((cache.retired + duration[0] > now)
 			&& (opaque = tfind(tn, &cache.temporary_tree_old, tree_compare)))
 		) {
-		LEVEL_DEBUG("dir found in cache\n");
+		LEVEL_DEBUG("dir found in cache");
 		duration[0] = opaque->key->expires - now ;
 		if (duration[0] >= 0) {
 			size = opaque->key->dsize;
@@ -837,11 +837,11 @@ static int Cache_Get_Common_Dir(struct dirblob *db, time_t * duration, const str
 			//char b[26];
 			//printf("GOT DEAD now:%s",ctime_r(&now,b)) ;
 			//printf("        then:%s",ctime_r(&opaque->key->expires,b)) ;
-			LEVEL_DEBUG("Expired in cache\n");
+			LEVEL_DEBUG("Expired in cache");
 			ret = -ETIMEDOUT;
 		}
 	} else {
-		LEVEL_DEBUG("dir not found in cache\n");
+		LEVEL_DEBUG("dir not found in cache");
 		ret = -ENOENT;
 	}
 	CACHE_RUNLOCK;
@@ -859,7 +859,7 @@ int Cache_Get_Device(void *bus_nr, const struct parsedname *pn)
 		return 1;
 	}
 
-	LEVEL_DEBUG(SNformat "\n", SNvar(pn->sn));
+	LEVEL_DEBUG(SNformat, SNvar(pn->sn));
 	memset(&tn.tk, 0, sizeof(struct tree_key));
 	memcpy(tn.tk.sn, pn->sn, 8);
 	tn.tk.p = Device_Marker;
@@ -882,7 +882,7 @@ int Cache_Get_Internal(void *data, size_t * dsize, const struct internal_prop *i
 {
 	struct tree_node tn;
 	time_t duration;
-	//printf("Cache_Get_Internal\n");
+	//printf("Cache_Get_Internal");
 	if (!pn) {
 		return 1;				// do check here to avoid needless processing
 	}
@@ -892,7 +892,7 @@ int Cache_Get_Internal(void *data, size_t * dsize, const struct internal_prop *i
 		return 1;				/* in case timeout set to 0 */
 	}
 	
-	LEVEL_DEBUG(SNformat " size=%d\n", SNvar(pn->sn), (int) dsize[0]);
+	LEVEL_DEBUG(SNformat " size=%d", SNvar(pn->sn), (int) dsize[0]);
 	memset(&tn.tk, 0, sizeof(struct tree_key));
 	memcpy(tn.tk.sn, pn->sn, 8);
 	tn.tk.p = ip->name;
@@ -971,15 +971,15 @@ static int Cache_Get_Simultaneous(enum simul_type type, struct one_wire_query *o
 		
 		if ( Cache_Get_Simul_Time(type,&start_time,pn) ) {
 			// Simul not found
-			LEVEL_DEBUG("Simultaneous conversion not found.\n") ;
+			LEVEL_DEBUG("Simultaneous conversion not found.") ;
 			return 0 ;
 		}
 		if ( start_time-time(NULL)+duration_simul > duration ) {
-			LEVEL_DEBUG("Simultaneous conversion is newer than previous reading.\n") ;
+			LEVEL_DEBUG("Simultaneous conversion is newer than previous reading.") ;
 			return 1 ; // Simul is newer
 		}
 		// Cached data is newer, so use it
-		LEVEL_DEBUG("Simultaneous conversion is older than actual reading.\n") ;
+		LEVEL_DEBUG("Simultaneous conversion is older than actual reading.") ;
 		return 0 ;
 	}
 	// fall through -- no cached primary data so simultaneous is irrelevant
@@ -1004,7 +1004,7 @@ int Cache_Get_Alias(ASCII * name, size_t length, const BYTE * sn)
 		if ( opaque->key->dsize < length ) {
 			strncpy(name,(ASCII *)TREE_DATA(opaque->key),length);
 			ret = 0 ;
-			LEVEL_DEBUG("Retrieving " SNformat " alias=%s\n", SNvar(sn), SAFESTRING(name) );
+			LEVEL_DEBUG("Retrieving " SNformat " alias=%s", SNvar(sn), SAFESTRING(name) );
 		} else {
 			ret = -EMSGSIZE ;
 		}
@@ -1074,9 +1074,9 @@ int Cache_Get_SerialNumber(const ASCII * name, BYTE * sn)
 	ret = global_aliasfind_struct.ret ;
 	ALIASFINDMUTEXUNLOCK;
 	if (ret) {
-		LEVEL_DEBUG("Antialiasing %s unsuccesssful\n", SAFESTRING(name));
+		LEVEL_DEBUG("Antialiasing %s unsuccesssful", SAFESTRING(name));
 	} else {
-		LEVEL_DEBUG("Antialiased %s as " SNformat "\n", SAFESTRING(name), SNvar(sn));
+		LEVEL_DEBUG("Antialiased %s as " SNformat, SAFESTRING(name), SNvar(sn));
 	}
 
 	return ret;
@@ -1089,7 +1089,7 @@ static int Cache_Get_Common(void *data, size_t * dsize, time_t * duration, const
 	time_t now = time(NULL);
 	struct tree_opaque *opaque;
 	//printf("Cache_Get_Common\n") ;
-	LEVEL_DEBUG("Get from cache sn " SNformat " pointer=%p index=%d size=%d\n", SNvar(tn->tk.sn), tn->tk.p, tn->tk.extension, (int) dsize[0]);
+	LEVEL_DEBUG("Get from cache sn " SNformat " pointer=%p index=%d size=%d", SNvar(tn->tk.sn), tn->tk.p, tn->tk.extension, (int) dsize[0]);
 	node_show(tn);
 	//printf("\nTree (new):\n");
 	new_tree();
@@ -1102,7 +1102,7 @@ static int Cache_Get_Common(void *data, size_t * dsize, time_t * duration, const
 		) {
 		//printf("CACHE GET 2 opaque=%p tn=%p\n",opaque,opaque->key);
 		duration[0] = opaque->key->expires - now ;
-		LEVEL_DEBUG("value found in cache. Remaining life: %d seconds.\n",duration[0]);
+		LEVEL_DEBUG("value found in cache. Remaining life: %d seconds.",duration[0]);
 		if (duration[0] > 0) {
 			// Compared with >= before, but fc_second(1) always cache for 2 seconds in that case.
 			// Very noticable when reading time-data like "/26.80A742000000/date" for example.
@@ -1125,7 +1125,7 @@ static int Cache_Get_Common(void *data, size_t * dsize, time_t * duration, const
 			ret = -ETIMEDOUT;
 		}
 	} else {
-		LEVEL_DEBUG("value not found in cache\n");
+		LEVEL_DEBUG("value not found in cache");
 		ret = -ENOENT;
 	}
 	CACHE_RUNLOCK;
@@ -1326,7 +1326,7 @@ static int Cache_Del_Common(const struct tree_node *tn)
 	struct tree_opaque *opaque;
 	time_t now = time(NULL);
 	int ret = 1;
-	LEVEL_DEBUG("Delete from cache sn " SNformat " in=%p index=%d\n", SNvar(tn->tk.sn), tn->tk.p, tn->tk.extension);
+	LEVEL_DEBUG("Delete from cache sn " SNformat " in=%p index=%d", SNvar(tn->tk.sn), tn->tk.p, tn->tk.extension);
 	CACHE_WLOCK;
 	if ((opaque = tfind(tn, &cache.temporary_tree_new, tree_compare))
 		|| ((cache.killed > now)

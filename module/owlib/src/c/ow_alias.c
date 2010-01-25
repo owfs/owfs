@@ -32,7 +32,7 @@ int AliasFile(const ASCII * file)
 			BYTE sn[8] ;
 			// check line length
 			if ((int)strlen(alias_line) > alias_line_max-1) {
-				LEVEL_DEFAULT("Alias file (%s:%d) Line too long (>%d characters).\n", SAFESTRING(file), line_number, alias_line_max-1);
+				LEVEL_DEFAULT("Alias file (%s:%d) Line too long (>%d characters).", SAFESTRING(file), line_number, alias_line_max-1);
 				ret = 1;
 				break;
 			} else {
@@ -46,7 +46,7 @@ int AliasFile(const ASCII * file)
 					}
 				}
 				if ( Parse_SerialNumber(sn_char, sn) ) {
-					LEVEL_CALL("Problem parsing device name in alias file %s:%d\n",file,line_number) ;
+					LEVEL_CALL("Problem parsing device name in alias file %s:%d",file,line_number) ;
 					continue ;
 				}
 				if ( a_line ) {
@@ -81,7 +81,7 @@ static int Test_Add_Alias( char * name, BYTE * sn )
 {
 	BYTE sn_stored[8] ;
 	if ( strlen(name) > PROPERTY_LENGTH_ALIAS ) {
-		LEVEL_CALL("Alias too long: sn=" SNformat ", alias=%s max length=%d\n", SNvar(sn), name,  PROPERTY_LENGTH_ALIAS ) ;
+		LEVEL_CALL("Alias too long: sn=" SNformat ", alias=%s max length=%d", SNvar(sn), name,  PROPERTY_LENGTH_ALIAS ) ;
 		return 1 ;
 	}
 
@@ -95,15 +95,15 @@ static int Test_Add_Alias( char * name, BYTE * sn )
 	|| strcmp( name, "structure" )==0
 	|| strncmp( name, "bus.", 4 )==0
 	) {
-		LEVEL_CALL("Alias copies intrinsic filename: %s\n",name ) ;
+		LEVEL_CALL("Alias copies intrinsic filename: %s",name ) ;
 		return 1 ;
 	}
 	if ( Cache_Get_SerialNumber( name, sn_stored )==0 && memcmp(sn,sn_stored,8)!=0 ) {
-		LEVEL_CALL("Alias redefines a previous alias: %s " SNformat " and " SNformat "\n",name,SNvar(sn),SNvar(sn_stored) ) ;
+		LEVEL_CALL("Alias redefines a previous alias: %s " SNformat " and " SNformat,name,SNvar(sn),SNvar(sn_stored) ) ;
 		return 1 ;
 	}
 	if ( strchr( name, '/' ) ) {
-		LEVEL_CALL("Alias contains confusin path separator \'/\': %s\n",name ) ;
+		LEVEL_CALL("Alias contains confusin path separator \'/\': %s",name ) ;
 		return 1 ;
 	}
 	return Cache_Add_Alias( name, sn) ;

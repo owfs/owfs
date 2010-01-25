@@ -58,10 +58,10 @@ int ClientAddr(char *sname, struct connection_in *in)
 	hint.ai_family = AF_UNSPEC;
 #endif
 
-	LEVEL_DEBUG("[%s] [%s]\n", SAFESTRING(in->connin.tcp.host), in->connin.tcp.service);
+	LEVEL_DEBUG("[%s] [%s]", SAFESTRING(in->connin.tcp.host), in->connin.tcp.service);
 
 	if ((ret = getaddrinfo(in->connin.tcp.host, in->connin.tcp.service, &hint, &in->connin.tcp.ai))) {
-		LEVEL_CONNECT("error %s\n", gai_strerror(ret));
+		LEVEL_CONNECT("error %s", gai_strerror(ret));
 		return -1;
 	}
 	return 0;
@@ -90,7 +90,7 @@ int ClientConnect(struct connection_in *in)
 	struct addrinfo *ai;
 
 	if (in->connin.tcp.ai == NULL) {
-		LEVEL_DEBUG("Client address not yet parsed\n");
+		LEVEL_DEBUG("Client address not yet parsed");
 		return -1;
 	}
 

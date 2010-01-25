@@ -30,7 +30,7 @@ void FileLexCD(struct cd_parse_s *cps)
 	while (1) {
 		switch (cps->pse) {
 		case parse_status_init:
-			LEVEL_DEBUG("FTP parse_status_init Path<%s> File <%s>\n", cps->buffer, cps->rest);
+			LEVEL_DEBUG("FTP parse_status_init Path<%s> File <%s>", cps->buffer, cps->rest);
 			/* cps->buffer is absolute */
 			/* trailing / only at root */
 			cps->ret = 0;
@@ -47,7 +47,7 @@ void FileLexCD(struct cd_parse_s *cps)
 			}
 			break;
 		case parse_status_init2:
-			LEVEL_DEBUG("FTP parse_status_init2 Path<%s> File <%s>\n", cps->buffer, cps->rest);
+			LEVEL_DEBUG("FTP parse_status_init2 Path<%s> File <%s>", cps->buffer, cps->rest);
 			/* cps->buffer is absolute */
 			/* trailing / only at root */
 			if ((cps->rest[0] == '.' && cps->rest[1] == '.')
@@ -58,7 +58,7 @@ void FileLexCD(struct cd_parse_s *cps)
 			}
 			break;
 		case parse_status_back:
-			LEVEL_DEBUG("FTP parse_status_back Path<%s> File <%s>\n", cps->buffer, cps->rest);
+			LEVEL_DEBUG("FTP parse_status_back Path<%s> File <%s>", cps->buffer, cps->rest);
 			/* cps->buffer is absolute */
 			/* trailing / only at root */
 			if (cps->rest[0] == '.' && cps->rest[1] == '.') {
@@ -81,7 +81,7 @@ void FileLexCD(struct cd_parse_s *cps)
 			}
 			break;
 		case parse_status_next:
-			LEVEL_DEBUG("FTP parse_status_next Path<%s> File <%s>\n", cps->buffer, cps->rest);
+			LEVEL_DEBUG("FTP parse_status_next Path<%s> File <%s>", cps->buffer, cps->rest);
 			/* cps->buffer is absolute */
 			/* trailing / only at root */
 			if (cps->rest == NULL || cps->rest[0] == '\0') {
@@ -104,7 +104,7 @@ void FileLexCD(struct cd_parse_s *cps)
 			}
 			break;
 		case parse_status_tame:
-			LEVEL_DEBUG("FTP parse_status_tame Path<%s> File <%s>\n", cps->buffer, cps->rest);
+			LEVEL_DEBUG("FTP parse_status_tame Path<%s> File <%s>", cps->buffer, cps->rest);
 			/* cps->buffer is absolute */
 			/* trailing / only at root */
 			if (cps->rest && (strlen(cps->buffer) + strlen(cps->rest) + 4 > PATH_MAX)) {
@@ -128,7 +128,7 @@ void FileLexCD(struct cd_parse_s *cps)
 			}
 			return;
 		case parse_status_last:
-			LEVEL_DEBUG("FTP parse_status_last Path<%s> File <%s>\n", cps->buffer, cps->rest);
+			LEVEL_DEBUG("FTP parse_status_last Path<%s> File <%s>", cps->buffer, cps->rest);
 			/* cps->buffer is absolute */
 			/* trailing / only at root */
 			if (cps->rest && (strlen(cps->buffer) + strlen(cps->rest) + 4 > PATH_MAX)) {
@@ -174,7 +174,7 @@ static void WildLexCD(struct cd_parse_s *cps, ASCII * match)
 {
 	struct parsedname pn;
 
-	LEVEL_DEBUG("FTP Wildcard patern matching: Path=%s, Pattern=%s, rest=%s\n", SAFESTRING(cps->buffer), SAFESTRING(match), SAFESTRING(cps->rest));
+	LEVEL_DEBUG("FTP Wildcard patern matching: Path=%s, Pattern=%s, rest=%s", SAFESTRING(cps->buffer), SAFESTRING(match), SAFESTRING(cps->rest));
 	/* Check potential length */
 	if (strlen(cps->buffer) + OW_FULLNAME_MAX + 2 > PATH_MAX) {
 		cps->ret = -ENAMETOOLONG;

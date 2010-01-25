@@ -20,11 +20,11 @@ $Id$
 void LibStop(void)
 {
 	char *argv[1] = { NULL };
-	LEVEL_CALL("Clear Cache\n");
+	LEVEL_CALL("Clear Cache");
 	Cache_Clear();
-	LEVEL_CALL("Closing input devices\n");
+	LEVEL_CALL("Closing input devices");
 	FreeInAll();
-	LEVEL_CALL("Closing outout devices\n");
+	LEVEL_CALL("Closing outout devices");
 	FreeOutAll();
 
 

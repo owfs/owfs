@@ -49,13 +49,13 @@ static void ResolveBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 	sn_ret = snprintf(service, 10, "%d", ntohs(port) ) ;
 	UCLIBCUNLOCK ;
 
-	LEVEL_DETAIL("ref=%d flags=%d index=%d, error=%d name=%s host=%s port=%d\n", (long int) s, f, i, e, n, host, ntohs(port));
+	LEVEL_DETAIL("ref=%d flags=%d index=%d, error=%d name=%s host=%s port=%d", (long int) s, f, i, e, n, host, ntohs(port));
 	/* remove trailing .local. */
 	if ( sn_ret >-1 ) {
-		LEVEL_DETAIL("ref=%d flags=%d index=%d, error=%d name=%s host=%s port=%s\n", (long int) s, f, i, e, n, host, service);
+		LEVEL_DETAIL("ref=%d flags=%d index=%d, error=%d name=%s host=%s port=%s", (long int) s, f, i, e, n, host, service);
 		ZeroAdd( bs->name, bs->type, bs->domain, host, service ) ;
 	} else {
-		LEVEL_DEBUG("Couldn't translate port %d\n",ntohs(port) ) ;
+		LEVEL_DEBUG("Couldn't translate port %d",ntohs(port) ) ;
 	}
 	BSKill(bs);
 }
@@ -106,7 +106,7 @@ static void ResolveWait( DNSServiceRef sref )
 			} else if (errno == EINTR) {
 				continue;
 			} else {
-				ERROR_CONNECT("Resolve timeout error\n");
+				ERROR_CONNECT("Resolve timeout error");
 			}
 			break;
 		}
@@ -118,8 +118,7 @@ static void BrowseBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i, DNSServic
 {
 	struct BrowseStruct *bs;
 	(void) context;
-	//printf("BrowseBack ref=%ld flags=%d index=%d, error=%d name=%s type=%s domain=%s\n",(long int)s,f,i,e,name,type,domain) ;
-	LEVEL_DETAIL("ref=%ld flags=%d index=%d, error=%d name=%s type=%s domain=%s\n", (long int) s, f, i, e, name, type, domain);
+	LEVEL_DETAIL("ref=%ld flags=%d index=%d, error=%d name=%s type=%s domain=%s", (long int) s, f, i, e, name, type, domain);
 
 	if (e != kDNSServiceErr_NoError) {
 		return ;
@@ -154,7 +153,7 @@ static void * OW_Browse_Bonjour(void * v)
 	dnserr = DNSServiceBrowse(&Globals.browse, 0, 0, "_owserver._tcp", NULL, BrowseBack, NULL);
 
 	if (dnserr != kDNSServiceErr_NoError) {
-		LEVEL_CONNECT("DNSServiceBrowse error = %d\n", dnserr);
+		LEVEL_CONNECT("DNSServiceBrowse error = %d", dnserr);
 		return NULL ;
 	}
 
@@ -175,14 +174,14 @@ void OW_Browse(void)
 		pthread_t thread;
 		int err = pthread_create(&thread, NULL, OW_Avahi_Browse, NULL);
 		if (err) {
-			LEVEL_CONNECT("Avahi Browse thread error %d.\n", err);
+			LEVEL_CONNECT("Avahi Browse thread error %d.", err);
 		}
 #endif
 	} else if ( Globals.zero == zero_bonjour ) {
 		pthread_t thread;
 		int err = pthread_create(&thread, NULL, OW_Browse_Bonjour, NULL);
 		if (err) {
-			LEVEL_CONNECT("Bonjour Browse thread error %d.\n", err);
+			LEVEL_CONNECT("Bonjour Browse thread error %d.", err);
 		}
 	}
 }
@@ -191,7 +190,7 @@ void OW_Browse(void)
 
 void OW_Browse(void)
 {
-	LEVEL_CONNECT("Avahi and Bonjour requires multithreading support (a compile-time configuration setting).\n");
+	LEVEL_CONNECT("Avahi and Bonjour requires multithreading support (a compile-time configuration setting).");
 }
 
 #endif							/* OW_MT */
@@ -202,7 +201,7 @@ void OW_Browse(void)
 
 void OW_Browse(void)
 {
-	LEVEL_CONNECT("OWFS was compiled without Avahi or Bonjour support.\n");
+	LEVEL_CONNECT("OWFS was compiled without Avahi or Bonjour support.");
 }
 
 #endif							/* OW_ZERO */

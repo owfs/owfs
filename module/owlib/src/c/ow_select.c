@@ -62,7 +62,7 @@ int BUS_select(const struct parsedname *pn)
 	}
 
 	if (!RootNotBranch(pn) && !AdapterSupports2409(pn)) {
-		LEVEL_CALL("Attempt to use a branched path (DS2409 main or aux) when bus master doesn't support it.\n");
+		LEVEL_CALL("Attempt to use a branched path (DS2409 main or aux) when bus master doesn't support it.");
 		return -ENOTSUP;		/* cannot do branching with eg. LINK ascii */
 	}
 	/* Adapter-specific select routine? */
@@ -71,15 +71,15 @@ int BUS_select(const struct parsedname *pn)
 	}
 
 	LEVEL_DEBUG("Selecting a path (and device) path=%s SN=" SNformat
-				" last path=" SNformat "\n", SAFESTRING(pn->path), SNvar(pn->sn), SNvar(pn->selected_connection->branch.sn));
+				" last path=" SNformat, SAFESTRING(pn->path), SNvar(pn->sn), SNvar(pn->selected_connection->branch.sn));
 
 	/* Very messy, we may need to clear all the DS2409 couplers up the the current branch */
 	if (RootNotBranch(pn)) {	/* no branches, overdrive possible */
 		if (pn->selected_connection->branch.sn[0]) {	// need clear root branch */
-			LEVEL_DEBUG("Clearing root branch\n");
+			LEVEL_DEBUG("Clearing root branch");
 			BUS_select_closing(pn) ;
 		} else {
-			LEVEL_DEBUG("Continuing root branch\n");
+			LEVEL_DEBUG("Continuing root branch");
 			//BUS_reselect_branch(pn) ;
 		}
 		pn->selected_connection->branch.sn[0] = 0x00;	// flag as no branches turned on
@@ -91,10 +91,10 @@ int BUS_select(const struct parsedname *pn)
 			|| ( pn->selected_connection->branch.branch != pn->bp[pl - 1].branch) )
 		{
 			/* different path */
-			LEVEL_DEBUG("Clearing all branches to level %d\n", pn->pathlength);
+			LEVEL_DEBUG("Clearing all branches to level %d", pn->pathlength);
 			BUS_select_closing(pn) ;
 		} else {
-			LEVEL_DEBUG("Reselecting branch at level %d\n", pn->pathlength);
+			LEVEL_DEBUG("Reselecting branch at level %d", pn->pathlength);
 			//BUS_reselect_branch(pn) ;
 		}
 		memcpy(pn->selected_connection->branch.sn, pn->bp[pl - 1].sn, 8);
@@ -113,12 +113,12 @@ int BUS_select(const struct parsedname *pn)
 		memcpy(&sent[1], pn->sn, 8);
 		if ((ret = BUS_send_data(sent, 1, pn))) {
 			STAT_ADD1_BUS(e_bus_select_errors, pn->selected_connection);
-			LEVEL_CONNECT("Select error for %s on bus %s\n", pn->selected_device->readable_name, pn->selected_connection->name);
+			LEVEL_CONNECT("Select error for %s on bus %s", pn->selected_device->readable_name, pn->selected_connection->name);
 			return ret;
 		}
 		if ((ret = BUS_send_data(&sent[1], 8, pn))) {
 			STAT_ADD1_BUS(e_bus_select_errors, pn->selected_connection);
-			LEVEL_CONNECT("Select error for %s on bus %s\n", pn->selected_device->readable_name, pn->selected_connection->name);
+			LEVEL_CONNECT("Select error for %s on bus %s", pn->selected_device->readable_name, pn->selected_connection->name);
 			return ret;
 		}
 		return ret;
@@ -206,10 +206,10 @@ static int BUS_select_subbranch(const struct buspath *bp, const struct parsednam
 	memcpy(&sent[1], bp->sn, 8);
 	sent[9] = branch[bp->branch];
 	sent[10] = 0xFF;
-	LEVEL_DEBUG("Selecting subbranch " SNformat "\n", SNvar(bp->sn));
+	LEVEL_DEBUG("Selecting subbranch " SNformat, SNvar(bp->sn));
 	if (BUS_transaction_nolock(t, pn) || (resp[1] != branch[bp->branch])) {
 		STAT_ADD1_BUS(e_bus_select_errors, pn->selected_connection);
-		LEVEL_CONNECT("Select subbranch error on bus %s\n", pn->selected_connection->name);
+		LEVEL_CONNECT("Select subbranch error on bus %s", pn->selected_connection->name);
 		return 1;
 	}
 	//printf("subbranch stop\n");

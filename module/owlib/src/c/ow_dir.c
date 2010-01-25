@@ -60,7 +60,7 @@ static int FS_dir_plus(void (*dirfunc) (void *, const struct parsedname *), void
 int FS_dir(void (*dirfunc) (void *, const struct parsedname *), void *v, struct parsedname *pn_directory)
 {
 	uint32_t flags;
-	LEVEL_DEBUG("path=%s\n", pn_directory->path);
+	LEVEL_DEBUG("path=%s", pn_directory->path);
 	pn_directory->control_flags |= ALIAS_REQUEST ; // All local directory queries want alias translation
 
 	return FS_dir_both(dirfunc, v, pn_directory, &flags);
@@ -71,7 +71,7 @@ int FS_dir(void (*dirfunc) (void *, const struct parsedname *), void *v, struct 
 /* More checking is done, and the flags are returned */
 int FS_dir_remote(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_directory, uint32_t * flags)
 {
-	LEVEL_DEBUG("path=%s\n", pn_directory->path);
+	LEVEL_DEBUG("path=%s", pn_directory->path);
 	return FS_dir_both(dirfunc, v, pn_directory, flags);
 }
 
@@ -92,14 +92,14 @@ static int FS_dir_both(void (*dirfunc) (void *, const struct parsedname *), void
 	 * instead of an empty directory.
 	 */
 	if (pn_raw_directory == NULL) {
-		LEVEL_CALL("return ENODEV pn_raw_directory=%p selected_connection=%p\n",
+		LEVEL_CALL("return ENODEV pn_raw_directory=%p selected_connection=%p",
 			pn_raw_directory,
 			(pn_raw_directory ? pn_raw_directory->selected_connection : NULL));
 		return -ENODEV;
 	}
 #endif
 	
-	LEVEL_CALL("path=%s\n", SAFESTRING(pn_raw_directory->path));
+	LEVEL_CALL("path=%s", SAFESTRING(pn_raw_directory->path));
 
 	STATLOCK;
 	AVERAGE_IN(&dir_avg);
@@ -183,7 +183,7 @@ static int FS_dir_both(void (*dirfunc) (void *, const struct parsedname *), void
 	AVERAGE_OUT(&all_avg);
 	STATUNLOCK;
 
-	LEVEL_DEBUG("ret=%d\n", ret);
+	LEVEL_DEBUG("ret=%d", ret);
 	return ret;
 }
 
@@ -418,7 +418,7 @@ static int FS_alarmdir(void (*dirfunc) (void *, const struct parsedname *), void
 	ret = BUS_first_alarm(&ds, pn_alarm_directory);
 	if (ret) {
 		BUSUNLOCK(pn_alarm_directory);
-		LEVEL_DEBUG("BUS_first_alarm = %d\n", ret);
+		LEVEL_DEBUG("BUS_first_alarm = %d", ret);
 		if (ret == -ENODEV) {
 			return 0;			/* no more alarms is ok */
 		}
@@ -634,7 +634,7 @@ static int FS_typedir(void (*dirfunc) (void *, const struct parsedname *), void 
 
 	memcpy(pn_type_device, pn_type_directory, sizeof(struct parsedname));	// shallow copy
 
-	LEVEL_DEBUG("called on %s\n", pn_type_directory->path);
+	LEVEL_DEBUG("called on %s", pn_type_directory->path);
 
 	TYPEDIRMUTEXLOCK;
 

@@ -45,7 +45,7 @@ static void Device2Tree(const struct device *d, enum ePN_type type)
 	if ((d_copy = (struct device *) owmalloc(sizeof(struct device)))) {
 		memmove(d_copy, d, sizeof(struct device));
 	} else {
-		LEVEL_DATA("Could not allocate memory for device %s\n", d->readable_name);
+		LEVEL_DATA("Could not allocate memory for device %s", d->readable_name);
 		return ;
 	}
 #endif							/* __FreeBSD__ */

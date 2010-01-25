@@ -54,7 +54,7 @@ int FS_output_owq(struct one_wire_query *owq)
 		} else {
 			file_length = FileLength(PN(owq));
 		}
-		LEVEL_DEBUG("FS_r_local: file_length=%lu offset=%lu size=%lu\n",
+		LEVEL_DEBUG("FS_r_local: file_length=%lu offset=%lu size=%lu",
 					(unsigned long) file_length, (unsigned long) OWQ_offset(owq), (unsigned long) OWQ_size(owq));
 		if ((unsigned long) OWQ_offset(owq) >= (unsigned long) file_length) {
 			return 0;			// This is data-length

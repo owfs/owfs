@@ -71,12 +71,12 @@ static void entry_group_callback(AvahiEntryGroup *group, AvahiEntryGroupState st
 
 		case AVAHI_ENTRY_GROUP_COLLISION :
 			// Shouldn't happen since we put the pid in the service name
-			LEVEL_DEBUG("inexplicable service name collison\n");
+			LEVEL_DEBUG("inexplicable service name collison");
 			avahi_simple_poll_quit(aas->poll);
 			break;
 
 		case AVAHI_ENTRY_GROUP_FAILURE :
-			LEVEL_DEBUG("group failure: %s\n", avahi_strerror(avahi_client_errno(aas->client)));
+			LEVEL_DEBUG("group failure: %s", avahi_strerror(avahi_client_errno(aas->client)));
 			avahi_simple_poll_quit(aas->poll);
 			break;
 
@@ -93,7 +93,7 @@ static void create_services(struct announce_avahi_struct * aas)
 	if (aas->group==NULL) {
 		aas->group = avahi_entry_group_new(aas->client, entry_group_callback, aas) ;
 		if ( aas->group==NULL) {
-			LEVEL_DEBUG("avahi_entry_group_new() failed: %s\n", avahi_strerror(avahi_client_errno(aas->client)));
+			LEVEL_DEBUG("avahi_entry_group_new() failed: %s", avahi_strerror(avahi_client_errno(aas->client)));
 			avahi_simple_poll_quit(aas->poll);
 			return ;
 		}
@@ -111,7 +111,7 @@ static void create_services(struct announce_avahi_struct * aas)
 		char * service_name ;
 		char name[63] ;
 		if (getsockname(aas->out->file_descriptor, &sa, &sl)) {
-			LEVEL_CONNECT("Could not get port number of device.\n");
+			LEVEL_CONNECT("Could not get port number of device.");
 			avahi_simple_poll_quit(aas->poll);
 			return;
 		}
@@ -146,7 +146,7 @@ static void create_services(struct announce_avahi_struct * aas)
 		}
 		//printf("AVAHI ANNOUNCE: domain=<%s>\n",avahi_client_get_domain_name(aas->client) ) ;
 		if ( ret1 < 0 || ret2 < 0 ) {
-			LEVEL_DEBUG("Failed to add a service: %s or %s\n", avahi_strerror(ret1), avahi_strerror(ret2));
+			LEVEL_DEBUG("Failed to add a service: %s or %s", avahi_strerror(ret1), avahi_strerror(ret2));
 			avahi_simple_poll_quit(aas->poll);
 			return;
 		}
@@ -154,7 +154,7 @@ static void create_services(struct announce_avahi_struct * aas)
 		/* Tell the server to register the service */
 		ret1 = avahi_entry_group_commit(aas->group) ;
 		if ( ret1 < 0 ) {
-			LEVEL_DEBUG("Failed to commit entry group: %s\n", avahi_strerror(ret1));
+			LEVEL_DEBUG("Failed to commit entry group: %s", avahi_strerror(ret1));
 			avahi_simple_poll_quit(aas->poll);
 			return;
 		}
@@ -192,7 +192,7 @@ static void client_callback(AvahiClient *client, AvahiClientState state, AVAHI_G
 {
 	struct announce_avahi_struct * aas = v ;
 	if ( client==NULL ) {
-		LEVEL_DEBUG("null client\n") ;
+		LEVEL_DEBUG("null client") ;
 		avahi_simple_poll_quit(aas->poll);
 		return ;
 	}
@@ -211,7 +211,7 @@ static void client_callback(AvahiClient *client, AvahiClientState state, AVAHI_G
 
 		case AVAHI_CLIENT_FAILURE:
 
-			LEVEL_DEBUG( "Client failure: %s\n", avahi_strerror(avahi_client_errno(client)));
+			LEVEL_DEBUG( "Client failure: %s", avahi_strerror(avahi_client_errno(client)));
 			avahi_simple_poll_quit(aas->poll);
 
 			break;
@@ -260,15 +260,15 @@ void *OW_Avahi_Announce( void * v )
 			// done
 			avahi_client_free(aas.client);
 		} else {
-			LEVEL_CONNECT("Failed to create client: %s\n", avahi_strerror(error)) ;
+			LEVEL_CONNECT("Failed to create client: %s", avahi_strerror(error)) ;
 		}
 
 		avahi_simple_poll_free(aas.poll);
 	} else {
-		LEVEL_CONNECT("Failed to create simple poll object.\n");
+		LEVEL_CONNECT("Failed to create simple poll object.");
 	}
 
-	LEVEL_DEBUG("Normal exit.\n");
+	LEVEL_DEBUG("Normal exit.");
 	pthread_exit(NULL);
 	return NULL ;
 }

@@ -156,7 +156,7 @@ static int FS_r_page(struct one_wire_query *owq)
 static int FS_w_page(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
-	LEVEL_DEBUG("size=%d offset=%d\n", OWQ_size(owq), OWQ_offset(owq));
+	LEVEL_DEBUG("size=%d offset=%d", OWQ_size(owq), OWQ_offset(owq));
 	if (OWQ_size(owq) < 8) {	/* partial page */
 		BYTE data[8];
 		if (OW_r_page(data, pn->extension, pn)) {
@@ -320,7 +320,7 @@ static int FS_Current(struct one_wire_query *owq)
 		return -EINVAL ;
 	}
 
-	LEVEL_DEBUG("DS2438 vis scratchpad " SNformat "\n", SNvar(data));
+	LEVEL_DEBUG("DS2438 vis scratchpad " SNformat, SNvar(data));
 	//F[0] = .0002441 * (_FLOAT) ((((int) data[6]) << 8) | data[5]);
 	OWQ_F(owq) = .0002441 * UT_int16(&data[5]);
 

@@ -53,7 +53,7 @@ void SideAddr(struct connection_side *side)
 //printf("ClientAddr: [%s] [%s]\n", in->connin.tcp.host, in->connin.tcp.service);
 
 	if ((ret = getaddrinfo(side->host, side->service, &hint, &side->ai))) {
-		LEVEL_CONNECT("GetAddrInfo error %s\n", gai_strerror(ret));
+		LEVEL_CONNECT("GetAddrInfo error %s", gai_strerror(ret));
 		side->good_entry = 0;
 	} else {
 		side->good_entry = 1;
@@ -83,7 +83,7 @@ int SideConnect(struct connection_side *side)
 	struct addrinfo *ai;
 
 	if (side->ai == NULL) {
-		LEVEL_DEBUG("Sidetap address not yet parsed\n");
+		LEVEL_DEBUG("Sidetap address not yet parsed");
 		return -1;
 	}
 

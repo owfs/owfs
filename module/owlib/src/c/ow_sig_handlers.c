@@ -19,16 +19,16 @@ static void DefaultSignalHandler(int signo, siginfo_t * info, void *context)
 #if OW_MT
 	if (info) {
 		LEVEL_DEBUG
-			("Signal handler for %d, errno %d, code %d, pid=%ld, self=%lu\n",
+			("Signal handler for %d, errno %d, code %d, pid=%ld, self=%lu",
 			 signo, info->si_errno, info->si_code, (long int) info->si_pid, pthread_self());
 	} else {
-		LEVEL_DEBUG("Signal handler for %d, self=%lu\n", signo, pthread_self());
+		LEVEL_DEBUG("Signal handler for %d, self=%lu", signo, pthread_self());
 	}
 #else							/* OW_MT */
 	if (info) {
-		LEVEL_DEBUG("Signal handler for %d, errno %d, code %d, pid=%ld\n", signo, info->si_errno, info->si_code, (long int) info->si_pid);
+		LEVEL_DEBUG("Signal handler for %d, errno %d, code %d, pid=%ld", signo, info->si_errno, info->si_code, (long int) info->si_pid);
 	} else {
-		LEVEL_DEBUG("Signal handler for %d\n", signo);
+		LEVEL_DEBUG("Signal handler for %d", signo);
 	}
 #endif							/* OW_MT */
 	return;
@@ -52,7 +52,7 @@ void set_signal_handlers(void (*handler)
 			sa.sa_sigaction = DefaultSignalHandler;
 		}
 		if (sigaction(sigs[i], &sa, NULL) == -1) {
-			LEVEL_DEFAULT("Cannot handle signal %d\n", sigs[i]);
+			LEVEL_DEFAULT("Cannot handle signal %d", sigs[i]);
 			exit(1);
 		}
 		i++;
@@ -73,7 +73,7 @@ void set_exit_signal_handlers(void (*exit_handler)
 		sa.sa_flags = SA_SIGINFO;
 		sa.sa_sigaction = exit_handler;
 		if (sigaction(sigs[i], &sa, NULL) == -1) {
-			LEVEL_DEFAULT("Cannot handle signal %d\n", sigs[i]);
+			LEVEL_DEFAULT("Cannot handle signal %d", sigs[i]);
 			exit(1);
 		}
 		i++;

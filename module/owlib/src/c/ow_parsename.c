@@ -99,7 +99,7 @@ static int FS_ParsedName_anywhere(const char *path, enum parse_pass remote_statu
 	// Even on normal glibc, errno isn't cleared on good system calls
 	errno = 0;
 
-	LEVEL_CALL("path=[%s]\n", SAFESTRING(path));
+	LEVEL_CALL("path=[%s]", SAFESTRING(path));
 
 	parse_error_status = FS_ParsedName_setup(pp, path, pn);
 	if (parse_error_status) {
@@ -115,7 +115,7 @@ static int FS_ParsedName_anywhere(const char *path, enum parse_pass remote_statu
 		switch (pe) {
 
 		case parse_done:		// the only exit!
-			//LEVEL_DEBUG("PARSENAME parse_done\n") ;
+			//LEVEL_DEBUG("PARSENAME parse_done") ;
 			//printf("PARSENAME end parse_error_status=%d\n",parse_error_status) ;
 			if (parse_error_status) {
 				FS_ParsedName_destroy(pn);
@@ -141,7 +141,7 @@ static int FS_ParsedName_anywhere(const char *path, enum parse_pass remote_statu
 			return 0;
 
 		case parse_error:
-			//LEVEL_DEBUG("PARSENAME parse_error\n") ;
+			//LEVEL_DEBUG("PARSENAME parse_error") ;
 			parse_error_status = -ENOENT;
 			pe = parse_done;
 			continue;
@@ -152,7 +152,7 @@ static int FS_ParsedName_anywhere(const char *path, enum parse_pass remote_statu
 
 		// break out next name in path, make sure pp->pathnext isn't NULL. (SIGSEGV in uClibc)
 		pp->pathnow = (pp->pathnext) ? strsep(&(pp->pathnext), "/") : NULL;
-		//LEVEL_DEBUG("PARSENAME pathnow=[%s] rest=[%s]\n",pp->pathnow,pp->pathnext) ;
+		//LEVEL_DEBUG("PARSENAME pathnow=[%s] rest=[%s]",pp->pathnow,pp->pathnext) ;
 		if (pp->pathnow == NULL || pp->pathnow[0] == '\0') {
 			pe = parse_done;
 			continue;
@@ -161,17 +161,17 @@ static int FS_ParsedName_anywhere(const char *path, enum parse_pass remote_statu
 		switch (pe) {
 
 		case parse_first:
-			//LEVEL_DEBUG("PARSENAME parse_first\n") ;
+			//LEVEL_DEBUG("PARSENAME parse_first") ;
 			pe = Parse_Unspecified(pp->pathnow, remote_status, pn);
 			break;
 
 		case parse_real:
-			//LEVEL_DEBUG("PARSENAME parse_real\n") ;
+			//LEVEL_DEBUG("PARSENAME parse_real") ;
 			pe = Parse_Real(pp->pathnow, remote_status, pn);
 			break;
 
 		case parse_branch:
-			//LEVEL_DEBUG("PARSENAME parse_branch\n") ;
+			//LEVEL_DEBUG("PARSENAME parse_branch") ;
 			pe = Parse_Branch(pp->pathnow, remote_status, pn);
 			break;
 
@@ -181,16 +181,16 @@ static int FS_ParsedName_anywhere(const char *path, enum parse_pass remote_statu
 			break;
 
 		case parse_prop:
-			//LEVEL_DEBUG("PARSENAME parse_prop\n") ;
+			//LEVEL_DEBUG("PARSENAME parse_prop") ;
 			pn->dirlength = pp->pathnow - pp->pathcpy + 1 ;
-			//LEVEL_DEBUG("Dirlength=%d <%*s>\n",pn->dirlength,pn->dirlength,pn->path) ;
+			//LEVEL_DEBUG("Dirlength=%d <%*s>",pn->dirlength,pn->dirlength,pn->path) ;
 			//printf("dirlength = %d which makes the path <%s> <%.*s>\n",pn->dirlength,pn->path,pn->dirlength,pn->path);
 			pp->pathlast = pp->pathnow;	/* Save for concatination if subdirectory later wanted */
 			pe = Parse_Property(pp->pathnow, pn);
 			break;
 
 		case parse_subprop:
-			//LEVEL_DEBUG("PARSENAME parse_subprop\n") ;
+			//LEVEL_DEBUG("PARSENAME parse_subprop") ;
 			pp->pathnow[-1] = '/';
 			pe = Parse_Property(pp->pathlast, pn);
 			break;

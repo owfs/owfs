@@ -40,7 +40,7 @@ _DNSServiceEnumerateDomains DNSServiceEnumerateDomains;
 
  #define DNSfunction_link( name )  name = (_##name) DL_sym( libdnssd, #name );\
 	if ( name == NULL ) {\
-		LEVEL_CONNECT("Zeroconf/Bonjour is disabled since "#name" isn't found\n");\
+		LEVEL_CONNECT("Zeroconf/Bonjour is disabled since "#name" isn't found");\
 		return -1;\
 	}
 
@@ -131,7 +131,7 @@ int OW_Load_dnssd_library(void)
 #endif
 
 	if (libdnssd == NULL) {
-		LEVEL_CONNECT("Zeroconf/Bonjour is disabled since dnssd library isn't found\n");
+		LEVEL_CONNECT("Zeroconf/Bonjour is disabled since dnssd library isn't found");
 		return -1;
 	}
 

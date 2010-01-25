@@ -45,7 +45,7 @@ pthread_t main_threadid;
 
 static void ow_exit(int e)
 {
-	LEVEL_DEBUG("ow_exit %d\n", e);
+	LEVEL_DEBUG("ow_exit %d", e);
 	if (IS_MAINTHREAD) {
 		LibClose();
 	}
@@ -63,30 +63,30 @@ static void exit_handler(int signo, siginfo_t * info, void *context)
 #if OW_MT
 	if (info) {
 		LEVEL_DEBUG
-			("exit_handler: for signo=%d, errno %d, code %d, pid=%ld, self=%lu main=%lu\n",
+			("exit_handler: for signo=%d, errno %d, code %d, pid=%ld, self=%lu main=%lu",
 			 signo, info->si_errno, info->si_code, (long int) info->si_pid, pthread_self(), main_threadid);
 	} else {
-		LEVEL_DEBUG("exit_handler: for signo=%d, self=%lu, main=%lu\n", signo, pthread_self(), main_threadid);
+		LEVEL_DEBUG("exit_handler: for signo=%d, self=%lu, main=%lu", signo, pthread_self(), main_threadid);
 	}
 	if (StateInfo.shutdown_in_progress) {
-	  LEVEL_DEBUG("exit_handler: shutdown already in progress. signo=%d, self=%lu, main=%lu\n", signo, pthread_self(), main_threadid);
+	  LEVEL_DEBUG("exit_handler: shutdown already in progress. signo=%d, self=%lu, main=%lu", signo, pthread_self(), main_threadid);
 	}
 	if (!StateInfo.shutdown_in_progress) {
 		StateInfo.shutdown_in_progress = 1;
 
 		if (info != NULL) {
 			if (SI_FROMUSER(info)) {
-				LEVEL_DEBUG("exit_handler: kill from user\n");
+				LEVEL_DEBUG("exit_handler: kill from user");
 			}
 			if (SI_FROMKERNEL(info)) {
-				LEVEL_DEBUG("exit_handler: kill from kernel\n");
+				LEVEL_DEBUG("exit_handler: kill from kernel");
 			}
 		}
 		if (!IS_MAINTHREAD) {
-			LEVEL_DEBUG("exit_handler: kill mainthread %lu self=%lu signo=%d\n", main_threadid, pthread_self(), signo);
+			LEVEL_DEBUG("exit_handler: kill mainthread %lu self=%lu signo=%d", main_threadid, pthread_self(), signo);
 			pthread_kill(main_threadid, signo);
 		} else {
-			LEVEL_DEBUG("exit_handler: ignore signal, mainthread %lu self=%lu signo=%d\n", main_threadid, pthread_self(), signo);
+			LEVEL_DEBUG("exit_handler: ignore signal, mainthread %lu self=%lu signo=%d", main_threadid, pthread_self(), signo);
 		}
 	}
 #else
@@ -130,10 +130,10 @@ int main(int argc, char *argv[])
 
 	if (Outbound_Control.active == 0) {
 		if (Globals.zero == zero_none) {
-			LEVEL_DEFAULT("%s would be \"locked in\" so will quit.\nBonjour and Avahi not available.\n", argv[0]);
+			LEVEL_DEFAULT("%s would be \"locked in\" so will quit.\nBonjour and Avahi not available.", argv[0]);
 			ow_exit(1);
 		} else {
-			LEVEL_CONNECT("%s will use an ephemeral port\n", argv[0]) ;
+			LEVEL_CONNECT("%s will use an ephemeral port", argv[0]) ;
 		}
 		ARG_Server(NULL);		// make an ephemeral assignment
 	}
@@ -157,7 +157,7 @@ int main(int argc, char *argv[])
 #endif
 
 	ServerProcess(Acceptor, ow_exit);
-	LEVEL_DEBUG("ServerProcess done\n");
+	LEVEL_DEBUG("ServerProcess done");
 	ow_exit(0);
 	return 0;
 }

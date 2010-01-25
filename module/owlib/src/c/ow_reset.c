@@ -26,11 +26,11 @@ int BUS_reset(const struct parsedname *pn)
 	} else if (ret == BUS_RESET_SHORT) {
 		pn->selected_connection->AnyDevices = anydevices_unknown;
 		STAT_ADD1_BUS(e_bus_short_errors, pn->selected_connection);
-		LEVEL_CONNECT("1-wire bus short circuit.\n");
+		LEVEL_CONNECT("1-wire bus short circuit.");
 		return 1;
 	} else {
 		pn->selected_connection->reconnect_state++;	// Flag for eventual reconnection
-		LEVEL_DEBUG("Reset error. Reconnection %d/%d\n",pn->selected_connection->reconnect_state,reconnect_error); 
+		LEVEL_DEBUG("Reset error. Reconnection %d/%d",pn->selected_connection->reconnect_state,reconnect_error); 
 		STAT_ADD1_BUS(e_bus_reset_errors, pn->selected_connection);
 	}
 	STAT_ADD1_BUS(e_bus_resets, pn->selected_connection);

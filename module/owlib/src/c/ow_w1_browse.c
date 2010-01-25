@@ -37,7 +37,7 @@ static void W1Clear( void )
 		if ( in->busmode == bus_w1
 			&& in->connin.w1.entry_mark  != Inbound_Control.w1_entry_mark
 			) {
-			LEVEL_DEBUG("w1 bus <%s> no longer found\n",in->name) ;
+			LEVEL_DEBUG("w1 bus <%s> no longer found",in->name) ;
 			RemoveIn( in ) ;
 		}
 	}
@@ -59,7 +59,7 @@ static void W1SysList( const char * directory )
 				if ( sscanf( dent->d_name, "w1_bus_master%d", &bus_master) == 1 ) {
 					AddW1Bus( bus_master ) ;
 				} else {
-					ERROR_DEBUG("Can't interpret bus number in sysfs entry %s/%s\n",directory,dent->d_name);
+					ERROR_DEBUG("Can't interpret bus number in sysfs entry %s/%s",directory,dent->d_name);
 				}
 			}
 		}
@@ -77,7 +77,7 @@ static void * W1_start_scan( void * v )
 	pthread_detach(pthread_self());
 
 	if ( Inbound_Control.w1_file_descriptor < 0 ) {
-		LEVEL_DEBUG("Cannot monitor w1 bus, No netlink connection.\n");
+		LEVEL_DEBUG("Cannot monitor w1 bus, No netlink connection.");
 	} else {
 		W1NLScan() ;
 	}
@@ -91,7 +91,7 @@ int W1_Browse( void )
     pthread_t thread_dispatch ;
 
     ++Inbound_Control.w1_entry_mark ;
-    LEVEL_DEBUG("Calling for netlink w1 list\n");
+    LEVEL_DEBUG("Calling for netlink w1 list");
 
     // Initial setup
     my_pthread_mutex_init(&(Inbound_Control.w1_mutex), Mutex.pmattr);
@@ -100,17 +100,17 @@ int W1_Browse( void )
     ++Inbound_Control.w1_last_read.tv_sec ;
 
     if ( Inbound_Control.w1_file_descriptor == -1 && w1_bind() == -1 ) {
-        ERROR_DEBUG("Netlink problem -- are you root?\n");
+        ERROR_DEBUG("Netlink problem -- are you root?");
         return -1 ;
     }
 
     if ( pthread_create(&thread_dispatch, NULL, W1_Dispatch, NULL) != 0 ) {
-        ERROR_DEBUG("Couldn't create netlink monitoring thread\n");
+        ERROR_DEBUG("Couldn't create netlink monitoring thread");
         return -1 ;
     }
 
     if ( W1NLList() != nrs_complete ) {
- 		LEVEL_DEBUG("Drop down to sysfs w1 list\n");
+ 		LEVEL_DEBUG("Drop down to sysfs w1 list");
 		W1SysList("/sys/bus/w1/devices") ;
 	}
 
@@ -123,7 +123,7 @@ int W1_Browse( void )
 #else /* OW_MT */
 int W1_Browse( void )
 {
-	LEVEL_CONNECT("Dynamic w1 support requires multithreading (a compile-time option\n");
+	LEVEL_CONNECT("Dynamic w1 support requires multithreading (a compile-time option");
 	// Initial setup
 	W1SysScan("/sys/bus/w1/devices") ;
 }

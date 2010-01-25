@@ -617,7 +617,7 @@ static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 	BYTE passwd[8];
 	int rest = 32 - (offset & 0x1F);
 
-	LEVEL_DEBUG("size=%ld offset=%X rest=%ld\n", size, offset, rest);
+	LEVEL_DEBUG("size=%ld offset=%X rest=%ld", size, offset, rest);
 
 	memset(passwd, 0xFF, 8);	// dummy password
 
@@ -707,7 +707,7 @@ static int OW_clearmemory(struct parsedname *pn)
 		//printf("error2\n");
 		return ret;
 	}
-	LEVEL_DEBUG("Read 0x0215: MEMCLR=%d %02X\n", (r & 0x08 ? 1 : 0), r);
+	LEVEL_DEBUG("Read 0x0215: MEMCLR=%d %02X", (r & 0x08 ? 1 : 0), r);
 
 	return 0;
 }

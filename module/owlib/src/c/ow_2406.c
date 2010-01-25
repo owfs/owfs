@@ -587,7 +587,7 @@ static int FS_temp(struct one_wire_query *owq)
 	if (TAI8570_SenseValue(&D2, SEC_READD2, &tai, &pn_copy)) {
 		return -EINVAL;
 	}
-	LEVEL_DEBUG("TAI8570 Raw Temperature (D2) = %lu\n", D2);
+	LEVEL_DEBUG("TAI8570 Raw Temperature (D2) = %lu", D2);
 	dT = D2 - UT1;
 	OWQ_F(owq) = (200. + dT * (tai.C[5] + 50.) / 1024.) / 10.;
 	return 0;
@@ -615,7 +615,7 @@ static int FS_pressure(struct one_wire_query *owq)
 			_FLOAT SENS = 24576. + tai.C[0] + (tai.C[2] * dT) / 1024.;
 			_FLOAT X = (SENS * (D1 - 7168.)) / 16384. - OFF;
 
-			LEVEL_DEBUG("TAI8570 Raw Pressure (D1) = %lu\n", D1);
+			LEVEL_DEBUG("TAI8570 Raw Pressure (D1) = %lu", D1);
 			OWQ_F(owq) = 250. + X / 32.;
 			return  0;
 		}
@@ -629,15 +629,15 @@ static int FS_pressure(struct one_wire_query *owq)
 static int ReadTmexPage(BYTE * data, size_t size, int page, const struct parsedname *pn)
 {
 	if (OW_r_mem(data, size, size * page, pn)) {
-		LEVEL_DETAIL("Cannot read Tmex page %d\n", page);
+		LEVEL_DETAIL("Cannot read Tmex page %d", page);
 		return 1;				// read page
 	}
 	if (data[0] > size) {
-		LEVEL_DETAIL("Tmex page %d bad length %d\n", page, data[0]);
+		LEVEL_DETAIL("Tmex page %d bad length %d", page, data[0]);
 		return 1;				// check length
 	}
 	if (CRC16seeded(data, data[0] + 3, page)) {
-		LEVEL_DETAIL("Tmex page %d CRC16 error\n", page);
+		LEVEL_DETAIL("Tmex page %d CRC16 error", page);
 		return 1;				// check length
 	}
 	return 0;
@@ -907,8 +907,8 @@ static int testTAI8570(struct s_TAI8570 *tai, struct one_wire_query *owq)
 	}
 	// See if already cached
 	if (Cache_Get_Internal_Strict((void *) tai, sizeof(struct s_TAI8570), InternalProp(BAR), pn) == 0) {
-		LEVEL_DEBUG("TAI8570 cache read: reader=" SNformat " writer=" SNformat "\n", SNvar(tai->reader), SNvar(tai->writer));
-		LEVEL_DEBUG("TAI8570 cache read: C1=%u C2=%u C3=%u C4=%u C5=%u C6=%u\n", tai->C[0], tai->C[1], tai->C[2], tai->C[3], tai->C[4], tai->C[5]);
+		LEVEL_DEBUG("TAI8570 cache read: reader=" SNformat " writer=" SNformat, SNvar(tai->reader), SNvar(tai->writer));
+		LEVEL_DEBUG("TAI8570 cache read: C1=%u C2=%u C3=%u C4=%u C5=%u C6=%u", tai->C[0], tai->C[1], tai->C[2], tai->C[3], tai->C[4], tai->C[5]);
 		return 0;
 	}
 	// Set master SN
@@ -919,7 +919,7 @@ static int testTAI8570(struct s_TAI8570 *tai, struct one_wire_query *owq)
 		return 1;				// read page
 	}
 	if (memcmp("8570", &data[8], 4)) {	// check dir entry
-		LEVEL_DETAIL("No 8570 Tmex file\n");
+		LEVEL_DETAIL("No 8570 Tmex file");
 		return 1;
 	}
 	// See if page 1 is readable
@@ -935,9 +935,9 @@ static int testTAI8570(struct s_TAI8570 *tai, struct one_wire_query *owq)
 		memcpy(tai->reader, tai->master, 8);
 		memcpy(tai->writer, tai->sibling, 8);
 	}
-	LEVEL_DETAIL("TAI8570 reader=" SNformat " writer=" SNformat "\n", SNvar(tai->reader), SNvar(tai->writer));
+	LEVEL_DETAIL("TAI8570 reader=" SNformat " writer=" SNformat, SNvar(tai->reader), SNvar(tai->writer));
 	if (TAI8570_Calibration(cal, tai, pn)) {
-		LEVEL_DETAIL("Trouble reading TAI8570 calibration constants\n");
+		LEVEL_DETAIL("Trouble reading TAI8570 calibration constants");
 		return 1;
 	}
 	tai->C[0] = ((cal[0]) >> 1);
@@ -947,7 +947,7 @@ static int testTAI8570(struct s_TAI8570 *tai, struct one_wire_query *owq)
 	tai->C[4] = ((cal[1]) >> 6) | (((cal[0]) & 0x01) << 10);
 	tai->C[5] = ((cal[1]) & 0x3F);
 
-	LEVEL_DETAIL("TAI8570 C1=%u C2=%u C3=%u C4=%u C5=%u C6=%u\n", tai->C[0], tai->C[1], tai->C[2], tai->C[3], tai->C[4], tai->C[5]);
+	LEVEL_DETAIL("TAI8570 C1=%u C2=%u C3=%u C4=%u C5=%u C6=%u", tai->C[0], tai->C[1], tai->C[2], tai->C[3], tai->C[4], tai->C[5]);
 	memcpy(pn->sn, tai->master, 8);	// restore original for cache
 	return Cache_Add_Internal((const void *) tai, sizeof(struct s_TAI8570), InternalProp(BAR), pn);
 }

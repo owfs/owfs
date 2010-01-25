@@ -42,7 +42,7 @@ struct HA7_response {
 
 static int Test_HA7_response( struct HA7_response * ha7_response )
 {
-	LEVEL_DEBUG("From ha7_response: signature=%.2s, command=%X, port=%d, ssl=%d, MAC=%.12s, device=%s\n",
+	LEVEL_DEBUG("From ha7_response: signature=%.2s, command=%X, port=%d, ssl=%d, MAC=%.12s, device=%s",
 	ha7_response->signature,
 	ntohs(ha7_response->command),
 	ntohs(ha7_response->port),
@@ -51,11 +51,11 @@ static int Test_HA7_response( struct HA7_response * ha7_response )
 	ha7_response->dev_name) ;
 
 	if (memcmp("HA", ha7_response->signature, 2)) {
-		LEVEL_CONNECT("HA7 response signature error\n");
+		LEVEL_CONNECT("HA7 response signature error");
 		return 1;
 	}
 	if ( 0x8001 != ntohs(ha7_response->command) ) {
-		LEVEL_CONNECT("HA7 response command error\n");
+		LEVEL_CONNECT("HA7 response command error");
 		return 1;
 	}
 	return 0 ;
@@ -85,22 +85,22 @@ static int Get_HA7_response( struct addrinfo *now, char * name )
 	int on = 1;
 
 	if ((file_descriptor = socket(now->ai_family, now->ai_socktype, now->ai_protocol)) < 0) {
-		ERROR_DEBUG("Cannot get socket file descriptor for broadcast.\n");
+		ERROR_DEBUG("Cannot get socket file descriptor for broadcast.");
 		return 1;
 	}
 	if (setsockopt(file_descriptor, SOL_SOCKET, SO_BROADCAST, &on, sizeof(on)) == -1) {
-		ERROR_DEBUG("Cannot set socket option for broadcast.\n");
+		ERROR_DEBUG("Cannot set socket option for broadcast.");
 		return 1;
 	}
 	if (sendto(file_descriptor, "HA\000\001", 4, 0, now->ai_addr, now->ai_addrlen)
 		!= 4) {
-		ERROR_CONNECT("Trouble sending broadcast message\n");
+		ERROR_CONNECT("Trouble sending broadcast message");
 		return 1;
 	}
 
 	/* now read */
 	if ( udp_read(file_descriptor, &ha7_response, sizeof(struct HA7_response), &tv, &from, &fromlen) != sizeof(struct HA7_response) ) {
-		LEVEL_CONNECT("HA7 response bad length\n");
+		LEVEL_CONNECT("HA7 response bad length");
 		return 1;
 	}
 
@@ -123,10 +123,10 @@ int FS_FindHA7(void)
 	int ret = -ENOENT;
 	int n ;
 
-	LEVEL_DEBUG("Attempting udp multicast search for the HA7Net bus master at 224.1.2.3:4567\n");
+	LEVEL_DEBUG("Attempting udp multicast search for the HA7Net bus master at 224.1.2.3:4567");
 	Setup_HA7_hint( &hint ) ;
 	if ((n = getaddrinfo("224.1.2.3", "4567", &hint, &ai))) {
-		LEVEL_CONNECT("Couldn't set up HA7 broadcast message %s\n", gai_strerror(n));
+		LEVEL_CONNECT("Couldn't set up HA7 broadcast message %s", gai_strerror(n));
 		return -ENOENT;
 	}
 
@@ -146,7 +146,7 @@ int FS_FindHA7(void)
 		in->name = owstrdup(name);
 		in->busmode = bus_ha7net;
 
-		LEVEL_CONNECT("HA7Net bus master discovered at %s\n",in->name);
+		LEVEL_CONNECT("HA7Net bus master discovered at %s",in->name);
 		ret = 0 ; // at least one good HA7
 	}
 	freeaddrinfo(ai);

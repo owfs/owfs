@@ -64,7 +64,7 @@ int W1_detect(struct connection_in *in)
 
 	FS_ParsedName(NULL, &pn);	// minimal parsename -- no destroy needed
 	pn.selected_connection = in;
-	LEVEL_CONNECT("start\n");
+	LEVEL_CONNECT("start");
 
 	/* Set up low-level routines */
 	W1_setroutines(in);
@@ -73,7 +73,7 @@ int W1_detect(struct connection_in *in)
 		in->connin.w1.read_file_descriptor = pipe_fd[0] ;
 		in->connin.w1.write_file_descriptor = pipe_fd[1] ;
 	} else {
-		ERROR_CONNECT("W1 pipe creation error\n");
+		ERROR_CONNECT("W1 pipe creation error");
 		in->connin.w1.read_file_descriptor = -1 ;
 		in->connin.w1.write_file_descriptor = -1 ;
 		return -1 ;
@@ -103,7 +103,7 @@ static int w1_send_reset( const struct parsedname *pn )
     w1c.cmd = W1_CMD_RESET ;
     w1c.len = 0 ;
 
-	LEVEL_DEBUG("Sending w1 reset message\n");
+	LEVEL_DEBUG("Sending w1 reset message");
     return W1_send_msg( pn->selected_connection, &w1m, &w1c, NULL );
 }
 
@@ -125,7 +125,7 @@ static int w1_send_search( BYTE search, const struct parsedname *pn )
 	w1c.cmd = (search==_1W_CONDITIONAL_SEARCH_ROM) ? W1_CMD_ALARM_SEARCH : W1_CMD_SEARCH ;
 	w1c.len = 0 ;
 
-	LEVEL_DEBUG("Sending w1 search (list devices) message\n");
+	LEVEL_DEBUG("Sending w1 search (list devices) message");
 	return W1_send_msg( pn->selected_connection, &w1m, &w1c, NULL );
 }
 
@@ -178,7 +178,7 @@ static int w1_send_selecttouch( const BYTE * data, size_t size, const struct par
 	w1c.cmd = W1_CMD_TOUCH ;
 	w1c.len = size ;
 
-	LEVEL_DEBUG("Sending w1 select message for "SNformat"\n",SNvar(pn->sn));
+	LEVEL_DEBUG("Sending w1 select message for "SNformat,SNvar(pn->sn));
 	return W1_send_msg( pn->selected_connection, &w1m, &w1c, data );
 }
 
@@ -217,7 +217,7 @@ static int w1_send_touch( const BYTE * data, size_t size, const struct parsednam
 	w1c.cmd = W1_CMD_TOUCH ;
 	w1c.len = size ;
 
-	LEVEL_DEBUG("Sending w1 send/receive data message for "SNformat"\n",SNvar(pn->sn));
+	LEVEL_DEBUG("Sending w1 send/receive data message for "SNformat,SNvar(pn->sn));
 	return W1_send_msg( pn->selected_connection, &w1m, &w1c, data );
 }
 

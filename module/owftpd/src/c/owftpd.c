@@ -14,7 +14,7 @@ pthread_t main_threadid;
 
 static void ow_exit(int e)
 {
-	LEVEL_DEBUG("ow_exit %d\n", e);
+	LEVEL_DEBUG("ow_exit %d", e);
 	if (IS_MAINTHREAD) {
 		LibClose();
 	}
@@ -33,30 +33,30 @@ static void exit_handler(int signo, siginfo_t * info, void *context)
 #if OW_MT
 	if (info) {
 		LEVEL_DEBUG
-			("exit_handler: for signo=%d, errno %d, code %d, pid=%ld, self=%lu main=%lu\n",
+			("exit_handler: for signo=%d, errno %d, code %d, pid=%ld, self=%lu main=%lu",
 			 signo, info->si_errno, info->si_code, (long int) info->si_pid, pthread_self(), main_threadid);
 	} else {
-		LEVEL_DEBUG("exit_handler: for signo=%d, self=%lu, main=%lu\n", signo, pthread_self(), main_threadid);
+		LEVEL_DEBUG("exit_handler: for signo=%d, self=%lu, main=%lu", signo, pthread_self(), main_threadid);
 	}
 	if (StateInfo.shutdown_in_progress) {
-	  LEVEL_DEBUG("exit_handler: shutdown already in progress. signo=%d, self=%lu, main=%lu\n", signo, pthread_self(), main_threadid);
+	  LEVEL_DEBUG("exit_handler: shutdown already in progress. signo=%d, self=%lu, main=%lu", signo, pthread_self(), main_threadid);
 	}
 	if (!StateInfo.shutdown_in_progress) {
 		StateInfo.shutdown_in_progress = 1;
 
 		if (info != NULL) {
 			if (SI_FROMUSER(info)) {
-				LEVEL_DEBUG("exit_handler: kill from user\n");
+				LEVEL_DEBUG("exit_handler: kill from user");
 			}
 			if (SI_FROMKERNEL(info)) {
-				LEVEL_DEBUG("exit_handler: kill from kernel\n");
+				LEVEL_DEBUG("exit_handler: kill from kernel");
 			}
 		}
 		if (!IS_MAINTHREAD) {
-			LEVEL_DEBUG("exit_handler: kill mainthread %lu self=%lu signo=%d\n", main_threadid, pthread_self(), signo);
+			LEVEL_DEBUG("exit_handler: kill mainthread %lu self=%lu signo=%d", main_threadid, pthread_self(), signo);
 			pthread_kill(main_threadid, signo);
 		} else {
-			LEVEL_DEBUG("exit_handler: ignore signal, mainthread %lu self=%lu signo=%d\n", main_threadid, pthread_self(), signo);
+			LEVEL_DEBUG("exit_handler: ignore signal, mainthread %lu self=%lu signo=%d", main_threadid, pthread_self(), signo);
 		}
 	}
 #else
@@ -112,7 +112,7 @@ int main(int argc, char *argv[])
 
 	/* Need at least 1 adapter */
 	if (Inbound_Control.active == 0 && !Globals.autoserver) {
-		LEVEL_DEFAULT("Need to specify at least one 1-wire adapter.\n");
+		LEVEL_DEFAULT("Need to specify at least one 1-wire adapter.");
 		ow_exit(1);
 	}
 
@@ -131,7 +131,7 @@ int main(int argc, char *argv[])
 
 #if OW_MT
 	main_threadid = pthread_self();
-	LEVEL_DEBUG("main_threadid = %lu\n", (unsigned long int) main_threadid);
+	LEVEL_DEBUG("main_threadid = %lu", (unsigned long int) main_threadid);
 #endif
 
 	sigemptyset(&myset);
@@ -142,13 +142,13 @@ int main(int argc, char *argv[])
 
 	/* create our main listener */
 	if (!ftp_listener_init(&ftp_listener)) {
-		LEVEL_CONNECT("Problem initializing FTP listener\n");
+		LEVEL_CONNECT("Problem initializing FTP listener");
 		ow_exit(1);
 	}
 
 	/* start our listener */
 	if (ftp_listener_start(&ftp_listener) == 0) {
-		LEVEL_CONNECT("Problem starting FTP service\n");
+		LEVEL_CONNECT("Problem starting FTP service");
 		ow_exit(1);
 	}
 
@@ -160,21 +160,21 @@ int main(int argc, char *argv[])
 	while (!StateInfo.shutdown_in_progress) {
 		if ((err = sigwait(&myset, &signo)) == 0) {
 			if (signo == SIGHUP) {
-				LEVEL_DEBUG("owftpd: ignore signo=%d\n", signo);
+				LEVEL_DEBUG("owftpd: ignore signo=%d", signo);
 				continue;
 			}
-			LEVEL_DEBUG("owftpd: break signo=%d\n", signo);
+			LEVEL_DEBUG("owftpd: break signo=%d", signo);
 			break;
 		} else {
-			LEVEL_DEBUG("owftpd: sigwait error %d\n", err);
+			LEVEL_DEBUG("owftpd: sigwait error %d", err);
 		}
 	}
 
 	StateInfo.shutdown_in_progress = 1;
-	LEVEL_DEBUG("owftpd shutdown initiated\n");
+	LEVEL_DEBUG("owftpd shutdown initiated");
 
 	ftp_listener_stop(&ftp_listener);
-	LEVEL_CONNECT("All connections finished, FTP server exiting\n");
+	LEVEL_CONNECT("All connections finished, FTP server exiting");
 
 	ow_exit(0);
 	return 0;

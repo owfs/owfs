@@ -488,7 +488,7 @@ static int FS_w_pulldownslewrate(struct one_wire_query *owq)
 	pn->selected_connection->connin.usb.pulldownslewrate = OWQ_U(owq);
 	pn->selected_connection->changed_bus_settings |= CHANGED_USB_SLEW ;	// force a reset
 
-	LEVEL_DEBUG("Set slewrate to %d\n", pn->selected_connection->connin.usb.pulldownslewrate);
+	LEVEL_DEBUG("Set slewrate to %d", pn->selected_connection->connin.usb.pulldownslewrate);
 
 	return 0;
 }

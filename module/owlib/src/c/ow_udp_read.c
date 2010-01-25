@@ -51,7 +51,7 @@ ssize_t udp_read(int file_descriptor, void *vptr, size_t n, const struct timeval
 				if (errno == EINTR) {
 					errno = 0;	// clear errno. We never use it anyway.
 				} else {
-					ERROR_DATA("udp read error\n");
+					ERROR_DATA("udp read error");
 					return -EIO;
 				}
 			} else if (read_or_error == 0) {
@@ -66,10 +66,10 @@ ssize_t udp_read(int file_descriptor, void *vptr, size_t n, const struct timeval
 				/* select() was interrupted, try again */
 				continue;
 			}
-			ERROR_DATA("udp read selection error (network)\n");
+			ERROR_DATA("udp read selection error (network)");
 			return -EIO;
 		} else {				/* timed out */
-			LEVEL_CONNECT("udp read timeout after %d bytes\n", n - nleft);
+			LEVEL_CONNECT("udp read timeout after %d bytes", n - nleft);
 			return -EAGAIN;
 		}
 	}

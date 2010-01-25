@@ -113,13 +113,13 @@ int W1_send_msg( struct connection_in * in, struct w1_netlink_msg *msg, struct w
 	if ( length > 0 ) {
 		memcpy(pdata, data, length);
 	}
-	LEVEL_DEBUG("Netlink send -----------------\n");
+	LEVEL_DEBUG("Netlink send -----------------");
 	Netlink_Print( nlm, cn, w1m, w1c, pdata, length ) ;
 
 	err = send(Inbound_Control.w1_file_descriptor, nlm, size,  0);
 	owfree(nlm);
 	if (err == -1) {
-		ERROR_CONNECT("Failed to send w1 netlink message\n");
+		ERROR_CONNECT("Failed to send w1 netlink message");
 		return -1 ;
 	}
 	return seq;

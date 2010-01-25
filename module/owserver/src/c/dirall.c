@@ -63,7 +63,7 @@ void *DirallHandler(struct handlerdata *hd, struct client_msg *cm, const struct 
 	CharblobInit(&cb);
 
 	// Now generate the directory (using the embedded callback function above for each element
-	LEVEL_DEBUG("OWSERVER Dir-All SpecifiedBus=%d path = %s\n", SpecifiedBus(pn), SAFESTRING(pn->path));
+	LEVEL_DEBUG("OWSERVER Dir-All SpecifiedBus=%d path = %s", SpecifiedBus(pn), SAFESTRING(pn->path));
 
 	if (hd->sm.payload >= PATH_MAX) {
 		cm->ret = -EMSGSIZE;

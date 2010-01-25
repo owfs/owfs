@@ -96,7 +96,7 @@ struct fuse_operations owfs_oper = {
 /* Needed for "SETATTR" */
 static int FS_utime(const char *path, struct utimbuf *buf)
 {
-	LEVEL_CALL("UTIME path=%s\n", SAFESTRING(path));
+	LEVEL_CALL("UTIME path=%s", SAFESTRING(path));
 	(void) buf;
 	return 0;
 }
@@ -104,7 +104,7 @@ static int FS_utime(const char *path, struct utimbuf *buf)
 /* Needed for "SETATTR" */
 static int FS_chmod(const char *path, mode_t mode)
 {
-	LEVEL_CALL("CHMODE path=%s\n", SAFESTRING(path));
+	LEVEL_CALL("CHMODE path=%s", SAFESTRING(path));
 	(void) mode;
 	return 0;
 }
@@ -112,7 +112,7 @@ static int FS_chmod(const char *path, mode_t mode)
 /* Needed for "SETATTR" */
 static int FS_chown(const char *path, uid_t uid, gid_t gid)
 {
-	LEVEL_CALL("CHOWN path=%s\n", SAFESTRING(path));
+	LEVEL_CALL("CHOWN path=%s", SAFESTRING(path));
 	(void) uid;
 	(void) gid;
 	return 0;
@@ -125,7 +125,7 @@ static int FS_open(const char *path, FUSEFLAG flags)
 	if (!pid_created)
 		PIDstart();
 #endif							/* FUSE_VERSION < 23 */
-	LEVEL_CALL("OPEN path=%s\n", SAFESTRING(path));
+	LEVEL_CALL("OPEN path=%s", SAFESTRING(path));
 	(void) flags;
 	return 0;
 }
@@ -133,7 +133,7 @@ static int FS_open(const char *path, FUSEFLAG flags)
 /* In theory, should handle file closing, but OWFS doesn't care. Device opened/closed with every read/write */
 static int FS_release(const char *path, FUSEFLAG flags)
 {
-	LEVEL_CALL("RELEASE path=%s\n", SAFESTRING(path));
+	LEVEL_CALL("RELEASE path=%s", SAFESTRING(path));
 	(void) flags;
 	return 0;
 }
@@ -141,7 +141,7 @@ static int FS_release(const char *path, FUSEFLAG flags)
 /* dummy truncation (empty) function */
 static int FS_truncate(const char *path, const off_t size)
 {
-	LEVEL_CALL("TRUNCATE path=%s\n", SAFESTRING(path));
+	LEVEL_CALL("TRUNCATE path=%s", SAFESTRING(path));
 	(void) size;
 	return 0;
 }
@@ -172,7 +172,7 @@ static int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler)
 	struct parsedname pn;
 	int ret = FS_ParsedName(path, &pn);
 
-	LEVEL_CALL("GETDIR path=%s\n", SAFESTRING(path));
+	LEVEL_CALL("GETDIR path=%s", SAFESTRING(path));
 
 	if (ret) { // bad ParseName
 		return ret;
@@ -210,7 +210,7 @@ static int CB_write(const char *path, const char *buffer, size_t size, off_t off
 #ifdef FUSE1X
 int FS_statfs(struct fuse_statfs *fst)
 {
-	LEVEL_CALL("STATFS\n");
+	LEVEL_CALL("STATFS"");
 	memset(fst, 0, sizeof(struct fuse_statfs));
 	return 0;
 }

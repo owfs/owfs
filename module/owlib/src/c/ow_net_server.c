@@ -59,7 +59,7 @@ static int ServerAddr(const char * default_port, struct connection_out *out)
 	//printf("ServerAddr: [%s] [%s]\n", out->host, out->service);
 
 	if ((ret = getaddrinfo(out->host, out->service, &hint, &out->ai))) {
-		ERROR_CONNECT("GetAddrInfo error [%s]=%s:%s\n", SAFESTRING(out->name), SAFESTRING(out->host), SAFESTRING(out->service));
+		ERROR_CONNECT("GetAddrInfo error [%s]=%s:%s", SAFESTRING(out->name), SAFESTRING(out->host), SAFESTRING(out->service));
 		return -1;
 	}
 	return 0;
@@ -68,7 +68,7 @@ static int ServerAddr(const char * default_port, struct connection_out *out)
 static int ServerListen(struct connection_out *out)
 {
 	if (out->ai == NULL) {
-		LEVEL_CONNECT("Server address not yet parsed [%s]\n", SAFESTRING(out->name));
+		LEVEL_CONNECT("Server address not yet parsed [%s]", SAFESTRING(out->name));
 		return -EIO;
 	}
 
@@ -82,14 +82,14 @@ static int ServerListen(struct connection_out *out)
 
 		//printf("ServerListen file_descriptor=%d\n",file_descriptor);
 		if (file_descriptor < 0) {
-			ERROR_CONNECT("Socket problem [%s]\n", SAFESTRING(out->name));
+			ERROR_CONNECT("Socket problem [%s]", SAFESTRING(out->name));
 		} else if (setsockopt(file_descriptor, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof(on)) != 0) {
-			ERROR_CONNECT("SetSockOpt problem [%s]\n", SAFESTRING(out->name));
+			ERROR_CONNECT("SetSockOpt problem [%s]", SAFESTRING(out->name));
 		} else if (bind(file_descriptor, out->ai_ok->ai_addr, out->ai_ok->ai_addrlen) != 0) {
 			// this is where the default linking to a busy port shows up
-			ERROR_CONNECT("Bind problem [%s]\n", SAFESTRING(out->name));
+			ERROR_CONNECT("Bind problem [%s]", SAFESTRING(out->name));
 		} else if (listen(file_descriptor, 10) != 0) {
-			ERROR_CONNECT("Listen problem [%s]\n", SAFESTRING(out->name));
+			ERROR_CONNECT("Listen problem [%s]", SAFESTRING(out->name));
 		} else {
 			out->file_descriptor = file_descriptor;
 			return file_descriptor;
@@ -98,7 +98,7 @@ static int ServerListen(struct connection_out *out)
 			close( file_descriptor );
 		}
 	} while ((out->ai_ok = out->ai_ok->ai_next));
-	LEVEL_CONNECT("No good listen network sockets [%s]\n", SAFESTRING(out->name));
+	LEVEL_CONNECT("No good listen network sockets [%s]", SAFESTRING(out->name));
 	return -1;
 }
 
@@ -125,7 +125,7 @@ int ServerOutSetup(struct connection_out *out)
 			if ( ServerListen(out)  >= 0 ) {
 				return 0 ;
 			}
-			ERROR_CONNECT("Default port not successful. Try an ephemeral port\n");
+			ERROR_CONNECT("Default port not successful. Try an ephemeral port");
 		}
 	}
 
@@ -162,7 +162,7 @@ void *ServerProcessHandler(void *arg)
 		Test_and_Close( &(hp->acceptfd) );
 		owfree(hp);
 	}
-	LEVEL_DEBUG("Normal exit.\n");
+	LEVEL_DEBUG("Normal exit.");
 	sem_post(&Mutex.accept_sem);
 	pthread_exit(NULL);
 	return NULL;
@@ -172,12 +172,12 @@ void ServerProcessAcceptUnlock(void *param)
 {
 	struct connection_out *out = (struct connection_out *)param;
 	if(out == NULL) {
-		LEVEL_DEBUG("out==NULL\n");
+		LEVEL_DEBUG("out==NULL");
 		return;
 	}
-	LEVEL_DEBUG("unlock %lu\n", out->tid);
+	LEVEL_DEBUG("unlock %lu", out->tid);
 	ACCEPTUNLOCK(out);
-	LEVEL_DEBUG("unlock %lu done\n", out->tid);
+	LEVEL_DEBUG("unlock %lu done", out->tid);
 }
 
 static void ServerProcessAccept(void *vp)
@@ -187,37 +187,37 @@ static void ServerProcessAccept(void *vp)
 	int acceptfd;
 	int ret;
 
-	LEVEL_DEBUG("%s[%lu] try lock %d\n", SAFESTRING(out->name), (unsigned long int) pthread_self(), out->index);
+	LEVEL_DEBUG("%s[%lu] try lock %d", SAFESTRING(out->name), (unsigned long int) pthread_self(), out->index);
 
 	ACCEPTLOCK(out);
 
 	pthread_cleanup_push(ServerProcessAcceptUnlock, vp);
 
-	LEVEL_DEBUG("%s[%lu] locked %d\n", SAFESTRING(out->name), (unsigned long int) pthread_self(), out->index);
+	LEVEL_DEBUG("%s[%lu] locked %d", SAFESTRING(out->name), (unsigned long int) pthread_self(), out->index);
 
 	do {
 		acceptfd = accept(out->file_descriptor, NULL, NULL);
 		if (StateInfo.shutdown_in_progress) {
-			LEVEL_DEBUG("shutdown_in_progress %s[%lu] accept %d\n",SAFESTRING(out->name),(unsigned long int)pthread_self(),out->index) ;
+			LEVEL_DEBUG("shutdown_in_progress %s[%lu] accept %d",SAFESTRING(out->name),(unsigned long int)pthread_self(),out->index) ;
 			break;
 		}
-		LEVEL_DEBUG("%s[%lu] accept %d fd=%d\n",SAFESTRING(out->name),(unsigned long int)pthread_self(),out->index, acceptfd) ;
+		LEVEL_DEBUG("%s[%lu] accept %d fd=%d",SAFESTRING(out->name),(unsigned long int)pthread_self(),out->index, acceptfd) ;
 		if (acceptfd < 0) {
 			if (errno == EINTR) {
-				LEVEL_DEBUG("interrupted\n");
+				LEVEL_DEBUG("interrupted");
 				continue;
 			}
-			LEVEL_DEBUG("error %d [%s]\n", errno, strerror(errno));
+			LEVEL_DEBUG("error %d [%s]", errno, strerror(errno));
 		}
 		break;
 	} while (1);
 
 	pthread_cleanup_pop(1);  // Call ACCEPTUNLOCK
 
-	LEVEL_DEBUG(" %s[%lu] unlock %d\n",SAFESTRING(out->name),(unsigned long int)pthread_self(),out->index) ;
+	LEVEL_DEBUG(" %s[%lu] unlock %d",SAFESTRING(out->name),(unsigned long int)pthread_self(),out->index) ;
 
 	if (StateInfo.shutdown_in_progress) {
-		LEVEL_DEBUG("%s[%lu] shutdown_in_progress %d return\n",
+		LEVEL_DEBUG("%s[%lu] shutdown_in_progress %d return",
 			    SAFESTRING(out->name), (unsigned long int) pthread_self(), out->index);
 		if (acceptfd >= 0) {
 			close(acceptfd);
@@ -226,7 +226,7 @@ static void ServerProcessAccept(void *vp)
 	}
 
 	if (acceptfd < 0) {
-		ERROR_CONNECT("accept() problem %d (%d)\n", out->file_descriptor, out->index);
+		ERROR_CONNECT("accept() problem %d (%d)", out->file_descriptor, out->index);
 		sem_post(&Mutex.accept_sem); /* Make sure to increase the semaphore on failure */
 	} else {
 		struct HandlerThread_data *hp;
@@ -237,14 +237,14 @@ static void ServerProcessAccept(void *vp)
 			/* Semaphore will be increased when ProcessHandler ends */
 			ret = pthread_create(&tid, NULL, ServerProcessHandler, hp);
 			if (ret) {
-				LEVEL_DEBUG("%s[%lu] create failed ret=%d\n", SAFESTRING(out->name), (unsigned long int) pthread_self(), ret);
+				LEVEL_DEBUG("%s[%lu] create failed ret=%d", SAFESTRING(out->name), (unsigned long int) pthread_self(), ret);
 				close(acceptfd);
 				owfree(hp);
 				sem_post(&Mutex.accept_sem); /* Make sure to increase the semaphore on failure */
 			}
 		}
 	}
-	LEVEL_DEBUG("%lu CLOSING\n", (unsigned long int) pthread_self());
+	LEVEL_DEBUG("%lu CLOSING", (unsigned long int) pthread_self());
 	return;
 }
 
@@ -253,13 +253,13 @@ static void *ServerProcessOut(void *v)
 {
 	struct connection_out *out = (struct connection_out *) v;
 
-	LEVEL_DEBUG("%lu\n", (unsigned long int) pthread_self());
+	LEVEL_DEBUG("%lu", (unsigned long int) pthread_self());
 
 	// This thread is terminated with pthread_cancel()+pthread_join(), and should not be detached.
 	//pthread_detach(pthread_self());
 
 	if (ServerOutSetup(out)) {
-		LEVEL_CONNECT("Cannot set up server socket on %s, index=%d\n", SAFESTRING(out->name), out->index);
+		LEVEL_CONNECT("Cannot set up server socket on %s, index=%d", SAFESTRING(out->name), out->index);
 		STATLOCK;
 		Outbound_Control.active--; // failed to setup... decrease nr
 		STATUNLOCK;
@@ -274,7 +274,7 @@ static void *ServerProcessOut(void *v)
 	ZeroConf_Announce(out);
 
 	OUTLOCK(out);
-	LEVEL_DEBUG("Output device %s setup is done. index=%d\n", SAFESTRING(out->name), out->index);
+	LEVEL_DEBUG("Output device %s setup is done. index=%d", SAFESTRING(out->name), out->index);
 
 	my_pthread_cond_signal(&(out->setup_cond));
 	OUTUNLOCK(out);
@@ -288,9 +288,9 @@ static void *ServerProcessOut(void *v)
 		ServerProcessAccept(v);
 	}
 
-	LEVEL_DEBUG("%lu CLOSING (%s)\n", (unsigned long int) pthread_self(), SAFESTRING(out->name));
+	LEVEL_DEBUG("%lu CLOSING (%s)", (unsigned long int) pthread_self(), SAFESTRING(out->name));
 
-	LEVEL_DEBUG("Normal exit.\n");
+	LEVEL_DEBUG("Normal exit.");
 	pthread_exit(NULL);
 	return NULL;
 }
@@ -303,7 +303,7 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 	sigset_t myset;
 
 	if (Outbound_Control.active == 0) {
-		LEVEL_CALL("No output devices defined\n");
+		LEVEL_CALL("No output devices defined");
 		Exit(1);
 	}
 
@@ -321,22 +321,22 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 
 		if (pthread_create(&(out->tid), NULL, ServerProcessOut, (void *) (out))) {
 			OUTUNLOCK(out);
-			ERROR_CONNECT("Could not create a thread for %s\n", SAFESTRING(out->name));
+			ERROR_CONNECT("Could not create a thread for %s", SAFESTRING(out->name));
 			return;
 		}
 	}
 
 	for (out = Outbound_Control.head; out; out = out->next) {
-		LEVEL_DEBUG("Wait for output device %d to setup.\n", out->index);
+		LEVEL_DEBUG("Wait for output device %d to setup.", out->index);
 		// Should perhaps wait for a cond-signal, but this works..
 		my_pthread_cond_wait(&(out->setup_cond), &(out->out_mutex));
-		LEVEL_DEBUG("Output device %d setup done.\n", out->index);
+		LEVEL_DEBUG("Output device %d setup done.", out->index);
 		OUTUNLOCK(out);
 	}
 
 
 	if (Outbound_Control.active == 0) {
-		LEVEL_CALL("No output devices could be created.\n");
+		LEVEL_CALL("No output devices could be created.");
 		return;
 	}
 
@@ -348,59 +348,59 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 	while (!StateInfo.shutdown_in_progress) {
 		if ((rc = sigwait(&myset, &signo)) == 0) {
 			if (signo == SIGHUP) {
-				LEVEL_DEBUG("ignore signo=%d\n", signo);
+				LEVEL_DEBUG("ignore signo=%d", signo);
 				// perhaps do some reload-thing here...
 				continue;
 			}
-			LEVEL_DEBUG("break signo=%d\n", signo);
+			LEVEL_DEBUG("break signo=%d", signo);
 			StateInfo.shutdown_in_progress = 1;
 		} else {
-			LEVEL_DEBUG("sigwait error %d\n", rc);
+			LEVEL_DEBUG("sigwait error %d", rc);
 		}
 	}
 
 	StateInfo.shutdown_in_progress = 1;
-	LEVEL_DEBUG("shutdown initiated\n");
+	LEVEL_DEBUG("shutdown initiated");
 
 	for (out = Outbound_Control.head; out; out = out->next) {
 		if(out->tid > 0) {
-			LEVEL_DEBUG("Shutting down %d of %d thread %lu\n", out->index, Outbound_Control.active, out->tid);
+			LEVEL_DEBUG("Shutting down %d of %d thread %lu", out->index, Outbound_Control.active, out->tid);
 #if 0
 			/* accept() is not a cancellation point under Solaris,
 			 * so I send a SIGTERM to abort the systemcall. */
 			if ((rc = pthread_cancel(out->tid))) {
-			  LEVEL_DEBUG("pthread_cancel (%d of %d) failed tid=%lu rc=%d [%s]\n", out->index, Outbound_Control.active, out->tid, rc, strerror(rc));
+			  LEVEL_DEBUG("pthread_cancel (%d of %d) failed tid=%lu rc=%d [%s]", out->index, Outbound_Control.active, out->tid, rc, strerror(rc));
 			} else {
-			  LEVEL_DEBUG("pthread_cancel (%d of %d) tid=%lu rc=%d [%s]\n", out->index, Outbound_Control.active, out->tid, rc, strerror(rc));
+			  LEVEL_DEBUG("pthread_cancel (%d of %d) tid=%lu rc=%d [%s]", out->index, Outbound_Control.active, out->tid, rc, strerror(rc));
 			}
 #else
 			signo = SIGTERM;
 			if((rc = pthread_kill(out->tid, signo))) {
-			  LEVEL_DEBUG("pthread_kill (%d of %d) tid=%lu signo=%d failed rc=%d [%s]\n", out->index, Outbound_Control.active, out->tid, signo, rc, strerror(rc));
+			  LEVEL_DEBUG("pthread_kill (%d of %d) tid=%lu signo=%d failed rc=%d [%s]", out->index, Outbound_Control.active, out->tid, signo, rc, strerror(rc));
 			} else {
-			  LEVEL_DEBUG("pthread_kill (%d of %d) tid=%lu signo=%d rc=%d [%s]\n", out->index, Outbound_Control.active, out->tid, signo, rc, strerror(rc));
+			  LEVEL_DEBUG("pthread_kill (%d of %d) tid=%lu signo=%d rc=%d [%s]", out->index, Outbound_Control.active, out->tid, signo, rc, strerror(rc));
 			}
 #endif
 		}
 	}
 
-	LEVEL_DEBUG("all threads cancelled\n");
+	LEVEL_DEBUG("all threads cancelled");
 
 	for (out = Outbound_Control.head; out; out = out->next) {
 		if(out->tid > 0) {
-			LEVEL_DEBUG("join %lu\n", out->tid);
+			LEVEL_DEBUG("join %lu", out->tid);
 			if((rc = pthread_join(out->tid, NULL))) {
-			  LEVEL_DEBUG("join %lu failed rc=%d [%s]\n", out->tid, rc, strerror(rc));
+			  LEVEL_DEBUG("join %lu failed rc=%d [%s]", out->tid, rc, strerror(rc));
 			} else {
-			  LEVEL_DEBUG("join %lu done\n", out->tid);
+			  LEVEL_DEBUG("join %lu done", out->tid);
 			}
 			out->tid = 0;
 		} else {
-			LEVEL_DEBUG("thread already removed\n");
+			LEVEL_DEBUG("thread already removed");
 		}
 	}
 
-	LEVEL_DEBUG("shutdown done\n");
+	LEVEL_DEBUG("shutdown done");
 
 	/* Cleanup that may never be reached */
 	return;
@@ -412,13 +412,13 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (int errcode))
 {
 	if (Outbound_Control.active == 0) {
-		LEVEL_CONNECT("No output device (port) specified. Exiting.\n");
+		LEVEL_CONNECT("No output device (port) specified. Exiting.");
 		Exit(1);
 	} else if (Outbound_Control.active > 1) {
-		LEVEL_CONNECT("More than one output device specified (%d). Library compiled non-threaded. Exiting.\n", Outbound_Control.active);
+		LEVEL_CONNECT("More than one output device specified (%d). Library compiled non-threaded. Exiting.", Outbound_Control.active);
 		Exit(1);
 	} else if (ServerOutSetup(Outbound_Control.head)) {
-		LEVEL_CONNECT("Cannot set up head_outbound_list [%s] -- will exit\n", SAFESTRING(head_outbound_list->name));
+		LEVEL_CONNECT("Cannot set up head_outbound_list [%s] -- will exit", SAFESTRING(head_outbound_list->name));
 		Exit(1);
 	} else {
 		ZeroConf_Announce(Outbound_Control.head);
@@ -428,7 +428,7 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 				break;
 			}
 			if (acceptfd < 0) {
-				ERROR_CONNECT("Trouble with accept, will reloop\n");
+				ERROR_CONNECT("Trouble with accept, will reloop");
 			} else {
 				HandlerRoutine(acceptfd);
 				close(acceptfd);

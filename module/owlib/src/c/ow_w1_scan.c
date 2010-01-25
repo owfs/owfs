@@ -39,7 +39,7 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
 static void w1_masters(struct netlink_parse * nlp)
 {
 	if ( nlp->nlm->nlmsg_pid != 0 ) {
-		LEVEL_DEBUG("Netlink packet PID not from kernel\n");
+		LEVEL_DEBUG("Netlink packet PID not from kernel");
 		return ;
 	}
 	if (nlp->w1m) {
@@ -47,20 +47,20 @@ static void w1_masters(struct netlink_parse * nlp)
 		switch (nlp->w1m->type) {
 			case W1_MASTER_ADD:
 				AddW1Bus(bus_master) ;
-				LEVEL_DEBUG("Master has been added: w1_master%d.\n",	bus_master);
+				LEVEL_DEBUG("Master has been added: w1_master%d.",	bus_master);
 					break;
 			case W1_MASTER_REMOVE:
 				RemoveW1Bus(bus_master) ;
-				LEVEL_DEBUG("Master has been removed: w1_master%d.\n", bus_master);
+				LEVEL_DEBUG("Master has been removed: w1_master%d.", bus_master);
 					break;
 			case W1_SLAVE_ADD:
 			case W1_SLAVE_REMOVE:
 			// ignored since thre is no bus attribution and real use will discover the change.
 			// at some point we could make the w1 master lists static and only changed when triggered by one of these messages.
-				LEVEL_DEBUG("Netlink (w1) Slave announcements\n");
+				LEVEL_DEBUG("Netlink (w1) Slave announcements");
 				break ;
 			default:
-				LEVEL_DEBUG("Netlink (w1) Other command.\n");
+				LEVEL_DEBUG("Netlink (w1) Other command.");
 				break ;
 		}
 	}
@@ -80,7 +80,7 @@ int W1NLScan( void )
 				Netlink_Parse_Destroy(&nlp) ;
 				break ;
 			default:
-				LEVEL_CONNECT("Fatal error scanning W1 bus\n");
+				LEVEL_CONNECT("Fatal error scanning W1 bus");
 				return  1;
 		}
 	}

@@ -51,7 +51,7 @@ int W1PipeSelect_timeout( int file_descriptor )
 		
 		if ( select_value == -1 ) {
 			if (errno != EINTR) {
-				ERROR_CONNECT("Netlink (w1) Select returned -1\n");
+				ERROR_CONNECT("Netlink (w1) Select returned -1");
 				return -1 ;
 			}
 		} else if ( select_value == 0 ) {
@@ -63,10 +63,10 @@ int W1PipeSelect_timeout( int file_descriptor )
 			timersub(&now,&Inbound_Control.w1_last_read,&diff);
 			my_pthread_mutex_unlock(&Inbound_Control.w1_read_mutex) ;
 			if ( diff.tv_sec <= Globals.timeout_w1 ) {
-				LEVEL_DEBUG("Select legal timeout -- try again\n");
+				LEVEL_DEBUG("Select legal timeout -- try again");
 				continue ;
 			}
-			LEVEL_DEBUG("Select returned zero (timeout)\n");
+			LEVEL_DEBUG("Select returned zero (timeout)");
 			return -1;
 		} else {
 			return 0 ;

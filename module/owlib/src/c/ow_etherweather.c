@@ -81,7 +81,7 @@ static int EtherWeather_command(struct connection_in *in, char command, int data
 			if (errno == EINTR) {
 				continue;
 			}
-			ERROR_CONNECT("Trouble writing data to EtherWeather: %s\n", SAFESTRING(in->name));
+			ERROR_CONNECT("Trouble writing data to EtherWeather: %s", SAFESTRING(in->name));
 			break;
 		}
 		left -= res;
@@ -102,13 +102,13 @@ static int EtherWeather_command(struct connection_in *in, char command, int data
 	// Read the response header
 	tcp_read(in->file_descriptor, packet, 2, &tvnet, &readin_size) ;
 	if (readin_size != 2) {
-		LEVEL_CONNECT("header read error\n");
+		LEVEL_CONNECT("header read error");
 		owfree(packet);
 		return -EIO;
 	}
 	// Make sure it was echoed properly
 	if (packet[0] != (datalen + 1) || packet[1] != command) {
-		LEVEL_CONNECT("invalid header\n");
+		LEVEL_CONNECT("invalid header");
 		owfree(packet);
 		return -EIO;
 	}
@@ -116,7 +116,7 @@ static int EtherWeather_command(struct connection_in *in, char command, int data
 	if (datalen > 0) {
 		tcp_read(in->file_descriptor, odata, datalen, &tvnet, &readin_size );
 		if (readin_size != (size_t) datalen) {
-			LEVEL_CONNECT("data read error\n");
+			LEVEL_CONNECT("data read error");
 			owfree(packet);
 			return -EIO;
 		}
@@ -201,7 +201,7 @@ static int EtherWeather_next_both(struct device_search *ds, const struct parsedn
 
 	ds->LastDevice = (sendbuf[8] == 0xFE);
 
-	LEVEL_DEBUG("SN found: " SNformat "\n", SNvar(ds->sn));
+	LEVEL_DEBUG("SN found: " SNformat, SNvar(ds->sn));
 
 	return 0;
 }
@@ -213,7 +213,7 @@ static int EtherWeather_PowerByte(const BYTE byte, BYTE * resp, const UINT delay
 	/* PowerByte command specifies delay in 500ms ticks, not milliseconds */
 	pbbuf[0] = (delay + 499) / 500;
 	pbbuf[1] = byte;
-	LEVEL_DEBUG("SPU: %d %d\n", pbbuf[0], pbbuf[1]);
+	LEVEL_DEBUG("SPU: %d %d", pbbuf[0], pbbuf[1]);
 	if (EtherWeather_command(pn->selected_connection, EtherWeather_COMMAND_POWER, 2, pbbuf, pbbuf)) {
 		return -EIO;
 	}
@@ -262,7 +262,7 @@ int EtherWeather_detect(struct connection_in *in)
 	FS_ParsedName(NULL, &pn);	// minimal parsename -- no destroy needed
 	pn.selected_connection = in;
 
-	LEVEL_CONNECT("Connecting to EtherWeather\n");
+	LEVEL_CONNECT("Connecting to EtherWeather");
 
 	/* Set up low-level routines */
 	EtherWeather_setroutines(in);
@@ -291,7 +291,7 @@ int EtherWeather_detect(struct connection_in *in)
 
 	/* TODO: probe version, and confirm that it's actually an EtherWeather */
 
-	LEVEL_CONNECT("Connected to EtherWeather at %s\n", in->name);
+	LEVEL_CONNECT("Connected to EtherWeather at %s", in->name);
 
 	in->Adapter = adapter_EtherWeather;
 

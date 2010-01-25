@@ -76,7 +76,7 @@ void Handler(int file_descriptor)
 
 		/* Persistence logic */
 		if (loop_persistent) {	/* Requested persistence */
-			LEVEL_DEBUG("Persistence requested\n");
+			LEVEL_DEBUG("Persistence requested");
 			if (persistent) {	/* already had persistence granted */
 				hd.persistent = 1;	/* so keep it */
 			} else {			/* See if available */
@@ -144,10 +144,10 @@ void Handler(int file_descriptor)
 			}
 		}
 
-		LEVEL_DEBUG("OWSERVER tcp connection persistence -- reusing connection now.\n");
+		LEVEL_DEBUG("OWSERVER tcp connection persistence -- reusing connection now.");
 	}
 
-	LEVEL_DEBUG("OWSERVER handler done\n");
+	LEVEL_DEBUG("OWSERVER handler done");
 	my_pthread_mutex_destroy(&hd.to_client);
 	// restore the persistent count
 	if (persistent) {
@@ -188,7 +188,7 @@ static void SingleHandler(struct handlerdata *hd)
 
 	gettimeofday(&this_handler_start,0) ; // start for timing query handling
 	timerclear(&hd->tv);
-	LEVEL_DEBUG("START handler {%lu} %s\n",this_handler_count,hd->sp.path) ;
+	LEVEL_DEBUG("START handler {%lu} %s",this_handler_count,hd->sp.path) ;
 
 	gettimeofday(&(hd->tv), NULL);
 #if OW_MT && defined(HAVE_SEM_TIMEDWAIT)
@@ -202,11 +202,11 @@ static void SingleHandler(struct handlerdata *hd)
 		TOCLIENTLOCK(hd);
 		ToClient(hd->file_descriptor, &ping_cm, NULL);	// send the ping
 		TOCLIENTUNLOCK(hd);
-		LEVEL_DEBUG("Extra ping (pingcrazy mode)\n");
+		LEVEL_DEBUG("Extra ping (pingcrazy mode)");
 	}
 
 	if (pthread_create(&thread, NULL, DataHandler, hd)) {
-		LEVEL_DEBUG("OWSERVER:handler() can't create new thread\n");
+		LEVEL_DEBUG("OWSERVER:handler() can't create new thread");
 		DataHandler(hd);		// do it without pings
 		goto HandlerDone;
 	}
@@ -221,9 +221,9 @@ static void SingleHandler(struct handlerdata *hd)
 #ifdef USE_CLOCKGETTIME
 		/* This require -lrt, and precision (nanoseconds) is a bit unneeded */
 		if (clock_gettime(CLOCK_REALTIME, &tspec_end) == -1) {
-			LEVEL_DEFAULT("clock_gettime failed\n");
+			LEVEL_DEFAULT("clock_gettime failed");
 		}
-		LEVEL_DEBUG("clock_gettime returned time(NULL)=%ld %ld.%ld\n", time(NULL), tspec_end.tv_sec, tspec_end.tv_nsec);
+		LEVEL_DEBUG("clock_gettime returned time(NULL)=%ld %ld.%ld", time(NULL), tspec_end.tv_sec, tspec_end.tv_nsec);
 #else
 		/* micro seconds are good enough for this timeout */
 		gettimeofday(&tv_start, NULL);
@@ -242,7 +242,7 @@ static void SingleHandler(struct handlerdata *hd)
 #if 0
 			// This should be enough, but it doesn't work during debugging with gdb.
 			while (((rc = sem_timedwait(&(hd->complete_sem), &tspec_end)) == -1) && ((err = errno) == EINTR)) {
-				LEVEL_DEFAULT("restart sem_timedwait since EINTR\n");
+				LEVEL_DEFAULT("restart sem_timedwait since EINTR");
 				continue;       /* Restart if interrupted by handler */
 			}
 #else
@@ -256,7 +256,7 @@ static void SingleHandler(struct handlerdata *hd)
 				timersub(&tv_end, &tv_now,   &left);  // time left of "timeout"
 			
 				if(err == EINTR) {
-					LEVEL_CALL("restart sem_timedwait since EINTR. elapsed=%ld.%03ld left=%ld.%03ld\n", elapsed.tv_sec, elapsed.tv_usec/1000, left.tv_sec, left.tv_usec/1000);
+					LEVEL_CALL("restart sem_timedwait since EINTR. elapsed=%ld.%03ld left=%ld.%03ld", elapsed.tv_sec, elapsed.tv_usec/1000, left.tv_sec, left.tv_usec/1000);
 					continue;
 				}
 				if(err == ETIMEDOUT) {
@@ -264,19 +264,19 @@ static void SingleHandler(struct handlerdata *hd)
 						/* Debugging the application with gdb will result into strange behavior from sem_timedwait.
 						 * It might return too early with ETIMEDOUT even if there are more time left.
 						 */
-						LEVEL_CALL("Too early ETIMEDOUT from sem_timedwait elapsed=%ld.%03ld left=%ld.%03ld\n", elapsed.tv_sec, elapsed.tv_usec/1000, left.tv_sec, left.tv_usec/1000);
+						LEVEL_CALL("Too early ETIMEDOUT from sem_timedwait elapsed=%ld.%03ld left=%ld.%03ld", elapsed.tv_sec, elapsed.tv_usec/1000, left.tv_sec, left.tv_usec/1000);
 						//Too early ETIMEDOUT from sem_timedwait elapsed=0.022 left=179.977
 						//sem_timedwait ok  time=0.077
 						// Call sem_timedwait and wait again. tspec_end should be untouched and contain correct end-time.
 						continue;
 					} else {
-						LEVEL_CALL("sem_timedwait timeout time=%ld.%03ld (timeout=%d ms)\n", elapsed.tv_sec, elapsed.tv_usec/1000, timeout);
+						LEVEL_CALL("sem_timedwait timeout time=%ld.%03ld (timeout=%d ms)", elapsed.tv_sec, elapsed.tv_usec/1000, timeout);
 					}
 				} else {
-					LEVEL_DEFAULT("sem_timedwait error %d rc=%d time=%ld.%03ld\n", err, elapsed.tv_sec, elapsed.tv_usec/1000);
+					LEVEL_DEFAULT("sem_timedwait error %d rc=%d time=%ld.%03ld", err, elapsed.tv_sec, elapsed.tv_usec/1000);
 				}
 			} else {
-				//LEVEL_DEFAULT("sem_timedwait ok  time=%ld.%03ld\n", elapsed.tv_sec, elapsed.tv_usec/1000);
+				//LEVEL_DEFAULT("sem_timedwait ok  time=%ld.%03ld", elapsed.tv_sec, elapsed.tv_usec/1000);
 			}
 			break;
 		}
@@ -297,14 +297,14 @@ static void SingleHandler(struct handlerdata *hd)
 		TOCLIENTLOCK(hd);
 
 		if (!timerisset(&(hd->tv))) {	// flag that the other thread is done
-			LEVEL_DEBUG("UNPING handler {%lu} %s\n",this_handler_count,hd->sp.path) ;
+			LEVEL_DEBUG("UNPING handler {%lu} %s",this_handler_count,hd->sp.path) ;
 			loop = 0;
 		} else {				// check timing -- ping if expired
 			gettimeofday(&now, NULL);	// current time
 			timersub(&now, &delta, &result);	// less delay
 			if (timercmp(&(hd->tv), &result, <) || Globals.pingcrazy) {	// test against last message time
 				char *c = NULL;	// dummy argument
-				LEVEL_DEBUG("PING handler {%lu} %s\n",this_handler_count,hd->sp.path) ;
+				LEVEL_DEBUG("PING handler {%lu} %s",this_handler_count,hd->sp.path) ;
 				ToClient(hd->file_descriptor, &ping_cm, c);	// send the ping
 				if (Sidebound_Control.active > 0) {
 					struct connection_side *side;
@@ -314,7 +314,7 @@ static void SingleHandler(struct handlerdata *hd)
 				}
 				gettimeofday(&(hd->tv), NULL);	// reset timer
 			} else {
-				LEVEL_DEBUG("NOPING handler {%lu} %s\n",this_handler_count,hd->sp.path) ;
+				LEVEL_DEBUG("NOPING handler {%lu} %s",this_handler_count,hd->sp.path) ;
 			}
 		}
 
@@ -324,11 +324,11 @@ static void SingleHandler(struct handlerdata *hd)
 
 HandlerDone:
 	gettimeofday(&this_handler_stop,0); // not for end of handling
-	LEVEL_DEBUG("OWSERVER TIMING: Query %6lu Seconds %12.2f Path %s\n",
+	LEVEL_DEBUG("OWSERVER TIMING: Query %6lu Seconds %12.2f Path %s",
 		this_handler_count,
 		1.0*(this_handler_stop.tv_sec-this_handler_start.tv_sec)+.000001*(this_handler_stop.tv_usec-this_handler_start.tv_usec),
 		hd->sp.path) ;
-	LEVEL_DEBUG("STOP handler {%lu} %s\n",this_handler_count,hd->sp.path) ;
+	LEVEL_DEBUG("STOP handler {%lu} %s",this_handler_count,hd->sp.path) ;
 #if OW_MT && defined(HAVE_SEM_TIMEDWAIT)
 	sem_destroy(&(hd->complete_sem));
 #endif

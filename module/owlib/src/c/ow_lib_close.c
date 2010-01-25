@@ -18,7 +18,7 @@ $Id$
 /* All ow library closeup */
 void LibClose(void)
 {
-	LEVEL_CALL("Starting Library cleanup\n");
+	LEVEL_CALL("Starting Library cleanup");
 	LibStop();
 	PIDstop();
 	DeviceDestroy();
@@ -56,7 +56,7 @@ void LibClose(void)
 		Globals.fatal_debug_file = NULL;
 	}
 
-	LEVEL_CALL("Finished Library cleanup\n");
+	LEVEL_CALL("Finished Library cleanup");
 	if (log_available) {
 		closelog();
 		log_available = 0;

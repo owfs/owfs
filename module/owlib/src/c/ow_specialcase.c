@@ -74,13 +74,13 @@ void SpecialCase_add( struct connection_in * in, unsigned char family_code, cons
 				// Add into the red/black tree
 				tsearch(sc, &SpecialCase, specialcase_compare);
 			} else {
-				LEVEL_DEBUG("Attempt to add special handling ran out of memory. Family type %s. Property %s\n",family_code,property) ;
+				LEVEL_DEBUG("Attempt to add special handling ran out of memory. Family type %s. Property %s",family_code,property) ;
 			}
 		} else {
-			LEVEL_DEBUG("Attempt to add special handling for unrecognized file type. Family type %s. Property %s\n",family_code,property) ;
+			LEVEL_DEBUG("Attempt to add special handling for unrecognized file type. Family type %s. Property %s",family_code,property) ;
 		}
 	} else {
-		LEVEL_DEBUG("Attempt to add special handling for unrecognized family type %s. Property %s\n",family_code,property) ;
+		LEVEL_DEBUG("Attempt to add special handling for unrecognized family type %s. Property %sn",family_code,property) ;
 	}
 	return ;	
 }

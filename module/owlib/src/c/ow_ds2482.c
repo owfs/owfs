@@ -339,7 +339,7 @@ static int DS2482_detect_bus(enum ds2482_address chip_num, struct connection_in 
 						if ( in_original == all_in ) { //first time
 							return -ENODEV ;
 						}
-						LEVEL_DEBUG("Cleaning excess allocated i2c structure\n");
+						LEVEL_DEBUG("Cleaning excess allocated i2c structure");
 						RemoveIn(all_in); //Pascal Baerten :this removes the false DS2482-100 provisioned
 						return 0 ;
 					}
@@ -370,7 +370,7 @@ static int DS2482_detect_single(int lowindex, int highindex, struct connection_i
 	/* open the i2c port */
 	file_descriptor = open(in->name, O_RDWR);
 	if (file_descriptor < 0) {
-		ERROR_CONNECT("Could not open i2c device %s\n", in->name);
+		ERROR_CONNECT("Could not open i2c device %s", in->name);
 		return -ENODEV;
 	}
 
@@ -380,10 +380,10 @@ static int DS2482_detect_single(int lowindex, int highindex, struct connection_i
 	for (i = lowindex; i <= highindex; ++i) {
 		/* set the candidate address */
 		if (ioctl(file_descriptor, I2C_SLAVE, test_address[i]) < 0) {
-			ERROR_CONNECT("Cound not set trial i2c address to %.2X\n", test_address[i]);
+			ERROR_CONNECT("Cound not set trial i2c address to %.2X", test_address[i]);
 		} else {
 			BYTE c;
-			LEVEL_CONNECT("Found an i2c device at %s address %.2X\n", in->name, test_address[i]);
+			LEVEL_CONNECT("Found an i2c device at %s address %.2X", in->name, test_address[i]);
 			/* Provisional setup as a DS2482-100 ( 1 channel ) */
 			in->file_descriptor = file_descriptor;
 			in->connin.i2c.index = 0;
@@ -411,10 +411,10 @@ static int DS2482_detect_single(int lowindex, int highindex, struct connection_i
 				|| DS2482_readstatus(&c, file_descriptor, DS2482_Chip_reset_usec)	// pause .5 usec then read status
 				|| (c != (DS2482_REG_STS_LL | DS2482_REG_STS_RST))	// make sure status is properly set
 				) {
-				LEVEL_CONNECT("i2c device at %s address %.2X cannot be reset. Not a DS2482.\n", in->name, test_address[i]);
+				LEVEL_CONNECT("i2c device at %s address %.2X cannot be reset. Not a DS2482.", in->name, test_address[i]);
 				continue;
 			}
-			LEVEL_CONNECT("i2c device at %s address %.2X appears to be DS2482-x00\n", in->name, test_address[i]);
+			LEVEL_CONNECT("i2c device at %s address %.2X appears to be DS2482-x00", in->name, test_address[i]);
 			in->connin.i2c.configchip = 0x00;	// default configuration register after RESET
 			// Note, only the lower nibble of the device config stored
 
@@ -438,13 +438,13 @@ static int DS2482_redetect(const struct parsedname *pn)
 	/* open the i2c port */
 	file_descriptor = open(head->name, O_RDWR);
 	if (file_descriptor < 0) {
-		ERROR_CONNECT("Could not open i2c device %s\n", head->name);
+		ERROR_CONNECT("Could not open i2c device %s", head->name);
 		return -ENODEV;
 	}
 
 	/* address is known */
 	if (ioctl(file_descriptor, I2C_SLAVE, head->connin.i2c.i2c_address) < 0) {
-		ERROR_CONNECT("Cound not set i2c address to %.2X\n", address);
+		ERROR_CONNECT("Cound not set i2c address to %.2X", address);
 	} else {
 		BYTE c;
 		/* write the RESET code */
@@ -452,12 +452,12 @@ static int DS2482_redetect(const struct parsedname *pn)
 			|| DS2482_readstatus(&c, file_descriptor, DS2482_Chip_reset_usec)	// pause .5 usec then read status
 			|| (c != (DS2482_REG_STS_LL | DS2482_REG_STS_RST))	// make sure status is properly set
 			) {
-			LEVEL_CONNECT("i2c device at %s address %d cannot be reset. Not a DS2482.\n", head->name, address);
+			LEVEL_CONNECT("i2c device at %s address %d cannot be reset. Not a DS2482.", head->name, address);
 		} else {
 			head->connin.i2c.current = 0;
 			head->file_descriptor = file_descriptor;
 			head->connin.i2c.configchip = 0x00;	// default configuration register after RESET
-			LEVEL_CONNECT("i2c device at %s address %d reset successfully\n", head->name, address);
+			LEVEL_CONNECT("i2c device at %s address %d reset successfully", head->name, address);
 			if (head->connin.i2c.channels > 1) {	// need to reset other 8 channels?
 				/* loop through devices, matching those that have the same "head" */
 				/* BUSLOCK also locks the sister channels for this */
@@ -489,16 +489,16 @@ static int DS2482_readstatus(BYTE * c, int file_descriptor, unsigned long int mi
 	do {
 		int ret = i2c_smbus_read_byte(file_descriptor);
 		if (ret < 0) {
-			LEVEL_DEBUG("problem min=%lu max=%lu i=%d ret=%d\n", min_usec, max_usec, i, ret);
+			LEVEL_DEBUG("problem min=%lu max=%lu i=%d ret=%d", min_usec, max_usec, i, ret);
 			return 1;
 		}
 		if ((ret & DS2482_REG_STS_1WB) == 0x00) {
 			c[0] = (BYTE) ret;
-			LEVEL_DEBUG("ok\n");
+			LEVEL_DEBUG("ok");
 			return 0;
 		}
 		if (i++ == 3) {
-			LEVEL_DEBUG("still busy min=%lu max=%lu i=%d ret=%d\n", min_usec, max_usec, i, ret);
+			LEVEL_DEBUG("still busy min=%lu max=%lu i=%d ret=%d", min_usec, max_usec, i, ret);
 			return 1;
 		}
 		UT_delay_us(delta_usec);	// increment up to three times
@@ -535,7 +535,7 @@ static int DS2482_next_both(struct device_search *ds, const struct parsedname *p
 	}
 	// loop to do the search
 	for (bit_number = 0; bit_number < 64; ++bit_number) {
-		LEVEL_DEBUG("bit number %d\n", bit_number);
+		LEVEL_DEBUG("bit number %d", bit_number);
 		/* Set the direction bit */
 		if (bit_number < ds->LastDiscrepancy) {
 			search_direction = UT_getbit(ds->sn, bit_number);
@@ -569,7 +569,7 @@ static int DS2482_next_both(struct device_search *ds, const struct parsedname *p
 	// if the search was successful then
 	ds->LastDiscrepancy = last_zero;
 	ds->LastDevice = (last_zero < 0);
-	LEVEL_DEBUG("SN found: " SNformat "\n", SNvar(ds->sn));
+	LEVEL_DEBUG("SN found: " SNformat "", SNvar(ds->sn));
 	return 0;
 }
 
@@ -600,7 +600,7 @@ static int DS2482_reset(const struct parsedname *pn)
 	}
 
 	in->AnyDevices = (c & DS2482_REG_STS_PPD) ? anydevices_yes : anydevices_no ;
-	LEVEL_DEBUG("DS2482 "I2Cformat" Any devices found on reset? %s\n",I2Cvar(in),in->AnyDevices==anydevices_yes?"Yes":"No");
+	LEVEL_DEBUG("DS2482 "I2Cformat" Any devices found on reset? %s",I2Cvar(in),in->AnyDevices==anydevices_yes?"Yes":"No");
 	return (c & DS2482_REG_STS_SD) ? BUS_RESET_SHORT : BUS_RESET_OK;
 }
 
@@ -665,10 +665,10 @@ static int HeadChannel(struct connection_in *in)
 	pn.selected_connection = in;
 	if (DS2482_channel_select(&pn)) {	/* Couldn't switch */
 		in->connin.i2c.index = 0;	/* restore correct value */
-		LEVEL_CONNECT("DS2482-100 (Single channel)\n");
+		LEVEL_CONNECT("DS2482-100 (Single channel)");
 		return 0;				/* happy as DS2482-100 */
 	}
-	LEVEL_CONNECT("DS2482-800 (Eight channels)\n");
+	LEVEL_CONNECT("DS2482-800 (Eight channels)");
 	/* Must be a DS2482-800 */
 	in->connin.i2c.channels = 8;
 	in->Adapter = adapter_DS2482_800;
@@ -708,7 +708,7 @@ static int DS2482_triple(BYTE * bits, int direction, int file_descriptor)
 	/* 3 bits in bits */
 	BYTE c;
 
-	LEVEL_DEBUG("-> TRIPLET attempt direction %d\n", direction);
+	LEVEL_DEBUG("-> TRIPLET attempt direction %d", direction);
 	/* Write TRIPLE command */
 	if (i2c_smbus_write_byte_data(file_descriptor, DS2482_CMD_1WIRE_TRIPLET, direction ? 0xFF : 0) < 0) {
 		return 1;
@@ -722,7 +722,7 @@ static int DS2482_triple(BYTE * bits, int direction, int file_descriptor)
 	bits[0] = (c & DS2482_REG_STS_SBR) != 0;
 	bits[1] = (c & DS2482_REG_STS_TSB) != 0;
 	bits[2] = (c & DS2482_REG_STS_DIR) != 0;
-	LEVEL_DEBUG("<- TRIPLET %d %d %d\n", bits[0], bits[1], bits[2]);
+	LEVEL_DEBUG("<- TRIPLET %d %d %d", bits[0], bits[1], bits[2]);
 	return 0;
 }
 
@@ -741,7 +741,7 @@ static int DS2482_channel_select(const struct parsedname *pn)
 	static const BYTE R_chan[8] = { 0xB8, 0xB1, 0xAA, 0xA3, 0x9C, 0x95, 0x8E, 0x87 };
 
 	if (file_descriptor < 0) {
-		LEVEL_CONNECT("Calling a closed i2c channel (%d) "I2Cformat" \n", chan,I2Cvar(pn->selected_connection));
+		LEVEL_CONNECT("Calling a closed i2c channel (%d) "I2Cformat" ", chan,I2Cvar(pn->selected_connection));
 		return -EINVAL;
 	}
 
@@ -791,7 +791,7 @@ static int SetConfiguration(BYTE c, struct connection_in *in)
 		|| (read_back = i2c_smbus_read_byte(file_descriptor)) < 0 || ((BYTE) read_back != c)
 		) {
 		head->connin.i2c.configchip = 0xFF;	// bad value to trigger retry
-		LEVEL_CONNECT("Trouble changing DS2482 configuration register "I2Cformat" \n",I2Cvar(in));
+		LEVEL_CONNECT("Trouble changing DS2482 configuration register "I2Cformat" ",I2Cvar(in));
 		return -EINVAL;
 	}
 	/* Clear the strong pull-up power bit(register is automatically cleared by reset) */

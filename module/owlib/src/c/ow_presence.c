@@ -72,12 +72,12 @@ int CheckPresence(struct parsedname *pn)
 	}
 	
 	if (Cache_Get_Device(&bus_nr, pn) == 0) {
-		LEVEL_DEBUG("Found device on bus %d\n",bus_nr);
+		LEVEL_DEBUG("Found device on bus %d",bus_nr);
 		SetKnownBus(bus_nr, pn);
 		return bus_nr;
 	}
 	
-	LEVEL_DETAIL("Checking presence of %s\n", SAFESTRING(pn->path));
+	LEVEL_DETAIL("Checking presence of %s", SAFESTRING(pn->path));
 	
 	if ( Inbound_Control.active == 0 ) { // No adapters
 		return -1 ;
@@ -112,7 +112,7 @@ int ReCheckPresence(struct parsedname *pn)
 	}
 	
 	if (Cache_Get_Device(&bus_nr, pn) == 0) {
-		LEVEL_DEBUG("Found device on bus %d\n",bus_nr);
+		LEVEL_DEBUG("Found device on bus %d",bus_nr);
 		if ( CheckThisConnection(bus_nr,pn) >= 0 ) {
 			SetKnownBus(bus_nr, pn);
 			return bus_nr ;
@@ -220,14 +220,14 @@ static int CheckThisConnection(int bus_nr, const struct parsedname *pn)
 		//printf("CheckPresence_low: call ServerPresence\n");
 		if (ServerPresence(pn_copy) >= 0) {
 			/* Device was found on this in-device, return it's index */
-			LEVEL_DEBUG("Presence found on server bus %s\n",SAFESTRING(in->name)) ;
+			LEVEL_DEBUG("Presence found on server bus %s",SAFESTRING(in->name)) ;
 			Cache_Add_Device(in->index,pn_copy->sn) ; // add or update cache */
 			return in->index;
 		}
 		//printf("CheckPresence_low: ServerPresence(%s) pn->selected_connection->index=%d ret=%d\n", pn->path, pn->selected_connection->index, ret);
 	} else if ( in->iroutines.flags & ADAP_FLAG_presence_from_dirblob ) {
 		if ( DirblobSearch(pn_copy->sn, &(in->main)) >= 0 ) {
-			LEVEL_DEBUG("Presence found on fake-like bus %s\n",SAFESTRING(in->name)) ;
+			LEVEL_DEBUG("Presence found on fake-like bus %s",SAFESTRING(in->name)) ;
 			return in->index;
 		}
 	} else {
@@ -243,7 +243,7 @@ static int CheckThisConnection(int bus_nr, const struct parsedname *pn)
 			return in->index ;
 		}
 	}
-	LEVEL_DEBUG("Presence NOT found on bus %s\n",SAFESTRING(in->name)) ;
+	LEVEL_DEBUG("Presence NOT found on bus %s",SAFESTRING(in->name)) ;
 	return -1 ;
 }
 

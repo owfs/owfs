@@ -104,11 +104,11 @@ static void resolve_callback(
 	/* Called whenever a service has been resolved successfully or timed out */
 	switch (event) {
 		case AVAHI_RESOLVER_FAILURE:
-			LEVEL_DEBUG( "Failed to resolve service '%s' of type '%s' in domain '%s': %s\n", name, type, domain, avahi_strerror(avahi_client_errno(bas->client)));
+			LEVEL_DEBUG( "Failed to resolve service '%s' of type '%s' in domain '%s': %s", name, type, domain, avahi_strerror(avahi_client_errno(bas->client)));
 			break;
 
 		case AVAHI_RESOLVER_FOUND:
-			LEVEL_DEBUG( "Service '%s' of type '%s' in domain '%s':\n", name, type, domain);
+			LEVEL_DEBUG( "Service '%s' of type '%s' in domain '%s'", name, type, domain);
 			if ( AvahiBrowserNetName( address, port, bas ) ) {
 				break ;
 			}
@@ -129,21 +129,21 @@ static int AvahiBrowserNetName( const AvahiAddress *address, int port, struct br
 	switch (address->proto) {
 		case AVAHI_PROTO_INET:     /**< IPv4 */
 			if ( inet_ntop( AF_INET, (const void *)&(address->data.ipv4), bas->host, sizeof(bas->host)) != NULL ) {
-				LEVEL_DEBUG( "Address '%s' Port %d:\n", bas->host, port);
+				LEVEL_DEBUG( "Address '%s' Port %d", bas->host, port);
 				return 0 ;
 			}
 			break ;
 #if __HAS_IPV6__
 		case AVAHI_PROTO_INET6:   /**< IPv6 */
 			if ( inet_ntop( AF_INET6, (const void *)&(address->data.ipv6), bas->host, sizeof(bas->host)) != NULL ) {
-				LEVEL_DEBUG( "Address '%s' Port %d:\n", bas->host, port);
+				LEVEL_DEBUG( "Address '%s' Port %d", bas->host, port);
 				return 0 ;
 			}
 			break ;
 #endif
 		default:
 			strncpy(bas->host,"Unknown address",sizeof(bas->host)) ;
-			LEVEL_DEBUG( "Unknown internet protocol\n");
+			LEVEL_DEBUG( "Unknown internet protocol");
 			break ;
 	}
 	return 1 ;
@@ -169,12 +169,12 @@ static void browse_callback(
 	switch (event) {
 		case AVAHI_BROWSER_FAILURE:
 
-			LEVEL_DEBUG( "%s\n", avahi_strerror(avahi_client_errno(bas->client)));
+			LEVEL_DEBUG( "%s", avahi_strerror(avahi_client_errno(bas->client)));
 			avahi_simple_poll_quit(bas->poll);
 			return;
 
 		case AVAHI_BROWSER_NEW:
-			LEVEL_DEBUG( "NEW: service '%s' of type '%s' in domain '%s'\n", name, type, domain);
+			LEVEL_DEBUG( "NEW: service '%s' of type '%s' in domain '%s'", name, type, domain);
 
 			/* We ignore the returned resolver object. In the callback
 			function we free it. If the server is terminated before
@@ -182,18 +182,18 @@ static void browse_callback(
 			the resolver for us. */
 
 		if (!(avahi_service_resolver_new(bas->client, interface, protocol, name, type, domain, AVAHI_PROTO_UNSPEC, 0, resolve_callback, bas)))
-			LEVEL_DEBUG( "Failed to resolve service '%s': %s\n", name, avahi_strerror(avahi_client_errno(bas->client)));
+			LEVEL_DEBUG( "Failed to resolve service '%s': %s", name, avahi_strerror(avahi_client_errno(bas->client)));
 
 		break;
 
 		case AVAHI_BROWSER_REMOVE:
-			LEVEL_DEBUG( "REMOVE: service '%s' of type '%s' in domain '%s'\n", name, type, domain);
+			LEVEL_DEBUG( "REMOVE: service '%s' of type '%s' in domain '%s'", name, type, domain);
 			ZeroDel(name, type, domain ) ;
 			break;
 
 		case AVAHI_BROWSER_ALL_FOR_NOW:
 		case AVAHI_BROWSER_CACHE_EXHAUSTED:
-			LEVEL_DEBUG( "%s\n", event == AVAHI_BROWSER_CACHE_EXHAUSTED ? "CACHE_EXHAUSTED" : "ALL_FOR_NOW");
+			LEVEL_DEBUG( "%s", event == AVAHI_BROWSER_CACHE_EXHAUSTED ? "CACHE_EXHAUSTED" : "ALL_FOR_NOW");
 			break;
 	}
 }
@@ -205,7 +205,7 @@ static void client_callback(AvahiClient *c, AvahiClientState state, void * v)
 	bas->client = c ;
 	/* Called whenever the client or server state changes */
 	if (state == AVAHI_CLIENT_FAILURE) {
-		LEVEL_DEBUG( "Server connection failure: %s\n", avahi_strerror(avahi_client_errno(c)));
+		LEVEL_DEBUG( "Server connection failure: %s", avahi_strerror(avahi_client_errno(c)));
 		avahi_simple_poll_quit(bas->poll);
 	}
 }
@@ -224,7 +224,7 @@ void * OW_Avahi_Browse(void * v)
 	/* Allocate main loop object */
 	bas.poll = avahi_simple_poll_new() ;
 	if (bas.poll==NULL) {
-		LEVEL_DEBUG( "Failed to create simple poll object.\n");
+		LEVEL_DEBUG( "Failed to create simple poll object.");
 		return NULL ;
 	}
 
@@ -233,7 +233,7 @@ void * OW_Avahi_Browse(void * v)
 
 	/* Check wether creating the client object succeeded */
 	if (bas.client==NULL) {
-		LEVEL_DEBUG( "Failed to create client: %s\n", avahi_strerror(error));
+		LEVEL_DEBUG( "Failed to create client: %s", avahi_strerror(error));
 		avahi_simple_poll_free(bas.poll);
 		return NULL;
 	}
@@ -241,7 +241,7 @@ void * OW_Avahi_Browse(void * v)
 	bas.browser = avahi_service_browser_new(bas.client, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC, "_owserver._tcp", NULL, 0, browse_callback, &bas);
 	/* Create the service browser */
 	if (bas.browser==NULL) {
-		LEVEL_DEBUG( "Failed to create service browser: %s\n", avahi_strerror(avahi_client_errno(bas.client)));
+		LEVEL_DEBUG( "Failed to create service browser: %s", avahi_strerror(avahi_client_errno(bas.client)));
 		avahi_simple_poll_free(bas.poll);
 		avahi_client_free(bas.client);
 		return NULL;

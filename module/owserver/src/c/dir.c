@@ -54,7 +54,7 @@ static void DirHandlerCallback(void *v, const struct parsedname *pn_entry)
 	struct dirhandlerstruct *dhs = (struct dirhandlerstruct *) v;
 	char *path = pn_entry->path;
 
-	LEVEL_DEBUG("owserver Calling dir=%s\n", SAFESTRING(path));
+	LEVEL_DEBUG("owserver Calling dir=%s", SAFESTRING(path));
 
 	dhs->cm->size = strlen(path);
 	dhs->cm->payload = dhs->cm->size + 1;
@@ -77,12 +77,12 @@ void DirHandler(struct handlerdata *hd, struct client_msg *cm, const struct pars
 	uint32_t flags = 0;
 	struct dirhandlerstruct dhs = { hd, cm, };
 
-	LEVEL_CALL("DirHandler: pn->path=%s\n", pn->path);
+	LEVEL_CALL("DirHandler: pn->path=%s", pn->path);
 
 	// Settings for all directory elements
 	cm->payload = strlen(pn->path) + 1 + OW_FULLNAME_MAX + 2;
 
-	LEVEL_DEBUG("OWSERVER SpecifiedBus=%d path=%s\n", SpecifiedBus(pn), SAFESTRING(pn->path));
+	LEVEL_DEBUG("OWSERVER SpecifiedBus=%d path=%s", SpecifiedBus(pn), SAFESTRING(pn->path));
 
 	if (hd->sm.payload >= PATH_MAX) {
 		cm->ret = -EMSGSIZE;
