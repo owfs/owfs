@@ -70,7 +70,7 @@ static int EtherWeather_command(struct connection_in *in, char command, int data
 
 	res = write(in->file_descriptor, prologue, 2);
 	if (res < 1) {
-		ERROR_CONNECT("Trouble writing data to EtherWeather: %s\n",
+		ERROR_CONNECT("Trouble writing data to EtherWeather: %s\,
 			SAFESTRING(in->name));
 		return -EIO;
 	}

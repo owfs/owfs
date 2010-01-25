@@ -49,7 +49,7 @@ int COM_read( BYTE * data, size_t length, struct connection_in *connection)
 			ssize_t read_result ;
 			
 			if (FD_ISSET(connection->file_descriptor, &readset) == 0) {
-				ERROR_CONNECT("Select no FD found (read) serial port: %s\n", SAFESTRING(connection->name));
+				ERROR_CONNECT("Select no FD found (read) serial port: %s", SAFESTRING(connection->name));
 				STAT_ADD1_BUS(e_bus_read_errors, connection);
 				return -EIO;	/* error */
 			}
@@ -57,26 +57,26 @@ int COM_read( BYTE * data, size_t length, struct connection_in *connection)
 			read_result = read(connection->file_descriptor, &data[length - to_be_read], to_be_read);	/* read bytes */
 			if (read_result < 0) {
 				if (errno != EWOULDBLOCK) {
-					ERROR_CONNECT("Trouble reading from serial port: %s\n", SAFESTRING(connection->name));
+					ERROR_CONNECT("Trouble reading from serial port: %s", SAFESTRING(connection->name));
 					STAT_ADD1_BUS(e_bus_read_errors, connection);
 					return read_result;
 				}
 				/* write() was interrupted, try again */
-				ERROR_CONNECT("Interrupt (read) serial port: %s\n", SAFESTRING(connection->name));
+				ERROR_CONNECT("Interrupt (read) serial port: %s", SAFESTRING(connection->name));
 				STAT_ADD1_BUS(e_bus_timeouts, connection);
 			} else {
 				Debug_Bytes("Serial read:", &data[length - to_be_read], read_result);
 				to_be_read -= read_result ;
 			}
 		} else if ( select_result == 0 ) { // timeout
-			ERROR_CONNECT("Timeout error (read) serial port: %s\n", SAFESTRING(connection->name));
+			ERROR_CONNECT("Timeout error (read) serial port: %s", SAFESTRING(connection->name));
 			return -EAGAIN ;
 		} else {			/* select error */
 			if ( errno == EINTR ) {
 				STAT_ADD1_BUS(e_bus_timeouts, connection);
 				continue ;
 			}
-			ERROR_CONNECT("Select error (read) serial port: %s\n", SAFESTRING(connection->name));
+			ERROR_CONNECT("Select error (read) serial port: %s", SAFESTRING(connection->name));
 			STAT_ADD1_BUS(e_bus_timeouts, connection);
 			return -EIO;
 		}

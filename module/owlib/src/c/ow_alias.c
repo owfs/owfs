@@ -71,7 +71,7 @@ int AliasFile(const ASCII * file)
 		fclose(alias_file_pointer);
 		return ret;
 	} else {
-		ERROR_DEFAULT("Cannot process alias file %s\n", file);
+		ERROR_DEFAULT("Cannot process alias file %s", file);
 		return 1;
 	}
 	return 1 ;

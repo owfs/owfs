@@ -90,10 +90,10 @@ static int DS9097_reset(const struct parsedname *pn)
 	tcgetattr(file_descriptor, &term);
 	term.c_cflag = CS8 | CREAD | HUPCL | CLOCAL;
 	if (cfsetospeed(&term, B9600) < 0 || cfsetispeed(&term, B9600) < 0) {
-		ERROR_CONNECT("Cannot set speed (9600): %s\n", SAFESTRING(pn->selected_connection->name));
+		ERROR_CONNECT("Cannot set speed (9600): %s", SAFESTRING(pn->selected_connection->name));
 	}
 	if (tcsetattr(file_descriptor, TCSANOW, &term) < 0) {
-		ERROR_CONNECT("Cannot set attributes: %s\n", SAFESTRING(pn->selected_connection->name));
+		ERROR_CONNECT("Cannot set attributes: %s", SAFESTRING(pn->selected_connection->name));
 		return -EIO;
 	}
 	if ((ret = DS9097_send_and_get(&resetbyte, &c, 1, pn))) {
@@ -156,16 +156,16 @@ static int DS9097_reset(const struct parsedname *pn)
 #ifndef B115200
 	/* MacOSX support max 38400 in termios.h ? */
 	if (cfsetospeed(&term, B38400) < 0 || cfsetispeed(&term, B38400) < 0) {
-		ERROR_CONNECT("Cannot set speed (38400): %s\n", SAFESTRING(pn->selected_connection->name));
+		ERROR_CONNECT("Cannot set speed (38400): %s", SAFESTRING(pn->selected_connection->name));
 	}
 #else
 	if (cfsetospeed(&term, B115200) < 0 || cfsetispeed(&term, B115200) < 0) {
-		ERROR_CONNECT("Cannot set speed (115200): %s\n", SAFESTRING(pn->selected_connection->name));
+		ERROR_CONNECT("Cannot set speed (115200): %s", SAFESTRING(pn->selected_connection->name));
 	}
 #endif
 
 	if (tcsetattr(file_descriptor, TCSANOW, &term) < 0) {
-		ERROR_CONNECT("Cannot set attributes: %s\n", SAFESTRING(pn->selected_connection->name));
+		ERROR_CONNECT("Cannot set attributes: %s", SAFESTRING(pn->selected_connection->name));
 		return -EFAULT;
 	}
 	/* Flush the input and output buffers */

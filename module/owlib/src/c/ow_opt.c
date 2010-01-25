@@ -792,7 +792,7 @@ static int OW_parsevalue_I(long long int *var, const ASCII * str)
 	errno = 0;
 	var[0] = strtol(str, NULL, 10);
 	if (errno) {
-		ERROR_DETAIL("Bad integer configuration value %s\n", str);
+		ERROR_DETAIL("Bad integer configuration value %s", str);
 		return 1;
 	}
 	return 0;
@@ -803,7 +803,7 @@ static int OW_parsevalue_F(_FLOAT *var, const ASCII * str)
 	errno = 0;
 	var[0] = (_FLOAT) strtod(str, NULL);
 	if (errno) {
-		ERROR_DETAIL("Bad floating point configuration value %s\n", str);
+		ERROR_DETAIL("Bad floating point configuration value %s", str);
 		return 1;
 	}
 	return 0;

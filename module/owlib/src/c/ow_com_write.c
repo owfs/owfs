@@ -49,7 +49,7 @@ int COM_write( const BYTE * data, size_t length, struct connection_in *connectio
 			ssize_t write_result ;
 
 			if (FD_ISSET(connection->file_descriptor, &writeset) == 0) {
-				ERROR_CONNECT("Select no FD found (write) serial port: %s\n", SAFESTRING(connection->name));
+				ERROR_CONNECT("Select no FD found (write) serial port: %s", SAFESTRING(connection->name));
 				STAT_ADD1_BUS(e_bus_write_errors, connection);
 				return -EIO;	/* error */
 			}
@@ -58,7 +58,7 @@ int COM_write( const BYTE * data, size_t length, struct connection_in *connectio
 			write_result = write(connection->file_descriptor, &data[length - to_be_written], to_be_written);	/* write bytes */
 			if (write_result < 0) {
 				if (errno != EWOULDBLOCK) {
-					ERROR_CONNECT("Trouble writing to serial port: %s\n", SAFESTRING(connection->name));
+					ERROR_CONNECT("Trouble writing to serial port: %s", SAFESTRING(connection->name));
 					STAT_ADD1_BUS(e_bus_write_errors, connection);
 					return write_result;
 				}
@@ -68,7 +68,7 @@ int COM_write( const BYTE * data, size_t length, struct connection_in *connectio
 				to_be_written -= write_result ;	
 			}
 		} else {			/* timed out or select error */
-			ERROR_CONNECT("Select/timeout error (write) serial port: %s\n", SAFESTRING(connection->name));
+			ERROR_CONNECT("Select/timeout error (write) serial port: %s", SAFESTRING(connection->name));
 			STAT_ADD1_BUS(e_bus_timeouts, connection);
 			return -errno;
 		}

@@ -123,7 +123,7 @@ int ClientConnect(struct connection_in *in)
 	} while ((ai = ai->ai_next));
 	in->connin.tcp.ai_ok = NULL;
 
-	ERROR_CONNECT("Socket problem\n");
+	ERROR_CONNECT("Socket problem");
 	STAT_ADD1(NET_connection_errors);
 	return -1;
 }
