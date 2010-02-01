@@ -124,7 +124,7 @@ int ServerDirall(ASCII * path)
 	//printf("DirALL <%s>\n",path ) ;
 	
 	memset(&sm, 0, sizeof(struct server_msg));
-	sm.type = msg_dirall;
+	sm.type = slashflag ? msg_dirallslash : msg_dirall;
 
 	sm.sg = SetupSemi();
 

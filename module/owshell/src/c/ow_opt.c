@@ -15,6 +15,7 @@ $Id$
 
 // globals
 int hexflag = 0 ;
+int slashflag = 0 ;
 int size_of_data = -1 ;
 int offset_into_data = 0 ;
 
@@ -34,6 +35,10 @@ const struct option owopts_long[] = {
 	{"HEX", no_argument, &hexflag, 1 },
 	{"hexidecimal", no_argument, &hexflag, 1 },
 	{"HEXIDECIMAL", no_argument, &hexflag, 1 },
+
+	{"dir", no_argument, &slashflag, 1 },
+	{"slash", no_argument, &slashflag, 1 },
+	{"SLASH", no_argument, &slashflag, 1 },
 
 	{"size", required_argument, NULL, 300 },
 	{"SIZE", required_argument, NULL, 300 },

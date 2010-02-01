@@ -238,6 +238,8 @@ enum msg_classification {
 	msg_presence,
 	msg_dirall,
 	msg_get,
+	msg_dirallslash,
+	msg_getslash,
 };
 /* message to owserver */
 struct server_msg {
@@ -280,6 +282,7 @@ extern time_t start_time;
 extern time_t dir_time;			/* time of last directory scan */
 
 extern int hexflag ; // read/write in hex mode?
+extern int slashflag ; // directory with '/'?
 extern int size_of_data ;
 extern int offset_into_data ;
 

@@ -77,6 +77,7 @@ void *DataHandler(void *v)
 		}
 		break;
 	case msg_get:
+	case msg_getslash:
 		if (Globals.no_get) {
 			LEVEL_DEBUG("GET messsage rejected.") ;
 			hd->sm.type = msg_error;
@@ -95,6 +96,7 @@ void *DataHandler(void *v)
 	case msg_dirall:			// good message
 	case msg_dirallslash:		// good message
 	case msg_get:				// good message
+	case msg_getslash:				// good message
 		if (hd->sm.payload == 0) {	/* Bad query -- no data after header */
 			LEVEL_DEBUG("No payload -- ignore.") ;
 			cm.ret = -EBADMSG;
@@ -158,6 +160,15 @@ void *DataHandler(void *v)
 				if (IsDir(pn)) {
 					LEVEL_CALL("Get -> Directory message (all at once)");
 					retbuffer = DirallHandler(hd, &cm, pn);
+				} else {
+					LEVEL_CALL("Get -> Read message");
+					retbuffer = ReadHandler(hd, &cm, owq);
+				}
+				break;
+			case msg_getslash:
+				if (IsDir(pn)) {
+					LEVEL_CALL("Get -> Directory message (all at once)");
+					retbuffer = DirallslashHandler(hd, &cm, pn);
 				} else {
 					LEVEL_CALL("Get -> Read message");
 					retbuffer = ReadHandler(hd, &cm, owq);
