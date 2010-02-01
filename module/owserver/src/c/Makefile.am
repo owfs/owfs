@@ -9,6 +9,7 @@ owserver_SOURCES = owserver.c    \
                    write.c       \
                    dir.c         \
                    dirall.c      \
+                   dirallslash.c \
                    data.c        \
                    handler.c
                    

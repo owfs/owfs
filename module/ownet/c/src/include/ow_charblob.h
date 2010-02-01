@@ -66,5 +66,7 @@ void CharblobInit(struct charblob *cb);
 int CharblobPure(struct charblob *cb);
 int CharblobAdd(const ASCII * a, size_t s, struct charblob *cb);
 int CharblobAddChar(ASCII a, struct charblob *cb);
+size_t CharblobLength( struct charblob * cb ) ;
+ASCII * CharblobData(struct charblob * cb) ;
 
 #endif							/* OW_CHARBLOB_H */

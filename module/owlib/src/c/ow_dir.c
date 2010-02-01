@@ -83,8 +83,9 @@ static int FS_dir_both(void (*dirfunc) (void *, const struct parsedname *), void
 	/* initialize flags */
 	flags[0] = 0;
 #if 0
-	if (pn_raw_directory == NULL || pn_raw_directory->selected_connection == NULL)
+	if (pn_raw_directory == NULL || pn_raw_directory->selected_connection == NULL) {
 		return -ENODEV;
+	}
 #else
 	/* pn_raw_directory->selected_connection Could be NULL here...
 	 * It will then return a root-directory containing

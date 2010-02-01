@@ -103,6 +103,9 @@ void DirHandler(struct handlerdata *hd, struct client_msg *cm, const struct pars
 /* Newer directory-at-once */
 void *DirallHandler(struct handlerdata *hd, struct client_msg *cm, const struct parsedname *pn);
 
+/* Newer directory-at-once with directory '/' */
+void *DirallslashHandler(struct handlerdata *hd, struct client_msg *cm, const struct parsedname *pn);
+
 /* Handle the actual request -- pings handled higher up */
 void *DataHandler(void *v);
 

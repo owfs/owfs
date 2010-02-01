@@ -43,6 +43,7 @@ enum msg_classification {
 	msg_presence,
 	msg_dirall,
 	msg_get,
+	msg_dirallslash,
 };
 /* message to owserver */
 struct server_msg {

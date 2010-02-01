@@ -126,3 +126,13 @@ int CharblobAddChar(ASCII a, struct charblob *cb)
 	++cb->used;
 	return 0;
 }
+
+size_t CharblobLength( struct charblob * cb )
+{
+	return cb->used ;
+}
+
+ASCII * CharblobData(struct charblob * cb)
+{
+	return cb->blob ;
+}

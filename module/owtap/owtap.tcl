@@ -11,7 +11,7 @@ package require Tk
 
 set SocketVars {string version type payload size sg offset tokenlength totallength paylength typetext ping state sock versiontext flagtext persist return id }
 
-set MessageList {ERROR NOP READ WRITE DIR SIZE PRESENCE DIRALL GET}
+set MessageList {ERROR NOP READ WRITE DIR SIZE PRESENCE DIRALL GET DIRALLSLASH}
 set MessageListPlus $MessageList
 lappend MessageListPlus PING BadHeader Unknown Total
 
@@ -1201,6 +1201,7 @@ proc ResponseDetail { window_name cb_index } {
             switch [$window_name.x22 cget -text] {
                 "DIR"   -
                 "DIRALL" {set offset [DetailOffset $offset]}
+                "DIRALLSLASH" {set offset [DetailOffset $offset]}
             }
             DetailRow $window_name white #EEEEFF $r(x.versiontext) [expr {$r(x.ping)?"PING":$r(x.paylength)}] $r(x.return) $r(x.flagtext) $r(x.size) $offset
             DetailPayload $window_name #EEEEFF $circ_buffer($cb_index.response.$i) $r(x.paylength)

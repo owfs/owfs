@@ -70,6 +70,7 @@ void *DataHandler(void *v)
 	/* Pre-handling for special testing mode to exclude certain messsages */
 	switch ((enum msg_classification) hd->sm.type) {
 	case msg_dirall:
+	case msg_dirallslash:
 		if (Globals.no_dirall) {
 			LEVEL_DEBUG("DIRALL messsage rejected.") ;
 			hd->sm.type = msg_error;
@@ -92,6 +93,7 @@ void *DataHandler(void *v)
 	case msg_dir:				// good message
 	case msg_presence:			// good message
 	case msg_dirall:			// good message
+	case msg_dirallslash:		// good message
 	case msg_get:				// good message
 		if (hd->sm.payload == 0) {	/* Bad query -- no data after header */
 			LEVEL_DEBUG("No payload -- ignore.") ;
@@ -147,6 +149,10 @@ void *DataHandler(void *v)
 			case msg_dirall:
 				LEVEL_CALL("Directory message (all at once)");
 				retbuffer = DirallHandler(hd, &cm, pn);
+				break;
+			case msg_dirallslash:
+				LEVEL_CALL("Directory message (all at once, with directory /)");
+				retbuffer = DirallslashHandler(hd, &cm, pn);
 				break;
 			case msg_get:
 				if (IsDir(pn)) {
