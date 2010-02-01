@@ -74,11 +74,11 @@ void *DirallHandler(struct handlerdata *hd, struct client_msg *cm, const struct 
 
 	if (cm->ret < 0) {			// error
 		cm->size = cm->payload = 0;
-	} else if (cb.blob == NULL) {	// empty
+	} else if (CharblobData(&cb) == NULL) {	// empty
 		cm->size = cm->payload = 0;
-	} else if ((ret = owstrdup(cb.blob)) != NULL) {	// try to copy
-		cm->payload = cb.used + 1;
-		cm->size = cb.used;
+	} else if ((ret = owstrdup(CharblobData(&cb))) != NULL) {	// try to copy
+		cm->payload = CharblobLength(&cb) + 1;
+		cm->size = CharblobLength(&cb);
 	} else {					// couldn't copy
 		cm->ret = -ENOMEM;
 		cm->size = cm->payload = 0;

@@ -152,7 +152,7 @@ static int OWServer_Enet_read(int file_descriptor, struct memblob *mb)
 		MemblobClear(mb);
 		return -ENOMEM;
 	}
-	LEVEL_DEBUG("READ FROM ENET:\n%s",mb->memory_storage);
+	LEVEL_DEBUG("READ FROM ENET:\n%s",MemblobData(mb));
 	return 0;
 }
 
@@ -168,7 +168,7 @@ static int ENET_get_detail(const struct parsedname *pn) {
 	if (ENET_send_detail(file_descriptor,pn->selected_connection)==0) {
 		struct memblob mb;
 		if ( OWServer_Enet_read(file_descriptor,&mb) == 0 ) {
-			ret = parse_detail_record( (char *) mb.memory_storage, pn ) ;
+			ret = parse_detail_record( (char *) MemblobData(&mb), pn ) ;
 			MemblobClear(&mb);
 		}
 	} else {

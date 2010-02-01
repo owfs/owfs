@@ -199,11 +199,11 @@ static enum http_return handle_POST(FILE * out, struct urlparse * up)
 		if ( post_path ) {
 			struct memblob mb ;
 			if ( GetPostData( boundary, &mb, out ) == 0 ) {
-				struct one_wire_query * owq = FS_OWQ_create_from_path( post_path, mb.used ) ;
+				struct one_wire_query * owq = FS_OWQ_create_from_path( post_path, MemblobLength(&mb) ) ;
 				if ( owq ) {
-					LEVEL_DEBUG("File upload %s for %ld bytes\n",post_path,mb.used);
-					memcpy( OWQ_buffer(owq), mb.memory_storage, mb.used ) ;
-					OWQ_length(owq) = mb.used ;
+					LEVEL_DEBUG("File upload %s for %ld bytes\n",post_path,MemblobLength(&mb));
+					memcpy( OWQ_buffer(owq), MemblobData(&mb), MemblobLength(&mb) ) ;
+					OWQ_length(owq) = MemblobLength(&mb) ;
 					PostData(owq);
 					FS_OWQ_destroy_sibling(owq) ;
 					http_code = http_ok ;
@@ -412,8 +412,8 @@ static int GetPostData( char * boundary, struct memblob * mb, FILE * out )
 		Debug_Bytes(boundary,(BYTE *)data,(size_t)read_this_pass);
 		if ( strstr( data, boundary ) != NULL ) {
 			free(data) ; // allocated by getline with malloc, not owmalloc
-			mb->used -= 2 ; // trim off final 0x0A 0x0D
-			LEVEL_DEBUG("Read in POST file upload of %ld bytes",mb->used);
+			MemblobTrim(2,mb) ; // trim off final 0x0A 0x0D
+			LEVEL_DEBUG("Read in POST file upload of %ld bytes",MemblobLength(mb));
 			return 0 ;
 		}
 		if ( MemblobAdd( (BYTE *)data, (size_t)read_this_pass, mb ) ) {

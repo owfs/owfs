@@ -73,7 +73,7 @@ static void getdir( struct one_wire_query * owq ) {
     
     CharblobInit( &cb ) ;
     if ( FS_dir( getdircallback, &cb, PN(owq) ) >= 0 ) {
-        OWQ_buffer(owq) = strdup( (cb.blob == NULL ? "" : cb.blob) ) ;
+        OWQ_buffer(owq) = strdup( (CharblobLength(&cb) >0) ? CharblobData(&cb) : "") ;
     } else {
         OWQ_buffer(owq) = NULL ;
     }
@@ -87,8 +87,12 @@ static void getdir( struct one_wire_query * owq ) {
  */
 static void getval( struct one_wire_query * owq ) {
     ssize_t s = FullFileLength(PN(owq)) ; // fix from Matthias Urlichs
-    if ( s <= 0 ) return ;
-    if ( (OWQ_buffer(owq) = malloc(s+1))==NULL ) return ;
+    if ( s <= 0 ) {
+		return ;
+	}
+    if ( (OWQ_buffer(owq) = malloc(s+1))==NULL ) {
+		return ;
+	}
     OWQ_size(owq) = s ;
     if ( (s = FS_read_postparse( owq )) < 1 ) {
         free(OWQ_buffer(owq)) ;
@@ -105,7 +109,9 @@ char * get( const char * path ) {
         OWQ_allocate_struct_and_pointer(owq);
     
         /* Check the parameters */
-        if ( path==NULL ) path="/" ;
+        if ( path==NULL ) {
+			path="/" ;
+		}
     
         if ( strlen(path) > PATH_MAX ) {
             // buf = NULL ;
@@ -146,11 +152,9 @@ int get_error_level(void) {
     return Globals.error_level;
 }
 
-
 int opt(const char option_char, const char *arg) {
     return owopt(option_char, arg);
 }
-
 
 %}
 %typemap(newfree) char * { if ($1) free($1) ; }

@@ -255,10 +255,10 @@ static int Bundle_enroute(struct transaction_bundle *tb, const struct parsedname
 {
 	int ret ;
 	if (tb->select_first) {
-		ret = BUS_select_and_sendback(tb->mb.memory_storage, tb->mb.memory_storage, tb->mb.used, pn);
+		ret = BUS_select_and_sendback(MemblobData(&(tb->mb)), MemblobData(&(tb->mb)), MemblobLength(&(tb->mb)), pn);
 		LEVEL_DEBUG("select and sendback = %d",ret ) ;
 	} else {
-		ret = BUS_sendback_data(tb->mb.memory_storage, tb->mb.memory_storage, tb->mb.used, pn);
+		ret = BUS_sendback_data(MemblobData(&(tb->mb)), MemblobData(&(tb->mb)), MemblobLength(&(tb->mb)), pn);
 		LEVEL_DEBUG("sendback = %d",ret ) ;
 	}
 	return ret ;
@@ -273,7 +273,7 @@ static int Bundle_enroute(struct transaction_bundle *tb, const struct parsedname
 static int Pack_item(const struct transaction_log *tl, struct transaction_bundle *tb)
 {
 	int ret = 0;				//default return value for good packets;
-	//printf("PACK_ITEM used=%d size=%d max=%d\n",tb->mb.used,tl->size,tb->max_size);
+	//printf("PACK_ITEM used=%d size=%d max=%d\n",MemblobLength(&(tl>mb)),tl->size,tb->max_size);
 	switch (tl->type) {
 	case trxn_select:			// select a 1-wire device (by unique ID)
 		LEVEL_DEBUG("pack=SELECT");
@@ -290,10 +290,10 @@ static int Pack_item(const struct transaction_log *tl, struct transaction_bundle
 		if (tl->size > tb->max_size) {
 			return -EINVAL;		// too big for any bundle
 		}
-		if (tl->size + tb->mb.used > tb->max_size) {
+		if (tl->size + MemblobLength(&(tb->mb)) > tb->max_size) {
 			return -EAGAIN;		// too big for this partial bundle
 		}
-		if (MemblobChar(0xFF, tl->size, &tb->mb)) {
+		if (MemblobAddChar(0xFF, tl->size, &tb->mb)) {
 			return -EINVAL;
 		}
 		break;
@@ -304,7 +304,7 @@ static int Pack_item(const struct transaction_log *tl, struct transaction_bundle
 		if (tl->size > tb->max_size) {
 			return -EINVAL;		// too big for any bundle
 		}
-		if (tl->size + tb->mb.used > tb->max_size) {
+		if (tl->size + MemblobLength(&(tb->mb)) > tb->max_size) {
 			return -EAGAIN;		// too big for this partial bundle
 		}
 		if (MemblobAdd(tl->out, tl->size, &tb->mb)) {
@@ -317,7 +317,7 @@ static int Pack_item(const struct transaction_log *tl, struct transaction_bundle
 		if (1 > tb->max_size) {
 			return -EINVAL;		// too big for any bundle
 		}
-		if (1 + tb->mb.used > tb->max_size) {
+		if (1 + MemblobLength(&(tb->mb)) > tb->max_size) {
 			return -EAGAIN;		// too big for this partial bundle
 		}
 		if (MemblobAdd(tl->out, 1, &tb->mb)) {
@@ -356,7 +356,7 @@ static int Bundle_unpack(struct transaction_bundle *tb)
 {
 	int packet_index;
 	const struct transaction_log *tl;
-	BYTE *data = tb->mb.memory_storage;
+	BYTE *data = MemblobData(&(tb->mb));
 	int ret = 0;
 
 	LEVEL_DEBUG("unpacking");

@@ -210,7 +210,7 @@ static int CB_write(const char *path, const char *buffer, size_t size, off_t off
 #ifdef FUSE1X
 int FS_statfs(struct fuse_statfs *fst)
 {
-	LEVEL_CALL("STATFS"");
+	LEVEL_CALL("STATFS");
 	memset(fst, 0, sizeof(struct fuse_statfs));
 	return 0;
 }

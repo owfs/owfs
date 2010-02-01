@@ -112,7 +112,7 @@ void *ReadHandler(struct handlerdata *hd, struct client_msg *cm, struct one_wire
 	}
 	LEVEL_DEBUG("ReadHandler: To Client cm->payload=%d cm->size=%d cm->offset=%d", cm->payload, cm->size, cm->offset);
 	if ((cm->size > 0) && retbuffer) {
-		Debug_Bytes("Data returned to client",retbuffer,cm->size) ;
+		Debug_Bytes("Data returned to client",(BYTE *) retbuffer,cm->size) ;
 	}
 	return retbuffer;
 }

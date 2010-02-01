@@ -61,7 +61,7 @@ static void ShowDirCallback(void *v, const struct parsedname *pn_entry)
 }
 
 	/* Misnamed. Actually all directory */
-void ShowDir(FILE * out, const struct parsedname *const pn)
+void ShowDir(FILE * out, struct parsedname * pn)
 {
 	int b = Backup(pn->path); // length of string to get to higher level
 	if (pn->state & ePS_text) {

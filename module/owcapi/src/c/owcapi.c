@@ -130,14 +130,14 @@ static ssize_t getdir(struct one_wire_query *owq)
 		// error in directory read
 		OWQ_buffer(owq) = NULL;
 		OWQ_size(owq) = 0;
-	} else if ( cb.used == 0 ) {
+	} else if ( CharblobLength(&cb) == 0 ) {
 		// empty directory
 		ret = 0 ;
 		OWQ_size(owq) = ret;
 		OWQ_buffer(owq) = NULL ;
-	} else if ((OWQ_buffer(owq) = owstrdup(cb.blob))) {
+	} else if ((OWQ_buffer(owq) = owstrdup(CharblobData(&cb)))) {
 		// able to copy directory (blob)
-		ret = cb.used;
+		ret = CharblobLength(&cb);
 		OWQ_size(owq) = ret;
 	} else {
 		// Unable to copy directory blob

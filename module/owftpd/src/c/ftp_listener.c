@@ -385,10 +385,11 @@ static void connection_handler_cleanup(void *v)
 
 void ftp_listener_stop(struct ftp_listener_s *f)
 {
+	int ignore ;
 	daemon_assert(invariant(f));
 
 	/* write a byte to the listening thread - this will wake it up */
-	(void) write(f->shutdown_request_send_fd, "", 1);
+	ignore =  write(f->shutdown_request_send_fd, "", 1);
 
 	/* wait for client connections to complete */
 	pthread_mutex_lock(&f->mutex);

@@ -13,7 +13,7 @@
 /* prototypes */
 static int invariant(const struct ftp_session_s *f);
 static void reply(struct ftp_session_s *f, int code, const char *fmt, ...);
-static void change_dir(struct ftp_session_s *f, char *new_dir);
+static void change_dir(struct ftp_session_s *f, const char *new_dir);
 static int open_connection(struct ftp_session_s *f);
 static int write_fully(int file_descriptor, const char *buf, int buflen);
 static void init_passive_port(void);
@@ -411,7 +411,7 @@ static void get_addr_str(const sockaddr_storage_t * s, char *buf, int bufsiz)
 
 static void do_cwd(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 {
-	char *new_dir;
+	const char *new_dir;
 
 	daemon_assert(invariant(f));
 	daemon_assert(cmd != NULL);
@@ -434,12 +434,12 @@ static void do_cdup(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 	daemon_assert(invariant(f));
 }
 
-static void change_dir(struct ftp_session_s *f, char *new_dir)
+static void change_dir(struct ftp_session_s *f, const char *new_dir)
 {
 	struct cd_parse_s cps;
 
 	strcpy(cps.buffer, (ASCII *) f->dir);
-	cps.rest = new_dir;
+	strcpy(cps.rest, new_dir);
 	cps.pse = parse_status_init;
 
 	LEVEL_DEBUG("CD dir=%s, file=%s", SAFESTRING(cps.buffer), SAFESTRING(new_dir));
@@ -453,8 +453,9 @@ static void change_dir(struct ftp_session_s *f, char *new_dir)
 	default:
 		cps.ret = -EFAULT;
 	}
-	if (cps.dir == NULL)
+	if (cps.dir == NULL) {
 		cps.ret = -ENOMEM;
+	}
 
 	if (cps.ret) {
 		reply(f, 550, "Error changing directory. %s", strerror(-cps.ret));
@@ -463,8 +464,12 @@ static void change_dir(struct ftp_session_s *f, char *new_dir)
 		reply(f, 250, "Directory change successful.");
 	}
 
-	if (cps.dir)
+	if (cps.dir) {
 		free(cps.dir);
+	}
+	if (cps.rest) {
+		free(cps.dir);
+	}
 }
 
 static void do_quit(struct ftp_session_s *f, const struct ftp_command_s *cmd)
@@ -1501,7 +1506,7 @@ static void netscape_hack(int file_descriptor)
 	ns_timeout.tv_usec = 0;
 	select_ret = select(file_descriptor + 1, &readfds, NULL, NULL, &ns_timeout);
 	if (select_ret > 0) {
-		(void) read(file_descriptor, &c, 1);
+		read(file_descriptor, &c, 1); // ignore warning
 	}
 }
 

@@ -168,7 +168,7 @@ static int HA7_directory(BYTE search, struct dirblob *db, const struct parsednam
 		ret = -EIO;
 	} else {
 		BYTE sn[8];
-		ASCII *p = (ASCII *) mb.memory_storage;
+		ASCII *p = (ASCII *) MemblobData(&mb);
 		while ((p = strstr(p, "<INPUT CLASS=\"HA7Value\" NAME=\"Address_"))
 			   && (p = strstr(p, "VALUE=\""))) {
 			p += 7;
@@ -288,7 +288,7 @@ static int HA7_read(int file_descriptor, struct memblob *mb)
 		MemblobClear(mb);
 		return -ENOMEM;
 	}
-	//printf("READ FROM HA7:\n%s\n",mb->memory_storage);
+	//printf("READ FROM HA7:\n%s\n",MemblobData(mb));
 	return 0;
 }
 
@@ -450,7 +450,7 @@ static int HA7_sendback_block(const BYTE * data, BYTE * resp, const size_t size,
 
 	if (HA7_toHA7(file_descriptor, &ha7, pn->selected_connection) == 0) {
 		if (HA7_read(file_descriptor, &mb) == 0) {
-			ASCII *p = (ASCII *) mb.memory_storage;
+			ASCII *p = (ASCII *) MemblobData(&mb);
 			if ((p = strstr(p, "<INPUT TYPE=\"TEXT\" NAME=\"ResultData_0\""))
 				&& (p = strstr(p, "VALUE=\""))) {
 				p += 7;

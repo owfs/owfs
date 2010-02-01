@@ -46,8 +46,8 @@ int OWNET_dirlist(OWNET_HANDLE h, const char *onewire_path, char **return_string
 		CharblobClear(cb);
 		return_value = -EINVAL;
 	} else {
-		return_string[0] = cb->blob;
-		return_value = cb->used;
+		return_string[0] = CharblobData(cb);
+		return_value = CharblobLength(cb);
 	}
 
 	CONNIN_RUNLOCK;

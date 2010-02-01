@@ -84,6 +84,25 @@ void MemblobInit(struct memblob *mb, size_t increment)
 	mb->memory_storage = NULL;
 }
 
+BYTE * MemblobData(struct memblob * mb)
+{
+	return mb->memory_storage ;
+}
+
+size_t MemblobLength(struct memblob * mb)
+{
+	return mb->used ;
+}
+
+void MemblobTrim(size_t nchars, struct memblob * mb)
+{
+	if (mb->used < nchars) {
+		MemblobClear(mb) ;
+	} else {
+		mb->used -= nchars ;
+	}
+}
+
 static int MemblobIncrease(size_t length, struct memblob *mb)
 {
 	// make more room? -- blocks of 10 devices (80byte)
@@ -114,7 +133,7 @@ int MemblobAdd(const BYTE * data, size_t length, struct memblob *mb)
 	return ret;
 }
 
-int MemblobChar(BYTE character, size_t length, struct memblob *mb)
+int MemblobAddChar(BYTE character, size_t length, struct memblob *mb)
 {
 	size_t used = mb->used;
 	int ret = MemblobIncrease(length, mb);

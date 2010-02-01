@@ -52,7 +52,7 @@ void ChangeData(struct one_wire_query *owq);
 void ShowDevice(FILE * out, struct parsedname *const pn);
 
 /* in owhttpd_dir.c */
-void ShowDir(FILE * out, const struct parsedname *const pn);
+void ShowDir(FILE * out, struct parsedname * pn);
 int Backup(const char *path);
 
 /* in ow_favicon.c */
