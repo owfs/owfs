@@ -42,6 +42,6 @@ void ow_help(void)
            "     --hex                       |data in hexidecimal format\n"
            "     --size                      |size of data in bytes\n"
            "     --offset                    |start of read/write in field\n"
-           "     --dir                       |add a trailing '/' for directories\n"
+           "     --dir                       |add a trailing '\' for directories\n"
 		   "  -V --version                   |Program version\n" "  -h --help                      |Basic help page\n");
 }
