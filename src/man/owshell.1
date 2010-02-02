@@ -55,6 +55,9 @@ filepath value
 .B owdir
 .I -f --format
 f[.]i[[.]c]
+] [
+.I --dir
+]
 .I -s 
 [host:]port
 [directory] [directory2 ...]
@@ -107,6 +110,8 @@ offset
 ] [
 .I --size=
 bytes
+] [
+.I --dir
 ]
 .I -s 
 [host:]port
@@ -121,6 +126,9 @@ bytes
 .B owwrite
 .I \-V \-\-version
 .br
+.B owget
+.I \-V \-\-version
+.br
 .PP
 .B owdir
 .I \-h | \-\-help
@@ -129,6 +137,9 @@ bytes
 .I \-h | \-\-help
 .br
 .B owwrite
+.I \-h | \-\-help
+.br
+.B owget
 .I \-h | \-\-help
 .br
 .SH "DESCRIPTION"
@@ -224,6 +235,8 @@ Shows basic summary of options.
 .I Version
 of this program and related libraries.
 .SH DISPLAY OPTIONS
+.SS \-\-dir
+Modify the display of directories to indicate which entries are also directories. A directory member will have a trailing '/' if it is a directory itself. This aids recursive searches.
 .SS \-f \-\-format "f[.]i[[.]c]"
 Display format for the 1-wire devices. Each device has a 8 byte address, consisting of:
 .TP
