@@ -11,7 +11,7 @@ package require Tk
 
 set SocketVars {string version type payload size sg offset tokenlength totallength paylength typetext ping state sock versiontext flagtext persist return id }
 
-set MessageList {ERROR NOP READ WRITE DIR SIZE PRESENCE DIRALL GET DIRALLSLASH}
+set MessageList {ERROR NOP READ WRITE DIR SIZE PRESENCE DIRALL GET DIRALLSLASH GETSLASH}
 set MessageListPlus $MessageList
 lappend MessageListPlus PING BadHeader Unknown Total
 

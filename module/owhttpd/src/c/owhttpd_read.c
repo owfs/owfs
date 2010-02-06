@@ -18,16 +18,16 @@ $Id$
 //static void Show(FILE * out, const char *const path, const char *const file);
 //static void ShowText(FILE * out, const char *path, const char *file);
 
-static void Show(FILE * out, struct parsedname *pn_entry);
-static void ShowDirectory(FILE * out, struct parsedname *pn_entry);
+static void Show(FILE * out, const struct parsedname *pn_entry);
+static void ShowDirectory(FILE * out, const struct parsedname *pn_entry);
 static void ShowReadWrite(FILE * out, struct one_wire_query *owq);
 static void ShowReadonly(FILE * out, struct one_wire_query *owq);
 static void ShowWriteonly(FILE * out, struct one_wire_query *owq);
 static void ShowStructure(FILE * out, struct one_wire_query *owq);
 static void Upload( FILE * out, const struct parsedname * pn ) ;
 
-static void ShowText(FILE * out, struct parsedname *pn_entry);
-static void ShowTextDirectory(FILE * out, struct parsedname *pn_entry);
+static void ShowText(FILE * out, const struct parsedname *pn_entry);
+static void ShowTextDirectory(FILE * out, const struct parsedname *pn_entry);
 static void ShowTextReadWrite(FILE * out, struct one_wire_query *owq);
 static void ShowTextReadonly(FILE * out, struct one_wire_query *owq);
 static void ShowTextWriteonly(FILE * out, struct one_wire_query *owq);
@@ -36,7 +36,7 @@ static void ShowTextStructure(FILE * out, struct one_wire_query *owq);
 /* --------------- Functions ---------------- */
 
 /* Device entry -- table line for a filetype */
-static void Show(FILE * out, struct parsedname *pn_entry)
+static void Show(FILE * out, const struct parsedname *pn_entry)
 {
 	struct one_wire_query *owq = FS_OWQ_from_pn(pn_entry);
 
@@ -195,13 +195,13 @@ static void ShowWriteonly(FILE * out, struct one_wire_query *owq)
 	}
 }
 
-static void ShowDirectory(FILE * out, struct parsedname *pn_entry)
+static void ShowDirectory(FILE * out, const struct parsedname *pn_entry)
 {
 	fprintf(out, "<A HREF='%s'>%s</A>", pn_entry->path, FS_DirName(pn_entry));
 }
 
 /* Device entry -- table line for a filetype */
-static void ShowText(FILE * out, struct parsedname *pn_entry)
+static void ShowText(FILE * out, const struct parsedname *pn_entry)
 {
 	struct one_wire_query *owq = FS_OWQ_from_pn(pn_entry);
 
@@ -288,20 +288,20 @@ static void ShowTextWriteonly(FILE * out, struct one_wire_query *owq)
 	fprintf(out, "(writeonly)");
 }
 
-static void ShowTextDirectory(FILE * out, struct parsedname *pn_entry)
+static void ShowTextDirectory(FILE * out, const struct parsedname *pn_entry)
 {
 	(void) out;
 	(void) pn_entry;
 }
 
 /* Now show the device */
-static void ShowDeviceTextCallback(void *v, const struct parsedname *const pn_entry)
+static void ShowDeviceTextCallback(void *v, const struct parsedname * pn_entry)
 {
 	FILE *out = v;
 	ShowText(out, pn_entry);
 }
 
-static void ShowDeviceCallback(void *v, const struct parsedname *const pn_entry)
+static void ShowDeviceCallback(void *v, const struct parsedname * pn_entry)
 {
 	FILE *out = v;
 //    Show(sds->out, sds->path, FS_DirName(pn_entry));

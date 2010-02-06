@@ -15,7 +15,7 @@ $Id$
 // #include <libgen.h>  /* for dirname() */
 
 /* --------------- Functions ---------------- */
-static void ShowDirText(FILE * out, const struct parsedname *const pn);
+static void ShowDirText(FILE * out, struct parsedname * pn);
 
 /* Find he next higher level by search for last slash that doesn't end the string */
 /* return length of "higher level" */
@@ -114,7 +114,8 @@ static void ShowDirTextCallback(void *v, const struct parsedname *const pn_entry
 	}
 	fprintf(out, "%s %s \"%s\"\r\n", FS_DirName(pn_entry), nam, typ);
 }
-static void ShowDirText(FILE * out, const struct parsedname *const pn)
+
+static void ShowDirText(FILE * out, struct parsedname * pn)
 {
 	HTTPstart(out, "200 OK", ct_text);
 

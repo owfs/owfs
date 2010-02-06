@@ -26,8 +26,6 @@ $Id$
     GNU General Public License for more details.
 
     ---------------------------------------------------------------------------
-    Implementation:
-    2006 dirblob
 */
 
 // Define for full memmory allocation debugging
