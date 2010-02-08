@@ -117,7 +117,7 @@ static void GetDeviceName(const ASCII ** strpointer, struct connection_in * in)
 		GetNextByte(strpointer,dn[5],&sn[5]);
 		GetNextByte(strpointer,dn[6],&sn[6]);
 	} else {
-		ASCII * name_to_familycode = namefind((*strpointer)) ;
+		const ASCII * name_to_familycode = namefind((*strpointer)) ;
 		if (  name_to_familycode != NULL) {
 			// device name specified (e.g. DS2401)
 			sn[0] = string2num(name_to_familycode);

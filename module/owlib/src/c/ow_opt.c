@@ -649,7 +649,7 @@ int owopt(const int option_char, const char *arg)
 			LEVEL_DEFAULT("No fatal_debug_file specified");
 			return 1;
 		} else if ((Globals.fatal_debug_file = owstrdup(arg)) == NULL) {
-			LEVEL_DEBUG(stderr, "Insufficient memory to store the fatal_debug_file: %s", arg);
+			LEVEL_DEBUG("Out of memory.");
 			return 1;
 		}
 		break;

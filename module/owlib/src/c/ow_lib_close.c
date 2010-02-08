@@ -14,6 +14,7 @@ $Id$
 #include "ow.h"
 #include "ow_devices.h"
 #include "ow_pid.h"
+#include "ow_specialcase.h"
 
 /* All ow library closeup */
 void LibClose(void)

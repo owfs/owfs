@@ -30,7 +30,9 @@ struct toENET {
 static int ENET_write(int file_descriptor, const ASCII * msg, size_t length, struct connection_in *in) ;
 static int OWServer_Enet_reset(const struct parsedname *pn);
 static void OWServer_Enet_close(struct connection_in *in);
+#if 0
 static void toENETinit(struct toENET *enet) ;
+#endif
 static int ENET_send_detail(int file_descriptor, struct connection_in *in) ;
 static int ENET_get_detail(const struct parsedname * pn ) ;
 static int OWServer_Enet_read(int file_descriptor, struct memblob *mb) ;
@@ -525,10 +527,12 @@ static void OWServer_Enet_close(struct connection_in *in)
 	FreeClientAddr(in);
 }
 
+#if 0
 static void toENETinit(struct toENET *enet)
 {
 	memset(enet, 0, sizeof(struct toENET));
 }
+#endif
 
 static int ENET_write(int file_descriptor, const ASCII * msg, size_t length, struct connection_in *in)
 {

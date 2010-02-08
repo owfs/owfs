@@ -154,10 +154,10 @@ enum e_visibility {
 	visible_always,
 } ;
 
-enum e_visibility AlwaysVisible( struct parsedname * pn ) ;
+enum e_visibility AlwaysVisible( const struct parsedname * pn ) ;
 #define VISIBLE AlwaysVisible
 
-enum e_visibility NeverVisible( struct parsedname * pn ) ; 
+enum e_visibility NeverVisible( const struct parsedname * pn ) ; 
 #define INVISIBLE NeverVisible
 
 /* filetype gives -file types- for chip properties */
@@ -169,7 +169,7 @@ struct filetype {
 	enum fc_change change;		// volatility
 	int (*read) (struct one_wire_query *);	// read callback function
 	int (*write) (struct one_wire_query *);	// write callback function
-	enum e_visibility (*visible) (struct parsedname *);	// Show in a directory listing?
+	enum e_visibility (*visible) (const struct parsedname *);	// Show in a directory listing?
 	union {
 		void *v;
 		int i;

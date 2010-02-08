@@ -116,6 +116,7 @@ static int FS_read_tester_single(struct one_wire_query *owq)
 		}
 	case ft_directory:
 	case ft_subdir:
+	case ft_unknown:
 		return -ENOENT;
 	}
 	return 0;					// put data as string into buffer and return length
@@ -153,6 +154,7 @@ static int FS_read_tester_array(struct one_wire_query *owq)
 			break;
 		case ft_directory:
 		case ft_subdir:
+		case ft_unknown:
 			return -ENOENT;
 		}
 		if (FS_read_tester_single(owq_single)) {

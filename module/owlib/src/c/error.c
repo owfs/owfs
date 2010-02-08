@@ -128,7 +128,7 @@ void err_msg(enum e_err_type errnoflag, enum e_err_level level, const char * fil
 			openlog("OWFS", LOG_PID, LOG_DAEMON);
 			log_available = 1;
 		}
-		syslog(level <= e_err_default ? LOG_INFO : LOG_NOTICE, (char *) buf);
+		syslog(level <= e_err_default ? LOG_INFO : LOG_NOTICE, "%s\n", buf);
 	} else {
 		fflush(stdout);			/* in case stdout and stderr are the same */
 		fputs(buf, stderr);
@@ -151,8 +151,8 @@ void _Debug_Bytes(const char *title, const unsigned char *buf, int length)
 		return;
 	}
 
-	hex_print( buf, length ) ;
-	ascii_print( buf, length ) ;
+	hex_print( (const char *) buf, length ) ;
+	ascii_print( (const char *) buf, length ) ;
 }
 
 /* Purely a debugging routine -- print an arbitrary buffer of bytes */
@@ -225,7 +225,7 @@ void fatal_error(const char * file, int line, const char * func, const char *fmt
 				openlog("OWFS", LOG_PID, LOG_DAEMON);
 				log_available = 1;
 			}
-			syslog(LOG_USER|LOG_INFO, (char *) buf);
+			syslog(LOG_USER|LOG_INFO, "%s\n", buf);
 		} else {
 			fflush(stdout);			/* in case stdout and stderr are the same */
 			fputs(buf, stderr);

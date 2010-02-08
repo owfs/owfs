@@ -50,8 +50,9 @@ WRITE_FUNCTION(FS_w_page);
 READ_FUNCTION(FS_r_memory);
 WRITE_FUNCTION(FS_w_memory);
 READ_FUNCTION(FS_r_tag);
+READ_FUNCTION(FS_temperature);
 
-static enum e_visibility EDS_visibie(struct parsedname * pn) ;
+static enum e_visibility EDS_visible(struct parsedname * pn) ;
 
 
 #define _EDS_WRITE_SCRATCHPAD 0x0F
@@ -71,6 +72,7 @@ static enum e_visibility EDS_visibie(struct parsedname * pn) ;
 #define _EDS0068   0x0010
 #define _EDS0069   0x0020
 
+#define _EDS_CHIPS_TEMPERATURE (_EDS0064|_EDS0065|_EDS0066|_EDS0067|_EDS0068|_EDS0069)
 struct eds_types {
 	char * name ;
 	unsigned bit ;
@@ -95,6 +97,8 @@ struct filetype EDS[] = {
 	{"memory", _EDS_PAGES * _EDS_PAGESIZE, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages/page", _EDS_PAGESIZE, &AEDS, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
+	{"memory", _EDS_PAGES * _EDS_PAGESIZE, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, VISIBLE, NO_FILETYPE_DATA,},
+	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_temperature, NO_WRITE_FUNCTION, EDS_visible, {i:_EDS_CHIPS_TEMPERATURE},},
 };
 
 DeviceEntryExtended(7E, EDS, DEV_temp | DEV_alarm);
@@ -110,29 +114,59 @@ MakeInternalProp(TAG, fc_persistent);	// cumulative
 // Only used to set visibility for specific 
 static int FS_r_tag(struct one_wire_query *owq)
 {
+	size_t size = _EDS_PAGESIZE ;
+	BYTE data[_EDS_PAGESIZE] ;
+	struct parsedname * pn = PN(owq) ;
+	struct one_wire_query * owq_sib = FS_OWQ_from_pn( pn ) ;
+	int ret = -EINVAL ;
 	UINT tag = 0x0000 ;
-	size_t size = _EDS_TAG_LENGTH ;
-	BYTE data[size] ;
-	struct one_wire_query * owq_sib = FS_OWQ_from_pn( PN(owq) ) ;
+
+	if ( owq_sib==NULL ) {
+		return -ENOMEM ;
+	}
+
+	if (Cache_Get_Internal_Strict(&tag, sizeof(UINT), InternalProp(TAG), pn) == 0 ) {	// tag exists
+		int tag_type = N_eds_types ;
+		while ( --tag_type >= 0 ) {
+			if (  tag == EDS_types[tag_type].bit ) {
+				strncpy( (char *)data, EDS_types[tag_type].name, _EDS_TAG_LENGTH ) ;
+				ret = 0 ;
+				break ;
+			}
+		}
+	} else if ( FS_r_sibling_binary(data,&size,"pages/page.0",owq) == 0 	) { // read device memory
+		int tag_type = N_eds_types ;
+		ret = 0 ;
+		while ( --tag_type >= 0 ) {
+			if ( strncasecmp( (char *) data, EDS_types[tag_type].name, _EDS_TAG_LENGTH ) == 0 ) {
+				tag = EDS_types[tag_type].bit ;
+				break ;
+			}
+		}
+		Cache_Add_Internal(&tag, sizeof(UINT), InternalProp(TAG), pn) ;
+	}
+	FS_OWQ_destroy_not_pn(owq_sib) ;
+	Fowq_output_offset_and_size_z( (char *) data, owq ) ;
+	return ret ;
+}
+
+static int FS_temperature(struct one_wire_query *owq)
+{
+	size_t size = _EDS_PAGESIZE ;
+	BYTE data[_EDS_PAGESIZE] ;
+	struct parsedname * pn = PN(owq) ;
+	struct one_wire_query * owq_sib = FS_OWQ_from_pn( pn ) ;
 	int ret = -EINVAL ;
 
 	if ( owq_sib==NULL ) {
 		return -ENOMEM ;
 	}
 
-	if ( FS_r_sibling_binary(data,&size,"memory",owq) == 0 	) {
-		int i = N_eds_types ;
+	if ( FS_r_sibling_binary(data,&size,"pages/page.1",owq) == 0 	) { // read device memory
+		OWQ_F(owq) = ( (_FLOAT)UT_uint16(&data[2]) ) / 16. ;
 		ret = 0 ;
-		while ( --i >= 0 ) {
-			if ( strncasecmp( (char *) data, EDS_types[i].name, _EDS_TAG_LENGTH ) == 0 ) {
-				tag = EDS_types[i].bit ;
-				break ;
-			}
-		}
-		Cache_Add_Internal(&tag, sizeof(UINT), InternalProp(TAG), PN(owq)) ;
 	}
 	FS_OWQ_destroy_not_pn(owq_sib) ;
-	Fowq_output_offset_and_size_z( (char *) data, owq ) ;
 	return ret ;
 }
 
@@ -146,7 +180,7 @@ static int FS_r_memory(struct one_wire_query *owq)
 	return 0;
 }
 
-static enum e_visibility EDS_visibie(struct parsedname * pn) {
+static enum e_visibility EDS_visible(struct parsedname * pn) {
 	UINT tag ;
 	if (Cache_Get_Internal_Strict(&tag, sizeof(UINT), InternalProp(TAG), pn) != 0 ) {	// tag doesn't (yet) exist
 		struct one_wire_query * owq = FS_OWQ_from_pn( pn ) ;

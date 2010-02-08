@@ -96,6 +96,7 @@ int FS_input_owq(struct one_wire_query *owq)
 			return FS_input_ascii(owq);
 		case ft_directory:
 		case ft_subdir:
+		case ft_unknown:
 			return -ENOENT;
 		}
 	}
@@ -338,7 +339,7 @@ static size_t FS_check_length(struct one_wire_query *owq)
 	}
 	
 	// check overall offset
-	if ( offset > filelength ) {
+	if ( (size_t) offset > filelength ) {
 		size = 0 ;
 	// and check offset plus size
 	} else if ( offset + size > filelength ) {

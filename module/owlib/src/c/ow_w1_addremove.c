@@ -66,12 +66,13 @@ static struct connection_in *FindIn(const char * name)
 /* (Dynamically) Add a new w1 bus to the list of connections */
 static void * AddBus( void * v )
 {
-	int bus_master = (int) v ;
+	int bus_master = ((int *) v)[0] ;
 	char name[63] ;
 	struct connection_in * in ;
 
 #if OW_MT
 	pthread_detach(pthread_self());
+	owfree(v) ;
 #endif /* OW_MT */
 
 	if ( w1_bus_name( bus_master, name ) < 0 ) {
@@ -99,12 +100,13 @@ static void * AddBus( void * v )
 
 void * RemoveBus( void * v )
 {
-	int bus_master = (int) v ;
+	int bus_master = ((int *) v)[0] ;
 	char name[63] ;
 	struct connection_in * in ;
 
 #if OW_MT
 	pthread_detach(pthread_self());
+	owfree(v) ;
 #endif /* OW_MT */
 
 	if ( w1_bus_name( bus_master, name ) < 0 ) {
@@ -130,7 +132,16 @@ void * RemoveBus( void * v )
 void AddW1Bus( int bus_master )
 {
 	pthread_t thread;
-	int err = pthread_create(&thread, NULL, AddBus, bus_master );
+	int err ;
+	int * copy_bus_master = owmalloc( sizeof(bus_master) ) ;
+	
+	if ( copy_bus_master == NULL) {
+		LEVEL_DEBUG("Cannot allocate memory to pass bus_master=%d\n", bus_master) ;
+		return ;
+	}
+	copy_bus_master[0] = bus_master ;
+
+	err = pthread_create(&thread, NULL, AddBus, copy_bus_master );
 	if (err) {
 		LEVEL_CONNECT("W1 bus add thread error %d.", err);
 	}
@@ -139,9 +150,19 @@ void AddW1Bus( int bus_master )
 void RemoveW1Bus( int bus_master )
 {
 	pthread_t thread;
-	int err = pthread_create(&thread, NULL, RemoveBus, bus_master );
+	int err ;
+	int * copy_bus_master = owmalloc( sizeof(bus_master) ) ;
+	
+	if ( copy_bus_master == NULL) {
+		LEVEL_DEBUG("Cannot allocate memory to pass bus_master=%d\n", bus_master) ;
+		return ;
+	}
+	copy_bus_master[0] = bus_master ;
+
+	err = pthread_create(&thread, NULL, RemoveBus, copy_bus_master );
 	if (err) {
 		LEVEL_CONNECT("W1 bus add thread error %d.", err);
+		owfree(copy_bus_master) ;
 	}
 }
 
@@ -149,12 +170,12 @@ void RemoveW1Bus( int bus_master )
 
 void AddW1Bus( int bus_master )
 {
-	AddBus( bus_master) ;
+	AddBus( &bus_master) ;
 }
 
 void RemoveW1Bus( int bus_master )
 {
-	RemoveBus( bus_master) ;
+	RemoveBus( &bus_master) ;
 }
 
 #endif /* OW_MT */

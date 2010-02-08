@@ -45,13 +45,13 @@ $Id$
 
 /* ------- Prototypes ------------ */
 
-enum e_visibility AlwaysVisible( struct parsedname * pn )
+enum e_visibility AlwaysVisible( const struct parsedname * pn )
 {
 	(void) pn ;
 	return visible_always ;
 }
 
-enum e_visibility NeverVisible( struct parsedname * pn )
+enum e_visibility NeverVisible( const struct parsedname * pn )
 {
 	(void) pn ;
 	return visible_never ;

@@ -101,6 +101,7 @@ int FS_output_owq(struct one_wire_query *owq)
 			return Fowq_output_ascii(owq);
 		case ft_directory:
 		case ft_subdir:
+		case ft_unknown:
 			return -ENOENT;
 		}
 	}
@@ -190,18 +191,18 @@ static int Fowq_output_yesno(struct one_wire_query *owq)
 	return PROPERTY_LENGTH_YESNO;
 }
 
-int Fowq_output_offset_and_size_z(char *string, struct one_wire_query *owq)
+int Fowq_output_offset_and_size_z(const char *string, struct one_wire_query *owq)
 {
 	return Fowq_output_offset_and_size(string, strlen(string), owq);
 }
 
 /* Put a string ionto the OWQ structure and return the length
    check lengths and offsets as part of the process */
-int Fowq_output_offset_and_size(char *string, size_t length, struct one_wire_query *owq)
+int Fowq_output_offset_and_size(const char *string, size_t length, struct one_wire_query *owq)
 {
 	size_t copy_length = length;
 	off_t offset = OWQ_offset(owq);
-	Debug_Bytes("Fowq_output_offset_and_size", (BYTE *) string, length);
+	Debug_Bytes("Fowq_output_offset_and_size", (const BYTE *) string, length);
 
 	/* offset is after the length of the string -- return 0 since
 	   some conditions a read after the end is done automatically */

@@ -17,7 +17,9 @@ $Id$
 #include "ow_codes.h"
 
 static int Turnoff(const struct parsedname *pn);
+#if 0
 static int BUS_reselect_branch(const struct parsedname *pn) ;
+#endif
 static int BUS_select_subbranch(const struct buspath *bp, const struct parsedname *pn);
 static int BUS_Skip_Rom(const struct parsedname *pn);
 static int BUS_select_opening(const struct parsedname *pn) ;
@@ -180,6 +182,7 @@ static int BUS_select_closing(const struct parsedname *pn)
 	return 0 ;
 }
 
+#if 0
 static int BUS_reselect_branch(const struct parsedname *pn)
 {
 	if ((BUS_reset(pn))) {
@@ -190,6 +193,7 @@ static int BUS_reselect_branch(const struct parsedname *pn)
 	}
 	return 0 ;
 }
+#endif
 
 /* Select the specific branch */
 static int BUS_select_subbranch(const struct buspath *bp, const struct parsedname *pn)

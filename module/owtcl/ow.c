@@ -6,7 +6,27 @@
 // $Id$
 //
 
+// Some Ugly code to keep command line #define from being over_written by <config.h>
+#define SAVE_FOR_NOW_PACKAGE_NAME    PACKAGE_NAME
+#undef               PACKAGE_NAME
+#define SAVE_FOR_NOW_PACKAGE_STRING  PACKAGE_STRING
+#undef               PACKAGE_STRING
+#define SAVE_FOR_NOW_PACKAGE_TARNAME PACKAGE_TARNAME
+#undef               PACKAGE_TARNAME
+#define SAVE_FOR_NOW_PACKAGE_VERSION PACKAGE_VERSION
+#undef               PACKAGE_VERSION
+
 #include <config.h>
+// Now restore
+#undef  PACKAGE_NAME
+#define PACKAGE_NAME    SAVE_FOR_NOW_PACKAGE_NAME
+#undef  PACKAGE_STRING
+#define PACKAGE_STRING  SAVE_FOR_NOW_PACKAGE_STRING
+#undef  PACKAGE_TARNAME
+#define PACKAGE_TARNAME SAVE_FOR_NOW_PACKAGE_TARNAME
+#undef  PACKAGE_VERSION
+#define PACKAGE_VERSION SAVE_FOR_NOW_PACKAGE_VERSION
+
 #include "owfs_config.h"
 #ifdef HAVE_VASPRINTF
 #define _GNU_SOURCE
@@ -77,11 +97,13 @@ void owtcl_Error(Tcl_Interp * interp, char *error_family, char *error_code, char
 #endif
 	{
 		/* Error within vasprintf/vsnprintf */
-		Tcl_SetResult(interp, Tcl_ErrnoMsg(Tcl_GetErrno()), TCL_STATIC);
+		Tcl_SetResult(interp, Tcl_ErrnoMsg(Tcl_GetErrno()), TCL_STATIC); 
+		#warning Ignore compiler warning since Tcl_ErrnoMsg is treated TCL_STATIC
 		Tcl_PosixError(interp);
 	} else {
 		/* Generate a posix like error message and code. */
-		Tcl_SetResult(interp, buf, TCL_VOLATILE);
+		Tcl_SetResult(interp, buf, TCL_VOLATILE); 
+		#warning Ignore compiler warning since Tcl_ErrnoMsg is treated TCL_STATIC
 		Tcl_SetErrorCode(interp, error_family, error_code, NULL);
 	}
 

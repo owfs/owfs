@@ -55,6 +55,7 @@ int ARG_I2C(const char *arg);
 int ARG_HA5( const char *arg);
 int ARG_HA7(const char *arg);
 int ARG_HA7E(const char *arg);
+int ARG_ENET(const char *arg);
 int ARG_EtherWeather(const char *arg);
 int ARG_Xport(const char *arg);
 int ARG_Fake(const char *arg);

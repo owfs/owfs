@@ -13,10 +13,6 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
-_FLOAT Pressure(_FLOAT P, const struct parsedname *pn);
-_FLOAT fromPressure(_FLOAT P, const struct parsedname *pn);
-const char *PressureScaleName(enum pressure_type p);
-
 struct pressure_data {
 	char * name ;
 	_FLOAT in_mbars ;

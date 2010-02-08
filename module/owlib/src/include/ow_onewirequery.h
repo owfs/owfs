@@ -71,8 +71,8 @@ int OWQ_create_shallow_aggregate(struct one_wire_query *owq_shallow, struct one_
 void OWQ_destroy_shallow_aggregate(struct one_wire_query *owq_shallow);
 void OWQ_create_temporary(struct one_wire_query *owq_temporary, char *buffer, size_t size, off_t offset, struct parsedname *pn);
 
-int Fowq_output_offset_and_size(char *string, size_t length, struct one_wire_query *owq);
-int Fowq_output_offset_and_size_z(char *string, struct one_wire_query *owq);
+int Fowq_output_offset_and_size(const char *string, size_t length, struct one_wire_query *owq);
+int Fowq_output_offset_and_size_z(const char *string, struct one_wire_query *owq);
 
 struct one_wire_query *FS_OWQ_from_pn(const struct parsedname *pn);
 
