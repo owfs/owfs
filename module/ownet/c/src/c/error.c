@@ -96,7 +96,7 @@ void err_msg(enum e_err_type errnoflag, enum e_err_level level, const char *fmt,
 			openlog("OWFS", LOG_PID, LOG_DAEMON);
 			log_available = 1;
 		}
-		syslog(level <= e_err_default ? LOG_INFO : LOG_NOTICE, buf);
+		syslog(level <= e_err_default ? LOG_INFO : LOG_NOTICE, "%s\n", buf);
 	} else {
 		fflush(stdout);			/* in case stdout and stderr are the same */
 		switch (level) {
@@ -219,7 +219,7 @@ void fatal_error(char *file, int row, const char *fmt, ...)
 #else
 		vsprintf(tmp, fmt, ap);
 #endif
-		fprintf(stderr, tmp);
+		fprintf(stderr, "%s\n", tmp);
 	}
 #else /* OWNETC_OW_DEBUG */
 	if(Globals.fatal_debug) {

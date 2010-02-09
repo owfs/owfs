@@ -1,17 +1,13 @@
 # $Id$
 
-OWLIB_DIR = ../../../../owlib
-OWLIB_DIR_C = ${OWLIB_DIR}/src/c
-OWLIB_DIR_H = ${OWLIB_DIR}/src/include
-
 LIBOWNET_SOURCE =	    \
-        ${OWLIB_DIR_C}/compat.c        \
+        compat.c        \
         error.c         \
-        ${OWLIB_DIR_C}/getaddrinfo.c   \
-        ${OWLIB_DIR_C}/getopt.c        \
+        getaddrinfo.c   \
+        getopt.c        \
         globals.c       \
         ow_browse.c     \
-        ${OWLIB_DIR_C}/ow_charblob.c   \
+        ow_charblob.c   \
         ow_connect.c    \
         ow_dl.c         \
         ow_dnssd.c      \
@@ -21,7 +17,7 @@ LIBOWNET_SOURCE =	    \
         ownet_dir.c     \
         ownet_init.c    \
         ownet_read.c    \
-        ownet_present.c    \
+        ownet_present.c \
         ownet_setget.c  \
         ownet_write.c   \
         ow_rwlock.c     \

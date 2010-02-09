@@ -307,7 +307,7 @@ static void ENET_SpecialCases( struct connection_in * in )
 static int Add_a_property(const char * tag, const char * property, const char * romid, char ** buffer)
 {
 	char path[PATH_MAX] ;
-	OWQ_allocate_struct_and_pointer(owq) ;
+	struct one_wire_query * owq ;
 	char * buffer_pointer = buffer[0] ;
 	int ret = 0 ;
 	

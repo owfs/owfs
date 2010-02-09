@@ -54,6 +54,10 @@ $Id$
 
 enum zero_support { zero_unknown, zero_none, zero_bonjour, zero_avahi, } ;
 
+enum opt_program { opt_owfs, opt_server, opt_httpd, opt_ftpd, opt_tcl,
+	opt_swig, opt_c,
+};
+
 /* Globals information (for local control) */
 struct global {
 	int announce_off;			// use zeroconf?

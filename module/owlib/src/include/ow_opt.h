@@ -52,9 +52,7 @@ $Id$
 /* These are the owlib-specific options */
 #define OWLIB_OPT "a:m:c:f:p:s:h::u::d:t:CFRKVP:"
 extern const struct option owopts_long[];
-enum opt_program { opt_owfs, opt_server, opt_httpd, opt_ftpd, opt_tcl,
-	opt_swig, opt_c,
-};
+
 int owopt(const int c, const char *arg);
 int owopt_packed(const char *params);
 

@@ -10,6 +10,15 @@ $Id$
 #ifndef OW_ONEWIREQUERY_H		/* tedious wrapper */
 #define OW_ONEWIREQUERY_H
 
+enum owq_cleanup {
+	owq_cleanup_none    = 0,
+	owq_cleanup_owq     = 0x01,
+	owq_cleanup_pn      = 0x02,
+	owq_cleanup_buffer  = 0x04,
+	owq_cleanup_rbuffer = 0x08,
+	owq_cleanup_array   = 0x10,
+	} ;
+
 union value_object {
 	int I;
 	unsigned int U;
@@ -22,32 +31,38 @@ union value_object {
 
 struct one_wire_query {
 	char *buffer;
+	char *read_buffer;
+	const char *write_buffer;
 	size_t size;
 	off_t offset;
 	struct parsedname pn;
+	enum owq_cleanup cleanup;
 	union value_object val;
 };
 
-#define OWQ_pn(owq)		((owq)->pn)
-#define OWQ_buffer(owq) ((owq)->buffer)
-#define OWQ_size(owq)   ((owq)->size)
-#define OWQ_offset(owq)	((owq)->offset)
-#define OWQ_val(owq)	((owq)->val)
-#define OWQ_array(owq)	(((owq)->val).array)
-#define PN(owq)         (&OWQ_pn(owq))
+#define OWQ_pn(owq)	      ((owq)->pn)
+#define OWQ_buffer(owq)       ((owq)->buffer)
+#define OWQ_read_buffer(owq)  ((owq)->read_buffer)
+#define OWQ_write_buffer(owq) ((owq)->write_buffer)
+#define OWQ_size(owq)         ((owq)->size)
+#define OWQ_offset(owq)	      ((owq)->offset)
+#define OWQ_cleanup(owq)      ((owq)->cleanup)
+#define OWQ_val(owq)	      ((owq)->val)
+#define OWQ_array(owq)	      (((owq)->val).array)
+#define PN(owq)               (&OWQ_pn(owq))
 
-#define OWQ_I(owq)      ((OWQ_val(owq)).I)
-#define OWQ_U(owq)      ((OWQ_val(owq)).U)
-#define OWQ_F(owq)      ((OWQ_val(owq)).F)
-#define OWQ_D(owq)      ((OWQ_val(owq)).D)
-#define OWQ_Y(owq)      ((OWQ_val(owq)).Y)
-#define OWQ_length(owq) ((OWQ_val(owq)).length)
+#define OWQ_I(owq)            ((OWQ_val(owq)).I)
+#define OWQ_U(owq)            ((OWQ_val(owq)).U)
+#define OWQ_F(owq)            ((OWQ_val(owq)).F)
+#define OWQ_D(owq)            ((OWQ_val(owq)).D)
+#define OWQ_Y(owq)            ((OWQ_val(owq)).Y)
+#define OWQ_length(owq)       ((OWQ_val(owq)).length)
 
-#define OWQ_array_I(owq,i)      ((OWQ_array(owq)[i]).I)
-#define OWQ_array_U(owq,i)      ((OWQ_array(owq)[i]).U)
-#define OWQ_array_F(owq,i)      ((OWQ_array(owq)[i]).F)
-#define OWQ_array_D(owq,i)      ((OWQ_array(owq)[i]).D)
-#define OWQ_array_Y(owq,i)      ((OWQ_array(owq)[i]).Y)
+#define OWQ_array_I(owq,i)    ((OWQ_array(owq)[i]).I)
+#define OWQ_array_U(owq,i)    ((OWQ_array(owq)[i]).U)
+#define OWQ_array_F(owq,i)    ((OWQ_array(owq)[i]).F)
+#define OWQ_array_D(owq,i)    ((OWQ_array(owq)[i]).D)
+#define OWQ_array_Y(owq,i)    ((OWQ_array(owq)[i]).Y)
 #define OWQ_array_length(owq,i) ((OWQ_array(owq)[i]).length)
 
 #define OWQ_explode(owq)	(BYTE *)OWQ_buffer(owq),OWQ_size(owq),OWQ_offset(owq),PN(owq)

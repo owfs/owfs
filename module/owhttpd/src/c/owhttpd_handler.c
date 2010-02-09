@@ -205,7 +205,7 @@ static enum http_return handle_POST(FILE * out, struct urlparse * up)
 					memcpy( OWQ_buffer(owq), MemblobData(&mb), MemblobLength(&mb) ) ;
 					OWQ_length(owq) = MemblobLength(&mb) ;
 					PostData(owq);
-					FS_OWQ_destroy_sibling(owq) ;
+					FS_OWQ_destroy(owq) ;
 					http_code = http_ok ;
 				} else {
 					LEVEL_DEBUG("Can't create %s",post_path);
