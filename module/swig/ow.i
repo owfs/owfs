@@ -68,16 +68,14 @@ static void getdircallback( void * v, const struct parsedname * const pn_entry )
   return length of string, or <0 for error
   *buffer will be returned as NULL on error
  */
-static void getdir( struct one_wire_query * owq ) {
-    struct charblob cb ;
+static void getdir( struct charblob * cb, struct one_wire_query * owq ) {
     
-    CharblobInit( &cb ) ;
-    if ( FS_dir( getdircallback, &cb, PN(owq) ) >= 0 ) {
-        OWQ_buffer(owq) = strdup( (CharblobLength(&cb) >0) ? CharblobData(&cb) : "") ;
-    } else {
-        OWQ_buffer(owq) = NULL ;
-    }
-    CharblobClear( &cb ) ;
+	CharblobInit( cb ) ;
+	if ( FS_dir( getdircallback, cb, PN(owq) ) != 0 ) {
+		CharblobClear( cb ) ;
+	} else if ( CharblobLength(cb) == 0 )
+		CharblobAddChar( '\0', cb) ;
+	}
 }
 
 /*
@@ -86,49 +84,61 @@ static void getdir( struct one_wire_query * owq ) {
   *buffer will be returned as NULL on error
  */
 static void getval( struct one_wire_query * owq ) {
-    ssize_t s = FullFileLength(PN(owq)) ; // fix from Matthias Urlichs
-    if ( s <= 0 ) {
-		return ;
-	}
-    if ( (OWQ_buffer(owq) = malloc(s+1))==NULL ) {
-		return ;
-	}
-    OWQ_size(owq) = s ;
-    if ( (s = FS_read_postparse( owq )) < 1 ) {
-        free(OWQ_buffer(owq)) ;
-        OWQ_buffer(owq) = NULL ;
-    } else {
-        OWQ_buffer(owq)[s] = '\0' ; // shorten to actual returned length
-    }
+	ssize_t read_size = FS_read_postparse( owq ) ;
+	
+	if ( read_size < 1 ) {
+		OWQ_length(owq) = 0 ;
+	} else {
+		OWQ_length(owq) = read_size ; 
+	}	
 }
 
+
 char * get( const char * path ) {
-    char * buf = NULL ;
+    char * return_buffer = NULL ;
 
     if ( API_access_start() == 0 ) {
-        OWQ_allocate_struct_and_pointer(owq);
+        struct one_wire_query * owq = NULL ;
     
         /* Check the parameters */
         if ( path==NULL ) {
-			path="/" ;
-		}
+		path="/" ;
+	}
     
         if ( strlen(path) > PATH_MAX ) {
-            // buf = NULL ;
-        } else if ( FS_OWQ_create( path, NULL, (size_t)0, (off_t)0, owq ) ) { /* Can we parse the input string */
-            // buf = NULL ;
-        } else {
+            // return_buffer = NULL ;
+        } else if ( (owq = FS_OWQ_create_read_path(path)) != NULL ) { /* Can we parse the input string */
             if ( IsDir( PN(owq) ) ) { /* A directory of some kind */
-                getdir( owq ) ;
+		size_t size ;
+		struct charblob cb ;
+                getdir( &cb, owq ) ;
+		size = CharblobLength(&cb) ;
+		if ( size > 0) {
+			return_buffer = malloc( size+1 ) ;
+			if ( return_buffer!= NULL ) {
+				return_buffer[size] = '\0' ;
+				memcpy( return_buffer, CharblobData(&cb), size ) ;
+			}
+			CharblobClear( &cb ) ;
+		}
+		
             } else { /* A regular file */
+		size_t size ;
                 getval( owq ) ;
+		size = OWQ_length(owq) ;
+		if ( size > 0) {
+			return_buffer = malloc( size+1 ) ;
+			if ( return_buffer!= NULL ) {
+				return_buffer[size] = '\0' ;
+				memcpy( return_buffer, OWQ_buffer(owq), size ) ;
+			}
+		}
             }
-            buf = OWQ_buffer(owq) ;
             FS_OWQ_destroy(owq) ;
         }
         API_access_end() ;
     }
-    return buf ;
+    return return_buffer ;
 }
 
 void finish( void ) {
