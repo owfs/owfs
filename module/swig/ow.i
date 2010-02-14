@@ -73,7 +73,7 @@ static void getdir( struct charblob * cb, struct one_wire_query * owq ) {
 	CharblobInit( cb ) ;
 	if ( FS_dir( getdircallback, cb, PN(owq) ) != 0 ) {
 		CharblobClear( cb ) ;
-	} else if ( CharblobLength(cb) == 0 )
+	} else if ( CharblobLength(cb) == 0 ) {
 		CharblobAddChar( '\0', cb) ;
 	}
 }
@@ -93,7 +93,6 @@ static void getval( struct one_wire_query * owq ) {
 	}	
 }
 
-
 char * get( const char * path ) {
     char * return_buffer = NULL ;
 
@@ -102,37 +101,36 @@ char * get( const char * path ) {
     
         /* Check the parameters */
         if ( path==NULL ) {
-		path="/" ;
-	}
+			path="/" ;
+		}
     
         if ( strlen(path) > PATH_MAX ) {
             // return_buffer = NULL ;
         } else if ( (owq = FS_OWQ_create_read_path(path)) != NULL ) { /* Can we parse the input string */
             if ( IsDir( PN(owq) ) ) { /* A directory of some kind */
-		size_t size ;
-		struct charblob cb ;
-                getdir( &cb, owq ) ;
-		size = CharblobLength(&cb) ;
-		if ( size > 0) {
-			return_buffer = malloc( size+1 ) ;
-			if ( return_buffer!= NULL ) {
-				return_buffer[size] = '\0' ;
-				memcpy( return_buffer, CharblobData(&cb), size ) ;
-			}
-			CharblobClear( &cb ) ;
-		}
-		
+				size_t size ;
+				struct charblob cb ;
+				getdir( &cb, owq ) ;
+				size = CharblobLength(&cb) ;
+				if ( size > 0) {
+					return_buffer = malloc( size+1 ) ;
+					if ( return_buffer!= NULL ) {
+						return_buffer[size] = '\0' ;
+						memcpy( return_buffer, CharblobData(&cb), size ) ;
+					}
+					CharblobClear( &cb ) ;
+				}		
             } else { /* A regular file */
-		size_t size ;
+				size_t size ;
                 getval( owq ) ;
-		size = OWQ_length(owq) ;
-		if ( size > 0) {
-			return_buffer = malloc( size+1 ) ;
-			if ( return_buffer!= NULL ) {
-				return_buffer[size] = '\0' ;
-				memcpy( return_buffer, OWQ_buffer(owq), size ) ;
-			}
-		}
+				size = OWQ_length(owq) ;
+				if ( size > 0) {
+					return_buffer = malloc( size+1 ) ;
+					if ( return_buffer != NULL ) {
+						return_buffer[size] = '\0' ;
+						memcpy( return_buffer, OWQ_buffer(owq), size ) ;
+					}
+				}
             }
             FS_OWQ_destroy(owq) ;
         }
