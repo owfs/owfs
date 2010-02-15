@@ -166,7 +166,7 @@ static enum http_return handle_GET(FILE * out, struct urlparse * up)
 		}
 		
 		// Create the owq to write to.
-		if (FS_OWQ_create_plus(up->file, up->request, up->value, strlen(up->value), 0, owq_write)) {
+		if (FS_OWQ_create_plus(up->file, up->request, up->value, strlen(up->value), 0, owq_write) != 0) { // for write
 			return http_404 ;
 		}
 		/* Execute the write */
@@ -199,7 +199,7 @@ static enum http_return handle_POST(FILE * out, struct urlparse * up)
 		if ( post_path ) {
 			struct memblob mb ;
 			if ( GetPostData( boundary, &mb, out ) == 0 ) {
-				struct one_wire_query * owq = FS_OWQ_create_from_path( post_path, MemblobLength(&mb) ) ;
+				struct one_wire_query * owq = FS_OWQ_create_from_path( post_path, MemblobLength(&mb) ) ; // for write
 				if ( owq ) {
 					LEVEL_DEBUG("File upload %s for %ld bytes\n",post_path,MemblobLength(&mb));
 					memcpy( OWQ_buffer(owq), MemblobData(&mb), MemblobLength(&mb) ) ;

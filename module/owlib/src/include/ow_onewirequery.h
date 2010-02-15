@@ -78,8 +78,6 @@ struct one_wire_query * FS_OWQ_create_from_path(const char *path, size_t size) ;
 struct one_wire_query * FS_OWQ_create_read_from_path(const char *path) ;
 
 struct one_wire_query *FS_OWQ_create_sibling(const char *sibling, struct one_wire_query *owq_original) ;
-void FS_OWQ_destroy_sibling(struct one_wire_query *owq) ;
-void FS_OWQ_destroy_not_pn(struct one_wire_query *owq) ;
 
 void OWQ_create_shallow_single(struct one_wire_query *owq_shallow, struct one_wire_query *owq_original);
 void OWQ_create_shallow_bitfield(struct one_wire_query *owq_shallow, struct one_wire_query *owq_original);

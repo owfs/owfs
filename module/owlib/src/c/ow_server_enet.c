@@ -320,7 +320,7 @@ static int Add_a_property(const char * tag, const char * property, const char * 
 	strcat(path,"/");
 	strcat(path,property) ;
 	
-	owq = FS_OWQ_create_from_path(path,enet_data_length) ;
+	owq = FS_OWQ_create_from_path(path,enet_data_length) ; // for write
 	//printf("Created OWQ for %s from %s",path,tag);
 	
 	if ( owq==NULL ) {
@@ -374,7 +374,7 @@ static int Add_a_property(const char * tag, const char * property, const char * 
 	} else {
 		ret = -EINVAL ;
 	}
-	FS_OWQ_destroy_sibling(owq) ;
+	FS_OWQ_destroy(owq) ;
 	return ret ;
 }
 

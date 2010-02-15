@@ -54,7 +54,7 @@ int FS_read(const char *path, char *buf, const size_t size, const off_t offset)
 
 	LEVEL_CALL("path=%s size=%d offset=%d", SAFESTRING(path), (int) size, (int) offset);
 	// Parseable path?
-	if (FS_OWQ_create(path, buf, size, offset, owq)) {
+	if (FS_OWQ_create(path, buf, size, offset, owq)) { // for read
 		return -ENOENT;
 	}
 

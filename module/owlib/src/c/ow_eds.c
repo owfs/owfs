@@ -52,7 +52,7 @@ WRITE_FUNCTION(FS_w_memory);
 READ_FUNCTION(FS_r_tag);
 READ_FUNCTION(FS_temperature);
 
-static enum e_visibility EDS_visible(struct parsedname * pn) ;
+static enum e_visibility EDS_visible(const struct parsedname * pn) ;
 
 
 #define _EDS_WRITE_SCRATCHPAD 0x0F
@@ -117,57 +117,42 @@ static int FS_r_tag(struct one_wire_query *owq)
 	size_t size = _EDS_PAGESIZE ;
 	BYTE data[_EDS_PAGESIZE] ;
 	struct parsedname * pn = PN(owq) ;
-	struct one_wire_query * owq_sib = FS_OWQ_from_pn( pn ) ;
-	int ret = -EINVAL ;
 	UINT tag = 0x0000 ;
 
-	if ( owq_sib==NULL ) {
-		return -ENOMEM ;
-	}
-
-	if (Cache_Get_Internal_Strict(&tag, sizeof(UINT), InternalProp(TAG), pn) == 0 ) {	// tag exists
+	if (Cache_Get_Internal_Strict(&tag, sizeof(UINT), InternalProp(TAG), pn) == 0 ) {
+		// Tag exists, find the name
 		int tag_type = N_eds_types ;
 		while ( --tag_type >= 0 ) {
 			if (  tag == EDS_types[tag_type].bit ) {
-				strncpy( (char *)data, EDS_types[tag_type].name, _EDS_TAG_LENGTH ) ;
-				ret = 0 ;
-				break ;
+				Fowq_output_offset_and_size( EDS_types[tag_type].name, _EDS_TAG_LENGTH, owq ) ;
+				return 0 ;
 			}
 		}
 	} else if ( FS_r_sibling_binary(data,&size,"pages/page.0",owq) == 0 	) { // read device memory
 		int tag_type = N_eds_types ;
-		ret = 0 ;
 		while ( --tag_type >= 0 ) {
 			if ( strncasecmp( (char *) data, EDS_types[tag_type].name, _EDS_TAG_LENGTH ) == 0 ) {
 				tag = EDS_types[tag_type].bit ;
 				break ;
 			}
 		}
+		Fowq_output_offset_and_size( data, _EDS_TAG_LENGTH, owq ) ;
 		Cache_Add_Internal(&tag, sizeof(UINT), InternalProp(TAG), pn) ;
+		return 0 ;
 	}
-	FS_OWQ_destroy_not_pn(owq_sib) ;
-	Fowq_output_offset_and_size_z( (char *) data, owq ) ;
-	return ret ;
+	return -EINVAL ;
 }
 
 static int FS_temperature(struct one_wire_query *owq)
 {
 	size_t size = _EDS_PAGESIZE ;
 	BYTE data[_EDS_PAGESIZE] ;
-	struct parsedname * pn = PN(owq) ;
-	struct one_wire_query * owq_sib = FS_OWQ_from_pn( pn ) ;
-	int ret = -EINVAL ;
-
-	if ( owq_sib==NULL ) {
-		return -ENOMEM ;
-	}
 
 	if ( FS_r_sibling_binary(data,&size,"pages/page.1",owq) == 0 	) { // read device memory
 		OWQ_F(owq) = ( (_FLOAT)UT_uint16(&data[2]) ) / 16. ;
-		ret = 0 ;
+		return -EINVAL ;
 	}
-	FS_OWQ_destroy_not_pn(owq_sib) ;
-	return ret ;
+	return 0 ;
 }
 
 static int FS_r_memory(struct one_wire_query *owq)
@@ -180,14 +165,14 @@ static int FS_r_memory(struct one_wire_query *owq)
 	return 0;
 }
 
-static enum e_visibility EDS_visible(struct parsedname * pn) {
+static enum e_visibility EDS_visible(const struct parsedname * pn) {
 	UINT tag ;
 	if (Cache_Get_Internal_Strict(&tag, sizeof(UINT), InternalProp(TAG), pn) != 0 ) {	// tag doesn't (yet) exist
-		struct one_wire_query * owq = FS_OWQ_from_pn( pn ) ;
+		struct one_wire_query * owq = FS_OWQ_from_pn( pn ) ; // for read
 		size_t size = _EDS_TAG_LENGTH ;
 		BYTE data[size] ;
 		FS_r_sibling_binary(data,&size,"tag",owq) ;
-		FS_OWQ_destroy_not_pn(owq) ;
+		FS_OWQ_destroy(owq) ;
 	}
 	if (Cache_Get_Internal_Strict(&tag, sizeof(UINT), InternalProp(TAG), pn) != 0 ) {	// tag doesn't (yet) exist
 		LEVEL_DEBUG("Cannot check visibility tag type for this entry");

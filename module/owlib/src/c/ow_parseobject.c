@@ -38,7 +38,6 @@ int FS_OWQ_create(const char *path, char *buffer, size_t size, off_t offset, str
 }
 
 /* Create the Parsename structure and create the buffer */
-/* Destroy with FS_OWQ_destroy_sibling */
 struct one_wire_query * FS_OWQ_create_from_path(const char *path, size_t size)
 {
 	struct one_wire_query * owq ;
@@ -53,15 +52,14 @@ struct one_wire_query * FS_OWQ_create_from_path(const char *path, size_t size)
 	}
 	pn = PN(owq) ; // for convenience
 	if ( FS_ParsedName( path, pn ) ) {
-		owfree(owq) ;
+		FS_OWQ_destroy(owq) ;
 		return NULL ;
 	}
 	OWQ_cleanup(owq) |= owq_cleanup_pn ;
 	if (pn->extension == EXTENSION_ALL && pn->type != ePN_structure) {
 		OWQ_array(owq) = owcalloc((size_t) pn->selected_filetype->ag->elements, sizeof(union value_object));
 		if (OWQ_array(owq) == NULL) {
-			FS_ParsedName_destroy(pn) ;
-			owfree(owq) ;
+			FS_OWQ_destroy(owq) ;
 			return NULL ;
 		}
 		OWQ_cleanup(owq) |= owq_cleanup_array ;
@@ -119,7 +117,6 @@ struct one_wire_query * FS_OWQ_create_read_from_path(const char *path)
 }
 
 /* Create the Parsename structure and load the relevant fields */
-/* Clean up with FS_OWQ_destroy_sibling */
 struct one_wire_query *FS_OWQ_create_sibling(const char *sibling, struct one_wire_query *owq_original)
 {
 	char path[PATH_MAX] ;
@@ -167,7 +164,6 @@ static int FS_OWQ_create_postparse(char *buffer, size_t size, off_t offset, cons
 }
 
 // Creates an owq from pn, making the buffer be filesize and part of the allocation
-// Destroy with FS_OWQ_destroy_not_pn
 struct one_wire_query *FS_OWQ_from_pn(const struct parsedname *pn)
 {
 	size_t size = FullFileLength(pn);
@@ -207,25 +203,6 @@ int FS_OWQ_create_plus(const char *path, const char *file, char *buffer, size_t 
 	return return_code ;
 }
 
-// Safe to pass a NULL
-void FS_OWQ_destroy_not_pn(struct one_wire_query *owq)
-{
-	struct parsedname *pn = PN(owq);
-
-	LEVEL_DEBUG("%s", pn->path);
-
-	if (pn->extension == EXTENSION_ALL && pn->type != ePN_structure) {
-		if (OWQ_array(owq)) {
-			owfree(OWQ_array(owq));
-			OWQ_array(owq) = NULL;
-		}
-	}
-//	if ( OWQ_buffer(owq) != NULL ) {
-//		owfree( OWQ_buffer(owq) ) ;
-//	}
-	owfree(owq) ;
-}
-
 void FS_OWQ_destroy(struct one_wire_query *owq)
 {
 	if ( owq == NULL) {
@@ -253,10 +230,4 @@ void FS_OWQ_destroy(struct one_wire_query *owq)
 	} else {
 		OWQ_cleanup(owq) = owq_cleanup_none ;
 	}
-}
-
-void FS_OWQ_destroy_sibling(struct one_wire_query *owq)
-{
-	FS_OWQ_destroy(owq) ;
-	owfree(owq) ;
 }

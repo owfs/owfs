@@ -38,7 +38,7 @@ static void ShowTextStructure(FILE * out, struct one_wire_query *owq);
 /* Device entry -- table line for a filetype */
 static void Show(FILE * out, const struct parsedname *pn_entry)
 {
-	struct one_wire_query *owq = FS_OWQ_from_pn(pn_entry);
+	struct one_wire_query *owq = FS_OWQ_from_pn(pn_entry); // for read or dir
 
 	/* Left column */
 	fprintf(out, "<TR><TD><B>%s</B></TD><TD>", FS_DirName(pn_entry));
@@ -203,7 +203,7 @@ static void ShowDirectory(FILE * out, const struct parsedname *pn_entry)
 /* Device entry -- table line for a filetype */
 static void ShowText(FILE * out, const struct parsedname *pn_entry)
 {
-	struct one_wire_query *owq = FS_OWQ_from_pn(pn_entry);
+	struct one_wire_query *owq = FS_OWQ_from_pn(pn_entry); // for read or dir
 
 	/* Left column */
 	fprintf(out, "%s ", FS_DirName(pn_entry));

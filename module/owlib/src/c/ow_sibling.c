@@ -54,7 +54,7 @@ int FS_r_sibling_F(_FLOAT *F, const char * sibling, struct one_wire_query *owq)
 	}
 	sib_status = FS_read_local(owq_sibling) ;
 	F[0] = OWQ_F(owq_sibling) ;
-	FS_OWQ_destroy_sibling(owq_sibling) ;
+	FS_OWQ_destroy(owq_sibling) ;
 	return sib_status?-EINVAL:0;
 }
 
@@ -68,7 +68,7 @@ int FS_w_sibling_F(_FLOAT F, const char * sibling, struct one_wire_query *owq)
 	}
 	OWQ_F(owq) = F ;
 	write_error = FS_write_local(owq_sibling) ;
-	FS_OWQ_destroy_sibling(owq_sibling) ;
+	FS_OWQ_destroy(owq_sibling) ;
 	return write_error ;
 }
 
@@ -83,7 +83,7 @@ int FS_r_sibling_D(_DATE *D, const char * sibling, struct one_wire_query *owq)
 	}
 	sib_status = FS_read_local(owq_sibling) ;
 	memcpy ( D, &OWQ_D(owq_sibling), sizeof( _DATE ) ) ;
-	FS_OWQ_destroy_sibling(owq_sibling) ;
+	FS_OWQ_destroy(owq_sibling) ;
 	return sib_status?-EINVAL:0;
 }
 
@@ -97,7 +97,7 @@ int FS_w_sibling_D(_DATE D, const char * sibling, struct one_wire_query *owq)
 	}
 	OWQ_D(owq_sibling) = D ;
 	write_error = FS_write_local(owq_sibling) ;
-	FS_OWQ_destroy_sibling(owq_sibling) ;
+	FS_OWQ_destroy(owq_sibling) ;
 	return write_error ;
 }
 
@@ -111,7 +111,7 @@ int FS_r_sibling_U(UINT *U, const char * sibling, struct one_wire_query *owq)
 	}
 	sib_status = FS_read_local(owq_sibling) ;
 	U[0] = OWQ_U(owq_sibling) ;
-	FS_OWQ_destroy_sibling(owq_sibling) ;
+	FS_OWQ_destroy(owq_sibling) ;
 	return sib_status?-EINVAL:0;
 }
 
@@ -132,7 +132,7 @@ int FS_r_sibling_binary(BYTE * data, size_t * size, const char * sibling, struct
 	} else {
 		sib_status = -ENOMEM ;
 	}
-	FS_OWQ_destroy_sibling(owq_sibling) ;
+	FS_OWQ_destroy(owq_sibling) ;
 	return sib_status?-EINVAL:0;
 }
 
@@ -146,7 +146,7 @@ int FS_w_sibling_U(UINT U, const char * sibling, struct one_wire_query *owq)
 	}
 	OWQ_U(owq) = U ;
 	write_error = FS_write_local(owq_sibling) ;
-	FS_OWQ_destroy_sibling(owq_sibling) ;
+	FS_OWQ_destroy(owq_sibling) ;
 	return write_error ;
 }
 
@@ -160,7 +160,7 @@ int FS_r_sibling_Y(INT *Y, const char * sibling, struct one_wire_query *owq)
 	}
 	sib_status = FS_read_local(owq_sibling) ;
 	Y[0] = OWQ_Y(owq_sibling) ;
-	FS_OWQ_destroy_sibling(owq_sibling) ;
+	FS_OWQ_destroy(owq_sibling) ;
 	return sib_status?-EINVAL:0;
 }
 
@@ -174,36 +174,33 @@ int FS_w_sibling_Y(INT Y, const char * sibling, struct one_wire_query *owq)
 	}
 	OWQ_Y(owq) = Y ;
 	write_error = FS_write_local(owq_sibling) ;
-	FS_OWQ_destroy_sibling(owq_sibling) ;
+	FS_OWQ_destroy(owq_sibling) ;
 	return write_error ;
 }
 
 int FS_w_sibling_bitwork(UINT set, UINT mask, const char * sibling, struct one_wire_query *owq)
 {
-	int write_error;
+	int write_error = -EINVAL ;
 	struct one_wire_query * owq_sibling  = FS_OWQ_create_sibling( sibling, owq ) ;
-	UINT bitfield ;
 
 	if ( owq_sibling == NULL ) {
 		return -EINVAL ;
 	}
-	if ( FS_read_local(owq_sibling) != 0 ) {
-		FS_OWQ_destroy_sibling(owq_sibling) ;
-		return -EINVAL ;
+	if ( FS_read_local(owq_sibling) == 0 ) {
+		UINT bitfield = OWQ_U(owq_sibling) ;
+
+		// clear mask:
+		bitfield &= ~mask ;
+
+		// set bits:
+		bitfield |= (set & mask) ;
+
+		OWQ_U(owq_sibling) = bitfield ;
+
+		write_error = FS_write_local(owq_sibling);
 	}
 
-	bitfield = OWQ_U(owq_sibling) ;
-
-	// clear mask:
-	bitfield &= ~mask ;
-
-	// set bits:
-	bitfield |= (set & mask) ;
-
-	OWQ_U(owq_sibling) = bitfield ;
-
-	write_error = FS_write_local(owq_sibling);
-	FS_OWQ_destroy_sibling(owq_sibling) ;
+	FS_OWQ_destroy(owq_sibling) ;
 	return write_error;
 }
 
@@ -216,5 +213,5 @@ void FS_del_sibling(const char * sibling, struct one_wire_query *owq)
 		return ;
 	}
 	Cache_Del(PN(owq_sibling)) ;
-	FS_OWQ_destroy_sibling(owq_sibling) ;
+	FS_OWQ_destroy(owq_sibling) ;
 }
