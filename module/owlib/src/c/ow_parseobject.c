@@ -209,23 +209,23 @@ void FS_OWQ_destroy(struct one_wire_query *owq)
 		return ;
 	}
 	
-	if ( OWQ_cleanup(owq) | owq_cleanup_buffer ) {
+	if ( OWQ_cleanup(owq) & owq_cleanup_buffer ) {
 		owfree(OWQ_buffer(owq)) ;
 	}
 	
-	if ( OWQ_cleanup(owq) | owq_cleanup_rbuffer ) {
+	if ( OWQ_cleanup(owq) & owq_cleanup_rbuffer ) {
 		owfree(OWQ_read_buffer(owq)) ;
 	}
 	
-	if ( OWQ_cleanup(owq) | owq_cleanup_array ) {
+	if ( OWQ_cleanup(owq) & owq_cleanup_array ) {
 		owfree(OWQ_array(owq)) ;
 	}
 	
-	if ( OWQ_cleanup(owq) | owq_cleanup_pn ) {
+	if ( OWQ_cleanup(owq) & owq_cleanup_pn ) {
 		FS_ParsedName_destroy(PN(owq)) ;
 	}
 
-	if ( OWQ_cleanup(owq) | owq_cleanup_owq ) {
+	if ( OWQ_cleanup(owq) & owq_cleanup_owq ) {
 		owfree(owq) ;
 	} else {
 		OWQ_cleanup(owq) = owq_cleanup_none ;
