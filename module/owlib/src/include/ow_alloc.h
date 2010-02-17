@@ -34,15 +34,7 @@ $Id$
 #ifndef OW_ALLOC_H			/* tedious wrapper */
 #define OW_ALLOC_H
 
-#ifndef OW_ALLOC_DEBUG
-	// Standard C library definitions
-	#define owmalloc(size)        malloc(size)
-	#define owcalloc(nmemb,size)  calloc(nmemb,size)
-	#define owfree(ptr)           free(ptr)
-	#define owfree_func           free
-	#define owrealloc(ptr,size)   realloc(ptr,size)
-	#define owstrdup(s)           strdup(s)
-#else  /* OW_ALLOC_DEBUG */
+#if OW_ALLOC_DEBUG
 	// Special wrapper functions to check memory allocation
 	#define owmalloc(size)        OWmalloc(__FILE__,__LINE__,__func__,size)
 	#define owcalloc(nmemb,size)  OWcalloc(__FILE__,__LINE__,__func__,nmemb,size)
@@ -56,6 +48,14 @@ $Id$
 	void  OWtreefree(void *ptr);
 	void *OWrealloc(const char * file, int line, const char * func, void *ptr, size_t size);
 	char *OWstrdup(const char * file, int line, const char * func, const char *s);
+#else  /* OW_ALLOC_DEBUG */
+	// Standard C library definitions
+	#define owmalloc(size)        malloc(size)
+	#define owcalloc(nmemb,size)  calloc(nmemb,size)
+	#define owfree(ptr)           free(ptr)
+	#define owfree_func           free
+	#define owrealloc(ptr,size)   realloc(ptr,size)
+	#define owstrdup(s)           strdup(s)
 #endif  /* OW_ALLOC_DEBUG */
 
 #endif							/* OW_ALLOC_H */
