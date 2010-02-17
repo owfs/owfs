@@ -362,8 +362,8 @@ AM_CONDITIONAL(ENABLE_W1, test "${ENABLE_W1}" = "true")
 # Check if the modules are enabled
 
 #Check owhttpd
-AC_MSG_CHECKING(if owhttpd is enabled)
 ENABLE_OWHTTPD="true"
+AC_MSG_CHECKING(if owhttpd is enabled)
 AC_ARG_ENABLE(owhttpd,
 [  --enable-owhttpd        Enable owhttpd module (default true)],
 [
@@ -382,8 +382,8 @@ AC_SUBST(ENABLE_OWHTTPD)
 AM_CONDITIONAL(ENABLE_OWHTTPD, test "${ENABLE_OWHTTPD}" = "true")
 
 #Check owftpd
-AC_MSG_CHECKING(if owftpd is enabled)
 ENABLE_OWFTPD="true"
+AC_MSG_CHECKING(if owftpd is enabled)
 AC_ARG_ENABLE(owftpd,
 [  --enable-owftpd         Enable owftpd module (default true)],
 [
@@ -431,8 +431,8 @@ AC_SUBST(ENABLE_OWSERVER)
 AM_CONDITIONAL(ENABLE_OWSERVER, test "${ENABLE_OWSERVER}" = "true")
 
 #Check ownet
-AC_MSG_CHECKING(if ownet is enabled)
 ENABLE_OWNET="true"
+AC_MSG_CHECKING(if ownet is enabled)
 AC_ARG_ENABLE(ownet,
 [  --enable-ownet          Enable ownet module (default true)],
 [
@@ -452,8 +452,8 @@ AM_CONDITIONAL(ENABLE_OWNET, test "${ENABLE_OWNET}" = "true")
 
 
 #Check owtap
-AC_MSG_CHECKING(if owtap is enabled)
 ENABLE_OWTAP="true"
+AC_MSG_CHECKING(if owtap is enabled)
 AC_ARG_ENABLE(owtap,
 [  --enable-owtap          Enable owtap module (default true)],
 [
@@ -467,6 +467,25 @@ AC_ARG_ENABLE(owtap,
 ])
 AC_SUBST(ENABLE_OWTAP)
 AM_CONDITIONAL(ENABLE_OWTAP, test "${ENABLE_OWTAP}" = "true")
+
+
+#Check owmalloc (special memory allocation routines)
+ENABLE_OWMALLOC="false"
+AC_MSG_CHECKING(if owmalloc is enabled)
+AC_ARG_ENABLE(owmalloc,
+[  --enable-owmalloc       Enable owmalloc checking (default false)],
+[
+	AC_MSG_RESULT([$enableval])
+	if test "$enableval" = "yes" ; then
+		ENABLE_OWMALLOC="true"
+	fi
+],
+[
+	AC_MSG_RESULT([no (default)])
+])
+AC_SUBST(ENABLE_OWMALLOC)
+AM_CONDITIONAL(ENABLE_OWMALLOC, test "${ENABLE_OWMALLOC}" = "true")
+
 
 #Check owside
 AC_MSG_CHECKING(if owside is enabled)
@@ -1568,6 +1587,13 @@ else
 fi
 AC_SUBST(OW_THERMOCOUPLE)
 
+if test "${ENABLE_OWMALLOC}" = "true" ; then
+	OW_ALLOC_DEBUG=1
+else
+	OW_ALLOC_DEBUG=0
+fi
+AC_SUBST(OW_ALLOC_DEBUG)
+
 # Checks for typedefs, structures, and compiler characteristics.
 
 AC_C_CONST
@@ -1758,6 +1784,11 @@ if test "${ENABLE_PROFILING}" = "true"; then
 	AC_MSG_RESULT([                Profiling is enabled])
 else
 	AC_MSG_RESULT([                Profiling is DISABLED])
+fi
+if test "${ENABLE_OWMALLOC}" = "true"; then
+	AC_MSG_RESULT([Tracing memory allocation is enabled])
+else
+	AC_MSG_RESULT([Tracing memory allocation is DISABLED])
 fi
 
 AC_MSG_RESULT()

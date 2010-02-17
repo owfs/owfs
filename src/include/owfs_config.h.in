@@ -59,6 +59,7 @@ $Id$
 #define OWFS_PATCHLEVEL "@VERSION_PATCHLEVEL@"
 
 #define OW_MT           @OW_MT@
+#define OW_ALLOC_DEBUG  @OW_ALLOC_DEBUG@
 #define OW_CACHE        @OW_CACHE@
 #define OW_USB          @OW_USB@
 #define OW_PARPORT      @OW_PARPORT@

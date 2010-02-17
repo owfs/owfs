@@ -184,6 +184,7 @@ struct one_wire_query *FS_OWQ_from_pn(const struct parsedname *pn)
 }
 
 /* Create the Parsename structure (using path and file) and load the relevant fields */
+/* Starts with a statically allocated owq space */
 int FS_OWQ_create_plus(const char *path, const char *file, char *buffer, size_t size, off_t offset, struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
@@ -193,6 +194,7 @@ int FS_OWQ_create_plus(const char *path, const char *file, char *buffer, size_t 
 
 	return_code = FS_ParsedNamePlus(path, file, pn) ;
 	if ( return_code == 0 ) {
+		OWQ_cleanup(owq) = owq_cleanup_none ;
 		return_code = FS_OWQ_create_postparse( buffer, size, offset, pn, owq ) ;
 		if ( return_code == 0 ) {
 			OWQ_cleanup(owq) |= owq_cleanup_pn ;
