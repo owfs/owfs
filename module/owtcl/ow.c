@@ -69,7 +69,7 @@ static OwtclStateType OwtclState;
 void owtcl_ErrorOWlib(Tcl_Interp * interp)
 {
 	/* Generate a posix like error message and code. */
-	Tcl_SetResult(interp, Tcl_ErrnoMsg(Tcl_GetErrno()), TCL_STATIC);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_ErrnoMsg(Tcl_GetErrno()),-1)); // -1 means a C-style string
 	Tcl_SetErrorCode(interp, "OWTCL", Tcl_ErrnoId(), Tcl_ErrnoMsg(Tcl_GetErrno()), NULL);
 }
 
@@ -97,13 +97,11 @@ void owtcl_Error(Tcl_Interp * interp, char *error_family, char *error_code, char
 #endif
 	{
 		/* Error within vasprintf/vsnprintf */
-		Tcl_SetResult(interp, Tcl_ErrnoMsg(Tcl_GetErrno()), TCL_STATIC); 
-		#warning Ignore compiler warning since Tcl_ErrnoMsg is treated TCL_STATIC
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_ErrnoMsg(Tcl_GetErrno()),-1)); // -1 means a C-style string
 		Tcl_PosixError(interp);
 	} else {
 		/* Generate a posix like error message and code. */
 		Tcl_SetResult(interp, buf, TCL_VOLATILE); 
-		#warning Ignore compiler warning since Tcl_ErrnoMsg is treated TCL_STATIC
 		Tcl_SetErrorCode(interp, error_family, error_code, NULL);
 	}
 
