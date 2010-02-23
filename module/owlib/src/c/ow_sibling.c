@@ -123,12 +123,17 @@ int FS_r_sibling_binary(BYTE * data, size_t * size, const char * sibling, struct
 	if ( owq_sibling == NULL ) {
 		return -EINVAL ;
 	}
-	OWQ_offset(owq_sibling) = 0 ;
-	sib_status = FS_read_local(owq_sibling) ;
-	if ( (sib_status == 0) && (OWQ_length(owq_sibling) <= size[0]) ) {
-		memset(data, 0, size[0] ) ;
-		size[0] = OWQ_length(owq_sibling) ;
-		memcpy( data, OWQ_buffer(owq_sibling), size[0] ) ;
+	
+	if ( FS_OWQ_allocate_read_buffer(owq_sibling) == 0 ) {
+		OWQ_offset(owq_sibling) = 0 ;
+		sib_status = FS_read_local(owq_sibling) ;
+		if ( (sib_status == 0) && (OWQ_length(owq_sibling) <= size[0]) ) {
+			memset(data, 0, size[0] ) ;
+			size[0] = OWQ_length(owq_sibling) ;
+			memcpy( data, OWQ_buffer(owq_sibling), size[0] ) ;
+		} else {
+			sib_status = -ENOMEM ;
+		}
 	} else {
 		sib_status = -ENOMEM ;
 	}

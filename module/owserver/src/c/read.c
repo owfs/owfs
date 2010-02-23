@@ -49,7 +49,7 @@ $Id$
 /* cm.ret is also set to an error <0 or the read length */
 void *ReadHandler(struct handlerdata *hd, struct client_msg *cm, struct one_wire_query *owq)
 {
-	char *retbuffer = NULL;
+	BYTE * retbuffer = NULL ;
 	ssize_t read_or_error;
 
 	LEVEL_DEBUG("ReadHandler start");
@@ -65,40 +65,32 @@ void *ReadHandler(struct handlerdata *hd, struct client_msg *cm, struct one_wire
 	} else if ((hd->sm.size <= 0) || (hd->sm.size > MAX_OWSERVER_PROTOCOL_PACKET_SIZE)) {
 		cm->ret = -EMSGSIZE;
 		LEVEL_DEBUG("ReadHandler: error hd->sm.size == %d", hd->sm.size);
-	} else if ((retbuffer = (char *) owmalloc((size_t) hd->sm.size + 1)) == NULL) {	// allocate return buffer
+	} else if ( FS_OWQ_allocate_read_buffer(owq) != 0) {	// allocate read buffer
 		LEVEL_DEBUG("ReadHandler: can't allocate memory");
 		cm->ret = -ENOBUFS;
 	} else {
 		struct parsedname *pn = PN(owq);
 		char *path = "";
 
-		if (Globals.error_level>=e_err_debug) { memset(retbuffer, 0,  hd->sm.size + 1); }  // keep valgrind happy
+		if ( OWQ_size(owq) > (size_t) hd->sm.size ) {
+			OWQ_size(owq) = hd->sm.size ;
+		}
+		OWQ_offset(owq) = hd->sm.offset ;
 
-		if (pn) {
-			if (pn->path) {
-				path = pn->path;
-			}
-			LEVEL_DEBUG("ReadHandler: call FS_read_postparse on %s", path);
-		} else {
-			LEVEL_DEBUG("ReadHandler: call FS_read_postparse pn==NULL");
+		if (pn->path) {
+			path = pn->path;
 		}
-		OWQ_buffer(owq) = retbuffer;
+		LEVEL_DEBUG("ReadHandler: call FS_read_postparse on %s", path);
 		read_or_error = FS_read_postparse(owq);
-		if (pn) {
-			if (pn->path) {
-				path = pn->path;
-			}
-			LEVEL_DEBUG("ReadHandler: FS_read_postparse read on %s return = %d", path, read_or_error);
-		} else {
-			LEVEL_DEBUG("ReadHandler: FS_read_postparse pn==NULL return = %d", read_or_error);
+		if (pn->path) {
+			path = pn->path;
 		}
+		LEVEL_DEBUG("ReadHandler: FS_read_postparse read on %s return = %d", path, read_or_error);
 
 		Debug_OWQ(owq);
 
 		if (read_or_error <= 0) {
 			LEVEL_DEBUG("ReadHandler: FS_read_postparse error %d", read_or_error);
-			owfree(retbuffer);
-			retbuffer = NULL;
 			cm->ret = read_or_error;
 		} else {
 			LEVEL_DEBUG("ReadHandler: FS_read_postparse ok size=%d", read_or_error);
@@ -107,12 +99,15 @@ void *ReadHandler(struct handlerdata *hd, struct client_msg *cm, struct one_wire
 			cm->offset = hd->sm.offset;
 			cm->size = read_or_error;
 			cm->ret = read_or_error;
-			retbuffer[cm->size] = '\0';	// end with null for debug output
+			retbuffer = owmalloc( cm->size ) ;
+			if ( retbuffer != NULL ) {
+				memcpy( retbuffer, OWQ_buffer(owq), cm->size ) ;
+			}
 		}
 	}
 	LEVEL_DEBUG("ReadHandler: To Client cm->payload=%d cm->size=%d cm->offset=%d", cm->payload, cm->size, cm->offset);
-	if ((cm->size > 0) && retbuffer) {
-		Debug_Bytes("Data returned to client",(BYTE *) retbuffer,cm->size) ;
+	if ((cm->size > 0)) {
+		Debug_Bytes("Data returned to client",(BYTE *) OWQ_buffer(owq),cm->size) ;
 	}
 	return retbuffer;
 }

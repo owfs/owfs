@@ -919,7 +919,6 @@ static void do_retr(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 	size_t size_write;
 	int returned_length;
 	off_t offset = 0;
-	int need_owq_destroy = 1;
 
 	daemon_assert(invariant(f));
 	daemon_assert(cmd != NULL);
@@ -934,13 +933,13 @@ static void do_retr(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 
 	/* if the last command was a REST command, restart at the */
 	/* requested position in the file                         */
-	if ((f->file_offset_command_number == (f->command_number - 1)))
+	if ((f->file_offset_command_number == (f->command_number - 1))) {
 		offset = f->file_offset;
+	}
 
 	/* Can we parse the name? */
-	if (FS_OWQ_create_plus(f->dir, file_name, NULL, 0, offset, &owq)) {
+	if (FS_OWQ_create_plus(f->dir, file_name, &owq)) {
 		reply(f, 550, "File does not exist.");
-		need_owq_destroy = 0;
 		goto exit_retr;
 	}
 
@@ -960,12 +959,11 @@ static void do_retr(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 		goto exit_retr;
 	}
 
-	OWQ_size(&owq) = FullFileLength(PN(&owq));
-	OWQ_buffer(&owq) = malloc(OWQ_size(&owq) - offset);
-	if (OWQ_buffer(&owq) == NULL) {
+	if (FS_OWQ_allocate_read_buffer(&owq) != 0 ) {
 		reply(f, 550, "Error, file too large.");
 		goto exit_retr;
 	}
+	OWQ_offset(&owq) = offset ;
 
 	returned_length = FS_read_postparse(&owq);
 	if (returned_length < 0) {
@@ -1035,12 +1033,10 @@ static void do_retr(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 			   f->client_addr_str, OWQ_pn(&owq).path, size_write, transfer_time.tv_sec, transfer_time.tv_usec);
 
   exit_retr:
-	if (OWQ_buffer(&owq))
-		free(OWQ_buffer(&owq));
-	if (buf2)
+	FS_OWQ_destroy(&owq); // safe at any speed
+	if (buf2) {
 		free(buf2);
-	if (need_owq_destroy)
-		FS_OWQ_destroy(&owq);
+	}
 	f->file_offset = 0;
 	if (socket_fd != -1) {
 		close(socket_fd);
@@ -1062,7 +1058,7 @@ static void do_stor(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 	struct timeval limit_time = { Globals.timeout_ftp, 0 };
 
 	size_t size_read;
-	int need_pn_destroy = 1;
+	char * data_in ;
 	struct parsedname *pn;
 	OWQ_allocate_struct_and_pointer(owq);
 
@@ -1077,9 +1073,8 @@ static void do_stor(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 	socket_fd = -1;
 
 	/* create an absolute name for our file */
-	if (FS_OWQ_create_plus(f->dir, cmd->arg[0].string, NULL, 0, 0, owq)) {
+	if (FS_OWQ_create_plus(f->dir, cmd->arg[0].string, owq)) {
 		reply(f, 550, "File does not exist.");
-		need_pn_destroy = 0;
 		goto exit_stor;
 	}
 
@@ -1103,13 +1098,6 @@ static void do_stor(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 		reply(f, 550, "Error, binary file (type ascii).");
 		goto exit_stor;
 	}
-	size_read = FullFileLength(PN(owq)) - OWQ_offset(owq) + 100;
-	OWQ_buffer(owq) = malloc(size_read);
-
-	if (OWQ_buffer(owq) == NULL) {
-		reply(f, 550, "Out of memory.");
-		goto exit_stor;
-	}
 
 	/* ready to transfer */
 	reply(f, 150, "About to open data connection.");
@@ -1119,18 +1107,29 @@ static void do_stor(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 
 	/* open data path */
 	socket_fd = open_connection(f);
-	if (socket_fd == -1)
+	if (socket_fd == -1) {
 		goto exit_stor;
+	}
 
-	{
+	size_read = FullFileLength(PN(owq)) - OWQ_offset(owq) + 100;
+	data_in = owmalloc(size_read);
+	if (data_in == NULL) {
+		reply(f, 550, "Out of memory.");
+		goto exit_stor;
+	} else {
 		/* we're golden, read the file */
 		size_t size_actual ;
-		int read_return = tcp_read(socket_fd, OWQ_buffer(owq), size_read, &limit_time, &size_actual) ;
+		int read_return = tcp_read(socket_fd, data_in, size_read, &limit_time, &size_actual) ;
 		if (read_return != 0 && read_return != -EAGAIN) {
 			reply(f, 550, "Error reading from data connection; %s.", strerror(errno));
 			goto exit_stor;
 		}
-		OWQ_size(owq) = size_actual;
+		if ( FS_OWQ_allocate_write_buffer( data_in, size_actual, owq ) != 0 ) {
+			owfree(data_in) ;
+			reply(f, 550, "Out of memory.");
+			goto exit_stor;
+		}
+		owfree(data_in) ;
 	}
 
 	watchdog_defer_watched(f->watched);
@@ -1159,9 +1158,9 @@ static void do_stor(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 
 	{
 		/* write to one-wire */
-		int tcp_error = FS_write_postparse(owq);
-		if (tcp_error < 0) {
-			reply(f, 550, "Error writing to file; %s.", strerror(-tcp_error));
+		int one_wire_error = FS_write_postparse(owq);
+		if (one_wire_error < 0) {
+			reply(f, 550, "Error writing to file; %s.", strerror(-one_wire_error));
 			goto exit_stor;
 		}
 	}
@@ -1171,10 +1170,7 @@ static void do_stor(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 			   f->client_addr_str, pn->path, OWQ_size(owq), transfer_time.tv_sec, transfer_time.tv_usec);
 
   exit_stor:
-	if (OWQ_buffer(owq))
-		free(OWQ_buffer(owq));
-	if (need_pn_destroy)
-		FS_OWQ_destroy(owq);
+	FS_OWQ_destroy(owq);
 	f->file_offset = 0;
 	if (socket_fd != -1) {
 		close(socket_fd);

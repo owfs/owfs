@@ -107,7 +107,7 @@ void *DataHandler(void *v)
 
 			/* Parse the path string and crete  query object */
 			LEVEL_CALL("DataHandler: parse path=%s", hd->sp.path);
-			cm.ret = FS_OWQ_create(hd->sp.path, NULL, hd->sm.size, hd->sm.offset, owq) ;
+			cm.ret = FS_OWQ_create(hd->sp.path, owq) ;
 			if ( cm.ret != 0 ) {
 				LEVEL_DEBUG("DataHandler: FS_OWQ_create failed cm.ret=%d", cm.ret);
 				break;
@@ -140,7 +140,7 @@ void *DataHandler(void *v)
 					cm.ret = -EMSGSIZE;
 				} else {
 					/* set buffer (size already set) */
-					OWQ_buffer(owq) = (ASCII *) hd->sp.data;
+					FS_OWQ_assign_write_buffer( (ASCII *) hd->sp.data, hd->sm.size, hd->sm.offset, owq) ;
 					WriteHandler(hd, &cm, owq);
 				}
 				break;

@@ -73,7 +73,13 @@ static void Show(FILE * out, const struct parsedname *pn_entry)
 static void ShowReadWrite(FILE * out, struct one_wire_query *owq)
 {
 	const char *file = FS_DirName(PN(owq));
-	int read_return = FS_read_postparse(owq);
+	int read_return ;
+	
+	if ( FS_OWQ_allocate_read_buffer(owq) != 0 ) {
+		return ;
+	}
+	
+	read_return = FS_read_postparse(owq);
 	if (read_return < 0) {
 		fprintf(out, "Error: %s", strerror(-read_return));
 		return;
@@ -118,7 +124,13 @@ static void Upload( FILE * out, const struct parsedname * pn )
 /* Device entry -- table line for a filetype */
 static void ShowReadonly(FILE * out, struct one_wire_query *owq)
 {
-	int read_return = FS_read_postparse(owq);
+	int read_return ;
+
+	if ( FS_OWQ_allocate_read_buffer(owq) != 0 ) {
+		return ;
+	}
+
+	read_return = FS_read_postparse(owq);
 	if (read_return < 0) {
 		fprintf(out, "Error: %s", strerror(-read_return));
 		return;
@@ -247,7 +259,13 @@ static void ShowTextStructure(FILE * out, struct one_wire_query *owq)
 /* Device entry -- table line for a filetype */
 static void ShowTextReadWrite(FILE * out, struct one_wire_query *owq)
 {
-	int read_return = FS_read_postparse(owq);
+	int read_return ;
+	
+	if ( FS_OWQ_allocate_read_buffer(owq) != 0 ) {
+		return ;
+	}
+	
+	read_return = FS_read_postparse(owq);
 	if (read_return < 0) {
 		//fprintf(out, "error: %s", strerror(-read_return));
 		return;

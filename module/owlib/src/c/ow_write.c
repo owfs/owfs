@@ -69,10 +69,10 @@ int FS_write(const char *path, const char *buf, const size_t size, const off_t o
 	LEVEL_CALL("path=%s size=%d offset=%d", SAFESTRING(path), (int) size, (int) offset);
 
 	// parsable path?
-	if (FS_OWQ_create(path, buf, size, offset, owq)) { // for write
+	if (FS_OWQ_create(path, owq)) { // for write
 		return -ENOENT;
 	}
-
+	FS_OWQ_assign_write_buffer(buf, size, offset, owq) ;
 	write_return = FS_write_postparse(owq);
 	FS_OWQ_destroy(owq);
 	return write_return;		/* here's where the size is used! */

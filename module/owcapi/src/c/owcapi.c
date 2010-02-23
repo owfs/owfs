@@ -155,25 +155,10 @@ static ssize_t getdir(struct one_wire_query *owq)
  */
 static ssize_t getval(struct one_wire_query *owq)
 {
-	ssize_t ret;
-	ssize_t s = FullFileLength(PN(owq));
-	if (s <= 0) {
-		return -ENOENT;
-	}
-	if ((OWQ_buffer(owq) = owmalloc(s + 1)) == NULL) {
+	if ( FS_OWQ_allocate_read_buffer(owq) != 0 ) {
 		return -ENOMEM;
 	}
-	OWQ_size(owq) = s;
-	ret = FS_read_postparse(owq);
-	if (ret < 0) {
-		owfree(OWQ_buffer(owq));
-		OWQ_buffer(owq) = NULL;
-		OWQ_size(owq) = 0;
-	} else {
-		OWQ_size(owq) = ret;
-		OWQ_buffer(owq)[ret] = '\0';
-	}
-	return ret;
+	return FS_read_postparse(owq);
 }
 
 ssize_t OW_get(const char *path, char **buffer, size_t * buffer_length)
@@ -196,7 +181,7 @@ ssize_t OW_get(const char *path, char **buffer, size_t * buffer_length)
 	}
 
 	if (API_access_start() == 0) {	/* Check for prior init */
-		if (FS_OWQ_create(path, NULL, 0, 0, &owq)) {	/* Can we parse the input string */
+		if (FS_OWQ_create(path, &owq)) {	/* Can we parse the input string */
 			ret = -ENOENT;
 		} else {
 			// the buffer is allocated by getdir or getval
@@ -220,18 +205,14 @@ ssize_t OW_get(const char *path, char **buffer, size_t * buffer_length)
 
 int OW_present(const char *path)
 {
-	struct one_wire_query owq;
 	ssize_t ret = -ENOENT;		/* current buffer string length */
 
-	if (path == NULL) {
-		path = "/";
-	}
-
 	if (API_access_start() == 0) {	/* Check for prior init */
-		if (FS_OWQ_create(path, NULL, 0, 0, &owq)) {	/* Can we parse the input string */
+		struct parsedname s_pn ;
+		if (FS_ParsedName(path, &s_pn) != 0) {	/* Can we parse the path string */
 			ret = -ENOENT;
 		} else {
-			FS_OWQ_destroy(&owq);
+			FS_ParsedName_destroy(&s_pn);
 		}
 		API_access_end();
 	}

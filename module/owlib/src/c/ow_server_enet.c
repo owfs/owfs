@@ -320,7 +320,7 @@ static int Add_a_property(const char * tag, const char * property, const char * 
 	strcat(path,"/");
 	strcat(path,property) ;
 	
-	owq = FS_OWQ_create_from_path(path,enet_data_length) ; // for write
+	owq = FS_OWQ_create_from_path(path) ; // for write
 	//printf("Created OWQ for %s from %s",path,tag);
 	
 	if ( owq==NULL ) {
@@ -334,10 +334,9 @@ static int Add_a_property(const char * tag, const char * property, const char * 
 	case ft_binary:
 	{
 		char * data = xml_string(tag,&buffer_pointer) ;
-		if ( data != NULL ) {
-			strncpy(OWQ_buffer(owq),data,enet_data_length);
-			OWQ_length(owq) = strlen(data) ;
-		} else {
+		if ( data == NULL ) {
+			ret = -EINVAL ;
+		} else if ( FS_OWQ_allocate_write_buffer(data,enet_data_length,owq) != 0 ) {
 			ret = -EINVAL ;
 		}
 		LEVEL_DEBUG("%s given value <%s> from tag %s",path,data,tag) ;
