@@ -77,7 +77,7 @@ int FS_OWQ_create_plus(const char *path, const char *file, struct one_wire_query
 void FS_OWQ_destroy(struct one_wire_query *owq);
 
 struct one_wire_query * FS_OWQ_create_from_path(const char *path) ;
-struct one_wire_query * FS_OWQ_create_read_from_path(const char *path) ;
+struct one_wire_query *FS_OWQ_create_sibling(const char *sibling, struct one_wire_query *owq_original) ;
 
 int FS_OWQ_allocate_read_buffer(struct one_wire_query * owq ) ;
 int FS_OWQ_allocate_write_buffer( const char * write_buffer, size_t buffer_length, struct one_wire_query * owq ) ;
@@ -85,7 +85,6 @@ int FS_OWQ_allocate_write_buffer( const char * write_buffer, size_t buffer_lengt
 void FS_OWQ_assign_read_buffer(char *buffer, size_t size, off_t offset, struct one_wire_query *owq) ;
 void FS_OWQ_assign_write_buffer(const char *buffer, size_t size, off_t offset, struct one_wire_query *owq) ;
 
-struct one_wire_query *FS_OWQ_create_sibling(const char *sibling, struct one_wire_query *owq_original) ;
 
 void OWQ_create_shallow_single(struct one_wire_query *owq_shallow, struct one_wire_query *owq_original);
 void OWQ_create_shallow_bitfield(struct one_wire_query *owq_shallow, struct one_wire_query *owq_original);
@@ -95,8 +94,6 @@ void OWQ_create_temporary(struct one_wire_query *owq_temporary, char *buffer, si
 
 int Fowq_output_offset_and_size(const char *string, size_t length, struct one_wire_query *owq);
 int Fowq_output_offset_and_size_z(const char *string, struct one_wire_query *owq);
-
-struct one_wire_query *FS_OWQ_from_pn(const struct parsedname *pn);
 
 int FS_input_owq(struct one_wire_query *owq);
 int FS_output_owq(struct one_wire_query *owq);

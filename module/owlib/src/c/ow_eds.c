@@ -168,11 +168,13 @@ static int FS_r_memory(struct one_wire_query *owq)
 static enum e_visibility EDS_visible(const struct parsedname * pn) {
 	UINT tag ;
 	if (Cache_Get_Internal_Strict(&tag, sizeof(UINT), InternalProp(TAG), pn) != 0 ) {	// tag doesn't (yet) exist
-		struct one_wire_query * owq = FS_OWQ_from_pn( pn ) ; // for read
+		struct one_wire_query * owq = FS_OWQ_create_from_path(pn->path) ; // for read
 		size_t size = _EDS_TAG_LENGTH ;
 		BYTE data[size] ;
-		FS_r_sibling_binary(data,&size,"tag",owq) ;
-		FS_OWQ_destroy(owq) ;
+		if ( owq != NULL) {
+			FS_r_sibling_binary(data,&size,"tag",owq) ;
+			FS_OWQ_destroy(owq) ;
+		}
 	}
 	if (Cache_Get_Internal_Strict(&tag, sizeof(UINT), InternalProp(TAG), pn) != 0 ) {	// tag doesn't (yet) exist
 		LEVEL_DEBUG("Cannot check visibility tag type for this entry");

@@ -63,12 +63,6 @@ struct one_wire_query *FS_OWQ_create_sibling(const char *sibling, struct one_wir
 }
 
 
-// Creates an owq from pn, making the buffer be filesize and part of the allocation
-struct one_wire_query *FS_OWQ_from_pn(const struct parsedname *pn)
-{
-	return FS_OWQ_create_from_path(pn->path) ;
-}
-
 /* Create the Parsename structure and load the relevant fields */
 int FS_OWQ_create(const char *path, struct one_wire_query *owq)
 {
@@ -135,12 +129,6 @@ static int FS_OWQ_allocate_array( struct one_wire_query * owq )
 		OWQ_I(owq) = 0;
 	}
 	return 0 ;
-}
-
-/* Create the Parsename structure and create the buffer */
-struct one_wire_query * FS_OWQ_create_read_from_path(const char *path)
-{
-	return FS_OWQ_create_from_path(path) ;
 }
 
 void FS_OWQ_assign_read_buffer(char *buffer, size_t size, off_t offset, struct one_wire_query *owq)
