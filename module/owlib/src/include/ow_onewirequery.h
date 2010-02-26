@@ -69,7 +69,9 @@ struct one_wire_query {
 
 //#define OWQ_allocate_struct_and_pointer( owq_name )	struct one_wire_query struct_##owq_name ; struct one_wire_query * owq_name = & struct_##owq_name
 // perhaps it would be nice to clear the memory try trace errors. OWQ_allocate_struct_and_pointer() needs to be defined as the last local variable now...
-#define OWQ_allocate_struct_and_pointer( owq_name )	struct one_wire_query struct_##owq_name ; struct one_wire_query * owq_name = & struct_##owq_name; if (Globals.error_level>=e_err_debug) { memset(&struct_##owq_name, 0, sizeof(struct one_wire_query)); }
+
+// "owq_name->cleanup = owq_cleanup_none" is needed at least... but why not clear the whole struct just to make sure it never happens again.
+#define OWQ_allocate_struct_and_pointer( owq_name )	struct one_wire_query struct_##owq_name ; struct one_wire_query * owq_name = & struct_##owq_name; memset(&struct_##owq_name, 0, sizeof(struct one_wire_query));
 
 int FS_OWQ_create(const char *path, struct one_wire_query *owq);
 int FS_OWQ_create_plus(const char *path, const char *file, struct one_wire_query *owq);
