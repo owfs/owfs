@@ -31,13 +31,8 @@ struct one_wire_query * FS_OWQ_create_from_path(const char *path)
 		return NULL ;
 	}
 	
+	memset(owq, 0, sizeof(struct one_wire_query));
 	OWQ_cleanup(owq) = owq_cleanup_owq ;
-	OWQ_buffer(owq) = NULL ;
-	OWQ_read_buffer(owq) = NULL ;
-	OWQ_write_buffer(owq) = NULL ;
-	OWQ_size(owq) = 0 ;
-	OWQ_offset(owq) = 0 ;
-	OWQ_I(owq) = 0 ;
 	
 	if ( FS_OWQ_parsename(path,owq) == 0 ) {
 		if ( FS_OWQ_allocate_array(owq) == 0 ) {
