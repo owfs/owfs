@@ -52,6 +52,6 @@ int FS_code(struct one_wire_query *owq)
 	ASCII code[2];
 	struct parsedname *pn = PN(owq);
 	num2string(code, pn->sn[0]);
-	return Fowq_output_offset_and_size(code, 2, owq);
+	return OWQ_parse_output_offset_and_size(code, 2, owq);
 }
 

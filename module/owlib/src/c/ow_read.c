@@ -54,12 +54,12 @@ int FS_read(const char *path, char *buf, const size_t size, const off_t offset)
 
 	LEVEL_CALL("path=%s size=%d offset=%d", SAFESTRING(path), (int) size, (int) offset);
 	// Parseable path?
-	if (FS_OWQ_create(path, owq)) { // for read
+	if ( OWQ_create(path, owq) != 0 ) { // for read
 		return -ENOENT;
 	}
-	FS_OWQ_assign_read_buffer( buf, size, offset, owq) ;
+	OWQ_assign_read_buffer( buf, size, offset, owq) ;
 	read_or_error = FS_read_postparse(owq);
-	FS_OWQ_destroy(owq);
+	OWQ_destroy(owq);
 
 	return read_or_error;
 }
@@ -247,7 +247,7 @@ static int FS_r_given_bus(struct one_wire_query *owq)
 			LEVEL_DEBUG("FS_r_local return=%d", read_status);
 			if (read_status >= 0) {
 				// local success -- now format in buffer
-				read_status = FS_output_owq(owq);	// this returns nr. bytes
+				read_status = OWQ_parse_output(owq);	// this returns nr. bytes
 			}
 		} else {
 			LEVEL_DEBUG("Cannot lock bus to perform read") ;
@@ -300,7 +300,7 @@ static int FS_r_virtual(struct one_wire_query *owq)
 		}
 		if (read_status >= 0) {
 			// local success -- now format in buffer
-			read_status = FS_output_owq(owq);	// this returns nr. bytes
+			read_status = OWQ_parse_output(owq);	// this returns nr. bytes
 		}
 	}
 	LEVEL_DEBUG("return %d", read_status);
@@ -364,7 +364,7 @@ static void adjust_file_size(struct one_wire_query *owq)
 
     /* next adjust for offset */
     if ((unsigned long) OWQ_offset(owq) >= (unsigned long) file_length) {
-        // This check is done in FS_output_owq() too, since it's always called when this function
+        // This check is done in OWQ_parse_output() too, since it's always called when this function
         OWQ_size(owq) = 0 ;           // this is status ok... but 0 bytes were read...
     } else if ( OWQ_size(owq) + OWQ_offset(owq) > file_length ) {
         // Finally adjust buffer length
@@ -647,7 +647,7 @@ static int FS_read_a_part(struct one_wire_query *owq)
 			for (extension_index = 0; extension_index < extension; ++extension_index) {
 				prior_length += OWQ_array_length(owq_all, extension_index);
 			}
-			return_status = Fowq_output_offset_and_size(&OWQ_buffer(owq_all)[prior_length], OWQ_array_length(owq_all, extension), owq);
+			return_status = OWQ_parse_output_offset_and_size(&OWQ_buffer(owq_all)[prior_length], OWQ_array_length(owq_all, extension), owq);
 			if (return_status < 0) {
 				OWQ_destroy_shallow_aggregate(owq_all);
 				return return_status;
@@ -691,7 +691,7 @@ static int FS_read_mixed_part(struct one_wire_query *owq)
 			for (extension_index = 0; extension_index < extension; ++extension_index) {
 				prior_length += OWQ_array_length(owq_all, extension_index);
 			}
-			return_status = Fowq_output_offset_and_size(&OWQ_buffer(owq_all)[prior_length], OWQ_array_length(owq_all, extension), owq);
+			return_status = OWQ_parse_output_offset_and_size(&OWQ_buffer(owq_all)[prior_length], OWQ_array_length(owq_all, extension), owq);
 			if (return_status < 0) {
 				OWQ_destroy_shallow_aggregate(owq_all);
 				return return_status;

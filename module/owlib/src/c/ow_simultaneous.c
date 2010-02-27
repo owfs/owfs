@@ -294,7 +294,7 @@ static int FS_r_single(struct one_wire_query *owq)
 			break ;
 
 	}
-	Fowq_output_offset_and_size_z(ad, owq);
+	OWQ_parse_output_offset_and_size_z(ad, owq);
 	return 0;
 }
 

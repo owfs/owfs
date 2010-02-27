@@ -101,7 +101,7 @@ static int FS_pidfile(struct one_wire_query *owq)
 	if (pid_file) {
 		name = pid_file;
 	}
-	Fowq_output_offset_and_size_z(name, owq);
+	OWQ_parse_output_offset_and_size_z(name, owq);
 	return 0;
 }
 

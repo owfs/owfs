@@ -38,7 +38,7 @@ static void ShowTextStructure(FILE * out, struct one_wire_query *owq);
 /* Device entry -- table line for a filetype */
 static void Show(FILE * out, const struct parsedname *pn_entry)
 {
-	struct one_wire_query *owq = FS_OWQ_create_from_path(pn_entry->path); // for read or dir
+	struct one_wire_query *owq = OWQ_create_from_path(pn_entry->path); // for read or dir
 
 	/* Left column */
 	fprintf(out, "<TR><TD><B>%s</B></TD><TD>", FS_DirName(pn_entry));
@@ -65,7 +65,7 @@ static void Show(FILE * out, const struct parsedname *pn_entry)
 		}
 	}
 	fprintf(out, "</TD></TR>\r\n");
-	FS_OWQ_destroy(owq);
+	OWQ_destroy(owq);
 }
 
 
@@ -75,7 +75,7 @@ static void ShowReadWrite(FILE * out, struct one_wire_query *owq)
 	const char *file = FS_DirName(PN(owq));
 	int read_return ;
 	
-	if ( FS_OWQ_allocate_read_buffer(owq) != 0 ) {
+	if ( OWQ_allocate_read_buffer(owq) != 0 ) {
 		return ;
 	}
 	
@@ -126,7 +126,7 @@ static void ShowReadonly(FILE * out, struct one_wire_query *owq)
 {
 	int read_return ;
 
-	if ( FS_OWQ_allocate_read_buffer(owq) != 0 ) {
+	if ( OWQ_allocate_read_buffer(owq) != 0 ) {
 		return ;
 	}
 
@@ -215,7 +215,7 @@ static void ShowDirectory(FILE * out, const struct parsedname *pn_entry)
 /* Device entry -- table line for a filetype */
 static void ShowText(FILE * out, const struct parsedname *pn_entry)
 {
-	struct one_wire_query *owq = FS_OWQ_create_from_path(pn_entry->path); // for read or dir
+	struct one_wire_query *owq = OWQ_create_from_path(pn_entry->path); // for read or dir
 
 	/* Left column */
 	fprintf(out, "%s ", FS_DirName(pn_entry));
@@ -241,7 +241,7 @@ static void ShowText(FILE * out, const struct parsedname *pn_entry)
 		}
 	}
 	fprintf(out, "\r\n");
-	FS_OWQ_destroy(owq);
+	OWQ_destroy(owq);
 }
 
 /* Device entry -- table line for a filetype */
@@ -261,7 +261,7 @@ static void ShowTextReadWrite(FILE * out, struct one_wire_query *owq)
 {
 	int read_return ;
 	
-	if ( FS_OWQ_allocate_read_buffer(owq) != 0 ) {
+	if ( OWQ_allocate_read_buffer(owq) != 0 ) {
 		return ;
 	}
 	

@@ -69,12 +69,12 @@ int FS_write(const char *path, const char *buf, const size_t size, const off_t o
 	LEVEL_CALL("path=%s size=%d offset=%d", SAFESTRING(path), (int) size, (int) offset);
 
 	// parsable path?
-	if (FS_OWQ_create(path, owq)) { // for write
+	if ( OWQ_create(path, owq) != 0 ) { // for write
 		return -ENOENT;
 	}
-	FS_OWQ_assign_write_buffer(buf, size, offset, owq) ;
+	OWQ_assign_write_buffer(buf, size, offset, owq) ;
 	write_return = FS_write_postparse(owq);
-	FS_OWQ_destroy(owq);
+	OWQ_destroy(owq);
 	return write_return;		/* here's where the size is used! */
 }
 
@@ -106,7 +106,7 @@ int FS_write_postparse(struct one_wire_query *owq)
 	++write_calls;				/* statistics */
 	STATUNLOCK;
 
-	input_or_error = FS_input_owq(owq);
+	input_or_error = OWQ_parse_input(owq);
 	Debug_OWQ(owq);
 	if (input_or_error < 0) {
 		LEVEL_DEBUG("Error interpretting input value.") ;

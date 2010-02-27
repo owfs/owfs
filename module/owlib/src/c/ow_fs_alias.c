@@ -52,8 +52,8 @@ int FS_alias(struct one_wire_query *owq)
 	char alias[PROPERTY_LENGTH_ALIAS+1] ;
 	struct parsedname *pn = PN(owq);
 	if ( Cache_Get_Alias( alias, PROPERTY_LENGTH_ALIAS+1, pn->sn) == 0 ) {
-		return Fowq_output_offset_and_size_z(alias, owq);
+		return OWQ_parse_output_offset_and_size_z(alias, owq);
 	}
-	return Fowq_output_offset_and_size_z("", owq);
+	return OWQ_parse_output_offset_and_size_z("", owq);
 }
 

@@ -52,6 +52,6 @@ int FS_crc8(struct one_wire_query *owq)
 	ASCII crc[2];
 	struct parsedname *pn = PN(owq);
 	num2string(crc, pn->sn[7]);
-	return Fowq_output_offset_and_size(crc, 2, owq);
+	return OWQ_parse_output_offset_and_size(crc, 2, owq);
 }
 

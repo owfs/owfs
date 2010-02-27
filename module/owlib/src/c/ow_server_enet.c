@@ -320,7 +320,7 @@ static int Add_a_property(const char * tag, const char * property, const char * 
 	strcat(path,"/");
 	strcat(path,property) ;
 	
-	owq = FS_OWQ_create_from_path(path) ; // for write
+	owq = OWQ_create_from_path(path) ; // for write
 	//printf("Created OWQ for %s from %s",path,tag);
 	
 	if ( owq==NULL ) {
@@ -336,7 +336,7 @@ static int Add_a_property(const char * tag, const char * property, const char * 
 		char * data = xml_string(tag,&buffer_pointer) ;
 		if ( data == NULL ) {
 			ret = -EINVAL ;
-		} else if ( FS_OWQ_allocate_write_buffer(data,enet_data_length,owq) != 0 ) {
+		} else if ( OWQ_allocate_write_buffer(data,enet_data_length,owq) != 0 ) {
 			ret = -EINVAL ;
 		}
 		LEVEL_DEBUG("%s given value <%s> from tag %s",path,data,tag) ;
@@ -373,7 +373,7 @@ static int Add_a_property(const char * tag, const char * property, const char * 
 	} else {
 		ret = -EINVAL ;
 	}
-	FS_OWQ_destroy(owq) ;
+	OWQ_destroy(owq) ;
 	return ret ;
 }
 

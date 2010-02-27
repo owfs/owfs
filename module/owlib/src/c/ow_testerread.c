@@ -94,7 +94,7 @@ static int FS_read_tester_single(struct one_wire_query *owq)
 				memcpy(&return_chars[buffer_index], address, copy_length);
 				length_left -= copy_length;
 			}
-			return Fowq_output_offset_and_size(return_chars, length, owq);
+			return OWQ_parse_output_offset_and_size(return_chars, length, owq);
 		}
 	case ft_binary:
 		{
@@ -112,7 +112,7 @@ static int FS_read_tester_single(struct one_wire_query *owq)
 				memcpy(&return_chars[buffer_index], pn->sn, copy_length);
 				length_left -= copy_length;
 			}
-			return Fowq_output_offset_and_size(return_chars, length, owq);
+			return OWQ_parse_output_offset_and_size(return_chars, length, owq);
 		}
 	case ft_directory:
 	case ft_subdir:

@@ -124,7 +124,7 @@ static int FS_r_tag(struct one_wire_query *owq)
 		int tag_type = N_eds_types ;
 		while ( --tag_type >= 0 ) {
 			if (  tag == EDS_types[tag_type].bit ) {
-				Fowq_output_offset_and_size( EDS_types[tag_type].name, _EDS_TAG_LENGTH, owq ) ;
+				OWQ_parse_output_offset_and_size( EDS_types[tag_type].name, _EDS_TAG_LENGTH, owq ) ;
 				return 0 ;
 			}
 		}
@@ -136,7 +136,7 @@ static int FS_r_tag(struct one_wire_query *owq)
 				break ;
 			}
 		}
-		Fowq_output_offset_and_size( data, _EDS_TAG_LENGTH, owq ) ;
+		OWQ_parse_output_offset_and_size( data, _EDS_TAG_LENGTH, owq ) ;
 		Cache_Add_Internal(&tag, sizeof(UINT), InternalProp(TAG), pn) ;
 		return 0 ;
 	}
@@ -168,12 +168,12 @@ static int FS_r_memory(struct one_wire_query *owq)
 static enum e_visibility EDS_visible(const struct parsedname * pn) {
 	UINT tag ;
 	if (Cache_Get_Internal_Strict(&tag, sizeof(UINT), InternalProp(TAG), pn) != 0 ) {	// tag doesn't (yet) exist
-		struct one_wire_query * owq = FS_OWQ_create_from_path(pn->path) ; // for read
+		struct one_wire_query * owq = OWQ_create_from_path(pn->path) ; // for read
 		size_t size = _EDS_TAG_LENGTH ;
 		BYTE data[size] ;
 		if ( owq != NULL) {
 			FS_r_sibling_binary(data,&size,"tag",owq) ;
-			FS_OWQ_destroy(owq) ;
+			OWQ_destroy(owq) ;
 		}
 	}
 	if (Cache_Get_Internal_Strict(&tag, sizeof(UINT), InternalProp(TAG), pn) != 0 ) {	// tag doesn't (yet) exist

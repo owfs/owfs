@@ -205,7 +205,7 @@ static int FS_MStype(struct one_wire_query *owq)
 		t = "unknown";
 		break;
 	}
-	return Fowq_output_offset_and_size_z(t, owq);
+	return OWQ_parse_output_offset_and_size_z(t, owq);
 }
 
 static int FS_temp(struct one_wire_query *owq)

@@ -164,12 +164,12 @@ static int FS_w_PS(struct one_wire_query *owq)
 
 static int FS_r_TS(struct one_wire_query *owq)
 {
-	Fowq_output_offset_and_size_z(TemperatureScaleName(TemperatureScale(PN(owq))), owq);
+	OWQ_parse_output_offset_and_size_z(TemperatureScaleName(TemperatureScale(PN(owq))), owq);
 	return 0;
 }
 
 static int FS_r_PS(struct one_wire_query *owq)
 {
-	Fowq_output_offset_and_size_z(PressureScaleName(PressureScale(PN(owq))), owq);
+	OWQ_parse_output_offset_and_size_z(PressureScaleName(PressureScale(PN(owq))), owq);
 	return 0;
 }

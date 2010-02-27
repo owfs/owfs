@@ -133,7 +133,7 @@ static int FS_version(struct one_wire_query *owq)
     snprintf(v,6,"%.2X.%.2X",major,minor);
     UCLIBCUNLOCK;
 
-    return Fowq_output_offset_and_size(v, 5, owq);
+    return OWQ_parse_output_offset_and_size(v, 5, owq);
 }
 
 static int FS_type_number(struct one_wire_query *owq)
@@ -244,7 +244,7 @@ static int FS_localtype(struct one_wire_query *owq)
 
     switch (type_number) {
         case 0x01:
-            return Fowq_output_offset_and_size_z("Hobby_Boards_UVI", owq) ;
+            return OWQ_parse_output_offset_and_size_z("Hobby_Boards_UVI", owq) ;
         default:
             return FS_type(owq);
     }

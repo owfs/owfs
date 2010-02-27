@@ -938,7 +938,7 @@ static void do_retr(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 	}
 
 	/* Can we parse the name? */
-	if (FS_OWQ_create_plus(f->dir, file_name, &owq)) {
+	if (OWQ_create_plus(f->dir, file_name, &owq)) {
 		reply(f, 550, "File does not exist.");
 		goto exit_retr;
 	}
@@ -959,7 +959,7 @@ static void do_retr(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 		goto exit_retr;
 	}
 
-	if (FS_OWQ_allocate_read_buffer(&owq) != 0 ) {
+	if ( OWQ_allocate_read_buffer(&owq) != 0 ) {
 		reply(f, 550, "Error, file too large.");
 		goto exit_retr;
 	}
@@ -1033,7 +1033,7 @@ static void do_retr(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 			   f->client_addr_str, OWQ_pn(&owq).path, size_write, transfer_time.tv_sec, transfer_time.tv_usec);
 
   exit_retr:
-	FS_OWQ_destroy(&owq); // safe at any speed
+	OWQ_destroy(&owq); // safe at any speed
 	if (buf2) {
 		free(buf2);
 	}
@@ -1073,7 +1073,7 @@ static void do_stor(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 	socket_fd = -1;
 
 	/* create an absolute name for our file */
-	if (FS_OWQ_create_plus(f->dir, cmd->arg[0].string, owq)) {
+	if (OWQ_create_plus(f->dir, cmd->arg[0].string, owq)) {
 		reply(f, 550, "File does not exist.");
 		goto exit_stor;
 	}
@@ -1124,7 +1124,7 @@ static void do_stor(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 			reply(f, 550, "Error reading from data connection; %s.", strerror(errno));
 			goto exit_stor;
 		}
-		if ( FS_OWQ_allocate_write_buffer( data_in, size_actual, owq ) != 0 ) {
+		if ( OWQ_allocate_write_buffer( data_in, size_actual, owq ) != 0 ) {
 			owfree(data_in) ;
 			reply(f, 550, "Out of memory.");
 			goto exit_stor;
@@ -1170,7 +1170,7 @@ static void do_stor(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 			   f->client_addr_str, pn->path, OWQ_size(owq), transfer_time.tv_sec, transfer_time.tv_usec);
 
   exit_stor:
-	FS_OWQ_destroy(owq);
+	OWQ_destroy(owq);
 	f->file_offset = 0;
 	if (socket_fd != -1) {
 		close(socket_fd);

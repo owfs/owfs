@@ -52,5 +52,5 @@ $Id$
 int FS_type(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
-	return Fowq_output_offset_and_size_z(pn->selected_device->readable_name, owq);
+	return OWQ_parse_output_offset_and_size_z(pn->selected_device->readable_name, owq);
 }

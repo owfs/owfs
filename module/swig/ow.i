@@ -106,7 +106,7 @@ char * get( const char * path ) {
     
         if ( strlen(path) > PATH_MAX ) {
             // return_buffer = NULL ;
-        } else if ( (owq = FS_OWQ_create_from_path(path)) != NULL ) { /* Can we parse the input string */
+        } else if ( (owq = OWQ_create_from_path(path)) != NULL ) { /* Can we parse the input string */
             if ( IsDir( PN(owq) ) ) { /* A directory of some kind */
 				size_t size ;
 				struct charblob cb ;
@@ -132,7 +132,7 @@ char * get( const char * path ) {
 					}
 				}
             }
-            FS_OWQ_destroy(owq) ;
+            OWQ_destroy(owq) ;
         }
         API_access_end() ;
     }

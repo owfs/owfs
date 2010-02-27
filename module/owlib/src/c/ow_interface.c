@@ -445,7 +445,7 @@ static int FS_r_ds2490status(struct one_wire_query *owq)
 		 */
 #endif
 	}
-	Fowq_output_offset_and_size_z(res, owq);
+	OWQ_parse_output_offset_and_size_z(res, owq);
 	return 0;
 }
 #endif
@@ -568,7 +568,7 @@ static int FS_name(struct one_wire_query *owq)
 	if (pn->selected_connection->adapter_name) {
 		name = pn->selected_connection->adapter_name;
 	}
-	Fowq_output_offset_and_size_z(name, owq);
+	OWQ_parse_output_offset_and_size_z(name, owq);
 	return 0;
 }
 
@@ -580,7 +580,7 @@ static int FS_port(struct one_wire_query *owq)
 	if (pn->selected_connection->name) {
 		name = pn->selected_connection->name;
 	}
-	Fowq_output_offset_and_size_z(name, owq);
+	OWQ_parse_output_offset_and_size_z(name, owq);
 	return 0;
 }
 

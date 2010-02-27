@@ -15,14 +15,14 @@ $Id$
 #include "ow_counters.h"
 #include "ow_connection.h"
 
-static int FS_OWQ_allocate_array( struct one_wire_query * owq ) ;
-static int FS_OWQ_parsename(const char *path, struct one_wire_query *owq);
-static int FS_OWQ_parsename_plus(const char *path, const char * file, struct one_wire_query *owq);
+static int OWQ_allocate_array( struct one_wire_query * owq ) ;
+static int OWQ_parsename(const char *path, struct one_wire_query *owq);
+static int OWQ_parsename_plus(const char *path, const char * file, struct one_wire_query *owq);
 
 #define OWQ_DEFAULT_READ_BUFFER_SIZE  1
 
 /* Create the Parsename structure and create the buffer */
-struct one_wire_query * FS_OWQ_create_from_path(const char *path)
+struct one_wire_query * OWQ_create_from_path(const char *path)
 {
 	struct one_wire_query * owq = owmalloc( sizeof( struct one_wire_query ) + OWQ_DEFAULT_READ_BUFFER_SIZE ) ;
 	
@@ -36,21 +36,21 @@ struct one_wire_query * FS_OWQ_create_from_path(const char *path)
 	memset(owq, 0, sizeof(owq));
 	OWQ_cleanup(owq) = owq_cleanup_owq ;
 	
-	if ( FS_OWQ_parsename(path,owq) == 0 ) {
-		if ( FS_OWQ_allocate_array(owq) == 0 ) {
+	if ( OWQ_parsename(path,owq) == 0 ) {
+		if ( OWQ_allocate_array(owq) == 0 ) {
 			/*   Add a 1 byte buffer by default. This distinguishes from filesystem calls at end of buffer */
-			/*   Read bufer is provided by FS_OWQ_assign_read_buffer or FS_OWQ_allocate_read_buffer */
+			/*   Read bufer is provided by OWQ_assign_read_buffer or OWQ_allocate_read_buffer */
 			OWQ_buffer(owq) = & owq[1] ;
 			OWQ_size(owq) = OWQ_DEFAULT_READ_BUFFER_SIZE ;
 			return owq ;
 		}
-		FS_OWQ_destroy(owq);
+		OWQ_destroy(owq);
 	}
 	return NULL ;
 }
 
 /* Create the Parsename structure and load the relevant fields */
-struct one_wire_query *FS_OWQ_create_sibling(const char *sibling, struct one_wire_query *owq_original)
+struct one_wire_query * OWQ_create_sibling(const char *sibling, struct one_wire_query *owq_original)
 {
 	char path[PATH_MAX] ;
 	int dirlength = PN(owq_original)->dirlength ;
@@ -60,42 +60,42 @@ struct one_wire_query *FS_OWQ_create_sibling(const char *sibling, struct one_wir
 
 	LEVEL_DEBUG("Create sibling %s from %s as %s", sibling,PN(owq_original)->path,path);
 
-	return FS_OWQ_create_from_path(path) ;
+	return OWQ_create_from_path(path) ;
 }
 
 
 /* Create the Parsename structure and load the relevant fields */
-int FS_OWQ_create(const char *path, struct one_wire_query *owq)
+int OWQ_create(const char *path, struct one_wire_query *owq)
 {
 	LEVEL_DEBUG("%s", path);
 
-	if ( FS_OWQ_parsename(path,owq) == 0 ) {
-		if ( FS_OWQ_allocate_array(owq) == 0 ) {
+	if ( OWQ_parsename(path,owq) == 0 ) {
+		if ( OWQ_allocate_array(owq) == 0 ) {
 			return 0 ;
 		}
-		FS_OWQ_destroy(owq);
+		OWQ_destroy(owq);
 	}
 	return 1 ;
 }
 
 /* Create the Parsename structure (using path and file) and load the relevant fields */
 /* Starts with a statically allocated owq space */
-int FS_OWQ_create_plus(const char *path, const char *file, struct one_wire_query *owq)
+int OWQ_create_plus(const char *path, const char *file, struct one_wire_query *owq)
 {
 	LEVEL_DEBUG("%s + %s", path, file);
 
 	OWQ_cleanup(owq) = owq_cleanup_none ;
-	if ( FS_OWQ_parsename_plus(path,file,owq) == 0 ) {
-		if ( FS_OWQ_allocate_array(owq) == 0 ) {
+	if ( OWQ_parsename_plus(path,file,owq) == 0 ) {
+		if ( OWQ_allocate_array(owq) == 0 ) {
 			return 0 ;
 		}
-		FS_OWQ_destroy(owq);
+		OWQ_destroy(owq);
 	}
 	return 1 ;
 }
 
 /* Create the Parsename structure in owq */
-static int FS_OWQ_parsename(const char *path, struct one_wire_query *owq)
+static int OWQ_parsename(const char *path, struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 
@@ -106,7 +106,7 @@ static int FS_OWQ_parsename(const char *path, struct one_wire_query *owq)
 	return 0 ;
 }
 
-static int FS_OWQ_parsename_plus(const char *path, const char * file, struct one_wire_query *owq)
+static int OWQ_parsename_plus(const char *path, const char * file, struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 
@@ -117,7 +117,7 @@ static int FS_OWQ_parsename_plus(const char *path, const char * file, struct one
 	return 0 ;
 }
 
-static int FS_OWQ_allocate_array( struct one_wire_query * owq )
+static int OWQ_allocate_array( struct one_wire_query * owq )
 {
 	struct parsedname * pn = PN(owq) ;
 	if (pn->extension == EXTENSION_ALL && pn->type != ePN_structure) {
@@ -132,7 +132,7 @@ static int FS_OWQ_allocate_array( struct one_wire_query * owq )
 	return 0 ;
 }
 
-void FS_OWQ_assign_read_buffer(char *buffer, size_t size, off_t offset, struct one_wire_query *owq)
+void OWQ_assign_read_buffer(char *buffer, size_t size, off_t offset, struct one_wire_query *owq)
 {
 	OWQ_buffer(owq) = buffer;
 	OWQ_read_buffer(owq) = NULL ;
@@ -141,7 +141,7 @@ void FS_OWQ_assign_read_buffer(char *buffer, size_t size, off_t offset, struct o
 	OWQ_offset(owq) = offset;
 }
 
-void FS_OWQ_assign_write_buffer(const char *buffer, size_t size, off_t offset, struct one_wire_query *owq)
+void OWQ_assign_write_buffer(const char *buffer, size_t size, off_t offset, struct one_wire_query *owq)
 {
 	OWQ_buffer(owq) = buffer;
 	OWQ_read_buffer(owq) = NULL ;
@@ -151,7 +151,7 @@ void FS_OWQ_assign_write_buffer(const char *buffer, size_t size, off_t offset, s
 }
 
 // create the buffer of size filesize
-int FS_OWQ_allocate_read_buffer(struct one_wire_query * owq )
+int OWQ_allocate_read_buffer(struct one_wire_query * owq )
 {
 	struct parsedname * pn = PN(owq) ;
 	size_t size = FullFileLength(pn);
@@ -170,7 +170,7 @@ int FS_OWQ_allocate_read_buffer(struct one_wire_query * owq )
 	return 0;
 }
 
-int FS_OWQ_allocate_write_buffer( const char * write_buffer, size_t buffer_length, struct one_wire_query * owq )
+int OWQ_allocate_write_buffer( const char * write_buffer, size_t buffer_length, struct one_wire_query * owq )
 {
 	char * buffer_copy ;
 	
@@ -197,7 +197,7 @@ int FS_OWQ_allocate_write_buffer( const char * write_buffer, size_t buffer_lengt
 	return 0 ;
 }
 
-void FS_OWQ_destroy(struct one_wire_query *owq)
+void OWQ_destroy(struct one_wire_query *owq)
 {
 	if ( owq == NULL) {
 		return ;

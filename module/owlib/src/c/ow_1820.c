@@ -421,7 +421,7 @@ static int FS_r_die(struct one_wire_query *owq)
 	default:
 		return -EINVAL;
 	}
-	return Fowq_output_offset_and_size(d, 2, owq);
+	return OWQ_parse_output_offset_and_size(d, 2, owq);
 }
 
 static int FS_r_trim(struct one_wire_query *owq)

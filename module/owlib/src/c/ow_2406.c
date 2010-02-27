@@ -566,7 +566,7 @@ static int FS_sibling(struct one_wire_query *owq)
 		return -ENOENT;
 	}
 	bytes2string(sib, tai.sibling, 8);
-	return Fowq_output_offset_and_size(sib, 16, owq);
+	return OWQ_parse_output_offset_and_size(sib, 16, owq);
 }
 
 static int FS_temp(struct one_wire_query *owq)

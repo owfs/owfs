@@ -65,7 +65,7 @@ void *ReadHandler(struct handlerdata *hd, struct client_msg *cm, struct one_wire
 	} else if ((hd->sm.size <= 0) || (hd->sm.size > MAX_OWSERVER_PROTOCOL_PACKET_SIZE)) {
 		cm->ret = -EMSGSIZE;
 		LEVEL_DEBUG("ReadHandler: error hd->sm.size == %d", hd->sm.size);
-	} else if ( FS_OWQ_allocate_read_buffer(owq) != 0) {	// allocate read buffer
+	} else if ( OWQ_allocate_read_buffer(owq) != 0) {	// allocate read buffer
 		LEVEL_DEBUG("ReadHandler: can't allocate memory");
 		cm->ret = -ENOBUFS;
 	} else {

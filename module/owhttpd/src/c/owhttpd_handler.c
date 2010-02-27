@@ -166,15 +166,15 @@ static enum http_return handle_GET(FILE * out, struct urlparse * up)
 		}
 		
 		// Create the owq to write to.
-		if (FS_OWQ_create_plus(up->file, up->request, owq_write) != 0) { // for write
+		if (OWQ_create_plus(up->file, up->request, owq_write) != 0) { // for write
 			return http_404 ;
 		}
-		FS_OWQ_assign_write_buffer( up->value, strlen(up->value), 0, owq_write ) ;
+		OWQ_assign_write_buffer( up->value, strlen(up->value), 0, owq_write ) ;
 		
 		/* Execute the write */
 		ChangeData(owq_write);
 		
-		FS_OWQ_destroy(owq_write);
+		OWQ_destroy(owq_write);
 		return http_ok ;
 	}
 }
@@ -202,16 +202,16 @@ static enum http_return handle_POST(FILE * out, struct urlparse * up)
 		if ( post_path ) {
 			struct memblob mb ;
 			if ( GetPostData( boundary, &mb, out ) == 0 ) {
-				struct one_wire_query * owq = FS_OWQ_create_from_path( post_path ) ; // for write
+				struct one_wire_query * owq = OWQ_create_from_path( post_path ) ; // for write
 				if ( owq ) {
 					LEVEL_DEBUG("File upload %s for %ld bytes",post_path,MemblobLength(&mb));
-					if ( FS_OWQ_allocate_write_buffer( (char *) MemblobData(&mb), MemblobLength(&mb), owq) == 0 ) {
+					if ( OWQ_allocate_write_buffer( (char *) MemblobData(&mb), MemblobLength(&mb), owq) == 0 ) {
 						PostData(owq);
 						http_code = http_ok ;
 					} else {
 						http_code = http_404 ;
 					}
-					FS_OWQ_destroy(owq) ;
+					OWQ_destroy(owq) ;
 				} else {
 					LEVEL_DEBUG("Can't create %s",post_path);
 					http_code = http_404 ;

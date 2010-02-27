@@ -47,7 +47,7 @@ $Id$
  * Performs a shift of the offset to do an operation,
  * then returns the offset to the initial value.
  * The reason is that some reads or writes are done in another place in memory,
- * but FS_output_owq checks the file size against the original property constraints.
+ * but OWQ_parse_output checks the file size against the original property constraints.
  */
 
 int COMMON_offset_process( int (*func) (struct one_wire_query *), struct one_wire_query * owq, off_t shift_offset)

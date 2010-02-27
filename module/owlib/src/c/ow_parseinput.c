@@ -59,7 +59,7 @@ static size_t FS_check_length(struct one_wire_query *owq);
         binary   memcpy     fixed length binary string      binary "string"
 */
 
-int FS_input_owq(struct one_wire_query *owq)
+int OWQ_parse_input(struct one_wire_query *owq)
 {
 	switch (OWQ_pn(owq).extension) {
 	case EXTENSION_BYTE:
@@ -398,7 +398,7 @@ static int FS_input_array_with_commas(struct one_wire_query *owq)
 		OWQ_pn(owq_single).extension = extension;
 		OWQ_buffer(owq_single) = buffer_position;
 		OWQ_size(owq_single) = comma - buffer_position;
-		if (FS_input_owq(owq_single)) {
+		if (OWQ_parse_input(owq_single)) {
 			return -EINVAL;
 		}
 		memcpy(&(OWQ_array(owq)[extension]), &OWQ_val(owq_single), sizeof(union value_object));

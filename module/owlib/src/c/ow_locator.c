@@ -29,7 +29,7 @@ int FS_locator(struct one_wire_query *owq)
 
 	OW_any_locator(loc, PN(owq) ) ;
 	bytes2string(ad, loc, 8);
-	return Fowq_output_offset_and_size(ad, 16, owq);
+	return OWQ_parse_output_offset_and_size(ad, 16, owq);
 }
 
 // reversed address
@@ -43,7 +43,7 @@ int FS_r_locator(struct one_wire_query *owq)
 	for (i = 0; i < 8; ++i) {
 		num2string(ad + (i << 1), loc[7 - i]);
 	}
-	return Fowq_output_offset_and_size(ad, 16, owq);
+	return OWQ_parse_output_offset_and_size(ad, 16, owq);
 }
 
 static void OW_any_locator(BYTE * loc, const struct parsedname *pn)
