@@ -227,7 +227,7 @@ static int FS_r_given_bus(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	int read_status = 0;
 
-	LEVEL_DEBUG("start");
+	LEVEL_DEBUG("structure contents before the read is performed");
 	Debug_OWQ(owq);
 
 	if (KnownBus(pn) && BusIsServer(pn->selected_connection)) {
@@ -238,7 +238,6 @@ static int FS_r_given_bus(struct one_wire_query *owq)
 		// Read afar -- returns already formatted in buffer
 		read_status = ServerRead(owq);
 		LEVEL_DEBUG("back from server");
-		Debug_OWQ(owq);
 		//printf("FS_r_given_bus pid=%ld r=%d\n",pthread_self(), r);
 	} else {
 		STAT_ADD1(read_calls);	/* statistics */
@@ -251,10 +250,12 @@ static int FS_r_given_bus(struct one_wire_query *owq)
 				read_status = FS_output_owq(owq);	// this returns nr. bytes
 			}
 		} else {
+			LEVEL_DEBUG("Cannot lock bus to perform read") ;
 			read_status = -EADDRINUSE;
 		}
 	}
-	LEVEL_DEBUG("return %d", read_status);
+	LEVEL_DEBUG("After read is performed (status %d)", read_status);
+	Debug_OWQ(owq);
 	return read_status;
 }
 
@@ -390,6 +391,7 @@ static int FS_r_local(struct one_wire_query *owq)
 	if ( OWQ_size(owq) == 0 ) {
 		// Mounting fuse with "direct_io" will cause a second read with offset
 		// at end-of-file... Just return 0 if offset == size
+		LEVEL_DEBUG("Call for read at very end of file") ;
 		return 0 ;
 	}
 	
@@ -426,11 +428,11 @@ static int FS_r_local(struct one_wire_query *owq)
 				}
 				switch (pn->selected_filetype->ag->combined) {
 					case ag_separate:	/* separate reads, artificially combined into a single array */
-				return FS_read_from_parts(owq);
+						return FS_read_from_parts(owq);
 					case ag_mixed:		/* mixed mode, ALL read handled differently */
-			case ag_aggregate:	/* natively an array */
-				/* return ALL if required   (comma separated) */
-				return FS_read_lump(owq);
+					case ag_aggregate:	/* natively an array */
+						/* return ALL if required   (comma separated) */
+						return FS_read_lump(owq);
 				}
 			default:
 				if (pn->selected_filetype->format == ft_bitfield) {
@@ -438,11 +440,11 @@ static int FS_r_local(struct one_wire_query *owq)
 				}
 				switch (pn->selected_filetype->ag->combined) {
 					case ag_separate:	/* separate reads, artificially combined into a single array */
-				return FS_read_lump(owq);
+						return FS_read_lump(owq);
 					case ag_mixed:		/* mixed mode, ALL read handled differently */
-				return FS_read_mixed_part(owq);
+						return FS_read_mixed_part(owq);
 					case ag_aggregate:	/* natively an array */
-				return FS_read_a_part(owq);
+						return FS_read_a_part(owq);
 				}
 		}
 	}

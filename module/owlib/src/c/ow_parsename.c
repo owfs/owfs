@@ -48,25 +48,20 @@ void FS_ParsedName_destroy(struct parsedname *pn)
 	if (!pn) {
 		return;
 	}
-	LEVEL_DEBUG("%s\n", SAFESTRING(pn->path));
+	LEVEL_DEBUG("%s", SAFESTRING(pn->path));
 	CONNIN_RUNLOCK ;
-	//printf("PNDestroy bp (%d)\n",BusIsServer(pn->selected_connection)) ;
 	if (pn->bp) {
 		owfree(pn->bp);
 		pn->bp = NULL;
 	}
-	//printf("PNDestroy path (%d)\n",BusIsServer(pn->selected_connection)) ;
 	if (pn->path) {
 		owfree(pn->path);
 		pn->path = NULL;
 	}
-	//printf("PNDestroy lock (%d)\n",BusIsServer(pn->selected_connection)) ;
 	if (pn->lock) {
 		owfree(pn->lock);
 		pn->lock = NULL;
 	}
-	//printf("PNDestroy done (%d)\n",BusIsServer(pn->selected_connection)) ;
-	// Tokenstring is part of a larger allocation and destroyed separately
 }
 
 // Path is either NULL (in which case a minimal structure is created that doesn't need Destroy -- used for Bus Master setups)

@@ -204,7 +204,7 @@ static enum http_return handle_POST(FILE * out, struct urlparse * up)
 			if ( GetPostData( boundary, &mb, out ) == 0 ) {
 				struct one_wire_query * owq = FS_OWQ_create_from_path( post_path ) ; // for write
 				if ( owq ) {
-					LEVEL_DEBUG("File upload %s for %ld bytes\n",post_path,MemblobLength(&mb));
+					LEVEL_DEBUG("File upload %s for %ld bytes",post_path,MemblobLength(&mb));
 					if ( FS_OWQ_allocate_write_buffer( (char *) MemblobData(&mb), MemblobLength(&mb), owq) == 0 ) {
 						PostData(owq);
 						http_code = http_ok ;

@@ -641,10 +641,8 @@ static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 	
 	/* Copy to scratchpad */
 	memcpy(&p[4], data, size);
-//	p[4+size+0] = 0xFF;
-//	p[4+size+1] = 0xFF;
 
-	printf("Write to BAE size=%d offset=%x\n",(int)size,(unsigned int)offset) ;
+	LEVEL_DEBUG("Write to BAE size=%d offset=%x\n",(int)size,(unsigned int)offset) ;
 	Debug_Bytes("BAE write",p,1+2+1+size) ;
 	
 	return BUS_transaction(t, pn) ;
@@ -735,7 +733,6 @@ static int OW_type( UINT * localtype, struct parsedname * pn )
 	if (BUS_transaction(t, pn)) {
 		return 1;
 	}
-	
 	localtype[0] = BAE_uint16(&p[1]) ;
 	return 0 ;
 };
