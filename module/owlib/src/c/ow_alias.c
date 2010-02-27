@@ -11,6 +11,10 @@ $Id$
 
 /* ow_opt -- owlib specific command line options processing */
 
+#define _GNU_SOURCE
+#include <stdio.h> // for getline
+#undef _GNU_SOURCE
+
 #include <config.h>
 #include "owfs_config.h"
 #include "ow.h"
@@ -19,62 +23,64 @@ static int Test_Add_Alias( char * name, BYTE * sn ) ;
 
 int AliasFile(const ASCII * file)
 {
-	FILE *alias_file_pointer = fopen(file, "r");
+	FILE *alias_file_pointer ;
 
-	if (alias_file_pointer) {
-		int ret = 0;
-		int alias_line_max = PROPERTY_LENGTH_ALIAS+16+32 ;  // alias name + serial number + whitespace
-		ASCII alias_line[alias_line_max] ;
-		int line_number = 0;
+	/* getline parameters. allocated and reallocated by getline. use free rather than owfree */
+	char * alias_line = NULL ;
+	size_t alias_line_length ;
+	int line_number = 0;
 
-		while (fgets(alias_line, 258, alias_file_pointer)) {
-			++line_number;
-			BYTE sn[8] ;
-			// check line length
-			if ((int)strlen(alias_line) > alias_line_max-1) {
-				LEVEL_DEFAULT("Alias file (%s:%d) Line too long (>%d characters).", SAFESTRING(file), line_number, alias_line_max-1);
-				ret = 1;
-				break;
-			} else {
-				char * a_line = alias_line ;
-				char * sn_char = NULL ;
-				char * name_char = NULL ;
-				while ( a_line ) {
-					sn_char = strsep( &a_line, "/ \t=\n");
-					if ( strlen(sn_char) ) {
-						break ;
-					}
-				}
-				if ( Parse_SerialNumber(sn_char, sn) ) {
-					LEVEL_CALL("Problem parsing device name in alias file %s:%d",file,line_number) ;
-					continue ;
-				}
-				if ( a_line ) {
-					a_line += strspn(a_line," \t=") ;
-				}
-				while ( a_line ) {
-					name_char = strsep( &a_line, "\n");
-					size_t len = strlen(name_char) ;
-					if ( len > 0 ) {
-						while ( len>0 ) {
-							if ( name_char[len-1] != ' ' && name_char[len-1] != '\t' ) {
-								break ;
-							}
-							name_char[--len] = '\0'  ;
-						}
-						Test_Add_Alias( name_char, sn) ;
-						break ;
-					}
-				}
-			}
-		}
-		fclose(alias_file_pointer);
-		return ret;
-	} else {
+	/* try to open file for reading */
+	alias_file_pointer = fopen(file, "r");
+	if ( alias_file_pointer == NULL ) {
 		ERROR_DEFAULT("Cannot process alias file %s", file);
 		return 1;
 	}
-	return 1 ;
+
+	/* read each line and parse */
+	while (getline(&alias_line, &alias_line_length, alias_file_pointer) >= 0) {
+		++line_number;
+		BYTE sn[8] ;
+		char * a_line = alias_line ; // pointer within the line
+		char * sn_char = NULL ; // pointer to serial number
+		char * name_char = NULL ; // pointer to alias name
+
+		while ( a_line ) {
+			sn_char = strsep( &a_line, "/ \t=\n");
+			if ( strlen(sn_char)>0 ) {
+				// non delim char
+				break ;
+			}
+		}
+
+		if ( Parse_SerialNumber(sn_char, sn) ) {
+			LEVEL_CALL("Problem parsing device name in alias file %s:%d",file,line_number) ;
+			continue ;
+		}
+
+		if ( a_line ) {
+			a_line += strspn(a_line," \t=") ;
+		}
+		while ( a_line ) {
+			name_char = strsep( &a_line, "\n");
+			size_t len = strlen(name_char) ;
+			if ( len > 0 ) {
+				while ( len>0 ) {
+					if ( name_char[len-1] != ' ' && name_char[len-1] != '\t' ) {
+						break ;
+					}
+					name_char[--len] = '\0'  ;
+				}
+				Test_Add_Alias( name_char, sn) ;
+				break ;
+			}
+		}
+	}
+	if ( alias_line != NULL ) {
+		free(alias_line) ; // not owfree since allocated by getline
+	}
+	fclose(alias_file_pointer);
+	return 0;
 }
 
 static int Test_Add_Alias( char * name, BYTE * sn )

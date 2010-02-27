@@ -66,8 +66,8 @@ int log_available = 0;
 void err_msg(enum e_err_type errnoflag, enum e_err_level level, const char * file, int line, const char * func, const char *fmt, ...)
 {
 	int errno_save = (errnoflag==e_err_type_error)?errno:0;		/* value caller might want printed */
-	char format[MAXLINE + 1];
-	char buf[MAXLINE + 1];
+	char format[MAXLINE + 3];
+	char buf[MAXLINE + 3];
 	enum e_err_print sl;		// 2=console 1=syslog
 	va_list ap;
 	const char * level_string ;
@@ -132,6 +132,7 @@ void err_msg(enum e_err_type errnoflag, enum e_err_level level, const char * fil
 	} else {
 		fflush(stdout);			/* in case stdout and stderr are the same */
 		fputs(buf, stderr);
+		fputs("\n", stderr);
 		fflush(stderr);
 	}
 	return;
@@ -260,18 +261,19 @@ static void err_format(char * format, int errno_save, const char * level_string,
 	/* Create output string */
 #ifdef    HAVE_VSNPRINTF
 	if (errno_save) {
-		snprintf(format, MAXLINE, "%s%s:%s(%d) [%s] %s\n", level_string,file,func,line,strerror(errno_save),fmt);	/* safe */
+		snprintf(format, MAXLINE, "%s%s:%s(%d) [%s] %s", level_string,file,func,line,strerror(errno_save),fmt);	/* safe */
 	} else {
-		snprintf(format, MAXLINE, "%s%s:%s(%d) %s\n", level_string,file,func,line,fmt);	/* safe */
+		snprintf(format, MAXLINE, "%s%s:%s(%d) %s", level_string,file,func,line,fmt);	/* safe */
 	}
 #else
 	if (errno_save) {
-		sprintf(format, "%s%s:%s(%d) [%s] %s\n", level_string,file,func,line,strerror(errno_save),fmt);		/* not safe */
+		sprintf(format, "%s%s:%s(%d) [%s] %s", level_string,file,func,line,strerror(errno_save),fmt);		/* not safe */
 	} else {
-		sprintf(format, "%s%s:%s(%d) %s\n", level_string,file,func,line,fmt);		/* not safe */
+		sprintf(format, "%s%s:%s(%d) %s", level_string,file,func,line,fmt);		/* not safe */
 	}
 #endif
 	UCLIBCUNLOCK;
+	/* Add CR at end */
 }
 
 

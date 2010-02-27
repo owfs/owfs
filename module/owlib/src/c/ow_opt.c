@@ -11,6 +11,10 @@ $Id$
 
 /* ow_opt -- owlib specific command line options processing */
 
+#define _GNU_SOURCE
+#include <stdio.h> // for getline
+#undef _GNU_SOURCE
+
 #include <config.h>
 #include "owfs_config.h"
 #include "ow.h"
@@ -18,7 +22,8 @@ $Id$
 #include "ow_pid.h"
 
 struct lineparse {
-	ASCII line[256];
+	char * line;
+	size_t line_length ;
 	const ASCII *file;
 	ASCII *prog;
 	ASCII *opt;
@@ -456,22 +461,19 @@ static int ConfigurationFile(const ASCII * file)
 		struct lineparse lp;
 		lp.line_number = 0;
 		lp.file = file;
+		lp.line = NULL ; // setup for getline
 
-		while (fgets(lp.line, 256, configuration_file_pointer)) {
+		while (getline(&(lp.line), &(lp.line_length), configuration_file_pointer)>=0) {
 			++lp.line_number;
-			// check line length
-			if (strlen(lp.line) > 250) {
-				LEVEL_DEFAULT("Configuration file (%s:%d) Line too long (>250 characters).", SAFESTRING(lp.file), lp.line_number);
-				ret = 1;
-				break;
-			}
 			ParseTheLine(&lp);
-			ret = owopt(ParseInterp(&lp), lp.val);
-			if (ret) {
-				break;
+			if ( owopt(ParseInterp(&lp), lp.val) != 0 ) {
+				ret = 1 ;
 			}
 		}
 		fclose(configuration_file_pointer);
+		if ( lp.line != NULL) {
+			free(lp.line) ; // not owfree
+		}
 		return ret;
 	} else {
 		ERROR_DEFAULT("Cannot process configuration file %s", file);

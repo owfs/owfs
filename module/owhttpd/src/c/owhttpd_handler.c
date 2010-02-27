@@ -19,7 +19,8 @@ $Id$
 
 /* ------------ Protoypes ---------------- */
 struct urlparse {
-	char line[LINE_MAX + 1];
+	char *line;
+	size_t line_length ;
 	char *cmd;
 	char *file;
 	char *version;
@@ -54,9 +55,10 @@ int handle_socket(FILE * out)
 	struct parsedname s_pn;
 	struct parsedname * pn = &s_pn ;
 	
-	if ( fgets(up.line, LINE_MAX, out) ) {
+	up.line = NULL ; // prep for getline with null. Will be allocated by getline.
+	if ( getline(&(up.line), &(up.line_length), out) >= 0 ) {
 		LEVEL_CALL("PreParse line=%s", up.line);
-		URLparse(&up);				/* Brake up URL */
+		URLparse(&up);				/* Break up URL */
 
 		LEVEL_CALL
 		("WLcmd: %s\tfile: %s\trequest: %s\tvalue: %s\tversion: %s",
@@ -97,6 +99,7 @@ int handle_socket(FILE * out)
 			ReadToCRLF(out) ;
 			http_code = http_400 ;
 		}
+		free(up.line) ;
 	} else {
 		LEVEL_DEBUG("No http data.");
 		pn = NULL ;
