@@ -327,7 +327,7 @@ static int FS_voltage(struct one_wire_query *owq)
 	// channel select byte, based on zero-indexed channel number
 	BYTE ch_select = (OWQ_pn(owq).extension << 2) + 0x02;
 	BYTE channel_info ;
-	BYTE data[8] = { ch_select, } ;
+	BYTE data[1+7+2] = { ch_select, } ;
 
 	// this is the complete byte sequence we want to write to the ds2406 so it will
 	// select the appropriate channel and initiate adc, and also so it can write
