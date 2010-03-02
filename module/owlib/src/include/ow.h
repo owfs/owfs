@@ -188,7 +188,7 @@ $Id$
 #endif							/* SKIP_SEARCH_H */
 
 /* If no getline, use our version */
-#if ! HAVE_GETLINE
+#ifndef HAVE_GETLINE
 ssize_t getline (char **lineptr, size_t *n, FILE *stream) ;
 #endif /* HAVE_GETLINE */
 
