@@ -187,6 +187,12 @@ $Id$
 #endif							/* __USE_GNU */
 #endif							/* SKIP_SEARCH_H */
 
+/* If no getline, use our version */
+#if ! HAVE_GETLINE
+ssize_t getline (char **lineptr, size_t *n, FILE *stream) ;
+#endif /* HAVE_GETLINE */
+
+
 /* Parport enabled uses two flags (one a holdover from the embedded work) */
 #ifdef USE_NO_PARPORT
 #undef OW_PARPORT

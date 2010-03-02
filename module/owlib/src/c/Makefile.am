@@ -12,6 +12,7 @@ OWLIB_SOURCE = ow_dl.c           \
                ow_browse_resolve.c\
                compat.c          \
                getaddrinfo.c     \
+	       getline.c         \
                getopt.c          \
                ow_none.c         \
                ow_1820.c         \

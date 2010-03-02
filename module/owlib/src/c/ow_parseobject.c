@@ -40,7 +40,7 @@ struct one_wire_query * OWQ_create_from_path(const char *path)
 		if ( OWQ_allocate_array(owq) == 0 ) {
 			/*   Add a 1 byte buffer by default. This distinguishes from filesystem calls at end of buffer */
 			/*   Read bufer is provided by OWQ_assign_read_buffer or OWQ_allocate_read_buffer */
-			OWQ_buffer(owq) = & owq[1] ;
+			OWQ_buffer(owq) = (char *) (& owq[1]) ; // point just beyond the one_wire_query struct
 			OWQ_size(owq) = OWQ_DEFAULT_READ_BUFFER_SIZE ;
 			return owq ;
 		}
