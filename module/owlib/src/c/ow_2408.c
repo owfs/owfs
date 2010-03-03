@@ -93,24 +93,24 @@ struct aggregate A2408 = { 8, ag_numbers, ag_aggregate, };
 struct filetype DS2408[] = {
 	F_STANDARD,
 	{"power", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"PIO", PROPERTY_LENGTH_BITFIELD, &A2408, ft_bitfield, fc_stable, FS_r_pio, FS_w_pio, VISIBLE, NO_FILETYPE_DATA,},
-  {"sensed", PROPERTY_LENGTH_BITFIELD, &A2408, ft_bitfield, fc_volatile, FS_sense, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"latch", PROPERTY_LENGTH_BITFIELD, &A2408, ft_bitfield, fc_volatile, FS_r_latch, FS_w_latch, VISIBLE, NO_FILETYPE_DATA,},
-  {"strobe", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_strobe, FS_w_strobe, VISIBLE, NO_FILETYPE_DATA,},
-  {"set_alarm", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_s_alarm, FS_w_s_alarm, VISIBLE, NO_FILETYPE_DATA,},
-  {"por", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_por, FS_w_por, VISIBLE, NO_FILETYPE_DATA,},
-  {"LCD_M", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_stable, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"LCD_M/clear", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_Mclear, VISIBLE, NO_FILETYPE_DATA,},
-  {"LCD_M/home", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_Mhome, VISIBLE, NO_FILETYPE_DATA,},
-  {"LCD_M/screen", 128, NON_AGGREGATE, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_Mscreen, VISIBLE, NO_FILETYPE_DATA,},
-  {"LCD_M/message", 128, NON_AGGREGATE, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_Mmessage, VISIBLE, NO_FILETYPE_DATA,},
-  {"LCD_H", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_stable, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"LCD_H/clear", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_Hclear, VISIBLE, NO_FILETYPE_DATA,},
-  {"LCD_H/home", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_Hhome, VISIBLE, NO_FILETYPE_DATA,},
-  {"LCD_H/screen", 128, NON_AGGREGATE, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_Hscreen, VISIBLE, NO_FILETYPE_DATA,},
-  {"LCD_H/screenyx", 128, NON_AGGREGATE, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_Hscreenyx, VISIBLE, NO_FILETYPE_DATA,},
-  {"LCD_H/message", 128, NON_AGGREGATE, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_Hmessage, VISIBLE, NO_FILETYPE_DATA,},
-  {"LCD_H/onoff", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, NO_READ_FUNCTION, FS_Honoff, VISIBLE, NO_FILETYPE_DATA,},
+	{"PIO", PROPERTY_LENGTH_BITFIELD, &A2408, ft_bitfield, fc_stable, FS_r_pio, FS_w_pio, VISIBLE, NO_FILETYPE_DATA,},
+	{"sensed", PROPERTY_LENGTH_BITFIELD, &A2408, ft_bitfield, fc_volatile, FS_sense, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"latch", PROPERTY_LENGTH_BITFIELD, &A2408, ft_bitfield, fc_volatile, FS_r_latch, FS_w_latch, VISIBLE, NO_FILETYPE_DATA,},
+	{"strobe", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_strobe, FS_w_strobe, VISIBLE, NO_FILETYPE_DATA,},
+	{"set_alarm", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_s_alarm, FS_w_s_alarm, VISIBLE, NO_FILETYPE_DATA,},
+	{"por", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_por, FS_w_por, VISIBLE, NO_FILETYPE_DATA,},
+	{"LCD_M", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_stable, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"LCD_M/clear", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_Mclear, VISIBLE, NO_FILETYPE_DATA,},
+	{"LCD_M/home", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_Mhome, VISIBLE, NO_FILETYPE_DATA,},
+	{"LCD_M/screen", 128, NON_AGGREGATE, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_Mscreen, VISIBLE, NO_FILETYPE_DATA,},
+	{"LCD_M/message", 128, NON_AGGREGATE, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_Mmessage, VISIBLE, NO_FILETYPE_DATA,},
+	{"LCD_H", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_stable, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"LCD_H/clear", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_Hclear, VISIBLE, NO_FILETYPE_DATA,},
+	{"LCD_H/home", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_Hhome, VISIBLE, NO_FILETYPE_DATA,},
+	{"LCD_H/screen", 128, NON_AGGREGATE, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_Hscreen, VISIBLE, NO_FILETYPE_DATA,},
+	{"LCD_H/screenyx", 128, NON_AGGREGATE, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_Hscreenyx, VISIBLE, NO_FILETYPE_DATA,},
+	{"LCD_H/message", 128, NON_AGGREGATE, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_Hmessage, VISIBLE, NO_FILETYPE_DATA,},
+	{"LCD_H/onoff", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, NO_READ_FUNCTION, FS_Honoff, VISIBLE, NO_FILETYPE_DATA,},
 };
 
 DeviceEntryExtended(29, DS2408, DEV_alarm | DEV_resume | DEV_ovdr);
@@ -361,7 +361,7 @@ static int FS_w_por(struct one_wire_query *owq)
 	return OW_w_control(data[5], pn) ? -EINVAL : 0;
 }
 
-#define LCD_SECOND_ROW_ADDRESS   0x40
+#define LCD_SECOND_ROW_ADDRESS        0x40
 #define LCD_COMMAND_CLEAR_DISPLAY     0x01
 #define LCD_COMMAND_RETURN_HOME       0x02
 #define LCD_COMMAND_RIGHT_TO_LEFT     0x06
@@ -374,8 +374,8 @@ static int FS_w_por(struct one_wire_query *owq)
 
 // structure holding the information to be placed on the LCD screen
 struct yx {
-	int y ;
-	int x ;
+	int y ;  // row
+	int x ;  // column
 	char * string ; // input string including coordinates
 	size_t length ; // length of string
 	int index ; // counter into string
@@ -454,10 +454,12 @@ static int OW_Hinit(struct parsedname * pn)
 static int Parseyx( struct yx * YX )
 {
 	if ( YX->length < 2 ) {
+		// not long enough to have an address
 		return -EINVAL ;
 	}
 
 	if ( YX->string[0] > '0' ) {
+		// ascii address rather than binary
 		return asciiyx(YX);
 	}
 	return binaryyx( YX ) ;
@@ -484,11 +486,13 @@ static int asciiyx( struct yx * YX )
 
 	colon[0] = '\0' ; // for safety
 	if ( sscanf(YX->string, "%d,%d", &YX->y, &YX->x ) < 2 ) {
+		// only one value. Set row=1
 		YX->y = 1 ;
 		if ( sscanf(YX->string, "%d", &YX->x ) < 1 ) {
 			return -EINVAL ;
 		}
 	}
+	// start text after colon
 	YX->index = ( colon - YX->string ) + 1 ;
 	return 0 ;
 }

@@ -23,26 +23,23 @@ $Id$
 
 int Fuse_setup(struct Fuse_option *fo)
 {
-	int i;
-	fo->max_options = 10;
+	fo->max_options = 0;
 	fo->argc = 0;
-	fo->argv = (char **) owcalloc(fo->max_options + 1, sizeof(char *));
-	if (fo->argv == NULL)
-		return -ENOMEM;
-	for (i = 0; i <= fo->max_options; ++i)
-		fo->argv[i] = NULL;
+	fo->argv = NULL;
 	/* create "0th" item -- the program name */
+	/* Note this is required since the final NULL item doesn't exist yet */
 	return Fuse_add("OWFS", fo);
 }
 
 void Fuse_cleanup(struct Fuse_option *fo)
 {
-	int i;
 	if (fo->argv) {
-		for (i = 0; i < fo->max_options; ++i)
-			if (fo->argv[i])
-				owfree(fo->argv[i]);
+		char ** option_pointer;
+		for (option_pointer=fo->argv; option_pointer[0] != NULL; ++option_pointer) {
+			owfree(option_pointer[0]);
+		}
 		owfree(fo->argv);
+		fo->argv = NULL ;
 	}
 }
 
@@ -58,24 +55,31 @@ int Fuse_parse(char *opts, struct Fuse_option *fo)
 	return 0;
 }
 
+/* Add an option for the fuse library. 
+ * Must be in char ** argv format like any parameters sent to main
+ * use a resizeable array
+ */
 int Fuse_add(char *opt, struct Fuse_option *fo)
 {
 	//LEVEL_DEBUG("Adding option %s",opt);
-	if (fo->argc >= fo->max_options) {	// need to allocate more space
-		int i = fo->max_options;
-		void *temp = fo->argv;
+	if (fo->argc >= fo->max_options-1) {	
+		char ** old_argv = fo->argv ;
+		// need to allocate more space
 		fo->max_options += 10;
-		fo->argv = (char **) owrealloc(temp, (fo->max_options + 1) * sizeof(char *));
+		
+		fo->argv = (char **) owrealloc(old_argv, (fo->max_options + 1) * sizeof(char *));
 		if (fo->argv == NULL) {
-			if (temp)
-				owfree(temp);
-			return -ENOMEM;		// allocated ok?
-		}
-		for (; i <= fo->max_options; ++i)
-			fo->argv[i] = NULL;	// now clear the new pointers
+			// not enough memory. Clean up and return an error
+			fo->argv = old_argv ;
+			Fuse_cleanup(fo) ;
+			return -ENOMEM;
+		}	
 	}
+	// Add new element
 	fo->argv[fo->argc++] = owstrdup(opt);
-	//LEVEL_DEBUG("Added option %d %s",fo->argc-1,fo->argv[fo->argc-1]);
+	// and guard element at end
+	fo->argv[fo->argc] = NULL;
+	LEVEL_DEBUG("Added FUSE option %d %s",fo->argc-1,fo->argv[fo->argc-1]);
 	return 0;
 }
 
