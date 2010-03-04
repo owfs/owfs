@@ -87,6 +87,8 @@ WRITE_FUNCTION(FS_Hscreenyx);
 WRITE_FUNCTION(FS_Hmessage);
 WRITE_FUNCTION(FS_Honoff);
 
+#define PROPERTY_LENGTH_LCD_MESSAGE   128
+
 /* ------- Structures ----------- */
 
 struct aggregate A2408 = { 8, ag_numbers, ag_aggregate, };
@@ -102,14 +104,14 @@ struct filetype DS2408[] = {
 	{"LCD_M", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_stable, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"LCD_M/clear", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_Mclear, VISIBLE, NO_FILETYPE_DATA,},
 	{"LCD_M/home", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_Mhome, VISIBLE, NO_FILETYPE_DATA,},
-	{"LCD_M/screen", 128, NON_AGGREGATE, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_Mscreen, VISIBLE, NO_FILETYPE_DATA,},
-	{"LCD_M/message", 128, NON_AGGREGATE, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_Mmessage, VISIBLE, NO_FILETYPE_DATA,},
+	{"LCD_M/screen", PROPERTY_LENGTH_LCD_MESSAGE, NON_AGGREGATE, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_Mscreen, VISIBLE, NO_FILETYPE_DATA,},
+	{"LCD_M/message", PROPERTY_LENGTH_LCD_MESSAGE, NON_AGGREGATE, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_Mmessage, VISIBLE, NO_FILETYPE_DATA,},
 	{"LCD_H", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_stable, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"LCD_H/clear", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_Hclear, VISIBLE, NO_FILETYPE_DATA,},
 	{"LCD_H/home", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_Hhome, VISIBLE, NO_FILETYPE_DATA,},
-	{"LCD_H/screen", 128, NON_AGGREGATE, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_Hscreen, VISIBLE, NO_FILETYPE_DATA,},
-	{"LCD_H/screenyx", 128, NON_AGGREGATE, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_Hscreenyx, VISIBLE, NO_FILETYPE_DATA,},
-	{"LCD_H/message", 128, NON_AGGREGATE, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_Hmessage, VISIBLE, NO_FILETYPE_DATA,},
+	{"LCD_H/screen", PROPERTY_LENGTH_LCD_MESSAGE, NON_AGGREGATE, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_Hscreen, VISIBLE, NO_FILETYPE_DATA,},
+	{"LCD_H/screenyx", PROPERTY_LENGTH_LCD_MESSAGE, NON_AGGREGATE, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_Hscreenyx, VISIBLE, NO_FILETYPE_DATA,},
+	{"LCD_H/message", PROPERTY_LENGTH_LCD_MESSAGE, NON_AGGREGATE, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_Hmessage, VISIBLE, NO_FILETYPE_DATA,},
 	{"LCD_H/onoff", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, NO_READ_FUNCTION, FS_Honoff, VISIBLE, NO_FILETYPE_DATA,},
 };
 
@@ -129,8 +131,11 @@ DeviceEntryExtended(29, DS2408, DEV_alarm | DEV_resume | DEV_ovdr);
 MakeInternalProp(INI, fc_stable);	// LCD screen initialized?
 
 /* Nibbles for LCD controller */
-#define NIBBLE_CTRL( x )    ((x)&0xF0) , (((x)<<4)&0xF0)
-#define NIBBLE_DATA( x )    ((x)&0xF0)|0x08 , (((x)<<4)&0xF0)|0x08
+#define LCD_DATA_FLAG       0x08
+#define NIBBLE_ONE(x)       ((x)&0xF0)
+#define NIBBLE_TWO(x)       (((x)<<4)&0xF0)
+#define NIBBLE_CTRL( x )    NIBBLE_ONE(x)               , NIBBLE_TWO(x)
+#define NIBBLE_DATA( x )    NIBBLE_ONE(x)|LCD_DATA_FLAG , NIBBLE_TWO(x)|LCD_DATA_FLAG
 
 /* ------- Functions ------------ */
 
@@ -378,7 +383,7 @@ struct yx {
 	int x ;  // column
 	char * string ; // input string including coordinates
 	size_t length ; // length of string
-	int index ; // counter into string
+	int text_start ; // counter into string
 } ;
 static int Parseyx( struct yx * YX ) ;
 static int binaryyx( struct yx * YX ) ;
@@ -386,11 +391,13 @@ static int asciiyx( struct yx * YX ) ;
 static int OW_Hprintyx(struct yx * YX, struct parsedname * pn) ;
 static int OW_Hinit(struct parsedname * pn) ;
 
-#define LCD_LINE_START           2
+#define LCD_LINE_START           1
 #define LCD_LINE_END             20
 #define LCD_FIRST_ROW            1
 #define LCD_LAST_ROW             4
+#define LCD_SAME_LOCATION_VALUE  0
 
+// Clear the display after potential initialization
 static int FS_Hclear(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
@@ -399,8 +406,8 @@ static int FS_Hclear(struct one_wire_query *owq)
 		NIBBLE_CTRL(LCD_COMMAND_DISPLAY_ON),
 		NIBBLE_CTRL(LCD_COMMAND_RIGHT_TO_LEFT),
 	};
-	
 	if ( OW_Hinit(pn) ) {
+		LEVEL_DEBUG("Screen initialization error");	
 		return -EINVAL ;
 	}
 	if (OW_w_pios(clear, 6, pn)) {
@@ -441,10 +448,12 @@ static int OW_Hinit(struct parsedname * pn)
 		return 1 ;
 	}// clear PIOs
 	if ( OW_w_pios(start, 1, pn)) {
+		LEVEL_DEBUG("Error sending initial attention");	
 		return 1;
 	}
 	UT_delay(5);
 	if (OW_w_pios(next, 5, pn)) {
+		LEVEL_DEBUG("Error sending setup commands");	
 		return 1;
 	}
 	Cache_Add_Internal(&init, sizeof(init), InternalProp(INI), pn);
@@ -455,6 +464,7 @@ static int Parseyx( struct yx * YX )
 {
 	if ( YX->length < 2 ) {
 		// not long enough to have an address
+		LEVEL_DEBUG("String too short to contain the location (%d bytes)",YX->length);
 		return -EINVAL ;
 	}
 
@@ -470,7 +480,7 @@ static int binaryyx( struct yx * YX )
 {
 	YX->y = YX->string[0] ;
 	YX->x = YX->string[1] ;
-	YX->index = 2 ;
+	YX->text_start = 2 ;
 
 	return 0 ; // next char
 }
@@ -480,20 +490,20 @@ static int asciiyx( struct yx * YX )
 {
 	char * colon = memchr( YX->string, ':', YX->length ) ; // position of mandatory colon
 	if ( colon==NULL ) {
-		LEVEL_DEBUG("No colon in screen text. Should be 'y.x:text'");
+		LEVEL_DEBUG("No colon in screen text location. Should be 'y.x:text'");
 		return -EINVAL ;
 	}
 
-	colon[0] = '\0' ; // for safety
-	if ( sscanf(YX->string, "%d,%d", &YX->y, &YX->x ) < 2 ) {
+	if ( sscanf(YX->string, "%d,%d:", &YX->y, &YX->x ) < 2 ) {
 		// only one value. Set row=1
 		YX->y = 1 ;
-		if ( sscanf(YX->string, "%d", &YX->x ) < 1 ) {
+		if ( sscanf(YX->string, "%d:", &YX->x ) < 1 ) {
+			LEVEL_DEBUG("Ascii string location not valid");
 			return -EINVAL ;
 		}
 	}
 	// start text after colon
-	YX->index = ( colon - YX->string ) + 1 ;
+	YX->text_start = ( colon - YX->string ) + 1 ;
 	return 0 ;
 }
 
@@ -527,7 +537,7 @@ static int FS_Hscreen(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	// y=0 is flag to do no position setting
-	struct yx YX = { 0, 0, OWQ_buffer(owq), OWQ_size(owq), 0 } ;
+	struct yx YX = { LCD_SAME_LOCATION_VALUE, LCD_SAME_LOCATION_VALUE, OWQ_buffer(owq), OWQ_size(owq), 0 } ;
 	if ( OW_Hinit(pn) ) {
 		return -EINVAL ;
 	}
@@ -555,51 +565,50 @@ static int FS_Hscreenyx(struct one_wire_query *owq)
 // YX structure is set with y,x,string,length, and start position of text 
 static int OW_Hprintyx(struct yx * YX, struct parsedname * pn)
 {
-	size_t translated_length = 2 + 2 * YX->length;
-	BYTE translated_data[translated_length];
-	size_t i, translate_index ;
-	u_char chip_command;
+	BYTE translated_data[2 + 2 * (YX->length-YX->text_start)];
+	size_t original_index ;
+	size_t translate_index = 0;
 
-	if ( YX->x > LCD_LINE_END || YX->y > LCD_LAST_ROW || YX->x < LCD_LINE_START || YX->y < LCD_FIRST_ROW ) {
+	int Valid_YX = ( YX->x <= LCD_LINE_END && YX->y <= LCD_LAST_ROW && YX->x >= LCD_LINE_START && YX->y >= LCD_FIRST_ROW ) ;
+	int Continue_YX = ( YX->y == LCD_SAME_LOCATION_VALUE || YX->x == LCD_SAME_LOCATION_VALUE ) ;
+
+	if ( Valid_YX ) {
+		BYTE chip_command ;
+		switch (YX->y) { // row value
+			case 1:
+				chip_command = LCD_COMMAND_SET_DDRAM_ADDRESS;
+				break;
+			case 2:
+				chip_command = LCD_COMMAND_SET_DDRAM_ADDRESS + LCD_SECOND_ROW_ADDRESS;
+				break;
+			case 3:
+				chip_command = LCD_COMMAND_SET_DDRAM_ADDRESS + LCD_LINE_END;
+				break;
+			case 4:
+				chip_command = (LCD_COMMAND_SET_DDRAM_ADDRESS + LCD_SECOND_ROW_ADDRESS) + LCD_LINE_START;
+				break;
+		}
+		chip_command += YX->x - 1; // add column (0 index)
+		// Initial location (2 half bytes)
+		translated_data[translate_index++] = NIBBLE_ONE(chip_command);
+		translated_data[translate_index++] = NIBBLE_TWO(chip_command);
+	} else if ( !Continue_YX ) {
 		LEVEL_DEBUG("Bad screen coordinates y=%d x=%d",YX->y,YX->x);
 		return 1;
 	}
-	
-	switch (YX->y) {
-		case 1:
-			chip_command = LCD_COMMAND_SET_DDRAM_ADDRESS;
-			break;
-		case 2:
-			chip_command = LCD_COMMAND_SET_DDRAM_ADDRESS | LCD_SECOND_ROW_ADDRESS;
-			break;
-		case 3:
-			chip_command = LCD_COMMAND_SET_DDRAM_ADDRESS + LCD_LINE_END;
-			break;
-		case 4:
-			chip_command = (LCD_COMMAND_SET_DDRAM_ADDRESS | LCD_SECOND_ROW_ADDRESS) + LCD_LINE_START;
-			break;
-		default: // do noop
-			chip_command = LCD_COMMAND_DISPLAY_ON;
-			break;
-	}
-	
-	chip_command += YX->x - 1; // 0 index
-	
-	// Initial location (2 half bytes)
-	translated_data[0] = (chip_command & 0xF0);
-	translated_data[1] = (chip_command << 4) & 0xF0;
-	
+		
 	//printf("Hscreen test<%*s>\n",(int)size,buf) ;
-	for (i = YX->index, translate_index = 2; i < YX->length; ++i, translate_index +=2) {
-		if (YX->string[i]) {
-			translated_data[translate_index] = (YX->string[i] & 0xF0) | 0x08;
-			translated_data[translate_index+1] = ((YX->string[i] << 4) & 0xF0) | 0x08;
+	for ( original_index = YX->text_start ; original_index < YX->length ; ++original_index ) {
+		if (YX->string[original_index]) {
+			translated_data[translate_index++] = NIBBLE_ONE(YX->string[original_index]) | LCD_DATA_FLAG;
+			translated_data[translate_index++] = NIBBLE_TWO(YX->string[original_index]) | LCD_DATA_FLAG;
 		} else {				//null byte becomes space
-			translated_data[translate_index] = 0x28;
-			translated_data[translate_index+1] = 0x08;
+			translated_data[translate_index++] = NIBBLE_ONE(' ') | LCD_DATA_FLAG;
+			translated_data[translate_index++] = NIBBLE_TWO(' ') | LCD_DATA_FLAG;
 		}
 	}
-	return OW_w_pios(translated_data, translated_length, pn) ;
+	LEVEL_DEBUG("Print the message");
+	return OW_w_pios(translated_data, translate_index, pn) ;
 }
 
 // 0x01 => blinking cursor on
@@ -608,15 +617,14 @@ static int OW_Hprintyx(struct yx * YX, struct parsedname * pn)
 static int FS_Honoff(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
-	BYTE onoff[] = { 0x00, 0x00 };
-
-	onoff[1] = ((0x08 | OWQ_U(owq)) << 4) & 0xF0;
+	BYTE onoff[] = { NIBBLE_DATA(OWQ_U(owq)) };
 
 	if ( OW_Hinit(pn) ) {
 		return -EINVAL ;
 	}
 	// onoff
 	if (OW_w_pios(onoff, 2, pn)) {
+		LEVEL_DEBUG("Error setting LCD state");	
 		return -EINVAL;
 	}
 	return 0;
