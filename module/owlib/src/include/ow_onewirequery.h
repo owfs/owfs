@@ -87,6 +87,7 @@ int OWQ_allocate_write_buffer( const char * write_buffer, size_t buffer_length, 
 void OWQ_assign_read_buffer(char *buffer, size_t size, off_t offset, struct one_wire_query *owq) ;
 void OWQ_assign_write_buffer(const char *buffer, size_t size, off_t offset, struct one_wire_query *owq) ;
 
+struct one_wire_query * OWQ_create_separate( int extension, struct one_wire_query * owq_aggregate ) ;
 
 void OWQ_create_shallow_single(struct one_wire_query *owq_shallow, struct one_wire_query *owq_original);
 void OWQ_create_shallow_bitfield(struct one_wire_query *owq_shallow, struct one_wire_query *owq_original);

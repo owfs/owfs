@@ -298,7 +298,7 @@ static int FS_w_screenX(struct one_wire_query *owq)
 	OWQ_allocate_struct_and_pointer(owq_line);
 
 	if (OWQ_offset(owq)) {
-		return -EADDRNOTAVAIL;
+		return -ERANGE;
 	}
 
 	if (OW_clear(pn)) {

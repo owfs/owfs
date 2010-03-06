@@ -587,6 +587,9 @@ static int OW_Hprintyx(struct yx * YX, struct parsedname * pn)
 			case 4:
 				chip_command = (LCD_COMMAND_SET_DDRAM_ADDRESS + LCD_SECOND_ROW_ADDRESS) + LCD_LINE_START;
 				break;
+			default:
+				LEVEL_DEBUG("Unrecognized row %d",YX->y) ;
+				return 1 ;
 		}
 		chip_command += YX->x - 1; // add column (0 index)
 		// Initial location (2 half bytes)

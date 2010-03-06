@@ -69,6 +69,28 @@ struct one_wire_query * OWQ_create_sibling(const char *sibling, struct one_wire_
 	return NULL ;
 }
 
+/* Use an aggregate OWQ as a template for a single element */
+struct one_wire_query * OWQ_create_separate( int extension, struct one_wire_query * owq_aggregate )
+{
+	struct one_wire_query * owq_sep = owmalloc( sizeof( struct one_wire_query ) + OWQ_DEFAULT_READ_BUFFER_SIZE ) ;
+	
+	LEVEL_DEBUG("%s with extension %d", PN(owq_aggregate)->path,extension);
+
+	if ( owq_sep== NULL) {
+		LEVEL_DEBUG("No memory to create object for extension %d",extension) ;
+		return NULL ;
+	}
+	
+	memset(owq_sep, 0, sizeof(owq_sep));
+	OWQ_cleanup(owq_sep) = owq_cleanup_owq ;
+	
+	memcpy( PN(owq_sep), PN(owq_aggregate), sizeof(struct parsedname) ) ;
+	PN(owq_sep)->extension = extension ;
+	OWQ_buffer(owq_sep) = (char *) (& owq_sep[1]) ; // point just beyond the one_wire_query struct
+	OWQ_size(owq_sep) = OWQ_DEFAULT_READ_BUFFER_SIZE ;
+	OWQ_offset(owq_sep) = 0 ;
+	return owq_sep ;
+}
 
 /* Create the Parsename structure and load the relevant fields */
 int OWQ_create(const char *path, struct one_wire_query *owq)

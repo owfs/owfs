@@ -108,7 +108,6 @@ OWLIB_SOURCE = ow_dl.c           \
                ow_parseshallow.c \
                ow_parse_sn.c     \
                ow_pid.c          \
-               ow_pio.c          \
 	       ow_powerbyte.c    \
                ow_presence.c     \
                ow_pressure.c     \
