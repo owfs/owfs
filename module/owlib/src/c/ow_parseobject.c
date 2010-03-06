@@ -54,13 +54,19 @@ struct one_wire_query * OWQ_create_sibling(const char *sibling, struct one_wire_
 {
 	char path[PATH_MAX] ;
 	int dirlength = PN(owq_original)->dirlength ;
+	struct one_wire_query * owq_sib ;
 
 	strncpy(path,PN(owq_original)->path,dirlength) ;
 	strcpy(&path[dirlength],sibling) ;
 
 	LEVEL_DEBUG("Create sibling %s from %s as %s", sibling,PN(owq_original)->path,path);
 
-	return OWQ_create_from_path(path) ;
+	owq_sib = OWQ_create_from_path(path) ;
+	if ( owq_sib != NULL ) {
+		OWQ_offset(owq_sib) = 0 ;
+		return owq_sib ;
+	}
+	return NULL ;
 }
 
 
