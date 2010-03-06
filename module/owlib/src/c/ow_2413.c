@@ -206,11 +206,11 @@ static int OW_write(BYTE data, const struct parsedname *pn)
 // piostate -> sense
 static UINT SENSED_state(UINT status_bits)
 {
-	return ((status_bit &0x01) >> 0) | ((status_bit 0x04) >>1);
+	return ((status_bits & 0x01) >> 0) | ((status_bits & 0x04) >>1);
 }
 
 // piostate -> latch
 static UINT LATCH_state(UINT status_bits)
 {
-	return ((status_bit &0x02) >> 1) | ((status_bit 0x08) >>2);
+	return ((status_bits & 0x02) >> 1) | ((status_bits & 0x08) >>2);
 }
