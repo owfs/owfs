@@ -116,12 +116,12 @@ static int FS_read_fake_array(struct one_wire_query *owq)
 	size_t elements = OWQ_pn(owq).selected_filetype->ag->elements;
 	size_t extension;
 	size_t entry_length = FileLength(PN(owq));
-	OWQ_allocate_struct_and_pointer(owq_single);
-
-	OWQ_create_shallow_single(owq_single, owq);
 
 	for (extension = 0; extension < elements; ++extension) {
-		OWQ_pn(owq_single).extension = extension;
+		struct one_wire_query * owq_single = OWQ_create_separate( extension, owq ) ;
+		if ( owq_single == NULL ) {
+			return -ENOMEM ;
+		}
 		switch (OWQ_pn(owq).selected_filetype->format) {
 		case ft_integer:
 		case ft_yesno:
@@ -136,18 +136,20 @@ static int FS_read_fake_array(struct one_wire_query *owq)
 		case ft_vascii:
 		case ft_ascii:
 		case ft_binary:
-			OWQ_size(owq_single) = entry_length;
-			OWQ_buffer(owq_single) = &OWQ_buffer(owq)[extension * entry_length];
+			OWQ_assign_read_buffer(&OWQ_buffer(owq)[extension * entry_length],entry_length,0,owq_single) ;
 			break;
 		case ft_directory:
 		case ft_subdir:
 		case ft_unknown:
+			OWQ_destroy(owq_single) ;
 			return -ENOENT;
 		}
 		if (FS_read_fake_single(owq_single)) {
+			OWQ_destroy(owq_single) ;
 			return -EINVAL;
 		}
 		memcpy(&OWQ_array(owq)[extension], &OWQ_val(owq_single), sizeof(union value_object));
+		OWQ_destroy(owq_single) ;
 	}
 	return 0;
 }

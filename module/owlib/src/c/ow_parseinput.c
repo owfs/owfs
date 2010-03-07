@@ -59,6 +59,8 @@ static size_t FS_check_length(struct one_wire_query *owq);
         binary   memcpy     fixed length binary string      binary "string"
 */
 
+
+// Routines to take write data (ascii representation) and interpret it and place into the proper fields.
 int OWQ_parse_input(struct one_wire_query *owq)
 {
 	switch (OWQ_pn(owq).extension) {
@@ -365,15 +367,13 @@ static int FS_input_array_with_commas(struct one_wire_query *owq)
 	char *end = OWQ_buffer(owq) + OWQ_size(owq);
 	char *comma = NULL;			// assignment to avoid compiler warning
 	char *buffer_position;
-	OWQ_allocate_struct_and_pointer(owq_single);
 
 	if (OWQ_offset(owq)!=0) {
 		return -EINVAL;
 	}
 
-	OWQ_create_shallow_single(owq_single, owq);
-
 	for (extension = 0; extension < elements; ++extension) {
+		struct one_wire_query * owq_single ;
 		// find start of buffer span
 		if (extension == 0) {
 			buffer_position = OWQ_buffer(owq);
@@ -395,13 +395,17 @@ static int FS_input_array_with_commas(struct one_wire_query *owq)
 		//Debug_Bytes("FS_input_array_with_commas -- to end",buffer_position,end-buffer_position) ;
 		//Debug_Bytes("FS_input_array_with_commas -- to comma",buffer_position,comma-buffer_position) ;
 		// set up single element
-		OWQ_pn(owq_single).extension = extension;
-		OWQ_buffer(owq_single) = buffer_position;
-		OWQ_size(owq_single) = comma - buffer_position;
+		owq_single = OWQ_create_separate( extension, owq ) ;
+		if ( owq_single == NULL ) {
+			return -ENOMEM ;
+		}
+		OWQ_assign_read_buffer(buffer_position, comma - buffer_position, 0, owq_single) ;
 		if (OWQ_parse_input(owq_single)) {
+			OWQ_destroy(owq_single) ;
 			return -EINVAL;
 		}
 		memcpy(&(OWQ_array(owq)[extension]), &OWQ_val(owq_single), sizeof(union value_object));
+		OWQ_destroy(owq_single) ;
 	}
 	return 0;
 }

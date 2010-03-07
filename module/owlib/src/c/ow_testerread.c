@@ -135,7 +135,6 @@ static int FS_read_tester_array(struct one_wire_query *owq)
 		if ( owq_single == NULL ) {
 			return -ENOMEM ;
 		}
-		OWQ_pn(owq_single).extension = extension;
 		switch (OWQ_pn(owq).selected_filetype->format) {
 		case ft_integer:
 		case ft_yesno:
