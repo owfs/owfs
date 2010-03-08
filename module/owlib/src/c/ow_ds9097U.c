@@ -217,7 +217,8 @@ static void DS2480_setroutines(struct connection_in *in)
 int DS2480_detect(struct connection_in *in)
 {
 	struct parsedname pn;
-	int ret;
+	int return_value ;
+	int reset_cycles ;
 
 	FS_ParsedName(NULL, &pn);	// minimal parsename -- no destroy needed
 	pn.selected_connection = in;
@@ -233,9 +234,14 @@ int DS2480_detect(struct connection_in *in)
 	in->connin.serial.reverse_polarity = Globals.serial_reverse ;
 	in->baud = Globals.baud ;
 
-	ret = DS2480_big_reset(&pn) ;
-	if ( ret ) {
-		return ret ;
+	for ( reset_cycles = 0 ; reset_cycles < 10 ; ++reset_cycles ) {
+		return_value = DS2480_big_reset(&pn) ;
+		if ( return_value == 0 ) {
+			break ;
+		}
+	}
+	if ( return_value ) {
+		return return_value ;
 	}
 
 	in->busmode = bus_serial;
