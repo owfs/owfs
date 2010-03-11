@@ -73,6 +73,7 @@ DeviceEntryExtended(3A, DS2413, DEV_resume | DEV_ovdr);
 #define _1W_PIO_ACCESS_WRITE 0x5A
 
 #define _1W_2413_LATCH_MASK 0x0A
+#define _1W_2413_CONFIRMATION 0xAA
 
 /* ------- Functions ------------ */
 
@@ -96,8 +97,17 @@ static int FS_r_piostate(struct one_wire_query *owq)
 		return -EINVAL ;
 	}
 
-	OWQ_U(owq) = piostate & 0x0F ;
+	OWQ_U(owq) = piostate ;
 	return 0 ;
+}
+
+/* write 2413 switch -- 2 values*/
+static int FS_w_piostate(struct one_wire_query *owq)
+{
+	UINT pio = OWQ_U(owq) ;
+
+	FS_del_sibling( "piostate", owq ) ;
+	return OW_write( pio, PN(owq) ) ? -EINVAL : 0 ;
 }
 
 /* 2413 switch */
@@ -113,6 +123,13 @@ static int FS_r_pio(struct one_wire_query *owq)
 	// complement
 	OWQ_U(owq) = SENSED_state(piostate) ^ 0x03 ;
 	return 0 ;
+}
+
+/* write 2413 switch -- 2 values*/
+static int FS_w_pio(struct one_wire_query *owq)
+{
+	// complement
+	return FS_w_sibling_U( OWQ_U(owq) ^ 0x03 , "piostate", owq );
 }
 
 /* 2413 switch PIO sensed*/
@@ -141,30 +158,15 @@ static int FS_r_latch(struct one_wire_query *owq)
 	return 0 ;
 }
 
-/* write 2413 switch -- 2 values*/
-static int FS_w_pio(struct one_wire_query *owq)
-{
-	return FS_w_sibling_U( OWQ_U(owq), "piostate", owq );
-}
-
-/* write 2413 switch -- 2 values*/
-static int FS_w_piostate(struct one_wire_query *owq)
-{
-	/* mask and reverse bits */
-	UINT pio = (OWQ_U(owq)^0x03) & 0x03 ;
-
-	FS_del_sibling( "piostate", owq ) ;
-	return OW_write( pio, PN(owq) ) ? -EINVAL : 0 ;
-}
-
 /* read status byte */
 static int OW_read(BYTE * data, const struct parsedname *pn)
 {
-	BYTE p[] = { _1W_PIO_ACCESS_READ, };
+	BYTE cmd[] = { _1W_PIO_ACCESS_READ, };
+	BYTE resp[1] ;
 	struct transaction_log t[] = {
 		TRXN_START,
-		TRXN_WRITE1(p),
-		TRXN_READ1(data),
+		TRXN_WRITE1(cmd),
+		TRXN_READ1(resp),
 		TRXN_END,
 	};
 
@@ -173,10 +175,11 @@ static int OW_read(BYTE * data, const struct parsedname *pn)
 	}
 	// High nibble the complement of low nibble?
 	// Fix thanks to josef_heiler
-	if ((data[0] & 0x0F) != ((~data[0] >> 4) & 0x0F)) {
+	if ((resp[0] & 0x0F) != ((~resp[0] >> 4) & 0x0F)) {
 		return 1;
 	}
 
+	data[0] = resp[0] & 0x0F ;
 	return 0;
 }
 
@@ -184,23 +187,19 @@ static int OW_read(BYTE * data, const struct parsedname *pn)
 /* top 6 bits are set to 1, complement then sent */
 static int OW_write(BYTE data, const struct parsedname *pn)
 {
-	BYTE p[] = { _1W_PIO_ACCESS_WRITE, data | 0xFC, (data ^ 0x03) & 0x03, };
-	BYTE q[1];
+	BYTE data_masked = data | 0xFC ;
+	BYTE cmd[] = { _1W_PIO_ACCESS_WRITE, data_masked, ~data_masked, };
+	BYTE chk[1];
+	BYTE confirm[] = { _1W_2413_CONFIRMATION, } ;
 	struct transaction_log t[] = {
 		TRXN_START,
-		TRXN_WRITE3(p),
-		TRXN_READ1(q),
+		TRXN_WRITE3(cmd),
+		TRXN_READ1(chk),
+		TRXN_COMPARE(chk,confirm,1),
 		TRXN_END,
 	};
 
-	if (BUS_transaction(t, pn)) {
-		return 1;
-	}
-	if (q[0] != 0xAA) {
-		return 1;
-	}
-
-	return 0;
+	return BUS_transaction(t, pn) ;
 }
 
 // piostate -> sense
