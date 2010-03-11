@@ -253,7 +253,7 @@ static int DS2480_initialize_repeatedly(struct parsedname * pn)
 
 	for ( init_cycles = 0 ; init_cycles < DS9097U_INIT_CYCLES ; ++init_cycles ) {
 		LEVEL_DEBUG("Attempt #%d to initialize the DS9097U",init_cycles) ;
-		if ( DS2480_big_reset(&pn) == 0 ) {
+		if ( DS2480_big_reset(pn) == 0 ) {
 			return 0 ;
 		}
 	}
