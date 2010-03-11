@@ -18,6 +18,7 @@ $Id$
 static int DS2480_next_both(struct device_search *ds, const struct parsedname *pn);
 //static int DS2480_databit(int sendbit, int *getbit, const struct parsedname *pn);
 static int DS2480_reset(const struct parsedname *pn);
+static int DS2480_initialize_repeatedly(struct parsedname * pn);
 static int DS2480_big_reset(const struct parsedname *pn) ;
 static int DS2480_big_reset_serial(const struct parsedname *pn) ;
 static int DS2480_big_reset_net(const struct parsedname *pn) ;
@@ -58,6 +59,9 @@ static void DS2480_setroutines(struct connection_in *in)
 	in->iroutines.flags = 0;
 	in->bundling_length = UART_FIFO_SIZE;
 }
+
+// Number of times to try init (from digitemp code))
+#define DS9097U_INIT_CYCLES   10
 
 /* --------------------------- */
 /* DS2480 defines from PDkit   */
@@ -217,8 +221,6 @@ static void DS2480_setroutines(struct connection_in *in)
 int DS2480_detect(struct connection_in *in)
 {
 	struct parsedname pn;
-	int return_value ;
-	int reset_cycles ;
 
 	FS_ParsedName(NULL, &pn);	// minimal parsename -- no destroy needed
 	pn.selected_connection = in;
@@ -234,19 +236,29 @@ int DS2480_detect(struct connection_in *in)
 	in->connin.serial.reverse_polarity = Globals.serial_reverse ;
 	in->baud = Globals.baud ;
 
-	for ( reset_cycles = 0 ; reset_cycles < 10 ; ++reset_cycles ) {
-		return_value = DS2480_big_reset(&pn) ;
-		if ( return_value == 0 ) {
-			break ;
-		}
-	}
-	if ( return_value ) {
-		return return_value ;
+	if ( DS2480_initialize_repeatedly(&pn) ) {
+		LEVEL_DEBUG("Could not initilize the DS9097U even after several tries") ;
+		return -EIO ;
 	}
 
 	in->busmode = bus_serial;
 
 	return DS2480_adapter(in) ;
+}
+
+// Make several attempts to initialize -- based on Digitemp example
+static int DS2480_initialize_repeatedly(struct parsedname * pn)
+{
+	int init_cycles ;
+
+	for ( init_cycles = 0 ; init_cycles < DS9097U_INIT_CYCLES ; ++init_cycles ) {
+		LEVEL_DEBUG("Attempt #%d to initialize the DS9097U",init_cycles) ;
+		if ( DS2480_big_reset(&pn) == 0 ) {
+			return 0 ;
+		}
+	}
+
+	return 1 ;
 }
 
 static int DS2480_adapter(struct connection_in *in)
