@@ -127,10 +127,6 @@ int ClientAddr(char *sname, struct connection_in *in);
 int ClientConnect(struct connection_in *in);
 void FreeClientAddr(struct connection_in *in);
 
-void SideAddr(struct connection_side *side);
-int SideConnect(struct connection_side *side);
-void FreeSideAddr(struct connection_side *side);
-
 void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (int errcode));
 int ServerOutSetup(struct connection_out *out);
 

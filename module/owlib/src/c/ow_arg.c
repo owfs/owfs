@@ -284,16 +284,6 @@ int ARG_Server(const char *arg)
 	return 0;
 }
 
-int ARG_Side(const char *arg)
-{
-	struct connection_side *side = NewSide();
-	if (side == NULL) {
-		return 1;
-	}
-	side->name = arg ? owstrdup(arg) : NULL;
-	return 0;
-}
-
 int ARG_Tester(const char *arg)
 {
 	struct connection_in *in = NewIn(NULL);

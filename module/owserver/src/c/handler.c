@@ -106,15 +106,6 @@ void Handler(int file_descriptor)
 			hd.sm.control_flags &= ~PERSISTENT_MASK;
 		}
 
-		/* Sidetap handling */
-		if (Sidebound_Control.active > 0) {
-			struct connection_side *side;
-			SetupSideMessage(&hd);
-			for (side = Sidebound_Control.head; side != NULL; side = side->next) {
-				FromClientSide(side, &hd);
-			}
-		}
-
 		/* Do the real work */
 		SingleHandler(&hd);
 
@@ -306,12 +297,6 @@ static void SingleHandler(struct handlerdata *hd)
 				char *c = NULL;	// dummy argument
 				LEVEL_DEBUG("PING handler {%lu} %s",this_handler_count,hd->sp.path) ;
 				ToClient(hd->file_descriptor, &ping_cm, c);	// send the ping
-				if (Sidebound_Control.active > 0) {
-					struct connection_side *side;
-					for (side = Sidebound_Control.head; side != NULL; side = side->next) {
-						ToClientSide(side, &ping_cm, c, &(hd->sidem));
-					}
-				}
 				gettimeofday(&(hd->tv), NULL);	// reset timer
 			} else {
 				LEVEL_DEBUG("NOPING handler {%lu} %s",this_handler_count,hd->sp.path) ;

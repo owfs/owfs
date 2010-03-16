@@ -114,14 +114,6 @@ int FromClient(struct handlerdata *hd)
 		hd->sp.datasize = 0;
 	}
 
-	if (isServersidetap(hd->sm.version)) {	/* side tap shouldn't come to owserver */
-		owfree(msg);
-		hd->sm.type = msg_error;
-		LEVEL_CALL("owserver shouldn't get sidetap messages");
-		return -EPROTO;
-	}
-
-
 	if (isServermessage(hd->sm.version)) {	/* make sure no loop */
 		size_t i;
 		char *p = &msg[hd->sm.payload];	// end of normal buffer

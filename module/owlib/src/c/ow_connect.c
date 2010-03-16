@@ -48,12 +48,6 @@ struct outbound_control Outbound_Control = {
 	.head = NULL,
 };
 
-struct sidebound_control Sidebound_Control = {
-	.active = 0,
-	.next_index = 0,
-	.head = NULL,
-};
-
 struct connection_in *find_connection_in(int bus_number)
 {
 	struct connection_in *c_in;
@@ -158,26 +152,6 @@ struct connection_out *NewOut(void)
 		//now->sref1 = 0 ;
 	} else {
 		LEVEL_DEFAULT("Cannot allocate memory for server structure,");
-	}
-	return now;
-}
-
-struct connection_side *NewSide(void)
-{
-	size_t len = sizeof(struct connection_side);
-	struct connection_side *now = (struct connection_side *) owmalloc(len);
-	if (now) {
-		memset(now, 0, len);
-		now->next = Sidebound_Control.head;
-		Sidebound_Control.head = now;
-		now->index = Sidebound_Control.next_index++;
-		++Sidebound_Control.active ;
-		now->file_descriptor = -1;
-#if OW_MT
-		my_pthread_mutex_init(&(now->side_mutex), Mutex.pmattr);
-#endif							/* OW_MT */
-	} else {
-		LEVEL_DEFAULT("Cannot allocate memory for sidetap structure,");
 	}
 	return now;
 }
@@ -354,40 +328,6 @@ void FreeOutAll(void)
 			}
 		}
 #endif
-		owfree(now);
-	}
-}
-
-void FreeSide(void)
-{
-	struct connection_side *next = Sidebound_Control.head;
-	struct connection_side *now;
-
-	Sidebound_Control.head = NULL;
-	Sidebound_Control.active = 0;
-	while (next) {
-		now = next;
-		next = now->next;
-#if OW_MT
-		my_pthread_mutex_destroy(&(now->side_mutex));
-#endif							/* OW_MT */
-		Test_and_Close( & (now->file_descriptor) ) ;
-		if (now->name) {
-			owfree(now->name);
-			now->name = NULL;
-		}
-		if (now->host) {
-			owfree(now->host);
-			now->host = NULL;
-		}
-		if (now->service) {
-			owfree(now->service);
-			now->service = NULL;
-		}
-		if (now->ai) {
-			freeaddrinfo(now->ai);
-			now->ai = NULL;
-		}
 		owfree(now);
 	}
 }

@@ -18,7 +18,6 @@ $Id$
 static void IgnoreSignals(void);
 static void SetupTemperatureLimits( void );
 static void SetupInboundConnections(void);
-static void SetupSideboundConnections(void);
 
 /* Start the owlib process -- already in background */
 int LibStart(void)
@@ -37,8 +36,6 @@ int LibStart(void)
 		LEVEL_DEFAULT("W1 (the linux kernel 1-wire system) is not supported");
 #endif /* OW_W1 */
 	}
-
-	SetupSideboundConnections();
 
 	// zeroconf/Bonjour look for new services
 	if (Globals.autoserver) {
@@ -231,16 +228,6 @@ static void SetupInboundConnections(void)
 		}
 	}
 }
-
-static void SetupSideboundConnections(void)
-{
-	struct connection_side *side;
-
-	for (side = Sidebound_Control.head; side != NULL; side = side->next) {
-		SideAddr(side);
-	}
-}
-
 
 static void IgnoreSignals(void)
 {

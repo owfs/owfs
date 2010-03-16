@@ -275,7 +275,6 @@ ssize_t getline (char **lineptr, size_t *n, FILE *stream) ;
 /* predeclare connection_in/out */
 struct connection_in;
 struct connection_out;
-struct connection_side;
 
 /* Maximum length of a file or directory name, and extension */
 #define OW_NAME_MAX      (32)

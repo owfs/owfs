@@ -82,7 +82,6 @@ struct handlerdata {
 	struct timeval tv;
 	struct server_msg sm;
 	struct serverpackage sp;
-	struct side_msg sidem;
 };
 
 /* read from client, free return pointer if not Null */
@@ -111,10 +110,5 @@ void *DataHandler(void *v);
 
 /* Handle a client request, including timeout pings */
 void Handler(int file_descriptor);
-
-/* Sidetap functions */
-int ToClientSide(struct connection_side *side, struct client_msg *cm, char *data, struct side_msg *sidem);
-int FromClientSide(struct connection_side *side, struct handlerdata *hd);
-int SetupSideMessage(struct handlerdata *hd);
 
 #endif							/* OWSERVER_H */

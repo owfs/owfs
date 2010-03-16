@@ -198,12 +198,6 @@ void *DataHandler(void *v)
 	TOCLIENTLOCK(hd);
 	if (cm.ret != -EIO) {
 		ToClient(hd->file_descriptor, &cm, retbuffer);
-		if (Sidebound_Control.active > 0) {
-			struct connection_side *side;
-			for (side = Sidebound_Control.head; side != NULL; side = side->next) {
-				ToClientSide(side, &cm, retbuffer, &(hd->sidem));
-			}
-		}
 	}
 	timerclear(&(hd->tv));
 #if OW_MT && defined(HAVE_SEM_TIMEDWAIT)

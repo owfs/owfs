@@ -71,13 +71,6 @@ union address {
 	char text[120];
 };
 
-/* message to client */
-struct side_msg {
-	int32_t version;
-	union address host;
-	union address peer;
-};
-
 struct serverpackage {
 	ASCII *path;
 	BYTE *data;
@@ -102,10 +95,5 @@ struct serverpackage {
 #define ServerprotocolMASK		((0xFF)<<17)
 #define Serverprotocol(version) (((version) & ServerprotocolMASK) >> 17 )
 #define MakeServerprotocol(protocol) ((protocol) << 17)
-
-// bit 32 set is Sidetap flag
-#define ServersidetapMASK		(((int32_t)1)<<31)
-#define MakeServersidetap		ServersidetapMASK
-#define isServersidetap(version)	(((version) & ServersidetapMASK) == ServersidetapMASK)
 
 #endif							/* OW_MESSAGE_H */

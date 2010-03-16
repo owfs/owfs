@@ -4,7 +4,6 @@ bin_PROGRAMS = owserver
 owserver_SOURCES = owserver.c    \
                    from_client.c \
                    to_client.c   \
-                   to_side.c     \
                    read.c        \
                    write.c       \
                    dir.c         \

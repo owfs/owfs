@@ -115,12 +115,6 @@ const struct option owopts_long[] = {
 	{"max-clients", required_argument, NULL, e_max_clients},	/* ftp max connections */
 	{"maxclients", required_argument, NULL, e_max_clients},	/* ftp max connections */
 
-	{"sidetap", required_argument, NULL, e_sidetap},	/* sidetap address */
-	{"side", required_argument, NULL, e_sidetap},	/* sidetap address */
-	{"Sidetap", required_argument, NULL, e_sidetap},	/* sidetap address */
-	{"SideTap", required_argument, NULL, e_sidetap},	/* sidetap address */
-	{"SIDE", required_argument, NULL, e_sidetap},	/* sidetap address */
-
 	{"passive", required_argument, NULL, e_passive},	/* DS9097 passive */
 	{"PASSIVE", required_argument, NULL, e_passive},	/* DS9097 passive */
 	{"i2c", optional_argument, NULL, e_i2c},	/* i2c adapters */
@@ -683,13 +677,6 @@ int owopt(const int option_char, const char *arg)
 		break;
 	case e_fuse_open_opt:		/* fuse_open_opt, handled in owfs.c */
 		break;
-	case e_sidetap:			/* sidetap address */
-		switch (Globals.opt) {
-		case opt_server:
-			return ARG_Side(arg);
-		default:
-			return 0;
-		}
 	case e_max_clients:
 		if (OW_parsevalue_I(&arg_to_integer, arg)) {
 			return 1;

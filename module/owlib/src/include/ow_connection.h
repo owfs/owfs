@@ -174,8 +174,6 @@ struct interface_routines {
 #define ACCEPTUNLOCK(out)     my_pthread_mutex_unlock(&((out)->accept_mutex) )
 #define OUTLOCK(out)          my_pthread_mutex_lock(  &((out)->out_mutex) )
 #define OUTUNLOCK(out)        my_pthread_mutex_unlock(&((out)->out_mutex) )
-#define SIDELOCK(side)        my_pthread_mutex_lock(  &((side)->side_mutex) )
-#define SIDEUNLOCK(side)      my_pthread_mutex_unlock(&((side)->side_mutex) )
 #else							/* OW_MT */
 #define DEVLOCK(pn)           return_ok()
 #define DEVUNLOCK(pn)         return_ok()
@@ -183,8 +181,6 @@ struct interface_routines {
 #define ACCEPTUNLOCK(out)     return_ok()
 #define OUTLOCK(out)          return_ok()
 #define OUTUNLOCK(out)        return_ok()
-#define SIDELOCK(side)        return_ok()
-#define SIDEUNLOCK(side)      return_ok()
 #endif							/* OW_MT */
 
 enum bus_speed {
@@ -527,28 +523,6 @@ extern struct outbound_control {
 	struct connection_out * head ; // head of a linked list of "bus" entries
 } Outbound_Control ; // Single global struct -- see ow_connect.c
 
-/* Network connection structure */
-struct connection_side {
-	struct connection_side *next;
-	char *name;
-	char *host;
-	char *service;
-	int index;
-	struct addrinfo *ai;
-	struct addrinfo *ai_ok;
-	int file_descriptor;
-	int good_entry;
-#if OW_MT
-	pthread_mutex_t side_mutex;
-#endif							/* OW_MT */
-};
-
-extern struct sidebound_control {
-	int active ; // how many "bus" entries are currently in linked list
-	int next_index ; // increasing sequence number
-	struct connection_side * head ; // head of a linked list of "bus" entries
-} Sidebound_Control ; // Single global struct -- see ow_connect.c
-
 
 #define  FD_PERSISTENT_IN_USE    -2
 #define  FD_PERSISTENT_NONE      -1
@@ -590,12 +564,10 @@ void FreeIn(struct connection_in * now);
 void RemoveIn( struct connection_in * conn ) ;
 
 void FreeOutAll(void);
-void FreeSide(void);
 void DelIn(struct connection_in *in);
 
 struct connection_in *NewIn(const struct connection_in *in);
 struct connection_out *NewOut(void);
-struct connection_side *NewSide(void);
 struct connection_in *find_connection_in(int nr);
 int SetKnownBus( int bus_number, struct parsedname * pn) ;
 

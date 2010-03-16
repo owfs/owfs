@@ -48,7 +48,6 @@ int ARG_Server(const char *arg);
 int ARG_USB(const char *arg);
 int ARG_Device(const char *arg);
 int ARG_Generic(const char *arg);
-int ARG_Side(const char *arg);
 int ARG_Serial(const char *arg);
 int ARG_Parallel(const char *arg);
 int ARG_I2C(const char *arg);

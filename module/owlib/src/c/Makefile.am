@@ -98,7 +98,6 @@ OWLIB_SOURCE = ow_dl.c           \
                ow_name.c         \
                ow_net_client.c   \
                ow_net_server.c   \
-               ow_net_side.c     \
 	       ow_offset.c       \
                ow_opt.c          \
                ow_parseinput.c   \
