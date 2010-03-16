@@ -487,23 +487,6 @@ AC_SUBST(ENABLE_OWMALLOC)
 AM_CONDITIONAL(ENABLE_OWMALLOC, test "${ENABLE_OWMALLOC}" = "true")
 
 
-#Check owside
-AC_MSG_CHECKING(if owside is enabled)
-ENABLE_OWSIDE="true"
-AC_ARG_ENABLE(owside,
-[  --enable-owside          Enable owside module (default true)],
-[
-	AC_MSG_RESULT([$enableval])
-	if test ! "$enableval" = "yes" ; then
-		ENABLE_OWSIDE="false"
-	fi
-],
-[
-	AC_MSG_RESULT([yes (default)])
-])
-AC_SUBST(ENABLE_OWSIDE)
-AM_CONDITIONAL(ENABLE_OWSIDE, test "${ENABLE_OWSIDE}" = "true")
-
 #Check owmon
 AC_MSG_CHECKING(if owmon is enabled)
 ENABLE_OWMON="true"
@@ -1681,8 +1664,6 @@ AC_CONFIG_FILES([
 
 	module/owtap/Makefile
 
-	module/owside/Makefile
-
 	module/owmon/Makefile
 
 	module/swig/Makefile
@@ -1838,11 +1819,6 @@ if test "${ENABLE_OWTAP}" = "true"; then
 	AC_MSG_RESULT([                    owtap is enabled])
 else
 	AC_MSG_RESULT([                    owtap is DISABLED])
-fi
-if test "${ENABLE_OWSIDE}" = "true"; then
-	AC_MSG_RESULT([                   owside is enabled])
-else
-	AC_MSG_RESULT([                   owside is DISABLED])
 fi
 if test "${ENABLE_OWMON}" = "true"; then
 	AC_MSG_RESULT([                    owmon is enabled])
