@@ -53,6 +53,7 @@ READ_FUNCTION(FS_volts);
 READ_FUNCTION(FS_Humid);
 READ_FUNCTION(FS_Humid_1735);
 READ_FUNCTION(FS_Humid_4000);
+READ_FUNCTION(FS_Humid_4010);
 READ_FUNCTION(FS_Current);
 READ_FUNCTION(FS_r_status);
 WRITE_FUNCTION(FS_w_status);
@@ -117,6 +118,8 @@ struct filetype DS2438[] = {
   {"HTM1735/humidity", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_link, FS_Humid_1735, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
   {"HIH4000", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
   {"HIH4000/humidity", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_Humid_4000, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+  {"HIH4010", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+  {"HIH4010/humidity", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_Humid_4010, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
   {"MultiSensor", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
   {"MultiSensor/type", 12, NON_AGGREGATE, ft_vascii, fc_stable, FS_MStype, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 };
@@ -274,6 +277,25 @@ static int FS_Humid_4000(struct one_wire_query *owq)
 	}
 
 	OWQ_F(owq) = (VAD / VDD - (0.8 / VDD)) / (.0062 * (1.0305 + .000044 * T + .0000011 * T * T));
+
+	return 0;
+}
+
+/* The HIH-4010 nd HIH-4020 are newer versions of the HIH-4000 */
+/* Used in the Hobbyboards humidity product */
+static int FS_Humid_4010(struct one_wire_query *owq)
+{
+	_FLOAT T, VAD, VDD;
+
+	if (
+		FS_r_sibling_F( &T, "temperature", owq )
+		|| FS_r_sibling_F( &VAD, "VAD", owq )
+		|| FS_r_sibling_F( &VDD, "VDD", owq )
+	) {
+		return -EINVAL ;
+	}
+
+	OWQ_F(owq) = ((VAD / VDD - 0.16) / .0062) / (1.0546 – 0.00216*T);
 
 	return 0;
 }
