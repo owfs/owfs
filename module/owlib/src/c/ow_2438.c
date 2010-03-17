@@ -295,7 +295,7 @@ static int FS_Humid_4010(struct one_wire_query *owq)
 		return -EINVAL ;
 	}
 
-	OWQ_F(owq) = ((VAD / VDD - 0.16) / .0062) / (1.0546 – 0.00216*T);
+	OWQ_F(owq) = ((VAD / VDD - 0.16) / .0062) / (1.0546 - .00216 * T);
 
 	return 0;
 }
