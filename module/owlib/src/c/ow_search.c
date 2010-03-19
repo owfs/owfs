@@ -79,7 +79,7 @@ int BUS_next(struct device_search *ds, const struct parsedname *pn)
 #endif
 	ret = BUS_next_triple(ds, pn);
 	LEVEL_DEBUG("return = %d | " SNformat, ret, SNvar(ds->sn));
-	if (ret && ret != -ENODEV) {	// true error
+	if (ret!=0 && ret != -ENODEV) {	// true error
 		STAT_ADD1_BUS(e_bus_search_errors3, pn->selected_connection);
 	} else if ( ret == 0 ) {
 		// found a device in a directory search, add to "presence" cache
@@ -88,7 +88,10 @@ int BUS_next(struct device_search *ds, const struct parsedname *pn)
 	return ret;
 }
 
-static int BUS_next_triple(struct device_search *ds, const struct parsedname *pn)
+/* try the directory search 3 times.
+ * Since ds->LastDescrepancy is alertered only on success a repeat is legal
+ * */
+ static int BUS_next_triple(struct device_search *ds, const struct parsedname *pn)
 {
 	int ret ;
 	
@@ -96,11 +99,13 @@ static int BUS_next_triple(struct device_search *ds, const struct parsedname *pn
 	if ( ret == 0 || ret == -ENODEV ) {
 		return ret ;
 	}
+	STAT_ADD1_BUS(e_bus_search_errors1, pn->selected_connection);
 	
 	ret = BUS_next_both(ds, pn);
 	if ( ret == 0 || ret == -ENODEV ) {
 		return ret ;
 	}
+	STAT_ADD1_BUS(e_bus_search_errors2, pn->selected_connection);
 
 	return BUS_next_both(ds, pn);
 }
