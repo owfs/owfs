@@ -17,6 +17,7 @@ $Id$
 #include "ow_codes.h"
 
 static void BUS_first_both(struct device_search *ds);
+static int BUS_next_triple(struct device_search *ds, const struct parsedname *pn) ;
 
 //--------------------------------------------------------------------------
 /** The 'owFirst' doesn't find the first device on the 1-Wire Net.
@@ -76,16 +77,34 @@ int BUS_next(struct device_search *ds, const struct parsedname *pn)
 		}
 	}
 #endif
-	ret = BUS_next_both(ds, pn);
+	ret = BUS_next_triple(ds, pn);
 	LEVEL_DEBUG("return = %d | " SNformat, ret, SNvar(ds->sn));
 	if (ret && ret != -ENODEV) {	// true error
-		STAT_ADD1_BUS(e_bus_search_errors, pn->selected_connection);
+		STAT_ADD1_BUS(e_bus_search_errors3, pn->selected_connection);
 	} else if ( ret == 0 ) {
 		// found a device in a directory search, add to "presence" cache
 		Cache_Add_Device(pn->selected_connection->index,ds->sn) ;
 	}
 	return ret;
 }
+
+static int BUS_next_triple(struct device_search *ds, const struct parsedname *pn)
+{
+	int ret ;
+	
+	ret = BUS_next_both(ds, pn);
+	if ( ret == 0 || ret == -ENODEV ) {
+		return ret ;
+	}
+	
+	ret = BUS_next_both(ds, pn);
+	if ( ret == 0 || ret == -ENODEV ) {
+		return ret ;
+	}
+
+	return BUS_next_both(ds, pn);
+}
+
 
 /* Low level search routines -- bit banging */
 /* Not used by more advanced adapters */
