@@ -36,7 +36,7 @@ noinst_HEADERS =          \
         ow_alloc.h        \
         ow_arg.h          \
         ow_avahi.h        \
-	ow_bae.h          \
+		ow_bae.h          \
         ow_bitwork.h      \
         ow_cache.h        \
         ow_charblob.h     \
@@ -49,7 +49,7 @@ noinst_HEADERS =          \
         ow_dirblob.h      \
         ow_dl.h           \
         ow_dnssd.h        \
-	ow_eds.h          \
+        ow_eds.h          \
         ow_eeef.h         \
         ow_filetype.h     \
         ow_functions.h    \
@@ -57,6 +57,7 @@ noinst_HEADERS =          \
         ow_integer.h      \
         ow_interface.h    \
         ow_localtypes.h   \
+        ow_localreturns.h   \
         ow_lcd.h          \
         ow_memblob.h      \
         ow_message.h      \

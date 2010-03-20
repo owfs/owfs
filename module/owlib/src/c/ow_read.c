@@ -19,9 +19,9 @@ $ID: $
 
 /* ------- Prototypes ----------- */
 static int FS_r_virtual(struct one_wire_query *owq);
-static int FS_read_real(struct one_wire_query *owq);
-static int FS_r_given_bus(struct one_wire_query *owq);
-static int FS_r_local(struct one_wire_query *owq);
+static SIZE_OR_ERROR FS_read_real(struct one_wire_query *owq);
+static SIZE_OR_ERROR FS_r_given_bus(struct one_wire_query *owq);
+static SIZE_OR_ERROR FS_r_local(struct one_wire_query *owq);
 static int FS_read_from_parts(struct one_wire_query *owq);
 static int FS_read_lump(struct one_wire_query *owq);
 static int FS_structure(struct one_wire_query *owq);
@@ -29,6 +29,7 @@ static int FS_read_all_bits(struct one_wire_query *owq);
 static int FS_read_one_bit(struct one_wire_query *owq);
 static int FS_read_a_part(struct one_wire_query *owq);
 static int FS_read_mixed_part(struct one_wire_query *owq);
+static SIZE_OR_ERROR FS_r_simultaneous(struct one_wire_query *owq) ;
 static void adjust_file_size(struct one_wire_query *owq) ;
 
 
@@ -47,9 +48,9 @@ Can break down cases into:
 /* Filesystem callback functions                  */
 /* ---------------------------------------------- */
 
-int FS_read(const char *path, char *buf, const size_t size, const off_t offset)
+SIZE_OR_ERROR FS_read(const char *path, char *buf, const size_t size, const off_t offset)
 {
-	int read_or_error;
+	SIZE_OR_ERROR read_or_error;
 	OWQ_allocate_struct_and_pointer(owq);
 
 	LEVEL_CALL("path=%s size=%d offset=%d", SAFESTRING(path), (int) size, (int) offset);
@@ -65,10 +66,10 @@ int FS_read(const char *path, char *buf, const size_t size, const off_t offset)
 }
 
 /* After parsing, but before sending to various devices. Will repeat 3 times if needed */
-int FS_read_postparse(struct one_wire_query *owq)
+SIZE_OR_ERROR FS_read_postparse(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
-	int read_or_error;
+	SIZE_OR_ERROR read_or_error;
 
 	// ServerRead jumps in here, perhaps with non-file entry
 	if (pn->selected_device == NULL || pn->selected_filetype == NULL) {
@@ -100,10 +101,10 @@ int FS_read_postparse(struct one_wire_query *owq)
 }
 
 /* Read real device (Non-virtual). Will repeat 3 times if needed */
-static int FS_read_real(struct one_wire_query *owq)
+static SIZE_OR_ERROR FS_read_real(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
-	int read_or_error;
+	SIZE_OR_ERROR read_or_error;
 
 	/* First try */
 	/* in and bus_nr already set */
@@ -157,8 +158,8 @@ static int FS_read_real(struct one_wire_query *owq)
 	return read_or_error;
 }
 
-// This function probably need to be modified a bit...
-static int FS_r_simultaneous(struct one_wire_query *owq)
+// This function probably needs to be modified a bit...
+static SIZE_OR_ERROR FS_r_simultaneous(struct one_wire_query *owq)
 {
 	OWQ_allocate_struct_and_pointer(owq_given);
 
@@ -190,9 +191,9 @@ static int FS_r_simultaneous(struct one_wire_query *owq)
 /* I.e. the rest of owlib can trust size and buffer to be legal */
 
 /* After parsing, choose special read based on path type */
-int FS_read_distribute(struct one_wire_query *owq)
+SIZE_OR_ERROR FS_read_distribute(struct one_wire_query *owq)
 {
-	int r = 0;
+	SIZE_OR_ERROR read_or_error = 0;
 
 	LEVEL_DEBUG("%s", OWQ_pn(owq).path);
 	STATLOCK;
@@ -202,30 +203,30 @@ int FS_read_distribute(struct one_wire_query *owq)
 
 	/* handle DeviceSimultaneous */
 	if (PN(owq)->selected_device == DeviceSimultaneous) {
-		r = FS_r_simultaneous(owq);
+		read_or_error = FS_r_simultaneous(owq);
 	} else {
-		r = FS_r_given_bus(owq);
+		read_or_error = FS_r_given_bus(owq);
 	}
 
 	STATLOCK;
-	if (r >= 0) {
+	if (read_or_error >= 0) {
 		++read_success;			/* statistics */
-		read_bytes += r;		/* statistics */
+		read_bytes += read_or_error;		/* statistics */
 	}
 	AVERAGE_OUT(&read_avg);
 	AVERAGE_OUT(&all_avg);
 	STATUNLOCK;
 
-	LEVEL_DEBUG("%s return %d", OWQ_pn(owq).path, r);
-	//printf("FS_read_distribute: pid=%ld return %d\n", pthread_self(), r);
-	return r;
+	LEVEL_DEBUG("%s return %d", OWQ_pn(owq).path, read_or_error);
+	//printf("FS_read_distribute: pid=%ld return %d\n", pthread_self(), read_or_error);
+	return read_or_error;
 }
 
 // This function should return number of bytes read... not status.
-static int FS_r_given_bus(struct one_wire_query *owq)
+static SIZE_OR_ERROR FS_r_given_bus(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
-	int read_status = 0;
+	int read_or_error = 0;
 
 	LEVEL_DEBUG("structure contents before the read is performed");
 	Debug_OWQ(owq);
@@ -236,27 +237,27 @@ static int FS_r_given_bus(struct one_wire_query *owq)
 		LEVEL_DEBUG("pid=%ld call ServerRead", pthread_self());
 #endif							/* OW_MT */
 		// Read afar -- returns already formatted in buffer
-		read_status = ServerRead(owq);
+		read_or_error = ServerRead(owq);
 		LEVEL_DEBUG("back from server");
-		//printf("FS_r_given_bus pid=%ld r=%d\n",pthread_self(), r);
+		//printf("FS_r_given_bus pid=%ld r=%d\n",pthread_self(), read_or_error);
 	} else {
 		STAT_ADD1(read_calls);	/* statistics */
 		if (LockGet(pn) == 0) {
-			read_status = FS_r_local(owq);	// this returns status
+			read_or_error = FS_r_local(owq);	// this returns status
 			LockRelease(pn);
-			LEVEL_DEBUG("FS_r_local return=%d", read_status);
-			if (read_status >= 0) {
+			LEVEL_DEBUG("FS_r_local return=%d", read_or_error);
+			if (read_or_error >= 0) {
 				// local success -- now format in buffer
-				read_status = OWQ_parse_output(owq);	// this returns nr. bytes
+				read_or_error = OWQ_parse_output(owq);	// this returns nr. bytes
 			}
 		} else {
 			LEVEL_DEBUG("Cannot lock bus to perform read") ;
-			read_status = -EADDRINUSE;
+			read_or_error = -EADDRINUSE;
 		}
 	}
-	LEVEL_DEBUG("After read is performed (status %d)", read_status);
+	LEVEL_DEBUG("After read is performed (bytes or error %d)", read_or_error);
 	Debug_OWQ(owq);
-	return read_status;
+	return read_or_error;
 }
 
 // This function should return number of bytes read... not status.
@@ -377,7 +378,7 @@ static void adjust_file_size(struct one_wire_query *owq)
 /* Real read -- called from read
 Integrates with cache -- read not called if cached value already set
 */
-static int FS_r_local(struct one_wire_query *owq)
+static SIZE_OR_ERROR FS_r_local(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	
@@ -712,7 +713,7 @@ static int FS_read_mixed_part(struct one_wire_query *owq)
 /* Used in sibling reads
    Reads locally without locking the bus (since it's already locked)
 */
-int FS_read_local( struct one_wire_query *owq)
+SIZE_OR_ERROR FS_read_local( struct one_wire_query *owq)
 {
 	return FS_r_local(owq);
 }

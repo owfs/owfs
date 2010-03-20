@@ -239,6 +239,9 @@ ssize_t getline (char **lineptr, size_t *n, FILE *stream) ;
 /* Define our understanding of integers, floats, ... */
 #include "ow_localtypes.h"
 
+/* Define our understanding of function returns ... */
+#include "ow_localreturns.h"
+
 /* Include sone byte conversion convenience routines */
 #include "ow_integer.h"
 

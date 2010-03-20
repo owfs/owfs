@@ -154,15 +154,15 @@ int FS_write(const char *path, const char *buf, const size_t size, const off_t o
 int FS_write_postparse(struct one_wire_query *owq);
 int FS_write_local(struct one_wire_query *owq);
 
-int FS_read(const char *path, char *buf, const size_t size, const off_t offset);
+SIZE_OR_ERROR FS_read(const char *path, char *buf, const size_t size, const off_t offset);
 //int FS_read_postparse(char *buf, const size_t size, const off_t offset,
 //                    const struct parsedname *pn);
-int FS_read_postparse(struct one_wire_query *owq);
-int FS_read_distribute(struct one_wire_query *owq);
+SIZE_OR_ERROR FS_read_postparse(struct one_wire_query *owq);
+SIZE_OR_ERROR FS_read_distribute(struct one_wire_query *owq);
 int FS_read_fake(struct one_wire_query *owq);
 int FS_read_tester(struct one_wire_query *owq);
 int FS_r_aggregate_all(struct one_wire_query *owq);
-int FS_read_local( struct one_wire_query *owq);
+SIZE_OR_ERROR FS_read_local( struct one_wire_query *owq);
 
 int FS_r_sibling_F(_FLOAT *F, const char * sibling, struct one_wire_query *owq) ;
 int FS_r_sibling_U(  UINT *U, const char * sibling, struct one_wire_query *owq) ;
