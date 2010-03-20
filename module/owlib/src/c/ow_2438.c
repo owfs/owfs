@@ -52,8 +52,8 @@ READ_FUNCTION(FS_temp);
 READ_FUNCTION(FS_volts);
 READ_FUNCTION(FS_Humid);
 READ_FUNCTION(FS_Humid_1735);
+READ_FUNCTION(FS_Humid_3600);
 READ_FUNCTION(FS_Humid_4000);
-READ_FUNCTION(FS_Humid_4010);
 READ_FUNCTION(FS_Current);
 READ_FUNCTION(FS_r_status);
 WRITE_FUNCTION(FS_w_status);
@@ -71,22 +71,22 @@ struct aggregate A2437 = { 8, ag_numbers, ag_separate, };
 struct filetype DS2437[] = {
 	F_STANDARD,
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"pages/page", 8, &A2437, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
-  {"VDD", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_volts, NO_WRITE_FUNCTION, VISIBLE, {i:1},},
-  {"VAD", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_volts, NO_WRITE_FUNCTION, VISIBLE, {i:0},},
-  {"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_simultaneous_temperature, FS_temp, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"vis", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_Current, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"IAD", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_status, FS_w_status, VISIBLE, {i:0},},
-  {"CA", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_status, FS_w_status, VISIBLE, {i:1},},
-  {"EE", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_status, FS_w_status, VISIBLE, {i:2},},
-  {"udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter, FS_w_counter, VISIBLE, {s:0x08},},
-  {"date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_second, FS_r_date, FS_w_date, VISIBLE, {s:0x08},},
-  {"disconnect", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"disconnect/udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_counter, FS_w_counter, VISIBLE, {s:0x10},},
-  {"disconnect/date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_volatile, FS_r_date, FS_w_date, VISIBLE, {s:0x10},},
-  {"endcharge", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"endcharge/udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_counter, FS_w_counter, VISIBLE, {s:0x14},},
-  {"endcharge/date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_volatile, FS_r_date, FS_w_date, VISIBLE, {s:0x14},},
+	{"pages/page", 8, &A2437, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
+	{"VDD", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_volts, NO_WRITE_FUNCTION, VISIBLE, {i:1},},
+	{"VAD", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_volts, NO_WRITE_FUNCTION, VISIBLE, {i:0},},
+	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_simultaneous_temperature, FS_temp, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"vis", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_Current, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"IAD", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_status, FS_w_status, VISIBLE, {i:0},},
+	{"CA", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_status, FS_w_status, VISIBLE, {i:1},},
+	{"EE", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_status, FS_w_status, VISIBLE, {i:2},},
+	{"udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter, FS_w_counter, VISIBLE, {s:0x08},},
+	{"date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_second, FS_r_date, FS_w_date, VISIBLE, {s:0x08},},
+	{"disconnect", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"disconnect/udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_counter, FS_w_counter, VISIBLE, {s:0x10},},
+	{"disconnect/date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_volatile, FS_r_date, FS_w_date, VISIBLE, {s:0x10},},
+	{"endcharge", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"endcharge/udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_counter, FS_w_counter, VISIBLE, {s:0x14},},
+	{"endcharge/date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_volatile, FS_r_date, FS_w_date, VISIBLE, {s:0x14},},
 };
 
 DeviceEntryExtended(1E, DS2437, DEV_temp | DEV_volt);
@@ -96,32 +96,32 @@ struct aggregate A2438 = { 8, ag_numbers, ag_separate, };
 struct filetype DS2438[] = {
 	F_STANDARD,
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"pages/page", 8, &A2438, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
-  {"VDD", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_volts, NO_WRITE_FUNCTION, VISIBLE, {i:1},},
-  {"VAD", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_volts, NO_WRITE_FUNCTION, VISIBLE, {i:0},},
-  {"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_simultaneous_temperature, FS_temp, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"humidity", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_Humid, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"vis", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_Current, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"IAD", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_status, FS_w_status, VISIBLE, {i:0},},
-  {"CA", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_status, FS_w_status, VISIBLE, {i:1},},
-  {"EE", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_status, FS_w_status, VISIBLE, {i:2},},
-  {"offset", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_Offset, FS_w_Offset, VISIBLE, NO_FILETYPE_DATA,},
-  {"udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter, FS_w_counter, VISIBLE, {s:0x08},},
-  {"date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_second, FS_r_date, FS_w_date, VISIBLE, {s:0x08},},
-  {"disconnect", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"disconnect/udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_counter, FS_w_counter, VISIBLE, {s:0x10},},
-  {"disconnect/date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_volatile, FS_r_date, FS_w_date, VISIBLE, {s:0x10},},
-  {"endcharge", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"endcharge/udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_counter, FS_w_counter, VISIBLE, {s:0x14},},
-  {"endcharge/date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_volatile, FS_r_date, FS_w_date, VISIBLE, {s:0x14},},
-  {"HTM1735", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"HTM1735/humidity", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_link, FS_Humid_1735, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"HIH4000", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"HIH4000/humidity", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_Humid_4000, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"HIH4010", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"HIH4010/humidity", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_Humid_4010, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"MultiSensor", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"MultiSensor/type", 12, NON_AGGREGATE, ft_vascii, fc_stable, FS_MStype, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"pages/page", 8, &A2438, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
+	{"VDD", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_volts, NO_WRITE_FUNCTION, VISIBLE, {i:1},},
+	{"VAD", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_volts, NO_WRITE_FUNCTION, VISIBLE, {i:0},},
+	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_simultaneous_temperature, FS_temp, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"humidity", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_link, FS_Humid, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"vis", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_Current, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"IAD", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_status, FS_w_status, VISIBLE, {i:0},},
+	{"CA", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_status, FS_w_status, VISIBLE, {i:1},},
+	{"EE", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_status, FS_w_status, VISIBLE, {i:2},},
+	{"offset", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_Offset, FS_w_Offset, VISIBLE, NO_FILETYPE_DATA,},
+	{"udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter, FS_w_counter, VISIBLE, {s:0x08},},
+	{"date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_second, FS_r_date, FS_w_date, VISIBLE, {s:0x08},},
+	{"disconnect", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"disconnect/udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_counter, FS_w_counter, VISIBLE, {s:0x10},},
+	{"disconnect/date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_volatile, FS_r_date, FS_w_date, VISIBLE, {s:0x10},},
+	{"endcharge", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"endcharge/udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_counter, FS_w_counter, VISIBLE, {s:0x14},},
+	{"endcharge/date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_volatile, FS_r_date, FS_w_date, VISIBLE, {s:0x14},},
+	{"HTM1735", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"HTM1735/humidity", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_link, FS_Humid_1735, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"HIH3600", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"HIH3600/humidity", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_Humid_3600, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"HIH4000", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"HIH4000/humidity", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_Humid_4000, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"MultiSensor", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"MultiSensor/type", 12, NON_AGGREGATE, ft_vascii, fc_stable, FS_MStype, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 };
 
 DeviceEntryExtended(26, DS2438, DEV_temp | DEV_volt);
@@ -230,7 +230,24 @@ static int FS_volts(struct one_wire_query *owq)
 
 static int FS_Humid(struct one_wire_query *owq)
 {
+	_FLOAT H ;
+
+	if (
+		FS_r_sibling_F( &H, "HIH3600/humidity", owq ) != 0
+	) {
+		return -EINVAL ;
+	}
+
+	OWQ_F(owq) = H ;
+
+	return 0;
+}
+
+static int FS_Humid_3600(struct one_wire_query *owq)
+{
 	_FLOAT T, VAD, VDD;
+	_FLOAT humidity_uncompensated ;
+	_FLOAT temperature_compensation ;
 
 	if (
 		FS_r_sibling_F( &T, "temperature", owq )
@@ -259,14 +276,24 @@ static int FS_Humid(struct one_wire_query *owq)
 	So, their documentation is a little wrong.
 	The level of error this produces would be proportional to how far from 5 Vdc your input voltage is.  In my case, I seem to have a constant 4.93 Vdc input, so it doesn’t have a great effect (about .25 degrees RH)
 	*/
-	OWQ_F(owq) = (VAD / VDD - (0.8 / VDD)) / (.0062 * (1.0546 - .00216 * T));
+	if ( VDD < .01 ) {
+		LEVEL_DEBUG("Low measured VDD %g",VDD);
+		return -EINVAL ;
+	}
+	humidity_uncompensated = (VAD / VDD - (0.8 / VDD)) / .0062 ;
+	temperature_compensation = 1.0546 - 0.00216 * T ;
+	OWQ_F(owq) = humidity_uncompensated / temperature_compensation ;
 
 	return 0;
 }
 
+/* The HIH-4010 and HIH-4020 are newer versions of the HIH-4000 */
+/* Used in the Hobbyboards humidity product */
 static int FS_Humid_4000(struct one_wire_query *owq)
 {
 	_FLOAT T, VAD, VDD;
+	_FLOAT humidity_uncompensated ;
+	_FLOAT temperature_compensation ;
 
 	if (
 		FS_r_sibling_F( &T, "temperature", owq )
@@ -276,26 +303,14 @@ static int FS_Humid_4000(struct one_wire_query *owq)
 		return -EINVAL ;
 	}
 
-	OWQ_F(owq) = (VAD / VDD - (0.8 / VDD)) / (.0062 * (1.0305 + .000044 * T + .0000011 * T * T));
-
-	return 0;
-}
-
-/* The HIH-4010 nd HIH-4020 are newer versions of the HIH-4000 */
-/* Used in the Hobbyboards humidity product */
-static int FS_Humid_4010(struct one_wire_query *owq)
-{
-	_FLOAT T, VAD, VDD;
-
-	if (
-		FS_r_sibling_F( &T, "temperature", owq )
-		|| FS_r_sibling_F( &VAD, "VAD", owq )
-		|| FS_r_sibling_F( &VDD, "VDD", owq )
-	) {
+	if ( VDD < .01 ) {
+		LEVEL_DEBUG("Low measured VDD %g",VDD);
 		return -EINVAL ;
 	}
-
-	OWQ_F(owq) = ((VAD / VDD - 0.16) / .0062) / (1.0546 - .00216 * T);
+	humidity_uncompensated = ((VAD/VDD) - 0.16) / 0.0062 ;
+	// temperature compensation
+	temperature_compensation = 1.0546 - 0.00216 * T ;
+	OWQ_F(owq) = humidity_uncompensated / temperature_compensation ;
 
 	return 0;
 }
