@@ -98,31 +98,29 @@ int DS9490_getstatus(BYTE * buffer, int readlen, const struct parsedname *pn);
 /* Rare PUBLIC aggregate structure to allow changing the number of adapters */
 struct filetype interface_settings[] = {
 	{"name", 128, NON_AGGREGATE, ft_vascii, fc_static, FS_name, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-	// variable length
 	{"address", 512, NON_AGGREGATE, ft_vascii, fc_static, FS_port, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"overdrive", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_overdrive, FS_w_overdrive, VISIBLE, NO_FILETYPE_DATA,},
 	{"version", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_version, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  // variable length
-  {"flexible_timing", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_flextime, FS_w_flextime, VISIBLE, NO_FILETYPE_DATA,},
-  {"ds2404_compliance", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_ds2404_compliance, FS_w_ds2404_compliance, VISIBLE, NO_FILETYPE_DATA,},
-  {"reconnect", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_reconnect, FS_w_reconnect, VISIBLE, NO_FILETYPE_DATA,},
-  {"usb", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  #ifdef DEBUG_DS2490
-  {"usb/ds2490status", 128, NON_AGGREGATE, ft_vascii, fc_static, FS_r_ds2490status, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  #endif
-  {"usb/pulldownslewrate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_pulldownslewrate, FS_w_pulldownslewrate, VISIBLE, NO_FILETYPE_DATA,},
-  {"usb/writeonelowtime", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_writeonelowtime, FS_w_writeonelowtime, VISIBLE, NO_FILETYPE_DATA,},
-  {"usb/datasampleoffset", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_datasampleoffset, FS_w_datasampleoffset, VISIBLE, NO_FILETYPE_DATA,},
-  {"serial", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"serial/reverse_polarity", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_reverse, FS_w_reverse, VISIBLE, NO_FILETYPE_DATA,},
-  {"serial/baudrate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_baud, FS_w_baud, VISIBLE, NO_FILETYPE_DATA,},
-  {"serial/checksum", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_checksum, FS_w_checksum, VISIBLE, NO_FILETYPE_DATA,},
-  {"i2c", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"i2c/ActivePullUp", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_APU, FS_w_APU, VISIBLE, NO_FILETYPE_DATA,},
-  {"i2c/PulsePresenceMask", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_PPM, FS_w_PPM, VISIBLE, NO_FILETYPE_DATA,},
-  {"simulated", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"simulated/templow", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE, {i:1},},
-  {"simulated/temphigh", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE, {i:0},},
+	{"flexible_timing", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_flextime, FS_w_flextime, VISIBLE, NO_FILETYPE_DATA,},
+	{"ds2404_compliance", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_ds2404_compliance, FS_w_ds2404_compliance, VISIBLE, NO_FILETYPE_DATA,},
+	{"reconnect", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_reconnect, FS_w_reconnect, VISIBLE, NO_FILETYPE_DATA,},
+	{"usb", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	#ifdef DEBUG_DS2490
+	{"usb/ds2490status", 128, NON_AGGREGATE, ft_vascii, fc_static, FS_r_ds2490status, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	#endif
+	{"usb/pulldownslewrate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_pulldownslewrate, FS_w_pulldownslewrate, VISIBLE, NO_FILETYPE_DATA,},
+	{"usb/writeonelowtime", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_writeonelowtime, FS_w_writeonelowtime, VISIBLE, NO_FILETYPE_DATA,},
+	{"usb/datasampleoffset", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_datasampleoffset, FS_w_datasampleoffset, VISIBLE, NO_FILETYPE_DATA,},
+	{"serial", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"serial/reverse_polarity", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_reverse, FS_w_reverse, VISIBLE, NO_FILETYPE_DATA,},
+	{"serial/baudrate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_baud, FS_w_baud, VISIBLE, NO_FILETYPE_DATA,},
+	{"serial/checksum", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_checksum, FS_w_checksum, VISIBLE, NO_FILETYPE_DATA,},
+	{"i2c", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"i2c/ActivePullUp", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_APU, FS_w_APU, VISIBLE, NO_FILETYPE_DATA,},
+	{"i2c/PulsePresenceMask", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_PPM, FS_w_PPM, VISIBLE, NO_FILETYPE_DATA,},
+	{"simulated", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"simulated/templow", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE, {i:1},},
+	{"simulated/temphigh", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE, {i:0},},
 };
 struct device d_interface_settings = { "settings", "settings", ePN_interface,
 	COUNT_OF_FILETYPES(interface_settings), interface_settings
@@ -157,8 +155,8 @@ struct filetype interface_statistics[] = {
 	{"overdrive/attempts", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat_p, NO_WRITE_FUNCTION, VISIBLE, {i:e_bus_try_overdrive},},
 	{"overdrive/failures", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat_p, NO_WRITE_FUNCTION, VISIBLE, {i:e_bus_failed_overdrive},},
 	{"total_bus_time", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_statistic, FS_time, NO_WRITE_FUNCTION, VISIBLE, {v:&total_bus_time},},
-	{"timeouts", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat_p, NO_WRITE_FUNCTION, VISIBLE, {i:e_bus_timeouts},},
 };
+
 struct device d_interface_statistics = { "statistics", "statistics", 0,
 	COUNT_OF_FILETYPES(interface_statistics), interface_statistics
 };
