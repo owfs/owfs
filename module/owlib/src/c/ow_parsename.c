@@ -566,7 +566,7 @@ static int BranchAdd(struct parsedname *pn)
 			return -ENOMEM;
 		}
 	}
-	memcpy(pn->bp[pn->pathlength].sn, pn->sn, 8);	/* copy over DS2409 name */
+	memcpy(pn->bp[pn->pathlength].sn, pn->sn, SERIAL_NUMBER_SIZE);	/* copy over DS2409 name */
 	pn->bp[pn->pathlength].branch = pn->selected_filetype->data.i;
 	++pn->pathlength;
 	pn->selected_filetype = NULL;

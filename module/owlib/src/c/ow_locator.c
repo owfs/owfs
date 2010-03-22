@@ -24,31 +24,31 @@ static void OW_any_locator(BYTE * loc, const struct parsedname *pn);
 
 int FS_locator(struct one_wire_query *owq)
 {
-	BYTE loc[8];
-	ASCII ad[16];
+	BYTE loc[SERIAL_NUMBER_SIZE];
+	ASCII ad[SERIAL_NUMBER_SIZE*2];
 
 	OW_any_locator(loc, PN(owq) ) ;
-	bytes2string(ad, loc, 8);
-	return OWQ_parse_output_offset_and_size(ad, 16, owq);
+	bytes2string(ad, loc, SERIAL_NUMBER_SIZE);
+	return OWQ_parse_output_offset_and_size(ad, sizeof(ad), owq);
 }
 
 // reversed address
 int FS_r_locator(struct one_wire_query *owq)
 {
-	BYTE loc[8];
-	ASCII ad[16];
+	BYTE loc[SERIAL_NUMBER_SIZE];
+	ASCII ad[SERIAL_NUMBER_SIZE*2];
 	size_t i;
 
 	OW_any_locator(loc, PN(owq) ) ;
-	for (i = 0; i < 8; ++i) {
+	for (i = 0; i < SERIAL_NUMBER_SIZE; ++i) {
 		num2string(ad + (i << 1), loc[7 - i]);
 	}
-	return OWQ_parse_output_offset_and_size(ad, 16, owq);
+	return OWQ_parse_output_offset_and_size(ad, sizeof(ad), owq);
 }
 
 static void OW_any_locator(BYTE * loc, const struct parsedname *pn)
 {	
-	memset( loc, 0xFF, 8 ) ; // default if no locator
+	memset( loc, 0xFF, SERIAL_NUMBER_SIZE ) ; // default if no locator
 	switch (get_busmode(pn->selected_connection)) {
 		case bus_fake:
 		case bus_tester:
@@ -63,23 +63,23 @@ static void OW_any_locator(BYTE * loc, const struct parsedname *pn)
 
 static int OW_locator(BYTE * loc, const struct parsedname *pn)
 {
-	BYTE addr[10] = { 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, };	// key and 8 byte default
+	BYTE addr[2+SERIAL_NUMBER_SIZE] = { 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, };	// key and 8 byte default
 	struct transaction_log t[] = {
 		TRXN_NVERIFY,
-		TRXN_MODIFY(addr, addr, 10),
+		TRXN_MODIFY(addr, addr, sizeof(addr)),
 		TRXN_END,
 	};
 	
 	if (BUS_transaction(t, pn)) {
 		return 1;
 	}
-	memcpy(loc, &addr[2], 8);
+	memcpy(loc, &addr[2], SERIAL_NUMBER_SIZE);
 	return 0;
 }
 
 static void OW_fake_locator(BYTE * loc, const struct parsedname *pn)
 {
-	if (pn->sn[7] & 0x01) {	// 50% chance of locator
+	if (pn->sn[SERIAL_NUMBER_SIZE-1] & 0x01) {	// 50% chance of locator
 		// start with 0xFE and use rest of sn (with valid CRC8)
 		loc[0] = 0xFE;
 		loc[1] = pn->sn[1] ;
@@ -88,6 +88,6 @@ static void OW_fake_locator(BYTE * loc, const struct parsedname *pn)
 		loc[4] = pn->sn[4] ;
 		loc[5] = pn->sn[5] ;
 		loc[6] = pn->sn[6] ;
-		loc[7] = CRC8compute(loc, 7, 0);
+		loc[SERIAL_NUMBER_SIZE-1] = CRC8compute(loc, SERIAL_NUMBER_SIZE-1, 0);
 	}
 }

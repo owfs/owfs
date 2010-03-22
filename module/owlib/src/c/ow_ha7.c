@@ -167,7 +167,7 @@ static int HA7_directory(BYTE search, struct dirblob *db, const struct parsednam
 		STAT_ADD1_BUS(e_bus_read_errors, pn->selected_connection);
 		ret = -EIO;
 	} else {
-		BYTE sn[8];
+		BYTE sn[SERIAL_NUMBER_SIZE];
 		ASCII *p = (ASCII *) MemblobData(&mb);
 		while ((p = strstr(p, "<INPUT CLASS=\"HA7Value\" NAME=\"Address_"))
 			   && (p = strstr(p, "VALUE=\""))) {
@@ -184,7 +184,7 @@ static int HA7_directory(BYTE search, struct dirblob *db, const struct parsednam
 			sn[2] = string2num(&p[10]);
 			sn[1] = string2num(&p[12]);
 			sn[0] = string2num(&p[14]);
-			if (CRC8(sn, 8)) {
+			if (CRC8(sn, SERIAL_NUMBER_SIZE)) {
 				ret = -EIO;
 				break;
 			}

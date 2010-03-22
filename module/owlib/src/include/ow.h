@@ -230,6 +230,9 @@ ssize_t getline (char **lineptr, size_t *n, FILE *stream) ;
 #define ENOTSUP EOPNOTSUPP
 #endif							/* ENOTSUP */
 
+/* Bytes in a 1-wire address */
+#define SERIAL_NUMBER_SIZE           8
+
 /* Allocation wrappers for debugging */
 #include "ow_alloc.h"
 

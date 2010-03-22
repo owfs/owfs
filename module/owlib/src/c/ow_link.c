@@ -561,7 +561,7 @@ static int LINK_directory(struct device_search *ds, struct dirblob *db, const st
 
 	/* Join the loop after the first query -- subsequent handled differently */
 	while ((resp[0] == '+') || (resp[0] == '-')) {
-		BYTE sn[8];
+		BYTE sn[SERIAL_NUMBER_SIZE];
 
 		sn[7] = string2num(&resp[2]);
 		sn[6] = string2num(&resp[4]);
@@ -574,7 +574,7 @@ static int LINK_directory(struct device_search *ds, struct dirblob *db, const st
 		LEVEL_DEBUG("SN found: " SNformat, SNvar(sn));
 
 		// CRC check
-		if (CRC8(sn, 8) || (sn[0] == 0)) {
+		if (CRC8(sn, SERIAL_NUMBER_SIZE) || (sn[0] == 0)) {
 			/* A minor "error" and should perhaps only return -1 */
 			/* to avoid reconnect */
 			LEVEL_DEBUG("sn = %s", sn);

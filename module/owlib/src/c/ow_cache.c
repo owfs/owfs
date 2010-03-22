@@ -135,6 +135,7 @@ static int Del_Stat(struct cache *scache, const int result);
 static int tree_compare(const void *a, const void *b);
 static time_t TimeOut(const enum fc_change change);
 static void Aliasfindaction(const void *node, const VISIT which, const int depth) ;
+static void LoadTK( const BYTE * sn, void * p, int extension, struct tree_node * tn ) ;
 
 /* used for the sort/search b-tree routines */
 /* big voodoo pointer fuss to just do a standard memory compare of the "key" */
@@ -346,10 +347,7 @@ int Cache_Add(const void *data, const size_t datasize, const struct parsedname *
 	LEVEL_DEBUG(SNformat " size=%d", SNvar(pn->sn), (int) datasize);
 
 	// populate the node structure with data
-	memset(&tn->tk, 0, sizeof(struct tree_key));
-	memcpy(tn->tk.sn, pn->sn, 8);
-	tn->tk.p = pn->selected_filetype;
-	tn->tk.extension = pn->extension;
+	LoadTK( pn->sn, pn->selected_filetype, pn->extension, tn );
 	tn->expires = duration + time(NULL);
 	tn->dsize = datasize;
 	if (datasize) {
@@ -366,7 +364,7 @@ int Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn)
 {
 	time_t duration = TimeOut(fc_directory);
 	struct tree_node *tn;
-	size_t size = DirblobElements(db) * 8;
+	size_t size = DirblobElements(db) * SERIAL_NUMBER_SIZE;
 	struct parsedname pn_directory;
 	//printf("Cache_Add_Dir\n") ;
 	if (pn==NULL || pn->selected_connection==NULL) {
@@ -398,11 +396,8 @@ int Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn)
 	LEVEL_DEBUG(SNformat " elements=%d", SNvar(pn->sn), DirblobElements(db));
 	
 	// populate node with directory name and dirblob
-	memset(&tn->tk, 0, sizeof(struct tree_key));
 	FS_LoadDirectoryOnly(&pn_directory, pn);
-	memcpy(tn->tk.sn, pn_directory.sn, 8);
-	tn->tk.p = Directory_Marker ;
-	tn->tk.extension = pn->selected_connection->index ;
+	LoadTK( pn_directory.sn, Directory_Marker, pn->selected_connection->index, tn );
 	tn->expires = duration + time(NULL);
 	tn->dsize = size;
 	if (size) {
@@ -447,12 +442,9 @@ int Cache_Add_Simul(const enum simul_type type, const struct parsedname *pn)
 	LEVEL_DEBUG(SNformat, SNvar(pn->sn));
 	
 	// populate node with directory name and dirblob
-	memset(&tn->tk, 0, sizeof(struct tree_key));
 	FS_LoadDirectoryOnly(&pn_directory, pn);
-	memcpy(tn->tk.sn, pn_directory.sn, 8);
-	tn->tk.p = Simul_Marker[type] ;
+	LoadTK( pn_directory.sn, Simul_Marker[type], pn->selected_connection->index, tn) ;
 	LEVEL_DEBUG("Simultaneous add type=%d",type);
-	tn->tk.extension = pn->selected_connection->index ;
 	tn->expires = duration + time(NULL);
 	tn->dsize = 0;
 	return Add_Stat(&cache_dir, Cache_Add_Common(tn));
@@ -473,12 +465,9 @@ int Cache_Add_Device(const int bus_nr, const BYTE * sn)
 	if (!tn) {
 		return -ENOMEM;
 	}
-	memset(&tn->tk, 0, sizeof(struct tree_key));
 
 	LEVEL_DEBUG(SNformat " bus=%d", SNvar(sn), (int) bus_nr);
-	memcpy(tn->tk.sn, sn, 8);
-	tn->tk.p = Device_Marker;	// value connected to all devices
-	tn->tk.extension = 0;
+	LoadTK(sn, Device_Marker, 0, tn );
 	tn->expires = duration + time(NULL);
 	tn->dsize = sizeof(int);
 	memcpy(TREE_DATA(tn), &bus_nr, sizeof(int));
@@ -514,12 +503,9 @@ int Cache_Add_Internal(const void *data, const size_t datasize, const struct int
 	if (!tn) {
 		return -ENOMEM;
 	}
-	memset(&tn->tk, 0, sizeof(struct tree_key));
 
 	LEVEL_DEBUG(SNformat " size=%d", SNvar(pn->sn), (int) datasize);
-	memcpy(tn->tk.sn, pn->sn, 8);
-	tn->tk.p = ip->name;
-	tn->tk.extension = EXTENSION_INTERNAL;
+	LoadTK( pn->sn, ip->name, EXTENSION_INTERNAL, tn );
 	tn->expires = duration + time(NULL);
 	tn->dsize = datasize;
 	if (datasize) {
@@ -546,12 +532,9 @@ int Cache_Add_Alias(const ASCII *name, const BYTE * sn)
 	if (!tn) {
 		return -ENOMEM;
 	}
-	memset(&tn->tk, 0, sizeof(struct tree_key));
 
 	LEVEL_DEBUG("Adding " SNformat " alias=%s", SNvar(sn), name);
-	memcpy(tn->tk.sn, sn, 8);
-	tn->tk.p = Alias_Marker;
-	tn->tk.extension = 0;
+	LoadTK( sn, Alias_Marker, 0, tn );
 	tn->expires = time(NULL);
 	tn->dsize = size+1;
 	strcpy((ASCII *)TREE_DATA(tn), name);
@@ -780,10 +763,7 @@ int Cache_Get(void *data, size_t * dsize, const struct parsedname *pn)
 	}
 
 	LEVEL_DEBUG(SNformat " size=%d IsUncachedDir=%d", SNvar(pn->sn), (int) dsize[0], IsUncachedDir(pn));
-	memset(&tn.tk, 0, sizeof(struct tree_key));
-	memcpy(tn.tk.sn, pn->sn, 8);
-	tn.tk.p = pn->selected_filetype;
-	tn.tk.extension = pn->extension;
+	LoadTK( pn->sn, pn->selected_filetype, pn->extension, &tn );
 	return Cache_Type_Store(pn) ?
 		Get_Stat(&cache_sto, Cache_Get_Store(data, dsize, &duration, &tn)) :
 		Get_Stat(&cache_ext, Cache_Get_Common(data, dsize, &duration, &tn));
@@ -802,11 +782,8 @@ int Cache_Get_Dir(struct dirblob *db, const struct parsedname *pn)
 	}
 
 	LEVEL_DEBUG(SNformat, SNvar(pn->sn));
-	memset(&tn.tk, 0, sizeof(struct tree_key));
 	FS_LoadDirectoryOnly(&pn_directory, pn);
-	memcpy(tn.tk.sn, pn_directory.sn, 8);
-	tn.tk.p = Directory_Marker ;
-	tn.tk.extension = pn->selected_connection->index ;
+	LoadTK( pn_directory.sn, Directory_Marker, pn->selected_connection->index, &tn) ;
 	return Get_Stat(&cache_dir, Cache_Get_Common_Dir(db, &duration, &tn));
 }
 
@@ -860,10 +837,7 @@ int Cache_Get_Device(void *bus_nr, const struct parsedname *pn)
 	}
 
 	LEVEL_DEBUG(SNformat, SNvar(pn->sn));
-	memset(&tn.tk, 0, sizeof(struct tree_key));
-	memcpy(tn.tk.sn, pn->sn, 8);
-	tn.tk.p = Device_Marker;
-	tn.tk.extension = 0;
+	LoadTK( pn->sn, Device_Marker, 0, &tn ) ;
 	return Get_Stat(&cache_dev, Cache_Get_Common(bus_nr, &size, &duration, &tn));
 }
 
@@ -893,10 +867,7 @@ int Cache_Get_Internal(void *data, size_t * dsize, const struct internal_prop *i
 	}
 	
 	LEVEL_DEBUG(SNformat " size=%d", SNvar(pn->sn), (int) dsize[0]);
-	memset(&tn.tk, 0, sizeof(struct tree_key));
-	memcpy(tn.tk.sn, pn->sn, 8);
-	tn.tk.p = ip->name;
-	tn.tk.extension = EXTENSION_INTERNAL;
+	LoadTK( pn->sn, ip->name, EXTENSION_INTERNAL, &tn) ;
 	switch (ip->change) {
 		case fc_persistent:
 			return Get_Stat(&cache_sto, Cache_Get_Store(data, dsize, &duration, &tn));
@@ -913,7 +884,7 @@ Else return the cached value and true (0)
 int Cache_Get_Simul_Time(enum simul_type type, time_t * start_time, const struct parsedname * pn)
 {
 	// valid cached primary data -- see if a simultaneous conversion should be used instead
-	struct tree_node tn_simul;
+	struct tree_node tn;
 	time_t duration ;
 	time_t duration_simul ;
 	size_t dsize_simul = 0 ;
@@ -925,12 +896,8 @@ int Cache_Get_Simul_Time(enum simul_type type, time_t * start_time, const struct
 	}
 	
 	FS_LoadDirectoryOnly(&pn_directory, pn);
-
-	memset(&tn_simul.tk, 0, sizeof(struct tree_key));
-	memcpy(tn_simul.tk.sn, pn_directory.sn, 8);
-	tn_simul.tk.p = Simul_Marker[type];
-	tn_simul.tk.extension = pn->selected_connection->index;
-	if ( Get_Stat(&cache_int, Cache_Get_Common(NULL, &dsize_simul, &duration_simul, &tn_simul)) ) {
+	LoadTK(pn_directory.sn, Simul_Marker[type], pn->selected_connection->index, &tn ) ;
+	if ( Get_Stat(&cache_int, Cache_Get_Common(NULL, &dsize_simul, &duration_simul, &tn)) ) {
 		return 1 ;
 	}
 	start_time[0] = duration_simul - duration + time(NULL) ;
@@ -954,10 +921,7 @@ static int Cache_Get_Simultaneous(enum simul_type type, struct one_wire_query *o
 		return 1;
 	}
 	
-	memset(&tn.tk, 0, sizeof(struct tree_key));
-	memcpy(tn.tk.sn, pn->sn, 8);
-	tn.tk.p = pn->selected_filetype;
-	tn.tk.extension = pn->extension;
+	LoadTK( pn->sn, pn->selected_filetype, pn->extension, &tn ) ;
 	
 	if ( Get_Stat(&cache_ext, Cache_Get_Common(&OWQ_val(owq), &dsize, &duration, &tn)) == 0 ) {
 		// valid cached primary data -- see if a simultaneous conversion should be used instead
@@ -994,10 +958,7 @@ int Cache_Get_Alias(ASCII * name, size_t length, const BYTE * sn)
 	struct tree_opaque *opaque;
 	int ret = -ENOENT ;
 
-	memset(&tn.tk, 0, sizeof(struct tree_key));
-	memcpy(tn.tk.sn, sn, 8);
-	tn.tk.p = Alias_Marker;
-	tn.tk.extension = 0;
+	LoadTK(sn, Alias_Marker, 0, &tn ) ;
 
 	STORE_RLOCK;
 	if ((opaque = tfind(&tn, &cache.permanent_tree, tree_compare))) {
@@ -1052,7 +1013,7 @@ static void Aliasfindaction(const void *node, const VISIT which, const int depth
 			return ;
 		}
 		global_aliasfind_struct.ret = 0 ;
-		memcpy(global_aliasfind_struct.sn,p->tk.sn,8) ;
+		memcpy(global_aliasfind_struct.sn,p->tk.sn,SERIAL_NUMBER_SIZE) ;
 		return ;
 	case preorder:
 	case endorder:
@@ -1183,10 +1144,7 @@ int Cache_Del(const struct parsedname *pn)
 		return 1;				/* in case timeout set to 0 */
 	}
 	
-	memset(&tn.tk, 0, sizeof(struct tree_key));
-	memcpy(tn.tk.sn, pn->sn, 8);
-	tn.tk.p = pn->selected_filetype;
-	tn.tk.extension = pn->extension;
+	LoadTK( pn->sn, pn->selected_filetype, pn->extension, &tn ) ;
 	switch (pn->selected_filetype->change) {
 		case fc_persistent:
 			return Del_Stat(&cache_sto, Cache_Del_Store(&tn));
@@ -1211,9 +1169,7 @@ int Cache_Del_Mixed_Individual(const struct parsedname *pn)
 		return 1;				/* in case timeout set to 0 */
 	}
 	
-	memset(&tn.tk, 0, sizeof(struct tree_key));
-	memcpy(tn.tk.sn, pn->sn, 8);
-	tn.tk.p = pn->selected_filetype;
+	LoadTK( pn->sn, pn->selected_filetype, 0, &tn) ;
 	for ( tn.tk.extension = pn->selected_filetype->ag->elements-1 ; tn.tk.extension >= 0 ; --tn.tk.extension ) {
 		switch (pn->selected_filetype->change) {
 			case fc_persistent:
@@ -1241,10 +1197,7 @@ int Cache_Del_Mixed_Aggregate(const struct parsedname *pn)
 		return 1;				/* in case timeout set to 0 */
 	}
 	
-	memset(&tn.tk, 0, sizeof(struct tree_key));
-	memcpy(tn.tk.sn, pn->sn, 8);
-	tn.tk.p = pn->selected_filetype;
-	tn.tk.extension = EXTENSION_ALL ;
+	LoadTK( pn->sn, pn->selected_filetype, EXTENSION_ALL, &tn) ;
 	switch (pn->selected_filetype->change) {
 		case fc_persistent:
 			return Del_Stat(&cache_sto, Cache_Del_Store(&tn));
@@ -1253,17 +1206,13 @@ int Cache_Del_Mixed_Aggregate(const struct parsedname *pn)
 	}
 }
 
-
 int Cache_Del_Dir(const struct parsedname *pn)
 {
 	struct tree_node tn;
 	struct parsedname pn_directory;
 	
-	memset(&tn.tk, 0, sizeof(struct tree_key));
 	FS_LoadDirectoryOnly(&pn_directory, pn);
-	memcpy(tn.tk.sn, pn_directory.sn, 8);
-	tn.tk.p = Directory_Marker ;
-	tn.tk.extension = pn->selected_connection->index ;
+	LoadTK( pn_directory.sn, Directory_Marker, pn->selected_connection->index, &tn ) ;
 	return Del_Stat(&cache_dir, Cache_Del_Common(&tn));
 }
 
@@ -1272,11 +1221,8 @@ int Cache_Del_Simul(enum simul_type type, const struct parsedname *pn)
 	struct tree_node tn;
 	struct parsedname pn_directory;
 	
-	memset(&tn.tk, 0, sizeof(struct tree_key));
 	FS_LoadDirectoryOnly(&pn_directory, pn);
-	memcpy(tn.tk.sn, pn_directory.sn, 8);
-	tn.tk.p = Simul_Marker[type] ;
-	tn.tk.extension = pn->selected_connection->index ;
+	LoadTK(pn_directory.sn, Simul_Marker[type], pn->selected_connection->index, &tn );
 	return Del_Stat(&cache_dir, Cache_Del_Common(&tn));
 }
 
@@ -1288,10 +1234,7 @@ int Cache_Del_Device(const struct parsedname *pn)
 		return 1;
 	}
 
-	memset(&tn.tk, 0, sizeof(struct tree_key));
-	memcpy(tn.tk.sn, pn->sn, 8);
-	tn.tk.p = Device_Marker;
-	tn.tk.extension = 0;
+	LoadTK(pn->sn, Device_Marker, 0, &tn) ;
 	return Del_Stat(&cache_dev, Cache_Del_Common(&tn));
 }
 
@@ -1309,10 +1252,7 @@ int Cache_Del_Internal(const struct internal_prop *ip, const struct parsedname *
 		return 1;				/* in case timeout set to 0 */
 	}
 
-	memset(&tn.tk, 0, sizeof(struct tree_key));
-	memcpy(tn.tk.sn, pn->sn, 8);
-	tn.tk.p = ip->name;
-	tn.tk.extension = 0;
+	LoadTK(pn->sn, ip->name, 0, &tn);
 	switch (ip->change) {
 	case fc_persistent:
 		return Del_Stat(&cache_sto, Cache_Del_Store(&tn));
@@ -1384,6 +1324,14 @@ void FS_cache_sibling(char *property, struct one_wire_query *owq_shallow_copy)
 	}
 
 	OWQ_Cache_Add(owq_shallow_copy);
+}
+
+static void LoadTK( const BYTE * sn, void * p, int extension, struct tree_node * tn )
+{
+	memset(&(tn->tk), 0, sizeof(struct tree_key));
+	memcpy(tn->tk.sn, sn, SERIAL_NUMBER_SIZE);
+	tn->tk.p = p;
+	tn->tk.extension = extension;
 }
 
 #endif							/* OW_CACHE */

@@ -194,7 +194,7 @@ static int parse_detail_record(char * detail, const struct parsedname *pn)
 		
 	for ( d=0 ; d<devices ; ++d ) {
 		char * romid = xml_string( "ROMId", &detail) ;
-		BYTE sn[8] ;
+		BYTE sn[SERIAL_NUMBER_SIZE] ;
 		if (detail==NULL) {
 			return -EINVAL ;
 		}
@@ -209,7 +209,7 @@ static int parse_detail_record(char * detail, const struct parsedname *pn)
 
 		LEVEL_DEBUG("SN found: " SNformat, SNvar(sn));
 		// CRC check
-		if (CRC8(sn, 8) || (sn[0] == 0)) {
+		if (CRC8(sn, SERIAL_NUMBER_SIZE) || (sn[0] == 0)) {
 			/* A minor "error" and should perhaps only return -1 */
 			/* to avoid reconnect */
 			LEVEL_DEBUG("sn = %s\n", romid);
@@ -507,7 +507,7 @@ static int OWServer_Enet_next_both(struct device_search *ds, const struct parsed
 static int OWServer_Enet_select( const struct parsedname * pn )
 {
 	// Set as current "Address" for adapter
-	memcpy( pn->selected_connection->connin.enet.sn, pn->sn, 8) ;
+	memcpy( pn->selected_connection->connin.enet.sn, pn->sn, SERIAL_NUMBER_SIZE) ;
 
 	return 0 ;
 }

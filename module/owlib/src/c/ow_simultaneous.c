@@ -207,7 +207,7 @@ static int FS_r_present(struct one_wire_query *owq)
 		{
 			struct parsedname pn_directory;
 			BYTE read_ROM[1] ;
-			BYTE resp[8];
+			BYTE resp[SERIAL_NUMBER_SIZE];
 			BYTE collisions[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, };
 			BYTE match[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, };
 			struct transaction_log t[] = {
@@ -224,11 +224,11 @@ static int FS_r_present(struct one_wire_query *owq)
 			if (BUS_transaction(t, &pn_directory)) {
 				return -EINVAL;
 			}
-			if (memcmp(resp, collisions, 8)) {	// all devices
+			if (memcmp(resp, collisions, SERIAL_NUMBER_SIZE)) {	// all devices
 				OWQ_Y(owq) = 1;		// YES present
-			} else if (memcmp(resp, match, 8)) {	// some device(s) complained
+			} else if (memcmp(resp, match, SERIAL_NUMBER_SIZE)) {	// some device(s) complained
 					OWQ_Y(owq) = 1;		// YES present
-				if (CRC8(resp, 8)) {
+				if (CRC8(resp, SERIAL_NUMBER_SIZE)) {
 					return 0;		// crc8 error -- more than one device
 				}
 				OW_single2cache(resp, &pn_directory);
@@ -245,7 +245,7 @@ static int FS_r_single(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	ASCII ad[30] = { 0x00, };	// long enough -- default "blank"
-	BYTE resp[8];
+	BYTE resp[SERIAL_NUMBER_SIZE];
 
 	switch (pn->selected_connection->Adapter) {
 		case adapter_fake:
@@ -265,7 +265,7 @@ static int FS_r_single(struct one_wire_query *owq)
 			struct transaction_log t[] = {
 				TRXN_START,
 				TRXN_WRITE1(read_ROM),
-				TRXN_READ(resp, 8),
+				TRXN_READ(resp, SERIAL_NUMBER_SIZE),
 				TRXN_END,
 			};
 
@@ -277,7 +277,7 @@ static int FS_r_single(struct one_wire_query *owq)
 				return -EINVAL;
 			}
 			LEVEL_DEBUG("dat=" SNformat " crc8=%02x", SNvar(resp), CRC8(resp, 7));
-			if ((memcmp(resp, collisions, 8) != 0) && (memcmp(resp, match, 8) != 0) && (CRC8(resp, 8) == 0)) {	// non-empty, and no CRC error
+			if ((memcmp(resp, collisions, SERIAL_NUMBER_SIZE) != 0) && (memcmp(resp, match, SERIAL_NUMBER_SIZE) != 0) && (CRC8(resp, SERIAL_NUMBER_SIZE) == 0)) {	// non-empty, and no CRC error
 				OW_single2cache(resp, &pn_directory);
 				/* Return device id. */
 				FS_devicename(ad, sizeof(ad), resp, pn);

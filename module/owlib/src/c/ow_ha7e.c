@@ -155,7 +155,7 @@ static int HA7E_next_both(struct device_search *ds, const struct parsedname *pn)
 static int HA7E_directory(struct device_search *ds, struct dirblob *db, const struct parsedname *pn)
 {
 	char resp[17];
-	BYTE sn[8];
+	BYTE sn[SERIAL_NUMBER_SIZE];
 	char *first, *next, *current ;
 
 	DirblobClear(db);
@@ -206,7 +206,7 @@ static int HA7E_directory(struct device_search *ds, struct dirblob *db, const st
 		sn[0] = string2num(&resp[14]);
 
 		// Set as current "Address" for adapter
-		memcpy( pn->selected_connection->connin.ha7e.sn, sn, 8) ;
+		memcpy( pn->selected_connection->connin.ha7e.sn, sn, SERIAL_NUMBER_SIZE) ;
 
 		LEVEL_DEBUG("SN found: " SNformat, SNvar(sn));
 		if ( resp[16]!=0x0D ) {
@@ -214,7 +214,7 @@ static int HA7E_directory(struct device_search *ds, struct dirblob *db, const st
 		}
 
 		// CRC check
-		if (CRC8(sn, 8) || (sn[0] == 0)) {
+		if (CRC8(sn, SERIAL_NUMBER_SIZE) || (sn[0] == 0)) {
 			/* A minor "error" and should perhaps only return -1 */
 			/* to avoid reconnect */
 			LEVEL_DEBUG("sn = %s", sn);
@@ -257,7 +257,7 @@ static int HA7E_select( const struct parsedname * pn )
 		return HA7E_reset(pn) ;
 	}
 
-	if ( memcmp( pn->sn, pn->selected_connection->connin.ha7e.sn, 8 ) ) {
+	if ( memcmp( pn->sn, pn->selected_connection->connin.ha7e.sn, SERIAL_NUMBER_SIZE ) ) {
 		if ( COM_write((BYTE*)send_address,18,pn->selected_connection) ) {
 			LEVEL_DEBUG("Error with sending HA7E A-ddress") ;
 			return HA7E_resync(pn) ;
@@ -278,7 +278,7 @@ static int HA7E_select( const struct parsedname * pn )
 	}
 
 	// Set as current "Address" for adapter
-	memcpy( pn->selected_connection->connin.ha7e.sn, pn->sn, 8) ;
+	memcpy( pn->selected_connection->connin.ha7e.sn, pn->sn, SERIAL_NUMBER_SIZE) ;
 
 	return 0 ;
 }

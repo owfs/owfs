@@ -17,7 +17,7 @@ $Id$
 #include "ow_codes.h"
 
 static void BUS_first_both(struct device_search *ds);
-static int BUS_next_triple(struct device_search *ds, const struct parsedname *pn) ;
+static int BUS_next_3try(struct device_search *ds, const struct parsedname *pn) ;
 
 //--------------------------------------------------------------------------
 /** The 'owFirst' doesn't find the first device on the 1-Wire Net.
@@ -77,7 +77,7 @@ int BUS_next(struct device_search *ds, const struct parsedname *pn)
 		}
 	}
 #endif
-	ret = BUS_next_triple(ds, pn);
+	ret = BUS_next_3try(ds, pn);
 	LEVEL_DEBUG("return = %d | " SNformat, ret, SNvar(ds->sn));
 	if (ret!=0 && ret != -ENODEV) {	// true error
 		STAT_ADD1_BUS(e_bus_search_errors3, pn->selected_connection);
@@ -91,7 +91,7 @@ int BUS_next(struct device_search *ds, const struct parsedname *pn)
 /* try the directory search 3 times.
  * Since ds->LastDescrepancy is alertered only on success a repeat is legal
  * */
- static int BUS_next_triple(struct device_search *ds, const struct parsedname *pn)
+ static int BUS_next_3try(struct device_search *ds, const struct parsedname *pn)
 {
 	int ret ;
 	

@@ -378,7 +378,7 @@ static int HA5_directory(struct device_search *ds, struct dirblob *db, const str
 	}
 
 	while ( resp[0] != CR_char ) {
-		BYTE sn[8];
+		BYTE sn[SERIAL_NUMBER_SIZE];
 		char wrap_char ;
 		//One needs to check the first character returned.
 		//If nothing is found, the ha5 will timeout rather then have a quick
@@ -508,7 +508,7 @@ static int HA5_select_wrapped( const struct parsedname * pn )
 	}
 
 	// Set as current "Address" for adapter
-	memcpy( in->connin.ha5.sn, pn->sn, 8) ;
+	memcpy( in->connin.ha5.sn, pn->sn, SERIAL_NUMBER_SIZE) ;
 
 	return 0 ;
 }
@@ -578,7 +578,7 @@ static int HA5_select_and_sendback(const BYTE * data, BYTE * resp, const size_t 
 	int left;
 	char block_cmd ;
 
-	if ( memcmp( pn->sn, in->connin.ha5.sn, 8 ) ) {
+	if ( memcmp( pn->sn, in->connin.ha5.sn, SERIAL_NUMBER_SIZE ) ) {
 		// Need a formal change of device
 		if ( HA5_select(pn) ) {
 			return -EIO ;

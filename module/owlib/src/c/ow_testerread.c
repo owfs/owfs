@@ -84,7 +84,7 @@ static int FS_read_tester_single(struct one_wire_query *owq)
 			size_t length = FileLength(PN(owq));
 			ASCII return_chars[length];
 
-			bytes2string(address, pn->sn, 8);
+			bytes2string(address, pn->sn, SERIAL_NUMBER_SIZE);
 			OWQ_length(owq) = OWQ_size(owq);
 			for (buffer_index = 0; buffer_index < length; buffer_index += sizeof(address)) {
 				size_t copy_length = length_left;
@@ -104,10 +104,10 @@ static int FS_read_tester_single(struct one_wire_query *owq)
 			ASCII return_chars[length];
 
 			OWQ_length(owq) = OWQ_size(owq);
-			for (buffer_index = 0; buffer_index < length; buffer_index += 8) {
+			for (buffer_index = 0; buffer_index < length; buffer_index += SERIAL_NUMBER_SIZE) {
 				size_t copy_length = length_left;
-				if (copy_length > 8) {
-					copy_length = 8;
+				if (copy_length > SERIAL_NUMBER_SIZE) {
+					copy_length = SERIAL_NUMBER_SIZE;
 				}
 				memcpy(&return_chars[buffer_index], pn->sn, copy_length);
 				length_left -= copy_length;

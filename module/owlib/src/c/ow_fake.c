@@ -100,8 +100,8 @@ static void GetDefaultDeviceName(BYTE * dn, const BYTE * sn, const struct connec
 
 static void GetDeviceName(const ASCII ** strpointer, struct connection_in * in)
 {
-	BYTE sn[8] ;
-	BYTE dn[8] ;
+	BYTE sn[SERIAL_NUMBER_SIZE] ;
+	BYTE dn[SERIAL_NUMBER_SIZE] ;
 
 	if ( isxdigit((*strpointer)[0])	&& isxdigit((*strpointer)[1]) ) {
 		// family code specified
@@ -134,7 +134,7 @@ static void GetDeviceName(const ASCII ** strpointer, struct connection_in * in)
 			return ;
 		}
 	}
-	sn[7] = CRC8compute(sn, 7, 0);
+	sn[SERIAL_NUMBER_SIZE-1] = CRC8compute(sn, SERIAL_NUMBER_SIZE-1, 0);
 	DirblobAdd(sn, &(in->main));	// Ignore bad return
 }
 

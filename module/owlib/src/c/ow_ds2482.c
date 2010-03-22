@@ -558,7 +558,7 @@ static int DS2482_next_both(struct device_search *ds, const struct parsedname *p
 		UT_setbit(ds->sn, bit_number, bits[2]);
 	}							// loop until through serial number bits
 
-	if (CRC8(ds->sn, 8) || (bit_number < 64) || (ds->sn[0] == 0)) {
+	if (CRC8(ds->sn, SERIAL_NUMBER_SIZE) || (bit_number < 64) || (ds->sn[0] == 0)) {
 		/* Unsuccessful search or error -- possibly a device suddenly added */
 		return -EIO;
 	}

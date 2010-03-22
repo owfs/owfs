@@ -229,7 +229,7 @@ struct connin_usb {
 	 * are no such DS1420 device available. It's used to find the 1-wire adapter
 	 * if it's disconnected and later reconnected again.
 	 */
-	BYTE ds1420_address[8];
+	BYTE ds1420_address[SERIAL_NUMBER_SIZE];
 };
 
 #define CHANGED_USB_SPEED  0x001
@@ -269,11 +269,11 @@ struct connin_link {
 };
 
 struct connin_ha7e {
-	unsigned char sn[8] ;       /* last address */
+	unsigned char sn[SERIAL_NUMBER_SIZE] ;       /* last address */
 };
 
 struct connin_ha5 {
-	unsigned char sn[8] ;       /* last address */
+	unsigned char sn[SERIAL_NUMBER_SIZE] ;       /* last address */
 	int checksum ;              /* flag to use checksum byte in communication */
 	char channel ;
 #if OW_MT
@@ -366,7 +366,7 @@ struct device_search {
 	int LastDiscrepancy;		// for search
 	int LastDevice;				// for search
 	int index;
-	BYTE sn[8];
+	BYTE sn[SERIAL_NUMBER_SIZE];
 	BYTE search;
 };
 

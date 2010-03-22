@@ -87,7 +87,7 @@ static int DS9490_read(BYTE * buf, size_t size, const struct parsedname *pn);
 static int DS9490_write(const BYTE * buf, size_t size, const struct parsedname *pn);
 static int DS9490_overdrive(const struct parsedname *pn);
 static void SetupDiscrepancy(const struct device_search *ds, BYTE * discrepancy);
-static int FindDiscrepancy(BYTE * last_sn);
+static int FindDiscrepancy(BYTE * last_sn, BYTE * discrepancy_sn);
 static int DS9490_directory(struct device_search *ds, struct dirblob *db, const struct parsedname *pn);
 static int DS9490_SetSpeed(const struct parsedname *pn);
 static void DS9490_SetFlexParameters(struct connection_in *in) ;
@@ -111,7 +111,8 @@ static void DS9490_setroutines(struct connection_in *in)
 	in->bundling_length = USB_FIFO_SIZE;
 }
 
-//#define DS2490_DIR_GULP_ELEMENTS     ((64/8) - 1)
+#define DS2490_BULK_BUFFER_SIZE     64
+//#define DS2490_DIR_GULP_ELEMENTS     ((DS2490_BULK_BUFFER_SIZE/SERIAL_NUMBER_SIZE) - 1)
 #define DS2490_DIR_GULP_ELEMENTS     (1)
 
 #define CONTROL_REQUEST_TYPE  0x40
@@ -390,7 +391,7 @@ static int DS9490_root_dir( struct dirblob * db, struct connection_in * in )
 static int DS9490_detect_found(struct connection_in *in)
 {
 	struct dirblob db ;
-	BYTE sn[8] ;
+	BYTE sn[SERIAL_NUMBER_SIZE] ;
 	int device_number ;
 	
 	if ( DS9490_root_dir( &db, in ) ) {
@@ -402,7 +403,7 @@ static int DS9490_detect_found(struct connection_in *in)
 	// Use 0x00 if no devices (homegrown adapters?)
 	if ( DirblobElements( &db) == 0 ) {
 		DirblobClear( &db ) ;
-		memset( in->connin.usb.ds1420_address, 0, 8 ) ;
+		memset( in->connin.usb.ds1420_address, 0, SERIAL_NUMBER_SIZE ) ;
 		LEVEL_DEFAULT("Set DS9490 %s unique id 0x00 (no devices at all)", SAFESTRING(in->name)) ;
 		return 0 ;
 	}
@@ -411,7 +412,7 @@ static int DS9490_detect_found(struct connection_in *in)
 	device_number = 0 ;
 	while ( DirblobGet( device_number, sn, &db ) == 0 ) {
 		if (sn[0] == 0x81) {	// 0x81 family code
-			memcpy(in->connin.usb.ds1420_address, sn, 8);
+			memcpy(in->connin.usb.ds1420_address, sn, SERIAL_NUMBER_SIZE);
 			LEVEL_DEFAULT("Set DS9490 %s unique id to " SNformat, SAFESTRING(in->name), SNvar(in->connin.usb.ds1420_address));
 			DirblobClear( &db ) ;
 			return 0 ;
@@ -423,7 +424,7 @@ static int DS9490_detect_found(struct connection_in *in)
 	device_number = 0 ;
 	while ( DirblobGet( device_number, sn, &db ) == 0 ) {
 		if (sn[0] == 0x01) {	// 0x01 family code
-			memcpy(in->connin.usb.ds1420_address, sn, 8);
+			memcpy(in->connin.usb.ds1420_address, sn, SERIAL_NUMBER_SIZE);
 			LEVEL_DEFAULT("Set DS9490 %s unique id to " SNformat, SAFESTRING(in->name), SNvar(in->connin.usb.ds1420_address));
 			DirblobClear( &db ) ;
 			return 0 ;
@@ -433,7 +434,7 @@ static int DS9490_detect_found(struct connection_in *in)
 
 	// Take the first device, whatever it is
 	DirblobGet( 0, sn, &db ) ;
-	memcpy(in->connin.usb.ds1420_address, sn, 8);
+	memcpy(in->connin.usb.ds1420_address, sn, SERIAL_NUMBER_SIZE);
 	LEVEL_DEFAULT("Set DS9490 %s unique id to " SNformat, SAFESTRING(in->name), SNvar(in->connin.usb.ds1420_address));
 	DirblobClear( &db ) ;
 	return 0;
@@ -708,7 +709,7 @@ static int DS9490_redetect_low(struct connection_in * in)
 static int DS9490_redetect_found( struct connection_in * in)
 {
 	struct dirblob db ;
-	BYTE sn[8] ;
+	BYTE sn[SERIAL_NUMBER_SIZE] ;
 	int device_number ;
 
 	LEVEL_DEBUG("Attempting reconnect on %s",SAFESTRING(in->name));
@@ -738,7 +739,7 @@ static int DS9490_redetect_found( struct connection_in * in)
 	// Scan directory for a match to the original tag
 	device_number = 0 ;
 	while ( DirblobGet( device_number, sn, &db ) == 0 ) {
-		if (memcmp(sn, in->connin.usb.ds1420_address, 8) == 0) {	// same tag device?
+		if (memcmp(sn, in->connin.usb.ds1420_address, SERIAL_NUMBER_SIZE) == 0) {	// same tag device?
 			LEVEL_DATA("Matching device [%s].", SAFESTRING(in->name));
 			DirblobClear( &db ) ;
 			return 0 ;
@@ -1118,8 +1119,12 @@ static int DS9490_next_both(struct device_search *ds, const struct parsedname *p
 // a dirblob. Called from DS9490_next_both every 7 devices to fill.
 static int DS9490_directory(struct device_search *ds, struct dirblob *db, const struct parsedname *pn)
 {
-	BYTE buffer[32];
-	BYTE *cb = pn->selected_connection->combuffer;
+	BYTE status_buffer[32];
+	BYTE EP2_data[SERIAL_NUMBER_SIZE] ; //USB endpoint 3 buffer
+	union {
+		BYTE b[DS2490_BULK_BUFFER_SIZE] ;
+		BYTE sn[DS2490_BULK_BUFFER_SIZE/SERIAL_NUMBER_SIZE][SERIAL_NUMBER_SIZE];
+	} EP3 ; //USB endpoint 3 buffer
 	int ret;
 	int bytes_back;
 	int devices_found;
@@ -1132,7 +1137,6 @@ static int DS9490_directory(struct device_search *ds, struct dirblob *db, const 
 		LEVEL_DEBUG("Selection problem before a directory listing") ;
 		return -EIO ;
 	}
-	// Note that USB_FIFO_SIZE >>= 64
 
 	/* DS1994/DS2404 might need an extra reset */
 	if (pn->selected_connection->ExtraReset) {
@@ -1142,23 +1146,26 @@ static int DS9490_directory(struct device_search *ds, struct dirblob *db, const 
 		pn->selected_connection->ExtraReset = 0;
 	}
 
-	SetupDiscrepancy(ds, cb);
+	SetupDiscrepancy(ds, EP2_data);
 
-	if ((ret = DS9490_write(cb, 8, pn)) < 8) {
+	// set the search start location
+	if ((ret = DS9490_write(EP2_data, SERIAL_NUMBER_SIZE, pn)) < SERIAL_NUMBER_SIZE) {
 		LEVEL_DATA("bulk write problem = %d", ret);
 		return -EIO;
 	}
+	// Send the search request
 	if ((ret = USB_Control_Msg(COMM_CMD, COMM_SEARCH_ACCESS | COMM_IM | COMM_SM | COMM_F | COMM_RTS, (dir_gulp_elements << 8) | (ds->search), pn) ) < 0) {
 		LEVEL_DATA("control problem ret=%d", ret);
 		return -EIO;
 	}
-
-	if ((ret = DS9490_getstatus(buffer, 0, pn)) < 0) {
+	// read the search status
+	if ((ret = DS9490_getstatus(status_buffer, 0, pn)) < 0) {
 		LEVEL_DATA("getstatus error");
 		return -EIO;
 	}
 
-	bytes_back = buffer[13];
+	// test the buffer size waiting for us
+	bytes_back = status_buffer[13];
 	LEVEL_DEBUG("Got %d bytes from USB search", bytes_back);
 	if (bytes_back == 0) {
 		/* Nothing found on the bus. Have to return something != 0 to avoid
@@ -1166,35 +1173,39 @@ static int DS9490_directory(struct device_search *ds, struct dirblob *db, const 
 		 * which ends when ret!=0 */
 		LEVEL_DATA("ReadBufferstatus == 0");
 		return -ENODEV;
-	} else if ((bytes_back % 8 != 0)
-		|| (bytes_back > (dir_gulp_elements + 1) * 8)) {
-		LEVEL_DATA("ReadBufferstatus %d not valid", bytes_back);
+	} else if ( bytes_back % SERIAL_NUMBER_SIZE != 0 ) {
+		LEVEL_DATA("ReadBufferstatus size %d not a multiple of %d", bytes_back,SERIAL_NUMBER_SIZE);
+		return -EIO;
+	} else if ( bytes_back > (dir_gulp_elements + 1) * SERIAL_NUMBER_SIZE ) {
+		LEVEL_DATA("ReadBufferstatus size %d too large", bytes_back);
 		return -EIO;
 	}
-
-	devices_found = bytes_back / 8;
+	devices_found = bytes_back / SERIAL_NUMBER_SIZE;
 	if (devices_found > dir_gulp_elements) {
 		devices_found = dir_gulp_elements;
 	}
 
-	if ((ret = DS9490_read(cb, bytes_back, pn)) <= 0) {
+	// read in the buffer that holds the devices found
+	if ((ret = DS9490_read(EP3.b, bytes_back, pn)) <= 0) {
 		LEVEL_DATA("bulk read problem ret=%d", ret);
 		return -EIO;
 	}
 
+	// analyze each device found
 	for (device_index = 0; device_index < devices_found; ++device_index) {
-		BYTE sn[8];
-		memcpy(sn, &cb[device_index * 8], 8);
 		/* test for CRC error */
-		LEVEL_DEBUG("gulp. Adding element %d:" SNformat, device_index, SNvar(&cb[device_index * 8]));
-		if (CRC8(sn, 8) != 0 || sn[0] == 0) {
+		LEVEL_DEBUG("gulp. Adding element %d:" SNformat, device_index, SNvar(EP3.sn[device_index]));
+		if (CRC8(EP3.sn[device_index], SERIAL_NUMBER_SIZE) != 0 || EP3.sn[device_index][0] == 0) {
 			LEVEL_DATA("CRC error");
 			return -EIO;
 		}
-		DirblobAdd(sn, db);
 	}
-	ds->LastDiscrepancy = FindDiscrepancy(&cb[bytes_back - 16]);
-	ds->LastDevice = (bytes_back == devices_found * 8);	// no more to read
+	// all ok, so add the devices
+	for (device_index = 0; device_index < devices_found; ++device_index) {
+		DirblobAdd(EP3.sn[device_index], db);
+	}
+	ds->LastDiscrepancy = FindDiscrepancy(EP3.sn[devices_found-1], EP3.sn[devices_found]);
+	ds->LastDevice = (bytes_back == devices_found * SERIAL_NUMBER_SIZE);	// no more to read
 
 	return 0;
 }
@@ -1204,7 +1215,7 @@ static void SetupDiscrepancy(const struct device_search *ds, BYTE * discrepancy)
 	int i;
 
 	/** Play LastDescrepancy games with bitstream */
-	memcpy(discrepancy, ds->sn, 8);	/* set buffer to zeros */
+	memcpy(discrepancy, ds->sn, SERIAL_NUMBER_SIZE);	/* set buffer to zeros */
 
 	if (ds->LastDiscrepancy > -1) {
 		UT_setbit(discrepancy, ds->LastDiscrepancy, 1);
@@ -1216,10 +1227,9 @@ static void SetupDiscrepancy(const struct device_search *ds, BYTE * discrepancy)
 	}
 }
 
-static int FindDiscrepancy(BYTE * last_sn)
+static int FindDiscrepancy(BYTE * last_sn, BYTE * discrepancy_sn)
 {
 	int i;
-	BYTE *discrepancy_sn = last_sn + 8;
 	for (i = 63; i >= 0; i--) {
 		if ((UT_getbit(discrepancy_sn, i) != 0)
 			&& (UT_getbit(last_sn, i) == 0)) {

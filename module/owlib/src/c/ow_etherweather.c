@@ -162,7 +162,7 @@ static int EtherWeather_next_both(struct device_search *ds, const struct parsedn
 		return -EIO ;
 	}
 
-	memcpy(sendbuf, ds->sn, 8);
+	memcpy(sendbuf, ds->sn, SERIAL_NUMBER_SIZE);
 	if (ds->LastDiscrepancy == -1) {
 		sendbuf[8] = 0x40;
 	} else {

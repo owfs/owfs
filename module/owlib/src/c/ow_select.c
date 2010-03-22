@@ -89,7 +89,7 @@ int BUS_select(const struct parsedname *pn)
 			sent[0] = _1W_OVERDRIVE_MATCH_ROM;
 		}
 	} else {
-		if ( (memcmp(pn->selected_connection->branch.sn, pn->bp[pl - 1].sn, 8) != 0)
+		if ( (memcmp(pn->selected_connection->branch.sn, pn->bp[pl - 1].sn, SERIAL_NUMBER_SIZE) != 0)
 			|| ( pn->selected_connection->branch.branch != pn->bp[pl - 1].branch) )
 		{
 			/* different path */
@@ -99,7 +99,7 @@ int BUS_select(const struct parsedname *pn)
 			LEVEL_DEBUG("Reselecting branch at level %d", pn->pathlength);
 			//BUS_reselect_branch(pn) ;
 		}
-		memcpy(pn->selected_connection->branch.sn, pn->bp[pl - 1].sn, 8);
+		memcpy(pn->selected_connection->branch.sn, pn->bp[pl - 1].sn, SERIAL_NUMBER_SIZE);
 		pn->selected_connection->branch.branch = pn->bp[pl - 1].branch;
 	}
 
@@ -112,13 +112,13 @@ int BUS_select(const struct parsedname *pn)
 	if ((pn->selected_device != NULL)
 		&& (pn->selected_device != DeviceThermostat)) {
 		//printf("Really select %s\n",pn->selected_device->code);
-		memcpy(&sent[1], pn->sn, 8);
+		memcpy(&sent[1], pn->sn, SERIAL_NUMBER_SIZE);
 		if ((ret = BUS_send_data(sent, 1, pn))) {
 			STAT_ADD1_BUS(e_bus_select_errors, pn->selected_connection);
 			LEVEL_CONNECT("Select error for %s on bus %s", pn->selected_device->readable_name, pn->selected_connection->name);
 			return ret;
 		}
-		if ((ret = BUS_send_data(&sent[1], 8, pn))) {
+		if ((ret = BUS_send_data(&sent[1], SERIAL_NUMBER_SIZE, pn))) {
 			STAT_ADD1_BUS(e_bus_select_errors, pn->selected_connection);
 			LEVEL_CONNECT("Select error for %s on bus %s", pn->selected_device->readable_name, pn->selected_connection->name);
 			return ret;
@@ -207,9 +207,9 @@ static int BUS_select_subbranch(const struct buspath *bp, const struct parsednam
 		TRXN_END,
 	};
 
-	memcpy(&sent[1], bp->sn, 8);
-	sent[9] = branch[bp->branch];
-	sent[10] = 0xFF;
+	memcpy(&sent[1], bp->sn, SERIAL_NUMBER_SIZE);
+	sent[SERIAL_NUMBER_SIZE+1] = branch[bp->branch];
+	sent[SERIAL_NUMBER_SIZE+2] = 0xFF;
 	LEVEL_DEBUG("Selecting subbranch " SNformat, SNvar(bp->sn));
 	if (BUS_transaction_nolock(t, pn) || (resp[1] != branch[bp->branch])) {
 		STAT_ADD1_BUS(e_bus_select_errors, pn->selected_connection);

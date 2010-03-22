@@ -74,7 +74,7 @@ subdir points to in-device groupings
 extern int32_t LocalControlFlags;
 
 struct buspath {
-	BYTE sn[8];
+	BYTE sn[SERIAL_NUMBER_SIZE];
 	BYTE branch;
 };
 
@@ -82,7 +82,7 @@ struct buspath {
 // used to negotiate between different threads (queries)
 struct devlock {
 	pthread_mutex_t lock;
-	BYTE sn[8];
+	BYTE sn[SERIAL_NUMBER_SIZE];
 	UINT users;
 };
 
@@ -123,7 +123,7 @@ struct parsedname {
 	struct connection_in *known_bus;	// where this device is located
 	enum ePN_type type;			// real? settings? ...
 	enum ePS_state state;			// alarm?
-	BYTE sn[8];				// 64-bit serial number
+	BYTE sn[SERIAL_NUMBER_SIZE];				// 64-bit serial number
 	struct device *selected_device;		// 1-wire device
 	struct filetype *selected_filetype;	// device property
 	int extension;				// numerical extension (for array values) or -1

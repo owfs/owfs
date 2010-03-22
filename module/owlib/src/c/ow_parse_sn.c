@@ -35,14 +35,14 @@ int Parse_SerialNumber(char *sn_char, BYTE * sn)
 	sn[4] = string2num(&ID[8]);
 	sn[5] = string2num(&ID[10]);
 	sn[6] = string2num(&ID[12]);
-	sn[7] = CRC8compute(sn, 7, 0);
+	sn[7] = CRC8compute(sn, SERIAL_NUMBER_SIZE-1, 0);
 	if (*sn_char == '.') {
 		++sn_char;
 	}
 	// Check CRC8 if given
 	if (isxdigit(sn_char[0]) && isxdigit(sn_char[1])) {
 		char crc[2];
-		num2string(crc, sn[7]);
+		num2string(crc, sn[SERIAL_NUMBER_SIZE-1]);
 		if (strncasecmp(crc, sn_char, 2)) {
 			return 1;
 		}

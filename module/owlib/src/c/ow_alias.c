@@ -40,7 +40,7 @@ int AliasFile(const ASCII * file)
 	/* read each line and parse */
 	while (getline(&alias_line, &alias_line_length, alias_file_pointer) >= 0) {
 		++line_number;
-		BYTE sn[8] ;
+		BYTE sn[SERIAL_NUMBER_SIZE] ;
 		char * a_line = alias_line ; // pointer within the line
 		char * sn_char = NULL ; // pointer to serial number
 		char * name_char = NULL ; // pointer to alias name
@@ -85,7 +85,7 @@ int AliasFile(const ASCII * file)
 
 static int Test_Add_Alias( char * name, BYTE * sn )
 {
-	BYTE sn_stored[8] ;
+	BYTE sn_stored[SERIAL_NUMBER_SIZE] ;
 	if ( strlen(name) > PROPERTY_LENGTH_ALIAS ) {
 		LEVEL_CALL("Alias too long: sn=" SNformat ", alias=%s max length=%d", SNvar(sn), name,  PROPERTY_LENGTH_ALIAS ) ;
 		return 1 ;
@@ -104,7 +104,7 @@ static int Test_Add_Alias( char * name, BYTE * sn )
 		LEVEL_CALL("Alias copies intrinsic filename: %s",name ) ;
 		return 1 ;
 	}
-	if ( Cache_Get_SerialNumber( name, sn_stored )==0 && memcmp(sn,sn_stored,8)!=0 ) {
+	if ( Cache_Get_SerialNumber( name, sn_stored )==0 && memcmp(sn,sn_stored,SERIAL_NUMBER_SIZE)!=0 ) {
 		LEVEL_CALL("Alias redefines a previous alias: %s " SNformat " and " SNformat,name,SNvar(sn),SNvar(sn_stored) ) ;
 		return 1 ;
 	}
@@ -123,7 +123,7 @@ void FS_alias_subst(void (*dirfunc) (void *, const struct parsedname *), void *v
 		ASCII path[PATH_MAX+1] ;
 		ASCII * pcurrent = pn->path ;
 		ASCII * pnext ;
-		BYTE sn[8] ;
+		BYTE sn[SERIAL_NUMBER_SIZE] ;
 		ASCII * pathstart ;
 		enum alias_parse_state { aps_initial, aps_next, aps_last } aps = aps_initial ;
 
