@@ -94,7 +94,7 @@ static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 static int OW_r_counter(struct one_wire_query *owq, size_t page, size_t pagesize);
 
 /* 2423A/D Counter */
-static int FS_r_page(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 	if (COMMON_OWQ_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, COMMON_read_memory_toss_counter)) {
@@ -103,7 +103,7 @@ static int FS_r_page(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_page(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 	if (COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem)) {
@@ -112,7 +112,7 @@ static int FS_w_page(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_r_mem(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 	if (COMMON_OWQ_readwrite_paged(owq, 0, pagesize, COMMON_read_memory_toss_counter)) {
@@ -121,7 +121,7 @@ static int FS_r_mem(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_mem(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 	if (COMMON_readwrite_paged(owq, 0, pagesize, OW_w_mem)) {
@@ -130,7 +130,7 @@ static int FS_w_mem(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_counter(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_counter(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 	if (OW_r_counter(owq, OWQ_pn(owq).extension + 14, pagesize)) {
@@ -139,7 +139,7 @@ static int FS_counter(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_pagecount(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_pagecount(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 	if (OW_r_counter(owq, OWQ_pn(owq).extension, pagesize)) {
@@ -151,7 +151,7 @@ static int FS_pagecount(struct one_wire_query *owq)
 #if OW_CACHE
 /* Special code for cumulative counters -- read/write -- uses the caching system for storage */
 /* Different from LCD system, counters are NOT reset with each read */
-static int FS_r_mincount(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_mincount(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	UINT st[3], ct[2];			// stored and current counter values
@@ -183,7 +183,7 @@ static int FS_r_mincount(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_mincount(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_mincount(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	UINT st[3];					// stored and current counter values

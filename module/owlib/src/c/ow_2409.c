@@ -87,7 +87,7 @@ static int OW_w_control(const UINT data, const struct parsedname *pn);
 #define _1W_SMART_ON_AUX       0x33
 
 /* discharge 2409 lines */
-static int FS_discharge(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_discharge(struct one_wire_query *owq)
 {
 	if ((OWQ_Y(owq)) && OW_discharge(PN(owq))) {
 		return -EINVAL;
@@ -97,7 +97,7 @@ static int FS_discharge(struct one_wire_query *owq)
 
 /* Clear 2409 event flags */
 /* Added by Jan Kandziora */
-static int FS_clearevent(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_clearevent(struct one_wire_query *owq)
 {
 	if ((OWQ_Y(owq)) && OW_clearevent(PN(owq))) {
 		return -EINVAL;
@@ -106,7 +106,7 @@ static int FS_clearevent(struct one_wire_query *owq)
 }
 
 /* 2409 switch -- branch pin voltage */
-static int FS_r_sensed(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_sensed(struct one_wire_query *owq)
 {
 	BYTE data;
 	if (OW_r_control(&data, PN(owq))) {
@@ -119,7 +119,7 @@ static int FS_r_sensed(struct one_wire_query *owq)
 }
 
 /* 2409 switch -- branch status  -- note that bit value is reversed */
-static int FS_r_branch(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_branch(struct one_wire_query *owq)
 {
 	BYTE data;
 	if (OW_r_control(&data, PN(owq))) {
@@ -132,7 +132,7 @@ static int FS_r_branch(struct one_wire_query *owq)
 }
 
 /* 2409 switch -- event status */
-static int FS_r_event(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_event(struct one_wire_query *owq)
 {
 	BYTE data;
 	if (OW_r_control(&data, PN(owq))) {
@@ -145,7 +145,7 @@ static int FS_r_event(struct one_wire_query *owq)
 }
 
 /* 2409 switch -- control pin state */
-static int FS_r_control(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_control(struct one_wire_query *owq)
 {
 	BYTE data;
 	UINT control[] = { 2, 3, 0, 1, };
@@ -157,7 +157,7 @@ static int FS_r_control(struct one_wire_query *owq)
 }
 
 /* 2409 switch -- control pin state */
-static int FS_w_control(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_control(struct one_wire_query *owq)
 {
 	if (OWQ_U(owq) > 3) {
 		return -EINVAL;

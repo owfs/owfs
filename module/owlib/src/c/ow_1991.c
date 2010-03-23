@@ -133,7 +133,7 @@ static const BYTE cp_array[9][8] = {
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
-static int FS_w_password(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_password(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	size_t s = OWQ_size(owq);
@@ -147,7 +147,7 @@ static int FS_w_password(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_reset_password(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_reset_password(struct one_wire_query *owq)
 {
 	if (OW_w_reset_password((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq))) {
 		return -EINVAL;
@@ -155,7 +155,7 @@ static int FS_w_reset_password(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_change_password(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_change_password(struct one_wire_query *owq)
 {
 	if (OW_w_change_password((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq))) {
 		return -EINVAL;
@@ -163,15 +163,15 @@ static int FS_w_change_password(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_r_page(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 {
 	if (OW_r_page((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq))) {
 		return -EINVAL;
 	}
-	return OWQ_size(owq);
+	return 0;
 }
 
-static int FS_w_page(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 {
 	if (OW_w_page((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq))) {
 		return -EINVAL;
@@ -179,15 +179,15 @@ static int FS_w_page(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_r_ident(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_ident(struct one_wire_query *owq)
 {
 	if (OW_r_ident((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq))) {
 		return -EINVAL;
 	}
-	return OWQ_size(owq);
+	return 0;
 }
 
-static int FS_w_ident(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_ident(struct one_wire_query *owq)
 {
 	if (OWQ_offset(owq)) {
 		return -EINVAL;
@@ -198,15 +198,15 @@ static int FS_w_ident(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_r_memory(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_memory(struct one_wire_query *owq)
 {
 	if (OW_r_memory((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq))) {
 		return -EINVAL;
 	}
-	return OWQ_size(owq);
+	return 0;
 }
 
-static int FS_w_memory(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_memory(struct one_wire_query *owq)
 {
 	if (OW_w_memory((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq))) {
 		return -EINVAL;

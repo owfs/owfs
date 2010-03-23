@@ -280,7 +280,7 @@ static void BAE_uint16_to_bytes( uint16_t num, unsigned char * p );
 static void BAE_uint32_to_bytes( uint32_t num, unsigned char * p );
 
 /* BAE memory functions */
-static int FS_r_mem(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
 {
 	if (OW_r_mem( (BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq), PN(owq))) {
 		return -EINVAL;
@@ -289,17 +289,17 @@ static int FS_r_mem(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_eeprom_r_mem(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_eeprom_r_mem(struct one_wire_query *owq)
 {
 	return COMMON_offset_process(FS_r_mem,owq, _FC02_EEPROM_OFFSET) ;
 }
 
-static int FS_eeprom_r_page(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_eeprom_r_page(struct one_wire_query *owq)
 {
 	return COMMON_offset_process(FS_eeprom_r_mem,owq, _FC02_EEPROM_PAGE_SIZE * OWQ_pn(owq).extension) ;
 }
 
-static int FS_w_mem(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_mem(struct one_wire_query *owq)
 {
 	size_t remain = OWQ_size(owq) ;
 	BYTE * data = (BYTE *) OWQ_buffer(owq) ;
@@ -322,17 +322,17 @@ static int FS_w_mem(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_eeprom_w_mem(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_eeprom_w_mem(struct one_wire_query *owq)
 {
 	return COMMON_offset_process(FS_w_mem,owq, _FC02_EEPROM_OFFSET) ;
 }
 
-static int FS_eeprom_w_page(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_eeprom_w_page(struct one_wire_query *owq)
 {
 	return COMMON_offset_process(FS_eeprom_w_mem,owq, _FC02_EEPROM_PAGE_SIZE * OWQ_pn(owq).extension) ;
 }
 
-static int FS_eeprom_erase(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_eeprom_erase(struct one_wire_query *owq)
 {
 	struct parsedname * pn = PN(owq) ;
 	if (OWQ_Y(owq)) {
@@ -345,7 +345,7 @@ static int FS_eeprom_erase(struct one_wire_query *owq)
 
 
 /* BAE flash functions */
-static int FS_w_flash(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_flash(struct one_wire_query *owq)
 {
 	struct parsedname * pn = PN(owq) ;
 	BYTE * rom_image = (BYTE *) OWQ_buffer(owq) ;
@@ -390,7 +390,7 @@ static int FS_w_flash(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_r_flash( struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_flash( struct one_wire_query *owq)
 {
 	if ( OW_r_mem( (BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq)+_FC02_FUNCTION_FLASH_OFFSET, PN(owq) ) ) {
 		return -EINVAL ;
@@ -400,7 +400,7 @@ static int FS_r_flash( struct one_wire_query *owq)
 }
 
 /* BAE date/counter functions */
-static int FS_r_date(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_date(struct one_wire_query *owq)
 {
 	UINT u ;
 	if ( FS_r_sibling_U( &u, "910/udate", owq ) ) {
@@ -411,7 +411,7 @@ static int FS_r_date(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_date(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_date(struct one_wire_query *owq)
 {
 	UINT u = (UINT) OWQ_D(owq) ; //register representation
 
@@ -419,7 +419,7 @@ static int FS_w_date(struct one_wire_query *owq)
 }
 
 /* BAE extended command */
-static int FS_w_extended(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_extended(struct one_wire_query *owq)
 {
 	// Write data 255 bytes maximum (1byte minimum)
 	if ( OWQ_size(owq) == 0 ) {
@@ -431,7 +431,7 @@ static int FS_w_extended(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_writebyte(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_writebyte(struct one_wire_query *owq)
 {
 	off_t location = OWQ_U(owq)>>8 ;
 	BYTE data = OWQ_U(owq) & 0xFF ;
@@ -445,7 +445,7 @@ static int FS_writebyte(struct one_wire_query *owq)
 }
 
 /* BAE version */
-static int FS_version_state(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_version_state(struct one_wire_query *owq)
 {
 	UINT v ;
 	if ( OW_version( &v, PN(owq) ) ) {
@@ -471,7 +471,7 @@ static ZERO_OR_ERROR FS_version(struct one_wire_query *owq)
 	return OWQ_format_output_offset_and_size(v, 5, owq);
 }
 
-static int FS_version_device(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_version_device(struct one_wire_query *owq)
 {
 	UINT version ;
 	
@@ -484,7 +484,7 @@ static int FS_version_device(struct one_wire_query *owq)
 	return 0 ;
 }
 
-static int FS_version_bootstrap(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_version_bootstrap(struct one_wire_query *owq)
 {
 	UINT version ;
 	
@@ -498,7 +498,7 @@ static int FS_version_bootstrap(struct one_wire_query *owq)
 }
 
 /* BAE type */
-static int FS_type_state(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_type_state(struct one_wire_query *owq)
 {
 	UINT t ;
 	if ( OW_type( &t, PN(owq) ) ) {
@@ -524,7 +524,7 @@ static ZERO_OR_ERROR FS_localtype(struct one_wire_query *owq)
 	return OWQ_format_output_offset_and_size(t, 5, owq);
 }
 
-static int FS_type_device(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_type_device(struct one_wire_query *owq)
 {
 	UINT t ;
 	
@@ -537,7 +537,7 @@ static int FS_type_device(struct one_wire_query *owq)
 	return 0 ;
 }
 
-static int FS_type_chip(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_type_chip(struct one_wire_query *owq)
 {
 	UINT t ;
 	
@@ -551,7 +551,7 @@ static int FS_type_chip(struct one_wire_query *owq)
 }
 
 /* read an 8 bit value from a register stored in filetype.data */
-static int FS_r_8(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_8(struct one_wire_query *owq)
 {
 	struct parsedname * pn = PN(owq) ;
 	BYTE data[1] ; // 8/8 = 1
@@ -563,7 +563,7 @@ static int FS_r_8(struct one_wire_query *owq)
 }
 
 /* write an 8 bit value from a register stored in filetype.data */
-static int FS_w_8(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_8(struct one_wire_query *owq)
 {
 	struct parsedname * pn = PN(owq) ;
 	BYTE data[1] ; // 8/8 = 1
@@ -576,7 +576,7 @@ static int FS_w_8(struct one_wire_query *owq)
 }
 
 /* read a 16 bit value from a register stored in filetype.data */
-static int FS_r_16(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_16(struct one_wire_query *owq)
 {
 	struct parsedname * pn = PN(owq) ;
 	BYTE data[2] ; // 16/8 = 2
@@ -588,7 +588,7 @@ static int FS_r_16(struct one_wire_query *owq)
 }
 
 /* write a 16 bit value from a register stored in filetype.data */
-static int FS_w_16(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_16(struct one_wire_query *owq)
 {
 	struct parsedname * pn = PN(owq) ;
 	BYTE data[2] ; // 16/8 = 2
@@ -601,7 +601,7 @@ static int FS_w_16(struct one_wire_query *owq)
 }
 
 /* read a 32 bit value from a register stored in filetype.data */
-static int FS_r_32(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_32(struct one_wire_query *owq)
 {
 	struct parsedname * pn = PN(owq) ;
 	BYTE data[4] ; // 32/8 = 4
@@ -613,7 +613,7 @@ static int FS_r_32(struct one_wire_query *owq)
 }
 
 /* write a 32 bit value from a register stored in filetype.data */
-static int FS_w_32(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_32(struct one_wire_query *owq)
 {
 	struct parsedname * pn = PN(owq) ;
 	BYTE data[4] ; // 32/8 = 2

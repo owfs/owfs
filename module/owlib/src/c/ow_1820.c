@@ -353,7 +353,7 @@ static ZERO_OR_ERROR FS_r_pio(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_r_piostate(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_piostate(struct one_wire_query *owq)
 {
 	if (OW_read_piostate(&(OWQ_U(owq)), PN(owq))) {
 		return -EINVAL;

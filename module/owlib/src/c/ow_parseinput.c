@@ -18,15 +18,15 @@ $Id$
 #define   DEFAULT_INPUT_BUFFER_LENGTH   128
 
 /* ------- Prototypes ----------- */
-static int FS_input_yesno(struct one_wire_query *owq);
-static int FS_input_integer(struct one_wire_query *owq);
-static int FS_input_unsigned(struct one_wire_query *owq);
-static int FS_input_float(struct one_wire_query *owq);
-static int FS_input_date(struct one_wire_query *owq);
-static int FS_input_ascii(struct one_wire_query *owq);
-static int FS_input_array_with_commas(struct one_wire_query *owq);
-static int FS_input_ascii_array(struct one_wire_query *owq);
-static int FS_input_array_no_commas(struct one_wire_query *owq);
+static ZERO_OR_ERROR FS_input_yesno(struct one_wire_query *owq);
+static ZERO_OR_ERROR FS_input_integer(struct one_wire_query *owq);
+static ZERO_OR_ERROR FS_input_unsigned(struct one_wire_query *owq);
+static ZERO_OR_ERROR FS_input_float(struct one_wire_query *owq);
+static ZERO_OR_ERROR FS_input_date(struct one_wire_query *owq);
+static ZERO_OR_ERROR FS_input_ascii(struct one_wire_query *owq);
+static ZERO_OR_ERROR FS_input_array_with_commas(struct one_wire_query *owq);
+static ZERO_OR_ERROR FS_input_ascii_array(struct one_wire_query *owq);
+static ZERO_OR_ERROR FS_input_array_no_commas(struct one_wire_query *owq);
 static size_t FS_check_length(struct one_wire_query *owq);
 
 /* ---------------------------------------------- */
@@ -61,7 +61,7 @@ static size_t FS_check_length(struct one_wire_query *owq);
 
 
 // Routines to take write data (ascii representation) and interpret it and place into the proper fields.
-int OWQ_parse_input(struct one_wire_query *owq)
+ZERO_OR_ERROR OWQ_parse_input(struct one_wire_query *owq)
 {
 	switch (OWQ_pn(owq).extension) {
 	case EXTENSION_BYTE:
@@ -107,14 +107,14 @@ int OWQ_parse_input(struct one_wire_query *owq)
 
 
 /* return 0 if ok */
-static int FS_input_yesno(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_input_yesno(struct one_wire_query *owq)
 {
 	char default_input_buffer[DEFAULT_INPUT_BUFFER_LENGTH + 1];
 	char *input_buffer = default_input_buffer;
 
 	char *end;
 	int I;
-	int ret;
+	ZERO_OR_ERROR ret;
 
 	/* allocate more space if buffer is really long */
 	if (OWQ_size(owq) > DEFAULT_INPUT_BUFFER_LENGTH) {
@@ -169,7 +169,7 @@ static int FS_input_yesno(struct one_wire_query *owq)
 
 /* parse a value for write from buffer to value_object */
 /* return 0 if ok */
-static int FS_input_integer(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_input_integer(struct one_wire_query *owq)
 {
 	char default_input_buffer[DEFAULT_INPUT_BUFFER_LENGTH + 1];
 	char *input_buffer = default_input_buffer;
@@ -203,7 +203,7 @@ static int FS_input_integer(struct one_wire_query *owq)
 
 /* parse a value for write from buffer to value_object */
 /* return 0 if ok */
-static int FS_input_unsigned(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_input_unsigned(struct one_wire_query *owq)
 {
 	char default_input_buffer[DEFAULT_INPUT_BUFFER_LENGTH + 1];
 	char *input_buffer = default_input_buffer;
@@ -238,7 +238,7 @@ static int FS_input_unsigned(struct one_wire_query *owq)
 
 /* parse a value for write from buffer to value_object */
 /* return 0 if ok */
-static int FS_input_float(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_input_float(struct one_wire_query *owq)
 {
 	char default_input_buffer[DEFAULT_INPUT_BUFFER_LENGTH + 1];
 	char *input_buffer = default_input_buffer;
@@ -289,13 +289,13 @@ static int FS_input_float(struct one_wire_query *owq)
 }
 
 /* return 0 if ok */
-static int FS_input_date(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_input_date(struct one_wire_query *owq)
 {
 	char default_input_buffer[DEFAULT_INPUT_BUFFER_LENGTH + 1];
 	char *input_buffer = default_input_buffer;
 
 	struct tm tm;
-	int ret = 0;				// default ok
+	ZERO_OR_ERROR ret = 0;				// default ok
 
 	/* allocate more space if buffer is really long */
 	if (OWQ_size(owq) > DEFAULT_INPUT_BUFFER_LENGTH) {
@@ -360,7 +360,7 @@ static int FS_input_ascii(struct one_wire_query *owq)
 
 /* returns 0 if ok */
 /* creates a new allocated memory area IF no error */
-static int FS_input_array_with_commas(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_input_array_with_commas(struct one_wire_query *owq)
 {
 	int elements = OWQ_pn(owq).selected_filetype->ag->elements;
 	int extension;
@@ -412,7 +412,7 @@ static int FS_input_array_with_commas(struct one_wire_query *owq)
 
 /* returns 0 if ok */
 /* Basically pack the entries onto the buffer array and find the position with the cumulative length entries */
-static int FS_input_ascii_array(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_input_ascii_array(struct one_wire_query *owq)
 {
 	int elements = OWQ_pn(owq).selected_filetype->ag->elements;
 	int extension;
@@ -461,7 +461,7 @@ static int FS_input_ascii_array(struct one_wire_query *owq)
 
 /* returns 0 if ok */
 /* creates a new allocated memory area IF no error */
-static int FS_input_array_no_commas(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_input_array_no_commas(struct one_wire_query *owq)
 {
 	int elements = OWQ_pn(owq).selected_filetype->ag->elements;
 	int extension;

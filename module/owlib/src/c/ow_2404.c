@@ -143,53 +143,37 @@ static void OW_reset(struct parsedname *pn) ;
 static UINT Avals[] = { 0, 1, 10, 11, 100, 101, 110, 111, };
 
 /* 2404 */
-static int FS_r_page(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	int size_or_error = COMMON_read_memory_F0(owq, OWQ_pn(owq).extension, pagesize) ;
+	ZERO_OR_ERROR read_status = COMMON_read_memory_F0(owq, OWQ_pn(owq).extension, pagesize) ;
 
-	if (size_or_error==0) {
-		size_or_error = OWQ_size(owq);
-	} else {
-		size_or_error = -EINVAL ;
-	}
 	OW_reset(PN(owq)) ; // DS2404 needs this to release for 3-wire communication
-
-	return size_or_error ;
+	return read_status ;
 }
 
-static int FS_r_memory(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_memory(struct one_wire_query *owq)
 {
 	/* read is consecutive, unchecked. No paging */
-	int size_or_error = COMMON_read_memory_F0(owq, 0, 0) ;
+	ZERO_OR_ERROR read_status = COMMON_read_memory_F0(owq, 0, 0) ;
 
-	if (size_or_error==0) {
-		size_or_error = OWQ_size(owq);
-	} else {
-		size_or_error = -EINVAL ;
-	}
 	OW_reset(PN(owq)) ; // DS2404 needs this to release for 3-wire communication
-
-	return size_or_error ;
+	return read_status ;
 }
 
-static int FS_w_page(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	int error_code = COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem) ;
+	ZERO_OR_ERROR error_code = COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem) ;
 
-	/* paged write */
-	if (error_code != 0) {
-		error_code = -EFAULT ;
-	}
 	OW_reset(PN(owq)) ; // DS2404 needs this to release for 3-wire communication
 	return error_code ;
 }
 
-static int FS_w_memory(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_memory(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	int error_code = COMMON_readwrite_paged(owq, 0, pagesize, OW_w_mem) ;
+	ZERO_OR_ERROR error_code = COMMON_readwrite_paged(owq, 0, pagesize, OW_w_mem) ;
 
 	/* paged write */
 	if (error_code != 0) {
@@ -200,7 +184,7 @@ static int FS_w_memory(struct one_wire_query *owq)
 }
 
 /* set clock */
-static int FS_w_date(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_date(struct one_wire_query *owq)
 {
 	_DATE D = OWQ_D(owq);
 	OWQ_U(owq) = (UINT) D;
@@ -208,7 +192,7 @@ static int FS_w_date(struct one_wire_query *owq)
 }
 
 /* read clock */
-static int FS_r_date(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_date(struct one_wire_query *owq)
 {
 	if (FS_r_counter5(owq)) {
 		return -EINVAL;
@@ -218,23 +202,23 @@ static int FS_r_date(struct one_wire_query *owq)
 }
 
 /* set clock */
-static int FS_w_counter5(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_counter5(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	uint64_t L = ((uint64_t) OWQ_U(owq)) << 8;
-	return OW_w_ulong(&L, 5, pn->selected_filetype->data.s, pn);
+	return OW_w_ulong(&L, 5, pn->selected_filetype->data.s, pn)?-EINVAL:0;
 }
 
 /* set clock */
-static int FS_w_counter4(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_counter4(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	uint64_t L = ((uint64_t) OWQ_U(owq));
-	return OW_w_ulong(&L, 4, pn->selected_filetype->data.s, pn);
+	return OW_w_ulong(&L, 4, pn->selected_filetype->data.s, pn)?-EINVAL:0;
 }
 
 /* read clock */
-static int FS_r_counter5(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_counter5(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	uint64_t L;
@@ -246,7 +230,7 @@ static int FS_r_counter5(struct one_wire_query *owq)
 }
 
 /* read clock */
-static int FS_r_counter4(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_counter4(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	uint64_t L;
@@ -258,7 +242,7 @@ static int FS_r_counter4(struct one_wire_query *owq)
 }
 
 /* alarm */
-static int FS_w_set_alarm(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_set_alarm(struct one_wire_query *owq)
 {
 	BYTE c;
 	switch (OWQ_U(owq)) {
@@ -295,7 +279,7 @@ static int FS_w_set_alarm(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_r_alarm(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_alarm(struct one_wire_query *owq)
 {
 	BYTE c;
 	OWQ_allocate_struct_and_pointer(owq_alarm);
@@ -308,7 +292,7 @@ static int FS_r_alarm(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_r_set_alarm(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_set_alarm(struct one_wire_query *owq)
 {
 	BYTE c;
 	OWQ_allocate_struct_and_pointer(owq_alarm);
@@ -322,7 +306,7 @@ static int FS_r_set_alarm(struct one_wire_query *owq)
 }
 
 /* write flag */
-static int FS_w_flag(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_flag(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	BYTE cr;
@@ -350,7 +334,7 @@ static int FS_w_flag(struct one_wire_query *owq)
 }
 
 /* read flag */
-static int FS_r_flag(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_flag(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	BYTE cr;

@@ -149,7 +149,7 @@ static int OW_w_pios(const BYTE * data, const size_t size, const struct parsedna
 
 /* 2408 switch */
 /* 2408 switch -- is Vcc powered?*/
-static int FS_power(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_power(struct one_wire_query *owq)
 {
 	BYTE data[6];
 	if (OW_r_reg(data, PN(owq))) {
@@ -159,7 +159,7 @@ static int FS_power(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_r_strobe(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_strobe(struct one_wire_query *owq)
 {
 	BYTE data[6];
 	if (OW_r_reg(data, PN(owq))) {
@@ -169,7 +169,7 @@ static int FS_r_strobe(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_strobe(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_strobe(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	BYTE data[6];
@@ -180,7 +180,7 @@ static int FS_w_strobe(struct one_wire_query *owq)
 	return OW_w_control(data[5], pn) ? -EINVAL : 0;
 }
 
-static int FS_Mclear(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_Mclear(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	int init = 1;
@@ -212,7 +212,7 @@ static int FS_Mclear(struct one_wire_query *owq)
 	return FS_Mhome(owq);
 }
 
-static int FS_Mhome(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_Mhome(struct one_wire_query *owq)
 {
 // home
 	if (OW_w_pio(0x02, PN(owq))) {
@@ -222,7 +222,7 @@ static int FS_Mhome(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_Mscreen(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_Mscreen(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	size_t size = OWQ_size(owq);
@@ -235,10 +235,10 @@ static int FS_Mscreen(struct one_wire_query *owq)
 		}
 		data[i] = OWQ_buffer(owq)[i] | 0x80;
 	}
-	return OW_w_pios(data, size, pn);
+	return OW_w_pios(data, size, pn)?-EINVAL:0;
 }
 
-static int FS_Mmessage(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_Mmessage(struct one_wire_query *owq)
 {
 	if (FS_Mclear(owq)) {
 		return -EINVAL;
@@ -248,7 +248,7 @@ static int FS_Mmessage(struct one_wire_query *owq)
 
 /* 2408 switch PIO sensed*/
 /* From register 0x88 */
-static int FS_sense(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_sense(struct one_wire_query *owq)
 {
 	BYTE data[6];
 	if (OW_r_reg(data, PN(owq))) {
@@ -260,7 +260,7 @@ static int FS_sense(struct one_wire_query *owq)
 
 /* 2408 switch PIO set*/
 /* From register 0x89 */
-static int FS_r_pio(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_pio(struct one_wire_query *owq)
 {
 	BYTE data[6];
 	if (OW_r_reg(data, PN(owq))) {
@@ -271,7 +271,7 @@ static int FS_r_pio(struct one_wire_query *owq)
 }
 
 /* 2408 switch PIO change*/
-static int FS_w_pio(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_pio(struct one_wire_query *owq)
 {
     BYTE data = BYTE_INVERSE(OWQ_U(owq)) & 0xFF ;   /* reverse bits */
     
@@ -283,7 +283,7 @@ static int FS_w_pio(struct one_wire_query *owq)
 
 /* 2408 read activity latch */
 /* From register 0x8A */
-static int FS_r_latch(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_latch(struct one_wire_query *owq)
 {
 	BYTE data[6];
 	if (OW_r_reg(data, PN(owq))) {
@@ -295,7 +295,7 @@ static int FS_r_latch(struct one_wire_query *owq)
 
 /* 2408 write activity latch */
 /* Actually resets them all */
-static int FS_w_latch(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_latch(struct one_wire_query *owq)
 {
 	if (OW_c_latch(PN(owq))) {
 		return -EINVAL;
@@ -305,7 +305,7 @@ static int FS_w_latch(struct one_wire_query *owq)
 
 /* 2408 alarm settings*/
 /* From registers 0x8B-0x8D */
-static int FS_r_s_alarm(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_s_alarm(struct one_wire_query *owq)
 {
 	BYTE d[6];
 	int i, p;
@@ -328,7 +328,7 @@ static int FS_r_s_alarm(struct one_wire_query *owq)
 /* next 8 channels */
 /* data[1] polarity */
 /* data[0] selection  */
-static int FS_w_s_alarm(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_s_alarm(struct one_wire_query *owq)
 {
 	BYTE data[3];
 	int i;
@@ -345,7 +345,7 @@ static int FS_w_s_alarm(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_r_por(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_por(struct one_wire_query *owq)
 {
 	BYTE data[6];
 	if (OW_r_reg(data, PN(owq))) {
@@ -355,7 +355,7 @@ static int FS_r_por(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_por(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_por(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	BYTE data[6];
@@ -398,7 +398,7 @@ static int OW_Hinit(struct parsedname * pn) ;
 #define LCD_SAME_LOCATION_VALUE  0
 
 // Clear the display after potential initialization
-static int FS_Hclear(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_Hclear(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	BYTE clear[] = {
@@ -508,7 +508,7 @@ static int asciiyx( struct yx * YX )
 }
 
 // put in home position
-static int FS_Hhome(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_Hhome(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	struct yx YX = { 1, 1, "", 0, 0 } ;
@@ -519,7 +519,7 @@ static int FS_Hhome(struct one_wire_query *owq)
 }
 
 // Print from home position
-static int FS_Hmessage(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_Hmessage(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	struct yx YX = { 1, 1, OWQ_buffer(owq), OWQ_size(owq), 0 } ;
@@ -533,7 +533,7 @@ static int FS_Hmessage(struct one_wire_query *owq)
 }
 
 // print from current position
-static int FS_Hscreen(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_Hscreen(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	// y=0 is flag to do no position setting
@@ -547,7 +547,7 @@ static int FS_Hscreen(struct one_wire_query *owq)
 // print from specified positionh --
 // either in ascii format "y.x:text" or "x:text"
 // or binary (first 2 bytes are y and x)
-static int FS_Hscreenyx(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_Hscreenyx(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	struct yx YX = { 0, 0, OWQ_buffer(owq), OWQ_size(owq), 0 } ;
@@ -617,7 +617,7 @@ static int OW_Hprintyx(struct yx * YX, struct parsedname * pn)
 // 0x01 => blinking cursor on
 // 0x02 => cursor on
 // 0x04 => display on
-static int FS_Honoff(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_Honoff(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	BYTE onoff[] = { NIBBLE_DATA(OWQ_U(owq)) };

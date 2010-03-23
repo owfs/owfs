@@ -144,7 +144,7 @@ static ZERO_OR_ERROR FS_r_tag(struct one_wire_query *owq)
 	return -EINVAL ;
 }
 
-static int FS_temperature(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_temperature(struct one_wire_query *owq)
 {
 	size_t size = _EDS_PAGESIZE ;
 	BYTE data[_EDS_PAGESIZE] ;
@@ -156,10 +156,9 @@ static int FS_temperature(struct one_wire_query *owq)
 	return 0 ;
 }
 
-static int FS_r_memory(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_memory(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-//    if ( OW_r_mem( buf, size, (size_t) offset, pn) ) { return -EINVAL ; }
 	if (COMMON_OWQ_readwrite_paged(owq, 0, pagesize, COMMON_read_memory_F0)) {
 		return -EINVAL ;
 	}
@@ -184,7 +183,7 @@ static enum e_visibility EDS_visible(const struct parsedname * pn) {
 	return ( tag & pn->selected_filetype->data.u ) ? visible_now : visible_not_now ;
 }
 
-static int FS_r_page(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 	if (COMMON_OWQ_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, COMMON_read_memory_F0)) {
@@ -193,7 +192,7 @@ static int FS_r_page(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_memory(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_memory(struct one_wire_query *owq)
 {
 	size_t size = OWQ_size(owq) ;
 	off_t start = OWQ_offset(owq) ;
@@ -215,7 +214,7 @@ static int FS_w_memory(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_page(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 {
 	struct parsedname * pn = PN(owq) ;
 	return OW_w_mem( (BYTE *) OWQ_buffer(owq),OWQ_size(owq),OWQ_offset(owq) + _EDS_PAGESIZE * pn->extension,pn) ? -EINVAL : 0 ;

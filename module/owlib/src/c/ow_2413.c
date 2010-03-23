@@ -83,7 +83,7 @@ static int OW_read(BYTE * data, const struct parsedname *pn);
 static UINT SENSED_state(UINT status_bits);
 static UINT LATCH_state(UINT status_bits);
 
-static int FS_r_piostate(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_piostate(struct one_wire_query *owq)
 {
 	/* surrogate property
 	bit 0 PIOA pin state
@@ -102,7 +102,7 @@ static int FS_r_piostate(struct one_wire_query *owq)
 }
 
 /* write 2413 switch -- 2 values*/
-static int FS_w_piostate(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_piostate(struct one_wire_query *owq)
 {
 	UINT pio = OWQ_U(owq) ;
 
@@ -113,7 +113,7 @@ static int FS_w_piostate(struct one_wire_query *owq)
 /* 2413 switch */
 /* complement of sense */
 /* bits 0 and 2 */
-static int FS_r_pio(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_pio(struct one_wire_query *owq)
 {
 	UINT piostate ;
 	if ( FS_r_sibling_U( &piostate, "piostate", owq ) != 0 ) {
@@ -126,7 +126,7 @@ static int FS_r_pio(struct one_wire_query *owq)
 }
 
 /* write 2413 switch -- 2 values*/
-static int FS_w_pio(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_pio(struct one_wire_query *owq)
 {
 	// complement
 	return FS_w_sibling_U( OWQ_U(owq) ^ 0x03 , "piostate", owq );
@@ -134,7 +134,7 @@ static int FS_w_pio(struct one_wire_query *owq)
 
 /* 2413 switch PIO sensed*/
 /* bits 0 and 2 */
-static int FS_sense(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_sense(struct one_wire_query *owq)
 {
 	UINT piostate ;
 	if ( FS_r_sibling_U( &piostate, "piostate", owq ) != 0 ) {
@@ -147,7 +147,7 @@ static int FS_sense(struct one_wire_query *owq)
 
 /* 2413 switch activity latch*/
 /* bites 1 and 3 */
-static int FS_r_latch(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_latch(struct one_wire_query *owq)
 {
 	UINT piostate ;
 	if ( FS_r_sibling_U( &piostate, "piostate", owq ) != 0 ) {

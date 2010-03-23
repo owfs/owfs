@@ -113,7 +113,7 @@ static int OW_w_status(BYTE * data, const struct parsedname *pn);
 static int OW_r_templimit(_FLOAT * T, const int Tindex, const struct parsedname *pn);
 static int OW_w_templimit(const _FLOAT T, const int Tindex, const struct parsedname *pn);
 
-static int FS_temperature(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_temperature(struct one_wire_query *owq)
 {
 	if (OW_temperature(&OWQ_F(owq), PN(owq))) {
 		return -EINVAL;
@@ -121,7 +121,7 @@ static int FS_temperature(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_r_thf(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_thf(struct one_wire_query *owq)
 {
 	BYTE data;
 
@@ -133,7 +133,7 @@ static int FS_r_thf(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_thf(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_thf(struct one_wire_query *owq)
 {
 	BYTE data;
 
@@ -148,7 +148,7 @@ static int FS_w_thf(struct one_wire_query *owq)
 }
 
 
-static int FS_r_tlf(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_tlf(struct one_wire_query *owq)
 {
 	BYTE data;
 
@@ -160,7 +160,7 @@ static int FS_r_tlf(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_tlf(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_tlf(struct one_wire_query *owq)
 {
 	BYTE data;
 
@@ -175,7 +175,7 @@ static int FS_w_tlf(struct one_wire_query *owq)
 }
 
 
-static int FS_r_thermomode(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_thermomode(struct one_wire_query *owq)
 {
 	BYTE data;
 
@@ -187,7 +187,7 @@ static int FS_r_thermomode(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_thermomode(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_thermomode(struct one_wire_query *owq)
 {
 	BYTE data;
 
@@ -202,7 +202,7 @@ static int FS_w_thermomode(struct one_wire_query *owq)
 }
 
 
-static int FS_r_polarity(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_polarity(struct one_wire_query *owq)
 {
 	BYTE data;
 
@@ -213,7 +213,7 @@ static int FS_r_polarity(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_polarity(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_polarity(struct one_wire_query *owq)
 {
 	BYTE data;
 
@@ -228,7 +228,7 @@ static int FS_w_polarity(struct one_wire_query *owq)
 }
 
 
-static int FS_r_oneshot(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_oneshot(struct one_wire_query *owq)
 {
 	BYTE data;
 
@@ -251,7 +251,7 @@ static int FS_r_oneshot(struct one_wire_query *owq)
  * commands at the appropriate times on the assumption that the reason you are setting the continuous conversion
  * mode is because you want continuous conversions.
  */
-static int FS_w_oneshot(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_oneshot(struct one_wire_query *owq)
 {
 	BYTE pstop[] = { _1W_STOP_CONVERT_T, };
 	struct transaction_log tstop[] = {
@@ -317,7 +317,7 @@ static int FS_w_oneshot(struct one_wire_query *owq)
 }
 
 
-static int FS_r_templimit(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_templimit(struct one_wire_query *owq)
 {
 	if (OW_r_templimit(&OWQ_F(owq), OWQ_pn(owq).selected_filetype->data.i, PN(owq))) {
 		return -EINVAL;
@@ -325,7 +325,7 @@ static int FS_r_templimit(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_templimit(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_templimit(struct one_wire_query *owq)
 {
 	if (OW_w_templimit(OWQ_F(owq), OWQ_pn(owq).selected_filetype->data.i, PN(owq))) {
 		return -EINVAL;

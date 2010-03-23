@@ -297,7 +297,7 @@ static int OW_r_logdate_single(struct Mission *mission, struct one_wire_query *o
 static int OW_r_logudate_all(struct Mission *mission, struct one_wire_query *owq);
 static int OW_r_logudate_single(struct Mission *mission, struct one_wire_query *owq);
 
-static int FS_r_register(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_register(struct one_wire_query *owq)
 {
 	BYTE c ;
 
@@ -309,7 +309,7 @@ static int FS_r_register(struct one_wire_query *owq)
 	return 0 ;
 }
 
-static int FS_w_register(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_register(struct one_wire_query *owq)
 {
 	BYTE c = OWQ_U(owq) & 0xFF ;
 
@@ -321,7 +321,7 @@ static int FS_w_register(struct one_wire_query *owq)
 }
 
 /* ControlRegister reversed */
-static int FS_r_controlrbit(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_controlrbit(struct one_wire_query *owq)
 {
 	UINT U ;
 	UINT mask = PN(owq)->selected_filetype->data.u ;
@@ -336,7 +336,7 @@ static int FS_r_controlrbit(struct one_wire_query *owq)
 }
 
 /* ControlRegister reversed */
-static int FS_w_controlrbit(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_controlrbit(struct one_wire_query *owq)
 {
 	UINT mask = PN(owq)->selected_filetype->data.u ;
 	UINT Y = OWQ_Y(owq) ?  0 : mask ;
@@ -344,7 +344,7 @@ static int FS_w_controlrbit(struct one_wire_query *owq)
 	return FS_w_sibling_bitwork( Y, mask, "ControlRegister", owq ) ;
 }
 
-static int FS_r_controlbit(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_controlbit(struct one_wire_query *owq)
 {
 	UINT U ;
 	UINT mask = PN(owq)->selected_filetype->data.u ;
@@ -358,7 +358,7 @@ static int FS_r_controlbit(struct one_wire_query *owq)
 	return 0 ;
 }
 
-static int FS_w_controlbit(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_controlbit(struct one_wire_query *owq)
 {
 	UINT mask = PN(owq)->selected_filetype->data.u ;
 	UINT Y = OWQ_Y(owq) ? mask : 0 ;
@@ -366,7 +366,7 @@ static int FS_w_controlbit(struct one_wire_query *owq)
 	return FS_w_sibling_bitwork( Y, mask, "ControlRegister", owq ) ;
 }
 
-static int FS_r_statusbit(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_statusbit(struct one_wire_query *owq)
 {
 	UINT U ;
 	UINT mask = PN(owq)->selected_filetype->data.u ;
@@ -380,7 +380,7 @@ static int FS_r_statusbit(struct one_wire_query *owq)
 	return 0 ;
 }
 
-static int FS_w_statusbit(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_statusbit(struct one_wire_query *owq)
 {
 	UINT mask = PN(owq)->selected_filetype->data.u ;
 	UINT Y = OWQ_Y(owq) ? mask : 0 ;
@@ -388,7 +388,7 @@ static int FS_w_statusbit(struct one_wire_query *owq)
 	return FS_w_sibling_bitwork( Y, mask, "StatusRegister", owq ) ;
 }
 
-static int FS_bitread(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_bitread(struct one_wire_query *owq)
 {
 	BYTE d;
 	struct parsedname *pn = PN(owq);
@@ -404,7 +404,7 @@ static int FS_bitread(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_bitwrite(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_bitwrite(struct one_wire_query *owq)
 {
 	BYTE d;
 	struct parsedname *pn = PN(owq);
@@ -423,31 +423,31 @@ static int FS_bitwrite(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_rbitread(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_rbitread(struct one_wire_query *owq)
 {
-	int ret = FS_bitread(owq);
+	ZERO_OR_ERROR ret = FS_bitread(owq);
 	OWQ_Y(owq) = !OWQ_Y(owq);
 	return ret;
 }
 
-static int FS_rbitwrite(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_rbitwrite(struct one_wire_query *owq)
 {
 	OWQ_Y(owq) = !OWQ_Y(owq);
 	return FS_bitwrite(owq);
 }
 
 /* histogram counts */
-static int FS_r_histogram(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_histogram(struct one_wire_query *owq)
 {
 	switch (OWQ_pn(owq).extension) {
 	case EXTENSION_ALL:
-		return OW_r_histogram_all(owq);
+		return OW_r_histogram_all(owq)?-EINVAL:0;
 	default:
-		return OW_r_histogram_single(owq);
+		return OW_r_histogram_single(owq)?-EINVAL:0;
 	}
 }
 
-static int FS_r_histotemp(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_histotemp(struct one_wire_query *owq)
 {
 	int extension = OWQ_pn(owq).extension;
 	struct Version *v = (struct Version *) bsearch(PN(owq), Versions, VersionElements,
@@ -466,7 +466,7 @@ static int FS_r_histotemp(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_r_histogap(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_histogap(struct one_wire_query *owq)
 {
 	struct Version *v = (struct Version *) bsearch(PN(owq), Versions, VersionElements,
 												   sizeof(struct Version), VersionCmp);
@@ -476,7 +476,7 @@ static int FS_r_histogap(struct one_wire_query *owq)
 	OWQ_F(owq) = v->resolution * 4;
 	return 0;
 }
-static int FS_r_histoelem(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_histoelem(struct one_wire_query *owq)
 {
 	OWQ_U(owq) = HISTOGRAM_DATA_ELEMENTS;
 	return 0;
@@ -490,7 +490,7 @@ static ZERO_OR_ERROR FS_r_version(struct one_wire_query *owq)
 	return v ? OWQ_format_output_offset_and_size_z(v->name, owq) : -ENOENT;
 }
 
-static int FS_r_resolution(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_resolution(struct one_wire_query *owq)
 {
 	struct Version *v = (struct Version *) bsearch(PN(owq), Versions, VersionElements,
 												   sizeof(struct Version), VersionCmp);
@@ -501,7 +501,7 @@ static int FS_r_resolution(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_r_rangelow(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_rangelow(struct one_wire_query *owq)
 {
 	struct Version *v = (struct Version *) bsearch(PN(owq), Versions, VersionElements,
 												   sizeof(struct Version), VersionCmp);
@@ -512,7 +512,7 @@ static int FS_r_rangelow(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_r_rangehigh(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_rangehigh(struct one_wire_query *owq)
 {
 	struct Version *v = (struct Version *) bsearch(PN(owq), Versions, VersionElements,
 												   sizeof(struct Version), VersionCmp);
@@ -524,7 +524,7 @@ static int FS_r_rangehigh(struct one_wire_query *owq)
 }
 
 /* Temperature -- force if not in progress */
-static int FS_r_temperature(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_temperature(struct one_wire_query *owq)
 {
 	int temp;
 	struct parsedname *pn = PN(owq);
@@ -545,7 +545,7 @@ static int FS_r_temperature(struct one_wire_query *owq)
 
 /* read counter */
 /* Save a function by shoving address in data field */
-static int FS_r_3byte(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_3byte(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	size_t addr = pn->selected_filetype->data.s;
@@ -558,7 +558,7 @@ static int FS_r_3byte(struct one_wire_query *owq)
 }
 
 /* mission start date */
-static int FS_mdate(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_mdate(struct one_wire_query *owq)
 {
 	struct Mission mission;
 
@@ -571,7 +571,7 @@ static int FS_mdate(struct one_wire_query *owq)
 }
 
 /* mission start date */
-static int FS_umdate(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_umdate(struct one_wire_query *owq)
 {
 	struct Mission mission;
 
@@ -583,7 +583,7 @@ static int FS_umdate(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_alarmelems(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_alarmelems(struct one_wire_query *owq)
 {
 	struct Mission mission;
 	struct parsedname *pn = PN(owq);
@@ -607,7 +607,7 @@ static int FS_alarmelems(struct one_wire_query *owq)
 }
 
 /* Temperature -- force if not in progress */
-static int FS_r_alarmtemp(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_alarmtemp(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	BYTE data[1];
@@ -624,7 +624,7 @@ static int FS_r_alarmtemp(struct one_wire_query *owq)
 }
 
 /* Temperature -- force if not in progress */
-static int FS_w_alarmtemp(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_alarmtemp(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	BYTE data[1];
@@ -640,7 +640,7 @@ static int FS_w_alarmtemp(struct one_wire_query *owq)
 	return (OW_w_mem(data, 1, pn->selected_filetype->data.s, pn)) ? -EINVAL : 0;
 }
 
-static int FS_alarmudate(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_alarmudate(struct one_wire_query *owq)
 {
 	struct Mission mission;
 	struct parsedname *pn = PN(owq);
@@ -660,7 +660,7 @@ static int FS_alarmudate(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_alarmstart(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_alarmstart(struct one_wire_query *owq)
 {
 	struct Mission mission;
 	struct parsedname *pn = PN(owq);
@@ -680,7 +680,7 @@ static int FS_alarmstart(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_alarmend(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_alarmend(struct one_wire_query *owq)
 {
 	struct Mission mission;
 	struct parsedname *pn = PN(owq);
@@ -700,7 +700,7 @@ static int FS_alarmend(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_alarmcnt(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_alarmcnt(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	int t[12];
@@ -717,7 +717,7 @@ static int FS_alarmcnt(struct one_wire_query *owq)
 }
 
 /* read clock */
-static int FS_r_date(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_date(struct one_wire_query *owq)
 {
 	BYTE data[7];
 
@@ -725,11 +725,11 @@ static int FS_r_date(struct one_wire_query *owq)
 	if (OW_small_read(data, 7, 0x0200, PN(owq))) {
 		return -EINVAL;
 	}
-	return OW_2date(&OWQ_D(owq), data);
+	return OW_2date(&OWQ_D(owq), data)?-EINVAL:0;
 }
 
 /* read clock */
-static int FS_r_counter(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_counter(struct one_wire_query *owq)
 {
 	BYTE data[7];
 	_DATE d;
@@ -747,12 +747,12 @@ static int FS_r_counter(struct one_wire_query *owq)
 }
 
 /* set clock */
-static int FS_w_date(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_date(struct one_wire_query *owq)
 {
-	return OW_w_date(&OWQ_D(owq), PN(owq));
+	return OW_w_date(&OWQ_D(owq), PN(owq)) ? -EINVAL:0;
 }
 
-static int FS_w_counter(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_counter(struct one_wire_query *owq)
 {
 	BYTE data[7];
 	struct parsedname *pn = PN(owq);
@@ -768,13 +768,13 @@ static int FS_w_counter(struct one_wire_query *owq)
 }
 
 /* stop/start clock running */
-static int FS_w_run(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_run(struct one_wire_query *owq)
 {
-	return OW_w_run(OWQ_Y(owq), PN(owq));
+	return OW_w_run(OWQ_Y(owq), PN(owq))?-EINVAL:0;
 }
 
 /* clock running? */
-static int FS_r_run(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_run(struct one_wire_query *owq)
 {
 	BYTE cr;
 	if (OW_small_read(&cr, 1, 0x020E, PN(owq))) {
@@ -785,7 +785,7 @@ static int FS_r_run(struct one_wire_query *owq)
 }
 
 /* start/stop mission */
-static int FS_w_mip(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_mip(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	if (OWQ_Y(owq)) {			/* start a mission! */
@@ -793,14 +793,14 @@ static int FS_w_mip(struct one_wire_query *owq)
 		if (OW_small_read(&data, 1, 0x020D, pn)) {
 			return -EINVAL;
 		}
-		return OW_startmission((UINT) data, pn);
+		return OW_startmission((UINT) data, pn)?-EINVAL:0;
 	} else {
-		return OW_stopmission(pn);
+		return OW_stopmission(pn)?-EINVAL:0;
 	}
 }
 
 /* read the interval between samples during a mission */
-static int FS_r_samplerate(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_samplerate(struct one_wire_query *owq)
 {
 	BYTE data;
 	if (OW_small_read(&data, 1, 0x020D, PN(owq))) {
@@ -811,17 +811,17 @@ static int FS_r_samplerate(struct one_wire_query *owq)
 }
 
 /* write the interval between samples during a mission */
-static int FS_w_samplerate(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_samplerate(struct one_wire_query *owq)
 {
 	if (OWQ_U(owq) > 0) {
-		return OW_startmission(OWQ_U(owq), PN(owq));
+		return OW_startmission(OWQ_U(owq), PN(owq))?-EINVAL:0;
 	} else {
-		return OW_stopmission(PN(owq));
+		return OW_stopmission(PN(owq))?-EINVAL:0;
 	}
 }
 
 /* read the alarm time field (not bit 7, though) */
-static int FS_r_atime(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_atime(struct one_wire_query *owq)
 {
 	BYTE data;
 	if (OW_small_read(&data, 1, OWQ_pn(owq).selected_filetype->data.s, PN(owq))) {
@@ -833,7 +833,7 @@ static int FS_r_atime(struct one_wire_query *owq)
 
 /* write one of the alarm fields */
 /* NOTE: keep first bit */
-static int FS_w_atime(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_atime(struct one_wire_query *owq)
 {
 	BYTE data;
 	struct parsedname *pn = PN(owq);
@@ -848,7 +848,7 @@ static int FS_w_atime(struct one_wire_query *owq)
 }
 
 /* read the alarm time field (not bit 7, though) */
-static int FS_r_atrig(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_atrig(struct one_wire_query *owq)
 {
 	BYTE data[4];
 	if (OW_small_read(data, 4, 0x0207, PN(owq))) {
@@ -868,7 +868,7 @@ static int FS_r_atrig(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_r_mem(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 	if (COMMON_OWQ_readwrite_paged(owq, 0, pagesize, COMMON_read_memory_crc16_A5)) {
@@ -877,7 +877,7 @@ static int FS_r_mem(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_mem(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 	if (COMMON_readwrite_paged(owq, 0, pagesize, OW_w_mem)) {
@@ -886,7 +886,7 @@ static int FS_w_mem(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_atrig(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_atrig(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	BYTE data[4];
@@ -913,16 +913,16 @@ static int FS_w_atrig(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_r_page(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 	if (COMMON_read_memory_crc16_A5(owq, OWQ_pn(owq).extension, pagesize)) {
 		return -EINVAL;
 	}
-	return OWQ_size(owq);
+	return 0;
 }
 
-static int FS_w_page(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 {
 	if (OW_w_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) (OWQ_offset(owq) + ((OWQ_pn(owq).extension) << 5)), PN(owq))) {
 		return -EINVAL;
@@ -931,7 +931,7 @@ static int FS_w_page(struct one_wire_query *owq)
 }
 
 /* temperature log */
-static int FS_logelements(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_logelements(struct one_wire_query *owq)
 {
 	struct Mission mission;
 
@@ -944,7 +944,7 @@ static int FS_logelements(struct one_wire_query *owq)
 }
 
 /* temperature log */
-static int FS_r_logdate(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_logdate(struct one_wire_query *owq)
 {
 	struct Mission mission;
 
@@ -954,14 +954,14 @@ static int FS_r_logdate(struct one_wire_query *owq)
 
 	switch (OWQ_pn(owq).extension) {
 	case EXTENSION_ALL:
-		return OW_r_logdate_all(&mission, owq);
+		return OW_r_logdate_all(&mission, owq)?-EINVAL:0;
 	default:
-		return OW_r_logdate_single(&mission, owq);
+		return OW_r_logdate_single(&mission, owq)?-EINVAL:0;
 	}
 }
 
 /* temperature log */
-static int FS_r_logudate(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_logudate(struct one_wire_query *owq)
 {
 	struct Mission mission;
 
@@ -971,14 +971,14 @@ static int FS_r_logudate(struct one_wire_query *owq)
 
 	switch (OWQ_pn(owq).extension) {
 	case EXTENSION_ALL:
-		return OW_r_logudate_all(&mission, owq);
+		return OW_r_logudate_all(&mission, owq)?-EINVAL:0;
 	default:
-		return OW_r_logudate_single(&mission, owq);
+		return OW_r_logudate_single(&mission, owq)?-EINVAL:0;
 	}
 }
 
 /* mission delay */
-static int FS_r_delay(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_delay(struct one_wire_query *owq)
 {
 	BYTE data[2];
 	if (OW_small_read(data, 2, (size_t) 0x0212, PN(owq))) {
@@ -989,7 +989,7 @@ static int FS_r_delay(struct one_wire_query *owq)
 }
 
 /* mission delay */
-static int FS_w_delay(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_delay(struct one_wire_query *owq)
 {
 	BYTE data[2] = { LOW_HIGH_ADDRESS(OWQ_U(owq)), };
 	if (OW_MIP(PN(owq))) {
@@ -1002,7 +1002,7 @@ static int FS_w_delay(struct one_wire_query *owq)
 }
 
 /* temperature log */
-static int FS_r_logtemp(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_logtemp(struct one_wire_query *owq)
 {
 	struct Mission mission;
 	struct parsedname *pn = PN(owq);
@@ -1019,13 +1019,13 @@ static int FS_r_logtemp(struct one_wire_query *owq)
 
 	switch (pn->extension) {
 	case EXTENSION_ALL:
-		return OW_r_logtemp_all(v, &mission, owq);
+		return OW_r_logtemp_all(v, &mission, owq)?-EINVAL:0;
 	default:
-		return OW_r_logtemp_single(v, &mission, owq);
+		return OW_r_logtemp_single(v, &mission, owq)?-EINVAL:0;
 	}
 }
 
-static int FS_easystart(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_easystart(struct one_wire_query *owq)
 {
 	/* write 0x020E -- 0x0214 */
 	BYTE data[] = { 0x86, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, };
@@ -1035,7 +1035,7 @@ static int FS_easystart(struct one_wire_query *owq)
 		return -EINVAL;
 	}
 
-	return OW_startmission(OWQ_U(owq), PN(owq));
+	return OW_startmission(OWQ_U(owq), PN(owq))?-EINVAL:0;
 }
 
 static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)

@@ -166,14 +166,14 @@ struct device d_interface_statistics = { "statistics", "statistics", 0,
 
 
 /* Just some tests to support change of extra delay */
-static int FS_r_ds2404_compliance(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_ds2404_compliance(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	OWQ_Y(owq) = pn->selected_connection->ds2404_compliance;
 	return 0;
 }
 
-static int FS_w_ds2404_compliance(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_ds2404_compliance(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	pn->selected_connection->ds2404_compliance = OWQ_Y(owq);
@@ -181,7 +181,7 @@ static int FS_w_ds2404_compliance(struct one_wire_query *owq)
 }
 
 /* Just some tests to support overdrive */
-static int FS_r_reconnect(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_reconnect(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	OWQ_Y(owq) = (pn->selected_connection->reconnect_state == reconnect_error);
@@ -189,7 +189,7 @@ static int FS_r_reconnect(struct one_wire_query *owq)
 }
 
 /* Just some tests to support overdrive */
-static int FS_w_reconnect(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_reconnect(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	pn->selected_connection->reconnect_state = OWQ_Y(owq) ? reconnect_error : reconnect_ok ;
@@ -197,14 +197,14 @@ static int FS_w_reconnect(struct one_wire_query *owq)
 }
 
 /* Just some tests to support flextime */
-static int FS_r_flextime(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_flextime(struct one_wire_query *owq)
 {
     struct parsedname *pn = PN(owq);
     OWQ_Y(owq) = (pn->selected_connection->flex==bus_yes_flex);
     return 0;
 }
 
-static int FS_w_flextime(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_flextime(struct one_wire_query *owq)
 {
     struct parsedname *pn = PN(owq);
     pn->selected_connection->flex = OWQ_Y(owq) ? bus_yes_flex : bus_no_flex ;
@@ -214,7 +214,7 @@ static int FS_w_flextime(struct one_wire_query *owq)
 
 /* DS2482 APU setting */
 #define DS2482_REG_CFG_APU     0x01
-static int FS_r_APU(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_APU(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	switch ( pn->selected_connection->busmode ) {
@@ -226,7 +226,7 @@ static int FS_r_APU(struct one_wire_query *owq)
 	}
 }
 
-static int FS_w_APU(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_APU(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	switch ( pn->selected_connection->busmode ) {
@@ -244,7 +244,7 @@ static int FS_w_APU(struct one_wire_query *owq)
 }
 
 /* DS2480B reverse_polarity setting */
-static int FS_r_reverse(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_reverse(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	switch ( pn->selected_connection->busmode ) {
@@ -256,7 +256,7 @@ static int FS_r_reverse(struct one_wire_query *owq)
 	}
 }
 
-static int FS_w_reverse(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_reverse(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	switch ( pn->selected_connection->busmode ) {
@@ -271,7 +271,7 @@ static int FS_w_reverse(struct one_wire_query *owq)
 }
 
 /* fake adapter temperature limits */
-static int FS_r_templimit(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_templimit(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	switch ( pn->selected_connection->busmode ) {
@@ -285,7 +285,7 @@ static int FS_r_templimit(struct one_wire_query *owq)
 	}
 }
 
-static int FS_w_templimit(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_templimit(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	switch ( pn->selected_connection->busmode ) {
@@ -305,7 +305,7 @@ static int FS_w_templimit(struct one_wire_query *owq)
 }
 
 /* Serial baud rate */
-static int FS_r_baud(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_baud(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	switch ( pn->selected_connection->busmode ) {
@@ -320,7 +320,7 @@ static int FS_r_baud(struct one_wire_query *owq)
 	}
 }
 
-static int FS_w_baud(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_baud(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	switch ( pn->selected_connection->busmode ) {
@@ -337,7 +337,7 @@ static int FS_w_baud(struct one_wire_query *owq)
 
 /* DS2482 PPM setting */
 #define DS2482_REG_CFG_PPM     0x02
-static int FS_r_PPM(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_PPM(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	switch ( pn->selected_connection->busmode ) {
@@ -349,7 +349,7 @@ static int FS_r_PPM(struct one_wire_query *owq)
 	}
 }
 
-static int FS_w_PPM(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_PPM(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	switch ( pn->selected_connection->busmode ) {
@@ -367,7 +367,7 @@ static int FS_w_PPM(struct one_wire_query *owq)
 }
 
 /* Just some tests for ha5 checksum */
-static int FS_r_checksum(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_checksum(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	switch ( pn->selected_connection->busmode ) {
@@ -379,7 +379,7 @@ static int FS_r_checksum(struct one_wire_query *owq)
 	}
 }
 
-static int FS_w_checksum(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_checksum(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	switch ( pn->selected_connection->busmode ) {
@@ -393,14 +393,14 @@ static int FS_w_checksum(struct one_wire_query *owq)
 }
 
 /* Just some tests to support overdrive */
-static int FS_r_overdrive(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_overdrive(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	OWQ_Y(owq) = (pn->selected_connection->speed == bus_speed_overdrive);
 	return 0;
 }
 
-static int FS_w_overdrive(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_overdrive(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	pn->selected_connection->speed = OWQ_Y(owq) ? bus_speed_overdrive : bus_speed_slow;
@@ -463,7 +463,7 @@ static ZERO_OR_ERROR FS_r_ds2490status(struct one_wire_query *owq)
  * PARMSET_Slew0p70Vus 0x6
  * PARMSET_Slew0p55Vus 0x7
  */
-static int FS_r_pulldownslewrate(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_pulldownslewrate(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	if (pn->selected_connection->busmode != bus_usb) {
@@ -474,7 +474,7 @@ static int FS_r_pulldownslewrate(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_pulldownslewrate(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_pulldownslewrate(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	if (pn->selected_connection->busmode != bus_usb) {
@@ -498,7 +498,7 @@ static int FS_w_pulldownslewrate(struct one_wire_query *owq)
  * Default value is 10us. (with altUSB)
  * Default value is 12us. (without altUSB)
  */
-static int FS_r_writeonelowtime(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_writeonelowtime(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	if (pn->selected_connection->busmode != bus_usb) {
@@ -509,7 +509,7 @@ static int FS_r_writeonelowtime(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_writeonelowtime(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_writeonelowtime(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	if (pn->selected_connection->busmode != bus_usb) {
@@ -531,7 +531,7 @@ static int FS_w_writeonelowtime(struct one_wire_query *owq)
  * Default value is 8us. (with altUSB)
  * Default value is 7us. (without altUSB)
  */
-static int FS_r_datasampleoffset(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_datasampleoffset(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	if (pn->selected_connection->busmode != bus_usb) {
@@ -542,7 +542,7 @@ static int FS_r_datasampleoffset(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_datasampleoffset(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_datasampleoffset(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	if (pn->selected_connection->busmode != bus_usb){
@@ -583,14 +583,14 @@ static ZERO_OR_ERROR FS_port(struct one_wire_query *owq)
 }
 
 /* special check, -remote file length won't match local sizes */
-static int FS_version(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_version(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	OWQ_U(owq) = pn->selected_connection->Adapter;
 	return 0;
 }
 
-static int FS_stat_p(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_stat_p(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 
@@ -598,7 +598,7 @@ static int FS_stat_p(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_time_p(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_time_p(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	struct timeval *tv;
@@ -617,7 +617,7 @@ static int FS_time_p(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_time(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_time(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	int dindex = pn->extension;
@@ -637,7 +637,7 @@ static int FS_time(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_elapsed(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_elapsed(struct one_wire_query *owq)
 {
 	OWQ_U(owq) = time(NULL) - StateInfo.start_time;
 	return 0;

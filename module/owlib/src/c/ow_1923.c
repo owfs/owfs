@@ -198,7 +198,7 @@ static void OW_date(const _DATE * d, BYTE * data);
 
 
 
-static int FS_r_page(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 	if (COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_r_mem)) {
@@ -207,7 +207,7 @@ static int FS_r_page(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_page(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 	if (COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem)) {
@@ -216,7 +216,7 @@ static int FS_w_page(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_r_mem(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 	if (COMMON_readwrite_paged(owq, 0, pagesize, OW_r_mem)) {
@@ -225,7 +225,7 @@ static int FS_r_mem(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_mem(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 	if (COMMON_readwrite_paged(owq, 0, pagesize, OW_w_mem)) {
@@ -236,7 +236,7 @@ static int FS_w_mem(struct one_wire_query *owq)
 
 
 /* mission delay */
-static int FS_r_delay(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_delay(struct one_wire_query *owq)
 {
 	BYTE data[3];
 	if (OW_r_mem(data, 3, 0x0216, PN(owq))) {
@@ -249,7 +249,7 @@ static int FS_r_delay(struct one_wire_query *owq)
 }
 
 /* mission delay */
-static int FS_w_delay(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_delay(struct one_wire_query *owq)
 {
 	UINT U = OWQ_U(owq);
 	BYTE data[3] = { U & 0xFF, (U >> 8) & 0xFF, (U >> 16) & 0xFF };
@@ -263,7 +263,7 @@ static int FS_w_delay(struct one_wire_query *owq)
 }
 
 /* Just a test-function */
-static int FS_enable_osc(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_enable_osc(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 #if 0
@@ -280,20 +280,20 @@ static int FS_enable_osc(struct one_wire_query *owq)
 	}
 #endif
 	memset(OWQ_buffer(owq), 0, 1);
-	return OWQ_size(owq);
+	return 0;
 }
 
-static int FS_clearmem(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_clearmem(struct one_wire_query *owq)
 {
 	memset(OWQ_buffer(owq), 0, 1);	// ??? why is this needed
 	if (OW_clearmemory(PN(owq))) {
 		return -EINVAL;
 	}
-	return OWQ_size(owq);
+	return OWQ_size(owq)?-EINVAL:0;
 }
 
 /* clock running? */
-static int FS_r_run(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_run(struct one_wire_query *owq)
 {
 	BYTE cr;
 	if (OW_r_mem(&cr, 1, 0x0212, PN(owq))) {
@@ -308,7 +308,7 @@ static int FS_r_run(struct one_wire_query *owq)
 }
 
 /* stop/start clock running */
-static int FS_w_run(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_run(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	BYTE cr;
@@ -336,7 +336,7 @@ static int FS_w_run(struct one_wire_query *owq)
 }
 
 /* start/stop mission */
-static int FS_w_mip(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_mip(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	unsigned long mdelay;
@@ -348,14 +348,14 @@ static int FS_w_mip(struct one_wire_query *owq)
 			return -EINVAL;
 		}
 		mdelay = data[0] | data[1] << 8 | data[2] << 16;
-		return OW_startmission(mdelay, pn);
+		return OW_startmission(mdelay, pn)?-EINVAL:0;
 	} else {
 		printf("FS_w_mip: stop\n");
-		return OW_stopmission(pn);
+		return OW_stopmission(pn)?-EINVAL:0;
 	}
 }
 
-static int FS_bitread(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_bitread(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	BYTE d;
@@ -371,7 +371,7 @@ static int FS_bitread(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_bitwrite(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_bitwrite(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	BYTE d;
@@ -390,9 +390,9 @@ static int FS_bitwrite(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_rbitread(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_rbitread(struct one_wire_query *owq)
 {
-	int ret = FS_bitread(owq);
+	ZERO_OR_ERROR ret = FS_bitread(owq);
 	OWQ_Y(owq) = !OWQ_Y(owq);
 	return ret;
 }
@@ -404,11 +404,11 @@ static int FS_rbitwrite(struct one_wire_query *owq)
 }
 
 /* Temperature -- force if not in progress */
-static int FS_r_temperature(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_temperature(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	UINT delay = 666;
-	int ret;
+	ZERO_OR_ERROR ret;
 	if ((ret = OW_MIP(pn))) {
 		printf("FS_r_temperature: mip error\n");
 		return ret;				/* Mission in progress */
@@ -425,11 +425,11 @@ static int FS_r_temperature(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_r_humid(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_humid(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	UINT delay = 666;
-	int ret;
+	ZERO_OR_ERROR ret;
 	if ((ret = OW_MIP(pn))) {
 		printf("FS_r_humid: mip error\n");
 		return ret;				/* Mission in progress */
@@ -446,7 +446,7 @@ static int FS_r_humid(struct one_wire_query *owq)
 }
 
 /* translate 7 byte field to a Unix-style date (number) */
-static int OW_2date(_DATE * d, const BYTE * data)
+static ZERO_OR_ERROR OW_2date(_DATE * d, const BYTE * data)
 {
 	struct tm t;
 
@@ -490,7 +490,7 @@ static int OW_2date(_DATE * d, const BYTE * data)
 }
 
 
-static int OW_oscillator(const int on, struct parsedname *pn)
+static ZERO_OR_ERROR OW_oscillator(const int on, struct parsedname *pn)
 {
 	BYTE d;
 	BYTE check;
@@ -536,10 +536,10 @@ static int OW_oscillator(const int on, struct parsedname *pn)
 
 
 /* read clock */
-int FS_r_date(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_date(struct one_wire_query *owq)
 {
 	BYTE data[6];
-	int ret;
+	ZERO_OR_ERROR ret;
 
 	if (OW_r_mem(data, 6, 0x0200, PN(owq))) {
 		printf("FS_r_date: error 2\n");
@@ -550,11 +550,11 @@ int FS_r_date(struct one_wire_query *owq)
 }
 
 /* read clock */
-static int FS_r_counter(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_counter(struct one_wire_query *owq)
 {
 	BYTE data[6];
 	_DATE d;
-	int ret;
+	ZERO_OR_ERROR ret;
 
 	/* Get date from chip */
 	if (OW_r_mem(data, 6, 0x0200, PN(owq))) {
@@ -568,11 +568,11 @@ static int FS_r_counter(struct one_wire_query *owq)
 }
 
 /* set clock */
-static int FS_w_date(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_date(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	BYTE data[6];
-	int ret;
+	ZERO_OR_ERROR ret;
 
 	/* Busy if in mission */
 	if ((ret = OW_MIP(pn))) {
@@ -593,12 +593,12 @@ static int FS_w_date(struct one_wire_query *owq)
 	return FS_w_run(owq);
 }
 
-static int FS_w_counter(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_counter(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	BYTE data[6];
 	_DATE d = (_DATE) OWQ_U(owq);
-	int ret;
+	ZERO_OR_ERROR ret;
 
 	/* Busy if in mission */
 	if ((ret = OW_MIP(pn))) {

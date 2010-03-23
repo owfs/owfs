@@ -110,7 +110,7 @@ static int OW_w_clock(const _DATE d, struct one_wire_query *owq);
 static int OW_w_control(const BYTE cr, const struct parsedname *pn);
 
 /* DS2417 interval */
-static int FS_r_interval(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_interval(struct one_wire_query *owq)
 {
 	UINT U ;
 
@@ -123,7 +123,7 @@ static int FS_r_interval(struct one_wire_query *owq)
 	return 0 ;
 }
 
-static int FS_w_interval(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_interval(struct one_wire_query *owq)
 {
 	UINT U = ( OWQ_U(owq) << 4 ) & _MASK_DS2417_IS ; // Move to upper nibble
 
@@ -131,7 +131,7 @@ static int FS_w_interval(struct one_wire_query *owq)
 }
 
 /* DS2415 User bits */
-static int FS_r_user(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_user(struct one_wire_query *owq)
 {
 	UINT U ;
 
@@ -144,7 +144,7 @@ static int FS_r_user(struct one_wire_query *owq)
 	return 0 ;
 }
 
-static int FS_w_user(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_user(struct one_wire_query *owq)
 {
 	UINT U = ( OWQ_U(owq) << 4 ) & _MASK_DS2415_USER ; // Move to upper nibble
 
@@ -152,7 +152,7 @@ static int FS_w_user(struct one_wire_query *owq)
 }
 
 /* DS2415-DS2417 Oscillator control */
-static int FS_r_run(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_run(struct one_wire_query *owq)
 {
 	UINT U ;
 
@@ -165,7 +165,7 @@ static int FS_r_run(struct one_wire_query *owq)
 	return 0 ;
 }
 
-static int FS_w_run(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_run(struct one_wire_query *owq)
 {
 	UINT U = OWQ_Y(owq) ? _MASK_DS2415_OSC : 0 ;
 
@@ -174,7 +174,7 @@ static int FS_w_run(struct one_wire_query *owq)
 
 
 /* DS2417 interrupt enable */
-static int FS_r_enable(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_enable(struct one_wire_query *owq)
 {
 	UINT U ;
 
@@ -187,7 +187,7 @@ static int FS_r_enable(struct one_wire_query *owq)
 	return 0 ;
 }
 
-static int FS_w_enable(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_enable(struct one_wire_query *owq)
 {
 	UINT U = OWQ_Y(owq) ? _MASK_DS2417_IE : 0 ;
 
@@ -195,7 +195,7 @@ static int FS_w_enable(struct one_wire_query *owq)
 }
 
 /* DS1915 Control Register */
-static int FS_r_control(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_control(struct one_wire_query *owq)
 {
 	BYTE cr ;
 	if ( OW_r_control( &cr, PN(owq) ) ) {
@@ -207,13 +207,13 @@ static int FS_r_control(struct one_wire_query *owq)
 	return 0 ;
 }
 
-static int FS_w_control(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_control(struct one_wire_query *owq)
 {
 	return OW_w_control( OWQ_U(owq) & 0xFF, PN(owq) ) ? -EINVAL : 0 ;
 }
 
 /* DS2415 - DS2417 couter verions of date */
-int FS_r_counter(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_counter(struct one_wire_query *owq)
 {
 	_DATE D ;
 
@@ -225,7 +225,7 @@ int FS_r_counter(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_counter(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_counter(struct one_wire_query *owq)
 {
 	_DATE D = (_DATE) OWQ_D(owq);
 
@@ -233,7 +233,7 @@ static int FS_w_counter(struct one_wire_query *owq)
 }
 
 /* DS2415 - DS2417 clock */
-int FS_r_date(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_date(struct one_wire_query *owq)
 {
 	if (OW_r_clock(&OWQ_D(owq), PN(owq))) {
 		return -EINVAL;
@@ -241,7 +241,7 @@ int FS_r_date(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_date(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_date(struct one_wire_query *owq)
 {
 	if (OW_w_clock(OWQ_D(owq), owq)) {
 		return -EINVAL;
@@ -250,7 +250,7 @@ static int FS_w_date(struct one_wire_query *owq)
 }
 
 /* DS2417 interval time (in seconds) */
-static int FS_w_itime(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_itime(struct one_wire_query *owq)
 {
 	UINT IS ;
 	int I = OWQ_I(owq);

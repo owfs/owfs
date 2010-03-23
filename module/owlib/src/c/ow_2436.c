@@ -92,7 +92,7 @@ static int OW_temp(_FLOAT * T, const struct parsedname *pn);
 static int OW_volts(_FLOAT * V, const struct parsedname *pn);
 
 /* 2436 A/D */
-static int FS_r_page(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	if (pn->extension > 2) {
@@ -101,10 +101,10 @@ static int FS_r_page(struct one_wire_query *owq)
 	if (OW_r_page((BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq) + ((pn->extension) << 5), pn)) {
 		return -EINVAL;
 	}
-	return OWQ_size(owq);
+	return 0;
 }
 
-static int FS_w_page(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	if (pn->extension > 2) {
@@ -116,7 +116,7 @@ static int FS_w_page(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_temp(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_temp(struct one_wire_query *owq)
 {
 	if (OW_temp(&OWQ_F(owq), PN(owq))) {
 		return -EINVAL;
@@ -124,7 +124,7 @@ static int FS_temp(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_volts(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_volts(struct one_wire_query *owq)
 {
 	if (OW_volts(&OWQ_F(owq), PN(owq))) {
 		return -EINVAL;

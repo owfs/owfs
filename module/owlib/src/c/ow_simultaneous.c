@@ -98,7 +98,7 @@ int FS_Test_Simultaneous( enum simul_type type, UINT delay, const struct parsedn
 	return 0 ;
 }
 
-static int FS_w_convert_temp(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_convert_temp(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	struct parsedname pn_directory;
@@ -150,7 +150,7 @@ static int FS_w_convert_temp(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_convert_volt(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_convert_volt(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	struct parsedname pn_directory;
@@ -183,7 +183,7 @@ static int FS_w_convert_volt(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_r_convert(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_convert(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	struct parsedname pn_directory;
@@ -194,7 +194,7 @@ static int FS_r_convert(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_r_present(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_present(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 

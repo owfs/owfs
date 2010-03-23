@@ -135,7 +135,7 @@ static int OW_r_por(int *y, struct parsedname *pn);
 static int OW_w_por(const int por, struct parsedname *pn);
 
 /* read a page of memory (8 bytes) */
-static int FS_r_page(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 8;
 	if (COMMON_OWQ_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, COMMON_read_memory_crc16_AA)) {
@@ -146,7 +146,7 @@ static int FS_r_page(struct one_wire_query *owq)
 }
 
 /* write an 8-byte page */
-static int FS_w_page(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 8;
 	if (COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem)) {
@@ -156,7 +156,7 @@ static int FS_w_page(struct one_wire_query *owq)
 }
 
 /* read powered flag */
-static int FS_r_power(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_power(struct one_wire_query *owq)
 {
 	BYTE p;
 	if (OW_r_mem(&p, 1, _ADDRESS_POWERED, PN(owq))) {
@@ -168,7 +168,7 @@ static int FS_r_power(struct one_wire_query *owq)
 }
 
 /* write powered flag */
-static int FS_w_power(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_power(struct one_wire_query *owq)
 {
 	BYTE p = _1W_2450_POWERED;	/* powered */
 	BYTE q = _1W_2450_UNPOWERED;	/* parasitic */
@@ -179,7 +179,7 @@ static int FS_w_power(struct one_wire_query *owq)
 }
 
 /* read "unset" PowerOnReset flag */
-static int FS_r_por(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_por(struct one_wire_query *owq)
 {
 	if (OW_r_por(&OWQ_Y(owq), PN(owq))) {
 		return -EINVAL;
@@ -188,7 +188,7 @@ static int FS_r_por(struct one_wire_query *owq)
 }
 
 /* write "unset" PowerOnReset flag */
-static int FS_w_por(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_por(struct one_wire_query *owq)
 {
 	if (OW_w_por(OWQ_Y(owq) & 0x01, PN(owq))) {
 		return -EINVAL;
@@ -197,7 +197,7 @@ static int FS_w_por(struct one_wire_query *owq)
 }
 
 /* read high/low voltage enable alarm flags */
-static int FS_r_high(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_high(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	int Y[4];
@@ -212,7 +212,7 @@ static int FS_r_high(struct one_wire_query *owq)
 }
 
 /* write high/low voltage enable alarm flags */
-static int FS_w_high(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_high(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	int Y[4] = {
@@ -228,7 +228,7 @@ static int FS_w_high(struct one_wire_query *owq)
 }
 
 /* read high/low voltage triggered state alarm flags */
-static int FS_r_flag(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_flag(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	int Y[4];
@@ -243,7 +243,7 @@ static int FS_r_flag(struct one_wire_query *owq)
 }
 
 /* write high/low voltage triggered state alarm flags */
-static int FS_w_flag(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_flag(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	int Y[4] = {
@@ -259,7 +259,7 @@ static int FS_w_flag(struct one_wire_query *owq)
 }
 
 /* 2450 A/D */
-static int FS_r_PIO(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_PIO(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	int element = pn->extension;
@@ -282,7 +282,7 @@ static int FS_r_PIO(struct one_wire_query *owq)
 
 /* 2450 A/D */
 /* pio status -- special code for ag_mixed */
-static int FS_w_PIO(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_PIO(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	int element = pn->extension;
@@ -305,7 +305,7 @@ static int FS_w_PIO(struct one_wire_query *owq)
 }
 
 /* 2450 A/D */
-static int FS_r_mem(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 8;
 	if (COMMON_OWQ_readwrite_paged(owq, 0, pagesize, COMMON_read_memory_crc16_AA)) {
@@ -315,7 +315,7 @@ static int FS_r_mem(struct one_wire_query *owq)
 }
 
 /* 2450 A/D */
-static int FS_w_mem(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 8;
 	if (COMMON_readwrite_paged(owq, 0, pagesize, OW_w_mem)) {
@@ -325,7 +325,7 @@ static int FS_w_mem(struct one_wire_query *owq)
 }
 
 /* 2450 A/D */
-static int FS_volts(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_volts(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	int element = pn->extension;
@@ -346,7 +346,7 @@ static int FS_volts(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_r_setvolt(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_setvolt(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	_FLOAT V[4];
@@ -360,7 +360,7 @@ static int FS_r_setvolt(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_setvolt(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_setvolt(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	_FLOAT V[4] = {
@@ -742,7 +742,7 @@ static int OW_w_por(const int por, struct parsedname *pn)
 
 
 /* Functions for the CO2 sensor */
-static int FS_CO2_power( struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_CO2_power( struct one_wire_query *owq)
 {
 	_FLOAT P ;
 	
@@ -753,7 +753,7 @@ static int FS_CO2_power( struct one_wire_query *owq)
 	return 0 ;
 }
 
-static int FS_CO2_ppm( struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_CO2_ppm( struct one_wire_query *owq)
 {
 	_FLOAT P ;
 	
@@ -764,7 +764,7 @@ static int FS_CO2_ppm( struct one_wire_query *owq)
 	return 0 ;
 }
 
-static int FS_CO2_status( struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_CO2_status( struct one_wire_query *owq)
 {
 	_FLOAT V ;
 	

@@ -87,7 +87,7 @@ struct device d_set_units = { "units", "units", ePN_settings, COUNT_OF_FILETYPES
 
 /* ------- Functions ------------ */
 
-static int FS_r_timeout(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_timeout(struct one_wire_query *owq)
 {
 	CACHE_RLOCK;
 	OWQ_I(owq) = ((UINT *) OWQ_pn(owq).selected_filetype->data.v)[0];
@@ -95,7 +95,7 @@ static int FS_r_timeout(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_timeout(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_timeout(struct one_wire_query *owq)
 {
 	int previous;
 	struct parsedname *pn = PN(owq);
@@ -110,9 +110,9 @@ static int FS_w_timeout(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_TS(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_TS(struct one_wire_query *owq)
 {
-	int ret = 0;
+	ZERO_OR_ERROR ret = 0;
 	if (OWQ_size(owq) == 0 || OWQ_offset(owq) > 0) {
 		return 0;				/* do nothing */
 	}
@@ -142,7 +142,7 @@ static int FS_w_TS(struct one_wire_query *owq)
 	return ret;
 }
 
-static int FS_w_PS(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_PS(struct one_wire_query *owq)
 {
 	int ret = -EINVAL ;
 	enum pressure_type pindex ;

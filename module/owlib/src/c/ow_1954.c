@@ -97,7 +97,7 @@ static int OW_r_status(struct one_wire_query *owq);
 static int OW_reset(struct one_wire_query *owq);
 
 /* 1954 */
-static int FS_w_ipr(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_ipr(struct one_wire_query *owq)
 {
 	if (OW_w_ipr(owq)) {
 		return -EINVAL;
@@ -105,7 +105,7 @@ static int FS_w_ipr(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_r_ipr(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_ipr(struct one_wire_query *owq)
 {
 	if (OW_r_ipr(owq)) {
 		return -EINVAL;
@@ -113,7 +113,7 @@ static int FS_r_ipr(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_io(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_io(struct one_wire_query *owq)
 {
 	if (OW_w_io(owq)) {
 		return -EINVAL;
@@ -121,7 +121,7 @@ static int FS_w_io(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_r_io(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_io(struct one_wire_query *owq)
 {
 	if (OW_r_io(owq)) {
 		return -EINVAL;
@@ -129,7 +129,7 @@ static int FS_r_io(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_status(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_status(struct one_wire_query *owq)
 {
 	if (OW_w_status(owq)) {
 		return -EINVAL;
@@ -137,7 +137,7 @@ static int FS_w_status(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_r_status(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_status(struct one_wire_query *owq)
 {
 	if (OW_r_status(owq)) {
 		return -EINVAL;
@@ -145,7 +145,7 @@ static int FS_r_status(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_reset(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_reset(struct one_wire_query *owq)
 {
 	if (OW_reset(owq)) {
 		return -EINVAL;

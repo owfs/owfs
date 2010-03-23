@@ -289,7 +289,7 @@ struct device d_stats_errors = { "errors", "errors", 0, COUNT_OF_FILETYPES(stats
 
 /* ------- Functions ------------ */
 
-static int FS_stat(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_stat(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	int dindex = pn->extension;
@@ -308,7 +308,7 @@ static int FS_stat(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_time(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_time(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	int dindex = pn->extension;

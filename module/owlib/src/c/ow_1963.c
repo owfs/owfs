@@ -91,13 +91,13 @@ DeviceEntryExtended(1A, DS1963L, DEV_ovdr);
 static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
 static int OW_r_counter(struct one_wire_query *owq, size_t page, size_t pagesize);
 
-static int FS_w_password(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_password(struct one_wire_query *owq)
 {
 	(void) owq;
 	return -EINVAL;
 }
 
-static int FS_r_page(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 	if (COMMON_OWQ_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, COMMON_read_memory_toss_counter)) {
@@ -106,7 +106,7 @@ static int FS_r_page(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_r_memory(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_memory(struct one_wire_query *owq)
 {
 	/* read is not page-limited */
 	size_t pagesize = 32;
@@ -116,7 +116,7 @@ static int FS_r_memory(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_counter(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_counter(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 	if (OW_r_counter(owq, OWQ_pn(owq).extension, pagesize)) {
@@ -134,7 +134,7 @@ static int FS_w_page(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_memory(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_memory(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 	if (COMMON_readwrite_paged(owq, 0, pagesize, OW_w_mem)){

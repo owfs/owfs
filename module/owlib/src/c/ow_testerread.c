@@ -17,8 +17,8 @@ $ID: $
 #include "ow_connection.h"
 
 /* ------- Prototypes ----------- */
-static int FS_read_tester_single(struct one_wire_query *owq);
-static int FS_read_tester_array(struct one_wire_query *owq);
+static ZERO_OR_ERROR FS_read_tester_single(struct one_wire_query *owq);
+static ZERO_OR_ERROR FS_read_tester_array(struct one_wire_query *owq);
 
 /* ---------------------------------------------- */
 /* Filesystem callback functions                  */
@@ -124,7 +124,7 @@ static ZERO_OR_ERROR FS_read_tester_single(struct one_wire_query *owq)
 
 /* Read each array element independently, but return as one long string */
 /* called when pn->extension==EXTENSION_ALL and pn->selected_filetype->ag->combined==ag_separate */
-static int FS_read_tester_array(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_read_tester_array(struct one_wire_query *owq)
 {
 	size_t elements = OWQ_pn(owq).selected_filetype->ag->elements;
 	size_t extension;

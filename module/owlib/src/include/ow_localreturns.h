@@ -70,6 +70,6 @@ $Id$
 
 typedef int SIZE_OR_ERROR ;
 typedef int ZERO_OR_ERROR ;
-typedef enum { GOOD_RETURN, BAD_RETURN } GOOD_OR_BAD  ; 
+typedef enum { gbGOOD, gbBAD } GOOD_OR_BAD  ; 
 
 #endif							/* OW_LOCALRETURNS_H */

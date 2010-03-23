@@ -140,26 +140,26 @@ static int OW_clear(const struct parsedname *pn);
 static int OW_full_access(BYTE * data, const struct parsedname *pn);
 
 /* 2406 memory read */
-static int FS_r_mem(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
 {
 	/* read is not a "paged" endeavor, the CRC comes after a full read */
 	if (OW_r_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq))) {
 		return -EINVAL;
 	}
-	return OWQ_size(owq);
+	return 0;
 }
 
 /* 2406 memory write */
-static int FS_r_page(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 {
 //printf("2406 read size=%d, offset=%d\n",(int)size,(int)offset);
 	if (OW_r_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) (OWQ_offset(owq) + (OWQ_pn(owq).extension << 5)), PN(owq))) {
 		return -EINVAL;
 	}
-	return OWQ_size(owq);
+	return 0;
 }
 
-static int FS_w_page(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 	if (COMMON_offset_process( COMMON_write_eprom_mem_owq, owq, pagesize * OWQ_pn(owq).extension )) {
@@ -169,7 +169,7 @@ static int FS_w_page(struct one_wire_query *owq)
 }
 
 /* Note, it's EPROM -- write once */
-static int FS_w_mem(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_mem(struct one_wire_query *owq)
 {
 	/* write is "byte at a time" -- not paged */
 	if (COMMON_write_eprom_mem_owq(owq)) {
@@ -179,7 +179,7 @@ static int FS_w_mem(struct one_wire_query *owq)
 }
 
 /* 2406 switch */
-static int FS_r_pio(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_pio(struct one_wire_query *owq)
 {
 	UINT infobyte ;
 
@@ -192,7 +192,7 @@ static int FS_r_pio(struct one_wire_query *owq)
 }
 
 /* 2406 switch */
-static int FS_r_flipflop(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_flipflop(struct one_wire_query *owq)
 {
 	UINT infobyte ;
 
@@ -205,7 +205,7 @@ static int FS_r_flipflop(struct one_wire_query *owq)
 }
 
 /* 2406 switch */
-static int FS_r_infobyte(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_infobyte(struct one_wire_query *owq)
 {
 	BYTE data;
 	if (OW_syncaccess(&data, PN(owq))) {
@@ -216,7 +216,7 @@ static int FS_r_infobyte(struct one_wire_query *owq)
 }
 
 /* 2406 switch -- is Vcc powered?*/
-static int FS_power(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_power(struct one_wire_query *owq)
 {
 	UINT infobyte ;
 
@@ -229,7 +229,7 @@ static int FS_power(struct one_wire_query *owq)
 }
 
 /* 2406 switch -- number of channels (actually, if Vcc powered)*/
-static int FS_channel(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_channel(struct one_wire_query *owq)
 {
 	UINT infobyte ;
 
@@ -243,7 +243,7 @@ static int FS_channel(struct one_wire_query *owq)
 
 /* 2406 switch PIO sensed*/
 /* bits 2 and 3 */
-static int FS_sense(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_sense(struct one_wire_query *owq)
 {
 	UINT infobyte ;
 
@@ -258,7 +258,7 @@ static int FS_sense(struct one_wire_query *owq)
 
 /* 2406 switch activity latch*/
 /* bites 4 and 5 */
-static int FS_r_latch(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_latch(struct one_wire_query *owq)
 {
 	UINT infobyte ;
 
@@ -272,7 +272,7 @@ static int FS_r_latch(struct one_wire_query *owq)
 }
 
 /* 2406 switch activity latch*/
-static int FS_w_latch(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_latch(struct one_wire_query *owq)
 {
 	FS_del_sibling( "infobyte", owq ) ;
 
@@ -283,7 +283,7 @@ static int FS_w_latch(struct one_wire_query *owq)
 }
 
 /* 2406 alarm settings*/
-static int FS_r_s_alarm(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_s_alarm(struct one_wire_query *owq)
 {
 	BYTE data;
 	if (OW_r_control(&data, PN(owq))) {
@@ -294,7 +294,7 @@ static int FS_r_s_alarm(struct one_wire_query *owq)
 }
 
 /* 2406 alarm settings*/
-static int FS_w_s_alarm(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_s_alarm(struct one_wire_query *owq)
 {
 	BYTE data;
 	UINT U = OWQ_U(owq);
@@ -308,7 +308,7 @@ static int FS_w_s_alarm(struct one_wire_query *owq)
 }
 
 /* write 2406 switch -- 2 values*/
-static int FS_w_pio(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_pio(struct one_wire_query *owq)
 {
 	BYTE data = BYTE_INVERSE(OWQ_U(owq)) & 0x03 ; /* reverse bits */
 
@@ -322,7 +322,7 @@ static int FS_w_pio(struct one_wire_query *owq)
 
 /* Support for EmbeddedDataSystems's T8A 8 channel A/D
    Written by Chase Shimmin cshimmin@berkeley.edu */
-static int FS_voltage(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_voltage(struct one_wire_query *owq)
 {
 	// channel select byte, based on zero-indexed channel number
 	BYTE ch_select = (OWQ_pn(owq).extension << 2) + 0x02;
@@ -569,7 +569,7 @@ static ZERO_OR_ERROR FS_sibling(struct one_wire_query *owq)
 	return OWQ_format_output_offset_and_size(sib, 16, owq);
 }
 
-static int FS_temp(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_temp(struct one_wire_query *owq)
 {
 	UINT D2;
 	int UT1, dT;
@@ -593,7 +593,7 @@ static int FS_temp(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_pressure(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_pressure(struct one_wire_query *owq)
 {
 	_FLOAT TEMP ;
 

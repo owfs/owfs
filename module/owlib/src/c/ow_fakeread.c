@@ -17,8 +17,8 @@ $ID: $
 #include "ow_connection.h"
 
 /* ------- Prototypes ----------- */
-static int FS_read_fake_single(struct one_wire_query *owq);
-static int FS_read_fake_array(struct one_wire_query *owq);
+static ZERO_OR_ERROR FS_read_fake_single(struct one_wire_query *owq);
+static ZERO_OR_ERROR FS_read_fake_array(struct one_wire_query *owq);
 
 /* ---------------------------------------------- */
 /* Filesystem callback functions                  */
@@ -34,7 +34,7 @@ static int FS_read_fake_array(struct one_wire_query *owq);
 #define Random_a ('a'+(rand() % (26)))
 #define Random_f (100.*Random)
 
-int FS_read_fake(struct one_wire_query *owq)
+ZERO_OR_ERROR FS_read_fake(struct one_wire_query *owq)
 {
 	switch (OWQ_pn(owq).extension) {
 	case EXTENSION_ALL:
@@ -111,7 +111,7 @@ static ZERO_OR_ERROR FS_read_fake_single(struct one_wire_query *owq)
 
 /* Read each array element independently, but return as one long string */
 /* called when pn->extension==EXTENSION_ALL and pn->selected_filetype->ag->combined==ag_separate */
-static int FS_read_fake_array(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_read_fake_array(struct one_wire_query *owq)
 {
 	size_t elements = OWQ_pn(owq).selected_filetype->ag->elements;
 	size_t extension;

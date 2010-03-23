@@ -104,25 +104,25 @@ static ZERO_OR_ERROR FS_pidfile(struct one_wire_query *owq)
 	return OWQ_format_output_offset_and_size_z(name, owq);
 }
 
-static int FS_pid(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_pid(struct one_wire_query *owq)
 {
 	OWQ_U(owq) = getpid();
 	return 0;
 }
 
-static int FS_in(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_in(struct one_wire_query *owq)
 {
 	OWQ_U(owq) = Inbound_Control.active;
 	return 0;
 }
 
-static int FS_out(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_out(struct one_wire_query *owq)
 {
 	OWQ_U(owq) = Outbound_Control.active;
 	return 0;
 }
 
-static int FS_define(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_define(struct one_wire_query *owq)
 {
 	OWQ_Y(owq) = OWQ_pn(owq).selected_filetype->data.i;
 	return 0;

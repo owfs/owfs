@@ -25,13 +25,13 @@ struct transaction_bundle {
 };
 
 // static int BUS_transaction_length( const struct transaction_log * tl, const struct parsedname * pn ) ;
-static int BUS_transaction_single(const struct transaction_log *t, const struct parsedname *pn);
+static ZERO_OR_ERROR BUS_transaction_single(const struct transaction_log *t, const struct parsedname *pn);
 
-static int Bundle_pack(const struct transaction_log *tl, const struct parsedname *pn);
-static int Pack_item(const struct transaction_log *tl, struct transaction_bundle *tb);
-static int Bundle_ship(struct transaction_bundle *tb, const struct parsedname *pn);
-static int Bundle_enroute(struct transaction_bundle *tb, const struct parsedname *pn);
-static int Bundle_unpack(struct transaction_bundle *tb);
+static ZERO_OR_ERROR Bundle_pack(const struct transaction_log *tl, const struct parsedname *pn);
+static ZERO_OR_ERROR Pack_item(const struct transaction_log *tl, struct transaction_bundle *tb);
+static ZERO_OR_ERROR Bundle_ship(struct transaction_bundle *tb, const struct parsedname *pn);
+static ZERO_OR_ERROR Bundle_enroute(struct transaction_bundle *tb, const struct parsedname *pn);
+static ZERO_OR_ERROR Bundle_unpack(struct transaction_bundle *tb);
 
 static void Bundle_init(struct transaction_bundle *tb, const struct parsedname *pn);
 
@@ -40,9 +40,9 @@ static void Bundle_init(struct transaction_bundle *tb, const struct parsedname *
 /* Bus transaction */
 /* Encapsulates communication with a device, including locking the bus, reset and selection */
 /* Then a series of bytes is sent and returned, including sending data and reading the return data */
-int BUS_transaction(const struct transaction_log *tl, const struct parsedname *pn)
+ZERO_OR_ERROR BUS_transaction(const struct transaction_log *tl, const struct parsedname *pn)
 {
-	int ret = 0;
+	ZERO_OR_ERROR ret = 0;
 
 	if (tl == NULL) {
 		return 0;
@@ -53,10 +53,11 @@ int BUS_transaction(const struct transaction_log *tl, const struct parsedname *p
 
 	return ret;
 }
-int BUS_transaction_nolock(const struct transaction_log *tl, const struct parsedname *pn)
+
+ZERO_OR_ERROR BUS_transaction_nolock(const struct transaction_log *tl, const struct parsedname *pn)
 {
 	const struct transaction_log *t = tl;
-	int ret = 0;
+	ZERO_OR_ERROR ret = 0;
 
 	if (pn->selected_connection->iroutines.flags & ADAP_FLAG_bundle) {
 		return Bundle_pack(tl, pn);
@@ -74,9 +75,9 @@ int BUS_transaction_nolock(const struct transaction_log *tl, const struct parsed
 	return ret;
 }
 
-static int BUS_transaction_single(const struct transaction_log *t, const struct parsedname *pn)
+static ZERO_OR_ERROR BUS_transaction_single(const struct transaction_log *t, const struct parsedname *pn)
 {
-	int ret = 0;
+	ZERO_OR_ERROR ret = 0;
 	switch (t->type) {
 	case trxn_select:			// select a 1-wire device (by unique ID)
 		ret = BUS_select(pn);
@@ -190,7 +191,7 @@ static void Bundle_init(struct transaction_bundle *tb, const struct parsedname *
 	tb->max_size = pn->selected_connection->bundling_length;
 }
 
-static int Bundle_pack(const struct transaction_log *tl, const struct parsedname *pn)
+static ZERO_OR_ERROR Bundle_pack(const struct transaction_log *tl, const struct parsedname *pn)
 {
 	const struct transaction_log *t_index;
 	struct transaction_bundle s_tb;
@@ -232,7 +233,7 @@ static int Bundle_pack(const struct transaction_log *tl, const struct parsedname
 }
 
 // Take a bundle, execute the transaction, unpack, and clear the memoblob
-static int Bundle_ship(struct transaction_bundle *tb, const struct parsedname *pn)
+static ZERO_OR_ERROR Bundle_ship(struct transaction_bundle *tb, const struct parsedname *pn)
 {
 	LEVEL_DEBUG("Ship Packets=%d", tb->packets);
 	if (tb->packets == 0) {
@@ -251,9 +252,9 @@ static int Bundle_ship(struct transaction_bundle *tb, const struct parsedname *p
 }
 
 // Execute a bundle transaction (actual bytes on 1-wire bus)
-static int Bundle_enroute(struct transaction_bundle *tb, const struct parsedname *pn)
+static ZERO_OR_ERROR Bundle_enroute(struct transaction_bundle *tb, const struct parsedname *pn)
 {
-	int ret ;
+	ZERO_OR_ERROR ret ;
 	if (tb->select_first) {
 		ret = BUS_select_and_sendback(MemblobData(&(tb->mb)), MemblobData(&(tb->mb)), MemblobLength(&(tb->mb)), pn);
 		LEVEL_DEBUG("select and sendback = %d",ret ) ;
@@ -270,9 +271,9 @@ static int Bundle_enroute(struct transaction_bundle *tb, const struct parsedname
    return -EINTR  -- should be at end (force end)
    return 0       -- added successfully
 */
-static int Pack_item(const struct transaction_log *tl, struct transaction_bundle *tb)
+static ZERO_OR_ERROR Pack_item(const struct transaction_log *tl, struct transaction_bundle *tb)
 {
-	int ret = 0;				//default return value for good packets;
+	ZERO_OR_ERROR ret = 0;				//default return value for good packets;
 	//printf("PACK_ITEM used=%d size=%d max=%d\n",MemblobLength(&(tl>mb)),tl->size,tb->max_size);
 	switch (tl->type) {
 	case trxn_select:			// select a 1-wire device (by unique ID)
@@ -352,12 +353,12 @@ static int Pack_item(const struct transaction_log *tl, struct transaction_bundle
 	return ret;
 }
 
-static int Bundle_unpack(struct transaction_bundle *tb)
+static ZERO_OR_ERROR Bundle_unpack(struct transaction_bundle *tb)
 {
 	int packet_index;
 	const struct transaction_log *tl;
 	BYTE *data = MemblobData(&(tb->mb));
-	int ret = 0;
+	ZERO_OR_ERROR ret = 0;
 
 	LEVEL_DEBUG("unpacking");
 

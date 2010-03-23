@@ -78,7 +78,7 @@ static int OW_r_cp(int *val, const struct parsedname *pn);
 static int OW_w_cp(const int val, const struct parsedname *pn);
 
 /* Wiper */
-static int FS_w_wiper(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_wiper(struct one_wire_query *owq)
 {
 	UINT num = OWQ_U(owq);
 	if (num > 255) {
@@ -92,7 +92,7 @@ static int FS_w_wiper(struct one_wire_query *owq)
 }
 
 /* write Charge Pump */
-static int FS_w_cp(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_cp(struct one_wire_query *owq)
 {
 	if (OW_w_cp(OWQ_Y(owq), PN(owq))) {
 		return -EINVAL;
@@ -101,7 +101,7 @@ static int FS_w_cp(struct one_wire_query *owq)
 }
 
 /* read Wiper */
-static int FS_r_wiper(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_wiper(struct one_wire_query *owq)
 {
 	if (OW_r_wiper(&OWQ_U(owq), PN(owq))) {
 		return -EINVAL;
@@ -110,7 +110,7 @@ static int FS_r_wiper(struct one_wire_query *owq)
 }
 
 /* Charge Pump */
-static int FS_r_cp(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_cp(struct one_wire_query *owq)
 {
 	if (OW_r_cp(&OWQ_Y(owq), PN(owq))) {
 		return -EINVAL;

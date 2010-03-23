@@ -136,7 +136,7 @@ static ZERO_OR_ERROR FS_version(struct one_wire_query *owq)
     return OWQ_format_output_offset_and_size(v, 5, owq);
 }
 
-static int FS_type_number(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_type_number(struct one_wire_query *owq)
 {
     BYTE type_number ;
 
@@ -149,7 +149,7 @@ static int FS_type_number(struct one_wire_query *owq)
     return 0;
 }
 
-static int FS_temperature(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_temperature(struct one_wire_query *owq)
 {
     _FLOAT T ;
 
@@ -162,7 +162,7 @@ static int FS_temperature(struct one_wire_query *owq)
     return 0;
 }
 
-static int FS_UVI(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_UVI(struct one_wire_query *owq)
 {
     _FLOAT UVI ;
 
@@ -175,7 +175,7 @@ static int FS_UVI(struct one_wire_query *owq)
     return 0;
 }
 
-static int FS_r_UVI_offset(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_UVI_offset(struct one_wire_query *owq)
 {
     _FLOAT UVI ;
 
@@ -188,7 +188,7 @@ static int FS_r_UVI_offset(struct one_wire_query *owq)
     return 0;
 }
 
-static int FS_r_temperature_offset(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_temperature_offset(struct one_wire_query *owq)
 {
     _FLOAT T ;
 
@@ -201,7 +201,7 @@ static int FS_r_temperature_offset(struct one_wire_query *owq)
     return 0;
 }
 
-static int FS_w_temperature_offset(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_temperature_offset(struct one_wire_query *owq)
 {
     signed char c ;
 
@@ -218,7 +218,7 @@ static int FS_w_temperature_offset(struct one_wire_query *owq)
     return 0;
 }
 
-static int FS_w_UVI_offset(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_UVI_offset(struct one_wire_query *owq)
 {
     unsigned char c ;
 
@@ -250,7 +250,7 @@ static ZERO_OR_ERROR FS_localtype(struct one_wire_query *owq)
     }
 }
 
-static int FS_UVI_valid(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_UVI_valid(struct one_wire_query *owq)
 {
     UINT type_number ;
     if ( FS_r_sibling_U( &type_number, "type_number", owq ) ) {
@@ -268,7 +268,7 @@ static int FS_UVI_valid(struct one_wire_query *owq)
     return 0 ;
 }
 
-static int FS_r_in_case(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_in_case(struct one_wire_query *owq)
 {
     BYTE in_case ;
     if ( OW_read(_EEEF_READ_IN_CASE,&in_case,1,PN(owq))) {
@@ -287,7 +287,7 @@ static int FS_r_in_case(struct one_wire_query *owq)
     return 0 ;
 }
 
-static int FS_w_in_case(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_in_case(struct one_wire_query *owq)
 {
     BYTE in_case = OWQ_Y(owq) ? 0xFF : 0x00 ;
     if ( OW_write(_EEEF_SET_IN_CASE,in_case,PN(owq))) {

@@ -145,7 +145,7 @@ static int OW_w_int(const int I, const UINT address, const struct parsedname *pn
 static int OW_w_offset(const int I, const struct parsedname *pn);
 
 /* 2438 A/D */
-static int FS_r_page(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	BYTE data[8];
@@ -153,10 +153,10 @@ static int FS_r_page(struct one_wire_query *owq)
 		return -EINVAL;
 	}
 	memcpy((BYTE *) OWQ_buffer(owq), &data[OWQ_offset(owq)], OWQ_size(owq));
-	return OWQ_size(owq);
+	return 0;
 }
 
-static int FS_w_page(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	LEVEL_DEBUG("size=%d offset=%d", OWQ_size(owq), OWQ_offset(owq));
@@ -211,7 +211,7 @@ static ZERO_OR_ERROR FS_MStype(struct one_wire_query *owq)
 	return OWQ_format_output_offset_and_size_z(t, owq);
 }
 
-static int FS_temp(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_temp(struct one_wire_query *owq)
 {
 	if (OW_temp(&OWQ_F(owq), PN(owq))) {
 		return -EINVAL;
@@ -219,7 +219,7 @@ static int FS_temp(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_volts(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_volts(struct one_wire_query *owq)
 {
 	/* data=1 VDD data=0 VAD */
 	if (OW_volts(&OWQ_F(owq), OWQ_pn(owq).selected_filetype->data.i, PN(owq))) {
@@ -228,7 +228,7 @@ static int FS_volts(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_Humid(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_Humid(struct one_wire_query *owq)
 {
 	_FLOAT H ;
 
@@ -243,7 +243,7 @@ static int FS_Humid(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_Humid_3600(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_Humid_3600(struct one_wire_query *owq)
 {
 	_FLOAT T, VAD, VDD;
 	_FLOAT humidity_uncompensated ;
@@ -289,7 +289,7 @@ static int FS_Humid_3600(struct one_wire_query *owq)
 
 /* The HIH-4010 and HIH-4020 are newer versions of the HIH-4000 */
 /* Used in the Hobbyboards humidity product */
-static int FS_Humid_4000(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_Humid_4000(struct one_wire_query *owq)
 {
 	_FLOAT T, VAD, VDD;
 	_FLOAT humidity_uncompensated ;
@@ -324,7 +324,7 @@ static int FS_Humid_4000(struct one_wire_query *owq)
  *      (page 2).  VAD is assumed to be volts and *H is relative
  *      humidity in percent.
  */
-static int FS_Humid_1735(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_Humid_1735(struct one_wire_query *owq)
 {
 	_FLOAT VAD;
 
@@ -341,7 +341,7 @@ static int FS_Humid_1735(struct one_wire_query *owq)
 
 // Read current register
 // turn on (temporary) A/D in scratchpad
-static int FS_Current(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_Current(struct one_wire_query *owq)
 {
 	BYTE data[9];
 	INT iad ;
@@ -365,7 +365,7 @@ static int FS_Current(struct one_wire_query *owq)
 }
 
 // status bit
-static int FS_r_status(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_status(struct one_wire_query *owq)
 {
 	BYTE page0[8 + 1];
 	if (OW_r_page(page0, 0, PN(owq))) {
@@ -375,7 +375,7 @@ static int FS_r_status(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_status(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_status(struct one_wire_query *owq)
 {
 	BYTE page0[8 + 1];
 	if (OW_r_page(page0, 0, PN(owq))) {
@@ -388,7 +388,7 @@ static int FS_w_status(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_r_Offset(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_Offset(struct one_wire_query *owq)
 {
 	if (OW_r_int(&OWQ_I(owq), 0x0D, PN(owq))) {
 		return -EINVAL;			/* page1 byte 5 */
@@ -397,7 +397,7 @@ static int FS_r_Offset(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_Offset(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_Offset(struct one_wire_query *owq)
 {
 	int I = OWQ_I(owq);
 	if (I > 255 || I < -256) {
@@ -409,7 +409,7 @@ static int FS_w_Offset(struct one_wire_query *owq)
 	return 0;
 }
 
-/* set clock */
+/* set ZERO_OR_ERROR */
 static int FS_w_counter(struct one_wire_query *owq)
 {
 	_DATE d = (_DATE) OWQ_U(owq);
@@ -418,7 +418,7 @@ static int FS_w_counter(struct one_wire_query *owq)
 }
 
 /* set clock */
-static int FS_w_date(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_date(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	int page = ((uint32_t) (pn->selected_filetype->data.s)) >> 3;

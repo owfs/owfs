@@ -145,7 +145,7 @@ static int OW_w_unpaged_to_screen(BYTE lcd_location, BYTE length, const char *te
 MakeInternalProp(CUM, fc_persistent);	//cumulative
 
 /* LCD */
-static int FS_simple_command(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_simple_command(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	UINT lcd_command_pair = (UINT) pn->selected_filetype->data.u;
@@ -165,7 +165,7 @@ static ZERO_OR_ERROR FS_r_version(struct one_wire_query *owq)
 	return OWQ_format_output_offset_and_size((ASCII *) v, _LCD_PAGE_SIZE, owq);
 }
 
-static int FS_r_gpio(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_gpio(struct one_wire_query *owq)
 {
 	BYTE data;
 	if (OW_r_gpio(&data, PN(owq))) {
@@ -176,7 +176,7 @@ static int FS_r_gpio(struct one_wire_query *owq)
 }
 
 /* 4 value array */
-static int FS_w_gpio(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_gpio(struct one_wire_query *owq)
 {
 	BYTE data = ~OWQ_U(owq) & 0x0F;
 	/* Now set pins */
@@ -186,7 +186,7 @@ static int FS_w_gpio(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_r_register(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_register(struct one_wire_query *owq)
 {
 	BYTE data;
 	if (OW_r_register(&data, PN(owq))) {
@@ -196,7 +196,7 @@ static int FS_r_register(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_register(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_register(struct one_wire_query *owq)
 {
 	if (OW_w_register((BYTE) (BYTE_MASK(OWQ_U(owq))), PN(owq))) {
 		return -EINVAL;
@@ -204,7 +204,7 @@ static int FS_w_register(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_r_data(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_data(struct one_wire_query *owq)
 {
 	BYTE data;
 	if (OW_r_data(&data, PN(owq))) {
@@ -214,7 +214,7 @@ static int FS_r_data(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_data(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_data(struct one_wire_query *owq)
 {
 	if (OW_w_data((BYTE) (BYTE_MASK(OWQ_U(owq))), PN(owq))) {
 		return -EINVAL;
@@ -222,7 +222,7 @@ static int FS_w_data(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_r_counters(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_counters(struct one_wire_query *owq)
 {
 	UINT u[4];
 	if (OW_r_counters(u, PN(owq))) {
@@ -236,7 +236,7 @@ static int FS_r_counters(struct one_wire_query *owq)
 }
 
 #if OW_CACHE					/* Special code for cumulative counters -- read/write -- uses the caching system for storage */
-static int FS_r_cum(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_cum(struct one_wire_query *owq)
 {
 	UINT u[4];
 	if (OW_r_counters(u, PN(owq))) {
@@ -252,7 +252,7 @@ static int FS_r_cum(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_cum(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_cum(struct one_wire_query *owq)
 {
 	UINT u[4] = {
 		OWQ_array_U(owq, 0),
@@ -264,7 +264,7 @@ static int FS_w_cum(struct one_wire_query *owq)
 }
 #endif							/*OW_CACHE */
 
-static int FS_w_lineX(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_lineX(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	int width = pn->selected_filetype->data.i;
@@ -287,7 +287,7 @@ static int FS_w_lineX(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_screenX(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_screenX(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	int width = pn->selected_filetype->data.i;
@@ -334,7 +334,7 @@ static int FS_w_screenX(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_r_memory(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_memory(struct one_wire_query *owq)
 {
 //    if ( OW_r_memory(buf,size,offset,pn) ) { return -EFAULT ; }
 	if (COMMON_readwrite_paged(owq, 0, _LCD_PAGE_SIZE, OW_r_memory)) {
@@ -343,7 +343,7 @@ static int FS_r_memory(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_memory(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_memory(struct one_wire_query *owq)
 {
 //    if ( OW_w_memory(buf,size,offset,pn) ) { return -EFAULT ; }
 	if (COMMON_readwrite_paged(owq, 0, _LCD_PAGE_SIZE, OW_w_memory)) {

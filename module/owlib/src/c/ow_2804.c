@@ -113,18 +113,18 @@ static int OW_clear(struct parsedname *pn);
 static int OW_w_reg(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
 
 /* 2804 memory read */
-static int FS_r_mem(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 	/* read is not a "paged" endeavor, the CRC comes after a full read */
 	if (COMMON_read_memory_F0(owq, 0, pagesize)) {
 		return -EINVAL;
 	}
-	return OWQ_size(owq);
+	return 0;
 }
 
 /* Note, it's EPROM -- write once */
-static int FS_w_mem(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 	/* write is "byte at a time" -- not paged */
@@ -135,7 +135,7 @@ static int FS_w_mem(struct one_wire_query *owq)
 }
 
 /* 2804 memory write */
-static int FS_r_page(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 	if (COMMON_read_memory_F0(owq, OWQ_pn(owq).extension, pagesize)) {
@@ -144,7 +144,7 @@ static int FS_r_page(struct one_wire_query *owq)
 	return OWQ_size(owq);
 }
 
-static int FS_w_page(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 	/* write is "byte at a time" -- not paged */
@@ -155,7 +155,7 @@ static int FS_w_page(struct one_wire_query *owq)
 }
 
 /* 2804 switch */
-static int FS_r_pio(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_pio(struct one_wire_query *owq)
 {
 	BYTE data;
 	OWQ_allocate_struct_and_pointer(owq_pio);
@@ -169,7 +169,7 @@ static int FS_r_pio(struct one_wire_query *owq)
 }
 
 /* write 2804 switch -- 2 values*/
-static int FS_w_pio(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_pio(struct one_wire_query *owq)
 {
 	BYTE data = 0;
 	/* reverse bits */
@@ -181,7 +181,7 @@ static int FS_w_pio(struct one_wire_query *owq)
 }
 
 /* 2804 switch -- is Vcc powered?*/
-static int FS_power(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_power(struct one_wire_query *owq)
 {
 	BYTE data;
 	OWQ_allocate_struct_and_pointer(owq_power);
@@ -195,7 +195,7 @@ static int FS_power(struct one_wire_query *owq)
 }
 
 /* 2904 switch -- power-on status of polrity pin */
-static int FS_polarity(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_polarity(struct one_wire_query *owq)
 {
 	BYTE data;
 	OWQ_allocate_struct_and_pointer(owq_polarity);
@@ -209,7 +209,7 @@ static int FS_polarity(struct one_wire_query *owq)
 }
 
 /* 2804 switch -- power-on status of polrity pin */
-static int FS_r_por(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_por(struct one_wire_query *owq)
 {
 	BYTE data;
 	OWQ_allocate_struct_and_pointer(owq_por);
@@ -223,7 +223,7 @@ static int FS_r_por(struct one_wire_query *owq)
 }
 
 /* 2804 switch -- power-on status of polrity pin */
-static int FS_w_por(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_por(struct one_wire_query *owq)
 {
 	BYTE data;
 	struct parsedname *pn = PN(owq);
@@ -249,7 +249,7 @@ static int FS_w_por(struct one_wire_query *owq)
 }
 
 /* 2804 switch PIO sensed*/
-static int FS_sense(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_sense(struct one_wire_query *owq)
 {
 	BYTE data;
 	OWQ_allocate_struct_and_pointer(owq_sense);
@@ -263,7 +263,7 @@ static int FS_sense(struct one_wire_query *owq)
 }
 
 /* 2804 switch activity latch*/
-static int FS_r_latch(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_latch(struct one_wire_query *owq)
 {
 	BYTE data;
 	OWQ_allocate_struct_and_pointer(owq_latch);
@@ -277,7 +277,7 @@ static int FS_r_latch(struct one_wire_query *owq)
 }
 
 /* 2804 switch activity latch*/
-static int FS_w_latch(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_latch(struct one_wire_query *owq)
 {
 	if (OW_clear(PN(owq))) {
 		return -EINVAL;
@@ -286,7 +286,7 @@ static int FS_w_latch(struct one_wire_query *owq)
 }
 
 /* 2804 alarm settings*/
-static int FS_r_s_alarm(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_s_alarm(struct one_wire_query *owq)
 {
 	BYTE data[3];
 	OWQ_allocate_struct_and_pointer(owq_alarm);
@@ -302,7 +302,7 @@ static int FS_r_s_alarm(struct one_wire_query *owq)
 }
 
 /* 2804 alarm settings*/
-static int FS_w_s_alarm(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_s_alarm(struct one_wire_query *owq)
 {
 	BYTE data[3] = { 0, 0, 0, };
 	UINT U = OWQ_U(owq);

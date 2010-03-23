@@ -67,7 +67,7 @@ static int OW_r_PIO(int *val, const struct parsedname *pn);
 static int OW_w_PIO(int val, const struct parsedname *pn);
 
 /* 2405 switch */
-static int FS_r_PIO(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_PIO(struct one_wire_query *owq)
 {
 	int num;
 	if (OW_r_PIO(&num, PN(owq))) {
@@ -78,7 +78,7 @@ static int FS_r_PIO(struct one_wire_query *owq)
 }
 
 /* 2405 switch */
-static int FS_r_sense(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_sense(struct one_wire_query *owq)
 {
 	int num;
 	if (OW_r_sense(&num, PN(owq))) {
@@ -89,7 +89,7 @@ static int FS_r_sense(struct one_wire_query *owq)
 }
 
 /* write 2405 switch */
-static int FS_w_PIO(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_PIO(struct one_wire_query *owq)
 {
 	if (OW_w_PIO(OWQ_Y(owq), PN(owq))) {
 		return -EINVAL;

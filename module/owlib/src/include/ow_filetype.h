@@ -167,8 +167,8 @@ struct filetype {
 	struct aggregate *ag;		// struct pointer for aggregate
 	enum ft_format format;		// type of data
 	enum fc_change change;		// volatility
-	int (*read) (struct one_wire_query *);	// read callback function
-	int (*write) (struct one_wire_query *);	// write callback function
+	ZERO_OR_ERROR (*read) (struct one_wire_query *);	// read callback function
+	ZERO_OR_ERROR (*write) (struct one_wire_query *);	// write callback function
 	enum e_visibility (*visible) (const struct parsedname *);	// Show in a directory listing?
 	union {
 		void *v;

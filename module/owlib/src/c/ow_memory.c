@@ -64,7 +64,7 @@ static void Set_OWQ_length(struct one_wire_query *owq)
 }
 
 /* No CRC -- 0xF0 code */
-int COMMON_read_memory_F0(struct one_wire_query *owq, size_t page, size_t pagesize)
+ZERO_OR_ERROR COMMON_read_memory_F0(struct one_wire_query *owq, size_t page, size_t pagesize)
 {
 	off_t offset = OWQ_offset(owq) + page * pagesize;
 	BYTE p[3] = { _1W_READ_F0, LOW_HIGH_ADDRESS(offset), };
@@ -104,20 +104,20 @@ static int OW_r_crc16(BYTE code, struct one_wire_query *owq, size_t page, size_t
 }
 
 /* read up to end of page to CRC16 -- 0xA5 code */
-int COMMON_read_memory_crc16_A5(struct one_wire_query *owq, size_t page, size_t pagesize)
+ZERO_OR_ERROR COMMON_read_memory_crc16_A5(struct one_wire_query *owq, size_t page, size_t pagesize)
 {
-	return OW_r_crc16(_1W_READ_A5, owq, page, pagesize);
+	return OW_r_crc16(_1W_READ_A5, owq, page, pagesize)?-EINVAL:0;
 }
 
 /* read up to end of page to CRC16 -- 0xA5 code */
-int COMMON_read_memory_crc16_AA(struct one_wire_query *owq, size_t page, size_t pagesize)
+ZERO_OR_ERROR COMMON_read_memory_crc16_AA(struct one_wire_query *owq, size_t page, size_t pagesize)
 {
-	return OW_r_crc16(_1W_READ_AA, owq, page, pagesize);
+	return OW_r_crc16(_1W_READ_AA, owq, page, pagesize)?-EINVAL:0;
 }
 
 /* read up to end of page to CRC16 -- 0xA5 code */
 /* Extra 8 bytes, (for counter) too -- discarded */
-int COMMON_read_memory_toss_counter(struct one_wire_query *owq, size_t page, size_t pagesize)
+ZERO_OR_ERROR COMMON_read_memory_toss_counter(struct one_wire_query *owq, size_t page, size_t pagesize)
 {
 	off_t offset = OWQ_offset(owq) + page * pagesize;
 	BYTE p[3 + pagesize + 8 + 2];
@@ -132,7 +132,7 @@ int COMMON_read_memory_toss_counter(struct one_wire_query *owq, size_t page, siz
 	p[1] = BYTE_MASK(offset);
 	p[2] = BYTE_MASK(offset >> 8);
 	if (BUS_transaction(t, PN(owq))) {
-		return 1;
+		return -EINVAL;
 	}
 	memcpy(OWQ_buffer(owq), &p[3], OWQ_size(owq));
 	Set_OWQ_length(owq);
@@ -143,7 +143,7 @@ int COMMON_read_memory_toss_counter(struct one_wire_query *owq, size_t page, siz
 
 /*  0xA5 code */
 /* Extra 8 bytes, too */
-int COMMON_read_memory_plus_counter(BYTE * extra, size_t page, size_t pagesize, struct parsedname *pn)
+ZERO_OR_ERROR COMMON_read_memory_plus_counter(BYTE * extra, size_t page, size_t pagesize, struct parsedname *pn)
 {
 	off_t offset = (page + 1) * pagesize - _1W_Throw_Away_Bytes;	// last byte of page
 	BYTE p[3 + _1W_Throw_Away_Bytes + 8 + 2] = { _1W_READ_A5, LOW_HIGH_ADDRESS(offset), };
@@ -154,7 +154,7 @@ int COMMON_read_memory_plus_counter(BYTE * extra, size_t page, size_t pagesize, 
 	};
 
 	if (BUS_transaction(t, pn)) {
-		return 1;
+		return -EINVAL;
 	}
 	if (extra) {
 		memcpy(extra, &p[3 + _1W_Throw_Away_Bytes], 8);

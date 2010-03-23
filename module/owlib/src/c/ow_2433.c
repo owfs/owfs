@@ -98,17 +98,17 @@ DeviceEntryExtended(43, DS28EC20, DEV_ovdr | DEV_resume);
 static int OW_w_23page(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
 static int OW_w_2Dpage(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
 
-static int FS_r_memory(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_memory(struct one_wire_query *owq)
 {
     size_t pagesize = 32;
     /* read is not page-limited */
     if (COMMON_read_memory_F0(owq, 0, pagesize)) {
 		return -EINVAL;
 	}
-	return OWQ_size(owq);
+	return 0;
 }
 
-static int FS_w_memory(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_memory(struct one_wire_query *owq)
 {
 	/* paged access */
 	size_t pagesize = 32;
@@ -119,7 +119,7 @@ static int FS_w_memory(struct one_wire_query *owq)
 }
 
 /* Although externally it's 32 byte pages, internally it acts as 8 byte pages */
-static int FS_w_memory2D(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_memory2D(struct one_wire_query *owq)
 {
 	/* paged access */
 	size_t pagesize = 8;
@@ -129,16 +129,16 @@ static int FS_w_memory2D(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_r_page(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 	if (COMMON_read_memory_F0(owq, OWQ_pn(owq).extension, pagesize)) {
 		return -EINVAL;
 	}
-	return OWQ_size(owq);
+	return 0;
 }
 
-static int FS_w_page(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 {
 	/* paged access */
 	size_t pagesize = 32;
@@ -148,7 +148,7 @@ static int FS_w_page(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_page2D(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_page2D(struct one_wire_query *owq)
 {
 	/* paged access */
 	size_t pagesize = 8;

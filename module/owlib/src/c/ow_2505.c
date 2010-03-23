@@ -116,7 +116,7 @@ DeviceEntryExtended(8F, DS1986U, DEV_ovdr);
 static int OW_w_status(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
 
 /* 2505 memory */
-static int FS_r_memory(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_memory(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 //    if ( OW_r_mem( buf, size, (size_t) offset, pn) ) { return -EINVAL ; }
@@ -126,7 +126,7 @@ static int FS_r_memory(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_r_page(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 	if (COMMON_OWQ_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, COMMON_read_memory_F0)) {
@@ -135,7 +135,7 @@ static int FS_r_page(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_r_status(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_status(struct one_wire_query *owq)
 {
 	size_t pagesize = FileLength(PN(owq)) ;
 	if (COMMON_OWQ_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, COMMON_read_memory_crc16_AA)) {
@@ -144,7 +144,7 @@ static int FS_r_status(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_memory(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_memory(struct one_wire_query *owq)
 {
 	if (COMMON_write_eprom_mem_owq(owq)) {
 		return -EINVAL;
@@ -152,7 +152,7 @@ static int FS_w_memory(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_status(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_status(struct one_wire_query *owq)
 {
 	if (OW_w_status(OWQ_explode(owq))) {
 		return -EINVAL;
@@ -160,7 +160,7 @@ static int FS_w_status(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_page(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 	if (COMMON_offset_process( COMMON_write_eprom_mem_owq, owq, OWQ_pn(owq).extension * pagesize)) {
