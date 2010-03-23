@@ -458,7 +458,7 @@ static SIZE_OR_ERROR FS_r_local(struct one_wire_query *owq)
 /* Structure file */
 static ZERO_OR_ERROR FS_structure(struct one_wire_query *owq)
 {
-	char ft_format_char[] = "  iufaabydytg";	/* return type */
+	char ft_format_char[] = "?DDiufaabydytgp";	/* return type */
 	char structure_text[PROPERTY_LENGTH_STRUCTURE+1] ;
 	int output_length;
 	struct parsedname * pn = PN(owq) ;
@@ -485,9 +485,11 @@ static ZERO_OR_ERROR FS_structure(struct one_wire_query *owq)
 	OWQ_pn(owq).type = ePN_structure;
 
 	if (output_length < 0) {
+		LEVEL_DEBUG("Problem formatting structure string");
 		return -EFAULT;
 	}
 	if ( output_length > PROPERTY_LENGTH_STRUCTURE ) {
+		LEVEL_DEBUG("Structure string too long");
 		return -EINVAL ;
 	}
 
