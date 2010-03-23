@@ -17,15 +17,17 @@ $ID: $
 #include "ow_connection.h"
 
 /* ------- Prototypes ----------- */
-static int OWQ_parse_output_integer(struct one_wire_query *owq);
-static int OWQ_parse_output_unsigned(struct one_wire_query *owq);
-static int OWQ_parse_output_float(struct one_wire_query *owq);
-static int OWQ_parse_output_date(struct one_wire_query *owq);
-static int OWQ_parse_output_yesno(struct one_wire_query *owq);
-static int OWQ_parse_output_ascii(struct one_wire_query *owq);
-static int OWQ_parse_output_array_with_commas(struct one_wire_query *owq);
-static int OWQ_parse_output_array_no_commas(struct one_wire_query *owq);
-static int OWQ_parse_output_ascii_array(struct one_wire_query *owq);
+static SIZE_OR_ERROR OWQ_parse_output_integer(struct one_wire_query *owq);
+static SIZE_OR_ERROR OWQ_parse_output_unsigned(struct one_wire_query *owq);
+static SIZE_OR_ERROR OWQ_parse_output_float(struct one_wire_query *owq);
+static SIZE_OR_ERROR OWQ_parse_output_date(struct one_wire_query *owq);
+static SIZE_OR_ERROR OWQ_parse_output_yesno(struct one_wire_query *owq);
+static SIZE_OR_ERROR OWQ_parse_output_ascii(struct one_wire_query *owq);
+static SIZE_OR_ERROR OWQ_parse_output_array_with_commas(struct one_wire_query *owq);
+static SIZE_OR_ERROR OWQ_parse_output_array_no_commas(struct one_wire_query *owq);
+static SIZE_OR_ERROR OWQ_parse_output_ascii_array(struct one_wire_query *owq);
+static SIZE_OR_ERROR OWQ_parse_output_offset_and_size_z(const char *string, struct one_wire_query *owq) ;
+static SIZE_OR_ERROR OWQ_parse_output_offset_and_size(const char *string, size_t length, struct one_wire_query *owq) ;
 
 /*
 Change in strategy 6/2006:
@@ -44,7 +46,7 @@ Can break down cases into:
 
 size_t FileLength_vascii(struct one_wire_query *owq);
 
-int OWQ_parse_output(struct one_wire_query *owq)
+SIZE_OR_ERROR OWQ_parse_output(struct one_wire_query *owq)
 {
 	// have to check if offset is beyond the filesize.
 	if (OWQ_offset(owq)) {
@@ -108,7 +110,7 @@ int OWQ_parse_output(struct one_wire_query *owq)
 	return -EINVAL;				// should never be reached if all the cases are truly covered
 }
 
-static int OWQ_parse_output_integer(struct one_wire_query *owq)
+static SIZE_OR_ERROR OWQ_parse_output_integer(struct one_wire_query *owq)
 {
 	/* should only need suglen+1, but uClibc's snprintf()
 	   seem to trash 'len' if not increased */
@@ -124,7 +126,7 @@ static int OWQ_parse_output_integer(struct one_wire_query *owq)
 	return OWQ_parse_output_offset_and_size(c, PROPERTY_LENGTH_INTEGER, owq);
 }
 
-static int OWQ_parse_output_unsigned(struct one_wire_query *owq)
+static SIZE_OR_ERROR OWQ_parse_output_unsigned(struct one_wire_query *owq)
 {
 	/* should only need suglen+1, but uClibc's snprintf()
 	   seem to trash 'len' if not increased */
@@ -140,7 +142,7 @@ static int OWQ_parse_output_unsigned(struct one_wire_query *owq)
 	return OWQ_parse_output_offset_and_size(c, PROPERTY_LENGTH_UNSIGNED, owq);
 }
 
-static int OWQ_parse_output_float(struct one_wire_query *owq)
+static SIZE_OR_ERROR OWQ_parse_output_float(struct one_wire_query *owq)
 {
 	/* should only need suglen+1, but uClibc's snprintf()
 	   seem to trash 'len' if not increased */
@@ -172,7 +174,7 @@ static int OWQ_parse_output_float(struct one_wire_query *owq)
 	return OWQ_parse_output_offset_and_size(c, PROPERTY_LENGTH_FLOAT, owq);
 }
 
-static int OWQ_parse_output_date(struct one_wire_query *owq)
+static SIZE_OR_ERROR OWQ_parse_output_date(struct one_wire_query *owq)
 {
 	char c[PROPERTY_LENGTH_DATE + 2];
 	if (OWQ_size(owq) < PROPERTY_LENGTH_DATE) {
@@ -182,7 +184,7 @@ static int OWQ_parse_output_date(struct one_wire_query *owq)
 	return OWQ_parse_output_offset_and_size(c, PROPERTY_LENGTH_DATE, owq);
 }
 
-static int OWQ_parse_output_yesno(struct one_wire_query *owq)
+static SIZE_OR_ERROR OWQ_parse_output_yesno(struct one_wire_query *owq)
 {
 	if (OWQ_size(owq) < PROPERTY_LENGTH_YESNO) {
 		return -EMSGSIZE;
@@ -191,14 +193,32 @@ static int OWQ_parse_output_yesno(struct one_wire_query *owq)
 	return PROPERTY_LENGTH_YESNO;
 }
 
-int OWQ_parse_output_offset_and_size_z(const char *string, struct one_wire_query *owq)
+ZERO_OR_ERROR OWQ_format_output_offset_and_size_z(const char *string, struct one_wire_query *owq)
+{
+	SIZE_OR_ERROR ret = OWQ_parse_output_offset_and_size_z(string,owq) ;
+	if ( ret > 0 ) {
+		return 0 ;
+	}
+	return ret ;
+}
+
+ZERO_OR_ERROR OWQ_format_output_offset_and_size(const char *string, size_t length, struct one_wire_query *owq)
+{
+	SIZE_OR_ERROR ret = OWQ_parse_output_offset_and_size(string,length,owq) ;
+	if ( ret > 0 ) {
+		return 0 ;
+	}
+	return ret ;
+}
+
+static SIZE_OR_ERROR OWQ_parse_output_offset_and_size_z(const char *string, struct one_wire_query *owq)
 {
 	return OWQ_parse_output_offset_and_size(string, strlen(string), owq);
 }
 
 /* Put a string ionto the OWQ structure and return the length
    check lengths and offsets as part of the process */
-int OWQ_parse_output_offset_and_size(const char *string, size_t length, struct one_wire_query *owq)
+static SIZE_OR_ERROR OWQ_parse_output_offset_and_size(const char *string, size_t length, struct one_wire_query *owq)
 {
 	size_t copy_length = length;
 	off_t offset = OWQ_offset(owq);
@@ -231,13 +251,13 @@ int OWQ_parse_output_offset_and_size(const char *string, size_t length, struct o
 	return copy_length;
 }
 
-static int OWQ_parse_output_ascii(struct one_wire_query *owq)
+static SIZE_OR_ERROR OWQ_parse_output_ascii(struct one_wire_query *owq)
 {
 	Debug_OWQ(owq);
 	return OWQ_length(owq);
 }
 
-static int OWQ_parse_output_array_with_commas(struct one_wire_query *owq)
+static SIZE_OR_ERROR OWQ_parse_output_array_with_commas(struct one_wire_query *owq)
 {
 	struct one_wire_query owq_single;
 	size_t extension;
@@ -276,7 +296,7 @@ static int OWQ_parse_output_array_with_commas(struct one_wire_query *owq)
 	return used_size;
 }
 
-static int OWQ_parse_output_ascii_array(struct one_wire_query *owq)
+static SIZE_OR_ERROR OWQ_parse_output_ascii_array(struct one_wire_query *owq)
 {
 	size_t extension;
 	size_t elements = OWQ_pn(owq).selected_filetype->ag->elements;
@@ -297,7 +317,7 @@ static int OWQ_parse_output_ascii_array(struct one_wire_query *owq)
 	return total_length;
 }
 
-static int OWQ_parse_output_array_no_commas(struct one_wire_query *owq)
+static SIZE_OR_ERROR OWQ_parse_output_array_no_commas(struct one_wire_query *owq)
 {
 	size_t extension;
 	size_t total_length = 0;

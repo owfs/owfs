@@ -555,7 +555,7 @@ static int TAI8570_SenseValue(UINT * val, BYTE * cmd, const struct s_TAI8570 *ta
 static int TAI8570_A(struct parsedname *pn);
 static int TAI8570_B(struct parsedname *pn);
 
-static int FS_sibling(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_sibling(struct one_wire_query *owq)
 {
 	ASCII sib[16];
 	struct s_TAI8570 tai;
@@ -566,7 +566,7 @@ static int FS_sibling(struct one_wire_query *owq)
 		return -ENOENT;
 	}
 	bytes2string(sib, tai.sibling, 8);
-	return OWQ_parse_output_offset_and_size(sib, 16, owq);
+	return OWQ_format_output_offset_and_size(sib, 16, owq);
 }
 
 static int FS_temp(struct one_wire_query *owq)

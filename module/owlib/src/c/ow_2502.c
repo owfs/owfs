@@ -107,14 +107,14 @@ static int FS_r_page(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_r_param(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_param(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	BYTE data[32];
 	if (OW_r_data(data, pn)) {
 		return -EINVAL;
 	}
-	return OWQ_parse_output_offset_and_size((ASCII *) & data[pn->selected_filetype->data.i], FileLength(pn), owq);
+	return OWQ_format_output_offset_and_size((ASCII *) & data[pn->selected_filetype->data.i], FileLength(pn), owq);
 }
 
 static int FS_w_memory(struct one_wire_query *owq)

@@ -24,7 +24,7 @@ static int FS_read_tester_array(struct one_wire_query *owq);
 /* Filesystem callback functions                  */
 /* ---------------------------------------------- */
 
-int FS_read_tester(struct one_wire_query *owq)
+ZERO_OR_ERROR FS_read_tester(struct one_wire_query *owq)
 {
 	switch (OWQ_pn(owq).extension) {
 	case EXTENSION_ALL:		/* array */
@@ -41,7 +41,7 @@ int FS_read_tester(struct one_wire_query *owq)
 	}
 }
 
-static int FS_read_tester_single(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_read_tester_single(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	int tester_bus = (pn->sn[2] << 8) + pn->sn[1];
@@ -94,7 +94,7 @@ static int FS_read_tester_single(struct one_wire_query *owq)
 				memcpy(&return_chars[buffer_index], address, copy_length);
 				length_left -= copy_length;
 			}
-			return OWQ_parse_output_offset_and_size(return_chars, length, owq);
+			return OWQ_format_output_offset_and_size(return_chars, length, owq);
 		}
 	case ft_binary:
 		{
@@ -112,7 +112,7 @@ static int FS_read_tester_single(struct one_wire_query *owq)
 				memcpy(&return_chars[buffer_index], pn->sn, copy_length);
 				length_left -= copy_length;
 			}
-			return OWQ_parse_output_offset_and_size(return_chars, length, owq);
+			return OWQ_format_output_offset_and_size(return_chars, length, owq);
 		}
 	case ft_directory:
 	case ft_subdir:

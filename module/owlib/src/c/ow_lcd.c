@@ -156,13 +156,13 @@ static int FS_simple_command(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_r_version(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_version(struct one_wire_query *owq)
 {
 	BYTE v[_LCD_PAGE_SIZE];
 	if (OW_r_version(v, PN(owq))) {
 		return -EINVAL;
 	}
-	return OWQ_parse_output_offset_and_size((ASCII *) v, _LCD_PAGE_SIZE, owq);
+	return OWQ_format_output_offset_and_size((ASCII *) v, _LCD_PAGE_SIZE, owq);
 }
 
 static int FS_r_gpio(struct one_wire_query *owq)

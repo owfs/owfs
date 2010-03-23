@@ -162,14 +162,12 @@ static int FS_w_PS(struct one_wire_query *owq)
 	return ret;
 }
 
-static int FS_r_TS(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_TS(struct one_wire_query *owq)
 {
-	OWQ_parse_output_offset_and_size_z(TemperatureScaleName(TemperatureScale(PN(owq))), owq);
-	return 0;
+	return OWQ_format_output_offset_and_size_z(TemperatureScaleName(TemperatureScale(PN(owq))), owq);
 }
 
-static int FS_r_PS(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_PS(struct one_wire_query *owq)
 {
-	OWQ_parse_output_offset_and_size_z(PressureScaleName(PressureScale(PN(owq))), owq);
-	return 0;
+	return OWQ_format_output_offset_and_size_z(PressureScaleName(PressureScale(PN(owq))), owq);
 }

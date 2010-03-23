@@ -47,13 +47,13 @@ $Id$
 
 /* ------- Functions ------------ */
 
-int FS_alias(struct one_wire_query *owq)
+ZERO_OR_ERROR FS_alias(struct one_wire_query *owq)
 {
 	char alias[PROPERTY_LENGTH_ALIAS+1] ;
 	struct parsedname *pn = PN(owq);
 	if ( Cache_Get_Alias( alias, PROPERTY_LENGTH_ALIAS+1, pn->sn) == 0 ) {
-		return OWQ_parse_output_offset_and_size_z(alias, owq);
+		return OWQ_format_output_offset_and_size_z(alias, owq);
 	}
-	return OWQ_parse_output_offset_and_size_z("", owq);
+	return OWQ_format_output_offset_and_size_z("", owq);
 }
 

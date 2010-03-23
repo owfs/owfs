@@ -95,14 +95,13 @@ struct device d_sys_configure = { "configuration", "configuration", ePN_system,
 
 /* ------- Functions ------------ */
 
-static int FS_pidfile(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_pidfile(struct one_wire_query *owq)
 {
 	char *name = "";
 	if (pid_file) {
 		name = pid_file;
 	}
-	OWQ_parse_output_offset_and_size_z(name, owq);
-	return 0;
+	return OWQ_format_output_offset_and_size_z(name, owq);
 }
 
 static int FS_pid(struct one_wire_query *owq)

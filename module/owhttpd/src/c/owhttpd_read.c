@@ -39,11 +39,13 @@ static void ShowTextStructure(FILE * out, struct one_wire_query *owq);
 static void Show(FILE * out, const struct parsedname *pn_entry)
 {
 	struct one_wire_query *owq = OWQ_create_from_path(pn_entry->path); // for read or dir
-
+	
 	/* Left column */
 	fprintf(out, "<TR><TD><B>%s</B></TD><TD>", FS_DirName(pn_entry));
 
 	if (owq == NULL) {
+		fprintf(out, "<B>Memory exhausted</B>");
+	} else if (OWQ_allocate_read_buffer(owq)) {
 		fprintf(out, "<B>Memory exhausted</B>");
 	} else if (pn_entry->selected_filetype == NULL) {
 		ShowDirectory(out, pn_entry);
@@ -73,13 +75,7 @@ static void Show(FILE * out, const struct parsedname *pn_entry)
 static void ShowReadWrite(FILE * out, struct one_wire_query *owq)
 {
 	const char *file = FS_DirName(PN(owq));
-	int read_return ;
-	
-	if ( OWQ_allocate_read_buffer(owq) != 0 ) {
-		return ;
-	}
-	
-	read_return = FS_read_postparse(owq);
+	int read_return = FS_read_postparse(owq);
 	if (read_return < 0) {
 		fprintf(out, "Error: %s", strerror(-read_return));
 		return;
@@ -124,13 +120,7 @@ static void Upload( FILE * out, const struct parsedname * pn )
 /* Device entry -- table line for a filetype */
 static void ShowReadonly(FILE * out, struct one_wire_query *owq)
 {
-	int read_return ;
-
-	if ( OWQ_allocate_read_buffer(owq) != 0 ) {
-		return ;
-	}
-
-	read_return = FS_read_postparse(owq);
+	int read_return = FS_read_postparse(owq);
 	if (read_return < 0) {
 		fprintf(out, "Error: %s", strerror(-read_return));
 		return;
@@ -221,6 +211,7 @@ static void ShowText(FILE * out, const struct parsedname *pn_entry)
 	fprintf(out, "%s ", FS_DirName(pn_entry));
 
 	if (owq == NULL) {
+	} else if (OWQ_allocate_read_buffer(owq)) {
 		//fprintf(out, "(memory exhausted)");
 	} else if (pn_entry->selected_filetype == NULL) {
 		ShowTextDirectory(out, pn_entry);
@@ -259,13 +250,7 @@ static void ShowTextStructure(FILE * out, struct one_wire_query *owq)
 /* Device entry -- table line for a filetype */
 static void ShowTextReadWrite(FILE * out, struct one_wire_query *owq)
 {
-	int read_return ;
-	
-	if ( OWQ_allocate_read_buffer(owq) != 0 ) {
-		return ;
-	}
-	
-	read_return = FS_read_postparse(owq);
+	int read_return = FS_read_postparse(owq);
 	if (read_return < 0) {
 		//fprintf(out, "error: %s", strerror(-read_return));
 		return;

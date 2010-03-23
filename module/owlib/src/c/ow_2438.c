@@ -177,7 +177,7 @@ static int FS_w_page(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_MStype(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_MStype(struct one_wire_query *owq)
 {
 	BYTE data[8];
 	ASCII *t;
@@ -208,7 +208,7 @@ static int FS_MStype(struct one_wire_query *owq)
 		t = "unknown";
 		break;
 	}
-	return OWQ_parse_output_offset_and_size_z(t, owq);
+	return OWQ_format_output_offset_and_size_z(t, owq);
 }
 
 static int FS_temp(struct one_wire_query *owq)

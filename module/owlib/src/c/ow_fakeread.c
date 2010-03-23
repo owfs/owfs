@@ -51,7 +51,7 @@ int FS_read_fake(struct one_wire_query *owq)
 	}
 }
 
-static int FS_read_fake_single(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_read_fake_single(struct one_wire_query *owq)
 {
 	enum { type_a, type_b } format_type = type_a;	// assume ascii
 
@@ -99,7 +99,7 @@ static int FS_read_fake_single(struct one_wire_query *owq)
 			for (i = 0; i < length; ++i) {
 				random_chars[i] = (format_type == type_a) ? Random_a : Random_b;
 			}
-			return OWQ_parse_output_offset_and_size(random_chars, length, owq);
+			return OWQ_format_output_offset_and_size(random_chars, length, owq);
 		}
 	case ft_directory:
 	case ft_subdir:

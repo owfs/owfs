@@ -120,7 +120,7 @@ static int OW_read(BYTE command, BYTE * bytes, size_t size, struct parsedname * 
 static int OW_write(BYTE command, BYTE byte, struct parsedname * pn);
 
 // returns major/minor as 2 hex bytes (ascii)
-static int FS_version(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_version(struct one_wire_query *owq)
 {
     char v[6];
     BYTE major, minor ;
@@ -133,7 +133,7 @@ static int FS_version(struct one_wire_query *owq)
     snprintf(v,6,"%.2X.%.2X",major,minor);
     UCLIBCUNLOCK;
 
-    return OWQ_parse_output_offset_and_size(v, 5, owq);
+    return OWQ_format_output_offset_and_size(v, 5, owq);
 }
 
 static int FS_type_number(struct one_wire_query *owq)
@@ -235,7 +235,7 @@ static int FS_w_UVI_offset(struct one_wire_query *owq)
     return 0;
 }
 
-static int FS_localtype(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_localtype(struct one_wire_query *owq)
 {
     UINT type_number ;
     if ( FS_r_sibling_U( &type_number, "type_number", owq ) ) {
@@ -244,7 +244,7 @@ static int FS_localtype(struct one_wire_query *owq)
 
     switch (type_number) {
         case 0x01:
-            return OWQ_parse_output_offset_and_size_z("Hobby_Boards_UVI", owq) ;
+            return OWQ_format_output_offset_and_size_z("Hobby_Boards_UVI", owq) ;
         default:
             return FS_type(owq);
     }

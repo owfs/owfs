@@ -402,7 +402,7 @@ static int FS_w_templimit(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_r_die(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_die(struct one_wire_query *owq)
 {
 	char *d;
 	switch (OW_die(PN(owq))) {
@@ -421,7 +421,7 @@ static int FS_r_die(struct one_wire_query *owq)
 	default:
 		return -EINVAL;
 	}
-	return OWQ_parse_output_offset_and_size(d, 2, owq);
+	return OWQ_format_output_offset_and_size(d, 2, owq);
 }
 
 static int FS_r_trim(struct one_wire_query *owq)

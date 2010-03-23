@@ -95,11 +95,11 @@ int OWQ_create_shallow_aggregate(struct one_wire_query *owq_shallow, struct one_
 void OWQ_destroy_shallow_aggregate(struct one_wire_query *owq_shallow);
 void OWQ_create_temporary(struct one_wire_query *owq_temporary, char *buffer, size_t size, off_t offset, struct parsedname *pn);
 
-int OWQ_parse_output_offset_and_size(const char *string, size_t length, struct one_wire_query *owq);
-int OWQ_parse_output_offset_and_size_z(const char *string, struct one_wire_query *owq);
+ZERO_OR_ERROR OWQ_format_output_offset_and_size(const char *string, size_t length, struct one_wire_query *owq);
+ZERO_OR_ERROR OWQ_format_output_offset_and_size_z(const char *string, struct one_wire_query *owq);
 
 int OWQ_parse_input(struct one_wire_query *owq);
-int OWQ_parse_output(struct one_wire_query *owq);
+SIZE_OR_ERROR OWQ_parse_output(struct one_wire_query *owq);
 void _print_owq(struct one_wire_query *owq);
 
 #endif							/* OW_ONEWIREQUERY_H */

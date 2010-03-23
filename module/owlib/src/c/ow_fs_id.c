@@ -47,15 +47,15 @@ $Id$
 
 /* ------- Functions ------------ */
 
-int FS_ID(struct one_wire_query *owq)
+ZERO_OR_ERROR FS_ID(struct one_wire_query *owq)
 {
 	ASCII id[12];
 	struct parsedname *pn = PN(owq);
 	bytes2string(id, &(pn->sn[1]), 6);
-	return OWQ_parse_output_offset_and_size(id, 12, owq);
+	return OWQ_format_output_offset_and_size(id, 12, owq);
 }
 
-int FS_r_ID(struct one_wire_query *owq)
+ZERO_OR_ERROR FS_r_ID(struct one_wire_query *owq)
 {
 	int sn_index, id_index;
 	ASCII id[12];
@@ -63,6 +63,6 @@ int FS_r_ID(struct one_wire_query *owq)
 	for (sn_index = 6, id_index = 0; sn_index > 0; --sn_index, id_index += 2) {
 		num2string(&id[id_index], pn->sn[sn_index]);
 	}
-	return OWQ_parse_output_offset_and_size(id, 12, owq);
+	return OWQ_format_output_offset_and_size(id, 12, owq);
 }
 

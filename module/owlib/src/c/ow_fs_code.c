@@ -47,11 +47,11 @@ $Id$
 
 /* ------- Functions ------------ */
 
-int FS_code(struct one_wire_query *owq)
+ZERO_OR_ERROR FS_code(struct one_wire_query *owq)
 {
 	ASCII code[2];
 	struct parsedname *pn = PN(owq);
 	num2string(code, pn->sn[0]);
-	return OWQ_parse_output_offset_and_size(code, 2, owq);
+	return OWQ_format_output_offset_and_size(code, 2, owq);
 }
 

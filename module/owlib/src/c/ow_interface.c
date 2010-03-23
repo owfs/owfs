@@ -409,7 +409,7 @@ static int FS_w_overdrive(struct one_wire_query *owq)
 }
 
 #ifdef DEBUG_DS2490
-static int FS_r_ds2490status(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_ds2490status(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	char res[256];
@@ -446,8 +446,7 @@ static int FS_r_ds2490status(struct one_wire_query *owq)
 		 */
 #endif
 	}
-	OWQ_parse_output_offset_and_size_z(res, owq);
-	return 0;
+	return OWQ_format_output_offset_and_size_z(res, owq);
 }
 #endif
 
@@ -561,7 +560,7 @@ static int FS_w_datasampleoffset(struct one_wire_query *owq)
 }
 
 /* special check, -remote file length won't match local sizes */
-static int FS_name(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_name(struct one_wire_query *owq)
 {
 	char *name = "";
 	struct parsedname *pn = PN(owq);
@@ -569,20 +568,18 @@ static int FS_name(struct one_wire_query *owq)
 	if (pn->selected_connection->adapter_name) {
 		name = pn->selected_connection->adapter_name;
 	}
-	OWQ_parse_output_offset_and_size_z(name, owq);
-	return 0;
+	return OWQ_format_output_offset_and_size_z(name, owq);
 }
 
 /* special check, -remote file length won't match local sizes */
-static int FS_port(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_port(struct one_wire_query *owq)
 {
 	char *name = "";
 	struct parsedname *pn = PN(owq);
 	if (pn->selected_connection->name) {
 		name = pn->selected_connection->name;
 	}
-	OWQ_parse_output_offset_and_size_z(name, owq);
-	return 0;
+	return OWQ_format_output_offset_and_size_z(name, owq);
 }
 
 /* special check, -remote file length won't match local sizes */

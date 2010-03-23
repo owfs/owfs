@@ -455,7 +455,7 @@ static int FS_version_state(struct one_wire_query *owq)
 	return 0 ;
 }
 
-static int FS_version(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_version(struct one_wire_query *owq)
 {
 	char v[6];
 	UINT version ;
@@ -468,7 +468,7 @@ static int FS_version(struct one_wire_query *owq)
 	snprintf(v,6,"%.2X.%.2X",version&0xFF, (version>>8)&0xFF);
 	UCLIBCUNLOCK;
 	
-	return OWQ_parse_output_offset_and_size(v, 5, owq);
+	return OWQ_format_output_offset_and_size(v, 5, owq);
 }
 
 static int FS_version_device(struct one_wire_query *owq)
@@ -508,7 +508,7 @@ static int FS_type_state(struct one_wire_query *owq)
 	return 0 ;
 }
 
-static int FS_localtype(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_localtype(struct one_wire_query *owq)
 {
 	char t[6];
 	UINT localtype ;
@@ -521,7 +521,7 @@ static int FS_localtype(struct one_wire_query *owq)
 	snprintf(t,6,"%.2X.%.2X",localtype&0xFF, (localtype>>8)&0xFF);
 	UCLIBCUNLOCK;
 	
-	return OWQ_parse_output_offset_and_size(t, 5, owq);
+	return OWQ_format_output_offset_and_size(t, 5, owq);
 }
 
 static int FS_type_device(struct one_wire_query *owq)

@@ -22,18 +22,18 @@ static void OW_any_locator(BYTE * loc, const struct parsedname *pn);
 /* ------- Functions ------------ */
 
 
-int FS_locator(struct one_wire_query *owq)
+ZERO_OR_ERROR FS_locator(struct one_wire_query *owq)
 {
 	BYTE loc[SERIAL_NUMBER_SIZE];
 	ASCII ad[SERIAL_NUMBER_SIZE*2];
 
 	OW_any_locator(loc, PN(owq) ) ;
 	bytes2string(ad, loc, SERIAL_NUMBER_SIZE);
-	return OWQ_parse_output_offset_and_size(ad, sizeof(ad), owq);
+	return OWQ_format_output_offset_and_size(ad, sizeof(ad), owq);
 }
 
 // reversed address
-int FS_r_locator(struct one_wire_query *owq)
+ZERO_OR_ERROR FS_r_locator(struct one_wire_query *owq)
 {
 	BYTE loc[SERIAL_NUMBER_SIZE];
 	ASCII ad[SERIAL_NUMBER_SIZE*2];
@@ -43,7 +43,7 @@ int FS_r_locator(struct one_wire_query *owq)
 	for (i = 0; i < SERIAL_NUMBER_SIZE; ++i) {
 		num2string(ad + (i << 1), loc[7 - i]);
 	}
-	return OWQ_parse_output_offset_and_size(ad, sizeof(ad), owq);
+	return OWQ_format_output_offset_and_size(ad, sizeof(ad), owq);
 }
 
 static void OW_any_locator(BYTE * loc, const struct parsedname *pn)

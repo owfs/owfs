@@ -112,7 +112,7 @@ MakeInternalProp(TAG, fc_persistent);	// cumulative
 
 /* EDS memory */
 // Only used to set visibility for specific 
-static int FS_r_tag(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_tag(struct one_wire_query *owq)
 {
 	size_t size = _EDS_PAGESIZE ;
 	BYTE data[_EDS_PAGESIZE] ;
@@ -124,8 +124,7 @@ static int FS_r_tag(struct one_wire_query *owq)
 		int tag_type = N_eds_types ;
 		while ( --tag_type >= 0 ) {
 			if (  tag == EDS_types[tag_type].bit ) {
-				OWQ_parse_output_offset_and_size( EDS_types[tag_type].name, _EDS_TAG_LENGTH, owq ) ;
-				return 0 ;
+				return OWQ_format_output_offset_and_size( EDS_types[tag_type].name, _EDS_TAG_LENGTH, owq ) ;
 			}
 		}
 	} else if ( FS_r_sibling_binary(data,&size,"pages/page.0",owq) == 0 	) { // read device memory
@@ -136,7 +135,9 @@ static int FS_r_tag(struct one_wire_query *owq)
 				break ;
 			}
 		}
-		OWQ_parse_output_offset_and_size( data, _EDS_TAG_LENGTH, owq ) ;
+		if ( OWQ_format_output_offset_and_size( data, _EDS_TAG_LENGTH, owq ) ) {
+			return -EINVAL ;
+		}
 		Cache_Add_Internal(&tag, sizeof(UINT), InternalProp(TAG), pn) ;
 		return 0 ;
 	}

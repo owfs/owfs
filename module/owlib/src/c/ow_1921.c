@@ -483,11 +483,11 @@ static int FS_r_histoelem(struct one_wire_query *owq)
 }
 
 
-static int FS_r_version(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_version(struct one_wire_query *owq)
 {
 	struct Version *v = (struct Version *) bsearch(PN(owq), Versions, VersionElements,
 												   sizeof(struct Version), VersionCmp);
-	return v ? OWQ_parse_output_offset_and_size_z(v->name, owq) : -ENOENT;
+	return v ? OWQ_format_output_offset_and_size_z(v->name, owq) : -ENOENT;
 }
 
 static int FS_r_resolution(struct one_wire_query *owq)

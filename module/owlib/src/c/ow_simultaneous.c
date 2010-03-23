@@ -241,7 +241,7 @@ static int FS_r_present(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_r_single(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_single(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	ASCII ad[30] = { 0x00, };	// long enough -- default "blank"
@@ -294,8 +294,7 @@ static int FS_r_single(struct one_wire_query *owq)
 			break ;
 
 	}
-	OWQ_parse_output_offset_and_size_z(ad, owq);
-	return 0;
+	return OWQ_format_output_offset_and_size_z(ad, owq);
 }
 
 // Do cache for single item
