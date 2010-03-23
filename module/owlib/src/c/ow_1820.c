@@ -249,7 +249,7 @@ static int OW_w_pio(BYTE pio, const struct parsedname *pn);
 static int OW_read_piostate(UINT * piostate, const struct parsedname *pn) ;
 static _FLOAT OW_masked_temperature( BYTE * data, BYTE mask ) ;
 
-static int FS_10temp(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_10temp(struct one_wire_query *owq)
 {
 	if (OW_10temp(&OWQ_F(owq), PN(owq))) {
 		return -EINVAL;
@@ -258,7 +258,7 @@ static int FS_10temp(struct one_wire_query *owq)
 }
 
 /* For DS1822 and DS18B20 -- resolution stuffed in ft->data */
-static int FS_22temp(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_22temp(struct one_wire_query *owq)
 {
 	int resolution = OWQ_pn(owq).selected_filetype->data.i;
 	switch (resolution) {
@@ -275,7 +275,7 @@ static int FS_22temp(struct one_wire_query *owq)
 }
 
 // use sibling function for fasttemp to keep cache value consistent
-static int FS_fasttemp(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_fasttemp(struct one_wire_query *owq)
 {
 	_FLOAT temperature ;
 
@@ -289,7 +289,7 @@ static int FS_fasttemp(struct one_wire_query *owq)
 }
 
 // use sibling function for temperature to keep cache value consistent
-static int FS_slowtemp(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_slowtemp(struct one_wire_query *owq)
 {
 	_FLOAT temperature ;
 
@@ -302,7 +302,7 @@ static int FS_slowtemp(struct one_wire_query *owq)
 	return 0 ;
 }
 
-static int FS_power(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_power(struct one_wire_query *owq)
 {
 	BYTE data;
 	if (OW_power(&data, PN(owq))) {
@@ -314,7 +314,7 @@ static int FS_power(struct one_wire_query *owq)
 
 
 /* 28EA00 switch */
-static int FS_w_pio(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_pio(struct one_wire_query *owq)
 {
 	BYTE data = BYTE_INVERSE(OWQ_U(owq) & 0x03);	/* reverse bits, set unused to 1s */
 	//printf("Write pio raw=%X, stored=%X\n",OWQ_U(owq),data) ;
@@ -325,7 +325,7 @@ static int FS_w_pio(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_sense(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_sense(struct one_wire_query *owq)
 {
 	UINT piostate ;
 
@@ -339,7 +339,7 @@ static int FS_sense(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_r_pio(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_pio(struct one_wire_query *owq)
 {
 	UINT piostate ;
 
@@ -361,7 +361,7 @@ static int FS_r_piostate(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_r_latch(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_latch(struct one_wire_query *owq)
 {
 	UINT piostate ;
 
@@ -375,7 +375,7 @@ static int FS_r_latch(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_r_templimit(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_templimit(struct one_wire_query *owq)
 {
 	if (OW_r_templimit(&OWQ_F(owq), PN(owq)->selected_filetype->data.i, PN(owq))) {
 		return -EINVAL;
@@ -384,7 +384,7 @@ static int FS_r_templimit(struct one_wire_query *owq)
 }
 
 /* DS1825 hardware programmable address */
-static int FS_r_ad(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_ad(struct one_wire_query *owq)
 {
 	BYTE data[9];
 	if (OW_r_scratchpad(data, PN(owq))) {
@@ -394,7 +394,7 @@ static int FS_r_ad(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_templimit(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_templimit(struct one_wire_query *owq)
 {
 	if (OW_w_templimit(OWQ_F(owq), PN(owq)->selected_filetype->data.i, PN(owq))) {
 		return -EINVAL;
@@ -424,7 +424,7 @@ static ZERO_OR_ERROR FS_r_die(struct one_wire_query *owq)
 	return OWQ_format_output_offset_and_size(d, 2, owq);
 }
 
-static int FS_r_trim(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_trim(struct one_wire_query *owq)
 {
 	BYTE t[2];
 	if (OW_r_trim(t, PN(owq))) {
@@ -434,7 +434,7 @@ static int FS_r_trim(struct one_wire_query *owq)
 	return 0;
 }
 
-static int FS_w_trim(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_trim(struct one_wire_query *owq)
 {
 	UINT trim = OWQ_U(owq);
 	BYTE t[2] = { LOW_HIGH_ADDRESS(trim), };
@@ -451,7 +451,7 @@ static int FS_w_trim(struct one_wire_query *owq)
 }
 
 /* Are the trim values valid-looking? */
-static int FS_r_trimvalid(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_trimvalid(struct one_wire_query *owq)
 {
 	BYTE trim[2];
 	switch (OW_die(PN(owq))) {
@@ -471,7 +471,7 @@ static int FS_r_trimvalid(struct one_wire_query *owq)
 }
 
 /* Put in a blank trim value if non-zero */
-static int FS_r_blanket(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_blanket(struct one_wire_query *owq)
 {
 	BYTE trim[2];
 	BYTE blanket[] = { _DEFAULT_BLANKET_TRIM_1, _DEFAULT_BLANKET_TRIM_2 };
@@ -489,7 +489,7 @@ static int FS_r_blanket(struct one_wire_query *owq)
 }
 
 /* Put in a blank trim value if non-zero */
-static int FS_w_blanket(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_blanket(struct one_wire_query *owq)
 {
 	BYTE blanket[] = { _DEFAULT_BLANKET_TRIM_1, _DEFAULT_BLANKET_TRIM_2 };
 	switch (OW_die(PN(owq))) {
