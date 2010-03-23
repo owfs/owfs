@@ -114,7 +114,7 @@ static void Server_close(struct connection_in *in)
 }
 
 // Send to an owserver using the READ message
-int ServerRead(struct one_wire_query *owq)
+ZERO_OR_ERROR ServerRead(struct one_wire_query *owq)
 {
 	struct server_msg sm;
 	struct client_msg cm;
@@ -124,7 +124,7 @@ int ServerRead(struct one_wire_query *owq)
 	};
 	int persistent = 1;
 	int connectfd;
-	int ret = 0;
+	ZERO_OR_ERROR ret = 0;
 
 	// Special handling of alias property. alias should only be asked on local machine.
 	if ( pn_file_entry->selected_filetype->change == fc_alias ) {
@@ -195,7 +195,7 @@ int ServerPresence(const struct parsedname *pn_file_entry)
 }
 
 // Send to an owserver using the WRITE message
-int ServerWrite(struct one_wire_query *owq)
+ZERO_OR_ERROR ServerWrite(struct one_wire_query *owq)
 {
 	struct server_msg sm;
 	struct client_msg cm;
@@ -205,7 +205,7 @@ int ServerWrite(struct one_wire_query *owq)
 	};
 	int persistent = 1;
 	int connectfd;
-	int ret = 0;
+	ZERO_OR_ERROR ret = 0;
 
 	memset(&sm, 0, sizeof(struct server_msg));
 	memset(&cm, 0, sizeof(struct client_msg));
