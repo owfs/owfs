@@ -17,24 +17,24 @@ $Id$
 #include "ow_dirblob.h"
 #include "ow.h"
 
-static int FS_dir_both(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_directory, uint32_t * flags);
-static int FS_dir_all_connections(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_directory, uint32_t * flags);
-static int FS_dir_all_connections_loop(void (*dirfunc)
+static ZERO_OR_ERROR FS_dir_both(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_directory, uint32_t * flags);
+static ZERO_OR_ERROR FS_dir_all_connections(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_directory, uint32_t * flags);
+static ZERO_OR_ERROR FS_dir_all_connections_loop(void (*dirfunc)
 									    (void *, const struct parsedname * const),
 									   void *v, struct connection_in * in, const struct parsedname *pn_directory, uint32_t * flags);
-static int FS_devdir(void (*dirfunc) (void *, const struct parsedname * const), void *v, const struct parsedname *pn2);
-static int FS_alarmdir(void (*dirfunc) (void *, const struct parsedname * const), void *v, const struct parsedname *pn2);
-static int FS_typedir(void (*dirfunc) (void *, const struct parsedname * const), void *v, const struct parsedname *pn_type_directory);
-static int FS_realdir(void (*dirfunc) (void *, const struct parsedname * const), void *v, const struct parsedname *pn2, uint32_t * flags);
-static int FS_cache2real(void (*dirfunc) (void *, const struct parsedname * const), void *v, const struct parsedname *pn2, uint32_t * flags);
-static int FS_busdir(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_directory);
+static ZERO_OR_ERROR FS_devdir(void (*dirfunc) (void *, const struct parsedname * const), void *v, const struct parsedname *pn2);
+static ZERO_OR_ERROR FS_alarmdir(void (*dirfunc) (void *, const struct parsedname * const), void *v, const struct parsedname *pn2);
+static ZERO_OR_ERROR FS_typedir(void (*dirfunc) (void *, const struct parsedname * const), void *v, const struct parsedname *pn_type_directory);
+static ZERO_OR_ERROR FS_realdir(void (*dirfunc) (void *, const struct parsedname * const), void *v, const struct parsedname *pn2, uint32_t * flags);
+static ZERO_OR_ERROR FS_cache2real(void (*dirfunc) (void *, const struct parsedname * const), void *v, const struct parsedname *pn2, uint32_t * flags);
+static ZERO_OR_ERROR FS_busdir(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_directory);
 
 static void FS_stype_dir(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_root_directory);
 static void FS_interface_dir(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_root_directory);
 static void FS_alarm_entry(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_root_directory);
 static void FS_simultaneous_entry(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_root_directory);
 static void FS_uncached_dir(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_root_directory);
-static int FS_dir_plus(void (*dirfunc) (void *, const struct parsedname *), void *v, uint32_t * flags, const struct parsedname *pn_directory, const char *file) ;
+static ZERO_OR_ERROR FS_dir_plus(void (*dirfunc) (void *, const struct parsedname *), void *v, uint32_t * flags, const struct parsedname *pn_directory, const char *file) ;
 
 /* Calls dirfunc() for each element in directory */
 /* void * data is arbitrary user data passed along -- e.g. output file descriptor */
@@ -57,7 +57,7 @@ static int FS_dir_plus(void (*dirfunc) (void *, const struct parsedname *), void
 /* path is the path which "pn_directory" parses */
 /* FS_dir produces the "invariant" portion of the directory, passing on to
    FS_dir_all_connections the variable part */
-int FS_dir(void (*dirfunc) (void *, const struct parsedname *), void *v, struct parsedname *pn_directory)
+ZERO_OR_ERROR FS_dir(void (*dirfunc) (void *, const struct parsedname *), void *v, struct parsedname *pn_directory)
 {
 	uint32_t flags;
 	LEVEL_DEBUG("path=%s", pn_directory->path);
@@ -69,14 +69,14 @@ int FS_dir(void (*dirfunc) (void *, const struct parsedname *), void *v, struct 
 /* path is the path which "pn_directory" parses */
 /* FS_dir_remote is the entry into FS_dir_all_connections from ServerDir */
 /* More checking is done, and the flags are returned */
-int FS_dir_remote(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_directory, uint32_t * flags)
+ZERO_OR_ERROR FS_dir_remote(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_directory, uint32_t * flags)
 {
 	LEVEL_DEBUG("path=%s", pn_directory->path);
 	return FS_dir_both(dirfunc, v, pn_directory, flags);
 }
 
 
-static int FS_dir_both(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_raw_directory, uint32_t * flags)
+static ZERO_OR_ERROR FS_dir_both(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_raw_directory, uint32_t * flags)
 {
 	int ret = 0;
 
@@ -249,11 +249,12 @@ static void *FS_dir_all_connections_callback(void *v)
 	pthread_exit(NULL);
 	return NULL;
 }
-static int FS_dir_all_connections_loop(void (*dirfunc)
+
+static ZERO_OR_ERROR FS_dir_all_connections_loop(void (*dirfunc)
 	(void *, const struct parsedname *), void *v,
 	struct connection_in * in, const struct parsedname *pn_directory, uint32_t * flags)
 {
-	int ret = 0;
+	ZERO_OR_ERROR ret = 0;
 	struct dir_all_connections_struct dacs = { in->next, pn_directory, dirfunc, v, flags, 0 };
 	struct parsedname s_pn_bus_directory;
 	struct parsedname *pn_bus_directory = &s_pn_bus_directory;
@@ -291,7 +292,7 @@ static int FS_dir_all_connections_loop(void (*dirfunc)
 	return ret;
 }
 
-static int
+static ZERO_OR_ERROR
 FS_dir_all_connections(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_directory, uint32_t * flags)
 {
 	struct connection_in * in = Inbound_Control.head ;
@@ -306,10 +307,10 @@ FS_dir_all_connections(void (*dirfunc) (void *, const struct parsedname *), void
 
 /* path is the path which "pn_directory" parses */
 /* FS_dir_all_connections produces the data that can vary: device lists, etc. */
-static int
+static ZERO_OR_ERROR
 FS_dir_all_connections(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_directory, uint32_t * flags)
 {
-	int ret = 0;
+	ZERO_OR_ERROR ret = 0;
 	struct connection_in * in;
 	struct parsedname s_pn_selected_connection;
 	struct parsedname *pn_selected_connection = &s_pn_selected_connection;
@@ -323,12 +324,18 @@ FS_dir_all_connections(void (*dirfunc) (void *, const struct parsedname *), void
 			continue ;
 		}
 		if (BusIsServer(pn_selected_connection->selected_connection)) {	/* is this a remote bus? */
-			ret |= ServerDir(dirfunc, v, pn_selected_connection, flags);
+			ZERO_OR_ERROR server = ServerDir(dirfunc, v, pn_selected_connection, flags);
+			if ( server ) {
+				ret = server ;
+			}
 			continue ;
 		}
 		/* local bus */
 		if (IsAlarmDir(pn_selected_connection)) {	/* root or branch directory -- alarm state */
-			ret |= FS_alarmdir(dirfunc, v, pn_selected_connection);
+			ZERO_OR_ERROR alarm = FS_alarmdir(dirfunc, v, pn_selected_connection);
+			if ( alarm ) {
+				ret = alarm ;
+			}
 		} else {
 			ret = FS_cache2real(dirfunc, v, pn_selected_connection, flags);
 		}
@@ -339,7 +346,7 @@ FS_dir_all_connections(void (*dirfunc) (void *, const struct parsedname *), void
 #endif							/* OW_MT */
 
 /* Device directory -- all from memory */
-static int FS_devdir(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_device_directory)
+static ZERO_OR_ERROR FS_devdir(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_device_directory)
 {
 	struct filetype *lastft = &(pn_device_directory->selected_device->filetype_array[pn_device_directory->selected_device->count_of_filetypes]);	/* last filetype struct */
 	struct filetype *ft_pointer;	/* first filetype struct */
@@ -400,9 +407,9 @@ static int FS_devdir(void (*dirfunc) (void *, const struct parsedname *), void *
 }
 
 /* Note -- alarm directory is smaller, no adapters or stats or uncached */
-static int FS_alarmdir(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_alarm_directory)
+static ZERO_OR_ERROR FS_alarmdir(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_alarm_directory)
 {
-	int ret;
+	ZERO_OR_ERROR ret;
 	struct device_search ds;	// holds search state
 	uint32_t ignoreflag ;
 
@@ -446,12 +453,12 @@ static int FS_alarmdir(void (*dirfunc) (void *, const struct parsedname *), void
 /* not within a device, nor alarm state */
 /* Also, adapters and stats handled elsewhere */
 /* Scan the directory from the BUS and add to cache */
-static int FS_realdir(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_whole_directory, uint32_t * flags)
+static ZERO_OR_ERROR FS_realdir(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_whole_directory, uint32_t * flags)
 {
 	struct device_search ds;
 	size_t devices = 0;
 	struct dirblob db;
-	int ret;
+	ZERO_OR_ERROR ret;
 
 	/* cache from Server if this is a remote bus */
 	if (BusIsServer(pn_whole_directory->selected_connection)) {
@@ -559,7 +566,7 @@ void FS_LoadDirectoryOnly(struct parsedname *pn_directory, const struct parsedna
 /* not within a device, nor alarm state */
 /* Also, adapters and stats handled elsewhere */
 /* Cache2Real try the cache first, else get directory from bus (and add to cache) */
-static int FS_cache2real(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_real_directory, uint32_t * flags)
+static ZERO_OR_ERROR FS_cache2real(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_real_directory, uint32_t * flags)
 {
 	size_t dindex;
 	struct dirblob db;
@@ -627,7 +634,7 @@ static void Typediraction(const void *t, const VISIT which, const int depth)
 
 /* Show the pn_directory->type (statistics, system, ...) entries */
 /* Only the top levels, the rest will be shown by FS_devdir */
-static int FS_typedir(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_type_directory)
+static ZERO_OR_ERROR FS_typedir(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_type_directory)
 {
 	struct parsedname s_pn_type_device;
 	struct parsedname *pn_type_device = &s_pn_type_device;
@@ -650,7 +657,7 @@ static int FS_typedir(void (*dirfunc) (void *, const struct parsedname *), void 
 }
 
 /* Show the bus entries */
-static int FS_busdir(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_directory)
+static ZERO_OR_ERROR FS_busdir(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_directory)
 {
 	char bus[OW_FULLNAME_MAX];
 	struct connection_in * in ;
@@ -671,7 +678,7 @@ static int FS_busdir(void (*dirfunc) (void *, const struct parsedname *), void *
 }
 
 /* Parse and show */
-static int FS_dir_plus(void (*dirfunc) (void *, const struct parsedname *), void *v, uint32_t * flags, const struct parsedname *pn_directory, const char *file)
+static ZERO_OR_ERROR FS_dir_plus(void (*dirfunc) (void *, const struct parsedname *), void *v, uint32_t * flags, const struct parsedname *pn_directory, const char *file)
 {
 	struct parsedname s_pn_plus_directory;
 	struct parsedname *pn_plus_directory = &s_pn_plus_directory;
