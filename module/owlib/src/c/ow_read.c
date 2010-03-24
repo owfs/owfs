@@ -465,7 +465,8 @@ static ZERO_OR_ERROR FS_structure(struct one_wire_query *owq)
 	struct filetype * ftype = pn->selected_filetype ;
 
 	// TEMPORARY change type from structure->real to get real length rhather than structure length
-	OWQ_pn(owq).type = ePN_real;	/* "real" type to get return length, rather than "structure" length */
+	pn->type = ePN_real;	/* "real" type to get return length, rather than "structure" length */
+	
 	LEVEL_DEBUG("start");
 	UCLIBCLOCK;
 	output_length = snprintf(structure_text,
@@ -482,7 +483,7 @@ static ZERO_OR_ERROR FS_structure(struct one_wire_query *owq)
 	LEVEL_DEBUG("length=%d", output_length);
 
 	// TEMPORARY restore type from real to structure
-	OWQ_pn(owq).type = ePN_structure;
+	pn->type = ePN_structure;
 
 	if (output_length < 0) {
 		LEVEL_DEBUG("Problem formatting structure string");

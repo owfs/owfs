@@ -240,14 +240,12 @@ static SIZE_OR_ERROR OWQ_parse_output_offset_and_size(const char *string, size_t
 
 	/* and copy */
 	memcpy(OWQ_buffer(owq), &string[offset], copy_length);
-	switch (OWQ_pn(owq).selected_filetype->format) {
-	case ft_vascii:
-	case ft_ascii:
-	case ft_binary:
-		OWQ_length(owq) = copy_length;
-	default:
-		break;
-	}
+	
+	// Warning, this will overwrite the I U or DATA value, 
+	// but that shouldn't matter since it's only called on ascii values
+	// and all structure values
+	OWQ_length(owq) = copy_length;
+
 	return copy_length;
 }
 
