@@ -32,6 +32,7 @@ $Id$
 #ifdef __FreeBSD__
 	// Add a few definitions we need
 #undef HAVE_USB_INTERRUPT_READ	// This call in libusb is unneeded for FreeBSD (and it's broken)
+#include <sys/types.h>
 #include <dev/usb/usb.h>
 struct usb_dev_handle {
 	int file_descriptor;
@@ -47,6 +48,7 @@ struct usb_dev_handle {
 #define USB_CLEAR_HALT usb_clear_halt
 #endif
 
+#include <sys/types.h> // Mac needs this before <usb.h> according to Peter Peter Radcliffe's work
 #include <usb.h>
 
 /* All the rest of the code sees is the DS9490_detect routine and the iroutine structure */
