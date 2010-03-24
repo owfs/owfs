@@ -82,6 +82,8 @@ AC_LIBTOOL_DLOPEN
 AM_PROG_LIBTOOL
 AC_SUBST(LIBTOOL_DEPS)
 
+# Supposedly this helps OS X compiling
+AC_DEFINE(_DARWIN_C_SOURCE, 1, [Define on Darwin to activate all library features])
 
 HAVE_DEBIAN="false"
 AC_MSG_CHECKING([if debian-system is used])
