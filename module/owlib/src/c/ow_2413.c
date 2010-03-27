@@ -54,7 +54,7 @@ WRITE_FUNCTION(FS_w_piostate);
 READ_FUNCTION(FS_r_pio);
 WRITE_FUNCTION(FS_w_pio);
 READ_FUNCTION(FS_sense);
-READ_FUNCTION(FS_r_latch);
+//READ_FUNCTION(FS_r_latch);
 
 /* ------- Structures ----------- */
 
@@ -64,7 +64,7 @@ struct filetype DS2413[] = {
 	{"piostate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_piostate, FS_w_piostate, INVISIBLE, NO_FILETYPE_DATA, },
 	{"PIO", PROPERTY_LENGTH_BITFIELD, &A2413, ft_bitfield, fc_link, FS_r_pio, FS_w_pio, VISIBLE, NO_FILETYPE_DATA,},
 	{"sensed", PROPERTY_LENGTH_BITFIELD, &A2413, ft_bitfield, fc_link, FS_sense, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-	{"latch", PROPERTY_LENGTH_BITFIELD, &A2413, ft_bitfield, fc_link, FS_r_latch, FS_w_pio, VISIBLE, NO_FILETYPE_DATA,},
+//	{"latch", PROPERTY_LENGTH_BITFIELD, &A2413, ft_bitfield, fc_link, FS_r_latch, FS_w_pio, VISIBLE, NO_FILETYPE_DATA,},
 };
 
 DeviceEntryExtended(3A, DS2413, DEV_resume | DEV_ovdr);
@@ -78,8 +78,8 @@ DeviceEntryExtended(3A, DS2413, DEV_resume | DEV_ovdr);
 /* ------- Functions ------------ */
 
 /* DS2413 */
-static int OW_write(BYTE data, const struct parsedname *pn);
-static int OW_read(BYTE * data, const struct parsedname *pn);
+static GOOD_OR_BAD OW_write(BYTE data, const struct parsedname *pn);
+static GOOD_OR_BAD OW_read(BYTE * data, const struct parsedname *pn);
 static UINT SENSED_state(UINT status_bits);
 static UINT LATCH_state(UINT status_bits);
 
@@ -106,22 +106,20 @@ static ZERO_OR_ERROR FS_w_piostate(struct one_wire_query *owq)
 {
 	UINT pio = OWQ_U(owq) ;
 
-	FS_del_sibling( "piostate", owq ) ;
 	return OW_write( pio, PN(owq) ) ? -EINVAL : 0 ;
 }
 
-/* 2413 switch */
-/* complement of sense */
-/* bits 0 and 2 */
+/* 2413 switch activity latch is actual set state of PIOs, what we want in this case */
+/* bites 1 and 3 */
 static ZERO_OR_ERROR FS_r_pio(struct one_wire_query *owq)
 {
 	UINT piostate ;
 	if ( FS_r_sibling_U( &piostate, "piostate", owq ) != 0 ) {
 		return -EINVAL ;
 	}
-	// bits 0->0 and 2->1
+	// bits 1>0 and 3->1
 	// complement
-	OWQ_U(owq) = SENSED_state(piostate) ^ 0x03 ;
+	OWQ_U(owq) = LATCH_state( piostate ) ^ 0x03 ;
 	return 0 ;
 }
 
@@ -129,7 +127,15 @@ static ZERO_OR_ERROR FS_r_pio(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_w_pio(struct one_wire_query *owq)
 {
 	// complement
-	return FS_w_sibling_U( OWQ_U(owq) ^ 0x03 , "piostate", owq );
+	ZERO_OR_ERROR ret = FS_w_sibling_U( OWQ_U(owq) ^ 0x03 , "piostate", owq );
+	
+	if ( ret == 0 ) {
+		// Able to write, but piostate is potentially now incorrect 
+		// since we use a different method to set pios
+		FS_del_sibling( "piostate", owq ) ;
+		return 0 ;
+	}
+	return ret ;
 }
 
 /* 2413 switch PIO sensed*/
@@ -145,21 +151,8 @@ static ZERO_OR_ERROR FS_sense(struct one_wire_query *owq)
 	return 0 ;
 }
 
-/* 2413 switch activity latch*/
-/* bites 1 and 3 */
-static ZERO_OR_ERROR FS_r_latch(struct one_wire_query *owq)
-{
-	UINT piostate ;
-	if ( FS_r_sibling_U( &piostate, "piostate", owq ) != 0 ) {
-		return -EINVAL ;
-	}
-	// bits 1>0 and 3->1
-	OWQ_U(owq) = LATCH_state( piostate ) ;
-	return 0 ;
-}
-
 /* read status byte */
-static int OW_read(BYTE * data, const struct parsedname *pn)
+static GOOD_OR_BAD OW_read(BYTE * data, const struct parsedname *pn)
 {
 	BYTE cmd[] = { _1W_PIO_ACCESS_READ, };
 	BYTE resp[1] ;
@@ -171,21 +164,21 @@ static int OW_read(BYTE * data, const struct parsedname *pn)
 	};
 
 	if (BUS_transaction(t, pn)) {
-		return 1;
+		return gbBAD;
 	}
 	// High nibble the complement of low nibble?
 	// Fix thanks to josef_heiler
 	if ((resp[0] & 0x0F) != ((~resp[0] >> 4) & 0x0F)) {
-		return 1;
+		return gbBAD;
 	}
 
 	data[0] = resp[0] & 0x0F ;
-	return 0;
+	return gbGOOD;
 }
 
 /* write status byte */
 /* top 6 bits are set to 1, complement then sent */
-static int OW_write(BYTE data, const struct parsedname *pn)
+static GOOD_OR_BAD OW_write(BYTE data, const struct parsedname *pn)
 {
 	BYTE data_masked = data | 0xFC ;
 	BYTE cmd[] = { _1W_PIO_ACCESS_WRITE, data_masked, ~data_masked, };
@@ -199,7 +192,7 @@ static int OW_write(BYTE data, const struct parsedname *pn)
 		TRXN_END,
 	};
 
-	return BUS_transaction(t, pn) ;
+	return RETURN_G_OR_B(BUS_transaction(t, pn)) ;
 }
 
 // piostate -> sense
