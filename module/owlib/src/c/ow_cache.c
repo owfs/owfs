@@ -693,6 +693,11 @@ int OWQ_Cache_Get(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 
+	// do check here to avoid needless processing
+	if (IsUncachedDir(pn) || IsAlarmDir(pn)) {
+		return 1;
+	}
+
 	switch (pn->selected_filetype->change) {
 	case fc_simultaneous_temperature:
 		return Cache_Get_Simultaneous(simul_temp, owq) ;
