@@ -17,8 +17,6 @@ Dual Switch
 .PP
 .B 3A
 [.]XXXXXXXXXXXX[XX][/[
-.B latch.[A|B|ALL|BYTE]
-|
 .B PIO.[A|B|ALL|BYTE]
 |
 .B sensed.[A|B|ALL|BYTE]
@@ -29,17 +27,6 @@ Dual Switch
 .PP
 .I 3A
 .SH SPECIAL PROPERTIES
-.SS latch.A latch.B latch.ALL latch.BYTE
-.I read-only, yes-no
-.br
-Poorly documented feature of the chip. Apparently set to 1 routinely, and if different from
-.I PIO 
-then a physical switch was triggered?
-.I ALL
-references both channels simultaneously, comma separated
-.br
-.I BYTE
-references both channels simultaneously as a single byte, with channel A in bit 0.
 .SS PIO.A PIO.B PIO.ALL PIO.BYTE
 .I read-write, yes-no
 .br
@@ -102,9 +89,7 @@ can switch higher voltages, up to 28V.
 .SH ADDRESSING
 .so addressing.3so
 .SH DATASHEET
-http://pdfserv.maxim-ic.com/en/ds/DS2406.pdf
-.br
-http://pdfserv.maxim-ic.com/en/ds/DS2407.pdf
+http://datasheets.maxim-ic.com/en/ds/DS2413.pdf
 .SH SEE ALSO
 .so seealso.3so
 .SH AVAILABILITY
