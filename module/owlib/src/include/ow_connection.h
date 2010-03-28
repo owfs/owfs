@@ -168,15 +168,11 @@ struct interface_routines {
 #define AdapterSupports2409(pn)	(((pn)->selected_connection->iroutines.flags&ADAP_FLAG_no2409path)==0)
 
 #if OW_MT
-#define DEVLOCK(pn)           my_pthread_mutex_lock( &(((pn)->selected_connection)->dev_mutex) )
-#define DEVUNLOCK(pn)         my_pthread_mutex_unlock( &(((pn)->selected_connection)->dev_mutex) )
 #define ACCEPTLOCK(out)       my_pthread_mutex_lock(  &((out)->accept_mutex) )
 #define ACCEPTUNLOCK(out)     my_pthread_mutex_unlock(&((out)->accept_mutex) )
 #define OUTLOCK(out)          my_pthread_mutex_lock(  &((out)->out_mutex) )
 #define OUTUNLOCK(out)        my_pthread_mutex_unlock(&((out)->out_mutex) )
 #else							/* OW_MT */
-#define DEVLOCK(pn)           return_ok()
-#define DEVUNLOCK(pn)         return_ok()
 #define ACCEPTLOCK(out)       return_ok()
 #define ACCEPTUNLOCK(out)     return_ok()
 #define OUTLOCK(out)          return_ok()

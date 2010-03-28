@@ -38,6 +38,7 @@ $Id$
 struct connection_in;
 struct device;
 struct filetype;
+struct devloc ;
 
 /* Maximum length of a file or directory name, and extension */
 #define OW_NAME_MAX      (32)
@@ -76,14 +77,6 @@ extern int32_t LocalControlFlags;
 struct buspath {
 	BYTE sn[SERIAL_NUMBER_SIZE];
 	BYTE branch;
-};
-
-// dynamically created access control for a 1-wire device
-// used to negotiate between different threads (queries)
-struct devlock {
-	pthread_mutex_t lock;
-	BYTE sn[SERIAL_NUMBER_SIZE];
-	UINT users;
 };
 
 #define EXTENSION_BYTE	-2

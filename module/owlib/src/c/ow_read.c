@@ -162,6 +162,7 @@ static SIZE_OR_ERROR FS_read_real(struct one_wire_query *owq)
 // This function probably needs to be modified a bit...
 static SIZE_OR_ERROR FS_r_simultaneous(struct one_wire_query *owq)
 {
+	// Device not locked.
 	OWQ_allocate_struct_and_pointer(owq_given);
 
 	if (SpecifiedBus(PN(owq))) {
@@ -194,6 +195,7 @@ static SIZE_OR_ERROR FS_r_simultaneous(struct one_wire_query *owq)
 /* After parsing, choose special read based on path type */
 static SIZE_OR_ERROR FS_read_distribute(struct one_wire_query *owq)
 {
+	// Device not locked
 	SIZE_OR_ERROR read_or_error = 0;
 
 	LEVEL_DEBUG("%s", OWQ_pn(owq).path);
@@ -226,6 +228,7 @@ static SIZE_OR_ERROR FS_read_distribute(struct one_wire_query *owq)
 // This function should return number of bytes read... not status.
 static SIZE_OR_ERROR FS_r_given_bus(struct one_wire_query *owq)
 {
+	// Device locking occurs here
 	struct parsedname *pn = PN(owq);
 	SIZE_OR_ERROR read_or_error = 0;
 
@@ -246,7 +249,7 @@ static SIZE_OR_ERROR FS_r_given_bus(struct one_wire_query *owq)
 		if (LockGet(pn) == 0) {
 			read_or_error = FS_r_local(owq);	// this returns status
 			LockRelease(pn);
-			LEVEL_DEBUG("FS_r_local return=%d", read_or_error);
+			LEVEL_DEBUG("return=%d", read_or_error);
 			if (read_or_error >= 0) {
 				// local success -- now format in buffer
 				read_or_error = OWQ_parse_output(owq);	// this returns nr. bytes
@@ -381,6 +384,7 @@ Integrates with cache -- read not called if cached value already set
 */
 static SIZE_OR_ERROR FS_r_local(struct one_wire_query *owq)
 {
+	// Bus and device already locked
 	struct parsedname *pn = PN(owq);
 	
 	/* Readable? */
@@ -500,6 +504,7 @@ static ZERO_OR_ERROR FS_structure(struct one_wire_query *owq)
 /* read without artificial separation or combination */
 static ZERO_OR_ERROR FS_read_lump(struct one_wire_query *owq)
 {
+	// Bus and device already locked
 	if (OWQ_Cache_Get(owq)) {	// non-zero means not found
 		ZERO_OR_ERROR read_error = SpecialCase_read(owq);
 		if ( read_error == -ENOENT ) {
@@ -517,6 +522,7 @@ static ZERO_OR_ERROR FS_read_lump(struct one_wire_query *owq)
 /* called when pn->extension==-1 (ALL) and pn->selected_filetype->ag->combined==ag_separate */
 static ZERO_OR_ERROR FS_read_from_parts(struct one_wire_query *owq)
 {
+	// Bus and device already locked
 	struct parsedname *pn = PN(owq);
 	size_t elements = pn->selected_filetype->ag->elements;
 	size_t extension;
@@ -572,6 +578,7 @@ static ZERO_OR_ERROR FS_read_from_parts(struct one_wire_query *owq)
 /* bitfield -- read the UINT and convert to explicit array */
 static ZERO_OR_ERROR FS_read_all_bits(struct one_wire_query *owq)
 {
+	// Bus and device already locked
 	struct parsedname *pn = PN(owq);
 	size_t elements = pn->selected_filetype->ag->elements;
 	size_t extension;
@@ -602,6 +609,7 @@ static ZERO_OR_ERROR FS_read_all_bits(struct one_wire_query *owq)
 /* bitfield -- read the UINT and extract single value */
 static ZERO_OR_ERROR FS_read_one_bit(struct one_wire_query *owq)
 {
+	// Bus and device already locked
 	struct parsedname *pn = PN(owq);
 	ZERO_OR_ERROR lump_read;
 	UINT U;
@@ -628,6 +636,7 @@ static ZERO_OR_ERROR FS_read_one_bit(struct one_wire_query *owq)
 /* called when pn->extension>0 (not ALL) and pn->selected_filetype->ag->combined==ag_aggregate */
 static ZERO_OR_ERROR FS_read_a_part(struct one_wire_query *owq)
 {
+	// Bus and device already locked
 	size_t extension = OWQ_pn(owq).extension;
 	ZERO_OR_ERROR return_status ;
 	OWQ_allocate_struct_and_pointer(owq_all);
@@ -665,6 +674,7 @@ static ZERO_OR_ERROR FS_read_a_part(struct one_wire_query *owq)
 /* called when pn->extension>0 (not ALL) and pn->selected_filetype->ag->combined==ag_aggregate */
 static ZERO_OR_ERROR FS_read_mixed_part(struct one_wire_query *owq)
 {
+	// Bus and device already locked
 	size_t extension = OWQ_pn(owq).extension;
 	ZERO_OR_ERROR return_status = 0 ;
 	OWQ_allocate_struct_and_pointer(owq_all);

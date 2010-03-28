@@ -58,10 +58,6 @@ void FS_ParsedName_destroy(struct parsedname *pn)
 		owfree(pn->path);
 		pn->path = NULL;
 	}
-	if (pn->lock) {
-		owfree(pn->lock);
-		pn->lock = NULL;
-	}
 }
 
 // Path is either NULL (in which case a minimal structure is created that doesn't need Destroy -- used for Bus Master setups)

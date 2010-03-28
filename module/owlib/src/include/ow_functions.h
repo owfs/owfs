@@ -111,7 +111,7 @@ GOOD_OR_BAD FS_poll_convert(const struct parsedname *pn);
 
 // ow_locks.c
 void LockSetup(void);
-int LockGet(struct parsedname *pn);
+ZERO_OR_ERROR LockGet(struct parsedname *pn);
 void LockRelease(struct parsedname *pn);
 
 /* 1-wire lowlevel */

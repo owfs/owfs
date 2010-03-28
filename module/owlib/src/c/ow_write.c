@@ -279,6 +279,7 @@ static ZERO_OR_ERROR FS_w_given_bus(struct one_wire_query *owq)
 /* return 0 if ok */
 static ZERO_OR_ERROR FS_w_local(struct one_wire_query *owq)
 {
+	// Device already locked
 	struct parsedname *pn = PN(owq);
 	//printf("FS_w_local\n");
 
