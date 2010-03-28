@@ -917,7 +917,7 @@ static void do_retr(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 	struct timeval transfer_time;
 	struct one_wire_query owq;
 	size_t size_write;
-	int returned_length;
+	SIZE_OR_ERROR returned_length;
 	off_t offset = 0;
 
 	daemon_assert(invariant(f));

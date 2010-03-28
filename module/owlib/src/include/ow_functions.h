@@ -155,8 +155,6 @@ int FS_write_postparse(struct one_wire_query *owq);
 int FS_write_local(struct one_wire_query *owq);
 
 SIZE_OR_ERROR FS_read(const char *path, char *buf, const size_t size, const off_t offset);
-//int FS_read_postparse(char *buf, const size_t size, const off_t offset,
-//                    const struct parsedname *pn);
 SIZE_OR_ERROR FS_read_postparse(struct one_wire_query *owq);
 ZERO_OR_ERROR FS_read_fake(struct one_wire_query *owq);
 ZERO_OR_ERROR FS_read_tester(struct one_wire_query *owq);

@@ -30,46 +30,53 @@ API_setup(opt_swig) ;
     #define IS_MAINTHREAD 1
 #endif /* OW_MT */
 
-char *version( ) {
-    return VERSION;
+char *version( ) 
+{
+	return VERSION;
 }
 
-int init( const char * dev ) {
-
-    if ( API_init(dev) ) {
-        return 0 ; // error
-    }
-    return 1 ;
+int init( const char * dev ) 
+{
+	if ( API_init(dev) ) {
+		return 0 ; // error
+	}
+	return 1 ;
 }
 
-int put( const char * path, const char * value ) {
-    int ret = 0 ; /* bad result */
-    
-    if ( value!=NULL) {
-        if ( API_access_start() == 0 ) {
-            size_t s = strlen(value) ;
-            if ( FS_write(path,value,s,0) < 0  ) {
-                ret = 1 ; // success
-            }
-            API_access_end() ;
-        }   
-    }
-    return ret ;
+int put( const char * path, const char * value ) 
+{
+	int ret = 0 ; /* bad result */
+
+	if ( API_access_start() != 0 ) {
+		return 0 ; // bad result
+	}
+
+	if ( value!=NULL) {
+		if ( FS_write( path, value, strlen(value), 0 ) < 0  ) {
+			ret = 1 ; // success
+		}
+	}
+	API_access_end() ;
+	return ret ;
 }
 
-static void getdircallback( void * v, const struct parsedname * const pn_entry ) {
-    struct charblob * cb = v ;
-    const char * buf = FS_DirName(pn_entry) ;
-    CharblobAdd( buf, strlen(buf), cb ) ;
-    if ( IsDir(pn_entry) ) CharblobAddChar( '/', cb ) ;
+static void getdircallback( void * v, const struct parsedname * const pn_entry ) 
+{
+	struct charblob * cb = v ;
+	const char * buf = FS_DirName(pn_entry) ;
+	CharblobAdd( buf, strlen(buf), cb ) ;
+	if ( IsDir(pn_entry) ) {
+		CharblobAddChar( '/', cb ) ;
+	}
 }
+
 /*
   Get a directory,  returning a copy of the contents in *buffer (which must be free-ed elsewhere)
   return length of string, or <0 for error
   *buffer will be returned as NULL on error
  */
-static void getdir( struct charblob * cb, struct one_wire_query * owq ) {
-    
+static void getdir( struct charblob * cb, struct one_wire_query * owq ) 
+{  
 	CharblobInit( cb ) ;
 	if ( FS_dir( getdircallback, cb, PN(owq) ) != 0 ) {
 		CharblobClear( cb ) ;
@@ -78,90 +85,80 @@ static void getdir( struct charblob * cb, struct one_wire_query * owq ) {
 	}
 }
 
-/*
-  Get a value,  returning a copy of the contents in *buffer (which must be free-ed elsewhere)
-  return length of string, or <0 for error
-  *buffer will be returned as NULL on error
- */
-static void getval( struct one_wire_query * owq ) {
-	ssize_t read_size = FS_read_postparse( owq ) ;
-	
-	if ( read_size < 1 ) {
-		OWQ_length(owq) = 0 ;
-	} else {
-		OWQ_length(owq) = read_size ; 
-	}	
+char * copy_buffer( char * data, int size )
+{
+	char * data_copy = NULL ; // default
+	if ( size < 1 ) {
+		return NULL ;
+	}
+	data_copy = malloc( size+1 ) ;
+	if ( data_copy == NULL ) {
+		return NULL ;
+	}
+	memcpy( data_copy, data, size ) ;
+	data_copy[size] = '\0' ;
+	return data_copy ;
 }
 
-char * get( const char * path ) {
-    char * return_buffer = NULL ;
+char * get( const char * path ) 
+{
+	char * return_buffer = NULL ;
+	struct one_wire_query * owq = NULL ;
 
-    if ( API_access_start() == 0 ) {
-        struct one_wire_query * owq = NULL ;
-    
-        /* Check the parameters */
-        if ( path==NULL ) {
-			path="/" ;
+	if ( API_access_start() != 0 ) {
+		return NULL ; // error
+	}
+
+	/* Check the parameters */
+	if ( path==NULL ) {
+		path="/" ;
+	}
+
+	if ( strlen(path) > PATH_MAX ) {
+		// return_buffer = NULL ;
+	} else if ( (owq = OWQ_create_from_path(path)) != NULL ) { /* Can we parse the input string */
+		if ( IsDir( PN(owq) ) ) { /* A directory of some kind */
+			struct charblob cb ;
+			CharblobInit(&cb) ;
+			getdir( &cb, owq ) ;
+			return_buffer = copy_buffer( CharblobData(&cb), CharblobLength(&cb)) ;
+			CharblobClear( &cb ) ;
+		} else { /* A regular file  -- so read */
+			if ( GOOD(OWQ_allocate_read_buffer(owq)) ) { // make the space in the buffer
+				SIZE_OR_ERROR size = FS_read_postparse(owq) ;
+				return_buffer = copy_buffer( OWQ_buffer(owq), size ) ;
+			}
 		}
-    
-        if ( strlen(path) > PATH_MAX ) {
-            // return_buffer = NULL ;
-        } else if ( (owq = OWQ_create_from_path(path)) != NULL ) { /* Can we parse the input string */
-            if ( IsDir( PN(owq) ) ) { /* A directory of some kind */
-				size_t size ;
-				struct charblob cb ;
-				getdir( &cb, owq ) ;
-				size = CharblobLength(&cb) ;
-				if ( size > 0) {
-					return_buffer = malloc( size+1 ) ;
-					if ( return_buffer!= NULL ) {
-						return_buffer[size] = '\0' ;
-						memcpy( return_buffer, CharblobData(&cb), size ) ;
-					}
-					CharblobClear( &cb ) ;
-				}		
-            } else { /* A regular file */
-				size_t size ;
-                getval( owq ) ;
-				size = OWQ_length(owq) ;
-				if ( size > 0) {
-					return_buffer = malloc( size+1 ) ;
-					if ( return_buffer != NULL ) {
-						return_buffer[size] = '\0' ;
-						memcpy( return_buffer, OWQ_buffer(owq), size ) ;
-					}
-				}
-            }
-            OWQ_destroy(owq) ;
-        }
-        API_access_end() ;
-    }
-    return return_buffer ;
+		OWQ_destroy(owq) ;
+	}
+
+	API_access_end() ;
+	return return_buffer ;
 }
 
 void finish( void ) {
-    API_finish() ;
+	API_finish() ;
 }
 
 
 void set_error_print(int val) {
-    Globals.error_print = val;
+	Globals.error_print = val;
 }
 
 int get_error_print(void) {
-    return Globals.error_print;
+	return Globals.error_print;
 }
 
 void set_error_level(int val) {
-    Globals.error_level = val;
+	Globals.error_level = val;
 }
 
 int get_error_level(void) {
-    return Globals.error_level;
+	return Globals.error_level;
 }
 
 int opt(const char option_char, const char *arg) {
-    return owopt(option_char, arg);
+	return owopt(option_char, arg);
 }
 
 %}

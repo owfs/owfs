@@ -50,7 +50,7 @@ $Id$
 void *ReadHandler(struct handlerdata *hd, struct client_msg *cm, struct one_wire_query *owq)
 {
 	BYTE * retbuffer = NULL ;
-	ssize_t read_or_error;
+	SIZE_OR_ERROR read_or_error;
 
 	LEVEL_DEBUG("ReadHandler start");
 	if (hd == NULL || owq == NULL || cm == NULL) {

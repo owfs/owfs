@@ -302,10 +302,6 @@ static ZERO_OR_ERROR FS_w_local(struct one_wire_query *owq)
 		return -ENOTSUP;
 	}
 
-	/* Special case for "mock" adapter */
-	// Need to write to store cache, but not execute real writes
-	// return Mock_write()
-
 	/* Array properties? Write all together if aggregate */
 	if (pn->selected_filetype->ag != NON_AGGREGATE) {
 		switch (pn->extension) {
