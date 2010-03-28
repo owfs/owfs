@@ -136,20 +136,20 @@ DeviceEntryExtended(26, DS2438, DEV_temp | DEV_volt);
 /* ------- Functions ------------ */
 
 /* DS2438 */
-static int OW_r_page(BYTE * p, const int page, const struct parsedname *pn);
-static int OW_w_page(const BYTE * p, const int page, const struct parsedname *pn);
-static int OW_temp(_FLOAT * T, const struct parsedname *pn);
-static int OW_volts(_FLOAT * V, const int src, const struct parsedname *pn);
-static int OW_r_int(int *I, const UINT address, const struct parsedname *pn);
-static int OW_w_int(const int I, const UINT address, const struct parsedname *pn);
-static int OW_w_offset(const int I, const struct parsedname *pn);
+static GOOD_OR_BAD OW_r_page(BYTE * p, const int page, const struct parsedname *pn);
+static GOOD_OR_BAD OW_w_page(const BYTE * p, const int page, const struct parsedname *pn);
+static GOOD_OR_BAD OW_temp(_FLOAT * T, const struct parsedname *pn);
+static GOOD_OR_BAD OW_volts(_FLOAT * V, const int src, const struct parsedname *pn);
+static GOOD_OR_BAD OW_r_int(int *I, const UINT address, const struct parsedname *pn);
+static GOOD_OR_BAD OW_w_int(const int I, const UINT address, const struct parsedname *pn);
+static GOOD_OR_BAD OW_w_offset(const int I, const struct parsedname *pn);
 
 /* 2438 A/D */
 static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	BYTE data[8];
-	if (OW_r_page(data, pn->extension, pn)) {
+	if ( BAD( OW_r_page(data, pn->extension, pn) ) ) {
 		return -EINVAL;
 	}
 	memcpy((BYTE *) OWQ_buffer(owq), &data[OWQ_offset(owq)], OWQ_size(owq));
@@ -162,15 +162,15 @@ static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 	LEVEL_DEBUG("size=%d offset=%d", OWQ_size(owq), OWQ_offset(owq));
 	if (OWQ_size(owq) < 8) {	/* partial page */
 		BYTE data[8];
-		if (OW_r_page(data, pn->extension, pn)) {
+		if ( BAD( OW_r_page(data, pn->extension, pn) ) ) {
 			return -EINVAL;
 		}
 		memcpy(&data[OWQ_offset(owq)], (BYTE *) OWQ_buffer(owq), OWQ_size(owq));
-		if (OW_w_page(data, pn->extension, pn)) {
+		if ( BAD( OW_w_page(data, pn->extension, pn) ) ) {
 			return -EFAULT;
 		}
 	} else {					/* complete page */
-		if (OW_w_page((BYTE *) OWQ_buffer(owq), pn->extension, pn)) {
+		if ( BAD( OW_w_page((BYTE *) OWQ_buffer(owq), pn->extension, pn) ) ) {
 			return -EFAULT;
 		}
 	}
@@ -182,7 +182,7 @@ static ZERO_OR_ERROR FS_MStype(struct one_wire_query *owq)
 	BYTE data[8];
 	ASCII *t;
 	// Read pasge 3 for type -- Michael Markstaller
-	if (OW_r_page(data, 3, PN(owq))) {
+	if ( BAD( OW_r_page(data, 3, PN(owq)) ) ) {
 		return -EINVAL;
 	}
 	switch (data[0]) {
@@ -213,7 +213,7 @@ static ZERO_OR_ERROR FS_MStype(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_temp(struct one_wire_query *owq)
 {
-	if (OW_temp(&OWQ_F(owq), PN(owq))) {
+	if ( BAD( OW_temp(&OWQ_F(owq), PN(owq)) ) ) {
 		return -EINVAL;
 	}
 	return 0;
@@ -222,7 +222,7 @@ static ZERO_OR_ERROR FS_temp(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_volts(struct one_wire_query *owq)
 {
 	/* data=1 VDD data=0 VAD */
-	if (OW_volts(&OWQ_F(owq), OWQ_pn(owq).selected_filetype->data.i, PN(owq))) {
+	if ( BAD( OW_volts(&OWQ_F(owq), OWQ_pn(owq).selected_filetype->data.i, PN(owq)) ) ) {
 		return -EINVAL;
 	}
 	return 0;
@@ -232,9 +232,7 @@ static ZERO_OR_ERROR FS_Humid(struct one_wire_query *owq)
 {
 	_FLOAT H ;
 
-	if (
-		FS_r_sibling_F( &H, "HIH3600/humidity", owq ) != 0
-	) {
+	if ( FS_r_sibling_F( &H, "HIH3600/humidity", owq ) ) {
 		return -EINVAL ;
 	}
 
@@ -328,9 +326,7 @@ static ZERO_OR_ERROR FS_Humid_1735(struct one_wire_query *owq)
 {
 	_FLOAT VAD;
 
-	if (
-		FS_r_sibling_F( &VAD, "VAD", owq )
-	) {
+	if ( FS_r_sibling_F( &VAD, "VAD", owq ) ) {
 		return -EINVAL ;
 	}
 
@@ -346,14 +342,12 @@ static ZERO_OR_ERROR FS_Current(struct one_wire_query *owq)
 	BYTE data[9];
 	INT iad ;
 
-	if (
-		FS_r_sibling_Y( &iad, "IAD", owq )
-	) {
+	if ( FS_r_sibling_Y( &iad, "IAD", owq ) ) {
 		return -EINVAL ;
 	}
 
 	// Actual units are volts-- need to know sense resistor for current
-	if (OW_r_page(data, 0, PN(owq))) {
+	if ( BAD( OW_r_page(data, 0, PN(owq)) ) ) {
 		return -EINVAL ;
 	}
 
@@ -368,7 +362,7 @@ static ZERO_OR_ERROR FS_Current(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_r_status(struct one_wire_query *owq)
 {
 	BYTE page0[8 + 1];
-	if (OW_r_page(page0, 0, PN(owq))) {
+	if ( BAD( OW_r_page(page0, 0, PN(owq)) ) ) {
 		return -EINVAL;
 	}
 	OWQ_Y(owq) = UT_getbit(page0, PN(owq)->selected_filetype->data.i);
@@ -378,11 +372,11 @@ static ZERO_OR_ERROR FS_r_status(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_w_status(struct one_wire_query *owq)
 {
 	BYTE page0[8 + 1];
-	if (OW_r_page(page0, 0, PN(owq))) {
+	if ( BAD( OW_r_page(page0, 0, PN(owq)) ) ) {
 		return -EINVAL;
 	}
 	UT_setbit(page0, PN(owq)->selected_filetype->data.i, OWQ_Y(owq));
-	if (OW_w_page(page0, 0, PN(owq))) {
+	if ( BAD( OW_w_page(page0, 0, PN(owq)) ) ) {
 		return -EINVAL;
 	}
 	return 0;
@@ -390,7 +384,7 @@ static ZERO_OR_ERROR FS_w_status(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_r_Offset(struct one_wire_query *owq)
 {
-	if (OW_r_int(&OWQ_I(owq), 0x0D, PN(owq))) {
+	if ( BAD( OW_r_int(&OWQ_I(owq), 0x0D, PN(owq)) ) ) {
 		return -EINVAL;			/* page1 byte 5 */
 	}
 	OWQ_I(owq) >>= 3;
@@ -403,7 +397,7 @@ static ZERO_OR_ERROR FS_w_Offset(struct one_wire_query *owq)
 	if (I > 255 || I < -256) {
 		return -EINVAL;
 	}
-	if (OW_w_offset(I << 3, PN(owq))) {
+	if ( BAD( OW_w_offset(I << 3, PN(owq)) ) ) {
 		return -EINVAL;
 	}
 	return 0;
@@ -424,28 +418,28 @@ static ZERO_OR_ERROR FS_w_date(struct one_wire_query *owq)
 	int page = ((uint32_t) (pn->selected_filetype->data.s)) >> 3;
 	int offset = ((uint32_t) (pn->selected_filetype->data.s)) & 0x07;
 	BYTE data[8];
-	if (OW_r_page(data, page, pn)) {
+	if ( BAD( OW_r_page(data, page, pn) ) ) {
 		return -EINVAL;
 	}
 	UT_fromDate(OWQ_D(owq), &data[offset]);
-	if (OW_w_page(data, page, pn)) {
+	if ( BAD( OW_w_page(data, page, pn) ) ) {
 		return -EINVAL;
 	}
 	return 0;
 }
 
 /* read clock */
-int FS_r_counter(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_counter(struct one_wire_query *owq)
 {
 	_DATE d;
-	int ret = FS_r_date(owq);
+	ZERO_OR_ERROR ret = FS_r_date(owq);
 	d = OWQ_D(owq);
 	OWQ_U(owq) = (UINT) d;
 	return ret;
 }
 
 /* read clock */
-int FS_r_date(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_date(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	int page = ((uint32_t) (pn->selected_filetype->data.s)) >> 3;
@@ -459,7 +453,7 @@ int FS_r_date(struct one_wire_query *owq)
 }
 
 /* DS2438 fancy battery */
-static int OW_r_page(BYTE * p, const int page, const struct parsedname *pn)
+static GOOD_OR_BAD OW_r_page(BYTE * p, const int page, const struct parsedname *pn)
 {
 	BYTE data[9];
 	BYTE recall[] = { _1W_RECALL_SCRATCHPAD, page, };
@@ -476,15 +470,15 @@ static int OW_r_page(BYTE * p, const int page, const struct parsedname *pn)
 
 	// read to scratch, then in
 	if (BUS_transaction(t, pn)) {
-		return 1;
+		return gbBAD;
 	}
 	// copy to buffer
 	memcpy(p, data, 8);
-	return 0;
+	return gbGOOD;
 }
 
 /* write 8 bytes */
-static int OW_w_page(const BYTE * p, const int page, const struct parsedname *pn)
+static GOOD_OR_BAD OW_w_page(const BYTE * p, const int page, const struct parsedname *pn)
 {
 	BYTE data[9];
 	BYTE w[] = { _1W_WRITE_SCRATCHPAD, page, };
@@ -504,14 +498,14 @@ static int OW_w_page(const BYTE * p, const int page, const struct parsedname *pn
 	};
 
 	if (BUS_transaction(t, pn)) {
-		return 1;
+		return gbBAD;
 	}
 
 	UT_delay(10);
-	return 0;					// timeout
+	return gbGOOD;					// timeout
 }
 
-static int OW_temp(_FLOAT * T, const struct parsedname *pn)
+static GOOD_OR_BAD OW_temp(_FLOAT * T, const struct parsedname *pn)
 {
 	BYTE data[9];
 	UINT delay = 10 ;
@@ -522,23 +516,23 @@ static int OW_temp(_FLOAT * T, const struct parsedname *pn)
 		TRXN_END,
 	};
 	// write conversion command
-	if (FS_Test_Simultaneous( simul_temp, delay, pn) != 0) {
+	if ( BAD( FS_Test_Simultaneous( simul_temp, delay, pn) ) ) {
 		if (BUS_transaction(tconvert, pn)) {
-			return 1;
+			return gbBAD;
 		}
 		UT_delay(delay);
 	}
 
 	// read back registers
 	if (OW_r_page(data, 0, pn)) {
-		return 1;
+		return gbBAD;
 	}
 	//*T = ((int)((signed char)data[2])) + .00390625*data[1] ;
 	T[0] = UT_int16(&data[1]) / 256.0;
-	return 0;
+	return gbGOOD;
 }
 
-static int OW_volts(_FLOAT * V, const int src, const struct parsedname *pn)
+static GOOD_OR_BAD OW_volts(_FLOAT * V, const int src, const struct parsedname *pn)
 {
 	// src deserves some explanation:
 	//   1 -- VDD (battery) measured
@@ -560,29 +554,29 @@ static int OW_volts(_FLOAT * V, const int src, const struct parsedname *pn)
 
 	// set voltage source command
 	if (OW_r_page(data, 0, pn)) {
-		return 1;
+		return gbBAD;
 	}
 	UT_setbit(data, 3, src);	// AD bit in status register
 	if (BUS_transaction(tsource, pn)) {
-		return 1;
+		return gbBAD;
 	}
 	// write conversion command
 	if (BUS_transaction(tconvert, pn)) {
-		return 1;
+		return gbBAD;
 	}
 	UT_delay(10);
 
 	// read back registers
 	if (OW_r_page(data, 0, pn)) {
-		return 1;
+		return gbBAD;
 	}
 	//printf("DS2438 current read %.2X %.2X %g\n",data[6],data[5],(_FLOAT)( ( ((int)data[6]) <<8 )|data[5] ));
 	//V[0] = .01 * (_FLOAT)( ( ((int)data[4]) <<8 )|data[3] ) ;
 	V[0] = .01 * (_FLOAT) UT_int16(&data[3]);
-	return 0;
+	return gbGOOD;
 }
 
-static int OW_w_offset(const int I, const struct parsedname *pn)
+static GOOD_OR_BAD OW_w_offset(const int I, const struct parsedname *pn)
 {
 	BYTE data[8];
 	int current_conversion_enabled;
@@ -595,43 +589,43 @@ static int OW_w_offset(const int I, const struct parsedname *pn)
 	if (current_conversion_enabled) {
 		UT_setbit(data, 0, 0);	// AD bit in status register
 		if (OW_w_page(data, 0, pn)) {
-			return 1;
+			return gbBAD;
 		}
 	}
 	// read back registers
 	if (OW_w_int(I, 0x0D, pn)) {
-		return 1;				/* page1 byte5 */
+		return gbBAD;				/* page1 byte5 */
 	}
 
 	if (current_conversion_enabled) {
 		// if ( OW_r_page( data , 0 , pn ) ) return 1 ; /* Assume no change to these fields */
 		UT_setbit(data, 0, 1);	// AD bit in status register
 		if (OW_w_page(data, 0, pn)) {
-			return 1;
+			return gbBAD;
 		}
 	}
-	return 0;
+	return gbGOOD;
 }
 
-static int OW_r_int(int *I, const UINT address, const struct parsedname *pn)
+static GOOD_OR_BAD OW_r_int(int *I, const UINT address, const struct parsedname *pn)
 {
 	BYTE data[8];
 
 	// read back registers
 	if (OW_r_page(data, address >> 3, pn)) {
-		return 1;
+		return gbBAD;
 	}
 	*I = ((int) ((signed char) data[(address & 0x07) + 1])) << 8 | data[address & 0x07];
-	return 0;
+	return gbGOOD;
 }
 
-static int OW_w_int(const int I, const UINT address, const struct parsedname *pn)
+static GOOD_OR_BAD OW_w_int(const int I, const UINT address, const struct parsedname *pn)
 {
 	BYTE data[8];
 
 	// read back registers
 	if (OW_r_page(data, address >> 3, pn)) {
-		return 1;
+		return gbBAD;
 	}
 	data[address & 0x07] = BYTE_MASK(I);
 	data[(address & 0x07) + 1] = BYTE_MASK(I >> 8);

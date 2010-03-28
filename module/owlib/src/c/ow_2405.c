@@ -62,15 +62,15 @@ DeviceEntryExtended(05, DS2405, DEV_alarm);
 
 /* ------- Functions ------------ */
 
-static int OW_r_sense(int *val, const struct parsedname *pn);
-static int OW_r_PIO(int *val, const struct parsedname *pn);
-static int OW_w_PIO(int val, const struct parsedname *pn);
+static GOOD_OR_BAD OW_r_sense(int *val, const struct parsedname *pn);
+static GOOD_OR_BAD OW_r_PIO(int *val, const struct parsedname *pn);
+static GOOD_OR_BAD OW_w_PIO(int val, const struct parsedname *pn);
 
 /* 2405 switch */
 static ZERO_OR_ERROR FS_r_PIO(struct one_wire_query *owq)
 {
 	int num;
-	if (OW_r_PIO(&num, PN(owq))) {
+	if ( BAD( OW_r_PIO(&num, PN(owq)) ) ) {
 		return -EINVAL;
 	}
 	OWQ_Y(owq) = (num != 0);
@@ -81,7 +81,7 @@ static ZERO_OR_ERROR FS_r_PIO(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_r_sense(struct one_wire_query *owq)
 {
 	int num;
-	if (OW_r_sense(&num, PN(owq))) {
+	if ( BAD( OW_r_sense(&num, PN(owq)) ) ) {
 		return -EINVAL;
 	}
 	OWQ_Y(owq) = (num != 0);
@@ -91,14 +91,14 @@ static ZERO_OR_ERROR FS_r_sense(struct one_wire_query *owq)
 /* write 2405 switch */
 static ZERO_OR_ERROR FS_w_PIO(struct one_wire_query *owq)
 {
-	if (OW_w_PIO(OWQ_Y(owq), PN(owq))) {
+	if ( BAD( OW_w_PIO(OWQ_Y(owq), PN(owq)) ) ) {
 		return -EINVAL;
 	}
 	return 0;
 }
 
 /* read the sense of the DS2405 switch */
-static int OW_r_sense(int *val, const struct parsedname *pn)
+static GOOD_OR_BAD OW_r_sense(int *val, const struct parsedname *pn)
 {
 	BYTE inp;
 	struct transaction_log r[] = {
@@ -108,15 +108,15 @@ static int OW_r_sense(int *val, const struct parsedname *pn)
 	};
 
 	if (BUS_transaction(r, pn)) {
-		return 1;
+		return gbBAD;
 	}
 
 	val[0] = (inp != 0);
-	return 0;
+	return gbGOOD;
 }
 
 /* read the state of the DS2405 switch */
-static int OW_r_PIO(int *val, const struct parsedname *pn)
+static GOOD_OR_BAD OW_r_PIO(int *val, const struct parsedname *pn)
 {
 	struct transaction_log a[] = {
 		TRXN_AVERIFY,
@@ -129,17 +129,17 @@ static int OW_r_PIO(int *val, const struct parsedname *pn)
 			TRXN_END,
 		};
 		if (BUS_transaction(n, pn)) {
-			return -ENOENT;
+			return gbBAD;
 		}
 		val[0] = 0;
 	} else {
 		val[0] = 1;
 	}
-	return 0;
+	return gbGOOD;
 }
 
 /* write (set) the state of the DS2405 switch */
-static int OW_w_PIO(const int val, const struct parsedname *pn)
+static GOOD_OR_BAD OW_w_PIO(const int val, const struct parsedname *pn)
 {
 	int current;
 
@@ -153,9 +153,9 @@ static int OW_w_PIO(const int val, const struct parsedname *pn)
 			TRXN_END,
 		};
 		if (BUS_transaction(n, pn)) {
-			return 1;
+			return gbBAD;
 		}
 	}
 	//printf("2405write current=%d new=%d\n",current,val) ;
-	return 0;
+	return gbGOOD;
 }

@@ -78,14 +78,14 @@ struct internal_prop ipSimul[] = {
 /* ------- Functions ------------ */
 static void OW_single2cache(BYTE * sn, const struct parsedname *pn2);
 
-int FS_Test_Simultaneous( enum simul_type type, UINT delay, const struct parsedname * pn)
+GOOD_OR_BAD FS_Test_Simultaneous( enum simul_type type, UINT delay, const struct parsedname * pn)
 {
 	time_t start_time ;
 	time_t remaining_delay ;
 
 	if ( Cache_Get_Simul_Time(type, &start_time, pn) ) {
 		LEVEL_DEBUG("No simultaneous conversion currently valid");
-		return 1 ; // No simultaneous valid
+		return gbBAD ; // No simultaneous valid
 	}
 
 	remaining_delay = delay - 1000* (time(NULL) - start_time) ;
@@ -95,7 +95,7 @@ int FS_Test_Simultaneous( enum simul_type type, UINT delay, const struct parsedn
 	} else {
 		LEVEL_DEBUG("Simultaneous conversion, no delay");
 	}
-	return 0 ;
+	return gbGOOD ;
 }
 
 static ZERO_OR_ERROR FS_w_convert_temp(struct one_wire_query *owq)

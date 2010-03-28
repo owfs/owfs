@@ -551,7 +551,7 @@ static int OW_convert(struct parsedname *pn)
 	}
 
 	/* See if a conversion was globally triggered */
-	if ((power == _1W_2450_POWERED) && FS_Test_Simultaneous( simul_volt, delay, pn) == 0) {
+	if ((power == _1W_2450_POWERED) && GOOD(FS_Test_Simultaneous( simul_volt, delay, pn))) {
 		return 0;
 	}
 

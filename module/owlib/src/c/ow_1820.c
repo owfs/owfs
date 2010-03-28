@@ -511,7 +511,7 @@ static GOOD_OR_BAD OW_10temp(_FLOAT * temp, const struct parsedname *pn)
 		if (BUS_transaction(tunpowered, pn)) {
 			return gbBAD;
 		}
-	} else if (FS_Test_Simultaneous( simul_temp, delay, pn)) {	// powered
+	} else if ( BAD( FS_Test_Simultaneous( simul_temp, delay, pn) ) ) {	// powered
 		// Simultaneous not valid, so do a conversion
 		GOOD_OR_BAD ret;
 		BUSLOCK(pn);
@@ -567,7 +567,7 @@ static GOOD_OR_BAD OW_22temp(_FLOAT * temp, const int resolution, const struct p
 	UINT longdelay = delay * 1.5 ; // failsafe
 	BYTE mask = Resolutions[resolution - 9].mask;
 	int stored_resolution ;
-	int must_convert = 0 ;
+	GOOD_OR_BAD must_convert = gbGOOD ;
 
 	struct transaction_log tunpowered[] = {
 		TRXN_START,
@@ -596,7 +596,7 @@ static GOOD_OR_BAD OW_22temp(_FLOAT * temp, const int resolution, const struct p
 		}
 		/* Put in new settings (if different) */
 		if ((data[4] | 0x1F) != resolution_register) {	// ignore lower 5 bits
-			must_convert = 1 ; // resolution has changed
+			must_convert = gbBAD ; // resolution has changed
 			data[4] = (resolution_register & 0x60) | 0x1F ;
 			if (OW_w_scratchpad(&data[2], pn)) {
 				return gbBAD;
@@ -615,11 +615,11 @@ static GOOD_OR_BAD OW_22temp(_FLOAT * temp, const int resolution, const struct p
 	if (!pow) {					// unpowered, deliver power, no communication allowed
 		LEVEL_DEBUG("Unpowered temperature conversion -- %d msec", delay);
 		// If not powered, no Simultaneous for this chip
-		must_convert = 1 ;
+		must_convert = gbBAD ;
 		if (BUS_transaction(tunpowered, pn)) {
 			return gbBAD;
 		}
-	} else if ( must_convert || FS_Test_Simultaneous( simul_temp, delay, pn) ) {
+	} else if ( BAD(must_convert) || BAD( FS_Test_Simultaneous( simul_temp, delay, pn) ) ) {
 		// No Simultaneous active, so need to "convert"
 		// powered, so release bus immediately after issuing convert
 		GOOD_OR_BAD ret;

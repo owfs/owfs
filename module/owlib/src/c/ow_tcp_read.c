@@ -52,7 +52,7 @@ int tcp_wait(int file_descriptor, const struct timeval *ptv)
 /* Read "n" bytes from a descriptor. */
 /* Stolen from Unix Network Programming by Stevens, Fenner, Rudoff p89 */
 /* return < 0 if failure */
-int tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval * ptv, size_t * chars_in)
+ZERO_OR_ERROR tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval * ptv, size_t * chars_in)
 {
 	size_t nleft;
 	ssize_t nread;

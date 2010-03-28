@@ -106,7 +106,7 @@ void Test_and_Close( int * file_descriptor ) ;
 #include "ow_cache.h"
 void FS_LoadDirectoryOnly(struct parsedname *pn_directory, const struct parsedname *pn_original);
 
-int FS_Test_Simultaneous( enum simul_type type, UINT delay, const struct parsedname * pn) ;
+GOOD_OR_BAD FS_Test_Simultaneous( enum simul_type type, UINT delay, const struct parsedname * pn) ;
 GOOD_OR_BAD FS_poll_convert(const struct parsedname *pn);
 
 // ow_locks.c
@@ -118,7 +118,7 @@ void DeviceLockRelease(struct parsedname *pn);
 void UT_delay(const UINT len);
 void UT_delay_us(const unsigned long len);
 
-int tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval *ptv, size_t * actual_read);
+ZERO_OR_ERROR tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval *ptv, size_t * actual_read);
 void tcp_read_flush(int file_descriptor);
 int tcp_wait(int file_descriptor, const struct timeval *ptv);
 ssize_t udp_read(int file_descriptor, void *vptr, size_t n, const struct timeval * ptv, struct sockaddr_in *from, socklen_t *fromlen) ;
