@@ -111,8 +111,8 @@ GOOD_OR_BAD FS_poll_convert(const struct parsedname *pn);
 
 // ow_locks.c
 void LockSetup(void);
-ZERO_OR_ERROR LockGet(struct parsedname *pn);
-void LockRelease(struct parsedname *pn);
+ZERO_OR_ERROR DeviceLockGet(struct parsedname *pn);
+void DeviceLockRelease(struct parsedname *pn);
 
 /* 1-wire lowlevel */
 void UT_delay(const UINT len);

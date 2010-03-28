@@ -59,16 +59,15 @@ struct dev_opaque {
 /* Grabs a device lock, either one already matching, or creates one */
 /* called per-adapter */
 /* The device locks (devlock) are kept in a tree */
-ZERO_OR_ERROR LockGet(struct parsedname *pn)
+ZERO_OR_ERROR DeviceLockGet(struct parsedname *pn)
 {
 #if OW_MT
 	struct devlock *local_devicelock;
 	struct devlock *tree_devicelock;
 	struct dev_opaque *opaque;
 
-	//printf("LockGet() pn->path=%s\n", pn->path);
 	if (pn->selected_device == DeviceSimultaneous) {
-		/* Shouldn't call LockGet() on DeviceSimultaneous. No sn exists */
+		/* Shouldn't call DeviceLockGet() on DeviceSimultaneous. No sn exists */
 		return 0;
 	}
 
@@ -140,7 +139,7 @@ ZERO_OR_ERROR LockGet(struct parsedname *pn)
 }
 
 // Unlock the device
-void LockRelease(struct parsedname *pn)
+void DeviceLockRelease(struct parsedname *pn)
 {
 #if OW_MT
 	if (pn->lock) { // this is the stored pointer to the device in the appropriate device tree

@@ -57,6 +57,7 @@ OWLIB_SOURCE = ow_dl.c           \
                ow_crc.c          \
                ow_daemon.c       \
                ow_delay.c        \
+	       ow_devicelock.c   \
                ow_dir.c          \
                ow_dirblob.c      \
                ow_ds2482.c       \

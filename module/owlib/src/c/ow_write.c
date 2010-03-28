@@ -261,10 +261,10 @@ static ZERO_OR_ERROR FS_w_given_bus(struct one_wire_query *owq)
 	} else if (KnownBus(pn) && BusIsServer(pn->selected_connection)) {
 		write_or_error = ServerWrite(owq);
 	} else if (OWQ_pn(owq).type == ePN_real) {
-		write_or_error = LockGet(pn);
+		write_or_error = DeviceLockGet(pn);
 		if (write_or_error == 0) {
 			write_or_error = FS_w_local(owq);
-			LockRelease(pn);
+			DeviceLockRelease(pn);
 		}
 	} else if (OWQ_pn(owq).type == ePN_interface) {
 		BUSLOCK(pn);

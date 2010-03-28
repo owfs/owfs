@@ -246,9 +246,9 @@ static SIZE_OR_ERROR FS_r_given_bus(struct one_wire_query *owq)
 		//printf("FS_r_given_bus pid=%ld r=%d\n",pthread_self(), read_or_error);
 	} else {
 		STAT_ADD1(read_calls);	/* statistics */
-		if (LockGet(pn) == 0) {
+		if (DeviceLockGet(pn) == 0) {
 			read_or_error = FS_r_local(owq);	// this returns status
-			LockRelease(pn);
+			DeviceLockRelease(pn);
 			LEVEL_DEBUG("return=%d", read_or_error);
 			if (read_or_error >= 0) {
 				// local success -- now format in buffer
