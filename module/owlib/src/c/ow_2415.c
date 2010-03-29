@@ -69,10 +69,10 @@ struct aggregate A2415 = { 4, ag_numbers, ag_aggregate, };
 struct filetype DS2415[] = {
 	F_STANDARD,
 	{"ControlRegister", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_control, FS_w_control, INVISIBLE, NO_FILETYPE_DATA, },
-  {"user", PROPERTY_LENGTH_UNSIGNED, &A2415, ft_bitfield, fc_link, FS_r_user, FS_w_user, VISIBLE, NO_FILETYPE_DATA,},
-  {"running", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_run, FS_w_run, VISIBLE, NO_FILETYPE_DATA,},
-  {"udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_counter, FS_w_counter, VISIBLE, NO_FILETYPE_DATA,},
-  {"date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_second, FS_r_date, FS_w_date, VISIBLE, NO_FILETYPE_DATA,},
+	{"user", PROPERTY_LENGTH_UNSIGNED, &A2415, ft_bitfield, fc_link, FS_r_user, FS_w_user, VISIBLE, NO_FILETYPE_DATA,},
+	{"running", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_run, FS_w_run, VISIBLE, NO_FILETYPE_DATA,},
+	{"udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_counter, FS_w_counter, VISIBLE, NO_FILETYPE_DATA,},
+	{"date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_second, FS_r_date, FS_w_date, VISIBLE, NO_FILETYPE_DATA,},
 };
 
 DeviceEntry(24, DS2415);
@@ -104,17 +104,17 @@ static int itimes[] = { 1, 4, 32, 64, 2048, 4096, 65536, 131072, };
 /* DS2415/DS1904 Digital clock in a can */
 
 /* DS2415 & DS2417 */
-static int OW_r_clock(_DATE * d, const struct parsedname *pn);
-static int OW_r_control(BYTE * cr, const struct parsedname *pn);
-static int OW_w_clock(const _DATE d, struct one_wire_query *owq);
-static int OW_w_control(const BYTE cr, const struct parsedname *pn);
+static GOOD_OR_BAD OW_r_clock(_DATE * d, const struct parsedname *pn);
+static GOOD_OR_BAD OW_r_control(BYTE * cr, const struct parsedname *pn);
+static GOOD_OR_BAD OW_w_clock(const _DATE d, struct one_wire_query *owq);
+static GOOD_OR_BAD OW_w_control(const BYTE cr, const struct parsedname *pn);
 
 /* DS2417 interval */
 static ZERO_OR_ERROR FS_r_interval(struct one_wire_query *owq)
 {
 	UINT U ;
 
-	if ( FS_r_sibling_U( &U, "ControlRegister", owq ) ) {
+	if ( BAD( FS_r_sibling_U( &U, "ControlRegister", owq ) ) ) {
 		return -EINVAL ;
 	}
 
@@ -135,7 +135,7 @@ static ZERO_OR_ERROR FS_r_user(struct one_wire_query *owq)
 {
 	UINT U ;
 
-	if ( FS_r_sibling_U( &U, "ControlRegister", owq ) ) {
+	if ( BAD( FS_r_sibling_U( &U, "ControlRegister", owq ) ) ) {
 		return -EINVAL ;
 	}
 
@@ -156,7 +156,7 @@ static ZERO_OR_ERROR FS_r_run(struct one_wire_query *owq)
 {
 	UINT U ;
 
-	if ( FS_r_sibling_U( &U, "ControlRegister", owq ) ) {
+	if ( BAD( FS_r_sibling_U( &U, "ControlRegister", owq ) ) ) {
 		return -EINVAL ;
 	}
 
@@ -285,7 +285,7 @@ static ZERO_OR_ERROR FS_w_itime(struct one_wire_query *owq)
 	return FS_w_sibling_Y( 1, "enable", owq) ;
 }
 
-int FS_r_itime(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_itime(struct one_wire_query *owq)
 {
 	UINT interval;
 	if ( FS_r_sibling_U( &interval, "interval", owq) ) {
@@ -296,7 +296,7 @@ int FS_r_itime(struct one_wire_query *owq)
 }
 
 /* 1904 clock-in-a-can */
-static int OW_r_control(BYTE * cr, const struct parsedname *pn)
+static GOOD_OR_BAD OW_r_control(BYTE * cr, const struct parsedname *pn)
 {
 	BYTE r[1] = { _1W_READ_CLOCK, };
 	struct transaction_log t[] = {
@@ -307,14 +307,14 @@ static int OW_r_control(BYTE * cr, const struct parsedname *pn)
 	};
 
 	if (BUS_transaction(t, pn)) {
-		return 1;
+		return gbBAD;
 	}
 
-	return 0;
+	return gbGOOD;
 }
 
 /* 1904 clock-in-a-can */
-static int OW_r_clock(_DATE * d, const struct parsedname *pn)
+static GOOD_OR_BAD OW_r_clock(_DATE * d, const struct parsedname *pn)
 {
 	BYTE r[1] = { _1W_READ_CLOCK, };
 	BYTE data[5];
@@ -326,15 +326,15 @@ static int OW_r_clock(_DATE * d, const struct parsedname *pn)
 	};
 
 	if (BUS_transaction(t, pn)) {
-		return 1;
+		return gbBAD;
 	}
 
 //    d[0] = (((((((UINT) data[4])<<8)|data[3])<<8)|data[2])<<8)|data[1] ;
 	d[0] = UT_toDate(&data[1]);
-	return 0;
+	return gbGOOD;
 }
 
-static int OW_w_clock(const _DATE d, struct one_wire_query *owq)
+static GOOD_OR_BAD OW_w_clock(const _DATE d, struct one_wire_query *owq)
 {
 	UINT cr ;
 	BYTE w[6] = { _1W_WRITE_CLOCK, };
@@ -353,12 +353,12 @@ static int OW_w_clock(const _DATE d, struct one_wire_query *owq)
 	UT_fromDate(d, &w[2]);
 
 	if (BUS_transaction(twrite, PN(owq))) {
-		return 1;
+		return gbBAD;
 	}
-	return 0;
+	return gbGOOD;
 }
 
-static int OW_w_control(const BYTE cr, const struct parsedname *pn)
+static GOOD_OR_BAD OW_w_control(const BYTE cr, const struct parsedname *pn)
 {
 	BYTE w[2] = { _1W_WRITE_CLOCK, cr, };
 	struct transaction_log t[] = {
@@ -369,8 +369,8 @@ static int OW_w_control(const BYTE cr, const struct parsedname *pn)
 
 	/* read in existing control byte to preserve bits 4-7 */
 	if (BUS_transaction(t, pn)) {
-		return 1;
+		return gbBAD;
 	}
 
-	return 0;
+	return gbGOOD;
 }
