@@ -89,8 +89,6 @@ int Cache_Del_Simul(enum simul_type type, const struct parsedname *pn) ;
 int Cache_Del_Mixed_Aggregate(const struct parsedname *pn);
 int Cache_Del_Mixed_Individual(const struct parsedname *pn);
 
-void FS_cache_sibling(char *property, struct one_wire_query *owq_shallow_copy);
-
 #else							/* OW_CACHE */
 
 #define MakeInternalProp(tag, change)
@@ -128,8 +126,6 @@ void FS_cache_sibling(char *property, struct one_wire_query *owq_shallow_copy);
 #define Cache_Del_Simul(type,pn)            (1)
 #define Cache_Del_Mixed_Aggregate(pn)       (1)
 #define Cache_Del_Mixed_Individual(pn)      (1)
-
-#define FS_cache_sibling( property, owq_shallow_copy)
 
 #endif							/* OW_CACHE */
 

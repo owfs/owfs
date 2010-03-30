@@ -1305,32 +1305,6 @@ static int Cache_Del_Store(const struct tree_node *tn)
 	return 0;
 }
 
-/* Cache to another property from the same device,
-   e.g. a flag status like IAD for vis measurement in the DS2438
-   Some things are different
-   1. Bus is known (since the original device is already determined)
-   2. Read is local
-   3. Bus is already locked
-   4. Device is locked
-
-   owq_shallow_copy comes in as a single, not aggregate, even if the original value was an aggregate
-*/
-void FS_cache_sibling(char *property, struct one_wire_query *owq_shallow_copy)
-{
-	struct parsedname *pn = PN(owq_shallow_copy);	// already set up with native device and property
-
-	if (FS_ParseProperty_for_sibling(property, pn)) {
-		return;
-	}
-
-	/* There are a few types that are not supported: aggregates (.ALL) */
-	if (pn->extension == EXTENSION_ALL) {
-		return;
-	}
-
-	OWQ_Cache_Add(owq_shallow_copy);
-}
-
 static void LoadTK( const BYTE * sn, void * p, int extension, struct tree_node * tn )
 {
 	memset(&(tn->tk), 0, sizeof(struct tree_key));

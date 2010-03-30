@@ -55,9 +55,6 @@ WRITE_FUNCTION(FS_w_flash);
 WRITE_FUNCTION(FS_w_extended);
 WRITE_FUNCTION(FS_writebyte);
 
-WRITE_FUNCTION(FS_w_date);
-READ_FUNCTION(FS_r_date);
-
 READ_FUNCTION(FS_version_state) ;
 READ_FUNCTION(FS_version) ;
 READ_FUNCTION(FS_version_device) ;
@@ -210,7 +207,7 @@ struct filetype BAE[] = {
 	{"910/adctotp", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_32, FS_w_32, VISIBLE_910, {u:_FC02_ADCTOTP,}, },
 	{"910/adctotn", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_32, FS_w_32, VISIBLE_910, {u:_FC02_ADCTOTN,}, },
 	{"910/udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_32, FS_w_32, VISIBLE_910, {u:_FC02_RTC,}, },
-	{"910/date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_link, FS_r_date, FS_w_date, VISIBLE_910, NO_FILETYPE_DATA,},
+	{"910/date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_link, COMMON_r_date, COMMON_w_date, VISIBLE_910, NO_FILETYPE_DATA,},
 	{"910/count", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_32, FS_w_32, VISIBLE_910, {u:_FC02_COUNT,}, },
 	{"910/out", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_read_stable, FS_r_8, FS_w_8, VISIBLE_910, {u:_FC02_OUT,}, },
 	{"910/pio", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_910, {u:_FC02_PIO,}, },
@@ -397,25 +394,6 @@ static ZERO_OR_ERROR FS_r_flash( struct one_wire_query *owq)
 	}
 	OWQ_length(owq) = OWQ_size(owq) ;
 	return 0 ;
-}
-
-/* BAE date/counter functions */
-static ZERO_OR_ERROR FS_r_date(struct one_wire_query *owq)
-{
-	UINT u ;
-	if ( FS_r_sibling_U( &u, "910/udate", owq ) ) {
-		return -EINVAL ;
-	}
-	
-	OWQ_D(owq) = (_DATE) u ;
-	return 0;
-}
-
-static ZERO_OR_ERROR FS_w_date(struct one_wire_query *owq)
-{
-	UINT u = (UINT) OWQ_D(owq) ; //register representation
-
-	return FS_w_sibling_U( u, "910/udate", owq ) ;
 }
 
 /* BAE extended command */

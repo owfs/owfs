@@ -43,6 +43,7 @@ static inline int32_t UT_int24(const BYTE * p)
 }
 static inline int32_t UT_int32(const BYTE * p)
 {
+	// least sig to most sig
 	return (((int32_t) p[3]) << 24) | (((uint32_t) p[2]) << 16) | (((uint32_t) p[1]) << 8) | ((uint32_t) p[0]);
 }
 

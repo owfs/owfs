@@ -48,8 +48,6 @@ $Id$
 /* DS2415/DS1904 Digital clock in a can */
 READ_FUNCTION(FS_r_counter);
 WRITE_FUNCTION(FS_w_counter);
-READ_FUNCTION(FS_r_date);
-WRITE_FUNCTION(FS_w_date);
 READ_FUNCTION(FS_r_run);
 WRITE_FUNCTION(FS_w_run);
 READ_FUNCTION(FS_r_enable);
@@ -71,8 +69,8 @@ struct filetype DS2415[] = {
 	{"ControlRegister", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_control, FS_w_control, INVISIBLE, NO_FILETYPE_DATA, },
 	{"user", PROPERTY_LENGTH_UNSIGNED, &A2415, ft_bitfield, fc_link, FS_r_user, FS_w_user, VISIBLE, NO_FILETYPE_DATA,},
 	{"running", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_run, FS_w_run, VISIBLE, NO_FILETYPE_DATA,},
-	{"udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_counter, FS_w_counter, VISIBLE, NO_FILETYPE_DATA,},
-	{"date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_second, FS_r_date, FS_w_date, VISIBLE, NO_FILETYPE_DATA,},
+	{"udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter, FS_w_counter, VISIBLE, NO_FILETYPE_DATA,},
+	{"date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_link, COMMON_r_date, COMMON_w_date, VISIBLE, NO_FILETYPE_DATA,},
 };
 
 DeviceEntry(24, DS2415);
@@ -84,8 +82,8 @@ struct filetype DS2417[] = {
 	{"interval", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_integer, fc_link, FS_r_interval, FS_w_interval, VISIBLE, NO_FILETYPE_DATA,},
 	{"itime", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_integer, fc_link, FS_r_itime, FS_w_itime, VISIBLE, NO_FILETYPE_DATA,},
 	{"running", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_run, FS_w_run, VISIBLE, NO_FILETYPE_DATA,},
-	{"udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_counter, FS_w_counter, VISIBLE, NO_FILETYPE_DATA,},
-	{"date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_second, FS_r_date, FS_w_date, VISIBLE, NO_FILETYPE_DATA,},
+	{"udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter, FS_w_counter, VISIBLE, NO_FILETYPE_DATA,},
+	{"date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_link, COMMON_r_date, COMMON_w_date, VISIBLE, NO_FILETYPE_DATA,},
 };
 
 DeviceEntry(27, DS2417);
@@ -104,9 +102,9 @@ static int itimes[] = { 1, 4, 32, 64, 2048, 4096, 65536, 131072, };
 /* DS2415/DS1904 Digital clock in a can */
 
 /* DS2415 & DS2417 */
-static GOOD_OR_BAD OW_r_clock(_DATE * d, const struct parsedname *pn);
+static GOOD_OR_BAD OW_r_udate(UINT * U, const struct parsedname *pn);
 static GOOD_OR_BAD OW_r_control(BYTE * cr, const struct parsedname *pn);
-static GOOD_OR_BAD OW_w_clock(const _DATE d, struct one_wire_query *owq);
+static GOOD_OR_BAD OW_w_udate(UINT control_reg, UINT U, const struct parsedname * pn);
 static GOOD_OR_BAD OW_w_control(const BYTE cr, const struct parsedname *pn);
 
 /* DS2417 interval */
@@ -215,38 +213,19 @@ static ZERO_OR_ERROR FS_w_control(struct one_wire_query *owq)
 /* DS2415 - DS2417 couter verions of date */
 static ZERO_OR_ERROR FS_r_counter(struct one_wire_query *owq)
 {
-	_DATE D ;
-
-	if ( FS_r_sibling_D( &D, "date", owq ) ) {
-		return -EINVAL ;
-	}
-
-	OWQ_U(owq) = (UINT) D ;
-	return 0;
+	return RETURN_Z_OR_E( OW_r_udate( &(OWQ_U(owq)), PN(owq) ) ) ; 
 }
 
 static ZERO_OR_ERROR FS_w_counter(struct one_wire_query *owq)
 {
-	_DATE D = (_DATE) OWQ_D(owq);
+	UINT control_reg ; // included in write
 
-	return FS_w_sibling_D( D, "date", owq ) ;
-}
-
-/* DS2415 - DS2417 clock */
-static ZERO_OR_ERROR FS_r_date(struct one_wire_query *owq)
-{
-	if (OW_r_clock(&OWQ_D(owq), PN(owq))) {
-		return -EINVAL;
+	/* read in existing control byte to preserve bits 4-7 */
+	if ( FS_r_sibling_U( &control_reg, "ControlRegister", owq) ) {
+		return gbBAD;
 	}
-	return 0;
-}
 
-static ZERO_OR_ERROR FS_w_date(struct one_wire_query *owq)
-{
-	if (OW_w_clock(OWQ_D(owq), owq)) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E( OW_w_udate( control_reg, OWQ_U(owq), PN(owq) ) ) ;
 }
 
 /* DS2417 interval time (in seconds) */
@@ -314,7 +293,7 @@ static GOOD_OR_BAD OW_r_control(BYTE * cr, const struct parsedname *pn)
 }
 
 /* 1904 clock-in-a-can */
-static GOOD_OR_BAD OW_r_clock(_DATE * d, const struct parsedname *pn)
+static GOOD_OR_BAD OW_r_udate(UINT * U, const struct parsedname *pn)
 {
 	BYTE r[1] = { _1W_READ_CLOCK, };
 	BYTE data[5];
@@ -329,12 +308,11 @@ static GOOD_OR_BAD OW_r_clock(_DATE * d, const struct parsedname *pn)
 		return gbBAD;
 	}
 
-//    d[0] = (((((((UINT) data[4])<<8)|data[3])<<8)|data[2])<<8)|data[1] ;
-	d[0] = UT_toDate(&data[1]);
+	U[0] = UT_int32(&data[1]);
 	return gbGOOD;
 }
 
-static GOOD_OR_BAD OW_w_clock(const _DATE d, struct one_wire_query *owq)
+static GOOD_OR_BAD OW_w_udate(UINT control_reg, UINT U, const struct parsedname *pn)
 {
 	UINT cr ;
 	BYTE w[6] = { _1W_WRITE_CLOCK, };
@@ -344,15 +322,9 @@ static GOOD_OR_BAD OW_w_clock(const _DATE d, struct one_wire_query *owq)
 		TRXN_END,
 	};
 
-	/* read in existing control byte to preserve bits 4-7 */
-	if ( FS_r_sibling_U( &cr, "ControlRegister", owq) ) {
-		return 1;
-	}
-
-	w[1] = cr & 0xFF ;
-	UT_fromDate(d, &w[2]);
-
-	if (BUS_transaction(twrite, PN(owq))) {
+	w[1] = control_reg & 0xFF ;
+	UT_uint32_to_bytes( U, &w[2] );
+	if (BUS_transaction(twrite, pn)) {
 		return gbBAD;
 	}
 	return gbGOOD;
