@@ -90,8 +90,8 @@ MakeInternalProp(CUM, fc_persistent);	// cumulative
 /* ------- Functions ------------ */
 
 /* DS2423 */
-static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
-static int OW_r_counter(struct one_wire_query *owq, size_t page, size_t pagesize);
+static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
+static GOOD_OR_BAD OW_r_counter(struct one_wire_query *owq, size_t page, size_t pagesize);
 
 /* 2423A/D Counter */
 static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
@@ -106,10 +106,7 @@ static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem)) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E(COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem)) ;
 }
 
 static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
@@ -124,28 +121,19 @@ static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_w_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (COMMON_readwrite_paged(owq, 0, pagesize, OW_w_mem)) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E(COMMON_readwrite_paged(owq, 0, pagesize, OW_w_mem)) ;
 }
 
 static ZERO_OR_ERROR FS_counter(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (OW_r_counter(owq, OWQ_pn(owq).extension + 14, pagesize)) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E(OW_r_counter(owq, OWQ_pn(owq).extension + 14, pagesize)) ;
 }
 
 static ZERO_OR_ERROR FS_pagecount(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (OW_r_counter(owq, OWQ_pn(owq).extension, pagesize)) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E(OW_r_counter(owq, OWQ_pn(owq).extension, pagesize)) ;
 }
 
 #if OW_CACHE
@@ -156,12 +144,12 @@ static ZERO_OR_ERROR FS_r_mincount(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	UINT st[3], ct[2];			// stored and current counter values
 
-	if (OW_r_counter(owq, 14, 32)) {
+	if ( BAD( OW_r_counter(owq, 14, 32) ) ) {
 		return -EINVAL;
 	}
 	ct[0] = OWQ_U(owq);
 
-	if (OW_r_counter(owq, 15, 32)) {
+	if ( BAD( OW_r_counter(owq, 15, 32) ) ) {
 		return -EINVAL;
 	}
 	ct[1] = OWQ_U(owq);
@@ -190,12 +178,12 @@ static ZERO_OR_ERROR FS_w_mincount(struct one_wire_query *owq)
 
 	st[2] = OWQ_U(owq);
 
-	if (OW_r_counter(owq, 14, 32)) {
+	if ( BAD( OW_r_counter(owq, 14, 32) ) ) {
 		return -EINVAL;
 	}
 	st[0] = OWQ_U(owq);
 
-	if (OW_r_counter(owq, 15, 32)) {
+	if ( BAD( OW_r_counter(owq, 15, 32) ) ) {
 		return -EINVAL;
 	}
 	st[1] = OWQ_U(owq);
@@ -207,7 +195,7 @@ static ZERO_OR_ERROR FS_w_mincount(struct one_wire_query *owq)
 }
 #endif							/*OW_CACHE */
 
-static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
+static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
 {
 	BYTE p[1 + 2 + 32 + 2] = { _1W_WRITE_SCRATCHPAD, LOW_HIGH_ADDRESS(offset), };
 	struct transaction_log tcopy_crc[] = {
@@ -238,11 +226,11 @@ static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 
 	if (((offset + size) & 0x1F)) {	// doesn't end on page boundary, no crc16
 		if (BUS_transaction(tcopy, pn)) {
-			return 1;
+			return gbBAD;
 		}
 	} else {					// DOES end on page boundary, can check CRC16
 		if (BUS_transaction(tcopy_crc, pn)) {
-			return 1;
+			return gbBAD;
 		}
 	}
 
@@ -250,33 +238,33 @@ static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 	/* Note that we tacitly shift the data one byte down for the E/S byte */
 	p[0] = _1W_READ_SCRATCHPAD;
 	if (BUS_transaction(treread, pn)) {
-		return 1;
+		return gbBAD;
 	}
 
 	/* Copy Scratchpad to SRAM */
 	p[0] = _1W_COPY_SCRATCHPAD;
 	if (BUS_transaction(twrite, pn)) {
-		return 1;
+		return gbBAD;
 	}
 
 	UT_delay(32);
-	return 0;
+	return gbGOOD;
 }
 
 /* read counter (just past memory) */
 /* Nathan Holmes helped troubleshoot this one! */
-static int OW_r_counter(struct one_wire_query *owq, size_t page, size_t pagesize)
+static GOOD_OR_BAD OW_r_counter(struct one_wire_query *owq, size_t page, size_t pagesize)
 {
 	BYTE extra[8];
 	if (COMMON_read_memory_plus_counter(extra, page, pagesize, PN(owq))) {
-		return 1;
+		return gbBAD;
 	}
 #if 0
 	if (extra[4] != _1W_COUNTER_FILL || extra[5] != _1W_COUNTER_FILL || extra[6] != _1W_COUNTER_FILL || extra[7] != _1W_COUNTER_FILL) {
-		return 1;
+		return gbBAD;
 	}
 #endif
 	/* counter is held in the 4 bytes after the data */
 	OWQ_U(owq) = UT_uint32(extra);
-	return 0;
+	return gbGOOD;
 }

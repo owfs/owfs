@@ -122,7 +122,7 @@ static ZERO_OR_ERROR FS_counter(struct one_wire_query *owq)
 	return RETURN_Z_OR_E(OW_r_counter(owq, OWQ_pn(owq).extension, pagesize)) ;
 }
 
-static int FS_w_page(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 	return RETURN_Z_OR_E(COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem)) ;

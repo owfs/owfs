@@ -125,33 +125,33 @@ struct aggregate A1923m = { 12, ag_numbers, ag_aggregate, };
 struct filetype DS1923[] = {
 	F_STANDARD,
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"pages/page", 32, &A1923p, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
-  {"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_r_temperature, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"humidity", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_humid, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"clock", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"clock/date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_second, FS_r_date, FS_w_date, VISIBLE, NO_FILETYPE_DATA,},
-  {"clock/udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter, FS_w_counter, VISIBLE, NO_FILETYPE_DATA,},
-  {"clock/running", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_rbitread, FS_rbitwrite, VISIBLE, {v:&BitReads[2]},},
-#if 0
+	{"pages/page", 32, &A1923p, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
+	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_r_temperature, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"humidity", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_humid, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"clock", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"clock/date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_second, FS_r_date, FS_w_date, VISIBLE, NO_FILETYPE_DATA,},
+	{"clock/udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter, FS_w_counter, VISIBLE, NO_FILETYPE_DATA,},
+	{"clock/running", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_rbitread, FS_rbitwrite, VISIBLE, {v:&BitReads[2]},},
+	#if 0
 	/* Just test functions */
 	{"running", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_run, FS_w_run, VISIBLE, NO_FILETYPE_DATA,},
 	{"memory", 512, NON_AGGREGATE, ft_binary, fc_stable, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 	{"clearmem", 1, NON_AGGREGATE, ft_binary, fc_stable, FS_clearmem, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"enableosc", 1, NON_AGGREGATE, ft_binary, fc_stable, FS_enable_osc, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 #endif
-{"mission", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-{"mission/running", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_bitread, FS_w_mip, VISIBLE, {v:&BitReads[0]},},
-{"mission/rollover", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_bitread, FS_bitwrite, VISIBLE, {v:&BitReads[1]},},
-{"mission/delay", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_delay, FS_w_delay, VISIBLE, NO_FILETYPE_DATA,},
-{"mission/samplingtemp", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_bitread, NO_WRITE_FUNCTION, VISIBLE, {v:&BitReads[3]},},
-{"mission/samplinghumidity", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_bitread, NO_WRITE_FUNCTION, VISIBLE, {v:&BitReads[4]},},
+	{"mission", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"mission/running", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_bitread, FS_w_mip, VISIBLE, {v:&BitReads[0]},},
+	{"mission/rollover", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_bitread, FS_bitwrite, VISIBLE, {v:&BitReads[1]},},
+	{"mission/delay", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_delay, FS_w_delay, VISIBLE, NO_FILETYPE_DATA,},
+	{"mission/samplingtemp", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_bitread, NO_WRITE_FUNCTION, VISIBLE, {v:&BitReads[3]},},
+	{"mission/samplinghumidity", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_bitread, NO_WRITE_FUNCTION, VISIBLE, {v:&BitReads[4]},},
 #if 0
-{"mission/frequency", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, {u: FS_r_samplerate}, {u: FS_w_samplerate}, VISIBLE, NO_FILETYPE_DATA,},
-{"mission/samples", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, {u: FS_r_3byte}, {o: NULL}, VISIBLE, {s:0x021A},},
-{"mission/delay", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_delay, FS_w_delay, VISIBLE, NO_FILETYPE_DATA,},
-{"mission/date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_volatile, {d:FS_mdate}, NO_READ_FUNCTION, NO_WRITE_FUNCTION,VISIBLE, NO_FILETYPE_DATA},
-{"mission/date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_volatile, {d: FS_mdate}, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-{"mission/easystart", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, {o: NULL}, {u: FS_easystart}, VISIBLE, NO_FILETYPE_DATA,},
+	{"mission/frequency", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, {u: FS_r_samplerate}, {u: FS_w_samplerate}, VISIBLE, NO_FILETYPE_DATA,},
+	{"mission/samples", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, {u: FS_r_3byte}, {o: NULL}, VISIBLE, {s:0x021A},},
+	{"mission/delay", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_delay, FS_w_delay, VISIBLE, NO_FILETYPE_DATA,},
+	{"mission/date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_volatile, {d:FS_mdate}, NO_READ_FUNCTION, NO_WRITE_FUNCTION,VISIBLE, NO_FILETYPE_DATA},
+	{"mission/date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_volatile, {d: FS_mdate}, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"mission/easystart", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, {o: NULL}, {u: FS_easystart}, VISIBLE, NO_FILETYPE_DATA,},
 #endif
 };
 
@@ -183,8 +183,8 @@ MakeInternalProp(FPW, fc_persistent);	// Full password
 /* ------- Functions ------------ */
 
 /* DS1923 */
-static int OW_r_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
-static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
+static GOOD_OR_BAD OW_r_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
+static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
 static int OW_r_temperature(_FLOAT * T, const UINT delay, struct parsedname *pn);
 static int OW_r_humid(_FLOAT * H, const UINT delay, struct parsedname *pn);
 static int OW_startmission(unsigned long mdelay, struct parsedname *pn);
@@ -201,37 +201,25 @@ static void OW_date(const _DATE * d, BYTE * data);
 static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_r_mem)) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E (COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_r_mem)) ;
 }
 
 static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem)) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E(COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem)) ;
 }
 
 static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (COMMON_readwrite_paged(owq, 0, pagesize, OW_r_mem)) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E( COMMON_readwrite_paged(owq, 0, pagesize, OW_r_mem)) ;
 }
 
 static ZERO_OR_ERROR FS_w_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (COMMON_readwrite_paged(owq, 0, pagesize, OW_w_mem)) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E( COMMON_readwrite_paged(owq, 0, pagesize, OW_w_mem)) ;
 }
 
 
@@ -239,7 +227,7 @@ static ZERO_OR_ERROR FS_w_mem(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_r_delay(struct one_wire_query *owq)
 {
 	BYTE data[3];
-	if (OW_r_mem(data, 3, 0x0216, PN(owq))) {
+	if ( BAD( OW_r_mem(data, 3, 0x0216, PN(owq)) ) ) {
 		return -EINVAL;
 	}
 	// should be 3 bytes!
@@ -256,10 +244,7 @@ static ZERO_OR_ERROR FS_w_delay(struct one_wire_query *owq)
 	if (OW_MIP(PN(owq))) {
 		return -EBUSY;
 	}
-	if (OW_w_mem(data, 3, 0x0216, PN(owq))) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E( OW_w_mem(data, 3, 0x0216, PN(owq))) ;
 }
 
 /* Just a test-function */
@@ -269,7 +254,7 @@ static ZERO_OR_ERROR FS_enable_osc(struct one_wire_query *owq)
 #if 0
 	/* Just write to address without any check */
 	BYTE d = 0x01;
-	if (OW_w_mem(&d, 1, 0x0212, pn)) {
+	if ( BAD( OW_w_mem(&d, 1, 0x0212, pn) ) ) {
 		printf("OW_oscillator: error4\n");
 		return -EINVAL;
 	}
@@ -296,7 +281,7 @@ static ZERO_OR_ERROR FS_clearmem(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_r_run(struct one_wire_query *owq)
 {
 	BYTE cr;
-	if (OW_r_mem(&cr, 1, 0x0212, PN(owq))) {
+	if ( BAD( OW_r_mem(&cr, 1, 0x0212, PN(owq)) ) ) {
 		return -EINVAL;
 	}
 	// only bit 0 and 1 should be used!
@@ -314,7 +299,7 @@ static ZERO_OR_ERROR FS_w_run(struct one_wire_query *owq)
 	BYTE cr;
 	BYTE check;
 
-	if (OW_r_mem(&cr, 1, 0x0212, pn)) {
+	if ( BAD( OW_r_mem(&cr, 1, 0x0212, pn) ) ) {
 		return -EINVAL;
 	}
 	// only bit 0 and 1 should be used!
@@ -322,11 +307,11 @@ static ZERO_OR_ERROR FS_w_run(struct one_wire_query *owq)
 		return -EINVAL;
 	}
 	cr = OWQ_Y(owq) ? (cr | 0x01) : (cr & 0xFE);
-	if (OW_w_mem(&cr, 1, 0x0212, pn)) {
+	if ( BAD( OW_w_mem(&cr, 1, 0x0212, pn) ) ) {
 		return -EINVAL;
 	}
 	/* Double check written value */
-	if (OW_r_mem(&check, 1, 0x0212, pn)) {
+	if ( BAD( OW_r_mem(&check, 1, 0x0212, pn) ) ) {
 		return -EINVAL;
 	}
 	if (check != cr) {
@@ -344,7 +329,7 @@ static ZERO_OR_ERROR FS_w_mip(struct one_wire_query *owq)
 	printf("FS_w_mip:\n");
 	if (OWQ_Y(owq)) {			/* start a mission! */
 		printf("FS_w_mip: start\n");
-		if (OW_r_mem(data, 3, 0x0216, pn)) {
+		if ( BAD( OW_r_mem(data, 3, 0x0216, pn) ) ) {
 			return -EINVAL;
 		}
 		mdelay = data[0] | data[1] << 8 | data[2] << 16;
@@ -364,7 +349,7 @@ static ZERO_OR_ERROR FS_bitread(struct one_wire_query *owq)
 		return -EINVAL;
 	}
 	br = ((struct BitRead *) (pn->selected_filetype->data.v));
-	if (OW_r_mem(&d, 1, br->location, pn)) {
+	if ( BAD( OW_r_mem(&d, 1, br->location, pn) ) ) {
 		return -EINVAL;
 	}
 	OWQ_Y(owq) = UT_getbit(&d, br->bit);
@@ -380,14 +365,11 @@ static ZERO_OR_ERROR FS_bitwrite(struct one_wire_query *owq)
 		return -EINVAL;
 	}
 	br = ((struct BitRead *) (pn->selected_filetype->data.v));
-	if (OW_r_mem(&d, 1, br->location, pn)) {
+	if ( BAD( OW_r_mem(&d, 1, br->location, pn) ) ) {
 		return -EINVAL;
 	}
 	UT_setbit(&d, br->bit, OWQ_Y(owq));
-	if (OW_w_mem(&d, 1, br->location, pn)) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E( OW_w_mem(&d, 1, br->location, pn) ) ;
 }
 
 static ZERO_OR_ERROR FS_rbitread(struct one_wire_query *owq)
@@ -498,7 +480,7 @@ static ZERO_OR_ERROR OW_oscillator(const int on, struct parsedname *pn)
 	 * turned off, I make this real paranoid read/write/read of the
 	 * oscillator bit until I know the code really works.
 	 */
-	if (OW_r_mem(&d, 1, 0x0212, pn)) {
+	if ( BAD( OW_r_mem(&d, 1, 0x0212, pn) ) ) {
 		printf("OW_oscillator: error1\n");
 		return -EINVAL;
 	}
@@ -517,11 +499,11 @@ static ZERO_OR_ERROR OW_oscillator(const int on, struct parsedname *pn)
 		}
 		d &= 0xFE;
 	}
-	if (OW_w_mem(&d, 1, 0x0212, pn)) {
+	if ( BAD( OW_w_mem(&d, 1, 0x0212, pn) ) ) {
 		printf("OW_oscillator: error4\n");
 		return -EINVAL;
 	}
-	if (OW_r_mem(&check, 1, 0x0212, pn)) {
+	if ( BAD( OW_r_mem(&check, 1, 0x0212, pn) ) ) {
 		printf("OW_oscillator: error5\n");
 		return -EINVAL;
 	}
@@ -541,7 +523,7 @@ static ZERO_OR_ERROR FS_r_date(struct one_wire_query *owq)
 	BYTE data[6];
 	ZERO_OR_ERROR ret;
 
-	if (OW_r_mem(data, 6, 0x0200, PN(owq))) {
+	if ( BAD( OW_r_mem(data, 6, 0x0200, PN(owq)) ) ) {
 		printf("FS_r_date: error 2\n");
 		return -EINVAL;
 	}
@@ -557,7 +539,7 @@ static ZERO_OR_ERROR FS_r_counter(struct one_wire_query *owq)
 	ZERO_OR_ERROR ret;
 
 	/* Get date from chip */
-	if (OW_r_mem(data, 6, 0x0200, PN(owq))) {
+	if ( BAD( OW_r_mem(data, 6, 0x0200, PN(owq)) ) ) {
 		return -EINVAL;
 	}
 	if ((ret = OW_2date(&d, data))) {
@@ -586,7 +568,7 @@ static ZERO_OR_ERROR FS_w_date(struct one_wire_query *owq)
 	}
 
 	OW_date(&OWQ_D(owq), data);
-	if (OW_w_mem(data, 6, 0x0200, pn)) {
+	if ( BAD( OW_w_mem(data, 6, 0x0200, pn) ) ) {
 		return -EINVAL;
 	}
 	OWQ_Y(owq) = 1;				// for turning on chip
@@ -607,11 +589,11 @@ static ZERO_OR_ERROR FS_w_counter(struct one_wire_query *owq)
 	}
 
 	OW_date(&d, data);
-	return OW_w_mem(data, 6, 0x0200, pn) ? -EINVAL : 0;
+	return RETURN_Z_OR_E( OW_w_mem(data, 6, 0x0200, pn) ) ;
 }
 
 
-static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
+static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
 {
 	BYTE p[3 + 1 + 32 + 2] = { _1W_WRITE_SCRATCHPAD, LOW_HIGH_ADDRESS(offset), };
 	BYTE passwd[8];
@@ -627,7 +609,7 @@ static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 	BUSLOCK(pn);
 	if (BUS_select(pn)!=0 || BUS_send_data(p, 3 + rest, pn)!=0) {
 		BUSUNLOCK(pn);
-		return 1;
+		return gbBAD;
 	}
 	/* Re-read scratchpad and compare */
 	/* Note: location of data has now shifted down a byte for E/S register */
@@ -635,12 +617,12 @@ static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 
 	if (BUS_select(pn)!=0) {
 		BUSUNLOCK(pn);
-		return 1;
+		return gbBAD;
 	}
 	p[0] = _1W_READ_SCRATCHPAD;
 	if (BUS_send_data(p, 1, pn)!=0) {
 		BUSUNLOCK(pn);
-		return 1;
+		return gbBAD;
 	}
 	// read TAL TAH E/S + rest bytes
 	if (BUS_readin_data(&p[1], 3 + rest, pn)!=0) {
@@ -649,11 +631,11 @@ static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 	}
 	if (CRC16(p, 4 + rest)!=0) {
 		BUSUNLOCK(pn);
-		return 1;
+		return gbBAD;
 	}
 	if (memcmp(&p[4], data, size)!=0) {
 		BUSUNLOCK(pn);
-		return 1;
+		return gbBAD;
 	}
 
 	/* Copy Scratchpad to SRAM */
@@ -665,15 +647,15 @@ static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 	p[0] = _1W_COPY_SCRATCHPAD_WITH_PASSWORD;
 	if (BUS_send_data(p, 4, pn)!=0) {
 		BUSUNLOCK(pn);
-		return 1;
+		return gbBAD;
 	}
 	if (BUS_send_data(passwd, 8, pn)!=0) {
 		BUSUNLOCK(pn);
-		return 1;
+		return gbBAD;
 	}
 	BUSUNLOCK(pn);
 	UT_delay(1);
-	return 0;
+	return gbGOOD;
 }
 
 static int OW_clearmemory(struct parsedname *pn)
@@ -740,14 +722,14 @@ static int OW_flush(struct parsedname *pn, int lock)
 }
 
 
-static int OW_r_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
+static GOOD_OR_BAD OW_r_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
 {
 	BYTE p[3 + 8 + 32 + 2] = { _1W_READ_MEMORY_WITH_PASSWORD_AND_CRC,
 		LOW_HIGH_ADDRESS(offset),
 	};
 	int rest = 32 - (offset & 0x1F);
 	BYTE passwd[8];
-	int ret;
+	GOOD_OR_BAD ret;
 	int i;
 
 	memset(passwd, 0xFF, 8);	// dummy password
@@ -764,26 +746,26 @@ static int OW_r_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 #else
 
 	ret = BUS_select(pn);
-	if (ret) {
+	if ( BAD( ret ) ) {
 		BUSUNLOCK(pn);
 		//printf("error1\n");
 		return ret;
 	}
 
 	ret = BUS_send_data(p, 3, pn);
-	if (ret) {
+	if ( BAD( ret ) ) {
 		BUSUNLOCK(pn);
 		//printf("error2\n");
 		return ret;
 	}
 	ret = BUS_send_data(passwd, 8, pn);
-	if (ret) {
+	if ( BAD( ret ) ) {
 		BUSUNLOCK(pn);
 		//printf("error2\n");
 		return ret;
 	}
 	ret = BUS_readin_data(&p[3], rest + 2, pn);
-	if (ret) {
+	if ( BAD( ret ) ) {
 		BUSUNLOCK(pn);
 		printf("error4\n");
 		return ret;
@@ -796,14 +778,14 @@ static int OW_r_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 		printf("\n");
 	}
 	ret = CRC16(p, 3 + rest + 2);
-	if (ret) {
+	if ( BAD( ret ) ) {
 		printf("crc error\n");
 	}
 #endif
 
 	BUSUNLOCK(pn);
 
-	if (!ret) {
+	if ( GOOD( ret) ) {
 		memcpy(data, &p[3], size);
 	}
 	return ret;
@@ -883,7 +865,7 @@ static int OW_r_temperature(_FLOAT * T, const UINT delay, struct parsedname *pn)
 	BYTE data[32];
 	(void) delay;
 
-	if (OW_r_mem(data, 8, 0x020C, pn)) {	/* read temp register */
+	if ( BAD( OW_r_mem(data, 8, 0x020C, pn) ) ) {	/* read temp register */
 		printf("OW_r_temperature: error1\n");
 		return -EINVAL;
 	}
@@ -902,7 +884,7 @@ static int OW_r_humid(_FLOAT * H, const UINT delay, struct parsedname *pn)
 	BYTE data[32];
 	(void) delay;
 
-	if (OW_r_mem(data, 6, 0x020E, pn)) {
+	if ( BAD( OW_r_mem(data, 6, 0x020E, pn) ) ) {
 		printf("OW_r_humid: error1\n");
 		return -EINVAL;
 	}
@@ -941,10 +923,7 @@ static int OW_w_delay(unsigned long mdelay, struct parsedname *pn)
 	p[0] = mdelay & 0xFF;
 	p[1] = (mdelay >> 8) & 0xFF;
 	p[2] = (mdelay >> 16) & 0xFF;
-	if (OW_w_mem(p, 3, 0x0216, pn)) {
-		return -EINVAL;
-	}
-	return 0;
+	return OW_w_mem(p, 3, 0x0216, pn) ;
 }
 
 static int OW_startmission(unsigned long mdelay, struct parsedname *pn)
@@ -966,7 +945,7 @@ static int OW_startmission(unsigned long mdelay, struct parsedname *pn)
 		return -ERANGE;			/* Bad interval */
 	}
 
-	if (OW_r_mem(&cc, 1, 0x0212, pn)) {
+	if ( BAD( OW_r_mem(&cc, 1, 0x0212, pn) ) ) {
 		return -EINVAL;
 	}
 	if (cc & 0xFC) {
@@ -989,7 +968,7 @@ static int OW_startmission(unsigned long mdelay, struct parsedname *pn)
 	} else {
 		cc &= 0xFD;				// Enable high speed sample (second)
 	}
-	if (OW_w_mem(&cc, 1, 0x0212, pn)) {
+	if ( BAD( OW_w_mem(&cc, 1, 0x0212, pn) ) ) {
 		return -EINVAL;
 	}
 #endif
@@ -999,7 +978,7 @@ static int OW_startmission(unsigned long mdelay, struct parsedname *pn)
 	p[0] = (mdelay & 0xFF);
 	p[1] = (mdelay & 0xFF00) >> 8;
 	p[2] = (mdelay & 0xFF0000) >> 16;
-	if (OW_w_mem(p, 3, 0x0216, pn)) {
+	if ( BAD( OW_w_mem(p, 3, 0x0216, pn) ) ) {
 		return -EINVAL;
 	}
 #endif

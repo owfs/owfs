@@ -274,7 +274,7 @@ static int VersionCmp(const void *pn, const void *version)
 /* ------- Functions ------------ */
 
 /* DS1921 */
-static int OW_w_mem(BYTE * data, size_t length, off_t offset, struct parsedname *pn);
+static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t length, off_t offset, struct parsedname *pn);
 static int OW_temperature(int *T, const UINT delay, struct parsedname *pn);
 static int OW_clearmemory(struct parsedname *pn);
 static int OW_2date(_DATE * d, const BYTE * data);
@@ -313,11 +313,7 @@ static ZERO_OR_ERROR FS_w_register(struct one_wire_query *owq)
 {
 	BYTE c = OWQ_U(owq) & 0xFF ;
 
-	if ( OW_w_mem( &c, 1, PN(owq)->selected_filetype->data.u, PN(owq) ) ) {
-		return -EINVAL ;
-	}
-
-	return 0 ;
+	return RETURN_Z_OR_E( OW_w_mem( &c, 1, PN(owq)->selected_filetype->data.u, PN(owq) ) ) ;
 }
 
 /* ControlRegister reversed */
@@ -417,10 +413,7 @@ static ZERO_OR_ERROR FS_bitwrite(struct one_wire_query *owq)
 		return -EINVAL;
 	}
 	UT_setbit(&d, br->bit, OWQ_Y(owq));
-	if (OW_w_mem(&d, 1, br->location, pn)) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E(OW_w_mem(&d, 1, br->location, pn)) ;
 }
 
 static ZERO_OR_ERROR FS_rbitread(struct one_wire_query *owq)
@@ -637,7 +630,7 @@ static ZERO_OR_ERROR FS_w_alarmtemp(struct one_wire_query *owq)
 		return -EBUSY;
 	}
 	data[0] = (OWQ_F(owq) - v->histolow) / v->resolution;
-	return (OW_w_mem(data, 1, pn->selected_filetype->data.s, pn)) ? -EINVAL : 0;
+	return RETURN_Z_OR_E(OW_w_mem(data, 1, pn->selected_filetype->data.s, pn)) ;
 }
 
 static ZERO_OR_ERROR FS_alarmudate(struct one_wire_query *owq)
@@ -764,7 +757,7 @@ static ZERO_OR_ERROR FS_w_counter(struct one_wire_query *owq)
 	}
 
 	OW_date(&d, data);
-	return OW_w_mem(data, 7, 0x0200, pn) ? -EINVAL : 0;
+	return RETURN_Z_OR_E( OW_w_mem(data, 7, 0x0200, pn) ) ;
 }
 
 /* stop/start clock running */
@@ -841,10 +834,7 @@ static ZERO_OR_ERROR FS_w_atime(struct one_wire_query *owq)
 		return -EFAULT;
 	}
 	data = ((BYTE) OWQ_U(owq)) | (data & 0x80);	/* EM on */
-	if (OW_w_mem(&data, 1, pn->selected_filetype->data.s, pn)) {
-		return -EFAULT;
-	}
-	return 0;
+	return RETURN_Z_OR_E(OW_w_mem(&data, 1, pn->selected_filetype->data.s, pn)) ;
 }
 
 /* read the alarm time field (not bit 7, though) */
@@ -880,10 +870,7 @@ static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_w_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (COMMON_readwrite_paged(owq, 0, pagesize, OW_w_mem)) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E( COMMON_readwrite_paged(owq, 0, pagesize, OW_w_mem) ) ;
 }
 
 static ZERO_OR_ERROR FS_w_atrig(struct one_wire_query *owq)
@@ -907,10 +894,7 @@ static ZERO_OR_ERROR FS_w_atrig(struct one_wire_query *owq)
 	case 4:
 		data[3] |= 0x80;
 	}
-	if (OW_w_mem(data, 4, 0x0207, pn)) {
-		return -EFAULT;
-	}
-	return 0;
+	return RETURN_Z_OR_E( OW_w_mem(data, 4, 0x0207, pn)) ;
 }
 
 static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
@@ -924,10 +908,7 @@ static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 {
-	if (OW_w_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) (OWQ_offset(owq) + ((OWQ_pn(owq).extension) << 5)), PN(owq))) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E( OW_w_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) (OWQ_offset(owq) + ((OWQ_pn(owq).extension) << 5)), PN(owq)) ) ;
 }
 
 /* temperature log */
@@ -995,10 +976,7 @@ static ZERO_OR_ERROR FS_w_delay(struct one_wire_query *owq)
 	if (OW_MIP(PN(owq))) {
 		return -EBUSY;
 	}
-	if (OW_w_mem(data, 2, (size_t) 0x0212, PN(owq))) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E(OW_w_mem(data, 2, (size_t) 0x0212, PN(owq))) ;
 }
 
 /* temperature log */
@@ -1031,14 +1009,14 @@ static ZERO_OR_ERROR FS_easystart(struct one_wire_query *owq)
 	BYTE data[] = { 0x86, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, };
 
 	/* Stop clock, no rollover, no delay, temp alarms on, alarms cleared */
-	if (OW_w_mem(data, 7, 0x020E, PN(owq))) {
+	if ( BAD( OW_w_mem(data, 7, 0x020E, PN(owq)) ) ) {
 		return -EINVAL;
 	}
 
 	return OW_startmission(OWQ_U(owq), PN(owq))?-EINVAL:0;
 }
 
-static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
+static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
 {
 	BYTE p[3 + 1 + 32 + 2] = { _1W_WRITE_SCRATCHPAD, LOW_HIGH_ADDRESS(offset), };
 	int rest = 32 - (offset & 0x1F);
@@ -1068,11 +1046,11 @@ static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 	memcpy(&p[3], data, size);
 	if ((offset + size) & 0x1F) {	/* to end of page */
 		if (BUS_transaction(tcopy, pn)) {
-			return 1;
+			return gbBAD;
 		}
 	} else {
 		if (BUS_transaction(tcopy_crc, pn)) {
-			return 1;
+			return gbBAD;
 		}
 	}
 
@@ -1080,17 +1058,17 @@ static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 	/* Note: location of data has now shifted down a byte for E/S register */
 	p[0] = _1W_READ_SCRATCHPAD;
 	if (BUS_transaction(tread, pn)) {
-		return 1;
+		return gbBAD;
 	}
 
 	/* write Scratchpad to SRAM */
 	p[0] = _1W_COPY_SCRATCHPAD;
 	if (BUS_transaction(twrite, pn)) {
-		return 1;
+		return gbBAD;
 	}
 
 	UT_delay(1);				/* 1 msec >> 2 usec per byte */
-	return 0;
+	return gbGOOD;
 }
 
 static int OW_temperature(int *T, const UINT delay, struct parsedname *pn)
@@ -1133,7 +1111,7 @@ static int OW_clearmemory(struct parsedname *pn)
 		return -EINVAL;
 	}
 	flag = (flag & 0x3F) | 0x40;
-	if (OW_w_mem(&flag, 1, 0x020E, pn)) {
+	if ( BAD( OW_w_mem(&flag, 1, 0x020E, pn) ) ) {
 		return -EINVAL;
 	}
 
@@ -1334,7 +1312,7 @@ static int OW_w_date(_DATE * D, struct parsedname *pn)
 	}
 
 	OW_date(D, data);
-	if (OW_w_mem(data, 7, 0x0200, pn)) {
+	if ( BAD( OW_w_mem(data, 7, 0x0200, pn) ) ) {
 		return -EINVAL;
 	}
 	return OW_w_run(1, pn);
@@ -1349,10 +1327,7 @@ static int OW_w_run(int state, struct parsedname *pn)
 		return -EINVAL;
 	}
 	cr = state ? cr & 0x7F : cr | 0x80;
-	if (OW_w_mem(&cr, 1, 0x020E, pn)) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_G_OR_B( OW_w_mem(&cr, 1, 0x020E, pn) ) ;
 }
 
 static int OW_small_read(BYTE * buffer, size_t size, off_t location, struct parsedname *pn)

@@ -117,7 +117,7 @@ DeviceEntryExtended(20, DS2450, DEV_volt | DEV_alarm | DEV_ovdr);
 
 /* DS2450 */
 static int OW_r_mem(BYTE * p, size_t size, off_t offset, struct parsedname *pn);
-static int OW_w_mem(BYTE * p, size_t size, off_t offset, struct parsedname *pn);
+static GOOD_OR_BAD OW_w_mem(BYTE * p, size_t size, off_t offset, struct parsedname *pn);
 static int OW_volts(_FLOAT * f, const int resolution, struct parsedname *pn);
 static int OW_1_volts(_FLOAT * f, const int element, const int resolution, struct parsedname *pn);
 static int OW_convert(struct parsedname *pn);
@@ -385,7 +385,7 @@ static int OW_r_mem(BYTE * p, size_t size, off_t offset, struct parsedname *pn)
 }
 
 /* write to 2450 */
-static int OW_w_mem(BYTE * p, size_t size, off_t offset, struct parsedname *pn)
+static GOOD_OR_BAD OW_w_mem(BYTE * p, size_t size, off_t offset, struct parsedname *pn)
 {
 	// command, address(2) , data , crc(2), databack
 	BYTE buf[6] = { _1W_WRITE_MEMORY, LOW_HIGH_ADDRESS(offset), p[0], };
@@ -407,22 +407,22 @@ static int OW_w_mem(BYTE * p, size_t size, off_t offset, struct parsedname *pn)
 //printf("2450 W mem size=%d location=%d\n",size,location) ;
 
 	if (size == 0) {
-		return 0;
+		return gbGOOD;
 	}
 
 	/* Send the first byte (handled differently) */
 	if (BUS_transaction(tfirst, pn)) {
-		return 1;
+		return gbBAD;
 	}
 	/* rest of the bytes */
 	for (i = 1; i < size; ++i) {
 		buf[0] = p[i];
 		if (BUS_transaction(trest, pn) || CRC16seeded(buf, 3, offset + i)
 			|| (echo[0] != p[i])) {
-			return 1;
+			return gbBAD;
 		}
 	}
-	return 0;
+	return gbGOOD;
 }
 
 /* Read A/D from 2450 */
@@ -454,7 +454,7 @@ static int OW_volts(_FLOAT * f, const int resolution, struct parsedname *pn)
 
 	// Set control registers
 	if (writeback) {
-		if (OW_w_mem(control, 8, _ADDRESS_CONTROL_PAGE, pn)) {
+		if ( BAD( OW_w_mem(control, 8, _ADDRESS_CONTROL_PAGE, pn) ) ) {
 			return 1;
 		}
 	}
@@ -503,7 +503,7 @@ static int OW_1_volts(_FLOAT * f, const int element, const int resolution, struc
 	}
 	// Set control registers
 	if (writeback) {
-		if (OW_w_mem(control, 2, _ADDRESS_CONTROL_PAGE + (element << 1), pn)) {
+		if ( BAD( OW_w_mem(control, 2, _ADDRESS_CONTROL_PAGE + (element << 1), pn) ) ) {
 			return 1;
 		}
 	}
@@ -645,8 +645,8 @@ static int OW_w_vset(const _FLOAT * V, const int high, const int resolution, str
 	p[2 + high] = V[1] * (resolution ? 50. : 100.);
 	p[4 + high] = V[2] * (resolution ? 50. : 100.);
 	p[6 + high] = V[3] * (resolution ? 50. : 100.);
-	if (OW_w_mem(p, 8, _ADDRESS_ALARM_PAGE, pn)) {
-		return 1;
+	if ( BAD( OW_w_mem(p, 8, _ADDRESS_ALARM_PAGE, pn) ) ) {
+		return gbBAD;
 	}
 	/* turn POR off */
 	if (OW_r_mem(p, 8, _ADDRESS_CONTROL_PAGE, pn)) {

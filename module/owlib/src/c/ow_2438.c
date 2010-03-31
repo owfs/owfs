@@ -61,8 +61,6 @@ READ_FUNCTION(FS_r_Offset);
 WRITE_FUNCTION(FS_w_Offset);
 READ_FUNCTION(FS_r_counter);
 WRITE_FUNCTION(FS_w_counter);
-READ_FUNCTION(FS_r_date);
-WRITE_FUNCTION(FS_w_date);
 READ_FUNCTION(FS_MStype);
 
 /* ------- Structures ----------- */
@@ -80,13 +78,13 @@ struct filetype DS2437[] = {
 	{"CA", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_status, FS_w_status, VISIBLE, {i:1},},
 	{"EE", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_status, FS_w_status, VISIBLE, {i:2},},
 	{"udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter, FS_w_counter, VISIBLE, {s:0x08},},
-	{"date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_second, FS_r_date, FS_w_date, VISIBLE, {s:0x08},},
+	{"date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_link, COMMON_r_date, COMMON_w_date, VISIBLE, {s:0x08},},
 	{"disconnect", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"disconnect/udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_counter, FS_w_counter, VISIBLE, {s:0x10},},
-	{"disconnect/date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_volatile, FS_r_date, FS_w_date, VISIBLE, {s:0x10},},
+	{"disconnect/date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_link, COMMON_r_date, COMMON_w_date, VISIBLE, {s:0x10},},
 	{"endcharge", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"endcharge/udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_counter, FS_w_counter, VISIBLE, {s:0x14},},
-	{"endcharge/date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_volatile, FS_r_date, FS_w_date, VISIBLE, {s:0x14},},
+	{"endcharge/date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_link, COMMON_r_date, COMMON_w_date, VISIBLE, {s:0x14},},
 };
 
 DeviceEntryExtended(1E, DS2437, DEV_temp | DEV_volt);
@@ -107,13 +105,13 @@ struct filetype DS2438[] = {
 	{"EE", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_status, FS_w_status, VISIBLE, {i:2},},
 	{"offset", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_Offset, FS_w_Offset, VISIBLE, NO_FILETYPE_DATA,},
 	{"udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter, FS_w_counter, VISIBLE, {s:0x08},},
-	{"date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_second, FS_r_date, FS_w_date, VISIBLE, {s:0x08},},
+	{"date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_link, COMMON_r_date, COMMON_w_date, VISIBLE, {s:0x08},},
 	{"disconnect", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"disconnect/udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_counter, FS_w_counter, VISIBLE, {s:0x10},},
-	{"disconnect/date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_volatile, FS_r_date, FS_w_date, VISIBLE, {s:0x10},},
+	{"disconnect/date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_link, COMMON_r_date, COMMON_w_date, VISIBLE, {s:0x10},},
 	{"endcharge", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"endcharge/udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_counter, FS_w_counter, VISIBLE, {s:0x14},},
-	{"endcharge/date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_volatile, FS_r_date, FS_w_date, VISIBLE, {s:0x14},},
+	{"endcharge/date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_link, COMMON_r_date, COMMON_w_date, VISIBLE, {s:0x14},},
 	{"HTM1735", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"HTM1735/humidity", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_link, FS_Humid_1735, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"HIH3600", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
@@ -143,6 +141,11 @@ static GOOD_OR_BAD OW_volts(_FLOAT * V, const int src, const struct parsedname *
 static GOOD_OR_BAD OW_r_int(int *I, const UINT address, const struct parsedname *pn);
 static GOOD_OR_BAD OW_w_int(const int I, const UINT address, const struct parsedname *pn);
 static GOOD_OR_BAD OW_w_offset(const int I, const struct parsedname *pn);
+
+/* 8 Byte pages */
+#define DS2438_ADDRESS_TO_PAGE(a)	((a)>>3)
+#define DS2438_ADDRESS_TO_OFFSET(a)	((a)&0x07)
+
 
 /* 2438 A/D */
 static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
@@ -403,56 +406,37 @@ static ZERO_OR_ERROR FS_w_Offset(struct one_wire_query *owq)
 	return 0;
 }
 
-/* set ZERO_OR_ERROR */
-static int FS_w_counter(struct one_wire_query *owq)
-{
-	_DATE d = (_DATE) OWQ_U(owq);
-	OWQ_D(owq) = d;
-	return FS_w_date(owq);
-}
-
 /* set clock */
-static ZERO_OR_ERROR FS_w_date(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_counter(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
-	int page = ((uint32_t) (pn->selected_filetype->data.s)) >> 3;
-	int offset = ((uint32_t) (pn->selected_filetype->data.s)) & 0x07;
+	int page = DS2438_ADDRESS_TO_PAGE(pn->selected_filetype->data.s) ;
+	int offset = DS2438_ADDRESS_TO_OFFSET(pn->selected_filetype->data.s);
 	BYTE data[8];
+
 	if ( BAD( OW_r_page(data, page, pn) ) ) {
 		return -EINVAL;
 	}
-	UT_fromDate(OWQ_D(owq), &data[offset]);
-	if ( BAD( OW_w_page(data, page, pn) ) ) {
-		return -EINVAL;
-	}
-	return 0;
+	UT_uint32_to_bytes( OWQ_U(owq), &data[offset] );
+	return RETURN_Z_OR_E( OW_w_page(data, page, pn) ) ;
 }
 
 /* read clock */
 static ZERO_OR_ERROR FS_r_counter(struct one_wire_query *owq)
 {
-	_DATE d;
-	ZERO_OR_ERROR ret = FS_r_date(owq);
-	d = OWQ_D(owq);
-	OWQ_U(owq) = (UINT) d;
-	return ret;
-}
-
-/* read clock */
-static ZERO_OR_ERROR FS_r_date(struct one_wire_query *owq)
-{
 	struct parsedname *pn = PN(owq);
-	int page = ((uint32_t) (pn->selected_filetype->data.s)) >> 3;
-	int offset = ((uint32_t) (pn->selected_filetype->data.s)) & 0x07;
+	int page = DS2438_ADDRESS_TO_PAGE(pn->selected_filetype->data.s);
+	int offset = DS2438_ADDRESS_TO_OFFSET(pn->selected_filetype->data.s);
 	BYTE data[8];
+
 	if (OW_r_page(data, page, pn)) {
 		return -EINVAL;
 	}
-	OWQ_D(owq) = UT_toDate(&data[offset]);
+	OWQ_U(owq) = UT_int32(&data[offset]);
 	return 0;
 }
 
-/* DS2438 fancy battery */
+/* DS2438 read page (8 bytes) */
 static GOOD_OR_BAD OW_r_page(BYTE * p, const int page, const struct parsedname *pn)
 {
 	BYTE data[9];
@@ -612,10 +596,10 @@ static GOOD_OR_BAD OW_r_int(int *I, const UINT address, const struct parsedname 
 	BYTE data[8];
 
 	// read back registers
-	if (OW_r_page(data, address >> 3, pn)) {
+	if (OW_r_page(data, DS2438_ADDRESS_TO_PAGE(address), pn)) {
 		return gbBAD;
 	}
-	*I = ((int) ((signed char) data[(address & 0x07) + 1])) << 8 | data[address & 0x07];
+	*I = (int) UT_int16(&data[DS2438_ADDRESS_TO_OFFSET(address)]);
 	return gbGOOD;
 }
 
@@ -624,10 +608,10 @@ static GOOD_OR_BAD OW_w_int(const int I, const UINT address, const struct parsed
 	BYTE data[8];
 
 	// read back registers
-	if (OW_r_page(data, address >> 3, pn)) {
+	if (OW_r_page(data, DS2438_ADDRESS_TO_PAGE(address), pn)) {
 		return gbBAD;
 	}
-	data[address & 0x07] = BYTE_MASK(I);
-	data[(address & 0x07) + 1] = BYTE_MASK(I >> 8);
-	return OW_w_page(data, address >> 3, pn);
+	data[DS2438_ADDRESS_TO_OFFSET(address)] = BYTE_MASK(I);
+	data[DS2438_ADDRESS_TO_OFFSET(address) + 1] = BYTE_MASK(I >> 8);
+	return OW_w_page(data, DS2438_ADDRESS_TO_PAGE(address), pn);
 }

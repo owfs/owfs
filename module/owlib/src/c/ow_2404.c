@@ -57,8 +57,6 @@ READ_FUNCTION(FS_r_counter4);
 WRITE_FUNCTION(FS_w_counter4);
 READ_FUNCTION(FS_r_counter5);
 WRITE_FUNCTION(FS_w_counter5);
-READ_FUNCTION(FS_r_date);
-WRITE_FUNCTION(FS_w_date);
 READ_FUNCTION(FS_r_flag);
 WRITE_FUNCTION(FS_w_flag);
 
@@ -70,62 +68,32 @@ struct filetype DS2404[] = {
 	{"alarm", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_alarm, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"set_alarm", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_set_alarm, FS_w_set_alarm, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"pages/page", 32, &A2404, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
-  {"memory", 512, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, VISIBLE, NO_FILETYPE_DATA,},
-  {"running", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {c:0x10},},
-  {"auto", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {c:0x20},},
-  {"start", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {c:0x40},},
-  {"delay", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {c:0x80},},
-  {"date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_second, FS_r_date, FS_w_date, VISIBLE, {s:0x202},},
-  {"udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter5, FS_w_counter5, VISIBLE, {s:0x202},},
-  {"interval", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_second, FS_r_date, FS_w_date, VISIBLE, {s:0x207},},
-  {"uinterval", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter5, FS_w_counter5, VISIBLE, {s:0x207},},
-  {"cycle", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter4, FS_w_counter4, VISIBLE, {s:0x20C},},
-  {"trigger", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"trigger/date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_second, FS_r_date, FS_w_date, VISIBLE, {s:0x210},},
-  {"trigger/udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter5, FS_w_counter5, VISIBLE, {s:0x210},},
-  {"trigger/interval", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_second, FS_r_date, FS_w_date, VISIBLE, {s:0x215},},
-  {"trigger/uinterval", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter5, FS_w_counter5, VISIBLE, {s:0x215},},
-  {"trigger/cycle", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter4, FS_w_counter4, VISIBLE, {s:0x21A},},
-  {"readonly", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"readonly/memory", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {c:0x08},},
-  {"readonly/cycle", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {c:0x04},},
-  {"readonly/interval", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {c:0x02},},
-  {"readonly/clock", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {c:0x01},},
+	{"pages/page", 32, &A2404, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
+	{"memory", 512, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, VISIBLE, NO_FILETYPE_DATA,},
+	{"running", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {c:0x10},},
+	{"auto", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {c:0x20},},
+	{"start", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {c:0x40},},
+	{"delay", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {c:0x80},},
+	{"date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_link, COMMON_r_date, COMMON_w_date, VISIBLE, {s:0x202},},
+	{"udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter5, FS_w_counter5, VISIBLE, {s:0x202},},
+	{"interval", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"interval/date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_link, COMMON_r_date, COMMON_w_date, VISIBLE, {s:0x207},},
+	{"interval/udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter5, FS_w_counter5, VISIBLE, {s:0x207},},
+	{"cycle", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter4, FS_w_counter4, VISIBLE, {s:0x20C},},
+	{"trigger", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"trigger/date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_link, COMMON_r_date, COMMON_w_date, VISIBLE, {s:0x210},},
+	{"trigger/udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter5, FS_w_counter5, VISIBLE, {s:0x210},},
+	{"trigger/date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_link, COMMON_r_date, COMMON_w_date, VISIBLE, {s:0x215},},
+	{"trigger/udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter5, FS_w_counter5, VISIBLE, {s:0x215},},
+	{"trigger/cycle", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter4, FS_w_counter4, VISIBLE, {s:0x21A},},
+	{"readonly", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"readonly/memory", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {c:0x08},},
+	{"readonly/cycle", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {c:0x04},},
+	{"readonly/interval", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {c:0x02},},
+	{"readonly/clock", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {c:0x01},},
 };
 
 DeviceEntryExtended(04, DS2404, DEV_alarm);
-
-struct filetype DS2404S[] = {
-	F_STANDARD,
-	{"alarm", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_alarm, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-	{"set_alarm", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_set_alarm, FS_w_set_alarm, VISIBLE, NO_FILETYPE_DATA,},
-	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"pages/page", 32, &A2404, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
-  {"memory", 512, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, VISIBLE, NO_FILETYPE_DATA,},
-  {"running", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {c:0x10},},
-  {"auto", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {c:0x20},},
-  {"start", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {c:0x40},},
-  {"delay", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {c:0x80},},
-  {"date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_second, FS_r_date, FS_w_date, VISIBLE, {s:0x202},},
-  {"udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter5, FS_w_counter5, VISIBLE, {s:0x202},},
-  {"interval", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_second, FS_r_date, FS_w_date, VISIBLE, {s:0x207},},
-  {"uinterval", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter5, FS_w_counter5, VISIBLE, {s:0x207},},
-  {"cycle", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter4, FS_w_counter4, VISIBLE, {s:0x20C},},
-  {"trigger", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"trigger/date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_second, FS_r_date, FS_w_date, VISIBLE, {s:0x210},},
-  {"trigger/udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter5, FS_w_counter5, VISIBLE, {s:0x210},},
-  {"trigger/interval", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_second, FS_r_date, FS_w_date, VISIBLE, {s:0x215},},
-  {"trigger/uinterval", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter5, FS_w_counter5, VISIBLE, {s:0x215},},
-  {"trigger/cycle", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter4, FS_w_counter4, VISIBLE, {s:0x21A},},
-  {"readonly", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"readonly/memory", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {c:0x08},},
-  {"readonly/cycle", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {c:0x04},},
-  {"readonly/interval", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {c:0x02},},
-  {"readonly/clock", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {c:0x01},},
-};
-
-DeviceEntryExtended(84, DS2404S, DEV_alarm);
 
 #define _1W_WRITE_SCRATCHPAD 0x0F
 #define _1W_READ_SCRATCHPAD 0xAA
@@ -135,9 +103,9 @@ DeviceEntryExtended(84, DS2404S, DEV_alarm);
 /* ------- Functions ------------ */
 
 /* DS2404 */
-static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
-static int OW_r_ulong(uint64_t * L, size_t size, off_t offset, struct parsedname *pn);
-static int OW_w_ulong(uint64_t * L, size_t size, off_t offset, struct parsedname *pn);
+static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
+static GOOD_OR_BAD OW_r_ulong(uint64_t * L, size_t size, off_t offset, struct parsedname *pn);
+static GOOD_OR_BAD OW_w_ulong(uint64_t * L, size_t size, off_t offset, struct parsedname *pn);
 static void OW_reset(struct parsedname *pn) ;
 
 static UINT Avals[] = { 0, 1, 10, 11, 100, 101, 110, 111, };
@@ -181,24 +149,6 @@ static ZERO_OR_ERROR FS_w_memory(struct one_wire_query *owq)
 	}
 	OW_reset(PN(owq)) ; // DS2404 needs this to release for 3-wire communication
 	return error_code ;
-}
-
-/* set clock */
-static ZERO_OR_ERROR FS_w_date(struct one_wire_query *owq)
-{
-	_DATE D = OWQ_D(owq);
-	OWQ_U(owq) = (UINT) D;
-	return FS_w_counter5(owq);
-}
-
-/* read clock */
-static ZERO_OR_ERROR FS_r_date(struct one_wire_query *owq)
-{
-	if (FS_r_counter5(owq)) {
-		return -EINVAL;
-	}
-	OWQ_D(owq) = (_DATE) OWQ_U(owq);
-	return 0;
 }
 
 /* set clock */
@@ -350,7 +300,7 @@ static ZERO_OR_ERROR FS_r_flag(struct one_wire_query *owq)
 }
 
 /* PAged access -- pre-screened */
-static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
+static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
 {
 	BYTE p[4 + 32] = { _1W_WRITE_SCRATCHPAD, LOW_HIGH_ADDRESS(offset), };
 	struct transaction_log tcopy[] = {
@@ -374,48 +324,48 @@ static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 
 	/* Copy to scratchpad */
 	if (BUS_transaction(tcopy, pn)) {
-		return 1;
+		return gbBAD;
 	}
 
 	/* Re-read scratchpad and compare */
 	p[0] = _1W_READ_SCRATCHPAD;
 	if (BUS_transaction(tread, pn)) {
-		return 1;
+		return gbBAD;
 	}
 
 	/* Copy Scratchpad to SRAM */
 	p[0] = _1W_COPY_SCRATCHPAD;
 	if (BUS_transaction(tsram, pn)) {
-		return 1;
+		return gbBAD;
 	}
 
 	UT_delay(32);
-	return 0;
+	return gbGOOD;
 }
 
 /* read 4 or 5 byte number */
-static int OW_r_ulong(uint64_t * L, size_t size, off_t offset, struct parsedname *pn)
+static GOOD_OR_BAD OW_r_ulong(uint64_t * L, size_t size, off_t offset, struct parsedname *pn)
 {
 	BYTE data[5] = { 0x00, 0x00, 0x00, 0x00, 0x00, };
 	OWQ_allocate_struct_and_pointer(owq_ulong);
 
 	OWQ_create_temporary(owq_ulong, (char *) data, size, offset, pn);
 	if (size > 5) {
-		return -ERANGE;
+		return gbBAD;
 	}
 	if (COMMON_read_memory_F0(owq_ulong, 0, 0)) {
-		return -EINVAL;
+		return gbBAD;
 	}
 	L[0] = ((uint64_t) data[0])
 		+ (((uint64_t) data[1]) << 8)
 		+ (((uint64_t) data[2]) << 16)
 		+ (((uint64_t) data[3]) << 24)
 		+ (((uint64_t) data[4]) << 32);
-	return 0;
+	return gbGOOD;
 }
 
 /* write 4 or 5 byte number */
-static int OW_w_ulong(uint64_t * L, size_t size, off_t offset, struct parsedname *pn)
+static GOOD_OR_BAD OW_w_ulong(uint64_t * L, size_t size, off_t offset, struct parsedname *pn)
 {
 	BYTE data[5] = { 0x00, 0x00, 0x00, 0x00, 0x00, };
 	if (size > 5) {
@@ -427,9 +377,9 @@ static int OW_w_ulong(uint64_t * L, size_t size, off_t offset, struct parsedname
 	data[3] = BYTE_MASK(L[0] >> 24);
 	data[4] = BYTE_MASK(L[0] >> 32);
 	if (OW_w_mem(data, size, offset, pn)) {
-		return -EINVAL;
+		return gbBAD;
 	}
-	return 0;
+	return gbGOOD;
 }
 
 static void OW_reset(struct parsedname *pn)

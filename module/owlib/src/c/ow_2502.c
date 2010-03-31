@@ -85,33 +85,27 @@ DeviceEntry(89, DS1982U);
 /* ------- Functions ------------ */
 
 /* DS2502 */
-static int OW_r_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
-static int OW_r_data(BYTE * data, struct parsedname *pn);
+static GOOD_OR_BAD OW_r_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
+static GOOD_OR_BAD OW_r_data(BYTE * data, struct parsedname *pn);
 
 /* 2502 memory */
 static ZERO_OR_ERROR FS_r_memory(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (COMMON_readwrite_paged(owq, 0, pagesize, OW_r_mem)) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E(COMMON_readwrite_paged(owq, 0, pagesize, OW_r_mem)) ;
 }
 
 static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_r_mem)) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E(COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_r_mem)) ;
 }
 
 static ZERO_OR_ERROR FS_r_param(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	BYTE data[32];
-	if (OW_r_data(data, pn)) {
+	if ( BAD( OW_r_data(data, pn) ) ) {
 		return -EINVAL;
 	}
 	return OWQ_format_output_offset_and_size((ASCII *) & data[pn->selected_filetype->data.i], FileLength(pn), owq);
@@ -135,7 +129,7 @@ static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 	return 0;
 }
 
-static int OW_r_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
+static GOOD_OR_BAD OW_r_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
 {
 	BYTE p[4] = { _1W_READ_DATA_CRC8, LOW_HIGH_ADDRESS(offset), };
 	BYTE q[33];
@@ -150,20 +144,20 @@ static int OW_r_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 		TRXN_END,
 	};
 	if (BUS_transaction(t, pn)) {
-		return 1;
+		return gbBAD;
 	}
 
 	memcpy(data, q, size);
-	return 0;
+	return gbGOOD;
 }
 
-static int OW_r_data(BYTE * data, struct parsedname *pn)
+static GOOD_OR_BAD OW_r_data(BYTE * data, struct parsedname *pn)
 {
 	BYTE p[32];
 
-	if (OW_r_mem(p, 32, 0, pn) || CRC16(p, 3 + p[0])) {
-		return 1;
+	if ( BAD( OW_r_mem(p, 32, 0, pn) ) || CRC16(p, 3 + p[0])) {
+		return gbBAD;
 	}
 	memcpy(data, &p[1], p[0]);
-	return 0;
+	return gbGOOD;
 }

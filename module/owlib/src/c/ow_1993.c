@@ -101,7 +101,7 @@ DeviceEntryExtended(0C, DS1996, DEV_ovdr);
 /* ------- Functions ------------ */
 
 /* DS1902 */
-static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
+static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
 
 /* 1902 */
 static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
@@ -142,7 +142,7 @@ static ZERO_OR_ERROR FS_w_memory(struct one_wire_query *owq)
 }
 
 /* paged, and pre-screened */
-static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
+static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
 {
 	BYTE p[4 + 32] = { _1W_WRITE_SCRATCHPAD, LOW_HIGH_ADDRESS(offset), };
 	struct transaction_log tcopy[] = {
@@ -166,21 +166,21 @@ static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 
 	/* Copy to scratchpad */
 	if (BUS_transaction(tcopy, pn)) {
-		return 1;
+		return gbBAD;
 	}
 
 	/* Re-read scratchpad and compare */
 	p[0] = _1W_READ_SCRATCHPAD;
 	if (BUS_transaction(tread, pn)) {
-		return 1;
+		return gbBAD;
 	}
 
 	/* Copy Scratchpad to SRAM */
 	p[0] = _1W_COPY_SCRATCHPAD;
 	if (BUS_transaction(tsram, pn)) {
-		return 1;
+		return gbBAD;
 	}
 
 	UT_delay(32);
-	return 0;
+	return gbGOOD;
 }
