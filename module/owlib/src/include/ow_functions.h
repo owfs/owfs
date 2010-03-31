@@ -180,7 +180,7 @@ int FS_fstat(const char *path, struct stat *stbuf);
 int FS_fstat_postparse(struct stat *stbuf, const struct parsedname *pn);
 
 /* iteration functions for splitting writes to buffers */
-int COMMON_readwrite_paged(struct one_wire_query *owq, size_t page, size_t pagelen, int (*readwritefunc) (BYTE *, size_t, off_t, struct parsedname *));
+GOOD_OR_BAD COMMON_readwrite_paged(struct one_wire_query *owq, size_t page, size_t pagelen, GOOD_OR_BAD (*readwritefunc) (BYTE *, size_t, off_t, struct parsedname *));
 int COMMON_OWQ_readwrite_paged(struct one_wire_query *owq, size_t page, size_t pagelen, int (*readwritefunc) (struct one_wire_query *, size_t, size_t));
 
 ZERO_OR_ERROR COMMON_r_date( struct one_wire_query * owq ) ;

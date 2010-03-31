@@ -88,8 +88,8 @@ DeviceEntryExtended(1A, DS1963L, DEV_ovdr);
 
 /* ------- Functions ------------ */
 
-static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
-static int OW_r_counter(struct one_wire_query *owq, size_t page, size_t pagesize);
+static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
+static GOOD_OR_BAD OW_r_counter(struct one_wire_query *owq, size_t page, size_t pagesize);
 
 static ZERO_OR_ERROR FS_w_password(struct one_wire_query *owq)
 {
@@ -119,32 +119,23 @@ static ZERO_OR_ERROR FS_r_memory(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_counter(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (OW_r_counter(owq, OWQ_pn(owq).extension, pagesize)) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E(OW_r_counter(owq, OWQ_pn(owq).extension, pagesize)) ;
 }
 
 static int FS_w_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem)) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E(COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem)) ;
 }
 
 static ZERO_OR_ERROR FS_w_memory(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (COMMON_readwrite_paged(owq, 0, pagesize, OW_w_mem)){
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E(COMMON_readwrite_paged(owq, 0, pagesize, OW_w_mem)) ;
 }
 
 /* paged, and pre-screened */
-static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
+static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
 {
 	BYTE p[1 + 2 + 32 + 2] = { _1W_WRITE_SCRATCHPAD, LOW_HIGH_ADDRESS(offset), };
 	struct transaction_log tcopy[] = {
@@ -174,37 +165,37 @@ static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 	memcpy(&p[3], data, size);
 
 	if (BUS_transaction(((offset + size) & 0x1F) != 0 ? tcopy : tcopy_crc16, pn)) {
-		return 1;
+		return gbBAD;
 	}
 
 	/* Re-read scratchpad and compare */
 	/* Note that we tacitly shift the data one byte down for the E/S byte */
 	p[0] = _1W_READ_SCRATCHPAD;
 	if (BUS_transaction(tread, pn)) {
-		return 1;
+		return gbBAD;
 	}
 
 	/* Copy Scratchpad to SRAM */
 	p[0] = _1W_COPY_SCRATCHPAD;
 	if (BUS_transaction(tsram, pn)) {
-		return 1;
+		return gbBAD;
 	}
 
-	return 0;
+	return gbGOOD;
 }
 
 /* read counter (just past memory) */
 /* Nathan Holmes helped troubleshoot this one! */
-static int OW_r_counter(struct one_wire_query *owq, size_t page, size_t pagesize)
+static GOOD_OR_BAD OW_r_counter(struct one_wire_query *owq, size_t page, size_t pagesize)
 {
 	BYTE extra[8];
 	if (COMMON_read_memory_plus_counter(extra, page, pagesize, PN(owq))) {
-		return 1;
+		return gbBAD;
 	}
 	if (extra[4] != _1W_COUNTER_FILL || extra[5] != _1W_COUNTER_FILL || extra[6] != _1W_COUNTER_FILL || extra[7] != _1W_COUNTER_FILL) {
-		return 1;
+		return gbBAD;
 	}
 	/* counter is held in the 4 bytes after the data */
 	OWQ_U(owq) = UT_uint32(extra);
-	return 0;
+	return gbGOOD;
 }

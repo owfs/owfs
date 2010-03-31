@@ -132,7 +132,7 @@ static int OW_r_gpio(BYTE * data, const struct parsedname *pn);
 static int OW_r_version(BYTE * data, const struct parsedname *pn);
 static int OW_r_counters(UINT * data, const struct parsedname *pn);
 static int OW_r_memory(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
-static int OW_w_memory(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
+static GOOD_OR_BAD OW_w_memory(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
 static int OW_clear(const struct parsedname *pn);
 static int OW_w_screen(BYTE lcd_location, const char *text, int size, const struct parsedname *pn);
 static int LCD_byte(BYTE b, int delay, const struct parsedname *pn);
@@ -475,12 +475,12 @@ static int OW_r_memory(BYTE * data, size_t size, off_t offset, struct parsedname
 /* Will pretend pagesize = 16 */
 /* minor inefficiency if start is not on "page" boundary */
 /* Call will not span "page" */
-static int OW_w_memory(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
+static GOOD_OR_BAD OW_w_memory(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
 {
 	BYTE location_and_buffer[1 + _LCD_PAGE_SIZE] = { BYTE_MASK(offset), };
 
 	if (size == 0) {
-		return 0;
+		return gbGOOD;
 	}
 	memcpy(&location_and_buffer[1], data, size);
 

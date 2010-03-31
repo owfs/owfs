@@ -16,7 +16,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
-int COMMON_readwrite_paged(struct one_wire_query *owq, size_t page, size_t pagelen, int (*readwritefunc) (BYTE *, size_t, off_t, struct parsedname *))
+GOOD_OR_BAD COMMON_readwrite_paged(struct one_wire_query *owq, size_t page, size_t pagelen, GOOD_OR_BAD (*readwritefunc) (BYTE *, size_t, off_t, struct parsedname *))
 {
 	size_t size = OWQ_size(owq);
 	off_t offset = OWQ_offset(owq) + pagelen * page;
@@ -30,15 +30,15 @@ int COMMON_readwrite_paged(struct one_wire_query *owq, size_t page, size_t pagel
 		if (thispage > size) {
 			thispage = size;
 		}
-		if (readwritefunc(buffer_position, thispage, offset, pn)) {
-				return 1;
+		if ( BAD( readwritefunc(buffer_position, thispage, offset, pn) ) ) {
+				return gbBAD;
 		}
 		buffer_position += thispage;
 		size -= thispage;
 		offset += thispage;
 	}
 
-	return 0;
+	return gbGOOD;
 }
 
 

@@ -106,7 +106,7 @@ DeviceEntryExtended(1C, DS28E04, DEV_alarm | DEV_resume | DEV_ovdr);
 /* ------- Functions ------------ */
 
 /* DS2804 */
-static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
+static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
 static int OW_w_scratch(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
 static int OW_w_pio(BYTE data, struct parsedname *pn);
 static int OW_clear(struct parsedname *pn);
@@ -128,10 +128,7 @@ static ZERO_OR_ERROR FS_w_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 	/* write is "byte at a time" -- not paged */
-	if (COMMON_readwrite_paged(owq, 0, pagesize, OW_w_mem)) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E(COMMON_readwrite_paged(owq, 0, pagesize, OW_w_mem)) ;
 }
 
 /* 2804 memory write */
@@ -141,17 +138,14 @@ static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 	if (COMMON_read_memory_F0(owq, OWQ_pn(owq).extension, pagesize)) {
 		return -EINVAL;
 	}
-	return OWQ_size(owq);
+	return 0;
 }
 
 static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 	/* write is "byte at a time" -- not paged */
-	if (COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem)) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E(COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem) ) ;
 }
 
 /* 2804 switch */
@@ -346,7 +340,7 @@ static int OW_w_scratch(BYTE * data, size_t size, off_t offset, struct parsednam
 }
 
 /* pre-paged */
-static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
+static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
 {
 	BYTE p[4 + 32 + 2] = { _1W_READ_SCRATCHPAD, LOW_HIGH_ADDRESS(offset), };
 	struct transaction_log tread[] = {
@@ -364,7 +358,7 @@ static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 
 	if (OW_w_scratch(data, size, offset, pn)
 		|| BUS_transaction(tread, pn)) {
-		return 1;
+		return gbBAD;
 	}
 	p[0] = _1W_COPY_SCRATCHPAD;
 	return BUS_transaction(tcopy, pn);
