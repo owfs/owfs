@@ -99,10 +99,9 @@ void *ReadHandler(struct handlerdata *hd, struct client_msg *cm, struct one_wire
 			cm->offset = hd->sm.offset;
 			cm->size = read_or_error;
 			cm->ret = read_or_error;
-			retbuffer = owmalloc( cm->size ) ;
-			if ( retbuffer != NULL ) {
-				memcpy( retbuffer, OWQ_buffer(owq), cm->size ) ;
-			}
+			/* Move this pointer, and let owfree remove it instead of OWQ_destroy() */
+			retbuffer = (BYTE *)OWQ_buffer(owq);
+			OWQ_buffer(owq) = NULL;
 		}
 	}
 	LEVEL_DEBUG("ReadHandler: To Client cm->payload=%d cm->size=%d cm->offset=%d", cm->payload, cm->size, cm->offset);
