@@ -25,7 +25,7 @@ static inline uint32_t UT_uint24(const BYTE * p)
 {
 	return (((uint32_t) p[2]) << 16) | (((uint32_t) p[1]) << 8) | ((uint32_t) p[0]);
 }
-static inline uint32_t UT_uint32(const const BYTE * p)
+static inline uint32_t UT_uint32(const BYTE * p)
 {
 	return (((uint32_t) p[3]) << 24) | (((uint32_t) p[2]) << 16) | (((uint32_t) p[1]) << 8) | ((uint32_t) p[0]);
 }
