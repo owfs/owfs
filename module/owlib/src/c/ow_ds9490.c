@@ -166,7 +166,7 @@ static void DS9490_setroutines(struct connection_in *in)
 #define COMM_DT                     0x2000
 #define COMM_SPU                    0x1000
 #define COMM_F                      0x0800
-#define COMM_ICP                    0x0200t
+#define COMM_ICP                    0x0200
 #define COMM_RST                    0x0100
 
 // Read Straight command, special bits
