@@ -109,7 +109,8 @@ enum fc_change {
 	fc_volatile,     // changes on it's own (e.g. external pin voltage)
 	fc_simultaneous_temperature, // volatile with a twist
 	fc_simultaneous_voltage, // volatile with a twist
-	fc_Avolatile,
+	fc_Avolatile,    // Atomic volatile -- don't need to lock device
+	fc_uncached,     // Don't cache (because the read and write interpretation are different)
 	fc_second,       // timer (changes every second)
 	fc_statistic,    // internally held statistic
 	fc_persistent,   // internal cumulative counter

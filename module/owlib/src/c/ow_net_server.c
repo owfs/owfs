@@ -295,57 +295,27 @@ static void *ServerProcessOut(void *v)
 	return NULL;
 }
 
-/* Setup Servers -- a thread for each port */
-void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (int errcode))
+void ServerProcessSignalThreaded( void )
 {
-	int rc, signo;
-	struct connection_out *out ;
 	sigset_t myset;
-
-	if (Outbound_Control.active == 0) {
-		LEVEL_CALL("No output devices defined");
-		Exit(1);
-	}
-
 	sigemptyset(&myset);
 	sigaddset(&myset, SIGHUP);
 	sigaddset(&myset, SIGINT);
 	// SIGTERM is used to kill all outprocesses which hang in accept()
 	pthread_sigmask(SIG_BLOCK, &myset, NULL);
+}
 
-	/* Start the head of a thread chain for each head_outbound_list */
-	for (out = Outbound_Control.head; out; out = out->next) {
-		OUTLOCK(out);
-		out->HandlerRoutine = HandlerRoutine;
-		out->Exit = Exit;
-
-		if (pthread_create(&(out->tid), NULL, ServerProcessOut, (void *) (out))) {
-			OUTUNLOCK(out);
-			ERROR_CONNECT("Could not create a thread for %s", SAFESTRING(out->name));
-			return;
-		}
-	}
-
-	for (out = Outbound_Control.head; out; out = out->next) {
-		LEVEL_DEBUG("Wait for output device %d to setup.", out->index);
-		// Should perhaps wait for a cond-signal, but this works..
-		my_pthread_cond_wait(&(out->setup_cond), &(out->out_mutex));
-		LEVEL_DEBUG("Output device %d setup done.", out->index);
-		OUTUNLOCK(out);
-	}
-
-
-	if (Outbound_Control.active == 0) {
-		LEVEL_CALL("No output devices could be created.");
-		return;
-	}
-
+void ServerProcessSignalUnthreaded( void )
+{
+	sigset_t myset;
 	sigemptyset(&myset);
 	sigaddset(&myset, SIGHUP);
 	sigaddset(&myset, SIGINT);
 	sigaddset(&myset, SIGTERM);
 
 	while (!StateInfo.shutdown_in_progress) {
+		int rc ;
+		int signo ;
 		if ((rc = sigwait(&myset, &signo)) == 0) {
 			if (signo == SIGHUP) {
 				LEVEL_DEBUG("ignore signo=%d", signo);
@@ -359,11 +329,16 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 		}
 	}
 
-	StateInfo.shutdown_in_progress = 1;
-	LEVEL_DEBUG("shutdown initiated");
+}
 
-	for (out = Outbound_Control.head; out; out = out->next) {
+void ServerProcessSendKill( void )
+{
+	struct connection_out * out ;
+	
+		for (out = Outbound_Control.head; out; out = out->next) {
 		if(out->tid > 0) {
+			int rc ;
+			int signo ;
 			LEVEL_DEBUG("Shutting down %d of %d thread %lu", out->index, Outbound_Control.active, out->tid);
 #if 0
 			/* accept() is not a cancellation point under Solaris,
@@ -383,11 +358,15 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 #endif
 		}
 	}
+}
 
-	LEVEL_DEBUG("all threads cancelled");
-
+void ServerProcessReap( void )
+{
+	struct connection_out * out;
+	
 	for (out = Outbound_Control.head; out; out = out->next) {
 		if(out->tid > 0) {
+			int rc ;
 			LEVEL_DEBUG("join %lu", out->tid);
 			if((rc = pthread_join(out->tid, NULL))) {
 			  LEVEL_DEBUG("join %lu failed rc=%d [%s]", out->tid, rc, strerror(rc));
@@ -399,8 +378,59 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 			LEVEL_DEBUG("thread already removed");
 		}
 	}
+}
 
-	LEVEL_DEBUG("shutdown done");
+/* Setup Servers -- a thread for each port */
+void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (int errcode))
+{
+	struct connection_out *out ;
+
+	if (Outbound_Control.active == 0) {
+		LEVEL_CALL("No output devices defined");
+		Exit(1);
+	}
+
+	ServerProcessSignalThreaded();
+
+	/* Start the head of a thread chain for each outbound port */
+	for (out = Outbound_Control.head; out; out = out->next) {
+		OUTLOCK(out);
+		out->HandlerRoutine = HandlerRoutine;
+		out->Exit = Exit;
+
+		if (pthread_create(&(out->tid), NULL, ServerProcessOut, (void *) (out))) {
+			OUTUNLOCK(out);
+			ERROR_CONNECT("Could not create a thread for %s", SAFESTRING(out->name));
+			return ;
+		}
+	}
+
+	for (out = Outbound_Control.head; out; out = out->next) {
+		LEVEL_DEBUG("Wait for output device %d to setup.", out->index);
+		// Should perhaps wait for a cond-signal, but this works..
+		my_pthread_cond_wait(&(out->setup_cond), &(out->out_mutex));
+		LEVEL_DEBUG("Output device %d setup done.", out->index);
+		OUTUNLOCK(out);
+	}
+
+
+	if (Outbound_Control.active == 0) {
+		LEVEL_CALL("No output devices could be created.");
+		return;
+	}
+
+	ServerProcessSignalUnthreaded();
+
+	StateInfo.shutdown_in_progress = 1;
+	LEVEL_DEBUG("shutdown initiated");
+
+	ServerProcessSendKill() ;
+
+	LEVEL_DEBUG("all threads cancelled");
+	
+	ServerProcessReap() ;
+ 
+ 	LEVEL_DEBUG("shutdown done");
 
 	/* Cleanup that may never be reached */
 	return;
