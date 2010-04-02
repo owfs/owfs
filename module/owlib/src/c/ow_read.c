@@ -555,7 +555,12 @@ static ZERO_OR_ERROR FS_read_from_parts(struct one_wire_query *owq)
 		OWQ_pn(owq_single).extension = extension;
 		lump_read = FS_read_lump(owq_single);
 		if (lump_read < 0) {
-			return lump_read;
+			// Retry read a single failing object... This is really needed.
+			LEVEL_CALL("Retry read single element %d", extension);
+			lump_read = FS_read_lump(owq_single);
+			if (lump_read < 0) {
+				return lump_read;
+			}
 		}
 		
 		// copy object (single to mixed array)
