@@ -43,7 +43,7 @@ GOOD_OR_BAD COMMON_readwrite_paged(struct one_wire_query *owq, size_t page, size
 
 
 // The same as COMMON_readwrite_paged above except the results are nicely placed in the OWQ buffers with sizes and offsets.
-int COMMON_OWQ_readwrite_paged(struct one_wire_query *owq, size_t page, size_t pagelen, int (*readwritefunc) (struct one_wire_query *, size_t, size_t))
+GOOD_OR_BAD COMMON_OWQ_readwrite_paged(struct one_wire_query *owq, size_t page, size_t pagelen, GOOD_OR_BAD (*readwritefunc) (struct one_wire_query *, size_t, size_t))
 {
 	size_t size = OWQ_size(owq);
 	off_t offset = OWQ_offset(owq) + pagelen * page;
@@ -63,7 +63,7 @@ int COMMON_OWQ_readwrite_paged(struct one_wire_query *owq, size_t page, size_t p
 		OWQ_size(owq_page) = thispage;
 		if (readwritefunc(owq_page, 0, pagelen)) {
 			LEVEL_DEBUG("error at offset %ld", (long) offset);
-			return 1;
+			return gbBAD;
 		}
 		OWQ_buffer(owq_page) += thispage;
 		size -= thispage;
@@ -72,5 +72,5 @@ int COMMON_OWQ_readwrite_paged(struct one_wire_query *owq, size_t page, size_t p
 		OWQ_offset(owq_page) = offset;
 	}
 
-	return 0;
+	return gbGOOD;
 }

@@ -60,77 +60,20 @@ int put( const char * path, const char * value )
 	return ret ;
 }
 
-static void getdircallback( void * v, const struct parsedname * const pn_entry ) 
-{
-	struct charblob * cb = v ;
-	const char * buf = FS_DirName(pn_entry) ;
-	CharblobAdd( buf, strlen(buf), cb ) ;
-	if ( IsDir(pn_entry) ) {
-		CharblobAddChar( '/', cb ) ;
-	}
-}
-
 /*
   Get a directory,  returning a copy of the contents in *buffer (which must be free-ed elsewhere)
   return length of string, or <0 for error
   *buffer will be returned as NULL on error
  */
-static void getdir( struct charblob * cb, struct one_wire_query * owq ) 
-{  
-	CharblobInit( cb ) ;
-	if ( FS_dir( getdircallback, cb, PN(owq) ) != 0 ) {
-		CharblobClear( cb ) ;
-	} else if ( CharblobLength(cb) == 0 ) {
-		CharblobAddChar( '\0', cb) ;
-	}
-}
-
-char * copy_buffer( char * data, int size )
-{
-	char * data_copy = NULL ; // default
-	if ( size < 1 ) {
-		return NULL ;
-	}
-	data_copy = malloc( size+1 ) ;
-	if ( data_copy == NULL ) {
-		return NULL ;
-	}
-	memcpy( data_copy, data, size ) ;
-	data_copy[size] = '\0' ;
-	return data_copy ;
-}
 
 char * get( const char * path ) 
 {
 	char * return_buffer = NULL ;
-	struct one_wire_query * owq = NULL ;
-
 	if ( API_access_start() != 0 ) {
 		return NULL ; // error
 	}
 
-	/* Check the parameters */
-	if ( path==NULL ) {
-		path="/" ;
-	}
-
-	if ( strlen(path) > PATH_MAX ) {
-		// return_buffer = NULL ;
-	} else if ( (owq = OWQ_create_from_path(path)) != NULL ) { /* Can we parse the input string */
-		if ( IsDir( PN(owq) ) ) { /* A directory of some kind */
-			struct charblob cb ;
-			CharblobInit(&cb) ;
-			getdir( &cb, owq ) ;
-			return_buffer = copy_buffer( CharblobData(&cb), CharblobLength(&cb)) ;
-			CharblobClear( &cb ) ;
-		} else { /* A regular file  -- so read */
-			if ( GOOD(OWQ_allocate_read_buffer(owq)) ) { // make the space in the buffer
-				SIZE_OR_ERROR size = FS_read_postparse(owq) ;
-				return_buffer = copy_buffer( OWQ_buffer(owq), size ) ;
-			}
-		}
-		OWQ_destroy(owq) ;
-	}
+	FS_get( path, &return_buffer, NULL ) ;
 
 	API_access_end() ;
 	return return_buffer ;

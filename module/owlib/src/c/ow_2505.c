@@ -113,35 +113,25 @@ DeviceEntryExtended(8F, DS1986U, DEV_ovdr);
 /* ------- Functions ------------ */
 
 /* DS2505 */
-static int OW_w_status(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
+static GOOD_OR_BAD OW_w_status(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
 
 /* 2505 memory */
 static ZERO_OR_ERROR FS_r_memory(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-//    if ( OW_r_mem( buf, size, (size_t) offset, pn) ) { return -EINVAL ; }
-	if (COMMON_OWQ_readwrite_paged(owq, 0, pagesize, COMMON_read_memory_F0)) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E(COMMON_OWQ_readwrite_paged(owq, 0, pagesize, COMMON_read_memory_F0)) ;
 }
 
 static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (COMMON_OWQ_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, COMMON_read_memory_F0)) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E(COMMON_OWQ_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, COMMON_read_memory_F0)) ;
 }
 
 static ZERO_OR_ERROR FS_r_status(struct one_wire_query *owq)
 {
 	size_t pagesize = FileLength(PN(owq)) ;
-	if (COMMON_OWQ_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, COMMON_read_memory_crc16_AA)) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E(COMMON_OWQ_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, COMMON_read_memory_crc16_AA)) ;
 }
 
 static ZERO_OR_ERROR FS_w_memory(struct one_wire_query *owq)
@@ -154,10 +144,7 @@ static ZERO_OR_ERROR FS_w_memory(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_w_status(struct one_wire_query *owq)
 {
-	if (OW_w_status(OWQ_explode(owq))) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E(OW_w_status(OWQ_explode(owq))) ;
 }
 
 static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
@@ -169,10 +156,10 @@ static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 	return 0;
 }
 
-static int OW_w_status(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
+static GOOD_OR_BAD OW_w_status(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
 {
 	BYTE p[6] = { _1W_WRITE_STATUS, LOW_HIGH_ADDRESS(offset), data[0] };
-	int ret = 0;
+	GOOD_OR_BAD ret = gbGOOD;
 	struct transaction_log tfirst[] = {
 		TRXN_START,
 		TRXN_WR_CRC16(p, 4, 0),
@@ -182,14 +169,14 @@ static int OW_w_status(BYTE * data, size_t size, off_t offset, struct parsedname
 	};
 
 	if (size == 0) {
-		return 0;
+		return gbGOOD;
 	}
 	if (size == 1) {
 		return BUS_transaction(tfirst, pn) || (p[0] & (~data[0]));
 	}
 	BUSLOCK(pn);
 	if (BUS_transaction(tfirst, pn) || (p[0] & ~data[0])) {
-		ret = 1;
+		ret = gbBAD;
 	} else {
 		size_t i;
 		const BYTE *d = &data[1];
@@ -203,7 +190,7 @@ static int OW_w_status(BYTE * data, size_t size, off_t offset, struct parsedname
 		};
 		for (i = 0; i < size; ++i, ++d, ++s) {
 			if (BUS_transaction(trest, pn) || (p[0] & ~d[0])) {
-				ret = 1;
+				ret = gbBAD;
 				break;
 			}
 		}

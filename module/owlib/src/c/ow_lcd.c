@@ -121,24 +121,24 @@ DeviceEntryExtended(FF, LCD, DEV_alarm);
 /* ------- Functions ------------ */
 
 /* LCD by L. Swart */
-static int OW_r_scratch(BYTE * data, int length, const struct parsedname *pn);
-static int OW_w_scratch(const BYTE * data, int length, const struct parsedname *pn);
-static int OW_w_register(BYTE data, const struct parsedname *pn);
-static int OW_r_register(BYTE * data, const struct parsedname *pn);
-static int OW_w_data(const BYTE data, const struct parsedname *pn);
-static int OW_r_data(BYTE * data, const struct parsedname *pn);
-static int OW_w_gpio(BYTE data, const struct parsedname *pn);
-static int OW_r_gpio(BYTE * data, const struct parsedname *pn);
-static int OW_r_version(BYTE * data, const struct parsedname *pn);
-static int OW_r_counters(UINT * data, const struct parsedname *pn);
-static int OW_r_memory(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
+static GOOD_OR_BAD OW_r_scratch(BYTE * data, int length, const struct parsedname *pn);
+static GOOD_OR_BAD OW_w_scratch(const BYTE * data, int length, const struct parsedname *pn);
+static GOOD_OR_BAD OW_w_register(BYTE data, const struct parsedname *pn);
+static GOOD_OR_BAD OW_r_register(BYTE * data, const struct parsedname *pn);
+static GOOD_OR_BAD OW_w_data(const BYTE data, const struct parsedname *pn);
+static GOOD_OR_BAD OW_r_data(BYTE * data, const struct parsedname *pn);
+static GOOD_OR_BAD OW_w_gpio(BYTE data, const struct parsedname *pn);
+static GOOD_OR_BAD OW_r_gpio(BYTE * data, const struct parsedname *pn);
+static GOOD_OR_BAD OW_r_version(BYTE * data, const struct parsedname *pn);
+static GOOD_OR_BAD OW_r_counters(UINT * data, const struct parsedname *pn);
+static GOOD_OR_BAD OW_r_memory(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
 static GOOD_OR_BAD OW_w_memory(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
-static int OW_clear(const struct parsedname *pn);
-static int OW_w_screen(BYTE lcd_location, const char *text, int size, const struct parsedname *pn);
-static int LCD_byte(BYTE b, int delay, const struct parsedname *pn);
-static int LCD_2byte(BYTE * bytes, int delay, const struct parsedname *pn);
-static int OW_simple_command(BYTE lcd_command_code, const struct parsedname *pn);
-static int OW_w_unpaged_to_screen(BYTE lcd_location, BYTE length, const char *text, const struct parsedname *pn);
+static GOOD_OR_BAD OW_clear(const struct parsedname *pn);
+static GOOD_OR_BAD OW_w_screen(BYTE lcd_location, const char *text, int size, const struct parsedname *pn);
+static GOOD_OR_BAD LCD_byte(BYTE b, int delay, const struct parsedname *pn);
+static GOOD_OR_BAD LCD_2byte(BYTE * bytes, int delay, const struct parsedname *pn);
+static GOOD_OR_BAD OW_simple_command(BYTE lcd_command_code, const struct parsedname *pn);
+static GOOD_OR_BAD OW_w_unpaged_to_screen(BYTE lcd_location, BYTE length, const char *text, const struct parsedname *pn);
 
 /* Internal files */
 //static struct internal_prop ip_cum = { "CUM", fc_persistent };
@@ -150,16 +150,13 @@ static ZERO_OR_ERROR FS_simple_command(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	UINT lcd_command_pair = (UINT) pn->selected_filetype->data.u;
 	BYTE lcd_command_code = OWQ_Y(owq) ? UNPACK_ON(lcd_command_pair) : UNPACK_OFF(lcd_command_pair);
-	if (OW_simple_command(lcd_command_code, pn)) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E(OW_simple_command(lcd_command_code, pn)) ;
 }
 
 static ZERO_OR_ERROR FS_r_version(struct one_wire_query *owq)
 {
 	BYTE v[_LCD_PAGE_SIZE];
-	if (OW_r_version(v, PN(owq))) {
+	if ( BAD( OW_r_version(v, PN(owq)) ) ) {
 		return -EINVAL;
 	}
 	return OWQ_format_output_offset_and_size((ASCII *) v, _LCD_PAGE_SIZE, owq);
@@ -168,7 +165,7 @@ static ZERO_OR_ERROR FS_r_version(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_r_gpio(struct one_wire_query *owq)
 {
 	BYTE data;
-	if (OW_r_gpio(&data, PN(owq))) {
+	if ( BAD( OW_r_gpio(&data, PN(owq)) ) ) {
 		return -EINVAL;
 	}
 	OWQ_U(owq) = (~data) & 0x0F;
@@ -180,16 +177,13 @@ static ZERO_OR_ERROR FS_w_gpio(struct one_wire_query *owq)
 {
 	BYTE data = ~OWQ_U(owq) & 0x0F;
 	/* Now set pins */
-	if (OW_w_gpio(data, PN(owq))) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E(OW_w_gpio(data, PN(owq))) ;
 }
 
 static ZERO_OR_ERROR FS_r_register(struct one_wire_query *owq)
 {
 	BYTE data;
-	if (OW_r_register(&data, PN(owq))) {
+	if ( BAD( OW_r_register(&data, PN(owq)) ) ) {
 		return -EINVAL;
 	}
 	OWQ_U(owq) = data;
@@ -198,16 +192,13 @@ static ZERO_OR_ERROR FS_r_register(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_w_register(struct one_wire_query *owq)
 {
-	if (OW_w_register((BYTE) (BYTE_MASK(OWQ_U(owq))), PN(owq))) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E(OW_w_register((BYTE) (BYTE_MASK(OWQ_U(owq))), PN(owq))) ;
 }
 
 static ZERO_OR_ERROR FS_r_data(struct one_wire_query *owq)
 {
 	BYTE data;
-	if (OW_r_data(&data, PN(owq))) {
+	if ( BAD( OW_r_data(&data, PN(owq)) ) ) {
 		return -EINVAL;
 	}
 	OWQ_U(owq) = data;
@@ -216,16 +207,13 @@ static ZERO_OR_ERROR FS_r_data(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_w_data(struct one_wire_query *owq)
 {
-	if (OW_w_data((BYTE) (BYTE_MASK(OWQ_U(owq))), PN(owq))) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E(OW_w_data((BYTE) (BYTE_MASK(OWQ_U(owq))), PN(owq))) ;
 }
 
 static ZERO_OR_ERROR FS_r_counters(struct one_wire_query *owq)
 {
 	UINT u[4];
-	if (OW_r_counters(u, PN(owq))) {
+	if ( BAD( OW_r_counters(u, PN(owq)) ) ) {
 		return -EINVAL;
 	}
 	OWQ_array_U(owq, 0) = u[0];
@@ -239,7 +227,7 @@ static ZERO_OR_ERROR FS_r_counters(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_r_cum(struct one_wire_query *owq)
 {
 	UINT u[4];
-	if (OW_r_counters(u, PN(owq))) {
+	if ( BAD( OW_r_counters(u, PN(owq)) ) ) {
 		return -EINVAL;			/* just to prime the "CUM" data */
 	}
 	if (Cache_Get_Internal_Strict((void *) u, 4 * sizeof(UINT), InternalProp(CUM), PN(owq))) {
@@ -281,10 +269,7 @@ static ZERO_OR_ERROR FS_w_lineX(struct one_wire_query *owq)
 	}
 	memset(line, ' ', width);
 	memcpy(&line[start], OWQ_buffer(owq), size);
-	if (OW_w_screen(lcd_line_start[pn->extension], line, width, pn)) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E(OW_w_screen(lcd_line_start[pn->extension], line, width, pn)) ;
 }
 
 static ZERO_OR_ERROR FS_w_screenX(struct one_wire_query *owq)
@@ -301,7 +286,7 @@ static ZERO_OR_ERROR FS_w_screenX(struct one_wire_query *owq)
 		return -ERANGE;
 	}
 
-	if (OW_clear(pn)) {
+	if (BAD( OW_clear(pn) ) ) {
 		return -EFAULT;
 	}
 
@@ -336,23 +321,15 @@ static ZERO_OR_ERROR FS_w_screenX(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_r_memory(struct one_wire_query *owq)
 {
-//    if ( OW_r_memory(buf,size,offset,pn) ) { return -EFAULT ; }
-	if (COMMON_readwrite_paged(owq, 0, _LCD_PAGE_SIZE, OW_r_memory)) {
-		return -EFAULT;
-	}
-	return 0;
+	return RETURN_Z_OR_E(COMMON_readwrite_paged(owq, 0, _LCD_PAGE_SIZE, OW_r_memory)) ;
 }
 
 static ZERO_OR_ERROR FS_w_memory(struct one_wire_query *owq)
 {
-//    if ( OW_w_memory(buf,size,offset,pn) ) { return -EFAULT ; }
-	if (COMMON_readwrite_paged(owq, 0, _LCD_PAGE_SIZE, OW_w_memory)) {
-		return -EFAULT;
-	}
-	return 0;
+	return RETURN_Z_OR_E(COMMON_readwrite_paged(owq, 0, _LCD_PAGE_SIZE, OW_w_memory)) ;
 }
 
-static int OW_w_scratch(const BYTE * data, int length, const struct parsedname *pn)
+static GOOD_OR_BAD OW_w_scratch(const BYTE * data, int length, const struct parsedname *pn)
 {
 	BYTE write_command[1] = { _LCD_COMMAND_SCRATCHPAD_WRITE, };
 	struct transaction_log t[] = {
@@ -365,7 +342,7 @@ static int OW_w_scratch(const BYTE * data, int length, const struct parsedname *
 	return BUS_transaction(t, pn);
 }
 
-static int OW_r_scratch(BYTE * data, int length, const struct parsedname *pn)
+static GOOD_OR_BAD OW_r_scratch(BYTE * data, int length, const struct parsedname *pn)
 {
 	BYTE read_command[1] = { _LCD_COMMAND_SCRATCHPAD_READ, };
 	struct transaction_log t[] = {
@@ -378,35 +355,35 @@ static int OW_r_scratch(BYTE * data, int length, const struct parsedname *pn)
 	return BUS_transaction(t, pn);
 }
 
-static int OW_w_register(BYTE data, const struct parsedname *pn)
+static GOOD_OR_BAD OW_w_register(BYTE data, const struct parsedname *pn)
 {
 	BYTE w[] = { _LCD_COMMAND_REGISTER_WRITE_BYTE, data, };
 	// 100uS
 	return LCD_2byte(w, 1, pn);
 }
 
-static int OW_r_register(BYTE * data, const struct parsedname *pn)
+static GOOD_OR_BAD OW_r_register(BYTE * data, const struct parsedname *pn)
 {
 	// 150uS
-	return LCD_byte(_LCD_COMMAND_REGISTER_TO_SCRATCH, 1, pn)
-		|| OW_r_scratch(data, 1, pn);
+	return BAD( LCD_byte(_LCD_COMMAND_REGISTER_TO_SCRATCH, 1, pn))
+		|| BAD( OW_r_scratch(data, 1, pn));
 }
 
-static int OW_w_data(const BYTE data, const struct parsedname *pn)
+static GOOD_OR_BAD OW_w_data(const BYTE data, const struct parsedname *pn)
 {
 	BYTE w[] = { _LCD_COMMAND_DATA_WRITE_BYTE, data, };
 	// 100uS
 	return LCD_2byte(w, 1, pn);
 }
 
-static int OW_r_data(BYTE * data, const struct parsedname *pn)
+static GOOD_OR_BAD OW_r_data(BYTE * data, const struct parsedname *pn)
 {
 	// 150uS
-	return LCD_byte(_LCD_COMMAND_DATA_TO_SCRATCH, 1, pn)
-		|| OW_r_scratch(data, 1, pn);
+	return BAD( LCD_byte(_LCD_COMMAND_DATA_TO_SCRATCH, 1, pn))
+		|| BAD(OW_r_scratch(data, 1, pn));
 }
 
-static int OW_w_gpio(BYTE data, const struct parsedname *pn)
+static GOOD_OR_BAD OW_w_gpio(BYTE data, const struct parsedname *pn)
 {
 	/* Note, it would be nice to control separately, nut
 	   we can't know the set state of the pin, i.e. sensed and set
@@ -417,21 +394,21 @@ static int OW_w_gpio(BYTE data, const struct parsedname *pn)
 	return LCD_2byte(w, 1, pn);
 }
 
-static int OW_r_gpio(BYTE * data, const struct parsedname *pn)
+static GOOD_OR_BAD OW_r_gpio(BYTE * data, const struct parsedname *pn)
 {
 	// 70uS
-	return LCD_byte(_LCD_COMMAND_GPIO_READ_TO_SCRATCH, 1, pn)
-		|| OW_r_scratch(data, 1, pn);
+	return BAD( LCD_byte(_LCD_COMMAND_GPIO_READ_TO_SCRATCH, 1, pn))
+		|| BAD(OW_r_scratch(data, 1, pn));
 }
 
-static int OW_r_counters(UINT * data, const struct parsedname *pn)
+static GOOD_OR_BAD OW_r_counters(UINT * data, const struct parsedname *pn)
 {
 	BYTE d[8];
 	UINT cum[4];
 
-	if (LCD_byte(_LCD_COMMAND_COUNTER_READ_TO_SCRATCH, 1, pn)
-		|| OW_r_scratch(d, 8, pn)) {
-		return 1;				// 80uS
+	if ( BAD( LCD_byte(_LCD_COMMAND_COUNTER_READ_TO_SCRATCH, 1, pn))
+		|| BAD(OW_r_scratch(d, 8, pn)) ) {
+		return gbBAD;				// 80uS
 	}
 	
 	data[0] = ((UINT) d[1]) << 8 | d[0];
@@ -452,7 +429,7 @@ static int OW_r_counters(UINT * data, const struct parsedname *pn)
 		cum[3] += data[3];
 	}
 	Cache_Add_Internal((void *) cum, sizeof(cum), InternalProp(CUM), pn);
-	return 0;
+	return gbGOOD;
 }
 
 /* memory is 112 bytes */
@@ -460,14 +437,14 @@ static int OW_r_counters(UINT * data, const struct parsedname *pn)
 /* Will pretend pagesize = 16 */
 /* minor inefficiency if start is not on "page" boundary */
 /* Call will not span "page" */
-static int OW_r_memory(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
+static GOOD_OR_BAD OW_r_memory(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
 {
 	BYTE location_setup[2] = { BYTE_MASK(offset), BYTE_MASK(size), };
 
 	// 500uS
-	return OW_w_scratch(location_setup, 2, pn)
-		|| LCD_byte(_LCD_COMMAND_EEPROM_READ_TO_SCRATCH, 1, pn)
-		|| OW_r_scratch(data, BYTE_MASK(size), pn);
+	return BAD(OW_w_scratch(location_setup, 2, pn))
+		|| BAD( LCD_byte(_LCD_COMMAND_EEPROM_READ_TO_SCRATCH, 1, pn))
+		|| BAD(OW_r_scratch(data, BYTE_MASK(size), pn));
 }
 
 /* memory is 112 bytes */
@@ -484,20 +461,20 @@ static GOOD_OR_BAD OW_w_memory(BYTE * data, size_t size, off_t offset, struct pa
 	}
 	memcpy(&location_and_buffer[1], data, size);
 
-	return OW_w_scratch(location_and_buffer, size + 1, pn)
-		|| LCD_byte(_LCD_COMMAND_EEPROM_WRITE_FROM_SCRATCH, 4 * size, pn);
+	return BAD(OW_w_scratch(location_and_buffer, size + 1, pn))
+		|| BAD( LCD_byte(_LCD_COMMAND_EEPROM_WRITE_FROM_SCRATCH, 4 * size, pn));
 	// 4mS/byte
 }
 
 /* data is 16 bytes */
-static int OW_r_version(BYTE * data, const struct parsedname *pn)
+static GOOD_OR_BAD OW_r_version(BYTE * data, const struct parsedname *pn)
 {
 	// 500uS
-	return LCD_byte(_LCD_COMMAND_VERSION_READ_TO_SCRATCH, 1, pn)
-		|| OW_r_scratch(data, _LCD_PAGE_SIZE, pn);
+	return BAD( LCD_byte(_LCD_COMMAND_VERSION_READ_TO_SCRATCH, 1, pn))
+		|| BAD(OW_r_scratch(data, _LCD_PAGE_SIZE, pn));
 }
 
-static int OW_w_screen(BYTE lcd_location, const char *text, int size, const struct parsedname *pn)
+static GOOD_OR_BAD OW_w_screen(BYTE lcd_location, const char *text, int size, const struct parsedname *pn)
 {
 	int chars_left_to_print = size;
 
@@ -508,35 +485,32 @@ static int OW_w_screen(BYTE lcd_location, const char *text, int size, const stru
 			chars_printing_now = _LCD_PAGE_SIZE;
 		}
 		current_index_in_buffer = size - chars_left_to_print;
-		if (OW_w_unpaged_to_screen(lcd_location + current_index_in_buffer, chars_printing_now, &text[current_index_in_buffer], pn)) {
-			return 1;
+		if ( BAD( OW_w_unpaged_to_screen(lcd_location + current_index_in_buffer, chars_printing_now, &text[current_index_in_buffer], pn) ) ) {
+			return gbBAD;
 		}
 		chars_left_to_print -= chars_printing_now;
 	}
-	return 0;
+	return gbGOOD;
 }
 
-static int OW_w_unpaged_to_screen(BYTE lcd_location, BYTE length, const char *text, const struct parsedname *pn)
+static GOOD_OR_BAD OW_w_unpaged_to_screen(BYTE lcd_location, BYTE length, const char *text, const struct parsedname *pn)
 {
 	BYTE location_and_string[1 + _LCD_PAGE_SIZE] = { lcd_location, };
 	memcpy(&location_and_string[1], text, length);
-	if (OW_w_scratch(location_and_string, 1 + length, pn)) {
-		return 1;
+	if ( BAD( OW_w_scratch(location_and_string, 1 + length, pn) ) ) {
+		return gbBAD;
 	}
-	if (LCD_byte(_LCD_COMMAND_PRINT_FROM_SCRATCH, 2, pn)) {
-		return 1;
-	}
-	return 0;
+	return LCD_byte(_LCD_COMMAND_PRINT_FROM_SCRATCH, 2, pn) ;
 }
 
-static int OW_clear(const struct parsedname *pn)
+static GOOD_OR_BAD OW_clear(const struct parsedname *pn)
 {
 	/* clear */
 	return LCD_byte(_LCD_COMMAND_LCD_CLEAR, 3, pn);
 	// 2.5mS
 }
 
-static int OW_simple_command(BYTE lcd_command_code, const struct parsedname *pn)
+static GOOD_OR_BAD OW_simple_command(BYTE lcd_command_code, const struct parsedname *pn)
 {
 	struct transaction_log t[] = {
 		TRXN_START,
@@ -546,7 +520,7 @@ static int OW_simple_command(BYTE lcd_command_code, const struct parsedname *pn)
 	return BUS_transaction(t, pn);
 }
 
-static int LCD_byte(BYTE b, int delay, const struct parsedname *pn)
+static GOOD_OR_BAD LCD_byte(BYTE b, int delay, const struct parsedname *pn)
 {
 	struct transaction_log t[] = {
 		TRXN_START,
@@ -557,7 +531,7 @@ static int LCD_byte(BYTE b, int delay, const struct parsedname *pn)
 	return BUS_transaction(t, pn);
 }
 
-static int LCD_2byte(BYTE * bytes, int delay, const struct parsedname *pn)
+static GOOD_OR_BAD LCD_2byte(BYTE * bytes, int delay, const struct parsedname *pn)
 {
 	struct transaction_log t[] = {
 		TRXN_START,
@@ -566,8 +540,8 @@ static int LCD_2byte(BYTE * bytes, int delay, const struct parsedname *pn)
 	};
 
 	if (BUS_transaction(t, pn)) {
-		return 1;
+		return gbBAD;
 	}
 	UT_delay(delay);			// mS
-	return 0;
+	return gbGOOD;
 }

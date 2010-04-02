@@ -104,103 +104,27 @@ ssize_t OW_init_args(int argc, char **argv)
 	return ReturnAndErrno(ret);
 }
 
-static void getdircallback(void *v, const struct parsedname *const pn_entry)
-{
-	struct charblob *cb = v;
-	const char *buf = FS_DirName(pn_entry);
-	CharblobAdd(buf, strlen(buf), cb);
-    if (IsDir(pn_entry)) {
-		CharblobAddChar('/', cb);
-    }
-}
+/*
+  Get a value,  returning a copy of the contents in *buffer (which must be free-ed elsewhere)
+  return length of string, or <0 for error
+  *buffer will be returned as NULL on error
+ */
 
 /*
   Get a directory,  returning a copy of the contents in *buffer (which must be free-ed elsewhere)
   return length of string, or <0 for error
   *buffer will be returned as NULL on error
  */
-static ssize_t getdir(struct one_wire_query *owq)
+
+ssize_t OW_get(const char *path, char **return_buffer, size_t * buffer_length)
 {
-	struct charblob cb;
-	ssize_t ret;
-
-	CharblobInit(&cb);
-	ret = FS_dir(getdircallback, &cb, PN(owq));
-	if (ret < 0) {
-		// error in directory read
-		OWQ_buffer(owq) = NULL;
-		OWQ_size(owq) = 0;
-	} else if ( CharblobLength(&cb) == 0 ) {
-		// empty directory
-		ret = 0 ;
-		OWQ_size(owq) = ret;
-		OWQ_buffer(owq) = NULL ;
-	} else if ((OWQ_buffer(owq) = owstrdup(CharblobData(&cb)))) {
-		// able to copy directory (blob)
-		ret = CharblobLength(&cb);
-		OWQ_size(owq) = ret;
-	} else {
-		// Unable to copy directory blob
-		ret = -ENOMEM;
-		OWQ_size(owq) = 0;
-	}
-	CharblobClear(&cb);
-	return ret;
-}
-
-/*
-  Get a value,  returning a copy of the contents in *buffer (which must be free-ed elsewhere)
-  return length of string, or <0 for error
-  *buffer will be returned as NULL on error
- */
-static ssize_t getval(struct one_wire_query *owq)
-{
-	if ( OWQ_allocate_read_buffer(owq) != 0 ) {
-		return -ENOMEM;
-	}
-	return FS_read_postparse(owq);
-}
-
-ssize_t OW_get(const char *path, char **buffer, size_t * buffer_length)
-{
-	struct one_wire_query owq;
-	ssize_t ret = -EACCES;		/* current buffer string length */
-
-	/* Check the parameters */
-	if (buffer == NULL) {
-		return ReturnAndErrno(-EINVAL);
-	}
-
-	if (path == NULL) {
-		path = "/";
-	}
-
-	*buffer = NULL;				// default return string on error
-	if (buffer_length != NULL) {
-		*buffer_length = 0;
-	}
+	SIZE_OR_ERROR size_or_error = -EACCES ;		/* current buffer string length */
 
 	if (API_access_start() == 0) {	/* Check for prior init */
-		if (OWQ_create(path, &owq)) {	/* Can we parse the input string */
-			ret = -ENOENT;
-		} else {
-			// the buffer is allocated by getdir or getval
-			if (IsDir(PN(&owq))) {	/* A directory of some kind */
-				ret = getdir(&owq);
-			} else {			/* A regular file */
-				ret = getval(&owq);
-			}
-			if (ret >= 0) {
-				*buffer = OWQ_buffer(&owq);
-				if (buffer_length != NULL) {
-					*buffer_length = OWQ_size(&owq);
-				}
-			}
-			OWQ_destroy(&owq);
-		}
+		size_or_error = FS_get( path, return_buffer, buffer_length );
 		API_access_end();
 	}
-	return ReturnAndErrno(ret);
+	return ReturnAndErrno(size_or_error);
 }
 
 int OW_present(const char *path)

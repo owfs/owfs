@@ -48,7 +48,7 @@ $Id$
 #define _1W_READ_AA  0xAA
 
 static void Set_OWQ_length(struct one_wire_query *owq);
-static int OW_r_crc16(BYTE code, struct one_wire_query *owq, size_t page, size_t pagesize);
+static GOOD_OR_BAD OW_r_crc16(BYTE code, struct one_wire_query *owq, size_t page, size_t pagesize);
 
 static void Set_OWQ_length(struct one_wire_query *owq)
 {
@@ -64,7 +64,7 @@ static void Set_OWQ_length(struct one_wire_query *owq)
 }
 
 /* No CRC -- 0xF0 code */
-ZERO_OR_ERROR COMMON_read_memory_F0(struct one_wire_query *owq, size_t page, size_t pagesize)
+GOOD_OR_BAD COMMON_read_memory_F0(struct one_wire_query *owq, size_t page, size_t pagesize)
 {
 	off_t offset = OWQ_offset(owq) + page * pagesize;
 	BYTE p[3] = { _1W_READ_F0, LOW_HIGH_ADDRESS(offset), };
@@ -80,7 +80,7 @@ ZERO_OR_ERROR COMMON_read_memory_F0(struct one_wire_query *owq, size_t page, siz
 }
 
 /* read up to end of page to CRC16 -- 0xA5 code */
-static int OW_r_crc16(BYTE code, struct one_wire_query *owq, size_t page, size_t pagesize)
+static GOOD_OR_BAD OW_r_crc16(BYTE code, struct one_wire_query *owq, size_t page, size_t pagesize)
 {
 	off_t offset = OWQ_offset(owq) + page * pagesize;
 	size_t size = OWQ_size(owq);
@@ -96,28 +96,28 @@ static int OW_r_crc16(BYTE code, struct one_wire_query *owq, size_t page, size_t
 	p[1] = BYTE_MASK(offset);
 	p[2] = BYTE_MASK(offset >> 8);
 	if (BUS_transaction(t, PN(owq))) {
-		return 1;
+		return gbBAD;
 	}
 	memcpy(OWQ_buffer(owq), &p[3], size);
 	Set_OWQ_length(owq);
-	return 0;
+	return gbGOOD;
 }
 
 /* read up to end of page to CRC16 -- 0xA5 code */
-ZERO_OR_ERROR COMMON_read_memory_crc16_A5(struct one_wire_query *owq, size_t page, size_t pagesize)
+GOOD_OR_BAD COMMON_read_memory_crc16_A5(struct one_wire_query *owq, size_t page, size_t pagesize)
 {
 	return OW_r_crc16(_1W_READ_A5, owq, page, pagesize)?-EINVAL:0;
 }
 
 /* read up to end of page to CRC16 -- 0xA5 code */
-ZERO_OR_ERROR COMMON_read_memory_crc16_AA(struct one_wire_query *owq, size_t page, size_t pagesize)
+GOOD_OR_BAD COMMON_read_memory_crc16_AA(struct one_wire_query *owq, size_t page, size_t pagesize)
 {
 	return OW_r_crc16(_1W_READ_AA, owq, page, pagesize)?-EINVAL:0;
 }
 
 /* read up to end of page to CRC16 -- 0xA5 code */
 /* Extra 8 bytes, (for counter) too -- discarded */
-ZERO_OR_ERROR COMMON_read_memory_toss_counter(struct one_wire_query *owq, size_t page, size_t pagesize)
+GOOD_OR_BAD COMMON_read_memory_toss_counter(struct one_wire_query *owq, size_t page, size_t pagesize)
 {
 	off_t offset = OWQ_offset(owq) + page * pagesize;
 	BYTE p[3 + pagesize + 8 + 2];
@@ -132,18 +132,18 @@ ZERO_OR_ERROR COMMON_read_memory_toss_counter(struct one_wire_query *owq, size_t
 	p[1] = BYTE_MASK(offset);
 	p[2] = BYTE_MASK(offset >> 8);
 	if (BUS_transaction(t, PN(owq))) {
-		return -EINVAL;
+		return gbBAD;
 	}
 	memcpy(OWQ_buffer(owq), &p[3], OWQ_size(owq));
 	Set_OWQ_length(owq);
-	return 0;
+	return gbGOOD;
 }
 
 #define _1W_Throw_Away_Bytes    1
 
 /*  0xA5 code */
 /* Extra 8 bytes, too */
-ZERO_OR_ERROR COMMON_read_memory_plus_counter(BYTE * extra, size_t page, size_t pagesize, struct parsedname *pn)
+GOOD_OR_BAD COMMON_read_memory_plus_counter(BYTE * extra, size_t page, size_t pagesize, struct parsedname *pn)
 {
 	off_t offset = (page + 1) * pagesize - _1W_Throw_Away_Bytes;	// last byte of page
 	BYTE p[3 + _1W_Throw_Away_Bytes + 8 + 2] = { _1W_READ_A5, LOW_HIGH_ADDRESS(offset), };
@@ -154,11 +154,11 @@ ZERO_OR_ERROR COMMON_read_memory_plus_counter(BYTE * extra, size_t page, size_t 
 	};
 
 	if (BUS_transaction(t, pn)) {
-		return -EINVAL;
+		return gbBAD;
 	}
 	if (extra) {
 		memcpy(extra, &p[3 + _1W_Throw_Away_Bytes], 8);
 	}
 	LEVEL_DEBUG("Counter Data: " SNformat, SNvar(extra));
-	return 0;
+	return gbGOOD;
 }

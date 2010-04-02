@@ -154,6 +154,8 @@ int FS_write(const char *path, const char *buf, const size_t size, const off_t o
 int FS_write_postparse(struct one_wire_query *owq);
 int FS_write_local(struct one_wire_query *owq);
 
+SIZE_OR_ERROR FS_get(const char *path, char **return_buffer, size_t * buffer_length) ;
+
 SIZE_OR_ERROR FS_read(const char *path, char *buf, const size_t size, const off_t offset);
 SIZE_OR_ERROR FS_read_postparse(struct one_wire_query *owq);
 ZERO_OR_ERROR FS_read_fake(struct one_wire_query *owq);
@@ -181,16 +183,16 @@ int FS_fstat_postparse(struct stat *stbuf, const struct parsedname *pn);
 
 /* iteration functions for splitting writes to buffers */
 GOOD_OR_BAD COMMON_readwrite_paged(struct one_wire_query *owq, size_t page, size_t pagelen, GOOD_OR_BAD (*readwritefunc) (BYTE *, size_t, off_t, struct parsedname *));
-int COMMON_OWQ_readwrite_paged(struct one_wire_query *owq, size_t page, size_t pagelen, int (*readwritefunc) (struct one_wire_query *, size_t, size_t));
+GOOD_OR_BAD COMMON_OWQ_readwrite_paged(struct one_wire_query *owq, size_t page, size_t pagelen, GOOD_OR_BAD (*readwritefunc) (struct one_wire_query *, size_t, size_t));
 
 ZERO_OR_ERROR COMMON_r_date( struct one_wire_query * owq ) ;
 ZERO_OR_ERROR COMMON_w_date( struct one_wire_query * owq ) ;
 
-int COMMON_read_memory_F0(struct one_wire_query *owq, size_t page, size_t pagesize);
-int COMMON_read_memory_crc16_A5(struct one_wire_query *owq, size_t page, size_t pagesize);
-int COMMON_read_memory_crc16_AA(struct one_wire_query *owq, size_t page, size_t pagesize);
-int COMMON_read_memory_toss_counter(struct one_wire_query *owq, size_t page, size_t pagesize);
-int COMMON_read_memory_plus_counter(BYTE * extra, size_t page, size_t pagesize, struct parsedname *pn);
+GOOD_OR_BAD COMMON_read_memory_F0(struct one_wire_query *owq, size_t page, size_t pagesize);
+GOOD_OR_BAD COMMON_read_memory_crc16_A5(struct one_wire_query *owq, size_t page, size_t pagesize);
+GOOD_OR_BAD COMMON_read_memory_crc16_AA(struct one_wire_query *owq, size_t page, size_t pagesize);
+GOOD_OR_BAD COMMON_read_memory_toss_counter(struct one_wire_query *owq, size_t page, size_t pagesize);
+GOOD_OR_BAD COMMON_read_memory_plus_counter(BYTE * extra, size_t page, size_t pagesize, struct parsedname *pn);
 
 int COMMON_write_eprom_mem_owq(struct one_wire_query * owq) ;
 int COMMON_write_eprom_status(const BYTE * data, size_t size, off_t offset, const struct parsedname *pn);

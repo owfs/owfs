@@ -861,10 +861,7 @@ static ZERO_OR_ERROR FS_r_atrig(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (COMMON_OWQ_readwrite_paged(owq, 0, pagesize, COMMON_read_memory_crc16_A5)) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E(COMMON_OWQ_readwrite_paged(owq, 0, pagesize, COMMON_read_memory_crc16_A5)) ;
 }
 
 static ZERO_OR_ERROR FS_w_mem(struct one_wire_query *owq)
@@ -1244,7 +1241,7 @@ static int OW_alarmlog(int *t, int *c, off_t offset, struct parsedname *pn)
 
 	OWQ_create_temporary(owq_alog, (char *) data, sizeof(data), offset, pn);
 
-	if (COMMON_OWQ_readwrite_paged(owq_alog, 0, 32, COMMON_read_memory_crc16_A5)) {
+	if ( BAD( COMMON_OWQ_readwrite_paged(owq_alog, 0, 32, COMMON_read_memory_crc16_A5) ) ) {
 		return -EINVAL;
 	}
 
@@ -1347,7 +1344,7 @@ static int OW_r_histogram_all(struct one_wire_query *owq)
 
 	OWQ_create_temporary(owq_histo, (char *) data, sizeof(data), 0x0800, PN(owq));
 
-	if (COMMON_OWQ_readwrite_paged(owq_histo, 0, pagesize, COMMON_read_memory_crc16_A5)) {
+	if ( BAD( COMMON_OWQ_readwrite_paged(owq_histo, 0, pagesize, COMMON_read_memory_crc16_A5) ) ) {
 		return -EINVAL;
 	}
 	for (i = 0; i < HISTOGRAM_DATA_ELEMENTS; ++i) {
@@ -1409,7 +1406,7 @@ static int OW_r_logtemp_all(struct Version *v, struct Mission *mission, struct o
 	}
 
 	OWQ_create_temporary(owq_log, (char *) data, sizeof(data), 0x1000, PN(owq));
-	if (COMMON_OWQ_readwrite_paged(owq_log, 0, pagesize, COMMON_read_memory_crc16_A5)) {
+	if ( BAD(COMMON_OWQ_readwrite_paged(owq_log, 0, pagesize, COMMON_read_memory_crc16_A5) ) ) {
 		return -EINVAL;
 	}
 	if (pass) {

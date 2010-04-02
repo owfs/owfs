@@ -104,7 +104,7 @@ struct filetype EDS[] = {
 DeviceEntryExtended(7E, EDS, DEV_temp | DEV_alarm);
 
 /* ------- Functions ------------ */
-static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn) ;
+static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn) ;
 
 /* Persistent storage */
 //static struct internal_prop ip_cum = { "CUM", fc_persistent };
@@ -135,7 +135,7 @@ static ZERO_OR_ERROR FS_r_tag(struct one_wire_query *owq)
 				break ;
 			}
 		}
-		if ( OWQ_format_output_offset_and_size( data, _EDS_TAG_LENGTH, owq ) ) {
+		if ( OWQ_format_output_offset_and_size( (char *) data, _EDS_TAG_LENGTH, owq ) ) {
 			return -EINVAL ;
 		}
 		Cache_Add_Internal(&tag, sizeof(UINT), InternalProp(TAG), pn) ;
@@ -159,10 +159,7 @@ static ZERO_OR_ERROR FS_temperature(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_r_memory(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (COMMON_OWQ_readwrite_paged(owq, 0, pagesize, COMMON_read_memory_F0)) {
-		return -EINVAL ;
-	}
-	return 0;
+	return RETURN_Z_OR_E(COMMON_OWQ_readwrite_paged(owq, 0, pagesize, COMMON_read_memory_F0)) ;
 }
 
 static enum e_visibility EDS_visible(const struct parsedname * pn) {
@@ -186,10 +183,7 @@ static enum e_visibility EDS_visible(const struct parsedname * pn) {
 static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (COMMON_OWQ_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, COMMON_read_memory_F0)) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E(COMMON_OWQ_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, COMMON_read_memory_F0)) ;
 }
 
 static ZERO_OR_ERROR FS_w_memory(struct one_wire_query *owq)
@@ -203,7 +197,7 @@ static ZERO_OR_ERROR FS_w_memory(struct one_wire_query *owq)
 		if ( write_size > size ) {
 			write_size = size ;
 		}
-		if ( OW_w_mem(position, write_size, start, PN(owq))) {
+		if ( BAD( OW_w_mem(position, write_size, start, PN(owq)) ) ) {
 			return -EINVAL ;
 		}
 		position += write_size ;
@@ -217,10 +211,10 @@ static ZERO_OR_ERROR FS_w_memory(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 {
 	struct parsedname * pn = PN(owq) ;
-	return OW_w_mem( (BYTE *) OWQ_buffer(owq),OWQ_size(owq),OWQ_offset(owq) + _EDS_PAGESIZE * pn->extension,pn) ? -EINVAL : 0 ;
+	return RETURN_Z_OR_E( OW_w_mem( (BYTE *) OWQ_buffer(owq),OWQ_size(owq),OWQ_offset(owq) + _EDS_PAGESIZE * pn->extension,pn) );
 }
 
-static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
+static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
 {
 	BYTE p[3 + 1 + _EDS_PAGESIZE + 2] = { _EDS_WRITE_SCRATCHPAD, LOW_HIGH_ADDRESS(offset), };
 	int rest = _EDS_PAGESIZE - (offset & 0x1F);
@@ -250,11 +244,11 @@ static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 	memcpy(&p[3], data, size);
 	if ((offset + size) & 0x1F) {	/* to end of page */
 		if (BUS_transaction(tcopy, pn)) {
-			return 1;
+			return gbBAD;
 		}
 	} else {
 		if (BUS_transaction(tcopy_crc, pn)) {
-			return 1;
+			return gbBAD;
 		}
 	}
 
@@ -262,14 +256,14 @@ static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 	/* Note: location of data has now shifted down a byte for E/S register */
 	p[0] = _EDS_READ_SCRATCHPAD;
 	if (BUS_transaction(tread, pn)) {
-		return 1;
+		return gbBAD;
 	}
 
 	/* write Scratchpad to SRAM */
 	p[0] = _EDS_COPY_SCRATCHPAD;
 	if (BUS_transaction(twrite, pn)) {
-		return 1;
+		return gbBAD;
 	}
 
-	return 0;
+	return gbGOOD;
 }
