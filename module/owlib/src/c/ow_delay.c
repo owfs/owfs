@@ -76,7 +76,7 @@ void UT_delay(const UINT len)
 
 #else							/* HAVE_NANOSLEEP */
 
-	usleep((unsigned long) len);
+	usleep((unsigned long) len * 1000);
 
 #endif							/* HAVE_NANOSLEEP */
 
@@ -148,7 +148,7 @@ void UT_delay_us(const unsigned long len)
 
 #else							/* HAVE_NANOSLEEP */
 
-	usleep((unsigned long) len * 1000);
+	usleep((unsigned long) len);
 
 #endif							/* HAVE_NANOSLEEP */
 
