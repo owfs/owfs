@@ -731,33 +731,27 @@ static int OW_w_por(const int por, struct parsedname *pn)
 /* Functions for the CO2 sensor */
 static ZERO_OR_ERROR FS_CO2_power( struct one_wire_query *owq)
 {
-	_FLOAT P ;
-	
-	if (FS_r_sibling_F(&P,"volt.D",owq)) {
-		return -EINVAL ;
-	}
+	_FLOAT P = 0. ;
+	ZERO_OR_ERROR z_or_e = FS_r_sibling_F(&P,"volt.D",owq) ;
+
 	OWQ_U(owq) = P ;
-	return 0 ;
+	return z_or_e ;
 }
 
 static ZERO_OR_ERROR FS_CO2_ppm( struct one_wire_query *owq)
 {
-	_FLOAT P ;
-	
-	if (FS_r_sibling_F(&P,"volt.A",owq)) {
-		return -EINVAL ;
-	}
+	_FLOAT P = 0. ;
+	ZERO_OR_ERROR z_or_e = FS_r_sibling_F(&P,"volt.A",owq) ;
+
 	OWQ_U(owq) = P*1000. ;
-	return 0 ;
+	return z_or_e ;
 }
 
 static ZERO_OR_ERROR FS_CO2_status( struct one_wire_query *owq)
 {
-	_FLOAT V ;
-	
-	if (FS_r_sibling_F(&V,"volt.B",owq)) {
-		return -EINVAL ;
-	}
+	_FLOAT V = 0.;
+	ZERO_OR_ERROR z_or_e = FS_r_sibling_F(&V,"volt.B",owq) ;
+
 	OWQ_Y(owq) = (V>3.0) && (V<3.4) ;
-	return 0 ;
+	return z_or_e ;
 }

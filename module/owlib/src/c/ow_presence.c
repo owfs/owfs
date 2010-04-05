@@ -46,13 +46,13 @@ $Id$
 #include "ow_connection.h"
 
 /* ------- Prototypes ------------ */
-static int CheckPresence_low(const struct parsedname *pn);
-static int CheckThisConnection(int bus_nr, const struct parsedname *pn) ;
+static INDEX_OR_ERROR CheckPresence_low(const struct parsedname *pn);
+static INDEX_OR_ERROR CheckThisConnection(int bus_nr, const struct parsedname *pn) ;
 
 /* ------- Functions ------------ */
 
 /* Check if device exists -- >=0 yes, -1 no */
-int CheckPresence(struct parsedname *pn)
+INDEX_OR_ERROR CheckPresence(struct parsedname *pn)
 {
 	int bus_nr;
 	
@@ -92,7 +92,7 @@ int CheckPresence(struct parsedname *pn)
 }
 
 /* See if a cached location is accurate -- called with "Known Bus" set */
-int ReCheckPresence(struct parsedname *pn)
+INDEX_OR_ERROR ReCheckPresence(struct parsedname *pn)
 {
 	int bus_nr;
 	
@@ -157,7 +157,7 @@ static void * CheckPresence_callback(void * v)
 	return NULL ;
 }
 
-static int CheckPresence_low(const struct parsedname *pn)
+static INDEX_OR_ERROR CheckPresence_low(const struct parsedname *pn)
 {
 	struct checkpresence_struct cps = { Inbound_Control.head , pn, -ENOENT };
 		
@@ -169,7 +169,7 @@ static int CheckPresence_low(const struct parsedname *pn)
 
 #else							/* OW_MT */
 
-static int CheckPresence_low(const struct parsedname *pn)
+static INDEX_OR_ERROR CheckPresence_low(const struct parsedname *pn)
 {
 	struct connection_in * in ;
 	
@@ -183,7 +183,7 @@ static int CheckPresence_low(const struct parsedname *pn)
 }
 #endif							/* OW_MT */
 
-int FS_present(struct one_wire_query *owq)
+ZERO_OR_ERROR FS_present(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 

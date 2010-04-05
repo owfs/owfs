@@ -47,41 +47,30 @@ $Id$
 #include "ow_standard.h"
 
 /* ------- Prototypes ----------- */
-static int COMMON_write_eprom_mem(const BYTE * data, size_t size, off_t offset, const struct parsedname *pn);
-static int OW_write_eprom_byte(BYTE code, BYTE data, off_t offset, const struct parsedname *pn);
+static GOOD_OR_BAD COMMON_write_eprom_mem(const BYTE * data, size_t size, off_t offset, const struct parsedname *pn);
+static GOOD_OR_BAD OW_write_eprom_byte(BYTE code, BYTE data, off_t offset, const struct parsedname *pn);
 
 #define _1W_WRITE_MEMORY         0x0F
 #define _1W_WRITE_STATUS         0x55
 
 // use owq instead of components
-int COMMON_write_eprom_mem_owq(struct one_wire_query * owq)
+ZERO_OR_ERROR COMMON_write_eprom_mem_owq(struct one_wire_query * owq)
 {
-	return COMMON_write_eprom_mem( OWQ_explode(owq));
+	return RETURN_Z_OR_E(COMMON_write_eprom_mem( OWQ_explode(owq)));
 }
 
-static int COMMON_write_eprom_mem(const BYTE * data, size_t size, off_t offset, const struct parsedname *pn)
-{
-	int byte_number;
-	for (byte_number = 0; byte_number < (int) size; ++byte_number) {
-		if (OW_write_eprom_byte(_1W_WRITE_MEMORY, data[byte_number], offset + byte_number, pn)) {
-			return 1;
-		}
-	}
-	return 0;
-}
-
-int COMMON_write_eprom_status(const BYTE * data, size_t size, off_t offset, const struct parsedname *pn)
+static GOOD_OR_BAD COMMON_write_eprom_mem(const BYTE * data, size_t size, off_t offset, const struct parsedname *pn)
 {
 	int byte_number;
 	for (byte_number = 0; byte_number < (int) size; ++byte_number) {
-		if (OW_write_eprom_byte(_1W_WRITE_STATUS, data[byte_number], offset + byte_number, pn)) {
-			return 1;
+		if ( BAD( OW_write_eprom_byte(_1W_WRITE_MEMORY, data[byte_number], offset + byte_number, pn) ) ) {
+			return gbBAD;
 		}
 	}
-	return 0;
+	return gbGOOD;
 }
 
-static int OW_write_eprom_byte(BYTE code, BYTE data, off_t offset, const struct parsedname *pn)
+static GOOD_OR_BAD OW_write_eprom_byte(BYTE code, BYTE data, off_t offset, const struct parsedname *pn)
 {
 	BYTE p[6] = { code, LOW_HIGH_ADDRESS(offset), data, };
 	struct transaction_log t[] = {
@@ -93,7 +82,7 @@ static int OW_write_eprom_byte(BYTE code, BYTE data, off_t offset, const struct 
 
 	if (BUS_transaction(t, pn)) {
 		LEVEL_DEBUG("Error writing to EPROM byte %d", (int) offset);
-		return 1;
+		return gbBAD;
 	}
-	return 0 ;
+	return gbGOOD ;
 }

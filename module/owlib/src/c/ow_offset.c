@@ -50,9 +50,9 @@ $Id$
  * but OWQ_parse_output checks the file size against the original property constraints.
  */
 
-int COMMON_offset_process( int (*func) (struct one_wire_query *), struct one_wire_query * owq, off_t shift_offset)
+ZERO_OR_ERROR COMMON_offset_process( ZERO_OR_ERROR (*func) (struct one_wire_query *), struct one_wire_query * owq, off_t shift_offset)
 {
-	int func_return_value ;
+	ZERO_OR_ERROR func_return_value ;
 
 	OWQ_offset(owq) += shift_offset ;
 	func_return_value = func(owq) ;

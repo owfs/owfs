@@ -72,8 +72,8 @@ int Parse_SerialNumber(char *sn_char, BYTE * sn) ;
 
 size_t FileLength(const struct parsedname *pn);
 size_t FullFileLength(const struct parsedname *pn);
-int CheckPresence(struct parsedname *pn);
-int ReCheckPresence(struct parsedname *pn);
+INDEX_OR_ERROR CheckPresence(struct parsedname *pn);
+INDEX_OR_ERROR ReCheckPresence(struct parsedname *pn);
 void FS_devicename(char *buffer, const size_t length, const BYTE * sn, const struct parsedname *pn);
 void FS_devicefind(const char *code, struct parsedname *pn);
 void FS_devicefindhex(BYTE f, struct parsedname *pn);
@@ -140,19 +140,19 @@ void FS_help(const char *arg);
 
 void update_max_delay(struct connection_in *connection);
 
-int ServerPresence(const struct parsedname *pn);
-int ServerRead(struct one_wire_query *owq);
-int ServerWrite(struct one_wire_query *owq);
-int ServerDir(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn, uint32_t * flags);
+INDEX_OR_ERROR ServerPresence(const struct parsedname *pn);
+SIZE_OR_ERROR ServerRead(struct one_wire_query *owq);
+ZERO_OR_ERROR ServerWrite(struct one_wire_query *owq);
+ZERO_OR_ERROR ServerDir(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn, uint32_t * flags);
 
 /* High-level callback functions */
-int FS_dir(void (*dirfunc) (void *, const struct parsedname *), void *v, struct parsedname *pn);
-int FS_dir_remote(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn, uint32_t * flags);
+ZERO_OR_ERROR FS_dir(void (*dirfunc) (void *, const struct parsedname *), void *v, struct parsedname *pn);
+ZERO_OR_ERROR FS_dir_remote(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn, uint32_t * flags);
 void FS_alias_subst(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn) ;
 
-int FS_write(const char *path, const char *buf, const size_t size, const off_t offset);
-int FS_write_postparse(struct one_wire_query *owq);
-int FS_write_local(struct one_wire_query *owq);
+ZERO_OR_ERROR FS_write(const char *path, const char *buf, const size_t size, const off_t offset);
+ZERO_OR_ERROR FS_write_postparse(struct one_wire_query *owq);
+ZERO_OR_ERROR FS_write_local(struct one_wire_query *owq);
 
 SIZE_OR_ERROR FS_get(const char *path, char **return_buffer, size_t * buffer_length) ;
 
@@ -163,18 +163,16 @@ ZERO_OR_ERROR FS_read_tester(struct one_wire_query *owq);
 ZERO_OR_ERROR FS_r_aggregate_all(struct one_wire_query *owq);
 SIZE_OR_ERROR FS_read_local( struct one_wire_query *owq);
 
-int FS_r_sibling_F(_FLOAT *F, const char * sibling, struct one_wire_query *owq) ;
-int FS_r_sibling_U(  UINT *U, const char * sibling, struct one_wire_query *owq) ;
-int FS_r_sibling_Y(   INT *Y, const char * sibling, struct one_wire_query *owq) ;
-int FS_r_sibling_D( _DATE *D, const char * sibling, struct one_wire_query *owq) ;
-int FS_r_sibling_binary(BYTE * data, size_t * size, const char * sibling, struct one_wire_query *owq) ;
+ZERO_OR_ERROR FS_r_sibling_F(_FLOAT *F, const char * sibling, struct one_wire_query *owq) ;
+ZERO_OR_ERROR FS_r_sibling_U(  UINT *U, const char * sibling, struct one_wire_query *owq) ;
+ZERO_OR_ERROR FS_r_sibling_Y(   INT *Y, const char * sibling, struct one_wire_query *owq) ;
+ZERO_OR_ERROR FS_r_sibling_binary(BYTE * data, size_t * size, const char * sibling, struct one_wire_query *owq) ;
 
-int FS_w_sibling_bitwork(UINT set, UINT mask, const char * sibling, struct one_wire_query *owq) ;
+ZERO_OR_ERROR FS_w_sibling_bitwork(UINT set, UINT mask, const char * sibling, struct one_wire_query *owq) ;
 
-int FS_w_sibling_F(_FLOAT F, const char * sibling, struct one_wire_query *owq) ;
-int FS_w_sibling_U(  UINT U, const char * sibling, struct one_wire_query *owq) ;
-int FS_w_sibling_Y(   INT Y, const char * sibling, struct one_wire_query *owq) ;
-int FS_w_sibling_D( _DATE D, const char * sibling, struct one_wire_query *owq) ;
+ZERO_OR_ERROR FS_w_sibling_F(_FLOAT F, const char * sibling, struct one_wire_query *owq) ;
+ZERO_OR_ERROR FS_w_sibling_U(  UINT U, const char * sibling, struct one_wire_query *owq) ;
+ZERO_OR_ERROR FS_w_sibling_Y(   INT Y, const char * sibling, struct one_wire_query *owq) ;
 
 void FS_del_sibling(const char * sibling, struct one_wire_query *owq) ;
 
@@ -194,10 +192,9 @@ GOOD_OR_BAD COMMON_read_memory_crc16_AA(struct one_wire_query *owq, size_t page,
 GOOD_OR_BAD COMMON_read_memory_toss_counter(struct one_wire_query *owq, size_t page, size_t pagesize);
 GOOD_OR_BAD COMMON_read_memory_plus_counter(BYTE * extra, size_t page, size_t pagesize, struct parsedname *pn);
 
-int COMMON_write_eprom_mem_owq(struct one_wire_query * owq) ;
-int COMMON_write_eprom_status(const BYTE * data, size_t size, off_t offset, const struct parsedname *pn);
+ZERO_OR_ERROR COMMON_write_eprom_mem_owq(struct one_wire_query * owq) ;
 
-int COMMON_offset_process( int (*func) (struct one_wire_query *), struct one_wire_query * owq, off_t shift_offset) ;
+ZERO_OR_ERROR COMMON_offset_process( ZERO_OR_ERROR (*func) (struct one_wire_query *), struct one_wire_query * owq, off_t shift_offset) ;
 
 void BUS_lock(const struct parsedname *pn);
 void BUS_unlock(const struct parsedname *pn);

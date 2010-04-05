@@ -238,7 +238,7 @@ static ZERO_OR_ERROR FS_w_UVI_offset(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_localtype(struct one_wire_query *owq)
 {
     UINT type_number ;
-    if ( FS_r_sibling_U( &type_number, "type_number", owq ) ) {
+    if ( FS_r_sibling_U( &type_number, "type_number", owq ) != 0 ) {
         return -EINVAL ;
     }
 
@@ -252,10 +252,8 @@ static ZERO_OR_ERROR FS_localtype(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_UVI_valid(struct one_wire_query *owq)
 {
-    UINT type_number ;
-    if ( FS_r_sibling_U( &type_number, "type_number", owq ) ) {
-        return -EINVAL ;
-    }
+    UINT type_number = 0 ;
+    ZERO_OR_ERROR z_or_e = FS_r_sibling_U( &type_number, "type_number", owq ) ;
 
     switch (type_number) {
         case 0x01:
@@ -265,7 +263,7 @@ static ZERO_OR_ERROR FS_UVI_valid(struct one_wire_query *owq)
             OWQ_Y(owq) = 0 ;
             break ;
     }
-    return 0 ;
+    return z_or_e ;
 }
 
 static ZERO_OR_ERROR FS_r_in_case(struct one_wire_query *owq)

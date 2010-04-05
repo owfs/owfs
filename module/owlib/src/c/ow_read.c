@@ -127,7 +127,7 @@ static SIZE_OR_ERROR FS_read_real(struct one_wire_query *owq)
 			}
 		} else if (BusIsServer(pn->selected_connection)) {
 			int bus_nr = pn->selected_connection->index ; // current selected bus
-			int busloc_or_error = ReCheckPresence(pn) ;
+			INDEX_OR_ERROR busloc_or_error = ReCheckPresence(pn) ;
 			// special handling or remote
 			// only repeat if the bus number is wrong
 			// because the remote does the rereads
@@ -143,7 +143,7 @@ static SIZE_OR_ERROR FS_read_real(struct one_wire_query *owq)
 				}
 			}
 		} else {
-			int busloc_or_error = ReCheckPresence(pn);	// search again
+			INDEX_OR_ERROR busloc_or_error = ReCheckPresence(pn);	// search again
 			if (busloc_or_error < 0) {
 				read_or_error = -ENOENT;
 			} else {

@@ -113,20 +113,14 @@ static ZERO_OR_ERROR FS_r_param(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_w_memory(struct one_wire_query *owq)
 {
-	if (COMMON_write_eprom_mem_owq(owq)) {
-		return -EINVAL;
-	}
-	return 0;
+	return COMMON_write_eprom_mem_owq(owq) ;
 }
 
 static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 	OWQ_offset(owq) += OWQ_pn(owq).extension * pagesize;
-	if (COMMON_write_eprom_mem_owq(owq)) {
-		return -EINVAL;
-	}
-	return 0;
+	return COMMON_write_eprom_mem_owq(owq) ;
 }
 
 static GOOD_OR_BAD OW_r_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)

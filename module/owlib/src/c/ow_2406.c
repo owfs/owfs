@@ -162,46 +162,34 @@ static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (COMMON_offset_process( COMMON_write_eprom_mem_owq, owq, pagesize * OWQ_pn(owq).extension )) {
-		return -EINVAL;
-	}
-	return 0;
+	return COMMON_offset_process( COMMON_write_eprom_mem_owq, owq, pagesize * OWQ_pn(owq).extension ) ;
 }
 
 /* Note, it's EPROM -- write once */
 static ZERO_OR_ERROR FS_w_mem(struct one_wire_query *owq)
 {
 	/* write is "byte at a time" -- not paged */
-	if (COMMON_write_eprom_mem_owq(owq)) {
-		return -EINVAL;
-	}
-	return 0;
+	return COMMON_write_eprom_mem_owq(owq) ;
 }
 
 /* 2406 switch */
 static ZERO_OR_ERROR FS_r_pio(struct one_wire_query *owq)
 {
-	UINT infobyte ;
-
-	if ( FS_r_sibling_U( &infobyte, "infobyte", owq ) ) {
-		return -EINVAL ;
-	}
+	UINT infobyte = 0 ;
+	ZERO_OR_ERROR z_or_e = FS_r_sibling_U( &infobyte, "infobyte", owq ) ;
 
 	OWQ_U(owq) = BYTE_INVERSE(infobyte>>0) & 0x03;	/* reverse bits */
-	return 0;
+	return z_or_e;
 }
 
 /* 2406 switch */
 static ZERO_OR_ERROR FS_r_flipflop(struct one_wire_query *owq)
 {
-	UINT infobyte ;
-
-	if ( FS_r_sibling_U( &infobyte, "infobyte", owq ) ) {
-		return -EINVAL ;
-	}
+	UINT infobyte = 0 ;
+	ZERO_OR_ERROR z_or_e = FS_r_sibling_U( &infobyte, "infobyte", owq ) ;
 
 	OWQ_U(owq) = (infobyte>>0) & 0x03;	/* reverse bits */
-	return 0;
+	return z_or_e;
 }
 
 /* 2406 switch */
@@ -218,57 +206,43 @@ static ZERO_OR_ERROR FS_r_infobyte(struct one_wire_query *owq)
 /* 2406 switch -- is Vcc powered?*/
 static ZERO_OR_ERROR FS_power(struct one_wire_query *owq)
 {
-	UINT infobyte ;
-
-	if ( FS_r_sibling_U( &infobyte, "infobyte", owq ) ) {
-		return -EINVAL ;
-	}
+	UINT infobyte = 0 ;
+	ZERO_OR_ERROR z_or_e = FS_r_sibling_U( &infobyte, "infobyte", owq ) ;
 
 	OWQ_Y(owq) = (infobyte & _DS2406_POWER_BIT) ? 1 : 0;
-	return 0;
+	return z_or_e;
 }
 
 /* 2406 switch -- number of channels (actually, if Vcc powered)*/
 static ZERO_OR_ERROR FS_channel(struct one_wire_query *owq)
 {
-	UINT infobyte ;
-
-	if ( FS_r_sibling_U( &infobyte, "infobyte", owq ) ) {
-		return -EINVAL ;
-	}
+	UINT infobyte = 0 ;
+	ZERO_OR_ERROR z_or_e = FS_r_sibling_U( &infobyte, "infobyte", owq ) ;
 
 	OWQ_U(owq) = (infobyte & 0x40) ? 2 : 1;
-	return 0;
+	return z_or_e;
 }
 
 /* 2406 switch PIO sensed*/
 /* bits 2 and 3 */
 static ZERO_OR_ERROR FS_sense(struct one_wire_query *owq)
 {
-	UINT infobyte ;
-
-	if ( FS_r_sibling_U( &infobyte, "infobyte", owq ) ) {
-		return -EINVAL ;
-	}
+	UINT infobyte = 0 ;
+	ZERO_OR_ERROR z_or_e = FS_r_sibling_U( &infobyte, "infobyte", owq ) ;
 
 	OWQ_U(owq) = (infobyte>>2) & 0x03;
-
-	return 0 ;
+	return z_or_e ;
 }
 
 /* 2406 switch activity latch*/
 /* bites 4 and 5 */
 static ZERO_OR_ERROR FS_r_latch(struct one_wire_query *owq)
 {
-	UINT infobyte ;
-
-	if ( FS_r_sibling_U( &infobyte, "infobyte", owq ) ) {
-		return -EINVAL ;
-	}
+	UINT infobyte = 0 ;
+	ZERO_OR_ERROR z_or_e = FS_r_sibling_U( &infobyte, "infobyte", owq ) ;
 
 	OWQ_U(owq) = (infobyte >> 4) & 0x03;
-
-	return 0;
+	return z_or_e;
 }
 
 /* 2406 switch activity latch*/
@@ -902,7 +876,7 @@ static int testTAI8570(struct s_TAI8570 *tai, struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 
 	// see which DS2406 is powered
-	if ( FS_r_sibling_Y( &pow, "power", owq ) ) {
+	if ( FS_r_sibling_Y( &pow, "power", owq ) != 0 ) {
 		return -EINVAL ;
 	}
 	// See if already cached

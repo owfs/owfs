@@ -687,15 +687,11 @@ static ZERO_OR_ERROR FS_w_vis_off(struct one_wire_query *owq)
 // Current bias -- using 25mOhm internal resistor
 static ZERO_OR_ERROR FS_r_abias(struct one_wire_query *owq)
 {
-	_FLOAT vbias ;
-
-	if ( FS_r_sibling_F( &vbias, "vbias", owq ) ) {
-		return -EINVAL ;
-	}
+	_FLOAT vbias = 0. ;
+	ZERO_OR_ERROR z_or_e = FS_r_sibling_F( &vbias, "vbias", owq ) ;
 
 	OWQ_F(owq) = vbias / .025;
-
-	return 0 ;
+	return z_or_e ;
 }
 
 // Current bias -- using 25mOhm internal resistor
@@ -707,15 +703,11 @@ static ZERO_OR_ERROR FS_w_abias(struct one_wire_query *owq)
 // Read current using internal 25mOhm resistor and Vis
 static ZERO_OR_ERROR FS_r_current(struct one_wire_query *owq)
 {
-	_FLOAT vis ;
-
-	if ( FS_r_sibling_F( &vis, "vis", owq ) ) {
-		return -EINVAL ;
-	}
+	_FLOAT vis = 0.;
+	ZERO_OR_ERROR z_or_e = FS_r_sibling_F( &vis, "vis", owq ) ;
 
 	OWQ_F(owq) = vis / .025;
-
-	return 0 ;
+	return z_or_e ;
 }
 
 static ZERO_OR_ERROR FS_r_vbias(struct one_wire_query *owq)
@@ -1062,13 +1054,13 @@ static ZERO_OR_ERROR FS_thermocouple(struct one_wire_query *owq)
 	_FLOAT T_coldjunction, vis, mV;
 
 	/* Get measured voltage */
-	if ( FS_r_sibling_F( &vis, "vis", owq ) ) {
+	if ( FS_r_sibling_F( &vis, "vis", owq )  != 0 ) {
 		return -EINVAL ;
 	}
 	mV = vis * 1000;	/* convert Volts to mVolts */
 
 	/* Get cold junction temperature */
-	if ( FS_r_sibling_F( &T_coldjunction, "temperature", owq ) ) {
+	if ( FS_r_sibling_F( &T_coldjunction, "temperature", owq ) != 0 ) {
 		return -EINVAL ;
 	}
 

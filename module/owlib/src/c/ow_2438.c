@@ -233,15 +233,11 @@ static ZERO_OR_ERROR FS_volts(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_Humid(struct one_wire_query *owq)
 {
-	_FLOAT H ;
-
-	if ( FS_r_sibling_F( &H, "HIH3600/humidity", owq ) ) {
-		return -EINVAL ;
-	}
+	_FLOAT H = 0.;
+	ZERO_OR_ERROR z_or_e = FS_r_sibling_F( &H, "HIH3600/humidity", owq ) ;
 
 	OWQ_F(owq) = H ;
-
-	return 0;
+	return z_or_e ;
 }
 
 static ZERO_OR_ERROR FS_Humid_3600(struct one_wire_query *owq)
@@ -251,9 +247,9 @@ static ZERO_OR_ERROR FS_Humid_3600(struct one_wire_query *owq)
 	_FLOAT temperature_compensation ;
 
 	if (
-		FS_r_sibling_F( &T, "temperature", owq )
-		|| FS_r_sibling_F( &VAD, "VAD", owq )
-		|| FS_r_sibling_F( &VDD, "VDD", owq )
+		FS_r_sibling_F( &T, "temperature", owq ) != 0
+		|| FS_r_sibling_F( &VAD, "VAD", owq ) != 0
+		|| FS_r_sibling_F( &VDD, "VDD", owq ) != 0
 	) {
 		return -EINVAL ;
 	}
@@ -297,9 +293,9 @@ static ZERO_OR_ERROR FS_Humid_4000(struct one_wire_query *owq)
 	_FLOAT temperature_compensation ;
 
 	if (
-		FS_r_sibling_F( &T, "temperature", owq )
-		|| FS_r_sibling_F( &VAD, "VAD", owq )
-		|| FS_r_sibling_F( &VDD, "VDD", owq )
+		FS_r_sibling_F( &T, "temperature", owq ) != 0
+		|| FS_r_sibling_F( &VAD, "VAD", owq ) != 0
+		|| FS_r_sibling_F( &VDD, "VDD", owq ) != 0
 	) {
 		return -EINVAL ;
 	}
@@ -327,15 +323,11 @@ static ZERO_OR_ERROR FS_Humid_4000(struct one_wire_query *owq)
  */
 static ZERO_OR_ERROR FS_Humid_1735(struct one_wire_query *owq)
 {
-	_FLOAT VAD;
-
-	if ( FS_r_sibling_F( &VAD, "VAD", owq ) ) {
-		return -EINVAL ;
-	}
+	_FLOAT VAD = 0.;
+	ZERO_OR_ERROR z_or_e = FS_r_sibling_F( &VAD, "VAD", owq ) ;
 
 	OWQ_F(owq) = 38.92 * VAD - 41.98;
-
-	return 0 ;
+	return z_or_e ;
 }
 
 // Read current register
@@ -345,7 +337,7 @@ static ZERO_OR_ERROR FS_Current(struct one_wire_query *owq)
 	BYTE data[9];
 	INT iad ;
 
-	if ( FS_r_sibling_Y( &iad, "IAD", owq ) ) {
+	if ( FS_r_sibling_Y( &iad, "IAD", owq ) != 0 ) {
 		return -EINVAL ;
 	}
 

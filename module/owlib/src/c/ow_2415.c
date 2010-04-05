@@ -110,15 +110,11 @@ static GOOD_OR_BAD OW_w_control(const BYTE cr, const struct parsedname *pn);
 /* DS2417 interval */
 static ZERO_OR_ERROR FS_r_interval(struct one_wire_query *owq)
 {
-	UINT U ;
-
-	if ( BAD( FS_r_sibling_U( &U, "ControlRegister", owq ) ) ) {
-		return -EINVAL ;
-	}
+	UINT U = 0 ;
+	ZERO_OR_ERROR z_or_e = FS_r_sibling_U( &U, "ControlRegister", owq ) ;
 
 	OWQ_U(owq) = ( U & _MASK_DS2417_IS ) >> 4 ;
-
-	return 0 ;
+	return z_or_e ;
 }
 
 static ZERO_OR_ERROR FS_w_interval(struct one_wire_query *owq)
@@ -131,15 +127,11 @@ static ZERO_OR_ERROR FS_w_interval(struct one_wire_query *owq)
 /* DS2415 User bits */
 static ZERO_OR_ERROR FS_r_user(struct one_wire_query *owq)
 {
-	UINT U ;
-
-	if ( BAD( FS_r_sibling_U( &U, "ControlRegister", owq ) ) ) {
-		return -EINVAL ;
-	}
+	UINT U = 0 ;
+	ZERO_OR_ERROR z_or_e = FS_r_sibling_U( &U, "ControlRegister", owq ) ;
 
 	OWQ_U(owq) = ( U & _MASK_DS2415_USER ) >> 4 ;
-
-	return 0 ;
+	return z_or_e ;
 }
 
 static ZERO_OR_ERROR FS_w_user(struct one_wire_query *owq)
@@ -152,15 +144,11 @@ static ZERO_OR_ERROR FS_w_user(struct one_wire_query *owq)
 /* DS2415-DS2417 Oscillator control */
 static ZERO_OR_ERROR FS_r_run(struct one_wire_query *owq)
 {
-	UINT U ;
-
-	if ( BAD( FS_r_sibling_U( &U, "ControlRegister", owq ) ) ) {
-		return -EINVAL ;
-	}
+	UINT U = 0;
+	ZERO_OR_ERROR z_or_e = FS_r_sibling_U( &U, "ControlRegister", owq ) ;
 
 	OWQ_Y(owq) = ( ( U & _MASK_DS2415_OSC ) != 0 ) ;
-
-	return 0 ;
+	return z_or_e ;
 }
 
 static ZERO_OR_ERROR FS_w_run(struct one_wire_query *owq)
@@ -174,15 +162,11 @@ static ZERO_OR_ERROR FS_w_run(struct one_wire_query *owq)
 /* DS2417 interrupt enable */
 static ZERO_OR_ERROR FS_r_enable(struct one_wire_query *owq)
 {
-	UINT U ;
-
-	if ( FS_r_sibling_U( &U, "ControlRegister", owq ) ) {
-		return -EINVAL ;
-	}
+	UINT U = 0 ;
+	ZERO_OR_ERROR z_or_e = FS_r_sibling_U( &U, "ControlRegister", owq ) ;
 
 	OWQ_Y(owq) = ( ( U & _MASK_DS2417_IE ) != 0 ) ;
-
-	return 0 ;
+	return z_or_e ;
 }
 
 static ZERO_OR_ERROR FS_w_enable(struct one_wire_query *owq)
@@ -221,7 +205,7 @@ static ZERO_OR_ERROR FS_w_counter(struct one_wire_query *owq)
 	UINT control_reg ; // included in write
 
 	/* read in existing control byte to preserve bits 4-7 */
-	if ( FS_r_sibling_U( &control_reg, "ControlRegister", owq) ) {
+	if ( FS_r_sibling_U( &control_reg, "ControlRegister", owq) != 0 ) {
 		return gbBAD;
 	}
 
@@ -256,7 +240,7 @@ static ZERO_OR_ERROR FS_w_itime(struct one_wire_query *owq)
 	}
 
 	/* Set interval */
-	if ( FS_w_sibling_U( IS, "interval", owq ) ) {
+	if ( FS_w_sibling_U( IS, "interval", owq ) != 0 ) {
 		return -EINVAL ;
 	}
 
@@ -266,12 +250,11 @@ static ZERO_OR_ERROR FS_w_itime(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_r_itime(struct one_wire_query *owq)
 {
-	UINT interval;
-	if ( FS_r_sibling_U( &interval, "interval", owq) ) {
-		return -EINVAL;
-	}
+	UINT interval = 0;
+	ZERO_OR_ERROR z_or_e = FS_r_sibling_U( &interval, "interval", owq) ;
+
 	OWQ_I(owq) = itimes[interval];
-	return 0;
+	return z_or_e ;
 }
 
 /* 1904 clock-in-a-can */

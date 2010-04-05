@@ -260,7 +260,7 @@ DeviceEntryExtended(FC, BAE, DEV_resume | DEV_alarm );
 
 /* ------- Functions ------------ */
 
-static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
+static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
 static int OW_w_extended(BYTE * data, size_t size, struct parsedname *pn);
 static int OW_version( UINT * version, struct parsedname * pn ) ;
 static int OW_type( UINT * localtype, struct parsedname * pn ) ;
@@ -308,7 +308,8 @@ static ZERO_OR_ERROR FS_w_mem(struct one_wire_query *owq)
 		if ( bolus > _FC02_MAX_WRITE_GULP ) {
 			bolus = _FC02_MAX_WRITE_GULP ;
 		}
-		if ( OW_w_mem(data, bolus, location, PN(owq)  ) ) {
+		LEVEL_DEBUG("Write %d of %d bytes. (%d bolus) at location %x",(int)remain,(int)OWQ_size(owq),(int)bolus,(int)location) ;
+		if ( BAD( OW_w_mem(data, bolus, location, PN(owq)) ) ) {
 			return -EINVAL ;
 		}
 		remain -= bolus ;
@@ -415,11 +416,7 @@ static ZERO_OR_ERROR FS_writebyte(struct one_wire_query *owq)
 	BYTE data = OWQ_U(owq) & 0xFF ;
 	
 	// Write 1 byte ,
-	if ( OW_w_mem( &data, 1, location, PN(owq)  ) ) {
-		return -EINVAL ;
-	}
-	
-	return 0;
+	return RETURN_Z_OR_E( OW_w_mem( &data, 1, location, PN(owq)  ) ) ;
 }
 
 /* BAE version */
@@ -438,7 +435,7 @@ static ZERO_OR_ERROR FS_version(struct one_wire_query *owq)
 	char v[6];
 	UINT version ;
 	
-	if ( FS_r_sibling_U( &version, "versionstate", owq ) ) {
+	if ( FS_r_sibling_U( &version, "versionstate", owq ) != 0 ) {
 		return -EINVAL ;
 	}
 	
@@ -451,28 +448,20 @@ static ZERO_OR_ERROR FS_version(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_version_device(struct one_wire_query *owq)
 {
-	UINT version ;
-	
-	if ( FS_r_sibling_U( &version, "versionstate", owq ) ) {
-		return -EINVAL ;
-	}
+	UINT version = 0 ;
+	ZERO_OR_ERROR z_or_e = FS_r_sibling_U( &version, "versionstate", owq ) ;
 	
 	OWQ_U(owq) = (version>>8) & 0xFF ;
-	
-	return 0 ;
+	return z_or_e ;
 }
 
 static ZERO_OR_ERROR FS_version_bootstrap(struct one_wire_query *owq)
 {
-	UINT version ;
-	
-	if ( FS_r_sibling_U( &version, "versionstate", owq ) ) {
-		return -EINVAL ;
-	}
+	UINT version = 0 ;
+	ZERO_OR_ERROR z_or_e = FS_r_sibling_U( &version, "versionstate", owq ) ;
 	
 	OWQ_U(owq) = version & 0xFF ;
-	
-	return 0 ;
+	return z_or_e ;
 }
 
 /* BAE type */
@@ -491,7 +480,7 @@ static ZERO_OR_ERROR FS_localtype(struct one_wire_query *owq)
 	char t[6];
 	UINT localtype ;
 	
-	if ( FS_r_sibling_U( &localtype, "typestate", owq ) ) {
+	if ( FS_r_sibling_U( &localtype, "typestate", owq ) != 0 ) {
 		return -EINVAL ;
 	}
 	
@@ -504,28 +493,20 @@ static ZERO_OR_ERROR FS_localtype(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_type_device(struct one_wire_query *owq)
 {
-	UINT t ;
-	
-	if ( FS_r_sibling_U( &t, "typestate", owq ) ) {
-		return -EINVAL ;
-	}
+	UINT t = 0 ;
+	ZERO_OR_ERROR z_or_e = FS_r_sibling_U( &t, "typestate", owq ) ;
 	
 	OWQ_U(owq) = (t>>8) & 0xFF ;
-	
-	return 0 ;
+	return z_or_e ;
 }
 
 static ZERO_OR_ERROR FS_type_chip(struct one_wire_query *owq)
 {
-	UINT t ;
-	
-	if ( FS_r_sibling_U( &t, "typestate", owq ) ) {
-		return -EINVAL ;
-	}
+	UINT t = 0 ;
+	ZERO_OR_ERROR z_or_e = FS_r_sibling_U( &t, "typestate", owq ) ;
 	
 	OWQ_U(owq) = t & 0xFF ;
-	
-	return 0 ;
+	return z_or_e ;
 }
 
 /* read an 8 bit value from a register stored in filetype.data */
@@ -547,10 +528,7 @@ static ZERO_OR_ERROR FS_w_8(struct one_wire_query *owq)
 	BYTE data[1] ; // 8/8 = 1
 	
 	data[0] = BYTE_MASK( OWQ_U(owq) ) ;
-	if ( OW_w_mem(data, 1, pn->selected_filetype->data.u, pn ) ) {
-		return -EINVAL ;
-	}
-	return 0 ;
+	return RETURN_Z_OR_E(OW_w_mem(data, 1, pn->selected_filetype->data.u, pn ) ) ;
 }
 
 /* read a 16 bit value from a register stored in filetype.data */
@@ -572,10 +550,7 @@ static ZERO_OR_ERROR FS_w_16(struct one_wire_query *owq)
 	BYTE data[2] ; // 16/8 = 2
 
 	BAE_uint16_to_bytes( OWQ_U(owq), data ) ;
-	if ( OW_w_mem(data, 2, pn->selected_filetype->data.u, pn ) ) {
-		return -EINVAL ;
-	}
-	return 0 ;
+	return RETURN_Z_OR_E( OW_w_mem(data, 2, pn->selected_filetype->data.u, pn ) ) ;
 }
 
 /* read a 32 bit value from a register stored in filetype.data */
@@ -597,15 +572,12 @@ static ZERO_OR_ERROR FS_w_32(struct one_wire_query *owq)
 	BYTE data[4] ; // 32/8 = 2
 	
 	BAE_uint32_to_bytes( OWQ_U(owq), data ) ;
-	if ( OW_w_mem(data, 4, pn->selected_filetype->data.u, pn ) ) {
-		return -EINVAL ;
-	}
-	return 0 ;
+	return RETURN_Z_OR_E( OW_w_mem(data, 4, pn->selected_filetype->data.u, pn ) ) ;
 }
 
 /* Lower level functions */
 /* size in already constrained to 32 bytes (_FC02_MAX_WRITE_GULP) */
-static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
+static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
 {
 	BYTE p[1 + 2 + 1 + _FC02_MAX_WRITE_GULP + 2] = { _1W_WRITE_BLOCK_WITH_LEN, LOW_HIGH_ADDRESS(offset), BYTE_MASK(size), };
 	BYTE q[] = { _1W_CONFIRM_WRITE, } ;
@@ -623,7 +595,7 @@ static int OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *p
 	LEVEL_DEBUG("Write to BAE size=%d offset=%x\n",(int)size,(unsigned int)offset) ;
 	Debug_Bytes("BAE write",p,1+2+1+size) ;
 	
-	return BUS_transaction(t, pn) ;
+	return RETURN_G_OR_B(BUS_transaction(t, pn)) ;
 }
 
 // Extended command -- insert length, The first byte of the payload is a subcommand but that is invisible to us.

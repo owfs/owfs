@@ -147,13 +147,11 @@ static ZERO_OR_ERROR FS_r_tag(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_temperature(struct one_wire_query *owq)
 {
 	size_t size = _EDS_PAGESIZE ;
-	BYTE data[_EDS_PAGESIZE] ;
+	BYTE data[_EDS_PAGESIZE]  = { 0, 0, 0, } ;
+	ZERO_OR_ERROR z_or_e = FS_r_sibling_binary(data,&size,"pages/page.1",owq) ; // read device memory
 
-	if ( FS_r_sibling_binary(data,&size,"pages/page.1",owq) == 0 	) { // read device memory
-		OWQ_F(owq) = ( (_FLOAT)UT_uint16(&data[2]) ) / 16. ;
-		return -EINVAL ;
-	}
-	return 0 ;
+	OWQ_F(owq) = ( (_FLOAT)UT_uint16(&data[2]) ) / 16. ;
+	return z_or_e ;
 }
 
 static ZERO_OR_ERROR FS_r_memory(struct one_wire_query *owq)

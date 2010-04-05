@@ -319,16 +319,12 @@ static ZERO_OR_ERROR FS_w_register(struct one_wire_query *owq)
 /* ControlRegister reversed */
 static ZERO_OR_ERROR FS_r_controlrbit(struct one_wire_query *owq)
 {
-	UINT U ;
+	UINT U = 0 ;
 	UINT mask = PN(owq)->selected_filetype->data.u ;
-
-	if ( FS_r_sibling_U( &U, "ControlRegister", owq ) ) {
-		return -EINVAL ;
-	}
+	ZERO_OR_ERROR z_or_e = FS_r_sibling_U( &U, "ControlRegister", owq ) ;
 
 	OWQ_Y(owq) = ( (U & mask) == 0 ) ;
-
-	return 0 ;
+	return z_or_e ;
 }
 
 /* ControlRegister reversed */
@@ -342,16 +338,12 @@ static ZERO_OR_ERROR FS_w_controlrbit(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_r_controlbit(struct one_wire_query *owq)
 {
-	UINT U ;
+	UINT U = 0 ;
 	UINT mask = PN(owq)->selected_filetype->data.u ;
-
-	if ( FS_r_sibling_U( &U, "ControlRegister", owq ) ) {
-		return -EINVAL ;
-	}
+	ZERO_OR_ERROR z_or_e = FS_r_sibling_U( &U, "ControlRegister", owq ) ;
 
 	OWQ_Y(owq) = ( (U & mask) != 0 ) ;
-
-	return 0 ;
+	return z_or_e ;
 }
 
 static ZERO_OR_ERROR FS_w_controlbit(struct one_wire_query *owq)
@@ -364,16 +356,12 @@ static ZERO_OR_ERROR FS_w_controlbit(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_r_statusbit(struct one_wire_query *owq)
 {
-	UINT U ;
+	UINT U = 0 ;
 	UINT mask = PN(owq)->selected_filetype->data.u ;
-
-	if ( FS_r_sibling_U( &U, "StatusRegister", owq ) ) {
-		return -EINVAL ;
-	}
+	ZERO_OR_ERROR z_or_e = FS_r_sibling_U( &U, "StatusRegister", owq ) ;
 
 	OWQ_Y(owq) = ( (U & mask) != 0 ) ;
-
-	return 0 ;
+	return z_or_e ;
 }
 
 static ZERO_OR_ERROR FS_w_statusbit(struct one_wire_query *owq)

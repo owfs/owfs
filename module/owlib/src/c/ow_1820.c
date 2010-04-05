@@ -270,29 +270,21 @@ static ZERO_OR_ERROR FS_22temp(struct one_wire_query *owq)
 // use sibling function for fasttemp to keep cache value consistent
 static ZERO_OR_ERROR FS_fasttemp(struct one_wire_query *owq)
 {
-	_FLOAT temperature ;
-
-	if ( BAD(FS_r_sibling_F( &temperature, "temperature9", owq )) ) {
-		return -EINVAL ;
-	}
+	_FLOAT temperature = 0.;
+	ZERO_OR_ERROR z_or_e = FS_r_sibling_F( &temperature, "temperature9", owq ) ;
 
 	OWQ_F(owq) = temperature ;
-
-	return 0 ;
+	return z_or_e ;
 }
 
 // use sibling function for temperature to keep cache value consistent
 static ZERO_OR_ERROR FS_slowtemp(struct one_wire_query *owq)
 {
-	_FLOAT temperature ;
-
-	if ( BAD(FS_r_sibling_F( &temperature, "temperature12", owq )) ) {
-		return -EINVAL ;
-	}
+	_FLOAT temperature = 0. ;
+	ZERO_OR_ERROR z_or_e = FS_r_sibling_F( &temperature, "temperature12", owq ) ;
 
 	OWQ_F(owq) = temperature ;
-
-	return 0 ;
+	return z_or_e ;
 }
 
 static ZERO_OR_ERROR FS_power(struct one_wire_query *owq)
@@ -317,30 +309,22 @@ static ZERO_OR_ERROR FS_w_pio(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_sense(struct one_wire_query *owq)
 {
-	UINT piostate ;
-
-	if ( BAD(FS_r_sibling_U( &piostate, "piostate", owq )) ) {
-		return -EINVAL ;
-	}
+	UINT piostate = 0;
+	ZERO_OR_ERROR z_or_e = FS_r_sibling_U( &piostate, "piostate", owq ) ;
 
 	// bits 0->0 and 2->1
 	OWQ_U(owq) = ( (piostate & 0x01) | ((piostate & 0x04)>>1) ) & 0x03  ;
-
-	return 0;
+	return z_or_e;
 }
 
 static ZERO_OR_ERROR FS_r_pio(struct one_wire_query *owq)
 {
-	UINT piostate ;
-
-	if ( BAD(FS_r_sibling_U( &piostate, "piostate", owq )) ) {
-		return -EINVAL ;
-	}
+	UINT piostate = 0;
+	ZERO_OR_ERROR z_or_e = FS_r_sibling_U( &piostate, "piostate", owq ) ;
 
 	// bits 0->0 and 2->1
 	OWQ_U(owq) = BYTE_INVERSE( (piostate & 0x01) | ((piostate & 0x04)>>1) ) & 0x03  ;
-
-	return 0;
+	return z_or_e;
 }
 
 static ZERO_OR_ERROR FS_r_piostate(struct one_wire_query *owq)
@@ -350,16 +334,12 @@ static ZERO_OR_ERROR FS_r_piostate(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_r_latch(struct one_wire_query *owq)
 {
-	UINT piostate ;
-
-	if ( BAD(FS_r_sibling_U( &piostate, "piostate", owq )) ) {
-		return -EINVAL ;
-	}
+	UINT piostate = 0 ;
+	ZERO_OR_ERROR z_or_e = FS_r_sibling_U( &piostate, "piostate", owq ) ;
 
 	// bits 1->0 and 3->1
 	OWQ_U(owq) = BYTE_INVERSE( ((piostate & 0x02)>>1) | ((piostate & 0x08)>>2) ) & 0x03  ;
-
-	return 0;
+	return z_or_e;
 }
 
 static ZERO_OR_ERROR FS_r_templimit(struct one_wire_query *owq)

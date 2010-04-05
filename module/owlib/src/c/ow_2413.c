@@ -113,14 +113,13 @@ static ZERO_OR_ERROR FS_w_piostate(struct one_wire_query *owq)
 /* bites 1 and 3 */
 static ZERO_OR_ERROR FS_r_pio(struct one_wire_query *owq)
 {
-	UINT piostate ;
-	if ( FS_r_sibling_U( &piostate, "piostate", owq ) != 0 ) {
-		return -EINVAL ;
-	}
+	UINT piostate = 0 ;
+	ZERO_OR_ERROR z_or_e = FS_r_sibling_U( &piostate, "piostate", owq ) ;
+
 	// bits 1>0 and 3->1
 	// complement
 	OWQ_U(owq) = LATCH_state( piostate ) ^ 0x03 ;
-	return 0 ;
+	return z_or_e ;
 }
 
 /* write 2413 switch -- 2 values*/
@@ -142,13 +141,12 @@ static ZERO_OR_ERROR FS_w_pio(struct one_wire_query *owq)
 /* bits 0 and 2 */
 static ZERO_OR_ERROR FS_sense(struct one_wire_query *owq)
 {
-	UINT piostate ;
-	if ( FS_r_sibling_U( &piostate, "piostate", owq ) != 0 ) {
-		return -EINVAL ;
-	}
+	UINT piostate = 0 ;
+	ZERO_OR_ERROR z_or_e = FS_r_sibling_U( &piostate, "piostate", owq ) ;
+
 	// bits 0->0 and 2->1
 	OWQ_U(owq) = SENSED_state(piostate) ;
-	return 0 ;
+	return z_or_e ;
 }
 
 /* read status byte */

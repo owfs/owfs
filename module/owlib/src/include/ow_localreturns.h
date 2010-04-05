@@ -70,11 +70,12 @@ $Id$
 
 typedef int SIZE_OR_ERROR ;
 typedef int ZERO_OR_ERROR ;
+typedef int INDEX_OR_ERROR ;
 typedef enum { gbGOOD, gbBAD } GOOD_OR_BAD  ;
 
 #define GOOD(x)	((x)==gbGOOD)
 #define BAD(x)	((x)!=gbGOOD)
-#define RETURN_G_OR_B(x)	GOOD(x)?gbGOOD:gbBAD
+#define RETURN_G_OR_B(x)	(x==0)?gbGOOD:gbBAD
 #define RETURN_Z_OR_E(x)	GOOD(x)?0:-EINVAL
 
 #endif							/* OW_LOCALRETURNS_H */

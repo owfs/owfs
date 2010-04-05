@@ -35,8 +35,8 @@ static void PersistentClear(int file_descriptor, struct connection_in *in);
 static int PersistentRequest(struct connection_in *in);
 static int PersistentReRequest(int file_descriptor, struct connection_in *in);
 
-int ServerDIRALL(void (*dirfunc) (void *, const struct parsedname * const), void *v, const struct parsedname *pn_whole_directory, uint32_t * flags);
-int ServerDIR(void (*dirfunc) (void *, const struct parsedname * const), void *v, const struct parsedname *pn_whole_directory, uint32_t * flags);
+static ZERO_OR_ERROR ServerDIRALL(void (*dirfunc) (void *, const struct parsedname * const), void *v, const struct parsedname *pn_whole_directory, uint32_t * flags);
+static ZERO_OR_ERROR ServerDIR(void (*dirfunc) (void *, const struct parsedname * const), void *v, const struct parsedname *pn_whole_directory, uint32_t * flags);
 
 static void Server_setroutines(struct interface_routines *f)
 {
@@ -114,7 +114,7 @@ static void Server_close(struct connection_in *in)
 }
 
 // Send to an owserver using the READ message
-ZERO_OR_ERROR ServerRead(struct one_wire_query *owq)
+SIZE_OR_ERROR ServerRead(struct one_wire_query *owq)
 {
 	struct server_msg sm;
 	struct client_msg cm;
@@ -124,7 +124,7 @@ ZERO_OR_ERROR ServerRead(struct one_wire_query *owq)
 	};
 	int persistent = 1;
 	int connectfd;
-	ZERO_OR_ERROR ret = 0;
+	SIZE_OR_ERROR ret = 0;
 
 	// Special handling of alias property. alias should only be asked on local machine.
 	if ( pn_file_entry->selected_filetype->change == fc_alias ) {
@@ -159,7 +159,7 @@ ZERO_OR_ERROR ServerRead(struct one_wire_query *owq)
 }
 
 // Send to an owserver using the PRESENT message
-int ServerPresence(const struct parsedname *pn_file_entry)
+INDEX_OR_ERROR ServerPresence(const struct parsedname *pn_file_entry)
 {
 	struct server_msg sm;
 	struct client_msg cm;
@@ -168,7 +168,7 @@ int ServerPresence(const struct parsedname *pn_file_entry)
 	};
 	int persistent = 1;
 	int connectfd;
-	int ret = 0;
+	INDEX_OR_ERROR ret = 0;
 
 	memset(&sm, 0, sizeof(struct server_msg));
 	memset(&cm, 0, sizeof(struct client_msg));
@@ -244,9 +244,9 @@ ZERO_OR_ERROR ServerWrite(struct one_wire_query *owq)
 }
 
 // Send to an owserver using either the DIR or DIRALL message
-int ServerDir(void (*dirfunc) (void *, const struct parsedname * const), void *v, const struct parsedname *pn_whole_directory, uint32_t * flags)
+ZERO_OR_ERROR ServerDir(void (*dirfunc) (void *, const struct parsedname * const), void *v, const struct parsedname *pn_whole_directory, uint32_t * flags)
 {
-	int ret;
+	ZERO_OR_ERROR ret;
 
 	// Do we know this server doesn't support DIRALL?
 	if (pn_whole_directory->selected_connection->connin.tcp.no_dirall) {
@@ -269,7 +269,7 @@ int ServerDir(void (*dirfunc) (void *, const struct parsedname * const), void *v
 }
 
 // Send to an owserver using the DIR message
-int ServerDIR(void (*dirfunc) (void *, const struct parsedname * const), void *v, const struct parsedname *pn_whole_directory, uint32_t * flags)
+static ZERO_OR_ERROR ServerDIR(void (*dirfunc) (void *, const struct parsedname * const), void *v, const struct parsedname *pn_whole_directory, uint32_t * flags)
 {
 	struct server_msg sm;
 	struct client_msg cm;
@@ -278,7 +278,7 @@ int ServerDIR(void (*dirfunc) (void *, const struct parsedname * const), void *v
 	};
 	int persistent = 1;
 	int connectfd;
-	int ret;
+	ZERO_OR_ERROR ret;
 
 	memset(&sm, 0, sizeof(struct server_msg));
 	memset(&cm, 0, sizeof(struct client_msg));
@@ -383,7 +383,7 @@ int ServerDIR(void (*dirfunc) (void *, const struct parsedname * const), void *v
 }
 
 // Send to an owserver using the DIRALL message
-int ServerDIRALL(void (*dirfunc) (void *, const struct parsedname * const), void *v, const struct parsedname *pn_whole_directory, uint32_t * flags)
+static ZERO_OR_ERROR ServerDIRALL(void (*dirfunc) (void *, const struct parsedname * const), void *v, const struct parsedname *pn_whole_directory, uint32_t * flags)
 {
 	ASCII *comma_separated_list;
 	struct server_msg sm;
@@ -393,7 +393,7 @@ int ServerDIRALL(void (*dirfunc) (void *, const struct parsedname * const), void
 	};
 	int persistent = 1;
 	int connectfd;
-	int ret;
+	ZERO_OR_ERROR ret;
 
 	memset(&sm, 0, sizeof(struct server_msg));
 	memset(&cm, 0, sizeof(struct client_msg));

@@ -78,7 +78,7 @@ ZERO_OR_ERROR FS_dir_remote(void (*dirfunc) (void *, const struct parsedname *),
 
 static ZERO_OR_ERROR FS_dir_both(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_raw_directory, uint32_t * flags)
 {
-	int ret = 0;
+	ZERO_OR_ERROR ret = 0;
 
 	/* initialize flags */
 	flags[0] = 0;
@@ -238,7 +238,7 @@ struct dir_all_connections_struct {
 	void (*dirfunc) (void *, const struct parsedname *);
 	void *v;
 	uint32_t *flags;
-	int ret;
+	ZERO_OR_ERROR ret;
 };
 
 /* Embedded function */
