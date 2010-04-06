@@ -1400,7 +1400,7 @@ static void do_size(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 	} else {
 
 		/* get the file information */
-		if (FS_ParsedNamePlus(f->dir, cmd->arg[0].string, &pn)) {
+		if ( FS_ParsedNamePlus(f->dir, cmd->arg[0].string, &pn) != 0 ) {
 			reply(f, 550, "Bad file specification");
 		} else {
 

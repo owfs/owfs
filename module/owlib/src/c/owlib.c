@@ -64,7 +64,7 @@ static void SetupTemperatureLimits( void )
 {
 	struct parsedname pn;
 	
-	FS_ParsedName(NULL, &pn);	// minimal parsename -- no destroy needed
+	FS_ParsedName_Placeholder(&pn);	// minimal parsename -- no destroy needed
 
 	if ( Globals.templow < GLOBAL_UNTOUCHED_TEMP_LIMIT + 1 ) {
 		Globals.templow = 0. ; // freezing point

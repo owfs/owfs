@@ -182,9 +182,9 @@ static void SingleHandler(struct handlerdata *hd)
 	LEVEL_DEBUG("START handler {%lu} %s",this_handler_count,hd->sp.path) ;
 
 	gettimeofday(&(hd->tv), NULL);
-#if OW_MT && defined(HAVE_SEM_TIMEDWAIT)
+#if defined(HAVE_SEM_TIMEDWAIT)
 	sem_init(&(hd->complete_sem), 0, 0);
-#endif
+#endif /* defined(HAVE_SEM_TIMEDWAIT) */
 		
 	//printf("OWSERVER pre-create\n");
 	// PTHREAD_CREATE_DETACHED doesn't work for older uclibc... call pthread_detach() instead.
@@ -203,7 +203,7 @@ static void SingleHandler(struct handlerdata *hd)
 	}
 
 	do {						// ping loop
-#if OW_MT && defined(HAVE_SEM_TIMEDWAIT)
+#if defined(HAVE_SEM_TIMEDWAIT)
 		int timeout = 100;  // max wait before testing hd->tv manually
 		int rc, err = 0;
 		struct timespec tspec_end;
@@ -215,12 +215,12 @@ static void SingleHandler(struct handlerdata *hd)
 			LEVEL_DEFAULT("clock_gettime failed");
 		}
 		LEVEL_DEBUG("clock_gettime returned time(NULL)=%ld %ld.%ld", time(NULL), tspec_end.tv_sec, tspec_end.tv_nsec);
-#else
+#else /* USE_CLOCKGETTIME */
 		/* micro seconds are good enough for this timeout */
 		gettimeofday(&tv_start, NULL);
 		tspec_end.tv_sec = tv_start.tv_sec;
 		tspec_end.tv_nsec = tv_start.tv_usec*1000;
-#endif
+#endif /* USE_CLOCKGETTIME */
 		tspec_end.tv_nsec += timeout*1000*1000;  // This is our end-time to wait until...
 		if(tspec_end.tv_nsec >= 1000*1000*1000) {
 			tspec_end.tv_nsec -= 1000*1000*1000;
@@ -236,9 +236,9 @@ static void SingleHandler(struct handlerdata *hd)
 				LEVEL_DEFAULT("restart sem_timedwait since EINTR");
 				continue;       /* Restart if interrupted by handler */
 			}
-#else
+#else /* 0 */
 			rc = sem_timedwait(&(hd->complete_sem), &tspec_end);
-#endif
+#endif /* 0 */
 
 			if(rc < 0) {
 				err = errno;
@@ -272,7 +272,7 @@ static void SingleHandler(struct handlerdata *hd)
 			break;
 		}
 	
-#else
+#else /* defined(HAVE_SEM_TIMEDWAIT) */
 		
 		// This will delay all persistant connections. (and result into cpu-usage)
 		// Replace into a timed semaphore
@@ -283,7 +283,7 @@ static void SingleHandler(struct handlerdata *hd)
 		usleep((unsigned long) 1000);
 #endif							/* HAVE_NANOSLEEP */
 
-#endif
+#endif /* defined(HAVE_SEM_TIMEDWAIT) */
 
 		TOCLIENTLOCK(hd);
 
@@ -314,9 +314,9 @@ HandlerDone:
 		1.0*(this_handler_stop.tv_sec-this_handler_start.tv_sec)+.000001*(this_handler_stop.tv_usec-this_handler_start.tv_usec),
 		hd->sp.path) ;
 	LEVEL_DEBUG("STOP handler {%lu} %s",this_handler_count,hd->sp.path) ;
-#if OW_MT && defined(HAVE_SEM_TIMEDWAIT)
+#if defined(HAVE_SEM_TIMEDWAIT)
 	sem_destroy(&(hd->complete_sem));
-#endif
+#endif /* defined(HAVE_SEM_TIMEDWAIT) */
 	if (hd->sp.path) {
 		owfree(hd->sp.path);
 		hd->sp.path = NULL;

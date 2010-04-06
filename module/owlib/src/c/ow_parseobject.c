@@ -16,8 +16,8 @@ $Id$
 #include "ow_connection.h"
 
 static int OWQ_allocate_array( struct one_wire_query * owq ) ;
-static int OWQ_parsename(const char *path, struct one_wire_query *owq);
-static int OWQ_parsename_plus(const char *path, const char * file, struct one_wire_query *owq);
+static GOOD_OR_BAD OWQ_parsename(const char *path, struct one_wire_query *owq);
+static GOOD_OR_BAD OWQ_parsename_plus(const char *path, const char * file, struct one_wire_query *owq);
 
 #define OWQ_DEFAULT_READ_BUFFER_SIZE  1
 
@@ -36,7 +36,7 @@ struct one_wire_query * OWQ_create_from_path(const char *path)
 	memset(owq, 0, sizeof(owq));
 	OWQ_cleanup(owq) = owq_cleanup_owq ;
 	
-	if ( OWQ_parsename(path,owq) == 0 ) {
+	if ( GOOD( OWQ_parsename(path,owq) ) ) {
 		if ( OWQ_allocate_array(owq) == 0 ) {
 			/*   Add a 1 byte buffer by default. This distinguishes from filesystem calls at end of buffer */
 			/*   Read bufer is provided by OWQ_assign_read_buffer or OWQ_allocate_read_buffer */
@@ -97,7 +97,7 @@ int OWQ_create(const char *path, struct one_wire_query *owq)
 {
 	LEVEL_DEBUG("%s", path);
 
-	if ( OWQ_parsename(path,owq) == 0 ) {
+	if ( GOOD( OWQ_parsename(path,owq) ) ) {
 		if ( OWQ_allocate_array(owq) == 0 ) {
 			return 0 ;
 		}
@@ -113,7 +113,7 @@ int OWQ_create_plus(const char *path, const char *file, struct one_wire_query *o
 	LEVEL_DEBUG("%s + %s", path, file);
 
 	OWQ_cleanup(owq) = owq_cleanup_none ;
-	if ( OWQ_parsename_plus(path,file,owq) == 0 ) {
+	if ( GOOD( OWQ_parsename_plus(path,file,owq) ) ) {
 		if ( OWQ_allocate_array(owq) == 0 ) {
 			return 0 ;
 		}
@@ -123,26 +123,26 @@ int OWQ_create_plus(const char *path, const char *file, struct one_wire_query *o
 }
 
 /* Create the Parsename structure in owq */
-static int OWQ_parsename(const char *path, struct one_wire_query *owq)
+static GOOD_OR_BAD OWQ_parsename(const char *path, struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 
 	if ( FS_ParsedName(path, pn) != 0 ) {
-		return 1 ;
+		return gbBAD ;
 	}
 	OWQ_cleanup(owq) |= owq_cleanup_pn ;
-	return 0 ;
+	return gbGOOD ;
 }
 
-static int OWQ_parsename_plus(const char *path, const char * file, struct one_wire_query *owq)
+static GOOD_OR_BAD OWQ_parsename_plus(const char *path, const char * file, struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 
 	if ( FS_ParsedNamePlus(path, file, pn) != 0 ) {
-		return 1 ;
+		return gbBAD ;
 	}
 	OWQ_cleanup(owq) |= owq_cleanup_pn ;
-	return 0 ;
+	return gbGOOD ;
 }
 
 static int OWQ_allocate_array( struct one_wire_query * owq )

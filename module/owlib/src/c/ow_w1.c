@@ -62,7 +62,7 @@ int W1_detect(struct connection_in *in)
 	struct parsedname pn;
 	int pipe_fd[2] ;
 
-	FS_ParsedName(NULL, &pn);	// minimal parsename -- no destroy needed
+	FS_ParsedName_Placeholder(&pn);	// minimal parsename -- no destroy needed
 	pn.selected_connection = in;
 	LEVEL_CONNECT("start");
 

@@ -259,7 +259,7 @@ int EtherWeather_detect(struct connection_in *in)
 
 	struct parsedname pn;
 
-	FS_ParsedName(NULL, &pn);	// minimal parsename -- no destroy needed
+	FS_ParsedName_Placeholder(&pn);	// minimal parsename -- no destroy needed
 	pn.selected_connection = in;
 
 	LEVEL_CONNECT("Connecting to EtherWeather");

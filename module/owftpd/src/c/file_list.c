@@ -257,7 +257,7 @@ static void WildLexParse(struct file_parse_s *fps, ASCII * match)
 	}
 
 	/* Can we understand the current path? */
-	if (FS_ParsedName(fps->buffer, &pn)) {
+	if (FS_ParsedName(fps->buffer, &pn) != 0 ) {
 		fps->ret = -ENOENT;
 		return;
 	}

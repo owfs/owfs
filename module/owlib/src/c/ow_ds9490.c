@@ -75,7 +75,7 @@ static int DS9490_reconnect(const struct parsedname *pn);
 static int DS9490_redetect_low(struct connection_in * in);
 static int DS9490_redetect_found(struct connection_in * in);
 static void DS9490_setroutines(struct connection_in *in);
-static int DS9490_root_dir( struct dirblob * db, struct connection_in * in ) ;
+static GOOD_OR_BAD DS9490_root_dir( struct dirblob * db, struct connection_in * in ) ;
 static void DS9490_dir_callback( void * v, const struct parsedname * pn_entry );
 static int DS9490_setup_adapter(struct connection_in * in) ;
 
@@ -355,18 +355,18 @@ static void DS9490_dir_callback( void * v, const struct parsedname * pn_entry )
 	}
 }
 
-static int DS9490_root_dir( struct dirblob * db, struct connection_in * in )
+static GOOD_OR_BAD DS9490_root_dir( struct dirblob * db, struct connection_in * in )
 {
 	ASCII path[PATH_MAX] ;
 	struct parsedname pn_root ;
-	int ret ;
+	ZERO_OR_ERROR ret ;
 
 	UCLIBCLOCK;
 	snprintf(path, PATH_MAX, "/uncached/bus.%d", in->index);
 	UCLIBCUNLOCK;
 
-	if ( FS_ParsedName(path, &pn_root) ) {
-		return 1 ;
+	if ( FS_ParsedName(path, &pn_root) != 0 ) {
+		return gbBAD ;
 	}
 	DirblobInit( db ) ;
 
@@ -381,11 +381,11 @@ static int DS9490_root_dir( struct dirblob * db, struct connection_in * in )
 	FS_ParsedName_destroy(&pn_root) ;
 	
 	
-	if ( ret ) {
+	if ( ret != 0 ) {
 		DirblobClear(db) ;
-		return 1 ;
+		return gbBAD ;
 	}
-	return 0 ;
+	return gbGOOD ;
 	// Dirblob must be cleared by recipient.
 }
 
@@ -396,7 +396,7 @@ static int DS9490_detect_found(struct connection_in *in)
 	BYTE sn[SERIAL_NUMBER_SIZE] ;
 	int device_number ;
 	
-	if ( DS9490_root_dir( &db, in ) ) {
+	if ( BAD( DS9490_root_dir( &db, in ) ) ) {
 		LEVEL_DATA("Cannot get root directory on [%s] (Probably non-DS9490 device and empty bus).", SAFESTRING(in->name));
 		return -EIO ;
 	}
@@ -449,7 +449,7 @@ static int DS9490_setup_adapter(struct connection_in * in)
 	BYTE buffer[32];
 	int ret;
 
-	FS_ParsedName(NULL, pn);	// minimal parsename -- no destroy needed
+	FS_ParsedName_Placeholder(pn);	// minimal parsename -- no destroy needed
 	pn->selected_connection = in;
 
 	// reset the device (not the 1-wire bus)
@@ -726,7 +726,7 @@ static int DS9490_redetect_found( struct connection_in * in)
 	}
 
 	// Generate a root directory
-	if ( DS9490_root_dir( &db, in ) ) {
+	if ( BAD( DS9490_root_dir( &db, in ) ) ) {
 		LEVEL_DATA("Cannot get root directory on [%s] (Probably non-DS9490 device and empty bus).", SAFESTRING(in->name));
 		return -EAGAIN ;
 	}

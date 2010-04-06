@@ -181,7 +181,7 @@ static void WildLexCD(struct cd_parse_s *cps, ASCII * match)
 		return;
 	}
 
-	if (FS_ParsedName(cps->buffer, &pn)) {
+	if ( FS_ParsedName(cps->buffer, &pn) != 0 ) {
 		cps->ret = -ENOENT;
 		return;
 	}

@@ -69,7 +69,7 @@ int HA7_detect(struct connection_in *in)
 	int file_descriptor;
 	struct toHA7 ha7;
 
-	FS_ParsedName(NULL, &pn);	// minimal parsename -- no destroy needed
+	FS_ParsedName_Placeholder(&pn);	// minimal parsename -- no destroy needed
 	pn.selected_connection = in;
 	LEVEL_CONNECT("start");
 

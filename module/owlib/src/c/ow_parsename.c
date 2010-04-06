@@ -14,7 +14,7 @@ $Id$
 #include "ow_devices.h"
 #include "ow_counters.h"
 
-static int BranchAdd(struct parsedname *pn);
+static ZERO_OR_ERROR BranchAdd(struct parsedname *pn);
 
 enum parse_pass {
 	parse_pass_pre_remote,
@@ -35,8 +35,8 @@ static enum parse_enum Parse_NonReal(char *pathnow, struct parsedname *pn);
 static enum parse_enum Parse_RealDevice(char *filename, enum parse_pass remote_status, struct parsedname *pn);
 static enum parse_enum Parse_NonRealDevice(char *filename, struct parsedname *pn);
 static enum parse_enum Parse_Bus(char *pathnow, struct parsedname *pn);
-static int FS_ParsedName_anywhere(const char *path, enum parse_pass remote_status, struct parsedname *pn);
-static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path, struct parsedname *pn);
+static ZERO_OR_ERROR FS_ParsedName_anywhere(const char *path, enum parse_pass remote_status, struct parsedname *pn);
+static ZERO_OR_ERROR FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path, struct parsedname *pn);
 
 #define BRANCH_INCR (9)
 
@@ -67,23 +67,23 @@ void FS_ParsedName_destroy(struct parsedname *pn)
 // For efficiency, the two path copies are allocated in the same call, and so can be removed together.
 
 /* Parse a path to check it's validity and attach to the propery data structures */
-int FS_ParsedName(const char *path, struct parsedname *pn)
+ZERO_OR_ERROR FS_ParsedName(const char *path, struct parsedname *pn)
 {
 	return FS_ParsedName_anywhere(path, parse_pass_pre_remote, pn);
 }
 
 /* Parse a path from a remote source back -- so don't check presence */
-int FS_ParsedName_BackFromRemote(const char *path, struct parsedname *pn)
+ZERO_OR_ERROR FS_ParsedName_BackFromRemote(const char *path, struct parsedname *pn)
 {
 	return FS_ParsedName_anywhere(path, parse_pass_post_remote, pn);
 }
 
 /* Parse off starting "mode" directory (uncached, alarm...) */
-static int FS_ParsedName_anywhere(const char *path, enum parse_pass remote_status, struct parsedname *pn)
+static ZERO_OR_ERROR FS_ParsedName_anywhere(const char *path, enum parse_pass remote_status, struct parsedname *pn)
 {
 	struct parsedname_pointers s_pp;
 	struct parsedname_pointers *pp = &s_pp;
-	int parse_error_status = 0;
+	ZERO_OR_ERROR parse_error_status = 0;
 	enum parse_enum pe = parse_first;
 
 	// To make the debug output useful it's cleared here.
@@ -196,7 +196,7 @@ static int FS_ParsedName_anywhere(const char *path, enum parse_pass remote_statu
 }
 
 /* Initial memory allocation and pn setup */
-static int FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path, struct parsedname *pn)
+static ZERO_OR_ERROR FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path, struct parsedname *pn)
 {
 	if (pn == NULL) {
 		return -EINVAL;
@@ -527,7 +527,7 @@ enum parse_enum Parse_Property(char *filename, struct parsedname *pn)
 		//printf("FP Good\n") ;
 		switch (pn->selected_filetype->format) {
 		case ft_directory:		// aux or main
-			if (BranchAdd(pn)) {
+			if (BranchAdd(pn) != 0) {
 				//printf("PN BranchAdd failed for %s\n", pn->path);
 				return parse_error;
 			}
@@ -550,7 +550,7 @@ enum parse_enum Parse_Property(char *filename, struct parsedname *pn)
 	return parse_error;			/* filetype not found */
 }
 
-static int BranchAdd(struct parsedname *pn)
+static ZERO_OR_ERROR BranchAdd(struct parsedname *pn)
 {
 	//printf("BRANCHADD\n");
 	if ((pn->pathlength % BRANCH_INCR) == 0) {
@@ -576,9 +576,9 @@ int filetype_cmp(const void *name, const void *ex)
 }
 
 /* Parse a path/file combination */
-int FS_ParsedNamePlus(const char *path, const char *file, struct parsedname *pn)
+ZERO_OR_ERROR FS_ParsedNamePlus(const char *path, const char *file, struct parsedname *pn)
 {
-	int ret = 0;
+	ZERO_OR_ERROR ret = 0;
 	char *fullpath;
 
 	if (path == NULL) {
@@ -606,7 +606,7 @@ int FS_ParsedNamePlus(const char *path, const char *file, struct parsedname *pn)
 }
 
 /* Parse a path/file combination */
-int FS_ParsedNamePlusExt(const char *path, const char *file, int extension, enum ag_index alphanumeric, struct parsedname *pn)
+ZERO_OR_ERROR FS_ParsedNamePlusExt(const char *path, const char *file, int extension, enum ag_index alphanumeric, struct parsedname *pn)
 {
 	char name[OW_FULLNAME_MAX];
 	UCLIBCLOCK;
@@ -621,6 +621,11 @@ int FS_ParsedNamePlusExt(const char *path, const char *file, int extension, enum
 	}
 	UCLIBCUNLOCK;
 	return FS_ParsedNamePlus(path, name, pn);
+}
+
+void FS_ParsedName_Placeholder( struct parsedname * pn )
+{
+	FS_ParsedName( NULL, pn ) ; // minimal parsename -- no destroy needed
 }
 
 /* For read and write sibling -- much simpler requirements */

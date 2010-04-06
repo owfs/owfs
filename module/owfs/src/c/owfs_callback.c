@@ -170,11 +170,11 @@ static void FS_getdir_callback(void *v, const struct parsedname *pn_entry)
 static int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler)
 {
 	struct parsedname pn;
-	int ret = FS_ParsedName(path, &pn);
+	ZERO_OR_ERROR ret = FS_ParsedName(path, &pn);
 
 	LEVEL_CALL("GETDIR path=%s", SAFESTRING(path));
 
-	if (ret) { // bad ParseName
+	if (ret != 0 ) { // bad ParseName
 		return ret;
 	}
 
@@ -190,7 +190,7 @@ static int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler)
 
 	/* Clean up */
 	FS_ParsedName_destroy(&pn);
-	return ret;
+	return (int) ret; // Casting ZERO_OR_ERROR to int for pedantry
 }
 
 #ifdef FUSE22PLUS

@@ -62,11 +62,12 @@ void DeviceSort(void);
 void DeviceDestroy(void);
 /* Pasename processing -- URL/path comprehension */
 int filetype_cmp(const void *name, const void *ex);
-int FS_ParsedNamePlus(const char *path, const char *file, struct parsedname *pn);
-int FS_ParsedNamePlusExt(const char *path, const char *file, int extension, enum ag_index alphanumeric, struct parsedname *pn);
-int FS_ParsedName(const char *fn, struct parsedname *pn);
-int FS_ParsedName_BackFromRemote(const char *fn, struct parsedname *pn);
+ZERO_OR_ERROR FS_ParsedNamePlus(const char *path, const char *file, struct parsedname *pn);
+ZERO_OR_ERROR FS_ParsedNamePlusExt(const char *path, const char *file, int extension, enum ag_index alphanumeric, struct parsedname *pn);
+ZERO_OR_ERROR FS_ParsedName(const char *fn, struct parsedname *pn);
+ZERO_OR_ERROR FS_ParsedName_BackFromRemote(const char *fn, struct parsedname *pn);
 void FS_ParsedName_destroy(struct parsedname *pn);
+void FS_ParsedName_Placeholder( struct parsedname * pn ) ;
 int FS_ParseProperty_for_sibling(char *filename, struct parsedname *pn);
 int Parse_SerialNumber(char *sn_char, BYTE * sn) ;
 
@@ -98,7 +99,6 @@ void UT_setbit(BYTE * buf, const int loc, const int bit);
 void UT_set2bit(BYTE * buf, const int loc, const int bits);
 void UT_fromDate(const _DATE D, BYTE * data);
 _DATE UT_toDate(const BYTE * date);
-int FS_busless(char *path);
 
 void Test_and_Close( int * file_descriptor ) ;
 

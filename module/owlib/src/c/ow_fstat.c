@@ -22,7 +22,7 @@ ZERO_OR_ERROR FS_fstat(const char *path, struct stat *stbuf)
 	LEVEL_CALL("path=%s", SAFESTRING(path));
 
 	/* Bad path */
-	if (FS_ParsedName(path, &pn)) {
+	if (FS_ParsedName(path, &pn) != 0 ) {
 		ret = -ENOENT;
 	} else {
 		ret = FS_fstat_postparse(stbuf, &pn);
