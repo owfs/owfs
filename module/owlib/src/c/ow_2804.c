@@ -107,10 +107,10 @@ DeviceEntryExtended(1C, DS28E04, DEV_alarm | DEV_resume | DEV_ovdr);
 
 /* DS2804 */
 static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
-static int OW_w_scratch(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
-static int OW_w_pio(BYTE data, struct parsedname *pn);
-static int OW_clear(struct parsedname *pn);
-static int OW_w_reg(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
+static GOOD_OR_BAD OW_w_scratch(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
+static GOOD_OR_BAD OW_w_pio(BYTE data, struct parsedname *pn);
+static GOOD_OR_BAD OW_clear(struct parsedname *pn);
+static GOOD_OR_BAD OW_w_reg(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
 
 /* 2804 memory read */
 static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
@@ -168,10 +168,8 @@ static ZERO_OR_ERROR FS_w_pio(struct one_wire_query *owq)
 	BYTE data = 0;
 	/* reverse bits */
 	data = BYTE_INVERSE(OWQ_U(owq)) | 0xFC;	/* Set bits 2-7 to "1" */
-	if (OW_w_pio(data, PN(owq))) {
-		return -EINVAL;
-	}
-	return 0;
+	
+	return RETURN_Z_OR_E(OW_w_pio(data, PN(owq))) ;
 }
 
 /* 2804 switch -- is Vcc powered?*/
@@ -229,7 +227,7 @@ static ZERO_OR_ERROR FS_w_por(struct one_wire_query *owq)
 	}
 	if (UT_getbit(&data, 3)) {	/* needs resetting? bit3==1 */
 		data ^= 0x08;			/* flip bit 3 */
-		if (OW_w_reg(&data, 1, _ADDRESS_CONDITIONAL_SEARCH_CONTROL, pn)) {
+		if ( BAD( OW_w_reg(&data, 1, _ADDRESS_CONDITIONAL_SEARCH_CONTROL, pn)) ) {
 			return -EINVAL;		/* reset */
 		}
 		if (FS_r_por(owq)) {
@@ -273,10 +271,7 @@ static ZERO_OR_ERROR FS_r_latch(struct one_wire_query *owq)
 /* 2804 switch activity latch*/
 static ZERO_OR_ERROR FS_w_latch(struct one_wire_query *owq)
 {
-	if (OW_clear(PN(owq))) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E(OW_clear(PN(owq))) ;
 }
 
 /* 2804 alarm settings*/
@@ -311,13 +306,10 @@ static ZERO_OR_ERROR FS_w_s_alarm(struct one_wire_query *owq)
 	UT_setbit(&data[1], 1, (int) (U / 10 % 10) & 0x01);
 	UT_setbit(&data[0], 0, ((int) (U % 10) & 0x02) >> 1);
 	UT_setbit(&data[0], 1, ((int) (U / 10 % 10) & 0x02) >> 1);
-	if (OW_w_reg(data, 3, _ADDRESS_CONDITIONAL_SEARCH_PIO, PN(owq))) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E(OW_w_reg(data, 3, _ADDRESS_CONDITIONAL_SEARCH_PIO, PN(owq))) ;
 }
 
-static int OW_w_scratch(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
+static GOOD_OR_BAD OW_w_scratch(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
 {
 	BYTE p[3 + 32 + 2] = { _1W_WRITE_SCRATCHPAD, LOW_HIGH_ADDRESS(offset), };
 	struct transaction_log t[] = {
@@ -356,7 +348,7 @@ static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parse
 		TRXN_END,
 	};
 
-	if (OW_w_scratch(data, size, offset, pn)
+	if ( BAD( OW_w_scratch(data, size, offset, pn) )
 		|| BUS_transaction(tread, pn)) {
 		return gbBAD;
 	}
@@ -365,7 +357,7 @@ static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parse
 }
 
 //* write status byte */
-static int OW_w_reg(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
+static GOOD_OR_BAD OW_w_reg(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
 {
 	BYTE p[3] = { _1W_WRITE_REGISTER, LOW_HIGH_ADDRESS(offset), };
 	struct transaction_log t[] = {
@@ -378,7 +370,7 @@ static int OW_w_reg(BYTE * data, size_t size, off_t offset, struct parsedname *p
 }
 
 /* set PIO state bits: bit0=A bit1=B, value: open=1 closed=0 */
-static int OW_w_pio(BYTE data, struct parsedname *pn)
+static GOOD_OR_BAD OW_w_pio(BYTE data, struct parsedname *pn)
 {
 	BYTE p[3] = { _1W_PIO_ACCESS_WRITE, BYTE_MASK(data), BYTE_INVERSE(data), };
 	BYTE confirm[] = { _1W_PIO_CONFIRMATION, };
@@ -395,7 +387,7 @@ static int OW_w_pio(BYTE data, struct parsedname *pn)
 }
 
 /* Clear latches */
-static int OW_clear(struct parsedname *pn)
+static GOOD_OR_BAD OW_clear(struct parsedname *pn)
 {
 	BYTE cmd[] = { _1W_RESET_ACTIVITY_LATCHES, };
 	BYTE resp[1];
