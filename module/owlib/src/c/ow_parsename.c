@@ -429,7 +429,7 @@ static enum parse_enum Parse_Bus(char *pathnow, struct parsedname *pn)
 static enum parse_enum Parse_RealDevice(char *filename, enum parse_pass remote_status, struct parsedname *pn)
 {
 	int bus_nr ;
-	if ( Parse_SerialNumber(filename,pn->sn)  ) {
+	if ( BAD( Parse_SerialNumber(filename,pn->sn) ) ) {
 		// Not a serial number, look for an alias
 		if (Cache_Get_SerialNumber(filename,pn->sn)) {
 			return parse_error;

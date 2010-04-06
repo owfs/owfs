@@ -68,7 +68,7 @@ ZERO_OR_ERROR FS_ParsedName(const char *fn, struct parsedname *pn);
 ZERO_OR_ERROR FS_ParsedName_BackFromRemote(const char *fn, struct parsedname *pn);
 void FS_ParsedName_destroy(struct parsedname *pn);
 void FS_ParsedName_Placeholder( struct parsedname * pn ) ;
-int Parse_SerialNumber(char *sn_char, BYTE * sn) ;
+GOOD_OR_BAD Parse_SerialNumber(char *sn_char, BYTE * sn) ;
 
 size_t FileLength(const struct parsedname *pn);
 size_t FullFileLength(const struct parsedname *pn);
