@@ -14,10 +14,10 @@ $Id$
 #include "ow.h"
 #include "ow_connection.h"
 
-int FS_fstat(const char *path, struct stat *stbuf)
+ZERO_OR_ERROR FS_fstat(const char *path, struct stat *stbuf)
 {
 	struct parsedname pn;
-	int ret = 0;
+	ZERO_OR_ERROR ret = 0;
 
 	LEVEL_CALL("path=%s", SAFESTRING(path));
 
@@ -32,7 +32,7 @@ int FS_fstat(const char *path, struct stat *stbuf)
 }
 
 /* Fstat with parsedname already done */
-int FS_fstat_postparse(struct stat *stbuf, const struct parsedname *pn)
+ZERO_OR_ERROR FS_fstat_postparse(struct stat *stbuf, const struct parsedname *pn)
 {
 	memset(stbuf, 0, sizeof(struct stat));
 

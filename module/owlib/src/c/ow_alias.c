@@ -21,7 +21,7 @@ $Id$
 
 static int Test_Add_Alias( char * name, BYTE * sn ) ;
 
-int AliasFile(const ASCII * file)
+GOOD_OR_BAD AliasFile(const ASCII * file)
 {
 	FILE *alias_file_pointer ;
 
@@ -34,7 +34,7 @@ int AliasFile(const ASCII * file)
 	alias_file_pointer = fopen(file, "r");
 	if ( alias_file_pointer == NULL ) {
 		ERROR_DEFAULT("Cannot process alias file %s", file);
-		return 1;
+		return gbBAD;
 	}
 
 	/* read each line and parse */
@@ -80,7 +80,7 @@ int AliasFile(const ASCII * file)
 		free(alias_line) ; // not owfree since allocated by getline
 	}
 	fclose(alias_file_pointer);
-	return 0;
+	return gbGOOD;
 }
 
 static int Test_Add_Alias( char * name, BYTE * sn )

@@ -1452,7 +1452,7 @@ static void do_mdtm(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 	get_absolute_fname(full_path, sizeof(full_path), f->dir, file_name);
 
 	/* get the file information */
-	if (FS_fstat(full_path, &stat_buf)) {
+	if (FS_fstat(full_path, &stat_buf) < 0) {
 		reply(f, 550, "Error getting file status; %s.", strerror(errno));
 	} else {
 		gmtime_r(&stat_buf.st_mtime, &mtime);

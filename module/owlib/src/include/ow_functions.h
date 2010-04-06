@@ -130,7 +130,7 @@ void FreeClientAddr(struct connection_in *in);
 void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (int errcode));
 int ServerOutSetup(struct connection_out *out);
 
-int AliasFile(const ASCII * file) ;
+GOOD_OR_BAD AliasFile(const ASCII * file) ;
 
 speed_t COM_MakeBaud( int raw_baud ) ;
 int COM_BaudRate( speed_t B_baud ) ;
@@ -176,8 +176,8 @@ ZERO_OR_ERROR FS_w_sibling_Y(   INT Y, const char * sibling, struct one_wire_que
 
 void FS_del_sibling(const char * sibling, struct one_wire_query *owq) ;
 
-int FS_fstat(const char *path, struct stat *stbuf);
-int FS_fstat_postparse(struct stat *stbuf, const struct parsedname *pn);
+ZERO_OR_ERROR FS_fstat(const char *path, struct stat *stbuf);
+ZERO_OR_ERROR FS_fstat_postparse(struct stat *stbuf, const struct parsedname *pn);
 
 /* iteration functions for splitting writes to buffers */
 GOOD_OR_BAD COMMON_readwrite_paged(struct one_wire_query *owq, size_t page, size_t pagelen, GOOD_OR_BAD (*readwritefunc) (BYTE *, size_t, off_t, struct parsedname *));
