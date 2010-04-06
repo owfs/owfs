@@ -627,17 +627,3 @@ void FS_ParsedName_Placeholder( struct parsedname * pn )
 {
 	FS_ParsedName( NULL, pn ) ; // minimal parsename -- no destroy needed
 }
-
-/* For read and write sibling -- much simpler requirements */
-int FS_ParseProperty_for_sibling(char *filename, struct parsedname *pn)
-{
-	// need to make a copy of filename since a static string can't be modified by strsep
-	char *filename_copy = owstrdup(filename);
-	int ret;
-	if (filename_copy == NULL) {
-		return 1;
-	}
-	ret = (Parse_Property(filename_copy, pn) == parse_done) ? 0 : 1;
-	owfree(filename_copy);
-	return ret;
-}
