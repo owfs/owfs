@@ -823,7 +823,9 @@ static int PersistentStart(int *persistent, struct connection_in *in)
 static void PersistentEnd(int file_descriptor, int persistent, int granted, struct connection_in *in)
 {
 	if (persistent == 0) {		// non-persistence from the start
-		close(file_descriptor);
+		if(file_descriptor >= 0) {
+			close(file_descriptor);
+		}
 	} else if (granted == 0) {	// not granted
 		PersistentClear(file_descriptor, in);
 	} else {					// Let the persistent connection be used
