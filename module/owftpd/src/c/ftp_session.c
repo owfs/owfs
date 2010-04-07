@@ -938,7 +938,7 @@ static void do_retr(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 	}
 
 	/* Can we parse the name? */
-	if (OWQ_create_plus(f->dir, file_name, &owq)) {
+	if ( BAD( OWQ_create_plus(f->dir, file_name, &owq) ) ) {
 		reply(f, 550, "File does not exist.");
 		goto exit_retr;
 	}
@@ -1073,7 +1073,7 @@ static void do_stor(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 	socket_fd = -1;
 
 	/* create an absolute name for our file */
-	if (OWQ_create_plus(f->dir, cmd->arg[0].string, owq)) {
+	if ( BAD( OWQ_create_plus(f->dir, cmd->arg[0].string, owq) ) ) {
 		reply(f, 550, "File does not exist.");
 		goto exit_stor;
 	}

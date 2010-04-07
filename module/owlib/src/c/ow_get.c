@@ -78,7 +78,7 @@ SIZE_OR_ERROR FS_get(const char *path, char **return_buffer, size_t * buffer_len
 
 	*return_buffer = NULL;				// default return string on error
 
-	if (OWQ_create(path, owq)) {	/* Can we parse the input string */
+	if ( BAD( OWQ_create(path, owq) ) ) {	/* Can we parse the input string */
 		return -ENOENT;
 	}
 

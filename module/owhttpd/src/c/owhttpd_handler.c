@@ -169,7 +169,7 @@ static enum http_return handle_GET(FILE * out, struct urlparse * up)
 		}
 		
 		// Create the owq to write to.
-		if (OWQ_create_plus(up->file, up->request, owq_write) != 0) { // for write
+		if ( BAD( OWQ_create_plus(up->file, up->request, owq_write) ) ) { // for write
 			return http_404 ;
 		}
 		OWQ_assign_write_buffer( up->value, strlen(up->value), 0, owq_write ) ;

@@ -73,8 +73,8 @@ struct one_wire_query {
 // "owq_name->cleanup = owq_cleanup_none" is needed at least... but why not clear the whole struct just to make sure it never happens again.
 #define OWQ_allocate_struct_and_pointer( owq_name )	struct one_wire_query struct_##owq_name ; struct one_wire_query * owq_name = & struct_##owq_name; memset(&struct_##owq_name, 0, sizeof(struct one_wire_query));
 
-int OWQ_create(const char *path, struct one_wire_query *owq);
-int OWQ_create_plus(const char *path, const char *file, struct one_wire_query *owq);
+GOOD_OR_BAD OWQ_create(const char *path, struct one_wire_query *owq);
+GOOD_OR_BAD OWQ_create_plus(const char *path, const char *file, struct one_wire_query *owq);
 
 void OWQ_destroy(struct one_wire_query *owq);
 

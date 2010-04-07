@@ -56,7 +56,7 @@ SIZE_OR_ERROR FS_read(const char *path, char *buf, const size_t size, const off_
 
 	LEVEL_CALL("path=%s size=%d offset=%d", SAFESTRING(path), (int) size, (int) offset);
 	// Parseable path?
-	if ( OWQ_create(path, owq) != 0 ) { // for read
+	if ( BAD( OWQ_create(path, owq) ) ) { // for read
 		return -ENOENT;
 	}
 	OWQ_assign_read_buffer( buf, size, offset, owq) ;

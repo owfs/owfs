@@ -107,7 +107,7 @@ void *DataHandler(void *v)
 
 			/* Parse the path string and crete  query object */
 			LEVEL_CALL("DataHandler: parse path=%s", hd->sp.path);
-			cm.ret = OWQ_create(hd->sp.path, owq) ;
+			cm.ret = BAD( OWQ_create(hd->sp.path, owq) ) ? -1 : 0 ;
 			if ( cm.ret != 0 ) {
 				LEVEL_DEBUG("DataHandler: OWQ_create failed cm.ret=%d", cm.ret);
 				break;

@@ -93,33 +93,33 @@ struct one_wire_query * OWQ_create_separate( int extension, struct one_wire_quer
 }
 
 /* Create the Parsename structure and load the relevant fields */
-int OWQ_create(const char *path, struct one_wire_query *owq)
+GOOD_OR_BAD OWQ_create(const char *path, struct one_wire_query *owq)
 {
 	LEVEL_DEBUG("%s", path);
 
 	if ( GOOD( OWQ_parsename(path,owq) ) ) {
 		if ( OWQ_allocate_array(owq) == 0 ) {
-			return 0 ;
+			return gbGOOD ;
 		}
 		OWQ_destroy(owq);
 	}
-	return 1 ;
+	return gbBAD ;
 }
 
 /* Create the Parsename structure (using path and file) and load the relevant fields */
 /* Starts with a statically allocated owq space */
-int OWQ_create_plus(const char *path, const char *file, struct one_wire_query *owq)
+GOOD_OR_BAD OWQ_create_plus(const char *path, const char *file, struct one_wire_query *owq)
 {
 	LEVEL_DEBUG("%s + %s", path, file);
 
 	OWQ_cleanup(owq) = owq_cleanup_none ;
 	if ( GOOD( OWQ_parsename_plus(path,file,owq) ) ) {
 		if ( OWQ_allocate_array(owq) == 0 ) {
-			return 0 ;
+			return gbGOOD ;
 		}
 		OWQ_destroy(owq);
 	}
-	return 1 ;
+	return gbBAD ;
 }
 
 /* Create the Parsename structure in owq */
