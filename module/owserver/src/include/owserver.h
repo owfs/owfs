@@ -69,6 +69,12 @@ pthread_t main_threadid;
 #define TOCLIENTUNLOCK(hd)
 #endif							/* OW_MT */
 
+enum toclient_state {
+	toclient_postping , // also initial state
+	toclient_postmessage, // only for interme4diate messages like DIR entries
+	toclient_complete, // final payload has been sent
+} ;
+
 // this structure holds the data needed for the handler function called in a separate thread by the ping wrapper
 struct handlerdata {
 	int file_descriptor;
@@ -78,6 +84,9 @@ struct handlerdata {
 #ifdef HAVE_SEM_TIMEDWAIT
 	sem_t complete_sem;
 #endif
+	int read_file_descriptor ;
+	int write_file_descriptor ;
+	enum toclient_state toclient ;
 #endif							/* OW_MT */
 	struct timeval tv;
 	struct server_msg sm;
