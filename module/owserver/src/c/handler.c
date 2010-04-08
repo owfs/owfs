@@ -152,20 +152,6 @@ void Handler(int file_descriptor)
 	}
 }
 
-/*
- * Routine for handling a single request
-   returns 0 if ok, else non-zero for error
- */
-unsigned long handler_count = 0 ;
-struct client_msg ping_cm = {
-	.version = 0 ,
-	.payload = -1 ,
-	.ret     = 0 ,
-	.control_flags = 0 ,
-	.size    = 0 ,
-	.offset  = 0 ,
-};
-
 static void SingleHandler(struct handlerdata *hd)
 {
 	struct timeval now;			// timer calculation
@@ -191,7 +177,7 @@ static void SingleHandler(struct handlerdata *hd)
 
 	if (Globals.pingcrazy) {	// extra pings
 		TOCLIENTLOCK(hd);
-		ToClient(hd->file_descriptor, &ping_cm, NULL);	// send the ping
+		PingClient(hd);	// send the ping
 		TOCLIENTUNLOCK(hd);
 		LEVEL_DEBUG("Extra ping (pingcrazy mode)");
 	}
@@ -296,7 +282,7 @@ static void SingleHandler(struct handlerdata *hd)
 			if (timercmp(&(hd->tv), &result, <) || Globals.pingcrazy) {	// test against last message time
 				char *c = NULL;	// dummy argument
 				LEVEL_DEBUG("PING handler {%lu} %s",this_handler_count,hd->sp.path) ;
-				ToClient(hd->file_descriptor, &ping_cm, c);	// send the ping
+				PingClient(hd);	// send the ping
 				gettimeofday(&(hd->tv), NULL);	// reset timer
 			} else {
 				LEVEL_DEBUG("NOPING handler {%lu} %s",this_handler_count,hd->sp.path) ;

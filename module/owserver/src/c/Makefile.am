@@ -10,7 +10,8 @@ owserver_SOURCES = owserver.c    \
                    dirall.c      \
                    dirallslash.c \
                    data.c        \
-                   handler.c
+                   handler.c     \
+                   ping.c
                    
 owserver_DEPENDENCIES = ../../../owlib/src/c/libow.la
 
