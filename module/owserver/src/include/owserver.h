@@ -120,9 +120,15 @@ void *DataHandler(void *v);
 /* Handle a client request, including timeout pings */
 void Handler(int file_descriptor);
 
-/* Send a timeout ping */
 #if OW_MT
-void PingClient(struct handlerdata *hd)
+
+/* Send a timeout ping */
+void PingClient(struct handlerdata *hd);
+
+/* Loop waiting for finish sending pings */
+GOOD_OR_BAD LoopSetup(struct handlerdata *hd) ;
+void PingLoop(struct handlerdata *hd) ;
+
 #endif /* OW_MT */
 
 #endif							/* OWSERVER_H */

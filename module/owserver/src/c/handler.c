@@ -39,7 +39,7 @@ $Id$
 
 /* Counters for persistent connections */
 int persistent_connections = 0;
-
+int handler_count = 0 ;
 
 #if OW_MT						// Handler for multithreaded approach -- with ping
 
@@ -280,7 +280,6 @@ static void SingleHandler(struct handlerdata *hd)
 			gettimeofday(&now, NULL);	// current time
 			timersub(&now, &delta, &result);	// less delay
 			if (timercmp(&(hd->tv), &result, <) || Globals.pingcrazy) {	// test against last message time
-				char *c = NULL;	// dummy argument
 				LEVEL_DEBUG("PING handler {%lu} %s",this_handler_count,hd->sp.path) ;
 				PingClient(hd);	// send the ping
 				gettimeofday(&(hd->tv), NULL);	// reset timer
