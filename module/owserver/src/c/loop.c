@@ -137,17 +137,11 @@ void PingLoop(struct handlerdata *hd)
 {
 	enum toclient_state current_toclient = toclient_postping ;
 	
-	if ( BAD( LoopSetup(hd) ) ) {
-		LoopCleanup(hd) ;
-		return gbBAD ;
-	}
-
 	do {
 		current_toclient = Ping_or_Send( current_toclient, hd ) ;
 	} while ( current_toclient != toclient_complete ) ;
 	
 	LoopCleanup(hd);
-	return gbGOOD ;
 }
 
 #endif							/* OW_MT */
