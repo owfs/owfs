@@ -39,6 +39,9 @@ $Id$
 
 #if OW_MT						// Handler for multithreaded approach -- with ping
 
+static void LoopCleanup(struct handlerdata *hd);
+static enum toclient_state Ping_or_Send( enum toclient_state last_toclient, struct handlerdata * hd );
+
 struct timeval tv_long  = { 1 , 000000 } ; // 1 second
 struct timeval tv_short = { 0 , 500000 } ; // 1/2 second
 
