@@ -137,7 +137,7 @@ void PingLoop(struct handlerdata *hd)
 {
 	enum toclient_state current_toclient = toclient_postping ;
 	
-	if ( GOOD( LoopSetup(hd) ) {
+	if ( GOOD( LoopSetup(hd) ) ) {
 		pthread_t thread ;
 		
 		// Create DataHandler
