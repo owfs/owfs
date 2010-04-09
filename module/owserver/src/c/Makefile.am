@@ -10,6 +10,7 @@ owserver_SOURCES = owserver.c    \
                    dirall.c      \
                    dirallslash.c \
                    data.c        \
+		   error.c       \
                    handler.c     \
                    loop.c        \
                    ping.c

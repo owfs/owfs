@@ -198,11 +198,15 @@ void *DataHandler(void *v)
 	TOCLIENTLOCK(hd);
 	if (cm.ret != -EIO) {
 		ToClient(hd->file_descriptor, &cm, retbuffer);
+	} else {
+		ErrorToClient(hd, &cm) ;
 	}
-	timerclear(&(hd->tv));
-#if OW_MT && defined(HAVE_SEM_TIMEDWAIT)
-	sem_post(&(hd->complete_sem));
-#endif
+#if OW_MT
+	hd->toclient = toclient_complete ;
+	if ( hd->write_file_descriptor > -1 ) {
+		write( hd->write_file_descriptor,"X",1) ; //dummy payload
+	}
+#endif /* OW_MT */
 	TOCLIENTUNLOCK(hd);
 	if (retbuffer) {
 		owfree(retbuffer);

@@ -41,18 +41,18 @@ $Id$
 
 static void LoopCleanup(struct handlerdata *hd);
 static enum toclient_state Ping_or_Send( enum toclient_state last_toclient, struct handlerdata * hd );
+static GOOD_OR_BAD LoopSetup(struct handlerdata *hd) ;
 
 struct timeval tv_long  = { 1 , 000000 } ; // 1 second
 struct timeval tv_short = { 0 , 500000 } ; // 1/2 second
 
-GOOD_OR_BAD LoopSetup(struct handlerdata *hd)
+static GOOD_OR_BAD LoopSetup(struct handlerdata *hd)
 {
 	int fd[2] ;
 	my_pthread_mutex_init(&hd->to_client, Mutex.pmattr);
 	hd->read_file_descriptor = -1;
 	hd->write_file_descriptor = -1 ;
 	if ( pipe(fd) == 0 ) {
-		LoopCleanup(hd) ;
 		return gbBAD ;
 	}
 	hd->read_file_descriptor = fd[0];
@@ -137,9 +137,22 @@ void PingLoop(struct handlerdata *hd)
 {
 	enum toclient_state current_toclient = toclient_postping ;
 	
-	do {
-		current_toclient = Ping_or_Send( current_toclient, hd ) ;
-	} while ( current_toclient != toclient_complete ) ;
+	if ( GOOD( LoopSetup(hd) ) {
+		pthread_t thread ;
+		
+		// Create DataHandler
+		if (pthread_create(&thread, NULL, DataHandler, hd)) {
+			LEVEL_DEBUG("OWSERVER:handler() can't create new thread");
+			DataHandler(hd);		// do it without pings
+			LoopCleanup(hd);
+			return ;
+		}
+
+		// ping vs data loop
+		do {
+			current_toclient = Ping_or_Send( current_toclient, hd ) ;
+		} while ( current_toclient != toclient_complete ) ;
+	}
 	
 	LoopCleanup(hd);
 }

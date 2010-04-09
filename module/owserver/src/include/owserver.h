@@ -81,9 +81,6 @@ struct handlerdata {
 	int persistent;
 #if OW_MT
 	pthread_mutex_t to_client;
-#ifdef HAVE_SEM_TIMEDWAIT
-	sem_t complete_sem;
-#endif
 	int read_file_descriptor ;
 	int write_file_descriptor ;
 	enum toclient_state toclient ;
@@ -120,13 +117,15 @@ void *DataHandler(void *v);
 /* Handle a client request, including timeout pings */
 void Handler(int file_descriptor);
 
+/* Send a response to client of an error */
+void ErrorToClient(struct handlerdata *hd, struct client_msg * cm ) ;
+
 #if OW_MT
 
 /* Send a timeout ping */
 void PingClient(struct handlerdata *hd);
 
 /* Loop waiting for finish sending pings */
-GOOD_OR_BAD LoopSetup(struct handlerdata *hd) ;
 void PingLoop(struct handlerdata *hd) ;
 
 #endif /* OW_MT */

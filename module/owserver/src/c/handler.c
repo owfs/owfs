@@ -154,154 +154,22 @@ void Handler(int file_descriptor)
 
 static void SingleHandler(struct handlerdata *hd)
 {
-	struct timeval now;			// timer calculation
-	struct timeval delta = { Globals.timeout_network, 500000 };	// 1.5 seconds ping interval
-	struct timeval result;		// timer calculation
-	pthread_t thread;			// hanler thread id (not used)
-	int loop = 1;				// ping loop flap
-	struct timeval this_handler_start ;
-	struct timeval this_handler_stop ;
-	unsigned long this_handler_count = ++handler_count ;
-
-	gettimeofday(&this_handler_start,0) ; // start for timing query handling
 	timerclear(&hd->tv);
-	LEVEL_DEBUG("START handler {%lu} %s",this_handler_count,hd->sp.path) ;
+
+	LEVEL_DEBUG("START handler %s",hd->sp.path) ;
 
 	gettimeofday(&(hd->tv), NULL);
-#if defined(HAVE_SEM_TIMEDWAIT)
-	sem_init(&(hd->complete_sem), 0, 0);
-#endif /* defined(HAVE_SEM_TIMEDWAIT) */
 		
 	//printf("OWSERVER pre-create\n");
 	// PTHREAD_CREATE_DETACHED doesn't work for older uclibc... call pthread_detach() instead.
 
 	if (Globals.pingcrazy) {	// extra pings
-		TOCLIENTLOCK(hd);
 		PingClient(hd);	// send the ping
-		TOCLIENTUNLOCK(hd);
 		LEVEL_DEBUG("Extra ping (pingcrazy mode)");
 	}
 
-	if (pthread_create(&thread, NULL, DataHandler, hd)) {
-		LEVEL_DEBUG("OWSERVER:handler() can't create new thread");
-		DataHandler(hd);		// do it without pings
-		goto HandlerDone;
-	}
+	PingLoop( hd ) ;
 
-	do {						// ping loop
-#if defined(HAVE_SEM_TIMEDWAIT)
-		int timeout = 100;  // max wait before testing hd->tv manually
-		int rc, err = 0;
-		struct timespec tspec_end;
-		struct timeval tv_start, tv_end, tv_now, elapsed, left;
-		
-#ifdef USE_CLOCKGETTIME
-		/* This require -lrt, and precision (nanoseconds) is a bit unneeded */
-		if (clock_gettime(CLOCK_REALTIME, &tspec_end) == -1) {
-			LEVEL_DEFAULT("clock_gettime failed");
-		}
-		LEVEL_DEBUG("clock_gettime returned time(NULL)=%ld %ld.%ld", time(NULL), tspec_end.tv_sec, tspec_end.tv_nsec);
-#else /* USE_CLOCKGETTIME */
-		/* micro seconds are good enough for this timeout */
-		gettimeofday(&tv_start, NULL);
-		tspec_end.tv_sec = tv_start.tv_sec;
-		tspec_end.tv_nsec = tv_start.tv_usec*1000;
-#endif /* USE_CLOCKGETTIME */
-		tspec_end.tv_nsec += timeout*1000*1000;  // This is our end-time to wait until...
-		if(tspec_end.tv_nsec >= 1000*1000*1000) {
-			tspec_end.tv_nsec -= 1000*1000*1000;
-			tspec_end.tv_sec += 1;
-		}
-		tv_end.tv_sec = tspec_end.tv_sec;
-		tv_end.tv_usec = tspec_end.tv_nsec/1000;
-
-		while(1) {
-#if 0
-			// This should be enough, but it doesn't work during debugging with gdb.
-			while (((rc = sem_timedwait(&(hd->complete_sem), &tspec_end)) == -1) && ((err = errno) == EINTR)) {
-				LEVEL_DEFAULT("restart sem_timedwait since EINTR");
-				continue;       /* Restart if interrupted by handler */
-			}
-#else /* 0 */
-			rc = sem_timedwait(&(hd->complete_sem), &tspec_end);
-#endif /* 0 */
-
-			if(rc < 0) {
-				err = errno;
-				gettimeofday(&tv_now, NULL);
-				timersub(&tv_now, &tv_start, &elapsed);  // total waiting time...
-				timersub(&tv_end, &tv_now,   &left);  // time left of "timeout"
-			
-				if(err == EINTR) {
-					LEVEL_CALL("restart sem_timedwait since EINTR. elapsed=%ld.%03ld left=%ld.%03ld", elapsed.tv_sec, elapsed.tv_usec/1000, left.tv_sec, left.tv_usec/1000);
-					continue;
-				}
-				if(err == ETIMEDOUT) {
-					if(left.tv_sec >= 0) {
-						/* Debugging the application with gdb will result into strange behavior from sem_timedwait.
-						 * It might return too early with ETIMEDOUT even if there are more time left.
-						 */
-						LEVEL_CALL("Too early ETIMEDOUT from sem_timedwait elapsed=%ld.%03ld left=%ld.%03ld", elapsed.tv_sec, elapsed.tv_usec/1000, left.tv_sec, left.tv_usec/1000);
-						//Too early ETIMEDOUT from sem_timedwait elapsed=0.022 left=179.977
-						//sem_timedwait ok  time=0.077
-						// Call sem_timedwait and wait again. tspec_end should be untouched and contain correct end-time.
-						continue;
-					} else {
-						LEVEL_CALL("sem_timedwait timeout time=%ld.%03ld (timeout=%d ms)", elapsed.tv_sec, elapsed.tv_usec/1000, timeout);
-					}
-				} else {
-					LEVEL_DEFAULT("sem_timedwait error %d rc=%d time=%ld.%03ld", err, elapsed.tv_sec, elapsed.tv_usec/1000);
-				}
-			} else {
-				//LEVEL_DEFAULT("sem_timedwait ok  time=%ld.%03ld", elapsed.tv_sec, elapsed.tv_usec/1000);
-			}
-			break;
-		}
-	
-#else /* defined(HAVE_SEM_TIMEDWAIT) */
-		
-		// This will delay all persistant connections. (and result into cpu-usage)
-		// Replace into a timed semaphore
-#ifdef HAVE_NANOSLEEP
-		struct timespec nano = { 0, 1000*1000 };	// .001 seconds (Note second element NANOsec)
-		nanosleep(&nano, NULL);
-#else							/* HAVE_NANOSLEEP */
-		usleep((unsigned long) 1000);
-#endif							/* HAVE_NANOSLEEP */
-
-#endif /* defined(HAVE_SEM_TIMEDWAIT) */
-
-		TOCLIENTLOCK(hd);
-
-		if (!timerisset(&(hd->tv))) {	// flag that the other thread is done
-			LEVEL_DEBUG("UNPING handler {%lu} %s",this_handler_count,hd->sp.path) ;
-			loop = 0;
-		} else {				// check timing -- ping if expired
-			gettimeofday(&now, NULL);	// current time
-			timersub(&now, &delta, &result);	// less delay
-			if (timercmp(&(hd->tv), &result, <) || Globals.pingcrazy) {	// test against last message time
-				LEVEL_DEBUG("PING handler {%lu} %s",this_handler_count,hd->sp.path) ;
-				PingClient(hd);	// send the ping
-				gettimeofday(&(hd->tv), NULL);	// reset timer
-			} else {
-				LEVEL_DEBUG("NOPING handler {%lu} %s",this_handler_count,hd->sp.path) ;
-			}
-		}
-
-		TOCLIENTUNLOCK(hd);
-
-	} while (loop);
-
-HandlerDone:
-	gettimeofday(&this_handler_stop,0); // not for end of handling
-	LEVEL_DEBUG("OWSERVER TIMING: Query %6lu Seconds %12.2f Path %s",
-		this_handler_count,
-		1.0*(this_handler_stop.tv_sec-this_handler_start.tv_sec)+.000001*(this_handler_stop.tv_usec-this_handler_start.tv_usec),
-		hd->sp.path) ;
-	LEVEL_DEBUG("STOP handler {%lu} %s",this_handler_count,hd->sp.path) ;
-#if defined(HAVE_SEM_TIMEDWAIT)
-	sem_destroy(&(hd->complete_sem));
-#endif /* defined(HAVE_SEM_TIMEDWAIT) */
 	if (hd->sp.path) {
 		owfree(hd->sp.path);
 		hd->sp.path = NULL;
