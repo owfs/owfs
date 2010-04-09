@@ -160,9 +160,6 @@ static void SingleHandler(struct handlerdata *hd)
 
 	gettimeofday(&(hd->tv), NULL);
 		
-	//printf("OWSERVER pre-create\n");
-	// PTHREAD_CREATE_DETACHED doesn't work for older uclibc... call pthread_detach() instead.
-
 	if (Globals.pingcrazy) {	// extra pings
 		PingClient(hd);	// send the ping
 		LEVEL_DEBUG("Extra ping (pingcrazy mode)");

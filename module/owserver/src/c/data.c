@@ -62,7 +62,6 @@ void *DataHandler(void *v)
 	}
 #endif
 
-	//printf("OWSERVER message type = %d\n",sm.type ) ;
 	memset(&cm, 0, sizeof(struct client_msg));
 	cm.version = MakeServerprotocol(OWSERVER_PROTOCOL_VERSION);
 	cm.control_flags = hd->sm.control_flags;			// default flag return -- includes persistence state
@@ -201,7 +200,9 @@ void *DataHandler(void *v)
 	} else {
 		ErrorToClient(hd, &cm) ;
 	}
+
 #if OW_MT
+	// Signal to PingLoop that we're done.
 	hd->toclient = toclient_complete ;
 	if ( hd->write_file_descriptor > -1 ) {
 		write( hd->write_file_descriptor,"X",1) ; //dummy payload
@@ -211,6 +212,6 @@ void *DataHandler(void *v)
 	if (retbuffer) {
 		owfree(retbuffer);
 	}
-	LEVEL_DEBUG("DataHandler: done");
+	LEVEL_DEBUG("Finished with client request");
 	return NULL;
 }
