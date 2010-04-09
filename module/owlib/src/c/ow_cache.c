@@ -46,7 +46,7 @@ int SimulMarkerLoc[simul_end] ;
 void * Simul_Marker[] = { &SimulMarkerLoc[simul_temp], &SimulMarkerLoc[simul_volt], } ;
 
 /* Put the globals into a struct to declutter the namespace */
-static struct {
+struct cache_data {
 	void *temporary_tree_new;				// current cache database
 	void *temporary_tree_old;				// older cache database
 	void *permanent_tree;				// persistent database
@@ -56,7 +56,8 @@ static struct {
 	time_t killed;				// deathtime of older
 	time_t lifespan;			// lifetime of older
 	UINT added;					// items added
-} cache;
+};
+static struct cache_data cache;
 
 /* Cache elements are placed in a Red/Black binary tree
 	-- standard glibc implementation
@@ -224,7 +225,7 @@ static int Cache_Type_Store( const struct parsedname * pn )
 /* Note: done in single-threaded mode so locking not yet needed */
 void Cache_Open(void)
 {
-	memset(&cache, 0, sizeof(struct cache));
+	memset(&cache, 0, sizeof(struct cache_data));
 
 	cache.lifespan = TimeOut(fc_stable);
 	if (cache.lifespan > 3600) {
