@@ -76,10 +76,10 @@ DeviceEntry(14, DS2430A);
 /* ------- Functions ------------ */
 
 /* DS2502 */
-static int OW_w_mem(const BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn);
-static int OW_w_app(const BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn);
-static int OW_r_app(BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn);
-static int OW_r_status(BYTE * data, const struct parsedname *pn);
+static GOOD_OR_BAD OW_w_mem(const BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn);
+static GOOD_OR_BAD OW_w_app(const BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn);
+static GOOD_OR_BAD OW_r_app(BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn);
+static GOOD_OR_BAD OW_r_status(BYTE * data, const struct parsedname *pn);
 
 /* DS2430A memory */
 static ZERO_OR_ERROR FS_r_memory(struct one_wire_query *owq)
@@ -93,40 +93,29 @@ static ZERO_OR_ERROR FS_r_memory(struct one_wire_query *owq)
 /* DS2430A memory */
 static ZERO_OR_ERROR FS_r_application(struct one_wire_query *owq)
 {
-	if (OW_r_app((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq))) {
-		return -EINVAL;
-	}
-	return OWQ_size(owq);
+	return RETURN_Z_OR_E(OW_r_app((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq))) ;
 }
 
 static ZERO_OR_ERROR FS_w_memory(struct one_wire_query *owq)
 {
-	if (OW_w_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq))) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E(OW_w_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq))) ;
 }
 
 static ZERO_OR_ERROR FS_w_application(struct one_wire_query *owq)
 {
-	if (OW_w_app((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq))) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E(OW_w_app((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq))) ;
 }
 
 static ZERO_OR_ERROR FS_r_lock(struct one_wire_query *owq)
 {
-	BYTE data;
-	if (OW_r_status(&data, PN(owq))) {
-		return -EINVAL;
-	}
+	BYTE data = 0 ;
+
 	OWQ_Y(owq) = data & 0x01;
-	return 0;
+	return RETURN_Z_OR_E(OW_r_status(&data, PN(owq))) ;
 }
 
 /* Byte-oriented write */
-static int OW_w_mem(const BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn)
+static GOOD_OR_BAD OW_w_mem(const BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn)
 {
 	BYTE fo[] = { _1W_READ_MEMORY, };
 	struct transaction_log tread[] = {
@@ -160,25 +149,25 @@ static int OW_w_mem(const BYTE * data, const size_t size, const off_t offset, co
 
 	/* load scratch pad if incomplete write */
 	if ((size != 16) && BUS_transaction(tread, pn)) {
-		return 1;
+		return gbBAD;
 	}
 	/* write data to scratchpad */
 	if (BUS_transaction(twrite, pn)) {
-		return 1;
+		return gbBAD;
 	}
 	/* read back the scratchpad */
 	if (BUS_transaction(tver, pn)) {
-		return 1;
+		return gbBAD;
 	}
 	if (memcmp(data, ver, size)) {
-		return 1;
+		return gbBAD;
 	}
 	/* copy scratchpad to memory */
 	return BUS_transaction(tcopy, pn);
 }
 
 /* Byte-oriented write */
-static int OW_w_app(const BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn)
+static GOOD_OR_BAD OW_w_app(const BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn)
 {
 	BYTE fo[] = { _1W_READ_APPLICATION_REGISTER, };
 	struct transaction_log tread[] = {
@@ -213,21 +202,21 @@ static int OW_w_app(const BYTE * data, const size_t size, const off_t offset, co
 
 	/* load scratch pad if incomplete write */
 	if ((size != 8) && BUS_transaction(tread, pn)){
-		return 1;
+		return gbBAD;
 	}
 	/* write data to scratchpad */
 	if (BUS_transaction(twrite, pn)) {
-		return 1;
+		return gbBAD;
 	}
 	/* read back the scratchpad */
 	if (BUS_transaction(tver, pn)) {
-		return 1;
+		return gbBAD;
 	}
 	/* copy scratchpad to memory */
 	return BUS_transaction(tcopy, pn);
 }
 
-static int OW_r_app(BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn)
+static GOOD_OR_BAD OW_r_app(BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn)
 {
 	BYTE fo[] = { _1W_READ_APPLICATION_REGISTER, (BYTE) (offset & 0x0F), };
 	struct transaction_log tread[] = {
@@ -236,13 +225,10 @@ static int OW_r_app(BYTE * data, const size_t size, const off_t offset, const st
 		TRXN_READ(data, size),
 		TRXN_END,
 	};
-	if (BUS_transaction(tread, pn)) {
-		return 1;
-	}
-	return 0;
+	return BUS_transaction(tread, pn) ;
 }
 
-static int OW_r_status(BYTE * data, const struct parsedname *pn)
+static GOOD_OR_BAD OW_r_status(BYTE * data, const struct parsedname *pn)
 {
 	BYTE ss[] = { _1W_READ_STATUS_REGISTER, 0x00 };
 	struct transaction_log tread[] = {

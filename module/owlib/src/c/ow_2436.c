@@ -57,9 +57,9 @@ struct aggregate A2436 = { 3, ag_numbers, ag_separate, };
 struct filetype DS2436[] = {
 	F_STANDARD,
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"pages/page", 32, &A2436, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
-  {"volts", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_volts, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_temp, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"pages/page", 32, &A2436, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
+	{"volts", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_volts, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_temp, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 };
 
 DeviceEntry(1B, DS2436);
@@ -86,55 +86,37 @@ DeviceEntry(1B, DS2436);
 /* ------- Functions ------------ */
 
 /* DS2436 */
-static int OW_r_page(BYTE * p, size_t size, off_t offset, const struct parsedname *pn);
-static int OW_w_page(const BYTE * p, size_t size, off_t offset, const struct parsedname *pn);
-static int OW_temp(_FLOAT * T, const struct parsedname *pn);
-static int OW_volts(_FLOAT * V, const struct parsedname *pn);
+static GOOD_OR_BAD OW_r_page(BYTE * p, size_t size, off_t offset, const struct parsedname *pn);
+static GOOD_OR_BAD OW_w_page(const BYTE * p, size_t size, off_t offset, const struct parsedname *pn);
+static GOOD_OR_BAD OW_temp(_FLOAT * T, const struct parsedname *pn);
+static GOOD_OR_BAD OW_volts(_FLOAT * V, const struct parsedname *pn);
 
 /* 2436 A/D */
 static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
-	if (pn->extension > 2) {
-		return -ERANGE;
-	}
-	if (OW_r_page((BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq) + ((pn->extension) << 5), pn)) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E(OW_r_page((BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq) + ((pn->extension) << 5), pn)) ;
 }
 
 static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
-	if (pn->extension > 2) {
-		return -ERANGE;
-	}
-	if (OW_w_page((BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq) + ((pn->extension) << 5), pn)) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E(OW_w_page((BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq) + ((pn->extension) << 5), pn)) ;
 }
 
 static ZERO_OR_ERROR FS_temp(struct one_wire_query *owq)
 {
-	if (OW_temp(&OWQ_F(owq), PN(owq))) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E(OW_temp(&OWQ_F(owq), PN(owq))) ;
 }
 
 static ZERO_OR_ERROR FS_volts(struct one_wire_query *owq)
 {
-	if (OW_volts(&OWQ_F(owq), PN(owq))) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E(OW_volts(&OWQ_F(owq), PN(owq))) ;
 }
 
 /* DS2436 simple battery */
 /* only called for a single page, and that page is 0,1,2 only*/
-static int OW_r_page(BYTE * data, size_t size, off_t offset, const struct parsedname *pn)
+static GOOD_OR_BAD OW_r_page(BYTE * data, size_t size, off_t offset, const struct parsedname *pn)
 {
 	int pagesize = 32;
 	int page = offset / pagesize;
@@ -154,20 +136,16 @@ static int OW_r_page(BYTE * data, size_t size, off_t offset, const struct parsed
 	};
 
 	if (BUS_transaction(tcopy, pn)) {
-		return 1;
+		return gbBAD;
 	}
 
 	UT_delay(10);
 
-	if (BUS_transaction(tscratch, pn)) {
-		return 1;
-	}
-
-	return 0;
+	return BUS_transaction(tscratch, pn) ;
 }
 
 /* only called for a single page, and that page is 0,1,2 only*/
-static int OW_w_page(const BYTE * data, size_t size, off_t offset, const struct parsedname *pn)
+static GOOD_OR_BAD OW_w_page(const BYTE * data, size_t size, off_t offset, const struct parsedname *pn)
 {
 	int pagesize = 32;
 	int page = offset / pagesize;
@@ -196,21 +174,21 @@ static int OW_w_page(const BYTE * data, size_t size, off_t offset, const struct 
 	};
 
 	if (BUS_transaction(twrite, pn)) {
-		return 1;
+		return gbBAD;
 	}
 	if (BUS_transaction(tread, pn)) {
-		return 1;
+		return gbBAD;
 	}
 	if (BUS_transaction(tcopy, pn)) {
-		return 1;
+		return gbBAD;
 	}
 
 	UT_delay(10);
 
-	return 0;
+	return gbGOOD;
 }
 
-static int OW_temp(_FLOAT * T, const struct parsedname *pn)
+static GOOD_OR_BAD OW_temp(_FLOAT * T, const struct parsedname *pn)
 {
 	BYTE d2[] = { _1W_CONVERT_T, };
 	BYTE b2[] = { _1W_READ_REGISTERS, _ADDRESS_TEMPERATURE, };
@@ -229,14 +207,14 @@ static int OW_temp(_FLOAT * T, const struct parsedname *pn)
 
 	// initiate conversion
 	if (BUS_transaction(tconvert, pn)) {
-		return 1;
+		return gbBAD;
 	}
 	UT_delay(10);
 
 
 	/* Get data */
 	if (BUS_transaction(tdata, pn)) {
-		return 1;
+		return gbBAD;
 	}
 
 	// success
@@ -245,10 +223,10 @@ static int OW_temp(_FLOAT * T, const struct parsedname *pn)
 
 	//T[0] = ((int)((int8_t)t[1])) + .00390625*t[0] ;
 	T[0] = UT_int16(t) / 256.;
-	return 0;
+	return gbGOOD;
 }
 
-static int OW_volts(_FLOAT * V, const struct parsedname *pn)
+static GOOD_OR_BAD OW_volts(_FLOAT * V, const struct parsedname *pn)
 {
 	BYTE b4[] = { _1W_CONVERT_V, };
 	BYTE b2[] = { _1W_READ_REGISTERS, _ADDRESS_VOLTAGE, };
@@ -267,17 +245,17 @@ static int OW_volts(_FLOAT * V, const struct parsedname *pn)
 
 	// initiate conversion
 	if (BUS_transaction(tconvert, pn)) {
-		return 1;
+		return gbBAD;
 	}
 	UT_delay(10);
 
 	/* Get data */
 	if (BUS_transaction(tdata, pn)) {
-		return 1;
+		return gbBAD;
 	}
 
 	// success
 	//V[0] = .01 * (_FLOAT)( ( ((uint32_t)v[1]) <<8 )|v[0] ) ;
 	V[0] = .01 * (_FLOAT) (UT_uint16(v));
-	return 0;
+	return gbGOOD;
 }

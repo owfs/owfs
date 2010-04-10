@@ -24,5 +24,6 @@
 #define _1W_OVERDRIVE_SKIP_ROM     0x3C
 #define _1W_OVERDRIVE_MATCH_ROM    0x69
 #define _1W_SWAP                   0xAA	// used by the DS27xx
+#define _1W_LOCATOR                0x00 // used by the Link Locator
 
 #endif							/* OW_CODES_H */

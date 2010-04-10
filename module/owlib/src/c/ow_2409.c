@@ -61,11 +61,11 @@ struct filetype DS2409[] = {
 	{"discharge", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_discharge, VISIBLE, NO_FILETYPE_DATA,},
 	{"clearevent", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_clearevent, VISIBLE, NO_FILETYPE_DATA,},
 	{"control", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_control, FS_w_control, VISIBLE, NO_FILETYPE_DATA,},
-  {"sensed", PROPERTY_LENGTH_BITFIELD, &A2409, ft_bitfield, fc_volatile, FS_r_sensed, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"branch", PROPERTY_LENGTH_BITFIELD, &A2409, ft_bitfield, fc_volatile, FS_r_branch, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"event", PROPERTY_LENGTH_BITFIELD, &A2409, ft_bitfield, fc_volatile, FS_r_event, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"aux", 0, NON_AGGREGATE, ft_directory, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, {i:1},},
-  {"main", 0, NON_AGGREGATE, ft_directory, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, {i:0},},
+	{"sensed", PROPERTY_LENGTH_BITFIELD, &A2409, ft_bitfield, fc_volatile, FS_r_sensed, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"branch", PROPERTY_LENGTH_BITFIELD, &A2409, ft_bitfield, fc_volatile, FS_r_branch, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"event", PROPERTY_LENGTH_BITFIELD, &A2409, ft_bitfield, fc_volatile, FS_r_event, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"aux", 0, NON_AGGREGATE, ft_directory, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, {i:1},},
+	{"main", 0, NON_AGGREGATE, ft_directory, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, {i:0},},
 };
 
 DeviceEntry(1F, DS2409);
@@ -73,11 +73,11 @@ DeviceEntry(1F, DS2409);
 /* ------- Functions ------------ */
 
 /* DS2409 */
-static int OW_r_control(BYTE * data, const struct parsedname *pn);
+static GOOD_OR_BAD OW_r_control(BYTE * data, const struct parsedname *pn);
 
-static int OW_discharge(const struct parsedname *pn);
-static int OW_clearevent(const struct parsedname *pn);
-static int OW_w_control(const UINT data, const struct parsedname *pn);
+static GOOD_OR_BAD OW_discharge(const struct parsedname *pn);
+static GOOD_OR_BAD OW_clearevent(const struct parsedname *pn);
+static GOOD_OR_BAD OW_w_control(const UINT data, const struct parsedname *pn);
 
 #define _1W_STATUS_READ_WRITE  0x5A
 #define _1W_ALL_LINES_OFF      0x66
@@ -89,7 +89,7 @@ static int OW_w_control(const UINT data, const struct parsedname *pn);
 /* discharge 2409 lines */
 static ZERO_OR_ERROR FS_discharge(struct one_wire_query *owq)
 {
-	if ((OWQ_Y(owq)) && OW_discharge(PN(owq))) {
+	if ((OWQ_Y(owq) != 0) && BAD( OW_discharge(PN(owq)) ) ) {
 		return -EINVAL;
 	}
 	return 0;
@@ -99,7 +99,7 @@ static ZERO_OR_ERROR FS_discharge(struct one_wire_query *owq)
 /* Added by Jan Kandziora */
 static ZERO_OR_ERROR FS_clearevent(struct one_wire_query *owq)
 {
-	if ((OWQ_Y(owq)) && OW_clearevent(PN(owq))) {
+	if ((OWQ_Y(owq)!=0) && BAD( OW_clearevent(PN(owq)) ) ) {
 		return -EINVAL;
 	}
 	return 0;
@@ -108,52 +108,48 @@ static ZERO_OR_ERROR FS_clearevent(struct one_wire_query *owq)
 /* 2409 switch -- branch pin voltage */
 static ZERO_OR_ERROR FS_r_sensed(struct one_wire_query *owq)
 {
-	BYTE data;
-	if (OW_r_control(&data, PN(owq))) {
-		return -EINVAL;
-	}
+	BYTE data = 0 ;
+
 //    y[0] = data&0x02 ? 1 : 0 ;
 //    y[1] = data&0x08 ? 1 : 0 ;
 	OWQ_U(owq) = ((data >> 1) & 0x01) | ((data >> 2) & 0x02);
-	return 0;
+
+	return RETURN_Z_OR_E( OW_r_control(&data, PN(owq))) ;
 }
 
 /* 2409 switch -- branch status  -- note that bit value is reversed */
 static ZERO_OR_ERROR FS_r_branch(struct one_wire_query *owq)
 {
-	BYTE data;
-	if (OW_r_control(&data, PN(owq))) {
-		return -EINVAL;
-	}
+	BYTE data = 0 ;
+
 //    y[0] = data&0x01 ? 0 : 1 ;
 //    y[1] = data&0x04 ? 0 : 1 ;
 	OWQ_U(owq) = (((data) & 0x01) | ((data >> 1) & 0x02)) ^ 0x03;
-	return 0;
+
+	return RETURN_Z_OR_E(OW_r_control(&data, PN(owq))) ;
 }
 
 /* 2409 switch -- event status */
 static ZERO_OR_ERROR FS_r_event(struct one_wire_query *owq)
 {
-	BYTE data;
-	if (OW_r_control(&data, PN(owq))) {
-		return -EINVAL;
-	}
+	BYTE data = 0 ;
+
 //    y[0] = data&0x10 ? 1 : 0 ;
 //    y[1] = data&0x20 ? 1 : 0 ;
 	OWQ_U(owq) = (data >> 4) & 0x03;
-	return 0;
+
+	return RETURN_Z_OR_E(OW_r_control(&data, PN(owq))) ;
 }
 
 /* 2409 switch -- control pin state */
 static ZERO_OR_ERROR FS_r_control(struct one_wire_query *owq)
 {
-	BYTE data;
+	BYTE data = 0 ;
 	UINT control[] = { 2, 3, 0, 1, };
-	if (OW_r_control(&data, PN(owq))) {
-		return -EINVAL;
-	}
+
 	OWQ_U(owq) = control[data >> 6];
-	return 0;
+
+	return RETURN_Z_OR_E(OW_r_control(&data, PN(owq))) ;
 }
 
 /* 2409 switch -- control pin state */
@@ -162,14 +158,11 @@ static ZERO_OR_ERROR FS_w_control(struct one_wire_query *owq)
 	if (OWQ_U(owq) > 3) {
 		return -EINVAL;
 	}
-	if (OW_w_control(OWQ_U(owq), PN(owq))) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E(OW_w_control(OWQ_U(owq), PN(owq))) ;
 }
 
 /* Fix from Jan Kandziora for proper command code */
-static int OW_discharge(const struct parsedname *pn)
+static GOOD_OR_BAD OW_discharge(const struct parsedname *pn)
 {
 	BYTE dis[] = { _1W_DISCHARGE_LINES, };
 	struct transaction_log t[] = {
@@ -184,21 +177,17 @@ static int OW_discharge(const struct parsedname *pn)
 	BUSUNLOCK(pn);
 
 	if (BUS_transaction(t, pn)) {
-		return 1;
+		return gbBAD;
 	}
 
 	UT_delay(100);
 
 	dis[0] = _1W_ALL_LINES_OFF;
-	if (BUS_transaction(t, pn)) {
-		return 1;
-	}
-
-	return 0;
+	return BUS_transaction(t, pn) ;
 }
 
 /* Added by Jan Kandziora */
-static int OW_clearevent(const struct parsedname *pn)
+static GOOD_OR_BAD OW_clearevent(const struct parsedname *pn)
 {
 	BYTE clr[] = { _1W_ALL_LINES_OFF, };
 	struct transaction_log t[] = {
@@ -208,14 +197,10 @@ static int OW_clearevent(const struct parsedname *pn)
 	};
 
 	// Could certainly couple this with next transaction
-	if (BUS_transaction(t, pn)) {
-		return 1;
-	}
-
-	return 0;
+	 return BUS_transaction(t, pn) ;
 }
 
-static int OW_w_control(const UINT data, const struct parsedname *pn)
+static GOOD_OR_BAD OW_w_control(const UINT data, const struct parsedname *pn)
 {
 	const BYTE d[] = { 0x20, 0xA0, 0x00, 0x40, };
 	BYTE p[] = { _1W_STATUS_READ_WRITE, d[data], };
@@ -229,14 +214,14 @@ static int OW_w_control(const UINT data, const struct parsedname *pn)
 	};
 
 	if (BUS_transaction(t, pn)) {
-		return 1;
+		return gbBAD;
 	}
 
 	/* Check that Info corresponds */
-	return (info & 0xC0) == r[data] ? 0 : 1;
+	return (info & 0xC0) == r[data] ? gbGOOD : gbBAD;
 }
 
-static int OW_r_control(BYTE * data, const struct parsedname *pn)
+static GOOD_OR_BAD OW_r_control(BYTE * data, const struct parsedname *pn)
 {
 	BYTE p[] = { _1W_STATUS_READ_WRITE, 0xFF, };
 	struct transaction_log t[] = {
@@ -246,8 +231,5 @@ static int OW_r_control(BYTE * data, const struct parsedname *pn)
 		TRXN_END,
 	};
 
-	if (BUS_transaction(t, pn)) {
-		return 1;
-	}
-	return 0;
+	return BUS_transaction(t, pn) ;
 }
