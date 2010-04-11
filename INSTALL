@@ -7,14 +7,25 @@ QUICK INSTALL:
 
 1. Download and unpack owfs (you can find it on sourceforge:
      http://www.sf.net/projects/owfs )
-2. cd owfs directory
-3. ./bootstrap
-4. ./configure
-5. make install
-6. run with a command such as:
-   /opt/owfs/bin/owfs /dev/ttyS1 /mnt/1wire
+2. cd owfs # move into the directory
+3. ./configure
+4. make install
+5. Run. Several choices:
+   A. Filesystem using FUSE
+   /opt/owfs/bin/owfs -d /dev/ttyS1 -m /mnt/1wire
    where /dev/ttyS1 is the serial port of your interface
    and /mnt/1wire is the directory to mount
+   B. Webserver
+   /opt/owfs/bin/owhttpd -u -p 4444
+   Where -u is the USB bus master (DS9490)
+   -p 4444 is an arbitrary post
+   Fire up your web browser and look at URL
+   localhost:4444
+6. There might be an issue with access permissions to the hardware.
+   Easiest test:
+   /opt/owfs/bin/owhttpd --fake=10 -p 4444
+   and look at URL http://localhost:4444
+   to see a simulated 1-wire network.
 
 More complete instructions:
 ---------------------------------------------------------------------
