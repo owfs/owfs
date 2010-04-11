@@ -72,10 +72,10 @@ DeviceEntryExtended(2C, DS2890, DEV_alarm | DEV_resume | DEV_ovdr);
 /* ------- Functions ------------ */
 
 /* DS2890 */
-static int OW_r_wiper(UINT * val, const struct parsedname *pn);
-static int OW_w_wiper(const UINT val, const struct parsedname *pn);
-static int OW_r_cp(int *val, const struct parsedname *pn);
-static int OW_w_cp(const int val, const struct parsedname *pn);
+static GOOD_OR_BAD OW_r_wiper(UINT * val, const struct parsedname *pn);
+static GOOD_OR_BAD OW_w_wiper(const UINT val, const struct parsedname *pn);
+static GOOD_OR_BAD OW_r_cp(int *val, const struct parsedname *pn);
+static GOOD_OR_BAD OW_w_cp(const int val, const struct parsedname *pn);
 
 /* Wiper */
 static ZERO_OR_ERROR FS_w_wiper(struct one_wire_query *owq)
@@ -85,41 +85,29 @@ static ZERO_OR_ERROR FS_w_wiper(struct one_wire_query *owq)
 		num = 255;
 	}
 
-	if (OW_w_wiper(num, PN(owq))) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E(OW_w_wiper(num, PN(owq))) ;
 }
 
 /* write Charge Pump */
 static ZERO_OR_ERROR FS_w_cp(struct one_wire_query *owq)
 {
-	if (OW_w_cp(OWQ_Y(owq), PN(owq))) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E(OW_w_cp(OWQ_Y(owq), PN(owq))) ;
 }
 
 /* read Wiper */
 static ZERO_OR_ERROR FS_r_wiper(struct one_wire_query *owq)
 {
-	if (OW_r_wiper(&OWQ_U(owq), PN(owq))) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E(OW_r_wiper(&OWQ_U(owq), PN(owq))) ;
 }
 
 /* Charge Pump */
 static ZERO_OR_ERROR FS_r_cp(struct one_wire_query *owq)
 {
-	if (OW_r_cp(&OWQ_Y(owq), PN(owq))) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E(OW_r_cp(&OWQ_Y(owq), PN(owq))) ;
 }
 
 /* write Wiper */
-static int OW_w_wiper(const UINT val, const struct parsedname *pn)
+static GOOD_OR_BAD OW_w_wiper(const UINT val, const struct parsedname *pn)
 {
 	BYTE resp[1];
 	BYTE cmd[] = { _1W_WRITE_POSITION, (BYTE) val, };
@@ -137,7 +125,7 @@ static int OW_w_wiper(const UINT val, const struct parsedname *pn)
 }
 
 /* read Wiper */
-static int OW_r_wiper(UINT * val, const struct parsedname *pn)
+static GOOD_OR_BAD OW_r_wiper(UINT * val, const struct parsedname *pn)
 {
 	BYTE fo[] = { _1W_READ_POSITION, };
 	BYTE resp[2];
@@ -149,15 +137,15 @@ static int OW_r_wiper(UINT * val, const struct parsedname *pn)
 	};
 
 	if (BUS_transaction(t, pn)) {
-		return 1;
+		return gbBAD;
 	}
 
 	*val = resp[1];
-	return 0;
+	return gbGOOD;
 }
 
 /* write Charge Pump */
-static int OW_w_cp(const int val, const struct parsedname *pn)
+static GOOD_OR_BAD OW_w_cp(const int val, const struct parsedname *pn)
 {
 	BYTE resp[1];
 	BYTE cmd[] = { _1W_WRITE_CONTROL_REGISTER, (val) ? 0x4C : 0x0C };
@@ -175,7 +163,7 @@ static int OW_w_cp(const int val, const struct parsedname *pn)
 }
 
 /* read Charge Pump */
-static int OW_r_cp(int *val, const struct parsedname *pn)
+static GOOD_OR_BAD OW_r_cp(int *val, const struct parsedname *pn)
 {
 	BYTE aa[] = { _1W_READ_CONTROL_REGISTER, };
 	BYTE resp[2];
@@ -187,9 +175,9 @@ static int OW_r_cp(int *val, const struct parsedname *pn)
 	};
 
 	if (BUS_transaction(t, pn)) {
-		return 1;
+		return gbBAD;
 	}
 
 	*val = ((resp[1] & 0x40) != 0);
-	return 0;
+	return gbGOOD;
 }
