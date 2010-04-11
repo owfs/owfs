@@ -140,19 +140,19 @@ MakeInternalProp(INI, fc_stable);	// LCD screen initialized?
 /* ------- Functions ------------ */
 
 /* DS2408 */
-static int OW_w_control(const BYTE data, const struct parsedname *pn);
-static int OW_c_latch(const struct parsedname *pn);
-static int OW_w_pio(const BYTE data, const struct parsedname *pn);
-static int OW_r_reg(BYTE * data, const struct parsedname *pn);
-static int OW_w_s_alarm(const BYTE * data, const struct parsedname *pn);
-static int OW_w_pios(const BYTE * data, const size_t size, const struct parsedname *pn);
+static GOOD_OR_BAD OW_w_control(const BYTE data, const struct parsedname *pn);
+static GOOD_OR_BAD OW_c_latch(const struct parsedname *pn);
+static GOOD_OR_BAD OW_w_pio(const BYTE data, const struct parsedname *pn);
+static GOOD_OR_BAD OW_r_reg(BYTE * data, const struct parsedname *pn);
+static GOOD_OR_BAD OW_w_s_alarm(const BYTE * data, const struct parsedname *pn);
+static GOOD_OR_BAD OW_w_pios(const BYTE * data, const size_t size, const struct parsedname *pn);
 
 /* 2408 switch */
 /* 2408 switch -- is Vcc powered?*/
 static ZERO_OR_ERROR FS_power(struct one_wire_query *owq)
 {
 	BYTE data[6];
-	if (OW_r_reg(data, PN(owq))) {
+	if ( BAD( OW_r_reg(data, PN(owq)) ) ) {
 		return -EINVAL;
 	}
 	OWQ_Y(owq) = UT_getbit(&data[5], 7);
@@ -162,7 +162,7 @@ static ZERO_OR_ERROR FS_power(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_r_strobe(struct one_wire_query *owq)
 {
 	BYTE data[6];
-	if (OW_r_reg(data, PN(owq))) {
+	if ( BAD( OW_r_reg(data, PN(owq)) ) ) {
 		return -EINVAL;
 	}
 	OWQ_Y(owq) = UT_getbit(&data[5], 2);
@@ -173,11 +173,11 @@ static ZERO_OR_ERROR FS_w_strobe(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	BYTE data[6];
-	if (OW_r_reg(data, pn)) {
+	if ( BAD( OW_r_reg(data, pn) ) ) {
 		return -EINVAL;
 	}
 	UT_setbit(&data[5], 2, OWQ_Y(owq));
-	return OW_w_control(data[5], pn) ? -EINVAL : 0;
+	return RETURN_Z_OR_E( OW_w_control(data[5], pn) ) ;
 }
 
 static ZERO_OR_ERROR FS_Mclear(struct one_wire_query *owq)
@@ -187,25 +187,25 @@ static ZERO_OR_ERROR FS_Mclear(struct one_wire_query *owq)
 
 	if (Cache_Get_Internal_Strict(&init, sizeof(init), InternalProp(INI), pn)) {
 		OWQ_Y(owq) = 1;
-		if (FS_r_strobe(owq)	// set reset pin to strobe mode
-			|| OW_w_pio(0x30, pn)) {
+		if ( FS_r_strobe(owq) != 0	// set reset pin to strobe mode
+			|| BAD( OW_w_pio(0x30, pn) ) ) {
 			return -EINVAL;
 		}
 		UT_delay(100);
 		// init
-		if (OW_w_pio(0x38, pn)) {
+		if ( BAD( OW_w_pio(0x38, pn) ) ) {
 			return -EINVAL;
 		}
 		UT_delay(10);
 		// Enable Display, Cursor, and Blinking
 		// Entry-mode: auto-increment, no shift
-		if (OW_w_pio(0x0F, pn) || OW_w_pio(0x06, pn)) {
+		if ( BAD( OW_w_pio(0x0F, pn) )  || BAD( OW_w_pio(0x06, pn) ) ) {
 			return -EINVAL;
 		}
 		Cache_Add_Internal(&init, sizeof(init), InternalProp(INI), pn);
 	}
 	// clear
-	if (OW_w_pio(0x01, pn)) {
+	if ( BAD( OW_w_pio(0x01, pn) ) ) {
 		return -EINVAL;
 	}
 	UT_delay(2);
@@ -215,7 +215,7 @@ static ZERO_OR_ERROR FS_Mclear(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_Mhome(struct one_wire_query *owq)
 {
 // home
-	if (OW_w_pio(0x02, PN(owq))) {
+	if ( BAD( OW_w_pio(0x02, PN(owq)) ) ) {
 		return -EINVAL;
 	}
 	UT_delay(2);
@@ -235,7 +235,7 @@ static ZERO_OR_ERROR FS_Mscreen(struct one_wire_query *owq)
 		}
 		data[i] = OWQ_buffer(owq)[i] | 0x80;
 	}
-	return OW_w_pios(data, size, pn)?-EINVAL:0;
+	return RETURN_Z_OR_E( OW_w_pios(data, size, pn) ) ;
 }
 
 static ZERO_OR_ERROR FS_Mmessage(struct one_wire_query *owq)
@@ -251,7 +251,7 @@ static ZERO_OR_ERROR FS_Mmessage(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_sense(struct one_wire_query *owq)
 {
 	BYTE data[6];
-	if (OW_r_reg(data, PN(owq))) {
+	if ( BAD( OW_r_reg(data, PN(owq)) ) ) {
 		return -EINVAL;
 	}
 	OWQ_U(owq) = data[0];
@@ -263,7 +263,7 @@ static ZERO_OR_ERROR FS_sense(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_r_pio(struct one_wire_query *owq)
 {
 	BYTE data[6];
-	if (OW_r_reg(data, PN(owq))) {
+	if ( BAD( OW_r_reg(data, PN(owq)) ) ) {
 		return -EINVAL;
 	}
 	OWQ_U(owq) = BYTE_INVERSE(data[1]);	/* reverse bits */
@@ -275,10 +275,7 @@ static ZERO_OR_ERROR FS_w_pio(struct one_wire_query *owq)
 {
     BYTE data = BYTE_INVERSE(OWQ_U(owq)) & 0xFF ;   /* reverse bits */
     
-    if (OW_w_pio(data, PN(owq))) {
-		return -EINVAL;
-    }
-	return 0;
+    return RETURN_Z_OR_E(OW_w_pio(data, PN(owq))) ;
 }
 
 /* 2408 read activity latch */
@@ -286,7 +283,7 @@ static ZERO_OR_ERROR FS_w_pio(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_r_latch(struct one_wire_query *owq)
 {
 	BYTE data[6];
-	if (OW_r_reg(data, PN(owq))) {
+	if ( BAD( OW_r_reg(data, PN(owq)) ) ) {
 		return -EINVAL;
 	}
 	OWQ_U(owq) = data[2];
@@ -297,10 +294,7 @@ static ZERO_OR_ERROR FS_r_latch(struct one_wire_query *owq)
 /* Actually resets them all */
 static ZERO_OR_ERROR FS_w_latch(struct one_wire_query *owq)
 {
-	if (OW_c_latch(PN(owq))) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E(OW_c_latch(PN(owq))) ;
 }
 
 /* 2408 alarm settings*/
@@ -310,7 +304,7 @@ static ZERO_OR_ERROR FS_r_s_alarm(struct one_wire_query *owq)
 	BYTE d[6];
 	int i, p;
 	UINT U;
-	if (OW_r_reg(d, PN(owq))) {
+	if ( BAD( OW_r_reg(d, PN(owq)) ) ) {
 		return -EINVAL;
 	}
 	/* register 0x8D */
@@ -339,16 +333,13 @@ static ZERO_OR_ERROR FS_w_s_alarm(struct one_wire_query *owq)
 		UT_setbit(&data[0], i, (((int) (U / p) % 10) & 0x02) >> 1);
 	}
 	data[2] = ((U / 100000000) % 10) & 0x03;
-	if (OW_w_s_alarm(data, PN(owq))) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E(OW_w_s_alarm(data, PN(owq))) ;
 }
 
 static ZERO_OR_ERROR FS_r_por(struct one_wire_query *owq)
 {
 	BYTE data[6];
-	if (OW_r_reg(data, PN(owq))) {
+	if ( BAD( OW_r_reg(data, PN(owq)) ) ) {
 		return -EINVAL;
 	}
 	OWQ_Y(owq) = UT_getbit(&data[5], 3);
@@ -359,11 +350,11 @@ static ZERO_OR_ERROR FS_w_por(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	BYTE data[6];
-	if (OW_r_reg(data, pn)) {
+	if ( BAD( OW_r_reg(data, pn) ) ) {
 		return -EINVAL;
 	}
 	UT_setbit(&data[5], 3, OWQ_Y(owq));
-	return OW_w_control(data[5], pn) ? -EINVAL : 0;
+	return RETURN_Z_OR_E( OW_w_control(data[5], pn) ) ;
 }
 
 #define LCD_SECOND_ROW_ADDRESS        0x40
@@ -385,11 +376,11 @@ struct yx {
 	size_t length ; // length of string
 	int text_start ; // counter into string
 } ;
-static int Parseyx( struct yx * YX ) ;
-static int binaryyx( struct yx * YX ) ;
-static int asciiyx( struct yx * YX ) ;
-static int OW_Hprintyx(struct yx * YX, struct parsedname * pn) ;
-static int OW_Hinit(struct parsedname * pn) ;
+static GOOD_OR_BAD Parseyx( struct yx * YX ) ;
+static GOOD_OR_BAD binaryyx( struct yx * YX ) ;
+static GOOD_OR_BAD asciiyx( struct yx * YX ) ;
+static GOOD_OR_BAD OW_Hprintyx(struct yx * YX, struct parsedname * pn) ;
+static GOOD_OR_BAD OW_Hinit(struct parsedname * pn) ;
 
 #define LCD_LINE_START           1
 #define LCD_LINE_END             20
@@ -406,17 +397,14 @@ static ZERO_OR_ERROR FS_Hclear(struct one_wire_query *owq)
 		NIBBLE_CTRL(LCD_COMMAND_DISPLAY_ON),
 		NIBBLE_CTRL(LCD_COMMAND_RIGHT_TO_LEFT),
 	};
-	if ( OW_Hinit(pn) ) {
+	if ( BAD( OW_Hinit(pn) ) ) {
 		LEVEL_DEBUG("Screen initialization error");	
 		return -EINVAL ;
 	}
-	if (OW_w_pios(clear, 6, pn)) {
-		return -EINVAL;
-	}
-	return 0;
+	return RETURN_Z_OR_E(OW_w_pios(clear, 6, pn)) ;
 }
 
-static int OW_Hinit(struct parsedname * pn)
+static GOOD_OR_BAD OW_Hinit(struct parsedname * pn)
 {
 	int init = 1;
 	// clear, display on, mode
@@ -431,41 +419,41 @@ static int OW_Hinit(struct parsedname * pn)
 
 	// already done?
 	if (Cache_Get_Internal_Strict(&init, sizeof(init), InternalProp(INI), pn)==0) {
-		return 0;
+		return gbGOOD;
 	}
 	
-	if (OW_w_control(0x04, pn)	// strobe
-		|| OW_r_reg(data, pn)) {
+	if ( BAD( OW_w_control(0x04, pn) )	// strobe
+		|| BAD( OW_r_reg(data, pn) ) ) {
 		LEVEL_DEBUG("Trouble sending strobe to Hobbyboard LCD") ;
-		return 1;
+		return gbBAD;
 	}
 	if ( data[5] != 0x84 )	{
 		LEVEL_DEBUG("LCD is not powered"); // not powered
-		return 1 ;
+		return gbBAD ;
 	}
-	if ( OW_c_latch(pn) ) {
+	if ( BAD( OW_c_latch(pn) ) ) {
 		LEVEL_DEBUG("Trouble clearing latches") ;
-		return 1 ;
+		return gbBAD ;
 	}// clear PIOs
-	if ( OW_w_pios(start, 1, pn)) {
+	if ( BAD( OW_w_pios(start, 1, pn) ) ) {
 		LEVEL_DEBUG("Error sending initial attention");	
-		return 1;
+		return gbBAD;
 	}
 	UT_delay(5);
-	if (OW_w_pios(next, 5, pn)) {
+	if ( BAD( OW_w_pios(next, 5, pn) ) ) {
 		LEVEL_DEBUG("Error sending setup commands");	
-		return 1;
+		return gbBAD;
 	}
 	Cache_Add_Internal(&init, sizeof(init), InternalProp(INI), pn);
-	return 0;
+	return gbGOOD ;
 }
 
-static int Parseyx( struct yx * YX )
+static GOOD_OR_BAD Parseyx( struct yx * YX )
 {
 	if ( YX->length < 2 ) {
 		// not long enough to have an address
 		LEVEL_DEBUG("String too short to contain the location (%d bytes)",YX->length);
-		return -EINVAL ;
+		return gbBAD ;
 	}
 
 	if ( YX->string[0] > '0' ) {
@@ -476,22 +464,22 @@ static int Parseyx( struct yx * YX )
 }
 
 // Extract coordinates from binary string and point coordinates. string and length already set.
-static int binaryyx( struct yx * YX )
+static GOOD_OR_BAD binaryyx( struct yx * YX )
 {
 	YX->y = YX->string[0] ;
 	YX->x = YX->string[1] ;
 	YX->text_start = 2 ;
 
-	return 0 ; // next char
+	return gbGOOD ; // next char
 }
 
 // Extract coordinates from ascii string and point past colon. string and length already set.
-static int asciiyx( struct yx * YX )
+static GOOD_OR_BAD asciiyx( struct yx * YX )
 {
 	char * colon = memchr( YX->string, ':', YX->length ) ; // position of mandatory colon
 	if ( colon==NULL ) {
 		LEVEL_DEBUG("No colon in screen text location. Should be 'y.x:text'");
-		return -EINVAL ;
+		return gbBAD ;
 	}
 
 	if ( sscanf(YX->string, "%d,%d:", &YX->y, &YX->x ) < 2 ) {
@@ -499,12 +487,12 @@ static int asciiyx( struct yx * YX )
 		YX->y = 1 ;
 		if ( sscanf(YX->string, "%d:", &YX->x ) < 1 ) {
 			LEVEL_DEBUG("Ascii string location not valid");
-			return -EINVAL ;
+			return gbBAD ;
 		}
 	}
 	// start text after colon
 	YX->text_start = ( colon - YX->string ) + 1 ;
-	return 0 ;
+	return gbGOOD ;
 }
 
 // put in home position
@@ -512,10 +500,10 @@ static ZERO_OR_ERROR FS_Hhome(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	struct yx YX = { 1, 1, "", 0, 0 } ;
-	if ( OW_Hinit(pn) ) {
+	if ( BAD( OW_Hinit(pn) ) ) {
 		return -EINVAL ;
 	}
-	return OW_Hprintyx(&YX, pn) ? -EINVAL : 0;
+	return RETURN_Z_OR_E( OW_Hprintyx(&YX, pn) );
 }
 
 // Print from home position
@@ -523,13 +511,13 @@ static ZERO_OR_ERROR FS_Hmessage(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	struct yx YX = { 1, 1, OWQ_buffer(owq), OWQ_size(owq), 0 } ;
-	if ( OW_Hinit(pn) ) {
+	if ( BAD( OW_Hinit(pn) ) ) {
 		return -EINVAL ;
 	}
-	if (FS_Hclear(owq)) {
+	if (FS_Hclear(owq) != 0) {
 		return -EINVAL;
 	}
-	return OW_Hprintyx(&YX, pn) ? -EINVAL : 0;
+	return RETURN_Z_OR_E( OW_Hprintyx(&YX, pn) );
 }
 
 // print from current position
@@ -538,10 +526,10 @@ static ZERO_OR_ERROR FS_Hscreen(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	// y=0 is flag to do no position setting
 	struct yx YX = { LCD_SAME_LOCATION_VALUE, LCD_SAME_LOCATION_VALUE, OWQ_buffer(owq), OWQ_size(owq), 0 } ;
-	if ( OW_Hinit(pn) ) {
+	if ( BAD( OW_Hinit(pn) ) ) {
 		return -EINVAL ;
 	}
-	return OW_Hprintyx(&YX, pn) ? -EINVAL : 0;
+	return RETURN_Z_OR_E( OW_Hprintyx(&YX, pn) );
 }
 
 // print from specified positionh --
@@ -552,18 +540,18 @@ static ZERO_OR_ERROR FS_Hscreenyx(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	struct yx YX = { 0, 0, OWQ_buffer(owq), OWQ_size(owq), 0 } ;
 
-	if ( Parseyx( &YX ) != 0 ) {
+	if ( BAD( Parseyx( &YX )  ) ) {
 		return -EINVAL ;
 	}
 	
-	if ( OW_Hinit(pn) ) {
+	if ( BAD( OW_Hinit(pn) ) ) {
 		return -EINVAL ;
 	}
-	return OW_Hprintyx(&YX, pn) ? -EINVAL : 0;
+	return RETURN_Z_OR_E( OW_Hprintyx(&YX, pn) );
 }
 
 // YX structure is set with y,x,string,length, and start position of text 
-static int OW_Hprintyx(struct yx * YX, struct parsedname * pn)
+static GOOD_OR_BAD OW_Hprintyx(struct yx * YX, struct parsedname * pn)
 {
 	BYTE translated_data[2 + 2 * (YX->length-YX->text_start)];
 	size_t original_index ;
@@ -597,7 +585,7 @@ static int OW_Hprintyx(struct yx * YX, struct parsedname * pn)
 		translated_data[translate_index++] = NIBBLE_TWO(chip_command);
 	} else if ( !Continue_YX ) {
 		LEVEL_DEBUG("Bad screen coordinates y=%d x=%d",YX->y,YX->x);
-		return 1;
+		return gbBAD;
 	}
 		
 	//printf("Hscreen test<%*s>\n",(int)size,buf) ;
@@ -622,11 +610,11 @@ static ZERO_OR_ERROR FS_Honoff(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	BYTE onoff[] = { NIBBLE_DATA(OWQ_U(owq)) };
 
-	if ( OW_Hinit(pn) ) {
+	if ( BAD( OW_Hinit(pn) ) ) {
 		return -EINVAL ;
 	}
 	// onoff
-	if (OW_w_pios(onoff, 2, pn)) {
+	if ( BAD( OW_w_pios(onoff, 2, pn) ) ) {
 		LEVEL_DEBUG("Error setting LCD state");	
 		return -EINVAL;
 	}
@@ -642,7 +630,7 @@ static ZERO_OR_ERROR FS_Honoff(struct one_wire_query *owq)
    0x8D Control/Status
    plus 2 more bytes to get to the end of the page and qualify for a CRC16 checksum
 */
-static int OW_r_reg(BYTE * data, const struct parsedname *pn)
+static GOOD_OR_BAD OW_r_reg(BYTE * data, const struct parsedname *pn)
 {
 	BYTE p[3 + 8 + 2] = { _1W_READ_PIO_REGISTERS,
 		LOW_HIGH_ADDRESS(_ADDRESS_PIO_LOGIC_STATE),
@@ -655,15 +643,15 @@ static int OW_r_reg(BYTE * data, const struct parsedname *pn)
 
 	//printf( "R_REG read attempt\n");
 	if (BUS_transaction(t, pn)) {
-		return 1;
+		return gbBAD;
 	}
 	//printf( "R_REG read ok\n");
 
 	memcpy(data, &p[3], 6);
-	return 0;
+	return gbGOOD;
 }
 
-static int OW_w_pio(const BYTE data, const struct parsedname *pn)
+static GOOD_OR_BAD OW_w_pio(const BYTE data, const struct parsedname *pn)
 {
 	BYTE write_string[] = { _1W_CHANNEL_ACCESS_WRITE, data, (BYTE) ~ data, };
 	BYTE read_back[2];
@@ -676,20 +664,20 @@ static int OW_w_pio(const BYTE data, const struct parsedname *pn)
 
 	//printf( "W_PIO attempt\n");
     if (BUS_transaction(t, pn)) {
-		return 1;
+		return gbBAD;
     }
 	//printf( "W_PIO attempt\n");
 	//printf("wPIO data = %2X %2X %2X %2X %2X\n",write_string[0],write_string[1],write_string[2],read_back[0],read_back[1]) ;
     if (read_back[0] != 0xAA) {
-		return 1;
+		return gbBAD;
     }
 	//printf( "W_PIO 0xAA ok\n");
 	/* Ignore byte 5 read_back[1] the PIO status byte */
-	return 0;
+	return gbGOOD;
 }
 
 /* Send several bytes to the channel */
-static int OW_w_pios(const BYTE * data, const size_t size, const struct parsedname *pn)
+static GOOD_OR_BAD OW_w_pios(const BYTE * data, const size_t size, const struct parsedname *pn)
 {
 	BYTE cmd[] = { _1W_CHANNEL_ACCESS_WRITE, };
 	size_t formatted_size = 4 * size;
@@ -713,7 +701,7 @@ static int OW_w_pios(const BYTE * data, const size_t size, const struct parsedna
 	}
 	//{ int j ; printf("IN  "); for (j=0 ; j<formatted_size ; ++j ) printf("%.2X ",formatted_data[j]); printf("\n") ; }
 	if (BUS_transaction(t, pn)) {
-		return 1;
+		return gbBAD;
 	}
 	//{ int j ; printf("OUT "); for (j=0 ; j<formatted_size ; ++j ) printf("%.2X ",formatted_data[j]); printf("\n") ; }
 	// check the array
@@ -721,24 +709,24 @@ static int OW_w_pios(const BYTE * data, const size_t size, const struct parsedna
 		int formatted_data_index = 4 * i;
 		BYTE rdata = ((BYTE)~data[i]);  // get rid of warning: comparison of promoted ~unsigned with unsigned
 		if (formatted_data[formatted_data_index + 0] != data[i]) {
-			return 1;
+			return gbBAD;
 		}
 		if (formatted_data[formatted_data_index + 1] != rdata) {
-			return 1;
+			return gbBAD;
 		}
 		if (formatted_data[formatted_data_index + 2] != 0xAA) {
-			return 1;
+			return gbBAD;
 		}
 		if (formatted_data[formatted_data_index + 3] != data[i]) {
-			return 1;
+			return gbBAD;
 		}
 	}
 
-	return 0;
+	return gbGOOD;
 }
 
 /* Reset activity latch */
-static int OW_c_latch(const struct parsedname *pn)
+static GOOD_OR_BAD OW_c_latch(const struct parsedname *pn)
 {
 	BYTE reset_string[] = { _1W_RESET_ACTIVITY_LATCHES, };
 	BYTE read_back[1];
@@ -751,19 +739,19 @@ static int OW_c_latch(const struct parsedname *pn)
 
 	//printf( "C_LATCH attempt\n");
 	if (BUS_transaction(t, pn)) {
-		return 1;
+		return gbBAD;
 	}
 	//printf( "C_LATCH transact\n");
 	if (read_back[0] != 0xAA) {
-		return 1;
+		return gbBAD;
 	}
 	//printf( "C_LATCH 0xAA ok\n");
 
-	return 0;
+	return gbGOOD;
 }
 
 /* Write control/status */
-static int OW_w_control(const BYTE data, const struct parsedname *pn)
+static GOOD_OR_BAD OW_w_control(const BYTE data, const struct parsedname *pn)
 {
 	BYTE write_string[1 + 2 + 1] = { _1W_WRITE_CONDITIONAL_SEARCH_REGISTER,
 		LOW_HIGH_ADDRESS(_ADDRESS_CONTROL_STATUS_REGISTER), data,
@@ -782,15 +770,15 @@ static int OW_w_control(const BYTE data, const struct parsedname *pn)
 
 	//printf( "W_CONTROL attempt\n");
 	if (BUS_transaction(t, pn)) {
-		return 1;
+		return gbBAD;
 	}
 	//printf( "W_CONTROL ok, now check %.2X -> %.2X\n",data,check_string[3]);
 
-	return ((data & 0x0F) != (check_string[3] & 0x0F));
+	return ((data & 0x0F) != (check_string[3] & 0x0F)) ? gbBAD : gbGOOD ;
 }
 
 /* write alarm settings */
-static int OW_w_s_alarm(const BYTE * data, const struct parsedname *pn)
+static GOOD_OR_BAD OW_w_s_alarm(const BYTE * data, const struct parsedname *pn)
 {
 	BYTE old_register[6];
 	BYTE new_register[6];
@@ -807,8 +795,8 @@ static int OW_w_s_alarm(const BYTE * data, const struct parsedname *pn)
 	};
 
 	// get the existing register contents
-	if (OW_r_reg(old_register, pn)) {
-		return -EINVAL;
+	if ( BAD( OW_r_reg(old_register, pn) ) ) {
+		return gbBAD;
 	}
 
 	//printf("S_ALARM 0x8B... = %.2X %.2X %.2X \n",data[0],data[1],data[2]) ;
@@ -816,15 +804,15 @@ static int OW_w_s_alarm(const BYTE * data, const struct parsedname *pn)
 	//printf("S_ALARM adjusted 0x8B... = %.2X %.2X %.2X \n",data[0],data[1],cr) ;
 
 	if (BUS_transaction(t, pn)) {
-		return 1;
+		return gbBAD;
 	}
 
 	/* Re-Read registers */
 	if (OW_r_reg(new_register, pn)) {
-		return 1;
+		return gbBAD;
 	}
 	//printf("S_ALARM back 0x8B... = %.2X %.2X %.2X \n",d[3],d[4],d[5]) ;
 
 	return (data[0] != new_register[3]) || (data[1] != new_register[4])
-		|| (control_value[0] != (new_register[5] & 0x0F));
+		|| (control_value[0] != (new_register[5] & 0x0F)) ? gbBAD : gbGOOD;
 }
