@@ -37,6 +37,18 @@ Temperature Voltages (Humidity) and Memory.
 |
 .B humidity
 |
+.B B1-R1-A/pressure
+|
+.B B1-R1-A/gain
+|
+.B B1-R1-A/offset
+|
+.B S3-R1-A/current
+|
+.B S3-R1-A/illuminance
+|
+.B S3-R1-A/gain
+|
 .B IAD
 |
 .B MultiSensor/type
@@ -65,6 +77,11 @@ Temperature Voltages (Humidity) and Memory.
 .I read-write, binary
 .br
 Memory is split into 8 pages of 8 bytes each. Only the pages 3-7 are really available, and some of that appears to be reserved. See the datasheet for details.
+.\" page.3/0 = Multisensor
+.\" page.3/2-7 = Hobby Boards Calibration data
+.\" page.4 =
+.\" page.5 =
+.\" page.7/4-7 = current storage
 .br
 .I ALL
 is an aggregate of the pages. Each page is accessed sequentially.
@@ -183,7 +200,7 @@ and setting either will change the other.
 .br
 Relative humidity, as percent (1-100 scale).
 .br
-This value is for a design based on Huoneywell's HIH-4000 humidity sensor.
+This value is for a design based on Honeywell's HIH-4000 humidity sensor.
 .SS HTM1735/humidity
 .I read-only, floating point
 .br
@@ -200,6 +217,64 @@ The
 actually does not read humidity, but a widely available and publicised circuit based on the chip, does. This design is for the common Honeywell HIH-3610 humidity chip. The mostly compatible HIH-4000 chip uses different temperature compensation, so is better read from the 
 .I HIH4000/humidity
 value. See the datasheets for details.
+.SH BAROMETER PROPERTIES
+.SS B1-R1-A/pressure
+.I read-only, floating point
+.br
+Pressure reading, as milli-bars, or other unit depending on
+.IR settings/units/pressure_scale .
+.br
+This value is for the B1-R1-A barometer from Hobby-Boards, and
+assumes the standard calibration.
+.SS B1-R1-A/gain
+.I read/write, floating point
+.br
+Calibration of pressure gain, as signed number, expressed as the same units as
+.I B1-R1-A/pressure
+per volt.
+.br
+This value will be multiplied with the measured voltage to get the
+.I B1-R1-A/pressure
+reading. It may have to be fine tuned for calibration purposes, although with the standard
+sensor, it will often be good enough to keep it as is.
+.SS B1-R1-A/offset
+.I read/write, floating point
+.br
+Calibration of pressure offset, as signed number, same units as
+.I B1-R1-A/pressure.
+.br
+This value will be added to the 
+.I B1-R1-A/pressure
+reading. The default value is 904.7 millibars, which may be altered to
+to compensate for elevation.
+.SH SOLAR SENSOR PROPERTIES
+.SS S3-R1-A/current
+.I read-only, floating point
+.br
+Photo-diode current, in micro-amperes.
+.br
+This value is for the S3-R1-A solar radiation sensor from Hobby-Boards.
+Due to noise and offsets, this value may read as a negative number in low light conditions.
+The
+.I offset
+register can be modified to reduce the offset as much as possible.
+.SS S3-R1-A/illumination
+.I read-only, floating point
+.br
+Illumination, in lux. Always a positive number.
+.br
+This value is the lux reading from the solar sensor, taking
+.I S3-R1-A/gain into consideration.
+.SS S3-R1-A/gain
+.I read/write, floating point
+.br
+Calibration of photo-diode gain expressed as lux per micro-amperes.
+The default value is for the SFH203P photo-diode from Osram, used bare.
+A different gain may be used for instance to compensate for an integrathing, 
+white sphere placed over the diode.
+.br
+This value is for the S3-R1-A solar radiation sensor from Hobby-Boards,
+using the SFH203P photo-diode from Osram.
 .SH MULTISENSOR PROPERTIES
 .SS MultiSensor/type
 .I read-only, ascii
@@ -249,4 +324,5 @@ http://www.humirel.com/product/fichier/HTM1735%20RevG%20.pdf
 .SH AVAILABILITY
 http://www.owfs.org
 .SH AUTHOR
-Paul Alfille (palfille@earthlink.net)
+Paul Alfille (paul.alfille@gmail.com)
+Egil Kvaleberg
