@@ -454,20 +454,20 @@ static struct LockPage * LP( const struct parsedname * pn ) ;
 static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
 {
 	/* read is not a "paged" endeavor, the CRC comes after a full read */
-	return RETURN_Z_OR_E(OW_r_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq), PN(owq))) ;
+	return GB_to_Z_OR_E(OW_r_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq), PN(owq))) ;
 }
 
 /* 2406 memory write */
 static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 {
 //printf("2406 read size=%d, offset=%d\n",(int)size,(int)offset);
-	return RETURN_Z_OR_E(OW_r_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq) +
+	return GB_to_Z_OR_E(OW_r_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq) +
 			((struct LockPage *) OWQ_pn(owq).selected_filetype->data.v)->offset[OWQ_pn(owq).extension], PN(owq))) ;
 }
 
 static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 {
-	return RETURN_Z_OR_E(OW_w_mem
+	return GB_to_Z_OR_E(OW_w_mem
 		((BYTE *) OWQ_buffer(owq), OWQ_size(owq),
 			OWQ_offset(owq) + ((struct LockPage *) OWQ_pn(owq).selected_filetype->data.v)->offset[OWQ_pn(owq).extension], PN(owq))) ;
 }
@@ -476,23 +476,21 @@ static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_r_lock(struct one_wire_query *owq)
 {
 	BYTE data;
-	if ( BAD( OW_r_mem(&data, 1, ((struct LockPage *) OWQ_pn(owq).selected_filetype->data.v)->reg, PN(owq)) ) ) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_mem(&data, 1, ((struct LockPage *) OWQ_pn(owq).selected_filetype->data.v)->reg, PN(owq)) ) ;
 	OWQ_Y(owq) = UT_getbit(&data, OWQ_pn(owq).extension);
 	return 0;
 }
 
 static ZERO_OR_ERROR FS_w_lock(struct one_wire_query *owq)
 {
-	return RETURN_Z_OR_E(OW_lock(PN(owq))) ;
+	return GB_to_Z_OR_E(OW_lock(PN(owq))) ;
 }
 
 /* Note, it's EPROM -- write once */
 static ZERO_OR_ERROR FS_w_mem(struct one_wire_query *owq)
 {
 	/* write is "byte at a time" -- not paged */
-	return RETURN_Z_OR_E(OW_w_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq), PN(owq))) ;
+	return GB_to_Z_OR_E(OW_w_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq), PN(owq))) ;
 }
 
 static ZERO_OR_ERROR FS_r_vis(struct one_wire_query *owq)
@@ -500,9 +498,7 @@ static ZERO_OR_ERROR FS_r_vis(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	int I;
 	_FLOAT f = 0.;
-	if (BAD( OW_r_int(&I, _1W_DS27XX_CURRENT, pn) ) ) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_int(&I, _1W_DS27XX_CURRENT, pn) );
 	switch (pn->sn[0]) {
 	case 0x36:					//DS2740
 		f = 6.25E-6;
@@ -544,16 +540,14 @@ static ZERO_OR_ERROR FS_r_vis_avg(struct one_wire_query *owq)
 		OWQ_F(owq) = .000001953 * I;
 		break;
 	}
-	return RETURN_Z_OR_E(ret);
+	return GB_to_Z_OR_E(ret);
 }
 
 // Volt-hours
 static ZERO_OR_ERROR FS_r_vh(struct one_wire_query *owq)
 {
 	int I;
-	if ( BAD( OW_r_int(&I, _1W_DS27XX_ACCUMULATED, PN(owq)) ) ) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_int(&I, _1W_DS27XX_ACCUMULATED, PN(owq)) ) ;
 	OWQ_F(owq) = .00000625 * I;
 	return 0;
 }
@@ -562,7 +556,7 @@ static ZERO_OR_ERROR FS_r_vh(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_w_vh(struct one_wire_query *owq)
 {
 	int I = OWQ_F(owq) / .00000625;
-	return RETURN_Z_OR_E(OW_w_int(&I, _1W_DS27XX_ACCUMULATED, PN(owq)));
+	return GB_to_Z_OR_E(OW_w_int(&I, _1W_DS27XX_ACCUMULATED, PN(owq)));
 }
 
 // Volt-limits
@@ -570,9 +564,7 @@ static ZERO_OR_ERROR FS_r_voltlim(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	int I;
-	if ( BAD( OW_r_int(&I, pn->selected_filetype->data.u, pn) ) ) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_int(&I, pn->selected_filetype->data.u, pn) ) ;
 	OWQ_F(owq) = .00000625 * I;
 	return 0;
 }
@@ -582,7 +574,7 @@ static ZERO_OR_ERROR FS_w_voltlim(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	int I = OWQ_F(owq) / .00000625;
-	return RETURN_Z_OR_E(OW_w_int(&I, pn->selected_filetype->data.u, pn) ) ;
+	return GB_to_Z_OR_E(OW_w_int(&I, pn->selected_filetype->data.u, pn) ) ;
 }
 
 // Volt-limits
@@ -590,9 +582,7 @@ static ZERO_OR_ERROR FS_r_templim(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	int I;
-	if ( BAD( OW_r_int8(&I, pn->selected_filetype->data.u, pn) ) ) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_int8(&I, pn->selected_filetype->data.u, pn) ) ;
 	OWQ_F(owq) = I;
 	return 0;
 }
@@ -608,16 +598,14 @@ static ZERO_OR_ERROR FS_w_templim(struct one_wire_query *owq)
 	if (I > 127) {
 		return -ERANGE;
 	}
-	return RETURN_Z_OR_E( OW_w_int8(&I, pn->selected_filetype->data.u, pn) );
+	return GB_to_Z_OR_E( OW_w_int8(&I, pn->selected_filetype->data.u, pn) );
 }
 
 // timer
 static ZERO_OR_ERROR FS_r_timer(struct one_wire_query *owq)
 {
 	int I;
-	if ( BAD( OW_r_int(&I, _1W_DS2770_TIMER, PN(owq)) ) ) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_int(&I, _1W_DS2770_TIMER, PN(owq)) ) ;
 	OWQ_F(owq) = .015625 * I;
 	return 0;
 }
@@ -626,7 +614,7 @@ static ZERO_OR_ERROR FS_r_timer(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_w_timer(struct one_wire_query *owq)
 {
 	int I = OWQ_F(owq) / .015625;
-	return RETURN_Z_OR_E( OW_w_int(&I, _1W_DS2770_TIMER, PN(owq)) );
+	return GB_to_Z_OR_E( OW_w_int(&I, _1W_DS2770_TIMER, PN(owq)) );
 }
 
 // Amp-hours -- using 25mOhm internal resistor
@@ -650,9 +638,7 @@ static ZERO_OR_ERROR FS_w_ah(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_r_vis_off(struct one_wire_query *owq)
 {
 	int I;
-	if ( BAD( OW_r_int8(&I, 0x7B, PN(owq)) ) ) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_int8(&I, 0x7B, PN(owq)) ); 
 	OWQ_F(owq) = 1.56E-6 * I;
 	return 0;
 }
@@ -667,7 +653,7 @@ static ZERO_OR_ERROR FS_w_vis_off(struct one_wire_query *owq)
 	if (I > 127) {
 		return -ERANGE;
 	}
-	return RETURN_Z_OR_E( OW_w_int8(&I, 0x7B, PN(owq)) );
+	return GB_to_Z_OR_E( OW_w_int8(&I, 0x7B, PN(owq)) );
 }
 
 // Current bias -- using 25mOhm internal resistor
@@ -703,29 +689,21 @@ static ZERO_OR_ERROR FS_r_vbias(struct one_wire_query *owq)
 	switch (pn->sn[0]) {
 	case 0x51:					//DS2751
 	case 0x30:					//DS2760
-		if ( BAD( OW_r_int8(&I, _1W_DS2760_CURRENT_OFFSET, pn) ) ) {
-			return -EINVAL;
-		}
+		RETURN_ERROR_IF_BAD( OW_r_int8(&I, _1W_DS2760_CURRENT_OFFSET, pn) ) ;
 		OWQ_F(owq) = 15.625E-6 * I;
 		break;
 	case 0x35:					//DS2755
-		if ( BAD( OW_r_int8(&I, _1W_DS2760_CURRENT_OFFSET, pn) ) ) {
-			return -EINVAL;
-		}
+		RETURN_ERROR_IF_BAD( OW_r_int8(&I, _1W_DS2760_CURRENT_OFFSET, pn) ) ;
 		OWQ_F(owq) = 1.95E-6 * I;
 		break;
 	case 0x28:					//DS2770
 		// really a 2byte value!
-		if ( BAD( OW_r_int(&I, _1W_DS2770_CURRENT_OFFSET, pn) ) ) {
-			return -EINVAL;
-		}
+		RETURN_ERROR_IF_BAD( OW_r_int(&I, _1W_DS2770_CURRENT_OFFSET, pn) ) ;
 		OWQ_F(owq) = 1.5625E-6 * I;
 		break;
 	case 0x32:					//DS2780
 	case 0x3D:					//DS2780
-		if ( BAD( OW_r_int8(&I, _1W_DS2780_CURRENT_OFFSET, pn) ) ) {
-			return -EINVAL;
-		}
+		RETURN_ERROR_IF_BAD( OW_r_int8(&I, _1W_DS2780_CURRENT_OFFSET, pn) ) ;
 		OWQ_F(owq) = 1.5625E-6 * I;
 		break;
 	}
@@ -781,16 +759,14 @@ static ZERO_OR_ERROR FS_w_vbias(struct one_wire_query *owq)
 		ret = OW_w_int8(&I, _1W_DS2780_CURRENT_OFFSET, pn);
 		break;
 	}
-	return RETURN_Z_OR_E( ret );
+	return GB_to_Z_OR_E( ret );
 }
 
 static ZERO_OR_ERROR FS_r_volt(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	int I;
-	if ( BAD( OW_r_int(&I, _1W_DS27XX_VOLTAGE, pn) ) ) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_int(&I, _1W_DS27XX_VOLTAGE, pn) ) ;
 	switch (pn->sn[0]) {
 	case 0x3D:					//DS2781
 		OWQ_F(owq) = (I / 32) * .00976;
@@ -815,9 +791,7 @@ static ZERO_OR_ERROR FS_r_temp(struct one_wire_query *owq)
 	default:
 		off = _1W_DS2760_TEMPERATURE;
 	}
-	if ( BAD( OW_r_int(&I, off, pn) ) ) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_int(&I, off, pn) ) ;
 	OWQ_F(owq) = (I / 32) * .125;
 	return 0;
 }
@@ -828,9 +802,7 @@ static ZERO_OR_ERROR FS_r_bit(struct one_wire_query *owq)
 	int bit = BYTE_MASK(pn->selected_filetype->data.u);
 	size_t location = pn->selected_filetype->data.u >> 8;
 	BYTE c[1];
-	if ( BAD( OW_r_mem(c, 1, location, pn) ) ) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_mem(c, 1, location, pn) ) ;
 	OWQ_Y(owq) = UT_getbit(c, bit);
 	return 0;
 }
@@ -841,11 +813,9 @@ static ZERO_OR_ERROR FS_w_bit(struct one_wire_query *owq)
 	int bit = BYTE_MASK(pn->selected_filetype->data.u);
 	size_t location = pn->selected_filetype->data.u >> 8;
 	BYTE c[1];
-	if ( BAD( OW_r_mem(c, 1, location, pn) ) ) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_mem(c, 1, location, pn) ) ;
 	UT_setbit(c, bit, OWQ_Y(owq) != 0);
-	return RETURN_Z_OR_E( OW_w_mem(c, 1, location, pn) );
+	return GB_to_Z_OR_E( OW_w_mem(c, 1, location, pn) );
 }
 
 /* switch PIO sensed*/
@@ -860,12 +830,12 @@ static ZERO_OR_ERROR FS_r_pio(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_charge(struct one_wire_query *owq)
 {
-	return RETURN_Z_OR_E(OW_cmd(OWQ_Y(owq) ? _1W_START_CHARGE : _1W_STOP_CHARGE, PN(owq))) ;
+	return GB_to_Z_OR_E(OW_cmd(OWQ_Y(owq) ? _1W_START_CHARGE : _1W_STOP_CHARGE, PN(owq))) ;
 }
 
 static ZERO_OR_ERROR FS_refresh(struct one_wire_query *owq)
 {
-	return RETURN_Z_OR_E(OW_cmd(_1W_REFRESH, PN(owq))) ;
+	return GB_to_Z_OR_E(OW_cmd(_1W_REFRESH, PN(owq))) ;
 }
 
 /* write PIO -- bit 6 */
@@ -948,8 +918,8 @@ static GOOD_OR_BAD OW_r_sram(BYTE * data, const size_t size, const off_t offset,
 
 static GOOD_OR_BAD OW_r_mem(BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn)
 {
-	return BAD( OW_recall_eeprom(size, offset, pn) )
-		|| BAD( OW_r_sram(data, size, offset, pn) ) ? gbBAD : gbGOOD;
+	RETURN_BAD_IF_BAD( OW_recall_eeprom(size, offset, pn) ) ;
+	return OW_r_sram(data, size, offset, pn) ;
 }
 
 /* Special processing for eeprom -- page is the address of a 16 byte page (e.g. 0x20) */
@@ -1010,18 +980,15 @@ static GOOD_OR_BAD OW_cmd(const BYTE cmd, const struct parsedname *pn)
 
 static GOOD_OR_BAD OW_w_mem(const BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn)
 {
-	return BAD( OW_recall_eeprom(size, offset, pn) )
-		|| BAD( OW_w_sram(data, size, offset, pn) )
-		|| BAD( OW_copy_eeprom(size, offset, pn) ) ? gbBAD : gbGOOD;
+	RETURN_BAD_IF_BAD( OW_recall_eeprom(size, offset, pn) ) ;
+	RETURN_BAD_IF_BAD( OW_w_sram(data, size, offset, pn) ) ;
+	return OW_copy_eeprom(size, offset, pn) ;
 }
 
 static GOOD_OR_BAD OW_r_int(int *I, off_t offset, const struct parsedname *pn)
 {
 	BYTE i[2];
-	GOOD_OR_BAD ret = OW_r_sram(i, 2, offset, pn);
-	if (BAD(ret)) {
-		return ret;
-	}
+	RETURN_BAD_IF_BAD( OW_r_sram(i, 2, offset, pn) );
 	// Data in the DS27xx is stored MSB/LSB -- different from DS2438 for example
 	// Thanks to Jan Bertelsen for finding this!
 	I[0] = (((int) ((int8_t) i[0]) << 8) + ((uint8_t) i[1]));
@@ -1037,10 +1004,8 @@ static GOOD_OR_BAD OW_w_int(const int *I, off_t offset, const struct parsedname 
 static GOOD_OR_BAD OW_r_int8(int *I, off_t offset, const struct parsedname *pn)
 {
 	BYTE i[1];
-	GOOD_OR_BAD ret = OW_r_sram(i, 1, offset, pn);
-	if (BAD(ret) ) {
-		return ret;
-	}
+	
+	RETURN_BAD_IF_BAD( OW_r_sram(i, 1, offset, pn) );
 	//I[0] = ((int)((int8_t)i[0]) ) ;
 	I[0] = UT_int8(i);
 	return gbGOOD;

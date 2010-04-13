@@ -56,16 +56,14 @@ static GOOD_OR_BAD OW_write_eprom_byte(BYTE code, BYTE data, off_t offset, const
 // use owq instead of components
 ZERO_OR_ERROR COMMON_write_eprom_mem_owq(struct one_wire_query * owq)
 {
-	return RETURN_Z_OR_E(COMMON_write_eprom_mem( OWQ_explode(owq)));
+	return GB_to_Z_OR_E(COMMON_write_eprom_mem( OWQ_explode(owq)));
 }
 
 static GOOD_OR_BAD COMMON_write_eprom_mem(const BYTE * data, size_t size, off_t offset, const struct parsedname *pn)
 {
 	int byte_number;
 	for (byte_number = 0; byte_number < (int) size; ++byte_number) {
-		if ( BAD( OW_write_eprom_byte(_1W_WRITE_MEMORY, data[byte_number], offset + byte_number, pn) ) ) {
-			return gbBAD;
-		}
+		RETURN_BAD_IF_BAD( OW_write_eprom_byte(_1W_WRITE_MEMORY, data[byte_number], offset + byte_number, pn) ) ;
 	}
 	return gbGOOD;
 }

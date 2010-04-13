@@ -138,23 +138,21 @@ static GOOD_OR_BAD OW_w_por(const int por, struct parsedname *pn);
 static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 8;
-	return RETURN_Z_OR_E(COMMON_OWQ_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, COMMON_read_memory_crc16_AA)) ;
+	return GB_to_Z_OR_E(COMMON_OWQ_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, COMMON_read_memory_crc16_AA)) ;
 }
 
 /* write an 8-byte page */
 static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 8;
-	return RETURN_Z_OR_E(COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem)) ;
+	return GB_to_Z_OR_E(COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem)) ;
 }
 
 /* read powered flag */
 static ZERO_OR_ERROR FS_r_power(struct one_wire_query *owq)
 {
 	BYTE p;
-	if ( BAD( OW_r_mem(&p, 1, _ADDRESS_POWERED, PN(owq)) ) ) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_mem(&p, 1, _ADDRESS_POWERED, PN(owq)) ) ;
 //printf("Cont %d\n",p) ;
 	OWQ_Y(owq) = (p == _1W_2450_POWERED);
 	return 0;
@@ -174,13 +172,13 @@ static ZERO_OR_ERROR FS_w_power(struct one_wire_query *owq)
 /* read "unset" PowerOnReset flag */
 static ZERO_OR_ERROR FS_r_por(struct one_wire_query *owq)
 {
-	return RETURN_Z_OR_E(OW_r_por(&OWQ_Y(owq), PN(owq))) ;
+	return GB_to_Z_OR_E(OW_r_por(&OWQ_Y(owq), PN(owq))) ;
 }
 
 /* write "unset" PowerOnReset flag */
 static ZERO_OR_ERROR FS_w_por(struct one_wire_query *owq)
 {
-	return RETURN_Z_OR_E(OW_w_por(OWQ_Y(owq) & 0x01, PN(owq))) ;
+	return GB_to_Z_OR_E(OW_w_por(OWQ_Y(owq) & 0x01, PN(owq))) ;
 }
 
 /* read high/low voltage enable alarm flags */
@@ -188,9 +186,7 @@ static ZERO_OR_ERROR FS_r_high(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	int Y[4];
-	if ( BAD( OW_r_high(Y, pn->selected_filetype->data.i & 0x01, pn) ) ) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_high(Y, pn->selected_filetype->data.i & 0x01, pn) ) ;
 	OWQ_array_Y(owq, 0) = Y[0];
 	OWQ_array_Y(owq, 1) = Y[1];
 	OWQ_array_Y(owq, 2) = Y[2];
@@ -208,7 +204,7 @@ static ZERO_OR_ERROR FS_w_high(struct one_wire_query *owq)
 		OWQ_array_Y(owq, 2),
 		OWQ_array_Y(owq, 3),
 	};
-	return RETURN_Z_OR_E(OW_w_high(Y, pn->selected_filetype->data.i & 0x01, pn)) ;
+	return GB_to_Z_OR_E(OW_w_high(Y, pn->selected_filetype->data.i & 0x01, pn)) ;
 }
 
 /* read high/low voltage triggered state alarm flags */
@@ -216,9 +212,7 @@ static ZERO_OR_ERROR FS_r_flag(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	int Y[4];
-	if ( BAD( OW_r_flag(Y, pn->selected_filetype->data.i & 0x01, pn) ) ) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_flag(Y, pn->selected_filetype->data.i & 0x01, pn) ) ;
 	OWQ_array_Y(owq, 0) = Y[0];
 	OWQ_array_Y(owq, 1) = Y[1];
 	OWQ_array_Y(owq, 2) = Y[2];
@@ -236,7 +230,7 @@ static ZERO_OR_ERROR FS_w_flag(struct one_wire_query *owq)
 		OWQ_array_Y(owq, 2),
 		OWQ_array_Y(owq, 3),
 	};
-	return RETURN_Z_OR_E(OW_w_flag(Y, pn->selected_filetype->data.i & 0x01, pn)) ;
+	return GB_to_Z_OR_E(OW_w_flag(Y, pn->selected_filetype->data.i & 0x01, pn)) ;
 }
 
 /* 2450 A/D */
@@ -255,7 +249,7 @@ static ZERO_OR_ERROR FS_r_PIO(struct one_wire_query *owq)
 	} else {
 		pio_error = OW_r_1_pio(&OWQ_Y(owq), element, pn);
 	}
-	return RETURN_Z_OR_E(pio_error) ;
+	return GB_to_Z_OR_E(pio_error) ;
 }
 
 /* 2450 A/D */
@@ -276,21 +270,21 @@ static ZERO_OR_ERROR FS_w_PIO(struct one_wire_query *owq)
 	} else {
 		pio_error = OW_w_1_pio(OWQ_Y(owq), element, pn);
 	}
-	return RETURN_Z_OR_E(pio_error) ;
+	return GB_to_Z_OR_E(pio_error) ;
 }
 
 /* 2450 A/D */
 static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 8;
-	return RETURN_Z_OR_E(COMMON_OWQ_readwrite_paged(owq, 0, pagesize, COMMON_read_memory_crc16_AA)) ;
+	return GB_to_Z_OR_E(COMMON_OWQ_readwrite_paged(owq, 0, pagesize, COMMON_read_memory_crc16_AA)) ;
 }
 
 /* 2450 A/D */
 static ZERO_OR_ERROR FS_w_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 8;
-	return RETURN_Z_OR_E(COMMON_readwrite_paged(owq, 0, pagesize, OW_w_mem)) ;
+	return GB_to_Z_OR_E(COMMON_readwrite_paged(owq, 0, pagesize, OW_w_mem)) ;
 }
 
 /* 2450 A/D */
@@ -309,16 +303,14 @@ static ZERO_OR_ERROR FS_volts(struct one_wire_query *owq)
 	} else {
 		volt_error = OW_1_volts(&OWQ_F(owq), element, pn->selected_filetype->data.i, pn);
 	}
-	return RETURN_Z_OR_E(volt_error) ;
+	return GB_to_Z_OR_E(volt_error) ;
 }
 
 static ZERO_OR_ERROR FS_r_setvolt(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	_FLOAT V[4];
-	if ( BAD( OW_r_vset(V, (pn->selected_filetype->data.i) >> 1, (pn->selected_filetype->data.i) & 0x01, pn) ) ) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_vset(V, (pn->selected_filetype->data.i) >> 1, (pn->selected_filetype->data.i) & 0x01, pn) ) ;
 	OWQ_array_F(owq, 0) = V[0];
 	OWQ_array_F(owq, 1) = V[1];
 	OWQ_array_F(owq, 2) = V[2];
@@ -335,7 +327,7 @@ static ZERO_OR_ERROR FS_w_setvolt(struct one_wire_query *owq)
 		OWQ_array_F(owq, 2),
 		OWQ_array_F(owq, 3),
 	};
-	return RETURN_Z_OR_E(OW_w_vset(V, (pn->selected_filetype->data.i) >> 1, (pn->selected_filetype->data.i) & 0x01, pn)) ;
+	return GB_to_Z_OR_E(OW_w_vset(V, (pn->selected_filetype->data.i) >> 1, (pn->selected_filetype->data.i) & 0x01, pn)) ;
 }
 
 static GOOD_OR_BAD OW_r_mem(BYTE * p, size_t size, off_t offset, struct parsedname *pn)
@@ -399,9 +391,7 @@ static GOOD_OR_BAD OW_volts(_FLOAT * f, const int resolution, struct parsedname 
 	int writeback = 0;			/* write control back? */
 	//printf("Volts res=%d\n",resolution);OW_r_mem
 	// Get control registers and set to A/D 16 bits
-	if ( BAD( OW_r_mem(control, 8, _ADDRESS_CONTROL_PAGE, pn) ) ) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD( OW_r_mem(control, 8, _ADDRESS_CONTROL_PAGE, pn) ) ;
 	//printf("2450 control = %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",control[0],control[1],control[2],control[3],control[4],control[5],control[6],control[7]) ;
 	for (i = 0; i < 8; i++) {	// warning, counter in incremented in loop, too
 		if (control[i] & 0x0F) {
@@ -417,22 +407,14 @@ static GOOD_OR_BAD OW_volts(_FLOAT * f, const int resolution, struct parsedname 
 
 	// Set control registers
 	if (writeback) {
-		if ( BAD( OW_w_mem(control, 8, _ADDRESS_CONTROL_PAGE, pn) ) ) {
-			return gbBAD;
-		}
+		RETURN_BAD_IF_BAD( OW_w_mem(control, 8, _ADDRESS_CONTROL_PAGE, pn) ) ;
 	}
 	//printf("writeback=%d\n",writeback);
 	// Start A/D process if needed
-	if ( BAD( OW_convert(pn) ) ) {
-		LEVEL_DEFAULT("Failed to start conversion");
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD( OW_convert(pn) ) ;
+
 	// read data
-	if ( BAD( OW_r_mem(data, 8, _ADDRESS_CONVERSION_PAGE, pn) ) ) {
-		LEVEL_DEFAULT("OW_r_mem Failed");
-		return gbBAD;
-	}
-	//printf("2450 data = %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7]) ;
+	RETURN_BAD_IF_BAD( OW_r_mem(data, 8, _ADDRESS_CONVERSION_PAGE, pn) ) ;
 
 	// data conversions
 	f[0] = (resolution ? 7.8126192E-5 : 3.90630961E-5) * ((((UINT) data[1]) << 8) | data[0]);
@@ -453,9 +435,7 @@ static GOOD_OR_BAD OW_1_volts(_FLOAT * f, const int element, const int resolutio
 	int writeback = 0;			/* write control back? */
 
 	// Get control registers and set to A/D 16 bits
-	if ( BAD( OW_r_mem(control, 2, _ADDRESS_CONTROL_PAGE + (element << 1), pn) ) ) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD( OW_r_mem(control, 2, _ADDRESS_CONTROL_PAGE + (element << 1), pn) ) ;
 	if (control[0] & 0x0F) {
 		control[0] &= 0xF0;		// 16bit, A/D
 		writeback = 1;
@@ -466,21 +446,13 @@ static GOOD_OR_BAD OW_1_volts(_FLOAT * f, const int element, const int resolutio
 	}
 	// Set control registers
 	if (writeback) {
-		if ( BAD( OW_w_mem(control, 2, _ADDRESS_CONTROL_PAGE + (element << 1), pn) ) ) {
-			return gbBAD;
-		}
+		RETURN_BAD_IF_BAD( OW_w_mem(control, 2, _ADDRESS_CONTROL_PAGE + (element << 1), pn) ) ;
 	}
 	// Start A/D process
-	if ( BAD( OW_convert(pn) ) ) {
-		LEVEL_DEFAULT("Failed to start conversion");
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD( OW_convert(pn) ) ;
+
 	// read data
-	if ( BAD( OW_r_mem(data, 2, _ADDRESS_CONVERSION_PAGE + (element << 1), pn) ) ) {
-		LEVEL_DEFAULT("OW_r_mem failed");
-		return gbBAD;
-	}
-//printf("2450 data = %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X\n",data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7]) ;
+	RETURN_BAD_IF_BAD( OW_r_mem(data, 2, _ADDRESS_CONVERSION_PAGE + (element << 1), pn) ) ;
 
 	// data conversions
 	//f[0] = (resolution?7.8126192E-5:3.90630961E-5)*((((UINT)data[1])<<8)|data[0]) ;
@@ -509,9 +481,7 @@ static GOOD_OR_BAD OW_convert(struct parsedname *pn)
 	};
 
 	/* get power flag -- to see if pullup can be avoided */
-	if ( BAD( OW_r_mem(&power, 1, 0x1C, pn) ) ) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD( OW_r_mem(&power, 1, 0x1C, pn) ) ;
 
 	/* See if a conversion was globally triggered */
 	if ((power == _1W_2450_POWERED) && GOOD(FS_Test_Simultaneous( simul_volt, delay, pn))) {
@@ -537,9 +507,7 @@ static GOOD_OR_BAD OW_convert(struct parsedname *pn)
 static GOOD_OR_BAD OW_r_pio(int *pio, struct parsedname *pn)
 {
 	BYTE p[8];
-	if ( BAD( OW_r_mem(p, 8, _ADDRESS_CONTROL_PAGE, pn) ) ) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD( OW_r_mem(p, 8, _ADDRESS_CONTROL_PAGE, pn) ) ;
 	pio[0] = ((p[0] & 0xC0) != 0x80);
 	pio[1] = ((p[2] & 0xC0) != 0x80);
 	pio[2] = ((p[4] & 0xC0) != 0x80);
@@ -551,9 +519,7 @@ static GOOD_OR_BAD OW_r_pio(int *pio, struct parsedname *pn)
 static GOOD_OR_BAD OW_r_1_pio(int *pio, const int element, struct parsedname *pn)
 {
 	BYTE p[2];
-	if ( BAD( OW_r_mem(p, 2, _ADDRESS_CONTROL_PAGE + (element << 1), pn) ) ) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD( OW_r_mem(p, 2, _ADDRESS_CONTROL_PAGE + (element << 1), pn) ) ;
 	pio[0] = ((p[0] & 0xC0) != 0x80);
 	return gbGOOD;
 }
@@ -563,9 +529,7 @@ static GOOD_OR_BAD OW_w_pio(const int *pio, struct parsedname *pn)
 {
 	BYTE p[8];
 	int i;
-	if ( BAD( OW_r_mem(p, 8, _ADDRESS_CONTROL_PAGE, pn) ) ) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD( OW_r_mem(p, 8, _ADDRESS_CONTROL_PAGE, pn) ) ;
 	for (i = 0; i <= 3; ++i) {
 		p[i << 1] &= 0x3F;
 		p[i << 1] |= pio[i] ? 0xC0 : 0x80;
@@ -577,9 +541,7 @@ static GOOD_OR_BAD OW_w_pio(const int *pio, struct parsedname *pn)
 static GOOD_OR_BAD OW_w_1_pio(const int pio, const int element, struct parsedname *pn)
 {
 	BYTE p[2];
-	if ( BAD( OW_r_mem(p, 2, _ADDRESS_CONTROL_PAGE + (element << 1), pn) ) ) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD( OW_r_mem(p, 2, _ADDRESS_CONTROL_PAGE + (element << 1), pn) ) ;
 	p[0] &= 0x3F;
 	p[0] |= pio ? 0xC0 : 0x80;
 	return OW_w_mem(p, 2, _ADDRESS_CONTROL_PAGE + (element << 1), pn);
@@ -588,9 +550,7 @@ static GOOD_OR_BAD OW_w_1_pio(const int pio, const int element, struct parsednam
 static GOOD_OR_BAD OW_r_vset(_FLOAT * V, const int high, const int resolution, struct parsedname *pn)
 {
 	BYTE p[8];
-	if ( BAD( OW_r_mem(p, 8, _ADDRESS_ALARM_PAGE, pn) ) ) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD( OW_r_mem(p, 8, _ADDRESS_ALARM_PAGE, pn) ) ;
 	V[0] = (resolution ? .02 : .01) * p[0 + high];
 	V[1] = (resolution ? .02 : .01) * p[2 + high];
 	V[2] = (resolution ? .02 : .01) * p[4 + high];
@@ -601,20 +561,14 @@ static GOOD_OR_BAD OW_r_vset(_FLOAT * V, const int high, const int resolution, s
 static GOOD_OR_BAD OW_w_vset(const _FLOAT * V, const int high, const int resolution, struct parsedname *pn)
 {
 	BYTE p[8];
-	if ( BAD( OW_r_mem(p, 8, _ADDRESS_ALARM_PAGE, pn) ) ) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD( OW_r_mem(p, 8, _ADDRESS_ALARM_PAGE, pn) ) ;
 	p[0 + high] = V[0] * (resolution ? 50. : 100.);
 	p[2 + high] = V[1] * (resolution ? 50. : 100.);
 	p[4 + high] = V[2] * (resolution ? 50. : 100.);
 	p[6 + high] = V[3] * (resolution ? 50. : 100.);
-	if ( BAD( OW_w_mem(p, 8, _ADDRESS_ALARM_PAGE, pn) ) ) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD( OW_w_mem(p, 8, _ADDRESS_ALARM_PAGE, pn) ) ;
 	/* turn POR off */
-	if ( BAD( OW_r_mem(p, 8, _ADDRESS_CONTROL_PAGE, pn) ) ) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD( OW_r_mem(p, 8, _ADDRESS_CONTROL_PAGE, pn) ) ;
 	UT_setbit(p, 15, 0);
 	UT_setbit(p, 31, 0);
 	UT_setbit(p, 47, 0);
@@ -625,9 +579,7 @@ static GOOD_OR_BAD OW_w_vset(const _FLOAT * V, const int high, const int resolut
 static GOOD_OR_BAD OW_r_high(int *y, const int high, struct parsedname *pn)
 {
 	BYTE p[8];
-	if ( BAD( OW_r_mem(p, 8, _ADDRESS_CONTROL_PAGE, pn) ) ) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD( OW_r_mem(p, 8, _ADDRESS_CONTROL_PAGE, pn) ) ;
 	y[0] = UT_getbit(p, 8 + 2 + high);
 	y[1] = UT_getbit(p, 24 + 2 + high);
 	y[2] = UT_getbit(p, 40 + 2 + high);
@@ -638,9 +590,7 @@ static GOOD_OR_BAD OW_r_high(int *y, const int high, struct parsedname *pn)
 static GOOD_OR_BAD OW_w_high(const int *y, const int high, struct parsedname *pn)
 {
 	BYTE p[8];
-	if ( BAD( OW_r_mem(p, 8, _ADDRESS_CONTROL_PAGE, pn) ) ) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD( OW_r_mem(p, 8, _ADDRESS_CONTROL_PAGE, pn) ) ;
 	UT_setbit(p, 8 + 2 + high, y[0] & 0x01);
 	UT_setbit(p, 24 + 2 + high, y[1] & 0x01);
 	UT_setbit(p, 40 + 2 + high, y[2] & 0x01);
@@ -656,9 +606,7 @@ static GOOD_OR_BAD OW_w_high(const int *y, const int high, struct parsedname *pn
 static GOOD_OR_BAD OW_r_flag(int *y, const int high, struct parsedname *pn)
 {
 	BYTE p[8];
-	if ( BAD( OW_r_mem(p, 8, _ADDRESS_CONTROL_PAGE, pn) ) ) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD( OW_r_mem(p, 8, _ADDRESS_CONTROL_PAGE, pn) ) ;
 	y[0] = UT_getbit(p, 8 + 4 + high);
 	y[1] = UT_getbit(p, 24 + 4 + high);
 	y[2] = UT_getbit(p, 40 + 4 + high);
@@ -669,9 +617,7 @@ static GOOD_OR_BAD OW_r_flag(int *y, const int high, struct parsedname *pn)
 static GOOD_OR_BAD OW_w_flag(const int *y, const int high, struct parsedname *pn)
 {
 	BYTE p[8];
-	if ( BAD( OW_r_mem(p, 8, _ADDRESS_CONTROL_PAGE, pn) ) ) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD( OW_r_mem(p, 8, _ADDRESS_CONTROL_PAGE, pn) ) ;
 	UT_setbit(p, 8 + 4 + high, y[0] & 0x01);
 	UT_setbit(p, 24 + 4 + high, y[1] & 0x01);
 	UT_setbit(p, 40 + 4 + high, y[2] & 0x01);
@@ -682,9 +628,7 @@ static GOOD_OR_BAD OW_w_flag(const int *y, const int high, struct parsedname *pn
 static GOOD_OR_BAD OW_r_por(int *y, struct parsedname *pn)
 {
 	BYTE p[8];
-	if ( BAD( OW_r_mem(p, 8, _ADDRESS_CONTROL_PAGE, pn) ) ) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD( OW_r_mem(p, 8, _ADDRESS_CONTROL_PAGE, pn) ) ;
 	y[0] = UT_getbit(p, 15) || UT_getbit(p, 31) || UT_getbit(p, 47)
 		|| UT_getbit(p, 63);
 	return gbGOOD;
@@ -693,9 +637,7 @@ static GOOD_OR_BAD OW_r_por(int *y, struct parsedname *pn)
 static GOOD_OR_BAD OW_w_por(const int por, struct parsedname *pn)
 {
 	BYTE p[8];
-	if ( BAD( OW_r_mem(p, 8, _ADDRESS_CONTROL_PAGE, pn) ) ) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD( OW_r_mem(p, 8, _ADDRESS_CONTROL_PAGE, pn) ) ;
 	UT_setbit(p, 15, por);
 	UT_setbit(p, 31, por);
 	UT_setbit(p, 47, por);

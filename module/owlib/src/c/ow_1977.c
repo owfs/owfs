@@ -107,46 +107,44 @@ MakeInternalProp(FUL, fc_persistent);
 static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
 static GOOD_OR_BAD OW_r_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
 static GOOD_OR_BAD OW_r_pmem(BYTE * data, BYTE * pwd, size_t size, off_t offset, struct parsedname *pn);
-static int OW_ver(UINT * u, struct parsedname *pn);
-static int OW_verify(BYTE * pwd, off_t offset, struct parsedname *pn);
-static int OW_clear(struct parsedname *pn);
+static GOOD_OR_BAD OW_ver(UINT * u, struct parsedname *pn);
+static GOOD_OR_BAD OW_verify(BYTE * pwd, off_t offset, struct parsedname *pn);
+static GOOD_OR_BAD OW_clear(struct parsedname *pn);
 
 /* 1977 password */
 static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 64;
-	return RETURN_Z_OR_E(COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_r_mem)) ;
+	return GB_to_Z_OR_E(COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_r_mem)) ;
 }
 
 static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 64;
-	return RETURN_Z_OR_E(COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem)) ;
+	return GB_to_Z_OR_E(COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem)) ;
 }
 
 static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 64;
-	return RETURN_Z_OR_E(COMMON_readwrite_paged(owq, 0, pagesize, OW_r_mem)) ;
+	return GB_to_Z_OR_E(COMMON_readwrite_paged(owq, 0, pagesize, OW_r_mem)) ;
 }
 
 static ZERO_OR_ERROR FS_w_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 64;
-	return RETURN_Z_OR_E(COMMON_readwrite_paged(owq, 0, pagesize, OW_w_mem)) ;
+	return GB_to_Z_OR_E(COMMON_readwrite_paged(owq, 0, pagesize, OW_w_mem)) ;
 }
 
 static ZERO_OR_ERROR FS_ver(struct one_wire_query *owq)
 {
-	return OW_ver(&OWQ_U(owq), PN(owq)) ? -EINVAL : 0;
+	return GB_to_Z_OR_E( OW_ver(&OWQ_U(owq), PN(owq)) );
 }
 
 static ZERO_OR_ERROR FS_r_pwd(struct one_wire_query *owq)
 {
 	BYTE p;
-	if ( BAD( OW_r_mem(&p, 1, 0x7FD0, PN(owq)) ) ) {
-		return -EACCES;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_mem(&p, 1, 0x7FD0, PN(owq)) ) ;
 	OWQ_Y(owq) = (p == _1W_READ_SCRATCHPAD);
 	return 0;
 }
@@ -154,10 +152,7 @@ static ZERO_OR_ERROR FS_r_pwd(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_w_pwd(struct one_wire_query *owq)
 {
 	BYTE p = OWQ_Y(owq) ? 0x00 : _1W_READ_SCRATCHPAD;
-	if ( BAD( OW_w_mem(&p, 1, 0x7FD0, PN(owq)) ) ) {
-		return -EACCES;
-	}
-	return 0;
+	return GB_to_Z_OR_E( OW_w_mem(&p, 1, 0x7FD0, PN(owq)) );
 }
 
 static ZERO_OR_ERROR FS_nset(struct one_wire_query *owq)
@@ -214,14 +209,10 @@ static ZERO_OR_ERROR FS_set(struct one_wire_query *owq)
 	OWQ_size(owq_scratch) = 8;
 	ret = FS_w_mem(owq_scratch);
 	OW_clear(pn);
-	if (ret) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD(ret) ;
 
 	/* Verify */
-	if (OW_verify((BYTE *) OWQ_buffer(owq_scratch), OWQ_offset(owq_scratch), PN(owq))) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD(OW_verify((BYTE *) OWQ_buffer(owq_scratch), OWQ_offset(owq_scratch), PN(owq))) ;
 
 #if OW_CACHE
 	/* set cache */
@@ -292,9 +283,7 @@ static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parse
 		ret = BUS_readin_data(&p[size + 3], 2, pn) || CRC16(p, 1 + 2 + size + 2);
 	}
 	BUSUNLOCK(pn);
-	if ( BAD( ret ) ) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD( ret ) ;
 
 	/* Re-read scratchpad and compare */
 	/* Note that we tacitly shift the data one byte down for the E/S byte */
@@ -304,9 +293,7 @@ static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parse
 		|| BUS_readin_data(&p[1], 3 + size, pn)
 		|| memcmp(&p[4], data, size);
 	BUSUNLOCK(pn);
-	if ( BAD(ret ) ) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(ret ) ;
 
 #if OW_CACHE
 	Cache_Get_Internal_Strict((void *) (&p[4]), 8, InternalProp(FUL), pn);
@@ -318,9 +305,8 @@ static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parse
 	ret = BUS_select(pn) || BUS_send_data(p, 4 + 7, pn)
 		|| BUS_PowerByte(p[4 + 7], &p[4 + 7], 10, pn);
 	BUSUNLOCK(pn);
-	if ( BAD( ret ) ) {
-		return gbBAD;
-	}
+	
+	RETURN_BAD_IF_BAD( ret ) ;
 
 	return gbGOOD;
 }
@@ -356,14 +342,12 @@ static GOOD_OR_BAD OW_r_pmem(BYTE * data, BYTE * pwd, size_t size, off_t offset,
 	}
 	BUSUNLOCK(pn);
 
-	if ( BAD( ret ) ) {
-		return ret;
-	}
+	RETURN_BAD_IF_BAD( ret ) ;
 	memcpy(data, &p[3], size);
 	return gbGOOD;
 }
 
-static int OW_ver(UINT * u, struct parsedname *pn)
+static GOOD_OR_BAD OW_ver(UINT * u, struct parsedname *pn)
 {
 	int ret;
 	BYTE p[] = { _1W_READ_VERSION, };
@@ -375,13 +359,13 @@ static int OW_ver(UINT * u, struct parsedname *pn)
 	BUSUNLOCK(pn);
 
 	if (ret || b[0] != b[1]) {
-		return 1;
+		return gbBAD;
 	}
 	u[0] = b[0];
-	return 0;
+	return gbGOOD;
 }
 
-static int OW_verify(BYTE * pwd, off_t offset, struct parsedname *pn)
+static GOOD_OR_BAD OW_verify(BYTE * pwd, off_t offset, struct parsedname *pn)
 {
 	int ret;
 	BYTE p[1 + 2 + 8] = { _1W_READ_MEMORY_WITH_PASSWORD, LOW_HIGH_ADDRESS(offset), };
@@ -393,11 +377,11 @@ static int OW_verify(BYTE * pwd, off_t offset, struct parsedname *pn)
 		|| BUS_readin_data(&c, 1, pn);
 	BUSUNLOCK(pn);
 
-	return (ret || c != 0xFF) ? 1 : 0;
+	return (ret || c != 0xFF) ? gbBAD : gbGOOD;
 }
 
 /* Clear first 16 bytes of scratchpad after password setting */
-static int OW_clear(struct parsedname *pn)
+static GOOD_OR_BAD OW_clear(struct parsedname *pn)
 {
 	BYTE p[1 + 2 + 16] = { _1W_WRITE_SCRATCHPAD, LOW_HIGH_ADDRESS(0x00), };
 	struct transaction_log t[] = {

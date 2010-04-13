@@ -313,7 +313,7 @@ static ZERO_OR_ERROR FS_w_register(struct one_wire_query *owq)
 {
 	BYTE c = OWQ_U(owq) & 0xFF ;
 
-	return RETURN_Z_OR_E( OW_w_mem( &c, 1, PN(owq)->selected_filetype->data.u, PN(owq) ) ) ;
+	return GB_to_Z_OR_E( OW_w_mem( &c, 1, PN(owq)->selected_filetype->data.u, PN(owq) ) ) ;
 }
 
 /* ControlRegister reversed */
@@ -401,7 +401,7 @@ static ZERO_OR_ERROR FS_bitwrite(struct one_wire_query *owq)
 		return -EINVAL;
 	}
 	UT_setbit(&d, br->bit, OWQ_Y(owq));
-	return RETURN_Z_OR_E(OW_w_mem(&d, 1, br->location, pn)) ;
+	return GB_to_Z_OR_E(OW_w_mem(&d, 1, br->location, pn)) ;
 }
 
 static ZERO_OR_ERROR FS_rbitread(struct one_wire_query *owq)
@@ -618,7 +618,7 @@ static ZERO_OR_ERROR FS_w_alarmtemp(struct one_wire_query *owq)
 		return -EBUSY;
 	}
 	data[0] = (OWQ_F(owq) - v->histolow) / v->resolution;
-	return RETURN_Z_OR_E(OW_w_mem(data, 1, pn->selected_filetype->data.s, pn)) ;
+	return GB_to_Z_OR_E(OW_w_mem(data, 1, pn->selected_filetype->data.s, pn)) ;
 }
 
 static ZERO_OR_ERROR FS_alarmudate(struct one_wire_query *owq)
@@ -745,7 +745,7 @@ static ZERO_OR_ERROR FS_w_counter(struct one_wire_query *owq)
 	}
 
 	OW_date(&d, data);
-	return RETURN_Z_OR_E( OW_w_mem(data, 7, 0x0200, pn) ) ;
+	return GB_to_Z_OR_E( OW_w_mem(data, 7, 0x0200, pn) ) ;
 }
 
 /* stop/start clock running */
@@ -822,7 +822,7 @@ static ZERO_OR_ERROR FS_w_atime(struct one_wire_query *owq)
 		return -EFAULT;
 	}
 	data = ((BYTE) OWQ_U(owq)) | (data & 0x80);	/* EM on */
-	return RETURN_Z_OR_E(OW_w_mem(&data, 1, pn->selected_filetype->data.s, pn)) ;
+	return GB_to_Z_OR_E(OW_w_mem(&data, 1, pn->selected_filetype->data.s, pn)) ;
 }
 
 /* read the alarm time field (not bit 7, though) */
@@ -849,13 +849,13 @@ static ZERO_OR_ERROR FS_r_atrig(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	return RETURN_Z_OR_E(COMMON_OWQ_readwrite_paged(owq, 0, pagesize, COMMON_read_memory_crc16_A5)) ;
+	return GB_to_Z_OR_E(COMMON_OWQ_readwrite_paged(owq, 0, pagesize, COMMON_read_memory_crc16_A5)) ;
 }
 
 static ZERO_OR_ERROR FS_w_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	return RETURN_Z_OR_E( COMMON_readwrite_paged(owq, 0, pagesize, OW_w_mem) ) ;
+	return GB_to_Z_OR_E( COMMON_readwrite_paged(owq, 0, pagesize, OW_w_mem) ) ;
 }
 
 static ZERO_OR_ERROR FS_w_atrig(struct one_wire_query *owq)
@@ -879,7 +879,7 @@ static ZERO_OR_ERROR FS_w_atrig(struct one_wire_query *owq)
 	case 4:
 		data[3] |= 0x80;
 	}
-	return RETURN_Z_OR_E( OW_w_mem(data, 4, 0x0207, pn)) ;
+	return GB_to_Z_OR_E( OW_w_mem(data, 4, 0x0207, pn)) ;
 }
 
 static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
@@ -893,7 +893,7 @@ static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 {
-	return RETURN_Z_OR_E( OW_w_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) (OWQ_offset(owq) + ((OWQ_pn(owq).extension) << 5)), PN(owq)) ) ;
+	return GB_to_Z_OR_E( OW_w_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) (OWQ_offset(owq) + ((OWQ_pn(owq).extension) << 5)), PN(owq)) ) ;
 }
 
 /* temperature log */
@@ -961,7 +961,7 @@ static ZERO_OR_ERROR FS_w_delay(struct one_wire_query *owq)
 	if (OW_MIP(PN(owq))) {
 		return -EBUSY;
 	}
-	return RETURN_Z_OR_E(OW_w_mem(data, 2, (size_t) 0x0212, PN(owq))) ;
+	return GB_to_Z_OR_E(OW_w_mem(data, 2, (size_t) 0x0212, PN(owq))) ;
 }
 
 /* temperature log */
@@ -1312,7 +1312,7 @@ static int OW_w_run(int state, struct parsedname *pn)
 		return -EINVAL;
 	}
 	cr = state ? cr & 0x7F : cr | 0x80;
-	return RETURN_G_OR_B( OW_w_mem(&cr, 1, 0x020E, pn) ) ;
+	return OW_w_mem(&cr, 1, 0x020E, pn) ;
 }
 
 static int OW_small_read(BYTE * buffer, size_t size, off_t location, struct parsedname *pn)

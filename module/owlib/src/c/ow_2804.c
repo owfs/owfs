@@ -128,7 +128,7 @@ static ZERO_OR_ERROR FS_w_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 	/* write is "byte at a time" -- not paged */
-	return RETURN_Z_OR_E(COMMON_readwrite_paged(owq, 0, pagesize, OW_w_mem)) ;
+	return GB_to_Z_OR_E(COMMON_readwrite_paged(owq, 0, pagesize, OW_w_mem)) ;
 }
 
 /* 2804 memory write */
@@ -145,7 +145,7 @@ static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 	/* write is "byte at a time" -- not paged */
-	return RETURN_Z_OR_E(COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem) ) ;
+	return GB_to_Z_OR_E(COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem) ) ;
 }
 
 /* 2804 switch */
@@ -169,7 +169,7 @@ static ZERO_OR_ERROR FS_w_pio(struct one_wire_query *owq)
 	/* reverse bits */
 	data = BYTE_INVERSE(OWQ_U(owq)) | 0xFC;	/* Set bits 2-7 to "1" */
 	
-	return RETURN_Z_OR_E(OW_w_pio(data, PN(owq))) ;
+	return GB_to_Z_OR_E(OW_w_pio(data, PN(owq))) ;
 }
 
 /* 2804 switch -- is Vcc powered?*/
@@ -227,9 +227,7 @@ static ZERO_OR_ERROR FS_w_por(struct one_wire_query *owq)
 	}
 	if (UT_getbit(&data, 3)) {	/* needs resetting? bit3==1 */
 		data ^= 0x08;			/* flip bit 3 */
-		if ( BAD( OW_w_reg(&data, 1, _ADDRESS_CONDITIONAL_SEARCH_CONTROL, pn)) ) {
-			return -EINVAL;		/* reset */
-		}
+		RETURN_ERROR_IF_BAD( OW_w_reg(&data, 1, _ADDRESS_CONDITIONAL_SEARCH_CONTROL, pn)) ;
 		if (FS_r_por(owq)) {
 			return -EINVAL;		/* reread */
 		}
@@ -271,7 +269,7 @@ static ZERO_OR_ERROR FS_r_latch(struct one_wire_query *owq)
 /* 2804 switch activity latch*/
 static ZERO_OR_ERROR FS_w_latch(struct one_wire_query *owq)
 {
-	return RETURN_Z_OR_E(OW_clear(PN(owq))) ;
+	return GB_to_Z_OR_E(OW_clear(PN(owq))) ;
 }
 
 /* 2804 alarm settings*/
@@ -306,7 +304,7 @@ static ZERO_OR_ERROR FS_w_s_alarm(struct one_wire_query *owq)
 	UT_setbit(&data[1], 1, (int) (U / 10 % 10) & 0x01);
 	UT_setbit(&data[0], 0, ((int) (U % 10) & 0x02) >> 1);
 	UT_setbit(&data[0], 1, ((int) (U / 10 % 10) & 0x02) >> 1);
-	return RETURN_Z_OR_E(OW_w_reg(data, 3, _ADDRESS_CONDITIONAL_SEARCH_PIO, PN(owq))) ;
+	return GB_to_Z_OR_E(OW_w_reg(data, 3, _ADDRESS_CONDITIONAL_SEARCH_PIO, PN(owq))) ;
 }
 
 static GOOD_OR_BAD OW_w_scratch(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
@@ -348,8 +346,8 @@ static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parse
 		TRXN_END,
 	};
 
-	if ( BAD( OW_w_scratch(data, size, offset, pn) )
-		|| BUS_transaction(tread, pn)) {
+	RETURN_BAD_IF_BAD( OW_w_scratch(data, size, offset, pn) );
+	if ( BUS_transaction(tread, pn)) {
 		return gbBAD;
 	}
 	p[0] = _1W_COPY_SCRATCHPAD;

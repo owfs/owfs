@@ -95,23 +95,23 @@ static GOOD_OR_BAD OW_volts(_FLOAT * V, const struct parsedname *pn);
 static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
-	return RETURN_Z_OR_E(OW_r_page((BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq) + ((pn->extension) << 5), pn)) ;
+	return GB_to_Z_OR_E(OW_r_page((BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq) + ((pn->extension) << 5), pn)) ;
 }
 
 static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
-	return RETURN_Z_OR_E(OW_w_page((BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq) + ((pn->extension) << 5), pn)) ;
+	return GB_to_Z_OR_E(OW_w_page((BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq) + ((pn->extension) << 5), pn)) ;
 }
 
 static ZERO_OR_ERROR FS_temp(struct one_wire_query *owq)
 {
-	return RETURN_Z_OR_E(OW_temp(&OWQ_F(owq), PN(owq))) ;
+	return GB_to_Z_OR_E(OW_temp(&OWQ_F(owq), PN(owq))) ;
 }
 
 static ZERO_OR_ERROR FS_volts(struct one_wire_query *owq)
 {
-	return RETURN_Z_OR_E(OW_volts(&OWQ_F(owq), PN(owq))) ;
+	return GB_to_Z_OR_E(OW_volts(&OWQ_F(owq), PN(owq))) ;
 }
 
 /* DS2436 simple battery */

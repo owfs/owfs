@@ -30,9 +30,7 @@ GOOD_OR_BAD COMMON_readwrite_paged(struct one_wire_query *owq, size_t page, size
 		if (thispage > size) {
 			thispage = size;
 		}
-		if ( BAD( readwritefunc(buffer_position, thispage, offset, pn) ) ) {
-				return gbBAD;
-		}
+		RETURN_BAD_IF_BAD( readwritefunc(buffer_position, thispage, offset, pn) ) ;
 		buffer_position += thispage;
 		size -= thispage;
 		offset += thispage;

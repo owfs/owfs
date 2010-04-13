@@ -39,9 +39,7 @@ ZERO_OR_ERROR FS_r_locator(struct one_wire_query *owq)
 	ASCII ad[SERIAL_NUMBER_SIZE*2];
 	size_t i;
 
-	if ( BAD( OW_any_locator(loc, PN(owq) ) ) ) {
-		return -EINVAL ;
-	}
+	RETURN_ERROR_IF_BAD( OW_any_locator(loc, PN(owq) ) ) ;
 	for (i = 0; i < SERIAL_NUMBER_SIZE; ++i) {
 		num2string(ad + (i << 1), loc[7 - i]);
 	}

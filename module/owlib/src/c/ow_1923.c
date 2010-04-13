@@ -201,25 +201,25 @@ static void OW_date(const _DATE * d, BYTE * data);
 static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	return RETURN_Z_OR_E (COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_r_mem)) ;
+	return GB_to_Z_OR_E (COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_r_mem)) ;
 }
 
 static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	return RETURN_Z_OR_E(COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem)) ;
+	return GB_to_Z_OR_E(COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem)) ;
 }
 
 static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	return RETURN_Z_OR_E( COMMON_readwrite_paged(owq, 0, pagesize, OW_r_mem)) ;
+	return GB_to_Z_OR_E( COMMON_readwrite_paged(owq, 0, pagesize, OW_r_mem)) ;
 }
 
 static ZERO_OR_ERROR FS_w_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	return RETURN_Z_OR_E( COMMON_readwrite_paged(owq, 0, pagesize, OW_w_mem)) ;
+	return GB_to_Z_OR_E( COMMON_readwrite_paged(owq, 0, pagesize, OW_w_mem)) ;
 }
 
 
@@ -244,7 +244,7 @@ static ZERO_OR_ERROR FS_w_delay(struct one_wire_query *owq)
 	if (OW_MIP(PN(owq))) {
 		return -EBUSY;
 	}
-	return RETURN_Z_OR_E( OW_w_mem(data, 3, 0x0216, PN(owq))) ;
+	return GB_to_Z_OR_E( OW_w_mem(data, 3, 0x0216, PN(owq))) ;
 }
 
 /* Just a test-function */
@@ -369,7 +369,7 @@ static ZERO_OR_ERROR FS_bitwrite(struct one_wire_query *owq)
 		return -EINVAL;
 	}
 	UT_setbit(&d, br->bit, OWQ_Y(owq));
-	return RETURN_Z_OR_E( OW_w_mem(&d, 1, br->location, pn) ) ;
+	return GB_to_Z_OR_E( OW_w_mem(&d, 1, br->location, pn) ) ;
 }
 
 static ZERO_OR_ERROR FS_rbitread(struct one_wire_query *owq)
@@ -589,7 +589,7 @@ static ZERO_OR_ERROR FS_w_counter(struct one_wire_query *owq)
 	}
 
 	OW_date(&d, data);
-	return RETURN_Z_OR_E( OW_w_mem(data, 6, 0x0200, pn) ) ;
+	return GB_to_Z_OR_E( OW_w_mem(data, 6, 0x0200, pn) ) ;
 }
 
 

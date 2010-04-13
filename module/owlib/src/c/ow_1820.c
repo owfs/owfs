@@ -250,7 +250,7 @@ static _FLOAT OW_masked_temperature( BYTE * data, BYTE mask ) ;
 
 static ZERO_OR_ERROR FS_10temp(struct one_wire_query *owq)
 {
-	return BAD(OW_10temp(&OWQ_F(owq), PN(owq))) ? -EINVAL : 0 ;
+	return GB_to_Z_OR_E( OW_10temp(&OWQ_F(owq), PN(owq)) ) ;
 }
 
 /* For DS1822 and DS18B20 -- resolution stuffed in ft->data */
@@ -262,7 +262,7 @@ static ZERO_OR_ERROR FS_22temp(struct one_wire_query *owq)
 	case 10:
 	case 11:
 	case 12:
-		return RETURN_Z_OR_E(OW_22temp(&OWQ_F(owq), resolution, PN(owq)));
+		return GB_to_Z_OR_E(OW_22temp(&OWQ_F(owq), resolution, PN(owq)));
 	}
 	return -ENODEV;
 }
@@ -290,9 +290,7 @@ static ZERO_OR_ERROR FS_slowtemp(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_power(struct one_wire_query *owq)
 {
 	BYTE data;
-	if (BAD(OW_power(&data, PN(owq)))) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD(OW_power(&data, PN(owq))) ;
 	OWQ_Y(owq) = (data != 0x00);
 	return 0;
 }
@@ -304,7 +302,7 @@ static ZERO_OR_ERROR FS_w_pio(struct one_wire_query *owq)
 	BYTE data = BYTE_INVERSE(OWQ_U(owq) & 0x03);	/* reverse bits, set unused to 1s */
 	//printf("Write pio raw=%X, stored=%X\n",OWQ_U(owq),data) ;
 	FS_del_sibling( "piostate", owq ) ;
-	return RETURN_Z_OR_E(OW_w_pio(data, PN(owq)));
+	return GB_to_Z_OR_E(OW_w_pio(data, PN(owq)));
 }
 
 static ZERO_OR_ERROR FS_sense(struct one_wire_query *owq)
@@ -329,7 +327,7 @@ static ZERO_OR_ERROR FS_r_pio(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_r_piostate(struct one_wire_query *owq)
 {
-	return BAD(OW_read_piostate(&(OWQ_U(owq)), PN(owq))) ? -EINVAL : 0 ;
+	return GB_to_Z_OR_E( OW_read_piostate(&(OWQ_U(owq)), PN(owq)) ) ;
 }
 
 static ZERO_OR_ERROR FS_r_latch(struct one_wire_query *owq)
@@ -344,23 +342,21 @@ static ZERO_OR_ERROR FS_r_latch(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_r_templimit(struct one_wire_query *owq)
 {
-	return RETURN_G_OR_B(OW_r_templimit(&OWQ_F(owq), PN(owq)->selected_filetype->data.i, PN(owq)));
+	return GB_to_Z_OR_E( OW_r_templimit(&OWQ_F(owq), PN(owq)->selected_filetype->data.i, PN(owq)) );
 }
 
 /* DS1825 hardware programmable address */
 static ZERO_OR_ERROR FS_r_ad(struct one_wire_query *owq)
 {
 	BYTE data[9];
-	if (BAD(OW_r_scratchpad(data, PN(owq)))) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD(OW_r_scratchpad(data, PN(owq))) ;
 	OWQ_U(owq) = data[4] & 0x0F;
 	return 0;
 }
 
 static ZERO_OR_ERROR FS_w_templimit(struct one_wire_query *owq)
 {
-	return RETURN_Z_OR_E(OW_w_templimit(OWQ_F(owq), PN(owq)->selected_filetype->data.i, PN(owq)));
+	return GB_to_Z_OR_E(OW_w_templimit(OWQ_F(owq), PN(owq)->selected_filetype->data.i, PN(owq)));
 }
 
 static ZERO_OR_ERROR FS_r_die(struct one_wire_query *owq)
@@ -388,9 +384,7 @@ static ZERO_OR_ERROR FS_r_die(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_r_trim(struct one_wire_query *owq)
 {
 	BYTE t[2];
-	if (BAD(OW_r_trim(t, PN(owq)))) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD(OW_r_trim(t, PN(owq))) ;
 	OWQ_U(owq) = (t[1] << 8) | t[0];
 	return 0;
 }
@@ -402,7 +396,7 @@ static ZERO_OR_ERROR FS_w_trim(struct one_wire_query *owq)
 	switch (OW_die(PN(owq))) {
 	case eB7:
 	case eC2:
-		return RETURN_Z_OR_E(OW_w_trim(t, PN(owq)));
+		return GB_to_Z_OR_E(OW_w_trim(t, PN(owq)));
 	default:
 		return -EINVAL;
 	}
@@ -415,9 +409,7 @@ static ZERO_OR_ERROR FS_r_trimvalid(struct one_wire_query *owq)
 	switch (OW_die(PN(owq))) {
 	case eB7:
 	case eC2:
-		if (BAD(OW_r_trim(trim, PN(owq)))) {
-			return -EINVAL;
-		}
+		RETURN_ERROR_IF_BAD(OW_r_trim(trim, PN(owq))) ;
 		OWQ_Y(owq) = (((trim[0] & 0x07) == 0x05)
 					  || ((trim[0] & 0x07) == 0x03))
 			&& (trim[1] == 0xBB);
@@ -436,9 +428,7 @@ static ZERO_OR_ERROR FS_r_blanket(struct one_wire_query *owq)
 	switch (OW_die(PN(owq))) {
 	case eB7:
 	case eC2:
-		if (BAD(OW_r_trim(trim, PN(owq)))) {
-			return -EINVAL;
-		}
+		RETURN_ERROR_IF_BAD(OW_r_trim(trim, PN(owq))) ;
 		OWQ_Y(owq) = (memcmp(trim, blanket, 2) == 0);
 		return 0;
 	default:
@@ -454,9 +444,7 @@ static ZERO_OR_ERROR FS_w_blanket(struct one_wire_query *owq)
 	case eB7:
 	case eC2:
 		if (OWQ_Y(owq)) {
-			if (BAD(OW_w_trim(blanket, PN(owq)))) {
-				return -EINVAL;
-			}
+			RETURN_ERROR_IF_BAD(OW_w_trim(blanket, PN(owq)) ) ;
 		}
 		return 0;
 	default:
@@ -497,14 +485,10 @@ static GOOD_OR_BAD OW_10temp(_FLOAT * temp, const struct parsedname *pn)
 		BUSLOCK(pn);
 		ret = BUS_transaction_nolock(tpowered, pn) || FS_poll_convert(pn);
 		BUSUNLOCK(pn);
-		if (ret) {
-			return ret;
-		}
+		RETURN_BAD_IF_BAD(ret) ;
 	}
 
-	if (OW_r_scratchpad(data, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(OW_r_scratchpad(data, pn)) ;
 
 	// Correction thanks to Nathan D. Holmes
 	//temp[0] = (_FLOAT) ((int16_t)(data[1]<<8|data[0])) * .5 ; // Main conversion
@@ -607,9 +591,7 @@ static GOOD_OR_BAD OW_22temp(_FLOAT * temp, const int resolution, const struct p
 		BUSLOCK(pn);
 		ret = BUS_transaction_nolock(tpowered, pn) || FS_poll_convert(pn);
 		BUSUNLOCK(pn);
-		if (ret) {
-			return ret;
-		}
+		RETURN_BAD_IF_BAD(ret)
 	}
 
 	if (OW_r_scratchpad(data, pn)) {
@@ -679,7 +661,7 @@ static GOOD_OR_BAD OW_w_templimit(const _FLOAT T, const int Tindex, const struct
 		return gbBAD;
 	}
 	data[2 + Tindex] = (uint8_t) T;
-	return RETURN_G_OR_B(OW_w_scratchpad(&data[2], pn));
+	return OW_w_scratchpad(&data[2], pn);
 }
 
 /* read 9 bytes, includes CRC8 which is checked */
@@ -694,7 +676,7 @@ static GOOD_OR_BAD OW_r_scratchpad(BYTE * data, const struct parsedname *pn)
 		TRXN_CRC8(data, 9),
 		TRXN_END,
 	};
-	return RETURN_G_OR_B(BUS_transaction(tread, pn));
+	return BUS_transaction(tread, pn);
 }
 
 /* write 3 bytes (byte2,3,4 of register) */
@@ -723,7 +705,7 @@ static GOOD_OR_BAD OW_w_scratchpad(const BYTE * data, const struct parsedname *p
 		return gbBAD;
 	}
 
-	return RETURN_G_OR_B(BUS_transaction(tpower, pn));
+	return BUS_transaction(tpower, pn);
 }
 
 /* Trim values -- undocumented except in AN247.pdf */
@@ -748,7 +730,7 @@ static GOOD_OR_BAD OW_r_trim(BYTE * trim, const struct parsedname *pn)
 		return gbBAD;
 	}
 
-	return RETURN_G_OR_B(BUS_transaction(t1, pn));
+	return BUS_transaction(t1, pn);
 }
 
 static GOOD_OR_BAD OW_w_trim(const BYTE * trim, const struct parsedname *pn)
@@ -848,7 +830,7 @@ static GOOD_OR_BAD OW_read_piostate(UINT * piostate, const struct parsedname *pn
 		TRXN_END,
 	};
 	if (BUS_transaction(t, pn)) {
-		return 1;
+		return gbBAD;
 	}
 	/* compare lower and upper nibble to be complements */
 	// High nibble the complement of low nibble?
@@ -870,7 +852,7 @@ static GOOD_OR_BAD OW_w_pio(BYTE pio, const struct parsedname *pn)
 		TRXN_WRITE3(cmd),
 		TRXN_END,
 	};
-	return RETURN_G_OR_B(BUS_transaction(t, pn));
+	return BUS_transaction(t, pn);
 }
 
 static _FLOAT OW_masked_temperature( BYTE * data, BYTE mask )

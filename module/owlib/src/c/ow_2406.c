@@ -143,14 +143,14 @@ static GOOD_OR_BAD OW_full_access(BYTE * data, const struct parsedname *pn);
 static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
 {
 	/* read is not a "paged" endeavor, the CRC comes after a full read */
-	return RETURN_Z_OR_E(OW_r_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq))) ;
+	return GB_to_Z_OR_E(OW_r_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq))) ;
 }
 
 /* 2406 memory write */
 static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 {
 //printf("2406 read size=%d, offset=%d\n",(int)size,(int)offset);
-	return RETURN_Z_OR_E(OW_r_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) (OWQ_offset(owq) + (OWQ_pn(owq).extension << 5)), PN(owq))) ;
+	return GB_to_Z_OR_E(OW_r_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) (OWQ_offset(owq) + (OWQ_pn(owq).extension << 5)), PN(owq))) ;
 }
 
 static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
@@ -190,9 +190,7 @@ static ZERO_OR_ERROR FS_r_flipflop(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_r_infobyte(struct one_wire_query *owq)
 {
 	BYTE data;
-	if ( BAD( OW_syncaccess(&data, PN(owq)) ) ) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD( OW_syncaccess(&data, PN(owq)) );
 	OWQ_U(owq) = data;	/* reverse bits */
 	return 0;
 }
@@ -244,7 +242,7 @@ static ZERO_OR_ERROR FS_w_latch(struct one_wire_query *owq)
 {
 	FS_del_sibling( "infobyte", owq ) ;
 
-	return RETURN_Z_OR_E(OW_clear(PN(owq))) ;
+	return GB_to_Z_OR_E(OW_clear(PN(owq))) ;
 }
 
 /* 2406 alarm settings*/
@@ -252,9 +250,7 @@ static ZERO_OR_ERROR FS_r_s_alarm(struct one_wire_query *owq)
 {
 	BYTE data ;
 
-	if ( BAD( OW_r_control(&data, PN(owq)) ) ) {
-		return -EINVAL ;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_control(&data, PN(owq)) );
 
 	OWQ_U(owq) = (data & 0x01) + ((data >> 1) & 0x03) * 10 + ((data >>3) & 0x03) * 100;
 	return 0 ;
@@ -268,7 +264,7 @@ static ZERO_OR_ERROR FS_w_s_alarm(struct one_wire_query *owq)
 	data = ((U % 10) & 0x01)
 		| (((U / 10 % 10) & 0x03) << 1)
 		| (((U / 100 % 10) & 0x03) << 3);
-	return RETURN_Z_OR_E(OW_w_s_alarm(data, PN(owq))) ;
+	return GB_to_Z_OR_E(OW_w_s_alarm(data, PN(owq))) ;
 }
 
 /* write 2406 switch -- 2 values*/
@@ -278,7 +274,7 @@ static ZERO_OR_ERROR FS_w_pio(struct one_wire_query *owq)
 
 	FS_del_sibling( "infobyte", owq ) ;
 
-	return RETURN_Z_OR_E(OW_w_pio(data, PN(owq))) ;
+	return GB_to_Z_OR_E(OW_w_pio(data, PN(owq))) ;
 }
 
 /* Support for EmbeddedDataSystems's T8A 8 channel A/D
@@ -391,9 +387,7 @@ static GOOD_OR_BAD OW_w_control(const BYTE data, const struct parsedname *pn)
 static GOOD_OR_BAD OW_w_s_alarm(const BYTE data, const struct parsedname *pn)
 {
 	BYTE b[1];
-	if ( BAD( OW_r_control(b, pn) ) ) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD( OW_r_control(b, pn) );
 	b[0] = ( b[0] & ~_DS2406_ALARM_BITS) | (data & _DS2406_ALARM_BITS) ;
 	return OW_w_control(b[0], pn);
 }
@@ -402,9 +396,7 @@ static GOOD_OR_BAD OW_w_s_alarm(const BYTE data, const struct parsedname *pn)
 static GOOD_OR_BAD OW_w_pio(const BYTE data, const struct parsedname *pn)
 {
 	BYTE b[1];
-	if ( BAD( OW_r_control(b, pn) ) ) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD( OW_r_control(b, pn) );
 	b[0] = ( b[0] & ~_DS2406_FLIPFLOP_BITS) | ((data<<5) & _DS2406_FLIPFLOP_BITS) ;
 	return OW_w_control(b[0], pn);
 }
@@ -412,9 +404,7 @@ static GOOD_OR_BAD OW_w_pio(const BYTE data, const struct parsedname *pn)
 static GOOD_OR_BAD OW_syncaccess(BYTE * data, const struct parsedname *pn)
 {
 	BYTE d[2] = { _DS2406_IM|_DS2406_CHS1|_DS2406_CHS0|_DS2406_CRC0, 0xFF, };
-	if ( BAD( OW_full_access(d, pn) ) ) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD( OW_full_access(d, pn) );
 	data[0] = d[0];
 	return gbGOOD;
 }
@@ -422,9 +412,7 @@ static GOOD_OR_BAD OW_syncaccess(BYTE * data, const struct parsedname *pn)
 static GOOD_OR_BAD OW_access(BYTE * data, const struct parsedname *pn)
 {
 	BYTE d[2] = { _DS2406_IM|_DS2406_IC|_DS2406_CHS1|_DS2406_CHS0|_DS2406_CRC0, 0xFF, };
-	if ( BAD( OW_full_access(d, pn) ) ) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD( OW_full_access(d, pn) );
 	data[0] = d[0];
 	return gbGOOD;
 }
@@ -541,9 +529,7 @@ static ZERO_OR_ERROR FS_temp(struct one_wire_query *owq)
 	}
 
 	UT1 = 8 * tai.C[4] + 20224;
-	if ( BAD( TAI8570_SenseValue(&D2, SEC_READD2, &tai, &pn_copy) ) ) {
-		return -EINVAL;
-	}
+	RETURN_BAD_IF_BAD( TAI8570_SenseValue(&D2, SEC_READD2, &tai, &pn_copy) );
 	LEVEL_DEBUG("TAI8570 Raw Temperature (D2) = %lu", D2);
 	dT = D2 - UT1;
 	OWQ_F(owq) = (200. + dT * (tai.C[5] + 50.) / 1024.) / 10.;
@@ -585,10 +571,7 @@ static ZERO_OR_ERROR FS_pressure(struct one_wire_query *owq)
 // pn should be pointing to putative master device
 static GOOD_OR_BAD ReadTmexPage(BYTE * data, size_t size, int page, const struct parsedname *pn)
 {
-	if ( BAD( OW_r_mem(data, size, size * page, pn) ) ) {
-		LEVEL_DETAIL("Cannot read Tmex page %d", page);
-		return gbBAD;				// read page
-	}
+	RETURN_BAD_IF_BAD( OW_r_mem(data, size, size * page, pn) );
 	if (data[0] > size) {
 		LEVEL_DETAIL("Tmex page %d bad length %d", page, data[0]);
 		return gbBAD;				// check length
@@ -620,15 +603,9 @@ static GOOD_OR_BAD TAI8570_A(struct parsedname *pn)
 	BYTE b = 0xFF;
 	int i;
 	for (i = 0; i < 5; ++i) {
-		if ( BAD( OW_access(&b, pn) ) ) {
-			return gbBAD;
-		}
-		if ( BAD( OW_w_control(b | 0x20, pn) ) ) {
-			return gbBAD;
-		}
-		if ( BAD( OW_access(&b, pn) ) ) {
-			return gbBAD;
-		}
+		RETURN_BAD_IF_BAD( OW_access(&b, pn) );
+		RETURN_BAD_IF_BAD( OW_w_control(b | 0x20, pn) );
+		RETURN_BAD_IF_BAD( OW_access(&b, pn) );
 		if (b & 0xDF) {
 			return gbGOOD;
 		}
@@ -641,15 +618,9 @@ static GOOD_OR_BAD TAI8570_B(struct parsedname *pn)
 	BYTE b = 0xFF;
 	int i;
 	for (i = 0; i < 5; ++i) {
-		if ( BAD( OW_access(&b, pn) ) ) {
-			return gbBAD;
-		}
-		if ( BAD( OW_w_control(b | 0x40, pn) ) ) {
-			return gbBAD;
-		}
-		if ( BAD( OW_access(&b, pn) ) ) {
-			return gbBAD;
-		}
+		RETURN_BAD_IF_BAD( OW_access(&b, pn) );
+		RETURN_BAD_IF_BAD( OW_w_control(b | 0x40, pn) ) ;
+		RETURN_BAD_IF_BAD( OW_access(&b, pn) ) ;
 		if (b & 0xBF) {
 			return gbGOOD;
 		}
@@ -661,9 +632,7 @@ static GOOD_OR_BAD TAI8570_B(struct parsedname *pn)
 static GOOD_OR_BAD TAI8570_ClockPulse(const struct s_TAI8570 *tai, struct parsedname *pn)
 {
 	memcpy(pn->sn, tai->reader, 8);
-	if ( BAD( TAI8570_A(pn) ) ) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD( TAI8570_A(pn) );
 	memcpy(pn->sn, tai->writer, 8);
 	return TAI8570_A(pn);
 }
@@ -672,9 +641,7 @@ static GOOD_OR_BAD TAI8570_ClockPulse(const struct s_TAI8570 *tai, struct parsed
 static GOOD_OR_BAD TAI8570_DataPulse(const struct s_TAI8570 *tai, struct parsedname *pn)
 {
 	memcpy(pn->sn, tai->reader, 8);
-	if ( BAD( TAI8570_B(pn) ) ) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD( TAI8570_B(pn) );
 	memcpy(pn->sn, tai->writer, 8);
 	return TAI8570_B(pn);
 }
@@ -682,14 +649,10 @@ static GOOD_OR_BAD TAI8570_DataPulse(const struct s_TAI8570 *tai, struct parsedn
 /* called with a copy of pn */
 static GOOD_OR_BAD TAI8570_Reset(const struct s_TAI8570 *tai, struct parsedname *pn)
 {
-	if ( BAD( TAI8570_ClockPulse(tai, pn) ) ) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD( TAI8570_ClockPulse(tai, pn) );
 	//printf("TAI8570 Clock ok\n") ;
 	memcpy(pn->sn, tai->writer, 8);
-	if ( BAD( TAI8570_config(CFG_WRITE, pn) ) ) {
-		return gbBAD;				// config write
-	}
+	RETURN_BAD_IF_BAD( TAI8570_config(CFG_WRITE, pn) );	// config write
 	//printf("TAI8570 config (reset) ok\n") ;
 	return TAI8570_Write(SEC_RESET, tai, pn);
 }
@@ -705,9 +668,7 @@ static GOOD_OR_BAD TAI8570_Write(BYTE * cmd, const struct s_TAI8570 *tai, struct
 		TRXN_END,
 	};
 	memcpy(pn->sn, tai->writer, 8);
-	if ( BAD( TAI8570_config(CFG_WRITE, pn) ) ) {
-		return gbBAD;				// config write
-	}
+	RETURN_BAD_IF_BAD( TAI8570_config(CFG_WRITE, pn) );	// config write
 	//printf("TAI8570 config (write) ok\n") ;
 	return BUS_transaction(t, pn);
 }
@@ -724,9 +685,7 @@ static GOOD_OR_BAD TAI8570_Read(UINT * u, const struct s_TAI8570 *tai, struct pa
 	};
 	//printf("TAI8570_Read\n");
 	memcpy(pn->sn, tai->reader, 8);
-	if ( BAD( TAI8570_config(CFG_READ, pn) ) ) {
-		return gbBAD;				// config write
-	}
+	RETURN_BAD_IF_BAD( TAI8570_config(CFG_READ, pn) );	// config write
 	//printf("TAI8570 read ") ;
 	for (i = j = 0; i < 16; ++i) {
 		data[j++] = 0xFF;
@@ -759,9 +718,7 @@ static GOOD_OR_BAD TAI8570_Check(const struct s_TAI8570 *tai, struct parsedname 
 	//printf("TAI8570_Check\n");
 	UT_delay(30);				// conversion time in msec
 	memcpy(pn->sn, tai->writer, 8);
-	if ( BAD( TAI8570_config(CFG_READPULSE, pn) ) ) {
-		return gbBAD;				// config write
-	}
+	RETURN_BAD_IF_BAD( TAI8570_config(CFG_READPULSE, pn) );		// config write
 	//printf("TAI8570 check ") ;
 	for (i = 0; i < 100; ++i) {
 		if (BUS_transaction(t, pn)) {
@@ -780,39 +737,21 @@ static GOOD_OR_BAD TAI8570_Check(const struct s_TAI8570 *tai, struct parsedname 
 /* Called with a copy of pn */
 static GOOD_OR_BAD TAI8570_SenseValue(UINT * val, BYTE * cmd, const struct s_TAI8570 *tai, struct parsedname *pn)
 {
-	if ( BAD( TAI8570_Reset(tai, pn) ) ) {
-		return gbBAD;
-	}
-	if ( BAD( TAI8570_Write(cmd, tai, pn) ) ) {
-		return gbBAD;
-	}
-	if ( BAD( TAI8570_Check(tai, pn) ) ) {
-		return gbBAD;
-	}
-	if ( BAD( TAI8570_ClockPulse(tai, pn) ) ) {
-		return gbBAD;
-	}
-	if ( BAD( TAI8570_Read(val, tai, pn) ) ) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD( TAI8570_Reset(tai, pn) );
+	RETURN_BAD_IF_BAD( TAI8570_Write(cmd, tai, pn) );
+	RETURN_BAD_IF_BAD( TAI8570_Check(tai, pn) );
+	RETURN_BAD_IF_BAD( TAI8570_ClockPulse(tai, pn) );
+	RETURN_BAD_IF_BAD( TAI8570_Read(val, tai, pn) );
 	return TAI8570_DataPulse(tai, pn);
 }
 
 /* Called with a copy of pn */
 static GOOD_OR_BAD TAI8570_CalValue(UINT * cal, BYTE * cmd, const struct s_TAI8570 *tai, struct parsedname *pn)
 {
-	if ( BAD( TAI8570_ClockPulse(tai, pn) ) ) {
-		return gbBAD;
-	}
-	if ( BAD( TAI8570_Write(cmd, tai, pn) ) ) {
-		return gbBAD;
-	}
-	if ( BAD( TAI8570_ClockPulse(tai, pn) ) ) {
-		return gbBAD;
-	}
-	if ( BAD( TAI8570_Read(cal, tai, pn) ) ) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD( TAI8570_ClockPulse(tai, pn) );
+	RETURN_BAD_IF_BAD( TAI8570_Write(cmd, tai, pn) );
+	RETURN_BAD_IF_BAD( TAI8570_ClockPulse(tai, pn) );
+	RETURN_BAD_IF_BAD( TAI8570_Read(cal, tai, pn) );
 	TAI8570_DataPulse(tai, pn);
 	return gbGOOD;
 }
@@ -828,9 +767,7 @@ static GOOD_OR_BAD TAI8570_Calibration(UINT * cal, const struct s_TAI8570 *tai, 
 
 	for (rep = 0; rep < 5; ++rep) {
 		//printf("TAI8570_Calibration #%d\n",rep);
-		if ( BAD( TAI8570_Reset(tai, pn) ) ) {
-			return gbBAD;
-		}
+		RETURN_BAD_IF_BAD( TAI8570_Reset(tai, pn) ) ;
 		//printf("TAI8570 Pre_Cal_Value\n");
 		TAI8570_CalValue(&cal[0], SEC_READW1, tai, pn);
 		//printf("TAI8570 SIBLING cal[0]=%u ok\n",cal[0]);
@@ -870,17 +807,13 @@ static GOOD_OR_BAD testTAI8570(struct s_TAI8570 *tai, struct one_wire_query *owq
 	memcpy(tai->master, pn->sn, 8);
 
 	// read page 0
-	if ( BAD( ReadTmexPage(data, 32, 0, pn) ) ) {
-		return gbBAD;				// read page
-	}
+	RETURN_BAD_IF_BAD( ReadTmexPage(data, 32, 0, pn) ) ;
 	if (memcmp("8570", &data[8], 4)) {	// check dir entry
 		LEVEL_DETAIL("No 8570 Tmex file");
 		return gbBAD;
 	}
 	// See if page 1 is readable
-	if ( BAD( ReadTmexPage(data, 32, 1, pn) ) ) {
-		return gbBAD;				// read page
-	}
+	RETURN_BAD_IF_BAD( ReadTmexPage(data, 32, 1, pn) ) ;
 
 	memcpy(tai->sibling, &data[1], 8);
 	if (pow) {

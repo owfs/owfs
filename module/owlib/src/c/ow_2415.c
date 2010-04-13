@@ -197,7 +197,7 @@ static ZERO_OR_ERROR FS_w_control(struct one_wire_query *owq)
 /* DS2415 - DS2417 couter verions of date */
 static ZERO_OR_ERROR FS_r_counter(struct one_wire_query *owq)
 {
-	return RETURN_Z_OR_E( OW_r_udate( &(OWQ_U(owq)), PN(owq) ) ) ; 
+	return GB_to_Z_OR_E( OW_r_udate( &(OWQ_U(owq)), PN(owq) ) ) ; 
 }
 
 static ZERO_OR_ERROR FS_w_counter(struct one_wire_query *owq)
@@ -209,7 +209,7 @@ static ZERO_OR_ERROR FS_w_counter(struct one_wire_query *owq)
 		return gbBAD;
 	}
 
-	return RETURN_Z_OR_E( OW_w_udate( control_reg, OWQ_U(owq), PN(owq) ) ) ;
+	return GB_to_Z_OR_E( OW_w_udate( control_reg, OWQ_U(owq), PN(owq) ) ) ;
 }
 
 /* DS2417 interval time (in seconds) */

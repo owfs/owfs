@@ -190,7 +190,7 @@ static GOOD_OR_BAD OW_write(BYTE data, const struct parsedname *pn)
 		TRXN_END,
 	};
 
-	return RETURN_G_OR_B(BUS_transaction(t, pn)) ;
+	return BUS_transaction(t, pn) ;
 }
 
 // piostate -> sense

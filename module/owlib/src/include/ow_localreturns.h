@@ -75,7 +75,9 @@ typedef enum { gbGOOD, gbBAD } GOOD_OR_BAD  ;
 
 #define GOOD(x)	((x)==gbGOOD)
 #define BAD(x)	((x)!=gbGOOD)
-#define RETURN_G_OR_B(x)	(x==0)?gbGOOD:gbBAD
-#define RETURN_Z_OR_E(x)	GOOD(x)?0:-EINVAL
+#define GB_to_Z_OR_E(x)	GOOD(x)?0:-EINVAL
+
+#define RETURN_BAD_IF_BAD(x)	if ( BAD(x) ) { return gbBAD; }
+#define RETURN_ERROR_IF_BAD(x)	if ( BAD(x) ) { return -EINVAL; }
 
 #endif							/* OW_LOCALRETURNS_H */

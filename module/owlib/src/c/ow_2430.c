@@ -93,17 +93,17 @@ static ZERO_OR_ERROR FS_r_memory(struct one_wire_query *owq)
 /* DS2430A memory */
 static ZERO_OR_ERROR FS_r_application(struct one_wire_query *owq)
 {
-	return RETURN_Z_OR_E(OW_r_app((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq))) ;
+	return GB_to_Z_OR_E(OW_r_app((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq))) ;
 }
 
 static ZERO_OR_ERROR FS_w_memory(struct one_wire_query *owq)
 {
-	return RETURN_Z_OR_E(OW_w_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq))) ;
+	return GB_to_Z_OR_E(OW_w_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq))) ;
 }
 
 static ZERO_OR_ERROR FS_w_application(struct one_wire_query *owq)
 {
-	return RETURN_Z_OR_E(OW_w_app((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq))) ;
+	return GB_to_Z_OR_E(OW_w_app((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq))) ;
 }
 
 static ZERO_OR_ERROR FS_r_lock(struct one_wire_query *owq)
@@ -111,7 +111,7 @@ static ZERO_OR_ERROR FS_r_lock(struct one_wire_query *owq)
 	BYTE data = 0 ;
 
 	OWQ_Y(owq) = data & 0x01;
-	return RETURN_Z_OR_E(OW_r_status(&data, PN(owq))) ;
+	return GB_to_Z_OR_E(OW_r_status(&data, PN(owq))) ;
 }
 
 /* Byte-oriented write */

@@ -85,25 +85,25 @@ static ZERO_OR_ERROR FS_w_wiper(struct one_wire_query *owq)
 		num = 255;
 	}
 
-	return RETURN_Z_OR_E(OW_w_wiper(num, PN(owq))) ;
+	return GB_to_Z_OR_E(OW_w_wiper(num, PN(owq))) ;
 }
 
 /* write Charge Pump */
 static ZERO_OR_ERROR FS_w_cp(struct one_wire_query *owq)
 {
-	return RETURN_Z_OR_E(OW_w_cp(OWQ_Y(owq), PN(owq))) ;
+	return GB_to_Z_OR_E(OW_w_cp(OWQ_Y(owq), PN(owq))) ;
 }
 
 /* read Wiper */
 static ZERO_OR_ERROR FS_r_wiper(struct one_wire_query *owq)
 {
-	return RETURN_Z_OR_E(OW_r_wiper(&OWQ_U(owq), PN(owq))) ;
+	return GB_to_Z_OR_E(OW_r_wiper(&OWQ_U(owq), PN(owq))) ;
 }
 
 /* Charge Pump */
 static ZERO_OR_ERROR FS_r_cp(struct one_wire_query *owq)
 {
-	return RETURN_Z_OR_E(OW_r_cp(&OWQ_Y(owq), PN(owq))) ;
+	return GB_to_Z_OR_E(OW_r_cp(&OWQ_Y(owq), PN(owq))) ;
 }
 
 /* write Wiper */

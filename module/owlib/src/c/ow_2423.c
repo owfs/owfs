@@ -97,37 +97,37 @@ static GOOD_OR_BAD OW_r_counter(struct one_wire_query *owq, size_t page, size_t 
 static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	return RETURN_Z_OR_E(COMMON_OWQ_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, COMMON_read_memory_toss_counter)) ;
+	return GB_to_Z_OR_E(COMMON_OWQ_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, COMMON_read_memory_toss_counter)) ;
 }
 
 static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	return RETURN_Z_OR_E(COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem)) ;
+	return GB_to_Z_OR_E(COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem)) ;
 }
 
 static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	return RETURN_Z_OR_E(COMMON_OWQ_readwrite_paged(owq, 0, pagesize, COMMON_read_memory_toss_counter)) ;
+	return GB_to_Z_OR_E(COMMON_OWQ_readwrite_paged(owq, 0, pagesize, COMMON_read_memory_toss_counter)) ;
 }
 
 static ZERO_OR_ERROR FS_w_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	return RETURN_Z_OR_E(COMMON_readwrite_paged(owq, 0, pagesize, OW_w_mem)) ;
+	return GB_to_Z_OR_E(COMMON_readwrite_paged(owq, 0, pagesize, OW_w_mem)) ;
 }
 
 static ZERO_OR_ERROR FS_counter(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	return RETURN_Z_OR_E(OW_r_counter(owq, OWQ_pn(owq).extension + 14, pagesize)) ;
+	return GB_to_Z_OR_E(OW_r_counter(owq, OWQ_pn(owq).extension + 14, pagesize)) ;
 }
 
 static ZERO_OR_ERROR FS_pagecount(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	return RETURN_Z_OR_E(OW_r_counter(owq, OWQ_pn(owq).extension, pagesize)) ;
+	return GB_to_Z_OR_E(OW_r_counter(owq, OWQ_pn(owq).extension, pagesize)) ;
 }
 
 #if OW_CACHE
@@ -138,14 +138,10 @@ static ZERO_OR_ERROR FS_r_mincount(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	UINT st[3], ct[2];			// stored and current counter values
 
-	if ( BAD( OW_r_counter(owq, 14, 32) ) ) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_counter(owq, 14, 32) ) ;
 	ct[0] = OWQ_U(owq);
 
-	if ( BAD( OW_r_counter(owq, 15, 32) ) ) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_counter(owq, 15, 32) ) ;
 	ct[1] = OWQ_U(owq);
 
 	if (Cache_Get_Internal_Strict((void *) st, 3 * sizeof(UINT), InternalProp(CUM), pn)) {	// record doesn't (yet) exist
@@ -172,14 +168,10 @@ static ZERO_OR_ERROR FS_w_mincount(struct one_wire_query *owq)
 
 	st[2] = OWQ_U(owq);
 
-	if ( BAD( OW_r_counter(owq, 14, 32) ) ) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_counter(owq, 14, 32) ) ;
 	st[0] = OWQ_U(owq);
 
-	if ( BAD( OW_r_counter(owq, 15, 32) ) ) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_counter(owq, 15, 32) );
 	st[1] = OWQ_U(owq);
 
 	if (Cache_Add_Internal((void *) st, 3 * sizeof(UINT), InternalProp(CUM), pn)) {

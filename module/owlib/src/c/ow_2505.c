@@ -119,19 +119,19 @@ static GOOD_OR_BAD OW_w_status(BYTE * data, size_t size, off_t offset, struct pa
 static ZERO_OR_ERROR FS_r_memory(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	return RETURN_Z_OR_E(COMMON_OWQ_readwrite_paged(owq, 0, pagesize, COMMON_read_memory_F0)) ;
+	return GB_to_Z_OR_E(COMMON_OWQ_readwrite_paged(owq, 0, pagesize, COMMON_read_memory_F0)) ;
 }
 
 static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	return RETURN_Z_OR_E(COMMON_OWQ_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, COMMON_read_memory_F0)) ;
+	return GB_to_Z_OR_E(COMMON_OWQ_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, COMMON_read_memory_F0)) ;
 }
 
 static ZERO_OR_ERROR FS_r_status(struct one_wire_query *owq)
 {
 	size_t pagesize = FileLength(PN(owq)) ;
-	return RETURN_Z_OR_E(COMMON_OWQ_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, COMMON_read_memory_crc16_AA)) ;
+	return GB_to_Z_OR_E(COMMON_OWQ_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, COMMON_read_memory_crc16_AA)) ;
 }
 
 static ZERO_OR_ERROR FS_w_memory(struct one_wire_query *owq)
@@ -141,7 +141,7 @@ static ZERO_OR_ERROR FS_w_memory(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_w_status(struct one_wire_query *owq)
 {
-	return RETURN_Z_OR_E(OW_w_status(OWQ_explode(owq))) ;
+	return GB_to_Z_OR_E(OW_w_status(OWQ_explode(owq))) ;
 }
 
 static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)

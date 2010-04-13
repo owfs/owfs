@@ -92,22 +92,20 @@ static GOOD_OR_BAD OW_r_data(BYTE * data, struct parsedname *pn);
 static ZERO_OR_ERROR FS_r_memory(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	return RETURN_Z_OR_E(COMMON_readwrite_paged(owq, 0, pagesize, OW_r_mem)) ;
+	return GB_to_Z_OR_E(COMMON_readwrite_paged(owq, 0, pagesize, OW_r_mem)) ;
 }
 
 static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	return RETURN_Z_OR_E(COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_r_mem)) ;
+	return GB_to_Z_OR_E(COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_r_mem)) ;
 }
 
 static ZERO_OR_ERROR FS_r_param(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	BYTE data[32];
-	if ( BAD( OW_r_data(data, pn) ) ) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_data(data, pn) );
 	return OWQ_format_output_offset_and_size((ASCII *) & data[pn->selected_filetype->data.i], FileLength(pn), owq);
 }
 
@@ -149,7 +147,8 @@ static GOOD_OR_BAD OW_r_data(BYTE * data, struct parsedname *pn)
 {
 	BYTE p[32];
 
-	if ( BAD( OW_r_mem(p, 32, 0, pn) ) || CRC16(p, 3 + p[0])) {
+	RETURN_BAD_IF_BAD( OW_r_mem(p, 32, 0, pn) ) ;
+	if ( CRC16(p, 3 + p[0])) {
 		return gbBAD;
 	}
 	memcpy(data, &p[1], p[0]);

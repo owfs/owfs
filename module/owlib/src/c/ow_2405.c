@@ -70,9 +70,7 @@ static GOOD_OR_BAD OW_w_PIO(int val, const struct parsedname *pn);
 static ZERO_OR_ERROR FS_r_PIO(struct one_wire_query *owq)
 {
 	int num;
-	if ( BAD( OW_r_PIO(&num, PN(owq)) ) ) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_PIO(&num, PN(owq)) ) ;
 	OWQ_Y(owq) = (num != 0);
 	return 0;
 }
@@ -81,9 +79,7 @@ static ZERO_OR_ERROR FS_r_PIO(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_r_sense(struct one_wire_query *owq)
 {
 	int num;
-	if ( BAD( OW_r_sense(&num, PN(owq)) ) ) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_sense(&num, PN(owq)) ) ;
 	OWQ_Y(owq) = (num != 0);
 	return 0;
 }
@@ -91,10 +87,7 @@ static ZERO_OR_ERROR FS_r_sense(struct one_wire_query *owq)
 /* write 2405 switch */
 static ZERO_OR_ERROR FS_w_PIO(struct one_wire_query *owq)
 {
-	if ( BAD( OW_w_PIO(OWQ_Y(owq), PN(owq)) ) ) {
-		return -EINVAL;
-	}
-	return 0;
+	return GB_to_Z_OR_E( OW_w_PIO(OWQ_Y(owq), PN(owq)) ) ;
 }
 
 /* read the sense of the DS2405 switch */

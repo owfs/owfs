@@ -261,15 +261,15 @@ DeviceEntryExtended(FC, BAE, DEV_resume | DEV_alarm );
 /* ------- Functions ------------ */
 
 static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
-static int OW_w_extended(BYTE * data, size_t size, struct parsedname *pn);
-static int OW_version( UINT * version, struct parsedname * pn ) ;
-static int OW_type( UINT * localtype, struct parsedname * pn ) ;
-static int OW_r_mem(BYTE *bytes, size_t size, off_t offset, struct parsedname * pn);
-static int OW_r_mem_small(BYTE *bytes, size_t size, off_t offset, struct parsedname * pn);
-static int OW_eeprom_erase( off_t offset, struct parsedname * pn ) ;
+static GOOD_OR_BAD OW_w_extended(BYTE * data, size_t size, struct parsedname *pn);
+static GOOD_OR_BAD OW_version( UINT * version, struct parsedname * pn ) ;
+static GOOD_OR_BAD OW_type( UINT * localtype, struct parsedname * pn ) ;
+static GOOD_OR_BAD OW_r_mem(BYTE *bytes, size_t size, off_t offset, struct parsedname * pn);
+static GOOD_OR_BAD OW_r_mem_small(BYTE *bytes, size_t size, off_t offset, struct parsedname * pn);
+static GOOD_OR_BAD OW_eeprom_erase( off_t offset, struct parsedname * pn ) ;
 
-static int OW_initiate_flash(BYTE * data, struct parsedname *pn);
-static int OW_write_flash(BYTE * data, struct parsedname *pn);
+static GOOD_OR_BAD OW_initiate_flash(BYTE * data, struct parsedname *pn);
+static GOOD_OR_BAD OW_write_flash(BYTE * data, struct parsedname *pn);
 
 static uint16_t BAE_uint16(BYTE * p);
 static uint32_t BAE_uint32(BYTE * p);
@@ -279,9 +279,7 @@ static void BAE_uint32_to_bytes( uint32_t num, unsigned char * p );
 /* BAE memory functions */
 static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
 {
-	if (OW_r_mem( (BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq), PN(owq))) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD(OW_r_mem( (BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq), PN(owq))) ;
 	OWQ_length(owq) = OWQ_size(owq) ;
 	return 0;
 }
@@ -309,9 +307,7 @@ static ZERO_OR_ERROR FS_w_mem(struct one_wire_query *owq)
 			bolus = _FC02_MAX_WRITE_GULP ;
 		}
 		LEVEL_DEBUG("Write %d of %d bytes. (%d bolus) at location %x",(int)remain,(int)OWQ_size(owq),(int)bolus,(int)location) ;
-		if ( BAD( OW_w_mem(data, bolus, location, PN(owq)) ) ) {
-			return -EINVAL ;
-		}
+		RETURN_ERROR_IF_BAD( OW_w_mem(data, bolus, location, PN(owq)) );
 		remain -= bolus ;
 		data += bolus ;
 		location += bolus ;
@@ -335,7 +331,7 @@ static ZERO_OR_ERROR FS_eeprom_erase(struct one_wire_query *owq)
 	struct parsedname * pn = PN(owq) ;
 	if (OWQ_Y(owq)) {
 		off_t offset = _FC02_EEPROM_PAGE_SIZE * pn->extension + _FC02_EEPROM_OFFSET ;
-		return OW_eeprom_erase(offset,pn) ? -EINVAL : 0 ;
+		RETURN_ERROR_IF_BAD( OW_eeprom_erase(offset,pn) ) ;
 	} else{
 		return 0 ;
 	}
@@ -366,7 +362,7 @@ static ZERO_OR_ERROR FS_w_flash(struct one_wire_query *owq)
 	}
 
 	// start flash process
-	if ( OW_initiate_flash( rom_image, pn ) ) {
+	if ( BAD( OW_initiate_flash( rom_image, pn ) ) ) {
 		LEVEL_DEBUG("Unsuccessful flash initialization");
 		return -EFAULT ;
 	}
@@ -375,7 +371,7 @@ static ZERO_OR_ERROR FS_w_flash(struct one_wire_query *owq)
 	for ( rom_offset=0 ; rom_offset<OWQ_size(owq) ; rom_offset += _FC02_MAX_WRITE_GULP ) {
 		int tries = 0 ;
 		LEVEL_DEBUG("Flash up to %d bytes.",rom_offset);
-		while ( OW_write_flash( &rom_image[rom_offset], pn ) ) {
+		while ( BAD( OW_write_flash( &rom_image[rom_offset], pn ) ) ) {
 			++tries ;
 			if ( tries > 4 ) {
 				LEVEL_DEBUG( "Too many failures writing flash at offset %d.", rom_offset ) ;
@@ -390,9 +386,7 @@ static ZERO_OR_ERROR FS_w_flash(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_r_flash( struct one_wire_query *owq)
 {
-	if ( OW_r_mem( (BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq)+_FC02_FUNCTION_FLASH_OFFSET, PN(owq) ) ) {
-		return -EINVAL ;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_mem( (BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq)+_FC02_FUNCTION_FLASH_OFFSET, PN(owq) ) );
 	OWQ_length(owq) = OWQ_size(owq) ;
 	return 0 ;
 }
@@ -404,10 +398,7 @@ static ZERO_OR_ERROR FS_w_extended(struct one_wire_query *owq)
 	if ( OWQ_size(owq) == 0 ) {
 		return -EINVAL ;
 	}
-	if ( OW_w_extended( (BYTE *) OWQ_buffer(owq), OWQ_size(owq), PN(owq)  ) ) {
-		return -EINVAL ;
-	}
-	return 0;
+	return GB_to_Z_OR_E( OW_w_extended( (BYTE *) OWQ_buffer(owq), OWQ_size(owq), PN(owq)  ) ) ;
 }
 
 static ZERO_OR_ERROR FS_writebyte(struct one_wire_query *owq)
@@ -416,16 +407,14 @@ static ZERO_OR_ERROR FS_writebyte(struct one_wire_query *owq)
 	BYTE data = OWQ_U(owq) & 0xFF ;
 	
 	// Write 1 byte ,
-	return RETURN_Z_OR_E( OW_w_mem( &data, 1, location, PN(owq)  ) ) ;
+	return GB_to_Z_OR_E( OW_w_mem( &data, 1, location, PN(owq)  ) ) ;
 }
 
 /* BAE version */
 static ZERO_OR_ERROR FS_version_state(struct one_wire_query *owq)
 {
 	UINT v ;
-	if ( OW_version( &v, PN(owq) ) ) {
-		return -EINVAL ;
-	}
+	RETURN_ERROR_IF_BAD( OW_version( &v, PN(owq) ) ) ;
 	OWQ_U(owq) = v ;
 	return 0 ;
 }
@@ -468,9 +457,7 @@ static ZERO_OR_ERROR FS_version_bootstrap(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_type_state(struct one_wire_query *owq)
 {
 	UINT t ;
-	if ( OW_type( &t, PN(owq) ) ) {
-		return -EINVAL ;
-	}
+	RETURN_ERROR_IF_BAD( OW_type( &t, PN(owq) ) );
 	OWQ_U(owq) = t ;
 	return 0 ;
 }
@@ -514,9 +501,7 @@ static ZERO_OR_ERROR FS_r_8(struct one_wire_query *owq)
 {
 	struct parsedname * pn = PN(owq) ;
 	BYTE data[1] ; // 8/8 = 1
-	if ( OW_r_mem_small(data, 1, pn->selected_filetype->data.u, pn ) ) {
-		return -EINVAL ;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_mem_small(data, 1, pn->selected_filetype->data.u, pn ) );
 	OWQ_U(owq) = data[0] ;
 	return 0 ;
 }
@@ -528,7 +513,7 @@ static ZERO_OR_ERROR FS_w_8(struct one_wire_query *owq)
 	BYTE data[1] ; // 8/8 = 1
 	
 	data[0] = BYTE_MASK( OWQ_U(owq) ) ;
-	return RETURN_Z_OR_E(OW_w_mem(data, 1, pn->selected_filetype->data.u, pn ) ) ;
+	return GB_to_Z_OR_E(OW_w_mem(data, 1, pn->selected_filetype->data.u, pn ) ) ;
 }
 
 /* read a 16 bit value from a register stored in filetype.data */
@@ -536,9 +521,7 @@ static ZERO_OR_ERROR FS_r_16(struct one_wire_query *owq)
 {
 	struct parsedname * pn = PN(owq) ;
 	BYTE data[2] ; // 16/8 = 2
-	if ( OW_r_mem_small(data, 2, pn->selected_filetype->data.u, pn ) ) {
-		return -EINVAL ;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_mem_small(data, 2, pn->selected_filetype->data.u, pn ) );
 	OWQ_U(owq) = BAE_uint16(data) ;
 	return 0 ;
 }
@@ -550,7 +533,7 @@ static ZERO_OR_ERROR FS_w_16(struct one_wire_query *owq)
 	BYTE data[2] ; // 16/8 = 2
 
 	BAE_uint16_to_bytes( OWQ_U(owq), data ) ;
-	return RETURN_Z_OR_E( OW_w_mem(data, 2, pn->selected_filetype->data.u, pn ) ) ;
+	return GB_to_Z_OR_E( OW_w_mem(data, 2, pn->selected_filetype->data.u, pn ) ) ;
 }
 
 /* read a 32 bit value from a register stored in filetype.data */
@@ -558,9 +541,7 @@ static ZERO_OR_ERROR FS_r_32(struct one_wire_query *owq)
 {
 	struct parsedname * pn = PN(owq) ;
 	BYTE data[4] ; // 32/8 = 4
-	if ( OW_r_mem_small(data, 4, pn->selected_filetype->data.u, pn ) ) {
-		return -EINVAL ;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_mem_small(data, 4, pn->selected_filetype->data.u, pn ) );
 	OWQ_U(owq) = BAE_uint32(data) ;
 	return 0 ;
 }
@@ -572,7 +553,7 @@ static ZERO_OR_ERROR FS_w_32(struct one_wire_query *owq)
 	BYTE data[4] ; // 32/8 = 2
 	
 	BAE_uint32_to_bytes( OWQ_U(owq), data ) ;
-	return RETURN_Z_OR_E( OW_w_mem(data, 4, pn->selected_filetype->data.u, pn ) ) ;
+	return GB_to_Z_OR_E( OW_w_mem(data, 4, pn->selected_filetype->data.u, pn ) ) ;
 }
 
 /* Lower level functions */
@@ -595,11 +576,11 @@ static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parse
 	LEVEL_DEBUG("Write to BAE size=%d offset=%x\n",(int)size,(unsigned int)offset) ;
 	Debug_Bytes("BAE write",p,1+2+1+size) ;
 	
-	return RETURN_G_OR_B(BUS_transaction(t, pn)) ;
+	return BUS_transaction(t, pn) ;
 }
 
 // Extended command -- insert length, The first byte of the payload is a subcommand but that is invisible to us.
-static int OW_w_extended(BYTE * data, size_t size, struct parsedname *pn)
+static GOOD_OR_BAD OW_w_extended(BYTE * data, size_t size, struct parsedname *pn)
 {
 	BYTE p[1 + 1 + _FC02_MAX_COMMAND_GULP + 2] = { _1W_EXTENDED_COMMAND, BYTE_MASK(size-1), };
 	BYTE q[] = { _1W_CONFIRM_WRITE, } ;
@@ -618,7 +599,7 @@ static int OW_w_extended(BYTE * data, size_t size, struct parsedname *pn)
 }
 
 //read bytes[size] from position
-static int OW_r_mem(BYTE * data, size_t size, off_t offset, struct parsedname * pn)
+static GOOD_OR_BAD OW_r_mem(BYTE * data, size_t size, off_t offset, struct parsedname * pn)
 {
 	size_t remain = size ;
 	off_t location = 0 ;
@@ -628,17 +609,15 @@ static int OW_r_mem(BYTE * data, size_t size, off_t offset, struct parsedname * 
 		if ( bolus > _FC02_MAX_READ_GULP ) {
 			bolus = _FC02_MAX_READ_GULP ;
 		}
-		if ( OW_r_mem_small( &data[location], bolus, offset+location, pn )) {
-			return 1 ;
-		}
+		RETURN_BAD_IF_BAD( OW_r_mem_small( &data[location], bolus, offset+location, pn ));
 		remain -= bolus ;
 		location += bolus ;
 	}
-	return 0 ;	
+	return gbGOOD ;	
 }
 
 /* Already constrained to _FC02_MAX_READ_GULP aliquots */
-static int OW_r_mem_small(BYTE * data, size_t size, off_t offset, struct parsedname * pn)
+static GOOD_OR_BAD OW_r_mem_small(BYTE * data, size_t size, off_t offset, struct parsedname * pn)
 {
 	BYTE p[1+2+1 + _FC02_MAX_READ_GULP + 2] = { _1W_READ_BLOCK_WITH_LEN, LOW_HIGH_ADDRESS(offset), BYTE_MASK(size), } ;
 	struct transaction_log t[] = {
@@ -648,13 +627,13 @@ static int OW_r_mem_small(BYTE * data, size_t size, off_t offset, struct parsedn
 	};
 	//printf("About to read memory location %X length %d\n",(unsigned int)offset,(unsigned int) size)	;	
 	if (BUS_transaction(t, pn)) {
-		return 1;
+		return gbBAD;
 	}
 	memcpy(data, &p[4], size);
-	return 0;
+	return gbGOOD;
 }
 
-static int OW_version( UINT * version, struct parsedname * pn )
+static GOOD_OR_BAD OW_version( UINT * version, struct parsedname * pn )
 {
 	BYTE p[5] = { _1W_READ_VERSION, } ;
 	struct transaction_log t[] = {
@@ -664,14 +643,14 @@ static int OW_version( UINT * version, struct parsedname * pn )
 	} ;
 		
 	if (BUS_transaction(t, pn)) {
-		return 1;
+		return gbBAD;
 	}
 
 	version[0] = BAE_uint16(&p[1]) ;
-	return 0 ;
+	return gbGOOD ;
 };
 
-static int OW_type( UINT * localtype, struct parsedname * pn )
+static GOOD_OR_BAD OW_type( UINT * localtype, struct parsedname * pn )
 {
 	BYTE p[5] = { _1W_READ_TYPE, } ;
 	struct transaction_log t[] = {
@@ -681,10 +660,10 @@ static int OW_type( UINT * localtype, struct parsedname * pn )
 	} ;
 	
 	if (BUS_transaction(t, pn)) {
-		return 1;
+		return gbBAD;
 	}
 	localtype[0] = BAE_uint16(&p[1]) ;
-	return 0 ;
+	return gbGOOD ;
 };
 
 /* Routines to play with byte <-> integer */
@@ -712,7 +691,7 @@ static void BAE_uint32_to_bytes( uint32_t num, unsigned char * p )
 	p[0] = (num>>24)&0xFF ;
 }
 
-static int OW_initiate_flash( BYTE * data, struct parsedname * pn )
+static GOOD_OR_BAD OW_initiate_flash( BYTE * data, struct parsedname * pn )
 {
 	BYTE p[1+1+1+32+2] = { _1W_EXTENDED_COMMAND, 32,_1W_ECMD_ERASE_FIRMWARE, } ;
 	BYTE q[] = { _1W_CONFIRM_WRITE, } ;
@@ -725,13 +704,10 @@ static int OW_initiate_flash( BYTE * data, struct parsedname * pn )
 	} ;
 
 	memcpy(&p[3], data, 32 ) ;
-	if (BUS_transaction(t, pn)) {
-		return 1;
-	}
-	return 0 ;
+	return BUS_transaction(t, pn) ;
 }
 
-static int OW_write_flash( BYTE * data, struct parsedname * pn )
+static GOOD_OR_BAD OW_write_flash( BYTE * data, struct parsedname * pn )
 {
 	BYTE p[1+1+1+32+2] = { _1W_EXTENDED_COMMAND, 32,_1W_ECMD_FLASH_FIRMWARE,  } ;
 	BYTE q[] = { _1W_CONFIRM_WRITE, } ;
@@ -744,13 +720,10 @@ static int OW_write_flash( BYTE * data, struct parsedname * pn )
 	} ;
 	
 	memcpy(&p[3], data, 32 ) ;
-	if (BUS_transaction(t, pn)) {
-		return 1;
-	}
-	return 0 ;
+	return BUS_transaction(t, pn) ;
 }
 
-static int OW_eeprom_erase( off_t offset, struct parsedname * pn )
+static GOOD_OR_BAD OW_eeprom_erase( off_t offset, struct parsedname * pn )
 {
 	BYTE p[1+2+2] = { _1W_ERASE_EEPROM_PAGE, LOW_HIGH_ADDRESS(offset), } ;
 	BYTE q[] = { _1W_CONFIRM_WRITE, } ;
@@ -761,8 +734,5 @@ static int OW_eeprom_erase( off_t offset, struct parsedname * pn )
 		TRXN_END,
 	} ;
 	
-	if (BUS_transaction(t, pn)) {
-		return 1;
-	}
-	return 0 ;
+	return BUS_transaction(t, pn) ;
 }

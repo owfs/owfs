@@ -112,7 +112,7 @@ static ZERO_OR_ERROR FS_w_memory(struct one_wire_query *owq)
 {
 	/* paged access */
 	size_t pagesize = 32;
-	return RETURN_Z_OR_E(COMMON_readwrite_paged(owq, 0, pagesize, OW_w_23page)) ;
+	return GB_to_Z_OR_E(COMMON_readwrite_paged(owq, 0, pagesize, OW_w_23page)) ;
 }
 
 /* Although externally it's 32 byte pages, internally it acts as 8 byte pages */
@@ -120,7 +120,7 @@ static ZERO_OR_ERROR FS_w_memory2D(struct one_wire_query *owq)
 {
 	/* paged access */
 	size_t pagesize = 8;
-	return RETURN_Z_OR_E(COMMON_readwrite_paged(owq, 0, pagesize, OW_w_2Dpage)) ;
+	return GB_to_Z_OR_E(COMMON_readwrite_paged(owq, 0, pagesize, OW_w_2Dpage)) ;
 }
 
 static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
@@ -136,14 +136,14 @@ static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 {
 	/* paged access */
 	size_t pagesize = 32;
-	return RETURN_Z_OR_E(COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_23page)) ;
+	return GB_to_Z_OR_E(COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_23page)) ;
 }
 
 static ZERO_OR_ERROR FS_w_page2D(struct one_wire_query *owq)
 {
 	/* paged access */
 	size_t pagesize = 8;
-	return RETURN_Z_OR_E(COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_2Dpage)) ;
+	return GB_to_Z_OR_E(COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_2Dpage)) ;
 }
 
 /* paged, and pre-screened */
