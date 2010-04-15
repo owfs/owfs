@@ -304,10 +304,8 @@ struct ftp_listener_s {
 	pthread_t listener_thread;
 
 	/* end of pipe to wake up listening thread with */
-	int shutdown_request_send_fd;
-
 	/* end of pipe listening thread waits on */
-	int shutdown_request_recv_fd;
+	int shutdown_request_fd[2];
 
 	/* condition to signal thread requesting shutdown */
 	pthread_cond_t shutdown_cond;

@@ -49,7 +49,6 @@ static void connection_handler_cleanup(void *v);
 int ftp_listener_init(struct ftp_listener_s *f)
 {
 	int flags;
-	int pipefds[2];
 
 	daemon_assert(f != NULL);
 
@@ -90,7 +89,7 @@ int ftp_listener_init(struct ftp_listener_s *f)
 	}
 
 	/* create a pipe to wake up our listening thread */
-	if (pipe(pipefds) != 0) {
+	if (pipe(f->shutdown_request_fd) != 0) {
 		ERROR_CONNECT("Error creating pipe for internal use");
 		return 0;
 	}
@@ -106,8 +105,6 @@ int ftp_listener_init(struct ftp_listener_s *f)
 	strcpy(f->dir, "/");
 	f->listener_running = 0;
 
-	f->shutdown_request_send_fd = pipefds[1];
-	f->shutdown_request_recv_fd = pipefds[0];
 	pthread_cond_init(&f->shutdown_cond, NULL);
 
 	daemon_assert(invariant(f));
@@ -163,10 +160,10 @@ static int invariant(const struct ftp_listener_s *f)
 	if ((dir_len <= 0) || (dir_len > PATH_MAX)) {
 		return 0;
 	}
-	if (f->shutdown_request_send_fd < 0) {
+	if (f->shutdown_request_fd[fd_pipe_write] < 0) {
 		return 0;
 	}
-	if (f->shutdown_request_recv_fd < 0) {
+	if (f->shutdown_request_fd[fd_pipe_read] < 0) {
 		return 0;
 	}
 	return 1;
@@ -204,11 +201,11 @@ static void *connection_acceptor(void *v)
 		/* wait for something to happen */
 		FD_ZERO(&readfds);
 		FD_SET(f->file_descriptor, &readfds);
-		FD_SET(f->shutdown_request_recv_fd, &readfds);
+		FD_SET(f->shutdown_request_fd[fd_pipe_read], &readfds);
 		select(FD_SETSIZE, &readfds, NULL, NULL, NULL);
 
 		/* if data arrived on our pipe, we've been asked to exit */
-		if (FD_ISSET(f->shutdown_request_recv_fd, &readfds)) {
+		if (FD_ISSET(f->shutdown_request_fd[fd_pipe_read], &readfds)) {
 			close(f->file_descriptor);
 			LEVEL_CONNECT("Listener no longer accepting connections");
 			pthread_exit(NULL);
@@ -390,7 +387,7 @@ void ftp_listener_stop(struct ftp_listener_s *f)
 	daemon_assert(invariant(f));
 
 	/* write a byte to the listening thread - this will wake it up */
-	ignore =  write(f->shutdown_request_send_fd, "", 1);
+	ignore =  write(f->shutdown_request_fd[fd_pipe_write], "", 1);
 
 	/* wait for client connections to complete */
 	pthread_mutex_lock(&f->mutex);

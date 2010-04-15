@@ -82,4 +82,9 @@ typedef char ASCII;
 typedef unsigned int UINT;
 typedef int INT;
 
+enum fd_pipe_channels {
+	fd_pipe_read = 0 ,
+	fd_pipe_write = 1 ,
+} ;
+
 #endif							/* OW_LOCALTYPES_H */
