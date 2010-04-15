@@ -285,8 +285,7 @@ struct connin_w1 {
 	unsigned int entry_mark ;
 	unsigned int seq ;
 	int id ; // equivalent to the number part of w1_bus_master23
-	int read_file_descriptor ;
-	int write_file_descriptor ;
+	int netlink_pipe[2] ;
 #endif /* OW_W1 */
 };
 

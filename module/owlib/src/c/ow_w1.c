@@ -69,13 +69,10 @@ int W1_detect(struct connection_in *in)
 	/* Set up low-level routines */
 	W1_setroutines(in);
 
-	if ( pipe( pipe_fd ) == 0 ) {
-		in->connin.w1.read_file_descriptor = pipe_fd[0] ;
-		in->connin.w1.write_file_descriptor = pipe_fd[1] ;
-	} else {
+	if ( pipe( in->connin.w1.netlink_pipe ) != 0 ) {
 		ERROR_CONNECT("W1 pipe creation error");
-		in->connin.w1.read_file_descriptor = -1 ;
-		in->connin.w1.write_file_descriptor = -1 ;
+		in->connin.w1.netlink_pipe[fd_pipe_read] = -1 ;
+		in->connin.w1.netlink_pipe[fd_pipe_write] = -1 ;
 		return -1 ;
 	}
 
@@ -230,8 +227,8 @@ static int W1_sendback_data(const BYTE * data, BYTE * resp, const size_t size, c
 
 static void W1_close(struct connection_in *in)
 {
-	Test_and_Close( &(in->connin.w1.read_file_descriptor) );
-	Test_and_Close( &(in->connin.w1.write_file_descriptor) );
+	Test_and_Close( &(in->connin.w1.netlink_pipe[fd_pipe_read]) );
+	Test_and_Close( &(in->connin.w1.netlink_pipe[fd_pipe_write]) );
 }
 
 #endif							/* OW_W1 */

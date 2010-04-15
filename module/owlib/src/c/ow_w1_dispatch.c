@@ -90,7 +90,7 @@ static void Dispatch_Packet( struct netlink_parse * nlp)
 		//printf("Matching %d/%s/%s/%s/ to bus.%d %d/%s/%s/%s/\n",bus_zero,name,type,domain,now->index,now->busmode,now->connin.tcp.name,now->connin.tcp.type,now->connin.tcp.domain);
 		if ( in->busmode == bus_w1 && in->connin.w1.id == bus ) {
 			LEVEL_DEBUG("Sending this packet to w1_bus_master%d",bus);
-			W1_write_pipe(in->connin.w1.write_file_descriptor, nlp) ;
+			W1_write_pipe(in->connin.w1.netlink_pipe[fd_pipe_write], nlp) ;
 			CONNIN_RUNLOCK ;
 			return ;
 		}
