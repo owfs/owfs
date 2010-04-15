@@ -1394,9 +1394,7 @@ static int OW_r_logtemp_all(struct Version *v, struct Mission *mission, struct o
 	}
 
 	OWQ_create_temporary(owq_log, (char *) data, sizeof(data), 0x1000, PN(owq));
-	if ( BAD(COMMON_OWQ_readwrite_paged(owq_log, 0, pagesize, COMMON_read_memory_crc16_A5) ) ) {
-		return -EINVAL;
-	}
+	RETURN_BAD_IF_BAD(COMMON_OWQ_readwrite_paged(owq_log, 0, pagesize, COMMON_read_memory_crc16_A5) );
 	if (pass) {
 		for (i = 0; i < LOG_DATA_ELEMENTS; ++i) {
 			OWQ_array_F(owq, i) = (_FLOAT) data[(i + off) % LOG_DATA_ELEMENTS] * v->resolution + v->histolow;
@@ -1407,7 +1405,7 @@ static int OW_r_logtemp_all(struct Version *v, struct Mission *mission, struct o
 		}
 	}
 
-	return 0;
+	return gbGOOD;
 }
 
 static int OW_r_logdate_single(struct Mission *mission, struct one_wire_query *owq)

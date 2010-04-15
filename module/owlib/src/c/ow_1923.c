@@ -185,18 +185,16 @@ MakeInternalProp(FPW, fc_persistent);	// Full password
 /* DS1923 */
 static GOOD_OR_BAD OW_r_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
 static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
-static int OW_r_temperature(_FLOAT * T, const UINT delay, struct parsedname *pn);
-static int OW_r_humid(_FLOAT * H, const UINT delay, struct parsedname *pn);
-static int OW_startmission(unsigned long mdelay, struct parsedname *pn);
-static int OW_stopmission(struct parsedname *pn);
-static int OW_MIP(struct parsedname *pn);
-static int OW_clearmemory(struct parsedname *pn);
-static int OW_force_conversion(const UINT delay, struct parsedname *pn);
-static int OW_2date(_DATE * d, const BYTE * data);
-static int OW_oscillator(const int on, struct parsedname *pn);
+static GOOD_OR_BAD OW_r_temperature(_FLOAT * T, const UINT delay, struct parsedname *pn);
+static GOOD_OR_BAD OW_r_humid(_FLOAT * H, const UINT delay, struct parsedname *pn);
+static GOOD_OR_BAD OW_startmission(unsigned long mdelay, struct parsedname *pn);
+static GOOD_OR_BAD OW_stopmission(struct parsedname *pn);
+static GOOD_OR_BAD OW_MIP(struct parsedname *pn);
+static GOOD_OR_BAD OW_clearmemory(struct parsedname *pn);
+static GOOD_OR_BAD OW_force_conversion(const UINT delay, struct parsedname *pn);
+static GOOD_OR_BAD OW_2date(_DATE * d, const BYTE * data);
+static GOOD_OR_BAD OW_oscillator(const int on, struct parsedname *pn);
 static void OW_date(const _DATE * d, BYTE * data);
-
-
 
 static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 {
@@ -227,9 +225,7 @@ static ZERO_OR_ERROR FS_w_mem(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_r_delay(struct one_wire_query *owq)
 {
 	BYTE data[3];
-	if ( BAD( OW_r_mem(data, 3, 0x0216, PN(owq)) ) ) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_mem(data, 3, 0x0216, PN(owq)) );
 	// should be 3 bytes!
 	//u[0] = (((UINT)data[2])<<16) | (((UINT)data[1])<<8) | data[0] ;
 	OWQ_U(owq) = (((UINT) data[1]) << 8) | data[0];
@@ -241,7 +237,7 @@ static ZERO_OR_ERROR FS_w_delay(struct one_wire_query *owq)
 {
 	UINT U = OWQ_U(owq);
 	BYTE data[3] = { U & 0xFF, (U >> 8) & 0xFF, (U >> 16) & 0xFF };
-	if (OW_MIP(PN(owq))) {
+	if ( BAD(OW_MIP(PN(owq)) ) ) {
 		return -EBUSY;
 	}
 	return GB_to_Z_OR_E( OW_w_mem(data, 3, 0x0216, PN(owq))) ;
@@ -254,36 +250,19 @@ static ZERO_OR_ERROR FS_enable_osc(struct one_wire_query *owq)
 #if 0
 	/* Just write to address without any check */
 	BYTE d = 0x01;
-	if ( BAD( OW_w_mem(&d, 1, 0x0212, pn) ) ) {
-		printf("OW_oscillator: error4\n");
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD( OW_w_mem(&d, 1, 0x0212, pn) );
 #else
-	if (OW_oscillator(1, pn)) {
-		printf("FS_enable_osc: error 1\n");
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD(OW_oscillator(1, pn));
 #endif
 	memset(OWQ_buffer(owq), 0, 1);
 	return 0;
-}
-
-static ZERO_OR_ERROR FS_clearmem(struct one_wire_query *owq)
-{
-	memset(OWQ_buffer(owq), 0, 1);	// ??? why is this needed
-	if (OW_clearmemory(PN(owq))) {
-		return -EINVAL;
-	}
-	return OWQ_size(owq)?-EINVAL:0;
 }
 
 /* clock running? */
 static ZERO_OR_ERROR FS_r_run(struct one_wire_query *owq)
 {
 	BYTE cr;
-	if ( BAD( OW_r_mem(&cr, 1, 0x0212, PN(owq)) ) ) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_mem(&cr, 1, 0x0212, PN(owq)) );
 	// only bit 0 and 1 should be used!
 	if (cr & 0xFC) {
 		return -EINVAL;
@@ -299,21 +278,15 @@ static ZERO_OR_ERROR FS_w_run(struct one_wire_query *owq)
 	BYTE cr;
 	BYTE check;
 
-	if ( BAD( OW_r_mem(&cr, 1, 0x0212, pn) ) ) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_mem(&cr, 1, 0x0212, pn) );
 	// only bit 0 and 1 should be used!
 	if (cr & 0xFC) {
 		return -EINVAL;
 	}
 	cr = OWQ_Y(owq) ? (cr | 0x01) : (cr & 0xFE);
-	if ( BAD( OW_w_mem(&cr, 1, 0x0212, pn) ) ) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD( OW_w_mem(&cr, 1, 0x0212, pn) );
 	/* Double check written value */
-	if ( BAD( OW_r_mem(&check, 1, 0x0212, pn) ) ) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_mem(&check, 1, 0x0212, pn) );
 	if (check != cr) {
 		return -EINVAL;
 	}
@@ -329,14 +302,12 @@ static ZERO_OR_ERROR FS_w_mip(struct one_wire_query *owq)
 	printf("FS_w_mip:\n");
 	if (OWQ_Y(owq)) {			/* start a mission! */
 		printf("FS_w_mip: start\n");
-		if ( BAD( OW_r_mem(data, 3, 0x0216, pn) ) ) {
-			return -EINVAL;
-		}
+		RETURN_ERROR_IF_BAD( OW_r_mem(data, 3, 0x0216, pn) );
 		mdelay = data[0] | data[1] << 8 | data[2] << 16;
-		return OW_startmission(mdelay, pn)?-EINVAL:0;
+		return GB_to_Z_OR_E(OW_startmission(mdelay, pn));
 	} else {
 		printf("FS_w_mip: stop\n");
-		return OW_stopmission(pn)?-EINVAL:0;
+		return GB_to_Z_OR_E( OW_stopmission(pn) );
 	}
 }
 
@@ -349,9 +320,7 @@ static ZERO_OR_ERROR FS_bitread(struct one_wire_query *owq)
 		return -EINVAL;
 	}
 	br = ((struct BitRead *) (pn->selected_filetype->data.v));
-	if ( BAD( OW_r_mem(&d, 1, br->location, pn) ) ) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_mem(&d, 1, br->location, pn) );
 	OWQ_Y(owq) = UT_getbit(&d, br->bit);
 	return 0;
 }
@@ -365,9 +334,7 @@ static ZERO_OR_ERROR FS_bitwrite(struct one_wire_query *owq)
 		return -EINVAL;
 	}
 	br = ((struct BitRead *) (pn->selected_filetype->data.v));
-	if ( BAD( OW_r_mem(&d, 1, br->location, pn) ) ) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_mem(&d, 1, br->location, pn) );
 	UT_setbit(&d, br->bit, OWQ_Y(owq));
 	return GB_to_Z_OR_E( OW_w_mem(&d, 1, br->location, pn) ) ;
 }
@@ -390,45 +357,27 @@ static ZERO_OR_ERROR FS_r_temperature(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	UINT delay = 666;
-	ZERO_OR_ERROR ret;
-	if ((ret = OW_MIP(pn))) {
-		printf("FS_r_temperature: mip error\n");
-		return ret;				/* Mission in progress */
-	}
 
-	if (OW_force_conversion(delay, pn)) {
-		printf("FS_r_temperature: conv\n");
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD( OW_MIP(pn));
 
-	if (OW_r_temperature(&OWQ_F(owq), delay, pn)) {
-		return -EINVAL;
-	}
-	return 0;
+	RETURN_ERROR_IF_BAD(OW_force_conversion(delay, pn));
+
+	return GB_to_Z_OR_E(OW_r_temperature(&OWQ_F(owq), delay, pn)) ;
 }
 
 static ZERO_OR_ERROR FS_r_humid(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	UINT delay = 666;
-	ZERO_OR_ERROR ret;
-	if ((ret = OW_MIP(pn))) {
-		printf("FS_r_humid: mip error\n");
-		return ret;				/* Mission in progress */
-	}
 
-	if (OW_force_conversion(delay, pn)) {
-		printf("FS_r_humid: conv\n");
-		return -EINVAL;
-	}
-	if (OW_r_humid(&OWQ_F(owq), delay, pn)) {
-		return -EINVAL;
-	}
-	return 0;
+	RETURN_ERROR_IF_BAD( OW_MIP(pn));
+
+	RETURN_ERROR_IF_BAD(OW_force_conversion(delay, pn));
+	return GB_to_Z_OR_E(OW_r_humid(&OWQ_F(owq), delay, pn)) ;
 }
 
 /* translate 7 byte field to a Unix-style date (number) */
-static ZERO_OR_ERROR OW_2date(_DATE * d, const BYTE * data)
+static GOOD_OR_BAD OW_2date(_DATE * d, const BYTE * data)
 {
 	struct tm t;
 
@@ -436,7 +385,7 @@ static ZERO_OR_ERROR OW_2date(_DATE * d, const BYTE * data)
 	d[0] = time(NULL);
 	if (gmtime_r(d, &t) == NULL) {
 		printf("OW_2date: error1\n");
-		return -EINVAL;
+		return gbBAD;
 	}
 
 	printf
@@ -465,14 +414,13 @@ static ZERO_OR_ERROR OW_2date(_DATE * d, const BYTE * data)
 	/* Pass through time_t again to validate */
 	if ((*d = mktime(&t)) == -1) {
 		printf("2date: error2\n");
-		return -EINVAL;
+		return gbBAD;
 	}
 
-	return 0;
+	return gbGOOD;
 }
 
-
-static ZERO_OR_ERROR OW_oscillator(const int on, struct parsedname *pn)
+static GOOD_OR_BAD OW_oscillator(const int on, struct parsedname *pn)
 {
 	BYTE d;
 	BYTE check;
@@ -480,40 +428,31 @@ static ZERO_OR_ERROR OW_oscillator(const int on, struct parsedname *pn)
 	 * turned off, I make this real paranoid read/write/read of the
 	 * oscillator bit until I know the code really works.
 	 */
-	if ( BAD( OW_r_mem(&d, 1, 0x0212, pn) ) ) {
-		printf("OW_oscillator: error1\n");
-		return -EINVAL;
-	}
+	RETURN_BAD_IF_BAD( OW_r_mem(&d, 1, 0x0212, pn) );
 	/* Only bit 0 and 1 are used... All other bits should be 0 */
 	if (d & 0xFC) {
-		return -EINVAL;
+		return gbBAD;
 	}
 	if (on) {
 		if (d & 0x01) {
-			return 0;			// already on
+			return gbGOOD;			// already on
 		}
 		d |= 0x01;
 	} else {
 		if (!(d & 0x01)) {
-			return 0;			// already off
+			return gbGOOD;			// already off
 		}
 		d &= 0xFE;
 	}
-	if ( BAD( OW_w_mem(&d, 1, 0x0212, pn) ) ) {
-		printf("OW_oscillator: error4\n");
-		return -EINVAL;
-	}
-	if ( BAD( OW_r_mem(&check, 1, 0x0212, pn) ) ) {
-		printf("OW_oscillator: error5\n");
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD( OW_w_mem(&d, 1, 0x0212, pn) );
+	RETURN_ERROR_IF_BAD( OW_r_mem(&check, 1, 0x0212, pn) );
 	if (check != d) {
-		return -EINVAL;			// failed to change value
+		return gbBAD;			// failed to change value
 	}
 
 	UT_delay(1000);				// I just want to wait a second and let clock update
 
-	return 0;
+	return gbGOOD;
 }
 
 
@@ -521,14 +460,9 @@ static ZERO_OR_ERROR OW_oscillator(const int on, struct parsedname *pn)
 static ZERO_OR_ERROR FS_r_date(struct one_wire_query *owq)
 {
 	BYTE data[6];
-	ZERO_OR_ERROR ret;
 
-	if ( BAD( OW_r_mem(data, 6, 0x0200, PN(owq)) ) ) {
-		printf("FS_r_date: error 2\n");
-		return -EINVAL;
-	}
-	ret = OW_2date(&OWQ_D(owq), data);
-	return ret;
+	RETURN_ERROR_IF_BAD( OW_r_mem(data, 6, 0x0200, PN(owq)) );
+	return GB_to_Z_OR_E( OW_2date(&OWQ_D(owq), data) );
 }
 
 /* read clock */
@@ -536,15 +470,10 @@ static ZERO_OR_ERROR FS_r_counter(struct one_wire_query *owq)
 {
 	BYTE data[6];
 	_DATE d;
-	ZERO_OR_ERROR ret;
 
 	/* Get date from chip */
-	if ( BAD( OW_r_mem(data, 6, 0x0200, PN(owq)) ) ) {
-		return -EINVAL;
-	}
-	if ((ret = OW_2date(&d, data))) {
-		return ret;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_mem(data, 6, 0x0200, PN(owq)) );
+	RETURN_ERROR_IF_BAD(OW_2date(&d, data));
 	OWQ_U(owq) = (UINT) d;
 	return 0;
 }
@@ -554,23 +483,17 @@ static ZERO_OR_ERROR FS_w_date(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	BYTE data[6];
-	ZERO_OR_ERROR ret;
 
 	/* Busy if in mission */
-	if ((ret = OW_MIP(pn))) {
+	if ( BAD( OW_MIP(pn))) {
 		printf("FS_w_date: mip error\n");
-		return ret;				/* Mission in progress */
+		return -EBUSY;				/* Mission in progress */
 	}
 
-	if (OW_oscillator(1, pn)) {
-		printf("FS_w_date: error 1\n");
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD(OW_oscillator(1, pn)) ;
 
 	OW_date(&OWQ_D(owq), data);
-	if ( BAD( OW_w_mem(data, 6, 0x0200, pn) ) ) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD( OW_w_mem(data, 6, 0x0200, pn) );
 	OWQ_Y(owq) = 1;				// for turning on chip
 	return FS_w_run(owq);
 }
@@ -580,12 +503,10 @@ static ZERO_OR_ERROR FS_w_counter(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	BYTE data[6];
 	_DATE d = (_DATE) OWQ_U(owq);
-	ZERO_OR_ERROR ret;
 
 	/* Busy if in mission */
-	if ((ret = OW_MIP(pn))) {
-		printf("FS_w_counter: mip error\n");
-		return ret;				/* Mission in progress */
+	if ( BAD( OW_MIP(pn)) ) {
+		return -EBUSY;				/* Mission in progress */
 	}
 
 	OW_date(&d, data);
@@ -658,7 +579,7 @@ static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parse
 	return gbGOOD;
 }
 
-static int OW_clearmemory(struct parsedname *pn)
+static GOOD_OR_BAD OW_clearmemory(struct parsedname *pn)
 {
 	BYTE p[3 + 8 + 32 + 2] = { _1W_CLEAR_MEMORY_WITH_PASSWORD, };
 	BYTE r;
@@ -671,27 +592,21 @@ static int OW_clearmemory(struct parsedname *pn)
 	ret = BUS_select(pn);
 	if (ret) {
 		BUSUNLOCK(pn);
-		printf("error1\n");
-		return ret;
+		return gbBAD;
 	}
 	ret = BUS_send_data(p, 10, pn);
 	if (ret) {
 		BUSUNLOCK(pn);
-		printf("error2\n");
-		return ret;
+		return gbBAD;
 	}
 	UT_delay(1);
 	BUSUNLOCK(pn);
 
 
-	ret = OW_r_mem(&r, 1, 0x0215, pn);
-	if (ret) {
-		//printf("error2\n");
-		return ret;
-	}
+	RETURN_BAD_IF_BAD( OW_r_mem(&r, 1, 0x0215, pn) );
 	LEVEL_DEBUG("Read 0x0215: MEMCLR=%d %02X", (r & 0x08 ? 1 : 0), r);
 
-	return 0;
+	return gbGOOD;
 }
 
 /* Just a test function to read all available bytes */
@@ -793,19 +708,15 @@ static GOOD_OR_BAD OW_r_mem(BYTE * data, size_t size, off_t offset, struct parse
 
 /* many things are disallowed if mission in progress */
 /* returns 1 if MIP, 0 if not, <0 if error */
-static int OW_MIP(struct parsedname *pn)
+static GOOD_OR_BAD OW_MIP(struct parsedname *pn)
 {
 	BYTE data;
-	int ret = OW_r_mem(&data, 1, 0x0215, pn);	/* read status register */
+	RETURN_BAD_IF_BAD( OW_r_mem(&data, 1, 0x0215, pn) );	/* read status register */
 
-	if (ret) {
-		printf("OW_MIP: err1\n");
-		return -EINVAL;
-	}
 	if (UT_getbit(&data, 1)) {
-		return -EBUSY;
+		return gbBAD;
 	}
-	return 0;
+	return gbGOOD;
 }
 
 /* set clock */
@@ -831,22 +742,19 @@ static void OW_date(const _DATE * d, BYTE * data)
 //printf("_DATE: sec=%d, min=%d, hour=%d, mday=%d, mon=%d, year=%d, wday=%d, isdst=%d\n",tm.tm_sec,tm.tm_min,tm.tm_hour,tm.tm_mday,tm.tm_mon,tm.tm_year,tm.tm_wday,tm.tm_isdst) ;
 }
 
-static int OW_force_conversion(const UINT delay, struct parsedname *pn)
+static GOOD_OR_BAD OW_force_conversion(const UINT delay, struct parsedname *pn)
 {
 	BYTE t[2] = { _1W_FORCED_CONVERSION, _1W_FORCED_CONVERSION_START };
 	int ret = 0;
 
-	if (OW_oscillator(1, pn)) {
-		printf("OW_force_conversion: error 1\n");
-		return -EINVAL;
-	}
+	RETURN_BAD_IF_BAD(OW_oscillator(1, pn));
 
 	/* Mission not progress, force conversion */
 	BUSLOCK(pn);
 	ret = BUS_select(pn) || BUS_send_data(t, 2, pn);
 	if (ret) {
 		printf("conv: err3\n");
-		return 1;
+		return gbBAD;
 	}
 	if (!ret) {
 		UT_delay(delay);
@@ -855,39 +763,33 @@ static int OW_force_conversion(const UINT delay, struct parsedname *pn)
 	BUSUNLOCK(pn);
 	if (ret) {
 		printf("conv: err4\n");
-		return 1;
+		return gbBAD;
 	}
-	return 0;
+	return gbGOOD;
 }
 
-static int OW_r_temperature(_FLOAT * T, const UINT delay, struct parsedname *pn)
+static GOOD_OR_BAD OW_r_temperature(_FLOAT * T, const UINT delay, struct parsedname *pn)
 {
 	BYTE data[32];
 	(void) delay;
 
-	if ( BAD( OW_r_mem(data, 8, 0x020C, pn) ) ) {	/* read temp register */
-		printf("OW_r_temperature: error1\n");
-		return -EINVAL;
-	}
+	RETURN_BAD_IF_BAD( OW_r_mem(data, 8, 0x020C, pn) );	/* read temp register */
 	*T = ((_FLOAT) ((BYTE) data[1])) / 2 - 41;
 
 	if (data[7] & 0x04) {
 		*T += ((_FLOAT) ((BYTE) data[0])) / 512;
 	}
-	return 0;
+	return gbGOOD;
 }
 
 
-static int OW_r_humid(_FLOAT * H, const UINT delay, struct parsedname *pn)
+static GOOD_OR_BAD OW_r_humid(_FLOAT * H, const UINT delay, struct parsedname *pn)
 {
 	_FLOAT ADVAL, IVAL;
 	BYTE data[32];
 	(void) delay;
 
-	if ( BAD( OW_r_mem(data, 6, 0x020E, pn) ) ) {
-		printf("OW_r_humid: error1\n");
-		return -EINVAL;
-	}
+	RETURN_BAD_IF_BAD( OW_r_mem(data, 6, 0x020E, pn) );
 	if (data[5] & 0x08) {
 		// high resolution
 		IVAL = (((BYTE) data[1]) * 256 + (BYTE) data[0]) / 16;
@@ -897,22 +799,20 @@ static int OW_r_humid(_FLOAT * H, const UINT delay, struct parsedname *pn)
 		ADVAL = ((_FLOAT) ((BYTE) data[1])) * 5.02 / 256;
 	}
 	*H = (ADVAL - 0.958) / 0.0307;
-	return 0;
+	return gbGOOD;
 }
 
-static int OW_stopmission(struct parsedname *pn)
+static GOOD_OR_BAD OW_stopmission(struct parsedname *pn)
 {
 	BYTE data[10] = { _1W_STOP_MISSION_WITH_PASSWORD, };
-	int ret;
+	GOOD_OR_BAD ret;
+
 	memset(&data[1], 0xFF, 8);	// dummy password
 	data[9] = _1W_STOP_MISSION_WITH_PASSWORD_START;
 
 	BUSLOCK(pn);
 	ret = BUS_select(pn) || BUS_send_data(data, 10, pn);
 	BUSUNLOCK(pn);
-	if (ret) {
-		printf("stopmission err1\n");
-	}
 	return ret;
 }
 
@@ -926,28 +826,24 @@ static int OW_w_delay(unsigned long mdelay, struct parsedname *pn)
 	return OW_w_mem(p, 3, 0x0216, pn) ;
 }
 
-static int OW_startmission(unsigned long mdelay, struct parsedname *pn)
+static GOOD_OR_BAD OW_startmission(unsigned long mdelay, struct parsedname *pn)
 {
 	BYTE cc, data;
 	BYTE p[10] = { _1W_START_MISSION_WITH_PASSWORD, };
-	int ret;
+	GOOD_OR_BAD ret;
 
 	/* stop the mission */
-	if (OW_stopmission(pn)) {
-		return -EINVAL;			/* stop */
-	}
+	RETURN_BAD_IF_BAD(OW_stopmission(pn));
 
 	if (mdelay == 0) {
-		return 0;				/* stay stopped */
+		return gbGOOD;				/* stay stopped */
 	}
 
 	if (mdelay & 0xFF000000) {
-		return -ERANGE;			/* Bad interval */
+		return gbBAD;			/* Bad interval */
 	}
 
-	if ( BAD( OW_r_mem(&cc, 1, 0x0212, pn) ) ) {
-		return -EINVAL;
-	}
+	RETURN_BAD_IF_BAD( OW_r_mem(&cc, 1, 0x0212, pn) );
 	if (cc & 0xFC) {
 		return -EINVAL;
 	}
@@ -957,7 +853,7 @@ static int OW_startmission(unsigned long mdelay, struct parsedname *pn)
 		OWQ_D(owq_dateset) = time(NULL);
 		/* start clock */
 		if (FS_w_date(owq_dateset)) {
-			return -EINVAL;		/* set the clock to current time */
+			return gbBAD;		/* set the clock to current time */
 		}
 		UT_delay(1000);			/* wait for the clock to count a second */
 	}
@@ -968,9 +864,7 @@ static int OW_startmission(unsigned long mdelay, struct parsedname *pn)
 	} else {
 		cc &= 0xFD;				// Enable high speed sample (second)
 	}
-	if ( BAD( OW_w_mem(&cc, 1, 0x0212, pn) ) ) {
-		return -EINVAL;
-	}
+	RETURN_BAD_IF_BAD( OW_w_mem(&cc, 1, 0x0212, pn) );
 #endif
 
 #if 1
@@ -978,15 +872,11 @@ static int OW_startmission(unsigned long mdelay, struct parsedname *pn)
 	p[0] = (mdelay & 0xFF);
 	p[1] = (mdelay & 0xFF00) >> 8;
 	p[2] = (mdelay & 0xFF0000) >> 16;
-	if ( BAD( OW_w_mem(p, 3, 0x0216, pn) ) ) {
-		return -EINVAL;
-	}
+	RETURN_BAD_IF_BAD( OW_w_mem(p, 3, 0x0216, pn) );
 #endif
 
 	/* clear memory */
-	if (OW_clearmemory(pn)) {
-		return -EINVAL;
-	}
+	RETURN_BAD_IF_BAD(OW_clearmemory(pn));
 
 	data = 0xA0;				// Bit 6&7 always set
 	data |= 0x01;				// start Temp logging
@@ -995,11 +885,7 @@ static int OW_startmission(unsigned long mdelay, struct parsedname *pn)
 	data |= 0x08;				// store Humidity in high resolution
 	data |= 0x10;				// Rollover and overwrite
 	//data |= 0x20 ; // start mission upon temperature alarm
-	ret = OW_w_mem(&data, 1, 0x0213, pn);
-	if (ret) {
-		printf("startmission err1\n");
-		return ret;
-	}
+	RETURN_BAD_IF_BAD( OW_w_mem(&data, 1, 0x0213, pn) );
 
 	p[0] = _1W_START_MISSION_WITH_PASSWORD;
 	memset(&p[1], 0xFF, 8);		// dummy password
@@ -1007,10 +893,6 @@ static int OW_startmission(unsigned long mdelay, struct parsedname *pn)
 	BUSLOCK(pn);
 	ret = BUS_select(pn) || BUS_send_data(p, 10, pn);
 	BUSUNLOCK(pn);
-	if (ret) {
-		printf("startmission err1\n");
-		return ret;
-	}
 
 	return ret;
 }

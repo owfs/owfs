@@ -20,14 +20,20 @@ $Id$
 #include "ow_connection.h"
 
 /* Prototypes */
-static int ServerAddr(const char * default_port, struct connection_out *out);
-static int ServerListen(struct connection_out *out);
+static GOOD_OR_BAD ServerAddr(const char * default_port, struct connection_out *out);
+static FILE_DESCRIPTOR_OR_ERROR ServerListen(struct connection_out *out);
+static void ServerProcessReap( void ) ;
+static void ServerProcessSendKill( void ) ;
+static void ServerProcessSignalThreaded( void ) ;
+static void ServerProcessSignalUnthreaded( void ) ;
+static void ServerProcessAccept(void *vp) ;
+static void ServerProcessAcceptUnlock(void *param) ;
+static void *ServerProcessOut(void *v) ;
+static void *ServerProcessHandler(void *arg) ;
 
-
-static int ServerAddr(const char * default_port, struct connection_out *out)
+static GOOD_OR_BAD ServerAddr(const char * default_port, struct connection_out *out)
 {
 	struct addrinfo hint;
-	int ret;
 	char *p;
 
 	if (out->name == NULL) {	// use defaults
@@ -58,18 +64,18 @@ static int ServerAddr(const char * default_port, struct connection_out *out)
 
 	//printf("ServerAddr: [%s] [%s]\n", out->host, out->service);
 
-	if ((ret = getaddrinfo(out->host, out->service, &hint, &out->ai))) {
+	if ( getaddrinfo(out->host, out->service, &hint, &out->ai) != 0 ) {
 		ERROR_CONNECT("GetAddrInfo error [%s]=%s:%s", SAFESTRING(out->name), SAFESTRING(out->host), SAFESTRING(out->service));
-		return -1;
+		return gbBAD;
 	}
-	return 0;
+	return gbGOOD;
 }
 
-static int ServerListen(struct connection_out *out)
+static FILE_DESCRIPTOR_OR_ERROR ServerListen(struct connection_out *out)
 {
 	if (out->ai == NULL) {
 		LEVEL_CONNECT("Server address not yet parsed [%s]", SAFESTRING(out->name));
-		return -EIO;
+		return FILE_DESCRIPTOR_BAD;
 	}
 
 	if (out->ai_ok == NULL) {
@@ -78,7 +84,7 @@ static int ServerListen(struct connection_out *out)
 
 	do {
 		int on = 1;
-		int file_descriptor = socket(out->ai_ok->ai_family, out->ai_ok->ai_socktype, out->ai_ok->ai_protocol);
+		FILE_DESCRIPTOR_OR_ERROR file_descriptor = socket(out->ai_ok->ai_family, out->ai_ok->ai_socktype, out->ai_ok->ai_protocol);
 
 		//printf("ServerListen file_descriptor=%d\n",file_descriptor);
 		if (file_descriptor < 0) {
@@ -99,10 +105,10 @@ static int ServerListen(struct connection_out *out)
 		}
 	} while ((out->ai_ok = out->ai_ok->ai_next));
 	LEVEL_CONNECT("No good listen network sockets [%s]", SAFESTRING(out->name));
-	return -1;
+	return FILE_DESCRIPTOR_BAD;
 }
 
-int ServerOutSetup(struct connection_out *out)
+GOOD_OR_BAD ServerOutSetup(struct connection_out *out)
 {
 	if ( out->name == NULL ) { // NULL name means default attempt
 		char * default_port ;
@@ -119,21 +125,18 @@ int ServerOutSetup(struct connection_out *out)
 				break ;
 		}
 		if ( default_port != NULL ) { // one of the 2 cases above
-			if ( ServerAddr( default_port, out ) < 0 ) {
-				return -1 ;
-			}
-			if ( ServerListen(out)  >= 0 ) {
-				return 0 ;
+			RETURN_BAD_IF_BAD( ServerAddr( default_port, out ) ) ;
+			if ( ServerListen(out)  != FILE_DESCRIPTOR_BAD ) {
+				return gbGOOD ;
 			}
 			ERROR_CONNECT("Default port not successful. Try an ephemeral port");
 		}
 	}
 
 	// second time through, use ephemeral port
-	if ( ServerAddr( "0", out ) < 0 ) {
-		return -1 ;
-	}
-	return (ServerListen(out)<0) ? -1 : 0 ;
+	RETURN_BAD_IF_BAD( ServerAddr( "0", out ) ) ;
+
+	return (ServerListen(out) == FILE_DESCRIPTOR_BAD) ? gbBAD : gbGOOD ;
 }
 
 /*
@@ -150,7 +153,7 @@ struct HandlerThread_data {
 	void (*HandlerRoutine) (int file_descriptor);
 };
 
-void *ServerProcessHandler(void *arg)
+static void *ServerProcessHandler(void *arg)
 {
 	struct HandlerThread_data *hp = (struct HandlerThread_data *) arg;
 	pthread_detach(pthread_self());
@@ -168,7 +171,7 @@ void *ServerProcessHandler(void *arg)
 	return NULL;
 }
 
-void ServerProcessAcceptUnlock(void *param)
+static void ServerProcessAcceptUnlock(void *param)
 {
 	struct connection_out *out = (struct connection_out *)param;
 	if(out == NULL) {
@@ -185,7 +188,6 @@ static void ServerProcessAccept(void *vp)
 	struct connection_out *out = (struct connection_out *) vp;
 	pthread_t tid;
 	int acceptfd;
-	int ret;
 
 	LEVEL_DEBUG("%s[%lu] try lock %d", SAFESTRING(out->name), (unsigned long int) pthread_self(), out->index);
 
@@ -235,9 +237,8 @@ static void ServerProcessAccept(void *vp)
 			hp->HandlerRoutine = out->HandlerRoutine;
 			hp->acceptfd = acceptfd;
 			/* Semaphore will be increased when ProcessHandler ends */
-			ret = pthread_create(&tid, NULL, ServerProcessHandler, hp);
-			if (ret) {
-				LEVEL_DEBUG("%s[%lu] create failed ret=%d", SAFESTRING(out->name), (unsigned long int) pthread_self(), ret);
+			if ( pthread_create(&tid, NULL, ServerProcessHandler, hp) != 0 ) {
+				LEVEL_DEBUG("%s[%lu] create failed", SAFESTRING(out->name), (unsigned long int) pthread_self());
 				close(acceptfd);
 				owfree(hp);
 				sem_post(&Mutex.accept_sem); /* Make sure to increase the semaphore on failure */
@@ -258,7 +259,7 @@ static void *ServerProcessOut(void *v)
 	// This thread is terminated with pthread_cancel()+pthread_join(), and should not be detached.
 	//pthread_detach(pthread_self());
 
-	if (ServerOutSetup(out)) {
+	if ( BAD(ServerOutSetup(out) ) ) {
 		LEVEL_CONNECT("Cannot set up server socket on %s, index=%d", SAFESTRING(out->name), out->index);
 		STATLOCK;
 		Outbound_Control.active--; // failed to setup... decrease nr
@@ -295,7 +296,7 @@ static void *ServerProcessOut(void *v)
 	return NULL;
 }
 
-void ServerProcessSignalThreaded( void )
+static void ServerProcessSignalThreaded( void )
 {
 	sigset_t myset;
 	sigemptyset(&myset);
@@ -305,7 +306,7 @@ void ServerProcessSignalThreaded( void )
 	pthread_sigmask(SIG_BLOCK, &myset, NULL);
 }
 
-void ServerProcessSignalUnthreaded( void )
+static void ServerProcessSignalUnthreaded( void )
 {
 	sigset_t myset;
 	sigemptyset(&myset);
@@ -331,36 +332,29 @@ void ServerProcessSignalUnthreaded( void )
 
 }
 
-void ServerProcessSendKill( void )
+static void ServerProcessSendKill( void )
 {
 	struct connection_out * out ;
 	
-		for (out = Outbound_Control.head; out; out = out->next) {
+	for (out = Outbound_Control.head; out; out = out->next) {
 		if(out->tid > 0) {
 			int rc ;
 			int signo ;
 			LEVEL_DEBUG("Shutting down %d of %d thread %lu", out->index, Outbound_Control.active, out->tid);
-#if 0
+
 			/* accept() is not a cancellation point under Solaris,
 			 * so I send a SIGTERM to abort the systemcall. */
-			if ((rc = pthread_cancel(out->tid))) {
-			  LEVEL_DEBUG("pthread_cancel (%d of %d) failed tid=%lu rc=%d [%s]", out->index, Outbound_Control.active, out->tid, rc, strerror(rc));
-			} else {
-			  LEVEL_DEBUG("pthread_cancel (%d of %d) tid=%lu rc=%d [%s]", out->index, Outbound_Control.active, out->tid, rc, strerror(rc));
-			}
-#else
 			signo = SIGTERM;
 			if((rc = pthread_kill(out->tid, signo))) {
-			  LEVEL_DEBUG("pthread_kill (%d of %d) tid=%lu signo=%d failed rc=%d [%s]", out->index, Outbound_Control.active, out->tid, signo, rc, strerror(rc));
+				LEVEL_DEBUG("pthread_kill (%d of %d) tid=%lu signo=%d failed rc=%d [%s]", out->index, Outbound_Control.active, out->tid, signo, rc, strerror(rc));
 			} else {
-			  LEVEL_DEBUG("pthread_kill (%d of %d) tid=%lu signo=%d rc=%d [%s]", out->index, Outbound_Control.active, out->tid, signo, rc, strerror(rc));
+				LEVEL_DEBUG("pthread_kill (%d of %d) tid=%lu signo=%d rc=%d [%s]", out->index, Outbound_Control.active, out->tid, signo, rc, strerror(rc));
 			}
-#endif
 		}
 	}
 }
 
-void ServerProcessReap( void )
+static void ServerProcessReap( void )
 {
 	struct connection_out * out;
 	
@@ -369,9 +363,9 @@ void ServerProcessReap( void )
 			int rc ;
 			LEVEL_DEBUG("join %lu", out->tid);
 			if((rc = pthread_join(out->tid, NULL))) {
-			  LEVEL_DEBUG("join %lu failed rc=%d [%s]", out->tid, rc, strerror(rc));
+				LEVEL_DEBUG("join %lu failed rc=%d [%s]", out->tid, rc, strerror(rc));
 			} else {
-			  LEVEL_DEBUG("join %lu done", out->tid);
+				LEVEL_DEBUG("join %lu done", out->tid);
 			}
 			out->tid = 0;
 		} else {
@@ -447,7 +441,7 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (i
 	} else if (Outbound_Control.active > 1) {
 		LEVEL_CONNECT("More than one output device specified (%d). Library compiled non-threaded. Exiting.", Outbound_Control.active);
 		Exit(1);
-	} else if (ServerOutSetup(Outbound_Control.head)) {
+	} else if ( BAD( ServerOutSetup(Outbound_Control.head) ) ) {
 		LEVEL_CONNECT("Cannot set up head_outbound_list [%s] -- will exit", SAFESTRING(head_outbound_list->name));
 		Exit(1);
 	} else {

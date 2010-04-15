@@ -68,6 +68,9 @@ $Id$
 #ifndef OW_LOCALRETURNS_H			/* tedious wrapper */
 #define OW_LOCALRETURNS_H
 
+typedef int FILE_DESCRIPTOR_OR_ERROR ;
+#define FILE_DESCRIPTOR_BAD -1
+
 typedef int SIZE_OR_ERROR ;
 typedef int ZERO_OR_ERROR ;
 typedef int INDEX_OR_ERROR ;

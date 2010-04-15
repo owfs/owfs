@@ -71,8 +71,9 @@ int ftp_listener_init(struct ftp_listener_s *f)
 		free(oldname);
 	}
 
-	if (ServerOutSetup(Outbound_Control.head))
+	if ( BAD( ServerOutSetup(Outbound_Control.head) ) ) {
 		return 0;
+	}
 
 	// Zeroconf/Bonjour start (since owftpd doesn't use ServerProcess yet)
 	ZeroConf_Announce(Outbound_Control.head);
