@@ -45,16 +45,11 @@ static GOOD_OR_BAD LoopSetup(struct handlerdata *hd) ;
 
 static GOOD_OR_BAD LoopSetup(struct handlerdata *hd)
 {
-	int fd[2] ;
 	my_pthread_mutex_init(&hd->to_client, Mutex.pmattr);
-	hd->read_file_descriptor = -1;
-	hd->write_file_descriptor = -1 ;
-	if ( pipe(fd) != 0 ) {
+	if ( pipe(hd->ping_pipe) != 0 ) {
 		ERROR_DEBUG("Cannot create pipe pair for keep-alive pulses") ;
 		return gbBAD ;
 	}
-	hd->read_file_descriptor = fd[0];
-	hd->write_file_descriptor = fd[1];
 	hd->toclient = toclient_postping ;
 	return gbGOOD ;
 }
@@ -62,11 +57,11 @@ static GOOD_OR_BAD LoopSetup(struct handlerdata *hd)
 static void LoopCleanup(struct handlerdata *hd)
 {
 	my_pthread_mutex_destroy(&hd->to_client);
-	if (hd->read_file_descriptor > -1 ) {
-		close(hd->read_file_descriptor);
+	if (hd->ping_pipe[fd_pipe_read] > -1 ) {
+		close(hd->ping_pipe[fd_pipe_read]) ;
 	}
-	if (hd->write_file_descriptor > -1 ) {
-		close(hd->write_file_descriptor);
+	if (hd->ping_pipe[fd_pipe_write] > -1 ) {
+		close(hd->ping_pipe[fd_pipe_write]) ;
 	}
 }
 
@@ -81,7 +76,7 @@ static enum toclient_state Ping_or_Send( enum toclient_state last_toclient, stru
 	enum toclient_state next_toclient ;
 
 	FD_ZERO( &read_set ) ;
-	FD_SET( hd->read_file_descriptor, &read_set ) ;
+	FD_SET( hd->ping_pipe[fd_pipe_read], &read_set ) ;
 
 	switch ( last_toclient ) {
 		case toclient_postmessage:
@@ -94,7 +89,7 @@ static enum toclient_state Ping_or_Send( enum toclient_state last_toclient, stru
 			break ;
 	}
 
-	select_value = select( hd->read_file_descriptor+1, &read_set, NULL, NULL, &tv ) ;
+	select_value = select( hd->ping_pipe[fd_pipe_read]+1, &read_set, NULL, NULL, &tv ) ;
 
 	// read pipe shows final data was sent
 	if ( select_value == 1 ) {

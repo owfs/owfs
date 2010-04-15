@@ -81,7 +81,7 @@ static void Dispatch_Packet( struct netlink_parse * nlp)
 
 	if ( bus == 0 ) {
 		LEVEL_DEBUG("Sending this packet to root bus");
-		W1_write_pipe(Inbound_Control.w1_write_file_descriptor, nlp) ;
+		W1_write_pipe(Inbound_Control.netlink_pipe[fd_pipe_write], nlp) ;
 		return ;
 	}
 

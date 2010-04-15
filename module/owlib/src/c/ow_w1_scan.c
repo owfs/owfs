@@ -72,7 +72,7 @@ int W1NLScan( void )
 	{
 		struct netlink_parse nlp ;
 
-		switch ( Get_and_Parse_Pipe( Inbound_Control.w1_read_file_descriptor, &nlp ) ) {
+		switch ( Get_and_Parse_Pipe( Inbound_Control.netlink_pipe[fd_pipe_read], &nlp ) ) {
 			case -EAGAIN:
 				break ;
 			case 0:

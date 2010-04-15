@@ -81,8 +81,7 @@ struct handlerdata {
 	int persistent;
 #if OW_MT
 	pthread_mutex_t to_client;
-	int read_file_descriptor ;
-	int write_file_descriptor ;
+	int ping_pipe[2] ;
 	enum toclient_state toclient ;
 #endif							/* OW_MT */
 	struct timeval tv;

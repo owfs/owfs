@@ -204,8 +204,8 @@ void *DataHandler(void *v)
 #if OW_MT
 	// Signal to PingLoop that we're done.
 	hd->toclient = toclient_complete ;
-	if ( hd->write_file_descriptor > -1 ) {
-		write( hd->write_file_descriptor,"X",1) ; //dummy payload
+	if ( hd->ping_pipe[fd_pipe_write] > -1 ) {
+		write( hd->ping_pipe[fd_pipe_write],"X",1) ; //dummy payload
 	}
 #endif /* OW_MT */
 	TOCLIENTUNLOCK(hd);

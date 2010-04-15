@@ -474,8 +474,7 @@ extern struct inbound_control {
 	unsigned int w1_seq ; // seq number to netlink
 	unsigned int w1_entry_mark ; // for removing buses_mark ;
 	int w1_file_descriptor ; // w1 kernel module for netlink communication
-	int w1_read_file_descriptor ; // w1 pipe
-	int w1_write_file_descriptor ; // w1 pipe
+	int netlink_pipe[2] ; // w1 pipe
 	int w1_pid ;
 	struct timeval w1_last_read ;
 

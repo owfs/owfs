@@ -200,7 +200,7 @@ enum Netlink_Read_Status W1_Process_Response( void (* nrs_callback)( struct netl
 	}
 
 	if ( pn == NULL ) {
-		file_descriptor = Inbound_Control.w1_read_file_descriptor ;
+		file_descriptor = Inbound_Control.netlink_pipe[fd_pipe_read] ;
 		bus = 0 ;
 	} else {
 		file_descriptor = pn->selected_connection->connin.w1.read_file_descriptor ;
