@@ -19,17 +19,29 @@ $Id$
 #include "ow_counters.h"
 #include "ow_connection.h"
 
+#if OW_MT
+	/* Locking for thread work */
+	/* Variables only used in this particular file */
+	/* i.e. "locally global" */
+	my_rwlock_t shutdown_mutex_rw ;
+	pthread_mutex_t handler_thread_mutex ;
+	int handler_thread_count ;
+	int shutdown_in_progress ;
+	FILE_DESCRIPTOR_OR_ERROR shutdown_pipe[2] ;
+#endif /* OW_MT */
+
+
 /* Prototypes */
 static GOOD_OR_BAD ServerAddr(const char * default_port, struct connection_out *out);
 static FILE_DESCRIPTOR_OR_ERROR ServerListen(struct connection_out *out);
-static void ServerProcessReap( void ) ;
-static void ServerProcessSendKill( void ) ;
-static void ServerProcessSignalThreaded( void ) ;
-static void ServerProcessSignalUnthreaded( void ) ;
-static void ServerProcessAccept(void *vp) ;
-static void ServerProcessAcceptUnlock(void *param) ;
-static void *ServerProcessOut(void *v) ;
-static void *ServerProcessHandler(void *arg) ;
+
+static FILE_DESCRIPTOR_OR_ERROR SetupListenSet( fd_set * listenset ) ;
+static GOOD_OR_BAD SetupListenSockets( void (*HandlerRoutine) (int file_descriptor) ) ;
+static void CloseListenSockets( void ) ;
+static void ProcessListenSocket( struct connection_out * out ) ;
+static void *ProcessAcceptSocket(void *arg) ;
+static void ProcessListenSet( fd_set * listenset ) ;
+static GOOD_OR_BAD ListenCycle( void ) ;
 
 static GOOD_OR_BAD ServerAddr(const char * default_port, struct connection_out *out)
 {
@@ -139,326 +151,186 @@ GOOD_OR_BAD ServerOutSetup(struct connection_out *out)
 	return (ServerListen(out) == FILE_DESCRIPTOR_BAD) ? gbBAD : gbGOOD ;
 }
 
-/*
- Loops through count_outbound_connections, starting a detached thread for each
- Each loop spawn threads for accepting connections
- Uses my non-patented "pre-threaded technique"
- */
-
-#if OW_MT
-
-/* structures */
-struct HandlerThread_data {
-	int acceptfd;
-	void (*HandlerRoutine) (int file_descriptor);
-};
-
-static void *ServerProcessHandler(void *arg)
+static FILE_DESCRIPTOR_OR_ERROR SetupListenSet( fd_set * listenset )
 {
-	struct HandlerThread_data *hp = (struct HandlerThread_data *) arg;
-	pthread_detach(pthread_self());
-	if (hp) {
-		hp->HandlerRoutine(hp->acceptfd);
-		/* This will never be reached right now.
-		   The thread is killed when application is stopped.
-		   Should perhaps fix a signal handler for this. */
-		Test_and_Close( &(hp->acceptfd) );
-		owfree(hp);
-	}
-	LEVEL_DEBUG("Normal exit.");
-	sem_post(&Mutex.accept_sem);
-	pthread_exit(NULL);
-	return NULL;
-}
+	int maxfd = -1 ;
+	struct connection_out * out ;
 
-static void ServerProcessAcceptUnlock(void *param)
-{
-	struct connection_out *out = (struct connection_out *)param;
-	if(out == NULL) {
-		LEVEL_DEBUG("out==NULL");
-		return;
-	}
-	LEVEL_DEBUG("unlock %lu", out->tid);
-	ACCEPTUNLOCK(out);
-	LEVEL_DEBUG("unlock %lu done", out->tid);
-}
-
-static void ServerProcessAccept(void *vp)
-{
-	struct connection_out *out = (struct connection_out *) vp;
-	pthread_t tid;
-	int acceptfd;
-
-	LEVEL_DEBUG("%s[%lu] try lock %d", SAFESTRING(out->name), (unsigned long int) pthread_self(), out->index);
-
-	ACCEPTLOCK(out);
-
-	pthread_cleanup_push(ServerProcessAcceptUnlock, vp);
-
-	LEVEL_DEBUG("%s[%lu] locked %d", SAFESTRING(out->name), (unsigned long int) pthread_self(), out->index);
-
-	do {
-		acceptfd = accept(out->file_descriptor, NULL, NULL);
-		if (StateInfo.shutdown_in_progress) {
-			LEVEL_DEBUG("shutdown_in_progress %s[%lu] accept %d",SAFESTRING(out->name),(unsigned long int)pthread_self(),out->index) ;
-			break;
-		}
-		LEVEL_DEBUG("%s[%lu] accept %d fd=%d",SAFESTRING(out->name),(unsigned long int)pthread_self(),out->index, acceptfd) ;
-		if (acceptfd < 0) {
-			if (errno == EINTR) {
-				LEVEL_DEBUG("interrupted");
-				continue;
-			}
-			LEVEL_DEBUG("error %d [%s]", errno, strerror(errno));
-		}
-		break;
-	} while (1);
-
-	pthread_cleanup_pop(1);  // Call ACCEPTUNLOCK
-
-	LEVEL_DEBUG(" %s[%lu] unlock %d",SAFESTRING(out->name),(unsigned long int)pthread_self(),out->index) ;
-
-	if (StateInfo.shutdown_in_progress) {
-		LEVEL_DEBUG("%s[%lu] shutdown_in_progress %d return",
-			    SAFESTRING(out->name), (unsigned long int) pthread_self(), out->index);
-		if (acceptfd >= 0) {
-			close(acceptfd);
-		}
-		return;
-	}
-
-	if (acceptfd < 0) {
-		ERROR_CONNECT("accept() problem %d (%d)", out->file_descriptor, out->index);
-		sem_post(&Mutex.accept_sem); /* Make sure to increase the semaphore on failure */
-	} else {
-		struct HandlerThread_data *hp;
-		hp = owmalloc(sizeof(struct HandlerThread_data));
-		if (hp) {
-			hp->HandlerRoutine = out->HandlerRoutine;
-			hp->acceptfd = acceptfd;
-			/* Semaphore will be increased when ProcessHandler ends */
-			if ( pthread_create(&tid, NULL, ServerProcessHandler, hp) != 0 ) {
-				LEVEL_DEBUG("%s[%lu] create failed", SAFESTRING(out->name), (unsigned long int) pthread_self());
-				close(acceptfd);
-				owfree(hp);
-				sem_post(&Mutex.accept_sem); /* Make sure to increase the semaphore on failure */
+	FD_ZERO( listenset ) ;
+	for (out = Outbound_Control.head; out; out = out->next) {
+		FILE_DESCRIPTOR_OR_ERROR fd = out->file_descriptor ;
+		if ( fd != FILE_DESCRIPTOR_BAD ) {
+			FD_SET( fd, listenset ) ;
+			if ( fd > maxfd ) {
+				maxfd = fd ;
 			}
 		}
 	}
-	LEVEL_DEBUG("%lu CLOSING", (unsigned long int) pthread_self());
-	return;
+	return maxfd ;
 }
 
-/* For a given port (connecion_out) set up listening */
-static void *ServerProcessOut(void *v)
-{
-	struct connection_out *out = (struct connection_out *) v;
-
-	LEVEL_DEBUG("%lu", (unsigned long int) pthread_self());
-
-	// This thread is terminated with pthread_cancel()+pthread_join(), and should not be detached.
-	//pthread_detach(pthread_self());
-
-	if ( BAD(ServerOutSetup(out) ) ) {
-		LEVEL_CONNECT("Cannot set up server socket on %s, index=%d", SAFESTRING(out->name), out->index);
-		STATLOCK;
-		Outbound_Control.active--; // failed to setup... decrease nr
-		STATUNLOCK;
-		OUTLOCK(out);
-		my_pthread_cond_signal(&(out->setup_cond));
-		out->tid = 0;
-		OUTUNLOCK(out);
-		pthread_exit(NULL);
-		return NULL;
-	}
-
-	ZeroConf_Announce(out);
-
-	OUTLOCK(out);
-	LEVEL_DEBUG("Output device %s setup is done. index=%d", SAFESTRING(out->name), out->index);
-
-	my_pthread_cond_signal(&(out->setup_cond));
-	OUTUNLOCK(out);
-
-	while (!StateInfo.shutdown_in_progress) {
-        int rc = sem_wait(&Mutex.accept_sem);
-		if(rc < 0) {
-			/* signal handler interrupts the call */
-			break;
-		}
-		ServerProcessAccept(v);
-	}
-
-	LEVEL_DEBUG("%lu CLOSING (%s)", (unsigned long int) pthread_self(), SAFESTRING(out->name));
-
-	LEVEL_DEBUG("Normal exit.");
-	pthread_exit(NULL);
-	return NULL;
-}
-
-static void ServerProcessSignalThreaded( void )
-{
-	sigset_t myset;
-	sigemptyset(&myset);
-	sigaddset(&myset, SIGHUP);
-	sigaddset(&myset, SIGINT);
-	// SIGTERM is used to kill all outprocesses which hang in accept()
-	pthread_sigmask(SIG_BLOCK, &myset, NULL);
-}
-
-static void ServerProcessSignalUnthreaded( void )
-{
-	sigset_t myset;
-	sigemptyset(&myset);
-	sigaddset(&myset, SIGHUP);
-	sigaddset(&myset, SIGINT);
-	sigaddset(&myset, SIGTERM);
-
-	while (!StateInfo.shutdown_in_progress) {
-		int rc ;
-		int signo ;
-		if ((rc = sigwait(&myset, &signo)) == 0) {
-			if (signo == SIGHUP) {
-				LEVEL_DEBUG("ignore signo=%d", signo);
-				// perhaps do some reload-thing here...
-				continue;
-			}
-			LEVEL_DEBUG("break signo=%d", signo);
-			StateInfo.shutdown_in_progress = 1;
-		} else {
-			LEVEL_DEBUG("sigwait error %d", rc);
-		}
-	}
-
-}
-
-static void ServerProcessSendKill( void )
+static GOOD_OR_BAD SetupListenSockets( void (*HandlerRoutine) (int file_descriptor) )
 {
 	struct connection_out * out ;
-	
-	for (out = Outbound_Control.head; out; out = out->next) {
-		if(out->tid > 0) {
-			int rc ;
-			int signo ;
-			LEVEL_DEBUG("Shutting down %d of %d thread %lu", out->index, Outbound_Control.active, out->tid);
+	GOOD_OR_BAD any_sockets = gbBAD ;
 
-			/* accept() is not a cancellation point under Solaris,
-			 * so I send a SIGTERM to abort the systemcall. */
-			signo = SIGTERM;
-			if((rc = pthread_kill(out->tid, signo))) {
-				LEVEL_DEBUG("pthread_kill (%d of %d) tid=%lu signo=%d failed rc=%d [%s]", out->index, Outbound_Control.active, out->tid, signo, rc, strerror(rc));
-			} else {
-				LEVEL_DEBUG("pthread_kill (%d of %d) tid=%lu signo=%d rc=%d [%s]", out->index, Outbound_Control.active, out->tid, signo, rc, strerror(rc));
-			}
+	for (out = Outbound_Control.head; out; out = out->next) {
+		if ( GOOD( ServerOutSetup( out ) ) ) {
+			any_sockets = gbGOOD;
+			ZeroConf_Announce(out);
+		}
+		out-> HandlerRoutine = HandlerRoutine ;
+	}
+	return any_sockets ;
+}
+
+static void CloseListenSockets( void )
+{
+	struct connection_out * out ;
+
+	for (out = Outbound_Control.head; out; out = out->next) {
+		Test_and_Close( &(out->file_descriptor) ) ;
+	}
+}
+
+static void ProcessListenSet( fd_set * listenset )
+{
+	struct connection_out * out ;
+
+	for (out = Outbound_Control.head; out; out = out->next) {
+		printf("Listen loop\n") ;
+		if ( FD_ISSET( out->file_descriptor, listenset ) ) {
+			printf("%d is set\n",out->file_descriptor) ;
+			ProcessListenSocket( out ) ;
 		}
 	}
 }
 
-static void ServerProcessReap( void )
-{
+/* structure */
+struct Accept_Socket_Data {
+	FILE_DESCRIPTOR_OR_ERROR acceptfd;
 	struct connection_out * out;
-	
-	for (out = Outbound_Control.head; out; out = out->next) {
-		if(out->tid > 0) {
-			int rc ;
-			LEVEL_DEBUG("join %lu", out->tid);
-			if((rc = pthread_join(out->tid, NULL))) {
-				LEVEL_DEBUG("join %lu failed rc=%d [%s]", out->tid, rc, strerror(rc));
-			} else {
-				LEVEL_DEBUG("join %lu done", out->tid);
-			}
-			out->tid = 0;
-		} else {
-			LEVEL_DEBUG("thread already removed");
-		}
+};
+
+static void *ProcessAcceptSocket(void *arg)
+{
+	struct Accept_Socket_Data * asd = (struct Accept_Socket_Data *) arg;
+	pthread_detach(pthread_self());
+
+	asd->out->HandlerRoutine( asd->acceptfd );
+
+	// cleanup
+	Test_and_Close( &(asd->acceptfd) );
+	owfree(asd);
+	LEVEL_DEBUG("Normal exit.");
+#if OW_MT
+	my_rwlock_read_lock( &shutdown_mutex_rw ) ;
+	pthread_mutex_lock( &handler_thread_mutex ) ;
+	--handler_thread_count ;
+	if ( shutdown_in_progress && handler_thread_count==0) {
+		if ( shutdown_pipe[fd_pipe_write] != FILE_DESCRIPTOR_BAD ) {
+			write( shutdown_pipe[fd_pipe_write],"X",1) ; //dummy payload
+		}		
 	}
+	pthread_mutex_unlock( &handler_thread_mutex ) ;
+	my_rwlock_read_unlock( &shutdown_mutex_rw ) ;
+#endif /* OW_MT */
+	return NULL;
 }
 
-/* Setup Servers -- a thread for each port */
-void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (int errcode))
+static void ProcessListenSocket( struct connection_out * out )
 {
-	struct connection_out *out ;
+	FILE_DESCRIPTOR_OR_ERROR acceptfd;
+	struct Accept_Socket_Data * asd ;
 
-	if (Outbound_Control.active == 0) {
-		LEVEL_CALL("No output devices defined");
-		Exit(1);
+	acceptfd = accept(out->file_descriptor, NULL, NULL);
+
+	if (acceptfd == FILE_DESCRIPTOR_BAD ) {
+		return ;
 	}
 
-	ServerProcessSignalThreaded();
-
-	/* Start the head of a thread chain for each outbound port */
-	for (out = Outbound_Control.head; out; out = out->next) {
-		OUTLOCK(out);
-		out->HandlerRoutine = HandlerRoutine;
-		out->Exit = Exit;
-
-		if (pthread_create(&(out->tid), NULL, ServerProcessOut, (void *) (out))) {
-			OUTUNLOCK(out);
-			ERROR_CONNECT("Could not create a thread for %s", SAFESTRING(out->name));
-			return ;
+	asd = owmalloc( sizeof(struct Accept_Socket_Data) ) ;
+	if ( asd == NULL ) {
+		close( acceptfd ) ;
+		return ;
+	}
+	asd->acceptfd = acceptfd ;
+	asd->out = out ;
+	printf("Prethread\n") ;
+	printf("asd=%p\n",asd) ;
+#if OW_MT
+	my_rwlock_read_lock( &shutdown_mutex_rw ) ;
+	if ( ! shutdown_in_progress ) {
+		pthread_t tid;
+		pthread_mutex_lock( &handler_thread_mutex ) ;
+		++handler_thread_count ;
+		pthread_mutex_unlock( &handler_thread_mutex ) ;
+		if ( pthread_create(&tid, NULL, ProcessAcceptSocket, asd ) != 0 ) {
+			// Do it in the main routine rather than a thread
+			ProcessAcceptSocket(asd) ;
 		}
 	}
+	my_rwlock_read_unlock( &shutdown_mutex_rw ) ;
+#else /* OW_MT */
+	ProcessAcceptSocket(asd) ;
+#endif
+}
 
-	for (out = Outbound_Control.head; out; out = out->next) {
-		LEVEL_DEBUG("Wait for output device %d to setup.", out->index);
-		// Should perhaps wait for a cond-signal, but this works..
-		my_pthread_cond_wait(&(out->setup_cond), &(out->out_mutex));
-		LEVEL_DEBUG("Output device %d setup done.", out->index);
-		OUTUNLOCK(out);
+static GOOD_OR_BAD ListenCycle( void )
+{
+	fd_set listenset ;
+	FILE_DESCRIPTOR_OR_ERROR maxfd = SetupListenSet( &listenset) ;
+	if ( maxfd != FILE_DESCRIPTOR_BAD) {
+		if ( select( maxfd+1, &listenset, NULL, NULL, NULL) > 0 ) {
+			printf("postselect\n");
+			ProcessListenSet( &listenset) ;
+			return gbGOOD ;
+		}
 	}
+	return gbBAD ;
+}
 
+/* Setup Servers -- select on each port */
+void ServerProcess(void (*HandlerRoutine) (int file_descriptor))
+{
 
-	if (Outbound_Control.active == 0) {
-		LEVEL_CALL("No output devices could be created.");
-		return;
+#if OW_MT
+	/* Locking for thread work */
+	int dont_need_to_read_pipe ;
+
+	handler_thread_count = 0 ;
+	shutdown_in_progress = 0 ;
+	shutdown_pipe[fd_pipe_read] = FILE_DESCRIPTOR_BAD ;
+	shutdown_pipe[fd_pipe_write] = FILE_DESCRIPTOR_BAD ;
+
+	my_rwlock_init( &shutdown_mutex_rw ) ;
+	my_pthread_mutex_init(&handler_thread_mutex, Mutex.pmattr);
+	if ( pipe( shutdown_pipe ) != 0 ) {
+		ERROR_DEFAULT("Cannot allocate a shutdown pipe. The program shutdown may be messy");
 	}
+#endif /* OW_MT */
 
-	ServerProcessSignalUnthreaded();
-
-	StateInfo.shutdown_in_progress = 1;
-	LEVEL_DEBUG("shutdown initiated");
-
-	ServerProcessSendKill() ;
-
-	LEVEL_DEBUG("all threads cancelled");
-	
-	ServerProcessReap() ;
- 
- 	LEVEL_DEBUG("shutdown done");
-
+	if ( GOOD( SetupListenSockets( HandlerRoutine ) ) ) {
+		while (	GOOD( ListenCycle() ) ) {
+		}
+#if OW_MT
+		my_rwlock_write_lock( &shutdown_mutex_rw ) ;
+		shutdown_in_progress = 1 ; // Signal time to wrap up
+		dont_need_to_read_pipe = handler_thread_count==0 || shutdown_pipe[fd_pipe_read]==FILE_DESCRIPTOR_BAD  ;
+		my_rwlock_write_unlock( &shutdown_mutex_rw ) ;
+		if ( ! dont_need_to_read_pipe ) {
+			char buf[2] ;
+			read( shutdown_pipe[fd_pipe_read],buf,1) ;
+		}
+		Test_and_Close(&shutdown_pipe[fd_pipe_read]) ;
+		Test_and_Close(&shutdown_pipe[fd_pipe_write]) ;
+		my_rwlock_destroy(&shutdown_mutex_rw) ;
+		pthread_mutex_destroy(&handler_thread_mutex) ;
+#endif /* OW_MT */
+		CloseListenSockets() ;
+	} else {
+		LEVEL_DEFAULT("Isolated from any control -- exit") ;
+	}
 	/* Cleanup that may never be reached */
 	return;
 }
-
-#else							/* OW_MT */
-
-// Non multithreaded
-void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (int errcode))
-{
-	if (Outbound_Control.active == 0) {
-		LEVEL_CONNECT("No output device (port) specified. Exiting.");
-		Exit(1);
-	} else if (Outbound_Control.active > 1) {
-		LEVEL_CONNECT("More than one output device specified (%d). Library compiled non-threaded. Exiting.", Outbound_Control.active);
-		Exit(1);
-	} else if ( BAD( ServerOutSetup(Outbound_Control.head) ) ) {
-		LEVEL_CONNECT("Cannot set up head_outbound_list [%s] -- will exit", SAFESTRING(head_outbound_list->name));
-		Exit(1);
-	} else {
-		ZeroConf_Announce(Outbound_Control.head);
-		while (1) {
-			int acceptfd = accept(Outbound_Control.head->file_descriptor, NULL, NULL);
-			if (StateInfo.shutdown_in_progress) {
-				break;
-			}
-			if (acceptfd < 0) {
-				ERROR_CONNECT("Trouble with accept, will reloop");
-			} else {
-				HandlerRoutine(acceptfd);
-				close(acceptfd);
-			}
-		}
-		Exit(0);
-	}
-}
-#endif							/* OW_MT */

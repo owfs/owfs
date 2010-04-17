@@ -204,7 +204,7 @@ void *DataHandler(void *v)
 #if OW_MT
 	// Signal to PingLoop that we're done.
 	hd->toclient = toclient_complete ;
-	if ( hd->ping_pipe[fd_pipe_write] > -1 ) {
+	if ( hd->ping_pipe[fd_pipe_write] != FILE_DESCRIPTOR_BAD ) {
 		write( hd->ping_pipe[fd_pipe_write],"X",1) ; //dummy payload
 	}
 #endif /* OW_MT */

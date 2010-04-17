@@ -159,7 +159,7 @@ int main(int argc, char **argv)
 #endif
 	/* Set up "Antiloop" -- a unique token */
 	SetupAntiloop();
-	ServerProcess(Handler, ow_exit);
+	ServerProcess(Handler);
 	LEVEL_DEBUG("ServerProcess done");
 	ow_exit(0);
 	return 0;

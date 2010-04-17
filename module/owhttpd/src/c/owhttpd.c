@@ -156,7 +156,7 @@ int main(int argc, char *argv[])
 	main_threadid = pthread_self();
 #endif
 
-	ServerProcess(Acceptor, ow_exit);
+	ServerProcess(Acceptor);
 	LEVEL_DEBUG("ServerProcess done");
 	ow_exit(0);
 	return 0;

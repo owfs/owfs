@@ -331,7 +331,7 @@ static ZERO_OR_ERROR FS_eeprom_erase(struct one_wire_query *owq)
 	struct parsedname * pn = PN(owq) ;
 	if (OWQ_Y(owq)) {
 		off_t offset = _FC02_EEPROM_PAGE_SIZE * pn->extension + _FC02_EEPROM_OFFSET ;
-		RETURN_ERROR_IF_BAD( OW_eeprom_erase(offset,pn) ) ;
+		return GB_to_Z_OR_E( OW_eeprom_erase(offset,pn) ) ;
 	} else{
 		return 0 ;
 	}

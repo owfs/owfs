@@ -488,7 +488,6 @@ extern struct inbound_control {
 struct connection_out {
 	struct connection_out *next;
 	void (*HandlerRoutine) (int file_descriptor);
-	void (*Exit) (int errcode);
 	char *name;
 	char *host;
 	char *service;

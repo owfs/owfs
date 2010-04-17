@@ -126,7 +126,7 @@ int ClientAddr(char *sname, struct connection_in *in);
 int ClientConnect(struct connection_in *in);
 void FreeClientAddr(struct connection_in *in);
 
-void ServerProcess(void (*HandlerRoutine) (int file_descriptor), void (*Exit) (int errcode));
+void ServerProcess(void (*HandlerRoutine) (int file_descriptor));
 GOOD_OR_BAD ServerOutSetup(struct connection_out *out);
 
 GOOD_OR_BAD AliasFile(const ASCII * file) ;
