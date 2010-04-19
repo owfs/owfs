@@ -54,7 +54,7 @@ static void Zero_setroutines(struct interface_routines *f)
 int Zero_detect(struct connection_in *in)
 {
 	in->busmode = bus_zero;
-	in->file_descriptor = FD_PERSISTENT_NONE;	// No persistent connection yet
+	in->file_descriptor = FILE_DESCRIPTOR_BAD;	// No persistent connection yet
 	if (in->name == NULL) {
 		return -1;
 	}
@@ -77,7 +77,7 @@ int Server_detect(struct connection_in *in)
 	if (ClientAddr(in->name, in)) {
 		return -1;
 	}
-	in->file_descriptor = FD_PERSISTENT_NONE;	// No persistent connection yet
+	in->file_descriptor = FILE_DESCRIPTOR_BAD;	// No persistent connection yet
 	in->Adapter = adapter_tcp;
 	in->adapter_name = "tcp";
 	in->busmode = bus_server;
@@ -89,9 +89,6 @@ int Server_detect(struct connection_in *in)
 // actual connections opened and closed independently
 static void Server_close(struct connection_in *in)
 {
-	if (in->file_descriptor > FD_PERSISTENT_NONE) {	// persistent connection
-		close(in->file_descriptor);
-		in->file_descriptor = FD_PERSISTENT_NONE;
-	}
+	Test_and_Close( &(in->file_descriptor) ) ;
 	FreeClientAddr(in);
 }

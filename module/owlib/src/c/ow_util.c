@@ -123,10 +123,10 @@ void Test_and_Close( FILE_DESCRIPTOR_OR_ERROR * file_descriptor )
 	if ( file_descriptor == NULL ) {
 		return ;
 	}
-	if ( file_descriptor[0] > -1 ) {
-		close( file_descriptor[0] ) ;
+	if ( FILE_DESCRIPTOR_VALID( *file_descriptor ) ) {
+		close( *file_descriptor ) ;
 	}
-	file_descriptor[0] = -1 ;
+	*file_descriptor = FILE_DESCRIPTOR_BAD ;
 }
 
 void Test_and_Close_Pipe( FILE_DESCRIPTOR_OR_ERROR * pipe_fd )

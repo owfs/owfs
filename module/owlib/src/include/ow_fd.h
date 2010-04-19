@@ -77,9 +77,7 @@ typedef int FILE_DESCRIPTOR_OR_ERROR ;
  * and we with to test that one first
  */
 typedef int FILE_DESCRIPTOR_OR_PERSISTENT ;
-#define  FD_PERSISTENT_IN_USE    -2
-#define  FD_PERSISTENT_NONE      -1
-#define  FD_CURRENT_BAD          -1
+#define  FILE_DESCRIPTOR_PERSISTENT_IN_USE    -2
 
 /* Pipe channels */
 enum fd_pipe_channels {
