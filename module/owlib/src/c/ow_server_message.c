@@ -18,19 +18,21 @@ $Id$
 #include "ow_connection.h"
 #include "ow_standard.h" // for FS_Alias
 
-static SIZE_OR_ERROR FromServer(int file_descriptor, struct client_msg *cm, char *msg, size_t size);
-static void *FromServerAlloc(int file_descriptor, struct client_msg *cm);
-static SIZE_OR_ERROR ToServer(int file_descriptor, struct server_msg *sm, struct serverpackage *sp);
-static uint32_t SetupControlFlags(int persistent, const struct parsedname *pn);
-static FILE_DESCRIPTOR_OR_ERROR ConnectToServer(struct connection_in *in);
-static FILE_DESCRIPTOR_OR_ERROR ToServerTwice(int file_descriptor, int persistent, struct server_msg *sm, struct serverpackage *sp, struct connection_in *in);
+enum persistent_state { persistent_yes, persistent_no, } ;
 
-static FILE_DESCRIPTOR_OR_ERROR PersistentStart(int *persistent, struct connection_in *in);
-static void PersistentEnd(int file_descriptor, int persistent, int granted, struct connection_in *in);
-static void PersistentFree(int file_descriptor, struct connection_in *in);
-static void PersistentClear(int file_descriptor, struct connection_in *in);
+static SIZE_OR_ERROR FromServer(int file_descriptor, struct client_msg *cm, char *msg, size_t size);
+static void *FromServerAlloc(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct client_msg *cm);
+static SIZE_OR_ERROR ToServer(int file_descriptor, struct server_msg *sm, struct serverpackage *sp);
+static uint32_t SetupControlFlags(enum persistent_state persistent, const struct parsedname *pn);
+static FILE_DESCRIPTOR_OR_ERROR ConnectToServer(struct connection_in *in);
+static FILE_DESCRIPTOR_OR_ERROR ToServerTwice(FILE_DESCRIPTOR_OR_ERROR file_descriptor, enum persistent_state persistent, struct server_msg *sm, struct serverpackage *sp, struct connection_in *in);
+
+static FILE_DESCRIPTOR_OR_ERROR PersistentStart(enum persistent_state *persistent, struct connection_in *in);
+static void PersistentEnd(FILE_DESCRIPTOR_OR_ERROR file_descriptor, enum persistent_state persistent, int granted, struct connection_in *in);
+static void PersistentFree(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct connection_in *in);
+static void PersistentClear(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct connection_in *in);
 static FILE_DESCRIPTOR_OR_ERROR PersistentRequest(struct connection_in *in);
-static FILE_DESCRIPTOR_OR_ERROR PersistentReRequest(int file_descriptor, struct connection_in *in);
+static FILE_DESCRIPTOR_OR_ERROR PersistentReRequest(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct connection_in *in);
 
 static ZERO_OR_ERROR ServerDIRALL(void (*dirfunc) (void *, const struct parsedname * const), void *v, const struct parsedname *pn_whole_directory, uint32_t * flags);
 static ZERO_OR_ERROR ServerDIR(void (*dirfunc) (void *, const struct parsedname * const), void *v, const struct parsedname *pn_whole_directory, uint32_t * flags);
@@ -44,7 +46,7 @@ SIZE_OR_ERROR ServerRead(struct one_wire_query *owq)
 	struct serverpackage sp = { pn_file_entry->path_busless, NULL, 0, pn_file_entry->tokenstring,
 		pn_file_entry->tokens,
 	};
-	int persistent = 1;
+	enum persistent_state persistent = persistent_yes;
 	FILE_DESCRIPTOR_OR_ERROR connectfd;
 	SIZE_OR_ERROR ret = 0;
 
@@ -89,7 +91,7 @@ INDEX_OR_ERROR ServerPresence(const struct parsedname *pn_file_entry)
 	struct serverpackage sp = { pn_file_entry->path_busless, NULL, 0, pn_file_entry->tokenstring,
 		pn_file_entry->tokens,
 	};
-	int persistent = 1;
+	enum persistent_state persistent = persistent_yes;
 	FILE_DESCRIPTOR_OR_ERROR connectfd;
 	INDEX_OR_ERROR ret = 0;
 
@@ -127,7 +129,7 @@ ZERO_OR_ERROR ServerWrite(struct one_wire_query *owq)
 	struct serverpackage sp = { pn_file_entry->path_busless, (BYTE *) OWQ_buffer(owq),
 		OWQ_size(owq), pn_file_entry->tokenstring, pn_file_entry->tokens,
 	};
-	int persistent = 1;
+	enum persistent_state persistent = persistent_yes;
 	FILE_DESCRIPTOR_OR_ERROR connectfd;
 	ZERO_OR_ERROR ret = 0;
 
@@ -201,8 +203,8 @@ static ZERO_OR_ERROR ServerDIR(void (*dirfunc) (void *, const struct parsedname 
 	struct serverpackage sp = { pn_whole_directory->path_busless, NULL, 0,
 		pn_whole_directory->tokenstring, pn_whole_directory->tokens,
 	};
-	int persistent = 1;
-	int connectfd;
+	enum persistent_state persistent = persistent_yes;
+	FILE_DESCRIPTOR_OR_ERROR connectfd;
 	ZERO_OR_ERROR ret;
 
 	memset(&sm, 0, sizeof(struct server_msg));
@@ -317,7 +319,7 @@ static ZERO_OR_ERROR ServerDIRALL(void (*dirfunc) (void *, const struct parsedna
 	struct serverpackage sp = { pn_whole_directory->path_busless, NULL, 0,
 		pn_whole_directory->tokenstring, pn_whole_directory->tokens,
 	};
-	int persistent = 1;
+	enum persistent_state persistent = persistent_yes;
 	FILE_DESCRIPTOR_OR_ERROR connectfd;
 	ZERO_OR_ERROR ret;
 
@@ -440,7 +442,7 @@ static ZERO_OR_ERROR ServerDIRALL(void (*dirfunc) (void *, const struct parsedna
 
 /* read from server, free return pointer if not Null */
 /* Adds an extra null byte at end */
-static void *FromServerAlloc(int file_descriptor, struct client_msg *cm)
+static void *FromServerAlloc(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct client_msg *cm)
 {
 	char *msg;
 	struct timeval tv = { Globals.timeout_network + 1, 0, };
@@ -528,13 +530,13 @@ static SIZE_OR_ERROR FromServer(int file_descriptor, struct client_msg *cm, char
 
 /* Send a message to server, or try a new connection and send again */
 /* return file descriptor */
-static FILE_DESCRIPTOR_OR_ERROR ToServerTwice(int file_descriptor, int persistent, struct server_msg *sm, struct serverpackage *sp, struct connection_in *in)
+static FILE_DESCRIPTOR_OR_ERROR ToServerTwice(FILE_DESCRIPTOR_OR_ERROR file_descriptor, enum persistent_state persistent, struct server_msg *sm, struct serverpackage *sp, struct connection_in *in)
 {
 	FILE_DESCRIPTOR_OR_ERROR newfd;
 	if (ToServer(file_descriptor, sm, sp) >= 0) {
 		return file_descriptor;
 	}
-	if (persistent == 0) {
+	if (persistent == persistent_no) {
 		close(file_descriptor);
 		return FD_CURRENT_BAD;
 	}
@@ -610,12 +612,12 @@ static SIZE_OR_ERROR ToServer(int file_descriptor, struct server_msg *sm, struct
 }
 
 /* flag the sg for "virtual root" -- the remote bus was specifically requested */
-static uint32_t SetupControlFlags(int persistent, const struct parsedname *pn)
+static uint32_t SetupControlFlags(enum persistent_state persistent, const struct parsedname *pn)
 {
 	uint32_t control_flags = pn->control_flags;
 
 	control_flags &= ~PERSISTENT_MASK;
-	if (persistent) {
+	if (persistent==persistent_yes) {
 		control_flags |= PERSISTENT_MASK;
 	}
 
@@ -673,7 +675,7 @@ static FILE_DESCRIPTOR_OR_ERROR PersistentRequest(struct connection_in *in)
 /* A persistent connection didn't work (probably expired on the other end
    recreate it, or clear and return -1
  */
-static FILE_DESCRIPTOR_OR_ERROR PersistentReRequest(int file_descriptor, struct connection_in *in)
+static FILE_DESCRIPTOR_OR_ERROR PersistentReRequest(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct connection_in *in)
 {
 	close(file_descriptor);
 	BUSLOCKIN(in);
@@ -687,7 +689,7 @@ static FILE_DESCRIPTOR_OR_ERROR PersistentReRequest(int file_descriptor, struct 
 }
 
 /* Clear a persistent connection */
-static void PersistentClear(int file_descriptor, struct connection_in *in)
+static void PersistentClear(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct connection_in *in)
 {
 	if (file_descriptor > FD_CURRENT_BAD) {
 		close(file_descriptor);
@@ -698,7 +700,7 @@ static void PersistentClear(int file_descriptor, struct connection_in *in)
 }
 
 /* Free a persistent connection */
-static void PersistentFree(int file_descriptor, struct connection_in *in)
+static void PersistentFree(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct connection_in *in)
 {
 	if (file_descriptor == FD_CURRENT_BAD) {
 		PersistentClear(file_descriptor, in);
@@ -714,17 +716,17 @@ static void PersistentFree(int file_descriptor, struct connection_in *in)
    persistent starts 0 or 1 for whether persistence is wanted
    persistent returns 0 or 1 for whether persistence is granted
 */
-static FILE_DESCRIPTOR_OR_ERROR PersistentStart(int *persistent, struct connection_in *in)
+static FILE_DESCRIPTOR_OR_ERROR PersistentStart(enum persistent_state *persistent, struct connection_in *in)
 {
 	FILE_DESCRIPTOR_OR_ERROR file_descriptor;
-	if (*persistent == 0) {		// no persistence wanted
+	if (*persistent == persistent_no) {		// no persistence wanted
 		file_descriptor = ConnectToServer(in);
-		*persistent = 0;		// still not persistent
+		*persistent = persistent_no;		// still not persistent
 	} else if ((file_descriptor = PersistentRequest(in)) == FD_CURRENT_BAD) {	// tried but failed
 		file_descriptor = ConnectToServer(in);	// non-persistent backup request
-		*persistent = 0;		// not persistent
+		*persistent = persistent_no;		// not persistent
 	} else {					// successfully
-		*persistent = 1;		// flag as persistent
+		*persistent = persistent_yes;		// flag as persistent
 	}
 	return file_descriptor;
 }
@@ -733,9 +735,9 @@ static FILE_DESCRIPTOR_OR_ERROR PersistentStart(int *persistent, struct connecti
    either leave connection open and persistent flag available,
    or close and leave available
 */
-static void PersistentEnd(int file_descriptor, int persistent, int granted, struct connection_in *in)
+static void PersistentEnd(FILE_DESCRIPTOR_OR_ERROR file_descriptor, enum persistent_state persistent, int granted, struct connection_in *in)
 {
-	if (persistent == 0) {		// non-persistence from the start
+	if (persistent == persistent_no) {		// non-persistence from the start
 		if(file_descriptor >= 0) {
 			close(file_descriptor);
 		}
