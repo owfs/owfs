@@ -124,6 +124,7 @@ OWLIB_SOURCE = ow_dl.c           \
                ow_stats.c        \
                ow_search.c       \
                ow_server.c       \
+               ow_server_message.c\
 	       ow_server_enet.c  \
                ow_select.c       \
                ow_settings.c     \
