@@ -127,7 +127,7 @@ void *DataHandler(void *v)
 				cm.size = 0;
 				retbuffer = owmalloc( SERIAL_NUMBER_SIZE ) ;
 				if ( retbuffer ) {
-					memcpy( retbuffer, pn->sn, SERIAL_NUMBER_SIZE ) 
+					memcpy( retbuffer, pn->sn, SERIAL_NUMBER_SIZE ) ;
 					cm.payload = SERIAL_NUMBER_SIZE ;
 				} else {
 					cm.payload = 0 ;
