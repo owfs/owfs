@@ -51,6 +51,7 @@ noinst_HEADERS =          \
         ow_dnssd.h        \
         ow_eds.h          \
         ow_eeef.h         \
+	ow_fd.h           \
         ow_filetype.h     \
         ow_functions.h    \
         ow_global.h       \

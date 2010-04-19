@@ -65,19 +65,26 @@ $Id$
     25-05-2003 iButtonLink device
 */
 
-#ifndef OW_LOCALRETURNS_H			/* tedious wrapper */
-#define OW_LOCALRETURNS_H
+#ifndef OW_FD_H			/* tedious wrapper */
+#define OW_FD_H
 
-typedef int SIZE_OR_ERROR ;
-typedef int ZERO_OR_ERROR ;
-typedef int INDEX_OR_ERROR ;
-typedef enum { gbGOOD, gbBAD } GOOD_OR_BAD  ;
+/* Simple type for file descriptors */
+typedef int FILE_DESCRIPTOR_OR_ERROR ;
+#define FILE_DESCRIPTOR_BAD -1
+#define FILE_DESCRIPTOR_VALID(fd) ((fd)>FILE_DESCRIPTOR_BAD)
+/* Add a little complexity for Persistence
+ * There is another state where a channel is alreaddy opened
+ * and we with to test that one first
+ */
+typedef int FILE_DESCRIPTOR_OR_PERSISTENT ;
+#define  FD_PERSISTENT_IN_USE    -2
+#define  FD_PERSISTENT_NONE      -1
+#define  FD_CURRENT_BAD          -1
 
-#define GOOD(x)	((x)==gbGOOD)
-#define BAD(x)	((x)!=gbGOOD)
-#define GB_to_Z_OR_E(x)	GOOD(x)?0:-EINVAL
-
-#define RETURN_BAD_IF_BAD(x)	if ( BAD(x) ) { return gbBAD; }
-#define RETURN_ERROR_IF_BAD(x)	if ( BAD(x) ) { return -EINVAL; }
+/* Pipe channels */
+enum fd_pipe_channels {
+	fd_pipe_read = 0 ,
+	fd_pipe_write = 1 ,
+} ;
 
 #endif							/* OW_LOCALRETURNS_H */

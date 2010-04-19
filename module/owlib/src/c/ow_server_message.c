@@ -31,7 +31,7 @@ static FILE_DESCRIPTOR_OR_ERROR PersistentStart(enum persistent_state *persisten
 static void PersistentEnd(FILE_DESCRIPTOR_OR_ERROR file_descriptor, enum persistent_state persistent, int granted, struct connection_in *in);
 static void PersistentFree(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct connection_in *in);
 static void PersistentClear(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct connection_in *in);
-static FILE_DESCRIPTOR_OR_ERROR PersistentRequest(struct connection_in *in);
+static FILE_DESCRIPTOR_OR_PERSISTENT PersistentRequest(struct connection_in *in);
 static FILE_DESCRIPTOR_OR_ERROR PersistentReRequest(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct connection_in *in);
 
 static ZERO_OR_ERROR ServerDIRALL(void (*dirfunc) (void *, const struct parsedname * const), void *v, const struct parsedname *pn_whole_directory, uint32_t * flags);
@@ -61,11 +61,10 @@ SIZE_OR_ERROR ServerRead(struct one_wire_query *owq)
 	sm.size = OWQ_size(owq);
 	sm.offset = OWQ_offset(owq);
 
-	//printf("ServerRead path=%s\n", pn_file_entry->path_busless);
 	LEVEL_CALL("SERVER(%d) path=%s", pn_file_entry->selected_connection->index, SAFESTRING(pn_file_entry->path_busless));
 
 	connectfd = PersistentStart(&persistent, pn_file_entry->selected_connection);
-	if (connectfd > FD_CURRENT_BAD) {
+	if ( FILE_DESCRIPTOR_VALID( connectfd ) ) {
 		sm.control_flags = SetupControlFlags(persistent, pn_file_entry);
 		connectfd = ToServerTwice(connectfd, persistent, &sm, &sp, pn_file_entry->selected_connection) ;
 		if ( connectfd < 0 ) {
@@ -99,11 +98,10 @@ INDEX_OR_ERROR ServerPresence(const struct parsedname *pn_file_entry)
 	memset(&cm, 0, sizeof(struct client_msg));
 	sm.type = msg_presence;
 
-	//printf("ServerPresence path=%s\n", pn_file_entry->path_busless);
 	LEVEL_CALL("SERVER(%d) path=%s", pn_file_entry->selected_connection->index, SAFESTRING(pn_file_entry->path_busless));
 
 	connectfd = PersistentStart(&persistent, pn_file_entry->selected_connection);
-	if (connectfd > FD_CURRENT_BAD) {
+	if ( FILE_DESCRIPTOR_VALID( connectfd ) ) {
 		sm.control_flags = SetupControlFlags(persistent, pn_file_entry);
 		connectfd = ToServerTwice(connectfd, persistent, &sm, &sp, pn_file_entry->selected_connection) ;
 		if ( connectfd < 0 ) {
@@ -139,11 +137,10 @@ ZERO_OR_ERROR ServerWrite(struct one_wire_query *owq)
 	sm.size = OWQ_size(owq);
 	sm.offset = OWQ_offset(owq);
 
-	//printf("ServerRead path=%s\n", pn_file_entry->path_busless);
 	LEVEL_CALL("SERVER(%d) path=%s", pn_file_entry->selected_connection->index, SAFESTRING(pn_file_entry->path_busless));
 
 	connectfd = PersistentStart(&persistent, pn_file_entry->selected_connection);
-	if (connectfd > FD_CURRENT_BAD) {
+	if ( FILE_DESCRIPTOR_VALID( connectfd ) ) {
 		sm.control_flags = SetupControlFlags(persistent, pn_file_entry);
 		connectfd = ToServerTwice(connectfd, persistent, &sm, &sp, pn_file_entry->selected_connection) ;
 		if ( connectfd < 0 ) {
@@ -215,7 +212,7 @@ static ZERO_OR_ERROR ServerDIR(void (*dirfunc) (void *, const struct parsedname 
 			   pn_whole_directory->selected_connection->index, SAFESTRING(pn_whole_directory->path), SAFESTRING(pn_whole_directory->path_busless));
 
 	connectfd = PersistentStart(&persistent, pn_whole_directory->selected_connection);
-	if (connectfd > FD_CURRENT_BAD) {
+	if ( FILE_DESCRIPTOR_VALID( connectfd ) ) {
 		sm.control_flags = SetupControlFlags(persistent, pn_whole_directory);
 		connectfd = ToServerTwice(connectfd, persistent, &sm, &sp, pn_whole_directory->selected_connection) ;
 		if ( connectfd < 0 ) {
@@ -635,10 +632,10 @@ static uint32_t SetupControlFlags(enum persistent_state persistent, const struct
 /* Wrapper for ClientConnect */
 static FILE_DESCRIPTOR_OR_ERROR ConnectToServer(struct connection_in *in)
 {
-	int file_descriptor;
+	FILE_DESCRIPTOR_OR_ERROR file_descriptor;
 
 	file_descriptor = ClientConnect(in);
-	if (file_descriptor == FD_CURRENT_BAD) {
+	if ( FILE_DESCRIPTOR_VALID( file_descriptor ) ) {
 		STAT_ADD1(in->reconnect_state);
 	}
 	return file_descriptor;
@@ -654,16 +651,16 @@ static FILE_DESCRIPTOR_OR_ERROR ConnectToServer(struct connection_in *in)
      3. in use, (in->file_descriptor = -2)
         return -1
 */
-static FILE_DESCRIPTOR_OR_ERROR PersistentRequest(struct connection_in *in)
+static FILE_DESCRIPTOR_OR_PERSISTENT PersistentRequest(struct connection_in *in)
 {
-	FILE_DESCRIPTOR_OR_ERROR file_descriptor;
+	FILE_DESCRIPTOR_OR_PERSISTENT file_descriptor;
 	BUSLOCKIN(in);
 	if (in->file_descriptor == FD_PERSISTENT_IN_USE) {	// in use
 		file_descriptor = FD_CURRENT_BAD;
 	} else if (in->file_descriptor > FD_PERSISTENT_NONE) {	// available
 		file_descriptor = in->file_descriptor;
 		in->file_descriptor = FD_PERSISTENT_IN_USE;
-	} else if ((file_descriptor = ConnectToServer(in)) == FD_CURRENT_BAD) {	// can't get a connection
+	} else if ( ! FILE_DESCRIPTOR_VALID( file_descriptor = ConnectToServer(in)) ) {	// can't get a connection
 		file_descriptor = FD_CURRENT_BAD;
 	} else {					// new connection -- make it persistent
 		in->file_descriptor = FD_PERSISTENT_IN_USE;
@@ -718,16 +715,20 @@ static void PersistentFree(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct conn
 */
 static FILE_DESCRIPTOR_OR_ERROR PersistentStart(enum persistent_state *persistent, struct connection_in *in)
 {
-	FILE_DESCRIPTOR_OR_ERROR file_descriptor;
-	if (*persistent == persistent_no) {		// no persistence wanted
-		file_descriptor = ConnectToServer(in);
+	FILE_DESCRIPTOR_OR_PERSISTENT file_descriptor;
+	if (*persistent == persistent_no) {		
+		// no persistence wanted
 		*persistent = persistent_no;		// still not persistent
-	} else if ((file_descriptor = PersistentRequest(in)) == FD_CURRENT_BAD) {	// tried but failed
-		file_descriptor = ConnectToServer(in);	// non-persistent backup request
-		*persistent = persistent_no;		// not persistent
-	} else {					// successfully
-		*persistent = persistent_yes;		// flag as persistent
+		return ConnectToServer(in);
 	}
+	
+	file_descriptor = PersistentRequest(in) ;
+	if ( file_descriptor == FD_CURRENT_BAD) {	// tried but failed
+		*persistent = persistent_no;		// not persistent
+		return ConnectToServer(in);	// non-persistent backup request
+	}					// successfully
+		
+	*persistent = persistent_yes;		// flag as persistent
 	return file_descriptor;
 }
 

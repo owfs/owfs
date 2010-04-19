@@ -494,7 +494,7 @@ struct connection_out {
 	int index;
 	struct addrinfo *ai;
 	struct addrinfo *ai_ok;
-	int file_descriptor;
+	FILE_DESCRIPTOR_OR_ERROR file_descriptor;
 	struct {
 		char *type;					// for zeroconf
 		char *domain;				// for zeroconf
@@ -518,10 +518,6 @@ extern struct outbound_control {
 	struct connection_out * head ; // head of a linked list of "bus" entries
 } Outbound_Control ; // Single global struct -- see ow_connect.c
 
-
-#define  FD_PERSISTENT_IN_USE    -2
-#define  FD_PERSISTENT_NONE      -1
-#define  FD_CURRENT_BAD          -1
 /* This bug-fix/workaround function seem to be fixed now... At least on
  * the platforms I have tested it on... printf() in owserver/src/c/owserver.c
  * returned very strange result on c->busmode before... but not anymore */
