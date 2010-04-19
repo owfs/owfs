@@ -313,7 +313,6 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor))
 
 	if ( GOOD( SetupListenSockets( HandlerRoutine ) ) ) {
 		while (	GOOD( ListenCycle() ) ) {
-			printf("Loop cycle\n");
 		}
 #if OW_MT
 		// Make sure all the handler threads are complete before closing down

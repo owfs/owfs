@@ -121,14 +121,13 @@ static enum toclient_state Ping_or_Send( enum toclient_state last_toclient, stru
 				hd->toclient = toclient_postping ;
 				break ;
 			case toclient_postping:
-			LEVEL_DEBUG("Taking too long, send a keep-alive pulse");
+				LEVEL_DEBUG("Taking too long, send a keep-alive pulse");
 				PingClient(hd);	// send the ping
 				next_toclient = toclient_postping ;
 				break ;
 		}
 	}
 
-printf("toclient postloop %d, but post %d in hd\n",next_toclient,hd->toclient);
 	TOCLIENTUNLOCK(hd);
 	return next_toclient ;
 }
@@ -136,13 +135,11 @@ printf("toclient postloop %d, but post %d in hd\n",next_toclient,hd->toclient);
 void PingLoop(struct handlerdata *hd)
 {
 	enum toclient_state current_toclient = toclient_postping ;
-	printf("Ping loop setup\n");
 	if ( GOOD( LoopSetup(hd) ) ) {
 		pthread_t thread ;
 		
 		// Create DataHandler
 		if (pthread_create(&thread, NULL, DataHandler, hd)) {
-	printf("Thread problem\n");
 			LEVEL_DEBUG("OWSERVER:handler() can't create new thread");
 			DataHandler(hd);		// do it without pings
 			LoopCleanup(hd);
@@ -151,7 +148,6 @@ void PingLoop(struct handlerdata *hd)
 
 		// ping vs data loop
 		do {
-			printf("Ping loop\n");
 			current_toclient = Ping_or_Send( current_toclient, hd ) ;
 		} while ( current_toclient != toclient_complete ) ;
 	}
