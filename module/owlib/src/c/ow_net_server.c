@@ -138,7 +138,7 @@ GOOD_OR_BAD ServerOutSetup(struct connection_out *out)
 		}
 		if ( default_port != NULL ) { // one of the 2 cases above
 			RETURN_BAD_IF_BAD( ServerAddr( default_port, out ) ) ;
-			if ( ServerListen(out)  != FILE_DESCRIPTOR_BAD ) {
+			if ( FILE_DESCRIPTOR_VALID(ServerListen(out)) ) {
 				return gbGOOD ;
 			}
 			ERROR_CONNECT("Default port not successful. Try an ephemeral port");
@@ -148,18 +148,18 @@ GOOD_OR_BAD ServerOutSetup(struct connection_out *out)
 	// second time through, use ephemeral port
 	RETURN_BAD_IF_BAD( ServerAddr( "0", out ) ) ;
 
-	return (ServerListen(out) == FILE_DESCRIPTOR_BAD) ? gbBAD : gbGOOD ;
+	return FILE_DESCRIPTOR_VALID(ServerListen(out)) ? gbGOOD : gbBAD ;
 }
 
 static FILE_DESCRIPTOR_OR_ERROR SetupListenSet( fd_set * listenset )
 {
-	int maxfd = -1 ;
+	FILE_DESCRIPTOR_OR_ERROR maxfd = FILE_DESCRIPTOR_BAD ;
 	struct connection_out * out ;
 
 	FD_ZERO( listenset ) ;
 	for (out = Outbound_Control.head; out; out = out->next) {
 		FILE_DESCRIPTOR_OR_ERROR fd = out->file_descriptor ;
-		if ( fd != FILE_DESCRIPTOR_BAD ) {
+		if ( FILE_DESCRIPTOR_NOT_VALID( fd ) ) {
 			FD_SET( fd, listenset ) ;
 			if ( fd > maxfd ) {
 				maxfd = fd ;
@@ -231,8 +231,8 @@ static void *ProcessAcceptSocket(void *arg)
 	pthread_mutex_lock( &handler_thread_mutex ) ;
 	--handler_thread_count ;
 	if ( shutdown_in_progress && handler_thread_count==0) {
-		if ( shutdown_pipe[fd_pipe_write] != FILE_DESCRIPTOR_BAD ) {
-			write( shutdown_pipe[fd_pipe_write],"X",1) ; //dummy payload
+		if ( FILE_DESCRIPTOR_VALID( shutdown_pipe[fd_pipe_write] ) ) {
+			ignore_result = write( shutdown_pipe[fd_pipe_write],"X",1) ; //dummy payload
 		}		
 	}
 	pthread_mutex_unlock( &handler_thread_mutex ) ;
@@ -248,7 +248,7 @@ static void ProcessListenSocket( struct connection_out * out )
 
 	acceptfd = accept(out->file_descriptor, NULL, NULL);
 
-	if (acceptfd == FILE_DESCRIPTOR_BAD ) {
+	if ( FILE_DESCRIPTOR_NOT_VALID( acceptfd ) ) {
 		return ;
 	}
 
@@ -284,7 +284,7 @@ static GOOD_OR_BAD ListenCycle( void )
 {
 	fd_set listenset ;
 	FILE_DESCRIPTOR_OR_ERROR maxfd = SetupListenSet( &listenset) ;
-	if ( maxfd != FILE_DESCRIPTOR_BAD) {
+	if ( FILE_DESCRIPTOR_VALID( maxfd ) ) {
 		if ( select( maxfd+1, &listenset, NULL, NULL, NULL) > 0 ) {
 			ProcessListenSet( &listenset) ;
 			return gbGOOD ;
@@ -299,7 +299,7 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor))
 
 #if OW_MT
 	/* Locking for thread work */
-	int dont_need_to_read_pipe ;
+	int need_to_read_pipe ;
 
 	handler_thread_count = 0 ;
 	shutdown_in_progress = 0 ;
@@ -320,14 +320,15 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor))
 		// Make sure all the handler threads are complete before closing down
 		my_rwlock_write_lock( &shutdown_mutex_rw ) ;
 		shutdown_in_progress = 1 ; // Signal time to wrap up
-		// need to test if there is a handler to wait for
-		// a new one can't be started while the write lock is held
-		dont_need_to_read_pipe = handler_thread_count==0 || shutdown_pipe[fd_pipe_read]==FILE_DESCRIPTOR_BAD  ;
+		// need to test if there is a handler to wait for before closing
+		// note that a new one can't be started while the write lock is held
+		need_to_read_pipe = handler_thread_count>0 && FILE_DESCRIPTOR_VALID( shutdown_pipe[fd_pipe_read] )  ;
 		my_rwlock_write_unlock( &shutdown_mutex_rw ) ;
-		if ( ! dont_need_to_read_pipe ) {
+		
+		if ( need_to_read_pipe ) {
 			// now wait for write to pipe from last handler thread
 			char buf[2] ;
-			read( shutdown_pipe[fd_pipe_read],buf,1) ;
+			ignore_result = read( shutdown_pipe[fd_pipe_read],buf,1) ;
 		}
 		Test_and_Close_Pipe(shutdown_pipe) ;
 		my_rwlock_destroy(&shutdown_mutex_rw) ;

@@ -108,7 +108,7 @@ void * W1_Dispatch( void * v )
 	pthread_detach(pthread_self());
 #endif                          /* OW_MT */
 
-	while (Inbound_Control.w1_file_descriptor > -1 ) {
+	while (  FILE_DESCRIPTOR_VALID( Inbound_Control.w1_file_descriptor ) ) {
 		struct netlink_parse nlp ;
 		LEVEL_DEBUG("Dispatch loop");
 		if ( Netlink_Parse_Get( &nlp ) == 0 ) {

@@ -117,4 +117,7 @@ struct global {
 };
 extern struct global Globals;
 
+// generic value for ignorable function returns 
+extern int ignore_result ;
+
 #endif							/* OW_GLOBAL_H */

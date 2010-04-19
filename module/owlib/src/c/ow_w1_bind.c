@@ -36,14 +36,16 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
 #include "ow_w1.h"
 #include "ow_connection.h"
 
-int w1_bind( void )
+FILE_DESCRIPTOR_OR_ERROR w1_bind( void )
 {
 	struct sockaddr_nl l_local ;
 
+	Test_and_Close( &(Inbound_Control.w1_file_descriptor) ) ; // just in case
+	
 	Inbound_Control.w1_file_descriptor = socket(AF_NETLINK, SOCK_DGRAM, NETLINK_CONNECTOR);
-	if (Inbound_Control.w1_file_descriptor == -1) {
+	if ( FILE_DESCRIPTOR_NOT_VALID( Inbound_Control.w1_file_descriptor ) ) {
 		ERROR_CONNECT("Netlink (w1) socket");
-		return -1;
+		return FILE_DESCRIPTOR_BAD;
 	}
 
 	Inbound_Control.w1_pid = getpid() ;
@@ -54,7 +56,7 @@ int w1_bind( void )
 	if (bind(Inbound_Control.w1_file_descriptor, (struct sockaddr *)&l_local, sizeof(struct sockaddr_nl)) == -1) {
 		ERROR_CONNECT("Netlink (w1) bind");
 		w1_unbind() ;
-		return -1;
+		return FILE_DESCRIPTOR_BAD;
 	}
 
 	/* Set up pipe pair for LIST_MASTERS and ADD_MASTERS REMOVE_MASTERS netlink messsage */
@@ -63,7 +65,7 @@ int w1_bind( void )
 		Inbound_Control.netlink_pipe[fd_pipe_read] = -1 ;
 		Inbound_Control.netlink_pipe[fd_pipe_write] = -1 ;
 		w1_unbind() ;
-		return -1 ;
+		return FILE_DESCRIPTOR_BAD ;
 	}
 	return Inbound_Control.w1_file_descriptor ;
 }

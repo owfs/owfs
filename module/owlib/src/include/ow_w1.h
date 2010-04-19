@@ -18,6 +18,9 @@ Much thanks to Evgeniy Polyakov
 #include "connector.h"
 #include "w1_netlink.h"
 
+// for some local types
+#include "ow_fd.h"
+
 #define W1_NLM_LENGTH	16
 #define W1_CN_LENGTH	20
 #define W1_W1M_LENGTH	12
@@ -33,7 +36,7 @@ enum Netlink_Read_Status {
 struct connection_in ;
 struct parsedname ;
 
-int w1_bind( void ) ;
+FILE_DESCRIPTOR_OR_ERROR w1_bind( void ) ;
 void w1_unbind( void ) ;
 
 void RemoveW1Bus( int bus_master ) ;

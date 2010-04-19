@@ -76,7 +76,7 @@ static void * W1_start_scan( void * v )
 
 	pthread_detach(pthread_self());
 
-	if ( Inbound_Control.w1_file_descriptor < 0 ) {
+	if ( FILE_DESCRIPTOR_NOT_VALID(Inbound_Control.w1_file_descriptor) ) {
 		LEVEL_DEBUG("Cannot monitor w1 bus, No netlink connection.");
 	} else {
 		W1NLScan() ;
@@ -99,7 +99,7 @@ int W1_Browse( void )
     gettimeofday(&Inbound_Control.w1_last_read,NULL);
     ++Inbound_Control.w1_last_read.tv_sec ;
 
-    if ( Inbound_Control.w1_file_descriptor == -1 && w1_bind() == -1 ) {
+    if ( FILE_DESCRIPTOR_NOT_VALID(w1_bind()) ) {
         ERROR_DEBUG("Netlink problem -- are you root?");
         return -1 ;
     }

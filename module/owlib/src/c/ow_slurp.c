@@ -40,8 +40,6 @@ void Slurp( int file_descriptor, unsigned long usec )
 		if (FD_ISSET(file_descriptor, &readset) == 0) {
 			return ;
 		}
-		if ( read(file_descriptor, data, 1) != 1 ) {
-			return ;
-		}
+		ignore_result = read(file_descriptor, data, 1) ;
 	}
 }

@@ -71,7 +71,10 @@ $Id$
 /* Simple type for file descriptors */
 typedef int FILE_DESCRIPTOR_OR_ERROR ;
 #define FILE_DESCRIPTOR_BAD -1
+
 #define FILE_DESCRIPTOR_VALID(fd) ((fd)>FILE_DESCRIPTOR_BAD)
+#define FILE_DESCRIPTOR_NOT_VALID(fd) (! FILE_DESCRIPTOR_VALID(fd))
+
 /* Add a little complexity for Persistence
  * There is another state where a channel is alreaddy opened
  * and we with to test that one first

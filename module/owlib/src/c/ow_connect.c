@@ -37,7 +37,7 @@ struct inbound_control Inbound_Control = {
 #if OW_W1
 	.w1_seq = 0,
 	.w1_entry_mark = 0,
-	.w1_file_descriptor = -1,
+	.w1_file_descriptor = FILE_DESCRIPTOR_BAD,
 	.w1_pid = 0,
 #endif /* OW_W1 */
 };

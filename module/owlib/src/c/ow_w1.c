@@ -60,7 +60,6 @@ static void W1_setroutines(struct connection_in *in)
 int W1_detect(struct connection_in *in)
 {
 	struct parsedname pn;
-	int pipe_fd[2] ;
 
 	FS_ParsedName_Placeholder(&pn);	// minimal parsename -- no destroy needed
 	pn.selected_connection = in;

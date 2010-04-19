@@ -690,11 +690,12 @@ static FILE_DESCRIPTOR_OR_ERROR PersistentReRequest(FILE_DESCRIPTOR_OR_ERROR fil
 	close(file_descriptor);
 	BUSLOCKIN(in);
 	file_descriptor = ConnectToServer(in);
-	if ( ! FILE_DESCRIPTOR_VALID( file_descriptor ) ) {	// bad connection
-		in->file_descriptor = FILE_DESCRIPTOR_BAD;
-	} else {
-		// else leave as in use
+	if ( FILE_DESCRIPTOR_VALID( file_descriptor ) ) {
+		// leave it marked as in use (though it's a different fd)
 		in->file_descriptor = FILE_DESCRIPTOR_PERSISTENT_IN_USE;
+	} else {
+		// can't reconnect
+		in->file_descriptor = FILE_DESCRIPTOR_BAD;
 	}
 	BUSUNLOCKIN(in);
 	return file_descriptor;
@@ -712,13 +713,13 @@ static void PersistentClear(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct con
 /* Free a persistent connection */
 static void PersistentFree(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct connection_in *in)
 {
-	if ( ! FILE_DESCRIPTOR_VALID( file_descriptor ) ) {
-		PersistentClear(file_descriptor, in);
-	} else {
+	if ( FILE_DESCRIPTOR_VALID( file_descriptor ) ) {
 		// mark as available
 		BUSLOCKIN(in);
 		in->file_descriptor = file_descriptor;
 		BUSUNLOCKIN(in);
+	} else {
+		PersistentClear(file_descriptor, in);
 	}
 }
 
@@ -737,10 +738,10 @@ static FILE_DESCRIPTOR_OR_ERROR PersistentStart(enum persistent_state *persisten
 	}
 	
 	file_descriptor = PersistentRequest(in) ;
-	if ( ! FILE_DESCRIPTOR_VALID( file_descriptor ) ) {	// tried but failed
+	if ( FILE_DESCRIPTOR_NOT_VALID( file_descriptor ) ) {	// tried but failed
 		*persistent = persistent_no;		// not persistent
 		return ConnectToServer(in);	// non-persistent backup request
-	}					// successfully
+	}
 		
 	*persistent = persistent_yes;		// flag as persistent
 	return file_descriptor;

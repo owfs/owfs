@@ -101,4 +101,7 @@ struct global Globals = {
 	.temphigh = GLOBAL_UNTOUCHED_TEMP_LIMIT,
 };
 
+// generic value for ignorable function returns 
+int ignore_result ;
+
 /* Statistics globals are stored in ow_stats.c */
