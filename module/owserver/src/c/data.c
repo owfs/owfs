@@ -93,9 +93,9 @@ void *DataHandler(void *v)
 	case msg_dir:				// good message
 	case msg_presence:			// good message
 	case msg_dirall:			// good message
-	case msg_dirallslash:		// good message
+	case msg_dirallslash:			// good message
 	case msg_get:				// good message
-	case msg_getslash:				// good message
+	case msg_getslash:			// good message
 		if (hd->sm.payload == 0) {	/* Bad query -- no data after header */
 			LEVEL_DEBUG("No payload -- ignore.") ;
 			cm.ret = -EBADMSG;
@@ -124,7 +124,14 @@ void *DataHandler(void *v)
 			case msg_presence:
 				LEVEL_CALL("Presence message on %s bus number=%d", SAFESTRING(pn->path), pn->known_bus->index);
 				// Basically, if we were able to ParsedName it's here!
-				cm.size = cm.payload = 0;
+				cm.size = 0;
+				retbuffer = owmalloc( SERIAL_NUMBER_SIZE ) ;
+				if ( retbuffer ) {
+					memcpy( retbuffer, pn->sn, SERIAL_NUMBER_SIZE ) 
+					cm.payload = SERIAL_NUMBER_SIZE ;
+				} else {
+					cm.payload = 0 ;
+				}
 				cm.ret = 0;		// good answer
 				break;
 			case msg_read:
