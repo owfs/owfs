@@ -140,7 +140,7 @@ void FS_help(const char *arg);
 
 void update_max_delay(struct connection_in *connection);
 
-INDEX_OR_ERROR ServerPresence(const struct parsedname *pn);
+INDEX_OR_ERROR ServerPresence( BYTE * sn, const struct parsedname *pn);
 SIZE_OR_ERROR ServerRead(struct one_wire_query *owq);
 ZERO_OR_ERROR ServerWrite(struct one_wire_query *owq);
 ZERO_OR_ERROR ServerDir(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn, uint32_t * flags);

@@ -67,7 +67,7 @@ SIZE_OR_ERROR ServerRead(struct one_wire_query *owq)
 	if ( FILE_DESCRIPTOR_VALID( connectfd ) ) {
 		sm.control_flags = SetupControlFlags(persistent, pn_file_entry);
 		connectfd = ToServerTwice(connectfd, persistent, &sm, &sp, pn_file_entry->selected_connection) ;
-		if ( connectfd < 0 ) {
+		if ( FILE_DESCRIPTOR_NOT_VALID( connectfd ) ) {
 			ret = -EIO;
 		} else if (FromServer(connectfd, &cm, OWQ_buffer(owq), OWQ_size(owq))
 				   < 0) {
@@ -83,16 +83,16 @@ SIZE_OR_ERROR ServerRead(struct one_wire_query *owq)
 }
 
 // Send to an owserver using the PRESENT message
-INDEX_OR_ERROR ServerPresence(const struct parsedname *pn_file_entry)
+INDEX_OR_ERROR ServerPresence( BYTE * sn, const struct parsedname *pn_file_entry)
 {
 	struct server_msg sm;
 	struct client_msg cm;
 	struct serverpackage sp = { pn_file_entry->path_busless, NULL, 0, pn_file_entry->tokenstring,
 		pn_file_entry->tokens,
 	};
+	BYTE * serial_number ;
 	enum persistent_state persistent = persistent_yes;
 	FILE_DESCRIPTOR_OR_ERROR connectfd;
-	INDEX_OR_ERROR ret = 0;
 
 	memset(&sm, 0, sizeof(struct server_msg));
 	memset(&cm, 0, sizeof(struct client_msg));
@@ -101,21 +101,32 @@ INDEX_OR_ERROR ServerPresence(const struct parsedname *pn_file_entry)
 	LEVEL_CALL("SERVER(%d) path=%s", pn_file_entry->selected_connection->index, SAFESTRING(pn_file_entry->path_busless));
 
 	connectfd = PersistentStart(&persistent, pn_file_entry->selected_connection);
-	if ( FILE_DESCRIPTOR_VALID( connectfd ) ) {
-		sm.control_flags = SetupControlFlags(persistent, pn_file_entry);
-		connectfd = ToServerTwice(connectfd, persistent, &sm, &sp, pn_file_entry->selected_connection) ;
-		if ( connectfd < 0 ) {
-			ret = -EIO;
-		} else if (FromServer(connectfd, &cm, NULL, 0) < 0) {
-			ret = -EIO;
-		} else {
-			ret = cm.ret;
-		}
-	} else {
-		ret = -EIO;
+	if ( FILE_DESCRIPTOR_NOT_VALID( connectfd ) ) {
+		PersistentEnd(connectfd, persistent, cm.control_flags & PERSISTENT_MASK, pn_file_entry->selected_connection);
+		return -EIO ;
 	}
+
+	sm.control_flags = SetupControlFlags(persistent, pn_file_entry);
+	connectfd = ToServerTwice(connectfd, persistent, &sm, &sp, pn_file_entry->selected_connection) ;
+	if ( FILE_DESCRIPTOR_NOT_VALID( connectfd ) ) {
+		PersistentEnd(connectfd, persistent, cm.control_flags & PERSISTENT_MASK, pn_file_entry->selected_connection);
+		return -EIO ;
+	}
+
+	serial_number = (BYTE *) FromServerAlloc( connectfd, &cm) ;
+	if (cm.ret < 0) {
+		PersistentEnd(connectfd, persistent, cm.control_flags & PERSISTENT_MASK, pn_file_entry->selected_connection);
+		return -EIO ;
+	}
+	if ( serial_number ) {
+		memcpy( sn, serial_number, SERIAL_NUMBER_SIZE ) ;
+		owfree( serial_number) ;
+	} else {
+		memcpy( sn, pn_file_entry->sn, SERIAL_NUMBER_SIZE ) ;
+	}
+
 	PersistentEnd(connectfd, persistent, cm.control_flags & PERSISTENT_MASK, pn_file_entry->selected_connection);
-	return ret;
+	return cm.ret;
 }
 
 // Send to an owserver using the WRITE message
@@ -143,7 +154,7 @@ ZERO_OR_ERROR ServerWrite(struct one_wire_query *owq)
 	if ( FILE_DESCRIPTOR_VALID( connectfd ) ) {
 		sm.control_flags = SetupControlFlags(persistent, pn_file_entry);
 		connectfd = ToServerTwice(connectfd, persistent, &sm, &sp, pn_file_entry->selected_connection) ;
-		if ( connectfd < 0 ) {
+		if ( FILE_DESCRIPTOR_NOT_VALID( connectfd ) ) {
 			ret = -EIO;
 		} else if (FromServer(connectfd, &cm, NULL, 0) < 0) {
 			ret = -EIO;
@@ -215,7 +226,7 @@ static ZERO_OR_ERROR ServerDIR(void (*dirfunc) (void *, const struct parsedname 
 	if ( FILE_DESCRIPTOR_VALID( connectfd ) ) {
 		sm.control_flags = SetupControlFlags(persistent, pn_whole_directory);
 		connectfd = ToServerTwice(connectfd, persistent, &sm, &sp, pn_whole_directory->selected_connection) ;
-		if ( connectfd < 0 ) {
+		if ( FILE_DESCRIPTOR_NOT_VALID( connectfd ) ) {
 			ret = -EIO;
 		} else {
 			char *return_path;
@@ -329,14 +340,14 @@ static ZERO_OR_ERROR ServerDIRALL(void (*dirfunc) (void *, const struct parsedna
 
 	// Get a file descriptor, possibly a persistent one
 	connectfd = PersistentStart(&persistent, pn_whole_directory->selected_connection);
-	if (connectfd < 0) {
+	if ( FILE_DESCRIPTOR_NOT_VALID( connectfd ) ) {
 		PersistentEnd(connectfd, persistent, cm.control_flags & PERSISTENT_MASK, pn_whole_directory->selected_connection);
 		return -EIO;
 	}
 	// Now try to get header. If fails, may need a new non-persistent file_descriptor
 	sm.control_flags = SetupControlFlags(persistent, pn_whole_directory);
 	connectfd = ToServerTwice(connectfd, persistent, &sm, &sp, pn_whole_directory->selected_connection);
-	if (connectfd < 0) {
+	if ( FILE_DESCRIPTOR_NOT_VALID( connectfd ) ) {
 		PersistentEnd(connectfd, persistent, cm.control_flags & PERSISTENT_MASK, pn_whole_directory->selected_connection);
 		return -EIO;
 	}

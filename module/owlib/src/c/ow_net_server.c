@@ -159,7 +159,7 @@ static FILE_DESCRIPTOR_OR_ERROR SetupListenSet( fd_set * listenset )
 	FD_ZERO( listenset ) ;
 	for (out = Outbound_Control.head; out; out = out->next) {
 		FILE_DESCRIPTOR_OR_ERROR fd = out->file_descriptor ;
-		if ( FILE_DESCRIPTOR_NOT_VALID( fd ) ) {
+		if ( FILE_DESCRIPTOR_VALID( fd ) ) {
 			FD_SET( fd, listenset ) ;
 			if ( fd > maxfd ) {
 				maxfd = fd ;
@@ -198,9 +198,7 @@ static void ProcessListenSet( fd_set * listenset )
 	struct connection_out * out ;
 
 	for (out = Outbound_Control.head; out; out = out->next) {
-		printf("Listen loop\n") ;
 		if ( FD_ISSET( out->file_descriptor, listenset ) ) {
-			printf("%d is set\n",out->file_descriptor) ;
 			ProcessListenSocket( out ) ;
 		}
 	}
@@ -315,6 +313,7 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor))
 
 	if ( GOOD( SetupListenSockets( HandlerRoutine ) ) ) {
 		while (	GOOD( ListenCycle() ) ) {
+			printf("Loop cycle\n");
 		}
 #if OW_MT
 		// Make sure all the handler threads are complete before closing down

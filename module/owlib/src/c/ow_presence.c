@@ -217,14 +217,13 @@ static int CheckThisConnection(int bus_nr, const struct parsedname *pn)
 	if (TestConnection(pn_copy)) {	// reconnect successful?
 		return -ECONNABORTED;
 	} else if (BusIsServer(in)) {
-		//printf("CheckPresence_low: call ServerPresence\n");
-		if (ServerPresence(pn_copy) >= 0) {
+		BYTE sn[SERIAL_NUMBER_SIZE] ;
+		if (ServerPresence(sn,pn_copy) >= 0) {
 			/* Device was found on this in-device, return it's index */
 			LEVEL_DEBUG("Presence found on server bus %s",SAFESTRING(in->name)) ;
-			Cache_Add_Device(in->index,pn_copy->sn) ; // add or update cache */
+			Cache_Add_Device(in->index,sn) ; // add or update cache */
 			return in->index;
 		}
-		//printf("CheckPresence_low: ServerPresence(%s) pn->selected_connection->index=%d ret=%d\n", pn->path, pn->selected_connection->index, ret);
 	} else if ( in->iroutines.flags & ADAP_FLAG_presence_from_dirblob ) {
 		if ( DirblobSearch(pn_copy->sn, &(in->main)) >= 0 ) {
 			LEVEL_DEBUG("Presence found on fake-like bus %s",SAFESTRING(in->name)) ;
