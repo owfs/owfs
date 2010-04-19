@@ -212,11 +212,13 @@ struct Accept_Socket_Data {
 	struct connection_out * out;
 };
 
+// Read data from the waiting socket and do the actual work
 static void *ProcessAcceptSocket(void *arg)
 {
 	struct Accept_Socket_Data * asd = (struct Accept_Socket_Data *) arg;
 	pthread_detach(pthread_self());
 
+	// Do the actual work
 	asd->out->HandlerRoutine( asd->acceptfd );
 
 	// cleanup
@@ -224,6 +226,7 @@ static void *ProcessAcceptSocket(void *arg)
 	owfree(asd);
 	LEVEL_DEBUG("Normal exit.");
 #if OW_MT
+	// All done. If shutdown in progress and this is a last handler thread, send a message to the main thread.
 	my_rwlock_read_lock( &shutdown_mutex_rw ) ;
 	pthread_mutex_lock( &handler_thread_mutex ) ;
 	--handler_thread_count ;
@@ -249,6 +252,7 @@ static void ProcessListenSocket( struct connection_out * out )
 		return ;
 	}
 
+	// allocate space to pass variables to thread -- cleaned up in thread handler
 	asd = owmalloc( sizeof(struct Accept_Socket_Data) ) ;
 	if ( asd == NULL ) {
 		close( acceptfd ) ;
@@ -256,9 +260,9 @@ static void ProcessListenSocket( struct connection_out * out )
 	}
 	asd->acceptfd = acceptfd ;
 	asd->out = out ;
-	printf("Prethread\n") ;
-	printf("asd=%p\n",asd) ;
+
 #if OW_MT
+	// Launch Handler thread only if shutdown not in progress
 	my_rwlock_read_lock( &shutdown_mutex_rw ) ;
 	if ( ! shutdown_in_progress ) {
 		pthread_t tid;
@@ -282,7 +286,6 @@ static GOOD_OR_BAD ListenCycle( void )
 	FILE_DESCRIPTOR_OR_ERROR maxfd = SetupListenSet( &listenset) ;
 	if ( maxfd != FILE_DESCRIPTOR_BAD) {
 		if ( select( maxfd+1, &listenset, NULL, NULL, NULL) > 0 ) {
-			printf("postselect\n");
 			ProcessListenSet( &listenset) ;
 			return gbGOOD ;
 		}
@@ -314,16 +317,19 @@ void ServerProcess(void (*HandlerRoutine) (int file_descriptor))
 		while (	GOOD( ListenCycle() ) ) {
 		}
 #if OW_MT
+		// Make sure all the handler threads are complete before closing down
 		my_rwlock_write_lock( &shutdown_mutex_rw ) ;
 		shutdown_in_progress = 1 ; // Signal time to wrap up
+		// need to test if there is a handler to wait for
+		// a new one can't be started while the write lock is held
 		dont_need_to_read_pipe = handler_thread_count==0 || shutdown_pipe[fd_pipe_read]==FILE_DESCRIPTOR_BAD  ;
 		my_rwlock_write_unlock( &shutdown_mutex_rw ) ;
 		if ( ! dont_need_to_read_pipe ) {
+			// now wait for write to pipe from last handler thread
 			char buf[2] ;
 			read( shutdown_pipe[fd_pipe_read],buf,1) ;
 		}
-		Test_and_Close(&shutdown_pipe[fd_pipe_read]) ;
-		Test_and_Close(&shutdown_pipe[fd_pipe_write]) ;
+		Test_and_Close_Pipe(shutdown_pipe) ;
 		my_rwlock_destroy(&shutdown_mutex_rw) ;
 		pthread_mutex_destroy(&handler_thread_mutex) ;
 #endif /* OW_MT */

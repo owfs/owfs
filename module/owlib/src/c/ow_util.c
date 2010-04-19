@@ -118,7 +118,7 @@ _DATE UT_toDate(const BYTE * data)
 	return (_DATE) UT_uint32(data);
 }
 
-void Test_and_Close( int * file_descriptor )
+void Test_and_Close( FILE_DESCRIPTOR_OR_ERROR * file_descriptor )
 {
 	if ( file_descriptor == NULL ) {
 		return ;
@@ -127,4 +127,10 @@ void Test_and_Close( int * file_descriptor )
 		close( file_descriptor[0] ) ;
 	}
 	file_descriptor[0] = -1 ;
+}
+
+void Test_and_Close_Pipe( FILE_DESCRIPTOR_OR_ERROR * pipe_fd )
+{
+	Test_and_Close( &pipe_fd[fd_pipe_read]) ;
+	Test_and_Close( &pipe_fd[fd_pipe_write]) ;
 }

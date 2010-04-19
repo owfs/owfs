@@ -227,8 +227,7 @@ static int W1_sendback_data(const BYTE * data, BYTE * resp, const size_t size, c
 
 static void W1_close(struct connection_in *in)
 {
-	Test_and_Close( &(in->connin.w1.netlink_pipe[fd_pipe_read]) );
-	Test_and_Close( &(in->connin.w1.netlink_pipe[fd_pipe_write]) );
+	Test_and_Close_Pipe( in->connin.w1.netlink_pipe );
 }
 
 #endif							/* OW_W1 */

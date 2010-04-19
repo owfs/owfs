@@ -71,8 +71,7 @@ int w1_bind( void )
 void w1_unbind( void )
 {
     Test_and_Close( &(Inbound_Control.w1_file_descriptor) );
-    Test_and_Close( &(Inbound_Control.netlink_pipe[fd_pipe_read]) );
-    Test_and_Close( &(Inbound_Control.netlink_pipe[fd_pipe_write]) );
+    Test_and_Close_Pipe( Inbound_Control.netlink_pipe );
 }
 
 #endif /* OW_W1 */
