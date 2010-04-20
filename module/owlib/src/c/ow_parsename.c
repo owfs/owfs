@@ -431,6 +431,7 @@ static enum parse_enum Parse_RealDevice(char *filename, enum parse_pass remote_s
 	int bus_nr ;
 	if ( BAD( Parse_SerialNumber(filename,pn->sn) ) ) {
 		// Not a serial number, look for an alias
+		pn->state |= ePS_alias ;
 		if (Cache_Get_SerialNumber(filename,pn->sn)) {
 			return parse_error;
 		}

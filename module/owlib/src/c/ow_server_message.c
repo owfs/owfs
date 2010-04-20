@@ -119,6 +119,15 @@ INDEX_OR_ERROR ServerPresence( BYTE * sn, const struct parsedname *pn_file_entry
 		return -EIO ;
 	}
 	if ( serial_number ) {
+		// this is a newer owserver that adds serial number
+		if ( AliasPath(pn_file_entry) ) {
+			// this is an alias that was analyzed
+			char * device = strrchr(pn_file_entry->path_busless,'/') ;
+			if ( device != NULL ) {
+				// Add the Alias to the database
+				Cache_Add_Alias( device+1, serial_number ) ;
+			}
+		}
 		memcpy( sn, serial_number, SERIAL_NUMBER_SIZE ) ;
 		owfree( serial_number) ;
 	} else {
