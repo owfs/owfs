@@ -499,7 +499,9 @@ static void *FromServerAlloc(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct cl
 			msg = NULL;
 		}
 	}
-	msg[cm->payload] = '\0';	// safety NULL
+	if(msg != NULL) {
+		msg[cm->payload] = '\0';	// safety NULL
+	}
 	return msg;
 }
 
