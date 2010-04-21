@@ -15,7 +15,6 @@ $Id$
 // #include <libgen.h>  /* for dirname() */
 	/* string format functions */
 static int hex_convert(char *str);
-static int httpunescape(BYTE * httpstr);\
 
 static void hex_only(char *str);
 
@@ -49,36 +48,6 @@ void ChangeData(struct one_wire_query *owq)
 			break;
 	}
 	FS_write_postparse(owq);
-}
-
-/* Change web-escaped string back to straight ascii */
-static int httpunescape(BYTE * httpstr)
-{
-	BYTE *in = httpstr;			/* input string pointer */
-	BYTE *out = httpstr;		/* output string pointer */
-
-	while (*in) {
-		switch (*in) {
-		case '%':
-			++in;
-			if (in[0] == '\0' || in[1] == '\0') {
-				*out = '\0';
-				return 1;
-			}
-			*out++ = string2num((char *) in);
-			++in;
-			break;
-		case '+':
-			*out++ = ' ';
-			break;
-		default:
-			*out++ = *in;
-			break;
-		}
-		in++;
-	}
-	*out = '\0';
-	return 0;
 }
 
 /* reads an as ascii hex string, strips out non-hex, converts in place */

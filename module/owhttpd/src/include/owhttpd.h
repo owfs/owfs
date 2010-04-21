@@ -58,4 +58,7 @@ int Backup(const char *path);
 /* in ow_favicon.c */
 void Favicon(FILE * out);
 
+/* in owhttpd_escape */
+void httpunescape(BYTE * httpstr) ;
+
 #endif							/* OWHTTPD_H */

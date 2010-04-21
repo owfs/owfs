@@ -80,7 +80,7 @@ int handle_socket(FILE * out)
 			http_code = http_icon ;
 		} else 	if (FS_ParsedName(up.file, pn)) {
 			// Can't understand the file name = URL
-			LEVEL_DEBUG("http %s not understaood.",up.file);
+			LEVEL_DEBUG("http %s not understood.",up.file);
 			ReadToCRLF(out) ;
 			pn = NULL ;
 			http_code = http_404 ;

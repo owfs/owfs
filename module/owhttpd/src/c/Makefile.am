@@ -7,6 +7,7 @@ owhttpd_SOURCES = owhttpd.c          \
                   owhttpd_write.c    \
                   owhttpd_read.c     \
                   owhttpd_dir.c      \
+				  owhttpd_escape.c   \
                   owhttpd_favicon.c
 
 owhttpd_DEPENDENCIES = ../../../owlib/src/c/libow.la
