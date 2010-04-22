@@ -50,11 +50,6 @@ SIZE_OR_ERROR ServerRead(struct one_wire_query *owq)
 	FILE_DESCRIPTOR_OR_ERROR connectfd;
 	SIZE_OR_ERROR ret = 0;
 
-	// Special handling of alias property. alias should only be asked on local machine.
-	if ( pn_file_entry->selected_filetype->change == fc_alias ) {
-		return FS_alias(owq) ;
-	}
-
 	memset(&sm, 0, sizeof(struct server_msg));
 	memset(&cm, 0, sizeof(struct client_msg));
 	sm.type = msg_read;
@@ -83,7 +78,7 @@ SIZE_OR_ERROR ServerRead(struct one_wire_query *owq)
 }
 
 // Send to an owserver using the PRESENT message
-INDEX_OR_ERROR ServerPresence( BYTE * sn, const struct parsedname *pn_file_entry)
+INDEX_OR_ERROR ServerPresence( struct parsedname *pn_file_entry)
 {
 	struct server_msg sm;
 	struct client_msg cm;
@@ -119,19 +114,8 @@ INDEX_OR_ERROR ServerPresence( BYTE * sn, const struct parsedname *pn_file_entry
 		return -EIO ;
 	}
 	if ( serial_number ) {
-		// this is a newer owserver that adds serial number
-		if ( AliasPath(pn_file_entry) ) {
-			// this is an alias that was analyzed
-			char * device = strrchr(pn_file_entry->path_busless,'/') ;
-			if ( device != NULL ) {
-				// Add the Alias to the database
-				Cache_Add_Alias( device+1, serial_number ) ;
-			}
-		}
-		memcpy( sn, serial_number, SERIAL_NUMBER_SIZE ) ;
+		memcpy( pn_file_entry->sn, serial_number, SERIAL_NUMBER_SIZE ) ;
 		owfree( serial_number) ;
-	} else {
-		memcpy( sn, pn_file_entry->sn, SERIAL_NUMBER_SIZE ) ;
 	}
 
 	PersistentEnd(connectfd, persistent, cm.control_flags & PERSISTENT_MASK, pn_file_entry->selected_connection);

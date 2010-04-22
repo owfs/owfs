@@ -59,6 +59,9 @@ int handle_socket(FILE * out)
 	if ( getline(&(up.line), &(up.line_length), out) >= 0 ) {
 		LEVEL_CALL("PreParse line=%s", up.line);
 		URLparse(&up);				/* Break up URL */
+		httpunescape((BYTE *) up.file    );
+		httpunescape((BYTE *) up.request );
+		httpunescape((BYTE *) up.value   );
 
 		LEVEL_CALL
 		("WLcmd: %s\tfile: %s\trequest: %s\tvalue: %s\tversion: %s",

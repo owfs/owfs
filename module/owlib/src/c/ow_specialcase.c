@@ -52,7 +52,7 @@ void SpecialCase_add( struct connection_in * in, unsigned char family_code, cons
 	/* Search for known 1-wire device */
 	struct parsedname pn ; // carrier for finding device -- not actually formally created. No deallocation needed.
 	pn.type = ePN_real ;
-	FS_devicefindhex( family_code, &pn);
+	pn.selected_device = FS_devicefindhex( family_code, &pn);
 	if ( pn.selected_device != &NoDevice ) {
 		/* Search for known device filetype */
 		enum parse_enum pe = parse_error ;

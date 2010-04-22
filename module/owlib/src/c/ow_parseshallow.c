@@ -52,6 +52,7 @@ int OWQ_create_shallow_aggregate(struct one_wire_query *owq_shallow, struct one_
 	case ft_binary:
 	case ft_ascii:
 	case ft_vascii:
+	case ft_alias:
 		/* allocate larger buffer space */
 		OWQ_size(owq_shallow) = FullFileLength(PN(owq_shallow));
 		OWQ_buffer(owq_shallow) = owmalloc(OWQ_size(owq_shallow));
@@ -77,6 +78,7 @@ void OWQ_destroy_shallow_aggregate(struct one_wire_query *owq_shallow)
 	case ft_binary:
 	case ft_ascii:
 	case ft_vascii:
+	case ft_alias:
 		owfree(OWQ_buffer(owq_shallow));
 		break;
 	default:

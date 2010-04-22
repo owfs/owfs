@@ -108,7 +108,6 @@ enum ePS_state {
 	ePS_busremote = 0x0020,
 	ePS_busveryremote = 0x0040,
 	ePS_reconnection = 0x0080,
-	ePS_alias = 0x0100,
 };
 
 struct parsedname {
@@ -164,7 +163,6 @@ struct parsedname {
 #define     IsAlarmDir(pn)    ( ! NotAlarmDir(pn) )
 #define     NotRealDir(pn)    ( ((pn)->type) != ePN_real )
 #define      IsRealDir(pn)    ( ((pn)->type) == ePN_real )
-#define      AliasPath(pn)    ( (((pn)->state)&ePS_alias) == 0 )
 
 #define   NotReconnect(pn)    ( (((pn)->state)&ePS_reconnection) == 0 )
 #define ClearReconnect(pn)    do { ((pn)->state)&=~ePS_reconnection; } while(0)

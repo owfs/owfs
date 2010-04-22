@@ -385,6 +385,7 @@ static ZERO_OR_ERROR FS_write_a_part(struct one_wire_query *owq)
 	case ft_binary:
 	case ft_ascii:
 	case ft_vascii:
+	case ft_alias:
 		{
 			size_t extension_index;
 			size_t elements = pn->selected_filetype->ag->elements;
@@ -477,6 +478,7 @@ static ZERO_OR_ERROR FS_write_in_parts(struct one_wire_query *owq)
 	switch (pn->selected_filetype->format) {
 	case ft_ascii:
 	case ft_vascii:
+	case ft_alias:
 	case ft_binary:
 		buffer_pointer = OWQ_buffer(owq);
 		break;

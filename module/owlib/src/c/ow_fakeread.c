@@ -91,6 +91,7 @@ static ZERO_OR_ERROR FS_read_fake_single(struct one_wire_query *owq)
 		format_type = type_b;	// binary
 		// fall through
 	case ft_vascii:
+	case ft_alias:
 	case ft_ascii:
 		{
 			size_t i;
@@ -134,6 +135,7 @@ static ZERO_OR_ERROR FS_read_fake_array(struct one_wire_query *owq)
 		case ft_date:
 			break;
 		case ft_vascii:
+		case ft_alias:
 		case ft_ascii:
 		case ft_binary:
 			OWQ_assign_read_buffer(&OWQ_buffer(owq)[extension * entry_length],entry_length,0,owq_single) ;

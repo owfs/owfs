@@ -70,6 +70,7 @@ ZERO_OR_ERROR OWQ_parse_input(struct one_wire_query *owq)
 		switch (OWQ_pn(owq).selected_filetype->format) {
 		case ft_ascii:
 		case ft_vascii:
+		case ft_alias:
 			return FS_input_ascii_array(owq);
 		case ft_binary:
 			return FS_input_array_no_commas(owq);
@@ -93,6 +94,7 @@ ZERO_OR_ERROR OWQ_parse_input(struct one_wire_query *owq)
 		case ft_date:
 			return FS_input_date(owq);
 		case ft_vascii:
+		case ft_alias:
 		case ft_ascii:
 		case ft_binary:
 			return FS_input_ascii(owq);

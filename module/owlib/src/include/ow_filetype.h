@@ -89,6 +89,7 @@ enum ft_format {
 	ft_integer,
 	ft_unsigned,
 	ft_float,
+	ft_alias,        // A human readable name in lue of numeric ID
 	ft_ascii,
 	ft_vascii,					// variable length ascii -- must be read and measured.
 	ft_binary,
@@ -117,7 +118,6 @@ enum fc_change {
 	fc_directory,    // directory listing
 	fc_presence,     // chip <-> bus pairing
 	fc_link,         // a link to another property -- cache that one instead
-	fc_alias,        // A human readable name in lue of numeric ID -- don't send over the wire
 };
 
 /* Predeclare one_wire_query */

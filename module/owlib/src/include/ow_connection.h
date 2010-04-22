@@ -397,7 +397,7 @@ enum e_bus_stat {
 
 struct connection_in {
 	struct connection_in *next;
-	int index;
+	INDEX_OR_ERROR index;
 	char *name;
 	FILE_DESCRIPTOR_OR_PERSISTENT file_descriptor;
 	speed_t baud; // baud rate in the form of B9600

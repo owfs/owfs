@@ -75,6 +75,7 @@ SIZE_OR_ERROR OWQ_parse_output(struct one_wire_query *owq)
 		switch (OWQ_pn(owq).selected_filetype->format) {
 		case ft_ascii:
 		case ft_vascii:
+		case ft_alias:
 			return OWQ_parse_output_ascii_array(owq);
 		case ft_binary:
 			return OWQ_parse_output_array_no_commas(owq);
@@ -98,6 +99,7 @@ SIZE_OR_ERROR OWQ_parse_output(struct one_wire_query *owq)
 		case ft_date:
 			return OWQ_parse_output_date(owq);
 		case ft_vascii:
+		case ft_alias:
 		case ft_ascii:
 		case ft_binary:
 			return OWQ_parse_output_ascii(owq);

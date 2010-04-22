@@ -70,7 +70,6 @@ $Id$
 
 typedef int SIZE_OR_ERROR ;
 typedef int ZERO_OR_ERROR ;
-typedef int INDEX_OR_ERROR ;
 typedef enum { gbGOOD, gbBAD } GOOD_OR_BAD  ;
 
 #define GOOD(x)	((x)==gbGOOD)

@@ -56,6 +56,7 @@ static void Set_OWQ_length(struct one_wire_query *owq)
 	case ft_binary:
 	case ft_ascii:
 	case ft_vascii:
+	case ft_alias:
 		OWQ_length(owq) = OWQ_size(owq);
 		break;
 	default:

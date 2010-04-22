@@ -51,7 +51,7 @@ ZERO_OR_ERROR FS_present(struct one_wire_query *owq);
 #define F_type     \
 {"type"      ,  PROPERTY_LENGTH_TYPE,  NON_AGGREGATE, ft_vascii, fc_static  , FS_type     , NO_WRITE_FUNCTION, VISIBLE, {v:NULL}, }
 #define F_alias     \
-{"alias"      ,PROPERTY_LENGTH_ALIAS,  NON_AGGREGATE, ft_vascii, fc_alias   , FS_alias    , NO_WRITE_FUNCTION, VISIBLE, {v:NULL}, }
+{"alias"      ,PROPERTY_LENGTH_ALIAS,  NON_AGGREGATE, ft_alias, fc_static   , FS_alias    , NO_WRITE_FUNCTION, VISIBLE, {v:NULL}, }
 #define F_locator  \
 {"locator"   ,  PROPERTY_LENGTH_ADDRESS,  NON_AGGREGATE, ft_ascii , fc_directory,FS_locator  , NO_WRITE_FUNCTION, VISIBLE, {v:NULL}, }
 #define F_r_locator \

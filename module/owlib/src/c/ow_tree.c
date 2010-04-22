@@ -185,22 +185,22 @@ void DeviceSort(void)
 	Tree[ePN_structure] = Tree[ePN_real];
 }
 
-void FS_devicefindhex(BYTE f, struct parsedname *pn)
+struct device * FS_devicefindhex(BYTE f, struct parsedname *pn)
 {
 	char ID[] = "XX";
 	const struct device d = { ID, NULL, 0, 0, NULL };
 	struct device_opaque *p;
 
-	pn->selected_device = &NoDevice;
 	num2string(ID, f);
 	if ((p = tfind(&d, &Tree[pn->type], device_compare))) {
-		pn->selected_device = p->key;
+		return p->key;
 	} else {
 		num2string(ID, f ^ 0x80);
 		if ((p = tfind(&d, &Tree[pn->type], device_compare))) {
-			pn->selected_device = p->key;
+			return p->key;
 		}
 	}
+	return &NoDevice ;
 }
 
 void FS_devicefind(const char *code, struct parsedname *pn)

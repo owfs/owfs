@@ -331,6 +331,7 @@ static int Add_a_property(const char * tag, const char * property, const char * 
 	switch (PN(owq)->selected_filetype->format) {
 	case ft_ascii:
 	case ft_vascii:
+	case ft_alias:
 	case ft_binary:
 	{
 		char * data = xml_string(tag,&buffer_pointer) ;

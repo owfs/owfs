@@ -167,7 +167,6 @@ static time_t TimeOut(const enum fc_change change)
 	case fc_directory:
 		return Globals.timeout_directory;
 	case fc_link:
-	case fc_alias:
 	default:					/* static or statistic */
 		return 0;
 	}
@@ -285,6 +284,7 @@ int OWQ_Cache_Add(const struct one_wire_query *owq)
 		switch (pn->selected_filetype->format) {
 		case ft_ascii:
 		case ft_vascii:
+		case ft_alias:
 		case ft_binary:
 			return 1;			// cache of string arrays not supported
 		case ft_integer:
@@ -303,6 +303,7 @@ int OWQ_Cache_Add(const struct one_wire_query *owq)
 		switch (pn->selected_filetype->format) {
 		case ft_ascii:
 		case ft_vascii:
+		case ft_alias:
 		case ft_binary:
 			if (OWQ_offset(owq) > 0) {
 				return 1;
@@ -460,6 +461,10 @@ int Cache_Add_Device(const int bus_nr, const BYTE * sn)
 
 	if (duration <= 0) {
 		return 0;				/* in case timeout set to 0 */
+	}
+
+	if ( sn[0] == 0 ) { //bad serial number
+		return 0 ;
 	}
 
 	tn = (struct tree_node *) owmalloc(sizeof(struct tree_node) + sizeof(int));
@@ -712,6 +717,7 @@ int OWQ_Cache_Get(struct one_wire_query *owq)
 		switch (pn->selected_filetype->format) {
 		case ft_ascii:
 		case ft_vascii:
+		case ft_alias:
 		case ft_binary:
 			return 1;			// string arrays not supported
 		case ft_integer:
@@ -730,6 +736,7 @@ int OWQ_Cache_Get(struct one_wire_query *owq)
 		switch (pn->selected_filetype->format) {
 		case ft_ascii:
 		case ft_vascii:
+		case ft_alias:
 		case ft_binary:
 			if (OWQ_offset(owq) > 0) {
 				return 1;

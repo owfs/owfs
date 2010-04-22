@@ -35,6 +35,9 @@ static enum parse_enum Parse_NonReal(char *pathnow, struct parsedname *pn);
 static enum parse_enum Parse_RealDevice(char *filename, enum parse_pass remote_status, struct parsedname *pn);
 static enum parse_enum Parse_NonRealDevice(char *filename, struct parsedname *pn);
 static enum parse_enum Parse_Bus(char *pathnow, struct parsedname *pn);
+static enum parse_enum Parse_Alias(char *filename, enum parse_pass remote_status, struct parsedname *pn);
+static void ReplaceAliasInBusless( char * filename, struct parsedname * pn);
+
 static ZERO_OR_ERROR FS_ParsedName_anywhere(const char *path, enum parse_pass remote_status, struct parsedname *pn);
 static ZERO_OR_ERROR FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path, struct parsedname *pn);
 
@@ -101,7 +104,6 @@ static ZERO_OR_ERROR FS_ParsedName_anywhere(const char *path, enum parse_pass re
 	}
 
 	while (1) {
-		//printf("PARSENAME parse_enum=%d pathnow=%s\n",pe,SAFESTRING(pp->pathnow));
 		// Check for extreme conditions (done, error)
 		switch (pe) {
 
@@ -231,7 +233,7 @@ static ZERO_OR_ERROR FS_ParsedName_setup(struct parsedname_pointers *pp, const c
 		return -EBADF;
 	}
 
-	pn->path = (char *) owmalloc(2 * strlen(path) + 4);
+	pn->path = (char *) owmalloc(2 * PATH_MAX + 4);
 	if (pn->path == NULL) {
 		return -ENOMEM;
 	}
@@ -374,14 +376,14 @@ static enum parse_enum Parse_NonReal(char *pathnow, struct parsedname *pn)
 static enum parse_enum Parse_Bus(char *pathnow, struct parsedname *pn)
 {
 	char *found;
-	int bus_number;
+	INDEX_OR_ERROR bus_number;
 	/* Processing for bus.X directories -- eventually will make this more generic */
 	if (!isdigit(pathnow[4])) {
 		return parse_error;
 	}
 
 	bus_number = atoi(&pathnow[4]);
-	if (bus_number < 0) {
+	if ( INDEX_NOT_VALID(bus_number) ) {
 		return parse_error;
 	}
 
@@ -421,6 +423,75 @@ static enum parse_enum Parse_Bus(char *pathnow, struct parsedname *pn)
 	return parse_first;
 }
 
+static void ReplaceAliasInBusless( char * filename, struct parsedname * pn)
+{
+	int alias_len = strlen(filename) ;
+
+	char alias[alias_len + 2] ;
+
+	char * alias_loc = pn->path_busless ;
+	char * post_alias_loc ;
+	
+	strcpy( alias, "/") ;
+	strcat( alias, filename ) ; // we include an initial / to make the match more accurate
+	do {
+		alias_loc = strstr( alias_loc, alias ) ;
+		if ( alias_loc == NULL ) {
+			return ;
+		}
+		++alias_loc ; // point after '/'
+		post_alias_loc = alias_loc + alias_len ;
+		if ( post_alias_loc[0] == '\0' ) {
+			// alias at end of string, no moving needed
+			break ;
+		} 
+		if ( post_alias_loc[0] == '/' ) {
+			// move rest of path
+			memmove( &alias_loc[14], post_alias_loc, strlen(post_alias_loc)+1 ) ;
+			break ;
+		} 
+		// alias not really found (only partial match)
+		// loop starting one char later
+	} while(1) ;
+	//write in serial number or alias
+	bytes2string( alias_loc, pn->sn, 7 ) ;
+}
+
+static enum parse_enum Parse_Alias(char *filename, enum parse_pass remote_status, struct parsedname *pn)
+{
+	if ( Cache_Get_SerialNumber(filename,pn->sn) == 0 ) {
+		// already known alias
+		/* Search for known 1-wire device -- keyed to device name (family code in HEX) */
+		pn->selected_device = FS_devicefindhex(pn->sn[0], pn);
+
+		if (Globals.one_device) {
+			SetKnownBus(INDEX_DEFAULT, pn);
+		} else if (remote_status == parse_pass_post_remote) {
+			return parse_prop;
+		} else {
+			/* Check the presence, and cache the proper bus number for better performance */
+			INDEX_OR_ERROR bus_nr = CheckPresence(pn);
+			if ( INDEX_NOT_VALID(bus_nr) ) {
+				return parse_error;	/* CheckPresence failed */
+			}
+		}
+	} else {
+		// Add the Alias to the database
+		INDEX_OR_ERROR bus_nr = RemoteAlias(pn) ;
+		if ( INDEX_NOT_VALID(bus_nr) ) {
+			return parse_error;	/* CheckPresence failed */
+		}
+		SetKnownBus(bus_nr, pn);
+		if ( pn->sn[0] != 0 ) {
+			Cache_Add_Alias( filename, pn->sn ) ;
+		}
+	}
+	if ( BusIsServer(pn->selected_connection) ) {
+		ReplaceAliasInBusless( filename, pn ) ;
+	}
+	return parse_prop;
+}
+
 /* Parse Name (only device name) part of string */
 /* Return -ENOENT if not a valid name
    return 0 if good
@@ -428,17 +499,13 @@ static enum parse_enum Parse_Bus(char *pathnow, struct parsedname *pn)
  */
 static enum parse_enum Parse_RealDevice(char *filename, enum parse_pass remote_status, struct parsedname *pn)
 {
-	int bus_nr ;
 	if ( BAD( Parse_SerialNumber(filename,pn->sn) ) ) {
 		// Not a serial number, look for an alias
-		pn->state |= ePS_alias ;
-		if (Cache_Get_SerialNumber(filename,pn->sn)) {
-			return parse_error;
-		}
+		return Parse_Alias( filename, remote_status, pn) ;
 	}
 
 	/* Search for known 1-wire device -- keyed to device name (family code in HEX) */
-	FS_devicefindhex(pn->sn[0], pn);
+	pn->selected_device = FS_devicefindhex(pn->sn[0], pn);
 
 	// returning from owserver -- don't need to check presence (it's implied)
 	if (remote_status == parse_pass_post_remote) {
@@ -446,11 +513,11 @@ static enum parse_enum Parse_RealDevice(char *filename, enum parse_pass remote_s
 	}
 
 	if (Globals.one_device) {
-		bus_nr = 0;				// arbitrary assignment
+		SetKnownBus(INDEX_DEFAULT, pn);
 	} else {
 		/* Check the presence, and cache the proper bus number for better performance */
-		bus_nr = CheckPresence(pn);
-		if (bus_nr < 0) {
+		INDEX_OR_ERROR bus_nr = CheckPresence(pn);
+		if ( INDEX_NOT_VALID(bus_nr) ) {
 			return parse_error;	/* CheckPresence failed */
 		}
 	}

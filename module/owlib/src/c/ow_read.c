@@ -386,9 +386,10 @@ static SIZE_OR_ERROR FS_r_local(struct one_wire_query *owq)
 {
 	// Bus and device already locked
 	struct parsedname *pn = PN(owq);
+	struct filetype * ft = pn->selected_filetype ;
 	
 	/* Readable? */
-	if (pn->selected_filetype->read == NO_READ_FUNCTION) {
+	if (ft->read == NO_READ_FUNCTION) {
 		return -ENOTSUP;
 	}
 	
@@ -401,7 +402,7 @@ static SIZE_OR_ERROR FS_r_local(struct one_wire_query *owq)
 		return 0 ;
 	}
 	
-	if (pn->selected_filetype->change != fc_static && IsRealDir(pn)) {
+	if (ft->change != fc_static && ft->format != ft_alias && IsRealDir(pn)) {
 		switch (pn->selected_connection->Adapter) {
 			case adapter_fake:
 				/* Special case for "fake" adapter */
@@ -421,7 +422,7 @@ static SIZE_OR_ERROR FS_r_local(struct one_wire_query *owq)
 	}
 	
 	/* Array property? Read separately? Read together and manually separate? */
-	if (pn->selected_filetype->ag != NON_AGGREGATE) {	/* array property */
+	if (ft->ag != NON_AGGREGATE) {	/* array property */
 		switch (pn->extension) {
 			case EXTENSION_BYTE:
 				return FS_read_lump(owq);
@@ -429,10 +430,10 @@ static SIZE_OR_ERROR FS_r_local(struct one_wire_query *owq)
 				if (OWQ_offset(owq) > 0) {
 					return -1;		// no aggregates can be offset -- too confusing
 				}
-				if (pn->selected_filetype->format == ft_bitfield) {
+				if (ft->format == ft_bitfield) {
 					return FS_read_all_bits(owq);
 				}
-				switch (pn->selected_filetype->ag->combined) {
+				switch (ft->ag->combined) {
 					case ag_separate:	/* separate reads, artificially combined into a single array */
 						return FS_read_from_parts(owq);
 					case ag_mixed:		/* mixed mode, ALL read handled differently */
@@ -441,10 +442,10 @@ static SIZE_OR_ERROR FS_r_local(struct one_wire_query *owq)
 						return FS_read_lump(owq);
 				}
 			default:
-				if (pn->selected_filetype->format == ft_bitfield) {
+				if (ft->format == ft_bitfield) {
 					return FS_read_one_bit(owq);
 				}
-				switch (pn->selected_filetype->ag->combined) {
+				switch (ft->ag->combined) {
 					case ag_separate:	/* separate reads, artificially combined into a single array */
 						return FS_read_lump(owq);
 					case ag_mixed:		/* mixed mode, ALL read handled differently */
@@ -534,6 +535,7 @@ static ZERO_OR_ERROR FS_read_from_parts(struct one_wire_query *owq)
 	switch (pn->selected_filetype->format) {
 		case ft_ascii:
 		case ft_vascii:
+		case ft_alias:
 		case ft_binary:
 			// sneaky! Move owq_single buffer location within owq buffer
 			if ( OWQ_size(owq) < FullFileLength(pn) || OWQ_offset(owq) != 0 ) {
@@ -568,6 +570,7 @@ static ZERO_OR_ERROR FS_read_from_parts(struct one_wire_query *owq)
 		switch (pn->selected_filetype->format) {
 		case ft_ascii:
 		case ft_vascii:
+		case ft_alias:
 		case ft_binary:
 			// sneaky! Move owq_single buffer location within owq buffer
 			OWQ_buffer(owq_single) += OWQ_length(owq_single);
@@ -654,6 +657,7 @@ static ZERO_OR_ERROR FS_read_a_part(struct one_wire_query *owq)
 	if (return_status == 0) {
 		switch (OWQ_pn(owq).selected_filetype->format) {
 		case ft_vascii:
+		case ft_alias:
 		case ft_ascii:
 		case ft_binary:
 			{
@@ -695,6 +699,7 @@ static ZERO_OR_ERROR FS_read_mixed_part(struct one_wire_query *owq)
 
 	switch (OWQ_pn(owq).selected_filetype->format) {
 	case ft_vascii:
+	case ft_alias:
 	case ft_ascii:
 	case ft_binary:
 		{

@@ -36,7 +36,6 @@ void ChangeData(struct one_wire_query *owq)
 	ASCII *value_string = OWQ_buffer(owq);
 	
 	/* Do command processing and make changes to 1-wire devices */
-	httpunescape((BYTE *) value_string);
 	LEVEL_DETAIL("New data path=%s value=%s", pn->path, value_string);
 	switch (pn->selected_filetype->format) {
 		case ft_binary:

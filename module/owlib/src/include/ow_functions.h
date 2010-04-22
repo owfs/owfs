@@ -74,9 +74,10 @@ size_t FileLength(const struct parsedname *pn);
 size_t FullFileLength(const struct parsedname *pn);
 INDEX_OR_ERROR CheckPresence(struct parsedname *pn);
 INDEX_OR_ERROR ReCheckPresence(struct parsedname *pn);
+INDEX_OR_ERROR RemoteAlias(struct parsedname *pn);
 void FS_devicename(char *buffer, const size_t length, const BYTE * sn, const struct parsedname *pn);
 void FS_devicefind(const char *code, struct parsedname *pn);
-void FS_devicefindhex(BYTE f, struct parsedname *pn);
+struct device * FS_devicefindhex(BYTE f, struct parsedname *pn);
 
 const char *FS_DirName(const struct parsedname *pn);
 
@@ -140,7 +141,7 @@ void FS_help(const char *arg);
 
 void update_max_delay(struct connection_in *connection);
 
-INDEX_OR_ERROR ServerPresence( BYTE * sn, const struct parsedname *pn);
+INDEX_OR_ERROR ServerPresence( struct parsedname *pn);
 SIZE_OR_ERROR ServerRead(struct one_wire_query *owq);
 ZERO_OR_ERROR ServerWrite(struct one_wire_query *owq);
 ZERO_OR_ERROR ServerDir(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn, uint32_t * flags);

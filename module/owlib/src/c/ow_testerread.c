@@ -75,6 +75,7 @@ static ZERO_OR_ERROR FS_read_tester_single(struct one_wire_query *owq)
 	case ft_date:
 		OWQ_D(owq) = 1174622400;
 		break;
+	case ft_alias:
 	case ft_vascii:
 	case ft_ascii:
 		{
@@ -147,6 +148,7 @@ static ZERO_OR_ERROR FS_read_tester_array(struct one_wire_query *owq)
 		case ft_date:
 			break;
 		case ft_vascii:
+		case ft_alias:
 		case ft_ascii:
 		case ft_binary:
 			OWQ_assign_read_buffer(&OWQ_buffer(owq)[extension * entry_length],entry_length,0,owq_single) ;
