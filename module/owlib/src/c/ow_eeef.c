@@ -9,36 +9,6 @@ $Id$
 	1wire/iButton system from Dallas Semiconductor
 */
 
-/* General Device File format:
-    This device file corresponds to a specific 1wire/iButton chip type
-	( or a closely related family of chips )
-
-	The connection to the larger program is through the "device" data structure,
-	  which must be declared in the acompanying header file.
-
-	The device structure holds the
-	  family code,
-	  name,
-	  device type (chip, interface or pseudo)
-	  number of properties,
-	  list of property structures, called "filetype".
-
-	Each filetype structure holds the
-	  name,
-	  estimated length (in bytes),
-	  aggregate structure pointer,
-	  data format,
-	  read function,
-	  write funtion,
-	  generic data pointer
-
-	The aggregate structure, is present for properties that several members
-	(e.g. pages of memory or entries in a temperature log. It holds:
-	  number of elements
-	  whether the members are lettered or numbered
-	  whether the elements are stored together and split, or separately and joined
-*/
-
 #include <config.h>
 #include "owfs_config.h"
 #include "ow_eeef.h"
@@ -107,17 +77,17 @@ DeviceEntry(EE, HobbyBoards_EF);
 /* ------- Functions ------------ */
 
 /* prototypes */
-static int OW_version(BYTE * major, BYTE * minor, struct parsedname * pn) ;
-static int OW_type(BYTE * type_number, struct parsedname * pn) ;
+static GOOD_OR_BAD OW_version(BYTE * major, BYTE * minor, struct parsedname * pn) ;
+static GOOD_OR_BAD OW_type(BYTE * type_number, struct parsedname * pn) ;
 
-static int OW_UVI(_FLOAT * UVI, struct parsedname * pn) ;
-static int OW_r_UVI_offset(_FLOAT * UVI, struct parsedname * pn) ;
+static GOOD_OR_BAD OW_UVI(_FLOAT * UVI, struct parsedname * pn) ;
+static GOOD_OR_BAD OW_r_UVI_offset(_FLOAT * UVI, struct parsedname * pn) ;
 
-static int OW_temperature(_FLOAT * T, struct parsedname * pn) ;
-static int OW_r_temperature_offset(_FLOAT * T, struct parsedname * pn) ;
+static GOOD_OR_BAD OW_temperature(_FLOAT * T, struct parsedname * pn) ;
+static GOOD_OR_BAD OW_r_temperature_offset(_FLOAT * T, struct parsedname * pn) ;
 
-static int OW_read(BYTE command, BYTE * bytes, size_t size, struct parsedname * pn) ;
-static int OW_write(BYTE command, BYTE byte, struct parsedname * pn);
+static GOOD_OR_BAD OW_read(BYTE command, BYTE * bytes, size_t size, struct parsedname * pn) ;
+static GOOD_OR_BAD OW_write(BYTE command, BYTE byte, struct parsedname * pn);
 
 // returns major/minor as 2 hex bytes (ascii)
 static ZERO_OR_ERROR FS_version(struct one_wire_query *owq)
@@ -125,9 +95,7 @@ static ZERO_OR_ERROR FS_version(struct one_wire_query *owq)
     char v[6];
     BYTE major, minor ;
 
-    if (OW_version(&major,&minor,PN(owq))) {
-        return -EINVAL ;
-    }
+    RETURN_ERROR_IF_BAD(OW_version(&major,&minor,PN(owq))) ;
 
     UCLIBCLOCK;
     snprintf(v,6,"%.2X.%.2X",major,minor);
@@ -140,9 +108,7 @@ static ZERO_OR_ERROR FS_type_number(struct one_wire_query *owq)
 {
     BYTE type_number ;
 
-    if (OW_type(&type_number,PN(owq))) {
-        return -EINVAL ;
-    }
+    RETURN_ERROR_IF_BAD(OW_type(&type_number,PN(owq))) ;
 
     OWQ_U(owq) = type_number ;
 
@@ -153,9 +119,7 @@ static ZERO_OR_ERROR FS_temperature(struct one_wire_query *owq)
 {
     _FLOAT T ;
 
-    if (OW_temperature(&T,PN(owq))) {
-        return -EINVAL ;
-    }
+    RETURN_ERROR_IF_BAD(OW_temperature(&T,PN(owq))) ;
 
     OWQ_F(owq) = T ;
 
@@ -166,9 +130,7 @@ static ZERO_OR_ERROR FS_UVI(struct one_wire_query *owq)
 {
     _FLOAT UVI ;
 
-    if (OW_UVI(&UVI,PN(owq))) {
-        return -EINVAL ;
-    }
+    RETURN_ERROR_IF_BAD( OW_UVI(&UVI,PN(owq))) ;
 
     OWQ_F(owq) = UVI ;
 
@@ -179,9 +141,7 @@ static ZERO_OR_ERROR FS_r_UVI_offset(struct one_wire_query *owq)
 {
     _FLOAT UVI ;
 
-    if (OW_r_UVI_offset(&UVI,PN(owq))) {
-        return -EINVAL ;
-    }
+    RETURN_ERROR_IF_BAD(OW_r_UVI_offset(&UVI,PN(owq))) ;
 
     OWQ_F(owq) = UVI ;
 
@@ -192,9 +152,7 @@ static ZERO_OR_ERROR FS_r_temperature_offset(struct one_wire_query *owq)
 {
     _FLOAT T ;
 
-    if (OW_r_temperature_offset(&T,PN(owq))) {
-        return -EINVAL ;
-    }
+    RETURN_BAD_IF_BAD(OW_r_temperature_offset(&T,PN(owq))) ;
 
     OWQ_F(owq) = T ;
 
@@ -211,9 +169,7 @@ static ZERO_OR_ERROR FS_w_temperature_offset(struct one_wire_query *owq)
     c = 2.0*OWQ_F(owq);
 #endif
 
-    if (OW_write(_EEEF_SET_TEMPERATURE_OFFSET,(BYTE)c,PN(owq))) {
-        return -EINVAL ;
-    }
+    RETURN_ERROR_IF_BAD(OW_write(_EEEF_SET_TEMPERATURE_OFFSET,(BYTE)c,PN(owq))) ;
 
     return 0;
 }
@@ -228,11 +184,7 @@ static ZERO_OR_ERROR FS_w_UVI_offset(struct one_wire_query *owq)
     c = 10.0*OWQ_F(owq)+.49;
 #endif
 
-    if (OW_write(_EEEF_SET_UVI_OFFSET,(BYTE)c,PN(owq))) {
-        return -EINVAL ;
-    }
-
-    return 0;
+    return GB_to_Z_OR_E(OW_write(_EEEF_SET_UVI_OFFSET,(BYTE)c,PN(owq))) ;
 }
 
 static ZERO_OR_ERROR FS_localtype(struct one_wire_query *owq)
@@ -269,9 +221,9 @@ static ZERO_OR_ERROR FS_UVI_valid(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_r_in_case(struct one_wire_query *owq)
 {
     BYTE in_case ;
-    if ( OW_read(_EEEF_READ_IN_CASE,&in_case,1,PN(owq))) {
-        return -EINVAL ;
-    }
+    
+	RETURN_ERROR_IF_BAD( OW_read(_EEEF_READ_IN_CASE,&in_case,1,PN(owq))) ;
+
     switch(in_case) {
         case 0x00:
             OWQ_Y(owq) = 0 ;
@@ -288,78 +240,74 @@ static ZERO_OR_ERROR FS_r_in_case(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_w_in_case(struct one_wire_query *owq)
 {
     BYTE in_case = OWQ_Y(owq) ? 0xFF : 0x00 ;
-    if ( OW_write(_EEEF_SET_IN_CASE,in_case,PN(owq))) {
-        return -EINVAL ;
-    }
-    return 0 ;
+    return GB_to_Z_OR_E( OW_write(_EEEF_SET_IN_CASE,in_case,PN(owq))) ;
 }
 
-static int OW_version(BYTE * major, BYTE * minor, struct parsedname * pn)
+static GOOD_OR_BAD OW_version(BYTE * major, BYTE * minor, struct parsedname * pn)
 {
     BYTE response[2] ;
-    if (OW_read(_EEEF_READ_VERSION, response, 2, pn)) {
-        return 1;
-    }
+    
+	RETURN_BAD_IF_BAD(OW_read(_EEEF_READ_VERSION, response, 2, pn)) ;
+
     *minor = response[0] ;
     *major = response[1] ;
-    return 0 ;
+    return gbGOOD ;
 }
 
-static int OW_type(BYTE * type_number, struct parsedname * pn)
+static GOOD_OR_BAD OW_type(BYTE * type_number, struct parsedname * pn)
 {
-    if (OW_read(_EEEF_READ_TYPE, type_number, 1, pn)) {
-        return 1;
-    }
-    return 0 ;
+    
+	RETURN_BAD_IF_BAD(OW_read(_EEEF_READ_TYPE, type_number, 1, pn)) ;
+    return gbGOOD ;
 }
 
-static int OW_UVI(_FLOAT * UVI, struct parsedname * pn)
+static GOOD_OR_BAD OW_UVI(_FLOAT * UVI, struct parsedname * pn)
 {
     BYTE u[1] ;
-    if (OW_read(_EEEF_READ_UVI, u, 1, pn)) {
-        return 1;
-    }
+    
+	RETURN_BAD_IF_BAD( OW_read(_EEEF_READ_UVI, u, 1, pn) ) ;
+	
     if (u[0]==0xFF) {
-        return 1;
+        return gbBAD;
     }
     UVI[0] = 0.1 * ((_FLOAT) u[0]) ;
-    return 0 ;
+    return gbGOOD ;
 }
 
-static int OW_r_UVI_offset(_FLOAT * UVI, struct parsedname * pn)
+static GOOD_OR_BAD OW_r_UVI_offset(_FLOAT * UVI, struct parsedname * pn)
 {
     BYTE u[1] ;
-    if (OW_read(_EEEF_READ_UVI_OFFSET, u, 1, pn)) {
-        return 1;
-    }
+    
+	RETURN_BAD_IF_BAD( OW_read(_EEEF_READ_UVI_OFFSET, u, 1, pn) );
+	
     if (u[0]==0xFF) {
-        return 1;
+        return gbBAD;
     }
     UVI[0] = 0.1 * ((_FLOAT) ((signed char) u[0])) ;
-    return 0 ;
+    return gbGOOD ;
 }
 
-static int OW_r_temperature_offset(_FLOAT * T, struct parsedname * pn)
+static GOOD_OR_BAD OW_r_temperature_offset(_FLOAT * T, struct parsedname * pn)
 {
     BYTE t[1] ;
-    if (OW_read(_EEEF_READ_TEMPERATURE_OFFSET, t, 1, pn)) {
-        return 1;
-    }
+    
+	RETURN_BAD_IF_BAD(OW_read(_EEEF_READ_TEMPERATURE_OFFSET, t, 1, pn)) ;
+
     T[0] = 0.5 * ((_FLOAT) ((signed char)t[0])) ;
-    return 0 ;
+    return gbGOOD ;
 }
 
-static int OW_temperature(_FLOAT * temperature, struct parsedname * pn)
+static GOOD_OR_BAD OW_temperature(_FLOAT * temperature, struct parsedname * pn)
 {
     BYTE t[2] ;
-    if (OW_read(_EEEF_READ_TEMPERATURE, t, 2, pn)) {
-        return 1;
-    }
+    
+	RETURN_BAD_IF_BAD(OW_read(_EEEF_READ_TEMPERATURE, t, 2, pn)) ;
+
     temperature[0] = (_FLOAT) 0.5 * UT_int16(t) ;
-    return 0 ;
+    return gbGOOD ;
 }
 
-static int OW_read(BYTE command, BYTE * bytes, size_t size, struct parsedname * pn)
+static GOOD_OR_BAD OW_read(BYTE command, BYTE * bytes, size_t size, struct parsedname * pn)
 {
     BYTE c[] = { command,} ;
     struct transaction_log t[] = {
@@ -371,7 +319,7 @@ static int OW_read(BYTE command, BYTE * bytes, size_t size, struct parsedname * 
     return BUS_transaction(t, pn) ;
 }
 
-static int OW_write(BYTE command, BYTE byte, struct parsedname * pn)
+static GOOD_OR_BAD OW_write(BYTE command, BYTE byte, struct parsedname * pn)
 {
     BYTE c[] = { command, byte, } ;
     struct transaction_log t[] = {
