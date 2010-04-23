@@ -129,7 +129,6 @@ DeviceEntryExtended(12, DS2406, DEV_alarm);
 
 /* DS2406 */
 static GOOD_OR_BAD OW_r_mem(BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn);
-//static int OW_r_s_alarm( BYTE * data , const struct parsedname * pn ) ;
 static GOOD_OR_BAD OW_w_s_alarm(const BYTE data, const struct parsedname *pn);
 static GOOD_OR_BAD OW_r_control(BYTE * data, const struct parsedname *pn);
 static GOOD_OR_BAD OW_w_control(const BYTE data, const struct parsedname *pn);

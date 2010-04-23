@@ -9,35 +9,6 @@ $Id$
     1wire/iButton system from Dallas Semiconductor
 */
 
-/* General Device File format:
-    This device file corresponds to a specific 1wire/iButton chip type
-    ( or a closely related family of chips )
-
-    The connection to the larger program is through the "device" data structure,
-      which must be declared in the acompanying header file.
-
-    The device structure holds the
-      family code,
-      name,
-      device type (chip, interface or pseudo)
-      number of properties,
-      list of property structures, called "filetype".
-
-    Each filetype structure holds the
-      name,
-      estimated length (in bytes),
-      aggregate structure pointer,
-      data format,
-      read function,
-      write funtion,
-      generic data pointer
-
-    The aggregate structure, is present for properties that several members
-    (e.g. pages of memory or entries in a temperature log. It holds:
-      number of elements
-      whether the members are lettered or numbered
-      whether the elements are stored together and split, or separately and joined
-*/
 
 #include <config.h>
 #include "owfs_config.h"
@@ -105,29 +76,24 @@ DeviceEntry(thermostat, DS1821);
 /* ------- Functions ------------ */
 
 /* DS1821*/
-static int OW_temperature(_FLOAT * temp, const struct parsedname *pn);
-static int OW_current_temperature(_FLOAT * temp, const struct parsedname *pn);
-static int OW_current_temperature_lowres(_FLOAT * temp, const struct parsedname *pn);
-static int OW_r_status(BYTE * data, const struct parsedname *pn);
-static int OW_w_status(BYTE * data, const struct parsedname *pn);
-static int OW_r_templimit(_FLOAT * T, const int Tindex, const struct parsedname *pn);
-static int OW_w_templimit(const _FLOAT T, const int Tindex, const struct parsedname *pn);
+static GOOD_OR_BAD OW_temperature(_FLOAT * temp, const struct parsedname *pn);
+static GOOD_OR_BAD OW_current_temperature(_FLOAT * temp, const struct parsedname *pn);
+static GOOD_OR_BAD OW_current_temperature_lowres(_FLOAT * temp, const struct parsedname *pn);
+static GOOD_OR_BAD OW_r_status(BYTE * data, const struct parsedname *pn);
+static GOOD_OR_BAD OW_w_status(BYTE * data, const struct parsedname *pn);
+static GOOD_OR_BAD OW_r_templimit(_FLOAT * T, const int Tindex, const struct parsedname *pn);
+static GOOD_OR_BAD OW_w_templimit(const _FLOAT T, const int Tindex, const struct parsedname *pn);
 
 static ZERO_OR_ERROR FS_temperature(struct one_wire_query *owq)
 {
-	if (OW_temperature(&OWQ_F(owq), PN(owq))) {
-		return -EINVAL;
-	}
-	return 0;
+	return GB_to_Z_OR_E(OW_temperature(&OWQ_F(owq), PN(owq))) ;
 }
 
 static ZERO_OR_ERROR FS_r_thf(struct one_wire_query *owq)
 {
 	BYTE data;
 
-	if (OW_r_status(&data, PN(owq))) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD(OW_r_status(&data, PN(owq))) ;
 	OWQ_Y(owq) = (data >> DS1821_STATUS_THF) & 0x01;
 //    OWQ_Y(owq) = (data & 0x10) >> 4;
 	return 0;
@@ -137,14 +103,9 @@ static ZERO_OR_ERROR FS_w_thf(struct one_wire_query *owq)
 {
 	BYTE data;
 
-	if (OW_r_status(&data, PN(owq))) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD(OW_r_status(&data, PN(owq))) ;
 	UT_setbit(&data, DS1821_STATUS_THF, OWQ_Y(owq));
-	if (OW_w_status(&data, PN(owq))) {
-		return -EINVAL;
-	}
-	return 0;
+	return GB_to_Z_OR_E(OW_w_status(&data, PN(owq))) ;
 }
 
 
@@ -152,9 +113,7 @@ static ZERO_OR_ERROR FS_r_tlf(struct one_wire_query *owq)
 {
 	BYTE data;
 
-	if (OW_r_status(&data, PN(owq))) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD(OW_r_status(&data, PN(owq))) ;
 	OWQ_Y(owq) = (data >> DS1821_STATUS_TLF) & 0x01;
 //OWQ_Y(owq) = (data & 0x08) >> 3;
 	return 0;
@@ -164,14 +123,9 @@ static ZERO_OR_ERROR FS_w_tlf(struct one_wire_query *owq)
 {
 	BYTE data;
 
-	if (OW_r_status(&data, PN(owq))) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD(OW_r_status(&data, PN(owq))) ;
 	UT_setbit(&data, DS1821_STATUS_TLF, OWQ_Y(owq));
-	if (OW_w_status(&data, PN(owq))) {
-		return -EINVAL;
-	}
-	return 0;
+	return GB_to_Z_OR_E(OW_w_status(&data, PN(owq))) ;
 }
 
 
@@ -179,9 +133,7 @@ static ZERO_OR_ERROR FS_r_thermomode(struct one_wire_query *owq)
 {
 	BYTE data;
 
-	if (OW_r_status(&data, PN(owq))) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD(OW_r_status(&data, PN(owq))) ;
 	OWQ_Y(owq) = (data >> DS1821_STATUS_TR) & 0x01;
 //    OWQ_Y(owq) = (data & 0x04) >> 2;
 	return 0;
@@ -191,14 +143,9 @@ static ZERO_OR_ERROR FS_w_thermomode(struct one_wire_query *owq)
 {
 	BYTE data;
 
-	if (OW_r_status(&data, PN(owq))) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD(OW_r_status(&data, PN(owq))) ;
 	UT_setbit(&data, DS1821_STATUS_TR, OWQ_Y(owq));
-	if (OW_w_status(&data, PN(owq))) {
-		return -EINVAL;
-	}
-	return 0;
+	return GB_to_Z_OR_E(OW_w_status(&data, PN(owq))) ;
 }
 
 
@@ -206,9 +153,7 @@ static ZERO_OR_ERROR FS_r_polarity(struct one_wire_query *owq)
 {
 	BYTE data;
 
-	if (OW_r_status(&data, PN(owq))) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD(OW_r_status(&data, PN(owq))) ;
 	OWQ_Y(owq) = (data >> DS1821_STATUS_POL) & 0x01;
 	return 0;
 }
@@ -217,14 +162,9 @@ static ZERO_OR_ERROR FS_w_polarity(struct one_wire_query *owq)
 {
 	BYTE data;
 
-	if (OW_r_status(&data, PN(owq))) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD(OW_r_status(&data, PN(owq))) ;
 	UT_setbit(&data, DS1821_STATUS_POL, OWQ_Y(owq));
-	if (OW_w_status(&data, PN(owq))) {
-		return -EINVAL;
-	}
-	return 0;
+	return GB_to_Z_OR_E(OW_w_status(&data, PN(owq))) ;
 }
 
 
@@ -232,9 +172,7 @@ static ZERO_OR_ERROR FS_r_oneshot(struct one_wire_query *owq)
 {
 	BYTE data;
 
-	if (OW_r_status(&data, PN(owq))) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD(OW_r_status(&data, PN(owq))) ;
 	OWQ_Y(owq) = (data >> DS1821_STATUS_1SHOT) & 0x01;
 
 	return 0;
@@ -270,16 +208,12 @@ static ZERO_OR_ERROR FS_w_oneshot(struct one_wire_query *owq)
 	BYTE data;
 	int oneshotmode;
 	
-	if (OW_r_status(&data, PN(owq))) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD(OW_r_status(&data, PN(owq))) ;
 
 	oneshotmode = (data >> DS1821_STATUS_1SHOT) & 0x01;
 
 	UT_setbit(&data, DS1821_STATUS_1SHOT, OWQ_Y(owq));
-	if (OW_w_status(&data, PN(owq))) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD(OW_w_status(&data, PN(owq))) ;
 
 	if (!oneshotmode && OWQ_Y(owq)) {
 		/* 1Shot mode was off and we are setting it on; i.e. we are ending continuous mode.
@@ -319,21 +253,15 @@ static ZERO_OR_ERROR FS_w_oneshot(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_r_templimit(struct one_wire_query *owq)
 {
-	if (OW_r_templimit(&OWQ_F(owq), OWQ_pn(owq).selected_filetype->data.i, PN(owq))) {
-		return -EINVAL;
-	}
-	return 0;
+	return GB_to_Z_OR_E(OW_r_templimit(&OWQ_F(owq), OWQ_pn(owq).selected_filetype->data.i, PN(owq))) ;
 }
 
 static ZERO_OR_ERROR FS_w_templimit(struct one_wire_query *owq)
 {
-	if (OW_w_templimit(OWQ_F(owq), OWQ_pn(owq).selected_filetype->data.i, PN(owq))) {
-		return -EINVAL;
-	}
-	return 0;
+	return GB_to_Z_OR_E(OW_w_templimit(OWQ_F(owq), OWQ_pn(owq).selected_filetype->data.i, PN(owq))) ;
 }
 
-static int OW_r_status(BYTE * data, const struct parsedname *pn)
+static GOOD_OR_BAD OW_r_status(BYTE * data, const struct parsedname *pn)
 {
 	BYTE p[] = { _1W_READ_STATUS, };
 	struct transaction_log t[] = {
@@ -346,7 +274,7 @@ static int OW_r_status(BYTE * data, const struct parsedname *pn)
 	return BUS_transaction(t, pn);
 }
 
-static int OW_w_status(BYTE * data, const struct parsedname *pn)
+static GOOD_OR_BAD OW_w_status(BYTE * data, const struct parsedname *pn)
 {
 	BYTE p[] = { _1W_WRITE_STATUS, data[0] };
 	struct transaction_log t[] = {
@@ -369,7 +297,7 @@ static int OW_w_status(BYTE * data, const struct parsedname *pn)
  * in progress. The result is incorrect temperature readings in the temperature register even if we don't attempt
  * to use the counter value to increase resolution.
  */
-static int OW_temperature(_FLOAT * temp, const struct parsedname *pn)
+static GOOD_OR_BAD OW_temperature(_FLOAT * temp, const struct parsedname *pn)
 {
 	BYTE c[] = { _1W_START_CONVERT_T, };
 	BYTE status;
@@ -380,9 +308,7 @@ static int OW_temperature(_FLOAT * temp, const struct parsedname *pn)
 		TRXN_END,
 	};
 
-	if (OW_r_status(&status, pn)) {
-		return 1;
-	}
+	RETURN_BAD_IF_BAD(OW_r_status(&status, pn)) ;
 
 	if ((status >> DS1821_STATUS_1SHOT) & 0x01) {	/* 1-shot, convert and wait 1 second */
 		if (BUS_transaction(t, pn)) {
@@ -399,7 +325,7 @@ static int OW_temperature(_FLOAT * temp, const struct parsedname *pn)
 /* Do a transaction to get the temperature, the remaining count, and the count-per-c registers.
  * Perform the calculation to increase the temperature resolution.
  */
-static int OW_current_temperature(_FLOAT * temp, const struct parsedname *pn)
+static GOOD_OR_BAD OW_current_temperature(_FLOAT * temp, const struct parsedname *pn)
 {
 	BYTE read_temp[] = { _1W_READ_TEMPERATURE, };
 	BYTE read_counter[] = { _1W_READ_COUNTER, };
@@ -423,7 +349,7 @@ static int OW_current_temperature(_FLOAT * temp, const struct parsedname *pn)
 	};
 
 	if (BUS_transaction(t, pn)) {
-		return 1;
+		return gbBAD;
 	}
 
 	if (count_per_c) {
@@ -433,13 +359,13 @@ static int OW_current_temperature(_FLOAT * temp, const struct parsedname *pn)
 		temp[0] = (_FLOAT) ((int8_t) temp_read);
 	}
 
-	return 0;
+	return gbGOOD;
 }
 
 /* Read temperature register but do not attempt to increase the resolution,
  * because, for instance, the chip is in continuous conversion mode.
  */
-static int OW_current_temperature_lowres(_FLOAT * temp, const struct parsedname *pn)
+static GOOD_OR_BAD OW_current_temperature_lowres(_FLOAT * temp, const struct parsedname *pn)
 {
 	BYTE read_temp[] = { _1W_READ_TEMPERATURE, };
 	BYTE temp_read;
@@ -451,15 +377,15 @@ static int OW_current_temperature_lowres(_FLOAT * temp, const struct parsedname 
 	};
 
 	if (BUS_transaction(t, pn)) {
-		return 1;
+		return gbBAD;
 	}
 	temp[0] = (_FLOAT) ((int8_t) temp_read);
 
-	return 0;
+	return gbGOOD;
 }
 
 /* Limits Tindex=0 high 1=low */
-static int OW_r_templimit(_FLOAT * T, const int Tindex, const struct parsedname *pn)
+static GOOD_OR_BAD OW_r_templimit(_FLOAT * T, const int Tindex, const struct parsedname *pn)
 {
 	BYTE p[] = { _1W_READ_TH, _1W_READ_TL, };
 	BYTE data;
@@ -471,14 +397,14 @@ static int OW_r_templimit(_FLOAT * T, const int Tindex, const struct parsedname 
 	};
 
 	if (BUS_transaction(t, pn)) {
-		return 1;
+		return gbBAD;
 	}
 	T[0] = (_FLOAT) ((int8_t) data);
-	return 0;
+	return gbGOOD;
 }
 
 /* Limits Tindex=0 high 1=low */
-static int OW_w_templimit(const _FLOAT T, const int Tindex, const struct parsedname *pn)
+static GOOD_OR_BAD OW_w_templimit(const _FLOAT T, const int Tindex, const struct parsedname *pn)
 {
 	BYTE p[] = { _1W_WRITE_TH, _1W_WRITE_TL, };
 #ifdef HAVE_LRINT
