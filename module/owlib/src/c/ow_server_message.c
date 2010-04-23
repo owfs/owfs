@@ -16,7 +16,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 #include "ow_connection.h"
-#include "ow_standard.h" // for FS_Alias
+#include "ow_standard.h" // for FS_alias
 
 enum persistent_state { persistent_yes, persistent_no, } ;
 
@@ -43,12 +43,14 @@ SIZE_OR_ERROR ServerRead(struct one_wire_query *owq)
 	struct server_msg sm;
 	struct client_msg cm;
 	struct parsedname *pn_file_entry = PN(owq);
+	struct connection_in * in = pn_file_entry->selected_connection ;
 	struct serverpackage sp = { pn_file_entry->path_busless, NULL, 0, pn_file_entry->tokenstring,
 		pn_file_entry->tokens,
 	};
 	enum persistent_state persistent = persistent_yes;
 	FILE_DESCRIPTOR_OR_ERROR connectfd;
 	SIZE_OR_ERROR ret = 0;
+	
 
 	memset(&sm, 0, sizeof(struct server_msg));
 	memset(&cm, 0, sizeof(struct client_msg));
@@ -56,12 +58,18 @@ SIZE_OR_ERROR ServerRead(struct one_wire_query *owq)
 	sm.size = OWQ_size(owq);
 	sm.offset = OWQ_offset(owq);
 
-	LEVEL_CALL("SERVER(%d) path=%s", pn_file_entry->selected_connection->index, SAFESTRING(pn_file_entry->path_busless));
+	if ( pn_file_entry->selected_filetype->format == ft_alias && ! SpecifiedRemoteBus(pn_file_entry) ) {
+		printf("Local alias\n");
+		ignore_result = FS_alias( owq ) ;
+		return OWQ_length(owq) ;
+	}
 
-	connectfd = PersistentStart(&persistent, pn_file_entry->selected_connection);
+	LEVEL_CALL("SERVER(%d) path=%s", in->index, SAFESTRING(pn_file_entry->path_busless));
+
+	connectfd = PersistentStart(&persistent, in);
 	if ( FILE_DESCRIPTOR_VALID( connectfd ) ) {
 		sm.control_flags = SetupControlFlags(persistent, pn_file_entry);
-		connectfd = ToServerTwice(connectfd, persistent, &sm, &sp, pn_file_entry->selected_connection) ;
+		connectfd = ToServerTwice(connectfd, persistent, &sm, &sp, in) ;
 		if ( FILE_DESCRIPTOR_NOT_VALID( connectfd ) ) {
 			ret = -EIO;
 		} else if (FromServer(connectfd, &cm, OWQ_buffer(owq), OWQ_size(owq))
@@ -73,7 +81,7 @@ SIZE_OR_ERROR ServerRead(struct one_wire_query *owq)
 	} else {
 		ret = -EIO;
 	}
-	PersistentEnd(connectfd, persistent, cm.control_flags & PERSISTENT_MASK, pn_file_entry->selected_connection);
+	PersistentEnd(connectfd, persistent, cm.control_flags & PERSISTENT_MASK, in);
 	return ret;
 }
 
@@ -82,6 +90,7 @@ INDEX_OR_ERROR ServerPresence( struct parsedname *pn_file_entry)
 {
 	struct server_msg sm;
 	struct client_msg cm;
+	struct connection_in * in = pn_file_entry->selected_connection ;
 	struct serverpackage sp = { pn_file_entry->path_busless, NULL, 0, pn_file_entry->tokenstring,
 		pn_file_entry->tokens,
 	};
@@ -93,24 +102,24 @@ INDEX_OR_ERROR ServerPresence( struct parsedname *pn_file_entry)
 	memset(&cm, 0, sizeof(struct client_msg));
 	sm.type = msg_presence;
 
-	LEVEL_CALL("SERVER(%d) path=%s", pn_file_entry->selected_connection->index, SAFESTRING(pn_file_entry->path_busless));
+	LEVEL_CALL("SERVER(%d) path=%s", in->index, SAFESTRING(pn_file_entry->path_busless));
 
-	connectfd = PersistentStart(&persistent, pn_file_entry->selected_connection);
+	connectfd = PersistentStart(&persistent, in);
 	if ( FILE_DESCRIPTOR_NOT_VALID( connectfd ) ) {
-		PersistentEnd(connectfd, persistent, cm.control_flags & PERSISTENT_MASK, pn_file_entry->selected_connection);
+		PersistentEnd(connectfd, persistent, cm.control_flags & PERSISTENT_MASK, in);
 		return -EIO ;
 	}
 
 	sm.control_flags = SetupControlFlags(persistent, pn_file_entry);
-	connectfd = ToServerTwice(connectfd, persistent, &sm, &sp, pn_file_entry->selected_connection) ;
+	connectfd = ToServerTwice(connectfd, persistent, &sm, &sp, in) ;
 	if ( FILE_DESCRIPTOR_NOT_VALID( connectfd ) ) {
-		PersistentEnd(connectfd, persistent, cm.control_flags & PERSISTENT_MASK, pn_file_entry->selected_connection);
+		PersistentEnd(connectfd, persistent, cm.control_flags & PERSISTENT_MASK, in);
 		return -EIO ;
 	}
 
 	serial_number = (BYTE *) FromServerAlloc( connectfd, &cm) ;
 	if (cm.ret < 0) {
-		PersistentEnd(connectfd, persistent, cm.control_flags & PERSISTENT_MASK, pn_file_entry->selected_connection);
+		PersistentEnd(connectfd, persistent, cm.control_flags & PERSISTENT_MASK, in);
 		return -EIO ;
 	}
 	if ( serial_number ) {
@@ -118,7 +127,7 @@ INDEX_OR_ERROR ServerPresence( struct parsedname *pn_file_entry)
 		owfree( serial_number) ;
 	}
 
-	PersistentEnd(connectfd, persistent, cm.control_flags & PERSISTENT_MASK, pn_file_entry->selected_connection);
+	PersistentEnd(connectfd, persistent, cm.control_flags & PERSISTENT_MASK, in);
 	return cm.ret;
 }
 
@@ -128,6 +137,7 @@ ZERO_OR_ERROR ServerWrite(struct one_wire_query *owq)
 	struct server_msg sm;
 	struct client_msg cm;
 	struct parsedname *pn_file_entry = PN(owq);
+	struct connection_in * in = pn_file_entry->selected_connection ;
 	struct serverpackage sp = { pn_file_entry->path_busless, (BYTE *) OWQ_buffer(owq),
 		OWQ_size(owq), pn_file_entry->tokenstring, pn_file_entry->tokens,
 	};
@@ -141,12 +151,12 @@ ZERO_OR_ERROR ServerWrite(struct one_wire_query *owq)
 	sm.size = OWQ_size(owq);
 	sm.offset = OWQ_offset(owq);
 
-	LEVEL_CALL("SERVER(%d) path=%s", pn_file_entry->selected_connection->index, SAFESTRING(pn_file_entry->path_busless));
+	LEVEL_CALL("SERVER(%d) path=%s", in->index, SAFESTRING(pn_file_entry->path_busless));
 
-	connectfd = PersistentStart(&persistent, pn_file_entry->selected_connection);
+	connectfd = PersistentStart(&persistent, in);
 	if ( FILE_DESCRIPTOR_VALID( connectfd ) ) {
 		sm.control_flags = SetupControlFlags(persistent, pn_file_entry);
-		connectfd = ToServerTwice(connectfd, persistent, &sm, &sp, pn_file_entry->selected_connection) ;
+		connectfd = ToServerTwice(connectfd, persistent, &sm, &sp, in) ;
 		if ( FILE_DESCRIPTOR_NOT_VALID( connectfd ) ) {
 			ret = -EIO;
 		} else if (FromServer(connectfd, &cm, NULL, 0) < 0) {
@@ -167,7 +177,7 @@ ZERO_OR_ERROR ServerWrite(struct one_wire_query *owq)
 	} else {
 		ret = -EIO;
 	}
-	PersistentEnd(connectfd, persistent, cm.control_flags & PERSISTENT_MASK, pn_file_entry->selected_connection);
+	PersistentEnd(connectfd, persistent, cm.control_flags & PERSISTENT_MASK, in);
 	return ret;
 }
 
@@ -175,9 +185,10 @@ ZERO_OR_ERROR ServerWrite(struct one_wire_query *owq)
 ZERO_OR_ERROR ServerDir(void (*dirfunc) (void *, const struct parsedname * const), void *v, const struct parsedname *pn_whole_directory, uint32_t * flags)
 {
 	ZERO_OR_ERROR ret;
+	struct connection_in * in = pn_whole_directory->selected_connection ;
 
 	// Do we know this server doesn't support DIRALL?
-	if (pn_whole_directory->selected_connection->connin.tcp.no_dirall) {
+	if (in->connin.tcp.no_dirall) {
 		return ServerDIR(dirfunc, v, pn_whole_directory, flags);
 	}
 	// Did we ask for no DIRALL explicitly?
@@ -190,7 +201,7 @@ ZERO_OR_ERROR ServerDir(void (*dirfunc) (void *, const struct parsedname * const
 	}
 	// try DIRALL and see if supported
 	if ((ret = ServerDIRALL(dirfunc, v, pn_whole_directory, flags)) == -ENOMSG) {
-		pn_whole_directory->selected_connection->connin.tcp.no_dirall = 1;
+		in->connin.tcp.no_dirall = 1;
 		return ServerDIR(dirfunc, v, pn_whole_directory, flags);
 	}
 	return ret;
@@ -201,6 +212,7 @@ static ZERO_OR_ERROR ServerDIR(void (*dirfunc) (void *, const struct parsedname 
 {
 	struct server_msg sm;
 	struct client_msg cm;
+	struct connection_in * in = pn_whole_directory->selected_connection ;
 	struct serverpackage sp = { pn_whole_directory->path_busless, NULL, 0,
 		pn_whole_directory->tokenstring, pn_whole_directory->tokens,
 	};
@@ -213,12 +225,12 @@ static ZERO_OR_ERROR ServerDIR(void (*dirfunc) (void *, const struct parsedname 
 	sm.type = msg_dir;
 
 	LEVEL_CALL("SERVER(%d) path=%s path_busless=%s",
-			   pn_whole_directory->selected_connection->index, SAFESTRING(pn_whole_directory->path), SAFESTRING(pn_whole_directory->path_busless));
+			   in->index, SAFESTRING(pn_whole_directory->path), SAFESTRING(pn_whole_directory->path_busless));
 
-	connectfd = PersistentStart(&persistent, pn_whole_directory->selected_connection);
+	connectfd = PersistentStart(&persistent, in);
 	if ( FILE_DESCRIPTOR_VALID( connectfd ) ) {
 		sm.control_flags = SetupControlFlags(persistent, pn_whole_directory);
-		connectfd = ToServerTwice(connectfd, persistent, &sm, &sp, pn_whole_directory->selected_connection) ;
+		connectfd = ToServerTwice(connectfd, persistent, &sm, &sp, in) ;
 		if ( FILE_DESCRIPTOR_NOT_VALID( connectfd ) ) {
 			ret = -EIO;
 		} else {
@@ -235,7 +247,7 @@ static ZERO_OR_ERROR ServerDIR(void (*dirfunc) (void *, const struct parsedname 
 				&& pn_whole_directory->selected_device == NULL) {
 				if (RootNotBranch(pn_whole_directory)) {	/* root dir */
 					BUSLOCK(pn_whole_directory);
-					db.allocated = pn_whole_directory->selected_connection->last_root_devs;	// root dir estimated length
+					db.allocated = in->last_root_devs;	// root dir estimated length
 					BUSUNLOCK(pn_whole_directory);
 				}
 			} else {
@@ -254,7 +266,7 @@ static ZERO_OR_ERROR ServerDIR(void (*dirfunc) (void *, const struct parsedname 
 					int sn_ret ;
 					char * no_leading_slash = &return_path[(return_path[0] == '/') ? 1 : 0] ;
 					UCLIBCLOCK ;
-					sn_ret = snprintf(BigBuffer, cm.payload + 11, "/bus.%d/%s",pn_whole_directory->selected_connection->index, no_leading_slash ) ;
+					sn_ret = snprintf(BigBuffer, cm.payload + 11, "/bus.%d/%s",in->index, no_leading_slash ) ;
 					UCLIBCUNLOCK ;
 					if (sn_ret > 0) {
 						ret = FS_ParsedName_BackFromRemote(BigBuffer, pn_directory_element);
@@ -279,7 +291,7 @@ static ZERO_OR_ERROR ServerDIR(void (*dirfunc) (void *, const struct parsedname 
 				 */
 				if (IsRealDir(pn_whole_directory)) {
 					/* If we get a device then cache the bus_nr */
-					Cache_Add_Device(pn_whole_directory->selected_connection->index, pn_directory_element->sn);
+					Cache_Add_Device(in->index, pn_directory_element->sn);
 				}
 				/* Add to cache Blob -- snlist is also a flag for cachable */
 				DirblobAdd(pn_directory_element->sn, &db);
@@ -292,7 +304,7 @@ static ZERO_OR_ERROR ServerDIR(void (*dirfunc) (void *, const struct parsedname 
 				Cache_Add_Dir(&db, pn_whole_directory);	// end with a null entry
 				if (RootNotBranch(pn_whole_directory)) {
 					BUSLOCK(pn_whole_directory);
-					pn_whole_directory->selected_connection->last_root_devs = DirblobElements(&db);	// root dir estimated length
+					in->last_root_devs = DirblobElements(&db);	// root dir estimated length
 					BUSUNLOCK(pn_whole_directory);
 				}
 			}
@@ -307,7 +319,7 @@ static ZERO_OR_ERROR ServerDIR(void (*dirfunc) (void *, const struct parsedname 
 	} else {
 		ret = -EIO;
 	}
-	PersistentEnd(connectfd, persistent, cm.control_flags & PERSISTENT_MASK, pn_whole_directory->selected_connection);
+	PersistentEnd(connectfd, persistent, cm.control_flags & PERSISTENT_MASK, in);
 	return ret;
 }
 
@@ -317,6 +329,7 @@ static ZERO_OR_ERROR ServerDIRALL(void (*dirfunc) (void *, const struct parsedna
 	ASCII *comma_separated_list;
 	struct server_msg sm;
 	struct client_msg cm;
+	struct connection_in * in = pn_whole_directory->selected_connection ;
 	struct serverpackage sp = { pn_whole_directory->path_busless, NULL, 0,
 		pn_whole_directory->tokenstring, pn_whole_directory->tokens,
 	};
@@ -329,19 +342,19 @@ static ZERO_OR_ERROR ServerDIRALL(void (*dirfunc) (void *, const struct parsedna
 	sm.type = msg_dirall;
 
 	LEVEL_CALL("SERVER(%d) path=%s path_busless=%s",
-			   pn_whole_directory->selected_connection->index, SAFESTRING(pn_whole_directory->path), SAFESTRING(pn_whole_directory->path_busless));
+			   in->index, SAFESTRING(pn_whole_directory->path), SAFESTRING(pn_whole_directory->path_busless));
 
 	// Get a file descriptor, possibly a persistent one
-	connectfd = PersistentStart(&persistent, pn_whole_directory->selected_connection);
+	connectfd = PersistentStart(&persistent, in);
 	if ( FILE_DESCRIPTOR_NOT_VALID( connectfd ) ) {
-		PersistentEnd(connectfd, persistent, cm.control_flags & PERSISTENT_MASK, pn_whole_directory->selected_connection);
+		PersistentEnd(connectfd, persistent, cm.control_flags & PERSISTENT_MASK, in);
 		return -EIO;
 	}
 	// Now try to get header. If fails, may need a new non-persistent file_descriptor
 	sm.control_flags = SetupControlFlags(persistent, pn_whole_directory);
-	connectfd = ToServerTwice(connectfd, persistent, &sm, &sp, pn_whole_directory->selected_connection);
+	connectfd = ToServerTwice(connectfd, persistent, &sm, &sp, in);
 	if ( FILE_DESCRIPTOR_NOT_VALID( connectfd ) ) {
-		PersistentEnd(connectfd, persistent, cm.control_flags & PERSISTENT_MASK, pn_whole_directory->selected_connection);
+		PersistentEnd(connectfd, persistent, cm.control_flags & PERSISTENT_MASK, in);
 		return -EIO;
 	}
 	// Success, get data
@@ -364,7 +377,7 @@ static ZERO_OR_ERROR ServerDIRALL(void (*dirfunc) (void *, const struct parsedna
 			&& pn_whole_directory->selected_device == NULL) {
 			if (RootNotBranch(pn_whole_directory)) {	/* root dir */
 				BUSLOCK(pn_whole_directory);
-				db.allocated = pn_whole_directory->selected_connection->last_root_devs;	// root dir estimated length
+				db.allocated = in->last_root_devs;	// root dir estimated length
 				BUSUNLOCK(pn_whole_directory);
 			}
 		} else {
@@ -385,7 +398,7 @@ static ZERO_OR_ERROR ServerDIRALL(void (*dirfunc) (void *, const struct parsedna
 				int sn_ret ;
 				char * no_leading_slash = &current_file[(current_file[0] == '/') ? 1 : 0] ;
 				UCLIBCLOCK ;
-				sn_ret = snprintf(BigBuffer, cm.payload + 11, "/bus.%d/%s",pn_whole_directory->selected_connection->index, no_leading_slash ) ;
+				sn_ret = snprintf(BigBuffer, cm.payload + 11, "/bus.%d/%s",in->index, no_leading_slash ) ;
 				UCLIBCUNLOCK ;
 				if (sn_ret > 0) {
 					ret = FS_ParsedName_BackFromRemote(BigBuffer, pn_directory_element);
@@ -404,7 +417,7 @@ static ZERO_OR_ERROR ServerDIRALL(void (*dirfunc) (void *, const struct parsedna
 			 */
 			if (IsRealDir(pn_whole_directory)) {
 				/* If we get a device then cache the bus_nr */
-				Cache_Add_Device(pn_whole_directory->selected_connection->index, pn_directory_element->sn);
+				Cache_Add_Device(in->index, pn_directory_element->sn);
 			}
 			/* Add to cache Blob -- snlist is also a flag for cachable */
 			if (DirblobPure(&db)) {	/* only add if there is a blob allocated successfully */
@@ -419,7 +432,7 @@ static ZERO_OR_ERROR ServerDIRALL(void (*dirfunc) (void *, const struct parsedna
 			Cache_Add_Dir(&db, pn_whole_directory);	// end with a null entry
 			if (RootNotBranch(pn_whole_directory)) {
 				BUSLOCK(pn_whole_directory);
-				pn_whole_directory->selected_connection->last_root_devs = DirblobElements(&db);	// root dir estimated length
+				in->last_root_devs = DirblobElements(&db);	// root dir estimated length
 				BUSUNLOCK(pn_whole_directory);
 			}
 		}
@@ -437,7 +450,7 @@ static ZERO_OR_ERROR ServerDIRALL(void (*dirfunc) (void *, const struct parsedna
 	}
 	ret = cm.ret;
 
-	PersistentEnd(connectfd, persistent, cm.control_flags & PERSISTENT_MASK, pn_whole_directory->selected_connection);
+	PersistentEnd(connectfd, persistent, cm.control_flags & PERSISTENT_MASK, in);
 	return ret;
 }
 
