@@ -44,7 +44,7 @@ SIZE_OR_ERROR ServerRead(struct one_wire_query *owq)
 	struct client_msg cm;
 	struct parsedname *pn_file_entry = PN(owq);
 	struct connection_in * in = pn_file_entry->selected_connection ;
-	struct serverpackage sp = { pn_file_entry->path_busless, NULL, 0, pn_file_entry->tokenstring,
+	struct serverpackage sp = { pn_file_entry->path_to_server, NULL, 0, pn_file_entry->tokenstring,
 		pn_file_entry->tokens,
 	};
 	enum persistent_state persistent = persistent_yes;
@@ -64,7 +64,7 @@ SIZE_OR_ERROR ServerRead(struct one_wire_query *owq)
 		return OWQ_length(owq) ;
 	}
 
-	LEVEL_CALL("SERVER(%d) path=%s", in->index, SAFESTRING(pn_file_entry->path_busless));
+	LEVEL_CALL("SERVER(%d) path=%s", in->index, SAFESTRING(pn_file_entry->path_to_server));
 
 	connectfd = PersistentStart(&persistent, in);
 	if ( FILE_DESCRIPTOR_VALID( connectfd ) ) {
@@ -91,7 +91,7 @@ INDEX_OR_ERROR ServerPresence( struct parsedname *pn_file_entry)
 	struct server_msg sm;
 	struct client_msg cm;
 	struct connection_in * in = pn_file_entry->selected_connection ;
-	struct serverpackage sp = { pn_file_entry->path_busless, NULL, 0, pn_file_entry->tokenstring,
+	struct serverpackage sp = { pn_file_entry->path_to_server, NULL, 0, pn_file_entry->tokenstring,
 		pn_file_entry->tokens,
 	};
 	BYTE * serial_number ;
@@ -102,7 +102,7 @@ INDEX_OR_ERROR ServerPresence( struct parsedname *pn_file_entry)
 	memset(&cm, 0, sizeof(struct client_msg));
 	sm.type = msg_presence;
 
-	LEVEL_CALL("SERVER(%d) path=%s", in->index, SAFESTRING(pn_file_entry->path_busless));
+	LEVEL_CALL("SERVER(%d) path=%s", in->index, SAFESTRING(pn_file_entry->path_to_server));
 
 	connectfd = PersistentStart(&persistent, in);
 	if ( FILE_DESCRIPTOR_NOT_VALID( connectfd ) ) {
@@ -138,7 +138,7 @@ ZERO_OR_ERROR ServerWrite(struct one_wire_query *owq)
 	struct client_msg cm;
 	struct parsedname *pn_file_entry = PN(owq);
 	struct connection_in * in = pn_file_entry->selected_connection ;
-	struct serverpackage sp = { pn_file_entry->path_busless, (BYTE *) OWQ_buffer(owq),
+	struct serverpackage sp = { pn_file_entry->path_to_server, (BYTE *) OWQ_buffer(owq),
 		OWQ_size(owq), pn_file_entry->tokenstring, pn_file_entry->tokens,
 	};
 	enum persistent_state persistent = persistent_yes;
@@ -151,7 +151,7 @@ ZERO_OR_ERROR ServerWrite(struct one_wire_query *owq)
 	sm.size = OWQ_size(owq);
 	sm.offset = OWQ_offset(owq);
 
-	LEVEL_CALL("SERVER(%d) path=%s", in->index, SAFESTRING(pn_file_entry->path_busless));
+	LEVEL_CALL("SERVER(%d) path=%s", in->index, SAFESTRING(pn_file_entry->path_to_server));
 
 	connectfd = PersistentStart(&persistent, in);
 	if ( FILE_DESCRIPTOR_VALID( connectfd ) ) {
@@ -213,7 +213,7 @@ static ZERO_OR_ERROR ServerDIR(void (*dirfunc) (void *, const struct parsedname 
 	struct server_msg sm;
 	struct client_msg cm;
 	struct connection_in * in = pn_whole_directory->selected_connection ;
-	struct serverpackage sp = { pn_whole_directory->path_busless, NULL, 0,
+	struct serverpackage sp = { pn_whole_directory->path_to_server, NULL, 0,
 		pn_whole_directory->tokenstring, pn_whole_directory->tokens,
 	};
 	enum persistent_state persistent = persistent_yes;
@@ -224,8 +224,8 @@ static ZERO_OR_ERROR ServerDIR(void (*dirfunc) (void *, const struct parsedname 
 	memset(&cm, 0, sizeof(struct client_msg));
 	sm.type = msg_dir;
 
-	LEVEL_CALL("SERVER(%d) path=%s path_busless=%s",
-			   in->index, SAFESTRING(pn_whole_directory->path), SAFESTRING(pn_whole_directory->path_busless));
+	LEVEL_CALL("SERVER(%d) path=%s path_to_server=%s",
+			   in->index, SAFESTRING(pn_whole_directory->path), SAFESTRING(pn_whole_directory->path_to_server));
 
 	connectfd = PersistentStart(&persistent, in);
 	if ( FILE_DESCRIPTOR_VALID( connectfd ) ) {
@@ -330,7 +330,7 @@ static ZERO_OR_ERROR ServerDIRALL(void (*dirfunc) (void *, const struct parsedna
 	struct server_msg sm;
 	struct client_msg cm;
 	struct connection_in * in = pn_whole_directory->selected_connection ;
-	struct serverpackage sp = { pn_whole_directory->path_busless, NULL, 0,
+	struct serverpackage sp = { pn_whole_directory->path_to_server, NULL, 0,
 		pn_whole_directory->tokenstring, pn_whole_directory->tokens,
 	};
 	enum persistent_state persistent = persistent_yes;
@@ -341,8 +341,8 @@ static ZERO_OR_ERROR ServerDIRALL(void (*dirfunc) (void *, const struct parsedna
 	memset(&cm, 0, sizeof(struct client_msg));
 	sm.type = msg_dirall;
 
-	LEVEL_CALL("SERVER(%d) path=%s path_busless=%s",
-			   in->index, SAFESTRING(pn_whole_directory->path), SAFESTRING(pn_whole_directory->path_busless));
+	LEVEL_CALL("SERVER(%d) path=%s path_to_server=%s",
+			   in->index, SAFESTRING(pn_whole_directory->path), SAFESTRING(pn_whole_directory->path_to_server));
 
 	// Get a file descriptor, possibly a persistent one
 	connectfd = PersistentStart(&persistent, in);

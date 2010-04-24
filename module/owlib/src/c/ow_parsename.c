@@ -36,7 +36,7 @@ static enum parse_enum Parse_RealDevice(char *filename, enum parse_pass remote_s
 static enum parse_enum Parse_NonRealDevice(char *filename, struct parsedname *pn);
 static enum parse_enum Parse_Bus(char *pathnow, struct parsedname *pn);
 static enum parse_enum Parse_Alias(char *filename, enum parse_pass remote_status, struct parsedname *pn);
-static void ReplaceAliasInBusless( char * filename, struct parsedname * pn);
+static void ReplaceAliasInto_server( char * filename, struct parsedname * pn);
 
 static ZERO_OR_ERROR FS_ParsedName_anywhere(const char *path, enum parse_pass remote_status, struct parsedname *pn);
 static ZERO_OR_ERROR FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path, struct parsedname *pn);
@@ -65,7 +65,7 @@ void FS_ParsedName_destroy(struct parsedname *pn)
 
 // Path is either NULL (in which case a minimal structure is created that doesn't need Destroy -- used for Bus Master setups)
 // Or Path is a full "filename" type string of form: 10.1243Ab000 or uncached/bus.0/statistics etc.
-// The Path passed in isn't altered, but 2 copies are made -- one with the full path, the other (busless) has the first bus.n removed.
+// The Path passed in isn't altered, but 2 copies are made -- one with the full path, the other (to_server) has the first bus.n removed.
 // An initial / is added to the path, and the full length has to be less than MAX_PATH (2048)
 // For efficiency, the two path copies are allocated in the same call, and so can be removed together.
 
@@ -241,8 +241,8 @@ static ZERO_OR_ERROR FS_ParsedName_setup(struct parsedname_pointers *pp, const c
 	/* Have to save pn->path at once */
 	strcpy(pn->path, "/"); // initial slash
 	strcpy(pn->path+1, path[0]=='/'?path+1:path);
-	pn->path_busless = pn->path + strlen(pn->path) + 1;
-	strcpy(pn->path_busless, pn->path);
+	pn->path_to_server = pn->path + strlen(pn->path) + 1;
+	strcpy(pn->path_to_server, pn->path);
 
 	/* make a copy for destructive parsing  without initial '/'*/
 	strcpy(pp->pathcpy,&pn->path[1]);
@@ -411,25 +411,25 @@ static enum parse_enum Parse_Bus(char *pathnow, struct parsedname *pn)
 		pn->control_flags &= (~SHOULD_RETURN_BUS_LIST);
 	}
 
-	/* Create the path without the "bus.x" part in pn->path_busless */
+	/* Create the path without the "bus.x" part in pn->path_to_server */
 	if ( (found = strstr(pn->path, "/bus.")) ) {
 		int length = found - pn->path;
 		if ((found = strchr(found + 1, '/'))) {	// more after bus
-			strcpy(&(pn->path_busless[length]), found);	// copy rest
+			strcpy(&(pn->path_to_server[length]), found);	// copy rest
 		} else {
-			pn->path_busless[length] = '\0';	// add final null
+			pn->path_to_server[length] = '\0';	// add final null
 		}
 	}
 	return parse_first;
 }
 
-static void ReplaceAliasInBusless( char * filename, struct parsedname * pn)
+static void ReplaceAliasInto_server( char * filename, struct parsedname * pn)
 {
 	int alias_len = strlen(filename) ;
 
 	char alias[alias_len + 2] ;
 
-	char * alias_loc = pn->path_busless ;
+	char * alias_loc = pn->path_to_server ;
 	char * post_alias_loc ;
 	
 	strcpy( alias, "/") ;
@@ -460,15 +460,24 @@ static void ReplaceAliasInBusless( char * filename, struct parsedname * pn)
 static enum parse_enum Parse_Alias(char *filename, enum parse_pass remote_status, struct parsedname *pn)
 {
 	if ( Cache_Get_SerialNumber(filename,pn->sn) == 0 ) {
-		// already known alias
+		// Success! The alias is already registered and the serial
+		//  number just now loaded in pn->sn
+		
 		/* Search for known 1-wire device -- keyed to device name (family code in HEX) */
 		pn->selected_device = FS_devicefindhex(pn->sn[0], pn);
 
 		if (Globals.one_device) {
+			// All devices assumed to be on this bus
 			SetKnownBus(INDEX_DEFAULT, pn);
 		} else if (remote_status == parse_pass_post_remote) {
+			// comming back from owserver, bus already known
 			return parse_prop;
 		} else {
+			// Replace in to_server the alias with the serial number
+			if ( BusIsServer(pn->selected_connection) ) {
+				ReplaceAliasInto_server( filename, pn ) ;
+			}
+
 			/* Check the presence, and cache the proper bus number for better performance */
 			INDEX_OR_ERROR bus_nr = CheckPresence(pn);
 			if ( INDEX_NOT_VALID(bus_nr) ) {
@@ -485,10 +494,13 @@ static enum parse_enum Parse_Alias(char *filename, enum parse_pass remote_status
 		if ( pn->sn[0] != 0 ) {
 			Cache_Add_Alias( filename, pn->sn ) ;
 		}
+
+		// Replace in to_server the alias with the serial number
+		if ( BusIsServer(pn->selected_connection) ) {
+			ReplaceAliasInto_server( filename, pn ) ;
+		}
 	}
-	if ( BusIsServer(pn->selected_connection) ) {
-		ReplaceAliasInBusless( filename, pn ) ;
-	}
+	
 	return parse_prop;
 }
 

@@ -104,14 +104,12 @@ int ServerRead(struct request_packet *rp)
 	int connectfd;
 	int ret = 0;
 
-	//printf("ServerRead pn_file_entry->path=%s, size=%d, offset=%u\n",pn_file_entry->path,size,offset);
 	memset(&sm, 0, sizeof(struct server_msg));
 	memset(&cm, 0, sizeof(struct client_msg));
 	sm.type = msg_read;
 	sm.size = rp->data_length;
 	sm.offset = rp->data_offset;
 
-	//printf("ServerRead path=%s\n", pn_file_entry->path_busless);
 	LEVEL_CALL("SERVER READ path=%s\n", SAFESTRING(rp->path));
 
 	connectfd = PersistentStart(&persistent, rp->owserver);
@@ -145,7 +143,6 @@ int ServerPresence(struct request_packet *rp)
 	memset(&cm, 0, sizeof(struct client_msg));
 	sm.type = msg_presence;
 
-	//printf("ServerPresence path=%s\n", pn_file_entry->path_busless);
 	LEVEL_CALL("SERVER PRESENCE path=%s\n", SAFESTRING(rp->path));
 
 	connectfd = PersistentStart(&persistent, rp->owserver);
@@ -181,7 +178,6 @@ int ServerWrite(struct request_packet *rp)
 	sm.size = rp->data_length;
 	sm.offset = rp->data_offset;
 
-	//printf("ServerRead path=%s\n", pn_file_entry->path_busless);
 	LEVEL_CALL("SERVER WRITE path=%s\n", SAFESTRING(rp->path));
 
 	connectfd = PersistentStart(&persistent, rp->owserver);
