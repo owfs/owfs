@@ -57,7 +57,7 @@ static void W1_setroutines(struct connection_in *in)
 	in->bundling_length = W1_FIFO_SIZE;	// arbitrary number
 }
 
-int W1_detect(struct connection_in *in)
+ZERO_OR_ERROR W1_detect(struct connection_in *in)
 {
 	struct parsedname pn;
 
@@ -72,11 +72,11 @@ int W1_detect(struct connection_in *in)
 		ERROR_CONNECT("W1 pipe creation error");
 		in->connin.w1.netlink_pipe[fd_pipe_read] = -1 ;
 		in->connin.w1.netlink_pipe[fd_pipe_write] = -1 ;
-		return -1 ;
+		return -EIO ;
 	}
 
 	if (in->name == NULL) {
-		return -1;
+		return -EINVAL;
 	}
 
 	in->Adapter = adapter_w1;

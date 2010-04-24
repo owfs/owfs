@@ -53,10 +53,10 @@ enum ds2482_address {
 	} ;
 
 static enum ds2482_address Parse_i2c_address( struct connection_in * in ) ;
-static int DS2482_detect_bus(enum ds2482_address chip_num, struct connection_in *in) ;
+static ZERO_OR_ERROR DS2482_detect_bus(enum ds2482_address chip_num, struct connection_in *in) ;
 static int DS2482_detect_sys( int any, enum ds2482_address chip_num, struct connection_in *in) ;
 static int DS2482_detect_dir( int any, enum ds2482_address chip_num, struct connection_in *in) ;
-static int DS2482_detect_single(int lowindex, int highindex, struct connection_in *in) ;
+static ZERO_OR_ERROR DS2482_detect_single(int lowindex, int highindex, struct connection_in *in) ;
 static int DS2482_next_both(struct device_search *ds, const struct parsedname *pn);
 static int DS2482_triple(BYTE * bits, int direction, int file_descriptor);
 static int DS2482_send_and_get(int file_descriptor, const BYTE wr, BYTE * rd);
@@ -178,7 +178,7 @@ static void DS2482_setroutines(struct connection_in *in)
 /* All the rest of the program sees is the DS2482_detect and the entry in iroutines */
 /* Open a DS2482 */
 /* Top level detect routine */
-int DS2482_detect(struct connection_in *in)
+ZERO_OR_ERROR DS2482_detect(struct connection_in *in)
 {
 	enum ds2482_address chip_num ;
 	int any ;
@@ -323,7 +323,7 @@ static int DS2482_detect_dir( int any, enum ds2482_address chip_num, struct conn
 
 /* Try to see if there is a DS2482 device on the specified i2c bus */
 /* Includes  a fix from Pascal Baerten */
-static int DS2482_detect_bus(enum ds2482_address chip_num, struct connection_in * in_original)
+static ZERO_OR_ERROR DS2482_detect_bus(enum ds2482_address chip_num, struct connection_in * in_original)
 {
 	switch (chip_num) {
 		case ds2482_any:
@@ -361,7 +361,7 @@ static int DS2482_detect_bus(enum ds2482_address chip_num, struct connection_in 
 }
 
 /* Try to see if there is a DS2482 device on the specified i2c bus */
-static int DS2482_detect_single(int lowindex, int highindex, struct connection_in *in)
+static ZERO_OR_ERROR DS2482_detect_single(int lowindex, int highindex, struct connection_in *in)
 {
 	int test_address[8] = { 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, };	// the last 4 are -800 only
 	int i;

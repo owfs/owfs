@@ -63,7 +63,7 @@ static void HA7_setroutines(struct connection_in *in)
 	in->bundling_length = HA7_FIFO_SIZE;	// arbitrary number
 }
 
-int HA7_detect(struct connection_in *in)
+ZERO_OR_ERROR HA7_detect(struct connection_in *in)
 {
 	struct parsedname pn;
 	int file_descriptor;
@@ -79,7 +79,7 @@ int HA7_detect(struct connection_in *in)
 	in->connin.ha7.locked = 0;
 
 	if (in->name == NULL) {
-		return -1;
+		return -EINVAL;
 	}
 
 	/* Add the port if it isn't there already */
@@ -116,7 +116,7 @@ int HA7_detect(struct connection_in *in)
 		}
 	}
 	close(file_descriptor);
-	return -EIO;
+	return -ENOENT;
 }
 
 static int HA7_reset(const struct parsedname *pn)

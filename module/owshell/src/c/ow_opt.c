@@ -58,7 +58,6 @@ const struct option owopts_long[] = {
 };
 
 /* Parses one argument */
-/* return 0 if ok */
 void owopt(const int c, const char *arg)
 {
 	//printf("Option %c (%d) Argument=%s\n",c,c,SAFESTRING(arg)) ;

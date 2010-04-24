@@ -51,7 +51,7 @@ $Id$
 
 /* Prototypes for owlib.c -- libow overall control */
 void LibSetup(enum opt_program op);
-int LibStart(void);
+void LibStart(void);
 void HandleSignals(void);
 void LibStop(void);
 void LibClose(void);
@@ -204,7 +204,7 @@ void BUS_unlock_in(struct connection_in *in);
 
 /* API wrappers for swig and owcapi */
 void API_setup(enum opt_program opt);
-int API_init(const char *command_line);
+GOOD_OR_BAD API_init(const char *command_line);
 void API_set_error_level(const char *params);
 void API_set_error_print(const char *params);
 void API_finish(void);

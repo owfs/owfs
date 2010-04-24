@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
 			allow_other = 1;
 			break;
 		}
-		if (owopt(c, optarg)) {
+		if ( BAD( owopt(c, optarg) ) ) {
 			ow_exit(0);			/* rest of message */
 		}
 	}
@@ -126,9 +126,8 @@ int main(int argc, char *argv[])
 	//set_signal_handlers(exit_handler);
 
 	/* Set up adapters */
-	if (LibStart()) {
-		ow_exit(1);
-	}
+	LibStart() ;
+
 #if OW_MT
 	main_threadid = pthread_self();
 #endif

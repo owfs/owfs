@@ -43,24 +43,24 @@ $Id$
 #ifndef OW_ARG_H			/* tedious wrapper */
 #define OW_ARG_H
 
-int ARG_Net(const char *arg);
-int ARG_Server(const char *arg);
-int ARG_USB(const char *arg);
-int ARG_Device(const char *arg);
-int ARG_Generic(const char *arg);
-int ARG_Serial(const char *arg);
-int ARG_Parallel(const char *arg);
-int ARG_I2C(const char *arg);
-int ARG_HA5( const char *arg);
-int ARG_HA7(const char *arg);
-int ARG_HA7E(const char *arg);
-int ARG_ENET(const char *arg);
-int ARG_EtherWeather(const char *arg);
-int ARG_Xport(const char *arg);
-int ARG_Fake(const char *arg);
-int ARG_Tester(const char *arg);
-int ARG_Mock(const char *arg);
-int ARG_Link(const char *arg);
-int ARG_Passive(char *adapter_type_name, const char *arg);
+GOOD_OR_BAD ARG_Net(const char *arg);
+GOOD_OR_BAD ARG_Server(const char *arg);
+GOOD_OR_BAD ARG_USB(const char *arg);
+GOOD_OR_BAD ARG_Device(const char *arg);
+GOOD_OR_BAD ARG_Generic(const char *arg);
+GOOD_OR_BAD ARG_Serial(const char *arg);
+GOOD_OR_BAD ARG_Parallel(const char *arg);
+GOOD_OR_BAD ARG_I2C(const char *arg);
+GOOD_OR_BAD ARG_HA5( const char *arg);
+GOOD_OR_BAD ARG_HA7(const char *arg);
+GOOD_OR_BAD ARG_HA7E(const char *arg);
+GOOD_OR_BAD ARG_ENET(const char *arg);
+GOOD_OR_BAD ARG_EtherWeather(const char *arg);
+GOOD_OR_BAD ARG_Xport(const char *arg);
+GOOD_OR_BAD ARG_Fake(const char *arg);
+GOOD_OR_BAD ARG_Tester(const char *arg);
+GOOD_OR_BAD ARG_Mock(const char *arg);
+GOOD_OR_BAD ARG_Link(const char *arg);
+GOOD_OR_BAD ARG_Passive(char *adapter_type_name, const char *arg);
 
 #endif							/* OW_ARG_H */

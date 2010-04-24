@@ -53,8 +53,8 @@ $Id$
 #define OWLIB_OPT "a:m:c:f:p:s:h::u::d:t:CFRKVP:"
 extern const struct option owopts_long[];
 
-int owopt(const int c, const char *arg);
-int owopt_packed(const char *params);
+GOOD_OR_BAD owopt(const int c, const char *arg);
+GOOD_OR_BAD owopt_packed(const char *params);
 
 enum e_long_option { e_error_print = 257, e_error_level,
 	e_cache_size,

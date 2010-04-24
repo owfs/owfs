@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
 		default:
 			break;
 		}
-		if (owopt(c, optarg)) {
+		if ( BAD( owopt(c, optarg) ) ) {
 			ow_exit(0);			/* rest of message */
 		}
 	}
@@ -146,12 +146,9 @@ int main(int argc, char *argv[])
 		ow_exit(1);
 	}
 
-	/*
-	 * Now we drop privledges and become a daemon.
-	 */
-	if (LibStart()) {
-		ow_exit(1);
-	}
+	/* Set up adapters */
+	LibStart() ;
+
 #if OW_MT
 	main_threadid = pthread_self();
 #endif

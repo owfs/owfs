@@ -37,7 +37,7 @@ char *version( )
 
 int init( const char * dev ) 
 {
-	if ( API_init(dev) ) {
+	if ( BAD(API_init(dev)) ) {
 		return 0 ; // error
 	}
 	return 1 ;
@@ -101,7 +101,7 @@ int get_error_level(void) {
 }
 
 int opt(const char option_char, const char *arg) {
-	return owopt(option_char, arg);
+	return GOOD( owopt(option_char, arg) ) ? 0 : 1 ;
 }
 
 %}

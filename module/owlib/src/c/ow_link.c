@@ -61,8 +61,8 @@ struct LINK_id LINK_id_tbl[] = {
 
 #define MAX_LINK_VERSION_LENGTH	36
 
-static int LINK_serial_detect(struct parsedname * pn_minimal) ;
-static int LINK_net_detect(struct parsedname * pn_minimal) ;
+static ZERO_OR_ERROR LINK_serial_detect(struct parsedname * pn_minimal) ;
+static ZERO_OR_ERROR LINK_net_detect(struct parsedname * pn_minimal) ;
 
 //static void byteprint( const BYTE * b, int size ) ;
 static void LINK_set_baud(const struct parsedname *pn) ;
@@ -148,7 +148,7 @@ static int LinkVersion_unknownstring( const char * reported_string, struct conne
 }
 
 // bus locking done at a higher level
-int LINK_detect(struct connection_in *in)
+ZERO_OR_ERROR LINK_detect(struct connection_in *in)
 {
 	struct parsedname pn;
 
@@ -156,7 +156,7 @@ int LINK_detect(struct connection_in *in)
 	pn.selected_connection = in;
 
 	if (in->name == NULL) {
-		return -ENODEV;
+		return -EINVAL;
 	}
 
 	switch( in->busmode ) {
@@ -169,7 +169,7 @@ int LINK_detect(struct connection_in *in)
 	}
 }
 
-static int LINK_serial_detect(struct parsedname * pn_minimal)
+static ZERO_OR_ERROR LINK_serial_detect(struct parsedname * pn_minimal)
 {
 	struct connection_in * in =  pn_minimal->selected_connection ;
 	
@@ -211,7 +211,7 @@ static int LINK_serial_detect(struct parsedname * pn_minimal)
 	return -ENODEV;
 }
 
-static int LINK_net_detect(struct parsedname * pn_minimal)
+static ZERO_OR_ERROR LINK_net_detect(struct parsedname * pn_minimal)
 {
 	struct connection_in * in =  pn_minimal->selected_connection ;
 	

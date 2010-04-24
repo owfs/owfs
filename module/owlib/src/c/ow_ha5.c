@@ -57,7 +57,7 @@ static void HA5_setroutines(struct connection_in *in)
 	in->bundling_length = HA5_FIFO_SIZE;
 }
 
-int HA5_detect(struct connection_in *in)
+ZERO_OR_ERROR HA5_detect(struct connection_in *in)
 {
 	struct parsedname pn;
 	int no_colon_exists ;

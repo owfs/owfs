@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "%s version:\n\t" VERSION "\n", argv[0]);
 			break;
 		}
-		if (owopt(c, optarg)) {
+		if ( BAD( owopt(c, optarg) ) ) {
 			ow_exit(0);			/* rest of message */
 		}
 	}
@@ -125,9 +125,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* Set up adapters */
-	if (LibStart()) {
-		ow_exit(1);
-	}
+	LibStart() ;
 
 #if OW_MT
 	main_threadid = pthread_self();

@@ -34,10 +34,10 @@ struct lineparse {
 };
 
 static void ParseTheLine(struct lineparse *lp);
-static int ConfigurationFile(const ASCII * file);
+static GOOD_OR_BAD ConfigurationFile(const ASCII * file);
 static int ParseInterp(struct lineparse *lp);
-static int OW_parsevalue_I(long long int *var, const ASCII * str);
-static int OW_parsevalue_F(_FLOAT *var, const ASCII * str);
+static GOOD_OR_BAD OW_parsevalue_I(long long int *var, const ASCII * str);
+static GOOD_OR_BAD OW_parsevalue_F(_FLOAT *var, const ASCII * str);
 
 const struct option owopts_long[] = {
 	{"alias", required_argument, NULL, 'a'},
@@ -446,11 +446,11 @@ static void ParseTheLine(struct lineparse *lp)
 	}
 }
 
-static int ConfigurationFile(const ASCII * file)
+static GOOD_OR_BAD ConfigurationFile(const ASCII * file)
 {
 	FILE *configuration_file_pointer = fopen(file, "r");
 	if (configuration_file_pointer) {
-		int ret = 0;
+		int ret = gbGOOD;
 
 		struct lineparse lp;
 		lp.line_number = 0;
@@ -460,9 +460,7 @@ static int ConfigurationFile(const ASCII * file)
 		while (getline(&(lp.line), &(lp.line_length), configuration_file_pointer)>=0) {
 			++lp.line_number;
 			ParseTheLine(&lp);
-			if ( owopt(ParseInterp(&lp), lp.val) != 0 ) {
-				ret = 1 ;
-			}
+			RETURN_BAD_IF_BAD( owopt(ParseInterp(&lp), lp.val) != 0 ) ;
 		}
 		fclose(configuration_file_pointer);
 		if ( lp.line != NULL) {
@@ -471,27 +469,27 @@ static int ConfigurationFile(const ASCII * file)
 		return ret;
 	} else {
 		ERROR_DEFAULT("Cannot process configuration file %s", file);
-		return 1;
+		return gbBAD;
 	}
 }
 
-int owopt_packed(const char *params)
+GOOD_OR_BAD owopt_packed(const char *params)
 {
 	char *params_copy;			// copy of the input line
 	char *current_location_in_params_copy;	// pointers into the input line copy
 	char *next_location_in_params_copy;	// pointers into the input line copy
 	char **argv = NULL;
 	int argc = 0;
-	int ret = 0;
+	GOOD_OR_BAD ret = 0;
 	int allocated = 0;
 	int option_char;
 
 	if (params == NULL) {
-		return 0;
+		return gbGOOD;
 	}
 	current_location_in_params_copy = params_copy = owstrdup(params);
 	if (params_copy == NULL) {
-		return -ENOMEM;
+		return gbBAD;
 	}
 	// Stuffs arbitrary first value since argv[0] ignored by getopt
 	// create a synthetic argv/argc for get_opt
@@ -504,7 +502,7 @@ int owopt_packed(const char *params)
 				allocated += 10;
 				argv = larger_argv;
 			} else {
-				ret = -ENOMEM;
+				ret = gbBAD;
 				break;
 			}
 		}
@@ -537,7 +535,7 @@ int owopt_packed(const char *params)
 
 /* Parses one argument */
 /* return 0 if ok */
-int owopt(const int option_char, const char *arg)
+GOOD_OR_BAD owopt(const int option_char, const char *arg)
 {
 	// depth of nesting for config files
 	static int config_depth = 0;
@@ -553,9 +551,9 @@ int owopt(const int option_char, const char *arg)
 	case 'c':
 		if (config_depth > 4) {
 			LEVEL_DEFAULT("Configuration file layered too deeply (>%d)", config_depth);
-			return 1;
+			return gbBAD;
 		} else {
-			int ret;
+			GOOD_OR_BAD ret;
 			++config_depth;
 			ret = ConfigurationFile(arg);
 			--config_depth;
@@ -563,15 +561,13 @@ int owopt(const int option_char, const char *arg)
 		}
 	case 'h':
 		FS_help(arg);
-		return 1;
+		return gbBAD;
 	case 'u':
 		return ARG_USB(arg);
 	case 'd':
 		return ARG_Device(arg);
 	case 't':
-		if (OW_parsevalue_I(&arg_to_integer, arg)) {
-			return 1;
-		}
+		RETURN_BAD_IF_BAD(OW_parsevalue_I(&arg_to_integer, arg)) ;
 		Globals.timeout_volatile = (int) arg_to_integer;
 		break;
 	case 'r':
@@ -594,7 +590,7 @@ int owopt(const int option_char, const char *arg)
 		break;
 	case 'V':
 		printf("libow version:\n\t" VERSION "\n");
-		return 1;
+		return gbBAD;
 	case 's':
 		return ARG_Net(arg);
 	case 'p':
@@ -604,14 +600,14 @@ int owopt(const int option_char, const char *arg)
 		case opt_ftpd:
 			return ARG_Server(arg);
 		default:
-			return 0;
+			return gbGOOD;
 		}
 	case 'm':
 		switch (Globals.opt) {
 		case opt_owfs:
 			return ARG_Server(arg);
 		default:
-			return 0;
+			return gbGOOD;
 		}
 	case 'f':
 		if (!strcasecmp(arg, "f.i")) {
@@ -628,49 +624,41 @@ int owopt(const int option_char, const char *arg)
 			set_controlflags(&LocalControlFlags, DEVFORMAT_MASK, DEVFORMAT_BIT, fic);
 		} else {
 			LEVEL_DEFAULT("Unrecognized format type %s", arg);
-			return 1;
+			return gbBAD;
 		}
 		break;
 	case 'P':
 		if (arg == NULL || strlen(arg) == 0) {
 			LEVEL_DEFAULT("No PID file specified");
-			return 1;
+			return gbBAD;
 		} else if ((pid_file = owstrdup(arg)) == NULL) {
 			fprintf(stderr, "Insufficient memory to store the PID filename: %s", arg);
-			return 1;
+			return gbBAD;
 		}
 		break;
 	case e_fatal_debug_file:
 		if (arg == NULL || strlen(arg) == 0) {
 			LEVEL_DEFAULT("No fatal_debug_file specified");
-			return 1;
+			return gbBAD;
 		} else if ((Globals.fatal_debug_file = owstrdup(arg)) == NULL) {
 			LEVEL_DEBUG("Out of memory.");
-			return 1;
+			return gbBAD;
 		}
 		break;
 	case e_error_print:
-		if (OW_parsevalue_I(&arg_to_integer, arg)) {
-			return 1;
-		}
+		RETURN_BAD_IF_BAD(OW_parsevalue_I(&arg_to_integer, arg)) ;
 		Globals.error_print = (int) arg_to_integer;
 		break;
 	case e_error_level:
-		if (OW_parsevalue_I(&arg_to_integer, arg)) {
-			return 1;
-		}
+		RETURN_BAD_IF_BAD(OW_parsevalue_I(&arg_to_integer, arg)) ;
 		Globals.error_level = (int) arg_to_integer;
 		break;
 	case e_concurrent_connections:
-		if (OW_parsevalue_I(&arg_to_integer, arg)) {
-			return 1;
-		}
+		RETURN_BAD_IF_BAD(OW_parsevalue_I(&arg_to_integer, arg)) ;
 		Globals.concurrent_connections = (int) arg_to_integer;
 		break;
 	case e_cache_size:
-		if (OW_parsevalue_I(&arg_to_integer, arg)) {
-			return 1;
-		}
+		RETURN_BAD_IF_BAD(OW_parsevalue_I(&arg_to_integer, arg)) ;
 		Globals.cache_size = (size_t) arg_to_integer;
 		break;
 	case e_fuse_opt:			/* fuse_opt, handled in owfs.c */
@@ -678,9 +666,7 @@ int owopt(const int option_char, const char *arg)
 	case e_fuse_open_opt:		/* fuse_open_opt, handled in owfs.c */
 		break;
 	case e_max_clients:
-		if (OW_parsevalue_I(&arg_to_integer, arg)) {
-			return 1;
-		}
+		RETURN_BAD_IF_BAD(OW_parsevalue_I(&arg_to_integer, arg)) ;
 		Globals.max_clients = (int) arg_to_integer;
 		break;
 	case e_i2c:
@@ -741,28 +727,20 @@ int owopt(const int option_char, const char *arg)
 	case e_timeout_persistent_high:
 	case e_clients_persistent_low:
 	case e_clients_persistent_high:
-		if (OW_parsevalue_I(&arg_to_integer, arg)) {
-			return 1;
-		}
+		RETURN_BAD_IF_BAD(OW_parsevalue_I(&arg_to_integer, arg)) ;
 		// Using the character as a numeric value -- convenient but risky
 		(&Globals.timeout_volatile)[option_char - e_timeout_volatile] = (int) arg_to_integer;
 		break;
 	case e_baud:
-		if (OW_parsevalue_I(&arg_to_integer, arg)) {
-			return 1;
-		}
+		RETURN_BAD_IF_BAD(OW_parsevalue_I(&arg_to_integer, arg)) ;
 		Globals.baud = COM_MakeBaud( arg_to_integer ) ;
 		break ;
 	case e_templow:
-		if (OW_parsevalue_F(&arg_to_float, arg)) {
-			return 1;
-		}
+		RETURN_BAD_IF_BAD(OW_parsevalue_F(&arg_to_float, arg)) ;
 		Globals.templow = arg_to_float;
 		break;
 	case e_temphigh:
-		if (OW_parsevalue_F(&arg_to_float, arg)) {
-			return 1;
-		}
+		RETURN_BAD_IF_BAD(OW_parsevalue_F(&arg_to_float, arg)) ;
 		Globals.temphigh = arg_to_float;
 		break;
 	case e_safemode:
@@ -771,29 +749,29 @@ int owopt(const int option_char, const char *arg)
 	case 0:
 		break;
 	default:
-		return 1;
+		return gbBAD;
 	}
-	return 0;
+	return gbGOOD;
 }
 
-static int OW_parsevalue_I(long long int *var, const ASCII * str)
+static GOOD_OR_BAD OW_parsevalue_I(long long int *var, const ASCII * str)
 {
 	errno = 0;
 	var[0] = strtol(str, NULL, 10);
 	if (errno) {
 		ERROR_DETAIL("Bad integer configuration value %s", str);
-		return 1;
+		return gbBAD;
 	}
-	return 0;
+	return gbGOOD;
 }
 
-static int OW_parsevalue_F(_FLOAT *var, const ASCII * str)
+static GOOD_OR_BAD OW_parsevalue_F(_FLOAT *var, const ASCII * str)
 {
 	errno = 0;
 	var[0] = (_FLOAT) strtod(str, NULL);
 	if (errno) {
 		ERROR_DETAIL("Bad floating point configuration value %s", str);
-		return 1;
+		return gbBAD;
 	}
-	return 0;
+	return gbGOOD;
 }

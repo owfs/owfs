@@ -22,7 +22,7 @@ static int DS2480_initialize_repeatedly(struct parsedname * pn);
 static int DS2480_big_reset(const struct parsedname *pn) ;
 static int DS2480_big_reset_serial(const struct parsedname *pn) ;
 static int DS2480_big_reset_net(const struct parsedname *pn) ;
-static int DS2480_adapter(struct connection_in *in) ;
+static ZERO_OR_ERROR DS2480_adapter(struct connection_in *in) ;
 static int DS2480_big_configuration(const struct parsedname *pn) ;
 static int DS2480_read(BYTE * buf, const size_t size, const struct parsedname *pn);
 static int DS2480_write(const BYTE * buf, const size_t size, const struct parsedname *pn);
@@ -218,7 +218,7 @@ static void DS2480_setroutines(struct connection_in *in)
    -EINVAL baudrate error
    If no detection, try a DS9097 passive port */
 // bus locking at a higher level
-int DS2480_detect(struct connection_in *in)
+ZERO_OR_ERROR DS2480_detect(struct connection_in *in)
 {
 	struct parsedname pn;
 
@@ -261,7 +261,7 @@ static int DS2480_initialize_repeatedly(struct parsedname * pn)
 	return 1 ;
 }
 
-static int DS2480_adapter(struct connection_in *in)
+static ZERO_OR_ERROR DS2480_adapter(struct connection_in *in)
 {
 	// in->Adapter is set in DS2480_reset from some status bits
 	switch (in->Adapter) {

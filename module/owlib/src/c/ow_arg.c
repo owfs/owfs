@@ -38,7 +38,7 @@ static enum arg_address ArgType( const char * arg )
 	return arg_addr_other ;
 }
 		
-int ARG_Device(const char *arg)
+GOOD_OR_BAD ARG_Device(const char *arg)
 {
 	struct stat sbuf;
 	if (stat(arg, &sbuf)) {
@@ -50,12 +50,12 @@ int ARG_Device(const char *arg)
 				return ARG_Xport(arg) ;
 			default:
 				LEVEL_DEFAULT("Cannot access device %s", arg);
-				return 1;
+				return gbBAD;
 		}
 	}
 	if (!S_ISCHR(sbuf.st_mode)) {
 		LEVEL_DEFAULT("Not a \"character\" device %s (st_mode=%x)", arg, sbuf.st_mode);
-		return 1;
+		return gbBAD;
 	}
 	if (major(sbuf.st_rdev) == 99) {
 		return ARG_Parallel(arg);
@@ -66,29 +66,29 @@ int ARG_Device(const char *arg)
 	return ARG_Serial(arg);
 }
 
-int ARG_EtherWeather(const char *arg)
+GOOD_OR_BAD ARG_EtherWeather(const char *arg)
 {
 	struct connection_in *in = NewIn(NULL);
 	if (in == NULL) {
-		return 1;
+		return gbBAD;
 	}
 	in->name = (arg!=NULL) ? owstrdup(arg) : NULL;
 	in->busmode = bus_etherweather;
-	return 0;
+	return gbGOOD;
 }
 
-int ARG_Fake(const char *arg)
+GOOD_OR_BAD ARG_Fake(const char *arg)
 {
 	struct connection_in *in = NewIn(NULL);
 	if (in == NULL) {
-		return 1;
+		return gbBAD;
 	}
 	in->name = (arg!=NULL) ? owstrdup(arg) : NULL;
 	in->busmode = bus_fake;
-	return 0;
+	return gbGOOD;
 }
 
-int ARG_Generic(const char *arg)
+GOOD_OR_BAD ARG_Generic(const char *arg)
 {
 	if (arg && arg[0]) {
 		switch (arg[0]) {
@@ -101,91 +101,91 @@ int ARG_Generic(const char *arg)
 				return ARG_Net(arg);
 		}
 	}
-	return 1;
+	return gbBAD;
 }
 
-int ARG_HA5( const char *arg)
+GOOD_OR_BAD ARG_HA5( const char *arg)
 {
 	struct connection_in *in = NewIn(NULL);
 	if (in == NULL) {
-		return 1;
+		return gbBAD;
 	}
 	in->name = (arg!=NULL) ? owstrdup(arg) : NULL;
 	in->busmode = bus_ha5;
-	return 0;
+	return gbGOOD;
 }
 
 
-int ARG_HA7(const char *arg)
+GOOD_OR_BAD ARG_HA7(const char *arg)
 {
 #if OW_HA7
 	if (arg != NULL) {
 		struct connection_in *in = NewIn(NULL);
 		if (in == NULL) {
-			return 1;
+			return gbBAD;
 		}
 		in->name = owstrdup(arg);
 		in->busmode = bus_ha7net;
-		return 0;
+		return gbGOOD;
 	} else {					// Try multicast discovery
 		//printf("Find HA7\n");
 		return FS_FindHA7();
 	}
 #else							/* OW_HA7 */
 	LEVEL_DEFAULT("HA7 support (intentionally) not included in compilation. Reconfigure and recompile.");
-	return 1;
+	return gbBAD;
 #endif							/* OW_HA7 */
 }
 
-int ARG_HA7E(const char *arg)
+GOOD_OR_BAD ARG_HA7E(const char *arg)
 {
 	struct connection_in *in = NewIn(NULL);
 	if (in == NULL) {
-		return 1;
+		return gbBAD;
 	}
 	in->name = (arg!=NULL) ? owstrdup(arg) : NULL;
 	in->busmode = bus_ha7e ;
-	return 0;
+	return gbGOOD;
 }
 
-int ARG_ENET(const char *arg)
+GOOD_OR_BAD ARG_ENET(const char *arg)
 {
 	struct connection_in *in = NewIn(NULL);
 	if (in == NULL) {
-		return 1;
+		return gbBAD;
 	}
 	in->name = (arg!=NULL) ? owstrdup(arg) : NULL;
 	in->busmode = bus_enet ;
-	return 0;
+	return gbGOOD;
 }
 
-int ARG_I2C(const char *arg)
+GOOD_OR_BAD ARG_I2C(const char *arg)
 {
 	#if OW_I2C
 	struct connection_in *in = NewIn(NULL);
 	if (in == NULL) {
-		return 1;
+		return gbBAD;
 	}
 	in->name = (arg!=NULL) ? owstrdup(arg) : owstrdup(":");
 	in->busmode = bus_i2c;
-	return 0;
+	return gbGOOD;
 	#else							/* OW_I2C */
 	LEVEL_DEFAULT("I2C (smbus DS2482-X00) support (intentionally) not included in compilation. Reconfigure and recompile.");
-	return 1;
+	return gbBAD;
 	#endif							/* OW_I2C */
 }
 
-int ARG_Link(const char *arg)
+GOOD_OR_BAD ARG_Link(const char *arg)
 {
 	struct connection_in *in = NewIn(NULL);
 	if (in == NULL) {
-		return 1;
+		return gbBAD;
 	}
 	in->name = (arg!=NULL) ? owstrdup(arg) : NULL;
 	switch( ArgType(arg) ) {
 		case arg_addr_null:
 			LEVEL_DEFAULT("LINK error. Please include either a serial device or network address in the command line specification");
-			return 1 ;
+			return gbBAD ;
 		case arg_addr_device:
 			in->busmode = bus_link ; // serial
 			break ;
@@ -196,71 +196,71 @@ int ARG_Link(const char *arg)
 			in->busmode = bus_elink ; // network
 			break ;	
 	}
-	return 0;
+	return gbGOOD;
 }
 
-int ARG_Mock(const char *arg)
+GOOD_OR_BAD ARG_Mock(const char *arg)
 {
 	struct connection_in *in = NewIn(NULL);
 	if (in == NULL) {
-		return 1;
+		return gbBAD;
 	}
 	in->name = (arg!=NULL) ? owstrdup(arg) : NULL;
 	in->busmode = bus_mock;
-	return 0;
+	return gbGOOD;
 }
 
-int ARG_Net(const char *arg)
+GOOD_OR_BAD ARG_Net(const char *arg)
 {
 	struct connection_in *in = NewIn(NULL);
 	if (in == NULL) {
-		return 1;
+		return gbBAD;
 	}
 	in->name = (arg!=NULL) ? owstrdup(arg) : NULL;
 	in->busmode = bus_server;
-	return 0;
+	return gbGOOD;
 }
 
-int ARG_Parallel(const char *arg)
+GOOD_OR_BAD ARG_Parallel(const char *arg)
 {
 	#if OW_PARPORT
 	struct connection_in *in = NewIn(NULL);
 	if (in == NULL) {
-		return 1;
+		return gbBAD;
 	}
 	in->name = (arg!=NULL) ? owstrdup(arg) : NULL;
 	in->busmode = bus_parallel;
-	return 0;
+	return gbGOOD;
 	#else							/* OW_PARPORT */
 	LEVEL_DEFAULT("Parallel port support (intentionally) not included in compilation. For DS1410E. That's ok, it doesn't work anyways.");
-	return 1;
+	return gbBAD;
 	#endif							/* OW_PARPORT */
 }
 
-int ARG_Passive(char *adapter_type_name, const char *arg)
+GOOD_OR_BAD ARG_Passive(char *adapter_type_name, const char *arg)
 {
 	struct connection_in *in = NewIn(NULL);
 	if (in == NULL) {
-		return 1;
+		return gbBAD;
 	}
 	in->name = (arg!=NULL) ? owstrdup(arg) : NULL;
 	in->busmode = bus_passive;
 	// special set name of adapter here
 	in->adapter_name = adapter_type_name;
-	return 0;
+	return gbGOOD;
 }
 
-int ARG_Serial(const char *arg)
+GOOD_OR_BAD ARG_Serial(const char *arg)
 {
 	struct connection_in *in = NewIn(NULL);
 	if (in == NULL) {
-		return 1;
+		return gbBAD;
 	}
 	in->name = (arg!=NULL) ? owstrdup(arg) : NULL;
 	switch( ArgType(arg) ) {
 		case arg_addr_null:
 			LEVEL_DEFAULT("LINK error. Please include either a serial device or network address in the command line specification");
-			return 1 ;
+			return gbBAD ;
 		case arg_addr_device:
 			in->busmode = bus_serial;
 			break ;
@@ -271,37 +271,37 @@ int ARG_Serial(const char *arg)
 			in->busmode = bus_xport ; // network
 			break ;
 	}
-	return 0;
+	return gbGOOD;
 }
 
-int ARG_Server(const char *arg)
+GOOD_OR_BAD ARG_Server(const char *arg)
 {
 	struct connection_out *out = NewOut();
 	if (out == NULL) {
-		return 1;
+		return gbBAD;
 	}
 	out->name = (arg!=NULL) ? owstrdup(arg) : NULL;
-	return 0;
+	return gbGOOD;
 }
 
-int ARG_Tester(const char *arg)
+GOOD_OR_BAD ARG_Tester(const char *arg)
 {
 	struct connection_in *in = NewIn(NULL);
 	if (in == NULL) {
-		return 1;
+		return gbBAD;
 	}
 	in->name = (arg!=NULL) ? owstrdup(arg) : NULL;
 	in->busmode = bus_tester;
-	return 0;
+	return gbGOOD;
 }
 
 // USB is a little more involved -- have to handle the "all" case and the specific number case
-int ARG_USB(const char *arg)
+GOOD_OR_BAD ARG_USB(const char *arg)
 {
 #if OW_USB
 	struct connection_in *in = NewIn(NULL);
 	if (in == NULL) {
-		return 1;
+		return gbBAD;
 	}
 	in->busmode = bus_usb;
 	if (arg == NULL) {
@@ -318,7 +318,7 @@ int ARG_USB(const char *arg)
 			for (usb_adapter_index = 2; usb_adapter_index <= number_of_usb_adapters; ++usb_adapter_index) {
 				struct connection_in *in2 = NewIn(NULL);
 				if (in2 == NULL) {
-					return 1;
+					return gbBAD;
 				}
 				in2->busmode = bus_usb;
 				in2->connin.usb.usb_nr = usb_adapter_index;
@@ -334,21 +334,21 @@ int ARG_USB(const char *arg)
 			LEVEL_CONNECT("USB bus master %d requested.", in->connin.usb.usb_nr);
 		}
 	}
-	return 0;
+	return gbGOOD;
 #else							/* OW_USB */
 	LEVEL_DEFAULT("USB support (intentionally) not included in compilation. Check LIBUSB, then reconfigure and recompile.");
-	return 1;
+	return gbBAD;
 #endif							/* OW_USB */
 }
 
 // Xport or telnet -- DS2480B over a remote serial server using telnet protocol.
-int ARG_Xport(const char *arg)
+GOOD_OR_BAD ARG_Xport(const char *arg)
 {
 	struct connection_in *in = NewIn(NULL);
 	if (in == NULL) {
-		return 1;
+		return gbBAD;
 	}
 	in->name = (arg!=NULL) ? owstrdup(arg) : NULL;
 	in->busmode = bus_xport;
-	return 0;
+	return gbGOOD;
 }

@@ -24,7 +24,7 @@ static void BadAdapter_close(struct connection_in *in);
 /* Device-specific functions */
 /* Note, the "Bad"adapter" ha not function, and returns "-ENOTSUP" (not supported) for most functions */
 /* It does call lower level functions for higher ones, which of course is pointless since the lower ones don't work either */
-int BadAdapter_detect(struct connection_in *in)
+ZERO_OR_ERROR BadAdapter_detect(struct connection_in *in)
 {
 	in->file_descriptor = -1;
 #if OW_USB

@@ -53,8 +53,6 @@ void OW_set_error_level(const char *params)
 
 ssize_t OW_init(const char *params)
 {
-	ssize_t ret = 0;
-
 	/* Set up owlib */
 	API_setup(opt_c);
 
@@ -62,46 +60,54 @@ ssize_t OW_init(const char *params)
 	/* grab our executable name */
 	Globals.progname = owstrdup("OWCAPI");
 
-	ret = API_init(params);
-
-	if (ret) {
+	if ( BAD( API_init(params) ) ) {
 		API_finish();
+		return ReturnAndErrno(-EINVAL) ;
 	}
 
-	return ReturnAndErrno(ret);
+	return ReturnAndErrno(0);
 }
 
 ssize_t OW_init_args(int argc, char **argv)
 {
-	ssize_t ret = 0;
-	int c;
-
 	/* Set up owlib */
 	API_setup(opt_c);
 
-	/* Proceed with init while lock held */
 	/* grab our executable name */
-    if (argc > 0) {
+	if (argc > 0) {
 		Globals.progname = owstrdup(argv[0]);
-    }
-
-	while (((c = getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL)) != -1)
-		   && (ret == 0)
-		) {
-		ret = owopt(c, optarg);
 	}
+
+	// process the command line flags
+	do {
+		int c = getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL) ;
+		if ( c == -1 ) {
+			break ;
+		}
+		if ( BAD( owopt(c, optarg) ) ) {
+			// clean up and exit
+			API_finish() ;
+			return ReturnAndErrno( -EINVAL ) ;
+		}
+	} while ( 1 ) ;
 
 	/* non-option arguments */
 	while (optind < argc) {
-		ARG_Generic(argv[optind]);
+		if ( BAD( ARG_Generic(argv[optind]) ) ) {
+			// clean up and exit
+			API_finish() ;
+			return ReturnAndErrno( -EINVAL ) ;
+		}
 		++optind;
 	}
 
-	if (ret || (ret = API_init(NULL))) {
-		API_finish();
+	if ( BAD( API_init(NULL) ) ) {
+		// clean up and exit
+		API_finish() ;
+		return ReturnAndErrno( -EINVAL ) ;
 	}
 
-	return ReturnAndErrno(ret);
+	return ReturnAndErrno(0);
 }
 
 /*

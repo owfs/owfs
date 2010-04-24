@@ -115,19 +115,19 @@ static int Get_HA7_response( struct addrinfo *now, char * name )
 	return 0 ;
 }
 
-int FS_FindHA7(void)
+GOOD_OR_BAD FS_FindHA7(void)
 {
 	struct addrinfo *ai;
 	struct addrinfo hint;
 	struct addrinfo *now;
-	int ret = -ENOENT;
-	int n ;
+	int number_found = 0;
+	int getaddr_error ;
 
 	LEVEL_DEBUG("Attempting udp multicast search for the HA7Net bus master at 224.1.2.3:4567");
 	Setup_HA7_hint( &hint ) ;
-	if ((n = getaddrinfo("224.1.2.3", "4567", &hint, &ai))) {
-		LEVEL_CONNECT("Couldn't set up HA7 broadcast message %s", gai_strerror(n));
-		return -ENOENT;
+	if ((getaddr_error = getaddrinfo("224.1.2.3", "4567", &hint, &ai))) {
+		LEVEL_CONNECT("Couldn't set up HA7 broadcast message %s", gai_strerror(getaddr_error));
+		return gbBAD;
 	}
 
 	for (now = ai; now; now = now->ai_next) {
@@ -147,9 +147,9 @@ int FS_FindHA7(void)
 		in->busmode = bus_ha7net;
 
 		LEVEL_CONNECT("HA7Net bus master discovered at %s",in->name);
-		ret = 0 ; // at least one good HA7
+		++number_found ;
 	}
 	freeaddrinfo(ai);
-	return ret ;
+	return number_found > 0 ? gbGOOD : gbBAD ;
 }
 #endif							/* OW_HA7 */

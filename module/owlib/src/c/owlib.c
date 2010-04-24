@@ -20,7 +20,7 @@ static void SetupTemperatureLimits( void );
 static void SetupInboundConnections(void);
 
 /* Start the owlib process -- already in background */
-int LibStart(void)
+void LibStart(void)
 {
 	/* Initialize random number generator, make sure fake devices get the same
 	 * id each time */
@@ -54,8 +54,6 @@ int LibStart(void)
 
 	// Signal handlers
 	IgnoreSignals();
-
-	return 0;
 }
 
 // only changes FAKE and MOCK temp limits
@@ -85,7 +83,7 @@ static void SetupInboundConnections(void)
 	struct connection_in *in;
 
 	for (in = Inbound_Control.head; in != NULL; in = in->next) {
-		int ret = -ENOPROTOOPT;;
+		ZERO_OR_ERROR ret = -ENOPROTOOPT;;
 		BadAdapter_detect(in);	/* default "NOTSUP" calls */
 		switch (get_busmode(in)) {
 
@@ -220,7 +218,7 @@ static void SetupInboundConnections(void)
 
 		}
 
-		if (ret) {				/* flag that that the adapter initiation was unsuccessful */
+		if (ret != 0) {				/* flag that that the adapter initiation was unsuccessful */
 			STAT_ADD1_BUS(e_bus_detect_errors, in);
 			BUS_close(in);		/* can use adapter's close */
 			BadAdapter_detect(in);	/* Set to default null assignments */

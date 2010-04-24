@@ -45,6 +45,7 @@ void API_setup(enum opt_program opt)
 	static int deja_vue = 0;
 	// poor mans lock for the Lib Setup and Lock Setup
 	if (++deja_vue == 1) {
+		// first time through
 		LibSetup(opt);
 		StateInfo.owlib_state = lib_state_setup;
 	}
@@ -68,9 +69,9 @@ void API_set_error_print(const char *params)
 
 
 /* Swig ensures that API_LibSetup is called first, but still we check */
-int API_init(const char *command_line)
+GOOD_OR_BAD API_init(const char *command_line)
 {
-	int return_code = 0;
+	GOOD_OR_BAD return_code = gbGOOD;
 
 	if (StateInfo.owlib_state == lib_state_pre) {
 		LibSetup(Globals.opt);	// use previous or default value
@@ -85,16 +86,12 @@ int API_init(const char *command_line)
 	// now restart
 	if (StateInfo.owlib_state == lib_state_setup) {
 		return_code = owopt_packed(command_line);
-		if (return_code != 0) {
+		if ( BAD(return_code) ) {
 			LIB_WUNLOCK;
 			return return_code;
 		}
 
-		return_code = LibStart();
-		if (return_code != 0) {
-			LIB_WUNLOCK;
-			return return_code;
-		}
+		LibStart();
 
 		StateInfo.owlib_state = lib_state_started;
 	}

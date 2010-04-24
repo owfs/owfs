@@ -180,7 +180,7 @@ static void SetConninData( int indx, const char * name, struct connection_in *in
 /* Since this is simulated bus master, it's creation cannot fail */
 /* in->name starts with a list of devices which is destructovely parsed and freed */
 /* in->name end with a name-index format */
-int Fake_detect(struct connection_in *in)
+ZERO_OR_ERROR Fake_detect(struct connection_in *in)
 {
 	Fake_setroutines(in);		// set up close, reconnect, reset, ...
 	in->iroutines.detect = Fake_detect;
@@ -197,7 +197,7 @@ int Fake_detect(struct connection_in *in)
 /* Since this is simulated bus master, it's creation cannot fail */
 /* in->name starts with a list of devices which is destructovely parsed and freed */
 /* in->name end with a name-index format */
-int Mock_detect(struct connection_in *in)
+ZERO_OR_ERROR Mock_detect(struct connection_in *in)
 {
 	Fake_setroutines(in);		// set up close, reconnect, reset, ...
 	in->iroutines.detect = Mock_detect;
@@ -213,7 +213,7 @@ int Mock_detect(struct connection_in *in)
 /* Since this is simulated bus master, it's creation cannot fail */
 /* in->name starts with a list of devices which is destructovely parsed and freed */
 /* in->name end with a name-index format */
-int Tester_detect(struct connection_in *in)
+ZERO_OR_ERROR Tester_detect(struct connection_in *in)
 {
 	Fake_setroutines(in);		// set up close, reconnect, reset, ...
 	in->iroutines.detect = Tester_detect;

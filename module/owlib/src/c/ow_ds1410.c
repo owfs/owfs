@@ -15,7 +15,7 @@ $Id$
 
 /* The parallel adapter has never worked for us, let's not pretend */
 
-int DS1410_detect(struct connection_in *in)
+ZERO_OR_ERROR DS1410_detect(struct connection_in *in)
 {
 	(void) in;
 	return 0;

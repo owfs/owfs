@@ -47,7 +47,7 @@ static void DS9097_setroutines(struct connection_in *in)
 
 /* _detect is a bit of a misnomer, no detection is actually done */
 // no bus locking here (higher up)
-int DS9097_detect(struct connection_in *in)
+ZERO_OR_ERROR DS9097_detect(struct connection_in *in)
 {
 	struct parsedname pn;
 
@@ -66,7 +66,13 @@ int DS9097_detect(struct connection_in *in)
 	FS_ParsedName_Placeholder(&pn);	// minimal parsename -- no destroy needed
 	pn.selected_connection = in;
 
-	return DS9097_reset(&pn);
+	switch( DS9097_reset(&pn) ) {
+		case BUS_RESET_OK:
+		case BUS_RESET_SHORT:
+			return 0 ;
+		default:
+			return -ENODEV ;
+	}
 }
 
 /* DS9097 Reset -- A little different from DS2480B */
@@ -80,8 +86,8 @@ static int DS9097_reset(const struct parsedname *pn)
 	int file_descriptor = pn->selected_connection->file_descriptor;
 	int ret;
 
-	if (file_descriptor < 0) {
-		return -1;
+	if ( FILE_DESCRIPTOR_NOT_VALID(file_descriptor) ) {
+		return -EINVAL;
 	}
 
 	/* 8 data bits */

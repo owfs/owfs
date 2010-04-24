@@ -254,7 +254,7 @@ static void EtherWeather_setroutines(struct connection_in *in)
 	in->iroutines.flags = ADAP_FLAG_overdrive | ADAP_FLAG_dirgulp | ADAP_FLAG_no2409path;
 }
 
-int EtherWeather_detect(struct connection_in *in)
+ZERO_OR_ERROR EtherWeather_detect(struct connection_in *in)
 {
 
 	struct parsedname pn;
@@ -268,7 +268,7 @@ int EtherWeather_detect(struct connection_in *in)
 	EtherWeather_setroutines(in);
 
 	if (in->name == NULL) {
-		return -1;
+		return -EINVAL;
 	}
 
 	/* Add the port if it isn't there already */
@@ -282,7 +282,7 @@ int EtherWeather_detect(struct connection_in *in)
 	}
 
 	if (ClientAddr(in->name, in)) {
-		return -1;
+		return -ENODEV;
 	}
 	if ((pn.selected_connection->file_descriptor = ClientConnect(in)) < 0) {
 		return -EIO;

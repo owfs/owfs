@@ -121,7 +121,7 @@ int main(int argc, char **argv)
 		default:
 			break;
 		}
-		if (owopt(c, optarg)) {
+		if ( BAD( owopt(c, optarg) ) ) {
 			ow_exit(0);			/* rest of message */
 		}
 	}
@@ -145,12 +145,8 @@ int main(int argc, char **argv)
 		ow_exit(1);
 	}
 
-	/*
-	 * Actually open the devices
-	 */
-	if (LibStart()) {
-		ow_exit(1);
-	}
+	/* Set up adapters */
+	LibStart() ;
 
 #if OW_MT
 	main_threadid = pthread_self();

@@ -69,8 +69,8 @@ static int DS9490_reset(const struct parsedname *pn);
 static int DS9490_open(struct usb_list *ul, struct connection_in *in);
 static int DS9490_sub_open(struct usb_list *ul, struct connection_in *in);
 
-static int DS9490_detect_low(struct connection_in *in);
-static int DS9490_detect_found(struct connection_in *in);
+static ZERO_OR_ERROR DS9490_detect_low(struct connection_in *in);
+static ZERO_OR_ERROR DS9490_detect_found(struct connection_in *in);
 static int DS9490_reconnect(const struct parsedname *pn);
 static int DS9490_redetect_low(struct connection_in * in);
 static int DS9490_redetect_found(struct connection_in * in);
@@ -297,9 +297,9 @@ int DS9490_enumerate(void)
 }
 
 /* Main routine for detecting (and setting up) the DS2490 1-wire USB chip */
-int DS9490_detect(struct connection_in *in)
+ZERO_OR_ERROR DS9490_detect(struct connection_in *in)
 {
-	int ret;
+	ZERO_OR_ERROR ret;
 
 	DS9490_setroutines(in);		// set up close, reconnect, reset, ...
 	in->name = owstrdup(badUSBname);		// initialized
@@ -312,14 +312,14 @@ int DS9490_detect(struct connection_in *in)
 	if (ret) {
 		fprintf(stderr, "Could not open the USB bus master. Is there a problem with permissions?\n");
 		LEVEL_DEFAULT("Could not open the USB bus master. Is there a problem with permissions?");
-        return ret ;
+		return ret ;
 	}
-    DS9490_SetFlexParameters (in);
+	DS9490_SetFlexParameters (in);
 	return 0;
 }
 
 /* Open a DS9490  -- low level code (to allow for repeats)  */
-static int DS9490_detect_low(struct connection_in * in)
+static ZERO_OR_ERROR DS9490_detect_low(struct connection_in * in)
 {
 	struct usb_list ul;
 	/* usb_nr holds the number of the adapter */
@@ -332,7 +332,7 @@ static int DS9490_detect_low(struct connection_in * in)
 			LEVEL_CONNECT("USB DS9490 %d passed over. (Looking for %d)", usbnum, useusb);
 		} else if (DS9490_open(&ul, in)) {
 			return -EIO;
-		} else if (DS9490_detect_found(in)) {
+		} else if (DS9490_detect_found(in) != 0) {
 			DS9490_close(in) ;
 			LEVEL_CONNECT("USB DS9490 %d unsuccessful. (Looking for %d)", usbnum, useusb);
 		} else{
@@ -390,7 +390,7 @@ static GOOD_OR_BAD DS9490_root_dir( struct dirblob * db, struct connection_in * 
 }
 
 /* Found a DS9490 that seems good, now check list and find a device to ID for reconnects */
-static int DS9490_detect_found(struct connection_in *in)
+static ZERO_OR_ERROR DS9490_detect_found(struct connection_in *in)
 {
 	struct dirblob db ;
 	BYTE sn[SERIAL_NUMBER_SIZE] ;

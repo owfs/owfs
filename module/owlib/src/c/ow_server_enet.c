@@ -69,7 +69,7 @@ static void OWServer_Enet_setroutines(struct connection_in *in)
 	in->bundling_length = HA7E_FIFO_SIZE;
 }
 
-int OWServer_Enet_detect(struct connection_in *in)
+ZERO_OR_ERROR OWServer_Enet_detect(struct connection_in *in)
 {
 	struct parsedname pn;
 
@@ -80,7 +80,7 @@ int OWServer_Enet_detect(struct connection_in *in)
 	OWServer_Enet_setroutines(in);
 
 	if (in->name == NULL) {
-		return -1;
+		return -EINVAL;
 	}
 
 	/* Add the port if it isn't there already */

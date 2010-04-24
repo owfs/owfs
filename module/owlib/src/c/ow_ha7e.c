@@ -45,7 +45,7 @@ static void HA7E_setroutines(struct connection_in *in)
 	in->bundling_length = HA7E_FIFO_SIZE;
 }
 
-int HA7E_detect(struct connection_in *in)
+ZERO_OR_ERROR HA7E_detect(struct connection_in *in)
 {
 	struct parsedname pn;
 

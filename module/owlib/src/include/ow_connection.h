@@ -566,43 +566,43 @@ int SetKnownBus( int bus_number, struct parsedname * pn) ;
 void ZeroConf_Announce(struct connection_out *out);
 void OW_Browse(void);
 
-int Server_detect(struct connection_in *in);
-int Zero_detect(struct connection_in *in);
-int DS2480_detect(struct connection_in *in);
+ZERO_OR_ERROR Server_detect(struct connection_in *in);
+ZERO_OR_ERROR Zero_detect(struct connection_in *in);
+ZERO_OR_ERROR DS2480_detect(struct connection_in *in);
 
 #if OW_PARPORT
-int DS1410_detect(struct connection_in *in);
+ZERO_OR_ERROR DS1410_detect(struct connection_in *in);
 #endif							/* OW_PARPORT */
 
-int DS9097_detect(struct connection_in *in);
-int LINK_detect(struct connection_in *in);
-int HA7E_detect(struct connection_in *in);
-int OWServer_Enet_detect(struct connection_in *in);
-int HA5_detect(struct connection_in *in);
-int BadAdapter_detect(struct connection_in *in);
-int LINKE_detect(struct connection_in *in);
-int Fake_detect(struct connection_in *in);
-int Tester_detect(struct connection_in *in);
-int Mock_detect(struct connection_in *in);
-int EtherWeather_detect(struct connection_in *in);
+ZERO_OR_ERROR DS9097_detect(struct connection_in *in);
+ZERO_OR_ERROR LINK_detect(struct connection_in *in);
+ZERO_OR_ERROR HA7E_detect(struct connection_in *in);
+ZERO_OR_ERROR OWServer_Enet_detect(struct connection_in *in);
+ZERO_OR_ERROR HA5_detect(struct connection_in *in);
+ZERO_OR_ERROR BadAdapter_detect(struct connection_in *in);
+ZERO_OR_ERROR LINKE_detect(struct connection_in *in);
+ZERO_OR_ERROR Fake_detect(struct connection_in *in);
+ZERO_OR_ERROR Tester_detect(struct connection_in *in);
+ZERO_OR_ERROR Mock_detect(struct connection_in *in);
+ZERO_OR_ERROR EtherWeather_detect(struct connection_in *in);
 
 #if OW_HA7
-int HA7_detect(struct connection_in *in);
-int FS_FindHA7(void);
+ZERO_OR_ERROR HA7_detect(struct connection_in *in);
+GOOD_OR_BAD FS_FindHA7(void);
 #endif							/* OW_HA7 */
 
 #if OW_W1
-int W1_detect(struct connection_in * in) ;
+ZERO_OR_ERROR W1_detect(struct connection_in * in) ;
 int W1_Browse( void ) ;
 #endif /* OW_W1 */
 
 #if OW_I2C
-int DS2482_detect(struct connection_in *in);
+ZERO_OR_ERROR DS2482_detect(struct connection_in *in);
 #endif							/* OW_I2C */
 
 #if OW_USB
 int DS9490_enumerate(void);
-int DS9490_detect(struct connection_in *in);
+ZERO_OR_ERROR DS9490_detect(struct connection_in *in);
 void DS9490_close(struct connection_in *in);
 #endif							/* OW_USB */
 
