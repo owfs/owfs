@@ -17,7 +17,7 @@ $Id$
 
 /* All the rest of the program sees is the DS9907_detect and the entry in iroutines */
 
-static int DS9097_reset(const struct parsedname *pn);
+static RESET_TYPE DS9097_reset(const struct parsedname *pn);
 static int DS9097_sendback_bits(const BYTE * outbits, BYTE * inbits, const size_t length, const struct parsedname *pn);
 static void DS9097_setroutines(struct connection_in *in);
 static int DS9097_send_and_get(const BYTE * bussend, BYTE * busget, const size_t length, const struct parsedname *pn);
@@ -77,14 +77,13 @@ ZERO_OR_ERROR DS9097_detect(struct connection_in *in)
 
 /* DS9097 Reset -- A little different from DS2480B */
 /* Puts in 9600 baud, sends 11110000 then reads response */
-// return 1 shorted, 0 ok, <0 error
-static int DS9097_reset(const struct parsedname *pn)
+static RESET_TYPE DS9097_reset(const struct parsedname *pn)
 {
 	BYTE resetbyte = 0xF0;
 	BYTE c;
 	struct termios term;
-	int file_descriptor = pn->selected_connection->file_descriptor;
-	int ret;
+	FILE_DESCRIPTOR_OR_ERROR file_descriptor = pn->selected_connection->file_descriptor;
+	RESET_TYPE ret;
 
 	if ( FILE_DESCRIPTOR_NOT_VALID(file_descriptor) ) {
 		return -EINVAL;

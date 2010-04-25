@@ -17,8 +17,8 @@ $Id$
 #include "ow_codes.h"
 
 //static void byteprint( const BYTE * b, int size ) ;
-static int HA5_reset(const struct parsedname *pn);
-static int HA5_reset_wrapped(const struct parsedname *pn) ;
+static RESET_TYPE HA5_reset(const struct parsedname *pn);
+static RESET_TYPE HA5_reset_wrapped(const struct parsedname *pn) ;
 static int HA5_next_both(struct device_search *ds, const struct parsedname *pn);
 static int HA5_sendback_part(char cmd, const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn) ;
 static int HA5_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
@@ -245,10 +245,10 @@ static int HA5_test_channel( struct parsedname  *pn )
 	return 0 ;
 }
 
-static int HA5_reset(const struct parsedname *pn)
+static RESET_TYPE HA5_reset(const struct parsedname *pn)
 {
 	struct connection_in * in = pn->selected_connection ;
-	int ret ;
+	RESET_TYPE ret ;
 
 	pthread_mutex_lock( &in->connin.ha5.head->connin.ha5.lock ) ;
 	ret = HA5_reset_wrapped(pn) ;
@@ -257,7 +257,7 @@ static int HA5_reset(const struct parsedname *pn)
 	return ret ;
 }
 
-static int HA5_reset_wrapped(const struct parsedname *pn)
+static RESET_TYPE HA5_reset_wrapped(const struct parsedname *pn)
 {
 	struct connection_in * in = pn->selected_connection ;
 	int reset_length ;
@@ -628,7 +628,7 @@ static void HA5_powerdown(struct connection_in * in)
 	pn.selected_connection = in;
 
 	COM_write((BYTE*)"P", 1, in) ;
-	if ( in->file_descriptor > -1 ) {
+	if ( FILE_DESCRIPTOR_VALID(in->file_descriptor) ) {
 		COM_slurp(in->file_descriptor) ;
 	}
 }

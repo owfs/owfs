@@ -609,34 +609,6 @@ static GOOD_OR_BAD OW_clearmemory(struct parsedname *pn)
 	return gbGOOD;
 }
 
-/* Just a test function to read all available bytes */
-static int OW_flush(struct parsedname *pn, int lock)
-{
-	int i = 0;
-	int ret;
-
-	if (lock) {
-		BUSLOCK(pn);
-	}
-	do {
-//    ret = BUS_read(&p,1,pn ) ;
-		if (ret) {
-			break;
-		}
-		i++;
-		if ((i % 5) == 0) {
-			printf(".");
-			fflush(stdout);
-		}
-	} while (ret == 0);
-	if (lock) {
-		BUSUNLOCK(pn);
-	}
-	//printf("flush: read %d bytes ret=%d\n", i, ret);
-	return 0;
-}
-
-
 static GOOD_OR_BAD OW_r_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
 {
 	BYTE p[3 + 8 + 32 + 2] = { _1W_READ_MEMORY_WITH_PASSWORD_AND_CRC,
@@ -814,16 +786,6 @@ static GOOD_OR_BAD OW_stopmission(struct parsedname *pn)
 	ret = BUS_select(pn) || BUS_send_data(data, 10, pn);
 	BUSUNLOCK(pn);
 	return ret;
-}
-
-static int OW_w_delay(unsigned long mdelay, struct parsedname *pn)
-{
-	BYTE p[3];
-	// mission start delay
-	p[0] = mdelay & 0xFF;
-	p[1] = (mdelay >> 8) & 0xFF;
-	p[2] = (mdelay >> 16) & 0xFF;
-	return OW_w_mem(p, 3, 0x0216, pn) ;
 }
 
 static GOOD_OR_BAD OW_startmission(unsigned long mdelay, struct parsedname *pn)

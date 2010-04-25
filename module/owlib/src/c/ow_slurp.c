@@ -19,7 +19,7 @@ $Id$
 #endif
 
 /* slurp up any pending chars -- used at the start to clear the com buffer */
-void Slurp( int file_descriptor, unsigned long usec )
+void Slurp( FILE_DESCRIPTOR_OR_ERROR file_descriptor, unsigned long usec )
 {
 	BYTE data[1] ;
 	while (1) {

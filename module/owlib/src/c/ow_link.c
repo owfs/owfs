@@ -68,7 +68,7 @@ static ZERO_OR_ERROR LINK_net_detect(struct parsedname * pn_minimal) ;
 static void LINK_set_baud(const struct parsedname *pn) ;
 static int LINK_read(BYTE * buf, const size_t size, int extra_net, const struct parsedname *pn);
 static int LINK_write(const BYTE * buf, const size_t size, const struct parsedname *pn);
-static int LINK_reset(const struct parsedname *pn);
+static RESET_TYPE LINK_reset(const struct parsedname *pn);
 static int LINK_next_both(struct device_search *ds, const struct parsedname *pn);
 static int LINK_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 static void LINK_setroutines(struct connection_in *in);
@@ -328,10 +328,9 @@ static void LINK_flush( struct connection_in * in )
 	}
 }
 
-static int LINK_reset(const struct parsedname *pn)
+static RESET_TYPE LINK_reset(const struct parsedname *pn)
 {
 	BYTE resp[3+1];
-	int ret;
 
 	if (pn->selected_connection->changed_bus_settings > 0) {
 		--pn->selected_connection->changed_bus_settings ;
@@ -350,27 +349,19 @@ static int LINK_reset(const struct parsedname *pn)
 
 	case 'P':
 		LEVEL_DEBUG("ok, devices Present");
-		ret = BUS_RESET_OK;
 		pn->selected_connection->AnyDevices = anydevices_yes;
-		break;
+		return BUS_RESET_OK;
 	case 'N':
 		LEVEL_DEBUG("ok, devices Not present");
-		ret = BUS_RESET_OK;
 		pn->selected_connection->AnyDevices = anydevices_no;
-		break;
-
+		return BUS_RESET_OK;
 	case 'S':
 		LEVEL_DEBUG("short, Short circuit on 1-wire bus!");
-		ret = BUS_RESET_SHORT;
-		break;
-
+		return BUS_RESET_SHORT;
 	default:
 		LEVEL_DEBUG("bad, Unknown LINK response %c", resp[0]);
-		ret = -EIO;
-		break;
+		return -EIO;
 	}
-
-	return ret;
 }
 
 static int LINK_next_both(struct device_search *ds, const struct parsedname *pn)

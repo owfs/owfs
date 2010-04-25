@@ -38,7 +38,7 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
 #include "ow_connection.h"
 
 // write to an internal pipe (in another thread). Use a timepout in case that thread has terminated.
-static int W1_write_pipe( int file_descriptor, struct netlink_parse * nlp )
+static int W1_write_pipe( FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct netlink_parse * nlp )
 {
 	int size = nlp->nlm->nlmsg_len ;
 	do {

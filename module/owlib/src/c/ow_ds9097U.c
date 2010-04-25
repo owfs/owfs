@@ -17,7 +17,7 @@ $Id$
 
 static int DS2480_next_both(struct device_search *ds, const struct parsedname *pn);
 //static int DS2480_databit(int sendbit, int *getbit, const struct parsedname *pn);
-static int DS2480_reset(const struct parsedname *pn);
+static RESET_TYPE DS2480_reset(const struct parsedname *pn);
 static int DS2480_initialize_repeatedly(struct parsedname * pn);
 static int DS2480_big_reset(const struct parsedname *pn) ;
 static int DS2480_big_reset_serial(const struct parsedname *pn) ;
@@ -35,7 +35,7 @@ static void DS2480_setroutines(struct connection_in *in);
 static int DS2480_configuration_write(BYTE parameter_code, BYTE value_code, const struct parsedname *pn);
 static int DS2480_configuration_read(BYTE parameter_code, BYTE value_code, const struct parsedname *pn);
 static int DS2480_stop_pulse(BYTE * response, const struct parsedname *pn);
-static int DS2480_reset_once(const struct parsedname *pn) ;
+static RESET_TYPE DS2480_reset_once(const struct parsedname *pn) ;
 static int DS2480_set_baud(const struct parsedname *pn) ;
 static void DS2480_set_baud_control(const struct parsedname *pn) ;
 static BYTE DS2480b_speed_byte( const struct parsedname * pn ) ;
@@ -348,7 +348,8 @@ static int DS2480_big_reset_net(const struct parsedname *pn)
 	if (ClientAddr(in->name, in)) {
 		return -ENODEV;
 	}
-	if ((in->file_descriptor = ClientConnect(in)) < 0) {
+	in->file_descriptor = ClientConnect(in) ;
+	if ( FILE_DESCRIPTOR_NOT_VALID(in->file_descriptor) ) {
 		return -EIO;
 	}
 	
@@ -394,7 +395,7 @@ static int DS2480_big_reset_net(const struct parsedname *pn)
 }
 
 // do the configuration stuff
-static int DS2480_big_configuration(const struct parsedname *pn)
+static ZERO_OR_ERROR DS2480_big_configuration(const struct parsedname *pn)
 {
 	int ret ;
 	BYTE single_bit = CMD_COMM | BITPOL_ONE |  DS2480b_speed_byte(pn) ;
@@ -586,9 +587,9 @@ static BYTE DS2480b_speed_byte( const struct parsedname * pn )
           1=short
           <0 error
  */
-static int DS2480_reset(const struct parsedname *pn)
+static RESET_TYPE DS2480_reset(const struct parsedname *pn)
 {
-	int ret ;
+	RESET_TYPE ret ;
 
 	if (pn->selected_connection->changed_bus_settings > 0) {
 		--pn->selected_connection->changed_bus_settings ;
@@ -613,9 +614,9 @@ static int DS2480_reset(const struct parsedname *pn)
 	return ret ;
 }
 
-static int DS2480_reset_once(const struct parsedname *pn)
+static RESET_TYPE DS2480_reset_once(const struct parsedname *pn)
 {
-	int ret = 0;
+	RESET_TYPE ret = BUS_RESET_OK;
 	BYTE reset_byte = (BYTE) ( CMD_COMM | FUNCTSEL_RESET | DS2480b_speed_byte(pn) );
 	BYTE reset_response ;
 

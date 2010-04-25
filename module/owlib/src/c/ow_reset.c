@@ -17,9 +17,9 @@ $Id$
 //#include "ow_codes.h"
 
 // RESET called with bus locked
-int BUS_reset(const struct parsedname *pn)
+RESET_TYPE BUS_reset(const struct parsedname *pn)
 {
-	int ret = (pn->selected_connection->iroutines.reset) (pn);
+	RESET_TYPE ret = (pn->selected_connection->iroutines.reset) (pn);
 	/* Shorted 1-wire bus or minor error shouldn't cause a reconnect */
 	if (ret == BUS_RESET_OK) {
 		pn->selected_connection->reconnect_state = reconnect_ok;	// Flag as good!

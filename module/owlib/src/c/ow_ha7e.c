@@ -17,7 +17,7 @@ $Id$
 #include "ow_codes.h"
 
 //static void byteprint( const BYTE * b, int size ) ;
-static int HA7E_reset(const struct parsedname *pn);
+static RESET_TYPE HA7E_reset(const struct parsedname *pn);
 static int HA7E_next_both(struct device_search *ds, const struct parsedname *pn);
 static int HA7E_sendback_part(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn) ;
 static int HA7E_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
@@ -83,7 +83,7 @@ ZERO_OR_ERROR HA7E_detect(struct connection_in *in)
 	return -ENODEV;
 }
 
-static int HA7E_reset(const struct parsedname *pn)
+static RESET_TYPE HA7E_reset(const struct parsedname *pn)
 {
 	BYTE resp[1];
 
@@ -342,7 +342,7 @@ static void HA7E_powerdown(struct connection_in * in)
 	pn.selected_connection = in;
 
 	COM_write((BYTE*)"P", 1, in) ;
-	if ( in->file_descriptor > -1 ) {
+	if ( FILE_DESCRIPTOR_VALID(in->file_descriptor) ) {
 		COM_slurp(in->file_descriptor) ;
 	}
 }

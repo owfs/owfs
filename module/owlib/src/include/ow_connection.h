@@ -69,6 +69,9 @@ See: http://www.iana.org/assignments/port-numbers
 #include <sys/ioctl.h>
 #include "ow_transaction.h"
 
+/* reset types */
+#include "ow_reset.h"
+
 /* large enough for arrays of 2048 elements of ~49 bytes each */
 #define MAX_OWSERVER_PROTOCOL_PACKET_SIZE  100050
 
@@ -115,9 +118,9 @@ struct device_search;
 /* Interface-specific routines ---------------- */
 struct interface_routines {
 	/* Detect if adapter is present, and open -- usually called outside of this routine */
-	int (*detect) (struct connection_in * in);
+	ZERO_OR_ERROR (*detect) (struct connection_in * in);
 	/* reset the interface -- actually the 1-wire bus */
-	int (*reset) (const struct parsedname * pn);
+	RESET_TYPE (*reset) (const struct parsedname * pn);
 	/* Bulk of search routine, after set ups for first or alarm or family */
 	int (*next_both) (struct device_search * ds, const struct parsedname * pn);
 	/* Send a byte with bus power to follow */
@@ -487,7 +490,7 @@ extern struct inbound_control {
 /* Network connection structure */
 struct connection_out {
 	struct connection_out *next;
-	void (*HandlerRoutine) (int file_descriptor);
+	void (*HandlerRoutine) (FILE_DESCRIPTOR_OR_ERROR file_descriptor);
 	char *name;
 	char *host;
 	char *service;
@@ -543,7 +546,7 @@ void COM_close(struct connection_in *in);
 void COM_break(struct connection_in *in);
 int COM_write( const BYTE * data, size_t length, struct connection_in *connection);
 int COM_read( BYTE * data, size_t length, struct connection_in *connection);
-void Slurp( int file_descriptor, unsigned long usec ) ;
+void Slurp( FILE_DESCRIPTOR_OR_ERROR file_descriptor, unsigned long usec ) ;
 
 int telnet_read(BYTE * buf, const size_t size, const struct parsedname *pn) ;
 
@@ -606,9 +609,7 @@ ZERO_OR_ERROR DS9490_detect(struct connection_in *in);
 void DS9490_close(struct connection_in *in);
 #endif							/* OW_USB */
 
-#define BUS_RESET_OK    0
-#define BUS_RESET_SHORT 1
-int BUS_reset(const struct parsedname *pn);
+RESET_TYPE BUS_reset(const struct parsedname *pn);
 
 int BUS_first(struct device_search *ds, const struct parsedname *pn);
 int BUS_next(struct device_search *ds, const struct parsedname *pn);

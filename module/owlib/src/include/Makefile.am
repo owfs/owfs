@@ -59,7 +59,7 @@ noinst_HEADERS =          \
         ow_integer.h      \
         ow_interface.h    \
         ow_localtypes.h   \
-        ow_localreturns.h   \
+        ow_localreturns.h \
         ow_lcd.h          \
         ow_memblob.h      \
         ow_message.h      \
@@ -70,6 +70,7 @@ noinst_HEADERS =          \
         ow_parsedname.h   \
         ow_pid.h          \
         ow_pressure.h     \
+	ow_reset.h        \
         ow_settings.h     \
         ow_simultaneous.h \
 	ow_specialcase.h  \

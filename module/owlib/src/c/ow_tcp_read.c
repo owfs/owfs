@@ -19,7 +19,7 @@ $Id$
 #include "ow_counters.h"
 
 /* Wait for something to be readable or timeout */
-int tcp_wait(int file_descriptor, const struct timeval *ptv)
+int tcp_wait(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const struct timeval *ptv)
 {
 	int rc;
 	fd_set readset;
@@ -52,7 +52,7 @@ int tcp_wait(int file_descriptor, const struct timeval *ptv)
 /* Read "n" bytes from a descriptor. */
 /* Stolen from Unix Network Programming by Stevens, Fenner, Rudoff p89 */
 /* return < 0 if failure */
-ZERO_OR_ERROR tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval * ptv, size_t * chars_in)
+ZERO_OR_ERROR tcp_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, void *vptr, size_t n, const struct timeval * ptv, size_t * chars_in)
 {
 	size_t nleft;
 	ssize_t nread;
@@ -110,7 +110,7 @@ ZERO_OR_ERROR tcp_read(int file_descriptor, void *vptr, size_t n, const struct t
 	return 0;
 }
 
-void tcp_read_flush(int file_descriptor)
+void tcp_read_flush( FILE_DESCRIPTOR_OR_ERROR file_descriptor)
 {
 	ASCII buffer[16];
 	ssize_t nread;

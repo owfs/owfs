@@ -90,9 +90,9 @@ static void BSKill(struct BrowseStruct *bs)
 // Wait for a resolve, then return. Timeout after 2 minutes
 static void ResolveWait( DNSServiceRef sref )
 {
-	int file_descriptor = DNSServiceRefSockFD(sref);
+	FILE_DESCRIPTOR_OR_ERROR file_descriptor = DNSServiceRefSockFD(sref);
 
-	if (file_descriptor >= 0) {
+	if ( FILE_DESCRIPTOR_VALID(file_descriptor) ) {
 		while (1) {
 			fd_set readfd;
 			struct timeval tv = { 120, 0 };

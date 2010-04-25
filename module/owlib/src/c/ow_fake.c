@@ -17,7 +17,7 @@ $Id$
 
 /* All the remaining_device_list of the program sees is the Fake_detect and the entry in iroutines */
 
-static int Fake_reset(const struct parsedname *pn);
+static RESET_TYPE Fake_reset(const struct parsedname *pn);
 static int Fake_ProgramPulse(const struct parsedname *pn);
 static int Fake_sendback_bits(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 static void Fake_close(struct connection_in *in);
@@ -225,7 +225,7 @@ ZERO_OR_ERROR Tester_detect(struct connection_in *in)
 	return 0;
 }
 
-static int Fake_reset(const struct parsedname *pn)
+static RESET_TYPE Fake_reset(const struct parsedname *pn)
 {
 	(void) pn;
 	return BUS_RESET_OK;

@@ -148,7 +148,7 @@ int Netlink_Parse_Get( struct netlink_parse * nlp )
 }
 
 /* Reads a packet from a pipe that was originally a netlink packet */
-int Get_and_Parse_Pipe( int file_descriptor, struct netlink_parse * nlp )
+int Get_and_Parse_Pipe( FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct netlink_parse * nlp )
 {
 	unsigned char * buffer ;
 	struct nlmsghdr peek_nlm ;
@@ -192,7 +192,7 @@ static void Netlink_Parse_Show( struct netlink_parse * nlp )
 
 enum Netlink_Read_Status W1_Process_Response( void (* nrs_callback)( struct netlink_parse * nlp, void * v, const struct parsedname * pn), int seq, void * v, const struct parsedname * pn )
 {
-	int file_descriptor ;
+	FILE_DESCRIPTOR_OR_ERROR file_descriptor ;
 	int bus ;
 
 	if ( seq < 0 ) {

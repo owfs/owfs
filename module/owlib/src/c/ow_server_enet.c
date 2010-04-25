@@ -27,15 +27,15 @@ struct toENET {
 };
 
 //static void byteprint( const BYTE * b, int size ) ;
-static int ENET_write(int file_descriptor, const ASCII * msg, size_t length, struct connection_in *in) ;
-static int OWServer_Enet_reset(const struct parsedname *pn);
+static int ENET_write(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const ASCII * msg, size_t length, struct connection_in *in) ;
+static RESET_TYPE OWServer_Enet_reset(const struct parsedname *pn);
 static void OWServer_Enet_close(struct connection_in *in);
 #if 0
 static void toENETinit(struct toENET *enet) ;
 #endif
-static int ENET_send_detail(int file_descriptor, struct connection_in *in) ;
+static int ENET_send_detail(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct connection_in *in) ;
 static int ENET_get_detail(const struct parsedname * pn ) ;
-static int OWServer_Enet_read(int file_descriptor, struct memblob *mb) ;
+static int OWServer_Enet_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct memblob *mb) ;
 static int Add_a_property(const char * tag, const char * property, const char * romid, char ** buffer) ;
 static int parse_detail_record(char * detail, const struct parsedname *pn) ;
 static char * find_xml_string( const char * tag, size_t * length, char * buffer) ;
@@ -110,7 +110,7 @@ ZERO_OR_ERROR OWServer_Enet_detect(struct connection_in *in)
 
 #define HA7_READ_BUFFER_LENGTH 500
 
-static int OWServer_Enet_read(int file_descriptor, struct memblob *mb)
+static int OWServer_Enet_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct memblob *mb)
 {
 	ASCII readin_area[HA7_READ_BUFFER_LENGTH + 1];
 	int first_pass = 1 ;
@@ -159,12 +159,13 @@ static int OWServer_Enet_read(int file_descriptor, struct memblob *mb)
 }
 
 static int ENET_get_detail(const struct parsedname *pn) {
-	int file_descriptor;
+	FILE_DESCRIPTOR_OR_ERROR file_descriptor;
 	int ret = -EIO ;
 	struct dirblob *db = &(pn->selected_connection->main) ;
 
 	DirblobClear(db);
-	if ((file_descriptor = ClientConnect(pn->selected_connection)) < 0) {
+	file_descriptor = ClientConnect(pn->selected_connection) ;
+	if ( FILE_DESCRIPTOR_NOT_VALID(file_descriptor) ) {
 		return -EIO;
 	}
 	if (ENET_send_detail(file_descriptor,pn->selected_connection)==0) {
@@ -460,7 +461,7 @@ static char * find_xml_string( const char * tag, size_t * length, char * buffer)
 	return data ;
 }
 
-static int OWServer_Enet_reset(const struct parsedname *pn)
+static RESET_TYPE OWServer_Enet_reset(const struct parsedname *pn)
 {
 	(void) pn ;
 	return BUS_RESET_OK;
@@ -534,7 +535,7 @@ static void toENETinit(struct toENET *enet)
 }
 #endif
 
-static int ENET_write(int file_descriptor, const ASCII * msg, size_t length, struct connection_in *in)
+static int ENET_write(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const ASCII * msg, size_t length, struct connection_in *in)
 {
 	ssize_t r, sl = length;
 	ssize_t size = sl;

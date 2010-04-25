@@ -58,15 +58,15 @@ static int DS2482_detect_sys( int any, enum ds2482_address chip_num, struct conn
 static int DS2482_detect_dir( int any, enum ds2482_address chip_num, struct connection_in *in) ;
 static ZERO_OR_ERROR DS2482_detect_single(int lowindex, int highindex, struct connection_in *in) ;
 static int DS2482_next_both(struct device_search *ds, const struct parsedname *pn);
-static int DS2482_triple(BYTE * bits, int direction, int file_descriptor);
-static int DS2482_send_and_get(int file_descriptor, const BYTE wr, BYTE * rd);
-static int DS2482_reset(const struct parsedname *pn);
+static int DS2482_triple(BYTE * bits, int direction, FILE_DESCRIPTOR_OR_ERROR file_descriptor);
+static int DS2482_send_and_get(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const BYTE wr, BYTE * rd);
+static RESET_TYPE DS2482_reset(const struct parsedname *pn);
 static int DS2482_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 static void DS2482_setroutines(struct connection_in *in);
 static int HeadChannel(struct connection_in *in);
 static int CreateChannels(struct connection_in *in);
 static int DS2482_channel_select(const struct parsedname *pn);
-static int DS2482_readstatus(BYTE * c, int file_descriptor, unsigned long int min_usec, unsigned long int max_usec);
+static int DS2482_readstatus(BYTE * c, FILE_DESCRIPTOR_OR_ERROR file_descriptor, unsigned long int min_usec, unsigned long int max_usec);
 static int SetConfiguration(BYTE c, struct connection_in *in);
 static void DS2482_close(struct connection_in *in);
 static int DS2482_redetect(const struct parsedname *pn);
@@ -365,11 +365,11 @@ static ZERO_OR_ERROR DS2482_detect_single(int lowindex, int highindex, struct co
 {
 	int test_address[8] = { 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, };	// the last 4 are -800 only
 	int i;
-	int file_descriptor;
+	FILE_DESCRIPTOR_OR_ERROR file_descriptor;
 
 	/* open the i2c port */
 	file_descriptor = open(in->name, O_RDWR);
-	if (file_descriptor < 0) {
+	if ( FILE_DESCRIPTOR_NOT_VALID(file_descriptor) ) {
 		ERROR_CONNECT("Could not open i2c device %s", in->name);
 		return -ENODEV;
 	}
@@ -433,11 +433,11 @@ static int DS2482_redetect(const struct parsedname *pn)
 {
 	struct connection_in *head = pn->selected_connection->connin.i2c.head;
 	int address = head->connin.i2c.i2c_address;
-	int file_descriptor;
+	FILE_DESCRIPTOR_OR_ERROR file_descriptor;
 
 	/* open the i2c port */
 	file_descriptor = open(head->name, O_RDWR);
-	if (file_descriptor < 0) {
+	if ( FILE_DESCRIPTOR_NOT_VALID(file_descriptor) ) {
 		ERROR_CONNECT("Could not open i2c device %s", head->name);
 		return -ENODEV;
 	}
@@ -481,7 +481,7 @@ static int DS2482_redetect(const struct parsedname *pn)
 /* will read at min time, avg time, max time, and another 50% */
 /* returns 0 good, 1 bad */
 /* tests to make sure bus not busy */
-static int DS2482_readstatus(BYTE * c, int file_descriptor, unsigned long int min_usec, unsigned long int max_usec)
+static int DS2482_readstatus(BYTE * c, FILE_DESCRIPTOR_OR_ERROR file_descriptor, unsigned long int min_usec, unsigned long int max_usec)
 {
 	unsigned long int delta_usec = (max_usec - min_usec + 1) / 2;
 	int i = 0;
@@ -511,7 +511,7 @@ static int DS2482_next_both(struct device_search *ds, const struct parsedname *p
 	int search_direction = 0;	/* initialization just to forestall incorrect compiler warning */
 	int bit_number;
 	int last_zero = -1;
-	int file_descriptor = pn->selected_connection->connin.i2c.head->file_descriptor;
+	FILE_DESCRIPTOR_OR_ERROR file_descriptor = pn->selected_connection->connin.i2c.head->file_descriptor;
 	BYTE bits[3];
 	int ret;
 
@@ -575,11 +575,11 @@ static int DS2482_next_both(struct device_search *ds, const struct parsedname *p
 
 /* DS2482 Reset -- A little different from DS2480B */
 // return 1 shorted, 0 ok, <0 error
-static int DS2482_reset(const struct parsedname *pn)
+static RESET_TYPE DS2482_reset(const struct parsedname *pn)
 {
 	BYTE c;
 	struct connection_in * in = pn->selected_connection ;
-	int file_descriptor = in->connin.i2c.head->file_descriptor;
+	FILE_DESCRIPTOR_OR_ERROR file_descriptor = in->connin.i2c.head->file_descriptor;
 
 	/* Make sure we're using the correct channel */
 	if (DS2482_channel_select(pn)) {
@@ -606,7 +606,7 @@ static int DS2482_reset(const struct parsedname *pn)
 
 static int DS2482_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn)
 {
-	int file_descriptor = pn->selected_connection->connin.i2c.head->file_descriptor;
+	FILE_DESCRIPTOR_OR_ERROR file_descriptor = pn->selected_connection->connin.i2c.head->file_descriptor;
 	size_t i;
 
 	/* Make sure we're using the correct channel */
@@ -623,7 +623,7 @@ static int DS2482_sendback_data(const BYTE * data, BYTE * resp, const size_t len
 }
 
 /* Single byte -- assumes channel selection already done */
-static int DS2482_send_and_get(int file_descriptor, const BYTE wr, BYTE * rd)
+static int DS2482_send_and_get(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const BYTE wr, BYTE * rd)
 {
 	int read_back;
 	BYTE c;
@@ -703,7 +703,7 @@ static int CreateChannels(struct connection_in *in)
 	return 0;
 }
 
-static int DS2482_triple(BYTE * bits, int direction, int file_descriptor)
+static int DS2482_triple(BYTE * bits, int direction, FILE_DESCRIPTOR_OR_ERROR file_descriptor)
 {
 	/* 3 bits in bits */
 	BYTE c;
@@ -730,7 +730,7 @@ static int DS2482_channel_select(const struct parsedname *pn)
 {
 	struct connection_in *head = pn->selected_connection->connin.i2c.head;
 	int chan = pn->selected_connection->connin.i2c.index;
-	int file_descriptor = head->file_descriptor;
+	FILE_DESCRIPTOR_OR_ERROR file_descriptor = head->file_descriptor;
 
 	/*
 		Write and verify codes for the CHANNEL_SELECT command (DS2482-800 only).
@@ -740,7 +740,7 @@ static int DS2482_channel_select(const struct parsedname *pn)
 	static const BYTE W_chan[8] = { 0xF0, 0xE1, 0xD2, 0xC3, 0xB4, 0xA5, 0x96, 0x87 };
 	static const BYTE R_chan[8] = { 0xB8, 0xB1, 0xAA, 0xA3, 0x9C, 0x95, 0x8E, 0x87 };
 
-	if (file_descriptor < 0) {
+	if ( FILE_DESCRIPTOR_NOT_VALID(file_descriptor) ) {
 		LEVEL_CONNECT("Calling a closed i2c channel (%d) "I2Cformat" ", chan,I2Cvar(pn->selected_connection));
 		return -EINVAL;
 	}
@@ -782,7 +782,7 @@ static int DS2482_channel_select(const struct parsedname *pn)
 static int SetConfiguration(BYTE c, struct connection_in *in)
 {
 	struct connection_in *head = in->connin.i2c.head;
-	int file_descriptor = head->file_descriptor;
+	FILE_DESCRIPTOR_OR_ERROR file_descriptor = head->file_descriptor;
 	int read_back;
 
 	/* Write, readback, and compare configuration register */

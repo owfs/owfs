@@ -35,7 +35,7 @@ $Id$
 #include <sys/types.h>
 #include <dev/usb/usb.h>
 struct usb_dev_handle {
-	int file_descriptor;
+	FILE_DESCRIPTOR_OR_ERROR file_descriptor;
 	struct usb_bus *bus;
 	struct usb_device *device;
 	int config;
@@ -64,7 +64,7 @@ static int USB_Control_Msg(BYTE bRequest, UINT wValue, UINT wIndex, const struct
 static int usbdevice_in_use(const struct connection_in * in_selected) ;
 static char *DS9490_device_name(const struct usb_list *ul);
 
-static int DS9490_reset(const struct parsedname *pn);
+static RESET_TYPE DS9490_reset(const struct parsedname *pn);
 
 static int DS9490_open(struct usb_list *ul, struct connection_in *in);
 static int DS9490_sub_open(struct usb_list *ul, struct connection_in *in);
@@ -929,9 +929,10 @@ static int DS9490_overdrive(const struct parsedname *pn)
 /* Reset adapter and detect devices on the bus */
 /* BUS locked at high level */
 /* return 1=short, 0 good <0 error */
-static int DS9490_reset(const struct parsedname *pn)
+static RESET_TYPE DS9490_reset(const struct parsedname *pn)
 {
-	int i, ret;
+	int i; 
+	RESET_TYPE ret;
 	BYTE buffer[32];
 	int USpeed;
 	struct connection_in * in = pn->selected_connection ;

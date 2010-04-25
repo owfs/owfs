@@ -36,7 +36,7 @@ static GOOD_OR_BAD ServerAddr(const char * default_port, struct connection_out *
 static FILE_DESCRIPTOR_OR_ERROR ServerListen(struct connection_out *out);
 
 static FILE_DESCRIPTOR_OR_ERROR SetupListenSet( fd_set * listenset ) ;
-static GOOD_OR_BAD SetupListenSockets( void (*HandlerRoutine) (int file_descriptor) ) ;
+static GOOD_OR_BAD SetupListenSockets( void (*HandlerRoutine) (FILE_DESCRIPTOR_OR_ERROR file_descriptor) ) ;
 static void CloseListenSockets( void ) ;
 static void ProcessListenSocket( struct connection_out * out ) ;
 static void *ProcessAcceptSocket(void *arg) ;
@@ -99,7 +99,7 @@ static FILE_DESCRIPTOR_OR_ERROR ServerListen(struct connection_out *out)
 		FILE_DESCRIPTOR_OR_ERROR file_descriptor = socket(out->ai_ok->ai_family, out->ai_ok->ai_socktype, out->ai_ok->ai_protocol);
 
 		//printf("ServerListen file_descriptor=%d\n",file_descriptor);
-		if (file_descriptor < 0) {
+		if ( FILE_DESCRIPTOR_NOT_VALID(file_descriptor) ) {
 			ERROR_CONNECT("Socket problem [%s]", SAFESTRING(out->name));
 		} else if (setsockopt(file_descriptor, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof(on)) != 0) {
 			ERROR_CONNECT("SetSockOpt problem [%s]", SAFESTRING(out->name));
@@ -112,9 +112,7 @@ static FILE_DESCRIPTOR_OR_ERROR ServerListen(struct connection_out *out)
 			out->file_descriptor = file_descriptor;
 			return file_descriptor;
 		}
-		if ( file_descriptor >= 0 ) {
-			close( file_descriptor );
-		}
+		Test_and_Close(&file_descriptor) ;
 	} while ((out->ai_ok = out->ai_ok->ai_next));
 	LEVEL_CONNECT("No good listen network sockets [%s]", SAFESTRING(out->name));
 	return FILE_DESCRIPTOR_BAD;
@@ -169,7 +167,7 @@ static FILE_DESCRIPTOR_OR_ERROR SetupListenSet( fd_set * listenset )
 	return maxfd ;
 }
 
-static GOOD_OR_BAD SetupListenSockets( void (*HandlerRoutine) (int file_descriptor) )
+static GOOD_OR_BAD SetupListenSockets( void (*HandlerRoutine) (FILE_DESCRIPTOR_OR_ERROR file_descriptor) )
 {
 	struct connection_out * out ;
 	GOOD_OR_BAD any_sockets = gbBAD ;
@@ -292,7 +290,7 @@ static GOOD_OR_BAD ListenCycle( void )
 }
 
 /* Setup Servers -- select on each port */
-void ServerProcess(void (*HandlerRoutine) (int file_descriptor))
+void ServerProcess(void (*HandlerRoutine) (FILE_DESCRIPTOR_OR_ERROR file_descriptor))
 {
 
 #if OW_MT

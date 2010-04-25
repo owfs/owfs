@@ -42,7 +42,7 @@ static int my_daemon(int nochdir, int noclose)
 {
 	struct sigaction act;
 	int pid;
-	int file_descriptor;
+	FILE_DESCRIPTOR_OR_ERROR file_descriptor;
 
 	signal(SIGCHLD, SIG_DFL);
 

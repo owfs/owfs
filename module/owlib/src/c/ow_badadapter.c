@@ -16,7 +16,7 @@ $Id$
 
 /* All the rest of the program sees is the BadAdapter_detect and the entry in iroutines */
 
-static int BadAdapter_reset(const struct parsedname *pn);
+static RESET_TYPE BadAdapter_reset(const struct parsedname *pn);
 static int BadAdapter_ProgramPulse(const struct parsedname *pn);
 static int BadAdapter_sendback_bits(const BYTE * data, BYTE * resp, size_t len, const struct parsedname *pn);
 static void BadAdapter_close(struct connection_in *in);
@@ -26,7 +26,7 @@ static void BadAdapter_close(struct connection_in *in);
 /* It does call lower level functions for higher ones, which of course is pointless since the lower ones don't work either */
 ZERO_OR_ERROR BadAdapter_detect(struct connection_in *in)
 {
-	in->file_descriptor = -1;
+	in->file_descriptor = FILE_DESCRIPTOR_BAD;
 #if OW_USB
 	in->connin.usb.usb = NULL;
 #endif
@@ -47,7 +47,7 @@ ZERO_OR_ERROR BadAdapter_detect(struct connection_in *in)
 	return 0;
 }
 
-static int BadAdapter_reset(const struct parsedname *pn)
+static RESET_TYPE BadAdapter_reset(const struct parsedname *pn)
 {
 	(void) pn;
 	return -ENOTSUP;

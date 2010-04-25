@@ -119,16 +119,16 @@ void DeviceLockRelease(struct parsedname *pn);
 void UT_delay(const UINT len);
 void UT_delay_us(const unsigned long len);
 
-ZERO_OR_ERROR tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval *ptv, size_t * actual_read);
-void tcp_read_flush(int file_descriptor);
-int tcp_wait(int file_descriptor, const struct timeval *ptv);
-ssize_t udp_read(int file_descriptor, void *vptr, size_t n, const struct timeval * ptv, struct sockaddr_in *from, socklen_t *fromlen) ;
+ZERO_OR_ERROR tcp_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, void *vptr, size_t n, const struct timeval *ptv, size_t * actual_read);
+void tcp_read_flush(FILE_DESCRIPTOR_OR_ERROR file_descriptor);
+int tcp_wait(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const struct timeval *ptv);
+ssize_t udp_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, void *vptr, size_t n, const struct timeval * ptv, struct sockaddr_in *from, socklen_t *fromlen) ;
 
 int ClientAddr(char *sname, struct connection_in *in);
 int ClientConnect(struct connection_in *in);
 void FreeClientAddr(struct connection_in *in);
 
-void ServerProcess(void (*HandlerRoutine) (int file_descriptor));
+void ServerProcess(void (*HandlerRoutine) (FILE_DESCRIPTOR_OR_ERROR file_descriptor));
 GOOD_OR_BAD ServerOutSetup(struct connection_out *out);
 
 GOOD_OR_BAD AliasFile(const ASCII * file) ;

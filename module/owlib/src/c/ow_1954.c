@@ -40,6 +40,8 @@ $Id$
 */
 
 // DS1954 Cryptographics iButton
+// DS1957 ibutton
+// From datasheet in the web -- hard to find info
 
 #include <config.h>
 #include "owfs_config.h"
@@ -87,86 +89,65 @@ DeviceEntryExtended(16, DS1954, DEV_ovdr);
 
 /* ------- Functions ------------ */
 
-/* DS1902 */
-static int OW_w_ipr(struct one_wire_query *owq);
-static int OW_r_ipr(struct one_wire_query *owq);
-static int OW_w_io(struct one_wire_query *owq);
-static int OW_r_io(struct one_wire_query *owq);
-static int OW_w_status(struct one_wire_query *owq);
-static int OW_r_status(struct one_wire_query *owq);
-static int OW_reset(struct one_wire_query *owq);
+/* DS1957 */
+static GOOD_OR_BAD OW_w_ipr(size_t size, BYTE * data, struct parsedname * pn);
+static GOOD_OR_BAD OW_r_ipr(struct one_wire_query *owq);
+static GOOD_OR_BAD OW_w_io(struct one_wire_query *owq);
+static GOOD_OR_BAD OW_r_io(struct one_wire_query *owq);
+static GOOD_OR_BAD OW_w_status(struct one_wire_query *owq);
+static GOOD_OR_BAD OW_r_status(struct one_wire_query *owq);
+static GOOD_OR_BAD OW_reset(struct one_wire_query *owq);
 
 /* 1954 */
 static ZERO_OR_ERROR FS_w_ipr(struct one_wire_query *owq)
 {
-	if (OW_w_ipr(owq)) {
-		return -EINVAL;
-	}
-	return 0;
+	return GB_to_Z_OR_E( OW_w_ipr(OWQ_size(owq), (BYTE*) OWQ_buffer(owq),PN(owq)) ) ;
 }
 
 static ZERO_OR_ERROR FS_r_ipr(struct one_wire_query *owq)
 {
-	if (OW_r_ipr(owq)) {
-		return -EINVAL;
-	}
-	return 0;
+	return GB_to_Z_OR_E(OW_r_ipr(owq)) ;
 }
 
 static ZERO_OR_ERROR FS_w_io(struct one_wire_query *owq)
 {
-	if (OW_w_io(owq)) {
-		return -EINVAL;
-	}
-	return 0;
+	return GB_to_Z_OR_E(OW_w_io(owq)) ;
 }
 
 static ZERO_OR_ERROR FS_r_io(struct one_wire_query *owq)
 {
-	if (OW_r_io(owq)) {
-		return -EINVAL;
-	}
-	return 0;
+	return GB_to_Z_OR_E(OW_r_io(owq)) ;
 }
 
 static ZERO_OR_ERROR FS_w_status(struct one_wire_query *owq)
 {
-	if (OW_w_status(owq)) {
-		return -EINVAL;
-	}
-	return 0;
+	return GB_to_Z_OR_E(OW_w_status(owq)) ;
 }
 
 static ZERO_OR_ERROR FS_r_status(struct one_wire_query *owq)
 {
-	if (OW_r_status(owq)) {
-		return -EINVAL;
-	}
-	return 0;
+	return GB_to_Z_OR_E(OW_r_status(owq)) ;
 }
 
 static ZERO_OR_ERROR FS_reset(struct one_wire_query *owq)
 {
-	if (OW_reset(owq)) {
-		return -EINVAL;
-	}
-	return 0;
+	return GB_to_Z_OR_E(OW_reset(owq)) ;
 }
 
-static int OW_w_ipr(struct one_wire_query *owq)
+static GOOD_OR_BAD OW_w_ipr(size_t size, BYTE * data, struct parsedname * pn)
 {
-	int size = OWQ_size(owq);
 	BYTE p[2 + 128 + 2] = { _1W_WRITE_IPR, BYTE_MASK(size), };
 	struct transaction_log t[] = {
 		TRXN_START,
 		TRXN_WR_CRC16(p, 2 + size, 0),
 		TRXN_END,
 	};
-	return BUS_transaction(t, PN(owq));
+	memcpy(&p[2],data,size) ;
+	return BUS_transaction(t, pn);
 };
 
 /* Read all 128 bytes, then transfer over what's needed */
-static int OW_r_ipr(struct one_wire_query *owq)
+static GOOD_OR_BAD OW_r_ipr(struct one_wire_query *owq)
 {
 	BYTE p[2 + 128 + 2] = { _1W_READ_IPR, 128, };
 	int size = OWQ_size(owq);
@@ -176,17 +157,17 @@ static int OW_r_ipr(struct one_wire_query *owq)
 		TRXN_END,
 	};
 	if (BUS_transaction(t, PN(owq))) {
-		return 1;
+		return gbBAD;
 	}
 	if (size > 128) {
 		size = 128;
 	}
 	memcpy(OWQ_buffer(owq), &p[2], size);
 	OWQ_length(owq) = size;
-	return 0;
+	return gbGOOD;
 };
 
-static int OW_w_status(struct one_wire_query *owq)
+static GOOD_OR_BAD OW_w_status(struct one_wire_query *owq)
 {
 	int size = OWQ_size(owq);
 	BYTE p[1 + 1 + 2] = { _1W_WRITE_STATUS, BYTE_MASK(size), };
@@ -202,7 +183,7 @@ static int OW_w_status(struct one_wire_query *owq)
 	return BUS_transaction(t, PN(owq));
 };
 
-static int OW_r_status(struct one_wire_query *owq)
+static GOOD_OR_BAD OW_r_status(struct one_wire_query *owq)
 {
 	BYTE p[1 + 4 + 2] = { _1W_READ_STATUS, };
 	int size = OWQ_size(owq);
@@ -212,17 +193,17 @@ static int OW_r_status(struct one_wire_query *owq)
 		TRXN_END,
 	};
 	if (BUS_transaction(t, PN(owq))) {
-		return 1;
+		return gbBAD;
 	}
 	if (size > 4) {
 		size = 4;
 	}
 	memcpy(OWQ_buffer(owq), &p[1], size);
 	OWQ_length(owq) = size;
-	return 0;
+	return gbGOOD;
 };
 
-static int OW_w_io(struct one_wire_query *owq)
+static GOOD_OR_BAD OW_w_io(struct one_wire_query *owq)
 {
 	int size = OWQ_size(owq);
 	BYTE p[2 + 8 + 2] = { _1W_WRITE_IO_BUFFER, BYTE_MASK(size), };
@@ -238,7 +219,7 @@ static int OW_w_io(struct one_wire_query *owq)
 	return BUS_transaction(t, PN(owq));
 };
 
-static int OW_r_io(struct one_wire_query *owq)
+static GOOD_OR_BAD OW_r_io(struct one_wire_query *owq)
 {
 	int size = OWQ_size(owq);
 	BYTE p[2 + 8 + 2] = { _1W_READ_IO_BUFFER, BYTE_MASK(size), };
@@ -251,15 +232,13 @@ static int OW_r_io(struct one_wire_query *owq)
 		TRXN_COMPARE(release, zero, 2),
 		TRXN_END,
 	};
-	if (BUS_transaction(t, PN(owq))) {
-		return 1;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(t, PN(owq))) ;
 	memcpy(OWQ_buffer(owq), &p[2], size);
 	OWQ_length(owq) = size;
-	return 0;
+	return gbGOOD;
 };
 
-static int OW_reset(struct one_wire_query *owq)
+static GOOD_OR_BAD OW_reset(struct one_wire_query *owq)
 {
 	BYTE p[] = { _1W_RESET_MICRO, };
 	BYTE release[2] = { _1W_RESET_RELEASE_SEQUENCE, };
@@ -273,8 +252,9 @@ static int OW_reset(struct one_wire_query *owq)
 		TRXN_READ1(testbit),
 		TRXN_END,
 	};
-	if (BUS_transaction(t, PN(owq)) || testbit[0] & 0x80) {
-		return 1;
+	RETURN_BAD_IF_BAD(BUS_transaction(t, PN(owq)) ) ;
+	if ( testbit[0] & 0x80 ) {
+		return gbBAD;
 	}
-	return 0;
+	return gbGOOD;
 };

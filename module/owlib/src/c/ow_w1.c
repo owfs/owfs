@@ -29,7 +29,7 @@ struct toW1 {
 };
 
 //static void byteprint( const BYTE * b, int size ) ;
-static int W1_reset(const struct parsedname *pn);
+static RESET_TYPE W1_reset(const struct parsedname *pn);
 static int W1_next_both(struct device_search *ds, const struct parsedname *pn);
 static int W1_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 static int W1_select_and_sendback(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
@@ -103,7 +103,7 @@ static int w1_send_reset( const struct parsedname *pn )
     return W1_send_msg( pn->selected_connection, &w1m, &w1c, NULL );
 }
 
-static int W1_reset(const struct parsedname *pn)
+static RESET_TYPE W1_reset(const struct parsedname *pn)
 {
 	return W1_Process_Response( NULL, w1_send_reset(pn), NULL, pn ) == nrs_complete ? BUS_RESET_OK : -EIO ;
 }

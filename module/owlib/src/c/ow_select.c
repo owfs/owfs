@@ -136,7 +136,7 @@ static int BUS_Skip_Rom(const struct parsedname *pn)
 		TRXN_END,
 	};
 
-	if ((BUS_reset(pn))) {
+	if (BUS_reset(pn)<BUS_RESET_OK) {
 		return 1;
 	}
 	skip[0] = (pn->selected_connection->speed == bus_speed_overdrive) ? _1W_OVERDRIVE_SKIP_ROM : _1W_SKIP_ROM;
@@ -148,7 +148,7 @@ static int BUS_select_opening(const struct parsedname *pn)
 {
 	int level ;
 
-	if ((BUS_reset(pn))) {
+	if (BUS_reset(pn)<BUS_RESET_OK) {
 		return 1;
 	}
 	for ( level=0 ; level<(int)pn->pathlength ; ++level ) {
@@ -167,7 +167,7 @@ static int BUS_select_closing(const struct parsedname *pn)
 	// step through turning off levels
 	for ( turnoff_level=0 ; turnoff_level<=(int)pn->pathlength ; ++turnoff_level ) {
 		int level ;
-		if ((BUS_reset(pn))) {
+		if (BUS_reset(pn)<BUS_RESET_OK) {
 			return 1;
 		}
 		if ( Turnoff(pn) ) {
@@ -185,7 +185,7 @@ static int BUS_select_closing(const struct parsedname *pn)
 #if 0
 static int BUS_reselect_branch(const struct parsedname *pn)
 {
-	if ((BUS_reset(pn))) {
+	if (BUS_reset(pn)<BUS_RESET_OK) {
 		return 1;
 	}
 	if ( pn->pathlength != 0 && BUS_select_subbranch(&(pn->bp[pn->pathlength-1]), pn) ) {

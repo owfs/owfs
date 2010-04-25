@@ -42,7 +42,7 @@ void w1_unbind( void ) ;
 void RemoveW1Bus( int bus_master ) ;
 void AddW1Bus( int bus_master ) ;
 int W1_send_msg( struct connection_in * in, struct w1_netlink_msg *msg, struct w1_netlink_cmd *cmd, const unsigned char * data) ;
-int W1PipeSelect_timeout( int file_descriptor ) ;
+int W1PipeSelect_timeout( FILE_DESCRIPTOR_OR_ERROR file_descriptor ) ;
 void * W1_Dispatch( void * v ) ;
 
 int W1NLScan( void ) ;
@@ -65,7 +65,7 @@ struct netlink_parse {
 
 void Netlink_Parse_Destroy( struct netlink_parse * nlp ) ;
 int Netlink_Parse_Get( struct netlink_parse * nlp ) ;
-int Get_and_Parse_Pipe( int file_descriptor, struct netlink_parse * nlp ) ;
+int Get_and_Parse_Pipe( FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct netlink_parse * nlp ) ;
 void Netlink_Print( struct nlmsghdr * nlm, struct cn_msg * cn, struct w1_netlink_msg * w1m, struct w1_netlink_cmd * w1c, unsigned char * data, int length ) ;
 enum Netlink_Read_Status W1_Process_Response( void (* nrs_callback)( struct netlink_parse * nlp, void  *v, const struct parsedname * pn), int seq, void * v, const struct parsedname * pn ) ;
 

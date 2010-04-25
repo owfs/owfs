@@ -77,14 +77,15 @@ static void Setup_HA7_hint( struct addrinfo * hint )
 static int Get_HA7_response( struct addrinfo *now, char * name )
 {
 	struct timeval tv = { 50, 0 };
-	int file_descriptor;
+	FILE_DESCRIPTOR_OR_ERROR file_descriptor;
 	struct HA7_response ha7_response ;
 
 	struct sockaddr_in from ;
 	socklen_t fromlen = sizeof(struct sockaddr_in) ;
 	int on = 1;
 
-	if ((file_descriptor = socket(now->ai_family, now->ai_socktype, now->ai_protocol)) < 0) {
+	file_descriptor = socket(now->ai_family, now->ai_socktype, now->ai_protocol) ;
+	if ( FILE_DESCRIPTOR_NOT_VALID(file_descriptor) ) {
 		ERROR_DEBUG("Cannot get socket file descriptor for broadcast.");
 		return 1;
 	}

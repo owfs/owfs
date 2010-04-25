@@ -47,6 +47,15 @@ $Id$
 #define EtherWeather_COMMAND_BITS		'b'
 #define EtherWeather_COMMAND_POWER	'P'
 
+static RESET_TYPE EtherWeather_reset(const struct parsedname *pn) ;
+static int EtherWeather_command(struct connection_in *in, char command, int datalen, const BYTE * idata, BYTE * odata) ;
+static void EtherWeather_close(struct connection_in *in);
+static int EtherWeather_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname *pn);
+static int EtherWeather_next_both(struct device_search *ds, const struct parsedname *pn);
+static int EtherWeather_sendback_bits(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn);
+static int EtherWeather_sendback_data(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn);
+static void EtherWeather_setroutines(struct connection_in *in);
+
 static int EtherWeather_command(struct connection_in *in, char command, int datalen, const BYTE * idata, BYTE * odata)
 {
 	ssize_t res;
@@ -229,13 +238,13 @@ static void EtherWeather_close(struct connection_in *in)
 	FreeClientAddr(in);
 }
 
-static int EtherWeather_reset(const struct parsedname *pn)
+static RESET_TYPE EtherWeather_reset(const struct parsedname *pn)
 {
 	if (EtherWeather_command(pn->selected_connection, EtherWeather_COMMAND_RESET, 0, NULL, NULL)) {
 		return -EIO;
 	}
 
-	return 0;
+	return BUS_RESET_OK;
 }
 
 static void EtherWeather_setroutines(struct connection_in *in)
@@ -284,7 +293,8 @@ ZERO_OR_ERROR EtherWeather_detect(struct connection_in *in)
 	if (ClientAddr(in->name, in)) {
 		return -ENODEV;
 	}
-	if ((pn.selected_connection->file_descriptor = ClientConnect(in)) < 0) {
+	pn.selected_connection->file_descriptor = ClientConnect(in) ;
+	if ( FILE_DESCRIPTOR_NOT_VALID(pn.selected_connection->file_descriptor) ) {
 		return -EIO;
 	}
 
