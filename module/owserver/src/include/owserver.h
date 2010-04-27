@@ -60,9 +60,14 @@ $Id$
 
 #if OW_MT
 pthread_t main_threadid;
+
+pthread_mutex_t persistence_mutex ;
+#define PERSISTENCELOCK    MUTEX_LOCK(   persistence_mutex ) ;
+#define PERSISTENCEUNLOCK  MUTEX_UNLOCK( persistence_mutex ) ;
+
 #define IS_MAINTHREAD (main_threadid == pthread_self())
-#define TOCLIENTLOCK(hd) pthread_mutex_lock( &((hd)->to_client) )
-#define TOCLIENTUNLOCK(hd) pthread_mutex_unlock( &((hd)->to_client) )
+#define TOCLIENTLOCK(hd) MUTEX_LOCK( (hd)->to_client )
+#define TOCLIENTUNLOCK(hd) MUTEX_UNLOCK( (hd)->to_client )
 #else							/* OW_MT */
 #define IS_MAINTHREAD 1
 #define TOCLIENTLOCK(hd)

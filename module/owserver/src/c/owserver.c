@@ -41,10 +41,6 @@ $Id$
 static void ow_exit(int e);
 static void SetupAntiloop(void);
 
-#if OW_MT
-extern pthread_mutex_t persistence_mutex;
-#endif
-
 static void ow_exit(int e)
 {
     if (IS_MAINTHREAD) {
@@ -150,13 +146,16 @@ int main(int argc, char **argv)
 
 #if OW_MT
 	main_threadid = pthread_self();
-	my_pthread_mutex_init(&persistence_mutex, Mutex.pmattr);
+	MUTEX_INIT(persistence_mutex);
 	LEVEL_DEBUG("main_threadid = %lu", (unsigned long int) main_threadid);
 #endif
 	/* Set up "Antiloop" -- a unique token */
 	SetupAntiloop();
 	ServerProcess(Handler);
 	LEVEL_DEBUG("ServerProcess done");
+#if OW_MT
+	MUTEX_DESTROY(persistence_mutex);
+#endif
 	ow_exit(0);
 	return 0;
 }

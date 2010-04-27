@@ -29,30 +29,15 @@ $Id$
  #endif							/* __UCLIBC__ */
 #endif							/* OW_MT */
 
-struct mutexes Mutex = {
-#if OW_MT
-	.stat_mutex = PTHREAD_MUTEX_INITIALIZER,
-	.controlflags_mutex = PTHREAD_MUTEX_INITIALIZER,
-	.fstat_mutex = PTHREAD_MUTEX_INITIALIZER,
-	.dir_mutex = PTHREAD_MUTEX_INITIALIZER,
-  #ifdef __UCLIBC__
-/* vsnprintf() doesn't seem to be thread-safe in uClibc
-   even if thread-support is enabled. */
-	.uclibc_mutex = PTHREAD_MUTEX_INITIALIZER,
-  #endif							/* __UCLIBC__ */
-  #if OW_USB
-	.libusb_mutex = PTHREAD_MUTEX_INITIALIZER,
-  #endif							/* OW_USB */
-/* mutex attribute -- needed for uClibc programming */
-/* we create at start, and destroy at end */
-	.pmattr = NULL,
-#endif							/* OW_MT */
-};
+// Global structure holding mutexes
+struct mutexes Mutex ;
 
 /* Essentially sets up mutexes to protect global data/devices */
 void LockSetup(void)
 {
 #if OW_MT
+	/* global mutex attribute */
+	my_pthread_mutexattr_init(&Mutex.mattr);
   #ifdef __UCLIBC__
     #if ((__UCLIBC_MAJOR__ << 16)+(__UCLIBC_MINOR__ << 8)+(__UCLIBC_SUBLEVEL__) < 0x00091D)
 	/* If uClibc < 0.9.29, then re-initialize internal pthread-structs
@@ -65,29 +50,29 @@ void LockSetup(void)
 	__pthread_initial_thread_bos = NULL;
 	__pthread_initialize();
 
-	/* global mutex attribute */
-	my_pthread_mutexattr_init(&Mutex.mattr);
 	my_pthread_mutexattr_settype(&Mutex.mattr, PTHREAD_MUTEX_ADAPTIVE_NP);
-	Mutex.pmattr = &Mutex.mattr;
+    #else /* UCLIBC_VERSION */
+	my_pthread_mutexattr_settype(&Mutex.mattr, PTHREAD_MUTEX_DEFAULT);
     #endif							/* UCLIBC_VERSION */
+	MUTEX_INIT(Mutex.uclibc_mutex);
+  #else /* __UCLIBC__ */
+	my_pthread_mutexattr_settype(&Mutex.mattr, PTHREAD_MUTEX_DEFAULT);   
   #endif							/* __UCLIBC__ */
 
-	my_pthread_mutex_init(&Mutex.stat_mutex, Mutex.pmattr);
-	my_pthread_mutex_init(&Mutex.controlflags_mutex, Mutex.pmattr);
-	my_pthread_mutex_init(&Mutex.fstat_mutex, Mutex.pmattr);
-	my_pthread_mutex_init(&Mutex.dir_mutex, Mutex.pmattr);
+	MUTEX_INIT(Mutex.stat_mutex);
+	MUTEX_INIT(Mutex.controlflags_mutex);
+	MUTEX_INIT(Mutex.fstat_mutex);
+	MUTEX_INIT(Mutex.dir_mutex);
+	MUTEX_INIT(Mutex.typedir_mutex);
+	MUTEX_INIT(Mutex.namefind_mutex);
+	MUTEX_INIT(Mutex.aliasfind_mutex);
 
-	my_rwlock_init(&Mutex.lib);
-	my_rwlock_init(&Mutex.cache);
-	my_rwlock_init(&Mutex.store);
-	my_rwlock_init(&Inbound_Control.lock);
-  #ifdef __UCLIBC__
-	my_pthread_mutex_init(&Mutex.uclibc_mutex, Mutex.pmattr);
-  #endif							/* __UCLIBC__ */
+	RWLOCK_INIT(Mutex.lib);
+	RWLOCK_INIT(Mutex.cache);
+	RWLOCK_INIT(Mutex.store);
+	RWLOCK_INIT(Inbound_Control.lock);
   #if OW_USB
-	my_pthread_mutex_init(&Mutex.libusb_mutex, Mutex.pmattr);
+	MUTEX_INIT(Mutex.libusb_mutex);
   #endif							/* OW_USB */
-	/* This will give us 10 concurrent Handler threads, and 10 in queue due to listen() */
-	sem_init(&Mutex.accept_sem, 0, Globals.concurrent_connections);
 #endif							/* OW_MT */
 }

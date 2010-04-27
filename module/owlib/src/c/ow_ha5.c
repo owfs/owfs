@@ -99,7 +99,7 @@ ZERO_OR_ERROR HA5_detect(struct connection_in *in)
 	/* By definition, this is the head adapter on this port */
 	in->connin.ha5.head = in ;
 #if OW_MT
-	my_pthread_mutex_init(&(in->connin.ha5.lock), Mutex.pmattr);
+	MUTEX_INIT(in->connin.ha5.lock);
 #endif							/* OW_MT */
 
 	/* Find the channels */
@@ -250,9 +250,9 @@ static RESET_TYPE HA5_reset(const struct parsedname *pn)
 	struct connection_in * in = pn->selected_connection ;
 	RESET_TYPE ret ;
 
-	pthread_mutex_lock( &in->connin.ha5.head->connin.ha5.lock ) ;
+	MUTEX_LOCK( in->connin.ha5.head->connin.ha5.lock ) ;
 	ret = HA5_reset_wrapped(pn) ;
-	pthread_mutex_unlock( &in->connin.ha5.head->connin.ha5.lock ) ;
+	MUTEX_UNLOCK( in->connin.ha5.head->connin.ha5.lock ) ;
 
 	return ret ;
 }
@@ -307,9 +307,9 @@ static int HA5_next_both(struct device_search *ds, const struct parsedname *pn)
 
 	if (ds->index == -1) {
 
-		pthread_mutex_lock( &in->connin.ha5.head->connin.ha5.lock ) ;
+		MUTEX_LOCK( in->connin.ha5.head->connin.ha5.lock ) ;
 		ret = HA5_directory(ds, db, pn) ;
-		pthread_mutex_unlock( &in->connin.ha5.head->connin.ha5.lock ) ;
+		MUTEX_UNLOCK( in->connin.ha5.head->connin.ha5.lock ) ;
 
 		if ( ret ) {
 			return -EIO;
@@ -455,9 +455,9 @@ static int HA5_select( const struct parsedname * pn )
 		return HA5_reset(pn) ;
 	}
 
-	pthread_mutex_lock( &in->connin.ha5.head->connin.ha5.lock ) ;
+	MUTEX_LOCK( in->connin.ha5.head->connin.ha5.lock ) ;
 	ret = HA5_select_wrapped(pn) ;
-	pthread_mutex_unlock( &in->connin.ha5.head->connin.ha5.lock ) ;
+	MUTEX_UNLOCK( in->connin.ha5.head->connin.ha5.lock ) ;
 
 	return ret ;
 }
@@ -561,9 +561,9 @@ static int HA5_sendback_data(const BYTE * data, BYTE * resp, const size_t size, 
 		size_t pass_start = size - left ;
 		size_t pass_size = (left>32)?32:left ;
 
-		pthread_mutex_lock( &in->connin.ha5.head->connin.ha5.lock ) ;
+		MUTEX_LOCK( in->connin.ha5.head->connin.ha5.lock ) ;
 		ret = HA5_sendback_part( 'W', &data[pass_start], &resp[pass_start], pass_size, pn ) ;
-		pthread_mutex_unlock( &in->connin.ha5.head->connin.ha5.lock ) ;
+		MUTEX_UNLOCK( in->connin.ha5.head->connin.ha5.lock ) ;
 
 		if ( ret ) {
 			return -EIO ;
@@ -594,9 +594,9 @@ static int HA5_select_and_sendback(const BYTE * data, BYTE * resp, const size_t 
 		size_t pass_start = size - left ;
 		size_t pass_size = (left>32)?32:left ;
 
-		pthread_mutex_lock( &in->connin.ha5.head->connin.ha5.lock ) ;
+		MUTEX_LOCK( in->connin.ha5.head->connin.ha5.lock ) ;
 		ret = HA5_sendback_part( block_cmd, &data[pass_start], &resp[pass_start], pass_size, pn ) ;
-		pthread_mutex_unlock( &in->connin.ha5.head->connin.ha5.lock ) ;
+		MUTEX_UNLOCK( in->connin.ha5.head->connin.ha5.lock ) ;
 		block_cmd = 'W' ; // for next pass
 		if ( ret ) {
 			return -EIO ;
@@ -615,7 +615,7 @@ static void HA5_close(struct connection_in *in)
 {
 	HA5_powerdown(in) ;
 	if ( in->connin.ha5.head == in ) {
-		my_pthread_mutex_destroy(&(in->connin.ha5.lock));
+		MUTEX_DESTROY(in->connin.ha5.lock);
 	}
 	COM_close(in);
 }

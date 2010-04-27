@@ -601,16 +601,7 @@ static ZERO_OR_ERROR FS_cache2real(void (*dirfunc) (void *, const struct parsedn
 	return 0;
 }
 
-#if OW_MT
 // must lock a global struct for walking through tree -- limitation of "twalk"
-pthread_mutex_t Typedirmutex = PTHREAD_MUTEX_INITIALIZER;
-#define TYPEDIRMUTEXLOCK		my_pthread_mutex_lock(&Typedirmutex)
-#define TYPEDIRMUTEXUNLOCK		my_pthread_mutex_unlock(&Typedirmutex)
-#else							/* OW_MT */
-#define TYPEDIRMUTEXLOCK		return_ok()
-#define TYPEDIRMUTEXUNLOCK		return_ok()
-#endif							/* OW_MT */
-
 // struct for walking through tree -- cannot send data except globally
 struct {
 	void (*dirfunc) (void *, const struct parsedname *);
@@ -644,14 +635,14 @@ static ZERO_OR_ERROR FS_typedir(void (*dirfunc) (void *, const struct parsedname
 
 	LEVEL_DEBUG("called on %s", pn_type_directory->path);
 
-	TYPEDIRMUTEXLOCK;
+	TYPEDIRLOCK;
 
 	typedir_action_struct.dirfunc = dirfunc;
 	typedir_action_struct.v = v;
 	typedir_action_struct.pn_directory = pn_type_device;
 	twalk(Tree[pn_type_directory->type], Typediraction);
 
-	TYPEDIRMUTEXUNLOCK;
+	TYPEDIRUNLOCK;
 
 	return 0;
 }

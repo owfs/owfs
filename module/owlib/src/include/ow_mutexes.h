@@ -64,79 +64,112 @@ extern struct mutexes {
 	pthread_mutex_t simul_mutex;
 	pthread_mutex_t dir_mutex;
 	pthread_mutex_t libusb_mutex;
+	pthread_mutex_t typedir_mutex;
+	pthread_mutex_t namefind_mutex;
+	pthread_mutex_t aliasfind_mutex;
+	
 	pthread_mutexattr_t *pmattr;
+	pthread_mutexattr_t mattr;
 	my_rwlock_t lib;
 	my_rwlock_t cache;
 	my_rwlock_t store;
-#ifdef __UCLIBC__
-	pthread_mutexattr_t mattr;
+  #ifdef __UCLIBC__
 	pthread_mutex_t uclibc_mutex;
-#endif							/* __UCLIBC__ */
-	sem_t accept_sem;
+  #endif							/* __UCLIBC__ */
 #endif							/* OW_MT */
 } Mutex;
 
 
 
 #if OW_MT
-#define LIB_WLOCK         my_rwlock_write_lock(   &Mutex.lib    ) ;
-#define LIB_WUNLOCK       my_rwlock_write_unlock( &Mutex.lib    ) ;
-#define LIB_RLOCK         my_rwlock_read_lock(    &Mutex.lib    ) ;
-#define LIB_RUNLOCK       my_rwlock_read_unlock(  &Mutex.lib    ) ;
+#define MUTEX_INIT(mut)	 	my_pthread_mutex_init(    &(mut) , &(Mutex.mattr) )
+#define MUTEX_DESTROY(mut)	my_pthread_mutex_destroy( &(mut) )
 
-#define CACHE_WLOCK       my_rwlock_write_lock(   &Mutex.cache  ) ;
-#define CACHE_WUNLOCK     my_rwlock_write_unlock( &Mutex.cache  ) ;
-#define CACHE_RLOCK       my_rwlock_read_lock(    &Mutex.cache  ) ;
-#define CACHE_RUNLOCK     my_rwlock_read_unlock(  &Mutex.cache  ) ;
+#define MUTEX_LOCK(mut)		my_pthread_mutex_lock(   &(mut) )
+#define MUTEX_UNLOCK(mut)	my_pthread_mutex_unlock( &(mut) )
 
-#define STORE_WLOCK       my_rwlock_write_lock(   &Mutex.store ) ;
-#define STORE_WUNLOCK     my_rwlock_write_unlock( &Mutex.store ) ;
-#define STORE_RLOCK       my_rwlock_read_lock(    &Mutex.store ) ;
-#define STORE_RUNLOCK     my_rwlock_read_unlock(  &Mutex.store ) ;
+#define RWLOCK_INIT(rw)		my_rwlock_init(    &(rw) )
+#define RWLOCK_DESTROY(rw)	my_rwlock_destroy( &(rw) )
 
-#define CONNIN_WLOCK      my_rwlock_write_lock(   &Inbound_Control.lock ) ;
-#define CONNIN_WUNLOCK    my_rwlock_write_unlock( &Inbound_Control.lock ) ;
-#define CONNIN_RLOCK      my_rwlock_read_lock(    &Inbound_Control.lock ) ;
-#define CONNIN_RUNLOCK    my_rwlock_read_unlock(  &Inbound_Control.lock ) ;
+#define RWLOCK_WLOCK(mut)	my_rwlock_write_lock(   &(mut) )
+#define RWLOCK_WUNLOCK(mut)	my_rwlock_write_unlock( &(mut) )
 
-#define STATLOCK          my_pthread_mutex_lock(  &Mutex.stat_mutex   )
-#define STATUNLOCK        my_pthread_mutex_unlock(&Mutex.stat_mutex   )
-#define CONTROLFLAGSLOCK  my_pthread_mutex_lock(  &Mutex.controlflags_mutex  )
-#define CONTROLFLAGSUNLOCK  my_pthread_mutex_unlock(&Mutex.controlflags_mutex  )
-#define FSTATLOCK         my_pthread_mutex_lock(  &Mutex.fstat_mutex  )
-#define FSTATUNLOCK       my_pthread_mutex_unlock(&Mutex.fstat_mutex  )
-#define SIMULLOCK         my_pthread_mutex_lock(  &Mutex.simul_mutex  )
-#define SIMULUNLOCK       my_pthread_mutex_unlock(&Mutex.simul_mutex  )
-#define DIRLOCK           my_pthread_mutex_lock(  &Mutex.dir_mutex    )
-#define DIRUNLOCK         my_pthread_mutex_unlock(&Mutex.dir_mutex    )
-#define LIBUSBLOCK        my_pthread_mutex_lock(  &Mutex.libusb_mutex    )
-#define LIBUSBUNLOCK      my_pthread_mutex_unlock(&Mutex.libusb_mutex    )
-#define BUSLOCK(pn)       BUS_lock(pn)
-#define BUSUNLOCK(pn)     BUS_unlock(pn)
-#define BUSLOCKIN(in)     BUS_lock_in(in)
-#define BUSUNLOCKIN(in)   BUS_unlock_in(in)
+#define RWLOCK_RLOCK(mut)	my_rwlock_read_lock(   &(mut) )
+#define RWLOCK_RUNLOCK(mut)	my_rwlock_read_unlock( &(mut) )
+
+#define LIB_WLOCK         	RWLOCK_WLOCK(   Mutex.lib    ) ;
+#define LIB_WUNLOCK       	RWLOCK_WUNLOCK( Mutex.lib    ) ;
+#define LIB_RLOCK         	RWLOCK_RLOCK(   Mutex.lib    ) ;
+#define LIB_RUNLOCK       	RWLOCK_RUNLOCK( Mutex.lib    ) ;
+
+#define CACHE_WLOCK       	RWLOCK_WLOCK(   Mutex.cache  ) ;
+#define CACHE_WUNLOCK     	RWLOCK_WUNLOCK( Mutex.cache  ) ;
+#define CACHE_RLOCK       	RWLOCK_RLOCK(   Mutex.cache  ) ;
+#define CACHE_RUNLOCK     	RWLOCK_RUNLOCK( Mutex.cache  ) ;
+
+#define STORE_WLOCK       	RWLOCK_WLOCK(   Mutex.store ) ;
+#define STORE_WUNLOCK     	RWLOCK_WUNLOCK( Mutex.store ) ;
+#define STORE_RLOCK       	RWLOCK_RLOCK(   Mutex.store ) ;
+#define STORE_RUNLOCK     	RWLOCK_RUNLOCK( Mutex.store ) ;
+
+#define CONNIN_WLOCK      	RWLOCK_WLOCK(   Inbound_Control.lock ) ;
+#define CONNIN_WUNLOCK    	RWLOCK_WUNLOCK( Inbound_Control.lock ) ;
+#define CONNIN_RLOCK      	RWLOCK_RLOCK(   Inbound_Control.lock ) ;
+#define CONNIN_RUNLOCK    	RWLOCK_RUNLOCK( Inbound_Control.lock ) ;
+
+#define STATLOCK          	MUTEX_LOCK(  Mutex.stat_mutex   )
+#define STATUNLOCK        	MUTEX_UNLOCK(Mutex.stat_mutex   )
+
+#define CONTROLFLAGSLOCK  	MUTEX_LOCK(  Mutex.controlflags_mutex  )
+#define CONTROLFLAGSUNLOCK	MUTEX_UNLOCK(Mutex.controlflags_mutex  )
+
+#define FSTATLOCK         	MUTEX_LOCK(  Mutex.fstat_mutex  )
+#define FSTATUNLOCK       	MUTEX_UNLOCK(Mutex.fstat_mutex  )
+
+#define SIMULLOCK         	MUTEX_LOCK(  Mutex.simul_mutex  )
+#define SIMULUNLOCK       	MUTEX_UNLOCK(Mutex.simul_mutex  )
+
+#define DIRLOCK           	MUTEX_LOCK(  Mutex.dir_mutex    )
+#define DIRUNLOCK         	MUTEX_UNLOCK(Mutex.dir_mutex    )
+
+#define LIBUSBLOCK        	MUTEX_LOCK(  Mutex.libusb_mutex )
+#define LIBUSBUNLOCK      	MUTEX_UNLOCK(Mutex.libusb_mutex )
+
+#define TYPEDIRLOCK       	MUTEX_LOCK(  Mutex.typedir_mutex)
+#define TYPEDIRUNLOCK     	MUTEX_UNLOCK(Mutex.typedir_mutex)
+
+#define NAMEFINDLOCK      	MUTEX_LOCK(  Mutex.namefind_mutex)
+#define NAMEFINDUNLOCK    	MUTEX_UNLOCK(Mutex.namefind_mutex)
+
+#define ALIASFINDLOCK     	MUTEX_LOCK(  Mutex.aliasfind_mutex)
+#define ALIASFINDUNLOCK   	MUTEX_UNLOCK(Mutex.aliasfind_mutex)
+
+#define BUSLOCK(pn)       	BUS_lock(pn)
+#define BUSUNLOCK(pn)     	BUS_unlock(pn)
+#define BUSLOCKIN(in)     	BUS_lock_in(in)
+#define BUSUNLOCKIN(in)   	BUS_unlock_in(in)
 #ifdef __UCLIBC__
-#define UCLIBCLOCK        my_pthread_mutex_lock(  &Mutex.uclibc_mutex)
-#define UCLIBCUNLOCK      my_pthread_mutex_unlock(&Mutex.uclibc_mutex)
+#define UCLIBCLOCK        	MUTEX_LOCK(  Mutex.uclibc_mutex)
+#define UCLIBCUNLOCK      	MUTEX_UNLOCK(Mutex.uclibc_mutex)
 #else							/* __UCLIBC__ */
-#define UCLIBCLOCK			return_ok()
+#define UCLIBCLOCK		return_ok()
 #define UCLIBCUNLOCK		return_ok()
 #endif							/* __UCLIBC__ */
 
 #else							/* OW_MT */
-#define LIB_WLOCK			return_ok()
-#define LIB_WUNLOCK			return_ok()
-#define LIB_RLOCK			return_ok()
-#define LIB_RUNLOCK			return_ok()
+#define LIB_WLOCK		return_ok()
+#define LIB_WUNLOCK		return_ok()
+#define LIB_RLOCK		return_ok()
+#define LIB_RUNLOCK		return_ok()
 
-#define CACHE_WLOCK			return_ok()
+#define CACHE_WLOCK		return_ok()
 #define CACHE_WUNLOCK		return_ok()
-#define CACHE_RLOCK			return_ok()
+#define CACHE_RLOCK		return_ok()
 #define CACHE_RUNLOCK		return_ok()
 
-#define STORE_WLOCK			return_ok()
+#define STORE_WLOCK		return_ok()
 #define STORE_WUNLOCK		return_ok()
-#define STORE_RLOCK			return_ok()
+#define STORE_RLOCK		return_ok()
 #define STORE_RUNLOCK		return_ok()
 
 #define CONNIN_WLOCK		return_ok()
@@ -144,23 +177,39 @@ extern struct mutexes {
 #define CONNIN_RLOCK		return_ok()
 #define CONNIN_RUNLOCK		return_ok()
 
-#define STATLOCK			return_ok()
-#define STATUNLOCK			return_ok()
-#define CONTROLFLAGSLOCK		return_ok()
-#define CONTROLFLAGSUNLOCK		return_ok()
-#define FSTATLOCK			return_ok()
-#define FSTATUNLOCK			return_ok()
-#define SIMULLOCK			return_ok()
-#define SIMULUNLOCK			return_ok()
-#define DIRLOCK				return_ok()
-#define DIRUNLOCK			return_ok()
-#define UCLIBCLOCK			return_ok()
+#define STATLOCK		return_ok()
+#define STATUNLOCK		return_ok()
+
+#define CONTROLFLAGSLOCK	return_ok()
+#define CONTROLFLAGSUNLOCK	return_ok()
+
+#define FSTATLOCK		return_ok()
+#define FSTATUNLOCK		return_ok()
+
+#define SIMULLOCK		return_ok()
+#define SIMULUNLOCK		return_ok()
+
+#define DIRLOCK			return_ok()
+#define DIRUNLOCK		return_ok()
+
+#define UCLIBCLOCK		return_ok()
 #define UCLIBCUNLOCK		return_ok()
-#define LIBUSBLOCK			return_ok()
+
+#define LIBUSBLOCK		return_ok()
 #define LIBUSBUNLOCK		return_ok()
-#define UCLIBCLOCK			return_ok()
+
+#define TYPEDIRBLOCK		return_ok()
+#define TYPEDIRUNLOCK		return_ok()
+
+#define NAMEFINDLOCK		return_ok()
+#define NAMEFINDUNLOCK		return_ok()
+
+#define ALIASFINDLOCK		return_ok()
+#define ALIASFINDUNLOCK		return_ok()
+
+#define UCLIBCLOCK		return_ok()
 #define UCLIBCUNLOCK		return_ok()
-#define BUSLOCK(pn)			return_ok()
+#define BUSLOCK(pn)		return_ok()
 #define BUSUNLOCK(pn)		return_ok()
 #define BUSLOCKIN(in)		return_ok()
 #define BUSUNLOCKIN(in)		return_ok()

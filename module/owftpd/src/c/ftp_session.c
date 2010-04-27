@@ -784,9 +784,9 @@ static int get_passive_port()
 	pthread_once(&once_control, init_passive_port);
 
 	/* pick a random port between 1024 and 65535, inclusive */
-	pthread_mutex_lock(&mutex);
+	MUTEX_LOCK(mutex);
 	port = (lrand48() % 64512) + 1024;
-	pthread_mutex_unlock(&mutex);
+	MUTEX_UNLOCK(mutex);
 
 	return port;
 }
@@ -1428,9 +1428,9 @@ struct tm *gmtime_r(const time_t * timep, struct tm *timeptr)
 {
 	static pthread_mutex_t time_lock = PTHREAD_MUTEX_INITIALIZER;
 
-	pthread_mutex_lock(&time_lock);
+	MUTEX_LOCK(time_lock);
 	*timeptr = *(gmtime(timep));
-	pthread_mutex_unlock(&time_lock);
+	MUTEX_UNLOCK(time_lock);
 	return timeptr;
 }
 #endif							/* HAVE_GMTIME_R */

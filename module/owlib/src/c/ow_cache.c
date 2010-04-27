@@ -987,15 +987,6 @@ int Cache_Get_Alias(ASCII * name, size_t length, const BYTE * sn)
 	return ret ;
 }
 
-#if OW_MT
-pthread_mutex_t Aliasfindmutex = PTHREAD_MUTEX_INITIALIZER;
-#define ALIASFINDMUTEXLOCK		my_pthread_mutex_lock(&Aliasfindmutex)
-#define ALIASFINDMUTEXUNLOCK		my_pthread_mutex_unlock(&Aliasfindmutex)
-#else							/* OW_MT */
-#define ALIASFINDMUTEXLOCK		return_ok()
-#define ALIASFINDMUTEXUNLOCK		return_ok()
-#endif							/* OW_MT */
-
 struct {
 	const ASCII *name;
 	size_t dsize ;
@@ -1038,7 +1029,7 @@ static void Aliasfindaction(const void *node, const VISIT which, const int depth
 int Cache_Get_SerialNumber(const ASCII * name, BYTE * sn)
 {
 	int ret;
-	ALIASFINDMUTEXLOCK;
+	ALIASFINDLOCK;
 
 	global_aliasfind_struct.ret = 11  ;// not yet found
 	global_aliasfind_struct.dsize = strlen(name) + 1 ;
@@ -1046,7 +1037,7 @@ int Cache_Get_SerialNumber(const ASCII * name, BYTE * sn)
 	global_aliasfind_struct.sn = sn ;
 	twalk(cache.permanent_tree, Aliasfindaction);
 	ret = global_aliasfind_struct.ret ;
-	ALIASFINDMUTEXUNLOCK;
+	ALIASFINDUNLOCK;
 	if (ret) {
 		LEVEL_DEBUG("Antialiasing %s unsuccesssful", SAFESTRING(name));
 	} else {

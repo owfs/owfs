@@ -286,7 +286,7 @@ static GOOD_OR_BAD OW_r_subkey(BYTE * data, const size_t size, const off_t offse
 static GOOD_OR_BAD OW_r_memory(BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn)
 {
 	BYTE all_data[0x40];
-	int i, ret, nr_bytes;
+	int i, nr_bytes;
 	size_t left = size;
 
 	if (offset) {

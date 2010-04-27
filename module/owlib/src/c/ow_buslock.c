@@ -37,9 +37,9 @@ void BUS_lock_in(struct connection_in *in)
 		return;
 	}
 #if OW_MT
-	my_pthread_mutex_lock(&(in->bus_mutex));
+	MUTEX_LOCK(in->bus_mutex);
 	if (in->busmode == bus_i2c && in->connin.i2c.channels > 1) {
-		my_pthread_mutex_lock(&(in->connin.i2c.head->connin.i2c.i2c_mutex));
+		MUTEX_LOCK(in->connin.i2c.head->connin.i2c.i2c_mutex);
 	}
 #endif							/* OW_MT */
 	gettimeofday(&(in->last_lock), NULL);	/* for statistics */
@@ -86,8 +86,8 @@ void BUS_unlock_in(struct connection_in *in)
 	STATUNLOCK;
 #if OW_MT
 	if (in->busmode == bus_i2c && in->connin.i2c.channels > 1) {
-		my_pthread_mutex_unlock(&(in->connin.i2c.head->connin.i2c.i2c_mutex));
+		MUTEX_UNLOCK(in->connin.i2c.head->connin.i2c.i2c_mutex);
 	}
-	my_pthread_mutex_unlock(&(in->bus_mutex));
+	MUTEX_UNLOCK(in->bus_mutex);
 #endif							/* OW_MT */
 }

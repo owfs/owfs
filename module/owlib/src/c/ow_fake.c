@@ -266,19 +266,11 @@ static int Fake_next_both(struct device_search *ds, const struct parsedname *pn)
 
 /* Need to lock struct global_namefind_struct since twalk requires global data -- can't pass void pointer */
 /* Except all *_detect routines are done sequentially, not concurrently */
-#if OW_MT
-pthread_mutex_t Namefindmutex = PTHREAD_MUTEX_INITIALIZER;
-#define NAMEFINDMUTEXLOCK		my_pthread_mutex_lock(&Namefindmutex)
-#define NAMEFINDMUTEXUNLOCK		my_pthread_mutex_unlock(&Namefindmutex)
-#else							/* OW_MT */
-#define NAMEFINDMUTEXLOCK		return_ok()
-#define NAMEFINDMUTEXUNLOCK		return_ok()
-#endif							/* OW_MT */
-
 struct {
 	const ASCII *readable_name;
 	const ASCII *ret;
 } global_namefind_struct;
+
 static void Namefindaction(const void *nodep, const VISIT which, const int depth)
 {
 	const struct device *p = *(struct device * const *) nodep;
@@ -301,14 +293,14 @@ static const ASCII *namefind(const char *name)
 {
 	const ASCII *ret;
 
-	NAMEFINDMUTEXLOCK;
+	NAMEFINDLOCK;
 
 	global_namefind_struct.readable_name = name;
 	global_namefind_struct.ret = NULL;
 	twalk(Tree[ePN_real], Namefindaction);
 	ret = global_namefind_struct.ret;
 
-	NAMEFINDMUTEXUNLOCK;
+	NAMEFINDUNLOCK;
 
 	return ret;
 }

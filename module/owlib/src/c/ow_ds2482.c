@@ -401,7 +401,7 @@ static ZERO_OR_ERROR DS2482_detect_single(int lowindex, int highindex, struct co
 				in->connin.i2c.configreg |= DS2482_REG_CFG_PPM ;
 			}
 			#if OW_MT
-			my_pthread_mutex_init(&(in->connin.i2c.i2c_mutex), Mutex.pmattr);
+			MUTEX_INIT(in->connin.i2c.i2c_mutex);
 			#endif							/* OW_MT */
 			in->busmode = bus_i2c;
 			in->Adapter = adapter_DS2482_100;
