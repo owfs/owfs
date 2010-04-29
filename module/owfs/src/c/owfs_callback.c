@@ -197,8 +197,31 @@ static int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler)
 static int CB_read(const char *path, char *buffer, size_t size, off_t offset, struct fuse_file_info *flags)
 {
 	(void) flags;
-	return FS_read(path, buffer, size, offset);
+	int return_size ;
+	OWQ_allocate_struct_and_pointer( owq ) ;
+
+	if (path == NULL) {
+		path = "/";
+	}
+
+	if ( BAD( OWQ_create(path, owq) ) ) {	/* Can we parse the input string */
+		return -ENOENT;
+	}
+
+	if ( IsDir( PN(owq) ) ) { /* A directory of some kind */
+		return_size = -EISDIR ;
+	} else if ( offset >= (off_t) FullFileLength( PN(owq) ) ) {
+		// fuse requests a useless read at end of file -- just return ok.
+		return_size = 0 ;
+	} else {
+		OWQ_assign_read_buffer( buffer, size, offset, owq) ;
+		return_size = FS_read_postparse(owq) ;
+	}
+	OWQ_destroy(owq);
+
+	return return_size ;
 }
+
 static int CB_write(const char *path, const char *buffer, size_t size, off_t offset, struct fuse_file_info *flags)
 {
 	(void) flags;
