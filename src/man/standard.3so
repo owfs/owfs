@@ -62,14 +62,12 @@ field will be all FF.
 is the
 .I locator
 in reverse order.
-.SS present
+.SS present (DEPRECATED)
 .I read-only, yes-no
 .br
 Is the device currently
 .I present
 on the 1-wire bus?
-.br
-Note, this means that each hex byte (2 characters) is reversed, not the text string.
 .SS type
 .I read-only, ascii
 .br

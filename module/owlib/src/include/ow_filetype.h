@@ -148,18 +148,7 @@ struct parsedname;
 #define NO_READ_FUNCTION NULL
 #define NO_WRITE_FUNCTION NULL
 
-enum e_visibility {
-	visible_never,
-	visible_not_now,
-	visible_now,
-	visible_always,
-} ;
-
-enum e_visibility AlwaysVisible( const struct parsedname * pn ) ;
-#define VISIBLE AlwaysVisible
-
-enum e_visibility NeverVisible( const struct parsedname * pn ) ; 
-#define INVISIBLE NeverVisible
+#include "ow_visibility.h"
 
 /* filetype gives -file types- for chip properties */
 struct filetype {

@@ -16,8 +16,6 @@
 |
 .B locator
 |
-.B present
-|
 .B r_address
 |
 .B r_id

@@ -47,7 +47,7 @@ ZERO_OR_ERROR FS_present(struct one_wire_query *owq);
 #define F_code     \
 {"family"    ,   2,  NON_AGGREGATE, ft_ascii , fc_static  , FS_code     , NO_WRITE_FUNCTION, VISIBLE, {v:NULL}, }
 #define F_present  \
-{"present"   ,   PROPERTY_LENGTH_YESNO,  NON_AGGREGATE, ft_yesno , fc_volatile, FS_present  , NO_WRITE_FUNCTION, VISIBLE, {v:NULL}, }
+{"present"   ,   PROPERTY_LENGTH_YESNO,  NON_AGGREGATE, ft_yesno , fc_volatile, FS_present  , NO_WRITE_FUNCTION, VISIBILE_PRESENT, {v:NULL}, }
 #define F_type     \
 {"type"      ,  PROPERTY_LENGTH_TYPE,  NON_AGGREGATE, ft_vascii, fc_static  , FS_type     , NO_WRITE_FUNCTION, VISIBLE, {v:NULL}, }
 #define F_alias     \

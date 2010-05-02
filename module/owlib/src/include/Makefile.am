@@ -82,6 +82,7 @@ noinst_HEADERS =          \
         ow_temperature.h  \
         ow_thermocouple.h \
         ow_transaction.h  \
+	ow_visibility.h   \
         ow_w1.h           \
         rwlock.h          \
         netlink.h         \
