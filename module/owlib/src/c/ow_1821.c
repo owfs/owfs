@@ -222,9 +222,8 @@ static ZERO_OR_ERROR FS_w_oneshot(struct one_wire_query *owq)
 		 * that we don't want continuous conversions anymore, 
 		 * so issue a STOP CONVERSION to halt the conversions.
 		 */
-		int ret = BUS_transaction(tstop, PN(owq));
-		if (ret) {
-			return ret;
+		if ( BUS_transaction(tstop, PN(owq)) ) {
+			return -EINVAL;
 		}
 	} else if (oneshotmode && !OWQ_Y(owq)) {
 		/* 1Shot mode was on and we are turning it off; i.e. we are starting continuous mode.
@@ -232,7 +231,7 @@ static ZERO_OR_ERROR FS_w_oneshot(struct one_wire_query *owq)
 		 * Presumably, we are doing this because we want continuous conversions so
 		 * issue a START CONVERSION command to kick things off.
 		 */
-		int ret = BUS_transaction(tstart, PN(owq));
+		GOOD_OR_BAD ret = BUS_transaction(tstart, PN(owq));
 
 		/* We have just kicked off a conversion. If we try to read the temperature
 		 * right now we will get some previous temperature, which we are not probably
@@ -241,8 +240,8 @@ static ZERO_OR_ERROR FS_w_oneshot(struct one_wire_query *owq)
 		 * worry about it.
 		 */
 		UT_delay(1000);
-		if (ret) {
-			return ret;
+		if ( BAD(ret) ) {
+			return -EINVAL;
 		}
 	}
 	// else ;   /* We are setting the bit to what it already was so do nothing special. */
@@ -311,9 +310,7 @@ static GOOD_OR_BAD OW_temperature(_FLOAT * temp, const struct parsedname *pn)
 	RETURN_BAD_IF_BAD(OW_r_status(&status, pn)) ;
 
 	if ((status >> DS1821_STATUS_1SHOT) & 0x01) {	/* 1-shot, convert and wait 1 second */
-		if (BUS_transaction(t, pn)) {
-			return 1;
-		}
+		RETURN_BAD_IF_BAD(BUS_transaction(t, pn)) ;
 		UT_delay(1000);
 		return OW_current_temperature(temp, pn);
 	} else {
@@ -348,9 +345,7 @@ static GOOD_OR_BAD OW_current_temperature(_FLOAT * temp, const struct parsedname
 		TRXN_END,
 	};
 
-	if (BUS_transaction(t, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(t, pn)) ;
 
 	if (count_per_c) {
 		/* Perform calculation to get high temperature resolution - see datasheet. */
@@ -376,9 +371,7 @@ static GOOD_OR_BAD OW_current_temperature_lowres(_FLOAT * temp, const struct par
 		TRXN_END,
 	};
 
-	if (BUS_transaction(t, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(t, pn)) ;
 	temp[0] = (_FLOAT) ((int8_t) temp_read);
 
 	return gbGOOD;
@@ -396,9 +389,7 @@ static GOOD_OR_BAD OW_r_templimit(_FLOAT * T, const int Tindex, const struct par
 		TRXN_END,
 	};
 
-	if (BUS_transaction(t, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(t, pn)) ;
 	T[0] = (_FLOAT) ((int8_t) data);
 	return gbGOOD;
 }

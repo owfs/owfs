@@ -73,14 +73,14 @@ struct filetype DS28E04[] = {
 	F_STANDARD,
 	{"memory", 550, NON_AGGREGATE, ft_binary, fc_stable, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"pages/page", 32, &A2804p, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
-  {"polarity", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_polarity, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"power", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"por", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_por, FS_w_por, VISIBLE, NO_FILETYPE_DATA,},
-  {"PIO", PROPERTY_LENGTH_BITFIELD, &A2804, ft_bitfield, fc_stable, FS_r_pio, FS_w_pio, VISIBLE, NO_FILETYPE_DATA,},
-  {"sensed", PROPERTY_LENGTH_BITFIELD, &A2804, ft_bitfield, fc_volatile, FS_sense, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"latch", PROPERTY_LENGTH_BITFIELD, &A2804, ft_bitfield, fc_volatile, FS_r_latch, FS_w_latch, VISIBLE, NO_FILETYPE_DATA,},
-  {"set_alarm", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_s_alarm, FS_w_s_alarm, VISIBLE, NO_FILETYPE_DATA,},
+	{"pages/page", 32, &A2804p, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
+	{"polarity", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_polarity, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"power", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"por", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_por, FS_w_por, VISIBLE, NO_FILETYPE_DATA,},
+	{"PIO", PROPERTY_LENGTH_BITFIELD, &A2804, ft_bitfield, fc_stable, FS_r_pio, FS_w_pio, VISIBLE, NO_FILETYPE_DATA,},
+	{"sensed", PROPERTY_LENGTH_BITFIELD, &A2804, ft_bitfield, fc_volatile, FS_sense, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"latch", PROPERTY_LENGTH_BITFIELD, &A2804, ft_bitfield, fc_volatile, FS_r_latch, FS_w_latch, VISIBLE, NO_FILETYPE_DATA,},
+	{"set_alarm", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_s_alarm, FS_w_s_alarm, VISIBLE, NO_FILETYPE_DATA,},
 };
 
 DeviceEntryExtended(1C, DS28E04, DEV_alarm | DEV_resume | DEV_ovdr);
@@ -117,10 +117,7 @@ static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 	/* read is not a "paged" endeavor, the CRC comes after a full read */
-	if (COMMON_read_memory_F0(owq, 0, pagesize)) {
-		return -EINVAL;
-	}
-	return 0;
+	return GB_to_Z_OR_E(COMMON_read_memory_F0(owq, 0, pagesize)) ;
 }
 
 /* Note, it's EPROM -- write once */
@@ -135,10 +132,7 @@ static ZERO_OR_ERROR FS_w_mem(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (COMMON_read_memory_F0(owq, OWQ_pn(owq).extension, pagesize)) {
-		return -EINVAL;
-	}
-	return 0;
+	return GB_to_Z_OR_E(COMMON_read_memory_F0(owq, OWQ_pn(owq).extension, pagesize)) ;
 }
 
 static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
@@ -155,7 +149,7 @@ static ZERO_OR_ERROR FS_r_pio(struct one_wire_query *owq)
 	OWQ_allocate_struct_and_pointer(owq_pio);
 
 	OWQ_create_temporary(owq_pio, (char *) &data, 1, _ADDRESS_PIO_OUTPUT, PN(owq));
-	if (COMMON_read_memory_F0(owq_pio, 0, 0)) {
+	if ( COMMON_read_memory_F0(owq_pio, 0, 0) != 0 ) {
 		return -EINVAL;
 	}
 	OWQ_U(owq) = BYTE_INVERSE(data) & 0x03;	/* reverse bits */
@@ -179,7 +173,7 @@ static ZERO_OR_ERROR FS_power(struct one_wire_query *owq)
 	OWQ_allocate_struct_and_pointer(owq_power);
 
 	OWQ_create_temporary(owq_power, (char *) &data, 1, _ADDRESS_CONDITIONAL_SEARCH_CONTROL, PN(owq));
-	if (COMMON_read_memory_F0(owq_power, 0, 0)) {
+	if ( COMMON_read_memory_F0(owq_power, 0, 0) != 0 ) {
 		return -EINVAL;
 	}
 	OWQ_Y(owq) = UT_getbit(&data, 7);
@@ -193,7 +187,7 @@ static ZERO_OR_ERROR FS_polarity(struct one_wire_query *owq)
 	OWQ_allocate_struct_and_pointer(owq_polarity);
 
 	OWQ_create_temporary(owq_polarity, (char *) &data, 1, _ADDRESS_CONDITIONAL_SEARCH_CONTROL, PN(owq));
-	if (COMMON_read_memory_F0(owq_polarity, 0, 0)) {
+	if ( COMMON_read_memory_F0(owq_polarity, 0, 0) != 0 ) {
 		return -EINVAL;
 	}
 	OWQ_Y(owq) = UT_getbit(&data, 6);
@@ -207,7 +201,7 @@ static ZERO_OR_ERROR FS_r_por(struct one_wire_query *owq)
 	OWQ_allocate_struct_and_pointer(owq_por);
 
 	OWQ_create_temporary(owq_por, (char *) &data, 1, _ADDRESS_CONDITIONAL_SEARCH_CONTROL, PN(owq));
-	if (COMMON_read_memory_F0(owq_por, 0, 0)) {
+	if ( COMMON_read_memory_F0(owq_por, 0, 0) != 0 ) {
 		return -EINVAL;
 	}
 	OWQ_Y(owq) = UT_getbit(&data, 3);
@@ -245,7 +239,7 @@ static ZERO_OR_ERROR FS_sense(struct one_wire_query *owq)
 	OWQ_allocate_struct_and_pointer(owq_sense);
 
 	OWQ_create_temporary(owq_sense, (char *) &data, 1, _ADDRESS_PIO_LOGIC, PN(owq));
-	if (COMMON_read_memory_F0(owq_sense, 0, 0)) {
+	if ( COMMON_read_memory_F0(owq_sense, 0, 0) != 0 ) {
 		return -EINVAL;
 	}
 	OWQ_U(owq) = (data) & 0x03;
@@ -259,7 +253,7 @@ static ZERO_OR_ERROR FS_r_latch(struct one_wire_query *owq)
 	OWQ_allocate_struct_and_pointer(owq_latch);
 
 	OWQ_create_temporary(owq_latch, (char *) &data, 1, _ADDRESS_PIO_ACTIVITY, PN(owq));
-	if (COMMON_read_memory_F0(owq_latch, 0, 0)) {
+	if ( COMMON_read_memory_F0(owq_latch, 0, 0) != 0 ) {
 		return -EINVAL;
 	}
 	OWQ_U(owq) = data & 0x03;
@@ -347,9 +341,7 @@ static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parse
 	};
 
 	RETURN_BAD_IF_BAD( OW_w_scratch(data, size, offset, pn) );
-	if ( BUS_transaction(tread, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD( BUS_transaction(tread, pn)) ;
 	p[0] = _1W_COPY_SCRATCHPAD;
 	return BUS_transaction(tcopy, pn);
 }

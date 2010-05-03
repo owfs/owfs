@@ -40,7 +40,7 @@ static int HA7_next_both(struct device_search *ds, const struct parsedname *pn);
 static int HA7_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 static int HA7_select_and_sendback(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 static int HA7_sendback_block(const BYTE * data, BYTE * resp, const size_t size, int also_address, const struct parsedname *pn);
-static int HA7_select(const struct parsedname *pn);
+static GOOD_OR_BAD HA7_select(const struct parsedname *pn);
 static void HA7_setroutines(struct connection_in *in);
 static void HA7_close(struct connection_in *in);
 static int HA7_directory(BYTE search, struct dirblob *db, const struct parsedname *pn);
@@ -484,9 +484,9 @@ static void setHA7address(struct toHA7 *ha7, const BYTE * sn)
 	num2string(&(ha7->address[14]), sn[0]);
 }
 
-static int HA7_select(const struct parsedname *pn)
+static GOOD_OR_BAD HA7_select(const struct parsedname *pn)
 {
-	int ret = -EIO;
+	GOOD_OR_BAD ret = gbBAD;
 
 	if (pn->selected_device) {
 		int file_descriptor = ClientConnect(pn->selected_connection);
@@ -501,13 +501,13 @@ static int HA7_select(const struct parsedname *pn)
 				struct memblob mb;
 				if (HA7_read(file_descriptor, &mb) == 0) {
 					MemblobClear(&mb);
-					ret = 0;
+					ret = gbGOOD;
 				}
 			}
 			close(file_descriptor);
 		}
 	} else {
-		return HA7_reset(pn);
+		return HA7_reset(pn)==BUS_RESET_OK ? gbGOOD : gbBAD ;
 	}
 	return ret;
 }

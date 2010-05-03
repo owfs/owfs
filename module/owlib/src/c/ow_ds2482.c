@@ -70,7 +70,7 @@ static int DS2482_readstatus(BYTE * c, FILE_DESCRIPTOR_OR_ERROR file_descriptor,
 static int SetConfiguration(BYTE c, struct connection_in *in);
 static void DS2482_close(struct connection_in *in);
 static int DS2482_redetect(const struct parsedname *pn);
-static int DS2482_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname *pn);
+static GOOD_OR_BAD DS2482_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname *pn);
 
 /**
  * The DS2482 registers - there are 3 registers that are addressed by a read
@@ -524,7 +524,7 @@ static int DS2482_next_both(struct device_search *ds, const struct parsedname *p
 		return -ENODEV;
 	}
 
-	if ( BUS_select(pn) ) {
+	if ( BAD( BUS_select(pn) ) ) {
 		return -EIO ;
 	}
 
@@ -799,26 +799,26 @@ static int SetConfiguration(BYTE c, struct connection_in *in)
 	return 0;
 }
 
-static int DS2482_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname *pn)
+static GOOD_OR_BAD DS2482_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname *pn)
 {
 	/* Make sure we're using the correct channel */
 	if (DS2482_channel_select(pn)) {
-		return -1;
+		return gbBAD;
 	}
 
 	/* Set the power (bit is automatically cleared by reset) */
 	if (SetConfiguration(pn->selected_connection->connin.i2c.configreg | DS2482_REG_CFG_SPU, pn->selected_connection)) {
-		return -1;
+		return gbBAD;
 	}
 
 	/* send and get byte (and trigger strong pull-up */
 	if (DS2482_send_and_get(pn->selected_connection->connin.i2c.head->file_descriptor, byte, resp)) {
-		return -1;
+		return gbBAD;
 	}
 
 	UT_delay(delay);
 
-	return 0;
+	return gbGOOD;
 }
 
 static void DS2482_close(struct connection_in *in)

@@ -239,27 +239,17 @@ static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parse
 	/* Copy to scratchpad -- use CRC16 if write to end of page, but don't force it */
 	memcpy(&p[3], data, size);
 	if ((offset + size) & 0x1F) {	/* to end of page */
-		if (BUS_transaction(tcopy, pn)) {
-			return gbBAD;
-		}
+		RETURN_BAD_IF_BAD(BUS_transaction(tcopy, pn)) ;
 	} else {
-		if (BUS_transaction(tcopy_crc, pn)) {
-			return gbBAD;
-		}
+		RETURN_BAD_IF_BAD(BUS_transaction(tcopy_crc, pn)) ;
 	}
 
 	/* Re-read scratchpad and compare */
 	/* Note: location of data has now shifted down a byte for E/S register */
 	p[0] = _EDS_READ_SCRATCHPAD;
-	if (BUS_transaction(tread, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(tread, pn)) ;
 
 	/* write Scratchpad to SRAM */
 	p[0] = _EDS_COPY_SCRATCHPAD;
-	if (BUS_transaction(twrite, pn)) {
-		return gbBAD;
-	}
-
-	return gbGOOD;
+	return BUS_transaction(twrite, pn) ;
 }

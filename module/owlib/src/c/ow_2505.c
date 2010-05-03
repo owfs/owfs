@@ -169,7 +169,7 @@ static GOOD_OR_BAD OW_w_status(BYTE * data, size_t size, off_t offset, struct pa
 		return BUS_transaction(tfirst, pn) || (p[0] & (~data[0]));
 	}
 	BUSLOCK(pn);
-	if (BUS_transaction(tfirst, pn) || (p[0] & ~data[0])) {
+	if ( BAD(BUS_transaction(tfirst, pn)) || (p[0] & ~data[0])) {
 		ret = gbBAD;
 	} else {
 		size_t i;
@@ -183,7 +183,7 @@ static GOOD_OR_BAD OW_w_status(BYTE * data, size_t size, off_t offset, struct pa
 			TRXN_END,
 		};
 		for (i = 0; i < size; ++i, ++d, ++s) {
-			if (BUS_transaction(trest, pn) || (p[0] & ~d[0])) {
+			if ( BAD(BUS_transaction(trest, pn)) || (p[0] & ~d[0])) {
 				ret = gbBAD;
 				break;
 			}

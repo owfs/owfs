@@ -135,9 +135,7 @@ static GOOD_OR_BAD OW_r_page(BYTE * data, size_t size, off_t offset, const struc
 		TRXN_END,
 	};
 
-	if (BUS_transaction(tcopy, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(tcopy, pn)) ;
 
 	UT_delay(10);
 
@@ -173,15 +171,9 @@ static GOOD_OR_BAD OW_w_page(const BYTE * data, size_t size, off_t offset, const
 		TRXN_END,
 	};
 
-	if (BUS_transaction(twrite, pn)) {
-		return gbBAD;
-	}
-	if (BUS_transaction(tread, pn)) {
-		return gbBAD;
-	}
-	if (BUS_transaction(tcopy, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(twrite, pn)) ;
+	RETURN_BAD_IF_BAD(BUS_transaction(tread, pn)) ;
+	RETURN_BAD_IF_BAD(BUS_transaction(tcopy, pn)) ;
 
 	UT_delay(10);
 
@@ -206,16 +198,12 @@ static GOOD_OR_BAD OW_temp(_FLOAT * T, const struct parsedname *pn)
 	};
 
 	// initiate conversion
-	if (BUS_transaction(tconvert, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(tconvert, pn)) ;
 	UT_delay(10);
 
 
 	/* Get data */
-	if (BUS_transaction(tdata, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(tdata, pn)) ;
 
 	// success
 	//printf("Temp bytes %0.2X %0.2X\n",t[0],t[1]);
@@ -244,15 +232,11 @@ static GOOD_OR_BAD OW_volts(_FLOAT * V, const struct parsedname *pn)
 	};
 
 	// initiate conversion
-	if (BUS_transaction(tconvert, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(tconvert, pn)) ;
 	UT_delay(10);
 
 	/* Get data */
-	if (BUS_transaction(tdata, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD( BUS_transaction(tdata, pn)) ;
 
 	// success
 	//V[0] = .01 * (_FLOAT)( ( ((uint32_t)v[1]) <<8 )|v[0] ) ;

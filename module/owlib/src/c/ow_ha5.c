@@ -26,9 +26,9 @@ static int HA5_select_and_sendback(const BYTE * data, BYTE * resp, const size_t 
 static void HA5_setroutines(struct connection_in *in);
 static void HA5_close(struct connection_in *in);
 static int HA5_directory(struct device_search *ds, struct dirblob *db, const struct parsedname *pn);
-static int HA5_select( const struct parsedname * pn ) ;
-static int HA5_select_wrapped( const struct parsedname * pn ) ;
-static int HA5_resync( const struct parsedname * pn ) ;
+static GOOD_OR_BAD HA5_select( const struct parsedname * pn ) ;
+static GOOD_OR_BAD HA5_select_wrapped( const struct parsedname * pn ) ;
+static GOOD_OR_BAD HA5_resync( const struct parsedname * pn ) ;
 static void HA5_powerdown(struct connection_in * in) ;
 static int Parse_first_ha5_address( struct connection_in * in ) ;
 static char Parse_next_ha5_address( char * name ) ;
@@ -370,11 +370,13 @@ static int HA5_directory(struct device_search *ds, struct dirblob *db, const str
 	query_length = AddChecksum( query, 5, in ) ;
 
 	if (COM_write( query, query_length, pn->selected_connection)) {
-		return HA5_resync(pn) ;
+		HA5_resync(pn) ;
+		return -EIO ;
 	}
 
 	if (COM_read(resp, 1, pn->selected_connection)) {
-		return HA5_resync(pn) ;
+		HA5_resync(pn) ;
+		return -EIO ;
 	}
 
 	while ( resp[0] != CR_char ) {
@@ -390,21 +392,26 @@ static int HA5_directory(struct device_search *ds, struct dirblob *db, const str
 
 		if ( in->connin.ha5.checksum ) {
 			if (COM_read(&resp[1], 19, pn->selected_connection)) {
-				return HA5_resync(pn) ;
+				HA5_resync(pn) ;
+				return -EIO ;
 			}
 			if ( resp[18]!=CR_char ) {
-				return HA5_resync(pn) ;
+				HA5_resync(pn) ;
+				return -EIO ;
 			}
 			wrap_char = resp[19] ;
 			if ( TestChecksum( resp, 16 ) ) {
-				return HA5_resync(pn) ;
+				HA5_resync(pn) ;
+				return -EIO ;
 			}
 		} else {
 			if (COM_read(&resp[1], 17, pn->selected_connection)) {
-				return HA5_resync(pn) ;
+				HA5_resync(pn) ;
+				return -EIO ;
 			}
 			if ( resp[16]!=CR_char ) {
-				return HA5_resync(pn) ;
+				HA5_resync(pn) ;
+				return -EIO ;
 			}
 			wrap_char = resp[17] ;
 		}
@@ -426,7 +433,8 @@ static int HA5_directory(struct device_search *ds, struct dirblob *db, const str
 			/* A minor "error" and should perhaps only return -1 */
 			/* to avoid reconnect */
 			LEVEL_DEBUG("sn = %s", sn);
-			return HA5_resync(pn) ;
+			HA5_resync(pn) ;
+			return -EIO ;
 		}
 		DirblobAdd(sn, db);
 		resp[0] = wrap_char ;
@@ -434,7 +442,7 @@ static int HA5_directory(struct device_search *ds, struct dirblob *db, const str
 	return 0 ;
 }
 
-static int HA5_resync( const struct parsedname * pn )
+static GOOD_OR_BAD HA5_resync( const struct parsedname * pn )
 {
 	COM_flush(pn->selected_connection);
 	HA5_reset(pn);
@@ -443,13 +451,13 @@ static int HA5_resync( const struct parsedname * pn )
 	// Poison current "Address" for adapter
 	pn->selected_connection->connin.ha5.sn[0] = 0 ; // so won't match
 
-	return -EIO ;
+	return gbBAD ;
 }
 
-static int HA5_select( const struct parsedname * pn )
+static GOOD_OR_BAD HA5_select( const struct parsedname * pn )
 {
 	struct connection_in * in = pn->selected_connection ;
-	int ret ;
+	GOOD_OR_BAD ret ;
 
 	if ( (pn->selected_device==NULL) || (pn->selected_device==DeviceThermostat) ) {
 		return HA5_reset(pn) ;
@@ -462,7 +470,7 @@ static int HA5_select( const struct parsedname * pn )
 	return ret ;
 }
 
-static int HA5_select_wrapped( const struct parsedname * pn )
+static GOOD_OR_BAD HA5_select_wrapped( const struct parsedname * pn )
 {
 	struct connection_in * in = pn->selected_connection ;
 	unsigned char send_address[21] ;
@@ -510,7 +518,7 @@ static int HA5_select_wrapped( const struct parsedname * pn )
 	// Set as current "Address" for adapter
 	memcpy( in->connin.ha5.sn, pn->sn, SERIAL_NUMBER_SIZE) ;
 
-	return 0 ;
+	return gbGOOD ;
 }
 
 //  Send data and return response block -- up to 32 bytes
@@ -529,22 +537,26 @@ static int HA5_sendback_part(char cmd, const BYTE * data, BYTE * resp, const siz
 
 	if ( COM_write( send_data, send_length, pn->selected_connection) ) {
 		LEVEL_DEBUG("Error with sending HA5 block") ;
-		return HA5_resync(pn) ;
+		HA5_resync(pn) ;
+		return -EIO ;
 	}
 
 	if ( in->connin.ha5.checksum ) {
 		if ( COM_read( get_data, size*2+3, pn->selected_connection) ) {
 			LEVEL_DEBUG("Error with reading HA5 block") ;
-			return HA5_resync(pn) ;
+			HA5_resync(pn) ;
+			return -EIO ;
 		}
 		if ( TestChecksum( get_data, size*2) ) {
 			LEVEL_DEBUG("HA5 block read checksum error") ;
-			return HA5_resync(pn) ;
+			HA5_resync(pn) ;
+			return -EIO ;
 		}
 	} else {
 		if ( COM_read( get_data, size*2+1, pn->selected_connection) ) {
 			LEVEL_DEBUG("Error with reading HA5 block") ;
-			return HA5_resync(pn) ;
+			HA5_resync(pn) ;
+			return -EIO ;
 		}
 	}
 	string2bytes( (char *)get_data, resp, size) ;
@@ -580,7 +592,7 @@ static int HA5_select_and_sendback(const BYTE * data, BYTE * resp, const size_t 
 
 	if ( memcmp( pn->sn, in->connin.ha5.sn, SERIAL_NUMBER_SIZE ) ) {
 		// Need a formal change of device
-		if ( HA5_select(pn) ) {
+		if ( BAD( HA5_select(pn) ) ) {
 			return -EIO ;
 		}
 		block_cmd = 'W' ;

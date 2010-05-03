@@ -26,8 +26,8 @@ static ZERO_OR_ERROR DS2480_adapter(struct connection_in *in) ;
 static int DS2480_big_configuration(const struct parsedname *pn) ;
 static int DS2480_read(BYTE * buf, const size_t size, const struct parsedname *pn);
 static int DS2480_write(const BYTE * buf, const size_t size, const struct parsedname *pn);
-static int DS2480_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname *pn);
-static int DS2480_ProgramPulse(const struct parsedname *pn);
+static GOOD_OR_BAD DS2480_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname *pn);
+static GOOD_OR_BAD DS2480_ProgramPulse(const struct parsedname *pn);
 static int DS2480_sendout_cmd(const BYTE * cmd, const size_t len, const struct parsedname *pn);
 static int DS2480_sendback_cmd(const BYTE * cmd, BYTE * resp, const size_t len, const struct parsedname *pn);
 static int DS2480_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
@@ -677,7 +677,7 @@ static int DS2480_next_both(struct device_search *ds, const struct parsedname *p
 		return -ENODEV;
 	}
 
-	if ( BUS_select(pn) ) {
+	if ( BAD( BUS_select(pn) ) ) {
 		return -EIO ;
 	}
 
@@ -770,9 +770,9 @@ static int DS2480_next_both(struct device_search *ds, const struct parsedname *p
 /* Returns 0=good
    bad = -EIO
  */
-static int DS2480_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname *pn)
+static GOOD_OR_BAD DS2480_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname *pn)
 {
-	int ret;
+	ZERO_OR_ERROR ret;
 	BYTE bits = CMD_COMM | FUNCTSEL_BIT | DS2480b_speed_byte(pn) ;
 	BYTE cmd[] = {
 		// bit 1
@@ -816,7 +816,7 @@ static int DS2480_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, cons
 		| ((respbits[1] & 1) << 1)
 		| ((respbits[0] & 1));
 
-	return ret;
+	return ret==0 ? gbGOOD : gbBAD ;
 }
 
 static void DS2480_flush( const struct connection_in * in )
@@ -852,7 +852,7 @@ static int DS2480_stop_pulse(BYTE * response, const struct parsedname *pn)
 
 /* Send a 12v 480usec pulse on the 1wire bus to program the EPROM */
 // returns 0 if good
-static int DS2480_ProgramPulse(const struct parsedname *pn)
+static GOOD_OR_BAD DS2480_ProgramPulse(const struct parsedname *pn)
 {
 	int ret;
 	BYTE cmd[] = { CMD_COMM | FUNCTSEL_CHMOD | BITPOL_12V | SPEEDSEL_PULSE, };
@@ -873,14 +873,14 @@ static int DS2480_ProgramPulse(const struct parsedname *pn)
 	DS2480_stop_pulse(stop_pulse, pn);
 
 	if (ret) {
-		return ret;
+		return gbBAD;
 	}
 
 	if ((command_resp[0] & response_mask) != (cmd[0] & response_mask)) {
-		ret = -EIO;
+		return gbBAD;
 	}
 
-	return ret;
+	return gbGOOD;
 }
 
 // Write to the output -- works for tcp and COM

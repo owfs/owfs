@@ -625,9 +625,8 @@ static GOOD_OR_BAD OW_r_page(BYTE * p, const int page, const struct parsedname *
 	};
 
 	// read to scratch, then in
-	if (BUS_transaction(t, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(t, pn)) ;
+
 	// copy to buffer
 	memcpy(p, data, 8);
 	return gbGOOD;
@@ -653,9 +652,7 @@ static GOOD_OR_BAD OW_w_page(const BYTE * p, const int page, const struct parsed
 		TRXN_END,
 	};
 
-	if (BUS_transaction(t, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(t, pn)) ;
 
 	UT_delay(10);
 	return gbGOOD;					// timeout
@@ -673,16 +670,13 @@ static GOOD_OR_BAD OW_temp(_FLOAT * T, const struct parsedname *pn)
 	};
 	// write conversion command
 	if ( BAD( FS_Test_Simultaneous( simul_temp, delay, pn) ) ) {
-		if (BUS_transaction(tconvert, pn)) {
-			return gbBAD;
-		}
+		RETURN_BAD_IF_BAD(BUS_transaction(tconvert, pn)) ;
 		UT_delay(delay);
 	}
 
 	// read back registers
-	if (OW_r_page(data, 0, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(OW_r_page(data, 0, pn)) ;
+
 	//*T = ((int)((signed char)data[2])) + .00390625*data[1] ;
 	T[0] = UT_int16(&data[1]) / 256.0;
 	return gbGOOD;
@@ -711,13 +705,10 @@ static GOOD_OR_BAD OW_volts(_FLOAT * V, const int src, const struct parsedname *
 	// set voltage source command
 	RETURN_BAD_IF_BAD(OW_r_page(data, 0, pn));
 	UT_setbit(data, 3, src);	// AD bit in status register
-	if (BUS_transaction(tsource, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(tsource, pn)) ;
+
 	// write conversion command
-	if (BUS_transaction(tconvert, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(tconvert, pn)) ;
 	UT_delay(10);
 
 	// read back registers

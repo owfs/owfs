@@ -161,9 +161,8 @@ static GOOD_OR_BAD OW_read(BYTE * data, const struct parsedname *pn)
 		TRXN_END,
 	};
 
-	if (BUS_transaction(t, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(t, pn)) ;
+
 	// High nibble the complement of low nibble?
 	// Fix thanks to josef_heiler
 	if ((resp[0] & 0x0F) != ((~resp[0] >> 4) & 0x0F)) {

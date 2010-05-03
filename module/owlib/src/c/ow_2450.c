@@ -366,14 +366,12 @@ static GOOD_OR_BAD OW_w_mem(BYTE * p, size_t size, off_t offset, struct parsedna
 	}
 
 	/* Send the first byte (handled differently) */
-	if (BUS_transaction(tfirst, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(tfirst, pn)) ;
 	/* rest of the bytes */
 	for (i = 1; i < size; ++i) {
 		buf[0] = p[i];
-		if (BUS_transaction(trest, pn) || CRC16seeded(buf, 3, offset + i)
-			|| (echo[0] != p[i])) {
+		RETURN_BAD_IF_BAD( BUS_transaction(trest, pn) ) ;
+		if ( CRC16seeded(buf, 3, offset + i) || (echo[0] != p[i]) ) {
 			return gbBAD;
 		}
 	}
@@ -491,14 +489,10 @@ static GOOD_OR_BAD OW_convert(struct parsedname *pn)
 	// Start conversion
 	// 6 msec for 16bytex4channel (5.2)
 	if (power == _1W_2450_POWERED) {	//powered
-		if (BUS_transaction(tpower, pn)) {
-			return gbBAD;
-		}
+		RETURN_BAD_IF_BAD(BUS_transaction(tpower, pn));
 		UT_delay(delay);			/* don't need to hold line for conversion! */
 	} else {
-		if (BUS_transaction(tdead, pn)) {
-			return gbBAD;
-		}
+		RETURN_BAD_IF_BAD(BUS_transaction(tdead, pn)) ;
 	}
 	return gbGOOD;
 }

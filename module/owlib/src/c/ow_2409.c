@@ -176,9 +176,7 @@ static GOOD_OR_BAD OW_discharge(const struct parsedname *pn)
 	pn->selected_connection->branch.sn[0] = BUSPATH_BAD ;
 	BUSUNLOCK(pn);
 
-	if (BUS_transaction(t, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(t, pn)) ;
 
 	UT_delay(100);
 
@@ -213,9 +211,7 @@ static GOOD_OR_BAD OW_w_control(const UINT data, const struct parsedname *pn)
 		TRXN_END,
 	};
 
-	if (BUS_transaction(t, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(t, pn)) ;
 
 	/* Check that Info corresponds */
 	return (info & 0xC0) == r[data] ? gbGOOD : gbBAD;

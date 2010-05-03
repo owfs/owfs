@@ -175,22 +175,16 @@ static GOOD_OR_BAD OW_w_23page(BYTE * data, size_t size, off_t offset, struct pa
 		tcopy[2].type = tcopy[3].type = trxn_nop;
 	}
 
-	if (BUS_transaction(tcopy, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(tcopy, pn)) ;
 
 	/* Re-read scratchpad and compare */
 	/* Note that we tacitly shift the data one byte down for the E/S byte */
 	p[0] = _1W_READ_SCRATCHPAD;
-	if (BUS_transaction(treread, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(treread, pn)) ;
 
 	/* Copy Scratchpad to SRAM */
 	p[0] = _1W_COPY_SCRATCHPAD;
-	if (BUS_transaction(twrite, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(twrite, pn)) ;
 
 	// pause for write
 	switch (pn->sn[0]) {
@@ -239,21 +233,15 @@ static GOOD_OR_BAD OW_w_2Dpage(BYTE * data, size_t size, off_t offset, struct pa
 	memcpy(&p[3 + pageoff], data, size);
 
 	/* Copy to scratchpad */
-	if (BUS_transaction(tcopy, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(tcopy, pn)) ;
 
 	/* Re-read scratchpad and compare */
 	p[0] = _1W_READ_SCRATCHPAD;
-	if (BUS_transaction(tread, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(tread, pn)) ;
 
 	/* Copy Scratchpad to SRAM */
 	p[0] = _1W_COPY_SCRATCHPAD;
-	if (BUS_transaction(tsram, pn)){
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(tsram, pn)) ;
 
 	UT_delay(13);
 	return gbGOOD ;

@@ -17,7 +17,6 @@ $Id$
 /* All the rest of the program sees is the BadAdapter_detect and the entry in iroutines */
 
 static RESET_TYPE BadAdapter_reset(const struct parsedname *pn);
-static int BadAdapter_ProgramPulse(const struct parsedname *pn);
 static int BadAdapter_sendback_bits(const BYTE * data, BYTE * resp, size_t len, const struct parsedname *pn);
 static void BadAdapter_close(struct connection_in *in);
 
@@ -35,7 +34,7 @@ ZERO_OR_ERROR BadAdapter_detect(struct connection_in *in)
 	in->iroutines.reset = BadAdapter_reset;
 	in->iroutines.next_both = NULL;
 	in->iroutines.PowerByte = NULL;
-	in->iroutines.ProgramPulse = BadAdapter_ProgramPulse;
+	in->iroutines.ProgramPulse = NULL;
 	in->iroutines.sendback_data = NULL;
 	in->iroutines.sendback_bits = BadAdapter_sendback_bits;
 	in->iroutines.select = NULL;
@@ -48,12 +47,6 @@ ZERO_OR_ERROR BadAdapter_detect(struct connection_in *in)
 }
 
 static RESET_TYPE BadAdapter_reset(const struct parsedname *pn)
-{
-	(void) pn;
-	return -ENOTSUP;
-}
-
-static int BadAdapter_ProgramPulse(const struct parsedname *pn)
 {
 	(void) pn;
 	return -ENOTSUP;

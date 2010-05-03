@@ -528,15 +528,14 @@ static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parse
 	memcpy(&p[3], data, size);
 
 	BUSLOCK(pn);
-	if (BUS_select(pn)!=0 || BUS_send_data(p, 3 + rest, pn)!=0) {
+	if ( BAD(BUS_select(pn)) || BUS_send_data(p, 3 + rest, pn)!=0) {
 		BUSUNLOCK(pn);
 		return gbBAD;
 	}
 	/* Re-read scratchpad and compare */
 	/* Note: location of data has now shifted down a byte for E/S register */
-	//ret = BUS_select(pn) || BUS_send_data( p,3,pn) || BUS_readin_data( &p[3],1+rest+2,pn) || CRC16(p,4+rest+2) || memcmp(&p[4], data, size) ;
 
-	if (BUS_select(pn)!=0) {
+	if ( BAD(BUS_select(pn))) {
 		BUSUNLOCK(pn);
 		return gbBAD;
 	}
@@ -560,7 +559,7 @@ static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parse
 	}
 
 	/* Copy Scratchpad to SRAM */
-	if (BUS_select(pn)!=0) {
+	if (BAD(BUS_select(pn))) {
 		BUSUNLOCK(pn);
 		return 1;
 	}
@@ -590,7 +589,7 @@ static GOOD_OR_BAD OW_clearmemory(struct parsedname *pn)
 
 	BUSLOCK(pn);
 	ret = BUS_select(pn);
-	if (ret) {
+	if (BAD(ret)) {
 		BUSUNLOCK(pn);
 		return gbBAD;
 	}
@@ -626,7 +625,7 @@ static GOOD_OR_BAD OW_r_mem(BYTE * data, size_t size, off_t offset, struct parse
 
 	BUSLOCK(pn);
 #if 0
-	ret = BUS_select(pn) || BUS_send_data(p, 3, pn)
+	ret = BAD(BUS_select(pn)) || BUS_send_data(p, 3, pn)
 		|| BUS_send_data(passwd, 8, pn)
 		|| BUS_readin_data(&p[3], rest + 2, pn)
 		|| CRC16(p, 3 + rest + 2);
@@ -723,7 +722,7 @@ static GOOD_OR_BAD OW_force_conversion(const UINT delay, struct parsedname *pn)
 
 	/* Mission not progress, force conversion */
 	BUSLOCK(pn);
-	ret = BUS_select(pn) || BUS_send_data(t, 2, pn);
+	ret = BAD(BUS_select(pn)) || BUS_send_data(t, 2, pn);
 	if (ret) {
 		printf("conv: err3\n");
 		return gbBAD;
@@ -783,7 +782,7 @@ static GOOD_OR_BAD OW_stopmission(struct parsedname *pn)
 	data[9] = _1W_STOP_MISSION_WITH_PASSWORD_START;
 
 	BUSLOCK(pn);
-	ret = BUS_select(pn) || BUS_send_data(data, 10, pn);
+	ret = BAD(BUS_select(pn)) || BUS_send_data(data, 10, pn);
 	BUSUNLOCK(pn);
 	return ret;
 }
@@ -853,7 +852,7 @@ static GOOD_OR_BAD OW_startmission(unsigned long mdelay, struct parsedname *pn)
 	memset(&p[1], 0xFF, 8);		// dummy password
 	p[9] = _1W_START_MISSION_WITH_PASSWORD_START;	// dummy byte
 	BUSLOCK(pn);
-	ret = BUS_select(pn) || BUS_send_data(p, 10, pn);
+	ret = BAD(BUS_select(pn)) || BUS_send_data(p, 10, pn);
 	BUSUNLOCK(pn);
 
 	return ret;

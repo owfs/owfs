@@ -83,8 +83,8 @@ int DS9490_getstatus(BYTE * buffer, int readlen, const struct parsedname *pn);
 static int DS9490_next_both(struct device_search *ds, const struct parsedname *pn);
 static int DS9490_sendback_data(const BYTE * data, BYTE * resp, size_t len, const struct parsedname *pn);
 static int DS9490_HaltPulse(const struct parsedname *pn);
-static int DS9490_PowerByte(BYTE byte, BYTE * resp, UINT delay, const struct parsedname *pn);
-static int DS9490_ProgramPulse(const struct parsedname *pn);
+static GOOD_OR_BAD DS9490_PowerByte(BYTE byte, BYTE * resp, UINT delay, const struct parsedname *pn);
+static GOOD_OR_BAD DS9490_ProgramPulse(const struct parsedname *pn);
 static int DS9490_read(BYTE * buf, size_t size, const struct parsedname *pn);
 static int DS9490_write(const BYTE * buf, size_t size, const struct parsedname *pn);
 static int DS9490_overdrive(const struct parsedname *pn);
@@ -1136,7 +1136,7 @@ static int DS9490_directory(struct device_search *ds, struct dirblob *db, const 
 	
 	DirblobClear(db);
 
-	if ( BUS_select(pn) ) {
+	if ( BAD( BUS_select(pn) ) ) {
 		LEVEL_DEBUG("Selection problem before a directory listing") ;
 		return -EIO ;
 	}
@@ -1252,9 +1252,9 @@ static int FindDiscrepancy(BYTE * last_sn, BYTE * discrepancy_sn)
 /* Returns 0=goodDS9490_SetSpeed
    bad = -EIO
  */
-static int DS9490_PowerByte(BYTE byte, BYTE * resp, UINT delay, const struct parsedname *pn)
+static GOOD_OR_BAD DS9490_PowerByte(BYTE byte, BYTE * resp, UINT delay, const struct parsedname *pn)
 {
-	int ret;
+	ZERO_OR_ERROR ret;
 
 	LEVEL_DATA("start");
 
@@ -1270,12 +1270,12 @@ static int DS9490_PowerByte(BYTE byte, BYTE * resp, UINT delay, const struct par
 		ret = 0;
 	}
 	DS9490_HaltPulse(pn);
-	return ret;
+	return ret==0 ? gbGOOD : gbBAD ;
 }
 
-static int DS9490_ProgramPulse(const struct parsedname *pn)
+static GOOD_OR_BAD DS9490_ProgramPulse(const struct parsedname *pn)
 {
-	int ret;
+	ZERO_OR_ERROR ret;
 
 	// set pullup to strong5 or program
 	// set the strong pullup duration to infinite
@@ -1286,9 +1286,9 @@ static int DS9490_ProgramPulse(const struct parsedname *pn)
 
 	if (DS9490_HaltPulse(pn) != 0) {
 		LEVEL_DEBUG("Couldn't reset the program pulse level back to normal");
-		return -EIO;
+		return gbBAD;
 	}
-	return ret;
+	return ret==0 ? gbGOOD : gbBAD ;
 }
 
 static int DS9490_HaltPulse(const struct parsedname *pn)

@@ -135,9 +135,7 @@ static GOOD_OR_BAD OW_r_mem(BYTE * data, size_t size, off_t offset, struct parse
 		TRXN_CRC8(q, rest),
 		TRXN_END,
 	};
-	if (BUS_transaction(t, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(t, pn)) ;
 
 	memcpy(data, q, size);
 	return gbGOOD;

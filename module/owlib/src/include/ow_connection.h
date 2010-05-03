@@ -124,9 +124,9 @@ struct interface_routines {
 	/* Bulk of search routine, after set ups for first or alarm or family */
 	int (*next_both) (struct device_search * ds, const struct parsedname * pn);
 	/* Send a byte with bus power to follow */
-	int (*PowerByte) (const BYTE data, BYTE * resp, const UINT delay, const struct parsedname * pn);
+	GOOD_OR_BAD (*PowerByte) (const BYTE data, BYTE * resp, const UINT delay, const struct parsedname * pn);
 	/* Send a 12V 480msec oulse to program EEPROM */
-	int (*ProgramPulse) (const struct parsedname * pn);
+	GOOD_OR_BAD (*ProgramPulse) (const struct parsedname * pn);
 	/* send and recieve data -- byte at a time */
 	int (*sendback_data) (const BYTE * data, BYTE * resp, const size_t len, const struct parsedname * pn);
 	/* send and recieve data -- byte at a time */
@@ -134,7 +134,7 @@ struct interface_routines {
 	/* send and recieve data -- bit at a time */
 	int (*sendback_bits) (const BYTE * databits, BYTE * respbits, const size_t len, const struct parsedname * pn);
 	/* select a device */
-	int (*select) (const struct parsedname * pn);
+	GOOD_OR_BAD (*select) (const struct parsedname * pn);
 	/* reconnect with a balky device */
 	int (*reconnect) (const struct parsedname * pn);
 	/* Close the connection (port) */
@@ -615,7 +615,7 @@ int BUS_first(struct device_search *ds, const struct parsedname *pn);
 int BUS_next(struct device_search *ds, const struct parsedname *pn);
 int BUS_first_alarm(struct device_search *ds, const struct parsedname *pn);
 
-int BUS_select(const struct parsedname *pn);
+GOOD_OR_BAD BUS_select(const struct parsedname *pn);
 int BUS_next_both_bitbang(struct device_search *ds, const struct parsedname *pn) ;
 
 int BUS_sendout_cmd(const BYTE * cmd, const size_t len, const struct parsedname *pn);
@@ -625,8 +625,8 @@ int BUS_send_data(const BYTE * data, const size_t len, const struct parsedname *
 int BUS_readin_data(BYTE * data, const size_t len, const struct parsedname *pn);
 int BUS_verify(BYTE search, const struct parsedname *pn);
 
-int BUS_PowerByte(const BYTE data, BYTE * resp, UINT delay, const struct parsedname *pn);
-int BUS_ProgramPulse(const struct parsedname *pn);
+GOOD_OR_BAD BUS_PowerByte(const BYTE data, BYTE * resp, UINT delay, const struct parsedname *pn);
+GOOD_OR_BAD BUS_ProgramPulse(const struct parsedname *pn);
 int BUS_next_both(struct device_search *ds, const struct parsedname *pn);
 int BUS_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 int BUS_select_and_sendback(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);

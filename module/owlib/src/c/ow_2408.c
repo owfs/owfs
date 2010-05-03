@@ -604,11 +604,7 @@ static GOOD_OR_BAD OW_r_reg(BYTE * data, const struct parsedname *pn)
 		TRXN_END,
 	};
 
-	//printf( "R_REG read attempt\n");
-	if (BUS_transaction(t, pn)) {
-		return gbBAD;
-	}
-	//printf( "R_REG read ok\n");
+	RETURN_BAD_IF_BAD(BUS_transaction(t, pn)) ;
 
 	memcpy(data, &p[3], 6);
 	return gbGOOD;
@@ -625,16 +621,12 @@ static GOOD_OR_BAD OW_w_pio(const BYTE data, const struct parsedname *pn)
 		TRXN_END,
 	};
 
-	//printf( "W_PIO attempt\n");
-    if (BUS_transaction(t, pn)) {
+	RETURN_BAD_IF_BAD(BUS_transaction(t, pn)) ;
+
+	if (read_back[0] != 0xAA) {
 		return gbBAD;
-    }
-	//printf( "W_PIO attempt\n");
-	//printf("wPIO data = %2X %2X %2X %2X %2X\n",write_string[0],write_string[1],write_string[2],read_back[0],read_back[1]) ;
-    if (read_back[0] != 0xAA) {
-		return gbBAD;
-    }
-	//printf( "W_PIO 0xAA ok\n");
+	}
+
 	/* Ignore byte 5 read_back[1] the PIO status byte */
 	return gbGOOD;
 }
@@ -662,12 +654,7 @@ static GOOD_OR_BAD OW_w_pios(const BYTE * data, const size_t size, const struct 
 		formatted_data[formatted_data_index + 2] = 0xFF;
 		formatted_data[formatted_data_index + 3] = 0xFF;
 	}
-	//{ int j ; printf("IN  "); for (j=0 ; j<formatted_size ; ++j ) printf("%.2X ",formatted_data[j]); printf("\n") ; }
-	if (BUS_transaction(t, pn)) {
-		return gbBAD;
-	}
-	//{ int j ; printf("OUT "); for (j=0 ; j<formatted_size ; ++j ) printf("%.2X ",formatted_data[j]); printf("\n") ; }
-	// check the array
+	RETURN_BAD_IF_BAD(BUS_transaction(t, pn)) ;
 	for (i = 0; i < size; ++i) {
 		int formatted_data_index = 4 * i;
 		BYTE rdata = ((BYTE)~data[i]);  // get rid of warning: comparison of promoted ~unsigned with unsigned
@@ -700,15 +687,10 @@ static GOOD_OR_BAD OW_c_latch(const struct parsedname *pn)
 		TRXN_END,
 	};
 
-	//printf( "C_LATCH attempt\n");
-	if (BUS_transaction(t, pn)) {
-		return gbBAD;
-	}
-	//printf( "C_LATCH transact\n");
+	RETURN_BAD_IF_BAD(BUS_transaction(t, pn)) ;
 	if (read_back[0] != 0xAA) {
 		return gbBAD;
 	}
-	//printf( "C_LATCH 0xAA ok\n");
 
 	return gbGOOD;
 }
@@ -731,11 +713,7 @@ static GOOD_OR_BAD OW_w_control(const BYTE data, const struct parsedname *pn)
 		TRXN_END,
 	};
 
-	//printf( "W_CONTROL attempt\n");
-	if (BUS_transaction(t, pn)) {
-		return gbBAD;
-	}
-	//printf( "W_CONTROL ok, now check %.2X -> %.2X\n",data,check_string[3]);
+	RETURN_BAD_IF_BAD(BUS_transaction(t, pn)) ;
 
 	return ((data & 0x0F) != (check_string[3] & 0x0F)) ? gbBAD : gbGOOD ;
 }
@@ -760,18 +738,12 @@ static GOOD_OR_BAD OW_w_s_alarm(const BYTE * data, const struct parsedname *pn)
 	// get the existing register contents
 	RETURN_BAD_IF_BAD( OW_r_reg(old_register, pn) ) ;
 
-	//printf("S_ALARM 0x8B... = %.2X %.2X %.2X \n",data[0],data[1],data[2]) ;
 	control_value[0] = (data[2] & 0x03) | (old_register[5] & 0x0C);
-	//printf("S_ALARM adjusted 0x8B... = %.2X %.2X %.2X \n",data[0],data[1],cr) ;
 
-	if (BUS_transaction(t, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(t, pn)) ;
 
 	/* Re-Read registers */
 	RETURN_BAD_IF_BAD(OW_r_reg(new_register, pn)) ;
-
-	//printf("S_ALARM back 0x8B... = %.2X %.2X %.2X \n",d[3],d[4],d[5]) ;
 
 	return (data[0] != new_register[3]) || (data[1] != new_register[4])
 		|| (control_value[0] != (new_register[5] & 0x0F)) ? gbBAD : gbGOOD;

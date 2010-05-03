@@ -196,7 +196,7 @@ ZERO_OR_ERROR FS_present(struct one_wire_query *owq)
 			TRXN_NVERIFY,
 			TRXN_END,
 		};
-		OWQ_Y(owq) = BUS_transaction(t, pn) ? 0 : 1;
+		OWQ_Y(owq) = BAD(BUS_transaction(t, pn)) ? 0 : 1;
 	}
 	return 0;
 }
@@ -234,7 +234,7 @@ static INDEX_OR_ERROR CheckThisConnection(int bus_nr, struct parsedname *pn)
 			TRXN_END,
 		};
 		/* this can only be done on local buses */
-		if (BUS_transaction(t, pn_copy) == 0 ) {
+		if ( GOOD( BUS_transaction(t, pn_copy) ) ) {
 			/* Device was found on this in-device, return it's index */
 			LEVEL_DEBUG("Presence found on local bus %s\n",SAFESTRING(in->name)) ;
 			Cache_Add_Device(in->index,pn_copy->sn) ; // add or update cache */

@@ -72,7 +72,7 @@ int BUS_next(struct device_search *ds, const struct parsedname *pn)
 	if (!RootNotBranch(pn)		// branch directory
 		|| (pn->selected_connection->iroutines.flags & ADAP_FLAG_dir_auto_reset) == 0	// needs this flag
 		) {
-		if (BUS_select(pn)) {
+		if ( BAD( BUS_select(pn) ) ) {
 			return 1;
 		}
 	}
@@ -126,7 +126,7 @@ int BUS_next_both(struct device_search *ds, const struct parsedname *pn)
 /* Not used by more advanced adapters */
 int BUS_next_both_bitbang(struct device_search *ds, const struct parsedname *pn)
 {
-	if ( BUS_select(pn) ) {
+	if ( BAD( BUS_select(pn) ) ) {
 		return -EIO ;
 	} else {
 		int search_direction = 0;	/* initialization just to forestall incorrect compiler warning */

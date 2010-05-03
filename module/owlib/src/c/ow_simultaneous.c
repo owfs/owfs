@@ -102,7 +102,7 @@ static ZERO_OR_ERROR FS_w_convert_temp(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	struct parsedname pn_directory;
-	int ret ;
+	GOOD_OR_BAD ret ;
 	const BYTE cmd_temp[] = { _1W_SKIP_ROM, _1W_CONVERT_T };
 	
 	if (OWQ_Y(owq) == 0) {
@@ -117,7 +117,7 @@ static ZERO_OR_ERROR FS_w_convert_temp(struct one_wire_query *owq)
 			/* Since writing to /simultaneous/temperature is done recursive to all
 			* adapters, we have to fake a successful write even if it's detected
 			* as a bad adapter. */
-			ret = 0 ;
+			ret = gbGOOD ;
 			break ;
 		case adapter_DS2482_800: {
 			// special case for the 8-channel DS2482-800
@@ -144,7 +144,7 @@ static ZERO_OR_ERROR FS_w_convert_temp(struct one_wire_query *owq)
 			break ;
 	}
 	LEVEL_DEBUG("Temperature convert ret=%d", ret);
-	if (ret) {
+	if ( BAD(ret) ) {
 		Cache_Del_Simul(simul_temp, pn);
 	}
 	return 0;
@@ -166,7 +166,6 @@ static ZERO_OR_ERROR FS_w_convert_volt(struct one_wire_query *owq)
 	* adapters, we have to fake a successful write even if it's detected
 	* as a bad adapter. */
 	if (pn->selected_connection->Adapter != adapter_Bad) {
-		int ret ;
 		BYTE cmd_volt[] = { _1W_SKIP_ROM, 0x3C, 0x0F, 0x00, 0xFF, 0xFF };
 		struct transaction_log t[] = {
 			TRXN_START,
@@ -174,9 +173,7 @@ static ZERO_OR_ERROR FS_w_convert_volt(struct one_wire_query *owq)
 			TRXN_DELAY(5),
 			TRXN_END,
 		};
-		ret = BUS_transaction(t, &pn_directory);
-		LEVEL_DEBUG("Voltage convert ret=%d", ret);
-		if (ret == 0) {
+		if ( GOOD(BUS_transaction(t, &pn_directory)) ) {
 			Cache_Add_Internal(NULL, 0, &ipSimul[simul_volt], &pn_directory);
 		}
 	}
@@ -221,9 +218,7 @@ static ZERO_OR_ERROR FS_r_present(struct one_wire_query *owq)
 			read_ROM[0] = _1W_READ_ROM;
 
 			FS_LoadDirectoryOnly(&pn_directory, pn);
-			if (BUS_transaction(t, &pn_directory)) {
-				return -EINVAL;
-			}
+			RETURN_ERROR_IF_BAD(BUS_transaction(t, &pn_directory)) ;
 			if (memcmp(resp, collisions, SERIAL_NUMBER_SIZE)) {	// all devices
 				OWQ_Y(owq) = 1;		// YES present
 			} else if (memcmp(resp, match, SERIAL_NUMBER_SIZE)) {	// some device(s) complained
@@ -273,9 +268,7 @@ static ZERO_OR_ERROR FS_r_single(struct one_wire_query *owq)
 			read_ROM[0] = pn->selected_filetype->data.i;
 
 			FS_LoadDirectoryOnly(&pn_directory, pn);
-			if (BUS_transaction(t, &pn_directory)) {
-				return -EINVAL;
-			}
+			RETURN_ERROR_IF_BAD(BUS_transaction(t, &pn_directory)) ;
 			LEVEL_DEBUG("dat=" SNformat " crc8=%02x", SNvar(resp), CRC8(resp, 7));
 			if ((memcmp(resp, collisions, SERIAL_NUMBER_SIZE) != 0) && (memcmp(resp, match, SERIAL_NUMBER_SIZE) != 0) && (CRC8(resp, SERIAL_NUMBER_SIZE) == 0)) {	// non-empty, and no CRC error
 				OW_single2cache(resp, &pn_directory);

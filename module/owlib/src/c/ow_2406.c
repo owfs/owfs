@@ -307,9 +307,7 @@ static ZERO_OR_ERROR FS_voltage(struct one_wire_query *owq)
 
 	FS_del_sibling( "infobyte", owq ) ;
 
-	if (BUS_transaction(t, PN(owq))) {
-		return -EINVAL;
-	}
+	RETURN_ERROR_IF_BAD(BUS_transaction(t, PN(owq))) ;
 
 	// grab the msb from the adc (in this case, it will be written in the 6th byte sent out)
 	// then take the ones complement and reverse bits.
@@ -340,10 +338,7 @@ static GOOD_OR_BAD OW_r_mem(BYTE * data, const size_t size, const off_t offset, 
 		TRXN_END,
 	};
 
-	if (BUS_transaction(t, pn)) {
-		return gbBAD;
-	}
-
+	RETURN_BAD_IF_BAD(BUS_transaction(t, pn)) ;
 	memcpy(data, &p[3], size);
 	return gbGOOD;
 }
@@ -359,10 +354,7 @@ static GOOD_OR_BAD OW_r_control(BYTE * data, const struct parsedname *pn)
 		TRXN_END,
 	};
 
-	if (BUS_transaction(t, pn)) {
-		return gbBAD;
-	}
-
+	RETURN_BAD_IF_BAD(BUS_transaction(t, pn)) ;
 	*data = p[3];
 	return gbGOOD;
 }
@@ -433,9 +425,7 @@ static GOOD_OR_BAD OW_full_access(BYTE * data, const struct parsedname *pn)
 		TRXN_END,
 	};
 
-	if (BUS_transaction(t, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(t, pn)) ;
 	//printf("DS2406 access %.2X %.2X -> %.2X %.2X \n",data[0],data[1],p[3],p[4]);
 	//printf("DS2406 CRC ok\n");
 	data[0] = p[3];
@@ -690,9 +680,7 @@ static GOOD_OR_BAD TAI8570_Read(UINT * u, const struct s_TAI8570 *tai, struct pa
 		data[j++] = 0xFF;
 		data[j++] = 0xFA;
 	}
-	if (BUS_transaction(t, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(t, pn)) ;
 	for (j = 0; j < 32; j += 2) {
 		U = U << 1;
 		if (data[j] & 0x80) {
@@ -720,9 +708,7 @@ static GOOD_OR_BAD TAI8570_Check(const struct s_TAI8570 *tai, struct parsedname 
 	RETURN_BAD_IF_BAD( TAI8570_config(CFG_READPULSE, pn) );		// config write
 	//printf("TAI8570 check ") ;
 	for (i = 0; i < 100; ++i) {
-		if (BUS_transaction(t, pn)) {
-			return gbBAD;
-		}
+		RETURN_BAD_IF_BAD(BUS_transaction(t, pn)) ;
 		//printf("%.2X ",data[0]) ;
 		if (data[0] != 0xFF) {
 			break;

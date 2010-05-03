@@ -70,7 +70,7 @@ $Id$
 
 typedef int SIZE_OR_ERROR ;
 typedef int ZERO_OR_ERROR ;
-typedef enum { gbGOOD, gbBAD } GOOD_OR_BAD  ;
+typedef enum { gbGOOD, gbBAD, gbOTHER, } GOOD_OR_BAD  ; // OTHER breaks the encapsulation a bit.
 
 #define GOOD(x)	((x)==gbGOOD)
 #define BAD(x)	((x)!=gbGOOD)

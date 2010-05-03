@@ -23,9 +23,9 @@ static int HA7E_sendback_part(const BYTE * data, BYTE * resp, const size_t size,
 static int HA7E_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 static void HA7E_setroutines(struct connection_in *in);
 static void HA7E_close(struct connection_in *in);
-static int HA7E_directory(struct device_search *ds, struct dirblob *db, const struct parsedname *pn);
-static int HA7E_select( const struct parsedname * pn ) ;
-static int HA7E_resync( const struct parsedname * pn ) ;
+static GOOD_OR_BAD HA7E_directory(struct device_search *ds, struct dirblob *db, const struct parsedname *pn);
+static GOOD_OR_BAD HA7E_select( const struct parsedname * pn ) ;
+static GOOD_OR_BAD HA7E_resync( const struct parsedname * pn ) ;
 static void HA7E_powerdown(struct connection_in * in) ;
 
 static void HA7E_setroutines(struct connection_in *in)
@@ -116,7 +116,7 @@ static int HA7E_next_both(struct device_search *ds, const struct parsedname *pn)
 	COM_flush(pn->selected_connection);
 
 	if (ds->index == -1) {
-		if (HA7E_directory(ds, db, pn)) {
+		if ( BAD( HA7E_directory(ds, db, pn) ) ) {
 			return -EIO;
 		}
 	}
@@ -152,7 +152,7 @@ static int HA7E_next_both(struct device_search *ds, const struct parsedname *pn)
 /* Only called for the first element, everything else comes from dirblob */
 /* returns 0 even if no elements, errors only on communication errors    */
 /************************************************************************/
-static int HA7E_directory(struct device_search *ds, struct dirblob *db, const struct parsedname *pn)
+static GOOD_OR_BAD HA7E_directory(struct device_search *ds, struct dirblob *db, const struct parsedname *pn)
 {
 	char resp[17];
 	BYTE sn[SERIAL_NUMBER_SIZE];
@@ -191,7 +191,7 @@ static int HA7E_directory(struct device_search *ds, struct dirblob *db, const st
 			return HA7E_resync(pn) ;
 		}
 		if ( resp[0] == 0x0D ) {
-			return 0 ; // end of list
+			return gbGOOD ; // end of list
 		}
 		if (COM_read((BYTE*)&resp[1], 16, pn->selected_connection)) {
 			return HA7E_resync(pn) ;
@@ -225,7 +225,7 @@ static int HA7E_directory(struct device_search *ds, struct dirblob *db, const st
 	}
 }
 
-static int HA7E_resync( const struct parsedname * pn )
+static GOOD_OR_BAD HA7E_resync( const struct parsedname * pn )
 {
 	COM_flush(pn->selected_connection);
 	HA7E_reset(pn);
@@ -234,10 +234,10 @@ static int HA7E_resync( const struct parsedname * pn )
 	// Poison current "Address" for adapter
 	pn->selected_connection->connin.ha7e.sn[0] = 0 ; // so won't match
 
-	return -EIO ;
+	return gbBAD ;
 }
 
-static int HA7E_select( const struct parsedname * pn )
+static GOOD_OR_BAD HA7E_select( const struct parsedname * pn )
 {
 	char send_address[18] ;
 	char resp_address[17] ;
@@ -280,7 +280,7 @@ static int HA7E_select( const struct parsedname * pn )
 	// Set as current "Address" for adapter
 	memcpy( pn->selected_connection->connin.ha7e.sn, pn->sn, SERIAL_NUMBER_SIZE) ;
 
-	return 0 ;
+	return gbGOOD ;
 }
 
 //  Send data and return response block -- up to 32 bytes
@@ -296,11 +296,13 @@ static int HA7E_sendback_part(const BYTE * data, BYTE * resp, const size_t size,
 
 	if ( COM_write((BYTE*)send_data,size*2+4,pn->selected_connection) ) {
 		LEVEL_DEBUG("Error with sending HA7E block") ;
-		return HA7E_resync(pn) ;
+		HA7E_resync(pn) ;
+		return -EIO ;
 	}
 	if ( COM_read((BYTE*)get_data,size*2+1,pn->selected_connection) ) {
 		LEVEL_DEBUG("Error with reading HA7E block") ;
-		return HA7E_resync(pn) ;
+		HA7E_resync(pn) ;
+		return -EIO ;
 	}
 
 	string2bytes(get_data, resp, size) ;

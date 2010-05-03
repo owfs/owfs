@@ -16,16 +16,14 @@ $Id$
 #include "ow_connection.h"
 #include "ow_codes.h"
 
-int BUS_ProgramPulse(const struct parsedname *pn)
+GOOD_OR_BAD BUS_ProgramPulse(const struct parsedname *pn)
 {
-	int ret;
+	GOOD_OR_BAD ret = gbBAD ;
 
 	if ( FunctionExists(pn->selected_connection->iroutines.ProgramPulse) ) {
 		ret = (pn->selected_connection->iroutines.ProgramPulse) (pn);
-	} else {
-		ret = -ENOTSUP;
 	}
-	if (ret) {
+	if ( BAD(ret) ) {
 		STAT_ADD1_BUS(e_bus_program_errors, pn->selected_connection);
 	}
 	return ret;

@@ -73,7 +73,7 @@ static int LINK_next_both(struct device_search *ds, const struct parsedname *pn)
 static int LINK_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 static void LINK_setroutines(struct connection_in *in);
 static int LINK_directory(struct device_search *ds, struct dirblob *db, const struct parsedname *pn);
-static int LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay, const struct parsedname *pn);
+static GOOD_OR_BAD LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay, const struct parsedname *pn);
 static void LINK_close(struct connection_in *in) ;
 
 static int LinkVersion_knownstring( const char * reported_string, struct LINK_id * tbl, struct connection_in * in ) ;
@@ -609,7 +609,7 @@ static void LINK_close(struct connection_in *in)
 	}
 }
 
-static int LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay, const struct parsedname *pn)
+static GOOD_OR_BAD LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay, const struct parsedname *pn)
 {
 	ASCII buf[3] = "pxx";
 	BYTE discard[3] ;
@@ -617,7 +617,7 @@ static int LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay, const 
 	num2string(&buf[1], data);
 	
 	if (LINK_write(LINK_string(buf), 3, pn) || LINK_read(LINK_string(buf), 2, 0, pn)) {
-		return -EIO;			// send just the <CR>
+		return gbBAD;			// send just the <CR>
 	}
 	
 	resp[0] = string2num(buf);
@@ -627,9 +627,9 @@ static int LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay, const 
 	
 	// flush the buffers
 	if (LINK_write(LINK_string("\r"), 1, pn) || LINK_read(discard, 2, 1, pn)) {
-		return -EIO;
+		return gbBAD;
 	}
-	return 0 ;
+	return gbGOOD ;
 }
 
 //  _sendback_data

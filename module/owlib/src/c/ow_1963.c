@@ -158,24 +158,16 @@ static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parse
 	/* Copy to scratchpad */
 	memcpy(&p[3], data, size);
 
-	if (BUS_transaction(((offset + size) & 0x1F) != 0 ? tcopy : tcopy_crc16, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(((offset + size) & 0x1F) != 0 ? tcopy : tcopy_crc16, pn)) ;
 
 	/* Re-read scratchpad and compare */
 	/* Note that we tacitly shift the data one byte down for the E/S byte */
 	p[0] = _1W_READ_SCRATCHPAD;
-	if (BUS_transaction(tread, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(tread, pn)) ;
 
 	/* Copy Scratchpad to SRAM */
 	p[0] = _1W_COPY_SCRATCHPAD;
-	if (BUS_transaction(tsram, pn)) {
-		return gbBAD;
-	}
-
-	return gbGOOD;
+	return BUS_transaction(tsram, pn) ;
 }
 
 /* read counter (just past memory) */

@@ -625,10 +625,9 @@ static GOOD_OR_BAD OW_r_mem_small(BYTE * data, size_t size, off_t offset, struct
 		TRXN_WR_CRC16(p, 4, size),
 		TRXN_END,
 	};
-	//printf("About to read memory location %X length %d\n",(unsigned int)offset,(unsigned int) size)	;	
-	if (BUS_transaction(t, pn)) {
-		return gbBAD;
-	}
+
+	RETURN_BAD_IF_BAD(BUS_transaction(t, pn)) ;
+
 	memcpy(data, &p[4], size);
 	return gbGOOD;
 }
@@ -642,9 +641,7 @@ static GOOD_OR_BAD OW_version( UINT * version, struct parsedname * pn )
 		TRXN_END,
 	} ;
 		
-	if (BUS_transaction(t, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(t, pn)) ;
 
 	version[0] = BAE_uint16(&p[1]) ;
 	return gbGOOD ;
@@ -659,9 +656,7 @@ static GOOD_OR_BAD OW_type( UINT * localtype, struct parsedname * pn )
 		TRXN_END,
 	} ;
 	
-	if (BUS_transaction(t, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(t, pn)) ;
 	localtype[0] = BAE_uint16(&p[1]) ;
 	return gbGOOD ;
 };

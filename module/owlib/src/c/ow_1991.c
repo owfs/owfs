@@ -218,9 +218,8 @@ static GOOD_OR_BAD OW_w_reset_password(const BYTE * data, const size_t size, con
 	memcpy(passwd, data, MIN(size, 8));
 	set_password[1] = pn->extension << 6;
 	set_password[2] = ~(set_password[1]);
-	if (BUS_transaction(tscratch, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(tscratch, pn)) ;
+
 	/* Verification is done... now send ident + password
 	 * Note: ALL saved data in subkey will be deleted during this operation
 	 */
@@ -358,15 +357,11 @@ static GOOD_OR_BAD OW_w_ident(const BYTE * data, const size_t size, const off_t 
 	write_scratch[2] = ~(write_scratch[1]);
 	memset(all_data, 0, 0x40);
 	memcpy(all_data, data, MIN(size, 8));
-	if (BUS_transaction(tscratch, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(tscratch, pn)) ;
 
 	copy_scratch[1] = pn->extension << 6;
 	copy_scratch[2] = ~(copy_scratch[1]);
-	if (BUS_transaction(tcopy, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(tcopy, pn)) ;
 
 	return gbGOOD;
 }
@@ -394,16 +389,12 @@ static GOOD_OR_BAD OW_w_change_password(const BYTE * data, const size_t size, co
 	write_scratch[2] = ~(write_scratch[1]);
 	memset(all_data, 0, 0x40);
 	memcpy(&all_data[0x08], data, MIN(size, 8));
-	if (BUS_transaction(tscratch, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(tscratch, pn)) ;
 
 	copy_scratch[1] = pn->extension << 6;
 	copy_scratch[2] = ~(copy_scratch[1]);
 
-	if (BUS_transaction(tcopy, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(tcopy, pn)) ;
 	memcpy(global_passwd[pn->extension], &all_data[0x08], 8);
 
 	return gbGOOD;
@@ -450,9 +441,7 @@ static GOOD_OR_BAD OW_w_page(const BYTE * data, const size_t size, const off_t o
 	memset(all_data, 0, 0x40);
 	memcpy(&all_data[0x10], data, size);
 
-	if (BUS_transaction(tscratch, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(tscratch, pn)) ;
 
 	/*
 	 * There are two possibilities to write memory.
@@ -469,9 +458,7 @@ static GOOD_OR_BAD OW_w_page(const BYTE * data, const size_t size, const off_t o
 		copy_scratch[1] = (pn->extension << 6);
 		copy_scratch[2] = ~(copy_scratch[1]);
 		tcopy[2].out = cp_array[DATA + i];
-		if (BUS_transaction(tcopy, pn)) {
-			return gbBAD;
-		}
+		RETURN_BAD_IF_BAD(BUS_transaction(tcopy, pn)) ;
 		left -= nr_bytes;
 	}
 	return gbGOOD;

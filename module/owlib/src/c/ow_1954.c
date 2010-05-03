@@ -156,9 +156,7 @@ static GOOD_OR_BAD OW_r_ipr(struct one_wire_query *owq)
 		TRXN_WR_CRC16(p, 2, 128),
 		TRXN_END,
 	};
-	if (BUS_transaction(t, PN(owq))) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(t, PN(owq))) ;
 	if (size > 128) {
 		size = 128;
 	}
@@ -192,9 +190,7 @@ static GOOD_OR_BAD OW_r_status(struct one_wire_query *owq)
 		TRXN_WR_CRC16(p, 1, 4),
 		TRXN_END,
 	};
-	if (BUS_transaction(t, PN(owq))) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(t, PN(owq)));
 	if (size > 4) {
 		size = 4;
 	}

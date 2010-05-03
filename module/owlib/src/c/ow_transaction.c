@@ -25,13 +25,13 @@ struct transaction_bundle {
 };
 
 // static int BUS_transaction_length( const struct transaction_log * tl, const struct parsedname * pn ) ;
-static ZERO_OR_ERROR BUS_transaction_single(const struct transaction_log *t, const struct parsedname *pn);
+static GOOD_OR_BAD BUS_transaction_single(const struct transaction_log *t, const struct parsedname *pn);
 
-static ZERO_OR_ERROR Bundle_pack(const struct transaction_log *tl, const struct parsedname *pn);
-static ZERO_OR_ERROR Pack_item(const struct transaction_log *tl, struct transaction_bundle *tb);
-static ZERO_OR_ERROR Bundle_ship(struct transaction_bundle *tb, const struct parsedname *pn);
-static ZERO_OR_ERROR Bundle_enroute(struct transaction_bundle *tb, const struct parsedname *pn);
-static ZERO_OR_ERROR Bundle_unpack(struct transaction_bundle *tb);
+static GOOD_OR_BAD Bundle_pack(const struct transaction_log *tl, const struct parsedname *pn);
+static GOOD_OR_BAD Pack_item(const struct transaction_log *tl, struct transaction_bundle *tb);
+static GOOD_OR_BAD Bundle_ship(struct transaction_bundle *tb, const struct parsedname *pn);
+static GOOD_OR_BAD Bundle_enroute(struct transaction_bundle *tb, const struct parsedname *pn);
+static GOOD_OR_BAD Bundle_unpack(struct transaction_bundle *tb);
 
 static void Bundle_init(struct transaction_bundle *tb, const struct parsedname *pn);
 
@@ -40,12 +40,12 @@ static void Bundle_init(struct transaction_bundle *tb, const struct parsedname *
 /* Bus transaction */
 /* Encapsulates communication with a device, including locking the bus, reset and selection */
 /* Then a series of bytes is sent and returned, including sending data and reading the return data */
-ZERO_OR_ERROR BUS_transaction(const struct transaction_log *tl, const struct parsedname *pn)
+GOOD_OR_BAD BUS_transaction(const struct transaction_log *tl, const struct parsedname *pn)
 {
-	ZERO_OR_ERROR ret = 0;
+	GOOD_OR_BAD ret ;
 
 	if (tl == NULL) {
-		return 0;
+		return gbGOOD;
 	}
 	BUSLOCK(pn);
 	ret = BUS_transaction_nolock(tl, pn);
@@ -54,10 +54,10 @@ ZERO_OR_ERROR BUS_transaction(const struct transaction_log *tl, const struct par
 	return ret;
 }
 
-ZERO_OR_ERROR BUS_transaction_nolock(const struct transaction_log *tl, const struct parsedname *pn)
+GOOD_OR_BAD BUS_transaction_nolock(const struct transaction_log *tl, const struct parsedname *pn)
 {
 	const struct transaction_log *t = tl;
-	ZERO_OR_ERROR ret = 0;
+	GOOD_OR_BAD ret = gbGOOD;
 
 	if (pn->selected_connection->iroutines.flags & ADAP_FLAG_bundle) {
 		return Bundle_pack(tl, pn);
@@ -66,18 +66,18 @@ ZERO_OR_ERROR BUS_transaction_nolock(const struct transaction_log *tl, const str
 	do {
 		//printf("Transact type=%d\n",t->type) ;
 		ret = BUS_transaction_single(t, pn);
-		if (ret == -ESRCH) {	// trxn_done flag
-			ret = 0;			// restore no error code
+		if (ret == gbOTHER) {	// trxn_done flag
+			ret = gbGOOD;			// restore no error code
 			break;				// but stop looping anyways
 		}
 		++t;
-	} while (ret == 0);
+	} while ( GOOD(ret) );
 	return ret;
 }
 
-static ZERO_OR_ERROR BUS_transaction_single(const struct transaction_log *t, const struct parsedname *pn)
+static GOOD_OR_BAD BUS_transaction_single(const struct transaction_log *t, const struct parsedname *pn)
 {
-	ZERO_OR_ERROR ret = 0;
+	GOOD_OR_BAD ret = gbGOOD;
 	switch (t->type) {
 	case trxn_select:			// select a 1-wire device (by unique ID)
 		ret = BUS_select(pn);
@@ -86,7 +86,7 @@ static ZERO_OR_ERROR BUS_transaction_single(const struct transaction_log *t, con
 	case trxn_compare:			// match two strings -- no actual 1-wire
 		if ((t->in == NULL) || (t->out == NULL)
 			|| (memcmp(t->in, t->out, t->size) != 0)) {
-			ret = -EINVAL;
+			ret = gbBAD;
 		}
 		LEVEL_DEBUG("compare = %d", ret);
 		break;
@@ -119,7 +119,7 @@ static ZERO_OR_ERROR BUS_transaction_single(const struct transaction_log *t, con
 				ret = BUS_sendback_data(t->out, dummy, t->size, pn);
 				owfree(dummy);
 			} else {
-				ret = -ENOMEM;
+				ret = gbBAD;
 			}
 		}
 		LEVEL_DEBUG("blind = %d", ret);
@@ -161,12 +161,12 @@ static ZERO_OR_ERROR BUS_transaction_single(const struct transaction_log *t, con
 		LEVEL_DEBUG("Micro Delay %d", t->size);
 		break;
 	case trxn_reset:
-		ret = BUS_reset(pn);
+		ret = BUS_reset(pn)==BUS_RESET_OK ? gbGOOD : gbBAD;
 		LEVEL_DEBUG("reset = %d", ret);
 		break;
 	case trxn_end:
 		LEVEL_DEBUG("end = %d", ret);
-		return -ESRCH;			// special "end" flag
+		return gbOTHER;			// special "end" flag
 	case trxn_verify:
 		{
 			struct parsedname pn2;
@@ -177,7 +177,7 @@ static ZERO_OR_ERROR BUS_transaction_single(const struct transaction_log *t, con
 		}
 		break;
 	case trxn_nop:
-		ret = 0;
+		ret = gbGOOD;
 		break;
 	}
 	return ret;
@@ -191,41 +191,31 @@ static void Bundle_init(struct transaction_bundle *tb, const struct parsedname *
 	tb->max_size = pn->selected_connection->bundling_length;
 }
 
-static ZERO_OR_ERROR Bundle_pack(const struct transaction_log *tl, const struct parsedname *pn)
+static GOOD_OR_BAD Bundle_pack(const struct transaction_log *tl, const struct parsedname *pn)
 {
 	const struct transaction_log *t_index;
 	struct transaction_bundle s_tb;
 	struct transaction_bundle *tb = &s_tb;
 
-	LEVEL_DEBUG("start");
-
 	Bundle_init(tb, pn);
 
 	for (t_index = tl; t_index->type != trxn_end; ++t_index) {
 		switch (Pack_item(t_index, tb)) {
-		case 0:
+		case gbGOOD:
 			LEVEL_DEBUG("Item addedn");
 			break;
-		case -EINVAL:
+		case gbBAD:
 			LEVEL_DEBUG("Item cannot be bundled");
-			if (Bundle_ship(tb, pn)) {
-				return -EINVAL;
-			}
-			if (BUS_transaction_single(t_index, pn)) {
-				return -EINVAL;
-			}
+			RETURN_BAD_IF_BAD(Bundle_ship(tb, pn)) ;
+			RETURN_BAD_IF_BAD(BUS_transaction_single(t_index, pn)) ;
 			break;
-		case -EAGAIN:
+		case gbOTHER:
 			LEVEL_DEBUG("Item too big");
-			if (Bundle_ship(tb, pn)) {
-				return -EINVAL;
-			}
-			if (Pack_item(t_index, tb) == 0) {
+			RETURN_BAD_IF_BAD(Bundle_ship(tb, pn)) ;
+			if ( GOOD( Pack_item(t_index, tb) ) ) {
 				break;
 			}
-			if (BUS_transaction_single(t_index, pn)) {
-				return -EINVAL;
-			}
+			RETURN_BAD_IF_BAD(BUS_transaction_single(t_index, pn)) ;
 			break;
 		}
 	}
@@ -233,26 +223,26 @@ static ZERO_OR_ERROR Bundle_pack(const struct transaction_log *tl, const struct 
 }
 
 // Take a bundle, execute the transaction, unpack, and clear the memoblob
-static ZERO_OR_ERROR Bundle_ship(struct transaction_bundle *tb, const struct parsedname *pn)
+static GOOD_OR_BAD Bundle_ship(struct transaction_bundle *tb, const struct parsedname *pn)
 {
 	LEVEL_DEBUG("Ship Packets=%d", tb->packets);
 	if (tb->packets == 0) {
-		return 0;
+		return gbGOOD;
 	}
 
-	if (Bundle_enroute(tb, pn) != 0) {
+	if ( BAD( Bundle_enroute(tb, pn) ) ) {
 		// clear the bundle
 		MemblobClear(&tb->mb);
 		tb->packets = 0;
 		tb->select_first = 0;
-		return -EINVAL;
+		return gbBAD;
 	}
 
 	return Bundle_unpack(tb);
 }
 
 // Execute a bundle transaction (actual bytes on 1-wire bus)
-static ZERO_OR_ERROR Bundle_enroute(struct transaction_bundle *tb, const struct parsedname *pn)
+static GOOD_OR_BAD Bundle_enroute(struct transaction_bundle *tb, const struct parsedname *pn)
 {
 	ZERO_OR_ERROR ret ;
 	if (tb->select_first) {
@@ -262,24 +252,23 @@ static ZERO_OR_ERROR Bundle_enroute(struct transaction_bundle *tb, const struct 
 		ret = BUS_sendback_data(MemblobData(&(tb->mb)), MemblobData(&(tb->mb)), MemblobLength(&(tb->mb)), pn);
 		LEVEL_DEBUG("sendback = %d",ret ) ;
 	}
-	return ret ;
+	return ret<0 ? gbBAD : gbGOOD ;
 }
 
 /* See if the item can be packed
-   return -EINVAL -- cannot be packed at all
-   return -EAGAIN -- should be at start
-   return -EINTR  -- should be at end (force end)
-   return 0       -- added successfully
+   return gbBAD -- cannot be packed at all
+   return gbOTHER -- should be at start
+   return gbGOOD       -- added successfully
 */
-static ZERO_OR_ERROR Pack_item(const struct transaction_log *tl, struct transaction_bundle *tb)
+static GOOD_OR_BAD Pack_item(const struct transaction_log *tl, struct transaction_bundle *tb)
 {
-	ZERO_OR_ERROR ret = 0;				//default return value for good packets;
+	GOOD_OR_BAD ret = 0;				//default return value for good packets;
 	//printf("PACK_ITEM used=%d size=%d max=%d\n",MemblobLength(&(tl>mb)),tl->size,tb->max_size);
 	switch (tl->type) {
 	case trxn_select:			// select a 1-wire device (by unique ID)
 		LEVEL_DEBUG("pack=SELECT");
 		if (tb->packets != 0) {
-			return -EAGAIN;		// select must be first
+			return gbOTHER;		// select must be first
 		}
 		tb->select_first = 1;
 		break;
@@ -289,13 +278,13 @@ static ZERO_OR_ERROR Pack_item(const struct transaction_log *tl, struct transact
 	case trxn_read:
 		LEVEL_DEBUG(" pack=READ");
 		if (tl->size > tb->max_size) {
-			return -EINVAL;		// too big for any bundle
+			return gbBAD;		// too big for any bundle
 		}
 		if (tl->size + MemblobLength(&(tb->mb)) > tb->max_size) {
-			return -EAGAIN;		// too big for this partial bundle
+			return gbOTHER;		// too big for this partial bundle
 		}
 		if (MemblobAddChar(0xFF, tl->size, &tb->mb)) {
-			return -EINVAL;
+			return gbBAD;
 		}
 		break;
 	case trxn_match:			// write data and match response
@@ -303,28 +292,28 @@ static ZERO_OR_ERROR Pack_item(const struct transaction_log *tl, struct transact
 	case trxn_blind:			// write data and ignore response
 		LEVEL_DEBUG("pack=MATCH MODIFY BLIND");
 		if (tl->size > tb->max_size) {
-			return -EINVAL;		// too big for any bundle
+			return gbBAD;		// too big for any bundle
 		}
 		if (tl->size + MemblobLength(&(tb->mb)) > tb->max_size) {
-			return -EAGAIN;		// too big for this partial bundle
+			return gbOTHER;		// too big for this partial bundle
 		}
 		if (MemblobAdd(tl->out, tl->size, &tb->mb)) {
-			return -EINVAL;
+			return gbBAD;
 		}
 		break;
 	case trxn_power:
 	case trxn_program:
 		LEVEL_DEBUG("pack=POWER PROGRAM");
 		if (1 > tb->max_size) {
-			return -EINVAL;		// too big for any bundle
+			return gbBAD;		// too big for any bundle
 		}
 		if (1 + MemblobLength(&(tb->mb)) > tb->max_size) {
-			return -EAGAIN;		// too big for this partial bundle
+			return gbOTHER;		// too big for this partial bundle
 		}
 		if (MemblobAdd(tl->out, 1, &tb->mb)) {
-			return -EINVAL;
+			return gbBAD;
 		}
-		ret = -EINTR;			// needs delay
+		ret = gbGOOD;			// needs delay
 		break;
 	case trxn_crc8:
 	case trxn_crc8seeded:
@@ -335,13 +324,13 @@ static ZERO_OR_ERROR Pack_item(const struct transaction_log *tl, struct transact
 	case trxn_delay:
 	case trxn_udelay:
 		LEVEL_DEBUG("pack=(U)DELAYS");
-		ret = -EINTR;
+		ret = gbGOOD;
 		break;
 	case trxn_reset:
 	case trxn_end:
 	case trxn_verify:
 		LEVEL_DEBUG("pack=RESET END VERIFY");
-		return -EINVAL;
+		return gbBAD;
 	case trxn_nop:
 		LEVEL_DEBUG("pack=NOP");
 		break;
@@ -353,12 +342,12 @@ static ZERO_OR_ERROR Pack_item(const struct transaction_log *tl, struct transact
 	return ret;
 }
 
-static ZERO_OR_ERROR Bundle_unpack(struct transaction_bundle *tb)
+static GOOD_OR_BAD Bundle_unpack(struct transaction_bundle *tb)
 {
 	int packet_index;
 	const struct transaction_log *tl;
 	BYTE *data = MemblobData(&(tb->mb));
-	ZERO_OR_ERROR ret = 0;
+	GOOD_OR_BAD ret = gbGOOD;
 
 	LEVEL_DEBUG("unpacking");
 
@@ -368,13 +357,13 @@ static ZERO_OR_ERROR Bundle_unpack(struct transaction_bundle *tb)
 			LEVEL_DEBUG("unpacking #%d COMPARE", packet_index);
 			if ((tl->in == NULL) || (tl->out == NULL)
 				|| (memcmp(tl->in, tl->out, tl->size) != 0)) {
-				ret = -EINVAL;
+				ret = gbBAD;
 			}
 			break;
 		case trxn_match:		// send data and compare response
 			LEVEL_DEBUG("unpacking #%d MATCH", packet_index);
 			if (memcmp(tl->out, data, tl->size) != 0) {
-				ret = -EINVAL;
+				ret = gbBAD;
 			}
 			data += tl->size;
 			break;
@@ -398,25 +387,25 @@ static ZERO_OR_ERROR Bundle_unpack(struct transaction_bundle *tb)
 		case trxn_crc8:
 			LEVEL_DEBUG("unpacking #%d CRC8", packet_index);
 			if (CRC8(tl->out, tl->size) != 0) {
-				ret = -EINVAL;
+				ret = gbBAD;
 			}
 			break;
 		case trxn_crc8seeded:
 			LEVEL_DEBUG("unpacking #%d CRC8 SEEDED", packet_index);
 			if (CRC8seeded(tl->out, tl->size, ((UINT *) (tl->in))[0]) != 0) {
-				ret = -EINVAL;
+				ret = gbBAD;
 			}
 			break;
 		case trxn_crc16:
 			LEVEL_DEBUG("npacking #%d CRC16", packet_index);
 			if (CRC16(tl->out, tl->size) != 0) {
-				ret = -EINVAL;
+				ret = gbBAD;
 			}
 			break;
 		case trxn_crc16seeded:
 			LEVEL_DEBUG("unpacking #%d CRC16 SEEDED", packet_index);
 			if (CRC16seeded(tl->out, tl->size, ((UINT *) (tl->in))[0]) != 0) {
-				ret = -EINVAL;
+				ret = gbBAD;
 			}
 			break;
 		case trxn_delay:
@@ -432,14 +421,14 @@ static ZERO_OR_ERROR Bundle_unpack(struct transaction_bundle *tb)
 		case trxn_verify:
 			// should never get here
 			LEVEL_DEBUG("unpacking #%d RESET END VERIFY", packet_index);
-			ret = -EINVAL;
+			ret = gbBAD;
 			break;
 		case trxn_nop:
 		case trxn_select:
 			LEVEL_DEBUG("unpacking #%d NOP or SELECT", packet_index);
 			break;
 		}
-		if (ret != 0) {
+		if ( BAD(ret) ) {
 			break;
 		}
 	}

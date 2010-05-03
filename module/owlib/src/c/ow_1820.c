@@ -476,9 +476,7 @@ static GOOD_OR_BAD OW_10temp(_FLOAT * temp, const struct parsedname *pn)
 
 	/* Select particular device and start conversion */
 	if (!pow) {					// unpowered, deliver power, no communication allowed
-		if (BUS_transaction(tunpowered, pn)) {
-			return gbBAD;
-		}
+		RETURN_BAD_IF_BAD(BUS_transaction(tunpowered, pn)) ;
 	} else if ( BAD( FS_Test_Simultaneous( simul_temp, delay, pn) ) ) {	// powered
 		// Simultaneous not valid, so do a conversion
 		GOOD_OR_BAD ret;
@@ -514,9 +512,7 @@ static GOOD_OR_BAD OW_power(BYTE * data, const struct parsedname *pn)
 			TRXN_END,
 		};
 	
-		if (BUS_transaction(tpower, pn)) {
-			return gbBAD;
-		}
+		RETURN_BAD_IF_BAD(BUS_transaction(tpower, pn)) ;
 		Cache_Add_Internal(data, sizeof(BYTE), InternalProp(POW), pn);
 	}
 	return gbGOOD;
@@ -555,16 +551,12 @@ static GOOD_OR_BAD OW_22temp(_FLOAT * temp, const int resolution, const struct p
 		|| stored_resolution != resolution) {
 		BYTE resolution_register = Resolutions[resolution - 9].config;
 		/* Get existing settings */
-		if (OW_r_scratchpad(data, pn)) {
-			return gbBAD;
-		}
+		RETURN_BAD_IF_BAD(OW_r_scratchpad(data, pn)) ;
 		/* Put in new settings (if different) */
 		if ((data[4] | 0x1F) != resolution_register) {	// ignore lower 5 bits
 			must_convert = gbBAD ; // resolution has changed
 			data[4] = (resolution_register & 0x60) | 0x1F ;
-			if (OW_w_scratchpad(&data[2], pn)) {
-				return gbBAD;
-			}
+			RETURN_BAD_IF_BAD(OW_w_scratchpad(&data[2], pn)) ;
 			Cache_Add_Internal(&resolution, sizeof(int), InternalProp(RES), pn);
 		}
 	}
@@ -580,9 +572,7 @@ static GOOD_OR_BAD OW_22temp(_FLOAT * temp, const int resolution, const struct p
 		LEVEL_DEBUG("Unpowered temperature conversion -- %d msec", delay);
 		// If not powered, no Simultaneous for this chip
 		must_convert = gbBAD ;
-		if (BUS_transaction(tunpowered, pn)) {
-			return gbBAD;
-		}
+		RETURN_BAD_IF_BAD(BUS_transaction(tunpowered, pn)) ;
 	} else if ( BAD(must_convert) || BAD( FS_Test_Simultaneous( simul_temp, delay, pn) ) ) {
 		// No Simultaneous active, so need to "convert"
 		// powered, so release bus immediately after issuing convert
@@ -594,9 +584,7 @@ static GOOD_OR_BAD OW_22temp(_FLOAT * temp, const int resolution, const struct p
 		RETURN_BAD_IF_BAD(ret)
 	}
 
-	if (OW_r_scratchpad(data, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(OW_r_scratchpad(data, pn)) ;
 
 	if ( data[1]!=0x05 || data[0]!=0x50 ) { // not 85C
 		temp[0] = OW_masked_temperature( data, mask) ;
@@ -605,12 +593,8 @@ static GOOD_OR_BAD OW_22temp(_FLOAT * temp, const int resolution, const struct p
 
 	// second time
 	LEVEL_DEBUG("Temp error. Try unpowered temperature conversion -- %d msec", delay);
-	if (BUS_transaction(tunpowered, pn)) {
-		return gbBAD;
-	}
-	if (OW_r_scratchpad(data, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(tunpowered, pn)) ;
+	RETURN_BAD_IF_BAD(OW_r_scratchpad(data, pn)) ;
 	if ( data[1]!=0x05 || data[0]!=0x50 ) { // not 85C
 		temp[0] = OW_masked_temperature( data, mask) ;
 		return gbGOOD;
@@ -618,12 +602,8 @@ static GOOD_OR_BAD OW_22temp(_FLOAT * temp, const int resolution, const struct p
 
 	// third and last time
 	LEVEL_DEBUG("Temp error. Try unpowered long temperature conversion -- %d msec", longdelay);
-	if (BUS_transaction(tunpowered_long, pn)) {
-		return gbBAD;
-	}
-	if (OW_r_scratchpad(data, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(tunpowered_long, pn)) ;
+	RETURN_BAD_IF_BAD(OW_r_scratchpad(data, pn)) ;
 	temp[0] = OW_masked_temperature( data, mask) ;
 	return gbGOOD;
 }
@@ -639,15 +619,11 @@ static GOOD_OR_BAD OW_r_templimit(_FLOAT * T, const int Tindex, const struct par
 		TRXN_END,
 	};
 
-	if (BUS_transaction(trecall, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(trecall, pn)) ;
 
 	UT_delay(10);
 
-	if (OW_r_scratchpad(data, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(OW_r_scratchpad(data, pn)) ;
 	T[0] = (_FLOAT) ((int8_t) data[2 + Tindex]);
 	return gbGOOD;
 }
@@ -701,10 +677,7 @@ static GOOD_OR_BAD OW_w_scratchpad(const BYTE * data, const struct parsedname *p
 		twrite->size = 4;
 	}
 
-	if (BUS_transaction(twrite, pn)) {
-		return gbBAD;
-	}
-
+	RETURN_BAD_IF_BAD(BUS_transaction(twrite, pn)) ;
 	return BUS_transaction(tpower, pn);
 }
 
@@ -725,11 +698,8 @@ static GOOD_OR_BAD OW_r_trim(BYTE * trim, const struct parsedname *pn)
 		TRXN_READ1(&trim[1]),
 		TRXN_END,
 	};
-
-	if (BUS_transaction(t0, pn)) {
-		return gbBAD;
-	}
-
+	
+	RETURN_BAD_IF_BAD(BUS_transaction(t0, pn)) ;
 	return BUS_transaction(t1, pn);
 }
 
@@ -760,18 +730,10 @@ static GOOD_OR_BAD OW_w_trim(const BYTE * trim, const struct parsedname *pn)
 		TRXN_END,
 	};
 
-	if (BUS_transaction(t0, pn)) {
-		return gbBAD;
-	}
-	if (BUS_transaction(t1, pn)) {
-		return gbBAD;
-	}
-	if (BUS_transaction(t2, pn)) {
-		return gbBAD;
-	}
-	if (BUS_transaction(t3, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD( BUS_transaction(t0, pn) );
+	RETURN_BAD_IF_BAD( BUS_transaction(t1, pn) );
+	RETURN_BAD_IF_BAD( BUS_transaction(t2, pn) );
+	RETURN_BAD_IF_BAD( BUS_transaction(t3, pn) );
 	return gbGOOD;
 }
 
@@ -804,7 +766,7 @@ GOOD_OR_BAD FS_poll_convert(const struct parsedname *pn)
 	// the first test is faster for just DS2438 (10 msec)
 	// subsequent polling is slower since the DS18x20 is a slower converter
 	for (i = 0; i < 22; ++i) {
-		if (BUS_transaction_nolock(t, pn)) {
+		if ( BAD( BUS_transaction_nolock(t, pn) )) {
 			LEVEL_DEBUG("BUS_transaction failed");
 			break;
 		}
@@ -829,9 +791,8 @@ static GOOD_OR_BAD OW_read_piostate(UINT * piostate, const struct parsedname *pn
 		TRXN_READ1(data),
 		TRXN_END,
 	};
-	if (BUS_transaction(t, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(t, pn)) ;
+
 	/* compare lower and upper nibble to be complements */
 	// High nibble the complement of low nibble?
 	// Fix thanks to josef_heiler

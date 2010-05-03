@@ -136,9 +136,7 @@ static GOOD_OR_BAD OW_r_wiper(UINT * val, const struct parsedname *pn)
 		TRXN_END
 	};
 
-	if (BUS_transaction(t, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(t, pn)) ;
 
 	*val = resp[1];
 	return gbGOOD;
@@ -174,9 +172,7 @@ static GOOD_OR_BAD OW_r_cp(int *val, const struct parsedname *pn)
 		TRXN_END
 	};
 
-	if (BUS_transaction(t, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(t, pn)) ;
 
 	*val = ((resp[1] & 0x40) != 0);
 	return gbGOOD;

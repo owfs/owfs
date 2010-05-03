@@ -71,10 +71,7 @@ int BUS_select_and_sendback(const BYTE * data, BYTE * resp, const size_t len, co
 	if ( FunctionExists(pn->selected_connection->iroutines.select_and_sendback) ) {
 		return (pn->selected_connection->iroutines.select_and_sendback) (data, resp, len, pn);
 	} else {
-		int ret = BUS_select(pn);
-		if (ret) {
-			return ret;
-		}
+		RETURN_ERROR_IF_BAD( BUS_select(pn) );
 
 		return BUS_sendback_data(data, resp, len, pn);
 	}

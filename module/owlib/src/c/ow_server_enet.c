@@ -50,7 +50,7 @@ static _FLOAT xml_float( const char * tag, char ** buffer) ;
 static int OWServer_Enet_next_both(struct device_search *ds, const struct parsedname *pn);
 static int OWServer_Enet_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 static void OWServer_Enet_setroutines(struct connection_in *in);
-static int OWServer_Enet_select( const struct parsedname * pn ) ;
+static GOOD_OR_BAD OWServer_Enet_select( const struct parsedname * pn ) ;
 
 static void OWServer_Enet_setroutines(struct connection_in *in)
 {
@@ -506,12 +506,12 @@ static int OWServer_Enet_next_both(struct device_search *ds, const struct parsed
 
 /* select a device for reference */
 /* Don't do much in this case */
-static int OWServer_Enet_select( const struct parsedname * pn )
+static GOOD_OR_BAD OWServer_Enet_select( const struct parsedname * pn )
 {
 	// Set as current "Address" for adapter
 	memcpy( pn->selected_connection->connin.enet.sn, pn->sn, SERIAL_NUMBER_SIZE) ;
 
-	return 0 ;
+	return gbGOOD ;
 }
 
 static int OWServer_Enet_sendback_data(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)

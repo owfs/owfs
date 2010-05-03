@@ -78,9 +78,5 @@ static GOOD_OR_BAD OW_write_eprom_byte(BYTE code, BYTE data, off_t offset, const
 		TRXN_END,
 	};
 
-	if (BUS_transaction(t, pn)) {
-		LEVEL_DEBUG("Error writing to EPROM byte %d", (int) offset);
-		return gbBAD;
-	}
-	return gbGOOD ;
+	return BUS_transaction(t, pn) ;
 }

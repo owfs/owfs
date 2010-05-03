@@ -50,7 +50,7 @@ $Id$
 static RESET_TYPE EtherWeather_reset(const struct parsedname *pn) ;
 static int EtherWeather_command(struct connection_in *in, char command, int datalen, const BYTE * idata, BYTE * odata) ;
 static void EtherWeather_close(struct connection_in *in);
-static int EtherWeather_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname *pn);
+static GOOD_OR_BAD EtherWeather_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname *pn);
 static int EtherWeather_next_both(struct device_search *ds, const struct parsedname *pn);
 static int EtherWeather_sendback_bits(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn);
 static int EtherWeather_sendback_data(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn);
@@ -167,7 +167,7 @@ static int EtherWeather_next_both(struct device_search *ds, const struct parsedn
 		return -ENODEV;
 	}
 
-	if ( BUS_select(pn) ) {
+	if ( BAD( BUS_select(pn) ) ) {
 		return -EIO ;
 	}
 
@@ -215,7 +215,7 @@ static int EtherWeather_next_both(struct device_search *ds, const struct parsedn
 	return 0;
 }
 
-static int EtherWeather_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname *pn)
+static GOOD_OR_BAD EtherWeather_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname *pn)
 {
 	BYTE pbbuf[2];
 
@@ -224,11 +224,11 @@ static int EtherWeather_PowerByte(const BYTE byte, BYTE * resp, const UINT delay
 	pbbuf[1] = byte;
 	LEVEL_DEBUG("SPU: %d %d", pbbuf[0], pbbuf[1]);
 	if (EtherWeather_command(pn->selected_connection, EtherWeather_COMMAND_POWER, 2, pbbuf, pbbuf)) {
-		return -EIO;
+		return gbBAD;
 	}
 
 	*resp = pbbuf[1];
-	return 0;
+	return gbGOOD;
 }
 
 

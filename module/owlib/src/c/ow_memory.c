@@ -96,9 +96,7 @@ static GOOD_OR_BAD OW_r_crc16(BYTE code, struct one_wire_query *owq, size_t page
 	p[0] = code;
 	p[1] = BYTE_MASK(offset);
 	p[2] = BYTE_MASK(offset >> 8);
-	if (BUS_transaction(t, PN(owq))) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(t, PN(owq))) ;
 	memcpy(OWQ_buffer(owq), &p[3], size);
 	Set_OWQ_length(owq);
 	return gbGOOD;
@@ -132,9 +130,7 @@ GOOD_OR_BAD COMMON_read_memory_toss_counter(struct one_wire_query *owq, size_t p
 	p[0] = _1W_READ_A5;
 	p[1] = BYTE_MASK(offset);
 	p[2] = BYTE_MASK(offset >> 8);
-	if (BUS_transaction(t, PN(owq))) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(t, PN(owq))) ;
 	memcpy(OWQ_buffer(owq), &p[3], OWQ_size(owq));
 	Set_OWQ_length(owq);
 	return gbGOOD;
@@ -154,9 +150,7 @@ GOOD_OR_BAD COMMON_read_memory_plus_counter(BYTE * extra, size_t page, size_t pa
 		TRXN_END,
 	};
 
-	if (BUS_transaction(t, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(t, pn)) ;
 	if (extra) {
 		memcpy(extra, &p[3 + _1W_Throw_Away_Bytes], 8);
 	}

@@ -524,9 +524,7 @@ static GOOD_OR_BAD LCD_2byte(BYTE * bytes, int delay, const struct parsedname *p
 		TRXN_END,
 	};
 
-	if (BUS_transaction(t, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(t, pn)) ;
 	UT_delay(delay);			// mS
 	return gbGOOD;
 }

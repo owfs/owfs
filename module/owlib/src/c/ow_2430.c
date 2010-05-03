@@ -148,17 +148,13 @@ static GOOD_OR_BAD OW_w_mem(const BYTE * data, const size_t size, const off_t of
 	};
 
 	/* load scratch pad if incomplete write */
-	if ((size != 16) && BUS_transaction(tread, pn)) {
+	if ((size != 16) && BAD(BUS_transaction(tread, pn)) ) {
 		return gbBAD;
 	}
 	/* write data to scratchpad */
-	if (BUS_transaction(twrite, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(twrite, pn)) ;
 	/* read back the scratchpad */
-	if (BUS_transaction(tver, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(tver, pn)) ;
 	if (memcmp(data, ver, size)) {
 		return gbBAD;
 	}
@@ -201,17 +197,13 @@ static GOOD_OR_BAD OW_w_app(const BYTE * data, const size_t size, const off_t of
 	};
 
 	/* load scratch pad if incomplete write */
-	if ((size != 8) && BUS_transaction(tread, pn)){
+	if ((size != 8) && BAD(BUS_transaction(tread, pn)) ){
 		return gbBAD;
 	}
 	/* write data to scratchpad */
-	if (BUS_transaction(twrite, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(twrite, pn)) ;
 	/* read back the scratchpad */
-	if (BUS_transaction(tver, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(tver, pn)) ;
 	/* copy scratchpad to memory */
 	return BUS_transaction(tcopy, pn);
 }

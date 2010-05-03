@@ -100,9 +100,7 @@ static GOOD_OR_BAD OW_r_sense(int *val, const struct parsedname *pn)
 		TRXN_END,
 	};
 
-	if (BUS_transaction(r, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(r, pn)) ;
 
 	val[0] = (inp != 0);
 	return gbGOOD;
@@ -116,14 +114,12 @@ static GOOD_OR_BAD OW_r_PIO(int *val, const struct parsedname *pn)
 		TRXN_END,
 	};
 
-	if (BUS_transaction(a, pn)) {
+	if ( BAD( BUS_transaction(a, pn) ) ) {
 		struct transaction_log n[] = {
 			TRXN_NVERIFY,
 			TRXN_END,
 		};
-		if (BUS_transaction(n, pn)) {
-			return gbBAD;
-		}
+		RETURN_BAD_IF_BAD(BUS_transaction(n, pn)) ;
 		val[0] = 0;
 	} else {
 		val[0] = 1;
@@ -145,9 +141,7 @@ static GOOD_OR_BAD OW_w_PIO(const int val, const struct parsedname *pn)
 			TRXN_START,
 			TRXN_END,
 		};
-		if (BUS_transaction(n, pn)) {
-			return gbBAD;
-		}
+		RETURN_BAD_IF_BAD(BUS_transaction(n, pn)) ;
 	}
 	//printf("2405write current=%d new=%d\n",current,val) ;
 	return gbGOOD;

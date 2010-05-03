@@ -268,11 +268,7 @@ static GOOD_OR_BAD OW_r_control(BYTE * cr, const struct parsedname *pn)
 		TRXN_END,
 	};
 
-	if (BUS_transaction(t, pn)) {
-		return gbBAD;
-	}
-
-	return gbGOOD;
+	 return BUS_transaction(t, pn) ;
 }
 
 /* 1904 clock-in-a-can */
@@ -287,9 +283,7 @@ static GOOD_OR_BAD OW_r_udate(UINT * U, const struct parsedname *pn)
 		TRXN_END,
 	};
 
-	if (BUS_transaction(t, pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(BUS_transaction(t, pn)) ;
 
 	U[0] = UT_int32(&data[1]);
 	return gbGOOD;
@@ -307,10 +301,7 @@ static GOOD_OR_BAD OW_w_udate(UINT control_reg, UINT U, const struct parsedname 
 
 	w[1] = control_reg & 0xFF ;
 	UT_uint32_to_bytes( U, &w[2] );
-	if (BUS_transaction(twrite, pn)) {
-		return gbBAD;
-	}
-	return gbGOOD;
+	return BUS_transaction(twrite, pn) ;
 }
 
 static GOOD_OR_BAD OW_w_control(const BYTE cr, const struct parsedname *pn)
@@ -323,9 +314,5 @@ static GOOD_OR_BAD OW_w_control(const BYTE cr, const struct parsedname *pn)
 	};
 
 	/* read in existing control byte to preserve bits 4-7 */
-	if (BUS_transaction(t, pn)) {
-		return gbBAD;
-	}
-
-	return gbGOOD;
+	return BUS_transaction(t, pn) ;
 }

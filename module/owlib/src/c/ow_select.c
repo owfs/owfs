@@ -16,14 +16,11 @@ $Id$
 #include "ow_connection.h"
 #include "ow_codes.h"
 
-static int Turnoff(const struct parsedname *pn);
-#if 0
-static int BUS_reselect_branch(const struct parsedname *pn) ;
-#endif
-static int BUS_select_subbranch(const struct buspath *bp, const struct parsedname *pn);
-static int BUS_Skip_Rom(const struct parsedname *pn);
-static int BUS_select_opening(const struct parsedname *pn) ;
-static int BUS_select_closing(const struct parsedname *pn) ;
+static GOOD_OR_BAD Turnoff(const struct parsedname *pn);
+static GOOD_OR_BAD BUS_select_subbranch(const struct buspath *bp, const struct parsedname *pn);
+static GOOD_OR_BAD BUS_Skip_Rom(const struct parsedname *pn);
+static GOOD_OR_BAD BUS_select_opening(const struct parsedname *pn) ;
+static GOOD_OR_BAD BUS_select_closing(const struct parsedname *pn) ;
 
 /* DS2409 commands */
 #define _1W_STATUS_READ_WRITE  0x5A
@@ -52,9 +49,8 @@ static int BUS_select_closing(const struct parsedname *pn) ;
    Well, you asked
 */
 
-int BUS_select(const struct parsedname *pn)
+GOOD_OR_BAD BUS_select(const struct parsedname *pn)
 {
-	int ret;
 	// match Serial Number command 0x55
 	BYTE sent[9] = { _1W_MATCH_ROM, };
 	int pl = pn->pathlength;
@@ -65,7 +61,7 @@ int BUS_select(const struct parsedname *pn)
 
 	if (!RootNotBranch(pn) && !AdapterSupports2409(pn)) {
 		LEVEL_CALL("Attempt to use a branched path (DS2409 main or aux) when bus master doesn't support it.");
-		return -ENOTSUP;		/* cannot do branching with eg. LINK ascii */
+		return gbBAD;		/* cannot do branching with eg. LINK ascii */
 	}
 	/* Adapter-specific select routine? */
 	if ( FunctionExists(pn->selected_connection->iroutines.select) ) {
@@ -103,15 +99,16 @@ int BUS_select(const struct parsedname *pn)
 		pn->selected_connection->branch.branch = pn->bp[pl - 1].branch;
 	}
 
-	if ( BUS_select_opening(pn) ) {
+	if ( BAD( BUS_select_opening(pn) ) ) {
 		pn->selected_connection->branch.sn[0] = BUSPATH_BAD ;
-		return -EIO ;
+		return gbBAD ;
 	}
 	
 	/* proper path now "turned on" */
 	if ((pn->selected_device != NULL)
 		&& (pn->selected_device != DeviceThermostat)) {
-		//printf("Really select %s\n",pn->selected_device->code);
+		GOOD_OR_BAD ret;
+		
 		memcpy(&sent[1], pn->sn, SERIAL_NUMBER_SIZE);
 		if ((ret = BUS_send_data(sent, 1, pn))) {
 			STAT_ADD1_BUS(e_bus_select_errors, pn->selected_connection);
@@ -125,10 +122,10 @@ int BUS_select(const struct parsedname *pn)
 		}
 		return ret;
 	}
-	return 0;
+	return gbGOOD;
 }
 
-static int BUS_Skip_Rom(const struct parsedname *pn)
+static GOOD_OR_BAD BUS_Skip_Rom(const struct parsedname *pn)
 {
 	BYTE skip[1];
 	struct transaction_log t[] = {
@@ -137,30 +134,28 @@ static int BUS_Skip_Rom(const struct parsedname *pn)
 	};
 
 	if (BUS_reset(pn)<BUS_RESET_OK) {
-		return 1;
+		return gbBAD;
 	}
 	skip[0] = (pn->selected_connection->speed == bus_speed_overdrive) ? _1W_OVERDRIVE_SKIP_ROM : _1W_SKIP_ROM;
 	return BUS_transaction_nolock(t, pn);
 }
 
 /* All the railroad switches need to be opened in order */
-static int BUS_select_opening(const struct parsedname *pn)
+static GOOD_OR_BAD BUS_select_opening(const struct parsedname *pn)
 {
 	int level ;
 
 	if (BUS_reset(pn)<BUS_RESET_OK) {
-		return 1;
+		return gbBAD;
 	}
 	for ( level=0 ; level<(int)pn->pathlength ; ++level ) {
-		if ( BUS_select_subbranch(&(pn->bp[level]), pn) ) {
-			return 1 ;
-		}
+		RETURN_BAD_IF_BAD( BUS_select_subbranch(&(pn->bp[level]), pn) ) ;
 	}
-	return 0 ;
+	return gbGOOD ;
 }
 
 /* All need to be closed at every level */
-static int BUS_select_closing(const struct parsedname *pn)
+static GOOD_OR_BAD BUS_select_closing(const struct parsedname *pn)
 {
 	int turnoff_level ;
 	
@@ -168,35 +163,18 @@ static int BUS_select_closing(const struct parsedname *pn)
 	for ( turnoff_level=0 ; turnoff_level<=(int)pn->pathlength ; ++turnoff_level ) {
 		int level ;
 		if (BUS_reset(pn)<BUS_RESET_OK) {
-			return 1;
+			return gbBAD;
 		}
-		if ( Turnoff(pn) ) {
-			return 1 ;
-		}
+		RETURN_BAD_IF_BAD(Turnoff(pn) ) ;
 		for ( level=0 ; level<turnoff_level ; ++level ) {
-			if ( BUS_select_subbranch(&(pn->bp[level]), pn) ) {
-				return 1 ;
-			}
+			RETURN_BAD_IF_BAD( BUS_select_subbranch(&(pn->bp[level]), pn) ) ;
 		}
 	}
-	return 0 ;
+	return gbGOOD ;
 }
-
-#if 0
-static int BUS_reselect_branch(const struct parsedname *pn)
-{
-	if (BUS_reset(pn)<BUS_RESET_OK) {
-		return 1;
-	}
-	if ( pn->pathlength != 0 && BUS_select_subbranch(&(pn->bp[pn->pathlength-1]), pn) ) {
-		return 1 ;
-	}
-	return 0 ;
-}
-#endif
 
 /* Select the specific branch */
-static int BUS_select_subbranch(const struct buspath *bp, const struct parsedname *pn)
+static GOOD_OR_BAD BUS_select_subbranch(const struct buspath *bp, const struct parsedname *pn)
 {
 	BYTE sent[11] = { _1W_MATCH_ROM, };
 	BYTE branch[2] = { _1W_SMART_ON_MAIN, _1W_SMART_ON_AUX, };	/* Main, Aux */
@@ -211,17 +189,17 @@ static int BUS_select_subbranch(const struct buspath *bp, const struct parsednam
 	sent[SERIAL_NUMBER_SIZE+1] = branch[bp->branch];
 	sent[SERIAL_NUMBER_SIZE+2] = 0xFF;
 	LEVEL_DEBUG("Selecting subbranch " SNformat, SNvar(bp->sn));
-	if (BUS_transaction_nolock(t, pn) || (resp[1] != branch[bp->branch])) {
+	if ( BAD(BUS_transaction_nolock(t, pn)) || (resp[1] != branch[bp->branch])) {
 		STAT_ADD1_BUS(e_bus_select_errors, pn->selected_connection);
 		LEVEL_CONNECT("Select subbranch error on bus %s", pn->selected_connection->name);
-		return 1;
+		return gbBAD;
 	}
 	//printf("subbranch stop\n");
-	return 0;
+	return gbGOOD;
 }
 
 /* find every DS2409 (family code 1F) and switch off, at this depth */
-static int Turnoff(const struct parsedname *pn)
+static GOOD_OR_BAD Turnoff(const struct parsedname *pn)
 {
 	BYTE sent[2] = { _1W_SKIP_ROM, _1W_ALL_LINES_OFF, };
 	struct transaction_log t[] = {
