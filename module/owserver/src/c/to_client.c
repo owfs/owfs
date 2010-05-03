@@ -70,12 +70,12 @@ int ToClient(int file_descriptor, struct client_msg *machine_order_cm, char *dat
 		++nio;
 	}
 
-	network_order_cm->version = htonl(machine_order_cm->version);
-	network_order_cm->payload = htonl(machine_order_cm->payload);
-	network_order_cm->ret = htonl(machine_order_cm->ret);
-	network_order_cm->control_flags = htonl(machine_order_cm->control_flags);
-	network_order_cm->size = htonl(machine_order_cm->size);
-	network_order_cm->offset = htonl(machine_order_cm->offset);
+	network_order_cm->version       = htonl( machine_order_cm->version       );
+	network_order_cm->payload       = htonl( machine_order_cm->payload       );
+	network_order_cm->ret           = htonl( machine_order_cm->ret           );
+	network_order_cm->control_flags = htonl( machine_order_cm->control_flags );
+	network_order_cm->size          = htonl( machine_order_cm->size          );
+	network_order_cm->offset        = htonl( machine_order_cm->offset        );
 
 	if(machine_order_cm->payload >= 0) {
 		Debug_Writev(io, nio);  // debug output of network package after it's created.

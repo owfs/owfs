@@ -52,16 +52,16 @@ int tcp_wait(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const struct timeval *ptv
 /* Read "n" bytes from a descriptor. */
 /* Stolen from Unix Network Programming by Stevens, Fenner, Rudoff p89 */
 /* return < 0 if failure */
-ZERO_OR_ERROR tcp_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, void *vptr, size_t n, const struct timeval * ptv, size_t * chars_in)
+ZERO_OR_ERROR tcp_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, void *vptr, size_t requested_size, const struct timeval * ptv, size_t * chars_in)
 {
-	size_t nleft;
+	size_t nleft_to_read;
 	ssize_t nread;
 	BYTE * buffer = vptr ;
 
-	LEVEL_DEBUG("attempt %d bytes Time:(%ld,%ld)n",(int)n,ptv->tv_sec,ptv->tv_usec ) ;
-	nleft = n;
+	LEVEL_DEBUG("attempt %d bytes Time:(%ld,%ld)n",(int)requested_size,ptv->tv_sec,ptv->tv_usec ) ;
+	nleft_to_read = requested_size;
 	*chars_in = 0 ;
-	while (nleft > 0) {
+	while (nleft_to_read > 0) {
 		int rc;
 		fd_set readset;
 		struct timeval tv = { ptv->tv_sec, ptv->tv_usec, };
@@ -80,7 +80,7 @@ ZERO_OR_ERROR tcp_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, void *vptr, siz
 			}
 			//update_max_delay(pn);
 			errno = 0 ;
-			if ((nread = read(file_descriptor, &buffer[*chars_in], nleft)) < 0) {
+			if ((nread = read(file_descriptor, &buffer[*chars_in], nleft_to_read)) < 0) {
 				if (errno == EINTR) {
 					nread = 0;	/* and call read() again */
 				} else {
@@ -92,7 +92,7 @@ ZERO_OR_ERROR tcp_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, void *vptr, siz
 				break;			/* EOF */
 			}
 			Debug_Bytes("NETREAD", &buffer[*chars_in], nread ) ;
-			nleft -= nread;
+			nleft_to_read -= nread;
 			*chars_in += nread ;
 		} else if (rc < 0) {	/* select error */
 			if (errno == EINTR) {
@@ -102,11 +102,11 @@ ZERO_OR_ERROR tcp_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, void *vptr, siz
 			ERROR_DATA("Selection error (network)");
 			return -EINTR;
 		} else {				/* timed out */
-			LEVEL_CONNECT("TIMEOUT after %d bytes", n - nleft);
+			LEVEL_CONNECT("TIMEOUT after %d bytes", requested_size - nleft_to_read);
 			return -EAGAIN;
 		}
 	}
-	LEVEL_DEBUG("n=%d nleft=%d n-nleft=%d",(int)n, (int) nleft, (int) (n-nleft) ) ;
+	LEVEL_DEBUG("requested=%d not_found=%d diffference=%d",(int)requested_size, (int) nleft_to_read, (int) (requested_size-nleft_to_read) ) ;
 	return 0;
 }
 

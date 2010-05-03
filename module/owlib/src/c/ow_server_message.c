@@ -18,24 +18,37 @@ $Id$
 #include "ow_connection.h"
 #include "ow_standard.h" // for FS_alias
 
-enum persistent_state { persistent_yes, persistent_no, } ;
+struct server_connection_state {
+	FILE_DESCRIPTOR_OR_ERROR file_descriptor ;
+	enum persistent_state { persistent_yes, persistent_no, } persistence ;
+	struct connection_in * in ;
+} ;
 
-static SIZE_OR_ERROR FromServer(int file_descriptor, struct client_msg *cm, char *msg, size_t size);
-static void *FromServerAlloc(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct client_msg *cm);
-static SIZE_OR_ERROR ToServer(int file_descriptor, struct server_msg *sm, struct serverpackage *sp);
-static uint32_t SetupControlFlags(enum persistent_state persistent, const struct parsedname *pn);
-static FILE_DESCRIPTOR_OR_ERROR ConnectToServer(struct connection_in *in);
-static FILE_DESCRIPTOR_OR_ERROR ToServerTwice(FILE_DESCRIPTOR_OR_ERROR file_descriptor, enum persistent_state persistent, struct server_msg *sm, struct serverpackage *sp, struct connection_in *in);
+struct directory_element_structure {
+	const struct parsedname * pn_whole_directory ;
+	struct dirblob db ;
+	void (*dirfunc) (void *, const struct parsedname * const) ;
+	void * v ;
+} ;
 
-static FILE_DESCRIPTOR_OR_ERROR PersistentStart(enum persistent_state *persistent, struct connection_in *in);
-static void PersistentEnd(FILE_DESCRIPTOR_OR_ERROR file_descriptor, enum persistent_state persistent, int granted, struct connection_in *in);
-static void PersistentFree(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct connection_in *in);
-static void PersistentClear(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct connection_in *in);
-static FILE_DESCRIPTOR_OR_ERROR PersistentRequest(struct connection_in *in);
-static FILE_DESCRIPTOR_OR_ERROR PersistentReRequest(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct connection_in *in);
+static uint32_t SetupControlFlags(const struct parsedname *pn);
 
 static ZERO_OR_ERROR ServerDIRALL(void (*dirfunc) (void *, const struct parsedname * const), void *v, const struct parsedname *pn_whole_directory, uint32_t * flags);
 static ZERO_OR_ERROR ServerDIR(void (*dirfunc) (void *, const struct parsedname * const), void *v, const struct parsedname *pn_whole_directory, uint32_t * flags);
+
+static void Directory_Element_Init( struct directory_element_structure * des );
+static void Directory_Element_Finish( struct directory_element_structure * des );
+static ZERO_OR_ERROR Directory_Element( char * current_file, struct directory_element_structure * des );
+
+static void Close_Persistent( struct server_connection_state * scs) ;
+static void Release_Persistent( struct server_connection_state * scs, int granted ) ;
+
+static GOOD_OR_BAD To_Server( struct server_connection_state * scs, struct server_msg * sm, struct serverpackage *sp) ;
+static SIZE_OR_ERROR WriteToServer(int file_descriptor, struct server_msg *sm, struct serverpackage *sp);
+
+static SIZE_OR_ERROR From_Server( struct server_connection_state * scs, struct client_msg *cm, char *msg, size_t size) ;
+static void *From_ServerAlloc(struct server_connection_state * scs, struct client_msg *cm) ;
+
 
 // Send to an owserver using the READ message
 SIZE_OR_ERROR ServerRead(struct one_wire_query *owq)
@@ -43,46 +56,41 @@ SIZE_OR_ERROR ServerRead(struct one_wire_query *owq)
 	struct server_msg sm;
 	struct client_msg cm;
 	struct parsedname *pn_file_entry = PN(owq);
-	struct connection_in * in = pn_file_entry->selected_connection ;
 	struct serverpackage sp = { pn_file_entry->path_to_server, NULL, 0, pn_file_entry->tokenstring,
 		pn_file_entry->tokens,
 	};
-	enum persistent_state persistent = persistent_yes;
-	FILE_DESCRIPTOR_OR_ERROR connectfd;
-	SIZE_OR_ERROR ret = 0;
-	
+	struct server_connection_state scs ;
 
+	// initialization
+	scs.in = pn_file_entry->selected_connection ;
 	memset(&sm, 0, sizeof(struct server_msg));
 	memset(&cm, 0, sizeof(struct client_msg));
 	sm.type = msg_read;
 	sm.size = OWQ_size(owq);
 	sm.offset = OWQ_offset(owq);
 
+	// Alias should show local understanding except if bus.x specified
 	if ( pn_file_entry->selected_filetype->format == ft_alias && ! SpecifiedRemoteBus(pn_file_entry) ) {
-		printf("Local alias\n");
 		ignore_result = FS_alias( owq ) ;
 		return OWQ_length(owq) ;
 	}
 
-	LEVEL_CALL("SERVER(%d) path=%s", in->index, SAFESTRING(pn_file_entry->path_to_server));
+	LEVEL_CALL("SERVER(%d) path=%s", pn_file_entry->selected_connection->index, SAFESTRING(pn_file_entry->path_to_server));
 
-	connectfd = PersistentStart(&persistent, in);
-	if ( FILE_DESCRIPTOR_VALID( connectfd ) ) {
-		sm.control_flags = SetupControlFlags(persistent, pn_file_entry);
-		connectfd = ToServerTwice(connectfd, persistent, &sm, &sp, in) ;
-		if ( FILE_DESCRIPTOR_NOT_VALID( connectfd ) ) {
-			ret = -EIO;
-		} else if (FromServer(connectfd, &cm, OWQ_buffer(owq), OWQ_size(owq))
-				   < 0) {
-			ret = -EIO;
-		} else {
-			ret = cm.ret;
-		}
-	} else {
-		ret = -EIO;
+	// Send to owserver
+	sm.control_flags = SetupControlFlags(pn_file_entry);
+	if ( BAD( To_Server( &scs, &sm, &sp) ) ) {
+		Release_Persistent( &scs, 0);
+		return -EIO ;
 	}
-	PersistentEnd(connectfd, persistent, cm.control_flags & PERSISTENT_MASK, in);
-	return ret;
+	
+	// Receive from owserver
+	if ( From_Server( &scs, &cm, OWQ_buffer(owq), OWQ_size(owq)) < 0 ) {
+		Release_Persistent( &scs, 0);
+		return -EIO ;
+	}
+	Release_Persistent( &scs, cm.control_flags & PERSISTENT_MASK);
+	return cm.ret;
 }
 
 // Send to an owserver using the PRESENT message
@@ -90,44 +98,41 @@ INDEX_OR_ERROR ServerPresence( struct parsedname *pn_file_entry)
 {
 	struct server_msg sm;
 	struct client_msg cm;
-	struct connection_in * in = pn_file_entry->selected_connection ;
 	struct serverpackage sp = { pn_file_entry->path_to_server, NULL, 0, pn_file_entry->tokenstring,
 		pn_file_entry->tokens,
 	};
 	BYTE * serial_number ;
-	enum persistent_state persistent = persistent_yes;
-	FILE_DESCRIPTOR_OR_ERROR connectfd;
+	struct server_connection_state scs ;
 
+	// initialization
+	scs.in = pn_file_entry->selected_connection ;
 	memset(&sm, 0, sizeof(struct server_msg));
 	memset(&cm, 0, sizeof(struct client_msg));
 	sm.type = msg_presence;
 
-	LEVEL_CALL("SERVER(%d) path=%s", in->index, SAFESTRING(pn_file_entry->path_to_server));
+	LEVEL_CALL("SERVER(%d) path=%s", pn_file_entry->selected_connection->index, SAFESTRING(pn_file_entry->path_to_server));
 
-	connectfd = PersistentStart(&persistent, in);
-	if ( FILE_DESCRIPTOR_NOT_VALID( connectfd ) ) {
-		PersistentEnd(connectfd, persistent, cm.control_flags & PERSISTENT_MASK, in);
+	// Send to owserver
+	sm.control_flags = SetupControlFlags( pn_file_entry);
+	if ( BAD( To_Server( &scs, &sm, &sp) ) ) {
+		Release_Persistent( &scs, 0 ) ;
 		return -EIO ;
 	}
 
-	sm.control_flags = SetupControlFlags(persistent, pn_file_entry);
-	connectfd = ToServerTwice(connectfd, persistent, &sm, &sp, in) ;
-	if ( FILE_DESCRIPTOR_NOT_VALID( connectfd ) ) {
-		PersistentEnd(connectfd, persistent, cm.control_flags & PERSISTENT_MASK, in);
-		return -EIO ;
-	}
-
-	serial_number = (BYTE *) FromServerAlloc( connectfd, &cm) ;
+	// Receive from owserver
+	serial_number = (BYTE *) From_ServerAlloc( &scs, &cm) ;
 	if (cm.ret < 0) {
-		PersistentEnd(connectfd, persistent, cm.control_flags & PERSISTENT_MASK, in);
+		Release_Persistent(&scs, 0 );
 		return -EIO ;
 	}
+
+	// Newer owservers return the serial number -- relevant for alias propagation
 	if ( serial_number ) {
 		memcpy( pn_file_entry->sn, serial_number, SERIAL_NUMBER_SIZE ) ;
 		owfree( serial_number) ;
 	}
 
-	PersistentEnd(connectfd, persistent, cm.control_flags & PERSISTENT_MASK, in);
+	Release_Persistent(&scs, cm.control_flags & PERSISTENT_MASK);
 	return cm.ret;
 }
 
@@ -137,48 +142,48 @@ ZERO_OR_ERROR ServerWrite(struct one_wire_query *owq)
 	struct server_msg sm;
 	struct client_msg cm;
 	struct parsedname *pn_file_entry = PN(owq);
-	struct connection_in * in = pn_file_entry->selected_connection ;
 	struct serverpackage sp = { pn_file_entry->path_to_server, (BYTE *) OWQ_buffer(owq),
 		OWQ_size(owq), pn_file_entry->tokenstring, pn_file_entry->tokens,
 	};
-	enum persistent_state persistent = persistent_yes;
-	FILE_DESCRIPTOR_OR_ERROR connectfd;
-	ZERO_OR_ERROR ret = 0;
+	struct server_connection_state scs ;
 
+	// initialization
+	scs.in = pn_file_entry->selected_connection ;
 	memset(&sm, 0, sizeof(struct server_msg));
 	memset(&cm, 0, sizeof(struct client_msg));
 	sm.type = msg_write;
 	sm.size = OWQ_size(owq);
 	sm.offset = OWQ_offset(owq);
 
-	LEVEL_CALL("SERVER(%d) path=%s", in->index, SAFESTRING(pn_file_entry->path_to_server));
+	LEVEL_CALL("SERVER(%d) path=%s", pn_file_entry->selected_connection->index, SAFESTRING(pn_file_entry->path_to_server));
 
-	connectfd = PersistentStart(&persistent, in);
-	if ( FILE_DESCRIPTOR_VALID( connectfd ) ) {
-		sm.control_flags = SetupControlFlags(persistent, pn_file_entry);
-		connectfd = ToServerTwice(connectfd, persistent, &sm, &sp, in) ;
-		if ( FILE_DESCRIPTOR_NOT_VALID( connectfd ) ) {
-			ret = -EIO;
-		} else if (FromServer(connectfd, &cm, NULL, 0) < 0) {
-			ret = -EIO;
-		} else {
-			int32_t control_flags = cm.control_flags & ~(SHOULD_RETURN_BUS_LIST | PERSISTENT_MASK | SAFEMODE);
-			// keep current safemode
-			control_flags |=  LocalControlFlags & SAFEMODE ;
-			ret = cm.ret;
-			CONTROLFLAGSLOCK;
-			if (LocalControlFlags != control_flags) {
-				// replace control flags (except safemode persists)
-				//printf("ServerRead: cm.control_flags changed!  controlflags=%X cm.control_flags=%X\n", SemiGlobal, cm.control_flags);
-				LocalControlFlags = control_flags;
-			}
-			CONTROLFLAGSUNLOCK;
-		}
-	} else {
-		ret = -EIO;
+	// Send to owserver
+	sm.control_flags = SetupControlFlags( pn_file_entry);
+	if ( BAD( To_Server( &scs, &sm, &sp) ) ) {
+		Release_Persistent( &scs, 0 ) ;
+		return -EIO ;
 	}
-	PersistentEnd(connectfd, persistent, cm.control_flags & PERSISTENT_MASK, in);
-	return ret;
+
+	// Receive from owserver
+	if ( From_Server( &scs, &cm, NULL, 0) < 0) {
+		Release_Persistent( &scs, 0 ) ;
+		return -EIO ;
+	}
+	{
+		int32_t control_flags = cm.control_flags & ~(SHOULD_RETURN_BUS_LIST | PERSISTENT_MASK | SAFEMODE);
+		// keep current safemode
+		control_flags |=  LocalControlFlags & SAFEMODE ;
+		CONTROLFLAGSLOCK;
+		if (LocalControlFlags != control_flags) {
+			// replace control flags (except safemode persists)
+			//printf("ServerRead: cm.control_flags changed!  controlflags=%X cm.control_flags=%X\n", SemiGlobal, cm.control_flags);
+			LocalControlFlags = control_flags;
+		}
+		CONTROLFLAGSUNLOCK;
+	}
+
+	Release_Persistent(&scs, cm.control_flags & PERSISTENT_MASK);
+	return cm.ret;
 }
 
 // Send to an owserver using either the DIR or DIRALL message
@@ -216,10 +221,13 @@ static ZERO_OR_ERROR ServerDIR(void (*dirfunc) (void *, const struct parsedname 
 	struct serverpackage sp = { pn_whole_directory->path_to_server, NULL, 0,
 		pn_whole_directory->tokenstring, pn_whole_directory->tokens,
 	};
-	enum persistent_state persistent = persistent_yes;
-	FILE_DESCRIPTOR_OR_ERROR connectfd;
-	ZERO_OR_ERROR ret;
+	struct server_connection_state scs ;
+	struct directory_element_structure des ;
 
+	char *return_path;
+
+	// initialization
+	scs.in = pn_whole_directory->selected_connection ;
 	memset(&sm, 0, sizeof(struct server_msg));
 	memset(&cm, 0, sizeof(struct client_msg));
 	sm.type = msg_dir;
@@ -227,100 +235,43 @@ static ZERO_OR_ERROR ServerDIR(void (*dirfunc) (void *, const struct parsedname 
 	LEVEL_CALL("SERVER(%d) path=%s path_to_server=%s",
 			   in->index, SAFESTRING(pn_whole_directory->path), SAFESTRING(pn_whole_directory->path_to_server));
 
-	connectfd = PersistentStart(&persistent, in);
-	if ( FILE_DESCRIPTOR_VALID( connectfd ) ) {
-		sm.control_flags = SetupControlFlags(persistent, pn_whole_directory);
-		connectfd = ToServerTwice(connectfd, persistent, &sm, &sp, in) ;
-		if ( FILE_DESCRIPTOR_NOT_VALID( connectfd ) ) {
-			ret = -EIO;
-		} else {
-			char *return_path;
-			size_t devices = 0;
-			struct dirblob db;
-
-			/* If cacheable, try to allocate a blob for storage */
-			/* only for "read devices" and not alarm */
-			DirblobInit(&db);
-			if (IsRealDir(pn_whole_directory)
-				&& NotAlarmDir(pn_whole_directory)
-				&& !SpecifiedBus(pn_whole_directory)
-				&& pn_whole_directory->selected_device == NULL) {
-				if (RootNotBranch(pn_whole_directory)) {	/* root dir */
-					BUSLOCK(pn_whole_directory);
-					db.allocated = in->last_root_devs;	// root dir estimated length
-					BUSUNLOCK(pn_whole_directory);
-				}
-			} else {
-				db.troubled = 1;	// no dirblob cache
-			}
-
-			while ((return_path = FromServerAlloc(connectfd, &cm))) {
-				struct parsedname s_pn_directory_element;
-				struct parsedname * pn_directory_element = & s_pn_directory_element ;
-				return_path[cm.payload - 1] = '\0';	/* Ensure trailing null */
-				LEVEL_DEBUG("got=[%s]", return_path);
-
-				if (SpecifiedRemoteBus(pn_whole_directory)) {
-					// Specified remote bus, add the bus to the path (in front)
-					char BigBuffer[cm.payload + 12];
-					int sn_ret ;
-					char * no_leading_slash = &return_path[(return_path[0] == '/') ? 1 : 0] ;
-					UCLIBCLOCK ;
-					sn_ret = snprintf(BigBuffer, cm.payload + 11, "/bus.%d/%s",in->index, no_leading_slash ) ;
-					UCLIBCUNLOCK ;
-					if (sn_ret > 0) {
-						ret = FS_ParsedName_BackFromRemote(BigBuffer, pn_directory_element);
-					} else {
-						ret = -EINVAL ;
-					}
-				} else {
-					ret = FS_ParsedName_BackFromRemote(return_path, pn_directory_element);
-				}
-
-				owfree(return_path);
-
-				if (ret) {
-					DirblobPoison(&db); // don't cache a mistake
-					cm.ret = ret;
-					break;
-				}
-				//printf("SERVERDIR path=%s\n",pn_directory_element.path);
-				/* we got a device on bus_nr = pn_whole_directory->selected_connection->index. Cache it so we
-				   find it quicker next time we want to do read values from the
-				   the actual device
-				 */
-				if (IsRealDir(pn_whole_directory)) {
-					/* If we get a device then cache the bus_nr */
-					Cache_Add_Device(in->index, pn_directory_element->sn);
-				}
-				/* Add to cache Blob -- snlist is also a flag for cachable */
-				DirblobAdd(pn_directory_element->sn, &db);
-				++devices;
-				FS_alias_subst(dirfunc,v,pn_directory_element);
-				FS_ParsedName_destroy(pn_directory_element);	// destroy the last parsed name
-			}
-			/* Add to the cache (full list as a single element */
-			if (DirblobPure(&db)) {
-				Cache_Add_Dir(&db, pn_whole_directory);	// end with a null entry
-				if (RootNotBranch(pn_whole_directory)) {
-					BUSLOCK(pn_whole_directory);
-					in->last_root_devs = DirblobElements(&db);	// root dir estimated length
-					BUSUNLOCK(pn_whole_directory);
-				}
-			}
-			DirblobClear(&db);
-
-			DIRLOCK;
-			/* flags are sent back in "offset" of final blank entry */
-			flags[0] |= cm.offset;
-			DIRUNLOCK;
-			ret = cm.ret;
-		}
-	} else {
-		ret = -EIO;
+	// Send to owserver
+	sm.control_flags = SetupControlFlags( pn_whole_directory);
+	if ( BAD( To_Server( &scs, &sm, &sp) ) ) {
+		Release_Persistent( &scs, 0 ) ;
+		return -EIO ;
 	}
-	PersistentEnd(connectfd, persistent, cm.control_flags & PERSISTENT_MASK, in);
-	return ret;
+
+	des.dirfunc = dirfunc ;
+	des.v = v ;
+	des.pn_whole_directory = pn_whole_directory ;
+	Directory_Element_Init( &des ) ;
+
+	// Receive from owserver -- in a loop for each directory entry
+	while ( (return_path = From_ServerAlloc(&scs, &cm)) != NULL ) {
+		ZERO_OR_ERROR ret;
+
+		return_path[cm.payload - 1] = '\0';	/* Ensure trailing null */
+		
+		ret = Directory_Element( return_path, &des ) ;
+
+		owfree(return_path);
+
+		if (ret) {
+			cm.ret = ret;
+			break;
+		}
+	}
+	
+	Directory_Element_Finish( &des ) ;
+
+	DIRLOCK;
+	/* flags are sent back in "offset" of final blank entry */
+	flags[0] |= cm.offset;
+	DIRUNLOCK;
+
+	Release_Persistent(&scs, cm.control_flags & PERSISTENT_MASK);
+	return cm.ret;
 }
 
 // Send to an owserver using the DIRALL message
@@ -329,14 +280,14 @@ static ZERO_OR_ERROR ServerDIRALL(void (*dirfunc) (void *, const struct parsedna
 	ASCII *comma_separated_list;
 	struct server_msg sm;
 	struct client_msg cm;
-	struct connection_in * in = pn_whole_directory->selected_connection ;
 	struct serverpackage sp = { pn_whole_directory->path_to_server, NULL, 0,
 		pn_whole_directory->tokenstring, pn_whole_directory->tokens,
 	};
-	enum persistent_state persistent = persistent_yes;
-	FILE_DESCRIPTOR_OR_ERROR connectfd;
-	ZERO_OR_ERROR ret;
+	struct connection_in * in = pn_whole_directory->selected_connection ;
+	struct server_connection_state scs ;
 
+	// initialization
+	scs.in = in ;
 	memset(&sm, 0, sizeof(struct server_msg));
 	memset(&cm, 0, sizeof(struct client_msg));
 	sm.type = msg_dirall;
@@ -344,102 +295,38 @@ static ZERO_OR_ERROR ServerDIRALL(void (*dirfunc) (void *, const struct parsedna
 	LEVEL_CALL("SERVER(%d) path=%s path_to_server=%s",
 			   in->index, SAFESTRING(pn_whole_directory->path), SAFESTRING(pn_whole_directory->path_to_server));
 
-	// Get a file descriptor, possibly a persistent one
-	connectfd = PersistentStart(&persistent, in);
-	if ( FILE_DESCRIPTOR_NOT_VALID( connectfd ) ) {
-		PersistentEnd(connectfd, persistent, cm.control_flags & PERSISTENT_MASK, in);
-		return -EIO;
+	// Send to owserver
+	sm.control_flags = SetupControlFlags( pn_whole_directory);
+	if ( BAD( To_Server( &scs, &sm, &sp) ) ) {
+		Release_Persistent( &scs, 0 ) ;
+		return -EIO ;
 	}
-	// Now try to get header. If fails, may need a new non-persistent file_descriptor
-	sm.control_flags = SetupControlFlags(persistent, pn_whole_directory);
-	connectfd = ToServerTwice(connectfd, persistent, &sm, &sp, in);
-	if ( FILE_DESCRIPTOR_NOT_VALID( connectfd ) ) {
-		PersistentEnd(connectfd, persistent, cm.control_flags & PERSISTENT_MASK, in);
-		return -EIO;
-	}
-	// Success, get data
-	comma_separated_list = FromServerAlloc(connectfd, &cm);
+
+	// Receive from owserver
+	comma_separated_list = From_ServerAlloc(&scs, &cm);
 	LEVEL_DEBUG("got %s", SAFESTRING(comma_separated_list));
 	if (cm.ret == 0) {
 		ASCII *current_file;
 		ASCII *rest_of_comma_list = comma_separated_list;
-		size_t devices = 0;
-		struct dirblob db;
+		struct directory_element_structure des ;
 
-		LEVEL_DEBUG("start parsing");
-
-		/* If cacheable, try to allocate a blob for storage */
-		/* only for "read devices" and not alarm */
-		DirblobInit(&db);
-		if (IsRealDir(pn_whole_directory)
-			&& NotAlarmDir(pn_whole_directory)
-			&& !SpecifiedBus(pn_whole_directory)
-			&& pn_whole_directory->selected_device == NULL) {
-			if (RootNotBranch(pn_whole_directory)) {	/* root dir */
-				BUSLOCK(pn_whole_directory);
-				db.allocated = in->last_root_devs;	// root dir estimated length
-				BUSUNLOCK(pn_whole_directory);
-			}
-		} else {
-			db.troubled = 1;	// no dirblob cache
-		}
+		des.dirfunc = dirfunc ;
+		des.v = v ;
+		des.pn_whole_directory = pn_whole_directory ;
+		Directory_Element_Init( &des ) ;
 
 		while ((current_file = strsep(&rest_of_comma_list, ",")) != NULL) {
-			struct parsedname s_pn_directory_element;
-			struct parsedname * pn_directory_element = & s_pn_directory_element ;
-			int path_length = strlen(current_file);
-			LEVEL_DEBUG("got=[%s]", current_file);
-
-			ret = -EINVAL;
-
-			if (SpecifiedRemoteBus(pn_whole_directory)) {
-				// Specified remote bus, add the bus to the path (in front)
-				char BigBuffer[path_length + 12];
-				int sn_ret ;
-				char * no_leading_slash = &current_file[(current_file[0] == '/') ? 1 : 0] ;
-				UCLIBCLOCK ;
-				sn_ret = snprintf(BigBuffer, cm.payload + 11, "/bus.%d/%s",in->index, no_leading_slash ) ;
-				UCLIBCUNLOCK ;
-				if (sn_ret > 0) {
-					ret = FS_ParsedName_BackFromRemote(BigBuffer, pn_directory_element);
-				}
-			} else {
-				ret = FS_ParsedName_BackFromRemote(current_file, pn_directory_element);
-			}
-
+			ZERO_OR_ERROR ret = Directory_Element( current_file, &des );
 			if (ret) {
 				cm.ret = ret;
 				break;
 			}
-			/* we got a device on bus_nr = pn_whole_directory->selected_connection->index. Cache it so we
-			   find it quicker next time we want to do read values from the
-			   the actual device
-			 */
-			if (IsRealDir(pn_whole_directory)) {
-				/* If we get a device then cache the bus_nr */
-				Cache_Add_Device(in->index, pn_directory_element->sn);
-			}
-			/* Add to cache Blob -- snlist is also a flag for cachable */
-			if (DirblobPure(&db)) {	/* only add if there is a blob allocated successfully */
-				DirblobAdd(pn_directory_element->sn, &db);
-			}
-			++devices;
-			FS_alias_subst(dirfunc,v,pn_directory_element) ;
-			FS_ParsedName_destroy(pn_directory_element);	// destroy the last parsed name
 		}
-		/* Add to the cache (full list as a single element */
-		if (DirblobPure(&db)) {
-			Cache_Add_Dir(&db, pn_whole_directory);	// end with a null entry
-			if (RootNotBranch(pn_whole_directory)) {
-				BUSLOCK(pn_whole_directory);
-				in->last_root_devs = DirblobElements(&db);	// root dir estimated length
-				BUSUNLOCK(pn_whole_directory);
-			}
-		}
-		DirblobClear(&db);
+		
+		Directory_Element_Finish( &des ) ;
 
 		DIRLOCK;
-		/* flags are sent back in "offset" of final blank entry */
+		/* flags are sent back in "offset" */
 		flags[0] |= cm.offset;
 		DIRUNLOCK;
 
@@ -448,22 +335,107 @@ static ZERO_OR_ERROR ServerDIRALL(void (*dirfunc) (void *, const struct parsedna
 	if (comma_separated_list != NULL) {
 		owfree(comma_separated_list);
 	}
-	ret = cm.ret;
 
-	PersistentEnd(connectfd, persistent, cm.control_flags & PERSISTENT_MASK, in);
-	return ret;
+	Release_Persistent( &scs, cm.control_flags & PERSISTENT_MASK );
+	return cm.ret;
+}
+
+static void Directory_Element_Init( struct directory_element_structure * des )
+{
+	/* If cacheable, try to allocate a blob for storage */
+	/* only for "read devices" and not alarm */
+	DirblobInit(&(des->db) );
+	if (IsRealDir(des->pn_whole_directory)
+		&& NotAlarmDir(des->pn_whole_directory)
+		&& !SpecifiedBus(des->pn_whole_directory)
+		&& des->pn_whole_directory->selected_device == NULL) {
+		if (RootNotBranch(des->pn_whole_directory)) {	/* root dir */
+			BUSLOCK(des->pn_whole_directory);
+			des->db.allocated = des->pn_whole_directory->selected_connection->last_root_devs;	// root dir estimated length
+			BUSUNLOCK(des->pn_whole_directory);
+		}
+	} else {
+		DirblobPoison( &(des->db) ); // don't cache other directories
+	}
+}
+
+static void Directory_Element_Finish( struct directory_element_structure * des )
+{
+	/* Add to the cache (full list as a single element */
+	if ( DirblobPure( &(des->db) ) ) {
+		Cache_Add_Dir( &(des->db), des->pn_whole_directory);	// end with a null entry
+		if (RootNotBranch(des->pn_whole_directory)) {
+			BUSLOCK(des->pn_whole_directory);
+			des->pn_whole_directory->selected_connection->last_root_devs = DirblobElements( &(des->db) );	// root dir estimated length
+			BUSUNLOCK(des->pn_whole_directory);
+		}
+	}
+	DirblobClear( & (des->db) );
+}
+
+static ZERO_OR_ERROR Directory_Element( char * current_file, struct directory_element_structure * des )
+{
+	struct parsedname s_pn_directory_element;
+	struct parsedname * pn_directory_element = & s_pn_directory_element ;
+	struct connection_in * in = des->pn_whole_directory->selected_connection ;
+	ZERO_OR_ERROR ret ;
+
+	LEVEL_DEBUG("got=[%s]", current_file);
+
+	if (SpecifiedRemoteBus(des->pn_whole_directory)) {
+		// Specified remote bus, add the bus to the path (in front)
+		int path_length = strlen(current_file);
+		char BigBuffer[path_length + 12];
+		int sn_ret ;
+		char * no_leading_slash = &current_file[(current_file[0] == '/') ? 1 : 0] ;
+		UCLIBCLOCK ;
+		sn_ret = snprintf(BigBuffer, path_length + 11, "/bus.%d/%s",in->index, no_leading_slash ) ;
+		UCLIBCUNLOCK ;
+		if (sn_ret < 0) {
+			return -EINVAL ;
+		}
+		ret = FS_ParsedName_BackFromRemote(BigBuffer, pn_directory_element);
+	} else {
+		ret = FS_ParsedName_BackFromRemote(current_file, pn_directory_element);
+	}
+
+	if ( ret < 0 ) {
+		DirblobPoison( &(des->db) ); // don't cache a mistake
+		return ret;
+	}
+
+	/* we got a device on bus_nr = pn_whole_directory->selected_connection->index. Cache it so we
+	   find it quicker next time we want to do read values from the
+	   the actual device
+	 */
+	if (IsRealDir(des->pn_whole_directory)) {
+		/* If we get a device then cache the bus_nr */
+		Cache_Add_Device(in->index, pn_directory_element->sn);
+	}
+	/* Add to cache Blob -- snlist is also a flag for cachable */
+	if (DirblobPure( &(des->db) ) ) {	/* only add if there is a blob allocated successfully */
+		DirblobAdd(pn_directory_element->sn, &(des->db) );
+	}
+
+	// Now actually do the directory function on this element
+	FS_alias_subst(des->dirfunc,des->v,pn_directory_element) ;
+	
+	// Cleanup
+	FS_ParsedName_destroy(pn_directory_element);	// destroy the last parsed name
+
+	return 0 ;
 }
 
 /* read from server, free return pointer if not Null */
 /* Adds an extra null byte at end */
-static void *FromServerAlloc(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct client_msg *cm)
+static void *From_ServerAlloc(struct server_connection_state * scs, struct client_msg *cm)
 {
 	char *msg;
 	struct timeval tv = { Globals.timeout_network + 1, 0, };
 	size_t actual_size ;
 
 	do {						/* loop until non delay message (payload>=0) */
-		tcp_read(file_descriptor, cm, sizeof(struct client_msg), &tv, &actual_size);
+		tcp_read(scs->file_descriptor, cm, sizeof(struct client_msg), &tv, &actual_size);
 		if (actual_size != sizeof(struct client_msg)) {
 			memset(cm, 0, sizeof(struct client_msg));
 			cm->ret = -EIO;
@@ -487,7 +459,7 @@ static void *FromServerAlloc(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct cl
 	}
 
 	if ((msg = (char *) owmalloc((size_t) cm->payload + 1))) {
-		tcp_read(file_descriptor, msg, (size_t) (cm->payload), &tv, &actual_size);
+		tcp_read(scs->file_descriptor, msg, (size_t) (cm->payload), &tv, &actual_size);
 		if ((ssize_t)actual_size != cm->payload) {
 			cm->payload = 0;
 			cm->offset = 0;
@@ -504,14 +476,14 @@ static void *FromServerAlloc(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct cl
 
 /* Read from server -- return negative on error,
     return 0 or positive giving size of data element */
-static SIZE_OR_ERROR FromServer(int file_descriptor, struct client_msg *cm, char *msg, size_t size)
+static SIZE_OR_ERROR From_Server( struct server_connection_state * scs, struct client_msg *cm, char *msg, size_t size)
 {
 	size_t rtry;
 	size_t actual_read ;
 	struct timeval tv = { Globals.timeout_network + 1, 0, };
 
 	do {						// read regular header, or delay (delay when payload<0)
-		tcp_read(file_descriptor, cm, sizeof(struct client_msg), &tv, &actual_read);
+		tcp_read(scs->file_descriptor, cm, sizeof(struct client_msg), &tv, &actual_read);
 		if (actual_read != sizeof(struct client_msg)) {
 			cm->size = 0;
 			cm->ret = -EIO;
@@ -529,49 +501,118 @@ static SIZE_OR_ERROR FromServer(int file_descriptor, struct client_msg *cm, char
 		return 0;				// No payload, done.
 	}
 	rtry = cm->payload < (ssize_t) size ? (size_t) cm->payload : size;
-	tcp_read(file_descriptor, msg, rtry, &tv, &actual_read);	// read expected payload now.
+	tcp_read(scs->file_descriptor, msg, rtry, &tv, &actual_read);	// read expected payload now.
 	if (actual_read != rtry) {
+		LEVEL_DEBUG("Read only %d of %d\n",(int)actual_read,(int)rtry) ;
 		cm->ret = -EIO;
 		return -EIO;
 	}
-
-	if (cm->payload > (ssize_t) size) {	// Uh oh. payload bigger than expected. read it in and discard
-		size_t extra_length = cm->payload - size ;
-		char extra[extra_length] ;
-		tcp_read(file_descriptor, extra, extra_length, &tv, &actual_read);
+	if (cm->payload > (ssize_t) size) {	// Uh oh. payload bigger than expected. close the connection
+		Close_Persistent( scs ) ;
 		return size;
 	}
 	return cm->payload;
+	return cm->payload;
 }
 
-/* Send a message to server, or try a new connection and send again */
-/* return file descriptor */
-static FILE_DESCRIPTOR_OR_ERROR ToServerTwice(FILE_DESCRIPTOR_OR_ERROR file_descriptor, enum persistent_state persistent, struct server_msg *sm, struct serverpackage *sp, struct connection_in *in)
+static GOOD_OR_BAD To_Server( struct server_connection_state * scs, struct server_msg * sm, struct serverpackage *sp)
 {
-	FILE_DESCRIPTOR_OR_ERROR newfd;
-	if (ToServer(file_descriptor, sm, sp) >= 0) {
-		return file_descriptor;
-	}
-	if (persistent == persistent_no) {
-		close(file_descriptor);
-		return FILE_DESCRIPTOR_BAD;
+	struct connection_in * in = scs->in ; // for convenience
+	
+	// initialize the variables
+	scs->file_descriptor = FILE_DESCRIPTOR_BAD ;
+	scs->persistence = Globals.no_persistence ? persistent_no : persistent_yes ;
+
+	// First set up the file descriptor based on persistent state
+	if (scs->persistence == persistent_no) {		
+		// no persistence wanted
+		scs->file_descriptor = ClientConnect(in);
+	} else {
+		// Persistence desired
+		BUSLOCKIN(in);
+		switch ( in->file_descriptor ) {
+			case FILE_DESCRIPTOR_PERSISTENT_IN_USE:
+				// Currently in use, so make new non-persistent connection
+				scs->file_descriptor = ClientConnect(in);
+				scs->persistence = persistent_no ;
+				break ;
+			case FILE_DESCRIPTOR_BAD:
+				// no conection currently, so make a new one
+				scs->file_descriptor = ClientConnect(in);
+				if ( FILE_DESCRIPTOR_VALID( scs->file_descriptor ) ) {
+					in->file_descriptor = FILE_DESCRIPTOR_PERSISTENT_IN_USE ;
+				}	
+				break ;
+			default:
+				// persistent connection idle and waiting for use
+				scs->file_descriptor = in->file_descriptor;
+				in->file_descriptor = FILE_DESCRIPTOR_PERSISTENT_IN_USE;
+			break ;
+		}
+		BUSUNLOCKIN(in);
 	}
 	
-	/* Special case if the connection was persistent
-	 * it may have timed out, so try a new conection */
-	newfd = PersistentReRequest(file_descriptor, in);
-	if ( ! FILE_DESCRIPTOR_VALID( newfd ) ) {
-		return FILE_DESCRIPTOR_BAD;
+	// Now test
+	if ( FILE_DESCRIPTOR_NOT_VALID( scs->file_descriptor ) ) {
+		STAT_ADD1(in->reconnect_state);
+		Close_Persistent( scs ) ;
+		return gbBAD ;
 	}
-	if (ToServer(newfd, sm, sp) >= 0) {
-		return newfd;
+
+	// Do the real work
+	if (WriteToServer(scs->file_descriptor, sm, sp) >= 0) {
+		// successful message
+		return gbGOOD;
 	}
-	close(newfd);
-	return FILE_DESCRIPTOR_BAD;
+
+	// This is where it gets a bit tricky. For non-persistent conections we're done'
+	if ( scs->persistence == persistent_no ) {
+		// not persistent, so no reconnection needed
+		Close_Persistent( scs ) ;
+		return gbBAD ;
+	}
+	
+	// perhaps the persistent connection is stale?
+	// Make a new one
+	scs->file_descriptor = ClientConnect(in) ;
+
+	// Now retest
+	if ( FILE_DESCRIPTOR_NOT_VALID( scs->file_descriptor ) ) {
+		// couldn't make that new connection -- free everything
+		STAT_ADD1(in->reconnect_state);
+		Close_Persistent( scs ) ;
+		return gbBAD ;
+	}
+	
+	// Leave in->file_descriptor = FILE_DESCRIPTOR_PERSISTENT_IN_USE
+
+	// Second attempt at the write, now with new connection
+	if (WriteToServer(scs->file_descriptor, sm, sp) >= 0) {
+		// successful message
+		return gbGOOD;
+	}
+
+	// bad write the second time -- clear everything
+	Close_Persistent( scs ) ;
+	return gbBAD ;
+}
+
+static void Close_Persistent( struct server_connection_state * scs)
+{
+	// First set up the file descriptor based on persistent state
+	if (scs->persistence == persistent_yes) {
+		// no persistence wanted
+		BUSLOCKIN(scs->in);
+			scs->in->file_descriptor = FILE_DESCRIPTOR_BAD ;
+		BUSUNLOCKIN(scs->in);
+	}
+	
+	scs->persistence = persistent_no ;
+	Test_and_Close( &(scs->file_descriptor) ) ;
 }
 
 // should be const char * data but iovec has problems with const arguments
-static SIZE_OR_ERROR ToServer(int file_descriptor, struct server_msg *sm, struct serverpackage *sp)
+static SIZE_OR_ERROR WriteToServer(int file_descriptor, struct server_msg *sm, struct serverpackage *sp)
 {
 	int payload = 0;
 	int tokens = 0;
@@ -619,24 +660,24 @@ static SIZE_OR_ERROR ToServer(int file_descriptor, struct server_msg *sm, struct
 	LEVEL_DEBUG("version=%u payload=%d size=%d type=%d SG=%X offset=%d",sm->version,payload,sm->size,sm->type,sm->control_flags,sm->offset);
 
 	// encode in network order (just the header)
-	local_sm.version = htonl(sm->version);
-	local_sm.payload = htonl(payload);
-	local_sm.size = htonl(sm->size);
-	local_sm.type = htonl(sm->type);
-	local_sm.control_flags = htonl(sm->control_flags);
-	local_sm.offset = htonl(sm->offset);
+	local_sm.version       = htonl( sm->version       );
+	local_sm.payload       = htonl( payload           );
+	local_sm.size          = htonl( sm->size          );
+	local_sm.type          = htonl( sm->type          );
+	local_sm.control_flags = htonl( sm->control_flags );
+	local_sm.offset        = htonl( sm->offset        );
 
 	Debug_Writev(io, nio);
 	return writev(file_descriptor, io, nio) != (ssize_t) (payload + sizeof(struct server_msg) + tokens * sizeof(union antiloop));
 }
 
 /* flag the sg for "virtual root" -- the remote bus was specifically requested */
-static uint32_t SetupControlFlags(enum persistent_state persistent, const struct parsedname *pn)
+static uint32_t SetupControlFlags(const struct parsedname *pn)
 {
 	uint32_t control_flags = pn->control_flags;
 
 	control_flags &= ~PERSISTENT_MASK;
-	if (persistent==persistent_yes) {
+	if (Globals.no_persistence == 0) {
 		control_flags |= PERSISTENT_MASK;
 	}
 
@@ -651,132 +692,32 @@ static uint32_t SetupControlFlags(enum persistent_state persistent, const struct
 	return control_flags;
 }
 
-/* Wrapper for ClientConnect */
-static FILE_DESCRIPTOR_OR_ERROR ConnectToServer(struct connection_in *in)
-{
-	FILE_DESCRIPTOR_OR_ERROR file_descriptor;
-
-	file_descriptor = ClientConnect(in);
-	if ( FILE_DESCRIPTOR_VALID( file_descriptor ) ) {
-		STAT_ADD1(in->reconnect_state);
-	}
-	return file_descriptor;
-}
-
-/* Request a persistent connection
-   Three possibilities:
-     1. no persistent connection currently (in->file_descriptor = -1)
-        create one, flag in->file_descriptor as -2, and return file_descriptor
-        or return -1 if a new one can't be created
-     2. persistent available (in->file_descriptor > -1 )
-        use it, flag in->file_descriptor as -2, and return in->file_descriptor
-     3. in use, (in->file_descriptor = -2)
-        return -1
-*/
-static FILE_DESCRIPTOR_OR_ERROR PersistentRequest(struct connection_in *in)
-{
-	FILE_DESCRIPTOR_OR_ERROR file_descriptor ;
-	BUSLOCKIN(in);
-	switch ( in->file_descriptor ) {
-		case FILE_DESCRIPTOR_PERSISTENT_IN_USE:
-			// Currently in use, so return bad to force a new (transient) conection
-			// We don't just allocate a new one because the higher level needs to know
-			// that this isn't a persistent connection'
-			file_descriptor = FILE_DESCRIPTOR_BAD ;
-			break ;
-		case FILE_DESCRIPTOR_BAD:
-			// no conection currently, so make a new one
-			file_descriptor = ConnectToServer(in) ;
-			if ( FILE_DESCRIPTOR_VALID( file_descriptor ) ) {
-				in->file_descriptor = FILE_DESCRIPTOR_PERSISTENT_IN_USE ;
-			}	
-			break ;
-		default:
-			// persistent connection idle and waiting for use
-			file_descriptor = in->file_descriptor;
-			in->file_descriptor = FILE_DESCRIPTOR_PERSISTENT_IN_USE;
-		break ;
-	}
-	BUSUNLOCKIN(in);
-	return file_descriptor;
-}
-
-/* A persistent connection didn't work (probably expired on the other end
-   recreate it, or clear and return -1
- */
-static FILE_DESCRIPTOR_OR_ERROR PersistentReRequest(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct connection_in *in)
-{
-	close(file_descriptor);
-	BUSLOCKIN(in);
-	file_descriptor = ConnectToServer(in);
-	if ( FILE_DESCRIPTOR_VALID( file_descriptor ) ) {
-		// leave it marked as in use (though it's a different fd)
-		in->file_descriptor = FILE_DESCRIPTOR_PERSISTENT_IN_USE;
-	} else {
-		// can't reconnect
-		in->file_descriptor = FILE_DESCRIPTOR_BAD;
-	}
-	BUSUNLOCKIN(in);
-	return file_descriptor;
-}
-
-/* Clear a persistent connection */
-static void PersistentClear(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct connection_in *in)
-{
-	Test_and_Close( &file_descriptor) ;
-	BUSLOCKIN(in);
-	in->file_descriptor = FILE_DESCRIPTOR_BAD;
-	BUSUNLOCKIN(in);
-}
-
-/* Free a persistent connection */
-static void PersistentFree(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct connection_in *in)
-{
-	if ( FILE_DESCRIPTOR_VALID( file_descriptor ) ) {
-		// mark as available
-		BUSLOCKIN(in);
-		in->file_descriptor = file_descriptor;
-		BUSUNLOCKIN(in);
-	} else {
-		PersistentClear(file_descriptor, in);
-	}
-}
-
-/* All the startup code
-   file_descriptor will get the file descriptor
-   persistent starts yes or no for whether persistence is wanted
-   persistent returns yes or no for whether persistence is granted
-*/
-static FILE_DESCRIPTOR_OR_ERROR PersistentStart(enum persistent_state *persistent, struct connection_in *in)
-{
-	FILE_DESCRIPTOR_OR_ERROR file_descriptor;
-	if (*persistent == persistent_no) {		
-		// no persistence wanted
-		*persistent = persistent_no;		// still not persistent
-		return ConnectToServer(in);
-	}
-	
-	file_descriptor = PersistentRequest(in) ;
-	if ( FILE_DESCRIPTOR_NOT_VALID( file_descriptor ) ) {	// tried but failed
-		*persistent = persistent_no;		// not persistent
-		return ConnectToServer(in);	// non-persistent backup request
-	}
-		
-	*persistent = persistent_yes;		// flag as persistent
-	return file_descriptor;
-}
-
 /* Clean up at end of routine,
    either leave connection open and persistent flag available,
-   or close and leave available
+   or close
 */
-static void PersistentEnd(FILE_DESCRIPTOR_OR_ERROR file_descriptor, enum persistent_state persistent, int granted, struct connection_in *in)
+static void Release_Persistent( struct server_connection_state * scs, int granted )
 {
-	if (persistent == persistent_no) {		// non-persistence from the start
-		Test_and_Close(&file_descriptor) ;
-	} else if (granted == 0) {	// not granted
-		PersistentClear(file_descriptor, in);
-	} else {					// Let the persistent connection be used
-		PersistentFree(file_descriptor, in);
+	if ( granted == 0 ) {
+		Close_Persistent( scs ) ;
+		return ;
 	}
+	
+	if ( FILE_DESCRIPTOR_NOT_VALID( scs->file_descriptor) ) {
+		Close_Persistent( scs ) ;
+		return ;
+	}
+	
+	if (scs->persistence == persistent_no) {		
+		// non-persistence from the start
+		Close_Persistent( scs ) ;
+		return ;
+	}
+
+	// mark as available
+	BUSLOCKIN(scs->in);
+	scs->in->file_descriptor = scs->file_descriptor;
+	BUSUNLOCKIN(scs->in);
+	scs->persistence = persistent_no ; // we no longer own this connection
+	scs->file_descriptor = FILE_DESCRIPTOR_BAD ;
 }
