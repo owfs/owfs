@@ -46,8 +46,8 @@ GOOD_OR_BAD Parse_SerialNumber(char *sn_char, BYTE * sn)
 		if (strncasecmp(crc, sn_char, 2)) {
 			return gbBAD;
 		}
+		sn_char += 2 ;
 	}
-
-	return gbGOOD;
+	return ( *sn_char == '\0' ) ? gbGOOD : gbBAD ;
 }
 

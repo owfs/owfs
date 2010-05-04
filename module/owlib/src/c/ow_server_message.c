@@ -116,14 +116,14 @@ INDEX_OR_ERROR ServerPresence( struct parsedname *pn_file_entry)
 	sm.control_flags = SetupControlFlags( pn_file_entry);
 	if ( BAD( To_Server( &scs, &sm, &sp) ) ) {
 		Release_Persistent( &scs, 0 ) ;
-		return -EIO ;
+		return INDEX_BAD ;
 	}
 
 	// Receive from owserver
 	serial_number = (BYTE *) From_ServerAlloc( &scs, &cm) ;
 	if (cm.ret < 0) {
 		Release_Persistent(&scs, 0 );
-		return -EIO ;
+		return INDEX_BAD ;
 	}
 
 	// Newer owservers return the serial number -- relevant for alias propagation
@@ -133,7 +133,7 @@ INDEX_OR_ERROR ServerPresence( struct parsedname *pn_file_entry)
 	}
 
 	Release_Persistent(&scs, cm.control_flags & PERSISTENT_MASK);
-	return cm.ret;
+	return INDEX_VALID(cm.ret) ? pn_file_entry->selected_connection->index : INDEX_BAD;
 }
 
 // Send to an owserver using the WRITE message

@@ -217,7 +217,7 @@ static INDEX_OR_ERROR CheckThisConnection(int bus_nr, struct parsedname *pn)
 	if (TestConnection(pn_copy)) {	// reconnect successful?
 		return INDEX_BAD;
 	} else if (BusIsServer(in)) {
-		if (ServerPresence(pn_copy) >= 0) {
+		if ( INDEX_VALID( ServerPresence(pn_copy) ) ) {
 			/* Device was found on this in-device, return it's index */
 			LEVEL_DEBUG("Presence found on server bus %s",SAFESTRING(in->name)) ;
 			Cache_Add_Device(in->index,pn_copy->sn) ; // add or update cache */

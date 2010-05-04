@@ -36,7 +36,7 @@ static enum parse_enum Parse_RealDevice(char *filename, enum parse_pass remote_s
 static enum parse_enum Parse_NonRealDevice(char *filename, struct parsedname *pn);
 static enum parse_enum Parse_Bus(char *pathnow, struct parsedname *pn);
 static enum parse_enum Parse_Alias(char *filename, enum parse_pass remote_status, struct parsedname *pn);
-static void ReplaceAliasInto_server( char * filename, struct parsedname * pn);
+static void ReplaceAliasInPath( char * filename, struct parsedname * pn);
 
 static ZERO_OR_ERROR FS_ParsedName_anywhere(const char *path, enum parse_pass remote_status, struct parsedname *pn);
 static ZERO_OR_ERROR FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path, struct parsedname *pn);
@@ -351,8 +351,6 @@ static enum parse_enum Parse_Real(char *pathnow, enum parse_pass remote_status, 
 	} else {
 		return Parse_RealDevice(pathnow, remote_status, pn);
 	}
-
-	return parse_error;
 }
 
 static enum parse_enum Parse_NonReal(char *pathnow, struct parsedname *pn)
@@ -423,7 +421,7 @@ static enum parse_enum Parse_Bus(char *pathnow, struct parsedname *pn)
 	return parse_first;
 }
 
-static void ReplaceAliasInto_server( char * filename, struct parsedname * pn)
+static void ReplaceAliasInPath( char * filename, struct parsedname * pn)
 {
 	int alias_len = strlen(filename) ;
 
@@ -475,7 +473,7 @@ static enum parse_enum Parse_Alias(char *filename, enum parse_pass remote_status
 		} else {
 			// Replace in to_server the alias with the serial number
 			if ( BusIsServer(pn->selected_connection) ) {
-				ReplaceAliasInto_server( filename, pn ) ;
+				ReplaceAliasInPath( filename, pn ) ;
 			}
 
 			/* Check the presence, and cache the proper bus number for better performance */
@@ -497,7 +495,7 @@ static enum parse_enum Parse_Alias(char *filename, enum parse_pass remote_status
 
 		// Replace in to_server the alias with the serial number
 		if ( BusIsServer(pn->selected_connection) ) {
-			ReplaceAliasInto_server( filename, pn ) ;
+			ReplaceAliasInPath( filename, pn ) ;
 		}
 	}
 	

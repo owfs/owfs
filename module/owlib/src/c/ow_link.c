@@ -636,10 +636,11 @@ static GOOD_OR_BAD LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay
 //  Send data and return response block
 //  return 0=good
 // Assume buffer length (combuffer) is 1 + 32*2 + 1
+#define LINK_SEND_SIZE  32
 static int LINK_sendback_data(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
 {
 	size_t left = size;
-	BYTE buf[66] ;
+	BYTE buf[1+LINK_SEND_SIZE*2+1] ;
 	
 	if (size == 0) {
 		return 0;
@@ -647,7 +648,7 @@ static int LINK_sendback_data(const BYTE * data, BYTE * resp, const size_t size,
 	
 	Debug_Bytes( "ELINK sendback send", data, size) ;
 	while (left > 0) {
-		size_t this_length = (left > 32) ? 32 : left;
+		size_t this_length = (left > LINK_SEND_SIZE) ? LINK_SEND_SIZE : left;
 		size_t total_length = 2 * this_length + 2;
 		buf[0] = 'b';			//put in byte mode
 		//        printf(">> size=%d, left=%d, i=%d\n",size,left,i);
