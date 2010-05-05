@@ -101,7 +101,7 @@ void owtcl_Error(Tcl_Interp * interp, char *error_family, char *error_code, char
 		Tcl_PosixError(interp);
 	} else {
 		/* Generate a posix like error message and code. */
-		Tcl_SetResult(interp, buf, TCL_VOLATILE); 
+		Tcl_SetResult(interp, buf, TCL_VOLATILE);
 		Tcl_SetErrorCode(interp, error_family, error_code, NULL);
 	}
 
@@ -152,7 +152,22 @@ owtcl_ObjCmdProc(Owtcl_Connect)
 	return tcl_return;
 }
 
+owtcl_ObjCmdProc(Owtcl_isConnect)
+{
+    OwtclStateType *OwtclStatePtr = (OwtclStateType *) clientData;
+    Tcl_Obj *resultPtr;
+    owtcl_ArgObjIncr;
 
+    resultPtr = Tcl_GetObjResult(interp);
+
+    if (OwtclStatePtr->used)
+        Tcl_SetIntObj(resultPtr, 1);
+    else
+        Tcl_SetIntObj(resultPtr, 0);
+
+    owtcl_ArgObjDecr;
+    return TCL_OK;
+}
 
 /*
  * Disconnect from onewire host(s).
@@ -239,7 +254,7 @@ owtcl_ObjCmdProc(Owtcl_Set_error_print)
 }
 
 /*
- * Change a owfs node's value. 
+ * Change a owfs node's value.
  */
 owtcl_ObjCmdProc(Owtcl_Put)
 {
@@ -357,7 +372,7 @@ owtcl_ObjCmdProc(Owtcl_Get)
 	}
 	Tcl_SetObjResult(interp, resultPtr);
 	free(buf);
-	
+
   common_exit:
 	owtcl_ArgObjDecr;
 	return tcl_return;
@@ -371,19 +386,83 @@ owtcl_ObjCmdProc(Owtcl_Get)
 owtcl_ObjCmdProc(Owtcl_Version)
 {
 	OwtclStateType *OwtclStatePtr = (OwtclStateType *) clientData;
-	char buf[128];
+	char buf[128], *arg;
 	Tcl_Obj *resultPtr;
+    int tcl_return = TCL_OK, s, lst;
+    owtcl_ArgObjIncr;
 
 	(void) OwtclStatePtr;		// suppress compiler warning
 	(void) objc;				// suppress compiler warning
 	(void) objv;				// suppress compiler warning
 
-	sprintf(buf, "owtcl:\t%s\nlibow:\t%s", OWTCL_VERSION, VERSION);
-	resultPtr = Tcl_NewStringObj(buf, -1);
+    lst = 0;
+    for (objix = 1; objix < objc; objix++) {
+        arg = Tcl_GetStringFromObj(objv[objix], &s);
+        if (!strncasecmp(arg, "-list", 5)) {
+            lst = 1;
+        } else if (s > 0) {
+            owtcl_Error(interp, "NONE", NULL, "bad switch \"%s\": should be -list", arg);
+            tcl_return = TCL_ERROR;
+            goto common_exit;
+        }
+    }
+
+    if (lst) {
+        resultPtr = Tcl_NewListObj(0, NULL);
+        Tcl_ListObjAppendElement(interp, resultPtr, Tcl_NewStringObj(OWTCL_VERSION, -1));
+        Tcl_ListObjAppendElement(interp, resultPtr, Tcl_NewStringObj(VERSION, -1));
+    } else {
+        sprintf(buf, "owtcl:\t%s\nlibow:\t%s", OWTCL_VERSION, VERSION);
+	    resultPtr = Tcl_NewStringObj(buf, -1);
+    }
 	Tcl_SetObjResult(interp, resultPtr);
-	return TCL_OK;
+
+  common_exit:
+    owtcl_ArgObjDecr;
+    return tcl_return;
 }
 
+/*
+ * Check if a owfs node exists.
+ */
+owtcl_ObjCmdProc(Owtcl_Exists)
+{
+    OwtclStateType *OwtclStatePtr = (OwtclStateType *) clientData;
+    char *path;
+    int s, r;
+    struct parsedname pn;
+    int tcl_return = TCL_OK;
+    Tcl_Obj *resultPtr;
+
+    owtcl_ArgObjIncr;
+
+    /* Check for arguments to the commmand. */
+    if (objc != 2) {
+        Tcl_WrongNumArgs(interp, 1, objv, "path");
+        tcl_return = TCL_ERROR;
+        goto common_exit;
+    }
+
+    /* Check we are connected to onewire host(s). */
+    if (OwtclStatePtr->used == 0) {
+        owtcl_Error(interp, "OWTCL", "DISCONNECTED", "owtcl disconnected");
+        tcl_return = TCL_ERROR;
+        goto common_exit;
+    }
+
+    resultPtr = Tcl_GetObjResult(interp);
+
+    /* Get the owfs node. */
+    path = Tcl_GetStringFromObj(objv[1], &s);
+    if ((r = FS_ParsedName(path, &pn)))
+        Tcl_SetIntObj(resultPtr, 0);
+    else
+        Tcl_SetIntObj(resultPtr, 1);
+
+  common_exit:
+    owtcl_ArgObjDecr;
+    return tcl_return;
+}
 
 
 /*
@@ -451,7 +530,8 @@ struct CmdListType {
 	void *func;
 } OwtclCmdList[] = {
 	{
-	"::OW::_init", Owtcl_Connect}, {
+    "::OW::_init", Owtcl_Connect}, {
+    "::OW::isconnect", Owtcl_isConnect}, {
 	"::OW::put", Owtcl_Put}, {
 	"::OW::get", Owtcl_Get}, {
 	"::OW::set_error_level", Owtcl_Set_error_level}, {
@@ -460,6 +540,7 @@ struct CmdListType {
 	"::OW::finish", Owtcl_Delete}, {
 	"::OW::isdirectory", Owtcl_IsDir}, {
 	"::OW::isdir", Owtcl_IsDir}, {
+    "::OW::exists", Owtcl_Exists}, {
 	NULL, NULL}
 };
 

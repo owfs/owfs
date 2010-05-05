@@ -239,17 +239,23 @@ Owtcl \- OWFS library access commands for Tcl
 .SH SYNOPSIS
 \fBpackage \fBrequire \fBow
 .sp
-\fB::OW::init\fI \fIinterface \fR?\fIinterface ...\fR? \fR?\fIoptions\fR?
+\fBow\fI \fIoption \fR?\fIarg ...\fR?
+.sp
+\fB::OW::init\fI \fIinterface \fR?\fIinterface ...\fR? \fR?\fIarg ...\fR?
 .br
 \fB::OW::finish
 .br
-\fB::OW::get\fI \fR?\fIpath\fR? \fR?\fIoptions\fR?
+\fB::OW::isconnect
+.br
+\fB::OW::get\fI \fR?\fIpath\fR? \fR?\fIarg ...\fR?
 .br
 \fB::OW::put\fI \fIpath \fR?\fIvalue\fR?
 .br
 \fB::OW::isdirectory\fI \fIpath
 .br
 \fB::OW::isdir\fI \fIpath
+.br
+\fB::OW::exists\fI \fIpath
 \fR
 .SH DESCRIPTION
 .so description.nso
@@ -261,13 +267,75 @@ is a Tcl extension that provides an interface to OWFS. The underlying interface 
 .B owhttpd (1) 
 web server interface. Only the top
 layer has been modified to return native Tcl data.
+.SH COMMANDS
+Performs one of several operations, depending on \fIoption\fR.
+The legal \fIoption\fRs (which may be abbreviated) are:
+.TP
+\fBow open \fIarg ...\fR
+Connect to 1-wire adapter or \fIowserver\fR. \fIarg ...\fR defines a way of
+connection to the 1-wire bus.
+.br
+The full set of initialization args is extensive. They correspond roughly to the command line args of
+.B owfs (1)
+.B owhttpd (1)
+and
+.B owftpd (1)
+
+.TP
+\fBow close
+Close connection to 1-wire bus or owserver.
+
+.TP
+\fBow version\fR ?\fI-list\fR?
+Return version of the owtcl and owlib/
+
+.TP
+\fBow opened
+Return 1 if connected to 1-wire adapter or \fIowserver\fR, otherwise 0.
+
+.TP
+\fBow error\fR \fIlevel\fR \fIvalue\fR
+Set debug options. See
+.B owfs (5)
+
+.TP
+\fBow error\fR \fIprint\fR \fIvalue\fR
+Set debug options. See
+.B owfs (5)
+
+.TP
+\fBow get\fR \fIpath\fR \fR?\fI-list\fR?
+Returns contents of OWFS directory as the list if path contains name OWFS directory.
+If path is name of OWFS file, returns of contents of this file. For files *.ALL
+returns a values list.
+
+
+.TP
+\fBow put \fIpath \fR\fIvalue\fR
+Puts \fIvalue\fR in OWFS file indicated in \fIpath\fR. For files *.ALL use a value
+list.
+
+.TP
+\fBow isdirectory \fIpath
+If \fIpath\fR is the directory - return 1. Otherwise return 0.
+
+.TP
+\fBow isdir \fIpath
+Synonym of \fBow isdirectory
+
+.TP
+\fBow set \fIpath
+Creates a new \fBow\fR-like command with root in the \fIpath\fR.
+A new command allows options \fIget\fR, \fIput\fR, \fIisdirectory\fR, \fIisdir\fR and \fIset\fR.
+
+
 .SH LOW-LEVEL COMMANDS
 The following low-level commands are possible:
 .TP
-\fB::OW::init \fIinterface \fR?\fIinterface ...\fR? \fR?\fIoptions\fR?
-Connect to 1-wire adapter or \fIowserver\fR. \fIinterface\fR and \fIoptions\fR defines a way of
+\fB::OW::init \fIinterface \fR?\fIinterface ...\fR? \fR?\fIarg ...\fR?
+Connect to 1-wire adapter or \fIowserver\fR. \fIinterface\fR and \fIarg ...\fR defines a way of
 connection to the 1-wire bus.
-.PP
+.br
 The full set of initialization options is extensive. They correspond roughly to the command line options of
 ,B owfs (1)
 .B owhttpd (1)
@@ -277,6 +345,10 @@ and
 .TP
 \fB::OW::finish
 Close connection to 1-wire bus or owserver.
+
+.TP
+\fB::OW::isconnect
+Return 1 if connected to 1-wire adapter or \fIowserver\fR, otherwise 0.
 
 .TP
 \fB::OW::get \fR?\fIpath\fR? \fR?\fI-list\fR?
@@ -297,6 +369,26 @@ If \fIpath\fR is the directory - return 1. Otherwise return 0.
 .TP
 \fB::OW::isdir \fIpath
 Synonym of \fB::OW::isdirectory
+
+.TP
+\fB::OW::exists \fIpath
+If \fIpath\fR is exists - return 1. Otherwise return 0.
+
+.SH EXAMPLE
+.CS
+package require ow
+
+ow open -d /dev/ttyS0 -t 60
+
+set save_templow [ow get /28.86BF80000000/templow]
+ow put /28.86BF80000000/templow 10
+
+set room_sensor [ow set /28.86BF80000000]
+$room_sensor put temphigh 50
+
+set room_temp [$room_sensor set temperature]
+set current_temp [$room_temp get]
+.CE
 
 .SH SEE ALSO
 .so seealso.nso

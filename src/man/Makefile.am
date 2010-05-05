@@ -32,7 +32,7 @@ man_MANS = owfs.1 \
            owperl.3 \
            owtcl.3 \
            owfs.5 owfs.conf.5 \
-           owtcl.n
+           owtcl.n ow.n
 
 EXTRA_DIST = ${man_MANS}
 

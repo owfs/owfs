@@ -62,7 +62,7 @@ clean-generic:
 	@RM@ -f *~ .*~
 
 ow.tcl.h: ow.tcl ${ow_la_DEPENDENCIES}
-	sed -e '/^$\#/d' -e '/^$$/d' -e 's/\"/\\"/g' -e 's/^/"/' -e 's/$$/\\n"/' <ow.tcl > $@ || { $(RM) $@; exit 1; }
+	sed -e '/^$\#/d' -e '/^$$/d' -e 's/\\\"/\\\\"/g' -e 's/\"/\\"/g' -e 's/^/"/' -e 's/$$/\\n"/' <ow.tcl > $@ || { $(RM) $@; exit 1; }
 
 # Have to relink the library since it's generated with -bundle, it should be -dynamiclib
 darwin-relink: ow.la
