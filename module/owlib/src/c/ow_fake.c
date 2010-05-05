@@ -21,7 +21,7 @@ static RESET_TYPE Fake_reset(const struct parsedname *pn);
 static GOOD_OR_BAD Fake_ProgramPulse(const struct parsedname *pn);
 static int Fake_sendback_bits(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 static void Fake_close(struct connection_in *in);
-static int Fake_next_both(struct device_search *ds, const struct parsedname *pn);
+static enum search_status Fake_next_both(struct device_search *ds, const struct parsedname *pn);
 static const ASCII *namefind(const char *name);
 static void Fake_setroutines(struct connection_in *in);
 static int Fake_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
@@ -251,17 +251,17 @@ static void Fake_close(struct connection_in *in)
 	(void) in;
 }
 
-static int Fake_next_both(struct device_search *ds, const struct parsedname *pn)
+static enum search_status Fake_next_both(struct device_search *ds, const struct parsedname *pn)
 {
 	if (ds->search == _1W_CONDITIONAL_SEARCH_ROM) {	// alarm not supported
 		ds->LastDevice = 1;
-		return -ENODEV;
+		return search_done;
 	}
 	if (DirblobGet(++ds->index, ds->sn, &(pn->selected_connection->main))) {
 		ds->LastDevice = 1;
-		return -ENODEV;
+		return search_done;
 	}
-	return 0;
+	return search_good;
 }
 
 /* Need to lock struct global_namefind_struct since twalk requires global data -- can't pass void pointer */

@@ -57,8 +57,8 @@ static ZERO_OR_ERROR DS2482_detect_bus(enum ds2482_address chip_num, struct conn
 static int DS2482_detect_sys( int any, enum ds2482_address chip_num, struct connection_in *in) ;
 static int DS2482_detect_dir( int any, enum ds2482_address chip_num, struct connection_in *in) ;
 static ZERO_OR_ERROR DS2482_detect_single(int lowindex, int highindex, struct connection_in *in) ;
-static int DS2482_next_both(struct device_search *ds, const struct parsedname *pn);
-static int DS2482_triple(BYTE * bits, int direction, FILE_DESCRIPTOR_OR_ERROR file_descriptor);
+static enum search_status DS2482_next_both(struct device_search *ds, const struct parsedname *pn);
+static GOOD_OR_BAD DS2482_triple(BYTE * bits, int direction, FILE_DESCRIPTOR_OR_ERROR file_descriptor);
 static int DS2482_send_and_get(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const BYTE wr, BYTE * rd);
 static RESET_TYPE DS2482_reset(const struct parsedname *pn);
 static int DS2482_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
@@ -506,14 +506,13 @@ static int DS2482_readstatus(BYTE * c, FILE_DESCRIPTOR_OR_ERROR file_descriptor,
 }
 
 /* uses the "Triple" primative for faster search */
-static int DS2482_next_both(struct device_search *ds, const struct parsedname *pn)
+static enum search_status DS2482_next_both(struct device_search *ds, const struct parsedname *pn)
 {
 	int search_direction = 0;	/* initialization just to forestall incorrect compiler warning */
 	int bit_number;
 	int last_zero = -1;
 	FILE_DESCRIPTOR_OR_ERROR file_descriptor = pn->selected_connection->connin.i2c.head->file_descriptor;
 	BYTE bits[3];
-	int ret;
 
 	// initialize for search
 	// if the last call was not the last one
@@ -521,17 +520,17 @@ static int DS2482_next_both(struct device_search *ds, const struct parsedname *p
 		ds->LastDevice = 1;
 	}
 	if (ds->LastDevice) {
-		return -ENODEV;
+		return search_done;
 	}
 
 	if ( BAD( BUS_select(pn) ) ) {
-		return -EIO ;
+		return search_error ;
 	}
 
 	/* Make sure we're using the correct channel */
 	/* Appropriate search command */
-	if ((ret = BUS_send_data(&(ds->search), 1, pn))) {
-		return ret;
+	if ( BUS_send_data(&(ds->search), 1, pn) != 0 ) {
+		return search_error;
 	}
 	// loop to do the search
 	for (bit_number = 0; bit_number < 64; ++bit_number) {
@@ -543,14 +542,14 @@ static int DS2482_next_both(struct device_search *ds, const struct parsedname *p
 			search_direction = (bit_number == ds->LastDiscrepancy) ? 1 : 0;
 		}
 		/* Appropriate search command */
-		if ((ret = DS2482_triple(bits, search_direction, file_descriptor))) {
-			return ret;
+		if ( BAD( DS2482_triple(bits, search_direction, file_descriptor) ) )  {
+			return search_error;
 		}
 		if (bits[0] || bits[1] || bits[2]) {
 			if (bits[0] && bits[1]) {	/* 1,1 */
 				/* No devices respond */
 				ds->LastDevice = 1;
-				return -ENODEV;
+				return search_done;
 			}
 		} else {				/* 0,0,0 */
 			last_zero = bit_number;
@@ -560,7 +559,7 @@ static int DS2482_next_both(struct device_search *ds, const struct parsedname *p
 
 	if (CRC8(ds->sn, SERIAL_NUMBER_SIZE) || (bit_number < 64) || (ds->sn[0] == 0)) {
 		/* Unsuccessful search or error -- possibly a device suddenly added */
-		return -EIO;
+		return search_error;
 	}
 	if ((ds->sn[0] & 0x7F) == 0x04) {
 		/* We found a DS1994/DS2404 which require longer delays */
@@ -570,7 +569,7 @@ static int DS2482_next_both(struct device_search *ds, const struct parsedname *p
 	ds->LastDiscrepancy = last_zero;
 	ds->LastDevice = (last_zero < 0);
 	LEVEL_DEBUG("SN found: " SNformat "", SNvar(ds->sn));
-	return 0;
+	return search_good;
 }
 
 /* DS2482 Reset -- A little different from DS2480B */
@@ -703,7 +702,7 @@ static int CreateChannels(struct connection_in *in)
 	return 0;
 }
 
-static int DS2482_triple(BYTE * bits, int direction, FILE_DESCRIPTOR_OR_ERROR file_descriptor)
+static GOOD_OR_BAD DS2482_triple(BYTE * bits, int direction, FILE_DESCRIPTOR_OR_ERROR file_descriptor)
 {
 	/* 3 bits in bits */
 	BYTE c;
@@ -711,19 +710,19 @@ static int DS2482_triple(BYTE * bits, int direction, FILE_DESCRIPTOR_OR_ERROR fi
 	LEVEL_DEBUG("-> TRIPLET attempt direction %d", direction);
 	/* Write TRIPLE command */
 	if (i2c_smbus_write_byte_data(file_descriptor, DS2482_CMD_1WIRE_TRIPLET, direction ? 0xFF : 0) < 0) {
-		return 1;
+		return gbBAD;
 	}
 
 	/* read status */
 	if (DS2482_readstatus(&c, file_descriptor, DS2482_1wire_triplet_usec)) {
-		return -1;				// 250usec = 3*Tslot
+		return gbBAD;				// 250usec = 3*Tslot
 	}
 
 	bits[0] = (c & DS2482_REG_STS_SBR) != 0;
 	bits[1] = (c & DS2482_REG_STS_TSB) != 0;
 	bits[2] = (c & DS2482_REG_STS_DIR) != 0;
 	LEVEL_DEBUG("<- TRIPLET %d %d %d", bits[0], bits[1], bits[2]);
-	return 0;
+	return gbGOOD;
 }
 
 static int DS2482_channel_select(const struct parsedname *pn)

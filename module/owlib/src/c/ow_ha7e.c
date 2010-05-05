@@ -18,7 +18,7 @@ $Id$
 
 //static void byteprint( const BYTE * b, int size ) ;
 static RESET_TYPE HA7E_reset(const struct parsedname *pn);
-static int HA7E_next_both(struct device_search *ds, const struct parsedname *pn);
+static enum search_status HA7E_next_both(struct device_search *ds, const struct parsedname *pn);
 static int HA7E_sendback_part(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn) ;
 static int HA7E_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 static void HA7E_setroutines(struct connection_in *in);
@@ -103,21 +103,20 @@ static RESET_TYPE HA7E_reset(const struct parsedname *pn)
 	return BUS_RESET_OK;
 }
 
-static int HA7E_next_both(struct device_search *ds, const struct parsedname *pn)
+static enum search_status HA7E_next_both(struct device_search *ds, const struct parsedname *pn)
 {
-	int ret = 0;
 	struct dirblob *db = (ds->search == _1W_CONDITIONAL_SEARCH_ROM) ?
 		&(pn->selected_connection->alarm) : &(pn->selected_connection->main);
 
 	if (ds->LastDevice) {
-		return -ENODEV;
+		return search_done;
 	}
 
 	COM_flush(pn->selected_connection);
 
 	if (ds->index == -1) {
 		if ( BAD( HA7E_directory(ds, db, pn) ) ) {
-			return -EIO;
+			return search_error;
 		}
 	}
 	// LOOK FOR NEXT ELEMENT
@@ -125,22 +124,20 @@ static int HA7E_next_both(struct device_search *ds, const struct parsedname *pn)
 
 	LEVEL_DEBUG("Index %d", ds->index);
 
-	ret = DirblobGet(ds->index, ds->sn, db);
-	LEVEL_DEBUG("DirblobGet %d", ret);
-	switch (ret) {
+	switch ( DirblobGet(ds->index, ds->sn, db) ) {
 	case 0:
 		if ((ds->sn[0] & 0x7F) == 0x04) {
 			/* We found a DS1994/DS2404 which require longer delays */
 			pn->selected_connection->ds2404_compliance = 1;
 		}
-		break;
+		LEVEL_DEBUG("SN found: " SNformat "\n", SNvar(ds->sn));
+		return search_good;
 	case -ENODEV:
+	default:
 		ds->LastDevice = 1;
-		break;
+		LEVEL_DEBUG("SN finished");
+		return search_done;
 	}
-
-	LEVEL_DEBUG("SN found: " SNformat "\n", SNvar(ds->sn));
-	return ret;
 }
 
 /************************************************************************/

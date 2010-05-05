@@ -36,7 +36,7 @@ static int HA7_getlock(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct connecti
 static int HA7_releaselock(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct connection_in *in);
 static int HA7_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct memblob *mb);
 static RESET_TYPE HA7_reset(const struct parsedname *pn);
-static int HA7_next_both(struct device_search *ds, const struct parsedname *pn);
+static enum search_status HA7_next_both(struct device_search *ds, const struct parsedname *pn);
 static int HA7_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 static int HA7_select_and_sendback(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 static int HA7_sendback_block(const BYTE * data, BYTE * resp, const size_t size, int also_address, const struct parsedname *pn);
@@ -198,37 +198,33 @@ static int HA7_directory(BYTE search, struct dirblob *db, const struct parsednam
 	return ret;
 }
 
-static int HA7_next_both(struct device_search *ds, const struct parsedname *pn)
+static enum search_status HA7_next_both(struct device_search *ds, const struct parsedname *pn)
 {
 	struct dirblob *db = (ds->search == _1W_CONDITIONAL_SEARCH_ROM) ?
 		&(pn->selected_connection->alarm) : &(pn->selected_connection->main);
-	int ret = 0;
 
 	if (pn->selected_connection->AnyDevices == anydevices_no) {
 		ds->LastDevice = 1;
 	}
 	if (ds->LastDevice) {
-		return -ENODEV;
+		return search_done;
 	}
 
 	if (++(ds->index) == 0) {
 		if (HA7_directory(ds->search, db, pn)) {
-			return -EIO;
+			return search_error;
 		}
 	}
-	ret = DirblobGet(ds->index, ds->sn, db);
-	switch (ret) {
-	case 0:
-		if ((ds->sn[0] & 0x7F) == 0x04) {
-			/* We found a DS1994/DS2404 which require longer delays */
-			pn->selected_connection->ds2404_compliance = 1;
-		}
-		break;
-	case -ENODEV:
-		ds->LastDevice = 1;
-		break;
+	switch ( DirblobGet(ds->index, ds->sn, db) ) {
+		case 0:
+			LEVEL_DEBUG("SN found: " SNformat "", SNvar(ds->sn));
+			return search_good;
+		case -ENODEV:
+		default:
+			ds->LastDevice = 1;
+			LEVEL_DEBUG("SN finished");
+			return search_done;
 	}
-	return ret;
 }
 
 #define HA7_READ_BUFFER_LENGTH 2000

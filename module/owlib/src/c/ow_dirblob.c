@@ -43,7 +43,7 @@ $Id$
 
     It is used for directory caches, and some "all at once" adapters types
 
-    Most interesting, it allocates memory dynamically.
+    Most interestingly, it allocates memory dynamically.
 */
 
 void DirblobClear(struct dirblob *db)
@@ -104,8 +104,9 @@ int DirblobAdd(const BYTE * sn, struct dirblob *db)
 
 int DirblobGet(int device_index, BYTE * sn, const struct dirblob *db)
 {
-	if (device_index >= db->devices)
+	if (device_index >= db->devices) {
 		return -ENODEV;
+	}
 	memcpy(sn, &(db->snlist[DIRBLOB_ELEMENT_LENGTH * device_index]), DIRBLOB_ELEMENT_LENGTH);
 	return 0;
 }

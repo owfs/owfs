@@ -72,6 +72,9 @@ See: http://www.iana.org/assignments/port-numbers
 /* reset types */
 #include "ow_reset.h"
 
+/* bus serach */
+#include "ow_search.h"
+
 /* large enough for arrays of 2048 elements of ~49 bytes each */
 #define MAX_OWSERVER_PROTOCOL_PACKET_SIZE  100050
 
@@ -112,7 +115,6 @@ See: http://www.iana.org/assignments/port-numbers
 #endif
 
 struct connection_in;
-struct device_search;
 
 /* -------------------------------------------- */
 /* Interface-specific routines ---------------- */
@@ -122,7 +124,7 @@ struct interface_routines {
 	/* reset the interface -- actually the 1-wire bus */
 	RESET_TYPE (*reset) (const struct parsedname * pn);
 	/* Bulk of search routine, after set ups for first or alarm or family */
-	int (*next_both) (struct device_search * ds, const struct parsedname * pn);
+	enum search_status (*next_both) (struct device_search * ds, const struct parsedname * pn);
 	/* Send a byte with bus power to follow */
 	GOOD_OR_BAD (*PowerByte) (const BYTE data, BYTE * resp, const UINT delay, const struct parsedname * pn);
 	/* Send a 12V 480msec oulse to program EEPROM */
@@ -359,14 +361,6 @@ enum e_anydevices {
 	anydevices_yes ,
 	anydevices_unknown ,
 };	
-
-struct device_search {
-	int LastDiscrepancy;		// for search
-	int LastDevice;				// for search
-	int index;
-	BYTE sn[SERIAL_NUMBER_SIZE];
-	BYTE search;
-};
 
 enum e_bus_stat {
 	e_bus_reconnects,
@@ -611,12 +605,7 @@ void DS9490_close(struct connection_in *in);
 
 RESET_TYPE BUS_reset(const struct parsedname *pn);
 
-int BUS_first(struct device_search *ds, const struct parsedname *pn);
-int BUS_next(struct device_search *ds, const struct parsedname *pn);
-int BUS_first_alarm(struct device_search *ds, const struct parsedname *pn);
-
 GOOD_OR_BAD BUS_select(const struct parsedname *pn);
-int BUS_next_both_bitbang(struct device_search *ds, const struct parsedname *pn) ;
 
 int BUS_sendout_cmd(const BYTE * cmd, const size_t len, const struct parsedname *pn);
 int BUS_send_cmd(const BYTE * cmd, const size_t len, const struct parsedname *pn);
@@ -627,7 +616,6 @@ int BUS_verify(BYTE search, const struct parsedname *pn);
 
 GOOD_OR_BAD BUS_PowerByte(const BYTE data, BYTE * resp, UINT delay, const struct parsedname *pn);
 GOOD_OR_BAD BUS_ProgramPulse(const struct parsedname *pn);
-int BUS_next_both(struct device_search *ds, const struct parsedname *pn);
 int BUS_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 int BUS_select_and_sendback(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 

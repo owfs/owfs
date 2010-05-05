@@ -68,10 +68,12 @@ noinst_HEADERS =          \
         ow_onewirequery.h \
         ow_opt.h          \
         ow_parsedname.h   \
+	ow_parse_sn.h     \
         ow_pid.h          \
         ow_pressure.h     \
 	ow_reset.h        \
         ow_settings.h     \
+	ow_search.h       \
         ow_simultaneous.h \
 	ow_specialcase.h  \
 	ow_standard.h     \

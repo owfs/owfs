@@ -80,7 +80,7 @@ static void DS9490_dir_callback( void * v, const struct parsedname * pn_entry );
 static int DS9490_setup_adapter(struct connection_in * in) ;
 
 int DS9490_getstatus(BYTE * buffer, int readlen, const struct parsedname *pn);
-static int DS9490_next_both(struct device_search *ds, const struct parsedname *pn);
+static enum search_status DS9490_next_both(struct device_search *ds, const struct parsedname *pn);
 static int DS9490_sendback_data(const BYTE * data, BYTE * resp, size_t len, const struct parsedname *pn);
 static int DS9490_HaltPulse(const struct parsedname *pn);
 static GOOD_OR_BAD DS9490_PowerByte(BYTE byte, BYTE * resp, UINT delay, const struct parsedname *pn);
@@ -90,7 +90,7 @@ static int DS9490_write(const BYTE * buf, size_t size, const struct parsedname *
 static int DS9490_overdrive(const struct parsedname *pn);
 static void SetupDiscrepancy(const struct device_search *ds, BYTE * discrepancy);
 static int FindDiscrepancy(BYTE * last_sn, BYTE * discrepancy_sn);
-static int DS9490_directory(struct device_search *ds, struct dirblob *db, const struct parsedname *pn);
+static enum search_status DS9490_directory(struct device_search *ds, struct dirblob *db, const struct parsedname *pn);
 static int DS9490_SetSpeed(const struct parsedname *pn);
 static void DS9490_SetFlexParameters(struct connection_in *in) ;
 
@@ -1072,55 +1072,61 @@ static int DS9490_sendback_data(const BYTE * data, BYTE * resp, size_t len, cons
  * return -EIO    on errors
  */
 
-static int DS9490_next_both(struct device_search *ds, const struct parsedname *pn)
+static enum search_status DS9490_next_both(struct device_search *ds, const struct parsedname *pn)
 {
 	struct dirblob *db = (ds->search == _1W_CONDITIONAL_SEARCH_ROM) ?
 		&(pn->selected_connection->alarm) : &(pn->selected_connection->main);
-	int ret;
 	int dir_gulp_elements = (pn->pathlength==0) ? DS2490_DIR_GULP_ELEMENTS : 1 ;
 
 	if (pn->selected_connection->AnyDevices == anydevices_no) {
-		return -ENODEV;
+		return search_done;
 	}
 
 	// LOOK FOR NEXT ELEMENT
 	++ds->index;
-
 	LEVEL_DEBUG("Index %d", ds->index);
 
 	if (ds->index % dir_gulp_elements == 0) {
 		if (ds->LastDevice) {
-			return -ENODEV;
+			return search_done;
 		}
-		if ((ret = DS9490_directory(ds, db, pn))) {
-			return ret;
+		switch ( DS9490_directory(ds, db, pn) ) {
+			case search_done:
+				return search_done;
+			case search_error:
+				return search_error;
+			case search_good:
+				break;
 		}
 	}
 
-	if ((ret = DirblobGet(ds->index % dir_gulp_elements, ds->sn, db))) {
-		return ret;
+	switch ( DirblobGet(ds->index % dir_gulp_elements, ds->sn, db) ) {
+		case 0:
+			LEVEL_DEBUG("SN found: " SNformat, SNvar(ds->sn));
+			/* test for special device families */
+			switch (ds->sn[0]) {
+				case 0x00:
+					LEVEL_DATA("NULL family found");
+					return search_error;
+				case 0x04:
+				case 0x84:
+					/* We found a DS1994/DS2404 which require longer delays */
+					pn->selected_connection->ds2404_compliance = 1;
+					break;
+				default:
+					break;
+			}
+			return search_good;
+		case -ENODEV:
+		default:
+			LEVEL_DEBUG("SN finished");
+			return search_done;
 	}
-
-	/* test for special device families */
-	switch (ds->sn[0]) {
-	case 0x00:
-		LEVEL_DATA("NULL family found");
-		return -EIO;
-	case 0x04:
-	case 0x84:
-		/* We found a DS1994/DS2404 which require longer delays */
-		pn->selected_connection->ds2404_compliance = 1;
-		break;
-	default:
-		break;
-	}
-	LEVEL_DEBUG("SN found: " SNformat, SNvar(ds->sn));
-	return 0;
 }
 
 // Read up to 7 (DS2490_DIR_GULP_ELEMENTS) at a time, and  place into
 // a dirblob. Called from DS9490_next_both every 7 devices to fill.
-static int DS9490_directory(struct device_search *ds, struct dirblob *db, const struct parsedname *pn)
+static enum search_status DS9490_directory(struct device_search *ds, struct dirblob *db, const struct parsedname *pn)
 {
 	BYTE status_buffer[32];
 	BYTE EP2_data[SERIAL_NUMBER_SIZE] ; //USB endpoint 3 buffer
@@ -1138,13 +1144,13 @@ static int DS9490_directory(struct device_search *ds, struct dirblob *db, const 
 
 	if ( BAD( BUS_select(pn) ) ) {
 		LEVEL_DEBUG("Selection problem before a directory listing") ;
-		return -EIO ;
+		return search_error ;
 	}
 
 	/* DS1994/DS2404 might need an extra reset */
 	if (pn->selected_connection->ExtraReset) {
 		if (BUS_reset(pn) < 0) {
-			return -EIO;
+			return search_error;
 		}
 		pn->selected_connection->ExtraReset = 0;
 	}
@@ -1154,17 +1160,17 @@ static int DS9490_directory(struct device_search *ds, struct dirblob *db, const 
 	// set the search start location
 	if ((ret = DS9490_write(EP2_data, SERIAL_NUMBER_SIZE, pn)) < SERIAL_NUMBER_SIZE) {
 		LEVEL_DATA("bulk write problem = %d", ret);
-		return -EIO;
+		return search_error;
 	}
 	// Send the search request
 	if ((ret = USB_Control_Msg(COMM_CMD, COMM_SEARCH_ACCESS | COMM_IM | COMM_SM | COMM_F | COMM_RTS, (dir_gulp_elements << 8) | (ds->search), pn) ) < 0) {
 		LEVEL_DATA("control problem ret=%d", ret);
-		return -EIO;
+		return search_error;
 	}
 	// read the search status
 	if ((ret = DS9490_getstatus(status_buffer, 0, pn)) < 0) {
 		LEVEL_DATA("getstatus error");
-		return -EIO;
+		return search_error;
 	}
 
 	// test the buffer size waiting for us
@@ -1175,13 +1181,13 @@ static int DS9490_directory(struct device_search *ds, struct dirblob *db, const 
 		 * getting stuck in loop in FS_realdir() and FS_alarmdir()
 		 * which ends when ret!=0 */
 		LEVEL_DATA("ReadBufferstatus == 0");
-		return -ENODEV;
+		return search_done;
 	} else if ( bytes_back % SERIAL_NUMBER_SIZE != 0 ) {
 		LEVEL_DATA("ReadBufferstatus size %d not a multiple of %d", bytes_back,SERIAL_NUMBER_SIZE);
-		return -EIO;
+		return search_error;
 	} else if ( bytes_back > (dir_gulp_elements + 1) * SERIAL_NUMBER_SIZE ) {
 		LEVEL_DATA("ReadBufferstatus size %d too large", bytes_back);
-		return -EIO;
+		return search_error;
 	}
 	devices_found = bytes_back / SERIAL_NUMBER_SIZE;
 	if (devices_found > dir_gulp_elements) {
@@ -1191,7 +1197,7 @@ static int DS9490_directory(struct device_search *ds, struct dirblob *db, const 
 	// read in the buffer that holds the devices found
 	if ((ret = DS9490_read(EP3.b, bytes_back, pn)) <= 0) {
 		LEVEL_DATA("bulk read problem ret=%d", ret);
-		return -EIO;
+		return search_error;
 	}
 
 	// analyze each device found
@@ -1200,7 +1206,7 @@ static int DS9490_directory(struct device_search *ds, struct dirblob *db, const 
 		LEVEL_DEBUG("gulp. Adding element %d:" SNformat, device_index, SNvar(EP3.sn[device_index]));
 		if (CRC8(EP3.sn[device_index], SERIAL_NUMBER_SIZE) != 0 || EP3.sn[device_index][0] == 0) {
 			LEVEL_DATA("CRC error");
-			return -EIO;
+			return search_error;
 		}
 	}
 	// all ok, so add the devices
@@ -1210,7 +1216,7 @@ static int DS9490_directory(struct device_search *ds, struct dirblob *db, const 
 	ds->LastDiscrepancy = FindDiscrepancy(EP3.sn[devices_found-1], EP3.sn[devices_found]);
 	ds->LastDevice = (bytes_back == devices_found * SERIAL_NUMBER_SIZE);	// no more to read
 
-	return 0;
+	return search_good;
 }
 
 static void SetupDiscrepancy(const struct device_search *ds, BYTE * discrepancy)

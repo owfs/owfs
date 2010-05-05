@@ -51,7 +51,7 @@ static RESET_TYPE EtherWeather_reset(const struct parsedname *pn) ;
 static int EtherWeather_command(struct connection_in *in, char command, int datalen, const BYTE * idata, BYTE * odata) ;
 static void EtherWeather_close(struct connection_in *in);
 static GOOD_OR_BAD EtherWeather_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname *pn);
-static int EtherWeather_next_both(struct device_search *ds, const struct parsedname *pn);
+static enum search_status EtherWeather_next_both(struct device_search *ds, const struct parsedname *pn);
 static int EtherWeather_sendback_bits(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn);
 static int EtherWeather_sendback_data(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn);
 static void EtherWeather_setroutines(struct connection_in *in);
@@ -155,7 +155,7 @@ static int EtherWeather_sendback_bits(const BYTE * data, BYTE * resp, const size
 	return 0;
 }
 
-static int EtherWeather_next_both(struct device_search *ds, const struct parsedname *pn)
+static enum search_status EtherWeather_next_both(struct device_search *ds, const struct parsedname *pn)
 {
 	BYTE sendbuf[9];
 
@@ -164,11 +164,11 @@ static int EtherWeather_next_both(struct device_search *ds, const struct parsedn
 		ds->LastDevice = 1;
 	}
 	if (ds->LastDevice) {
-		return -ENODEV;
+		return search_done;
 	}
 
 	if ( BAD( BUS_select(pn) ) ) {
-		return -EIO ;
+		return search_error ;
 	}
 
 	memcpy(sendbuf, ds->sn, SERIAL_NUMBER_SIZE);
@@ -182,19 +182,19 @@ static int EtherWeather_next_both(struct device_search *ds, const struct parsedn
 	}
 
 	if (EtherWeather_command(pn->selected_connection, EtherWeather_COMMAND_ACCEL, 9, sendbuf, sendbuf)) {
-		return -EIO;
+		return search_error;
 	}
 
 	if (sendbuf[8] == 0xFF) {
 		/* No devices */
-		return -ENODEV;
+		return search_done;
 	}
 
 	memcpy(ds->sn, sendbuf, 8);
 
 	if (CRC8(ds->sn, 8) || (ds->sn[0] == 0)) {
 		/* Bus error */
-		return -EIO;
+		return search_error;
 	}
 
 	if ((ds->sn[0] & 0x7F) == 0x04) {
@@ -212,7 +212,7 @@ static int EtherWeather_next_both(struct device_search *ds, const struct parsedn
 
 	LEVEL_DEBUG("SN found: " SNformat, SNvar(ds->sn));
 
-	return 0;
+	return search_good;
 }
 
 static GOOD_OR_BAD EtherWeather_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname *pn)

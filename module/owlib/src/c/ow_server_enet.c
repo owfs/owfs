@@ -47,7 +47,7 @@ static int xml_integer( const char * tag, char ** buffer) ;
 static char * xml_string( const char * tag, char ** buffer) ;
 static _FLOAT xml_float( const char * tag, char ** buffer) ;
 
-static int OWServer_Enet_next_both(struct device_search *ds, const struct parsedname *pn);
+static enum search_status OWServer_Enet_next_both(struct device_search *ds, const struct parsedname *pn);
 static int OWServer_Enet_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 static void OWServer_Enet_setroutines(struct connection_in *in);
 static GOOD_OR_BAD OWServer_Enet_select( const struct parsedname * pn ) ;
@@ -467,22 +467,21 @@ static RESET_TYPE OWServer_Enet_reset(const struct parsedname *pn)
 	return BUS_RESET_OK;
 }
 
-static int OWServer_Enet_next_both(struct device_search *ds, const struct parsedname *pn)
+static enum search_status OWServer_Enet_next_both(struct device_search *ds, const struct parsedname *pn)
 {
-	int ret = 0;
 	struct dirblob *db = &(pn->selected_connection->main) ;
 
 	if ( ds->search == _1W_CONDITIONAL_SEARCH_ROM ) {
-		return -ENOTSUP ;
+		return search_error ;
 	}
 
 	if (ds->LastDevice) {
-		return -ENODEV;
+		return search_done;
 	}
 
 	if (ds->index == -1) {
 		if (ENET_get_detail(pn)!=0) {
-			return -EIO;
+			return search_error;
 		}
 	}
 	// LOOK FOR NEXT ELEMENT
@@ -490,18 +489,16 @@ static int OWServer_Enet_next_both(struct device_search *ds, const struct parsed
 
 	LEVEL_DEBUG("Index %d", ds->index);
 
-	ret = DirblobGet(ds->index, ds->sn, db);
-	LEVEL_DEBUG("DirblobGet %d\n", ret);
-	switch (ret) {
+	switch ( DirblobGet(ds->index, ds->sn, db) ) {
 	case 0:
-		break;
+		LEVEL_DEBUG("SN found: " SNformat, SNvar(ds->sn));
+		return search_good;
 	case -ENODEV:
+	default:
 		ds->LastDevice = 1;
-		break;
+		LEVEL_DEBUG("SN finished");
+		return search_done;
 	}
-
-	LEVEL_DEBUG("SN found: " SNformat, SNvar(ds->sn));
-	return ret;
 }
 
 /* select a device for reference */

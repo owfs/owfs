@@ -13,7 +13,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
-GOOD_OR_BAD Parse_SerialNumber(char *sn_char, BYTE * sn)
+enum parse_serialnumber Parse_SerialNumber(char *sn_char, BYTE * sn)
 {
 	ASCII ID[14];
 	int i;
@@ -25,7 +25,7 @@ GOOD_OR_BAD Parse_SerialNumber(char *sn_char, BYTE * sn)
 		if (isxdigit(*sn_char)) {
 			ID[i] = *sn_char;
 		} else {
-			return gbBAD; // non-hex
+			return sn_alias; // non-hex
 		}
 	}
 	sn[0] = string2num(&ID[0]);
@@ -44,10 +44,10 @@ GOOD_OR_BAD Parse_SerialNumber(char *sn_char, BYTE * sn)
 		char crc[2];
 		num2string(crc, sn[SERIAL_NUMBER_SIZE-1]);
 		if (strncasecmp(crc, sn_char, 2)) {
-			return gbBAD;
+			return sn_invalid;
 		}
 		sn_char += 2 ;
 	}
-	return ( *sn_char == '\0' ) ? gbGOOD : gbBAD ;
+	return ( *sn_char == '\0' ) ? sn_valid : sn_alias ;
 }
 

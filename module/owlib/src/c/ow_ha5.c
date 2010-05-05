@@ -19,13 +19,13 @@ $Id$
 //static void byteprint( const BYTE * b, int size ) ;
 static RESET_TYPE HA5_reset(const struct parsedname *pn);
 static RESET_TYPE HA5_reset_wrapped(const struct parsedname *pn) ;
-static int HA5_next_both(struct device_search *ds, const struct parsedname *pn);
+static enum search_status HA5_next_both(struct device_search *ds, const struct parsedname *pn);
 static int HA5_sendback_part(char cmd, const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn) ;
 static int HA5_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 static int HA5_select_and_sendback(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 static void HA5_setroutines(struct connection_in *in);
 static void HA5_close(struct connection_in *in);
-static int HA5_directory(struct device_search *ds, struct dirblob *db, const struct parsedname *pn);
+static enum search_status HA5_directory(struct device_search *ds, struct dirblob *db, const struct parsedname *pn);
 static GOOD_OR_BAD HA5_select( const struct parsedname * pn ) ;
 static GOOD_OR_BAD HA5_select_wrapped( const struct parsedname * pn ) ;
 static GOOD_OR_BAD HA5_resync( const struct parsedname * pn ) ;
@@ -292,50 +292,47 @@ static RESET_TYPE HA5_reset_wrapped(const struct parsedname *pn)
 	return BUS_RESET_OK;
 }
 
-static int HA5_next_both(struct device_search *ds, const struct parsedname *pn)
+static enum search_status HA5_next_both(struct device_search *ds, const struct parsedname *pn)
 {
-	int ret = 0;
 	struct connection_in * in = pn->selected_connection ;
 	struct dirblob *db = (ds->search == _1W_CONDITIONAL_SEARCH_ROM) ?
 		&(in->alarm) : &(in->main);
 
 	if (ds->LastDevice) {
-		return -ENODEV;
+		return search_done;
 	}
 
 	COM_flush(pn->selected_connection);
 
 	if (ds->index == -1) {
-
+		enum search_status ret ;
 		MUTEX_LOCK( in->connin.ha5.head->connin.ha5.lock ) ;
 		ret = HA5_directory(ds, db, pn) ;
 		MUTEX_UNLOCK( in->connin.ha5.head->connin.ha5.lock ) ;
 
-		if ( ret ) {
-			return -EIO;
+		if ( ret != search_good ) {
+			return search_error;
 		}
 	}
+
 	// LOOK FOR NEXT ELEMENT
 	++ds->index;
-
 	LEVEL_DEBUG("Index %d", ds->index);
 
-	ret = DirblobGet(ds->index, ds->sn, db);
-	LEVEL_DEBUG("DirblobGet %d", ret);
-	switch (ret) {
-	case 0:
-		if ((ds->sn[0] & 0x7F) == 0x04) {
-			/* We found a DS1994/DS2404 which require longer delays */
-			pn->selected_connection->ds2404_compliance = 1;
-		}
-		break;
-	case -ENODEV:
-		ds->LastDevice = 1;
-		break;
+	switch ( DirblobGet(ds->index, ds->sn, db) ) {
+		case 0:
+			if ((ds->sn[0] & 0x7F) == 0x04) {
+				/* We found a DS1994/DS2404 which require longer delays */
+				pn->selected_connection->ds2404_compliance = 1;
+			}
+			LEVEL_DEBUG("SN found: " SNformat, SNvar(ds->sn));
+			return search_good;
+		case -ENODEV:
+		default:
+			ds->LastDevice = 1;
+			LEVEL_DEBUG("SN finished");
+			return search_done;
 	}
-
-	LEVEL_DEBUG("SN found: " SNformat, SNvar(ds->sn));
-	return ret;
 }
 
 /************************************************************************/
@@ -347,7 +344,7 @@ static int HA5_next_both(struct device_search *ds, const struct parsedname *pn)
 /* Only called for the first element, everything else comes from dirblob */
 /* returns 0 even if no elements, errors only on communication errors    */
 /************************************************************************/
-static int HA5_directory(struct device_search *ds, struct dirblob *db, const struct parsedname *pn)
+static enum search_status HA5_directory(struct device_search *ds, struct dirblob *db, const struct parsedname *pn)
 {
 	unsigned char resp[20];
 	unsigned char query[5+2+1] ;
@@ -371,12 +368,12 @@ static int HA5_directory(struct device_search *ds, struct dirblob *db, const str
 
 	if (COM_write( query, query_length, pn->selected_connection)) {
 		HA5_resync(pn) ;
-		return -EIO ;
+		return search_error ;
 	}
 
 	if (COM_read(resp, 1, pn->selected_connection)) {
 		HA5_resync(pn) ;
-		return -EIO ;
+		return search_error ;
 	}
 
 	while ( resp[0] != CR_char ) {
@@ -393,25 +390,25 @@ static int HA5_directory(struct device_search *ds, struct dirblob *db, const str
 		if ( in->connin.ha5.checksum ) {
 			if (COM_read(&resp[1], 19, pn->selected_connection)) {
 				HA5_resync(pn) ;
-				return -EIO ;
+				return search_error ;
 			}
 			if ( resp[18]!=CR_char ) {
 				HA5_resync(pn) ;
-				return -EIO ;
+				return search_error ;
 			}
 			wrap_char = resp[19] ;
 			if ( TestChecksum( resp, 16 ) ) {
 				HA5_resync(pn) ;
-				return -EIO ;
+				return search_error ;
 			}
 		} else {
 			if (COM_read(&resp[1], 17, pn->selected_connection)) {
 				HA5_resync(pn) ;
-				return -EIO ;
+				return search_error ;
 			}
 			if ( resp[16]!=CR_char ) {
 				HA5_resync(pn) ;
-				return -EIO ;
+				return search_error ;
 			}
 			wrap_char = resp[17] ;
 		}
@@ -434,12 +431,12 @@ static int HA5_directory(struct device_search *ds, struct dirblob *db, const str
 			/* to avoid reconnect */
 			LEVEL_DEBUG("sn = %s", sn);
 			HA5_resync(pn) ;
-			return -EIO ;
+			return search_error ;
 		}
 		DirblobAdd(sn, db);
 		resp[0] = wrap_char ;
 	}
-	return 0 ;
+	return search_good ;
 }
 
 static GOOD_OR_BAD HA5_resync( const struct parsedname * pn )

@@ -30,7 +30,7 @@ struct toW1 {
 
 //static void byteprint( const BYTE * b, int size ) ;
 static RESET_TYPE W1_reset(const struct parsedname *pn);
-static int W1_next_both(struct device_search *ds, const struct parsedname *pn);
+static enum search_status W1_next_both(struct device_search *ds, const struct parsedname *pn);
 static int W1_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 static int W1_select_and_sendback(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 static void W1_setroutines(struct connection_in *in);
@@ -135,30 +135,31 @@ static void search_callback( struct netlink_parse * nlp, void * v, const struct 
 	}
 }
 
-static int W1_next_both(struct device_search *ds, const struct parsedname *pn)
+static enum search_status W1_next_both(struct device_search *ds, const struct parsedname *pn)
 {
 	struct dirblob *db = (ds->search == _1W_CONDITIONAL_SEARCH_ROM) ?
 		&(pn->selected_connection->alarm) : &(pn->selected_connection->main);
-	int ret ;
 
 	if (ds->LastDevice) {
-		return -ENODEV;
+		return search_done;
 	}
 	if (++(ds->index) == 0) {
 		DirblobClear(db);
 		if ( W1_Process_Response( search_callback, w1_send_search(ds->search,pn), db, pn ) != nrs_complete) {
-			return -EIO ;
+			return search_error;
 		}
 	}
-	ret = DirblobGet(ds->index, ds->sn, db);
-	switch (ret) {
-	case 0:
-		break;
-	case -ENODEV:
-		ds->LastDevice = 1;
-		break;
+
+	switch ( DirblobGet(ds->index, ds->sn, db) ) {
+		case 0:
+			LEVEL_DEBUG("SN found: " SNformat "", SNvar(ds->sn));
+			return search_good;
+		case -ENODEV:
+		default:
+			ds->LastDevice = 1;
+			LEVEL_DEBUG("SN finished");
+			return search_done;
 	}
-	return ret;
 }
 
 static int w1_send_selecttouch( const BYTE * data, size_t size, const struct parsedname *pn )

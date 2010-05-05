@@ -17,7 +17,7 @@ $Id$
 #include "ow_codes.h"
 
 static void BUS_first_both(struct device_search *ds);
-static int BUS_next_3try(struct device_search *ds, const struct parsedname *pn) ;
+static enum search_status BUS_next_3try(struct device_search *ds, const struct parsedname *pn) ;
 
 //--------------------------------------------------------------------------
 /** The 'owFirst' doesn't find the first device on the 1-Wire Net.
@@ -27,7 +27,7 @@ static int BUS_next_3try(struct device_search *ds, const struct parsedname *pn) 
 
  Returns:   0-device found 1-no dev or error
 */
-int BUS_first(struct device_search *ds, const struct parsedname *pn)
+enum search_status BUS_first(struct device_search *ds, const struct parsedname *pn)
 {
 	// reset the search state
 	LEVEL_DEBUG("Start of directory path=%s device=" SNformat, SAFESTRING(pn->path), SNvar(pn->sn));
@@ -37,7 +37,7 @@ int BUS_first(struct device_search *ds, const struct parsedname *pn)
 	return BUS_next(ds, pn);
 }
 
-int BUS_first_alarm(struct device_search *ds, const struct parsedname *pn)
+enum search_status BUS_first_alarm(struct device_search *ds, const struct parsedname *pn)
 {
 	// reset the search state
 	BUS_first_both(ds);
@@ -64,56 +64,62 @@ static void BUS_first_both(struct device_search *ds)
 
  Sets LastDevice=1 if no more
 */
-int BUS_next(struct device_search *ds, const struct parsedname *pn)
+enum search_status BUS_next(struct device_search *ds, const struct parsedname *pn)
 {
-	int ret;
-
-#if 0
-	if (!RootNotBranch(pn)		// branch directory
-		|| (pn->selected_connection->iroutines.flags & ADAP_FLAG_dir_auto_reset) == 0	// needs this flag
-		) {
-		if ( BAD( BUS_select(pn) ) ) {
-			return 1;
-		}
+	switch ( BUS_next_3try(ds, pn) ) {
+		case search_good:
+			// found a device in a directory search, add to "presence" cache
+			Cache_Add_Device(pn->selected_connection->index,ds->sn) ;
+			return search_good ;
+		case search_done:
+			return search_done;
+		case search_error:
+			return search_error;
 	}
-#endif
-	ret = BUS_next_3try(ds, pn);
-	LEVEL_DEBUG("return = %d | " SNformat, ret, SNvar(ds->sn));
-	if (ret!=0 && ret != -ENODEV) {	// true error
-		STAT_ADD1_BUS(e_bus_search_errors3, pn->selected_connection);
-	} else if ( ret == 0 ) {
-		// found a device in a directory search, add to "presence" cache
-		Cache_Add_Device(pn->selected_connection->index,ds->sn) ;
-	}
-	return ret;
 }
 
 /* try the directory search 3 times.
  * Since ds->LastDescrepancy is alertered only on success a repeat is legal
  * */
- static int BUS_next_3try(struct device_search *ds, const struct parsedname *pn)
+static enum search_status BUS_next_3try(struct device_search *ds, const struct parsedname *pn)
 {
-	int ret ;
-	
-	ret = BUS_next_both(ds, pn);
-	if ( ret == 0 || ret == -ENODEV ) {
-		return ret ;
+	switch (BUS_next_both(ds, pn) ) {
+		case search_good:
+			return search_good ;
+		case search_done:
+			return search_done;
+		case search_error:
+			break ;
 	}
 	STAT_ADD1_BUS(e_bus_search_errors1, pn->selected_connection);
 	
-	ret = BUS_next_both(ds, pn);
-	if ( ret == 0 || ret == -ENODEV ) {
-		return ret ;
+	switch (BUS_next_both(ds, pn) ) {
+		case search_good:
+			return search_good ;
+		case search_done:
+			return search_done;
+		case search_error:
+			break ;
 	}
 	STAT_ADD1_BUS(e_bus_search_errors2, pn->selected_connection);
 
-	return BUS_next_both(ds, pn);
+	switch (BUS_next_both(ds, pn) ) {
+		case search_good:
+			return search_good ;
+		case search_done:
+			return search_done;
+		case search_error:
+			break ;
+	}
+	STAT_ADD1_BUS(e_bus_search_errors3, pn->selected_connection);
+
+	return search_error ;
 }
 
 
 /* Low level search routines -- bit banging */
 /* Not used by more advanced adapters */
-int BUS_next_both(struct device_search *ds, const struct parsedname *pn)
+enum search_status BUS_next_both(struct device_search *ds, const struct parsedname *pn)
 {
 	if ( FunctionExists(pn->selected_connection->iroutines.next_both) ) {
 		return (pn->selected_connection->iroutines.next_both) (ds, pn);
@@ -124,16 +130,15 @@ int BUS_next_both(struct device_search *ds, const struct parsedname *pn)
 
 /* Low level search routines -- bit banging */
 /* Not used by more advanced adapters */
-int BUS_next_both_bitbang(struct device_search *ds, const struct parsedname *pn)
+enum search_status BUS_next_both_bitbang(struct device_search *ds, const struct parsedname *pn)
 {
 	if ( BAD( BUS_select(pn) ) ) {
-		return -EIO ;
+		return search_error ;
 	} else {
 		int search_direction = 0;	/* initialization just to forestall incorrect compiler warning */
 		int bit_number;
 		int last_zero = -1;
 		BYTE bits[3];
-		int ret;
 		
 		// initialize for search
 		// if the last call was not the last one
@@ -141,31 +146,31 @@ int BUS_next_both_bitbang(struct device_search *ds, const struct parsedname *pn)
 			ds->LastDevice = 1;
 		}
 		if (ds->LastDevice) {
-			return -ENODEV;
+			return search_done;
 		}
 		
 		/* Appropriate search command */
-		if ((ret = BUS_send_data(&(ds->search), 1, pn))) {
-			return ret;
+		if ( BUS_send_data(&(ds->search), 1, pn) != 0 ) {
+			return search_error ;
 		}
 		// loop to do the search
 		for (bit_number = 0;; ++bit_number) {
 			bits[1] = bits[2] = 0xFF;
 			if (bit_number == 0) {	/* First bit */
 				/* get two bits (AND'ed bit and AND'ed complement) */
-				if ((ret = BUS_sendback_bits(&bits[1], &bits[1], 2, pn))) {
-					return ret;
+				if ( BUS_sendback_bits(&bits[1], &bits[1], 2, pn) != 0 ) {
+					return search_error;
 				}
 			} else {
 				bits[0] = search_direction;
 				if (bit_number < 64) {
 					/* Send chosen bit path, then check match on next two */
-					if ((ret = BUS_sendback_bits(bits, bits, 3, pn))) {
-						return ret;
+					if ( BUS_sendback_bits(bits, bits, 3, pn) != 0 ) {
+						return search_error;
 					}
 				} else {		/* last bit */
-					if ((ret = BUS_sendback_bits(bits, bits, 1, pn))) {
-						return ret;
+					if ( BUS_sendback_bits(bits, bits, 1, pn) != 0 ) {
+						return search_error;
 					}
 					break;
 				}
@@ -174,7 +179,7 @@ int BUS_next_both_bitbang(struct device_search *ds, const struct parsedname *pn)
 				if (bits[2]) {	/* 1,1 */
 					/* No devices respond */
 					ds->LastDevice = 1;
-					return -ENODEV;
+					return search_done;
 				} else {		/* 1,0 */
 					search_direction = 1;	// bit write value for search
 				}
@@ -205,7 +210,7 @@ int BUS_next_both_bitbang(struct device_search *ds, const struct parsedname *pn)
 		
 		if (CRC8(ds->sn, 8) || (bit_number < 64) || (ds->sn[0] == 0)) {
 			/* A minor "error" */
-			return -EIO;
+			return search_error;
 		}
 		if ((ds->sn[0] & 0x7F) == 0x04) {
 			/* We found a DS1994/DS2404 which require longer delays */
@@ -217,6 +222,6 @@ int BUS_next_both_bitbang(struct device_search *ds, const struct parsedname *pn)
 		//    printf("Post, lastdiscrep=%d\n",si->LastDiscrepancy) ;
 		ds->LastDevice = (last_zero < 0);
 		LEVEL_DEBUG("Generic_next_both SN found: " SNformat, SNvar(ds->sn));
-		return 0;
+		return search_good;
 	}
 }

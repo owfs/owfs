@@ -409,7 +409,7 @@ static ZERO_OR_ERROR FS_devdir(void (*dirfunc) (void *, const struct parsedname 
 /* Note -- alarm directory is smaller, no adapters or stats or uncached */
 static ZERO_OR_ERROR FS_alarmdir(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_alarm_directory)
 {
-	ZERO_OR_ERROR ret;
+	enum search_status ret;
 	struct device_search ds;	// holds search state
 	uint32_t ignoreflag ;
 
@@ -420,33 +420,30 @@ static ZERO_OR_ERROR FS_alarmdir(void (*dirfunc) (void *, const struct parsednam
 
 	/* STATISCTICS */
 	STAT_ADD1(dir_main.calls);
-	//printf("DIR alarm directory\n");
 
 	BUSLOCK(pn_alarm_directory);
 	ret = BUS_first_alarm(&ds, pn_alarm_directory);
-	if (ret) {
-		BUSUNLOCK(pn_alarm_directory);
-		LEVEL_DEBUG("BUS_first_alarm = %d", ret);
-		if (ret == -ENODEV) {
-			return 0;			/* no more alarms is ok */
-		}
-		return ret;
-	}
-	while (ret == 0) {
-		char dev[PROPERTY_LENGTH_ALIAS + 1];
+	BUSUNLOCK(pn_alarm_directory);
 
+	while ( ret == search_good ) {
+		char dev[PROPERTY_LENGTH_ALIAS + 1];
 		STAT_ADD1(dir_main.entries);
 		FS_devicename(dev, PROPERTY_LENGTH_ALIAS, ds.sn, pn_alarm_directory);
 		FS_dir_plus(dirfunc, v, &ignoreflag, pn_alarm_directory, dev);
 
+		BUSLOCK(pn_alarm_directory);
 		ret = BUS_next(&ds, pn_alarm_directory);
-		//printf("ALARM sn: "SNformat" ret=%d\n",SNvar(sn),ret);
+		BUSUNLOCK(pn_alarm_directory);
 	}
-	BUSUNLOCK(pn_alarm_directory);
-	if (ret == -ENODEV) {
-		return 0;				/* no more alarms is ok */
-	}
-	return ret;
+
+	switch ( ret ) {
+		case search_good:
+		case search_done:
+			return 0 ;
+		case search_error:
+		default:
+			return -EIO;
+	}	
 }
 
 /* A directory of devices -- either main or branch */
@@ -458,7 +455,7 @@ static ZERO_OR_ERROR FS_realdir(void (*dirfunc) (void *, const struct parsedname
 	struct device_search ds;
 	size_t devices = 0;
 	struct dirblob db;
-	ZERO_OR_ERROR ret;
+	enum search_status ret;
 
 	/* cache from Server if this is a remote bus */
 	if (BusIsServer(pn_whole_directory->selected_connection)) {
@@ -473,33 +470,18 @@ static ZERO_OR_ERROR FS_realdir(void (*dirfunc) (void *, const struct parsedname
 	// This is called from the reconnection routine -- we use a flag to avoid mutex doubling and deadlock
 	if ( NotReconnect(pn_whole_directory) ) {
 		BUSLOCK(pn_whole_directory);
+		ret = BUS_first(&ds, pn_whole_directory) ;
+		BUSUNLOCK(pn_whole_directory);
+	} else {
+		ret = BUS_first(&ds, pn_whole_directory) ;
 	}
 	
-	/* it appears that plugging in a new device sends a "presence pulse" that screws up BUS_first */
-	ret = BUS_first(&ds, pn_whole_directory) ;
-	if (ret) {
-		if ( NotReconnect(pn_whole_directory) ) {
-			BUSUNLOCK(pn_whole_directory);
-		}
-		if (ret == -ENODEV) {
-			if (RootNotBranch(pn_whole_directory)) {
-				pn_whole_directory->selected_connection->last_root_devs = 0;	// root dir estimated length
-			}
-			return 0;			/* no more devices is ok */
-		}
-		return -EIO;
-	}
-	/* BUS still locked */
 	if (RootNotBranch(pn_whole_directory)) {
 		db.allocated = pn_whole_directory->selected_connection->last_root_devs;	// root dir estimated length
 	}
-	do {
+	while ( ret == search_good ) {
 		char dev[PROPERTY_LENGTH_ALIAS + 1];
 
-		if ( NotReconnect(pn_whole_directory) ) {
-			BUSUNLOCK(pn_whole_directory);
-		}
-		
 		/* Add to device cache */
 		Cache_Add_Device(pn_whole_directory->selected_connection->index,ds.sn) ;
 		
@@ -507,8 +489,7 @@ static ZERO_OR_ERROR FS_realdir(void (*dirfunc) (void *, const struct parsedname
 		FS_devicename(dev, PROPERTY_LENGTH_ALIAS, ds.sn, pn_whole_directory);
 		
 		/* Execute callback function */
-		ret = FS_dir_plus(dirfunc, v, flags, pn_whole_directory, dev);
-		if ( ret ) {
+		if ( FS_dir_plus(dirfunc, v, flags, pn_whole_directory, dev) != 0 ) {
 			DirblobPoison(&db);
 			break ;
 		}
@@ -517,29 +498,34 @@ static ZERO_OR_ERROR FS_realdir(void (*dirfunc) (void *, const struct parsedname
 
 		if ( NotReconnect(pn_whole_directory) ) {
 			BUSLOCK(pn_whole_directory);
+			ret = BUS_next(&ds, pn_whole_directory) ;
+			BUSUNLOCK(pn_whole_directory);
+		} else {
+			ret = BUS_next(&ds, pn_whole_directory) ;
 		}
-	} while ((ret = BUS_next(&ds, pn_whole_directory)) == 0);
-	/* BUS still locked */
-	if (RootNotBranch(pn_whole_directory) && ret == -ENODEV) {
-		pn_whole_directory->selected_connection->last_root_devs = devices;	// root dir estimated length
-	}
-	if ( NotReconnect(pn_whole_directory) ) {
-		BUSUNLOCK(pn_whole_directory);
-	}
-
-	/* Add to the cache (full list as a single element */
-	if (DirblobPure(&db) && ret == -ENODEV) {
-		Cache_Add_Dir(&db, pn_whole_directory);
-	}
-	DirblobClear(&db);
+	} 
 
 	STATLOCK;
 	dir_main.entries += devices;
 	STATUNLOCK;
-	if (ret == -ENODEV) {
-		return 0;				// no more devices is ok */
+
+	switch ( ret ) {
+		case search_done:
+			if ( RootNotBranch(pn_whole_directory) ) {
+				pn_whole_directory->selected_connection->last_root_devs = devices;	// root dir estimated length
+			}
+			/* Add to the cache (full list as a single element */
+			if (DirblobPure(&db) && ret == -ENODEV) {
+				Cache_Add_Dir(&db, pn_whole_directory);
+			}
+			DirblobClear(&db);
+			return 0 ;
+		case search_good:
+		case search_error:
+		default:
+			DirblobClear(&db);
+			return -EIO ;
 	}
-	return ret;
 }
 
 /* points "serial number" to directory

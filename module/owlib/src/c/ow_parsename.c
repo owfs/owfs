@@ -509,9 +509,13 @@ static enum parse_enum Parse_Alias(char *filename, enum parse_pass remote_status
  */
 static enum parse_enum Parse_RealDevice(char *filename, enum parse_pass remote_status, struct parsedname *pn)
 {
-	if ( BAD( Parse_SerialNumber(filename,pn->sn) ) ) {
-		// Not a serial number, look for an alias
-		return Parse_Alias( filename, remote_status, pn) ;
+	switch ( Parse_SerialNumber(filename,pn->sn) ) {
+		case sn_alias:
+			return Parse_Alias( filename, remote_status, pn) ;
+		case sn_invalid:
+			return parse_error ;
+		case sn_valid:
+			break ;
 	}
 
 	/* Search for known 1-wire device -- keyed to device name (family code in HEX) */

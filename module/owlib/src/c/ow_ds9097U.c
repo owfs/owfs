@@ -15,7 +15,7 @@ $Id$
 #include "ow_counters.h"
 #include "ow_connection.h"
 
-static int DS2480_next_both(struct device_search *ds, const struct parsedname *pn);
+static enum search_status DS2480_next_both(struct device_search *ds, const struct parsedname *pn);
 //static int DS2480_databit(int sendbit, int *getbit, const struct parsedname *pn);
 static RESET_TYPE DS2480_reset(const struct parsedname *pn);
 static int DS2480_initialize_repeatedly(struct parsedname * pn);
@@ -660,9 +660,8 @@ static RESET_TYPE DS2480_reset_once(const struct parsedname *pn)
 }
 
 /* search = normal and alarm */
-static int DS2480_next_both(struct device_search *ds, const struct parsedname *pn)
+static enum search_status DS2480_next_both(struct device_search *ds, const struct parsedname *pn)
 {
-	int ret;
 	int mismatched;
 	BYTE sn[8];
 	BYTE bitpairs[16];
@@ -674,11 +673,11 @@ static int DS2480_next_both(struct device_search *ds, const struct parsedname *p
 		ds->LastDevice = 1;
 	}
 	if (ds->LastDevice) {
-		return -ENODEV;
+		return search_done;
 	}
 
 	if ( BAD( BUS_select(pn) ) ) {
-		return -EIO ;
+		return search_error;
 	}
 
 	// build the command stream
@@ -713,12 +712,12 @@ static int DS2480_next_both(struct device_search *ds, const struct parsedname *p
 	// change back to command mode
 	// send the packet
 	// search OFF
-	if ((ret = BUS_send_data(&(ds->search), 1, pn))
-		|| (ret = DS2480_sendout_cmd(&searchon, 1, pn))
-		|| (ret = BUS_sendback_data(bitpairs, bitpairs, 16, pn))
-		|| (ret = DS2480_sendout_cmd(&searchoff, 1, pn))
+	if ( BUS_send_data(&(ds->search), 1, pn)
+		|| DS2480_sendout_cmd(&searchon, 1, pn)
+		|| BUS_sendback_data(bitpairs, bitpairs, 16, pn)
+		|| DS2480_sendout_cmd(&searchoff, 1, pn)
 		) {
-		return ret;
+		return search_error;
 	}
 
 	// interpret the bit stream
@@ -735,9 +734,9 @@ static int DS2480_next_both(struct device_search *ds, const struct parsedname *p
 	if (CRC8(sn, 8) || (ds->LastDiscrepancy == 63) || (sn[0] == 0)) {
 		if ( sn[0]==0xFF && sn[1]==0xFF && sn[2]==0xFF && sn[3]==0xFF && sn[4]==0xFF && sn[5]==0xFF && sn[6]==0xFF && sn[7]==0xFF ) {
 			// special case for no alarm present
-			return -ENODEV ;
+			return search_done ;
 		}
-		return -EIO;
+		return search_error;
 	}
 
 	// successful search
@@ -757,7 +756,7 @@ static int DS2480_next_both(struct device_search *ds, const struct parsedname *p
 	ds->LastDiscrepancy = mismatched;
 
 	LEVEL_DEBUG("SN found: " SNformat, SNvar(ds->sn));
-	return 0;
+	return search_good;
 }
 
 //--------------------------------------------------------------------------

@@ -53,7 +53,7 @@ GOOD_OR_BAD AliasFile(const ASCII * file)
 			}
 		}
 
-		if ( BAD( Parse_SerialNumber(sn_char, sn) ) ) {
+		if ( Parse_SerialNumber(sn_char, sn) != sn_valid ) {
 			LEVEL_CALL("Problem parsing device name in alias file %s:%d",file,line_number) ;
 			continue ;
 		}
@@ -146,7 +146,7 @@ void FS_alias_subst(void (*dirfunc) (void *, const struct parsedname *), void *v
 				pcurrent = pnext + 1 ; // past '/'
 				aps = aps_next ;
 			}
-			if ( GOOD( Parse_SerialNumber(pathstart,sn) ) ) {
+			if ( Parse_SerialNumber(pathstart,sn) == sn_valid ) {
 				Cache_Get_Alias(pathstart,PATH_MAX - (pathstart-path),sn) ;
 			}
 		}

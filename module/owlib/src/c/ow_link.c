@@ -69,7 +69,7 @@ static void LINK_set_baud(const struct parsedname *pn) ;
 static int LINK_read(BYTE * buf, const size_t size, int extra_net, const struct parsedname *pn);
 static int LINK_write(const BYTE * buf, const size_t size, const struct parsedname *pn);
 static RESET_TYPE LINK_reset(const struct parsedname *pn);
-static int LINK_next_both(struct device_search *ds, const struct parsedname *pn);
+static enum search_status LINK_next_both(struct device_search *ds, const struct parsedname *pn);
 static int LINK_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 static void LINK_setroutines(struct connection_in *in);
 static int LINK_directory(struct device_search *ds, struct dirblob *db, const struct parsedname *pn);
@@ -364,52 +364,46 @@ static RESET_TYPE LINK_reset(const struct parsedname *pn)
 	}
 }
 
-static int LINK_next_both(struct device_search *ds, const struct parsedname *pn)
+static enum search_status LINK_next_both(struct device_search *ds, const struct parsedname *pn)
 {
-	int ret = 0;
 	struct dirblob *db = (ds->search == _1W_CONDITIONAL_SEARCH_ROM) ?
 		&(pn->selected_connection->alarm) : &(pn->selected_connection->main);
 
 	//Special case for DS2409 hub, use low-level code
 	if ( pn->pathlength>0 ) {
-		return -ENOTSUP ;
+		return search_error ;
 	}
 
-//	if (!pn->selected_connection->AnyDevices) {
-//		ds->LastDevice = 1;
-//	}
 	if (ds->LastDevice) {
-		return -ENODEV;
+		return search_done;
 	}
 
 	LINK_flush(pn->selected_connection);
 
 	if (ds->index == -1) {
 		if (LINK_directory(ds, db, pn)) {
-			return -EIO;
+			return search_error;
 		}
 	}
+
 	// LOOK FOR NEXT ELEMENT
 	++ds->index;
-
 	LEVEL_DEBUG("Index %d", ds->index);
 
-	ret = DirblobGet(ds->index, ds->sn, db);
-	LEVEL_DEBUG("DirblobGet %d", ret);
-	switch (ret) {
-	case 0:
-		if ((ds->sn[0] & 0x7F) == 0x04) {
-			/* We found a DS1994/DS2404 which require longer delays */
-			pn->selected_connection->ds2404_compliance = 1;
-		}
-		break;
-	case -ENODEV:
-		ds->LastDevice = 1;
-		break;
+	switch ( DirblobGet(ds->index, ds->sn, db) ) {
+		case 0:
+			if ((ds->sn[0] & 0x7F) == 0x04) {
+				/* We found a DS1994/DS2404 which require longer delays */
+				pn->selected_connection->ds2404_compliance = 1;
+			}
+			LEVEL_DEBUG("SN found: " SNformat "", SNvar(ds->sn));
+			return search_good;
+		case -ENODEV:
+		default:
+			ds->LastDevice = 1;
+			LEVEL_DEBUG("SN finished");
+			return search_done;
 	}
-
-	LEVEL_DEBUG("SN found: " SNformat "", SNvar(ds->sn));
-	return ret;
 }
 
 /* Assymetric */
