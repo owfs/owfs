@@ -81,6 +81,7 @@ void FreeClientAddr(struct connection_in *in)
 		freeaddrinfo(in->connin.tcp.ai);
 		in->connin.tcp.ai = NULL;
 	}
+	in->connin.tcp.ai_ok = NULL;
 }
 
 /* Usually called with BUS locked, to protect ai settings */
