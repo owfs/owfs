@@ -1,28 +1,5 @@
 /*
 $Id$
-    OW -- One-Wire filesystem
-    version 0.4 7/2/2003
-
-    Function naming scheme:
-    OW -- Generic call to interaface
-    LI -- LINK commands
-    L1 -- 2480B commands
-    FS -- filesystem commands
-    UT -- utility functions
-
-    LICENSE (As of version 2.5p4 2-Oct-2006)
-    owlib: GPL v2
-    owfs, owhttpd, owftpd, owserver: GPL v2
-    owshell(owdir owread owwrite owpresent): GPL v2
-    owcapi (libowcapi): GPL v2
-    owperl: GPL v2
-    owtcl: LGPL v2
-    owphp: GPL v2
-    owpython: GPL v2
-    owsim.tcl: GPL v2
-    where GPL v2 is the "Gnu General License version 2"
-    and "LGPL v2" is the "Lesser Gnu General License version 2"
-
 
     Written 2003 Paul H Alfille
         Fuse code based on "fusexmp" {GPL} by Miklos Szeredi, mszeredi@inf.bme.hu
@@ -65,14 +42,46 @@ $Id$
     25-05-2003 iButtonLink device
 */
 
-#ifndef OW_RESET_H			/* tedious wrapper */
-#define OW_RESET_H
+#ifndef OW_DETECT_H			/* tedious wrapper */
+#define OW_DETECT_H
 
-typedef int RESET_TYPE ;
+GOOD_OR_BAD Server_detect(struct connection_in *in);
+GOOD_OR_BAD Zero_detect(struct connection_in *in);
+GOOD_OR_BAD DS2480_detect(struct connection_in *in);
 
-#define BUS_RESET_OK    0
-#define BUS_RESET_SHORT 1
-#define BUS_RESET_ERROR -EINVAL
+#if OW_PARPORT
+GOOD_OR_BAD DS1410_detect(struct connection_in *in);
+#endif							/* OW_PARPORT */
 
+GOOD_OR_BAD DS9097_detect(struct connection_in *in);
+GOOD_OR_BAD LINK_detect(struct connection_in *in);
+GOOD_OR_BAD HA7E_detect(struct connection_in *in);
+GOOD_OR_BAD OWServer_Enet_detect(struct connection_in *in);
+GOOD_OR_BAD HA5_detect(struct connection_in *in);
+GOOD_OR_BAD BadAdapter_detect(struct connection_in *in);
+GOOD_OR_BAD LINKE_detect(struct connection_in *in);
+GOOD_OR_BAD Fake_detect(struct connection_in *in);
+GOOD_OR_BAD Tester_detect(struct connection_in *in);
+GOOD_OR_BAD Mock_detect(struct connection_in *in);
+GOOD_OR_BAD EtherWeather_detect(struct connection_in *in);
 
-#endif							/* OW_RESET_H */
+#if OW_HA7
+GOOD_OR_BAD HA7_detect(struct connection_in *in);
+GOOD_OR_BAD FS_FindHA7(void);
+#endif							/* OW_HA7 */
+
+#if OW_W1
+GOOD_OR_BAD W1_detect(struct connection_in * in) ;
+int W1_Browse( void ) ;
+#endif /* OW_W1 */
+
+#if OW_I2C
+GOOD_OR_BAD DS2482_detect(struct connection_in *in);
+#endif							/* OW_I2C */
+
+#if OW_USB
+int DS9490_enumerate(void);
+GOOD_OR_BAD DS9490_detect(struct connection_in *in);
+#endif							/* OW_USB */
+
+#endif							/* OW_DETECT_H */

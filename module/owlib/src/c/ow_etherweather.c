@@ -263,7 +263,7 @@ static void EtherWeather_setroutines(struct connection_in *in)
 	in->iroutines.flags = ADAP_FLAG_overdrive | ADAP_FLAG_dirgulp | ADAP_FLAG_no2409path;
 }
 
-ZERO_OR_ERROR EtherWeather_detect(struct connection_in *in)
+GOOD_OR_BAD EtherWeather_detect(struct connection_in *in)
 {
 
 	struct parsedname pn;
@@ -277,25 +277,25 @@ ZERO_OR_ERROR EtherWeather_detect(struct connection_in *in)
 	EtherWeather_setroutines(in);
 
 	if (in->name == NULL) {
-		return -EINVAL;
+		return gbBAD;
 	}
 
 	/* Add the port if it isn't there already */
 	if (strchr(in->name, ':') == NULL) {
 		ASCII *temp = owrealloc(in->name, strlen(in->name) + 3);
 		if (temp == NULL) {
-			return -ENOMEM;
+			return gbBAD;
 		}
 		in->name = temp;
 		strcat(in->name, ":15862");
 	}
 
 	if (ClientAddr(in->name, in)) {
-		return -ENODEV;
+		return gbBAD;
 	}
 	pn.selected_connection->file_descriptor = ClientConnect(in) ;
 	if ( FILE_DESCRIPTOR_NOT_VALID(pn.selected_connection->file_descriptor) ) {
-		return -EIO;
+		return gbBAD;
 	}
 
 
@@ -308,5 +308,5 @@ ZERO_OR_ERROR EtherWeather_detect(struct connection_in *in)
 	in->adapter_name = "EtherWeather";
 	in->busmode = bus_etherweather;
 
-	return 0;
+	return gbGOOD;
 }

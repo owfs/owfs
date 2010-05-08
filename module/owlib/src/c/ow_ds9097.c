@@ -47,13 +47,13 @@ static void DS9097_setroutines(struct connection_in *in)
 
 /* _detect is a bit of a misnomer, no detection is actually done */
 // no bus locking here (higher up)
-ZERO_OR_ERROR DS9097_detect(struct connection_in *in)
+GOOD_OR_BAD DS9097_detect(struct connection_in *in)
 {
 	struct parsedname pn;
 
 	/* open the COM port in 9600 Baud  */
 	if (COM_open(in)) {
-		return -ENODEV;
+		return gbBAD;
 	}
 
 	/* Set up low-level routines */
@@ -69,9 +69,9 @@ ZERO_OR_ERROR DS9097_detect(struct connection_in *in)
 	switch( DS9097_reset(&pn) ) {
 		case BUS_RESET_OK:
 		case BUS_RESET_SHORT:
-			return 0 ;
+			return gbGOOD ;
 		default:
-			return -ENODEV ;
+			return gbBAD ;
 	}
 }
 

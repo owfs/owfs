@@ -51,38 +51,38 @@ static void Zero_setroutines(struct interface_routines *f)
 
 // bus_zero is a server found by zeroconf/Bonjour
 // It differs in that the server must respond
-ZERO_OR_ERROR Zero_detect(struct connection_in *in)
+GOOD_OR_BAD Zero_detect(struct connection_in *in)
 {
 	in->busmode = bus_zero;
 	in->file_descriptor = FILE_DESCRIPTOR_BAD;	// No persistent connection yet
 	if (in->name == NULL) {
-		return -EINVAL;
+		return gbBAD;
 	}
 	if (ClientAddr(in->name, in)) {
-		return -ENODEV;
+		return gbBAD;
 	}
 	in->Adapter = adapter_tcp;
 	in->adapter_name = "tcp";
 	Zero_setroutines(&(in->iroutines));
-	return 0;
+	return gbGOOD;
 }
 
 // Set up inbound connection to an owserver
 // Actual tcp connection created as needed
-ZERO_OR_ERROR Server_detect(struct connection_in *in)
+GOOD_OR_BAD Server_detect(struct connection_in *in)
 {
 	if (in->name == NULL) {
-		return -EINVAL;
+		return gbBAD;
 	}
 	if (ClientAddr(in->name, in)) {
-		return -ENODEV;
+		return gbBAD;
 	}
 	in->file_descriptor = FILE_DESCRIPTOR_BAD;	// No persistent connection yet
 	in->Adapter = adapter_tcp;
 	in->adapter_name = "tcp";
 	in->busmode = bus_server;
 	Server_setroutines(&(in->iroutines));
-	return 0;
+	return gbGOOD;
 }
 
 // Free up the owserver inbound connection

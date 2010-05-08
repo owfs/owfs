@@ -69,7 +69,7 @@ static void OWServer_Enet_setroutines(struct connection_in *in)
 	in->bundling_length = HA7E_FIFO_SIZE;
 }
 
-ZERO_OR_ERROR OWServer_Enet_detect(struct connection_in *in)
+GOOD_OR_BAD OWServer_Enet_detect(struct connection_in *in)
 {
 	struct parsedname pn;
 
@@ -80,21 +80,22 @@ ZERO_OR_ERROR OWServer_Enet_detect(struct connection_in *in)
 	OWServer_Enet_setroutines(in);
 
 	if (in->name == NULL) {
-		return -EINVAL;
+		return gbBAD;
 	}
 
 	/* Add the port if it isn't there already */
 	if (strchr(in->name, ':') == NULL) {
 		ASCII *temp = owrealloc(in->name, strlen(in->name) + 3);
 		if (temp == NULL) {
-			return -ENOMEM;
+			return gbBAD;
 		}
 		in->name = temp;
 		strcat(in->name, ":80");
 	}
 
 	if (ClientAddr(in->name, in)) {
-		return -EIO;
+		LEVEL_DEBUG("OW_SERVER_ENET Can't open tcp address");
+		return gbBAD;
 	}
 
 	in->Adapter = adapter_ENET;
@@ -103,9 +104,9 @@ ZERO_OR_ERROR OWServer_Enet_detect(struct connection_in *in)
 
 	if (ENET_get_detail(&pn) == 0) {
 		ENET_SpecialCases(in) ; // load the special access functions
-		return 0;
+		return gbGOOD;
 	}
-	return -ENODEV;
+	return gbBAD;
 }
 
 #define HA7_READ_BUFFER_LENGTH 500

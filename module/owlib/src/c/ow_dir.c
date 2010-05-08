@@ -267,7 +267,7 @@ static ZERO_OR_ERROR FS_dir_all_connections_loop(void (*dirfunc)
 
 	SetKnownBus(in->index, pn_bus_directory);
 
-	if (TestConnection(pn_bus_directory)) {	// reconnect ok?
+	if ( BAD(TestConnection(pn_bus_directory)) ) {	// reconnect ok?
 		ret = -ECONNABORTED;
 	} else if (BusIsServer(pn_bus_directory->selected_connection)) {	/* is this a remote bus? */
 		//printf("FS_dir_all_connections: Call ServerDir %s\n", pn_directory->path);
@@ -320,7 +320,7 @@ FS_dir_all_connections(void (*dirfunc) (void *, const struct parsedname *), void
 	for (in = Inbound_Control.head ; in != NULL ; in = in->next ) {
 		SetKnownBus(in->index, pn_selected_connection);
 
-		if ( TestConnection(pn_selected_connection) ) {
+		if ( BAD(TestConnection(pn_selected_connection)) ) {
 			continue ;
 		}
 		if (BusIsServer(pn_selected_connection->selected_connection)) {	/* is this a remote bus? */

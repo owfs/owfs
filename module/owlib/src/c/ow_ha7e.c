@@ -45,7 +45,7 @@ static void HA7E_setroutines(struct connection_in *in)
 	in->bundling_length = HA7E_FIFO_SIZE;
 }
 
-ZERO_OR_ERROR HA7E_detect(struct connection_in *in)
+GOOD_OR_BAD HA7E_detect(struct connection_in *in)
 {
 	struct parsedname pn;
 
@@ -60,7 +60,8 @@ ZERO_OR_ERROR HA7E_detect(struct connection_in *in)
 
 	/* Open the com port */
 	if (COM_open(in)) {
-		return -ENODEV;
+		LEVEL_DEFAULT("Error in HA7E detection: can't open serial port");
+		return gbBAD;
 	}
 
 	// set the baud rate to 9600. (Already set to 9600 in COM_open())
@@ -73,14 +74,14 @@ ZERO_OR_ERROR HA7E_detect(struct connection_in *in)
 	if (HA7E_reset(&pn) == BUS_RESET_OK ) {
 		in->Adapter = adapter_HA7E ;
 		in->adapter_name = "HA7E/S";
-		return 0;
+		return gbGOOD;
 	} else if (HA7E_reset(&pn) == BUS_RESET_OK ) {
 		in->Adapter = adapter_HA7E ;
 		in->adapter_name = "HA7E/S";
-		return 0;
+		return gbGOOD;
 	}
-	LEVEL_DEFAULT("Error in HA7E detection");
-	return -ENODEV;
+	LEVEL_DEFAULT("Error in HA7E detection: can't perform RESET");
+	return gbBAD;
 }
 
 static RESET_TYPE HA7E_reset(const struct parsedname *pn)

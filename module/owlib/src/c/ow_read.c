@@ -116,7 +116,7 @@ static SIZE_OR_ERROR FS_read_real(struct one_wire_query *owq)
 	if (read_or_error < 0) {	//error
 		STAT_ADD1(read_tries[1]);
 		if (SpecifiedBus(pn)) {	// this bus or bust!
-			if (TestConnection(pn)) {
+			if ( BAD(TestConnection(pn)) ) {
 				read_or_error = -ECONNABORTED;
 			} else {
 				read_or_error = FS_read_distribute(owq);	// 2nd try

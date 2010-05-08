@@ -75,6 +75,9 @@ See: http://www.iana.org/assignments/port-numbers
 /* bus serach */
 #include "ow_search.h"
 
+/* connect to a bus master */
+#include "ow_detect.h"
+
 /* large enough for arrays of 2048 elements of ~49 bytes each */
 #define MAX_OWSERVER_PROTOCOL_PACKET_SIZE  100050
 
@@ -120,7 +123,7 @@ struct connection_in;
 /* Interface-specific routines ---------------- */
 struct interface_routines {
 	/* Detect if adapter is present, and open -- usually called outside of this routine */
-	ZERO_OR_ERROR (*detect) (struct connection_in * in);
+	GOOD_OR_BAD (*detect) (struct connection_in * in);
 	/* reset the interface -- actually the 1-wire bus */
 	RESET_TYPE (*reset) (const struct parsedname * pn);
 	/* Bulk of search routine, after set ups for first or alarm or family */
@@ -138,7 +141,7 @@ struct interface_routines {
 	/* select a device */
 	GOOD_OR_BAD (*select) (const struct parsedname * pn);
 	/* reconnect with a balky device */
-	int (*reconnect) (const struct parsedname * pn);
+	GOOD_OR_BAD (*reconnect) (const struct parsedname * pn);
 	/* Close the connection (port) */
 	void (*close) (struct connection_in * in);
 	/* transaction */
@@ -563,46 +566,6 @@ int SetKnownBus( int bus_number, struct parsedname * pn) ;
 void ZeroConf_Announce(struct connection_out *out);
 void OW_Browse(void);
 
-ZERO_OR_ERROR Server_detect(struct connection_in *in);
-ZERO_OR_ERROR Zero_detect(struct connection_in *in);
-ZERO_OR_ERROR DS2480_detect(struct connection_in *in);
-
-#if OW_PARPORT
-ZERO_OR_ERROR DS1410_detect(struct connection_in *in);
-#endif							/* OW_PARPORT */
-
-ZERO_OR_ERROR DS9097_detect(struct connection_in *in);
-ZERO_OR_ERROR LINK_detect(struct connection_in *in);
-ZERO_OR_ERROR HA7E_detect(struct connection_in *in);
-ZERO_OR_ERROR OWServer_Enet_detect(struct connection_in *in);
-ZERO_OR_ERROR HA5_detect(struct connection_in *in);
-ZERO_OR_ERROR BadAdapter_detect(struct connection_in *in);
-ZERO_OR_ERROR LINKE_detect(struct connection_in *in);
-ZERO_OR_ERROR Fake_detect(struct connection_in *in);
-ZERO_OR_ERROR Tester_detect(struct connection_in *in);
-ZERO_OR_ERROR Mock_detect(struct connection_in *in);
-ZERO_OR_ERROR EtherWeather_detect(struct connection_in *in);
-
-#if OW_HA7
-ZERO_OR_ERROR HA7_detect(struct connection_in *in);
-GOOD_OR_BAD FS_FindHA7(void);
-#endif							/* OW_HA7 */
-
-#if OW_W1
-ZERO_OR_ERROR W1_detect(struct connection_in * in) ;
-int W1_Browse( void ) ;
-#endif /* OW_W1 */
-
-#if OW_I2C
-ZERO_OR_ERROR DS2482_detect(struct connection_in *in);
-#endif							/* OW_I2C */
-
-#if OW_USB
-int DS9490_enumerate(void);
-ZERO_OR_ERROR DS9490_detect(struct connection_in *in);
-void DS9490_close(struct connection_in *in);
-#endif							/* OW_USB */
-
 RESET_TYPE BUS_reset(const struct parsedname *pn);
 
 GOOD_OR_BAD BUS_select(const struct parsedname *pn);
@@ -619,7 +582,7 @@ GOOD_OR_BAD BUS_ProgramPulse(const struct parsedname *pn);
 int BUS_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 int BUS_select_and_sendback(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 
-int TestConnection(const struct parsedname *pn);
+GOOD_OR_BAD TestConnection(const struct parsedname *pn);
 
 void ZeroAdd(const char * name, const char * type, const char * domain, const char * host, const char * service) ;
 void ZeroDel(const char * name, const char * type, const char * domain ) ;

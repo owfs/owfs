@@ -180,7 +180,7 @@ static void SetConninData( int indx, const char * name, struct connection_in *in
 /* Since this is simulated bus master, it's creation cannot fail */
 /* in->name starts with a list of devices which is destructovely parsed and freed */
 /* in->name end with a name-index format */
-ZERO_OR_ERROR Fake_detect(struct connection_in *in)
+GOOD_OR_BAD Fake_detect(struct connection_in *in)
 {
 	Fake_setroutines(in);		// set up close, reconnect, reset, ...
 	in->iroutines.detect = Fake_detect;
@@ -190,14 +190,14 @@ ZERO_OR_ERROR Fake_detect(struct connection_in *in)
 
 	SetConninData( Inbound_Control.next_fake++, "fake", in  );
 
-	return 0;
+	return gbGOOD;
 }
 
 /* Device-specific functions */
 /* Since this is simulated bus master, it's creation cannot fail */
 /* in->name starts with a list of devices which is destructovely parsed and freed */
 /* in->name end with a name-index format */
-ZERO_OR_ERROR Mock_detect(struct connection_in *in)
+GOOD_OR_BAD Mock_detect(struct connection_in *in)
 {
 	Fake_setroutines(in);		// set up close, reconnect, reset, ...
 	in->iroutines.detect = Mock_detect;
@@ -206,14 +206,14 @@ ZERO_OR_ERROR Mock_detect(struct connection_in *in)
 	in->Adapter = adapter_mock;
 	SetConninData( Inbound_Control.next_mock++, "mock", in  );
 
-	return 0;
+	return gbGOOD;
 }
 
 /* Device-specific functions */
 /* Since this is simulated bus master, it's creation cannot fail */
 /* in->name starts with a list of devices which is destructovely parsed and freed */
 /* in->name end with a name-index format */
-ZERO_OR_ERROR Tester_detect(struct connection_in *in)
+GOOD_OR_BAD Tester_detect(struct connection_in *in)
 {
 	Fake_setroutines(in);		// set up close, reconnect, reset, ...
 	in->iroutines.detect = Tester_detect;
@@ -222,7 +222,7 @@ ZERO_OR_ERROR Tester_detect(struct connection_in *in)
 	in->Adapter = adapter_tester;
 	SetConninData( Inbound_Control.next_tester++, "tester", in  );
 
-	return 0;
+	return gbGOOD;
 }
 
 static RESET_TYPE Fake_reset(const struct parsedname *pn)

@@ -19,15 +19,15 @@ $Id$
 /* If so, the bus is closed and "reconnected" */
 /* Reconnection usually just means reopening (detect) with the same initial name like ttyS0 */
 /* USB is a special case, in gets reenumerated, so we look for similar DS2401 chip */
-int TestConnection(const struct parsedname *pn)
+GOOD_OR_BAD TestConnection(const struct parsedname *pn)
 {
-	int ret = 0;
+	GOOD_OR_BAD ret = 0;
 	struct connection_in *in = pn->selected_connection;
 
 	//printf("Reconnect = %d / %d\n",selected_connection->reconnect_state,reconnect_error) ;
 	// Test without a lock -- efficient
 	if (pn == NULL || in == NULL || in->reconnect_state < reconnect_error) {
-		return 0;
+		return gbGOOD;
 	}
 	// Lock the bus
 	BUSLOCK(pn);
@@ -47,19 +47,21 @@ int TestConnection(const struct parsedname *pn)
 		} else {
 			ret = BUS_detect(in) ;	// call initial opener
 		}
-		if ( ret != 0 ) {
-			STAT_ADD1_BUS(e_bus_reconnect_errors, in);
-			LEVEL_DEFAULT("Failed to reconnect %s bus master!", in->adapter_name);
+		if ( BAD( ret ) ) {
 			in->reconnect_state = reconnect_ok + 1 ;
 			// delay to slow thrashing
 			UT_delay(200);
-			ret = -EIO;
 		} else {
-			LEVEL_DEFAULT("%s bus master reconnected", in->adapter_name);
 			in->reconnect_state = reconnect_ok;
 		}
 	}
 	BUSUNLOCK(pn);
+
+	if ( BAD( ret ) ) {
+		LEVEL_DEFAULT("Failed to reconnect %s bus master!", in->adapter_name);
+	} else {
+		LEVEL_DEFAULT("%s bus master reconnected", in->adapter_name);
+	}
 
 	return ret;
 }

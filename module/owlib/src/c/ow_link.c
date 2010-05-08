@@ -61,8 +61,8 @@ struct LINK_id LINK_id_tbl[] = {
 
 #define MAX_LINK_VERSION_LENGTH	36
 
-static ZERO_OR_ERROR LINK_serial_detect(struct parsedname * pn_minimal) ;
-static ZERO_OR_ERROR LINK_net_detect(struct parsedname * pn_minimal) ;
+static GOOD_OR_BAD LINK_serial_detect(struct parsedname * pn_minimal) ;
+static GOOD_OR_BAD LINK_net_detect(struct parsedname * pn_minimal) ;
 
 //static void byteprint( const BYTE * b, int size ) ;
 static void LINK_set_baud(const struct parsedname *pn) ;
@@ -148,7 +148,7 @@ static int LinkVersion_unknownstring( const char * reported_string, struct conne
 }
 
 // bus locking done at a higher level
-ZERO_OR_ERROR LINK_detect(struct connection_in *in)
+GOOD_OR_BAD LINK_detect(struct connection_in *in)
 {
 	struct parsedname pn;
 
@@ -156,7 +156,7 @@ ZERO_OR_ERROR LINK_detect(struct connection_in *in)
 	pn.selected_connection = in;
 
 	if (in->name == NULL) {
-		return -EINVAL;
+		return gbBAD;
 	}
 
 	switch( in->busmode ) {
@@ -165,11 +165,11 @@ ZERO_OR_ERROR LINK_detect(struct connection_in *in)
 		case bus_link:
 			return LINK_serial_detect(&pn) ;
 		default:
-			return -ENODEV ;
+			return gbBAD ;
 	}
 }
 
-static ZERO_OR_ERROR LINK_serial_detect(struct parsedname * pn_minimal)
+static GOOD_OR_BAD LINK_serial_detect(struct parsedname * pn_minimal)
 {
 	struct connection_in * in =  pn_minimal->selected_connection ;
 	
@@ -178,7 +178,7 @@ static ZERO_OR_ERROR LINK_serial_detect(struct parsedname * pn_minimal)
 	
 	/* Open the com port */
 	if (COM_open(in)) {
-		return -ENODEV;
+		return gbBAD;
 	}
 	
 	COM_break( in ) ;
@@ -204,24 +204,24 @@ static ZERO_OR_ERROR LINK_serial_detect(struct parsedname * pn_minimal)
 			in->baud = Globals.baud ;
 			++in->changed_bus_settings ;
 			BUS_reset(pn_minimal) ; // extra reset
-			return 0;
+			return gbGOOD;
 		}
 	}
 	LEVEL_DEFAULT("LINK detection error");
-	return -ENODEV;
+	return gbBAD;
 }
 
-static ZERO_OR_ERROR LINK_net_detect(struct parsedname * pn_minimal)
+static GOOD_OR_BAD LINK_net_detect(struct parsedname * pn_minimal)
 {
 	struct connection_in * in =  pn_minimal->selected_connection ;
 	
 	LINKE_setroutines(in);
 	
 	if (ClientAddr(in->name, in)) {
-		return -ENODEV;
+		return gbBAD;
 	}
 	if ((in->file_descriptor = ClientConnect(in)) < 0) {
-		return -EIO;
+		return gbBAD;
 	}
 	
 	in->default_discard = 0 ;
@@ -254,11 +254,11 @@ static ZERO_OR_ERROR LINK_net_detect(struct parsedname * pn_minimal)
 		/* Now find the dot for the version parsing */
 		if ( version_read_in!=NULL && LinkVersion_knownstring(version_read_in,LINKE_id_tbl,in)==0 ) {
 			BUS_reset(pn_minimal) ; // extra reset
-			return 0;
+			return gbGOOD;
 		}
 	}
 	LEVEL_DEFAULT("LINK detection error");
-	return -ENODEV;
+	return gbBAD;
 }
 
 static void LINK_set_baud(const struct parsedname *pn)

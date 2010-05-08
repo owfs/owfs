@@ -23,7 +23,7 @@ static void BadAdapter_close(struct connection_in *in);
 /* Device-specific functions */
 /* Note, the "Bad"adapter" ha not function, and returns "-ENOTSUP" (not supported) for most functions */
 /* It does call lower level functions for higher ones, which of course is pointless since the lower ones don't work either */
-ZERO_OR_ERROR BadAdapter_detect(struct connection_in *in)
+GOOD_OR_BAD BadAdapter_detect(struct connection_in *in)
 {
 	in->file_descriptor = FILE_DESCRIPTOR_BAD;
 #if OW_USB
@@ -43,13 +43,13 @@ ZERO_OR_ERROR BadAdapter_detect(struct connection_in *in)
 	in->iroutines.transaction = NULL;
 	in->iroutines.flags = 0;
 	in->adapter_name = "Bad Adapter";
-	return 0;
+	return gbGOOD;
 }
 
 static RESET_TYPE BadAdapter_reset(const struct parsedname *pn)
 {
 	(void) pn;
-	return -ENOTSUP;
+	return BUS_RESET_ERROR;
 }
 
 static int BadAdapter_sendback_bits(const BYTE * data, BYTE * resp, size_t len, const struct parsedname *pn)

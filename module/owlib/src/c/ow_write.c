@@ -143,10 +143,10 @@ ZERO_OR_ERROR FS_write_postparse(struct one_wire_query *owq)
 			if (write_or_error < 0) {	// second look -- initial write gave an error
 				STAT_ADD1(write_tries[1]);
 				if (SpecifiedBus(pn)) {
-					write_or_error = TestConnection(pn) ? -ECONNABORTED : FS_w_given_bus(owq);
+					write_or_error = BAD(TestConnection(pn)) ? -ECONNABORTED : FS_w_given_bus(owq);
 					if (write_or_error < 0) {	// third try
 						STAT_ADD1(write_tries[2]);
-						write_or_error = TestConnection(pn) ? -ECONNABORTED : FS_w_given_bus(owq);
+						write_or_error = BAD(TestConnection(pn)) ? -ECONNABORTED : FS_w_given_bus(owq);
 					}
 				} else if (BusIsServer(pn->selected_connection)) {
 					int bus_nr = pn->selected_connection->index ; // current selected bus
@@ -161,7 +161,7 @@ ZERO_OR_ERROR FS_write_postparse(struct one_wire_query *owq)
 							write_or_error = FS_w_given_bus(owq);
 							if (write_or_error < 0) {	// third try
 								STAT_ADD1(write_tries[2]);
-								write_or_error = TestConnection(pn) ? -ECONNABORTED : FS_w_given_bus(owq);
+								write_or_error = BAD(TestConnection(pn)) ? -ECONNABORTED : FS_w_given_bus(owq);
 							}
 						}
 					}				
@@ -173,7 +173,7 @@ ZERO_OR_ERROR FS_write_postparse(struct one_wire_query *owq)
 						write_or_error = FS_w_given_bus(owq);
 						if (write_or_error < 0) {	// third try
 							STAT_ADD1(write_tries[2]);
-							write_or_error = TestConnection(pn) ? -ECONNABORTED : FS_w_given_bus(owq);
+							write_or_error = BAD(TestConnection(pn)) ? -ECONNABORTED : FS_w_given_bus(owq);
 						}
 					}
 				}
@@ -256,7 +256,7 @@ static ZERO_OR_ERROR FS_w_given_bus(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	ZERO_OR_ERROR write_or_error;
 
-	if (TestConnection(pn)) {
+	if ( BAD(TestConnection(pn)) ) {
 		write_or_error = -ECONNABORTED;
 	} else if (KnownBus(pn) && BusIsServer(pn->selected_connection)) {
 		write_or_error = ServerWrite(owq);

@@ -63,7 +63,7 @@ static void HA7_setroutines(struct connection_in *in)
 	in->bundling_length = HA7_FIFO_SIZE;	// arbitrary number
 }
 
-ZERO_OR_ERROR HA7_detect(struct connection_in *in)
+GOOD_OR_BAD HA7_detect(struct connection_in *in)
 {
 	struct parsedname pn;
 	FILE_DESCRIPTOR_OR_ERROR file_descriptor;
@@ -79,26 +79,26 @@ ZERO_OR_ERROR HA7_detect(struct connection_in *in)
 	in->connin.ha7.locked = 0;
 
 	if (in->name == NULL) {
-		return -EINVAL;
+		return gbBAD;
 	}
 
 	/* Add the port if it isn't there already */
 	if (strchr(in->name, ':') == NULL) {
 		ASCII *temp = owrealloc(in->name, strlen(in->name) + 3);
 		if (temp == NULL) {
-			return -ENOMEM;
+			return gbBAD;
 		}
 		in->name = temp;
 		strcat(in->name, ":80");
 	}
 
 	if (ClientAddr(in->name, in)) {
-		return -EIO;
+		return gbBAD;
 	}
 
 	file_descriptor = ClientConnect(in) ;
 	if ( FILE_DESCRIPTOR_NOT_VALID(file_descriptor) ) {
-		return -EIO;
+		return gbBAD;
 	}
 
 	in->Adapter = adapter_HA7NET;
@@ -113,11 +113,11 @@ ZERO_OR_ERROR HA7_detect(struct connection_in *in)
 			in->AnyDevices = anydevices_yes;
 			MemblobClear(&mb);
 			close(file_descriptor);
-			return 0;
+			return gbGOOD;
 		}
 	}
 	close(file_descriptor);
-	return -ENOENT;
+	return gbBAD;
 }
 
 static RESET_TYPE HA7_reset(const struct parsedname *pn)

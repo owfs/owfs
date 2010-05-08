@@ -57,7 +57,7 @@ static void HA5_setroutines(struct connection_in *in)
 	in->bundling_length = HA5_FIFO_SIZE;
 }
 
-ZERO_OR_ERROR HA5_detect(struct connection_in *in)
+GOOD_OR_BAD HA5_detect(struct connection_in *in)
 {
 	struct parsedname pn;
 	int no_colon_exists ;
@@ -75,8 +75,8 @@ ZERO_OR_ERROR HA5_detect(struct connection_in *in)
 
 	/* Open the com port */
 	if (COM_open(in)) {
-		LEVEL_DEBUG("cannot open serial port -- Permissions problem?");
-		return -ENODEV;
+		LEVEL_DEFAULT("cannot open serial port -- Permissions problem?");
+		return gbBAD;
 	}
 
 	// 9600 isn't valid for the HA5, so we can tell that this value was actually selected
@@ -106,7 +106,7 @@ ZERO_OR_ERROR HA5_detect(struct connection_in *in)
 	if ( no_colon_exists ) {
 		if ( HA5_find_channel(&pn) ) {
 			HA5_close(in) ;
-			return -ENODEV ;
+			return gbBAD ;
 		}
 	} else { // A list of channels
 		char next_char ;
@@ -124,7 +124,7 @@ ZERO_OR_ERROR HA5_detect(struct connection_in *in)
 
 	pn.selected_connection = in;
 	HA5_reset(&pn) ;
-	return 0;
+	return gbGOOD;
 }
 
 /* Search for a ":" in the name

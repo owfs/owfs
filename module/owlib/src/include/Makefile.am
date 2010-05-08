@@ -45,6 +45,7 @@ noinst_HEADERS =          \
         ow_counters.h     \
         ow_connection.h   \
         ow_debug.h        \
+	ow_detect.h       \
         ow_device.h       \
         ow_devices.h      \
         ow_dirblob.h      \

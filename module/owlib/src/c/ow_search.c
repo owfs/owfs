@@ -74,6 +74,7 @@ enum search_status BUS_next(struct device_search *ds, const struct parsedname *p
 		case search_done:
 			return search_done;
 		case search_error:
+		default:
 			return search_error;
 	}
 }

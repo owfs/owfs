@@ -214,7 +214,7 @@ static INDEX_OR_ERROR CheckThisConnection(int bus_nr, struct parsedname *pn)
 	memcpy(pn_copy, pn, sizeof(struct parsedname));	// shallow copy
 	pn_copy->selected_connection = in;
 	
-	if (TestConnection(pn_copy)) {	// reconnect successful?
+	if ( BAD( TestConnection(pn_copy) ) ) {	// reconnect successful?
 		return INDEX_BAD;
 	} else if (BusIsServer(in)) {
 		if ( INDEX_VALID( ServerPresence(pn_copy) ) ) {

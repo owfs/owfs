@@ -174,7 +174,7 @@ void FreeIn(struct connection_in * now)
 		break;
 	case bus_usb:
 #if OW_USB
-		DS9490_close(now);
+		BUS_close(now);
 #endif
 		break;
 	case bus_zero:

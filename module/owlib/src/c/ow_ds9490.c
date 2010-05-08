@@ -69,9 +69,9 @@ static RESET_TYPE DS9490_reset(const struct parsedname *pn);
 static int DS9490_open(struct usb_list *ul, struct connection_in *in);
 static int DS9490_sub_open(struct usb_list *ul, struct connection_in *in);
 
-static ZERO_OR_ERROR DS9490_detect_low(struct connection_in *in);
+static GOOD_OR_BAD DS9490_detect_low(struct connection_in *in);
 static ZERO_OR_ERROR DS9490_detect_found(struct connection_in *in);
-static int DS9490_reconnect(const struct parsedname *pn);
+static GOOD_OR_BAD DS9490_reconnect(const struct parsedname *pn);
 static int DS9490_redetect_low(struct connection_in * in);
 static int DS9490_redetect_found(struct connection_in * in);
 static void DS9490_setroutines(struct connection_in *in);
@@ -93,6 +93,7 @@ static int FindDiscrepancy(BYTE * last_sn, BYTE * discrepancy_sn);
 static enum search_status DS9490_directory(struct device_search *ds, struct dirblob *db, const struct parsedname *pn);
 static int DS9490_SetSpeed(const struct parsedname *pn);
 static void DS9490_SetFlexParameters(struct connection_in *in) ;
+static void DS9490_close(struct connection_in *in);
 
 /* Device-specific routines */
 static void DS9490_setroutines(struct connection_in *in)
@@ -297,10 +298,8 @@ int DS9490_enumerate(void)
 }
 
 /* Main routine for detecting (and setting up) the DS2490 1-wire USB chip */
-ZERO_OR_ERROR DS9490_detect(struct connection_in *in)
+GOOD_OR_BAD DS9490_detect(struct connection_in *in)
 {
-	ZERO_OR_ERROR ret;
-
 	DS9490_setroutines(in);		// set up close, reconnect, reset, ...
 	in->name = owstrdup(badUSBname);		// initialized
 
@@ -308,18 +307,17 @@ ZERO_OR_ERROR DS9490_detect(struct connection_in *in)
 	in->connin.usb.timeout = 1000 * Globals.timeout_usb;
 	in->busmode = bus_usb;
 	
-	ret = DS9490_detect_low(in);
-	if (ret) {
+	if ( BAD( DS9490_detect_low(in) ) ) {
 		fprintf(stderr, "Could not open the USB bus master. Is there a problem with permissions?\n");
 		LEVEL_DEFAULT("Could not open the USB bus master. Is there a problem with permissions?");
-		return ret ;
+		return gbBAD ;
 	}
 	DS9490_SetFlexParameters (in);
-	return 0;
+	return gbGOOD;
 }
 
 /* Open a DS9490  -- low level code (to allow for repeats)  */
-static ZERO_OR_ERROR DS9490_detect_low(struct connection_in * in)
+static GOOD_OR_BAD DS9490_detect_low(struct connection_in * in)
 {
 	struct usb_list ul;
 	/* usb_nr holds the number of the adapter */
@@ -331,18 +329,18 @@ static ZERO_OR_ERROR DS9490_detect_low(struct connection_in * in)
 		if (++usbnum < useusb) {
 			LEVEL_CONNECT("USB DS9490 %d passed over. (Looking for %d)", usbnum, useusb);
 		} else if (DS9490_open(&ul, in)) {
-			return -EIO;
+			return gbBAD;
 		} else if (DS9490_detect_found(in) != 0) {
 			DS9490_close(in) ;
 			LEVEL_CONNECT("USB DS9490 %d unsuccessful. (Looking for %d)", usbnum, useusb);
 		} else{
 			LEVEL_CONNECT("USB DS9490 %d/%d successful bound", usbnum, useusb);
-			return 0 ;
+			return gbGOOD ;
 		}
 	}
 
 	LEVEL_CONNECT("No available USB DS9490 bus master found");
-	return -ENODEV;
+	return gbBAD;
 }
 
 static void DS9490_dir_callback( void * v, const struct parsedname * pn_entry )
@@ -579,9 +577,9 @@ static int DS9490_sub_open(struct usb_list *ul, struct connection_in *in)
 
 /* When the errors stop the USB device from functioning -- close and reopen.
  * If it fails, re-scan the USB bus and search for the old adapter */
-static int DS9490_reconnect(const struct parsedname *pn)
+static GOOD_OR_BAD DS9490_reconnect(const struct parsedname *pn)
 {
-	int ret;
+	GOOD_OR_BAD ret;
 	struct connection_in * in = pn->selected_connection ;
 	
 	/* Have to protect usb_find_busses() and usb_find_devices() with
@@ -592,9 +590,9 @@ static int DS9490_reconnect(const struct parsedname *pn)
 	DS9490_close( in) ;
 	if (DS9490_redetect_low(in)==0) {
 		LEVEL_DEFAULT("Found USB DS9490 bus master after USB rescan as [%s]", SAFESTRING(in->name));
-		ret = 0;
+		ret = gbGOOD;
 	} else {
-		ret = -EIO;
+		ret = gbBAD;
 	}
 	LIBUSBUNLOCK;
 	return ret;
@@ -754,7 +752,7 @@ static int DS9490_redetect_found( struct connection_in * in)
 	return -ENODEV;
 }
 
-void DS9490_close(struct connection_in *in)
+static void DS9490_close(struct connection_in *in)
 {
 	usb_dev_handle *usb = in->connin.usb.usb;
 
