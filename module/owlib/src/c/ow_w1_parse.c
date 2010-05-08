@@ -113,9 +113,9 @@ int Netlink_Parse_Get( struct netlink_parse * nlp )
 	int recv_len = recv(Inbound_Control.w1_file_descriptor, &peek_nlm, W1_NLM_LENGTH, MSG_PEEK );
 
 	// Set time of last read
-	MUTEX_LOCK(Inbound_Control.w1_read_mutex) ;
+	_MUTEX_LOCK(Inbound_Control.w1_read_mutex) ;
 	gettimeofday(&Inbound_Control.w1_last_read,NULL);
-	MUTEX_UNLOCK(Inbound_Control.w1_read_mutex) ;
+	_MUTEX_UNLOCK(Inbound_Control.w1_read_mutex) ;
 
 	LEVEL_DEBUG("Pre-parse header: %u bytes len=%u type=%u seq=%u|%u pid=%u",recv_len,peek_nlm.nlmsg_len,peek_nlm.nlmsg_type,NL_BUS(peek_nlm.nlmsg_seq),NL_SEQ(peek_nlm.nlmsg_seq),peek_nlm.nlmsg_pid);
 	if (recv_len == -1) {

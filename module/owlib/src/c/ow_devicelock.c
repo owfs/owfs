@@ -31,8 +31,8 @@ We keep a finite number of devlocks, organized in a tree for faster searching.
 The have a mutex and a counter to negotiate between threads and total lifetime.
 */
 #if OW_MT
-	#define DEVTREE_LOCK(pn)           MUTEX_LOCK(   ((pn)->selected_connection)->dev_mutex )
-	#define DEVTREE_UNLOCK(pn)         MUTEX_UNLOCK( ((pn)->selected_connection)->dev_mutex )
+	#define DEVTREE_LOCK(pn)           _MUTEX_LOCK(   ((pn)->selected_connection)->dev_mutex )
+	#define DEVTREE_UNLOCK(pn)         _MUTEX_UNLOCK( ((pn)->selected_connection)->dev_mutex )
 #endif							/* OW_MT */
 
 /* Bad bad C library */
@@ -123,14 +123,14 @@ ZERO_OR_ERROR DeviceLockGet(struct parsedname *pn)
 	if ( local_devicelock == tree_devicelock) {	// new device slot
 		// No longer "local" -- the local_device lock now belongs to the device_tree
 		// It will need to be freed later, when the user count returns to zero.
-		MUTEX_INIT(tree_devicelock->lock);	// create a mutex
+		_MUTEX_INIT(tree_devicelock->lock);	// create a mutex
 		tree_devicelock->users = 0 ;
 	} else {					// existing device slot
 		owfree(local_devicelock); // kill the locally allocated devlock (since there already is a matching devlock)	
 	}
 	++(tree_devicelock->users); // add our claim to the device
 	DEVTREE_UNLOCK(pn);
-	MUTEX_LOCK(tree_devicelock->lock);	// now grab the device
+	_MUTEX_LOCK(tree_devicelock->lock);	// now grab the device
 	pn->lock = tree_devicelock; // use this new devlock
 #else							/* OW_MT */
 	(void) pn;					// suppress compiler warning in the trivial case.
@@ -144,7 +144,7 @@ void DeviceLockRelease(struct parsedname *pn)
 #if OW_MT
 	if (pn->lock) { // this is the stored pointer to the device in the appropriate device tree
 		// Free the device
-		MUTEX_UNLOCK(pn->lock->lock);		/* Serg: This coredump on his 64-bit server */
+		_MUTEX_UNLOCK(pn->lock->lock);		/* Serg: This coredump on his 64-bit server */
 
 		// Now mark our disinterest in the device tree (and possibly reap the node))
 		DEVTREE_LOCK(pn);
@@ -152,7 +152,7 @@ void DeviceLockRelease(struct parsedname *pn)
 		if (pn->lock->users == 0) {
 			// No body's interested!
 			tdelete(pn->lock, &(pn->selected_connection->dev_db), dev_compare); /* Serg: Address 0x5A0D750 is 0 bytes inside a block of size 32 free'd */
-			MUTEX_DESTROY(pn->lock->lock);
+			_MUTEX_DESTROY(pn->lock->lock);
 			owfree(pn->lock);
 		}
 		pn->lock = NULL;

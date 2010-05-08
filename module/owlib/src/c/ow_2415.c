@@ -291,7 +291,6 @@ static GOOD_OR_BAD OW_r_udate(UINT * U, const struct parsedname *pn)
 
 static GOOD_OR_BAD OW_w_udate(UINT control_reg, UINT U, const struct parsedname *pn)
 {
-	UINT cr ;
 	BYTE w[6] = { _1W_WRITE_CLOCK, };
 	struct transaction_log twrite[] = {
 		TRXN_START,

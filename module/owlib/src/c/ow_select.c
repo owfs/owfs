@@ -133,9 +133,8 @@ static GOOD_OR_BAD BUS_Skip_Rom(const struct parsedname *pn)
 		TRXN_END,
 	};
 
-	if (BUS_reset(pn)<BUS_RESET_OK) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD( gbRESET( BUS_reset(pn) ) ) ;
+
 	skip[0] = (pn->selected_connection->speed == bus_speed_overdrive) ? _1W_OVERDRIVE_SKIP_ROM : _1W_SKIP_ROM;
 	return BUS_transaction_nolock(t, pn);
 }
@@ -145,9 +144,8 @@ static GOOD_OR_BAD BUS_select_opening(const struct parsedname *pn)
 {
 	int level ;
 
-	if (BUS_reset(pn)<BUS_RESET_OK) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD( gbRESET( BUS_reset(pn) ) ) ;
+
 	for ( level=0 ; level<(int)pn->pathlength ; ++level ) {
 		RETURN_BAD_IF_BAD( BUS_select_subbranch(&(pn->bp[level]), pn) ) ;
 	}
@@ -162,9 +160,7 @@ static GOOD_OR_BAD BUS_select_closing(const struct parsedname *pn)
 	// step through turning off levels
 	for ( turnoff_level=0 ; turnoff_level<=(int)pn->pathlength ; ++turnoff_level ) {
 		int level ;
-		if (BUS_reset(pn)<BUS_RESET_OK) {
-			return gbBAD;
-		}
+		RETURN_BAD_IF_BAD( gbRESET( BUS_reset(pn) ) ) ;
 		RETURN_BAD_IF_BAD(Turnoff(pn) ) ;
 		for ( level=0 ; level<turnoff_level ; ++level ) {
 			RETURN_BAD_IF_BAD( BUS_select_subbranch(&(pn->bp[level]), pn) ) ;

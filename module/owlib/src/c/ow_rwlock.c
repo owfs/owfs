@@ -19,7 +19,7 @@ $Id$
 
 void my_rwlock_init(my_rwlock_t * my_rwlock)
 {
-	MUTEX_INIT(my_rwlock->protect_reader_count);
+	_MUTEX_INIT(my_rwlock->protect_reader_count);
 	sem_init(&(my_rwlock->allow_readers), 0, 1);
 	sem_init(&(my_rwlock->no_processes), 0, 1);
 	my_rwlock->reader_count = 1;
@@ -44,25 +44,25 @@ inline void my_rwlock_read_lock(my_rwlock_t * my_rwlock)
 	sem_wait(&(my_rwlock->allow_readers));
 	sem_post(&(my_rwlock->allow_readers));
 
-	MUTEX_LOCK(my_rwlock->protect_reader_count);
+	_MUTEX_LOCK(my_rwlock->protect_reader_count);
 	if (++my_rwlock->reader_count == 1) {
 		sem_wait(&(my_rwlock->no_processes));
 	}
-	MUTEX_UNLOCK(my_rwlock->protect_reader_count);
+	_MUTEX_UNLOCK(my_rwlock->protect_reader_count);
 }
 
 inline void my_rwlock_read_unlock(my_rwlock_t * my_rwlock)
 {
-	MUTEX_LOCK(my_rwlock->protect_reader_count);
+	_MUTEX_LOCK(my_rwlock->protect_reader_count);
 	if (--my_rwlock->reader_count == 0) {
 		sem_post(&(my_rwlock->no_processes));
 	}
-	MUTEX_UNLOCK(my_rwlock->protect_reader_count);
+	_MUTEX_UNLOCK(my_rwlock->protect_reader_count);
 }
 
 void my_rwlock_destroy(my_rwlock_t * my_rwlock)
 {
-	MUTEX_DESTROY(my_rwlock->protect_reader_count);
+	_MUTEX_DESTROY(my_rwlock->protect_reader_count);
 	sem_destroy(&(my_rwlock->allow_readers));
 	sem_destroy(&(my_rwlock->no_processes));
 }

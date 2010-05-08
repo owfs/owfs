@@ -35,9 +35,9 @@ struct tm *localtime_r(const time_t * timep, struct tm *timeptr)
 {
 	static pthread_mutex_t time_lock = PTHREAD_MUTEX_INITIALIZER;
 
-	MUTEX_LOCK(time_lock);
+	_MUTEX_LOCK(time_lock);
 	*timeptr = *(localtime(timep));
-	MUTEX_UNLOCK(time_lock);
+	_MUTEX_UNLOCK(time_lock);
 	return timeptr;
 }
 #endif							/* HAVE_LOCALTIME_R */

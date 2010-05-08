@@ -176,10 +176,10 @@ struct interface_routines {
 #define AdapterSupports2409(pn)	(((pn)->selected_connection->iroutines.flags&ADAP_FLAG_no2409path)==0)
 
 #if OW_MT
-#define ACCEPTLOCK(out)       MUTEX_LOCK(  (out)->accept_mutex )
-#define ACCEPTUNLOCK(out)     MUTEX_UNLOCK((out)->accept_mutex )
-#define OUTLOCK(out)          MUTEX_LOCK(  (out)->out_mutex )
-#define OUTUNLOCK(out)        MUTEX_UNLOCK((out)->out_mutex )
+#define ACCEPTLOCK(out)       _MUTEX_LOCK(  (out)->accept_mutex )
+#define ACCEPTUNLOCK(out)     _MUTEX_UNLOCK((out)->accept_mutex )
+#define OUTLOCK(out)          _MUTEX_LOCK(  (out)->out_mutex )
+#define OUTUNLOCK(out)        _MUTEX_UNLOCK((out)->out_mutex )
 #else							/* OW_MT */
 #define ACCEPTLOCK(out)       return_ok()
 #define ACCEPTUNLOCK(out)     return_ok()

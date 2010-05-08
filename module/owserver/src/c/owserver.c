@@ -146,7 +146,7 @@ int main(int argc, char **argv)
 
 #if OW_MT
 	main_threadid = pthread_self();
-	MUTEX_INIT(persistence_mutex);
+	_MUTEX_INIT(persistence_mutex);
 	LEVEL_DEBUG("main_threadid = %lu", (unsigned long int) main_threadid);
 #endif
 	/* Set up "Antiloop" -- a unique token */
@@ -154,7 +154,7 @@ int main(int argc, char **argv)
 	ServerProcess(Handler);
 	LEVEL_DEBUG("ServerProcess done");
 #if OW_MT
-	MUTEX_DESTROY(persistence_mutex);
+	_MUTEX_DESTROY(persistence_mutex);
 #endif
 	ow_exit(0);
 	return 0;

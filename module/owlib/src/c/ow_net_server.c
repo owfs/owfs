@@ -224,14 +224,14 @@ static void *ProcessAcceptSocket(void *arg)
 #if OW_MT
 	// All done. If shutdown in progress and this is a last handler thread, send a message to the main thread.
 	RWLOCK_RLOCK( shutdown_mutex_rw ) ;
-	MUTEX_LOCK( handler_thread_mutex ) ;
+	_MUTEX_LOCK( handler_thread_mutex ) ;
 	--handler_thread_count ;
 	if ( shutdown_in_progress && handler_thread_count==0) {
 		if ( FILE_DESCRIPTOR_VALID( shutdown_pipe[fd_pipe_write] ) ) {
 			ignore_result = write( shutdown_pipe[fd_pipe_write],"X",1) ; //dummy payload
 		}		
 	}
-	MUTEX_UNLOCK( handler_thread_mutex ) ;
+	_MUTEX_UNLOCK( handler_thread_mutex ) ;
 	RWLOCK_RUNLOCK( shutdown_mutex_rw ) ;
 #endif /* OW_MT */
 	return NULL;
@@ -262,9 +262,9 @@ static void ProcessListenSocket( struct connection_out * out )
 	RWLOCK_RLOCK( shutdown_mutex_rw ) ;
 	if ( ! shutdown_in_progress ) {
 		pthread_t tid;
-		MUTEX_LOCK( handler_thread_mutex ) ;
+		_MUTEX_LOCK( handler_thread_mutex ) ;
 		++handler_thread_count ;
-		MUTEX_UNLOCK( handler_thread_mutex ) ;
+		_MUTEX_UNLOCK( handler_thread_mutex ) ;
 		if ( pthread_create(&tid, NULL, ProcessAcceptSocket, asd ) != 0 ) {
 			// Do it in the main routine rather than a thread
 			ProcessAcceptSocket(asd) ;
@@ -303,7 +303,7 @@ void ServerProcess(void (*HandlerRoutine) (FILE_DESCRIPTOR_OR_ERROR file_descrip
 	shutdown_pipe[fd_pipe_write] = FILE_DESCRIPTOR_BAD ;
 
 	RWLOCK_INIT( shutdown_mutex_rw ) ;
-	MUTEX_INIT(handler_thread_mutex);
+	_MUTEX_INIT(handler_thread_mutex);
 	if ( pipe( shutdown_pipe ) != 0 ) {
 		ERROR_DEFAULT("Cannot allocate a shutdown pipe. The program shutdown may be messy");
 	}
@@ -328,7 +328,7 @@ void ServerProcess(void (*HandlerRoutine) (FILE_DESCRIPTOR_OR_ERROR file_descrip
 		}
 		Test_and_Close_Pipe(shutdown_pipe) ;
 		RWLOCK_DESTROY(shutdown_mutex_rw) ;
-		MUTEX_DESTROY(handler_thread_mutex) ;
+		_MUTEX_DESTROY(handler_thread_mutex) ;
 #endif /* OW_MT */
 		CloseListenSockets() ;
 	} else {

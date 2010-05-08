@@ -54,25 +54,25 @@ void LockSetup(void)
     #else /* UCLIBC_VERSION */
 	my_pthread_mutexattr_settype(&Mutex.mattr, PTHREAD_MUTEX_DEFAULT);
     #endif							/* UCLIBC_VERSION */
-	MUTEX_INIT(Mutex.uclibc_mutex);
+	_MUTEX_INIT(Mutex.uclibc_mutex);
   #else /* __UCLIBC__ */
 	my_pthread_mutexattr_settype(&Mutex.mattr, PTHREAD_MUTEX_DEFAULT);   
   #endif							/* __UCLIBC__ */
 
-	MUTEX_INIT(Mutex.stat_mutex);
-	MUTEX_INIT(Mutex.controlflags_mutex);
-	MUTEX_INIT(Mutex.fstat_mutex);
-	MUTEX_INIT(Mutex.dir_mutex);
-	MUTEX_INIT(Mutex.typedir_mutex);
-	MUTEX_INIT(Mutex.namefind_mutex);
-	MUTEX_INIT(Mutex.aliasfind_mutex);
+	_MUTEX_INIT(Mutex.stat_mutex);
+	_MUTEX_INIT(Mutex.controlflags_mutex);
+	_MUTEX_INIT(Mutex.fstat_mutex);
+	_MUTEX_INIT(Mutex.dir_mutex);
+	_MUTEX_INIT(Mutex.typedir_mutex);
+	_MUTEX_INIT(Mutex.namefind_mutex);
+	_MUTEX_INIT(Mutex.aliasfind_mutex);
 
 	RWLOCK_INIT(Mutex.lib);
 	RWLOCK_INIT(Mutex.cache);
 	RWLOCK_INIT(Mutex.store);
 	RWLOCK_INIT(Inbound_Control.lock);
   #if OW_USB
-	MUTEX_INIT(Mutex.libusb_mutex);
+	_MUTEX_INIT(Mutex.libusb_mutex);
   #endif							/* OW_USB */
 #endif							/* OW_MT */
 }

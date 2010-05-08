@@ -428,11 +428,7 @@ static GOOD_OR_BAD DS2480_big_configuration(const struct parsedname *pn)
 	}
 
 	/* Apparently need to reset again to get the version number properly */
-	if ( DS2480_reset(pn) < BUS_RESET_OK ) {
-		return gbBAD;
-	}
-
-	return gbGOOD ;
+	return gbRESET( DS2480_reset(pn)  ) ;
 }
 
 // configuration of DS2480B -- parameter code is already shifted in the defines (by 4 bites)

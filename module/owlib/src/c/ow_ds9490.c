@@ -906,7 +906,7 @@ static int DS9490_overdrive(const struct parsedname *pn)
 	// we need to change speed to overdrive
 	for (i = 0; i < 3; i++) {
 		LEVEL_DATA("set overdrive speed. Attempt %d",i);
-		if ((ret = BUS_reset(pn)) < 0) {
+		if ( BAD( gbRESET(BUS_reset(pn)) ) ) {
 			continue;
 		}
 		if (((ret = DS9490_sendback_data(&sp, &resp, 1, pn)) < 0)
@@ -1147,7 +1147,7 @@ static enum search_status DS9490_directory(struct device_search *ds, struct dirb
 
 	/* DS1994/DS2404 might need an extra reset */
 	if (pn->selected_connection->ExtraReset) {
-		if (BUS_reset(pn) < 0) {
+		if ( BAD( gbRESET( BUS_reset(pn) ) ) ) {
 			return search_error;
 		}
 		pn->selected_connection->ExtraReset = 0;

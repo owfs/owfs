@@ -94,8 +94,8 @@ int W1_Browse( void )
     LEVEL_DEBUG("Calling for netlink w1 list");
 
     // Initial setup
-    MUTEX_INIT(Inbound_Control.w1_mutex);
-    MUTEX_INIT(Inbound_Control.w1_read_mutex);
+    _MUTEX_INIT(Inbound_Control.w1_mutex);
+    _MUTEX_INIT(Inbound_Control.w1_read_mutex);
     gettimeofday(&Inbound_Control.w1_last_read,NULL);
     ++Inbound_Control.w1_last_read.tv_sec ;
 

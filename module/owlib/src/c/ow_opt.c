@@ -460,7 +460,7 @@ static GOOD_OR_BAD ConfigurationFile(const ASCII * file)
 		while (getline(&(lp.line), &(lp.line_length), configuration_file_pointer)>=0) {
 			++lp.line_number;
 			ParseTheLine(&lp);
-			RETURN_BAD_IF_BAD( owopt(ParseInterp(&lp), lp.val) != 0 ) ;
+			RETURN_BAD_IF_BAD( owopt(ParseInterp(&lp), lp.val) ) ;
 		}
 		fclose(configuration_file_pointer);
 		if ( lp.line != NULL) {

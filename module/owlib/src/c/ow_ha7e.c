@@ -71,15 +71,18 @@ GOOD_OR_BAD HA7E_detect(struct connection_in *in)
 	COM_speed(in->baud, in);
 	COM_slurp(in->file_descriptor) ;
 
-	if (HA7E_reset(&pn) == BUS_RESET_OK ) {
-		in->Adapter = adapter_HA7E ;
-		in->adapter_name = "HA7E/S";
-		return gbGOOD;
-	} else if (HA7E_reset(&pn) == BUS_RESET_OK ) {
+	if ( BAD( gbRESET( HA7E_reset(&pn) ) ) ) {
 		in->Adapter = adapter_HA7E ;
 		in->adapter_name = "HA7E/S";
 		return gbGOOD;
 	}
+	
+	if ( BAD( gbRESET( HA7E_reset(&pn) ) ) ) {
+		in->Adapter = adapter_HA7E ;
+		in->adapter_name = "HA7E/S";
+		return gbGOOD;
+	}
+	
 	LEVEL_DEFAULT("Error in HA7E detection: can't perform RESET");
 	return gbBAD;
 }
@@ -252,7 +255,7 @@ static GOOD_OR_BAD HA7E_select( const struct parsedname * pn )
 	send_address[17] = 0x0D;
 
 	if ( (pn->selected_device==NULL) || (pn->selected_device==DeviceThermostat) ) {
-		return HA7E_reset(pn) ;
+		return gbRESET( HA7E_reset(pn) ) ;
 	}
 
 	if ( memcmp( pn->sn, pn->selected_connection->connin.ha7e.sn, SERIAL_NUMBER_SIZE ) ) {

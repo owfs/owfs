@@ -716,27 +716,22 @@ static void OW_date(const _DATE * d, BYTE * data)
 static GOOD_OR_BAD OW_force_conversion(const UINT delay, struct parsedname *pn)
 {
 	BYTE t[2] = { _1W_FORCED_CONVERSION, _1W_FORCED_CONVERSION_START };
-	int ret = 0;
+	RESET_TYPE ret ;
 
 	RETURN_BAD_IF_BAD(OW_oscillator(1, pn));
 
 	/* Mission not progress, force conversion */
 	BUSLOCK(pn);
-	ret = BAD(BUS_select(pn)) || BUS_send_data(t, 2, pn);
-	if (ret) {
-		printf("conv: err3\n");
+	if ( BAD(BUS_select(pn)) || BUS_send_data(t, 2, pn) ) {
+		printf("conv: err\n");
+		BUSUNLOCK(pn);
 		return gbBAD;
 	}
-	if (!ret) {
-		UT_delay(delay);
-		ret = BUS_reset(pn);
-	}
+	UT_delay(delay);
+	ret = BUS_reset(pn);
 	BUSUNLOCK(pn);
-	if (ret) {
-		printf("conv: err4\n");
-		return gbBAD;
-	}
-	return gbGOOD;
+
+	return gbRESET( ret ) ;
 }
 
 static GOOD_OR_BAD OW_r_temperature(_FLOAT * T, const UINT delay, struct parsedname *pn)

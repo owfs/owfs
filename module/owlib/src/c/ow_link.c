@@ -187,7 +187,6 @@ static GOOD_OR_BAD LINK_serial_detect(struct parsedname * pn_minimal)
 	
 	//COM_flush(in);
 	if (LINK_reset(pn_minimal) == BUS_RESET_OK && LINK_write(LINK_string(" "), 1, pn_minimal) == 0) {
-		
 		char version_read_in[MAX_LINK_VERSION_LENGTH] ;
 		memset(version_read_in, 0, MAX_LINK_VERSION_LENGTH);
 		

@@ -45,7 +45,7 @@ static GOOD_OR_BAD LoopSetup(struct handlerdata *hd) ;
 
 static GOOD_OR_BAD LoopSetup(struct handlerdata *hd)
 {
-	MUTEX_INIT(hd->to_client);
+	_MUTEX_INIT(hd->to_client);
 	if ( pipe(hd->ping_pipe) != 0 ) {
 		ERROR_DEBUG("Cannot create pipe pair for keep-alive pulses") ;
 		return gbBAD ;
@@ -56,7 +56,7 @@ static GOOD_OR_BAD LoopSetup(struct handlerdata *hd)
 
 static void LoopCleanup(struct handlerdata *hd)
 {
-	MUTEX_DESTROY(hd->to_client);
+	_MUTEX_DESTROY(hd->to_client);
 	if (hd->ping_pipe[fd_pipe_read] > -1 ) {
 		close(hd->ping_pipe[fd_pipe_read]) ;
 	}

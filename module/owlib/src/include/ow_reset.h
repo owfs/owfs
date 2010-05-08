@@ -74,5 +74,7 @@ typedef int RESET_TYPE ;
 #define BUS_RESET_SHORT 1
 #define BUS_RESET_ERROR -EINVAL
 
+#define gbRESET( r )  ( ( (r) < BUS_RESET_OK ) ? gbBAD : gbGOOD )
+
 
 #endif							/* OW_RESET_H */

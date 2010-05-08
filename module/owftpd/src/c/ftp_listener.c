@@ -100,7 +100,7 @@ int ftp_listener_init(struct ftp_listener_s *f)
 	f->max_connections = Globals.max_clients;
 	f->num_connections = 0;
 	f->inactivity_timeout = Globals.timeout_ftp;
-	MUTEX_INIT(f->mutex);
+	_MUTEX_INIT(f->mutex);
 
 	strcpy(f->dir, "/");
 	f->listener_running = 0;
@@ -324,10 +324,10 @@ static void *connection_handler(void *v)
 	pthread_cleanup_push(connection_handler_cleanup, info);
 
 	/* process global data */
-	MUTEX_LOCK(f->mutex);
+	_MUTEX_LOCK(f->mutex);
 	num_connections = ++f->num_connections;
 	ERROR_DEBUG("%s port %d connection", addr2string(&info->ftp_session.client_addr), ntohs(SINPORT(&info->ftp_session.client_addr)));
-	MUTEX_UNLOCK(f->mutex);
+	_MUTEX_UNLOCK(f->mutex);
 
 	/* handle the session */
 	if (num_connections <= f->max_connections) {
@@ -341,11 +341,11 @@ static void *connection_handler(void *v)
 		ftp_session_drop(&info->ftp_session, drop_reason);
 
 		/* log the rejection */
-		MUTEX_LOCK(f->mutex);
+		_MUTEX_LOCK(f->mutex);
 		LEVEL_CONNECT
 			("%s port %d exceeds max users (%d), dropping connection",
 			 addr2string(&info->ftp_session.client_addr), ntohs(SINPORT(&info->ftp_session.client_addr)), num_connections);
-		MUTEX_UNLOCK(f->mutex);
+		_MUTEX_UNLOCK(f->mutex);
 
 	}
 
@@ -366,14 +366,14 @@ static void connection_handler_cleanup(void *v)
 
 	watchdog_remove_watched(&info->watched);
 
-	MUTEX_LOCK(f->mutex);
+	_MUTEX_LOCK(f->mutex);
 
 	f->num_connections--;
 	pthread_cond_signal(&f->shutdown_cond);
 
 	LEVEL_CONNECT("%s port %d disconnected", addr2string(&info->ftp_session.client_addr), ntohs(SINPORT(&info->ftp_session.client_addr)));
 
-	MUTEX_UNLOCK(f->mutex);
+	_MUTEX_UNLOCK(f->mutex);
 
 	ftp_session_destroy(&info->ftp_session);
 	telnet_session_destroy(&info->telnet_session);
@@ -390,9 +390,9 @@ void ftp_listener_stop(struct ftp_listener_s *f)
 	ignore =  write(f->shutdown_request_fd[fd_pipe_write], "", 1);
 
 	/* wait for client connections to complete */
-	MUTEX_LOCK(f->mutex);
+	_MUTEX_LOCK(f->mutex);
 	while (f->num_connections > 0) {
 		pthread_cond_wait(&f->shutdown_cond, &f->mutex);
 	}
-	MUTEX_UNLOCK(f->mutex);
+	_MUTEX_UNLOCK(f->mutex);
 }

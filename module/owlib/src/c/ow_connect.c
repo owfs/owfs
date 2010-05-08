@@ -103,8 +103,8 @@ struct connection_in *NewIn(const struct connection_in *in)
 		DirblobInit(&(now->alarm));
 
 #if OW_MT
-		MUTEX_INIT(now->bus_mutex);
-		MUTEX_INIT(now->dev_mutex);
+		_MUTEX_INIT(now->bus_mutex);
+		_MUTEX_INIT(now->dev_mutex);
 		now->dev_db = NULL;
 #endif							/* OW_MT */
 		/* Support DS1994/DS2404 which require longer delays, and is automatically
@@ -134,8 +134,8 @@ struct connection_out *NewOut(void)
 		now->index = Outbound_Control.next_index++;
 		++Outbound_Control.active ;
 #if OW_MT
-		MUTEX_INIT(now->accept_mutex);
-		MUTEX_INIT(now->out_mutex);
+		_MUTEX_INIT(now->accept_mutex);
+		_MUTEX_INIT(now->out_mutex);
 		my_pthread_cond_init(&(now->setup_cond), NULL);
 #endif							/* OW_MT */
 		// Zero sref's -- done with struct memset
@@ -158,8 +158,8 @@ void FreeIn(struct connection_in * now)
 	//LEVEL_DEBUG("%p next=%p busmode=%d\n", now, now->next, (int)get_busmode(now));
 	--Inbound_Control.active ;
 #if OW_MT
-	MUTEX_DESTROY(now->bus_mutex);
-	MUTEX_DESTROY(now->dev_mutex);
+	_MUTEX_DESTROY(now->bus_mutex);
+	_MUTEX_DESTROY(now->dev_mutex);
 
 	if (now->dev_db) {
 		tdestroy(now->dev_db, owfree_func);
@@ -206,15 +206,15 @@ void FreeIn(struct connection_in * now)
 	case bus_i2c:
 #if OW_MT
 		if (now->connin.i2c.index == 0) {
-			MUTEX_DESTROY(now->connin.i2c.i2c_mutex);
+			_MUTEX_DESTROY(now->connin.i2c.i2c_mutex);
 		}
 #endif							/* OW_MT */
 		break ;
 	case bus_w1:
 #if OW_W1
 #if OW_MT
-		MUTEX_DESTROY(Inbound_Control.w1_mutex);
-		MUTEX_DESTROY(Inbound_Control.w1_read_mutex);
+		_MUTEX_DESTROY(Inbound_Control.w1_mutex);
+		_MUTEX_DESTROY(Inbound_Control.w1_read_mutex);
 #endif							/* OW_MT */
 #endif							/* OW_W1 */
 		break ;
@@ -305,8 +305,8 @@ void FreeOutAll(void)
 			now->ai = NULL;
 		}
 #if OW_MT
-		MUTEX_DESTROY(now->accept_mutex);
-		MUTEX_DESTROY(now->out_mutex);
+		_MUTEX_DESTROY(now->accept_mutex);
+		_MUTEX_DESTROY(now->out_mutex);
 		my_pthread_cond_destroy(&(now->setup_cond));
 #endif							/* OW_MT */
 #if OW_ZERO

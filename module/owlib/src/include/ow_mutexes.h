@@ -82,11 +82,11 @@ extern struct mutexes {
 
 
 #if OW_MT
-#define MUTEX_INIT(mut)	 	my_pthread_mutex_init(    &(mut) , &(Mutex.mattr) )
-#define MUTEX_DESTROY(mut)	my_pthread_mutex_destroy( &(mut) )
+#define _MUTEX_INIT(mut)	my_pthread_mutex_init(    &(mut) , &(Mutex.mattr) )
+#define _MUTEX_DESTROY(mut)	my_pthread_mutex_destroy( &(mut) )
 
-#define MUTEX_LOCK(mut)		my_pthread_mutex_lock(   &(mut) )
-#define MUTEX_UNLOCK(mut)	my_pthread_mutex_unlock( &(mut) )
+#define _MUTEX_LOCK(mut)	my_pthread_mutex_lock(   &(mut) )
+#define _MUTEX_UNLOCK(mut)	my_pthread_mutex_unlock( &(mut) )
 
 #define RWLOCK_INIT(rw)		my_rwlock_init(    &(rw) )
 #define RWLOCK_DESTROY(rw)	my_rwlock_destroy( &(rw) )
@@ -117,40 +117,40 @@ extern struct mutexes {
 #define CONNIN_RLOCK      	RWLOCK_RLOCK(   Inbound_Control.lock ) ;
 #define CONNIN_RUNLOCK    	RWLOCK_RUNLOCK( Inbound_Control.lock ) ;
 
-#define STATLOCK          	MUTEX_LOCK(  Mutex.stat_mutex   )
-#define STATUNLOCK        	MUTEX_UNLOCK(Mutex.stat_mutex   )
+#define STATLOCK          	_MUTEX_LOCK(  Mutex.stat_mutex   )
+#define STATUNLOCK        	_MUTEX_UNLOCK(Mutex.stat_mutex   )
 
-#define CONTROLFLAGSLOCK  	MUTEX_LOCK(  Mutex.controlflags_mutex  )
-#define CONTROLFLAGSUNLOCK	MUTEX_UNLOCK(Mutex.controlflags_mutex  )
+#define CONTROLFLAGSLOCK  	_MUTEX_LOCK(  Mutex.controlflags_mutex  )
+#define CONTROLFLAGSUNLOCK	_MUTEX_UNLOCK(Mutex.controlflags_mutex  )
 
-#define FSTATLOCK         	MUTEX_LOCK(  Mutex.fstat_mutex  )
-#define FSTATUNLOCK       	MUTEX_UNLOCK(Mutex.fstat_mutex  )
+#define FSTATLOCK         	_MUTEX_LOCK(  Mutex.fstat_mutex  )
+#define FSTATUNLOCK       	_MUTEX_UNLOCK(Mutex.fstat_mutex  )
 
-#define SIMULLOCK         	MUTEX_LOCK(  Mutex.simul_mutex  )
-#define SIMULUNLOCK       	MUTEX_UNLOCK(Mutex.simul_mutex  )
+#define SIMULLOCK         	_MUTEX_LOCK(  Mutex.simul_mutex  )
+#define SIMULUNLOCK       	_MUTEX_UNLOCK(Mutex.simul_mutex  )
 
-#define DIRLOCK           	MUTEX_LOCK(  Mutex.dir_mutex    )
-#define DIRUNLOCK         	MUTEX_UNLOCK(Mutex.dir_mutex    )
+#define DIRLOCK           	_MUTEX_LOCK(  Mutex.dir_mutex    )
+#define DIRUNLOCK         	_MUTEX_UNLOCK(Mutex.dir_mutex    )
 
-#define LIBUSBLOCK        	MUTEX_LOCK(  Mutex.libusb_mutex )
-#define LIBUSBUNLOCK      	MUTEX_UNLOCK(Mutex.libusb_mutex )
+#define LIBUSBLOCK        	_MUTEX_LOCK(  Mutex.libusb_mutex )
+#define LIBUSBUNLOCK      	_MUTEX_UNLOCK(Mutex.libusb_mutex )
 
-#define TYPEDIRLOCK       	MUTEX_LOCK(  Mutex.typedir_mutex)
-#define TYPEDIRUNLOCK     	MUTEX_UNLOCK(Mutex.typedir_mutex)
+#define TYPEDIRLOCK       	_MUTEX_LOCK(  Mutex.typedir_mutex)
+#define TYPEDIRUNLOCK     	_MUTEX_UNLOCK(Mutex.typedir_mutex)
 
-#define NAMEFINDLOCK      	MUTEX_LOCK(  Mutex.namefind_mutex)
-#define NAMEFINDUNLOCK    	MUTEX_UNLOCK(Mutex.namefind_mutex)
+#define NAMEFINDLOCK      	_MUTEX_LOCK(  Mutex.namefind_mutex)
+#define NAMEFINDUNLOCK    	_MUTEX_UNLOCK(Mutex.namefind_mutex)
 
-#define ALIASFINDLOCK     	MUTEX_LOCK(  Mutex.aliasfind_mutex)
-#define ALIASFINDUNLOCK   	MUTEX_UNLOCK(Mutex.aliasfind_mutex)
+#define ALIASFINDLOCK     	_MUTEX_LOCK(  Mutex.aliasfind_mutex)
+#define ALIASFINDUNLOCK   	_MUTEX_UNLOCK(Mutex.aliasfind_mutex)
 
 #define BUSLOCK(pn)       	BUS_lock(pn)
 #define BUSUNLOCK(pn)     	BUS_unlock(pn)
 #define BUSLOCKIN(in)     	BUS_lock_in(in)
 #define BUSUNLOCKIN(in)   	BUS_unlock_in(in)
 #ifdef __UCLIBC__
-#define UCLIBCLOCK        	MUTEX_LOCK(  Mutex.uclibc_mutex)
-#define UCLIBCUNLOCK      	MUTEX_UNLOCK(Mutex.uclibc_mutex)
+#define UCLIBCLOCK        	_MUTEX_LOCK(  Mutex.uclibc_mutex)
+#define UCLIBCUNLOCK      	_MUTEX_UNLOCK(Mutex.uclibc_mutex)
 #else							/* __UCLIBC__ */
 #define UCLIBCLOCK		return_ok()
 #define UCLIBCUNLOCK		return_ok()

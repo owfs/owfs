@@ -57,7 +57,7 @@ void Handler(int file_descriptor)
 	int persistent = 0;
 
 	hd.file_descriptor = file_descriptor;
-	MUTEX_INIT(hd.to_client);
+	_MUTEX_INIT(hd.to_client);
 
 	timersub(&tv_high, &tv_low, &tv_high);	// just the delta
 
@@ -135,7 +135,7 @@ void Handler(int file_descriptor)
 	}
 
 	LEVEL_DEBUG("OWSERVER handler done");
-	MUTEX_DESTROY(hd.to_client);
+	_MUTEX_DESTROY(hd.to_client);
 	// restore the persistent count
 	if (persistent) {
 

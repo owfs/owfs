@@ -17,7 +17,7 @@ int watchdog_init(struct watchdog_s *w, int inactivity_timeout)
 	daemon_assert(w != NULL);
 	daemon_assert(inactivity_timeout > 0);
 
-	MUTEX_INIT(w->mutex);
+	_MUTEX_INIT(w->mutex);
 	w->inactivity_timeout = inactivity_timeout;
 	w->oldest = NULL;
 	w->newest = NULL;
@@ -39,13 +39,13 @@ void watchdog_add_watched(struct watchdog_s *w, struct watched_s *watched)
 {
 	daemon_assert(invariant(w));
 
-	MUTEX_LOCK(w->mutex);
+	_MUTEX_LOCK(w->mutex);
 
 	watched->watched_thread = pthread_self();
 	watched->watchdog = w;
 	insert(w, watched);
 
-	MUTEX_UNLOCK(w->mutex);
+	_MUTEX_UNLOCK(w->mutex);
 
 	daemon_assert(invariant(w));
 }
@@ -57,12 +57,12 @@ void watchdog_defer_watched(struct watched_s *watched)
 	daemon_assert(invariant(watched->watchdog));
 
 	w = watched->watchdog;
-	MUTEX_LOCK(w->mutex);
+	_MUTEX_LOCK(w->mutex);
 
 	delete(w, watched);
 	insert(w, watched);
 
-	MUTEX_UNLOCK(w->mutex);
+	_MUTEX_UNLOCK(w->mutex);
 	daemon_assert(invariant(w));
 }
 
@@ -73,11 +73,11 @@ void watchdog_remove_watched(struct watched_s *watched)
 	daemon_assert(invariant(watched->watchdog));
 
 	w = watched->watchdog;
-	MUTEX_LOCK(w->mutex);
+	_MUTEX_LOCK(w->mutex);
 
 	delete(w, watched);
 
-	MUTEX_UNLOCK(w->mutex);
+	_MUTEX_UNLOCK(w->mutex);
 	daemon_assert(invariant(w));
 }
 
@@ -165,7 +165,7 @@ static void *watcher(void *void_w)
 
 		time(&now);
 
-		MUTEX_LOCK(w->mutex);
+		_MUTEX_LOCK(w->mutex);
 		while ((w->oldest != NULL) && (difftime(now, w->oldest->alarm_time) > 0)) {
 			watched = w->oldest;
 
@@ -179,7 +179,7 @@ static void *watcher(void *void_w)
 
 			pthread_cancel(watched->watched_thread);
 		}
-		MUTEX_UNLOCK(w->mutex);
+		_MUTEX_UNLOCK(w->mutex);
 	}
 	return NULL ;
 }
@@ -199,7 +199,7 @@ static int invariant(struct watchdog_s *w)
 	}
 
 	ret_val = 0;
-	MUTEX_LOCK(w->mutex);
+	_MUTEX_LOCK(w->mutex);
 
 	if (w->inactivity_timeout <= 0) {
 		goto exit_invariant;
@@ -262,7 +262,7 @@ static int invariant(struct watchdog_s *w)
 	ret_val = 1;
 
   exit_invariant:
-	MUTEX_UNLOCK(w->mutex);
+	_MUTEX_UNLOCK(w->mutex);
 	return ret_val;
 }
 #endif							/* NDEBUG */

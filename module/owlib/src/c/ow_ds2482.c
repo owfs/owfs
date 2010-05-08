@@ -401,7 +401,7 @@ static GOOD_OR_BAD DS2482_detect_single(int lowindex, int highindex, struct conn
 				in->connin.i2c.configreg |= DS2482_REG_CFG_PPM ;
 			}
 			#if OW_MT
-			MUTEX_INIT(in->connin.i2c.i2c_mutex);
+			_MUTEX_INIT(in->connin.i2c.i2c_mutex);
 			#endif							/* OW_MT */
 			in->busmode = bus_i2c;
 			in->Adapter = adapter_DS2482_100;
