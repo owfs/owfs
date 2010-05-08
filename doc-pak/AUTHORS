@@ -1,9 +1,0 @@
-$Id$
-
-Paul H Allfille:     	     Concept and original work
-Vadim Tkachenko:	     Module split, build infrastructure, configuration
-Geo Carncross:          Configuration work
-Christian Magnusson: Embedded work, and work on chips, and multiple busses
-Serg Oskin:                TCL support as well as alarms and many patches
-Peter Kropf:               Python support
-Sebastian Zuther:      PHP support           

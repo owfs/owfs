@@ -1,33 +1,71 @@
 $Id$
 
 This package uses the standard UNIX installation methods, with
-scripts that taylor the code to your environment.
+scripts that tailor the code to your environment.
 
-QUICK INSTALL:
+Usually you'll use the QUICK INSTALL and can ignore all the rest.
 
+QUICK INSTALL: (From a source code release)
+--------------------------------------------------------------------
 1. Download and unpack owfs (you can find it on sourceforge:
      http://www.sf.net/projects/owfs )
+
 2. cd owfs # move into the directory
+
 3. ./configure
-4. make install
+
+4. sudo make install
+
 5. Run. Several choices:
-   A. Filesystem using FUSE
+   
+    A. Filesystem using FUSE
    /opt/owfs/bin/owfs -d /dev/ttyS1 -m /mnt/1wire
    where /dev/ttyS1 is the serial port of your interface
    and /mnt/1wire is the directory to mount
+   
    B. Webserver
    /opt/owfs/bin/owhttpd -u -p 4444
    Where -u is the USB bus master (DS9490)
    -p 4444 is an arbitrary post
    Fire up your web browser and look at URL
    localhost:4444
+
 6. There might be an issue with access permissions to the hardware.
    Easiest test:
    /opt/owfs/bin/owhttpd --fake=10 -p 4444
    and look at URL http://localhost:4444
    to see a simulated 1-wire network.
 
-More complete instructions:
+
+
+INSTALL from development code (CVS)
+---------------------------------------------------------------------
+1. Get the source code from the server:
+   
+   A. Type at the command line:
+      cvs -d:pserver:anonymous@owfs.cvs.sourceforge.net:/cvsroot/owfs login 
+      cvs -z3 -d:pserver:anonymous@owfs.cvs.sourceforge.net:/cvsroot/owfs co owfs
+
+   B. You can also follow the instructions here:
+      http://sourceforge.net/scm/?type=cvs&group_id=85502
+      (which say the same thing)
+
+   C. Later update to a newer versiion by entering the owfs directory and typing
+      cvs update -dR
+
+2. Run bootstrap (this is a nuisance).
+   A. Try to see if you're lucky: in the owfs directory type
+      ./bootstrap
+
+   B. If you get errors, the problem is probably the libtool version, so
+      cp /usr/bin/libtool owfs/src/scripts/install/install.sh
+      (the second pathname is a relative path into the owfs directory).
+      then follow A above.
+
+3. Now you can go to step 3 of QUICKINSTALL above.
+
+
+More complete instructions: (Not owfs-specific)
 ---------------------------------------------------------------------
 Basic Installation
 ==================

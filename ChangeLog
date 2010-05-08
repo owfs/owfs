@@ -1,14 +1,31 @@
 $Id$
-For 2.2p1
-2/19/2006
-Fixed problem with network timeouts. owserver will ping back every 1.5 seconds.
-Added support for more of the DS27xx chips
-For 2.2p0
-Support for Link-Hub-E
-For release 2:
 
-More chip support (just about everything except the encryption, java, and thermocrons)
-Client server architecture.
-Fully multithreading
-perl, python, php and tcl bindings
-multiple 1-wire busses
+We don't have a single ChangeLog. Instead use the following resources:
+
+1. Development
+
+  OWFS development is managed by CVS, and the definitive source for code
+modifications is the CVS log entries.
+
+  http://owfs.cvs.sourceforge.net/owfs/
+
+2. Releases
+
+  Each release has brief release notes included on the download page of the
+Sourceforge site.
+
+  http://sourceforge.net/projects/owfs/files/
+
+3. Discussion
+
+  Discussion of changes and direction of program development occurs on the
+owfs-developer's mailing list.
+
+  Archive: http://sourceforge.net/mailarchive/forum.php?forum_name=owfs-developers
+  Subscribe: https://lists.sourceforge.net/lists/listinfo/owfs-developers
+
+4. Documentation
+
+  See the web site.
+
+  http://www.owfs.org
