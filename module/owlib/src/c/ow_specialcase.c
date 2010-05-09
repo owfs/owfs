@@ -47,7 +47,7 @@ static int specialcase_compare(const void *a, const void *b)
 	return memcmp(a, b, sizeof(struct specialcase_key));
 }
 
-void SpecialCase_add( struct connection_in * in, unsigned char family_code, const char * property, int (*read_func) (struct one_wire_query *), int (*write_func) (struct one_wire_query *))
+void SpecialCase_add( struct connection_in * in, unsigned char family_code, const char * property, ZERO_OR_ERROR (*read_func) (struct one_wire_query *), SIZE_OR_ERROR (*write_func) (struct one_wire_query *))
 {
 	/* Search for known 1-wire device */
 	struct parsedname pn ; // carrier for finding device -- not actually formally created. No deallocation needed.
@@ -96,9 +96,7 @@ static void * SpecialCase_look( struct one_wire_query * owq )
 
 	// find in the red/black tree
 	return tfind(&sc, &SpecialCase, specialcase_compare);
-}
-
-int SpecialCase_read( struct one_wire_query * owq )
+}ZERO_OR_ERROR SpecialCase_read( struct one_wire_query * owq )
 {
 	struct specialcase * sc = SpecialCase_look(owq) ;
 	
@@ -111,7 +109,7 @@ int SpecialCase_read( struct one_wire_query * owq )
 	return (sc->read)(owq) ;
 }
 
-int SpecialCase_write( struct one_wire_query * owq )
+SIZE_OR_ERROR SpecialCase_write( struct one_wire_query * owq )
 {
 	struct specialcase * sc = SpecialCase_look(owq) ;
 	

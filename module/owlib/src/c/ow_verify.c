@@ -22,7 +22,7 @@ $Id$
 // BUS_verify tests if device is present in requested mode
 //   serialnumber is 1-wire device address (64 bits)
 //   return 0 good, 1 bad
-int BUS_verify(BYTE search, const struct parsedname *pn)
+GOOD_OR_BAD BUS_verify(BYTE search, const struct parsedname *pn)
 {
 	BYTE buffer[25];
 	int i, goodbits = 0;
@@ -37,11 +37,10 @@ int BUS_verify(BYTE search, const struct parsedname *pn)
 	}
 
 	// send/recieve the transfer buffer
-	if (BUS_sendback_data(buffer, buffer, 25, pn)) {
-		return 1;
-	}
+	RETURN_BAD_IF_BAD(BUS_sendback_data(buffer, buffer, 25, pn) ) ;
+
 	if (buffer[0] != search) {
-		return 1;
+		return gbBAD;
 	}
 	for (i = 0; (i < 64) && (goodbits < 64); i++) {
 		switch (UT_getbit(buffer, 3 * i + 8) << 1 | UT_getbit(buffer, 3 * i + 9)) {
@@ -58,10 +57,9 @@ int BUS_verify(BYTE search, const struct parsedname *pn)
 			}
 			break;
 		case 3:				// No device on line
-			return 1;
+			return gbBAD;
 		}
 	}
 	// check to see if there were enough good bits to be successful
-	// remember 1 is bad!
-	return goodbits < 8;
+	return ( goodbits < 8 ) ? gbBAD : gbGOOD;
 }

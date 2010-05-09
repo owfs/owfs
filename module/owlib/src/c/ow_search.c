@@ -151,7 +151,7 @@ enum search_status BUS_next_both_bitbang(struct device_search *ds, const struct 
 		}
 		
 		/* Appropriate search command */
-		if ( BUS_send_data(&(ds->search), 1, pn) != 0 ) {
+		if ( BAD( BUS_send_data(&(ds->search), 1, pn)) ) {
 			return search_error ;
 		}
 		// loop to do the search
@@ -159,18 +159,18 @@ enum search_status BUS_next_both_bitbang(struct device_search *ds, const struct 
 			bits[1] = bits[2] = 0xFF;
 			if (bit_number == 0) {	/* First bit */
 				/* get two bits (AND'ed bit and AND'ed complement) */
-				if ( BUS_sendback_bits(&bits[1], &bits[1], 2, pn) != 0 ) {
+				if ( BAD( BUS_sendback_bits(&bits[1], &bits[1], 2, pn) ) ) {
 					return search_error;
 				}
 			} else {
 				bits[0] = search_direction;
 				if (bit_number < 64) {
 					/* Send chosen bit path, then check match on next two */
-					if ( BUS_sendback_bits(bits, bits, 3, pn) != 0 ) {
+					if ( BAD( BUS_sendback_bits(bits, bits, 3, pn) ) ) {
 						return search_error;
 					}
 				} else {		/* last bit */
-					if ( BUS_sendback_bits(bits, bits, 1, pn) != 0 ) {
+					if ( BAD( BUS_sendback_bits(bits, bits, 1, pn) ) ) {
 						return search_error;
 					}
 					break;

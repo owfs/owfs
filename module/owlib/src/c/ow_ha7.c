@@ -28,22 +28,20 @@ struct toHA7 {
 };
 
 //static void byteprint( const BYTE * b, int size ) ;
-static int HA7_write(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const ASCII * msg, size_t size, struct connection_in *in);
+static GOOD_OR_BAD HA7_write(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const ASCII * msg, size_t size, struct connection_in *in);
 static void toHA7init(struct toHA7 *ha7);
 static void setHA7address(struct toHA7 *ha7, const BYTE * sn);
-static int HA7_toHA7(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const struct toHA7 *ha7, struct connection_in *in);
-static int HA7_getlock(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct connection_in *in);
-static int HA7_releaselock(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct connection_in *in);
-static int HA7_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct memblob *mb);
+static GOOD_OR_BAD HA7_toHA7(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const struct toHA7 *ha7, struct connection_in *in);
+static GOOD_OR_BAD HA7_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct memblob *mb);
 static RESET_TYPE HA7_reset(const struct parsedname *pn);
 static enum search_status HA7_next_both(struct device_search *ds, const struct parsedname *pn);
-static int HA7_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
-static int HA7_select_and_sendback(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
-static int HA7_sendback_block(const BYTE * data, BYTE * resp, const size_t size, int also_address, const struct parsedname *pn);
+static GOOD_OR_BAD HA7_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
+static GOOD_OR_BAD HA7_select_and_sendback(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
+static GOOD_OR_BAD HA7_sendback_block(const BYTE * data, BYTE * resp, const size_t size, int also_address, const struct parsedname *pn);
 static GOOD_OR_BAD HA7_select(const struct parsedname *pn);
 static void HA7_setroutines(struct connection_in *in);
 static void HA7_close(struct connection_in *in);
-static int HA7_directory(BYTE search, struct dirblob *db, const struct parsedname *pn);
+static GOOD_OR_BAD HA7_directory(BYTE search, struct dirblob *db, const struct parsedname *pn);
 
 static void HA7_setroutines(struct connection_in *in)
 {
@@ -58,7 +56,6 @@ static void HA7_setroutines(struct connection_in *in)
 	in->iroutines.select = HA7_select;
 	in->iroutines.reconnect = NULL;
 	in->iroutines.close = HA7_close;
-	in->iroutines.transaction = NULL;
 	in->iroutines.flags = ADAP_FLAG_dirgulp | ADAP_FLAG_bundle | ADAP_FLAG_dir_auto_reset;
 	in->bundling_length = HA7_FIFO_SIZE;	// arbitrary number
 }
@@ -105,9 +102,9 @@ GOOD_OR_BAD HA7_detect(struct connection_in *in)
 
 	toHA7init(&ha7);
 	ha7.command = "ReleaseLock";
-	if (HA7_toHA7(file_descriptor, &ha7, in) == 0) {
+	if (GOOD( HA7_toHA7(file_descriptor, &ha7, in)) ) {
 		struct memblob mb;
-		if (HA7_read(file_descriptor, &mb) == 0) {
+		if ( GOOD( HA7_read(file_descriptor, &mb)) ) {
 			in->adapter_name = "HA7Net";
 			in->busmode = bus_ha7net;
 			in->AnyDevices = anydevices_yes;
@@ -133,9 +130,9 @@ static RESET_TYPE HA7_reset(const struct parsedname *pn)
 
 	toHA7init(&ha7);
 	ha7.command = "Reset";
-	if (HA7_toHA7(file_descriptor, &ha7, pn->selected_connection)) {
+	if ( BAD(HA7_toHA7(file_descriptor, &ha7, pn->selected_connection)) ) {
 		ret = -EIO;
-	} else if (HA7_read(file_descriptor, &mb)) {
+	} else if ( BAD(HA7_read(file_descriptor, &mb)) ) {
 		ret = -EIO;
 	}
 	MemblobClear(&mb);
@@ -143,10 +140,10 @@ static RESET_TYPE HA7_reset(const struct parsedname *pn)
 	return ret;
 }
 
-static int HA7_directory(BYTE search, struct dirblob *db, const struct parsedname *pn)
+static GOOD_OR_BAD HA7_directory(BYTE search, struct dirblob *db, const struct parsedname *pn)
 {
 	FILE_DESCRIPTOR_OR_ERROR file_descriptor;
-	int ret = 0;
+	GOOD_OR_BAD ret = gbGOOD;
 	struct toHA7 ha7;
 	struct memblob mb;
 
@@ -154,7 +151,7 @@ static int HA7_directory(BYTE search, struct dirblob *db, const struct parsednam
 	file_descriptor = ClientConnect(pn->selected_connection) ;
 	if ( FILE_DESCRIPTOR_NOT_VALID(file_descriptor) ) {
 		db->troubled = 1;
-		return -EIO;
+		return gbBAD;
 	}
 
 	toHA7init(&ha7);
@@ -163,11 +160,11 @@ static int HA7_directory(BYTE search, struct dirblob *db, const struct parsednam
 		ha7.conditional[0] = '1';
 	}
 
-	if (HA7_toHA7(file_descriptor, &ha7, pn->selected_connection)) {
-		ret = -EIO;
-	} else if (HA7_read(file_descriptor, &mb)) {
+	if ( BAD(HA7_toHA7(file_descriptor, &ha7, pn->selected_connection)) ) {
+		ret = gbBAD;
+	} else if ( BAD(HA7_read(file_descriptor, &mb)) ) {
 		STAT_ADD1_BUS(e_bus_read_errors, pn->selected_connection);
-		ret = -EIO;
+		ret = gbBAD;
 	} else {
 		BYTE sn[SERIAL_NUMBER_SIZE];
 		ASCII *p = (ASCII *) MemblobData(&mb);
@@ -175,7 +172,7 @@ static int HA7_directory(BYTE search, struct dirblob *db, const struct parsednam
 			   && (p = strstr(p, "VALUE=\""))) {
 			p += 7;
 			if (strspn(p, "0123456789ABCDEF") < 16) {
-				ret = -EIO;
+				ret = gbBAD;
 				break;
 			}
 			sn[7] = string2num(&p[0]);
@@ -187,7 +184,7 @@ static int HA7_directory(BYTE search, struct dirblob *db, const struct parsednam
 			sn[1] = string2num(&p[12]);
 			sn[0] = string2num(&p[14]);
 			if (CRC8(sn, SERIAL_NUMBER_SIZE)) {
-				ret = -EIO;
+				ret = gbBAD;
 				break;
 			}
 			DirblobAdd(sn, db);
@@ -211,7 +208,7 @@ static enum search_status HA7_next_both(struct device_search *ds, const struct p
 	}
 
 	if (++(ds->index) == 0) {
-		if (HA7_directory(ds->search, db, pn)) {
+		if ( BAD(HA7_directory(ds->search, db, pn)) ) {
 			return search_error;
 		}
 	}
@@ -229,7 +226,7 @@ static enum search_status HA7_next_both(struct device_search *ds, const struct p
 
 #define HA7_READ_BUFFER_LENGTH 2000
 
-static int HA7_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct memblob *mb)
+static GOOD_OR_BAD HA7_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct memblob *mb)
 {
 	ASCII readin_area[HA7_READ_BUFFER_LENGTH + 1];
 	ASCII *start;
@@ -243,7 +240,7 @@ static int HA7_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct memblob *mb
 	if ( read_size == 0) {
 		LEVEL_CONNECT("(ethernet) error = %d", read_size);
 		//write(1, readin_area, read_size);
-		return -EIO;
+		return gbBAD;
 	}
 	// make sure null terminated (allocated extra byte in readin_area to always have room)
 	readin_area[read_size] = '\0';
@@ -255,18 +252,18 @@ static int HA7_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct memblob *mb
 			p = &readin_area[15 + 32];
 		}
 		LEVEL_DATA("response problem:%.*s", p - readin_area - 15, &readin_area[15]);
-		return -EINVAL;
+		return gbBAD;
 	}
 	// Look for "<body>"
 	if ((start = strstr(readin_area, "<body>")) == NULL) {
 		LEVEL_DATA("esponse: No HTTP body to parse");
 		MemblobClear(mb);
-		return -EINVAL;
+		return gbBAD;
 	}
 	// HTML body found, dump header
 	if (MemblobAdd((BYTE *) start, read_size - (start - readin_area), mb)) {
 		MemblobClear(mb);
-		return -ENOMEM;
+		return gbBAD;
 	}
 	// loop through reading in HA7_READ_BUFFER_LENGTH blocks
 	while (read_size == HA7_READ_BUFFER_LENGTH) {	// full read, so presume more waiting
@@ -274,23 +271,23 @@ static int HA7_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct memblob *mb
 		if (read_size == 0) {
 			LEVEL_DATA("Couldn't get rest of HA7 data (err=%d)", read_size);
 			MemblobClear(mb);
-			return -EIO;
+			return gbBAD;
 		} else if (MemblobAdd((BYTE *) readin_area, read_size, mb)) {
 			MemblobClear(mb);
-			return -ENOMEM;
+			return gbBAD;
 		}
 	}
 
 	// Add trailing null
 	if (MemblobAdd((BYTE *) "", 1, mb)) {
 		MemblobClear(mb);
-		return -ENOMEM;
+		return gbBAD;
 	}
 	//printf("READ FROM HA7:\n%s\n",MemblobData(mb));
-	return 0;
+	return gbGOOD;
 }
 
-static int HA7_write(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const ASCII * msg, size_t length, struct connection_in *in)
+static GOOD_OR_BAD HA7_write(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const ASCII * msg, size_t length, struct connection_in *in)
 {
 	ssize_t r, sl = length;
 	ssize_t size = sl;
@@ -308,23 +305,23 @@ static int HA7_write(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const ASCII * msg
 	gettimeofday(&(in->bus_write_time), NULL);
 	if (sl > 0) {
 		STAT_ADD1_BUS(e_bus_write_errors, in);
-		return -EIO;
+		return gbBAD;
 	}
-	return 0;
+	return gbGOOD;
 }
 
-static int HA7_toHA7(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const struct toHA7 *ha7, struct connection_in *in)
+static GOOD_OR_BAD HA7_toHA7(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const struct toHA7 *ha7, struct connection_in *in)
 {
 	int first = 1;
 	int probable_length;
-	int ret = 0;
+	GOOD_OR_BAD ret ;
 	char *full_command;
 	LEVEL_DEBUG
 		("To HA7 command=%s address=%.16s conditional=%.1s lock=%.10s",
 		 SAFESTRING(ha7->command), SAFESTRING(ha7->address), SAFESTRING(ha7->conditional), SAFESTRING(ha7->lock));
 
 	if (ha7->command == NULL) {
-		return -EINVAL;
+		return gbBAD;
 	}
 
 	probable_length = 11 + strlen(ha7->command) + 5 + ((ha7->address[0]) ? 1 + 8 + 16 : 0)
@@ -335,7 +332,7 @@ static int HA7_toHA7(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const struct toHA
 
 	full_command = owmalloc(probable_length);
 	if (full_command == NULL) {
-		return -ENOMEM;
+		return gbBAD;
 	}
 	memset(full_command, 0, probable_length);
 
@@ -374,7 +371,7 @@ static int HA7_toHA7(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const struct toHA
 
 	LEVEL_DEBUG("To HA7 %s", full_command);
 
-	ret = HA7_write(file_descriptor, full_command, probable_length, in);
+	ret = HA7_write(file_descriptor, full_command, probable_length, in) ;
 	owfree(full_command);
 	return ret;
 }
@@ -383,7 +380,7 @@ static int HA7_toHA7(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const struct toHA
 /* return 0=good
    sendout_data, readin
  */
-static int HA7_select_and_sendback(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
+static GOOD_OR_BAD HA7_select_and_sendback(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
 {
 	size_t location = 0;
 	int also_address = 1;
@@ -394,20 +391,18 @@ static int HA7_select_and_sendback(const BYTE * data, BYTE * resp, const size_t 
 			block = 32;
 		}
 		// Don't add address (that's the "0")
-		if (HA7_sendback_block(&data[location], &resp[location], block, also_address, pn)) {
-			return -EIO;
-		}
+		RETURN_BAD_IF_BAD(HA7_sendback_block(&data[location], &resp[location], block, also_address, pn)) ;
 		location += block;
 		also_address = 0;		//for subsequent blocks
 	}
-	return 0;
+	return gbGOOD ;
 }
 
 //  Send data and return response block
 /* return 0=good
    sendout_data, readin
  */
-static int HA7_sendback_data(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
+static GOOD_OR_BAD HA7_sendback_data(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
 {
 	size_t location = 0;
 
@@ -417,26 +412,24 @@ static int HA7_sendback_data(const BYTE * data, BYTE * resp, const size_t size, 
 			block = 32;
 		}
 		// Don't add address (that's the "0")
-		if (HA7_sendback_block(&data[location], &resp[location], block, 0, pn)) {
-			return -EIO;
-		}
+		RETURN_BAD_IF_BAD(HA7_sendback_block(&data[location], &resp[location], block, 0, pn)) ;
 		location += block;
 	}
-	return 0;
+	return gbGOOD;
 }
 
 // HA7 only allows WriteBlock of 32 bytes
 // This routine assumes that larger writes have already been broken up
-static int HA7_sendback_block(const BYTE * data, BYTE * resp, const size_t size, int also_address, const struct parsedname *pn)
+static GOOD_OR_BAD HA7_sendback_block(const BYTE * data, BYTE * resp, const size_t size, int also_address, const struct parsedname *pn)
 {
 	int file_descriptor;
 	struct memblob mb;
 	struct toHA7 ha7;
-	int ret = -EIO;
+	GOOD_OR_BAD ret = gbBAD;
 
 	file_descriptor = ClientConnect(pn->selected_connection) ;
 	if ( FILE_DESCRIPTOR_NOT_VALID(file_descriptor) ) {
-		return -EIO;
+		return gbBAD;
 	}
 
 	toHA7init(&ha7);
@@ -447,8 +440,8 @@ static int HA7_sendback_block(const BYTE * data, BYTE * resp, const size_t size,
 		setHA7address(&ha7, pn->sn);
 	}
 
-	if (HA7_toHA7(file_descriptor, &ha7, pn->selected_connection) == 0) {
-		if (HA7_read(file_descriptor, &mb) == 0) {
+	if ( GOOD( HA7_toHA7(file_descriptor, &ha7, pn->selected_connection)) ) {
+		if ( GOOD( HA7_read(file_descriptor, &mb)) ) {
 			ASCII *p = (ASCII *) MemblobData(&mb);
 			if ((p = strstr(p, "<INPUT TYPE=\"TEXT\" NAME=\"ResultData_0\""))
 				&& (p = strstr(p, "VALUE=\""))) {
@@ -456,7 +449,7 @@ static int HA7_sendback_block(const BYTE * data, BYTE * resp, const size_t size,
 				LEVEL_DEBUG("HA7_sendback_data received(%d): %.*s", size * 2, size * 2, p);
 				if (strspn(p, "0123456789ABCDEF") >= size << 1) {
 					string2bytes(p, resp, size);
-					ret = 0;
+					ret = gbGOOD;
 				}
 			}
 			MemblobClear(&mb);
@@ -465,7 +458,7 @@ static int HA7_sendback_block(const BYTE * data, BYTE * resp, const size_t size,
 		}
 	}
 	close(file_descriptor);
-	return ret;
+	return gbGOOD;
 }
 
 static void setHA7address(struct toHA7 *ha7, const BYTE * sn)
@@ -492,10 +485,9 @@ static GOOD_OR_BAD HA7_select(const struct parsedname *pn)
 			toHA7init(&ha7);
 			ha7.command = "AddressDevice";
 			setHA7address(&ha7, pn->sn);
-			if (HA7_toHA7(file_descriptor, &ha7, pn->selected_connection)
-				== 0) {
+			if ( GOOD( HA7_toHA7(file_descriptor, &ha7, pn->selected_connection)) ) {
 				struct memblob mb;
-				if (HA7_read(file_descriptor, &mb) == 0) {
+				if ( GOOD( HA7_read(file_descriptor, &mb)) ) {
 					MemblobClear(&mb);
 					ret = gbGOOD;
 				}
@@ -511,18 +503,6 @@ static GOOD_OR_BAD HA7_select(const struct parsedname *pn)
 static void HA7_close(struct connection_in *in)
 {
 	FreeClientAddr(in);
-}
-
-static int HA7_getlock(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct connection_in *in)
-{
-	(void) file_descriptor;
-	(void) in;
-}
-
-static int HA7_releaselock(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct connection_in *in)
-{
-	(void) file_descriptor;
-	(void) in;
 }
 
 static void toHA7init(struct toHA7 *ha7)

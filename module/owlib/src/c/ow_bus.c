@@ -23,23 +23,24 @@ $Id$
     bad return sendback_data
     -EIO if memcpy
  */
-int BUS_send_data(const BYTE * data, const size_t len, const struct parsedname *pn)
+GOOD_OR_BAD BUS_send_data(const BYTE * data, const size_t len, const struct parsedname *pn)
 {
-	int ret;
+	GOOD_OR_BAD ret = gbGOOD;
 	BYTE *resp;
 
 	if (len == 0) {
-		return 0;
+		return gbGOOD;
 	}
 
 	resp = owmalloc(len);
 	if (resp == NULL) {
-		return -ENOMEM;
+		return gbBAD;
 	}
 
-	if ((ret = BUS_sendback_data(data, resp, len, pn)) == 0) {
+	if ( BAD( BUS_sendback_data(data, resp, len, pn) ) ) {
+		ret = gbBAD ;
 		if ((ret = memcmp(data, resp, (size_t) len))) {
-			ret = -EIO;			/* EPROTO not available for MacOSX */
+			ret = gbBAD;			/* EPROTO not available for MacOSX */
 			STAT_ADD1_BUS(e_bus_errors, pn->selected_connection);
 		}
 	}
@@ -52,9 +53,9 @@ int BUS_send_data(const BYTE * data, const size_t len, const struct parsedname *
   Returns 0=good
   Bad sendback_data
  */
-int BUS_readin_data(BYTE * data, const size_t len, const struct parsedname *pn)
+GOOD_OR_BAD BUS_readin_data(BYTE * data, const size_t len, const struct parsedname *pn)
 {
-	int ret = BUS_sendback_data(memset(data, 0xFF, (size_t) len), data, len, pn);
+	GOOD_OR_BAD ret = BUS_sendback_data(memset(data, 0xFF, (size_t) len), data, len, pn);
 	if (ret) {
 		STAT_ADD1(BUS_readin_data_errors);
 	}
@@ -66,20 +67,19 @@ int BUS_readin_data(BYTE * data, const size_t len, const struct parsedname *pn)
 
 /* Symmetric */
 /* send bytes, and read back -- calls lower level bit routine */
-int BUS_select_and_sendback(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn)
+GOOD_OR_BAD BUS_select_and_sendback(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn)
 {
 	if ( FunctionExists(pn->selected_connection->iroutines.select_and_sendback) ) {
 		return (pn->selected_connection->iroutines.select_and_sendback) (data, resp, len, pn);
 	} else {
 		RETURN_ERROR_IF_BAD( BUS_select(pn) );
-
 		return BUS_sendback_data(data, resp, len, pn);
 	}
 }
 
 /* Symmetric */
 /* send bytes, and read back -- calls lower level bit routine */
-int BUS_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn)
+GOOD_OR_BAD BUS_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn)
 {
 	UINT i, bits = len << 3;
 	int ret;
@@ -87,25 +87,27 @@ int BUS_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const st
 	int remain = len - combuffer_length_adjusted;
 
 	if (len == 0) {
-		return 0;
+		return gbGOOD;
 	}
 	if ( FunctionExists(pn->selected_connection->iroutines.sendback_data) ) {
 		return (pn->selected_connection->iroutines.sendback_data) (data, resp, len, pn);
 	}
 
 	/* Split into smaller packets? */
-	if (remain > 0)
-		return BUS_sendback_data(data, resp, combuffer_length_adjusted, pn)
-			|| BUS_sendback_data(&data[combuffer_length_adjusted], resp ? (&resp[combuffer_length_adjusted]) : NULL, remain, pn);
+	if (remain > 0) {
+		RETURN_BAD_IF_BAD( BUS_sendback_data(data, resp, combuffer_length_adjusted, pn) );
+		RETURN_BAD_IF_BAD( BUS_sendback_data(&data[combuffer_length_adjusted], resp ? (&resp[combuffer_length_adjusted]) : NULL, remain, pn) );
+	}
 
 	/* Encode bits */
-	for (i = 0; i < bits; ++i)
+	for (i = 0; i < bits; ++i) {
 		pn->selected_connection->combuffer[i] = UT_getbit(data, i) ? 0xFF : 0x00;
+	}
 
 	/* Communication with DS9097 routine */
-	if ((ret = BUS_sendback_bits(pn->selected_connection->combuffer, pn->selected_connection->combuffer, bits, pn))) {
+	if ( BAD( BUS_sendback_bits(pn->selected_connection->combuffer, pn->selected_connection->combuffer, bits, pn)) ) {
 		STAT_ADD1_BUS(e_bus_errors, pn->selected_connection);
-		return ret;
+		return gbBAD;
 	}
 
 	/* Decode Bits */
@@ -115,5 +117,5 @@ int BUS_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const st
 		}
 	}
 
-	return 0;
+	return gbGOOD;
 }

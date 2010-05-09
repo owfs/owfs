@@ -45,16 +45,16 @@ struct specialcase_key {
 
 struct specialcase {
 	struct specialcase_key key ;
-	int (*read) (struct one_wire_query *);	// read callback function
-	int (*write) (struct one_wire_query *);	// write callback function
+	ZERO_OR_ERROR (*read) (struct one_wire_query *);	// read callback function
+	SIZE_OR_ERROR (*write) (struct one_wire_query *);	// write callback function
 } ;
 
 extern void * SpecialCase ; // tree of special case devices
 
 /* ---- Prototypes --- */
 void SpecialCase_add( struct connection_in * in, unsigned char family_code, const char * property, int (*read_func) (struct one_wire_query *), int (*write_func) (struct one_wire_query *)) ;
-int SpecialCase_read( struct one_wire_query * owq ) ;
-int SpecialCase_write( struct one_wire_query * owq ) ;
+ZERO_OR_ERROR SpecialCase_read( struct one_wire_query * owq ) ;
+SIZE_OR_ERROR SpecialCase_write( struct one_wire_query * owq ) ;
 void SpecialCase_close( void ) ;
 
 #endif							/* OW_SPECIALCASE_H */

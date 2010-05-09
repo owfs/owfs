@@ -26,7 +26,7 @@ $Id$
  */
 GOOD_OR_BAD BUS_PowerByte(BYTE data, BYTE * resp, UINT delay, const struct parsedname *pn)
 {
-	ZERO_OR_ERROR ret;
+	GOOD_OR_BAD ret;
 
 	if ( FunctionExists(pn->selected_connection->iroutines.PowerByte) ) {
 		ret = (pn->selected_connection->iroutines.PowerByte) (data, resp, delay, pn);
@@ -36,8 +36,9 @@ GOOD_OR_BAD BUS_PowerByte(BYTE data, BYTE * resp, UINT delay, const struct parse
 		// delay
 		UT_delay(delay);
 	}
-	if (ret) {
+	if ( BAD(ret) ) {
 		STAT_ADD1_BUS(e_bus_pullup_errors, pn->selected_connection);
+		return gbBAD ;
 	}
-	return ret==0 ? gbGOOD : gbBAD ;
+	return gbGOOD ;
 }

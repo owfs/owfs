@@ -528,7 +528,7 @@ static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parse
 	memcpy(&p[3], data, size);
 
 	BUSLOCK(pn);
-	if ( BAD(BUS_select(pn)) || BUS_send_data(p, 3 + rest, pn)!=0) {
+	if ( BAD(BUS_select(pn)) || BAD(BUS_send_data(p, 3 + rest, pn)) ) {
 		BUSUNLOCK(pn);
 		return gbBAD;
 	}
@@ -540,12 +540,12 @@ static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parse
 		return gbBAD;
 	}
 	p[0] = _1W_READ_SCRATCHPAD;
-	if (BUS_send_data(p, 1, pn)!=0) {
+	if ( BAD(BUS_send_data(p, 1, pn)) ) {
 		BUSUNLOCK(pn);
 		return gbBAD;
 	}
 	// read TAL TAH E/S + rest bytes
-	if (BUS_readin_data(&p[1], 3 + rest, pn)!=0) {
+	if ( BAD( BUS_readin_data(&p[1], 3 + rest, pn) ) ) {
 		BUSUNLOCK(pn);
 		return 1;
 	}
@@ -565,11 +565,11 @@ static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parse
 	}
 	// send _1W_COPY_SCRATCHPAD_WITH_PASSWORD    TAL TAH E/S
 	p[0] = _1W_COPY_SCRATCHPAD_WITH_PASSWORD;
-	if (BUS_send_data(p, 4, pn)!=0) {
+	if ( BAD(BUS_send_data(p, 4, pn)) ) {
 		BUSUNLOCK(pn);
 		return gbBAD;
 	}
-	if (BUS_send_data(passwd, 8, pn)!=0) {
+	if ( BAD(BUS_send_data(passwd, 8, pn)) ) {
 		BUSUNLOCK(pn);
 		return gbBAD;
 	}
@@ -582,19 +582,16 @@ static GOOD_OR_BAD OW_clearmemory(struct parsedname *pn)
 {
 	BYTE p[3 + 8 + 32 + 2] = { _1W_CLEAR_MEMORY_WITH_PASSWORD, };
 	BYTE r;
-	int ret;
 
 	memset(&p[1], 0xFF, 8);		// password
 	p[9] = 0xFF;				// dummy byte
 
 	BUSLOCK(pn);
-	ret = BUS_select(pn);
-	if (BAD(ret)) {
+	if (BAD(BUS_select(pn))) {
 		BUSUNLOCK(pn);
 		return gbBAD;
 	}
-	ret = BUS_send_data(p, 10, pn);
-	if (ret) {
+	if (BUS_send_data(p, 10, pn)) {
 		BUSUNLOCK(pn);
 		return gbBAD;
 	}
@@ -624,37 +621,27 @@ static GOOD_OR_BAD OW_r_mem(BYTE * data, size_t size, off_t offset, struct parse
 	//printf("OW_r_mem: size=%lX offset=%lX  %02X %02X %02X\n", size, offset, p[0], p[1], p[2]);
 
 	BUSLOCK(pn);
-#if 0
-	ret = BAD(BUS_select(pn)) || BUS_send_data(p, 3, pn)
-		|| BUS_send_data(passwd, 8, pn)
-		|| BUS_readin_data(&p[3], rest + 2, pn)
-		|| CRC16(p, 3 + rest + 2);
-#else
 
-	ret = BUS_select(pn);
-	if ( BAD( ret ) ) {
+	if ( BAD( BUS_select(pn) ) ) {
 		BUSUNLOCK(pn);
 		//printf("error1\n");
-		return ret;
+		return gbBAD;
 	}
 
-	ret = BUS_send_data(p, 3, pn);
-	if ( BAD( ret ) ) {
+	if ( BAD( BUS_send_data(p, 3, pn) ) ) {
 		BUSUNLOCK(pn);
-		//printf("error2\n");
-		return ret;
+		return gbBAD;
 	}
-	ret = BUS_send_data(passwd, 8, pn);
-	if ( BAD( ret ) ) {
+
+	if ( BAD( BUS_send_data(passwd, 8, pn) ) ) {
 		BUSUNLOCK(pn);
-		//printf("error2\n");
-		return ret;
+		return gbBAD;
 	}
-	ret = BUS_readin_data(&p[3], rest + 2, pn);
-	if ( BAD( ret ) ) {
+
+	if ( BAD( BUS_readin_data(&p[3], rest + 2, pn) ) ) {
 		BUSUNLOCK(pn);
 		printf("error4\n");
-		return ret;
+		return gbBAD;
 	}
 	{
 		printf("Read: sz=%d ", 3 + rest + 2);
@@ -667,7 +654,6 @@ static GOOD_OR_BAD OW_r_mem(BYTE * data, size_t size, off_t offset, struct parse
 	if ( BAD( ret ) ) {
 		printf("crc error\n");
 	}
-#endif
 
 	BUSUNLOCK(pn);
 
@@ -722,7 +708,7 @@ static GOOD_OR_BAD OW_force_conversion(const UINT delay, struct parsedname *pn)
 
 	/* Mission not progress, force conversion */
 	BUSLOCK(pn);
-	if ( BAD(BUS_select(pn)) || BUS_send_data(t, 2, pn) ) {
+	if ( BAD(BUS_select(pn)) || BAD(BUS_send_data(t, 2, pn)) ) {
 		printf("conv: err\n");
 		BUSUNLOCK(pn);
 		return gbBAD;
@@ -777,7 +763,7 @@ static GOOD_OR_BAD OW_stopmission(struct parsedname *pn)
 	data[9] = _1W_STOP_MISSION_WITH_PASSWORD_START;
 
 	BUSLOCK(pn);
-	ret = BAD(BUS_select(pn)) || BUS_send_data(data, 10, pn);
+	ret = BAD(BUS_select(pn)) || BAD(BUS_send_data(data, 10, pn));
 	BUSUNLOCK(pn);
 	return ret;
 }
@@ -847,7 +833,7 @@ static GOOD_OR_BAD OW_startmission(unsigned long mdelay, struct parsedname *pn)
 	memset(&p[1], 0xFF, 8);		// dummy password
 	p[9] = _1W_START_MISSION_WITH_PASSWORD_START;	// dummy byte
 	BUSLOCK(pn);
-	ret = BAD(BUS_select(pn)) || BUS_send_data(p, 10, pn);
+	ret = BAD(BUS_select(pn)) || BAD(BUS_send_data(p, 10, pn));
 	BUSUNLOCK(pn);
 
 	return ret;

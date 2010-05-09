@@ -278,7 +278,7 @@ static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parse
 	memcpy(&p[3], data, size);
 
 	BUSLOCK(pn);
-	ret = BUS_select(pn) || BUS_send_data(p, size + 3, pn);
+	ret = BAD(BUS_select(pn)) || BAD(BUS_send_data(p, size + 3, pn));
 	if (ret == 0 && ((offset + size) & 0x2F) == 0) {
 		ret = BUS_readin_data(&p[size + 3], 2, pn) || CRC16(p, 1 + 2 + size + 2);
 	}
@@ -289,8 +289,8 @@ static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parse
 	/* Note that we tacitly shift the data one byte down for the E/S byte */
 	p[0] = _1W_READ_SCRATCHPAD;
 	BUSLOCK(pn);
-	ret = BUS_select(pn) || BUS_send_data(p, 1, pn)
-		|| BUS_readin_data(&p[1], 3 + size, pn)
+	ret = BAD(BUS_select(pn)) || BAD(BUS_send_data(p, 1, pn))
+		|| BAD(BUS_readin_data(&p[1], 3 + size, pn))
 		|| memcmp(&p[4], data, size);
 	BUSUNLOCK(pn);
 	RETURN_BAD_IF_BAD(ret ) ;
@@ -302,8 +302,8 @@ static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parse
 	/* Copy Scratchpad to SRAM */
 	p[0] = _1W_COPY_SCRATCHPAD_WITH_PASSWORD;
 	BUSLOCK(pn);
-	ret = BUS_select(pn) || BUS_send_data(p, 4 + 7, pn)
-		|| BUS_PowerByte(p[4 + 7], &p[4 + 7], 10, pn);
+	ret = BAD(BUS_select(pn)) || BAD(BUS_send_data(p, 4 + 7, pn))
+		|| BAD(BUS_PowerByte(p[4 + 7], &p[4 + 7], 10, pn));
 	BUSUNLOCK(pn);
 	
 	RETURN_BAD_IF_BAD( ret ) ;
@@ -331,8 +331,8 @@ static GOOD_OR_BAD OW_r_pmem(BYTE * data, BYTE * pwd, size_t size, off_t offset,
 	BYTE p[1 + 2 + 64 + 2] = { _1W_VERIFY_PASSWORD, LOW_HIGH_ADDRESS(offset), };
 
 	BUSLOCK(pn);
-	ret = BUS_select(pn) || BUS_send_data(p, 3, pn)
-		|| BUS_send_data(pwd, 7, pn)
+	ret = BAD(BUS_select(pn)) || BAD(BUS_send_data(p, 3, pn))
+		|| BAD(BUS_send_data(pwd, 7, pn))
 		|| BUS_PowerByte(pwd[7], &pwd[7], 5, pn);
 	if (ret) {
 	} else if ((offset + size) & 0x3F) {	/* not a page boundary */
@@ -354,8 +354,8 @@ static GOOD_OR_BAD OW_ver(UINT * u, struct parsedname *pn)
 	BYTE b[2];
 
 	BUSLOCK(pn);
-	ret = BUS_select(pn) || BUS_send_data(p, 1, pn)
-		|| BUS_readin_data(b, 2, pn);
+	ret = BAD(BUS_select(pn)) || BAD(BUS_send_data(p, 1, pn))
+		|| BAD(BUS_readin_data(b, 2, pn));
 	BUSUNLOCK(pn);
 
 	if (ret || b[0] != b[1]) {
@@ -372,9 +372,9 @@ static GOOD_OR_BAD OW_verify(BYTE * pwd, off_t offset, struct parsedname *pn)
 	BYTE c;
 #warning "OW_verify: pwd is unused?"
 	BUSLOCK(pn);
-	ret = BUS_select(pn) || BUS_send_data(p, 3 + 7, pn)
-		|| BUS_PowerByte(p[3 + 7], &p[3 + 7], 5, pn)
-		|| BUS_readin_data(&c, 1, pn);
+	ret = BAD(BUS_select(pn)) || BAD(BUS_send_data(p, 3 + 7, pn))
+		|| BAD(BUS_PowerByte(p[3 + 7], &p[3 + 7], 5, pn))
+		|| BAD(BUS_readin_data(&c, 1, pn));
 	BUSUNLOCK(pn);
 
 	return (ret || c != 0xFF) ? gbBAD : gbGOOD;

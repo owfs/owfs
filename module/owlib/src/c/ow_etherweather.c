@@ -52,8 +52,8 @@ static int EtherWeather_command(struct connection_in *in, char command, int data
 static void EtherWeather_close(struct connection_in *in);
 static GOOD_OR_BAD EtherWeather_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname *pn);
 static enum search_status EtherWeather_next_both(struct device_search *ds, const struct parsedname *pn);
-static int EtherWeather_sendback_bits(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn);
-static int EtherWeather_sendback_data(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn);
+static GOOD_OR_BAD EtherWeather_sendback_bits(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn);
+static GOOD_OR_BAD EtherWeather_sendback_data(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn);
 static void EtherWeather_setroutines(struct connection_in *in);
 
 static int EtherWeather_command(struct connection_in *in, char command, int datalen, const BYTE * idata, BYTE * odata)
@@ -135,24 +135,24 @@ static int EtherWeather_command(struct connection_in *in, char command, int data
 	return 0;
 }
 
-static int EtherWeather_sendback_data(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
+static GOOD_OR_BAD EtherWeather_sendback_data(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
 {
 
 	if (EtherWeather_command(pn->selected_connection, EtherWeather_COMMAND_BYTES, size, data, resp)) {
-		return -EIO;
+		return gbBAD;
 	}
 
-	return 0;
+	return gbGOOD;
 }
 
-static int EtherWeather_sendback_bits(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
+static GOOD_OR_BAD EtherWeather_sendback_bits(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
 {
 
 	if (EtherWeather_command(pn->selected_connection, EtherWeather_COMMAND_BITS, size, data, resp)) {
-		return -EIO;
+		return gbBAD;
 	}
 
-	return 0;
+	return gbGOOD;
 }
 
 static enum search_status EtherWeather_next_both(struct device_search *ds, const struct parsedname *pn)
@@ -259,7 +259,6 @@ static void EtherWeather_setroutines(struct connection_in *in)
 	in->iroutines.select = NULL;
 	in->iroutines.reconnect = NULL;
 	in->iroutines.close = EtherWeather_close;
-	in->iroutines.transaction = NULL;
 	in->iroutines.flags = ADAP_FLAG_overdrive | ADAP_FLAG_dirgulp | ADAP_FLAG_no2409path;
 }
 

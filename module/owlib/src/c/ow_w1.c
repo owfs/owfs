@@ -31,8 +31,8 @@ struct toW1 {
 //static void byteprint( const BYTE * b, int size ) ;
 static RESET_TYPE W1_reset(const struct parsedname *pn);
 static enum search_status W1_next_both(struct device_search *ds, const struct parsedname *pn);
-static int W1_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
-static int W1_select_and_sendback(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
+static GOOD_OR_BAD W1_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
+static GOOD_OR_BAD W1_select_and_sendback(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 static void W1_setroutines(struct connection_in *in);
 static void W1_close(struct connection_in *in);
 
@@ -49,7 +49,6 @@ static void W1_setroutines(struct connection_in *in)
 	in->iroutines.select = NULL;
 	in->iroutines.reconnect = NULL;
 	in->iroutines.close = W1_close;
-	in->iroutines.transaction = NULL;
 	// Directory obtained in a single gulp (W1_LIST_SLAVES)
 	// Bundle transactions
 	//
@@ -195,10 +194,10 @@ static void touch( struct netlink_parse * nlp, void * v, const struct parsedname
 }
 
 // Reset, select, and read/write data
-static int W1_select_and_sendback(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
+static GOOD_OR_BAD W1_select_and_sendback(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
 {
 	struct touch_struct ts = { resp, size, } ;
-	return W1_Process_Response( touch, w1_send_selecttouch(data,size,pn), &ts, pn)==nrs_complete ? 0 : -EIO ;
+	return W1_Process_Response( touch, w1_send_selecttouch(data,size,pn), &ts, pn)==nrs_complete ? gbGOOD : gbBAD ;
 }
 
 static int w1_send_touch( const BYTE * data, size_t size, const struct parsedname *pn )
@@ -219,10 +218,10 @@ static int w1_send_touch( const BYTE * data, size_t size, const struct parsednam
 }
 
 //  Send data and return response block
-static int W1_sendback_data(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
+static GOOD_OR_BAD W1_sendback_data(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
 {
 	struct touch_struct ts = { resp, size, } ;
-	return W1_Process_Response( touch, w1_send_touch(data,size,pn), &ts, pn)==nrs_complete ? 0 : -EIO ;
+	return W1_Process_Response( touch, w1_send_touch(data,size,pn), &ts, pn)==nrs_complete ? gbGOOD : gbBAD ;
 }
 
 static void W1_close(struct connection_in *in)

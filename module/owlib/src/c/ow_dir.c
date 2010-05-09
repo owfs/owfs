@@ -515,7 +515,7 @@ static ZERO_OR_ERROR FS_realdir(void (*dirfunc) (void *, const struct parsedname
 				pn_whole_directory->selected_connection->last_root_devs = devices;	// root dir estimated length
 			}
 			/* Add to the cache (full list as a single element */
-			if (DirblobPure(&db) && ret == -ENODEV) {
+			if (DirblobPure(&db) && (ret == search_done) ) {
 				Cache_Add_Dir(&db, pn_whole_directory);
 			}
 			DirblobClear(&db);

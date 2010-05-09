@@ -54,20 +54,20 @@ enum ds2482_address {
 
 static enum ds2482_address Parse_i2c_address( struct connection_in * in ) ;
 static GOOD_OR_BAD DS2482_detect_bus(enum ds2482_address chip_num, struct connection_in *in) ;
-static int DS2482_detect_sys( int any, enum ds2482_address chip_num, struct connection_in *in) ;
-static int DS2482_detect_dir( int any, enum ds2482_address chip_num, struct connection_in *in) ;
+static GOOD_OR_BAD DS2482_detect_sys( int any, enum ds2482_address chip_num, struct connection_in *in) ;
+static GOOD_OR_BAD DS2482_detect_dir( int any, enum ds2482_address chip_num, struct connection_in *in) ;
 static GOOD_OR_BAD DS2482_detect_single(int lowindex, int highindex, struct connection_in *in) ;
 static enum search_status DS2482_next_both(struct device_search *ds, const struct parsedname *pn);
 static GOOD_OR_BAD DS2482_triple(BYTE * bits, int direction, FILE_DESCRIPTOR_OR_ERROR file_descriptor);
-static int DS2482_send_and_get(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const BYTE wr, BYTE * rd);
+static GOOD_OR_BAD DS2482_send_and_get(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const BYTE wr, BYTE * rd);
 static RESET_TYPE DS2482_reset(const struct parsedname *pn);
-static int DS2482_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
+static GOOD_OR_BAD DS2482_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 static void DS2482_setroutines(struct connection_in *in);
 static GOOD_OR_BAD HeadChannel(struct connection_in *in);
 static GOOD_OR_BAD CreateChannels(struct connection_in *in);
-static int DS2482_channel_select(const struct parsedname *pn);
+static GOOD_OR_BAD DS2482_channel_select(const struct parsedname *pn);
 static GOOD_OR_BAD DS2482_readstatus(BYTE * c, FILE_DESCRIPTOR_OR_ERROR file_descriptor, unsigned long int min_usec, unsigned long int max_usec);
-static int SetConfiguration(BYTE c, struct connection_in *in);
+static GOOD_OR_BAD SetConfiguration(BYTE c, struct connection_in *in);
 static void DS2482_close(struct connection_in *in);
 static GOOD_OR_BAD DS2482_redetect(const struct parsedname *pn);
 static GOOD_OR_BAD DS2482_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname *pn);
@@ -170,7 +170,6 @@ static void DS2482_setroutines(struct connection_in *in)
 	in->iroutines.select = NULL;
 	in->iroutines.reconnect = DS2482_redetect;
 	in->iroutines.close = DS2482_close;
-	in->iroutines.transaction = NULL;
 	in->iroutines.flags = ADAP_FLAG_overdrive;
 	in->bundling_length = I2C_FIFO_SIZE;
 }
@@ -195,22 +194,16 @@ GOOD_OR_BAD DS2482_detect(struct connection_in *in)
 		return DS2482_detect_bus( chip_num, in )==0 ? gbGOOD : gbBAD ;
 	}
 
-	if ( DS2482_detect_sys( any, chip_num, in ) == 0 ) {
-		// No adapters found!
-		return gbBAD ;
-	}
-
-	return gbGOOD ;
+	// Any adapters?
+	return DS2482_detect_sys( any, chip_num, in ) ;
 }
 
 #define SYSFS_I2C_Path "/sys/class/i2c-adapter"
 
 /* Use sysfs to find i2c adapters */
 /* cycle through SYSFS_I2C_Path */
-/* returns -1 -- no directory could be opened
-   else found -- number of directories found */
-// any is flag -- either find the first, or ALL
-static int DS2482_detect_sys( int any, enum ds2482_address chip_num, struct connection_in *in_original)
+/* return GOOD if any found */
+static GOOD_OR_BAD DS2482_detect_sys( int any, enum ds2482_address chip_num, struct connection_in *in_original)
 {
 	DIR * i2c_list_dir ;
 	struct dirent * i2c_bus ;
@@ -260,15 +253,13 @@ static int DS2482_detect_sys( int any, enum ds2482_address chip_num, struct conn
 	}
 
 	closedir( i2c_list_dir ) ;
-	return found ;
+	return found>0 ? gbGOOD : gbBAD ;
 }
 
 /* non sysfs method -- try by bus name */
 /* cycle through /dev/i2c-n */
-/* returns -1 -- no direcory could be opened
-   else found -- number of directories found */
-// any is flag -- either find the first, or ALL
-static int DS2482_detect_dir( int any, enum ds2482_address chip_num, struct connection_in *in_original)
+/* returns GOOD if any adpters found */
+static GOOD_OR_BAD DS2482_detect_dir( int any, enum ds2482_address chip_num, struct connection_in *in_original)
 {
 	int found = 0 ;
 	struct connection_in * in_current = in_original ;
@@ -318,7 +309,7 @@ static int DS2482_detect_dir( int any, enum ds2482_address chip_num, struct conn
 		}
 	}
 
-	return found ;
+	return found>0 ? gbGOOD : gbBAD ;
 }
 
 /* Try to see if there is a DS2482 device on the specified i2c bus */
@@ -529,7 +520,7 @@ static enum search_status DS2482_next_both(struct device_search *ds, const struc
 
 	/* Make sure we're using the correct channel */
 	/* Appropriate search command */
-	if ( BUS_send_data(&(ds->search), 1, pn) != 0 ) {
+	if ( BAD(BUS_send_data(&(ds->search), 1, pn)) ) {
 		return search_error;
 	}
 	// loop to do the search
@@ -581,7 +572,7 @@ static RESET_TYPE DS2482_reset(const struct parsedname *pn)
 	FILE_DESCRIPTOR_OR_ERROR file_descriptor = in->connin.i2c.head->file_descriptor;
 
 	/* Make sure we're using the correct channel */
-	if (DS2482_channel_select(pn)) {
+	if ( BAD(DS2482_channel_select(pn)) ) {
 		return -EIO;
 	}
 
@@ -603,54 +594,48 @@ static RESET_TYPE DS2482_reset(const struct parsedname *pn)
 	return (c & DS2482_REG_STS_SD) ? BUS_RESET_SHORT : BUS_RESET_OK;
 }
 
-static int DS2482_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn)
+static GOOD_OR_BAD DS2482_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn)
 {
 	FILE_DESCRIPTOR_OR_ERROR file_descriptor = pn->selected_connection->connin.i2c.head->file_descriptor;
 	size_t i;
 
 	/* Make sure we're using the correct channel */
-	if (DS2482_channel_select(pn)) {
-		return -1;
-	}
+	RETURN_BAD_IF_BAD(DS2482_channel_select(pn)) ;
 
 	for (i = 0; i < len; ++i) {
-		if (DS2482_send_and_get(file_descriptor, data[i], &resp[i])) {
-			return 1;
-		}
+		RETURN_BAD_IF_BAD(DS2482_send_and_get(file_descriptor, data[i], &resp[i])) ;
 	}
-	return 0;
+	return gbGOOD;
 }
 
 /* Single byte -- assumes channel selection already done */
-static int DS2482_send_and_get(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const BYTE wr, BYTE * rd)
+static GOOD_OR_BAD DS2482_send_and_get(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const BYTE wr, BYTE * rd)
 {
 	int read_back;
 	BYTE c;
 
 	/* Write data byte */
 	if (i2c_smbus_write_byte_data(file_descriptor, DS2482_CMD_1WIRE_WRITE_BYTE, wr) < 0) {
-		return 1;
+		return gbBAD;
 	}
 
 	/* read status for done */
-	if ( BAD( DS2482_readstatus(&c, file_descriptor, DS2482_1wire_write_usec) ) ) {
-		return -1;
-	}
+	RETURN_BAD_IF_BAD( DS2482_readstatus(&c, file_descriptor, DS2482_1wire_write_usec) ) ;
 
 	/* Select the data register */
 	if (i2c_smbus_write_byte_data(file_descriptor, DS2482_CMD_SET_READ_PTR, DS2482_PTR_CODE_DATA) < 0) {
-		return 1;
+		return gbBAD;
 	}
 
 	/* Read the data byte */
 	read_back = i2c_smbus_read_byte(file_descriptor);
 
 	if (read_back < 0) {
-		return 1;
+		return gbBAD;
 	}
 	rd[0] = (BYTE) read_back;
 
-	return 0;
+	return gbGOOD;
 }
 
 /* It's a DS2482 -- whether 1 channel or 8 channel not yet determined */
@@ -662,7 +647,7 @@ static GOOD_OR_BAD HeadChannel(struct connection_in *in)
 	/* Intentionally put the wrong index */
 	in->connin.i2c.index = 1;
 	pn.selected_connection = in;
-	if (DS2482_channel_select(&pn)) {	/* Couldn't switch */
+	if ( BAD(DS2482_channel_select(&pn)) ) {	/* Couldn't switch */
 		in->connin.i2c.index = 0;	/* restore correct value */
 		LEVEL_CONNECT("DS2482-100 (Single channel)");
 		return gbGOOD;				/* happy as DS2482-100 */
@@ -723,7 +708,7 @@ static GOOD_OR_BAD DS2482_triple(BYTE * bits, int direction, FILE_DESCRIPTOR_OR_
 	return gbGOOD;
 }
 
-static int DS2482_channel_select(const struct parsedname *pn)
+static GOOD_OR_BAD DS2482_channel_select(const struct parsedname *pn)
 {
 	struct connection_in *head = pn->selected_connection->connin.i2c.head;
 	int chan = pn->selected_connection->connin.i2c.index;
@@ -739,7 +724,7 @@ static int DS2482_channel_select(const struct parsedname *pn)
 
 	if ( FILE_DESCRIPTOR_NOT_VALID(file_descriptor) ) {
 		LEVEL_CONNECT("Calling a closed i2c channel (%d) "I2Cformat" ", chan,I2Cvar(pn->selected_connection));
-		return -EINVAL;
+		return gbBAD;
 	}
 
 	/* Already properly selected? */
@@ -749,16 +734,16 @@ static int DS2482_channel_select(const struct parsedname *pn)
 
 		/* Select command */
 		if (i2c_smbus_write_byte_data(file_descriptor, DS2482_CMD_CHANNEL_SELECT, W_chan[chan]) < 0) {
-			return -EIO;
+			return gbBAD;
 		}
 
 		/* Read back and confirm */
 		read_back = i2c_smbus_read_byte(file_descriptor);
 		if (read_back < 0) {
-			return -ENODEV; // flag for DS2482-100 vs -800 detection
+			return gbBAD; // flag for DS2482-100 vs -800 detection
 		}
 		if (((BYTE) read_back) != R_chan[chan]) {
-			return -ENODEV; // flag for DS2482-100 vs -800 detection
+			return gbBAD; // flag for DS2482-100 vs -800 detection
 		}
 
 		/* Set the channel in head */
@@ -771,12 +756,12 @@ static int DS2482_channel_select(const struct parsedname *pn)
 		return SetConfiguration(pn->selected_connection->connin.i2c.configreg, pn->selected_connection);
 	}
 
-	return 0;
+	return gbGOOD;
 }
 
 /* Set the configuration register, both for this channel, and for head global data */
 /* Note, config is stored as only the lower nibble */
-static int SetConfiguration(BYTE c, struct connection_in *in)
+static GOOD_OR_BAD SetConfiguration(BYTE c, struct connection_in *in)
 {
 	struct connection_in *head = in->connin.i2c.head;
 	FILE_DESCRIPTOR_OR_ERROR file_descriptor = head->file_descriptor;
@@ -789,29 +774,23 @@ static int SetConfiguration(BYTE c, struct connection_in *in)
 		) {
 		head->connin.i2c.configchip = 0xFF;	// bad value to trigger retry
 		LEVEL_CONNECT("Trouble changing DS2482 configuration register "I2Cformat" ",I2Cvar(in));
-		return -EINVAL;
+		return gbBAD;
 	}
 	/* Clear the strong pull-up power bit(register is automatically cleared by reset) */
 	in->connin.i2c.configreg = head->connin.i2c.configchip = c & ~DS2482_REG_CFG_SPU;
-	return 0;
+	return gbGOOD;
 }
 
 static GOOD_OR_BAD DS2482_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname *pn)
 {
 	/* Make sure we're using the correct channel */
-	if (DS2482_channel_select(pn)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(DS2482_channel_select(pn)) ;
 
 	/* Set the power (bit is automatically cleared by reset) */
-	if (SetConfiguration(pn->selected_connection->connin.i2c.configreg | DS2482_REG_CFG_SPU, pn->selected_connection)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(SetConfiguration(pn->selected_connection->connin.i2c.configreg | DS2482_REG_CFG_SPU, pn->selected_connection)) ;
 
 	/* send and get byte (and trigger strong pull-up */
-	if (DS2482_send_and_get(pn->selected_connection->connin.i2c.head->file_descriptor, byte, resp)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(DS2482_send_and_get(pn->selected_connection->connin.i2c.head->file_descriptor, byte, resp)) ;
 
 	UT_delay(delay);
 

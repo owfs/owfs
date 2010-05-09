@@ -19,12 +19,12 @@ $Id$
 
 static RESET_TYPE Fake_reset(const struct parsedname *pn);
 static GOOD_OR_BAD Fake_ProgramPulse(const struct parsedname *pn);
-static int Fake_sendback_bits(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
+static GOOD_OR_BAD Fake_sendback_bits(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 static void Fake_close(struct connection_in *in);
 static enum search_status Fake_next_both(struct device_search *ds, const struct parsedname *pn);
 static const ASCII *namefind(const char *name);
 static void Fake_setroutines(struct connection_in *in);
-static int Fake_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
+static GOOD_OR_BAD Fake_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 static void GetNextByte( const ASCII ** strpointer, BYTE default_byte, BYTE * sn ) ;
 static void GetDeviceName(const ASCII ** strpointer, struct connection_in * in) ;
 static void GetDefaultDeviceName(BYTE * dn, const BYTE * sn, const struct connection_in * in) ;
@@ -43,17 +43,16 @@ static void Fake_setroutines(struct connection_in *in)
 	in->iroutines.select = NULL;
 	in->iroutines.reconnect = NULL;
 	in->iroutines.close = Fake_close;
-	in->iroutines.transaction = NULL;
 	in->iroutines.flags = ADAP_FLAG_no2409path | ADAP_FLAG_presence_from_dirblob ;
 }
 
-static int Fake_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn)
+static GOOD_OR_BAD Fake_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn)
 {
 	(void) pn;
 	(void) data;
 	(void) resp;
 	(void) len;
-	return 0;
+	return gbGOOD;
 }
 
 static void GetNextByte( const ASCII ** strpointer, BYTE default_byte, BYTE * sn )
@@ -237,13 +236,13 @@ static GOOD_OR_BAD Fake_ProgramPulse(const struct parsedname *pn)
 	return gbGOOD;
 }
 
-static int Fake_sendback_bits(const BYTE * data, BYTE * resp, const size_t length, const struct parsedname *pn)
+static GOOD_OR_BAD Fake_sendback_bits(const BYTE * data, BYTE * resp, const size_t length, const struct parsedname *pn)
 {
 	(void) pn;
 	(void) data;
 	(void) resp;
 	(void) length;
-	return 0;
+	return gbGOOD;
 }
 
 static void Fake_close(struct connection_in *in)

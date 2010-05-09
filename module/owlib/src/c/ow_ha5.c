@@ -20,9 +20,9 @@ $Id$
 static RESET_TYPE HA5_reset(const struct parsedname *pn);
 static RESET_TYPE HA5_reset_wrapped(const struct parsedname *pn) ;
 static enum search_status HA5_next_both(struct device_search *ds, const struct parsedname *pn);
-static int HA5_sendback_part(char cmd, const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn) ;
-static int HA5_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
-static int HA5_select_and_sendback(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
+static GOOD_OR_BAD HA5_sendback_part(char cmd, const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn) ;
+static GOOD_OR_BAD HA5_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
+static GOOD_OR_BAD HA5_select_and_sendback(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 static void HA5_setroutines(struct connection_in *in);
 static void HA5_close(struct connection_in *in);
 static enum search_status HA5_directory(struct device_search *ds, struct dirblob *db, const struct parsedname *pn);
@@ -30,12 +30,12 @@ static GOOD_OR_BAD HA5_select( const struct parsedname * pn ) ;
 static GOOD_OR_BAD HA5_select_wrapped( const struct parsedname * pn ) ;
 static GOOD_OR_BAD HA5_resync( const struct parsedname * pn ) ;
 static void HA5_powerdown(struct connection_in * in) ;
-static int Parse_first_ha5_address( struct connection_in * in ) ;
+static GOOD_OR_BAD Parse_first_ha5_address( struct connection_in * in ) ;
 static char Parse_next_ha5_address( char * name ) ;
-static int HA5_test_channel( struct parsedname  *pn ) ;
+static GOOD_OR_BAD HA5_test_channel( struct parsedname  *pn ) ;
 static int AddChecksum( unsigned char * check_string, int length, struct connection_in * in ) ;
-static int TestChecksum( unsigned char * check_string, int length ) ;
-static int HA5_find_channel(struct parsedname *pn) ;
+static GOOD_OR_BAD TestChecksum( unsigned char * check_string, int length ) ;
+static GOOD_OR_BAD HA5_find_channel(struct parsedname *pn) ;
 
 #define CR_char		(0x0D)
 
@@ -52,7 +52,6 @@ static void HA5_setroutines(struct connection_in *in)
 	in->iroutines.select = HA5_select ;
 	in->iroutines.reconnect = NULL;
 	in->iroutines.close = HA5_close;
-	in->iroutines.transaction = NULL;
 	in->iroutines.flags = ADAP_FLAG_dirgulp | ADAP_FLAG_bundle | ADAP_FLAG_dir_auto_reset;
 	in->bundling_length = HA5_FIFO_SIZE;
 }
@@ -60,7 +59,7 @@ static void HA5_setroutines(struct connection_in *in)
 GOOD_OR_BAD HA5_detect(struct connection_in *in)
 {
 	struct parsedname pn;
-	int no_colon_exists ;
+	GOOD_OR_BAD no_colon_exists ;
 
 	FS_ParsedName_Placeholder(&pn);	// minimal parsename -- no destroy needed
 	pn.selected_connection = in;
@@ -103,8 +102,8 @@ GOOD_OR_BAD HA5_detect(struct connection_in *in)
 #endif							/* OW_MT */
 
 	/* Find the channels */
-	if ( no_colon_exists ) {
-		if ( HA5_find_channel(&pn) ) {
+	if ( BAD(no_colon_exists) ) {
+		if ( BAD(HA5_find_channel(&pn)) ) {
 			HA5_close(in) ;
 			return gbBAD ;
 		}
@@ -132,11 +131,11 @@ Change it to a null,and parse the remaining text as a letter
 return 0 -- success, else 1
 NOTE: Alters in->name
 */
-static int Parse_first_ha5_address( struct connection_in * in )
+static GOOD_OR_BAD Parse_first_ha5_address( struct connection_in * in )
 {
 	char * colon = strchr( in->name, ':' ) ;
 	if ( colon == NULL ) { // not found
-		return 1 ;
+		return gbBAD ;
 	}
 
 	colon[0] = 0x00 ; // set as null
@@ -144,9 +143,9 @@ static int Parse_first_ha5_address( struct connection_in * in )
 	if ( isalpha( colon[1] ) ) {
 		in->connin.ha5.channel = tolower( colon[1] ) ;
 		colon[1] = ':' ;
-		return  0 ;
+		return  gbGOOD;
 	}
-	return 1 ;
+	return gbBAD ;
 }
 
 static char Parse_next_ha5_address( char * name )
@@ -171,20 +170,19 @@ static char Parse_next_ha5_address( char * name )
 
 /* Find the HA5 channel (since none specified) */
 /* Arbitrarily assign it to "a" if none found */
-static int HA5_find_channel(struct parsedname *pn)
+static GOOD_OR_BAD HA5_find_channel(struct parsedname *pn)
 {
 	struct connection_in * in = pn->selected_connection ;
 
 	for ( in->connin.ha5.channel = 'a' ; in->connin.ha5.channel <= 'z' ; ++in->connin.ha5.channel ) {
-		if ( HA5_test_channel(pn) == 0 ) {
+		if ( GOOD( HA5_test_channel(pn)) ) {
 			LEVEL_CONNECT("HA5 bus master found on port %s at channel %c", in->name, in->connin.ha5.channel ) ;
-			return 0 ;
+			return gbGOOD ;
 		}
 	}
-	in->connin.ha5.channel = 'a' ;
-	LEVEL_DEBUG("HA5 bus master not found on port %s so set to channel %c", in->name, in->connin.ha5.channel ) ;
+	LEVEL_DEBUG("HA5 bus master not found on port %s.", in->name ) ;
 
-	return 0;
+	return gbBAD;
 }
 
 /* Adds bytes to end of string -- either 1 byte for <CR> or 3 bytes for <checksum><CR> */
@@ -208,7 +206,7 @@ static int AddChecksum( unsigned char * check_string, int length, struct connect
 }
 
 
-static int TestChecksum( unsigned char * check_string, int length )
+static GOOD_OR_BAD TestChecksum( unsigned char * check_string, int length )
 {
 	int i ;
 	unsigned char sum = 0 ;
@@ -216,12 +214,12 @@ static int TestChecksum( unsigned char * check_string, int length )
 		sum += check_string[i] ;
 	}
 	if ( string2num( (char *) & check_string[length]) == (sum & 0xFF) ) {
-		return 0 ;
+		return gbGOOD ;
 	}
-	return 1 ;
+	return gbBAD ;
 }
 
-static int HA5_test_channel( struct parsedname  *pn )
+static GOOD_OR_BAD HA5_test_channel( struct parsedname  *pn )
 {
 	unsigned char test_string[1+1+2+1] ;
 	unsigned char test_response[1] ;
@@ -235,14 +233,14 @@ static int HA5_test_channel( struct parsedname  *pn )
 	string_length = AddChecksum( test_string, 2, in ) ;
 
 	if ( COM_write( test_string, string_length, pn->selected_connection ) ) {
-		return 1 ;
+		return gbBAD ;
 	}
 	if ( COM_read( test_response, 1, pn->selected_connection ) ) {
-		return 1 ;
+		return gbBAD ;
 	}
 
 	COM_slurp(in->file_descriptor) ;
-	return 0 ;
+	return gbGOOD ;
 }
 
 static RESET_TYPE HA5_reset(const struct parsedname *pn)
@@ -397,7 +395,7 @@ static enum search_status HA5_directory(struct device_search *ds, struct dirblob
 				return search_error ;
 			}
 			wrap_char = resp[19] ;
-			if ( TestChecksum( resp, 16 ) ) {
+			if ( BAD( TestChecksum( resp, 16 )) ) {
 				HA5_resync(pn) ;
 				return search_error ;
 			}
@@ -497,7 +495,7 @@ static GOOD_OR_BAD HA5_select_wrapped( const struct parsedname * pn )
 			LEVEL_DEBUG("Error with reading HA5 select") ;
 			return HA5_resync(pn) ;
 		}
-		if ( TestChecksum( resp_address, 16) ) {
+		if ( BAD(TestChecksum( resp_address, 16)) ) {
 			LEVEL_DEBUG("HA5 select checksum error") ;
 			return HA5_resync(pn) ;
 		}
@@ -519,7 +517,7 @@ static GOOD_OR_BAD HA5_select_wrapped( const struct parsedname * pn )
 }
 
 //  Send data and return response block -- up to 32 bytes
-static int HA5_sendback_part(char cmd, const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
+static GOOD_OR_BAD HA5_sendback_part(char cmd, const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
 {
 	struct connection_in * in = pn->selected_connection ;
 	unsigned char send_data[2+2+32*2+3] ;
@@ -535,38 +533,38 @@ static int HA5_sendback_part(char cmd, const BYTE * data, BYTE * resp, const siz
 	if ( COM_write( send_data, send_length, pn->selected_connection) ) {
 		LEVEL_DEBUG("Error with sending HA5 block") ;
 		HA5_resync(pn) ;
-		return -EIO ;
+		return gbBAD ;
 	}
 
 	if ( in->connin.ha5.checksum ) {
 		if ( COM_read( get_data, size*2+3, pn->selected_connection) ) {
 			LEVEL_DEBUG("Error with reading HA5 block") ;
 			HA5_resync(pn) ;
-			return -EIO ;
+			return gbBAD ;
 		}
-		if ( TestChecksum( get_data, size*2) ) {
+		if ( BAD(TestChecksum( get_data, size*2)) ) {
 			LEVEL_DEBUG("HA5 block read checksum error") ;
 			HA5_resync(pn) ;
-			return -EIO ;
+			return gbBAD ;
 		}
 	} else {
 		if ( COM_read( get_data, size*2+1, pn->selected_connection) ) {
 			LEVEL_DEBUG("Error with reading HA5 block") ;
 			HA5_resync(pn) ;
-			return -EIO ;
+			return gbBAD ;
 		}
 	}
 	string2bytes( (char *)get_data, resp, size) ;
-	return 0 ;
+	return gbGOOD ;
 }
 
-static int HA5_sendback_data(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
+static GOOD_OR_BAD HA5_sendback_data(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
 {
 	struct connection_in * in = pn->selected_connection ;
 	int left;
 
 	for ( left=size ; left>0 ; left -= 32 ) {
-		int ret ;
+		GOOD_OR_BAD ret ;
 		size_t pass_start = size - left ;
 		size_t pass_size = (left>32)?32:left ;
 
@@ -574,14 +572,12 @@ static int HA5_sendback_data(const BYTE * data, BYTE * resp, const size_t size, 
 		ret = HA5_sendback_part( 'W', &data[pass_start], &resp[pass_start], pass_size, pn ) ;
 		_MUTEX_UNLOCK( in->connin.ha5.head->connin.ha5.lock ) ;
 
-		if ( ret ) {
-			return -EIO ;
-		}
+		RETURN_BAD_IF_BAD( ret ) ;
 	}
-	return 0;
+	return gbGOOD;
 }
 
-static int HA5_select_and_sendback(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
+static GOOD_OR_BAD HA5_select_and_sendback(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
 {
 	struct connection_in * in = pn->selected_connection ;
 	int left;
@@ -589,9 +585,7 @@ static int HA5_select_and_sendback(const BYTE * data, BYTE * resp, const size_t 
 
 	if ( memcmp( pn->sn, in->connin.ha5.sn, SERIAL_NUMBER_SIZE ) ) {
 		// Need a formal change of device
-		if ( BAD( HA5_select(pn) ) ) {
-			return -EIO ;
-		}
+		RETURN_BAD_IF_BAD( HA5_select(pn) ) ;
 		block_cmd = 'W' ;
 	} else {
 		// Same device
@@ -599,7 +593,7 @@ static int HA5_select_and_sendback(const BYTE * data, BYTE * resp, const size_t 
 	}
 
 	for ( left=size ; left>0 ; left -= 32 ) {
-		int ret ;
+		GOOD_OR_BAD ret ;
 		size_t pass_start = size - left ;
 		size_t pass_size = (left>32)?32:left ;
 
@@ -607,11 +601,9 @@ static int HA5_select_and_sendback(const BYTE * data, BYTE * resp, const size_t 
 		ret = HA5_sendback_part( block_cmd, &data[pass_start], &resp[pass_start], pass_size, pn ) ;
 		_MUTEX_UNLOCK( in->connin.ha5.head->connin.ha5.lock ) ;
 		block_cmd = 'W' ; // for next pass
-		if ( ret ) {
-			return -EIO ;
-		}
+		RETURN_BAD_IF_BAD( ret ) ;
 	}
-	return 0;
+	return gbGOOD;
 }
 
 /********************************************************/

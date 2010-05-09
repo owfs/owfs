@@ -18,9 +18,9 @@ $Id$
 /* All the rest of the program sees is the DS9907_detect and the entry in iroutines */
 
 static RESET_TYPE DS9097_reset(const struct parsedname *pn);
-static int DS9097_sendback_bits(const BYTE * outbits, BYTE * inbits, const size_t length, const struct parsedname *pn);
+static GOOD_OR_BAD DS9097_sendback_bits(const BYTE * outbits, BYTE * inbits, const size_t length, const struct parsedname *pn);
 static void DS9097_setroutines(struct connection_in *in);
-static int DS9097_send_and_get(const BYTE * bussend, BYTE * busget, const size_t length, const struct parsedname *pn);
+static GOOD_OR_BAD DS9097_send_and_get(const BYTE * bussend, BYTE * busget, const size_t length, const struct parsedname *pn);
 
 #define	OneBit	0xFF
 //#define ZeroBit 0xC0
@@ -40,7 +40,6 @@ static void DS9097_setroutines(struct connection_in *in)
 	in->iroutines.select = NULL;
 	in->iroutines.reconnect = NULL;
 	in->iroutines.close = COM_close;
-	in->iroutines.transaction = NULL;
 	in->iroutines.flags = ADAP_FLAG_overdrive;
 	in->bundling_length = UART_FIFO_SIZE / 10;
 }
@@ -101,8 +100,8 @@ static RESET_TYPE DS9097_reset(const struct parsedname *pn)
 		ERROR_CONNECT("Cannot set attributes: %s", SAFESTRING(pn->selected_connection->name));
 		return -EIO;
 	}
-	if ((ret = DS9097_send_and_get(&resetbyte, &c, 1, pn))) {
-		return ret;
+	if ( BAD( DS9097_send_and_get(&resetbyte, &c, 1, pn)) ) {
+		return BUS_RESET_ERROR ;
 	}
 
 	switch (c) {
@@ -206,16 +205,15 @@ static int setRTS(int on, const struct connection_in *in)
 /* Actually uses bit zero of each byte */
 /* Dispatches DS9097_MAX_BITS "bits" at a time */
 #define DS9097_MAX_BITS 24
-int DS9097_sendback_bits(const BYTE * outbits, BYTE * inbits, const size_t length, const struct parsedname *pn)
+static GOOD_OR_BAD DS9097_sendback_bits(const BYTE * outbits, BYTE * inbits, const size_t length, const struct parsedname *pn)
 {
-	int ret;
 	BYTE d[DS9097_MAX_BITS];
 	size_t l = 0;
 	size_t i = 0;
 	size_t start = 0;
 
 	if (length == 0) {
-		return 0;
+		return gbGOOD;
 	}
 
 	/* Split into smaller packets? */
@@ -223,9 +221,9 @@ int DS9097_sendback_bits(const BYTE * outbits, BYTE * inbits, const size_t lengt
 		d[l++] = outbits[i++] ? OneBit : ZeroBit;
 		if (l == DS9097_MAX_BITS || i == length) {
 			/* Communication with DS9097 routine */
-			if ((ret = DS9097_send_and_get(d, &inbits[start], l, pn))) {
+			if ( BAD( DS9097_send_and_get(d, &inbits[start], l, pn)) ) {
 				STAT_ADD1_BUS(e_bus_errors, pn->selected_connection);
-				return ret;
+				return gbBAD;
 			}
 			l = 0;
 			start = i;
@@ -233,21 +231,22 @@ int DS9097_sendback_bits(const BYTE * outbits, BYTE * inbits, const size_t lengt
 	} while (i < length);
 
 	/* Decode Bits */
-	for (i = 0; i < length; ++i)
+	for (i = 0; i < length; ++i) {
 		inbits[i] &= 0x01;
+	}
 
-	return 0;
+	return gbGOOD;
 }
 
 /* Routine to send a string of bits and get another string back */
 /* This seems rather COM-port specific */
 /* Indeed, will move to DS9097 */
-static int DS9097_send_and_get(const BYTE * bussend, BYTE * busget, const size_t length, const struct parsedname *pn)
+static GOOD_OR_BAD DS9097_send_and_get(const BYTE * bussend, BYTE * busget, const size_t length, const struct parsedname *pn)
 {
 	if ( COM_write( bussend, length, pn->selected_connection ) < 0 ) {
-		return -EIO ;
+		return gbBAD ;
 	}	
 
 	/* get back string -- with timeout and partial read loop */
-	return COM_read( busget, length, pn->selected_connection ) ;
+	return COM_read( busget, length, pn->selected_connection ) ? gbBAD : gbGOOD ;
 }

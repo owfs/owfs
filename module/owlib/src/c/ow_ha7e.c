@@ -19,8 +19,8 @@ $Id$
 //static void byteprint( const BYTE * b, int size ) ;
 static RESET_TYPE HA7E_reset(const struct parsedname *pn);
 static enum search_status HA7E_next_both(struct device_search *ds, const struct parsedname *pn);
-static int HA7E_sendback_part(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn) ;
-static int HA7E_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
+static GOOD_OR_BAD HA7E_sendback_part(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn) ;
+static GOOD_OR_BAD HA7E_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 static void HA7E_setroutines(struct connection_in *in);
 static void HA7E_close(struct connection_in *in);
 static GOOD_OR_BAD HA7E_directory(struct device_search *ds, struct dirblob *db, const struct parsedname *pn);
@@ -40,7 +40,6 @@ static void HA7E_setroutines(struct connection_in *in)
 	in->iroutines.select = HA7E_select ;
 	in->iroutines.reconnect = NULL;
 	in->iroutines.close = HA7E_close;
-	in->iroutines.transaction = NULL;
 	in->iroutines.flags = ADAP_FLAG_dirgulp | ADAP_FLAG_bundle | ADAP_FLAG_dir_auto_reset;
 	in->bundling_length = HA7E_FIFO_SIZE;
 }
@@ -285,7 +284,7 @@ static GOOD_OR_BAD HA7E_select( const struct parsedname * pn )
 }
 
 //  Send data and return response block -- up to 32 bytes
-static int HA7E_sendback_part(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
+static GOOD_OR_BAD HA7E_sendback_part(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
 {
 	char send_data[1+2+32*2+1] ;
 	char get_data[32*2+1] ;
@@ -298,30 +297,28 @@ static int HA7E_sendback_part(const BYTE * data, BYTE * resp, const size_t size,
 	if ( COM_write((BYTE*)send_data,size*2+4,pn->selected_connection) ) {
 		LEVEL_DEBUG("Error with sending HA7E block") ;
 		HA7E_resync(pn) ;
-		return -EIO ;
+		return gbBAD ;
 	}
 	if ( COM_read((BYTE*)get_data,size*2+1,pn->selected_connection) ) {
 		LEVEL_DEBUG("Error with reading HA7E block") ;
 		HA7E_resync(pn) ;
-		return -EIO ;
+		return gbBAD ;
 	}
 
 	string2bytes(get_data, resp, size) ;
-	return 0 ;
+	return gbGOOD ;
 }
 
-static int HA7E_sendback_data(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
+static GOOD_OR_BAD HA7E_sendback_data(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
 {
 	int left;
 
 	for ( left=size ; left>0 ; left -= 32 ) {
 		size_t pass_start = size - left ;
 		size_t pass_size = (left>32)?32:left ;
-		if ( HA7E_sendback_part( &data[pass_start], &resp[pass_start], pass_size, pn ) ) {
-			return -EIO ;
-		}
+		RETURN_BAD_IF_BAD( HA7E_sendback_part( &data[pass_start], &resp[pass_start], pass_size, pn ) ) ;
 	}
-	return 0;
+	return gbGOOD;
 }
 
 /********************************************************/

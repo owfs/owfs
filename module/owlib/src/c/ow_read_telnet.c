@@ -39,9 +39,8 @@ static struct timeval tvnet = { 0, 300000, };
 
 
 /* Read from a telnet device
-   0=good else bad
 */
-int telnet_read(BYTE * buf, const size_t size, const struct parsedname *pn)
+GOOD_OR_BAD telnet_read(BYTE * buf, const size_t size, const struct parsedname *pn)
 {
 	// temporary buffer (guess the extra escape chars based on prior experience
 	size_t allocated_size = size + pn->selected_connection->default_discard ;
@@ -62,7 +61,7 @@ int telnet_read(BYTE * buf, const size_t size, const struct parsedname *pn)
 	tcp_read(pn->selected_connection->file_descriptor, readin_buf, allocated_size, &tvnet, &actual_readin) ;
 	if (actual_readin < size) {
 		LEVEL_CONNECT("Telnet (ethernet) error");
-		return -EIO;
+		return gbBAD;
 	}
 
 	// loop and look for escape sequances
@@ -72,7 +71,7 @@ int telnet_read(BYTE * buf, const size_t size, const struct parsedname *pn)
 			tcp_read(pn->selected_connection->file_descriptor, readin_buf, still_needed, &tvnet, &actual_readin) ;
 			if (actual_readin != still_needed ) {
 				LEVEL_CONNECT("Telnet (ethernet) error");
-				return -EIO;
+				return gbBAD;
 			}
 			current_index = 0 ;
 			allocated_size = still_needed ;
@@ -135,7 +134,7 @@ int telnet_read(BYTE * buf, const size_t size, const struct parsedname *pn)
 						break ;
 					default:
 						LEVEL_DEBUG("Unexpected telnet sequence");
-						return -EIO ;
+						return gbBAD ;
 				}
 				break ;
 			case telnet_fffa:
@@ -163,5 +162,5 @@ int telnet_read(BYTE * buf, const size_t size, const struct parsedname *pn)
 	// store this extra length for the next read attempt
 	//printf("LINKE_READ setting default_discard = %d to %d\n",pn->selected_connection->default_discard,total_discard);
 	pn->selected_connection->default_discard = total_discard ;
-	return 0 ;
+	return gbGOOD ;
 }

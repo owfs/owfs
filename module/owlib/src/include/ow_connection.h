@@ -133,19 +133,17 @@ struct interface_routines {
 	/* Send a 12V 480msec oulse to program EEPROM */
 	GOOD_OR_BAD (*ProgramPulse) (const struct parsedname * pn);
 	/* send and recieve data -- byte at a time */
-	int (*sendback_data) (const BYTE * data, BYTE * resp, const size_t len, const struct parsedname * pn);
+	GOOD_OR_BAD (*sendback_data) (const BYTE * data, BYTE * resp, const size_t len, const struct parsedname * pn);
 	/* send and recieve data -- byte at a time */
-	int (*select_and_sendback) (const BYTE * data, BYTE * resp, const size_t len, const struct parsedname * pn);
+	GOOD_OR_BAD (*select_and_sendback) (const BYTE * data, BYTE * resp, const size_t len, const struct parsedname * pn);
 	/* send and recieve data -- bit at a time */
-	int (*sendback_bits) (const BYTE * databits, BYTE * respbits, const size_t len, const struct parsedname * pn);
+	GOOD_OR_BAD (*sendback_bits) (const BYTE * databits, BYTE * respbits, const size_t len, const struct parsedname * pn);
 	/* select a device */
 	GOOD_OR_BAD (*select) (const struct parsedname * pn);
 	/* reconnect with a balky device */
 	GOOD_OR_BAD (*reconnect) (const struct parsedname * pn);
 	/* Close the connection (port) */
 	void (*close) (struct connection_in * in);
-	/* transaction */
-	int (*transaction) (const struct transaction_log * tl, const struct parsedname * pn);
 	/* capabilities flags */
 	UINT flags;
 };
@@ -545,7 +543,7 @@ int COM_write( const BYTE * data, size_t length, struct connection_in *connectio
 int COM_read( BYTE * data, size_t length, struct connection_in *connection);
 void Slurp( FILE_DESCRIPTOR_OR_ERROR file_descriptor, unsigned long usec ) ;
 
-int telnet_read(BYTE * buf, const size_t size, const struct parsedname *pn) ;
+GOOD_OR_BAD telnet_read(BYTE * buf, const size_t size, const struct parsedname *pn) ;
 
 #define COM_slurp( file_descriptor ) Slurp( file_descriptor, 1000 )
 #define TCP_slurp( file_descriptor ) Slurp( file_descriptor, 100000 )
@@ -570,17 +568,15 @@ RESET_TYPE BUS_reset(const struct parsedname *pn);
 
 GOOD_OR_BAD BUS_select(const struct parsedname *pn);
 
-int BUS_sendout_cmd(const BYTE * cmd, const size_t len, const struct parsedname *pn);
-int BUS_send_cmd(const BYTE * cmd, const size_t len, const struct parsedname *pn);
-int BUS_sendback_cmd(const BYTE * cmd, BYTE * resp, const size_t len, const struct parsedname *pn);
-int BUS_send_data(const BYTE * data, const size_t len, const struct parsedname *pn);
-int BUS_readin_data(BYTE * data, const size_t len, const struct parsedname *pn);
-int BUS_verify(BYTE search, const struct parsedname *pn);
+GOOD_OR_BAD BUS_sendback_cmd(const BYTE * cmd, BYTE * resp, const size_t len, const struct parsedname *pn);
+GOOD_OR_BAD BUS_send_data(const BYTE * data, const size_t len, const struct parsedname *pn);
+GOOD_OR_BAD BUS_readin_data(BYTE * data, const size_t len, const struct parsedname *pn);
+GOOD_OR_BAD BUS_verify(BYTE search, const struct parsedname *pn);
 
 GOOD_OR_BAD BUS_PowerByte(const BYTE data, BYTE * resp, UINT delay, const struct parsedname *pn);
 GOOD_OR_BAD BUS_ProgramPulse(const struct parsedname *pn);
-int BUS_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
-int BUS_select_and_sendback(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
+GOOD_OR_BAD BUS_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
+GOOD_OR_BAD BUS_select_and_sendback(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 
 GOOD_OR_BAD TestConnection(const struct parsedname *pn);
 

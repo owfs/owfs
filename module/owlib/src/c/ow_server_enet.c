@@ -27,20 +27,17 @@ struct toENET {
 };
 
 //static void byteprint( const BYTE * b, int size ) ;
-static int ENET_write(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const ASCII * msg, size_t length, struct connection_in *in) ;
+static GOOD_OR_BAD ENET_write(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const ASCII * msg, size_t length, struct connection_in *in) ;
 static RESET_TYPE OWServer_Enet_reset(const struct parsedname *pn);
 static void OWServer_Enet_close(struct connection_in *in);
-#if 0
-static void toENETinit(struct toENET *enet) ;
-#endif
-static int ENET_send_detail(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct connection_in *in) ;
-static int ENET_get_detail(const struct parsedname * pn ) ;
-static int OWServer_Enet_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct memblob *mb) ;
-static int Add_a_property(const char * tag, const char * property, const char * romid, char ** buffer) ;
-static int parse_detail_record(char * detail, const struct parsedname *pn) ;
+static GOOD_OR_BAD ENET_send_detail(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct connection_in *in) ;
+static GOOD_OR_BAD ENET_get_detail(const struct parsedname * pn ) ;
+static GOOD_OR_BAD OWServer_Enet_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct memblob *mb) ;
+static GOOD_OR_BAD Add_a_property(const char * tag, const char * property, const char * romid, char ** buffer) ;
+static GOOD_OR_BAD parse_detail_record(char * detail, const struct parsedname *pn) ;
 static char * find_xml_string( const char * tag, size_t * length, char * buffer) ;
 
-static int SpecialRead( struct one_wire_query * owq ) ;
+static ZERO_OR_ERROR SpecialRead( struct one_wire_query * owq ) ;
 static void ENET_SpecialCases( struct connection_in * in ) ;
 
 static int xml_integer( const char * tag, char ** buffer) ;
@@ -48,7 +45,7 @@ static char * xml_string( const char * tag, char ** buffer) ;
 static _FLOAT xml_float( const char * tag, char ** buffer) ;
 
 static enum search_status OWServer_Enet_next_both(struct device_search *ds, const struct parsedname *pn);
-static int OWServer_Enet_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
+static GOOD_OR_BAD OWServer_Enet_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 static void OWServer_Enet_setroutines(struct connection_in *in);
 static GOOD_OR_BAD OWServer_Enet_select( const struct parsedname * pn ) ;
 
@@ -64,7 +61,6 @@ static void OWServer_Enet_setroutines(struct connection_in *in)
 	in->iroutines.select = OWServer_Enet_select ;
 	in->iroutines.reconnect = NULL;
 	in->iroutines.close = OWServer_Enet_close;
-	in->iroutines.transaction = NULL;
 	in->iroutines.flags = ADAP_FLAG_dirgulp | ADAP_FLAG_dir_auto_reset | ADAP_FLAG_no2409path | ADAP_FLAG_presence_from_dirblob ;
 	in->bundling_length = HA7E_FIFO_SIZE;
 }
@@ -102,7 +98,7 @@ GOOD_OR_BAD OWServer_Enet_detect(struct connection_in *in)
 	in->adapter_name = "OWServer_Enet";
 	in->busmode = bus_enet;
 
-	if (ENET_get_detail(&pn) == 0) {
+	if ( GOOD(ENET_get_detail(&pn)) ) {
 		ENET_SpecialCases(in) ; // load the special access functions
 		return gbGOOD;
 	}
@@ -111,7 +107,7 @@ GOOD_OR_BAD OWServer_Enet_detect(struct connection_in *in)
 
 #define HA7_READ_BUFFER_LENGTH 500
 
-static int OWServer_Enet_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct memblob *mb)
+static GOOD_OR_BAD OWServer_Enet_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct memblob *mb)
 {
 	ASCII readin_area[HA7_READ_BUFFER_LENGTH + 1];
 	int first_pass = 1 ;
@@ -129,21 +125,21 @@ static int OWServer_Enet_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct m
 			first_pass = 0 ;
 			if ( read_size < 38 ) {
 				LEVEL_DEBUG("Got a very short read from details.xml") ;
-				return -EIO ;
+				return gbBAD ;
 			}
 			// Look for happy response
 			if (strncmp("HTTP/1.1 200 OK", readin_area, 15)) {	//Bad HTTP return code
 				LEVEL_DATA("Bad HTTP response from the ENET server");
-				return -EINVAL;
+				return gbBAD;
 			}
 			if (strstr(readin_area,"<?xml version=\"1.0\" encoding=\"UTF-8\"?>")==NULL) {	//Bad XML header
 				LEVEL_DATA("response problem with XML: %s", readin_area);
-				return -EINVAL;
+				return gbBAD;
 			}
 		}
 		if (MemblobAdd((BYTE *) readin_area, read_size, mb)) {
 			MemblobClear(mb);
-			return -ENOMEM;
+			return gbBAD;
 		}
 		if (read_size < HA7_READ_BUFFER_LENGTH) {
 			break;
@@ -153,25 +149,25 @@ static int OWServer_Enet_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct m
 	// Add trailing null
 	if (MemblobAdd((BYTE *) "", 1, mb)) {
 		MemblobClear(mb);
-		return -ENOMEM;
+		return gbBAD;
 	}
 	LEVEL_DEBUG("READ FROM ENET:\n%s",MemblobData(mb));
-	return 0;
+	return gbGOOD;
 }
 
-static int ENET_get_detail(const struct parsedname *pn) {
+static GOOD_OR_BAD ENET_get_detail(const struct parsedname *pn) {
 	FILE_DESCRIPTOR_OR_ERROR file_descriptor;
-	int ret = -EIO ;
+	GOOD_OR_BAD ret = gbBAD ;
 	struct dirblob *db = &(pn->selected_connection->main) ;
 
 	DirblobClear(db);
 	file_descriptor = ClientConnect(pn->selected_connection) ;
 	if ( FILE_DESCRIPTOR_NOT_VALID(file_descriptor) ) {
-		return -EIO;
+		return gbBAD;
 	}
-	if (ENET_send_detail(file_descriptor,pn->selected_connection)==0) {
+	if ( GOOD(ENET_send_detail(file_descriptor,pn->selected_connection)) ) {
 		struct memblob mb;
-		if ( OWServer_Enet_read(file_descriptor,&mb) == 0 ) {
+		if ( GOOD( OWServer_Enet_read(file_descriptor,&mb)) ) {
 			ret = parse_detail_record( (char *) MemblobData(&mb), pn ) ;
 			MemblobClear(&mb);
 		}
@@ -182,7 +178,7 @@ static int ENET_get_detail(const struct parsedname *pn) {
 	return ret ;
 }
 
-static int parse_detail_record(char * detail, const struct parsedname *pn) 
+static GOOD_OR_BAD parse_detail_record(char * detail, const struct parsedname *pn) 
 {
 	struct connection_in * in = pn->selected_connection ;
 	struct dirblob *db = &(in->main) ;
@@ -190,7 +186,7 @@ static int parse_detail_record(char * detail, const struct parsedname *pn)
 	
 	devices = xml_integer( "DevicesConnected", &detail ) ;
 	if ( detail==NULL) {
-		return -EINVAL ;
+		return gbBAD ;
 	}
 	LEVEL_DEBUG("devices=%d\n",devices) ;
 		
@@ -198,7 +194,7 @@ static int parse_detail_record(char * detail, const struct parsedname *pn)
 		char * romid = xml_string( "ROMId", &detail) ;
 		BYTE sn[SERIAL_NUMBER_SIZE] ;
 		if (detail==NULL) {
-			return -EINVAL ;
+			return gbBAD ;
 		}
 		sn[0] = string2num(&romid[0]);
 		sn[1] = string2num(&romid[2]);
@@ -264,16 +260,14 @@ static int parse_detail_record(char * detail, const struct parsedname *pn)
 		}
 			
 	}
-	return 0 ;
+	return gbGOOD ;
 }
 
-static int SpecialRead( struct one_wire_query * owq )
+static ZERO_OR_ERROR SpecialRead( struct one_wire_query * owq )
 {
 	struct parsedname * pn = PN(owq) ;
 	enum ePS_state state = pn->state ;
-	if ( ENET_get_detail(pn) != 0 ) {
-		return -EINVAL ;
-	}
+	RETURN_BAD_IF_BAD( ENET_get_detail(pn) ) ;
 	pn->state |= ~ePS_uncached ; // turn off uncached
 	if (OWQ_Cache_Get(owq)) {
 		// Not found even after re-reading detail
@@ -306,15 +300,15 @@ static void ENET_SpecialCases( struct connection_in * in )
 }
 
 #define enet_data_length 1000
-static int Add_a_property(const char * tag, const char * property, const char * romid, char ** buffer)
+static GOOD_OR_BAD Add_a_property(const char * tag, const char * property, const char * romid, char ** buffer)
 {
 	char path[PATH_MAX] ;
 	struct one_wire_query * owq ;
 	char * buffer_pointer = buffer[0] ;
-	int ret = 0 ;
+	GOOD_OR_BAD ret = 0 ;
 	
 	if ( buffer[0] == NULL ) {
-		return -EINVAL ;
+		return gbBAD ;
 	}
 	//printf("About to create %s from %s\n",property,tag);
 	strncpy( path, romid, 16 ) ;
@@ -327,7 +321,7 @@ static int Add_a_property(const char * tag, const char * property, const char * 
 	
 	if ( owq==NULL ) {
 		LEVEL_DEBUG("Couldn't understand path %s",path);
-		return -EINVAL ;
+		return gbBAD ;
 	}
 	
 	switch (PN(owq)->selected_filetype->format) {
@@ -338,9 +332,9 @@ static int Add_a_property(const char * tag, const char * property, const char * 
 	{
 		char * data = xml_string(tag,&buffer_pointer) ;
 		if ( data == NULL ) {
-			ret = -EINVAL ;
+			ret = gbBAD ;
 		} else if ( OWQ_allocate_write_buffer(data,enet_data_length,owq) != 0 ) {
-			ret = -EINVAL ;
+			ret = gbBAD ;
 		}
 		LEVEL_DEBUG("%s given value <%s> from tag %s",path,data,tag) ;
 		break ;
@@ -368,13 +362,13 @@ static int Add_a_property(const char * tag, const char * property, const char * 
 		LEVEL_DEBUG("%s given value %lg from tag %s",path,OWQ_F(owq),tag) ;
 		break ;
 	default:
-		ret = -EINVAL ;
+		ret = gbBAD ;
 		break;
 	}
 	if ( buffer_pointer != NULL ) {
 		OWQ_Cache_Add(owq) ;
 	} else {
-		ret = -EINVAL ;
+		ret = gbBAD ;
 	}
 	OWQ_destroy(owq) ;
 	return ret ;
@@ -481,7 +475,7 @@ static enum search_status OWServer_Enet_next_both(struct device_search *ds, cons
 	}
 
 	if (ds->index == -1) {
-		if (ENET_get_detail(pn)!=0) {
+		if ( BAD(ENET_get_detail(pn)) ) {
 			return search_error;
 		}
 	}
@@ -512,13 +506,13 @@ static GOOD_OR_BAD OWServer_Enet_select( const struct parsedname * pn )
 	return gbGOOD ;
 }
 
-static int OWServer_Enet_sendback_data(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
+static GOOD_OR_BAD OWServer_Enet_sendback_data(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
 {
 	(void) data;
 	(void) resp;
 	(void) size;
 	(void) pn ;
-	return -ENOTSUP;
+	return gbGOOD;
 }
 
 static void OWServer_Enet_close(struct connection_in *in)
@@ -533,7 +527,7 @@ static void toENETinit(struct toENET *enet)
 }
 #endif
 
-static int ENET_write(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const ASCII * msg, size_t length, struct connection_in *in)
+static GOOD_OR_BAD ENET_write(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const ASCII * msg, size_t length, struct connection_in *in)
 {
 	ssize_t r, sl = length;
 	ssize_t size = sl;
@@ -551,12 +545,12 @@ static int ENET_write(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const ASCII * ms
 	gettimeofday(&(in->bus_write_time), NULL);
 	if (sl > 0) {
 		STAT_ADD1_BUS(e_bus_write_errors, in);
-		return -EIO;
+		return gbBAD;
 	}
-	return 0;
+	return gbGOOD;
 }
 
-static int ENET_send_detail(int file_descriptor, struct connection_in *in)
+static GOOD_OR_BAD ENET_send_detail(int file_descriptor, struct connection_in *in)
 {
 	char * full_command = "GET /details.xml HTTP/1.0\x0D\x0A\x0D\x0A" ;
 	LEVEL_DEBUG("To ENET %s", full_command);

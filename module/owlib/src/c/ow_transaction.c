@@ -172,7 +172,7 @@ static GOOD_OR_BAD BUS_transaction_single(const struct transaction_log *t, const
 			struct parsedname pn2;
 			memcpy(&pn2, pn, sizeof(struct parsedname));	//shallow copy
 			pn2.selected_device = NULL;
-			ret = BUS_select(&pn2) || BUS_verify(t->size, pn);
+			ret = ( BUS_select(&pn2) || BAD(BUS_verify(t->size, pn)) ) ? gbBAD : gbGOOD;
 			LEVEL_DEBUG("verify = %d", ret);
 		}
 		break;
@@ -244,15 +244,11 @@ static GOOD_OR_BAD Bundle_ship(struct transaction_bundle *tb, const struct parse
 // Execute a bundle transaction (actual bytes on 1-wire bus)
 static GOOD_OR_BAD Bundle_enroute(struct transaction_bundle *tb, const struct parsedname *pn)
 {
-	ZERO_OR_ERROR ret ;
 	if (tb->select_first) {
-		ret = BUS_select_and_sendback(MemblobData(&(tb->mb)), MemblobData(&(tb->mb)), MemblobLength(&(tb->mb)), pn);
-		LEVEL_DEBUG("select and sendback = %d",ret ) ;
+		return BUS_select_and_sendback(MemblobData(&(tb->mb)), MemblobData(&(tb->mb)), MemblobLength(&(tb->mb)), pn);
 	} else {
-		ret = BUS_sendback_data(MemblobData(&(tb->mb)), MemblobData(&(tb->mb)), MemblobLength(&(tb->mb)), pn);
-		LEVEL_DEBUG("sendback = %d",ret ) ;
+		return BUS_sendback_data(MemblobData(&(tb->mb)), MemblobData(&(tb->mb)), MemblobLength(&(tb->mb)), pn);
 	}
-	return ret<0 ? gbBAD : gbGOOD ;
 }
 
 /* See if the item can be packed

@@ -17,7 +17,7 @@ $Id$
 /* All the rest of the program sees is the BadAdapter_detect and the entry in iroutines */
 
 static RESET_TYPE BadAdapter_reset(const struct parsedname *pn);
-static int BadAdapter_sendback_bits(const BYTE * data, BYTE * resp, size_t len, const struct parsedname *pn);
+static GOOD_OR_BAD BadAdapter_sendback_bits(const BYTE * data, BYTE * resp, size_t len, const struct parsedname *pn);
 static void BadAdapter_close(struct connection_in *in);
 
 /* Device-specific functions */
@@ -40,7 +40,6 @@ GOOD_OR_BAD BadAdapter_detect(struct connection_in *in)
 	in->iroutines.select = NULL;
 	in->iroutines.reconnect = NULL;
 	in->iroutines.close = BadAdapter_close;
-	in->iroutines.transaction = NULL;
 	in->iroutines.flags = 0;
 	in->adapter_name = "Bad Adapter";
 	return gbGOOD;
@@ -52,7 +51,7 @@ static RESET_TYPE BadAdapter_reset(const struct parsedname *pn)
 	return BUS_RESET_ERROR;
 }
 
-static int BadAdapter_sendback_bits(const BYTE * data, BYTE * resp, size_t len, const struct parsedname *pn)
+static GOOD_OR_BAD BadAdapter_sendback_bits(const BYTE * data, BYTE * resp, size_t len, const struct parsedname *pn)
 {
 	(void) pn;
 	(void) data;
