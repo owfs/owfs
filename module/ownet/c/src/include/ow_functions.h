@@ -74,7 +74,6 @@ void LockSetup(void);
 
 ssize_t tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval *ptv);
 void tcp_read_flush(int file_descriptor);
-int tcp_wait(int file_descriptor, const struct timeval *ptv);
 int ClientAddr(char *sname, struct connection_in *in);
 int ClientConnect(struct connection_in *in);
 void FreeClientAddr(struct connection_in *in);

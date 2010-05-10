@@ -19,7 +19,7 @@ $Id$
 #include "ow_counters.h"
 
 /* Wait for something to be readable or timeout */
-int tcp_wait(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const struct timeval *ptv)
+GOOD_OR_BAD tcp_wait(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const struct timeval *ptv)
 {
 	int rc;
 	fd_set readset;
@@ -36,9 +36,9 @@ int tcp_wait(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const struct timeval *ptv
 			if (errno == EINTR) {
 				continue;		/* interrupted */
 			}
-			return -EIO;		/* error */
+			return gbBAD;		/* error */
 		} else if (rc == 0) {
-			return -EAGAIN;		/* timeout */
+			return gbBAD;		/* timeout */
 		} else {
 			// Is there something to read?
 			if (FD_ISSET(file_descriptor, &readset)) {
@@ -46,7 +46,7 @@ int tcp_wait(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const struct timeval *ptv
 			}
 		}
 	}
-	return 0;
+	return gbGOOD;
 }
 
 /* Read "n" bytes from a descriptor. */

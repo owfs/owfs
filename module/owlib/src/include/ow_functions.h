@@ -57,7 +57,7 @@ void LibStart(void);
 void HandleSignals(void);
 void LibStop(void);
 void LibClose(void);
-int EnterBackground(void);
+GOOD_OR_BAD EnterBackground(void);
 
 /* Initial sorting or the device and filetype lists */
 void DeviceSort(void);
@@ -122,7 +122,7 @@ void UT_delay_us(const unsigned long len);
 
 ZERO_OR_ERROR tcp_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, void *vptr, size_t n, const struct timeval *ptv, size_t * actual_read);
 void tcp_read_flush(FILE_DESCRIPTOR_OR_ERROR file_descriptor);
-int tcp_wait(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const struct timeval *ptv);
+GOOD_OR_BAD tcp_wait(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const struct timeval *ptv);
 ssize_t udp_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, void *vptr, size_t n, const struct timeval * ptv, struct sockaddr_in *from, socklen_t *fromlen) ;
 
 GOOD_OR_BAD ClientAddr(char *sname, struct connection_in *in);

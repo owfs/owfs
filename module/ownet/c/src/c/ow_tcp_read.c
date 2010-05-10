@@ -17,36 +17,6 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
-/* Wait for something to be readable or timeout */
-int tcp_wait(int file_descriptor, const struct timeval *ptv)
-{
-	int rc;
-	fd_set readset;
-	struct timeval tv = { ptv->tv_sec, ptv->tv_usec, };
-
-	/* Initialize readset */
-	FD_ZERO(&readset);
-	FD_SET(file_descriptor, &readset);
-
-	while (1) {
-		// Read if it doesn't timeout first
-		rc = select(file_descriptor + 1, &readset, NULL, NULL, &tv);
-		if (rc < 0) {
-			if (errno == EINTR)
-				continue;		/* interrupted */
-			return -EIO;		/* error */
-		} else if (rc == 0) {
-			return -EAGAIN;		/* timeout */
-		} else {
-			// Is there something to read?
-			if (FD_ISSET(file_descriptor, &readset)) {
-				break;
-			}
-		}
-	}
-	return 0;
-}
-
 /* Read "n" bytes from a descriptor. */
 /* Stolen from Unix Network Programming by Stevens, Fenner, Rudoff p89 */
 ssize_t tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval * ptv)

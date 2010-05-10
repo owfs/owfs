@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
 	set_signal_handlers(NULL);
 
 	/* become a daemon if not told otherwise */
-	if (EnterBackground()) {
+	if ( BAD(EnterBackground()) ) {
 		ow_exit(1);
 	}
 

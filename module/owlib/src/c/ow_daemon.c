@@ -109,7 +109,7 @@ static int my_daemon(int nochdir, int noclose)
 #endif							/* HAVE_DAEMON */
 
 /* Start the owlib process -- actually only tests for backgrounding */
-int EnterBackground(void)
+GOOD_OR_BAD EnterBackground(void)
 {
 	/* First call to pthread should be done after daemon() in uClibc, so
 	 * I moved it here to avoid calling __pthread_initialize() */
@@ -134,7 +134,7 @@ int EnterBackground(void)
 #endif							/* HAVE_DAEMON */
 				) {
 				LEVEL_DEFAULT("Cannot enter background mode, quitting.");
-				return 1;
+				return gbBAD;
 			} else {
 				Globals.now_background = 1;
 #ifdef __UCLIBC__
@@ -157,5 +157,5 @@ int EnterBackground(void)
 	}
 	//printf("Exit Background\n") ;
 
-	return 0;
+	return gbGOOD;
 }

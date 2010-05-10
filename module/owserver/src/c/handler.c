@@ -111,7 +111,7 @@ void Handler(int file_descriptor)
 		}
 
 		/* Shorter wait */
-		if (tcp_wait(file_descriptor, &tv_low)) {	// timed out
+		if ( BAD(tcp_wait(file_descriptor, &tv_low)) ) {	// timed out
 			/* test if below threshold for longer wait */
 
 			PERSISTENCELOCK;
@@ -126,7 +126,7 @@ void Handler(int file_descriptor)
 			}
 
 			/*  longer wait */
-			if (tcp_wait(file_descriptor, &tv_high)) {
+			if ( BAD(tcp_wait(file_descriptor, &tv_high)) ) {
 				break;
 			}
 		}
