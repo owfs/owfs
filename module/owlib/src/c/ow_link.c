@@ -215,7 +215,8 @@ static GOOD_OR_BAD LINK_net_detect(struct parsedname * pn_minimal)
 	
 	RETURN_BAD_IF_BAD(ClientAddr(in->name, in)) ;
 
-	if ((in->file_descriptor = ClientConnect(in)) < 0) {
+	in->file_descriptor = ClientConnect(in) ;
+	if ( FILE_DESCRIPTOR_NOT_VALID(in->file_descriptor) ) {
 		return gbBAD;
 	}
 	

@@ -420,7 +420,7 @@ static GOOD_OR_BAD HA7_sendback_data(const BYTE * data, BYTE * resp, const size_
 // This routine assumes that larger writes have already been broken up
 static GOOD_OR_BAD HA7_sendback_block(const BYTE * data, BYTE * resp, const size_t size, int also_address, const struct parsedname *pn)
 {
-	int file_descriptor;
+	FILE_DESCRIPTOR_OR_ERROR file_descriptor;
 	struct memblob mb;
 	struct toHA7 ha7;
 	GOOD_OR_BAD ret = gbBAD;
@@ -476,9 +476,9 @@ static GOOD_OR_BAD HA7_select(const struct parsedname *pn)
 	GOOD_OR_BAD ret = gbBAD;
 
 	if (pn->selected_device) {
-		int file_descriptor = ClientConnect(pn->selected_connection);
+		FILE_DESCRIPTOR_OR_ERROR file_descriptor = ClientConnect(pn->selected_connection);
 
-		if (file_descriptor >= 0) {
+		if ( FILE_DESCRIPTOR_VALID(file_descriptor) ) {
 			struct toHA7 ha7;
 			toHA7init(&ha7);
 			ha7.command = "AddressDevice";

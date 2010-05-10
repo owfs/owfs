@@ -345,7 +345,7 @@ static GOOD_OR_BAD DS2480_big_reset_net(const struct parsedname *pn)
 	RETURN_BAD_IF_BAD(ClientAddr(in->name, in)) ;
 	in->file_descriptor = ClientConnect(in) ;
 	if ( FILE_DESCRIPTOR_NOT_VALID(in->file_descriptor) ) {
-		return -EIO;
+		return gbBAD;
 	}
 	
 	in->default_discard = 0 ;

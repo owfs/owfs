@@ -85,14 +85,14 @@ void FreeClientAddr(struct connection_in *in)
 }
 
 /* Usually called with BUS locked, to protect ai settings */
-int ClientConnect(struct connection_in *in)
+FILE_DESCRIPTOR_OR_ERROR ClientConnect(struct connection_in *in)
 {
 	FILE_DESCRIPTOR_OR_ERROR file_descriptor;
 	struct addrinfo *ai;
 
 	if (in->connin.tcp.ai == NULL) {
 		LEVEL_DEBUG("Client address not yet parsed");
-		return -1;
+		return FILE_DESCRIPTOR_BAD;
 	}
 
 	/* Can't change ai_ok without locking the in-device.
@@ -126,5 +126,5 @@ int ClientConnect(struct connection_in *in)
 
 	ERROR_CONNECT("Socket problem");
 	STAT_ADD1(NET_connection_errors);
-	return -1;
+	return FILE_DESCRIPTOR_BAD;
 }
