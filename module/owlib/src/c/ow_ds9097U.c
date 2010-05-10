@@ -301,9 +301,7 @@ static GOOD_OR_BAD DS2480_big_reset_serial(const struct parsedname *pn)
 	BYTE reset_byte = (BYTE) ( CMD_COMM | FUNCTSEL_RESET | SPEEDSEL_STD );
 
 	// Open the com port in 9600 Baud.
-	if (COM_open(pn->selected_connection)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(COM_open(pn->selected_connection)) ;
 
 	// send a break to reset the DS2480
 	COM_break(pn->selected_connection);

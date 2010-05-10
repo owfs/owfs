@@ -802,6 +802,11 @@ static void DS2482_close(struct connection_in *in)
 	if (in == NULL) {
 		return;
 	}
+#if OW_MT
+	if (in->connin.i2c.index == 0) {
+		_MUTEX_DESTROY(in->connin.i2c.i2c_mutex);
+	}
+#endif							/* OW_MT */
 	Test_and_Close( & (in->connin.i2c.head->file_descriptor) ) ;
 }
 #endif							/* OW_I2C */

@@ -176,9 +176,7 @@ static GOOD_OR_BAD LINK_serial_detect(struct parsedname * pn_minimal)
 	LINK_setroutines(in);
 	
 	/* Open the com port */
-	if (COM_open(in)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(COM_open(in)) ;
 	
 	COM_break( in ) ;
 	COM_slurp( in->file_descriptor ) ;

@@ -59,7 +59,7 @@ static void HA5_setroutines(struct connection_in *in)
 GOOD_OR_BAD HA5_detect(struct connection_in *in)
 {
 	struct parsedname pn;
-	GOOD_OR_BAD no_colon_exists ;
+	GOOD_OR_BAD colon_exists ;
 
 	FS_ParsedName_Placeholder(&pn);	// minimal parsename -- no destroy needed
 	pn.selected_connection = in;
@@ -70,13 +70,10 @@ GOOD_OR_BAD HA5_detect(struct connection_in *in)
 	// Poison current "Address" for adapter
 	in->connin.ha5.sn[0] = 0 ; // so won't match
 
-	no_colon_exists = Parse_first_ha5_address(in) ;
+	colon_exists = Parse_first_ha5_address(in) ;
 
 	/* Open the com port */
-	if (COM_open(in)) {
-		LEVEL_DEFAULT("cannot open serial port -- Permissions problem?");
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(COM_open(in)) ;
 
 	// 9600 isn't valid for the HA5, so we can tell that this value was actually selected
 	if ( Globals.baud != B9600 ) {
@@ -102,7 +99,7 @@ GOOD_OR_BAD HA5_detect(struct connection_in *in)
 #endif							/* OW_MT */
 
 	/* Find the channels */
-	if ( BAD(no_colon_exists) ) {
+	if ( BAD(colon_exists) ) { // scan for channel
 		if ( BAD(HA5_find_channel(&pn)) ) {
 			HA5_close(in) ;
 			return gbBAD ;
@@ -175,13 +172,14 @@ static GOOD_OR_BAD HA5_find_channel(struct parsedname *pn)
 	struct connection_in * in = pn->selected_connection ;
 
 	for ( in->connin.ha5.channel = 'a' ; in->connin.ha5.channel <= 'z' ; ++in->connin.ha5.channel ) {
+		LEVEL_DEBUG("Looking for HA5 adapter on %s:%c", in->name, in->connin.ha5.channel ) ;
 		if ( GOOD( HA5_test_channel(pn)) ) {
-			LEVEL_CONNECT("HA5 bus master found on port %s at channel %c", in->name, in->connin.ha5.channel ) ;
+			LEVEL_CONNECT("HA5 bus master FOUND on port %s at channel %c", in->name, in->connin.ha5.channel ) ;
 			return gbGOOD ;
 		}
 	}
-	LEVEL_DEBUG("HA5 bus master not found on port %s.", in->name ) ;
-
+	LEVEL_DEBUG("HA5 bus master NOT FOUND on port %s", in->name ) ;
+	in->connin.ha5.channel = '\0' ; 
 	return gbBAD;
 }
 

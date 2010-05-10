@@ -14,6 +14,8 @@ $Id$
 #include "ow.h"
 #include "ow_connection.h"
 
+static void FreeIn(struct connection_in * now);
+
 /* Routines for handling a linked list of connections in and out */
 /* typical connection in would be gtmhe serial port or USB */
 
@@ -87,6 +89,9 @@ struct connection_in *NewIn(const struct connection_in *in)
 	if (now) {
 		if (in) {
 			memcpy(now, in, len);
+			if ( in->name != NULL ) {
+				now->name = owstrdup( in->name ) ;
+			}
 		} else {
 			memset(now, 0, len);
 		}
@@ -150,7 +155,7 @@ struct connection_out *NewOut(void)
 // Free the important parts of a connection_in structure
 // unlinking needs to be done elsewhere
 // Then free structure itself
-void FreeIn(struct connection_in * now)
+static void FreeIn(struct connection_in * now)
 {
 	if ( now==NULL ) {
 		return ;
@@ -166,64 +171,11 @@ void FreeIn(struct connection_in * now)
 	}
 	now->dev_db = NULL;
 #endif							/* OW_MT */
-	switch (get_busmode(now)) {
-	case bus_link:
-	case bus_serial:
-	case bus_passive:
-		COM_close(now);
-		break;
-	case bus_usb:
-#if OW_USB
-		BUS_close(now);
-#endif
-		break;
-	case bus_zero:
-	case bus_server:
-		if (now->connin.tcp.type) {
-			owfree(now->connin.tcp.type);
-		}
-		if (now->connin.tcp.domain) {
-			owfree(now->connin.tcp.domain);
-		}
-		if (now->connin.tcp.name) {
-			owfree(now->connin.tcp.name);
-		}
-		FreeClientAddr(now);
-		break;
-	case bus_ha7net:
-		BUS_close(now);
-		break ;
-	case bus_elink:
-	case bus_etherweather:
-		BUS_close(now);
-		break;
-	case bus_fake:
-		break;
-	case bus_tester:
-		break;
-	case bus_mock:
-		break;
-	case bus_i2c:
-#if OW_MT
-		if (now->connin.i2c.index == 0) {
-			_MUTEX_DESTROY(now->connin.i2c.i2c_mutex);
-		}
-#endif							/* OW_MT */
-		break ;
-	case bus_w1:
-#if OW_W1
-#if OW_MT
-		_MUTEX_DESTROY(Inbound_Control.w1_mutex);
-		_MUTEX_DESTROY(Inbound_Control.w1_read_mutex);
-#endif							/* OW_MT */
-#endif							/* OW_W1 */
-		break ;
-	case bus_bad:
-	default:
-		break;
-	}
+
+	BUS_close(now) ;
+	
 	if (now->name) {
-		//LEVEL_DEBUG("[%s]\n", now->name);
+		printf("[%d][%s]\n",now->index, now->name);
 		owfree(now->name);
 	}
 	DirblobClear(&(now->main));
@@ -234,14 +186,23 @@ void FreeIn(struct connection_in * now)
 /* Free all connection_in in reverse order (Added to head on creation, head-first deletion) */
 void FreeInAll( void )
 {
-	struct connection_in *next ;
-
 	while ( Inbound_Control.head ) {
-		next = Inbound_Control.head->next;
+		struct connection_in *next_saved = Inbound_Control.head->next;
 		//LEVEL_DEBUG("%p next=%p", Inbound_Control.head, Inbound_Control.head->next);
 		FreeIn(Inbound_Control.head);
-		Inbound_Control.head = next;
+		Inbound_Control.head = next_saved;
 	}
+
+#if OW_W1
+	if ( Inbound_Control.w1_pid > 0 ) {
+		Test_and_Close( & (Inbound_Control.w1_file_descriptor) ) ;
+		Test_and_Close_Pipe( Inbound_Control.netlink_pipe ) ;
+#if OW_MT
+		_MUTEX_DESTROY(Inbound_Control.w1_mutex);
+		_MUTEX_DESTROY(Inbound_Control.w1_read_mutex);
+#endif							/* OW_MT */
+	}
+#endif							/* OW_W1 */
 }
 
 void RemoveIn( struct connection_in * conn )

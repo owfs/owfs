@@ -58,8 +58,8 @@ struct usb_list {
 	struct usb_device *dev;
 };
 
-static int USB_init(struct usb_list *ul);
-static int USB_next(struct usb_list *ul);
+static void USB_init(struct usb_list *ul);
+static GOOD_OR_BAD USB_next(struct usb_list *ul);
 static GOOD_OR_BAD USB_Control_Msg(BYTE bRequest, UINT wValue, UINT wIndex, const struct parsedname *pn);
 static GOOD_OR_BAD usbdevice_in_use(const struct connection_in * in_selected) ;
 static char *DS9490_device_name(const struct usb_list *ul);
@@ -70,10 +70,10 @@ static GOOD_OR_BAD DS9490_open(struct usb_list *ul, struct connection_in *in);
 static GOOD_OR_BAD DS9490_sub_open(struct usb_list *ul, struct connection_in *in);
 
 static GOOD_OR_BAD DS9490_detect_low(struct connection_in *in);
-static ZERO_OR_ERROR DS9490_detect_found(struct connection_in *in);
+static GOOD_OR_BAD DS9490_detect_found(struct connection_in *in);
 static GOOD_OR_BAD DS9490_reconnect(const struct parsedname *pn);
-static int DS9490_redetect_low(struct connection_in * in);
-static int DS9490_redetect_found(struct connection_in * in);
+static GOOD_OR_BAD DS9490_redetect_low(struct connection_in * in);
+static GOOD_OR_BAD DS9490_redetect_found(struct connection_in * in);
 static void DS9490_setroutines(struct connection_in *in);
 static GOOD_OR_BAD DS9490_root_dir( struct dirblob * db, struct connection_in * in ) ;
 static void DS9490_dir_callback( void * v, const struct parsedname * pn_entry );
@@ -261,7 +261,7 @@ static void DS9490_setroutines(struct connection_in *in)
 /* 480 usec is the recommended program pulse duration in the DS2406 DS2502 DS2505 datasheets */
 #define PROGRAM_PULSE_DURATION_CODE	0x3C
 
-char badUSBname[] = "-1/-1";
+char badUSBname[] = "-1:-1";
 
 #ifdef __FreeBSD__
 // This is in here until the libusb on FreeBSD supports the usb_clear_halt function
@@ -288,12 +288,13 @@ int BSD_usb_clear_halt(usb_dev_handle * dev, unsigned int ep)
 int DS9490_enumerate(void)
 {
 	struct usb_list ul;
-	int ret = 0;
+	int found = 0;
 	USB_init(&ul);
-	while (!USB_next(&ul))
-		++ret;
+	while ( GOOD(USB_next(&ul)) ) {
+		++found;
+	}
 		
-	return ret;
+	return found;
 }
 
 /* Main routine for detecting (and setting up) the DS2490 1-wire USB chip */
@@ -324,12 +325,12 @@ static GOOD_OR_BAD DS9490_detect_low(struct connection_in * in)
 	int usbnum = 0;
 
 	USB_init(&ul);
-	while (!USB_next(&ul)) {
+	while ( GOOD(USB_next(&ul)) ) {
 		if (++usbnum < useusb) {
 			LEVEL_CONNECT("USB DS9490 %d passed over. (Looking for %d)", usbnum, useusb);
 		} else if ( BAD(DS9490_open(&ul, in)) ) {
 			return gbBAD;
-		} else if (DS9490_detect_found(in) != 0) {
+		} else if ( BAD(DS9490_detect_found(in)) ) {
 			DS9490_close(in) ;
 			LEVEL_CONNECT("USB DS9490 %d unsuccessful. (Looking for %d)", usbnum, useusb);
 		} else{
@@ -387,7 +388,7 @@ static GOOD_OR_BAD DS9490_root_dir( struct dirblob * db, struct connection_in * 
 }
 
 /* Found a DS9490 that seems good, now check list and find a device to ID for reconnects */
-static ZERO_OR_ERROR DS9490_detect_found(struct connection_in *in)
+static GOOD_OR_BAD DS9490_detect_found(struct connection_in *in)
 {
 	struct dirblob db ;
 	BYTE sn[SERIAL_NUMBER_SIZE] ;
@@ -395,7 +396,7 @@ static ZERO_OR_ERROR DS9490_detect_found(struct connection_in *in)
 	
 	if ( BAD( DS9490_root_dir( &db, in ) ) ) {
 		LEVEL_DATA("Cannot get root directory on [%s] (Probably non-DS9490 device and empty bus).", SAFESTRING(in->name));
-		return -EIO ;
+		return gbBAD ;
 	}
 
 
@@ -404,7 +405,7 @@ static ZERO_OR_ERROR DS9490_detect_found(struct connection_in *in)
 		DirblobClear( &db ) ;
 		memset( in->connin.usb.ds1420_address, 0, SERIAL_NUMBER_SIZE ) ;
 		LEVEL_DEFAULT("Set DS9490 %s unique id 0x00 (no devices at all)", SAFESTRING(in->name)) ;
-		return 0 ;
+		return gbGOOD ;
 	}
 	
 	// look for the special 0x81 device
@@ -414,7 +415,7 @@ static ZERO_OR_ERROR DS9490_detect_found(struct connection_in *in)
 			memcpy(in->connin.usb.ds1420_address, sn, SERIAL_NUMBER_SIZE);
 			LEVEL_DEFAULT("Set DS9490 %s unique id to " SNformat, SAFESTRING(in->name), SNvar(in->connin.usb.ds1420_address));
 			DirblobClear( &db ) ;
-			return 0 ;
+			return gbGOOD ;
 		}
 		++device_number ;
 	}
@@ -426,7 +427,7 @@ static ZERO_OR_ERROR DS9490_detect_found(struct connection_in *in)
 			memcpy(in->connin.usb.ds1420_address, sn, SERIAL_NUMBER_SIZE);
 			LEVEL_DEFAULT("Set DS9490 %s unique id to " SNformat, SAFESTRING(in->name), SNvar(in->connin.usb.ds1420_address));
 			DirblobClear( &db ) ;
-			return 0 ;
+			return gbGOOD ;
 		}
 		++device_number ;
 	}
@@ -436,7 +437,7 @@ static ZERO_OR_ERROR DS9490_detect_found(struct connection_in *in)
 	memcpy(in->connin.usb.ds1420_address, sn, SERIAL_NUMBER_SIZE);
 	LEVEL_DEFAULT("Set DS9490 %s unique id to " SNformat, SAFESTRING(in->name), SNvar(in->connin.usb.ds1420_address));
 	DirblobClear( &db ) ;
-	return 0;
+	return gbGOOD;
 }
 
 static GOOD_OR_BAD DS9490_setup_adapter(struct connection_in * in)
@@ -580,28 +581,26 @@ static GOOD_OR_BAD DS9490_reconnect(const struct parsedname *pn)
 	 * It's not called until DS9490_redetect_low(), but I lock here just
 	 * to be sure DS9490_close() and DS9490_open() get one try first. */
 	LIBUSBLOCK;
-	DS9490_close( in) ;
-	if (DS9490_redetect_low(in)==0) {
-		LEVEL_DEFAULT("Found USB DS9490 bus master after USB rescan as [%s]", SAFESTRING(in->name));
-		ret = gbGOOD;
-	} else {
-		ret = gbBAD;
-	}
+	DS9490_close( in ) ;
+	ret = DS9490_redetect_low(in) ;
 	LIBUSBUNLOCK;
+
+	if ( GOOD(ret) ) {
+		LEVEL_DEFAULT("Found USB DS9490 bus master after USB rescan as [%s]", SAFESTRING(in->name));
+	}
 	return ret;
 }
 
-static int USB_init(struct usb_list *ul)
+static void USB_init(struct usb_list *ul)
 {
 	usb_init();
 	usb_find_busses();
 	usb_find_devices();
 	ul->bus = usb_get_busses();
 	ul->dev = NULL;
-	return 0;
 }
 
-static int USB_next(struct usb_list *ul)
+static GOOD_OR_BAD USB_next(struct usb_list *ul)
 {
 	while (ul->bus) {
 		// First pass, look for next device
@@ -615,13 +614,13 @@ static int USB_next(struct usb_list *ul)
 				continue;		// not DS9490
 			}
 			LEVEL_CONNECT("Bus master found: %s/%s", ul->bus->dirname, ul->dev->filename);
-			return 0;
+			return gbGOOD;
 		} else {
 			ul->bus = ul->bus->next;
 			ul->dev = NULL;
 		}
 	}
-	return 1;
+	return gbBAD;
 }
 
 static GOOD_OR_BAD usbdevice_in_use(const struct connection_in * in_selected)
@@ -655,7 +654,7 @@ static char *DS9490_device_name(const struct usb_list *ul)
 	char *ret = NULL;
 	int sn_ret ;
 	UCLIBCLOCK ;
-	sn_ret = snprintf(name, len, "%s/%s", ul->bus->dirname, ul->dev->filename) ;
+	sn_ret = snprintf(name, len, "%s:%s", ul->bus->dirname, ul->dev->filename) ;
 	UCLIBCUNLOCK ;
 	if (sn_ret > 0) {
 		name[len] = '\0';		// make sufre there is a trailing null
@@ -665,7 +664,7 @@ static char *DS9490_device_name(const struct usb_list *ul)
 }
 
 /* Open a DS9490  -- low level code (to allow for repeats)  */
-static int DS9490_redetect_low(struct connection_in * in)
+static GOOD_OR_BAD DS9490_redetect_low(struct connection_in * in)
 {
 	struct usb_list ul;
 	
@@ -681,52 +680,49 @@ static int DS9490_redetect_low(struct connection_in * in)
 	*/
 	USB_init(&ul);
 	
-	while (USB_next(&ul)==0) {
+	while ( GOOD(USB_next(&ul)) ) {
 		// try to open the DS9490
 		if ( BAD(DS9490_open(&ul, in)) ) {
 			LEVEL_CONNECT("Cannot open USB bus master, Find next...");
 			continue;
 		}
 
-		if ( DS9490_redetect_found( in ) == 0 ) {
-			return 0 ;
+		if ( GOOD(DS9490_redetect_found( in )) ) {
+			return gbGOOD ;
 		}
 		DS9490_close(in);
 	}
 	//LEVEL_CONNECT("No available USB DS9490 bus master found");
-	return -ENODEV;
-	
+	return gbBAD;
 }
 
 /* Open a DS9490  -- low level code (to allow for repeats)  */
-static int DS9490_redetect_found( struct connection_in * in)
+static GOOD_OR_BAD DS9490_redetect_found( struct connection_in * in)
 {
 	struct dirblob db ;
 	BYTE sn[SERIAL_NUMBER_SIZE] ;
 	int device_number ;
 
 	LEVEL_DEBUG("Attempting reconnect on %s",SAFESTRING(in->name));
-	if ( BAD(usbdevice_in_use(in)) ) {
-		return EAGAIN ;
-	}
+	RETURN_BAD_IF_BAD( usbdevice_in_use(in) ) ;
 
 	// Special case -- originally untagged adapter
 	if ( in->connin.usb.ds1420_address[0] == '\0' ) {
 		LEVEL_CONNECT("Since originally untagged bus master, we will use first available slot.");
-		return 0 ;
+		return gbGOOD ;
 	}
 
 	// Generate a root directory
 	if ( BAD( DS9490_root_dir( &db, in ) ) ) {
 		LEVEL_DATA("Cannot get root directory on [%s] (Probably non-DS9490 device and empty bus).", SAFESTRING(in->name));
-		return -EAGAIN ;
+		return gbBAD ;
 	}
 
 	// This adapter has no tags, so not the one we want
 	if ( DirblobElements( &db) == 0 ) {
 		DirblobClear( &db ) ;
 		LEVEL_DATA("Empty directory on [%s] (Doesn't match initial scan).", SAFESTRING(in->name));
-		return -EAGAIN ;
+		return gbBAD ;
 	}
 
 	// Scan directory for a match to the original tag
@@ -735,14 +731,14 @@ static int DS9490_redetect_found( struct connection_in * in)
 		if (memcmp(sn, in->connin.usb.ds1420_address, SERIAL_NUMBER_SIZE) == 0) {	// same tag device?
 			LEVEL_DATA("Matching device [%s].", SAFESTRING(in->name));
 			DirblobClear( &db ) ;
-			return 0 ;
+			return gbGOOD ;
 		}
 		++device_number ;
 	}
 	// Couldn't find correct ds1420 chip on this adapter
 	LEVEL_CONNECT("Couldn't find correct ds1420 chip on this bus master [%s] (want: " SNformat ")", SAFESTRING(in->name), SNvar(in->connin.usb.ds1420_address));
 	DirblobClear( &db ) ;
-	return -ENODEV;
+	return gbBAD;
 }
 
 static void DS9490_close(struct connection_in *in)

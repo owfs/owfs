@@ -30,17 +30,18 @@ $Id$
  *        -EFAULT = already open
  */
 /* return 0 for success, 1 for failure */
-int COM_open(struct connection_in *in)
+GOOD_OR_BAD COM_open(struct connection_in *in)
 {
 	struct termios newSerialTio;	/*new serial port settings */
 	if (in == NULL) {
 		LEVEL_DEBUG("Attempt to open a NULL serial device");
-		return -ENODEV;
+		return gbBAD;
 	}
 //    if ((in->file_descriptor = open(in->name, O_RDWR | O_NONBLOCK )) < 0) {
-	if ((in->file_descriptor = open(in->name, O_RDWR | O_NONBLOCK | O_NOCTTY)) < 0) {
-		ERROR_DEFAULT("Cannot open port: %s", SAFESTRING(in->name));
-		return -ENODEV;
+	in->file_descriptor = open(in->name, O_RDWR | O_NONBLOCK | O_NOCTTY) ;
+	if ( FILE_DESCRIPTOR_NOT_VALID( in->file_descriptor ) ) {
+		ERROR_DEFAULT("Cannot open port: %s Permissions problem?", SAFESTRING(in->name));
+		return gbBAD;
 	}
 	// valgrind warns about uninitialized memory in tcsetattr(), so clear all.
 	memset(&(in->oldSerialTio), 0, sizeof(struct termios));
@@ -66,17 +67,17 @@ int COM_open(struct connection_in *in)
 	newSerialTio.c_cc[VTIME] = 3;
 	if (tcsetattr(in->file_descriptor, TCSAFLUSH, &newSerialTio)) {
 		ERROR_CONNECT("Cannot set port attributes: %s", SAFESTRING(in->name));
-		return -EIO;
+		return gbBAD;
 	}
 	tcflush(in->file_descriptor, TCIOFLUSH);
 	//fcntl(pn->si->file_descriptor, F_SETFL, fcntl(pn->si->file_descriptor, F_GETFL, 0) & ~O_NONBLOCK);
-	return 0;
+	return gbGOOD;
 }
 
 void COM_close(struct connection_in *in)
 {
 	// restore tty settings
-	if (in->file_descriptor > -1) {
+	if ( FILE_DESCRIPTOR_VALID( in->file_descriptor ) ) {
 		LEVEL_DEBUG("COM_close: flush");
 		tcflush(in->file_descriptor, TCIOFLUSH);
 		LEVEL_DEBUG("COM_close: restore");
@@ -85,7 +86,7 @@ void COM_close(struct connection_in *in)
 		}
 		LEVEL_DEBUG("COM_close: close");
 		close(in->file_descriptor);
-		in->file_descriptor = -1;
+		in->file_descriptor = FILE_DESCRIPTOR_BAD;
 	}
 }
 

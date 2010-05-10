@@ -51,9 +51,7 @@ GOOD_OR_BAD DS9097_detect(struct connection_in *in)
 	struct parsedname pn;
 
 	/* open the COM port in 9600 Baud  */
-	if (COM_open(in)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(COM_open(in)) ;
 
 	/* Set up low-level routines */
 	DS9097_setroutines(in);

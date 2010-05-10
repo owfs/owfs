@@ -58,10 +58,7 @@ GOOD_OR_BAD HA7E_detect(struct connection_in *in)
 	in->connin.ha7e.sn[0] = 0 ; // so won't match
 
 	/* Open the com port */
-	if (COM_open(in)) {
-		LEVEL_DEFAULT("Error in HA7E detection: can't open serial port");
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(COM_open(in)) ;
 
 	// set the baud rate to 9600. (Already set to 9600 in COM_open())
 	in->baud = B9600 ;

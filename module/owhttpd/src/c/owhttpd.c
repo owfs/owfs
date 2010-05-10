@@ -138,9 +138,6 @@ int main(int argc, char *argv[])
 		ARG_Server(NULL);		// make an ephemeral assignment
 	}
 
-	set_exit_signal_handlers(exit_handler);
-	set_signal_handlers(NULL);
-
 	/* become a daemon if not told otherwise */
 	if (EnterBackground()) {
 		ow_exit(1);
@@ -152,6 +149,8 @@ int main(int argc, char *argv[])
 #if OW_MT
 	main_threadid = pthread_self();
 #endif
+	set_exit_signal_handlers(exit_handler);
+	set_signal_handlers(NULL);
 
 	ServerProcess(Acceptor);
 	LEVEL_DEBUG("ServerProcess done");

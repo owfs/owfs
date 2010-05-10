@@ -535,7 +535,7 @@ int BusIsServer(struct connection_in *in);
 
 /* Serial port */
 void COM_speed(speed_t new_baud, struct connection_in *in);
-int COM_open(struct connection_in *in);
+GOOD_OR_BAD COM_open(struct connection_in *in);
 void COM_flush( const struct connection_in *in);
 void COM_close(struct connection_in *in);
 void COM_break(struct connection_in *in);
@@ -549,7 +549,6 @@ GOOD_OR_BAD telnet_read(BYTE * buf, const size_t size, const struct parsedname *
 #define TCP_slurp( file_descriptor ) Slurp( file_descriptor, 100000 )
 
 void FreeInAll(void);
-void FreeIn(struct connection_in * now);
 void RemoveIn( struct connection_in * conn ) ;
 
 void FreeOutAll(void);
