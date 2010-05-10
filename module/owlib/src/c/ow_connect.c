@@ -138,11 +138,7 @@ struct connection_out *NewOut(void)
 		Outbound_Control.head = now;
 		now->index = Outbound_Control.next_index++;
 		++Outbound_Control.active ;
-#if OW_MT
-		_MUTEX_INIT(now->accept_mutex);
-		_MUTEX_INIT(now->out_mutex);
-		my_pthread_cond_init(&(now->setup_cond), NULL);
-#endif							/* OW_MT */
+
 		// Zero sref's -- done with struct memset
 		//now->sref0 = 0 ;
 		//now->sref1 = 0 ;
@@ -265,11 +261,6 @@ void FreeOutAll(void)
 			freeaddrinfo(now->ai);
 			now->ai = NULL;
 		}
-#if OW_MT
-		_MUTEX_DESTROY(now->accept_mutex);
-		_MUTEX_DESTROY(now->out_mutex);
-		my_pthread_cond_destroy(&(now->setup_cond));
-#endif							/* OW_MT */
 #if OW_ZERO
 		if (libdnssd != NULL) {
 			if (now->sref0) {

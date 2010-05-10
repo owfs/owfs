@@ -89,9 +89,7 @@ GOOD_OR_BAD HA7_detect(struct connection_in *in)
 		strcat(in->name, ":80");
 	}
 
-	if (ClientAddr(in->name, in)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(ClientAddr(in->name, in)) ;
 
 	file_descriptor = ClientConnect(in) ;
 	if ( FILE_DESCRIPTOR_NOT_VALID(file_descriptor) ) {

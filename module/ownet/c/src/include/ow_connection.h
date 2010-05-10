@@ -180,7 +180,6 @@ struct connection_in {
 	struct interface_routines iroutines;
 	enum adapter_type Adapter;
 	char *adapter_name;
-	BYTE combuffer[MAX_FIFO_SIZE];
 
 	/* Static buffer for conmmunication */
 	/* Since only used during actual transfer to/from the adapter,

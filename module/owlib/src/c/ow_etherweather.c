@@ -289,9 +289,7 @@ GOOD_OR_BAD EtherWeather_detect(struct connection_in *in)
 		strcat(in->name, ":15862");
 	}
 
-	if (ClientAddr(in->name, in)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(ClientAddr(in->name, in)) ;
 	pn.selected_connection->file_descriptor = ClientConnect(in) ;
 	if ( FILE_DESCRIPTOR_NOT_VALID(pn.selected_connection->file_descriptor) ) {
 		return gbBAD;

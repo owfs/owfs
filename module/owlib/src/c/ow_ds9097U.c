@@ -342,9 +342,7 @@ static GOOD_OR_BAD DS2480_big_reset_net(const struct parsedname *pn)
 	BYTE reset_byte = (BYTE) ( CMD_COMM | FUNCTSEL_RESET | SPEEDSEL_STD );
 	struct connection_in * in =  pn->selected_connection ;
 
-	if (ClientAddr(in->name, in)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(ClientAddr(in->name, in)) ;
 	in->file_descriptor = ClientConnect(in) ;
 	if ( FILE_DESCRIPTOR_NOT_VALID(in->file_descriptor) ) {
 		return -EIO;

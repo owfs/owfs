@@ -213,9 +213,8 @@ static GOOD_OR_BAD LINK_net_detect(struct parsedname * pn_minimal)
 	
 	LINKE_setroutines(in);
 	
-	if (ClientAddr(in->name, in)) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(ClientAddr(in->name, in)) ;
+
 	if ((in->file_descriptor = ClientConnect(in)) < 0) {
 		return gbBAD;
 	}
@@ -441,20 +440,19 @@ static void byteprint( const BYTE * b, int size ) {
 */
 
 /************************************************************************/
-/*									                                     */
-/*	LINK_directory: searches the Directory stores it in a dirblob	     */
-/*			& stores in in a dirblob object depending if it              */
-/*			Supports conditional searches of the bus for 	             */
-/*			/alarm branch					                             */
-/*                                                                       */
-/* Only called for the first element, everything else comes from dirblob */
-/* returns 0 even if no elements, errors only on communication errors    */
-/*									                                     */
+/*									*/
+/*	LINK_directory: searches the Directory stores it in a dirblob	*/
+/*			& stores in in a dirblob object depending if it */
+/*			Supports conditional searches of the bus for 	*/
+/*			/alarm branch					*/
+/*                                                                      */
+/* Only called for the first element, everything else comes from dirblob*/
+/* returns 0 even if no elements, errors only on communication errors   */
+/*									*/
 /************************************************************************/
 static GOOD_OR_BAD LINK_directory(struct device_search *ds, struct dirblob *db, const struct parsedname *pn)
 {
 	char resp[21];
-	int ret;
 
 	DirblobClear(db);
 

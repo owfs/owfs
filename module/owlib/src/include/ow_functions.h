@@ -125,7 +125,7 @@ void tcp_read_flush(FILE_DESCRIPTOR_OR_ERROR file_descriptor);
 int tcp_wait(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const struct timeval *ptv);
 ssize_t udp_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, void *vptr, size_t n, const struct timeval * ptv, struct sockaddr_in *from, socklen_t *fromlen) ;
 
-int ClientAddr(char *sname, struct connection_in *in);
+GOOD_OR_BAD ClientAddr(char *sname, struct connection_in *in);
 int ClientConnect(struct connection_in *in);
 void FreeClientAddr(struct connection_in *in);
 

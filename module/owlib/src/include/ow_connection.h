@@ -173,18 +173,6 @@ struct interface_routines {
 
 #define AdapterSupports2409(pn)	(((pn)->selected_connection->iroutines.flags&ADAP_FLAG_no2409path)==0)
 
-#if OW_MT
-#define ACCEPTLOCK(out)       _MUTEX_LOCK(  (out)->accept_mutex )
-#define ACCEPTUNLOCK(out)     _MUTEX_UNLOCK((out)->accept_mutex )
-#define OUTLOCK(out)          _MUTEX_LOCK(  (out)->out_mutex )
-#define OUTUNLOCK(out)        _MUTEX_UNLOCK((out)->out_mutex )
-#else							/* OW_MT */
-#define ACCEPTLOCK(out)       return_ok()
-#define ACCEPTUNLOCK(out)     return_ok()
-#define OUTLOCK(out)          return_ok()
-#define OUTUNLOCK(out)        return_ok()
-#endif							/* OW_MT */
-
 enum bus_speed {
 	bus_speed_slow,
 	bus_speed_overdrive,
@@ -433,7 +421,6 @@ struct connection_in {
 	int ProgramAvailable;
 	size_t last_root_devs;
 	struct buspath branch;		// Branch currently selected
-	BYTE combuffer[MAX_FIFO_SIZE];
 
 	/* Static buffer for conmmunication */
 	/* Since only used during actual transfer to/from the adapter,
@@ -499,9 +486,6 @@ struct connection_out {
 		char *name;					// zeroconf name
 	} zero ;
 #if OW_MT
-	pthread_cond_t setup_cond;
-	pthread_mutex_t accept_mutex;
-	pthread_mutex_t out_mutex;
 	pthread_t tid;
 #endif							/* OW_MT */
 #if OW_ZERO

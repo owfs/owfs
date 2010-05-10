@@ -89,10 +89,7 @@ GOOD_OR_BAD OWServer_Enet_detect(struct connection_in *in)
 		strcat(in->name, ":80");
 	}
 
-	if (ClientAddr(in->name, in)) {
-		LEVEL_DEBUG("OW_SERVER_ENET Can't open tcp address");
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD(ClientAddr(in->name, in)) ;
 
 	in->Adapter = adapter_ENET;
 	in->adapter_name = "OWServer_Enet";

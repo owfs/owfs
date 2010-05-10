@@ -19,13 +19,13 @@ $Id$
 #include "ow_counters.h"
 #include "ow_connection.h"
 
-int ClientAddr(char *sname, struct connection_in *in)
+GOOD_OR_BAD ClientAddr(char *sname, struct connection_in *in)
 {
 	struct addrinfo hint;
 	char *p;
 	int ret;
 	
-    if (sname == NULL || sname[0] == '\0') {
+	if (sname == NULL || sname[0] == '\0') {
 		/* probably not a good idea to set localhost:DEFAULT_PORT
 		 * The user have probably typed wrong address */
 		in->connin.tcp.host = NULL;
@@ -62,9 +62,9 @@ int ClientAddr(char *sname, struct connection_in *in)
 
 	if ((ret = getaddrinfo(in->connin.tcp.host, in->connin.tcp.service, &hint, &in->connin.tcp.ai))) {
 		LEVEL_CONNECT("error %s", gai_strerror(ret));
-		return -1;
+		return gbBAD;
 	}
-	return 0;
+	return gbGOOD;
 }
 
 void FreeClientAddr(struct connection_in *in)

@@ -16,6 +16,8 @@ $Id$
 #include "ow_connection.h"
 #include "ow_codes.h"
 
+static GOOD_OR_BAD BUS_sendback_data_bitbang(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn) ;
+
 /** BUS_send_data
     Send a data and expect response match
     puts into data mode if needed.
@@ -81,31 +83,46 @@ GOOD_OR_BAD BUS_select_and_sendback(const BYTE * data, BYTE * resp, const size_t
 /* send bytes, and read back -- calls lower level bit routine */
 GOOD_OR_BAD BUS_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn)
 {
-	UINT i, bits = len << 3;
-	int ret;
-	int combuffer_length_adjusted = MAX_FIFO_SIZE >> 3;
-	int remain = len - combuffer_length_adjusted;
-
+	/* Empty is ok */
 	if (len == 0) {
 		return gbGOOD;
 	}
+	
+	/* Native function for this bus master? */
 	if ( FunctionExists(pn->selected_connection->iroutines.sendback_data) ) {
 		return (pn->selected_connection->iroutines.sendback_data) (data, resp, len, pn);
 	}
 
+	return BUS_sendback_data_bitbang(data, resp, len, pn);
+}
+
+/* Symmetric */
+/* send bytes, and read back -- calls lower level bit routine */
+static GOOD_OR_BAD BUS_sendback_data_bitbang(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn)
+{
+	UINT i, bits = len * 8;
+	int combuffer_length_adjusted = MAX_FIFO_SIZE / 8 ;
+	int remain = len - combuffer_length_adjusted;
+	BYTE combuffer[ combuffer_length_adjusted ] ;
+
+	/* Empty is ok */
+	if (len == 0) {
+		return gbGOOD;
+	}
+	
 	/* Split into smaller packets? */
 	if (remain > 0) {
-		RETURN_BAD_IF_BAD( BUS_sendback_data(data, resp, combuffer_length_adjusted, pn) );
-		RETURN_BAD_IF_BAD( BUS_sendback_data(&data[combuffer_length_adjusted], resp ? (&resp[combuffer_length_adjusted]) : NULL, remain, pn) );
+		RETURN_BAD_IF_BAD( BUS_sendback_data_bitbang(data, resp, combuffer_length_adjusted, pn) );
+		RETURN_BAD_IF_BAD( BUS_sendback_data_bitbang(&data[combuffer_length_adjusted], resp ? (&resp[combuffer_length_adjusted]) : NULL, remain, pn) );
 	}
 
 	/* Encode bits */
 	for (i = 0; i < bits; ++i) {
-		pn->selected_connection->combuffer[i] = UT_getbit(data, i) ? 0xFF : 0x00;
+		combuffer[i] = UT_getbit(data, i) ? 0xFF : 0x00;
 	}
 
 	/* Communication with DS9097 routine */
-	if ( BAD( BUS_sendback_bits(pn->selected_connection->combuffer, pn->selected_connection->combuffer, bits, pn)) ) {
+	if ( BAD( BUS_sendback_bits(combuffer, combuffer, bits, pn)) ) {
 		STAT_ADD1_BUS(e_bus_errors, pn->selected_connection);
 		return gbBAD;
 	}
@@ -113,7 +130,7 @@ GOOD_OR_BAD BUS_sendback_data(const BYTE * data, BYTE * resp, const size_t len, 
 	/* Decode Bits */
 	if (resp) {
 		for (i = 0; i < bits; ++i) {
-			UT_setbit(resp, i, pn->selected_connection->combuffer[i] & 0x01);
+			UT_setbit(resp, i, combuffer[i] & 0x01);
 		}
 	}
 
