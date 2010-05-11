@@ -241,7 +241,7 @@ static void EtherWeather_close(struct connection_in *in)
 static RESET_TYPE EtherWeather_reset(const struct parsedname *pn)
 {
 	if (EtherWeather_command(pn->selected_connection, EtherWeather_COMMAND_RESET, 0, NULL, NULL)) {
-		return -EIO;
+		return BUS_RESET_ERROR;
 	}
 
 	return BUS_RESET_OK;

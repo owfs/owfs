@@ -104,7 +104,7 @@ static int w1_send_reset( const struct parsedname *pn )
 
 static RESET_TYPE W1_reset(const struct parsedname *pn)
 {
-	return W1_Process_Response( NULL, w1_send_reset(pn), NULL, pn ) == nrs_complete ? BUS_RESET_OK : -EIO ;
+	return W1_Process_Response( NULL, w1_send_reset(pn), NULL, pn ) == nrs_complete ? BUS_RESET_OK : BUS_RESET_ERROR ;
 }
 
 static int w1_send_search( BYTE search, const struct parsedname *pn )

@@ -559,10 +559,6 @@ static BYTE DS2480b_speed_byte( const struct parsedname * pn )
 //          This routine will not function correctly on some
 //          Alarm reset types of the DS1994/DS1427/DS2404 with
 //          Rev 1,2, and 3 of the DS2480/DS2480B.
-/* return 0=good
-          1=short
-          <0 error
- */
 static RESET_TYPE DS2480_reset(const struct parsedname *pn)
 {
 	RESET_TYPE ret ;
@@ -571,56 +567,55 @@ static RESET_TYPE DS2480_reset(const struct parsedname *pn)
 		--pn->selected_connection->changed_bus_settings ;
 		DS2480_set_baud_control(pn);	// reset paramters
 	}
-	//printf("reset after speed\n");
-	ret = DS2480_reset_once(pn) ;
 
-	// Some kind of problem (not including bus short)
-	// Try simple fixes
-	if ( ret < 0 ) {
-		BYTE dummy[1] ; //we don't check the pulse stop, since it's only a whim.
-		// perhaps the DS9097U wasn't in command mode, so missed the reset
-		// force a mode switch
-		pn->selected_connection->connin.serial.mode = ds2480b_data_mode ;
-		// Also make sure no power or programming pulse active
-		DS2480_stop_pulse(dummy,pn) ;
-		// And now reset again
-		ret = DS2480_reset_once(pn) ;
+	switch( DS2480_reset_once(pn) ) {
+		case BUS_RESET_OK:
+			return BUS_RESET_OK ;
+		case BUS_RESET_SHORT:
+			return BUS_RESET_SHORT;
+		case BUS_RESET_ERROR:
+		default: {
+			// Some kind of reset problem (not including bus short)
+			// Try simple fixes
+			BYTE dummy[1] ; //we don't check the pulse stop, since it's only a whim.
+			// perhaps the DS9097U wasn't in command mode, so missed the reset
+			// force a mode switch
+			pn->selected_connection->connin.serial.mode = ds2480b_data_mode ;
+			// Also make sure no power or programming pulse active
+			DS2480_stop_pulse(dummy,pn) ;
+			// And now reset again
+			return DS2480_reset_once(pn) ;
+		}
 	}
-	//printf("reset done\n");
-	return ret ;
 }
 
 static RESET_TYPE DS2480_reset_once(const struct parsedname *pn)
 {
-	RESET_TYPE ret = BUS_RESET_OK;
 	BYTE reset_byte = (BYTE) ( CMD_COMM | FUNCTSEL_RESET | DS2480b_speed_byte(pn) );
 	BYTE reset_response ;
 
-	//printf("DS2480_reset\n");
 	// flush the buffers
 	DS2480_flush(pn->selected_connection);
 
 	// send the packet
 	// read back the 1 byte response
 	if ( BAD(DS2480_sendback_cmd(&reset_byte, &reset_response, 1, pn)) ) {
-		return -EIO;
+		return BUS_RESET_ERROR;
 	}
-	/* The adapter type is encode in this response byte */
-	/* The known values coorespond to the types in enum adapter_type */
+
+	/* The adapter type is encoded in this response byte */
+	/* The known values correspond to the types in enum adapter_type */
 	/* Other values are assigned for adapters that don't have this hardcoded value */
 	pn->selected_connection->Adapter = (reset_response & RB_CHIPID_MASK) >> 2;
 
 	switch (reset_response & RB_RESET_MASK) {
 	case RB_1WIRESHORT:
-		ret = BUS_RESET_SHORT;
-		break;
+		return BUS_RESET_SHORT;
 	case RB_NOPRESENCE:
-		ret = BUS_RESET_OK;
 		pn->selected_connection->AnyDevices = anydevices_no ;
-		break;
+		return BUS_RESET_OK;
 	case RB_PRESENCE:
 	case RB_ALARMPRESENCE:
-		ret = BUS_RESET_OK;
 		pn->selected_connection->AnyDevices = anydevices_yes ;
 		// check if programming voltage available
 		pn->selected_connection->ProgramAvailable = ((reset_response & PARMSEL_12VPULSE) == PARMSEL_12VPULSE);
@@ -629,10 +624,10 @@ static RESET_TYPE DS2480_reset_once(const struct parsedname *pn)
 			UT_delay(5);
 		}
 		DS2480_flush(pn->selected_connection);
-		break;
-
+		return BUS_RESET_OK;
+	default:
+		return BUS_RESET_ERROR; // should never happen
 	}
-	return ret;
 }
 
 /* search = normal and alarm */

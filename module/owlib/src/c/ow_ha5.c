@@ -266,26 +266,25 @@ static RESET_TYPE HA5_reset_wrapped(const struct parsedname *pn)
 
 	if (COM_write(reset, reset_length, pn->selected_connection)) {
 		LEVEL_DEBUG("Error sending HA5 reset");
-		return -EIO;
+		return BUS_RESET_ERROR;
 	}
 	// For some reason, the HA5 doesn't use a checksum for RESET response.
 	if (COM_read(resp, 2, pn->selected_connection)) {
 		LEVEL_DEBUG("Error reading HA5 reset");
-		return -EIO;
+		return BUS_RESET_ERROR;
 	}
 
 	switch( resp[0] ) {
 		case 'P':
 			in->AnyDevices = anydevices_yes ;
-			break ;
+			return BUS_RESET_OK;
 		case 'N':
 			in->AnyDevices = anydevices_no ;
-			break ;
+			return BUS_RESET_OK;
 		default:
 			LEVEL_DEBUG("Error HA5 reset bad response %c (0x%.2X)", resp[0], resp[0]);
-			return -EIO;
+			return BUS_RESET_ERROR;
 	}
-	return BUS_RESET_OK;
 }
 
 static enum search_status HA5_next_both(struct device_search *ds, const struct parsedname *pn)

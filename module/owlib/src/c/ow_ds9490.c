@@ -66,11 +66,11 @@ static char *DS9490_device_name(const struct usb_list *ul);
 
 static RESET_TYPE DS9490_reset(const struct parsedname *pn);
 
+static GOOD_OR_BAD DS9490_open_and_name(struct usb_list *ul, struct connection_in *in);
 static GOOD_OR_BAD DS9490_open(struct usb_list *ul, struct connection_in *in);
-static GOOD_OR_BAD DS9490_sub_open(struct usb_list *ul, struct connection_in *in);
 
 static GOOD_OR_BAD DS9490_detect_low(struct connection_in *in);
-static GOOD_OR_BAD DS9490_detect_found(struct connection_in *in);
+static GOOD_OR_BAD DS9490_ID_this_master(struct connection_in *in);
 static GOOD_OR_BAD DS9490_reconnect(const struct parsedname *pn);
 static GOOD_OR_BAD DS9490_redetect_low(struct connection_in * in);
 static GOOD_OR_BAD DS9490_redetect_found(struct connection_in * in);
@@ -79,7 +79,7 @@ static GOOD_OR_BAD DS9490_root_dir( struct dirblob * db, struct connection_in * 
 static void DS9490_dir_callback( void * v, const struct parsedname * pn_entry );
 static GOOD_OR_BAD DS9490_setup_adapter(struct connection_in * in) ;
 
-int DS9490_getstatus(BYTE * buffer, int readlen, const struct parsedname *pn);
+static RESET_TYPE DS9490_getstatus(BYTE * buffer, int readlen, const struct parsedname *pn);
 static enum search_status DS9490_next_both(struct device_search *ds, const struct parsedname *pn);
 static GOOD_OR_BAD DS9490_sendback_data(const BYTE * data, BYTE * resp, size_t len, const struct parsedname *pn);
 static GOOD_OR_BAD DS9490_HaltPulse(const struct parsedname *pn);
@@ -263,6 +263,26 @@ static void DS9490_setroutines(struct connection_in *in)
 
 char badUSBname[] = "-1:-1";
 
+/* ------------------------------------------------------------ */
+/* --- USB low-level communication -----------------------------*/
+
+// Call to USB EP1 (control channel)
+// Names (bRequest, wValue wIndex) are from datasheet http://datasheets.maxim-ic.com/en/ds/DS2490.pdf
+static GOOD_OR_BAD USB_Control_Msg(BYTE bRequest, UINT wValue, UINT wIndex, const struct parsedname *pn)
+{
+	usb_dev_handle *usb = pn->selected_connection->connin.usb.usb;
+	int ret ;
+	if (usb == NULL) {
+		return gbBAD;
+	}
+	ret = usb_control_msg(usb, CONTROL_REQUEST_TYPE, bRequest, wValue, wIndex, NULL, 0, pn->selected_connection->connin.usb.timeout);
+	if( ret < 0 ) {
+		LEVEL_DEBUG("USB control problem = %d", ret) ;
+		return gbBAD ;
+	}
+	return gbGOOD ;
+}
+
 #ifdef __FreeBSD__
 // This is in here until the libusb on FreeBSD supports the usb_clear_halt function
 int BSD_usb_clear_halt(usb_dev_handle * dev, unsigned int ep)
@@ -284,18 +304,115 @@ int BSD_usb_clear_halt(usb_dev_handle * dev, unsigned int ep)
 }
 #endif							/* __FreeBSD__ */
 
-/* Step through USB devices (looking for the DS2490 chip) */
-int DS9490_enumerate(void)
+static RESET_TYPE DS9490_getstatus(BYTE * buffer, int readlen, const struct parsedname *pn)
 {
-	struct usb_list ul;
-	int found = 0;
-	USB_init(&ul);
-	while ( GOOD(USB_next(&ul)) ) {
-		++found;
+	int ret, loops = 0;
+	int i;
+	struct connection_in * in = pn->selected_connection ;
+	usb_dev_handle *usb = in->connin.usb.usb;
+	
+	// Pretty ugly, but needed for SUSE at least
+	// Try both HAVE_USB_INTERRUPT_READ
+#ifdef HAVE_USB_INTERRUPT_READ
+	static int have_usb_interrupt_read = (1 == 1);
+#else							/* HAVE_USB_INTERRUPT_READ */
+	static int have_usb_interrupt_read = (1 == 0);
+#endif							/* HAVE_USB_INTERRUPT_READ */
+	static int count_have_usb_interrupt_read = 0;
+
+	memset(buffer, 0, 32);		// should not be needed
+
+#ifdef __FreeBSD__				// Clear the Interrupt read buffer before trying to get status
+	{
+		char junk[1500];
+		ret = usb_bulk_read(usb, DS2490_EP1, (ASCII *) junk, (size_t) 1500, in->connin.usb.timeout) ;
+		if ( ret < 0) {
+			STAT_ADD1_BUS(e_bus_status_errors, in);
+			LEVEL_DATA("error reading ret=%d", ret);
+			return BUS_RESET_ERROR;
+		}
 	}
-		
-	return found;
+#endif							// __FreeBSD__
+	do {
+		// Fix from Wim Heirman -- kernel 2.6 is fussier about endpoint type
+#ifdef HAVE_USB_INTERRUPT_READ
+		if (have_usb_interrupt_read) {
+			ret = usb_interrupt_read(usb, DS2490_EP1, (ASCII *) buffer, (size_t) 32, in->connin.usb.timeout) ;
+			if ( ret < 0 ) {
+				LEVEL_DATA("(HAVE_USB_INTERRUPT_READ) error reading ret=%d", ret);
+			}
+		} else
+#endif
+		ret = usb_bulk_read(usb, DS2490_EP1, (ASCII *) buffer, (size_t) 32, in->connin.usb.timeout) ;
+		if ( ret < 0) {
+			LEVEL_DATA("(no HAVE_USB_INTERRUPT_READ) error reading ret=%d", ret);
+		}
+
+		if ( ret < 0 ) {
+			if (count_have_usb_interrupt_read != 0) {
+				STAT_ADD1_BUS(e_bus_status_errors, in);
+				return BUS_RESET_ERROR;
+			}
+			have_usb_interrupt_read = !have_usb_interrupt_read;
+			count_have_usb_interrupt_read = 1;
+			continue;
+		}
+		if (ret > 16) {
+			if (ret == 32) {	// FreeBSD buffers the input, so this could just be two readings
+				if (!memcmp(buffer, &buffer[16], 6)) {
+					memmove(buffer, &buffer[16], 16);
+					ret = 16;
+					LEVEL_DATA("Corrected buffer 32 byte read");
+				}
+			}
+			for (i = 16; i < ret; i++) {
+				BYTE val = buffer[i];
+				if (val != ONEWIREDEVICEDETECT) {
+					LEVEL_DATA("Status byte[%X]: %X", i - 16, val);
+				}
+				if (val & COMMCMDERRORRESULT_SH) {	// short detected
+					LEVEL_DATA("short detected");
+					return BUS_RESET_SHORT;
+				}
+			}
+		}
+
+		if (readlen < 0) {
+			break;				/* Don't wait for STATUSFLAGS_IDLE if length==-1 */
+		}
+
+		if (buffer[8] & STATUSFLAGS_IDLE) {
+			if (readlen > 0) {
+				// we have enough bytes to read now!
+				// buffer[13] == (ReadBufferStatus)
+				if (buffer[13] >= readlen) {
+					break;
+				}
+			} else {
+				break;
+			}
+		}
+		// this value might be decreased later...
+		if (++loops > 100) {
+			LEVEL_DATA("never got idle  StatusFlags=%X read=%X", buffer[8], buffer[13]);
+			return BUS_RESET_ERROR;	// adapter never got idle
+		}
+		/* Since result seem to be on the usb bus very quick, I sleep
+		 * sleep 0.1ms or something like that instead... It seems like
+		 * result is there after 0.2-0.3ms
+		 */
+		UT_delay_us(100);
+	} while (1);
+
+	if (ret < 16) {
+		LEVEL_DATA("incomplete packet ret=%d", ret);
+		return BUS_RESET_ERROR;			// incomplete packet??
+	}
+	return BUS_RESET_OK ;
 }
+
+/* ------------------------------------------------------------ */
+/* --- USB detection routines ----------------------------------*/
 
 /* Main routine for detecting (and setting up) the DS2490 1-wire USB chip */
 GOOD_OR_BAD DS9490_detect(struct connection_in *in)
@@ -308,7 +425,9 @@ GOOD_OR_BAD DS9490_detect(struct connection_in *in)
 	in->busmode = bus_usb;
 	
 	if ( BAD( DS9490_detect_low(in) ) ) {
+		// intentional print to console
 		fprintf(stderr, "Could not open the USB bus master. Is there a problem with permissions?\n");
+		// And log
 		LEVEL_DEFAULT("Could not open the USB bus master. Is there a problem with permissions?");
 		return gbBAD ;
 	}
@@ -328,9 +447,9 @@ static GOOD_OR_BAD DS9490_detect_low(struct connection_in * in)
 	while ( GOOD(USB_next(&ul)) ) {
 		if (++usbnum < useusb) {
 			LEVEL_CONNECT("USB DS9490 %d passed over. (Looking for %d)", usbnum, useusb);
-		} else if ( BAD(DS9490_open(&ul, in)) ) {
+		} else if ( BAD(DS9490_open_and_name(&ul, in)) ) {
 			return gbBAD;
-		} else if ( BAD(DS9490_detect_found(in)) ) {
+		} else if ( BAD(DS9490_ID_this_master(in)) ) {
 			DS9490_close(in) ;
 			LEVEL_CONNECT("USB DS9490 %d unsuccessful. (Looking for %d)", usbnum, useusb);
 		} else{
@@ -343,52 +462,8 @@ static GOOD_OR_BAD DS9490_detect_low(struct connection_in * in)
 	return gbBAD;
 }
 
-static void DS9490_dir_callback( void * v, const struct parsedname * pn_entry )
-{
-	struct dirblob * db = v ;
-
-	LEVEL_DEBUG("Callback on %s",SAFESTRING(pn_entry->path));
-	if ( pn_entry->sn[0] != '\0' ) {
-		DirblobAdd( pn_entry->sn, db ) ;
-	}
-}
-
-static GOOD_OR_BAD DS9490_root_dir( struct dirblob * db, struct connection_in * in )
-{
-	ASCII path[PATH_MAX] ;
-	struct parsedname pn_root ;
-	ZERO_OR_ERROR ret ;
-
-	UCLIBCLOCK;
-	snprintf(path, PATH_MAX, "/uncached/bus.%d", in->index);
-	UCLIBCUNLOCK;
-
-	if ( FS_ParsedName(path, &pn_root) != 0 ) {
-		return gbBAD ;
-	}
-	DirblobInit( db ) ;
-
-	/* First time pretend there are devices */
-	pn_root.selected_connection->changed_bus_settings |= CHANGED_USB_SPEED ;	// Trigger needing new configuration
-	pn_root.selected_connection->speed = bus_speed_slow;	// not overdrive at start
-	pn_root.selected_connection->flex = Globals.usb_flextime ? bus_yes_flex : bus_no_flex ;
-	
-	SetReconnect(&pn_root) ;
-	ret = FS_dir( DS9490_dir_callback, db, &pn_root ) ;
-	LEVEL_DEBUG("Finished FS_dir");
-	FS_ParsedName_destroy(&pn_root) ;
-	
-	
-	if ( ret != 0 ) {
-		DirblobClear(db) ;
-		return gbBAD ;
-	}
-	return gbGOOD ;
-	// Dirblob must be cleared by recipient.
-}
-
 /* Found a DS9490 that seems good, now check list and find a device to ID for reconnects */
-static GOOD_OR_BAD DS9490_detect_found(struct connection_in *in)
+static GOOD_OR_BAD DS9490_ID_this_master(struct connection_in *in)
 {
 	struct dirblob db ;
 	BYTE sn[SERIAL_NUMBER_SIZE] ;
@@ -398,7 +473,6 @@ static GOOD_OR_BAD DS9490_detect_found(struct connection_in *in)
 		LEVEL_DATA("Cannot get root directory on [%s] (Probably non-DS9490 device and empty bus).", SAFESTRING(in->name));
 		return gbBAD ;
 	}
-
 
 	// Use 0x00 if no devices (homegrown adapters?)
 	if ( DirblobElements( &db) == 0 ) {
@@ -440,156 +514,30 @@ static GOOD_OR_BAD DS9490_detect_found(struct connection_in *in)
 	return gbGOOD;
 }
 
-static GOOD_OR_BAD DS9490_setup_adapter(struct connection_in * in)
+static GOOD_OR_BAD usbdevice_in_use(const struct connection_in * in_selected)
 {
-	struct parsedname s_pn;
-	struct parsedname * pn = &s_pn ;
-	BYTE buffer[32];
+	struct connection_in *in;
 
-	FS_ParsedName_Placeholder(pn);	// minimal parsename -- no destroy needed
-	pn->selected_connection = in;
-
-	// reset the device (not the 1-wire bus)
-	if ( BAD(USB_Control_Msg(CONTROL_CMD, CTL_RESET_DEVICE, 0x0000, pn))) {
-		LEVEL_DATA("ResetDevice error");
-		return gbBAD;
-	}
-	// set the strong pullup duration to infinite
-	if ( BAD( USB_Control_Msg(COMM_CMD, COMM_SET_DURATION | COMM_IM, 0x0000, pn)) ) {
-		LEVEL_DATA("StrongPullup error");
-		return gbBAD;
-	}
-	// set the 12V pullup duration to 512us
-	if ( BAD( USB_Control_Msg(COMM_CMD, COMM_SET_DURATION | COMM_IM | COMM_TYPE, PROGRAM_PULSE_DURATION_CODE, pn)) ) {
-		LEVEL_DATA("12VPullup error");
-		return gbBAD;
-	}
-	// enable both program and strong pulses
-	if ( BAD( USB_Control_Msg(MODE_CMD, MOD_PULSE_EN, ENABLE_PROGRAM_AND_PULSE, pn)) ) {
-		LEVEL_DATA("EnableProgram error");
-		return gbBAD;
-	}
-	// enable speed changes
-	if ( BAD( USB_Control_Msg(MODE_CMD, MOD_SPEED_CHANGE_EN, 1, pn)) ) {
-		LEVEL_DATA("SpeedEnable error");
-		return gbBAD;
-	}
-
-	if ( BAD( DS9490_getstatus(buffer, 0, pn)) ) {
-		LEVEL_DATA("getstatus failed error");
-		return gbBAD;
-	}
-
-	return gbGOOD;
-}
-
-
-/* Open usb device,
-   unload ds9490r kernel module if it is interfering
-   set all the interface magic
-   set callback routines and adapter entries
-*/
-static GOOD_OR_BAD DS9490_open(struct usb_list *ul, struct connection_in *in)
-{
-	if (in->name) {
-		owfree(in->name);
-		in->name = NULL;
-	}
-
-	if (in->connin.usb.usb) {
-		LEVEL_DEFAULT("usb.usb was NOT closed before DS9490_open() ?");
-		return gbBAD ;
-	}
-
-	in->name = DS9490_device_name(ul);
-
-	if (in->name == NULL) {
-		return gbBAD;
-	}
-
-	if ( BAD( DS9490_sub_open( ul, in ) ) ) {
-		owfree(in->name);
-		in->name = owstrdup(badUSBname) ;
-		in->connin.usb.dev = NULL;	// this will force a re-scan next time
-		//LEVEL_CONNECT("Failed to open USB DS9490 bus master %s", name);
-		STAT_ADD1_BUS(e_bus_open_errors, in);
-		return gbBAD ;
-	}
-
-	return gbGOOD ;
-}
-
-static GOOD_OR_BAD DS9490_sub_open(struct usb_list *ul, struct connection_in *in)
-{
-	usb_dev_handle *usb;
-
-	in->connin.usb.dev = ul->dev;
-
-	if (in->connin.usb.dev ==NULL ) {
-		return gbBAD ;
-	}
-
-	usb = usb_open(in->connin.usb.dev) ;
-	if (usb == NULL) {
-		return gbBAD ;
-	}
-
-	in->connin.usb.usb = usb;
-	#ifdef LIBUSB_HAS_DETACH_KERNEL_DRIVER_NP
-	usb_detach_kernel_driver_np(usb, 0);
-	#endif							/* LIBUSB_HAS_DETACH_KERNEL_DRIVER_NP */
-
-	if ( usb_set_configuration(usb, 1) != 0 ) {
-		LEVEL_CONNECT("Failed to set configuration on USB DS9490 bus master at %s.", in->name);
-	} else if ( usb_claim_interface(usb, 0) != 0 ) {
-		LEVEL_CONNECT("Failed to claim interface on USB DS9490 bus master at %s.", in->name);
-	} else {
-		if ( usb_set_altinterface(usb, 3) != 0 ) {
-			LEVEL_CONNECT("Failed to set alt interface on USB DS9490 bus master at %s.", in->name);
-		} else {
-			LEVEL_DEFAULT("Opened USB DS9490 bus master at %s.", in->name);
-			DS9490_setroutines(in);
-			in->Adapter = adapter_DS9490;	/* OWFS assigned value */
-			in->adapter_name = "DS9490";
-
-			// clear endpoints
-			if ( USB_CLEAR_HALT(usb, DS2490_EP3) || USB_CLEAR_HALT(usb, DS2490_EP2) || USB_CLEAR_HALT(usb, DS2490_EP1) ) {
-				LEVEL_DEFAULT("DS9490_open: USB_CLEAR_HALT failed");
-			} else if ( BAD( DS9490_setup_adapter(in)) ) {
-				LEVEL_DEFAULT("Error setting up USB DS9490 bus master at %s.", in->name);
-			} else {		/* All GOOD */
-				return gbGOOD;
-			}
+	for (in = Inbound_Control.head; in != NULL; in = in->next) {
+		if ( in == in_selected ) {
+			continue ;
 		}
-		usb_release_interface(usb, 0);
+		if ( in->busmode != bus_usb ) {
+			continue ;
+		}
+		if ( in->name == NULL ) {
+			continue ;
+		}
+		LEVEL_DEBUG("Comparing %s with bus.%d %s",in_selected->name,in->index,SAFESTRING(in->name));
+		if ( strcmp(in->name, in_selected->name) == 0 ) {
+			return gbBAD;			// It seems to be in use already
+		}
 	}
-	usb_close(usb);
-	in->connin.usb.usb = NULL;
-
-	return gbBAD;
+	return gbGOOD;					// not found in the current inbound list
 }
 
-/* When the errors stop the USB device from functioning -- close and reopen.
- * If it fails, re-scan the USB bus and search for the old adapter */
-static GOOD_OR_BAD DS9490_reconnect(const struct parsedname *pn)
-{
-	GOOD_OR_BAD ret;
-	struct connection_in * in = pn->selected_connection ;
-	
-	/* Have to protect usb_find_busses() and usb_find_devices() with
-	 * a lock since libusb could crash if 2 threads call it at the same time.
-	 * It's not called until DS9490_redetect_low(), but I lock here just
-	 * to be sure DS9490_close() and DS9490_open() get one try first. */
-	LIBUSBLOCK;
-	DS9490_close( in ) ;
-	ret = DS9490_redetect_low(in) ;
-	LIBUSBUNLOCK;
-
-	if ( GOOD(ret) ) {
-		LEVEL_DEFAULT("Found USB DS9490 bus master after USB rescan as [%s]", SAFESTRING(in->name));
-	}
-	return ret;
-}
+/* ------------------------------------------------------------ */
+/* --- USB bus scaning -----------------------------------------*/
 
 static void USB_init(struct usb_list *ul)
 {
@@ -623,42 +571,40 @@ static GOOD_OR_BAD USB_next(struct usb_list *ul)
 	return gbBAD;
 }
 
-static GOOD_OR_BAD usbdevice_in_use(const struct connection_in * in_selected)
+/* Step through USB devices (looking for the DS2490 chip) */
+int DS9490_enumerate(void)
 {
-	struct connection_in *in;
-
-	for (in = Inbound_Control.head; in != NULL; in = in->next) {
-		if ( in == in_selected ) {
-			continue ;
-		}
-		if ( in->busmode != bus_usb ) {
-			continue ;
-		}
-		if ( in->name == NULL ) {
-			continue ;
-		}
-		LEVEL_DEBUG("Comparing %s with bus.%d %s",in_selected->name,in->index,SAFESTRING(in->name));
-		if ( strcmp(in->name, in_selected->name) == 0 ) {
-			return gbBAD;			// It seems to be in use already
-		}
+	struct usb_list ul;
+	int found = 0;
+	USB_init(&ul);
+	while ( GOOD(USB_next(&ul)) ) {
+		++found;
 	}
-	return gbGOOD;					// not found in the current inbound list
+		
+	return found;
 }
 
-/* Construct the device name */
-/* Return NULL if there is a problem */
-static char *DS9490_device_name(const struct usb_list *ul)
+/* ------------------------------------------------------------ */
+/* --- USB redetect routines -----------------------------------*/
+
+/* When the errors stop the USB device from functioning -- close and reopen.
+ * If it fails, re-scan the USB bus and search for the old adapter */
+static GOOD_OR_BAD DS9490_reconnect(const struct parsedname *pn)
 {
-	size_t len = 2 * PATH_MAX + 1;
-	char name[len + 1];
-	char *ret = NULL;
-	int sn_ret ;
-	UCLIBCLOCK ;
-	sn_ret = snprintf(name, len, "%s:%s", ul->bus->dirname, ul->dev->filename) ;
-	UCLIBCUNLOCK ;
-	if (sn_ret > 0) {
-		name[len] = '\0';		// make sufre there is a trailing null
-		ret = owstrdup(name);
+	GOOD_OR_BAD ret;
+	struct connection_in * in = pn->selected_connection ;
+	
+	/* Have to protect usb_find_busses() and usb_find_devices() with
+	 * a lock since libusb could crash if 2 threads call it at the same time.
+	 * It's not called until DS9490_redetect_low(), but I lock here just
+	 * to be sure DS9490_close() and DS9490_open_and_name() get one try first. */
+	LIBUSBLOCK;
+	DS9490_close( in ) ;
+	ret = DS9490_redetect_low(in) ;
+	LIBUSBUNLOCK;
+
+	if ( GOOD(ret) ) {
+		LEVEL_DEFAULT("Found USB DS9490 bus master after USB rescan as [%s]", SAFESTRING(in->name));
 	}
 	return ret;
 }
@@ -682,7 +628,7 @@ static GOOD_OR_BAD DS9490_redetect_low(struct connection_in * in)
 	
 	while ( GOOD(USB_next(&ul)) ) {
 		// try to open the DS9490
-		if ( BAD(DS9490_open(&ul, in)) ) {
+		if ( BAD(DS9490_open_and_name(&ul, in)) ) {
 			LEVEL_CONNECT("Cannot open USB bus master, Find next...");
 			continue;
 		}
@@ -741,175 +687,8 @@ static GOOD_OR_BAD DS9490_redetect_found( struct connection_in * in)
 	return gbBAD;
 }
 
-static void DS9490_close(struct connection_in *in)
-{
-	usb_dev_handle *usb = in->connin.usb.usb;
-
-	if (usb) {
-		int ret = usb_release_interface(usb, 0);
-		if (ret) {
-			in->connin.usb.dev = NULL;	// force a re-scan
-			LEVEL_CONNECT("Release interface failed ret=%d", ret);
-		}
-
-		/* It might already be closed? (returning -ENODEV)
-		 * I have seen problem with calling usb_close() twice, so we
-		 * might perhaps skip it if usb_release_interface() fails */
-		ret = usb_close(usb);
-		if (ret) {
-			in->connin.usb.dev = NULL;	// force a re-scan
-			LEVEL_CONNECT("usb_close() failed ret=%d", ret);
-		}
-		LEVEL_CONNECT("Closed USB DS9490 bus master at %s. ret=%d", in->name, ret);
-	}
-	in->connin.usb.usb = NULL;
-	in->connin.usb.dev = NULL;
-	if (in->name) {
-		owfree(in->name);
-	}
-	in->name = owstrdup(badUSBname);
-}
-
-/* DS9490_getstatus()
-   return -1          if Short detected on 1-wire bus
-   return -ETIMEDOUT  on timeout (will require DS9490_close())
-   return -EIO        on read errors (will require DS9490_close())
-   otherwise return number of status bytes in buffer
-*/
-int DS9490_getstatus(BYTE * buffer, int readlen, const struct parsedname *pn)
-{
-	int ret, loops = 0;
-	int i;
-	struct connection_in * in = pn->selected_connection ;
-	usb_dev_handle *usb = in->connin.usb.usb;
-	
-	// Pretty ugly, but needed for SUSE at least
-	// Try both HAVE_USB_INTERRUPT_READ
-#ifdef HAVE_USB_INTERRUPT_READ
-	static int have_usb_interrupt_read = (1 == 1);
-#else							/* HAVE_USB_INTERRUPT_READ */
-	static int have_usb_interrupt_read = (1 == 0);
-#endif							/* HAVE_USB_INTERRUPT_READ */
-	static int count_have_usb_interrupt_read = 0;
-
-	memset(buffer, 0, 32);		// should not be needed
-	//LEVEL_DETAIL("DS9490_getstatus: readlen=%d", readlen);
-
-#ifdef __FreeBSD__				// Clear the Interrupt read buffer before trying to get status
-	{
-		char junk[1500];
-		if ((ret = usb_bulk_read(usb, DS2490_EP1, (ASCII *) junk, (size_t) 1500, in->connin.usb.timeout)) < 0) {
-			STAT_ADD1_BUS(e_bus_status_errors, in);
-			LEVEL_DATA("error reading ret=%d", ret);
-			return -EIO;
-		}
-	}
-#endif							// __FreeBSD__
-	do {
-		// Fix from Wim Heirman -- kernel 2.6 is fussier about endpoint type
-#ifdef HAVE_USB_INTERRUPT_READ
-		if (have_usb_interrupt_read) {
-			if ((ret = usb_interrupt_read(usb, DS2490_EP1, (ASCII *) buffer, (size_t) 32, in->connin.usb.timeout)) < 0) {
-				LEVEL_DATA("(HAVE_USB_INTERRUPT_READ) error reading ret=%d", ret);
-			}
-		} else
-#endif
-		if ((ret = usb_bulk_read(usb, DS2490_EP1, (ASCII *) buffer, (size_t) 32, in->connin.usb.timeout)) < 0) {
-			LEVEL_DATA("(no HAVE_USB_INTERRUPT_READ) error reading ret=%d", ret);
-		}
-
-		if (ret < 0) {
-			if (count_have_usb_interrupt_read != 0) {
-				STAT_ADD1_BUS(e_bus_status_errors, in);
-				return -EIO;
-			}
-			have_usb_interrupt_read = !have_usb_interrupt_read;
-			count_have_usb_interrupt_read = 1;
-			continue;
-		}
-		if (ret > 16) {
-			if (ret == 32) {	// FreeBSD buffers the input, so this could just be two readings
-				if (!memcmp(buffer, &buffer[16], 6)) {
-					memmove(buffer, &buffer[16], 16);
-					ret = 16;
-					LEVEL_DATA("Corrected buffer 32 byte read");
-				}
-			}
-			for (i = 16; i < ret; i++) {
-				BYTE val = buffer[i];
-				if (val != ONEWIREDEVICEDETECT) {
-					LEVEL_DATA("Status byte[%X]: %X", i - 16, val);
-				}
-				if (val & COMMCMDERRORRESULT_SH) {	// short detected
-					LEVEL_DATA("short detected");
-					return -1;
-				}
-			}
-		}
-
-		if (readlen < 0) {
-			break;				/* Don't wait for STATUSFLAGS_IDLE if length==-1 */
-		}
-
-		if (buffer[8] & STATUSFLAGS_IDLE) {
-			if (readlen > 0) {
-				// we have enough bytes to read now!
-				// buffer[13] == (ReadBufferStatus)
-				if (buffer[13] >= readlen) {
-					break;
-				}
-			} else
-				break;
-		}
-		// this value might be decreased later...
-		if (++loops > 100) {
-			LEVEL_DATA("never got idle  StatusFlags=%X read=%X", buffer[8], buffer[13]);
-			return -ETIMEDOUT;	// adapter never got idle
-		}
-		/* Since result seem to be on the usb bus very quick, I sleep
-		 * sleep 0.1ms or something like that instead... It seems like
-		 * result is there after 0.2-0.3ms
-		 */
-		UT_delay_us(100);
-	} while (1);
-
-	//printf("DS9490_getstatus: read %d bytes\n", ret);
-	//printf("  "SNformat"\n",SNvar(&(buffer[ 0])));
-	//printf("  "SNformat"\n",SNvar(&(buffer[ 8])));
-
-	if (ret < 16) {
-		LEVEL_DATA("incomplete packet ret=%d", ret);
-		return -EIO;			// incomplete packet??
-	}
-	return (ret - 16);			// return number of status bytes in buffer
-}
-
-// Switch to overdrive speed -- 3 tries
-static GOOD_OR_BAD DS9490_overdrive(const struct parsedname *pn)
-{
-	BYTE sp = _1W_OVERDRIVE_SKIP_ROM;
-	BYTE resp;
-	int i;
-
-	// we need to change speed to overdrive
-	for (i = 0; i < 3; i++) {
-		LEVEL_DATA("set overdrive speed. Attempt %d",i);
-		if ( BAD( gbRESET(BUS_reset(pn)) ) ) {
-			continue;
-		}
-		if ( BAD( DS9490_sendback_data(&sp, &resp, 1, pn) ) || (_1W_OVERDRIVE_SKIP_ROM != resp) ) {
-			LEVEL_DEBUG("error setting overdrive %.2X/0x%02X", _1W_OVERDRIVE_SKIP_ROM, resp);
-			continue;
-		}
-		if ( GOOD( USB_Control_Msg(MODE_CMD, MOD_1WIRE_SPEED, ONEWIREBUSSPEED_OVERDRIVE, pn)) ) {
-			LEVEL_DEBUG("speed is now set to overdrive");
-			return gbGOOD;
-		}
-	}
-
-	LEVEL_DEBUG("Error setting overdrive after 3 retries");
-	return gbBAD;
-}
+/* ------------------------------------------------------------ */
+/* --- USB reset routines --------------------------------------*/
 
 /* Reset adapter and detect devices on the bus */
 /* BUS locked at high level */
@@ -922,13 +701,9 @@ static RESET_TYPE DS9490_reset(const struct parsedname *pn)
 	int USpeed;
 	struct connection_in * in = pn->selected_connection ;
 	
-	//printf("9490RESET\n");
-	//printf("DS9490_reset() index=%d in->Adapter=%d %s\n", in->index, in->Adapter, in->adapter_name);
-
-	LEVEL_DATA("start");
-
 	if (in->connin.usb.usb == NULL || in->connin.usb.dev == NULL) {
-		return -EIO;
+		LEVEL_DEBUG("Attempting RESET on null bus") ;
+		return BUS_RESET_ERROR;
 	}
 
 	// Do we need to change settings?
@@ -945,8 +720,8 @@ static RESET_TYPE DS9490_reset(const struct parsedname *pn)
 		: ONEWIREBUSSPEED_OVERDRIVE;
 
 	if ( BAD( USB_Control_Msg(COMM_CMD, COMM_1_WIRE_RESET | COMM_F | COMM_IM | COMM_SE, USpeed, pn)) ) {
-		LEVEL_DATA("Sending reset error");
-		return -EIO;			// fatal error... probably closed usb-handle
+		LEVEL_DATA("Reset command rejected");
+		return BUS_RESET_ERROR;			// fatal error... probably closed usb-handle
 	}
 
 	if (in->ds2404_compliance && (in->speed == bus_speed_slow)) {
@@ -954,15 +729,15 @@ static RESET_TYPE DS9490_reset(const struct parsedname *pn)
 		UT_delay(5);
 	}
 
-	if ((ret = DS9490_getstatus(buffer, 0, pn)) < 0) {
-		if (ret == -1) {
-			/* Short detected, but otherwise no bigger "problem"?
-			 * Make sure 1-wires won't be scanned */
-			LEVEL_DATA("short detected", ret);
-			return BUS_RESET_SHORT;
-		}
-		LEVEL_DATA("getstatus failed ret=%d", ret);
-		return ret;
+	switch( DS9490_getstatus(buffer, 0, pn) ) {
+		case BUS_RESET_SHORT:
+			/* Short detected, but otherwise no bigger problem */
+			return BUS_RESET_SHORT ;
+		case BUS_RESET_OK:
+			break ;
+		case BUS_RESET_ERROR:
+		default:
+			return BUS_RESET_ERROR;
 	}
 	//USBpowered = (buffer[8]&STATUSFLAGS_PMOD) == STATUSFLAGS_PMOD ;
 	in->AnyDevices = anydevices_yes ;
@@ -978,84 +753,11 @@ static RESET_TYPE DS9490_reset(const struct parsedname *pn)
 			}
 		}
 	}
-	LEVEL_DATA("ok");
 	return BUS_RESET_OK;
 }
 
-static SIZE_OR_ERROR DS9490_read(BYTE * buf, size_t size, const struct parsedname *pn)
-{
-	SIZE_OR_ERROR ret;
-	struct connection_in * in = pn->selected_connection ;
-	usb_dev_handle *usb = in->connin.usb.usb;
-	//printf("DS9490_read\n");
-	if ((ret = usb_bulk_read(usb, DS2490_EP3, (ASCII *) buf, (int) size, in->connin.usb.timeout)) > 0) {
-		return ret;
-	}
-	LEVEL_DATA("failed ret=%d", ret);
-	USB_CLEAR_HALT(usb, DS2490_EP3);
-	STAT_ADD1_BUS(e_bus_read_errors, in);
-	return ret;
-}
-
-/* Fills the EP2 buffer in the USB adapter
-   returns number of bytes (size)
-   or <0 for an error */
-static SIZE_OR_ERROR DS9490_write(const BYTE * buf, size_t size, const struct parsedname *pn)
-{
-	SIZE_OR_ERROR ret;
-	struct connection_in * in = pn->selected_connection ;
-	usb_dev_handle *usb = in->connin.usb.usb;
-	//printf("DS9490_write\n");
-
-	if (size == 0) {
-		return 0;
-	}
-
-	if ((ret = usb_bulk_write(usb, DS2490_EP2, (ASCII *) buf, (int) size, in->connin.usb.timeout)) > 0) {
-		return ret;
-	}
-	LEVEL_DATA("failed ret=%d", ret);
-	USB_CLEAR_HALT(usb, DS2490_EP2);
-	STAT_ADD1_BUS(e_bus_write_errors, in);
-	return ret;
-}
-
-static GOOD_OR_BAD DS9490_sendback_data(const BYTE * data, BYTE * resp, size_t len, const struct parsedname *pn)
-{
-	ZERO_OR_ERROR ret = 0;
-	BYTE buffer[32];
-
-	if (len > USB_FIFO_EACH) {
-		RETURN_BAD_IF_BAD( DS9490_sendback_data(data, resp, USB_FIFO_EACH, pn) ) ;
-		RETURN_BAD_IF_BAD( DS9490_sendback_data(&data[USB_FIFO_EACH], &resp[USB_FIFO_EACH], len - USB_FIFO_EACH, pn) );
-	}
-
-	if ((ret = DS9490_write(data, (size_t) len, pn)) < (int) len) {
-		LEVEL_DATA("USBsendback bulk write problem ret=%d", ret);
-		return gbBAD;
-	}
-	// COMM_BLOCK_IO | COMM_IM | COMM_F == 0x0075
-	if (( BAD( USB_Control_Msg(COMM_CMD, COMM_BLOCK_IO | COMM_IM | COMM_F, len, pn)) )
-		|| ( DS9490_getstatus(buffer, len, pn) < 0)	// wait for len bytes
-		) {
-		LEVEL_DATA("USBsendback control error");
-		STAT_ADD1_BUS(e_bus_errors, pn->selected_connection);
-		return gbBAD;
-	}
-
-	if ( DS9490_read(resp, (size_t) len, pn) < 0) {
-		LEVEL_DATA("USBsendback bulk read error");
-		return gbBAD;
-	}
-	return gbGOOD;
-}
-
-/*
- * return 0       if success
- * return -ENODEV if no more devices
- * return -ENOENT if no devices at all
- * return -EIO    on errors
- */
+/* ------------------------------------------------------------ */
+/* --- USB Directory functions  --------------------------------*/
 
 static enum search_status DS9490_next_both(struct device_search *ds, const struct parsedname *pn)
 {
@@ -1153,8 +855,7 @@ static enum search_status DS9490_directory(struct device_search *ds, struct dirb
 		return search_error;
 	}
 	// read the search status
-	if ((ret = DS9490_getstatus(status_buffer, 0, pn)) < 0) {
-		LEVEL_DATA("getstatus error");
+	if ( DS9490_getstatus(status_buffer, 0, pn)  != BUS_RESET_OK ) {
 		return search_error;
 	}
 
@@ -1233,16 +934,265 @@ static int FindDiscrepancy(BYTE * last_sn, BYTE * discrepancy_sn)
 	return 0;
 }
 
-//--------------------------------------------------------------------------
+static void DS9490_dir_callback( void * v, const struct parsedname * pn_entry )
+{
+	struct dirblob * db = v ;
+
+	LEVEL_DEBUG("Callback on %s",SAFESTRING(pn_entry->path));
+	if ( pn_entry->sn[0] != '\0' ) {
+		DirblobAdd( pn_entry->sn, db ) ;
+	}
+}
+
+static GOOD_OR_BAD DS9490_root_dir( struct dirblob * db, struct connection_in * in )
+{
+	ASCII path[PATH_MAX] ;
+	struct parsedname pn_root ;
+	ZERO_OR_ERROR ret ;
+
+	UCLIBCLOCK;
+	snprintf(path, PATH_MAX, "/uncached/bus.%d", in->index);
+	UCLIBCUNLOCK;
+
+	if ( FS_ParsedName(path, &pn_root) != 0 ) {
+		return gbBAD ;
+	}
+	DirblobInit( db ) ;
+
+	/* First time pretend there are devices */
+	pn_root.selected_connection->changed_bus_settings |= CHANGED_USB_SPEED ;	// Trigger needing new configuration
+	pn_root.selected_connection->speed = bus_speed_slow;	// not overdrive at start
+	pn_root.selected_connection->flex = Globals.usb_flextime ? bus_yes_flex : bus_no_flex ;
+	
+	SetReconnect(&pn_root) ;
+	ret = FS_dir( DS9490_dir_callback, db, &pn_root ) ;
+	LEVEL_DEBUG("Finished FS_dir");
+	FS_ParsedName_destroy(&pn_root) ;
+	
+	
+	if ( ret != 0 ) {
+		DirblobClear(db) ;
+		return gbBAD ;
+	}
+	return gbGOOD ;
+	// Dirblob must be cleared by recipient.
+}
+
+/* ------------------------------------------------------------ */
+/* --- USB Open and Close --------------------------------------*/
+
+/* Open usb device,
+   unload ds9490r kernel module if it is interfering
+   set all the interface magic
+   set callback routines and adapter entries
+*/
+static GOOD_OR_BAD DS9490_open_and_name(struct usb_list *ul, struct connection_in *in)
+{
+	if (in->name) {
+		owfree(in->name);
+		in->name = NULL;
+	}
+
+	if (in->connin.usb.usb) {
+		LEVEL_DEFAULT("usb.usb was NOT closed?");
+		return gbBAD ;
+	}
+
+	in->name = DS9490_device_name(ul);
+
+	if (in->name == NULL) {
+		return gbBAD;
+	}
+
+	if ( BAD( DS9490_open( ul, in ) ) ) {
+		owfree(in->name);
+		in->name = owstrdup(badUSBname) ;
+		in->connin.usb.dev = NULL;	// this will force a re-scan next time
+		//LEVEL_CONNECT("Failed to open USB DS9490 bus master %s", name);
+		STAT_ADD1_BUS(e_bus_open_errors, in);
+		return gbBAD ;
+	}
+
+	return gbGOOD ;
+}
+
+static GOOD_OR_BAD DS9490_open(struct usb_list *ul, struct connection_in *in)
+{
+	usb_dev_handle *usb;
+
+	in->connin.usb.dev = ul->dev;
+
+	if (in->connin.usb.dev ==NULL ) {
+		return gbBAD ;
+	}
+
+	usb = usb_open(in->connin.usb.dev) ;
+	if (usb == NULL) {
+		return gbBAD ;
+	}
+
+	in->connin.usb.usb = usb;
+	#ifdef LIBUSB_HAS_DETACH_KERNEL_DRIVER_NP
+	usb_detach_kernel_driver_np(usb, 0);
+	#endif							/* LIBUSB_HAS_DETACH_KERNEL_DRIVER_NP */
+
+	if ( usb_set_configuration(usb, 1) != 0 ) {
+		LEVEL_CONNECT("Failed to set configuration on USB DS9490 bus master at %s.", in->name);
+	} else if ( usb_claim_interface(usb, 0) != 0 ) {
+		LEVEL_CONNECT("Failed to claim interface on USB DS9490 bus master at %s.", in->name);
+	} else {
+		if ( usb_set_altinterface(usb, 3) != 0 ) {
+			LEVEL_CONNECT("Failed to set alt interface on USB DS9490 bus master at %s.", in->name);
+		} else {
+			LEVEL_DEFAULT("Opened USB DS9490 bus master at %s.", in->name);
+			DS9490_setroutines(in);
+			in->Adapter = adapter_DS9490;	/* OWFS assigned value */
+			in->adapter_name = "DS9490";
+
+			// clear endpoints
+			if ( USB_CLEAR_HALT(usb, DS2490_EP3) || USB_CLEAR_HALT(usb, DS2490_EP2) || USB_CLEAR_HALT(usb, DS2490_EP1) ) {
+				LEVEL_DEFAULT("USB_CLEAR_HALT failed");
+			} else if ( BAD( DS9490_setup_adapter(in)) ) {
+				LEVEL_DEFAULT("Error setting up USB DS9490 bus master at %s.", in->name);
+			} else {		/* All GOOD */
+				return gbGOOD;
+			}
+		}
+		usb_release_interface(usb, 0);
+	}
+	usb_close(usb);
+	in->connin.usb.usb = NULL;
+
+	return gbBAD;
+}
+
+static void DS9490_close(struct connection_in *in)
+{
+	usb_dev_handle *usb = in->connin.usb.usb;
+
+	if (usb) {
+		int ret = usb_release_interface(usb, 0);
+		if (ret) {
+			in->connin.usb.dev = NULL;	// force a re-scan
+			LEVEL_CONNECT("Release interface failed ret=%d", ret);
+		}
+
+		/* It might already be closed? (returning -ENODEV)
+		 * I have seen problem with calling usb_close() twice, so we
+		 * might perhaps skip it if usb_release_interface() fails */
+		ret = usb_close(usb);
+		if (ret) {
+			in->connin.usb.dev = NULL;	// force a re-scan
+			LEVEL_CONNECT("usb_close() failed ret=%d", ret);
+		}
+		LEVEL_CONNECT("Closed USB DS9490 bus master at %s. ret=%d", in->name, ret);
+	}
+	in->connin.usb.usb = NULL;
+	in->connin.usb.dev = NULL;
+	if (in->name) {
+		owfree(in->name);
+	}
+	in->name = owstrdup(badUSBname);
+}
+
+/* Construct the device name */
+/* Return NULL if there is a problem */
+static char *DS9490_device_name(const struct usb_list *ul)
+{
+	size_t len = 2 * PATH_MAX + 1;
+	char name[len + 1];
+	char *ret = NULL;
+	int sn_ret ;
+	UCLIBCLOCK ;
+	sn_ret = snprintf(name, len, "%s:%s", ul->bus->dirname, ul->dev->filename) ;
+	UCLIBCUNLOCK ;
+	if (sn_ret > 0) {
+		name[len] = '\0';		// make sufre there is a trailing null
+		ret = owstrdup(name);
+	}
+	return ret;
+}
+
+/* ------------------------------------------------------------ */
+/* --- USB read and write --------------------------------------*/
+
+static SIZE_OR_ERROR DS9490_read(BYTE * buf, size_t size, const struct parsedname *pn)
+{
+	SIZE_OR_ERROR ret;
+	struct connection_in * in = pn->selected_connection ;
+	usb_dev_handle *usb = in->connin.usb.usb;
+	//printf("DS9490_read\n");
+	if ((ret = usb_bulk_read(usb, DS2490_EP3, (ASCII *) buf, (int) size, in->connin.usb.timeout)) > 0) {
+		return ret;
+	}
+	LEVEL_DATA("failed ret=%d", ret);
+	USB_CLEAR_HALT(usb, DS2490_EP3);
+	STAT_ADD1_BUS(e_bus_read_errors, in);
+	return ret;
+}
+
+/* Fills the EP2 buffer in the USB adapter
+   returns number of bytes (size)
+   or <0 for an error */
+static SIZE_OR_ERROR DS9490_write(const BYTE * buf, size_t size, const struct parsedname *pn)
+{
+	SIZE_OR_ERROR ret;
+	struct connection_in * in = pn->selected_connection ;
+	usb_dev_handle *usb = in->connin.usb.usb;
+	//printf("DS9490_write\n");
+
+	if (size == 0) {
+		return 0;
+	}
+
+	if ((ret = usb_bulk_write(usb, DS2490_EP2, (ASCII *) buf, (int) size, in->connin.usb.timeout)) > 0) {
+		return ret;
+	}
+	LEVEL_DATA("failed ret=%d", ret);
+	USB_CLEAR_HALT(usb, DS2490_EP2);
+	STAT_ADD1_BUS(e_bus_write_errors, in);
+	return ret;
+}
+
+static GOOD_OR_BAD DS9490_sendback_data(const BYTE * data, BYTE * resp, size_t len, const struct parsedname *pn)
+{
+	ZERO_OR_ERROR ret = 0;
+	BYTE buffer[32];
+
+	if (len > USB_FIFO_EACH) {
+		RETURN_BAD_IF_BAD( DS9490_sendback_data(data, resp, USB_FIFO_EACH, pn) ) ;
+		RETURN_BAD_IF_BAD( DS9490_sendback_data(&data[USB_FIFO_EACH], &resp[USB_FIFO_EACH], len - USB_FIFO_EACH, pn) );
+	}
+
+	if ((ret = DS9490_write(data, (size_t) len, pn)) < (int) len) {
+		LEVEL_DATA("USBsendback bulk write problem ret=%d", ret);
+		return gbBAD;
+	}
+	// COMM_BLOCK_IO | COMM_IM | COMM_F == 0x0075
+	if (( BAD( USB_Control_Msg(COMM_CMD, COMM_BLOCK_IO | COMM_IM | COMM_F, len, pn)) )
+		|| ( DS9490_getstatus(buffer, len, pn)  != BUS_RESET_OK )	// wait for len bytes
+		) {
+		LEVEL_DATA("USBsendback control error");
+		STAT_ADD1_BUS(e_bus_errors, pn->selected_connection);
+		return gbBAD;
+	}
+
+	if ( DS9490_read(resp, (size_t) len, pn) < 0) {
+		LEVEL_DATA("USBsendback bulk read error");
+		return gbBAD;
+	}
+	return gbGOOD;
+}
+
+
+/* ------------------------------------------------------------ */
+/* --- USB Power byte for temperature conversion ---------------*/
+
 // Send 8 bits of communication to the 1-Wire Net and read the
 // 8 bits back from the 1-Wire Net.
 // The parameter 'byte' least significant 8 bits are used.  After the
 // 8 bits are sent change the level of the 1-Wire net.
 // Delay delay msec and return to normal
-//
-/* Returns 0=goodDS9490_SetSpeed
-   bad = -EIO
- */
 static GOOD_OR_BAD DS9490_PowerByte(BYTE byte, BYTE * resp, UINT delay, const struct parsedname *pn)
 {
 	LEVEL_DATA("start");
@@ -1261,6 +1211,9 @@ static GOOD_OR_BAD DS9490_PowerByte(BYTE byte, BYTE * resp, UINT delay, const st
 	DS9490_HaltPulse(pn);
 	return gbGOOD ;
 }
+
+/* ------------------------------------------------------------ */
+/* --- USB Program Pulse ---------------------------------------*/
 
 static GOOD_OR_BAD DS9490_ProgramPulse(const struct parsedname *pn)
 {
@@ -1300,12 +1253,11 @@ static GOOD_OR_BAD DS9490_HaltPulse(const struct parsedname *pn)
 		}
 
 		/* Can't wait for STATUSFLAGS_IDLE... just get first availalbe status flag */
-		if ( DS9490_getstatus(buffer, -1, pn) < 0 ) {
+		if ( DS9490_getstatus(buffer, -1, pn) != BUS_RESET_OK ) {
 			break;
 		}
 		// check the SPU flag
 		if (!(buffer[8] & STATUSFLAGS_SPUA)) {
-			//printf("DS9490_HaltPulse: SPU not set\n");
 			return gbGOOD;
 		}
 		if (gettimeofday(&tv, NULL) < 0) {
@@ -1317,23 +1269,8 @@ static GOOD_OR_BAD DS9490_HaltPulse(const struct parsedname *pn)
 	return gbBAD;
 }
 
-
-// Call to USB EP1 (control channel)
-// Names (bRequest, wValue wIndex) are from datasheet http://datasheets.maxim-ic.com/en/ds/DS2490.pdf
-static GOOD_OR_BAD USB_Control_Msg(BYTE bRequest, UINT wValue, UINT wIndex, const struct parsedname *pn)
-{
-	usb_dev_handle *usb = pn->selected_connection->connin.usb.usb;
-	int ret ;
-	if (usb == NULL) {
-		return gbBAD;
-	}
-	ret = usb_control_msg(usb, CONTROL_REQUEST_TYPE, bRequest, wValue, wIndex, NULL, 0, pn->selected_connection->connin.usb.timeout);
-	if( ret < 0 ) {
-		LEVEL_DEBUG("USB control problem = %d", ret) ;
-		return gbBAD ;
-	}
-	return gbGOOD ;
-}
+/* ------------------------------------------------------------ */
+/* --- USB Various Parameters ----------------------------------*/
 
 static GOOD_OR_BAD DS9490_SetSpeed(const struct parsedname *pn)
 {
@@ -1393,6 +1330,76 @@ static GOOD_OR_BAD DS9490_SetSpeed(const struct parsedname *pn)
 		}
 	}
 	return ret>0 ? gbBAD : gbGOOD;
+}
+
+// Switch to overdrive speed -- 3 tries
+static GOOD_OR_BAD DS9490_overdrive(const struct parsedname *pn)
+{
+	BYTE sp = _1W_OVERDRIVE_SKIP_ROM;
+	BYTE resp;
+	int i;
+
+	// we need to change speed to overdrive
+	for (i = 0; i < 3; i++) {
+		LEVEL_DATA("set overdrive speed. Attempt %d",i);
+		if ( BAD( gbRESET(BUS_reset(pn)) ) ) {
+			continue;
+		}
+		if ( BAD( DS9490_sendback_data(&sp, &resp, 1, pn) ) || (_1W_OVERDRIVE_SKIP_ROM != resp) ) {
+			LEVEL_DEBUG("error setting overdrive %.2X/0x%02X", _1W_OVERDRIVE_SKIP_ROM, resp);
+			continue;
+		}
+		if ( GOOD( USB_Control_Msg(MODE_CMD, MOD_1WIRE_SPEED, ONEWIREBUSSPEED_OVERDRIVE, pn)) ) {
+			LEVEL_DEBUG("speed is now set to overdrive");
+			return gbGOOD;
+		}
+	}
+
+	LEVEL_DEBUG("Error setting overdrive after 3 retries");
+	return gbBAD;
+}
+
+static GOOD_OR_BAD DS9490_setup_adapter(struct connection_in * in)
+{
+	struct parsedname s_pn;
+	struct parsedname * pn = &s_pn ;
+	BYTE buffer[32];
+
+	FS_ParsedName_Placeholder(pn);	// minimal parsename -- no destroy needed
+	pn->selected_connection = in;
+
+	// reset the device (not the 1-wire bus)
+	if ( BAD(USB_Control_Msg(CONTROL_CMD, CTL_RESET_DEVICE, 0x0000, pn))) {
+		LEVEL_DATA("ResetDevice error");
+		return gbBAD;
+	}
+	// set the strong pullup duration to infinite
+	if ( BAD( USB_Control_Msg(COMM_CMD, COMM_SET_DURATION | COMM_IM, 0x0000, pn)) ) {
+		LEVEL_DATA("StrongPullup error");
+		return gbBAD;
+	}
+	// set the 12V pullup duration to 512us
+	if ( BAD( USB_Control_Msg(COMM_CMD, COMM_SET_DURATION | COMM_IM | COMM_TYPE, PROGRAM_PULSE_DURATION_CODE, pn)) ) {
+		LEVEL_DATA("12VPullup error");
+		return gbBAD;
+	}
+	// enable both program and strong pulses
+	if ( BAD( USB_Control_Msg(MODE_CMD, MOD_PULSE_EN, ENABLE_PROGRAM_AND_PULSE, pn)) ) {
+		LEVEL_DATA("EnableProgram error");
+		return gbBAD;
+	}
+	// enable speed changes
+	if ( BAD( USB_Control_Msg(MODE_CMD, MOD_SPEED_CHANGE_EN, 1, pn)) ) {
+		LEVEL_DATA("SpeedEnable error");
+		return gbBAD;
+	}
+
+	if ( DS9490_getstatus(buffer, 0, pn) != BUS_RESET_OK ) {
+		LEVEL_DATA("getstatus failed error");
+		return gbBAD;
+	}
+
+	return gbGOOD;
 }
 
 static void DS9490_SetFlexParameters(struct connection_in *in)

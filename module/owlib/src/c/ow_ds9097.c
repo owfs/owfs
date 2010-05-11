@@ -18,6 +18,8 @@ $Id$
 /* All the rest of the program sees is the DS9907_detect and the entry in iroutines */
 
 static RESET_TYPE DS9097_reset(const struct parsedname *pn);
+static GOOD_OR_BAD DS9097_pre_reset(struct termios * term, const struct parsedname *pn) ;
+static void DS9097_post_reset(struct termios * term, const struct parsedname *pn) ;
 static GOOD_OR_BAD DS9097_sendback_bits(const BYTE * outbits, BYTE * inbits, const size_t length, const struct parsedname *pn);
 static void DS9097_setroutines(struct connection_in *in);
 static GOOD_OR_BAD DS9097_send_and_get(const BYTE * bussend, BYTE * busget, const size_t length, const struct parsedname *pn);
@@ -77,102 +79,103 @@ GOOD_OR_BAD DS9097_detect(struct connection_in *in)
 static RESET_TYPE DS9097_reset(const struct parsedname *pn)
 {
 	BYTE resetbyte = 0xF0;
-	BYTE c;
+	BYTE responsebyte;
 	struct termios term;
-	FILE_DESCRIPTOR_OR_ERROR file_descriptor = pn->selected_connection->file_descriptor;
-	RESET_TYPE ret;
 
-	if ( FILE_DESCRIPTOR_NOT_VALID(file_descriptor) ) {
-		return -EINVAL;
-	}
-
-	/* 8 data bits */
-	//valgrind warn about uninitialized memory in tcsetattr(), so clear all.
-	memset(&term, 0, sizeof(struct termios));
-	tcgetattr(file_descriptor, &term);
-	term.c_cflag = CS8 | CREAD | HUPCL | CLOCAL;
-	if (cfsetospeed(&term, B9600) < 0 || cfsetispeed(&term, B9600) < 0) {
-		ERROR_CONNECT("Cannot set speed (9600): %s", SAFESTRING(pn->selected_connection->name));
-	}
-	if (tcsetattr(file_descriptor, TCSANOW, &term) < 0) {
-		ERROR_CONNECT("Cannot set attributes: %s", SAFESTRING(pn->selected_connection->name));
-		return -EIO;
-	}
-	if ( BAD( DS9097_send_and_get(&resetbyte, &c, 1, pn)) ) {
+	if ( BAD( DS9097_pre_reset( &term, pn ) ) ) {
 		return BUS_RESET_ERROR ;
 	}
 
-	switch (c) {
+	if ( BAD( DS9097_send_and_get(&resetbyte, &responsebyte, 1, pn)) ) {
+		DS9097_post_reset( &term, pn) ;
+		return BUS_RESET_ERROR ;
+	}
+
+	DS9097_post_reset( &term, pn) ;
+	
+	switch (responsebyte) {
 	case 0:
-		ret = BUS_RESET_SHORT;
-		break;
+		return BUS_RESET_SHORT;
 	case 0xF0:
-		ret = BUS_RESET_OK;
 		pn->selected_connection->AnyDevices = anydevices_no ;
-		break;
+		return BUS_RESET_OK;
 	default:
-		ret = BUS_RESET_OK;
 		pn->selected_connection->AnyDevices = anydevices_yes ;
 		pn->selected_connection->ProgramAvailable = 0;	/* from digitemp docs */
 		if (pn->selected_connection->ds2404_compliance) {
 			// extra delay for alarming DS1994/DS2404 compliance
 			UT_delay(5);
 		}
+		return BUS_RESET_OK;
+	}
+}
+
+/* Puts in 9600 baud */
+static GOOD_OR_BAD DS9097_pre_reset(struct termios * term, const struct parsedname *pn)
+{
+	FILE_DESCRIPTOR_OR_ERROR file_descriptor = pn->selected_connection->file_descriptor;
+
+	if ( FILE_DESCRIPTOR_NOT_VALID(file_descriptor) ) {
+		LEVEL_CONNECT("Bad serial port file descriptor") ;
+		return gbBAD;
 	}
 
+	/* 8 data bits */
+	//valgrind warn about uninitialized memory in tcsetattr(), so clear all.
+	memset(term, 0, sizeof(struct termios));
+	if ( tcgetattr(file_descriptor,term) < 0 ) {
+		ERROR_CONNECT( "Canot get serial port settings") ;
+		return gbBAD ;
+	}
+	
+	term->c_cflag = CS8 | CREAD | HUPCL | CLOCAL;
+	if (cfsetospeed(term, B9600) < 0 || cfsetispeed(term, B9600) < 0) {
+		ERROR_CONNECT("Cannot set speed (9600): %s", SAFESTRING(pn->selected_connection->name));
+		return gbBAD ;
+	}
+	if (tcsetattr(file_descriptor, TCSANOW, term) < 0) {
+		ERROR_CONNECT("Cannot set attributes: %s", SAFESTRING(pn->selected_connection->name));
+		DS9097_post_reset( term, pn ) ;
+		return gbBAD;
+	}
+	return gbGOOD;
+}
+
+/* Restore terminal settings (serial port settings) */
+static void DS9097_post_reset(struct termios * term, const struct parsedname *pn)
+{
 	/* Reset all settings */
-	term.c_lflag = 0;
-	term.c_iflag = 0;
-	term.c_oflag = 0;
+	term->c_lflag = 0;
+	term->c_iflag = 0;
+	term->c_oflag = 0;
 
 	/* 1 byte at a time, no timer */
-	term.c_cc[VMIN] = 1;
-	term.c_cc[VTIME] = 0;
-
-#if 0
-	/* digitemp seems to contain a really nasty bug.. in
-	   SMALLINT owTouchReset(int portnum)
-	   They use 8bit all the time actually..
-	   8 data bits */
-	term[portnum].c_cflag |= CS8;	//(0x60)
-	cfsetispeed(&term[portnum], B9600);
-	cfsetospeed(&term[portnum], B9600);
-	tcsetattr(file_descriptor[portnum], TCSANOW, &term[portnum]);
-	send_reset_byte(0xF0);
-	cfsetispeed(&term[portnum], B115200);
-	cfsetospeed(&term[portnum], B115200);
-	/* set to 6 data bits */
-	term[portnum].c_cflag |= CS6;	// (0x20)
-	tcsetattr(file_descriptor[portnum], TCSANOW, &term[portnum]);
-	/* Not really a change of data-bits here...
-	   They always use 8bit mode... doohhh? */
-#endif
+	term->c_cc[VMIN] = 1;
+	term->c_cc[VTIME] = 0;
 
 	if (Globals.eightbit_serial) {
 		/* coninue with 8 data bits */
-		term.c_cflag = CS8 | CREAD | HUPCL | CLOCAL;
+		term->c_cflag = CS8 | CREAD | HUPCL | CLOCAL;
 	} else {
 		/* 6 data bits, Receiver enabled, Hangup, Dont change "owner" */
-		term.c_cflag = CS6 | CREAD | HUPCL | CLOCAL;
+		term->c_cflag = CS6 | CREAD | HUPCL | CLOCAL;
 	}
 #ifndef B115200
 	/* MacOSX support max 38400 in termios.h ? */
-	if (cfsetospeed(&term, B38400) < 0 || cfsetispeed(&term, B38400) < 0) {
+	if (cfsetospeed(term, B38400) < 0 || cfsetispeed(term, B38400) < 0) {
 		ERROR_CONNECT("Cannot set speed (38400): %s", SAFESTRING(pn->selected_connection->name));
 	}
 #else
-	if (cfsetospeed(&term, B115200) < 0 || cfsetispeed(&term, B115200) < 0) {
+	if (cfsetospeed(term, B115200) < 0 || cfsetispeed(term, B115200) < 0) {
 		ERROR_CONNECT("Cannot set speed (115200): %s", SAFESTRING(pn->selected_connection->name));
 	}
 #endif
 
-	if (tcsetattr(file_descriptor, TCSANOW, &term) < 0) {
+	if (tcsetattr(pn->selected_connection->file_descriptor, TCSANOW, term) < 0) {
 		ERROR_CONNECT("Cannot set attributes: %s", SAFESTRING(pn->selected_connection->name));
-		return -EFAULT;
 	}
 	/* Flush the input and output buffers */
 	COM_flush(pn->selected_connection);
-	return ret;
 }
 
 #if 0

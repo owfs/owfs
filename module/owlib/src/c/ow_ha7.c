@@ -123,15 +123,17 @@ static RESET_TYPE HA7_reset(const struct parsedname *pn)
 	struct toHA7 ha7;
 
 	if ( FILE_DESCRIPTOR_NOT_VALID(file_descriptor) ) {
-		return -EIO;
+		return BUS_RESET_ERROR;
 	}
 
 	toHA7init(&ha7);
 	ha7.command = "Reset";
 	if ( BAD(HA7_toHA7(file_descriptor, &ha7, pn->selected_connection)) ) {
-		ret = -EIO;
+		LEVEL_DEBUG("Trouble sending reset command");
+		ret = BUS_RESET_ERROR;
 	} else if ( BAD(HA7_read(file_descriptor, &mb)) ) {
-		ret = -EIO;
+		LEVEL_DEBUG("Trouble with reset command response");
+		ret = BUS_RESET_ERROR;
 	}
 	MemblobClear(&mb);
 	close(file_descriptor);

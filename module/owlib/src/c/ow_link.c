@@ -338,25 +338,22 @@ static RESET_TYPE LINK_reset(const struct parsedname *pn)
 	//Response is 3 bytes:  1 byte for code + \r\n
 	if ( BAD(LINK_write(LINK_string("r"), 1, pn) || BAD( LINK_read(resp, 3, 1, pn))) ) {
 		LEVEL_DEBUG("Error resetting LINK device");
-		return -EIO;
+		return BUS_RESET_ERROR;
 	}
 
 	switch (resp[0]) {
 
 	case 'P':
-		LEVEL_DEBUG("ok, devices Present");
 		pn->selected_connection->AnyDevices = anydevices_yes;
 		return BUS_RESET_OK;
 	case 'N':
-		LEVEL_DEBUG("ok, devices Not present");
 		pn->selected_connection->AnyDevices = anydevices_no;
 		return BUS_RESET_OK;
 	case 'S':
-		LEVEL_DEBUG("short, Short circuit on 1-wire bus!");
 		return BUS_RESET_SHORT;
 	default:
 		LEVEL_DEBUG("bad, Unknown LINK response %c", resp[0]);
-		return -EIO;
+		return BUS_RESET_ERROR;
 	}
 }
 

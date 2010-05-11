@@ -57,7 +57,7 @@ static GOOD_OR_BAD BadAdapter_sendback_bits(const BYTE * data, BYTE * resp, size
 	(void) data;
 	(void) resp;
 	(void) len;
-	return -ENOTSUP;
+	return gbBAD;
 }
 
 static void BadAdapter_close(struct connection_in *in)

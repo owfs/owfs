@@ -20,6 +20,7 @@ Much thanks to Evgeniy Polyakov
 
 // for some local types
 #include "ow_fd.h"
+#include "ow_localreturns.h"
 
 #define W1_NLM_LENGTH	16
 #define W1_CN_LENGTH	20
@@ -31,6 +32,7 @@ enum Netlink_Read_Status {
 	nrs_bad_send,
 	nrs_nodev,
 	nrs_timeout,
+	nrs_error,
 } ;
 
 struct connection_in ;
@@ -45,7 +47,7 @@ int W1_send_msg( struct connection_in * in, struct w1_netlink_msg *msg, struct w
 int W1PipeSelect_timeout( FILE_DESCRIPTOR_OR_ERROR file_descriptor ) ;
 void * W1_Dispatch( void * v ) ;
 
-int W1NLScan( void ) ;
+void W1NLInitialScan( void ) ;
 enum Netlink_Read_Status W1NLList( void ) ;
 
 #define MAKE_NL_SEQ( bus, seq )  ((uint32_t)(( ((bus) & 0xFFFF) << 16 ) | ((seq) & 0xFFFF)))
@@ -65,7 +67,7 @@ struct netlink_parse {
 
 void Netlink_Parse_Destroy( struct netlink_parse * nlp ) ;
 int Netlink_Parse_Get( struct netlink_parse * nlp ) ;
-int Get_and_Parse_Pipe( FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct netlink_parse * nlp ) ;
+GOOD_OR_BAD Get_and_Parse_Pipe( FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct netlink_parse * nlp ) ;
 void Netlink_Print( struct nlmsghdr * nlm, struct cn_msg * cn, struct w1_netlink_msg * w1m, struct w1_netlink_cmd * w1c, unsigned char * data, int length ) ;
 enum Netlink_Read_Status W1_Process_Response( void (* nrs_callback)( struct netlink_parse * nlp, void  *v, const struct parsedname * pn), int seq, void * v, const struct parsedname * pn ) ;
 

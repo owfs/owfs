@@ -79,45 +79,45 @@ static void * W1_start_scan( void * v )
 	if ( FILE_DESCRIPTOR_NOT_VALID(Inbound_Control.w1_file_descriptor) ) {
 		LEVEL_DEBUG("Cannot monitor w1 bus, No netlink connection.");
 	} else {
-		W1NLScan() ;
+		W1NLInitialScan() ;
 	}
 	LEVEL_DEBUG("Normal exit.\n");
 	return NULL ;
 }
 
-int W1_Browse( void )
+GOOD_OR_BAD W1_Browse( void )
 {
-    pthread_t thread_scan ;
-    pthread_t thread_dispatch ;
+	pthread_t thread_scan ;
+	pthread_t thread_dispatch ;
 
-    ++Inbound_Control.w1_entry_mark ;
-    LEVEL_DEBUG("Calling for netlink w1 list");
+	++Inbound_Control.w1_entry_mark ;
+	LEVEL_DEBUG("Calling for netlink w1 list");
 
-    // Initial setup
-    _MUTEX_INIT(Inbound_Control.w1_mutex);
-    _MUTEX_INIT(Inbound_Control.w1_read_mutex);
-    gettimeofday(&Inbound_Control.w1_last_read,NULL);
-    ++Inbound_Control.w1_last_read.tv_sec ;
+	// Initial setup
+	_MUTEX_INIT(Inbound_Control.w1_mutex);
+	_MUTEX_INIT(Inbound_Control.w1_read_mutex);
+	gettimeofday(&Inbound_Control.w1_last_read,NULL);
+	++Inbound_Control.w1_last_read.tv_sec ;
 
-    if ( FILE_DESCRIPTOR_NOT_VALID(w1_bind()) ) {
-        ERROR_DEBUG("Netlink problem -- are you root?");
-        return -1 ;
-    }
+	if ( FILE_DESCRIPTOR_NOT_VALID(w1_bind()) ) {
+		ERROR_DEBUG("Netlink problem -- are you root?");
+		return gbBAD ;
+	}
 
-    if ( pthread_create(&thread_dispatch, NULL, W1_Dispatch, NULL) != 0 ) {
-        ERROR_DEBUG("Couldn't create netlink monitoring thread");
-        return -1 ;
-    }
+	if ( pthread_create(&thread_dispatch, NULL, W1_Dispatch, NULL) != 0 ) {
+		ERROR_DEBUG("Couldn't create netlink monitoring thread");
+		return gbBAD ;
+	}
 
-    if ( W1NLList() != nrs_complete ) {
- 		LEVEL_DEBUG("Drop down to sysfs w1 list");
+	if ( W1NLList() != nrs_complete ) {
+		LEVEL_DEBUG("Drop down to sysfs w1 list");
 		W1SysList("/sys/bus/w1/devices") ;
 	}
 
 	// And clear deadwood
 	W1Clear() ;
 
-	return pthread_create(&thread_scan, NULL, W1_start_scan, NULL);
+	return pthread_create(&thread_scan, NULL, W1_start_scan, NULL)==0 ? gbGOOD : gbBAD ;
 }
 
 #else /* OW_MT */

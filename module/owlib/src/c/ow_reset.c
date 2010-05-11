@@ -14,26 +14,27 @@ $Id$
 #include "ow.h"
 #include "ow_counters.h"
 #include "ow_connection.h"
-//#include "ow_codes.h"
 
 // RESET called with bus locked
 RESET_TYPE BUS_reset(const struct parsedname *pn)
 {
-	RESET_TYPE ret = (pn->selected_connection->iroutines.reset) (pn);
-	/* Shorted 1-wire bus or minor error shouldn't cause a reconnect */
-	if (ret == BUS_RESET_OK) {
+	STAT_ADD1_BUS(e_bus_resets, pn->selected_connection);
+
+	switch ( (pn->selected_connection->iroutines.reset) (pn) ) {
+	case BUS_RESET_OK:
 		pn->selected_connection->reconnect_state = reconnect_ok;	// Flag as good!
-	} else if (ret == BUS_RESET_SHORT) {
+		return BUS_RESET_OK ;
+	case BUS_RESET_SHORT:
+		/* Shorted 1-wire bus or minor error shouldn't cause a reconnect */
 		pn->selected_connection->AnyDevices = anydevices_unknown;
-		STAT_ADD1_BUS(e_bus_short_errors, pn->selected_connection);
 		LEVEL_CONNECT("1-wire bus short circuit.");
-		return 1;
-	} else {
+		STAT_ADD1_BUS(e_bus_short_errors, pn->selected_connection);
+		return BUS_RESET_SHORT;
+	case BUS_RESET_ERROR:
+	default:
 		pn->selected_connection->reconnect_state++;	// Flag for eventual reconnection
 		LEVEL_DEBUG("Reset error. Reconnection %d/%d",pn->selected_connection->reconnect_state,reconnect_error); 
 		STAT_ADD1_BUS(e_bus_reset_errors, pn->selected_connection);
+		return BUS_RESET_ERROR ;
 	}
-	STAT_ADD1_BUS(e_bus_resets, pn->selected_connection);
-
-	return ret;
 }

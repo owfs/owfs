@@ -66,25 +66,20 @@ static void w1_masters(struct netlink_parse * nlp)
 	}
 }
 
-int W1NLScan( void )
+void W1NLInitialScan( void )
 {
-	while (1)
-	{
-		struct netlink_parse nlp ;
+	struct netlink_parse nlp ;
 
-		switch ( Get_and_Parse_Pipe( Inbound_Control.netlink_pipe[fd_pipe_read], &nlp ) ) {
-			case -EAGAIN:
-				break ;
-			case 0:
-				w1_masters( &nlp );
-				Netlink_Parse_Destroy(&nlp) ;
-				break ;
-			default:
-				LEVEL_CONNECT("Fatal error scanning W1 bus");
-				return  1;
-		}
+	switch ( Get_and_Parse_Pipe( Inbound_Control.netlink_pipe[fd_pipe_read], &nlp ) ) {
+		case gbGOOD:
+			w1_masters( &nlp );
+			Netlink_Parse_Destroy(&nlp) ;
+			break ;
+		case gbBAD:
+		default:
+			LEVEL_CONNECT("Fatal error scanning W1 bus");
+			break ;
 	}
-	return 0;
 }
 
 #endif /* OW_W1 */

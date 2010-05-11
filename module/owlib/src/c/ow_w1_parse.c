@@ -148,7 +148,7 @@ int Netlink_Parse_Get( struct netlink_parse * nlp )
 }
 
 /* Reads a packet from a pipe that was originally a netlink packet */
-int Get_and_Parse_Pipe( FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct netlink_parse * nlp )
+GOOD_OR_BAD Get_and_Parse_Pipe( FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct netlink_parse * nlp )
 {
 	unsigned char * buffer ;
 	struct nlmsghdr peek_nlm ;
@@ -156,7 +156,7 @@ int Get_and_Parse_Pipe( FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct netlink
 	// first read start of message to get length and details
 	if ( read( file_descriptor, &peek_nlm, W1_NLM_LENGTH ) != W1_NLM_LENGTH ) {
 		ERROR_DEBUG("Pipe (w1) read header error");
-		return -1 ;
+		return gbBAD ;
 	}
 
 	LEVEL_DEBUG("Pipe header: len=%u type=%u seq=%u|%u pid=%u ",peek_nlm.nlmsg_len,peek_nlm.nlmsg_type,NL_BUS(peek_nlm.nlmsg_seq),NL_SEQ(peek_nlm.nlmsg_seq),peek_nlm.nlmsg_pid);
@@ -165,7 +165,7 @@ int Get_and_Parse_Pipe( FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct netlink
 	buffer = owmalloc( peek_nlm.nlmsg_len ) ;
 	if ( buffer == NULL ) {
 		LEVEL_DEBUG("Netlink (w1) Cannot allocate %d byte buffer for data",peek_nlm.nlmsg_len) ;
-		return -ENOMEM ;
+		return gbBAD ;
 	}
 
 	memcpy( buffer, &peek_nlm, W1_NLM_LENGTH ) ;
@@ -173,16 +173,19 @@ int Get_and_Parse_Pipe( FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct netlink
 	if ( read( file_descriptor, &buffer[W1_NLM_LENGTH], peek_nlm.nlmsg_len - W1_NLM_LENGTH ) != (ssize_t) peek_nlm.nlmsg_len - W1_NLM_LENGTH ) {
 		ERROR_DEBUG("Pipe (w1) read body error");
 		owfree(buffer) ;
-		return -1 ;
+		return gbBAD ;
 	}
 
-	if ( Netlink_Parse_Buffer( buffer, nlp ) == 0 ) {
-		LEVEL_DEBUG("Pipe read --------------------");
-		Netlink_Parse_Show( nlp ) ;
-		return 0 ;
+	if ( Netlink_Parse_Buffer( buffer, nlp ) != 0 ) {
+		LEVEL_DEBUG("Buffer parsing error");
+		owfree(buffer) ;
+		return gbBAD ;
 	}
-	owfree(buffer) ;
-	return -EINVAL ;
+
+	// Good, the receiving routine should owfree buffer
+	LEVEL_DEBUG("Pipe read --------------------");
+	Netlink_Parse_Show( nlp ) ;
+	return gbGOOD ;
 }
 
 static void Netlink_Parse_Show( struct netlink_parse * nlp )
@@ -200,21 +203,21 @@ enum Netlink_Read_Status W1_Process_Response( void (* nrs_callback)( struct netl
 	}
 
 	if ( pn == NULL ) {
+		// Send to main netlink rather than a particular bus
 		file_descriptor = Inbound_Control.netlink_pipe[fd_pipe_read] ;
 		bus = 0 ;
 	} else {
+		// Bus-specifc
 		file_descriptor = pn->selected_connection->connin.w1.netlink_pipe[fd_pipe_read] ;
 		bus = pn->selected_connection->connin.w1.id ;
 	}
 
-	
 	while ( W1PipeSelect_timeout(file_descriptor)  == 0 ) {
 		struct netlink_parse nlp ;
 		LEVEL_DEBUG("Loop waiting for netlink piped message");
-		if ( Get_and_Parse_Pipe( file_descriptor, &nlp ) != 0 ) {
+		if ( BAD( Get_and_Parse_Pipe( file_descriptor, &nlp )) ) {
 			LEVEL_DEBUG("Error reading pipe for w1_bus_master%d",bus);
-			return -EIO ;
-			break ;
+			return nrs_error ;
 		}
 		if ( NL_SEQ(nlp.nlm->nlmsg_seq) != (unsigned int) seq ) {
 			LEVEL_DEBUG("Netlink sequence number out of order");
@@ -229,6 +232,7 @@ enum Netlink_Read_Status W1_Process_Response( void (* nrs_callback)( struct netl
 			owfree(nlp.nlm) ;
 			return nrs_complete ;
 		}
+
 		LEVEL_DEBUG("About to call nrs_callback");
 		nrs_callback( &nlp, v, pn ) ;
 		LEVEL_DEBUG("Called nrs_callback");

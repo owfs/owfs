@@ -90,15 +90,15 @@ static RESET_TYPE HA7E_reset(const struct parsedname *pn)
 	COM_flush(pn->selected_connection);
 	if (COM_write((BYTE*)"R", 1, pn->selected_connection)) {
 		LEVEL_DEBUG("Error sending HA7E reset");
-		return -EIO;
+		return BUS_RESET_ERROR;
 	}
 	if (COM_read(resp, 1, pn->selected_connection)) {
 		LEVEL_DEBUG("Error reading HA7E reset");
-		return -EIO;
+		return BUS_RESET_ERROR;
 	}
 	if (resp[0]!=0x0D) {
 		LEVEL_DEBUG("Error HA7E reset bad <cr>");
-		return -EIO;
+		return BUS_RESET_ERROR;
 	}
 	return BUS_RESET_OK;
 }
