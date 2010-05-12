@@ -289,6 +289,9 @@ static GOOD_OR_BAD DS2482_detect_dir( int any, enum ds2482_address chip_num, str
 		if ( in_current ) {
 			owfree( in_current->name ) ;
 		}
+		if ( in_current->name != NULL ) {
+			owfree( in_current->name ) ;
+		}
 		in_current->name = new_device ;
 
 		// Now look for the ds2482's

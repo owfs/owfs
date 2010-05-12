@@ -42,45 +42,21 @@ $Id$
     25-05-2003 iButtonLink device
 */
 
-#ifndef OW_DETECT_H			/* tedious wrapper */
-#define OW_DETECT_H
+#ifndef OW_PARSE_ADDRESS_H			/* tedious wrapper */
+#define OW_PARSE_ADDRESS_H
 
-GOOD_OR_BAD Server_detect(struct connection_in *in);
-GOOD_OR_BAD Zero_detect(struct connection_in *in);
-GOOD_OR_BAD DS2480_detect(struct connection_in *in);
+#define ADDRESS_NONE   -1
+#define ADDRESS_ALL    -2
+#define ADDRESS_NOTNUM -3
 
-#if OW_PARPORT
-GOOD_OR_BAD DS1410_detect(struct connection_in *in);
-#endif							/* OW_PARPORT */
+typedef int ADDRESS_OR_FLAG ;
 
-GOOD_OR_BAD DS9097_detect(struct connection_in *in);
-GOOD_OR_BAD LINK_detect(struct connection_in *in);
-GOOD_OR_BAD HA7E_detect(struct connection_in *in);
-GOOD_OR_BAD OWServer_Enet_detect(struct connection_in *in);
-GOOD_OR_BAD HA5_detect(struct connection_in *in);
-GOOD_OR_BAD BadAdapter_detect(struct connection_in *in);
-GOOD_OR_BAD LINKE_detect(struct connection_in *in);
-GOOD_OR_BAD Fake_detect(struct connection_in *in);
-GOOD_OR_BAD Tester_detect(struct connection_in *in);
-GOOD_OR_BAD Mock_detect(struct connection_in *in);
-GOOD_OR_BAD EtherWeather_detect(struct connection_in *in);
+struct address_pair {
+	int entries ;
+	ADDRESS_OR_FLAG first ;
+	ADDRESS_OR_FLAG second ;
+} ;
 
-#if OW_HA7
-GOOD_OR_BAD HA7_detect(struct connection_in *in);
-GOOD_OR_BAD FS_FindHA7(void);
-#endif							/* OW_HA7 */
+void Parse_Address( char * address, struct address_pair * ap ) ;
 
-#if OW_W1
-GOOD_OR_BAD W1_detect(struct connection_in * in) ;
-GOOD_OR_BAD W1_Browse( void ) ;
-#endif /* OW_W1 */
-
-#if OW_I2C
-GOOD_OR_BAD DS2482_detect(struct connection_in *in);
-#endif							/* OW_I2C */
-
-#if OW_USB
-GOOD_OR_BAD DS9490_detect(struct connection_in *in);
-#endif							/* OW_USB */
-
-#endif							/* OW_DETECT_H */
+#endif							/* OW_PARSE_ADDRESS_H */

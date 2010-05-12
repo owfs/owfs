@@ -561,8 +561,6 @@ static BYTE DS2480b_speed_byte( const struct parsedname * pn )
 //          Rev 1,2, and 3 of the DS2480/DS2480B.
 static RESET_TYPE DS2480_reset(const struct parsedname *pn)
 {
-	RESET_TYPE ret ;
-
 	if (pn->selected_connection->changed_bus_settings > 0) {
 		--pn->selected_connection->changed_bus_settings ;
 		DS2480_set_baud_control(pn);	// reset paramters

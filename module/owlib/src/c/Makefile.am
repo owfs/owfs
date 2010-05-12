@@ -104,6 +104,7 @@ OWLIB_SOURCE = ow_dl.c           \
                ow_net_server.c   \
 	       ow_offset.c       \
                ow_opt.c          \
+               ow_parse_address.c\
                ow_parseinput.c   \
                ow_parsename.c    \
                ow_parseobject.c  \

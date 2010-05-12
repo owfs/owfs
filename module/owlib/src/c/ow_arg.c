@@ -304,36 +304,7 @@ GOOD_OR_BAD ARG_USB(const char *arg)
 		return gbBAD;
 	}
 	in->busmode = bus_usb;
-	if (arg == NULL) {
-		in->connin.usb.usb_nr = 1;
-	} else if (strcasecmp(arg, "all") == 0) {
-		int number_of_usb_adapters;
-		number_of_usb_adapters = DS9490_enumerate();
-		LEVEL_CONNECT("All USB bus masters requested, %d found.", number_of_usb_adapters);
-		// first one
-		in->connin.usb.usb_nr = 1;
-		// cycle through rest
-		if (number_of_usb_adapters > 1) {
-			int usb_adapter_index;
-			for (usb_adapter_index = 2; usb_adapter_index <= number_of_usb_adapters; ++usb_adapter_index) {
-				struct connection_in *in2 = NewIn(NULL);
-				if (in2 == NULL) {
-					return gbBAD;
-				}
-				in2->busmode = bus_usb;
-				in2->connin.usb.usb_nr = usb_adapter_index;
-			}
-		}
-	} else {
-		in->connin.usb.usb_nr = atoi(arg);
-		//printf("ArgUSB file_descriptor=%d\n",in->file_descriptor);
-		if (in->connin.usb.usb_nr < 1) {
-			LEVEL_CONNECT("USB option %s implies no USB detection.", arg);
-			in->connin.usb.usb_nr = 0;
-		} else if (in->connin.usb.usb_nr > 1) {
-			LEVEL_CONNECT("USB bus master %d requested.", in->connin.usb.usb_nr);
-		}
-	}
+	in->name = (arg!=NULL) ? owstrdup(arg) : NULL;
 	return gbGOOD;
 #else							/* OW_USB */
 	LEVEL_DEFAULT("USB support (intentionally) not included in compilation. Check LIBUSB, then reconfigure and recompile.");

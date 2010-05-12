@@ -78,6 +78,9 @@ See: http://www.iana.org/assignments/port-numbers
 /* connect to a bus master */
 #include "ow_detect.h"
 
+/* address for i2c or usb */
+#include "ow_parse_address.h"
+
 /* large enough for arrays of 2048 elements of ~49 bytes each */
 #define MAX_OWSERVER_PROTOCOL_PACKET_SIZE  100050
 
@@ -208,11 +211,13 @@ struct connin_fake {
 struct connin_usb {
 	struct usb_device *dev;
 	struct usb_dev_handle *usb;
-	int usb_nr;
 	int datasampleoffset;
 	int writeonelowtime;
 	int pulldownslewrate;
 	int timeout;
+
+	int specific_usb_address ; // only a specific address requested?
+
 	/* "Name" of the device, like "8146572300000051"
 	 * This is set to the first DS1420 id found on the 1-wire adapter which
 	 * exists on the DS9490 adapters. If user only have a DS2490 chip, there
@@ -226,7 +231,6 @@ struct connin_usb {
 #define CHANGED_USB_SLEW   0x002
 #define CHANGED_USB_LOW    0x004
 #define CHANGED_USB_OFFSET 0x008
-
 
 struct connin_i2c {
 	int channels;
