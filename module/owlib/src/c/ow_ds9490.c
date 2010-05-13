@@ -69,7 +69,8 @@ static RESET_TYPE DS9490_reset(const struct parsedname *pn);
 static GOOD_OR_BAD DS9490_open_and_name(struct usb_list *ul, struct connection_in *in);
 static GOOD_OR_BAD DS9490_open(struct usb_list *ul, struct connection_in *in);
 
-static GOOD_OR_BAD DS9490_detect_low(int usb_nr, struct connection_in *in);
+static GOOD_OR_BAD DS9490_detect_single_adapter(int usb_nr, struct connection_in *in);
+static GOOD_OR_BAD DS9490_detect_all_adapters(struct connection_in * in_first);
 static GOOD_OR_BAD DS9490_ID_this_master(struct connection_in *in);
 static GOOD_OR_BAD DS9490_reconnect(const struct parsedname *pn);
 static GOOD_OR_BAD DS9490_redetect_low(struct connection_in * in);
@@ -419,7 +420,6 @@ static RESET_TYPE DS9490_getstatus(BYTE * buffer, int * readlen, const struct pa
 GOOD_OR_BAD DS9490_detect(struct connection_in *in)
 {
 	struct address_pair addr_pair ;
-	int usb_nr = 1 ;
 	
 	DS9490_setroutines(in);		// set up close, reconnect, reset, ...
 	
@@ -431,24 +431,24 @@ GOOD_OR_BAD DS9490_detect(struct connection_in *in)
 
 	if ( addr_pair.entries == 0 ) {
 		// Minimal specification, so use first USB device
-		return DS9490_detect_low( 1, in) ;
+		return DS9490_detect_single_adapter( 1, in) ;
 	} else if ( addr_pair.entries == 1 ) {
-		switch( addr_pain.first ) {
+		switch( addr_pair.first ) {
 		case ADDRESS_NONE:
 		case ADDRESS_NOTNUM:
 			LEVEL_CALL("Unclear usb specification in command line, will use first bus master") ;
-			return DS9490_detect_low( 1, in) ;
+			return DS9490_detect_single_adapter( 1, in) ;
 		case ADDRESS_ALL:
-			break ;
+			return DS9490_detect_all_adapters(in) ;
 		default:
-			return DS9490_detect_low( addr.first, in) ;
+			return DS9490_detect_single_adapter( addr_pair.first, in) ;
 		}
 	}
 	return gbGOOD;
 }
 
 /* Open a DS9490  -- low level code (to allow for repeats)  */
-static GOOD_OR_BAD DS9490_detect_low(int usb_nr, struct connection_in * in)
+static GOOD_OR_BAD DS9490_detect_single_adapter(int usb_nr, struct connection_in * in)
 {
 	struct usb_list ul;
 	/* usb_nr holds the number of the adapter */
@@ -472,6 +472,38 @@ static GOOD_OR_BAD DS9490_detect_low(int usb_nr, struct connection_in * in)
 
 	LEVEL_CONNECT("No available USB DS9490 bus master found");
 	return gbBAD;
+}
+
+/* Open a DS9490  -- low level code (to allow for repeats)  */
+static GOOD_OR_BAD DS9490_detect_all_adapters(struct connection_in * in_first)
+{
+	struct usb_list ul;
+	struct connection_in * in = in_first ;
+
+	USB_init(&ul);
+	while ( GOOD(USB_next(&ul)) ) {
+		if ( BAD(DS9490_open_and_name(&ul, in)) ) {
+			LEVEL_DEBUG("Cannot open USB device %s:%s", ul.bus->dirname, ul.dev->filename );
+			continue ;
+		} else if ( BAD(DS9490_ID_this_master(in)) ) {
+			DS9490_close(in) ;
+			LEVEL_DEBUG("Cannot name USB device %s:%s", ul.bus->dirname, ul.dev->filename );
+			continue;
+		} else{
+			LEVEL_CONNECT("USB DS9490 %s:%s successful bound", ul.bus->dirname, ul.dev->filename );
+			in = NewIn(in_first) ;
+			if ( in == NULL ) {
+				return gbGOOD ;
+			}
+		}
+	}
+	if ( in == in_first ) {
+		LEVEL_CONNECT("No available USB DS9490 bus master found");
+		return gbBAD;
+	}
+	// Remove extra connection_in
+	RemoveIn(in);
+	return gbGOOD ;
 }
 
 /* Found a DS9490 that seems good, now check list and find a device to ID for reconnects */
@@ -628,7 +660,7 @@ static GOOD_OR_BAD DS9490_redetect_low(struct connection_in * in)
 	
 	/*
 	* I don't think we need to call usb_init() or usb_find_busses() here.
-	* They are already called once in DS9490_detect_low().
+	* They are already called once in DS9490_detect_single_adapter().
 	* usb_init() is more like a os_init() function and there are probably
 	* no new USB-busses added after rebooting kernel... or?
 	* It doesn't seem to leak any memory when calling them, so they are
