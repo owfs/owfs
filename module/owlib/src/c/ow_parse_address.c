@@ -58,3 +58,37 @@ void Parse_Address( char * address, struct address_pair * ap )
 	ap->second = Parse_Single_Address(colon+1) ;
 }
 
+void Free_Address( struct address_pair * ap )
+{
+	if ( ap == NULL ) {
+		return ;
+	}
+	if ( ap->first.alpha ) {
+		owfree(ap->first.alpha) ;
+		ap->first.alpha = NULL ;
+	}
+	if ( ap->second.alpha ) {
+		owfree(ap->second.alpha) ;
+		ap->first.second = NULL ;
+	}
+	ap->first.type = address_none ;
+	ap->second.type = address_none ;
+}	
+	
+void Free_Address( struct address_pair * ap )
+{
+	if ( ap == NULL ) {
+		return ;
+	}
+	if ( ap->first.alpha ) {
+		owfree(ap->first.alpha) ;
+		ap->first.alpha = NULL ;
+	}
+	if ( ap->second.alpha ) {
+		owfree(ap->second.alpha) ;
+		ap->first.second = NULL ;
+	}
+	ap->first.type = address_none ;
+	ap->second.type = address_none ;
+}	
+	

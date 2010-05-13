@@ -45,18 +45,21 @@ $Id$
 #ifndef OW_PARSE_ADDRESS_H			/* tedious wrapper */
 #define OW_PARSE_ADDRESS_H
 
-#define ADDRESS_NONE   -1
-#define ADDRESS_ALL    -2
-#define ADDRESS_NOTNUM -3
+struct address_entry {
+	enum { address_none, address_alpha, address_all, address_numeric, } type ;
+	char * alpha ;
+	int number ;
+} ;
 
 typedef int ADDRESS_OR_FLAG ;
 
 struct address_pair {
 	int entries ;
-	ADDRESS_OR_FLAG first ;
-	ADDRESS_OR_FLAG second ;
+	struct address_entry first ;
+	struct address_entry second ;
 } ;
 
 void Parse_Address( char * address, struct address_pair * ap ) ;
+void Free_Address( struct address_pair * ap ) ;
 
 #endif							/* OW_PARSE_ADDRESS_H */
