@@ -420,6 +420,7 @@ static RESET_TYPE DS9490_getstatus(BYTE * buffer, int * readlen, const struct pa
 GOOD_OR_BAD DS9490_detect(struct connection_in *in)
 {
 	struct address_pair addr_pair ;
+	GOOD_OR_BAD gbResult = gbGOOD;
 	
 	DS9490_setroutines(in);		// set up close, reconnect, reset, ...
 	
@@ -429,22 +430,31 @@ GOOD_OR_BAD DS9490_detect(struct connection_in *in)
 	}
 	in->name = owstrdup(badUSBname);		// initialized
 
-	if ( addr_pair.entries == 0 ) {
-		// Minimal specification, so use first USB device
-		return DS9490_detect_single_adapter( 1, in) ;
-	} else if ( addr_pair.entries == 1 ) {
-		switch( addr_pair.first ) {
-		case ADDRESS_NONE:
-		case ADDRESS_NOTNUM:
-			LEVEL_CALL("Unclear usb specification in command line, will use first bus master") ;
-			return DS9490_detect_single_adapter( 1, in) ;
-		case ADDRESS_ALL:
-			return DS9490_detect_all_adapters(in) ;
-		default:
-			return DS9490_detect_single_adapter( addr_pair.first, in) ;
-		}
+	switch ( addr_pair.entries ) {
+		case 0:
+			// Minimal specification, so use first USB device
+			gbResult = DS9490_detect_single_adapter( 1, in) ;
+			break ;
+		case 1:
+			switch( addr_pair.first.type ) {
+				case address_all:
+					gbResult = DS9490_detect_all_adapters(in) ;
+					break ;
+				case address_numeric:
+					gbResult = DS9490_detect_single_adapter( addr_pair.first.number, in) ;
+					break ;
+				default:
+					LEVEL_DEFAULT("Unclear what <%s> means in USB specification, will use first adapter.",addr_pair.first.alpha) ;
+					gbResult = DS9490_detect_single_adapter( 1, in) ;
+					break ;
+			}
+			break ;
+		case 2:
+			// not implemented yet
+			break ;
 	}
-	return gbGOOD;
+	Free_Address( &addr_pair ) ;
+	return gbResult;
 }
 
 /* Open a DS9490  -- low level code (to allow for repeats)  */
