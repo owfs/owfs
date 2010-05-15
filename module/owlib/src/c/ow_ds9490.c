@@ -72,6 +72,8 @@ static GOOD_OR_BAD DS9490_open(struct usb_list *ul, struct connection_in *in);
 static GOOD_OR_BAD DS9490_detect_single_adapter(int usb_nr, struct connection_in *in);
 static GOOD_OR_BAD DS9490_detect_all_adapters(struct connection_in * in_first);
 static GOOD_OR_BAD DS9490_ID_this_master(struct connection_in *in);
+static void DS9490_connection_init( struct connection_in * in ) ;
+
 static GOOD_OR_BAD DS9490_reconnect(const struct parsedname *pn);
 static GOOD_OR_BAD DS9490_redetect_low(struct connection_in * in);
 static GOOD_OR_BAD DS9490_redetect_match(struct connection_in * in);
@@ -425,10 +427,7 @@ GOOD_OR_BAD DS9490_detect(struct connection_in *in)
 	DS9490_setroutines(in);		// set up close, reconnect, reset, ...
 	
 	Parse_Address( in->name, &addr_pair ) ;
-	if ( in->name ) {
-		owfree(in->name) ;
-	}
-	in->name = owstrdup(badUSBname);		// initialized
+	DS9490_connection_init( in ) ;
 
 	switch ( addr_pair.entries ) {
 		case 0:
@@ -438,9 +437,11 @@ GOOD_OR_BAD DS9490_detect(struct connection_in *in)
 		case 1:
 			switch( addr_pair.first.type ) {
 				case address_all:
+					LEVEL_DEBUG("Look for all USB adapters");
 					gbResult = DS9490_detect_all_adapters(in) ;
 					break ;
 				case address_numeric:
+					LEVEL_DEBUG("Look for USB adapter number %d",addr_pair.first.number);
 					gbResult = DS9490_detect_single_adapter( addr_pair.first.number, in) ;
 					break ;
 				default:
@@ -466,7 +467,6 @@ static GOOD_OR_BAD DS9490_detect_single_adapter(int usb_nr, struct connection_in
 
 	USB_init(&ul);
 	while ( GOOD(USB_next(&ul)) ) {
-		printf("USB <%s>=%d\t  DEVICE <%s>=%d\n", ul.bus->dirname,ul.bus->location, ul.dev->filename,ul.dev->devnum);
 		if (++usbnum < usb_nr ) {
 			LEVEL_CONNECT("USB DS9490 %d passed over. (Looking for %d)", usbnum, usb_nr);
 		} else if ( BAD(DS9490_open_and_name(&ul, in)) ) {
@@ -475,7 +475,7 @@ static GOOD_OR_BAD DS9490_detect_single_adapter(int usb_nr, struct connection_in
 			DS9490_close(in) ;
 			LEVEL_CONNECT("USB DS9490 %d unsuccessful. (Looking for %d)", usbnum, usb_nr);
 		} else{
-			LEVEL_CONNECT("USB DS9490 %d/%d successful bound", usbnum, usb_nr);
+			LEVEL_CONNECT("USB DS9490 %d/%d successfully bound", usbnum, usb_nr);
 			return gbGOOD ;
 		}
 	}
@@ -500,18 +500,20 @@ static GOOD_OR_BAD DS9490_detect_all_adapters(struct connection_in * in_first)
 			LEVEL_DEBUG("Cannot name USB device %s:%s", ul.bus->dirname, ul.dev->filename );
 			continue;
 		} else{
-			LEVEL_CONNECT("USB DS9490 %s:%s successful bound", ul.bus->dirname, ul.dev->filename );
+			LEVEL_CONNECT("USB DS9490 %s:%s successfully bound", ul.bus->dirname, ul.dev->filename );
 			in = NewIn(in_first) ;
 			if ( in == NULL ) {
 				return gbGOOD ;
 			}
+			// set up the new connection for the next adapter
+			DS9490_connection_init(in) ;
 		}
 	}
 	if ( in == in_first ) {
 		LEVEL_CONNECT("No available USB DS9490 bus master found");
 		return gbBAD;
 	}
-	// Remove extra connection_in
+	// Remove the extra connection
 	RemoveIn(in);
 	return gbGOOD ;
 }
@@ -1032,6 +1034,24 @@ static GOOD_OR_BAD DS9490_root_dir( struct dirblob * db, struct connection_in * 
 	// Dirblob must be cleared by recipient.
 }
 
+static void DS9490_connection_init( struct connection_in * in )
+{
+	if ( in == NULL ) {
+		return ;
+	}
+	if ( in->name ) {
+		owfree( in->name) ;
+	}
+	in->name = owstrdup(badUSBname);		// initialized
+
+	in->busmode = bus_usb;
+	in->connin.usb.usb = NULL ; // no handle yet
+	memset( in->connin.usb.ds1420_address, 0, SERIAL_NUMBER_SIZE ) ;
+	DS9490_setroutines(in);
+	in->Adapter = adapter_DS9490;	/* OWFS assigned value */
+	in->adapter_name = "DS9490";
+}
+
 /* ------------------------------------------------------------ */
 /* --- USB Open and Close --------------------------------------*/
 
@@ -1106,9 +1126,6 @@ static GOOD_OR_BAD DS9490_open(struct usb_list *ul, struct connection_in *in)
 			LEVEL_CONNECT("Failed to set alt interface on USB DS9490 bus master at %s.", in->name);
 		} else {
 			LEVEL_DEFAULT("Opened USB DS9490 bus master at %s.", in->name);
-			DS9490_setroutines(in);
-			in->Adapter = adapter_DS9490;	/* OWFS assigned value */
-			in->adapter_name = "DS9490";
 
 			// clear endpoints
 			if ( USB_CLEAR_HALT(usb, DS2490_EP3) || USB_CLEAR_HALT(usb, DS2490_EP2) || USB_CLEAR_HALT(usb, DS2490_EP1) ) {
@@ -1183,7 +1200,6 @@ static SIZE_OR_ERROR DS9490_read(BYTE * buf, size_t size, const struct parsednam
 	SIZE_OR_ERROR ret;
 	struct connection_in * in = pn->selected_connection ;
 	usb_dev_handle *usb = in->connin.usb.usb;
-	//printf("DS9490_read\n");
 	if ((ret = usb_bulk_read(usb, DS2490_EP3, (ASCII *) buf, (int) size, in->connin.usb.timeout)) > 0) {
 		return ret;
 	}

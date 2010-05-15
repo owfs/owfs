@@ -27,21 +27,21 @@ static void Parse_Single_Address( struct address_entry * ae )
 		ae->type = address_all ;
 	} else {
 		switch( sscanf( ae->alpha, "%i.%i.%i.%i", &q1, &q2, &q3, &q4 ) ) {
-			case 4:
+		case 4:
 			ae->type = address_dottedquad ;
 			ae->number = q1 ;
 			break ;
-			case 3:
-			case 2:
+		case 3:
+		case 2:
 			ae->number = q1 ;
 			ae->type = address_alpha ;
 			break ;
-			case 1:
+		case 1:
 			ae->type = address_numeric ;
 			ae->number = q1 ;
 			break ;
-			case 0:
-			default:
+		case 0:
+		default:
 			ae->type = address_alpha ;
 			break ;
 		}
