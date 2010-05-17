@@ -245,6 +245,7 @@ struct connin_i2c {
 #endif							/* OW_MT */
 	int current;
 	struct connection_in *head;
+	struct connection_in *next;
 };
 
 struct connin_ha7 {

@@ -71,12 +71,14 @@ static GOOD_OR_BAD DS9490_open(struct usb_list *ul, struct connection_in *in);
 
 static GOOD_OR_BAD DS9490_detect_single_adapter(int usb_nr, struct connection_in *in);
 static GOOD_OR_BAD DS9490_detect_all_adapters(struct connection_in * in_first);
+static GOOD_OR_BAD DS9490_detect_specific_adapter(int bus_nr, int dev_nr, struct connection_in * in) ;
 static GOOD_OR_BAD DS9490_ID_this_master(struct connection_in *in);
 static void DS9490_connection_init( struct connection_in * in ) ;
 
 static GOOD_OR_BAD DS9490_reconnect(const struct parsedname *pn);
 static GOOD_OR_BAD DS9490_redetect_low(struct connection_in * in);
 static GOOD_OR_BAD DS9490_redetect_match(struct connection_in * in);
+static GOOD_OR_BAD DS9490_redetect_specific_adapter( struct connection_in * in) ;
 static void DS9490_setroutines(struct connection_in *in);
 static GOOD_OR_BAD DS9490_root_dir( struct dirblob * db, struct connection_in * in ) ;
 static void DS9490_dir_callback( void * v, const struct parsedname * pn_entry );
@@ -421,40 +423,44 @@ static RESET_TYPE DS9490_getstatus(BYTE * buffer, int * readlen, const struct pa
 /* Main routine for detecting (and setting up) the DS2490 1-wire USB chip */
 GOOD_OR_BAD DS9490_detect(struct connection_in *in)
 {
-	struct address_pair addr_pair ;
-	GOOD_OR_BAD gbResult = gbGOOD;
+	struct address_pair ap ;
+	GOOD_OR_BAD gbResult = gbBAD;
 	
 	DS9490_setroutines(in);		// set up close, reconnect, reset, ...
 	
-	Parse_Address( in->name, &addr_pair ) ;
+	Parse_Address( in->name, &ap ) ;
 	DS9490_connection_init( in ) ;
 
-	switch ( addr_pair.entries ) {
+	switch ( ap.entries ) {
 		case 0:
 			// Minimal specification, so use first USB device
 			gbResult = DS9490_detect_single_adapter( 1, in) ;
 			break ;
 		case 1:
-			switch( addr_pair.first.type ) {
+			switch( ap.first.type ) {
 				case address_all:
 					LEVEL_DEBUG("Look for all USB adapters");
 					gbResult = DS9490_detect_all_adapters(in) ;
 					break ;
 				case address_numeric:
-					LEVEL_DEBUG("Look for USB adapter number %d",addr_pair.first.number);
-					gbResult = DS9490_detect_single_adapter( addr_pair.first.number, in) ;
+					LEVEL_DEBUG("Look for USB adapter number %d",ap.first.number);
+					gbResult = DS9490_detect_single_adapter( ap.first.number, in) ;
 					break ;
 				default:
-					LEVEL_DEFAULT("Unclear what <%s> means in USB specification, will use first adapter.",addr_pair.first.alpha) ;
+					LEVEL_DEFAULT("Unclear what <%s> means in USB specification, will use first adapter.",ap.first.alpha) ;
 					gbResult = DS9490_detect_single_adapter( 1, in) ;
 					break ;
 			}
 			break ;
 		case 2:
-			// not implemented yet
+			if ( ap.first.type != address_numeric || ap.second.type != address_numeric ) {
+				LEVEL_DEFAULT("USB address <%s:%s> not in number:number format",ap.first.alpha,ap.second.alpha) ;
+			} else {
+				gbResult = DS9490_detect_specific_adapter( ap.first.number, ap.second.number, in ) ;
+			}
 			break ;
 	}
-	Free_Address( &addr_pair ) ;
+	Free_Address( &ap ) ;
 	return gbResult;
 }
 
@@ -478,6 +484,47 @@ static GOOD_OR_BAD DS9490_detect_single_adapter(int usb_nr, struct connection_in
 			LEVEL_CONNECT("USB DS9490 %d/%d successfully bound", usbnum, usb_nr);
 			return gbGOOD ;
 		}
+	}
+
+	LEVEL_CONNECT("No available USB DS9490 bus master found");
+	return gbBAD;
+}
+
+/* Open a DS9490  -- low level code (to allow for repeats)  */
+static GOOD_OR_BAD DS9490_detect_specific_adapter(int bus_nr, int dev_nr, struct connection_in * in)
+{
+	struct usb_list ul;
+	
+	// Mark this connection as taking only this address pair. Important for reconnections.
+	in->connin.usb.specific_usb_address = 1 ;
+
+	USB_init(&ul);
+	while ( GOOD(USB_next(&ul)) ) {
+		// Use a not very efficient mechanism.
+		// Create the actual USB name (bus:dev) for this entry,
+		// parse it like an address,
+		// and match it.
+		struct address_pair ap ;
+		char * usb_address = DS9490_device_name( &ul ) ; // temporary name for parsing into a number
+		if ( usb_address == NULL ) {
+			continue ;
+		} else {
+			Parse_Address( usb_address, &ap ) ; // makes a copy
+			owfree(usb_address) ; // free the original
+		}
+		if ( ap.entries != 2 || ap.first.type != address_numeric || ap.second.type != address_numeric ) {
+			LEVEL_DEBUG("LIBUSB generated an uninterpretable usb address") ;
+		} else if ( ap.first.number != bus_nr || ap.second.number != dev_nr ) {
+			LEVEL_CONNECT("USB DS9490 %d:%d passed over. (Looking for %d:%d)", ap.first.number, ap.second.number, bus_nr, dev_nr );
+		} else if ( BAD(DS9490_open_and_name(&ul, in)) ) {
+			Free_Address( &ap ) ;
+			return gbBAD;
+		} else{
+			LEVEL_CONNECT("USB DS9490 %d:%d successfully bound", bus_nr, dev_nr );
+			Free_Address( &ap ) ;
+			return gbGOOD ;
+		}
+		Free_Address( &ap ) ;
 	}
 
 	LEVEL_CONNECT("No available USB DS9490 bus master found");
@@ -649,7 +696,13 @@ static GOOD_OR_BAD DS9490_reconnect(const struct parsedname *pn)
 {
 	GOOD_OR_BAD ret;
 	struct connection_in * in = pn->selected_connection ;
-	
+
+	if ( in->connin.usb.specific_usb_address ) { 
+		// special case where a usb bus:dev pair was given
+		// only connect to the same spot
+		return DS9490_redetect_specific_adapter( in ) ; 
+	}
+
 	/* Have to protect usb_find_busses() and usb_find_devices() with
 	 * a lock since libusb could crash if 2 threads call it at the same time.
 	 * It's not called until DS9490_redetect_low(), but I lock here just
@@ -694,6 +747,47 @@ static GOOD_OR_BAD DS9490_redetect_low(struct connection_in * in)
 	}
 	//LEVEL_CONNECT("No available USB DS9490 bus master found");
 	return gbBAD;
+}
+
+/* Open a DS9490  -- low level code (to allow for repeats)  */
+static GOOD_OR_BAD DS9490_redetect_specific_adapter( struct connection_in * in)
+{
+	struct address_pair ap ;
+	GOOD_OR_BAD gbResult ;
+	
+	if ( in->name == NULL ) {
+		// Reconnect with bad name
+		return gbBAD ;
+	}
+	
+	Parse_Address( in->name, &ap ) ;
+	if ( ap.first.type != address_numeric || ap.second.type != address_numeric ) {
+		LEVEL_DEBUG("Cannot understand the specific usb address pair to reconnect <%s>",in->name) ;
+		gbResult = gbBAD ;
+	} else {
+		char * name_copy = owstrdup( in->name ) ; // since DS9490_close clears this value and we may need to restore on error
+
+		/* Have to protect usb_find_busses() and usb_find_devices() with
+		 * a lock since libusb could crash if 2 threads call it at the same time.
+		 * It's not called until DS9490_redetect_low(), but I lock here just
+		 * to be sure DS9490_close() and DS9490_open() get one try first. */
+		LIBUSBLOCK;
+		DS9490_close( in ) ;
+		gbResult = DS9490_detect_specific_adapter( ap.first.number, ap.second.number, in) ;
+		LIBUSBUNLOCK;
+		
+		if ( BAD(gbResult) ) {
+			if ( in->name ) {
+				owfree( in->name ) ;
+			}
+			in->name = name_copy ; // so no need to free here
+		} else {
+			owfree( name_copy ) ;
+		}
+	}
+
+	Free_Address( &ap ) ;
+	return gbResult ;
 }
 
 /* Open a DS9490  -- low level code (to allow for repeats)  */
@@ -1178,7 +1272,7 @@ static void DS9490_close(struct connection_in *in)
 /* Return NULL if there is a problem */
 static char *DS9490_device_name(const struct usb_list *ul)
 {
-	size_t len = 2 * PATH_MAX + 1;
+	size_t len = PATH_MAX ;
 	char name[len + 1];
 	char *ret = NULL;
 	int sn_ret ;
@@ -1186,7 +1280,7 @@ static char *DS9490_device_name(const struct usb_list *ul)
 	sn_ret = snprintf(name, len, "%s:%s", ul->bus->dirname, ul->dev->filename) ;
 	UCLIBCUNLOCK ;
 	if (sn_ret > 0) {
-		name[len] = '\0';		// make sufre there is a trailing null
+		name[len] = '\0';		// make sure there is a trailing null
 		ret = owstrdup(name);
 	}
 	return ret;

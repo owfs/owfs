@@ -50,21 +50,20 @@ enum ds2482_address {
 	ds2482_all=-1,
 	ds2482_18, ds2482_19, ds2482_1A, ds2482_1B, ds2482_1C, ds2482_1D, ds2482_1E, ds2482_1F,
 	ds2482_too_far
-	} ;
+} ;
 
-static enum ds2482_address Parse_i2c_address( struct connection_in * in ) ;
-static GOOD_OR_BAD DS2482_detect_bus(enum ds2482_address chip_num, struct connection_in *in) ;
+static GOOD_OR_BAD DS2482_detect_bus(enum ds2482_address chip_num, char * i2c_device, struct connection_in *in) ;
 static GOOD_OR_BAD DS2482_detect_sys( int any, enum ds2482_address chip_num, struct connection_in *in) ;
 static GOOD_OR_BAD DS2482_detect_dir( int any, enum ds2482_address chip_num, struct connection_in *in) ;
-static GOOD_OR_BAD DS2482_detect_single(int lowindex, int highindex, struct connection_in *in) ;
+static GOOD_OR_BAD DS2482_detect_single(int lowindex, int highindex, char * i2c_device, struct connection_in *in) ;
 static enum search_status DS2482_next_both(struct device_search *ds, const struct parsedname *pn);
 static GOOD_OR_BAD DS2482_triple(BYTE * bits, int direction, FILE_DESCRIPTOR_OR_ERROR file_descriptor);
 static GOOD_OR_BAD DS2482_send_and_get(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const BYTE wr, BYTE * rd);
 static RESET_TYPE DS2482_reset(const struct parsedname *pn);
 static GOOD_OR_BAD DS2482_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 static void DS2482_setroutines(struct connection_in *in);
-static GOOD_OR_BAD HeadChannel(struct connection_in *in);
-static GOOD_OR_BAD CreateChannels(struct connection_in *in);
+static GOOD_OR_BAD HeadChannel(struct connection_in *head);
+static GOOD_OR_BAD CreateChannels(struct connection_in *head);
 static GOOD_OR_BAD DS2482_channel_select(const struct parsedname *pn);
 static GOOD_OR_BAD DS2482_readstatus(BYTE * c, FILE_DESCRIPTOR_OR_ERROR file_descriptor, unsigned long int min_usec, unsigned long int max_usec);
 static GOOD_OR_BAD SetConfiguration(BYTE c, struct connection_in *in);
@@ -125,37 +124,8 @@ static GOOD_OR_BAD DS2482_PowerByte(const BYTE byte, BYTE * resp, const UINT del
 #define DS2482_1wire_triplet_usec   198, 219
 
 /* Defines for making messages more explicit */
-#define I2Cformat "I2C bus %s, address %.2X channel %d/%d"
-#define I2Cvar(in)  (in)->name,(in)->connin.i2c.i2c_address, (in)->connin.i2c.index, (in)->connin.i2c.channels
-
-
-/* Search for a ":" in the name
-   Change it to a null,and parse the remaining text as either
-   null, a number, or nothing
-*/
-static enum ds2482_address Parse_i2c_address( struct connection_in * in )
-{
-	enum ds2482_address address ;
-	char * colon = strchr( in->name, ':' ) ;
-	if ( colon == NULL ) { // not found
-		return ds2482_any ;
-	}
-
-	colon[0] = 0x00 ; // set as null
-	++colon ; // point beyond
-
-	if ( strcasecmp(colon,"all")==0 ) {
-		return ds2482_all ;
-	}
-
-	address = atoi( colon ) ;
-
-	if ( address < ds2482_18 || address >= ds2482_too_far ) {
-		return ds2482_any ; // bad entry ignored
-	}
-
-	return address ;
-}
+#define I2Cformat "I2C bus %s, channel %d/%d"
+#define I2Cvar(in)  (in)->name, (in)->connin.i2c.index, (in)->connin.i2c.channels
 
 /* Device-specific functions */
 static void DS2482_setroutines(struct connection_in *in)
@@ -179,23 +149,55 @@ static void DS2482_setroutines(struct connection_in *in)
 /* Top level detect routine */
 GOOD_OR_BAD DS2482_detect(struct connection_in *in)
 {
+	struct address_pair ap ;
+	GOOD_OR_BAD gbResult ;
 	enum ds2482_address chip_num ;
-	int any ;
-	int all ;
-
-	// find the specific i2c address specified after the ":"
-	// Alters the name by changing ':' to NULL
-	chip_num = Parse_i2c_address( in ) ;
-
-	any = ( in->name[0] == 0x00 ) ; // no adapter specified, so use any (the first good one )
-	all = ( strcasecmp( in->name, "all" ) == 0 ) ;
-	if ( !any && !all ) {
-		// traditional, actual bus specified
-		return DS2482_detect_bus( chip_num, in )==0 ? gbGOOD : gbBAD ;
+	
+	Parse_Address( in->name, &ap ) ;
+	
+	switch ( ap.second.type ) {
+		case address_numeric:
+			if ( ap.second.number < ds2482_18 || ap.second.number >= ds2482_too_far ) {
+				LEVEL_CALL("DS2482 bus address <%s> invalid. Will scan.", ap.second.alpha) ;
+				chip_num = ds2482_any ;
+			} else {
+				chip_num = ap.second.number ;
+			}
+			break ;
+		case address_all:
+			chip_num = ds2482_all ;
+			break ;
+		case address_none:
+			chip_num = ds2482_any ;
+			break ;
+		default:
+			LEVEL_CALL("DS2482 bus address <%s> invalid. Will scan.", ap.second.alpha) ;
+			chip_num = ds2482_any ;
+			break ;
 	}
 
-	// Any adapters?
-	return DS2482_detect_sys( any, chip_num, in ) ;
+	if ( in->name ) {
+		owfree(in->name) ;
+		in->name = NULL ;
+	}
+
+	switch ( ap.first.type ) {
+		case address_all:
+			// All adapters
+			gbResult = DS2482_detect_sys( 0, chip_num, in ) ;
+			break ;
+		case address_none:
+			// Any adapter -- first one found
+			gbResult = DS2482_detect_sys( 1, chip_num, in ) ;
+			break ;
+		default:
+			// traditional, actual bus specified
+			gbResult = DS2482_detect_bus( chip_num, ap.first.alpha, in ) ;
+			break ;
+	}
+	
+	Free_Address( &ap ) ;
+	return gbResult ;
 }
 
 #define SYSFS_I2C_Path "/sys/class/i2c-adapter"
@@ -221,21 +223,18 @@ static GOOD_OR_BAD DS2482_detect_sys( int any, enum ds2482_address chip_num, str
 
 	/* cycle through entries in /sys/class/i2c-adapter */
 	while ( (i2c_bus=readdir(i2c_list_dir)) != NULL ) {
-		char * new_device = owmalloc( strlen(i2c_bus->d_name) + 7 ) ; // room for /dev/name
-		if ( new_device==NULL ) {
-			break ; // cannot make space
-		}
+		char dev_name[128] ; // room for /dev/name
+		int sn_ret ;
 
-		// Change name to real i2c bus name
-		if ( in_current->name ) {
-			owfree( in_current->name ) ;
+		UCLIBCLOCK ;
+		sn_ret = snprintf( dev_name, 128-1, "/dev/%s", i2c_bus->d_name ) ;
+		UCLIBCUNLOCK ;
+		if ( sn_ret < 0 ) {
+			break ;
 		}
-		in_current->name = new_device ;
-		strcpy( in_current->name, "/dev/" ) ;
-		strcat( in_current->name, i2c_bus->d_name ) ;
 
 		// Now look for the ds2482's
-		if ( BAD( DS2482_detect_bus( chip_num, in_current ) ) ) {
+		if ( BAD( DS2482_detect_bus( chip_num, dev_name, in_current ) ) ) {
 			continue ; // none found on this i2c bus
 		}
 
@@ -268,7 +267,6 @@ static GOOD_OR_BAD DS2482_detect_dir( int any, enum ds2482_address chip_num, str
 
 	for ( bus=0 ; bus<99 ; ++bus ) {
 		char dev_name[128] ;
-		char * new_device ;
 
 		UCLIBCLOCK ;
 		sn_ret = snprintf( dev_name, 128-1, "/dev/i2c-%d", bus ) ;
@@ -280,22 +278,9 @@ static GOOD_OR_BAD DS2482_detect_dir( int any, enum ds2482_address chip_num, str
 		if ( access(dev_name, F_OK) < 0 ) {
 			continue ;
 		}
-		new_device = owstrdup( dev_name ) ;
-		if ( new_device==NULL ) {
-			break ; // cannot make space
-		}
-
-		// Change name to real i2c bus name
-		if ( in_current ) {
-			owfree( in_current->name ) ;
-		}
-		if ( in_current->name != NULL ) {
-			owfree( in_current->name ) ;
-		}
-		in_current->name = new_device ;
 
 		// Now look for the ds2482's
-		if ( BAD( DS2482_detect_bus( chip_num, in_current ) ) ) {
+		if ( BAD( DS2482_detect_bus( chip_num, dev_name, in_current ) ) ) {
 			continue ;
 		}
 
@@ -317,19 +302,19 @@ static GOOD_OR_BAD DS2482_detect_dir( int any, enum ds2482_address chip_num, str
 
 /* Try to see if there is a DS2482 device on the specified i2c bus */
 /* Includes  a fix from Pascal Baerten */
-static GOOD_OR_BAD DS2482_detect_bus(enum ds2482_address chip_num, struct connection_in * in_original)
+static GOOD_OR_BAD DS2482_detect_bus(enum ds2482_address chip_num, char * i2c_device, struct connection_in * in_original)
 {
 	switch (chip_num) {
 		case ds2482_any:
 			// usual case, find the first adapter
-			return DS2482_detect_single( 0, 7, in_original ) ;
+			return DS2482_detect_single( 0, 7, i2c_device, in_original ) ;
 		case ds2482_all:
 			// Look through all the possible i2c addresses
 			{
 				int start_chip = 0 ;
 				struct connection_in * all_in = in_original ;
 				do {
-					if ( BAD( DS2482_detect_single( start_chip, 7, all_in ) ) ) {
+					if ( BAD( DS2482_detect_single( start_chip, 7, i2c_device, all_in ) ) ) {
 						if ( in_original == all_in ) { //first time
 							return gbBAD ;
 						}
@@ -350,19 +335,19 @@ static GOOD_OR_BAD DS2482_detect_bus(enum ds2482_address chip_num, struct connec
 			break ;
 		default:
 			// specific i2c address
-			return DS2482_detect_single( chip_num, chip_num, in_original ) ;
+			return DS2482_detect_single( chip_num, chip_num, i2c_device, in_original ) ;
 	}
 }
 
 /* Try to see if there is a DS2482 device on the specified i2c bus */
-static GOOD_OR_BAD DS2482_detect_single(int lowindex, int highindex, struct connection_in *in)
+static GOOD_OR_BAD DS2482_detect_single(int lowindex, int highindex, char * i2c_device, struct connection_in *in)
 {
 	int test_address[8] = { 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, };	// the last 4 are -800 only
-	int i;
+	int i2c_index;
 	FILE_DESCRIPTOR_OR_ERROR file_descriptor;
 
 	/* open the i2c port */
-	file_descriptor = open(in->name, O_RDWR);
+	file_descriptor = open(i2c_device, O_RDWR);
 	if ( FILE_DESCRIPTOR_NOT_VALID(file_descriptor) ) {
 		ERROR_CONNECT("Could not open i2c device %s", in->name);
 		return gbBAD;
@@ -371,22 +356,23 @@ static GOOD_OR_BAD DS2482_detect_single(int lowindex, int highindex, struct conn
 	/* Set up low-level routines */
 	DS2482_setroutines(in);
 
-	for (i = lowindex; i <= highindex; ++i) {
+	for (i2c_index = lowindex; i2c_index <= highindex; ++i2c_index) {
 		/* set the candidate address */
-		if (ioctl(file_descriptor, I2C_SLAVE, test_address[i]) < 0) {
-			ERROR_CONNECT("Cound not set trial i2c address to %.2X", test_address[i]);
+		if (ioctl(file_descriptor, I2C_SLAVE, test_address[i2c_index]) < 0) {
+			ERROR_CONNECT("Cound not set trial i2c address to %.2X", test_address[i2c_index]);
 		} else {
 			BYTE c;
-			LEVEL_CONNECT("Found an i2c device at %s address %.2X", in->name, test_address[i]);
+			LEVEL_CONNECT("Found an i2c device at %s address %.2X", i2c_device, test_address[i2c_index]);
 			/* Provisional setup as a DS2482-100 ( 1 channel ) */
 			in->file_descriptor = file_descriptor;
 			in->connin.i2c.index = 0;
 			in->connin.i2c.channels = 1;
 			in->connin.i2c.current = 0;
 			in->connin.i2c.head = in;
+			in->connin.i2c.next = NULL;
 			in->adapter_name = "DS2482-100";
-			in->connin.i2c.i2c_address = test_address[i];
-			in->connin.i2c.i2c_index = i;
+			in->connin.i2c.i2c_address = test_address[i2c_index];
+			in->connin.i2c.i2c_index = i2c_index;
 			in->connin.i2c.configreg = 0x00 ;	// default configuration setting desired
 			if ( Globals.i2c_APU ) {
 				in->connin.i2c.configreg |= DS2482_REG_CFG_APU ;
@@ -405,12 +391,20 @@ static GOOD_OR_BAD DS2482_detect_single(int lowindex, int highindex, struct conn
 				|| BAD(DS2482_readstatus(&c, file_descriptor, DS2482_Chip_reset_usec))	// pause .5 usec then read status
 				|| (c != (DS2482_REG_STS_LL | DS2482_REG_STS_RST))	// make sure status is properly set
 				) {
-				LEVEL_CONNECT("i2c device at %s address %.2X cannot be reset. Not a DS2482.", in->name, test_address[i]);
+				LEVEL_CONNECT("i2c device at %s address %.2X cannot be reset. Not a DS2482.", i2c_index, test_address[i2c_index]);
 				continue;
 			}
-			LEVEL_CONNECT("i2c device at %s address %.2X appears to be DS2482-x00", in->name, test_address[i]);
+			LEVEL_CONNECT("i2c device at %s address %.2X appears to be DS2482-x00", i2c_index, test_address[i2c_index]);
 			in->connin.i2c.configchip = 0x00;	// default configuration register after RESET
 			// Note, only the lower nibble of the device config stored
+			
+			// Create name
+			in->name = owmalloc( strlen(i2c_device) + 10 ) ;
+			if ( in-> name ) {
+				UCLIBCLOCK;
+				snprintf(in->name, strlen(i2c_device) + 10, "%s:%.2X", i2c_device, test_address[i2c_index]);
+				UCLIBCUNLOCK;
+			}
 
 			/* Now see if DS2482-100 or DS2482-800 */
 			return HeadChannel(in);
@@ -428,9 +422,12 @@ static GOOD_OR_BAD DS2482_redetect(const struct parsedname *pn)
 	struct connection_in *head = pn->selected_connection->connin.i2c.head;
 	int address = head->connin.i2c.i2c_address;
 	FILE_DESCRIPTOR_OR_ERROR file_descriptor;
+	struct address_pair ap ; // to get device name from device:address
 
 	/* open the i2c port */
-	file_descriptor = open(head->name, O_RDWR);
+	Parse_Address( head->name, &ap ) ;
+	file_descriptor = open(ap.first.alpha, O_RDWR);
+	Free_Address( &ap ) ;
 	if ( FILE_DESCRIPTOR_NOT_VALID(file_descriptor) ) {
 		ERROR_CONNECT("Could not open i2c device %s", head->name);
 		return gbBAD;
@@ -448,19 +445,15 @@ static GOOD_OR_BAD DS2482_redetect(const struct parsedname *pn)
 			) {
 			LEVEL_CONNECT("i2c device at %s address %d cannot be reset. Not a DS2482.", head->name, address);
 		} else {
+			struct connection_in * next ;
 			head->connin.i2c.current = 0;
 			head->file_descriptor = file_descriptor;
-			head->connin.i2c.configchip = 0x00;	// default configuration register after RESET
+			head->connin.i2c.configchip = 0x00;	// default configuration register after RESET	
 			LEVEL_CONNECT("i2c device at %s address %d reset successfully", head->name, address);
-			if (head->connin.i2c.channels > 1) {	// need to reset other 8 channels?
+			for ( next = head->connin.i2c.next; next; next = next->connin.i2c.next ) {
 				/* loop through devices, matching those that have the same "head" */
 				/* BUSLOCK also locks the sister channels for this */
-				struct connection_in *in;
-				for (in = Inbound_Control.head; in; in = in->next) {
-					if (in == head) {
-						in->reconnect_state = reconnect_ok;
-					}
-				}
+				next->reconnect_state = reconnect_ok;
 			}
 			return gbGOOD;
 		}
@@ -643,24 +636,24 @@ static GOOD_OR_BAD DS2482_send_and_get(FILE_DESCRIPTOR_OR_ERROR file_descriptor,
 
 /* It's a DS2482 -- whether 1 channel or 8 channel not yet determined */
 /* All general stored data will be assigned to this "head" channel */
-static GOOD_OR_BAD HeadChannel(struct connection_in *in)
+static GOOD_OR_BAD HeadChannel(struct connection_in *head)
 {
 	struct parsedname pn;
 
 	/* Intentionally put the wrong index */
-	in->connin.i2c.index = 1;
-	pn.selected_connection = in;
+	head->connin.i2c.index = 1;
+	pn.selected_connection = head;
 	if ( BAD(DS2482_channel_select(&pn)) ) {	/* Couldn't switch */
-		in->connin.i2c.index = 0;	/* restore correct value */
+		head->connin.i2c.index = 0;	/* restore correct value */
 		LEVEL_CONNECT("DS2482-100 (Single channel)");
 		return gbGOOD;				/* happy as DS2482-100 */
 	}
 	LEVEL_CONNECT("DS2482-800 (Eight channels)");
 	/* Must be a DS2482-800 */
-	in->connin.i2c.channels = 8;
-	in->Adapter = adapter_DS2482_800;
+	head->connin.i2c.channels = 8;
+	head->Adapter = adapter_DS2482_800;
 
-	return CreateChannels(in);
+	return CreateChannels(head);
 }
 
 /* create more channels,
@@ -669,23 +662,27 @@ static GOOD_OR_BAD HeadChannel(struct connection_in *in)
    called only for DS12482-800
    NOTE: coded assuming num = 1 or 8 only
  */
-static GOOD_OR_BAD CreateChannels(struct connection_in *in)
+static GOOD_OR_BAD CreateChannels(struct connection_in *head)
 {
+	struct connection_in * prior = head ;
 	int i;
 	char *name[] = { "DS2482-800(0)", "DS2482-800(1)", "DS2482-800(2)",
 		"DS2482-800(3)", "DS2482-800(4)", "DS2482-800(5)", "DS2482-800(6)",
 		"DS2482-800(7)",
 	};
-	in->connin.i2c.index = 0;
-	in->adapter_name = name[0];
+	head->connin.i2c.index = 0;
+	head->adapter_name = name[0];
 	for (i = 1; i < 8; ++i) {
 		struct connection_in *added ;
-		added = NewIn(in);
+		added = NewIn(head);
+		prior->connin.i2c.next = added ;
 		if (added == NULL) {
 			return gbBAD;
 		}
 		added->connin.i2c.index = i;
 		added->adapter_name = name[i];
+		added->connin.i2c.next = NULL ; // for now
+		prior = added ;
 	}
 	return gbGOOD;
 }
