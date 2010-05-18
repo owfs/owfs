@@ -25,13 +25,14 @@ static GOOD_OR_BAD HA5_sendback_data(const BYTE * data, BYTE * resp, const size_
 static GOOD_OR_BAD HA5_select_and_sendback(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 static void HA5_setroutines(struct connection_in *in);
 static void HA5_close(struct connection_in *in);
+static GOOD_OR_BAD HA5_reconnect( const struct parsedname  *pn ) ;
 static enum search_status HA5_directory(struct device_search *ds, struct dirblob *db, const struct parsedname *pn);
 static GOOD_OR_BAD HA5_select( const struct parsedname * pn ) ;
 static GOOD_OR_BAD HA5_select_wrapped( const struct parsedname * pn ) ;
 static GOOD_OR_BAD HA5_resync( const struct parsedname * pn ) ;
 static void HA5_powerdown(struct connection_in * in) ;
 static GOOD_OR_BAD HA5_channel_list( char * alpha_string, struct parsedname * pn ) ;
-static GOOD_OR_BAD HA5_test_channel( char c, struct parsedname  *pn ) ;
+static GOOD_OR_BAD HA5_test_channel( char c, const struct parsedname  *pn ) ;
 static int AddChecksum( unsigned char * check_string, int length, struct connection_in * in ) ;
 static GOOD_OR_BAD TestChecksum( unsigned char * check_string, int length ) ;
 static GOOD_OR_BAD HA5_find_channel(struct parsedname *pn) ;
@@ -49,7 +50,7 @@ static void HA5_setroutines(struct connection_in *in)
 	in->iroutines.select_and_sendback = HA5_select_and_sendback;
 	//    in->iroutines.sendback_bits = ;
 	in->iroutines.select = HA5_select ;
-	in->iroutines.reconnect = NULL;
+	in->iroutines.reconnect = HA5_reconnect;
 	in->iroutines.close = HA5_close;
 	in->iroutines.flags = ADAP_FLAG_dirgulp | ADAP_FLAG_bundle | ADAP_FLAG_dir_auto_reset;
 	in->bundling_length = HA5_FIFO_SIZE;
@@ -71,8 +72,13 @@ GOOD_OR_BAD HA5_detect(struct connection_in *in)
 	in->connin.ha5.sn[0] = 0 ; // so won't match
 
 	Parse_Address( in->name, &ap ) ;
-
-	if ( ap.first.type==address_none || BAD( COM_open(ap.first.alpha) ) {
+	if ( ap.first.type==address_none ) {
+		// Cannot open serial port
+		Free_Address( &ap ) ;
+		return gbBAD ;
+	}
+	strcpy(in->name, ap.first.alpha) ; // subset so will fit
+	if ( BAD(COM_open(in)) ) {
 		// Cannot open serial port
 		Free_Address( &ap ) ;
 		return gbBAD ;
@@ -105,7 +111,7 @@ GOOD_OR_BAD HA5_detect(struct connection_in *in)
 	if ( ap.second.type == address_none ) { // scan for channel
 		gbResult = HA5_find_channel(&pn) ;
 	} else { // A list of channels
-		gbResult = HA5_channel_list( ap.second.alpha, pn ) ;
+		gbResult = HA5_channel_list( ap.second.alpha, &pn ) ;
 	}
 
 	if ( BAD( gbResult ) ) {
@@ -138,7 +144,7 @@ static GOOD_OR_BAD HA5_channel_list( char * alpha_string, struct parsedname * pn
 				break ;
 			}
 			pn->selected_connection = current_in ;
-			current_in = owstrdup( initial_in->name ) ; // copy COM port
+			current_in->name = owstrdup( initial_in->name ) ; // copy COM port
 		} else {
 			LEVEL_CONNECT("HA5 bus master NOT FOUND on port %s at channel %c", current_in->name, c ) ;
 		}
@@ -209,7 +215,15 @@ static GOOD_OR_BAD TestChecksum( unsigned char * check_string, int length )
 	return gbBAD ;
 }
 
-static GOOD_OR_BAD HA5_test_channel( char c, struct parsedname  *pn )
+static GOOD_OR_BAD HA5_reconnect( const struct parsedname  *pn )
+{
+	struct connection_in * in = pn->selected_connection ;
+	COM_close(in) ;
+	RETURN_BAD_IF_BAD( COM_open(in) ) ;
+	return HA5_test_channel( in->connin.ha5.channel, pn ) ;
+}
+
+static GOOD_OR_BAD HA5_test_channel( char c, const struct parsedname  *pn )
 {
 	unsigned char test_string[1+1+2+1] ;
 	unsigned char test_response[1] ;
