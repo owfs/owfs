@@ -82,20 +82,40 @@ static void SetupTemperatureLimits( void )
 static void SetupInboundConnections(void)
 {
 	struct connection_in *in;
+	int found_good = 0 ; // count of good connections
+	int found_bad = 0 ; // count of bad connections
 
+	// cycle through connections analyzing them
 	for (in = Inbound_Control.head; in != NULL; in = in->next) {
-		if ( BAD( SetupSingleInboundConnection(in) ) ) {				/* flag that that the adapter initiation was unsuccessful */
+		if ( BAD( SetupSingleInboundConnection(in) ) ) {				
+			/* flag that that the adapter initiation was unsuccessful */
 			STAT_ADD1_BUS(e_bus_detect_errors, in);
 			BUS_close(in);		/* can use adapter's close */
 			BadAdapter_detect(in);	/* Set to default null assignments */
-			in->busmode = bus_bad ;
+			++found_bad ;
+		} else {
+			++found_good ;
 		}
+	}
+	
+	// Now remove bad conections (except a single bad if no good)
+	in = Inbound_Control.head ;
+	while ( in != NULL ) {
+		struct connection_in * current = in ; // store now because removal confuses things
+		in = current->next ; // compute now because removal confuses things
+		if ( found_good + found_bad < 2 ) {
+			break ;
+		}
+		if ( current->busmode != bus_bad ) {
+			continue ;
+		}
+		RemoveIn( current ) ;
+		--found_bad ;
 	}
 }
 
 static GOOD_OR_BAD SetupSingleInboundConnection( struct connection_in * in )
 {
-	BadAdapter_detect(in);	/* default "NOTSUP" calls */
 	switch (get_busmode(in)) {
 
 	case bus_zero:
@@ -116,13 +136,10 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct connection_in * in )
 		/* Set up DS2480/LINK interface */
 		if ( BAD( DS2480_detect(in) )) {
 			LEVEL_CONNECT("Cannot detect DS2480 or LINK interface on %s.", in->name);
-			return gbBAD ;
 		} else {
-			break ;
+			return gbGOOD ;
 		}
 		// Fall Through
-		BUS_close(in);
-		BadAdapter_detect(in);	/* reset the methods */
 		in->adapter_name = "DS9097";	// need to set adapter name for this approach to passive adapter
 
 	case bus_passive:

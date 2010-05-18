@@ -22,7 +22,7 @@ static GOOD_OR_BAD DS2480_initialize_repeatedly(struct parsedname * pn);
 static GOOD_OR_BAD DS2480_big_reset(const struct parsedname *pn) ;
 static GOOD_OR_BAD DS2480_big_reset_serial(const struct parsedname *pn) ;
 static GOOD_OR_BAD DS2480_big_reset_net(const struct parsedname *pn) ;
-static GOOD_OR_BAD DS2480_adapter(struct connection_in *in) ;
+static void DS2480_adapter(struct connection_in *in) ;
 static GOOD_OR_BAD DS2480_big_configuration(const struct parsedname *pn) ;
 static GOOD_OR_BAD DS2480_read(BYTE * buf, const size_t size, const struct parsedname *pn);
 static GOOD_OR_BAD DS2480_write(const BYTE * buf, const size_t size, const struct parsedname *pn);
@@ -237,12 +237,14 @@ GOOD_OR_BAD DS2480_detect(struct connection_in *in)
 
 	if ( BAD(DS2480_initialize_repeatedly(&pn)) ) {
 		LEVEL_DEBUG("Could not initilize the DS9097U even after several tries") ;
+		BUS_close(in) ;
 		return gbBAD ;
 	}
 
 	in->busmode = bus_serial;
 
-	return DS2480_adapter(in) ;
+	DS2480_adapter(in) ;
+	return gbGOOD ;
 }
 
 // Make several attempts to initialize -- based on Digitemp example
@@ -260,7 +262,7 @@ static GOOD_OR_BAD DS2480_initialize_repeatedly(struct parsedname * pn)
 	return gbBAD ;
 }
 
-static GOOD_OR_BAD DS2480_adapter(struct connection_in *in)
+static void DS2480_adapter(struct connection_in *in)
 {
 	// in->Adapter is set in DS2480_reset from some status bits
 	switch (in->Adapter) {
@@ -278,9 +280,9 @@ static GOOD_OR_BAD DS2480_adapter(struct connection_in *in)
 		in->adapter_name = "LINK(emulate mode)";
 		break;
 	default:
-		return gbBAD;
+		in->adapter_name = "DS2480B based";
+		break;
 	}
-	return gbGOOD;
 }
 
 // do the com port and configuration stuff

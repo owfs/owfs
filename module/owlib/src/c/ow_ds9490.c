@@ -512,7 +512,7 @@ static GOOD_OR_BAD DS9490_detect_specific_adapter(int bus_nr, int dev_nr, struct
 			Parse_Address( usb_address, &ap ) ; // makes a copy
 			owfree(usb_address) ; // free the original
 		}
-		if ( ap.entries != 2 || ap.first.type != address_numeric || ap.second.type != address_numeric ) {
+		if ( ap.first.type != address_numeric || ap.second.type != address_numeric ) {
 			LEVEL_DEBUG("LIBUSB generated an uninterpretable usb address") ;
 		} else if ( ap.first.number != bus_nr || ap.second.number != dev_nr ) {
 			LEVEL_CONNECT("USB DS9490 %d:%d passed over. (Looking for %d:%d)", ap.first.number, ap.second.number, bus_nr, dev_nr );
@@ -1156,6 +1156,7 @@ static void DS9490_connection_init( struct connection_in * in )
 */
 static GOOD_OR_BAD DS9490_open_and_name(struct usb_list *ul, struct connection_in *in)
 {
+	struct connection_in * other ; // to test against repeats
 	if (in->name) {
 		owfree(in->name);
 		in->name = NULL;
@@ -1171,10 +1172,21 @@ static GOOD_OR_BAD DS9490_open_and_name(struct usb_list *ul, struct connection_i
 	if (in->name == NULL) {
 		return gbBAD;
 	}
+	
+	for ( other = Inbound_Control.head ; other!=NULL ; other = other->next ) {
+		if ( other == in ) {
+			// don't test against yourself
+			continue ;
+		}
+		if ( other->busmode == bus_usb && other->name != NULL && strcasecmp(other->name,in->name)==0 ) {
+			// duplicate USB device, ignore
+			in->connin.usb.dev = NULL;	// this will force a re-scan next time
+			LEVEL_DEBUG("Duplicate USB device ignored") ;
+			return gbBAD ;
+		}
+	}
 
 	if ( BAD( DS9490_open( ul, in ) ) ) {
-		owfree(in->name);
-		in->name = owstrdup(badUSBname) ;
 		in->connin.usb.dev = NULL;	// this will force a re-scan next time
 		//LEVEL_CONNECT("Failed to open USB DS9490 bus master %s", name);
 		STAT_ADD1_BUS(e_bus_open_errors, in);

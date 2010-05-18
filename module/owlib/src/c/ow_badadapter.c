@@ -26,9 +26,6 @@ static void BadAdapter_close(struct connection_in *in);
 GOOD_OR_BAD BadAdapter_detect(struct connection_in *in)
 {
 	in->file_descriptor = FILE_DESCRIPTOR_BAD;
-#if OW_USB
-	in->connin.usb.usb = NULL;
-#endif
 	in->iroutines.detect = BadAdapter_detect;
 	in->Adapter = adapter_Bad;	/* OWFS assigned value */
 	in->iroutines.reset = BadAdapter_reset;
@@ -42,6 +39,11 @@ GOOD_OR_BAD BadAdapter_detect(struct connection_in *in)
 	in->iroutines.close = BadAdapter_close;
 	in->iroutines.flags = 0;
 	in->adapter_name = "Bad Adapter";
+	if ( in->name != NULL ) {
+		owfree( in->name ) ;
+	}
+	in->name = owstrdup("None") ;
+	in->busmode = bus_bad ;
 	return gbGOOD;
 }
 
