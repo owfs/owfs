@@ -18,16 +18,16 @@ $Id$
 #include <linux/limits.h>
 #endif
 
-int COM_write( const BYTE * data, size_t length, struct connection_in *connection)
+GOOD_OR_BAD COM_write( const BYTE * data, size_t length, struct connection_in *connection)
 {
 	ssize_t to_be_written = length ;
 
 	if ( length == 0 || data == NULL ) {
-		return 0 ;
+		return gbGOOD ;
 	}
 
 	if ( connection == NULL ) {
-		return -EIO ;
+		return gbBAD ;
 	}
 
 	while (to_be_written > 0) {
@@ -51,7 +51,7 @@ int COM_write( const BYTE * data, size_t length, struct connection_in *connectio
 			if (FD_ISSET(connection->file_descriptor, &writeset) == 0) {
 				ERROR_CONNECT("Select no FD found (write) serial port: %s", SAFESTRING(connection->name));
 				STAT_ADD1_BUS(e_bus_write_errors, connection);
-				return -EIO;	/* error */
+				return gbBAD;	/* error */
 			}
 			update_max_delay(connection);
 			Debug_Bytes("Attempt serial write:",  &data[length - to_be_written], to_be_written);
@@ -60,7 +60,7 @@ int COM_write( const BYTE * data, size_t length, struct connection_in *connectio
 				if (errno != EWOULDBLOCK) {
 					ERROR_CONNECT("Trouble writing to serial port: %s", SAFESTRING(connection->name));
 					STAT_ADD1_BUS(e_bus_write_errors, connection);
-					return write_result;
+					return gbBAD;
 				}
 				/* write() was interrupted, try again */
 				STAT_ADD1_BUS(e_bus_timeouts, connection);
@@ -70,12 +70,12 @@ int COM_write( const BYTE * data, size_t length, struct connection_in *connectio
 		} else {			/* timed out or select error */
 			ERROR_CONNECT("Select/timeout error (write) serial port: %s", SAFESTRING(connection->name));
 			STAT_ADD1_BUS(e_bus_timeouts, connection);
-			return -errno;
+			return gbBAD;
 		}
 	}
 
 	tcdrain(connection->file_descriptor);
 	gettimeofday(&(connection->bus_write_time), NULL);
 
-	return to_be_written ;
+	return gbGOOD ;
 }

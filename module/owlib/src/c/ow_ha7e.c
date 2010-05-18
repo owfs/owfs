@@ -88,7 +88,7 @@ static RESET_TYPE HA7E_reset(const struct parsedname *pn)
 	BYTE resp[1];
 
 	COM_flush(pn->selected_connection);
-	if (COM_write((BYTE*)"R", 1, pn->selected_connection)) {
+	if ( BAD(COM_write((BYTE*)"R", 1, pn->selected_connection)) ) {
 		LEVEL_DEBUG("Error sending HA7E reset");
 		return BUS_RESET_ERROR;
 	}
@@ -173,7 +173,7 @@ static GOOD_OR_BAD HA7E_directory(struct device_search *ds, struct dirblob *db, 
 	current = first ;
 
 	while (1) {
-		if (COM_write((BYTE*)current, 1, pn->selected_connection)) {
+		if ( BAD(COM_write((BYTE*)current, 1, pn->selected_connection)) ) {
 			return HA7E_resync(pn) ;
 		}
 		current = next ; // set up for next pass
@@ -255,12 +255,12 @@ static GOOD_OR_BAD HA7E_select( const struct parsedname * pn )
 	}
 
 	if ( memcmp( pn->sn, pn->selected_connection->connin.ha7e.sn, SERIAL_NUMBER_SIZE ) ) {
-		if ( COM_write((BYTE*)send_address,18,pn->selected_connection) ) {
+		if ( BAD(COM_write((BYTE*)send_address,18,pn->selected_connection)) ) {
 			LEVEL_DEBUG("Error with sending HA7E A-ddress") ;
 			return HA7E_resync(pn) ;
 		}
 	} else {
-		if ( COM_write((BYTE*)"M",1,pn->selected_connection) ) {
+		if ( BAD(COM_write((BYTE*)"M",1,pn->selected_connection)) ) {
 			LEVEL_DEBUG("Error with sending HA7E M-atch") ;
 			return HA7E_resync(pn) ;
 		}
@@ -291,7 +291,7 @@ static GOOD_OR_BAD HA7E_sendback_part(const BYTE * data, BYTE * resp, const size
 	bytes2string(&send_data[3], data, size) ;
 	send_data[3+2*size] = 0x0D ;
 
-	if ( COM_write((BYTE*)send_data,size*2+4,pn->selected_connection) ) {
+	if ( BAD(COM_write((BYTE*)send_data,size*2+4,pn->selected_connection)) ) {
 		LEVEL_DEBUG("Error with sending HA7E block") ;
 		HA7E_resync(pn) ;
 		return gbBAD ;

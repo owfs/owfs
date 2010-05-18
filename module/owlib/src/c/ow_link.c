@@ -426,7 +426,7 @@ static GOOD_OR_BAD LINK_read(BYTE * buf, const size_t size, int extra_net_byte, 
 //Special processing for the remote hub (add 0x0A)
 static GOOD_OR_BAD LINK_write(const BYTE * buf, const size_t size, const struct parsedname *pn)
 {
-	return COM_write( buf, size, pn->selected_connection ) ? gbBAD : gbGOOD ;
+	return COM_write( buf, size, pn->selected_connection ) ;
 }
 
 /************************************************************************/

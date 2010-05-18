@@ -244,9 +244,7 @@ static GOOD_OR_BAD DS9097_sendback_bits(const BYTE * outbits, BYTE * inbits, con
 /* Indeed, will move to DS9097 */
 static GOOD_OR_BAD DS9097_send_and_get(const BYTE * bussend, BYTE * busget, const size_t length, const struct parsedname *pn)
 {
-	if ( COM_write( bussend, length, pn->selected_connection ) < 0 ) {
-		return gbBAD ;
-	}	
+	RETURN_BAD_IF_BAD( COM_write( bussend, length, pn->selected_connection ) ) ;
 
 	/* get back string -- with timeout and partial read loop */
 	return COM_read( busget, length, pn->selected_connection ) ;

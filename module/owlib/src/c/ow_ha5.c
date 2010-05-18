@@ -236,9 +236,7 @@ static GOOD_OR_BAD HA5_test_channel( char c, const struct parsedname  *pn )
 	test_string[1] = 'R' ;
 	string_length = AddChecksum( test_string, 2, in ) ;
 
-	if ( COM_write( test_string, string_length, pn->selected_connection ) ) {
-		return gbBAD ;
-	}
+	RETURN_BAD_IF_BAD( COM_write( test_string, string_length, pn->selected_connection ) ) ;
 	RETURN_BAD_IF_BAD( COM_read( test_response, 1, pn->selected_connection ) ) ;
 
 	in->connin.ha5.channel = c ;
@@ -269,7 +267,7 @@ static RESET_TYPE HA5_reset_wrapped(const struct parsedname *pn)
 	reset[1] = 'R' ;
 	reset_length = AddChecksum( reset, 2, in ) ;
 
-	if (COM_write(reset, reset_length, pn->selected_connection)) {
+	if ( BAD(COM_write(reset, reset_length, pn->selected_connection)) ) {
 		LEVEL_DEBUG("Error sending HA5 reset");
 		return BUS_RESET_ERROR;
 	}
@@ -366,7 +364,7 @@ static enum search_status HA5_directory(struct device_search *ds, struct dirblob
 	query[4] = 'F' ;
 	query_length = AddChecksum( query, 5, in ) ;
 
-	if (COM_write( query, query_length, pn->selected_connection)) {
+	if ( BAD(COM_write( query, query_length, pn->selected_connection)) ) {
 		HA5_resync(pn) ;
 		return search_error ;
 	}
@@ -487,7 +485,7 @@ static GOOD_OR_BAD HA5_select_wrapped( const struct parsedname * pn )
 
 	send_length = AddChecksum( send_address, 18, in ) ;
 
-	if ( COM_write( send_address, send_length, pn->selected_connection) ) {
+	if ( BAD(COM_write( send_address, send_length, pn->selected_connection)) ) {
 		LEVEL_DEBUG("Error with sending HA5 A-ddress") ;
 		return HA5_resync(pn) ;
 	}
@@ -532,7 +530,7 @@ static GOOD_OR_BAD HA5_sendback_part(char cmd, const BYTE * data, BYTE * resp, c
 	bytes2string( (char *)&send_data[4], data, size) ;
 	send_length = AddChecksum( send_data, 4+size*2, in ) ;
 
-	if ( COM_write( send_data, send_length, pn->selected_connection) ) {
+	if ( BAD(COM_write( send_data, send_length, pn->selected_connection)) ) {
 		LEVEL_DEBUG("Error with sending HA5 block") ;
 		HA5_resync(pn) ;
 		return gbBAD ;

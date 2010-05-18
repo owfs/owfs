@@ -854,7 +854,7 @@ static GOOD_OR_BAD DS2480_ProgramPulse(const struct parsedname *pn)
 // Write to the output -- works for tcp and COM
 static GOOD_OR_BAD DS2480_write(const BYTE * buf, const size_t size, const struct parsedname *pn)
 {
-	return COM_write( buf, size, pn->selected_connection ) ? gbBAD : gbGOOD ;
+	return COM_write( buf, size, pn->selected_connection ) ;
 }
 
 /* Assymetric */
