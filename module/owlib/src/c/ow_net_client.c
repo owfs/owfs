@@ -22,32 +22,44 @@ $Id$
 GOOD_OR_BAD ClientAddr(char *sname, struct connection_in *in)
 {
 	struct addrinfo hint;
-	char *p;
+	struct address_pair ap ;
 	int ret;
 	
-	if (sname == NULL || sname[0] == '\0') {
-		/* probably not a good idea to set localhost:DEFAULT_PORT
-		 * The user have probably typed wrong address */
+	Parse_Address( sname, &ap ) ;
+	switch ( ap.entries ) {
+	case 0: // Complete default address
 		in->connin.tcp.host = NULL;
 		in->connin.tcp.service = owstrdup(DEFAULT_PORT);
-	}
-	if ((p = strrchr(sname, ':')) == NULL) {    /* : NOT exist */
-		if (strchr(sname, '.')) {   //probably an address
-			in->connin.tcp.host = owstrdup(sname);
-			in->connin.tcp.service = owstrdup(DEFAULT_PORT);
-		} else {                // assume a port
+		break ;
+	case 1: // single entry -- usually port unless a dotted quad
+		switch ( ap.first.type ) {
+		case address_none:
 			in->connin.tcp.host = NULL;
-			in->connin.tcp.service = owstrdup(sname);
+			in->connin.tcp.service = owstrdup(DEFAULT_PORT);
+			break ;
+		case address_dottedquad:
+			// looks like an IP address
+			in->connin.tcp.host = owstrdup(ap.first.alpha);
+			in->connin.tcp.service = owstrdup(DEFAULT_PORT);
+			break ;
+		default:
+			// assume it's a port
+			in->connin.tcp.host = NULL;
+			in->connin.tcp.service = owstrdup(ap.first.alpha);
+			break ;
 		}
-	} else {
-		p[0] = '\0';            /* Separate tokens in the string */
-		in->connin.tcp.host = owstrdup(sname);
-		p[0] = ':';             /* restore name string */
-		in->connin.tcp.service = owstrdup(&p[1]);
+		break ;
+	case 2:
+	default: // address:port format -- unambiguous
+		in->connin.tcp.host = ( ap.first.type == address_none ) ? NULL : owstrdup(ap.first.alpha) ;
+		in->connin.tcp.service = ( ap.second.type == address_none ) ? owstrdup(DEFAULT_PORT) : owstrdup(ap.second.alpha) ;
+		break ;
 	}
+	Free_Address( &ap ) ;
 
 	memset(&hint, 0, sizeof(struct addrinfo));
 	hint.ai_socktype = SOCK_STREAM;
+
 #if OW_CYGWIN
 	hint.ai_family = AF_INET;
 	if(in->connin.tcp.host == NULL) {
@@ -58,10 +70,10 @@ GOOD_OR_BAD ClientAddr(char *sname, struct connection_in *in)
 	hint.ai_family = AF_UNSPEC;
 #endif
 
-	LEVEL_DEBUG("[%s] [%s]", SAFESTRING(in->connin.tcp.host), in->connin.tcp.service);
-
-	if ((ret = getaddrinfo(in->connin.tcp.host, in->connin.tcp.service, &hint, &in->connin.tcp.ai))) {
-		LEVEL_CONNECT("error %s", gai_strerror(ret));
+	LEVEL_DEBUG("IP address=[%s] port=[%s]", SAFESTRING(in->connin.tcp.host), in->connin.tcp.service);
+	ret = getaddrinfo(in->connin.tcp.host, in->connin.tcp.service, &hint, &in->connin.tcp.ai) ;
+	if ( ret != 0 ) {
+		LEVEL_CONNECT("GETADDRINFO error %s", gai_strerror(ret));
 		return gbBAD;
 	}
 	return gbGOOD;

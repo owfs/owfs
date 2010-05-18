@@ -18,16 +18,16 @@ $Id$
 #include <linux/limits.h>
 #endif
 
-int COM_read( BYTE * data, size_t length, struct connection_in *connection)
+GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connection)
 {
 	ssize_t to_be_read = length ;
 	
 	if ( length == 0 || data == NULL ) {
-		return 0 ;
+		return gbGOOD ;
 	}
 	
 	if ( connection == NULL ) {
-		return -EIO ;
+		return gbBAD ;
 	}
 	
 	while (to_be_read > 0) {
@@ -51,7 +51,7 @@ int COM_read( BYTE * data, size_t length, struct connection_in *connection)
 			if (FD_ISSET(connection->file_descriptor, &readset) == 0) {
 				ERROR_CONNECT("Select no FD found (read) serial port: %s", SAFESTRING(connection->name));
 				STAT_ADD1_BUS(e_bus_read_errors, connection);
-				return -EIO;	/* error */
+				return gbBAD;	/* error */
 			}
 			update_max_delay(connection);
 			read_result = read(connection->file_descriptor, &data[length - to_be_read], to_be_read);	/* read bytes */
@@ -59,7 +59,7 @@ int COM_read( BYTE * data, size_t length, struct connection_in *connection)
 				if (errno != EWOULDBLOCK) {
 					ERROR_CONNECT("Trouble reading from serial port: %s", SAFESTRING(connection->name));
 					STAT_ADD1_BUS(e_bus_read_errors, connection);
-					return read_result;
+					return gbBAD;
 				}
 				/* write() was interrupted, try again */
 				ERROR_CONNECT("Interrupt (read) serial port: %s", SAFESTRING(connection->name));
@@ -70,7 +70,7 @@ int COM_read( BYTE * data, size_t length, struct connection_in *connection)
 			}
 		} else if ( select_result == 0 ) { // timeout
 			ERROR_CONNECT("Timeout error (read) serial port: %s", SAFESTRING(connection->name));
-			return -EAGAIN ;
+			return gbBAD ;
 		} else {			/* select error */
 			if ( errno == EINTR ) {
 				STAT_ADD1_BUS(e_bus_timeouts, connection);
@@ -78,12 +78,12 @@ int COM_read( BYTE * data, size_t length, struct connection_in *connection)
 			}
 			ERROR_CONNECT("Select error (read) serial port: %s", SAFESTRING(connection->name));
 			STAT_ADD1_BUS(e_bus_timeouts, connection);
-			return -EIO;
+			return gbBAD;
 		}
 	}
 	
 	tcdrain(connection->file_descriptor);
 	gettimeofday(&(connection->bus_read_time), NULL);
 	
-	return to_be_read ;
+	return gbGOOD ;
 }

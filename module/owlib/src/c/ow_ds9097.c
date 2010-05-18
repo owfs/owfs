@@ -249,5 +249,5 @@ static GOOD_OR_BAD DS9097_send_and_get(const BYTE * bussend, BYTE * busget, cons
 	}	
 
 	/* get back string -- with timeout and partial read loop */
-	return COM_read( busget, length, pn->selected_connection ) ? gbBAD : gbGOOD ;
+	return COM_read( busget, length, pn->selected_connection ) ;
 }

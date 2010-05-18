@@ -171,7 +171,6 @@ static void FreeIn(struct connection_in * now)
 	BUS_close(now) ;
 	
 	if (now->name) {
-		printf("[%d][%s]\n",now->index, now->name);
 		owfree(now->name);
 	}
 	DirblobClear(&(now->main));

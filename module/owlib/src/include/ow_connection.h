@@ -529,7 +529,7 @@ void COM_flush( const struct connection_in *in);
 void COM_close(struct connection_in *in);
 void COM_break(struct connection_in *in);
 int COM_write( const BYTE * data, size_t length, struct connection_in *connection);
-int COM_read( BYTE * data, size_t length, struct connection_in *connection);
+GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connection);
 void Slurp( FILE_DESCRIPTOR_OR_ERROR file_descriptor, unsigned long usec ) ;
 
 GOOD_OR_BAD telnet_read(BYTE * buf, const size_t size, const struct parsedname *pn) ;

@@ -869,7 +869,7 @@ static GOOD_OR_BAD DS2480_read(BYTE * buf, const size_t size, const struct parse
 		case bus_elink:
 			return telnet_read( buf, size, pn ) ;
 		default:
-			return COM_read( buf, size, in ) ? gbBAD : gbGOOD ;
+			return COM_read( buf, size, in ) ;
 	}
 }
 

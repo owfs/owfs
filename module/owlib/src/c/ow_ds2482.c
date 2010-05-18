@@ -365,14 +365,14 @@ static GOOD_OR_BAD DS2482_detect_single(int lowindex, int highindex, char * i2c_
 			LEVEL_CONNECT("Found an i2c device at %s address %.2X", i2c_device, test_address[i2c_index]);
 			/* Provisional setup as a DS2482-100 ( 1 channel ) */
 			in->file_descriptor = file_descriptor;
+			in->connin.i2c.i2c_address = test_address[i2c_index];
+			in->connin.i2c.i2c_index = i2c_index;
 			in->connin.i2c.index = 0;
 			in->connin.i2c.channels = 1;
 			in->connin.i2c.current = 0;
 			in->connin.i2c.head = in;
 			in->connin.i2c.next = NULL;
 			in->adapter_name = "DS2482-100";
-			in->connin.i2c.i2c_address = test_address[i2c_index];
-			in->connin.i2c.i2c_index = i2c_index;
 			in->connin.i2c.configreg = 0x00 ;	// default configuration setting desired
 			if ( Globals.i2c_APU ) {
 				in->connin.i2c.configreg |= DS2482_REG_CFG_APU ;
@@ -638,16 +638,19 @@ static GOOD_OR_BAD DS2482_send_and_get(FILE_DESCRIPTOR_OR_ERROR file_descriptor,
 /* All general stored data will be assigned to this "head" channel */
 static GOOD_OR_BAD HeadChannel(struct connection_in *head)
 {
-	struct parsedname pn;
+	struct parsedname pn; // Token only for DS2482_channel_select test
+	pn.selected_connection = head;
 
 	/* Intentionally put the wrong index */
 	head->connin.i2c.index = 1;
-	pn.selected_connection = head;
+
 	if ( BAD(DS2482_channel_select(&pn)) ) {	/* Couldn't switch */
 		head->connin.i2c.index = 0;	/* restore correct value */
 		LEVEL_CONNECT("DS2482-100 (Single channel)");
 		return gbGOOD;				/* happy as DS2482-100 */
 	}
+
+	// It's a DS2482-800 (8 channels) to set up other 7 with this one as "head"
 	LEVEL_CONNECT("DS2482-800 (Eight channels)");
 	/* Must be a DS2482-800 */
 	head->connin.i2c.channels = 8;

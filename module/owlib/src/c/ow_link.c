@@ -416,7 +416,7 @@ static GOOD_OR_BAD LINK_read(BYTE * buf, const size_t size, int extra_net_byte, 
 			// Only need to add an extra byte sometimes
 			return telnet_read( buf, size+extra_net_byte, pn ) ;
 		default:
-			return COM_read( buf, size, in )? gbBAD : gbGOOD ;
+			return COM_read( buf, size, in ) ;
 	}
 }
 
@@ -428,14 +428,6 @@ static GOOD_OR_BAD LINK_write(const BYTE * buf, const size_t size, const struct 
 {
 	return COM_write( buf, size, pn->selected_connection ) ? gbBAD : gbGOOD ;
 }
-
-/*
-static void byteprint( const BYTE * b, int size ) {
-    int i ;
-    for ( i=0; i<size; ++i ) { printf( "%.2X ",b[i] ) ; }
-    if ( size ) { printf("\n") ; }
-}
-*/
 
 /************************************************************************/
 /*									*/

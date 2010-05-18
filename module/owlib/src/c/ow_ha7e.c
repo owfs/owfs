@@ -92,7 +92,7 @@ static RESET_TYPE HA7E_reset(const struct parsedname *pn)
 		LEVEL_DEBUG("Error sending HA7E reset");
 		return BUS_RESET_ERROR;
 	}
-	if (COM_read(resp, 1, pn->selected_connection)) {
+	if ( BAD(COM_read(resp, 1, pn->selected_connection)) ) {
 		LEVEL_DEBUG("Error reading HA7E reset");
 		return BUS_RESET_ERROR;
 	}
@@ -184,13 +184,13 @@ static GOOD_OR_BAD HA7E_directory(struct device_search *ds, struct dirblob *db, 
 		//So we grab the first character and check it.  If not an E leave it
 		//in the resp buffer and get the rest of the response from the HA7E
 		//device
-		if (COM_read((BYTE*)resp, 1, pn->selected_connection)) {
+		if ( BAD(COM_read((BYTE*)resp, 1, pn->selected_connection)) ) {
 			return HA7E_resync(pn) ;
 		}
 		if ( resp[0] == 0x0D ) {
 			return gbGOOD ; // end of list
 		}
-		if (COM_read((BYTE*)&resp[1], 16, pn->selected_connection)) {
+		if ( BAD(COM_read((BYTE*)&resp[1], 16, pn->selected_connection)) ) {
 			return HA7E_resync(pn) ;
 		}
 		sn[7] = string2num(&resp[0]);
@@ -265,7 +265,7 @@ static GOOD_OR_BAD HA7E_select( const struct parsedname * pn )
 			return HA7E_resync(pn) ;
 		}
 	}
-	if ( COM_read((BYTE*)resp_address,17,pn->selected_connection) ) {
+	if ( BAD(COM_read((BYTE*)resp_address,17,pn->selected_connection)) ) {
 		LEVEL_DEBUG("Error with reading HA7E select") ;
 		return HA7E_resync(pn) ;
 	}
@@ -296,7 +296,7 @@ static GOOD_OR_BAD HA7E_sendback_part(const BYTE * data, BYTE * resp, const size
 		HA7E_resync(pn) ;
 		return gbBAD ;
 	}
-	if ( COM_read((BYTE*)get_data,size*2+1,pn->selected_connection) ) {
+	if ( BAD(COM_read((BYTE*)get_data,size*2+1,pn->selected_connection)) ) {
 		LEVEL_DEBUG("Error with reading HA7E block") ;
 		HA7E_resync(pn) ;
 		return gbBAD ;
