@@ -79,17 +79,7 @@ GOOD_OR_BAD HA7_detect(struct connection_in *in)
 		return gbBAD;
 	}
 
-	/* Add the port if it isn't there already */
-	if (strchr(in->name, ':') == NULL) {
-		ASCII *temp = owrealloc(in->name, strlen(in->name) + 3);
-		if (temp == NULL) {
-			return gbBAD;
-		}
-		in->name = temp;
-		strcat(in->name, ":80");
-	}
-
-	RETURN_BAD_IF_BAD(ClientAddr(in->name, in)) ;
+	RETURN_BAD_IF_BAD(ClientAddr(in->name, DEFAULT_HA7_PORT, in)) ;
 
 	file_descriptor = ClientConnect(in) ;
 	if ( FILE_DESCRIPTOR_NOT_VALID(file_descriptor) ) {

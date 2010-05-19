@@ -213,7 +213,7 @@ static GOOD_OR_BAD LINK_net_detect(struct parsedname * pn_minimal)
 	
 	LINKE_setroutines(in);
 	
-	RETURN_BAD_IF_BAD(ClientAddr(in->name, in)) ;
+	RETURN_BAD_IF_BAD(ClientAddr(in->name, DEFAULT_LINK_PORT, in)) ;
 
 	in->file_descriptor = ClientConnect(in) ;
 	if ( FILE_DESCRIPTOR_NOT_VALID(in->file_descriptor) ) {

@@ -58,7 +58,7 @@ GOOD_OR_BAD Zero_detect(struct connection_in *in)
 	if (in->name == NULL) {
 		return gbBAD;
 	}
-	RETURN_BAD_IF_BAD(ClientAddr(in->name, in)) ;
+	RETURN_BAD_IF_BAD(ClientAddr(in->name, DEFAULT_SERVER_PORT, in)) ;
 	in->Adapter = adapter_tcp;
 	in->adapter_name = "tcp";
 	Zero_setroutines(&(in->iroutines));
@@ -72,7 +72,7 @@ GOOD_OR_BAD Server_detect(struct connection_in *in)
 	if (in->name == NULL) {
 		return gbBAD;
 	}
-	RETURN_BAD_IF_BAD(ClientAddr(in->name, in)) ;
+	RETURN_BAD_IF_BAD(ClientAddr(in->name, DEFAULT_SERVER_PORT, in)) ;
 	in->file_descriptor = FILE_DESCRIPTOR_BAD;	// No persistent connection yet
 	in->Adapter = adapter_tcp;
 	in->adapter_name = "tcp";

@@ -19,7 +19,7 @@ $Id$
 #include "ow_counters.h"
 #include "ow_connection.h"
 
-GOOD_OR_BAD ClientAddr(char *sname, struct connection_in *in)
+GOOD_OR_BAD ClientAddr(char *sname, char * default_port, struct connection_in *in)
 {
 	struct addrinfo hint;
 	struct address_pair ap ;
@@ -29,30 +29,35 @@ GOOD_OR_BAD ClientAddr(char *sname, struct connection_in *in)
 	switch ( ap.entries ) {
 	case 0: // Complete default address
 		in->connin.tcp.host = NULL;
-		in->connin.tcp.service = owstrdup(DEFAULT_PORT);
+		in->connin.tcp.service = owstrdup(default_port);
 		break ;
 	case 1: // single entry -- usually port unless a dotted quad
 		switch ( ap.first.type ) {
 		case address_none:
 			in->connin.tcp.host = NULL;
-			in->connin.tcp.service = owstrdup(DEFAULT_PORT);
+			in->connin.tcp.service = owstrdup(default_port);
 			break ;
 		case address_dottedquad:
 			// looks like an IP address
 			in->connin.tcp.host = owstrdup(ap.first.alpha);
-			in->connin.tcp.service = owstrdup(DEFAULT_PORT);
+			in->connin.tcp.service = owstrdup(default_port);
 			break ;
 		default:
-			// assume it's a port
-			in->connin.tcp.host = NULL;
-			in->connin.tcp.service = owstrdup(ap.first.alpha);
+			// assume it's a port if it's the SERVER
+			if ( strcasecmp( default_port, DEFAULT_SERVER_PORT ) == 0 ) {
+				in->connin.tcp.host = NULL;
+				in->connin.tcp.service = owstrdup(ap.first.alpha);
+			} else {
+				in->connin.tcp.host = owstrdup(ap.first.alpha);
+				in->connin.tcp.service = owstrdup(default_port);
+			}
 			break ;
 		}
 		break ;
 	case 2:
 	default: // address:port format -- unambiguous
 		in->connin.tcp.host = ( ap.first.type == address_none ) ? NULL : owstrdup(ap.first.alpha) ;
-		in->connin.tcp.service = ( ap.second.type == address_none ) ? owstrdup(DEFAULT_PORT) : owstrdup(ap.second.alpha) ;
+		in->connin.tcp.service = ( ap.second.type == address_none ) ? owstrdup(default_port) : owstrdup(ap.second.alpha) ;
 		break ;
 	}
 	Free_Address( &ap ) ;

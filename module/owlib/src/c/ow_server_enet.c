@@ -79,27 +79,16 @@ GOOD_OR_BAD OWServer_Enet_detect(struct connection_in *in)
 		return gbBAD;
 	}
 
-	/* Add the port if it isn't there already */
-	if (strchr(in->name, ':') == NULL) {
-		ASCII *temp = owrealloc(in->name, strlen(in->name) + 3);
-		if (temp == NULL) {
-			return gbBAD;
-		}
-		in->name = temp;
-		strcat(in->name, ":80");
-	}
-
-	RETURN_BAD_IF_BAD(ClientAddr(in->name, in)) ;
+	RETURN_BAD_IF_BAD(ClientAddr(in->name, DEFAULT_ENET_PORT, in)) ;
 
 	in->Adapter = adapter_ENET;
 	in->adapter_name = "OWServer_Enet";
 	in->busmode = bus_enet;
 
-	if ( GOOD(ENET_get_detail(&pn)) ) {
-		ENET_SpecialCases(in) ; // load the special access functions
-		return gbGOOD;
-	}
-	return gbBAD;
+	RETURN_BAD_IF_BAD(ENET_get_detail(&pn)) ;
+
+	ENET_SpecialCases(in) ; // load the special access functions
+	return gbGOOD;
 }
 
 #define HA7_READ_BUFFER_LENGTH 500

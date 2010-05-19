@@ -62,7 +62,14 @@ owserver        4304/udp   One-Wire Filesystem Server
 
 See: http://www.iana.org/assignments/port-numbers
 */
-#define DEFAULT_PORT  "4304"
+#define DEFAULT_SERVER_PORT       "4304"
+#define DEFAULT_FTP_PORT          "21"
+#define DEFAULT_HA7_PORT          "80"
+#define DEFAULT_ENET_PORT         "80"
+#define DEFAULT_LINK_PORT         "10001"
+#define DEFAULT_XPORT_PORT        "10001"
+#define DEFAULT_ETHERWEATHER_POST "15862"
+
 
 #include "ow.h"
 #include "ow_counters.h"

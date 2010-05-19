@@ -125,10 +125,10 @@ GOOD_OR_BAD ServerOutSetup(struct connection_out *out)
 		// First time through, try default port
 		switch (Globals.opt) {
 			case opt_server:
-				default_port = DEFAULT_PORT ;
+				default_port = DEFAULT_SERVER_PORT ;
 				break ;
 			case opt_ftpd:
-				default_port = "21" ;
+				default_port = DEFAULT_FTP_PORT ;
 				break ;
 			default:
 				default_port = NULL ;

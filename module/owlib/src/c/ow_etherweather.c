@@ -279,17 +279,7 @@ GOOD_OR_BAD EtherWeather_detect(struct connection_in *in)
 		return gbBAD;
 	}
 
-	/* Add the port if it isn't there already */
-	if (strchr(in->name, ':') == NULL) {
-		ASCII *temp = owrealloc(in->name, strlen(in->name) + 3);
-		if (temp == NULL) {
-			return gbBAD;
-		}
-		in->name = temp;
-		strcat(in->name, ":15862");
-	}
-
-	RETURN_BAD_IF_BAD(ClientAddr(in->name, in)) ;
+	RETURN_BAD_IF_BAD(ClientAddr(in->name, DEFAULT_ETHERWEATHER_POST, in)) ;
 	pn.selected_connection->file_descriptor = ClientConnect(in) ;
 	if ( FILE_DESCRIPTOR_NOT_VALID(pn.selected_connection->file_descriptor) ) {
 		return gbBAD;
