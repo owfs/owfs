@@ -188,6 +188,9 @@ static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parse
 static GOOD_OR_BAD OW_r_temperature(_FLOAT * T, const UINT delay, struct parsedname *pn);
 static GOOD_OR_BAD OW_r_humid(_FLOAT * H, const UINT delay, struct parsedname *pn);
 static GOOD_OR_BAD OW_startmission(unsigned long mdelay, struct parsedname *pn);
+static GOOD_OR_BAD OW_mission_timing(unsigned long mdelay, struct parsedname *pn) ;
+static GOOD_OR_BAD OW_startmission_post_setup( struct parsedname * pn ) ;
+static GOOD_OR_BAD OW_mission_default_setup( struct parsedname * pn ) ;
 static GOOD_OR_BAD OW_stopmission(struct parsedname *pn);
 static GOOD_OR_BAD OW_MIP(struct parsedname *pn);
 static GOOD_OR_BAD OW_clearmemory(struct parsedname *pn);
@@ -535,12 +538,11 @@ static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parse
 		TRXN_START,
 		TRXN_WRITE(p,4),
 		TRXN_WRITE(passwd,8),
+		TRXN_DELAY(1) ,
 		TRXN_END,
 	};
-	LEVEL_DEBUG("size=%ld offset=%X rest=%ld", size, offset, rest);
 
 	memset(passwd, 0xFF, 8);	// dummy password
-
 	memcpy(&p[3], data, size);
 
 	RETURN_BAD_IF_BAD( BUS_transaction(t_scratch,pn) ) ;
@@ -553,7 +555,7 @@ static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parse
 	/* Copy Scratchpad to SRAM */
 	p[0] = _1W_COPY_SCRATCHPAD_WITH_PASSWORD;
 	RETURN_BAD_IF_BAD( BUS_transaction(t_write,pn) ) ;
-	UT_delay(1);
+
 	return gbGOOD;
 }
 
@@ -561,22 +563,17 @@ static GOOD_OR_BAD OW_clearmemory(struct parsedname *pn)
 {
 	BYTE p[3 + 8 + 32 + 2] = { _1W_CLEAR_MEMORY_WITH_PASSWORD, };
 	BYTE r;
+	struct transaction_log t[] = {
+		TRXN_START ,
+		TRXN_WRITE(p,10),
+		TRXN_DELAY(1),
+		TRXN_END ,
+	} ;
 
 	memset(&p[1], 0xFF, 8);		// password
 	p[9] = 0xFF;				// dummy byte
 
-	BUSLOCK(pn);
-	if (BAD(BUS_select(pn))) {
-		BUSUNLOCK(pn);
-		return gbBAD;
-	}
-	if (BUS_send_data(p, 10, pn)) {
-		BUSUNLOCK(pn);
-		return gbBAD;
-	}
-	UT_delay(1);
-	BUSUNLOCK(pn);
-
+	RETURN_BAD_IF_BAD( BUS_transaction(t,pn) ) ;
 
 	RETURN_BAD_IF_BAD( OW_r_mem(&r, 1, 0x0215, pn) );
 	LEVEL_DEBUG("Read 0x0215: MEMCLR=%d %02X", (r & 0x08 ? 1 : 0), r);
@@ -649,23 +646,18 @@ static void OW_date(const _DATE * d, BYTE * data)
 
 static GOOD_OR_BAD OW_force_conversion(const UINT delay, struct parsedname *pn)
 {
-	BYTE t[2] = { _1W_FORCED_CONVERSION, _1W_FORCED_CONVERSION_START };
-	RESET_TYPE ret ;
-
+	BYTE p[2] = { _1W_FORCED_CONVERSION, _1W_FORCED_CONVERSION_START };
+	struct transaction_log t[] = {
+		TRXN_START,
+		TRXN_WRITE2(p),
+		TRXN_DELAY(delay),
+		TRXN_END,
+	} ;
+	
 	RETURN_BAD_IF_BAD(OW_oscillator(1, pn));
 
 	/* Mission not progress, force conversion */
-	BUSLOCK(pn);
-	if ( BAD(BUS_select(pn)) || BAD(BUS_send_data(t, 2, pn)) ) {
-		printf("conv: err\n");
-		BUSUNLOCK(pn);
-		return gbBAD;
-	}
-	UT_delay(delay);
-	ret = BUS_reset(pn);
-	BUSUNLOCK(pn);
-
-	return gbRESET( ret ) ;
+	return BUS_transaction(t,pn) ;
 }
 
 static GOOD_OR_BAD OW_r_temperature(_FLOAT * T, const UINT delay, struct parsedname *pn)
@@ -705,25 +697,33 @@ static GOOD_OR_BAD OW_r_humid(_FLOAT * H, const UINT delay, struct parsedname *p
 static GOOD_OR_BAD OW_stopmission(struct parsedname *pn)
 {
 	BYTE data[10] = { _1W_STOP_MISSION_WITH_PASSWORD, };
-	GOOD_OR_BAD ret;
+	struct transaction_log t[] = {
+		TRXN_START ,
+		TRXN_WRITE( data, 10) ,
+		TRXN_END ,
+	} ;
 
 	memset(&data[1], 0xFF, 8);	// dummy password
 	data[9] = _1W_STOP_MISSION_WITH_PASSWORD_START;
 
-	BUSLOCK(pn);
-	ret = BAD(BUS_select(pn)) || BAD(BUS_send_data(data, 10, pn));
-	BUSUNLOCK(pn);
-	return ret;
+	return BUS_transaction(t,pn);
 }
 
 static GOOD_OR_BAD OW_startmission(unsigned long mdelay, struct parsedname *pn)
 {
-	BYTE cc, data;
-	BYTE p[10] = { _1W_START_MISSION_WITH_PASSWORD, };
-	GOOD_OR_BAD ret;
+	RETURN_BAD_IF_BAD( OW_stopmission(pn) );
+	RETURN_BAD_IF_BAD( OW_mission_timing(mdelay,pn) );
+	RETURN_BAD_IF_BAD( OW_clearmemory(pn) );
+	RETURN_BAD_IF_BAD( OW_mission_default_setup(pn) ) ;
+	RETURN_BAD_IF_BAD( OW_startmission_post_setup(pn) );
 
-	/* stop the mission */
-	RETURN_BAD_IF_BAD(OW_stopmission(pn));
+	return gbGOOD ;
+}
+
+static GOOD_OR_BAD OW_mission_timing(unsigned long mdelay, struct parsedname *pn)
+{
+	BYTE cc;
+	BYTE start_delay[3] ;
 
 	if (mdelay == 0) {
 		return gbGOOD;				/* stay stopped */
@@ -747,7 +747,7 @@ static GOOD_OR_BAD OW_startmission(unsigned long mdelay, struct parsedname *pn)
 		}
 		UT_delay(1000);			/* wait for the clock to count a second */
 	}
-#if 1
+
 	if (mdelay >= 15 * 60) {
 		cc |= 0x02;				// Enable high speed sample (minute)
 		mdelay = mdelay / 60;
@@ -755,34 +755,40 @@ static GOOD_OR_BAD OW_startmission(unsigned long mdelay, struct parsedname *pn)
 		cc &= 0xFD;				// Enable high speed sample (second)
 	}
 	RETURN_BAD_IF_BAD( OW_w_mem(&cc, 1, 0x0212, pn) );
-#endif
 
-#if 1
 	// mission start delay
-	p[0] = (mdelay & 0xFF);
-	p[1] = (mdelay & 0xFF00) >> 8;
-	p[2] = (mdelay & 0xFF0000) >> 16;
-	RETURN_BAD_IF_BAD( OW_w_mem(p, 3, 0x0216, pn) );
-#endif
+	start_delay[0] = (mdelay & 0xFF);
+	start_delay[1] = (mdelay & 0xFF00) >> 8;
+	start_delay[2] = (mdelay & 0xFF0000) >> 16;
+	
+	return OW_w_mem(start_delay, 3, 0x0216, pn) ;
+}
 
-	/* clear memory */
-	RETURN_BAD_IF_BAD(OW_clearmemory(pn));
-
-	data = 0xA0;				// Bit 6&7 always set
+static GOOD_OR_BAD OW_mission_default_setup( struct parsedname * pn )
+{
+	BYTE data = 0x00 ;
+	data |= 0xA0;				// Bit 6&7 always set
 	data |= 0x01;				// start Temp logging
 	data |= 0x02;				// start Humidity logging
 	data |= 0x04;				// store Temp in high resolution
 	data |= 0x08;				// store Humidity in high resolution
 	data |= 0x10;				// Rollover and overwrite
 	//data |= 0x20 ; // start mission upon temperature alarm
-	RETURN_BAD_IF_BAD( OW_w_mem(&data, 1, 0x0213, pn) );
+	
+	return OW_w_mem(&data, 1, 0x0213, pn);
+}
 
-	p[0] = _1W_START_MISSION_WITH_PASSWORD;
+static GOOD_OR_BAD OW_startmission_post_setup( struct parsedname * pn )
+{
+	BYTE p[10] = { _1W_START_MISSION_WITH_PASSWORD, } ;
+	struct transaction_log t[] = {
+		TRXN_START,
+		TRXN_WRITE(p,10),
+		TRXN_END,
+	} ;
+	
 	memset(&p[1], 0xFF, 8);		// dummy password
 	p[9] = _1W_START_MISSION_WITH_PASSWORD_START;	// dummy byte
-	BUSLOCK(pn);
-	ret = BAD(BUS_select(pn)) || BAD(BUS_send_data(p, 10, pn));
-	BUSUNLOCK(pn);
-
-	return ret;
+	return BUS_transaction(t,pn) ;
 }
+

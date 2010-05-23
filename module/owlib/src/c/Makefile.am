@@ -21,7 +21,7 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_1921.c          \
                ow_1923.c          \
                ow_1954.c          \
-               ow_1963.c          \ 
+               ow_1963.c          \
                ow_1977.c          \
                ow_1991.c          \
                ow_1993.c          \
@@ -30,10 +30,10 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_2405.c          \
                ow_2406.c          \
                ow_2408.c          \
-               ow_2409.c          \ 
+               ow_2409.c          \
                ow_2413.c          \
                ow_2415.c          \
-               ow_2423.c          \ 
+               ow_2423.c          \
                ow_2430.c          \
                ow_2433.c          \
                ow_2436.c          \
@@ -52,7 +52,7 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_cache.c         \
                ow_charblob.c      \
                ow_com.c           \
-               ow_com_write.c     \ 
+               ow_com_write.c     \
                ow_com_read.c      \
                ow_connect.c       \
                ow_crc.c           \
@@ -71,7 +71,7 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_eeef.c          \
                ow_eprom_write.c   \
                ow_etherweather.c  \
-               ow_fs_address.c    \ 
+               ow_fs_address.c    \
                ow_fs_alias.c      \
                ow_fs_code.c       \
                ow_fs_crc8.c       \

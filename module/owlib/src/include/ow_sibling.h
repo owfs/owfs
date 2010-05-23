@@ -47,7 +47,7 @@ ZERO_OR_ERROR FS_r_sibling_F(_FLOAT *F, const char * sibling, struct one_wire_qu
 ZERO_OR_ERROR FS_r_sibling_U(  UINT *U, const char * sibling, struct one_wire_query *owq) ;
 ZERO_OR_ERROR FS_r_sibling_Y(   INT *Y, const char * sibling, struct one_wire_query *owq) ;
 ZERO_OR_ERROR FS_r_sibling_binary(BYTE * data, size_t * size, const char * sibling, struct one_wire_query *owq) ;
-ZERO_OR_ERROR FS_w_sibling_binary(BYTE * data, size_t * size, const char * sibling, struct one_wire_query *owq) ;
+ZERO_OR_ERROR FS_w_sibling_binary(BYTE * data, size_t size, off_t offset, const char * sibling, struct one_wire_query *owq) ;
 
 ZERO_OR_ERROR FS_w_sibling_bitwork(UINT set, UINT mask, const char * sibling, struct one_wire_query *owq) ;
 
