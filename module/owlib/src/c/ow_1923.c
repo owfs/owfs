@@ -520,60 +520,39 @@ static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parse
 	BYTE passwd[8];
 	int rest = 32 - (offset & 0x1F);
 
+	struct transaction_log t_scratch[] = {
+		TRXN_START,
+		TRXN_WRITE(p,3+rest),
+		TRXN_END,
+	} ;
+	struct transaction_log t_check[] = {
+		TRXN_START,
+		TRXN_WR_CRC16(p,1,3+rest),
+		TRXN_COMPARE(&p[4],data,size),
+		TRXN_END,
+	};
+	struct transaction_log t_write[] = {
+		TRXN_START,
+		TRXN_WRITE(p,4),
+		TRXN_WRITE(passwd,8),
+		TRXN_END,
+	};
 	LEVEL_DEBUG("size=%ld offset=%X rest=%ld", size, offset, rest);
 
 	memset(passwd, 0xFF, 8);	// dummy password
 
-	memset(&p[3], 0xFF, 32);
 	memcpy(&p[3], data, size);
 
-	BUSLOCK(pn);
-	if ( BAD(BUS_select(pn)) || BAD(BUS_send_data(p, 3 + rest, pn)) ) {
-		BUSUNLOCK(pn);
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD( BUS_transaction(t_scratch,pn) ) ;
+
 	/* Re-read scratchpad and compare */
 	/* Note: location of data has now shifted down a byte for E/S register */
-
-	if ( BAD(BUS_select(pn))) {
-		BUSUNLOCK(pn);
-		return gbBAD;
-	}
 	p[0] = _1W_READ_SCRATCHPAD;
-	if ( BAD(BUS_send_data(p, 1, pn)) ) {
-		BUSUNLOCK(pn);
-		return gbBAD;
-	}
-	// read TAL TAH E/S + rest bytes
-	if ( BAD( BUS_readin_data(&p[1], 3 + rest, pn) ) ) {
-		BUSUNLOCK(pn);
-		return 1;
-	}
-	if (CRC16(p, 4 + rest)!=0) {
-		BUSUNLOCK(pn);
-		return gbBAD;
-	}
-	if (memcmp(&p[4], data, size)!=0) {
-		BUSUNLOCK(pn);
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD( BUS_transaction(t_check,pn) ) ;
 
 	/* Copy Scratchpad to SRAM */
-	if (BAD(BUS_select(pn))) {
-		BUSUNLOCK(pn);
-		return 1;
-	}
-	// send _1W_COPY_SCRATCHPAD_WITH_PASSWORD    TAL TAH E/S
 	p[0] = _1W_COPY_SCRATCHPAD_WITH_PASSWORD;
-	if ( BAD(BUS_send_data(p, 4, pn)) ) {
-		BUSUNLOCK(pn);
-		return gbBAD;
-	}
-	if ( BAD(BUS_send_data(passwd, 8, pn)) ) {
-		BUSUNLOCK(pn);
-		return gbBAD;
-	}
-	BUSUNLOCK(pn);
+	RETURN_BAD_IF_BAD( BUS_transaction(t_write,pn) ) ;
 	UT_delay(1);
 	return gbGOOD;
 }
@@ -605,62 +584,31 @@ static GOOD_OR_BAD OW_clearmemory(struct parsedname *pn)
 	return gbGOOD;
 }
 
+// At most one page
 static GOOD_OR_BAD OW_r_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
 {
-	BYTE p[3 + 8 + 32 + 2] = { _1W_READ_MEMORY_WITH_PASSWORD_AND_CRC,
+	BYTE p[3 + 32 + 2] = { _1W_READ_MEMORY_WITH_PASSWORD_AND_CRC,
 		LOW_HIGH_ADDRESS(offset),
 	};
 	int rest = 32 - (offset & 0x1F);
 	BYTE passwd[8];
-	GOOD_OR_BAD ret;
-	int i;
+	struct transaction_log t[] = {
+		TRXN_START,
+		TRXN_WRITE3(p),
+		TRXN_WRITE(passwd,8),
+		TRXN_READ(&p[3],rest+2),
+		TRXN_CRC16(p,3+rest+2),
+		TRXN_END,
+	};
 
 	memset(passwd, 0xFF, 8);	// dummy password
-	memset(data, 0, size);		// clear output
 
 	//printf("OW_r_mem: size=%lX offset=%lX  %02X %02X %02X\n", size, offset, p[0], p[1], p[2]);
 
-	BUSLOCK(pn);
-
-	if ( BAD( BUS_select(pn) ) ) {
-		BUSUNLOCK(pn);
-		//printf("error1\n");
-		return gbBAD;
-	}
-
-	if ( BAD( BUS_send_data(p, 3, pn) ) ) {
-		BUSUNLOCK(pn);
-		return gbBAD;
-	}
-
-	if ( BAD( BUS_send_data(passwd, 8, pn) ) ) {
-		BUSUNLOCK(pn);
-		return gbBAD;
-	}
-
-	if ( BAD( BUS_readin_data(&p[3], rest + 2, pn) ) ) {
-		BUSUNLOCK(pn);
-		printf("error4\n");
-		return gbBAD;
-	}
-	{
-		printf("Read: sz=%d ", 3 + rest + 2);
-		for (i = 0; i < 3 + rest + 2; i++) {
-			printf("%02X", p[i]);
-		}
-		printf("\n");
-	}
-	ret = CRC16(p, 3 + rest + 2);
-	if ( BAD( ret ) ) {
-		printf("crc error\n");
-	}
-
-	BUSUNLOCK(pn);
-
-	if ( GOOD( ret) ) {
-		memcpy(data, &p[3], size);
-	}
-	return ret;
+	RETURN_BAD_IF_BAD( BUS_transaction( t, pn) ) ;
+	
+	memcpy(data, &p[3], size);
+	return gbGOOD;
 }
 
 /* many things are disallowed if mission in progress */

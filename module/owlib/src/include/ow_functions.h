@@ -165,18 +165,7 @@ ZERO_OR_ERROR FS_read_tester(struct one_wire_query *owq);
 ZERO_OR_ERROR FS_r_aggregate_all(struct one_wire_query *owq);
 SIZE_OR_ERROR FS_read_local( struct one_wire_query *owq);
 
-ZERO_OR_ERROR FS_r_sibling_F(_FLOAT *F, const char * sibling, struct one_wire_query *owq) ;
-ZERO_OR_ERROR FS_r_sibling_U(  UINT *U, const char * sibling, struct one_wire_query *owq) ;
-ZERO_OR_ERROR FS_r_sibling_Y(   INT *Y, const char * sibling, struct one_wire_query *owq) ;
-ZERO_OR_ERROR FS_r_sibling_binary(BYTE * data, size_t * size, const char * sibling, struct one_wire_query *owq) ;
-
-ZERO_OR_ERROR FS_w_sibling_bitwork(UINT set, UINT mask, const char * sibling, struct one_wire_query *owq) ;
-
-ZERO_OR_ERROR FS_w_sibling_F(_FLOAT F, const char * sibling, struct one_wire_query *owq) ;
-ZERO_OR_ERROR FS_w_sibling_U(  UINT U, const char * sibling, struct one_wire_query *owq) ;
-ZERO_OR_ERROR FS_w_sibling_Y(   INT Y, const char * sibling, struct one_wire_query *owq) ;
-
-void FS_del_sibling(const char * sibling, struct one_wire_query *owq) ;
+#include "ow_sibling.h"
 
 ZERO_OR_ERROR FS_fstat(const char *path, struct stat *stbuf);
 ZERO_OR_ERROR FS_fstat_postparse(struct stat *stbuf, const struct parsedname *pn);

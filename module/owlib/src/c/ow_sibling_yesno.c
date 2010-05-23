@@ -43,40 +43,30 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
-ZERO_OR_ERROR FS_w_sibling_bitwork(UINT set, UINT mask, const char * sibling, struct one_wire_query *owq)
+ZERO_OR_ERROR FS_r_sibling_Y(INT *Y, const char * sibling, struct one_wire_query *owq)
 {
-	ZERO_OR_ERROR write_error = -EINVAL ;
+	struct one_wire_query * owq_sibling  = OWQ_create_sibling( sibling, owq ) ;
+	SIZE_OR_ERROR sib_status ;
+
+	if ( owq_sibling == NULL ) {
+		return -EINVAL ;
+	}
+	sib_status = FS_read_local(owq_sibling) ;
+	Y[0] = OWQ_Y(owq_sibling) ;
+	OWQ_destroy(owq_sibling) ;
+	return sib_status >= 0 ? 0 : -EINVAL ;
+}
+
+ZERO_OR_ERROR FS_w_sibling_Y(INT Y, const char * sibling, struct one_wire_query *owq)
+{
+	ZERO_OR_ERROR write_error;
 	struct one_wire_query * owq_sibling  = OWQ_create_sibling( sibling, owq ) ;
 
 	if ( owq_sibling == NULL ) {
 		return -EINVAL ;
 	}
-	if ( FS_read_local(owq_sibling) == 0 ) {
-		UINT bitfield = OWQ_U(owq) ;
-
-		// clear mask:
-		bitfield &= ~mask ;
-
-		// set bits:
-		bitfield |= (set & mask) ;
-
-		OWQ_U(owq_sibling) = bitfield ;
-
-		write_error = FS_write_local(owq_sibling);
-	}
-
+	OWQ_Y(owq_sibling) = Y ;
+	write_error = FS_write_local(owq_sibling) ;
 	OWQ_destroy(owq_sibling) ;
-	return write_error;
-}
-
-/* Delete entry in cache */
-void FS_del_sibling(const char * sibling, struct one_wire_query *owq)
-{
-	struct one_wire_query * owq_sibling  = OWQ_create_sibling( sibling, owq ) ;
-
-	if ( owq_sibling == NULL ) {
-		return ;
-	}
-	Cache_Del(PN(owq_sibling)) ;
-	OWQ_destroy(owq_sibling) ;
+	return write_error ;
 }

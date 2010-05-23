@@ -54,35 +54,30 @@ READ_FUNCTION(FS_ver);
 READ_FUNCTION(FS_r_pwd);
 WRITE_FUNCTION(FS_w_pwd);
 WRITE_FUNCTION(FS_set);
-WRITE_FUNCTION(FS_nset);
 #if OW_CACHE
 WRITE_FUNCTION(FS_use);
-WRITE_FUNCTION(FS_nuse);
 #endif							/* OW_CACHE */
 
 /* ------- Structures ----------- */
+
+enum _ds1977_passwords { _ds1977_full, _ds1977_read, _ds1977_control } ;
+off_t _ds1977_pwd_loc[] = { 0x7FC0, 0x7FC8, 0x7FD0, } ;
 
 struct aggregate A1977 = { 511, ag_numbers, ag_separate, };
 struct filetype DS1977[] = {
 	F_STANDARD,
 	{"memory", 32704, NON_AGGREGATE, ft_binary, fc_stable, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_stable, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"pages/page", 64, &A1977, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
-  {"set_password", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_stable, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"set_password/read", 8, NON_AGGREGATE, ft_binary, fc_stable, NO_READ_FUNCTION, FS_set, VISIBLE, {i:0},},
-  {"set_password/full", 8, NON_AGGREGATE, ft_binary, fc_stable, NO_READ_FUNCTION, FS_set, VISIBLE, {i:8},},
-  {"set_password/enabled", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_pwd, FS_w_pwd, VISIBLE, NO_FILETYPE_DATA,},
-  {"set_number", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_stable, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"set_number/read", 47, NON_AGGREGATE, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_nset, VISIBLE, {i:0},},
-  {"set_number/full", 47, NON_AGGREGATE, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_nset, VISIBLE, {i:8},},
-  {"version", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_ver, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"pages/page", 64, &A1977, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
+	{"set_password", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_stable, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"set_password/read", 8, NON_AGGREGATE, ft_binary, fc_stable, NO_READ_FUNCTION, FS_set, VISIBLE, {i:_ds1977_full},},
+	{"set_password/full", 8, NON_AGGREGATE, ft_binary, fc_stable, NO_READ_FUNCTION, FS_set, VISIBLE, {i:_ds1977_read},},
+	{"set_password/enabled", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_pwd, FS_w_pwd, VISIBLE, NO_FILETYPE_DATA,},
+	{"version", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_ver, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 #if OW_CACHE
-{"use_password", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_stable, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-{"use_password/read", 8, NON_AGGREGATE, ft_binary, fc_stable, NO_READ_FUNCTION, FS_use, VISIBLE, {i:0},},
-{"use_password/full", 8, NON_AGGREGATE, ft_binary, fc_stable, NO_READ_FUNCTION, FS_use, VISIBLE, {i:8},},
-{"use_number", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_stable, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-{"use_number/read", 47, NON_AGGREGATE, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_nuse, VISIBLE, {i:0},},
-{"use_number/full", 47, NON_AGGREGATE, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_nuse, VISIBLE, {i:8},},
+	{"use_password", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_stable, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"use_password/read", 8, NON_AGGREGATE, ft_binary, fc_stable, NO_READ_FUNCTION, FS_use, VISIBLE, {i:_ds1977_full},},
+	{"use_password/full", 8, NON_AGGREGATE, ft_binary, fc_stable, NO_READ_FUNCTION, FS_use, VISIBLE, {i:_ds1977_read},},
 #endif							/*OW_CACHE */
 };
 
@@ -95,6 +90,8 @@ DeviceEntryExtended(37, DS1977, DEV_resume | DEV_ovdr);
 #define _1W_VERIFY_PASSWORD 0x69
 #define _1W_READ_VERSION 0xCC
 
+#define _DS1977_PASSWORD_OK  0xAA
+
 /* Persistent storage */
 //static struct internal_prop ip_rea = { "REA", fc_persistent };
 MakeInternalProp(REA, fc_persistent);
@@ -104,12 +101,11 @@ MakeInternalProp(FUL, fc_persistent);
 /* ------- Functions ------------ */
 
 /* DS2423 */
-static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
+static GOOD_OR_BAD OW_w_mem( BYTE * data, size_t size, off_t offset, struct parsedname *pn) ;
 static GOOD_OR_BAD OW_r_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
-static GOOD_OR_BAD OW_r_pmem(BYTE * data, BYTE * pwd, size_t size, off_t offset, struct parsedname *pn);
-static GOOD_OR_BAD OW_ver(UINT * u, struct parsedname *pn);
+static GOOD_OR_BAD OW_version(UINT * u, struct parsedname *pn);
 static GOOD_OR_BAD OW_verify(BYTE * pwd, off_t offset, struct parsedname *pn);
-static GOOD_OR_BAD OW_clear(struct parsedname *pn);
+static GOOD_OR_BAD OW_r_mem_with_password( BYTE * pwd, BYTE * data, size_t size, off_t offset, struct parsedname *pn) ;
 
 /* 1977 password */
 static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
@@ -138,260 +134,204 @@ static ZERO_OR_ERROR FS_w_mem(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_ver(struct one_wire_query *owq)
 {
-	return GB_to_Z_OR_E( OW_ver(&OWQ_U(owq), PN(owq)) );
+	return GB_to_Z_OR_E( OW_version(&OWQ_U(owq), PN(owq)) );
 }
 
 static ZERO_OR_ERROR FS_r_pwd(struct one_wire_query *owq)
 {
 	BYTE p;
-	RETURN_ERROR_IF_BAD( OW_r_mem(&p, 1, 0x7FD0, PN(owq)) ) ;
-	OWQ_Y(owq) = (p == _1W_READ_SCRATCHPAD);
+	RETURN_ERROR_IF_BAD( OW_r_mem(&p, 1, _ds1977_pwd_loc[_ds1977_control], PN(owq)) ) ;
+	OWQ_Y(owq) = (p == _DS1977_PASSWORD_OK);
 	return 0;
 }
 
 static ZERO_OR_ERROR FS_w_pwd(struct one_wire_query *owq)
 {
-	BYTE p = OWQ_Y(owq) ? 0x00 : _1W_READ_SCRATCHPAD;
-	return GB_to_Z_OR_E( OW_w_mem(&p, 1, 0x7FD0, PN(owq)) );
-}
-
-static ZERO_OR_ERROR FS_nset(struct one_wire_query *owq)
-{
-	char a[48];
-	char *end;
-	union {
-		BYTE b[8];
-		int64_t i;
-	} xfer;
-	OWQ_allocate_struct_and_pointer(owq_scratch);
-
-	bzero(a, 48);
-	bzero(xfer.b, 8);
-	memcpy(&a[OWQ_offset(owq)], OWQ_buffer(owq), OWQ_size(owq));
-	xfer.i = strtoll(a, &end, 0);
-	if (end == a || errno) {
-		return -EINVAL;
-	}
-	OWQ_create_shallow_single(owq_scratch, owq);	// won't bother to destroy
-	OWQ_buffer(owq_scratch) = (char *) xfer.b;
-	OWQ_size(owq_scratch) = 8;
-	OWQ_offset(owq_scratch) = 0;
-	return FS_set(owq_scratch);
+	BYTE p = OWQ_Y(owq) ? 0x00 : _DS1977_PASSWORD_OK;
+	return GB_to_Z_OR_E( OW_w_mem(&p, 1, _ds1977_pwd_loc[_ds1977_control], PN(owq)) );
 }
 
 static ZERO_OR_ERROR FS_set(struct one_wire_query *owq)
 {
-	struct parsedname *pn = PN(owq);
-	int ret;
-	int oldy;
-	OWQ_allocate_struct_and_pointer(owq_scratch);
-
+	struct parsedname * pn = PN(owq) ;
 	if (OWQ_size(owq) < 8) {
 		return -ERANGE;
 	}
 
-	OWQ_create_shallow_single(owq_scratch, owq);	// won't bother to destroy
-
-	/* disable passwords */
-	if (FS_r_pwd(owq_scratch)) {
-		return -EACCES;
-	}
-	oldy = OWQ_Y(owq);
-	if (oldy) {
-		OWQ_Y(owq_scratch) = 0;
-		if (FS_w_pwd(owq_scratch)) {
-			return -EACCES;
-		}
-	}
-
-	/* write password */
-	OWQ_offset(owq_scratch) = 0x7FC0 + pn->selected_filetype->data.i;
-	OWQ_size(owq_scratch) = 8;
-	ret = FS_w_mem(owq_scratch);
-	OW_clear(pn);
-	RETURN_ERROR_IF_BAD(ret) ;
+	/* Write */
+	RETURN_ERROR_IF_BAD( OW_w_mem( OWQ_buffer(owq), 8, _ds1977_pwd_loc[pn->selected_filetype->data.i],pn) ) ;
 
 	/* Verify */
-	RETURN_ERROR_IF_BAD(OW_verify((BYTE *) OWQ_buffer(owq_scratch), OWQ_offset(owq_scratch), PN(owq))) ;
-
+	RETURN_ERROR_IF_BAD(OW_verify((BYTE *) OWQ_buffer(owq), _ds1977_pwd_loc[pn->selected_filetype->data.i], pn) ) ;
+	
 #if OW_CACHE
-	/* set cache */
-	OWQ_offset(owq_scratch) = 0;
-	FS_use(owq_scratch);
-#endif							/* OW_CACHE */
-
-	/* reenable passwords */
-	if (oldy) {
-		OWQ_Y(owq_scratch) = 1;
-		if (FS_w_pwd(owq_scratch)) {
-			return -EACCES;
-		}
+	switch ( pn->selected_filetype->data.i) {
+		case _ds1977_full:
+			Cache_Add_Internal((BYTE *) OWQ_buffer(owq), 8, InternalProp(FUL) , pn) ;
+			break ;
+		case _ds1977_read:
+		default:
+			Cache_Add_Internal((BYTE *) OWQ_buffer(owq), 8, InternalProp(REA) , pn) ;
+			break ;
 	}
-
-	return 0;
+	return FS_use(owq);
+#else
+	return 0 ;
+#endif /* OW_CACHE */
 }
 
 #if OW_CACHE
-static ZERO_OR_ERROR FS_nuse(struct one_wire_query *owq)
-{
-	char a[48];
-	char *end;
-	union {
-		BYTE b[8];
-		int64_t i;
-	} xfer;
-	OWQ_allocate_struct_and_pointer(owq_scratch);
-
-	bzero(a, 48);
-	bzero(xfer.b, 8);
-	memcpy(&a[OWQ_offset(owq)], OWQ_buffer(owq), OWQ_size(owq));
-	xfer.i = strtoll(a, &end, 0);
-	if (end == a || errno) {
-		return -EINVAL;
-	}
-	OWQ_create_shallow_single(owq_scratch, owq);	// won't bother to destroy
-	OWQ_buffer(owq_scratch) = (char *) xfer.b;
-	OWQ_size(owq_scratch) = 8;
-	OWQ_offset(owq_scratch) = 0;
-	return FS_use(owq_scratch);
-}
-
 static ZERO_OR_ERROR FS_use(struct one_wire_query *owq)
 {
+	struct parsedname * pn = PN(owq) ;
 	if (OWQ_size(owq) < 8) {
 		return -ERANGE;
 	}
 
-	if (Cache_Add_Internal((BYTE *) OWQ_buffer(owq), 8, OWQ_pn(owq).selected_filetype->data.i ? InternalProp(FUL) : InternalProp(REA), PN(owq))) {
-		return -EINVAL;
+	switch ( pn->selected_filetype->data.i) {
+		case _ds1977_full:
+			return Cache_Add_Internal((BYTE *) OWQ_buffer(owq), 8, InternalProp(FUL) , pn)==0 ? 0 : -EINVAL ;
+		case _ds1977_read:
+			return Cache_Add_Internal((BYTE *) OWQ_buffer(owq), 8, InternalProp(REA) , pn)==0 ? 0 : -EINVAL ;
 	}
-	return 0;
+	return -EINVAL;
 }
 #endif							/* OW_CACHE */
-
-static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
-{
-	BYTE p[1 + 2 + 64 + 2] = { _1W_WRITE_SCRATCHPAD, LOW_HIGH_ADDRESS(offset), };
-	GOOD_OR_BAD ret;
-
-	/* Copy to scratchpad */
-	memcpy(&p[3], data, size);
-
-	BUSLOCK(pn);
-	ret = BAD(BUS_select(pn)) || BAD(BUS_send_data(p, size + 3, pn));
-	if (ret == 0 && ((offset + size) & 0x2F) == 0) {
-		ret = BUS_readin_data(&p[size + 3], 2, pn) || CRC16(p, 1 + 2 + size + 2);
-	}
-	BUSUNLOCK(pn);
-	RETURN_BAD_IF_BAD( ret ) ;
-
-	/* Re-read scratchpad and compare */
-	/* Note that we tacitly shift the data one byte down for the E/S byte */
-	p[0] = _1W_READ_SCRATCHPAD;
-	BUSLOCK(pn);
-	ret = BAD(BUS_select(pn)) || BAD(BUS_send_data(p, 1, pn))
-		|| BAD(BUS_readin_data(&p[1], 3 + size, pn))
-		|| memcmp(&p[4], data, size);
-	BUSUNLOCK(pn);
-	RETURN_BAD_IF_BAD(ret ) ;
-
-#if OW_CACHE
-	Cache_Get_Internal_Strict((void *) (&p[4]), 8, InternalProp(FUL), pn);
-#endif							/* OW_CACHE */
-
-	/* Copy Scratchpad to SRAM */
-	p[0] = _1W_COPY_SCRATCHPAD_WITH_PASSWORD;
-	BUSLOCK(pn);
-	ret = BAD(BUS_select(pn)) || BAD(BUS_send_data(p, 4 + 7, pn))
-		|| BAD(BUS_PowerByte(p[4 + 7], &p[4 + 7], 10, pn));
-	BUSUNLOCK(pn);
-	
-	RETURN_BAD_IF_BAD( ret ) ;
-
-	return gbGOOD;
-}
 
 static GOOD_OR_BAD OW_r_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
 {
 	BYTE pwd[8] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, };
 
 #if OW_CACHE
-	if (Cache_Get_Internal_Strict((void *) pwd, sizeof(pwd), InternalProp(FUL), pn)
-		|| OW_r_pmem(data, pwd, size, offset, pn)) {
-		return gbGOOD;
+	if (Cache_Get_Internal_Strict((void *) pwd, sizeof(pwd), InternalProp(REA), pn) == 0 ) {
+		if ( GOOD( OW_r_mem_with_password( pwd, data,size,offset,pn) ) ) {
+			return gbGOOD ;
+		}
 	}
-	Cache_Get_Internal_Strict((void *) pwd, sizeof(pwd), InternalProp(REA), pn);
+	if (Cache_Get_Internal_Strict((void *) pwd, sizeof(pwd), InternalProp(FUL), pn) == 0 ) {
+		if ( GOOD( OW_r_mem_with_password( pwd, data,size,offset,pn) ) ) {
+			return gbGOOD ;
+		}
+	}
 #endif							/* OW_CACHE */
-	return OW_r_pmem(data, pwd, size, offset, pn);
+	return OW_r_mem_with_password(pwd, data, size, offset, pn);
 }
 
-static GOOD_OR_BAD OW_r_pmem(BYTE * data, BYTE * pwd, size_t size, off_t offset, struct parsedname *pn)
+static GOOD_OR_BAD OW_version(UINT * u, struct parsedname *pn)
 {
-	GOOD_OR_BAD ret;
-	BYTE p[1 + 2 + 64 + 2] = { _1W_VERIFY_PASSWORD, LOW_HIGH_ADDRESS(offset), };
+	BYTE p[] = { _1W_READ_VERSION, 0x00, 0x00 };
+	struct transaction_log t[] = {
+		TRXN_START,
+		TRXN_MODIFY(p,p,3),
+		TRXN_COMPARE(&p[1],&p[2],1),
+		TRXN_END,
+	} ;
+	
+	RETURN_BAD_IF_BAD( BUS_transaction(t,pn) ) ;
+	u[0] = p[1];
+	return gbGOOD;
+}
 
-	BUSLOCK(pn);
-	ret = BAD(BUS_select(pn)) || BAD(BUS_send_data(p, 3, pn))
-		|| BAD(BUS_send_data(pwd, 7, pn))
-		|| BUS_PowerByte(pwd[7], &pwd[7], 5, pn);
-	if (ret) {
-	} else if ((offset + size) & 0x3F) {	/* not a page boundary */
-		ret = BUS_readin_data(&p[3], size, pn);
+static GOOD_OR_BAD OW_w_mem( BYTE * data, size_t size, off_t offset, struct parsedname *pn)
+{
+	BYTE p[1 + 2 + 1+ 64 + 2] = { _1W_WRITE_SCRATCHPAD, LOW_HIGH_ADDRESS(offset), };
+	BYTE passwd[8] ; // altered
+	size_t rest = 64 - (offset & 0x3F);
+	BYTE post[1] ;
+	struct transaction_log t_nocrc[] = {
+		TRXN_START,
+		TRXN_WRITE(p,3+size),
+		TRXN_END,
+	};
+	struct transaction_log t_crc[] = {
+		TRXN_START,
+		TRXN_WR_CRC16(p,3+size,0),
+		TRXN_END,
+	};
+	struct transaction_log t_read[] = {
+		TRXN_START,
+		TRXN_WR_CRC16(p,1,3+rest),
+		TRXN_COMPARE(&p[4],data,size),
+		TRXN_END,
+	};
+	struct transaction_log t_copy[] = {
+		TRXN_START,
+		TRXN_WRITE(p,4),
+		TRXN_MODIFY(passwd,passwd, 8-1),
+		TRXN_POWER(&passwd[7],10), // 10ms
+		TRXN_READ1(post),
+		TRXN_END,
+	};
+
+	// set up transfer
+	if ( size>rest ) {
+		return gbBAD ;
+	}
+	memcpy(&p[3],data,size) ;
+	
+	// Write to scratchpad (possibly with CRC16)
+	if ( size==rest ) {
+		RETURN_BAD_IF_BAD( BUS_transaction( t_crc, pn ) ) ;
 	} else {
-		ret = BUS_readin_data(&p[3], size + 2, pn) || CRC16(p, size + 5);
+		RETURN_BAD_IF_BAD( BUS_transaction( t_nocrc, pn ) ) ;
 	}
-	BUSUNLOCK(pn);
+	
+	// Read back from scratch pad to prime next step and confirm data
+	/* Note that we tacitly shift the data one byte down for the E/S byte */
+	p[0] = _1W_READ_SCRATCHPAD ;
+	RETURN_BAD_IF_BAD( BUS_transaction( t_read, pn ) ) ;
 
-	RETURN_BAD_IF_BAD( ret ) ;
-	memcpy(data, &p[3], size);
-	return gbGOOD;
+	// Copy scratchpad to memory
+	if (Cache_Get_Internal_Strict((void *) passwd, 8, InternalProp(FUL), pn)) {	/* Full passwd */
+		memset( passwd, 0xFF, 8 ) ;
+	}
+	p[0] = _1W_COPY_SCRATCHPAD_WITH_PASSWORD ;
+	RETURN_BAD_IF_BAD( BUS_transaction( t_copy, pn ) ) ;
+	return (post[0]==0xFF) ? gbBAD : gbGOOD ;
 }
 
-static GOOD_OR_BAD OW_ver(UINT * u, struct parsedname *pn)
+static GOOD_OR_BAD OW_r_mem_with_password( BYTE * pwd, BYTE * data, size_t size, off_t offset, struct parsedname *pn)
 {
-	int ret;
-	BYTE p[] = { _1W_READ_VERSION, };
-	BYTE b[2];
+	BYTE p[1 + 2 + 64 + 2] = { _1W_READ_MEMORY_WITH_PASSWORD, LOW_HIGH_ADDRESS(offset), };
+	BYTE passwd[8] ; // altered
+	size_t rest = 64 - (offset & 0x3F);
+	struct transaction_log t[] = {
+		TRXN_START,
+		TRXN_WRITE(p,3),
+		TRXN_MODIFY(passwd,passwd, 8-1),
+		TRXN_POWER(&passwd[7],5), // 5ms
+		TRXN_READ(&p[3],rest+2),
+		{ p, NULL, 3+rest+2, trxn_crc16, },
+		TRXN_END,
+	};
 
-	BUSLOCK(pn);
-	ret = BAD(BUS_select(pn)) || BAD(BUS_send_data(p, 1, pn))
-		|| BAD(BUS_readin_data(b, 2, pn));
-	BUSUNLOCK(pn);
-
-	if (ret || b[0] != b[1]) {
-		return gbBAD;
+	// set up transfer
+	if ( size>rest ) {
+		return gbBAD ;
 	}
-	u[0] = b[0];
-	return gbGOOD;
+	memcpy(passwd,pwd,8) ;
+	RETURN_BAD_IF_BAD( BUS_transaction(t,pn) ) ;
+
+	memcpy(data,&p[3],size) ;
+	return gbGOOD ;
 }
 
 static GOOD_OR_BAD OW_verify(BYTE * pwd, off_t offset, struct parsedname *pn)
 {
-	int ret;
-	BYTE p[1 + 2 + 8] = { _1W_READ_MEMORY_WITH_PASSWORD, LOW_HIGH_ADDRESS(offset), };
-	BYTE c;
-#warning "OW_verify: pwd is unused?"
-	BUSLOCK(pn);
-	ret = BAD(BUS_select(pn)) || BAD(BUS_send_data(p, 3 + 7, pn))
-		|| BAD(BUS_PowerByte(p[3 + 7], &p[3 + 7], 5, pn))
-		|| BAD(BUS_readin_data(&c, 1, pn));
-	BUSUNLOCK(pn);
-
-	return (ret || c != 0xFF) ? gbBAD : gbGOOD;
-}
-
-/* Clear first 16 bytes of scratchpad after password setting */
-static GOOD_OR_BAD OW_clear(struct parsedname *pn)
-{
-	BYTE p[1 + 2 + 16] = { _1W_WRITE_SCRATCHPAD, LOW_HIGH_ADDRESS(0x00), };
+	BYTE p[1 + 2] = { _1W_READ_MEMORY_WITH_PASSWORD, LOW_HIGH_ADDRESS(offset), };
+	BYTE passwd[8] ; // altered
+	BYTE post[1] ;
 	struct transaction_log t[] = {
 		TRXN_START,
-		TRXN_WRITE(p, 3 + 16),
+		TRXN_WRITE(p,3),
+		TRXN_MODIFY(passwd,passwd, 8-1),
+		TRXN_POWER(&passwd[7],5), // 5ms
+		TRXN_READ1(post),
 		TRXN_END,
 	};
 
-	/* Copy to scratchpad */
-	bzero(&p[3], 16);
+	memcpy(passwd,pwd,8) ;
+	RETURN_BAD_IF_BAD( BUS_transaction(t,pn) ) ;
 
-	return BUS_transaction(t, pn);
+	return post[0]==0xFF ? gbBAD : gbGOOD ;
 }
