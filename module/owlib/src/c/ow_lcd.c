@@ -521,10 +521,9 @@ static GOOD_OR_BAD LCD_2byte(BYTE * bytes, int delay, const struct parsedname *p
 	struct transaction_log t[] = {
 		TRXN_START,
 		TRXN_WRITE2(bytes),
+		TRXN_DELAY(delay),
 		TRXN_END,
 	};
 
-	RETURN_BAD_IF_BAD(BUS_transaction(t, pn)) ;
-	UT_delay(delay);			// mS
-	return gbGOOD;
+	return BUS_transaction(t, pn) ;
 }

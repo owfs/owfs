@@ -155,6 +155,7 @@ static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parse
 	struct transaction_log tsram[] = {
 		TRXN_START,
 		TRXN_WRITE(p, 4),
+		TRXN_DELAY(32),
 		TRXN_END,
 	};
 
@@ -167,8 +168,5 @@ static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parse
 
 	/* Copy Scratchpad to SRAM */
 	p[0] = _1W_COPY_SCRATCHPAD;
-	RETURN_BAD_IF_BAD(BUS_transaction(tsram, pn)) ;
-
-	UT_delay(32);
-	return gbGOOD;
+	return BUS_transaction(tsram, pn) ;
 }

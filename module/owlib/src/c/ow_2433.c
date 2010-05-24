@@ -162,9 +162,16 @@ static GOOD_OR_BAD OW_w_23page(BYTE * data, size_t size, off_t offset, struct pa
 		TRXN_COMPARE(&p[4], data, size),
 		TRXN_END,
 	};
-	struct transaction_log twrite[] = {
+	struct transaction_log twrite33[] = {
 		TRXN_START,
 		TRXN_WRITE(p, 4),
+		TRXN_DELAY(5),
+		TRXN_END,
+	};
+	struct transaction_log twriteEC20[] = {
+		TRXN_START,
+		TRXN_WRITE(p, 4),
+		TRXN_DELAY(10),
 		TRXN_END,
 	};
 
@@ -184,18 +191,13 @@ static GOOD_OR_BAD OW_w_23page(BYTE * data, size_t size, off_t offset, struct pa
 
 	/* Copy Scratchpad to SRAM */
 	p[0] = _1W_COPY_SCRATCHPAD;
-	RETURN_BAD_IF_BAD(BUS_transaction(twrite, pn)) ;
-
-	// pause for write
 	switch (pn->sn[0]) {
 	case 0x23:					// DS2433
-		UT_delay(5);
-		break;
-	case 0x43:					// DS28EC20
-		UT_delay(10);
-		break;
+		return BUS_transaction(twrite33,pn);
+	case 0x43:
+	default:					// DS28EC20
+		return BUS_transaction(twriteEC20,pn);
 	}
-	return gbGOOD;
 }
 
 /* paged, and pre-screened */
@@ -219,6 +221,7 @@ static GOOD_OR_BAD OW_w_2Dpage(BYTE * data, size_t size, off_t offset, struct pa
 	struct transaction_log tsram[] = {
 		TRXN_START,
 		TRXN_WRITE(p, 4),
+		TRXN_DELAY(13),
 		TRXN_END,
 	};
 
@@ -241,8 +244,5 @@ static GOOD_OR_BAD OW_w_2Dpage(BYTE * data, size_t size, off_t offset, struct pa
 
 	/* Copy Scratchpad to SRAM */
 	p[0] = _1W_COPY_SCRATCHPAD;
-	RETURN_BAD_IF_BAD(BUS_transaction(tsram, pn)) ;
-
-	UT_delay(13);
-	return gbGOOD ;
+	return BUS_transaction(tsram, pn) ;
 }

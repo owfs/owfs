@@ -616,12 +616,11 @@ static GOOD_OR_BAD OW_r_templimit(_FLOAT * T, const int Tindex, const struct par
 	struct transaction_log trecall[] = {
 		TRXN_START,
 		TRXN_WRITE1(recall),
+		TRXN_DELAY(10),
 		TRXN_END,
 	};
 
 	RETURN_BAD_IF_BAD(BUS_transaction(trecall, pn)) ;
-
-	UT_delay(10);
 
 	RETURN_BAD_IF_BAD(OW_r_scratchpad(data, pn)) ;
 	T[0] = (_FLOAT) ((int8_t) data[2 + Tindex]);

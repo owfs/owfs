@@ -699,14 +699,13 @@ static GOOD_OR_BAD TAI8570_Check(const struct s_TAI8570 *tai, struct parsedname 
 	size_t i;
 	BYTE data[1];
 	struct transaction_log t[] = {
+		TRXN_DELAY(1),
 		TRXN_READ1(data),
 		TRXN_END,
 	};
-	//printf("TAI8570_Check\n");
-	UT_delay(30);				// conversion time in msec
+	UT_delay(29);				// conversion time in msec
 	memcpy(pn->sn, tai->writer, 8);
 	RETURN_BAD_IF_BAD( TAI8570_config(CFG_READPULSE, pn) );		// config write
-	//printf("TAI8570 check ") ;
 	for (i = 0; i < 100; ++i) {
 		RETURN_BAD_IF_BAD(BUS_transaction(t, pn)) ;
 		//printf("%.2X ",data[0]) ;
@@ -715,7 +714,6 @@ static GOOD_OR_BAD TAI8570_Check(const struct s_TAI8570 *tai, struct parsedname 
 		}
 	}
 	//printf("TAI8570 conversion poll = %d\n",i) ;
-	//printf("\n") ;
 	return gbGOOD;
 }
 

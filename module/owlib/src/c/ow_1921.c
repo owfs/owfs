@@ -960,6 +960,7 @@ static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parse
 	struct transaction_log twrite[] = {
 		TRXN_START,
 		TRXN_WRITE(p, 4),
+		TRXN_DELAY(1), /* 1 msec >> 2 usec per byte */
 		TRXN_END,
 	};
 
@@ -978,10 +979,7 @@ static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parse
 
 	/* write Scratchpad to SRAM */
 	p[0] = _1W_COPY_SCRATCHPAD;
-	RETURN_BAD_IF_BAD(BUS_transaction(twrite, pn)) ;
-
-	UT_delay(1);				/* 1 msec >> 2 usec per byte */
-	return gbGOOD;
+	return BUS_transaction(twrite, pn) ;
 }
 
 static GOOD_OR_BAD OW_temperature(int *T, const UINT delay, struct parsedname *pn)
@@ -1013,6 +1011,7 @@ static GOOD_OR_BAD OW_clearmemory(struct parsedname *pn)
 	struct transaction_log t[] = {
 		TRXN_START,
 		TRXN_WRITE1(cr),
+		TRXN_DELAY(1),
 		TRXN_END,
 	};
 	/* Clear memory flag */
@@ -1020,10 +1019,7 @@ static GOOD_OR_BAD OW_clearmemory(struct parsedname *pn)
 	flag = (flag & 0x3F) | 0x40;
 	RETURN_BAD_IF_BAD( OW_w_mem(&flag, 1, 0x020E, pn) );
 
-	RETURN_BAD_IF_BAD( BUS_transaction(t, pn) );
-
-	UT_delay(1);				/* wait 500 usec */
-	return 0;
+	return BUS_transaction(t, pn) ;
 }
 
 /* translate 7 byte field to a Unix-style date (number) */

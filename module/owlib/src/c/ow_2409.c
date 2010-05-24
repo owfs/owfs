@@ -165,9 +165,13 @@ static ZERO_OR_ERROR FS_w_control(struct one_wire_query *owq)
 static GOOD_OR_BAD OW_discharge(const struct parsedname *pn)
 {
 	BYTE dis[] = { _1W_DISCHARGE_LINES, };
+	BYTE alo[] = { _1W_ALL_LINES_OFF, };
 	struct transaction_log t[] = {
 		TRXN_START,
 		TRXN_WRITE1(dis),
+		TRXN_DELAY(100),
+		TRXN_START,
+		TRXN_WRITE1(alo),
 		TRXN_END,
 	};
 
@@ -176,11 +180,6 @@ static GOOD_OR_BAD OW_discharge(const struct parsedname *pn)
 	pn->selected_connection->branch.sn[0] = BUSPATH_BAD ;
 	BUSUNLOCK(pn);
 
-	RETURN_BAD_IF_BAD(BUS_transaction(t, pn)) ;
-
-	UT_delay(100);
-
-	dis[0] = _1W_ALL_LINES_OFF;
 	return BUS_transaction(t, pn) ;
 }
 

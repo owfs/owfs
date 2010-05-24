@@ -649,13 +649,11 @@ static GOOD_OR_BAD OW_w_page(const BYTE * p, const int page, const struct parsed
 		TRXN_CRC8(data, 9),
 		TRXN_START,
 		TRXN_WRITE2(eeprom),
+		TRXN_DELAY(10), // 10 msec
 		TRXN_END,
 	};
 
-	RETURN_BAD_IF_BAD(BUS_transaction(t, pn)) ;
-
-	UT_delay(10);
-	return gbGOOD;					// timeout
+	return BUS_transaction(t, pn) ;
 }
 
 static GOOD_OR_BAD OW_temp(_FLOAT * T, const struct parsedname *pn)
@@ -666,12 +664,12 @@ static GOOD_OR_BAD OW_temp(_FLOAT * T, const struct parsedname *pn)
 	struct transaction_log tconvert[] = {
 		TRXN_START,
 		TRXN_WRITE1(t),
+		TRXN_DELAY(delay),
 		TRXN_END,
 	};
 	// write conversion command
 	if ( BAD( FS_Test_Simultaneous( simul_temp, delay, pn) ) ) {
 		RETURN_BAD_IF_BAD(BUS_transaction(tconvert, pn)) ;
-		UT_delay(delay);
 	}
 
 	// read back registers
@@ -699,6 +697,7 @@ static GOOD_OR_BAD OW_volts(_FLOAT * V, const int src, const struct parsedname *
 	struct transaction_log tconvert[] = {
 		TRXN_START,
 		TRXN_WRITE1(v),
+		TRXN_DELAY(10), // 10 ms
 		TRXN_END,
 	};
 
@@ -709,7 +708,6 @@ static GOOD_OR_BAD OW_volts(_FLOAT * V, const int src, const struct parsedname *
 
 	// write conversion command
 	RETURN_BAD_IF_BAD(BUS_transaction(tconvert, pn)) ;
-	UT_delay(10);
 
 	// read back registers
 	RETURN_BAD_IF_BAD(OW_r_page(data, 0, pn));

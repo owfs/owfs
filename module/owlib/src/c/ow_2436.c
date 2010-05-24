@@ -126,6 +126,7 @@ static GOOD_OR_BAD OW_r_page(BYTE * data, size_t size, off_t offset, const struc
 	struct transaction_log tcopy[] = {
 		TRXN_START,
 		TRXN_WRITE1(copy),
+		TRXN_DELAY(10),
 		TRXN_END,
 	};
 	struct transaction_log tscratch[] = {
@@ -136,8 +137,6 @@ static GOOD_OR_BAD OW_r_page(BYTE * data, size_t size, off_t offset, const struc
 	};
 
 	RETURN_BAD_IF_BAD(BUS_transaction(tcopy, pn)) ;
-
-	UT_delay(10);
 
 	return BUS_transaction(tscratch, pn) ;
 }
@@ -168,16 +167,13 @@ static GOOD_OR_BAD OW_w_page(const BYTE * data, size_t size, off_t offset, const
 	struct transaction_log tcopy[] = {
 		TRXN_START,
 		TRXN_WRITE1(copy),
+		TRXN_DELAY(10),
 		TRXN_END,
 	};
 
 	RETURN_BAD_IF_BAD(BUS_transaction(twrite, pn)) ;
 	RETURN_BAD_IF_BAD(BUS_transaction(tread, pn)) ;
-	RETURN_BAD_IF_BAD(BUS_transaction(tcopy, pn)) ;
-
-	UT_delay(10);
-
-	return gbGOOD;
+	return BUS_transaction(tcopy, pn) ;
 }
 
 static GOOD_OR_BAD OW_temp(_FLOAT * T, const struct parsedname *pn)
@@ -188,6 +184,7 @@ static GOOD_OR_BAD OW_temp(_FLOAT * T, const struct parsedname *pn)
 	struct transaction_log tconvert[] = {
 		TRXN_START,
 		TRXN_WRITE1(d2),
+		TRXN_DELAY(10),
 		TRXN_END,
 	};
 	struct transaction_log tdata[] = {
@@ -199,7 +196,6 @@ static GOOD_OR_BAD OW_temp(_FLOAT * T, const struct parsedname *pn)
 
 	// initiate conversion
 	RETURN_BAD_IF_BAD(BUS_transaction(tconvert, pn)) ;
-	UT_delay(10);
 
 
 	/* Get data */
@@ -222,6 +218,7 @@ static GOOD_OR_BAD OW_volts(_FLOAT * V, const struct parsedname *pn)
 	struct transaction_log tconvert[] = {
 		TRXN_START,
 		TRXN_WRITE1(b4),
+		TRXN_DELAY(10),
 		TRXN_END,
 	};
 	struct transaction_log tdata[] = {
@@ -233,7 +230,6 @@ static GOOD_OR_BAD OW_volts(_FLOAT * V, const struct parsedname *pn)
 
 	// initiate conversion
 	RETURN_BAD_IF_BAD(BUS_transaction(tconvert, pn)) ;
-	UT_delay(10);
 
 	/* Get data */
 	RETURN_BAD_IF_BAD( BUS_transaction(tdata, pn)) ;

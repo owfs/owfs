@@ -136,6 +136,7 @@ static GOOD_OR_BAD OW_w_mem(const BYTE * data, const size_t size, const off_t of
 		TRXN_START,
 		TRXN_WRITE2(vr),
 		TRXN_READ(ver, size),
+		TRXN_COMPARE(data,ver,size),
 		TRXN_END,
 	};
 	BYTE cp[] = { _1W_COPY_SCRATCHPAD, };
@@ -151,13 +152,13 @@ static GOOD_OR_BAD OW_w_mem(const BYTE * data, const size_t size, const off_t of
 	if ((size != 16) && BAD(BUS_transaction(tread, pn)) ) {
 		return gbBAD;
 	}
+
 	/* write data to scratchpad */
 	RETURN_BAD_IF_BAD(BUS_transaction(twrite, pn)) ;
+
 	/* read back the scratchpad */
 	RETURN_BAD_IF_BAD(BUS_transaction(tver, pn)) ;
-	if (memcmp(data, ver, size)) {
-		return gbBAD;
-	}
+
 	/* copy scratchpad to memory */
 	return BUS_transaction(tcopy, pn);
 }
