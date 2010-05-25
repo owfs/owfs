@@ -37,7 +37,7 @@ void LockSetup(void)
 {
 #if OW_MT
 	/* global mutex attribute */
-	my_pthread_mutexattr_init(&Mutex.mattr);
+	_MUTEX_ATTR_INIT(Mutex.mattr);
   #ifdef __UCLIBC__
     #if ((__UCLIBC_MAJOR__ << 16)+(__UCLIBC_MINOR__ << 8)+(__UCLIBC_SUBLEVEL__) < 0x00091D)
 	/* If uClibc < 0.9.29, then re-initialize internal pthread-structs
@@ -50,13 +50,13 @@ void LockSetup(void)
 	__pthread_initial_thread_bos = NULL;
 	__pthread_initialize();
 
-	my_pthread_mutexattr_settype(&Mutex.mattr, PTHREAD_MUTEX_ADAPTIVE_NP);
+	_MUTEX_ATTR_SET(Mutex.mattr, PTHREAD_MUTEX_ADAPTIVE_NP);
     #else /* UCLIBC_VERSION */
-	my_pthread_mutexattr_settype(&Mutex.mattr, PTHREAD_MUTEX_DEFAULT);
+	_MUTEX_ATTR_SET(Mutex.mattr, PTHREAD_MUTEX_DEFAULT);
     #endif							/* UCLIBC_VERSION */
 	_MUTEX_INIT(Mutex.uclibc_mutex);
   #else /* __UCLIBC__ */
-	my_pthread_mutexattr_settype(&Mutex.mattr, PTHREAD_MUTEX_DEFAULT);   
+	_MUTEX_ATTR_SET(Mutex.mattr, PTHREAD_MUTEX_DEFAULT);   
   #endif							/* __UCLIBC__ */
 
 	_MUTEX_INIT(Mutex.stat_mutex);

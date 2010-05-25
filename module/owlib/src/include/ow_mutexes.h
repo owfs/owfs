@@ -68,8 +68,7 @@ extern struct mutexes {
 	pthread_mutex_t namefind_mutex;
 	pthread_mutex_t aliasfind_mutex;
 	
-	pthread_mutexattr_t *pmattr;
-	pthread_mutexattr_t mattr;
+	pthread_mutexattr_t mattr; // mutex attribute -- used for all mutexes
 	my_rwlock_t lib;
 	my_rwlock_t cache;
 	my_rwlock_t store;
@@ -82,6 +81,10 @@ extern struct mutexes {
 
 
 #if OW_MT
+#define _MUTEX_ATTR_INIT(at)	my_pthread_mutexattr_init(    &(at) )
+#define _MUTEX_ATTR_SET(at,typ)	my_pthread_mutexattr_settype( &(at) , typ )
+#define _MUTEX_ATTR_DESTROY(at)	my_pthread_mutexattr_destroy( &(at) )
+
 #define _MUTEX_INIT(mut)	my_pthread_mutex_init(    &(mut) , &(Mutex.mattr) )
 #define _MUTEX_DESTROY(mut)	my_pthread_mutex_destroy( &(mut) )
 

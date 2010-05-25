@@ -20,14 +20,14 @@ $Id$
 #include "ow_connection.h"
 
 #if OW_MT
-	/* Locking for thread work */
-	/* Variables only used in this particular file */
-	/* i.e. "locally global" */
-	my_rwlock_t shutdown_mutex_rw ;
-	pthread_mutex_t handler_thread_mutex ;
-	int handler_thread_count ;
-	int shutdown_in_progress ;
-	FILE_DESCRIPTOR_OR_ERROR shutdown_pipe[2] ;
+/* Locking for thread work */
+/* Variables only used in this particular file */
+/* i.e. "locally global" */
+my_rwlock_t shutdown_mutex_rw ;
+pthread_mutex_t handler_thread_mutex ;
+int handler_thread_count ;
+int shutdown_in_progress ;
+FILE_DESCRIPTOR_OR_ERROR shutdown_pipe[2] ;
 #endif /* OW_MT */
 
 

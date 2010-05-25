@@ -26,10 +26,7 @@ void LibClose(void)
 	SpecialCase_close();
 
 #if OW_MT
-	if (Mutex.pmattr) {
-		my_pthread_mutexattr_destroy(Mutex.pmattr);
-		Mutex.pmattr = NULL;
-	}
+	_MUTEX_ATTR_DESTROY(Mutex.mattr);
 #endif							/* OW_MT */
 
 	if (Globals.announce_name) {

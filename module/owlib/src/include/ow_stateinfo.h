@@ -57,7 +57,7 @@ struct stateinfo {
 	int lock_setup_done;
 	time_t start_time;
 	time_t dir_time;
-	int shutdown_in_progress;
+	int shutting_down;
 };
 extern struct stateinfo StateInfo;
 

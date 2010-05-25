@@ -38,11 +38,11 @@ static void exit_handler(int signo, siginfo_t * info, void *context)
 	} else {
 		LEVEL_DEBUG("exit_handler: for signo=%d, self=%lu, main=%lu", signo, pthread_self(), main_threadid);
 	}
-	if (StateInfo.shutdown_in_progress) {
+	if (StateInfo.shutting_down) {
 	  LEVEL_DEBUG("exit_handler: shutdown already in progress. signo=%d, self=%lu, main=%lu", signo, pthread_self(), main_threadid);
 	}
-	if (!StateInfo.shutdown_in_progress) {
-		StateInfo.shutdown_in_progress = 1;
+	if (!StateInfo.shutting_down) {
+		StateInfo.shutting_down = 1;
 
 		if (info != NULL) {
 			if (SI_FROMUSER(info)) {
@@ -62,7 +62,7 @@ static void exit_handler(int signo, siginfo_t * info, void *context)
 #else
 	(void) signo;
 	(void) info;
-	StateInfo.shutdown_in_progress = 1;
+	StateInfo.shutting_down = 1;
 #endif
 	return;
 }
@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
 	sigaddset(&myset, SIGINT);
 	sigaddset(&myset, SIGTERM);
 
-	while (!StateInfo.shutdown_in_progress) {
+	while (!StateInfo.shutting_down) {
 		if ((err = sigwait(&myset, &signo)) == 0) {
 			if (signo == SIGHUP) {
 				LEVEL_DEBUG("owftpd: ignore signo=%d", signo);
@@ -168,7 +168,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	StateInfo.shutdown_in_progress = 1;
+	StateInfo.shutting_down = 1;
 	LEVEL_DEBUG("owftpd shutdown initiated");
 
 	ftp_listener_stop(&ftp_listener);

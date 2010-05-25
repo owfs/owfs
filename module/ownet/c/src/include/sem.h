@@ -53,17 +53,6 @@ static inline int sem_init(sem_t * s, int ign, int val)
 	return 0;
 }
 
-//static int inline sem_getvalue(sem_t *s, int *sval) {
-static inline int sem_getvalue(sem_t * s, int *sval)
-{
-	if (pthread_mutex_lock(&s->m) == -1)
-		return -1;
-	if (s && sval)
-		*sval = s->v;
-	pthread_mutex_unlock(&s->m);
-	return 0;
-}
-
 //static int inline sem_post(sem_t *s) {
 static inline int sem_post(sem_t * s)
 {
@@ -97,28 +86,6 @@ static inline int sem_wait(sem_t * s)
 	pthread_mutex_unlock(&s->m);
 	return ok;
 }
-
-//static int inline sem_trywait(sem_t *s) {
-static inline int sem_trywait(sem_t * s)
-{
-	struct timespec ts;
-	int ok = 0;
-	memset(&ts, 0, sizeof(ts));
-	pthread_mutex_lock(&s->m);
-	while (s->v == 0) {
-		s->w++;
-		if (pthread_cond_timedwait(&s->c, &s->m, &ts) == -1) {
-			ok = -1;
-			s->w--;
-			break;
-		}
-		s->w--;
-	}
-	s->v--;
-	pthread_mutex_unlock(&s->m);
-	return ok;
-}
-
 
 #endif							/* HAVE_SEMAPHORE_H */
 
