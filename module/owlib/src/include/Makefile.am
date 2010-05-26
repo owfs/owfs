@@ -1,5 +1,5 @@
 noinst_HEADERS =          \
-	compat_getopt.h   \
+        compat_getopt.h   \
         compat.h          \
         i2c-dev.h         \
         compat_netdb.h    \
@@ -36,7 +36,7 @@ noinst_HEADERS =          \
         ow_alloc.h        \
         ow_arg.h          \
         ow_avahi.h        \
-	ow_bae.h          \
+        ow_bae.h          \
         ow_bitwork.h      \
         ow_busnumber.h    \
         ow_cache.h        \
@@ -45,7 +45,7 @@ noinst_HEADERS =          \
         ow_counters.h     \
         ow_connection.h   \
         ow_debug.h        \
-	ow_detect.h       \
+        ow_detect.h       \
         ow_device.h       \
         ow_devices.h      \
         ow_dirblob.h      \
@@ -53,9 +53,11 @@ noinst_HEADERS =          \
         ow_dnssd.h        \
         ow_eds.h          \
         ow_eeef.h         \
-	ow_fd.h           \
+        ow_fd.h           \
         ow_filetype.h     \
         ow_functions.h    \
+		ow_generic_read.h \
+		ow_generic_write.h\
         ow_global.h       \
         ow_integer.h      \
         ow_interface.h    \
@@ -70,24 +72,24 @@ noinst_HEADERS =          \
         ow_opt.h          \
         ow_parse_address.h\
         ow_parsedname.h   \
-	ow_parse_sn.h     \
+        ow_parse_sn.h     \
         ow_pid.h          \
         ow_pressure.h     \
-	ow_reset.h        \
+        ow_reset.h        \
         ow_settings.h     \
-	ow_search.h       \
-	ow_sibling.h      \
+        ow_search.h       \
+        ow_sibling.h      \
         ow_simultaneous.h \
-	ow_specialcase.h  \
-	ow_standard.h     \
-	ow_stateinfo.h    \
+        ow_specialcase.h  \
+        ow_standard.h     \
+        ow_stateinfo.h    \
         ow_stats.h        \
         ow_stub.h         \
         ow_system.h       \
         ow_temperature.h  \
         ow_thermocouple.h \
         ow_transaction.h  \
-	ow_visibility.h   \
+        ow_visibility.h   \
         ow_w1.h           \
         rwlock.h          \
         netlink.h         \

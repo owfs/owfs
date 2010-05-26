@@ -32,6 +32,12 @@ $Id$
 #ifndef OW_GENERIC_READ_H				/* tedious wrapper */
 #define OW_GENERIC_READ_H
 
-
+#define UNPAGED_MEMORY	0
+struct generic_read {
+	int pagesize ;
+	enum read_crc_type { rct_no_crc, rct_crc8, rct_crc16, }  crc_type ;
+	enum read_address_type { rat_not_supported, rat_2byte, rat_1byte, rat_page, rat_complement, } addressing_type ;
+	BYTE command ;
+} ;
 
 #endif							/* OW_GENERIC_READ_H */
