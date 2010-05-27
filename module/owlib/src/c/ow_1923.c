@@ -132,7 +132,7 @@ struct filetype DS1923[] = {
 	{"clock/date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_second, FS_r_date, FS_w_date, VISIBLE, NO_FILETYPE_DATA,},
 	{"clock/udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter, FS_w_counter, VISIBLE, NO_FILETYPE_DATA,},
 	{"clock/running", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_rbitread, FS_rbitwrite, VISIBLE, {v:&BitReads[2]},},
-	#if 0
+#if 0
 	/* Just test functions */
 	{"running", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_run, FS_w_run, VISIBLE, NO_FILETYPE_DATA,},
 	{"memory", 512, NON_AGGREGATE, ft_binary, fc_stable, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
@@ -155,7 +155,7 @@ struct filetype DS1923[] = {
 #endif
 };
 
-DeviceEntryExtended(41, DS1923, DEV_temp | DEV_alarm | DEV_ovdr | DEV_resume);
+DeviceEntryExtended(41, DS1923, DEV_temp | DEV_alarm | DEV_ovdr | DEV_resume, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 /* Persistent storage */
 MakeInternalProp(RPW, fc_persistent);	// Read password

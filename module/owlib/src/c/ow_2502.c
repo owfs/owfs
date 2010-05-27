@@ -59,10 +59,10 @@ struct filetype DS2502[] = {
 	F_STANDARD,
 	{"memory", 128, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"pages/page", 32, &A2502, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
+	{"pages/page", 32, &A2502, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
 };
 
-DeviceEntry(09, DS2502);
+DeviceEntry(09, DS2502, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 struct filetype DS1982U[] = {
 	F_STANDARD,
@@ -71,10 +71,10 @@ struct filetype DS1982U[] = {
 	{"project", 4, NON_AGGREGATE, ft_binary, fc_stable, FS_r_param, NO_WRITE_FUNCTION, VISIBLE, {i:0},},
 	{"memory", 128, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"pages/page", 32, &A2502, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
+	{"pages/page", 32, &A2502, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
 };
 
-DeviceEntry(89, DS1982U);
+DeviceEntry(89, DS1982U, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 #define _1W_READ_MEMORY 0xF0
 #define _1W_READ_STATUS 0xAA

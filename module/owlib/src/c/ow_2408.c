@@ -115,7 +115,7 @@ struct filetype DS2408[] = {
 	{"LCD_H/onoff", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, NO_READ_FUNCTION, FS_Honoff, VISIBLE, NO_FILETYPE_DATA,},
 };
 
-DeviceEntryExtended(29, DS2408, DEV_alarm | DEV_resume | DEV_ovdr);
+DeviceEntryExtended(29, DS2408, DEV_alarm | DEV_resume | DEV_ovdr, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 #define _1W_READ_PIO_REGISTERS  0xF0
 #define _1W_CHANNEL_ACCESS_READ 0xF5

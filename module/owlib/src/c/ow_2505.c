@@ -67,24 +67,24 @@ struct aggregate A2505s = { 11, ag_numbers, ag_separate, };
 struct filetype DS2505[] = {
 	F_STANDARD,
 	{"status", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"status/page", 8, &A2505s, ft_binary, fc_stable, FS_r_status, FS_w_status, VISIBLE, NO_FILETYPE_DATA,},
-  {"memory", 2048, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, VISIBLE, NO_FILETYPE_DATA,},
-  {"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"pages/page", 32, &A2505, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
+	{"status/page", 8, &A2505s, ft_binary, fc_stable, FS_r_status, FS_w_status, VISIBLE, NO_FILETYPE_DATA,},
+	{"memory", 2048, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, VISIBLE, NO_FILETYPE_DATA,},
+	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"pages/page", 32, &A2505, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
 };
 
-DeviceEntry(0B, DS2505);
+DeviceEntry(0B, DS2505, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 struct filetype DS1985U[] = {
 	F_STANDARD,
 	{"status", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"status/page", 8, &A2505s, ft_binary, fc_stable, FS_r_status, FS_w_status, VISIBLE, NO_FILETYPE_DATA,},
-  {"memory", 2048, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, VISIBLE, NO_FILETYPE_DATA,},
-  {"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"pages/page", 32, &A2505, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
+	{"status/page", 8, &A2505s, ft_binary, fc_stable, FS_r_status, FS_w_status, VISIBLE, NO_FILETYPE_DATA,},
+	{"memory", 2048, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, VISIBLE, NO_FILETYPE_DATA,},
+	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"pages/page", 32, &A2505, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
 };
 
-DeviceEntry(8B, DS1985U);
+DeviceEntry(8B, DS1985U, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 struct aggregate A2506 = { 256, ag_numbers, ag_separate, };
 struct aggregate A2506s = { 11, ag_numbers, ag_separate, };
@@ -97,7 +97,7 @@ struct filetype DS2506[] = {
   {"pages/page", 32, &A2506, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
 };
 
-DeviceEntryExtended(0F, DS2506, DEV_ovdr);
+DeviceEntryExtended(0F, DS2506, DEV_ovdr, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 struct filetype DS1986U[] = {
 	F_STANDARD,
@@ -108,7 +108,7 @@ struct filetype DS1986U[] = {
   {"pages/page", 32, &A2506, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
 };
 
-DeviceEntryExtended(8F, DS1986U, DEV_ovdr);
+DeviceEntryExtended(8F, DS1986U, DEV_ovdr, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 /* ------- Functions ------------ */
 

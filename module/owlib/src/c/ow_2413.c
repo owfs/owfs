@@ -67,7 +67,7 @@ struct filetype DS2413[] = {
 //	{"latch", PROPERTY_LENGTH_BITFIELD, &A2413, ft_bitfield, fc_link, FS_r_latch, FS_w_pio, VISIBLE, NO_FILETYPE_DATA,},
 };
 
-DeviceEntryExtended(3A, DS2413, DEV_resume | DEV_ovdr);
+DeviceEntryExtended(3A, DS2413, DEV_resume | DEV_ovdr, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 #define _1W_PIO_ACCESS_READ 0xF5
 #define _1W_PIO_ACCESS_WRITE 0x5A

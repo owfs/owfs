@@ -243,7 +243,7 @@ struct filetype BAE[] = {
 
 };
 
-DeviceEntryExtended(FC, BAE, DEV_resume | DEV_alarm );
+DeviceEntryExtended(FC, BAE, DEV_resume | DEV_alarm, NO_GENERIC_READ, NO_GENERIC_WRITE );
 
 /* <AE command codes */
 #define _1W_ECMD_ERASE_FIRMWARE 0xBB

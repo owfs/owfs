@@ -58,25 +58,25 @@ struct aggregate A1963S = { 16, ag_numbers, ag_separate, };
 struct filetype DS1963S[] = {
 	F_STANDARD,
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"pages/page", 32, &A1963S, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
-  {"pages/count", PROPERTY_LENGTH_UNSIGNED, &A1963S, ft_unsigned, fc_volatile, FS_counter, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"pages/password", 8, NON_AGGREGATE, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_password, VISIBLE, NO_FILETYPE_DATA,},
-  {"memory", 512, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, VISIBLE, NO_FILETYPE_DATA,},
-  {"password", 8, NON_AGGREGATE, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_password, VISIBLE, NO_FILETYPE_DATA,},
+	{"pages/page", 32, &A1963S, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
+	{"pages/count", PROPERTY_LENGTH_UNSIGNED, &A1963S, ft_unsigned, fc_volatile, FS_counter, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"pages/password", 8, NON_AGGREGATE, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_password, VISIBLE, NO_FILETYPE_DATA,},
+	{"memory", 512, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, VISIBLE, NO_FILETYPE_DATA,},
+	{"password", 8, NON_AGGREGATE, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_password, VISIBLE, NO_FILETYPE_DATA,},
 };
 
-DeviceEntryExtended(18, DS1963S, DEV_resume | DEV_ovdr);
+DeviceEntryExtended(18, DS1963S, DEV_resume | DEV_ovdr, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 struct aggregate A1963L = { 16, ag_numbers, ag_separate, };
 struct filetype DS1963L[] = {
 	F_STANDARD,
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"pages/page", 32, &A1963L, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
-  {"pages/count", PROPERTY_LENGTH_UNSIGNED, &A1963L, ft_unsigned, fc_volatile, FS_counter, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"memory", 512, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, VISIBLE, NO_FILETYPE_DATA,},
+	{"pages/page", 32, &A1963L, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
+	{"pages/count", PROPERTY_LENGTH_UNSIGNED, &A1963L, ft_unsigned, fc_volatile, FS_counter, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"memory", 512, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, VISIBLE, NO_FILETYPE_DATA,},
 };
 
-DeviceEntryExtended(1A, DS1963L, DEV_ovdr);
+DeviceEntryExtended(1A, DS1963L, DEV_ovdr, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 #define _1W_WRITE_SCRATCHPAD 0x0F
 #define _1W_READ_SCRATCHPAD 0xAA

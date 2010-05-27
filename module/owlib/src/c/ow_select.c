@@ -105,10 +105,7 @@ GOOD_OR_BAD BUS_select(const struct parsedname *pn)
 	}
 
 	/* proper path now "turned on" */
-	if ((pn->selected_device != NULL)
-		&& (pn->selected_device != DeviceThermostat)) {
-		GOOD_OR_BAD ret;
-		
+	if ((pn->selected_device != NULL) && (pn->selected_device != DeviceThermostat)) {
 		memcpy(&sent[1], pn->sn, SERIAL_NUMBER_SIZE);
 		if ( BAD(BUS_send_data(sent, 1, pn))) {
 			STAT_ADD1_BUS(e_bus_select_errors, pn->selected_connection);

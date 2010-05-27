@@ -81,6 +81,8 @@ struct device {
 	uint32_t flags;
 	int count_of_filetypes;
 	struct filetype *filetype_array;
+	struct generic_read * g_read ;
+	struct generic_write * g_write ;
 };
 
 #define DeviceHeader( chip )    extern struct device d_##chip
@@ -89,8 +91,10 @@ struct device {
 /* Cannot set the 3rd element (number of filetypes) at compile time because
    filetype arrays aren;t defined at this point */
 #define COUNT_OF_FILETYPES(filetype_array) ((int)(sizeof(filetype_array)/sizeof(struct filetype)))
-#define DeviceEntryExtended( code , chip , flags )  struct device d_##chip = { #code, #chip, flags ,  COUNT_OF_FILETYPES(chip), chip }
-#define DeviceEntry( code , chip )  DeviceEntryExtended( code, chip, 0 )
+
+#define DeviceEntryExtended( code , chip , flags, gread, gwrite )  struct device d_##chip = {#code,#chip,flags,COUNT_OF_FILETYPES(chip),chip,gread,gwrite}
+
+#define DeviceEntry( code , chip, gread, gwrite )  DeviceEntryExtended( code, chip, 0, gread, gwrite )
 
 /* Device tree for matching names */
 /* Bianry tree implementation */

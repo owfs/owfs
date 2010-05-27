@@ -58,7 +58,7 @@ struct filetype DS2405[] = {
 	{"sensed", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_volatile, FS_r_sense, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 };
 
-DeviceEntryExtended(05, DS2405, DEV_alarm);
+DeviceEntryExtended(05, DS2405, DEV_alarm, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 /* ------- Functions ------------ */
 

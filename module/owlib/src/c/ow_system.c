@@ -64,7 +64,7 @@ struct filetype sys_process[] = {
 	{"pid", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_pid, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 };
 struct device d_sys_process = { "process", "process", ePN_system, COUNT_OF_FILETYPES(sys_process),
-	sys_process
+	sys_process, NO_GENERIC_READ, NO_GENERIC_WRITE
 };
 
 struct filetype sys_connections[] = {
@@ -73,7 +73,7 @@ struct filetype sys_connections[] = {
 };
 struct device d_sys_connections = { "connections", "connections", ePN_system,
 	COUNT_OF_FILETYPES(sys_connections),
-	sys_connections
+	sys_connections, NO_GENERIC_READ, NO_GENERIC_WRITE
 };
 
 struct filetype sys_configure[] = {
@@ -90,7 +90,7 @@ struct filetype sys_configure[] = {
 };
 struct device d_sys_configure = { "configuration", "configuration", ePN_system,
 	COUNT_OF_FILETYPES(sys_configure),
-	sys_configure
+	sys_configure, NO_GENERIC_READ, NO_GENERIC_WRITE
 };
 
 /* ------- Functions ------------ */

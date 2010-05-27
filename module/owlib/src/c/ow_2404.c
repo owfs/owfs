@@ -93,7 +93,7 @@ struct filetype DS2404[] = {
 	{"readonly/clock", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {c:0x01},},
 };
 
-DeviceEntryExtended(04, DS2404, DEV_alarm);
+DeviceEntryExtended(04, DS2404, DEV_alarm, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 #define _1W_WRITE_SCRATCHPAD 0x0F
 #define _1W_READ_SCRATCHPAD 0xAA

@@ -56,8 +56,8 @@ noinst_HEADERS =          \
         ow_fd.h           \
         ow_filetype.h     \
         ow_functions.h    \
-		ow_generic_read.h \
-		ow_generic_write.h\
+	ow_generic_read.h \
+	ow_generic_write.h\
         ow_global.h       \
         ow_integer.h      \
         ow_interface.h    \

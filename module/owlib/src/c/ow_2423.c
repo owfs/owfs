@@ -63,17 +63,17 @@ struct aggregate A2423 = { 16, ag_numbers, ag_separate, };
 struct aggregate A2423c = { 2, ag_letters, ag_separate, };
 struct filetype DS2423[] = {
 	F_STANDARD,
-  {"memory", 512, NULL, ft_binary, fc_stable, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
-  {"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-  {"pages/page", 32, &A2423, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
-  {"counters", PROPERTY_LENGTH_UNSIGNED, &A2423c, ft_unsigned, fc_volatile, FS_counter, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"memory", 512, NULL, ft_binary, fc_stable, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
+	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"pages/page", 32, &A2423, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
+	{"counters", PROPERTY_LENGTH_UNSIGNED, &A2423c, ft_unsigned, fc_volatile, FS_counter, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 #if OW_CACHE
-{"mincount", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_mincount, FS_w_mincount, VISIBLE, NO_FILETYPE_DATA,},
+	{"mincount", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_mincount, FS_w_mincount, VISIBLE, NO_FILETYPE_DATA,},
 #endif							/*OW_CACHE */
-  {"pages/count", PROPERTY_LENGTH_UNSIGNED, &A2423, ft_unsigned, fc_volatile, FS_pagecount, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"pages/count", PROPERTY_LENGTH_UNSIGNED, &A2423, ft_unsigned, fc_volatile, FS_pagecount, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 };
 
-DeviceEntryExtended(1D, DS2423, DEV_ovdr);
+DeviceEntryExtended(1D, DS2423, DEV_ovdr, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 #define _1W_WRITE_SCRATCHPAD 0x0F
 #define _1W_READ_SCRATCHPAD 0xAA

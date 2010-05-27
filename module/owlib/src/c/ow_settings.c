@@ -73,7 +73,7 @@ struct filetype set_cache[] = {
 
 ;
 struct device d_set_cache = { "timeout", "timeout", ePN_settings, COUNT_OF_FILETYPES(set_cache),
-	set_cache
+	set_cache, NO_GENERIC_READ, NO_GENERIC_WRITE
 };
 struct filetype set_units[] = {
  	{"temperature_scale", 1, NULL, ft_ascii, fc_static, FS_r_TS, FS_w_TS, VISIBLE, NO_FILETYPE_DATA,},
@@ -82,7 +82,7 @@ struct filetype set_units[] = {
 
 ;
 struct device d_set_units = { "units", "units", ePN_settings, COUNT_OF_FILETYPES(set_units),
-	set_units
+	set_units, NO_GENERIC_READ, NO_GENERIC_WRITE
 };
 
 /* ------- Functions ------------ */

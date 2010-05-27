@@ -46,7 +46,7 @@ struct filetype DS1821[] = {
 }
 
 ;
-DeviceEntry(thermostat, DS1821);
+DeviceEntry(thermostat, DS1821, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 #define _1W_READ_TEMPERATURE 0xAA
 #define _1W_START_CONVERT_T 0xEE

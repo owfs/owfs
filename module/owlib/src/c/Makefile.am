@@ -84,6 +84,7 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_fakeread.c      \
                ow_filelength.c    \
                ow_fstat.c         \
+	       ow_generic_read.c  \
 	       ow_get.c           \
                ow_help.c          \
                ow_interface.c     \

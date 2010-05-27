@@ -67,7 +67,7 @@ struct filetype NoDev[] = {
 	F_r_address,
 	F_r_id,
 };
-struct device NoDevice = { "XX", "generic", ePN_real, COUNT_OF_FILETYPES(NoDev), NoDev };
-struct device AnyDevice = { "YY", "remote_alias", ePN_real, COUNT_OF_FILETYPES(NoDev), NoDev };
+struct device NoDevice = { "XX", "generic", ePN_real, COUNT_OF_FILETYPES(NoDev), NoDev, NO_GENERIC_READ, NO_GENERIC_WRITE };
+struct device AnyDevice = { "YY", "remote_alias", ePN_real, COUNT_OF_FILETYPES(NoDev), NoDev, NO_GENERIC_READ, NO_GENERIC_WRITE };
 
 /* ------- Functions ------------ */

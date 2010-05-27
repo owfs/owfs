@@ -81,7 +81,7 @@ struct filetype DS1977[] = {
 #endif							/*OW_CACHE */
 };
 
-DeviceEntryExtended(37, DS1977, DEV_resume | DEV_ovdr);
+DeviceEntryExtended(37, DS1977, DEV_resume | DEV_ovdr, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 #define _1W_WRITE_SCRATCHPAD 0x0F
 #define _1W_READ_SCRATCHPAD 0xAA

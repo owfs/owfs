@@ -46,7 +46,7 @@ struct filetype HobbyBoards_EE[] = {
     {"UVI/UVI_offset", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_UVI_offset, FS_w_UVI_offset, VISIBLE, NO_FILETYPE_DATA,},
 };
 
-DeviceEntry(EE, HobbyBoards_EE);
+DeviceEntry(EE, HobbyBoards_EE, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 struct filetype HobbyBoards_EF[] = {
     F_STANDARD_NO_TYPE,
@@ -60,7 +60,7 @@ struct filetype HobbyBoards_EF[] = {
     {"UVI/UVI_offset", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_UVI_offset, FS_w_UVI_offset, VISIBLE, NO_FILETYPE_DATA,},
 };
 
-DeviceEntry(EE, HobbyBoards_EF);
+DeviceEntry(EE, HobbyBoards_EF, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 
 #define _EEEF_READ_VERSION 0x11

@@ -73,7 +73,7 @@ struct filetype DS2415[] = {
 	{"date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_link, COMMON_r_date, COMMON_w_date, VISIBLE, NO_FILETYPE_DATA,},
 };
 
-DeviceEntry(24, DS2415);
+DeviceEntry(24, DS2415, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 struct filetype DS2417[] = {
 	F_STANDARD,
@@ -86,7 +86,7 @@ struct filetype DS2417[] = {
 	{"date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_link, COMMON_r_date, COMMON_w_date, VISIBLE, NO_FILETYPE_DATA,},
 };
 
-DeviceEntry(27, DS2417);
+DeviceEntry(27, DS2417, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 static int itimes[] = { 1, 4, 32, 64, 2048, 4096, 65536, 131072, };
 

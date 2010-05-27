@@ -215,7 +215,7 @@ struct filetype DS2720[] = {
 	{"uv", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_bit, FS_w_bit, VISIBLE, {u:(_1W_DS27XX_PROTECT_REG << 8) | 6},},
 };
 
-DeviceEntry(31, DS2720);
+DeviceEntry(31, DS2720, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 struct filetype DS2740[] = {
 	F_STANDARD,
@@ -228,7 +228,7 @@ struct filetype DS2740[] = {
 	{"smod", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_bit, FS_w_bit, VISIBLE, {u:(_1W_DS27XX_STATUS_REG << 8) | 6},},
 };
 
-DeviceEntry(36, DS2740);
+DeviceEntry(36, DS2740, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 struct filetype DS2751[] = {
 	F_STANDARD,
@@ -254,7 +254,7 @@ struct filetype DS2751[] = {
 	F_thermocouple
 };
 
-DeviceEntry(51, DS2751);
+DeviceEntry(51, DS2751, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 struct filetype DS2755[] = {
 	F_STANDARD,
@@ -286,7 +286,7 @@ struct filetype DS2755[] = {
 	F_thermocouple
 };
 
-DeviceEntryExtended(35, DS2755, DEV_alarm);
+DeviceEntryExtended(35, DS2755, DEV_alarm, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 struct filetype DS2760[] = {
 	F_STANDARD,
@@ -322,7 +322,7 @@ struct filetype DS2760[] = {
 	F_thermocouple
 };
 
-DeviceEntry(30, DS2760);
+DeviceEntry(30, DS2760, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 struct filetype DS2770[] = {
 	F_STANDARD,
@@ -351,7 +351,7 @@ struct filetype DS2770[] = {
 	F_thermocouple
 };
 
-DeviceEntry(2E, DS2770);
+DeviceEntry(2E, DS2770, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 /* DS2780 also includees the DS2775 DS2776 DS2784 */
 struct filetype DS2780[] = {
@@ -383,7 +383,7 @@ struct filetype DS2780[] = {
 	F_thermocouple
 };
 
-DeviceEntry(32, DS2780);
+DeviceEntry(32, DS2780, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 struct filetype DS2781[] = {
 	F_STANDARD,
@@ -410,7 +410,7 @@ struct filetype DS2781[] = {
 	F_thermocouple
 };
 
-DeviceEntry(3D, DS2781);
+DeviceEntry(3D, DS2781, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 /* DS2784 - specific */
 #define _1W_WRITE_CHALLENGE 0x0C

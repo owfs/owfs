@@ -175,7 +175,7 @@ struct filetype stats_cache[] = {
 	{"device/deleted", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&cache_dev.deletes,},},
 };
 
-struct device d_stats_cache = { "cache", "cache", 0, COUNT_OF_FILETYPES(stats_cache), stats_cache };
+struct device d_stats_cache = { "cache", "cache", 0, COUNT_OF_FILETYPES(stats_cache), stats_cache, NO_GENERIC_READ, NO_GENERIC_WRITE };
 
 	// Note, the store hit rate and deletions are not shown -- too much information!
 
@@ -190,7 +190,7 @@ struct filetype stats_read[] = {
 }
 
 ;
-struct device d_stats_read = { "read", "read", 0, COUNT_OF_FILETYPES(stats_read), stats_read };
+struct device d_stats_read = { "read", "read", 0, COUNT_OF_FILETYPES(stats_read), stats_read, NO_GENERIC_READ, NO_GENERIC_WRITE };
 
 struct filetype stats_write[] = {
 	{"calls", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&write_calls},},
@@ -200,7 +200,7 @@ struct filetype stats_write[] = {
 }
 
 ;
-struct device d_stats_write = { "write", "write", 0, COUNT_OF_FILETYPES(stats_write), stats_write };
+struct device d_stats_write = { "write", "write", 0, COUNT_OF_FILETYPES(stats_write), stats_write, NO_GENERIC_READ, NO_GENERIC_WRITE };
 
 struct filetype stats_directory[] = {
 	{"maxdepth", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&dir_depth},},
@@ -214,7 +214,7 @@ struct filetype stats_directory[] = {
 
 ;
 struct device d_stats_directory = { "directory", "directory", 0, COUNT_OF_FILETYPES(stats_directory),
-	stats_directory
+	stats_directory, NO_GENERIC_READ, NO_GENERIC_WRITE
 };
 
 struct filetype stats_thread[] = {
@@ -242,7 +242,7 @@ struct filetype stats_thread[] = {
 
 ;
 struct device d_stats_thread = { "threads", "threads", 0, COUNT_OF_FILETYPES(stats_thread),
-	stats_thread
+	stats_thread, NO_GENERIC_READ, NO_GENERIC_WRITE
 };
 
 #define FS_stat_ROW(var) {"" #var "",PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE  , ft_unsigned, fc_statistic,   FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v: & var,} }

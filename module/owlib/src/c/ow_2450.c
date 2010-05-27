@@ -99,7 +99,7 @@ struct filetype DS2450[] = {
 	{"CO2/status", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_float, fc_link, FS_CO2_status, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 };
 
-DeviceEntryExtended(20, DS2450, DEV_volt | DEV_alarm | DEV_ovdr);
+DeviceEntryExtended(20, DS2450, DEV_volt | DEV_alarm | DEV_ovdr, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 #define _1W_READ_MEMORY 0x44
 #define _1W_WRITE_MEMORY 0x55

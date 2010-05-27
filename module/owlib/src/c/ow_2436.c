@@ -62,7 +62,7 @@ struct filetype DS2436[] = {
 	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_temp, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 };
 
-DeviceEntry(1B, DS2436);
+DeviceEntry(1B, DS2436, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 #define _1W_READ_SCRATCHPAD 0x11
 #define _1W_WRITE_SCRATCHPAD 0x17

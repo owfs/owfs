@@ -116,7 +116,7 @@ struct filetype LCD[] = {
 	{"line40", 40, &ALCD_L40, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_w_lineX, VISIBLE, {i:40},},
 };
 
-DeviceEntryExtended(FF, LCD, DEV_alarm);
+DeviceEntryExtended(FF, LCD, DEV_alarm, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 /* ------- Functions ------------ */
 

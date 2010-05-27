@@ -65,7 +65,7 @@ struct filetype simultaneous[] = {
 	{"single_ds2400", 18, NON_AGGREGATE, ft_ascii, fc_volatile, FS_r_single, NO_WRITE_FUNCTION, VISIBLE, {i:_1W_OLD_READ_ROM},},
 };
 
-DeviceEntry(simultaneous, simultaneous);
+DeviceEntry(simultaneous, simultaneous, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 // in this order: enum sumul_type { simul_temp, simul_volt, } ;
 struct internal_prop ipSimul[] = {

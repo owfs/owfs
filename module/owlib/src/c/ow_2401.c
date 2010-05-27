@@ -56,12 +56,12 @@ struct filetype DS2401[] = {
 	F_STANDARD,
 };
 
-DeviceEntry(01, DS2401);
+DeviceEntry(01, DS2401, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 struct filetype DS1420[] = {
 	F_STANDARD,
 };
 
-DeviceEntry(81, DS1420);
+DeviceEntry(81, DS1420, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 /* ------- Functions ------------ */

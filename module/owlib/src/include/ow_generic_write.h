@@ -32,4 +32,15 @@ $Id$
 #ifndef OW_GENERIC_WRITE_H				/* tedious wrapper */
 #define OW_GENERIC_WRITE_H
 
+struct generic_write {
+	int pagesize ;
+	enum write_crc_type { wct_no_crc, wct_crc8, wct_crc16, }  crc_type ;
+	enum write_address_type { wat_not_supported, wat_2byte, wat_1byte, wat_page, wat_complement, } addressing_type ;
+	BYTE write_cmd ;
+	BYTE read_cmd ;
+	BYTE copy_cmd ;
+} ;
+
+#define NO_GENERIC_WRITE NULL
+
 #endif							/* OW_GENERIC_WRITE_H */

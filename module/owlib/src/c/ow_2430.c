@@ -61,7 +61,7 @@ struct filetype DS2430A[] = {
 	{"lock", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_lock, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 };
 
-DeviceEntry(14, DS2430A);
+DeviceEntry(14, DS2430A, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 #define _1W_WRITE_SCRATCHPAD 0x0F
 #define _1W_READ_SCRATCHPAD 0xAA

@@ -68,7 +68,7 @@ struct filetype DS2409[] = {
 	{"main", 0, NON_AGGREGATE, ft_directory, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, {i:0},},
 };
 
-DeviceEntry(1F, DS2409);
+DeviceEntry(1F, DS2409, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 /* ------- Functions ------------ */
 

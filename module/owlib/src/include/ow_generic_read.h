@@ -40,4 +40,6 @@ struct generic_read {
 	BYTE command ;
 } ;
 
+#define NO_GENERIC_READ	NULL
+
 #endif							/* OW_GENERIC_READ_H */

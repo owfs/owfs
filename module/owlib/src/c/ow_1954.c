@@ -68,7 +68,7 @@ struct filetype DS1954[] = {
 	{"reset", 1, NON_AGGREGATE, ft_yesno, fc_volatile, NO_READ_FUNCTION, FS_reset, VISIBLE, NO_FILETYPE_DATA,},
 };
 
-DeviceEntryExtended(16, DS1954, DEV_ovdr);
+DeviceEntryExtended(16, DS1954, DEV_ovdr, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 #define _1W_WRITE_IPR 0x0F
 #define _1W_READ_IPR 0xAA

@@ -97,7 +97,7 @@ struct filetype DS2437[] = {
 	{"endcharge/date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_link, COMMON_r_date, COMMON_w_date, VISIBLE, {s:0x14},},
 };
 
-DeviceEntryExtended(1E, DS2437, DEV_temp | DEV_volt);
+DeviceEntryExtended(1E, DS2437, DEV_temp | DEV_volt, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 
 struct aggregate A2438 = { 8, ag_numbers, ag_separate, };
@@ -149,7 +149,7 @@ struct filetype DS2438[] = {
 	{"S3-R1-A/gain", PROPERTY_LENGTH_PRESSURE, NON_AGGREGATE, ft_float, fc_stable, FS_r_S3R1A_gain, FS_w_S3R1A_gain, VISIBLE, NO_FILETYPE_DATA,},
 };
 
-DeviceEntryExtended(26, DS2438, DEV_temp | DEV_volt);
+DeviceEntryExtended(26, DS2438, DEV_temp | DEV_volt, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 #define _1W_WRITE_SCRATCHPAD 0x4E
 #define _1W_READ_SCRATCHPAD 0xBE
