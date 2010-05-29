@@ -162,6 +162,8 @@ GOOD_OR_BAD LINK_detect(struct connection_in *in)
 		case bus_elink:
 			return LINK_net_detect( &pn ) ;
 		case bus_link:
+			RETURN_GOOD_IF_GOOD( LINK_serial_detect(&pn) ) ;
+			RETURN_GOOD_IF_GOOD( LINK_serial_detect(&pn) ) ;
 			return LINK_serial_detect(&pn) ;
 		default:
 			return gbBAD ;
@@ -204,6 +206,7 @@ static GOOD_OR_BAD LINK_serial_detect(struct parsedname * pn_minimal)
 		}
 	}
 	LEVEL_DEFAULT("LINK detection error");
+	LINK_close(in) ;
 	return gbBAD;
 }
 
@@ -254,6 +257,7 @@ static GOOD_OR_BAD LINK_net_detect(struct parsedname * pn_minimal)
 		}
 	}
 	LEVEL_DEFAULT("LINK detection error");
+	LINK_close(in) ;
 	return gbBAD;
 }
 
