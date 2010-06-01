@@ -51,10 +51,13 @@ install-so-man:
 	done; \
 	for manfile in $$list; do \
 	    for i in `sed -n '2,$$ s/^.so //p' $(DESTDIR)/$$manfile`; do \
-			sed -i "/$$i/r $(srcdir)/$$i" $(DESTDIR)/$$manfile; \
-			sed -i "/$$i/d" $(DESTDIR)/$$manfile; \
+			printf "%s\n" H /$$i/d ".r $(srcdir)/$$i" g/^.\\\\\"/d ",w" | ed -s $(DESTDIR)/$$manfile ; \
 	    done; \
-		sed -i '/^.\\\"/d' $(DESTDIR)/$$manfile; \
+	done; \
+	for manfile in $$list; do \
+	    for i in `sed -n '2,$$ s/^.so //p' $(DESTDIR)/$$manfile`; do \
+			printf "%s\n" H /$$i/d ".r $(srcdir)/$$i" g/^.\\\"/d ",w" | ed -s $(DESTDIR)/$$manfile ; \
+	    done; \
 	done
 
 clean-generic:
