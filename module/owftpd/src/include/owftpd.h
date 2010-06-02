@@ -272,7 +272,6 @@ int ftp_session_init(struct ftp_session_s *f,
 void ftp_session_drop(struct ftp_session_s *f, const char *reason);
 void ftp_session_run(struct ftp_session_s *f, struct watched_s *watched);
 void ftp_session_destroy(struct ftp_session_s *f);
-#define DEFAULT_FTP_PORT 21
 
 struct ftp_listener_s {
 

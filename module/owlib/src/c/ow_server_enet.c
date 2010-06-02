@@ -319,7 +319,7 @@ static GOOD_OR_BAD Add_a_property(const char * tag, const char * property, const
 		char * data = xml_string(tag,&buffer_pointer) ;
 		if ( data == NULL ) {
 			ret = gbBAD ;
-		} else if ( OWQ_allocate_write_buffer(data,enet_data_length,0,owq) != 0 ) {
+		} else if ( BAD( OWQ_allocate_write_buffer(data,enet_data_length,0,owq)) ) {
 			ret = gbBAD ;
 		}
 		LEVEL_DEBUG("%s given value <%s> from tag %s",path,data,tag) ;

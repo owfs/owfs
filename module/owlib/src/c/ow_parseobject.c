@@ -198,35 +198,34 @@ int OWQ_allocate_read_buffer(struct one_wire_query * owq )
 	return 0;
 }
 
-int OWQ_allocate_write_buffer( const char * write_buffer, size_t buffer_length, off_t offset, struct one_wire_query * owq )
+GOOD_OR_BAD OWQ_allocate_write_buffer( const char * write_buffer, size_t buffer_length, off_t offset, struct one_wire_query * owq )
 {
 	char * buffer_copy ;
 	
 	if ( buffer_length == 0 ) {
 		// Buffer size is zero. Allowed, but make it NULL and no cleanup needed.
-		OWQ_buffer(owq) = NULL ;
 		OWQ_size(owq) = 0 ;
 		OWQ_offset(owq) = 0 ;
-		return 0 ;
+		return gbGOOD ;
 	}
 	
-	buffer_copy = owmalloc( buffer_length) ;
+	buffer_copy = owmalloc( buffer_length+1) ;
 	if ( buffer_copy == NULL) {
 		// cannot allocate space for buffer
 		LEVEL_DEBUG("Cannot allocate %ld bytes for buffer", buffer_length) ;
-		OWQ_buffer(owq) = NULL ;
 		OWQ_size(owq) = 0 ;
 		OWQ_offset(owq) = 0 ;
-		return 1 ;
+		return gbBAD ;
 	}
 	
 	memcpy( buffer_copy, write_buffer, buffer_length) ;
+	buffer_copy[buffer_length] = '\0' ; // make sure it's zero-ended
 	OWQ_buffer(owq) = buffer_copy ;
 	OWQ_size(owq)   = buffer_length ;
 	OWQ_length(owq) = buffer_length ;
 	OWQ_offset(owq) = offset ;
-	OWQ_cleanup(owq) |= owq_cleanup_buffer ;
-	return 0 ;
+	OWQ_cleanup(owq) |= owq_cleanup_buffer ; // buffer needs cleanup
+	return gbGOOD ;
 }
 
 void OWQ_destroy(struct one_wire_query *owq)

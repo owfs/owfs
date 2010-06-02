@@ -1126,7 +1126,7 @@ static void do_stor(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 			reply(f, 550, "Error reading from data connection; %s.", strerror(errno));
 			goto exit_stor;
 		}
-		if ( OWQ_allocate_write_buffer( data_in, size_actual, offset, owq ) != 0 ) {
+		if ( BAD( OWQ_allocate_write_buffer( data_in, size_actual, offset, owq )) ) {
 			owfree(data_in) ;
 			reply(f, 550, "Out of memory.");
 			goto exit_stor;
