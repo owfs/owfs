@@ -159,7 +159,7 @@ static ZERO_OR_ERROR FS_set(struct one_wire_query *owq)
 	}
 
 	/* Write */
-	RETURN_ERROR_IF_BAD( OW_w_mem( OWQ_buffer(owq), 8, _ds1977_pwd_loc[pn->selected_filetype->data.i],pn) ) ;
+	RETURN_ERROR_IF_BAD( OW_w_mem((BYTE *) OWQ_buffer(owq), 8, _ds1977_pwd_loc[pn->selected_filetype->data.i],pn) ) ;
 
 	/* Verify */
 	RETURN_ERROR_IF_BAD(OW_verify((BYTE *) OWQ_buffer(owq), _ds1977_pwd_loc[pn->selected_filetype->data.i], pn) ) ;
@@ -204,14 +204,10 @@ static GOOD_OR_BAD OW_r_mem(BYTE * data, size_t size, off_t offset, struct parse
 
 #if OW_CACHE
 	if (Cache_Get_Internal_Strict((void *) pwd, sizeof(pwd), InternalProp(REA), pn) == 0 ) {
-		if ( GOOD( OW_r_mem_with_password( pwd, data,size,offset,pn) ) ) {
-			return gbGOOD ;
-		}
+		RETURN_GOOD_IF_GOOD( OW_r_mem_with_password( pwd, data,size,offset,pn) ) ;
 	}
 	if (Cache_Get_Internal_Strict((void *) pwd, sizeof(pwd), InternalProp(FUL), pn) == 0 ) {
-		if ( GOOD( OW_r_mem_with_password( pwd, data,size,offset,pn) ) ) {
-			return gbGOOD ;
-		}
+		RETURN_GOOD_IF_GOOD( OW_r_mem_with_password( pwd, data,size,offset,pn) ) ;
 	}
 #endif							/* OW_CACHE */
 	return OW_r_mem_with_password(pwd, data, size, offset, pn);

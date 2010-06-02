@@ -198,7 +198,7 @@ int OWQ_allocate_read_buffer(struct one_wire_query * owq )
 	return 0;
 }
 
-int OWQ_allocate_write_buffer( const char * write_buffer, size_t buffer_length, struct one_wire_query * owq )
+int OWQ_allocate_write_buffer( const char * write_buffer, size_t buffer_length, off_t offset, struct one_wire_query * owq )
 {
 	char * buffer_copy ;
 	
@@ -206,6 +206,7 @@ int OWQ_allocate_write_buffer( const char * write_buffer, size_t buffer_length, 
 		// Buffer size is zero. Allowed, but make it NULL and no cleanup needed.
 		OWQ_buffer(owq) = NULL ;
 		OWQ_size(owq) = 0 ;
+		OWQ_offset(owq) = 0 ;
 		return 0 ;
 	}
 	
@@ -215,12 +216,15 @@ int OWQ_allocate_write_buffer( const char * write_buffer, size_t buffer_length, 
 		LEVEL_DEBUG("Cannot allocate %ld bytes for buffer", buffer_length) ;
 		OWQ_buffer(owq) = NULL ;
 		OWQ_size(owq) = 0 ;
+		OWQ_offset(owq) = 0 ;
 		return 1 ;
 	}
 	
 	memcpy( buffer_copy, write_buffer, buffer_length) ;
 	OWQ_buffer(owq) = buffer_copy ;
+	OWQ_size(owq)   = buffer_length ;
 	OWQ_length(owq) = buffer_length ;
+	OWQ_offset(owq) = offset ;
 	OWQ_cleanup(owq) |= owq_cleanup_buffer ;
 	return 0 ;
 }

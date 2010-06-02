@@ -195,6 +195,7 @@ void ow_help_device(void)
 	"USB\n"
 	"  -u              DS9490R or PuceBaboon bus master\n"
 	"  -uall           Scan and use all DS9490-type bus master\n"
+	"  -u3:4           Specific USB location (bus 3, device 4)\n"
 	"  -d /dev/ttyUSB0 ECLO USB bus master\n"
 	"  --altUSB        Change some settings for DS9490 bus master (especially for AAG and DS2423)\n"
 	"  --usb_flextime | --usb_regulartime     Needed for Louis Swart's LCD module\n"

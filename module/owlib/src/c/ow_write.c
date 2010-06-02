@@ -191,6 +191,11 @@ ZERO_OR_ERROR FS_write_postparse(struct one_wire_query *owq)
 	AVERAGE_OUT(&all_avg);
 	STATUNLOCK;
 
+	if ( write_or_error == 0 ) {
+		LEVEL_DEBUG("Successful write to %s",pn->path) ;
+	} else {
+		LEVEL_DEBUG("Error writing to %s",pn->path) ;
+	}
 	return write_or_error;
 }
 

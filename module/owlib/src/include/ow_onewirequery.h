@@ -82,7 +82,7 @@ struct one_wire_query * OWQ_create_from_path(const char *path) ;
 struct one_wire_query * OWQ_create_sibling(const char *sibling, struct one_wire_query *owq_original) ;
 
 int OWQ_allocate_read_buffer(struct one_wire_query * owq ) ;
-int OWQ_allocate_write_buffer( const char * write_buffer, size_t buffer_length, struct one_wire_query * owq ) ;
+int OWQ_allocate_write_buffer( const char * write_buffer, size_t buffer_length, off_t offset, struct one_wire_query * owq ) ;
 
 void OWQ_assign_read_buffer(char *buffer, size_t size, off_t offset, struct one_wire_query *owq) ;
 void OWQ_assign_write_buffer(const char *buffer, size_t size, off_t offset, struct one_wire_query *owq) ;

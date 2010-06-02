@@ -88,6 +88,9 @@ $Id$
 #endif							/* HAVE_FEATURE_TESTS_H */
 
 #ifdef HAVE_SYS_TYPES_H
+#ifdef __FreeBSD__
+#define __BSD_VISIBLE 1
+#endif /* __FreeBSD__ */
 #include <sys/types.h>			/* for stat */
 #endif							/* HAVE_SYS_TYPES_H */
 

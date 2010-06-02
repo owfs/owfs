@@ -1058,6 +1058,7 @@ static void do_stor(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 	struct timeval limit_time = { Globals.timeout_ftp, 0 };
 
 	size_t size_read;
+	off_t offset = 0 ;
 	char * data_in ;
 	struct parsedname *pn;
 	OWQ_allocate_struct_and_pointer(owq);
@@ -1080,8 +1081,9 @@ static void do_stor(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 
 	/* if the last command was a REST command, restart at the */
 	/* requested position in the file                         */
-	if ((f->file_offset_command_number == (f->command_number - 1)))
-		OWQ_offset(owq) = f->file_offset;
+	if ((f->file_offset_command_number == (f->command_number - 1))) {
+		offset = f->file_offset;
+	}
 
 	if (IsDir(pn)) {
 		reply(f, 550, "Error, file is a directory.");
@@ -1124,7 +1126,7 @@ static void do_stor(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 			reply(f, 550, "Error reading from data connection; %s.", strerror(errno));
 			goto exit_stor;
 		}
-		if ( OWQ_allocate_write_buffer( data_in, size_actual, owq ) != 0 ) {
+		if ( OWQ_allocate_write_buffer( data_in, size_actual, offset, owq ) != 0 ) {
 			owfree(data_in) ;
 			reply(f, 550, "Out of memory.");
 			goto exit_stor;

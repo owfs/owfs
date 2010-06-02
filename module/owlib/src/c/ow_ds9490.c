@@ -29,11 +29,15 @@ $Id$
 #if OW_USB						/* conditional inclusion of USB */
 
 /* Extensive FreeBSD workarounds by Robert Nilsson <rnilsson@mac.com> */
+/* Peter Radcliffe updated support for FreeBSD >= 8 */
 #ifdef __FreeBSD__
 	// Add a few definitions we need
 #undef HAVE_USB_INTERRUPT_READ	// This call in libusb is unneeded for FreeBSD (and it's broken)
+#if __FreeBSD__ < 8
 #include <sys/types.h>
 #include <dev/usb/usb.h>
+#define USB_CLEAR_HALT BSD_usb_clear_halt
+#endif /* __FreeBSD__ < 8 */
 struct usb_dev_handle {
 	FILE_DESCRIPTOR_OR_ERROR file_descriptor;
 	struct usb_bus *bus;
@@ -43,10 +47,11 @@ struct usb_dev_handle {
 	int altsetting;
 	void *impl_info;
 };
-#define USB_CLEAR_HALT BSD_usb_clear_halt
-#else /* __FreeBSD__ */
-#define USB_CLEAR_HALT usb_clear_halt
 #endif /* __FreeBSD__ */
+
+#ifndef USB_CLEAR_HALT
+#define USB_CLEAR_HALT usb_clear_halt
+#endif /* USB_CLEAR_HALT */
 
 #include <sys/types.h> // Mac needs this before <usb.h> according to Peter Peter Radcliffe's work
 #include <usb.h>
@@ -289,7 +294,8 @@ static GOOD_OR_BAD USB_Control_Msg(BYTE bRequest, UINT wValue, UINT wIndex, cons
 }
 
 #ifdef __FreeBSD__
-// This is in here until the libusb on FreeBSD supports the usb_clear_halt function
+// This is in here for versions of libusb on FreeBSD that do not support the usb_clear_halt function
+#if __FreeBSD__ < 8
 int BSD_usb_clear_halt(usb_dev_handle * dev, unsigned int ep)
 {
 	int ret;
@@ -307,6 +313,7 @@ int BSD_usb_clear_halt(usb_dev_handle * dev, unsigned int ep)
 	}
 	return ret;
 }
+#endif /* __FreeBSD__ < 8 */
 #endif							/* __FreeBSD__ */
 
 static RESET_TYPE DS9490_getstatus(BYTE * buffer, int * readlen, const struct parsedname *pn)
@@ -739,10 +746,7 @@ static GOOD_OR_BAD DS9490_redetect_low(struct connection_in * in)
 			LEVEL_CONNECT("Cannot open USB bus master, Find next...");
 			continue;
 		}
-
-		if ( GOOD(DS9490_redetect_match( in )) ) {
-			return gbGOOD ;
-		}
+		RETURN_GOOD_IF_GOOD( DS9490_redetect_match( in ) ) ;
 		DS9490_close(in);
 	}
 	//LEVEL_CONNECT("No available USB DS9490 bus master found");
