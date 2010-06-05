@@ -48,8 +48,8 @@ $Id$
 /* DS1902 ibutton memory */
 READ_FUNCTION(FS_r_page);
 WRITE_FUNCTION(FS_w_page);
-READ_FUNCTION(FS_r_memory);
-WRITE_FUNCTION(FS_w_memory);
+READ_FUNCTION(FS_r_mem);
+WRITE_FUNCTION(FS_w_mem);
 READ_FUNCTION(FS_r_alarm);
 READ_FUNCTION(FS_r_set_alarm);
 WRITE_FUNCTION(FS_w_set_alarm);
@@ -69,7 +69,7 @@ struct filetype DS2404[] = {
 	{"set_alarm", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_set_alarm, FS_w_set_alarm, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages/page", 32, &A2404, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
-	{"memory", 512, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, VISIBLE, NO_FILETYPE_DATA,},
+	{"memory", 512, NON_AGGREGATE, ft_binary, fc_stable, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 	{"running", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {c:0x10},},
 	{"auto", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {c:0x20},},
 	{"start", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {c:0x40},},
@@ -114,13 +114,10 @@ static UINT Avals[] = { 0, 1, 10, 11, 100, 101, 110, 111, };
 static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	ZERO_OR_ERROR read_status = COMMON_read_memory_F0(owq, OWQ_pn(owq).extension, pagesize) ;
-
-	OW_reset(PN(owq)) ; // DS2404 needs this to release for 3-wire communication
-	return read_status ;
+	return COMMON_offset_process( FS_r_mem, owq, OWQ_pn(owq).extension*pagesize) ;
 }
 
-static ZERO_OR_ERROR FS_r_memory(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
 {
 	/* read is consecutive, unchecked. No paging */
 	ZERO_OR_ERROR read_status = COMMON_read_memory_F0(owq, 0, 0) ;
@@ -132,13 +129,10 @@ static ZERO_OR_ERROR FS_r_memory(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	ZERO_OR_ERROR error_code = COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem) ;
-
-	OW_reset(PN(owq)) ; // DS2404 needs this to release for 3-wire communication
-	return error_code ;
+	return COMMON_offset_process( FS_w_mem, owq, OWQ_pn(owq).extension*pagesize) ;
 }
 
-static ZERO_OR_ERROR FS_w_memory(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 	ZERO_OR_ERROR error_code = COMMON_readwrite_paged(owq, 0, pagesize, OW_w_mem) ;

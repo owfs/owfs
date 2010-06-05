@@ -48,8 +48,8 @@ $Id$
 /* DS2423 counter */
 READ_FUNCTION(FS_r_page);
 WRITE_FUNCTION(FS_w_page);
-READ_FUNCTION(FS_r_memory);
-WRITE_FUNCTION(FS_w_memory);
+READ_FUNCTION(FS_r_mem);
+WRITE_FUNCTION(FS_w_mem);
 READ_FUNCTION(FS_r_param);
 
 /* ------- Structures ----------- */
@@ -57,7 +57,7 @@ READ_FUNCTION(FS_r_param);
 struct aggregate A2502 = { 4, ag_numbers, ag_separate, };
 struct filetype DS2502[] = {
 	F_STANDARD,
-	{"memory", 128, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, VISIBLE, NO_FILETYPE_DATA,},
+	{"memory", 128, NON_AGGREGATE, ft_binary, fc_stable, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages/page", 32, &A2502, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
 };
@@ -69,7 +69,7 @@ struct filetype DS1982U[] = {
 	{"mac_e", 6, NON_AGGREGATE, ft_binary, fc_stable, FS_r_param, NO_WRITE_FUNCTION, VISIBLE, {i:4},},
 	{"mac_fw", 8, NON_AGGREGATE, ft_binary, fc_stable, FS_r_param, NO_WRITE_FUNCTION, VISIBLE, {i:4},},
 	{"project", 4, NON_AGGREGATE, ft_binary, fc_stable, FS_r_param, NO_WRITE_FUNCTION, VISIBLE, {i:0},},
-	{"memory", 128, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, VISIBLE, NO_FILETYPE_DATA,},
+	{"memory", 128, NON_AGGREGATE, ft_binary, fc_stable, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages/page", 32, &A2502, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
 };
@@ -89,7 +89,7 @@ static GOOD_OR_BAD OW_r_mem(BYTE * data, size_t size, off_t offset, struct parse
 static GOOD_OR_BAD OW_r_data(BYTE * data, struct parsedname *pn);
 
 /* 2502 memory */
-static ZERO_OR_ERROR FS_r_memory(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 	return GB_to_Z_OR_E(COMMON_readwrite_paged(owq, 0, pagesize, OW_r_mem)) ;
@@ -98,7 +98,7 @@ static ZERO_OR_ERROR FS_r_memory(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	return GB_to_Z_OR_E(COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_r_mem)) ;
+	return COMMON_offset_process( FS_r_mem, owq, OWQ_pn(owq).extension*pagesize) ;
 }
 
 static ZERO_OR_ERROR FS_r_param(struct one_wire_query *owq)
@@ -109,7 +109,7 @@ static ZERO_OR_ERROR FS_r_param(struct one_wire_query *owq)
 	return OWQ_format_output_offset_and_size((ASCII *) & data[pn->selected_filetype->data.i], FileLength(pn), owq);
 }
 
-static ZERO_OR_ERROR FS_w_memory(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_mem(struct one_wire_query *owq)
 {
 	return COMMON_write_eprom_mem_owq(owq) ;
 }
@@ -117,8 +117,7 @@ static ZERO_OR_ERROR FS_w_memory(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	OWQ_offset(owq) += OWQ_pn(owq).extension * pagesize;
-	return COMMON_write_eprom_mem_owq(owq) ;
+	return COMMON_offset_process( FS_w_mem, owq, OWQ_pn(owq).extension*pagesize ) ;
 }
 
 static GOOD_OR_BAD OW_r_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)

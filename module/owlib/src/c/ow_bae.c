@@ -261,12 +261,15 @@ DeviceEntryExtended(FC, BAE, DEV_resume | DEV_alarm, NO_GENERIC_READ, NO_GENERIC
 /* ------- Functions ------------ */
 
 static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
+static GOOD_OR_BAD OW_w_mem_eeprom(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
+static GOOD_OR_BAD OW_w_mem_small(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
 static GOOD_OR_BAD OW_w_extended(BYTE * data, size_t size, struct parsedname *pn);
 static GOOD_OR_BAD OW_version( UINT * version, struct parsedname * pn ) ;
 static GOOD_OR_BAD OW_type( UINT * localtype, struct parsedname * pn ) ;
 static GOOD_OR_BAD OW_r_mem(BYTE *bytes, size_t size, off_t offset, struct parsedname * pn);
 static GOOD_OR_BAD OW_r_mem_small(BYTE *bytes, size_t size, off_t offset, struct parsedname * pn);
 static GOOD_OR_BAD OW_eeprom_erase( off_t offset, struct parsedname * pn ) ;
+static void OW_siumulate_eeprom(BYTE * eeprom, const BYTE * data, size_t size) ;
 
 static GOOD_OR_BAD OW_initiate_flash(BYTE * data, struct parsedname *pn);
 static GOOD_OR_BAD OW_write_flash(BYTE * data, struct parsedname *pn);
@@ -296,29 +299,36 @@ static ZERO_OR_ERROR FS_eeprom_r_page(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_w_mem(struct one_wire_query *owq)
 {
-	size_t remain = OWQ_size(owq) ;
-	BYTE * data = (BYTE *) OWQ_buffer(owq) ;
-	off_t location = OWQ_offset(owq) ;
-	
-	// Write data 32 bytes (_FC02_MAX_WRITE_GULP) at a time ignoring page boundaries
-	while ( remain > 0 ) {
-		size_t bolus = remain ;
-		if ( bolus > _FC02_MAX_WRITE_GULP ) {
-			bolus = _FC02_MAX_WRITE_GULP ;
-		}
-		LEVEL_DEBUG("Write %d of %d bytes. (%d bolus) at location %x",(int)remain,(int)OWQ_size(owq),(int)bolus,(int)location) ;
-		RETURN_ERROR_IF_BAD( OW_w_mem(data, bolus, location, PN(owq)) );
-		remain -= bolus ;
-		data += bolus ;
-		location += bolus ;
-	}
-	
-	return 0;
+	return GB_to_Z_OR_E( OW_w_mem( (BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq), PN(owq)) ) ;
 }
 
 static ZERO_OR_ERROR FS_eeprom_w_mem(struct one_wire_query *owq)
 {
-	return COMMON_offset_process(FS_w_mem,owq, _FC02_EEPROM_OFFSET) ;
+	struct parsedname * pn = PN(owq) ;
+	size_t size = OWQ_size(owq) ;
+	BYTE * eeprom = owmalloc( size ) ;
+	if ( eeprom==NULL ) {
+		return -ENOMEM ;
+	}
+	
+	// read existing eeprom pattern
+	if ( BAD( OW_r_mem(eeprom, size, OWQ_offset(owq)+_FC02_EEPROM_OFFSET, pn)) ) {
+		LEVEL_DEBUG("Cannot read eeprom prior to writing") ;
+		owfree(eeprom) ;
+		return -EINVAL ;
+	}
+	
+	// modify eeprom with new data
+	OW_siumulate_eeprom(eeprom, (const BYTE *) OWQ_buffer(owq), size) ;
+	
+	// write back
+	if ( BAD( OW_w_mem_eeprom(eeprom, size, OWQ_offset(owq)+_FC02_EEPROM_OFFSET, pn)) ) {
+		LEVEL_DEBUG("Cannot write to eepromm") ;
+		owfree(eeprom) ;
+		return -EINVAL ;
+	}
+	owfree(eeprom) ;
+	return 0 ;
 }
 
 static ZERO_OR_ERROR FS_eeprom_w_page(struct one_wire_query *owq)
@@ -557,27 +567,6 @@ static ZERO_OR_ERROR FS_w_32(struct one_wire_query *owq)
 }
 
 /* Lower level functions */
-/* size in already constrained to 32 bytes (_FC02_MAX_WRITE_GULP) */
-static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
-{
-	BYTE p[1 + 2 + 1 + _FC02_MAX_WRITE_GULP + 2] = { _1W_WRITE_BLOCK_WITH_LEN, LOW_HIGH_ADDRESS(offset), BYTE_MASK(size), };
-	BYTE q[] = { _1W_CONFIRM_WRITE, } ;
-	struct transaction_log t[] = {
-		TRXN_START,
-		TRXN_WR_CRC16(p, 1+ 2 + 1 + size, 0),
-//		TRXN_WRITE(p, 1+ 2 + 1 + size +2),
-		TRXN_WRITE1(q),
-		TRXN_END,
-	};
-	
-	/* Copy to scratchpad */
-	memcpy(&p[4], data, size);
-
-	LEVEL_DEBUG("Write to BAE size=%d offset=%x\n",(int)size,(unsigned int)offset) ;
-	Debug_Bytes("BAE write",p,1+2+1+size) ;
-	
-	return BUS_transaction(t, pn) ;
-}
 
 // Extended command -- insert length, The first byte of the payload is a subcommand but that is invisible to us.
 static GOOD_OR_BAD OW_w_extended(BYTE * data, size_t size, struct parsedname *pn)
@@ -602,18 +591,64 @@ static GOOD_OR_BAD OW_w_extended(BYTE * data, size_t size, struct parsedname *pn
 static GOOD_OR_BAD OW_r_mem(BYTE * data, size_t size, off_t offset, struct parsedname * pn)
 {
 	size_t remain = size ;
-	off_t location = 0 ;
+	off_t local_offset = 0 ;
 	
 	while ( remain > 0 ) {
-		size_t bolus = remain ;
-		if ( bolus > _FC02_MAX_READ_GULP ) {
-			bolus = _FC02_MAX_READ_GULP ;
+		size_t gulp = remain ;
+		if ( gulp > _FC02_MAX_READ_GULP ) {
+			gulp = _FC02_MAX_READ_GULP ;
 		}
-		RETURN_BAD_IF_BAD( OW_r_mem_small( &data[location], bolus, offset+location, pn ));
-		remain -= bolus ;
-		location += bolus ;
+		RETURN_BAD_IF_BAD( OW_r_mem_small( &data[local_offset], gulp, offset+local_offset, pn ));
+		remain -= gulp ;
+		local_offset += gulp ;
 	}
 	return gbGOOD ;	
+}
+
+//write bytes[size] to position
+static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname * pn)
+{
+	size_t remain = size ;
+	off_t local_offset = 0 ;
+	
+	while ( remain > 0 ) {
+		size_t gulp = remain ;
+		if ( gulp > _FC02_MAX_READ_GULP ) {
+			gulp = _FC02_MAX_READ_GULP ;
+		}
+		RETURN_BAD_IF_BAD( OW_w_mem_small( &data[local_offset], gulp, offset+local_offset, pn ));
+		remain -= gulp ;
+		local_offset += gulp ;
+	}
+	return gbGOOD ;	
+}
+
+//write bytes[size] to eeprom position ( only difference is eeprom delay)
+static GOOD_OR_BAD OW_w_mem_eeprom(BYTE * data, size_t size, off_t offset, struct parsedname * pn)
+{
+	size_t remain = size ;
+	off_t local_offset = 0 ;
+	
+	while ( remain > 0 ) {
+		size_t gulp = remain ;
+		if ( gulp > _FC02_MAX_READ_GULP ) {
+			gulp = _FC02_MAX_READ_GULP ;
+		}
+		RETURN_BAD_IF_BAD( OW_w_mem_small( &data[local_offset], gulp, offset+local_offset, pn ));
+		UT_delay(2) ; //1.5 msec
+		remain -= gulp ;
+		local_offset += gulp ;
+	}
+	return gbGOOD ;	
+}
+
+// Simulate eeprom (for correct CRC)
+static void OW_siumulate_eeprom(BYTE * eeprom, const BYTE * data, size_t size)
+{
+	size_t i ;
+	for ( i=0 ; i<size ; ++i) {
+		eeprom[i] &= data[i] ;
+	}
 }
 
 /* Already constrained to _FC02_MAX_READ_GULP aliquots */
@@ -630,6 +665,27 @@ static GOOD_OR_BAD OW_r_mem_small(BYTE * data, size_t size, off_t offset, struct
 
 	memcpy(data, &p[4], size);
 	return gbGOOD;
+}
+
+/* size in already constrained to 32 bytes (_FC02_MAX_WRITE_GULP) */
+static GOOD_OR_BAD OW_w_mem_small(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
+{
+	BYTE p[1+2+1 + _FC02_MAX_WRITE_GULP + 2] = { _1W_WRITE_BLOCK_WITH_LEN, LOW_HIGH_ADDRESS(offset), BYTE_MASK(size), };
+	BYTE q[] = { _1W_CONFIRM_WRITE, } ;
+	struct transaction_log t[] = {
+		TRXN_START,
+		TRXN_WR_CRC16(p, 1+ 2 + 1 + size, 0),
+		TRXN_WRITE1(q),
+		TRXN_END,
+	};
+	
+	/* Copy to scratchpad */
+	memcpy(&p[4], data, size);
+
+	LEVEL_DEBUG("Write to BAE size=%d offset=%x\n",(int)size,(unsigned int)offset) ;
+	Debug_Bytes("BAE write",p,1+2+1+size) ;
+	
+	return BUS_transaction(t, pn) ;
 }
 
 static GOOD_OR_BAD OW_version( UINT * version, struct parsedname * pn )

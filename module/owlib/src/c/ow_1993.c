@@ -48,8 +48,8 @@ $Id$
 /* DS1902 ibutton memory */
 READ_FUNCTION(FS_r_page);
 WRITE_FUNCTION(FS_w_page);
-READ_FUNCTION(FS_r_memory);
-WRITE_FUNCTION(FS_w_memory);
+READ_FUNCTION(FS_r_mem);
+WRITE_FUNCTION(FS_w_mem);
 
 /* ------- Structures ----------- */
 
@@ -58,7 +58,7 @@ struct filetype DS1992[] = {
 	F_STANDARD,
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages/page", 32, &A1992, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
-	{"memory", 128, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, VISIBLE, NO_FILETYPE_DATA,},
+	{"memory", 128, NON_AGGREGATE, ft_binary, fc_stable, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 };
 
 DeviceEntry(08, DS1992, NO_GENERIC_READ, NO_GENERIC_WRITE);
@@ -68,7 +68,7 @@ struct filetype DS1993[] = {
 	F_STANDARD,
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages/page", 32, &A1993, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
-	{"memory", 512, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, VISIBLE, NO_FILETYPE_DATA,},
+	{"memory", 512, NON_AGGREGATE, ft_binary, fc_stable, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 };
 
 DeviceEntry(06, DS1993, NO_GENERIC_READ, NO_GENERIC_WRITE);
@@ -78,7 +78,7 @@ struct filetype DS1995[] = {
 	F_STANDARD,
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages/page", 32, &A1995, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
-	{"memory", 2048, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, VISIBLE, NO_FILETYPE_DATA,},
+	{"memory", 2048, NON_AGGREGATE, ft_binary, fc_stable, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 };
 
 DeviceEntryExtended(0A, DS1995, DEV_ovdr, NO_GENERIC_READ, NO_GENERIC_WRITE);
@@ -88,7 +88,7 @@ struct filetype DS1996[] = {
 	F_STANDARD,
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages/page", 32, &A1996, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
-	{"memory", 8192, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, VISIBLE, NO_FILETYPE_DATA,},
+	{"memory", 8192, NON_AGGREGATE, ft_binary, fc_stable, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 };
 
 DeviceEntryExtended(0C, DS1996, DEV_ovdr, NO_GENERIC_READ, NO_GENERIC_WRITE);
@@ -107,13 +107,10 @@ static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parse
 static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	if (COMMON_read_memory_F0(owq, OWQ_pn(owq).extension, pagesize)) {
-		return -EINVAL;
-	}
-	return 0;
+	return COMMON_offset_process( FS_r_mem, owq, OWQ_pn(owq).extension*pagesize) ;
 }
 
-static ZERO_OR_ERROR FS_r_memory(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
 {
 	/* read is not page-limited */
 	if (COMMON_read_memory_F0(owq, 0, 0)) {
@@ -125,10 +122,10 @@ static ZERO_OR_ERROR FS_r_memory(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	return GB_to_Z_OR_E(COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_mem)) ;
+	return COMMON_offset_process( FS_w_mem, owq, OWQ_pn(owq).extension*pagesize) ;
 }
 
-static ZERO_OR_ERROR FS_w_memory(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_mem(struct one_wire_query *owq)
 {
 	/* paged access */
 	size_t pagesize = 32;

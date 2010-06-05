@@ -48,10 +48,8 @@ $Id$
 /* DS2433 EEPROM */
 READ_FUNCTION(FS_r_page);
 WRITE_FUNCTION(FS_w_page);
-WRITE_FUNCTION(FS_w_page2D);
-READ_FUNCTION(FS_r_memory);
-WRITE_FUNCTION(FS_w_memory);
-WRITE_FUNCTION(FS_w_memory2D);
+READ_FUNCTION(FS_r_mem);
+WRITE_FUNCTION(FS_w_mem);
 
  /* ------- Structures ----------- */
 
@@ -59,8 +57,8 @@ struct aggregate A2431 = { 4, ag_numbers, ag_separate, };
 struct filetype DS2431[] = {
 	F_STANDARD,
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-	{"pages/page", 32, &A2431, ft_binary, fc_stable, FS_r_page, FS_w_page2D, VISIBLE, NO_FILETYPE_DATA,},
-	{"memory", 128, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory2D, VISIBLE, NO_FILETYPE_DATA,},
+	{"pages/page", 32, &A2431, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
+	{"memory", 128, NON_AGGREGATE, ft_binary, fc_stable, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 };
 
 DeviceEntryExtended(2D, DS2431, DEV_ovdr | DEV_resume, NO_GENERIC_READ, NO_GENERIC_WRITE);
@@ -70,7 +68,7 @@ struct filetype DS2433[] = {
 	F_STANDARD,
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages/page", 32, &A2433, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
-	{"memory", 512, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, VISIBLE, NO_FILETYPE_DATA,},
+	{"memory", 512, NON_AGGREGATE, ft_binary, fc_stable, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 };
 
 DeviceEntryExtended(23, DS2433, DEV_ovdr, NO_GENERIC_READ, NO_GENERIC_WRITE);
@@ -80,7 +78,7 @@ struct filetype DS28EC20[] = {
 	F_STANDARD,
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages/page", 32, &A28EC20, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
-	{"memory", 2560, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, VISIBLE, NO_FILETYPE_DATA,},
+	{"memory", 2560, NON_AGGREGATE, ft_binary, fc_stable, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 };
 
 DeviceEntryExtended(43, DS28EC20, DEV_ovdr | DEV_resume, NO_GENERIC_READ, NO_GENERIC_WRITE);
@@ -98,7 +96,7 @@ DeviceEntryExtended(43, DS28EC20, DEV_ovdr | DEV_resume, NO_GENERIC_READ, NO_GEN
 static GOOD_OR_BAD OW_w_23page(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
 static GOOD_OR_BAD OW_w_2Dpage(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
 
-static ZERO_OR_ERROR FS_r_memory(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
 {
     size_t pagesize = 32;
     /* read is not page-limited */
@@ -108,19 +106,18 @@ static ZERO_OR_ERROR FS_r_memory(struct one_wire_query *owq)
 	return 0;
 }
 
-static ZERO_OR_ERROR FS_w_memory(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_mem(struct one_wire_query *owq)
 {
 	/* paged access */
-	size_t pagesize = 32;
-	return GB_to_Z_OR_E(COMMON_readwrite_paged(owq, 0, pagesize, OW_w_23page)) ;
-}
-
-/* Although externally it's 32 byte pages, internally it acts as 8 byte pages */
-static ZERO_OR_ERROR FS_w_memory2D(struct one_wire_query *owq)
-{
-	/* paged access */
-	size_t pagesize = 8;
-	return GB_to_Z_OR_E(COMMON_readwrite_paged(owq, 0, pagesize, OW_w_2Dpage)) ;
+	size_t pagesize;
+	switch (PN(owq)->sn[0]) {
+		case 0x2D:
+			pagesize = 8 ;
+			return GB_to_Z_OR_E(COMMON_readwrite_paged(owq, 0, pagesize, OW_w_2Dpage)) ;
+		default:
+			pagesize = 8 ;
+			return GB_to_Z_OR_E(COMMON_readwrite_paged(owq, 0, pagesize, OW_w_23page)) ;
+	}
 }
 
 static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
@@ -136,14 +133,7 @@ static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 {
 	/* paged access */
 	size_t pagesize = 32;
-	return GB_to_Z_OR_E(COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_23page)) ;
-}
-
-static ZERO_OR_ERROR FS_w_page2D(struct one_wire_query *owq)
-{
-	/* paged access */
-	size_t pagesize = 8;
-	return GB_to_Z_OR_E(COMMON_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, OW_w_2Dpage)) ;
+	return COMMON_offset_process( FS_w_mem, owq, OWQ_pn(owq).extension*pagesize) ;
 }
 
 /* paged, and pre-screened */

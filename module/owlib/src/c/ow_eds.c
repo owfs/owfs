@@ -47,8 +47,8 @@ $Id$
 
 READ_FUNCTION(FS_r_page);
 WRITE_FUNCTION(FS_w_page);
-READ_FUNCTION(FS_r_memory);
-WRITE_FUNCTION(FS_w_memory);
+READ_FUNCTION(FS_r_mem);
+WRITE_FUNCTION(FS_w_mem);
 READ_FUNCTION(FS_r_tag);
 READ_FUNCTION(FS_temperature);
 
@@ -94,10 +94,10 @@ struct aggregate AEDS = { _EDS_PAGES, ag_numbers, ag_separate, };
 struct filetype EDS[] = {
 	F_STANDARD,
 	{"tag", _EDS_TAG_LENGTH, NON_AGGREGATE, ft_ascii, fc_stable, FS_r_tag, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA,},
-	{"memory", _EDS_PAGES * _EDS_PAGESIZE, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, VISIBLE, NO_FILETYPE_DATA,},
+	{"memory", _EDS_PAGES * _EDS_PAGESIZE, NON_AGGREGATE, ft_binary, fc_stable, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages/page", _EDS_PAGESIZE, &AEDS, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
-	{"memory", _EDS_PAGES * _EDS_PAGESIZE, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, VISIBLE, NO_FILETYPE_DATA,},
+	{"memory", _EDS_PAGES * _EDS_PAGESIZE, NON_AGGREGATE, ft_binary, fc_stable, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_temperature, NO_WRITE_FUNCTION, EDS_visible, {i:_EDS_CHIPS_TEMPERATURE},},
 };
 
@@ -154,7 +154,7 @@ static ZERO_OR_ERROR FS_temperature(struct one_wire_query *owq)
 	return z_or_e ;
 }
 
-static ZERO_OR_ERROR FS_r_memory(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 	return GB_to_Z_OR_E(COMMON_OWQ_readwrite_paged(owq, 0, pagesize, COMMON_read_memory_F0)) ;
@@ -180,11 +180,10 @@ static enum e_visibility EDS_visible(const struct parsedname * pn) {
 
 static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 {
-	size_t pagesize = 32;
-	return GB_to_Z_OR_E(COMMON_OWQ_readwrite_paged(owq, OWQ_pn(owq).extension, pagesize, COMMON_read_memory_F0)) ;
+	return COMMON_offset_process( FS_r_mem, owq, OWQ_pn(owq).extension*_EDS_PAGESIZE) ;
 }
 
-static ZERO_OR_ERROR FS_w_memory(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_mem(struct one_wire_query *owq)
 {
 	size_t size = OWQ_size(owq) ;
 	off_t start = OWQ_offset(owq) ;
@@ -206,8 +205,7 @@ static ZERO_OR_ERROR FS_w_memory(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 {
-	struct parsedname * pn = PN(owq) ;
-	return GB_to_Z_OR_E( OW_w_mem( (BYTE *) OWQ_buffer(owq),OWQ_size(owq),OWQ_offset(owq) + _EDS_PAGESIZE * pn->extension,pn) );
+	return COMMON_offset_process( FS_w_mem, owq, OWQ_pn(owq).extension*_EDS_PAGESIZE) ;
 }
 
 static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)

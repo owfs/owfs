@@ -148,14 +148,14 @@ static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
 /* 2406 memory write */
 static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 {
-//printf("2406 read size=%d, offset=%d\n",(int)size,(int)offset);
-	return GB_to_Z_OR_E(OW_r_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) (OWQ_offset(owq) + (OWQ_pn(owq).extension << 5)), PN(owq))) ;
+	size_t pagesize = 32 ;
+	return COMMON_offset_process( FS_r_mem, owq, OWQ_pn(owq).extension*pagesize) ;
 }
 
 static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	return COMMON_offset_process( COMMON_write_eprom_mem_owq, owq, pagesize * OWQ_pn(owq).extension ) ;
+	return COMMON_offset_process( FS_w_mem, owq, OWQ_pn(owq).extension*pagesize) ;
 }
 
 /* Note, it's EPROM -- write once */
