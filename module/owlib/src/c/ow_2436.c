@@ -56,7 +56,7 @@ READ_FUNCTION(FS_volts);
 struct aggregate A2436 = { 3, ag_numbers, ag_separate, };
 struct filetype DS2436[] = {
 	F_STANDARD,
-	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages/page", 32, &A2436, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
 	{"volts", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_volts, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_temp, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},

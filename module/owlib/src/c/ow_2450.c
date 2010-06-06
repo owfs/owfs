@@ -75,14 +75,15 @@ struct aggregate A2450m = { 4, ag_letters, ag_mixed, };
 struct aggregate A2450v = { 4, ag_letters, ag_aggregate, };
 struct filetype DS2450[] = {
 	F_STANDARD,
-	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-	{"pages/page", 8, &A2450, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
+	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"pages/page", 8, &A2450, ft_binary, fc_page, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
 	{"power", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_power, FS_w_power, VISIBLE, NO_FILETYPE_DATA,},
-	{"memory", 32, NON_AGGREGATE, ft_binary, fc_stable, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
+	{"memory", 32, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 	{"PIO", PROPERTY_LENGTH_YESNO, &A2450m, ft_yesno, fc_stable, FS_r_PIO, FS_w_PIO, VISIBLE, {i:0},},
 	{"volt", PROPERTY_LENGTH_FLOAT, &A2450m, ft_float, fc_volatile, FS_volts, NO_WRITE_FUNCTION, VISIBLE, {i:1},},
 	{"volt2", PROPERTY_LENGTH_FLOAT, &A2450m, ft_float, fc_volatile, FS_volts, NO_WRITE_FUNCTION, VISIBLE, {i:0},},
-	{"set_alarm", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+
+	{"set_alarm", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"set_alarm/volthigh", PROPERTY_LENGTH_FLOAT, &A2450v, ft_float, fc_stable, FS_r_setvolt, FS_w_setvolt, VISIBLE, {i:3},},
 	{"set_alarm/volt2high", PROPERTY_LENGTH_FLOAT, &A2450v, ft_float, fc_stable, FS_r_setvolt, FS_w_setvolt, VISIBLE, {i:2},},
 	{"set_alarm/voltlow", PROPERTY_LENGTH_FLOAT, &A2450v, ft_float, fc_stable, FS_r_setvolt, FS_w_setvolt, VISIBLE, {i:1},},
@@ -90,10 +91,12 @@ struct filetype DS2450[] = {
 	{"set_alarm/high", PROPERTY_LENGTH_YESNO, &A2450v, ft_yesno, fc_stable, FS_r_high, FS_w_high, VISIBLE, {i:1},},
 	{"set_alarm/low", PROPERTY_LENGTH_YESNO, &A2450v, ft_yesno, fc_stable, FS_r_high, FS_w_high, VISIBLE, {i:0},},
 	{"set_alarm/unset", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_por, FS_w_por, VISIBLE, NO_FILETYPE_DATA,},
-	{"alarm", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+
+	{"alarm", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"alarm/high", PROPERTY_LENGTH_YESNO, &A2450v, ft_yesno, fc_volatile, FS_r_flag, FS_w_flag, VISIBLE, {i:1},},
 	{"alarm/low", PROPERTY_LENGTH_YESNO, &A2450v, ft_yesno, fc_volatile, FS_r_flag, FS_w_flag, VISIBLE, {i:0},},
-	{"CO2", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+
+	{"CO2", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"CO2/ppm", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_CO2_ppm, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"CO2/Vdd", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_yesno, fc_link, FS_CO2_power, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"CO2/status", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_float, fc_link, FS_CO2_status, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},

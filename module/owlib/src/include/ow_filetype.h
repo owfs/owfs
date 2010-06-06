@@ -118,6 +118,8 @@ enum fc_change {
 	fc_directory,    // directory listing
 	fc_presence,     // chip <-> bus pairing
 	fc_link,         // a link to another property -- cache that one instead
+	fc_page,	 // cache a page of memory
+	fc_subdir,       // really a NOP, but makes code clearer
 };
 
 /* Predeclare one_wire_query */

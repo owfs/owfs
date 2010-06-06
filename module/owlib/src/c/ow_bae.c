@@ -91,7 +91,7 @@ WRITE_FUNCTION(FS_w_32) ;
 #define _FC02_MAX_READ_GULP	32
 #define _FC02_MAX_COMMAND_GULP	255
 
-/* BAE registers */
+/* BAE registers -- memory mapped */
 #define _FC02_ADC        50   /* u8 */
 #define _FC02_ADCAN      24   /* u16 */
 #define _FC02_ADCAP      22   /* u16 */
@@ -158,8 +158,8 @@ WRITE_FUNCTION(FS_w_32) ;
 struct aggregate ABAEeeprom = { _FC02_EEPROM_PAGES, ag_numbers, ag_separate, };
 struct filetype BAE[] = {
 	F_STANDARD,
-	{"memory", _FC02_MEMORY_SIZE, NULL, ft_binary, fc_read_stable, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
-	{"command", _FC02_MAX_COMMAND_GULP, NULL, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_extended, VISIBLE, NO_FILETYPE_DATA,},
+	{"memory", _FC02_MEMORY_SIZE, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
+	{"command", _FC02_MAX_COMMAND_GULP, NON_AGGREGATE, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_extended, VISIBLE, NO_FILETYPE_DATA,},
 	{"writebyte", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_read_stable, NO_READ_FUNCTION, FS_writebyte, VISIBLE, NO_FILETYPE_DATA, },
 	{"versionstate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_version_state, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA, },
 	{"version", 5, NON_AGGREGATE, ft_ascii, fc_link, FS_version, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
@@ -170,16 +170,16 @@ struct filetype BAE[] = {
 	{"device_type", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_type_device, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"chip_type", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_type_chip, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 
-	{"firmware", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-	{"firmware/function", _FC02_FUNCTION_FLASH_SIZE, NULL, ft_binary, fc_stable, FS_r_flash, FS_w_flash, VISIBLE, NO_FILETYPE_DATA,},
+	{"firmware", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"firmware/function", _FC02_FUNCTION_FLASH_SIZE, NON_AGGREGATE, ft_binary, fc_stable, FS_r_flash, FS_w_flash, VISIBLE, NO_FILETYPE_DATA,},
 
-	{"eeprom",PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-	{"eeprom/erase", PROPERTY_LENGTH_YESNO, &ABAEeeprom, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_eeprom_erase, VISIBLE, NO_FILETYPE_DATA,},
-	{"eeprom/memory",_FC02_EEPROM_PAGE_SIZE*_FC02_EEPROM_PAGES, NON_AGGREGATE, ft_binary, fc_stable, FS_eeprom_r_mem, FS_eeprom_w_mem, VISIBLE, NO_FILETYPE_DATA,},
-	{"eeprom/page",_FC02_EEPROM_PAGE_SIZE, &ABAEeeprom, ft_binary, fc_stable, FS_eeprom_r_page, FS_eeprom_w_page, VISIBLE, NO_FILETYPE_DATA,},
+	{"eeprom", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"eeprom/erase", PROPERTY_LENGTH_YESNO, &ABAEeeprom, ft_yesno, fc_link, NO_READ_FUNCTION, FS_eeprom_erase, VISIBLE, NO_FILETYPE_DATA,},
+	{"eeprom/memory",_FC02_EEPROM_PAGE_SIZE*_FC02_EEPROM_PAGES, NON_AGGREGATE, ft_binary, fc_link, FS_eeprom_r_mem, FS_eeprom_w_mem, VISIBLE, NO_FILETYPE_DATA,},
+	{"eeprom/page",_FC02_EEPROM_PAGE_SIZE, &ABAEeeprom, ft_binary, fc_page, FS_eeprom_r_page, FS_eeprom_w_page, VISIBLE, NO_FILETYPE_DATA,},
 	
 	
-	{"910", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_910, NO_FILETYPE_DATA,},
+	{"910", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_910, NO_FILETYPE_DATA,},
 	{"910/adcc", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_read_stable, FS_r_8, FS_w_8, VISIBLE_910, {u:_FC02_ADCC,}, },
 	{"910/cntc", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_read_stable, FS_r_8, FS_w_8, VISIBLE_910, {u:_FC02_CNTC,}, },
 	{"910/outc", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_read_stable, FS_r_8, FS_w_8, VISIBLE_910, {u:_FC02_OUTC,}, },

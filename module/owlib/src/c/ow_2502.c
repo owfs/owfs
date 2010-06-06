@@ -57,9 +57,9 @@ READ_FUNCTION(FS_r_param);
 struct aggregate A2502 = { 4, ag_numbers, ag_separate, };
 struct filetype DS2502[] = {
 	F_STANDARD,
-	{"memory", 128, NON_AGGREGATE, ft_binary, fc_stable, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
-	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-	{"pages/page", 32, &A2502, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
+	{"memory", 128, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
+	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"pages/page", 32, &A2502, ft_binary, fc_page, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
 };
 
 DeviceEntry(09, DS2502, NO_GENERIC_READ, NO_GENERIC_WRITE);
@@ -69,9 +69,9 @@ struct filetype DS1982U[] = {
 	{"mac_e", 6, NON_AGGREGATE, ft_binary, fc_stable, FS_r_param, NO_WRITE_FUNCTION, VISIBLE, {i:4},},
 	{"mac_fw", 8, NON_AGGREGATE, ft_binary, fc_stable, FS_r_param, NO_WRITE_FUNCTION, VISIBLE, {i:4},},
 	{"project", 4, NON_AGGREGATE, ft_binary, fc_stable, FS_r_param, NO_WRITE_FUNCTION, VISIBLE, {i:0},},
-	{"memory", 128, NON_AGGREGATE, ft_binary, fc_stable, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
-	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-	{"pages/page", 32, &A2502, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
+	{"memory", 128, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
+	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"pages/page", 32, &A2502, ft_binary, fc_page, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
 };
 
 DeviceEntry(89, DS1982U, NO_GENERIC_READ, NO_GENERIC_WRITE);

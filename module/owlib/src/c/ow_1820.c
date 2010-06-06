@@ -72,12 +72,13 @@ struct filetype DS18S20[] = {
 	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_simultaneous_temperature, FS_10temp, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"templow", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE, {i:1},},
 	{"temphigh", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE, {i:0},},
-	{"errata", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_stable, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"power", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+
+	{"errata", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"errata/trim", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_trim, FS_w_trim, VISIBLE, NO_FILETYPE_DATA,},
 	{"errata/die", 2, NON_AGGREGATE, ft_ascii, fc_static, FS_r_die, NO_WRITE_FUNCTION, VISIBLE, {i:1},},
 	{"errata/trimvalid", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_trimvalid, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"errata/trimblanket", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_blanket, FS_w_blanket, VISIBLE, NO_FILETYPE_DATA,},
-	{"power", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 };
 
 DeviceEntryExtended(10, DS18S20, DEV_temp | DEV_alarm, NO_GENERIC_READ, NO_GENERIC_WRITE);
@@ -93,12 +94,13 @@ struct filetype DS18B20[] = {
 	{"fasttemp", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_link, FS_fasttemp, NO_WRITE_FUNCTION, VISIBLE, {i:9},},
 	{"templow", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE, {i:1},},
 	{"temphigh", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE, {i:0},},
-	{"errata", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_stable, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"power", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+
+	{"errata", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"errata/trim", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_trim, FS_w_trim, VISIBLE, NO_FILETYPE_DATA,},
 	{"errata/die", 2, NON_AGGREGATE, ft_ascii, fc_static, FS_r_die, NO_WRITE_FUNCTION, VISIBLE, {i:2},},
 	{"errata/trimvalid", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_trimvalid, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"errata/trimblanket", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_blanket, FS_w_blanket, VISIBLE, NO_FILETYPE_DATA,},
-	{"power", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 };
 
 DeviceEntryExtended(28, DS18B20, DEV_temp | DEV_alarm, NO_GENERIC_READ, NO_GENERIC_WRITE);
@@ -114,12 +116,13 @@ struct filetype DS1822[] = {
 	{"fasttemp", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_link, FS_fasttemp, NO_WRITE_FUNCTION, VISIBLE, {i:9},},
 	{"templow", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE, {i:1},},
 	{"temphigh", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE, {i:0},},
-	{"errata", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_stable, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"power", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+
+	{"errata", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"errata/trim", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_trim, FS_w_trim, VISIBLE, NO_FILETYPE_DATA,},
 	{"errata/die", 2, NULL, ft_ascii, fc_static, FS_r_die, NO_WRITE_FUNCTION, VISIBLE, {i:0},},
 	{"errata/trimvalid", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_trimvalid, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"errata/trimblanket", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_blanket, FS_w_blanket, VISIBLE, NO_FILETYPE_DATA,},
-	{"power", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 };
 
 DeviceEntryExtended(22, DS1822, DEV_temp | DEV_alarm, NO_GENERIC_READ, NO_GENERIC_WRITE);
