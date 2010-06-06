@@ -123,7 +123,6 @@ ZERO_OR_ERROR FS_write_postparse(struct one_wire_query *owq)
 		write_or_error = FS_w_given_bus(owq);
 		break;
 	default:					// ePN_real
-	//LEVEL_DEBUG(pid=%ld call FS_w_given_bus size=%ld", pthread_self(), size);
 
 		/* handle DeviceSimultaneous */
 		if (pn->selected_device == DeviceSimultaneous) {
@@ -270,6 +269,8 @@ static ZERO_OR_ERROR FS_w_given_bus(struct one_wire_query *owq)
 		if (write_or_error == 0) {
 			write_or_error = FS_w_local(owq);
 			DeviceLockRelease(pn);
+		} else {
+			LEVEL_DEBUG("Cannot lock device for writing") ;
 		}
 	} else if (OWQ_pn(owq).type == ePN_interface) {
 		BUSLOCK(pn);
@@ -312,6 +313,7 @@ static ZERO_OR_ERROR FS_w_local(struct one_wire_query *owq)
 	if (pn->selected_filetype->ag != NON_AGGREGATE) {
 		switch (pn->extension) {
 		case EXTENSION_BYTE:
+			LEVEL_DEBUG("Writing collectively as a bitfield");
 			return FS_write_single_lump(owq);
 		case EXTENSION_ALL:
 			if (pn->selected_filetype->format == ft_bitfield) {
@@ -320,13 +322,16 @@ static ZERO_OR_ERROR FS_w_local(struct one_wire_query *owq)
 			switch (pn->selected_filetype->ag->combined) {
 			case ag_aggregate:
 			case ag_mixed:
+				LEVEL_DEBUG("Writing collectively");
 				return FS_write_aggregate_lump(owq);
 			case ag_separate:
+				LEVEL_DEBUG("Writing separately");
 				return FS_write_in_parts(owq);
 			}
 		default:
 			// Just write one field of an array
 			if (pn->selected_filetype->format == ft_bitfield) {
+				LEVEL_DEBUG("Writing a bit in a bitfield");
 				return FS_write_a_bit(owq);
 			}
 			switch (pn->selected_filetype->ag->combined) {
@@ -498,10 +503,10 @@ static ZERO_OR_ERROR FS_write_in_parts(struct one_wire_query *owq)
 		OWQ_pn(owq_single).extension = extension;
 		OWQ_size(owq_single) = FileLength(PN(owq_single));
 		OWQ_offset(owq_single) = 0;
-		if (buffer_pointer) {
+		if ( buffer_pointer != NULL ) {
 			OWQ_buffer(owq_single) = buffer_pointer;
 		}
-
+		//_print_owq(owq_single) ; // debug
 		single_write = FS_write_single_lump(owq_single);
 
 		if (single_write != 0) {
