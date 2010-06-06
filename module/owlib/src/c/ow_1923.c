@@ -124,8 +124,13 @@ struct aggregate A1923h = { 63, ag_numbers, ag_mixed, };
 struct aggregate A1923m = { 12, ag_numbers, ag_aggregate, };
 struct filetype DS1923[] = {
 	F_STANDARD,
+#if 0
+	/* Just test functions */
+	{"memory", 512, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
+#endif
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages/page", 32, &A1923p, ft_binary, fc_page, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
+
 	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_r_temperature, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"humidity", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_humid, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 
@@ -133,13 +138,14 @@ struct filetype DS1923[] = {
 	{"clock/date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_second, FS_r_date, FS_w_date, VISIBLE, NO_FILETYPE_DATA,},
 	{"clock/udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter, FS_w_counter, VISIBLE, NO_FILETYPE_DATA,},
 	{"clock/running", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_rbitread, FS_rbitwrite, VISIBLE, {v:&BitReads[2]},},
+
 #if 0
 	/* Just test functions */
 	{"running", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_run, FS_w_run, VISIBLE, NO_FILETYPE_DATA,},
-	{"memory", 512, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 	{"clearmem", 1, NON_AGGREGATE, ft_binary, fc_stable, FS_clearmem, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"enableosc", 1, NON_AGGREGATE, ft_binary, fc_stable, FS_enable_osc, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 #endif
+
 	{"mission", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"mission/running", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_bitread, FS_w_mip, VISIBLE, {v:&BitReads[0]},},
 	{"mission/rollover", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_bitread, FS_bitwrite, VISIBLE, {v:&BitReads[1]},},

@@ -97,6 +97,8 @@ struct aggregate ALCD_L20 = { 4, ag_numbers, ag_separate, };
 struct aggregate ALCD_L40 = { 2, ag_numbers, ag_separate, };
 struct filetype LCD[] = {
 	F_STANDARD,
+	{"memory", 112, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, VISIBLE, NO_FILETYPE_DATA,},
+
 	{"LCDon", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_simple_command, VISIBLE, {u:PACK_ON_OFF(_LCD_COMMAND_POWER_ON, _LCD_COMMAND_POWER_OFF)},},
 	{"backlight", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_simple_command, VISIBLE, {u:PACK_ON_OFF(_LCD_COMMAND_BACKLIGHT_ON, _LCD_COMMAND_BACKLIGHT_OFF)},},
 	{"version", _LCD_PAGE_SIZE, NON_AGGREGATE, ft_ascii, fc_stable, FS_r_version, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
@@ -107,7 +109,6 @@ struct filetype LCD[] = {
 #if OW_CACHE
 	{"cumulative", PROPERTY_LENGTH_UNSIGNED, &ALCD, ft_unsigned, fc_volatile, FS_r_cum, FS_w_cum, VISIBLE, NO_FILETYPE_DATA,},
 #endif							/*OW_CACHE */
-	{"memory", 112, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, VISIBLE, NO_FILETYPE_DATA,},
 	{"screen16", 128, NON_AGGREGATE, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_w_screenX, VISIBLE, {i:16},},
 	{"screen20", 128, NON_AGGREGATE, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_w_screenX, VISIBLE, {i:20},},
 	{"screen40", 128, NON_AGGREGATE, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_w_screenX, VISIBLE, {i:40},},

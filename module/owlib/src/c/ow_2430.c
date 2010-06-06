@@ -57,6 +57,7 @@ WRITE_FUNCTION(FS_w_application);
 struct filetype DS2430A[] = {
 	F_STANDARD,
 	{"memory", 16, NON_AGGREGATE, ft_binary, fc_link, FS_r_memory, FS_w_memory, VISIBLE, NO_FILETYPE_DATA,},
+
 	{"application", 8, NON_AGGREGATE, ft_binary, fc_stable, FS_r_application, FS_w_application, VISIBLE, NO_FILETYPE_DATA,},
 	{"lock", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_lock, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 };

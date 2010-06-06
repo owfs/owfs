@@ -199,11 +199,11 @@ struct aggregate L2780 = { Pages2780, ag_numbers, ag_separate };
 
 struct filetype DS2720[] = {
 	F_STANDARD,
-	{"lock", PROPERTY_LENGTH_YESNO, &L2720, ft_yesno, fc_stable, FS_r_lock, FS_w_lock, VISIBLE, {v:&P2720},},
 	{"memory", 256, NULL, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages/page", Size2720, &L2720, ft_binary, fc_page, FS_r_page, FS_w_page, VISIBLE, {v:&P2720},},
 
+	{"lock", PROPERTY_LENGTH_YESNO, &L2720, ft_yesno, fc_stable, FS_r_lock, FS_w_lock, VISIBLE, {v:&P2720},},
 	{"cc", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_bit, FS_w_bit, VISIBLE, {u:(_1W_DS27XX_PROTECT_REG << 8) | 3},},
 	{"ce", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_bit, FS_w_bit, VISIBLE, {u:(_1W_DS27XX_PROTECT_REG << 8) | 1},},
 	{"dc", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_bit, FS_w_bit, VISIBLE, {u:(_1W_DS27XX_PROTECT_REG << 8) | 2},},
@@ -220,6 +220,7 @@ DeviceEntry(31, DS2720, NO_GENERIC_READ, NO_GENERIC_WRITE);
 struct filetype DS2740[] = {
 	F_STANDARD,
 	{"memory", 256, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
+
 	{"PIO", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_pio, FS_w_pio, VISIBLE, {u:(_1W_DS2760_SPECIAL_REG << 8) | 6},},
 	{"vis", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_vis, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"vis_B", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_vis, NO_WRITE_FUNCTION, VISIBLE, {f:1.5625E-6},},
@@ -232,13 +233,14 @@ DeviceEntry(36, DS2740, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 struct filetype DS2751[] = {
 	F_STANDARD,
+	{"memory", 256, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
+	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"pages/page", Size2751, &L2751, ft_binary, fc_page, FS_r_page, FS_w_page, VISIBLE, {v:&P2751},},
+
 	{"amphours", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_ah, FS_w_ah, VISIBLE, NO_FILETYPE_DATA,},
 	{"current", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_link, FS_r_current, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"currentbias", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_link, FS_r_abias, FS_w_abias, VISIBLE, NO_FILETYPE_DATA,},
 	{"lock", PROPERTY_LENGTH_YESNO, &L2751, ft_yesno, fc_stable, FS_r_lock, FS_w_lock, VISIBLE, {v:&P2751},},
-	{"memory", 256, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
-	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-	{"pages/page", Size2751, &L2751, ft_binary, fc_page, FS_r_page, FS_w_page, VISIBLE, {v:&P2751},},
 	{"PIO", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, NO_READ_FUNCTION, FS_w_pio, VISIBLE, {u:(_1W_DS2760_SPECIAL_REG << 8) | 6},},
 	{"sensed", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_bit, NO_WRITE_FUNCTION, VISIBLE, {u:(_1W_DS2760_SPECIAL_REG << 8) | 6},},
 	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_r_temp, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
@@ -258,10 +260,11 @@ DeviceEntry(51, DS2751, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 struct filetype DS2755[] = {
 	F_STANDARD,
-	{"lock", PROPERTY_LENGTH_YESNO, &L2755, ft_yesno, fc_stable, FS_r_lock, FS_w_lock, VISIBLE, {v:&P2751},},
 	{"memory", 256, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages/page", Size2755, &L2755, ft_binary, fc_page, FS_r_page, FS_w_page, VISIBLE, {v:&P2755},},
+
+	{"lock", PROPERTY_LENGTH_YESNO, &L2755, ft_yesno, fc_stable, FS_r_lock, FS_w_lock, VISIBLE, {v:&P2751},},
 	{"PIO", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, NO_READ_FUNCTION, FS_w_pio, VISIBLE, {u:(_1W_DS2760_SPECIAL_REG << 8) | 6},},
 	{"sensed", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_bit, NO_WRITE_FUNCTION, VISIBLE, {u:(_1W_DS2760_SPECIAL_REG << 8) | 6},},
 	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_r_temp, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
@@ -290,13 +293,14 @@ DeviceEntryExtended(35, DS2755, DEV_alarm, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 struct filetype DS2760[] = {
 	F_STANDARD,
+	{"memory", 256, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
+	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"pages/page", Size2760, &L2760, ft_binary, fc_page, FS_r_page, FS_w_page, VISIBLE, {v:&P2760},},
+
 	{"amphours", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_ah, FS_w_ah, VISIBLE, NO_FILETYPE_DATA,},
 	{"current", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_link, FS_r_current, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"currentbias", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_link, FS_r_abias, FS_w_abias, VISIBLE, NO_FILETYPE_DATA,},
 	{"lock", PROPERTY_LENGTH_YESNO, &L2760, ft_yesno, fc_stable, FS_r_lock, FS_w_lock, VISIBLE, {v:&P2760},},
-	{"memory", 256, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
-	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-	{"pages/page", Size2760, &L2760, ft_binary, fc_page, FS_r_page, FS_w_page, VISIBLE, {v:&P2760},},
 	{"PIO", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, NO_READ_FUNCTION, FS_w_pio, VISIBLE, {u:(_1W_DS2760_SPECIAL_REG << 8) | 6},},
 	{"sensed", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_bit, NO_WRITE_FUNCTION, VISIBLE, {u:(_1W_DS2760_SPECIAL_REG << 8) | 6},},
 	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_r_temp, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
@@ -326,13 +330,14 @@ DeviceEntry(30, DS2760, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 struct filetype DS2770[] = {
 	F_STANDARD,
+	{"memory", 256, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
+	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"pages/page", Size2770, &L2770, ft_binary, fc_page, FS_r_page, FS_w_page, VISIBLE, {v:&P2770},},
+
 	{"amphours", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_ah, FS_w_ah, VISIBLE, NO_FILETYPE_DATA,},
 	{"current", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_link, FS_r_current, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"currentbias", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_link, FS_r_abias, FS_w_abias, VISIBLE, NO_FILETYPE_DATA,},
 	{"lock", PROPERTY_LENGTH_YESNO, &L2770, ft_yesno, fc_stable, FS_r_lock, FS_w_lock, VISIBLE, {v:&P2770},},
-	{"memory", 256, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
-	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-	{"pages/page", Size2770, &L2770, ft_binary, fc_page, FS_r_page, FS_w_page, VISIBLE, {v:&P2770},},
 	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_r_temp, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"vbias", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_vbias, FS_w_vbias, VISIBLE, NO_FILETYPE_DATA,},
 	{"vis", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_vis, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
@@ -356,10 +361,11 @@ DeviceEntry(2E, DS2770, NO_GENERIC_READ, NO_GENERIC_WRITE);
 /* DS2780 also includees the DS2775 DS2776 DS2784 */
 struct filetype DS2780[] = {
 	F_STANDARD,
-	{"lock", PROPERTY_LENGTH_YESNO, &L2780, ft_yesno, fc_stable, FS_r_lock, FS_w_lock, VISIBLE, {v:&P2780},},
 	{"memory", 256, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages/page", Size2780, &L2780, ft_binary, fc_page, FS_r_page, FS_w_page, VISIBLE, {v:&P2780},},
+
+	{"lock", PROPERTY_LENGTH_YESNO, &L2780, ft_yesno, fc_stable, FS_r_lock, FS_w_lock, VISIBLE, {v:&P2780},},
 	{"PIO", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, NO_READ_FUNCTION, FS_w_pio, VISIBLE, {u:(_1W_DS2780_SPECIAL_REG << 8) | 0},},
 	{"sensed", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_bit, NO_WRITE_FUNCTION, VISIBLE, {u:(_1W_DS2780_SPECIAL_REG << 8) | 0},},
 	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_r_temp, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
@@ -387,10 +393,11 @@ DeviceEntry(32, DS2780, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 struct filetype DS2781[] = {
 	F_STANDARD,
-	{"lock", PROPERTY_LENGTH_YESNO, &L2780, ft_yesno, fc_stable, FS_r_lock, FS_w_lock, VISIBLE, {v:&P2780},},
 	{"memory", 256, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages/page", Size2780, &L2780, ft_binary, fc_page, FS_r_page, FS_w_page, VISIBLE, {v:&P2780},},
+
+	{"lock", PROPERTY_LENGTH_YESNO, &L2780, ft_yesno, fc_stable, FS_r_lock, FS_w_lock, VISIBLE, {v:&P2780},},
 	{"PIO", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, NO_READ_FUNCTION, FS_w_pio, VISIBLE, {u:(_1W_DS2780_SPECIAL_REG << 8) | 0},},
 	{"sensed", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_bit, NO_WRITE_FUNCTION, VISIBLE, {u:(_1W_DS2780_SPECIAL_REG << 8) | 0},},
 	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_r_temp, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},

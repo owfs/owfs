@@ -65,11 +65,12 @@ WRITE_FUNCTION(FS_w_flag);
 struct aggregate A2404 = { 16, ag_numbers, ag_separate, };
 struct filetype DS2404[] = {
 	F_STANDARD,
-	{"alarm", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_alarm, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-	{"set_alarm", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_set_alarm, FS_w_set_alarm, VISIBLE, NO_FILETYPE_DATA,},
 	{"memory", 512, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages/page", 32, &A2404, ft_binary, fc_page, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
+
+	{"alarm", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_alarm, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"set_alarm", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_set_alarm, FS_w_set_alarm, VISIBLE, NO_FILETYPE_DATA,},
 	{"running", PROPERTY_LENGTH_YESNO, NULL, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {c:0x10},},
 	{"auto", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {c:0x20},},
 	{"start", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {c:0x40},},

@@ -75,10 +75,11 @@ struct aggregate A2450m = { 4, ag_letters, ag_mixed, };
 struct aggregate A2450v = { 4, ag_letters, ag_aggregate, };
 struct filetype DS2450[] = {
 	F_STANDARD,
+	{"memory", 32, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages/page", 8, &A2450, ft_binary, fc_page, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
+
 	{"power", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_power, FS_w_power, VISIBLE, NO_FILETYPE_DATA,},
-	{"memory", 32, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 	{"PIO", PROPERTY_LENGTH_YESNO, &A2450m, ft_yesno, fc_stable, FS_r_PIO, FS_w_PIO, VISIBLE, {i:0},},
 	{"volt", PROPERTY_LENGTH_FLOAT, &A2450m, ft_float, fc_volatile, FS_volts, NO_WRITE_FUNCTION, VISIBLE, {i:1},},
 	{"volt2", PROPERTY_LENGTH_FLOAT, &A2450m, ft_float, fc_volatile, FS_volts, NO_WRITE_FUNCTION, VISIBLE, {i:0},},
