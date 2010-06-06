@@ -1,7 +1,13 @@
+/*
+$Id$
+*/
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <string.h>
+#include <libgen.h>
+#include <ctype.h>
 
 #include <ownetapi.h>
 
@@ -15,13 +21,10 @@ void usage(int argc, char **argv)
 	printf("%s shows examples of directory and read functions\n", argv[0]);
 	printf("\n");
 	printf("Usage of %s:\n", argv[0]);
-	printf("\t%s -s owserver_address one_wire_path\n", argv[0]);
+	printf("\t%s -s owserver_address\n", argv[0]);
 	printf("\t\towserver_address -- tcp/ip address:port of owserver\n");
 	printf("\t\t\te.g. 192.168.0.77:3000 or just port number\n");
 	printf("\t\t\tdefault localhost:4304\n");
-	printf("\t\tone_wire_path    -- OWFS-style 1-wire address.\n");
-	printf("\t\t\te.g.: / for root 1-wire bus listing (default)\n");
-	printf("\t\t\tor /10.67C6697351FF for a device directory\n");
 	printf("\n");
 	printf("see http://www.owfs.org for information on owserver.\n");
 	exit(1);
@@ -31,8 +34,8 @@ void usage(int argc, char **argv)
 void parse_command_line(int argc, char **argv)
 {
 	int argc_index;
-	int next_is_owserver = 0;
-	if (argc < 2) {
+	int next_is_owserver = 1;
+	if (argc < 1) {
 		usage(argc, argv);
 	}
 	for (argc_index = 1; argc_index < argc; ++argc_index) {
@@ -49,22 +52,93 @@ void parse_command_line(int argc, char **argv)
 				owserver_address = argv[argc_index];
 				next_is_owserver = 0;
 			} else {
-				one_wire_path = argv[argc_index];
+				fprintf(stderr,"Extra argument <%s> in command line\n",argv[argc_index]);
+				exit(1) ;			
 			}
 		}
 	}
 }
 
 //------------- Example-specific ---------
+struct pass_on {
+	OWNET_HANDLE h;
+	int depth;
+};
+
+// directory_element callback function
+void Show_property(void *v, const char *filename)
+{
+	// cast the void pointer to a known structure pointer
+	struct pass_on *this_pass = v;
+	// set up a structure to pass to future call-back
+	struct pass_on next_pass = {
+		this_pass->h,
+		this_pass->depth + 1,
+	};
+	char * read_data = NULL ;
+	int read_length = OWNET_read(this_pass->h, filename, &read_data);
+
+	// space in to level (for example)
+	int indent_index;
+	for (indent_index = 0; indent_index < this_pass->depth; ++indent_index) {
+		printf(" ");
+	}
+
+	// print this filename
+	printf("%s", filename);
+
+	if ( read_length >= 0 ) {
+		int i ;
+		for ( i = 0 ; i < read_length ; ++i ) {
+			if ( ! isprint(read_data[i]) ) {
+				read_data[i] = '.' ;
+			}
+		}
+		printf("\t<%s>",read_data);
+	}
+	if ( read_data != NULL ) {
+		free( read_data ) ;
+	}
+	printf("\n") ;
+
+	// recursive call on children
+	OWNET_dirprocess(this_pass->h, filename, Show_property, &next_pass);
+}
+
+// directory_element callback function
+void Show_device(void *v, const char *filename)
+{
+	// cast the void pointer to a known structure pointer
+	struct pass_on *this_pass = v;
+	// set up a structure to pass to future call-back
+	struct pass_on next_pass = {
+		this_pass->h,
+		this_pass->depth + 1,
+	};
+
+	// space in to level (for example)
+	int indent_index;
+	for (indent_index = 0; indent_index < this_pass->depth; ++indent_index) {
+		printf(" ");
+	}
+
+	// print this filename
+	printf("%s\n", filename);
+
+	// Only continue for real devices
+	if ( !isxdigit(filename[1]) || !isxdigit(filename[2]) ) {
+		return ;
+	}
+
+	// recursive call on children
+	OWNET_dirprocess(this_pass->h, filename, Show_property, &next_pass);
+}
+
 int main(int argc, char **argv)
 {
-	ssize_t rc;
 	ssize_t ret = 0;
-	size_t len;
-	char *dir_buffer = NULL;
-	char **d_buffer;
-	char *dir_member;
 	OWNET_HANDLE owh;
+	struct pass_on first_pass;
 
 	parse_command_line(argc, argv);
 
@@ -73,91 +147,14 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	len = OWNET_dirlist(owh, one_wire_path, &dir_buffer);
-	if ((len < 0) || dir_buffer == NULL) {
-		printf("OWNET_dirlist: buffer is empty (buffer=%p len=%d)\n", dir_buffer, len);
-		goto cleanup;
+	first_pass.h = owh;
+	first_pass.depth = 0;
+
+	ret = OWNET_dirprocess(owh, one_wire_path, Show_device, &first_pass);
+	if (ret < 0) {
+		printf("OWNET_dirprocess error: %ld)\n", ret);
 	}
 
-	printf("OWNET_dirlist() returned len=%d\n", (int) len);
-	dir_buffer[len] = 0;		// make sure last null char
-	printf("------- buffer content -------\n");
-	printf("%s\n", dir_buffer);
-	printf("------------------------------\n");
-
-	d_buffer = &dir_buffer;
-	while ((dir_member = strsep(d_buffer, ","))) {
-		switch (dir_member[1]) {
-		case '1':
-			if (dir_member[2] == '0') {
-				char tpath[128];
-				char *type_buffer = NULL;
-
-				strcpy(tpath, dir_member);
-				strcat(tpath, "/temperature");
-				len = OWNET_read(owh, tpath, &type_buffer);
-				if ((len < 0) || type_buffer == NULL) {
-					printf("OWNET_read: buffer is empty (buffer=%p len=%d)\n", type_buffer, len);
-					goto cleanup;
-				}
-				printf("OWNET_read() returned len=%d\n", (int) len);
-				type_buffer[len] = 0;
-				printf("------- buffer content (%s) -------\n", tpath);
-				printf("%s\n", type_buffer);
-				printf("------------------------------\n");
-				if (type_buffer) {
-					free(type_buffer);
-				}
-			}
-			//fall through
-		case '0':
-		case '2':
-		case '3':
-		case '4':
-		case '5':
-		case '6':
-		case '7':
-		case '8':
-		case '9':
-		case 'A':
-		case 'B':
-		case 'C':
-		case 'D':
-		case 'E':
-		case 'F':
-			{
-				char tpath[128];
-				char *type_buffer = NULL;
-
-				strcpy(tpath, dir_member);
-				strcat(tpath, "/type");
-				len = OWNET_read(owh, tpath, &type_buffer);
-				if ((len < 0) || type_buffer == NULL) {
-					printf("OWNET_read: buffer is empty (buffer=%p len=%d)\n", type_buffer, len);
-					goto cleanup;
-				}
-				printf("OWNET_read() returned len=%d\n", (int) len);
-				type_buffer[len] = 0;
-				printf("------- buffer content (%s) -------\n", tpath);
-				printf("%s\n", type_buffer);
-				printf("------------------------------\n");
-				if (type_buffer) {
-					free(type_buffer);
-				}
-			}
-			break;
-		default:
-			break;
-		}
-	}
-
-  cleanup:
 	OWNET_close(owh);
-
-	if (dir_buffer) {
-		free(dir_buffer);
-		dir_buffer = NULL;
-	}
-
-	exit(ret);
+	return 0;
 }

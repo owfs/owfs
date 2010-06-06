@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <libgen.h>
 
 #include <ownetapi.h>
 
@@ -103,7 +104,7 @@ int main(int argc, char **argv)
 
 	ret = OWNET_dirprocess(owh, one_wire_path, Show_element, &first_pass);
 	if (ret < 0) {
-		printf("OWNET_dirprocess error: %d)\n", ret);
+		printf("OWNET_dirprocess error: %ld)\n", ret);
 	}
 
 	OWNET_close(owh);
