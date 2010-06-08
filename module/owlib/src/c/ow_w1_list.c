@@ -83,6 +83,7 @@ static void w1_masters(struct netlink_parse * nlp, void * v, const struct parsed
 
 enum Netlink_Read_Status W1NLList( void )
 {
+	LEVEL_DEBUG("Request w1 masters by netlink command") ;
 	return W1_Process_Response( w1_masters, w1_list_masters(), NULL, NULL ) ;
 }
 

@@ -137,12 +137,12 @@ struct checkpresence_struct {
 static void * CheckPresence_callback(void * v)
 {
 	pthread_t thread;
-	int threadbad = 1;
+	int threadbad ;
 	struct checkpresence_struct * cps = (struct checkpresence_struct *) v ;
 	struct checkpresence_struct next_cps = { cps->in->next, cps->pn, INDEX_BAD };
 	
 	threadbad = (next_cps.in == NULL)
-	|| pthread_create(&thread, NULL, CheckPresence_callback, (void *) (&next_cps));
+	|| (pthread_create(&thread, NULL, CheckPresence_callback, (void *) (&next_cps)) != 0) ;
 	
 	cps->bus_nr = CheckThisConnection( cps->in->index, cps->pn ) ;
 	
@@ -179,7 +179,7 @@ static INDEX_OR_ERROR CheckPresence_low(struct parsedname *pn)
 			return bus_nr ;
 		}
 	}
-	return -ENOENT;				// no success
+	return INDEX_BAD;				// no success
 }
 #endif							/* OW_MT */
 
@@ -201,11 +201,13 @@ ZERO_OR_ERROR FS_present(struct one_wire_query *owq)
 	return 0;
 }
 
+// Look on a given connection for the device
 static INDEX_OR_ERROR CheckThisConnection(int bus_nr, struct parsedname *pn)
 {
 	struct parsedname s_pn_copy;
 	struct parsedname * pn_copy = &s_pn_copy ;
 	struct connection_in * in = find_connection_in(bus_nr) ;
+	INDEX_OR_ERROR connection_result = INDEX_BAD ;
 
 	if ( in == NULL ) {
 		return INDEX_BAD ;
@@ -214,34 +216,35 @@ static INDEX_OR_ERROR CheckThisConnection(int bus_nr, struct parsedname *pn)
 	memcpy(pn_copy, pn, sizeof(struct parsedname));	// shallow copy
 	pn_copy->selected_connection = in;
 	
-	if ( BAD( TestConnection(pn_copy) ) ) {	// reconnect successful?
+	if ( BAD( TestConnection(pn_copy) ) ) {
+		// Connection currently disconnected
 		return INDEX_BAD;
 	} else if (BusIsServer(in)) {
+		// Server
 		if ( INDEX_VALID( ServerPresence(pn_copy) ) ) {
-			/* Device was found on this in-device, return it's index */
-			LEVEL_DEBUG("Presence found on server bus %s",SAFESTRING(in->name)) ;
-			Cache_Add_Device(in->index,pn_copy->sn) ; // add or update cache */
-			return in->index;
+			connection_result =  in->index;
 		}
 	} else if ( in->iroutines.flags & ADAP_FLAG_presence_from_dirblob ) {
+		// local connection with a dirblob (like fake, mock, ...)
 		if ( DirblobSearch(pn_copy->sn, &(in->main)) >= 0 ) {
-			LEVEL_DEBUG("Presence found on fake-like bus %s",SAFESTRING(in->name)) ;
-			return in->index;
+			connection_result =  in->index;
 		}
 	} else {
+		// local connection but need to ask directly
 		struct transaction_log t[] = {
 			TRXN_NVERIFY,
 			TRXN_END,
 		};
-		/* this can only be done on local buses */
 		if ( GOOD( BUS_transaction(t, pn_copy) ) ) {
-			/* Device was found on this in-device, return it's index */
-			LEVEL_DEBUG("Presence found on local bus %s\n",SAFESTRING(in->name)) ;
-			Cache_Add_Device(in->index,pn_copy->sn) ; // add or update cache */
-			return in->index ;
+			connection_result =  in->index ;
 		}
 	}
-	LEVEL_DEBUG("Presence NOT found on bus %s",SAFESTRING(in->name)) ;
-	return INDEX_BAD ;
+	if ( connection_result == INDEX_BAD ) {
+		LEVEL_DEBUG("Presence of "SNformat" NOT found on bus %s",SNvar(pn_copy->sn),SAFESTRING(in->name)) ;
+	} else {
+		LEVEL_DEBUG("Presence of "SNformat" FOUND on bus %s",SNvar(pn_copy->sn),SAFESTRING(in->name)) ;
+		Cache_Add_Device(in->index,pn_copy->sn) ; // add or update cache */
+	}
+	return connection_result ;
 }
 
