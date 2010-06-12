@@ -11,9 +11,35 @@ $Id$
 
 #include <config.h>
 #include "owfs_config.h"
-#include "ow.h"
+#include "ow_generic_read.h"
 
 /* ------- Prototypes ----------- */
+static ZERO_OR_ERROR UnpagedRead( struct generic_read * gread, struct one_wire_query *owq )
+{
+	size_t size = OWQ_size(owq) ;
+	BYTE * p = owmalloc( 3+size );
+	struct transaction_log t[] = {
+		TRXN_START,
+		TRXN_READ( p, 3+size ) ,
+		TRXN_END,
+	} ;
+	
+	if ( p==NULL ) {
+		return -ENOMEM ;
+	}
+	
+	p[0] = gread->command ;
+	p[1] = BYTE_MASK(OWQ_offset(owq)) ;
+	p[2] = BYTE_MASK(OWQ_offset(owq)>>8) ;
+
+	if ( BAD( BUS_transaction(t,PN(owq)) ) ) {
+		owfree(p) ;
+		return -EINVAL ;
+	}
+	memcpy( OWQ_buffer(owq), &p[3], size ) ;
+	owfree(p) ;
+	return 0 ;
+}
 
 ZERO_OR_ERROR Generic_Read( struct one_wire_query *owq)
 {

@@ -515,6 +515,10 @@ static GOOD_OR_BAD DS2480_set_baud(const struct parsedname *pn)
 			value_code = PARMSET_115200 ;
 			break ;
 #endif
+		default:
+			pn->selected_connection->baud = B9600 ;
+			value_code = PARMSET_9600 ;
+			break ;
 	}
 
 	// Add polarity

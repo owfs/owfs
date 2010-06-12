@@ -32,6 +32,11 @@ $Id$
 #ifndef OW_GENERIC_READ_H				/* tedious wrapper */
 #define OW_GENERIC_READ_H
 
+#ifndef OWFS_CONFIG_H
+#error Please make sure owfs_config.h is included *before* this header file
+#endif
+#include "ow_standard.h"
+
 #define UNPAGED_MEMORY	0
 struct generic_read {
 	int pagesize ;

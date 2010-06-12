@@ -17,19 +17,19 @@ Light weight access to B<owserver>
 
 OWNet is an easy way to access B<owserver> and thence the 1-wire bus.
 
-Dallas Semiconductor's 1-wire system uses simple wiring and unique addresses for it's interesting devices. The B<One Wire File System> is a suite of programs that hides 1-wire details behind a file system metaphor. B<owserver> connects to the 1-wire bus and provides network access.
+Dallas Semiconductor's 1-wire system uses simple wiring and unique addresses for it's interesting devices. The B<One Wire File System> is a suite of programs that hide 1-wire details behind a file system metaphor. B<owserver> connects to the 1-wire bus and provides network access.
 
 B<OWNet> is a perl module that connects to B<owserver> and allows reading, writing and listing the 1-wire bus.
 
-Then the following perl program prints the temperature:
+Example perl program that prints the temperature:
 
  use OWNet ;
- print OWNET::read( "localhost:3000" , "/10.67C6697351FF/temperature" ) ."\n" ;
+ print OWNet::read( "localhost:3000" , "/10.67C6697351FF/temperature" ) ."\n" ;
 
 There is the alternative object oriented form:
 
  use OWNet ;
- my $owserver = OWNET->new( "localhost:4304" ) ;
+ my $owserver = OWNet->new( "localhost:4304" ) ;
  print $owserver->read( "/10.67C6697351FF/temperature" ) ."\n" ;
 
 =head1 SYNTAX
@@ -44,23 +44,18 @@ There is the alternative object oriented form:
 
 =item B<read>
 
- read( address, path )
+ OWNet::read( address, path )
  $owserver -> read( path )
 
 =item B<write>
 
- write( address, path, value )
+ OWNet::write( address, path, value )
  $owserver -> write( path, value )
 
 =item B<dir>
 
- dir( address, path )
+ OWNet::dir( address, path )
  $owserver -> dir( path )
-
-=item B<present>
-
- present( address, path )
- $owserver -> present( path )
 
 =back
 
@@ -70,13 +65,13 @@ TCP/IP I<address> of B<owserver>. Valid forms:
 
 =over
 
-=item I<name> test.owfs.net:3001
+=item I<name> test.owfs.net:4304
 
-=item I<quad> number: 123.231.312.213:3001
+=item I<quad> number: 123.231.312.213:4304
 
-=item I<host> localhost:3001
+=item I<host> localhost:4304
 
-=item I<port> 3001
+=item I<port> 4304
 
 =back
 
@@ -130,7 +125,7 @@ Device display format (1-wire unique address) can also be specified in the I<add
 
 =back
 
-Warning messages will only be display if verbose flag is specified in I<address>
+Warning messages will only be displayed if verbose flag is specified in I<address>
 
 =over
 
@@ -177,21 +172,22 @@ use strict ;
 use IO::Socket::INET ;
 use bytes ;
 
-my $msg_read = 2 ;
-my $msg_write = 3 ;
-my $msg_dir = 4 ;
-my $msg_presence = 6 ;
-my $msg_dirall = 7 ;
-my $msg_get = 8 ;
+my $MSG_READ = 2 ;
+my $MSG_WRITE = 3 ;
+my $MSG_DIR = 4 ;
+my $MSG_PRESENCE = 6 ;
+my $MSG_DIRALL = 7 ;
+my $MSG_GET = 8 ;
 
-my $persistence_bit = 0x04 ;
+# return value should be negative for error, but the networking layer uses 32bit unsigned integers. This is the boundary.
+my $MAX_RETURN = 66000 ;
+# Network timeout in ms
+my $MAX_WAIT = 3000 ;
+
+my $PERSISTENCE_BIT = 0x04 ;
 # PresenceCheck, Return bus list,  and apply aliases
-my $default_sg = 0x100 + 0x2 + 0x8 ;
-my $default_block = 4096 ;
-
-#if ( !defined(&MSG_DONTWAIT) ) {
-#  sub MSG_DONTWAIT { return 0 ; }
-#}
+my $DEFAULT_SG = 0x100 + 0x2 + 0x8 ;
+my $DEFAULT_BLOCK_LENGTH = 4096 ;
 
 our $VERSION=(split(/ /,q[$Revision$]))[1] ;
 
@@ -252,7 +248,7 @@ sub _new($$) {
 
     $self->{ADDR} = $addr ;
     $self->{PORT} = $port ;
-    $self->{SG} = $default_sg + $tempscale + $presscale + $format ;
+    $self->{SG} = $DEFAULT_SG + $tempscale + $presscale + $format ;
     $self->{VER} = 0 ;
 }
 
@@ -285,7 +281,7 @@ sub _self($) {
     my $self ;
     if ( ref($addr) ) {
         $self = $addr ;
-        $self->{PERSIST} = $persistence_bit ;
+        $self->{PERSIST} = $PERSISTENCE_BIT ;
     } else {
         $self = {} ;
         _new($self,$addr)  ;
@@ -334,14 +330,12 @@ sub _ToServer ($$$$$;$) {
     my $message = pack($f,$self->{VER},$payload_length,$msg_type,$self->{SG}|$self->{PERSIST},$size,$offset,$payload_data) ;
 
     # try to send
-#    send( $self->{SOCK}, $message, MSG_DONTWAIT ) && return 1 ;
     send( $self->{SOCK}, $message, 0 ) && return 1 ;
 
     # maybe bad persistent connection
     if ( $self->{PERSIST} != 0 ) {
         $self->{SOCK} = undef ;
         _Sock($self) || return ;
-#        send( $self->{SOCK}, $message, MSG_DONTWAIT ) && return 1 ;
         send( $self->{SOCK}, $message, 0 ) && return 1 ;
     }
 
@@ -349,7 +343,7 @@ sub _ToServer ($$$$$;$) {
 	return ;
 }
 
-sub _FromServerLow($$) {
+sub _FromServerBinaryParse($$) {
     my $self = shift ;
     my $length_wanted = shift ;
     return '' if $length_wanted == 0 ;
@@ -358,12 +352,9 @@ sub _FromServerLow($$) {
     vec($selectreadbits,$fileno,1) = 1 ;
     my $remaininglength = $length_wanted ;
     my $fullread = '' ;
-    #print "LOOOP for length $length \n" ;
     do {
-        select($selectreadbits,undef,undef,3000) ;
-	# 3000ms timeout
+        select($selectreadbits,undef,undef,$MAX_WAIT) ;
         return if vec($selectreadbits,$fileno,1) == 0 ;
-    #	return if $sel->can_read(1) == 0 ;
         my $partialread ;
 #        defined( recv( $self->{SOCK}, $partialread, $remaininglength, MSG_DONTWAIT ) ) || do {
         defined( recv( $self->{SOCK}, $partialread, $remaininglength, 0 ) ) || do {
@@ -374,7 +365,7 @@ sub _FromServerLow($$) {
         #print " length a=".length($a)." length ret=".length($ret)." length a+ret=".length($a.$ret)." \n" ;
         $fullread .= $partialread ;
         $remaininglength = $length_wanted - length($fullread) ;
-        #print "_FromServerLow (a.len=".length($a)." $len of $length \n" ;
+        #print "_FromServerBinaryParse (a.len=".length($a)." $len of $length \n" ;
     } while $remaininglength > 0 ;
     return $fullread ;
 }
@@ -383,24 +374,22 @@ sub _FromServer($) {
     my $self = shift ;
     my ( $version, $payload_length, $return_status, $sg, $size, $offset, $payload_data ) ;
     do {
-	my $r = _FromServerLow( $self,24 ) || do {
+	my $r = _FromServerBinaryParse( $self,24 ) || do {
 	    warn("Trouble getting header $!") if $self->{VERBOSE} ;
 	    return ;
 	} ;
 	($version, $payload_length, $return_status, $sg, $size, $offset) = unpack('N6', $r ) ;
-	# returns unsigned (though originals signed
-	# assume anything above 66000 is an error
-	return if $return_status > 66000 ;
+	return if $return_status > $MAX_RETURN ;
 	#print "From Server, size = $siz, ret = $ret payload = $pay \n" ;
-    } while $payload_length > 66000 ;
-    $payload_data = _FromServerLow( $self,$payload_length ) ;
+    } while $payload_length > $MAX_RETURN ;
+    $payload_data = _FromServerBinaryParse( $self,$payload_length ) ;
     if ( !defined($payload_data) ) {
     	warn("Trouble getting payload $!") if $self->{VERBOSE} ;
       return ;
     } ;
     $payload_data = substr($payload_data,0,$size) ;
     #print "From Server, payload retrieved <$dat> \n" ;
-    $self->{PERSIST} = $sg & $persistence_bit ;
+    $self->{PERSIST} = $sg & $PERSISTENCE_BIT ;
     return ($version, $payload_length, $return_status, $sg, $size, $offset, $payload_data ) ;
 }
 
@@ -470,7 +459,7 @@ Error (and undef return value) if:
 sub read($$) {
     my $self = _self(shift) || return ;
     my $path = shift ;
-    _ToServer($self,length($path)+1,$msg_read,$default_block,0,$path) ;
+    _ToServer($self,length($path)+1,$MSG_READ,$DEFAULT_BLOCK_LENGTH,0,$path) ;
 	my @r = _FromServer($self) ;
 		return if !@r ;
   	return $r[6] ;
@@ -518,7 +507,7 @@ sub write($$$) {
 	my $value_length = length($val) ;
 	my $path_length = length($path)+1 ;
 	my $payload = pack( 'Z'.$path_length.'A'.$value_length,$path,$val ) ;
-	_ToServer($self,length($payload),$msg_write,$value_length,0,$payload) ;
+	_ToServer($self,length($payload),$MSG_WRITE,$value_length,0,$payload) ;
 	my @r = _FromServer($self) ;
 		return if !@r ;
 	return $r[2]>=0 ;
@@ -559,7 +548,7 @@ Error (and undef return value) if:
 sub present($$) {
     my $self = _self(shift) || return ;
     my $path = shift ;
-	_ToServer($self,length($path)+1,$msg_presence,$default_block,0,$path) ;
+	_ToServer($self,length($path)+1,$MSG_PRESENCE,$DEFAULT_BLOCK_LENGTH,0,$path) ;
 	my @r = _FromServer($self) ;
 		return if !@r ;
 	return $r[2]>=0 ;
@@ -601,17 +590,17 @@ sub dir($$) {
     my $self = _self(shift) || return ;
     my $path = shift ;
 
-    # new msg_dirall method -- single packet
-    _ToServer($self,length($path)+1,$msg_dirall,$default_block,0,$path) || return ;
+    # new MSG_DIRALL method -- single packet
+    _ToServer($self,length($path)+1,$MSG_DIRALL,$DEFAULT_BLOCK_LENGTH,0,$path) || return ;
     my @r = _FromServer($self) ;
     if (@r) {
         $self->{SOCK} = undef if $self->{PERSIST} == 0 ;
         return $r[6] ;
     } ;
 
-    # old msg_dir method -- many packets
+    # old MSG_DIR method -- many packets
     _Sock($self) || return ;
-    _ToServer($self,length($path)+1,$msg_dir,$default_block,0,$path) || return ;
+    _ToServer($self,length($path)+1,$MSG_DIR,$DEFAULT_BLOCK_LENGTH,0,$path) || return ;
 	my $dirlist = '' ;
 	while (1) {
 		@r = _FromServer($self) || return ;
@@ -757,13 +746,13 @@ If no port is specified, uses the IANA allocated well known port (4304) for owse
 
 Sends formats and sends a message to owserver. If a persistent socket fails, retries after new socket created.
 
-=item _FromServerLow
+=item _FromServerBinaryParse
 
 Reads a specified length from server
 
 =item _FromServer
 
-Reads whole packet from server, using _FromServerLow (first for header, then payload/tokens). Discards ping packets silently.
+Reads whole packet from server, using _FromServerBinaryParse (first for header, then payload/tokens). Discards ping packets silently.
 
 Uses the IANA allocated well known port (4304) for owserver. First looks in /etc/services, then just tries 4304.
 
