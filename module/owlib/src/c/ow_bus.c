@@ -103,7 +103,7 @@ static GOOD_OR_BAD BUS_sendback_data_bitbang(const BYTE * data, BYTE * resp, con
 	UINT i, bits = len * 8;
 	int combuffer_length_adjusted = MAX_FIFO_SIZE / 8 ;
 	int remain = len - combuffer_length_adjusted;
-	BYTE combuffer[ combuffer_length_adjusted ] ;
+	BYTE combuffer[ bits ] ;
 
 	/* Empty is ok */
 	if (len == 0) {
