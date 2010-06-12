@@ -20,48 +20,37 @@ static GOOD_OR_BAD BUS_sendback_data_bitbang(const BYTE * data, BYTE * resp, con
 
 /** BUS_send_data
     Send a data and expect response match
-    puts into data mode if needed.
-    return 0=good
-    bad return sendback_data
-    -EIO if memcpy
  */
 GOOD_OR_BAD BUS_send_data(const BYTE * data, const size_t len, const struct parsedname *pn)
 {
-	GOOD_OR_BAD ret = gbGOOD;
-	BYTE *resp;
+	BYTE resp[len];
 
 	if (len == 0) {
 		return gbGOOD;
 	}
 
-	resp = owmalloc(len);
-	if (resp == NULL) {
-		return gbBAD;
+	if ( BAD( BUS_sendback_data(data, resp, len, pn) ) ) {
+		STAT_ADD1_BUS(e_bus_errors, pn->selected_connection);
+		return gbBAD ;
 	}
 
-	if ( BAD( BUS_sendback_data(data, resp, len, pn) ) ) {
-		ret = gbBAD ;
-		if ((ret = memcmp(data, resp, (size_t) len))) {
-			ret = gbBAD;			/* EPROTO not available for MacOSX */
-			STAT_ADD1_BUS(e_bus_errors, pn->selected_connection);
-		}
+	if ( memcmp(data, resp, len) != 0 ) {
+		STAT_ADD1_BUS(e_bus_errors, pn->selected_connection);
+		return gbBAD ;
 	}
-	owfree(resp);
-	return ret;
+	return gbGOOD;
 }
 
 /** readin_data
   Send 0xFFs and return response block
-  Returns 0=good
-  Bad sendback_data
  */
 GOOD_OR_BAD BUS_readin_data(BYTE * data, const size_t len, const struct parsedname *pn)
 {
-	GOOD_OR_BAD ret = BUS_sendback_data(memset(data, 0xFF, (size_t) len), data, len, pn);
-	if (ret) {
-		STAT_ADD1(BUS_readin_data_errors);
-	}
-	return ret;
+	memset(data, 0xFF, (size_t) len) ;
+	RETURN_GOOD_IF_GOOD( BUS_sendback_data( data, data, len, pn) ) ;
+
+	STAT_ADD1(BUS_readin_data_errors);
+	return gbBAD;
 }
 
 // ----------------------------------------------------------------
@@ -74,7 +63,7 @@ GOOD_OR_BAD BUS_select_and_sendback(const BYTE * data, BYTE * resp, const size_t
 	if ( FunctionExists(pn->selected_connection->iroutines.select_and_sendback) ) {
 		return (pn->selected_connection->iroutines.select_and_sendback) (data, resp, len, pn);
 	} else {
-		RETURN_ERROR_IF_BAD( BUS_select(pn) );
+		RETURN_BAD_IF_BAD( BUS_select(pn) );
 		return BUS_sendback_data(data, resp, len, pn);
 	}
 }
