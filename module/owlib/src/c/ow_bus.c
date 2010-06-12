@@ -101,9 +101,9 @@ GOOD_OR_BAD BUS_sendback_data(const BYTE * data, BYTE * resp, const size_t len, 
 static GOOD_OR_BAD BUS_sendback_data_bitbang(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn)
 {
 	UINT i, bits = len * 8;
-	int combuffer_length_adjusted = MAX_FIFO_SIZE / 8 ;
-	int remain = len - combuffer_length_adjusted;
-	BYTE combuffer[ bits ] ;
+	int max_bits = MAX_FIFO_SIZE / 8 ;
+	int remain = len - max_bits;
+	BYTE bit_buffer[ bits ] ;
 
 	/* Empty is ok */
 	if (len == 0) {
@@ -112,17 +112,17 @@ static GOOD_OR_BAD BUS_sendback_data_bitbang(const BYTE * data, BYTE * resp, con
 	
 	/* Split into smaller packets? */
 	if (remain > 0) {
-		RETURN_BAD_IF_BAD( BUS_sendback_data_bitbang(data, resp, combuffer_length_adjusted, pn) );
-		RETURN_BAD_IF_BAD( BUS_sendback_data_bitbang(&data[combuffer_length_adjusted], resp ? (&resp[combuffer_length_adjusted]) : NULL, remain, pn) );
+		RETURN_BAD_IF_BAD( BUS_sendback_data_bitbang(data, resp, max_bits, pn) );
+		RETURN_BAD_IF_BAD( BUS_sendback_data_bitbang(&data[max_bits], resp ? (&resp[max_bits]) : NULL, remain, pn) );
 	}
 
 	/* Encode bits */
 	for (i = 0; i < bits; ++i) {
-		combuffer[i] = UT_getbit(data, i) ? 0xFF : 0x00;
+		bit_buffer[i] = UT_getbit(data, i) ? 0xFF : 0x00;
 	}
 
-	/* Communication with DS9097 routine */
-	if ( BAD( BUS_sendback_bits(combuffer, combuffer, bits, pn)) ) {
+	/* Communication with bit-level (e.g. DS9097) routine */
+	if ( BAD( BUS_sendback_bits(bit_buffer, bit_buffer, bits, pn)) ) {
 		STAT_ADD1_BUS(e_bus_errors, pn->selected_connection);
 		return gbBAD;
 	}
@@ -130,7 +130,7 @@ static GOOD_OR_BAD BUS_sendback_data_bitbang(const BYTE * data, BYTE * resp, con
 	/* Decode Bits */
 	if (resp) {
 		for (i = 0; i < bits; ++i) {
-			UT_setbit(resp, i, combuffer[i] & 0x01);
+			UT_setbit(resp, i, bit_buffer[i] & 0x01);
 		}
 	}
 
