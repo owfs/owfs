@@ -24,7 +24,7 @@ B<OWNet> is a perl module that connects to B<owserver> and allows reading, writi
 Example perl program that prints the temperature:
 
  use OWNet ;
- print OWNet::read( "localhost:3000" , "/10.67C6697351FF/temperature" ) ."\n" ;
+ print OWNet::read( "localhost:4304" , "/10.67C6697351FF/temperature" ) ."\n" ;
 
 There is the alternative object oriented form:
 
@@ -183,6 +183,9 @@ my $MSG_GET = 8 ;
 my $MAX_RETURN = 66000 ;
 # Network timeout in ms
 my $MAX_WAIT = 3000 ;
+my $RECV_FLAGS = 0 ;
+my $SEND_FLAGS = 0 ;
+my $NO_OFFSET = 0 ;
 
 my $PERSISTENCE_BIT = 0x04 ;
 # PresenceCheck, Return bus list,  and apply aliases
@@ -330,13 +333,13 @@ sub _ToServer ($$$$$;$) {
     my $message = pack($f,$self->{VER},$payload_length,$msg_type,$self->{SG}|$self->{PERSIST},$size,$offset,$payload_data) ;
 
     # try to send
-    send( $self->{SOCK}, $message, 0 ) && return 1 ;
+    send( $self->{SOCK}, $message, $SEND_FLAGS ) && return 1 ;
 
     # maybe bad persistent connection
     if ( $self->{PERSIST} != 0 ) {
         $self->{SOCK} = undef ;
         _Sock($self) || return ;
-        send( $self->{SOCK}, $message, 0 ) && return 1 ;
+        send( $self->{SOCK}, $message, $SEND_FLAGS ) && return 1 ;
     }
 
 	warn("Send problem $! \n") if $self->{VERBOSE} ;
@@ -356,8 +359,7 @@ sub _FromServerBinaryParse($$) {
         select($selectreadbits,undef,undef,$MAX_WAIT) ;
         return if vec($selectreadbits,$fileno,1) == 0 ;
         my $partialread ;
-#        defined( recv( $self->{SOCK}, $partialread, $remaininglength, MSG_DONTWAIT ) ) || do {
-        defined( recv( $self->{SOCK}, $partialread, $remaininglength, 0 ) ) || do {
+        defined( recv( $self->{SOCK}, $partialread, $remaininglength, $RECV_FLAGS ) ) || do {
             warn("Trouble getting data back $! after $remaininglength of $length_wanted") if $self->{VERBOSE} ;
             return ;
         } ;
@@ -384,8 +386,8 @@ sub _FromServer($) {
     } while $payload_length > $MAX_RETURN ;
     $payload_data = _FromServerBinaryParse( $self,$payload_length ) ;
     if ( !defined($payload_data) ) {
-    	warn("Trouble getting payload $!") if $self->{VERBOSE} ;
-      return ;
+		warn("Trouble getting payload $!") if $self->{VERBOSE} ;
+		return ;
     } ;
     $payload_data = substr($payload_data,0,$size) ;
     #print "From Server, payload retrieved <$dat> \n" ;
@@ -459,9 +461,11 @@ Error (and undef return value) if:
 sub read($$) {
     my $self = _self(shift) || return ;
     my $path = shift ;
-    _ToServer($self,length($path)+1,$MSG_READ,$DEFAULT_BLOCK_LENGTH,0,$path) ;
+    _ToServer($self,length($path)+1,$MSG_READ,$DEFAULT_BLOCK_LENGTH,$NO_OFFSET,$path) ;
 	my @r = _FromServer($self) ;
-		return if !@r ;
+	if ( !@r ) {
+		return ;
+	}
   	return $r[6] ;
 }
 
@@ -507,9 +511,11 @@ sub write($$$) {
 	my $value_length = length($val) ;
 	my $path_length = length($path)+1 ;
 	my $payload = pack( 'Z'.$path_length.'A'.$value_length,$path,$val ) ;
-	_ToServer($self,length($payload),$MSG_WRITE,$value_length,0,$payload) ;
+	_ToServer($self,length($payload),$MSG_WRITE,$value_length,$NO_OFFSET,$payload) ;
 	my @r = _FromServer($self) ;
-		return if !@r ;
+	if ( !@r ) {
+		return;
+	}
 	return $r[2]>=0 ;
 }
 
@@ -548,7 +554,7 @@ Error (and undef return value) if:
 sub present($$) {
     my $self = _self(shift) || return ;
     my $path = shift ;
-	_ToServer($self,length($path)+1,$MSG_PRESENCE,$DEFAULT_BLOCK_LENGTH,0,$path) ;
+	_ToServer($self,length($path)+1,$MSG_PRESENCE,$DEFAULT_BLOCK_LENGTH,$NO_OFFSET,$path) ;
 	my @r = _FromServer($self) ;
 		return if !@r ;
 	return $r[2]>=0 ;
@@ -591,7 +597,7 @@ sub dir($$) {
     my $path = shift ;
 
     # new MSG_DIRALL method -- single packet
-    _ToServer($self,length($path)+1,$MSG_DIRALL,$DEFAULT_BLOCK_LENGTH,0,$path) || return ;
+    _ToServer($self,length($path)+1,$MSG_DIRALL,$DEFAULT_BLOCK_LENGTH,$NO_OFFSET,$path) || return ;
     my @r = _FromServer($self) ;
     if (@r) {
         $self->{SOCK} = undef if $self->{PERSIST} == 0 ;
@@ -600,7 +606,7 @@ sub dir($$) {
 
     # old MSG_DIR method -- many packets
     _Sock($self) || return ;
-    _ToServer($self,length($path)+1,$MSG_DIR,$DEFAULT_BLOCK_LENGTH,0,$path) || return ;
+    _ToServer($self,length($path)+1,$MSG_DIR,$DEFAULT_BLOCK_LENGTH,$NO_OFFSET,$path) || return ;
 	my $dirlist = '' ;
 	while (1) {
 		@r = _FromServer($self) || return ;
