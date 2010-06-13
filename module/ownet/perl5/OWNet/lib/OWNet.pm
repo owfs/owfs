@@ -326,10 +326,11 @@ sub _BonjourLookup($) {
     return 1 ;
 }
 
-sub _ToServer ($$$$$;$) {
-    my ($self, $payload_length, $msg_type, $size, $offset, $payload_data) = @_ ;
+sub _ToServer ($$$$;$) {
+    my ($self, $msg_type, $size, $offset, $payload_data) = @_ ;
     my $f = "N6" ;
-    $f .= 'Z'.$payload_length if ( $payload_length > 0 ) ;
+	my $payload_length = length($payload_data) + 1 ;
+    $f .= 'Z'.$payload_length ;
     my $message = pack($f,$self->{VER},$payload_length,$msg_type,$self->{SG}|$self->{PERSIST},$size,$offset,$payload_data) ;
 
     # try to send
@@ -461,7 +462,7 @@ Error (and undef return value) if:
 sub read($$) {
     my $self = _self(shift) || return ;
     my $path = shift ;
-    _ToServer($self,length($path)+1,$MSG_READ,$DEFAULT_BLOCK_LENGTH,$NO_OFFSET,$path) ;
+    _ToServer($self,$MSG_READ,$DEFAULT_BLOCK_LENGTH,$NO_OFFSET,$path) ;
 	my @r = _FromServer($self) ;
 	if ( !@r ) {
 		return ;
@@ -511,7 +512,7 @@ sub write($$$) {
 	my $value_length = length($val) ;
 	my $path_length = length($path)+1 ;
 	my $payload = pack( 'Z'.$path_length.'A'.$value_length,$path,$val ) ;
-	_ToServer($self,length($payload),$MSG_WRITE,$value_length,$NO_OFFSET,$payload) ;
+	_ToServer($self,$MSG_WRITE,$value_length,$NO_OFFSET,$payload) ;
 	my @r = _FromServer($self) ;
 	if ( !@r ) {
 		return;
@@ -554,7 +555,7 @@ Error (and undef return value) if:
 sub present($$) {
     my $self = _self(shift) || return ;
     my $path = shift ;
-	_ToServer($self,length($path)+1,$MSG_PRESENCE,$DEFAULT_BLOCK_LENGTH,$NO_OFFSET,$path) ;
+	_ToServer($self,$MSG_PRESENCE,$DEFAULT_BLOCK_LENGTH,$NO_OFFSET,$path) ;
 	my @r = _FromServer($self) ;
 		return if !@r ;
 	return $r[2]>=0 ;
@@ -597,7 +598,7 @@ sub dir($$) {
     my $path = shift ;
 
     # new MSG_DIRALL method -- single packet
-    _ToServer($self,length($path)+1,$MSG_DIRALL,$DEFAULT_BLOCK_LENGTH,$NO_OFFSET,$path) || return ;
+    _ToServer($self,$MSG_DIRALL,$DEFAULT_BLOCK_LENGTH,$NO_OFFSET,$path) || return ;
     my @r = _FromServer($self) ;
     if (@r) {
         $self->{SOCK} = undef if $self->{PERSIST} == 0 ;
@@ -606,7 +607,7 @@ sub dir($$) {
 
     # old MSG_DIR method -- many packets
     _Sock($self) || return ;
-    _ToServer($self,length($path)+1,$MSG_DIR,$DEFAULT_BLOCK_LENGTH,$NO_OFFSET,$path) || return ;
+    _ToServer($self,$MSG_DIR,$DEFAULT_BLOCK_LENGTH,$NO_OFFSET,$path) || return ;
 	my $dirlist = '' ;
 	while (1) {
 		@r = _FromServer($self) || return ;
