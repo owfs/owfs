@@ -95,14 +95,14 @@ GOOD_OR_BAD OWServer_Enet_detect(struct connection_in *in)
 
 static GOOD_OR_BAD OWServer_Enet_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct memblob *mb)
 {
-	ASCII readin_area[HA7_READ_BUFFER_LENGTH + 1];
+	char readin_area[HA7_READ_BUFFER_LENGTH + 1];
 	int first_pass = 1 ;
 	size_t read_size;
 	struct timeval tvnet = { Globals.timeout_ha7, 0, };
 	
 	MemblobInit(mb, HA7_READ_BUFFER_LENGTH);
 
-	while (	tcp_read(file_descriptor, readin_area, HA7_READ_BUFFER_LENGTH, &tvnet, &read_size) == 0 ) {
+	while (	tcp_read(file_descriptor, (BYTE *) readin_area, HA7_READ_BUFFER_LENGTH, &tvnet, &read_size) == 0 ) {
 		// make sure null terminated (allocated extra byte in readin_area to always have room)
 		//printf("read_size = %d\n",(int)read_size) ;
 		readin_area[read_size] = '\0';
@@ -123,7 +123,7 @@ static GOOD_OR_BAD OWServer_Enet_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, 
 				return gbBAD;
 			}
 		}
-		if (MemblobAdd((BYTE *) readin_area, read_size, mb)) {
+		if (MemblobAdd( (BYTE *) readin_area, read_size, mb)) {
 			MemblobClear(mb);
 			return gbBAD;
 		}

@@ -188,7 +188,7 @@ void DeviceSort(void)
 struct device * FS_devicefindhex(BYTE f, struct parsedname *pn)
 {
 	char ID[] = "XX";
-	const struct device d = { ID, NULL, 0, 0, NULL };
+	const struct device d = { ID, NULL, 0, 0, NULL, NO_GENERIC_READ, NO_GENERIC_WRITE };
 	struct device_opaque *p;
 
 	num2string(ID, f);
@@ -205,7 +205,7 @@ struct device * FS_devicefindhex(BYTE f, struct parsedname *pn)
 
 void FS_devicefind(const char *code, struct parsedname *pn)
 {
-	const struct device d = { code, NULL, 0, 0, NULL };
+	const struct device d = { code, NULL, 0, 0, NULL, NO_GENERIC_READ, NO_GENERIC_WRITE };
 	struct device_opaque *p = tfind(&d, &Tree[pn->type], device_compare);
 	if (p) {
 		pn->selected_device = p->key;

@@ -17,7 +17,7 @@ Light weight access to B<owserver>
 
 OWNet is an easy way to access B<owserver> and thence the 1-wire bus.
 
-Dallas Semiconductor's 1-wire system uses simple wiring and unique addresses for it's interesting devices. The B<One Wire File System> is a suite of programs that hide 1-wire details behind a file system metaphor. B<owserver> connects to the 1-wire bus and provides network access.
+Dallas Semiconductor's 1-wire system uses simple wiring and unique addresses for its interesting devices. The B<One Wire File System (OWFS)> is a suite of programs that hide 1-wire details behind a file system metaphor. B<owserver> connects to the 1-wire bus and provides network access.
 
 B<OWNet> is a perl module that connects to B<owserver> and allows reading, writing and listing the 1-wire bus.
 
@@ -99,7 +99,7 @@ Pressure scale can also be specified in the I<address>. Same syntax as the other
 
 =item --mmHg     mm Mercury
 
-=item -inHg      inch Mercury
+=item --inHg     inch Mercury
 
 =item --psi      pounds per inch^2
 
@@ -122,6 +122,14 @@ Device display format (1-wire unique address) can also be specified in the I<add
 =item -ffi.c  /1067C6697351FF.8D
 
 =item -ffic   /1067C6697351FF8D
+
+=back
+
+Show directories that are themselves directories with a '/' suffix ( e.g. /10.67C6697351FF/ )
+
+=over
+
+=item -slash  show directory elements
 
 =back
 
@@ -177,7 +185,7 @@ my $MSG_WRITE = 3 ;
 my $MSG_DIR = 4 ;
 my $MSG_PRESENCE = 6 ;
 my $MSG_DIRALL = 7 ;
-my $MSG_GET = 8 ;
+my $MSG_DIRALLSLASH = 9 ;
 
 # return value should be negative for error, but the networking layer uses 32bit unsigned integers. This is the boundary.
 my $MAX_RETURN = 66000 ;
@@ -195,205 +203,219 @@ my $DEFAULT_BLOCK_LENGTH = 4096 ;
 our $VERSION=(split(/ /,q[$Revision$]))[1] ;
 
 sub _new($$) {
-    my ($self,$addr) = @_ ;
+	my ($self,$addr) = @_ ;
 
-    $addr =~ s/--/-/g ;
+	$addr =~ s/--/-/g ;
 
-    my $tempscale = 0 ;
-    TEMPSCALE: {
-        $tempscale = 0x00000 , last TEMPSCALE if $addr =~ /-C/i ;
-        $tempscale = 0x10000 , last TEMPSCALE if $addr =~ /-F/i ;
-        $tempscale = 0x20000 , last TEMPSCALE if $addr =~ /-K/i ;
-        $tempscale = 0x30000 , last TEMPSCALE if $addr =~ /-R/i ;
-    }
+	my $tempscale = 0 ;
+	TEMPSCALE: {
+		$tempscale = 0x00000 , last TEMPSCALE if $addr =~ /-C/ ;
+		$tempscale = 0x10000 , last TEMPSCALE if $addr =~ /-F/ ;
+		$tempscale = 0x20000 , last TEMPSCALE if $addr =~ /-K/ ;
+		$tempscale = 0x30000 , last TEMPSCALE if $addr =~ /-R/ ;
+	}
 
-    my $presscale = 0 ;
-    PRESSCALE: {
-        $presscale = 0x000000 , last TEMPSCALE if $addr =~ /-mbar/i ;
-        $presscale = 0x040000 , last TEMPSCALE if $addr =~ /-atm/i ;
-        $presscale = 0x080000 , last TEMPSCALE if $addr =~ /-mmhg/i ;
-        $presscale = 0x0C0000 , last TEMPSCALE if $addr =~ /-inhg/i ;
-        $presscale = 0x100000 , last TEMPSCALE if $addr =~ /-psi/i ;
-        $presscale = 0x140000 , last TEMPSCALE if $addr =~ /-pa/i ;
-    }
+	my $presscale = 0 ;
+	PRESSCALE: {
+		$presscale = 0x000000 , last PRESSCALE if $addr =~ /-mbar/i ;
+		$presscale = 0x040000 , last PRESSCALE if $addr =~ /-atm/i ;
+		$presscale = 0x080000 , last PRESSCALE if $addr =~ /-mmhg/i ;
+		$presscale = 0x0C0000 , last PRESSCALE if $addr =~ /-inhg/i ;
+		$presscale = 0x100000 , last PRESSCALE if $addr =~ /-psi/i ;
+		$presscale = 0x140000 , last PRESSCALE if $addr =~ /-pa/i ;
+	}
 
-    my $format = 0 ;
-    FORMAT: {
-        $format = 0x2000000 , last FORMAT if $addr =~ /-ff\.i\.c/ ;
-        $format = 0x4000000 , last FORMAT if $addr =~ /-ffi\.c/ ;
-        $format = 0x3000000 , last FORMAT if $addr =~ /-ff\.ic/ ;
-        $format = 0x5000000 , last FORMAT if $addr =~ /-ffic/ ;
-        $format = 0x0000000 , last FORMAT if $addr =~ /-ff\.i/ ;
-        $format = 0x1000000 , last FORMAT if $addr =~ /-ffi/ ;
-        $format = 0x2000000 , last FORMAT if $addr =~ /-f\.i\.c/ ;
-        $format = 0x4000000 , last FORMAT if $addr =~ /-fi\.c/ ;
-        $format = 0x3000000 , last FORMAT if $addr =~ /-f\.ic/ ;
-        $format = 0x5000000 , last FORMAT if $addr =~ /-fic/ ;
-        $format = 0x0000000 , last FORMAT if $addr =~ /-f\.i/ ;
-        $format = 0x1000000 , last FORMAT if $addr =~ /-fi/ ;
-    }
+	my $format = 0 ;
+	FORMAT: {
+		$format = 0x2000000 , last FORMAT if $addr =~ /-ff\.i\.c/ ;
+		$format = 0x4000000 , last FORMAT if $addr =~ /-ffi\.c/ ;
+		$format = 0x3000000 , last FORMAT if $addr =~ /-ff\.ic/ ;
+		$format = 0x5000000 , last FORMAT if $addr =~ /-ffic/ ;
+		$format = 0x0000000 , last FORMAT if $addr =~ /-ff\.i/ ;
+		$format = 0x1000000 , last FORMAT if $addr =~ /-ffi/ ;
+		$format = 0x2000000 , last FORMAT if $addr =~ /-f\.i\.c/ ;
+		$format = 0x4000000 , last FORMAT if $addr =~ /-fi\.c/ ;
+		$format = 0x3000000 , last FORMAT if $addr =~ /-f\.ic/ ;
+		$format = 0x5000000 , last FORMAT if $addr =~ /-fic/ ;
+		$format = 0x0000000 , last FORMAT if $addr =~ /-f\.i/ ;
+		$format = 0x1000000 , last FORMAT if $addr =~ /-fi/ ;
+	}
 
-	$self->{VERBOSE} = 1 if $addr =~ /-v/ ;
+	# Verbose flag
+	$self->{VERBOSE} = 1 if $addr =~ /-v/i ;
+	
+	# slash after directory elements
+	$self->{SLASH} = 1 if $addr =~ /-slash/i ;
 
-    $addr =~ s/-[\w\.]*//g ;
-    $addr =~ s/ //g ;
+	$addr =~ s/-[\w\.]*//g ;
+	$addr =~ s/ //g ;
 
-    my $port ;
-    if ( $addr =~ /(.*):(.*)/ ) {
-      $addr = $1 ;
-      $port = $2 ;
-    } elsif ( $addr =~/\D/ ) {
-      $port = '' ;
-    } else {
-      $port = $addr ;
-      $addr = '' ;
-    }
+	my $port ;
+	if ( $addr =~ /(.*):(.*)/ ) {
+		$addr = $1 ;
+		$port = $2 ;
+	} elsif ( $addr =~/\D/ ) {
+		$port = '' ;
+	} else {
+		$port = $addr ;
+		$addr = '' ;
+	}
 
-    $self->{ADDR} = $addr ;
-    $self->{PORT} = $port ;
-    $self->{SG} = $DEFAULT_SG + $tempscale + $presscale + $format ;
-    $self->{VER} = 0 ;
+	$self->{ADDR} = $addr ;
+	$self->{PORT} = $port ;
+	$self->{SG} = $DEFAULT_SG + $tempscale + $presscale + $format ;
+	$self->{VER} = 1 ;
 }
 
 sub _Sock($) {
-    my $self = shift ;
-    # persistent socket already there?
-    if ( defined($self->{SOCK} && $self->{PERSIST} != 0  ) ) {
-        return 1 ;
-    }
-    # defaults
-    my $addr = $self->{ADDR} ;
-    my $port = $self->{PORT} ;
-    $addr = '127.0.0.1' if $addr eq '' ;
-    $port = 'owserver(4304)' if $port eq '' ;
-    # New socket
-    $self->{SOCK} = IO::Socket::INET->new(
-            PeerAddr=>$addr,
-            PeerPort=>$port,
-            Proto=>'tcp')
-        || do {
-            warn("Can't open $addr:$port ($!) \n") if $self->{VERBOSE} ;
-            $self->{SOCK} = undef ;
-            return ;
-        } ;
-    return 1 ;
+	my $self = shift ;
+
+	# persistent socket already there?
+	if ( defined($self->{SOCK} && $self->{PERSIST} != 0  ) ) {
+		return 1 ;
+	}
+
+	# defaults
+	my $addr = $self->{ADDR} ;
+	my $port = $self->{PORT} ;
+	$addr = '127.0.0.1' if $addr eq '' ;
+	$port = 'owserver(4304)' if $port eq '' ;
+
+	# New socket
+	$self->{SOCK} = IO::Socket::INET->new(
+	    PeerAddr=>$addr,
+	    PeerPort=>$port,
+	    Proto=>'tcp')
+	|| do {
+		warn("Can't open $addr:$port ($!) \n") if $self->{VERBOSE} ;
+		$self->{SOCK} = undef ;
+		return ;
+	} ;
+	return 1 ;
 }
 
 sub _self($) {
-    my $addr = shift ;
-    my $self ;
-    if ( ref($addr) ) {
-        $self = $addr ;
-        $self->{PERSIST} = $PERSISTENCE_BIT ;
-    } else {
-        $self = {} ;
-        _new($self,$addr)  ;
-        $self->{PERSIST} = 0 ;
-    }
-    if ( ($self->{ADDR} eq '') && ($self->{PORT} eq '') ) {
-        _BonjourLookup($self) || _Sock($self) || return ;
-    } else {
-        _Sock($self) || return ;
-    }
-    return $self;
+	my $addr = shift ;
+	my $self ;
+
+	if ( ref($addr) ) {
+		$self = $addr ;
+		$self->{PERSIST} = $PERSISTENCE_BIT ;
+	} else {
+		$self = {} ;
+		_new($self,$addr)  ;
+		$self->{PERSIST} = 0 ;
+	}
+
+	if ( ($self->{ADDR} eq '') && ($self->{PORT} eq '') ) {
+		_BonjourLookup($self) || _Sock($self) || return ;
+	} else {
+		_Sock($self) || return ;
+	}
+	return $self;
 }
 
 sub _BonjourLookup($) {
-    my $self = shift ;
-    eval { require Net::Rendezvous; };
-    if ($@) {
-        print "$@\n" if $self->{VERBOSE} ;
-        return ;
-    }
-    my $owservers = Net::Rendezvous->new('owserver') || do {
-        print "Unable to start owserver discovery via Net::Rendezvous $!\n" if $self->{VERBOSE} ;
-        return ;
-    } ;
-    $owservers->discover ;
-    my $owserver_selected = $owservers->shift_entry || do {
-        print "No owserver discovered by Net::Rendezvous\n" if $self->{VERBOSE} ;
-        return ;
-    } ;
-    print $owserver_selected->host.":".$owserver_selected->port."\n" ;
-    # New socket
-    $self->{SOCK} = IO::Socket::INET->new(PeerAddr=>$owserver_selected->host,PeerPort=>$owserver_selected->port,Proto=>'tcp') || do {
-        warn("Can't open Bonjour (autodiscovered) port ($!) \n") if $self->{VERBOSE} ;
-        $self->{SOCK} = undef ;
-        return ;
-    } ;
-    $self->{ADDR} = $self->{SOCK}->peeraddr ;
-    $self->{PORT} = $self->{SOCK}->peerport ;
-    return 1 ;
+	my $self = shift ;
+
+	eval { require Net::Rendezvous; };
+	if ($@) {
+		print "$@\n" if $self->{VERBOSE} ;
+		return ;
+	}
+
+	my $owservers = Net::Rendezvous->new('owserver') || do {
+		print "Unable to start owserver discovery via Net::Rendezvous $!\n" if $self->{VERBOSE} ;
+		return ;
+	} ;
+
+	$owservers->discover ;
+	my $owserver_selected = $owservers->shift_entry || do {
+		print "No owserver discovered by Net::Rendezvous\n" if $self->{VERBOSE} ;
+		return ;
+	} ;
+	print $owserver_selected->host.":".$owserver_selected->port."\n" if $self->{VERBOSE} ;
+
+	# New socket
+	$self->{SOCK} = IO::Socket::INET->new(PeerAddr=>$owserver_selected->host,PeerPort=>$owserver_selected->port,Proto=>'tcp') || do {
+		warn("Can't open Bonjour (autodiscovered) port ($!) \n") if $self->{VERBOSE} ;
+		$self->{SOCK} = undef ;
+	return ;
+	} ;
+	$self->{ADDR} = $self->{SOCK}->peeraddr ;
+	$self->{PORT} = $self->{SOCK}->peerport ;
+	return 1 ;
 }
 
 sub _ToServer ($$$$;$) {
-    my ($self, $msg_type, $size, $offset, $payload_data) = @_ ;
-    my $f = "N6" ;
+	my ($self, $msg_type, $size, $offset, $payload_data) = @_ ;
+	my $f = "N6" ;
 	my $payload_length = length($payload_data) + 1 ;
-    $f .= 'Z'.$payload_length ;
-    my $message = pack($f,$self->{VER},$payload_length,$msg_type,$self->{SG}|$self->{PERSIST},$size,$offset,$payload_data) ;
+	$f .= 'Z'.$payload_length ;
+	my $message = pack($f,$self->{VER},$payload_length,$msg_type,$self->{SG}|$self->{PERSIST},$size,$offset,$payload_data) ;
 
-    # try to send
-    send( $self->{SOCK}, $message, $SEND_FLAGS ) && return 1 ;
+	# try to send
+	send( $self->{SOCK}, $message, $SEND_FLAGS ) && return 1 ;
 
-    # maybe bad persistent connection
-    if ( $self->{PERSIST} != 0 ) {
-        $self->{SOCK} = undef ;
-        _Sock($self) || return ;
-        send( $self->{SOCK}, $message, $SEND_FLAGS ) && return 1 ;
-    }
+	# maybe bad persistent connection
+	if ( $self->{PERSIST} != 0 ) {
+		$self->{SOCK} = undef ;
+		_Sock($self) || return ;
+		send( $self->{SOCK}, $message, $SEND_FLAGS ) && return 1 ;
+	}
 
 	warn("Send problem $! \n") if $self->{VERBOSE} ;
 	return ;
 }
 
 sub _FromServerBinaryParse($$) {
-    my $self = shift ;
-    my $length_wanted = shift ;
-    return '' if $length_wanted == 0 ;
-    my $fileno = $self->{SOCK}->fileno ;
-    my $selectreadbits = '' ;
-    vec($selectreadbits,$fileno,1) = 1 ;
-    my $remaininglength = $length_wanted ;
-    my $fullread = '' ;
-    do {
-        select($selectreadbits,undef,undef,$MAX_WAIT) ;
-        return if vec($selectreadbits,$fileno,1) == 0 ;
-        my $partialread ;
-        defined( recv( $self->{SOCK}, $partialread, $remaininglength, $RECV_FLAGS ) ) || do {
-            warn("Trouble getting data back $! after $remaininglength of $length_wanted") if $self->{VERBOSE} ;
-            return ;
-        } ;
-        #print "reading=".$a."\n";
-        #print " length a=".length($a)." length ret=".length($ret)." length a+ret=".length($a.$ret)." \n" ;
-        $fullread .= $partialread ;
-        $remaininglength = $length_wanted - length($fullread) ;
-        #print "_FromServerBinaryParse (a.len=".length($a)." $len of $length \n" ;
-    } while $remaininglength > 0 ;
-    return $fullread ;
+	my $self = shift ;
+
+	my $length_wanted = shift ;
+	return '' if $length_wanted == 0 ;
+
+	my $fileno = $self->{SOCK}->fileno ;
+	my $selectreadbits = '' ;
+	vec($selectreadbits,$fileno,1) = 1 ;
+
+	my $remaininglength = $length_wanted ;
+	my $fullread = '' ;
+	do {
+		select($selectreadbits,undef,undef,$MAX_WAIT) ;
+		return if vec($selectreadbits,$fileno,1) == 0 ;
+		my $partialread ;
+		defined( recv( $self->{SOCK}, $partialread, $remaininglength, $RECV_FLAGS ) ) || do {
+			warn("Trouble getting data back $! after $remaininglength of $length_wanted") if $self->{VERBOSE} ;
+			return ;
+		} ;
+		$fullread .= $partialread ;
+		$remaininglength = $length_wanted - length($fullread) ;
+	} while $remaininglength > 0 ;
+
+	return $fullread ;
 }
 
 sub _FromServer($) {
-    my $self = shift ;
-    my ( $version, $payload_length, $return_status, $sg, $size, $offset, $payload_data ) ;
-    do {
-	my $r = _FromServerBinaryParse( $self,24 ) || do {
-	    warn("Trouble getting header $!") if $self->{VERBOSE} ;
-	    return ;
-	} ;
-	($version, $payload_length, $return_status, $sg, $size, $offset) = unpack('N6', $r ) ;
-	return if $return_status > $MAX_RETURN ;
-	#print "From Server, size = $siz, ret = $ret payload = $pay \n" ;
-    } while $payload_length > $MAX_RETURN ;
-    $payload_data = _FromServerBinaryParse( $self,$payload_length ) ;
-    if ( !defined($payload_data) ) {
+	my $self = shift ;
+	my ( $version, $payload_length, $return_status, $sg, $size, $offset, $payload_data ) ;
+
+	do {
+		my $r = _FromServerBinaryParse( $self,24 ) || do {
+			warn("Trouble getting header $!") if $self->{VERBOSE} ;
+			return ;
+		} ;
+		($version, $payload_length, $return_status, $sg, $size, $offset) = unpack('N6', $r ) ;
+		return if $return_status > $MAX_RETURN ;
+	} while $payload_length > $MAX_RETURN ;
+
+	$payload_data = _FromServerBinaryParse( $self,$payload_length ) ;
+	if ( !defined($payload_data) ) {
 		warn("Trouble getting payload $!") if $self->{VERBOSE} ;
 		return ;
-    } ;
-    $payload_data = substr($payload_data,0,$size) ;
-    #print "From Server, payload retrieved <$dat> \n" ;
-    $self->{PERSIST} = $sg & $PERSISTENCE_BIT ;
-    return ($version, $payload_length, $return_status, $sg, $size, $offset, $payload_data ) ;
+	} ;
+	$payload_data = substr($payload_data,0,$size) ;
+	$self->{PERSIST} = $sg & $PERSISTENCE_BIT ;
+	return ($version, $payload_length, $return_status, $sg, $size, $offset, $payload_data ) ;
 }
 
 =item I<new>
@@ -415,15 +437,15 @@ Error (and undef return value) if:
 =cut
 
 sub new($$) {
-    my $class = shift ;
-    my $addr = shift || "" ;
-    my $self = {} ;
-    _new($self,$addr) ;
-    if ( !defined($self->{ADDR}) ) {
-        return ;
-    } ;
-    bless $self, $class ;
-    return $self ;
+	my $class = shift ;
+	my $addr = shift || "" ;
+	my $self = {} ;
+	_new($self,$addr) ;
+	if ( !defined($self->{ADDR}) ) {
+		return ;
+	} ;
+	bless $self, $class ;
+	return $self ;
 }
 
 =item I<read>
@@ -460,14 +482,14 @@ Error (and undef return value) if:
 =cut
 
 sub read($$) {
-    my $self = _self(shift) || return ;
-    my $path = shift ;
-    _ToServer($self,$MSG_READ,$DEFAULT_BLOCK_LENGTH,$NO_OFFSET,$path) ;
+	my $self = _self(shift) || return ;
+	my $path = shift ;
+	_ToServer($self,$MSG_READ,$DEFAULT_BLOCK_LENGTH,$NO_OFFSET,$path) ;
 	my @r = _FromServer($self) ;
 	if ( !@r ) {
 		return ;
 	}
-  	return $r[6] ;
+	return $r[6] ;
 }
 
 =item I<write>
@@ -504,15 +526,16 @@ Error (and undef return value) if:
 
 =cut
 
-sub write($$$) {
-    my $self = _self(shift) || return ;
-    my $path = shift ;
-    my $val = shift ;
+sub write($$$;$) {
+	my $self = _self(shift) || return ;
+	my $path = shift ;
+	my $val = shift ;
+	my $offset = shift || $NO_OFFSET ;
 
 	my $value_length = length($val) ;
 	my $path_length = length($path)+1 ;
 	my $payload = pack( 'Z'.$path_length.'A'.$value_length,$path,$val ) ;
-	_ToServer($self,$MSG_WRITE,$value_length,$NO_OFFSET,$payload) ;
+	_ToServer($self,$MSG_WRITE,$value_length,$offset,$payload) ;
 	my @r = _FromServer($self) ;
 	if ( !@r ) {
 		return;
@@ -553,8 +576,8 @@ Error (and undef return value) if:
 =cut
 
 sub present($$) {
-    my $self = _self(shift) || return ;
-    my $path = shift ;
+	my $self = _self(shift) || return ;
+	my $path = shift ;
 	_ToServer($self,$MSG_PRESENCE,$DEFAULT_BLOCK_LENGTH,$NO_OFFSET,$path) ;
 	my @r = _FromServer($self) ;
 		return if !@r ;
@@ -594,28 +617,38 @@ Error (and undef return value) if:
 =cut
 
 sub dir($$) {
-    my $self = _self(shift) || return ;
-    my $path = shift ;
+	my $self = _self(shift) || return ;
+	my $path = shift ;
 
-    # new MSG_DIRALL method -- single packet
-    _ToServer($self,$MSG_DIRALL,$DEFAULT_BLOCK_LENGTH,$NO_OFFSET,$path) || return ;
-    my @r = _FromServer($self) ;
-    if (@r) {
-        $self->{SOCK} = undef if $self->{PERSIST} == 0 ;
-        return $r[6] ;
-    } ;
+	# DIRALLSLASH method -- single packet with slash (/) after each dir entry
+	if ( $self->{SLASH}) {
+		_ToServer($self,$MSG_DIRALLSLASH,$DEFAULT_BLOCK_LENGTH,$NO_OFFSET,$path) || return ;
+		my @r = _FromServer($self) ;
+		if (@r) {
+			$self->{SOCK} = undef if $self->{PERSIST} == 0 ;
+			return $r[6] ;
+		} ;
+	}
 
-    # old MSG_DIR method -- many packets
-    _Sock($self) || return ;
-    _ToServer($self,$MSG_DIR,$DEFAULT_BLOCK_LENGTH,$NO_OFFSET,$path) || return ;
+	# new MSG_DIRALL method -- single packet
+	_ToServer($self,$MSG_DIRALL,$DEFAULT_BLOCK_LENGTH,$NO_OFFSET,$path) || return ;
+	my @r = _FromServer($self) ;
+	if (@r) {
+		$self->{SOCK} = undef if $self->{PERSIST} == 0 ;
+		return $r[6] ;
+	} ;
+
+	# old MSG_DIR method -- many packets
+	_Sock($self) || return ;
+	_ToServer($self,$MSG_DIR,$DEFAULT_BLOCK_LENGTH,$NO_OFFSET,$path) || return ;
 	my $dirlist = '' ;
 	while (1) {
 		@r = _FromServer($self) || return ;
 		return if !@r ;
-        if ( $r[1] == 0 ) { # last null packet
-            $self->{SOCK} = undef if $self->{PERSIST} == 0 ;
-            return substr($dirlist,1) ; # not starting comma
-        }
+	if ( $r[1] == 0 ) { # last null packet
+		$self->{SOCK} = undef if $self->{PERSIST} == 0 ;
+		return substr($dirlist,1) ; # not starting comma
+	}
 		$dirlist .= ','.$r[6] ;
 	}
 }

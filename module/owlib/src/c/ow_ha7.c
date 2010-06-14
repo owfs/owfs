@@ -226,7 +226,7 @@ static GOOD_OR_BAD HA7_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct mem
 	MemblobInit(mb, HA7_READ_BUFFER_LENGTH);
 
 	// Read first block of data from HA7
-	tcp_read(file_descriptor, readin_area, HA7_READ_BUFFER_LENGTH, &tvnet, &read_size) ;
+	tcp_read(file_descriptor, (BYTE *) readin_area, HA7_READ_BUFFER_LENGTH, &tvnet, &read_size) ;
 	if ( read_size == 0) {
 		LEVEL_CONNECT("(ethernet) error = %d", read_size);
 		//write(1, readin_area, read_size);
@@ -257,7 +257,7 @@ static GOOD_OR_BAD HA7_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct mem
 	}
 	// loop through reading in HA7_READ_BUFFER_LENGTH blocks
 	while (read_size == HA7_READ_BUFFER_LENGTH) {	// full read, so presume more waiting
-		tcp_read(file_descriptor, readin_area, HA7_READ_BUFFER_LENGTH, &tvnet, &read_size) ;
+		tcp_read(file_descriptor, (BYTE *) readin_area, HA7_READ_BUFFER_LENGTH, &tvnet, &read_size) ;
 		if (read_size == 0) {
 			LEVEL_DATA("Couldn't get rest of HA7 data (err=%d)", read_size);
 			MemblobClear(mb);

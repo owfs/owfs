@@ -294,8 +294,14 @@ struct filetype stats_errors[] = {
 
 ;
 
-struct device d_stats_errors = { "errors", "errors", 0, COUNT_OF_FILETYPES(stats_errors),
-	stats_errors
+struct device d_stats_errors = { 
+	"errors", 
+	"errors", 
+	0, 
+	COUNT_OF_FILETYPES(stats_errors),
+	stats_errors,
+	NO_GENERIC_READ,
+	NO_GENERIC_WRITE
 };
 
 

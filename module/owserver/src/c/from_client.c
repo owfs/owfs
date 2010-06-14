@@ -40,7 +40,7 @@ $Id$
 /* read from client, free return pointer if not Null */
 int FromClient(struct handlerdata *hd)
 {
-	char *msg;
+	BYTE *msg;
 	ssize_t trueload;
 	size_t actual_read ;
 	struct timeval tv = { Globals.timeout_server, 0, };
@@ -50,7 +50,7 @@ int FromClient(struct handlerdata *hd)
 	memset(&hd->sp, 0, sizeof(struct serverpackage));
 
 	/* read header */
-	tcp_read(hd->file_descriptor, &hd->sm, sizeof(struct server_msg), &tv, &actual_read) ;
+	tcp_read(hd->file_descriptor, (BYTE *) &hd->sm, sizeof(struct server_msg), &tv, &actual_read) ;
 	if (actual_read != sizeof(struct server_msg)) {
 		hd->sm.type = msg_error;
 		return -EIO;
@@ -85,7 +85,7 @@ int FromClient(struct handlerdata *hd)
 	}
 
 	/* Can allocate space? */
-	if ((msg = (char *) owmalloc(trueload)) == NULL) {	/* create a buffer */
+	if ((msg = owmalloc(trueload)) == NULL) {	/* create a buffer */
 		hd->sm.type = msg_error;
 		return -ENOMEM;
 	}
@@ -106,8 +106,8 @@ int FromClient(struct handlerdata *hd)
 			owfree(msg);
 			return -EINVAL;
 		}
-		pathlen = strlen(msg) + 1;
-		hd->sp.data = (BYTE *) & msg[pathlen];
+		pathlen = strlen( (char *) msg) + 1;
+		hd->sp.data = & msg[pathlen];
 		hd->sp.datasize = hd->sm.payload - pathlen;
 	} else {
 		hd->sp.data = NULL;
@@ -116,8 +116,8 @@ int FromClient(struct handlerdata *hd)
 
 	if (isServermessage(hd->sm.version)) {	/* make sure no loop */
 		size_t i;
-		char *p = &msg[hd->sm.payload];	// end of normal buffer
-		hd->sp.tokenstring = (BYTE *) p;
+		BYTE *p = &msg[hd->sm.payload];	// end of normal buffer
+		hd->sp.tokenstring = p;
 		hd->sp.tokens = Servertokens(hd->sm.version);
 		for (i = 0; i < hd->sp.tokens; ++i, p += sizeof(union antiloop)) {
 			if (memcmp(p, &(Globals.Token), sizeof(union antiloop)) == 0) {
@@ -128,6 +128,6 @@ int FromClient(struct handlerdata *hd)
 			}
 		}
 	}
-	hd->sp.path = msg;
+	hd->sp.path = (char *) msg;
 	return 0;
 }

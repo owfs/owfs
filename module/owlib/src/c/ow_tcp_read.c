@@ -21,7 +21,7 @@ $Id$
 /* Wait for something to be readable or timeout */
 GOOD_OR_BAD tcp_wait(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const struct timeval *ptv)
 {
-	int rc;
+	int select_result;
 	fd_set readset;
 	struct timeval tv = { ptv->tv_sec, ptv->tv_usec, };
 
@@ -31,13 +31,13 @@ GOOD_OR_BAD tcp_wait(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const struct time
 
 	while (1) {
 		// Read if it doesn't timeout first
-		rc = select(file_descriptor + 1, &readset, NULL, NULL, &tv);
-		if (rc < 0) {
+		select_result = select(file_descriptor + 1, &readset, NULL, NULL, &tv);
+		if (select_result < 0) {
 			if (errno == EINTR) {
 				continue;		/* interrupted */
 			}
 			return gbBAD;		/* error */
-		} else if (rc == 0) {
+		} else if (select_result == 0) {
 			return gbBAD;		/* timeout */
 		} else {
 			// Is there something to read?
@@ -52,17 +52,15 @@ GOOD_OR_BAD tcp_wait(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const struct time
 /* Read "n" bytes from a descriptor. */
 /* Stolen from Unix Network Programming by Stevens, Fenner, Rudoff p89 */
 /* return < 0 if failure */
-ZERO_OR_ERROR tcp_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, void *vptr, size_t requested_size, const struct timeval * ptv, size_t * chars_in)
+ZERO_OR_ERROR tcp_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, BYTE * buffer, size_t requested_size, const struct timeval * ptv, size_t * chars_in)
 {
-	size_t nleft_to_read;
-	ssize_t nread;
-	BYTE * buffer = vptr ;
+	size_t nleft_to_read = requested_size ;
 
-	LEVEL_DEBUG("attempt %d bytes Time:(%ld,%ld)n",(int)requested_size,ptv->tv_sec,ptv->tv_usec ) ;
-	nleft_to_read = requested_size;
+	LEVEL_DEBUG("attempt %d bytes Time:(%ld,%ld)",(int)requested_size,ptv->tv_sec,ptv->tv_usec ) ;
 	*chars_in = 0 ;
 	while (nleft_to_read > 0) {
-		int rc;
+		int select_result;
+		ssize_t nread;
 		fd_set readset;
 		struct timeval tv = { ptv->tv_sec, ptv->tv_usec, };
 
@@ -71,8 +69,8 @@ ZERO_OR_ERROR tcp_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, void *vptr, siz
 		FD_SET(file_descriptor, &readset);
 
 		/* Read if it doesn't timeout first */
-		rc = select(file_descriptor + 1, &readset, NULL, NULL, &tv);
-		if (rc > 0) {
+		select_result = select(file_descriptor + 1, &readset, NULL, NULL, &tv);
+		if (select_result > 0) {
 			/* Is there something to read? */
 			if (FD_ISSET(file_descriptor, &readset) == 0) {
 				LEVEL_DEBUG("tcp_error -- nothing avialable to read");
@@ -80,7 +78,8 @@ ZERO_OR_ERROR tcp_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, void *vptr, siz
 			}
 			//update_max_delay(pn);
 			errno = 0 ;
-			if ((nread = read(file_descriptor, &buffer[*chars_in], nleft_to_read)) < 0) {
+			nread = read(file_descriptor, &buffer[*chars_in], nleft_to_read) ;
+			if ( nread < 0 ) {
 				if (errno == EINTR) {
 					nread = 0;	/* and call read() again */
 				} else {
@@ -94,7 +93,7 @@ ZERO_OR_ERROR tcp_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, void *vptr, siz
 			Debug_Bytes("NETREAD", &buffer[*chars_in], nread ) ;
 			nleft_to_read -= nread;
 			*chars_in += nread ;
-		} else if (rc < 0) {	/* select error */
+		} else if (select_result < 0) {	/* select error */
 			if (errno == EINTR) {
 				/* select() was interrupted, try again */
 				continue;

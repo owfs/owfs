@@ -430,12 +430,12 @@ static ZERO_OR_ERROR Directory_Element( char * current_file, struct directory_el
 /* Adds an extra null byte at end */
 static void *From_ServerAlloc(struct server_connection_state * scs, struct client_msg *cm)
 {
-	char *msg;
+	BYTE *msg;
 	struct timeval tv = { Globals.timeout_network + 1, 0, };
 	size_t actual_size ;
 
 	do {						/* loop until non delay message (payload>=0) */
-		tcp_read(scs->file_descriptor, cm, sizeof(struct client_msg), &tv, &actual_size);
+		tcp_read(scs->file_descriptor, (BYTE *) cm, sizeof(struct client_msg), &tv, &actual_size);
 		if (actual_size != sizeof(struct client_msg)) {
 			memset(cm, 0, sizeof(struct client_msg));
 			cm->ret = -EIO;
@@ -458,7 +458,8 @@ static void *From_ServerAlloc(struct server_connection_state * scs, struct clien
 		return NULL;
 	}
 
-	if ((msg = (char *) owmalloc((size_t) cm->payload + 1))) {
+	msg = owmalloc((size_t) cm->payload + 1) ;
+	if ( msg != NULL ) {
 		tcp_read(scs->file_descriptor, msg, (size_t) (cm->payload), &tv, &actual_size);
 		if ((ssize_t)actual_size != cm->payload) {
 			cm->payload = 0;
@@ -483,7 +484,7 @@ static SIZE_OR_ERROR From_Server( struct server_connection_state * scs, struct c
 	struct timeval tv = { Globals.timeout_network + 1, 0, };
 
 	do {						// read regular header, or delay (delay when payload<0)
-		tcp_read(scs->file_descriptor, cm, sizeof(struct client_msg), &tv, &actual_read);
+		tcp_read(scs->file_descriptor, (BYTE *) cm, sizeof(struct client_msg), &tv, &actual_read);
 		if (actual_read != sizeof(struct client_msg)) {
 			cm->size = 0;
 			cm->ret = -EIO;
@@ -501,7 +502,7 @@ static SIZE_OR_ERROR From_Server( struct server_connection_state * scs, struct c
 		return 0;				// No payload, done.
 	}
 	rtry = cm->payload < (ssize_t) size ? (size_t) cm->payload : size;
-	tcp_read(scs->file_descriptor, msg, rtry, &tv, &actual_read);	// read expected payload now.
+	tcp_read(scs->file_descriptor, (BYTE *) msg, rtry, &tv, &actual_read);	// read expected payload now.
 	if (actual_read != rtry) {
 		LEVEL_DEBUG("Read only %d of %d\n",(int)actual_read,(int)rtry) ;
 		cm->ret = -EIO;

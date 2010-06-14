@@ -120,7 +120,7 @@ void DeviceLockRelease(struct parsedname *pn);
 void UT_delay(const UINT len);
 void UT_delay_us(const unsigned long len);
 
-ZERO_OR_ERROR tcp_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, void *vptr, size_t n, const struct timeval *ptv, size_t * actual_read);
+ZERO_OR_ERROR tcp_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, BYTE * buffer, size_t n, const struct timeval *ptv, size_t * actual_read);
 void tcp_read_flush(FILE_DESCRIPTOR_OR_ERROR file_descriptor);
 GOOD_OR_BAD tcp_wait(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const struct timeval *ptv);
 ssize_t udp_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, void *vptr, size_t n, const struct timeval * ptv, struct sockaddr_in *from, socklen_t *fromlen) ;

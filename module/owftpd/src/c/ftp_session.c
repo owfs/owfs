@@ -1121,7 +1121,7 @@ static void do_stor(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 	} else {
 		/* we're golden, read the file */
 		size_t size_actual ;
-		int read_return = tcp_read(socket_fd, data_in, size_read, &limit_time, &size_actual) ;
+		int read_return = tcp_read(socket_fd, (BYTE *) data_in, size_read, &limit_time, &size_actual) ;
 		if (read_return != 0 && read_return != -EAGAIN) {
 			reply(f, 550, "Error reading from data connection; %s.", strerror(errno));
 			goto exit_stor;
@@ -1504,7 +1504,7 @@ static void netscape_hack(int file_descriptor)
 	ns_timeout.tv_usec = 0;
 	select_ret = select(file_descriptor + 1, &readfds, NULL, NULL, &ns_timeout);
 	if (select_ret > 0) {
-		read(file_descriptor, &c, 1); // ignore warning
+		ignore_result = read(file_descriptor, &c, 1); // ignore warning
 	}
 }
 

@@ -126,8 +126,14 @@ struct filetype interface_settings[] = {
 	{"simulated/templow", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE, {i:1},},
 	{"simulated/temphigh", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE, {i:0},},
 };
-struct device d_interface_settings = { "settings", "settings", ePN_interface,
-	COUNT_OF_FILETYPES(interface_settings), interface_settings
+struct device d_interface_settings = { 
+	"settings", 
+	"settings", 
+	ePN_interface,
+	COUNT_OF_FILETYPES(interface_settings), 
+	interface_settings,
+	NO_GENERIC_READ,
+	NO_GENERIC_WRITE
 };
 
 struct filetype interface_statistics[] = {
@@ -163,8 +169,14 @@ struct filetype interface_statistics[] = {
 	{"overdrive/failures", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat_p, NO_WRITE_FUNCTION, VISIBLE, {i:e_bus_failed_overdrive},},
 };
 
-struct device d_interface_statistics = { "statistics", "statistics", 0,
-	COUNT_OF_FILETYPES(interface_statistics), interface_statistics
+struct device d_interface_statistics = { 
+	"statistics", 
+	"statistics", 
+	0,
+	COUNT_OF_FILETYPES(interface_statistics), 
+	interface_statistics,
+	NO_GENERIC_READ,
+	NO_GENERIC_WRITE
 };
 
 
