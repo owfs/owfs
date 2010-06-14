@@ -44,13 +44,13 @@ There is the alternative object oriented form:
 
 =item B<read>
 
- OWNet::read( address, path )
- $owserver -> read( path )
+ OWNet::read( address, path [,size [,offset]] )
+ $owserver -> read( path [,size [,offset]] )
 
 =item B<write>
 
- OWNet::write( address, path, value )
- $owserver -> write( path, value )
+ OWNet::write( address, path, value [,offset] )
+ $owserver -> write( path, value [,offset] )
 
 =item B<dir>
 
@@ -74,6 +74,10 @@ TCP/IP I<address> of B<owserver>. Valid forms:
 =item I<port> 4304
 
 =back
+
+=head2 I<additional arguments>
+
+Additional arguments to add to address
 
 Temperature scale can also be specified in the I<address>. Same syntax as the other OWFS programs:
 
@@ -198,7 +202,7 @@ my $NO_OFFSET = 0 ;
 my $PERSISTENCE_BIT = 0x04 ;
 # PresenceCheck, Return bus list,  and apply aliases
 my $DEFAULT_SG = 0x100 + 0x2 + 0x8 ;
-my $DEFAULT_BLOCK_LENGTH = 4096 ;
+my $DEFAULT_BLOCK_LENGTH = 33000 ;
 
 our $VERSION=(split(/ /,q[$Revision$]))[1] ;
 
@@ -432,6 +436,8 @@ Error (and undef return value) if:
 
 =item 2 No <B>owserver at I<address>
 
+=item
+
 =back
 
 =cut
@@ -454,16 +460,20 @@ sub new($$) {
 
 =item Non object-oriented:
 
-B<read>( I<address> , I<path> )
+B<OWNet::read>( I<address> , I<path> [ , size [ , offset ] ] )
 
 =item Object-oriented:
 
-$ownet->B<read>( I<path> )
+$ownet->B<read>( I<path> [ , size [ , offset ] ] )
 
 =back
 
 
 Read the value of a 1-wire device property. Returns the (scalar string) value of the property.
+
+Size (number of bytes to read) is optional
+
+Offset (number of bytes from start of field to start write) is optional
 
 Error (and undef return value) if:
 
@@ -477,6 +487,8 @@ Error (and undef return value) if:
 
 =item 4 I<path> not a readable device property
 
+=item
+
 =back
 
 =cut
@@ -484,7 +496,10 @@ Error (and undef return value) if:
 sub read($$) {
 	my $self = _self(shift) || return ;
 	my $path = shift ;
-	_ToServer($self,$MSG_READ,$DEFAULT_BLOCK_LENGTH,$NO_OFFSET,$path) ;
+	my $read_length = shift || $DEFAULT_BLOCK_LENGTH ;
+	my $offset = shift || $NO_OFFSET ;
+
+	_ToServer($self,$MSG_READ,$read_length,$offset,$path) ;
 	my @r = _FromServer($self) ;
 	if ( !@r ) {
 		return ;
@@ -498,15 +513,17 @@ sub read($$) {
 
 =item Non object-oriented:
 
-B<write>( I<address> , I<path> , I<value> )
+B<OWNet::write>( I<address> , I<path> , I<value> [ , offset ] )
 
 =item Object-oriented:
 
-$ownet->B<write>( I<path> , I<value> )
+$ownet->B<write>( I<path> , I<value> [ , offset ] )
 
 =back
 
 Set the value of a 1-wire device property. Returns "1" on success.
+
+Offset (number of bytes from start of field to start write) is optional
 
 Error (and undef return value) if:
 
@@ -521,6 +538,8 @@ Error (and undef return value) if:
 =item 4 I<path> not a writable device property
 
 =item 5 I<value> incorrect size or format
+
+=item
 
 =back
 
@@ -540,47 +559,6 @@ sub write($$$;$) {
 	if ( !@r ) {
 		return;
 	}
-	return $r[2]>=0 ;
-}
-
-=item I<present>
-
-=over
-
-=item Non object-oriented:
-
-B<present>( I<address> , I<path> )
-
-=item Object-oriented:
-
-$ownet->B<present>( I<path> )
-
-=back
-
-Test if a 1-wire device exists.
-
-Error (and undef return value) if:
-
-=over
-
-=item 1 (Non object) No B<owserver> at I<address>
-
-=item 2 (Object form) Not called with a valid OWNet object
-
-=item 3 Bad I<path>
-
-=item 4 I<path> not a device
-
-=back
-
-=cut
-
-sub present($$) {
-	my $self = _self(shift) || return ;
-	my $path = shift ;
-	_ToServer($self,$MSG_PRESENCE,$DEFAULT_BLOCK_LENGTH,$NO_OFFSET,$path) ;
-	my @r = _FromServer($self) ;
-		return if !@r ;
 	return $r[2]>=0 ;
 }
 
@@ -611,6 +589,8 @@ Error (and undef return value) if:
 =item 3 Bad I<path>
 
 =item 4 I<path> not a directory
+
+=item
 
 =back
 
@@ -657,6 +637,49 @@ sub dir($$) {
 return 1 ;
 
 END { }
+
+=item I<present>
+
+=over
+
+=item Non object-oriented:
+
+B<present>( I<address> , I<path> )
+
+=item Object-oriented:
+
+$ownet->B<present>( I<path> )
+
+=back
+
+Test if a 1-wire device exists.
+
+Error (and undef return value) if:
+
+=over
+
+=item 1 (Non object) No B<owserver> at I<address>
+
+=item 2 (Object form) Not called with a valid OWNet object
+
+=item 3 Bad I<path>
+
+=item 4 I<path> not a device
+
+=item
+
+=back
+
+=cut
+
+sub present($$) {
+	my $self = _self(shift) || return ;
+	my $path = shift ;
+	_ToServer($self,$MSG_PRESENCE,$DEFAULT_BLOCK_LENGTH,$NO_OFFSET,$path) ;
+	my @r = _FromServer($self) ;
+		return if !@r ;
+	return $r[2]>=0 ;
+}
 
 =back
 
@@ -758,6 +781,10 @@ Flag sent to server, and returned, that encodes temperature scale and display fo
 
 Print error messages? Set by "-v" in object invocation.
 
+=item SLASH
+
+Add "/" to the end of directory entries. Set by "-slash" in object invocation.
+
 =item SOCK
 
 Socket address (object) for communication. Stays defined for persistent connections, else deleted between calls.
@@ -808,7 +835,7 @@ Bounjour details for owserver at:
 
 =head1 AUTHOR
 
-Paul H Alfille paul.alfille @ gmail . com
+Paul H Alfille paul.alfille@gmail.com
 
 =head1 BUGS
 
