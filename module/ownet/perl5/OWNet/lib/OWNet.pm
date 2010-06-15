@@ -268,7 +268,7 @@ sub _new($$) {
 	$self->{ADDR} = $addr ;
 	$self->{PORT} = $port ;
 	$self->{SG} = $DEFAULT_SG + $tempscale + $presscale + $format ;
-	$self->{VER} = 1 ;
+	$self->{VER} = 0 ;
 }
 
 sub _Sock($) {
@@ -422,9 +422,11 @@ sub _FromServer($) {
 	return ($version, $payload_length, $return_status, $sg, $size, $offset, $payload_data ) ;
 }
 
-=item I<new>
+=item B<new>
 
-B<new>( I<address> )
+Object-oriented (only):
+
+B<OWNet::new>( I<address> )
 
 Create a new OWNet object -- corresponds to an B<owserver>.
 
@@ -434,7 +436,7 @@ Error (and undef return value) if:
 
 =item 1 Badly formed tcp/ip I<address>
 
-=item 2 No <B>owserver at I<address>
+=item 2 No B<owserver> at I<address>
 
 =item
 
@@ -454,26 +456,26 @@ sub new($$) {
 	return $self ;
 }
 
-=item I<read>
+=item B<read>
 
 =over
 
 =item Non object-oriented:
 
-B<OWNet::read>( I<address> , I<path> [ , size [ , offset ] ] )
+B<OWNet::read>( I<address> , I<path> [ , I<size> [ , I<offset> ] ] )
 
 =item Object-oriented:
 
-$ownet->B<read>( I<path> [ , size [ , offset ] ] )
+$ownet->B<read>( I<path> [ , I<size> [ , I<offset> ] ] )
 
 =back
 
 
 Read the value of a 1-wire device property. Returns the (scalar string) value of the property.
 
-Size (number of bytes to read) is optional
+I<size> (number of bytes to read) is optional
 
-Offset (number of bytes from start of field to start write) is optional
+I<offset> (number of bytes from start of field to start write) is optional
 
 Error (and undef return value) if:
 
@@ -507,23 +509,23 @@ sub read($$) {
 	return $r[6] ;
 }
 
-=item I<write>
+=item B<write>
 
 =over
 
 =item Non object-oriented:
 
-B<OWNet::write>( I<address> , I<path> , I<value> [ , offset ] )
+B<OWNet::write>( I<address> , I<path> , I<value> [ , I<offset> ] )
 
 =item Object-oriented:
 
-$ownet->B<write>( I<path> , I<value> [ , offset ] )
+$ownet->B<write>( I<path> , I<value> [ , I<offset> ] )
 
 =back
 
 Set the value of a 1-wire device property. Returns "1" on success.
 
-Offset (number of bytes from start of field to start write) is optional
+I<offset> (number of bytes from start of field to start write) is optional
 
 Error (and undef return value) if:
 
@@ -562,13 +564,13 @@ sub write($$$;$) {
 	return $r[2]>=0 ;
 }
 
-=item I<dir>
+=item B<dir>
 
 =over
 
 =item Non object-oriented:
 
-B<dir>( I<address> , I<path> )
+B<OWNet::dir>( I<address> , I<path> )
 
 =item Object-oriented:
 
@@ -638,13 +640,13 @@ return 1 ;
 
 END { }
 
-=item I<present>
+=item B<present> (deprecated)
 
 =over
 
 =item Non object-oriented:
 
-B<present>( I<address> , I<path> )
+B<OWNet::present>( I<address> , I<path> )
 
 =item Object-oriented:
 
@@ -687,29 +689,38 @@ sub present($$) {
 
 =head2 OWFS
 
-I<OWFS> is a suite of programs that allows easy access to I<Dallas Semiconductor>'s 1-wire bus and devices. I<OWFS> provides a consistent naming scheme, safe multplexing of 1-wire traffice, multiple methods of access and display, and network access. The basic I<OWFS> metaphor is a file-system, with the bus beinng the root directory, each device a subdirectory, and the the device properties (e.g. voltage, temperature, memory) a file.
+I<OWFS> is a suite of programs that allows easy access to I<Dallas Semiconductor>'s 1-wire bus and devices. 
+I<OWFS> provides a consistent naming scheme, safe multplexing of 1-wire traffice, multiple methods of access and display, and network access. 
+The basic I<OWFS> metaphor is a file-system, with the bus beinng the root directory, each device a subdirectory, and the the device properties (e.g. voltage, temperature, memory) a file.
 
 =head2 1-Wire
 
-I<1-wire> is a protocol allowing simple connection of inexpensive devices. Each device has a unique ID number (used in it's OWFS address) and is individually addressable. The bus itself is extremely simple -- a data line and a ground. The data line also provides power. 1-wire devices come in a variety of packages -- chips, commercial boxes, and iButtons (stainless steel cans). 1-wire devices have a variety of capabilities, from simple ID to complex voltage, temperature, current measurements, memory, and switch control.
+I<1-wire> is a protocol allowing simple connection of inexpensive devices. 
+Each device has a unique ID number (used in its OWFS address) and is individually addressable. 
+The bus itself is extremely simple -- a data line and a ground. The data line also provides power. 
+1-wire devices come in a variety of packages -- chips, commercial boxes, and iButtons (stainless steel cans). 
+1-wire devices have a variety of capabilities, from simple ID to complex voltage, temperature, current measurements, memory, and switch control.
 
 =head2 Programs
 
-Connection to the 1-wire bus is either done by bit-banging a digital pin on the processor, or by using a bus master -- USB, serial, i2c, parallel. The heavy-weight I<OWFS> programs: B<owserver> B<owfs> B<owhttpd> B<owftpd> and the heavy-weight perl module B<OW> all link in the full I<OWFS> library and can connect directly to the bus master(s) and/or to B<owserver>.
+Connection to the 1-wire bus is either done by bit-banging a digital pin on the processor, or by using a bus master -- USB, serial, i2c, parallel. 
+The heavy-weight I<OWFS> programs: B<owserver> B<owfs> B<owhttpd> B<owftpd> and the heavy-weight perl module B<OW> all link in the full I<OWFS> library and can connect directly to the bus master(s) and/or to B<owserver>.
 
 B<OWNet> is a light-weight module. It connects only to an B<owserver>, does not link in the I<OWFS> library, and should be more portable..
 
 =head2 Object-oriented
 
-I<OWNet> can be used in either a classical (non-object-oriented) manner, or with objects. The object stored the ip address of the B<owserver> and a network socket to communicate. I<OWNet> will use persistent tcp connections for the object form -- potentially a performance boost over a slow network.
+B<OWNet> can be used in either a classical (non-object-oriented) manner, or with objects. 
+The object stored the ip address of the B<owserver> and a network socket to communicate. 
+B<OWNet> will use persistent tcp connections for the object form -- potentially a performance boost over a slow network.
 
 =head1 EXAMPLES
 
 =head2 owserver
 
-owserver is a separate process that must be accessible on the network. It allows multiple clients, and can connect to many physical 1-wire adapters and 1-wire devices. It's address must be discoverable -- either set on the command line, or at it's default location, or by using Bonjour (zeroconf) service discovery.
+B<owserver> is a separate process that must be accessible on the network. It allows multiple clients, and can connect to many physical 1-wire adapters and 1-wire devices. It's address must be discoverable -- either set on the command line, or at it's default location, or by using Bonjour (zeroconf) service discovery.
 
-An example owserver invocation for a serial adapter and explicitly the default port:
+An example owserver invocation for a serial adapter and explicitly chooses the default port:
 
  owserver -d /dev/ttyS0 -p 4304
 
@@ -789,6 +800,14 @@ Add "/" to the end of directory entries. Set by "-slash" in object invocation.
 
 Socket address (object) for communication. Stays defined for persistent connections, else deleted between calls.
 
+=item PERSIST
+
+State of socket connection (persistent means the same socket is used which speeds network communication).
+
+=item VER
+
+owprotocol version number (currently 0)
+
 =back
 
 =head2 Private methods
@@ -797,7 +816,10 @@ Socket address (object) for communication. Stays defined for persistent connecti
 
 =item _self
 
-Takes either the implicit object reference (if called on an object) or the ip address in non-object format. In either case a socket is created, the persistence bit is property set, and the address parsed. Returns the object reference, or undef on error. Called by each external method (read,write,dir) on the first parameter.
+Takes either the implicit object reference (if called on an object) or the ip address in non-object format. 
+In either case a socket is created, the persistence bit is properly set, and the address parsed. 
+Returns the object reference, or undef on error. 
+Called by each external method (read,write,dir) on the first parameter.
 
 =item _new
 
@@ -805,13 +827,13 @@ Takes command line invocation parameters (for an object or not) and properly par
 
 =item _Sock
 
-Socket processing, including tests for persistence, and opening.
+Socket processing, including tests for persistence and opening.
 If no host is specified, localhost (127.0.0.1) is used.
 If no port is specified, uses the IANA allocated well known port (4304) for owserver. First looks in /etc/services, then just tries 4304.
 
 =item _ToServer
 
-Sends formats and sends a message to owserver. If a persistent socket fails, retries after new socket created.
+Sends a message to owserver. Formats in owserver protocol. If a persistent socket fails, retries after new socket created.
 
 =item _FromServerBinaryParse
 
@@ -819,17 +841,13 @@ Reads a specified length from server
 
 =item _FromServer
 
-Reads whole packet from server, using _FromServerBinaryParse (first for header, then payload/tokens). Discards ping packets silently.
-
-Uses the IANA allocated well known port (4304) for owserver. First looks in /etc/services, then just tries 4304.
+Reads whole packet from server, using _FromServerBinaryParse (first for header, then payload). Discards ping packets silently.
 
 =item _BonjourLookup
 
 Uses the mDNS service discovery protocol to find an available owserver.
 Employs NET::Rendezvous (an earlier name or Apple's Bonjour)
-This module is loaded only if available using the method of http://sial.org/blog/2006/12/optional_perl_module_loading.html
-
-Bounjour details for owserver at:
+This module is loaded only if available. (Uses the method of http://sial.org/blog/2006/12/optional_perl_module_loading.html)
 
 =back
 
@@ -849,7 +867,7 @@ Support for proper timeout using the "select" function seems broken in perl. Thi
 
 Documentation for the full B<owfs> program suite, including man pages for each of the supported 1-wire devices, and more extensive explanatation of owfs components.
 
-=item http://owfs.sourceforge.net
+=item http://owfs.sourceforge.net/projects/owfs
 
 Location where source code is hosted.
 
