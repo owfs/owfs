@@ -163,10 +163,12 @@ const struct option owopts_long[] = {
 	{"EtherWeather", required_argument, NULL, e_etherweather},	/* EtherWeather */
 	{"zero", no_argument, &Globals.announce_off, 0},
 	{"nozero", no_argument, &Globals.announce_off, 1},
-	{"autoserver", no_argument, &Globals.autoserver, 1},
-	{"noautoserver", no_argument, &Globals.autoserver, 0},
-	{"w1", no_argument, &Globals.w1, 1},
-	{"W1", no_argument, &Globals.w1, 1},
+	{"autoserver", no_argument, NULL, e_browse},
+	{"auto", no_argument, NULL, e_browse},
+	{"AUTO", no_argument, NULL, e_browse},
+	{"browse", no_argument, NULL, e_browse},
+	{"w1", no_argument, NULL, e_w1_monitor},
+	{"W1", no_argument, NULL, e_w1_monitor},
 	{"announce", required_argument, NULL, e_announce},
 	{"allow_other", no_argument, NULL, e_allow_other},
 	{"altUSB", no_argument, &Globals.altUSB, 1},	/* Willy Robison's tweaks */
@@ -526,9 +528,7 @@ GOOD_OR_BAD owopt_packed(const char *params)
 		++optind;
 	}
 
-	if (argv != NULL) {
-		owfree(argv);
-	}
+	SAFEFREE(argv) ;
 	owfree(params_copy);
 	return ret;
 }
@@ -697,6 +697,10 @@ GOOD_OR_BAD owopt(const int option_char, const char *arg)
 		return ARG_Mock(arg);
 	case e_etherweather:
 		return ARG_EtherWeather(arg);
+	case e_w1_monitor:
+		return ARG_W1_monitor();
+	case e_browse:
+		return ARG_Browse();
 	case e_announce:
 		Globals.announce_name = owstrdup(arg);
 		break;

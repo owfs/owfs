@@ -558,6 +558,10 @@ static ZERO_OR_ERROR FS_cache2real(void (*dirfunc) (void *, const struct parsedn
 	struct dirblob db;
 	BYTE sn[8];
 
+	if ( pn_real_directory->selected_connection->iroutines.flags & ADAP_FLAG_sham ) {
+		return 0 ;
+	}
+	
 	/* Test to see whether we should get the directory "directly" */
 	if (SpecifiedBus(pn_real_directory) || IsUncachedDir(pn_real_directory)
 		|| Cache_Get_Dir(&db, pn_real_directory)) {

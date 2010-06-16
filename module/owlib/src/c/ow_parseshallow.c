@@ -70,10 +70,7 @@ int OWQ_create_shallow_aggregate(struct one_wire_query *owq_shallow, struct one_
 
 void OWQ_destroy_shallow_aggregate(struct one_wire_query *owq_shallow)
 {
-	if (OWQ_array(owq_shallow)) {
-		owfree(OWQ_array(owq_shallow));
-		OWQ_array(owq_shallow) = NULL;
-	}
+	SAFEFREE(OWQ_array(owq_shallow)) ;
 	switch (OWQ_pn(owq_shallow).selected_filetype->format) {
 	case ft_binary:
 	case ft_ascii:

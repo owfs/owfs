@@ -35,16 +35,17 @@ This file itself  is a modestly modified version of w1d by Evgeniy Polyakov
 #include "ow_connection.h"
 
 static void Netlink_Parse_Show( struct netlink_parse * nlp ) ;
+static GOOD_OR_BAD Netlink_Parse_Buffer( unsigned char * buffer, struct netlink_parse * nlp ) ;
 
 void Netlink_Parse_Destroy( struct netlink_parse * nlp )
 {
-	if ( nlp && nlp->nlm ) {
-		owfree( nlp->nlm ) ;
-		nlp->nlm = NULL ;
+	if ( nlp == NULL ) {
+		return ;
 	}
+	SAFEFREE(nlp->nlm ) ;
 }
 
-static int Netlink_Parse_Buffer( unsigned char * buffer, struct netlink_parse * nlp )
+static GOOD_OR_BAD Netlink_Parse_Buffer( unsigned char * buffer, struct netlink_parse * nlp )
 {
 	/* NLM Netlink header */
 	nlp->nlm = (struct nlmsghdr *)       &buffer[0] ;
@@ -53,19 +54,19 @@ static int Netlink_Parse_Buffer( unsigned char * buffer, struct netlink_parse * 
 	if ( nlp->nlm->nlmsg_pid != 0 ) {
 		LEVEL_DEBUG("Netlink (w1) Not from kernel");
 		// non-peek
-		return 1 ;
+		return gbBAD ;
 	}
 
 	// test type
 	if ( nlp->nlm->nlmsg_type != NLMSG_DONE ) {
 		LEVEL_DEBUG("Netlink (w1) Bad message type");
-		return 1 ;
+		return gbBAD ;
 	}
 
 	// test length
 	if ( nlp->nlm->nlmsg_len < W1_NLM_LENGTH + W1_CN_LENGTH + W1_W1M_LENGTH ) {
 		LEVEL_DEBUG("Netlink (w1) Bad message length (%d)",nlp->nlm->nlmsg_len);
-		return 1 ;
+		return gbBAD ;
 	}
 
 	/* CONNECTOOR MESSAGE */
@@ -74,7 +75,7 @@ static int Netlink_Parse_Buffer( unsigned char * buffer, struct netlink_parse * 
 	// sequence numbers
 	if ( nlp->nlm->nlmsg_seq != nlp->cn->seq ) {
 		LEVEL_DEBUG("Netlink (w1) sequence numbers internally inconsitent");
-		return 1 ;
+		return gbBAD ;
 	}
 
 	/* W1_NETLINK_MESSAGE */
@@ -100,10 +101,10 @@ static int Netlink_Parse_Buffer( unsigned char * buffer, struct netlink_parse * 
 	if ( nlp->data_size == 0 ) {
 		nlp->data = NULL ;
 	}
-	return 0 ;
+	return gbGOOD ;
 }
 
-int Netlink_Parse_Get( struct netlink_parse * nlp )
+GOOD_OR_BAD Netlink_Parse_Get( struct netlink_parse * nlp )
 {
 	unsigned char * buffer ;
 	struct nlmsghdr peek_nlm ;
@@ -120,14 +121,14 @@ int Netlink_Parse_Get( struct netlink_parse * nlp )
 	LEVEL_DEBUG("Pre-parse header: %u bytes len=%u type=%u seq=%u|%u pid=%u",recv_len,peek_nlm.nlmsg_len,peek_nlm.nlmsg_type,NL_BUS(peek_nlm.nlmsg_seq),NL_SEQ(peek_nlm.nlmsg_seq),peek_nlm.nlmsg_pid);
 	if (recv_len == -1) {
 		ERROR_DEBUG("Netlink (w1) recv header error");
-		return -errno ;
+		return gbBAD ;
 	}
 
 	// allocate space
 	buffer = owmalloc( peek_nlm.nlmsg_len ) ;
 	if ( buffer == NULL ) {
 		LEVEL_DEBUG("Netlink (w1) Cannot allocate %d byte buffer for data",peek_nlm.nlmsg_len) ;
-		return -ENOMEM ;
+		return gbBAD ;
 	}
 
 	// read whole packet
@@ -135,16 +136,16 @@ int Netlink_Parse_Get( struct netlink_parse * nlp )
 	if (recv_len == -1) {
 		ERROR_DEBUG("Netlink (w1) recv body error");
 		owfree(buffer);
-		return -EIO ;
+		return gbBAD ;
 	}
 
-	if ( Netlink_Parse_Buffer( buffer, nlp ) == 0 ) {
+	if ( GOOD( Netlink_Parse_Buffer( buffer, nlp )) ) {
 		LEVEL_DEBUG("Netlink read -----------------");
 		Netlink_Parse_Show( nlp ) ;
-		return 0 ;
+		return gbGOOD ;
 	}
 	owfree( buffer ) ;
-	return -EINVAL ;
+	return gbBAD ;
 }
 
 /* Reads a packet from a pipe that was originally a netlink packet */
@@ -176,7 +177,7 @@ GOOD_OR_BAD Get_and_Parse_Pipe( FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct
 		return gbBAD ;
 	}
 
-	if ( Netlink_Parse_Buffer( buffer, nlp ) != 0 ) {
+	if ( BAD( Netlink_Parse_Buffer( buffer, nlp )) ) {
 		LEVEL_DEBUG("Buffer parsing error");
 		owfree(buffer) ;
 		return gbBAD ;

@@ -121,6 +121,8 @@ struct connection_in *NewIn(const struct connection_in *in)
 		now->branch.sn[0] = BUSPATH_BAD ;
 		/* Arbitrary guess at root directory size for allocating cache blob */
 		now->last_root_devs = 10;
+		/* Not yet a valid bus */
+		now->iroutines.flags = ADAP_FLAG_sham ;
 	} else {
 		LEVEL_DEFAULT("Cannot allocate memory for bus master structure,");
 	}
@@ -170,9 +172,7 @@ static void FreeIn(struct connection_in * now)
 
 	BUS_close(now) ;
 	
-	if (now->name) {
-		owfree(now->name);
-	}
+	SAFEFREE(now->name) ;
 	DirblobClear(&(now->main));
 	DirblobClear(&(now->alarm));
 	owfree(now);
@@ -232,30 +232,12 @@ void FreeOutAll(void)
 	while (next) {
 		now = next;
 		next = now->next;
-		if (now->zero.name) {
-			owfree(now->zero.name);
-			now->zero.name = NULL;
-		}
-		if (now->zero.type) {
-			owfree(now->zero.type);
-			now->zero.type = NULL;
-		}
-		if (now->zero.domain) {
-			owfree(now->zero.domain);
-			now->zero.domain = NULL;
-		}
-		if (now->name) {
-			owfree(now->name);
-			now->name = NULL;
-		}
-		if (now->host) {
-			owfree(now->host);
-			now->host = NULL;
-		}
-		if (now->service) {
-			owfree(now->service);
-			now->service = NULL;
-		}
+		SAFEFREE(now->zero.name) ;
+		SAFEFREE(now->zero.type) ;
+		SAFEFREE(now->zero.domain) ;
+		SAFEFREE(now->name) ;
+		SAFEFREE(now->host) ;
+		SAFEFREE(now->service) ;
 		if (now->ai) {
 			freeaddrinfo(now->ai);
 			now->ai = NULL;

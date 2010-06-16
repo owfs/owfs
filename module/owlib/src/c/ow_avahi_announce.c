@@ -159,14 +159,10 @@ static void create_services(struct announce_avahi_struct * aas)
 			return;
 		}
 		/* Record the service to prevent browsing to ourself */
-		if ( aas->out->zero.name ) {
-			owfree(aas->out->zero.name) ;
-		}
+		SAFEFREE( aas->out->zero.name ) ;
 		aas->out->zero.name = owstrdup(name) ;
 
-		if ( aas->out->zero.type ) {
-			owfree(aas->out->zero.type) ;
-		}
+		SAFEFREE( aas->out->zero.type ) ;
 		switch (Globals.opt) {
 			case opt_httpd:
 				aas->out->zero.type = owstrdup("_owhttpd._tcp") ;
@@ -181,9 +177,7 @@ static void create_services(struct announce_avahi_struct * aas)
 				break ;
 		}
 
-		if ( aas->out->zero.domain ) {
-			owfree(aas->out->zero.domain) ;
-		}
+		SAFEFREE( aas->out->zero.domain ) ;
 		aas->out->zero.domain = owstrdup(avahi_client_get_domain_name(aas->client)) ;
 	}
 }

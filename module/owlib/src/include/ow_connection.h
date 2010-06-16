@@ -163,6 +163,9 @@ struct interface_routines {
 
 /* placed in iroutines.flags */
 
+// Adapter is usable
+#define ADAP_FLAG_default     0x00000000
+
 // Adapter supports overdrive mode
 #define ADAP_FLAG_overdrive     0x00000001
 
@@ -180,6 +183,9 @@ struct interface_routines {
 
 // Adapter doesn't support "presence" -- use the last dirblob instead.
 #define ADAP_FLAG_presence_from_dirblob 0x00004000
+
+// Adapter is a sham.
+#define ADAP_FLAG_sham 0x00008000
 
 #define AdapterSupports2409(pn)	(((pn)->selected_connection->iroutines.flags&ADAP_FLAG_no2409path)==0)
 
@@ -306,6 +312,7 @@ enum bus_mode {
 	bus_parallel,
 	bus_server,
 	bus_zero,
+	bus_browse,
 	bus_i2c,
 	bus_ha7net,
 	bus_ha5,
@@ -319,6 +326,7 @@ enum bus_mode {
 	bus_etherweather,
 	bus_bad,
 	bus_w1,
+	bus_w1_monitor,
 };
 
 enum adapter_type {
@@ -348,6 +356,8 @@ enum adapter_type {
 	adapter_tester,
 	adapter_mock,
 	adapter_w1,
+	adapter_w1_monitor,
+	adapter_browse_monitor,
 	adapter_xport,
 };
 

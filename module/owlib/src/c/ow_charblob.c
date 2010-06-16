@@ -41,9 +41,7 @@ $Id$
 
 void CharblobClear(struct charblob *cb)
 {
-	if (cb->blob) {
-		owfree(cb->blob);
-	}
+	SAFEFREE(cb->blob) ;
 	CharblobInit(cb);
 }
 

@@ -191,6 +191,8 @@ ZERO_OR_ERROR FS_present(struct one_wire_query *owq)
 		OWQ_Y(owq) = 1;
 	} else if ( pn->selected_connection->iroutines.flags & ADAP_FLAG_presence_from_dirblob ) {
 		OWQ_Y(owq) = (DirblobSearch(pn->sn, &(pn->selected_connection->main)) >= 0);
+	} else if ( pn->selected_connection->iroutines.flags & ADAP_FLAG_sham ) {
+		OWQ_Y(owq) = 0 ;
 	} else {
 		struct transaction_log t[] = {
 			TRXN_NVERIFY,
@@ -229,6 +231,8 @@ static INDEX_OR_ERROR CheckThisConnection(int bus_nr, struct parsedname *pn)
 		if ( DirblobSearch(pn_copy->sn, &(in->main)) >= 0 ) {
 			connection_result =  in->index;
 		}
+	} else if ( in->iroutines.flags & ADAP_FLAG_sham ) {
+		return INDEX_BAD ;
 	} else {
 		// local connection but need to ask directly
 		struct transaction_log t[] = {

@@ -86,14 +86,8 @@ GOOD_OR_BAD ClientAddr(char *sname, char * default_port, struct connection_in *i
 
 void FreeClientAddr(struct connection_in *in)
 {
-	if (in->connin.tcp.host) {
-		owfree(in->connin.tcp.host);
-		in->connin.tcp.host = NULL;
-	}
-	if (in->connin.tcp.service) {
-		owfree(in->connin.tcp.service);
-		in->connin.tcp.service = NULL;
-	}
+	SAFEFREE(in->connin.tcp.host) ;
+	SAFEFREE(in->connin.tcp.service) ;
 	if (in->connin.tcp.ai) {
 		freeaddrinfo(in->connin.tcp.ai);
 		in->connin.tcp.ai = NULL;

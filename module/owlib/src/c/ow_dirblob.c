@@ -48,10 +48,7 @@ $Id$
 
 void DirblobClear(struct dirblob *db)
 {
-	if (db->snlist != NULL) {
-		owfree(db->snlist);
-		db->snlist = NULL;
-	}
+	SAFEFREE(db->snlist) ;
 	db->allocated = db->devices;
 	db->devices = 0;
 }

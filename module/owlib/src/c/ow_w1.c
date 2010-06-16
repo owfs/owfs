@@ -87,19 +87,19 @@ GOOD_OR_BAD W1_detect(struct connection_in *in)
 /* Send blindly, no response expected */
 static int w1_send_reset( const struct parsedname *pn )
 {
-    struct w1_netlink_msg w1m;
-    struct w1_netlink_cmd w1c;
+	struct w1_netlink_msg w1m;
+	struct w1_netlink_cmd w1c;
 
-    memset(&w1m, 0, W1_W1M_LENGTH);
-    w1m.type = W1_MASTER_CMD;
-    w1m.id.mst.id = pn->selected_connection->connin.w1.id ;
+	memset(&w1m, 0, W1_W1M_LENGTH);
+	w1m.type = W1_MASTER_CMD;
+	w1m.id.mst.id = pn->selected_connection->connin.w1.id ;
 
-    memset(&w1c, 0, W1_W1C_LENGTH);
-    w1c.cmd = W1_CMD_RESET ;
-    w1c.len = 0 ;
+	memset(&w1c, 0, W1_W1C_LENGTH);
+	w1c.cmd = W1_CMD_RESET ;
+	w1c.len = 0 ;
 
 	LEVEL_DEBUG("Sending w1 reset message");
-    return W1_send_msg( pn->selected_connection, &w1m, &w1c, NULL );
+	return W1_send_msg( pn->selected_connection, &w1m, &w1c, NULL );
 }
 
 static RESET_TYPE W1_reset(const struct parsedname *pn)
@@ -187,10 +187,12 @@ static void touch( struct netlink_parse * nlp, void * v, const struct parsedname
 {
 	struct touch_struct * ts = v ;
 	(void) pn ;
-	if ( nlp->data == NULL || ts->size != (size_t)nlp->data_size ) {
+	if ( nlp->data == NULL ) {
 		return ;
 	}
-	memcpy( ts->resp, nlp->data, nlp->data_size ) ;
+	if ( ts->size == (size_t)nlp->data_size ) {
+		memcpy( ts->resp, nlp->data, nlp->data_size ) ;
+	}
 }
 
 // Reset, select, and read/write data

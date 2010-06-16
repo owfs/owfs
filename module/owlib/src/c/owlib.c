@@ -29,29 +29,9 @@ void LibStart(void)
 
 	SetupTemperatureLimits() ;
 	
+	CONNIN_WLOCK ;
 	SetupInboundConnections();
-	if ( Globals.w1 ) {
-#if OW_W1
-		W1_Browse() ;
-#else /* OW_W1 */
-		LEVEL_DEFAULT("W1 (the linux kernel 1-wire system) is not supported");
-#endif /* OW_W1 */
-	}
-
-	// zeroconf/Bonjour look for new services
-	if (Globals.autoserver) {
-#if OW_ZERO
-		if (Globals.zero == zero_none ) {
-			fprintf(stderr, "Zeroconf/Bonjour is disabled since Bonjour or Avahi library wasn't found.\n");
-			exit(0);
-		} else {
-			OW_Browse();
-		}
-#else
-		fprintf(stderr, "OWFS is compiled without Zeroconf/Bonjour support.\n");
-		exit(0);
-#endif
-	}
+	CONNIN_WUNLOCK ;
 
 	// Signal handlers
 	IgnoreSignals();
@@ -233,6 +213,10 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct connection_in * in )
 		}
 		break;
 
+	case bus_browse:
+		RETURN_BAD_IF_BAD( Browse_detect(in) ) ;
+		break;
+
 	case bus_fake:
 		Fake_detect(in);	// never fails
 		break;
@@ -243,6 +227,10 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct connection_in * in )
 
 	case bus_mock:
 		Mock_detect(in);	// never fails
+		break;
+
+	case bus_w1_monitor:
+		RETURN_BAD_IF_BAD( W1_monitor_detect(in) ) ;
 		break;
 
 	case bus_w1:

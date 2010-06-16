@@ -58,4 +58,6 @@ $Id$
 	#define owstrdup(s)           strdup(s)
 #endif  /* OW_ALLOC_DEBUG */
 
+#define SAFEFREE(p)    do { if ( (p)!= NULL ) { owfree(p) ; p=NULL; } } while (0)
+
 #endif							/* OW_ALLOC_H */

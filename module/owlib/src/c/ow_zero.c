@@ -34,19 +34,13 @@ static void RegisterBack(DNSServiceRef s, DNSServiceFlags f, DNSServiceErrorType
 	}
 	out->sref0 = s;
 
-	if ( out->zero.name ) {
-		owfree(out->zero.name) ;
-	}
+	SAFEFREE( out->zero.name ) ;
 	out->zero.name = owstrdup(name) ;
 
-	if ( out->zero.type ) {
-		owfree(out->zero.type) ;
-	}
+	SAFEFREE( out->zero.type ) ;
 	out->zero.type = owstrdup(type) ;
 
-	if ( out->zero.domain ) {
-		owfree(out->zero.domain) ;
-	}
+	SAFEFREE( out->zero.domain ) ;
 	out->zero.domain = owstrdup(domain) ;
 }
 

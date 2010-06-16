@@ -332,9 +332,7 @@ static ZERO_OR_ERROR ServerDIRALL(void (*dirfunc) (void *, const struct parsedna
 
 	}
 	// free the allocated memory
-	if (comma_separated_list != NULL) {
-		owfree(comma_separated_list);
-	}
+	SAFEFREE(comma_separated_list) ;
 
 	Release_Persistent( &scs, cm.control_flags & PERSISTENT_MASK );
 	return cm.ret;

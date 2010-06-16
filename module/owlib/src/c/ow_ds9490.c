@@ -118,7 +118,7 @@ static void DS9490_setroutines(struct connection_in *in)
 	in->iroutines.select = NULL;
 	in->iroutines.reconnect = DS9490_reconnect;
 	in->iroutines.close = DS9490_close;
-	in->iroutines.flags = 0;
+	in->iroutines.flags = ADAP_FLAG_default;
 
 	in->bundling_length = USB_FIFO_SIZE;
 }
@@ -781,9 +781,7 @@ static GOOD_OR_BAD DS9490_redetect_specific_adapter( struct connection_in * in)
 		LIBUSBUNLOCK;
 		
 		if ( BAD(gbResult) ) {
-			if ( in->name ) {
-				owfree( in->name ) ;
-			}
+			SAFEFREE( in->name ) ;
 			in->name = name_copy ; // so no need to free here
 		} else {
 			owfree( name_copy ) ;
@@ -1137,9 +1135,7 @@ static void DS9490_connection_init( struct connection_in * in )
 	if ( in == NULL ) {
 		return ;
 	}
-	if ( in->name ) {
-		owfree( in->name) ;
-	}
+	SAFEFREE( in->name ) ;
 	in->name = owstrdup(badUSBname);		// initialized
 
 	in->busmode = bus_usb;
@@ -1161,10 +1157,7 @@ static void DS9490_connection_init( struct connection_in * in )
 static GOOD_OR_BAD DS9490_open_and_name(struct usb_list *ul, struct connection_in *in)
 {
 	struct connection_in * other ; // to test against repeats
-	if (in->name) {
-		owfree(in->name);
-		in->name = NULL;
-	}
+	SAFEFREE(in->name) ;
 
 	if (in->connin.usb.usb) {
 		LEVEL_DEFAULT("usb.usb was NOT closed?");
@@ -1278,9 +1271,7 @@ static void DS9490_close(struct connection_in *in)
 	}
 	in->connin.usb.usb = NULL;
 	in->connin.usb.dev = NULL;
-	if (in->name) {
-		owfree(in->name);
-	}
+	SAFEFREE(in->name) ;
 	in->name = owstrdup(badUSBname);
 }
 

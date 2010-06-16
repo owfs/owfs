@@ -176,10 +176,7 @@ GOOD_OR_BAD DS2482_detect(struct connection_in *in)
 			break ;
 	}
 
-	if ( in->name ) {
-		owfree(in->name) ;
-		in->name = NULL ;
-	}
+	SAFEFREE( in->name ) ;
 
 	switch ( ap.first.type ) {
 		case address_all:

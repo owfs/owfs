@@ -25,8 +25,8 @@ struct BrowseStruct {
 	char *domain;
 };
 
-static struct BrowseStruct *BSCreate(const char *name, const char *type, const char *domain);
-static void BSKill(struct BrowseStruct *bs);
+static struct BrowseStruct *Browse_Struct_Create(const char *name, const char *type, const char *domain);
+static void Browse_Struct_Desctroy(struct BrowseStruct *browse_struct);
 static void * OW_Browse_Bonjour(void * v) ;
 static void ResolveWait( DNSServiceRef sref ) ;
 static void ResolveBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
@@ -38,7 +38,7 @@ static void BrowseBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 static void ResolveBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 						DNSServiceErrorType e, const char *n, const char *host, uint16_t port, uint16_t tl, const char *t, void *c)
 {
-	struct BrowseStruct *bs = c;
+	struct BrowseStruct *browse_struct = c;
 	char service[11] ;
 	int sn_ret ;
 
@@ -53,38 +53,39 @@ static void ResolveBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 	/* remove trailing .local. */
 	if ( sn_ret >-1 ) {
 		LEVEL_DETAIL("ref=%d flags=%d index=%d, error=%d name=%s host=%s port=%s", (long int) s, f, i, e, n, host, service);
-		ZeroAdd( bs->name, bs->type, bs->domain, host, service ) ;
+		ZeroAdd( browse_struct->name, browse_struct->type, browse_struct->domain, host, service ) ;
 	} else {
 		LEVEL_DEBUG("Couldn't translate port %d",ntohs(port) ) ;
 	}
-	BSKill(bs);
+	Browse_Struct_Desctroy(browse_struct);
 }
 
-static struct BrowseStruct *BSCreate(const char *name, const char *type, const char *domain)
+static struct BrowseStruct *Browse_Struct_Create(const char *name, const char *type, const char *domain)
 {
-	struct BrowseStruct *bs = owmalloc(sizeof(struct BrowseStruct));
-	if (bs) {
-		bs->name = name ? owstrdup(name) : NULL;
-		bs->type = type ? owstrdup(type) : NULL;
-		bs->domain = domain ? owstrdup(domain) : NULL;
+	struct BrowseStruct *browse_struct = owmalloc(sizeof(struct BrowseStruct));
+	
+	if ( browse_struct == NULL ) {
+		return NULL ;
 	}
-	return bs;
+
+	browse_struct->name   = ( name    != NULL ) ? owstrdup(name)   : NULL;
+	browse_struct->type   = ( type    != NULL ) ? owstrdup(type)   : NULL;
+	browse_struct->domain = ( domain  != NULL ) ? owstrdup(domain) : NULL;
+
+	return browse_struct;
 }
 
-static void BSKill(struct BrowseStruct *bs)
+static void Browse_Struct_Desctroy(struct BrowseStruct *browse_struct)
 {
-	if (bs) {
-		if (bs->name) {
-			owfree(bs->name);
-		}
-		if (bs->type) {
-			owfree(bs->type);
-		}
-		if (bs->domain) {
-			owfree(bs->domain);
-		}
-		owfree(bs);
+	if ( browse_struct == NULL ) {
+		return;
 	}
+
+	SAFEFREE(browse_struct->name  ) ;
+	SAFEFREE(browse_struct->type  ) ;
+	SAFEFREE(browse_struct->domain) ;
+
+	owfree(browse_struct);
 }
 
 // Wait for a resolve, then return. Timeout after 2 minutes
@@ -116,7 +117,7 @@ static void ResolveWait( DNSServiceRef sref )
 /* Sent back from Bounjour -- arbitrarily use it to set the Ref for Deallocation */
 static void BrowseBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i, DNSServiceErrorType e, const char *name, const char *type, const char *domain, void *context)
 {
-	struct BrowseStruct *bs;
+	struct BrowseStruct *browse_struct;
 	(void) context;
 	LEVEL_DETAIL("ref=%ld flags=%d index=%d, error=%d name=%s type=%s domain=%s", (long int) s, f, i, e, name, type, domain);
 
@@ -124,19 +125,19 @@ static void BrowseBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i, DNSServic
 		return ;
 	}
 
-	bs = BSCreate( name, type, domain ) ;
+	browse_struct = Browse_Struct_Create( name, type, domain ) ;
 
 	if (f & kDNSServiceFlagsAdd) {	// Add
 		DNSServiceRef sr;
 
-		if (DNSServiceResolve(&sr, 0, 0, name, type, domain, ResolveBack, (void *)bs) == kDNSServiceErr_NoError) {
+		if (DNSServiceResolve(&sr, 0, 0, name, type, domain, ResolveBack, (void *)browse_struct) == kDNSServiceErr_NoError) {
 			ResolveWait(sr) ;
 			DNSServiceRefDeallocate(sr);
 		} else {
-			BSKill(bs) ;
+			Browse_Struct_Desctroy(browse_struct) ;
 		}
 	} else { // Remove
-		BSKill(bs) ;
+		Browse_Struct_Desctroy(browse_struct) ;
 		ZeroDel( name, type, domain ) ;
 	}
 }

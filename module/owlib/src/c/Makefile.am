@@ -10,6 +10,7 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_baud.c          \
                ow_browse.c        \
                ow_browse_resolve.c\
+               ow_browse_monitor.c\
 	       ow_buslock.c       \
                compat.c           \
                getaddrinfo.c      \
@@ -158,6 +159,7 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_w1_browse.c     \
                ow_w1_dispatch.c   \
                ow_w1_list.c       \
+               ow_w1_monitor.c    \
                ow_w1_parse.c      \
                ow_w1_print.c      \
                ow_w1_scan.c       \

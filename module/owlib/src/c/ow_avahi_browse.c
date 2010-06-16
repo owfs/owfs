@@ -181,10 +181,10 @@ static void browse_callback(
 			the callback function is called the server will free
 			the resolver for us. */
 
-		if (!(avahi_service_resolver_new(bas->client, interface, protocol, name, type, domain, AVAHI_PROTO_UNSPEC, 0, resolve_callback, bas)))
-			LEVEL_DEBUG( "Failed to resolve service '%s': %s", name, avahi_strerror(avahi_client_errno(bas->client)));
-
-		break;
+			if (!(avahi_service_resolver_new(bas->client, interface, protocol, name, type, domain, AVAHI_PROTO_UNSPEC, 0, resolve_callback, bas))) {
+				LEVEL_DEBUG( "Failed to resolve service '%s': %s", name, avahi_strerror(avahi_client_errno(bas->client)));
+			}
+			break;
 
 		case AVAHI_BROWSER_REMOVE:
 			LEVEL_DEBUG( "REMOVE: service '%s' of type '%s' in domain '%s'", name, type, domain);
@@ -192,8 +192,11 @@ static void browse_callback(
 			break;
 
 		case AVAHI_BROWSER_ALL_FOR_NOW:
+			LEVEL_DEBUG( "ALL_FOR_NOW" );
+			break;
+			
 		case AVAHI_BROWSER_CACHE_EXHAUSTED:
-			LEVEL_DEBUG( "%s", event == AVAHI_BROWSER_CACHE_EXHAUSTED ? "CACHE_EXHAUSTED" : "ALL_FOR_NOW");
+			LEVEL_DEBUG( "CACHE_EXHAUSTED" );
 			break;
 	}
 }

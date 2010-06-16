@@ -29,15 +29,8 @@ void LibClose(void)
 	_MUTEX_ATTR_DESTROY(Mutex.mattr);
 #endif							/* OW_MT */
 
-	if (Globals.announce_name) {
-		owfree(Globals.announce_name);
-		Globals.announce_name = NULL;
-	}
-
-	if (Globals.progname) {
-		owfree(Globals.progname);
-		Globals.progname = NULL;
-	}
+	SAFEFREE(Globals.announce_name) ;
+	SAFEFREE(Globals.progname) ;
 #if OW_ZERO
 	if (Globals.browse && (libdnssd != NULL)) {
 		DNSServiceRefDeallocate(Globals.browse);
@@ -47,10 +40,7 @@ void LibClose(void)
 	OW_Free_avahi_library();
 #endif
 
-	if (Globals.fatal_debug_file) {
-		owfree(Globals.fatal_debug_file);
-		Globals.fatal_debug_file = NULL;
-	}
+	SAFEFREE(Globals.fatal_debug_file) ;
 
 	LEVEL_CALL("Finished Library cleanup");
 	if (log_available) {

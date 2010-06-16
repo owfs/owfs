@@ -37,11 +37,9 @@ GOOD_OR_BAD BadAdapter_detect(struct connection_in *in)
 	in->iroutines.select = NULL;
 	in->iroutines.reconnect = NULL;
 	in->iroutines.close = BadAdapter_close;
-	in->iroutines.flags = 0;
+	in->iroutines.flags = ADAP_FLAG_sham;
 	in->adapter_name = "Bad Adapter";
-	if ( in->name != NULL ) {
-		owfree( in->name ) ;
-	}
+	SAFEFREE( in->name ) ;
 	in->name = owstrdup("None") ;
 	in->busmode = bus_bad ;
 	return gbGOOD;

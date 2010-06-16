@@ -168,9 +168,7 @@ static void SetConninData( int indx, const char * name, struct connection_in *in
 	UCLIBCUNLOCK ;
 
 	GetAllDeviceNames( oldname, in ) ;
-	if (oldname) {
-		owfree(oldname);
-	}
+	SAFEFREE(oldname) ;
 
 	in->name = owstrdup(newname);
 }

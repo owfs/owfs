@@ -33,6 +33,7 @@ static void Server_setroutines(struct interface_routines *f)
 //    f->select        = ;
 	f->reconnect = NULL;
 	f->close = Server_close;
+	f->flags = 0 ;
 }
 
 static void Zero_setroutines(struct interface_routines *f)
@@ -47,6 +48,7 @@ static void Zero_setroutines(struct interface_routines *f)
 //    f->select        = ;
 	f->reconnect = NULL;
 	f->close = Server_close;
+	f->flags = 0 ;
 }
 
 // bus_zero is a server found by zeroconf/Bonjour
@@ -86,14 +88,8 @@ GOOD_OR_BAD Server_detect(struct connection_in *in)
 static void Server_close(struct connection_in *in)
 {
 	Test_and_Close( &(in->file_descriptor) ) ;
-	if (in->connin.tcp.type) {
-		owfree(in->connin.tcp.type);
-	}
-	if (in->connin.tcp.domain) {
-		owfree(in->connin.tcp.domain);
-	}
-	if (in->connin.tcp.name) {
-		owfree(in->connin.tcp.name);
-	}
+	SAFEFREE(in->connin.tcp.type) ;
+	SAFEFREE(in->connin.tcp.domain) ;
+	SAFEFREE(in->connin.tcp.name) ;
 	FreeClientAddr(in);
 }

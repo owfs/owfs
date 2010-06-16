@@ -42,7 +42,7 @@ static void DS9097_setroutines(struct connection_in *in)
 	in->iroutines.select = NULL;
 	in->iroutines.reconnect = NULL;
 	in->iroutines.close = COM_close;
-	in->iroutines.flags = ADAP_FLAG_overdrive;
+	in->iroutines.flags = ADAP_FLAG_default;
 	in->bundling_length = UART_FIFO_SIZE / 10;
 }
 

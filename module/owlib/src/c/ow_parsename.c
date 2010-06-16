@@ -53,14 +53,8 @@ void FS_ParsedName_destroy(struct parsedname *pn)
 	}
 	LEVEL_DEBUG("%s", SAFESTRING(pn->path));
 	CONNIN_RUNLOCK ;
-	if (pn->bp) {
-		owfree(pn->bp);
-		pn->bp = NULL;
-	}
-	if (pn->path) {
-		owfree(pn->path);
-		pn->path = NULL;
-	}
+	SAFEFREE(pn->bp) ;
+	SAFEFREE(pn->path) ;
 }
 
 // Path is either NULL (in which case a minimal structure is created that doesn't need Destroy -- used for Bus Master setups)
@@ -638,9 +632,7 @@ static ZERO_OR_ERROR BranchAdd(struct parsedname *pn)
 	if ((pn->pathlength % BRANCH_INCR) == 0) {
 		void *temp = pn->bp;
 		if ((pn->bp = owrealloc(temp, (BRANCH_INCR + pn->pathlength) * sizeof(struct buspath))) == NULL) {
-			if (temp) {
-				owfree(temp);
-			}
+			SAFEFREE(temp) ;
 			return -ENOMEM;
 		}
 	}

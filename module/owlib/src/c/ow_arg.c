@@ -210,6 +210,33 @@ GOOD_OR_BAD ARG_Mock(const char *arg)
 	return gbGOOD;
 }
 
+GOOD_OR_BAD ARG_W1_monitor(void)
+{
+	struct connection_in *in = NewIn(NULL);
+	if (in == NULL) {
+		return gbBAD;
+	}
+	in->name = owstrdup("W1 monitor");
+	in->busmode = bus_w1_monitor;
+	return gbGOOD;
+}
+
+GOOD_OR_BAD ARG_Browse(void)
+{
+#if OW_ZERO
+	struct connection_in *in = NewIn(NULL);
+	if (in == NULL) {
+		return gbBAD;
+	}
+	in->name = owstrdup("ZeroConf monitor");
+	in->busmode = bus_browse;
+	return gbGOOD;
+#else
+	fprintf(stderr, "OWFS is compiled without Zeroconf/Bonjour support.\n");
+	return gbBAD;
+#endif
+}
+
 GOOD_OR_BAD ARG_Net(const char *arg)
 {
 	struct connection_in *in = NewIn(NULL);

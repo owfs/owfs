@@ -96,11 +96,8 @@ void Free_Address( struct address_pair * ap )
 	if ( ap == NULL ) {
 		return ;
 	}
-	if ( ap->first.alpha ) {
-		owfree(ap->first.alpha) ;
-		// Eliminates ap->second.alpha, too
-		ap->first.alpha = NULL ;
-	}
+	// Eliminates ap->second.alpha, too
+	SAFEFREE( ap->first.alpha ) ;
 	ap->first.type = address_none ;
 	ap->second.type = address_none ;
 }	

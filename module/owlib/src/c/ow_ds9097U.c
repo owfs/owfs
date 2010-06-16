@@ -55,7 +55,7 @@ static void DS2480_setroutines(struct connection_in *in)
 	in->iroutines.select = NULL;
 	in->iroutines.reconnect = DS2480_big_reset ;
 	in->iroutines.close = DS2480_close;
-	in->iroutines.flags = 0;
+	in->iroutines.flags = ADAP_FLAG_default;
 	in->bundling_length = UART_FIFO_SIZE;
 }
 
