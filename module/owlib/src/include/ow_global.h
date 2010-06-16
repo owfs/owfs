@@ -77,7 +77,6 @@ struct global {
 	ASCII *fatal_debug_file;
 	int readonly;
 	int max_clients;			// for ftp
-	int autoserver;
 	size_t cache_size;			// max cache size (or 0 for no max) ;
 	int one_device;				// Single device, use faster ROM comands
 	/* Special parameter to trigger William Robison <ibutton@n952.dyndns.ws> timings */
@@ -107,7 +106,6 @@ struct global {
 	int no_persistence;
 	int eightbit_serial;
 	enum zero_support zero ;
-	int w1 ;
 	int checksum ;
 	int i2c_APU ;
 	int i2c_PPM ;

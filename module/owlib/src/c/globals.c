@@ -58,7 +58,6 @@ struct global Globals = {
 	.concurrent_connections = 10,
 	.readonly = 0,
 	.max_clients = 250,
-	.autoserver = 0,
 
 	.cache_size = 0,
 
@@ -91,7 +90,6 @@ struct global Globals = {
 	.no_persistence = 0,
 	.eightbit_serial = 0,
 	.zero = zero_unknown ,
-	.w1 = 0 , // w1 kernel support
 	.checksum = 1,
 	.i2c_APU = 1 ,
 	.i2c_PPM = 1 ,
