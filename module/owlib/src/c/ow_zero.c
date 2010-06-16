@@ -141,7 +141,6 @@ void ZeroConf_Announce(struct connection_out *out)
 		Announce(out);
 #endif							/* OW_MT */
 	}
-	LEVEL_DEBUG("end");
 }
 
 #else							/* OW_ZERO */

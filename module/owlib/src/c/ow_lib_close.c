@@ -29,22 +29,18 @@ void LibClose(void)
 	_MUTEX_ATTR_DESTROY(Mutex.mattr);
 #endif							/* OW_MT */
 
-	SAFEFREE(Globals.announce_name) ;
-	SAFEFREE(Globals.progname) ;
 #if OW_ZERO
-	if (Globals.browse && (libdnssd != NULL)) {
-		DNSServiceRefDeallocate(Globals.browse);
-	}
-
+	// Used by browse and announce
 	OW_Free_dnssd_library();
 	OW_Free_avahi_library();
 #endif
-
-	SAFEFREE(Globals.fatal_debug_file) ;
 
 	LEVEL_CALL("Finished Library cleanup");
 	if (log_available) {
 		closelog();
 		log_available = 0;
 	}
+	SAFEFREE(Globals.announce_name) ;
+	SAFEFREE(Globals.progname) ;
+	SAFEFREE(Globals.fatal_debug_file) ;
 }

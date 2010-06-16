@@ -22,7 +22,7 @@ void LibSetup(enum opt_program opt)
 	Globals.zero = zero_none ;
 #if OW_ZERO
 #if OW_MT
-// Avahi only implemeentd with multithreading
+// Avahi only implementd with multithreading
 	if ( OW_Load_avahi_library() == 0 ) {
 		Globals.zero = zero_avahi ;
 		OW_Load_dnssd_library() ; // until avahi browse implemented

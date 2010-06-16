@@ -145,13 +145,12 @@ static void BrowseBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i, DNSServic
 // Called in a thread
 static void * OW_Browse_Bonjour(void * v)
 {
+	struct connection_in * in = v ;
 	DNSServiceErrorType dnserr;
-
-	(void) v ;
 
 	pthread_detach(pthread_self());
 
-	dnserr = DNSServiceBrowse(&Globals.browse, 0, 0, "_owserver._tcp", NULL, BrowseBack, NULL);
+	dnserr = DNSServiceBrowse(&in->connin.browse.browse, 0, 0, "_owserver._tcp", NULL, BrowseBack, NULL);
 
 	if (dnserr != kDNSServiceErr_NoError) {
 		LEVEL_CONNECT("DNSServiceBrowse error = %d", dnserr);
@@ -159,16 +158,16 @@ static void * OW_Browse_Bonjour(void * v)
 	}
 
 	// Blocks, which is why this is in it's own thread
-	while (DNSServiceProcessResult(Globals.browse) == kDNSServiceErr_NoError) {
+	while (DNSServiceProcessResult(in->connin.browse.browse) == kDNSServiceErr_NoError) {
 		//printf("DNSServiceProcessResult ref %ld\n",(long int)rs->sref) ;
 		continue;
 	}
-	DNSServiceRefDeallocate(Globals.browse);
-	Globals.browse = 0 ;
+	DNSServiceRefDeallocate(in->connin.browse.browse);
+	in->connin.browse.browse = 0 ;
 	return NULL;
 }
 
-void OW_Browse(void)
+void OW_Browse(struct connection_in *in)
 {
 	if ( Globals.zero == zero_avahi ) {
 #if !OW_CYGWIN
@@ -180,7 +179,7 @@ void OW_Browse(void)
 #endif
 	} else if ( Globals.zero == zero_bonjour ) {
 		pthread_t thread;
-		int err = pthread_create(&thread, NULL, OW_Browse_Bonjour, NULL);
+		int err = pthread_create(&thread, NULL, OW_Browse_Bonjour, (void *) in);
 		if (err) {
 			LEVEL_CONNECT("Bonjour Browse thread error %d.", err);
 		}
@@ -189,8 +188,9 @@ void OW_Browse(void)
 
 #else							/* OW_MT */
 
-void OW_Browse(void)
+void OW_Browse(struct connection_in *in)
 {
+	(void) in ;
 	LEVEL_CONNECT("Avahi and Bonjour requires multithreading support (a compile-time configuration setting).");
 }
 
@@ -200,8 +200,9 @@ void OW_Browse(void)
 
 #include "ow_debug.h"
 
-void OW_Browse(void)
+void OW_Browse(struct connection_in *in)
 {
+	(void) in ;
 	LEVEL_CONNECT("OWFS was compiled without Avahi or Bonjour support.");
 }
 

@@ -301,6 +301,12 @@ struct connin_w1 {
 #endif /* OW_W1 */
 };
 
+struct connin_browse {
+#if OW_ZERO
+	DNSServiceRef browse;
+#endif
+};
+
 //enum server_type { srv_unknown, srv_direct, srv_client, src_
 /* Network connection structure */
 enum bus_mode {
@@ -463,6 +469,7 @@ struct connection_in {
 		struct connin_ha7e enet ;
 		struct connin_etherweather etherweather;
 		struct connin_w1 w1;
+		struct connin_browse browse;
 	} connin;
 };
 
@@ -567,7 +574,7 @@ int SetKnownBus( int bus_number, struct parsedname * pn) ;
 
 /* Bonjour registration */
 void ZeroConf_Announce(struct connection_out *out);
-void OW_Browse(void);
+void OW_Browse(struct connection_in *in);
 
 RESET_TYPE BUS_reset(const struct parsedname *pn);
 

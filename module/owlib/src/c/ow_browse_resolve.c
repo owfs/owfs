@@ -15,7 +15,7 @@ $Id$
 
 #include "ow_connection.h"
 
-static GOOD_OR_BAD CreateIn(const char * name, const char * type, const char * domain, const char * host, const char * service ) ;
+static void CreateIn(const char * name, const char * type, const char * domain, const char * host, const char * service ) ;
 static struct connection_in *FindIn(const char * name, const char * type, const char * domain);
 static struct connection_out *FindOut(const char * name, const char * type, const char * domain);
 static GOOD_OR_BAD string_null_or_match( const char * one, const char * two );
@@ -119,13 +119,13 @@ static struct connection_out *FindOut(const char * name, const char * type, cons
 {
 	struct connection_out *now ;
 	for ( now = Outbound_Control.head ; now != NULL ; now = now->next ) {
-		if ( BAD( string_null_or_match( name   , now->connin.tcp.name   )) ) {
+		if ( BAD( string_null_or_match( name   , now->zero.name   )) ) {
 			continue ;
 		}
-		if ( BAD( string_null_or_match( type   , now->connin.tcp.type   )) ) {
+		if ( BAD( string_null_or_match( type   , now->zero.type   )) ) {
 			continue ;
 		}
-		if ( BAD( string_null_or_match( domain , now->connin.tcp.domain )) ) {
+		if ( BAD( string_null_or_match( domain , now->zero.domain )) ) {
 			continue ;
 		}
 		return now ;

@@ -234,7 +234,7 @@ void * OW_Avahi_Browse(void * v)
 	/* Allocate a new client */
 	bas.client = avahi_client_new(avahi_simple_poll_get(bas.poll), 0, client_callback, &bas, &error);
 
-	/* Check wether creating the client object succeeded */
+	/* Check whether creating the client object succeeded */
 	if (bas.client==NULL) {
 		LEVEL_DEBUG( "Failed to create client: %s", avahi_strerror(error));
 		avahi_simple_poll_free(bas.poll);

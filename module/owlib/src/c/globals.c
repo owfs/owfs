@@ -41,10 +41,6 @@ int32_t LocalControlFlags = ((uint8_t) fdi) << DEVFORMAT_BIT | ((uint8_t) pressu
 struct global Globals = {
 	.announce_off = 0,
 	.announce_name = NULL,
-#if OW_ZERO
-	.browse = NULL,
-#endif
-
 	.opt = opt_swig,
 	.progname = NULL,			// "One Wire File System" , Can't allocate here since it's freed
 	.want_background = 1,

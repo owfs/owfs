@@ -62,9 +62,6 @@ enum opt_program { opt_owfs, opt_server, opt_httpd, opt_ftpd, opt_tcl,
 struct global {
 	int announce_off;			// use zeroconf?
 	ASCII *announce_name;
-#if OW_ZERO
-	DNSServiceRef browse;
-#endif
 	enum opt_program opt;
 	ASCII *progname;
 	union antiloop Token;

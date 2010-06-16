@@ -37,14 +37,14 @@ GOOD_OR_BAD Browse_detect(struct connection_in *in)
 	in->iroutines.flags = ADAP_FLAG_sham;
 	in->adapter_name = "ZeroConf monitor";
 	in->busmode = bus_browse ;
-	
+	in->connin.browse.browse = 0 ;
 	RETURN_BAD_IF_BAD( browse_in_use(in) ) ;
 	
 	if (Globals.zero == zero_none ) {
 		LEVEL_DEFAULT("Zeroconf/Bonjour is disabled since Bonjour or Avahi library wasn't found.");
 		return gbBAD;
 	} else {
-		OW_Browse();
+		OW_Browse(in);
 	}
 	return gbGOOD ;
 }
@@ -67,5 +67,10 @@ static GOOD_OR_BAD browse_in_use(const struct connection_in * in_selected)
 
 static void Browse_close(struct connection_in *in)
 {
-	(void) in;
+#if OW_ZERO
+	if (in->connin.browse.browse && (libdnssd != NULL)) {
+		DNSServiceRefDeallocate(in->connin.browse.browse);
+		in->connin.browse.browse = 0 ;
+	}
+#endif
 }
