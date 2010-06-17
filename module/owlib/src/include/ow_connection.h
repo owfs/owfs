@@ -303,7 +303,17 @@ struct connin_w1 {
 
 struct connin_browse {
 #if OW_ZERO
-	DNSServiceRef browse;
+	DNSServiceRef bonjour_browse;
+
+	AvahiServiceBrowser *avahi_browser ;
+	AvahiSimplePoll *avahi_poll ;
+	AvahiClient *avahi_client ;
+#if __HAS_IPV6__
+	char avahi_host[INET6_ADDRSTRLEN+1] ;
+#else
+	char avahi_host[INET_ADDRSTRLEN+1] ;
+#endif
+	char avahi_service[10] ;
 #endif
 };
 

@@ -150,7 +150,7 @@ static void * OW_Browse_Bonjour(void * v)
 
 	pthread_detach(pthread_self());
 
-	dnserr = DNSServiceBrowse(&in->connin.browse.browse, 0, 0, "_owserver._tcp", NULL, BrowseBack, NULL);
+	dnserr = DNSServiceBrowse(&in->connin.browse.bonjour_browse, 0, 0, "_owserver._tcp", NULL, BrowseBack, NULL);
 
 	if (dnserr != kDNSServiceErr_NoError) {
 		LEVEL_CONNECT("DNSServiceBrowse error = %d", dnserr);
@@ -158,12 +158,12 @@ static void * OW_Browse_Bonjour(void * v)
 	}
 
 	// Blocks, which is why this is in it's own thread
-	while (DNSServiceProcessResult(in->connin.browse.browse) == kDNSServiceErr_NoError) {
+	while (DNSServiceProcessResult(in->connin.browse.bonjour_browse) == kDNSServiceErr_NoError) {
 		//printf("DNSServiceProcessResult ref %ld\n",(long int)rs->sref) ;
 		continue;
 	}
-	DNSServiceRefDeallocate(in->connin.browse.browse);
-	in->connin.browse.browse = 0 ;
+	DNSServiceRefDeallocate(in->connin.browse.bonjour_browse);
+	in->connin.browse.bonjour_browse = 0 ;
 	return NULL;
 }
 
