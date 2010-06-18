@@ -325,6 +325,7 @@ enum bus_mode {
 	bus_xport,
 	bus_passive,
 	bus_usb,
+	bus_usb_monitor,
 	bus_parallel,
 	bus_server,
 	bus_zero,
@@ -375,6 +376,7 @@ enum adapter_type {
 	adapter_w1_monitor,
 	adapter_browse_monitor,
 	adapter_xport,
+	adapter_usb_monitor,
 };
 
 enum e_reconnect {

@@ -123,6 +123,9 @@ static void DS9490_setroutines(struct connection_in *in)
 	in->bundling_length = USB_FIFO_SIZE;
 }
 
+#define DS2490_USB_VENDOR  0x04FA
+#define DS2490_USB_PRODUCT 0x2490
+
 #define DS2490_BULK_BUFFER_SIZE     64
 //#define DS2490_DIR_GULP_ELEMENTS     ((DS2490_BULK_BUFFER_SIZE/SERIAL_NUMBER_SIZE) - 1)
 #define DS2490_DIR_GULP_ELEMENTS     (1)
@@ -668,7 +671,7 @@ static GOOD_OR_BAD USB_next(struct usb_list *ul)
 			ul->dev = ul->dev->next;
 		}
 		if (ul->dev) {			// device found
-			if (ul->dev->descriptor.idVendor != 0x04FA || ul->dev->descriptor.idProduct != 0x2490) {
+			if (ul->dev->descriptor.idVendor != DS2490_USB_VENDOR || ul->dev->descriptor.idProduct != DS2490_USB_PRODUCT) {
 				continue;		// not DS9490
 			}
 			LEVEL_CONNECT("Bus master found: %s/%s", ul->bus->dirname, ul->dev->filename);
