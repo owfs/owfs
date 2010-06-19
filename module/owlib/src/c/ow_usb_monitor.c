@@ -14,14 +14,14 @@ $Id$
 #include "ow.h"
 #include "ow_connection.h"
 
-static void Browse_close(struct connection_in *in);
+static void USB_monitor_close(struct connection_in *in);
 static GOOD_OR_BAD browse_in_use(const struct connection_in * in_selected) ;
 
 /* Device-specific functions */
-GOOD_OR_BAD Browse_detect(struct connection_in *in)
+GOOD_OR_BAD USB_monitor_detect(struct connection_in *in)
 {
 	in->file_descriptor = FILE_DESCRIPTOR_BAD;
-	in->iroutines.detect = Browse_detect;
+	in->iroutines.detect = USB_monitor_detect;
 	in->Adapter = adapter_browse_monitor;	/* OWFS assigned value */
 	in->iroutines.reset = NULL;
 	in->iroutines.next_both = NULL;
@@ -31,29 +31,17 @@ GOOD_OR_BAD Browse_detect(struct connection_in *in)
 	in->iroutines.sendback_bits = NULL;
 	in->iroutines.select = NULL;
 	in->iroutines.reconnect = NULL;
-	in->iroutines.close = Browse_close;
+	in->iroutines.close = USB_monitor_close;
 	in->iroutines.flags = ADAP_FLAG_sham;
-	in->adapter_name = "ZeroConf monitor";
-	in->busmode = bus_browse ;
+	in->adapter_name = "USB scan";
+	in->busmode = bus_usb_monitor ;
 	
-	RETURN_BAD_IF_BAD( browse_in_use(in) ) ;
+	RETURN_BAD_IF_BAD( usb_monitor_in_use(in) ) ;
 
-	in->connin.browse.bonjour_browse = 0 ;
-	
-	in->connin.browse.avahi_browser = NULL ;
-	in->connin.browse.avahi_poll    = NULL ;
-	in->connin.browse.avahi_client  = NULL ;
-	
-	if (Globals.zero == zero_none ) {
-		LEVEL_DEFAULT("Zeroconf/Bonjour is disabled since Bonjour or Avahi library wasn't found.");
-		return gbBAD;
-	} else {
-		OW_Browse(in);
-	}
 	return gbGOOD ;
 }
 
-static GOOD_OR_BAD browse_in_use(const struct connection_in * in_selected)
+static GOOD_OR_BAD usb_monitor_in_use(const struct connection_in * in_selected)
 {
 	struct connection_in *in;
 
@@ -61,7 +49,7 @@ static GOOD_OR_BAD browse_in_use(const struct connection_in * in_selected)
 		if ( in == in_selected ) {
 			continue ;
 		}
-		if ( in->busmode != bus_browse ) {
+		if ( in->busmode != bus_usb_monitor ) {
 			continue ;
 		}
 		return gbBAD ;
@@ -69,7 +57,7 @@ static GOOD_OR_BAD browse_in_use(const struct connection_in * in_selected)
 	return gbGOOD;					// not found in the current inbound list
 }
 
-static void Browse_close(struct connection_in *in)
+static void USB_monitor_close(struct connection_in *in)
 {
 #if OW_ZERO
 	if (in->connin.browse.bonjour_browse && (libdnssd != NULL)) {

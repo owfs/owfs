@@ -150,6 +150,7 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_tree.c          \
                ow_transaction.c   \
                ow_udp_read.c      \
+               ow_usb_monitor.c   \
                ow_util.c          \
                ow_verify.c        \
 	       ow_visibility.c    \
