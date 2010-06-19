@@ -490,6 +490,7 @@ extern struct inbound_control {
 	int next_index ; // increasing sequence number
 	struct connection_in * head ; // head of a linked list of "bus" entries
 #if OW_MT
+	my_rwlock_t monitor_lock; // allow monitor processes
 	my_rwlock_t lock; // RW lock of linked list
 #endif /* OW_MT */
 	int next_fake ; // count of fake buses

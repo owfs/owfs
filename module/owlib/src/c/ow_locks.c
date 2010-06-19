@@ -71,6 +71,7 @@ void LockSetup(void)
 	RWLOCK_INIT(Mutex.cache);
 	RWLOCK_INIT(Mutex.store);
 	RWLOCK_INIT(Inbound_Control.lock);
+	RWLOCK_INIT(Inbound_Control.monitor_lock);
   #if OW_USB
 	_MUTEX_INIT(Mutex.libusb_mutex);
   #endif							/* OW_USB */

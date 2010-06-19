@@ -29,9 +29,9 @@ void LibStart(void)
 
 	SetupTemperatureLimits() ;
 	
-	CONNIN_WLOCK ;
+	MONITOR_WLOCK ;
 	SetupInboundConnections();
-	CONNIN_WUNLOCK ;
+	MONITOR_WUNLOCK ;
 
 	// Signal handlers
 	IgnoreSignals();

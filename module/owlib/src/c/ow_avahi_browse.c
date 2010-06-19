@@ -226,7 +226,9 @@ void * OW_Avahi_Browse(void * v)
 			if (in->connin.browse.avahi_browser!=NULL) {
 				
 				/* Run the main loop */
+				MONITOR_RLOCK ;
 				avahi_simple_poll_loop(in->connin.browse.avahi_poll);
+				MONITOR_RUNLOCK ;
 				
 				/* Free the browser object */
 				avahi_service_browser_free(in->connin.browse.avahi_browser);

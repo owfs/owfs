@@ -120,6 +120,11 @@ extern struct mutexes {
 #define CONNIN_RLOCK      	RWLOCK_RLOCK(   Inbound_Control.lock ) ;
 #define CONNIN_RUNLOCK    	RWLOCK_RUNLOCK( Inbound_Control.lock ) ;
 
+#define MONITOR_WLOCK      	RWLOCK_WLOCK(   Inbound_Control.monitor_lock ) ;
+#define MONITOR_WUNLOCK    	RWLOCK_WUNLOCK( Inbound_Control.monitor_lock ) ;
+#define MONITOR_RLOCK      	RWLOCK_RLOCK(   Inbound_Control.monitor_lock ) ;
+#define MONITOR_RUNLOCK    	RWLOCK_RUNLOCK( Inbound_Control.monitor_lock ) ;
+
 #define STATLOCK          	_MUTEX_LOCK(  Mutex.stat_mutex   )
 #define STATUNLOCK        	_MUTEX_UNLOCK(Mutex.stat_mutex   )
 

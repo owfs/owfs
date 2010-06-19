@@ -149,7 +149,7 @@ static void * OW_Browse_Bonjour(void * v)
 	DNSServiceErrorType dnserr;
 
 	pthread_detach(pthread_self());
-
+	MONITOR_RLOCK ;
 	dnserr = DNSServiceBrowse(&in->connin.browse.bonjour_browse, 0, 0, "_owserver._tcp", NULL, BrowseBack, NULL);
 
 	if (dnserr != kDNSServiceErr_NoError) {
@@ -164,6 +164,7 @@ static void * OW_Browse_Bonjour(void * v)
 	}
 	DNSServiceRefDeallocate(in->connin.browse.bonjour_browse);
 	in->connin.browse.bonjour_browse = 0 ;
+	MONITOR_RUNLOCK ;
 	return NULL;
 }
 

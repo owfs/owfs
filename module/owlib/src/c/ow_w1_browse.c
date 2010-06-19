@@ -79,7 +79,9 @@ static void * W1_start_scan( void * v )
 	if ( FILE_DESCRIPTOR_NOT_VALID(Inbound_Control.w1_file_descriptor) ) {
 		LEVEL_DEBUG("Cannot monitor w1 bus, No netlink connection.");
 	} else {
+		MONITOR_RLOCK ;
 		W1NLInitialScan() ;
+		MONITOR_RUNLOCK ;
 	}
 	LEVEL_DEBUG("Normal exit.\n");
 	return NULL ;
@@ -121,7 +123,7 @@ GOOD_OR_BAD W1_Browse( void )
 }
 
 #else /* OW_MT */
-int W1_Browse( void )
+GOOD_OR_BAD W1_Browse( void )
 {
 	LEVEL_CONNECT("Dynamic w1 support requires multithreading (a compile-time option");
 	// Initial setup
