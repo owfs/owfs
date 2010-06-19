@@ -83,7 +83,7 @@ GOOD_OR_BAD DS2482_detect(struct connection_in *in);
 
 #if OW_USB
 GOOD_OR_BAD DS9490_detect(struct connection_in *in);
-GOOD_OR_BAD USB_monitor_detect(struct connection_in *in)
+GOOD_OR_BAD USB_monitor_detect(struct connection_in *in) ;
 #endif							/* OW_USB */
 
 #endif							/* OW_DETECT_H */
