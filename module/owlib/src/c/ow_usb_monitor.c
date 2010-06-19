@@ -15,7 +15,7 @@ $Id$
 #include "ow_connection.h"
 
 static void USB_monitor_close(struct connection_in *in);
-static GOOD_OR_BAD browse_in_use(const struct connection_in * in_selected) ;
+static GOOD_OR_BAD usb_monitor_in_use(const struct connection_in * in_selected) ;
 
 /* Device-specific functions */
 GOOD_OR_BAD USB_monitor_detect(struct connection_in *in)
