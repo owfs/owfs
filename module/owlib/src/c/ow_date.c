@@ -19,7 +19,7 @@ $Id$
 ZERO_OR_ERROR COMMON_r_date( struct one_wire_query * owq )
 {
 	UINT U ;
-	ZERO_OR_ERROR read_sibling = FS_r_sibling_U( &U, "udate", owq ) ;
+	ZERO_OR_ERROR read_sibling = FS_r_sibling_U( &U, PN(owq)->selected_filetype->data.a, owq ) ;
 	OWQ_D(owq) = (_DATE) U ;
 	return read_sibling ;
 }
@@ -27,5 +27,5 @@ ZERO_OR_ERROR COMMON_r_date( struct one_wire_query * owq )
 ZERO_OR_ERROR COMMON_w_date( struct one_wire_query * owq )
 {
 	UINT U = (UINT) OWQ_D(owq) ;
-	return FS_w_sibling_U( U, "udate", owq) ;
+	return FS_w_sibling_U( U, PN(owq)->selected_filetype->data.a, owq) ;
 }
