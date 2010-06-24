@@ -88,6 +88,11 @@ See: http://www.iana.org/assignments/port-numbers
 /* address for i2c or usb */
 #include "ow_parse_address.h"
 
+#if OW_USB						/* conditional inclusion of USB */
+/* Special libusb 0.1x search */
+#include "ow_usb_cycle.h"
+#endif /* OW_USB */
+
 /* large enough for arrays of 2048 elements of ~49 bytes each */
 #define MAX_OWSERVER_PROTOCOL_PACKET_SIZE  100050
 
@@ -222,13 +227,14 @@ struct connin_fake {
 };
 
 struct connin_usb {
+#if OW_USB
 	struct usb_device *dev;
 	struct usb_dev_handle *usb;
 	int datasampleoffset;
 	int writeonelowtime;
 	int pulldownslewrate;
 	int timeout;
-
+#endif /* OW_USB */
 	int specific_usb_address ; // only a specific address requested?
 
 	/* "Name" of the device, like "8146572300000051"

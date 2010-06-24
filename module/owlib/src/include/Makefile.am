@@ -56,8 +56,8 @@ noinst_HEADERS =          \
         ow_fd.h           \
         ow_filetype.h     \
         ow_functions.h    \
-	ow_generic_read.h \
-	ow_generic_write.h\
+        ow_generic_read.h \
+        ow_generic_write.h\
         ow_global.h       \
         ow_integer.h      \
         ow_interface.h    \
@@ -89,6 +89,7 @@ noinst_HEADERS =          \
         ow_temperature.h  \
         ow_thermocouple.h \
         ow_transaction.h  \
+        ow_usb_cycle.h    \
         ow_visibility.h   \
         ow_w1.h           \
         rwlock.h          \

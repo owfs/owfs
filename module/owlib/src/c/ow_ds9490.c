@@ -53,18 +53,8 @@ struct usb_dev_handle {
 #define USB_CLEAR_HALT usb_clear_halt
 #endif /* USB_CLEAR_HALT */
 
-#include <sys/types.h> // Mac needs this before <usb.h> according to Peter Peter Radcliffe's work
-#include <usb.h>
-
 /* All the rest of the code sees is the DS9490_detect routine and the iroutine structure */
 
-struct usb_list {
-	struct usb_bus *bus;
-	struct usb_device *dev;
-};
-
-static void USB_init(struct usb_list *ul);
-static GOOD_OR_BAD USB_next(struct usb_list *ul);
 static GOOD_OR_BAD USB_Control_Msg(BYTE bRequest, UINT wValue, UINT wIndex, const struct parsedname *pn);
 static GOOD_OR_BAD usbdevice_in_use(const struct connection_in * in_selected) ;
 static char *DS9490_device_name(const struct usb_list *ul);
@@ -122,9 +112,6 @@ static void DS9490_setroutines(struct connection_in *in)
 
 	in->bundling_length = USB_FIFO_SIZE;
 }
-
-#define DS2490_USB_VENDOR  0x04FA
-#define DS2490_USB_PRODUCT 0x2490
 
 #define DS2490_BULK_BUFFER_SIZE     64
 //#define DS2490_DIR_GULP_ELEMENTS     ((DS2490_BULK_BUFFER_SIZE/SERIAL_NUMBER_SIZE) - 1)
@@ -481,7 +468,7 @@ static GOOD_OR_BAD DS9490_detect_single_adapter(int usb_nr, struct connection_in
 	/* usb_nr holds the number of the adapter */
 	int usbnum = 0;
 
-	USB_init(&ul);
+	USB_first(&ul);
 	while ( GOOD(USB_next(&ul)) ) {
 		if (++usbnum < usb_nr ) {
 			LEVEL_CONNECT("USB DS9490 %d passed over. (Looking for %d)", usbnum, usb_nr);
@@ -508,7 +495,7 @@ static GOOD_OR_BAD DS9490_detect_specific_adapter(int bus_nr, int dev_nr, struct
 	// Mark this connection as taking only this address pair. Important for reconnections.
 	in->connin.usb.specific_usb_address = 1 ;
 
-	USB_init(&ul);
+	USB_first(&ul);
 	while ( GOOD(USB_next(&ul)) ) {
 		// Use a not very efficient mechanism.
 		// Create the actual USB name (bus:dev) for this entry,
@@ -516,12 +503,10 @@ static GOOD_OR_BAD DS9490_detect_specific_adapter(int bus_nr, int dev_nr, struct
 		// and match it.
 		struct address_pair ap ;
 		char * usb_address = DS9490_device_name( &ul ) ; // temporary name for parsing into a number
-		if ( usb_address == NULL ) {
-			continue ;
-		} else {
-			Parse_Address( usb_address, &ap ) ; // makes a copy
-			owfree(usb_address) ; // free the original
-		}
+
+		Parse_Address( usb_address, &ap ) ; // makes a copy -- tolerates no name.
+		SAFEFREE(usb_address) ; // free the original
+
 		if ( ap.first.type != address_numeric || ap.second.type != address_numeric ) {
 			LEVEL_DEBUG("LIBUSB generated an uninterpretable usb address") ;
 		} else if ( ap.first.number != bus_nr || ap.second.number != dev_nr ) {
@@ -547,7 +532,7 @@ static GOOD_OR_BAD DS9490_detect_all_adapters(struct connection_in * in_first)
 	struct usb_list ul;
 	struct connection_in * in = in_first ;
 
-	USB_init(&ul);
+	USB_first(&ul);
 	while ( GOOD(USB_next(&ul)) ) {
 		if ( BAD(DS9490_open_and_name(&ul, in)) ) {
 			LEVEL_DEBUG("Cannot open USB device %s:%s", ul.bus->dirname, ul.dev->filename );
@@ -650,54 +635,6 @@ static GOOD_OR_BAD usbdevice_in_use(const struct connection_in * in_selected)
 }
 
 /* ------------------------------------------------------------ */
-/* --- USB bus scaning -----------------------------------------*/
-
-static void USB_init(struct usb_list *ul)
-{
-	usb_init();
-	usb_find_busses();
-	usb_find_devices();
-	ul->bus = usb_get_busses();
-	ul->dev = NULL;
-}
-
-static GOOD_OR_BAD USB_next(struct usb_list *ul)
-{
-	while (ul->bus) {
-		// First pass, look for next device
-		if (ul->dev == NULL) {
-			ul->dev = ul->bus->devices;
-		} else {				// New bus, find first device
-			ul->dev = ul->dev->next;
-		}
-		if (ul->dev) {			// device found
-			if (ul->dev->descriptor.idVendor != DS2490_USB_VENDOR || ul->dev->descriptor.idProduct != DS2490_USB_PRODUCT) {
-				continue;		// not DS9490
-			}
-			LEVEL_CONNECT("Bus master found: %s/%s", ul->bus->dirname, ul->dev->filename);
-			return gbGOOD;
-		} else {
-			ul->bus = ul->bus->next;
-			ul->dev = NULL;
-		}
-	}
-	return gbBAD;
-}
-
-/* Step through USB devices (looking for the DS2490 chip) */
-int DS9490_enumerate(void)
-{
-	struct usb_list ul;
-	int found = 0;
-	USB_init(&ul);
-	while ( GOOD(USB_next(&ul)) ) {
-		++found;
-	}
-		
-	return found;
-}
-
-/* ------------------------------------------------------------ */
 /* --- USB redetect routines -----------------------------------*/
 
 /* When the errors stop the USB device from functioning -- close and reopen.
@@ -734,14 +671,14 @@ static GOOD_OR_BAD DS9490_redetect_low(struct connection_in * in)
 	struct usb_list ul;
 	
 	/*
-	* I don't think we need to call usb_init() or usb_find_busses() here.
+	* I don't think we need to call USB_first() or usb_find_busses() here.
 	* They are already called once in DS9490_detect_single_adapter().
-	* usb_init() is more like a os_init() function and there are probably
+	* USB_first() is more like a os_init() function and there are probably
 	* no new USB-busses added after rebooting kernel... or?
 	* It doesn't seem to leak any memory when calling them, so they are
 	* still called.
 	*/
-	USB_init(&ul);
+	USB_first(&ul);
 	
 	while ( GOOD(USB_next(&ul)) ) {
 		// try to open the DS9490
@@ -761,11 +698,6 @@ static GOOD_OR_BAD DS9490_redetect_specific_adapter( struct connection_in * in)
 {
 	struct address_pair ap ;
 	GOOD_OR_BAD gbResult ;
-	
-	if ( in->name == NULL ) {
-		// Reconnect with bad name
-		return gbBAD ;
-	}
 	
 	Parse_Address( in->name, &ap ) ;
 	if ( ap.first.type != address_numeric || ap.second.type != address_numeric ) {

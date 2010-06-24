@@ -3,18 +3,18 @@
 OWLIB_SOURCE = ow_dl.c            \
                ow_dnssd.c         \
                ow_alias.c         \
-	       ow_arg.c           \
-	       ow_avahi_announce.c\
+	           ow_arg.c           \
+	           ow_avahi_announce.c\
                ow_avahi_browse.c  \
-	       ow_avahi_link.c    \
+               ow_avahi_link.c    \
                ow_baud.c          \
                ow_browse.c        \
                ow_browse_resolve.c\
                ow_browse_monitor.c\
-	       ow_buslock.c       \
+               ow_buslock.c       \
                compat.c           \
                getaddrinfo.c      \
-	       getline.c          \
+               getline.c          \
                getopt.c           \
                ow_none.c          \
                ow_1820.c          \
@@ -58,9 +58,9 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_connect.c       \
                ow_crc.c           \
                ow_daemon.c        \
-	       ow_date.c          \
+               ow_date.c          \
                ow_delay.c         \
-	       ow_devicelock.c    \
+               ow_devicelock.c    \
                ow_dir.c           \
                ow_dirblob.c       \
                ow_ds2482.c        \
@@ -68,7 +68,7 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_ds1410.c        \
                ow_ds9097U.c       \
                ow_ds9490.c        \
-	       ow_eds.c           \
+               ow_eds.c           \
                ow_eeef.c          \
                ow_eprom_write.c   \
                ow_etherweather.c  \
@@ -85,8 +85,8 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_fakeread.c      \
                ow_filelength.c    \
                ow_fstat.c         \
-	       ow_generic_read.c  \
-	       ow_get.c           \
+               ow_generic_read.c  \
+               ow_get.c           \
                ow_help.c          \
                ow_interface.c     \
                ow_iterate.c       \
@@ -150,6 +150,7 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_tree.c          \
                ow_transaction.c   \
                ow_udp_read.c      \
+               ow_usb_cycle.c     \
                ow_usb_monitor.c   \
                ow_util.c          \
                ow_verify.c        \
