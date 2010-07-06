@@ -79,11 +79,11 @@ void DeviceDestroy(void)
 {
 	UINT i;
 	for (i = 0; i < (sizeof(Tree) / sizeof(void *)); i++) {
-		if (Tree[i]) {
-			/* ePN_structure is just a duplicate of ePN_real */
-			if (i != ePN_structure) {
-				tdestroy(Tree[i], free_node);
-			}
+		/* ePN_structure is just a duplicate of ePN_real */
+		if (i != ePN_structure) {
+			SAFETDESTROY( &(Tree[i]), free_node);
+		} else {
+			/* ePN_structure (will be cleared in ePN_real) */
 			Tree[i] = NULL;
 		}
 	}

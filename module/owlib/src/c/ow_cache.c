@@ -240,8 +240,7 @@ void Cache_Open(void)
 void Cache_Close(void)
 {
 	Cache_Clear() ;
-	tdestroy(cache.permanent_tree, owfree_func);
-	cache.permanent_tree = NULL;
+	SAFETDESTROY( &(cache.permanent_tree), owfree_func);
 }
 
 /* Clear the cache (a change was made that might give stale information) */
@@ -261,12 +260,8 @@ void Cache_Clear(void)
 	cache.killed = cache.retired + cache.lifespan;
 	CACHE_WUNLOCK;
 	/* flipped old database is now out of circulation -- can be destroyed without a lock */
-	if (c_new) {
-		tdestroy(c_new, owfree_func);
-	}
-	if (c_old) {
-		tdestroy(c_old, owfree_func);
-	}
+	SAFETDESTROY( &c_new, owfree_func);
+	SAFETDESTROY( &c_old, owfree_func);
 }
 
 /* Wrapper to perform a cache function and add statistics */
@@ -567,7 +562,7 @@ static void * GetFlippedTree( void )
 static void DeleteFlippedTree( void * retired_tree )
 {
 	LEVEL_DEBUG("flip cache. tdestroy() will be called.");
-	tdestroy(retired_tree, owfree_func);
+	SAFETDESTROY( &retired_tree, owfree_func);
 	STATLOCK;
 	++cache_flips;			/* statistics */
 	memcpy(&old_avg, &new_avg, sizeof(struct average));
@@ -582,7 +577,7 @@ static int Cache_Add_Common(struct tree_node *tn)
 {
 	struct tree_opaque *opaque;
 	enum { no_add, yes_add, just_update } state = no_add;
-	void *retired_tree = NULL;
+	void *retired_tree = NULL; // used a a flag for cache flip
 
 	node_show(tn);
 	LEVEL_DEBUG("Add to cache sn " SNformat " pointer=%p index=%d size=%d", SNvar(tn->tk.sn), tn->tk.p, tn->tk.extension, tn->dsize);

@@ -27,7 +27,7 @@ static void * SpecialCase_look( struct one_wire_query * owq ) ;
 static void free_node(void *nodep) ;
 static int specialcase_compare(const void *a, const void *b) ;
 
-void * SpecialCase = NULL ;
+void * SpecialCaseTree = NULL ;
 
 static void free_node(void *nodep)
 {
@@ -38,7 +38,7 @@ static void free_node(void *nodep)
 
 void SpecialCase_close(void)
 {
-	tdestroy(SpecialCase, free_node);
+	SAFETDESTROY( &SpecialCaseTree, free_node);
 }
 
 
@@ -72,7 +72,7 @@ void SpecialCase_add( struct connection_in * in, unsigned char family_code, cons
 				sc->read = read_func ;
 				sc->write = write_func ;
 				// Add into the red/black tree
-				tsearch(sc, &SpecialCase, specialcase_compare);
+				tsearch(sc, &SpecialCaseTree, specialcase_compare);
 			} else {
 				LEVEL_DEBUG("Attempt to add special handling ran out of memory. Family type %s. Property %s",family_code,property) ;
 			}
@@ -95,7 +95,7 @@ static void * SpecialCase_look( struct one_wire_query * owq )
 	sc.key.extension = pn->extension ;
 
 	// find in the red/black tree
-	return tfind(&sc, &SpecialCase, specialcase_compare);
+	return tfind(&sc, &SpecialCaseTree, specialcase_compare);
 }ZERO_OR_ERROR SpecialCase_read( struct one_wire_query * owq )
 {
 	struct specialcase * sc = SpecialCase_look(owq) ;

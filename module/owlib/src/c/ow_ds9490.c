@@ -113,8 +113,6 @@ static void DS9490_setroutines(struct connection_in *in)
 //#define DS2490_DIR_GULP_ELEMENTS     ((DS2490_BULK_BUFFER_SIZE/SERIAL_NUMBER_SIZE) - 1)
 #define DS2490_DIR_GULP_ELEMENTS     (1)
 
-#define CONTROL_REQUEST_TYPE  0x40
-
 #define CONTROL_CMD     0x00
 #define COMM_CMD        0x01
 #define MODE_CMD        0x02
@@ -206,10 +204,6 @@ static void DS9490_setroutines(struct connection_in *in)
 #define ONEWIREBUSSPEED_FLEXIBLE       0x01
 #define ONEWIREBUSSPEED_OVERDRIVE      0x02
 
-#define ONEWIREDEVICEDETECT               0xA5
-#define COMMCMDERRORRESULT_NRS            0x01
-#define COMMCMDERRORRESULT_SH             0x02
-
 #define PARMSET_Slew15Vus   0x0
 #define PARMSET_Slew2p20Vus 0x1
 #define PARMSET_Slew1p65Vus 0x2
@@ -236,13 +230,6 @@ static void DS9490_setroutines(struct connection_in *in)
 #define PARMSET_DS0_W0R_8us 0x5
 #define PARMSET_DS0_W0R_9us 0x6
 #define PARMSET_DS0_W0R_10us 0x7
-
-/** EP1 -- control read */
-#define DS2490_EP1              0x81
-/** EP2 -- bulk write */
-#define DS2490_EP2              0x02
-/** EP3 -- bulk read */
-#define DS2490_EP3              0x83
 
 /* From datasheet http://datasheets.maxim-ic.com/en/ds/DS2490.pdf page 15 */
 /* 480 usec = 8usec * 60 and 60(decimal) = 0x3C */

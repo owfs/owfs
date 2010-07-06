@@ -14,8 +14,6 @@ $Id$
 #include "ow.h"
 #include "ow_connection.h"
 
-static void FreeIn(struct connection_in * now);
-
 /* Routines for handling a linked list of connections in and out */
 /* typical connection in would be gtmhe serial port or USB */
 
@@ -80,9 +78,9 @@ int BusIsServer(struct connection_in *in)
 	return (in->busmode == bus_server) || (in->busmode == bus_zero);
 }
 
-/* Make a new connection_in entry, and place it in the chain */
+/* Make a new connection_in entry, but DON'T place it in the chain (yet)*/
 /* Based on a shallow copy of "in" if not NULL */
-struct connection_in *NewIn(const struct connection_in *in)
+struct connection_in *AllocIn(const struct connection_in *in)
 {
 	size_t len = sizeof(struct connection_in);
 	struct connection_in *now = (struct connection_in *) owmalloc(len);
@@ -90,28 +88,20 @@ struct connection_in *NewIn(const struct connection_in *in)
 		if (in) {
 			memcpy(now, in, len);
 			if ( in->name != NULL ) {
+				// Don't make the name point to the same string, make a copy
 				now->name = owstrdup( in->name ) ;
 			}
 		} else {
 			memset(now, 0, len);
 		}
 
-		// Housekeeping to place in linked list
-		// Locking done at a higher level
-		now->next = Inbound_Control.head;	/* put in linked list at start */
-		Inbound_Control.head = now;
-		now->index = Inbound_Control.next_index++;
-		++Inbound_Control.active ;
+		/* not yet linked */
+		now->next = NULL ;
 
 		/* Initialize dir-at-once structures */
 		DirblobInit(&(now->main));
 		DirblobInit(&(now->alarm));
 
-#if OW_MT
-		_MUTEX_INIT(now->bus_mutex);
-		_MUTEX_INIT(now->dev_mutex);
-		now->dev_db = NULL;
-#endif							/* OW_MT */
 		/* Support DS1994/DS2404 which require longer delays, and is automatically
 		 * turned on in *_next_both().
 		 * If it's turned off, it will result into a faster reset-sequence.
@@ -128,6 +118,35 @@ struct connection_in *NewIn(const struct connection_in *in)
 	}
 	now->AnyDevices = anydevices_unknown ;
 	return now;
+}
+
+/* Place a new connection in the chain */
+struct connection_in *LinkIn(struct connection_in *now)
+{
+	if (now) {
+		// Housekeeping to place in linked list
+		// Locking done at a higher level
+		now->next = Inbound_Control.head;	/* put in linked list at start */
+		Inbound_Control.head = now;
+		now->index = Inbound_Control.next_index++;
+		++Inbound_Control.active ;
+
+		/* Initialize dir-at-once structures */
+		DirblobInit(&(now->main));
+		DirblobInit(&(now->alarm));
+
+#if OW_MT
+		_MUTEX_INIT(now->bus_mutex);
+		_MUTEX_INIT(now->dev_mutex);
+		now->dev_db = NULL;
+#endif							/* OW_MT */
+	}
+	return now;
+}
+
+/* Create a new inbound structure and place it in the chain */
+struct connection_in *NewIn(const struct connection_in *in) {
+	return LinkIn( AllocIn(in) ) ;
 }
 
 struct connection_out *NewOut(void)
@@ -150,42 +169,11 @@ struct connection_out *NewOut(void)
 	return now;
 }
 
-// Free the important parts of a connection_in structure
-// unlinking needs to be done elsewhere
-// Then free structure itself
-static void FreeIn(struct connection_in * now)
-{
-	if ( now==NULL ) {
-		return ;
-	}
-	//LEVEL_DEBUG("%p next=%p busmode=%d\n", now, now->next, (int)get_busmode(now));
-	--Inbound_Control.active ;
-#if OW_MT
-	_MUTEX_DESTROY(now->bus_mutex);
-	_MUTEX_DESTROY(now->dev_mutex);
-
-	if (now->dev_db) {
-		tdestroy(now->dev_db, owfree_func);
-	}
-	now->dev_db = NULL;
-#endif							/* OW_MT */
-
-	BUS_close(now) ;
-	
-	SAFEFREE(now->name) ;
-	DirblobClear(&(now->main));
-	DirblobClear(&(now->alarm));
-	owfree(now);
-}
-
 /* Free all connection_in in reverse order (Added to head on creation, head-first deletion) */
 void FreeInAll( void )
 {
 	while ( Inbound_Control.head ) {
-		struct connection_in *next_saved = Inbound_Control.head->next;
-		//LEVEL_DEBUG("%p next=%p", Inbound_Control.head, Inbound_Control.head->next);
-		FreeIn(Inbound_Control.head);
-		Inbound_Control.head = next_saved;
+		RemoveIn(Inbound_Control.head);
 	}
 
 #if OW_W1
@@ -202,24 +190,47 @@ void FreeInAll( void )
 
 void RemoveIn( struct connection_in * conn )
 {
-	struct connection_in * now ;
-
+	/* NULL safe */
 	if ( conn == NULL ) {
 		return ;
 	}
 
+	/* First unlink from list */
 	if ( Inbound_Control.head == conn ) {
+		/* Head of list, easy */
 		Inbound_Control.head = conn->next ;
+		--Inbound_Control.active ;
 	} else {
+		struct connection_in * now ;
+		/* find in list and splice out */
 		for ( now = Inbound_Control.head ; now != NULL ; now = now->next ) {
+			/* Works even if not linked, since won't match and will just fall through */
 			if ( now->next == conn ) {
 				now->next = conn->next ;
+				--Inbound_Control.active ;
 				break ;
 			}
 		}
 	}
 
-	FreeIn( conn ) ;
+	/* Now free up thread-sync resources */
+#if OW_MT
+	if ( conn->next != NULL ) {
+		/* Only if actually linked in and possibly active */
+		_MUTEX_DESTROY(conn->bus_mutex);
+		_MUTEX_DESTROY(conn->dev_mutex);
+		SAFETDESTROY( &(conn->dev_db), owfree_func);
+	}
+#endif							/* OW_MT */
+
+	/* Next free up internal resources */
+	BUS_close(conn) ;
+	SAFEFREE(conn->name) ;
+	DirblobClear(&(conn->main));
+	DirblobClear(&(conn->alarm));
+	
+	/* Finally delete the structure */
+	owfree(conn);
 }
 
 void FreeOutAll(void)

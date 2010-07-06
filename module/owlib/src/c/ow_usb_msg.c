@@ -57,11 +57,6 @@ struct usb_dev_handle {
 
 #define CONTROL_REQUEST_TYPE  0x40
 
-// Mode Command Code Constants
-#define ONEWIREDEVICEDETECT               0xA5
-#define COMMCMDERRORRESULT_NRS            0x01
-#define COMMCMDERRORRESULT_SH             0x02
-
 /** EP1 -- control read */
 #define DS2490_EP1              0x81
 /** EP2 -- bulk write */
@@ -153,7 +148,9 @@ RESET_TYPE DS9490_getstatus(BYTE * buffer, int * readlen, const struct parsednam
 			}
 		} else
 #endif
-		ret = usb_bulk_read(usb, DS2490_EP1, (ASCII *) buffer, (size_t) 32, in->connin.usb.timeout) ;
+		{
+			ret = usb_bulk_read(usb, DS2490_EP1, (ASCII *) buffer, (size_t) 32, in->connin.usb.timeout) ;
+		}
 		if ( ret < 0) {
 			LEVEL_DATA("(no HAVE_USB_INTERRUPT_READ) error reading ret=%d", ret);
 		}
@@ -282,7 +279,7 @@ void DS9490_close(struct connection_in *in)
 		int ret = usb_release_interface(usb, 0);
 		if (ret) {
 			in->connin.usb.dev = NULL;	// force a re-scan
-			LEVEL_CONNECT("Release interface failed ret=%d", ret);
+			LEVEL_CONNECT("Release interface (USB) failed ret=%d", ret);
 		}
 
 		/* It might already be closed? (returning -ENODEV)

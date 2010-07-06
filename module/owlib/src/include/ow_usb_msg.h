@@ -59,19 +59,10 @@ SIZE_OR_ERROR DS9490_read(BYTE * buf, size_t size, const struct parsedname *pn);
 SIZE_OR_ERROR DS9490_write(const BYTE * buf, size_t size, const struct parsedname *pn);
 void DS9490_close(struct connection_in *in);
 
-#define CONTROL_REQUEST_TYPE  0x40
-
 // Mode Command Code Constants
 #define ONEWIREDEVICEDETECT               0xA5
 #define COMMCMDERRORRESULT_NRS            0x01
 #define COMMCMDERRORRESULT_SH             0x02
-
-/** EP1 -- control read */
-#define DS2490_EP1              0x81
-/** EP2 -- bulk write */
-#define DS2490_EP2              0x02
-/** EP3 -- bulk read */
-#define DS2490_EP3              0x83
 
 extern char badUSBname[] ;
 
