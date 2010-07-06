@@ -1,0 +1,88 @@
+/*
+$Id$
+    OWFS -- One-Wire filesystem
+    OWHTTPD -- One-Wire Web Server
+    Written 2003 Paul H Alfille
+    email: palfille@earthlink.net
+    Released under the GPL
+    See the header file: ow.h for full attribution
+    1wire/iButton system from Dallas Semiconductor
+*/
+
+/* DS9490R-W USB 1-Wire master
+
+   USB parameters:
+       Vendor ID: 04FA
+       ProductID: 2490
+
+   Dallas controller DS2490
+
+*/
+
+#ifndef OW_USB_MSG_H			/* tedious wrapper */
+#define OW_USB_MSG_H
+
+#if OW_USB						/* conditional inclusion of USB */
+
+/* Extensive FreeBSD workarounds by Robert Nilsson <rnilsson@mac.com> */
+/* Peter Radcliffe updated support for FreeBSD >= 8 */
+#ifdef __FreeBSD__
+	// Add a few definitions we need
+#undef HAVE_USB_INTERRUPT_READ	// This call in libusb is unneeded for FreeBSD (and it's broken)
+#if __FreeBSD__ < 8
+#include <sys/types.h>
+#include <dev/usb/usb.h>
+#define USB_CLEAR_HALT BSD_usb_clear_halt
+#endif /* __FreeBSD__ < 8 */
+struct usb_dev_handle {
+	FILE_DESCRIPTOR_OR_ERROR file_descriptor;
+	struct usb_bus *bus;
+	struct usb_device *device;
+	int config;
+	int interface;
+	int altsetting;
+	void *impl_info;
+};
+#endif /* __FreeBSD__ */
+
+#ifndef USB_CLEAR_HALT
+#define USB_CLEAR_HALT usb_clear_halt
+#endif /* USB_CLEAR_HALT */
+
+/* All the rest of the code sees is the DS9490_detect routine and the iroutine structure */
+
+GOOD_OR_BAD USB_Control_Msg(BYTE bRequest, UINT wValue, UINT wIndex, const struct parsedname *pn);
+GOOD_OR_BAD DS9490_open(struct usb_list *ul, struct connection_in *in);
+
+RESET_TYPE DS9490_getstatus(BYTE * buffer, int * readlen, const struct parsedname *pn);
+SIZE_OR_ERROR DS9490_read(BYTE * buf, size_t size, const struct parsedname *pn);
+SIZE_OR_ERROR DS9490_write(const BYTE * buf, size_t size, const struct parsedname *pn);
+void DS9490_close(struct connection_in *in);
+
+#define CONTROL_REQUEST_TYPE  0x40
+
+// Mode Command Code Constants
+#define ONEWIREDEVICEDETECT               0xA5
+#define COMMCMDERRORRESULT_NRS            0x01
+#define COMMCMDERRORRESULT_SH             0x02
+
+/** EP1 -- control read */
+#define DS2490_EP1              0x81
+/** EP2 -- bulk write */
+#define DS2490_EP2              0x02
+/** EP3 -- bulk read */
+#define DS2490_EP3              0x83
+
+extern char badUSBname[] ;
+
+// Device Status Flags
+#define STATUSFLAGS_SPUA                       0x01	// if set Strong Pull-up is active
+#define STATUSFLAGS_PRGA                       0x02	// if set a 12V programming pulse is being generated
+#define STATUSFLAGS_12VP                       0x04	// if set the external 12V programming voltage is present
+#define STATUSFLAGS_PMOD                       0x08	// if set the DS2490 powered from USB and external sources
+#define STATUSFLAGS_HALT                       0x10	// if set the DS2490 is currently halted
+#define STATUSFLAGS_IDLE                       0x20	// if set the DS2490 is currently idle
+
+#endif							/* OW_USB */
+
+#endif /* OW_USB_MSG_H */
