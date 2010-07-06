@@ -57,17 +57,11 @@ struct usb_dev_handle {
 
 /* All the rest of the code sees is the DS9490_detect routine and the iroutine structure */
 
-static GOOD_OR_BAD usbdevice_in_use(const struct connection_in * in_selected) ;
-static char *DS9490_device_name(const struct usb_list *ul);
-
 static RESET_TYPE DS9490_reset(const struct parsedname *pn);
-
-static GOOD_OR_BAD DS9490_open_and_name(struct usb_list *ul, struct connection_in *in);
 
 static GOOD_OR_BAD DS9490_detect_single_adapter(int usb_nr, struct connection_in *in);
 static GOOD_OR_BAD DS9490_detect_all_adapters(struct connection_in * in_first);
 static GOOD_OR_BAD DS9490_detect_specific_adapter(int bus_nr, int dev_nr, struct connection_in * in) ;
-static GOOD_OR_BAD DS9490_ID_this_master(struct connection_in *in);
 static void DS9490_connection_init( struct connection_in * in ) ;
 
 static GOOD_OR_BAD DS9490_reconnect(const struct parsedname *pn);
@@ -75,8 +69,6 @@ static GOOD_OR_BAD DS9490_redetect_low(struct connection_in * in);
 static GOOD_OR_BAD DS9490_redetect_match(struct connection_in * in);
 static GOOD_OR_BAD DS9490_redetect_specific_adapter( struct connection_in * in) ;
 static void DS9490_setroutines(struct connection_in *in);
-static GOOD_OR_BAD DS9490_root_dir( struct dirblob * db, struct connection_in * in ) ;
-static void DS9490_dir_callback( void * v, const struct parsedname * pn_entry );
 static GOOD_OR_BAD DS9490_setup_adapter(struct connection_in * in) ;
 
 static enum search_status DS9490_next_both(struct device_search *ds, const struct parsedname *pn);
@@ -382,80 +374,6 @@ static GOOD_OR_BAD DS9490_detect_all_adapters(struct connection_in * in_first)
 	return gbGOOD ;
 }
 
-/* Found a DS9490 that seems good, now check list and find a device to ID for reconnects */
-static GOOD_OR_BAD DS9490_ID_this_master(struct connection_in *in)
-{
-	struct dirblob db ;
-	BYTE sn[SERIAL_NUMBER_SIZE] ;
-	int device_number ;
-	
-	if ( BAD( DS9490_root_dir( &db, in ) ) ) {
-		LEVEL_DATA("Cannot get root directory on [%s] (Probably non-DS9490 device and empty bus).", SAFESTRING(in->name));
-		return gbBAD ;
-	}
-
-	// Use 0x00 if no devices (homegrown adapters?)
-	if ( DirblobElements( &db) == 0 ) {
-		DirblobClear( &db ) ;
-		memset( in->connin.usb.ds1420_address, 0, SERIAL_NUMBER_SIZE ) ;
-		LEVEL_DEFAULT("Set DS9490 %s unique id 0x00 (no devices at all)", SAFESTRING(in->name)) ;
-		return gbGOOD ;
-	}
-	
-	// look for the special 0x81 device
-	device_number = 0 ;
-	while ( DirblobGet( device_number, sn, &db ) == 0 ) {
-		if (sn[0] == 0x81) {	// 0x81 family code
-			memcpy(in->connin.usb.ds1420_address, sn, SERIAL_NUMBER_SIZE);
-			LEVEL_DEFAULT("Set DS9490 %s unique id to " SNformat, SAFESTRING(in->name), SNvar(in->connin.usb.ds1420_address));
-			DirblobClear( &db ) ;
-			return gbGOOD ;
-		}
-		++device_number ;
-	}
-
-	// look for the (less specific, but older DS9490s) 0x01 device
-	device_number = 0 ;
-	while ( DirblobGet( device_number, sn, &db ) == 0 ) {
-		if (sn[0] == 0x01) {	// 0x01 family code
-			memcpy(in->connin.usb.ds1420_address, sn, SERIAL_NUMBER_SIZE);
-			LEVEL_DEFAULT("Set DS9490 %s unique id to " SNformat, SAFESTRING(in->name), SNvar(in->connin.usb.ds1420_address));
-			DirblobClear( &db ) ;
-			return gbGOOD ;
-		}
-		++device_number ;
-	}
-
-	// Take the first device, whatever it is
-	DirblobGet( 0, sn, &db ) ;
-	memcpy(in->connin.usb.ds1420_address, sn, SERIAL_NUMBER_SIZE);
-	LEVEL_DEFAULT("Set DS9490 %s unique id to " SNformat, SAFESTRING(in->name), SNvar(in->connin.usb.ds1420_address));
-	DirblobClear( &db ) ;
-	return gbGOOD;
-}
-
-static GOOD_OR_BAD usbdevice_in_use(const struct connection_in * in_selected)
-{
-	struct connection_in *in;
-
-	for (in = Inbound_Control.head; in != NULL; in = in->next) {
-		if ( in == in_selected ) {
-			continue ;
-		}
-		if ( in->busmode != bus_usb ) {
-			continue ;
-		}
-		if ( in->name == NULL ) {
-			continue ;
-		}
-		LEVEL_DEBUG("Comparing %s with bus.%d %s",in_selected->name,in->index,SAFESTRING(in->name));
-		if ( strcmp(in->name, in_selected->name) == 0 ) {
-			return gbBAD;			// It seems to be in use already
-		}
-	}
-	return gbGOOD;					// not found in the current inbound list
-}
-
 /* ------------------------------------------------------------ */
 /* --- USB redetect routines -----------------------------------*/
 
@@ -566,10 +484,7 @@ static GOOD_OR_BAD DS9490_redetect_match( struct connection_in * in)
 	}
 
 	// Generate a root directory
-	if ( BAD( DS9490_root_dir( &db, in ) ) ) {
-		LEVEL_DATA("Cannot get root directory on [%s] (Probably non-DS9490 device and empty bus).", SAFESTRING(in->name));
-		return gbBAD ;
-	}
+	RETURN_BAD_IF_BAD( DS9490_root_dir( &db, in ) ) ;
 
 	// This adapter has no tags, so not the one we want
 	if ( DirblobElements( &db) == 0 ) {
@@ -843,50 +758,6 @@ static int FindDiscrepancy(BYTE * last_sn, BYTE * discrepancy_sn)
 	return 0;
 }
 
-static void DS9490_dir_callback( void * v, const struct parsedname * pn_entry )
-{
-	struct dirblob * db = v ;
-
-	LEVEL_DEBUG("Callback on %s",SAFESTRING(pn_entry->path));
-	if ( pn_entry->sn[0] != '\0' ) {
-		DirblobAdd( pn_entry->sn, db ) ;
-	}
-}
-
-static GOOD_OR_BAD DS9490_root_dir( struct dirblob * db, struct connection_in * in )
-{
-	ASCII path[PATH_MAX] ;
-	struct parsedname pn_root ;
-	ZERO_OR_ERROR ret ;
-
-	UCLIBCLOCK;
-	snprintf(path, PATH_MAX, "/uncached/bus.%d", in->index);
-	UCLIBCUNLOCK;
-
-	if ( FS_ParsedName(path, &pn_root) != 0 ) {
-		return gbBAD ;
-	}
-	DirblobInit( db ) ;
-
-	/* First time pretend there are devices */
-	pn_root.selected_connection->changed_bus_settings |= CHANGED_USB_SPEED ;	// Trigger needing new configuration
-	pn_root.selected_connection->speed = bus_speed_slow;	// not overdrive at start
-	pn_root.selected_connection->flex = Globals.usb_flextime ? bus_yes_flex : bus_no_flex ;
-	
-	SetReconnect(&pn_root) ;
-	ret = FS_dir( DS9490_dir_callback, db, &pn_root ) ;
-	LEVEL_DEBUG("Finished FS_dir");
-	FS_ParsedName_destroy(&pn_root) ;
-	
-	
-	if ( ret != 0 ) {
-		DirblobClear(db) ;
-		return gbBAD ;
-	}
-	return gbGOOD ;
-	// Dirblob must be cleared by recipient.
-}
-
 static void DS9490_connection_init( struct connection_in * in )
 {
 	if ( in == NULL ) {
@@ -911,7 +782,7 @@ static void DS9490_connection_init( struct connection_in * in )
    set all the interface magic
    set callback routines and adapter entries
 */
-static GOOD_OR_BAD DS9490_open_and_name(struct usb_list *ul, struct connection_in *in)
+GOOD_OR_BAD DS9490_open_and_name(struct usb_list *ul, struct connection_in *in)
 {
 	struct connection_in * other ; // to test against repeats
 	SAFEFREE(in->name) ;
@@ -953,24 +824,6 @@ static GOOD_OR_BAD DS9490_open_and_name(struct usb_list *ul, struct connection_i
 	DS9490_SetFlexParameters(in);
 
 	return gbGOOD ;
-}
-
-/* Construct the device name */
-/* Return NULL if there is a problem */
-static char *DS9490_device_name(const struct usb_list *ul)
-{
-	size_t len = PATH_MAX ;
-	char name[len + 1];
-	char *ret = NULL;
-	int sn_ret ;
-	UCLIBCLOCK ;
-	sn_ret = snprintf(name, len, "%s:%s", ul->bus->dirname, ul->dev->filename) ;
-	UCLIBCUNLOCK ;
-	if (sn_ret > 0) {
-		name[len] = '\0';		// make sure there is a trailing null
-		ret = owstrdup(name);
-	}
-	return ret;
 }
 
 /* ------------------------------------------------------------ */

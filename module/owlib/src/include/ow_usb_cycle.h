@@ -66,6 +66,11 @@ struct usb_list {
 
 void USB_first(struct usb_list *ul);
 GOOD_OR_BAD USB_next(struct usb_list *ul);
+GOOD_OR_BAD DS9490_root_dir( struct dirblob * db, struct connection_in * in ) ;
+GOOD_OR_BAD DS9490_ID_this_master(struct connection_in *in);
+GOOD_OR_BAD usbdevice_in_use(const struct connection_in * in_selected);
+char *DS9490_device_name(const struct usb_list *ul);
+GOOD_OR_BAD DS9490_open_and_name(struct usb_list *ul, struct connection_in *in);
 
 #define DS2490_USB_VENDOR  0x04FA
 #define DS2490_USB_PRODUCT 0x2490

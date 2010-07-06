@@ -53,8 +53,6 @@ struct usb_dev_handle {
 #define USB_CLEAR_HALT usb_clear_halt
 #endif /* USB_CLEAR_HALT */
 
-/* All the rest of the code sees is the DS9490_detect routine and the iroutine structure */
-
 #define CONTROL_REQUEST_TYPE  0x40
 
 /** EP1 -- control read */

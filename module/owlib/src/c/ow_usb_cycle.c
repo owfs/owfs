@@ -28,6 +28,8 @@ $Id$
 
 #if OW_USB
 
+static void DS9490_dir_callback( void * v, const struct parsedname * pn_entry );
+
 /* ------------------------------------------------------------ */
 /* --- USB bus scaning -----------------------------------------*/
 
@@ -61,6 +63,146 @@ GOOD_OR_BAD USB_next(struct usb_list *ul)
 		}
 	}
 	return gbBAD;
+}
+
+/* Used only in root_dir */
+static void DS9490_dir_callback( void * v, const struct parsedname * pn_entry )
+{
+	struct dirblob * db = v ;
+
+	LEVEL_DEBUG("Callback on %s",SAFESTRING(pn_entry->path));
+	if ( pn_entry->sn[0] != '\0' ) {
+		DirblobAdd( pn_entry->sn, db ) ;
+	}
+}
+
+/* Get the root directory listing for finding a 1-wire tag for a DS9490 */
+/* Only error is if parsename fails */
+GOOD_OR_BAD DS9490_root_dir( struct dirblob * db, struct connection_in * in )
+{
+	ASCII path[PATH_MAX] ;
+	struct parsedname pn_root ;
+
+	UCLIBCLOCK;
+		/* Force this adapter with bus.n path */
+		snprintf(path, PATH_MAX, "/uncached/bus.%d", in->index);
+	UCLIBCUNLOCK;
+
+	if ( FS_ParsedName(path, &pn_root) != 0 ) {
+		LEVEL_DATA("Cannot get root directory on [%s] Parsing %s error.", SAFESTRING(in->name), path);
+		return gbBAD ;
+	}
+	DirblobInit( db ) ;
+
+	/* First time pretend there are devices */
+	pn_root.selected_connection->changed_bus_settings |= CHANGED_USB_SPEED ;	// Trigger needing new configuration
+	pn_root.selected_connection->speed = bus_speed_slow;	// not overdrive at start
+	pn_root.selected_connection->flex = Globals.usb_flextime ? bus_yes_flex : bus_no_flex ;
+	
+	SetReconnect(&pn_root) ;
+	FS_dir( DS9490_dir_callback, db, &pn_root ) ;
+	LEVEL_DEBUG("Finished FS_dir");
+	FS_ParsedName_destroy(&pn_root) ;
+
+	return gbGOOD ;
+	// Dirblob must be cleared by recipient.
+}
+
+/* Found a DS9490 that seems good, now check list and find a device to ID for reconnects */
+/* Choose in order:
+ * (first) 0x81
+ * (first) 0x01
+ * first other family
+ * 0x00
+ * */
+GOOD_OR_BAD DS9490_ID_this_master(struct connection_in *in)
+{
+	struct dirblob db ;
+	BYTE sn[SERIAL_NUMBER_SIZE] ;
+	int device_number ;
+	
+	RETURN_BAD_IF_BAD( DS9490_root_dir( &db, in ) ) ;
+
+	// Use 0x00 if no devices (homegrown adapters?)
+	if ( DirblobElements( &db) == 0 ) {
+		DirblobClear( &db ) ;
+		memset( in->connin.usb.ds1420_address, 0, SERIAL_NUMBER_SIZE ) ;
+		LEVEL_DEFAULT("Set DS9490 %s unique id 0x00 (no devices at all)", SAFESTRING(in->name)) ;
+		return gbGOOD ;
+	}
+	
+	// look for the special 0x81 device
+	device_number = 0 ;
+	while ( DirblobGet( device_number, sn, &db ) == 0 ) {
+		if (sn[0] == 0x81) {	// 0x81 family code
+			memcpy(in->connin.usb.ds1420_address, sn, SERIAL_NUMBER_SIZE);
+			LEVEL_DEFAULT("Set DS9490 %s unique id to " SNformat, SAFESTRING(in->name), SNvar(in->connin.usb.ds1420_address));
+			DirblobClear( &db ) ;
+			return gbGOOD ;
+		}
+		++device_number ;
+	}
+
+	// look for the (less specific, for older DS9490s) 0x01 device
+	device_number = 0 ;
+	while ( DirblobGet( device_number, sn, &db ) == 0 ) {
+		if (sn[0] == 0x01) {	// 0x01 family code
+			memcpy(in->connin.usb.ds1420_address, sn, SERIAL_NUMBER_SIZE);
+			LEVEL_DEFAULT("Set DS9490 %s unique id to " SNformat, SAFESTRING(in->name), SNvar(in->connin.usb.ds1420_address));
+			DirblobClear( &db ) ;
+			return gbGOOD ;
+		}
+		++device_number ;
+	}
+
+	// Take the first device, whatever it is
+	DirblobGet( 0, sn, &db ) ;
+	memcpy(in->connin.usb.ds1420_address, sn, SERIAL_NUMBER_SIZE);
+	LEVEL_DEFAULT("Set DS9490 %s unique id to " SNformat, SAFESTRING(in->name), SNvar(in->connin.usb.ds1420_address));
+	DirblobClear( &db ) ;
+	return gbGOOD;
+}
+
+GOOD_OR_BAD usbdevice_in_use(const struct connection_in * in_selected)
+{
+	struct connection_in *in;
+
+	for (in = Inbound_Control.head; in != NULL; in = in->next) {
+		if ( in == in_selected ) {
+			continue ;
+		}
+		if ( in->busmode != bus_usb ) {
+			continue ;
+		}
+		if ( in->name == NULL ) {
+			continue ;
+		}
+		LEVEL_DEBUG("Comparing %s with bus.%d %s",in_selected->name,in->index,SAFESTRING(in->name));
+		if ( strcmp(in->name, in_selected->name) == 0 ) {
+			return gbBAD;			// It seems to be in use already
+		}
+	}
+	return gbGOOD;					// not found in the current inbound list
+}
+
+/* Construct the device name */
+/* Return NULL if there is a problem */
+char *DS9490_device_name(const struct usb_list *ul)
+{
+	size_t len = PATH_MAX ;
+	char name[len + 1];
+	int sn_ret ;
+
+	UCLIBCLOCK ;
+	sn_ret = snprintf(name, len, "%s:%s", ul->bus->dirname, ul->dev->filename) ;
+	UCLIBCUNLOCK ;
+
+	if (sn_ret <= 0) {
+		return NULL ;
+	}
+
+	name[len] = '\0';		// make sure there is a trailing null
+	return owstrdup(name);
 }
 
 #endif							/* OW_USB */
