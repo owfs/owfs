@@ -23,6 +23,8 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 #include "ow_connection.h"
+#include "ow_usb_msg.h"
+#include "ow_usb_cycle.h"
 
 #if OW_USB
 

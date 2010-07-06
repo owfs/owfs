@@ -90,6 +90,7 @@ noinst_HEADERS =          \
         ow_thermocouple.h \
         ow_transaction.h  \
         ow_usb_cycle.h    \
+        ow_usb_msg.h      \
         ow_visibility.h   \
         ow_w1.h           \
         rwlock.h          \

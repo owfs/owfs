@@ -64,7 +64,7 @@ struct usb_list {
 	struct usb_device *dev;
 };
 
-void USB_init(struct usb_list *ul);
+void USB_first(struct usb_list *ul);
 GOOD_OR_BAD USB_next(struct usb_list *ul);
 
 #define DS2490_USB_VENDOR  0x04FA

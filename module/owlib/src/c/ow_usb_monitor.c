@@ -13,6 +13,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 #include "ow_connection.h"
+#include "ow_usb_msg.h"
 
 static void USB_monitor_close(struct connection_in *in);
 static GOOD_OR_BAD usb_monitor_in_use(const struct connection_in * in_selected) ;
@@ -71,3 +72,38 @@ static void USB_monitor_close(struct connection_in *in)
 	}
 #endif
 }
+
+/* Open a DS9490  -- low level code (to allow for repeats)  */
+static GOOD_OR_BAD USB_scan_for_adapters(struct connection_in * in_first)
+{
+	struct usb_list ul;
+	struct connection_in * in = in_first ;
+
+	USB_first(&ul);
+	while ( GOOD(USB_next(&ul)) ) {
+		if ( BAD(DS9490_open_and_name(&ul, in)) ) {
+			LEVEL_DEBUG("Cannot open USB device %s:%s", ul.bus->dirname, ul.dev->filename );
+			continue ;
+		} else if ( BAD(DS9490_ID_this_master(in)) ) {
+			DS9490_close(in) ;
+			LEVEL_DEBUG("Cannot name USB device %s:%s", ul.bus->dirname, ul.dev->filename );
+			continue;
+		} else{
+			LEVEL_CONNECT("USB DS9490 %s:%s successfully bound", ul.bus->dirname, ul.dev->filename );
+			in = NewIn(in_first) ;
+			if ( in == NULL ) {
+				return gbGOOD ;
+			}
+			// set up the new connection for the next adapter
+			DS9490_connection_init(in) ;
+		}
+	}
+	if ( in == in_first ) {
+		LEVEL_CONNECT("No available USB DS9490 bus master found");
+		return gbBAD;
+	}
+	// Remove the extra connection
+	RemoveIn(in);
+	return gbGOOD ;
+}
+
