@@ -292,12 +292,12 @@ static GOOD_OR_BAD DS9490_detect_single_adapter(int usb_nr, struct connection_in
 			DS9490_close(in) ;
 			LEVEL_CONNECT("USB DS9490 %d unsuccessful. (Looking for %d)", usbnum, usb_nr);
 		} else{
-			LEVEL_CONNECT("USB DS9490 %d/%d successfully bound", usbnum, usb_nr);
+			LEVEL_CONNECT("USB DS9490 %d:%d successfully bound", usbnum, usb_nr);
 			return gbGOOD ;
 		}
 	}
 
-	LEVEL_CONNECT("No available USB DS9490 bus master found");
+	LEVEL_CONNECT("No matching USB DS9490 bus master found");
 	return gbBAD;
 }
 
