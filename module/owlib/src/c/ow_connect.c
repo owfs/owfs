@@ -17,6 +17,10 @@ $Id$
 /* Routines for handling a linked list of connections in and out */
 /* typical connection in would be gtmhe serial port or USB */
 
+static struct connection_in *AllocIn(const struct connection_in *in);
+static struct connection_in *LinkIn(struct connection_in *in);
+
+
 /* Globals */
 struct inbound_control Inbound_Control = {
 	.active = 0,
@@ -80,7 +84,7 @@ int BusIsServer(struct connection_in *in)
 
 /* Make a new connection_in entry, but DON'T place it in the chain (yet)*/
 /* Based on a shallow copy of "in" if not NULL */
-struct connection_in *AllocIn(const struct connection_in *in)
+static struct connection_in *AllocIn(const struct connection_in *in)
 {
 	size_t len = sizeof(struct connection_in);
 	struct connection_in *now = (struct connection_in *) owmalloc(len);
@@ -121,7 +125,7 @@ struct connection_in *AllocIn(const struct connection_in *in)
 }
 
 /* Place a new connection in the chain */
-struct connection_in *LinkIn(struct connection_in *now)
+static struct connection_in *LinkIn(struct connection_in *now)
 {
 	if (now) {
 		// Housekeeping to place in linked list

@@ -587,8 +587,6 @@ void RemoveIn( struct connection_in * conn ) ;
 void FreeOutAll(void);
 void DelIn(struct connection_in *in);
 
-struct connection_in *AllocIn(const struct connection_in *in);
-struct connection_in *LinkIn(struct connection_in *in);
 struct connection_in *NewIn(const struct connection_in *in);
 struct connection_in *find_connection_in(int nr);
 int SetKnownBus( int bus_number, struct parsedname * pn) ;
