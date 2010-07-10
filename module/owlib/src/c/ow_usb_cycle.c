@@ -39,6 +39,8 @@ void USB_first(struct usb_list *ul)
 	usb_find_busses();
 	usb_find_devices();
 	ul->bus = usb_get_busses();
+	ul->usb_bus_number = -1 ;
+	ul->usb_bus_number = atoi(ul->bus->dirname) ;
 	ul->dev = NULL;
 }
 
@@ -50,15 +52,19 @@ GOOD_OR_BAD USB_next(struct usb_list *ul)
 			ul->dev = ul->bus->devices;
 		} else {				// New bus, find first device
 			ul->dev = ul->dev->next;
+			ul->usb_dev_number = -1 ;
+			ul->usb_dev_number = atoi(ul->dev->filename) ;
 		}
 		if (ul->dev) {			// device found
 			if (ul->dev->descriptor.idVendor != DS2490_USB_VENDOR || ul->dev->descriptor.idProduct != DS2490_USB_PRODUCT) {
 				continue;		// not DS9490
 			}
-			LEVEL_CONNECT("Bus master found: %s/%s", ul->bus->dirname, ul->dev->filename);
+			LEVEL_CONNECT("Bus master found: %s:%s", ul->bus->dirname, ul->dev->filename);
 			return gbGOOD;
 		} else {
 			ul->bus = ul->bus->next;
+			ul->usb_bus_number = -1 ;
+			ul->usb_bus_number = atoi(ul->bus->dirname) ;
 			ul->dev = NULL;
 		}
 	}
@@ -174,13 +180,13 @@ GOOD_OR_BAD usbdevice_in_use(const struct connection_in * in_selected)
 		if ( in->busmode != bus_usb ) {
 			continue ;
 		}
-		if ( in->name == NULL ) {
+		if ( in->connin.usb.usb_bus_number != in_selected->connin.usb.usb_bus_number ) {
 			continue ;
 		}
-		LEVEL_DEBUG("Comparing %s with bus.%d %s",in_selected->name,in->index,SAFESTRING(in->name));
-		if ( strcmp(in->name, in_selected->name) == 0 ) {
-			return gbBAD;			// It seems to be in use already
+		if ( in->connin.usb.usb_dev_number != in_selected->connin.usb.usb_dev_number ) {
+			continue ;
 		}
+		return gbBAD;			// It seems to be in use already
 	}
 	return gbGOOD;					// not found in the current inbound list
 }

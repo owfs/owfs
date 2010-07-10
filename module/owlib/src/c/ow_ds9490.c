@@ -290,13 +290,14 @@ static GOOD_OR_BAD DS9490_detect_single_adapter(int usb_nr, struct connection_in
 			return gbBAD;
 		} else if ( BAD(DS9490_ID_this_master(in)) ) {
 			DS9490_close(in) ;
-			LEVEL_CONNECT("USB DS9490 %d unsuccessful. (Looking for %d)", usbnum, usb_nr);
+			LEVEL_CONNECT("USB DS9490 %d unsuccessful.", usbnum, usb_nr);
+			return gbBAD;
 		} else{
 			LEVEL_CONNECT("USB DS9490 %d:%d successfully bound", usbnum, usb_nr);
 			return gbGOOD ;
 		}
 	}
-
+	// fall through
 	LEVEL_CONNECT("No matching USB DS9490 bus master found");
 	return gbBAD;
 }
@@ -768,6 +769,7 @@ static void DS9490_connection_init( struct connection_in * in )
 
 	in->busmode = bus_usb;
 	in->connin.usb.usb = NULL ; // no handle yet
+	in->connin.usb.usb_bus_number = in->connin.usb.usb_dev_number = -1 ;
 	memset( in->connin.usb.ds1420_address, 0, SERIAL_NUMBER_SIZE ) ;
 	DS9490_setroutines(in);
 	in->Adapter = adapter_DS9490;	/* OWFS assigned value */

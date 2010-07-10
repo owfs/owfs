@@ -237,9 +237,11 @@ GOOD_OR_BAD DS9490_open(struct usb_list *ul, struct connection_in *in)
 	}
 
 	in->connin.usb.usb = usb;
-	#ifdef LIBUSB_HAS_DETACH_KERNEL_DRIVER_NP
+	in->connin.usb.usb_bus_number = ul->usb_bus_number ;
+	in->connin.usb.usb_dev_number = ul->usb_dev_number ;
+#ifdef LIBUSB_HAS_DETACH_KERNEL_DRIVER_NP
 	usb_detach_kernel_driver_np(usb, 0);
-	#endif							/* LIBUSB_HAS_DETACH_KERNEL_DRIVER_NP */
+#endif							/* LIBUSB_HAS_DETACH_KERNEL_DRIVER_NP */
 
 	// store timeout value -- sec -> msec
 	in->connin.usb.timeout = 1000 * Globals.timeout_usb;

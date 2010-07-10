@@ -62,6 +62,8 @@ $Id$
 struct usb_list {
 	struct usb_bus *bus;
 	struct usb_device *dev;
+	int usb_bus_number;
+	int usb_dev_number;
 };
 
 void USB_first(struct usb_list *ul);

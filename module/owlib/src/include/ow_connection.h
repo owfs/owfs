@@ -231,6 +231,8 @@ struct connin_usb {
 #if OW_USB
 	struct usb_device *dev;
 	struct usb_dev_handle *usb;
+	int usb_bus_number;
+	int usb_dev_number;
 	int datasampleoffset;
 	int writeonelowtime;
 	int pulldownslewrate;
