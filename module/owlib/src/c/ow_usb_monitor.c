@@ -81,7 +81,7 @@ static void USB_scan_for_adapters(void)
 
 	USB_first(&ul);
 	while ( GOOD(USB_next(&ul)) ) {
-		struct connection_in * in = NewIn() ;
+		struct connection_in * in = NewIn(NULL) ;
 		if ( in == NULL ) {
 			return ;
 		}
@@ -103,21 +103,4 @@ static void USB_scan_for_adapters(void)
 			LEVEL_CONNECT("USB DS9490 %s:%s successfully bound", ul.bus->dirname, ul.dev->filename );
 		}
 	}
-}
-
-void DS9490_connection_init( struct connection_in * in )
-{
-	if ( in == NULL ) {
-		return ;
-	}
-	SAFEFREE( in->name ) ;
-	in->name = owstrdup(badUSBname);		// initialized
-
-	in->busmode = bus_usb;
-	in->connin.usb.usb = NULL ; // no handle yet
-	in->connin.usb.usb_bus_number = in->connin.usb.usb_dev_number = -1 ;
-	memset( in->connin.usb.ds1420_address, 0, SERIAL_NUMBER_SIZE ) ;
-	DS9490_setroutines(in);
-	in->Adapter = adapter_DS9490;	/* OWFS assigned value */
-	in->adapter_name = "DS9490";
 }

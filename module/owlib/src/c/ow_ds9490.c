@@ -358,6 +358,23 @@ static GOOD_OR_BAD DS9490_detect_all_adapters(struct connection_in * in_first)
 	return gbGOOD ;
 }
 
+void DS9490_connection_init( struct connection_in * in )
+{
+	if ( in == NULL ) {
+		return ;
+	}
+	SAFEFREE( in->name ) ;
+	in->name = owstrdup(badUSBname);		// initialized
+
+	in->busmode = bus_usb;
+	in->connin.usb.usb = NULL ; // no handle yet
+	in->connin.usb.usb_bus_number = in->connin.usb.usb_dev_number = -1 ;
+	memset( in->connin.usb.ds1420_address, 0, SERIAL_NUMBER_SIZE ) ;
+	DS9490_setroutines(in);
+	in->Adapter = adapter_DS9490;	/* OWFS assigned value */
+	in->adapter_name = "DS9490";
+}
+
 /* ------------------------------------------------------------ */
 /* --- USB redetect routines -----------------------------------*/
 
