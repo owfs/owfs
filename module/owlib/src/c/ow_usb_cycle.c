@@ -29,6 +29,7 @@ $Id$
 #if OW_USB
 
 static void DS9490_dir_callback( void * v, const struct parsedname * pn_entry );
+static GOOD_OR_BAD usbdevice_in_use(const struct usb_list *ul);
 
 /* ------------------------------------------------------------ */
 /* --- USB bus scaning -----------------------------------------*/
@@ -58,6 +59,9 @@ GOOD_OR_BAD USB_next(struct usb_list *ul)
 		if (ul->dev) {			// device found
 			if (ul->dev->descriptor.idVendor != DS2490_USB_VENDOR || ul->dev->descriptor.idProduct != DS2490_USB_PRODUCT) {
 				continue;		// not DS9490
+			}
+			if ( BAD ( usbdevice_in_use( ul ) ) ) {
+				continue ;
 			}
 			LEVEL_CONNECT("Bus master found: %s:%s", ul->bus->dirname, ul->dev->filename);
 			return gbGOOD;
@@ -169,21 +173,18 @@ GOOD_OR_BAD DS9490_ID_this_master(struct connection_in *in)
 	return gbGOOD;
 }
 
-GOOD_OR_BAD usbdevice_in_use(const struct connection_in * in_selected)
+static GOOD_OR_BAD usbdevice_in_use(const struct usb_list *ul)
 {
 	struct connection_in *in;
 
 	for (in = Inbound_Control.head; in != NULL; in = in->next) {
-		if ( in == in_selected ) {
-			continue ;
-		}
 		if ( in->busmode != bus_usb ) {
 			continue ;
 		}
-		if ( in->connin.usb.usb_bus_number != in_selected->connin.usb.usb_bus_number ) {
+		if ( in->connin.usb.usb_bus_number != ul->usb_bus_number ) {
 			continue ;
 		}
-		if ( in->connin.usb.usb_dev_number != in_selected->connin.usb.usb_dev_number ) {
+		if ( in->connin.usb.usb_dev_number != ul->usb_dev_number ) {
 			continue ;
 		}
 		return gbBAD;			// It seems to be in use already

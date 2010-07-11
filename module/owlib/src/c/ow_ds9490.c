@@ -62,7 +62,6 @@ static RESET_TYPE DS9490_reset(const struct parsedname *pn);
 static GOOD_OR_BAD DS9490_detect_single_adapter(int usb_nr, struct connection_in *in);
 static GOOD_OR_BAD DS9490_detect_all_adapters(struct connection_in * in_first);
 static GOOD_OR_BAD DS9490_detect_specific_adapter(int bus_nr, int dev_nr, struct connection_in * in) ;
-static void DS9490_connection_init( struct connection_in * in ) ;
 
 static GOOD_OR_BAD DS9490_reconnect(const struct parsedname *pn);
 static GOOD_OR_BAD DS9490_redetect_low(struct connection_in * in);
@@ -312,32 +311,16 @@ static GOOD_OR_BAD DS9490_detect_specific_adapter(int bus_nr, int dev_nr, struct
 
 	USB_first(&ul);
 	while ( GOOD(USB_next(&ul)) ) {
-		// Use a not very efficient mechanism.
-		// Create the actual USB name (bus:dev) for this entry,
-		// parse it like an address,
-		// and match it.
-		struct address_pair ap ;
-		char * usb_address = DS9490_device_name( &ul ) ; // temporary name for parsing into a number
-
-		Parse_Address( usb_address, &ap ) ; // makes a copy -- tolerates usb_address NULL.
-		SAFEFREE(usb_address) ; // free the original
-
-		if ( ap.first.type != address_numeric || ap.second.type != address_numeric ) {
-			LEVEL_DEBUG("LIBUSB generated an uninterpretable usb address") ;
-		} else if ( ap.first.number != bus_nr || ap.second.number != dev_nr ) {
-			LEVEL_CONNECT("USB DS9490 %d:%d passed over. (Looking for %d:%d)", ap.first.number, ap.second.number, bus_nr, dev_nr );
-		} else if ( BAD(DS9490_open_and_name(&ul, in)) ) {
-			Free_Address( &ap ) ;
-			return gbBAD;
-		} else{
-			LEVEL_CONNECT("USB DS9490 %d:%d successfully bound", bus_nr, dev_nr );
-			Free_Address( &ap ) ;
-			return gbGOOD ;
+		if ( ul.usb_bus_number != bus_nr || ul.usb_dev_number != dev_nr ) {
+			LEVEL_CONNECT("USB DS9490 %d:%d passed over. (Looking for %d:%d)", ul.usb_bus_number, ul.usb_dev_number, bus_nr, dev_nr );
+			continue ;
 		}
-		Free_Address( &ap ) ;
+		RETURN_BAD_IF_BAD( DS9490_open_and_name(&ul, in) ) ;
+		LEVEL_CONNECT("USB DS9490 %d:%d successfully bound", bus_nr, dev_nr );
+		return gbGOOD ;
 	}
 
-	LEVEL_CONNECT("No available USB DS9490 bus master found");
+	LEVEL_CONNECT("No matching USB DS9490 bus master found");
 	return gbBAD;
 }
 
@@ -410,17 +393,9 @@ static GOOD_OR_BAD DS9490_reconnect(const struct parsedname *pn)
 static GOOD_OR_BAD DS9490_redetect_low(struct connection_in * in)
 {
 	struct usb_list ul;
-	
-	/*
-	* I don't think we need to call USB_first() or usb_find_busses() here.
-	* They are already called once in DS9490_detect_single_adapter().
-	* USB_first() is more like a os_init() function and there are probably
-	* no new USB-busses added after rebooting kernel... or?
-	* It doesn't seem to leak any memory when calling them, so they are
-	* still called.
-	*/
+
 	USB_first(&ul);
-	
+		
 	while ( GOOD(USB_next(&ul)) ) {
 		// try to open the DS9490
 		if ( BAD(DS9490_open_and_name(&ul, in)) ) {
@@ -476,7 +451,6 @@ static GOOD_OR_BAD DS9490_redetect_match( struct connection_in * in)
 	int device_number ;
 
 	LEVEL_DEBUG("Attempting reconnect on %s",SAFESTRING(in->name));
-	RETURN_BAD_IF_BAD( usbdevice_in_use(in) ) ;
 
 	// Special case -- originally untagged adapter
 	if ( in->connin.usb.ds1420_address[0] == '\0' ) {
@@ -757,23 +731,6 @@ static int FindDiscrepancy(BYTE * last_sn, BYTE * discrepancy_sn)
 		}
 	}
 	return 0;
-}
-
-static void DS9490_connection_init( struct connection_in * in )
-{
-	if ( in == NULL ) {
-		return ;
-	}
-	SAFEFREE( in->name ) ;
-	in->name = owstrdup(badUSBname);		// initialized
-
-	in->busmode = bus_usb;
-	in->connin.usb.usb = NULL ; // no handle yet
-	in->connin.usb.usb_bus_number = in->connin.usb.usb_dev_number = -1 ;
-	memset( in->connin.usb.ds1420_address, 0, SERIAL_NUMBER_SIZE ) ;
-	DS9490_setroutines(in);
-	in->Adapter = adapter_DS9490;	/* OWFS assigned value */
-	in->adapter_name = "DS9490";
 }
 
 /* ------------------------------------------------------------ */

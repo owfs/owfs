@@ -17,6 +17,7 @@ $Id$
 
 static void USB_monitor_close(struct connection_in *in);
 static GOOD_OR_BAD usb_monitor_in_use(const struct connection_in * in_selected) ;
+static void USB_scan_for_adapters(void) ;
 
 /* Device-specific functions */
 GOOD_OR_BAD USB_monitor_detect(struct connection_in *in)
@@ -74,36 +75,49 @@ static void USB_monitor_close(struct connection_in *in)
 }
 
 /* Open a DS9490  -- low level code (to allow for repeats)  */
-static GOOD_OR_BAD USB_scan_for_adapters(struct connection_in * in_first)
+static void USB_scan_for_adapters(void)
 {
 	struct usb_list ul;
-	struct connection_in * in = in_first ;
 
 	USB_first(&ul);
 	while ( GOOD(USB_next(&ul)) ) {
+		struct connection_in * in = NewIn() ;
+		if ( in == NULL ) {
+			return ;
+		}
+		// set up the new connection for the next adapter
+		DS9490_connection_init(in) ;
+
 		if ( BAD(DS9490_open_and_name(&ul, in)) ) {
 			LEVEL_DEBUG("Cannot open USB device %s:%s", ul.bus->dirname, ul.dev->filename );
+			// Remove the extra connection
+			RemoveIn(in);
 			continue ;
 		} else if ( BAD(DS9490_ID_this_master(in)) ) {
 			DS9490_close(in) ;
 			LEVEL_DEBUG("Cannot name USB device %s:%s", ul.bus->dirname, ul.dev->filename );
+			// Remove the extra connection
+			RemoveIn(in);
 			continue;
 		} else{
 			LEVEL_CONNECT("USB DS9490 %s:%s successfully bound", ul.bus->dirname, ul.dev->filename );
-			in = NewIn(in_first) ;
-			if ( in == NULL ) {
-				return gbGOOD ;
-			}
-			// set up the new connection for the next adapter
-			DS9490_connection_init(in) ;
 		}
 	}
-	if ( in == in_first ) {
-		LEVEL_CONNECT("No available USB DS9490 bus master found");
-		return gbBAD;
-	}
-	// Remove the extra connection
-	RemoveIn(in);
-	return gbGOOD ;
 }
 
+void DS9490_connection_init( struct connection_in * in )
+{
+	if ( in == NULL ) {
+		return ;
+	}
+	SAFEFREE( in->name ) ;
+	in->name = owstrdup(badUSBname);		// initialized
+
+	in->busmode = bus_usb;
+	in->connin.usb.usb = NULL ; // no handle yet
+	in->connin.usb.usb_bus_number = in->connin.usb.usb_dev_number = -1 ;
+	memset( in->connin.usb.ds1420_address, 0, SERIAL_NUMBER_SIZE ) ;
+	DS9490_setroutines(in);
+	in->Adapter = adapter_DS9490;	/* OWFS assigned value */
+	in->adapter_name = "DS9490";
+}
