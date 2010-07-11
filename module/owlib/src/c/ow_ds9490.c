@@ -236,9 +236,9 @@ GOOD_OR_BAD DS9490_detect(struct connection_in *in)
 	struct address_pair ap ;
 	GOOD_OR_BAD gbResult = gbBAD;
 	
-	DS9490_setroutines(in);		// set up close, reconnect, reset, ...
-	
+	/* uses "name" before it's cleared by connection_init */
 	Parse_Address( in->name, &ap ) ;
+
 	DS9490_connection_init( in ) ;
 
 	switch ( ap.entries ) {
@@ -278,27 +278,24 @@ GOOD_OR_BAD DS9490_detect(struct connection_in *in)
 static GOOD_OR_BAD DS9490_detect_single_adapter(int usb_nr, struct connection_in * in)
 {
 	struct usb_list ul;
-	/* usb_nr holds the number of the adapter */
-	int usbnum = 0;
 
 	USB_first(&ul);
-	while ( GOOD(USB_next(&ul)) ) {
-		if (++usbnum < usb_nr ) {
-			LEVEL_CONNECT("USB DS9490 %d passed over. (Looking for %d)", usbnum, usb_nr);
-		} else if ( BAD(DS9490_open_and_name(&ul, in)) ) {
-			return gbBAD;
-		} else if ( BAD(DS9490_ID_this_master(in)) ) {
-			DS9490_close(in) ;
-			LEVEL_CONNECT("USB DS9490 %d unsuccessful.", usbnum, usb_nr);
-			return gbBAD;
-		} else{
-			LEVEL_CONNECT("USB DS9490 %d:%d successfully bound", usbnum, usb_nr);
-			return gbGOOD ;
-		}
+
+	if ( usb_nr == 1 ) {
+		// return the first free
+		RETURN_BAD_IF_BAD( USB_next( &ul ) ) ;
+	} else {
+		// return the nth
+		RETURN_BAD_IF_BAD( USB_next_until_n( &ul, usb_nr ) ) ;
 	}
-	// fall through
-	LEVEL_CONNECT("No matching USB DS9490 bus master found");
-	return gbBAD;
+
+	RETURN_BAD_IF_BAD( DS9490_open_and_name(&ul, in)) ;
+	if ( BAD(DS9490_ID_this_master(in)) ) {
+		DS9490_close(in) ;
+		return gbBAD;
+	}
+
+	return gbGOOD ;
 }
 
 /* Open a DS9490  -- low level code (to allow for repeats)  */
@@ -315,9 +312,7 @@ static GOOD_OR_BAD DS9490_detect_specific_adapter(int bus_nr, int dev_nr, struct
 			LEVEL_CONNECT("USB DS9490 %d:%d passed over. (Looking for %d:%d)", ul.usb_bus_number, ul.usb_dev_number, bus_nr, dev_nr );
 			continue ;
 		}
-		RETURN_BAD_IF_BAD( DS9490_open_and_name(&ul, in) ) ;
-		LEVEL_CONNECT("USB DS9490 %d:%d successfully bound", bus_nr, dev_nr );
-		return gbGOOD ;
+		return DS9490_open_and_name(&ul, in) ;
 	}
 
 	LEVEL_CONNECT("No matching USB DS9490 bus master found");
@@ -337,10 +332,9 @@ static GOOD_OR_BAD DS9490_detect_all_adapters(struct connection_in * in_first)
 			continue ;
 		} else if ( BAD(DS9490_ID_this_master(in)) ) {
 			DS9490_close(in) ;
-			LEVEL_DEBUG("Cannot name USB device %s:%s", ul.bus->dirname, ul.dev->filename );
+			LEVEL_DEBUG("Cannot access USB device %s:%s", ul.bus->dirname, ul.dev->filename );
 			continue;
 		} else{
-			LEVEL_CONNECT("USB DS9490 %s:%s successfully bound", ul.bus->dirname, ul.dev->filename );
 			in = NewIn(in_first) ;
 			if ( in == NULL ) {
 				return gbGOOD ;
@@ -350,7 +344,7 @@ static GOOD_OR_BAD DS9490_detect_all_adapters(struct connection_in * in_first)
 		}
 	}
 	if ( in == in_first ) {
-		LEVEL_CONNECT("No available USB DS9490 bus master found");
+		LEVEL_CONNECT("No USB DS9490 bus masters used");
 		return gbBAD;
 	}
 	// Remove the extra connection
@@ -365,6 +359,8 @@ void DS9490_connection_init( struct connection_in * in )
 	}
 	SAFEFREE( in->name ) ;
 	in->name = owstrdup(badUSBname);		// initialized
+
+	DS9490_setroutines(in);		// set up close, reconnect, reset, ...
 
 	in->busmode = bus_usb;
 	in->connin.usb.usb = NULL ; // no handle yet
@@ -799,6 +795,7 @@ GOOD_OR_BAD DS9490_open_and_name(struct usb_list *ul, struct connection_in *in)
 	}
 	DS9490_SetFlexParameters(in);
 
+	LEVEL_CONNECT("USB DS9490 %s successfully opened", in->name);
 	return gbGOOD ;
 }
 

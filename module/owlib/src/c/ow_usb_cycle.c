@@ -75,6 +75,42 @@ GOOD_OR_BAD USB_next(struct usb_list *ul)
 	return gbBAD;
 }
 
+/* Includes a count of the rejected existing USB devices
+ * needed for compatibility with the -u2 -u3 arguments
+ */
+GOOD_OR_BAD USB_next_until_n(struct usb_list *ul, int num)
+{
+	int found = 0 ;
+	
+	while (ul->bus) {
+		// First pass, look for next device
+		if (ul->dev == NULL) {
+			ul->dev = ul->bus->devices;
+		} else {				// New bus, find first device
+			ul->dev = ul->dev->next;
+			ul->usb_dev_number = -1 ;
+			ul->usb_dev_number = atoi(ul->dev->filename) ;
+		}
+		if (ul->dev) {			// device found
+			if (ul->dev->descriptor.idVendor != DS2490_USB_VENDOR || ul->dev->descriptor.idProduct != DS2490_USB_PRODUCT) {
+				continue;		// not DS9490
+			}
+			++ found ;
+			if ( found < num ) {
+				continue ;
+			}
+			LEVEL_CONNECT("Bus master found: %s:%s", ul->bus->dirname, ul->dev->filename);
+			return usbdevice_in_use( ul );
+		} else {
+			ul->bus = ul->bus->next;
+			ul->usb_bus_number = -1 ;
+			ul->usb_bus_number = atoi(ul->bus->dirname) ;
+			ul->dev = NULL;
+		}
+	}
+	return gbBAD;
+}
+
 /* Used only in root_dir */
 static void DS9490_dir_callback( void * v, const struct parsedname * pn_entry )
 {

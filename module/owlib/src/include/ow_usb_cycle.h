@@ -68,6 +68,7 @@ struct usb_list {
 
 void USB_first(struct usb_list *ul);
 GOOD_OR_BAD USB_next(struct usb_list *ul);
+GOOD_OR_BAD USB_next_until_n(struct usb_list *ul, int num) ;
 GOOD_OR_BAD DS9490_root_dir( struct dirblob * db, struct connection_in * in ) ;
 GOOD_OR_BAD DS9490_ID_this_master(struct connection_in *in);
 char *DS9490_device_name(const struct usb_list *ul);
