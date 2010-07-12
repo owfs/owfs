@@ -18,6 +18,7 @@ $Id$
 static void USB_monitor_close(struct connection_in *in);
 static GOOD_OR_BAD usb_monitor_in_use(const struct connection_in * in_selected) ;
 static void USB_scan_for_adapters(void) ;
+static void * USB_monitor_loop( void * v );
 
 /* Device-specific functions */
 GOOD_OR_BAD USB_monitor_detect(struct connection_in *in)
@@ -60,7 +61,7 @@ GOOD_OR_BAD USB_monitor_detect(struct connection_in *in)
 
 	RETURN_BAD_IF_BAD( usb_monitor_in_use(in) ) ;
 
-	if ( pthread_create(&thread, NULL, USB_monitor_loop, NULL) != 0 ) {
+	if ( pthread_create(&thread, NULL, USB_monitor_loop, (void *) in) != 0 ) {
 		ERROR_CALL("Cannot create the USB monitoring program thread");
 		return gbBAD ;
 	}
@@ -94,11 +95,12 @@ static void USB_monitor_close(struct connection_in *in)
 	Test_and_Close_Pipe(in->connin.usb_monitor.shutdown_pipe) ;
 }
 
-void * USB_monitor_loop( void * v )
+static void * USB_monitor_loop( void * v )
 {
-	(void) v ;
-	pthread_detach(pthread_self());
+	struct connection_in * in = v ;
 	FILE_DESCRIPTOR_OR_ERROR file_descriptor = in->connin.usb_monitor.shutdown_pipe[fd_pipe_read] ;
+
+	pthread_detach(pthread_self());
 	
 	do {
 		fd_set readset;
@@ -106,7 +108,7 @@ void * USB_monitor_loop( void * v )
 		
 		/* Initialize readset */
 		FD_ZERO(&readset);
-		if ( FILE_DESCRIPTOR_VALID( file_descriptor ) {
+		if ( FILE_DESCRIPTOR_VALID( file_descriptor ) ) {
 			FD_SET(file_descriptor, &readset);
 		}
 
@@ -115,6 +117,8 @@ void * USB_monitor_loop( void * v )
 		}
 		USB_scan_for_adapters() ;
 	} while (1) ;
+	
+	return NULL ;
 }
 
 /* Open a DS9490  -- low level code (to allow for repeats)  */
