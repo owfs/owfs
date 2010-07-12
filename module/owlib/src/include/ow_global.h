@@ -52,6 +52,8 @@ $Id$
 // some improbably sub-absolute-zero number
 #define GLOBAL_UNTOUCHED_TEMP_LIMIT	(-999.)
 
+#define DEFAULT_USB_SCAN_INTERVAL 10 /* seconds */
+
 enum zero_support { zero_unknown, zero_none, zero_bonjour, zero_avahi, } ;
 
 enum opt_program { opt_owfs, opt_server, opt_httpd, opt_ftpd, opt_tcl,
@@ -97,6 +99,7 @@ struct global {
 	int timeout_persistent_high;
 	int clients_persistent_low;
 	int clients_persistent_high;
+	int usb_scan_interval ;
 	int pingcrazy;
 	int no_dirall;
 	int no_get;

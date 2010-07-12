@@ -216,9 +216,25 @@ GOOD_OR_BAD ARG_W1_monitor(void)
 	if (in == NULL) {
 		return gbBAD;
 	}
-	in->name = owstrdup("W1 monitor");
+	in->name = owstrdup("W1 bus monitor");
 	in->busmode = bus_w1_monitor;
 	return gbGOOD;
+}
+
+GOOD_OR_BAD ARG_USB_monitor(const char *arg)
+{
+#if OW_USB
+	struct connection_in *in = NewIn(NULL);
+	if (in == NULL) {
+		return gbBAD;
+	}
+	in->name = (arg==NULL) ? NULL : owstrdup(arg);
+	in->busmode = bus_usb_monitor;
+	return gbGOOD;
+#else
+	fprintf(stderr, "OWFS is compiled without USB support.\n");
+	return gbBAD;
+#endif
 }
 
 GOOD_OR_BAD ARG_Browse(void)

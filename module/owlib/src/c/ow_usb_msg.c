@@ -233,6 +233,7 @@ GOOD_OR_BAD DS9490_open(struct usb_list *ul, struct connection_in *in)
 		fprintf(stderr, "Could not open the USB bus master. Is there a problem with permissions?\n");
 		// And log
 		LEVEL_DEFAULT("Could not open the USB bus master. Is there a problem with permissions?");
+		STAT_ADD1_BUS(e_bus_open_errors, in);
 		return gbBAD ;
 	}
 
@@ -268,6 +269,8 @@ GOOD_OR_BAD DS9490_open(struct usb_list *ul, struct connection_in *in)
 	usb_close(usb);
 	in->connin.usb.usb = NULL;
 
+	LEVEL_DEBUG("Did not successfully open DS9490 %s",in->name) ;
+	STAT_ADD1_BUS(e_bus_open_errors, in);
 	return gbBAD;
 }
 

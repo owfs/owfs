@@ -22,6 +22,20 @@ static void USB_scan_for_adapters(void) ;
 /* Device-specific functions */
 GOOD_OR_BAD USB_monitor_detect(struct connection_in *in)
 {
+	struct address_pair ap ;
+	pthread_t thread ;
+	
+	Parse_Address( in->name, &ap ) ;
+	if ( ap.first.type == address_numeric ) {
+		Globals.usb_scan_interval = ap.first.number ;
+	} else {
+		Globals.usb_scan_interval = DEFAULT_USB_SCAN_INTERVAL ;
+	}
+	Free_Address( &ap ) ;
+
+	SAFEFREE(in->name) ;
+	in->name = owstrdup("USB bus monitor") ;
+
 	in->file_descriptor = FILE_DESCRIPTOR_BAD;
 	in->iroutines.detect = USB_monitor_detect;
 	in->Adapter = adapter_browse_monitor;	/* OWFS assigned value */
@@ -38,7 +52,18 @@ GOOD_OR_BAD USB_monitor_detect(struct connection_in *in)
 	in->adapter_name = "USB scan";
 	in->busmode = bus_usb_monitor ;
 	
+	if ( pipe( in->connin.usb_monitor.shutdown_pipe ) != 0 ) {
+		ERROR_DEFAULT("Cannot allocate a shutdown pipe. The program shutdown may be messy");
+		in->connin.usb_monitor.shutdown_pipe[fd_pipe_read] = FILE_DESCRIPTOR_BAD ;
+		in->connin.usb_monitor.shutdown_pipe[fd_pipe_write] = FILE_DESCRIPTOR_BAD ;
+	}
+
 	RETURN_BAD_IF_BAD( usb_monitor_in_use(in) ) ;
+
+	if ( pthread_create(&thread, NULL, USB_monitor_loop, NULL) != 0 ) {
+		ERROR_CALL("Cannot create the USB monitoring program thread");
+		return gbBAD ;
+	}
 
 	return gbGOOD ;
 }
@@ -61,17 +86,35 @@ static GOOD_OR_BAD usb_monitor_in_use(const struct connection_in * in_selected)
 
 static void USB_monitor_close(struct connection_in *in)
 {
-#if OW_ZERO
-	if (in->connin.browse.bonjour_browse && (libdnssd != NULL)) {
-		DNSServiceRefDeallocate(in->connin.browse.bonjour_browse);
-		in->connin.browse.bonjour_browse = 0 ;
-	}
-	if ( in->connin.browse.avahi_poll != NULL ) {
-		// Signal avahi loop to quit (in ow_avahi_browse.c)
-		// and clean up for itself
-		avahi_simple_poll_quit(in->connin.browse.avahi_poll);
-	}
-#endif
+	SAFEFREE(in->name) ;
+
+	if ( FILE_DESCRIPTOR_VALID( in->connin.usb_monitor.shutdown_pipe[fd_pipe_write] ) ) {
+		ignore_result = write( in->connin.usb_monitor.shutdown_pipe[fd_pipe_write],"X",1) ; //dummy payload
+	}		
+	Test_and_Close_Pipe(in->connin.usb_monitor.shutdown_pipe) ;
+}
+
+void * USB_monitor_loop( void * v )
+{
+	(void) v ;
+	pthread_detach(pthread_self());
+	FILE_DESCRIPTOR_OR_ERROR file_descriptor = in->connin.usb_monitor.shutdown_pipe[fd_pipe_read] ;
+	
+	do {
+		fd_set readset;
+		struct timeval tv = { Globals.usb_scan_interval, 0, };
+		
+		/* Initialize readset */
+		FD_ZERO(&readset);
+		if ( FILE_DESCRIPTOR_VALID( file_descriptor ) {
+			FD_SET(file_descriptor, &readset);
+		}
+
+		if ( select( file_descriptor+1, &readset, NULL, NULL, &tv ) != 0 ) {
+			break ; // don't scan any more -- perhaps a close?
+		}
+		USB_scan_for_adapters() ;
+	} while (1) ;
 }
 
 /* Open a DS9490  -- low level code (to allow for repeats)  */
@@ -79,28 +122,21 @@ static void USB_scan_for_adapters(void)
 {
 	struct usb_list ul;
 
+	MONITOR_RLOCK ;
+	
+	LEVEL_DEBUG("USB SCAN!");
 	USB_first(&ul);
 	while ( GOOD(USB_next(&ul)) ) {
 		struct connection_in * in = NewIn(NULL) ;
 		if ( in == NULL ) {
 			return ;
 		}
-		// set up the new connection for the next adapter
-		DS9490_connection_init(in) ;
-
-		if ( BAD(DS9490_open_and_name(&ul, in)) ) {
-			LEVEL_DEBUG("Cannot open USB device %s:%s", ul.bus->dirname, ul.dev->filename );
+		in->name = DS9490_device_name(&ul) ;
+		if ( BAD( DS9490_detect(in)) ) {
 			// Remove the extra connection
 			RemoveIn(in);
-			continue ;
-		} else if ( BAD(DS9490_ID_this_master(in)) ) {
-			DS9490_close(in) ;
-			LEVEL_DEBUG("Cannot name USB device %s:%s", ul.bus->dirname, ul.dev->filename );
-			// Remove the extra connection
-			RemoveIn(in);
-			continue;
-		} else{
-			LEVEL_CONNECT("USB DS9490 %s:%s successfully bound", ul.bus->dirname, ul.dev->filename );
 		}
 	}
+
+	MONITOR_RUNLOCK ;
 }

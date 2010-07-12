@@ -80,6 +80,8 @@ struct global Globals = {
 	.clients_persistent_low = 10,
 	.clients_persistent_high = 20,
 
+	.usb_scan_interval = DEFAULT_USB_SCAN_INTERVAL,
+
 	.pingcrazy = 0,
 	.no_dirall = 0,
 	.no_get = 0,

@@ -177,6 +177,8 @@ const struct option owopts_long[] = {
 	{"USB_flextime", no_argument, &Globals.usb_flextime, 1},
 	{"usb_regulartime", no_argument, &Globals.usb_flextime, 0},
 	{"USB_regulartime", no_argument, &Globals.usb_flextime, 0},
+	{"usb_scan", optional_argument, NULL, e_usb_monitor,},
+	{"USB_scan", optional_argument, NULL, e_usb_monitor,},
 	{"serial_flex", no_argument, &Globals.serial_flextime, 1},
 	{"serial_flextime", no_argument, &Globals.serial_flextime, 1},
 	{"serial_regulartime", no_argument, &Globals.serial_flextime, 0},
@@ -699,6 +701,8 @@ GOOD_OR_BAD owopt(const int option_char, const char *arg)
 		return ARG_EtherWeather(arg);
 	case e_w1_monitor:
 		return ARG_W1_monitor();
+	case e_usb_monitor:
+		return ARG_USB_monitor(arg);
 	case e_browse:
 		return ARG_Browse();
 	case e_announce:

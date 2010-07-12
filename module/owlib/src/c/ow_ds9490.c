@@ -256,6 +256,12 @@ GOOD_OR_BAD DS9490_detect(struct connection_in *in)
 					LEVEL_DEBUG("Look for USB adapter number %d",ap.first.number);
 					gbResult = DS9490_detect_single_adapter( ap.first.number, in) ;
 					break ;
+				case address_alpha:
+					if ( strncasecmp(ap.first.alpha,"scan",4) == 0 ) {
+						SAFEFREE(in->name) ;
+						gbResult = USB_monitor_detect(in) ;
+					}
+					// fall through
 				default:
 					LEVEL_DEFAULT("Unclear what <%s> means in USB specification, will use first adapter.",ap.first.alpha) ;
 					gbResult = DS9490_detect_single_adapter( 1, in) ;
@@ -756,36 +762,19 @@ static int FindDiscrepancy(BYTE * last_sn, BYTE * discrepancy_sn)
 */
 GOOD_OR_BAD DS9490_open_and_name(struct usb_list *ul, struct connection_in *in)
 {
-	struct connection_in * other ; // to test against repeats
-	SAFEFREE(in->name) ;
-
 	if (in->connin.usb.usb) {
-		LEVEL_DEFAULT("usb.usb was NOT closed?");
+		LEVEL_DEFAULT("DS9490 %s was NOT closed?", in->name);
 		return gbBAD ;
 	}
 
+	SAFEFREE(in->name) ;
 	in->name = DS9490_device_name(ul);
 
 	if (in->name == NULL) {
 		return gbBAD;
 	}
 	
-	for ( other = Inbound_Control.head ; other!=NULL ; other = other->next ) {
-		if ( other == in ) {
-			// don't test against yourself
-			continue ;
-		}
-		if ( other->busmode == bus_usb && other->name != NULL && strcasecmp(other->name,in->name)==0 ) {
-			// duplicate USB device, ignore
-			in->connin.usb.dev = NULL;	// this will force a re-scan next time
-			LEVEL_DEBUG("Duplicate USB device ignored") ;
-			return gbBAD ;
-		}
-	}
-
 	if ( BAD( DS9490_open( ul, in ) ) ) {
-		in->connin.usb.dev = NULL;	// this will force a re-scan next time
-		//LEVEL_CONNECT("Failed to open USB DS9490 bus master %s", name);
 		STAT_ADD1_BUS(e_bus_open_errors, in);
 		return gbBAD ;
 	} else if ( BAD( DS9490_setup_adapter(in)) ) {
@@ -795,7 +784,6 @@ GOOD_OR_BAD DS9490_open_and_name(struct usb_list *ul, struct connection_in *in)
 	}
 	DS9490_SetFlexParameters(in);
 
-	LEVEL_CONNECT("USB DS9490 %s successfully opened", in->name);
 	return gbGOOD ;
 }
 

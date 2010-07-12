@@ -233,6 +233,10 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct connection_in * in )
 		RETURN_BAD_IF_BAD( W1_monitor_detect(in) ) ;
 		break;
 
+	case bus_usb_monitor:
+		RETURN_BAD_IF_BAD( USB_monitor_detect(in) ) ;
+		break;
+
 	case bus_w1:
 		/* w1 is different: it is a dynamic list of adapters */
 		/* the scanning starts with "W1_Browse" in LibStart and continues in it's own thread */

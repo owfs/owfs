@@ -62,6 +62,7 @@ GOOD_OR_BAD ARG_Tester(const char *arg);
 GOOD_OR_BAD ARG_Mock(const char *arg);
 GOOD_OR_BAD ARG_Link(const char *arg);
 GOOD_OR_BAD ARG_W1_monitor(void);
+GOOD_OR_BAD ARG_USB_monitor(const char *arg);
 GOOD_OR_BAD ARG_Browse(void);
 GOOD_OR_BAD ARG_Passive(char *adapter_type_name, const char *arg);
 

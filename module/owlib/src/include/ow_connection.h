@@ -306,8 +306,12 @@ struct connin_w1 {
 	unsigned int entry_mark ;
 	unsigned int seq ;
 	int id ; // equivalent to the number part of w1_bus_master23
-	int netlink_pipe[2] ;
+	FILE_DESCRIPTOR_OR_ERROR netlink_pipe[2] ;
 #endif /* OW_W1 */
+};
+
+struct connin_usb_monitor {
+	FILE_DESCRIPTOR_OR_ERROR shutdown_pipe[2] ;
 };
 
 struct connin_browse {
@@ -491,6 +495,7 @@ struct connection_in {
 		struct connin_etherweather etherweather;
 		struct connin_w1 w1;
 		struct connin_browse browse;
+		struct connin_usb_monitor usb_monitor ;
 	} connin;
 };
 

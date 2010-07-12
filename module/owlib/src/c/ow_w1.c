@@ -69,8 +69,8 @@ GOOD_OR_BAD W1_detect(struct connection_in *in)
 
 	if ( pipe( in->connin.w1.netlink_pipe ) != 0 ) {
 		ERROR_CONNECT("W1 pipe creation error");
-		in->connin.w1.netlink_pipe[fd_pipe_read] = -1 ;
-		in->connin.w1.netlink_pipe[fd_pipe_write] = -1 ;
+		in->connin.w1.netlink_pipe[fd_pipe_read] = FILE_DESCRIPTOR_BAD ;
+		in->connin.w1.netlink_pipe[fd_pipe_write] = FILE_DESCRIPTOR_BAD ;
 		return gbBAD ;
 	}
 
