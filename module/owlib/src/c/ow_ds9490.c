@@ -259,7 +259,9 @@ GOOD_OR_BAD DS9490_detect(struct connection_in *in)
 				case address_alpha:
 					if ( strncasecmp(ap.first.alpha,"scan",4) == 0 ) {
 						SAFEFREE(in->name) ;
+						LEVEL_DEBUG("Add USB scanning capability");
 						gbResult = USB_monitor_detect(in) ;
+						break ;
 					}
 					// fall through
 				default:

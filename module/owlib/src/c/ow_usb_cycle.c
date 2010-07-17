@@ -54,12 +54,12 @@ GOOD_OR_BAD USB_next(struct usb_list *ul)
 		} else {				// New bus, find first device
 			ul->dev = ul->dev->next;
 			ul->usb_dev_number = -1 ;
-			ul->usb_dev_number = atoi(ul->dev->filename) ;
 		}
 		if (ul->dev) {			// device found
 			if (ul->dev->descriptor.idVendor != DS2490_USB_VENDOR || ul->dev->descriptor.idProduct != DS2490_USB_PRODUCT) {
 				continue;		// not DS9490
 			}
+			ul->usb_dev_number = atoi(ul->dev->filename) ;
 			if ( BAD ( usbdevice_in_use( ul ) ) ) {
 				continue ;
 			}
@@ -68,7 +68,9 @@ GOOD_OR_BAD USB_next(struct usb_list *ul)
 		} else {
 			ul->bus = ul->bus->next;
 			ul->usb_bus_number = -1 ;
-			ul->usb_bus_number = atoi(ul->bus->dirname) ;
+			if ( ul->bus ) {
+				ul->usb_bus_number = atoi(ul->bus->dirname) ;
+			}
 			ul->dev = NULL;
 		}
 	}
