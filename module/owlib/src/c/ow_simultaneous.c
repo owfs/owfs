@@ -186,8 +186,7 @@ static ZERO_OR_ERROR FS_r_convert(struct one_wire_query *owq)
 	struct parsedname pn_directory;
 
 	FS_LoadDirectoryOnly(&pn_directory, pn);
-	OWQ_Y(owq) = (Cache_Get_Internal_Strict(NULL, 0, &ipSimul[pn->selected_filetype->data.i], &pn_directory)
-				  == 0);
+	OWQ_Y(owq) = GOOD (Cache_Get_Internal_Strict(NULL, 0, &ipSimul[pn->selected_filetype->data.i], &pn_directory) );
 	return 0;
 }
 

@@ -222,7 +222,7 @@ static ZERO_OR_ERROR FS_r_cum(struct one_wire_query *owq)
 	/* just to prime the "CUM" data */
 	RETURN_ERROR_IF_BAD( OW_r_counters(u, PN(owq)) ) ;
 
-	if (Cache_Get_Internal_Strict((void *) u, 4 * sizeof(UINT), InternalProp(CUM), PN(owq))) {
+	if ( BAD( Cache_Get_Internal_Strict((void *) u, 4 * sizeof(UINT), InternalProp(CUM), PN(owq))) ) {
 		return -EINVAL;
 	}
 	OWQ_array_U(owq, 0) = u[0];
@@ -407,7 +407,7 @@ static GOOD_OR_BAD OW_r_counters(UINT * data, const struct parsedname *pn)
 	data[3] = ((UINT) d[7]) << 8 | d[6];
 
 //printf("OW_COUNTER key=%s\n",key);
-	if (Cache_Get_Internal_Strict((void *) cum, sizeof(cum), InternalProp(CUM), pn)) {	/* First pass at cumulative */
+	if ( BAD( Cache_Get_Internal_Strict((void *) cum, sizeof(cum), InternalProp(CUM), pn)) ) {	/* First pass at cumulative */
 		cum[0] = data[0];
 		cum[1] = data[1];
 		cum[2] = data[2];

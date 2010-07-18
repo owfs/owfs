@@ -179,7 +179,7 @@ static ZERO_OR_ERROR FS_Mclear(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	int init = 1;
 
-	if (Cache_Get_Internal_Strict(&init, sizeof(init), InternalProp(INI), pn)) {
+	if ( BAD( Cache_Get_Internal_Strict(&init, sizeof(init), InternalProp(INI), pn)) ) {
 		OWQ_Y(owq) = 1;
 		if ( FS_r_strobe(owq) != 0 ) {	// set reset pin to strobe mode
 			return -EINVAL;
@@ -394,9 +394,7 @@ static GOOD_OR_BAD OW_Hinit(struct parsedname * pn)
 	BYTE data[6];
 
 	// already done?
-	if (Cache_Get_Internal_Strict(&init, sizeof(init), InternalProp(INI), pn)==0) {
-		return gbGOOD;
-	}
+	RETURN_GOOD_IF_GOOD( Cache_Get_Internal_Strict(&init, sizeof(init), InternalProp(INI), pn) )
 	
 	if ( BAD( OW_w_control(0x04, pn) )	// strobe
 		|| BAD( OW_r_reg(data, pn) ) ) {

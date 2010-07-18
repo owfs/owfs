@@ -206,10 +206,10 @@ static GOOD_OR_BAD OW_r_mem(BYTE * data, size_t size, off_t offset, struct parse
 	BYTE pwd[8] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, };
 
 #if OW_CACHE
-	if (Cache_Get_Internal_Strict((void *) pwd, sizeof(pwd), InternalProp(REA), pn) == 0 ) {
+	if ( GOOD( Cache_Get_Internal_Strict((void *) pwd, sizeof(pwd), InternalProp(REA), pn)) ) {
 		RETURN_GOOD_IF_GOOD( OW_r_mem_with_password( pwd, data,size,offset,pn) ) ;
 	}
-	if (Cache_Get_Internal_Strict((void *) pwd, sizeof(pwd), InternalProp(FUL), pn) == 0 ) {
+	if ( GOOD( Cache_Get_Internal_Strict((void *) pwd, sizeof(pwd), InternalProp(FUL), pn)) ) {
 		RETURN_GOOD_IF_GOOD( OW_r_mem_with_password( pwd, data,size,offset,pn) ) ;
 	}
 #endif							/* OW_CACHE */
@@ -281,7 +281,7 @@ static GOOD_OR_BAD OW_w_mem( BYTE * data, size_t size, off_t offset, struct pars
 	RETURN_BAD_IF_BAD( BUS_transaction( t_read, pn ) ) ;
 
 	// Copy scratchpad to memory
-	if (Cache_Get_Internal_Strict((void *) passwd, 8, InternalProp(FUL), pn)) {	/* Full passwd */
+	if ( BAD( Cache_Get_Internal_Strict((void *) passwd, 8, InternalProp(FUL), pn)) ) {	/* Full passwd */
 		memset( passwd, 0xFF, 8 ) ;
 	}
 	p[0] = _1W_COPY_SCRATCHPAD_WITH_PASSWORD ;

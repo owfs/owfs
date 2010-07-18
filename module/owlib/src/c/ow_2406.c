@@ -784,7 +784,7 @@ static GOOD_OR_BAD testTAI8570(struct s_TAI8570 *tai, struct one_wire_query *owq
 		return gbBAD ;
 	}
 	// See if already cached
-	if (Cache_Get_Internal_Strict((void *) tai, sizeof(struct s_TAI8570), InternalProp(BAR), pn) == 0) {
+	if ( GOOD( Cache_Get_Internal_Strict((void *) tai, sizeof(struct s_TAI8570), InternalProp(BAR), pn)) ) {
 		LEVEL_DEBUG("TAI8570 cache read: reader=" SNformat " writer=" SNformat, SNvar(tai->reader), SNvar(tai->writer));
 		LEVEL_DEBUG("TAI8570 cache read: C1=%u C2=%u C3=%u C4=%u C5=%u C6=%u", tai->C[0], tai->C[1], tai->C[2], tai->C[3], tai->C[4], tai->C[5]);
 		return gbGOOD;

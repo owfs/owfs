@@ -506,7 +506,7 @@ static GOOD_OR_BAD OW_10temp(_FLOAT * temp, const struct parsedname *pn)
 static GOOD_OR_BAD OW_power(BYTE * data, const struct parsedname *pn)
 {
 	if (IsUncachedDir(pn)
-		|| Cache_Get_Internal_Strict(data, sizeof(BYTE), InternalProp(POW), pn)) {
+		|| BAD( Cache_Get_Internal_Strict(data, sizeof(BYTE), InternalProp(POW), pn)) ) {
 		BYTE b4[] = { _1W_READ_POWERMODE, };
 		struct transaction_log tpower[] = {
 			TRXN_START,
@@ -550,7 +550,7 @@ static GOOD_OR_BAD OW_22temp(_FLOAT * temp, const int resolution, const struct p
 	};
 
 	/* Resolution */
-	if (Cache_Get_Internal_Strict(&stored_resolution, sizeof(stored_resolution), InternalProp(RES), pn)
+	if ( BAD( Cache_Get_Internal_Strict(&stored_resolution, sizeof(stored_resolution), InternalProp(RES), pn))
 		|| stored_resolution != resolution) {
 		BYTE resolution_register = Resolutions[resolution - 9].config;
 		/* Get existing settings */

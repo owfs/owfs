@@ -75,7 +75,7 @@ int Cache_Get_Strict(void *data, size_t dsize, const struct parsedname *pn);
 int Cache_Get_Dir(struct dirblob *db, const struct parsedname *pn);
 int Cache_Get_Device(void *bus_nr, const struct parsedname *pn);
 int Cache_Get_Internal(void *data, size_t * dsize, const struct internal_prop *ip, const struct parsedname *pn);
-int Cache_Get_Internal_Strict(void *data, size_t dsize, const struct internal_prop *ip, const struct parsedname *pn);
+GOOD_OR_BAD Cache_Get_Internal_Strict(void *data, size_t dsize, const struct internal_prop *ip, const struct parsedname *pn);
 int Cache_Get_Alias(ASCII * name, size_t length, const BYTE * sn) ;
 int Cache_Get_SerialNumber(const ASCII * name, BYTE * sn) ;
 int Cache_Get_Simul_Time(enum simul_type type, time_t * start_time, const struct parsedname * pn);
@@ -113,7 +113,7 @@ int Cache_Del_Mixed_Individual(const struct parsedname *pn);
 
 #define Cache_Get_Device(bus_nr,pn )        (1)
 #define Cache_Get_Internal(data,dsize,ip,pn )       (1)
-#define Cache_Get_Internal_Strict(data,dsize,ip,pn )       (1)
+#define Cache_Get_Internal_Strict(data,dsize,ip,pn )       (gbBAD)
 #define Cache_Get_Alias(name, length, sn)   (1)
 #define Cache_Get_SerialNumber(name, sn)    (1)
 #define Cache_Get_Simul_Time(type,time,pn)  (1)

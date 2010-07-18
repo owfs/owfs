@@ -39,7 +39,8 @@ $Id$
       whether the elements are stored together and split, or separately and joined
 */
 
-/* Pascal Baerten's BAE device -- preliminary */
+/* Pascal Baerten's BAE 910 device -- functional */
+/* Pascal Baerten's BAE 911 device -- preliminary */
 
 #include <config.h>
 #include "owfs_config.h"
@@ -153,7 +154,8 @@ WRITE_FUNCTION(FS_w_32) ;
 
 
 /* Placeholder for special vsibility code for firmware types "personalities" */
-#define VISIBLE_910 VISIBLE
+static enum e_visibility VISIBLE_910( const struct parsedname * pn ) ;
+static enum e_visibility VISIBLE_911( const struct parsedname * pn ) ;
 
 struct aggregate ABAEeeprom = { _FC02_EEPROM_PAGES, ag_numbers, ag_separate, };
 struct filetype BAE[] = {
@@ -280,6 +282,58 @@ static uint32_t BAE_uint32(BYTE * p);
 static void BAE_uint16_to_bytes( uint16_t num, unsigned char * p );
 static void BAE_uint32_to_bytes( uint32_t num, unsigned char * p );
 
+static int VISIBLE_BAE( const struct parsedname * pn ) ;
+
+/* finds the visibility value (910, 911, ...) either cached, or computed via the device_type (then cached) */
+static int VISIBLE_BAE( const struct parsedname * pn )
+{
+	int visibility_parameter = -1 ;
+	
+	if ( BAD( GetVisibilityCache( &visibility_parameter, pn ) ) ) {
+		struct one_wire_query * owq = OWQ_create_from_path(pn->path) ; // for read
+		if ( owq != NULL) {
+			UINT device_type ;
+			if ( FS_r_sibling_U( &device_type, "device_type", owq ) == 0 ) {
+				switch (device_type) {
+					case 2:
+						visibility_parameter = 910 ;
+						SetVisibilityCache( visibility_parameter, pn ) ;
+						break ;
+					case 3:
+						visibility_parameter = 911 ;
+						SetVisibilityCache( visibility_parameter, pn ) ;
+						break ;
+					default:
+						visibility_parameter = -1 ;
+				}
+			}
+			OWQ_destroy(owq) ;
+		}
+	}
+	return visibility_parameter ;
+}
+
+static enum e_visibility VISIBLE_910( const struct parsedname * pn )
+{
+	switch ( VISIBLE_BAE(pn) ) {
+		case 910:
+		case -1:
+			return visible_now ;
+		default:
+			return visible_not_now ;
+	}
+}
+
+static enum e_visibility VISIBLE_911( const struct parsedname * pn )
+{
+	switch ( VISIBLE_BAE(pn) ) {
+		case 911:
+		case -1:
+			return visible_now ;
+		default:
+			return visible_not_now ;
+	}
+}
 /* BAE memory functions */
 static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
 {
@@ -347,7 +401,6 @@ static ZERO_OR_ERROR FS_eeprom_erase(struct one_wire_query *owq)
 		return 0 ;
 	}
 }
-
 
 /* BAE flash functions */
 static ZERO_OR_ERROR FS_w_flash(struct one_wire_query *owq)
