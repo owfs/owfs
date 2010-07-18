@@ -144,7 +144,9 @@ int main(int argc, char *argv[])
 	}
 
 	/* Set up adapters */
-	LibStart() ;
+	if ( BAD(LibStart()) ) {
+		ow_exit(1);
+	}
 
 #if OW_MT
 	main_threadid = pthread_self();

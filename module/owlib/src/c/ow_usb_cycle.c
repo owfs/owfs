@@ -59,17 +59,18 @@ GOOD_OR_BAD USB_next(struct usb_list *ul)
 			if (ul->dev->descriptor.idVendor != DS2490_USB_VENDOR || ul->dev->descriptor.idProduct != DS2490_USB_PRODUCT) {
 				continue;		// not DS9490
 			}
-			ul->usb_dev_number = atoi(ul->dev->filename) ;
+			if ( sscanf( ul->dev->filename, "%u", &(ul->usb_dev_number) ) <= 0 ) {
+				ul->usb_dev_number = -1 ;
+			}
 			if ( BAD ( usbdevice_in_use( ul ) ) ) {
 				continue ;
 			}
-			LEVEL_CONNECT("Bus master found: %s:%s", ul->bus->dirname, ul->dev->filename);
+			LEVEL_CONNECT("Bus master found: %.d:%.d", ul->usb_bus_number, ul->usb_dev_number);
 			return gbGOOD;
 		} else {
 			ul->bus = ul->bus->next;
-			ul->usb_bus_number = -1 ;
-			if ( ul->bus ) {
-				ul->usb_bus_number = atoi(ul->bus->dirname) ;
+			if ( ul->bus == NULL || sscanf( ul->bus->dirname, "%u", &(ul->usb_bus_number) ) <= 0 ) {
+				ul->usb_bus_number = -1 ;
 			}
 			ul->dev = NULL;
 		}
@@ -91,22 +92,25 @@ GOOD_OR_BAD USB_next_until_n(struct usb_list *ul, int num)
 		} else {				// New bus, find first device
 			ul->dev = ul->dev->next;
 			ul->usb_dev_number = -1 ;
-			ul->usb_dev_number = atoi(ul->dev->filename) ;
 		}
 		if (ul->dev) {			// device found
 			if (ul->dev->descriptor.idVendor != DS2490_USB_VENDOR || ul->dev->descriptor.idProduct != DS2490_USB_PRODUCT) {
 				continue;		// not DS9490
 			}
+			if ( sscanf( ul->dev->filename, "%u", &(ul->usb_dev_number) ) <= 0 ) {
+				ul->usb_dev_number = -1 ;
+			}
 			++ found ;
 			if ( found < num ) {
 				continue ;
 			}
-			LEVEL_CONNECT("Bus master found: %s:%s", ul->bus->dirname, ul->dev->filename);
+			LEVEL_CONNECT("Bus master found: %.d:%.d", ul->usb_bus_number, ul->usb_dev_number);
 			return usbdevice_in_use( ul );
 		} else {
 			ul->bus = ul->bus->next;
-			ul->usb_bus_number = -1 ;
-			ul->usb_bus_number = atoi(ul->bus->dirname) ;
+			if ( ul->bus == NULL || sscanf( ul->bus->dirname, "%u", &(ul->usb_bus_number) ) <= 0 ) {
+				ul->usb_bus_number = -1 ;
+			}
 			ul->dev = NULL;
 		}
 	}
@@ -234,20 +238,23 @@ static GOOD_OR_BAD usbdevice_in_use(const struct usb_list *ul)
 /* Return NULL if there is a problem */
 char *DS9490_device_name(const struct usb_list *ul)
 {
-	size_t len = PATH_MAX ;
-	char name[len + 1];
+	size_t len = 32 ;
 	int sn_ret ;
+	char * return_string = owmalloc(len+1);
 
-	UCLIBCLOCK ;
-	sn_ret = snprintf(name, len, "%s:%s", ul->bus->dirname, ul->dev->filename) ;
-	UCLIBCUNLOCK ;
-
-	if (sn_ret <= 0) {
+	if ( return_string == NULL ) {
 		return NULL ;
 	}
 
-	name[len] = '\0';		// make sure there is a trailing null
-	return owstrdup(name);
+	UCLIBCLOCK ;
+	sn_ret = snprintf(return_string, len, "%.d:%.d", ul->usb_bus_number, ul->usb_dev_number) ;
+	UCLIBCUNLOCK ;
+
+	if (sn_ret <= 0) {
+		SAFEFREE(return_string) ;
+	}
+
+	return return_string;
 }
 
 #endif							/* OW_USB */

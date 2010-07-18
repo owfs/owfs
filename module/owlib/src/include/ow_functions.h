@@ -53,7 +53,7 @@ $Id$
 
 /* Prototypes for owlib.c -- libow overall control */
 void LibSetup(enum opt_program op);
-void LibStart(void);
+GOOD_OR_BAD LibStart(void);
 void HandleSignals(void);
 void LibStop(void);
 void LibClose(void);

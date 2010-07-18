@@ -126,7 +126,9 @@ int main(int argc, char *argv[])
 	//set_signal_handlers(exit_handler);
 
 	/* Set up adapters */
-	LibStart() ;
+	if ( BAD(LibStart()) ) {
+		ow_exit(1);
+	}
 
 #if OW_MT
 	main_threadid = pthread_self();

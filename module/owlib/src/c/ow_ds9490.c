@@ -336,11 +336,11 @@ static GOOD_OR_BAD DS9490_detect_all_adapters(struct connection_in * in_first)
 	USB_first(&ul);
 	while ( GOOD(USB_next(&ul)) ) {
 		if ( BAD(DS9490_open_and_name(&ul, in)) ) {
-			LEVEL_DEBUG("Cannot open USB device %s:%s", ul.bus->dirname, ul.dev->filename );
+			LEVEL_DEBUG("Cannot open USB device %.d:%.d", ul.usb_bus_number, ul.usb_dev_number );
 			continue ;
 		} else if ( BAD(DS9490_ID_this_master(in)) ) {
 			DS9490_close(in) ;
-			LEVEL_DEBUG("Cannot access USB device %s:%s", ul.bus->dirname, ul.dev->filename );
+			LEVEL_DEBUG("Cannot access USB device %.d:%.d", ul.usb_bus_number, ul.usb_dev_number );
 			continue;
 		} else{
 			in = NewIn(in_first) ;

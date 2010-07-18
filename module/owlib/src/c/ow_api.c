@@ -93,7 +93,11 @@ GOOD_OR_BAD API_init(const char *command_line)
 			return return_code;
 		}
 
-		LibStart();
+		return_code = LibStart();
+		if ( BAD(return_code) ) {
+			LIB_WUNLOCK;
+			return return_code;
+		}
 
 		StateInfo.owlib_state = lib_state_started;
 	}

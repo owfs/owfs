@@ -110,12 +110,6 @@ int main(int argc, char *argv[])
 		++optind;
 	}
 
-	/* Need at least 1 adapter */
-	if (Inbound_Control.active == 0 ) {
-		LEVEL_DEFAULT("Need to specify at least one 1-wire adapter.");
-		ow_exit(1);
-	}
-
 	set_exit_signal_handlers(exit_handler);
 	set_signal_handlers(NULL);
 
@@ -125,7 +119,9 @@ int main(int argc, char *argv[])
 	}
 
 	/* Set up adapters */
-	LibStart() ;
+	if ( BAD(LibStart()) ) {
+		ow_exit(1);
+	}
 
 #if OW_MT
 	main_threadid = pthread_self();

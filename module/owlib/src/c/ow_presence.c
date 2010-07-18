@@ -79,9 +79,6 @@ INDEX_OR_ERROR CheckPresence(struct parsedname *pn)
 	
 	LEVEL_DETAIL("Checking presence of %s", SAFESTRING(pn->path));
 	
-	if ( Inbound_Control.active == 0 ) { // No adapters
-		return INDEX_BAD ;
-	}
 	bus_nr = CheckPresence_low(pn);	// check only allocated inbound connections
 	if ( INDEX_VALID(bus_nr) ) {
 		SetKnownBus(bus_nr, pn);

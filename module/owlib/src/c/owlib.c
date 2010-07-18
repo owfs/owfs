@@ -21,7 +21,7 @@ static void SetupInboundConnections(void);
 static GOOD_OR_BAD SetupSingleInboundConnection( struct connection_in * in ) ;
 
 /* Start the owlib process -- already in background */
-void LibStart(void)
+GOOD_OR_BAD LibStart(void)
 {
 	/* Initialize random number generator, make sure fake devices get the same
 	 * id each time */
@@ -35,6 +35,12 @@ void LibStart(void)
 
 	// Signal handlers
 	IgnoreSignals();
+	
+	if ( Inbound_Control.head == NULL ) {
+		LEVEL_DEFAULT("No valid 1-wire buses found");
+		return gbBAD ;
+	}
+	return gbGOOD ;
 }
 
 // only changes FAKE and MOCK temp limits
@@ -61,39 +67,20 @@ static void SetupTemperatureLimits( void )
 
 static void SetupInboundConnections(void)
 {
-	struct connection_in *in;
-	int found_good = 0 ; // count of good connections
-	int found_bad = 0 ; // count of bad connections
+	struct connection_in *in = Inbound_Control.head;
 
 	// cycle through connections analyzing them
-	for (in = Inbound_Control.head; in != NULL; in = in->next) {
+	while (in != NULL) {
+		struct connection_in * next = in->next ;
 		if ( BAD( SetupSingleInboundConnection(in) ) ) {				
 			/* flag that that the adapter initiation was unsuccessful */
 			STAT_ADD1_BUS(e_bus_detect_errors, in);
-			BUS_close(in);		/* can use adapter's close */
-			BadAdapter_detect(in);	/* Set to default null assignments */
-			++found_bad ;
-		} else {
-			++found_good ;
+			RemoveIn( in ) ;
 		}
-	}
-	
-	// Now remove bad conections (except a single bad if no good)
-	in = Inbound_Control.head ;
-	while ( in != NULL ) {
-		struct connection_in * current = in ; // store now because removal confuses things
-		in = current->next ; // compute now because removal confuses things
-		if ( found_good + found_bad < 2 ) {
-			break ;
-		}
-		if ( current->busmode != bus_bad ) {
-			continue ;
-		}
-		RemoveIn( current ) ;
-		--found_bad ;
+		in = next ;
 	}
 }
-
+	
 static GOOD_OR_BAD SetupSingleInboundConnection( struct connection_in * in )
 {
 	switch (get_busmode(in)) {
