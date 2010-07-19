@@ -20,6 +20,7 @@ static GOOD_OR_BAD browse_in_use(const struct connection_in * in_selected) ;
 /* Device-specific functions */
 GOOD_OR_BAD Browse_detect(struct connection_in *in)
 {
+#if OW_ZERO
 	in->file_descriptor = FILE_DESCRIPTOR_BAD;
 	in->iroutines.detect = Browse_detect;
 	in->Adapter = adapter_browse_monitor;	/* OWFS assigned value */
@@ -51,6 +52,10 @@ GOOD_OR_BAD Browse_detect(struct connection_in *in)
 		OW_Browse(in);
 	}
 	return gbGOOD ;
+#else /* OW_ZERO */
+	(void) in ;
+	return gbBAD ;
+#endif /* OW_ZERO */
 }
 
 static GOOD_OR_BAD browse_in_use(const struct connection_in * in_selected)
@@ -81,5 +86,7 @@ static void Browse_close(struct connection_in *in)
 		// and clean up for itself
 		avahi_simple_poll_quit(in->connin.browse.avahi_poll);
 	}
-#endif
+#else /* OW_ZERO */
+	(void) in ;
+#endif /* OW_ZERO */
 }
