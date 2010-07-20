@@ -81,7 +81,7 @@ void DeviceDestroy(void)
 	for (i = 0; i < (sizeof(Tree) / sizeof(void *)); i++) {
 		/* ePN_structure is just a duplicate of ePN_real */
 		if (i != ePN_structure) {
-			SAFETDESTROY( &(Tree[i]), free_node);
+			SAFETDESTROY( Tree[i], free_node);
 		} else {
 			/* ePN_structure (will be cleared in ePN_real) */
 			Tree[i] = NULL;

@@ -223,7 +223,7 @@ void RemoveIn( struct connection_in * conn )
 		/* Only if actually linked in and possibly active */
 		_MUTEX_DESTROY(conn->bus_mutex);
 		_MUTEX_DESTROY(conn->dev_mutex);
-		SAFETDESTROY( &(conn->dev_db), owfree_func);
+		SAFETDESTROY( conn->dev_db, owfree_func);
 	}
 #endif							/* OW_MT */
 

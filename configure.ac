@@ -266,7 +266,7 @@ AC_ARG_ENABLE(thermocouple,
 AC_SUBST(ENABLE_THERMOCOUPLE)
 AM_CONDITIONAL(ENABLE_THERMOCOUPLE, test "${ENABLE_THERMOCOUPLE}" = "true")
 
-# Check for multithreading
+# Check for threading
 ENABLE_MT="true"
 AC_MSG_CHECKING([if multithreading is enabled])
 AC_ARG_ENABLE(mt,
@@ -488,6 +488,24 @@ AC_ARG_ENABLE(owmalloc,
 ])
 AC_SUBST(ENABLE_OWMALLOC)
 AM_CONDITIONAL(ENABLE_OWMALLOC, test "${ENABLE_OWMALLOC}" = "true")
+
+
+#Check for all bus traffic being reported
+ENABLE_OWTRAFFIC="false"
+AC_MSG_CHECKING(if bus traffic reports is enabled)
+AC_ARG_ENABLE(owtraffic,
+[  --enable-owtraffic      Enable bus traffic reports (default false)],
+[
+	AC_MSG_RESULT([$enableval])
+	if test "$enableval" = "yes" ; then
+		ENABLE_OWTRAFFIC="true"
+	fi
+],
+[
+	AC_MSG_RESULT([no (default)])
+])
+AC_SUBST(ENABLE_OWTRAFFIC)
+AM_CONDITIONAL(ENABLE_OWTRAFFIC, test "${ENABLE_OWTRAFFIC}" = "true")
 
 
 #Check owmon
@@ -1580,6 +1598,13 @@ else
 fi
 AC_SUBST(OW_ALLOC_DEBUG)
 
+if test "${ENABLE_OWTRAFFIC}" = "true" ; then
+	OW_SHOW_TRAFFIC=1
+else
+	OW_SHOW_TRAFFIC=0
+fi
+AC_SUBST(OW_SHOW_TRAFFIC)
+
 # Checks for typedefs, structures, and compiler characteristics.
 
 AC_C_CONST
@@ -1773,6 +1798,11 @@ if test "${ENABLE_OWMALLOC}" = "true"; then
 	AC_MSG_RESULT([Tracing memory allocation is enabled])
 else
 	AC_MSG_RESULT([Tracing memory allocation is DISABLED])
+fi
+if test "${ENABLE_OWTRAFFIC}" = "true"; then
+	AC_MSG_RESULT([1wire bus traffic reports is enabled])
+else
+	AC_MSG_RESULT([1wire bus traffic reports is DISABLED])
 fi
 
 AC_MSG_RESULT()

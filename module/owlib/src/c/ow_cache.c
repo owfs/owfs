@@ -240,7 +240,7 @@ void Cache_Open(void)
 void Cache_Close(void)
 {
 	Cache_Clear() ;
-	SAFETDESTROY( &(cache.permanent_tree), owfree_func);
+	SAFETDESTROY( cache.permanent_tree, owfree_func);
 }
 
 /* Clear the cache (a change was made that might give stale information) */
@@ -260,8 +260,8 @@ void Cache_Clear(void)
 	cache.killed = cache.retired + cache.lifespan;
 	CACHE_WUNLOCK;
 	/* flipped old database is now out of circulation -- can be destroyed without a lock */
-	SAFETDESTROY( &c_new, owfree_func);
-	SAFETDESTROY( &c_old, owfree_func);
+	SAFETDESTROY( c_new, owfree_func);
+	SAFETDESTROY( c_old, owfree_func);
 }
 
 /* Wrapper to perform a cache function and add statistics */
@@ -562,7 +562,7 @@ static void * GetFlippedTree( void )
 static void DeleteFlippedTree( void * retired_tree )
 {
 	LEVEL_DEBUG("flip cache. tdestroy() will be called.");
-	SAFETDESTROY( &retired_tree, owfree_func);
+	SAFETDESTROY( retired_tree, owfree_func);
 	STATLOCK;
 	++cache_flips;			/* statistics */
 	memcpy(&old_avg, &new_avg, sizeof(struct average));

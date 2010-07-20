@@ -38,7 +38,7 @@ static void free_node(void *nodep)
 
 void SpecialCase_close(void)
 {
-	SAFETDESTROY( &SpecialCaseTree, free_node);
+	SAFETDESTROY( SpecialCaseTree, free_node);
 }
 
 
