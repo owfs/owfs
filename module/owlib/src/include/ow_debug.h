@@ -125,6 +125,16 @@ extern int log_available;
 #define SNformat	"%.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X"
 #define SNvar(sn)	(sn)[0],(sn)[1],(sn)[2],(sn)[3],(sn)[4],(sn)[5],(sn)[6],(sn)[7]
 
+/* Show bus traffic in detail (must be configured into the build) */
+#if OW_SHOW_TRAFFIC
+void TrafficOut( const char * data_type, const BYTE * data, size_t length, const struct connection_in * in );
+void TrafficIn( const char * data_type, const BYTE * data, size_t length, const struct connection_in * in );
+#else /* OW_SHOW_TRAFFIC */
+#define TrafficOut( data_type, data, length, in ) { } while (0)
+#define TrafficIn( data_type, data, length,  in ) { } while (0)
+#endif /* OW_SHOW_TRAFFIC */
+
+
 #if OW_MT
 /* Need to define those functions to get FILE and LINE information */
 #define my_pthread_mutex_init(mutex, attr) \

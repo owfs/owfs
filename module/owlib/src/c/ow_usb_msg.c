@@ -71,12 +71,17 @@ char badUSBname[] = "-1:-1";
 // Names (bRequest, wValue wIndex) are from datasheet http://datasheets.maxim-ic.com/en/ds/DS2490.pdf
 GOOD_OR_BAD USB_Control_Msg(BYTE bRequest, UINT wValue, UINT wIndex, const struct parsedname *pn)
 {
-	usb_dev_handle *usb = pn->selected_connection->connin.usb.usb;
+	struct connection_in * in = pn->selected_connection ;
+	usb_dev_handle *usb = in->connin.usb.usb;
 	int ret ;
 	if (usb == NULL) {
 		return gbBAD;
 	}
-	ret = usb_control_msg(usb, CONTROL_REQUEST_TYPE, bRequest, wValue, wIndex, NULL, 0, pn->selected_connection->connin.usb.timeout);
+	ret = usb_control_msg(usb, CONTROL_REQUEST_TYPE, bRequest, wValue, wIndex, NULL, 0, in->connin.usb.timeout);
+#if OW_SHOW_TRAFFIC
+	fprintf(stderr, "TRAFFIC OUT <control> bus=%d (%s)\n", in->index, in->name ) ;
+	fprintf(stderr, "\tbus name=%s request type=0x%.2X, wValue=0x%X, wIndex=0x%X, return code=%d\n",in->adapter_name, bRequest, wValue, wIndex, ret) ;
+#endif /* OW_SHOW_TRAFFIC */
 	if( ret < 0 ) {
 		LEVEL_DEBUG("USB control problem = %d", ret) ;
 		return gbBAD ;
@@ -310,6 +315,7 @@ SIZE_OR_ERROR DS9490_read(BYTE * buf, size_t size, const struct parsedname *pn)
 	struct connection_in * in = pn->selected_connection ;
 	usb_dev_handle *usb = in->connin.usb.usb;
 	if ((ret = usb_bulk_read(usb, DS2490_EP3, (ASCII *) buf, (int) size, in->connin.usb.timeout)) > 0) {
+		TrafficIn("read",buf,size,pn->selected_connection) ;
 		return ret;
 	}
 	LEVEL_DATA("failed ret=%d", ret);
@@ -337,6 +343,7 @@ SIZE_OR_ERROR DS9490_write(const BYTE * buf, size_t size, const struct parsednam
 		USB_CLEAR_HALT(usb, DS2490_EP2);
 		STAT_ADD1_BUS(e_bus_write_errors, in);
 	}
+	TrafficOut("write",buf,size,pn->selected_connection);
 	return ret;
 }
 
