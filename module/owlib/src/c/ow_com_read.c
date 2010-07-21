@@ -65,7 +65,7 @@ GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connecti
 				ERROR_CONNECT("Interrupt (read) serial port: %s", SAFESTRING(connection->name));
 				STAT_ADD1_BUS(e_bus_timeouts, connection);
 			} else {
-				Debug_Bytes("Serial read:", &data[length - to_be_read], read_result);
+				TrafficIn( "read", &data[length - to_be_read], read_result, connection ) ;
 				to_be_read -= read_result ;
 			}
 		} else if ( select_result == 0 ) { // timeout
