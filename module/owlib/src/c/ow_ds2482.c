@@ -595,9 +595,11 @@ static GOOD_OR_BAD DS2482_sendback_data(const BYTE * data, BYTE * resp, const si
 	/* Make sure we're using the correct channel */
 	RETURN_BAD_IF_BAD(DS2482_channel_select(pn)) ;
 
+	TrafficOut( "write", data, len, pn->selected_connection ) ;
 	for (i = 0; i < len; ++i) {
 		RETURN_BAD_IF_BAD(DS2482_send_and_get(file_descriptor, data[i], &resp[i])) ;
 	}
+	TrafficOut( "response", resp, len, pn->selected_connection ) ;
 	return gbGOOD;
 }
 
@@ -783,14 +785,18 @@ static GOOD_OR_BAD SetConfiguration(BYTE c, struct connection_in *in)
 
 static GOOD_OR_BAD DS2482_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname *pn)
 {
+	struct connection_in * in = pn->selected_connection ;
+	
 	/* Make sure we're using the correct channel */
 	RETURN_BAD_IF_BAD(DS2482_channel_select(pn)) ;
 
 	/* Set the power (bit is automatically cleared by reset) */
-	RETURN_BAD_IF_BAD(SetConfiguration(pn->selected_connection->connin.i2c.configreg | DS2482_REG_CFG_SPU, pn->selected_connection)) ;
+	TrafficOut("power write", &byte, 1, in ) ;
+	RETURN_BAD_IF_BAD(SetConfiguration(  in->connin.i2c.configreg | DS2482_REG_CFG_SPU, in)) ;
 
 	/* send and get byte (and trigger strong pull-up */
-	RETURN_BAD_IF_BAD(DS2482_send_and_get(pn->selected_connection->connin.i2c.head->file_descriptor, byte, resp)) ;
+	RETURN_BAD_IF_BAD(DS2482_send_and_get( in->connin.i2c.head->file_descriptor, byte, resp)) ;
+	TrafficOut("power response", &resp, 1, in ) ;
 
 	UT_delay(delay);
 
