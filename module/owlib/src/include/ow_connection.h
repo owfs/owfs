@@ -133,7 +133,14 @@ See: http://www.iana.org/assignments/port-numbers
 #define MAX_FIFO_SIZE UART_FIFO_SIZE
 #endif
 
+// For forward references
 struct connection_in;
+
+/* Debugging interface to showing all bus traffic
+ * You need to configure compile with
+ * ./configure --enable-owtraffic
+ * */
+#include "ow_traffic.h"
 
 /* -------------------------------------------- */
 /* Interface-specific routines ---------------- */

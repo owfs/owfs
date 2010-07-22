@@ -199,8 +199,6 @@ void OW_Browse(struct connection_in *in)
 
 #else							/* OW_ZERO */
 
-#include "ow_debug.h"
-
 void OW_Browse(struct connection_in *in)
 {
 	(void) in ;

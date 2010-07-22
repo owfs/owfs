@@ -104,7 +104,7 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_name.c          \
                ow_net_client.c    \
                ow_net_server.c    \
-	       ow_offset.c        \
+			   ow_offset.c        \
                ow_opt.c           \
                ow_parse_address.c \
                ow_parseinput.c    \
@@ -114,22 +114,22 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_parseshallow.c  \
                ow_parse_sn.c      \
                ow_pid.c           \
-	       ow_powerbyte.c     \
+			   ow_powerbyte.c     \
                ow_presence.c      \
                ow_pressure.c      \
                ow_printparse.c    \
-	       ow_programpulse.c  \
+			   ow_programpulse.c  \
                ow_read.c          \
                ow_read_telnet.c   \
                ow_reconnect.c     \
-	       ow_remote_alias.c  \
-	       ow_reset.c         \
+			   ow_remote_alias.c  \
+			   ow_reset.c         \
                ow_rwlock.c        \
                ow_stats.c         \
                ow_search.c        \
                ow_server.c        \
                ow_server_message.c\
-	       ow_server_enet.c   \
+			   ow_server_enet.c   \
                ow_select.c        \
                ow_settings.c      \
                ow_sibling.c       \
@@ -140,22 +140,23 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_sig_handlers.c  \
                ow_simultaneous.c  \
                ow_slurp.c         \
-	       ow_specialcase.c   \
+			   ow_specialcase.c   \
                ow_stateinfo.c     \
                ow_system.c        \
                ow_tcp_read.c      \
                ow_temp.c          \
                ow_testerread.c    \
                ow_thermocouple.c  \
-               ow_tree.c          \
+               ow_traffic.c       \
                ow_transaction.c   \
+               ow_tree.c          \
                ow_udp_read.c      \
-               ow_usb_msg.c     \
+               ow_usb_msg.c       \
                ow_usb_cycle.c     \
                ow_usb_monitor.c   \
                ow_util.c          \
                ow_verify.c        \
-	       ow_visibility.c    \
+			   ow_visibility.c    \
                ow_w1.c            \
                ow_w1_addremove.c  \
                ow_w1_bind.c       \
