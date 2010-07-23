@@ -23,6 +23,8 @@ $Id$
 pthread_mutex_t init_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t access_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t access_cond = PTHREAD_COND_INITIALIZER;
+#define INITINIT       _MUTEX_INIT( init_mutex )
+#define ACCESSINIT     _MUTEX_INIT( access_mutex )
 #define INITLOCK       _MUTEX_LOCK(    init_mutex   )
 #define INITUNLOCK     _MUTEX_UNLOCK(  init_mutex   )
 #define ACCESSLOCK     _MUTEX_LOCK(  access_mutex   )
@@ -30,6 +32,8 @@ pthread_cond_t access_cond = PTHREAD_COND_INITIALIZER;
 #define ACCESSWAIT     my_pthread_cond_wait(    &access_cond, &access_mutex )
 #define ACCESSSIGNAL   my_pthread_cond_signal(  &access_cond )
 #else							/* OW_MT */
+#define INITINIT       
+#define ACCESSINIT     
 #define INITLOCK		return_ok()
 #define INITUNLOCK		return_ok()
 #define ACCESSLOCK		return_ok()
@@ -47,8 +51,8 @@ void API_setup(enum opt_program opt)
 	if (++deja_vue == 1) {
 		// first time through
 		LibSetup(opt);
-		_MUTEX_INIT( init_mutex ) ;
-		_MUTEX_INIT( access_mutex ) ;
+		INITINIT ;
+		ACCESSINIT ;
 		StateInfo.owlib_state = lib_state_setup;
 	}
 }

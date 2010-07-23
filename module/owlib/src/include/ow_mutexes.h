@@ -165,19 +165,20 @@ extern struct mutexes {
 #endif							/* __UCLIBC__ */
 
 #else							/* OW_MT */
-#define LIB_WLOCK		return_ok()
-#define LIB_WUNLOCK		return_ok()
-#define LIB_RLOCK		return_ok()
-#define LIB_RUNLOCK		return_ok()
 
-#define CACHE_WLOCK		return_ok()
+#define LIB_WLOCK			return_ok()
+#define LIB_WUNLOCK			return_ok()
+#define LIB_RLOCK			return_ok()
+#define LIB_RUNLOCK			return_ok()
+
+#define CACHE_WLOCK			return_ok()
 #define CACHE_WUNLOCK		return_ok()
-#define CACHE_RLOCK		return_ok()
+#define CACHE_RLOCK			return_ok()
 #define CACHE_RUNLOCK		return_ok()
 
-#define STORE_WLOCK		return_ok()
+#define STORE_WLOCK			return_ok()
 #define STORE_WUNLOCK		return_ok()
-#define STORE_RLOCK		return_ok()
+#define STORE_RLOCK			return_ok()
 #define STORE_RUNLOCK		return_ok()
 
 #define CONNIN_WLOCK		return_ok()
@@ -185,28 +186,28 @@ extern struct mutexes {
 #define CONNIN_RLOCK		return_ok()
 #define CONNIN_RUNLOCK		return_ok()
 
-#define STATLOCK		return_ok()
-#define STATUNLOCK		return_ok()
+#define STATLOCK			return_ok()
+#define STATUNLOCK			return_ok()
 
 #define CONTROLFLAGSLOCK	return_ok()
 #define CONTROLFLAGSUNLOCK	return_ok()
 
-#define FSTATLOCK		return_ok()
-#define FSTATUNLOCK		return_ok()
+#define FSTATLOCK			return_ok()
+#define FSTATUNLOCK			return_ok()
 
-#define SIMULLOCK		return_ok()
-#define SIMULUNLOCK		return_ok()
+#define SIMULLOCK			return_ok()
+#define SIMULUNLOCK			return_ok()
 
-#define DIRLOCK			return_ok()
-#define DIRUNLOCK		return_ok()
+#define DIRLOCK				return_ok()
+#define DIRUNLOCK			return_ok()
 
-#define UCLIBCLOCK		return_ok()
+#define UCLIBCLOCK			return_ok()
 #define UCLIBCUNLOCK		return_ok()
 
-#define LIBUSBLOCK		return_ok()
+#define LIBUSBLOCK			return_ok()
 #define LIBUSBUNLOCK		return_ok()
 
-#define TYPEDIRBLOCK		return_ok()
+#define TYPEDIRLOCK			return_ok()
 #define TYPEDIRUNLOCK		return_ok()
 
 #define NAMEFINDLOCK		return_ok()

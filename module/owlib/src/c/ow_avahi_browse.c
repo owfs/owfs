@@ -14,28 +14,28 @@ See the header file: ow.h for full attribution
 
 #ifdef HAVE_STDLIB_H
 #include "stdlib.h"  // need this for NULL
-#endif
+#endif /* HAVE_STDLIB_H */
 
-#if OW_ZERO
-
-#if OW_CYGWIN
-// not used for cygwin
-#else
+#if OW_ZERO && OW_MT && ( ! OW_CYGWIN )
 
 #include "ow_avahi.h"
 #include "ow_connection.h"
+
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
-#endif
+#endif /* HAVE_SYS_SOCKET_H */
+
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
-#endif
+#endif /* HAVE_NETINET_IN_H */
+
 #ifdef HAVE_ARPA_INET_H
 #include <arpa/inet.h>
-#endif
+#endif /* HAVE_ARPA_INET_H */
 
 /* Prototypes */
 static int AvahiBrowserNetName( const AvahiAddress *address, int port, struct connection_in * in ) ;
+
 static void resolve_callback(
 	AvahiServiceResolver *r,
 	AVAHI_GCC_UNUSED AvahiIfIndex interface,
@@ -50,6 +50,7 @@ static void resolve_callback(
 	void *txt,
 	AvahiLookupResultFlags flags,
 	void* v) ;
+
 static void browse_callback(
 	AvahiServiceBrowser *b,
 	AvahiIfIndex interface,
@@ -60,6 +61,7 @@ static void browse_callback(
 	const char *domain,
 	AVAHI_GCC_UNUSED AvahiLookupResultFlags flags,
 	void* v) ;
+
 static void client_callback(AvahiClient *c, AvahiClientState state, void * v) ;
 
 /* Code */
@@ -125,7 +127,7 @@ static int AvahiBrowserNetName( const AvahiAddress *address, int port, struct co
 				return 0 ;
 			}
 			break ;
-#endif
+#endif /* __HAS_IPV6__ */
 		default:
 			strncpy(in->connin.browse.avahi_host,"Unknown address",sizeof(in->connin.browse.avahi_host)) ;
 			LEVEL_DEBUG( "Unknown internet protocol");
@@ -203,9 +205,7 @@ void * OW_Avahi_Browse(void * v)
 	struct connection_in * in = v ;
 	int error;
 
-#if OW_MT
 	pthread_detach(pthread_self());
-#endif
 
 	/* Create main loop object */
 	in->connin.browse.avahi_poll = avahi_simple_poll_new() ;
@@ -252,11 +252,9 @@ void * OW_Avahi_Browse(void * v)
 	return NULL;
 }
 
-#endif /* OW_CYGWIN */
-
-#else /* OW_ZERO */
+#else /* OW_ZERO  && OW_MT && ! OW_CYGWIN */
 void * OW_Avahi_Browse(void * v) {
 	(void) v ;
 	return NULL ;
 }
-#endif /* OW_ZERO */
+#endif  /* OW_ZERO  && OW_MT && ! OW_CYGWIN */
