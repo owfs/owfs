@@ -55,6 +55,7 @@ GOOD_OR_BAD COM_write( const BYTE * data, size_t length, struct connection_in *c
 			}
 			update_max_delay(connection);
 			TrafficOut("write", &data[length - to_be_written], to_be_written, connection );
+			write_result = write(connection->file_descriptor, &data[length - to_be_written], to_be_written); /* write bytes */ 			
 			if (write_result < 0) {
 				if (errno != EWOULDBLOCK) {
 					ERROR_CONNECT("Trouble writing to serial port: %s", SAFESTRING(connection->name));
