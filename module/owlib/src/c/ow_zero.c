@@ -11,10 +11,10 @@ $Id$
 
 #include <config.h>
 #include "owfs_config.h"
-
-#if OW_ZERO
-
 #include "ow_connection.h"
+
+#if OW_ZERO && OW_MT
+
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -108,10 +108,9 @@ static void *Announce(void *v)
 	}
 
 	Announce_Post_Register(sref, err) ;
-#if OW_MT
 	LEVEL_DEBUG("Normal exit");
 	pthread_exit(NULL);
-#endif
+
 	return NULL;
 }
 
@@ -120,7 +119,6 @@ void ZeroConf_Announce(struct connection_out *out)
 	if ( Globals.announce_off) {
 		return;
 	} else if ( Globals.zero == zero_avahi ) {
-#if OW_MT
 #if !OW_CYGWIN
 		// avahi only implemented with multithreading
 		pthread_t thread;
@@ -129,25 +127,21 @@ void ZeroConf_Announce(struct connection_out *out)
 			LEVEL_CONNECT("Avahi registration thread error %d.", err);
 		}
 #endif
-#endif
 	} else if ( Globals.zero == zero_bonjour ) {
-#if OW_MT
 		pthread_t thread;
 		int err = pthread_create(&thread, NULL, Announce, (void *) out);
 		if (err) {
 			LEVEL_CONNECT("Zeroconf/Bonjour registration thread error %d.", err);
 		}
-#else							/* OW_MT */
-		Announce(out);
-#endif							/* OW_MT */
 	}
 }
 
-#else							/* OW_ZERO */
+#else							/* OW_ZERO && OW_MT  */
 
 void ZeroConf_Announce(struct connection_out *out)
 {
 	(void) out;
+	LEVEL_CONNECT("Zeroconf and/or Multithreading are not enabled");
 	return;
 }
 

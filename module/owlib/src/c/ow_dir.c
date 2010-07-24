@@ -19,9 +19,6 @@ $Id$
 
 static ZERO_OR_ERROR FS_dir_both(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_directory, uint32_t * flags);
 static ZERO_OR_ERROR FS_dir_all_connections(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_directory, uint32_t * flags);
-static ZERO_OR_ERROR FS_dir_all_connections_loop(void (*dirfunc)
-									    (void *, const struct parsedname * const),
-									   void *v, struct connection_in * in, const struct parsedname *pn_directory, uint32_t * flags);
 static ZERO_OR_ERROR FS_devdir(void (*dirfunc) (void *, const struct parsedname * const), void *v, const struct parsedname *pn2);
 static ZERO_OR_ERROR FS_alarmdir(void (*dirfunc) (void *, const struct parsedname * const), void *v, const struct parsedname *pn2);
 static ZERO_OR_ERROR FS_typedir(void (*dirfunc) (void *, const struct parsedname * const), void *v, const struct parsedname *pn_type_directory);
@@ -229,9 +226,15 @@ static void FS_simultaneous_entry(void (*dirfunc) (void *, const struct parsedna
 	FS_dir_plus(dirfunc, v, &ignoreflag, pn_root_directory, "simultaneous");
 }
 
+#if OW_MT
+
 /* path is the path which "pn_directory" parses */
 /* FS_dir_all_connections produces the data that can vary: device lists, etc. */
-#if OW_MT
+
+static ZERO_OR_ERROR FS_dir_all_connections_loop(void (*dirfunc)
+									    (void *, const struct parsedname * const),
+									   void *v, struct connection_in * in, const struct parsedname *pn_directory, uint32_t * flags);
+
 struct dir_all_connections_struct {
 	struct connection_in * in;
 	const struct parsedname *pn_directory;
@@ -303,6 +306,7 @@ FS_dir_all_connections(void (*dirfunc) (void *, const struct parsedname *), void
 	// Start iterating through buses
 	return FS_dir_all_connections_loop(dirfunc, v, in, pn_directory, flags);
 }
+
 #else							/* OW_MT */
 
 /* path is the path which "pn_directory" parses */
@@ -332,9 +336,9 @@ FS_dir_all_connections(void (*dirfunc) (void *, const struct parsedname *), void
 		}
 		/* local bus */
 		if (IsAlarmDir(pn_selected_connection)) {	/* root or branch directory -- alarm state */
-			ZERO_OR_ERROR alarm = FS_alarmdir(dirfunc, v, pn_selected_connection);
-			if ( alarm ) {
-				ret = alarm ;
+			ZERO_OR_ERROR alarm_return = FS_alarmdir(dirfunc, v, pn_selected_connection);
+			if ( alarm_return ) {
+				ret = alarm_return ;
 			}
 		} else {
 			ret = FS_cache2real(dirfunc, v, pn_selected_connection, flags);
@@ -564,7 +568,7 @@ static ZERO_OR_ERROR FS_cache2real(void (*dirfunc) (void *, const struct parsedn
 	
 	/* Test to see whether we should get the directory "directly" */
 	if (SpecifiedBus(pn_real_directory) || IsUncachedDir(pn_real_directory)
-		|| Cache_Get_Dir(&db, pn_real_directory)) {
+		|| BAD( Cache_Get_Dir(&db, pn_real_directory)) ) {
 		//printf("FS_cache2real: didn't find anything at bus %d\n", pn_real_directory->selected_connection->index);
 		return FS_realdir(dirfunc, v, pn_real_directory, flags);
 	}

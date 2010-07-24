@@ -12,11 +12,11 @@ See the header file: ow.h for full attribution
 
 #include <config.h>
 #include "owfs_config.h"
+#include "ow_connection.h"
 
-#if OW_ZERO
+#if OW_ZERO && OW_MT
 
 #include "ow_avahi.h"
-#include "ow_connection.h"
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
@@ -267,4 +267,14 @@ void *OW_Avahi_Announce( void * v )
 	return NULL ;
 }
 
-#endif /* OW_ZERO */
+#else /* OW_ZERO && OW_MT */
+
+// Should be called in it's own thread
+void *OW_Avahi_Announce( void * v )
+{
+	(void) v ;
+	LEVEL_CONNECT("Avahi support not present in this build");
+	return NULL ;
+}
+
+#endif /* OW_ZERO && OW_MT */

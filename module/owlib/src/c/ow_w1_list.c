@@ -37,7 +37,7 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
 #include <config.h>
 #include "owfs_config.h"
 
-#if OW_W1
+#if OW_W1 && OW_MT
 
 #include "ow_w1.h"
 #include "ow_connection.h"
@@ -87,4 +87,4 @@ enum Netlink_Read_Status W1NLList( void )
 	return W1_Process_Response( w1_masters, w1_list_masters(), NULL, NULL ) ;
 }
 
-#endif /* OW_W1 */
+#endif /* OW_W1 && OW_MT */

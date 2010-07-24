@@ -13,9 +13,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
-#if OW_ZERO
-
-#if OW_MT
+#if OW_ZERO && OW_MT
 
 #include "ow_connection.h"
 
@@ -187,22 +185,13 @@ void OW_Browse(struct connection_in *in)
 	}
 }
 
-#else							/* OW_MT */
+#else	/* OW_ZERO && OW_MT */
 
 void OW_Browse(struct connection_in *in)
 {
 	(void) in ;
-	LEVEL_CONNECT("Avahi and Bonjour requires multithreading support (a compile-time configuration setting).");
+	LEVEL_CONNECT("Avahi and Bonjour (and Multithreading) was not enabled");
 }
 
-#endif							/* OW_MT */
 
-#else							/* OW_ZERO */
-
-void OW_Browse(struct connection_in *in)
-{
-	(void) in ;
-	LEVEL_CONNECT("OWFS was compiled without Avahi or Bonjour support.");
-}
-
-#endif							/* OW_ZERO */
+#endif	/* OW_ZERO && OW_MT*/

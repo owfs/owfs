@@ -100,30 +100,30 @@ extern struct mutexes {
 #define RWLOCK_RLOCK(mut)	my_rwlock_read_lock(   &(mut) )
 #define RWLOCK_RUNLOCK(mut)	my_rwlock_read_unlock( &(mut) )
 
-#define LIB_WLOCK         	RWLOCK_WLOCK(   Mutex.lib    ) ;
-#define LIB_WUNLOCK       	RWLOCK_WUNLOCK( Mutex.lib    ) ;
-#define LIB_RLOCK         	RWLOCK_RLOCK(   Mutex.lib    ) ;
-#define LIB_RUNLOCK       	RWLOCK_RUNLOCK( Mutex.lib    ) ;
+#define LIB_WLOCK         	RWLOCK_WLOCK(   Mutex.lib    )
+#define LIB_WUNLOCK       	RWLOCK_WUNLOCK( Mutex.lib    )
+#define LIB_RLOCK         	RWLOCK_RLOCK(   Mutex.lib    )
+#define LIB_RUNLOCK       	RWLOCK_RUNLOCK( Mutex.lib    )
 
-#define CACHE_WLOCK       	RWLOCK_WLOCK(   Mutex.cache  ) ;
-#define CACHE_WUNLOCK     	RWLOCK_WUNLOCK( Mutex.cache  ) ;
-#define CACHE_RLOCK       	RWLOCK_RLOCK(   Mutex.cache  ) ;
-#define CACHE_RUNLOCK     	RWLOCK_RUNLOCK( Mutex.cache  ) ;
+#define CACHE_WLOCK       	RWLOCK_WLOCK(   Mutex.cache  )
+#define CACHE_WUNLOCK     	RWLOCK_WUNLOCK( Mutex.cache  )
+#define CACHE_RLOCK       	RWLOCK_RLOCK(   Mutex.cache  )
+#define CACHE_RUNLOCK     	RWLOCK_RUNLOCK( Mutex.cache  )
 
-#define STORE_WLOCK       	RWLOCK_WLOCK(   Mutex.store ) ;
-#define STORE_WUNLOCK     	RWLOCK_WUNLOCK( Mutex.store ) ;
-#define STORE_RLOCK       	RWLOCK_RLOCK(   Mutex.store ) ;
-#define STORE_RUNLOCK     	RWLOCK_RUNLOCK( Mutex.store ) ;
+#define STORE_WLOCK       	RWLOCK_WLOCK(   Mutex.store )
+#define STORE_WUNLOCK     	RWLOCK_WUNLOCK( Mutex.store )
+#define STORE_RLOCK       	RWLOCK_RLOCK(   Mutex.store )
+#define STORE_RUNLOCK     	RWLOCK_RUNLOCK( Mutex.store )
 
-#define CONNIN_WLOCK      	RWLOCK_WLOCK(   Inbound_Control.lock ) ;
-#define CONNIN_WUNLOCK    	RWLOCK_WUNLOCK( Inbound_Control.lock ) ;
-#define CONNIN_RLOCK      	RWLOCK_RLOCK(   Inbound_Control.lock ) ;
-#define CONNIN_RUNLOCK    	RWLOCK_RUNLOCK( Inbound_Control.lock ) ;
+#define CONNIN_WLOCK      	RWLOCK_WLOCK(   Inbound_Control.lock )
+#define CONNIN_WUNLOCK    	RWLOCK_WUNLOCK( Inbound_Control.lock )
+#define CONNIN_RLOCK      	RWLOCK_RLOCK(   Inbound_Control.lock )
+#define CONNIN_RUNLOCK    	RWLOCK_RUNLOCK( Inbound_Control.lock )
 
-#define MONITOR_WLOCK      	RWLOCK_WLOCK(   Inbound_Control.monitor_lock ) ;
-#define MONITOR_WUNLOCK    	RWLOCK_WUNLOCK( Inbound_Control.monitor_lock ) ;
-#define MONITOR_RLOCK      	RWLOCK_RLOCK(   Inbound_Control.monitor_lock ) ;
-#define MONITOR_RUNLOCK    	RWLOCK_RUNLOCK( Inbound_Control.monitor_lock ) ;
+#define MONITOR_WLOCK      	RWLOCK_WLOCK(   Inbound_Control.monitor_lock )
+#define MONITOR_WUNLOCK    	RWLOCK_WUNLOCK( Inbound_Control.monitor_lock )
+#define MONITOR_RLOCK      	RWLOCK_RLOCK(   Inbound_Control.monitor_lock )
+#define MONITOR_RUNLOCK    	RWLOCK_RUNLOCK( Inbound_Control.monitor_lock )
 
 #define STATLOCK          	_MUTEX_LOCK(  Mutex.stat_mutex   )
 #define STATUNLOCK        	_MUTEX_UNLOCK(Mutex.stat_mutex   )
@@ -160,7 +160,7 @@ extern struct mutexes {
 #define UCLIBCLOCK        	_MUTEX_LOCK(  Mutex.uclibc_mutex)
 #define UCLIBCUNLOCK      	_MUTEX_UNLOCK(Mutex.uclibc_mutex)
 #else							/* __UCLIBC__ */
-#define UCLIBCLOCK		return_ok()
+#define UCLIBCLOCK			return_ok()
 #define UCLIBCUNLOCK		return_ok()
 #endif							/* __UCLIBC__ */
 
@@ -185,6 +185,11 @@ extern struct mutexes {
 #define CONNIN_WUNLOCK		return_ok()
 #define CONNIN_RLOCK		return_ok()
 #define CONNIN_RUNLOCK		return_ok()
+
+#define MONITOR_WLOCK      	return_ok()
+#define MONITOR_WUNLOCK    	return_ok()
+#define MONITOR_RLOCK      	return_ok()
+#define MONITOR_RUNLOCK    	return_ok()
 
 #define STATLOCK			return_ok()
 #define STATUNLOCK			return_ok()
@@ -216,9 +221,9 @@ extern struct mutexes {
 #define ALIASFINDLOCK		return_ok()
 #define ALIASFINDUNLOCK		return_ok()
 
-#define UCLIBCLOCK		return_ok()
+#define UCLIBCLOCK			return_ok()
 #define UCLIBCUNLOCK		return_ok()
-#define BUSLOCK(pn)		return_ok()
+#define BUSLOCK(pn)			return_ok()
 #define BUSUNLOCK(pn)		return_ok()
 #define BUSLOCKIN(in)		return_ok()
 #define BUSUNLOCKIN(in)		return_ok()

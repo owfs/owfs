@@ -255,7 +255,7 @@ static ZERO_OR_ERROR SpecialRead( struct one_wire_query * owq )
 	enum ePS_state state = pn->state ;
 	RETURN_BAD_IF_BAD( ENET_get_detail(pn) ) ;
 	pn->state |= ~ePS_uncached ; // turn off uncached
-	if (OWQ_Cache_Get(owq)) {
+	if ( BAD( OWQ_Cache_Get(owq)) ) {
 		// Not found even after re-reading detail
 		pn->state = state ;
 		return -EINVAL ;

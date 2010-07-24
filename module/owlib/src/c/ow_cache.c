@@ -123,9 +123,11 @@ static int Cache_Add_Common(struct tree_node *tn);
 static int Cache_Add_Store(struct tree_node *tn);
 
 static int Cache_Get_Common(void *data, size_t * dsize, time_t * duration, const struct tree_node *tn);
-static int Cache_Get_Common_Dir(struct dirblob *db, time_t * duration, const struct tree_node *tn);
+static GOOD_OR_BAD Cache_Get_Common_Dir(struct dirblob *db, time_t * duration, const struct tree_node *tn);
 static int Cache_Get_Store(void *data, size_t * dsize, time_t * duration, const struct tree_node *tn);
 static int Cache_Get_Simultaneous(enum simul_type type, struct one_wire_query *owq) ;
+static GOOD_OR_BAD Cache_Get_Internal(void *data, size_t * dsize, const struct internal_prop *ip, const struct parsedname *pn);
+static GOOD_OR_BAD Cache_Get_Strict(void *data, size_t dsize, const struct parsedname *pn);
 
 static int Cache_Del_Common(const struct tree_node *tn);
 static int Cache_Del_Store(const struct tree_node *tn);
@@ -682,23 +684,21 @@ static int Get_Stat(struct cache *scache, const int result)
 }
 
 /* Does cache get, but doesn't allow play in data size */
-int Cache_Get_Strict(void *data, size_t dsize, const struct parsedname *pn)
+static GOOD_OR_BAD Cache_Get_Strict(void *data, size_t dsize, const struct parsedname *pn)
 {
 	size_t size = dsize;
-	if (Cache_Get(data, &size, pn) || dsize != size) {
-		return 1;
-	}
-	return 0;
+	RETURN_BAD_IF_BAD( Cache_Get(data, &size, pn) ) ;
+	return ( dsize == size) ? gbGOOD : gbBAD ;
 }
 
 
-int OWQ_Cache_Get(struct one_wire_query *owq)
+GOOD_OR_BAD OWQ_Cache_Get(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 
 	// do check here to avoid needless processing
 	if (IsUncachedDir(pn) || IsAlarmDir(pn)) {
-		return 1;
+		return gbBAD;
 	}
 
 	switch (pn->selected_filetype->change) {
@@ -716,7 +716,7 @@ int OWQ_Cache_Get(struct one_wire_query *owq)
 		case ft_vascii:
 		case ft_alias:
 		case ft_binary:
-			return 1;			// string arrays not supported
+			return gbBAD;			// string arrays not supported
 		case ft_integer:
 		case ft_unsigned:
 		case ft_yesno:
@@ -727,7 +727,7 @@ int OWQ_Cache_Get(struct one_wire_query *owq)
 		case ft_tempgap:
 			return Cache_Get_Strict(OWQ_array(owq), (pn->selected_filetype->ag->elements) * sizeof(union value_object), pn);
 		default:
-			return 1;
+			return gbBAD;
 		}
 	} else {
 		switch (pn->selected_filetype->format) {
@@ -736,7 +736,7 @@ int OWQ_Cache_Get(struct one_wire_query *owq)
 		case ft_alias:
 		case ft_binary:
 			if (OWQ_offset(owq) > 0) {
-				return 1;
+				return gbBAD;
 			}
 			OWQ_length(owq) = OWQ_size(owq);
 			return Cache_Get(OWQ_buffer(owq), &OWQ_length(owq), pn);
@@ -750,26 +750,25 @@ int OWQ_Cache_Get(struct one_wire_query *owq)
 		case ft_tempgap:
 			return Cache_Get_Strict(&OWQ_val(owq), sizeof(union value_object), pn);
 		default:
-			return 1;
+			return gbBAD;
 		}
 	}
 }
 
-
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
-int Cache_Get(void *data, size_t * dsize, const struct parsedname *pn)
+GOOD_OR_BAD Cache_Get(void *data, size_t * dsize, const struct parsedname *pn)
 {
 	time_t duration;
 	struct tree_node tn;
 	//printf("Cache_Get\n") ;
 	// do check here to avoid needless processing
 	if (IsUncachedDir(pn) || IsAlarmDir(pn)) {
-		return 1;
+		return gbBAD;
 	}
 
 	duration = TimeOut(pn->selected_filetype->change);
 	if (duration <= 0) {
-		return 1;
+		return gbBAD;
 	}
 
 	LEVEL_DEBUG(SNformat " size=%d IsUncachedDir=%d", SNvar(pn->sn), (int) dsize[0], IsUncachedDir(pn));
@@ -780,15 +779,14 @@ int Cache_Get(void *data, size_t * dsize, const struct parsedname *pn)
 }
 
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
-int Cache_Get_Dir(struct dirblob *db, const struct parsedname *pn)
+GOOD_OR_BAD Cache_Get_Dir(struct dirblob *db, const struct parsedname *pn)
 {
 	time_t duration = TimeOut(fc_directory);
 	struct tree_node tn;
 	struct parsedname pn_directory;
 	DirblobInit(db);
-	//printf("Cache_Get_Dir\n") ;
 	if (duration <= 0) {
-		return 1;
+		return gbBAD;
 	}
 
 	LEVEL_DEBUG(SNformat, SNvar(pn->sn));
@@ -798,9 +796,9 @@ int Cache_Get_Dir(struct dirblob *db, const struct parsedname *pn)
 }
 
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
-static int Cache_Get_Common_Dir(struct dirblob *db, time_t * duration, const struct tree_node *tn)
+static GOOD_OR_BAD Cache_Get_Common_Dir(struct dirblob *db, time_t * duration, const struct tree_node *tn)
 {
-	int ret;
+	GOOD_OR_BAD ret;
 	time_t now = time(NULL);
 	size_t size;
 	struct tree_opaque *opaque;
@@ -816,34 +814,33 @@ static int Cache_Get_Common_Dir(struct dirblob *db, time_t * duration, const str
 			size = opaque->key->dsize;
 			if (DirblobRecreate(TREE_DATA(opaque->key), size, db) == 0) {
 				//printf("Cache: snlist=%p, devices=%lu, size=%lu\n",*snlist,devices[0],size) ;
-				ret = 0;
+				ret = gbGOOD;
 			} else {
-				ret = -ENOMEM;
+				ret = gbBAD;
 			}
 		} else {
 			//char b[26];
 			//printf("GOT DEAD now:%s",ctime_r(&now,b)) ;
 			//printf("        then:%s",ctime_r(&opaque->key->expires,b)) ;
 			LEVEL_DEBUG("Expired in cache");
-			ret = -ETIMEDOUT;
+			ret = gbBAD;
 		}
 	} else {
 		LEVEL_DEBUG("dir not found in cache");
-		ret = -ENOENT;
+		ret = gbBAD;
 	}
 	CACHE_RUNLOCK;
 	return ret;
 }
 
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
-int Cache_Get_Device(void *bus_nr, const struct parsedname *pn)
+GOOD_OR_BAD Cache_Get_Device(void *bus_nr, const struct parsedname *pn)
 {
 	time_t duration = TimeOut(fc_presence);
 	size_t size = sizeof(int);
 	struct tree_node tn;
-	//printf("Cache_Get_Device\n") ;
 	if (duration <= 0) {
-		return 1;
+		return gbBAD;
 	}
 
 	LEVEL_DEBUG(SNformat, SNvar(pn->sn));
@@ -855,25 +852,24 @@ int Cache_Get_Device(void *bus_nr, const struct parsedname *pn)
 GOOD_OR_BAD Cache_Get_Internal_Strict(void *data, size_t dsize, const struct internal_prop *ip, const struct parsedname *pn)
 {
 	size_t size = dsize;
-	if (Cache_Get_Internal(data, &size, ip, pn) || dsize != size) {
-		return gbBAD;
-	}
-	return gbGOOD;
+	RETURN_BAD_IF_BAD( Cache_Get_Internal(data, &size, ip, pn) ) ;
+	
+	return ( dsize == size) ? gbGOOD : gbBAD ;
 }
 
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
-int Cache_Get_Internal(void *data, size_t * dsize, const struct internal_prop *ip, const struct parsedname *pn)
+static GOOD_OR_BAD Cache_Get_Internal(void *data, size_t * dsize, const struct internal_prop *ip, const struct parsedname *pn)
 {
 	struct tree_node tn;
 	time_t duration;
 	//printf("Cache_Get_Internal");
 	if (!pn) {
-		return 1;				// do check here to avoid needless processing
+		return gbBAD;				// do check here to avoid needless processing
 	}
 	
 	duration = TimeOut(ip->change);
 	if (duration <= 0) {
-		return 1;				/* in case timeout set to 0 */
+		return gbBAD;				/* in case timeout set to 0 */
 	}
 	
 	LEVEL_DEBUG(SNformat " size=%d", SNvar(pn->sn), (int) dsize[0]);

@@ -37,6 +37,22 @@ static int AddChecksum( unsigned char * check_string, int length, struct connect
 static GOOD_OR_BAD TestChecksum( unsigned char * check_string, int length ) ;
 static GOOD_OR_BAD HA5_find_channel(struct parsedname *pn) ;
 
+#if OW_MT
+
+#define HA5MUTEX_INIT(in)		_MUTEX_INIT(in->connin.ha5.lock)
+#define HA5MUTEX_LOCK(in)		_MUTEX_LOCK(in->connin.ha5.lock ) ;
+#define HA5MUTEX_UNLOCK(in)		_MUTEX_UNLOCK(in->connin.ha5.lock);
+#define HA5MUTEX_DESTROY(in)	_MUTEX_DESTROY(in->connin.ha5.lock);
+
+#else /* OW_MT */
+
+#define HA5MUTEX_INIT(in)			(void) in
+#define HA5MUTEX_LOCK(in)			(void) in
+#define HA5MUTEX_UNLOCK(in)			(void) in	
+#define HA5MUTEX_DESTROY(in)		(void) in	
+
+#endif /* ow_MT */
+
 #define CR_char		(0x0D)
 
 static void HA5_setroutines(struct connection_in *in)
@@ -103,9 +119,7 @@ GOOD_OR_BAD HA5_detect(struct connection_in *in)
 
 	/* By definition, this is the head adapter on this port */
 	in->connin.ha5.head = in ;
-#if OW_MT
-	_MUTEX_INIT(in->connin.ha5.lock);
-#endif							/* OW_MT */
+	HA5MUTEX_INIT(in);
 
 	/* Find the channels */
 	if ( ap.second.type == address_none ) { // scan for channel
@@ -249,9 +263,9 @@ static RESET_TYPE HA5_reset(const struct parsedname *pn)
 	struct connection_in * in = pn->selected_connection ;
 	RESET_TYPE ret ;
 
-	_MUTEX_LOCK( in->connin.ha5.head->connin.ha5.lock ) ;
+	HA5MUTEX_LOCK( in->connin.ha5.head ) ;
 	ret = HA5_reset_wrapped(pn) ;
-	_MUTEX_UNLOCK( in->connin.ha5.head->connin.ha5.lock ) ;
+	HA5MUTEX_UNLOCK( in->connin.ha5.head ) ;
 
 	return ret ;
 }
@@ -304,9 +318,9 @@ static enum search_status HA5_next_both(struct device_search *ds, const struct p
 
 	if (ds->index == -1) {
 		enum search_status ret ;
-		_MUTEX_LOCK( in->connin.ha5.head->connin.ha5.lock ) ;
+		HA5MUTEX_LOCK( in->connin.ha5.head ) ;
 		ret = HA5_directory(ds, db, pn) ;
-		_MUTEX_UNLOCK( in->connin.ha5.head->connin.ha5.lock ) ;
+		HA5MUTEX_UNLOCK( in->connin.ha5.head ) ;
 
 		if ( ret != search_good ) {
 			return search_error;
@@ -458,9 +472,9 @@ static GOOD_OR_BAD HA5_select( const struct parsedname * pn )
 		RETURN_BAD_IF_BAD( gbRESET( HA5_reset(pn) ) ) ;
 	}
 
-	_MUTEX_LOCK( in->connin.ha5.head->connin.ha5.lock ) ;
+	HA5MUTEX_LOCK( in->connin.ha5.head ) ;
 	ret = HA5_select_wrapped(pn) ;
-	_MUTEX_UNLOCK( in->connin.ha5.head->connin.ha5.lock ) ;
+	HA5MUTEX_UNLOCK( in->connin.ha5.head ) ;
 
 	return ret ;
 }
@@ -568,9 +582,9 @@ static GOOD_OR_BAD HA5_sendback_data(const BYTE * data, BYTE * resp, const size_
 		size_t pass_start = size - left ;
 		size_t pass_size = (left>32)?32:left ;
 
-		_MUTEX_LOCK( in->connin.ha5.head->connin.ha5.lock ) ;
+		HA5MUTEX_LOCK( in->connin.ha5.head ) ;
 		ret = HA5_sendback_part( 'W', &data[pass_start], &resp[pass_start], pass_size, pn ) ;
-		_MUTEX_UNLOCK( in->connin.ha5.head->connin.ha5.lock ) ;
+		HA5MUTEX_UNLOCK( in->connin.ha5.head ) ;
 
 		RETURN_BAD_IF_BAD( ret ) ;
 	}
@@ -597,9 +611,9 @@ static GOOD_OR_BAD HA5_select_and_sendback(const BYTE * data, BYTE * resp, const
 		size_t pass_start = size - left ;
 		size_t pass_size = (left>32)?32:left ;
 
-		_MUTEX_LOCK( in->connin.ha5.head->connin.ha5.lock ) ;
+		HA5MUTEX_LOCK( in->connin.ha5.head ) ;
 		ret = HA5_sendback_part( block_cmd, &data[pass_start], &resp[pass_start], pass_size, pn ) ;
-		_MUTEX_UNLOCK( in->connin.ha5.head->connin.ha5.lock ) ;
+		HA5MUTEX_UNLOCK( in->connin.ha5.head ) ;
 		block_cmd = 'W' ; // for next pass
 		RETURN_BAD_IF_BAD( ret ) ;
 	}
@@ -616,7 +630,7 @@ static void HA5_close(struct connection_in *in)
 {
 	HA5_powerdown(in) ;
 	if ( in->connin.ha5.head == in ) {
-		_MUTEX_DESTROY(in->connin.ha5.lock);
+		HA5MUTEX_DESTROY(in);
 	}
 	COM_close(in);
 }

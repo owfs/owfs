@@ -412,7 +412,7 @@ static SIZE_OR_ERROR FS_r_local(struct one_wire_query *owq)
 				return FS_read_tester(owq);
 			case adapter_mock:
 				/* Special case for "mock" adapter */
-				if (OWQ_Cache_Get(owq)) {	// non-zero means not found
+				if ( BAD( OWQ_Cache_Get(owq)) ) {	// not found
 					return FS_read_fake(owq);
 				}
 				return 0;
@@ -506,7 +506,7 @@ static ZERO_OR_ERROR FS_structure(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_read_lump(struct one_wire_query *owq)
 {
 	// Bus and device already locked
-	if (OWQ_Cache_Get(owq)) {	// non-zero means not found
+	if ( BAD( OWQ_Cache_Get(owq)) ) {	// not found
 		ZERO_OR_ERROR read_error = SpecialCase_read(owq);
 		if ( read_error == -ENOENT ) {
 			read_error = (OWQ_pn(owq).selected_filetype->read) (owq);
@@ -692,7 +692,7 @@ static ZERO_OR_ERROR FS_read_mixed_part(struct one_wire_query *owq)
 		return -ENOMEM;
 	}
 
-	if (OWQ_Cache_Get(owq_all)) {	// no "all" cached
+	if ( BAD( OWQ_Cache_Get(owq_all)) ) {	// no "all" cached
 		OWQ_destroy_shallow_aggregate(owq_all);
 		return FS_read_lump(owq);	// read individual value */
 	}

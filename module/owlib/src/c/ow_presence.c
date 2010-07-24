@@ -71,7 +71,7 @@ INDEX_OR_ERROR CheckPresence(struct parsedname *pn)
 		return pn->known_bus->index;
 	}
 	
-	if (Cache_Get_Device(&bus_nr, pn) == 0) {
+	if ( GOOD( Cache_Get_Device(&bus_nr, pn)) ) {
 		LEVEL_DEBUG("Found device on bus %d",bus_nr);
 		SetKnownBus(bus_nr, pn);
 		return bus_nr;
@@ -108,7 +108,7 @@ INDEX_OR_ERROR ReCheckPresence(struct parsedname *pn)
 		}
 	}
 	
-	if (Cache_Get_Device(&bus_nr, pn) == 0) {
+	if ( GOOD( Cache_Get_Device(&bus_nr, pn)) ) {
 		LEVEL_DEBUG("Found device on bus %d",bus_nr);
 		if ( INDEX_VALID( CheckThisConnection(bus_nr,pn) ) ) {
 			SetKnownBus(bus_nr, pn);

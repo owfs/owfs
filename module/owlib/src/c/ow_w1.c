@@ -11,11 +11,11 @@ $Id$
 
 #include <config.h>
 #include "owfs_config.h"
+#include "ow_connection.h"
 
-#if OW_W1
+#if OW_W1 && OW_MT
 
 #include "ow_w1.h"
-#include "ow_connection.h"
 #include "ow_codes.h"
 #include "ow_counters.h"
 
@@ -231,4 +231,13 @@ static void W1_close(struct connection_in *in)
 	Test_and_Close_Pipe( in->connin.w1.netlink_pipe );
 }
 
-#endif							/* OW_W1 */
+#else							/* OW_W1  && OW_MT */
+
+GOOD_OR_BAD W1_detect(struct connection_in *in)
+{
+	(void) in ;
+	LEVEL_CONNECT("Kernel 1-wire support was not configured in") ;
+	return gbBAD ;
+}
+
+#endif							/* OW_W1  && OW_MT */

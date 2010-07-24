@@ -12,7 +12,7 @@ $Id$
 #include <config.h>
 #include "owfs_config.h"
 
-#if OW_W1
+#if OW_W1 && OW_MT
 
 #include "ow_w1.h"
 #include "ow_connection.h"
@@ -70,10 +70,8 @@ static void * AddBus( void * v )
 	char name[63] ;
 	struct connection_in * in ;
 
-#if OW_MT
 	pthread_detach(pthread_self());
 	owfree(v) ;
-#endif /* OW_MT */
 
 	if ( w1_bus_name( bus_master, name ) < 0 ) {
 		return NULL ;
@@ -104,10 +102,8 @@ void * RemoveBus( void * v )
 	char name[63] ;
 	struct connection_in * in ;
 
-#if OW_MT
 	pthread_detach(pthread_self());
 	owfree(v) ;
-#endif /* OW_MT */
 
 	if ( w1_bus_name( bus_master, name ) < 0 ) {
 		return NULL ;
@@ -125,8 +121,6 @@ void * RemoveBus( void * v )
 	LEVEL_DEBUG("Normal exit.");
 	return NULL ;
 }
-
-#if OW_MT
 
 /* Need to run the add/remove in a separate thread so that netlink messatges can still be parsed and CONNIN_RLOCK won't deadlock */
 void AddW1Bus( int bus_master )
@@ -166,17 +160,4 @@ void RemoveW1Bus( int bus_master )
 	}
 }
 
-#else /* OW_MT */
-
-void AddW1Bus( int bus_master )
-{
-	AddBus( &bus_master) ;
-}
-
-void RemoveW1Bus( int bus_master )
-{
-	RemoveBus( &bus_master) ;
-}
-
-#endif /* OW_MT */
-#endif /* OW_W1 */
+#endif /* OW_W1 && OW_MT */

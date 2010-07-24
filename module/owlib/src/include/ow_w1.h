@@ -8,6 +8,7 @@ Much thanks to Evgeniy Polyakov
 */
 
 #if OW_W1
+
 #ifndef OW_W1_H
 #define OW_W1_H
 
@@ -72,4 +73,5 @@ void Netlink_Print( struct nlmsghdr * nlm, struct cn_msg * cn, struct w1_netlink
 enum Netlink_Read_Status W1_Process_Response( void (* nrs_callback)( struct netlink_parse * nlp, void  *v, const struct parsedname * pn), int seq, void * v, const struct parsedname * pn ) ;
 
 #endif 	/* OW_W1_H */
+
 #endif /* OW_W1 */

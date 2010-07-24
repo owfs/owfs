@@ -15,6 +15,8 @@ $Id$
 #include "ow_connection.h"
 #include "ow_usb_msg.h"
 
+#if OW_USB && OW_MT
+
 static void USB_monitor_close(struct connection_in *in);
 static GOOD_OR_BAD usb_monitor_in_use(const struct connection_in * in_selected) ;
 static void USB_scan_for_adapters(void) ;
@@ -144,3 +146,14 @@ static void USB_scan_for_adapters(void)
 
 	MONITOR_RUNLOCK ;
 }
+
+#else /*  OW_USB && OW_MT */
+
+GOOD_OR_BAD USB_monitor_detect(struct connection_in *in)
+{
+	(void) in ;
+	LEVEL_CALL( "USB monitoring support not enabled" ) ;
+	return gbBAD ;
+}
+
+#endif /*  OW_USB && OW_MT */

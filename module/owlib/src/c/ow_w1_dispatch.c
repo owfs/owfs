@@ -32,7 +32,7 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
 #include <config.h>
 #include "owfs_config.h"
 
-#if OW_W1
+#if OW_W1 && OW_MT
 
 #include "ow_w1.h"
 #include "ow_connection.h"
@@ -104,9 +104,7 @@ void * W1_Dispatch( void * v )
 {
 	(void) v;
 
-#if OW_MT
 	pthread_detach(pthread_self());
-#endif                          /* OW_MT */
 
 	while (  FILE_DESCRIPTOR_VALID( Inbound_Control.w1_file_descriptor ) ) {
 		struct netlink_parse nlp ;
@@ -120,4 +118,4 @@ void * W1_Dispatch( void * v )
 	return NULL;
 }
 
-#endif /* OW_W1 */
+#endif /* OW_W1 && OW_MT */

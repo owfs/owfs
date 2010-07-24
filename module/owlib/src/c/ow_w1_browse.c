@@ -16,11 +16,11 @@ $Id$
 
 #include <config.h>
 #include "owfs_config.h"
+#include "ow_connection.h"
 
-#if OW_W1
+#if OW_W1 && OW_MT
 
 #include "ow_w1.h"
-#include "ow_connection.h"
 
 static void W1Clear( void ) ;
 static void W1SysList( const char * directory ) ;
@@ -67,8 +67,6 @@ static void W1SysList( const char * directory )
 		closedir( sys_w1 ) ;
 	}
 }
-
-#if OW_MT
 
 static void * W1_start_scan( void * v )
 {
@@ -122,13 +120,4 @@ GOOD_OR_BAD W1_Browse( void )
 	return pthread_create(&thread_scan, NULL, W1_start_scan, NULL)==0 ? gbGOOD : gbBAD ;
 }
 
-#else /* OW_MT */
-GOOD_OR_BAD W1_Browse( void )
-{
-	LEVEL_CONNECT("Dynamic w1 support requires multithreading (a compile-time option");
-	// Initial setup
-	W1SysScan("/sys/bus/w1/devices") ;
-}
-#endif /* OW_MT */
-
-#endif /* OW_W1 */
+#endif /* OW_W1 && OW_MT */

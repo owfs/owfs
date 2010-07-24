@@ -14,7 +14,7 @@ $Id$
 #include "ow.h"
 #include "ow_connection.h"
 
-/* All the rest of the program sees is the BadAdapter_detect and the entry in iroutines */
+#if OW_W1 && OW_MT
 
 static void W1_close(struct connection_in *in);
 static GOOD_OR_BAD w1_in_use(const struct connection_in * in_selected) ;
@@ -40,13 +40,8 @@ GOOD_OR_BAD W1_monitor_detect(struct connection_in *in)
 	
 	RETURN_BAD_IF_BAD( w1_in_use(in) ) ;
 	
-#if OW_W1
 	W1_Browse() ;
 	return gbGOOD ;
-#else /* OW_W1 */
-	LEVEL_DEFAULT("W1 (the linux kernel 1-wire system) is not supported");
-	return gbBAD ;
-#endif /* OW_W1 */
 }
 
 static GOOD_OR_BAD w1_in_use(const struct connection_in * in_selected)
@@ -69,3 +64,14 @@ static void W1_close(struct connection_in *in)
 {
 	(void) in;
 }
+
+#else /* OW_W1 && OW_MT */
+
+GOOD_OR_BAD W1_monitor_detect(struct connection_in *in)
+{
+	(void) in ;
+	LEVEL_DEFAULT("W1 (the linux kernel 1-wire system) is not supported");
+	return gbBAD ;
+}
+
+#endif /* OW_W1 && OW_MT */

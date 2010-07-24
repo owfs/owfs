@@ -20,6 +20,7 @@ $Id$
 #include "ow_connection.h"
 
 #if OW_MT
+
 /* Locking for thread work */
 /* Variables only used in this particular file */
 /* i.e. "locally global" */
@@ -28,6 +29,7 @@ pthread_mutex_t handler_thread_mutex ;
 int handler_thread_count ;
 int shutdown_in_progress ;
 FILE_DESCRIPTOR_OR_ERROR shutdown_pipe[2] ;
+
 #endif /* OW_MT */
 
 
@@ -208,6 +210,21 @@ struct Accept_Socket_Data {
 	struct connection_out * out;
 };
 
+static GOOD_OR_BAD ListenCycle( void )
+{
+	fd_set listenset ;
+	FILE_DESCRIPTOR_OR_ERROR maxfd = SetupListenSet( &listenset) ;
+	if ( FILE_DESCRIPTOR_VALID( maxfd ) ) {
+		if ( select( maxfd+1, &listenset, NULL, NULL, NULL) > 0 ) {
+			ProcessListenSet( &listenset) ;
+			return gbGOOD ;
+		}
+	}
+	return gbBAD ;
+}
+
+#if OW_MT
+
 // Read data from the waiting socket and do the actual work
 static void *ProcessAcceptSocket(void *arg)
 {
@@ -221,7 +238,7 @@ static void *ProcessAcceptSocket(void *arg)
 	Test_and_Close( &(asd->acceptfd) );
 	owfree(asd);
 	LEVEL_DEBUG("Normal exit.");
-#if OW_MT
+
 	// All done. If shutdown in progress and this is a last handler thread, send a message to the main thread.
 	RWLOCK_RLOCK( shutdown_mutex_rw ) ;
 	_MUTEX_LOCK( handler_thread_mutex ) ;
@@ -233,7 +250,36 @@ static void *ProcessAcceptSocket(void *arg)
 	}
 	_MUTEX_UNLOCK( handler_thread_mutex ) ;
 	RWLOCK_RUNLOCK( shutdown_mutex_rw ) ;
-#endif /* OW_MT */
+
+	return NULL;
+}
+
+// Read data from the waiting socket and do the actual work
+static void *ProcessAcceptSocket(void *arg)
+{
+	struct Accept_Socket_Data * asd = (struct Accept_Socket_Data *) arg;
+	pthread_detach(pthread_self());
+
+	// Do the actual work
+	asd->out->HandlerRoutine( asd->acceptfd );
+
+	// cleanup
+	Test_and_Close( &(asd->acceptfd) );
+	owfree(asd);
+	LEVEL_DEBUG("Normal exit.");
+
+	// All done. If shutdown in progress and this is a last handler thread, send a message to the main thread.
+	RWLOCK_RLOCK( shutdown_mutex_rw ) ;
+	_MUTEX_LOCK( handler_thread_mutex ) ;
+	--handler_thread_count ;
+	if ( shutdown_in_progress && handler_thread_count==0) {
+		if ( FILE_DESCRIPTOR_VALID( shutdown_pipe[fd_pipe_write] ) ) {
+			ignore_result = write( shutdown_pipe[fd_pipe_write],"X",1) ; //dummy payload
+		}		
+	}
+	_MUTEX_UNLOCK( handler_thread_mutex ) ;
+	RWLOCK_RUNLOCK( shutdown_mutex_rw ) ;
+
 	return NULL;
 }
 
@@ -257,7 +303,6 @@ static void ProcessListenSocket( struct connection_out * out )
 	asd->acceptfd = acceptfd ;
 	asd->out = out ;
 
-#if OW_MT
 	// Launch Handler thread only if shutdown not in progress
 	RWLOCK_RLOCK( shutdown_mutex_rw ) ;
 	if ( ! shutdown_in_progress ) {
@@ -271,29 +316,11 @@ static void ProcessListenSocket( struct connection_out * out )
 		}
 	}
 	RWLOCK_RUNLOCK( shutdown_mutex_rw ) ;
-#else /* OW_MT */
-	ProcessAcceptSocket(asd) ;
-#endif
-}
-
-static GOOD_OR_BAD ListenCycle( void )
-{
-	fd_set listenset ;
-	FILE_DESCRIPTOR_OR_ERROR maxfd = SetupListenSet( &listenset) ;
-	if ( FILE_DESCRIPTOR_VALID( maxfd ) ) {
-		if ( select( maxfd+1, &listenset, NULL, NULL, NULL) > 0 ) {
-			ProcessListenSet( &listenset) ;
-			return gbGOOD ;
-		}
-	}
-	return gbBAD ;
 }
 
 /* Setup Servers -- select on each port */
 void ServerProcess(void (*HandlerRoutine) (FILE_DESCRIPTOR_OR_ERROR file_descriptor))
 {
-
-#if OW_MT
 	/* Locking for thread work */
 	int need_to_read_pipe ;
 
@@ -304,15 +331,15 @@ void ServerProcess(void (*HandlerRoutine) (FILE_DESCRIPTOR_OR_ERROR file_descrip
 
 	RWLOCK_INIT( shutdown_mutex_rw ) ;
 	_MUTEX_INIT(handler_thread_mutex);
+
 	if ( pipe( shutdown_pipe ) != 0 ) {
 		ERROR_DEFAULT("Cannot allocate a shutdown pipe. The program shutdown may be messy");
 	}
-#endif /* OW_MT */
 
 	if ( GOOD( SetupListenSockets( HandlerRoutine ) ) ) {
 		while (	GOOD( ListenCycle() ) ) {
 		}
-#if OW_MT
+
 		// Make sure all the handler threads are complete before closing down
 		RWLOCK_WLOCK( shutdown_mutex_rw ) ;
 		shutdown_in_progress = 1 ; // Signal time to wrap up
@@ -329,7 +356,62 @@ void ServerProcess(void (*HandlerRoutine) (FILE_DESCRIPTOR_OR_ERROR file_descrip
 		Test_and_Close_Pipe(shutdown_pipe) ;
 		RWLOCK_DESTROY(shutdown_mutex_rw) ;
 		_MUTEX_DESTROY(handler_thread_mutex) ;
-#endif /* OW_MT */
+		CloseListenSockets() ;
+
+	} else {
+		LEVEL_DEFAULT("Isolated from any control -- exit") ;
+	}
+	/* Cleanup that may never be reached */
+	return;
+}
+
+#else /* OW_MT */
+
+// Read data from the waiting socket and do the actual work
+static void *ProcessAcceptSocket(void *arg)
+{
+	struct Accept_Socket_Data * asd = (struct Accept_Socket_Data *) arg;
+
+	// Do the actual work
+	asd->out->HandlerRoutine( asd->acceptfd );
+
+	// cleanup
+	Test_and_Close( &(asd->acceptfd) );
+	owfree(asd);
+	LEVEL_DEBUG("Normal exit.");
+
+	return NULL;
+}
+
+static void ProcessListenSocket( struct connection_out * out )
+{
+	FILE_DESCRIPTOR_OR_ERROR acceptfd;
+	struct Accept_Socket_Data * asd ;
+
+	acceptfd = accept(out->file_descriptor, NULL, NULL);
+
+	if ( FILE_DESCRIPTOR_NOT_VALID( acceptfd ) ) {
+		return ;
+	}
+
+	// allocate space to pass variables to thread -- cleaned up in thread handler
+	asd = owmalloc( sizeof(struct Accept_Socket_Data) ) ;
+	if ( asd == NULL ) {
+		close( acceptfd ) ;
+		return ;
+	}
+	asd->acceptfd = acceptfd ;
+	asd->out = out ;
+
+	ProcessAcceptSocket(asd) ;
+}
+
+/* Setup Servers -- select on each port */
+void ServerProcess(void (*HandlerRoutine) (FILE_DESCRIPTOR_OR_ERROR file_descriptor))
+{
+	if ( GOOD( SetupListenSockets( HandlerRoutine ) ) ) {
+		while (	GOOD( ListenCycle() ) ) {
+		}
 		CloseListenSockets() ;
 	} else {
 		LEVEL_DEFAULT("Isolated from any control -- exit") ;
@@ -337,3 +419,6 @@ void ServerProcess(void (*HandlerRoutine) (FILE_DESCRIPTOR_OR_ERROR file_descrip
 	/* Cleanup that may never be reached */
 	return;
 }
+
+#endif /* OW_MT */
+

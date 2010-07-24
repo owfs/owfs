@@ -2,16 +2,8 @@
 
 OWLIB_SOURCE = ow_dl.c            \
                ow_dnssd.c         \
-               ow_alias.c         \
 	           ow_arg.c           \
-	           ow_avahi_announce.c\
-               ow_avahi_browse.c  \
-               ow_avahi_link.c    \
                ow_baud.c          \
-               ow_browse.c        \
-               ow_browse_resolve.c\
-               ow_browse_monitor.c\
-               ow_buslock.c       \
                compat.c           \
                getaddrinfo.c      \
                getline.c          \
@@ -45,11 +37,20 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_2760.c          \
                ow_2804.c          \
                ow_2890.c          \
+               ow_alias.c         \
                ow_alloc.c         \
                ow_api.c           \
+	           ow_avahi_announce.c\
+               ow_avahi_browse.c  \
+               ow_avahi_link.c    \
                ow_badadapter.c    \
                ow_bae.c           \
+               ow_browse.c        \
+               ow_browse_resolve.c\
+               ow_browse_monitor.c\
                ow_bus.c           \
+               ow_bus_data.c      \
+               ow_buslock.c       \
                ow_cache.c         \
                ow_charblob.c      \
                ow_com.c           \

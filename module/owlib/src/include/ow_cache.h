@@ -69,12 +69,10 @@ int Cache_Add_Internal(const void *data, const size_t datasize, const struct int
 int Cache_Add_Alias(const ASCII *name, const BYTE * sn) ;
 int Cache_Add_Simul(const enum simul_type type, const struct parsedname *pn);
 
-int OWQ_Cache_Get(struct one_wire_query *owq);
-int Cache_Get(void *data, size_t * dsize, const struct parsedname *pn);
-int Cache_Get_Strict(void *data, size_t dsize, const struct parsedname *pn);
-int Cache_Get_Dir(struct dirblob *db, const struct parsedname *pn);
-int Cache_Get_Device(void *bus_nr, const struct parsedname *pn);
-int Cache_Get_Internal(void *data, size_t * dsize, const struct internal_prop *ip, const struct parsedname *pn);
+GOOD_OR_BAD OWQ_Cache_Get(struct one_wire_query *owq);
+GOOD_OR_BAD Cache_Get(void *data, size_t * dsize, const struct parsedname *pn);
+GOOD_OR_BAD Cache_Get_Dir(struct dirblob *db, const struct parsedname *pn);
+GOOD_OR_BAD Cache_Get_Device(void *bus_nr, const struct parsedname *pn);
 GOOD_OR_BAD Cache_Get_Internal_Strict(void *data, size_t dsize, const struct internal_prop *ip, const struct parsedname *pn);
 int Cache_Get_Alias(ASCII * name, size_t length, const BYTE * sn) ;
 int Cache_Get_SerialNumber(const ASCII * name, BYTE * sn) ;
@@ -106,12 +104,11 @@ int Cache_Del_Mixed_Individual(const struct parsedname *pn);
 #define Cache_Add_Alias(name, sn)           (1)
 #define Cache_Add_Simul(type,pn)            (1)
 
-#define Cache_Get(data,dsize,pn )           (1)
-#define Cache_Get_Dir(db,pn )               (1)
-#define Cache_Get_Strict(data,dsize,pn )    (1)
-#define OWQ_Cache_Get( owq )                (1)
+#define Cache_Get(data,dsize,pn )           (gbBAD)
+#define Cache_Get_Dir(db,pn )               (gbBAD)
+#define OWQ_Cache_Get( owq )                (gbBAD)
 
-#define Cache_Get_Device(bus_nr,pn )        (1)
+#define Cache_Get_Device(bus_nr,pn )        (gbBAD)
 #define Cache_Get_Internal(data,dsize,ip,pn )       (1)
 #define Cache_Get_Internal_Strict(data,dsize,ip,pn )       (gbBAD)
 #define Cache_Get_Alias(name, length, sn)   (1)

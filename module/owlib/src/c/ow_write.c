@@ -382,7 +382,7 @@ static ZERO_OR_ERROR FS_write_a_part(struct one_wire_query *owq)
 	}
 
 	// First fill the whole array with current values
-	if (OWQ_Cache_Get(owq_all)) {
+	if ( BAD( OWQ_Cache_Get(owq_all)) ) {
 		ZERO_OR_ERROR read_error = (pn->selected_filetype->read) (owq_all);
 		if (read_error != 0) {
 			OWQ_destroy_shallow_aggregate(owq_all);
@@ -551,7 +551,7 @@ static ZERO_OR_ERROR FS_write_a_bit(struct one_wire_query *owq)
 
 	OWQ_pn(owq_single).extension = EXTENSION_BYTE;
 
-	if (OWQ_Cache_Get(owq_single)) {
+	if ( BAD( OWQ_Cache_Get(owq_single)) ) {
 		ZERO_OR_ERROR read_error = (pn->selected_filetype->read) (owq_single);
 		if (read_error < 0) {
 			return read_error;
