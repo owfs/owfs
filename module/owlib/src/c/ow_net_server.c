@@ -254,35 +254,6 @@ static void *ProcessAcceptSocket(void *arg)
 	return NULL;
 }
 
-// Read data from the waiting socket and do the actual work
-static void *ProcessAcceptSocket(void *arg)
-{
-	struct Accept_Socket_Data * asd = (struct Accept_Socket_Data *) arg;
-	pthread_detach(pthread_self());
-
-	// Do the actual work
-	asd->out->HandlerRoutine( asd->acceptfd );
-
-	// cleanup
-	Test_and_Close( &(asd->acceptfd) );
-	owfree(asd);
-	LEVEL_DEBUG("Normal exit.");
-
-	// All done. If shutdown in progress and this is a last handler thread, send a message to the main thread.
-	RWLOCK_RLOCK( shutdown_mutex_rw ) ;
-	_MUTEX_LOCK( handler_thread_mutex ) ;
-	--handler_thread_count ;
-	if ( shutdown_in_progress && handler_thread_count==0) {
-		if ( FILE_DESCRIPTOR_VALID( shutdown_pipe[fd_pipe_write] ) ) {
-			ignore_result = write( shutdown_pipe[fd_pipe_write],"X",1) ; //dummy payload
-		}		
-	}
-	_MUTEX_UNLOCK( handler_thread_mutex ) ;
-	RWLOCK_RUNLOCK( shutdown_mutex_rw ) ;
-
-	return NULL;
-}
-
 static void ProcessListenSocket( struct connection_out * out )
 {
 	FILE_DESCRIPTOR_OR_ERROR acceptfd;
