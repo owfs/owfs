@@ -36,13 +36,15 @@ int OWNET_read(OWNET_HANDLE h, const char *onewire_path, char **return_string)
 	rp->data_length = MAX_READ_BUFFER_SIZE;
 	rp->data_offset = 0;
 
+	/* Fix from nleonard671 to add a terminating NULL */
 	return_value = ServerRead(rp);
 	if (return_value > 0) {
-		*return_string = malloc(return_value);
+		*return_string = malloc(return_value+1);
 		if (*return_string == NULL) {
 			return_value = -ENOMEM;
 		} else {
 			memcpy(*return_string, buffer, return_value);
+			(*return_string)[return_value] = '\0' ;
 		}
 	}
 
