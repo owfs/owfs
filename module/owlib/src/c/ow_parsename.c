@@ -451,7 +451,7 @@ static void ReplaceAliasInPath( char * filename, struct parsedname * pn)
 
 static enum parse_enum Parse_Alias(char *filename, enum parse_pass remote_status, struct parsedname *pn)
 {
-	if ( Cache_Get_SerialNumber(filename,pn->sn) == 0 ) {
+	if ( GOOD( Cache_Get_SerialNumber(filename,pn->sn)) ) {
 		// Success! The alias is already registered and the serial
 		//  number just now loaded in pn->sn
 		

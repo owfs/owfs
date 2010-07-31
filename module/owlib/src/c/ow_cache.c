@@ -114,27 +114,31 @@ struct tree_opaque {
 #define TREE_DATA(tn)    ( (BYTE *)(tn) + sizeof(struct tree_node) )
 #define CONST_TREE_DATA(tn)    ( (const BYTE *)(tn) + sizeof(struct tree_node) )
 
+enum cache_task_return { ctr_ok, ctr_not_found, ctr_expired, ctr_size_mismatch, } ;
+
 static void * GetFlippedTree( void ) ;
 static void DeleteFlippedTree( void * retired_tree ) ;
 
 static int Cache_Type_Store( const struct parsedname * pn ) ;
 
-static int Cache_Add_Common(struct tree_node *tn);
-static int Cache_Add_Store(struct tree_node *tn);
+static GOOD_OR_BAD Cache_Add(const void *data, const size_t datasize, const struct parsedname *pn);
+static GOOD_OR_BAD Cache_Add_Common(struct tree_node *tn);
+static GOOD_OR_BAD Cache_Add_Store(struct tree_node *tn);
 
-static int Cache_Get_Common(void *data, size_t * dsize, time_t * duration, const struct tree_node *tn);
-static GOOD_OR_BAD Cache_Get_Common_Dir(struct dirblob *db, time_t * duration, const struct tree_node *tn);
-static int Cache_Get_Store(void *data, size_t * dsize, time_t * duration, const struct tree_node *tn);
-static int Cache_Get_Simultaneous(enum simul_type type, struct one_wire_query *owq) ;
+static enum cache_task_return Cache_Get_Common(void *data, size_t * dsize, time_t * duration, const struct tree_node *tn);
+static enum cache_task_return Cache_Get_Common_Dir(struct dirblob *db, time_t * duration, const struct tree_node *tn);
+static enum cache_task_return Cache_Get_Store(void *data, size_t * dsize, time_t * duration, const struct tree_node *tn);
+
+static GOOD_OR_BAD Cache_Get_Simultaneous(enum simul_type type, struct one_wire_query *owq) ;
 static GOOD_OR_BAD Cache_Get_Internal(void *data, size_t * dsize, const struct internal_prop *ip, const struct parsedname *pn);
 static GOOD_OR_BAD Cache_Get_Strict(void *data, size_t dsize, const struct parsedname *pn);
 
-static int Cache_Del_Common(const struct tree_node *tn);
-static int Cache_Del_Store(const struct tree_node *tn);
+static GOOD_OR_BAD Cache_Del_Common(const struct tree_node *tn);
+static GOOD_OR_BAD Cache_Del_Store(const struct tree_node *tn);
 
-static int Add_Stat(struct cache *scache, const int result);
-static int Get_Stat(struct cache *scache, const int result);
-static int Del_Stat(struct cache *scache, const int result);
+static GOOD_OR_BAD Add_Stat(struct cache *scache, GOOD_OR_BAD result);
+static GOOD_OR_BAD Get_Stat(struct cache *scache, const enum cache_task_return result);
+static void Del_Stat(struct cache *scache, const int result);
 static int tree_compare(const void *a, const void *b);
 static time_t TimeOut(const enum fc_change change);
 static void Aliasfindaction(const void *node, const VISIT which, const int depth) ;
@@ -267,16 +271,16 @@ void Cache_Clear(void)
 }
 
 /* Wrapper to perform a cache function and add statistics */
-static int Add_Stat(struct cache *scache, const int result)
+static GOOD_OR_BAD Add_Stat(struct cache *scache, GOOD_OR_BAD result)
 {
-	if (result == 0) {
+	if ( GOOD(result) ) {
 		STAT_ADD1(scache->adds);
 	}
 	return result;
 }
 
 /* Higher level add of a one-wire-query object */
-int OWQ_Cache_Add(const struct one_wire_query *owq)
+GOOD_OR_BAD OWQ_Cache_Add(const struct one_wire_query *owq)
 {
 	const struct parsedname *pn = PN(owq);
 	if (pn->extension == EXTENSION_ALL) {
@@ -285,7 +289,7 @@ int OWQ_Cache_Add(const struct one_wire_query *owq)
 		case ft_vascii:
 		case ft_alias:
 		case ft_binary:
-			return 1;			// cache of string arrays not supported
+			return gbBAD;			// cache of string arrays not supported
 		case ft_integer:
 		case ft_unsigned:
 		case ft_yesno:
@@ -296,7 +300,7 @@ int OWQ_Cache_Add(const struct one_wire_query *owq)
 		case ft_tempgap:
 			return Cache_Add(OWQ_array(owq), (pn->selected_filetype->ag->elements) * sizeof(union value_object), pn);
 		default:
-			return 1;
+			return gbBAD;
 		}
 	} else {
 		switch (pn->selected_filetype->format) {
@@ -305,7 +309,7 @@ int OWQ_Cache_Add(const struct one_wire_query *owq)
 		case ft_alias:
 		case ft_binary:
 			if (OWQ_offset(owq) > 0) {
-				return 1;
+				return gbBAD;
 			}
 			return Cache_Add(OWQ_buffer(owq), OWQ_length(owq), pn);
 		case ft_integer:
@@ -318,31 +322,31 @@ int OWQ_Cache_Add(const struct one_wire_query *owq)
 		case ft_tempgap:
 			return Cache_Add(&OWQ_val(owq), sizeof(union value_object), pn);
 		default:
-			return 1;
+			return gbBAD;
 		}
 	}
 }
 
 /* Add an item to the cache */
 /* return 0 if good, 1 if not */
-int Cache_Add(const void *data, const size_t datasize, const struct parsedname *pn)
+static GOOD_OR_BAD Cache_Add(const void *data, const size_t datasize, const struct parsedname *pn)
 {
 	struct tree_node *tn;
 	time_t duration;
 
 	if (!pn || IsAlarmDir(pn)) {
-		return 0;				// do check here to avoid needless processing
+		return gbGOOD;				// do check here to avoid needless processing
 	}
 
 	duration = TimeOut(pn->selected_filetype->change);
 	if (duration <= 0) {
-		return 0;				/* in case timeout set to 0 */
+		return gbGOOD;				/* in case timeout set to 0 */
 	}
 
 	// allocate space for the node and data
 	tn = (struct tree_node *) owmalloc(sizeof(struct tree_node) + datasize);
 	if (!tn) {
-		return -ENOMEM;
+		return gbBAD;
 	}
 
 	LEVEL_DEBUG(SNformat " size=%d", SNvar(pn->sn), (int) datasize);
@@ -361,15 +365,15 @@ int Cache_Add(const void *data, const size_t datasize, const struct parsedname *
 
 /* Add a directory entry to the cache */
 /* return 0 if good, 1 if not */
-int Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn)
+GOOD_OR_BAD Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn)
 {
 	time_t duration = TimeOut(fc_directory);
 	struct tree_node *tn;
 	size_t size = DirblobElements(db) * SERIAL_NUMBER_SIZE;
 	struct parsedname pn_directory;
-	//printf("Cache_Add_Dir\n") ;
+
 	if (pn==NULL || pn->selected_connection==NULL) {
-		return 0;				// do check here to avoid needless processing
+		return gbGOOD;				// do check here to avoid needless processing
 	}
 	
 	switch ( pn->selected_connection->busmode ) {
@@ -379,7 +383,7 @@ int Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn)
 		case bus_w1:
 		case bus_bad:
 		case bus_unknown:
-			return 0 ;
+			return gbGOOD ;
 		default:
 			break ;
 	}
@@ -391,7 +395,7 @@ int Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn)
 	// allocate space for the node and data
 	tn = (struct tree_node *) owmalloc(sizeof(struct tree_node) + size);
 	if (!tn) {
-		return -ENOMEM;
+		return gbBAD;
 	}
 	
 	LEVEL_DEBUG(SNformat " elements=%d", SNvar(pn->sn), DirblobElements(db));
@@ -409,14 +413,14 @@ int Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn)
 
 /* Add a Simultaneous entry to the cache */
 /* return 0 if good, 1 if not */
-int Cache_Add_Simul(const enum simul_type type, const struct parsedname *pn)
+GOOD_OR_BAD Cache_Add_Simul(const enum simul_type type, const struct parsedname *pn)
 {
 	time_t duration = TimeOut(fc_volatile);
 	struct tree_node *tn;
 	struct parsedname pn_directory;
-	//printf("Cache_Add_Dir\n") ;
+
 	if (pn==NULL || pn->selected_connection==NULL) {
-		return 0;				// do check here to avoid needless processing
+		return gbGOOD;				// do check here to avoid needless processing
 	}
 	
 	switch ( pn->selected_connection->busmode ) {
@@ -425,19 +429,19 @@ int Cache_Add_Simul(const enum simul_type type, const struct parsedname *pn)
 		case bus_mock:
 		case bus_bad:
 		case bus_unknown:
-			return 0 ;
+			return gbGOOD ;
 		default:
 			break ;
 	}
 	
 	if (duration <= 0) {
-		return 0;				/* in case timeout set to 0 */
+		return gbGOOD;				/* in case timeout set to 0 */
 	}
 	
 	// allocate space for the node and data
 	tn = (struct tree_node *) owmalloc(sizeof(struct tree_node));
 	if (!tn) {
-		return -ENOMEM;
+		return gbBAD;
 	}
 	
 	LEVEL_DEBUG(SNformat, SNvar(pn->sn));
@@ -453,22 +457,22 @@ int Cache_Add_Simul(const enum simul_type type, const struct parsedname *pn)
 
 /* Add a device entry to the cache */
 /* return 0 if good, 1 if not */
-int Cache_Add_Device(const int bus_nr, const BYTE * sn)
+GOOD_OR_BAD Cache_Add_Device(const int bus_nr, const BYTE * sn)
 {
 	time_t duration = TimeOut(fc_presence);
 	struct tree_node *tn;
 
 	if (duration <= 0) {
-		return 0;				/* in case timeout set to 0 */
+		return gbGOOD;				/* in case timeout set to 0 */
 	}
 
 	if ( sn[0] == 0 ) { //bad serial number
-		return 0 ;
+		return gbGOOD ;
 	}
 
 	tn = (struct tree_node *) owmalloc(sizeof(struct tree_node) + sizeof(int));
 	if (!tn) {
-		return -ENOMEM;
+		return gbBAD;
 	}
 
 	LEVEL_DEBUG(SNformat " bus=%d", SNvar(sn), (int) bus_nr);
@@ -490,23 +494,23 @@ property   device sn      extension             *ft       binary data
 
 /* Add an item to the cache */
 /* return 0 if good, 1 if not */
-int Cache_Add_Internal(const void *data, const size_t datasize, const struct internal_prop *ip, const struct parsedname *pn)
+GOOD_OR_BAD Cache_Add_Internal(const void *data, const size_t datasize, const struct internal_prop *ip, const struct parsedname *pn)
 {
 	struct tree_node *tn;
 	time_t duration;
 	//printf("Cache_Add_Internal\n");
 	if (!pn) {
-		return 0;				// do check here to avoid needless processing
+		return gbGOOD;				// do check here to avoid needless processing
 	}
 
 	duration = TimeOut(ip->change);
 	if (duration <= 0) {
-		return 0;				/* in case timeout set to 0 */
+		return gbGOOD;				/* in case timeout set to 0 */
 	}
 
 	tn = (struct tree_node *) owmalloc(sizeof(struct tree_node) + datasize);
 	if (!tn) {
-		return -ENOMEM;
+		return gbBAD;
 	}
 
 	LEVEL_DEBUG(SNformat " size=%d", SNvar(pn->sn), (int) datasize);
@@ -528,14 +532,14 @@ int Cache_Add_Internal(const void *data, const size_t datasize, const struct int
 
 /* Add an item to the cache */
 /* return 0 if good, 1 if not */
-int Cache_Add_Alias(const ASCII *name, const BYTE * sn)
+GOOD_OR_BAD Cache_Add_Alias(const ASCII *name, const BYTE * sn)
 {
 	struct tree_node *tn;
 	size_t size = strlen(name) ;
 
 	tn = (struct tree_node *) owmalloc(sizeof(struct tree_node) + size + 1 );
 	if (!tn) {
-		return -ENOMEM;
+		return gbBAD;
 	}
 
 	LEVEL_DEBUG("Adding " SNformat " alias=%s", SNvar(sn), name);
@@ -575,7 +579,7 @@ static void DeleteFlippedTree( void * retired_tree )
 /* Add an item to the cache */
 /* retire the cache (flip) if too old, and start a new one (keep the old one for a while) */
 /* return 0 if good, 1 if not */
-static int Cache_Add_Common(struct tree_node *tn)
+static GOOD_OR_BAD Cache_Add_Common(struct tree_node *tn)
 {
 	struct tree_opaque *opaque;
 	enum { no_add, yes_add, just_update } state = no_add;
@@ -611,30 +615,27 @@ static int Cache_Add_Common(struct tree_node *tn)
 	}
 	/* Added or updated, update statistics */
 	switch (state) {
-	case yes_add:
-		//printf("CACHECommon: Yes add\n");
-		STATLOCK;
-		AVERAGE_IN(&new_avg);
-		++cache_adds;			/* statistics */
-		STATUNLOCK;
-		return 0;
-	case just_update:
-		//printf("CACHECommon: Yes update\n");
-		STATLOCK;
-		AVERAGE_MARK(&new_avg);
-		++cache_adds;			/* statistics */
-		STATUNLOCK;
-		return 0;
-	default:
-		//printf("CACHECommon: Error\n");
-		return 1;
+		case yes_add: // add new entry
+			STATLOCK;
+			AVERAGE_IN(&new_avg);
+			++cache_adds;			/* statistics */
+			STATUNLOCK;
+			return gbGOOD;
+		case just_update: // update the time mark and data
+			STATLOCK;
+			AVERAGE_MARK(&new_avg);
+			++cache_adds;			/* statistics */
+			STATUNLOCK;
+			return gbGOOD;
+		default: // unable to add
+			return gbBAD;
 	}
 }
 
 /* Add an item to the cache */
 /* retire the cache (flip) if too old, and start a new one (keep the old one for a while) */
 /* return 0 if good, 1 if not */
-static int Cache_Add_Store(struct tree_node *tn)
+static GOOD_OR_BAD Cache_Add_Store(struct tree_node *tn)
 {
 	struct tree_opaque *opaque;
 	enum { no_add, yes_add, just_update } state = no_add;
@@ -658,29 +659,36 @@ static int Cache_Add_Store(struct tree_node *tn)
 		STATLOCK;
 		AVERAGE_IN(&store_avg);
 		STATUNLOCK;
-		return 0;
+		return gbGOOD;
 	case just_update:
 		STATLOCK;
 		AVERAGE_MARK(&store_avg);
 		STATUNLOCK;
-		return 0;
+		return gbGOOD;
 	default:
-		return 1;
+		return gbBAD;
 	}
 }
 
-static int Get_Stat(struct cache *scache, const int result)
+static GOOD_OR_BAD Get_Stat(struct cache *scache, const enum cache_task_return result)
 {
-	//printf("Get_Stat\n") ;
+	GOOD_OR_BAD gbret = gbBAD ; // default
+	
 	STATLOCK;
-	if (result == 0) {
-		++scache->hits;
-	} else if (result == -ETIMEDOUT) {
-		++scache->expires;
-	}
 	++scache->tries;
+	switch ( result ) {
+		case ctr_expired:
+			++scache->expires;
+			break ;
+		case ctr_ok:
+			++scache->hits;
+			gbret = gbGOOD ;
+			break ;
+		default:
+			break ;
+	}	
 	STATUNLOCK;
-	return result;
+	return gbret ;
 }
 
 /* Does cache get, but doesn't allow play in data size */
@@ -796,9 +804,9 @@ GOOD_OR_BAD Cache_Get_Dir(struct dirblob *db, const struct parsedname *pn)
 }
 
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
-static GOOD_OR_BAD Cache_Get_Common_Dir(struct dirblob *db, time_t * duration, const struct tree_node *tn)
+static enum cache_task_return Cache_Get_Common_Dir(struct dirblob *db, time_t * duration, const struct tree_node *tn)
 {
-	GOOD_OR_BAD ret;
+	enum cache_task_return ctr_ret;
 	time_t now = time(NULL);
 	size_t size;
 	struct tree_opaque *opaque;
@@ -814,23 +822,23 @@ static GOOD_OR_BAD Cache_Get_Common_Dir(struct dirblob *db, time_t * duration, c
 			size = opaque->key->dsize;
 			if (DirblobRecreate(TREE_DATA(opaque->key), size, db) == 0) {
 				//printf("Cache: snlist=%p, devices=%lu, size=%lu\n",*snlist,devices[0],size) ;
-				ret = gbGOOD;
+				ctr_ret = ctr_ok;
 			} else {
-				ret = gbBAD;
+				ctr_ret = ctr_size_mismatch;
 			}
 		} else {
 			//char b[26];
 			//printf("GOT DEAD now:%s",ctime_r(&now,b)) ;
 			//printf("        then:%s",ctime_r(&opaque->key->expires,b)) ;
 			LEVEL_DEBUG("Expired in cache");
-			ret = gbBAD;
+			ctr_ret = ctr_expired;
 		}
 	} else {
 		LEVEL_DEBUG("dir not found in cache");
-		ret = gbBAD;
+		ctr_ret = ctr_not_found;
 	}
 	CACHE_RUNLOCK;
-	return ret;
+	return ctr_ret;
 }
 
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
@@ -887,82 +895,90 @@ If the property isn't independently cached, return false (1)
 If the simultaneous conversion is more recent, return false (1)
 Else return the cached value and true (0)
 */
-int Cache_Get_Simul_Time(enum simul_type type, time_t * start_time, const struct parsedname * pn)
+GOOD_OR_BAD Cache_Get_Simul_Time(enum simul_type type, time_t * dwell_time, const struct parsedname * pn)
 {
 	// valid cached primary data -- see if a simultaneous conversion should be used instead
 	struct tree_node tn;
 	time_t duration ;
-	time_t duration_simul ;
+	time_t time_left ;
 	size_t dsize_simul = 0 ;
 	struct parsedname pn_directory ;
 
-	duration = duration_simul = TimeOut(ipSimul[type].change);
-	if (duration_simul <= 0) {
-		return 1;
+	duration = TimeOut(ipSimul[type].change); // time allocated this conversion
+	if ( duration <= 0) {
+		// uncachable
+		return gbBAD;
 	}
 	
 	FS_LoadDirectoryOnly(&pn_directory, pn);
 	LoadTK(pn_directory.sn, Simul_Marker[type], pn->selected_connection->index, &tn ) ;
-	if ( Get_Stat(&cache_int, Cache_Get_Common(NULL, &dsize_simul, &duration_simul, &tn)) ) {
-		return 1 ;
+	if ( Get_Stat(&cache_int, Cache_Get_Common(NULL, &dsize_simul, &time_left, &tn)) ) {
+		return gbBAD ;
 	}
-	start_time[0] = duration_simul - duration + time(NULL) ;
-	return 0 ;
+	// duration_simul is time left
+	// duration is time allocated
+	// back-compute dwell time
+	dwell_time[0] = duration - time_left ;
+	return gbGOOD ;
 }
 
 /* Test for a simultaneous property
-If the property isn't independently cached, return false (1)
-If the simultaneous conversion is more recent, return false (1)
-Else return the cached value and true (0)
+ * return true if simultaneous is the prefered method
+ * bad if no simultaneous, or it's not the best
 */
-static int Cache_Get_Simultaneous(enum simul_type type, struct one_wire_query *owq)
+static GOOD_OR_BAD Cache_Get_Simultaneous(enum simul_type type, struct one_wire_query *owq)
 {
 	struct tree_node tn;
-	time_t duration;
+	time_t duration ;
+	time_t time_left ;
+	time_t dwell_time_simul ;
 	struct parsedname * pn = PN(owq) ;
 	size_t dsize = sizeof(union value_object) ;
 	
 	duration = TimeOut(pn->selected_filetype->change);
 	if (duration <= 0) {
-		return 1;
+		// probably "uncached" requested
+		return gbBAD;
 	}
 	
 	LoadTK( pn->sn, pn->selected_filetype, pn->extension, &tn ) ;
 	
-	if ( Get_Stat(&cache_ext, Cache_Get_Common(&OWQ_val(owq), &dsize, &duration, &tn)) == 0 ) {
+	if ( Get_Stat(&cache_ext, Cache_Get_Common( &OWQ_val(owq), &dsize, &time_left, &tn)) == 0 ) {
 		// valid cached primary data -- see if a simultaneous conversion should be used instead
-		time_t start_time ;
-		time_t duration_simul;
+		time_t dwell_time_data = duration - time_left ;
 		
-		duration_simul = TimeOut(ipSimul[type].change);
-		if (duration_simul <= 0) {
-			return 0; /* use cached property */
-		}
-		
-		if ( Cache_Get_Simul_Time(type,&start_time,pn) ) {
-			// Simul not found
+		if ( BAD( Cache_Get_Simul_Time( type, &dwell_time_simul, pn)) ) {
+			// Simul not found or timed out
 			LEVEL_DEBUG("Simultaneous conversion not found.") ;
-			return 0 ;
+			OWQ_SIMUL_CLR(owq) ;
+			return gbGOOD ;
 		}
-		if ( start_time-time(NULL)+duration_simul > duration ) {
+		if ( dwell_time_simul < dwell_time_data ) {
 			LEVEL_DEBUG("Simultaneous conversion is newer than previous reading.") ;
-			return 1 ; // Simul is newer
+			OWQ_SIMUL_SET(owq) ;
+			return gbBAD ; // Simul is newer
 		}
 		// Cached data is newer, so use it
-		LEVEL_DEBUG("Simultaneous conversion is older than actual reading.") ;
-		return 0 ;
+		OWQ_SIMUL_CLR(owq) ;
+		return gbGOOD ;
 	}
-	// fall through -- no cached primary data so simultaneous is irrelevant
-	return 1 ;
+	// fall through -- no cached primary data
+	if ( BAD( Cache_Get_Simul_Time( type, &dwell_time_simul, pn)) ) {
+		// no simultaneous either
+		OWQ_SIMUL_CLR(owq) ;
+		return gbBAD ;
+	}
+	OWQ_SIMUL_SET(owq) ;
+	return gbBAD ; // Simul is newer
 }
 
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
 /* space already allocated in buffer */
-int Cache_Get_Alias(ASCII * name, size_t length, const BYTE * sn)
+GOOD_OR_BAD Cache_Get_Alias(ASCII * name, size_t length, const BYTE * sn)
 {
 	struct tree_node tn;
 	struct tree_opaque *opaque;
-	int ret = -ENOENT ;
+	GOOD_OR_BAD ret = gbBAD ;
 
 	LoadTK(sn, Alias_Marker, 0, &tn ) ;
 
@@ -970,10 +986,8 @@ int Cache_Get_Alias(ASCII * name, size_t length, const BYTE * sn)
 	if ((opaque = tfind(&tn, &cache.permanent_tree, tree_compare))) {
 		if ( opaque->key->dsize < length ) {
 			strncpy(name,(ASCII *)TREE_DATA(opaque->key),length);
-			ret = 0 ;
+			ret = gbGOOD ;
 			LEVEL_DEBUG("Retrieving " SNformat " alias=%s", SNvar(sn), SAFESTRING(name) );
-		} else {
-			ret = -EMSGSIZE ;
 		}
 	}
 	STORE_RUNLOCK;
@@ -984,14 +998,14 @@ struct {
 	const ASCII *name;
 	size_t dsize ;
 	BYTE * sn;
-	int ret ;
+	GOOD_OR_BAD ret ;
 } global_aliasfind_struct;
 
 static void Aliasfindaction(const void *node, const VISIT which, const int depth)
 {
 	const struct tree_node *p = *(struct tree_node * const *) node;
 	(void) depth;
-	if ( global_aliasfind_struct.ret==0 ) {
+	if (  GOOD( global_aliasfind_struct.ret) ) {
 		return ;
 	}
 
@@ -1009,7 +1023,7 @@ static void Aliasfindaction(const void *node, const VISIT which, const int depth
 		if ( memcmp(global_aliasfind_struct.name,(const ASCII *)CONST_TREE_DATA(p),global_aliasfind_struct.dsize) ) {
 			return ;
 		}
-		global_aliasfind_struct.ret = 0 ;
+		global_aliasfind_struct.ret = gbGOOD ;
 		memcpy(global_aliasfind_struct.sn,p->tk.sn,SERIAL_NUMBER_SIZE) ;
 		return ;
 	case preorder:
@@ -1019,82 +1033,76 @@ static void Aliasfindaction(const void *node, const VISIT which, const int depth
 }
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
 /* Gets serial number from name */
-int Cache_Get_SerialNumber(const ASCII * name, BYTE * sn)
+GOOD_OR_BAD Cache_Get_SerialNumber(const ASCII * name, BYTE * sn)
 {
-	int ret;
-	ALIASFINDLOCK;
+	GOOD_OR_BAD ret;
 
-	global_aliasfind_struct.ret = 11  ;// not yet found
+	ALIASFINDLOCK;
+	global_aliasfind_struct.ret = gbBAD  ; // not yet found
 	global_aliasfind_struct.dsize = strlen(name) + 1 ;
 	global_aliasfind_struct.name = name ;
 	global_aliasfind_struct.sn = sn ;
 	twalk(cache.permanent_tree, Aliasfindaction);
 	ret = global_aliasfind_struct.ret ;
 	ALIASFINDUNLOCK;
-	if (ret) {
+
+	if ( BAD(ret)) {
 		LEVEL_DEBUG("Antialiasing %s unsuccesssful", SAFESTRING(name));
+		return gbBAD ;
 	} else {
 		LEVEL_DEBUG("Antialiased %s as " SNformat, SAFESTRING(name), SNvar(sn));
+		return gbGOOD ;
 	}
-
-	return ret;
 }
 
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
-static int Cache_Get_Common(void *data, size_t * dsize, time_t * duration, const struct tree_node *tn)
+/* duration is time left */
+static enum cache_task_return Cache_Get_Common(void *data, size_t * dsize, time_t * duration, const struct tree_node *tn)
 {
-	int ret;
+	enum cache_task_return ctr_ret;
 	time_t now = time(NULL);
 	struct tree_opaque *opaque;
-	//printf("Cache_Get_Common\n") ;
+	
 	LEVEL_DEBUG("Get from cache sn " SNformat " pointer=%p index=%d size=%d", SNvar(tn->tk.sn), tn->tk.p, tn->tk.extension, (int) dsize[0]);
-	node_show(tn);
-	//printf("\nTree (new):\n");
-	new_tree();
-	//printf("\nTree (old):\n");
-	new_tree();
+	//node_show(tn);
+	//new_tree();
 	CACHE_RLOCK;
 	if ((opaque = tfind(tn, &cache.temporary_tree_new, tree_compare))
 		|| ((cache.retired + duration[0] > now)
 			&& (opaque = tfind(tn, &cache.temporary_tree_old, tree_compare)))
 		) {
-		//printf("CACHE GET 2 opaque=%p tn=%p\n",opaque,opaque->key);
 		duration[0] = opaque->key->expires - now ;
 		LEVEL_DEBUG("value found in cache. Remaining life: %d seconds.",duration[0]);
 		if (duration[0] > 0) {
 			// Compared with >= before, but fc_second(1) always cache for 2 seconds in that case.
 			// Very noticable when reading time-data like "/26.80A742000000/date" for example.
-			//printf("CACHE GET 3 buffer size=%lu stored size=%d\n",*dsize,opaque->key->dsize);
 			if ( dsize[0] >= opaque->key->dsize) {
-				//printf("CACHE GET 4\n");
 				dsize[0] = opaque->key->dsize;
 				//tree_show(opaque,leaf,0);
-				//printf("CACHE GET 5 size=%lu\n",*dsize);
 				if (dsize[0]) {
 					memcpy(data, TREE_DATA(opaque->key), dsize[0]);
 				}
-				ret = 0;
-				//printf("CACHE GOT\n");
+				ctr_ret = ctr_ok;
 				//twalk(cache.temporary_tree_new,tree_show) ;
 			} else {
-				ret = -EMSGSIZE;
+				ctr_ret = ctr_size_mismatch;
 			}
 		} else {
-			ret = -ETIMEDOUT;
+			ctr_ret = ctr_expired;
 		}
 	} else {
 		LEVEL_DEBUG("value not found in cache");
-		ret = -ENOENT;
+		ctr_ret = ctr_not_found;
 	}
 	CACHE_RUNLOCK;
-	return ret;
+	return ctr_ret;
 }
 
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
-static int Cache_Get_Store(void *data, size_t * dsize, time_t * duration, const struct tree_node *tn)
+static enum cache_task_return Cache_Get_Store(void *data, size_t * dsize, time_t * duration, const struct tree_node *tn)
 {
 	struct tree_opaque *opaque;
-	int ret;
+	enum cache_task_return ctr_ret;
 	(void) duration; // ignored -- no timeout
 	STORE_RLOCK;
 	if ((opaque = tfind(tn, &cache.permanent_tree, tree_compare))) {
@@ -1103,67 +1111,68 @@ static int Cache_Get_Store(void *data, size_t * dsize, time_t * duration, const 
 			if (dsize[0]) {
 				memcpy(data, TREE_DATA(opaque->key), dsize[0]);
 			}
-			ret = 0;
+			ctr_ret = ctr_ok;
 		} else {
-			ret = -EMSGSIZE;
+			ctr_ret = ctr_size_mismatch;
 		}
 	} else {
-		ret = -ENOENT;
+		ctr_ret = ctr_not_found;
 	}
 	STORE_RUNLOCK;
-	return ret;
+	return ctr_ret;
 }
 
-static int Del_Stat(struct cache *scache, const int result)
+static void Del_Stat(struct cache *scache, const int result)
 {
-	if (result == 0) {
+	if ( GOOD( result)) {
 		STAT_ADD1(scache->deletes);
 	}
-	return result;
 }
 
-int OWQ_Cache_Del(const struct one_wire_query *owq)
+void OWQ_Cache_Del(const struct one_wire_query *owq)
 {
-	return Cache_Del(PN(owq));
+	Cache_Del(PN(owq));
 }
 
-int Cache_Del(const struct parsedname *pn)
+void Cache_Del(const struct parsedname *pn)
 {
 	struct tree_node tn;
 	time_t duration;
 	//printf("Cache_Del\n") ;
 	if (!pn) {
-		return 1;				// do check here to avoid needless processing
+		return;				// do check here to avoid needless processing
 	}
 	
 	duration = TimeOut(pn->selected_filetype->change);
 	if (duration <= 0) {
-		return 1;				/* in case timeout set to 0 */
+		return;				/* in case timeout set to 0 */
 	}
 	
 	LoadTK( pn->sn, pn->selected_filetype, pn->extension, &tn ) ;
 	switch (pn->selected_filetype->change) {
 		case fc_persistent:
-			return Del_Stat(&cache_sto, Cache_Del_Store(&tn));
+			Del_Stat(&cache_sto, Cache_Del_Store(&tn));
+			break ;
 		default:
-			return Del_Stat(&cache_ext, Cache_Del_Common(&tn));
+			Del_Stat(&cache_ext, Cache_Del_Common(&tn));
+			break ;
 	}
 }
 
-int Cache_Del_Mixed_Individual(const struct parsedname *pn)
+void Cache_Del_Mixed_Individual(const struct parsedname *pn)
 {
 	struct tree_node tn;
 	time_t duration;
 	//printf("Cache_Del\n") ;
 	if (!pn) {
-		return 1;				// do check here to avoid needless processing
+		return;				// do check here to avoid needless processing
 	}
 	if (pn->selected_filetype->ag==NON_AGGREGATE || pn->selected_filetype->ag->combined!=ag_mixed) {
-		return 1 ;
+		return ;
 	}
 	duration = TimeOut(pn->selected_filetype->change);
 	if (duration <= 0) {
-		return 1;				/* in case timeout set to 0 */
+		return;				/* in case timeout set to 0 */
 	}
 	
 	LoadTK( pn->sn, pn->selected_filetype, 0, &tn) ;
@@ -1171,98 +1180,103 @@ int Cache_Del_Mixed_Individual(const struct parsedname *pn)
 		switch (pn->selected_filetype->change) {
 			case fc_persistent:
 				Del_Stat(&cache_sto, Cache_Del_Store(&tn));
+				break ;
 			default:
 				Del_Stat(&cache_ext, Cache_Del_Common(&tn));
+				break ;
 		}
 	}
-	return 0 ;
 }
 
-int Cache_Del_Mixed_Aggregate(const struct parsedname *pn)
+void Cache_Del_Mixed_Aggregate(const struct parsedname *pn)
 {
 	struct tree_node tn;
 	time_t duration;
 	//printf("Cache_Del\n") ;
 	if (!pn) {
-		return 1;				// do check here to avoid needless processing
+		return;				// do check here to avoid needless processing
 	}
 	if (pn->selected_filetype->ag==NON_AGGREGATE || pn->selected_filetype->ag->combined!=ag_mixed) {
-		return 1 ;
+		return ;
 	}
 	duration = TimeOut(pn->selected_filetype->change);
 	if (duration <= 0) {
-		return 1;				/* in case timeout set to 0 */
+		return;				/* in case timeout set to 0 */
 	}
 	
 	LoadTK( pn->sn, pn->selected_filetype, EXTENSION_ALL, &tn) ;
 	switch (pn->selected_filetype->change) {
 		case fc_persistent:
-			return Del_Stat(&cache_sto, Cache_Del_Store(&tn));
+			Del_Stat(&cache_sto, Cache_Del_Store(&tn));
+			break ;
 		default:
-			return Del_Stat(&cache_ext, Cache_Del_Common(&tn));
+			Del_Stat(&cache_ext, Cache_Del_Common(&tn));
+			break ;
 	}
 }
 
-int Cache_Del_Dir(const struct parsedname *pn)
+void Cache_Del_Dir(const struct parsedname *pn)
 {
 	struct tree_node tn;
 	struct parsedname pn_directory;
 	
 	FS_LoadDirectoryOnly(&pn_directory, pn);
 	LoadTK( pn_directory.sn, Directory_Marker, pn->selected_connection->index, &tn ) ;
-	return Del_Stat(&cache_dir, Cache_Del_Common(&tn));
+	Del_Stat(&cache_dir, Cache_Del_Common(&tn));
 }
 
-int Cache_Del_Simul(enum simul_type type, const struct parsedname *pn)
+void Cache_Del_Simul(enum simul_type type, const struct parsedname *pn)
 {
 	struct tree_node tn;
 	struct parsedname pn_directory;
 	
 	FS_LoadDirectoryOnly(&pn_directory, pn);
 	LoadTK(pn_directory.sn, Simul_Marker[type], pn->selected_connection->index, &tn );
-	return Del_Stat(&cache_dir, Cache_Del_Common(&tn));
+	Del_Stat(&cache_dir, Cache_Del_Common(&tn));
 }
 
-int Cache_Del_Device(const struct parsedname *pn)
+void Cache_Del_Device(const struct parsedname *pn)
 {
 	struct tree_node tn;
 	time_t duration = TimeOut(fc_presence);
 	if (duration <= 0) {
-		return 1;
+		return;
 	}
 
 	LoadTK(pn->sn, Device_Marker, 0, &tn) ;
-	return Del_Stat(&cache_dev, Cache_Del_Common(&tn));
+	Del_Stat(&cache_dev, Cache_Del_Common(&tn));
 }
 
-int Cache_Del_Internal(const struct internal_prop *ip, const struct parsedname *pn)
+void Cache_Del_Internal(const struct internal_prop *ip, const struct parsedname *pn)
 {
 	struct tree_node tn;
 	time_t duration;
 	//printf("Cache_Del_Internal\n") ;
 	if (!pn) {
-		return 1;				// do check here to avoid needless processing
+		return;				// do check here to avoid needless processing
 	}
 
 	duration = TimeOut(ip->change);
 	if (duration <= 0) {
-		return 1;				/* in case timeout set to 0 */
+		return;				/* in case timeout set to 0 */
 	}
 
 	LoadTK(pn->sn, ip->name, 0, &tn);
 	switch (ip->change) {
 	case fc_persistent:
-		return Del_Stat(&cache_sto, Cache_Del_Store(&tn));
+		Del_Stat(&cache_sto, Cache_Del_Store(&tn));
+		break;
 	default:
-		return Del_Stat(&cache_int, Cache_Del_Common(&tn));
+		Del_Stat(&cache_int, Cache_Del_Common(&tn));
+		break;
 	}
 }
 
-static int Cache_Del_Common(const struct tree_node *tn)
+static GOOD_OR_BAD Cache_Del_Common(const struct tree_node *tn)
 {
 	struct tree_opaque *opaque;
 	time_t now = time(NULL);
-	int ret = 1;
+	GOOD_OR_BAD ret = gbBAD;
 	LEVEL_DEBUG("Delete from cache sn " SNformat " in=%p index=%d", SNvar(tn->tk.sn), tn->tk.p, tn->tk.extension);
 	CACHE_WLOCK;
 	if ((opaque = tfind(tn, &cache.temporary_tree_new, tree_compare))
@@ -1270,13 +1284,13 @@ static int Cache_Del_Common(const struct tree_node *tn)
 			&& (opaque = tfind(tn, &cache.temporary_tree_old, tree_compare)))
 		) {
 		opaque->key->expires = now - 1;
-		ret = 0;
+		ret = gbGOOD;
 	}
 	CACHE_WUNLOCK;
 	return ret;
 }
 
-static int Cache_Del_Store(const struct tree_node *tn)
+static GOOD_OR_BAD Cache_Del_Store(const struct tree_node *tn)
 {
 	struct tree_opaque *opaque;
 	struct tree_node *tn_found = NULL;
@@ -1287,14 +1301,14 @@ static int Cache_Del_Store(const struct tree_node *tn)
 	}
 	STORE_WUNLOCK;
 	if (!tn_found) {
-		return 1;
+		return gbBAD;
 	}
 
 	owfree(tn_found);
 	STATLOCK;
 	AVERAGE_OUT(&store_avg);
 	STATUNLOCK;
-	return 0;
+	return gbGOOD;
 }
 
 static void LoadTK( const BYTE * sn, void * p, int extension, struct tree_node * tn )

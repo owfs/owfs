@@ -122,9 +122,9 @@ DeviceEntryExtended(20, DS2450, DEV_volt | DEV_alarm | DEV_ovdr, NO_GENERIC_READ
 /* DS2450 */
 static GOOD_OR_BAD OW_r_mem(BYTE * p, size_t size, off_t offset, struct parsedname *pn);
 static GOOD_OR_BAD OW_w_mem(BYTE * p, size_t size, off_t offset, struct parsedname *pn);
-static GOOD_OR_BAD OW_volts(_FLOAT * f, const int resolution, struct parsedname *pn);
-static GOOD_OR_BAD OW_1_volts(_FLOAT * f, const int element, const int resolution, struct parsedname *pn);
-static GOOD_OR_BAD OW_convert(struct parsedname *pn);
+static GOOD_OR_BAD OW_volts(_FLOAT * f, int simul_good, int resolution, struct parsedname *pn);
+static GOOD_OR_BAD OW_1_volts(_FLOAT * f, int element, int simul_good, int resolution, struct parsedname *pn);
+static GOOD_OR_BAD OW_convert(int simul_good, struct parsedname *pn);
 static GOOD_OR_BAD OW_r_pio(int *pio, struct parsedname *pn);
 static GOOD_OR_BAD OW_r_1_pio(int *pio, const int element, struct parsedname *pn);
 static GOOD_OR_BAD OW_w_pio(const int *pio, struct parsedname *pn);
@@ -299,13 +299,19 @@ static ZERO_OR_ERROR FS_volts(struct one_wire_query *owq)
 	GOOD_OR_BAD volt_error;
 	if (element == EXTENSION_ALL) {
 		_FLOAT V[4] = { 0., 0., 0., 0., };
-		volt_error = OW_volts(V, pn->selected_filetype->data.i, pn);
+		volt_error = OW_volts(V, OWQ_SIMUL_TEST(owq), pn->selected_filetype->data.i, pn);
+		if ( BAD( volt_error )) {
+			volt_error = OW_volts(V, 0, pn->selected_filetype->data.i, pn);
+		}
 		OWQ_array_F(owq, 0) = V[0];
 		OWQ_array_F(owq, 1) = V[1];
 		OWQ_array_F(owq, 2) = V[2];
 		OWQ_array_F(owq, 3) = V[3];
 	} else {
-		volt_error = OW_1_volts(&OWQ_F(owq), element, pn->selected_filetype->data.i, pn);
+		volt_error = OW_1_volts(&OWQ_F(owq), element, OWQ_SIMUL_TEST(owq), pn->selected_filetype->data.i, pn);
+		if ( BAD( volt_error )) {
+			volt_error = OW_1_volts(&OWQ_F(owq), element, 0, pn->selected_filetype->data.i, pn);
+		}
 	}
 	return GB_to_Z_OR_E(volt_error) ;
 }
@@ -385,7 +391,7 @@ static GOOD_OR_BAD OW_w_mem(BYTE * p, size_t size, off_t offset, struct parsedna
 /* Read A/D from 2450 */
 /* Note: Sets 16 bits resolution and all 4 channels */
 /* resolution is 1->5.10V 0->2.55V */
-static GOOD_OR_BAD OW_volts(_FLOAT * f, const int resolution, struct parsedname *pn)
+static GOOD_OR_BAD OW_volts(_FLOAT * f, int simul_good, int resolution, struct parsedname *pn)
 {
 	BYTE control[8];
 	BYTE data[8];
@@ -413,7 +419,7 @@ static GOOD_OR_BAD OW_volts(_FLOAT * f, const int resolution, struct parsedname 
 	}
 	//printf("writeback=%d\n",writeback);
 	// Start A/D process if needed
-	RETURN_BAD_IF_BAD( OW_convert(pn) ) ;
+	RETURN_BAD_IF_BAD( OW_convert( writeback?0:simul_good, pn) ) ;
 
 	// read data
 	RETURN_BAD_IF_BAD( OW_r_mem(data, 8, _ADDRESS_CONVERSION_PAGE, pn) ) ;
@@ -430,7 +436,7 @@ static GOOD_OR_BAD OW_volts(_FLOAT * f, const int resolution, struct parsedname 
 /* Read A/D from 2450 */
 /* Note: Sets 16 bits resolution on a single channel */
 /* resolution is 1->5.10V 0->2.55V */
-static GOOD_OR_BAD OW_1_volts(_FLOAT * f, const int element, const int resolution, struct parsedname *pn)
+static GOOD_OR_BAD OW_1_volts(_FLOAT * f, int element, int simul_good, int resolution, struct parsedname *pn)
 {
 	BYTE control[2];
 	BYTE data[2];
@@ -451,7 +457,7 @@ static GOOD_OR_BAD OW_1_volts(_FLOAT * f, const int element, const int resolutio
 		RETURN_BAD_IF_BAD( OW_w_mem(control, 2, _ADDRESS_CONTROL_PAGE + (element << 1), pn) ) ;
 	}
 	// Start A/D process
-	RETURN_BAD_IF_BAD( OW_convert(pn) ) ;
+	RETURN_BAD_IF_BAD( OW_convert( writeback?0:simul_good, pn) ) ;
 
 	// read data
 	RETURN_BAD_IF_BAD( OW_r_mem(data, 2, _ADDRESS_CONVERSION_PAGE + (element << 1), pn) ) ;
@@ -463,7 +469,7 @@ static GOOD_OR_BAD OW_1_volts(_FLOAT * f, const int element, const int resolutio
 }
 
 /* send A/D conversion command */
-static GOOD_OR_BAD OW_convert(struct parsedname *pn)
+static GOOD_OR_BAD OW_convert( int simul_good, struct parsedname *pn)
 {
 	BYTE convert[] = { _1W_CONVERT, 0x0F, 0x00, 0xFF, 0xFF, };
 	BYTE power;
@@ -486,8 +492,10 @@ static GOOD_OR_BAD OW_convert(struct parsedname *pn)
 	RETURN_BAD_IF_BAD( OW_r_mem(&power, 1, 0x1C, pn) ) ;
 
 	/* See if a conversion was globally triggered */
-	if ((power == _1W_2450_POWERED) && GOOD(FS_Test_Simultaneous( simul_volt, delay, pn))) {
-		return gbGOOD;
+	if ( power == _1W_2450_POWERED ) {
+		if ( simul_good ) { 
+			return FS_Test_Simultaneous( simul_volt, delay, pn) ;
+		}
 	}
 
 	// Start conversion

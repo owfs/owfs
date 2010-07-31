@@ -17,6 +17,9 @@ enum owq_cleanup {
 	owq_cleanup_buffer  = 0x04,
 	owq_cleanup_rbuffer = 0x08,
 	owq_cleanup_array   = 0x10,
+
+	// unrelated flag
+	owq_simultaneous    = 0x1000,
 	} ;
 
 union value_object {
@@ -66,6 +69,10 @@ struct one_wire_query {
 #define OWQ_array_length(owq,i) ((OWQ_array(owq)[i]).length)
 
 #define OWQ_explode(owq)	(BYTE *)OWQ_buffer(owq),OWQ_size(owq),OWQ_offset(owq),PN(owq)
+
+#define OWQ_SIMUL_SET(owq)    (((owq)->cleanup) |= owq_simultaneous )
+#define OWQ_SIMUL_CLR(owq)    (((owq)->cleanup) &= (~owq_simultaneous) )
+#define OWQ_SIMUL_TEST(owq)   ((((owq)->cleanup) & owq_simultaneous) != 0 )
 
 //#define OWQ_allocate_struct_and_pointer( owq_name )	struct one_wire_query struct_##owq_name ; struct one_wire_query * owq_name = & struct_##owq_name
 // perhaps it would be nice to clear the memory try trace errors. OWQ_allocate_struct_and_pointer() needs to be defined as the last local variable now...

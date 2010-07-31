@@ -61,31 +61,30 @@ void Cache_Open(void);
 void Cache_Close(void);
 void Cache_Clear(void);
 
-int OWQ_Cache_Add(const struct one_wire_query *owq);
-int Cache_Add(const void *data, const size_t datasize, const struct parsedname *pn);
-int Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn);
-int Cache_Add_Device(const int bus_nr, const BYTE *sn);
-int Cache_Add_Internal(const void *data, const size_t datasize, const struct internal_prop *ip, const struct parsedname *pn);
-int Cache_Add_Alias(const ASCII *name, const BYTE * sn) ;
-int Cache_Add_Simul(const enum simul_type type, const struct parsedname *pn);
+GOOD_OR_BAD OWQ_Cache_Add(const struct one_wire_query *owq);
+GOOD_OR_BAD Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn);
+GOOD_OR_BAD Cache_Add_Device(const int bus_nr, const BYTE *sn);
+GOOD_OR_BAD Cache_Add_Internal(const void *data, const size_t datasize, const struct internal_prop *ip, const struct parsedname *pn);
+GOOD_OR_BAD Cache_Add_Alias(const ASCII *name, const BYTE * sn) ;
+GOOD_OR_BAD Cache_Add_Simul(const enum simul_type type, const struct parsedname *pn);
 
 GOOD_OR_BAD OWQ_Cache_Get(struct one_wire_query *owq);
 GOOD_OR_BAD Cache_Get(void *data, size_t * dsize, const struct parsedname *pn);
 GOOD_OR_BAD Cache_Get_Dir(struct dirblob *db, const struct parsedname *pn);
 GOOD_OR_BAD Cache_Get_Device(void *bus_nr, const struct parsedname *pn);
 GOOD_OR_BAD Cache_Get_Internal_Strict(void *data, size_t dsize, const struct internal_prop *ip, const struct parsedname *pn);
-int Cache_Get_Alias(ASCII * name, size_t length, const BYTE * sn) ;
-int Cache_Get_SerialNumber(const ASCII * name, BYTE * sn) ;
-int Cache_Get_Simul_Time(enum simul_type type, time_t * start_time, const struct parsedname * pn);
+GOOD_OR_BAD Cache_Get_Alias(ASCII * name, size_t length, const BYTE * sn) ;
+GOOD_OR_BAD Cache_Get_SerialNumber(const ASCII * name, BYTE * sn) ;
+GOOD_OR_BAD Cache_Get_Simul_Time(enum simul_type type, time_t * dwell_time, const struct parsedname * pn);
 
-int OWQ_Cache_Del(const struct one_wire_query *owq);
-int Cache_Del(const struct parsedname *pn);
-int Cache_Del_Dir(const struct parsedname *pn);
-int Cache_Del_Device(const struct parsedname *pn);
-int Cache_Del_Internal(const struct internal_prop *ip, const struct parsedname *pn);
-int Cache_Del_Simul(enum simul_type type, const struct parsedname *pn) ;
-int Cache_Del_Mixed_Aggregate(const struct parsedname *pn);
-int Cache_Del_Mixed_Individual(const struct parsedname *pn);
+void OWQ_Cache_Del(const struct one_wire_query *owq);
+void Cache_Del(const struct parsedname *pn);
+void Cache_Del_Dir(const struct parsedname *pn);
+void Cache_Del_Device(const struct parsedname *pn);
+void Cache_Del_Internal(const struct internal_prop *ip, const struct parsedname *pn);
+void Cache_Del_Simul(enum simul_type type, const struct parsedname *pn) ;
+void Cache_Del_Mixed_Aggregate(const struct parsedname *pn);
+void Cache_Del_Mixed_Individual(const struct parsedname *pn);
 
 #else							/* OW_CACHE */
 
@@ -96,13 +95,12 @@ int Cache_Del_Mixed_Individual(const struct parsedname *pn);
 #define Cache_Close( void )
 #define Cache_Clear( void )
 
-#define Cache_Add(data,datasize,pn )        (1)
-#define Cache_Add_Dir(db,pn )               (1)
-#define Cache_Add_Device(bus_nr,sn )        (1)
-#define Cache_Add_Internal(data,datasize,ip,pn )    (1)
-#define OWQ_Cache_Add( owq )                (1)
-#define Cache_Add_Alias(name, sn)           (1)
-#define Cache_Add_Simul(type,pn)            (1)
+#define Cache_Add_Dir(db,pn )               (gbBAD)
+#define Cache_Add_Device(bus_nr,sn )        (gbBAD)
+#define Cache_Add_Internal(data,datasize,ip,pn )    (gbBAD)
+#define OWQ_Cache_Add( owq )                (gbBAD)
+#define Cache_Add_Alias(name, sn)           (gbBAD)
+#define Cache_Add_Simul(type,pn)            (gbBAD)
 
 #define Cache_Get(data,dsize,pn )           (gbBAD)
 #define Cache_Get_Dir(db,pn )               (gbBAD)
@@ -111,8 +109,8 @@ int Cache_Del_Mixed_Individual(const struct parsedname *pn);
 #define Cache_Get_Device(bus_nr,pn )        (gbBAD)
 #define Cache_Get_Internal(data,dsize,ip,pn )       (1)
 #define Cache_Get_Internal_Strict(data,dsize,ip,pn )       (gbBAD)
-#define Cache_Get_Alias(name, length, sn)   (1)
-#define Cache_Get_SerialNumber(name, sn)    (1)
+#define Cache_Get_Alias(name, length, sn)   (gbBAD)
+#define Cache_Get_SerialNumber(name, sn)    (gbBAD)
 #define Cache_Get_Simul_Time(type,time,pn)  (1)
 
 #define Cache_Del(pn )                      (1)

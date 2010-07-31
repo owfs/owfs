@@ -240,7 +240,7 @@ static ZERO_OR_ERROR FS_w_cum(struct one_wire_query *owq)
 		OWQ_array_U(owq, 2),
 		OWQ_array_U(owq, 3),
 	};
-	return Cache_Add_Internal((const void *) u, 4 * sizeof(UINT), InternalProp(CUM), PN(owq)) ? -EINVAL : 0;
+	return GB_to_Z_OR_E( Cache_Add_Internal((const void *) u, 4 * sizeof(UINT), InternalProp(CUM), PN(owq)) );
 }
 #endif							/*OW_CACHE */
 

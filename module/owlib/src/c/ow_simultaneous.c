@@ -80,15 +80,15 @@ static void OW_single2cache(BYTE * sn, const struct parsedname *pn2);
 
 GOOD_OR_BAD FS_Test_Simultaneous( enum simul_type type, UINT delay, const struct parsedname * pn)
 {
-	time_t start_time ;
+	time_t dwell_time ;
 	time_t remaining_delay ;
 
-	if ( Cache_Get_Simul_Time(type, &start_time, pn) ) {
+	if( BAD( Cache_Get_Simul_Time(type, &dwell_time, pn)) ) {
 		LEVEL_DEBUG("No simultaneous conversion currently valid");
 		return gbBAD ; // No simultaneous valid
 	}
 
-	remaining_delay = delay - 1000* (time(NULL) - start_time) ;
+	remaining_delay = delay - 1000 * dwell_time ;
 	if ( remaining_delay > 0 ) {
 		LEVEL_DEBUG("Simultaneous conversion requires %d msec delay",(int) remaining_delay);
 		UT_delay(remaining_delay) ;

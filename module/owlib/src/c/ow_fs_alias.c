@@ -51,7 +51,7 @@ ZERO_OR_ERROR FS_alias(struct one_wire_query *owq)
 {
 	char alias[PROPERTY_LENGTH_ALIAS+1] ;
 	struct parsedname *pn = PN(owq);
-	if ( Cache_Get_Alias( alias, PROPERTY_LENGTH_ALIAS+1, pn->sn) == 0 ) {
+	if ( GOOD( Cache_Get_Alias( alias, PROPERTY_LENGTH_ALIAS+1, pn->sn)) ) {
 		LEVEL_DEBUG("Found alias %s for "SNformat"\n",alias,SNvar(pn->sn));
 		return OWQ_format_output_offset_and_size_z(alias, owq);
 	}

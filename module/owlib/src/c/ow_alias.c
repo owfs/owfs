@@ -19,7 +19,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
-static int Test_Add_Alias( char * name, BYTE * sn ) ;
+static GOOD_OR_BAD Test_Add_Alias( char * name, BYTE * sn ) ;
 
 GOOD_OR_BAD AliasFile(const ASCII * file)
 {
@@ -83,12 +83,12 @@ GOOD_OR_BAD AliasFile(const ASCII * file)
 	return gbGOOD;
 }
 
-static int Test_Add_Alias( char * name, BYTE * sn )
+static GOOD_OR_BAD Test_Add_Alias( char * name, BYTE * sn )
 {
 	BYTE sn_stored[SERIAL_NUMBER_SIZE] ;
 	if ( strlen(name) > PROPERTY_LENGTH_ALIAS ) {
 		LEVEL_CALL("Alias too long: sn=" SNformat ", alias=%s max length=%d", SNvar(sn), name,  PROPERTY_LENGTH_ALIAS ) ;
-		return 1 ;
+		return gbBAD ;
 	}
 
 	if ( strcmp( name, "interface" )==0
@@ -102,15 +102,15 @@ static int Test_Add_Alias( char * name, BYTE * sn )
 	|| strncmp( name, "bus.", 4 )==0
 	) {
 		LEVEL_CALL("Alias copies intrinsic filename: %s",name ) ;
-		return 1 ;
+		return gbBAD ;
 	}
-	if ( Cache_Get_SerialNumber( name, sn_stored )==0 && memcmp(sn,sn_stored,SERIAL_NUMBER_SIZE)!=0 ) {
+	if ( GOOD( Cache_Get_SerialNumber( name, sn_stored )) && memcmp(sn,sn_stored,SERIAL_NUMBER_SIZE)!=0 ) {
 		LEVEL_CALL("Alias redefines a previous alias: %s " SNformat " and " SNformat,name,SNvar(sn),SNvar(sn_stored) ) ;
-		return 1 ;
+		return gbBAD ;
 	}
 	if ( strchr( name, '/' ) ) {
 		LEVEL_CALL("Alias contains confusin path separator \'/\': %s",name ) ;
-		return 1 ;
+		return gbBAD ;
 	}
 	return Cache_Add_Alias( name, sn) ;
 }

@@ -166,7 +166,7 @@ DeviceEntryExtended(26, DS2438, DEV_temp | DEV_volt, NO_GENERIC_READ, NO_GENERIC
 /* DS2438 */
 static GOOD_OR_BAD OW_r_page(BYTE * p, const int page, const struct parsedname *pn);
 static GOOD_OR_BAD OW_w_page(const BYTE * p, const int page, const struct parsedname *pn);
-static GOOD_OR_BAD OW_temp(_FLOAT * T, const struct parsedname *pn);
+static GOOD_OR_BAD OW_temp(_FLOAT * T, int simul_good, const struct parsedname *pn);
 static GOOD_OR_BAD OW_volts(_FLOAT * V, const int src, const struct parsedname *pn);
 static GOOD_OR_BAD OW_r_int(int *I, const UINT address, const struct parsedname *pn);
 static GOOD_OR_BAD OW_w_int(const int I, const UINT address, const struct parsedname *pn);
@@ -238,7 +238,11 @@ static ZERO_OR_ERROR FS_MStype(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_temp(struct one_wire_query *owq)
 {
-	return GB_to_Z_OR_E( OW_temp(&OWQ_F(owq), PN(owq)) ) ;
+	// Double try temperature, with and without simultaneous
+	if ( GOOD( OW_temp(&OWQ_F(owq), OWQ_SIMUL_TEST(owq), PN(owq))) ) {
+		return 0 ;
+	}
+	return GB_to_Z_OR_E( OW_temp(&OWQ_F(owq), 0, PN(owq)) ) ;
 }
 
 static ZERO_OR_ERROR FS_volts(struct one_wire_query *owq)
@@ -659,7 +663,7 @@ static GOOD_OR_BAD OW_w_page(const BYTE * p, const int page, const struct parsed
 	return BUS_transaction(t, pn) ;
 }
 
-static GOOD_OR_BAD OW_temp(_FLOAT * T, const struct parsedname *pn)
+static GOOD_OR_BAD OW_temp(_FLOAT * T, int simul_good, const struct parsedname *pn)
 {
 	BYTE data[9];
 	UINT delay = 10 ;
@@ -671,7 +675,9 @@ static GOOD_OR_BAD OW_temp(_FLOAT * T, const struct parsedname *pn)
 		TRXN_END,
 	};
 	// write conversion command
-	if ( BAD( FS_Test_Simultaneous( simul_temp, delay, pn) ) ) {
+	if ( simul_good ) {
+		RETURN_BAD_IF_BAD( FS_Test_Simultaneous( simul_temp, delay, pn) ) ;
+	} else {
 		RETURN_BAD_IF_BAD(BUS_transaction(tconvert, pn)) ;
 	}
 

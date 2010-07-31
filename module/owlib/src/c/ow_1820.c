@@ -234,11 +234,13 @@ struct die_limits DIE[] = {
 #define _DEFAULT_BLANKET_TRIM_1   0x9D
 #define _DEFAULT_BLANKET_TRIM_2   0xBB
 
+enum temperature_problem_flag { allow_85C, deny_85C, } ;
+
 /* ------- Functions ------------ */
 
 /* DS1820&2*/
-static GOOD_OR_BAD OW_10temp(_FLOAT * temp, const struct parsedname *pn);
-static GOOD_OR_BAD OW_22temp(_FLOAT * temp, const int resolution, const struct parsedname *pn);
+static GOOD_OR_BAD OW_10temp(_FLOAT * temp, enum temperature_problem_flag accept_85C, int simul_good, const struct parsedname *pn);
+static GOOD_OR_BAD OW_22temp(_FLOAT * temp, enum temperature_problem_flag accept_85C, int simul_good, int resolution, const struct parsedname *pn);
 static GOOD_OR_BAD OW_power(BYTE * data, const struct parsedname *pn);
 static GOOD_OR_BAD OW_r_templimit(_FLOAT * T, const int Tindex, const struct parsedname *pn);
 static GOOD_OR_BAD OW_w_templimit(const _FLOAT T, const int Tindex, const struct parsedname *pn);
@@ -253,19 +255,43 @@ static _FLOAT OW_masked_temperature( BYTE * data, BYTE mask ) ;
 
 static ZERO_OR_ERROR FS_10temp(struct one_wire_query *owq)
 {
-	return GB_to_Z_OR_E( OW_10temp(&OWQ_F(owq), PN(owq)) ) ;
+	struct parsedname * pn = PN(owq) ;
+	
+	// triple try temperatures
+	// first pass include simultaneous
+	if ( GOOD( OW_10temp(&OWQ_F(owq), deny_85C, OWQ_SIMUL_TEST(owq), pn)) ) {
+		return 0 ;
+	}
+	// second pass no simultaneous
+	if ( GOOD( OW_10temp(&OWQ_F(owq), deny_85C, 0, pn)) ) {
+		return 0 ;
+	}
+	// third pass, accept 85C
+	return GB_to_Z_OR_E(OW_10temp(&OWQ_F(owq), allow_85C, 0, pn));
 }
 
 /* For DS1822 and DS18B20 -- resolution stuffed in ft->data */
 static ZERO_OR_ERROR FS_22temp(struct one_wire_query *owq)
 {
-	int resolution = OWQ_pn(owq).selected_filetype->data.i;
+	struct parsedname * pn = PN(owq) ;
+	int resolution = pn->selected_filetype->data.i;
+
 	switch (resolution) {
 	case 9:
 	case 10:
 	case 11:
 	case 12:
-		return GB_to_Z_OR_E(OW_22temp(&OWQ_F(owq), resolution, PN(owq)));
+		// triple try temperatures
+		// first pass include simultaneous
+		if ( GOOD( OW_22temp(&OWQ_F(owq), deny_85C, OWQ_SIMUL_TEST(owq), resolution, pn) ) ) {
+			return 0 ;
+		}
+		// second pass no simultaneous
+		if ( GOOD( OW_22temp(&OWQ_F(owq), deny_85C, 0, resolution, pn) ) ) {
+			return 0 ;
+		}
+		// third pass, accept 85C
+		return GB_to_Z_OR_E(OW_22temp(&OWQ_F(owq), allow_85C, 0, resolution, pn));
 	}
 	return -ENODEV;
 }
@@ -456,7 +482,7 @@ static ZERO_OR_ERROR FS_w_blanket(struct one_wire_query *owq)
 }
 
 /* get the temp from the scratchpad buffer after starting a conversion and waiting */
-static GOOD_OR_BAD OW_10temp(_FLOAT * temp, const struct parsedname *pn)
+static GOOD_OR_BAD OW_10temp(_FLOAT * temp, enum temperature_problem_flag accept_85C, int simul_good, const struct parsedname *pn)
 {
 	BYTE data[9];
 	BYTE convert[] = { _1W_CONVERT_T, };
@@ -480,13 +506,16 @@ static GOOD_OR_BAD OW_10temp(_FLOAT * temp, const struct parsedname *pn)
 	/* Select particular device and start conversion */
 	if (!pow) {					// unpowered, deliver power, no communication allowed
 		RETURN_BAD_IF_BAD(BUS_transaction(tunpowered, pn)) ;
-	} else if ( BAD( FS_Test_Simultaneous( simul_temp, delay, pn) ) ) {	// powered
+	} else if ( !simul_good ) {	// powered
 		// Simultaneous not valid, so do a conversion
 		GOOD_OR_BAD ret;
 		BUSLOCK(pn);
 		ret = BUS_transaction_nolock(tpowered, pn) || FS_poll_convert(pn);
 		BUSUNLOCK(pn);
 		RETURN_BAD_IF_BAD(ret) ;
+	} else {
+		// simultaneous -- delay if needed
+		RETURN_BAD_IF_BAD( FS_Test_Simultaneous( simul_temp, delay, pn)) ;
 	}
 
 	RETURN_BAD_IF_BAD(OW_r_scratchpad(data, pn)) ;
@@ -500,7 +529,11 @@ static GOOD_OR_BAD OW_10temp(_FLOAT * temp, const struct parsedname *pn)
 	//        temp[0] += (_FLOAT)(data[7]-data[6]) / (_FLOAT)data[7] - .25 ; // additional precision
 		temp[0] += .75 - (_FLOAT) data[6] / (_FLOAT) data[7];	// additional precision
 	}
-	return gbGOOD;
+
+	if ( accept_85C==allow_85C || data[0] != 0x50 || data[1] != 0x05 ) {
+		return gbGOOD;
+	}
+	return gbBAD ;
 }
 
 static GOOD_OR_BAD OW_power(BYTE * data, const struct parsedname *pn)
@@ -521,7 +554,7 @@ static GOOD_OR_BAD OW_power(BYTE * data, const struct parsedname *pn)
 	return gbGOOD;
 }
 
-static GOOD_OR_BAD OW_22temp(_FLOAT * temp, const int resolution, const struct parsedname *pn)
+static GOOD_OR_BAD OW_22temp(_FLOAT * temp, enum temperature_problem_flag accept_85C, int simul_good, int resolution, const struct parsedname *pn)
 {
 	BYTE data[9];
 	BYTE convert[] = { _1W_CONVERT_T, };
@@ -530,7 +563,7 @@ static GOOD_OR_BAD OW_22temp(_FLOAT * temp, const int resolution, const struct p
 	UINT longdelay = delay * 1.5 ; // failsafe
 	BYTE mask = Resolutions[resolution - 9].mask;
 	int stored_resolution ;
-	GOOD_OR_BAD must_convert = gbGOOD ;
+	int must_convert = 0 ;
 
 	struct transaction_log tunpowered[] = {
 		TRXN_START,
@@ -557,7 +590,7 @@ static GOOD_OR_BAD OW_22temp(_FLOAT * temp, const int resolution, const struct p
 		RETURN_BAD_IF_BAD(OW_r_scratchpad(data, pn)) ;
 		/* Put in new settings (if different) */
 		if ((data[4] | 0x1F) != resolution_register) {	// ignore lower 5 bits
-			must_convert = gbBAD ; // resolution has changed
+			must_convert = 1 ; // resolution has changed
 			data[4] = (resolution_register & 0x60) | 0x1F ;
 			RETURN_BAD_IF_BAD(OW_w_scratchpad(&data[2], pn)) ;
 			Cache_Add_Internal(&resolution, sizeof(int), InternalProp(RES), pn);
@@ -571,12 +604,16 @@ static GOOD_OR_BAD OW_22temp(_FLOAT * temp, const int resolution, const struct p
 		pow = 0x00;				/* assume unpowered if cannot tell */
 	}
 
-	if (!pow) {					// unpowered, deliver power, no communication allowed
+	if ( accept_85C == allow_85C ) {
+		// must be desperate
+		LEVEL_DEBUG("Unpowered temperature conversion -- %d msec", longdelay);
+		// If not powered, no Simultaneous for this chip
+		RETURN_BAD_IF_BAD(BUS_transaction(tunpowered_long, pn)) ;	
+	} else if (!pow) {					// unpowered, deliver power, no communication allowed
 		LEVEL_DEBUG("Unpowered temperature conversion -- %d msec", delay);
 		// If not powered, no Simultaneous for this chip
-		must_convert = gbBAD ;
 		RETURN_BAD_IF_BAD(BUS_transaction(tunpowered, pn)) ;
-	} else if ( BAD(must_convert) || BAD( FS_Test_Simultaneous( simul_temp, delay, pn) ) ) {
+	} else if ( must_convert || !simul_good ) {
 		// No Simultaneous active, so need to "convert"
 		// powered, so release bus immediately after issuing convert
 		GOOD_OR_BAD ret;
@@ -585,30 +622,19 @@ static GOOD_OR_BAD OW_22temp(_FLOAT * temp, const int resolution, const struct p
 		ret = BUS_transaction_nolock(tpowered, pn) || FS_poll_convert(pn);
 		BUSUNLOCK(pn);
 		RETURN_BAD_IF_BAD(ret)
+	} else {
+		// valid simultaneous, just delay if needed
+		RETURN_BAD_IF_BAD( FS_Test_Simultaneous( simul_temp, delay, pn)) ;
 	}
 
 	RETURN_BAD_IF_BAD(OW_r_scratchpad(data, pn)) ;
 
-	if ( data[1]!=0x05 || data[0]!=0x50 ) { // not 85C
-		temp[0] = OW_masked_temperature( data, mask) ;
-		return gbGOOD;
-	}
-
-	// second time
-	LEVEL_DEBUG("Temp error. Try unpowered temperature conversion -- %d msec", delay);
-	RETURN_BAD_IF_BAD(BUS_transaction(tunpowered, pn)) ;
-	RETURN_BAD_IF_BAD(OW_r_scratchpad(data, pn)) ;
-	if ( data[1]!=0x05 || data[0]!=0x50 ) { // not 85C
-		temp[0] = OW_masked_temperature( data, mask) ;
-		return gbGOOD;
-	}
-
-	// third and last time
-	LEVEL_DEBUG("Temp error. Try unpowered long temperature conversion -- %d msec", longdelay);
-	RETURN_BAD_IF_BAD(BUS_transaction(tunpowered_long, pn)) ;
-	RETURN_BAD_IF_BAD(OW_r_scratchpad(data, pn)) ;
 	temp[0] = OW_masked_temperature( data, mask) ;
-	return gbGOOD;
+
+	if ( accept_85C==allow_85C || data[0] != 0x50 || data[1] != 0x05 ) {
+		return gbGOOD;
+	}
+	return gbBAD ;
 }
 
 /* Limits Tindex=0 high 1=low */
