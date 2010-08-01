@@ -616,25 +616,28 @@ static SIZE_OR_ERROR WriteToServer(int file_descriptor, struct server_msg *sm, s
 	int payload = 0;
 	int tokens = 0;
 	int nio = 0;
+	int traffic_counter ;
 	struct iovec io[5] = { {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}, };
-	struct server_msg local_sm ;
+	struct server_msg net_sm ;
 
 	// First block to send, the header
-	io[nio].iov_base = &local_sm;
+	io[nio].iov_base = &net_sm;
 	io[nio].iov_len = sizeof(struct server_msg);
 	nio++;
 
 	// Next block, the path
-	if ((io[nio].iov_base = sp->path)) {	// send path (if not null)
-		io[nio].iov_len = payload = strlen(sp->path) + 1;
+	if (sp->path != 0) {	// send path (if not null)
+		io[nio].iov_base = sp->path ;
+		io[nio].iov_len = strlen(sp->path) + 1;
+		payload =  io[nio].iov_len ;
 		nio++;
-		LEVEL_DEBUG("path=%s", sp->path);
 	}
 	// next block, data (only for writes)
-	if ((sp->datasize>0) && (io[nio].iov_base = sp->data)) {	// send data only for writes (if datasize not zero)
-		payload += (io[nio].iov_len = sp->datasize);
+	if ((sp->datasize>0) && (sp->data!=NULL)) {	// send data only for writes (if datasize not zero)
+		io[nio].iov_base = sp->data ;
+		io[nio].iov_len = sp->datasize ;
+		payload += sp->datasize;
 		nio++;
-		Debug_Bytes("Data sent to server", sp->data,sp->datasize);
 	}
 
 	sm->version = MakeServerprotocol(OWSERVER_PROTOCOL_VERSION);
@@ -654,19 +657,34 @@ static SIZE_OR_ERROR WriteToServer(int file_descriptor, struct server_msg *sm, s
 		io[nio].iov_base = &(Globals.Token);	// owserver: add our tag
 		io[nio].iov_len = sizeof(union antiloop);
 		nio++;
-		LEVEL_DEBUG("tokens=%d", tokens);
 	}
 	LEVEL_DEBUG("version=%u payload=%d size=%d type=%d SG=%X offset=%d",sm->version,payload,sm->size,sm->type,sm->control_flags,sm->offset);
 
 	// encode in network order (just the header)
-	local_sm.version       = htonl( sm->version       );
-	local_sm.payload       = htonl( payload           );
-	local_sm.size          = htonl( sm->size          );
-	local_sm.type          = htonl( sm->type          );
-	local_sm.control_flags = htonl( sm->control_flags );
-	local_sm.offset        = htonl( sm->offset        );
+	net_sm.version       = htonl( sm->version       );
+	net_sm.payload       = htonl( payload           );
+	net_sm.size          = htonl( sm->size          );
+	net_sm.type          = htonl( sm->type          );
+	net_sm.control_flags = htonl( sm->control_flags );
+	net_sm.offset        = htonl( sm->offset        );
 
-	Debug_Writev(io, nio);
+	traffic_counter = 0 ;
+	TrafficOutFD("write header" ,io[traffic_counter].iov_base,io[traffic_counter].iov_len,file_descriptor);
+	++traffic_counter;
+	TrafficOutFD("write path"  ,io[traffic_counter].iov_base,io[traffic_counter].iov_len,file_descriptor);
+	if ((sp->datasize>0) && (sp->data!=NULL)) {	// send data only for writes (if datasize not zero)
+		++traffic_counter;
+		TrafficOutFD("write data" ,io[traffic_counter].iov_base,io[traffic_counter].iov_len,file_descriptor);
+	}
+	if ( Globals.opt == opt_server ) {
+		if (sp->tokens > 0) {		// owserver: send prior tags
+			++traffic_counter;
+			TrafficOutFD("write old tokens" ,io[traffic_counter].iov_base,io[traffic_counter].iov_len,file_descriptor);
+		}
+		++traffic_counter;
+		TrafficOutFD("write new tokens" ,io[traffic_counter].iov_base,io[traffic_counter].iov_len,file_descriptor);
+	}
+
 	return writev(file_descriptor, io, nio) != (ssize_t) (payload + sizeof(struct server_msg) + tokens * sizeof(union antiloop));
 }
 

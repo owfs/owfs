@@ -78,7 +78,7 @@ int ToClient(int file_descriptor, struct client_msg *machine_order_cm, char *dat
 	network_order_cm->offset        = htonl( machine_order_cm->offset        );
 
 	if(machine_order_cm->payload >= 0) {
-		Debug_Writev(io, nio);  // debug output of network package after it's created.
+		TrafficOutFD("to server data",io[1].iov_base,io[1].iov_leng,file_descriptor);
 	}
 	
 	return writev(file_descriptor, io, nio) != (ssize_t) (io[0].iov_len + io[1].iov_len);

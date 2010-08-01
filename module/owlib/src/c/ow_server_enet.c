@@ -518,6 +518,7 @@ static GOOD_OR_BAD ENET_write(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const AS
 	ssize_t r, sl = length;
 	ssize_t size = sl;
 	while (sl > 0) {
+		TrafficOut("write",msg,length,in);
 		r = write(file_descriptor, &msg[size - sl], sl);
 		if (r < 0) {
 			if (errno == EINTR) {

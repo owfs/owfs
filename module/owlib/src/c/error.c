@@ -156,28 +156,6 @@ void _Debug_Bytes(const char *title, const unsigned char *buf, int length)
 	ascii_print( (const char *) buf, length ) ;
 }
 
-/* Purely a debugging routine -- print an arbitrary buffer of bytes */
-void _Debug_Writev(struct iovec *io, int iosz)
-{
-	int ionr;
-
-	for ( ionr=0; ionr < iosz; ++ionr ) {
-		char * buf = io[ionr].iov_base;
-		int length = io[ionr].iov_len;
-
-		/* title line */
-		fprintf(stderr,"Writev byte buffer ionr=%d/%d length=%d", ionr+1, iosz, (int) length);
-		if (length <= 0) {
-			fprintf(stderr,"\n-- Attempt to write with bad length\n");
-		} else if (buf == NULL) {
-			fprintf(stderr,"\n-- NULL buffer\n");
-		} else {
-			hex_print(buf,length) ;
-			ascii_print(buf,length) ;
-		}
-	}
-}
-
 void fatal_error(const char * file, int line, const char * func, const char *fmt, ...)
 {
 	va_list ap;

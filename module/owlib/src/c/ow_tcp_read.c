@@ -90,7 +90,7 @@ ZERO_OR_ERROR tcp_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, BYTE * buffer, 
 			} else if (nread == 0) {
 				break;			/* EOF */
 			}
-			TrafficOutFD("NETREAD", &buffer[*chars_in], nread, file_descriptor ) ;
+			TrafficInFD("NETREAD", &buffer[*chars_in], nread, file_descriptor ) ;
 			nleft_to_read -= nread;
 			*chars_in += nread ;
 		} else if (select_result < 0) {	/* select error */
