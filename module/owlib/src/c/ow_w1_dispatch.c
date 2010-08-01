@@ -81,7 +81,7 @@ static void Dispatch_Packet( struct netlink_parse * nlp)
 
 	if ( bus == 0 ) {
 		LEVEL_DEBUG("Sending this packet to root bus");
-		W1_write_pipe(Inbound_Control.netlink_pipe[fd_pipe_write], nlp) ;
+		w1_master_command(nlp) ;
 		return ;
 	}
 
@@ -106,7 +106,9 @@ void * W1_Dispatch( void * v )
 
 	pthread_detach(pthread_self());
 
-	while (  FILE_DESCRIPTOR_VALID( Inbound_Control.w1_file_descriptor ) ) {
+	w1_list_masters() ; // ask for master list
+
+	while ( FILE_DESCRIPTOR_VALID( Inbound_Control.w1_file_descriptor ) ) {
 		struct netlink_parse nlp ;
 		LEVEL_DEBUG("Dispatch loop");
 		if ( Netlink_Parse_Get( &nlp ) == 0 ) {

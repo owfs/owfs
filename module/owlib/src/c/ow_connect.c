@@ -183,7 +183,6 @@ void FreeInAll( void )
 #if OW_W1
 	if ( Inbound_Control.w1_pid > 0 ) {
 		Test_and_Close( & (Inbound_Control.w1_file_descriptor) ) ;
-		Test_and_Close_Pipe( Inbound_Control.netlink_pipe ) ;
 #if OW_MT
 		_MUTEX_DESTROY(Inbound_Control.w1_mutex);
 		_MUTEX_DESTROY(Inbound_Control.w1_read_mutex);

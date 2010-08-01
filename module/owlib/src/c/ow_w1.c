@@ -62,15 +62,14 @@ GOOD_OR_BAD W1_detect(struct connection_in *in)
 
 	FS_ParsedName_Placeholder(&pn);	// minimal parsename -- no destroy needed
 	pn.selected_connection = in;
-	LEVEL_CONNECT("start");
 
 	/* Set up low-level routines */
 	W1_setroutines(in);
+	in->connin.w1.netlink_pipe[fd_pipe_read] = FILE_DESCRIPTOR_BAD ;
+	in->connin.w1.netlink_pipe[fd_pipe_write] = FILE_DESCRIPTOR_BAD ;
 
 	if ( pipe( in->connin.w1.netlink_pipe ) != 0 ) {
 		ERROR_CONNECT("W1 pipe creation error");
-		in->connin.w1.netlink_pipe[fd_pipe_read] = FILE_DESCRIPTOR_BAD ;
-		in->connin.w1.netlink_pipe[fd_pipe_write] = FILE_DESCRIPTOR_BAD ;
 		return gbBAD ;
 	}
 

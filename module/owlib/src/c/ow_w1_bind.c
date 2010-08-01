@@ -59,21 +59,12 @@ FILE_DESCRIPTOR_OR_ERROR w1_bind( void )
 		return FILE_DESCRIPTOR_BAD;
 	}
 
-	/* Set up pipe pair for LIST_MASTERS and ADD_MASTERS REMOVE_MASTERS netlink messsage */
-	if ( pipe( Inbound_Control.netlink_pipe ) != 0 ) {
-		ERROR_CONNECT("W1 pipe creation error\n");
-		Inbound_Control.netlink_pipe[fd_pipe_read] = -1 ;
-		Inbound_Control.netlink_pipe[fd_pipe_write] = -1 ;
-		w1_unbind() ;
-		return FILE_DESCRIPTOR_BAD ;
-	}
 	return Inbound_Control.w1_file_descriptor ;
 }
 
 void w1_unbind( void )
 {
     Test_and_Close( &(Inbound_Control.w1_file_descriptor) );
-    Test_and_Close_Pipe( Inbound_Control.netlink_pipe );
 }
 
 #endif /* OW_W1 */

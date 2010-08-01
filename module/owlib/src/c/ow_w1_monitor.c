@@ -40,10 +40,10 @@ GOOD_OR_BAD W1_monitor_detect(struct connection_in *in)
 	
 	RETURN_BAD_IF_BAD( w1_in_use(in) ) ;
 	
-	W1_Browse() ;
-	return gbGOOD ;
+	return W1_Browse() ; // creates thread that runs forever.
 }
 
+// is there already a W! monitor in the Inbound list? You only need one.
 static GOOD_OR_BAD w1_in_use(const struct connection_in * in_selected)
 {
 	struct connection_in *in;

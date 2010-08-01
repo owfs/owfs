@@ -48,8 +48,7 @@ int W1_send_msg( struct connection_in * in, struct w1_netlink_msg *msg, struct w
 int W1PipeSelect_timeout( FILE_DESCRIPTOR_OR_ERROR file_descriptor ) ;
 void * W1_Dispatch( void * v ) ;
 
-void W1NLInitialScan( void ) ;
-enum Netlink_Read_Status W1NLList( void ) ;
+int w1_list_masters( void ) ;
 
 #define MAKE_NL_SEQ( bus, seq )  ((uint32_t)(( ((bus) & 0xFFFF) << 16 ) | ((seq) & 0xFFFF)))
 #define NL_SEQ( seq )  ((uint32_t)((seq) & 0xFFFF))
@@ -66,6 +65,8 @@ struct netlink_parse {
 	int			data_size ;
 } ;
 
+void w1_master_command(struct netlink_parse * nlp) ;
+void w1_parse_master_list(struct netlink_parse * nlp);
 void Netlink_Parse_Destroy( struct netlink_parse * nlp ) ;
 GOOD_OR_BAD Netlink_Parse_Get( struct netlink_parse * nlp ) ;
 GOOD_OR_BAD Get_and_Parse_Pipe( FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct netlink_parse * nlp ) ;

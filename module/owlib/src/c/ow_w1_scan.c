@@ -37,7 +37,7 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
 #include "ow_w1.h"
 #include "ow_connection.h"
 
-static void w1_masters(struct netlink_parse * nlp)
+void w1_master_command(struct netlink_parse * nlp)
 {
 	if ( nlp->nlm->nlmsg_pid != 0 ) {
 		LEVEL_DEBUG("Netlink packet PID not from kernel");
@@ -46,40 +46,27 @@ static void w1_masters(struct netlink_parse * nlp)
 	if (nlp->w1m) {
 		int bus_master = nlp->w1m->id.mst.id ;
 		switch (nlp->w1m->type) {
+			case W1_LIST_MASTERS:
+				w1_parse_master_list( nlp );
+				break;
 			case W1_MASTER_ADD:
 				AddW1Bus(bus_master) ;
 				LEVEL_DEBUG("Master has been added: w1_master%d.",	bus_master);
-					break;
+				break;
 			case W1_MASTER_REMOVE:
 				RemoveW1Bus(bus_master) ;
 				LEVEL_DEBUG("Master has been removed: w1_master%d.", bus_master);
-					break;
+				break;
 			case W1_SLAVE_ADD:
 			case W1_SLAVE_REMOVE:
-			// ignored since thre is no bus attribution and real use will discover the change.
-			// at some point we could make the w1 master lists static and only changed when triggered by one of these messages.
+				// ignored since there is no bus attribution and real use will discover the change.
+				// at some point we could make the w1 master lists static and only changed when triggered by one of these messages.
 				LEVEL_DEBUG("Netlink (w1) Slave announcements");
 				break ;
 			default:
 				LEVEL_DEBUG("Netlink (w1) Other command.");
 				break ;
 		}
-	}
-}
-
-void W1NLInitialScan( void )
-{
-	struct netlink_parse nlp ;
-
-	switch ( Get_and_Parse_Pipe( Inbound_Control.netlink_pipe[fd_pipe_read], &nlp ) ) {
-		case gbGOOD:
-			w1_masters( &nlp );
-			Netlink_Parse_Destroy(&nlp) ;
-			break ;
-		case gbBAD:
-		default:
-			LEVEL_CONNECT("Fatal error scanning W1 bus");
-			break ;
 	}
 }
 

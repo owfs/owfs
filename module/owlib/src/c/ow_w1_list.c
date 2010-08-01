@@ -42,7 +42,7 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
 #include "ow_w1.h"
 #include "ow_connection.h"
 
-static int w1_list_masters( void )
+int w1_list_masters( void )
 {
 	struct w1_netlink_msg w1m;
 
@@ -55,36 +55,15 @@ static int w1_list_masters( void )
 	return W1_send_msg( NULL, &w1m, NULL, NULL );
 }
 
-static void w1_parse_master_list(struct netlink_parse * nlp)
+void w1_parse_master_list(struct netlink_parse * nlp)
 {
 	int * bus_master = (int *) nlp->data ;
 	int num_masters = nlp->data_size / 4 ;
 	int i ;
-
 	
 	for ( i=0  ;i<num_masters ; ++i ) {
 		AddW1Bus( bus_master[i] ) ;
 	}
-}
-
-static void w1_masters(struct netlink_parse * nlp, void * v, const struct parsedname * pn)
-{
-	(void) pn ;
-	(void) v ;
-	switch (nlp->w1m->type) {
-		case W1_LIST_MASTERS:
-			w1_parse_master_list( nlp );
-				break;
-		default:
-			LEVEL_DEBUG("Other command (Not master list)");
-			break ;
-	}
-}
-
-enum Netlink_Read_Status W1NLList( void )
-{
-	LEVEL_DEBUG("Request w1 masters by netlink command") ;
-	return W1_Process_Response( w1_masters, w1_list_masters(), NULL, NULL ) ;
 }
 
 #endif /* OW_W1 && OW_MT */
