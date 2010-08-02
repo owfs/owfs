@@ -111,7 +111,7 @@ GOOD_OR_BAD Netlink_Parse_Get( struct netlink_parse * nlp )
 	struct nlmsghdr peek_nlm ;
 
 	// first peek at message to get length and details
-	LEVEL_DEBUG("About to peek at message");
+	LEVEL_DEBUG("Wait to peek at message");
 	int recv_len = recv(Inbound_Control.w1_file_descriptor, &peek_nlm, W1_NLM_LENGTH, MSG_PEEK );
 
 	// Set time of last read
@@ -120,7 +120,7 @@ GOOD_OR_BAD Netlink_Parse_Get( struct netlink_parse * nlp )
 	_MUTEX_UNLOCK(Inbound_Control.w1_read_mutex) ;
 
 	LEVEL_DEBUG("Pre-parse header: %u bytes len=%u type=%u seq=%u|%u pid=%u",recv_len,peek_nlm.nlmsg_len,peek_nlm.nlmsg_type,NL_BUS(peek_nlm.nlmsg_seq),NL_SEQ(peek_nlm.nlmsg_seq),peek_nlm.nlmsg_pid);
-	if (recv_len == -1) {
+	if (recv_len < 0) {
 		ERROR_DEBUG("Netlink (w1) recv header error");
 		return gbBAD ;
 	}
@@ -214,7 +214,7 @@ enum Netlink_Read_Status W1_Process_Response( void (* nrs_callback)( struct netl
 		bus = pn->selected_connection->connin.w1.id ;
 	}
 
-	while ( W1PipeSelect_timeout(file_descriptor)  == 0 ) {
+	while ( GOOD( W1PipeSelect_timeout(file_descriptor)) ) {
 		struct netlink_parse nlp ;
 		LEVEL_DEBUG("Loop waiting for netlink piped message");
 		if ( BAD( Get_and_Parse_Pipe( file_descriptor, &nlp )) ) {

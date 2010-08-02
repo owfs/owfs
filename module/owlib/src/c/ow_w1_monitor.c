@@ -16,14 +16,14 @@ $Id$
 
 #if OW_W1 && OW_MT
 
-static void W1_close(struct connection_in *in);
-static GOOD_OR_BAD w1_in_use(const struct connection_in * in_selected) ;
+static void W1_monitor_close(struct connection_in *in);
+static GOOD_OR_BAD w1_monitor_in_use(const struct connection_in * in_selected) ;
 
 /* Device-specific functions */
 GOOD_OR_BAD W1_monitor_detect(struct connection_in *in)
 {
 	in->file_descriptor = FILE_DESCRIPTOR_BAD;
-	in->iroutines.detect = W1_detect;
+	in->iroutines.detect = W1_monitor_detect;
 	in->Adapter = adapter_w1_monitor;	/* OWFS assigned value */
 	in->iroutines.reset = NULL;
 	in->iroutines.next_both = NULL;
@@ -33,18 +33,23 @@ GOOD_OR_BAD W1_monitor_detect(struct connection_in *in)
 	in->iroutines.sendback_bits = NULL;
 	in->iroutines.select = NULL;
 	in->iroutines.reconnect = NULL;
-	in->iroutines.close = W1_close;
+	in->iroutines.close = W1_monitor_close;
 	in->iroutines.flags = ADAP_FLAG_sham;
 	in->adapter_name = "W1 monitor";
 	in->busmode = bus_w1_monitor ;
 	
-	RETURN_BAD_IF_BAD( w1_in_use(in) ) ;
+	RETURN_BAD_IF_BAD( w1_monitor_in_use(in) ) ;
 	
+	if ( FILE_DESCRIPTOR_NOT_VALID(w1_bind()) ) {
+		ERROR_DEBUG("Netlink problem -- are you root?");
+		return gbBAD ;
+	}
+
 	return W1_Browse() ; // creates thread that runs forever.
 }
 
 // is there already a W! monitor in the Inbound list? You only need one.
-static GOOD_OR_BAD w1_in_use(const struct connection_in * in_selected)
+static GOOD_OR_BAD w1_monitor_in_use(const struct connection_in * in_selected)
 {
 	struct connection_in *in;
 
@@ -60,9 +65,10 @@ static GOOD_OR_BAD w1_in_use(const struct connection_in * in_selected)
 	return gbGOOD;					// not found in the current inbound list
 }
 
-static void W1_close(struct connection_in *in)
+static void W1_monitor_close(struct connection_in *in)
 {
 	(void) in;
+    Test_and_Close( &(Inbound_Control.w1_file_descriptor) );
 }
 
 #else /* OW_W1 && OW_MT */

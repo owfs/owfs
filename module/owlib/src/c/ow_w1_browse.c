@@ -26,19 +26,11 @@ GOOD_OR_BAD W1_Browse( void )
 {
 	pthread_t thread_dispatch ;
 
-	++Inbound_Control.w1_entry_mark ;
-	LEVEL_DEBUG("Calling for netlink w1 list");
-
 	// Initial setup
 	_MUTEX_INIT(Inbound_Control.w1_mutex);
 	_MUTEX_INIT(Inbound_Control.w1_read_mutex);
 	gettimeofday(&Inbound_Control.w1_last_read,NULL);
 	++Inbound_Control.w1_last_read.tv_sec ;
-
-	if ( FILE_DESCRIPTOR_NOT_VALID(w1_bind()) ) {
-		ERROR_DEBUG("Netlink problem -- are you root?");
-		return gbBAD ;
-	}
 
 	if ( pthread_create(&thread_dispatch, NULL, W1_Dispatch, NULL) != 0 ) {
 		ERROR_DEBUG("Couldn't create netlink monitoring thread");

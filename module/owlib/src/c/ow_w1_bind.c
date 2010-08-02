@@ -55,16 +55,10 @@ FILE_DESCRIPTOR_OR_ERROR w1_bind( void )
 
 	if (bind(Inbound_Control.w1_file_descriptor, (struct sockaddr *)&l_local, sizeof(struct sockaddr_nl)) == -1) {
 		ERROR_CONNECT("Netlink (w1) bind");
-		w1_unbind() ;
 		return FILE_DESCRIPTOR_BAD;
 	}
 
 	return Inbound_Control.w1_file_descriptor ;
-}
-
-void w1_unbind( void )
-{
-    Test_and_Close( &(Inbound_Control.w1_file_descriptor) );
 }
 
 #endif /* OW_W1 */

@@ -38,7 +38,7 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
 #include "ow_connection.h"
 
 /* Wait for a netlink packet */
-int W1PipeSelect_timeout( FILE_DESCRIPTOR_OR_ERROR file_descriptor )
+GOOD_OR_BAD W1PipeSelect_timeout( FILE_DESCRIPTOR_OR_ERROR file_descriptor )
 {
 	do {
 		int select_value ;
@@ -51,8 +51,8 @@ int W1PipeSelect_timeout( FILE_DESCRIPTOR_OR_ERROR file_descriptor )
 		
 		if ( select_value == -1 ) {
 			if (errno != EINTR) {
-				ERROR_CONNECT("Netlink (w1) Select returned -1");
-				return -1 ;
+				ERROR_CONNECT("Netlink (w1) Select error");
+				return gbBAD ;
 			}
 		} else if ( select_value == 0 ) {
 			struct timeval now ;
@@ -67,9 +67,9 @@ int W1PipeSelect_timeout( FILE_DESCRIPTOR_OR_ERROR file_descriptor )
 				continue ;
 			}
 			LEVEL_DEBUG("Select returned zero (timeout)");
-			return -1;
+			return gbBAD;
 		} else {
-			return 0 ;
+			return gbGOOD ;
 		}
 	} while (1) ;
 }

@@ -51,11 +51,9 @@ void w1_master_command(struct netlink_parse * nlp)
 				break;
 			case W1_MASTER_ADD:
 				AddW1Bus(bus_master) ;
-				LEVEL_DEBUG("Master has been added: w1_master%d.",	bus_master);
 				break;
 			case W1_MASTER_REMOVE:
 				RemoveW1Bus(bus_master) ;
-				LEVEL_DEBUG("Master has been removed: w1_master%d.", bus_master);
 				break;
 			case W1_SLAVE_ADD:
 			case W1_SLAVE_REMOVE:

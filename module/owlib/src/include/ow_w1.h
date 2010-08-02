@@ -40,12 +40,11 @@ struct connection_in ;
 struct parsedname ;
 
 FILE_DESCRIPTOR_OR_ERROR w1_bind( void ) ;
-void w1_unbind( void ) ;
 
 void RemoveW1Bus( int bus_master ) ;
 void AddW1Bus( int bus_master ) ;
 int W1_send_msg( struct connection_in * in, struct w1_netlink_msg *msg, struct w1_netlink_cmd *cmd, const unsigned char * data) ;
-int W1PipeSelect_timeout( FILE_DESCRIPTOR_OR_ERROR file_descriptor ) ;
+GOOD_OR_BAD W1PipeSelect_timeout( FILE_DESCRIPTOR_OR_ERROR file_descriptor ) ;
 void * W1_Dispatch( void * v ) ;
 
 int w1_list_masters( void ) ;
