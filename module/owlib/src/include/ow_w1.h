@@ -54,8 +54,6 @@ SEQ_OR_ERROR w1_list_masters( void ) ;
 #define NL_SEQ( seq )  ((uint32_t)((seq) & 0xFFFF))
 #define NL_BUS( seq )  ((uint32_t)(((seq) >> 16 ) & 0xFFFF))
 
-int Announce_Control_init( int allocated ) ;
-
 struct netlink_parse {
 	struct nlmsghdr *	nlm ;
 	struct cn_msg * 	cn ;
