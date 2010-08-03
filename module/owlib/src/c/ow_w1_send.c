@@ -40,7 +40,8 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
 /* If cmd is specified, msg length will be adjusted */
 /* Build a netlink message, rather tediously, from all the components
  * making the internal flags, length fields and headers be correct */
-int W1_send_msg( struct connection_in * in, struct w1_netlink_msg *msg, struct w1_netlink_cmd *cmd, const unsigned char * data)
+
+SEQ_OR_ERROR W1_send_msg( struct connection_in * in, struct w1_netlink_msg *msg, struct w1_netlink_cmd *cmd, const unsigned char * data)
 {
 	// outer structure -- nlm = netlink messsage
 	struct nlmsghdr *nlm;
@@ -52,12 +53,12 @@ int W1_send_msg( struct connection_in * in, struct w1_netlink_msg *msg, struct w
 	struct w1_netlink_cmd *w1c;
 	unsigned char * pdata ;
 	int length ;
-	unsigned int seq ;
+	SEQ_OR_ERROR seq ;
 	int bus ;
 	int size, err;
 
 	// NULL connection for initial LIST_MASTERS, not assigned to a specific bus
-	if ( in ) {
+	if ( in != NULL ) {
 		seq = ++in->connin.w1.seq ;
 		bus = in->connin.w1.id;
 	} else {
@@ -76,8 +77,8 @@ int W1_send_msg( struct connection_in * in, struct w1_netlink_msg *msg, struct w
 	}
 
 	nlm = owmalloc(size);
-	if (!nlm) {
-		return -ENOMEM;
+	if (nlm==NULL) {
+		return SEQ_BAD;
 	}
 
 	// set the nlm fields
@@ -120,7 +121,7 @@ int W1_send_msg( struct connection_in * in, struct w1_netlink_msg *msg, struct w
 	owfree(nlm);
 	if (err == -1) {
 		ERROR_CONNECT("Failed to send w1 netlink message");
-		return -1 ;
+		return SEQ_BAD ;
 	}
 	return seq;
 }

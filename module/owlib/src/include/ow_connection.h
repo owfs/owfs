@@ -89,6 +89,9 @@ See: http://www.iana.org/assignments/port-numbers
 /* address for i2c or usb */
 #include "ow_parse_address.h"
 
+/* w1 sequence defines */
+#include "ow_w1_seq.h"
+
 #if OW_USB						/* conditional inclusion of USB */
 /* Special libusb 0.1x search */
 #include "ow_usb_cycle.h"
@@ -254,7 +257,7 @@ struct connin_w1 {
 #if OW_W1
 	// bus master name kept in name
 	// netlink fd kept in file_descriptor
-	unsigned int seq ;
+	SEQ_OR_ERROR seq ;
 	int id ; // equivalent to the number part of w1_bus_master23
 	FILE_DESCRIPTOR_OR_ERROR netlink_pipe[2] ;
 #endif /* OW_W1 */
@@ -461,7 +464,7 @@ extern struct inbound_control {
 	int next_tester ; // count tester buses
 	int next_mock ; // count mock buses
 #if OW_W1
-	unsigned int w1_seq ; // seq number to netlink
+	SEQ_OR_ERROR w1_seq ; // seq number to netlink
 	FILE_DESCRIPTOR_OR_ERROR w1_file_descriptor ; // w1 kernel module for netlink communication
 	int w1_pid ;
 	struct timeval w1_last_read ;

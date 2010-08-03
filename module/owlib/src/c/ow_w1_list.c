@@ -42,7 +42,7 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
 #include "ow_w1.h"
 #include "ow_connection.h"
 
-int w1_list_masters( void )
+SEQ_OR_ERROR w1_list_masters( void )
 {
 	struct w1_netlink_msg w1m;
 

@@ -22,6 +22,7 @@ Much thanks to Evgeniy Polyakov
 // for some local types
 #include "ow_fd.h"
 #include "ow_localreturns.h"
+#include "ow_w1_seq.h"
 
 #define W1_NLM_LENGTH	16
 #define W1_CN_LENGTH	20
@@ -43,11 +44,11 @@ FILE_DESCRIPTOR_OR_ERROR w1_bind( void ) ;
 
 void RemoveW1Bus( int bus_master ) ;
 void AddW1Bus( int bus_master ) ;
-int W1_send_msg( struct connection_in * in, struct w1_netlink_msg *msg, struct w1_netlink_cmd *cmd, const unsigned char * data) ;
+SEQ_OR_ERROR W1_send_msg( struct connection_in * in, struct w1_netlink_msg *msg, struct w1_netlink_cmd *cmd, const unsigned char * data) ;
 GOOD_OR_BAD W1PipeSelect_timeout( FILE_DESCRIPTOR_OR_ERROR file_descriptor ) ;
 void * W1_Dispatch( void * v ) ;
 
-int w1_list_masters( void ) ;
+SEQ_OR_ERROR w1_list_masters( void ) ;
 
 #define MAKE_NL_SEQ( bus, seq )  ((uint32_t)(( ((bus) & 0xFFFF) << 16 ) | ((seq) & 0xFFFF)))
 #define NL_SEQ( seq )  ((uint32_t)((seq) & 0xFFFF))
@@ -70,7 +71,7 @@ void Netlink_Parse_Destroy( struct netlink_parse * nlp ) ;
 GOOD_OR_BAD Netlink_Parse_Get( struct netlink_parse * nlp ) ;
 GOOD_OR_BAD Get_and_Parse_Pipe( FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct netlink_parse * nlp ) ;
 void Netlink_Print( struct nlmsghdr * nlm, struct cn_msg * cn, struct w1_netlink_msg * w1m, struct w1_netlink_cmd * w1c, unsigned char * data, int length ) ;
-enum Netlink_Read_Status W1_Process_Response( void (* nrs_callback)( struct netlink_parse * nlp, void  *v, const struct parsedname * pn), int seq, void * v, const struct parsedname * pn ) ;
+enum Netlink_Read_Status W1_Process_Response( void (* nrs_callback)( struct netlink_parse * nlp, void  *v, const struct parsedname * pn), SEQ_OR_ERROR seq, void * v, const struct parsedname * pn ) ;
 
 #endif 	/* OW_W1_H */
 

@@ -195,12 +195,12 @@ static void Netlink_Parse_Show( struct netlink_parse * nlp )
 	Netlink_Print( nlp->nlm, nlp->cn, nlp->w1m, nlp->w1c, nlp->data, nlp->data_size ) ;
 }
 
-enum Netlink_Read_Status W1_Process_Response( void (* nrs_callback)( struct netlink_parse * nlp, void * v, const struct parsedname * pn), int seq, void * v, const struct parsedname * pn )
+enum Netlink_Read_Status W1_Process_Response( void (* nrs_callback)( struct netlink_parse * nlp, void * v, const struct parsedname * pn), SEQ_OR_ERROR seq, void * v, const struct parsedname * pn )
 {
 	FILE_DESCRIPTOR_OR_ERROR file_descriptor ;
 	int bus ;
 
-	if ( seq < 0 ) {
+	if ( seq == SEQ_BAD ) {
 		return nrs_bad_send ;
 	}
 

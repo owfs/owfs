@@ -36,6 +36,11 @@ static GOOD_OR_BAD W1_select_and_sendback(const BYTE * data, BYTE * resp, const 
 static void W1_setroutines(struct connection_in *in);
 static void W1_close(struct connection_in *in);
 
+static SEQ_OR_ERROR w1_send_touch( const BYTE * data, size_t size, const struct parsedname *pn );
+static SEQ_OR_ERROR w1_send_selecttouch( const BYTE * data, size_t size, const struct parsedname *pn );
+static SEQ_OR_ERROR w1_send_search( BYTE search, const struct parsedname *pn );
+static SEQ_OR_ERROR w1_send_reset( const struct parsedname *pn );
+
 static void W1_setroutines(struct connection_in *in)
 {
 	in->iroutines.detect = W1_detect;
@@ -80,11 +85,12 @@ GOOD_OR_BAD W1_detect(struct connection_in *in)
 	in->Adapter = adapter_w1;
 	in->adapter_name = "w1";
 	in->busmode = bus_w1;
+	in->connin.w1.seq = SEQ_INIT;
 	return gbGOOD;
 }
 
 /* Send blindly, no response expected */
-static int w1_send_reset( const struct parsedname *pn )
+static SEQ_OR_ERROR w1_send_reset( const struct parsedname *pn )
 {
 	struct w1_netlink_msg w1m;
 	struct w1_netlink_cmd w1c;
@@ -106,7 +112,7 @@ static RESET_TYPE W1_reset(const struct parsedname *pn)
 	return W1_Process_Response( NULL, w1_send_reset(pn), NULL, pn ) == nrs_complete ? BUS_RESET_OK : BUS_RESET_ERROR ;
 }
 
-static int w1_send_search( BYTE search, const struct parsedname *pn )
+static SEQ_OR_ERROR w1_send_search( BYTE search, const struct parsedname *pn )
 {
 	struct w1_netlink_msg w1m;
 	struct w1_netlink_cmd w1c;
@@ -160,7 +166,7 @@ static enum search_status W1_next_both(struct device_search *ds, const struct pa
 	}
 }
 
-static int w1_send_selecttouch( const BYTE * data, size_t size, const struct parsedname *pn )
+static SEQ_OR_ERROR w1_send_selecttouch( const BYTE * data, size_t size, const struct parsedname *pn )
 {
 	struct w1_netlink_msg w1m;
 	struct w1_netlink_cmd w1c;
@@ -201,7 +207,7 @@ static GOOD_OR_BAD W1_select_and_sendback(const BYTE * data, BYTE * resp, const 
 	return W1_Process_Response( touch, w1_send_selecttouch(data,size,pn), &ts, pn)==nrs_complete ? gbGOOD : gbBAD ;
 }
 
-static int w1_send_touch( const BYTE * data, size_t size, const struct parsedname *pn )
+static SEQ_OR_ERROR w1_send_touch( const BYTE * data, size_t size, const struct parsedname *pn )
 {
 	struct w1_netlink_msg w1m;
 	struct w1_netlink_cmd w1c;

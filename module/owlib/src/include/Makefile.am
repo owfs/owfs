@@ -95,6 +95,7 @@ noinst_HEADERS =          \
         ow_usb_msg.h      \
         ow_visibility.h   \
         ow_w1.h           \
+        ow_w1_seq.h       \
         rwlock.h          \
         netlink.h         \
         w1_netlink.h      \
