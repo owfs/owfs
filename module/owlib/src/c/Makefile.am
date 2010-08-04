@@ -37,6 +37,7 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_2760.c          \
                ow_2804.c          \
                ow_2890.c          \
+               ow_add_inflight.c  \
                ow_alias.c         \
                ow_alloc.c         \
                ow_api.c           \
