@@ -32,7 +32,10 @@ static void * AddBus( void * v )
 	return NULL ;
 }
 
-/* Need to run the add/remove in a separate thread so that netlink messages can still be parsed and CONNIN_RLOCK won't deadlock */
+/* Need to run the add/remove in a separate thread so that 1-wire requests can still be parsed and CONNIN_RLOCK won't deadlock */
+/* This allows adding new Bus Masters while program is running
+ * The connin is usually only read-locked for normal operation
+ * write lock is done in a separate thread when no requests are being processed */
 void Add_InFlight( struct connection_in * new_in )
 {
 	pthread_t thread;
