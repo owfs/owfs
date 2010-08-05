@@ -343,12 +343,10 @@ class Sensor( object ):
         and thr PIO.0 might be 1.
         """
         #print 'Sensor.__getattr__', name
-        if name in self._attrs:
-            attr = owfs_get( self._attrs[ name ] )
-        else:
+        try:
+			 return owfs_get(object.__getattribute__(self, '_attrs')[name])
+		except KeyError:
             raise AttributeError, name
-
-        return attr
 
 
     def __setattr__( self, name, value ):
