@@ -19,7 +19,7 @@ $Id$
 /* This allows removing Bus Masters while program is running
  * The connin is usually only read-locked for normal operation
  * write lock is done in a separate thread when no requests are being processed */
-void Del_InFlight( struct connection_in * new_in )
+void Del_InFlight( struct connection_in * old_in )
 {
 	LEVEL_DEBUG("Request master be removed: %s", old_in->name);
 

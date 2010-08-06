@@ -30,7 +30,6 @@ void ZeroAdd(const char * name, const char * type, const char * domain, const ch
 		return ;
 	}
 
-	CONNIN_WLOCK ;
 	in = FindIn( name, type, domain ) ;
 	if ( in != NULL ) {
 		if ( GOOD( string_null_or_match( in->connin.tcp.host, host)) && GOOD( string_null_or_match(in->connin.tcp.service,service)) ) {
@@ -39,41 +38,38 @@ void ZeroAdd(const char * name, const char * type, const char * domain, const ch
 			return ;
 		} else {
 			LEVEL_DEBUG( "The new connection replaces a previous entry" ) ;
-			RemoveIn(in) ;
+			Del_InFlight(in) ;
 		}
 	}
 
 	CreateIn( name, type, domain, host, service ) ;
-	CONNIN_WUNLOCK ;
 }
 
 void ZeroDel(const char * name, const char * type, const char * domain )
 {
 	struct connection_in * in ;
 
-	CONNIN_WLOCK ;
 	in = FindIn( name, type, domain ) ;
 	if ( in != NULL ) {
 		LEVEL_DEBUG( "Removing %s (bus.%d)",name,in->index) ;
-		RemoveIn( in ) ;
+		Del_InFlight( in ) ;
 	} else {
 		LEVEL_DEBUG("Couldn't find matching bus to remove");
 	}
-	CONNIN_WUNLOCK ;
 }
 
 static void CreateIn(const char * name, const char * type, const char * domain, const char * host, const char * service )
 {
 	char addr_name[128] ;
-	struct connection_in * in ;
+	struct connection_in * in = AllocIn(NULL);
 
-	in = NewIn(NULL) ;
 	if ( in == NULL ) {
+		LEVEL_DEBUG( "Cannot allocate position for a new Bus Master %s (%s:%s) -- ignored",name,host,service) ;
 		return ;
 	}
 
 	UCLIBCLOCK;
-	snprintf(addr_name,128,"%s:%s",host,service) ;
+	snprintf(addr_name,127,"%s:%s",host,service) ;
 	UCLIBCUNLOCK;
 	in->name = owstrdup(addr_name) ;
 	in->connin.tcp.name   = owstrdup( name  ) ;
@@ -81,11 +77,12 @@ static void CreateIn(const char * name, const char * type, const char * domain, 
 	in->connin.tcp.domain = owstrdup( domain) ;
 
 	if ( BAD( Zero_detect(in)) ) {
-		LEVEL_DEBUG("Created a new bus.%d",in->index) ;
+		LEVEL_DEBUG("Failed to create new %s",in->name) ;
 		RemoveIn(in) ;
 	} else {
 		LEVEL_DEBUG("Created a new bus.%d",in->index) ;
 	}
+	Add_InFlight(in) ;
 }
 
 // Finds matching connection
@@ -94,6 +91,7 @@ static void CreateIn(const char * name, const char * type, const char * domain, 
 static struct connection_in *FindIn(const char * name, const char * type, const char * domain)
 {
 	struct connection_in *now ;
+	CONNIN_RLOCK ;
 	for ( now = Inbound_Control.head ; now != NULL ; now = now->next ) {
 		if ( now->busmode != bus_zero ) {
 			continue ;
@@ -107,8 +105,10 @@ static struct connection_in *FindIn(const char * name, const char * type, const 
 		if ( BAD( string_null_or_match( domain , now->connin.tcp.domain )) ) {
 			continue ;
 		}
+		CONNIN_RUNLOCK ;
 		return now ;
 	}
+	CONNIN_RUNLOCK ;
 	return NULL;
 }
 
