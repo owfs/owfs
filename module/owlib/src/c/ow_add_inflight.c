@@ -15,45 +15,24 @@ $Id$
 
 #if OW_MT
 
-static void * AddBus( void * v );
-
-/* (Dynamically) Add a new bus to the list of connections */
-static void * AddBus( void * v )
-{
-	struct connection_in * new_in = v ;
-
-	pthread_detach(pthread_self());
-
-	CONNIN_WLOCK ;
-
-	LinkIn(new_in);
-
-	CONNIN_WUNLOCK ;
-	return NULL ;
-}
-
-/* Need to run the add/remove in a separate thread so that 1-wire requests can still be parsed and CONNIN_RLOCK won't deadlock */
+/* Can only be called by a separate (monitoring) thread  so the write-lock won't deadlock */
 /* This allows adding new Bus Masters while program is running
  * The connin is usually only read-locked for normal operation
  * write lock is done in a separate thread when no requests are being processed */
 void Add_InFlight( struct connection_in * new_in )
 {
-	pthread_t thread;
-	int err ;
-	
 	LEVEL_DEBUG("Request master be added: %s", new_in->name);
 
-	err = pthread_create(&thread, NULL, AddBus, new_in );
-	if (err) {
-		LEVEL_CONNECT("Add thread error %d.", err);
-		LinkIn(new_in);
-	}
+	CONNIN_WLOCK ;
+	LinkIn(new_in);
+	CONNIN_WUNLOCK ;
 }
 
 #else /* OW_MT */
 
 void Add_InFlight( struct connection_in * new_in )
 {
+	LEVEL_DEBUG("Request master be added: %s", new_in->name);
 	LinkIn(new_in);
 }
 
