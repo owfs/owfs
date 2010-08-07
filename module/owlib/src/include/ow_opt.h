@@ -56,7 +56,8 @@ extern const struct option owopts_long[];
 GOOD_OR_BAD owopt(const int c, const char *arg);
 GOOD_OR_BAD owopt_packed(const char *params);
 
-enum e_long_option { e_error_print = 257, e_error_level,
+// All these command line arguments are after the printable ascii characters
+enum e_long_option { e_error_print = 257, e_error_level, e_debug,
 	e_cache_size,
 	e_fuse_opt, e_fuse_open_opt,
 	e_max_clients,

@@ -98,6 +98,7 @@ const struct option owopts_long[] = {
 	{"error_level", required_argument, NULL, e_error_level},
 	{"error-level", required_argument, NULL, e_error_level},
 	{"errorlevel", required_argument, NULL, e_error_level},
+	{"debug", no_argument, NULL, e_debug},
 	{"concurrent_connections", required_argument, NULL, e_concurrent_connections},
 	{"concurrent-connections", required_argument, NULL, e_concurrent_connections},
 	{"max-connections", required_argument, NULL, e_concurrent_connections},
@@ -655,6 +656,11 @@ GOOD_OR_BAD owopt(const int option_char, const char *arg)
 		RETURN_BAD_IF_BAD(OW_parsevalue_I(&arg_to_integer, arg)) ;
 		Globals.error_level = (int) arg_to_integer;
 		break;
+	case e_debug:
+		// shortcut for --foreground --error_level=9
+		Globals.want_background = 0 ; //foreground
+		Globals.error_level = 9 ;
+		break ;
 	case e_concurrent_connections:
 		RETURN_BAD_IF_BAD(OW_parsevalue_I(&arg_to_integer, arg)) ;
 		Globals.concurrent_connections = (int) arg_to_integer;

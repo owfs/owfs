@@ -77,6 +77,8 @@ void ow_help_job(void)
 	"  --no_dirall      DIRALL fails, drops back to older DIR (individual entries)\n"
 	"  --no_get         GET fails, drops back to DIRALL and READ\n"
 	"  --no_persistence persistent connections refused, drops back to non-persistent\n"
+	"\n"
+	"  --debug          Shortcut for --error_level=9 --foreground\n"
 	);
 }
 
