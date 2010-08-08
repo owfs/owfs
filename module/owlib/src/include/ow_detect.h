@@ -74,7 +74,7 @@ GOOD_OR_BAD FS_FindHA7(void);
 
 #if OW_W1
 GOOD_OR_BAD W1_detect(struct connection_in * in) ;
-GOOD_OR_BAD W1_Browse(struct connection_in *in) ;
+GOOD_OR_BAD W1_Browse( void ) ;
 #endif /* OW_W1 */
 
 #if OW_I2C

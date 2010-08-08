@@ -61,7 +61,6 @@ struct netlink_parse {
 	struct w1_netlink_cmd *	w1c ;
 	unsigned char *		data ;
 	int			data_size ;
-	struct connection_in * in_monitor ;
 } ;
 
 //void * w1_master_command(struct netlink_parse * nlp) ;

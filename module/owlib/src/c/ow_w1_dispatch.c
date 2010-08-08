@@ -113,13 +113,14 @@ static void Dispatch_Packet( struct netlink_parse * nlp)
 // Infinite loop waiting for netlink packets, to be sent to internal pipes as appropriate
 void * W1_Dispatch( void * v )
 {
+	(void) v ;
+
 	pthread_detach(pthread_self());
 
 	w1_list_masters() ; // ask for master list
 
 	while ( FILE_DESCRIPTOR_VALID( Inbound_Control.w1_file_descriptor ) ) {
 		struct netlink_parse nlp ;
-		nlp.in_monitor = v ;
 
 		LEVEL_DEBUG("Dispatch loop");
 		if ( Netlink_Parse_Get( &nlp ) == 0 ) {
