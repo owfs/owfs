@@ -45,7 +45,7 @@ GOOD_OR_BAD W1_monitor_detect(struct connection_in *in)
 		return gbBAD ;
 	}
 
-	return W1_Browse() ; // creates thread that runs forever.
+	return W1_Browse(in) ; // creates thread that runs forever.
 }
 
 // is there already a W! monitor in the Inbound list? You only need one.

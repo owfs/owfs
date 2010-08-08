@@ -80,8 +80,19 @@ static void Dispatch_Packet( struct netlink_parse * nlp)
 	struct connection_in * in ;
 
 	if ( bus == 0 ) {
-		LEVEL_DEBUG("Sending this packet to root bus");
-		w1_master_command(nlp) ;
+		/* Need to run the add/remove in a separate thread so that netlink messages can still be parsed and CONNIN_RLOCK won't deadlock */
+		pthread_t thread ;
+		// make a copy for the new thread (which will have to destroy)
+		struct netlink_parse * nlp_copy = owmalloc( sizeof(struct netlink_parse) ) ;
+		if ( nlp_copy == NULL ) {
+			return ;
+		}
+		memcpy( nlp_copy, nlp, sizeof(struct netlink_parse) ) ;
+		if ( pthread_create( &thread, NULL, w1_master_command, (void *) nlp_copy ) == 0 ) {
+			LEVEL_DEBUG("Sending this packet to root bus");
+		} else {
+			LEVEL_DEBUG("Thread creation problem");
+		}
 		return ;
 	}
 
@@ -102,14 +113,14 @@ static void Dispatch_Packet( struct netlink_parse * nlp)
 // Infinite loop waiting for netlink packets, to be sent to internal pipes as appropriate
 void * W1_Dispatch( void * v )
 {
-	(void) v;
-
 	pthread_detach(pthread_self());
 
 	w1_list_masters() ; // ask for master list
 
 	while ( FILE_DESCRIPTOR_VALID( Inbound_Control.w1_file_descriptor ) ) {
 		struct netlink_parse nlp ;
+		nlp.in_monitor = v ;
+
 		LEVEL_DEBUG("Dispatch loop");
 		if ( Netlink_Parse_Get( &nlp ) == 0 ) {
 			Dispatch_Packet( &nlp ) ;

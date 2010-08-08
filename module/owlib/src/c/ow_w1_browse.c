@@ -22,7 +22,7 @@ $Id$
 
 #include "ow_w1.h"
 
-GOOD_OR_BAD W1_Browse( void )
+GOOD_OR_BAD W1_Browse(struct connection_in *in_monitor)
 {
 	pthread_t thread_dispatch ;
 
@@ -32,7 +32,7 @@ GOOD_OR_BAD W1_Browse( void )
 	gettimeofday(&Inbound_Control.w1_last_read,NULL);
 	++Inbound_Control.w1_last_read.tv_sec ;
 
-	if ( pthread_create(&thread_dispatch, NULL, W1_Dispatch, NULL) != 0 ) {
+	if ( pthread_create(&thread_dispatch, NULL, W1_Dispatch, (void *) in_monitor) != 0 ) {
 		ERROR_DEBUG("Couldn't create netlink monitoring thread");
 		return gbBAD ;
 	}

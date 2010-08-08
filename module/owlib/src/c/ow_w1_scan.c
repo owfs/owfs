@@ -37,13 +37,15 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
 #include "ow_w1.h"
 #include "ow_connection.h"
 
-void w1_master_command(struct netlink_parse * nlp)
+void * w1_master_command(void * v)
 {
+	struct netlink_parse * nlp = v ;
+	
+	pthread_detach(pthread_self());
+
 	if ( nlp->nlm->nlmsg_pid != 0 ) {
 		LEVEL_DEBUG("Netlink packet PID not from kernel");
-		return ;
-	}
-	if (nlp->w1m) {
+	} else if (nlp->w1m) {
 		int bus_master = nlp->w1m->id.mst.id ;
 		switch (nlp->w1m->type) {
 			case W1_LIST_MASTERS:
@@ -66,6 +68,8 @@ void w1_master_command(struct netlink_parse * nlp)
 				break ;
 		}
 	}
+	owfree(nlp) ;
+	return NULL ;
 }
 
 #endif /* OW_W1 && OW_MT */
