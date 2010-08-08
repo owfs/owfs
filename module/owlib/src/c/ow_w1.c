@@ -70,10 +70,10 @@ GOOD_OR_BAD W1_detect(struct connection_in *in)
 
 	/* Set up low-level routines */
 	W1_setroutines(in);
-	in->connin.w1.netlink_pipe[fd_pipe_read] = FILE_DESCRIPTOR_BAD ;
-	in->connin.w1.netlink_pipe[fd_pipe_write] = FILE_DESCRIPTOR_BAD ;
+	in->master.w1.netlink_pipe[fd_pipe_read] = FILE_DESCRIPTOR_BAD ;
+	in->master.w1.netlink_pipe[fd_pipe_write] = FILE_DESCRIPTOR_BAD ;
 
-	if ( pipe( in->connin.w1.netlink_pipe ) != 0 ) {
+	if ( pipe( in->master.w1.netlink_pipe ) != 0 ) {
 		ERROR_CONNECT("W1 pipe creation error");
 		return gbBAD ;
 	}
@@ -85,7 +85,7 @@ GOOD_OR_BAD W1_detect(struct connection_in *in)
 	in->Adapter = adapter_w1;
 	in->adapter_name = "w1";
 	in->busmode = bus_w1;
-	in->connin.w1.seq = SEQ_INIT;
+	in->master.w1.seq = SEQ_INIT;
 	return gbGOOD;
 }
 
@@ -97,7 +97,7 @@ static SEQ_OR_ERROR w1_send_reset( const struct parsedname *pn )
 
 	memset(&w1m, 0, W1_W1M_LENGTH);
 	w1m.type = W1_MASTER_CMD;
-	w1m.id.mst.id = pn->selected_connection->connin.w1.id ;
+	w1m.id.mst.id = pn->selected_connection->master.w1.id ;
 
 	memset(&w1c, 0, W1_W1C_LENGTH);
 	w1c.cmd = W1_CMD_RESET ;
@@ -119,7 +119,7 @@ static SEQ_OR_ERROR w1_send_search( BYTE search, const struct parsedname *pn )
 
 	memset(&w1m, 0, W1_W1M_LENGTH);
 	w1m.type = W1_MASTER_CMD;
-	w1m.id.mst.id = pn->selected_connection->connin.w1.id ;
+	w1m.id.mst.id = pn->selected_connection->master.w1.id ;
 
 	memset(&w1c, 0, W1_W1C_LENGTH);
 	w1c.cmd = (search==_1W_CONDITIONAL_SEARCH_ROM) ? W1_CMD_ALARM_SEARCH : W1_CMD_SEARCH ;
@@ -214,7 +214,7 @@ static SEQ_OR_ERROR w1_send_touch( const BYTE * data, size_t size, const struct 
 
 	memset(&w1m, 0, W1_W1M_LENGTH);
 	w1m.type = W1_MASTER_CMD;
-	w1m.id.mst.id = pn->selected_connection->connin.w1.id ;
+	w1m.id.mst.id = pn->selected_connection->master.w1.id ;
 
 	memset(&w1c, 0, W1_W1C_LENGTH);
 	w1c.cmd = W1_CMD_TOUCH ;
@@ -233,7 +233,7 @@ static GOOD_OR_BAD W1_sendback_data(const BYTE * data, BYTE * resp, const size_t
 
 static void W1_close(struct connection_in *in)
 {
-	Test_and_Close_Pipe( in->connin.w1.netlink_pipe );
+	Test_and_Close_Pipe( in->master.w1.netlink_pipe );
 }
 
 #else							/* OW_W1  && OW_MT */

@@ -178,7 +178,7 @@ GOOD_OR_BAD DS9490_ID_this_master(struct connection_in *in)
 	// Use 0x00 if no devices (homegrown adapters?)
 	if ( DirblobElements( &db) == 0 ) {
 		DirblobClear( &db ) ;
-		memset( in->connin.usb.ds1420_address, 0, SERIAL_NUMBER_SIZE ) ;
+		memset( in->master.usb.ds1420_address, 0, SERIAL_NUMBER_SIZE ) ;
 		LEVEL_DEFAULT("Set DS9490 %s unique id 0x00 (no devices at all)", SAFESTRING(in->name)) ;
 		return gbGOOD ;
 	}
@@ -187,8 +187,8 @@ GOOD_OR_BAD DS9490_ID_this_master(struct connection_in *in)
 	device_number = 0 ;
 	while ( DirblobGet( device_number, sn, &db ) == 0 ) {
 		if (sn[0] == 0x81) {	// 0x81 family code
-			memcpy(in->connin.usb.ds1420_address, sn, SERIAL_NUMBER_SIZE);
-			LEVEL_DEFAULT("Set DS9490 %s unique id to " SNformat, SAFESTRING(in->name), SNvar(in->connin.usb.ds1420_address));
+			memcpy(in->master.usb.ds1420_address, sn, SERIAL_NUMBER_SIZE);
+			LEVEL_DEFAULT("Set DS9490 %s unique id to " SNformat, SAFESTRING(in->name), SNvar(in->master.usb.ds1420_address));
 			DirblobClear( &db ) ;
 			return gbGOOD ;
 		}
@@ -199,8 +199,8 @@ GOOD_OR_BAD DS9490_ID_this_master(struct connection_in *in)
 	device_number = 0 ;
 	while ( DirblobGet( device_number, sn, &db ) == 0 ) {
 		if (sn[0] == 0x01) {	// 0x01 family code
-			memcpy(in->connin.usb.ds1420_address, sn, SERIAL_NUMBER_SIZE);
-			LEVEL_DEFAULT("Set DS9490 %s unique id to " SNformat, SAFESTRING(in->name), SNvar(in->connin.usb.ds1420_address));
+			memcpy(in->master.usb.ds1420_address, sn, SERIAL_NUMBER_SIZE);
+			LEVEL_DEFAULT("Set DS9490 %s unique id to " SNformat, SAFESTRING(in->name), SNvar(in->master.usb.ds1420_address));
 			DirblobClear( &db ) ;
 			return gbGOOD ;
 		}
@@ -209,8 +209,8 @@ GOOD_OR_BAD DS9490_ID_this_master(struct connection_in *in)
 
 	// Take the first device, whatever it is
 	DirblobGet( 0, sn, &db ) ;
-	memcpy(in->connin.usb.ds1420_address, sn, SERIAL_NUMBER_SIZE);
-	LEVEL_DEFAULT("Set DS9490 %s unique id to " SNformat, SAFESTRING(in->name), SNvar(in->connin.usb.ds1420_address));
+	memcpy(in->master.usb.ds1420_address, sn, SERIAL_NUMBER_SIZE);
+	LEVEL_DEFAULT("Set DS9490 %s unique id to " SNformat, SAFESTRING(in->name), SNvar(in->master.usb.ds1420_address));
 	DirblobClear( &db ) ;
 	return gbGOOD;
 }
@@ -223,10 +223,10 @@ static GOOD_OR_BAD usbdevice_in_use(const struct usb_list *ul)
 		if ( in->busmode != bus_usb ) {
 			continue ;
 		}
-		if ( in->connin.usb.usb_bus_number != ul->usb_bus_number ) {
+		if ( in->master.usb.usb_bus_number != ul->usb_bus_number ) {
 			continue ;
 		}
-		if ( in->connin.usb.usb_dev_number != ul->usb_dev_number ) {
+		if ( in->master.usb.usb_dev_number != ul->usb_dev_number ) {
 			continue ;
 		}
 		return gbBAD;			// It seems to be in use already

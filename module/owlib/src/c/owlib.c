@@ -189,7 +189,7 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct connection_in * in )
 
 	case bus_usb:
 #if OW_USB
-		/* in->connin.usb.ds1420_address should be set to identify the
+		/* in->master.usb.ds1420_address should be set to identify the
 		 * adapter just in case it's disconnected. It's done in the
 		 * DS9490_next_both() if not set. */
 		if ( BAD( DS9490_detect(in) )) {

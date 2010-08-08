@@ -158,7 +158,7 @@ enum bus_flex { bus_no_flex, bus_yes_flex };
 
 enum ds2480b_mode { ds2480b_data_mode, ds2480b_command_mode, } ;
 
-struct connin_tcp {
+struct master_tcp {
 	char *host;
 	char *service;
 	struct addrinfo *ai;
@@ -169,19 +169,19 @@ struct connin_tcp {
 	int no_dirall;				// flag that server doesn't support DIRALL
 };
 
-struct connin_serial {
-	struct connin_tcp tcp;      // mirror connin.server
+struct master_serial {
+	struct master_tcp tcp;      // mirror master.server
 	enum ds2480b_mode mode ;
 	int reverse_polarity ;
 };
 
-struct connin_fake {
+struct master_fake {
 	int index;
 	_FLOAT templow;
 	_FLOAT temphigh;
 };
 
-struct connin_usb {
+struct master_usb {
 #if OW_USB
 	struct usb_device *dev;
 	struct usb_dev_handle *usb;
@@ -208,7 +208,7 @@ struct connin_usb {
 #define CHANGED_USB_LOW    0x004
 #define CHANGED_USB_OFFSET 0x008
 
-struct connin_i2c {
+struct master_i2c {
 	int channels;
 	int index;
 	int i2c_address;
@@ -224,26 +224,26 @@ struct connin_i2c {
 	struct connection_in *next;
 };
 
-struct connin_ha7 {
-	struct connin_tcp tcp;		// mirror connin.server
+struct master_ha7 {
+	struct master_tcp tcp;		// mirror master.server
 	ASCII lock[10];
 	int locked;
 	int found;
 };
 
-struct connin_etherweather {
-	struct connin_tcp tcp;
+struct master_etherweather {
+	struct master_tcp tcp;
 };
 
-struct connin_link {
-	struct connin_tcp tcp;      // mirror connin.server
+struct master_link {
+	struct master_tcp tcp;      // mirror master.server
 };
 
-struct connin_ha7e {
+struct master_ha7e {
 	unsigned char sn[SERIAL_NUMBER_SIZE] ;       /* last address */
 };
 
-struct connin_ha5 {
+struct master_ha5 {
 	unsigned char sn[SERIAL_NUMBER_SIZE] ;       /* last address */
 	int checksum ;              /* flag to use checksum byte in communication */
 	char channel ;
@@ -253,7 +253,7 @@ struct connin_ha5 {
 	struct connection_in *head;
 };
 
-struct connin_w1 {
+struct master_w1 {
 #if OW_W1
 	// bus master name kept in name
 	// netlink fd kept in file_descriptor
@@ -263,11 +263,11 @@ struct connin_w1 {
 #endif /* OW_W1 */
 };
 
-struct connin_usb_monitor {
+struct master_usb_monitor {
 	FILE_DESCRIPTOR_OR_ERROR shutdown_pipe[2] ;
 };
 
-struct connin_browse {
+struct master_browse {
 #if OW_ZERO
 	DNSServiceRef bonjour_browse;
 
@@ -433,23 +433,23 @@ struct connection_in {
 	   should be protected from contention even when multithreading allowed */
 	size_t bundling_length;
 	union {
-		struct connin_serial serial;
-		struct connin_link link;
-		struct connin_tcp tcp;
-		struct connin_usb usb;
-		struct connin_i2c i2c;
-		struct connin_fake fake;
-		struct connin_fake tester;
-		struct connin_fake mock;
-		struct connin_ha5 ha5;
-		struct connin_ha7 ha7;
-		struct connin_ha7e ha7e ;
-		struct connin_ha7e enet ;
-		struct connin_etherweather etherweather;
-		struct connin_w1 w1;
-		struct connin_browse browse;
-		struct connin_usb_monitor usb_monitor ;
-	} connin;
+		struct master_serial serial;
+		struct master_link link;
+		struct master_tcp tcp;
+		struct master_usb usb;
+		struct master_i2c i2c;
+		struct master_fake fake;
+		struct master_fake tester;
+		struct master_fake mock;
+		struct master_ha5 ha5;
+		struct master_ha7 ha7;
+		struct master_ha7e ha7e ;
+		struct master_ha7e enet ;
+		struct master_etherweather etherweather;
+		struct master_w1 w1;
+		struct master_browse browse;
+		struct master_usb_monitor usb_monitor ;
+	} master;
 };
 
 extern struct inbound_control {

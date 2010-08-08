@@ -39,11 +39,11 @@ GOOD_OR_BAD Browse_detect(struct connection_in *in)
 	
 	RETURN_BAD_IF_BAD( browse_in_use(in) ) ;
 
-	in->connin.browse.bonjour_browse = 0 ;
+	in->master.browse.bonjour_browse = 0 ;
 	
-	in->connin.browse.avahi_browser = NULL ;
-	in->connin.browse.avahi_poll    = NULL ;
-	in->connin.browse.avahi_client  = NULL ;
+	in->master.browse.avahi_browser = NULL ;
+	in->master.browse.avahi_poll    = NULL ;
+	in->master.browse.avahi_client  = NULL ;
 	
 	if (Globals.zero == zero_none ) {
 		LEVEL_DEFAULT("Zeroconf/Bonjour is disabled since Bonjour or Avahi library wasn't found.");
@@ -77,14 +77,14 @@ static GOOD_OR_BAD browse_in_use(const struct connection_in * in_selected)
 static void Browse_close(struct connection_in *in)
 {
 #if OW_ZERO
-	if (in->connin.browse.bonjour_browse && (libdnssd != NULL)) {
-		DNSServiceRefDeallocate(in->connin.browse.bonjour_browse);
-		in->connin.browse.bonjour_browse = 0 ;
+	if (in->master.browse.bonjour_browse && (libdnssd != NULL)) {
+		DNSServiceRefDeallocate(in->master.browse.bonjour_browse);
+		in->master.browse.bonjour_browse = 0 ;
 	}
-	if ( in->connin.browse.avahi_poll != NULL ) {
+	if ( in->master.browse.avahi_poll != NULL ) {
 		// Signal avahi loop to quit (in ow_avahi_browse.c)
 		// and clean up for itself
-		avahi_simple_poll_quit(in->connin.browse.avahi_poll);
+		avahi_simple_poll_quit(in->master.browse.avahi_poll);
 	}
 #else /* OW_ZERO */
 	(void) in ;

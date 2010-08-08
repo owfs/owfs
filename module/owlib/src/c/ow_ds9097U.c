@@ -232,7 +232,7 @@ GOOD_OR_BAD DS2480_detect(struct connection_in *in)
 
 	// Now set desired baud and polarity
 	// BUS_reset will do the actual changes
-	in->connin.serial.reverse_polarity = Globals.serial_reverse ;
+	in->master.serial.reverse_polarity = Globals.serial_reverse ;
 	in->baud = Globals.baud ;
 
 	if ( BAD(DS2480_initialize_repeatedly(&pn)) ) {
@@ -307,7 +307,7 @@ static GOOD_OR_BAD DS2480_big_reset_serial(const struct parsedname *pn)
 	COM_break(pn->selected_connection);
 
 	// It's in command mode now
-	pn->selected_connection->connin.serial.mode = ds2480b_command_mode ;
+	pn->selected_connection->master.serial.mode = ds2480b_command_mode ;
 
 	// send the timing byte (A reset command at 9600 baud)
 	DS2480_write( &reset_byte, 1, pn ) ;
@@ -361,7 +361,7 @@ static GOOD_OR_BAD DS2480_big_reset_net(const struct parsedname *pn)
 	DS2480_flush(in);
 
 	// It's in command mode now
-	in->connin.serial.mode = ds2480b_command_mode ;
+	in->master.serial.mode = ds2480b_command_mode ;
 
 	// send the timing byte (A reset command at 9600 baud)
 	DS2480_write( &reset_byte, 1, pn ) ;
@@ -522,7 +522,7 @@ static GOOD_OR_BAD DS2480_set_baud(const struct parsedname *pn)
 	}
 
 	// Add polarity
-	if ( pn->selected_connection->connin.serial.reverse_polarity ) {
+	if ( pn->selected_connection->master.serial.reverse_polarity ) {
 		value_code |= PARMSET_REVERSE_POLARITY ;
 	}
 	send_code = CMD_CONFIG | PARMSEL_BAUDRATE | value_code;
@@ -582,7 +582,7 @@ static RESET_TYPE DS2480_reset(const struct parsedname *pn)
 			BYTE dummy[1] ; //we don't check the pulse stop, since it's only a whim.
 			// perhaps the DS9097U wasn't in command mode, so missed the reset
 			// force a mode switch
-			pn->selected_connection->connin.serial.mode = ds2480b_data_mode ;
+			pn->selected_connection->master.serial.mode = ds2480b_data_mode ;
 			// Also make sure no power or programming pulse active
 			DS2480_stop_pulse(dummy,pn) ;
 			// And now reset again
@@ -885,7 +885,7 @@ static GOOD_OR_BAD DS2480_read(BYTE * buf, const size_t size, const struct parse
 // return 0=good
 static GOOD_OR_BAD DS2480_sendout_cmd(const BYTE * cmd, const size_t len, const struct parsedname *pn)
 {
-	if (pn->selected_connection->connin.serial.mode == ds2480b_command_mode ) {
+	if (pn->selected_connection->master.serial.mode == ds2480b_command_mode ) {
 		// already in command mode -- very easy
 		return DS2480_write(cmd, (unsigned) len, pn);
 	} else {
@@ -896,7 +896,7 @@ static GOOD_OR_BAD DS2480_sendout_cmd(const BYTE * cmd, const size_t len, const 
 		memcpy( &cmd_plus[1], cmd, len ) ;
 		// MODE_COMMAND is one of the reservred commands that does not generate a response byte
 		// page 6 of datasheet: http://datasheets.maxim-ic.com/en/ds/DS2480B.pdf
-		pn->selected_connection->connin.serial.mode = ds2480b_command_mode ;
+		pn->selected_connection->master.serial.mode = ds2480b_command_mode ;
 		return DS2480_write(cmd_plus, (unsigned) len+1, pn);
 	}
 }
@@ -909,7 +909,7 @@ static GOOD_OR_BAD DS2480_sendout_cmd(const BYTE * cmd, const size_t len, const 
 static GOOD_OR_BAD DS2480_sendback_cmd(const BYTE * cmd, BYTE * resp, const size_t len, const struct parsedname *pn)
 {
 	size_t bytes_so_far = 0 ;
-	size_t extra_byte_for_modeshift  = (pn->selected_connection->connin.serial.mode != ds2480b_command_mode) ? 1 : 0 ;
+	size_t extra_byte_for_modeshift  = (pn->selected_connection->master.serial.mode != ds2480b_command_mode) ? 1 : 0 ;
 
 	while ( bytes_so_far < len ) {
 		size_t bytes_this_segment = len - bytes_so_far ;
@@ -944,12 +944,12 @@ static GOOD_OR_BAD DS2480_sendback_data(const BYTE * data, BYTE * resp, const si
 	}
 
 	// switch mode if needed
-	if (pn->selected_connection->connin.serial.mode != ds2480b_data_mode) {
+	if (pn->selected_connection->master.serial.mode != ds2480b_data_mode) {
 		// this is one of the "reserved commands" that does not generate a resonse byte
 		// page 6 of the datasheet http://datasheets.maxim-ic.com/en/ds/DS2480B.pdf
 		sendout[bytes_this_segment++] = MODE_DATA;
 		// change flag to data mode
-		pn->selected_connection->connin.serial.mode = ds2480b_data_mode;
+		pn->selected_connection->master.serial.mode = ds2480b_data_mode;
 	}
 
 	while ( bytes_from_list < len )

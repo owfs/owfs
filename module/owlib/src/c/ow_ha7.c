@@ -73,7 +73,7 @@ GOOD_OR_BAD HA7_detect(struct connection_in *in)
 	/* Set up low-level routines */
 	HA7_setroutines(in);
 
-	in->connin.ha7.locked = 0;
+	in->master.ha7.locked = 0;
 
 	if (in->name == NULL) {
 		return gbBAD;

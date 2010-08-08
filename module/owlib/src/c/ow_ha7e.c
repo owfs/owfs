@@ -55,7 +55,7 @@ GOOD_OR_BAD HA7E_detect(struct connection_in *in)
 	HA7E_setroutines(in);
 
 	// Poison current "Address" for adapter
-	in->connin.ha7e.sn[0] = 0 ; // so won't match
+	in->master.ha7e.sn[0] = 0 ; // so won't match
 
 	/* Open the com port */
 	RETURN_BAD_IF_BAD(COM_open(in)) ;
@@ -203,7 +203,7 @@ static GOOD_OR_BAD HA7E_directory(struct device_search *ds, struct dirblob *db, 
 		sn[0] = string2num(&resp[14]);
 
 		// Set as current "Address" for adapter
-		memcpy( pn->selected_connection->connin.ha7e.sn, sn, SERIAL_NUMBER_SIZE) ;
+		memcpy( pn->selected_connection->master.ha7e.sn, sn, SERIAL_NUMBER_SIZE) ;
 
 		LEVEL_DEBUG("SN found: " SNformat, SNvar(sn));
 		if ( resp[16]!=0x0D ) {
@@ -229,7 +229,7 @@ static GOOD_OR_BAD HA7E_resync( const struct parsedname * pn )
 	COM_flush(pn->selected_connection);
 
 	// Poison current "Address" for adapter
-	pn->selected_connection->connin.ha7e.sn[0] = 0 ; // so won't match
+	pn->selected_connection->master.ha7e.sn[0] = 0 ; // so won't match
 
 	return gbBAD ;
 }
@@ -254,7 +254,7 @@ static GOOD_OR_BAD HA7E_select( const struct parsedname * pn )
 		return gbRESET( HA7E_reset(pn) ) ;
 	}
 
-	if ( memcmp( pn->sn, pn->selected_connection->connin.ha7e.sn, SERIAL_NUMBER_SIZE ) ) {
+	if ( memcmp( pn->sn, pn->selected_connection->master.ha7e.sn, SERIAL_NUMBER_SIZE ) ) {
 		if ( BAD(COM_write((BYTE*)send_address,18,pn->selected_connection)) ) {
 			LEVEL_DEBUG("Error with sending HA7E A-ddress") ;
 			return HA7E_resync(pn) ;
@@ -275,7 +275,7 @@ static GOOD_OR_BAD HA7E_select( const struct parsedname * pn )
 	}
 
 	// Set as current "Address" for adapter
-	memcpy( pn->selected_connection->connin.ha7e.sn, pn->sn, SERIAL_NUMBER_SIZE) ;
+	memcpy( pn->selected_connection->master.ha7e.sn, pn->sn, SERIAL_NUMBER_SIZE) ;
 
 	return gbGOOD ;
 }

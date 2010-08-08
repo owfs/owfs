@@ -312,7 +312,7 @@ static GOOD_OR_BAD DS9490_detect_specific_adapter(int bus_nr, int dev_nr, struct
 	struct usb_list ul;
 	
 	// Mark this connection as taking only this address pair. Important for reconnections.
-	in->connin.usb.specific_usb_address = 1 ;
+	in->master.usb.specific_usb_address = 1 ;
 
 	USB_first(&ul);
 	while ( GOOD(USB_next(&ul)) ) {
@@ -371,9 +371,9 @@ void DS9490_connection_init( struct connection_in * in )
 	DS9490_setroutines(in);		// set up close, reconnect, reset, ...
 
 	in->busmode = bus_usb;
-	in->connin.usb.usb = NULL ; // no handle yet
-	in->connin.usb.usb_bus_number = in->connin.usb.usb_dev_number = -1 ;
-	memset( in->connin.usb.ds1420_address, 0, SERIAL_NUMBER_SIZE ) ;
+	in->master.usb.usb = NULL ; // no handle yet
+	in->master.usb.usb_bus_number = in->master.usb.usb_dev_number = -1 ;
+	memset( in->master.usb.ds1420_address, 0, SERIAL_NUMBER_SIZE ) ;
 	DS9490_setroutines(in);
 	in->Adapter = adapter_DS9490;	/* OWFS assigned value */
 	in->adapter_name = "DS9490";
@@ -389,7 +389,7 @@ static GOOD_OR_BAD DS9490_reconnect(const struct parsedname *pn)
 	GOOD_OR_BAD ret;
 	struct connection_in * in = pn->selected_connection ;
 
-	if ( in->connin.usb.specific_usb_address ) { 
+	if ( in->master.usb.specific_usb_address ) { 
 		// special case where a usb bus:dev pair was given
 		// only connect to the same spot
 		return DS9490_redetect_specific_adapter( in ) ; 
@@ -474,7 +474,7 @@ static GOOD_OR_BAD DS9490_redetect_match( struct connection_in * in)
 	LEVEL_DEBUG("Attempting reconnect on %s",SAFESTRING(in->name));
 
 	// Special case -- originally untagged adapter
-	if ( in->connin.usb.ds1420_address[0] == '\0' ) {
+	if ( in->master.usb.ds1420_address[0] == '\0' ) {
 		LEVEL_CONNECT("Since originally untagged bus master, we will use first available slot.");
 		return gbGOOD ;
 	}
@@ -492,7 +492,7 @@ static GOOD_OR_BAD DS9490_redetect_match( struct connection_in * in)
 	// Scan directory for a match to the original tag
 	device_number = 0 ;
 	while ( DirblobGet( device_number, sn, &db ) == 0 ) {
-		if (memcmp(sn, in->connin.usb.ds1420_address, SERIAL_NUMBER_SIZE) == 0) {	// same tag device?
+		if (memcmp(sn, in->master.usb.ds1420_address, SERIAL_NUMBER_SIZE) == 0) {	// same tag device?
 			LEVEL_DATA("Matching device [%s].", SAFESTRING(in->name));
 			DirblobClear( &db ) ;
 			return gbGOOD ;
@@ -500,7 +500,7 @@ static GOOD_OR_BAD DS9490_redetect_match( struct connection_in * in)
 		++device_number ;
 	}
 	// Couldn't find correct ds1420 chip on this adapter
-	LEVEL_CONNECT("Couldn't find correct ds1420 chip on this bus master [%s] (want: " SNformat ")", SAFESTRING(in->name), SNvar(in->connin.usb.ds1420_address));
+	LEVEL_CONNECT("Couldn't find correct ds1420 chip on this bus master [%s] (want: " SNformat ")", SAFESTRING(in->name), SNvar(in->master.usb.ds1420_address));
 	DirblobClear( &db ) ;
 	return gbBAD;
 }
@@ -519,7 +519,7 @@ static RESET_TYPE DS9490_reset(const struct parsedname *pn)
 	struct connection_in * in = pn->selected_connection ;
 	int readlen = 0 ;
 	
-	if (in->connin.usb.usb == NULL || in->connin.usb.dev == NULL) {
+	if (in->master.usb.usb == NULL || in->master.usb.dev == NULL) {
 		LEVEL_DEBUG("Attempting RESET on null bus") ;
 		return BUS_RESET_ERROR;
 	}
@@ -764,7 +764,7 @@ static int FindDiscrepancy(BYTE * last_sn, BYTE * discrepancy_sn)
 */
 GOOD_OR_BAD DS9490_open_and_name(struct usb_list *ul, struct connection_in *in)
 {
-	if (in->connin.usb.usb) {
+	if (in->master.usb.usb) {
 		LEVEL_DEFAULT("DS9490 %s was NOT closed?", in->name);
 		return gbBAD ;
 	}
@@ -920,7 +920,7 @@ static GOOD_OR_BAD DS9490_SetSpeed(const struct parsedname *pn)
 	int ret = 0;
 
 	// in case timeout value changed (via settings) -- sec -> msec
-	in->connin.usb.timeout = 1000 * Globals.timeout_usb;
+	in->master.usb.timeout = 1000 * Globals.timeout_usb;
 
 	// Failed overdrive, switch to slow
 
@@ -950,7 +950,7 @@ static GOOD_OR_BAD DS9490_SetSpeed(const struct parsedname *pn)
 	if (in->changed_bus_settings | CHANGED_USB_SLEW) {
 		in->changed_bus_settings ^= CHANGED_USB_SLEW ;
 		/* Slew Rate */
-		if ( BAD(USB_Control_Msg(MODE_CMD, MOD_PULLDOWN_SLEWRATE, in->connin.usb.pulldownslewrate, pn)) ) {
+		if ( BAD(USB_Control_Msg(MODE_CMD, MOD_PULLDOWN_SLEWRATE, in->master.usb.pulldownslewrate, pn)) ) {
 			LEVEL_DATA("MOD_PULLDOWN_SLEWRATE error");
 			++ret;
 		}
@@ -958,7 +958,7 @@ static GOOD_OR_BAD DS9490_SetSpeed(const struct parsedname *pn)
 	if (in->changed_bus_settings | CHANGED_USB_LOW) {
 		in->changed_bus_settings ^= CHANGED_USB_LOW ;
 		/* Low Time */
-		if ( BAD(USB_Control_Msg(MODE_CMD, MOD_WRITE1_LOWTIME, in->connin.usb.writeonelowtime, pn)) ) {
+		if ( BAD(USB_Control_Msg(MODE_CMD, MOD_WRITE1_LOWTIME, in->master.usb.writeonelowtime, pn)) ) {
 			LEVEL_DATA("MOD_WRITE1_LOWTIME error");
 			++ret;
 		}
@@ -966,7 +966,7 @@ static GOOD_OR_BAD DS9490_SetSpeed(const struct parsedname *pn)
 	if (in->changed_bus_settings | CHANGED_USB_OFFSET) {
 		in->changed_bus_settings ^= CHANGED_USB_OFFSET ;
 		/* DS0 Low */
-		if ( BAD(USB_Control_Msg(MODE_CMD, MOD_DSOW0_TREC, in->connin.usb.datasampleoffset, pn)) ) {
+		if ( BAD(USB_Control_Msg(MODE_CMD, MOD_DSOW0_TREC, in->master.usb.datasampleoffset, pn)) ) {
 			LEVEL_DATA("MOD_DS0W0 error");
 			++ret;
 		}
@@ -1052,14 +1052,14 @@ static void DS9490_SetFlexParameters(struct connection_in *in)
 
 	// default values for bus-timing when using --altUSB
 	if (Globals.altUSB) {
-		in->connin.usb.pulldownslewrate = PARMSET_Slew1p37Vus;
-		in->connin.usb.writeonelowtime = PARMSET_W1L_10us;
-		in->connin.usb.datasampleoffset = PARMSET_DS0_W0R_8us;
+		in->master.usb.pulldownslewrate = PARMSET_Slew1p37Vus;
+		in->master.usb.writeonelowtime = PARMSET_W1L_10us;
+		in->master.usb.datasampleoffset = PARMSET_DS0_W0R_8us;
 	} else {
 		/* This seem to be the default value when reseting the ds2490 chip */
-		in->connin.usb.pulldownslewrate = PARMSET_Slew0p83Vus;
-		in->connin.usb.writeonelowtime = PARMSET_W1L_12us;
-		in->connin.usb.datasampleoffset = PARMSET_DS0_W0R_7us;
+		in->master.usb.pulldownslewrate = PARMSET_Slew0p83Vus;
+		in->master.usb.writeonelowtime = PARMSET_W1L_12us;
+		in->master.usb.datasampleoffset = PARMSET_DS0_W0R_7us;
 	}
 	in->changed_bus_settings |= CHANGED_USB_SLEW | CHANGED_USB_LOW | CHANGED_USB_OFFSET ;
 }

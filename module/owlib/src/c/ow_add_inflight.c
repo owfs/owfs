@@ -15,7 +15,7 @@ $Id$
 
 /* Can only be called by a separate (monitoring) thread  so the write-lock won't deadlock */
 /* This allows adding new Bus Masters while program is running
- * The connin is usually only read-locked for normal operation
+ * The master is usually only read-locked for normal operation
  * write lock is done in a separate thread when no requests are being processed */
 void Add_InFlight( GOOD_OR_BAD (*nomatch)(struct connection_in * trial,struct connection_in * existing), struct connection_in * new_in )
 {

@@ -74,8 +74,8 @@ static ZERO_OR_ERROR FS_read_fake_single(struct one_wire_query *owq)
 		break;
 	case ft_temperature:
 		{
-			_FLOAT low  = OWQ_pn(owq).selected_connection->connin.fake.templow ;
-			_FLOAT high = OWQ_pn(owq).selected_connection->connin.fake.temphigh ;
+			_FLOAT low  = OWQ_pn(owq).selected_connection->master.fake.templow ;
+			_FLOAT high = OWQ_pn(owq).selected_connection->master.fake.temphigh ;
 			OWQ_F(owq) = low + (high-low)*Random_f/100.;
 		}
 		break;

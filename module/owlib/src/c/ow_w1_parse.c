@@ -210,8 +210,8 @@ enum Netlink_Read_Status W1_Process_Response( void (* nrs_callback)( struct netl
 		bus = 0 ;
 	} else {
 		// Bus-specifc
-		file_descriptor = pn->selected_connection->connin.w1.netlink_pipe[fd_pipe_read] ;
-		bus = pn->selected_connection->connin.w1.id ;
+		file_descriptor = pn->selected_connection->master.w1.netlink_pipe[fd_pipe_read] ;
+		bus = pn->selected_connection->master.w1.id ;
 	}
 
 	while ( GOOD( W1PipeSelect_timeout(file_descriptor)) ) {

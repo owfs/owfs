@@ -55,10 +55,10 @@ GOOD_OR_BAD USB_monitor_detect(struct connection_in *in)
 	in->adapter_name = "USB scan";
 	in->busmode = bus_usb_monitor ;
 	
-	if ( pipe( in->connin.usb_monitor.shutdown_pipe ) != 0 ) {
+	if ( pipe( in->master.usb_monitor.shutdown_pipe ) != 0 ) {
 		ERROR_DEFAULT("Cannot allocate a shutdown pipe. The program shutdown may be messy");
-		in->connin.usb_monitor.shutdown_pipe[fd_pipe_read] = FILE_DESCRIPTOR_BAD ;
-		in->connin.usb_monitor.shutdown_pipe[fd_pipe_write] = FILE_DESCRIPTOR_BAD ;
+		in->master.usb_monitor.shutdown_pipe[fd_pipe_read] = FILE_DESCRIPTOR_BAD ;
+		in->master.usb_monitor.shutdown_pipe[fd_pipe_write] = FILE_DESCRIPTOR_BAD ;
 	}
 
 	RETURN_BAD_IF_BAD( usb_monitor_in_use(in) ) ;
@@ -91,16 +91,16 @@ static void USB_monitor_close(struct connection_in *in)
 {
 	SAFEFREE(in->name) ;
 
-	if ( FILE_DESCRIPTOR_VALID( in->connin.usb_monitor.shutdown_pipe[fd_pipe_write] ) ) {
-		ignore_result = write( in->connin.usb_monitor.shutdown_pipe[fd_pipe_write],"X",1) ; //dummy payload
+	if ( FILE_DESCRIPTOR_VALID( in->master.usb_monitor.shutdown_pipe[fd_pipe_write] ) ) {
+		ignore_result = write( in->master.usb_monitor.shutdown_pipe[fd_pipe_write],"X",1) ; //dummy payload
 	}		
-	Test_and_Close_Pipe(in->connin.usb_monitor.shutdown_pipe) ;
+	Test_and_Close_Pipe(in->master.usb_monitor.shutdown_pipe) ;
 }
 
 static void * USB_monitor_loop( void * v )
 {
 	struct connection_in * in = v ;
-	FILE_DESCRIPTOR_OR_ERROR file_descriptor = in->connin.usb_monitor.shutdown_pipe[fd_pipe_read] ;
+	FILE_DESCRIPTOR_OR_ERROR file_descriptor = in->master.usb_monitor.shutdown_pipe[fd_pipe_read] ;
 
 	pthread_detach(pthread_self());
 	

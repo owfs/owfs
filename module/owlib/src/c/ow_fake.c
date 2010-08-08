@@ -74,8 +74,8 @@ static void GetDefaultDeviceName(BYTE * dn, const BYTE * sn, const struct connec
 	switch (in->busmode) {
 		case bus_tester:
 			// "bus number"
-			dn[1] = BYTE_MASK(in->connin.tester.index >> 0) ;
-			dn[2] = BYTE_MASK(in->connin.tester.index >> 8) ;
+			dn[1] = BYTE_MASK(in->master.tester.index >> 0) ;
+			dn[2] = BYTE_MASK(in->master.tester.index >> 8) ;
 			// repeat family code
 			dn[3] = sn[0] ;
 			// family code complement
@@ -129,7 +129,7 @@ static void GetDeviceName(const ASCII ** strpointer, struct connection_in * in)
 			sn[6] = dn[6] ;
 		} else {
 			// Bad device name
-			LEVEL_DEFAULT("Device %d <%s> not recognized for %s %d -- ignored",DirblobElements(&(in->main))+1,*strpointer,in->adapter_name,in->connin.fake.index);
+			LEVEL_DEFAULT("Device %d <%s> not recognized for %s %d -- ignored",DirblobElements(&(in->main))+1,*strpointer,in->adapter_name,in->master.fake.index);
 			return ;
 		}
 	}
@@ -158,9 +158,9 @@ static void SetConninData( int indx, const char * name, struct connection_in *in
 	char newname[20] ;
 
 	in->file_descriptor = indx;
-	in->connin.fake.index = indx;
-	in->connin.fake.templow = Globals.templow;
-	in->connin.fake.temphigh = Globals.temphigh;
+	in->master.fake.index = indx;
+	in->master.fake.templow = Globals.templow;
+	in->master.fake.temphigh = Globals.temphigh;
 	LEVEL_CONNECT("Setting up %s Bus Master (%d)", in->adapter_name, indx);
 
 	UCLIBCLOCK ;

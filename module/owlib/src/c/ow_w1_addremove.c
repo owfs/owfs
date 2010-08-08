@@ -39,7 +39,7 @@ static struct connection_in * CreateIn(int bus_master)
 	}	
 
 	in->name = owstrdup(name) ;
-	in->connin.w1.id = bus_master ;
+	in->master.w1.id = bus_master ;
 	if ( BAD( W1_detect(in)) ) {
 		RemoveIn(in) ;
 		return NULL ;
@@ -54,7 +54,7 @@ static GOOD_OR_BAD W1_nomatch( struct connection_in * trial, struct connection_i
 	if ( existing->busmode != bus_w1 ) {
 		return gbGOOD ;
 	}
-	if ( trial->connin.w1.id != existing->connin.w1.id ) {
+	if ( trial->master.w1.id != existing->master.w1.id ) {
 		return gbGOOD ;
 	}
 	return gbBAD;

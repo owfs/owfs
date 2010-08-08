@@ -39,10 +39,10 @@ static GOOD_OR_BAD HA5_find_channel(struct parsedname *pn) ;
 
 #if OW_MT
 
-#define HA5MUTEX_INIT(in)		_MUTEX_INIT(in->connin.ha5.lock)
-#define HA5MUTEX_LOCK(in)		_MUTEX_LOCK(in->connin.ha5.lock ) ;
-#define HA5MUTEX_UNLOCK(in)		_MUTEX_UNLOCK(in->connin.ha5.lock);
-#define HA5MUTEX_DESTROY(in)	_MUTEX_DESTROY(in->connin.ha5.lock);
+#define HA5MUTEX_INIT(in)		_MUTEX_INIT(in->master.ha5.lock)
+#define HA5MUTEX_LOCK(in)		_MUTEX_LOCK(in->master.ha5.lock ) ;
+#define HA5MUTEX_UNLOCK(in)		_MUTEX_UNLOCK(in->master.ha5.lock);
+#define HA5MUTEX_DESTROY(in)	_MUTEX_DESTROY(in->master.ha5.lock);
 
 #else /* OW_MT */
 
@@ -85,7 +85,7 @@ GOOD_OR_BAD HA5_detect(struct connection_in *in)
 	HA5_setroutines(in);
 	
 	// Poison current "Address" for adapter
-	in->connin.ha5.sn[0] = 0 ; // so won't match
+	in->master.ha5.sn[0] = 0 ; // so won't match
 
 	Parse_Address( in->name, &ap ) ;
 	if ( ap.first.type==address_none ) {
@@ -113,12 +113,12 @@ GOOD_OR_BAD HA5_detect(struct connection_in *in)
 	/* Set com port speed*/
 	COM_speed(in->baud,in) ;
 
-	in->connin.ha5.checksum = Globals.checksum ;
+	in->master.ha5.checksum = Globals.checksum ;
 	in->Adapter = adapter_HA5 ;
 	in->adapter_name = "HA5";
 
 	/* By definition, this is the head adapter on this port */
-	in->connin.ha5.head = in ;
+	in->master.ha5.head = in ;
 	HA5MUTEX_INIT(in);
 
 	/* Find the channels */
@@ -152,7 +152,7 @@ static GOOD_OR_BAD HA5_channel_list( char * alpha_string, struct parsedname * pn
 		c = tolower(c) ;
 		LEVEL_DEBUG("Looking for HA5 adapter on %s:%c", current_in->name, c ) ;
 		if ( GOOD( HA5_test_channel(c,pn)) ) {
-			LEVEL_CONNECT("HA5 bus master FOUND on port %s at channel %c", current_in->name, current_in->connin.ha5.channel ) ;
+			LEVEL_CONNECT("HA5 bus master FOUND on port %s at channel %c", current_in->name, current_in->master.ha5.channel ) ;
 			current_in = NewIn( initial_in ) ;
 			if ( current_in == NULL ) {
 				break ;
@@ -186,12 +186,12 @@ static GOOD_OR_BAD HA5_find_channel(struct parsedname *pn)
 	for ( c = 'a' ; c <= 'z' ; ++c ) {
 		LEVEL_DEBUG("Looking for HA5 adapter on %s:%c", in->name, c ) ;
 		if ( GOOD( HA5_test_channel(c,pn)) ) {
-			LEVEL_CONNECT("HA5 bus master FOUND on port %s at channel %c", in->name, in->connin.ha5.channel ) ;
+			LEVEL_CONNECT("HA5 bus master FOUND on port %s at channel %c", in->name, in->master.ha5.channel ) ;
 			return gbGOOD ;
 		}
 	}
 	LEVEL_DEBUG("HA5 bus master NOT FOUND on port %s", in->name ) ;
-	in->connin.ha5.channel = '\0' ; 
+	in->master.ha5.channel = '\0' ; 
 	return gbBAD;
 }
 
@@ -200,7 +200,7 @@ static GOOD_OR_BAD HA5_find_channel(struct parsedname *pn)
 /* check_string must have enough space allocated */
 static int AddChecksum( unsigned char * check_string, int length, struct connection_in * in )
 {
-	if ( in->connin.ha5.checksum ) {
+	if ( in->master.ha5.checksum ) {
 		int i ;
 		unsigned int sum = 0 ;
 		for ( i=0 ; i<length ; ++i ) {
@@ -234,7 +234,7 @@ static GOOD_OR_BAD HA5_reconnect( const struct parsedname  *pn )
 	struct connection_in * in = pn->selected_connection ;
 	COM_close(in) ;
 	RETURN_BAD_IF_BAD( COM_open(in) ) ;
-	return HA5_test_channel( in->connin.ha5.channel, pn ) ;
+	return HA5_test_channel( in->master.ha5.channel, pn ) ;
 }
 
 static GOOD_OR_BAD HA5_test_channel( char c, const struct parsedname  *pn )
@@ -253,7 +253,7 @@ static GOOD_OR_BAD HA5_test_channel( char c, const struct parsedname  *pn )
 	RETURN_BAD_IF_BAD( COM_write( test_string, string_length, pn->selected_connection ) ) ;
 	RETURN_BAD_IF_BAD( COM_read( test_response, 1, pn->selected_connection ) ) ;
 
-	in->connin.ha5.channel = c ;
+	in->master.ha5.channel = c ;
 	COM_slurp(in->file_descriptor) ;
 	return gbGOOD ;
 }
@@ -263,9 +263,9 @@ static RESET_TYPE HA5_reset(const struct parsedname *pn)
 	struct connection_in * in = pn->selected_connection ;
 	RESET_TYPE ret ;
 
-	HA5MUTEX_LOCK( in->connin.ha5.head ) ;
+	HA5MUTEX_LOCK( in->master.ha5.head ) ;
 	ret = HA5_reset_wrapped(pn) ;
-	HA5MUTEX_UNLOCK( in->connin.ha5.head ) ;
+	HA5MUTEX_UNLOCK( in->master.ha5.head ) ;
 
 	return ret ;
 }
@@ -277,7 +277,7 @@ static RESET_TYPE HA5_reset_wrapped(const struct parsedname *pn)
 	BYTE reset[5] ;
 	BYTE resp[2];
 
-	reset[0] = in->connin.ha5.channel ;
+	reset[0] = in->master.ha5.channel ;
 	reset[1] = 'R' ;
 	reset_length = AddChecksum( reset, 2, in ) ;
 
@@ -318,9 +318,9 @@ static enum search_status HA5_next_both(struct device_search *ds, const struct p
 
 	if (ds->index == -1) {
 		enum search_status ret ;
-		HA5MUTEX_LOCK( in->connin.ha5.head ) ;
+		HA5MUTEX_LOCK( in->master.ha5.head ) ;
 		ret = HA5_directory(ds, db, pn) ;
-		HA5MUTEX_UNLOCK( in->connin.ha5.head ) ;
+		HA5MUTEX_UNLOCK( in->master.ha5.head ) ;
 
 		if ( ret != search_good ) {
 			return search_error;
@@ -371,7 +371,7 @@ static enum search_status HA5_directory(struct device_search *ds, struct dirblob
 	//tF0 -- Normal searching
 
 	// Send the configuration command and check response
-	query[0] = in->connin.ha5.channel ;
+	query[0] = in->master.ha5.channel ;
 	query[1] = (ds->search == _1W_CONDITIONAL_SEARCH_ROM) ? 'C' : 'S' ;
 	query[2] = ',' ;
 	query[3] = 'F' ;
@@ -399,7 +399,7 @@ static enum search_status HA5_directory(struct device_search *ds, struct dirblob
 		//in the resp buffer and get the rest of the response from the HA5
 		//device
 
-		if ( in->connin.ha5.checksum ) {
+		if ( in->master.ha5.checksum ) {
 			if ( BAD(COM_read(&resp[1], 19, pn->selected_connection)) ) {
 				HA5_resync(pn) ;
 				return search_error ;
@@ -434,7 +434,7 @@ static enum search_status HA5_directory(struct device_search *ds, struct dirblob
 		sn[0] = string2num((char *)&resp[14]);
 
 		// Set as current "Address" for adapter
-		memcpy( pn->selected_connection->connin.ha5.sn, sn, 8) ;
+		memcpy( pn->selected_connection->master.ha5.sn, sn, 8) ;
 
 		LEVEL_DEBUG("SN found: " SNformat, SNvar(sn));
 		// CRC check
@@ -458,7 +458,7 @@ static GOOD_OR_BAD HA5_resync( const struct parsedname * pn )
 	COM_flush(pn->selected_connection);
 
 	// Poison current "Address" for adapter
-	pn->selected_connection->connin.ha5.sn[0] = 0 ; // so won't match
+	pn->selected_connection->master.ha5.sn[0] = 0 ; // so won't match
 
 	return gbBAD ;
 }
@@ -472,9 +472,9 @@ static GOOD_OR_BAD HA5_select( const struct parsedname * pn )
 		RETURN_BAD_IF_BAD( gbRESET( HA5_reset(pn) ) ) ;
 	}
 
-	HA5MUTEX_LOCK( in->connin.ha5.head ) ;
+	HA5MUTEX_LOCK( in->master.ha5.head ) ;
 	ret = HA5_select_wrapped(pn) ;
-	HA5MUTEX_UNLOCK( in->connin.ha5.head ) ;
+	HA5MUTEX_UNLOCK( in->master.ha5.head ) ;
 
 	return ret ;
 }
@@ -486,7 +486,7 @@ static GOOD_OR_BAD HA5_select_wrapped( const struct parsedname * pn )
 	unsigned char resp_address[19] ;
 	int send_length ;
 
-	send_address[0] = in->connin.ha5.channel ;
+	send_address[0] = in->master.ha5.channel ;
 	send_address[1] = 'A' ;
 	num2string( (char *)&send_address[ 2], pn->sn[7] ) ;
 	num2string( (char *)&send_address[ 4], pn->sn[6] ) ;
@@ -504,7 +504,7 @@ static GOOD_OR_BAD HA5_select_wrapped( const struct parsedname * pn )
 		return HA5_resync(pn) ;
 	}
 
-	if ( in->connin.ha5.checksum ) {
+	if ( in->master.ha5.checksum ) {
 		if ( BAD(COM_read(resp_address,19,pn->selected_connection)) ) {
 			LEVEL_DEBUG("Error with reading HA5 select") ;
 			return HA5_resync(pn) ;
@@ -525,7 +525,7 @@ static GOOD_OR_BAD HA5_select_wrapped( const struct parsedname * pn )
 	}
 
 	// Set as current "Address" for adapter
-	memcpy( in->connin.ha5.sn, pn->sn, SERIAL_NUMBER_SIZE) ;
+	memcpy( in->master.ha5.sn, pn->sn, SERIAL_NUMBER_SIZE) ;
 
 	return gbGOOD ;
 }
@@ -538,7 +538,7 @@ static GOOD_OR_BAD HA5_sendback_part(char cmd, const BYTE * data, BYTE * resp, c
 	unsigned char get_data[32*2+3] ;
 	int send_length ;
 
-	send_data[0] = in->connin.ha5.channel ;
+	send_data[0] = in->master.ha5.channel ;
 	send_data[1] = cmd ;
 	num2string( (char *)&send_data[2], size ) ;
 	bytes2string( (char *)&send_data[4], data, size) ;
@@ -550,7 +550,7 @@ static GOOD_OR_BAD HA5_sendback_part(char cmd, const BYTE * data, BYTE * resp, c
 		return gbBAD ;
 	}
 
-	if ( in->connin.ha5.checksum ) {
+	if ( in->master.ha5.checksum ) {
 		if ( BAD(COM_read( get_data, size*2+3, pn->selected_connection)) ) {
 			LEVEL_DEBUG("Error with reading HA5 block") ;
 			HA5_resync(pn) ;
@@ -582,9 +582,9 @@ static GOOD_OR_BAD HA5_sendback_data(const BYTE * data, BYTE * resp, const size_
 		size_t pass_start = size - left ;
 		size_t pass_size = (left>32)?32:left ;
 
-		HA5MUTEX_LOCK( in->connin.ha5.head ) ;
+		HA5MUTEX_LOCK( in->master.ha5.head ) ;
 		ret = HA5_sendback_part( 'W', &data[pass_start], &resp[pass_start], pass_size, pn ) ;
-		HA5MUTEX_UNLOCK( in->connin.ha5.head ) ;
+		HA5MUTEX_UNLOCK( in->master.ha5.head ) ;
 
 		RETURN_BAD_IF_BAD( ret ) ;
 	}
@@ -597,7 +597,7 @@ static GOOD_OR_BAD HA5_select_and_sendback(const BYTE * data, BYTE * resp, const
 	int left;
 	char block_cmd ;
 
-	if ( memcmp( pn->sn, in->connin.ha5.sn, SERIAL_NUMBER_SIZE ) ) {
+	if ( memcmp( pn->sn, in->master.ha5.sn, SERIAL_NUMBER_SIZE ) ) {
 		// Need a formal change of device
 		RETURN_BAD_IF_BAD( HA5_select(pn) ) ;
 		block_cmd = 'W' ;
@@ -611,9 +611,9 @@ static GOOD_OR_BAD HA5_select_and_sendback(const BYTE * data, BYTE * resp, const
 		size_t pass_start = size - left ;
 		size_t pass_size = (left>32)?32:left ;
 
-		HA5MUTEX_LOCK( in->connin.ha5.head ) ;
+		HA5MUTEX_LOCK( in->master.ha5.head ) ;
 		ret = HA5_sendback_part( block_cmd, &data[pass_start], &resp[pass_start], pass_size, pn ) ;
-		HA5MUTEX_UNLOCK( in->connin.ha5.head ) ;
+		HA5MUTEX_UNLOCK( in->master.ha5.head ) ;
 		block_cmd = 'W' ; // for next pass
 		RETURN_BAD_IF_BAD( ret ) ;
 	}
@@ -629,7 +629,7 @@ static GOOD_OR_BAD HA5_select_and_sendback(const BYTE * data, BYTE * resp, const
 static void HA5_close(struct connection_in *in)
 {
 	HA5_powerdown(in) ;
-	if ( in->connin.ha5.head == in ) {
+	if ( in->master.ha5.head == in ) {
 		HA5MUTEX_DESTROY(in);
 	}
 	COM_close(in);

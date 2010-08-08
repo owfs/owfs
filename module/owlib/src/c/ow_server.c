@@ -91,8 +91,8 @@ GOOD_OR_BAD Server_detect(struct connection_in *in)
 static void Server_close(struct connection_in *in)
 {
 	Test_and_Close( &(in->file_descriptor) ) ;
-	SAFEFREE(in->connin.tcp.type) ;
-	SAFEFREE(in->connin.tcp.domain) ;
-	SAFEFREE(in->connin.tcp.name) ;
+	SAFEFREE(in->master.tcp.type) ;
+	SAFEFREE(in->master.tcp.domain) ;
+	SAFEFREE(in->master.tcp.name) ;
 	FreeClientAddr(in);
 }

@@ -487,7 +487,7 @@ static enum search_status OWServer_Enet_next_both(struct device_search *ds, cons
 static GOOD_OR_BAD OWServer_Enet_select( const struct parsedname * pn )
 {
 	// Set as current "Address" for adapter
-	memcpy( pn->selected_connection->connin.enet.sn, pn->sn, SERIAL_NUMBER_SIZE) ;
+	memcpy( pn->selected_connection->master.enet.sn, pn->sn, SERIAL_NUMBER_SIZE) ;
 
 	return gbGOOD ;
 }

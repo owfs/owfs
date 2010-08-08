@@ -59,8 +59,8 @@ SEQ_OR_ERROR W1_send_msg( struct connection_in * in, struct w1_netlink_msg *msg,
 
 	// NULL connection for initial LIST_MASTERS, not assigned to a specific bus
 	if ( in != NULL ) {
-		seq = ++in->connin.w1.seq ;
-		bus = in->connin.w1.id;
+		seq = ++in->master.w1.seq ;
+		bus = in->master.w1.id;
 	} else {
 		seq = ++Inbound_Control.w1_seq ;
 		bus = 0 ;

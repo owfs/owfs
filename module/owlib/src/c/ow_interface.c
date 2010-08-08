@@ -237,7 +237,7 @@ static ZERO_OR_ERROR FS_r_APU(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	switch ( pn->selected_connection->busmode ) {
 		case bus_i2c:
-			OWQ_Y(owq) = ( (pn->selected_connection->connin.i2c.configreg & DS2482_REG_CFG_APU) != 0x00 ) ;
+			OWQ_Y(owq) = ( (pn->selected_connection->master.i2c.configreg & DS2482_REG_CFG_APU) != 0x00 ) ;
 			return 0;
 		default:
 			return -ENOTSUP ;
@@ -250,9 +250,9 @@ static ZERO_OR_ERROR FS_w_APU(struct one_wire_query *owq)
 	switch ( pn->selected_connection->busmode ) {
 		case bus_i2c:
 			if ( OWQ_Y(owq) ) {
-				pn->selected_connection->connin.i2c.configreg |= DS2482_REG_CFG_APU ;
+				pn->selected_connection->master.i2c.configreg |= DS2482_REG_CFG_APU ;
 			} else {
-				pn->selected_connection->connin.i2c.configreg &= ~DS2482_REG_CFG_APU ;
+				pn->selected_connection->master.i2c.configreg &= ~DS2482_REG_CFG_APU ;
 			}
 			break ;
 		default:
@@ -267,7 +267,7 @@ static ZERO_OR_ERROR FS_r_reverse(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	switch ( pn->selected_connection->busmode ) {
 		case bus_serial:
-			OWQ_Y(owq) = ( pn->selected_connection->connin.serial.reverse_polarity ) ;
+			OWQ_Y(owq) = ( pn->selected_connection->master.serial.reverse_polarity ) ;
 			return 0;
 		default:
 			return -ENOTSUP ;
@@ -279,7 +279,7 @@ static ZERO_OR_ERROR FS_w_reverse(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	switch ( pn->selected_connection->busmode ) {
 		case bus_serial:
-			pn->selected_connection->connin.serial.reverse_polarity = OWQ_Y(owq) ;
+			pn->selected_connection->master.serial.reverse_polarity = OWQ_Y(owq) ;
 			++pn->selected_connection->changed_bus_settings ;
 			break ;
 		default:
@@ -296,7 +296,7 @@ static ZERO_OR_ERROR FS_r_templimit(struct one_wire_query *owq)
 		case bus_fake:
 		case bus_mock:
 		case bus_tester:
-			OWQ_F(owq) = pn->selected_filetype->data.i ? pn->selected_connection->connin.fake.templow : pn->selected_connection->connin.fake.temphigh;
+			OWQ_F(owq) = pn->selected_filetype->data.i ? pn->selected_connection->master.fake.templow : pn->selected_connection->master.fake.temphigh;
 			return 0;
 		default:
 			return -ENOTSUP ;
@@ -311,9 +311,9 @@ static ZERO_OR_ERROR FS_w_templimit(struct one_wire_query *owq)
 		case bus_mock:
 		case bus_tester:
 			if (pn->selected_filetype->data.i) {
-				pn->selected_connection->connin.fake.templow = OWQ_F(owq);
+				pn->selected_connection->master.fake.templow = OWQ_F(owq);
 			} else {
-				pn->selected_connection->connin.fake.temphigh = OWQ_F(owq);
+				pn->selected_connection->master.fake.temphigh = OWQ_F(owq);
 			}
 			return 0;
 		default:
@@ -360,7 +360,7 @@ static ZERO_OR_ERROR FS_r_PPM(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	switch ( pn->selected_connection->busmode ) {
 		case bus_i2c:
-			OWQ_Y(owq) = ( (pn->selected_connection->connin.i2c.configreg & DS2482_REG_CFG_PPM) != 0x00 ) ;
+			OWQ_Y(owq) = ( (pn->selected_connection->master.i2c.configreg & DS2482_REG_CFG_PPM) != 0x00 ) ;
 			return 0;
 		default:
 			return -ENOTSUP ;
@@ -373,9 +373,9 @@ static ZERO_OR_ERROR FS_w_PPM(struct one_wire_query *owq)
 	switch ( pn->selected_connection->busmode ) {
 		case bus_i2c:
 			if ( OWQ_Y(owq) ) {
-				pn->selected_connection->connin.i2c.configreg |= DS2482_REG_CFG_PPM ;
+				pn->selected_connection->master.i2c.configreg |= DS2482_REG_CFG_PPM ;
 			} else {
-				pn->selected_connection->connin.i2c.configreg &= ~DS2482_REG_CFG_PPM ;
+				pn->selected_connection->master.i2c.configreg &= ~DS2482_REG_CFG_PPM ;
 			}
 			break ;
 		default:
@@ -390,7 +390,7 @@ static ZERO_OR_ERROR FS_r_checksum(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	switch ( pn->selected_connection->busmode ) {
 		case bus_ha5:
-			OWQ_Y(owq) = pn->selected_connection->connin.ha5.checksum;
+			OWQ_Y(owq) = pn->selected_connection->master.ha5.checksum;
 			return 0;
 		default:
 			return -ENOTSUP ;
@@ -402,7 +402,7 @@ static ZERO_OR_ERROR FS_w_checksum(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	switch ( pn->selected_connection->busmode ) {
 		case bus_ha5:
-			pn->selected_connection->connin.ha5.checksum = OWQ_Y(owq) ;
+			pn->selected_connection->master.ha5.checksum = OWQ_Y(owq) ;
 			break ;
 		default:
 			break ;
@@ -487,7 +487,7 @@ static ZERO_OR_ERROR FS_r_pulldownslewrate(struct one_wire_query *owq)
 	if (pn->selected_connection->busmode != bus_usb) {
 		return -ENOTSUP;
 	} else {
-		OWQ_U(owq) = pn->selected_connection->connin.usb.pulldownslewrate;
+		OWQ_U(owq) = pn->selected_connection->master.usb.pulldownslewrate;
 	}
 	return 0;
 }
@@ -503,10 +503,10 @@ static ZERO_OR_ERROR FS_w_pulldownslewrate(struct one_wire_query *owq)
 		return -ENOTSUP;
 	}
 
-	pn->selected_connection->connin.usb.pulldownslewrate = OWQ_U(owq);
+	pn->selected_connection->master.usb.pulldownslewrate = OWQ_U(owq);
 	pn->selected_connection->changed_bus_settings |= CHANGED_USB_SLEW ;	// force a reset
 
-	LEVEL_DEBUG("Set slewrate to %d", pn->selected_connection->connin.usb.pulldownslewrate);
+	LEVEL_DEBUG("Set slewrate to %d", pn->selected_connection->master.usb.pulldownslewrate);
 
 	return 0;
 }
@@ -522,7 +522,7 @@ static ZERO_OR_ERROR FS_r_writeonelowtime(struct one_wire_query *owq)
 	if (pn->selected_connection->busmode != bus_usb) {
 		OWQ_U(owq) = 10;
 	} else {
-		OWQ_U(owq) = pn->selected_connection->connin.usb.writeonelowtime + 8;
+		OWQ_U(owq) = pn->selected_connection->master.usb.writeonelowtime + 8;
 	}
 	return 0;
 }
@@ -538,7 +538,7 @@ static ZERO_OR_ERROR FS_w_writeonelowtime(struct one_wire_query *owq)
 		return -ENOTSUP;
 	}
 
-	pn->selected_connection->connin.usb.writeonelowtime = OWQ_U(owq) - 8;
+	pn->selected_connection->master.usb.writeonelowtime = OWQ_U(owq) - 8;
 	pn->selected_connection->changed_bus_settings |= CHANGED_USB_LOW ;	// force a reset
 
 	return 0;
@@ -555,7 +555,7 @@ static ZERO_OR_ERROR FS_r_datasampleoffset(struct one_wire_query *owq)
 	if (pn->selected_connection->busmode != bus_usb) {
 		OWQ_U(owq) = 8;
 	} else {
-		OWQ_U(owq) = pn->selected_connection->connin.usb.datasampleoffset + 3;
+		OWQ_U(owq) = pn->selected_connection->master.usb.datasampleoffset + 3;
 	}
 	return 0;
 }
@@ -571,7 +571,7 @@ static ZERO_OR_ERROR FS_w_datasampleoffset(struct one_wire_query *owq)
 		return -ENOTSUP;
 	}
 
-	pn->selected_connection->connin.usb.datasampleoffset = OWQ_U(owq) - 3;
+	pn->selected_connection->master.usb.datasampleoffset = OWQ_U(owq) - 3;
 	pn->selected_connection->changed_bus_settings |= CHANGED_USB_OFFSET;	// force a reset
 
 	return 0;

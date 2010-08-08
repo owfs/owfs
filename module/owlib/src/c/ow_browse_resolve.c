@@ -64,9 +64,9 @@ static struct connection_in * CreateIn(const char * name, const char * type, con
 	snprintf(addr_name,127,"%s:%s",host,service) ;
 	UCLIBCUNLOCK;
 	in->name = owstrdup(addr_name) ;
-	in->connin.tcp.name   = owstrdup( name  ) ;
-	in->connin.tcp.type   = owstrdup( type  ) ;
-	in->connin.tcp.domain = owstrdup( domain) ;
+	in->master.tcp.name   = owstrdup( name  ) ;
+	in->master.tcp.type   = owstrdup( type  ) ;
+	in->master.tcp.domain = owstrdup( domain) ;
 
 	return in ;
 }
@@ -77,13 +77,13 @@ static GOOD_OR_BAD Zero_nomatch(struct connection_in * trial,struct connection_i
 	if ( existing->busmode != bus_zero ) {
 		return gbGOOD ;
 	}
-	if ( BAD( string_null_or_match( trial->connin.tcp.name   , existing->connin.tcp.name   )) ) {
+	if ( BAD( string_null_or_match( trial->master.tcp.name   , existing->master.tcp.name   )) ) {
 		return gbGOOD ;
 	}
-	if ( BAD( string_null_or_match( trial->connin.tcp.type   , existing->connin.tcp.type   )) ) {
+	if ( BAD( string_null_or_match( trial->master.tcp.type   , existing->master.tcp.type   )) ) {
 		return gbGOOD ;
 	}
-	if ( BAD( string_null_or_match( trial->connin.tcp.domain , existing->connin.tcp.domain )) ) {
+	if ( BAD( string_null_or_match( trial->master.tcp.domain , existing->master.tcp.domain )) ) {
 		return gbGOOD ;
 	}
 	return gbBAD ;
