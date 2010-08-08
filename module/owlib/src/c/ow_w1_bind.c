@@ -36,28 +36,26 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
 #include "ow_w1.h"
 #include "ow_connection.h"
 
-FILE_DESCRIPTOR_OR_ERROR w1_bind( void )
+void w1_bind( void )
 {
 	struct sockaddr_nl l_local ;
 
-	Test_and_Close( &(Inbound_Control.w1_file_descriptor) ) ; // just in case
+	Test_and_Close( &(Inbound_Control.w1_monitor->file_descriptor) ) ; // just in case
 	
-	Inbound_Control.w1_file_descriptor = socket(AF_NETLINK, SOCK_DGRAM, NETLINK_CONNECTOR);
-	if ( FILE_DESCRIPTOR_NOT_VALID( Inbound_Control.w1_file_descriptor ) ) {
+	Inbound_Control.w1_monitor->file_descriptor = socket(AF_NETLINK, SOCK_DGRAM, NETLINK_CONNECTOR);
+	if ( FILE_DESCRIPTOR_NOT_VALID( Inbound_Control.w1_monitor->file_descriptor ) ) {
 		ERROR_CONNECT("Netlink (w1) socket");
-		return FILE_DESCRIPTOR_BAD;
+		return ;
 	}
 
 	l_local.nl_pid = Inbound_Control.w1_monitor->master.w1_monitor.pid = getpid() ;
 	l_local.nl_family = AF_NETLINK;
 	l_local.nl_groups = 23;
 
-	if (bind(Inbound_Control.w1_file_descriptor, (struct sockaddr *)&l_local, sizeof(struct sockaddr_nl)) == -1) {
+	if ( bind( Inbound_Control.w1_monitor->file_descriptor, (struct sockaddr *)&l_local, sizeof(struct sockaddr_nl) ) == -1 ) {
 		ERROR_CONNECT("Netlink (w1) bind");
-		return FILE_DESCRIPTOR_BAD;
+		Test_and_Close( &(Inbound_Control.w1_monitor->file_descriptor) );
 	}
-
-	return Inbound_Control.w1_file_descriptor ;
 }
 
 #endif /* OW_W1 */

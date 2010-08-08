@@ -26,12 +26,6 @@ GOOD_OR_BAD W1_Browse( void )
 {
 	pthread_t thread_dispatch ;
 
-	// Initial setup
-	_MUTEX_INIT(Inbound_Control.w1_mutex);
-	_MUTEX_INIT(Inbound_Control.w1_read_mutex);
-	gettimeofday(&(Inbound_Control.w1_monitor->master.w1_monitor.last_read),NULL);
-	++Inbound_Control.w1_monitor->master.w1_monitor.last_read.tv_sec ;
-
 	if ( pthread_create(&thread_dispatch, NULL, W1_Dispatch, NULL ) != 0 ) {
 		ERROR_DEBUG("Couldn't create netlink monitoring thread");
 		return gbBAD ;

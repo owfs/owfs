@@ -40,16 +40,23 @@ GOOD_OR_BAD W1_monitor_detect(struct connection_in *in)
 	
 	RETURN_BAD_IF_BAD( w1_monitor_in_use(in) ) ;
 	
+	// Initial setup
+	Inbound_Control.w1_monitor = in ; // essentially a global pointer to the w1_monitor entry
+	_MUTEX_INIT(in->master.w1_monitor.seq_mutex);
+	_MUTEX_INIT(in->master.w1_monitor.read_mutex);
+	gettimeofday(&(in->master.w1_monitor.last_read),NULL);
+	++in->master.w1_monitor.last_read.tv_sec ;
+
 	in->master.w1_monitor.seq = SEQ_INIT ;
 	in->master.w1_monitor.pid = 0 ;
 	
-	if ( FILE_DESCRIPTOR_NOT_VALID(w1_bind()) ) {
+	w1_bind() ; // sets in->file_descriptor
+	if ( FILE_DESCRIPTOR_NOT_VALID( in->file_descriptor ) ) {
 		ERROR_DEBUG("Netlink problem -- are you root?");
+		Inbound_Control.w1_monitor = NULL ;
 		return gbBAD ;
 	}
 	
-	Inbound_Control.w1_monitor = in ; // essentially a global pointer to the w1_monitor entry
-
 	return W1_Browse() ; // creates thread that runs forever.
 }
 
@@ -73,9 +80,9 @@ static GOOD_OR_BAD w1_monitor_in_use(const struct connection_in * in_selected)
 static void W1_monitor_close(struct connection_in *in)
 {
 	(void) in;
-    Test_and_Close( &(Inbound_Control.w1_file_descriptor) );
-	_MUTEX_DESTROY(Inbound_Control.w1_mutex);
-	_MUTEX_DESTROY(Inbound_Control.w1_read_mutex);
+    Test_and_Close( &(in->file_descriptor) );
+	_MUTEX_DESTROY(in->master.w1_monitor.seq_mutex);
+	_MUTEX_DESTROY(in->master.w1_monitor.read_mutex);
 }
 
 #else /* OW_W1 && OW_MT */

@@ -256,7 +256,6 @@ struct master_ha5 {
 struct master_w1 {
 #if OW_W1
 	// bus master name kept in name
-	// netlink fd kept in file_descriptor
 	SEQ_OR_ERROR seq ;
 	int id ; // equivalent to the number part of w1_bus_master23
 	FILE_DESCRIPTOR_OR_ERROR netlink_pipe[2] ;
@@ -265,13 +264,13 @@ struct master_w1 {
 
 struct master_w1_monitor {
 #if OW_W1 && OW_MT
+	// netlink fd kept in file_descriptor
 	SEQ_OR_ERROR seq ; // seq number to netlink
-	FILE_DESCRIPTOR_OR_ERROR w1_file_descriptor ; // w1 kernel module for netlink communication
 	pid_t pid ;
 	struct timeval last_read ;
 
-	pthread_mutex_t w1_mutex;	// mutex for w1 sequence number */
-	pthread_mutex_t w1_read_mutex;  // mutex for w1 netlink read time
+	pthread_mutex_t seq_mutex;	// mutex for w1 sequence number */
+	pthread_mutex_t read_mutex;  // mutex for w1 netlink read time
 #endif /* OW_W1 && OW_MT */
 	
 };
@@ -477,15 +476,8 @@ extern struct inbound_control {
 	int next_fake ; // count of fake buses
 	int next_tester ; // count tester buses
 	int next_mock ; // count mock buses
-	struct connection_in * w1_monitor ;
-#if OW_W1
-	FILE_DESCRIPTOR_OR_ERROR w1_file_descriptor ; // w1 kernel module for netlink communication
 
-#if OW_MT
-	pthread_mutex_t w1_mutex;	// mutex for w1 sequence number */
-	pthread_mutex_t w1_read_mutex;  // mutex for w1 netlink read time
-#endif /* OW_MT */
-#endif /* OW_W1 */
+	struct connection_in * w1_monitor ;
 } Inbound_Control ; // Single global struct -- see ow_connect.c
 
 /* Network connection structure */

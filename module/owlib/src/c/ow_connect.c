@@ -25,9 +25,6 @@ struct inbound_control Inbound_Control = {
 	.next_fake = 0,
 	.next_tester = 0,
 	.next_mock = 0,
-#if OW_W1
-	.w1_file_descriptor = FILE_DESCRIPTOR_BAD,
-#endif /* OW_W1 */
 };
 
 struct outbound_control Outbound_Control = {
