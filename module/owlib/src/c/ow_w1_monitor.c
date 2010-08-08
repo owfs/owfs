@@ -40,10 +40,14 @@ GOOD_OR_BAD W1_monitor_detect(struct connection_in *in)
 	
 	RETURN_BAD_IF_BAD( w1_monitor_in_use(in) ) ;
 	
+	in->master.w1_monitor.seq = SEQ_INIT ;
+	
 	if ( FILE_DESCRIPTOR_NOT_VALID(w1_bind()) ) {
 		ERROR_DEBUG("Netlink problem -- are you root?");
 		return gbBAD ;
 	}
+	
+	Inbound_Control.w1_monitor = in ; // essentially a global pointer to the w1_monitor entry
 
 	return W1_Browse() ; // creates thread that runs forever.
 }

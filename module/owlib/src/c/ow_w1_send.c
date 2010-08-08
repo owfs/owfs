@@ -62,7 +62,7 @@ SEQ_OR_ERROR W1_send_msg( struct connection_in * in, struct w1_netlink_msg *msg,
 		seq = ++in->master.w1.seq ;
 		bus = in->master.w1.id;
 	} else {
-		seq = ++Inbound_Control.w1_seq ;
+		seq = ++Inbound_Control.w1_monitor->master.w1_monitor.seq ;
 		bus = 0 ;
 	}
 

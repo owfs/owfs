@@ -263,6 +263,19 @@ struct master_w1 {
 #endif /* OW_W1 */
 };
 
+struct master_w1_monitor {
+#if OW_W1 && OW_MT
+	SEQ_OR_ERROR seq ; // seq number to netlink
+	FILE_DESCRIPTOR_OR_ERROR w1_file_descriptor ; // w1 kernel module for netlink communication
+	int w1_pid ;
+	struct timeval w1_last_read ;
+
+	pthread_mutex_t w1_mutex;	// mutex for w1 sequence number */
+	pthread_mutex_t w1_read_mutex;  // mutex for w1 netlink read time
+#endif /* OW_W1 && OW_MT */
+	
+};
+
 struct master_usb_monitor {
 	FILE_DESCRIPTOR_OR_ERROR shutdown_pipe[2] ;
 };
@@ -447,6 +460,7 @@ struct connection_in {
 		struct master_ha7e enet ;
 		struct master_etherweather etherweather;
 		struct master_w1 w1;
+		struct master_w1_monitor w1_monitor ;
 		struct master_browse browse;
 		struct master_usb_monitor usb_monitor ;
 	} master;
@@ -463,8 +477,8 @@ extern struct inbound_control {
 	int next_fake ; // count of fake buses
 	int next_tester ; // count tester buses
 	int next_mock ; // count mock buses
+	struct connection_in * w1_monitor ;
 #if OW_W1
-	SEQ_OR_ERROR w1_seq ; // seq number to netlink
 	FILE_DESCRIPTOR_OR_ERROR w1_file_descriptor ; // w1 kernel module for netlink communication
 	int w1_pid ;
 	struct timeval w1_last_read ;
