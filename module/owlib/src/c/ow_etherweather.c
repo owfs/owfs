@@ -234,7 +234,6 @@ static GOOD_OR_BAD EtherWeather_PowerByte(const BYTE byte, BYTE * resp, const UI
 
 static void EtherWeather_close(struct connection_in *in)
 {
-	Test_and_Close( &(in->file_descriptor) ) ;
 	FreeClientAddr(in);
 }
 

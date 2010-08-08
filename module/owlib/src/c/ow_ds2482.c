@@ -813,6 +813,5 @@ static void DS2482_close(struct connection_in *in)
 		_MUTEX_DESTROY(in->master.i2c.i2c_mutex);
 	}
 #endif							/* OW_MT */
-	Test_and_Close( & (in->master.i2c.head->file_descriptor) ) ;
 }
 #endif							/* OW_I2C */

@@ -25,6 +25,7 @@ struct inbound_control Inbound_Control = {
 	.next_fake = 0,
 	.next_tester = 0,
 	.next_mock = 0,
+	.w1_monitor = NULL ,
 };
 
 struct outbound_control Outbound_Control = {
@@ -87,6 +88,7 @@ struct connection_in *AllocIn(const struct connection_in *in)
 			}
 		} else {
 			memset(now, 0, len);
+			now->file_descriptor = FILE_DESCRIPTOR_BAD ;
 		}
 
 		/* not yet linked */
@@ -206,8 +208,11 @@ void RemoveIn( struct connection_in * conn )
 	}
 #endif							/* OW_MT */
 
-	/* Next free up internal resources */
+	/* Close master-specific resources */
 	BUS_close(conn) ;
+
+	/* Next free up internal resources */
+	Test_and_Close( &(conn->file_descriptor) ) ;
 	SAFEFREE(conn->name) ;
 	DirblobClear(&(conn->main));
 	DirblobClear(&(conn->alarm));

@@ -571,7 +571,6 @@ static void LINK_close(struct connection_in *in)
 {
 	switch( in->busmode ) {
 		case bus_elink:
-			Test_and_Close( &(in->file_descriptor) ) ;
 			FreeClientAddr(in);
 			break ;
 		case bus_link:

@@ -16,6 +16,8 @@ $Id$
 
 #if OW_W1 && OW_MT
 
+#include "ow_w1.h"
+
 static void W1_monitor_close(struct connection_in *in);
 static GOOD_OR_BAD w1_monitor_in_use(const struct connection_in * in_selected) ;
 
@@ -79,8 +81,6 @@ static GOOD_OR_BAD w1_monitor_in_use(const struct connection_in * in_selected)
 
 static void W1_monitor_close(struct connection_in *in)
 {
-	(void) in;
-    Test_and_Close( &(in->file_descriptor) );
 	_MUTEX_DESTROY(in->master.w1_monitor.seq_mutex);
 	_MUTEX_DESTROY(in->master.w1_monitor.read_mutex);
 }

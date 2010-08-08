@@ -283,7 +283,7 @@ void DS9490_close(struct connection_in *in)
 {
 	usb_dev_handle *usb = in->master.usb.usb;
 
-	if (usb) {
+	if (usb != NULL) {
 		int ret = usb_release_interface(usb, 0);
 		if (ret) {
 			in->master.usb.dev = NULL;	// force a re-scan
