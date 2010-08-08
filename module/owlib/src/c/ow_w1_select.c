@@ -60,7 +60,7 @@ GOOD_OR_BAD W1PipeSelect_timeout( FILE_DESCRIPTOR_OR_ERROR file_descriptor )
 			gettimeofday(&now,NULL);
 			// Set time of last read
 			_MUTEX_LOCK(Inbound_Control.w1_read_mutex) ;
-			timersub(&now,&Inbound_Control.w1_last_read,&diff);
+			timersub( &now, &(Inbound_Control.w1_monitor->master.w1_monitor.last_read), &diff );
 			_MUTEX_UNLOCK(Inbound_Control.w1_read_mutex) ;
 			if ( diff.tv_sec <= Globals.timeout_w1 ) {
 				LEVEL_DEBUG("Select legal timeout -- try again");

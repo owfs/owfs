@@ -267,8 +267,8 @@ struct master_w1_monitor {
 #if OW_W1 && OW_MT
 	SEQ_OR_ERROR seq ; // seq number to netlink
 	FILE_DESCRIPTOR_OR_ERROR w1_file_descriptor ; // w1 kernel module for netlink communication
-	int w1_pid ;
-	struct timeval w1_last_read ;
+	pid_t pid ;
+	struct timeval last_read ;
 
 	pthread_mutex_t w1_mutex;	// mutex for w1 sequence number */
 	pthread_mutex_t w1_read_mutex;  // mutex for w1 netlink read time
@@ -480,8 +480,6 @@ extern struct inbound_control {
 	struct connection_in * w1_monitor ;
 #if OW_W1
 	FILE_DESCRIPTOR_OR_ERROR w1_file_descriptor ; // w1 kernel module for netlink communication
-	int w1_pid ;
-	struct timeval w1_last_read ;
 
 #if OW_MT
 	pthread_mutex_t w1_mutex;	// mutex for w1 sequence number */

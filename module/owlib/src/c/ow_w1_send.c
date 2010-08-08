@@ -88,7 +88,7 @@ SEQ_OR_ERROR W1_send_msg( struct connection_in * in, struct w1_netlink_msg *msg,
 	nlm->nlmsg_len = size;
 	nlm->nlmsg_flags = 0;
 	//nlm->nlmsg_flags = NLM_F_REQUEST;
-	nlm->nlmsg_pid = Inbound_Control.w1_pid ;
+	nlm->nlmsg_pid = Inbound_Control.w1_monitor->master.w1_monitor.pid ;
 
 	// set the cn fields
 	cn = (struct cn_msg *)(nlm + 1);

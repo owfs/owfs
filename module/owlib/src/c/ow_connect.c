@@ -27,7 +27,6 @@ struct inbound_control Inbound_Control = {
 	.next_mock = 0,
 #if OW_W1
 	.w1_file_descriptor = FILE_DESCRIPTOR_BAD,
-	.w1_pid = 0,
 #endif /* OW_W1 */
 };
 
@@ -173,16 +172,6 @@ void FreeInAll( void )
 	while ( Inbound_Control.head ) {
 		RemoveIn(Inbound_Control.head);
 	}
-
-#if OW_W1
-	if ( Inbound_Control.w1_pid > 0 ) {
-		Test_and_Close( & (Inbound_Control.w1_file_descriptor) ) ;
-#if OW_MT
-		_MUTEX_DESTROY(Inbound_Control.w1_mutex);
-		_MUTEX_DESTROY(Inbound_Control.w1_read_mutex);
-#endif							/* OW_MT */
-	}
-#endif							/* OW_W1 */
 }
 
 void RemoveIn( struct connection_in * conn )

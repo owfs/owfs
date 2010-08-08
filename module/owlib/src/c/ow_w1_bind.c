@@ -48,10 +48,9 @@ FILE_DESCRIPTOR_OR_ERROR w1_bind( void )
 		return FILE_DESCRIPTOR_BAD;
 	}
 
-	Inbound_Control.w1_pid = getpid() ;
+	l_local.nl_pid = Inbound_Control.w1_monitor->master.w1_monitor.pid = getpid() ;
 	l_local.nl_family = AF_NETLINK;
 	l_local.nl_groups = 23;
-	l_local.nl_pid    = Inbound_Control.w1_pid ;
 
 	if (bind(Inbound_Control.w1_file_descriptor, (struct sockaddr *)&l_local, sizeof(struct sockaddr_nl)) == -1) {
 		ERROR_CONNECT("Netlink (w1) bind");
