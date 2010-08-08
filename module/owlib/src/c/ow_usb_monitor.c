@@ -133,14 +133,20 @@ static void USB_scan_for_adapters(void)
 	LEVEL_DEBUG("USB SCAN!");
 	USB_first(&ul);
 	while ( GOOD(USB_next(&ul)) ) {
-		struct connection_in * in = NewIn(NULL) ;
+		struct connection_in * in = AllocIn(NULL) ;
 		if ( in == NULL ) {
 			return ;
 		}
 		in->name = DS9490_device_name(&ul) ;
+		
+		// Can do detect. Becasue the name makes this a specific adapter (USB pair)
+		// we won't do a directory and won't add the directory and devices with the wrong index
 		if ( BAD( DS9490_detect(in)) ) {
 			// Remove the extra connection
 			RemoveIn(in);
+		} else {
+			// Add the device, but no need to check for bad match
+			Add_InFlight( NULL, in ) ;
 		}
 	}
 
