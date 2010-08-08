@@ -27,7 +27,7 @@ typedef void *DLHANDLE;
 
 #endif							/* OW_CYGWIN */
 
-DLHANDLE DL_open(const char *pathname, int mode);
+DLHANDLE DL_open(const char *pathname);
 void *DL_sym(DLHANDLE handle, const char *name);
 int DL_close(DLHANDLE handle);
 char *DL_error(void);

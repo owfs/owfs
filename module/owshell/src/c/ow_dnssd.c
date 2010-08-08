@@ -50,7 +50,7 @@ int OW_Load_dnssd_library(void)
 
 	while (*libdirs[i]) {
 		/* Cygwin has dlopen and it seems to be ok to use it actually. */
-		if (!(libdnssd = DL_open(libdirs[i], 0))) {
+		if (!(libdnssd = DL_open(libdirs[i]))) {
 			/* Couldn't open that lib, but continue anyway */
 #if 0
 			char *derr;
@@ -69,7 +69,7 @@ int OW_Load_dnssd_library(void)
 	if (!libdnssd) {
 		char file[255];
 		strcpy(file, "dnssd.dll");
-		if (!(libdnssd = DL_open(file, 0))) {
+		if (!(libdnssd = DL_open(file))) {
 			/* Couldn't open that lib, but continue anyway */
 		}
 	}
@@ -84,7 +84,7 @@ int OW_Load_dnssd_library(void)
 	};
 
 	while (*libdirs[i]) {
-		if (!(libdnssd = DL_open(libdirs[i], RTLD_LAZY))) {
+		if (!(libdnssd = DL_open(libdirs[i]))) {
 			/* Couldn't open that lib, but continue anyway */
 #if 0
 			char *derr;
@@ -108,7 +108,7 @@ int OW_Load_dnssd_library(void)
 	};
 
 	while (*libdirs[i]) {
-		if (!(libdnssd = DL_open(libdirs[i], RTLD_LAZY))) {
+		if (!(libdnssd = DL_open(libdirs[i]))) {
 			/* Couldn't open that lib, but continue anyway */
 #if 0
 			char *derr;

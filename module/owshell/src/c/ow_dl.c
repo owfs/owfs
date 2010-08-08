@@ -15,12 +15,12 @@ $Id$
 
 #if OW_ZERO
 
-DLHANDLE DL_open(const char *pathname, int mode)
+DLHANDLE DL_open(const char *pathname)
 {
 #if OW_CYGWIN
 	return LoadLibrary(pathname);
 #elif defined(HAVE_DLOPEN)
-	return dlopen(pathname, mode);
+	return dlopen(pathname, RTLD_LAZY|RTLD_GLOBAL);
 #endif
 
 }

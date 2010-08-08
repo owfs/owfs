@@ -16,10 +16,6 @@ See the header file: ow.h for full attribution
 
 #include "ow.h"
 
-#if !OW_CYGWIN
-#include "ow_avahi.h"
-#endif
-
 #include "ow_dl.h"
 
 DLHANDLE avahi_client = NULL;
@@ -48,31 +44,37 @@ avahi_strerror
 #include <dlfcn.h>
 #endif
 
-#define DNSfunction_link( lib , name )  name = DL_sym( lib, #name );\
+#define DNSfunction_link( lib , name )  do { name = DL_sym( lib, #name );\
 	if ( name == NULL ) {\
-		LEVEL_CONNECT("Avahi is disabled since "#name" isn't found");\
-		return -1;\
-	}
+		LEVEL_CONNECT("Avahi is DISABLED since "#name" isn't found");\
+		return gbBAD;\
+	} else { \
+		LEVEL_DEBUG("Avahi library function found: "#name);\
+	} } while (0)
 	
-int OW_Load_avahi_library(void)
+GOOD_OR_BAD OW_Load_avahi_library(void)
 {
 #if OW_CYGWIN
-	// No avahi in Cygwin
-	return -1 ;
+	LEVEL_DEBUG("No avahi in Cygwin");
+	return gbBAD ;
 #elif OW_DARWIN
-	// At least currently, it's easier to use the native Bonjour on Mac OSX
-	return -1 ;
+	LEVEL_DEBUG("At least currently, it's easier to use the native Bonjour on Mac OSX");
+	return gbBAD ;
 
 #elif defined(HAVE_DLOPEN)
+#if OW_DEBUG
+#endif /* OW_DEBUG */
 	if (
-		(avahi_client=DL_open("libavahi-client.so", RTLD_LAZY)) == NULL
+		(avahi_client=DL_open("libavahi-client.so")) == NULL
 		&&
-		(avahi_client=DL_open("/usr/lib/libavahi-client.so", RTLD_LAZY)) == NULL
+		(avahi_client=DL_open("/usr/lib/libavahi-client.so")) == NULL
 		&&
-		(avahi_client=DL_open("/opt/owfs/lib/libavahi-client.so", RTLD_LAZY)) == NULL
+		(avahi_client=DL_open("/opt/owfs/lib/libavahi-client.so")) == NULL
 	) {
-		LEVEL_CONNECT("No Avahi support. Library libavahi-client couldn't be loaded.") ;
-		return -1 ;
+		LEVEL_CONNECT("No Avahi support. Library libavahi-client couldn't be loaded") ;
+		return gbBAD ;
+	} else {
+		LEVEL_DEBUG("Avahi support: libavahi-client loaded successfully");
 	}
 	DNSfunction_link(avahi_client,avahi_client_errno) ;
 	DNSfunction_link(avahi_client,avahi_client_free) ;
@@ -90,14 +92,16 @@ int OW_Load_avahi_library(void)
 	DNSfunction_link(avahi_client,avahi_service_browser_new) ;
 
 	if (
-		(avahi_common=DL_open("libavahi-common.so", RTLD_LAZY)) == NULL
+		(avahi_common=DL_open("libavahi-common.so")) == NULL
 		&&
-		(avahi_common=DL_open("/usr/lib/libavahi-common.so", RTLD_LAZY)) == NULL
+		(avahi_common=DL_open("/usr/lib/libavahi-common.so")) == NULL
 		&&
-		(avahi_common=DL_open("/opt/owfs/lib/libavahi-common.so", RTLD_LAZY)) == NULL
+		(avahi_common=DL_open("/opt/owfs/lib/libavahi-common.so")) == NULL
 		) {
-		LEVEL_CONNECT("No Avahi support. Library libavahi-commonn couldn't be loaded.") ;
-		return -1 ;
+		LEVEL_CONNECT("No Avahi support. Library libavahi-common couldn't be loaded.") ;
+		return gbBAD ;
+	} else {
+		LEVEL_DEBUG("Avahi support: libavahi-common loaded successfully.");
 	}
 	DNSfunction_link(avahi_common,avahi_simple_poll_free) ;
 	DNSfunction_link(avahi_common,avahi_simple_poll_get) ;
@@ -105,10 +109,10 @@ int OW_Load_avahi_library(void)
 	DNSfunction_link(avahi_common,avahi_simple_poll_new) ;
 	DNSfunction_link(avahi_common,avahi_simple_poll_quit) ;
 	DNSfunction_link(avahi_common,avahi_strerror) ;
-	return 0 ;
+	return gbGOOD ;
 #endif
-				
-	return -1;
+	LEVEL_CONNECT("dlopen not supported on this platform") ;			
+	return gbBAD;
 }
 
 void OW_Free_avahi_library(void)

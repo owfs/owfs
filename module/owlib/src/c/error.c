@@ -71,7 +71,6 @@ void err_msg(enum e_err_type errnoflag, enum e_err_level level, const char * fil
 	enum e_err_print sl;		// 2=console 1=syslog
 	va_list ap;
 	const char * level_string ;
-
 	switch (level) {
 	case e_err_default:
 		level_string = "DEFAULT: ";

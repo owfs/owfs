@@ -171,7 +171,7 @@ void OW_Browse(struct connection_in *in)
 	if ( Globals.zero == zero_avahi ) {
 #if !OW_CYGWIN
 		pthread_t thread;
-		int err = pthread_create(&thread, NULL, OW_Avahi_Browse, NULL);
+		int err = pthread_create(&thread, NULL, OW_Avahi_Browse, (void *) in);
 		if (err) {
 			LEVEL_CONNECT("Avahi Browse thread error %d.", err);
 		}

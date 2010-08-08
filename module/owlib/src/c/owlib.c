@@ -23,6 +23,20 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct connection_in * in ) ;
 /* Start the owlib process -- already in background */
 GOOD_OR_BAD LibStart(void)
 {
+	Globals.zero = zero_none ;
+#if OW_ZERO
+#if OW_MT
+	// Avahi only implementd with multithreading
+	if ( GOOD( OW_Load_avahi_library()) ) {
+		Globals.zero = zero_avahi ;
+		//OW_Load_dnssd_library() ; // until avahi browse implemented
+	} else
+#endif
+	if ( OW_Load_dnssd_library() == 0 ) {
+		Globals.zero = zero_bonjour ;
+	}
+#endif
+
 	/* Initialize random number generator, make sure fake devices get the same
 	 * id each time */
 	srand(1);

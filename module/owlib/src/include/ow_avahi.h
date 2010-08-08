@@ -399,9 +399,8 @@ AvahiServiceResolver * (*avahi_service_resolver_new)(
 
 /**********************************************/
 /* Prototypes */
-
 struct connection_out ;
-int OW_Load_avahi_library(void) ;
+GOOD_OR_BAD OW_Load_avahi_library(void) ;
 void OW_Free_avahi_library(void) ;
 void *OW_Avahi_Announce( void * v ) ;
 void *OW_Avahi_Browse(void * v) ;

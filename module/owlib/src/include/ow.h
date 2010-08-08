@@ -201,15 +201,6 @@ ssize_t getline (char **lineptr, size_t *n, FILE *stream) ;
 #undef OW_PARPORT
 #endif							/* USE_NO_PARPORT */
 
-#if OW_ZERO
-/* Zeroconf / Bonjour */
-#include "ow_dl.h"
-#include "ow_dnssd.h"
-#if !OW_CYGWIN
-#include "ow_avahi.h"
-#endif							/* OW_CYGWIN */
-#endif							/* OW_ZERO */
-
 /* Include some compatibility functions */
 #include "compat.h"
 
@@ -270,6 +261,15 @@ ssize_t getline (char **lineptr, size_t *n, FILE *stream) ;
 #include "rwlock.h"
 /* Many mutexes separated out for readability */
 #include "ow_mutexes.h"
+
+#if OW_ZERO
+/* Zeroconf / Bonjour */
+#include "ow_dl.h"
+#include "ow_dnssd.h"
+#if !OW_CYGWIN
+#include "ow_avahi.h"
+#endif							/* OW_CYGWIN */
+#endif							/* OW_ZERO */
 
 /*
     OW -- One Wire

@@ -18,7 +18,6 @@ See the header file: ow.h for full attribution
 
 #if OW_ZERO && OW_MT && ( ! OW_CYGWIN )
 
-#include "ow_avahi.h"
 #include "ow_connection.h"
 
 #ifdef HAVE_SYS_SOCKET_H
@@ -158,7 +157,7 @@ static void browse_callback(
 
 			LEVEL_DEBUG( "%s", avahi_strerror(avahi_client_errno(in->connin.browse.avahi_client)));
 			avahi_simple_poll_quit(in->connin.browse.avahi_poll);
-			return;
+			break;
 
 		case AVAHI_BROWSER_NEW:
 			LEVEL_DEBUG( "NEW: service '%s' of type '%s' in domain '%s'", name, type, domain);

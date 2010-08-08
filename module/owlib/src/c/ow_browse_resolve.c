@@ -15,9 +15,9 @@ $Id$
 
 #include "ow_connection.h"
 
-static void CreateIn(const char * name, const char * type, const char * domain, const char * host, const char * service ) ;
-static struct connection_in *FindIn(const char * name, const char * type, const char * domain);
+static struct connection_in * CreateIn(const char * name, const char * type, const char * domain, const char * host, const char * service );
 static struct connection_out *FindOut(const char * name, const char * type, const char * domain);
+static GOOD_OR_BAD Zero_nomatch(struct connection_in * trial,struct connection_in * existing);
 static GOOD_OR_BAD string_null_or_match( const char * one, const char * two );
 
 void ZeroAdd(const char * name, const char * type, const char * domain, const char * host, const char * service)
@@ -30,42 +30,34 @@ void ZeroAdd(const char * name, const char * type, const char * domain, const ch
 		return ;
 	}
 
-	in = FindIn( name, type, domain ) ;
-	if ( in != NULL ) {
-		if ( GOOD( string_null_or_match( in->connin.tcp.host, host)) && GOOD( string_null_or_match(in->connin.tcp.service,service)) ) {
-			LEVEL_DEBUG( "Repeat add of %s (%s:%s) -- ignored",name,host,service) ;
-			CONNIN_WUNLOCK ;
-			return ;
-		} else {
-			LEVEL_DEBUG( "The new connection replaces a previous entry" ) ;
-			Del_InFlight(in) ;
-		}
+	in = CreateIn( name, type, domain, host, service ) ;
+	if ( BAD( Zero_detect(in)) ) {
+		LEVEL_DEBUG("Failed to create new %s",in->name) ;
+		RemoveIn(in) ;
+	} else {
+		Add_InFlight( Zero_nomatch, in ) ;
 	}
-
-	CreateIn( name, type, domain, host, service ) ;
 }
 
 void ZeroDel(const char * name, const char * type, const char * domain )
 {
-	struct connection_in * in ;
-
-	in = FindIn( name, type, domain ) ;
+	struct connection_in * in = CreateIn( name, type, domain, "", "" ) ;
+	
 	if ( in != NULL ) {
-		LEVEL_DEBUG( "Removing %s (bus.%d)",name,in->index) ;
-		Del_InFlight( in ) ;
-	} else {
-		LEVEL_DEBUG("Couldn't find matching bus to remove");
+		SAFEFREE(in->name) ;
+		in->name = owstrdup(name) ;
+		Del_InFlight( Zero_nomatch, in ) ;
 	}
 }
 
-static void CreateIn(const char * name, const char * type, const char * domain, const char * host, const char * service )
+static struct connection_in * CreateIn(const char * name, const char * type, const char * domain, const char * host, const char * service )
 {
 	char addr_name[128] ;
 	struct connection_in * in = AllocIn(NULL);
 
 	if ( in == NULL ) {
 		LEVEL_DEBUG( "Cannot allocate position for a new Bus Master %s (%s:%s) -- ignored",name,host,service) ;
-		return ;
+		return NULL ;
 	}
 
 	UCLIBCLOCK;
@@ -76,43 +68,28 @@ static void CreateIn(const char * name, const char * type, const char * domain, 
 	in->connin.tcp.type   = owstrdup( type  ) ;
 	in->connin.tcp.domain = owstrdup( domain) ;
 
-	if ( BAD( Zero_detect(in)) ) {
-		LEVEL_DEBUG("Failed to create new %s",in->name) ;
-		RemoveIn(in) ;
-	} else {
-		LEVEL_DEBUG("Created a new bus.%d",in->index) ;
-	}
-	Add_InFlight(in) ;
+	return in ;
 }
 
-// Finds matching connection
-// returns it if found,
-// else NULL
-static struct connection_in *FindIn(const char * name, const char * type, const char * domain)
+// GOOD means no match
+static GOOD_OR_BAD Zero_nomatch(struct connection_in * trial,struct connection_in * existing)
 {
-	struct connection_in *now ;
-	CONNIN_RLOCK ;
-	for ( now = Inbound_Control.head ; now != NULL ; now = now->next ) {
-		if ( now->busmode != bus_zero ) {
-			continue ;
-		}
-		if ( BAD( string_null_or_match( name   , now->connin.tcp.name   )) ) {
-			continue ;
-		}
-		if ( BAD( string_null_or_match( type   , now->connin.tcp.type   )) ) {
-			continue ;
-		}
-		if ( BAD( string_null_or_match( domain , now->connin.tcp.domain )) ) {
-			continue ;
-		}
-		CONNIN_RUNLOCK ;
-		return now ;
+	if ( existing->busmode != bus_zero ) {
+		return gbGOOD ;
 	}
-	CONNIN_RUNLOCK ;
-	return NULL;
+	if ( BAD( string_null_or_match( trial->connin.tcp.name   , existing->connin.tcp.name   )) ) {
+		return gbGOOD ;
+	}
+	if ( BAD( string_null_or_match( trial->connin.tcp.type   , existing->connin.tcp.type   )) ) {
+		return gbGOOD ;
+	}
+	if ( BAD( string_null_or_match( trial->connin.tcp.domain , existing->connin.tcp.domain )) ) {
+		return gbGOOD ;
+	}
+	return gbBAD ;
 }
 
-// Finds matching connection
+// Finds matching connection in OUTBOUND list (so you don't match yourself)
 // returns it if found,
 // else NULL
 static struct connection_out *FindOut(const char * name, const char * type, const char * domain)

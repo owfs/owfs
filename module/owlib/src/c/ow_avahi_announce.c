@@ -16,7 +16,6 @@ See the header file: ow.h for full attribution
 
 #if OW_ZERO && OW_MT
 
-#include "ow_avahi.h"
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
