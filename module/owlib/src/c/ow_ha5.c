@@ -39,10 +39,10 @@ static GOOD_OR_BAD HA5_find_channel(struct parsedname *pn) ;
 
 #if OW_MT
 
-#define HA5MUTEX_INIT(in)		_MUTEX_INIT(in->master.ha5.lock)
-#define HA5MUTEX_LOCK(in)		_MUTEX_LOCK(in->master.ha5.lock ) ;
-#define HA5MUTEX_UNLOCK(in)		_MUTEX_UNLOCK(in->master.ha5.lock);
-#define HA5MUTEX_DESTROY(in)	_MUTEX_DESTROY(in->master.ha5.lock);
+#define HA5MUTEX_INIT(in)		_MUTEX_INIT(in->master.ha5.all_channel_lock)
+#define HA5MUTEX_LOCK(in)		_MUTEX_LOCK(in->master.ha5.all_channel_lock ) ;
+#define HA5MUTEX_UNLOCK(in)		_MUTEX_UNLOCK(in->master.ha5.all_channel_lock);
+#define HA5MUTEX_DESTROY(in)	_MUTEX_DESTROY(in->master.ha5.all_channel_lock);
 
 #else /* OW_MT */
 
