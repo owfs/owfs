@@ -378,7 +378,7 @@ static GOOD_OR_BAD DS2482_detect_single(int lowindex, int highindex, char * i2c_
 				in->master.i2c.configreg |= DS2482_REG_CFG_PPM ;
 			}
 			#if OW_MT
-			_MUTEX_INIT(in->master.i2c.i2c_mutex);
+			_MUTEX_INIT(in->master.i2c.all_channel_lock);
 			#endif							/* OW_MT */
 			in->busmode = bus_i2c;
 			in->Adapter = adapter_DS2482_100;
@@ -810,7 +810,7 @@ static void DS2482_close(struct connection_in *in)
 	}
 #if OW_MT
 	if (in->master.i2c.index == 0) {
-		_MUTEX_DESTROY(in->master.i2c.i2c_mutex);
+		_MUTEX_DESTROY(in->master.i2c.all_channel_lock);
 	}
 #endif							/* OW_MT */
 }

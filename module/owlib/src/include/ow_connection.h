@@ -217,7 +217,7 @@ struct master_i2c {
 	BYTE configchip;
 	/* only one per chip, the bus entries for the other 7 channels point to the first one */
 #if OW_MT
-	pthread_mutex_t i2c_mutex;	// second level mutex for the entire chip */
+	pthread_mutex_t all_channel_lock;	// second level mutex for the entire chip */
 #endif							/* OW_MT */
 	int current;
 	struct connection_in *head;

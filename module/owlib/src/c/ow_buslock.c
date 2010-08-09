@@ -39,7 +39,7 @@ void BUS_lock_in(struct connection_in *in)
 #if OW_MT
 	_MUTEX_LOCK(in->bus_mutex);
 	if (in->busmode == bus_i2c && in->master.i2c.channels > 1) {
-		_MUTEX_LOCK(in->master.i2c.head->master.i2c.i2c_mutex);
+		_MUTEX_LOCK(in->master.i2c.head->master.i2c.all_channel_lock);
 	}
 #endif							/* OW_MT */
 	gettimeofday(&(in->last_lock), NULL);	/* for statistics */
@@ -86,7 +86,7 @@ void BUS_unlock_in(struct connection_in *in)
 	STATUNLOCK;
 #if OW_MT
 	if (in->busmode == bus_i2c && in->master.i2c.channels > 1) {
-		_MUTEX_UNLOCK(in->master.i2c.head->master.i2c.i2c_mutex);
+		_MUTEX_UNLOCK(in->master.i2c.head->master.i2c.all_channel_lock);
 	}
 	_MUTEX_UNLOCK(in->bus_mutex);
 #endif							/* OW_MT */
