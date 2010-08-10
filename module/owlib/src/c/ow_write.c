@@ -26,8 +26,6 @@ static ZERO_OR_ERROR FS_write_all_bits(struct one_wire_query *owq);
 static ZERO_OR_ERROR FS_write_a_bit(struct one_wire_query *owq);
 static ZERO_OR_ERROR FS_write_in_parts(struct one_wire_query *owq);
 static ZERO_OR_ERROR FS_write_a_part(struct one_wire_query *owq);
-static ZERO_OR_ERROR FS_write_mixed_part(struct one_wire_query *owq);
-static void FS_write_add_to_cache( struct one_wire_query *owq);
 
 /* ---------------------------------------------- */
 /* Filesystem callback functions                  */
@@ -287,19 +285,19 @@ static ZERO_OR_ERROR FS_w_local(struct one_wire_query *owq)
 {
 	// Device already locked
 	struct parsedname *pn = PN(owq);
-	//printf("FS_w_local\n");
 
 	/* Special case for "fake" adapter */
 	if ( IsRealDir(pn) ) {
 		switch (get_busmode(pn->selected_connection)) {
 			case bus_mock:
 				// Mock -- write even "unwritable" to the cache for testing
-				FS_write_add_to_cache(owq);
+				OWQ_Cache_Add(owq) ;
 				// fall through
 			case bus_fake:
 			case bus_tester:
 				return (pn->selected_filetype->write == NO_WRITE_FUNCTION) ? -ENOTSUP : 0 ;
 			default:
+				// non-virtual devices get handled below
 				break ;
 		}
 	}
@@ -309,13 +307,21 @@ static ZERO_OR_ERROR FS_w_local(struct one_wire_query *owq)
 		return -ENOTSUP;
 	}
 
+	// Kills all extensions, or just singleton value
+	OWQ_Cache_Del_parts(owq) ;
+
 	/* Array properties? Write all together if aggregate */
 	if (pn->selected_filetype->ag != NON_AGGREGATE) {
+
 		switch (pn->extension) {
 		case EXTENSION_BYTE:
 			LEVEL_DEBUG("Writing collectively as a bitfield");
-			return FS_write_single_lump(owq);
+			OWQ_Cache_Del_ALL(owq) ;
+			OWQ_Cache_Del_parts(owq) ;
+			return FS_write_single_lump(owq); //cache
 		case EXTENSION_ALL:
+			OWQ_Cache_Del_ALL(owq) ;
+			OWQ_Cache_Del_parts(owq) ;
 			if (pn->selected_filetype->format == ft_bitfield) {
 				return FS_write_all_bits(owq);
 			}
@@ -323,7 +329,7 @@ static ZERO_OR_ERROR FS_w_local(struct one_wire_query *owq)
 			case ag_aggregate:
 			case ag_mixed:
 				LEVEL_DEBUG("Writing collectively");
-				return FS_write_aggregate_lump(owq);
+				return FS_write_aggregate_lump(owq); // cache
 			case ag_separate:
 				LEVEL_DEBUG("Writing separately");
 				return FS_write_in_parts(owq);
@@ -332,20 +338,21 @@ static ZERO_OR_ERROR FS_w_local(struct one_wire_query *owq)
 			// Just write one field of an array
 			if (pn->selected_filetype->format == ft_bitfield) {
 				LEVEL_DEBUG("Writing a bit in a bitfield");
-				return FS_write_a_bit(owq);
+				return FS_write_a_bit(owq); //cache
 			}
 			switch (pn->selected_filetype->ag->combined) {
 			case ag_aggregate:
 				// need to read it all and overwrite just a part
-				return FS_write_a_part(owq);
+				return FS_write_a_part(owq); // cache
 			case ag_mixed:
-				return FS_write_mixed_part(owq);
 			case ag_separate:
-				return FS_write_single_lump(owq);
+				OWQ_Cache_Del_ALL(owq) ;
+				return FS_write_single_lump(owq); // cache
 			}
 		}
 	}
-	return FS_write_single_lump(owq);
+	
+	return FS_write_single_lump(owq); // cache
 }
 
 static ZERO_OR_ERROR FS_write_single_lump(struct one_wire_query *owq)
@@ -360,13 +367,8 @@ static ZERO_OR_ERROR FS_write_single_lump(struct one_wire_query *owq)
 		write_error = (OWQ_pn(owq).selected_filetype->write) (owq_copy);
 	}
 
-	if (write_error != 0) {
-		return write_error;
-	}
-
-	FS_write_add_to_cache(owq);
-
-	return 0;
+	OWQ_Cache_Del(owq) ;
+	return write_error;
 }
 
 /* Write just one field of an aggregate property -- but a property that is handled as one big object */
@@ -377,9 +379,14 @@ static ZERO_OR_ERROR FS_write_a_part(struct one_wire_query *owq)
 	ZERO_OR_ERROR write_error;
 	OWQ_allocate_struct_and_pointer(owq_all);
 
+	pn->extension = EXTENSION_ALL ; // temporary
 	if (OWQ_create_shallow_aggregate(owq_all, owq) < 0) {
+		pn->extension = extension ; // restore
 		return -ENOMEM;
 	}
+	pn->extension = extension ; // restore
+
+	OWQ_Cache_Del(owq) ; // erase individual
 
 	// First fill the whole array with current values
 	if ( BAD( OWQ_Cache_Get(owq_all)) ) {
@@ -431,8 +438,6 @@ static ZERO_OR_ERROR FS_write_a_part(struct one_wire_query *owq)
 	// Write whole thing out
 	write_error = FS_write_aggregate_lump(owq_all);
 
-	OWQ_destroy_shallow_aggregate(owq_all);
-
 	return write_error;
 }
 
@@ -450,28 +455,7 @@ static ZERO_OR_ERROR FS_write_aggregate_lump(struct one_wire_query *owq)
 	}
 
 	OWQ_destroy_shallow_aggregate(owq_copy);
-
-	if (write_error != 0) {
-		return write_error;
-	}
-
-	FS_write_add_to_cache(owq);
-
-	return 0;
-}
-
-static ZERO_OR_ERROR FS_write_mixed_part(struct one_wire_query *owq)
-{
-	ZERO_OR_ERROR write_error = FS_write_single_lump(owq);
-	OWQ_allocate_struct_and_pointer(owq_copy);
-
-	OWQ_create_shallow_aggregate(owq_copy, owq);
-
-	OWQ_pn(owq_copy).extension = EXTENSION_ALL;
-	OWQ_Cache_Del(owq_copy);
-
-	OWQ_destroy_shallow_aggregate(owq_copy);
-
+	OWQ_Cache_Del_ALL(owq) ;
 	return write_error;
 }
 
@@ -550,6 +534,8 @@ static ZERO_OR_ERROR FS_write_a_bit(struct one_wire_query *owq)
 	OWQ_create_shallow_single(owq_single, owq);
 
 	OWQ_pn(owq_single).extension = EXTENSION_BYTE;
+	
+	OWQ_Cache_Del_ALL(owq) ;
 
 	if ( BAD( OWQ_Cache_Get(owq_single)) ) {
 		ZERO_OR_ERROR read_error = (pn->selected_filetype->read) (owq_single);
@@ -567,15 +553,4 @@ static ZERO_OR_ERROR FS_write_a_bit(struct one_wire_query *owq)
 ZERO_OR_ERROR FS_write_local(struct one_wire_query *owq)
 {
 	return FS_w_local(owq);
-}
-
-// special case for fc_read_stable that actually doesn't add a written value, since the chip can modify it on writing
-// i.e. The chip can decide the written value is out of range and use a valid entry instead.
-static void FS_write_add_to_cache( struct one_wire_query *owq)
-{
-	if ( OWQ_pn(owq).selected_filetype->change == fc_read_stable ) {
-		OWQ_Cache_Del(owq) ;
-	} else {
-		OWQ_Cache_Add(owq) ;
-	}
 }

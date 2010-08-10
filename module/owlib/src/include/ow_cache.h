@@ -77,8 +77,11 @@ GOOD_OR_BAD Cache_Get_Alias(ASCII * name, size_t length, const BYTE * sn) ;
 GOOD_OR_BAD Cache_Get_SerialNumber(const ASCII * name, BYTE * sn) ;
 GOOD_OR_BAD Cache_Get_Simul_Time(enum simul_type type, time_t * dwell_time, const struct parsedname * pn);
 
-void OWQ_Cache_Del(const struct one_wire_query *owq);
-void Cache_Del(const struct parsedname *pn);
+void OWQ_Cache_Del(struct one_wire_query *owq);
+void OWQ_Cache_Del_ALL(struct one_wire_query *owq);
+void OWQ_Cache_Del_BYTE(struct one_wire_query *owq);
+void OWQ_Cache_Del_parts(struct one_wire_query *owq);
+
 void Cache_Del_Dir(const struct parsedname *pn);
 void Cache_Del_Device(const struct parsedname *pn);
 void Cache_Del_Internal(const struct internal_prop *ip, const struct parsedname *pn);

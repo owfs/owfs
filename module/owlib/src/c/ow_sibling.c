@@ -77,6 +77,6 @@ void FS_del_sibling(const char * sibling, struct one_wire_query *owq)
 	if ( owq_sibling == NULL ) {
 		return ;
 	}
-	Cache_Del(PN(owq_sibling)) ;
+	OWQ_Cache_Del(owq_sibling) ;
 	OWQ_destroy(owq_sibling) ;
 }

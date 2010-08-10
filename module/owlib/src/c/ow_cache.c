@@ -133,6 +133,7 @@ static GOOD_OR_BAD Cache_Get_Simultaneous(enum simul_type type, struct one_wire_
 static GOOD_OR_BAD Cache_Get_Internal(void *data, size_t * dsize, const struct internal_prop *ip, const struct parsedname *pn);
 static GOOD_OR_BAD Cache_Get_Strict(void *data, size_t dsize, const struct parsedname *pn);
 
+static void Cache_Del(const struct parsedname *pn) ;
 static GOOD_OR_BAD Cache_Del_Common(const struct tree_node *tn);
 static GOOD_OR_BAD Cache_Del_Store(const struct tree_node *tn);
 
@@ -1129,12 +1130,49 @@ static void Del_Stat(struct cache *scache, const int result)
 	}
 }
 
-void OWQ_Cache_Del(const struct one_wire_query *owq)
+void OWQ_Cache_Del(struct one_wire_query *owq)
 {
 	Cache_Del(PN(owq));
 }
 
-void Cache_Del(const struct parsedname *pn)
+void OWQ_Cache_Del_ALL(struct one_wire_query *owq)
+{
+	struct parsedname * pn = PN(owq) ; // convenience
+	int extension = pn->extension ; // store extension
+	
+	pn->extension = EXTENSION_ALL ; // temporary assignment
+	Cache_Del(pn);
+	pn->extension = extension ; // restore extension
+}
+
+void OWQ_Cache_Del_BYTE(struct one_wire_query *owq)
+{
+	struct parsedname * pn = PN(owq) ; // convenience
+	int extension = pn->extension ; // store extension
+	
+	pn->extension = EXTENSION_BYTE ; // temporary assignment
+	Cache_Del(pn);
+	pn->extension = extension ; // restore extension
+}
+
+void OWQ_Cache_Del_parts(struct one_wire_query *owq)
+{
+	struct parsedname * pn = PN(owq) ; // convenience
+	
+	if ( pn->selected_filetype->ag != NON_AGGREGATE ) {
+		int extension = pn->extension ; // store extension
+		int extension_index ;
+		for ( extension_index = pn->selected_filetype->ag->elements - 1 ; extension_index >= 0  ; -- extension_index ) {
+			pn->extension = extension_index ; // temporary assignment
+			Cache_Del(pn);
+		}
+		pn->extension = extension ; // restore extension
+	} else {
+		Cache_Del(pn);
+	}
+}
+
+static void Cache_Del(const struct parsedname *pn)
 {
 	struct tree_node tn;
 	time_t duration;
