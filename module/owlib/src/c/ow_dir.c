@@ -17,6 +17,8 @@ $Id$
 #include "ow_dirblob.h"
 #include "ow.h"
 
+static enum search_status PossiblyLockedBusCall( enum search_status (* first_next)(struct device_search *, const struct parsedname *), struct device_search * ds, const struct parsedname * pn ) ;
+
 static ZERO_OR_ERROR FS_dir_both(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_directory, uint32_t * flags);
 static ZERO_OR_ERROR FS_dir_all_connections(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_directory, uint32_t * flags);
 static ZERO_OR_ERROR FS_devdir(void (*dirfunc) (void *, const struct parsedname * const), void *v, const struct parsedname *pn2);
@@ -79,11 +81,7 @@ static ZERO_OR_ERROR FS_dir_both(void (*dirfunc) (void *, const struct parsednam
 
 	/* initialize flags */
 	flags[0] = 0;
-#if 0
-	if (pn_raw_directory == NULL || pn_raw_directory->selected_connection == NULL) {
-		return -ENODEV;
-	}
-#else
+
 	/* pn_raw_directory->selected_connection Could be NULL here...
 	 * It will then return a root-directory containing
 	 * /uncached,/settings,/system,/statistics,/structure
@@ -95,7 +93,6 @@ static ZERO_OR_ERROR FS_dir_both(void (*dirfunc) (void *, const struct parsednam
 			(pn_raw_directory ? pn_raw_directory->selected_connection : NULL));
 		return -ENODEV;
 	}
-#endif
 	
 	LEVEL_CALL("path=%s", SAFESTRING(pn_raw_directory->path));
 
@@ -236,7 +233,7 @@ static ZERO_OR_ERROR FS_dir_all_connections_loop(void (*dirfunc)
 									   void *v, struct connection_in * in, const struct parsedname *pn_directory, uint32_t * flags);
 
 struct dir_all_connections_struct {
-	struct connection_in * in;
+	struct connection_in * current ;
 	const struct parsedname *pn_directory;
 	void (*dirfunc) (void *, const struct parsedname *);
 	void *v;
@@ -248,27 +245,27 @@ struct dir_all_connections_struct {
 static void *FS_dir_all_connections_callback(void *v)
 {
 	struct dir_all_connections_struct *dacs = v;
-	dacs->ret = FS_dir_all_connections_loop(dacs->dirfunc, dacs->v, dacs->in, dacs->pn_directory, dacs->flags);
+	dacs->ret = FS_dir_all_connections_loop(dacs->dirfunc, dacs->v, dacs->current, dacs->pn_directory, dacs->flags);
 	pthread_exit(NULL);
 	return NULL;
 }
 
 static ZERO_OR_ERROR FS_dir_all_connections_loop(void (*dirfunc)
 	(void *, const struct parsedname *), void *v,
-	struct connection_in * in, const struct parsedname *pn_directory, uint32_t * flags)
+	struct connection_in * current, const struct parsedname *pn_directory, uint32_t * flags)
 {
 	ZERO_OR_ERROR ret = 0;
-	struct dir_all_connections_struct dacs = { in->next, pn_directory, dirfunc, v, flags, 0 };
+	struct dir_all_connections_struct dacs = { current->next, pn_directory, dirfunc, v, flags, 0 };
 	struct parsedname s_pn_bus_directory;
 	struct parsedname *pn_bus_directory = &s_pn_bus_directory;
 	pthread_t thread;
 	int threadbad = 1;
 
-	threadbad = (dacs.in==NULL) || pthread_create(&thread, NULL, FS_dir_all_connections_callback, (void *) (&dacs));
+	threadbad = (dacs.current==NULL) || pthread_create(&thread, NULL, FS_dir_all_connections_callback, (void *) (&dacs));
 
 	memcpy(pn_bus_directory, pn_directory, sizeof(struct parsedname));	// shallow copy
 
-	SetKnownBus(in->index, pn_bus_directory);
+	SetKnownBus(current->index, pn_bus_directory);
 
 	if ( BAD(TestConnection(pn_bus_directory)) ) {	// reconnect ok?
 		ret = -ECONNABORTED;
@@ -422,12 +419,15 @@ static ZERO_OR_ERROR FS_alarmdir(void (*dirfunc) (void *, const struct parsednam
 		return ServerDir(dirfunc, v, pn_alarm_directory, &ignoreflag);
 	}
 
+	/* Certain buses are not real bus masters (like usb-monitor and w1-monitor) */
+	if ( pn_alarm_directory->selected_connection->iroutines.flags & ADAP_FLAG_sham ) {
+		return 0 ;
+	}
+
 	/* STATISCTICS */
 	STAT_ADD1(dir_main.calls);
 
-	BUSLOCK(pn_alarm_directory);
-	ret = BUS_first_alarm(&ds, pn_alarm_directory);
-	BUSUNLOCK(pn_alarm_directory);
+	ret = PossiblyLockedBusCall( BUS_first_alarm, &ds, pn_alarm_directory) ;
 
 	while ( ret == search_good ) {
 		char dev[PROPERTY_LENGTH_ALIAS + 1];
@@ -435,9 +435,7 @@ static ZERO_OR_ERROR FS_alarmdir(void (*dirfunc) (void *, const struct parsednam
 		FS_devicename(dev, PROPERTY_LENGTH_ALIAS, ds.sn, pn_alarm_directory);
 		FS_dir_plus(dirfunc, v, &ignoreflag, pn_alarm_directory, dev);
 
-		BUSLOCK(pn_alarm_directory);
-		ret = BUS_next(&ds, pn_alarm_directory);
-		BUSUNLOCK(pn_alarm_directory);
+		ret = PossiblyLockedBusCall( BUS_next, &ds, pn_alarm_directory) ;
 	}
 
 	switch ( ret ) {
@@ -448,6 +446,21 @@ static ZERO_OR_ERROR FS_alarmdir(void (*dirfunc) (void *, const struct parsednam
 		default:
 			return -EIO;
 	}	
+}
+
+static enum search_status PossiblyLockedBusCall( enum search_status (* first_next)(struct device_search *, const struct parsedname *), struct device_search * ds, const struct parsedname * pn )
+{
+	enum search_status ret;
+	
+	// This is also called from the reconnection routine -- we use a flag to avoid mutex doubling and deadlock
+	if ( NotReconnect(pn) ) {
+		BUSLOCK(pn);
+		ret = first_next(ds, pn) ;
+		BUSUNLOCK(pn);
+	} else {
+		ret = first_next(ds, pn) ;
+	}
+	return ret ;
 }
 
 /* A directory of devices -- either main or branch */
@@ -466,19 +479,17 @@ static ZERO_OR_ERROR FS_realdir(void (*dirfunc) (void *, const struct parsedname
 		return ServerDir(dirfunc, v, pn_whole_directory, flags);
 	}
 
+	/* Certain buses are not real bus masters (like usb-monitor and w1-monitor) */
+	if ( pn_whole_directory->selected_connection->iroutines.flags & ADAP_FLAG_sham ) {
+		return 0 ;
+	}
+
 	/* STATISTICS */
 	STAT_ADD1(dir_main.calls);
 
 	DirblobInit(&db);			// set up a fresh dirblob
 
-	// This is called from the reconnection routine -- we use a flag to avoid mutex doubling and deadlock
-	if ( NotReconnect(pn_whole_directory) ) {
-		BUSLOCK(pn_whole_directory);
-		ret = BUS_first(&ds, pn_whole_directory) ;
-		BUSUNLOCK(pn_whole_directory);
-	} else {
-		ret = BUS_first(&ds, pn_whole_directory) ;
-	}
+	ret = PossiblyLockedBusCall( BUS_first, &ds, pn_whole_directory) ;
 	
 	if (RootNotBranch(pn_whole_directory)) {
 		db.allocated = pn_whole_directory->selected_connection->last_root_devs;	// root dir estimated length
@@ -500,13 +511,7 @@ static ZERO_OR_ERROR FS_realdir(void (*dirfunc) (void *, const struct parsedname
 		DirblobAdd(ds.sn, &db);
 		++devices;
 
-		if ( NotReconnect(pn_whole_directory) ) {
-			BUSLOCK(pn_whole_directory);
-			ret = BUS_next(&ds, pn_whole_directory) ;
-			BUSUNLOCK(pn_whole_directory);
-		} else {
-			ret = BUS_next(&ds, pn_whole_directory) ;
-		}
+		ret = PossiblyLockedBusCall( BUS_next, &ds, pn_whole_directory) ;
 	} 
 
 	STATLOCK;
@@ -562,10 +567,6 @@ static ZERO_OR_ERROR FS_cache2real(void (*dirfunc) (void *, const struct parsedn
 	struct dirblob db;
 	BYTE sn[8];
 
-	if ( pn_real_directory->selected_connection->iroutines.flags & ADAP_FLAG_sham ) {
-		return 0 ;
-	}
-	
 	/* Test to see whether we should get the directory "directly" */
 	if (SpecifiedBus(pn_real_directory) || IsUncachedDir(pn_real_directory)
 		|| BAD( Cache_Get_Dir(&db, pn_real_directory)) ) {
