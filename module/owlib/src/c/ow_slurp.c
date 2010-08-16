@@ -41,6 +41,6 @@ void Slurp( FILE_DESCRIPTOR_OR_ERROR file_descriptor, unsigned long usec )
 			return ;
 		}
 		ignore_result = read(file_descriptor, data, 1) ;
-		LEVEL_DEBUG("Slurped in %.2X",data[0]);
+		TrafficInFD("slurp",data,1,file_descriptor);
 	}
 }
