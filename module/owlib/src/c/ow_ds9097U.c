@@ -15,33 +15,36 @@ $Id$
 #include "ow_counters.h"
 #include "ow_connection.h"
 
-static enum search_status DS2480_next_both(struct device_search *ds, const struct parsedname *pn);
-//static int DS2480_databit(int sendbit, int *getbit, const struct parsedname *pn);
 static RESET_TYPE DS2480_reset(const struct parsedname *pn);
-static GOOD_OR_BAD DS2480_initialize_repeatedly(struct parsedname * pn);
-static GOOD_OR_BAD DS2480_big_reset(const struct parsedname *pn) ;
-static GOOD_OR_BAD DS2480_big_reset_serial(const struct parsedname *pn) ;
-static GOOD_OR_BAD DS2480_big_reset_net(const struct parsedname *pn) ;
-static void DS2480_adapter(struct connection_in *in) ;
-static GOOD_OR_BAD DS2480_big_configuration(const struct parsedname *pn) ;
-static GOOD_OR_BAD DS2480_read(BYTE * buf, const size_t size, struct connection_in * in);
-static GOOD_OR_BAD DS2480_write(const BYTE * buf, const size_t size, const struct parsedname *pn);
+static enum search_status DS2480_next_both(struct device_search *ds, const struct parsedname *pn);
 static GOOD_OR_BAD DS2480_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname *pn);
 static GOOD_OR_BAD DS2480_ProgramPulse(const struct parsedname *pn);
-static GOOD_OR_BAD DS2480_sendout_cmd(const BYTE * cmd, const size_t len, const struct parsedname *pn);
-static GOOD_OR_BAD DS2480_sendback_cmd(const BYTE * cmd, BYTE * resp, const size_t len, const struct parsedname *pn);
 static GOOD_OR_BAD DS2480_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
+static GOOD_OR_BAD DS2480_reconnect(const struct parsedname * pn);
+static void DS2480_close(struct connection_in *in) ;
+
 static void DS2480_setroutines(struct connection_in *in);
-static GOOD_OR_BAD DS2480_configuration_write(BYTE parameter_code, BYTE value_code, const struct parsedname *pn);
-static GOOD_OR_BAD DS2480_configuration_read(BYTE parameter_code, BYTE value_code, const struct parsedname *pn);
-static GOOD_OR_BAD DS2480_stop_pulse(BYTE * response, const struct parsedname *pn);
-static RESET_TYPE DS2480_reset_once(const struct parsedname *pn) ;
-static GOOD_OR_BAD DS2480_set_baud(const struct parsedname *pn) ;
-static void DS2480_set_baud_control(const struct parsedname *pn) ;
-static BYTE DS2480b_speed_byte( const struct parsedname * pn ) ;
+
+static RESET_TYPE DS2480_reset_in(struct connection_in * in);
+static GOOD_OR_BAD DS2480_initialize_repeatedly(struct connection_in * in);
+static GOOD_OR_BAD DS2480_big_reset(struct connection_in * in) ;
+static GOOD_OR_BAD DS2480_big_reset_serial(struct connection_in * in) ;
+static GOOD_OR_BAD DS2480_big_reset_net(struct connection_in * in) ;
+static void DS2480_adapter(struct connection_in *in) ;
+static GOOD_OR_BAD DS2480_big_configuration(struct connection_in * in) ;
+static GOOD_OR_BAD DS2480_read(BYTE * buf, const size_t size, struct connection_in * in);
+static GOOD_OR_BAD DS2480_write(const BYTE * buf, const size_t size, struct connection_in * in);
+static GOOD_OR_BAD DS2480_sendout_cmd(const BYTE * cmd, const size_t len, struct connection_in * in);
+static GOOD_OR_BAD DS2480_sendback_cmd(const BYTE * cmd, BYTE * resp, const size_t len, struct connection_in * in);
+static GOOD_OR_BAD DS2480_configuration_write(BYTE parameter_code, BYTE value_code, struct connection_in * in);
+static GOOD_OR_BAD DS2480_configuration_read(BYTE parameter_code, BYTE value_code, struct connection_in * in);
+static GOOD_OR_BAD DS2480_stop_pulse(BYTE * response, struct connection_in * in);
+static RESET_TYPE DS2480_reset_once(struct connection_in * in) ;
+static GOOD_OR_BAD DS2480_set_baud(struct connection_in * in) ;
+static void DS2480_set_baud_control(struct connection_in * in) ;
+static BYTE DS2480b_speed_byte( struct connection_in * in ) ;
 static void DS2480_flush( const struct connection_in * in ) ;
 static void DS2480_slurp( const struct connection_in * in ) ;
-static void DS2480_close(struct connection_in *in) ;
 
 static void DS2480_setroutines(struct connection_in *in)
 {
@@ -53,7 +56,7 @@ static void DS2480_setroutines(struct connection_in *in)
 	in->iroutines.sendback_data = DS2480_sendback_data;
 //    in->iroutines.sendback_bits = ;
 	in->iroutines.select = NULL;
-	in->iroutines.reconnect = DS2480_big_reset ;
+	in->iroutines.reconnect = DS2480_reconnect ;
 	in->iroutines.close = DS2480_close;
 	in->iroutines.flags = ADAP_FLAG_default;
 	in->bundling_length = UART_FIFO_SIZE;
@@ -219,11 +222,6 @@ static void DS2480_setroutines(struct connection_in *in)
 // bus locking at a higher level
 GOOD_OR_BAD DS2480_detect(struct connection_in *in)
 {
-	struct parsedname pn;
-
-	FS_ParsedName_Placeholder(&pn);	// minimal parsename -- no destroy needed
-	pn.selected_connection = in;
-
 	/* Set up low-level routines */
 	DS2480_setroutines(in);
 
@@ -235,7 +233,7 @@ GOOD_OR_BAD DS2480_detect(struct connection_in *in)
 	in->master.serial.reverse_polarity = Globals.serial_reverse ;
 	in->baud = Globals.baud ;
 
-	if ( BAD(DS2480_initialize_repeatedly(&pn)) ) {
+	if ( BAD(DS2480_initialize_repeatedly(in)) ) {
 		LEVEL_DEBUG("Could not initilize the DS9097U even after several tries") ;
 		BUS_close(in) ;
 		return gbBAD ;
@@ -248,13 +246,13 @@ GOOD_OR_BAD DS2480_detect(struct connection_in *in)
 }
 
 // Make several attempts to initialize -- based on Digitemp example
-static GOOD_OR_BAD DS2480_initialize_repeatedly(struct parsedname * pn)
+static GOOD_OR_BAD DS2480_initialize_repeatedly(struct connection_in * in)
 {
 	int init_cycles ;
 
 	for ( init_cycles = 0 ; init_cycles < DS9097U_INIT_CYCLES ; ++init_cycles ) {
 		LEVEL_DEBUG("Attempt #%d to initialize the DS9097U",init_cycles) ;
-		RETURN_GOOD_IF_GOOD( DS2480_big_reset(pn) ) ;
+		RETURN_GOOD_IF_GOOD( DS2480_big_reset(in) ) ;
 	}
 
 	return gbBAD ;
@@ -283,64 +281,68 @@ static void DS2480_adapter(struct connection_in *in)
 	}
 }
 
-// do the com port and configuration stuff
-static GOOD_OR_BAD DS2480_big_reset(const struct parsedname *pn)
+static GOOD_OR_BAD DS2480_reconnect(const struct parsedname * pn)
 {
-	switch (pn->selected_connection->busmode) {
+	return DS2480_big_reset(pn->selected_connection) ;
+}
+
+// do the com port and configuration stuff
+static GOOD_OR_BAD DS2480_big_reset(struct connection_in * in)
+{
+	switch (in->busmode) {
 		case bus_xport:
 			//printf("Xport\n");
-			return DS2480_big_reset_net(pn) ;
+			return DS2480_big_reset_net(in) ;
 		default:
 			//printf("Serial\n");
-			return DS2480_big_reset_serial(pn) ;
+			return DS2480_big_reset_serial(in) ;
 	}
 }
 // do the com port and configuration stuff
-static GOOD_OR_BAD DS2480_big_reset_serial(const struct parsedname *pn)
+static GOOD_OR_BAD DS2480_big_reset_serial(struct connection_in * in)
 {
 	BYTE reset_byte = (BYTE) ( CMD_COMM | FUNCTSEL_RESET | SPEEDSEL_STD );
 
 	// Open the com port in 9600 Baud.
-	RETURN_BAD_IF_BAD(COM_open(pn->selected_connection)) ;
+	RETURN_BAD_IF_BAD(COM_open(in)) ;
 
 	// send a break to reset the DS2480
-	COM_break(pn->selected_connection);
+	COM_break(in);
 
 	// It's in command mode now
-	pn->selected_connection->master.serial.mode = ds2480b_command_mode ;
+	in->master.serial.mode = ds2480b_command_mode ;
 
 	// send the timing byte (A reset command at 9600 baud)
-	DS2480_write( &reset_byte, 1, pn ) ;
+	DS2480_write( &reset_byte, 1, in ) ;
 
 	// delay to let line settle
 	UT_delay(4);
 	// flush the buffers
-	DS2480_flush(pn->selected_connection);
+	DS2480_flush(in);
 	// ignore response
-	DS2480_slurp( pn->selected_connection ) ;
+	DS2480_slurp( in ) ;
 	// Now set desired baud and polarity
 	// BUS_reset will do the actual changes
-	pn->selected_connection->changed_bus_settings = 1 ; // Force a mode change
+	in->changed_bus_settings = 1 ; // Force a mode change
 	// Send a reset again
 	LEVEL_DEBUG("Send the initial reset to the bus master.");
-	BUS_reset(pn) ;
+	DS2480_reset_in(in) ;
 
 	// delay to let line settle
 	UT_delay(4);
 	// flush the buffers
-	DS2480_flush(pn->selected_connection);
+	DS2480_flush(in);
 	// ignore response
-	DS2480_slurp( pn->selected_connection ) ;
+	DS2480_slurp( in ) ;
 
 	// Now set desired baud and polarity
-	return DS2480_big_configuration(pn) ;
+	return DS2480_big_configuration(in) ;
 }
 
 // do the com port and configuration stuff
-static GOOD_OR_BAD DS2480_big_reset_net(const struct parsedname *pn)
+static GOOD_OR_BAD DS2480_big_reset_net(struct connection_in * in)
 {
 	BYTE reset_byte = (BYTE) ( CMD_COMM | FUNCTSEL_RESET | SPEEDSEL_STD );
-	struct connection_in * in =  pn->selected_connection ;
 
 	RETURN_BAD_IF_BAD(ClientAddr(in->name, DEFAULT_XPORT_PORT, in)) ;
 	in->file_descriptor = ClientConnect(in) ;
@@ -364,7 +366,7 @@ static GOOD_OR_BAD DS2480_big_reset_net(const struct parsedname *pn)
 	in->master.serial.mode = ds2480b_command_mode ;
 
 	// send the timing byte (A reset command at 9600 baud)
-	DS2480_write( &reset_byte, 1, pn ) ;
+	DS2480_write( &reset_byte, 1, in ) ;
 
 	// delay to let line settle
 	UT_delay(4);
@@ -376,63 +378,63 @@ static GOOD_OR_BAD DS2480_big_reset_net(const struct parsedname *pn)
 	// BUS_reset will do the actual changes
 	in->changed_bus_settings = 1 ; // Force a mode change
 	// Send a reset again
-	BUS_reset(pn) ;
+	DS2480_reset_in(in) ;
 
 	// delay to let line settle
 	UT_delay(4);
 	// flush the buffers
 	DS2480_flush(in);
 	// ignore response
-	DS2480_slurp( pn->selected_connection ) ;
+	DS2480_slurp( in ) ;
 
 	// Now set desired baud and polarity
-	return DS2480_big_configuration(pn) ;
+	return DS2480_big_configuration(in) ;
 }
 
 // do the configuration stuff
-static GOOD_OR_BAD DS2480_big_configuration(const struct parsedname *pn)
+static GOOD_OR_BAD DS2480_big_configuration(struct connection_in * in)
 {
-	BYTE single_bit = CMD_COMM | BITPOL_ONE |  DS2480b_speed_byte(pn) ;
+	BYTE single_bit = CMD_COMM | BITPOL_ONE |  DS2480b_speed_byte(in) ;
 	BYTE single_bit_response ;
 
 	// Now set desired baud and polarity
 	// BUS_reset will do the actual changes
-	pn->selected_connection->changed_bus_settings = 1 ; // Force a mode change
+	in->changed_bus_settings = 1 ; // Force a mode change
 	// Send a reset again
-	BUS_reset(pn) ;
+	DS2480_reset_in(in) ;
 
 	// delay to let line settle
 	UT_delay(4);
 
 	// default W1LT = 10us (write-1 low time)
-	RETURN_BAD_IF_BAD(DS2480_configuration_write(PARMSEL_WRITE1LOW, PARMSET_Write10us, pn)) ;
+	RETURN_BAD_IF_BAD(DS2480_configuration_write(PARMSEL_WRITE1LOW, PARMSET_Write10us, in)) ;
 
 	// default DSO/WORT = 8us (data sample offset / write 0 recovery time )
-	RETURN_BAD_IF_BAD(DS2480_configuration_write(PARMSEL_SAMPLEOFFSET, PARMSET_SampOff8us, pn)) ;
+	RETURN_BAD_IF_BAD(DS2480_configuration_write(PARMSEL_SAMPLEOFFSET, PARMSET_SampOff8us, in)) ;
 
 	// Strong pullup duration = infinite
-	RETURN_BAD_IF_BAD(DS2480_configuration_write(PARMSEL_5VPULSE, PARMSET_infinite, pn)) ;
+	RETURN_BAD_IF_BAD(DS2480_configuration_write(PARMSEL_5VPULSE, PARMSET_infinite, in)) ;
 
 	// Program pulse duration = 512usec
-	RETURN_BAD_IF_BAD(DS2480_configuration_write(PARMSEL_12VPULSE, PARMSET_512us, pn)) ;
+	RETURN_BAD_IF_BAD(DS2480_configuration_write(PARMSEL_12VPULSE, PARMSET_512us, in)) ;
 
 	// Send a single bit
 	// The datasheet wants this
-	RETURN_BAD_IF_BAD(DS2480_sendback_cmd(&single_bit, &single_bit_response, 1, pn)) ;
+	RETURN_BAD_IF_BAD(DS2480_sendback_cmd(&single_bit, &single_bit_response, 1, in)) ;
 
 	/* Apparently need to reset again to get the version number properly */
-	return gbRESET( DS2480_reset(pn)  ) ;
+	return gbRESET( DS2480_reset_in(in)  ) ;
 }
 
 // configuration of DS2480B -- parameter code is already shifted in the defines (by 4 bites)
 // configuration of DS2480B -- value code is already shifted in the defines (by 1 bit)
-static GOOD_OR_BAD DS2480_configuration_write(BYTE parameter_code, BYTE value_code, const struct parsedname *pn)
+static GOOD_OR_BAD DS2480_configuration_write(BYTE parameter_code, BYTE value_code, struct connection_in * in)
 {
 	BYTE send_code = CMD_CONFIG | parameter_code | value_code;
 	BYTE expected_response = CMD_CONFIG_RESPONSE | parameter_code | value_code;
 	BYTE actual_response;
 
-	RETURN_BAD_IF_BAD(DS2480_sendback_cmd(&send_code, &actual_response, 1, pn)) ;
+	RETURN_BAD_IF_BAD(DS2480_sendback_cmd(&send_code, &actual_response, 1, in)) ;
 
 	if (expected_response == actual_response) {
 		return gbGOOD;
@@ -443,13 +445,13 @@ static GOOD_OR_BAD DS2480_configuration_write(BYTE parameter_code, BYTE value_co
 
 // configuration of DS2480B -- parameter code is already shifted in the defines (by 4 bites)
 // configuration of DS2480B -- value code is already shifted in the defines (by 1 bit)
-static GOOD_OR_BAD DS2480_configuration_read(BYTE parameter_code, BYTE value_code, const struct parsedname *pn)
+static GOOD_OR_BAD DS2480_configuration_read(BYTE parameter_code, BYTE value_code, struct connection_in * in)
 {
 	BYTE send_code = CMD_CONFIG | PARMSEL_PARMREAD | (parameter_code>>3);
 	BYTE expected_response = CMD_CONFIG_RESPONSE | PARMSEL_PARMREAD | value_code;
 	BYTE actual_response;
 
-	RETURN_BAD_IF_BAD( DS2480_sendback_cmd(&send_code, &actual_response, 1, pn)) ;
+	RETURN_BAD_IF_BAD( DS2480_sendback_cmd(&send_code, &actual_response, 1, in)) ;
 	if (expected_response == actual_response) {
 		return gbGOOD;
 	}
@@ -460,10 +462,8 @@ static GOOD_OR_BAD DS2480_configuration_read(BYTE parameter_code, BYTE value_cod
 // configuration of DS2480B -- parameter code is already shifted in the defines (by 4 bites)
 // configuration of DS2480B -- value code is already shifted in the defines (by 1 bit)
 // Set Baud rate -- can't use DS2480_conficuration_code because return byte is in a different speed
-static void DS2480_set_baud_control(const struct parsedname *pn)
+static void DS2480_set_baud_control(struct connection_in * in)
 {
-	struct connection_in * in = pn->selected_connection ;
-
 	// restrict allowable baud rates based on device capabilities
 	COM_BaudRestrict( &(in->baud), B9600, B19200, B57600, B115200, 0 ) ;
 
@@ -473,12 +473,12 @@ static void DS2480_set_baud_control(const struct parsedname *pn)
 		return ;
 	}
 
-	if ( GOOD( DS2480_set_baud(pn) ) ) {
+	if ( GOOD( DS2480_set_baud(in) ) ) {
 		return ;
 	}
 	LEVEL_DEBUG("Failed first attempt at resetting baud rate of bus master %s",SAFESTRING(in->name)) ;
 
-	if ( GOOD( DS2480_set_baud(pn) ) ) {
+	if ( GOOD( DS2480_set_baud(in) ) ) {
 		return ;
 	}
 	LEVEL_DEBUG("Failed second attempt at resetting baud rate of bus master %s",SAFESTRING(in->name)) ;
@@ -490,13 +490,13 @@ static void DS2480_set_baud_control(const struct parsedname *pn)
 	return;
 }
 
-static GOOD_OR_BAD DS2480_set_baud(const struct parsedname *pn)
+static GOOD_OR_BAD DS2480_set_baud(struct connection_in * in)
 {
 	BYTE value_code = 0 ;
 	BYTE send_code ;
 
 	// Find rate parameter
-	switch ( pn->selected_connection->baud ) {
+	switch ( in->baud ) {
 		case B9600:
 			value_code = PARMSET_9600 ;
 			break ;
@@ -516,41 +516,41 @@ static GOOD_OR_BAD DS2480_set_baud(const struct parsedname *pn)
 			break ;
 #endif
 		default:
-			pn->selected_connection->baud = B9600 ;
+			in->baud = B9600 ;
 			value_code = PARMSET_9600 ;
 			break ;
 	}
 
 	// Add polarity
-	if ( pn->selected_connection->master.serial.reverse_polarity ) {
+	if ( in->master.serial.reverse_polarity ) {
 		value_code |= PARMSET_REVERSE_POLARITY ;
 	}
 	send_code = CMD_CONFIG | PARMSEL_BAUDRATE | value_code;
 
 	// Send configuration change
-	DS2480_flush(pn->selected_connection);
+	DS2480_flush(in);
 	UT_delay(5);
 
 	// uh oh -- undefined state -- not sure what the bus speed is.
-	RETURN_BAD_IF_BAD(DS2480_sendout_cmd(&send_code, 1, pn)) ;
+	RETURN_BAD_IF_BAD(DS2480_sendout_cmd(&send_code, 1, in)) ;
 
 	// Change OS view of rate
 	UT_delay(5);
-	COM_speed(pn->selected_connection->baud,pn->selected_connection) ;
+	COM_speed(in->baud,in) ;
 	UT_delay(5);
-	DS2480_slurp(pn->selected_connection);
+	DS2480_slurp(in);
 
 	// Check rate
-	RETURN_BAD_IF_BAD( DS2480_configuration_read( PARMSEL_BAUDRATE, value_code, pn ) ) ;
+	RETURN_BAD_IF_BAD( DS2480_configuration_read( PARMSEL_BAUDRATE, value_code, in ) ) ;
 
 	return gbGOOD ;
 }
 
-static BYTE DS2480b_speed_byte( const struct parsedname * pn )
+static BYTE DS2480b_speed_byte( struct connection_in * in )
 {
-	if ( pn->selected_connection->speed == bus_speed_overdrive ) {
+	if ( in->speed == bus_speed_overdrive ) {
 		return SPEEDSEL_OD ;
-	} else if ( pn->selected_connection->flex == bus_yes_flex ) {
+	} else if ( in->flex == bus_yes_flex ) {
 		return SPEEDSEL_FLEX ;
 	} else {
 		return SPEEDSEL_STD ;
@@ -563,14 +563,18 @@ static BYTE DS2480b_speed_byte( const struct parsedname * pn )
 //          This routine will not function correctly on some
 //          Alarm reset types of the DS1994/DS1427/DS2404 with
 //          Rev 1,2, and 3 of the DS2480/DS2480B.
-static RESET_TYPE DS2480_reset(const struct parsedname *pn)
+static RESET_TYPE DS2480_reset(const struct parsedname *pn) {
+	return DS2480_reset_in( pn->selected_connection ) ;
+}
+
+static RESET_TYPE DS2480_reset_in(struct connection_in * in)
 {
-	if (pn->selected_connection->changed_bus_settings > 0) {
-		--pn->selected_connection->changed_bus_settings ;
-		DS2480_set_baud_control(pn);	// reset paramters
+	if (in->changed_bus_settings > 0) {
+		--in->changed_bus_settings ;
+		DS2480_set_baud_control(in);	// reset paramters
 	}
 
-	switch( DS2480_reset_once(pn) ) {
+	switch( DS2480_reset_once(in) ) {
 		case BUS_RESET_OK:
 			return BUS_RESET_OK ;
 		case BUS_RESET_SHORT:
@@ -582,50 +586,50 @@ static RESET_TYPE DS2480_reset(const struct parsedname *pn)
 			BYTE dummy[1] ; //we don't check the pulse stop, since it's only a whim.
 			// perhaps the DS9097U wasn't in command mode, so missed the reset
 			// force a mode switch
-			pn->selected_connection->master.serial.mode = ds2480b_data_mode ;
+			in->master.serial.mode = ds2480b_data_mode ;
 			// Also make sure no power or programming pulse active
-			DS2480_stop_pulse(dummy,pn) ;
+			DS2480_stop_pulse(dummy,in) ;
 			// And now reset again
-			return DS2480_reset_once(pn) ;
+			return DS2480_reset_once(in) ;
 		}
 	}
 }
 
-static RESET_TYPE DS2480_reset_once(const struct parsedname *pn)
+static RESET_TYPE DS2480_reset_once(struct connection_in * in)
 {
-	BYTE reset_byte = (BYTE) ( CMD_COMM | FUNCTSEL_RESET | DS2480b_speed_byte(pn) );
+	BYTE reset_byte = (BYTE) ( CMD_COMM | FUNCTSEL_RESET | DS2480b_speed_byte(in) );
 	BYTE reset_response ;
 
 	// flush the buffers
-	DS2480_flush(pn->selected_connection);
+	DS2480_flush(in);
 
 	// send the packet
 	// read back the 1 byte response
-	if ( BAD(DS2480_sendback_cmd(&reset_byte, &reset_response, 1, pn)) ) {
+	if ( BAD(DS2480_sendback_cmd(&reset_byte, &reset_response, 1, in)) ) {
 		return BUS_RESET_ERROR;
 	}
 
 	/* The adapter type is encoded in this response byte */
 	/* The known values correspond to the types in enum adapter_type */
 	/* Other values are assigned for adapters that don't have this hardcoded value */
-	pn->selected_connection->Adapter = (reset_response & RB_CHIPID_MASK) >> 2;
+	in->Adapter = (reset_response & RB_CHIPID_MASK) >> 2;
 
 	switch (reset_response & RB_RESET_MASK) {
 	case RB_1WIRESHORT:
 		return BUS_RESET_SHORT;
 	case RB_NOPRESENCE:
-		pn->selected_connection->AnyDevices = anydevices_no ;
+		in->AnyDevices = anydevices_no ;
 		return BUS_RESET_OK;
 	case RB_PRESENCE:
 	case RB_ALARMPRESENCE:
-		pn->selected_connection->AnyDevices = anydevices_yes ;
+		in->AnyDevices = anydevices_yes ;
 		// check if programming voltage available
-		pn->selected_connection->ProgramAvailable = ((reset_response & PARMSEL_12VPULSE) == PARMSEL_12VPULSE);
-		if (pn->selected_connection->ds2404_compliance) {
+		in->ProgramAvailable = ((reset_response & PARMSEL_12VPULSE) == PARMSEL_12VPULSE);
+		if (in->ds2404_compliance) {
 			// extra delay for alarming DS1994/DS2404 complience
 			UT_delay(5);
 		}
-		DS2480_flush(pn->selected_connection);
+		DS2480_flush(in);
 		return BUS_RESET_OK;
 	default:
 		return BUS_RESET_ERROR; // should never happen
@@ -638,11 +642,12 @@ static enum search_status DS2480_next_both(struct device_search *ds, const struc
 	int mismatched;
 	BYTE sn[8];
 	BYTE bitpairs[16];
-	BYTE searchon = (BYTE) ( CMD_COMM | FUNCTSEL_SEARCHON | DS2480b_speed_byte(pn) );
-	BYTE searchoff = (BYTE) ( CMD_COMM | FUNCTSEL_SEARCHOFF | DS2480b_speed_byte(pn) );
+	struct connection_in * in = pn->selected_connection ;
+	BYTE searchon = (BYTE) ( CMD_COMM | FUNCTSEL_SEARCHON | DS2480b_speed_byte(in) );
+	BYTE searchoff = (BYTE) ( CMD_COMM | FUNCTSEL_SEARCHOFF | DS2480b_speed_byte(in) );
 	int i;
 
-	if ( pn->selected_connection->AnyDevices == anydevices_no ) {
+	if ( in->AnyDevices == anydevices_no ) {
 		ds->LastDevice = 1;
 	}
 	if (ds->LastDevice) {
@@ -679,16 +684,16 @@ static enum search_status DS2480_next_both(struct device_search *ds, const struc
 	// after last discrepancy so leave zeros
 
 	// flush the buffers
-	DS2480_flush(pn->selected_connection);
+	DS2480_flush(in);
 
 	// search ON
 	// change back to command mode
 	// send the packet
 	// search OFF
 	if ( BAD(BUS_send_data(&(ds->search), 1, pn))
-		|| BAD(DS2480_sendout_cmd(&searchon, 1, pn))
+		|| BAD(DS2480_sendout_cmd(&searchon, 1, in))
 		|| BAD( BUS_sendback_data(bitpairs, bitpairs, 16, pn) )
-		|| BAD(DS2480_sendout_cmd(&searchoff, 1, pn))
+		|| BAD(DS2480_sendout_cmd(&searchoff, 1, in))
 		) {
 		return search_error;
 	}
@@ -723,7 +728,7 @@ static enum search_status DS2480_next_both(struct device_search *ds, const struc
 
 	if ((sn[0] & 0x7F) == DS2404_family) {
 		/* We found a DS1994/DS2404 which require longer delays */
-		pn->selected_connection->ds2404_compliance = 1;
+		in->ds2404_compliance = 1;
 	}
 	// set the count
 	ds->LastDiscrepancy = mismatched;
@@ -745,7 +750,8 @@ static enum search_status DS2480_next_both(struct device_search *ds, const struc
 static GOOD_OR_BAD DS2480_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname *pn)
 {
 	GOOD_OR_BAD ret;
-	BYTE bits = CMD_COMM | FUNCTSEL_BIT | DS2480b_speed_byte(pn) ;
+	struct connection_in * in = pn->selected_connection ;
+	BYTE bits = CMD_COMM | FUNCTSEL_BIT | DS2480b_speed_byte(in) ;
 	BYTE cmd[] = {
 		// bit 1
 		((byte & 0x01) ? BITPOL_ONE : BITPOL_ZERO) | bits | PRIME5V_FALSE,
@@ -768,16 +774,16 @@ static GOOD_OR_BAD DS2480_PowerByte(const BYTE byte, BYTE * resp, const UINT del
 	BYTE response[1];
 
 	// flush the buffers
-	DS2480_flush(pn->selected_connection);
+	DS2480_flush(in);
 
 	// send the packet
 	// read back the 8 byte response from sending the 5V pulse
-	ret = DS2480_sendback_cmd(cmd, respbits, 8, pn);
+	ret = DS2480_sendback_cmd(cmd, respbits, 8, in);
 
 	UT_delay(delay);
 
 	// return to normal level
-	DS2480_stop_pulse(response, pn);
+	DS2480_stop_pulse(response, in);
 
 	resp[0] = ((respbits[7] & 1) << 7)
 		| ((respbits[6] & 1) << 6)
@@ -815,34 +821,35 @@ static void DS2480_slurp( const struct connection_in * in )
 	}
 }
 
-static GOOD_OR_BAD DS2480_stop_pulse(BYTE * response, const struct parsedname *pn)
+static GOOD_OR_BAD DS2480_stop_pulse(BYTE * response, struct connection_in * in)
 {
 	BYTE cmd[1] = { MODE_STOP_PULSE, };
 	// read back the 8 byte response from setting time limit
-	return DS2480_sendback_cmd(cmd, response, 1, pn);
+	return DS2480_sendback_cmd(cmd, response, 1, in);
 }
 
 /* Send a 12v 480usec pulse on the 1wire bus to program the EPROM */
 // returns 0 if good
 static GOOD_OR_BAD DS2480_ProgramPulse(const struct parsedname *pn)
 {
+	struct connection_in * in = pn->selected_connection ;
 	GOOD_OR_BAD ret;
 	BYTE cmd[] = { CMD_COMM | FUNCTSEL_CHMOD | BITPOL_12V | SPEEDSEL_PULSE, };
 	BYTE response_mask = 0xFC;
 	BYTE command_resp[1];
 	BYTE stop_pulse[1] ;
 
-	DS2480_flush(pn->selected_connection);
+	DS2480_flush(in);
 
 	// send the packet
 	// read back the 8 byte response from sending the 12V pilse
-	ret = DS2480_sendback_cmd(cmd, command_resp, 1, pn);
+	ret = DS2480_sendback_cmd(cmd, command_resp, 1, in);
 
 	if ( GOOD(ret) ) {
 		UT_delay_us(520);
 	}
 	// return to normal level
-	DS2480_stop_pulse(stop_pulse, pn);
+	DS2480_stop_pulse(stop_pulse, in);
 
 	RETURN_BAD_IF_BAD(ret) ;
 
@@ -854,9 +861,9 @@ static GOOD_OR_BAD DS2480_ProgramPulse(const struct parsedname *pn)
 }
 
 // Write to the output -- works for tcp and COM
-static GOOD_OR_BAD DS2480_write(const BYTE * buf, const size_t size, const struct parsedname *pn)
+static GOOD_OR_BAD DS2480_write(const BYTE * buf, const size_t size, struct connection_in * in)
 {
-	return COM_write( buf, size, pn->selected_connection ) ;
+	return COM_write( buf, size, in ) ;
 }
 
 /* Assymetric */
@@ -882,21 +889,21 @@ static GOOD_OR_BAD DS2480_read(BYTE * buf, const size_t size, struct connection_
 // The only uses for this alone are the single byte search accelerators
 // so size checking will be done in sendback
 // return 0=good
-static GOOD_OR_BAD DS2480_sendout_cmd(const BYTE * cmd, const size_t len, const struct parsedname *pn)
+static GOOD_OR_BAD DS2480_sendout_cmd(const BYTE * cmd, const size_t len, struct connection_in * in)
 {
-	if (pn->selected_connection->master.serial.mode == ds2480b_command_mode ) {
+	if (in->master.serial.mode == ds2480b_command_mode ) {
 		// already in command mode -- very easy
-		return DS2480_write(cmd, (unsigned) len, pn);
+		return DS2480_write(cmd, (unsigned) len, in);
 	} else {
 		// need to switch to command mode
 		// add to current string for efficiency
 		BYTE cmd_plus[len+1] ;
 		cmd_plus[0] = MODE_COMMAND ;
 		memcpy( &cmd_plus[1], cmd, len ) ;
-		// MODE_COMMAND is one of the reservred commands that does not generate a response byte
+		// MODE_COMMAND is one of the reserved commands that does not generate a response byte
 		// page 6 of datasheet: http://datasheets.maxim-ic.com/en/ds/DS2480B.pdf
-		pn->selected_connection->master.serial.mode = ds2480b_command_mode ;
-		return DS2480_write(cmd_plus, (unsigned) len+1, pn);
+		in->master.serial.mode = ds2480b_command_mode ;
+		return DS2480_write(cmd_plus, (unsigned) len+1, in);
 	}
 }
 
@@ -905,11 +912,10 @@ static GOOD_OR_BAD DS2480_sendout_cmd(const BYTE * cmd, const size_t len, const 
 //  Send a command and return response block
 //  puts into command mode if needed.
 // return 0=good
-static GOOD_OR_BAD DS2480_sendback_cmd(const BYTE * cmd, BYTE * resp, const size_t len, const struct parsedname *pn)
+static GOOD_OR_BAD DS2480_sendback_cmd(const BYTE * cmd, BYTE * resp, const size_t len, struct connection_in * in)
 {
 	size_t bytes_so_far = 0 ;
-	size_t extra_byte_for_modeshift  = (pn->selected_connection->master.serial.mode != ds2480b_command_mode) ? 1 : 0 ;
-	struct connection_in * in = pn->selected_connection ;
+	size_t extra_byte_for_modeshift  = (in->master.serial.mode != ds2480b_command_mode) ? 1 : 0 ;
 
 
 	while ( bytes_so_far < len ) {
@@ -918,7 +924,7 @@ static GOOD_OR_BAD DS2480_sendback_cmd(const BYTE * cmd, BYTE * resp, const size
 			bytes_this_segment = MAX_SEND_SIZE - extra_byte_for_modeshift ;
 			extra_byte_for_modeshift = 0 ;
 		}
-		RETURN_BAD_IF_BAD( DS2480_sendout_cmd( &cmd[bytes_so_far], bytes_this_segment, pn) );
+		RETURN_BAD_IF_BAD( DS2480_sendout_cmd( &cmd[bytes_so_far], bytes_this_segment, in) );
 		RETURN_BAD_IF_BAD( DS2480_read( &resp[bytes_so_far], bytes_this_segment, in) );
 		bytes_so_far += bytes_this_segment ;
 	}
@@ -933,12 +939,11 @@ static GOOD_OR_BAD DS2480_sendback_cmd(const BYTE * cmd, BYTE * resp, const size
 // return 0=good
 static GOOD_OR_BAD DS2480_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn)
 {
+	struct connection_in * in = pn->selected_connection ;
 	BYTE sendout[MAX_SEND_SIZE] ;
 	size_t bytes_this_segment = 0 ;
 	size_t bytes_at_segment_start = 0 ;
 	size_t bytes_from_list = 0 ;
-	struct connection_in * in = pn->selected_connection ;
-
 
 	// skip if nothing
 	// don't even switch to data mode
@@ -955,8 +960,7 @@ static GOOD_OR_BAD DS2480_sendback_data(const BYTE * data, BYTE * resp, const si
 		in->master.serial.mode = ds2480b_data_mode;
 	}
 
-	while ( bytes_from_list < len )
-	{
+	while ( bytes_from_list < len ) {
 		BYTE current_char = data[bytes_from_list++] ;
 		// transfer this byte
 		sendout[ bytes_this_segment++ ] = current_char ;
@@ -969,7 +973,7 @@ static GOOD_OR_BAD DS2480_sendback_data(const BYTE * data, BYTE * resp, const si
 		// need room for potentially 2 characters
 		if ( bytes_this_segment > MAX_SEND_SIZE-2 || bytes_from_list == len ) {
 			// write out
-			RETURN_BAD_IF_BAD( DS2480_write(sendout, bytes_this_segment, pn ) ) ;
+			RETURN_BAD_IF_BAD( DS2480_write(sendout, bytes_this_segment, in ) ) ;
 
 			// read in
 			// note that read and write sizes won't match because of doubled bytes and mode shift

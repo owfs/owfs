@@ -22,7 +22,7 @@ static GOOD_OR_BAD DS9097_pre_reset(struct termios * term, const struct parsedna
 static void DS9097_post_reset(struct termios * term, const struct parsedname *pn) ;
 static GOOD_OR_BAD DS9097_sendback_bits(const BYTE * outbits, BYTE * inbits, const size_t length, const struct parsedname *pn);
 static void DS9097_setroutines(struct connection_in *in);
-static GOOD_OR_BAD DS9097_send_and_get(const BYTE * bussend, BYTE * busget, const size_t length, const struct parsedname *pn);
+static GOOD_OR_BAD DS9097_send_and_get(const BYTE * bussend, BYTE * busget, const size_t length, struct connection_in *in);
 
 #define	OneBit	0xFF
 //#define ZeroBit 0xC0
@@ -81,12 +81,13 @@ static RESET_TYPE DS9097_reset(const struct parsedname *pn)
 	BYTE resetbyte = 0xF0;
 	BYTE responsebyte;
 	struct termios term;
+	struct connection_in * in = pn->selected_connection ;
 
 	if ( BAD( DS9097_pre_reset( &term, pn ) ) ) {
 		return BUS_RESET_ERROR ;
 	}
 
-	if ( BAD( DS9097_send_and_get(&resetbyte, &responsebyte, 1, pn)) ) {
+	if ( BAD( DS9097_send_and_get(&resetbyte, &responsebyte, 1, in )) ) {
 		DS9097_post_reset( &term, pn) ;
 		return BUS_RESET_ERROR ;
 	}
@@ -97,12 +98,12 @@ static RESET_TYPE DS9097_reset(const struct parsedname *pn)
 	case 0:
 		return BUS_RESET_SHORT;
 	case 0xF0:
-		pn->selected_connection->AnyDevices = anydevices_no ;
+		in->AnyDevices = anydevices_no ;
 		return BUS_RESET_OK;
 	default:
-		pn->selected_connection->AnyDevices = anydevices_yes ;
-		pn->selected_connection->ProgramAvailable = 0;	/* from digitemp docs */
-		if (pn->selected_connection->ds2404_compliance) {
+		in->AnyDevices = anydevices_yes ;
+		in->ProgramAvailable = 0;	/* from digitemp docs */
+		if (in->ds2404_compliance) {
 			// extra delay for alarming DS1994/DS2404 compliance
 			UT_delay(5);
 		}
@@ -212,6 +213,7 @@ static GOOD_OR_BAD DS9097_sendback_bits(const BYTE * outbits, BYTE * inbits, con
 	size_t l = 0;
 	size_t i = 0;
 	size_t start = 0;
+	struct connection_in * in = pn->selected_connection ;
 
 	if (length == 0) {
 		return gbGOOD;
@@ -222,8 +224,8 @@ static GOOD_OR_BAD DS9097_sendback_bits(const BYTE * outbits, BYTE * inbits, con
 		d[l++] = outbits[i++] ? OneBit : ZeroBit;
 		if (l == DS9097_MAX_BITS || i == length) {
 			/* Communication with DS9097 routine */
-			if ( BAD( DS9097_send_and_get(d, &inbits[start], l, pn)) ) {
-				STAT_ADD1_BUS(e_bus_errors, pn->selected_connection);
+			if ( BAD( DS9097_send_and_get(d, &inbits[start], l, in)) ) {
+				STAT_ADD1_BUS(e_bus_errors, in);
 				return gbBAD;
 			}
 			l = 0;
@@ -242,10 +244,10 @@ static GOOD_OR_BAD DS9097_sendback_bits(const BYTE * outbits, BYTE * inbits, con
 /* Routine to send a string of bits and get another string back */
 /* This seems rather COM-port specific */
 /* Indeed, will move to DS9097 */
-static GOOD_OR_BAD DS9097_send_and_get(const BYTE * bussend, BYTE * busget, const size_t length, const struct parsedname *pn)
+static GOOD_OR_BAD DS9097_send_and_get(const BYTE * bussend, BYTE * busget, const size_t length, struct connection_in * in)
 {
-	RETURN_BAD_IF_BAD( COM_write( bussend, length, pn->selected_connection ) ) ;
+	RETURN_BAD_IF_BAD( COM_write( bussend, length, in ) ) ;
 
 	/* get back string -- with timeout and partial read loop */
-	return COM_read( busget, length, pn->selected_connection ) ;
+	return COM_read( busget, length, in ) ;
 }

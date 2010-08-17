@@ -197,6 +197,7 @@ static void Netlink_Parse_Show( struct netlink_parse * nlp )
 
 enum Netlink_Read_Status W1_Process_Response( void (* nrs_callback)( struct netlink_parse * nlp, void * v, const struct parsedname * pn), SEQ_OR_ERROR seq, void * v, const struct parsedname * pn )
 {
+	struct connection_in * in = pn->selected_connection ;
 	FILE_DESCRIPTOR_OR_ERROR file_descriptor ;
 	int bus ;
 
@@ -204,14 +205,14 @@ enum Netlink_Read_Status W1_Process_Response( void (* nrs_callback)( struct netl
 		return nrs_bad_send ;
 	}
 
-	if ( pn == NULL ) {
+	if ( in == NULL ) {
 		// Send to main netlink rather than a particular bus
 		file_descriptor = FILE_DESCRIPTOR_BAD ;
 		bus = 0 ;
 	} else {
 		// Bus-specifc
-		file_descriptor = pn->selected_connection->master.w1.netlink_pipe[fd_pipe_read] ;
-		bus = pn->selected_connection->master.w1.id ;
+		file_descriptor = in->master.w1.netlink_pipe[fd_pipe_read] ;
+		bus = in->master.w1.id ;
 	}
 
 	while ( GOOD( W1PipeSelect_timeout(file_descriptor)) ) {

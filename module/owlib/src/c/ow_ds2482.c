@@ -64,7 +64,7 @@ static GOOD_OR_BAD DS2482_sendback_data(const BYTE * data, BYTE * resp, const si
 static void DS2482_setroutines(struct connection_in *in);
 static GOOD_OR_BAD HeadChannel(struct connection_in *head);
 static GOOD_OR_BAD CreateChannels(struct connection_in *head);
-static GOOD_OR_BAD DS2482_channel_select(const struct parsedname *pn);
+static GOOD_OR_BAD DS2482_channel_select(struct connection_in * in);
 static GOOD_OR_BAD DS2482_readstatus(BYTE * c, FILE_DESCRIPTOR_OR_ERROR file_descriptor, unsigned long int min_usec, unsigned long int max_usec);
 static GOOD_OR_BAD SetConfiguration(BYTE c, struct connection_in *in);
 static void DS2482_close(struct connection_in *in);
@@ -565,7 +565,7 @@ static RESET_TYPE DS2482_reset(const struct parsedname *pn)
 	FILE_DESCRIPTOR_OR_ERROR file_descriptor = in->master.i2c.head->file_descriptor;
 
 	/* Make sure we're using the correct channel */
-	if ( BAD(DS2482_channel_select(pn)) ) {
+	if ( BAD(DS2482_channel_select(in)) ) {
 		return BUS_RESET_ERROR;
 	}
 
@@ -589,17 +589,18 @@ static RESET_TYPE DS2482_reset(const struct parsedname *pn)
 
 static GOOD_OR_BAD DS2482_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn)
 {
-	FILE_DESCRIPTOR_OR_ERROR file_descriptor = pn->selected_connection->master.i2c.head->file_descriptor;
+	struct connection_in * in = pn->selected_connection ;
+	FILE_DESCRIPTOR_OR_ERROR file_descriptor = in->master.i2c.head->file_descriptor;
 	size_t i;
 
 	/* Make sure we're using the correct channel */
-	RETURN_BAD_IF_BAD(DS2482_channel_select(pn)) ;
+	RETURN_BAD_IF_BAD(DS2482_channel_select(in)) ;
 
-	TrafficOut( "write", data, len, pn->selected_connection ) ;
+	TrafficOut( "write", data, len, in ) ;
 	for (i = 0; i < len; ++i) {
 		RETURN_BAD_IF_BAD(DS2482_send_and_get(file_descriptor, data[i], &resp[i])) ;
 	}
-	TrafficOut( "response", resp, len, pn->selected_connection ) ;
+	TrafficOut( "response", resp, len, in ) ;
 	return gbGOOD;
 }
 
@@ -637,13 +638,10 @@ static GOOD_OR_BAD DS2482_send_and_get(FILE_DESCRIPTOR_OR_ERROR file_descriptor,
 /* All general stored data will be assigned to this "head" channel */
 static GOOD_OR_BAD HeadChannel(struct connection_in *head)
 {
-	struct parsedname pn; // Token only for DS2482_channel_select test
-	pn.selected_connection = head;
-
 	/* Intentionally put the wrong index */
 	head->master.i2c.index = 1;
 
-	if ( BAD(DS2482_channel_select(&pn)) ) {	/* Couldn't switch */
+	if ( BAD(DS2482_channel_select(head)) ) {	/* Couldn't switch */
 		head->master.i2c.index = 0;	/* restore correct value */
 		LEVEL_CONNECT("DS2482-100 (Single channel)");
 		return gbGOOD;				/* happy as DS2482-100 */
@@ -710,10 +708,10 @@ static GOOD_OR_BAD DS2482_triple(BYTE * bits, int direction, FILE_DESCRIPTOR_OR_
 	return gbGOOD;
 }
 
-static GOOD_OR_BAD DS2482_channel_select(const struct parsedname *pn)
+static GOOD_OR_BAD DS2482_channel_select(struct connection_in * in)
 {
-	struct connection_in *head = pn->selected_connection->master.i2c.head;
-	int chan = pn->selected_connection->master.i2c.index;
+	struct connection_in *head = in->master.i2c.head;
+	int chan = in->master.i2c.index;
 	FILE_DESCRIPTOR_OR_ERROR file_descriptor = head->file_descriptor;
 
 	/*
@@ -725,7 +723,7 @@ static GOOD_OR_BAD DS2482_channel_select(const struct parsedname *pn)
 	static const BYTE R_chan[8] = { 0xB8, 0xB1, 0xAA, 0xA3, 0x9C, 0x95, 0x8E, 0x87 };
 
 	if ( FILE_DESCRIPTOR_NOT_VALID(file_descriptor) ) {
-		LEVEL_CONNECT("Calling a closed i2c channel (%d) "I2Cformat" ", chan,I2Cvar(pn->selected_connection));
+		LEVEL_CONNECT("Calling a closed i2c channel (%d) "I2Cformat" ", chan,I2Cvar(in));
 		return gbBAD;
 	}
 
@@ -749,13 +747,13 @@ static GOOD_OR_BAD DS2482_channel_select(const struct parsedname *pn)
 		}
 
 		/* Set the channel in head */
-		head->master.i2c.current = pn->selected_connection->master.i2c.index;
+		head->master.i2c.current = in->master.i2c.index;
 	}
 
 	/* Now check the configuration register */
 	/* This is since configuration is per chip, not just channel */
-	if (pn->selected_connection->master.i2c.configreg != head->master.i2c.configchip) {
-		return SetConfiguration(pn->selected_connection->master.i2c.configreg, pn->selected_connection);
+	if (in->master.i2c.configreg != head->master.i2c.configchip) {
+		return SetConfiguration(in->master.i2c.configreg, in);
 	}
 
 	return gbGOOD;
@@ -788,7 +786,7 @@ static GOOD_OR_BAD DS2482_PowerByte(const BYTE byte, BYTE * resp, const UINT del
 	struct connection_in * in = pn->selected_connection ;
 	
 	/* Make sure we're using the correct channel */
-	RETURN_BAD_IF_BAD(DS2482_channel_select(pn)) ;
+	RETURN_BAD_IF_BAD(DS2482_channel_select(in)) ;
 
 	/* Set the power (bit is automatically cleared by reset) */
 	TrafficOut("power write", &byte, 1, in ) ;
@@ -796,7 +794,7 @@ static GOOD_OR_BAD DS2482_PowerByte(const BYTE byte, BYTE * resp, const UINT del
 
 	/* send and get byte (and trigger strong pull-up */
 	RETURN_BAD_IF_BAD(DS2482_send_and_get( in->master.i2c.head->file_descriptor, byte, resp)) ;
-	TrafficOut("power response", &resp, 1, in ) ;
+	TrafficOut("power response", resp, 1, in ) ;
 
 	UT_delay(delay);
 
