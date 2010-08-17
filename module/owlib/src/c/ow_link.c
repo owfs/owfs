@@ -255,6 +255,7 @@ static char * LINK_version_string(struct connection_in * in)
 	in->master.serial.tcp.default_discard = 0 ;
 	in->master.serial.tcp.CRLF_size = 0 ;
 	in->master.link.tmode = e_link_t_unknown ;
+	in->master.link.qmode = e_link_t_unknown ;
 
 	if ( version_string == NULL ) {
 		LEVEL_DEBUG( "cannot allocate version string" );
@@ -497,16 +498,17 @@ static GOOD_OR_BAD LINK_search_type(struct device_search *ds, struct connection_
 					response_length = 2 ;
 					break;
 				default:
-					in->master.link.tmode = e_link_t_comma ;
+					in->master.link.tmode = e_link_t_extra ;
 					response_length = 3 ;
 					LINK_slurp(in);
 					break;
 			}
 			break ;	
-		case e_link_t_comma:
+		case e_link_t_extra:
 			response_length = 3 ;
 			break ;
 		case e_link_t_none:
+		default:
 			response_length = 2 ;
 			break ;
 	}
@@ -695,22 +697,52 @@ static GOOD_OR_BAD LINK_sendback_data(const BYTE * data, BYTE * resp, const size
 	struct connection_in * in = pn->selected_connection ;
 	size_t left = size;
 	size_t location = 0 ;
-	BYTE buf[1+LINK_SEND_SIZE*2+1+in->master.serial.tcp.CRLF_size] ;
+	int qmode_extra ;
+	BYTE buf[1+LINK_SEND_SIZE*2+1+1+in->master.serial.tcp.CRLF_size] ;
 	
 	if (size == 0) {
 		return gbGOOD;
 	}
 	
+	switch ( in->master.link.qmode ) {
+		case e_link_t_extra:
+			qmode_extra = 1 ;
+			break ;
+		case e_link_t_unknown:
+		case e_link_t_none:
+		default:
+			qmode_extra = 0 ;
+			break ;
+	}
+			
 	//Debug_Bytes( "ELINK sendback send", data, size) ;
 	while (left > 0) {
+		// Loop through taking only 32 bytes at a time
 		size_t this_length = (left > LINK_SEND_SIZE) ? LINK_SEND_SIZE : left;
+		size_t this_length2 = 2 * this_length ; // doubled for switch from hex to ascii
+		
 		buf[0] = 'b';			//put in byte mode
-		//        printf(">> size=%d, left=%d, i=%d\n",size,left,i);
-		bytes2string((char *) &buf[1], &data[location], this_length);
-		buf[1+this_length*2] = '\r';	// take out of byte mode
-		RETURN_BAD_IF_BAD(LINK_write(buf, 1+this_length*2+1, in) ) ;
-		RETURN_BAD_IF_BAD( LINK_read(buf, this_length*2, in) ) ;
-		string2bytes((char *) buf, &resp[size - left], this_length);
+		bytes2string((char *) &buf[1], &data[location], this_length); // load in data as ascii data
+		buf[1+this_length2] = '\r';	// take out of byte mode
+		
+		// send to LINK
+		RETURN_BAD_IF_BAD(LINK_write(buf, 1+this_length2+1, in) ) ;
+		
+		// read back
+		RETURN_BAD_IF_BAD( LINK_read(buf, this_length2+qmode_extra, in) ) ;
+		
+		// see if we've yet tested the extra '?' "feature"
+		if ( in->master.link.qmode == e_link_t_unknown ) {
+			if ( buf[this_length2] != 0x0D ) {
+				in->master.link.qmode = e_link_t_extra ;
+				LINK_slurp(in) ;
+			} else {
+				in->master.link.qmode = e_link_t_none ;
+			}
+		}
+		
+		// place data (converted back to hex) in resp
+		string2bytes((char *) buf, &resp[location], this_length);
 		left -= this_length;
 		location += this_length ;
 	}
