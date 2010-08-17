@@ -52,11 +52,13 @@ READ_FUNCTION(FS_r_lock);
 READ_FUNCTION(FS_r_application);
 WRITE_FUNCTION(FS_w_application);
 
+#define _DS2430A_MEM_SIZE 32
+
 /* ------- Structures ----------- */
 
 struct filetype DS2430A[] = {
 	F_STANDARD,
-	{"memory", 16, NON_AGGREGATE, ft_binary, fc_link, FS_r_memory, FS_w_memory, VISIBLE, NO_FILETYPE_DATA,},
+	{"memory", _DS2430A_MEM_SIZE, NON_AGGREGATE, ft_binary, fc_link, FS_r_memory, FS_w_memory, VISIBLE, NO_FILETYPE_DATA,},
 
 	{"application", 8, NON_AGGREGATE, ft_binary, fc_stable, FS_r_application, FS_w_application, VISIBLE, NO_FILETYPE_DATA,},
 	{"lock", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_lock, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
@@ -77,18 +79,16 @@ DeviceEntry(14, DS2430A, NO_GENERIC_READ, NO_GENERIC_WRITE);
 /* ------- Functions ------------ */
 
 /* DS2502 */
-static GOOD_OR_BAD OW_w_mem(const BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn);
-static GOOD_OR_BAD OW_w_app(const BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn);
-static GOOD_OR_BAD OW_r_app(BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn);
+static GOOD_OR_BAD OW_w_mem(const BYTE * data, size_t size, off_t offset, const struct parsedname *pn);
+static GOOD_OR_BAD OW_r_mem(BYTE * data, size_t size, off_t offset, const struct parsedname *pn);
+static GOOD_OR_BAD OW_w_app(const BYTE * data, size_t size, off_t offset, const struct parsedname *pn);
+static GOOD_OR_BAD OW_r_app(BYTE * data, size_t size, off_t offset, const struct parsedname *pn);
 static GOOD_OR_BAD OW_r_status(BYTE * data, const struct parsedname *pn);
 
 /* DS2430A memory */
 static ZERO_OR_ERROR FS_r_memory(struct one_wire_query *owq)
 {
-	if (COMMON_read_memory_F0(owq, 0, 0)) {
-		return -EINVAL;
-	}
-	return 0;
+	return GB_to_Z_OR_E(OW_r_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq))) ;
 }
 
 /* DS2430A memory */
@@ -116,28 +116,23 @@ static ZERO_OR_ERROR FS_r_lock(struct one_wire_query *owq)
 }
 
 /* Byte-oriented write */
-static GOOD_OR_BAD OW_w_mem(const BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn)
+static GOOD_OR_BAD OW_w_mem(const BYTE * data, size_t size, off_t offset, const struct parsedname *pn)
 {
-	BYTE fo[] = { _1W_READ_MEMORY, };
-	struct transaction_log tread[] = {
-		TRXN_START,
-		TRXN_WRITE1(fo),
-		TRXN_END,
-	};
-	BYTE of[] = { _1W_WRITE_SCRATCHPAD, (BYTE) (offset & 0x1F), };
+	BYTE scratch[_DS2430A_MEM_SIZE];
+
+	BYTE of[] = { _1W_WRITE_SCRATCHPAD, BYTE_MASK(offset), };
 	struct transaction_log twrite[] = {
 		TRXN_START,
 		TRXN_WRITE2(of),
 		TRXN_WRITE(data, size),
 		TRXN_END,
 	};
-	BYTE ver[16];
-	BYTE vr[] = { _1W_READ_SCRATCHPAD, (BYTE) (offset & 0x1F), };
+	BYTE vr[] = { _1W_READ_SCRATCHPAD, BYTE_MASK(offset), };
 	struct transaction_log tver[] = {
 		TRXN_START,
 		TRXN_WRITE2(vr),
-		TRXN_READ(ver, size),
-		TRXN_COMPARE(data,ver,size),
+		TRXN_READ(scratch, size),
+		TRXN_COMPARE(data,scratch,size),
 		TRXN_END,
 	};
 	BYTE cp[] = { _1W_COPY_SCRATCHPAD, };
@@ -150,8 +145,8 @@ static GOOD_OR_BAD OW_w_mem(const BYTE * data, const size_t size, const off_t of
 	};
 
 	/* load scratch pad if incomplete write */
-	if ((size != 16) && BAD(BUS_transaction(tread, pn)) ) {
-		return gbBAD;
+	if ( size != _DS2430A_MEM_SIZE ) {
+		RETURN_BAD_IF_BAD( OW_r_mem( scratch, 0, 0x00, pn)) ;
 	}
 
 	/* write data to scratchpad */
@@ -165,7 +160,21 @@ static GOOD_OR_BAD OW_w_mem(const BYTE * data, const size_t size, const off_t of
 }
 
 /* Byte-oriented write */
-static GOOD_OR_BAD OW_w_app(const BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn)
+static GOOD_OR_BAD OW_r_mem( BYTE * data, size_t size, off_t offset, const struct parsedname *pn)
+{
+	BYTE fo[] = { _1W_READ_MEMORY, BYTE_MASK(offset), };
+	struct transaction_log t[] = {
+		TRXN_START,
+		TRXN_WRITE2(fo),
+		TRXN_READ( data, size ) ,
+		TRXN_END,
+	};
+
+	return BUS_transaction(t, pn);
+}
+
+/* Byte-oriented write */
+static GOOD_OR_BAD OW_w_app(const BYTE * data, size_t size, off_t offset, const struct parsedname *pn)
 {
 	BYTE fo[] = { _1W_READ_APPLICATION_REGISTER, };
 	struct transaction_log tread[] = {
@@ -173,7 +182,7 @@ static GOOD_OR_BAD OW_w_app(const BYTE * data, const size_t size, const off_t of
 		TRXN_WRITE1(fo),
 		TRXN_END,
 	};
-	BYTE of[] = { _1W_WRITE_APPLICATION_REGISTER, (BYTE) (offset & 0x0F), };
+	BYTE of[] = { _1W_WRITE_APPLICATION_REGISTER, BYTE_MASK(offset), };
 	struct transaction_log twrite[] = {
 		TRXN_START,
 		TRXN_WRITE2(of),
@@ -181,7 +190,7 @@ static GOOD_OR_BAD OW_w_app(const BYTE * data, const size_t size, const off_t of
 		TRXN_END,
 	};
 	BYTE ver[9];
-	BYTE vr[] = { _1W_READ_SCRATCHPAD, (BYTE) (offset & 0x1F), };
+	BYTE vr[] = { _1W_READ_SCRATCHPAD, BYTE_MASK(offset), };
 	struct transaction_log tver[] = {
 		TRXN_START,
 		TRXN_WRITE2(vr),
@@ -199,8 +208,8 @@ static GOOD_OR_BAD OW_w_app(const BYTE * data, const size_t size, const off_t of
 	};
 
 	/* load scratch pad if incomplete write */
-	if ((size != 8) && BAD(BUS_transaction(tread, pn)) ){
-		return gbBAD;
+	if ( size != 8 ) {
+		RETURN_BAD_IF_BAD(BUS_transaction(tread, pn)) ;
 	}
 	/* write data to scratchpad */
 	RETURN_BAD_IF_BAD(BUS_transaction(twrite, pn)) ;
@@ -210,9 +219,9 @@ static GOOD_OR_BAD OW_w_app(const BYTE * data, const size_t size, const off_t of
 	return BUS_transaction(tcopy, pn);
 }
 
-static GOOD_OR_BAD OW_r_app(BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn)
+static GOOD_OR_BAD OW_r_app(BYTE * data, size_t size, off_t offset, const struct parsedname *pn)
 {
-	BYTE fo[] = { _1W_READ_APPLICATION_REGISTER, (BYTE) (offset & 0x0F), };
+	BYTE fo[] = { _1W_READ_APPLICATION_REGISTER, BYTE_MASK(offset), };
 	struct transaction_log tread[] = {
 		TRXN_START,
 		TRXN_WRITE2(fo),
