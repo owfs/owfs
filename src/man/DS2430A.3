@@ -19,7 +19,7 @@ EEPROM
 [.]XXXXXXXXXXXX[XX][/[
 .B application
 |
-.B lock
+.B status
 |
 .B memory
 |
@@ -33,18 +33,24 @@ EEPROM
 .I read-write, binary
 .br
 8 bytes of data. Write once, then
-.I lock
-is true and further writing is impossible.
-.SS lock
-.I read-only, yes-no
+.I status
+is 0xFC and further writing is impossible.
+.SS status
+.I read-only, unsigned integer
 .br
 Is the
 .I application
 area locked?
+.TP
+0xFF
+Application area untouched
+.TP
+0xFC
+Applcation area locked
 .SS memory
 .I read-write, binary
 .br
-16 bytes of data.
+32 bytes of data. (256 bits)
 .SH STANDARD PROPERTIES
 .so standard.3so
 .SH ALARMS
@@ -54,8 +60,12 @@ None.
 .SS DS2430A
 The
 .B DS2430A (3)
-is a memory 1-wire chip. It ios considered obsoloete and newer designs are supposed to use the
+is a memory 1-wire chip. It is considered obsolete and newer designs are supposed to use the
 .B DS2431 (3)
+.P
+The
+.B DS1971 (3)
+is an iButton version of the same device.
 .SH ADDRESSING
 .so addressing.3so
 .SH DATASHEET
