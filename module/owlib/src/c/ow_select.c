@@ -107,12 +107,7 @@ GOOD_OR_BAD BUS_select(const struct parsedname *pn)
 	/* proper path now "turned on" */
 	if ((pn->selected_device != NULL) && (pn->selected_device != DeviceThermostat)) {
 		memcpy(&sent[1], pn->sn, SERIAL_NUMBER_SIZE);
-		if ( BAD(BUS_send_data(sent, 1, pn))) {
-			STAT_ADD1_BUS(e_bus_select_errors, pn->selected_connection);
-			LEVEL_CONNECT("Select error for %s on bus %s", pn->selected_device->readable_name, pn->selected_connection->name);
-			return gbBAD;
-		}
-		if ( BAD( BUS_send_data(&sent[1], SERIAL_NUMBER_SIZE, pn)) ) {
+		if ( BAD(BUS_send_data(sent, 1+SERIAL_NUMBER_SIZE, pn))) {
 			STAT_ADD1_BUS(e_bus_select_errors, pn->selected_connection);
 			LEVEL_CONNECT("Select error for %s on bus %s", pn->selected_device->readable_name, pn->selected_connection->name);
 			return gbBAD;

@@ -35,6 +35,7 @@ GOOD_OR_BAD BUS_send_data(const BYTE * data, const size_t len, const struct pars
 	}
 
 	if ( memcmp(data, resp, len) != 0 ) {
+		LEVEL_DEBUG("Response doesn't match data sent");
 		STAT_ADD1_BUS(e_bus_errors, pn->selected_connection);
 		return gbBAD ;
 	}
