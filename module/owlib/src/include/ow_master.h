@@ -104,8 +104,11 @@ struct master_etherweather {
 	struct master_tcp tcp;
 };
 
+enum e_link_t_mode { e_link_t_unknown, e_link_t_comma, e_link_t_none } ;
+
 struct master_link {
 	struct master_tcp tcp;      // mirror master.server
+	enum e_link_t_mode tmode ;
 };
 
 struct master_ha7e {

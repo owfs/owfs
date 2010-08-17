@@ -254,6 +254,7 @@ static char * LINK_version_string(struct connection_in * in)
 
 	in->master.serial.tcp.default_discard = 0 ;
 	in->master.serial.tcp.CRLF_size = 0 ;
+	in->master.link.tmode = e_link_t_unknown ;
 
 	if ( version_string == NULL ) {
 		LEVEL_DEBUG( "cannot allocate version string" );
@@ -484,16 +485,42 @@ static GOOD_OR_BAD LINK_write(const BYTE * buf, size_t size, struct connection_i
 static GOOD_OR_BAD LINK_search_type(struct device_search *ds, struct connection_in * in)
 {
 	char resp[3+in->master.serial.tcp.CRLF_size];
+	int response_length ;
+	
+	switch ( in->master.link.tmode ) {
+		case e_link_t_unknown:
+			RETURN_BAD_IF_BAD( LINK_write(LINK_string("tF0"), 3, in));
+			RETURN_BAD_IF_BAD(LINK_read(LINK_string(resp), 2, in));
+			switch ( resp[0] ) {
+				case 'F':
+					in->master.link.tmode = e_link_t_none ;
+					response_length = 2 ;
+					break;
+				default:
+					in->master.link.tmode = e_link_t_comma ;
+					response_length = 3 ;
+					LINK_slurp(in);
+					break;
+			}
+			break ;	
+		case e_link_t_comma:
+			response_length = 3 ;
+			break ;
+		case e_link_t_none:
+			response_length = 2 ;
+			break ;
+	}
 
 	//Depending on the search type, the LINK search function
 	//needs to be selected
 	//tEC -- Conditional searching
 	//tF0 -- Normal searching
+	
 
 	// Send the configuration command and check response
 	if (ds->search == _1W_CONDITIONAL_SEARCH_ROM) {
 		RETURN_BAD_IF_BAD(LINK_write(LINK_string("tEC"), 3, in)) ;
-		RETURN_BAD_IF_BAD(LINK_read(LINK_string(resp), 3, in)) ;
+		RETURN_BAD_IF_BAD(LINK_read(LINK_string(resp), response_length, in)) ;
 		if (strstr(resp, "EC") == NULL) {
 			LEVEL_DEBUG("Did not change to conditional search");
 			return gbBAD;
