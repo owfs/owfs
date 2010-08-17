@@ -528,7 +528,7 @@ static GOOD_OR_BAD LINK_search_type(struct device_search *ds, struct connection_
 		LEVEL_DEBUG("LINK set for conditional search");
 	} else {
 		RETURN_BAD_IF_BAD( LINK_write(LINK_string("tF0"), 3, in));
-		RETURN_BAD_IF_BAD(LINK_read(LINK_string(resp), 3, in));
+		RETURN_BAD_IF_BAD(LINK_read(LINK_string(resp), response_length, in));
 		if (strstr(resp, "F0") == NULL) {
 			LEVEL_DEBUG("Did not change to normal search");
 			return gbBAD;
