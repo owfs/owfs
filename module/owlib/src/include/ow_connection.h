@@ -155,7 +155,7 @@ GOOD_OR_BAD COM_write( const BYTE * data, size_t length, struct connection_in *c
 GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connection);
 void Slurp( FILE_DESCRIPTOR_OR_ERROR file_descriptor, unsigned long usec ) ;
 
-GOOD_OR_BAD telnet_read(BYTE * buf, const size_t size, const struct parsedname *pn) ;
+GOOD_OR_BAD telnet_read(BYTE * buf, const size_t size, struct connection_in *in) ;
 
 #define COM_slurp( file_descriptor ) Slurp( file_descriptor, 1000 )
 #define TCP_slurp( file_descriptor ) Slurp( file_descriptor, 100000 )

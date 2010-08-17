@@ -24,7 +24,7 @@ static GOOD_OR_BAD DS2480_big_reset_serial(const struct parsedname *pn) ;
 static GOOD_OR_BAD DS2480_big_reset_net(const struct parsedname *pn) ;
 static void DS2480_adapter(struct connection_in *in) ;
 static GOOD_OR_BAD DS2480_big_configuration(const struct parsedname *pn) ;
-static GOOD_OR_BAD DS2480_read(BYTE * buf, const size_t size, const struct parsedname *pn);
+static GOOD_OR_BAD DS2480_read(BYTE * buf, const size_t size, struct connection_in * in);
 static GOOD_OR_BAD DS2480_write(const BYTE * buf, const size_t size, const struct parsedname *pn);
 static GOOD_OR_BAD DS2480_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname *pn);
 static GOOD_OR_BAD DS2480_ProgramPulse(const struct parsedname *pn);
@@ -864,12 +864,11 @@ static GOOD_OR_BAD DS2480_write(const BYTE * buf, const size_t size, const struc
 // NOTE: from PDkit, read 1-byte at a time
 // NOTE: change timeout to 40msec from 10msec for LINK (emulation mode)
 // returns 0=good 1=bad
-static GOOD_OR_BAD DS2480_read(BYTE * buf, const size_t size, const struct parsedname *pn)
+static GOOD_OR_BAD DS2480_read(BYTE * buf, const size_t size, struct connection_in * in)
 {
-	struct connection_in * in = pn->selected_connection ;
 	switch ( in->busmode ) {
 		case bus_elink:
-			return telnet_read( buf, size, pn ) ;
+			return telnet_read( buf, size, in ) ;
 		default:
 			return COM_read( buf, size, in ) ;
 	}
@@ -910,6 +909,8 @@ static GOOD_OR_BAD DS2480_sendback_cmd(const BYTE * cmd, BYTE * resp, const size
 {
 	size_t bytes_so_far = 0 ;
 	size_t extra_byte_for_modeshift  = (pn->selected_connection->master.serial.mode != ds2480b_command_mode) ? 1 : 0 ;
+	struct connection_in * in = pn->selected_connection ;
+
 
 	while ( bytes_so_far < len ) {
 		size_t bytes_this_segment = len - bytes_so_far ;
@@ -918,7 +919,7 @@ static GOOD_OR_BAD DS2480_sendback_cmd(const BYTE * cmd, BYTE * resp, const size
 			extra_byte_for_modeshift = 0 ;
 		}
 		RETURN_BAD_IF_BAD( DS2480_sendout_cmd( &cmd[bytes_so_far], bytes_this_segment, pn) );
-		RETURN_BAD_IF_BAD( DS2480_read( &resp[bytes_so_far], bytes_this_segment, pn) );
+		RETURN_BAD_IF_BAD( DS2480_read( &resp[bytes_so_far], bytes_this_segment, in) );
 		bytes_so_far += bytes_this_segment ;
 	}
 	return gbGOOD ;
@@ -936,6 +937,8 @@ static GOOD_OR_BAD DS2480_sendback_data(const BYTE * data, BYTE * resp, const si
 	size_t bytes_this_segment = 0 ;
 	size_t bytes_at_segment_start = 0 ;
 	size_t bytes_from_list = 0 ;
+	struct connection_in * in = pn->selected_connection ;
+
 
 	// skip if nothing
 	// don't even switch to data mode
@@ -944,12 +947,12 @@ static GOOD_OR_BAD DS2480_sendback_data(const BYTE * data, BYTE * resp, const si
 	}
 
 	// switch mode if needed
-	if (pn->selected_connection->master.serial.mode != ds2480b_data_mode) {
+	if (in->master.serial.mode != ds2480b_data_mode) {
 		// this is one of the "reserved commands" that does not generate a resonse byte
 		// page 6 of the datasheet http://datasheets.maxim-ic.com/en/ds/DS2480B.pdf
 		sendout[bytes_this_segment++] = MODE_DATA;
 		// change flag to data mode
-		pn->selected_connection->master.serial.mode = ds2480b_data_mode;
+		in->master.serial.mode = ds2480b_data_mode;
 	}
 
 	while ( bytes_from_list < len )
@@ -970,7 +973,7 @@ static GOOD_OR_BAD DS2480_sendback_data(const BYTE * data, BYTE * resp, const si
 
 			// read in
 			// note that read and write sizes won't match because of doubled bytes and mode shift
-			RETURN_BAD_IF_BAD( DS2480_read(&resp[bytes_at_segment_start], bytes_from_list - bytes_at_segment_start, pn) ) ;
+			RETURN_BAD_IF_BAD( DS2480_read(&resp[bytes_at_segment_start], bytes_from_list - bytes_at_segment_start, in) ) ;
 
 			// move indexes for next segment
 			bytes_at_segment_start = bytes_from_list ;

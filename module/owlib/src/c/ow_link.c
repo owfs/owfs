@@ -66,8 +66,8 @@ static GOOD_OR_BAD LINK_net_detect(struct parsedname * pn_minimal) ;
 
 //static void byteprint( const BYTE * b, int size ) ;
 static void LINK_set_baud(const struct parsedname *pn) ;
-static GOOD_OR_BAD LINK_read(BYTE * buf, const size_t size, int extra_net, const struct parsedname *pn);
-static GOOD_OR_BAD LINK_write(const BYTE * buf, const size_t size, const struct parsedname *pn);
+static GOOD_OR_BAD LINK_read(BYTE * buf, const size_t size, int extra_net, struct connection_in * in);
+static GOOD_OR_BAD LINK_write(const BYTE * buf, const size_t size, struct connection_in *in);
 static RESET_TYPE LINK_reset(const struct parsedname *pn);
 static enum search_status LINK_next_both(struct device_search *ds, const struct parsedname *pn);
 static GOOD_OR_BAD LINK_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
@@ -185,14 +185,14 @@ static GOOD_OR_BAD LINK_serial_detect(struct parsedname * pn_minimal)
 	UT_delay(100) ; // based on http://morpheus.wcf.net/phpbb2/viewtopic.php?t=89&sid=3ab680415917a0ebb1ef020bdc6903ad
 	
 	//COM_flush(in);
-	if (LINK_reset(pn_minimal) == BUS_RESET_OK && GOOD( LINK_write(LINK_string(" "), 1, pn_minimal) ) ) {
+	if (LINK_reset(pn_minimal) == BUS_RESET_OK && GOOD( LINK_write(LINK_string(" "), 1, in) ) ) {
 		char version_read_in[MAX_LINK_VERSION_LENGTH] ;
 		memset(version_read_in, 0, MAX_LINK_VERSION_LENGTH);
 		
 		/* read the version string */
 		LEVEL_DEBUG("Checking LINK version");
 		
-		LINK_read((BYTE *)version_read_in, MAX_LINK_VERSION_LENGTH, 0, pn_minimal);	// ignore return value -- will time out, probably
+		LINK_read((BYTE *)version_read_in, MAX_LINK_VERSION_LENGTH, 0, in);	// ignore return value -- will time out, probably
 		Debug_Bytes("Read version from link", (BYTE*)version_read_in, MAX_LINK_VERSION_LENGTH);
 		
 		LINK_flush(in);
@@ -235,7 +235,7 @@ static GOOD_OR_BAD LINK_net_detect(struct parsedname * pn_minimal)
 	TCP_slurp( in->file_descriptor ) ;
 	LINK_flush(in);
 
-	if ( GOOD( LINK_write(LINK_string(" "), 1, pn_minimal) ) ) {
+	if ( GOOD( LINK_write(LINK_string(" "), 1, in) ) ) {
 		char version_read_in[MAX_LINK_VERSION_LENGTH] ;
 		int version_index ;
 		memset(version_read_in, 0, MAX_LINK_VERSION_LENGTH);
@@ -245,7 +245,7 @@ static GOOD_OR_BAD LINK_net_detect(struct parsedname * pn_minimal)
 
 		// need to read 1 char at a time to get a short string
 		for ( version_index=0 ; version_index<MAX_LINK_VERSION_LENGTH ; ++version_index ) {
-			if ( BAD( LINK_read((BYTE *)&version_read_in[version_index], 1, 0, pn_minimal)) ) {
+			if ( BAD( LINK_read((BYTE *)&version_read_in[version_index], 1, 0, in)) ) {
 				break ;	// ignore return value -- will time out, probably
 			}
 		}
@@ -263,19 +263,20 @@ static GOOD_OR_BAD LINK_net_detect(struct parsedname * pn_minimal)
 
 static void LINK_set_baud(const struct parsedname *pn)
 {
-	char * speed_code ; // 
+	char * speed_code ;
+	struct connection_in * in = pn->selected_connection ;
 
-	if ( pn->selected_connection->busmode == bus_elink ) {
+	if ( in->busmode == bus_elink ) {
 		return ;
 	}
 
-	COM_BaudRestrict( &(pn->selected_connection->baud), B9600, B19200, B38400, B57600, 0 ) ;
+	COM_BaudRestrict( &(in->baud), B9600, B19200, B38400, B57600, 0 ) ;
 
-	LEVEL_DEBUG("to %d",COM_BaudRate(pn->selected_connection->baud));
+	LEVEL_DEBUG("to %d",COM_BaudRate(in->baud));
 	// Find rate parameter
-	switch ( pn->selected_connection->baud ) {
+	switch ( in->baud ) {
 		case B9600:
-			COM_break(pn->selected_connection) ;
+			COM_break(in) ;
 			return ;
 		case B19200:
 			speed_code = "," ;
@@ -295,23 +296,23 @@ static void LINK_set_baud(const struct parsedname *pn)
 	}
 
 	LEVEL_DEBUG("LINK change baud string <%s>",speed_code);
-	LINK_flush(pn->selected_connection);
-	if ( BAD( LINK_write(LINK_string(speed_code), 1, pn) ) ) {
+	LINK_flush(in);
+	if ( BAD( LINK_write(LINK_string(speed_code), 1, in) ) ) {
 		LEVEL_DEBUG("LINK change baud error -- will return to 9600");
-		pn->selected_connection->baud = B9600 ;
-		++pn->selected_connection->changed_bus_settings ;
+		in->baud = B9600 ;
+		++in->changed_bus_settings ;
 		return ;
 	}
 
 
 	// Send configuration change
-	LINK_flush(pn->selected_connection);
+	LINK_flush(in);
 
 	// Change OS view of rate
 	UT_delay(5);
-	COM_speed(pn->selected_connection->baud,pn->selected_connection) ;
+	COM_speed(in->baud,in) ;
 	UT_delay(5);
-	COM_slurp(pn->selected_connection->file_descriptor);
+	COM_slurp(in->file_descriptor);
 
 	return ;
 }
@@ -331,16 +332,17 @@ static void LINK_flush( struct connection_in * in )
 static RESET_TYPE LINK_reset(const struct parsedname *pn)
 {
 	BYTE resp[3+1];
+	struct connection_in * in = pn->selected_connection ;
 
-	if (pn->selected_connection->changed_bus_settings > 0) {
-		--pn->selected_connection->changed_bus_settings ;
+	if (in->changed_bus_settings > 0) {
+		--in->changed_bus_settings ;
 		LINK_set_baud(pn);	// reset paramters
 	} else {
-		LINK_flush(pn->selected_connection);
+		LINK_flush(in);
 	}
 
 	//Response is 3 bytes:  1 byte for code + \r\n
-	if ( BAD(LINK_write(LINK_string("r"), 1, pn) || BAD( LINK_read(resp, 3, 1, pn))) ) {
+	if ( BAD(LINK_write(LINK_string("r"), 1, in) || BAD( LINK_read(resp, 3, 1, in))) ) {
 		LEVEL_DEBUG("Error resetting LINK device");
 		return BUS_RESET_ERROR;
 	}
@@ -348,10 +350,10 @@ static RESET_TYPE LINK_reset(const struct parsedname *pn)
 	switch (resp[0]) {
 
 	case 'P':
-		pn->selected_connection->AnyDevices = anydevices_yes;
+		in->AnyDevices = anydevices_yes;
 		return BUS_RESET_OK;
 	case 'N':
-		pn->selected_connection->AnyDevices = anydevices_no;
+		in->AnyDevices = anydevices_no;
 		return BUS_RESET_OK;
 	case 'S':
 		return BUS_RESET_SHORT;
@@ -363,8 +365,9 @@ static RESET_TYPE LINK_reset(const struct parsedname *pn)
 
 static enum search_status LINK_next_both(struct device_search *ds, const struct parsedname *pn)
 {
+	struct connection_in * in = pn->selected_connection ;
 	struct dirblob *db = (ds->search == _1W_CONDITIONAL_SEARCH_ROM) ?
-		&(pn->selected_connection->alarm) : &(pn->selected_connection->main);
+		&(in->alarm) : &(in->main);
 
 	//Special case for DS2409 hub, use low-level code
 	if ( pn->pathlength>0 ) {
@@ -375,7 +378,7 @@ static enum search_status LINK_next_both(struct device_search *ds, const struct 
 		return search_done;
 	}
 
-	LINK_flush(pn->selected_connection);
+	LINK_flush(in);
 
 	if (ds->index == -1) {
 		if ( BAD(LINK_directory(ds, db, pn)) ) {
@@ -412,13 +415,12 @@ static enum search_status LINK_next_both(struct device_search *ds, const struct 
           -errno = read error
           -EINTR = timeout
  */
-static GOOD_OR_BAD LINK_read(BYTE * buf, const size_t size, int extra_net_byte, const struct parsedname *pn)
+static GOOD_OR_BAD LINK_read(BYTE * buf, const size_t size, int extra_net_byte, struct connection_in *in)
 {
-	struct connection_in * in = pn->selected_connection ;
 	switch ( in->busmode ) {
 		case bus_elink:
 			// Only need to add an extra byte sometimes
-			return telnet_read( buf, size+extra_net_byte, pn ) ;
+			return telnet_read( buf, size+extra_net_byte, in ) ;
 		default:
 			return COM_read( buf, size, in ) ;
 	}
@@ -428,9 +430,9 @@ static GOOD_OR_BAD LINK_read(BYTE * buf, const size_t size, int extra_net_byte, 
 // return 0=good,
 //          -EIO = error
 //Special processing for the remote hub (add 0x0A)
-static GOOD_OR_BAD LINK_write(const BYTE * buf, const size_t size, const struct parsedname *pn)
+static GOOD_OR_BAD LINK_write(const BYTE * buf, const size_t size, struct connection_in *in)
 {
-	return COM_write( buf, size, pn->selected_connection ) ;
+	return COM_write( buf, size, in ) ;
 }
 
 /************************************************************************/
@@ -447,6 +449,7 @@ static GOOD_OR_BAD LINK_write(const BYTE * buf, const size_t size, const struct 
 static GOOD_OR_BAD LINK_directory(struct device_search *ds, struct dirblob *db, const struct parsedname *pn)
 {
 	char resp[21];
+	struct connection_in * in = pn->selected_connection ;
 
 	DirblobClear(db);
 
@@ -457,16 +460,16 @@ static GOOD_OR_BAD LINK_directory(struct device_search *ds, struct dirblob *db, 
 
 	// Send the configuration command and check response
 	if (ds->search == _1W_CONDITIONAL_SEARCH_ROM) {
-		RETURN_BAD_IF_BAD(LINK_write(LINK_string("tEC"), 3, pn)) ;
-		RETURN_BAD_IF_BAD(LINK_read(LINK_string(resp), 5, 1, pn)) ;
+		RETURN_BAD_IF_BAD(LINK_write(LINK_string("tEC"), 3, in)) ;
+		RETURN_BAD_IF_BAD(LINK_read(LINK_string(resp), 5, 1, in)) ;
 		if (strstr(resp, "EC") == NULL) {
 			LEVEL_DEBUG("Did not change to conditional search");
 			return gbBAD;
 		}
 		LEVEL_DEBUG("LINK set for conditional search");
 	} else {
-		RETURN_BAD_IF_BAD( LINK_write(LINK_string("tF0"), 3, pn));
-		RETURN_BAD_IF_BAD(LINK_read(LINK_string(resp), 5, 1, pn));
+		RETURN_BAD_IF_BAD( LINK_write(LINK_string("tF0"), 3, in));
+		RETURN_BAD_IF_BAD(LINK_read(LINK_string(resp), 5, 1, in));
 		if (strstr(resp, "F0") == NULL) {
 			LEVEL_DEBUG("Did not change to normal search");
 			return gbBAD;
@@ -474,7 +477,7 @@ static GOOD_OR_BAD LINK_directory(struct device_search *ds, struct dirblob *db, 
 		LEVEL_DEBUG("LINK set for normal search");
 	}
 
-	RETURN_BAD_IF_BAD(LINK_write(LINK_string("f"), 1, pn)) ;
+	RETURN_BAD_IF_BAD(LINK_write(LINK_string("f"), 1, in)) ;
 
 	//One needs to check the first character returned.
 	//If nothing is found, the link will timeout rather then have a quick
@@ -484,7 +487,7 @@ static GOOD_OR_BAD LINK_directory(struct device_search *ds, struct dirblob *db, 
 	//in the resp buffer and get the rest of the response from the LINK
 	//device
 
-	if ( BAD(LINK_read(LINK_string(resp), 1, 0, pn)) ) {
+	if ( BAD(LINK_read(LINK_string(resp), 1, 0, in)) ) {
 		return -EIO;
 	}
 	
@@ -495,7 +498,7 @@ static GOOD_OR_BAD LINK_directory(struct device_search *ds, struct dirblob *db, 
 		case 'N':
 			// remove extra 2 bytes
 			LEVEL_DEBUG("LINK returned E or N: Empty bus");
-			if ( BAD(LINK_read(LINK_string(&resp[1]), 2, 1, pn)) ) {
+			if ( BAD(LINK_read(LINK_string(&resp[1]), 2, 1, in)) ) {
 				return -EIO;
 			}
 			if (ds->search != _1W_CONDITIONAL_SEARCH_ROM) {
@@ -506,7 +509,7 @@ static GOOD_OR_BAD LINK_directory(struct device_search *ds, struct dirblob *db, 
 			break ;
 	}
 	
-	if ( BAD(LINK_read(LINK_string(&resp[1]), 19, 1, pn)) ) {
+	if ( BAD(LINK_read(LINK_string(&resp[1]), 19, 1, in)) ) {
 		return -EIO;
 	}
 
@@ -515,7 +518,7 @@ static GOOD_OR_BAD LINK_directory(struct device_search *ds, struct dirblob *db, 
 	case '-':
 	case '+':
 		if (ds->search != _1W_CONDITIONAL_SEARCH_ROM) {
-			pn->selected_connection->AnyDevices = anydevices_yes;
+			in->AnyDevices = anydevices_yes;
 		}
 		break;
 	default:
@@ -550,10 +553,10 @@ static GOOD_OR_BAD LINK_directory(struct device_search *ds, struct dirblob *db, 
 		switch (resp[0]) {
 		case '+':
 			// get next element
-			if ( BAD(LINK_write(LINK_string("n"), 1, pn))) {
+			if ( BAD(LINK_write(LINK_string("n"), 1, in))) {
 				return -EIO;
 			}
-			if ( BAD(LINK_read(LINK_string((resp)), 20, 1, pn)) ) {
+			if ( BAD(LINK_read(LINK_string((resp)), 20, 1, in)) ) {
 				return -EIO;
 			}
 			break;
@@ -585,11 +588,12 @@ static GOOD_OR_BAD LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay
 {
 	ASCII buf[3] = "pxx";
 	BYTE discard[3] ;
+	struct connection_in * in = pn->selected_connection ;
 	
 	num2string(&buf[1], data);
 	
-	RETURN_BAD_IF_BAD(LINK_write(LINK_string(buf), 3, pn) ) ;
-	RETURN_BAD_IF_BAD( LINK_read(LINK_string(buf), 2, 0, pn) ) ;
+	RETURN_BAD_IF_BAD(LINK_write(LINK_string(buf), 3, in) ) ;
+	RETURN_BAD_IF_BAD( LINK_read(LINK_string(buf), 2, 0, in) ) ;
 	
 	resp[0] = string2num(buf);
 	
@@ -597,8 +601,8 @@ static GOOD_OR_BAD LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay
 	UT_delay(delay);
 	
 	// flush the buffers
-	RETURN_BAD_IF_BAD(LINK_write(LINK_string("\r"), 1, pn) ) ;
-	return LINK_read(discard, 2, 1, pn) ;
+	RETURN_BAD_IF_BAD(LINK_write(LINK_string("\r"), 1, in) ) ;
+	return LINK_read(discard, 2, 1, in) ;
 }
 
 //  _sendback_data
@@ -610,6 +614,7 @@ static GOOD_OR_BAD LINK_sendback_data(const BYTE * data, BYTE * resp, const size
 {
 	size_t left = size;
 	BYTE buf[1+LINK_SEND_SIZE*2+1] ;
+	struct connection_in * in = pn->selected_connection ;
 	
 	if (size == 0) {
 		return gbGOOD;
@@ -623,8 +628,8 @@ static GOOD_OR_BAD LINK_sendback_data(const BYTE * data, BYTE * resp, const size
 		//        printf(">> size=%d, left=%d, i=%d\n",size,left,i);
 		bytes2string((char *) &buf[1], &data[size - left], this_length);
 		buf[total_length - 1] = '\r';	// take out of byte mode
-		RETURN_BAD_IF_BAD(LINK_write(buf, total_length, pn) ) ;
-		RETURN_BAD_IF_BAD( LINK_read(buf, total_length, 1, pn) ) ;
+		RETURN_BAD_IF_BAD(LINK_write(buf, total_length, in) ) ;
+		RETURN_BAD_IF_BAD( LINK_read(buf, total_length, 1, in) ) ;
 		string2bytes((char *) buf, &resp[size - left], this_length);
 		left -= this_length;
 	}
