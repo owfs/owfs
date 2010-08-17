@@ -233,6 +233,8 @@ GOOD_OR_BAD DS2480_detect(struct connection_in *in)
 	in->master.serial.reverse_polarity = Globals.serial_reverse ;
 	in->baud = Globals.baud ;
 
+	in->master.serial.tcp.CRLF_size = 2 ;
+
 	if ( BAD(DS2480_initialize_repeatedly(in)) ) {
 		LEVEL_DEBUG("Could not initilize the DS9097U even after several tries") ;
 		BUS_close(in) ;
@@ -350,7 +352,7 @@ static GOOD_OR_BAD DS2480_big_reset_net(struct connection_in * in)
 		return gbBAD;
 	}
 	
-	in->default_discard = 0 ;
+	in->master.serial.tcp.default_discard = 0 ;
 
 	if (1) {
 		BYTE data[1] ;

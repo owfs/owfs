@@ -37,6 +37,10 @@ struct master_tcp {
 	char *domain;				// for zeroconf
 	char *name;					// zeroconf name
 	int no_dirall;				// flag that server doesn't support DIRALL
+	
+	// telnet tuning
+	int CRLF_size ; 
+	int default_discard ; // linkhub-telnet escape chars
 };
 
 struct master_serial {

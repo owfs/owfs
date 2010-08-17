@@ -506,19 +506,12 @@ static void OWServer_Enet_close(struct connection_in *in)
 	FreeClientAddr(in);
 }
 
-#if 0
-static void toENETinit(struct toENET *enet)
-{
-	memset(enet, 0, sizeof(struct toENET));
-}
-#endif
-
 static GOOD_OR_BAD ENET_write(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const ASCII * msg, size_t length, struct connection_in *in)
 {
 	ssize_t r, sl = length;
 	ssize_t size = sl;
 	while (sl > 0) {
-		TrafficOut("write",msg,length,in);
+		TrafficOut( "write", (const BYTE *) msg, length, in );
 		r = write(file_descriptor, &msg[size - sl], sl);
 		if (r < 0) {
 			if (errno == EINTR) {

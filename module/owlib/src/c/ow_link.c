@@ -73,15 +73,18 @@ static void LINKE_setroutines(struct connection_in *in);
 static RESET_TYPE LINK_reset_in(struct connection_in * in);
 static GOOD_OR_BAD LINK_serial_detect(struct connection_in * in) ;
 static GOOD_OR_BAD LINK_net_detect(struct connection_in * in) ;
+static char * LINK_version_string(struct connection_in * in) ;
 
 static void LINK_set_baud(struct connection_in * in) ;
-static GOOD_OR_BAD LINK_read(BYTE * buf, const size_t size, int extra_net, struct connection_in * in);
-static GOOD_OR_BAD LINK_write(const BYTE * buf, const size_t size, struct connection_in *in);
+static GOOD_OR_BAD LINK_read(BYTE * buf, size_t size, struct connection_in * in);
+static GOOD_OR_BAD LINK_write(const BYTE * buf, size_t size, struct connection_in *in);
 static GOOD_OR_BAD LINK_directory(struct device_search *ds, struct dirblob *db, struct connection_in * in);
+static GOOD_OR_BAD LINK_search_type(struct device_search *ds, struct connection_in * in) ;
 
 static GOOD_OR_BAD LinkVersion_knownstring( const char * reported_string, struct LINK_id * tbl, struct connection_in * in ) ;
 static GOOD_OR_BAD LinkVersion_unknownstring( const char * reported_string, struct connection_in * in ) ;
 static void LINK_flush( struct connection_in * in ) ;
+static void LINK_slurp(struct connection_in *in);
 
 static void LINK_setroutines(struct connection_in *in)
 {
@@ -153,6 +156,8 @@ GOOD_OR_BAD LINK_detect(struct connection_in *in)
 		return gbBAD;
 	}
 
+	in->master.serial.tcp.CRLF_size = 2 ;
+
 	switch( in->busmode ) {
 		case bus_elink:
 			return LINK_net_detect( in ) ;
@@ -167,6 +172,8 @@ GOOD_OR_BAD LINK_detect(struct connection_in *in)
 
 static GOOD_OR_BAD LINK_serial_detect(struct connection_in * in)
 {
+	char * version_string ;
+	
 	/* Set up low-level routines */
 	LINK_setroutines(in);
 	
@@ -174,30 +181,26 @@ static GOOD_OR_BAD LINK_serial_detect(struct connection_in * in)
 	RETURN_BAD_IF_BAD(COM_open(in)) ;
 	
 	COM_break( in ) ;
-	COM_slurp( in->file_descriptor ) ;
+	LINK_slurp( in ) ;
 	UT_delay(100) ; // based on http://morpheus.wcf.net/phpbb2/viewtopic.php?t=89&sid=3ab680415917a0ebb1ef020bdc6903ad
 	
-	//COM_flush(in);
-	if (LINK_reset_in(in) == BUS_RESET_OK && GOOD( LINK_write(LINK_string(" "), 1, in) ) ) {
-		char version_read_in[MAX_LINK_VERSION_LENGTH] ;
-		memset(version_read_in, 0, MAX_LINK_VERSION_LENGTH);
-		
-		/* read the version string */
-		LEVEL_DEBUG("Checking LINK version");
-		
-		LINK_read((BYTE *)version_read_in, MAX_LINK_VERSION_LENGTH, 0, in);	// ignore return value -- will time out, probably
-		Debug_Bytes("Read version from link", (BYTE*)version_read_in, MAX_LINK_VERSION_LENGTH);
-		
-		LINK_flush(in);
-		
-		/* Now find the dot for the version parsing */
-		if ( version_read_in!=NULL && GOOD( LinkVersion_knownstring(version_read_in,LINK_id_tbl,in)) ) {
-			in->baud = Globals.baud ;
-			++in->changed_bus_settings ;
-			LINK_reset_in(in) ; // extra reset
-			return gbGOOD;
-		}
+	version_string = LINK_version_string(in) ;
+	if ( version_string == NULL ) {
+		LEVEL_DEBUG("Cannot get version string");
+		LINK_close(in) ;
+		return gbBAD;
 	}
+
+	/* Now find the dot for the version parsing */
+	if ( GOOD( LinkVersion_knownstring( version_string, LINK_id_tbl, in)) ) {
+		owfree(version_string);
+		in->baud = Globals.baud ;
+		++in->changed_bus_settings ;
+		LINK_reset_in(in) ; // extra reset
+		return gbGOOD;
+	}
+
+	owfree(version_string);
 	LEVEL_DEFAULT("LINK detection error");
 	LINK_close(in) ;
 	return gbBAD;
@@ -205,17 +208,18 @@ static GOOD_OR_BAD LINK_serial_detect(struct connection_in * in)
 
 static GOOD_OR_BAD LINK_net_detect(struct connection_in * in)
 {
+	char * version_string ;
+
+	/* Set up low-level routines */
 	LINKE_setroutines(in);
 	
+	/* Open the tcp port */
 	RETURN_BAD_IF_BAD(ClientAddr(in->name, DEFAULT_LINK_PORT, in)) ;
-
 	in->file_descriptor = ClientConnect(in) ;
 	if ( FILE_DESCRIPTOR_NOT_VALID(in->file_descriptor) ) {
 		return gbBAD;
 	}
 	
-	in->default_discard = 0 ;
-
 	if (1) {
 		BYTE data[1] ;
 		size_t read_size ;
@@ -223,33 +227,71 @@ static GOOD_OR_BAD LINK_net_detect(struct connection_in * in)
 		tcp_read(in->file_descriptor, data, 1, &tvnetfirst, &read_size ) ;
 	}
 	LEVEL_DEBUG("Slurp in initial bytes");
-	TCP_slurp( in->file_descriptor ) ;
+	LINK_slurp( in ) ;
 	LINK_flush(in);
 
-	if ( GOOD( LINK_write(LINK_string(" "), 1, in) ) ) {
-		char version_read_in[MAX_LINK_VERSION_LENGTH] ;
-		int version_index ;
-		memset(version_read_in, 0, MAX_LINK_VERSION_LENGTH);
-		
-		/* read the version string */
-		LEVEL_DEBUG("Checking LINK version");
-
-		// need to read 1 char at a time to get a short string
-		for ( version_index=0 ; version_index<MAX_LINK_VERSION_LENGTH ; ++version_index ) {
-			if ( BAD( LINK_read((BYTE *)&version_read_in[version_index], 1, 0, in)) ) {
-				break ;	// ignore return value -- will time out, probably
-			}
-		}
-		Debug_Bytes("Read version from link", (BYTE*)version_read_in, MAX_LINK_VERSION_LENGTH);
+	version_string = LINK_version_string(in) ;
+	if ( version_string != NULL ) {
 		/* Now find the dot for the version parsing */
-		if ( version_read_in!=NULL && GOOD( LinkVersion_knownstring(version_read_in,LINKE_id_tbl,in)) ) {
+		if ( GOOD( LinkVersion_knownstring(version_string,LINKE_id_tbl,in)) ) {
+			owfree(version_string) ;
 			LINK_reset_in(in) ; // extra reset
 			return gbGOOD;
 		}
+		owfree(version_string) ;
 	}
+
 	LEVEL_DEFAULT("LINK detection error");
 	LINK_close(in) ;
 	return gbBAD;
+}
+
+static char * LINK_version_string(struct connection_in * in)
+{
+	char * version_string = owmalloc(MAX_LINK_VERSION_LENGTH) ;
+	int version_index ;
+	int index_0D = 0 ;
+
+	in->master.serial.tcp.default_discard = 0 ;
+	in->master.serial.tcp.CRLF_size = 0 ;
+
+	if ( version_string == NULL ) {
+		LEVEL_DEBUG( "cannot allocate version string" );
+		return NULL ;
+	}
+	memset(version_string, 0, MAX_LINK_VERSION_LENGTH);
+
+	if ( BAD( LINK_write(LINK_string(" "), 1, in) ) ) {
+		LEVEL_DEFAULT("LINK version string cannot be requested");
+		owfree(version_string);
+		return NULL ;
+	}
+		
+	/* read the version string */
+	LEVEL_DEBUG("Checking LINK version");
+
+	// need to read 1 char at a time to get a short string
+	for ( version_index=0 ; version_index<MAX_LINK_VERSION_LENGTH ; ++version_index ) {
+		if ( BAD( LINK_read( (BYTE *) &(version_string[version_index]), 1, in)) ) {
+			LEVEL_DEBUG("Cannot read a full CRLF version string");
+			owfree(version_string);
+			return NULL ;
+		}
+		switch( version_string[version_index] ) {
+			case 0x0D:
+				index_0D = version_index ;
+				break ;
+			case 0x0A:
+				in->master.serial.tcp.CRLF_size = version_index - index_0D + 1 ;
+				LEVEL_DEBUG("CRLF string length = %d",in->master.serial.tcp.CRLF_size) ;
+				return version_string ;
+			default:
+				break ;
+		}
+	}
+	owfree(version_string) ;
+	LEVEL_DEFAULT("LINK version string too long");
+	return NULL ;
 }
 
 static void LINK_set_baud(struct connection_in * in)
@@ -302,7 +344,7 @@ static void LINK_set_baud(struct connection_in * in)
 	UT_delay(5);
 	COM_speed(in->baud,in) ;
 	UT_delay(5);
-	COM_slurp(in->file_descriptor);
+	LINK_slurp(in);
 
 	return ;
 }
@@ -326,7 +368,7 @@ static RESET_TYPE LINK_reset(const struct parsedname *pn)
 
 static RESET_TYPE LINK_reset_in(struct connection_in * in)
 {
-	BYTE resp[3+1];
+	BYTE resp[1+in->master.serial.tcp.CRLF_size];
 
 	if (in->changed_bus_settings > 0) {
 		--in->changed_bus_settings ;
@@ -336,8 +378,9 @@ static RESET_TYPE LINK_reset_in(struct connection_in * in)
 	}
 
 	//Response is 3 bytes:  1 byte for code + \r\n
-	if ( BAD(LINK_write(LINK_string("r"), 1, in) || BAD( LINK_read(resp, 3, 1, in))) ) {
+	if ( BAD(LINK_write(LINK_string("r"), 1, in) || BAD( LINK_read(resp, 1, in))) ) {
 		LEVEL_DEBUG("Error resetting LINK device");
+		LINK_slurp(in);
 		return BUS_RESET_ERROR;
 	}
 
@@ -372,8 +415,6 @@ static enum search_status LINK_next_both(struct device_search *ds, const struct 
 		return search_done;
 	}
 
-	LINK_flush(in);
-
 	if (ds->index == -1) {
 		if ( BAD(LINK_directory(ds, db, in)) ) {
 			return search_error;
@@ -400,6 +441,17 @@ static enum search_status LINK_next_both(struct device_search *ds, const struct 
 	}
 }
 
+static void LINK_slurp(struct connection_in *in)
+{
+	switch ( in->busmode ) {
+		case bus_elink:
+			// Only need to add an extra byte sometimes
+			TCP_slurp(in->file_descriptor);
+		default:
+			COM_slurp(in->file_descriptor);
+	}
+}
+
 /* Assymetric */
 /* Read from LINK with timeout on each character */
 // NOTE: from PDkit, reead 1-byte at a time
@@ -409,14 +461,14 @@ static enum search_status LINK_next_both(struct device_search *ds, const struct 
           -errno = read error
           -EINTR = timeout
  */
-static GOOD_OR_BAD LINK_read(BYTE * buf, const size_t size, int extra_net_byte, struct connection_in *in)
+static GOOD_OR_BAD LINK_read(BYTE * buf, size_t size, struct connection_in *in)
 {
 	switch ( in->busmode ) {
 		case bus_elink:
 			// Only need to add an extra byte sometimes
-			return telnet_read( buf, size+extra_net_byte, in ) ;
+			return telnet_read( buf, size+in->master.serial.tcp.CRLF_size, in ) ;
 		default:
-			return COM_read( buf, size, in ) ;
+			return COM_read( buf, size+in->master.serial.tcp.CRLF_size, in ) ;
 	}
 }
 
@@ -424,9 +476,39 @@ static GOOD_OR_BAD LINK_read(BYTE * buf, const size_t size, int extra_net_byte, 
 // return 0=good,
 //          -EIO = error
 //Special processing for the remote hub (add 0x0A)
-static GOOD_OR_BAD LINK_write(const BYTE * buf, const size_t size, struct connection_in *in)
+static GOOD_OR_BAD LINK_write(const BYTE * buf, size_t size, struct connection_in *in)
 {
 	return COM_write( buf, size, in ) ;
+}
+
+static GOOD_OR_BAD LINK_search_type(struct device_search *ds, struct connection_in * in)
+{
+	char resp[3+in->master.serial.tcp.CRLF_size];
+
+	//Depending on the search type, the LINK search function
+	//needs to be selected
+	//tEC -- Conditional searching
+	//tF0 -- Normal searching
+
+	// Send the configuration command and check response
+	if (ds->search == _1W_CONDITIONAL_SEARCH_ROM) {
+		RETURN_BAD_IF_BAD(LINK_write(LINK_string("tEC"), 3, in)) ;
+		RETURN_BAD_IF_BAD(LINK_read(LINK_string(resp), 3, in)) ;
+		if (strstr(resp, "EC") == NULL) {
+			LEVEL_DEBUG("Did not change to conditional search");
+			return gbBAD;
+		}
+		LEVEL_DEBUG("LINK set for conditional search");
+	} else {
+		RETURN_BAD_IF_BAD( LINK_write(LINK_string("tF0"), 3, in));
+		RETURN_BAD_IF_BAD(LINK_read(LINK_string(resp), 3, in));
+		if (strstr(resp, "F0") == NULL) {
+			LEVEL_DEBUG("Did not change to normal search");
+			return gbBAD;
+		}
+		LEVEL_DEBUG("LINK set for normal search");
+	}
+	return gbGOOD ;
 }
 
 /************************************************************************/
@@ -440,36 +522,20 @@ static GOOD_OR_BAD LINK_write(const BYTE * buf, const size_t size, struct connec
 /* returns 0 even if no elements, errors only on communication errors   */
 /*									*/
 /************************************************************************/
+#define DEVICE_LENGTH  16
+#define COMMA_LENGTH 1
+#define PLUS_LENGTH 1
+
 static GOOD_OR_BAD LINK_directory(struct device_search *ds, struct dirblob *db, struct connection_in * in)
 {
-	char resp[21];
+	char resp[DEVICE_LENGTH+COMMA_LENGTH+PLUS_LENGTH+in->master.serial.tcp.CRLF_size];
 
 	DirblobClear(db);
 
-	//Depending on the search type, the LINK search function
-	//needs to be selected
-	//tEC -- Conditional searching
-	//tF0 -- Normal searching
-
 	// Send the configuration command and check response
-	if (ds->search == _1W_CONDITIONAL_SEARCH_ROM) {
-		RETURN_BAD_IF_BAD(LINK_write(LINK_string("tEC"), 3, in)) ;
-		RETURN_BAD_IF_BAD(LINK_read(LINK_string(resp), 5, 1, in)) ;
-		if (strstr(resp, "EC") == NULL) {
-			LEVEL_DEBUG("Did not change to conditional search");
-			return gbBAD;
-		}
-		LEVEL_DEBUG("LINK set for conditional search");
-	} else {
-		RETURN_BAD_IF_BAD( LINK_write(LINK_string("tF0"), 3, in));
-		RETURN_BAD_IF_BAD(LINK_read(LINK_string(resp), 5, 1, in));
-		if (strstr(resp, "F0") == NULL) {
-			LEVEL_DEBUG("Did not change to normal search");
-			return gbBAD;
-		}
-		LEVEL_DEBUG("LINK set for normal search");
-	}
+	RETURN_BAD_IF_BAD( LINK_search_type( ds, in )) ;
 
+	// send the first search
 	RETURN_BAD_IF_BAD(LINK_write(LINK_string("f"), 1, in)) ;
 
 	//One needs to check the first character returned.
@@ -480,9 +546,7 @@ static GOOD_OR_BAD LINK_directory(struct device_search *ds, struct dirblob *db, 
 	//in the resp buffer and get the rest of the response from the LINK
 	//device
 
-	if ( BAD(LINK_read(LINK_string(resp), 1, 0, in)) ) {
-		return -EIO;
-	}
+	RETURN_BAD_IF_BAD(LINK_read(LINK_string(resp), 1, in)) ;
 	
 	switch (resp[0]) {
 		case 'E':
@@ -491,19 +555,16 @@ static GOOD_OR_BAD LINK_directory(struct device_search *ds, struct dirblob *db, 
 		case 'N':
 			// remove extra 2 bytes
 			LEVEL_DEBUG("LINK returned E or N: Empty bus");
-			if ( BAD(LINK_read(LINK_string(&resp[1]), 2, 1, in)) ) {
-				return -EIO;
-			}
 			if (ds->search != _1W_CONDITIONAL_SEARCH_ROM) {
 				in->AnyDevices = anydevices_no;
 			}
-			return 0 ;
+			return gbGOOD ;
 		default:
 			break ;
 	}
 	
-	if ( BAD(LINK_read(LINK_string(&resp[1]), 19, 1, in)) ) {
-		return -EIO;
+	if ( BAD(LINK_read(LINK_string(&resp[1+in->master.serial.tcp.CRLF_size]), DEVICE_LENGTH+COMMA_LENGTH+PLUS_LENGTH-1-in->master.serial.tcp.CRLF_size, in)) ) {
+		return gbBAD;
 	}
 
 	// Check if we should start scanning
@@ -515,8 +576,8 @@ static GOOD_OR_BAD LINK_directory(struct device_search *ds, struct dirblob *db, 
 		}
 		break;
 	default:
-		LEVEL_DEBUG("LINK_search default case");
-		return -EIO;
+		LEVEL_DEBUG("LINK_search unrecognized case");
+		return gbBAD;
 	}
 
 	/* Join the loop after the first query -- subsequent handled differently */
@@ -535,10 +596,8 @@ static GOOD_OR_BAD LINK_directory(struct device_search *ds, struct dirblob *db, 
 
 		// CRC check
 		if (CRC8(sn, SERIAL_NUMBER_SIZE) || (sn[0] == 0)) {
-			/* A minor "error" and should perhaps only return -1 */
-			/* to avoid reconnect */
-			LEVEL_DEBUG("sn = %s", sn);
-			return -EIO;
+			LEVEL_DEBUG("sn = %s -- BAD family or CRC8", sn);
+			return gbBAD;
 		}
 
 		DirblobAdd(sn, db);
@@ -547,20 +606,20 @@ static GOOD_OR_BAD LINK_directory(struct device_search *ds, struct dirblob *db, 
 		case '+':
 			// get next element
 			if ( BAD(LINK_write(LINK_string("n"), 1, in))) {
-				return -EIO;
+				return gbBAD;
 			}
-			if ( BAD(LINK_read(LINK_string((resp)), 20, 1, in)) ) {
-				return -EIO;
+			if ( BAD(LINK_read(LINK_string((resp)), DEVICE_LENGTH+COMMA_LENGTH+PLUS_LENGTH, in)) ) {
+				return gbBAD;
 			}
 			break;
 		case '-':
-			return 0;
+			return gbGOOD;
 		default:
 			break;
 		}
 	}
 
-	return 0;
+	return gbGOOD;
 }
 
 static void LINK_close(struct connection_in *in)
@@ -579,23 +638,24 @@ static void LINK_close(struct connection_in *in)
 
 static GOOD_OR_BAD LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay, const struct parsedname *pn)
 {
-	ASCII buf[3] = "pxx";
-	BYTE discard[3] ;
 	struct connection_in * in = pn->selected_connection ;
+	ASCII buf[3] = "pxx";
+	BYTE respond[2+in->master.serial.tcp.CRLF_size] ;
 	
 	num2string(&buf[1], data);
 	
 	RETURN_BAD_IF_BAD(LINK_write(LINK_string(buf), 3, in) ) ;
-	RETURN_BAD_IF_BAD( LINK_read(LINK_string(buf), 2, 0, in) ) ;
-	
-	resp[0] = string2num(buf);
 	
 	// delay
 	UT_delay(delay);
 	
 	// flush the buffers
 	RETURN_BAD_IF_BAD(LINK_write(LINK_string("\r"), 1, in) ) ;
-	return LINK_read(discard, 2, 1, in) ;
+	
+	RETURN_BAD_IF_BAD( LINK_read(LINK_string(respond), 2, in) ) ;
+	
+	resp[0] = string2num((const ASCII *) respond);
+	return gbGOOD ;
 }
 
 //  _sendback_data
@@ -605,26 +665,28 @@ static GOOD_OR_BAD LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay
 #define LINK_SEND_SIZE  32
 static GOOD_OR_BAD LINK_sendback_data(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
 {
-	size_t left = size;
-	BYTE buf[1+LINK_SEND_SIZE*2+1] ;
 	struct connection_in * in = pn->selected_connection ;
+	size_t left = size;
+	size_t location = 0 ;
+	BYTE buf[1+LINK_SEND_SIZE*2+1+in->master.serial.tcp.CRLF_size] ;
 	
 	if (size == 0) {
 		return gbGOOD;
 	}
 	
-	Debug_Bytes( "ELINK sendback send", data, size) ;
+	//Debug_Bytes( "ELINK sendback send", data, size) ;
 	while (left > 0) {
 		size_t this_length = (left > LINK_SEND_SIZE) ? LINK_SEND_SIZE : left;
-		size_t total_length = 2 * this_length + 2;
 		buf[0] = 'b';			//put in byte mode
 		//        printf(">> size=%d, left=%d, i=%d\n",size,left,i);
-		bytes2string((char *) &buf[1], &data[size - left], this_length);
-		buf[total_length - 1] = '\r';	// take out of byte mode
-		RETURN_BAD_IF_BAD(LINK_write(buf, total_length, in) ) ;
-		RETURN_BAD_IF_BAD( LINK_read(buf, total_length, 1, in) ) ;
+		bytes2string((char *) &buf[1], &data[location], this_length);
+		buf[1+this_length*2] = '\r';	// take out of byte mode
+		RETURN_BAD_IF_BAD(LINK_write(buf, 1+this_length*2+1, in) ) ;
+		RETURN_BAD_IF_BAD( LINK_read(buf, this_length*2, in) ) ;
 		string2bytes((char *) buf, &resp[size - left], this_length);
 		left -= this_length;
+		location += this_length ;
 	}
+	//Debug_Bytes( "ELINK sendback get", resp, size) ;
 	return gbGOOD;
 }

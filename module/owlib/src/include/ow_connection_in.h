@@ -180,7 +180,6 @@ struct connection_in {
 	char *adapter_name;
 	enum e_anydevices AnyDevices;
 	int ExtraReset;				// DS1994/DS2404 might need an extra reset
-	size_t default_discard ; // linkhub-telnet escape chars
 	enum bus_speed speed;
 	enum bus_flex flex ;
 	int changed_bus_settings;

@@ -43,7 +43,7 @@ static struct timeval tvnet = { 0, 300000, };
 GOOD_OR_BAD telnet_read(BYTE * buf, const size_t size, struct connection_in *in)
 {
 	// temporary buffer (guess the extra escape chars based on prior experience
-	size_t allocated_size = size + in->default_discard ;
+	size_t allocated_size = size + in->master.serial.tcp.default_discard ; // works for link and DS9097U
 	BYTE readin_buf[allocated_size] ;
 
 	// state machine for telnet escape chars
@@ -157,6 +157,6 @@ GOOD_OR_BAD telnet_read(BYTE * buf, const size_t size, struct connection_in *in)
 		++ current_index ;
 	}
 	// store this extra length for the next read attempt
-	in->default_discard = total_discard ;
+	in->master.serial.tcp.default_discard = total_discard ;
 	return gbGOOD ;
 }
