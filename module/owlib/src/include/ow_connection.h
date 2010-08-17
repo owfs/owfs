@@ -156,144 +156,14 @@ enum bus_speed {
 
 enum bus_flex { bus_no_flex, bus_yes_flex };
 
-enum ds2480b_mode { ds2480b_data_mode, ds2480b_command_mode, } ;
-
-struct master_tcp {
-	char *host;
-	char *service;
-	struct addrinfo *ai;
-	struct addrinfo *ai_ok;
-	char *type;					// for zeroconf
-	char *domain;				// for zeroconf
-	char *name;					// zeroconf name
-	int no_dirall;				// flag that server doesn't support DIRALL
-};
-
-struct master_serial {
-	struct master_tcp tcp;      // mirror master.server
-	enum ds2480b_mode mode ;
-	int reverse_polarity ;
-};
-
-struct master_fake {
-	int index;
-	_FLOAT templow;
-	_FLOAT temphigh;
-};
-
-struct master_usb {
-#if OW_USB
-	struct usb_device *dev;
-	struct usb_dev_handle *usb;
-	int usb_bus_number;
-	int usb_dev_number;
-	int datasampleoffset;
-	int writeonelowtime;
-	int pulldownslewrate;
-	int timeout;
-#endif /* OW_USB */
-	int specific_usb_address ; // only a specific address requested?
-
-	/* "Name" of the device, like "8146572300000051"
-	 * This is set to the first DS1420 id found on the 1-wire adapter which
-	 * exists on the DS9490 adapters. If user only have a DS2490 chip, there
-	 * are no such DS1420 device available. It's used to find the 1-wire adapter
-	 * if it's disconnected and later reconnected again.
-	 */
-	BYTE ds1420_address[SERIAL_NUMBER_SIZE];
-};
+/* -------------------------------------------- */
+/* bUS-MASTER-specific routines ---------------- */
+#include "ow_master.h"
 
 #define CHANGED_USB_SPEED  0x001
 #define CHANGED_USB_SLEW   0x002
 #define CHANGED_USB_LOW    0x004
 #define CHANGED_USB_OFFSET 0x008
-
-struct master_i2c {
-	int channels;
-	int index;
-	int i2c_address;
-	int i2c_index ;
-	BYTE configreg;
-	BYTE configchip;
-	/* only one per chip, the bus entries for the other 7 channels point to the first one */
-#if OW_MT
-	pthread_mutex_t all_channel_lock;	// second level mutex for the entire chip */
-#endif							/* OW_MT */
-	int current;
-	struct connection_in *head;
-	struct connection_in *next;
-};
-
-struct master_ha7 {
-	struct master_tcp tcp;		// mirror master.server
-	ASCII lock[10];
-	int locked;
-	int found;
-};
-
-struct master_etherweather {
-	struct master_tcp tcp;
-};
-
-struct master_link {
-	struct master_tcp tcp;      // mirror master.server
-};
-
-struct master_ha7e {
-	unsigned char sn[SERIAL_NUMBER_SIZE] ;       /* last address */
-};
-
-struct master_ha5 {
-	unsigned char sn[SERIAL_NUMBER_SIZE] ;       /* last address */
-	int checksum ;              /* flag to use checksum byte in communication */
-	char channel ;
-#if OW_MT
-	pthread_mutex_t all_channel_lock;	// second level mutex for the entire chip */
-#endif							/* OW_MT */
-	struct connection_in *head;
-};
-
-struct master_w1 {
-#if OW_W1
-	// bus master name kept in name
-	SEQ_OR_ERROR seq ;
-	int id ; // equivalent to the number part of w1_bus_master23
-	FILE_DESCRIPTOR_OR_ERROR netlink_pipe[2] ;
-#endif /* OW_W1 */
-};
-
-struct master_w1_monitor {
-#if OW_W1 && OW_MT
-	// netlink fd kept in file_descriptor
-	SEQ_OR_ERROR seq ; // seq number to netlink
-	pid_t pid ;
-	struct timeval last_read ;
-
-	pthread_mutex_t seq_mutex;	// mutex for w1 sequence number */
-	pthread_mutex_t read_mutex;  // mutex for w1 netlink read time
-#endif /* OW_W1 && OW_MT */
-	
-};
-
-struct master_usb_monitor {
-	FILE_DESCRIPTOR_OR_ERROR shutdown_pipe[2] ;
-};
-
-struct master_browse {
-#if OW_ZERO
-	DNSServiceRef bonjour_browse;
-
-	AvahiServiceBrowser *avahi_browser ;
-	AvahiSimplePoll *avahi_poll ;
-	AvahiClient *avahi_client ;
-#if __HAS_IPV6__
-	char avahi_host[INET6_ADDRSTRLEN+1] ;
-#else
-	char avahi_host[INET_ADDRSTRLEN+1] ;
-#endif
-	char avahi_service[10] ;
-#endif
-};
 
 //enum server_type { srv_unknown, srv_direct, srv_client, src_
 /* Network connection structure */
@@ -440,29 +310,9 @@ struct connection_in {
 	size_t last_root_devs;
 	struct buspath branch;		// Branch currently selected
 
-	/* Static buffer for conmmunication */
-	/* Since only used during actual transfer to/from the adapter,
-	   should be protected from contention even when multithreading allowed */
 	size_t bundling_length;
-	union {
-		struct master_serial serial;
-		struct master_link link;
-		struct master_tcp tcp;
-		struct master_usb usb;
-		struct master_i2c i2c;
-		struct master_fake fake;
-		struct master_fake tester;
-		struct master_fake mock;
-		struct master_ha5 ha5;
-		struct master_ha7 ha7;
-		struct master_ha7e ha7e ;
-		struct master_ha7e enet ;
-		struct master_etherweather etherweather;
-		struct master_w1 w1;
-		struct master_w1_monitor w1_monitor ;
-		struct master_browse browse;
-		struct master_usb_monitor usb_monitor ;
-	} master;
+
+	union master_union master;
 };
 
 extern struct inbound_control {
