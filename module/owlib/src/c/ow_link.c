@@ -61,27 +61,27 @@ struct LINK_id LINK_id_tbl[] = {
 
 #define MAX_LINK_VERSION_LENGTH	36
 
-static GOOD_OR_BAD LINK_serial_detect(struct parsedname * pn_minimal) ;
-static GOOD_OR_BAD LINK_net_detect(struct parsedname * pn_minimal) ;
-
-//static void byteprint( const BYTE * b, int size ) ;
-static void LINK_set_baud(const struct parsedname *pn) ;
-static GOOD_OR_BAD LINK_read(BYTE * buf, const size_t size, int extra_net, struct connection_in * in);
-static GOOD_OR_BAD LINK_write(const BYTE * buf, const size_t size, struct connection_in *in);
 static RESET_TYPE LINK_reset(const struct parsedname *pn);
 static enum search_status LINK_next_both(struct device_search *ds, const struct parsedname *pn);
 static GOOD_OR_BAD LINK_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
-static void LINK_setroutines(struct connection_in *in);
-static GOOD_OR_BAD LINK_directory(struct device_search *ds, struct dirblob *db, const struct parsedname *pn);
 static GOOD_OR_BAD LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay, const struct parsedname *pn);
 static void LINK_close(struct connection_in *in) ;
+
+static void LINK_setroutines(struct connection_in *in);
+static void LINKE_setroutines(struct connection_in *in);
+
+static RESET_TYPE LINK_reset_in(struct connection_in * in);
+static GOOD_OR_BAD LINK_serial_detect(struct connection_in * in) ;
+static GOOD_OR_BAD LINK_net_detect(struct connection_in * in) ;
+
+static void LINK_set_baud(struct connection_in * in) ;
+static GOOD_OR_BAD LINK_read(BYTE * buf, const size_t size, int extra_net, struct connection_in * in);
+static GOOD_OR_BAD LINK_write(const BYTE * buf, const size_t size, struct connection_in *in);
+static GOOD_OR_BAD LINK_directory(struct device_search *ds, struct dirblob *db, struct connection_in * in);
 
 static GOOD_OR_BAD LinkVersion_knownstring( const char * reported_string, struct LINK_id * tbl, struct connection_in * in ) ;
 static GOOD_OR_BAD LinkVersion_unknownstring( const char * reported_string, struct connection_in * in ) ;
 static void LINK_flush( struct connection_in * in ) ;
-
-//static void byteprint( const BYTE * b, int size ) ;
-static void LINKE_setroutines(struct connection_in *in);
 
 static void LINK_setroutines(struct connection_in *in)
 {
@@ -149,31 +149,24 @@ static GOOD_OR_BAD LinkVersion_unknownstring( const char * reported_string, stru
 // bus locking done at a higher level
 GOOD_OR_BAD LINK_detect(struct connection_in *in)
 {
-	struct parsedname pn;
-
-	FS_ParsedName_Placeholder(&pn);	// minimal parsename -- no destroy needed
-	pn.selected_connection = in;
-
 	if (in->name == NULL) {
 		return gbBAD;
 	}
 
 	switch( in->busmode ) {
 		case bus_elink:
-			return LINK_net_detect( &pn ) ;
+			return LINK_net_detect( in ) ;
 		case bus_link:
-			RETURN_GOOD_IF_GOOD( LINK_serial_detect(&pn) ) ;
-			RETURN_GOOD_IF_GOOD( LINK_serial_detect(&pn) ) ;
-			return LINK_serial_detect(&pn) ;
+			RETURN_GOOD_IF_GOOD( LINK_serial_detect(in) ) ;
+			RETURN_GOOD_IF_GOOD( LINK_serial_detect(in) ) ;
+			return LINK_serial_detect(in) ;
 		default:
 			return gbBAD ;
 	}
 }
 
-static GOOD_OR_BAD LINK_serial_detect(struct parsedname * pn_minimal)
+static GOOD_OR_BAD LINK_serial_detect(struct connection_in * in)
 {
-	struct connection_in * in =  pn_minimal->selected_connection ;
-	
 	/* Set up low-level routines */
 	LINK_setroutines(in);
 	
@@ -185,7 +178,7 @@ static GOOD_OR_BAD LINK_serial_detect(struct parsedname * pn_minimal)
 	UT_delay(100) ; // based on http://morpheus.wcf.net/phpbb2/viewtopic.php?t=89&sid=3ab680415917a0ebb1ef020bdc6903ad
 	
 	//COM_flush(in);
-	if (LINK_reset(pn_minimal) == BUS_RESET_OK && GOOD( LINK_write(LINK_string(" "), 1, in) ) ) {
+	if (LINK_reset_in(in) == BUS_RESET_OK && GOOD( LINK_write(LINK_string(" "), 1, in) ) ) {
 		char version_read_in[MAX_LINK_VERSION_LENGTH] ;
 		memset(version_read_in, 0, MAX_LINK_VERSION_LENGTH);
 		
@@ -201,7 +194,7 @@ static GOOD_OR_BAD LINK_serial_detect(struct parsedname * pn_minimal)
 		if ( version_read_in!=NULL && GOOD( LinkVersion_knownstring(version_read_in,LINK_id_tbl,in)) ) {
 			in->baud = Globals.baud ;
 			++in->changed_bus_settings ;
-			BUS_reset(pn_minimal) ; // extra reset
+			LINK_reset_in(in) ; // extra reset
 			return gbGOOD;
 		}
 	}
@@ -210,10 +203,8 @@ static GOOD_OR_BAD LINK_serial_detect(struct parsedname * pn_minimal)
 	return gbBAD;
 }
 
-static GOOD_OR_BAD LINK_net_detect(struct parsedname * pn_minimal)
+static GOOD_OR_BAD LINK_net_detect(struct connection_in * in)
 {
-	struct connection_in * in =  pn_minimal->selected_connection ;
-	
 	LINKE_setroutines(in);
 	
 	RETURN_BAD_IF_BAD(ClientAddr(in->name, DEFAULT_LINK_PORT, in)) ;
@@ -252,7 +243,7 @@ static GOOD_OR_BAD LINK_net_detect(struct parsedname * pn_minimal)
 		Debug_Bytes("Read version from link", (BYTE*)version_read_in, MAX_LINK_VERSION_LENGTH);
 		/* Now find the dot for the version parsing */
 		if ( version_read_in!=NULL && GOOD( LinkVersion_knownstring(version_read_in,LINKE_id_tbl,in)) ) {
-			BUS_reset(pn_minimal) ; // extra reset
+			LINK_reset_in(in) ; // extra reset
 			return gbGOOD;
 		}
 	}
@@ -261,10 +252,9 @@ static GOOD_OR_BAD LINK_net_detect(struct parsedname * pn_minimal)
 	return gbBAD;
 }
 
-static void LINK_set_baud(const struct parsedname *pn)
+static void LINK_set_baud(struct connection_in * in)
 {
 	char * speed_code ;
-	struct connection_in * in = pn->selected_connection ;
 
 	if ( in->busmode == bus_elink ) {
 		return ;
@@ -331,12 +321,16 @@ static void LINK_flush( struct connection_in * in )
 
 static RESET_TYPE LINK_reset(const struct parsedname *pn)
 {
+	return LINK_reset_in(pn->selected_connection);
+}
+
+static RESET_TYPE LINK_reset_in(struct connection_in * in)
+{
 	BYTE resp[3+1];
-	struct connection_in * in = pn->selected_connection ;
 
 	if (in->changed_bus_settings > 0) {
 		--in->changed_bus_settings ;
-		LINK_set_baud(pn);	// reset paramters
+		LINK_set_baud(in);	// reset paramters
 	} else {
 		LINK_flush(in);
 	}
@@ -381,7 +375,7 @@ static enum search_status LINK_next_both(struct device_search *ds, const struct 
 	LINK_flush(in);
 
 	if (ds->index == -1) {
-		if ( BAD(LINK_directory(ds, db, pn)) ) {
+		if ( BAD(LINK_directory(ds, db, in)) ) {
 			return search_error;
 		}
 	}
@@ -446,10 +440,9 @@ static GOOD_OR_BAD LINK_write(const BYTE * buf, const size_t size, struct connec
 /* returns 0 even if no elements, errors only on communication errors   */
 /*									*/
 /************************************************************************/
-static GOOD_OR_BAD LINK_directory(struct device_search *ds, struct dirblob *db, const struct parsedname *pn)
+static GOOD_OR_BAD LINK_directory(struct device_search *ds, struct dirblob *db, struct connection_in * in)
 {
 	char resp[21];
-	struct connection_in * in = pn->selected_connection ;
 
 	DirblobClear(db);
 
@@ -502,7 +495,7 @@ static GOOD_OR_BAD LINK_directory(struct device_search *ds, struct dirblob *db, 
 				return -EIO;
 			}
 			if (ds->search != _1W_CONDITIONAL_SEARCH_ROM) {
-				pn->selected_connection->AnyDevices = anydevices_no;
+				in->AnyDevices = anydevices_no;
 			}
 			return 0 ;
 		default:
