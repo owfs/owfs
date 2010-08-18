@@ -81,6 +81,8 @@ static GOOD_OR_BAD LINK_write(const BYTE * buf, size_t size, struct connection_i
 static GOOD_OR_BAD LINK_directory(struct device_search *ds, struct dirblob *db, struct connection_in * in);
 static GOOD_OR_BAD LINK_search_type(struct device_search *ds, struct connection_in * in) ;
 
+static GOOD_OR_BAD LINK_readback_data( BYTE * resp, const size_t size, struct connection_in * in);
+
 static GOOD_OR_BAD LinkVersion_knownstring( const char * reported_string, struct LINK_id * tbl, struct connection_in * in ) ;
 static GOOD_OR_BAD LinkVersion_unknownstring( const char * reported_string, struct connection_in * in ) ;
 static void LINK_flush( struct connection_in * in ) ;
@@ -681,7 +683,7 @@ static GOOD_OR_BAD LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay
 	// flush the buffers
 	RETURN_BAD_IF_BAD(LINK_write(LINK_string("\r"), 1, in) ) ;
 	
-	RETURN_BAD_IF_BAD( LINK_read(LINK_string(respond), 2, in) ) ;
+	RETURN_BAD_IF_BAD( LINK_readback_data( LINK_string(respond), 2, in) ) ;
 	
 	resp[0] = string2num((const ASCII *) respond);
 	return gbGOOD ;
@@ -697,24 +699,12 @@ static GOOD_OR_BAD LINK_sendback_data(const BYTE * data, BYTE * resp, const size
 	struct connection_in * in = pn->selected_connection ;
 	size_t left = size;
 	size_t location = 0 ;
-	int qmode_extra ;
 	BYTE buf[1+LINK_SEND_SIZE*2+1+1+in->master.serial.tcp.CRLF_size] ;
 	
 	if (size == 0) {
 		return gbGOOD;
 	}
 	
-	switch ( in->master.link.qmode ) {
-		case e_link_t_extra:
-			qmode_extra = 1 ;
-			break ;
-		case e_link_t_unknown:
-		case e_link_t_none:
-		default:
-			qmode_extra = 0 ;
-			break ;
-	}
-			
 	//Debug_Bytes( "ELINK sendback send", data, size) ;
 	while (left > 0) {
 		// Loop through taking only 32 bytes at a time
@@ -729,17 +719,7 @@ static GOOD_OR_BAD LINK_sendback_data(const BYTE * data, BYTE * resp, const size
 		RETURN_BAD_IF_BAD(LINK_write(buf, 1+this_length2+1, in) ) ;
 		
 		// read back
-		RETURN_BAD_IF_BAD( LINK_read(buf, this_length2+qmode_extra, in) ) ;
-		
-		// see if we've yet tested the extra '?' "feature"
-		if ( in->master.link.qmode == e_link_t_unknown ) {
-			if ( buf[this_length2] != 0x0D ) {
-				in->master.link.qmode = e_link_t_extra ;
-				LINK_slurp(in) ;
-			} else {
-				in->master.link.qmode = e_link_t_none ;
-			}
-		}
+		RETURN_BAD_IF_BAD( LINK_readback_data(buf, this_length2, in) ) ;
 		
 		// place data (converted back to hex) in resp
 		string2bytes((char *) buf, &resp[location], this_length);
@@ -747,5 +727,36 @@ static GOOD_OR_BAD LINK_sendback_data(const BYTE * data, BYTE * resp, const size
 		location += this_length ;
 	}
 	//Debug_Bytes( "ELINK sendback get", resp, size) ;
+	return gbGOOD;
+}
+
+static GOOD_OR_BAD LINK_readback_data( BYTE * buf, const size_t size, struct connection_in * in)
+{
+	int qmode_extra ;
+	
+	switch ( in->master.link.qmode ) {
+		case e_link_t_extra:
+			qmode_extra = 1 ;
+			break ;
+		case e_link_t_unknown:
+		case e_link_t_none:
+		default:
+			qmode_extra = 0 ;
+			break ;
+	}
+			
+	// read back
+	RETURN_BAD_IF_BAD( LINK_read(buf, size+qmode_extra, in) ) ;
+	
+	// see if we've yet tested the extra '?' "feature"
+	if ( in->master.link.qmode == e_link_t_unknown ) {
+		if ( buf[size] != 0x0D ) {
+			in->master.link.qmode = e_link_t_extra ;
+			LINK_slurp(in) ;
+		} else {
+			in->master.link.qmode = e_link_t_none ;
+		}
+	}
+		
 	return gbGOOD;
 }
