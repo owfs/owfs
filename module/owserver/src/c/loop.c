@@ -91,41 +91,45 @@ static enum toclient_state Ping_or_Send( enum toclient_state last_toclient, stru
 
 	select_value = select( hd->ping_pipe[fd_pipe_read]+1, &read_set, NULL, NULL, &tv ) ;
 
-	// read pipe shows final data was sent
-	if ( select_value == 1 ) {
-		return toclient_complete ;
-	}
-	
 	TOCLIENTLOCK(hd);
 	next_toclient = hd->toclient ;
 	
-	// select error. just send a ping
-	if ( select_value < 0 ) {
-		LEVEL_DEBUG("Select problem in keep-alive pulsing");
-		switch ( next_toclient ) {
-			case toclient_complete:
-				break ;
-			case toclient_postmessage:
-			case toclient_postping:
-				PingClient(hd);	// send the ping
-				next_toclient = toclient_postping ;
-				hd->toclient = toclient_postping ;
-				break ;
-		}
-	} else { // timeout
-		switch ( next_toclient ) {
-			case toclient_complete:
-				break ;
-			case toclient_postmessage:
-				LEVEL_DEBUG("Ping forestalled by a directory element");
-				hd->toclient = toclient_postping ;
-				break ;
-			case toclient_postping:
-				LEVEL_DEBUG("Taking too long, send a keep-alive pulse");
-				PingClient(hd);	// send the ping
-				next_toclient = toclient_postping ;
-				break ;
-		}
+	switch ( select_value ) {
+		case 1: // message from other thread that we're done
+			// some architectures (like MIPS) want this check inside the lock
+			next_toclient = toclient_complete ;
+			break ;
+		case 0: // timeout -- time for ping?
+			switch ( next_toclient ) {
+				case toclient_complete:
+					// crossed paths, we're really done
+					break ;
+				case toclient_postmessage:
+					LEVEL_DEBUG("Ping forestalled by a directory element");
+					hd->toclient = toclient_postping ;
+					break ;
+				case toclient_postping:
+					LEVEL_DEBUG("Taking too long, send a keep-alive pulse");
+					PingClient(hd);	// send the ping
+					next_toclient = toclient_postping ;
+					break ;
+			}
+			break ;
+		default: // select error
+			LEVEL_DEBUG("Select problem in keep-alive pulsing");
+			switch ( next_toclient ) {
+				case toclient_complete:
+					// fortunately we're done
+					break ;
+				case toclient_postmessage:
+				case toclient_postping:
+					// not done. Send a ping and resync the process
+					PingClient(hd);	// send the ping
+					next_toclient = toclient_postping ;
+					hd->toclient = toclient_postping ;
+					break ;
+			}
+			break ;
 	}
 
 	TOCLIENTUNLOCK(hd);
