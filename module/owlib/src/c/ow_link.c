@@ -222,12 +222,6 @@ static GOOD_OR_BAD LINK_net_detect(struct connection_in * in)
 		return gbBAD;
 	}
 	
-	if (1) {
-		BYTE data[1] ;
-		size_t read_size ;
-		struct timeval tvnetfirst = { Globals.timeout_network, 0, };
-		tcp_read(in->file_descriptor, data, 1, &tvnetfirst, &read_size ) ;
-	}
 	LEVEL_DEBUG("Slurp in initial bytes");
 	LINK_slurp( in ) ;
 	LINK_flush(in);
