@@ -15,7 +15,7 @@ $Id$
 #include "ow_counters.h"
 #include "ow_connection.h"
 
-static int OWQ_allocate_array( struct one_wire_query * owq ) ;
+static GOOD_OR_BAD OWQ_allocate_array( struct one_wire_query * owq ) ;
 static GOOD_OR_BAD OWQ_parsename(const char *path, struct one_wire_query *owq);
 static GOOD_OR_BAD OWQ_parsename_plus(const char *path, const char * file, struct one_wire_query *owq);
 
@@ -37,7 +37,7 @@ struct one_wire_query * OWQ_create_from_path(const char *path)
 	OWQ_cleanup(owq) = owq_cleanup_owq ;
 	
 	if ( GOOD( OWQ_parsename(path,owq) ) ) {
-		if ( OWQ_allocate_array(owq) == 0 ) {
+		if ( GOOD( OWQ_allocate_array(owq)) ) {
 			/*   Add a 1 byte buffer by default. This distinguishes from filesystem calls at end of buffer */
 			/*   Read bufer is provided by OWQ_assign_read_buffer or OWQ_allocate_read_buffer */
 			OWQ_buffer(owq) = (char *) (& owq[1]) ; // point just beyond the one_wire_query struct
@@ -92,13 +92,40 @@ struct one_wire_query * OWQ_create_separate( int extension, struct one_wire_quer
 	return owq_sep ;
 }
 
+/* Use an single OWQ as a template for the aggregate one */
+struct one_wire_query * OWQ_create_aggregate( struct one_wire_query * owq_single )
+{
+	struct one_wire_query * owq_all = owmalloc( sizeof( struct one_wire_query ) + OWQ_DEFAULT_READ_BUFFER_SIZE ) ;
+	
+	LEVEL_DEBUG("%s with extension ALL", PN(owq_aggregate)->path);
+
+	if ( owq_ALL== NULL) {
+		LEVEL_DEBUG("No memory to create object for extension ALL") ;
+		return NULL ;
+	}
+	
+	memset(owq_all, 0, sizeof(owq_sep));
+	OWQ_cleanup(owq_all) = owq_cleanup_owq ;
+	
+	memcpy( PN(owq_all), PN(owq_single), sizeof(struct parsedname) ) ;
+	PN(owq_all)->extension = EXTENSION_ALL ;
+	OWQ_buffer(owq_all) = (char *) (& owq_all[1]) ; // point just beyond the one_wire_query struct
+	OWQ_size(owq_all) = OWQ_DEFAULT_READ_BUFFER_SIZE ;
+	OWQ_offset(owq_all) = 0 ;
+	if ( BAD( OWQ_allocate_array(owq_all)) ) {
+		OWQ_destroy(owq_all);
+		return NULL ;
+	}
+	return owq_all ;
+}
+
 /* Create the Parsename structure and load the relevant fields */
 GOOD_OR_BAD OWQ_create(const char *path, struct one_wire_query *owq)
 {
 	LEVEL_DEBUG("%s", path);
 
 	if ( GOOD( OWQ_parsename(path,owq) ) ) {
-		if ( OWQ_allocate_array(owq) == 0 ) {
+		if ( GOOD( OWQ_allocate_array(owq)) ) {
 			return gbGOOD ;
 		}
 		OWQ_destroy(owq);
@@ -114,7 +141,7 @@ GOOD_OR_BAD OWQ_create_plus(const char *path, const char *file, struct one_wire_
 
 	OWQ_cleanup(owq) = owq_cleanup_none ;
 	if ( GOOD( OWQ_parsename_plus(path,file,owq) ) ) {
-		if ( OWQ_allocate_array(owq) == 0 ) {
+		if ( GOOD( OWQ_allocate_array(owq)) ) {
 			return gbGOOD ;
 		}
 		OWQ_destroy(owq);
@@ -145,19 +172,19 @@ static GOOD_OR_BAD OWQ_parsename_plus(const char *path, const char * file, struc
 	return gbGOOD ;
 }
 
-static int OWQ_allocate_array( struct one_wire_query * owq )
+static GOOD_OR_BAD OWQ_allocate_array( struct one_wire_query * owq )
 {
 	struct parsedname * pn = PN(owq) ;
 	if (pn->extension == EXTENSION_ALL && pn->type != ePN_structure) {
 		OWQ_array(owq) = owcalloc((size_t) pn->selected_filetype->ag->elements, sizeof(union value_object));
 		if (OWQ_array(owq) == NULL) {
-			return 1 ;
+			return gbBAD ;
 		}
 		OWQ_cleanup(owq) |= owq_cleanup_array ;
 	} else {
 		OWQ_I(owq) = 0;
 	}
-	return 0 ;
+	return gbGOOD ;
 }
 
 void OWQ_assign_read_buffer(char *buffer, size_t size, off_t offset, struct one_wire_query *owq)

@@ -307,64 +307,91 @@ static ZERO_OR_ERROR FS_w_local(struct one_wire_query *owq)
 		return -ENOTSUP;
 	}
 
-	// Kills all extensions, or just singleton value
-	OWQ_Cache_Del_parts(owq) ;
+	/* Non-array? */
+	if (pn->selected_filetype->ag == NON_AGGREGATE) {
+		return FS_write_single_lump(owq); // cache
+	}
 
+	switch (pn->selected_filetype->ag->combined) {
+		case ag_aggregate:
+			switch (pn->extension) {
+				case EXTENSION_BYTE:
+					break ;
+				case EXTENSION_ALL:
+					return FS_write_aggregate_lump(owq); // cache
+				default:
+					return FS_write_a_part(owq) ; // cache
+			}
+			break ;
+		case ag_mized:
+			switch (pn->extension) {
+				case EXTENSION_BYTE:
+					break ;
+				case EXTENSION_ALL:
+					OWQ_Cache_Del_parts(owq);
+					return FS_write_single_lump(owq); // cache
+				default:
+					OWQ_Cache_Del_ALL(owq);
+					return FS_write_single_lump(owq); // cache
+			}
+			break ;
+		case ag_separate:
+			switch (pn->extension) {
+				case EXTENSION_BYTE:
+					break ;
+				case EXTENSION_ALL:
+					return FS_write_in_parts(owq); // cache
+				default:
+					return FS_write_single_lump(owq); // cache
+			}
+			break ;
+	}
 	/* Array properties? Write all together if aggregate */
-	if (pn->selected_filetype->ag != NON_AGGREGATE) {
-
-		switch (pn->extension) {
-		case EXTENSION_BYTE:
-			LEVEL_DEBUG("Writing collectively as a bitfield");
+	switch (pn->extension) {
+	case EXTENSION_BYTE:
+		LEVEL_DEBUG("Writing collectively as a bitfield");
+		OWQ_Cache_Del_ALL(owq) ;
+		OWQ_Cache_Del_parts(owq) ;
+		return FS_write_single_lump(owq); //cache
+	case EXTENSION_ALL:
+		OWQ_Cache_Del_ALL(owq) ;
+		OWQ_Cache_Del_parts(owq) ;
+		if (pn->selected_filetype->format == ft_bitfield) {
+			return FS_write_all_bits(owq);
+		}
+		switch (pn->selected_filetype->ag->combined) {
+		case ag_aggregate:
+		case ag_mixed:
+			LEVEL_DEBUG("Writing collectively");
+			return FS_write_aggregate_lump(owq); // cache
+		case ag_separate:
+			LEVEL_DEBUG("Writing separately");
+			return FS_write_in_parts(owq);
+		}
+	default:
+		// Just write one field of an array
+		if (pn->selected_filetype->format == ft_bitfield) {
+			LEVEL_DEBUG("Writing a bit in a bitfield");
+			return FS_write_a_bit(owq); //cache
+		}
+		switch (pn->selected_filetype->ag->combined) {
+		case ag_aggregate:
+			// need to read it all and overwrite just a part
+			return FS_write_a_part(owq); // cache
+		case ag_mixed:
+		case ag_separate:
 			OWQ_Cache_Del_ALL(owq) ;
-			OWQ_Cache_Del_parts(owq) ;
-			return FS_write_single_lump(owq); //cache
-		case EXTENSION_ALL:
-			OWQ_Cache_Del_ALL(owq) ;
-			OWQ_Cache_Del_parts(owq) ;
-			if (pn->selected_filetype->format == ft_bitfield) {
-				return FS_write_all_bits(owq);
-			}
-			switch (pn->selected_filetype->ag->combined) {
-			case ag_aggregate:
-			case ag_mixed:
-				LEVEL_DEBUG("Writing collectively");
-				return FS_write_aggregate_lump(owq); // cache
-			case ag_separate:
-				LEVEL_DEBUG("Writing separately");
-				return FS_write_in_parts(owq);
-			}
-		default:
-			// Just write one field of an array
-			if (pn->selected_filetype->format == ft_bitfield) {
-				LEVEL_DEBUG("Writing a bit in a bitfield");
-				return FS_write_a_bit(owq); //cache
-			}
-			switch (pn->selected_filetype->ag->combined) {
-			case ag_aggregate:
-				// need to read it all and overwrite just a part
-				return FS_write_a_part(owq); // cache
-			case ag_mixed:
-			case ag_separate:
-				OWQ_Cache_Del_ALL(owq) ;
-				return FS_write_single_lump(owq); // cache
-			}
+			return FS_write_single_lump(owq); // cache
 		}
 	}
-	
-	return FS_write_single_lump(owq); // cache
 }
 
 static ZERO_OR_ERROR FS_write_single_lump(struct one_wire_query *owq)
 {
-	ZERO_OR_ERROR write_error;
-	OWQ_allocate_struct_and_pointer(owq_copy);
+	ZERO_OR_ERROR write_error = SpecialCase_write(owq_copy);
 
-	OWQ_create_shallow_single(owq_copy, owq);
-
-	write_error = SpecialCase_write(owq_copy);
 	if ( write_error == -ENOENT) {
-		write_error = (OWQ_pn(owq).selected_filetype->write) (owq_copy);
+		write_error = (OWQ_pn(owq).selected_filetype->write) (owq);
 	}
 
 	OWQ_Cache_Del(owq) ;
@@ -385,8 +412,6 @@ static ZERO_OR_ERROR FS_write_a_part(struct one_wire_query *owq)
 		return -ENOMEM;
 	}
 	pn->extension = extension ; // restore
-
-	OWQ_Cache_Del(owq) ; // erase individual
 
 	// First fill the whole array with current values
 	if ( BAD( OWQ_Cache_Get(owq_all)) ) {
@@ -410,22 +435,26 @@ static ZERO_OR_ERROR FS_write_a_part(struct one_wire_query *owq)
 			char *entry_pointer;
 			char *target_pointer;
 
+			// All prior elements
 			for (extension_index = 0; extension_index < extension; ++extension) {
+				// move past their buffer position
 				buffer_pointer += OWQ_array_length(owq_all, extension_index);
 			}
 
-			entry_pointer = buffer_pointer;
+			entry_pointer = buffer_pointer; // this element's buffer start
 
-			target_pointer = buffer_pointer + OWQ_length(owq);
-			buffer_pointer = buffer_pointer + OWQ_array_length(owq_all, extension);
+			target_pointer = buffer_pointer + OWQ_length(owq); // new start next element
+			buffer_pointer = buffer_pointer + OWQ_array_length(owq_all, extension); // current start next element
 
+			// move rest of elements to new locations
 			for (extension_index = extension + 1; extension_index < elements; ++extension) {
 				size_t this_length = OWQ_array_length(owq_all, extension_index);
 				memmove(target_pointer, buffer_pointer, this_length);
-				buffer_pointer += this_length;
+				target_pointer += this_length;
 				buffer_pointer += this_length;
 			}
 
+			// now move current element's buffer to location
 			memmove(entry_pointer, OWQ_buffer(owq), OWQ_length(owq));
 			break;
 		}
@@ -438,23 +467,18 @@ static ZERO_OR_ERROR FS_write_a_part(struct one_wire_query *owq)
 	// Write whole thing out
 	write_error = FS_write_aggregate_lump(owq_all);
 
+	OWQ_destroy_shallow_aggregate(owq_all);
 	return write_error;
 }
 
 // Write a whole aggregate array (treated as a single large value )
 static ZERO_OR_ERROR FS_write_aggregate_lump(struct one_wire_query *owq)
 {
-	ZERO_OR_ERROR write_error;
-	OWQ_allocate_struct_and_pointer(owq_copy);
-
-	OWQ_create_shallow_aggregate(owq_copy, owq);
-
-	write_error = SpecialCase_write(owq_copy);
+	ZERO_OR_ERROR write_error = SpecialCase_write(owq_copy);
 	if ( write_error == -ENOENT) {
-		write_error = (OWQ_pn(owq).selected_filetype->write) (owq_copy);
+		write_error = (OWQ_pn(owq).selected_filetype->write) (owq);
 	}
 
-	OWQ_destroy_shallow_aggregate(owq_copy);
 	OWQ_Cache_Del_ALL(owq) ;
 	return write_error;
 }
@@ -465,10 +489,13 @@ static ZERO_OR_ERROR FS_write_in_parts(struct one_wire_query *owq)
 	size_t elements = pn->selected_filetype->ag->elements;
 	char *buffer_pointer;
 	size_t extension;
+	ZERO_OR_ERROR z_or_e = 0 ;
+	
+	// Create a "single" OWQ copy to iterate with
 	OWQ_allocate_struct_and_pointer(owq_single);
-
 	OWQ_create_shallow_single(owq_single, owq);
 
+	// create a buffer for certain types
 	switch (pn->selected_filetype->format) {
 	case ft_ascii:
 	case ft_vascii:
@@ -481,28 +508,31 @@ static ZERO_OR_ERROR FS_write_in_parts(struct one_wire_query *owq)
 		break;
 	}
 
+	// loop through all eloements
 	for (extension = 0; extension < elements; ++extension) {
 		ZERO_OR_ERROR single_write;
+
+		// make the "single" OWQ element
 		memcpy(&OWQ_val(owq_single), &OWQ_array(owq)[extension], sizeof(union value_object));
 		OWQ_pn(owq_single).extension = extension;
 		OWQ_size(owq_single) = FileLength(PN(owq_single));
 		OWQ_offset(owq_single) = 0;
+
 		if ( buffer_pointer != NULL ) {
 			OWQ_buffer(owq_single) = buffer_pointer;
 		}
-		//_print_owq(owq_single) ; // debug
 		single_write = FS_write_single_lump(owq_single);
 
 		if (single_write != 0) {
-			return single_write;
+			z_or_e = single_write ;
 		}
 
-		if (buffer_pointer) {
+		if (buffer_pointer != NULL) {
 			buffer_pointer += OWQ_array_length(owq, extension);
 		}
 	}
 
-	return 0;
+	return z_or_e;
 }
 
 static ZERO_OR_ERROR FS_write_all_bits(struct one_wire_query *owq)

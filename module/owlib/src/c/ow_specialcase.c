@@ -96,7 +96,9 @@ static void * SpecialCase_look( struct one_wire_query * owq )
 
 	// find in the red/black tree
 	return tfind(&sc, &SpecialCaseTree, specialcase_compare);
-}ZERO_OR_ERROR SpecialCase_read( struct one_wire_query * owq )
+}
+
+ZERO_OR_ERROR SpecialCase_read( struct one_wire_query * owq )
 {
 	struct specialcase * sc = SpecialCase_look(owq) ;
 	
@@ -116,7 +118,7 @@ SIZE_OR_ERROR SpecialCase_write( struct one_wire_query * owq )
 	if ( sc == NULL ) {
 		return -ENOENT ;
 	}
-	if ( sc->read == NO_WRITE_FUNCTION ) {
+	if ( sc->write == NO_WRITE_FUNCTION ) {
 		return -ENOENT ;
 	}
 	return (sc->write)(owq) ;
