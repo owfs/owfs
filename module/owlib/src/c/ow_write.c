@@ -20,12 +20,13 @@ $Id$
 static ZERO_OR_ERROR FS_w_given_bus(struct one_wire_query *owq);
 static ZERO_OR_ERROR FS_w_local(struct one_wire_query *owq);
 static ZERO_OR_ERROR FS_w_simultaneous(struct one_wire_query *owq);
-static ZERO_OR_ERROR FS_write_single_lump(struct one_wire_query *owq);
-static ZERO_OR_ERROR FS_write_aggregate_lump(struct one_wire_query *owq);
-static ZERO_OR_ERROR FS_write_all_bits(struct one_wire_query *owq);
-static ZERO_OR_ERROR FS_write_a_bit(struct one_wire_query *owq);
-static ZERO_OR_ERROR FS_write_in_parts(struct one_wire_query *owq);
-static ZERO_OR_ERROR FS_write_a_part(struct one_wire_query *owq);
+static ZERO_OR_ERROR FS_write_owq(struct one_wire_query *owq);
+static ZERO_OR_ERROR FS_write_all( struct one_wire_query *owq_all ) ;
+static ZERO_OR_ERROR FS_write_all_bits( struct one_wire_query *owq_all );
+static ZERO_OR_ERROR FS_write_a_bit(struct one_wire_query *owq_bit);
+static ZERO_OR_ERROR FS_write_in_parts( struct one_wire_query *owq_all );
+static ZERO_OR_ERROR FS_write_a_part( struct one_wire_query *owq_part );
+static ZERO_OR_ERROR FS_write_as_bits( struct one_wire_query *owq_byte ) ;
 
 /* ---------------------------------------------- */
 /* Filesystem callback functions                  */
@@ -285,6 +286,7 @@ static ZERO_OR_ERROR FS_w_local(struct one_wire_query *owq)
 {
 	// Device already locked
 	struct parsedname *pn = PN(owq);
+	struct filetype * ft = pn->selected_filetype ;
 
 	/* Special case for "fake" adapter */
 	if ( IsRealDir(pn) ) {
@@ -295,7 +297,7 @@ static ZERO_OR_ERROR FS_w_local(struct one_wire_query *owq)
 				// fall through
 			case bus_fake:
 			case bus_tester:
-				return (pn->selected_filetype->write == NO_WRITE_FUNCTION) ? -ENOTSUP : 0 ;
+				return ( ft->write == NO_WRITE_FUNCTION ) ? -ENOTSUP : 0 ;
 			default:
 				// non-virtual devices get handled below
 				break ;
@@ -303,134 +305,112 @@ static ZERO_OR_ERROR FS_w_local(struct one_wire_query *owq)
 	}
 
 	/* Writable? */
-	if (pn->selected_filetype->write == NO_WRITE_FUNCTION) {
+	if ( ft->write == NO_WRITE_FUNCTION ) {
 		return -ENOTSUP;
 	}
 
 	/* Non-array? */
-	if (pn->selected_filetype->ag == NON_AGGREGATE) {
-		return FS_write_single_lump(owq); // cache
+	if ( ft->ag == NON_AGGREGATE ) {
+		LEVEL_DEBUG("Write an non-array element %s",pn->path);
+		return FS_write_owq(owq);
 	}
 
-	switch (pn->selected_filetype->ag->combined) {
+	/* array */
+	switch ( ft->ag->combined ) {
 		case ag_aggregate:
 			switch (pn->extension) {
 				case EXTENSION_BYTE:
-					break ;
+					LEVEL_DEBUG("Write an aggregate .BYTE %s",pn->path);
+					return FS_write_owq(owq);
 				case EXTENSION_ALL:
-					return FS_write_aggregate_lump(owq); // cache
+					LEVEL_DEBUG("Write an aggregate .ALL %s",pn->path);
+					return FS_write_all(owq);
 				default:
-					return FS_write_a_part(owq) ; // cache
+					LEVEL_DEBUG("Write an aggregate element %s",pn->path);
+					return FS_write_a_part(owq) ;
 			}
-			break ;
-		case ag_mized:
+		case ag_mixed:
 			switch (pn->extension) {
 				case EXTENSION_BYTE:
-					break ;
-				case EXTENSION_ALL:
+					LEVEL_DEBUG("Write a mixed .BYTE %s",pn->path);
 					OWQ_Cache_Del_parts(owq);
-					return FS_write_single_lump(owq); // cache
+					return FS_write_owq(owq);
+				case EXTENSION_ALL:
+					LEVEL_DEBUG("Write a mixed .ALL %s",pn->path);
+					OWQ_Cache_Del_parts(owq);
+					return FS_write_all(owq);
 				default:
+					LEVEL_DEBUG("Write a mixed element %s",pn->path);
 					OWQ_Cache_Del_ALL(owq);
-					return FS_write_single_lump(owq); // cache
+					OWQ_Cache_Del_BYTE(owq);
+					return FS_write_owq(owq);
 			}
-			break ;
 		case ag_separate:
 			switch (pn->extension) {
 				case EXTENSION_BYTE:
-					break ;
+					LEVEL_DEBUG("Write a separate .BYTE %s",pn->path);
+					return FS_write_as_bits(owq);
 				case EXTENSION_ALL:
-					return FS_write_in_parts(owq); // cache
+					LEVEL_DEBUG("Write a separate .ALL %s",pn->path);
+					return FS_write_in_parts(owq);
 				default:
-					return FS_write_single_lump(owq); // cache
+					LEVEL_DEBUG("Write a separate element %s",pn->path);
+					return FS_write_owq(owq);
 			}
-			break ;
-	}
-	/* Array properties? Write all together if aggregate */
-	switch (pn->extension) {
-	case EXTENSION_BYTE:
-		LEVEL_DEBUG("Writing collectively as a bitfield");
-		OWQ_Cache_Del_ALL(owq) ;
-		OWQ_Cache_Del_parts(owq) ;
-		return FS_write_single_lump(owq); //cache
-	case EXTENSION_ALL:
-		OWQ_Cache_Del_ALL(owq) ;
-		OWQ_Cache_Del_parts(owq) ;
-		if (pn->selected_filetype->format == ft_bitfield) {
-			return FS_write_all_bits(owq);
-		}
-		switch (pn->selected_filetype->ag->combined) {
-		case ag_aggregate:
-		case ag_mixed:
-			LEVEL_DEBUG("Writing collectively");
-			return FS_write_aggregate_lump(owq); // cache
-		case ag_separate:
-			LEVEL_DEBUG("Writing separately");
-			return FS_write_in_parts(owq);
-		}
-	default:
-		// Just write one field of an array
-		if (pn->selected_filetype->format == ft_bitfield) {
-			LEVEL_DEBUG("Writing a bit in a bitfield");
-			return FS_write_a_bit(owq); //cache
-		}
-		switch (pn->selected_filetype->ag->combined) {
-		case ag_aggregate:
-			// need to read it all and overwrite just a part
-			return FS_write_a_part(owq); // cache
-		case ag_mixed:
-		case ag_separate:
-			OWQ_Cache_Del_ALL(owq) ;
-			return FS_write_single_lump(owq); // cache
-		}
+		default:
+			return -ENOENT ;
 	}
 }
 
-static ZERO_OR_ERROR FS_write_single_lump(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_write_owq(struct one_wire_query *owq)
 {
-	ZERO_OR_ERROR write_error = SpecialCase_write(owq_copy);
+	ZERO_OR_ERROR write_error = SpecialCase_write(owq);
 
 	if ( write_error == -ENOENT) {
 		write_error = (OWQ_pn(owq).selected_filetype->write) (owq);
 	}
 
 	OWQ_Cache_Del(owq) ;
+	LEVEL_DEBUG("Write %s Extension %d Gives result %d",PN(owq)->path,PN(owq)->extension,write_error);
 	return write_error;
 }
 
 /* Write just one field of an aggregate property -- but a property that is handled as one big object */
-static ZERO_OR_ERROR FS_write_a_part(struct one_wire_query *owq)
+// Handles .n
+static ZERO_OR_ERROR FS_write_a_part( struct one_wire_query *owq_part )
 {
-	struct parsedname *pn = PN(owq);
+	struct parsedname *pn = PN(owq_part);
 	size_t extension = pn->extension;
-	ZERO_OR_ERROR write_error;
-	OWQ_allocate_struct_and_pointer(owq_all);
-
-	pn->extension = EXTENSION_ALL ; // temporary
-	if (OWQ_create_shallow_aggregate(owq_all, owq) < 0) {
-		pn->extension = extension ; // restore
-		return -ENOMEM;
+	struct filetype * ft = pn->selected_filetype ;
+	ZERO_OR_ERROR z_or_e ;
+	struct one_wire_query * owq_all ;
+	
+	// bitfield
+	if ( ft->format == ft_bitfield ) {
+		return FS_write_a_bit( owq_part ) ;
 	}
-	pn->extension = extension ; // restore
 
+	// non-bitfield 
+	owq_all = OWQ_create_aggregate( owq_part ) ;
+	if ( owq_all == NULL ) {
+		return -ENOENT ;
+	}
+	
 	// First fill the whole array with current values
-	if ( BAD( OWQ_Cache_Get(owq_all)) ) {
-		ZERO_OR_ERROR read_error = (pn->selected_filetype->read) (owq_all);
-		if (read_error != 0) {
-			OWQ_destroy_shallow_aggregate(owq_all);
-			return read_error;
-		}
+	if ( FS_read_local( owq_all ) < 0 ) {
+		OWQ_destroy( owq_all ) ;
+		return -ENOENT ;
 	}
 
 	// Copy ascii/binary field
-	switch (pn->selected_filetype->format) {
+	switch (ft->format) {
 	case ft_binary:
 	case ft_ascii:
 	case ft_vascii:
 	case ft_alias:
 		{
 			size_t extension_index;
-			size_t elements = pn->selected_filetype->ag->elements;
+			size_t elements = ft->ag->elements;
 			char *buffer_pointer = OWQ_buffer(owq_all);
 			char *entry_pointer;
 			char *target_pointer;
@@ -443,7 +423,7 @@ static ZERO_OR_ERROR FS_write_a_part(struct one_wire_query *owq)
 
 			entry_pointer = buffer_pointer; // this element's buffer start
 
-			target_pointer = buffer_pointer + OWQ_length(owq); // new start next element
+			target_pointer = buffer_pointer + OWQ_length(owq_part); // new start next element
 			buffer_pointer = buffer_pointer + OWQ_array_length(owq_all, extension); // current start next element
 
 			// move rest of elements to new locations
@@ -455,128 +435,143 @@ static ZERO_OR_ERROR FS_write_a_part(struct one_wire_query *owq)
 			}
 
 			// now move current element's buffer to location
-			memmove(entry_pointer, OWQ_buffer(owq), OWQ_length(owq));
-			break;
+			memmove(entry_pointer, OWQ_buffer(owq_part), OWQ_length(owq_part));
+			OWQ_array_length(owq_all,extension) = OWQ_length(owq_part) ;
 		}
+		break;
 	default:
+		// Copy value field
+		memcpy(&OWQ_array(owq_all)[pn->extension], &OWQ_val(owq_part), sizeof(union value_object));
 		break;
 	}
-	// Copy value field
-	memcpy(&OWQ_array(owq_all)[pn->extension], &OWQ_val(owq), sizeof(union value_object));
 
 	// Write whole thing out
-	write_error = FS_write_aggregate_lump(owq_all);
+	z_or_e = FS_write_owq(owq_all);
 
-	OWQ_destroy_shallow_aggregate(owq_all);
-	return write_error;
+	OWQ_destroy(owq_all);
+
+	return z_or_e ;
 }
 
 // Write a whole aggregate array (treated as a single large value )
-static ZERO_OR_ERROR FS_write_aggregate_lump(struct one_wire_query *owq)
+// handles ALL
+static ZERO_OR_ERROR FS_write_all( struct one_wire_query * owq_all )
 {
-	ZERO_OR_ERROR write_error = SpecialCase_write(owq_copy);
-	if ( write_error == -ENOENT) {
-		write_error = (OWQ_pn(owq).selected_filetype->write) (owq);
+	// bitfield, convert to .BYTE format and write ( and delete cache ) as BYTE.
+	if ( OWQ_pn(owq_all).selected_filetype->format == ft_bitfield ) {
+		return FS_write_all_bits( owq_all ) ;
 	}
 
-	OWQ_Cache_Del_ALL(owq) ;
-	return write_error;
+	return FS_write_owq( owq_all ) ;
 }
 
-static ZERO_OR_ERROR FS_write_in_parts(struct one_wire_query *owq)
+/* Takes ALL to individual, no need for the cache */
+// Handles: ALL
+static ZERO_OR_ERROR FS_write_in_parts( struct one_wire_query *owq_all )
 {
-	struct parsedname *pn = PN(owq);
+	struct one_wire_query * owq_part = OWQ_create_separate( 0, owq_all ) ;
+	struct parsedname *pn = PN(owq_all);
 	size_t elements = pn->selected_filetype->ag->elements;
+	size_t extension ;
 	char *buffer_pointer;
-	size_t extension;
 	ZERO_OR_ERROR z_or_e = 0 ;
 	
 	// Create a "single" OWQ copy to iterate with
-	OWQ_allocate_struct_and_pointer(owq_single);
-	OWQ_create_shallow_single(owq_single, owq);
+	if ( owq_part == NULL ) {
+		return -ENOENT ;
+	}
 
 	// create a buffer for certain types
-	switch (pn->selected_filetype->format) {
-	case ft_ascii:
-	case ft_vascii:
-	case ft_alias:
-	case ft_binary:
-		buffer_pointer = OWQ_buffer(owq);
-		break;
-	default:
-		buffer_pointer = NULL;
-		break;
-	}
+	// point to 0th element's buffer first
+	buffer_pointer = OWQ_buffer(owq_all);
+	OWQ_size(owq_part) = FileLength(PN(owq_part));
+	OWQ_offset(owq_part) = 0;
 
 	// loop through all eloements
 	for (extension = 0; extension < elements; ++extension) {
 		ZERO_OR_ERROR single_write;
 
-		// make the "single" OWQ element
-		memcpy(&OWQ_val(owq_single), &OWQ_array(owq)[extension], sizeof(union value_object));
-		OWQ_pn(owq_single).extension = extension;
-		OWQ_size(owq_single) = FileLength(PN(owq_single));
-		OWQ_offset(owq_single) = 0;
-
-		if ( buffer_pointer != NULL ) {
-			OWQ_buffer(owq_single) = buffer_pointer;
+		switch (pn->selected_filetype->format) {
+		case ft_ascii:
+		case ft_vascii:
+		case ft_alias:
+		case ft_binary:
+			OWQ_length(owq_part) = OWQ_array_length(owq_all,extension) ;
+			OWQ_buffer(owq_part) = buffer_pointer;
+			buffer_pointer += OWQ_length(owq_part);
+			break;
+		default:
+			memcpy(&OWQ_val(owq_part), &OWQ_array(owq_all)[extension], sizeof(union value_object));
+			break;
 		}
-		single_write = FS_write_single_lump(owq_single);
+
+		OWQ_pn(owq_part).extension = extension;
+		single_write = FS_write_owq(owq_part);
 
 		if (single_write != 0) {
 			z_or_e = single_write ;
-		}
-
-		if (buffer_pointer != NULL) {
-			buffer_pointer += OWQ_array_length(owq, extension);
 		}
 	}
 
 	return z_or_e;
 }
 
-static ZERO_OR_ERROR FS_write_all_bits(struct one_wire_query *owq)
+/* Write BYTE to bits */
+// handles: BYTE
+static ZERO_OR_ERROR FS_write_as_bits( struct one_wire_query *owq_byte )
 {
-	struct parsedname *pn = PN(owq);
-	size_t elements = pn->selected_filetype->ag->elements;
-	size_t extension;
-	UINT U = 0;
-	OWQ_allocate_struct_and_pointer(owq_single);
-
-	OWQ_create_shallow_single(owq_single, owq);
-
-	for (extension = 0; extension < elements; ++extension) {
-		UT_setbit((void *) (&U), extension, OWQ_array_Y(owq, extension));
+	struct one_wire_query * owq_bit = OWQ_create_separate( 0, owq_byte ) ;
+	size_t elements = OWQ_pn(owq_byte).selected_filetype->ag->elements;
+	size_t extension ;
+	ZERO_OR_ERROR z_or_e = 0 ;
+	
+	if ( owq_bit == NULL ) {
+		return -ENOENT ;
 	}
 
-	OWQ_U(owq_single) = U;
-	OWQ_pn(owq_single).extension = EXTENSION_BYTE;
-
-	return FS_write_single_lump(owq_single);
-}
-
-/* Writing a single bit -- need to read in whole byte and change bit */
-static ZERO_OR_ERROR FS_write_a_bit(struct one_wire_query *owq)
-{
-	struct parsedname *pn = PN(owq);
-	OWQ_allocate_struct_and_pointer(owq_single);
-
-	OWQ_create_shallow_single(owq_single, owq);
-
-	OWQ_pn(owq_single).extension = EXTENSION_BYTE;
-	
-	OWQ_Cache_Del_ALL(owq) ;
-
-	if ( BAD( OWQ_Cache_Get(owq_single)) ) {
-		ZERO_OR_ERROR read_error = (pn->selected_filetype->read) (owq_single);
-		if (read_error < 0) {
-			return read_error;
+	for ( extension = 0 ; extension < elements ; ++extension ) {
+		ZERO_OR_ERROR z ;
+		OWQ_pn(owq_bit).extension = extension ;
+		OWQ_Y(owq_bit) = UT_getbit( (BYTE *) &OWQ_U(owq_byte), extension ) ;
+		z = FS_write_owq( owq_bit ) ;
+		if ( z != 0 ) {
+			z_or_e = z ;
 		}
 	}
+	OWQ_destroy( owq_bit ) ;
 
-	UT_setbit((void *) (&OWQ_U(owq_single)), pn->extension, OWQ_Y(owq));
+	return z_or_e ;
+}
 
-	return FS_write_single_lump(owq_single);
+/* Write ALL to BYTE */
+// Handles: ALL
+static ZERO_OR_ERROR FS_write_all_bits( struct one_wire_query *owq_all )
+{
+	struct one_wire_query * owq_byte = ALLtoBYTE( owq_all ) ;
+	ZERO_OR_ERROR z_or_e = -ENOENT ;
+	
+	if ( owq_byte != NULL ) {
+		z_or_e = FS_write_owq( owq_byte ) ;
+		OWQ_destroy( owq_byte ) ;
+	}
+	return z_or_e ;
+}
+
+/* Write a bit in a BYTE */
+// Handles: .n
+static ZERO_OR_ERROR FS_write_a_bit(struct one_wire_query *owq_bit)
+{
+	struct one_wire_query * owq_byte = OWQ_create_separate( EXTENSION_BYTE, owq_bit ) ;
+	ZERO_OR_ERROR z_or_e = -ENOENT ;
+	
+	if ( owq_byte != NULL ) {
+		if ( FS_read_local( owq_byte ) >= 0 ) {
+			UT_setbit( (BYTE *) &OWQ_U( owq_byte ), OWQ_pn(owq_bit).extension, OWQ_Y(owq_bit) ) ;
+			z_or_e = FS_write_owq( owq_byte ) ;
+		}
+		OWQ_destroy( owq_byte ) ;
+	}
+	return z_or_e ;
 }
 
 // Used for sibling write -- bus already locked, and it's local

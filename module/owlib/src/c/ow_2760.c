@@ -461,6 +461,7 @@ static struct LockPage * LP( const struct parsedname * pn ) ;
 static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
 {
 	/* read is not a "paged" endeavor, the CRC comes after a full read */
+	OWQ_length(owq) = OWQ_size(owq) ;
 	return GB_to_Z_OR_E(OW_r_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq), PN(owq))) ;
 }
 

@@ -188,6 +188,7 @@ static ZERO_OR_ERROR FS_w_ident(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_r_memory(struct one_wire_query *owq)
 {
+	OWQ_length(owq) = OWQ_size(owq) ;
 	return GB_to_Z_OR_E(OW_r_memory((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq))) ;
 }
 

@@ -52,7 +52,7 @@ ZERO_OR_ERROR FS_r_sibling_binary(char * data, size_t * size, const char * sibli
 		return -EINVAL ;
 	}
 	
-	if ( OWQ_allocate_read_buffer(owq_sibling) == 0 ) {
+	if ( GOOD( OWQ_allocate_read_buffer(owq_sibling)) ) {
 		OWQ_offset(owq_sibling) = 0 ;
 		sib_status = FS_read_local(owq_sibling) ;
 		if ( (sib_status >= 0) && (OWQ_length(owq_sibling) <= size[0]) ) {

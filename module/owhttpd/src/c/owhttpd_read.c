@@ -45,7 +45,7 @@ static void Show(FILE * out, const struct parsedname *pn_entry)
 
 	if (owq == NULL) {
 		fprintf(out, "<B>Memory exhausted</B>");
-	} else if (OWQ_allocate_read_buffer(owq)) {
+	} else if ( BAD( OWQ_allocate_read_buffer(owq)) ) {
 		fprintf(out, "<B>Memory exhausted</B>");
 	} else if (pn_entry->selected_filetype == NULL) {
 		ShowDirectory(out, pn_entry);
@@ -74,13 +74,14 @@ static void Show(FILE * out, const struct parsedname *pn_entry)
 /* Device entry -- table line for a filetype */
 static void ShowReadWrite(FILE * out, struct one_wire_query *owq)
 {
-	const char *file = FS_DirName(PN(owq));
+	struct parsedname * pn = PN(owq) ;
+	const char *file = FS_DirName(pn);
 	SIZE_OR_ERROR read_return = FS_read_postparse(owq);
 	if (read_return < 0) {
 		fprintf(out, "Error: %s", strerror(-read_return));
 		return;
 	}
-	switch (PN(owq)->selected_filetype->format) {
+	switch (pn->selected_filetype->format) {
 	case ft_binary:
 		{
 			int i = 0;
@@ -92,12 +93,12 @@ static void ShowReadWrite(FILE * out, struct one_wire_query *owq)
 				}
 			}
 			fprintf(out, "</TEXTAREA><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM></CODE>");
-			Upload( out, PN(owq) ) ;
+			Upload( out, pn ) ;
 			break;
 		}
 	case ft_yesno:
 	case ft_bitfield:
-		if (PN(owq)->extension >= 0) {
+		if (pn->extension >= 0) {
 			fprintf(out,
 					"<FORM METHOD=\"GET\"><INPUT TYPE='CHECKBOX' NAME='%s' %s><INPUT TYPE='SUBMIT' VALUE='CHANGE' NAME='%s'></FORM></FORM>",
 					file, (OWQ_buffer(owq)[0] == '0') ? "" : "CHECKED", file);
@@ -211,7 +212,7 @@ static void ShowText(FILE * out, const struct parsedname *pn_entry)
 	fprintf(out, "%s ", FS_DirName(pn_entry));
 
 	if (owq == NULL) {
-	} else if (OWQ_allocate_read_buffer(owq)) {
+	} else if ( BAD( OWQ_allocate_read_buffer(owq)) ) {
 		//fprintf(out, "(memory exhausted)");
 	} else if (pn_entry->selected_filetype == NULL) {
 		ShowTextDirectory(out, pn_entry);

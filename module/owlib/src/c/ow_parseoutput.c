@@ -44,18 +44,12 @@ Can break down cases into:
 /* Filesystem callback functions                  */
 /* ---------------------------------------------- */
 
-size_t FileLength_vascii(struct one_wire_query *owq);
-
 SIZE_OR_ERROR OWQ_parse_output(struct one_wire_query *owq)
 {
 	// have to check if offset is beyond the filesize.
 	if (OWQ_offset(owq)) {
 		size_t file_length = 0;
-		if (PN(owq)->selected_filetype->format == ft_vascii) {
-			file_length = FileLength_vascii(owq);
-		} else {
-			file_length = FileLength(PN(owq));
-		}
+		file_length = FileLength(PN(owq));
 		LEVEL_DEBUG("file_length=%lu offset=%lu size=%lu",
 					(unsigned long) file_length, (unsigned long) OWQ_offset(owq), (unsigned long) OWQ_size(owq));
 		if ((unsigned long) OWQ_offset(owq) >= (unsigned long) file_length) {

@@ -959,7 +959,7 @@ static void do_retr(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 		goto exit_retr;
 	}
 
-	if ( OWQ_allocate_read_buffer(&owq) != 0 ) {
+	if ( BAD( OWQ_allocate_read_buffer(&owq)) ) {
 		reply(f, 550, "Error, file too large.");
 		goto exit_retr;
 	}

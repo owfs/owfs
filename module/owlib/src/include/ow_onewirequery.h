@@ -88,7 +88,7 @@ void OWQ_destroy(struct one_wire_query *owq);
 struct one_wire_query * OWQ_create_from_path(const char *path) ;
 struct one_wire_query * OWQ_create_sibling(const char *sibling, struct one_wire_query *owq_original) ;
 
-int OWQ_allocate_read_buffer(struct one_wire_query * owq ) ;
+GOOD_OR_BAD OWQ_allocate_read_buffer(struct one_wire_query * owq ) ;
 GOOD_OR_BAD OWQ_allocate_write_buffer( const char * write_buffer, size_t buffer_length, off_t offset, struct one_wire_query * owq ) ;
 
 void OWQ_assign_read_buffer(char *buffer, size_t size, off_t offset, struct one_wire_query *owq) ;
@@ -105,6 +105,9 @@ void OWQ_create_temporary(struct one_wire_query *owq_temporary, char *buffer, si
 
 ZERO_OR_ERROR OWQ_format_output_offset_and_size(const char *string, size_t length, struct one_wire_query *owq);
 ZERO_OR_ERROR OWQ_format_output_offset_and_size_z(const char *string, struct one_wire_query *owq);
+
+struct one_wire_query * ALLtoBYTE( struct one_wire_query *owq_all  );
+struct one_wire_query * BYTEtoALL( struct one_wire_query *owq_byte );
 
 int OWQ_parse_input(struct one_wire_query *owq);
 SIZE_OR_ERROR OWQ_parse_output(struct one_wire_query *owq);

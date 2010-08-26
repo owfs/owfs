@@ -97,14 +97,14 @@ struct one_wire_query * OWQ_create_aggregate( struct one_wire_query * owq_single
 {
 	struct one_wire_query * owq_all = owmalloc( sizeof( struct one_wire_query ) + OWQ_DEFAULT_READ_BUFFER_SIZE ) ;
 	
-	LEVEL_DEBUG("%s with extension ALL", PN(owq_aggregate)->path);
+	LEVEL_DEBUG("%s with extension ALL", PN(owq_single)->path);
 
-	if ( owq_ALL== NULL) {
+	if ( owq_all == NULL) {
 		LEVEL_DEBUG("No memory to create object for extension ALL") ;
 		return NULL ;
 	}
 	
-	memset(owq_all, 0, sizeof(owq_sep));
+	memset(owq_all, 0, sizeof(owq_single));
 	OWQ_cleanup(owq_all) = owq_cleanup_owq ;
 	
 	memcpy( PN(owq_all), PN(owq_single), sizeof(struct parsedname) ) ;
@@ -206,7 +206,7 @@ void OWQ_assign_write_buffer(const char *buffer, size_t size, off_t offset, stru
 }
 
 // create the buffer of size filesize
-int OWQ_allocate_read_buffer(struct one_wire_query * owq )
+GOOD_OR_BAD OWQ_allocate_read_buffer(struct one_wire_query * owq )
 {
 	struct parsedname * pn = PN(owq) ;
 	size_t size = FullFileLength(pn);
@@ -214,7 +214,7 @@ int OWQ_allocate_read_buffer(struct one_wire_query * owq )
 	if ( size > 0 ) {
 		char * buffer = owmalloc(size+1) ;
 		if ( buffer == NULL ) {
-			return 1 ;
+			return gbBAD ;
 		}
 		memset(buffer,0,size+1) ;
 		OWQ_buffer(owq) = buffer ;
@@ -222,7 +222,7 @@ int OWQ_allocate_read_buffer(struct one_wire_query * owq )
 		OWQ_offset(owq) = 0 ;
 		OWQ_cleanup(owq) |= owq_cleanup_buffer ;
 	}
-	return 0;
+	return gbGOOD;
 }
 
 GOOD_OR_BAD OWQ_allocate_write_buffer( const char * write_buffer, size_t buffer_length, off_t offset, struct one_wire_query * owq )

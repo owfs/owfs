@@ -89,6 +89,7 @@ static GOOD_OR_BAD OW_r_status(BYTE * data, const struct parsedname *pn);
 /* DS2430A memory */
 static ZERO_OR_ERROR FS_r_memory(struct one_wire_query *owq)
 {
+	OWQ_length(owq) = OWQ_size(owq) ;
 	return GB_to_Z_OR_E(OW_r_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq))) ;
 }
 
