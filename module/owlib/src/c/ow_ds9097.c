@@ -52,9 +52,6 @@ GOOD_OR_BAD DS9097_detect(struct connection_in *in)
 {
 	struct parsedname pn;
 
-	/* open the COM port in 9600 Baud  */
-	RETURN_BAD_IF_BAD(COM_open(in)) ;
-
 	/* Set up low-level routines */
 	DS9097_setroutines(in);
 
@@ -65,13 +62,45 @@ GOOD_OR_BAD DS9097_detect(struct connection_in *in)
 	FS_ParsedName_Placeholder(&pn);	// minimal parsename -- no destroy needed
 	pn.selected_connection = in;
 
+	/* open the COM port in 9600 Baud  */
+	in->flow_control = flow_none ;
+	RETURN_BAD_IF_BAD(COM_open(in)) ;
+
 	switch( DS9097_reset(&pn) ) {
 		case BUS_RESET_OK:
 		case BUS_RESET_SHORT:
 			return gbGOOD ;
 		default:
-			return gbBAD ;
+			break ;
 	}
+
+	/* open the COM port in 9600 Baud  */
+	/* Second pass */
+	in->flow_control = flow_none ;
+	RETURN_BAD_IF_BAD(COM_open(in)) ;
+
+	switch( DS9097_reset(&pn) ) {
+		case BUS_RESET_OK:
+		case BUS_RESET_SHORT:
+			return gbGOOD ;
+		default:
+			break ;
+	}
+
+	/* open the COM port in 9600 Baud  */
+	/* Third pass, hardware flow control */
+	in->flow_control = flow_hard ;
+	RETURN_BAD_IF_BAD(COM_open(in)) ;
+
+	switch( DS9097_reset(&pn) ) {
+		case BUS_RESET_OK:
+		case BUS_RESET_SHORT:
+			return gbGOOD ;
+		default:
+			break ;
+	}
+	
+	return gbBAD ;
 }
 
 /* DS9097 Reset -- A little different from DS2480B */

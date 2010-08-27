@@ -60,8 +60,20 @@ GOOD_OR_BAD COM_open(struct connection_in *in)
 	newSerialTio.c_iflag &= ~(BRKINT | ICRNL | IGNCR | INLCR | INPCK | ISTRIP | IXON | IXOFF | PARMRK);
 	newSerialTio.c_iflag |= IGNBRK | IGNPAR;
 	newSerialTio.c_oflag &= ~(OPOST);
-	newSerialTio.c_cflag &= ~(CRTSCTS | CSIZE | HUPCL | PARENB);
-	newSerialTio.c_cflag |= (CLOCAL | CS8 | CREAD);
+	switch( in->flow_control ) {
+		case flow_hard:
+			newSerialTio.c_cflag &= ~(CSIZE | HUPCL | PARENB);
+			newSerialTio.c_cflag |= (CRTSCTS | CLOCAL | CS8 | CREAD);
+			break ;
+		case flow_none:
+			newSerialTio.c_cflag &= ~(CRTSCTS | CSIZE | HUPCL | PARENB);
+			newSerialTio.c_cflag |= (CLOCAL | CS8 | CREAD);
+			break ;
+		case flow_soft:
+		default:
+			LEVEL_DEBUG("Unsupported COM port flow control");
+			return -ENOTSUP ;
+	}
 	newSerialTio.c_lflag &= ~(ECHO | ECHOE | ECHOK | ECHONL | ICANON | IEXTEN | ISIG);
 	newSerialTio.c_cc[VMIN] = 0;
 	newSerialTio.c_cc[VTIME] = 3;

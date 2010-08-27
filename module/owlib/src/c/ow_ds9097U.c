@@ -293,11 +293,15 @@ static GOOD_OR_BAD DS2480_big_reset(struct connection_in * in)
 {
 	switch (in->busmode) {
 		case bus_xport:
-			//printf("Xport\n");
 			return DS2480_big_reset_net(in) ;
 		default:
-			//printf("Serial\n");
-			return DS2480_big_reset_serial(in) ;
+			in->flow_control = flow_none ;
+			RETURN_GOOD_IF_GOOD( DS2480_big_reset_serial(in)) ;
+			in->flow_control = flow_none ;
+			RETURN_GOOD_IF_GOOD( DS2480_big_reset_serial(in)) ;
+			in->flow_control = flow_hard ;
+			RETURN_GOOD_IF_GOOD( DS2480_big_reset_serial(in)) ;
+			return gbBAD ;
 	}
 }
 // do the com port and configuration stuff

@@ -94,6 +94,7 @@ GOOD_OR_BAD HA5_detect(struct connection_in *in)
 		return gbBAD ;
 	}
 	strcpy(in->name, ap.first.alpha) ; // subset so will fit
+	in->flow_control = flow_none ;
 	if ( BAD(COM_open(in)) ) {
 		// Cannot open serial port
 		Free_Address( &ap ) ;

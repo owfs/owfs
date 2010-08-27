@@ -164,8 +164,11 @@ GOOD_OR_BAD LINK_detect(struct connection_in *in)
 		case bus_elink:
 			return LINK_net_detect( in ) ;
 		case bus_link:
+			in->flow_control = flow_none ;
 			RETURN_GOOD_IF_GOOD( LINK_serial_detect(in) ) ;
+			in->flow_control = flow_none ;
 			RETURN_GOOD_IF_GOOD( LINK_serial_detect(in) ) ;
+			in->flow_control = flow_hard ;
 			return LINK_serial_detect(in) ;
 		default:
 			return gbBAD ;
