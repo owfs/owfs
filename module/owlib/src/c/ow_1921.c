@@ -180,7 +180,7 @@ struct filetype DS1921[] = {
 	{"mission/enable", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_controlrbit, FS_w_controlrbit, VISIBLE, {u:_MASK_DS1921_MISSION_ENABLE},},
 	{"mission/clear", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_controlbit, FS_w_controlbit, INVISIBLE, {u:_MASK_DS1921_CLEAR_MEMORY},},
 	{"mission/running", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_bitread, FS_w_mip, VISIBLE, {v:&BitReads[1]},},
-	{"mission/frequency", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_samplerate, FS_w_samplerate, VISIBLE, NO_FILETYPE_DATA,},
+	{"mission/frequency", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_samplerate, FS_w_samplerate, VISIBLE, NO_FILETYPE_DATA,},
 	{"mission/samples", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_3byte, NO_WRITE_FUNCTION, VISIBLE, {s:0x021A},},
 	{"mission/delay", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_delay, FS_w_delay, VISIBLE, NO_FILETYPE_DATA,},
 	{"mission/rollover", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_controlbit, FS_w_controlbit, VISIBLE, {u:_MASK_DS1921_ROLLOVER},},
