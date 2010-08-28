@@ -24,6 +24,7 @@ static void ShowReadWrite(FILE * out, struct one_wire_query *owq);
 static void ShowReadonly(FILE * out, struct one_wire_query *owq);
 static void ShowWriteonly(FILE * out, struct one_wire_query *owq);
 static void ShowStructure(FILE * out, struct one_wire_query *owq);
+static void StructureDetail(FILE * out, const char * structure_details );
 static void Upload( FILE * out, const struct parsedname * pn ) ;
 
 static void ShowText(FILE * out, const struct parsedname *pn_entry);
@@ -161,7 +162,7 @@ static void ShowReadonly(FILE * out, struct one_wire_query *owq)
 	}
 }
 
-/* Device entry -- table line for a filetype */
+/* Structure entry */
 static void ShowStructure(FILE * out, struct one_wire_query *owq)
 {
 	SIZE_OR_ERROR read_return = FS_read_postparse(owq);
@@ -171,6 +172,97 @@ static void ShowStructure(FILE * out, struct one_wire_query *owq)
 	}
 
 	fprintf(out, "%.*s", read_return, OWQ_buffer(owq));
+	
+	// Optional structure details
+	StructureDetail(out,OWQ_buffer(owq)) ;
+}
+
+/* Detailed (parsed) structure entry */
+static void StructureDetail(FILE * out, const char * structure_details )
+{
+	char format_type ;
+	int extension ;
+	int elements ;
+	char rw[4] ;
+	int size ;
+
+	if ( sscanf( structure_details, "%c,%d,%d,%2s,%d,", &format_type, &extension, &elements, rw, &size ) < 5 ) {
+		return ;
+	}
+
+	fprintf(out, "<br>");
+	switch( format_type ) {
+		case 'b':
+			fprintf(out, "Binary string");
+			break ;
+		case 'a':
+			fprintf(out, "Ascii string");
+			break ;
+		case 'D':
+			fprintf(out, "Directory");
+			break ;
+		case 'i':
+			fprintf(out, "Integer value");
+			break ;
+		case 'u':
+			fprintf(out, "Unsigned integer value");
+			break ;
+		case 'f':
+			fprintf(out, "Floating point value");
+			break ;
+		case 'l':
+			fprintf(out, "Alias");
+			break ;
+		case 'y':
+			fprintf(out, "Yes/No value");
+			break ;
+		case 'd':
+			fprintf(out, "Date value");
+			break ;
+		case 't':
+			fprintf(out, "Temperature value");
+			break ;
+		case 'g':
+			fprintf(out, "Delta temperature value");
+			break ;
+		case 'p':
+			fprintf(out, "Pressure value");
+			break ;
+		default:
+			fprintf(out, "Unknown value type");
+	}
+
+	fprintf(out, ", ");
+
+	if ( elements == 1 ) {
+		fprintf(out, "Singleton");
+	} else if ( extension == EXTENSION_BYTE ) {
+		fprintf(out, "Array of %d bits as a BYTE",elements);
+	} else if ( extension == EXTENSION_ALL ) {
+		fprintf(out, "Array of %d elements combined",elements);
+	} else {
+		fprintf(out, "Element %d (of %d)",extension,elements);
+	}
+
+	fprintf(out, ", ");
+
+	if ( strncasecmp( rw, "rw", 2 ) == 0 ) {
+		fprintf(out, "Read/Write");
+	} else if ( strncasecmp( rw, "ro", 2 ) == 0 ) {
+		fprintf(out, "Read only");
+	} else if ( strncasecmp( rw, "wo", 2 ) == 0 ) {
+		fprintf(out, "Write only");
+	} else{
+		fprintf(out, "No access");
+	}
+
+	fprintf(out, ", ");
+
+	if ( format_type == 'b' ) {
+		fprintf(out, "%d bytes",size);
+	} else {
+		fprintf(out, "%d characters",size);
+	}
 }
 
 /* Device entry -- table line for a filetype */

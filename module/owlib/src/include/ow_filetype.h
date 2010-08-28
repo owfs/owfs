@@ -100,6 +100,8 @@ enum ft_format {
 	ft_tempgap,
 	ft_pressure,
 };
+#define FT_FORMAT_CHAR "?DDiuflaabydytgp?"
+
 	/* property changability. Static unchanged, Stable we change, Volatile changes */
 enum fc_change {
 	fc_local,
