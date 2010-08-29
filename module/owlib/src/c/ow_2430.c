@@ -124,7 +124,7 @@ static GOOD_OR_BAD OW_w_mem(const BYTE * data, size_t size, off_t offset, const 
 	BYTE scratch[_DS2430A_MEM_SIZE];
 	BYTE vr[] = { _1W_READ_SCRATCHPAD, BYTE_MASK(offset), };
 	BYTE of[] = { _1W_WRITE_SCRATCHPAD, BYTE_MASK(offset), };
-	BYTE cp[] = { _1W_COPY_SCRATCHPAD, 1W_COPY_SCRATCHPAD_VALIDATION_KEY, };
+	BYTE cp[] = { _1W_COPY_SCRATCHPAD, _1W_COPY_SCRATCHPAD_VALIDATION_KEY, };
 	struct transaction_log t[] = {
 		TRXN_START,
 		TRXN_WRITE2(of),
