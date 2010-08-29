@@ -266,13 +266,15 @@ static ZERO_OR_ERROR FS_w_lineX(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_w_screenX(struct one_wire_query *owq)
 {
+	struct one_wire_query * owq_line ;
+	int extension;
+
 	struct parsedname *pn = PN(owq);
+
 	int width = pn->selected_filetype->data.i;
 	int rows = (width == 40) ? 2 : 4;	/* max number of rows */
 	char *start_of_remaining_text = OWQ_buffer(owq);
 	char *pointer_after_all_text = OWQ_buffer(owq) + OWQ_size(owq);
-	int extension;
-	OWQ_allocate_struct_and_pointer(owq_line);
 
 	if (OWQ_offset(owq)) {
 		return -ERANGE;
@@ -282,8 +284,10 @@ static ZERO_OR_ERROR FS_w_screenX(struct one_wire_query *owq)
 		return -EFAULT;
 	}
 
-	OWQ_create_shallow_single(owq_line, owq);	// won't bother to destroy
-	OWQ_pn(owq_line).selected_filetype = OWQ_pn(owq).selected_filetype;	// to get the correct width in FS_w_lineX
+	owq_line = OWQ_create_separate( 0, owq ) ;
+	if ( owq_line == NULL ) {
+		return -ENOMEM ;
+	}
 
 	for (extension = 0; extension < rows; ++extension) {
 		char *newline_location = memchr(start_of_remaining_text, '\n',
@@ -303,11 +307,13 @@ static ZERO_OR_ERROR FS_w_screenX(struct one_wire_query *owq)
 			start_of_remaining_text = lineend_location;
 		}
 		if (FS_w_lineX(owq_line)) {
+			OWQ_destroy( owq_line ) ;
 			return -EINVAL;
 		}
 		if (start_of_remaining_text >= pointer_after_all_text)
 			break;
 	}
+	OWQ_destroy( owq_line ) ;
 	return 0;
 }
 

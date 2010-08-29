@@ -122,28 +122,20 @@ static ZERO_OR_ERROR FS_r_status(struct one_wire_query *owq)
 static GOOD_OR_BAD OW_w_mem(const BYTE * data, size_t size, off_t offset, const struct parsedname *pn)
 {
 	BYTE scratch[_DS2430A_MEM_SIZE];
-
+	BYTE vr[] = { _1W_READ_SCRATCHPAD, BYTE_MASK(offset), };
 	BYTE of[] = { _1W_WRITE_SCRATCHPAD, BYTE_MASK(offset), };
-	struct transaction_log twrite[] = {
+	BYTE cp[] = { _1W_COPY_SCRATCHPAD, 1W_COPY_SCRATCHPAD_VALIDATION_KEY, };
+	struct transaction_log t[] = {
 		TRXN_START,
 		TRXN_WRITE2(of),
 		TRXN_WRITE(data, size),
-		TRXN_END,
-	};
-	BYTE vr[] = { _1W_READ_SCRATCHPAD, BYTE_MASK(offset), };
-	struct transaction_log tver[] = {
 		TRXN_START,
 		TRXN_WRITE2(vr),
 		TRXN_READ(scratch, size),
 		TRXN_COMPARE(data,scratch,size),
-		TRXN_END,
-	};
-	BYTE cp[] = { _1W_COPY_SCRATCHPAD, };
-	BYTE cf[] = { _1W_COPY_SCRATCHPAD_VALIDATION_KEY, };
-	struct transaction_log tcopy[] = {
 		TRXN_START,
-		TRXN_WRITE1(cp),
-		{cf, cf, 10, trxn_power},
+		TRXN_WRITE2(cp),
+		TRXN_DELAY(10),
 		TRXN_END,
 	};
 
@@ -153,13 +145,9 @@ static GOOD_OR_BAD OW_w_mem(const BYTE * data, size_t size, off_t offset, const 
 	}
 
 	/* write data to scratchpad */
-	RETURN_BAD_IF_BAD(BUS_transaction(twrite, pn)) ;
-
 	/* read back the scratchpad */
-	RETURN_BAD_IF_BAD(BUS_transaction(tver, pn)) ;
-
 	/* copy scratchpad to memory */
-	return BUS_transaction(tcopy, pn);
+	return BUS_transaction(t, pn);
 }
 
 /* Byte-oriented write */
