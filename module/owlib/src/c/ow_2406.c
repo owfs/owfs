@@ -334,16 +334,15 @@ static ZERO_OR_ERROR FS_voltage(struct one_wire_query *owq)
 
 static GOOD_OR_BAD OW_r_mem(BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn)
 {
-	BYTE p[3 + 128] = { _1W_READ_MEMORY, LOW_HIGH_ADDRESS(offset), };
+	BYTE p[] = { _1W_READ_MEMORY, LOW_HIGH_ADDRESS(offset), };
 	struct transaction_log t[] = {
 		TRXN_START,
 		TRXN_WRITE3(p),
-		TRXN_READ(&p[3], size),
+		TRXN_READ(data, size),
 		TRXN_END,
 	};
 
 	RETURN_BAD_IF_BAD(BUS_transaction(t, pn)) ;
-	memcpy(data, &p[3], size);
 	return gbGOOD;
 }
 
