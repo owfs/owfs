@@ -14,7 +14,6 @@ $Id$
 #include "ow.h"
 #include "ow_devices.h"
 #include "ow_pid.h"
-#include "ow_specialcase.h"
 
 /* All ow library closeup */
 void LibClose(void)
@@ -23,7 +22,6 @@ void LibClose(void)
 	LibStop();
 	PIDstop();
 	DeviceDestroy();
-	SpecialCase_close();
 
 #if OW_MT
 	_MUTEX_ATTR_DESTROY(Mutex.mattr);

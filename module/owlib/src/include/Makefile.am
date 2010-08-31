@@ -84,7 +84,6 @@ noinst_HEADERS =           \
         ow_search.h        \
         ow_sibling.h       \
         ow_simultaneous.h  \
-        ow_specialcase.h   \
         ow_standard.h      \
         ow_stateinfo.h     \
         ow_stats.h         \

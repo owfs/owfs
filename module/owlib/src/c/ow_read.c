@@ -15,7 +15,6 @@ $ID: $
 #include "ow.h"
 #include "ow_counters.h"
 #include "ow_connection.h"
-#include "ow_specialcase.h"
 
 /* ------- Prototypes ----------- */
 static SIZE_OR_ERROR FS_r_virtual(struct one_wire_query *owq);
@@ -507,15 +506,12 @@ static ZERO_OR_ERROR FS_read_owq(struct one_wire_query *owq)
 {
 	// Bus and device already locked
 	if ( BAD( OWQ_Cache_Get(owq)) ) {	// not found
-		ZERO_OR_ERROR read_error = SpecialCase_read(owq);
-		if ( read_error == -ENOENT ) {
-			read_error = (OWQ_pn(owq).selected_filetype->read) (owq);
-		}
+		ZERO_OR_ERROR read_error = (OWQ_pn(owq).selected_filetype->read) (owq);
 		LEVEL_DEBUG("Read %s Extension %d Gives result %d",PN(owq)->path,PN(owq)->extension,read_error);
 		if (read_error < 0) {
 			return read_error;
 		}
-		OWQ_Cache_Add(owq);
+		OWQ_Cache_Add(owq); // Only add good attempts
 	}
 	return 0;
 }

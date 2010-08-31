@@ -14,7 +14,6 @@ $Id$
 #include "ow.h"
 #include "ow_counters.h"
 #include "ow_connection.h"
-#include "ow_specialcase.h"
 
 /* ------- Prototypes ----------- */
 static ZERO_OR_ERROR FS_w_given_bus(struct one_wire_query *owq);
@@ -364,13 +363,8 @@ static ZERO_OR_ERROR FS_w_local(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_write_owq(struct one_wire_query *owq)
 {
-	ZERO_OR_ERROR write_error = SpecialCase_write(owq);
-
-	if ( write_error == -ENOENT) {
-		write_error = (OWQ_pn(owq).selected_filetype->write) (owq);
-	}
-
-	OWQ_Cache_Del(owq) ;
+	ZERO_OR_ERROR write_error = (OWQ_pn(owq).selected_filetype->write) (owq);
+	OWQ_Cache_Del(owq) ; // Delete anyways
 	LEVEL_DEBUG("Write %s Extension %d Gives result %d",PN(owq)->path,PN(owq)->extension,write_error);
 	return write_error;
 }
