@@ -623,8 +623,8 @@ static GOOD_OR_BAD LINK_directory(struct device_search *ds, struct dirblob *db, 
 		LEVEL_DEBUG("SN found: " SNformat, SNvar(sn));
 
 		// CRC check
-		if (CRC8(sn, SERIAL_NUMBER_SIZE) || (sn[0] == 0)) {
-			LEVEL_DEBUG("sn = %s -- BAD family or CRC8", sn);
+		if (CRC8(sn, SERIAL_NUMBER_SIZE) || (sn[0] == 0x00)) {
+			LEVEL_DEBUG("BAD family or CRC8");
 			return gbBAD;
 		}
 

@@ -68,7 +68,6 @@ GOOD_OR_BAD HA7_detect(struct connection_in *in)
 
 	FS_ParsedName_Placeholder(&pn);	// minimal parsename -- no destroy needed
 	pn.selected_connection = in;
-	LEVEL_CONNECT("start");
 
 	/* Set up low-level routines */
 	HA7_setroutines(in);

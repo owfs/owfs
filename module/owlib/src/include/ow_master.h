@@ -112,6 +112,13 @@ struct master_link {
 	enum e_link_t_mode qmode ; //extra '?' after b command
 };
 
+struct master_enet {
+	struct master_tcp tcp;      // mirror master.server
+	enum e_link_t_mode tmode ; // extra ',' before tF0 command
+	enum e_link_t_mode qmode ; //extra '?' after b command
+	unsigned char sn[SERIAL_NUMBER_SIZE] ;       /* last address */
+};
+
 struct master_ha7e {
 	unsigned char sn[SERIAL_NUMBER_SIZE] ;       /* last address */
 };
@@ -180,7 +187,7 @@ union master_union {
 	struct master_ha5 ha5;
 	struct master_ha7 ha7;
 	struct master_ha7e ha7e ;
-	struct master_ha7e enet ;
+	struct master_enet enet ;
 	struct master_etherweather etherweather;
 	struct master_w1 w1;
 	struct master_w1_monitor w1_monitor ;

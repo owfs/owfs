@@ -240,6 +240,10 @@ static GOOD_OR_BAD HA7E_select( const struct parsedname * pn )
 	char send_address[18] ;
 	char resp_address[17] ;
 
+	if ( (pn->selected_device==NULL) || (pn->selected_device==DeviceThermostat) ) {
+		return gbRESET( HA7E_reset(pn) ) ;
+	}
+
 	send_address[0] = 'A' ;
 	num2string( &send_address[ 1], pn->sn[7] ) ;
 	num2string( &send_address[ 3], pn->sn[6] ) ;
@@ -250,10 +254,6 @@ static GOOD_OR_BAD HA7E_select( const struct parsedname * pn )
 	num2string( &send_address[13], pn->sn[1] ) ;
 	num2string( &send_address[15], pn->sn[0] ) ;
 	send_address[17] = 0x0D;
-
-	if ( (pn->selected_device==NULL) || (pn->selected_device==DeviceThermostat) ) {
-		return gbRESET( HA7E_reset(pn) ) ;
-	}
 
 	if ( memcmp( pn->sn, pn->selected_connection->master.ha7e.sn, SERIAL_NUMBER_SIZE ) ) {
 		if ( BAD(COM_write((BYTE*)send_address,18,pn->selected_connection)) ) {
