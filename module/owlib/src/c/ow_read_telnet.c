@@ -64,7 +64,7 @@ GOOD_OR_BAD telnet_read(BYTE * buf, const size_t size, struct connection_in *in)
 	while ( still_needed > 0 ) {
 		if ( current_index >= allocated_size ) {
 			// need to read more -- just read what we think we need -- escape chars may require repeat
-			tcp_read( in->file_descriptor, readin_buf, still_needed, &tvnet, &actual_readin) ;
+			tcp_read( in->file_descriptor, readin_buf, still_needed, &(in->timeout), &actual_readin) ;
 			if (actual_readin != still_needed ) {
 				LEVEL_CONNECT("Telnet (ethernet) error");
 				return gbBAD;

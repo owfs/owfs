@@ -227,6 +227,8 @@ GOOD_OR_BAD DS2480_detect(struct connection_in *in)
 
 	in->speed = bus_speed_slow ;
 	in->flex = Globals.serial_flextime ? bus_yes_flex : bus_no_flex ;
+	in->timeout.tv_sec = 0 ;
+	in->timeout.tv_usec = 1000 ;
 
 	// Now set desired baud and polarity
 	// BUS_reset will do the actual changes

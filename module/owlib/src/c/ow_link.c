@@ -181,7 +181,9 @@ static GOOD_OR_BAD LINK_serial_detect(struct connection_in * in)
 	
 	/* Set up low-level routines */
 	LINK_setroutines(in);
-	
+	in->timeout.tv_sec = 0 ;
+	in->timeout.tv_usec = 1000 ;
+
 	/* Open the com port */
 	RETURN_BAD_IF_BAD(COM_open(in)) ;
 	
@@ -217,7 +219,9 @@ static GOOD_OR_BAD LINK_net_detect(struct connection_in * in)
 
 	/* Set up low-level routines */
 	LINKE_setroutines(in);
-	
+	in->timeout.tv_sec = 0 ;
+	in->timeout.tv_usec = 300000 ;
+
 	/* Open the tcp port */
 	RETURN_BAD_IF_BAD(ClientAddr(in->name, DEFAULT_LINK_PORT, in)) ;
 	in->file_descriptor = ClientConnect(in) ;

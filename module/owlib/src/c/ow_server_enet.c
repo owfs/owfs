@@ -69,6 +69,8 @@ GOOD_OR_BAD OWServer_Enet_detect(struct connection_in *in)
 	in->Adapter = adapter_ENET;
 	in->adapter_name = "OWServer_Enet";
 	in->busmode = bus_enet;
+	in->timeout.tv_sec = 0 ;
+	in->timeout.tv_usec = 600000 ;
 
 	if (in->name == NULL) {
 		return gbBAD;

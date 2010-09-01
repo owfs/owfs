@@ -158,6 +158,7 @@ struct connection_in {
 	speed_t baud; // baud rate in the form of B9600
 	struct termios oldSerialTio;    /*old serial port settings */
 	enum { flow_none, flow_soft, flow_hard, } flow_control ;
+	struct timeval timeout ; // for serial or tcp read
 	
 	// For adapters that maintain dir-at-once (or dirgulp):
 	struct dirblob main;        /* main directory */
