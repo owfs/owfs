@@ -35,9 +35,6 @@ unlikely. Handling these would be just the same as the FF FA codes above.
 
 */
 
-static struct timeval tvnet = { 0, 500000, };
-
-
 /* Read from a telnet device
 */
 GOOD_OR_BAD telnet_read(BYTE * buf, const size_t size, struct connection_in *in)
@@ -57,7 +54,7 @@ GOOD_OR_BAD telnet_read(BYTE * buf, const size_t size, struct connection_in *in)
 	size_t still_needed = size ;
 	
 	// initial read
-	tcp_read( in->file_descriptor, readin_buf, allocated_size, &tvnet, &actual_readin) ;
+	tcp_read( in->file_descriptor, readin_buf, allocated_size, &(in->timeout), &actual_readin) ;
 	if (actual_readin < size) {
 		LEVEL_CONNECT("Telnet (ethernet) error");
 		return gbBAD;
