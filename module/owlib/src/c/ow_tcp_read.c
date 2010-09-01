@@ -105,7 +105,7 @@ ZERO_OR_ERROR tcp_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, BYTE * buffer, 
 			return -EAGAIN;
 		}
 	}
-	LEVEL_DEBUG("requested=%d not_found=%d diffference=%d",(int)requested_size, (int) nleft_to_read, (int) (requested_size-nleft_to_read) ) ;
+	LEVEL_DEBUG("requested=%d not_found=%d",(int)requested_size, (int) nleft_to_read ) ;
 	return 0;
 }
 

@@ -35,7 +35,7 @@ unlikely. Handling these would be just the same as the FF FA codes above.
 
 */
 
-static struct timeval tvnet = { 0, 300000, };
+static struct timeval tvnet = { 0, 500000, };
 
 
 /* Read from a telnet device

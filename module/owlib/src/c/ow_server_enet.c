@@ -259,6 +259,8 @@ static GOOD_OR_BAD OWServer_Enet_directory(struct device_search *ds, struct dirb
 		sn[1] = string2num(&resp[12]);
 		sn[0] = string2num(&resp[14]);
 		LEVEL_DEBUG("SN found: " SNformat, SNvar(sn));
+		// Set as current "Address" for adapter
+		memcpy( in->master.enet.sn, sn, SERIAL_NUMBER_SIZE) ;
 
 		// CRC check
 		if (CRC8(sn, SERIAL_NUMBER_SIZE) || (sn[0] == 0x00)) {
@@ -283,9 +285,11 @@ static GOOD_OR_BAD OWServer_Enet_select( const struct parsedname * pn )
 	struct connection_in * in = pn->selected_connection ;
 	char send_address[] = "A7766554433221100\r" ;
 
+	// Apparently need to reset before select (Unlike the HA7S)
+	RETURN_BAD_IF_BAD( gbRESET( BUS_reset(pn)) ) ;
+	
 	if ( (pn->selected_device==NULL) || (pn->selected_device==DeviceThermostat) ) {
-		memset( in->master.enet.sn, 0x00, SERIAL_NUMBER_SIZE) ;
-		return gbRESET( BUS_reset(pn) ) ;
+		return gbGOOD ;
 	}
 
 	if ( memcmp( pn->sn, in->master.ha7e.sn, SERIAL_NUMBER_SIZE ) != 0 ) {
@@ -382,7 +386,7 @@ static GOOD_OR_BAD OWServer_Enet_sendback_data(const BYTE * data, BYTE * resp, c
 
 	for ( left=size ; left>0 ; left -= MAX_ENET_MEMORY_GULP ) {
 		size_t pass_start = size - left ;
-		size_t pass_size = (left>MAX_ENET_MEMORY_GULP)?MAX_ENET_MEMORY_GULP:left ;
+		size_t pass_size = (left>MAX_ENET_MEMORY_GULP) ? MAX_ENET_MEMORY_GULP : left ;
 		RETURN_BAD_IF_BAD( OWServer_Enet_sendback_part( &data[pass_start], &resp[pass_start], pass_size, pn ) ) ;
 	}
 	return gbGOOD;
