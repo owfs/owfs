@@ -32,13 +32,14 @@ ssize_t udp_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, void *vptr, size_t n,
 	while (nleft > 0) {
 		int select_result;
 		fd_set readset;
-		struct timeval tv = { ptv->tv_sec, ptv->tv_usec, };
+		struct timeval tv ;
 
 		/* Initialize readset */
 		FD_ZERO(&readset);
 		FD_SET(file_descriptor, &readset);
 
 		/* Read if it doesn't timeout first */
+		timercpy( &tv, ptv ) ;
 		select_result = select(file_descriptor + 1, &readset, NULL, NULL, &tv);
 		if (select_result > 0) {
 			ssize_t read_or_error;

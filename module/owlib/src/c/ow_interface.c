@@ -86,8 +86,7 @@ READ_FUNCTION(FS_r_ds2490status);
 
 /* Statistics reporting */
 READ_FUNCTION(FS_stat_p);
-READ_FUNCTION(FS_time);
-READ_FUNCTION(FS_time_p);
+READ_FUNCTION(FS_bustime);
 READ_FUNCTION(FS_elapsed);
 
 #if OW_USB
@@ -138,7 +137,7 @@ struct device d_interface_settings = {
 
 struct filetype interface_statistics[] = {
 	{"elapsed_time", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_elapsed, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-	{"bus_time", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_statistic, FS_time_p, NO_WRITE_FUNCTION, VISIBLE, {i:0},},
+	{"bus_time", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_statistic, FS_bustime, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"reconnects", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat_p, NO_WRITE_FUNCTION, VISIBLE, {i:e_bus_reconnects},},
 	{"reconnect_errors", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat_p, NO_WRITE_FUNCTION, VISIBLE, {i:e_bus_reconnect_errors},},
 	{"locks", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat_p, NO_WRITE_FUNCTION, VISIBLE, {i:e_bus_locks},},
@@ -157,7 +156,6 @@ struct filetype interface_statistics[] = {
 	{"select_errors", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat_p, NO_WRITE_FUNCTION, VISIBLE, {i:e_bus_select_errors},},
 	{"status_errors", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat_p, NO_WRITE_FUNCTION, VISIBLE, {i:e_bus_status_errors},},
 	{"timeouts", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat_p, NO_WRITE_FUNCTION, VISIBLE, {i:e_bus_timeouts},},
-	{"total_bus_time", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_statistic, FS_time, NO_WRITE_FUNCTION, VISIBLE, {v:&total_bus_time},},
 
 	{"search_errors", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"search_errors/error_pass_1", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat_p, NO_WRITE_FUNCTION, VISIBLE, {i:e_bus_search_errors1},},
@@ -616,42 +614,9 @@ static ZERO_OR_ERROR FS_stat_p(struct one_wire_query *owq)
 	return 0;
 }
 
-static ZERO_OR_ERROR FS_time_p(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_bustime(struct one_wire_query *owq)
 {
-	struct parsedname *pn = PN(owq);
-	struct timeval *tv;
-
-	if (pn->selected_filetype == NULL) {
-		return -ENOENT;
-	}
-	switch (pn->selected_filetype->data.i) {
-	case 0:
-		tv = &(pn->selected_connection->bus_time);
-		break;
-	default:
-		return -ENOENT;
-	}
-	OWQ_F(owq) = (_FLOAT) tv->tv_sec + ((_FLOAT) (tv->tv_usec / 1000)) / 1000.0;
-	return 0;
-}
-
-static ZERO_OR_ERROR FS_time(struct one_wire_query *owq)
-{
-	struct parsedname *pn = PN(owq);
-	int dindex = pn->extension;
-	struct timeval *tv;
-	if (dindex < 0) {
-		dindex = 0;
-	}
-	if (pn->selected_filetype == NULL) {
-		return -ENOENT;
-	}
-	tv = (struct timeval *) pn->selected_filetype->data.v;
-	if (tv == NULL) {
-		return -ENOENT;
-	}
-
-	OWQ_F(owq) = (_FLOAT) tv[dindex].tv_sec + ((_FLOAT) (tv[dindex].tv_usec / 1000)) / 1000.0;
+	OWQ_F(owq) = TVfloat( &(PN(owq)->selected_connection->bus_time) ) ;
 	return 0;
 }
 

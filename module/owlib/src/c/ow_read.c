@@ -230,8 +230,7 @@ static SIZE_OR_ERROR FS_r_given_bus(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	SIZE_OR_ERROR read_or_error = 0;
 
-	LEVEL_DEBUG("structure contents before the read is performed");
-	Debug_OWQ(owq);
+	LEVEL_DEBUG("About to read <%s> extension=%d size=%d offset=%d",SAFESTRING(pn->path),(int) pn->extension,(int) OWQ_size(owq),(int) OWQ_offset(owq));
 
 	if (KnownBus(pn) && BusIsServer(pn->selected_connection)) {
 		/* The bus is not local... use a network connection instead */
@@ -269,8 +268,6 @@ static SIZE_OR_ERROR FS_r_virtual(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	SIZE_OR_ERROR read_status = 0;
-	LEVEL_DEBUG("start");
-	Debug_OWQ(owq);
 
 	if (SpecifiedRemoteBus(pn)) {
 		/* The bus is not local... use a network connection instead */

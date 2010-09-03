@@ -1017,20 +1017,11 @@ static void do_retr(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 	gettimeofday(&end_timestamp, NULL);
 
 	/* calculate transfer rate */
-	transfer_time.tv_sec = end_timestamp.tv_sec - start_timestamp.tv_sec;
-	transfer_time.tv_usec = end_timestamp.tv_usec - start_timestamp.tv_usec;
-	while (transfer_time.tv_usec >= 1000000) {
-		transfer_time.tv_sec++;
-		transfer_time.tv_usec -= 1000000;
-	}
-	while (transfer_time.tv_usec < 0) {
-		transfer_time.tv_sec--;
-		transfer_time.tv_usec += 1000000;
-	}
+	timersub( &end_timestamp, &start_timestamp, &transfer_time ) ;
 
 	/* note the transfer */
-	LEVEL_DATA("%s retrieved \"%s\", %ld bytes in %d.%06d seconds",
-			   f->client_addr_str, OWQ_pn(&owq).path, size_write, transfer_time.tv_sec, transfer_time.tv_usec);
+	LEVEL_DATA("%s retrieved \"%s\", %ld bytes in "TVformat,
+			   f->client_addr_str, OWQ_pn(&owq).path, size_write, TVvar(&transfer_time) );
 
   exit_retr:
 	OWQ_destroy(&owq); // safe at any speed
@@ -1147,16 +1138,7 @@ static void do_stor(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 	gettimeofday(&end_timestamp, NULL);
 
 	/* calculate transfer rate */
-	transfer_time.tv_sec = end_timestamp.tv_sec - start_timestamp.tv_sec;
-	transfer_time.tv_usec = end_timestamp.tv_usec - start_timestamp.tv_usec;
-	while (transfer_time.tv_usec >= 1000000) {
-		transfer_time.tv_sec++;
-		transfer_time.tv_usec -= 1000000;
-	}
-	while (transfer_time.tv_usec < 0) {
-		transfer_time.tv_sec--;
-		transfer_time.tv_usec += 1000000;
-	}
+	timersub( &end_timestamp, &start_timestamp, &transfer_time ) ;
 
 	{
 		/* write to one-wire */
@@ -1168,8 +1150,8 @@ static void do_stor(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 	}
 
 	/* note the transfer */
-	LEVEL_DATA("%s stored \"%s\", %ld bytes in %d.%06d seconds",
-			   f->client_addr_str, pn->path, OWQ_size(owq), transfer_time.tv_sec, transfer_time.tv_usec);
+	LEVEL_DATA("%s stored \"%s\", %ld bytes in "TVformat,
+			   f->client_addr_str, pn->path, OWQ_size(owq), TVvar(&transfer_time) );
 
   exit_stor:
 	OWQ_destroy(owq);
@@ -1491,7 +1473,7 @@ static void send_readme(const struct ftp_session_s *f, int code)
 static void netscape_hack(int file_descriptor)
 {
 	fd_set readfds;
-	struct timeval ns_timeout;
+	struct timeval ns_timeout = {15, 0 } ; // 15 seconds
 	int select_ret;
 	char c;
 
@@ -1500,8 +1482,6 @@ static void netscape_hack(int file_descriptor)
 	shutdown(file_descriptor, 1);
 	FD_ZERO(&readfds);
 	FD_SET(file_descriptor, &readfds);
-	ns_timeout.tv_sec = 15;
-	ns_timeout.tv_usec = 0;
 	select_ret = select(file_descriptor + 1, &readfds, NULL, NULL, &ns_timeout);
 	if (select_ret > 0) {
 		ignore_result = read(file_descriptor, &c, 1); // ignore warning

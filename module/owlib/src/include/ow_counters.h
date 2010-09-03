@@ -118,8 +118,6 @@ extern struct average all_avg;
 extern struct timeval max_delay;
 
 // ow_locks.c
-extern struct timeval total_bus_time;	// total bus_time
-//extern struct timeval bus_pause ; 
 extern UINT total_bus_locks;	// total number of locks
 extern UINT total_bus_unlocks;	// total number of unlocks
 

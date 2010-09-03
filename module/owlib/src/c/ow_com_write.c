@@ -34,11 +34,10 @@ GOOD_OR_BAD COM_write( const BYTE * data, size_t length, struct connection_in *c
 		int select_result ;
 
 		fd_set writeset;
-		struct timeval tv;
 
-		// use same timeout as read as for write
-		tv.tv_sec = Globals.timeout_serial;
-		tv.tv_usec = 0;
+		// use same timeout as read for write
+		struct timeval tv = { Globals.timeout_serial, 0 } ;
+
 		/* Initialize readset */
 		FD_ZERO(&writeset);
 		FD_SET(connection->file_descriptor, &writeset);
@@ -53,7 +52,6 @@ GOOD_OR_BAD COM_write( const BYTE * data, size_t length, struct connection_in *c
 				STAT_ADD1_BUS(e_bus_write_errors, connection);
 				return gbBAD;	/* error */
 			}
-			update_max_delay(connection);
 			TrafficOut("write", &data[length - to_be_written], to_be_written, connection );
 			write_result = write(connection->file_descriptor, &data[length - to_be_written], to_be_written); /* write bytes */ 			
 			if (write_result < 0) {
@@ -75,7 +73,6 @@ GOOD_OR_BAD COM_write( const BYTE * data, size_t length, struct connection_in *c
 	}
 
 	tcdrain(connection->file_descriptor);
-	gettimeofday(&(connection->bus_write_time), NULL);
 
 	return gbGOOD ;
 }

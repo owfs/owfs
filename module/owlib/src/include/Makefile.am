@@ -91,6 +91,7 @@ noinst_HEADERS =           \
         ow_system.h        \
         ow_temperature.h   \
         ow_thermocouple.h  \
+        ow_timer.h         \
         ow_traffic.h       \
         ow_transaction.h   \
         ow_usb_cycle.h     \

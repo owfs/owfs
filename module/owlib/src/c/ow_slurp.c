@@ -24,11 +24,10 @@ void Slurp( FILE_DESCRIPTOR_OR_ERROR file_descriptor, unsigned long usec )
 	BYTE data[1] ;
 	while (1) {
 		fd_set readset;
-		struct timeval tv;
 		
 		// very short timeout
-		tv.tv_sec = 0;
-		tv.tv_usec = usec;
+		struct timeval tv = { 0, usec } ;
+		
 		/* Initialize readset */
 		FD_ZERO(&readset);
 		FD_SET(file_descriptor, &readset);

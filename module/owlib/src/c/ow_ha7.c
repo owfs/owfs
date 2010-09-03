@@ -291,7 +291,6 @@ static GOOD_OR_BAD HA7_write(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const ASC
 		}
 		sl -= r;
 	}
-	gettimeofday(&(in->bus_write_time), NULL);
 	if (sl > 0) {
 		STAT_ADD1_BUS(e_bus_write_errors, in);
 		return gbBAD;

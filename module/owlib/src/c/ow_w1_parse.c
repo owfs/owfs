@@ -116,7 +116,7 @@ GOOD_OR_BAD Netlink_Parse_Get( struct netlink_parse * nlp )
 
 	// Set time of last read
 	_MUTEX_LOCK(Inbound_Control.w1_monitor->master.w1_monitor.read_mutex) ;
-	gettimeofday(&(Inbound_Control.w1_monitor->master.w1_monitor.last_read),NULL);
+	timernow( &(Inbound_Control.w1_monitor->master.w1_monitor.last_read) );
 	_MUTEX_UNLOCK(Inbound_Control.w1_monitor->master.w1_monitor.read_mutex) ;
 
 	LEVEL_DEBUG("Pre-parse header: %u bytes len=%u type=%u seq=%u|%u pid=%u",recv_len,peek_nlm.nlmsg_len,peek_nlm.nlmsg_type,NL_BUS(peek_nlm.nlmsg_seq),NL_SEQ(peek_nlm.nlmsg_seq),peek_nlm.nlmsg_pid);

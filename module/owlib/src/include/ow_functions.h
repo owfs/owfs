@@ -140,8 +140,6 @@ void COM_BaudRestrict( speed_t * B_baud, ... ) ;
 
 void FS_help(const char *arg);
 
-void update_max_delay(struct connection_in *connection);
-
 INDEX_OR_ERROR ServerPresence( struct parsedname *pn);
 SIZE_OR_ERROR ServerRead(struct one_wire_query *owq);
 ZERO_OR_ERROR ServerWrite(struct one_wire_query *owq);

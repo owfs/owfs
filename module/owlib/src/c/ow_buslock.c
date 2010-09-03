@@ -42,48 +42,31 @@ void BUS_lock_in(struct connection_in *in)
 		_MUTEX_LOCK(in->master.i2c.head->master.i2c.all_channel_lock);
 	}
 #endif							/* OW_MT */
-	gettimeofday(&(in->last_lock), NULL);	/* for statistics */
+	timernow( &(in->last_lock) );	/* for statistics */
 	STAT_ADD1_BUS(e_bus_locks, in);
 }
 
 void BUS_unlock_in(struct connection_in *in)
 {
-	struct timeval *t;
-	long sec, usec;
+	struct timeval tv;
+
 	if (!in) {
 		return;
 	}
 
-	gettimeofday(&(in->last_unlock), NULL);
+	timernow( &tv );
 
-	/* avoid update if system-clock have changed */
-	STATLOCK;
-	sec = in->last_unlock.tv_sec - in->last_lock.tv_sec;
-	if ((sec >= 0) && (sec < 60)) {
-		usec = in->last_unlock.tv_usec - in->last_lock.tv_usec;
-		total_bus_time.tv_sec += sec;
-		total_bus_time.tv_usec += usec;
-		if (total_bus_time.tv_usec >= 1000000) {
-			total_bus_time.tv_usec -= 1000000;
-			++total_bus_time.tv_sec;
-		} else if (total_bus_time.tv_usec < 0) {
-			total_bus_time.tv_usec += 1000000;
-			--total_bus_time.tv_sec;
-		}
-
-		t = &in->bus_time;
-		t->tv_sec += sec;
-		t->tv_usec += usec;
-		if (t->tv_usec >= 1000000) {
-			t->tv_usec -= 1000000;
-			++t->tv_sec;
-		} else if (t->tv_usec < 0) {
-			t->tv_usec += 1000000;
-			--t->tv_sec;
-		}
+	if ( timercmp( &tv, &(in->last_lock), <) ) {
+		LEVEL_DEBUG("System clock moved backward");
+		timernow( &(in->last_lock) );
 	}
+	timersub( &tv, &(in->last_lock), &tv ) ;
+
+	STATLOCK;
+	timeradd( &tv, &(in->bus_time), &(in->bus_time) ) ;
 	++in->bus_stat[e_bus_unlocks];
 	STATUNLOCK;
+
 #if OW_MT
 	if (in->busmode == bus_i2c && in->master.i2c.channels > 1) {
 		_MUTEX_UNLOCK(in->master.i2c.head->master.i2c.all_channel_lock);

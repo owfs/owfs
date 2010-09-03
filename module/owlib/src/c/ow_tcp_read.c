@@ -23,7 +23,7 @@ GOOD_OR_BAD tcp_wait(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const struct time
 {
 	int select_result;
 	fd_set readset;
-	struct timeval tv = { ptv->tv_sec, ptv->tv_usec, };
+	struct timeval tv ;
 
 	/* Initialize readset */
 	FD_ZERO(&readset);
@@ -31,6 +31,7 @@ GOOD_OR_BAD tcp_wait(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const struct time
 
 	while (1) {
 		// Read if it doesn't timeout first
+		timercpy( &tv, ptv ) ;
 		select_result = select(file_descriptor + 1, &readset, NULL, NULL, &tv);
 		if (select_result < 0) {
 			if (errno == EINTR) {
@@ -56,19 +57,20 @@ ZERO_OR_ERROR tcp_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, BYTE * buffer, 
 {
 	size_t nleft_to_read = requested_size ;
 
-	LEVEL_DEBUG("attempt %d bytes Time:(%ld,%ld)",(int)requested_size,ptv->tv_sec,ptv->tv_usec ) ;
+	LEVEL_DEBUG("attempt %d bytes Time: "TVformat,(int)requested_size, TVvar(ptv) ) ;
 	*chars_in = 0 ;
 	while (nleft_to_read > 0) {
 		int select_result;
 		ssize_t nread;
 		fd_set readset;
-		struct timeval tv = { ptv->tv_sec, ptv->tv_usec, };
+		struct timeval tv ;
 
 		/* Initialize readset */
 		FD_ZERO(&readset);
 		FD_SET(file_descriptor, &readset);
 
 		/* Read if it doesn't timeout first */
+		timercpy( &tv, ptv ) ;
 		select_result = select(file_descriptor + 1, &readset, NULL, NULL, &tv);
 		if (select_result > 0) {
 			/* Is there something to read? */
@@ -76,7 +78,6 @@ ZERO_OR_ERROR tcp_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, BYTE * buffer, 
 				LEVEL_DEBUG("tcp_error -- nothing avialable to read");
 				return -EIO;	/* error */
 			}
-			//update_max_delay(pn);
 			errno = 0 ;
 			nread = read(file_descriptor, &buffer[*chars_in], nleft_to_read) ;
 			if ( nread < 0 ) {

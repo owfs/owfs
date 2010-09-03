@@ -86,8 +86,6 @@ struct average dir_avg = { 0L, 0L, 0L, 0L, };
 struct timeval max_delay = { 0, 0, };
 
 // ow_locks.c
-//struct timeval bus_pause = {0, 0, } ;
-struct timeval total_bus_time = { 0, 0, };
 UINT total_bus_locks = 0;
 UINT total_bus_unlocks = 0;
 
@@ -343,7 +341,7 @@ static ZERO_OR_ERROR FS_time(struct one_wire_query *owq)
 	}
 
 	STATLOCK;
-	OWQ_F(owq) = (_FLOAT) tv[dindex].tv_sec + ((_FLOAT) (tv[dindex].tv_usec / 1000)) / 1000.0;
+	OWQ_F(owq) = TVfloat( &(tv[dindex]) ) ;
 	STATUNLOCK;
 	return 0;
 }

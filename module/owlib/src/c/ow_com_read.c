@@ -34,11 +34,10 @@ GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connecti
 		int select_result ;
 		
 		fd_set readset;
-		struct timeval tv;
 		
-		// use same timeout as read as for write
-		tv.tv_sec = Globals.timeout_serial;
-		tv.tv_usec = 0;
+		// use same timeout for read as for write
+		struct timeval tv = { Globals.timeout_serial, 0 } ;
+
 		/* Initialize readset */
 		FD_ZERO(&readset);
 		FD_SET(connection->file_descriptor, &readset);
@@ -53,7 +52,6 @@ GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connecti
 				STAT_ADD1_BUS(e_bus_read_errors, connection);
 				return gbBAD;	/* error */
 			}
-			update_max_delay(connection);
 			read_result = read(connection->file_descriptor, &data[length - to_be_read], to_be_read);	/* read bytes */
 			if (read_result < 0) {
 				if (errno != EWOULDBLOCK) {
@@ -83,7 +81,6 @@ GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connecti
 	}
 	
 	tcdrain(connection->file_descriptor);
-	gettimeofday(&(connection->bus_read_time), NULL);
 	
 	return gbGOOD ;
 }

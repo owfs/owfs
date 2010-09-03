@@ -24,6 +24,8 @@ static GOOD_OR_BAD w1_monitor_in_use(const struct connection_in * in_selected) ;
 /* Device-specific functions */
 GOOD_OR_BAD W1_monitor_detect(struct connection_in *in)
 {
+	struct timeval tvslack = { 1, 0 } ; // 1 second
+	
 	in->file_descriptor = FILE_DESCRIPTOR_BAD;
 	in->iroutines.detect = W1_monitor_detect;
 	in->Adapter = adapter_w1_monitor;	/* OWFS assigned value */
@@ -46,8 +48,9 @@ GOOD_OR_BAD W1_monitor_detect(struct connection_in *in)
 	Inbound_Control.w1_monitor = in ; // essentially a global pointer to the w1_monitor entry
 	_MUTEX_INIT(in->master.w1_monitor.seq_mutex);
 	_MUTEX_INIT(in->master.w1_monitor.read_mutex);
-	gettimeofday(&(in->master.w1_monitor.last_read),NULL);
-	++in->master.w1_monitor.last_read.tv_sec ;
+
+	timernow( &(in->master.w1_monitor.last_read) );
+	timeradd( &(in->master.w1_monitor.last_read), &tvslack, &(in->master.w1_monitor.last_read) );
 
 	in->master.w1_monitor.seq = SEQ_INIT ;
 	in->master.w1_monitor.pid = 0 ;

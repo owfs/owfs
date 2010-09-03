@@ -151,9 +151,8 @@ $Id$
 #include <sys/uio.h>
 #endif
 
-#ifdef HAVE_SYS_TIME_H
-#include <sys/time.h>			/* for gettimeofday */
-#endif							/* HAVE_SYS_TIME_H */
+/* Include gettimeofday and all the timerX macros */
+#include "ow_timer.h"
 
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>			/* for stat */

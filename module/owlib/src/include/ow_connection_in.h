@@ -170,14 +170,10 @@ struct connection_in {
 #endif							/* OW_MT */
 	enum e_reconnect reconnect_state;
 	struct timeval last_lock;	/* statistics */
-	struct timeval last_unlock;
 
 	UINT bus_stat[e_bus_stat_last_marker];
 
 	struct timeval bus_time;
-
-	struct timeval bus_read_time;
-	struct timeval bus_write_time;	/* for statistics */
 
 	enum bus_mode busmode;
 	struct interface_routines iroutines;

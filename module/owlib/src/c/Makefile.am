@@ -101,7 +101,6 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_link.c          \
                ow_locator.c       \
                ow_locks.c         \
-               ow_max_delay.c     \
                ow_memblob.c       \
                ow_memory.c        \
                ow_multicast.c     \

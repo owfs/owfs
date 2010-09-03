@@ -153,14 +153,15 @@ static void delete(struct watchdog_s *w, struct watched_s *watched)
 static void *watcher(void *void_w)
 {
 	struct watchdog_s *w;
-	struct timeval tv;
+	struct timeval tvwatch = { 1, 0 } ; // 1 second
 	time_t now;
 	struct watched_s *watched;
 
 	w = (struct watchdog_s *) void_w;
 	for (;;) {
-		tv.tv_sec = 1;
-		tv.tv_usec = 0;
+		struct timeval tv ;
+		
+		timercpy( &tv, &tvwatch ) ;
 		select(0, NULL, NULL, NULL, &tv);
 
 		time(&now);

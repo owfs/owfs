@@ -877,12 +877,13 @@ static GOOD_OR_BAD DS9490_HaltPulse(const struct parsedname *pn)
 {
 	BYTE buffer[32];
 	struct timeval tv;
-	time_t endtime, now;
+	struct timeval tvtarget;
+	struct timeval tvlimit = { 0, 300000 } ; // 300 millisec from PDKit /ib/other/libUSB/libusbds2490.c
 
-	if (gettimeofday(&tv, NULL) < 0) {
+	if ( timernow( &tv ) < 0) {
 		return gbBAD;
 	}
-	endtime = (tv.tv_sec & 0xFFFF) * 1000 + tv.tv_usec / 1000 + 300;
+	timeradd( &tv, &tvlimit, &tvtarget ) ;
 
 	do {
 		int readlen = -1 ;
@@ -902,11 +903,10 @@ static GOOD_OR_BAD DS9490_HaltPulse(const struct parsedname *pn)
 		if (!(buffer[8] & STATUSFLAGS_SPUA)) {
 			return gbGOOD;
 		}
-		if (gettimeofday(&tv, NULL) < 0) {
+		if ( timernow( &tv ) < 0) {
 			return gbBAD;
 		}
-		now = (tv.tv_sec & 0xFFFF) * 1000 + tv.tv_usec / 1000;
-	} while (endtime > now);
+	} while ( timercmp( &tv, &tvtarget, >) ) ;
 	LEVEL_DATA("timeout");
 	return gbBAD;
 }

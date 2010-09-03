@@ -92,7 +92,6 @@ GOOD_OR_BAD OWServer_Enet_detect(struct connection_in *in)
 
 static GOOD_OR_BAD OWServer_Enet_reopen(struct connection_in *in)
 {
-	LEVEL_DEBUG("Entering REOPEN");
 	Test_and_Close( &(in->file_descriptor) ) ;
 	
 	in->master.serial.tcp.default_discard = 0 ;
