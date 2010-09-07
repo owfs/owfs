@@ -543,10 +543,6 @@ static enum search_status DS2482_next_both(struct device_search *ds, const struc
 		/* Unsuccessful search or error -- possibly a device suddenly added */
 		return search_error;
 	}
-	if ((ds->sn[0] & 0x7F) == 0x04) {
-		/* We found a DS1994/DS2404 which require longer delays */
-		pn->selected_connection->ds2404_compliance = 1;
-	}
 	// if the search was successful then
 	ds->LastDiscrepancy = last_zero;
 	ds->LastDevice = (last_zero < 0);

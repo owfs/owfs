@@ -40,7 +40,7 @@ static void HA7E_setroutines(struct connection_in *in)
 	in->iroutines.select = HA7E_select ;
 	in->iroutines.reconnect = NULL;
 	in->iroutines.close = HA7E_close;
-	in->iroutines.flags = ADAP_FLAG_dirgulp | ADAP_FLAG_bundle | ADAP_FLAG_dir_auto_reset;
+	in->iroutines.flags = ADAP_FLAG_dirgulp | ADAP_FLAG_bundle | ADAP_FLAG_dir_auto_reset | ADAP_FLAG_no2404delay ;
 	in->bundling_length = HA7E_FIFO_SIZE;
 }
 
@@ -127,10 +127,6 @@ static enum search_status HA7E_next_both(struct device_search *ds, const struct 
 
 	switch ( DirblobGet(ds->index, ds->sn, db) ) {
 	case 0:
-		if ((ds->sn[0] & 0x7F) == 0x04) {
-			/* We found a DS1994/DS2404 which require longer delays */
-			pn->selected_connection->ds2404_compliance = 1;
-		}
 		LEVEL_DEBUG("SN found: " SNformat "\n", SNvar(ds->sn));
 		return search_good;
 	case -ENODEV:

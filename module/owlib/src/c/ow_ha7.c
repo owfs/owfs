@@ -56,7 +56,7 @@ static void HA7_setroutines(struct connection_in *in)
 	in->iroutines.select = HA7_select;
 	in->iroutines.reconnect = NULL;
 	in->iroutines.close = HA7_close;
-	in->iroutines.flags = ADAP_FLAG_dirgulp | ADAP_FLAG_bundle | ADAP_FLAG_dir_auto_reset;
+	in->iroutines.flags = ADAP_FLAG_dirgulp | ADAP_FLAG_bundle | ADAP_FLAG_dir_auto_reset | ADAP_FLAG_no2404delay ;
 	in->bundling_length = HA7_FIFO_SIZE;	// arbitrary number
 }
 

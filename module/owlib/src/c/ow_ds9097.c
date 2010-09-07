@@ -18,8 +18,9 @@ $Id$
 /* All the rest of the program sees is the DS9907_detect and the entry in iroutines */
 
 static RESET_TYPE DS9097_reset(const struct parsedname *pn);
-static GOOD_OR_BAD DS9097_pre_reset(struct termios * term, const struct parsedname *pn) ;
-static void DS9097_post_reset(struct termios * term, const struct parsedname *pn) ;
+static RESET_TYPE DS9097_reset_in( struct connection_in * in );
+static GOOD_OR_BAD DS9097_pre_reset(struct termios * term, struct connection_in *in ) ;
+static void DS9097_post_reset(struct termios * term, struct connection_in *in ) ;
 static GOOD_OR_BAD DS9097_sendback_bits(const BYTE * outbits, BYTE * inbits, const size_t length, const struct parsedname *pn);
 static void DS9097_setroutines(struct connection_in *in);
 static GOOD_OR_BAD DS9097_send_and_get(const BYTE * bussend, BYTE * busget, const size_t length, struct connection_in *in);
@@ -28,6 +29,9 @@ static GOOD_OR_BAD DS9097_send_and_get(const BYTE * bussend, BYTE * busget, cons
 //#define ZeroBit 0xC0
 // Should be all zero's when we send 8 bits. digitemp write 0xFF or 0x00
 #define ZeroBit 0x00
+
+// at slower speed of course
+#define RESET_BYTE 0xF0 
 
 /* Device-specific functions */
 static void DS9097_setroutines(struct connection_in *in)
@@ -50,8 +54,6 @@ static void DS9097_setroutines(struct connection_in *in)
 // no bus locking here (higher up)
 GOOD_OR_BAD DS9097_detect(struct connection_in *in)
 {
-	struct parsedname pn;
-
 	/* Set up low-level routines */
 	DS9097_setroutines(in);
 
@@ -59,14 +61,11 @@ GOOD_OR_BAD DS9097_detect(struct connection_in *in)
 	// in->adapter_name already set, to support HA3 and HA4B
 	in->busmode = bus_passive;	// in case initially tried DS9097U
 
-	FS_ParsedName_Placeholder(&pn);	// minimal parsename -- no destroy needed
-	pn.selected_connection = in;
-
 	/* open the COM port in 9600 Baud  */
 	in->flow_control = flow_none ;
 	RETURN_BAD_IF_BAD(COM_open(in)) ;
 
-	switch( DS9097_reset(&pn) ) {
+	switch( DS9097_reset_in(in) ) {
 		case BUS_RESET_OK:
 		case BUS_RESET_SHORT:
 			return gbGOOD ;
@@ -79,7 +78,7 @@ GOOD_OR_BAD DS9097_detect(struct connection_in *in)
 	in->flow_control = flow_none ;
 	RETURN_BAD_IF_BAD(COM_open(in)) ;
 
-	switch( DS9097_reset(&pn) ) {
+	switch( DS9097_reset_in(in) ) {
 		case BUS_RESET_OK:
 		case BUS_RESET_SHORT:
 			return gbGOOD ;
@@ -92,7 +91,7 @@ GOOD_OR_BAD DS9097_detect(struct connection_in *in)
 	in->flow_control = flow_hard ;
 	RETURN_BAD_IF_BAD(COM_open(in)) ;
 
-	switch( DS9097_reset(&pn) ) {
+	switch( DS9097_reset_in(in) ) {
 		case BUS_RESET_OK:
 		case BUS_RESET_SHORT:
 			return gbGOOD ;
@@ -107,43 +106,45 @@ GOOD_OR_BAD DS9097_detect(struct connection_in *in)
 /* Puts in 9600 baud, sends 11110000 then reads response */
 static RESET_TYPE DS9097_reset(const struct parsedname *pn)
 {
-	BYTE resetbyte = 0xF0;
+	return DS9097_reset_in( pn->selected_connection ) ;
+}
+
+/* DS9097 Reset -- A little different from DS2480B */
+/* Puts in 9600 baud, sends 11110000 then reads response */
+static RESET_TYPE DS9097_reset_in( struct connection_in * in )
+{
+	BYTE resetbyte = RESET_BYTE;
 	BYTE responsebyte;
 	struct termios term;
-	struct connection_in * in = pn->selected_connection ;
 
-	if ( BAD( DS9097_pre_reset( &term, pn ) ) ) {
+	if ( BAD( DS9097_pre_reset( &term, in ) ) ) {
 		return BUS_RESET_ERROR ;
 	}
 
 	if ( BAD( DS9097_send_and_get(&resetbyte, &responsebyte, 1, in )) ) {
-		DS9097_post_reset( &term, pn) ;
+		DS9097_post_reset( &term, in) ;
 		return BUS_RESET_ERROR ;
 	}
 
-	DS9097_post_reset( &term, pn) ;
+	DS9097_post_reset( &term, in) ;
 	
 	switch (responsebyte) {
-	case 0:
+	case 0x00:
 		return BUS_RESET_SHORT;
-	case 0xF0:
+	case RESET_BYTE:
+		// no presence
 		in->AnyDevices = anydevices_no ;
 		return BUS_RESET_OK;
 	default:
 		in->AnyDevices = anydevices_yes ;
-		in->ProgramAvailable = 0;	/* from digitemp docs */
-		if (in->ds2404_compliance) {
-			// extra delay for alarming DS1994/DS2404 compliance
-			UT_delay(5);
-		}
 		return BUS_RESET_OK;
 	}
 }
 
 /* Puts in 9600 baud */
-static GOOD_OR_BAD DS9097_pre_reset(struct termios * term, const struct parsedname *pn)
+static GOOD_OR_BAD DS9097_pre_reset(struct termios * term, struct connection_in *in )
 {
-	FILE_DESCRIPTOR_OR_ERROR file_descriptor = pn->selected_connection->file_descriptor;
+	FILE_DESCRIPTOR_OR_ERROR file_descriptor = in->file_descriptor;
 
 	if ( FILE_DESCRIPTOR_NOT_VALID(file_descriptor) ) {
 		LEVEL_CONNECT("Bad serial port file descriptor") ;
@@ -160,19 +161,19 @@ static GOOD_OR_BAD DS9097_pre_reset(struct termios * term, const struct parsedna
 	
 	term->c_cflag = CS8 | CREAD | HUPCL | CLOCAL;
 	if (cfsetospeed(term, B9600) < 0 || cfsetispeed(term, B9600) < 0) {
-		ERROR_CONNECT("Cannot set speed (9600): %s", SAFESTRING(pn->selected_connection->name));
+		ERROR_CONNECT("Cannot set speed (9600): %s", SAFESTRING(in->name));
 		return gbBAD ;
 	}
 	if (tcsetattr(file_descriptor, TCSANOW, term) < 0) {
-		ERROR_CONNECT("Cannot set attributes: %s", SAFESTRING(pn->selected_connection->name));
-		DS9097_post_reset( term, pn ) ;
+		ERROR_CONNECT("Cannot set attributes: %s", SAFESTRING(in->name));
+		DS9097_post_reset( term, in ) ;
 		return gbBAD;
 	}
 	return gbGOOD;
 }
 
 /* Restore terminal settings (serial port settings) */
-static void DS9097_post_reset(struct termios * term, const struct parsedname *pn)
+static void DS9097_post_reset(struct termios * term, struct connection_in *in )
 {
 	/* Reset all settings */
 	term->c_lflag = 0;
@@ -193,78 +194,58 @@ static void DS9097_post_reset(struct termios * term, const struct parsedname *pn
 #ifndef B115200
 	/* MacOSX support max 38400 in termios.h ? */
 	if (cfsetospeed(term, B38400) < 0 || cfsetispeed(term, B38400) < 0) {
-		ERROR_CONNECT("Cannot set speed (38400): %s", SAFESTRING(pn->selected_connection->name));
+		ERROR_CONNECT("Cannot set speed (38400): %s", SAFESTRING(in->name));
 	}
 #else
 	if (cfsetospeed(term, B115200) < 0 || cfsetispeed(term, B115200) < 0) {
-		ERROR_CONNECT("Cannot set speed (115200): %s", SAFESTRING(pn->selected_connection->name));
+		ERROR_CONNECT("Cannot set speed (115200): %s", SAFESTRING(in->name));
 	}
 #endif
 
-	if (tcsetattr(pn->selected_connection->file_descriptor, TCSANOW, term) < 0) {
-		ERROR_CONNECT("Cannot set attributes: %s", SAFESTRING(pn->selected_connection->name));
+	if (tcsetattr(in->file_descriptor, TCSANOW, term) < 0) {
+		ERROR_CONNECT("Cannot set attributes: %s", SAFESTRING(in->name));
 	}
 	/* Flush the input and output buffers */
-	COM_flush(pn->selected_connection);
+	COM_flush(in);
 }
-
-#if 0
-/* Adapted from http://www.linuxquestions.org/questions/showthread.php?t=221632 */
-static int setRTS(int on, const struct connection_in *in)
-{
-	int status;
-
-	if (ioctl(in->file_descriptor, TIOCMGET, &status) == -1) {
-		ERROR_CONNECT("setRTS(): TIOCMGET");
-		return 0;
-	}
-	if (on) {
-		status |= TIOCM_RTS;
-	} else {
-		status &= ~TIOCM_RTS;
-	}
-	if (ioctl(in->file_descriptor, TIOCMSET, &status) == -1) {
-		ERROR_CONNECT("setRTS(): TIOCMSET");
-		return 0;
-	}
-	return 1;
-}
-#endif							/* 0 */
 
 /* Symmetric */
 /* send bits -- read bits */
 /* Actually uses bit zero of each byte */
+/* So each "byte" has already been expanded to 1 bit/byte */
 /* Dispatches DS9097_MAX_BITS "bits" at a time */
 #define DS9097_MAX_BITS 24
 static GOOD_OR_BAD DS9097_sendback_bits(const BYTE * outbits, BYTE * inbits, const size_t length, const struct parsedname *pn)
 {
-	BYTE d[DS9097_MAX_BITS];
-	size_t l = 0;
-	size_t i = 0;
-	size_t start = 0;
+	BYTE local_data[DS9097_MAX_BITS];
+	size_t global_counter ;
+	size_t local_counter ;
+	size_t offset ;
 	struct connection_in * in = pn->selected_connection ;
 
-	if (length == 0) {
-		return gbGOOD;
-	}
-
 	/* Split into smaller packets? */
-	do {
-		d[l++] = outbits[i++] ? OneBit : ZeroBit;
-		if (l == DS9097_MAX_BITS || i == length) {
+	for ( local_counter = global_counter = offset = 0 ; offset < length ; ) {
+		// encode this bit
+		local_data[local_counter] = outbits[global_counter] ? OneBit : ZeroBit;
+		// point to next one
+		++local_counter ;
+		++global_counter ;
+		// test if enough bits to send to master
+		if (local_counter == DS9097_MAX_BITS || global_counter == length) {
 			/* Communication with DS9097 routine */
-			if ( BAD( DS9097_send_and_get(d, &inbits[start], l, in)) ) {
+			/* Up to DS9097_MAX_BITS bits at a time */
+			if ( BAD( DS9097_send_and_get( local_data, &inbits[offset], local_counter, in )) ) {
 				STAT_ADD1_BUS(e_bus_errors, in);
 				return gbBAD;
 			}
-			l = 0;
-			start = i;
+			offset += local_counter ;
+			local_counter = 0 ;
 		}
-	} while (i < length);
+	} 
 
 	/* Decode Bits */
-	for (i = 0; i < length; ++i) {
-		inbits[i] &= 0x01;
+	for (global_counter = 0; global_counter < length; ++global_counter) {
+		inbits[global_counter] &= 0x01; // mask out all but lowest bit
 	}
 
 	return gbGOOD;

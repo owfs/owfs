@@ -100,7 +100,7 @@ static void LINK_setroutines(struct connection_in *in)
 	in->iroutines.select = NULL;
 	in->iroutines.reconnect = NULL;
 	in->iroutines.close = LINK_close;
-	in->iroutines.flags = ADAP_FLAG_no2409path;
+	in->iroutines.flags = ADAP_FLAG_no2409path | ADAP_FLAG_no2404delay ;
 	in->bundling_length = LINK_FIFO_SIZE;
 }
 
@@ -432,10 +432,6 @@ static enum search_status LINK_next_both(struct device_search *ds, const struct 
 
 	switch ( DirblobGet(ds->index, ds->sn, db) ) {
 		case 0:
-			if ((ds->sn[0] & 0x7F) == 0x04) {
-				/* We found a DS1994/DS2404 which require longer delays */
-				pn->selected_connection->ds2404_compliance = 1;
-			}
 			LEVEL_DEBUG("SN found: " SNformat "", SNvar(ds->sn));
 			return search_good;
 		case -ENODEV:

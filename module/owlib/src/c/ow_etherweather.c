@@ -44,7 +44,7 @@ $Id$
 #define EtherWeather_COMMAND_RESET	'R'
 #define EtherWeather_COMMAND_ACCEL	'A'
 #define EtherWeather_COMMAND_BYTES	'B'
-#define EtherWeather_COMMAND_BITS		'b'
+#define EtherWeather_COMMAND_BITS	'b'
 #define EtherWeather_COMMAND_POWER	'P'
 
 static RESET_TYPE EtherWeather_reset(const struct parsedname *pn) ;
@@ -196,11 +196,6 @@ static enum search_status EtherWeather_next_both(struct device_search *ds, const
 		return search_error;
 	}
 
-	if ((ds->sn[0] & 0x7F) == 0x04) {
-		/* We found a DS1994/DS2404 which require longer delays */
-		pn->selected_connection->ds2404_compliance = 1;
-	}
-
 	/* 0xFE indicates no discrepancies */
 	ds->LastDiscrepancy = sendbuf[8];
 	if (ds->LastDiscrepancy == 0xFE) {
@@ -257,7 +252,7 @@ static void EtherWeather_setroutines(struct connection_in *in)
 	in->iroutines.select = NULL;
 	in->iroutines.reconnect = NULL;
 	in->iroutines.close = EtherWeather_close;
-	in->iroutines.flags = ADAP_FLAG_overdrive | ADAP_FLAG_dirgulp | ADAP_FLAG_no2409path;
+	in->iroutines.flags = ADAP_FLAG_overdrive | ADAP_FLAG_dirgulp | ADAP_FLAG_no2409path | ADAP_FLAG_no2404delay ;
 }
 
 GOOD_OR_BAD EtherWeather_detect(struct connection_in *in)

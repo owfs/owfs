@@ -57,7 +57,7 @@ static void W1_setroutines(struct connection_in *in)
 	// Directory obtained in a single gulp (W1_LIST_SLAVES)
 	// Bundle transactions
 	//
-	in->iroutines.flags = ADAP_FLAG_dirgulp | ADAP_FLAG_bundle | ADAP_FLAG_dir_auto_reset;
+	in->iroutines.flags = ADAP_FLAG_dirgulp | ADAP_FLAG_bundle | ADAP_FLAG_dir_auto_reset | ADAP_FLAG_no2404delay ;
 	in->bundling_length = W1_FIFO_SIZE;	// arbitrary number
 }
 

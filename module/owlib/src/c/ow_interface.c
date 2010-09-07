@@ -63,8 +63,8 @@ READ_FUNCTION(FS_r_reconnect);
 WRITE_FUNCTION(FS_w_reconnect);
 READ_FUNCTION(FS_r_checksum);
 WRITE_FUNCTION(FS_w_checksum);
-READ_FUNCTION(FS_r_ds2404_compliance);
-WRITE_FUNCTION(FS_w_ds2404_compliance);
+READ_FUNCTION(FS_r_ds2404_found);
+WRITE_FUNCTION(FS_w_ds2404_found);
 READ_FUNCTION(FS_r_pulldownslewrate);
 WRITE_FUNCTION(FS_w_pulldownslewrate);
 READ_FUNCTION(FS_r_writeonelowtime);
@@ -101,7 +101,7 @@ struct filetype interface_settings[] = {
 	{"overdrive", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_overdrive, FS_w_overdrive, VISIBLE, NO_FILETYPE_DATA,},
 	{"version", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_version, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"flexible_timing", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_flextime, FS_w_flextime, VISIBLE, NO_FILETYPE_DATA,},
-	{"ds2404_compliance", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_ds2404_compliance, FS_w_ds2404_compliance, VISIBLE, NO_FILETYPE_DATA,},
+	{"ds2404_found", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_ds2404_found, FS_w_ds2404_found, VISIBLE, NO_FILETYPE_DATA,},
 	{"reconnect", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_reconnect, FS_w_reconnect, VISIBLE, NO_FILETYPE_DATA,},
 
 	{"usb", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
@@ -182,17 +182,17 @@ struct device d_interface_statistics = {
 
 
 /* Just some tests to support change of extra delay */
-static ZERO_OR_ERROR FS_r_ds2404_compliance(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_ds2404_found(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
-	OWQ_Y(owq) = pn->selected_connection->ds2404_compliance;
+	OWQ_Y(owq) = pn->selected_connection->ds2404_found;
 	return 0;
 }
 
-static ZERO_OR_ERROR FS_w_ds2404_compliance(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_ds2404_found(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
-	pn->selected_connection->ds2404_compliance = OWQ_Y(owq);
+	pn->selected_connection->ds2404_found = OWQ_Y(owq);
 	return 0;
 }
 

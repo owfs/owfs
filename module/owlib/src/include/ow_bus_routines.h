@@ -95,6 +95,9 @@ struct interface_routines {
 // Adapter doesn't support the DS2409 microlan hub
 #define ADAP_FLAG_no2409path      0x00000010
 
+// Adapter doesn't need DS2404 delay (i.e. not a local device)
+#define ADAP_FLAG_no2404delay      0x00000020
+
 // Adapter gets a directory all at once rather than one at a time
 #define ADAP_FLAG_dirgulp       0x00000100
 

@@ -633,10 +633,6 @@ static RESET_TYPE DS2480_reset_once(struct connection_in * in)
 		in->AnyDevices = anydevices_yes ;
 		// check if programming voltage available
 		in->ProgramAvailable = ((reset_response & PARMSEL_12VPULSE) == PARMSEL_12VPULSE);
-		if (in->ds2404_compliance) {
-			// extra delay for alarming DS1994/DS2404 complience
-			UT_delay(5);
-		}
 		DS2480_flush(in);
 		return BUS_RESET_OK;
 	default:
@@ -734,10 +730,6 @@ static enum search_status DS2480_next_both(struct device_search *ds, const struc
 	// copy the SerialNum to the buffer
 	memcpy(ds->sn, sn, 8);
 
-	if ((sn[0] & 0x7F) == DS2404_family) {
-		/* We found a DS1994/DS2404 which require longer delays */
-		in->ds2404_compliance = 1;
-	}
 	// set the count
 	ds->LastDiscrepancy = mismatched;
 

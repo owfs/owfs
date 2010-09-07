@@ -43,7 +43,7 @@ static void Fake_setroutines(struct connection_in *in)
 	in->iroutines.select = NULL;
 	in->iroutines.reconnect = NULL;
 	in->iroutines.close = Fake_close;
-	in->iroutines.flags = ADAP_FLAG_no2409path | ADAP_FLAG_presence_from_dirblob ;
+	in->iroutines.flags = ADAP_FLAG_no2409path | ADAP_FLAG_presence_from_dirblob | ADAP_FLAG_no2404delay ;
 }
 
 static GOOD_OR_BAD Fake_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn)

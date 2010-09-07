@@ -542,7 +542,7 @@ static RESET_TYPE DS9490_reset(const struct parsedname *pn)
 		return BUS_RESET_ERROR;			// fatal error... probably closed usb-handle
 	}
 
-	if (in->ds2404_compliance && (in->speed == bus_speed_slow)) {
+	if (in->ds2404_found && (in->speed == bus_speed_slow)) {
 		// extra delay for alarming DS1994/DS2404 complience
 		UT_delay(5);
 	}
@@ -613,11 +613,6 @@ static enum search_status DS9490_next_both(struct device_search *ds, const struc
 				case 0x00:
 					LEVEL_DATA("NULL family found");
 					return search_error;
-				case 0x04:
-				case 0x84:
-					/* We found a DS1994/DS2404 which require longer delays */
-					pn->selected_connection->ds2404_compliance = 1;
-					break;
 				default:
 					break;
 			}
@@ -651,14 +646,6 @@ static enum search_status DS9490_directory(struct device_search *ds, struct dirb
 	if ( BAD( BUS_select(pn) ) ) {
 		LEVEL_DEBUG("Selection problem before a directory listing") ;
 		return search_error ;
-	}
-
-	/* DS1994/DS2404 might need an extra reset */
-	if (pn->selected_connection->ExtraReset) {
-		if ( BAD( gbRESET( BUS_reset(pn) ) ) ) {
-			return search_error;
-		}
-		pn->selected_connection->ExtraReset = 0;
 	}
 
 	SetupDiscrepancy(ds, EP2_data);

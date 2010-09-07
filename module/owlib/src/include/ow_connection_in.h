@@ -178,11 +178,10 @@ struct connection_in {
 	enum adapter_type Adapter;
 	char *adapter_name;
 	enum e_anydevices AnyDevices;
-	int ExtraReset;				// DS1994/DS2404 might need an extra reset
 	enum bus_speed speed;
 	enum bus_flex flex ;
 	int changed_bus_settings;
-	int ds2404_compliance;
+	int ds2404_found;
 	int ProgramAvailable;
 	size_t last_root_devs;
 	struct buspath branch;		// Branch currently selected

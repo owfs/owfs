@@ -56,7 +56,7 @@ static void OWServer_Enet_setroutines(struct connection_in *in)
 	in->iroutines.select = OWServer_Enet_select ;
 	in->iroutines.reconnect = NULL;
 	in->iroutines.close = OWServer_Enet_close;
-	in->iroutines.flags = ADAP_FLAG_dirgulp | ADAP_FLAG_no2409path | ADAP_FLAG_overdrive | ADAP_FLAG_bundle ;
+	in->iroutines.flags = ADAP_FLAG_dirgulp | ADAP_FLAG_no2409path | ADAP_FLAG_overdrive | ADAP_FLAG_bundle | ADAP_FLAG_no2404delay ;
 	in->bundling_length = HA7E_FIFO_SIZE;
 }
 
@@ -162,10 +162,6 @@ static enum search_status OWServer_Enet_next_both(struct device_search *ds, cons
 
 	switch ( DirblobGet(ds->index, ds->sn, db) ) {
 		case 0:
-			if ((ds->sn[0] & 0x7F) == 0x04) {
-				/* We found a DS1994/DS2404 which require longer delays */
-				pn->selected_connection->ds2404_compliance = 1;
-			}
 			LEVEL_DEBUG("SN found: " SNformat "", SNvar(ds->sn));
 			return search_good;
 		case -ENODEV:

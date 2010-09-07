@@ -102,7 +102,7 @@ struct connection_in *AllocIn(const struct connection_in *in)
 		 * turned on in *_next_both().
 		 * If it's turned off, it will result into a faster reset-sequence.
 		 */
-		now->ds2404_compliance = 0;
+		now->ds2404_found = 0;
 		/* Flag first pass as need to clear all branches if DS2409 present */
 		now->branch.sn[0] = BUSPATH_BAD ;
 		/* Arbitrary guess at root directory size for allocating cache blob */

@@ -32,7 +32,6 @@ enum search_status BUS_first(struct device_search *ds, const struct parsedname *
 	// reset the search state
 	LEVEL_DEBUG("Start of directory path=%s device=" SNformat, SAFESTRING(pn->path), SNvar(pn->sn));
 	BUS_first_both(ds);
-	pn->selected_connection->ExtraReset = 0;
 	ds->search = _1W_SEARCH_ROM;
 	return BUS_next(ds, pn);
 }
@@ -122,11 +121,23 @@ static enum search_status BUS_next_3try(struct device_search *ds, const struct p
 /* Not used by more advanced adapters */
 enum search_status BUS_next_both(struct device_search *ds, const struct parsedname *pn)
 {
+	enum search_status next_both ;
 	if ( FunctionExists(pn->selected_connection->iroutines.next_both) ) {
-		return (pn->selected_connection->iroutines.next_both) (ds, pn);
+		next_both = (pn->selected_connection->iroutines.next_both) (ds, pn);
 	} else {
-		return BUS_next_both_bitbang( ds, pn ) ;
+		next_both = BUS_next_both_bitbang( ds, pn ) ;
 	}
+	switch ( next_both ) {
+		case search_good:
+			if ((ds->sn[0] & 0x7F) == 0x04) {
+				/* We found a DS1994/DS2404 which requires longer delays */
+				pn->selected_connection->ds2404_found = 1;
+			}
+			break ;
+		default :
+			break ;
+	}
+	return next_both ;
 }
 
 /* Low level search routines -- bit banging */
@@ -212,10 +223,6 @@ enum search_status BUS_next_both_bitbang(struct device_search *ds, const struct 
 		if (CRC8(ds->sn, 8) || (bit_number < 64) || (ds->sn[0] == 0)) {
 			/* A minor "error" */
 			return search_error;
-		}
-		if ((ds->sn[0] & 0x7F) == 0x04) {
-			/* We found a DS1994/DS2404 which require longer delays */
-			pn->selected_connection->ds2404_compliance = 1;
 		}
 		// if the search was successful then
 		
