@@ -115,7 +115,7 @@ void * W1_Dispatch( void * v )
 {
 	(void) v ;
 
-	pthread_detach(pthread_self());
+	DETACH_THREAD;
 
 	w1_list_masters() ; // ask for master list
 

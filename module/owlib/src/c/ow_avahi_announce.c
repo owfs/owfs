@@ -240,7 +240,7 @@ void *OW_Avahi_Announce( void * v )
 		.client = NULL,
 		.out = out ,
 	} ;
-	pthread_detach(pthread_self());
+	DETACH_THREAD;
 
 	aas.poll = avahi_simple_poll_new() ;
 	if ( aas.poll != NULL ) {

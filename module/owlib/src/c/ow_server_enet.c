@@ -37,6 +37,7 @@ static GOOD_OR_BAD OWServer_Enet_write_string( char * buf, struct connection_in 
 static char OWServer_Enet_command( char * cmd_string, struct connection_in * in ) ;
 static RESET_TYPE OWServer_Enet_reset_in(struct connection_in * in);
 static GOOD_OR_BAD OWServer_Enet_directory(struct device_search *ds, struct dirblob *db, struct connection_in * in) ;
+static enum ENET_dir OWServer_Enet_directory_loop(struct device_search *ds, struct dirblob *db, struct connection_in * in) ;
 static GOOD_OR_BAD OWServer_Enet_sendback_part(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn) ;
 static void OWServer_Enet_settimeout(struct connection_in *in) ;
 static void OWServer_Enet_testtimeout(struct connection_in *in) ;
@@ -178,7 +179,27 @@ static enum search_status OWServer_Enet_next_both(struct device_search *ds, cons
 #define DEVICE_LENGTH  16
 #define EXCLAIM_LENGTH 1
 
-static GOOD_OR_BAD OWServer_Enet_directory(struct device_search *ds, struct dirblob *db, struct connection_in * in)
+enum ENET_dir { ENET_dir_ok, ENET_dir_repeat, ENET_dir_bad } ;
+
+static GOOD_OR_BAD OWServer_Enet_directory(struct device_search *ds, struct dirblob *db, struct connection_in * in) {
+	int i ;
+	for ( i=0 ; i<10 ; ++i ) {
+		switch ( OWServer_Enet_directory_loop( ds, db, in ) ) {
+			case ENET_dir_ok:
+				return gbGOOD ;
+			case ENET_dir_repeat:
+				LEVEL_DEBUG("Repeating directory loop because of communication error");
+				continue ;
+			case ENET_dir_bad:
+				LEVEL_DEBUG("directory error");
+				return gbBAD;
+		}
+	}
+	LEVEL_DEBUG("Too many attempts at a directory listing");
+	return gbBAD ;
+}
+
+static enum ENET_dir OWServer_Enet_directory_loop(struct device_search *ds, struct dirblob *db, struct connection_in * in)
 {
 	char resp[DEVICE_LENGTH+in->master.serial.tcp.CRLF_size];
 	char * search_first ;
@@ -199,27 +220,45 @@ static GOOD_OR_BAD OWServer_Enet_directory(struct device_search *ds, struct dirb
 	}
 
 	// send the first search
-	RETURN_BAD_IF_BAD( OWServer_Enet_write_string( search_first, in)) ;
+	if ( BAD( OWServer_Enet_write_string( search_first, in)) ) {
+		return ENET_dir_bad ;
+	}
 
 	do {
 		size_t read_so_far = 0 ;
 		// read first character
-		RETURN_BAD_IF_BAD(OWServer_Enet_read(BYTE_string(resp), EXCLAIM_LENGTH, in)) ;
+		if ( BAD(OWServer_Enet_read(BYTE_string(resp), EXCLAIM_LENGTH, in)) ) {
+			return ENET_dir_bad ;
+		}
 		
 		switch (resp[0]) {
 			case '!':
-				return gbGOOD ;
-			case '?':
-				read_so_far = 0 ;
-				break ;
-			default:
+				return ENET_dir_ok ;
+			case '0':
+			case '1':
+			case '2':
+			case '3':
+			case '4':
+			case '5':
+			case '6':
+			case '7':
+			case '8':
+			case '9':
+			case 'A':
+			case 'B':
+			case 'C':
+			case 'D':
+			case 'E':
+			case 'F':
 				read_so_far = EXCLAIM_LENGTH+in->master.serial.tcp.CRLF_size ;
 				break ;
+			default:
+				return ENET_dir_repeat ;
 		}
 		
 		// read rest of the characters
 		if ( BAD(OWServer_Enet_read(BYTE_string(&resp[read_so_far]), DEVICE_LENGTH-read_so_far, in)) ) {
-			return gbBAD;
+			return ENET_dir_bad;
 		}
 
 		BYTE sn[SERIAL_NUMBER_SIZE];
@@ -239,7 +278,7 @@ static GOOD_OR_BAD OWServer_Enet_directory(struct device_search *ds, struct dirb
 		// CRC check
 		if (CRC8(sn, SERIAL_NUMBER_SIZE) || (sn[0] == 0x00)) {
 			LEVEL_DEBUG("BAD family or CRC8");
-			return gbBAD;
+			return ENET_dir_repeat;
 		}
 
 		DirblobAdd(sn, db);
@@ -249,7 +288,9 @@ static GOOD_OR_BAD OWServer_Enet_directory(struct device_search *ds, struct dirb
 		}
 
 		// send the subsequent search
-		RETURN_BAD_IF_BAD(OWServer_Enet_write_string( search_next, in)) ;
+		if ( BAD(OWServer_Enet_write_string( search_next, in)) ) {
+			return ENET_dir_bad ;
+		}
 	} while (1) ;
 }
 

@@ -12,15 +12,14 @@ $Id$
 #include <config.h>
 #include "owfs_config.h"
 #include "ow.h"
-//#include "ow_counters.h"
 #include "ow_connection.h"
+
+# if OW_MT
 
 // dynamically created access control for a 1-wire device
 // used to negotiate between different threads (queries)
 struct devlock {
-#if OW_MT
 	pthread_mutex_t lock;
-#endif							/* OW_MT */
 	BYTE sn[SERIAL_NUMBER_SIZE];
 	UINT users;
 };
@@ -29,10 +28,8 @@ struct devlock {
 /*
 We keep all the devlocks, organized in a tree for faster searching.
 */
-#if OW_MT
-	#define DEVTREE_LOCK(pn)           _MUTEX_LOCK(   ((pn)->selected_connection)->dev_mutex )
-	#define DEVTREE_UNLOCK(pn)         _MUTEX_UNLOCK( ((pn)->selected_connection)->dev_mutex )
-#endif							/* OW_MT */
+#define DEVTREE_LOCK(pn)           _MUTEX_LOCK(   ((pn)->selected_connection)->dev_mutex )
+#define DEVTREE_UNLOCK(pn)         _MUTEX_UNLOCK( ((pn)->selected_connection)->dev_mutex )
 
 /* Bad bad C library */
 /* implementation of tfind, tsearch returns an opaque structure */
@@ -44,23 +41,20 @@ struct dev_opaque {
 	void *other;
 };
 
-#if OW_MT
-	/* compilation error in gcc version 4.0.0 20050519 if dev_compare
-	 * is defined as an embedded function
-	 */
-	/* Use the serial numbers to find the right devlock */
-	static int dev_compare(const void *a, const void *b)
-	{
-		return memcmp(&((const struct devlock *) a)->sn, &((const struct devlock *) b)->sn, SERIAL_NUMBER_SIZE);
-	}
-#endif
+/* compilation error in gcc version 4.0.0 20050519 if dev_compare
+ * is defined as an embedded function
+ */
+/* Use the serial numbers to find the right devlock */
+static int dev_compare(const void *a, const void *b)
+{
+	return memcmp(&((const struct devlock *) a)->sn, &((const struct devlock *) b)->sn, SERIAL_NUMBER_SIZE);
+}
 
 /* Grabs a device lock, either one already matching, or creates one */
 /* called per-adapter */
 /* The device locks (devlock) are kept in a tree */
 ZERO_OR_ERROR DeviceLockGet(struct parsedname *pn)
 {
-#if OW_MT
 	struct devlock *local_devicelock;
 	struct devlock *tree_devicelock;
 	struct dev_opaque *opaque;
@@ -125,16 +119,12 @@ ZERO_OR_ERROR DeviceLockGet(struct parsedname *pn)
 	DEVTREE_UNLOCK(pn);
 	_MUTEX_LOCK(tree_devicelock->lock);	// now grab the device
 	pn->lock = tree_devicelock; // use this new devlock
-#else							/* OW_MT */
-	(void) pn;					// suppress compiler warning in the trivial case.
-#endif							/* OW_MT */
 	return 0;
 }
 
 // Unlock the device
 void DeviceLockRelease(struct parsedname *pn)
 {
-#if OW_MT
 	if (pn->lock) { // this is the stored pointer to the device in the appropriate device tree
 		// Free the device
 		_MUTEX_UNLOCK(pn->lock->lock);		/* Serg: This coredump on his 64-bit server */
@@ -151,7 +141,19 @@ void DeviceLockRelease(struct parsedname *pn)
 		DEVTREE_UNLOCK(pn);
 		pn->lock = NULL;
 	}
-#else							/* OW_MT */
-	(void) pn;					// suppress compiler warning in the trivial case.
-#endif							/* OW_MT */
 }
+
+#else							/* not OW_MT */
+
+ZERO_OR_ERROR DeviceLockGet(struct parsedname *pn)
+{
+	(void) pn;					// suppress compiler warning in the trivial case.
+	return 0 ;
+}
+
+void DeviceLockRelease(struct parsedname *pn)
+{
+	(void) pn;					// suppress compiler warning in the trivial case.
+}
+
+#endif							/* OW_MT */

@@ -19,21 +19,19 @@ $Id$
 #include "ow.h"
 #include "ow_connection.h"
 
-#if OW_MT
 pthread_t main_threadid;
-
 pthread_mutex_t persistence_mutex ;
 #define PERSISTENCELOCK    _MUTEX_LOCK(   persistence_mutex ) ;
 #define PERSISTENCEUNLOCK  _MUTEX_UNLOCK( persistence_mutex ) ;
 
+#if OW_MT
 #define IS_MAINTHREAD (main_threadid == pthread_self())
-#define TOCLIENTLOCK(hd) _MUTEX_LOCK( (hd)->to_client )
-#define TOCLIENTUNLOCK(hd) _MUTEX_UNLOCK( (hd)->to_client )
 #else							/* OW_MT */
 #define IS_MAINTHREAD 1
-#define TOCLIENTLOCK(hd)
-#define TOCLIENTUNLOCK(hd)
 #endif							/* OW_MT */
+
+#define TOCLIENTLOCK(hd) _MUTEX_LOCK( (hd)->to_client )
+#define TOCLIENTUNLOCK(hd) _MUTEX_UNLOCK( (hd)->to_client )
 
 enum toclient_state {
 	toclient_postping , // also initial state
@@ -45,11 +43,9 @@ enum toclient_state {
 struct handlerdata {
 	int file_descriptor;
 	int persistent;
-#if OW_MT
 	pthread_mutex_t to_client;
 	int ping_pipe[2] ;
 	enum toclient_state toclient ;
-#endif							/* OW_MT */
 	struct timeval tv;
 	struct server_msg sm;
 	struct serverpackage sp;

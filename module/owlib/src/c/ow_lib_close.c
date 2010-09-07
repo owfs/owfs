@@ -23,9 +23,7 @@ void LibClose(void)
 	PIDstop();
 	DeviceDestroy();
 
-#if OW_MT
 	_MUTEX_ATTR_DESTROY(Mutex.mattr);
-#endif							/* OW_MT */
 
 #if OW_ZERO
 	// Used by browse and announce

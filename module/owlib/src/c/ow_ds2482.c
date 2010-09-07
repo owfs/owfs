@@ -377,9 +377,7 @@ static GOOD_OR_BAD DS2482_detect_single(int lowindex, int highindex, char * i2c_
 			if ( Globals.i2c_PPM ) {
 				in->master.i2c.configreg |= DS2482_REG_CFG_PPM ;
 			}
-			#if OW_MT
 			_MUTEX_INIT(in->master.i2c.all_channel_lock);
-			#endif							/* OW_MT */
 			in->busmode = bus_i2c;
 			in->Adapter = adapter_DS2482_100;
 
@@ -673,8 +671,7 @@ static GOOD_OR_BAD CreateChannels(struct connection_in *head)
 	head->master.i2c.index = 0;
 	head->adapter_name = name[0];
 	for (i = 1; i < 8; ++i) {
-		struct connection_in *added ;
-		added = NewIn(head);
+		struct connection_in * added = NewIn(head);
 		prior->master.i2c.next = added ;
 		if (added == NULL) {
 			return gbBAD;
@@ -806,10 +803,8 @@ static void DS2482_close(struct connection_in *in)
 	if (in == NULL) {
 		return;
 	}
-#if OW_MT
 	if (in->master.i2c.index == 0) {
 		_MUTEX_DESTROY(in->master.i2c.all_channel_lock);
 	}
-#endif							/* OW_MT */
 }
 #endif							/* OW_I2C */

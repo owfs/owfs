@@ -314,7 +314,7 @@ static void *connection_handler(void *v)
 	f = info->ftp_listener;
 
 	/* don't save state for pthread_join() */
-	pthread_detach(pthread_self());
+	DETACH_THREAD;
 
 	/* set up our watchdog */
 	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);

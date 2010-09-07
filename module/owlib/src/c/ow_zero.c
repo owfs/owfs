@@ -67,9 +67,7 @@ static void *Announce(void *v)
 	char * service_name ;
 	char name[63] ;
 
-	#if OW_MT
-	pthread_detach(pthread_self());
-	#endif							/* OW_MT */
+	DETACH_THREAD;
 
 	if (getsockname(out->file_descriptor, &sa, &sl)) {
 		LEVEL_CONNECT("Could not get port number of device.");

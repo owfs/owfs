@@ -102,7 +102,7 @@ static void * USB_monitor_loop( void * v )
 	struct connection_in * in = v ;
 	FILE_DESCRIPTOR_OR_ERROR file_descriptor = in->master.usb_monitor.shutdown_pipe[fd_pipe_read] ;
 
-	pthread_detach(pthread_self());
+	DETACH_THREAD;
 	
 	do {
 		fd_set readset;

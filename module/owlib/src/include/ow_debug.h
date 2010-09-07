@@ -35,24 +35,6 @@ enum e_err_print { e_err_print_mixed, e_err_print_syslog,
 	e_err_print_console,
 };
 
-#if OW_MT
-extern const char mutex_init_failed[];
-extern const char mutex_destroy_failed[];
-extern const char mutex_lock_failed[];
-extern const char mutex_unlock_failed[];
-extern const char mutexattr_init_failed[];
-extern const char mutexattr_destroy_failed[];
-extern const char mutexattr_settype_failed[];
-extern const char rwlock_init_failed[];
-extern const char rwlock_read_lock_failed[];
-extern const char rwlock_read_unlock_failed[];
-extern const char cond_timedwait_failed[];
-extern const char cond_signal_failed[];
-extern const char cond_wait_failed[];
-extern const char cond_init_failed[];
-extern const char cond_destroy_failed[];
-#endif
-
 void err_msg(enum e_err_type errnoflag, enum e_err_level level, const char * file, int line, const char * func, const char *fmt, ...);
 void _Debug_Bytes(const char *title, const unsigned char *buf, int length);
 void fatal_error(const char * file, int line, const char * func, const char *fmt, ...);
@@ -91,7 +73,9 @@ extern int log_available;
 
 #define Debug_OWQ(owq)        if (Globals.error_level>=e_err_debug) { _print_owq(owq); }
 #define Debug_Bytes(title,buf,length)    if (Globals.error_level>=e_err_beyond) { _Debug_Bytes(title,buf,length) ; }
-#else
+
+#else /* not OW_DEBUG */
+
 #define LEVEL_DEFAULT(...)    do { } while (0)
 #define LEVEL_CONNECT(...)    do { } while (0)
 #define LEVEL_CALL(...)       do { } while (0)
@@ -110,7 +94,8 @@ extern int log_available;
 
 #define Debug_Bytes(title,buf,length)    do { } while (0)
 #define Debug_OWQ(owq)        do { } while (0)
-#endif
+
+#endif /* OW_DEBUG */
 
 /* Make sure strings are safe for printf */
 #define SAFESTRING(x) ((x) ? (x):"")
@@ -121,53 +106,85 @@ extern int log_available;
 
 #if OW_MT
 /* Need to define those functions to get FILE and LINE information */
+
+extern const char  mutex_init_failed[];
 #define my_pthread_mutex_init(mutex, attr)              do {\
 	int mrc = pthread_mutex_init(mutex, attr);	            \
 	if(mrc != 0) { FATAL_ERROR( mutex_init_failed,        mrc, strerror(mrc)); }} while(0)
 
+extern const char  mutex_destroy_failed[];
 #define my_pthread_mutex_destroy(mutex)                 do {\
 	int mrc = pthread_mutex_destroy(mutex);                 \
 	if(mrc != 0) { FATAL_ERROR( mutex_destroy_failed,     mrc, strerror(mrc)); }} while(0)
 
+extern const char  mutex_lock_failed[];
 #define my_pthread_mutex_lock(mutex)                    do {\
 	int mrc = pthread_mutex_lock(mutex);		            \
 	if(mrc != 0) { FATAL_ERROR( mutex_lock_failed,        mrc, strerror(mrc)); }} while (0)
 
+extern const char  mutex_unlock_failed[];
 #define my_pthread_mutex_unlock(mutex)                  do {\
 	int mrc = pthread_mutex_unlock(mutex);                  \
 	if(mrc != 0) { FATAL_ERROR( mutex_unlock_failed,      mrc, strerror(mrc)); }} while (0)
 
+extern const char  mutexattr_init_failed[];
 #define my_pthread_mutexattr_init(attr)                 do {\
 	int mrc = pthread_mutexattr_init(attr);	                \
 	if(mrc != 0) { FATAL_ERROR( mutexattr_init_failed,    mrc, strerror(mrc)); }} while (0)
 
+extern const char  mutexattr_destroy_failed[];
 #define my_pthread_mutexattr_destroy(attr)              do {\
 	int mrc = pthread_mutexattr_destroy(attr);	            \
 	if(mrc != 0) { FATAL_ERROR( mutexattr_destroy_failed, mrc, strerror(mrc)); }} while (0)
 
+extern const char  mutexattr_settype_failed[];
 #define my_pthread_mutexattr_settype(attr, typ)         do {\
 	int mrc = pthread_mutexattr_settype(attr, typ);	        \
 	if(mrc != 0) { FATAL_ERROR( mutexattr_settype_failed, mrc, strerror(mrc)); }} while (0)
 
+extern const char  cond_timedwait_failed[];
 #define my_pthread_cond_timedwait(cond, mutex, abstime)	do {\
 	int mrc = pthread_cond_timedwait(cond, mutex, abstime);	\
 	if(mrc != 0) { FATAL_ERROR( cond_timedwait_failed,    mrc, strerror(mrc)); }} while (0)
 
+extern const char  cond_wait_failed[];
 #define my_pthread_cond_wait(cond, mutex)	            do {\
 	int mrc = pthread_cond_wait(cond, mutex);	            \
 	if(mrc != 0) { FATAL_ERROR( cond_wait_failed,         mrc, strerror(mrc)); }} while (0)
 
+extern const char  cond_signal_failed[];
 #define my_pthread_cond_signal(cond)	                do {\
 	int mrc = pthread_cond_signal(cond);	                \
 	if(mrc != 0) { FATAL_ERROR( cond_signal_failed,       mrc, strerror(mrc)); }} while (0)
 
+extern const char  cond_init_failed[];
 #define my_pthread_cond_init(cond, attr)                do {\
 	int mrc = pthread_cond_init(cond, attr);			    \
 	if(mrc != 0) { FATAL_ERROR( cond_init_failed,         mrc, strerror(mrc)); }} while (0)
 
+extern const char  cond_destroy_failed[];
 #define my_pthread_cond_destroy(cond)	                do {\
 	int mrc = pthread_cond_destroy(cond);	                \
 	if(mrc != 0) { FATAL_ERROR( cond_destroy_failed,      mrc, strerror(mrc)); }} while (0)
+
+//extern const char rwlock_init_failed[];
+//extern const char rwlock_read_lock_failed[];
+//extern const char rwlock_read_unlock_failed[];
+
+#else /* not OW_MT */
+
+#define my_pthread_mutex_init(mutex, attr)              do {} while(0)
+#define my_pthread_mutex_destroy(mutex)                 do {} while(0)
+#define my_pthread_mutex_lock(mutex)                    do {} while (0)
+#define my_pthread_mutex_unlock(mutex)                  do {} while (0)
+#define my_pthread_mutexattr_init(attr)                 do {} while (0)
+#define my_pthread_mutexattr_destroy(attr)              do {} while (0)
+#define my_pthread_mutexattr_settype(attr, typ)         do {} while (0)
+#define my_pthread_cond_timedwait(cond, mutex, abstime)	do {} while (0)
+#define my_pthread_cond_wait(cond, mutex)	            do {} while (0)
+#define my_pthread_cond_signal(cond)	                do {} while (0)
+#define my_pthread_cond_init(cond, attr)                do {} while (0)
+#define my_pthread_cond_destroy(cond)	                do {} while (0)
 
 #endif /* OW_MT */
 

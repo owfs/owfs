@@ -47,9 +47,7 @@ void *DataHandler(void *v)
 	char *retbuffer = NULL;
 	struct client_msg cm;
 
-#if OW_MT
-	pthread_detach(pthread_self());
-#endif
+	DETACH_THREAD;
 
 #if OW_CYGWIN
 	/* Random generator seem to need initialization for each new thread

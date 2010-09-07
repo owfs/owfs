@@ -18,11 +18,16 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
-/* ------- Globalss ----------- */
+/* ------- Globals ----------- */
 #if OW_MT
 pthread_mutex_t init_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t access_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t access_cond = PTHREAD_COND_INITIALIZER;
+#else /* not OW_MT */
+pthread_mutex_t init_mutex ;
+pthread_mutex_t access_mutex ;
+pthread_cond_t access_cond ;
+#endif /* OW_MT */
 #define INITINIT       _MUTEX_INIT( init_mutex )
 #define ACCESSINIT     _MUTEX_INIT( access_mutex )
 #define INITLOCK       _MUTEX_LOCK(    init_mutex   )
@@ -31,16 +36,6 @@ pthread_cond_t access_cond = PTHREAD_COND_INITIALIZER;
 #define ACCESSUNLOCK   _MUTEX_UNLOCK(access_mutex   )
 #define ACCESSWAIT     my_pthread_cond_wait(    &access_cond, &access_mutex )
 #define ACCESSSIGNAL   my_pthread_cond_signal(  &access_cond )
-#else							/* OW_MT */
-#define INITINIT       
-#define ACCESSINIT     
-#define INITLOCK		return_ok()
-#define INITUNLOCK		return_ok()
-#define ACCESSLOCK		return_ok()
-#define ACCESSUNLOCK	return_ok()
-#define ACCESSWAIT
-#define ACCESSSIGNAL
-#endif							/* OW_MT */
 
 int access_num = 0;
 

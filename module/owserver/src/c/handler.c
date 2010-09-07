@@ -181,7 +181,6 @@ void Handler(int file_descriptor)
 		owfree(hd.sp.path);
 		hd.sp.path = NULL;
 	}
-//printf("OWSERVER handler done\n" ) ;
 }
 
 #endif							/* OW_MT */

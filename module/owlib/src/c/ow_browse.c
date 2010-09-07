@@ -146,7 +146,7 @@ static void * OW_Browse_Bonjour(void * v)
 	struct connection_in * in = v ;
 	DNSServiceErrorType dnserr;
 
-	pthread_detach(pthread_self());
+	DETACH_THREAD;
 	MONITOR_RLOCK ;
 	dnserr = DNSServiceBrowse(&in->master.browse.bonjour_browse, 0, 0, "_owserver._tcp", NULL, BrowseBack, NULL);
 

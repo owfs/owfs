@@ -19,8 +19,6 @@ $Id$
 #include "ow_counters.h"
 #include "ow_connection.h"
 
-#if OW_MT
-
 /* Locking for thread work */
 /* Variables only used in this particular file */
 /* i.e. "locally global" */
@@ -29,8 +27,6 @@ pthread_mutex_t handler_thread_mutex ;
 int handler_thread_count ;
 int shutdown_in_progress ;
 FILE_DESCRIPTOR_OR_ERROR shutdown_pipe[2] ;
-
-#endif /* OW_MT */
 
 
 /* Prototypes */
@@ -229,7 +225,7 @@ static GOOD_OR_BAD ListenCycle( void )
 static void *ProcessAcceptSocket(void *arg)
 {
 	struct Accept_Socket_Data * asd = (struct Accept_Socket_Data *) arg;
-	pthread_detach(pthread_self());
+	DETACH_THREAD;
 
 	// Do the actual work
 	asd->out->HandlerRoutine( asd->acceptfd );

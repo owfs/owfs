@@ -51,6 +51,7 @@ void DirblobClear(struct dirblob *db)
 	SAFEFREE(db->snlist) ;
 	db->allocated = db->devices;
 	db->devices = 0;
+	db->troubled = 0;
 }
 
 void DirblobInit(struct dirblob *db)

@@ -226,7 +226,6 @@ static void * Simultaneous_write(void * v)
 	}
 	return NULL ;
 }
-#endif /* OW_MT */
 
 /* This function is only used by "Simultaneous" */
 static ZERO_OR_ERROR FS_w_simultaneous(struct one_wire_query *owq)
@@ -234,10 +233,20 @@ static ZERO_OR_ERROR FS_w_simultaneous(struct one_wire_query *owq)
 	if (SpecifiedBus(PN(owq))) {
 		return FS_w_given_bus(owq);
 	} else if (Inbound_Control.head) {
-#if OW_MT
 		struct simultaneous_struct ss = { Inbound_Control.head, owq };
 		Simultaneous_write( (void *) (&ss) ) ;
-#else /* OW_MT */
+	}
+	return 0;
+}
+
+#else /* not OW_MT */
+
+/* This function is only used by "Simultaneous" */
+static ZERO_OR_ERROR FS_w_simultaneous(struct one_wire_query *owq)
+{
+	if (SpecifiedBus(PN(owq))) {
+		return FS_w_given_bus(owq);
+	} else if (Inbound_Control.head) {
 		struct connection_in * in;
 		OWQ_allocate_struct_and_pointer(owq_given);
 		
@@ -247,10 +256,11 @@ static ZERO_OR_ERROR FS_w_simultaneous(struct one_wire_query *owq)
 			SetKnownBus(in->index, PN(owq_given));
 			FS_w_given_bus(owq_given);
 		}
-#endif /* OW_MT */
 	}
 	return 0;
 }
+
+#endif /* OW_MT */
 
 /* return 0 if ok, else negative */
 static ZERO_OR_ERROR FS_w_given_bus(struct one_wire_query *owq)

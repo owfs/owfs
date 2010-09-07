@@ -41,9 +41,7 @@ struct connection_out {
 		char *domain;				// for zeroconf
 		char *name;					// zeroconf name
 	} zero ;
-#if OW_MT
 	pthread_t tid;
-#endif							/* OW_MT */
 #if OW_ZERO
 	DNSServiceRef sref0;
 	DNSServiceRef sref1;

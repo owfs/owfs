@@ -62,9 +62,7 @@ static void DirHandlerCallback(void *v, const struct parsedname *pn_entry)
 
 	TOCLIENTLOCK(dhs->hd);
 	ToClient(dhs->hd->file_descriptor, dhs->cm, path);	// send this directory element
-#if OW_MT
 	dhs->hd->toclient = toclient_postmessage ;
-#endif /* OW_MT */
 	TOCLIENTUNLOCK(dhs->hd);
 }
 

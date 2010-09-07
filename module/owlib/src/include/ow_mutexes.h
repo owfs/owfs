@@ -57,7 +57,6 @@ $Id$
 #endif							/* OW_MT */
 
 extern struct mutexes {
-#if OW_MT
 	pthread_mutex_t stat_mutex;
 	pthread_mutex_t controlflags_mutex;
 	pthread_mutex_t fstat_mutex;
@@ -75,7 +74,6 @@ extern struct mutexes {
   #ifdef __UCLIBC__
 	pthread_mutex_t uclibc_mutex;
   #endif							/* __UCLIBC__ */
-#endif							/* OW_MT */
 } Mutex;
 
 
@@ -164,7 +162,16 @@ extern struct mutexes {
 #define UCLIBCUNLOCK		return_ok()
 #endif							/* __UCLIBC__ */
 
+#define DETACH_THREAD		pthread_detach(pthread_self())
+
 #else							/* OW_MT */
+
+#define _MUTEX_ATTR_DESTROY(at)	return_ok()
+
+#define _MUTEX_INIT(mut)	(void) mut
+#define _MUTEX_DESTROY(mut)	(void) mut
+#define _MUTEX_LOCK(mut)	return_ok()
+#define _MUTEX_UNLOCK(mut)	return_ok()
 
 #define LIB_WLOCK			return_ok()
 #define LIB_WUNLOCK			return_ok()
@@ -227,6 +234,9 @@ extern struct mutexes {
 #define BUSUNLOCK(pn)		return_ok()
 #define BUSLOCKIN(in)		return_ok()
 #define BUSUNLOCKIN(in)		return_ok()
+
+#define DETACH_THREAD		do {} while(0)
+
 #endif							/* OW_MT */
 
 #endif							/* OW_MUTEXES_H */

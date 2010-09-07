@@ -41,7 +41,7 @@ void * w1_master_command(void * v)
 {
 	struct netlink_parse * nlp = v ;
 	
-	pthread_detach(pthread_self());
+	DETACH_THREAD;
 
 	if ( nlp->nlm->nlmsg_pid != 0 ) {
 		LEVEL_DEBUG("Netlink packet PID not from kernel");

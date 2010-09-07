@@ -85,9 +85,7 @@ struct master_i2c {
 	BYTE configreg;
 	BYTE configchip;
 	/* only one per chip, the bus entries for the other 7 channels point to the first one */
-#if OW_MT
 	pthread_mutex_t all_channel_lock;	// second level mutex for the entire chip */
-#endif							/* OW_MT */
 	int current;
 	struct connection_in *head;
 	struct connection_in *next;
@@ -128,9 +126,7 @@ struct master_ha5 {
 	unsigned char sn[SERIAL_NUMBER_SIZE] ;       /* last address */
 	int checksum ;              /* flag to use checksum byte in communication */
 	char channel ;
-#if OW_MT
 	pthread_mutex_t all_channel_lock;	// second level mutex for the entire chip */
-#endif							/* OW_MT */
 	struct connection_in *head;
 };
 
@@ -144,7 +140,7 @@ struct master_w1 {
 };
 
 struct master_w1_monitor {
-#if OW_W1 && OW_MT
+#if OW_W1
 	// netlink fd kept in file_descriptor
 	SEQ_OR_ERROR seq ; // seq number to netlink
 	pid_t pid ;
@@ -152,7 +148,7 @@ struct master_w1_monitor {
 
 	pthread_mutex_t seq_mutex;	// mutex for w1 sequence number */
 	pthread_mutex_t read_mutex;  // mutex for w1 netlink read time
-#endif /* OW_W1 && OW_MT */
+#endif /* OW_W1 */
 	
 };
 

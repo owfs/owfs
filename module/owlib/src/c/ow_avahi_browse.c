@@ -204,7 +204,7 @@ void * OW_Avahi_Browse(void * v)
 	struct connection_in * in = v ;
 	int error;
 
-	pthread_detach(pthread_self());
+	DETACH_THREAD;
 
 	/* Create main loop object */
 	in->master.browse.avahi_poll = avahi_simple_poll_new() ;
