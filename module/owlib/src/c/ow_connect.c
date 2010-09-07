@@ -79,7 +79,7 @@ struct connection_in *AllocIn(const struct connection_in *in)
 {
 	size_t len = sizeof(struct connection_in);
 	struct connection_in *now = (struct connection_in *) owmalloc(len);
-	if (now) {
+	if (now != NULL) {
 		if (in) {
 			memcpy(now, in, len);
 			if ( in->name != NULL ) {
@@ -109,10 +109,10 @@ struct connection_in *AllocIn(const struct connection_in *in)
 		now->last_root_devs = 10;
 		/* Not yet a valid bus */
 		now->iroutines.flags = ADAP_FLAG_sham ;
+		now->AnyDevices = anydevices_unknown ;
 	} else {
 		LEVEL_DEFAULT("Cannot allocate memory for bus master structure,");
 	}
-	now->AnyDevices = anydevices_unknown ;
 	return now;
 }
 
@@ -131,11 +131,9 @@ struct connection_in *LinkIn(struct connection_in *now)
 		DirblobInit(&(now->main));
 		DirblobInit(&(now->alarm));
 
-#if OW_MT
 		_MUTEX_INIT(now->bus_mutex);
 		_MUTEX_INIT(now->dev_mutex);
 		now->dev_db = NULL;
-#endif							/* OW_MT */
 	}
 	return now;
 }
@@ -199,14 +197,12 @@ void RemoveIn( struct connection_in * conn )
 	}
 
 	/* Now free up thread-sync resources */
-#if OW_MT
 	if ( conn->next != NULL ) {
 		/* Only if actually linked in and possibly active */
 		_MUTEX_DESTROY(conn->bus_mutex);
 		_MUTEX_DESTROY(conn->dev_mutex);
 		SAFETDESTROY( conn->dev_db, owfree_func);
 	}
-#endif							/* OW_MT */
 
 	/* Close master-specific resources */
 	BUS_close(conn) ;
