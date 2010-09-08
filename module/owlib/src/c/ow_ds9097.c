@@ -206,7 +206,7 @@ static void DS9097_post_reset(struct termios * term, struct connection_in *in )
 		ERROR_CONNECT("Cannot set attributes: %s", SAFESTRING(in->name));
 	}
 	/* Flush the input and output buffers */
-	COM_flush(in);
+	COM_flush(in); // Adds no appreciable time
 }
 
 /* Symmetric */
