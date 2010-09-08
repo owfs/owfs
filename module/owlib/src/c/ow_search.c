@@ -29,8 +29,8 @@ static enum search_status BUS_next_3try(struct device_search *ds, const struct p
 */
 enum search_status BUS_first(struct device_search *ds, const struct parsedname *pn)
 {
-	// reset the search state
 	LEVEL_DEBUG("Start of directory path=%s device=" SNformat, SAFESTRING(pn->path), SNvar(pn->sn));
+	// reset the search state
 	BUS_first_both(ds);
 	ds->search = _1W_SEARCH_ROM;
 	return BUS_next(ds, pn);
@@ -38,10 +38,10 @@ enum search_status BUS_first(struct device_search *ds, const struct parsedname *
 
 enum search_status BUS_first_alarm(struct device_search *ds, const struct parsedname *pn)
 {
+	LEVEL_DEBUG("Start of directory path=%s device=" SNformat, SAFESTRING(pn->path), SNvar(pn->sn));
 	// reset the search state
 	BUS_first_both(ds);
 	ds->search = _1W_CONDITIONAL_SEARCH_ROM;
-	//BUS_reset(pn);
 	return BUS_next(ds, pn);
 }
 
@@ -68,6 +68,7 @@ enum search_status BUS_next(struct device_search *ds, const struct parsedname *p
 	switch ( BUS_next_3try(ds, pn) ) {
 		case search_good:
 			// found a device in a directory search, add to "presence" cache
+			LEVEL_DEBUG("Device found: " SNformat, SNvar(ds->sn));
 			Cache_Add_Device(pn->selected_connection->index,ds->sn) ;
 			return search_good ;
 		case search_done:
@@ -116,9 +117,7 @@ static enum search_status BUS_next_3try(struct device_search *ds, const struct p
 	return search_error ;
 }
 
-
-/* Low level search routines -- bit banging */
-/* Not used by more advanced adapters */
+/* Call either master-specific search routine, or the bit-banging one */
 enum search_status BUS_next_both(struct device_search *ds, const struct parsedname *pn)
 {
 	enum search_status next_both ;
@@ -212,13 +211,9 @@ enum search_status BUS_next_both_bitbang(struct device_search *ds, const struct 
 				search_direction = 0;
 				last_zero = bit_number;
 			}
-			// check for Last discrepancy in family
-			//if (last_zero < 9) si->LastFamilyDiscrepancy = last_zero;
 			UT_setbit(ds->sn, bit_number, search_direction);
 			
-			// serial number search direction write bit
-			//if ( (ret=DS9097_sendback_bits(&search_direction,bits,1)) ) return ret ;
-		}						// loop until through serial number bits
+		}	// loop until through serial number bits
 		
 		if (CRC8(ds->sn, 8) || (bit_number < 64) || (ds->sn[0] == 0)) {
 			/* A minor "error" */
@@ -229,7 +224,6 @@ enum search_status BUS_next_both_bitbang(struct device_search *ds, const struct 
 		ds->LastDiscrepancy = last_zero;
 		//    printf("Post, lastdiscrep=%d\n",si->LastDiscrepancy) ;
 		ds->LastDevice = (last_zero < 0);
-		LEVEL_DEBUG("Generic_next_both SN found: " SNformat, SNvar(ds->sn));
 		return search_good;
 	}
 }
