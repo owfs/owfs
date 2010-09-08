@@ -24,17 +24,17 @@ struct BrowseStruct {
 };
 
 static struct BrowseStruct *Browse_Struct_Create(const char *name, const char *type, const char *domain);
-static void Browse_Struct_Desctroy(struct BrowseStruct *browse_struct);
+static void Browse_Struct_Destroy(struct BrowseStruct *browse_struct);
 static void * OW_Browse_Bonjour(void * v) ;
 static void ResolveWait( DNSServiceRef sref ) ;
 static void ResolveBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
-						DNSServiceErrorType e, const char *n, const char *host, uint16_t port, uint16_t tl, const char *t, void *c);
+						DNSServiceErrorType e, const char *n, const char *host, uint16_t port, uint16_t tl, const unsigned char *t, void *c);
 static void BrowseBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 					   DNSServiceErrorType e, const char *name, const char *type, const char *domain, void *context);
 
 
 static void ResolveBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
-						DNSServiceErrorType e, const char *n, const char *host, uint16_t port, uint16_t tl, const char *t, void *c)
+						DNSServiceErrorType e, const char *n, const char *host, uint16_t port, uint16_t tl, const unsigned char *t, void *c)
 {
 	struct BrowseStruct *browse_struct = c;
 	char service[11] ;
@@ -55,7 +55,7 @@ static void ResolveBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 	} else {
 		LEVEL_DEBUG("Couldn't translate port %d",ntohs(port) ) ;
 	}
-	Browse_Struct_Desctroy(browse_struct);
+	Browse_Struct_Destroy(browse_struct);
 }
 
 static struct BrowseStruct *Browse_Struct_Create(const char *name, const char *type, const char *domain)
@@ -73,7 +73,7 @@ static struct BrowseStruct *Browse_Struct_Create(const char *name, const char *t
 	return browse_struct;
 }
 
-static void Browse_Struct_Desctroy(struct BrowseStruct *browse_struct)
+static void Browse_Struct_Destroy(struct BrowseStruct *browse_struct)
 {
 	if ( browse_struct == NULL ) {
 		return;
@@ -132,10 +132,10 @@ static void BrowseBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i, DNSServic
 			ResolveWait(sr) ;
 			DNSServiceRefDeallocate(sr);
 		} else {
-			Browse_Struct_Desctroy(browse_struct) ;
+			Browse_Struct_Destroy(browse_struct) ;
 		}
 	} else { // Remove
-		Browse_Struct_Desctroy(browse_struct) ;
+		Browse_Struct_Destroy(browse_struct) ;
 		ZeroDel( name, type, domain ) ;
 	}
 }
