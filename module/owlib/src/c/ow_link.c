@@ -71,12 +71,13 @@ static void LINK_setroutines(struct connection_in *in);
 static void LINKE_setroutines(struct connection_in *in);
 
 static RESET_TYPE LINK_reset_in(struct connection_in * in);
-static GOOD_OR_BAD LINK_serial_detect(struct connection_in * in) ;
-static GOOD_OR_BAD LINK_net_detect(struct connection_in * in) ;
+static GOOD_OR_BAD LINK_detect_serial(struct connection_in * in) ;
+static GOOD_OR_BAD LINK_detect_net(struct connection_in * in) ;
 static char * LINK_version_string(struct connection_in * in) ;
 
 static void LINK_set_baud(struct connection_in * in) ;
 static GOOD_OR_BAD LINK_read(BYTE * buf, size_t size, struct connection_in * in);
+static GOOD_OR_BAD LINK_read_true_length(BYTE * buf, size_t size, struct connection_in *in) ;
 static GOOD_OR_BAD LINK_write(const BYTE * buf, size_t size, struct connection_in *in);
 static GOOD_OR_BAD LINK_directory(struct device_search *ds, struct dirblob *db, struct connection_in * in);
 static GOOD_OR_BAD LINK_search_type(struct device_search *ds, struct connection_in * in) ;
@@ -162,20 +163,22 @@ GOOD_OR_BAD LINK_detect(struct connection_in *in)
 
 	switch( in->busmode ) {
 		case bus_elink:
-			return LINK_net_detect( in ) ;
+			return LINK_detect_net( in ) ;
 		case bus_link:
 			in->flow_control = flow_none ;
-			RETURN_GOOD_IF_GOOD( LINK_serial_detect(in) ) ;
+			RETURN_GOOD_IF_GOOD( LINK_detect_serial(in) ) ;
+			LEVEL_DEBUG("Second attempt at serial LINK setup");
 			in->flow_control = flow_none ;
-			RETURN_GOOD_IF_GOOD( LINK_serial_detect(in) ) ;
+			RETURN_GOOD_IF_GOOD( LINK_detect_serial(in) ) ;
+			LEVEL_DEBUG("Third attempt at serial LINK setup");
 			in->flow_control = flow_hard ;
-			return LINK_serial_detect(in) ;
+			return LINK_detect_serial(in) ;
 		default:
 			return gbBAD ;
 	}
 }
 
-static GOOD_OR_BAD LINK_serial_detect(struct connection_in * in)
+static GOOD_OR_BAD LINK_detect_serial(struct connection_in * in)
 {
 	char * version_string ;
 	
@@ -187,7 +190,7 @@ static GOOD_OR_BAD LINK_serial_detect(struct connection_in * in)
 	/* Open the com port */
 	RETURN_BAD_IF_BAD(COM_open(in)) ;
 	
-	COM_break( in ) ;
+	//COM_break( in ) ;
 	LINK_slurp( in ) ;
 	UT_delay(100) ; // based on http://morpheus.wcf.net/phpbb2/viewtopic.php?t=89&sid=3ab680415917a0ebb1ef020bdc6903ad
 	
@@ -213,7 +216,7 @@ static GOOD_OR_BAD LINK_serial_detect(struct connection_in * in)
 	return gbBAD;
 }
 
-static GOOD_OR_BAD LINK_net_detect(struct connection_in * in)
+static GOOD_OR_BAD LINK_detect_net(struct connection_in * in)
 {
 	char * version_string ;
 
@@ -252,11 +255,11 @@ static GOOD_OR_BAD LINK_net_detect(struct connection_in * in)
 static char * LINK_version_string(struct connection_in * in)
 {
 	char * version_string = owmalloc(MAX_LINK_VERSION_LENGTH) ;
+	enum { lvs_string, lvs_0d, } lvs = lvs_string ;
 	int version_index ;
-	int index_0D = 0 ;
 
 	in->master.serial.tcp.default_discard = 0 ;
-	in->master.serial.tcp.CRLF_size = 0 ;
+	in->master.serial.tcp.CRLF_size = 2 ;
 	in->master.link.tmode = e_link_t_unknown ;
 	in->master.link.qmode = e_link_t_unknown ;
 
@@ -277,20 +280,48 @@ static char * LINK_version_string(struct connection_in * in)
 
 	// need to read 1 char at a time to get a short string
 	for ( version_index=0 ; version_index<MAX_LINK_VERSION_LENGTH ; ++version_index ) {
-		if ( BAD( LINK_read( (BYTE *) &(version_string[version_index]), 1, in)) ) {
+		if ( BAD( LINK_read_true_length( (BYTE *) &(version_string[version_index]), 1, in)) ) {
 			LEVEL_DEBUG("Cannot read a full CRLF version string");
+			switch ( lvs ) {
+				case lvs_string:
+					LEVEL_DEBUG("Found string <%s> but no 0x0D 0x0A",version_string) ;
+					break ;
+				case lvs_0d:
+					LEVEL_DEBUG("Found string <%s> but no 0x0A") ;
+					break ;
+			}
 			owfree(version_string);
 			return NULL ;
 		}
+		
 		switch( version_string[version_index] ) {
 			case 0x0D:
-				index_0D = version_index ;
+				switch ( lvs ) {
+					case lvs_string:
+						lvs = lvs_0d ;
+						break ;
+					case lvs_0d:
+						LEVEL_DEBUG("Extra CR char")
+						break ;
+				}
 				break ;
 			case 0x0A:
-				in->master.serial.tcp.CRLF_size = version_index - index_0D + 1 ;
-				LEVEL_DEBUG("CRLF string length = %d",in->master.serial.tcp.CRLF_size) ;
-				return version_string ;
+				switch ( lvs ) {
+					case lvs_string:
+						LEVEL_DEBUG("No CR before LF char");
+						// fall through
+					case lvs_0d:
+						return version_string ;
+				}
 			default:
+				switch ( lvs ) {
+					case lvs_string:
+						// add to string
+						break ; 
+					case lvs_0d:
+						++in->master.serial.tcp.CRLF_size;
+						break ;
+				}
 				break ;
 		}
 	}
@@ -382,7 +413,6 @@ static RESET_TYPE LINK_reset_in(struct connection_in * in)
 		LINK_flush(in);
 	}
 
-	//Response is 3 bytes:  1 byte for code + \r\n
 	if ( BAD(LINK_write(LINK_string("r"), 1, in) || BAD( LINK_read(resp, 1, in))) ) {
 		LEVEL_DEBUG("Error resetting LINK device");
 		LINK_slurp(in);
@@ -401,6 +431,7 @@ static RESET_TYPE LINK_reset_in(struct connection_in * in)
 		return BUS_RESET_SHORT;
 	default:
 		LEVEL_DEBUG("bad, Unknown LINK response %c", resp[0]);
+		LINK_slurp(in);
 		return BUS_RESET_ERROR;
 	}
 }
@@ -464,12 +495,17 @@ static void LINK_slurp(struct connection_in *in)
  */
 static GOOD_OR_BAD LINK_read(BYTE * buf, size_t size, struct connection_in *in)
 {
+	return LINK_read_true_length( buf, size+in->master.serial.tcp.CRLF_size, in ) ;
+}
+
+static GOOD_OR_BAD LINK_read_true_length(BYTE * buf, size_t size, struct connection_in *in)
+{
 	switch ( in->busmode ) {
 		case bus_elink:
 			// Only need to add an extra byte sometimes
-			return telnet_read( buf, size+in->master.serial.tcp.CRLF_size, in ) ;
+			return telnet_read( buf, size, in ) ;
 		default:
-			return COM_read( buf, size+in->master.serial.tcp.CRLF_size, in ) ;
+			return COM_read( buf, size, in ) ;
 	}
 }
 
