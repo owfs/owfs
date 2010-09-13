@@ -158,6 +158,8 @@ static enum e_visibility VISIBLE_910( const struct parsedname * pn ) ;
 static enum e_visibility VISIBLE_911( const struct parsedname * pn ) ;
 
 struct aggregate ABAEeeprom = { _FC02_EEPROM_PAGES, ag_numbers, ag_separate, };
+struct aggregate A911pio = { 22, ag_numbers, ag_separate, };
+struct aggregate A911pwm = { 4, ag_numbers, ag_separate, };
 struct filetype BAE[] = {
 	F_STANDARD,
 	{"memory", _FC02_MEMORY_SIZE, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
@@ -180,7 +182,7 @@ struct filetype BAE[] = {
 	{"eeprom/memory",_FC02_EEPROM_PAGE_SIZE*_FC02_EEPROM_PAGES, NON_AGGREGATE, ft_binary, fc_link, FS_eeprom_r_mem, FS_eeprom_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 	{"eeprom/page",_FC02_EEPROM_PAGE_SIZE, &ABAEeeprom, ft_binary, fc_page, FS_eeprom_r_page, FS_eeprom_w_page, VISIBLE, NO_FILETYPE_DATA,},
 	{"eeprom/erase", PROPERTY_LENGTH_YESNO, &ABAEeeprom, ft_yesno, fc_link, NO_READ_FUNCTION, FS_eeprom_erase, VISIBLE, NO_FILETYPE_DATA,},
-	
+
 	
 	{"910", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_910, NO_FILETYPE_DATA,},
 	{"910/adcc", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_read_stable, FS_r_8, FS_w_8, VISIBLE_910, {u:_FC02_ADCC,}, },
@@ -244,6 +246,8 @@ struct filetype BAE[] = {
 	{"910/pc2", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_910, {u:_FC02_PC2,}, },
 	{"910/pc3", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_910, {u:_FC02_PC3,}, },
 
+	{"911", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
+	{"911/pio", PROPERTY_LENGTH_YESNO, &A911pio, ft_yesno, fc_read_stable, FS_r_8, FS_w_8, VISIBLE_910, NO_FILETYPE_DATA, },
 };
 
 DeviceEntryExtended(FC, BAE, DEV_resume | DEV_alarm, NO_GENERIC_READ, NO_GENERIC_WRITE );
@@ -560,24 +564,24 @@ static ZERO_OR_ERROR FS_type_chip(struct one_wire_query *owq)
 	return z_or_e ;
 }
 
-/* read an 8 bit value from a register stored in filetype.data */
+/* read an 8 bit value from a register stored in filetype.data plus extension */
 static ZERO_OR_ERROR FS_r_8(struct one_wire_query *owq)
 {
 	struct parsedname * pn = PN(owq) ;
 	BYTE data[1] ; // 8/8 = 1
-	RETURN_ERROR_IF_BAD( OW_r_mem_small(data, 1, pn->selected_filetype->data.u, pn ) );
+	RETURN_ERROR_IF_BAD( OW_r_mem_small(data, 1, pn->selected_filetype->data.u + pn->extension, pn ) );
 	OWQ_U(owq) = data[0] ;
 	return 0 ;
 }
 
-/* write an 8 bit value from a register stored in filetype.data */
+/* write an 8 bit value from a register stored in filetype.data plus extension */
 static ZERO_OR_ERROR FS_w_8(struct one_wire_query *owq)
 {
 	struct parsedname * pn = PN(owq) ;
 	BYTE data[1] ; // 8/8 = 1
 	
 	data[0] = BYTE_MASK( OWQ_U(owq) ) ;
-	return GB_to_Z_OR_E(OW_w_mem(data, 1, pn->selected_filetype->data.u, pn ) ) ;
+	return GB_to_Z_OR_E(OW_w_mem(data, 1, pn->selected_filetype->data.u + pn->extension, pn ) ) ;
 }
 
 /* read a 16 bit value from a register stored in filetype.data */

@@ -247,10 +247,10 @@ class Sensor(object):
         and thr PIO.0 might be 1.
         """
 
-        if name in self._attrs:
+        try:
             #print 'Sensor.__getattr__(%s)' % name
-            attr = self._connection.read(self._attrs[name])
-        else:
+            attr = object._connection.read(object.__getattribute__(self, '_attrs')[name])
+        except KeyError:
             raise AttributeError, name
 
         return attr

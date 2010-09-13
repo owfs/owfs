@@ -344,8 +344,8 @@ class Sensor( object ):
         """
         #print 'Sensor.__getattr__', name
         try:
-		    return owfs_get(object.__getattribute__(self, '_attrs')[name])
-		except KeyError:
+            return owfs_get(object.__getattribute__(self, '_attrs')[name])
+        except KeyError:
             raise AttributeError, name
 
 

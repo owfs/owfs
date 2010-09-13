@@ -232,7 +232,10 @@ class Connection(object):
         val          = struct.unpack('iiiiii', msg)
         version      = socket.ntohl(val[0])
         payload_len  = socket.ntohl(val[1])
-        ret_value    = socket.ntohl(val[2])
+        try:
+            ret_value    = socket.ntohl(val[2])
+        except OverflowError:
+            ret_value = 0
         format_flags = socket.ntohl(val[3])
         data_len     = socket.ntohl(val[4])
         offset       = socket.ntohl(val[5])
