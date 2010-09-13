@@ -684,9 +684,9 @@ ZERO_OR_ERROR FS_ParsedNamePlusExt(const char *path, const char *file, int exten
 {
 	char name[OW_FULLNAME_MAX];
 	UCLIBCLOCK;
-	if (extension == -2) {
+	if (extension == EXTENSION_BYTE ) {
 		snprintf(name, OW_FULLNAME_MAX, "%s.BYTE", file);
-	} else if (extension == -1) {
+	} else if (extension == EXTENSION_ALL ) {
 		snprintf(name, OW_FULLNAME_MAX, "%s.ALL", file);
 	} else if (alphanumeric == ag_letters) {
 		snprintf(name, OW_FULLNAME_MAX, "%s.%c", file, extension + 'A');
