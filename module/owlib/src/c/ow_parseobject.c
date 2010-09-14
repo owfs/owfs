@@ -53,13 +53,38 @@ struct one_wire_query * OWQ_create_from_path(const char *path)
 struct one_wire_query * OWQ_create_sibling(const char *sibling, struct one_wire_query *owq_original)
 {
 	char path[PATH_MAX] ;
-	int dirlength = PN(owq_original)->dirlength ;
+	struct parsedname * pn_original = PN(owq_original) ;
+	int dirlength = pn_original->dirlength ;
 	struct one_wire_query * owq_sib ;
 
-	strncpy(path,PN(owq_original)->path,dirlength) ;
+	strncpy(path, pn_original->path,dirlength) ;
 	strcpy(&path[dirlength],sibling) ;
-
-	LEVEL_DEBUG("Create sibling %s from %s as %s", sibling,PN(owq_original)->path,path);
+	
+	// Add extension only if original property is aggregate
+	if ( pn_original->selected_filetype->ag != NON_AGGREGATE ) {
+		// search for sibling in the filetype array
+		struct filetype * sib_filetype = bsearch(sibling, pn_original->selected_device->filetype_array,
+				 (size_t) pn_original->selected_device->count_of_filetypes, sizeof(struct filetype), filetype_cmp) ;
+		// see if sibling is also an aggregate property
+		if ( sib_filetype != NULL && sib_filetype->ag != NON_AGGREGATE ) {
+			char * aggregate_point = path + strlen(path) ;
+			if (pn_original->extension == EXTENSION_BYTE ) {
+				strcpy( aggregate_point, ".BYTE" ) ;
+			} else if (pn_original->extension == EXTENSION_ALL ) {
+				strcpy( aggregate_point, ".ALL" ) ;
+			} else if (sib_filetype->ag->letters == ag_letters) {
+				UCLIBCLOCK;
+				snprintf(aggregate_point, OW_FULLNAME_MAX, ".%c", pn_original->extension + 'A');
+				UCLIBCUNLOCK;
+			} else {
+				UCLIBCLOCK;
+				snprintf(aggregate_point, OW_FULLNAME_MAX, ".%d", pn_original->extension );
+				UCLIBCUNLOCK;
+			}
+		}			
+	}
+	
+	LEVEL_DEBUG("Create sibling %s from %s as %s", sibling, pn_original->path,path);
 
 	owq_sib = OWQ_create_from_path(path) ;
 	if ( owq_sib != NULL ) {
