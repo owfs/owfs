@@ -79,6 +79,9 @@ WRITE_FUNCTION(FS_w_16) ;
 READ_FUNCTION(FS_r_32) ;
 WRITE_FUNCTION(FS_w_32) ;
 
+READ_FUNCTION(FS_r_911_pio) ;
+WRITE_FUNCTION(FS_w_911_pio) ;
+
 /* ------- Structures ----------- */
 
 #define _FC02_MEMORY_SIZE 128
@@ -151,6 +154,8 @@ WRITE_FUNCTION(FS_w_32) ;
 #define _FC02_USERN      116  /* u32 */
 #define _FC02_USERO      120  /* u32 */
 #define _FC02_USERP      124  /* u32 */
+
+#define _FC03_PIO        0x00 /* u8 x 22 */
 
 
 /* Placeholder for special vsibility code for firmware types "personalities" */
@@ -247,7 +252,8 @@ struct filetype BAE[] = {
 	{"910/pc3", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_910, {u:_FC02_PC3,}, },
 
 	{"911", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
-	{"911/pio", PROPERTY_LENGTH_YESNO, &A911pio, ft_yesno, fc_read_stable, FS_r_8, FS_w_8, VISIBLE_910, NO_FILETYPE_DATA, },
+	{"911/piostate", PROPERTY_LENGTH_UNSIGNED, &A911pio, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, INVISIBLE, {u:_FC03_PIO,}, },
+	{"911/pio", PROPERTY_LENGTH_YESNO, &A911pio, ft_yesno, fc_link, FS_r_911_pio, FS_w_911_pio, VISIBLE_911, NO_FILETYPE_DATA, },
 };
 
 DeviceEntryExtended(FC, BAE, DEV_resume | DEV_alarm, NO_GENERIC_READ, NO_GENERIC_WRITE );
@@ -485,6 +491,21 @@ static ZERO_OR_ERROR FS_version_state(struct one_wire_query *owq)
 	RETURN_ERROR_IF_BAD( OW_version( &v, PN(owq) ) ) ;
 	OWQ_U(owq) = v ;
 	return 0 ;
+}
+
+// there may need to be a 0<->1 sense interchange
+static ZERO_OR_ERROR FS_r_911_pio( struct one_wire_query * owq ) {
+	UINT piostate ;
+	if ( FS_r_sibling_U( &piostate, "911/piostate", owq ) != 0 ) {
+		return -EINVAL ;
+	}
+	OWQ_Y(owq) = piostate & 0x01 ;
+	return 0 ;
+}
+
+// there may need to be a 0<->1 sense interchange
+static ZERO_OR_ERROR FS_w_911_pio( struct one_wire_query * owq ) {
+	return FS_w_sibling_U( OWQ_Y(owq), "911/piostate", owq ) ;
 }
 
 static ZERO_OR_ERROR FS_version(struct one_wire_query *owq)
