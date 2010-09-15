@@ -81,6 +81,8 @@ WRITE_FUNCTION(FS_w_32) ;
 
 READ_FUNCTION(FS_r_911_pio) ;
 WRITE_FUNCTION(FS_w_911_pio) ;
+READ_FUNCTION(FS_r_pio_bit) ;
+WRITE_FUNCTION(FS_w_pio_bit) ;
 
 /* ------- Structures ----------- */
 
@@ -156,6 +158,8 @@ WRITE_FUNCTION(FS_w_911_pio) ;
 #define _FC02_USERP      124  /* u32 */
 
 #define _FC03_PIO        0x00 /* u8 x 22 */
+#define _FC03_PIO_CONF   0x16 /* u8 x 22 */
+#define _FC03_ADC        0x40 /* u16 x 16 */
 
 
 /* Placeholder for special vsibility code for firmware types "personalities" */
@@ -165,6 +169,7 @@ static enum e_visibility VISIBLE_911( const struct parsedname * pn ) ;
 struct aggregate ABAEeeprom = { _FC02_EEPROM_PAGES, ag_numbers, ag_separate, };
 struct aggregate A911pio = { 22, ag_numbers, ag_separate, };
 struct aggregate A911pwm = { 4, ag_numbers, ag_separate, };
+struct aggregate A911adc = { 16, ag_numbers, ag_separate, };
 struct filetype BAE[] = {
 	F_STANDARD,
 	{"memory", _FC02_MEMORY_SIZE, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
@@ -254,6 +259,12 @@ struct filetype BAE[] = {
 	{"911", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
 	{"911/piostate", PROPERTY_LENGTH_UNSIGNED, &A911pio, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, INVISIBLE, {u:_FC03_PIO,}, },
 	{"911/pio", PROPERTY_LENGTH_YESNO, &A911pio, ft_yesno, fc_link, FS_r_911_pio, FS_w_911_pio, VISIBLE_911, NO_FILETYPE_DATA, },
+	{"911/pio_config", PROPERTY_LENGTH_UNSIGNED, &A911pio, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_PIO_CONF,}, },
+	{"911/pio_ds", PROPERTY_LENGTH_YESNO, &A911pio, ft_yesno, fc_link, FS_r_pio_bit, FS_w_pio_bit, VISIBLE_911, {i: 3}, },
+	{"911/pio_pd", PROPERTY_LENGTH_YESNO, &A911pio, ft_yesno, fc_link, FS_r_pio_bit, FS_w_pio_bit, VISIBLE_911, {i: 2}, },
+	{"911/pio_pe", PROPERTY_LENGTH_YESNO, &A911pio, ft_yesno, fc_link, FS_r_pio_bit, FS_w_pio_bit, VISIBLE_911, {i: 1}, },
+	{"911/pio_dd", PROPERTY_LENGTH_YESNO, &A911pio, ft_yesno, fc_link, FS_r_pio_bit, FS_w_pio_bit, VISIBLE_911, {i: 0}, },
+	{"911/adc", PROPERTY_LENGTH_UNSIGNED, &A911adc, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_ADC,}, },
 };
 
 DeviceEntryExtended(FC, BAE, DEV_resume | DEV_alarm, NO_GENERIC_READ, NO_GENERIC_WRITE );
@@ -508,6 +519,19 @@ static ZERO_OR_ERROR FS_w_911_pio( struct one_wire_query * owq ) {
 	return FS_w_sibling_U( OWQ_Y(owq), "911/piostate", owq ) ;
 }
 
+static ZERO_OR_ERROR FS_r_pio_bit( struct one_wire_query * owq ) {
+	UINT pioconf ;
+	if ( FS_r_sibling_U( &pioconf, "911/pio_config", owq ) != 0 ) {
+		return -EINVAL ;
+	}
+	OWQ_Y(owq) = UT_getbit( (void *) &pioconf, PN(owq)->selected_filetype->data.u ) ;
+	return 0 ;
+}
+
+static ZERO_OR_ERROR FS_w_pio_bit( struct one_wire_query * owq ) {
+	return FS_w_sibling_bitwork( OWQ_Y(owq), (1<<(PN(owq)->selected_filetype->data.u)), "911/pio_config", owq ) ;
+}
+
 static ZERO_OR_ERROR FS_version(struct one_wire_query *owq)
 {
 	char v[6];
@@ -610,7 +634,7 @@ static ZERO_OR_ERROR FS_r_16(struct one_wire_query *owq)
 {
 	struct parsedname * pn = PN(owq) ;
 	BYTE data[2] ; // 16/8 = 2
-	RETURN_ERROR_IF_BAD( OW_r_mem_small(data, 2, pn->selected_filetype->data.u, pn ) );
+	RETURN_ERROR_IF_BAD( OW_r_mem_small(data, 2, pn->selected_filetype->data.u + 2 * pn->extension, pn ) );
 	OWQ_U(owq) = BAE_uint16(data) ;
 	return 0 ;
 }
