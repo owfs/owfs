@@ -159,6 +159,7 @@ WRITE_FUNCTION(FS_w_pio_bit) ;
 
 #define _FC03_PIO        0x00 /* u8 x 22 */
 #define _FC03_PIO_CONF   0x16 /* u8 x 22 */
+#define _FC03_DUTY       0x32 /* u16 x 4 */
 #define _FC03_ADC        0x40 /* u16 x 16 */
 
 
@@ -264,6 +265,7 @@ struct filetype BAE[] = {
 	{"911/pio_pd", PROPERTY_LENGTH_YESNO, &A911pio, ft_yesno, fc_link, FS_r_pio_bit, FS_w_pio_bit, VISIBLE_911, {i: 2}, },
 	{"911/pio_pe", PROPERTY_LENGTH_YESNO, &A911pio, ft_yesno, fc_link, FS_r_pio_bit, FS_w_pio_bit, VISIBLE_911, {i: 1}, },
 	{"911/pio_dd", PROPERTY_LENGTH_YESNO, &A911pio, ft_yesno, fc_link, FS_r_pio_bit, FS_w_pio_bit, VISIBLE_911, {i: 0}, },
+	{"911/duty", PROPERTY_LENGTH_UNSIGNED, &A911pwm, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_DUTY,}, },
 	{"911/adc", PROPERTY_LENGTH_UNSIGNED, &A911adc, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_ADC,}, },
 };
 
@@ -310,6 +312,7 @@ static int VISIBLE_BAE( const struct parsedname * pn )
 {
 	int visibility_parameter = -1 ;
 	
+	LEVEL_DEBUG("Checking visibility of %s",SAFESTRING(pn->path)) ;
 	if ( BAD( GetVisibilityCache( &visibility_parameter, pn ) ) ) {
 		struct one_wire_query * owq = OWQ_create_from_path(pn->path) ; // for read
 		if ( owq != NULL) {
@@ -646,7 +649,7 @@ static ZERO_OR_ERROR FS_w_16(struct one_wire_query *owq)
 	BYTE data[2] ; // 16/8 = 2
 
 	BAE_uint16_to_bytes( OWQ_U(owq), data ) ;
-	return GB_to_Z_OR_E( OW_w_mem(data, 2, pn->selected_filetype->data.u, pn ) ) ;
+	return GB_to_Z_OR_E( OW_w_mem(data, 2, pn->selected_filetype->data.u + 2 * pn->extension, pn ) ) ;
 }
 
 /* read a 32 bit value from a register stored in filetype.data */
