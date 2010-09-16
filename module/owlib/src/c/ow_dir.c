@@ -479,7 +479,12 @@ static ZERO_OR_ERROR FS_structdevdir(void (*dirfunc) (void *, const struct parse
 				FS_ParsedName_destroy(pn_file_entry);
 			}
 		} else {
-			FS_dir_plus(dirfunc, v, &ignoreflag, pn_device_directory, namepart);
+			struct parsedname s_pn_file_entry;
+			struct parsedname *pn_file_entry = &s_pn_file_entry;
+			if (FS_ParsedNamePlus(pn_device_directory->path, namepart, pn_file_entry) == 0) {
+				FS_alias_subst( dirfunc, v, pn_file_entry) ;
+				FS_ParsedName_destroy(pn_file_entry);
+			}
 		}
 	}
 	return 0;
