@@ -380,9 +380,6 @@ static ZERO_OR_ERROR FS_devdir(void (*dirfunc) (void *, const struct parsedname 
 	for (; ft_pointer < lastft; ++ft_pointer) {	/* loop through filetypes */
 		char *slash = strchr(ft_pointer->name, '/'); // marker that there is a subdir involved
 		char *namepart;
- 		if ( ! ft_pointer->visible(pn_device_directory) ) { // hide hidden properties
-			continue ;
-		}
 		if (subdir_len > 0) {	/* subdir */
 			/* test start of name for directory name */
 			if (strncmp(ft_pointer->name, subdir_name, subdir_len) != 0) {
@@ -401,10 +398,17 @@ static ZERO_OR_ERROR FS_devdir(void (*dirfunc) (void *, const struct parsedname 
 			struct parsedname *pn_file_entry = &s_pn_file_entry;
 			for (extension = first_extension; extension < ft_pointer->ag->elements; ++extension) {
 				if (FS_ParsedNamePlusExt(pn_device_directory->path, namepart, extension, ft_pointer->ag->letters, pn_file_entry) == 0) {
-					FS_alias_subst( dirfunc, v, pn_file_entry) ;
+					switch ( FS_visible(pn_file_entry) ) { // hide hidden properties
+						case visible_now :
+						case visible_always:
+							FS_alias_subst( dirfunc, v, pn_file_entry) ;
+							STAT_ADD1(dir_dev.entries);
+							break ;
+						default:
+							break ;
+					}
 					FS_ParsedName_destroy(pn_file_entry);
 				}
-				STAT_ADD1(dir_dev.entries);
 			}
 		} else {
 			FS_dir_plus(dirfunc, v, &ignoreflag, pn_device_directory, namepart);
@@ -744,9 +748,16 @@ static ZERO_OR_ERROR FS_dir_plus(void (*dirfunc) (void *, const struct parsednam
 	struct parsedname *pn_plus_directory = &s_pn_plus_directory;
 
 	if (FS_ParsedNamePlus(pn_directory->path, file, pn_plus_directory) == 0) {
-		FS_alias_subst( dirfunc, v, pn_plus_directory) ;
-		if ( pn_plus_directory->selected_device ){
-			flags[0] |= pn_plus_directory->selected_device->flags;
+ 		switch ( FS_visible(pn_plus_directory) ) { // hide hidden properties
+			case visible_now :
+			case visible_always:
+				FS_alias_subst( dirfunc, v, pn_plus_directory) ;
+				if ( pn_plus_directory->selected_device ){
+					flags[0] |= pn_plus_directory->selected_device->flags;
+				}
+				break ;
+			default:
+				break ;
 		}
 		FS_ParsedName_destroy(pn_plus_directory) ;
 		return 0;

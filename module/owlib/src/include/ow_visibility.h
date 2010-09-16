@@ -52,5 +52,6 @@ enum e_visibility NeverVisible( const struct parsedname * pn ) ;
 GOOD_OR_BAD GetVisibilityCache( int * visibility_parameter, const struct parsedname * pn ) ;
 void SetVisibilityCache( int visibility_parameter, const struct parsedname * pn ) ;
 
+enum e_visibility FS_visible( const struct parsedname * pn ) ;
 
 #endif							/* OW_VISIBILITY_H */

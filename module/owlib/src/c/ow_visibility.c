@@ -69,3 +69,13 @@ void SetVisibilityCache( int visibility_parameter, const struct parsedname * pn 
 {
 	Cache_Add_Internal( &visibility_parameter, sizeof(int), InternalProp(VIS), pn) ;
 }
+
+enum e_visibility FS_visible( const struct parsedname * pn )
+{
+	struct filetype * ft = pn->selected_filetype ;
+	if ( ft != NULL ) {
+		return ft->visible(pn ) ;
+	}
+	return visible_always ;
+}
+
