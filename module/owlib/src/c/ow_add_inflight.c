@@ -19,7 +19,7 @@ $Id$
  * write lock is done in a separate thread when no requests are being processed */
 void Add_InFlight( GOOD_OR_BAD (*nomatch)(struct connection_in * trial,struct connection_in * existing), struct connection_in * new_in )
 {
-	if ( new_in == NULL ) {
+	if ( new_in == NO_CONNECTION ) {
 		return ;
 	}
 
@@ -28,7 +28,7 @@ void Add_InFlight( GOOD_OR_BAD (*nomatch)(struct connection_in * trial,struct co
 	CONNIN_WLOCK ;
 	if ( nomatch != NULL ) {
 		struct connection_in * in ;
-		for ( in = Inbound_Control.head ; in != NULL ; in = in->next ) {
+		for ( in = Inbound_Control.head ; in != NO_CONNECTION ; in = in->next ) {
 			if ( GOOD( nomatch( new_in, in )) ) {
 				continue ;
 			}

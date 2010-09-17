@@ -63,7 +63,7 @@ struct aggregate A2423 = { 16, ag_numbers, ag_separate, };
 struct aggregate A2423c = { 2, ag_letters, ag_separate, };
 struct filetype DS2423[] = {
 	F_STANDARD,
-	{"memory", 512, NULL, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
+	{"memory", 512, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages/page", 32, &A2423, ft_binary, fc_page, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages/count", PROPERTY_LENGTH_UNSIGNED, &A2423, ft_unsigned, fc_volatile, FS_pagecount, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},

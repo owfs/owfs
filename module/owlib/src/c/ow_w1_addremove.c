@@ -22,12 +22,12 @@ static GOOD_OR_BAD W1_nomatch( struct connection_in * trial, struct connection_i
 
 static struct connection_in * CreateIn(int bus_master)
 {
-	struct connection_in * in = AllocIn(NULL) ;
+	struct connection_in * in = AllocIn(NO_CONNECTION) ;
 	char name[63] ;
 	int sn_ret ;
 
-	if ( in == NULL ) {
-		return NULL ;
+	if ( in == NO_CONNECTION ) {
+		return NO_CONNECTION ;
 	}
 
 	UCLIBCLOCK ;
@@ -35,14 +35,14 @@ static struct connection_in * CreateIn(int bus_master)
 	UCLIBCLOCK ;
 	if ( sn_ret < 0 ) {
 		RemoveIn(in) ;
-		return NULL ;
+		return NO_CONNECTION ;
 	}	
 
 	in->name = owstrdup(name) ;
 	in->master.w1.id = bus_master ;
 	if ( BAD( W1_detect(in)) ) {
 		RemoveIn(in) ;
-		return NULL ;
+		return NO_CONNECTION ;
 	}	
 		 
 	LEVEL_DEBUG("Created a new bus %s",in->name) ;

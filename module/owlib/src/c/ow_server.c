@@ -55,7 +55,7 @@ static void Zero_setroutines(struct interface_routines *f)
 // It differs in that the server must respond
 GOOD_OR_BAD Zero_detect(struct connection_in *in)
 {
-	if ( in==NULL ) {
+	if ( in==NO_CONNECTION ) {
 		return gbBAD ;
 	}
 	in->busmode = bus_zero;

@@ -243,7 +243,7 @@ static GOOD_OR_BAD DS2482_detect_sys( int any, enum ds2482_address chip_num, str
 
 		// ALL? then set up a new connection_in slot for the next one
 		in_current = NewIn(in_current) ;
-		if ( in_current == NULL ) {
+		if ( in_current == NO_CONNECTION ) {
 			break ;
 		}
 	}
@@ -289,7 +289,7 @@ static GOOD_OR_BAD DS2482_detect_dir( int any, enum ds2482_address chip_num, str
 
 		// ALL? then set up a new connection_in slot
 		in_current = NewIn(in_current) ;
-		if ( in_current == NULL ) {
+		if ( in_current == NO_CONNECTION ) {
 			break ;
 		}
 	}
@@ -324,7 +324,7 @@ static GOOD_OR_BAD DS2482_detect_bus(enum ds2482_address chip_num, char * i2c_de
 						return gbGOOD ;
 					}
 					all_in = NewIn(all_in) ;
-					if ( all_in == NULL ) {
+					if ( all_in == NO_CONNECTION ) {
 						return gbBAD ;
 					}
 				} while (1) ;
@@ -368,7 +368,7 @@ static GOOD_OR_BAD DS2482_detect_single(int lowindex, int highindex, char * i2c_
 			in->master.i2c.channels = 1;
 			in->master.i2c.current = 0;
 			in->master.i2c.head = in;
-			in->master.i2c.next = NULL;
+			in->master.i2c.next = NO_CONNECTION;
 			in->adapter_name = "DS2482-100";
 			in->master.i2c.configreg = 0x00 ;	// default configuration setting desired
 			if ( Globals.i2c_APU ) {
@@ -669,12 +669,12 @@ static GOOD_OR_BAD CreateChannels(struct connection_in *head)
 	for (i = 1; i < 8; ++i) {
 		struct connection_in * added = NewIn(head);
 		prior->master.i2c.next = added ;
-		if (added == NULL) {
+		if (added == NO_CONNECTION) {
 			return gbBAD;
 		}
 		added->master.i2c.index = i;
 		added->adapter_name = name[i];
-		added->master.i2c.next = NULL ; // for now
+		added->master.i2c.next = NO_CONNECTION ; // for now
 		prior = added ;
 	}
 	return gbGOOD;
@@ -796,7 +796,7 @@ static GOOD_OR_BAD DS2482_PowerByte(const BYTE byte, BYTE * resp, const UINT del
 
 static void DS2482_close(struct connection_in *in)
 {
-	if (in == NULL) {
+	if (in == NO_CONNECTION) {
 		return;
 	}
 	if (in->master.i2c.index == 0) {

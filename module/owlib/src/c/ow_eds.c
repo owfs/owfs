@@ -166,7 +166,7 @@ static enum e_visibility EDS_visible(const struct parsedname * pn) {
 		struct one_wire_query * owq = OWQ_create_from_path(pn->path) ; // for read
 		size_t size = _EDS_TAG_LENGTH ;
 		char data[size] ;
-		if ( owq != NULL) {
+		if ( owq != NO_ONE_WIRE_QUERY) {
 			FS_r_sibling_binary(data,&size,"tag",owq) ;
 			OWQ_destroy(owq) ;
 		}

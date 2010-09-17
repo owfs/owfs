@@ -76,8 +76,8 @@ struct device d_set_cache = { "timeout", "timeout", ePN_settings, COUNT_OF_FILET
 	set_cache, NO_GENERIC_READ, NO_GENERIC_WRITE
 };
 struct filetype set_units[] = {
- 	{"temperature_scale", 1, NULL, ft_ascii, fc_static, FS_r_TS, FS_w_TS, VISIBLE, NO_FILETYPE_DATA,},
- 	{"pressure_scale", 12, NULL, ft_ascii, fc_static, FS_r_PS, FS_w_PS, VISIBLE, NO_FILETYPE_DATA,},
+ 	{"temperature_scale", 1, NON_AGGREGATE, ft_ascii, fc_static, FS_r_TS, FS_w_TS, VISIBLE, NO_FILETYPE_DATA,},
+ 	{"pressure_scale", 12, NON_AGGREGATE, ft_ascii, fc_static, FS_r_PS, FS_w_PS, VISIBLE, NO_FILETYPE_DATA,},
 }
 
 ;

@@ -58,7 +58,7 @@ GOOD_OR_BAD W1_monitor_detect(struct connection_in *in)
 	w1_bind() ; // sets in->file_descriptor
 	if ( FILE_DESCRIPTOR_NOT_VALID( in->file_descriptor ) ) {
 		ERROR_DEBUG("Netlink problem -- are you root?");
-		Inbound_Control.w1_monitor = NULL ;
+		Inbound_Control.w1_monitor = NO_CONNECTION ;
 		return gbBAD ;
 	}
 	
@@ -70,7 +70,7 @@ static GOOD_OR_BAD w1_monitor_in_use(const struct connection_in * in_selected)
 {
 	struct connection_in *in;
 
-	for (in = Inbound_Control.head; in != NULL; in = in->next) {
+	for (in = Inbound_Control.head; in != NO_CONNECTION; in = in->next) {
 		if ( in == in_selected ) {
 			continue ;
 		}

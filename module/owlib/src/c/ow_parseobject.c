@@ -67,7 +67,7 @@ struct one_wire_query * OWQ_create_sibling(const char *sibling, struct one_wire_
 				 (size_t) pn_original->selected_device->count_of_filetypes, sizeof(struct filetype), filetype_cmp) ;
 		// see if sibling is also an aggregate property
 		LEVEL_DEBUG("Path %s is an agggregate",SAFESTRING(pn_original->path));
-		if ( sib_filetype != NULL && sib_filetype->ag != NON_AGGREGATE ) {
+		if ( sib_filetype != NO_FILETYPE && sib_filetype->ag != NON_AGGREGATE ) {
 			char * aggregate_point = path + strlen(path) ;
 			LEVEL_DEBUG("Sibling is also an aggregate",sibling);
 			if (pn_original->extension == EXTENSION_BYTE ) {

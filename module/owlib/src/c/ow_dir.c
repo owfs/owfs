@@ -91,7 +91,7 @@ static ZERO_OR_ERROR FS_dir_both(void (*dirfunc) (void *, const struct parsednam
 	if (pn_raw_directory == NULL) {
 		LEVEL_CALL("return ENODEV pn_raw_directory=%p selected_connection=%p",
 			pn_raw_directory,
-			(pn_raw_directory ? pn_raw_directory->selected_connection : NULL));
+			(pn_raw_directory ? pn_raw_directory->selected_connection : NO_CONNECTION));
 		return -ENODEV;
 	}
 	
@@ -106,7 +106,7 @@ static ZERO_OR_ERROR FS_dir_both(void (*dirfunc) (void *, const struct parsednam
 	StateInfo.dir_time = time(NULL);	// protected by mutex
 	FSTATUNLOCK;
 
-	if (pn_raw_directory->selected_filetype != NULL) {
+	if (pn_raw_directory->selected_filetype != NO_FILETYPE) {
 		// File, not directory
 		ret = -ENOTDIR;
 
@@ -119,7 +119,7 @@ static ZERO_OR_ERROR FS_dir_both(void (*dirfunc) (void *, const struct parsednam
 		// Send remotely only (all evaluation done there)
 		ret = ServerDir(dirfunc, v, pn_raw_directory, flags);
 
-	} else if (pn_raw_directory->selected_device != NULL) {
+	} else if (pn_raw_directory->selected_device != NO_DEVICE) {
 		//printf("NO SELECTED_DEVICE\n");
 		// device directory -- not bus-specific
 		if ( IsStructureDir( pn_raw_directory ) ) {
@@ -304,7 +304,7 @@ FS_dir_all_connections(void (*dirfunc) (void *, const struct parsedname *), void
 {
 	struct connection_in * in = Inbound_Control.head ;
 	// Make sure head isn't NULL
-	if ( in == NULL ) {
+	if ( in == NO_CONNECTION ) {
 		return 0 ;
 	}
 	// Start iterating through buses
@@ -325,7 +325,7 @@ FS_dir_all_connections(void (*dirfunc) (void *, const struct parsedname *), void
 
 	memcpy(pn_selected_connection, pn_directory, sizeof(struct parsedname));	//shallow copy
 
-	for (in = Inbound_Control.head ; in != NULL ; in = in->next ) {
+	for (in = Inbound_Control.head ; in != NO_CONNECTION ; in = in->next ) {
 		SetKnownBus(in->index, pn_selected_connection);
 
 		if ( BAD(TestConnection(pn_selected_connection)) ) {
@@ -365,7 +365,7 @@ static ZERO_OR_ERROR FS_devdir(void (*dirfunc) (void *, const struct parsedname 
 	STAT_ADD1(dir_dev.calls);
 
 	// Add subdir to name (SubDirectory is within a device, but an extra layer of grouping of properties)
-	if (pn_device_directory->subdir != NULL) {
+	if (pn_device_directory->subdir != NO_SUBDIR) {
 		// device subdirectory -- so use the sorted list to find all entries with the same prefix
 		strncpy(subdir_name, pn_device_directory->subdir->name, OW_FULLNAME_MAX);
 		strcat(subdir_name, "/");
@@ -428,7 +428,7 @@ static ZERO_OR_ERROR FS_structdevdir(void (*dirfunc) (void *, const struct parse
 	uint32_t ignoreflag ;
 
 	// Add subdir to name (SubDirectory is within a device, but an extra layer of grouping of properties)
-	if (pn_device_directory->subdir != NULL) {
+	if (pn_device_directory->subdir != NO_SUBDIR) {
 		strncpy(subdir_name, pn_device_directory->subdir->name, OW_FULLNAME_MAX);
 		strcat(subdir_name, "/");
 		subdir_len = strlen(subdir_name);
@@ -637,7 +637,7 @@ void FS_LoadDirectoryOnly(struct parsedname *pn_directory, const struct parsedna
 		memcpy(pn_directory->sn, pn_directory->bp[pn_directory->pathlength].sn, 7);
 		pn_directory->sn[7] = pn_directory->bp[pn_directory->pathlength].branch;
 	}
-	pn_directory->selected_device = NULL;
+	pn_directory->selected_device = NO_DEVICE;
 }
 
 /* A directory of devices -- either main or branch */
@@ -736,7 +736,7 @@ static ZERO_OR_ERROR FS_busdir(void (*dirfunc) (void *, const struct parsedname 
 		return 0;
 	}
 
-	for ( in = Inbound_Control.head ; in != NULL ; in = in->next ) {
+	for ( in = Inbound_Control.head ; in != NO_CONNECTION ; in = in->next ) {
 		UCLIBCLOCK;
 		snprintf(bus, OW_FULLNAME_MAX, "bus.%d", in->index);
 		UCLIBCUNLOCK;

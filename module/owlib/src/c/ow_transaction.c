@@ -171,7 +171,7 @@ static GOOD_OR_BAD BUS_transaction_single(const struct transaction_log *t, const
 		{
 			struct parsedname pn2;
 			memcpy(&pn2, pn, sizeof(struct parsedname));	//shallow copy
-			pn2.selected_device = NULL;
+			pn2.selected_device = NO_DEVICE;
 			ret = ( BUS_select(&pn2) || BAD(BUS_verify(t->size, pn)) ) ? gbBAD : gbGOOD;
 			LEVEL_DEBUG("verify = %d", ret);
 		}

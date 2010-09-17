@@ -26,7 +26,7 @@ GOOD_OR_BAD TestConnection(const struct parsedname *pn)
 
 	//printf("Reconnect = %d / %d\n",selected_connection->reconnect_state,reconnect_error) ;
 	// Test without a lock -- efficient
-	if (pn == NULL || in == NULL || in->reconnect_state < reconnect_error) {
+	if (pn == NULL || in == NO_CONNECTION || in->reconnect_state < reconnect_error) {
 		return gbGOOD;
 	}
 	// Lock the bus

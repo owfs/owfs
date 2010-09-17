@@ -21,11 +21,11 @@ $Id$
 struct inbound_control Inbound_Control = {
 	.active = 0,
 	.next_index = 0,
-	.head = NULL,
+	.head = NO_CONNECTION,
 	.next_fake = 0,
 	.next_tester = 0,
 	.next_mock = 0,
-	.w1_monitor = NULL ,
+	.w1_monitor = NO_CONNECTION ,
 };
 
 struct outbound_control Outbound_Control = {
@@ -39,19 +39,19 @@ struct connection_in *find_connection_in(int bus_number)
 	struct connection_in *c_in;
 	// step through inbound linked list
 
-	for (c_in = Inbound_Control.head; c_in != NULL; c_in = c_in->next) {
+	for (c_in = Inbound_Control.head; c_in != NO_CONNECTION; c_in = c_in->next) {
 		if (c_in->index == bus_number) {
 			return c_in;
 		}
 	}
 	LEVEL_DEBUG("Couldn't find bus number %d",bus_number);
-	return NULL;
+	return NO_CONNECTION;
 }
 
 int SetKnownBus( int bus_number, struct parsedname * pn)
 {
 	struct connection_in * found = find_connection_in( bus_number ) ;
-	if ( found==NULL ) {
+	if ( found == NO_CONNECTION ) {
 		return 1 ;
 	}
 	pn->state |= ePS_bus;
@@ -62,7 +62,7 @@ int SetKnownBus( int bus_number, struct parsedname * pn)
 
 enum bus_mode get_busmode(struct connection_in *in)
 {
-	if (in == NULL) {
+	if (in == NO_CONNECTION) {
 		return bus_unknown;
 	}
 	return in->busmode;
@@ -79,7 +79,7 @@ struct connection_in *AllocIn(const struct connection_in *in)
 {
 	size_t len = sizeof(struct connection_in);
 	struct connection_in *now = (struct connection_in *) owmalloc(len);
-	if (now != NULL) {
+	if (now != NO_CONNECTION) {
 		if (in) {
 			memcpy(now, in, len);
 			if ( in->name != NULL ) {
@@ -92,7 +92,7 @@ struct connection_in *AllocIn(const struct connection_in *in)
 		}
 
 		/* not yet linked */
-		now->next = NULL ;
+		now->next = NO_CONNECTION ;
 
 		/* Initialize dir-at-once structures */
 		DirblobInit(&(now->main));
@@ -174,7 +174,7 @@ void FreeInAll( void )
 void RemoveIn( struct connection_in * conn )
 {
 	/* NULL safe */
-	if ( conn == NULL ) {
+	if ( conn == NO_CONNECTION ) {
 		return ;
 	}
 
@@ -186,7 +186,7 @@ void RemoveIn( struct connection_in * conn )
 	} else {
 		struct connection_in * now ;
 		/* find in list and splice out */
-		for ( now = Inbound_Control.head ; now != NULL ; now = now->next ) {
+		for ( now = Inbound_Control.head ; now != NO_CONNECTION ; now = now->next ) {
 			/* Works even if not linked, since won't match and will just fall through */
 			if ( now->next == conn ) {
 				now->next = conn->next ;
@@ -197,7 +197,7 @@ void RemoveIn( struct connection_in * conn )
 	}
 
 	/* Now free up thread-sync resources */
-	if ( conn->next != NULL ) {
+	if ( conn->next != NO_CONNECTION ) {
 		/* Only if actually linked in and possibly active */
 		_MUTEX_DESTROY(conn->bus_mutex);
 		_MUTEX_DESTROY(conn->dev_mutex);

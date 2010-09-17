@@ -344,7 +344,7 @@ static GOOD_OR_BAD DS9490_detect_all_adapters(struct connection_in * in_first)
 			continue;
 		} else{
 			in = NewIn(in_first) ;
-			if ( in == NULL ) {
+			if ( in == NO_CONNECTION ) {
 				return gbGOOD ;
 			}
 			// set up the new connection for the next adapter
@@ -362,7 +362,7 @@ static GOOD_OR_BAD DS9490_detect_all_adapters(struct connection_in * in_first)
 
 void DS9490_connection_init( struct connection_in * in )
 {
-	if ( in == NULL ) {
+	if ( in == NO_CONNECTION ) {
 		return ;
 	}
 	SAFEFREE( in->name ) ;

@@ -43,6 +43,8 @@ struct one_wire_query {
 	union value_object val;
 };
 
+#define NO_ONE_WIRE_QUERY NULL
+
 #define OWQ_pn(owq)	      ((owq)->pn)
 #define OWQ_buffer(owq)       ((owq)->buffer)
 #define OWQ_read_buffer(owq)  ((owq)->read_buffer)

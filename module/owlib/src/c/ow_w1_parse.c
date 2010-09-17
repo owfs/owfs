@@ -205,7 +205,7 @@ enum Netlink_Read_Status W1_Process_Response( void (* nrs_callback)( struct netl
 		return nrs_bad_send ;
 	}
 
-	if ( in == NULL ) {
+	if ( in == NO_CONNECTION ) {
 		// Send to main netlink rather than a particular bus
 		file_descriptor = FILE_DESCRIPTOR_BAD ;
 		bus = 0 ;

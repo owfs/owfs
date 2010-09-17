@@ -23,7 +23,7 @@ $Id$
 static struct connection_in * Bus_from_file_descriptor( FILE_DESCRIPTOR_OR_ERROR file_descriptor )
 {
 	struct connection_in * in ;
-	for( in = Inbound_Control.head ; in != NULL ; in = in->next ) {
+	for( in = Inbound_Control.head ; in != NO_CONNECTION ; in = in->next ) {
 		if ( in->file_descriptor == file_descriptor ) {
 			break ;
 		}
@@ -46,7 +46,7 @@ void TrafficIn( const char * data_type, const BYTE * data, size_t length, const 
 void TrafficOutFD( const char * data_type, const BYTE * data, size_t length, FILE_DESCRIPTOR_OR_ERROR file_descriptor )
 {
 	struct connection_in * in = Bus_from_file_descriptor( file_descriptor ) ;
-	if ( in != NULL ) {
+	if ( in != NO_CONNECTION ) {
 		TrafficOut( data_type, data, length, in ) ;
 	} else {
 		fprintf(stderr, "TRAFFIC OUT <%s> file descriptor=%d\n", SAFESTRING(data_type), file_descriptor ) ;
@@ -57,7 +57,7 @@ void TrafficOutFD( const char * data_type, const BYTE * data, size_t length, FIL
 void TrafficInFD( const char * data_type, const BYTE * data, size_t length, FILE_DESCRIPTOR_OR_ERROR file_descriptor )
 {
 	struct connection_in * in = Bus_from_file_descriptor( file_descriptor ) ;
-	if ( in != NULL ) {
+	if ( in != NO_CONNECTION ) {
 		TrafficIn( data_type, data, length, in ) ;
 	} else {
 		fprintf(stderr, "TRAFFIC IN  <%s> file descriptor=%d\n", SAFESTRING(data_type), file_descriptor ) ;

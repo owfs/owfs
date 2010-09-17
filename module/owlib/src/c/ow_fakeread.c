@@ -120,7 +120,7 @@ static ZERO_OR_ERROR FS_read_fake_array(struct one_wire_query *owq)
 
 	for (extension = 0; extension < elements; ++extension) {
 		struct one_wire_query * owq_single = OWQ_create_separate( extension, owq ) ;
-		if ( owq_single == NULL ) {
+		if ( owq_single == NO_ONE_WIRE_QUERY ) {
 			return -ENOMEM ;
 		}
 		switch (OWQ_pn(owq).selected_filetype->format) {

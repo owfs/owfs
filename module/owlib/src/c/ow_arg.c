@@ -68,8 +68,8 @@ GOOD_OR_BAD ARG_Device(const char *arg)
 
 GOOD_OR_BAD ARG_EtherWeather(const char *arg)
 {
-	struct connection_in *in = NewIn(NULL);
-	if (in == NULL) {
+	struct connection_in *in = NewIn(NO_CONNECTION);
+	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
 	in->name = (arg!=NULL) ? owstrdup(arg) : NULL;
@@ -79,8 +79,8 @@ GOOD_OR_BAD ARG_EtherWeather(const char *arg)
 
 GOOD_OR_BAD ARG_Fake(const char *arg)
 {
-	struct connection_in *in = NewIn(NULL);
-	if (in == NULL) {
+	struct connection_in *in = NewIn(NO_CONNECTION);
+	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
 	in->name = (arg!=NULL) ? owstrdup(arg) : NULL;
@@ -106,8 +106,8 @@ GOOD_OR_BAD ARG_Generic(const char *arg)
 
 GOOD_OR_BAD ARG_HA5( const char *arg)
 {
-	struct connection_in *in = NewIn(NULL);
-	if (in == NULL) {
+	struct connection_in *in = NewIn(NO_CONNECTION);
+	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
 	in->name = (arg!=NULL) ? owstrdup(arg) : NULL;
@@ -120,8 +120,8 @@ GOOD_OR_BAD ARG_HA7(const char *arg)
 {
 #if OW_HA7
 	if (arg != NULL) {
-		struct connection_in *in = NewIn(NULL);
-		if (in == NULL) {
+		struct connection_in *in = NewIn(NO_CONNECTION);
+		if (in == NO_CONNECTION) {
 			return gbBAD;
 		}
 		in->name = owstrdup(arg);
@@ -139,8 +139,8 @@ GOOD_OR_BAD ARG_HA7(const char *arg)
 
 GOOD_OR_BAD ARG_HA7E(const char *arg)
 {
-	struct connection_in *in = NewIn(NULL);
-	if (in == NULL) {
+	struct connection_in *in = NewIn(NO_CONNECTION);
+	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
 	in->name = (arg!=NULL) ? owstrdup(arg) : NULL;
@@ -150,8 +150,8 @@ GOOD_OR_BAD ARG_HA7E(const char *arg)
 
 GOOD_OR_BAD ARG_ENET(const char *arg)
 {
-	struct connection_in *in = NewIn(NULL);
-	if (in == NULL) {
+	struct connection_in *in = NewIn(NO_CONNECTION);
+	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
 	in->name = (arg!=NULL) ? owstrdup(arg) : NULL;
@@ -162,8 +162,8 @@ GOOD_OR_BAD ARG_ENET(const char *arg)
 GOOD_OR_BAD ARG_I2C(const char *arg)
 {
 	#if OW_I2C
-	struct connection_in *in = NewIn(NULL);
-	if (in == NULL) {
+	struct connection_in *in = NewIn(NO_CONNECTION);
+	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
 	in->name = (arg!=NULL) ? owstrdup(arg) : owstrdup(":");
@@ -177,8 +177,8 @@ GOOD_OR_BAD ARG_I2C(const char *arg)
 
 GOOD_OR_BAD ARG_Link(const char *arg)
 {
-	struct connection_in *in = NewIn(NULL);
-	if (in == NULL) {
+	struct connection_in *in = NewIn(NO_CONNECTION);
+	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
 	in->name = (arg!=NULL) ? owstrdup(arg) : NULL;
@@ -201,8 +201,8 @@ GOOD_OR_BAD ARG_Link(const char *arg)
 
 GOOD_OR_BAD ARG_Mock(const char *arg)
 {
-	struct connection_in *in = NewIn(NULL);
-	if (in == NULL) {
+	struct connection_in *in = NewIn(NO_CONNECTION);
+	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
 	in->name = (arg!=NULL) ? owstrdup(arg) : NULL;
@@ -212,8 +212,8 @@ GOOD_OR_BAD ARG_Mock(const char *arg)
 
 GOOD_OR_BAD ARG_W1_monitor(void)
 {
-	struct connection_in *in = NewIn(NULL);
-	if (in == NULL) {
+	struct connection_in *in = NewIn(NO_CONNECTION);
+	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
 	in->name = owstrdup("W1 bus monitor");
@@ -224,8 +224,8 @@ GOOD_OR_BAD ARG_W1_monitor(void)
 GOOD_OR_BAD ARG_USB_monitor(const char *arg)
 {
 #if OW_USB
-	struct connection_in *in = NewIn(NULL);
-	if (in == NULL) {
+	struct connection_in *in = NewIn(NO_CONNECTION);
+	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
 	in->name = (arg==NULL) ? NULL : owstrdup(arg);
@@ -240,8 +240,8 @@ GOOD_OR_BAD ARG_USB_monitor(const char *arg)
 GOOD_OR_BAD ARG_Browse(void)
 {
 #if OW_ZERO
-	struct connection_in *in = NewIn(NULL);
-	if (in == NULL) {
+	struct connection_in *in = NewIn(NO_CONNECTION);
+	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
 	in->name = owstrdup("ZeroConf monitor");
@@ -255,8 +255,8 @@ GOOD_OR_BAD ARG_Browse(void)
 
 GOOD_OR_BAD ARG_Net(const char *arg)
 {
-	struct connection_in *in = NewIn(NULL);
-	if (in == NULL) {
+	struct connection_in *in = NewIn(NO_CONNECTION);
+	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
 	in->name = (arg!=NULL) ? owstrdup(arg) : NULL;
@@ -267,8 +267,8 @@ GOOD_OR_BAD ARG_Net(const char *arg)
 GOOD_OR_BAD ARG_Parallel(const char *arg)
 {
 	#if OW_PARPORT
-	struct connection_in *in = NewIn(NULL);
-	if (in == NULL) {
+	struct connection_in *in = NewIn(NO_CONNECTION);
+	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
 	in->name = (arg!=NULL) ? owstrdup(arg) : NULL;
@@ -282,8 +282,8 @@ GOOD_OR_BAD ARG_Parallel(const char *arg)
 
 GOOD_OR_BAD ARG_Passive(char *adapter_type_name, const char *arg)
 {
-	struct connection_in *in = NewIn(NULL);
-	if (in == NULL) {
+	struct connection_in *in = NewIn(NO_CONNECTION);
+	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
 	in->name = (arg!=NULL) ? owstrdup(arg) : NULL;
@@ -295,8 +295,8 @@ GOOD_OR_BAD ARG_Passive(char *adapter_type_name, const char *arg)
 
 GOOD_OR_BAD ARG_Serial(const char *arg)
 {
-	struct connection_in *in = NewIn(NULL);
-	if (in == NULL) {
+	struct connection_in *in = NewIn(NO_CONNECTION);
+	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
 	in->name = (arg!=NULL) ? owstrdup(arg) : NULL;
@@ -329,8 +329,8 @@ GOOD_OR_BAD ARG_Server(const char *arg)
 
 GOOD_OR_BAD ARG_Tester(const char *arg)
 {
-	struct connection_in *in = NewIn(NULL);
-	if (in == NULL) {
+	struct connection_in *in = NewIn(NO_CONNECTION);
+	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
 	in->name = (arg!=NULL) ? owstrdup(arg) : NULL;
@@ -342,8 +342,8 @@ GOOD_OR_BAD ARG_Tester(const char *arg)
 GOOD_OR_BAD ARG_USB(const char *arg)
 {
 #if OW_USB
-	struct connection_in *in = NewIn(NULL);
-	if (in == NULL) {
+	struct connection_in *in = NewIn(NO_CONNECTION);
+	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
 	in->busmode = bus_usb;
@@ -358,8 +358,8 @@ GOOD_OR_BAD ARG_USB(const char *arg)
 // Xport or telnet -- DS2480B over a remote serial server using telnet protocol.
 GOOD_OR_BAD ARG_Xport(const char *arg)
 {
-	struct connection_in *in = NewIn(NULL);
-	if (in == NULL) {
+	struct connection_in *in = NewIn(NO_CONNECTION);
+	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
 	in->name = (arg!=NULL) ? owstrdup(arg) : NULL;

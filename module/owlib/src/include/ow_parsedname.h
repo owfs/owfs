@@ -85,6 +85,11 @@ struct buspath {
 #define EXTENSION_ALL_MIXED		-1
 #define EXTENSION_ALL_AGGREGATE	-1
 
+#define NO_FILETYPE NULL
+#define NO_SUBDIR NULL
+#define NO_DEVICE NULL
+#define NO_CONNECTION NULL
+
 enum ePN_type {
 	ePN_root,
 	ePN_real,

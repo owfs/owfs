@@ -97,7 +97,7 @@ static void Dispatch_Packet( struct netlink_parse * nlp)
 	}
 
 	CONNIN_RLOCK ;
-	for ( in = Inbound_Control.head ; in != NULL ; in = in->next ) {
+	for ( in = Inbound_Control.head ; in != NO_CONNECTION ; in = in->next ) {
 		//printf("Matching %d/%s/%s/%s/ to bus.%d %d/%s/%s/%s/\n",bus_zero,name,type,domain,now->index,now->busmode,now->master.tcp.name,now->master.tcp.type,now->master.tcp.domain);
 		if ( in->busmode == bus_w1 && in->master.w1.id == bus ) {
 			LEVEL_DEBUG("Sending this packet to w1_bus_master%d",bus);

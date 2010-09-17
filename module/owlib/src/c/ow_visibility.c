@@ -73,9 +73,14 @@ void SetVisibilityCache( int visibility_parameter, const struct parsedname * pn 
 enum e_visibility FS_visible( const struct parsedname * pn )
 {
 	struct filetype * ft = pn->selected_filetype ;
-	if ( ft != NULL ) {
-		return ft->visible(pn ) ;
+	if ( ft != NO_FILETYPE ) {
+		return ft->visible(pn) ;
 	}
+	ft = pn->subdir ;
+	if ( ft != NO_SUBDIR ) {
+		return ft->visible(pn) ;
+	}
+	
 	return visible_always ;
 }
 

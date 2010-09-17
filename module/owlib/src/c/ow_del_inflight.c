@@ -19,7 +19,7 @@ $Id$
  * write lock is done in a separate thread when no requests are being processed */
 void Del_InFlight( GOOD_OR_BAD (*nomatch)(struct connection_in * trial,struct connection_in * existing), struct connection_in * old_in )
 {
-	if ( old_in == NULL ) {
+	if ( old_in == NO_CONNECTION ) {
 		return ;
 	}
 
@@ -28,7 +28,7 @@ void Del_InFlight( GOOD_OR_BAD (*nomatch)(struct connection_in * trial,struct co
 	CONNIN_WLOCK ;
 	if ( nomatch != NULL ) {
 		struct connection_in * in = Inbound_Control.head ;
-		while ( in != NULL ) {
+		while ( in != NO_CONNECTION ) {
 			struct connection_in * next = in-> next ;
 			if ( BAD( nomatch( old_in, in )) ) {
 				LEVEL_DEBUG("Removing BUS index=%d %s",in->index,in->name);

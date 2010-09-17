@@ -39,147 +39,149 @@ static int ParseInterp(struct lineparse *lp);
 static GOOD_OR_BAD OW_parsevalue_I(long long int *var, const ASCII * str);
 static GOOD_OR_BAD OW_parsevalue_F(_FLOAT *var, const ASCII * str);
 
+#define NO_LINKED_VAR NULL
+
 const struct option owopts_long[] = {
-	{"alias", required_argument, NULL, 'a'},
-	{"aliases", required_argument, NULL, 'a'},
-	{"aliasfile", required_argument, NULL, 'a'},
-	{"configuration", required_argument, NULL, 'c'},
-	{"device", required_argument, NULL, 'd'},
-	{"usb", optional_argument, NULL, 'u'},
-	{"USB", optional_argument, NULL, 'u'},
-	{"help", optional_argument, NULL, 'h'},
-	{"port", required_argument, NULL, 'p'},
-	{"mountpoint", required_argument, NULL, 'm'},
-	{"server", required_argument, NULL, 's'},
-	{"readonly", no_argument, NULL, 'r'},
-	{"safemode", no_argument, NULL, e_safemode},
-	{"safe_mode", no_argument, NULL, e_safemode},
-	{"safe", no_argument, NULL, e_safemode},
-	{"write", no_argument, NULL, 'w'},
+	{"alias", required_argument, NO_LINKED_VAR, 'a'},
+	{"aliases", required_argument, NO_LINKED_VAR, 'a'},
+	{"aliasfile", required_argument, NO_LINKED_VAR, 'a'},
+	{"configuration", required_argument, NO_LINKED_VAR, 'c'},
+	{"device", required_argument, NO_LINKED_VAR, 'd'},
+	{"usb", optional_argument, NO_LINKED_VAR, 'u'},
+	{"USB", optional_argument, NO_LINKED_VAR, 'u'},
+	{"help", optional_argument, NO_LINKED_VAR, 'h'},
+	{"port", required_argument, NO_LINKED_VAR, 'p'},
+	{"mountpoint", required_argument, NO_LINKED_VAR, 'm'},
+	{"server", required_argument, NO_LINKED_VAR, 's'},
+	{"readonly", no_argument, NO_LINKED_VAR, 'r'},
+	{"safemode", no_argument, NO_LINKED_VAR, e_safemode},
+	{"safe_mode", no_argument, NO_LINKED_VAR, e_safemode},
+	{"safe", no_argument, NO_LINKED_VAR, e_safemode},
+	{"write", no_argument, NO_LINKED_VAR, 'w'},
 
-	{"Celsius", no_argument, NULL, 'C'},
-	{"celsius", no_argument, NULL, 'C'},
-	{"Fahrenheit", no_argument, NULL, 'F'},
-	{"fahrenheit", no_argument, NULL, 'F'},
-	{"Kelvin", no_argument, NULL, 'K'},
-	{"kelvin", no_argument, NULL, 'K'},
-	{"Rankine", no_argument, NULL, 'R'},
-	{"rankine", no_argument, NULL, 'R'},
+	{"Celsius", no_argument, NO_LINKED_VAR, 'C'},
+	{"celsius", no_argument, NO_LINKED_VAR, 'C'},
+	{"Fahrenheit", no_argument, NO_LINKED_VAR, 'F'},
+	{"fahrenheit", no_argument, NO_LINKED_VAR, 'F'},
+	{"Kelvin", no_argument, NO_LINKED_VAR, 'K'},
+	{"kelvin", no_argument, NO_LINKED_VAR, 'K'},
+	{"Rankine", no_argument, NO_LINKED_VAR, 'R'},
+	{"rankine", no_argument, NO_LINKED_VAR, 'R'},
 
-	{"mbar", no_argument, NULL, e_pressure_mbar},
-	{"millibar", no_argument, NULL, e_pressure_mbar},
-	{"mBar", no_argument, NULL, e_pressure_mbar},
-	{"atm", no_argument, NULL, e_pressure_atm},
-	{"mmhg", no_argument, NULL, e_pressure_mmhg},
-	{"mmHg", no_argument, NULL, e_pressure_mmhg},
-	{"torr", no_argument, NULL, e_pressure_mmhg},
-	{"inhg", no_argument, NULL, e_pressure_inhg},
-	{"inHg", no_argument, NULL, e_pressure_inhg},
-	{"psi", no_argument, NULL, e_pressure_psi},
-	{"psia", no_argument, NULL, e_pressure_psi},
-	{"psig", no_argument, NULL, e_pressure_psi},
-	{"Pa", no_argument, NULL, e_pressure_Pa},
-	{"pa", no_argument, NULL, e_pressure_Pa},
-	{"pascal", no_argument, NULL, e_pressure_Pa},
+	{"mbar", no_argument, NO_LINKED_VAR, e_pressure_mbar},
+	{"millibar", no_argument, NO_LINKED_VAR, e_pressure_mbar},
+	{"mBar", no_argument, NO_LINKED_VAR, e_pressure_mbar},
+	{"atm", no_argument, NO_LINKED_VAR, e_pressure_atm},
+	{"mmhg", no_argument, NO_LINKED_VAR, e_pressure_mmhg},
+	{"mmHg", no_argument, NO_LINKED_VAR, e_pressure_mmhg},
+	{"torr", no_argument, NO_LINKED_VAR, e_pressure_mmhg},
+	{"inhg", no_argument, NO_LINKED_VAR, e_pressure_inhg},
+	{"inHg", no_argument, NO_LINKED_VAR, e_pressure_inhg},
+	{"psi", no_argument, NO_LINKED_VAR, e_pressure_psi},
+	{"psia", no_argument, NO_LINKED_VAR, e_pressure_psi},
+	{"psig", no_argument, NO_LINKED_VAR, e_pressure_psi},
+	{"Pa", no_argument, NO_LINKED_VAR, e_pressure_Pa},
+	{"pa", no_argument, NO_LINKED_VAR, e_pressure_Pa},
+	{"pascal", no_argument, NO_LINKED_VAR, e_pressure_Pa},
 
-	{"version", no_argument, NULL, 'V'},
-	{"format", required_argument, NULL, 'f'},
-	{"pid_file", required_argument, NULL, 'P'},
-	{"pid-file", required_argument, NULL, 'P'},
+	{"version", no_argument, NO_LINKED_VAR, 'V'},
+	{"format", required_argument, NO_LINKED_VAR, 'f'},
+	{"pid_file", required_argument, NO_LINKED_VAR, 'P'},
+	{"pid-file", required_argument, NO_LINKED_VAR, 'P'},
 	{"background", no_argument, &Globals.want_background, 1},
 	{"foreground", no_argument, &Globals.want_background, 0},
 	{"fatal_debug", no_argument, &Globals.fatal_debug, 1},
 	{"fatal-debug", no_argument, &Globals.fatal_debug, 1},
-	{"fatal_debug_file", required_argument, NULL, e_fatal_debug_file},
-	{"fatal-debug-file", required_argument, NULL, e_fatal_debug_file},
-	{"error_print", required_argument, NULL, e_error_print},
-	{"error-print", required_argument, NULL, e_error_print},
-	{"errorprint", required_argument, NULL, e_error_print},
-	{"error_level", required_argument, NULL, e_error_level},
-	{"error-level", required_argument, NULL, e_error_level},
-	{"errorlevel", required_argument, NULL, e_error_level},
-	{"debug", no_argument, NULL, e_debug},
-	{"concurrent_connections", required_argument, NULL, e_concurrent_connections},
-	{"concurrent-connections", required_argument, NULL, e_concurrent_connections},
-	{"max-connections", required_argument, NULL, e_concurrent_connections},
-	{"max_connections", required_argument, NULL, e_concurrent_connections},
-	{"cache_size", required_argument, NULL, e_cache_size},	/* max cache size */
-	{"cache-size", required_argument, NULL, e_cache_size},	/* max cache size */
-	{"cachesize", required_argument, NULL, e_cache_size},	/* max cache size */
-	{"fuse_opt", required_argument, NULL, e_fuse_opt},	/* owfs, fuse mount option */
-	{"fuse-opt", required_argument, NULL, e_fuse_opt},	/* owfs, fuse mount option */
-	{"fuseopt", required_argument, NULL, e_fuse_opt},	/* owfs, fuse mount option */
-	{"fuse_open_opt", required_argument, NULL, e_fuse_open_opt},	/* owfs, fuse open option */
-	{"fuse-open-opt", required_argument, NULL, e_fuse_open_opt},	/* owfs, fuse open option */
-	{"fuseopenopt", required_argument, NULL, e_fuse_open_opt},	/* owfs, fuse open option */
-	{"max_clients", required_argument, NULL, e_max_clients},	/* ftp max connections */
-	{"max-clients", required_argument, NULL, e_max_clients},	/* ftp max connections */
-	{"maxclients", required_argument, NULL, e_max_clients},	/* ftp max connections */
+	{"fatal_debug_file", required_argument, NO_LINKED_VAR, e_fatal_debug_file},
+	{"fatal-debug-file", required_argument, NO_LINKED_VAR, e_fatal_debug_file},
+	{"error_print", required_argument, NO_LINKED_VAR, e_error_print},
+	{"error-print", required_argument, NO_LINKED_VAR, e_error_print},
+	{"errorprint", required_argument, NO_LINKED_VAR, e_error_print},
+	{"error_level", required_argument, NO_LINKED_VAR, e_error_level},
+	{"error-level", required_argument, NO_LINKED_VAR, e_error_level},
+	{"errorlevel", required_argument, NO_LINKED_VAR, e_error_level},
+	{"debug", no_argument, NO_LINKED_VAR, e_debug},
+	{"concurrent_connections", required_argument, NO_LINKED_VAR, e_concurrent_connections},
+	{"concurrent-connections", required_argument, NO_LINKED_VAR, e_concurrent_connections},
+	{"max-connections", required_argument, NO_LINKED_VAR, e_concurrent_connections},
+	{"max_connections", required_argument, NO_LINKED_VAR, e_concurrent_connections},
+	{"cache_size", required_argument, NO_LINKED_VAR, e_cache_size},	/* max cache size */
+	{"cache-size", required_argument, NO_LINKED_VAR, e_cache_size},	/* max cache size */
+	{"cachesize", required_argument, NO_LINKED_VAR, e_cache_size},	/* max cache size */
+	{"fuse_opt", required_argument, NO_LINKED_VAR, e_fuse_opt},	/* owfs, fuse mount option */
+	{"fuse-opt", required_argument, NO_LINKED_VAR, e_fuse_opt},	/* owfs, fuse mount option */
+	{"fuseopt", required_argument, NO_LINKED_VAR, e_fuse_opt},	/* owfs, fuse mount option */
+	{"fuse_open_opt", required_argument, NO_LINKED_VAR, e_fuse_open_opt},	/* owfs, fuse open option */
+	{"fuse-open-opt", required_argument, NO_LINKED_VAR, e_fuse_open_opt},	/* owfs, fuse open option */
+	{"fuseopenopt", required_argument, NO_LINKED_VAR, e_fuse_open_opt},	/* owfs, fuse open option */
+	{"max_clients", required_argument, NO_LINKED_VAR, e_max_clients},	/* ftp max connections */
+	{"max-clients", required_argument, NO_LINKED_VAR, e_max_clients},	/* ftp max connections */
+	{"maxclients", required_argument, NO_LINKED_VAR, e_max_clients},	/* ftp max connections */
 
-	{"passive", required_argument, NULL, e_passive},	/* DS9097 passive */
-	{"PASSIVE", required_argument, NULL, e_passive},	/* DS9097 passive */
-	{"i2c", optional_argument, NULL, e_i2c},	/* i2c adapters */
-	{"I2C", optional_argument, NULL, e_i2c},	/* i2c adapters */
-	{"HA7", optional_argument, NULL, e_ha7},	/* HA7Net */
-	{"ha7", optional_argument, NULL, e_ha7},	/* HA7Net */
-	{"HA7NET", optional_argument, NULL, e_ha7},
-	{"HA7Net", optional_argument, NULL, e_ha7},
-	{"ha7net", optional_argument, NULL, e_ha7},
-	{"enet", optional_argument, NULL, e_enet},
-	{"Enet", optional_argument, NULL, e_enet},
-	{"ENET", optional_argument, NULL, e_enet},
-	{"OW-Server-Enet", optional_argument, NULL, e_enet},
-	{"FAKE", required_argument, NULL, e_fake},	/* Fake */
-	{"Fake", required_argument, NULL, e_fake},	/* Fake */
-	{"fake", required_argument, NULL, e_fake},	/* Fake */
-	{"link", required_argument, NULL, e_link},	/* link in ascii mode */
-	{"LINK", required_argument, NULL, e_link},	/* link in ascii mode */
-	{"HA3", required_argument, NULL, e_ha3},
-	{"ha3", required_argument, NULL, e_ha3},
-	{"HA4B", required_argument, NULL, e_ha4b},
-	{"HA4b", required_argument, NULL, e_ha4b},
-	{"ha4b", required_argument, NULL, e_ha4b},
-	{"HA5", required_argument, NULL, e_ha5},
-	{"ha5", required_argument, NULL, e_ha5},
-	{"ha7e", required_argument, NULL, e_ha7e},
-	{"HA7e", required_argument, NULL, e_ha7e},
-	{"HA7E", required_argument, NULL, e_ha7e},
-	{"ha7s", required_argument, NULL, e_ha7e},
-	{"HA7s", required_argument, NULL, e_ha7e},
-	{"HA7S", required_argument, NULL, e_ha7e},
-	{"xport", required_argument, NULL, e_xport, },
-	{"telnet", required_argument, NULL, e_xport, },
-	{"TELNET", required_argument, NULL, e_xport, },
-	{"Xport", required_argument, NULL, e_xport, },
-	{"XPort", required_argument, NULL, e_xport, },
-	{"XPORT", required_argument, NULL, e_xport, },
-	{"telnet", required_argument, NULL, e_xport, },
-	{"TESTER", required_argument, NULL, e_tester},	/* Tester */
-	{"Tester", required_argument, NULL, e_tester},	/* Tester */
-	{"tester", required_argument, NULL, e_tester},	/* Tester */
-	{"mock", required_argument, NULL, e_mock},	/* Mock */
-	{"Mock", required_argument, NULL, e_mock},	/* Mock */
-	{"MOCK", required_argument, NULL, e_mock},	/* Mock */
-	{"etherweather", required_argument, NULL, e_etherweather},	/* EtherWeather */
-	{"EtherWeather", required_argument, NULL, e_etherweather},	/* EtherWeather */
+	{"passive", required_argument, NO_LINKED_VAR, e_passive},	/* DS9097 passive */
+	{"PASSIVE", required_argument, NO_LINKED_VAR, e_passive},	/* DS9097 passive */
+	{"i2c", optional_argument, NO_LINKED_VAR, e_i2c},	/* i2c adapters */
+	{"I2C", optional_argument, NO_LINKED_VAR, e_i2c},	/* i2c adapters */
+	{"HA7", optional_argument, NO_LINKED_VAR, e_ha7},	/* HA7Net */
+	{"ha7", optional_argument, NO_LINKED_VAR, e_ha7},	/* HA7Net */
+	{"HA7NET", optional_argument, NO_LINKED_VAR, e_ha7},
+	{"HA7Net", optional_argument, NO_LINKED_VAR, e_ha7},
+	{"ha7net", optional_argument, NO_LINKED_VAR, e_ha7},
+	{"enet", optional_argument, NO_LINKED_VAR, e_enet},
+	{"Enet", optional_argument, NO_LINKED_VAR, e_enet},
+	{"ENET", optional_argument, NO_LINKED_VAR, e_enet},
+	{"OW-Server-Enet", optional_argument, NO_LINKED_VAR, e_enet},
+	{"FAKE", required_argument, NO_LINKED_VAR, e_fake},	/* Fake */
+	{"Fake", required_argument, NO_LINKED_VAR, e_fake},	/* Fake */
+	{"fake", required_argument, NO_LINKED_VAR, e_fake},	/* Fake */
+	{"link", required_argument, NO_LINKED_VAR, e_link},	/* link in ascii mode */
+	{"LINK", required_argument, NO_LINKED_VAR, e_link},	/* link in ascii mode */
+	{"HA3", required_argument, NO_LINKED_VAR, e_ha3},
+	{"ha3", required_argument, NO_LINKED_VAR, e_ha3},
+	{"HA4B", required_argument, NO_LINKED_VAR, e_ha4b},
+	{"HA4b", required_argument, NO_LINKED_VAR, e_ha4b},
+	{"ha4b", required_argument, NO_LINKED_VAR, e_ha4b},
+	{"HA5", required_argument, NO_LINKED_VAR, e_ha5},
+	{"ha5", required_argument, NO_LINKED_VAR, e_ha5},
+	{"ha7e", required_argument, NO_LINKED_VAR, e_ha7e},
+	{"HA7e", required_argument, NO_LINKED_VAR, e_ha7e},
+	{"HA7E", required_argument, NO_LINKED_VAR, e_ha7e},
+	{"ha7s", required_argument, NO_LINKED_VAR, e_ha7e},
+	{"HA7s", required_argument, NO_LINKED_VAR, e_ha7e},
+	{"HA7S", required_argument, NO_LINKED_VAR, e_ha7e},
+	{"xport", required_argument, NO_LINKED_VAR, e_xport, },
+	{"telnet", required_argument, NO_LINKED_VAR, e_xport, },
+	{"TELNET", required_argument, NO_LINKED_VAR, e_xport, },
+	{"Xport", required_argument, NO_LINKED_VAR, e_xport, },
+	{"XPort", required_argument, NO_LINKED_VAR, e_xport, },
+	{"XPORT", required_argument, NO_LINKED_VAR, e_xport, },
+	{"telnet", required_argument, NO_LINKED_VAR, e_xport, },
+	{"TESTER", required_argument, NO_LINKED_VAR, e_tester},	/* Tester */
+	{"Tester", required_argument, NO_LINKED_VAR, e_tester},	/* Tester */
+	{"tester", required_argument, NO_LINKED_VAR, e_tester},	/* Tester */
+	{"mock", required_argument, NO_LINKED_VAR, e_mock},	/* Mock */
+	{"Mock", required_argument, NO_LINKED_VAR, e_mock},	/* Mock */
+	{"MOCK", required_argument, NO_LINKED_VAR, e_mock},	/* Mock */
+	{"etherweather", required_argument, NO_LINKED_VAR, e_etherweather},	/* EtherWeather */
+	{"EtherWeather", required_argument, NO_LINKED_VAR, e_etherweather},	/* EtherWeather */
 	{"zero", no_argument, &Globals.announce_off, 0},
 	{"nozero", no_argument, &Globals.announce_off, 1},
-	{"autoserver", no_argument, NULL, e_browse},
-	{"auto", no_argument, NULL, e_browse},
-	{"AUTO", no_argument, NULL, e_browse},
-	{"browse", no_argument, NULL, e_browse},
-	{"w1", no_argument, NULL, e_w1_monitor},
-	{"W1", no_argument, NULL, e_w1_monitor},
-	{"announce", required_argument, NULL, e_announce},
-	{"allow_other", no_argument, NULL, e_allow_other},
+	{"autoserver", no_argument, NO_LINKED_VAR, e_browse},
+	{"auto", no_argument, NO_LINKED_VAR, e_browse},
+	{"AUTO", no_argument, NO_LINKED_VAR, e_browse},
+	{"browse", no_argument, NO_LINKED_VAR, e_browse},
+	{"w1", no_argument, NO_LINKED_VAR, e_w1_monitor},
+	{"W1", no_argument, NO_LINKED_VAR, e_w1_monitor},
+	{"announce", required_argument, NO_LINKED_VAR, e_announce},
+	{"allow_other", no_argument, NO_LINKED_VAR, e_allow_other},
 	{"altUSB", no_argument, &Globals.altUSB, 1},	/* Willy Robison's tweaks */
 	{"altusb", no_argument, &Globals.altUSB, 1},	/* Willy Robison's tweaks */
 	{"usb_flextime", no_argument, &Globals.usb_flextime, 1},
 	{"USB_flextime", no_argument, &Globals.usb_flextime, 1},
 	{"usb_regulartime", no_argument, &Globals.usb_flextime, 0},
 	{"USB_regulartime", no_argument, &Globals.usb_flextime, 0},
-	{"usb_scan", optional_argument, NULL, e_usb_monitor,},
-	{"USB_scan", optional_argument, NULL, e_usb_monitor,},
+	{"usb_scan", optional_argument, NO_LINKED_VAR, e_usb_monitor,},
+	{"USB_scan", optional_argument, NO_LINKED_VAR, e_usb_monitor,},
 	{"serial_flex", no_argument, &Globals.serial_flextime, 1},
 	{"serial_flextime", no_argument, &Globals.serial_flextime, 1},
 	{"serial_regulartime", no_argument, &Globals.serial_flextime, 0},
@@ -191,41 +193,41 @@ const struct option owopts_long[] = {
 	{"reverse", no_argument, &Globals.serial_reverse, 1},
 	{"reverse_polarity", no_argument, &Globals.serial_reverse, 1},
 	{"straight_polarity", no_argument, &Globals.serial_reverse, 0},
-	{"baud_rate", required_argument, NULL, e_baud},
-	{"baud", required_argument, NULL, e_baud},
-	{"Baud", required_argument, NULL, e_baud},
-	{"BAUD", required_argument, NULL, e_baud},
+	{"baud_rate", required_argument, NO_LINKED_VAR, e_baud},
+	{"baud", required_argument, NO_LINKED_VAR, e_baud},
+	{"Baud", required_argument, NO_LINKED_VAR, e_baud},
+	{"BAUD", required_argument, NO_LINKED_VAR, e_baud},
 
-	{"timeout_volatile", required_argument, NULL, e_timeout_volatile,},	// timeout -- changing cached values
-	{"timeout_stable", required_argument, NULL, e_timeout_stable,},	// timeout -- unchanging cached values
-	{"timeout_directory", required_argument, NULL, e_timeout_directory,},	// timeout -- direcory cached values
-	{"timeout_presence", required_argument, NULL, e_timeout_presence,},	// timeout -- device location
-	{"timeout_serial", required_argument, NULL, e_timeout_serial,},	// timeout -- serial wait (read and write)
-	{"timeout_usb", required_argument, NULL, e_timeout_usb,},	// timeout -- usb wait
-	{"timeout_network", required_argument, NULL, e_timeout_network,},	// timeout -- tcp wait
-	{"timeout_server", required_argument, NULL, e_timeout_server,},	// timeout -- server wait
-	{"timeout_ftp", required_argument, NULL, e_timeout_ftp,},	// timeout -- ftp wait
-	{"timeout_HA7", required_argument, NULL, e_timeout_ha7,},	// timeout -- HA7Net wait
-	{"timeout_ha7", required_argument, NULL, e_timeout_ha7,},	// timeout -- HA7Net wait
-	{"timeout_HA7Net", required_argument, NULL, e_timeout_ha7,},	// timeout -- HA7Net wait
-	{"timeout_ha7net", required_argument, NULL, e_timeout_ha7,},	// timeout -- HA7Net wait
-	{"timeout_w1", required_argument, NULL, e_timeout_w1,},	// timeout -- w1 netlink
-	{"timeout_W1", required_argument, NULL, e_timeout_w1,},	// timeout -- w1 netlink
-	{"timeout_persistent_low", required_argument, NULL, e_timeout_persistent_low,},
-	{"timeout_persistent_high", required_argument, NULL, e_timeout_persistent_high,},
-	{"clients_persistent_low", required_argument, NULL, e_clients_persistent_low,},
-	{"clients_persistent_high", required_argument, NULL, e_clients_persistent_high,},
+	{"timeout_volatile", required_argument, NO_LINKED_VAR, e_timeout_volatile,},	// timeout -- changing cached values
+	{"timeout_stable", required_argument, NO_LINKED_VAR, e_timeout_stable,},	// timeout -- unchanging cached values
+	{"timeout_directory", required_argument, NO_LINKED_VAR, e_timeout_directory,},	// timeout -- direcory cached values
+	{"timeout_presence", required_argument, NO_LINKED_VAR, e_timeout_presence,},	// timeout -- device location
+	{"timeout_serial", required_argument, NO_LINKED_VAR, e_timeout_serial,},	// timeout -- serial wait (read and write)
+	{"timeout_usb", required_argument, NO_LINKED_VAR, e_timeout_usb,},	// timeout -- usb wait
+	{"timeout_network", required_argument, NO_LINKED_VAR, e_timeout_network,},	// timeout -- tcp wait
+	{"timeout_server", required_argument, NO_LINKED_VAR, e_timeout_server,},	// timeout -- server wait
+	{"timeout_ftp", required_argument, NO_LINKED_VAR, e_timeout_ftp,},	// timeout -- ftp wait
+	{"timeout_HA7", required_argument, NO_LINKED_VAR, e_timeout_ha7,},	// timeout -- HA7Net wait
+	{"timeout_ha7", required_argument, NO_LINKED_VAR, e_timeout_ha7,},	// timeout -- HA7Net wait
+	{"timeout_HA7Net", required_argument, NO_LINKED_VAR, e_timeout_ha7,},	// timeout -- HA7Net wait
+	{"timeout_ha7net", required_argument, NO_LINKED_VAR, e_timeout_ha7,},	// timeout -- HA7Net wait
+	{"timeout_w1", required_argument, NO_LINKED_VAR, e_timeout_w1,},	// timeout -- w1 netlink
+	{"timeout_W1", required_argument, NO_LINKED_VAR, e_timeout_w1,},	// timeout -- w1 netlink
+	{"timeout_persistent_low", required_argument, NO_LINKED_VAR, e_timeout_persistent_low,},
+	{"timeout_persistent_high", required_argument, NO_LINKED_VAR, e_timeout_persistent_high,},
+	{"clients_persistent_low", required_argument, NO_LINKED_VAR, e_clients_persistent_low,},
+	{"clients_persistent_high", required_argument, NO_LINKED_VAR, e_clients_persistent_high,},
 
-	{"temperature_low", required_argument, NULL, e_templow,},
-	{"low_temperature", required_argument, NULL, e_templow,},
-	{"templow", required_argument, NULL, e_templow,},
+	{"temperature_low", required_argument, NO_LINKED_VAR, e_templow,},
+	{"low_temperature", required_argument, NO_LINKED_VAR, e_templow,},
+	{"templow", required_argument, NO_LINKED_VAR, e_templow,},
 
-	{"temperature_high", required_argument, NULL, e_temphigh,},
-	{"high_temperature", required_argument, NULL, e_temphigh,},
-	{"temphigh", required_argument, NULL, e_temphigh,},
-	{"temperature_hi", required_argument, NULL, e_temphigh,},
-	{"hi_temperature", required_argument, NULL, e_temphigh,},
-	{"temphi", required_argument, NULL, e_temphigh,},
+	{"temperature_high", required_argument, NO_LINKED_VAR, e_temphigh,},
+	{"high_temperature", required_argument, NO_LINKED_VAR, e_temphigh,},
+	{"temphigh", required_argument, NO_LINKED_VAR, e_temphigh,},
+	{"temperature_hi", required_argument, NO_LINKED_VAR, e_temphigh,},
+	{"hi_temperature", required_argument, NO_LINKED_VAR, e_temphigh,},
+	{"temphi", required_argument, NO_LINKED_VAR, e_temphigh,},
 
 	{"one_device", no_argument, &Globals.one_device, 1},
 	{"1_device", no_argument, &Globals.one_device, 1},

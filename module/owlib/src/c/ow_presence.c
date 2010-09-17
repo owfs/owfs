@@ -138,7 +138,7 @@ static void * CheckPresence_callback(void * v)
 	struct checkpresence_struct * cps = (struct checkpresence_struct *) v ;
 	struct checkpresence_struct next_cps = { cps->in->next, cps->pn, INDEX_BAD };
 	
-	threadbad = (next_cps.in == NULL)
+	threadbad = (next_cps.in == NO_CONNECTION)
 	|| (pthread_create(&thread, NULL, CheckPresence_callback, (void *) (&next_cps)) != 0) ;
 	
 	cps->bus_nr = CheckThisConnection( cps->in->index, cps->pn ) ;

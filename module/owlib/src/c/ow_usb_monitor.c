@@ -75,7 +75,7 @@ static GOOD_OR_BAD usb_monitor_in_use(const struct connection_in * in_selected)
 {
 	struct connection_in *in;
 
-	for (in = Inbound_Control.head; in != NULL; in = in->next) {
+	for (in = Inbound_Control.head; in != NO_CONNECTION; in = in->next) {
 		if ( in == in_selected ) {
 			continue ;
 		}
@@ -133,8 +133,8 @@ static void USB_scan_for_adapters(void)
 	LEVEL_DEBUG("USB SCAN!");
 	USB_first(&ul);
 	while ( GOOD(USB_next(&ul)) ) {
-		struct connection_in * in = AllocIn(NULL) ;
-		if ( in == NULL ) {
+		struct connection_in * in = AllocIn(NO_CONNECTION) ;
+		if ( in == NO_CONNECTION ) {
 			return ;
 		}
 		in->name = DS9490_device_name(&ul) ;

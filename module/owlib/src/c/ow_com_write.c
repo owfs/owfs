@@ -26,7 +26,7 @@ GOOD_OR_BAD COM_write( const BYTE * data, size_t length, struct connection_in *c
 		return gbGOOD ;
 	}
 
-	if ( connection == NULL ) {
+	if ( connection == NO_CONNECTION ) {
 		return gbBAD ;
 	}
 

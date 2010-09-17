@@ -299,7 +299,7 @@ static GOOD_OR_BAD OWServer_Enet_select( const struct parsedname * pn )
 	// Apparently need to reset before select (Unlike the HA7S)
 	RETURN_BAD_IF_BAD( gbRESET( BUS_reset(pn)) ) ;
 	
-	if ( (pn->selected_device==NULL) || (pn->selected_device==DeviceThermostat) ) {
+	if ( (pn->selected_device==NO_DEVICE) || (pn->selected_device==DeviceThermostat) ) {
 		return gbGOOD ;
 	}
 
