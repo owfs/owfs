@@ -219,6 +219,7 @@ static ZERO_OR_ERROR FS_ParsedName_setup(struct parsedname_pointers *pp, const c
 	pn->lock = NULL ;
 
 	/* minimal structure for initial bus "detect" use -- really has connection and LocalControlFlags only */
+	pn->dirlength = -1 ;
 	if (path == NULL) {
 		return 0;
 	}

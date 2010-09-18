@@ -60,8 +60,12 @@ struct one_wire_query * OWQ_create_sibling(const char *sibling, struct one_wire_
 	strncpy(path, pn_original->path,dirlength) ;
 	strcpy(&path[dirlength],sibling) ;
 	
+	if ( pn_original->selected_filetype == NO_FILETYPE ) {
+		if ( pn_original->subdir == NO_SUBDIR ) {
+			return NO_ONE_WIRE_QUERY ;
+		}
 	// Add extension only if original property is aggregate
-	if ( pn_original->selected_filetype->ag != NON_AGGREGATE ) {
+	} else if ( pn_original->selected_filetype->ag != NON_AGGREGATE ) {
 		// search for sibling in the filetype array
 		struct filetype * sib_filetype = bsearch(sibling, pn_original->selected_device->filetype_array,
 				 (size_t) pn_original->selected_device->count_of_filetypes, sizeof(struct filetype), filetype_cmp) ;
