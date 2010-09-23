@@ -219,7 +219,7 @@ static GOOD_OR_BAD usbdevice_in_use(const struct usb_list *ul)
 {
 	struct connection_in *in;
 
-	for (in = Inbound_Control.head; in != NULL; in = in->next) {
+	for (in = Inbound_Control.head; in != NO_CONNECTION; in = in->next) {
 		if ( in->busmode != bus_usb ) {
 			continue ;
 		}

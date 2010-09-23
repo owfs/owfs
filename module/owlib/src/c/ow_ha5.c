@@ -49,12 +49,12 @@ static void HA5_setroutines(struct connection_in *in)
 	in->iroutines.detect = HA5_detect;
 	in->iroutines.reset = HA5_reset;
 	in->iroutines.next_both = HA5_next_both;
-	in->iroutines.PowerByte = NULL;
-//    in->iroutines.ProgramPulse = ;
+	in->iroutines.PowerByte = NO_POWERBYTE_ROUTINE;
+    in->iroutines.ProgramPulse = NO_PROGRAMPULSE_ROUTINE;
 	in->iroutines.sendback_data = HA5_sendback_data;
-	in->iroutines.select_and_sendback = HA5_select_and_sendback;
-	//    in->iroutines.sendback_bits = ;
+	in->iroutines.sendback_bits = NO_SENDBACKBITS_ROUTINE;
 	in->iroutines.select = HA5_select ;
+	in->iroutines.select_and_sendback = HA5_select_and_sendback;
 	in->iroutines.reconnect = HA5_reconnect;
 	in->iroutines.close = HA5_close;
 	in->iroutines.flags = ADAP_FLAG_dirgulp | ADAP_FLAG_bundle | ADAP_FLAG_dir_auto_reset | ADAP_FLAG_no2404delay ;
@@ -144,7 +144,7 @@ static GOOD_OR_BAD HA5_channel_list( char * alpha_string, struct parsedname * pn
 		if ( GOOD( HA5_test_channel(c,pn)) ) {
 			LEVEL_CONNECT("HA5 bus master FOUND on port %s at channel %c", current_in->name, current_in->master.ha5.channel ) ;
 			current_in = NewIn( initial_in ) ;
-			if ( current_in == NULL ) {
+			if ( current_in == NO_CONNECTION ) {
 				break ;
 			}
 			pn->selected_connection = current_in ;
@@ -451,7 +451,7 @@ static GOOD_OR_BAD HA5_select( const struct parsedname * pn )
 {
 	GOOD_OR_BAD ret ;
 
-	if ( (pn->selected_device==NULL) || (pn->selected_device==DeviceThermostat) ) {
+	if ( (pn->selected_device==NO_DEVICE) || (pn->selected_device==DeviceThermostat) ) {
 		RETURN_BAD_IF_BAD( gbRESET( HA5_reset(pn) ) ) ;
 	}
 

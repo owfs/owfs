@@ -62,7 +62,7 @@ GOOD_OR_BAD BUS_readin_data(BYTE * data, const size_t len, const struct parsedna
 GOOD_OR_BAD BUS_select_and_sendback(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn)
 {
 	GOOD_OR_BAD (*select_and_sendback) (const BYTE * data, BYTE * resp, const size_t len, const struct parsedname * pn) = pn->selected_connection->iroutines.select_and_sendback ;
-	if ( FunctionExists(select_and_sendback) ) {
+	if ( select_and_sendback != NO_SELECTANDSENDBACK_ROUTINE ) {
 		return (select_and_sendback) (data, resp, len, pn);
 	} else {
 		RETURN_BAD_IF_BAD( BUS_select(pn) );
@@ -82,7 +82,7 @@ GOOD_OR_BAD BUS_sendback_data(const BYTE * data, BYTE * resp, const size_t len, 
 	}
 	
 	/* Native function for this bus master? */
-	if ( FunctionExists(sendback_data) ) {
+	if ( sendback_data != NO_SENDBACKDATA_ROUTINE ) {
 		return (sendback_data) (data, resp, len, pn);
 	}
 
@@ -133,7 +133,7 @@ static GOOD_OR_BAD BUS_sendback_data_bitbang(const BYTE * data, BYTE * resp, con
 GOOD_OR_BAD BUS_sendback_bits( const BYTE * databits, BYTE * respbits, const size_t len, const struct parsedname * pn )
 {
 	GOOD_OR_BAD (*sendback_bits) (const BYTE * databits, BYTE * respbits, const size_t len, const struct parsedname * pn) = ((pn)->selected_connection->iroutines.sendback_bits) ;
-	if ( FunctionExists(sendback_bits) ) {
+	if ( sendback_bits != NO_SENDBACKBITS_ROUTINE ) {
 		return (sendback_bits)((databits),(respbits),(len),(pn)) ;
 	}
 	return gbBAD ;

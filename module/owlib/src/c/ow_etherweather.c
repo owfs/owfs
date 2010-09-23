@@ -246,11 +246,12 @@ static void EtherWeather_setroutines(struct connection_in *in)
 	in->iroutines.reset = EtherWeather_reset;
 	in->iroutines.next_both = EtherWeather_next_both;
 	in->iroutines.PowerByte = EtherWeather_PowerByte;
-//    in->iroutines.ProgramPulse = ;
+    in->iroutines.ProgramPulse = NO_PROGRAMPULSE_ROUTINE;
 	in->iroutines.sendback_data = EtherWeather_sendback_data;
 	in->iroutines.sendback_bits = EtherWeather_sendback_bits;
-	in->iroutines.select = NULL;
-	in->iroutines.reconnect = NULL;
+	in->iroutines.select = NO_SELECT_ROUTINE;
+	in->iroutines.select_and_sendback = NO_SELECTANDSENDBACK_ROUTINE;
+	in->iroutines.reconnect = NO_RECONNECT_ROUTINE;
 	in->iroutines.close = EtherWeather_close;
 	in->iroutines.flags = ADAP_FLAG_overdrive | ADAP_FLAG_dirgulp | ADAP_FLAG_no2409path | ADAP_FLAG_no2404delay ;
 }

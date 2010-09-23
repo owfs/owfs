@@ -24,14 +24,15 @@ static void Server_close(struct connection_in *in);
 static void Server_setroutines(struct interface_routines *f)
 {
 	f->detect = Server_detect;
-//    f->reset         =;
-//    f->next_both  ;
-//    f->PowerByte     = ;
-//    f->ProgramPulse = ;
-//    f->sendback_data = ;
-//    f->sendback_bits = ;
-//    f->select        = ;
-	f->reconnect = NULL;
+    f->reset      = NO_RESET_ROUTINE;
+    f->next_both  = NO_NEXT_BOTH_ROUTINE ;
+    f->PowerByte     = NO_POWERBYTE_ROUTINE;
+    f->ProgramPulse = NO_PROGRAMPULSE_ROUTINE;
+    f->sendback_data = NO_SENDBACKDATA_ROUTINE;
+    f->sendback_bits = NO_SENDBACKBITS_ROUTINE;
+    f->select        = NO_SELECT_ROUTINE;
+    f->select_and_sendback = NO_SELECTANDSENDBACK_ROUTINE;
+	f->reconnect = NO_RECONNECT_ROUTINE;
 	f->close = Server_close;
 	f->flags = 0 ;
 }
@@ -39,14 +40,15 @@ static void Server_setroutines(struct interface_routines *f)
 static void Zero_setroutines(struct interface_routines *f)
 {
 	f->detect = Server_detect;
-//    f->reset         =;
-//    f->next_both  ;
-//    f->PowerByte     = ;
-//    f->ProgramPulse = ;
-//    f->sendback_data = ;
-//    f->sendback_bits = ;
-//    f->select        = ;
-	f->reconnect = NULL;
+    f->reset      = NO_RESET_ROUTINE;
+    f->next_both  = NO_NEXT_BOTH_ROUTINE ;
+    f->PowerByte     = NO_POWERBYTE_ROUTINE;
+    f->ProgramPulse = NO_PROGRAMPULSE_ROUTINE;
+    f->sendback_data = NO_SENDBACKDATA_ROUTINE;
+    f->sendback_bits = NO_SENDBACKBITS_ROUTINE;
+    f->select        = NO_SELECT_ROUTINE;
+    f->select_and_sendback = NO_SELECTANDSENDBACK_ROUTINE;
+	f->reconnect = NO_RECONNECT_ROUTINE;
 	f->close = Server_close;
 	f->flags = 0 ;
 }

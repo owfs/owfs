@@ -178,14 +178,14 @@ static int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler)
 		return ret;
 	}
 
-	if (pn.selected_filetype) {
-		ret = -ENOENT;
-	} else {					/* Good pn */
+	if (pn.selected_filetype == NO_FILETYPE) {
 		struct getdirstruct gds = { h, filler, };
 		/* Call directory spanning function */
 		FS_dir(FS_getdir_callback, &gds, &pn);
 		FILLER(h, ".");
 		FILLER(h, "..");
+	} else {					/* property */
+		ret = -ENOENT;
 	}
 
 	/* Clean up */

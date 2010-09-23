@@ -49,12 +49,13 @@ static void OWServer_Enet_setroutines(struct connection_in *in)
 	in->iroutines.detect = OWServer_Enet_detect;
 	in->iroutines.reset = OWServer_Enet_reset;
 	in->iroutines.next_both = OWServer_Enet_next_both;
-	in->iroutines.PowerByte = NULL;
-//    in->iroutines.ProgramPulse = ;
+	in->iroutines.PowerByte = NO_POWERBYTE_ROUTINE;
+    in->iroutines.ProgramPulse = NO_PROGRAMPULSE_ROUTINE;
 	in->iroutines.sendback_data = OWServer_Enet_sendback_data;
-//    in->iroutines.sendback_bits = ;
+    in->iroutines.sendback_bits = NO_SENDBACKBITS_ROUTINE;
 	in->iroutines.select = OWServer_Enet_select ;
-	in->iroutines.reconnect = NULL;
+	in->iroutines.select_and_sendback = NO_SELECTANDSENDBACK_ROUTINE ;
+	in->iroutines.reconnect = NO_RECONNECT_ROUTINE;
 	in->iroutines.close = OWServer_Enet_close;
 	in->iroutines.flags = ADAP_FLAG_dirgulp | ADAP_FLAG_no2409path | ADAP_FLAG_overdrive | ADAP_FLAG_bundle | ADAP_FLAG_no2404delay ;
 	in->bundling_length = HA7E_FIFO_SIZE;

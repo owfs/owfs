@@ -26,7 +26,7 @@ void Add_InFlight( GOOD_OR_BAD (*nomatch)(struct connection_in * trial,struct co
 	LEVEL_DEBUG("Request master be added: %s", new_in->name);
 
 	CONNIN_WLOCK ;
-	if ( nomatch != NULL ) {
+	if ( nomatch != NO_CONNECTION ) {
 		struct connection_in * in ;
 		for ( in = Inbound_Control.head ; in != NO_CONNECTION ; in = in->next ) {
 			if ( GOOD( nomatch( new_in, in )) ) {

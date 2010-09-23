@@ -48,7 +48,7 @@ ZERO_OR_ERROR FS_r_sibling_binary(char * data, size_t * size, const char * sibli
 	struct one_wire_query * owq_sibling  = OWQ_create_sibling( sibling, owq ) ;
 	SIZE_OR_ERROR sib_status ;
 
-	if ( owq_sibling == NULL ) {
+	if ( owq_sibling == NO_ONE_WIRE_QUERY ) {
 		return -EINVAL ;
 	}
 	
@@ -75,7 +75,7 @@ ZERO_OR_ERROR FS_w_sibling_binary(char * data, size_t size, off_t offset, const 
 	struct one_wire_query * owq_sibling  = OWQ_create_sibling( sibling, owq ) ;
 	SIZE_OR_ERROR write_error ;
 
-	if ( owq_sibling == NULL ) {
+	if ( owq_sibling == NO_ONE_WIRE_QUERY ) {
 		return -EINVAL ;
 	}
 	

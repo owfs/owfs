@@ -28,9 +28,9 @@ struct one_wire_query * OWQ_create_from_path(const char *path)
 	
 	LEVEL_DEBUG("%s", path);
 
-	if ( owq== NULL) {
+	if ( owq== NO_ONE_WIRE_QUERY) {
 		LEVEL_DEBUG("No memory to create object for path %s",path) ;
-		return NULL ;
+		return NO_ONE_WIRE_QUERY ;
 	}
 	
 	memset(owq, 0, sizeof(owq));
@@ -46,7 +46,7 @@ struct one_wire_query * OWQ_create_from_path(const char *path)
 		}
 		OWQ_destroy(owq);
 	}
-	return NULL ;
+	return NO_ONE_WIRE_QUERY ;
 }
 
 /* Create the Parsename structure and load the relevant fields */
@@ -93,11 +93,11 @@ struct one_wire_query * OWQ_create_sibling(const char *sibling, struct one_wire_
 	LEVEL_DEBUG("Create sibling %s from %s as %s", sibling, pn_original->path,path);
 
 	owq_sib = OWQ_create_from_path(path) ;
-	if ( owq_sib != NULL ) {
+	if ( owq_sib != NO_ONE_WIRE_QUERY ) {
 		OWQ_offset(owq_sib) = 0 ;
 		return owq_sib ;
 	}
-	return NULL ;
+	return NO_ONE_WIRE_QUERY ;
 }
 
 /* Use an aggregate OWQ as a template for a single element */
@@ -107,9 +107,9 @@ struct one_wire_query * OWQ_create_separate( int extension, struct one_wire_quer
 	
 	LEVEL_DEBUG("%s with extension %d", PN(owq_aggregate)->path,extension);
 
-	if ( owq_sep== NULL) {
+	if ( owq_sep== NO_ONE_WIRE_QUERY) {
 		LEVEL_DEBUG("No memory to create object for extension %d",extension) ;
-		return NULL ;
+		return NO_ONE_WIRE_QUERY ;
 	}
 	
 	memset(owq_sep, 0, sizeof(owq_sep));
@@ -130,9 +130,9 @@ struct one_wire_query * OWQ_create_aggregate( struct one_wire_query * owq_single
 	
 	LEVEL_DEBUG("%s with extension ALL", PN(owq_single)->path);
 
-	if ( owq_all == NULL) {
+	if ( owq_all == NO_ONE_WIRE_QUERY) {
 		LEVEL_DEBUG("No memory to create object for extension ALL") ;
-		return NULL ;
+		return NO_ONE_WIRE_QUERY ;
 	}
 	
 	memset(owq_all, 0, sizeof(owq_single));
@@ -145,7 +145,7 @@ struct one_wire_query * OWQ_create_aggregate( struct one_wire_query * owq_single
 	OWQ_offset(owq_all) = 0 ;
 	if ( BAD( OWQ_allocate_array(owq_all)) ) {
 		OWQ_destroy(owq_all);
-		return NULL ;
+		return NO_ONE_WIRE_QUERY ;
 	}
 	return owq_all ;
 }
@@ -208,7 +208,7 @@ static GOOD_OR_BAD OWQ_allocate_array( struct one_wire_query * owq )
 	struct parsedname * pn = PN(owq) ;
 	if (pn->extension == EXTENSION_ALL && pn->type != ePN_structure) {
 		OWQ_array(owq) = owcalloc((size_t) pn->selected_filetype->ag->elements, sizeof(union value_object));
-		if (OWQ_array(owq) == NULL) {
+		if (OWQ_array(owq) == NO_ONE_WIRE_QUERY) {
 			return gbBAD ;
 		}
 		OWQ_cleanup(owq) |= owq_cleanup_array ;
@@ -288,7 +288,7 @@ GOOD_OR_BAD OWQ_allocate_write_buffer( const char * write_buffer, size_t buffer_
 
 void OWQ_destroy(struct one_wire_query *owq)
 {
-	if ( owq == NULL) {
+	if ( owq == NO_ONE_WIRE_QUERY) {
 		return ;
 	}
 	

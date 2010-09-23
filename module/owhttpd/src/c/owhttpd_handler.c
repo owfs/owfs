@@ -87,7 +87,7 @@ int handle_socket(FILE * out)
 			ReadToCRLF(out) ;
 			pn = NULL ;
 			http_code = http_404 ;
-		} else if (pn->selected_device == NULL) {
+		} else if (pn->selected_device == NO_DEVICE) {
 			// directory!
 			LEVEL_DEBUG("http directory request.");
 			ReadToCRLF(out) ;
@@ -163,7 +163,7 @@ static enum http_return handle_GET(FILE * out, struct urlparse * up)
 		if ( req_leng <= fil_leng && strcasecmp(up->request,&up->file[fil_leng-req_leng])==0 ) {
 			struct parsedname s_pn ;
 			if ( FS_ParsedName(up->file,&s_pn)==0 ) {
-				if ( s_pn.selected_filetype != NULL ) {
+				if ( s_pn.selected_filetype != NO_FILETYPE ) {
 					LEVEL_DEBUG("Property name %s duplicated on command line. Not a problem.",up->request) ;
 					up->file[fil_leng-req_leng-1] = '\0';
 				}

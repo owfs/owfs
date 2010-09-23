@@ -46,13 +46,14 @@ static void W1_setroutines(struct connection_in *in)
 	in->iroutines.detect = W1_detect;
 	in->iroutines.reset = W1_reset;
 	in->iroutines.next_both = W1_next_both;
-	in->iroutines.PowerByte = NULL;
-	//    in->iroutines.ProgramPulse = ;
+	in->iroutines.PowerByte = NO_POWERBYTE_ROUTINE;
+	in->iroutines.ProgramPulse = NO_PROGRAMPULSE_ROUTINE;
 	in->iroutines.select_and_sendback = W1_select_and_sendback;
 	in->iroutines.sendback_data = W1_sendback_data;
-	//    in->iroutines.sendback_bits = ;
-	in->iroutines.select = NULL;
-	in->iroutines.reconnect = NULL;
+	in->iroutines.sendback_bits = NO_SENDBACKBITS_ROUTINE;
+	in->iroutines.select = NO_SELECT_ROUTINE;
+	in->iroutines.select_and_sendback = NO_SELECTANDSENDBACK_ROUTINE;
+	in->iroutines.reconnect = NO_RECONNECT_ROUTINE;
 	in->iroutines.close = W1_close;
 	// Directory obtained in a single gulp (W1_LIST_SLAVES)
 	// Bundle transactions

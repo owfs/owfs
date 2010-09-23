@@ -33,12 +33,13 @@ static void HA7E_setroutines(struct connection_in *in)
 	in->iroutines.detect = HA7E_detect;
 	in->iroutines.reset = HA7E_reset;
 	in->iroutines.next_both = HA7E_next_both;
-	in->iroutines.PowerByte = NULL;
-//    in->iroutines.ProgramPulse = ;
+	in->iroutines.PowerByte = NO_POWERBYTE_ROUTINE;
+    in->iroutines.ProgramPulse = NO_PROGRAMPULSE_ROUTINE;
 	in->iroutines.sendback_data = HA7E_sendback_data;
-//    in->iroutines.sendback_bits = ;
+    in->iroutines.sendback_bits = NO_SENDBACKBITS_ROUTINE;
 	in->iroutines.select = HA7E_select ;
-	in->iroutines.reconnect = NULL;
+	in->iroutines.select_and_sendback = NO_SELECTANDSENDBACK_ROUTINE ;
+	in->iroutines.reconnect = NO_RECONNECT_ROUTINE;
 	in->iroutines.close = HA7E_close;
 	in->iroutines.flags = ADAP_FLAG_dirgulp | ADAP_FLAG_bundle | ADAP_FLAG_dir_auto_reset | ADAP_FLAG_no2404delay ;
 	in->bundling_length = HA7E_FIFO_SIZE;
@@ -236,7 +237,7 @@ static GOOD_OR_BAD HA7E_select( const struct parsedname * pn )
 	char send_address[18] ;
 	char resp_address[17] ;
 
-	if ( (pn->selected_device==NULL) || (pn->selected_device==DeviceThermostat) ) {
+	if ( (pn->selected_device==NO_DEVICE) || (pn->selected_device==DeviceThermostat) ) {
 		return gbRESET( HA7E_reset(pn) ) ;
 	}
 

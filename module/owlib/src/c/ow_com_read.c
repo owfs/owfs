@@ -26,7 +26,7 @@ GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connecti
 		return gbGOOD ;
 	}
 	
-	if ( connection == NULL ) {
+	if ( connection == NO_CONNECTION ) {
 		return gbBAD ;
 	}
 	

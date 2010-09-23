@@ -50,7 +50,7 @@ GOOD_OR_BAD LibStart(void)
 	// Signal handlers
 	IgnoreSignals();
 	
-	if ( Inbound_Control.head == NULL ) {
+	if ( Inbound_Control.head == NO_CONNECTION ) {
 		LEVEL_DEFAULT("No valid 1-wire buses found");
 		return gbBAD ;
 	}
@@ -84,7 +84,7 @@ static void SetupInboundConnections(void)
 	struct connection_in *in = Inbound_Control.head;
 
 	// cycle through connections analyzing them
-	while (in != NULL) {
+	while (in != NO_CONNECTION) {
 		struct connection_in * next = in->next ;
 		if ( BAD( SetupSingleInboundConnection(in) ) ) {				
 			/* flag that that the adapter initiation was unsuccessful */

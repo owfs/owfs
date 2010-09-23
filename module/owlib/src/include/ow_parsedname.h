@@ -157,8 +157,8 @@ struct parsedname {
 #define DeviceFormat(ppn)         ( (enum deviceformat) (((ppn)->control_flags & DEVFORMAT_MASK) >> DEVFORMAT_BIT) )
 #define set_controlflags(s, mask, bit, val) do { *(s) = (*(s) & ~(mask)) | ((val)<<bit); } while(0)
 
-#define IsDir( pn )    ( ((pn)->selected_device)==NULL \
-                      || ((pn)->selected_filetype)==NULL  \
+#define IsDir( pn )    ( ((pn)->selected_device)==NO_DEVICE \
+                      || ((pn)->selected_filetype)==NO_FILETYPE  \
                       || ((pn)->selected_filetype)->format==ft_subdir \
                       || ((pn)->selected_filetype)->format==ft_directory )
 #define NotUncachedDir(pn)    ( (((pn)->state)&ePS_uncached) == 0 )

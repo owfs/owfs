@@ -312,7 +312,7 @@ static ZERO_OR_ERROR FS_stat(struct one_wire_query *owq)
 	if (dindex < 0) {
 		dindex = 0;
 	}
-	if (pn->selected_filetype == NULL) {
+	if (pn->selected_filetype == NO_FILETYPE) {
 		return -ENOENT;
 	}
 	if (pn->selected_filetype->data.v == NULL) {
@@ -332,7 +332,7 @@ static ZERO_OR_ERROR FS_time(struct one_wire_query *owq)
 	if (dindex < 0) {
 		dindex = 0;
 	}
-	if (pn->selected_filetype == NULL) {
+	if (pn->selected_filetype == NO_FILETYPE) {
 		return -ENOENT;
 	}
 	tv = (struct timeval *) pn->selected_filetype->data.v;

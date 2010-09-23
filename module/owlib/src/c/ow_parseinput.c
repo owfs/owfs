@@ -398,7 +398,7 @@ static ZERO_OR_ERROR FS_input_array_with_commas(struct one_wire_query *owq)
 		//Debug_Bytes("FS_input_array_with_commas -- to comma",buffer_position,comma-buffer_position) ;
 		// set up single element
 		owq_single = OWQ_create_separate( extension, owq ) ;
-		if ( owq_single == NULL ) {
+		if ( owq_single == NO_ONE_WIRE_QUERY ) {
 			return -ENOMEM ;
 		}
 		OWQ_assign_read_buffer(buffer_position, comma - buffer_position, 0, owq_single) ;

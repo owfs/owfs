@@ -41,7 +41,7 @@ GOOD_OR_BAD TestConnection(const struct parsedname *pn)
 
 		// Call reconnection
 		in->AnyDevices = anydevices_unknown ;
-		if ( FunctionExists(in->iroutines.reconnect) ) {
+		if ( in->iroutines.reconnect != NO_RECONNECT_ROUTINE ) {
 			// reconnect method exists
 			ret = (in->iroutines.reconnect) (pn) ;	// call bus-specific reconnect
 		} else {

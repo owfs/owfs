@@ -1389,7 +1389,7 @@ static void do_size(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 		} else {
 
 			/* verify that the file is not a directory */
-			if (pn.selected_device == NULL || pn.selected_filetype == NULL) {
+			if (pn.selected_device == NO_DEVICE || pn.selected_filetype == NO_FILETYPE) {
 				reply(f, 550, "File is a directory, SIZE command not valid.");
 			} else {
 				filesize = FullFileLength(&pn);

@@ -39,7 +39,7 @@ static ZERO_OR_ERROR FS_dir_plus(void (*dirfunc) (void *, const struct parsednam
 /* Calls dirfunc() for each element in directory */
 /* void * data is arbitrary user data passed along -- e.g. output file descriptor */
 /* pn_directory -- input:
-    pn_directory->selected_device == NULL -- root directory, give list of all devices
+    pn_directory->selected_device == NO_DEVICE -- root directory, give list of all devices
     pn_directory->selected_device non-null, -- device directory, give all properties
     branch aware
     cache aware

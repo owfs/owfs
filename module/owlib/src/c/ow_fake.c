@@ -36,12 +36,13 @@ static void Fake_setroutines(struct connection_in *in)
 	in->iroutines.detect = Fake_detect;
 	in->iroutines.reset = Fake_reset;
 	in->iroutines.next_both = Fake_next_both;
-	in->iroutines.PowerByte = NULL;
+	in->iroutines.PowerByte = NO_POWERBYTE_ROUTINE;
 	in->iroutines.ProgramPulse = Fake_ProgramPulse;
 	in->iroutines.sendback_data = Fake_sendback_data;
 	in->iroutines.sendback_bits = Fake_sendback_bits;
-	in->iroutines.select = NULL;
-	in->iroutines.reconnect = NULL;
+	in->iroutines.select = NO_SELECT_ROUTINE;
+	in->iroutines.select_and_sendback = NO_SELECTANDSENDBACK_ROUTINE;
+	in->iroutines.reconnect = NO_RECONNECT_ROUTINE;
 	in->iroutines.close = Fake_close;
 	in->iroutines.flags = ADAP_FLAG_no2409path | ADAP_FLAG_presence_from_dirblob | ADAP_FLAG_no2404delay ;
 }

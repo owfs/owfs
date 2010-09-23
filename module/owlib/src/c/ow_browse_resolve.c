@@ -43,7 +43,7 @@ void ZeroDel(const char * name, const char * type, const char * domain )
 {
 	struct connection_in * in = CreateIn( name, type, domain, "", "" ) ;
 	
-	if ( in != NULL ) {
+	if ( in != NO_CONNECTION ) {
 		SAFEFREE(in->name) ;
 		in->name = owstrdup(name) ;
 		Del_InFlight( Zero_nomatch, in ) ;
@@ -53,11 +53,11 @@ void ZeroDel(const char * name, const char * type, const char * domain )
 static struct connection_in * CreateIn(const char * name, const char * type, const char * domain, const char * host, const char * service )
 {
 	char addr_name[128] ;
-	struct connection_in * in = AllocIn(NULL);
+	struct connection_in * in = AllocIn(NO_CONNECTION);
 
-	if ( in == NULL ) {
+	if ( in == NO_CONNECTION ) {
 		LEVEL_DEBUG( "Cannot allocate position for a new Bus Master %s (%s:%s) -- ignored",name,host,service) ;
-		return NULL ;
+		return NO_CONNECTION ;
 	}
 
 	UCLIBCLOCK;

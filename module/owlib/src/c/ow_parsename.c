@@ -542,7 +542,7 @@ static enum parse_enum Parse_NonRealDevice(char *filename, struct parsedname *pn
 {
 	//printf("Parse_NonRealDevice: [%s] [%s]\n", filename, pn->path);
 	FS_devicefind(filename, pn);
-	return (pn->selected_device == &NoDevice) ? parse_error : parse_prop;
+	return (pn->selected_device == &UnknownDevice) ? parse_error : parse_prop;
 }
 
 enum parse_enum Parse_Property(char *filename, struct parsedname *pn)
@@ -640,8 +640,8 @@ static ZERO_OR_ERROR BranchAdd(struct parsedname *pn)
 	memcpy(pn->bp[pn->pathlength].sn, pn->sn, SERIAL_NUMBER_SIZE);	/* copy over DS2409 name */
 	pn->bp[pn->pathlength].branch = pn->selected_filetype->data.i;
 	++pn->pathlength;
-	pn->selected_filetype = NULL;
-	pn->selected_device = NULL;
+	pn->selected_filetype = NO_FILETYPE;
+	pn->selected_device = NO_DEVICE;
 	return 0;
 }
 

@@ -84,6 +84,18 @@ struct interface_routines {
 	UINT flags;
 };
 
+#define NO_DETECT_ROUTINE				NULL
+#define NO_RESET_ROUTINE				NULL
+#define NO_NEXT_BOTH_ROUTINE			NULL
+#define NO_POWERBYTE_ROUTINE			NULL
+#define NO_PROGRAMPULSE_ROUTINE			NULL
+#define NO_SENDBACKDATA_ROUTINE			NULL
+#define NO_SELECTANDSENDBACK_ROUTINE	NULL
+#define NO_SENDBACKBITS_ROUTINE			NULL
+#define NO_SELECT_ROUTINE				NULL
+#define NO_RECONNECT_ROUTINE			NULL
+#define NO_CLOSE_ROUTINE				NULL
+
 /* placed in iroutines.flags */
 
 // Adapter is usable

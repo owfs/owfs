@@ -33,7 +33,7 @@ $Id$
 GOOD_OR_BAD COM_open(struct connection_in *in)
 {
 	struct termios newSerialTio;	/*new serial port settings */
-	if (in == NULL) {
+	if (in == NO_CONNECTION) {
 		LEVEL_DEBUG("Attempt to open a NULL serial device");
 		return gbBAD;
 	}

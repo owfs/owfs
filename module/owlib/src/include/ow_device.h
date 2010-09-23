@@ -112,7 +112,7 @@ struct device_opaque {
 /* Must be sorted for bsearch */
 //extern struct device * Devices[] ;
 //extern size_t nDevices ;
-extern struct device NoDevice;
+extern struct device UnknownDevice;
 extern struct device AnyDevice; // returned from remote DIR listing.
 extern struct device *DeviceSimultaneous;
 extern struct device *DeviceThermostat;

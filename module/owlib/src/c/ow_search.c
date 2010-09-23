@@ -121,7 +121,7 @@ static enum search_status BUS_next_3try(struct device_search *ds, const struct p
 enum search_status BUS_next_both(struct device_search *ds, const struct parsedname *pn)
 {
 	enum search_status next_both ;
-	if ( FunctionExists(pn->selected_connection->iroutines.next_both) ) {
+	if ( pn->selected_connection->iroutines.next_both != NO_NEXT_BOTH_ROUTINE ) {
 		next_both = (pn->selected_connection->iroutines.next_both) (ds, pn);
 	} else {
 		next_both = BUS_next_both_bitbang( ds, pn ) ;

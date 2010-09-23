@@ -95,11 +95,12 @@ static void LINK_setroutines(struct connection_in *in)
 	in->iroutines.reset = LINK_reset;
 	in->iroutines.next_both = LINK_next_both;
 	in->iroutines.PowerByte = LINK_PowerByte;
-//    in->iroutines.ProgramPulse = ;
+    in->iroutines.ProgramPulse = NO_PROGRAMPULSE_ROUTINE;
 	in->iroutines.sendback_data = LINK_sendback_data;
-//    in->iroutines.sendback_bits = ;
-	in->iroutines.select = NULL;
-	in->iroutines.reconnect = NULL;
+    in->iroutines.sendback_bits = NO_SENDBACKBITS_ROUTINE;
+	in->iroutines.select = NO_SELECT_ROUTINE;
+	in->iroutines.select_and_sendback = NO_SELECTANDSENDBACK_ROUTINE;
+	in->iroutines.reconnect = NO_RECONNECT_ROUTINE;
 	in->iroutines.close = LINK_close;
 	in->iroutines.flags = ADAP_FLAG_no2409path | ADAP_FLAG_no2404delay ;
 	in->bundling_length = LINK_FIFO_SIZE;

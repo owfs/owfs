@@ -71,7 +71,7 @@ SIZE_OR_ERROR FS_read_postparse(struct one_wire_query *owq)
 	SIZE_OR_ERROR read_or_error;
 
 	// ServerRead jumps in here, perhaps with non-file entry
-	if (pn->selected_device == NULL || pn->selected_filetype == NULL) {
+	if (pn->selected_device == NO_DEVICE || pn->selected_filetype == NO_FILETYPE) {
 		return -EISDIR;
 	}
 
@@ -476,7 +476,7 @@ static ZERO_OR_ERROR FS_read_all( struct one_wire_query *owq_all)
 	// bitfield, convert to .BYTE format and write ( and delete cache ) as BYTE.
 	if ( pn->selected_filetype->format == ft_bitfield ) {
 		struct one_wire_query * owq_byte = OWQ_create_separate( EXTENSION_BYTE, owq_all ) ;
-		if ( owq_byte != NULL ) {
+		if ( owq_byte != NO_ONE_WIRE_QUERY ) {
 			if ( FS_read_owq( owq_byte ) >= 0 ) {
 				size_t elements = pn->selected_filetype->ag->elements;
 				size_t extension;
@@ -527,7 +527,7 @@ static ZERO_OR_ERROR FS_read_in_parts( struct one_wire_query *owq_all )
 	
 	// single for BYTE or iteration 
 	owq_part = OWQ_create_separate( 0, owq_all ) ;
-	if ( owq_part == NULL ) {
+	if ( owq_part == NO_ONE_WIRE_QUERY ) {
 		return -ENOENT ;
 	}
 	
@@ -596,7 +596,7 @@ static ZERO_OR_ERROR FS_read_all_bits(struct one_wire_query *owq_byte)
 	size_t elements = pn->selected_filetype->ag->elements;
 	size_t extension;
 	
-	if ( owq_bit == NULL ) {
+	if ( owq_bit == NO_ONE_WIRE_QUERY ) {
 		return -ENOENT ;
 	}
 
@@ -622,7 +622,7 @@ static ZERO_OR_ERROR FS_read_a_bit( struct one_wire_query *owq_bit )
 	struct parsedname *pn = PN(owq_bit);
 	ZERO_OR_ERROR z_or_e = -ENOENT ;
 	
-	if ( owq_byte == NULL ) {
+	if ( owq_byte == NO_ONE_WIRE_QUERY ) {
 		return -ENOENT ;
 	}
 
@@ -652,7 +652,7 @@ static ZERO_OR_ERROR FS_read_a_part( struct one_wire_query *owq_part )
 
 	// non-bitfield 
 	owq_all = OWQ_create_aggregate( owq_part ) ;
-	if ( owq_all == NULL ) {
+	if ( owq_all == NO_ONE_WIRE_QUERY ) {
 		return -ENOENT ;
 	}
 	

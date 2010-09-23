@@ -38,13 +38,14 @@ static void DS9097_setroutines(struct connection_in *in)
 {
 	in->iroutines.detect = DS9097_detect;
 	in->iroutines.reset = DS9097_reset;
-	in->iroutines.next_both = NULL;
-	in->iroutines.PowerByte = NULL;
-//    in->iroutines.ProgramPulse = ;
-	in->iroutines.sendback_data = NULL;
+	in->iroutines.next_both = NO_NEXT_BOTH_ROUTINE;
+	in->iroutines.PowerByte = NO_POWERBYTE_ROUTINE;
+    in->iroutines.ProgramPulse = NO_PROGRAMPULSE_ROUTINE;
+	in->iroutines.sendback_data = NO_SENDBACKDATA_ROUTINE;
 	in->iroutines.sendback_bits = DS9097_sendback_bits;
-	in->iroutines.select = NULL;
-	in->iroutines.reconnect = NULL;
+	in->iroutines.select = NO_SELECT_ROUTINE;
+	in->iroutines.select_and_sendback = NO_SELECTANDSENDBACK_ROUTINE;
+	in->iroutines.reconnect = NO_RECONNECT_ROUTINE;
 	in->iroutines.close = COM_close;
 	in->iroutines.flags = ADAP_FLAG_default;
 	in->bundling_length = UART_FIFO_SIZE / 10;

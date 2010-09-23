@@ -408,12 +408,12 @@ static void ShowDeviceText(FILE * out, struct parsedname *pn)
 {
 	HTTPstart(out, "200 OK", ct_text);
 
-	if (pn->selected_filetype) {	/* single item */
-		//printf("single item path=%s\n", pn->path);
-		ShowText(out, pn);
-	} else {					/* whole device */
+	if (pn->selected_filetype == NO_DEVICE) {	/* whole device */
 		//printf("whole directory path=%s \n", pn->path);
 		FS_dir(ShowDeviceTextCallback, out, pn);
+	} else {					/* Single item */
+		//printf("single item path=%s\n", pn->path);
+		ShowText(out, pn);
 	}
 }
 
@@ -436,10 +436,10 @@ void ShowDevice(FILE * out, struct parsedname *pn)
 	fprintf(out, "<TR><TD><A HREF='%.*s'><CODE><B><BIG>up</BIG></B></CODE></A></TD><TD>directory</TD></TR>", Backup(pn->path), pn->path);
 
 
-	if (pn->selected_filetype) {	/* single item */
-		Show(out, pn);
-	} else {					/* whole device */
+	if (pn->selected_filetype == NO_FILETYPE) {	/* whole device */
 		FS_dir(ShowDeviceCallback, out, pn);
+	} else {					/* single item */
+		Show(out, pn);
 	}
 	fprintf(out, "</TABLE>");
 	HTTPfoot(out);

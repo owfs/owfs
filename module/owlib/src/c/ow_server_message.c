@@ -346,7 +346,7 @@ static void Directory_Element_Init( struct directory_element_structure * des )
 	if (IsRealDir(des->pn_whole_directory)
 		&& NotAlarmDir(des->pn_whole_directory)
 		&& !SpecifiedBus(des->pn_whole_directory)
-		&& des->pn_whole_directory->selected_device == NULL) {
+		&& des->pn_whole_directory->selected_device == NO_DEVICE) {
 		if (RootNotBranch(des->pn_whole_directory)) {	/* root dir */
 			BUSLOCK(des->pn_whole_directory);
 			des->db.allocated = des->pn_whole_directory->selected_connection->last_root_devs;	// root dir estimated length

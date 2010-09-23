@@ -134,10 +134,11 @@ static void DS2482_setroutines(struct connection_in *in)
 	in->iroutines.reset = DS2482_reset;
 	in->iroutines.next_both = DS2482_next_both;
 	in->iroutines.PowerByte = DS2482_PowerByte;
-//    in->iroutines.ProgramPulse = ;
+    in->iroutines.ProgramPulse = NO_PROGRAMPULSE_ROUTINE;
 	in->iroutines.sendback_data = DS2482_sendback_data;
-	in->iroutines.sendback_bits = NULL;
-	in->iroutines.select = NULL;
+	in->iroutines.sendback_bits = NO_SENDBACKBITS_ROUTINE;
+	in->iroutines.select = NO_SELECT_ROUTINE;
+	in->iroutines.select_and_sendback = NO_SELECTANDSENDBACK_ROUTINE;
 	in->iroutines.reconnect = DS2482_redetect;
 	in->iroutines.close = DS2482_close;
 	in->iroutines.flags = ADAP_FLAG_overdrive;

@@ -91,8 +91,9 @@ static void DS9490_setroutines(struct connection_in *in)
 	in->iroutines.PowerByte = DS9490_PowerByte;
 	in->iroutines.ProgramPulse = DS9490_ProgramPulse;
 	in->iroutines.sendback_data = DS9490_sendback_data;
-	//    in->iroutines.sendback_bits = ;
-	in->iroutines.select = NULL;
+	in->iroutines.sendback_bits = NO_SENDBACKBITS_ROUTINE;
+	in->iroutines.select = NO_SELECT_ROUTINE;
+	in->iroutines.select_and_sendback = NO_SELECTANDSENDBACK_ROUTINE;
 	in->iroutines.reconnect = DS9490_reconnect;
 	in->iroutines.close = DS9490_close;
 	in->iroutines.flags = ADAP_FLAG_default;

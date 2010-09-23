@@ -93,7 +93,7 @@ ZERO_OR_ERROR FS_write_postparse(struct one_wire_query *owq)
 		return -EISDIR;			// not a file
 	}
 
-	if (pn->selected_connection == NULL) {
+	if (pn->selected_connection == NO_CONNECTION) {
 		LEVEL_DEBUG("Attempt to write but no 1-wire bus master.");
 		return -ENODEV;			// no buses
 	}
@@ -396,7 +396,7 @@ static ZERO_OR_ERROR FS_write_a_part( struct one_wire_query *owq_part )
 
 	// non-bitfield 
 	owq_all = OWQ_create_aggregate( owq_part ) ;
-	if ( owq_all == NULL ) {
+	if ( owq_all == NO_ONE_WIRE_QUERY ) {
 		return -ENOENT ;
 	}
 	
@@ -481,7 +481,7 @@ static ZERO_OR_ERROR FS_write_in_parts( struct one_wire_query *owq_all )
 	ZERO_OR_ERROR z_or_e = 0 ;
 	
 	// Create a "single" OWQ copy to iterate with
-	if ( owq_part == NULL ) {
+	if ( owq_part == NO_ONE_WIRE_QUERY ) {
 		return -ENOENT ;
 	}
 
@@ -529,7 +529,7 @@ static ZERO_OR_ERROR FS_write_as_bits( struct one_wire_query *owq_byte )
 	size_t extension ;
 	ZERO_OR_ERROR z_or_e = 0 ;
 	
-	if ( owq_bit == NULL ) {
+	if ( owq_bit == NO_ONE_WIRE_QUERY ) {
 		return -ENOENT ;
 	}
 
@@ -554,7 +554,7 @@ static ZERO_OR_ERROR FS_write_all_bits( struct one_wire_query *owq_all )
 	struct one_wire_query * owq_byte = ALLtoBYTE( owq_all ) ;
 	ZERO_OR_ERROR z_or_e = -ENOENT ;
 	
-	if ( owq_byte != NULL ) {
+	if ( owq_byte != NO_ONE_WIRE_QUERY ) {
 		z_or_e = FS_write_owq( owq_byte ) ;
 		OWQ_destroy( owq_byte ) ;
 	}
@@ -568,7 +568,7 @@ static ZERO_OR_ERROR FS_write_a_bit(struct one_wire_query *owq_bit)
 	struct one_wire_query * owq_byte = OWQ_create_separate( EXTENSION_BYTE, owq_bit ) ;
 	ZERO_OR_ERROR z_or_e = -ENOENT ;
 	
-	if ( owq_byte != NULL ) {
+	if ( owq_byte != NO_ONE_WIRE_QUERY ) {
 		if ( FS_read_local( owq_byte ) >= 0 ) {
 			UT_setbit( (BYTE *) &OWQ_U( owq_byte ), OWQ_pn(owq_bit).extension, OWQ_Y(owq_bit) ) ;
 			z_or_e = FS_write_owq( owq_byte ) ;

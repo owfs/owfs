@@ -48,7 +48,7 @@ ZERO_OR_ERROR FS_w_sibling_bitwork(UINT set, UINT mask, const char * sibling, st
 	ZERO_OR_ERROR write_error = -EINVAL ;
 	struct one_wire_query * owq_sibling  = OWQ_create_sibling( sibling, owq ) ;
 
-	if ( owq_sibling == NULL ) {
+	if ( owq_sibling == NO_ONE_WIRE_QUERY ) {
 		return -EINVAL ;
 	}
 	if ( FS_read_local(owq_sibling) == 0 ) {
@@ -74,7 +74,7 @@ void FS_del_sibling(const char * sibling, struct one_wire_query *owq)
 {
 	struct one_wire_query * owq_sibling  = OWQ_create_sibling( sibling, owq ) ;
 
-	if ( owq_sibling == NULL ) {
+	if ( owq_sibling == NO_ONE_WIRE_QUERY ) {
 		return ;
 	}
 	OWQ_Cache_Del(owq_sibling) ;

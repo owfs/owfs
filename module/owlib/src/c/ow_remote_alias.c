@@ -54,8 +54,8 @@ static INDEX_OR_ERROR ServerAlias( BYTE * sn, struct connection_in * in, struct 
 static struct connection_in * NextServer( struct connection_in * in ) 
 {
 	do {
-		if ( in == NULL ) {
-			return NULL ;
+		if ( in == NO_CONNECTION ) {
+			return NO_CONNECTION ;
 		}
 		if ( BusIsServer(in) ) {
 			return in ;
@@ -99,7 +99,7 @@ static void * RemoteAlias_callback(void * v)
 
 	memset( next_ras.sn, 0, SERIAL_NUMBER_SIZE) ;
 		
-	threadbad = (next_ras.in == NULL)
+	threadbad = (next_ras.in == NO_CONNECTION)
 	|| pthread_create(&thread, NULL, RemoteAlias_callback, (void *) (&next_ras));
 	
 	ras->bus_nr = ServerAlias( ras->sn, ras->in, ras->pn ) ;
@@ -126,7 +126,7 @@ INDEX_OR_ERROR RemoteAlias(struct parsedname *pn)
 
 	memset( ras.sn, 0, SERIAL_NUMBER_SIZE) ;
 	
-	if ( ras.in != NULL ) {
+	if ( ras.in != NO_CONNECTION ) {
 		RemoteAlias_callback( (void *) (&ras) ) ;
 	}
 	

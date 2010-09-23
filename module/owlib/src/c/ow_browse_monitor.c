@@ -24,14 +24,15 @@ GOOD_OR_BAD Browse_detect(struct connection_in *in)
 	in->file_descriptor = FILE_DESCRIPTOR_BAD;
 	in->iroutines.detect = Browse_detect;
 	in->Adapter = adapter_browse_monitor;	/* OWFS assigned value */
-	in->iroutines.reset = NULL;
-	in->iroutines.next_both = NULL;
-	in->iroutines.PowerByte = NULL;
-	in->iroutines.ProgramPulse = NULL;
-	in->iroutines.sendback_data = NULL;
-	in->iroutines.sendback_bits = NULL;
-	in->iroutines.select = NULL;
-	in->iroutines.reconnect = NULL;
+	in->iroutines.reset = NO_RESET_ROUTINE;
+	in->iroutines.next_both = NO_NEXT_BOTH_ROUTINE;
+	in->iroutines.PowerByte = NO_POWERBYTE_ROUTINE;
+	in->iroutines.ProgramPulse = NO_PROGRAMPULSE_ROUTINE;
+	in->iroutines.sendback_data = NO_SENDBACKDATA_ROUTINE;
+	in->iroutines.sendback_bits = NO_SENDBACKBITS_ROUTINE;
+	in->iroutines.select = NO_SELECT_ROUTINE;
+	in->iroutines.select_and_sendback = NO_SELECTANDSENDBACK_ROUTINE;
+	in->iroutines.reconnect = NO_RECONNECT_ROUTINE;
 	in->iroutines.close = Browse_close;
 	in->iroutines.flags = ADAP_FLAG_sham;
 	in->adapter_name = "ZeroConf monitor";
@@ -62,7 +63,7 @@ static GOOD_OR_BAD browse_in_use(const struct connection_in * in_selected)
 {
 	struct connection_in *in;
 
-	for (in = Inbound_Control.head; in != NULL; in = in->next) {
+	for (in = Inbound_Control.head; in != NO_CONNECTION; in = in->next) {
 		if ( in == in_selected ) {
 			continue ;
 		}

@@ -16,7 +16,7 @@ $Id$
 GOOD_OR_BAD BUS_detect( struct connection_in * in )
 {
 	GOOD_OR_BAD (*detect) (struct connection_in * in) = in->iroutines.detect ;
-	if ( FunctionExists(detect) ) {
+	if ( detect != NO_DETECT_ROUTINE ) {
 		return (detect)(in) ;
 	}
 	return gbBAD ;
@@ -25,7 +25,7 @@ GOOD_OR_BAD BUS_detect( struct connection_in * in )
 void BUS_close( struct connection_in * in )
 {
 	void (*bus_close) (struct connection_in * in) = in->iroutines.close ;
-	if ( FunctionExists(bus_close) ) {
+	if ( bus_close != NO_CLOSE_ROUTINE ) {
 		return (bus_close)(in);
 	}
 }

@@ -41,7 +41,7 @@ ZERO_OR_ERROR FS_fstat_postparse(struct stat *stbuf, const struct parsedname *pn
 		/* check for presence of first in-device at least since FS_ParsedName
 		 * doesn't do it yet. */
 		return -ENOENT;
-	} else if (pn->selected_device == NULL) {	/* root directory */
+	} else if (pn->selected_device == NO_DEVICE) {	/* root directory */
 		int nr = 0;
 		//printf("FS_fstat root\n");
 		stbuf->st_mode = S_IFDIR | 0755;
@@ -56,7 +56,7 @@ ZERO_OR_ERROR FS_fstat_postparse(struct stat *stbuf, const struct parsedname *pn
 		 */
 		stbuf->st_nlink += nr;
 		stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = StateInfo.start_time;
-	} else if (pn->selected_filetype == NULL) {
+	} else if (pn->selected_filetype == NO_FILETYPE) {
 		int nr = 0;
 		//printf("FS_fstat pn.selected_filetype == NULL  (1-wire device)\n");
 		stbuf->st_mode = S_IFDIR | 0777;

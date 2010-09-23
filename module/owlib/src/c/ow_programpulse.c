@@ -20,7 +20,7 @@ GOOD_OR_BAD BUS_ProgramPulse(const struct parsedname *pn)
 {
 	GOOD_OR_BAD ret = gbBAD ;
 
-	if ( FunctionExists(pn->selected_connection->iroutines.ProgramPulse) ) {
+	if ( pn->selected_connection->iroutines.ProgramPulse != NO_PROGRAMPULSE_ROUTINE ) {
 		ret = (pn->selected_connection->iroutines.ProgramPulse) (pn);
 	}
 	if ( BAD(ret) ) {

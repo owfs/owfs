@@ -45,8 +45,6 @@ $Id$
 
 #include "ow_parse_sn.h" // sub-includes
 
-#define FunctionExists(func)	((func) != NULL)
-
 /* Prototypes */
 #define  READ_FUNCTION( fname )  static int fname( struct one_wire_query * owq )
 #define  WRITE_FUNCTION( fname )  static int fname( struct one_wire_query * owq )

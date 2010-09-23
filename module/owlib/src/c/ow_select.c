@@ -64,7 +64,7 @@ GOOD_OR_BAD BUS_select(const struct parsedname *pn)
 		return gbBAD;		/* cannot do branching with eg. LINK ascii */
 	}
 	/* Adapter-specific select routine? */
-	if ( FunctionExists(pn->selected_connection->iroutines.select) ) {
+	if ( pn->selected_connection->iroutines.select != NO_SELECT_ROUTINE ) {
 		return (pn->selected_connection->iroutines.select) (pn);
 	}
 

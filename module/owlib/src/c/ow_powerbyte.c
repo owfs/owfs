@@ -28,7 +28,7 @@ GOOD_OR_BAD BUS_PowerByte(BYTE data, BYTE * resp, UINT delay, const struct parse
 {
 	GOOD_OR_BAD ret;
 
-	if ( FunctionExists(pn->selected_connection->iroutines.PowerByte) ) {
+	if ( pn->selected_connection->iroutines.PowerByte !=NO_POWERBYTE_ROUTINE ) {
 		ret = (pn->selected_connection->iroutines.PowerByte) (data, resp, delay, pn);
 	} else {
 		// send the packet

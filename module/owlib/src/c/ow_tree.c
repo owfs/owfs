@@ -94,7 +94,7 @@ void DeviceSort(void)
 	memset(Tree, 0, sizeof(void *) * ePN_max_type);
 
 	/* Sort the filetypes for the unrecognized device */
-	qsort(NoDevice.filetype_array, (size_t) NoDevice.count_of_filetypes, sizeof(struct filetype), file_compare);
+	qsort(UnknownDevice.filetype_array, (size_t) UnknownDevice.count_of_filetypes, sizeof(struct filetype), file_compare);
 
 	Device2Tree(&d_BAE, ePN_real);
 	Device2Tree(&d_DS1420, ePN_real);
@@ -200,7 +200,7 @@ struct device * FS_devicefindhex(BYTE f, struct parsedname *pn)
 			return p->key;
 		}
 	}
-	return &NoDevice ;
+	return &UnknownDevice ;
 }
 
 void FS_devicefind(const char *code, struct parsedname *pn)
@@ -210,6 +210,6 @@ void FS_devicefind(const char *code, struct parsedname *pn)
 	if (p) {
 		pn->selected_device = p->key;
 	} else {
-		pn->selected_device = &NoDevice;
+		pn->selected_device = &UnknownDevice;
 	}
 }
