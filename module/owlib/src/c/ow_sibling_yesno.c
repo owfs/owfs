@@ -48,7 +48,7 @@ ZERO_OR_ERROR FS_r_sibling_Y(INT *Y, const char * sibling, struct one_wire_query
 	struct one_wire_query * owq_sibling  = OWQ_create_sibling( sibling, owq ) ;
 	SIZE_OR_ERROR sib_status ;
 
-	if ( owq_sibling == NULL ) {
+	if ( owq_sibling == NO_ONE_WIRE_QUERY ) {
 		return -EINVAL ;
 	}
 	sib_status = FS_read_local(owq_sibling) ;
@@ -62,7 +62,7 @@ ZERO_OR_ERROR FS_w_sibling_Y(INT Y, const char * sibling, struct one_wire_query 
 	ZERO_OR_ERROR write_error;
 	struct one_wire_query * owq_sibling  = OWQ_create_sibling( sibling, owq ) ;
 
-	if ( owq_sibling == NULL ) {
+	if ( owq_sibling == NO_ONE_WIRE_QUERY ) {
 		return -EINVAL ;
 	}
 	OWQ_Y(owq_sibling) = Y ;

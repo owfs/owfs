@@ -373,7 +373,7 @@ GOOD_OR_BAD Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn)
 	size_t size = DirblobElements(db) * SERIAL_NUMBER_SIZE;
 	struct parsedname pn_directory;
 
-	if (pn==NULL || pn->selected_connection==NO_CONNECTION) {
+	if (pn==NO_PARSEDNAME || pn->selected_connection==NO_CONNECTION) {
 		return gbGOOD;				// do check here to avoid needless processing
 	}
 	
@@ -420,7 +420,7 @@ GOOD_OR_BAD Cache_Add_Simul(const enum simul_type type, const struct parsedname 
 	struct tree_node *tn;
 	struct parsedname pn_directory;
 
-	if (pn==NULL || pn->selected_connection==NO_CONNECTION) {
+	if (pn==NO_PARSEDNAME || pn->selected_connection==NO_CONNECTION) {
 		return gbGOOD;				// do check here to avoid needless processing
 	}
 	

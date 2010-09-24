@@ -69,7 +69,7 @@ void * w1_master_command(void * v)
 		}
 	}
 	owfree(nlp) ;
-	return NULL ;
+	return VOID_RETURN ;
 }
 
 #endif /* OW_W1 && OW_MT */

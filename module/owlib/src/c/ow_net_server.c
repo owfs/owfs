@@ -247,7 +247,7 @@ static void *ProcessAcceptSocket(void *arg)
 	_MUTEX_UNLOCK( handler_thread_mutex ) ;
 	RWLOCK_RUNLOCK( shutdown_mutex_rw ) ;
 
-	return NULL;
+	return VOID_RETURN;
 }
 
 static void ProcessListenSocket( struct connection_out * out )
@@ -347,7 +347,7 @@ static void *ProcessAcceptSocket(void *arg)
 	owfree(asd);
 	LEVEL_DEBUG("Normal exit.");
 
-	return NULL;
+	return VOID_RETURN;
 }
 
 static void ProcessListenSocket( struct connection_out * out )

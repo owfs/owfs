@@ -192,7 +192,7 @@ static void *connection_acceptor(void *v)
 
 	if (!watchdog_init(&f->watchdog, f->inactivity_timeout)) {
 		LEVEL_CONNECT("Error initializing watchdog thread");
-		return NULL;
+		return VOID_RETURN;
 	}
 
 	num_error = 0;
@@ -209,6 +209,7 @@ static void *connection_acceptor(void *v)
 			close(f->file_descriptor);
 			LEVEL_CONNECT("Listener no longer accepting connections");
 			pthread_exit(NULL);
+			return VOID_RETURN;
 		}
 
 		/* otherwise accept our pending connection (if any) */
@@ -269,10 +270,12 @@ static void *connection_acceptor(void *v)
 			}
 			if (num_error >= MAX_ACCEPT_ERROR) {
 				LEVEL_CONNECT("Too many consecutive errors, FTP server exiting");
-				return NULL;
+				return VOID_RETURN;
 			}
 		}
 	}
+	return VOID_RETURN;
+
 }
 
 /* convert an address to a printable string */
@@ -353,7 +356,7 @@ static void *connection_handler(void *v)
 	pthread_cleanup_pop(1);
 
 	/* return for form :) */
-	return NULL;
+	return VOID_RETURN;
 }
 
 /* clean up a connection */

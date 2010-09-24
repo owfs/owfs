@@ -19,8 +19,8 @@ struct one_wire_query * ALLtoBYTE(struct one_wire_query *owq_all)
 	size_t elements = PN(owq_all)->selected_filetype->ag->elements ;
 	size_t extension ;
 
-	if ( owq_byte == NULL ) {
-		return NULL ;
+	if ( owq_byte == NO_ONE_WIRE_QUERY ) {
+		return NO_ONE_WIRE_QUERY ;
 	}
 
 	for ( extension = 0 ; extension < elements ; ++extension ) {
@@ -35,8 +35,8 @@ struct one_wire_query * BYTEtoALL(struct one_wire_query *owq_byte)
 	size_t elements = PN(owq_all)->selected_filetype->ag->elements ;
 	size_t extension ;
 
-	if ( owq_all == NULL ) {
-		return NULL ;
+	if ( owq_all == NO_ONE_WIRE_QUERY ) {
+		return NO_ONE_WIRE_QUERY ;
 	}
 
 	for ( extension = 0 ; extension < elements ; ++extension ) {

@@ -88,7 +88,7 @@ static ZERO_OR_ERROR FS_dir_both(void (*dirfunc) (void *, const struct parsednam
 	 * /uncached,/settings,/system,/statistics,/structure
 	 * instead of an empty directory.
 	 */
-	if (pn_raw_directory == NULL) {
+	if (pn_raw_directory == NO_PARSEDNAME) {
 		LEVEL_CALL("return ENODEV pn_raw_directory=%p selected_connection=%p",
 			pn_raw_directory,
 			(pn_raw_directory ? pn_raw_directory->selected_connection : NO_CONNECTION));
@@ -254,7 +254,7 @@ static void *FS_dir_all_connections_callback(void *v)
 	struct dir_all_connections_struct *dacs = v;
 	dacs->ret = FS_dir_all_connections_loop(dacs->dirfunc, dacs->v, dacs->current, dacs->pn_directory, dacs->flags);
 	pthread_exit(NULL);
-	return NULL;
+	return VOID_RETURN;
 }
 
 static ZERO_OR_ERROR FS_dir_all_connections_loop(void (*dirfunc)

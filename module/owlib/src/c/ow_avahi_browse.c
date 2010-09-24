@@ -248,12 +248,12 @@ void * OW_Avahi_Browse(void * v)
 		LEVEL_DEBUG( "Failed to create simple poll object.");
 	}
 
-	return NULL;
+	return VOID_RETURN;
 }
 
 #else /* OW_ZERO  && OW_MT && ! OW_CYGWIN */
 void * OW_Avahi_Browse(void * v) {
 	(void) v ;
-	return NULL ;
+	return VOID_RETURN ;
 }
 #endif  /* OW_ZERO  && OW_MT && ! OW_CYGWIN */

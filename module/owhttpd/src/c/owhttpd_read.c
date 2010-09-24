@@ -44,11 +44,11 @@ static void Show(FILE * out, const struct parsedname *pn_entry)
 	/* Left column */
 	fprintf(out, "<TR><TD><B>%s</B></TD><TD>", FS_DirName(pn_entry));
 
-	if (owq == NULL) {
+	if (owq == NO_ONE_WIRE_QUERY) {
 		fprintf(out, "<B>Memory exhausted</B>");
 	} else if ( BAD( OWQ_allocate_read_buffer(owq)) ) {
 		fprintf(out, "<B>Memory exhausted</B>");
-	} else if (pn_entry->selected_filetype == NULL) {
+	} else if (pn_entry->selected_filetype == NO_FILETYPE) {
 		ShowDirectory(out, pn_entry);
 	} else if (IsStructureDir(pn_entry)) {
 		ShowStructure(out, owq);
@@ -303,10 +303,10 @@ static void ShowText(FILE * out, const struct parsedname *pn_entry)
 	/* Left column */
 	fprintf(out, "%s ", FS_DirName(pn_entry));
 
-	if (owq == NULL) {
+	if (owq == NO_ONE_WIRE_QUERY) {
 	} else if ( BAD( OWQ_allocate_read_buffer(owq)) ) {
 		//fprintf(out, "(memory exhausted)");
-	} else if (pn_entry->selected_filetype == NULL) {
+	} else if (pn_entry->selected_filetype == NO_FILETYPE) {
 		ShowTextDirectory(out, pn_entry);
 	} else if (pn_entry->selected_filetype->format == ft_directory || pn_entry->selected_filetype->format == ft_subdir) {
 		ShowTextDirectory(out, pn_entry);

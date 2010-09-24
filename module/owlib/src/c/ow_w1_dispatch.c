@@ -129,7 +129,7 @@ void * W1_Dispatch( void * v )
 		}
 	}
 	LEVEL_DEBUG("Normal exit.");
-	return NULL;
+	return VOID_RETURN;
 }
 
 #endif /* OW_W1 && OW_MT */

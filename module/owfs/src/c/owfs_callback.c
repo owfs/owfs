@@ -249,6 +249,6 @@ static void *FS_init(void)
 {
 #endif							/* FUSE_VERSION > 25 */
 	PIDstart();
-	return NULL;
+	return VOID_RETURN;
 }
 #endif							/* FUSE_VERSION > 22 */

@@ -65,7 +65,7 @@ ZERO_OR_ERROR DeviceLockGet(struct parsedname *pn)
 	}
 
 	/* Cannot lock without knowing which bus since the device trees are bus-specific */
-	if (pn->selected_connection == NULL) {
+	if (pn->selected_connection == NO_CONNECTION) {
 		return -EINVAL ;
 	}
 

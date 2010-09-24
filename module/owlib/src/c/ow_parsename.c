@@ -194,7 +194,7 @@ static ZERO_OR_ERROR FS_ParsedName_anywhere(const char *path, enum parse_pass re
 /* Initial memory allocation and pn setup */
 static ZERO_OR_ERROR FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path, struct parsedname *pn)
 {
-	if (pn == NULL) {
+	if (pn == NO_PARSEDNAME) {
 		return -EINVAL;
 	}
 
@@ -618,7 +618,7 @@ enum parse_enum Parse_Property(char *filename, struct parsedname *pn)
 		case ft_subdir:
 			//printf("PN %s is a subdirectory\n", filename);
 			pn->subdir = pn->selected_filetype;
-			pn->selected_filetype = NULL;
+			pn->selected_filetype = NO_FILETYPE;
 			return parse_subprop;
 		default:
 			return parse_done;

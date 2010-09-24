@@ -46,7 +46,7 @@ ZERO_OR_ERROR Generic_Read( struct one_wire_query *owq)
 	struct parsedname * pn = PN(owq) ;
 	struct generic_read * gread ;
 	
-	if ( pn==NULL && pn->selected_device==NO_DEVICE) {
+	if ( pn==NO_PARSEDNAME && pn->selected_device==NO_DEVICE) {
 		return -ENOTSUP ;
 	}
 	

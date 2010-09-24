@@ -218,5 +218,5 @@ void *DataHandler(void *v)
 		owfree(retbuffer);
 	}
 	LEVEL_DEBUG("Finished with client request");
-	return NULL;
+	return VOID_RETURN;
 }

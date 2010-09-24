@@ -139,8 +139,8 @@ GOOD_OR_BAD FS_FindHA7(void)
 			continue ;
 		}
 
-		in = NewIn(NULL) ;
-		if (in == NULL) {
+		in = NewIn(NO_CONNECTION) ;
+		if (in == NO_CONNECTION) {
 			continue;
 		}
 

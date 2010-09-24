@@ -69,23 +69,23 @@ int handle_socket(FILE * out)
 
 		if (up.cmd == NULL) {
 			// No command line in request
-			pn = NULL ;
+			pn = NO_PARSEDNAME ;
 			http_code = http_400 ;
 		} else if (up.file == NULL) {
 			// could not parse a path from the request
-			pn = NULL ;
+			pn = NO_PARSEDNAME ;
 			http_code = http_404 ;
 		} else if (strcasecmp(up.file, "/favicon.ico") == 0) {
 			// secial case for the icon
 			LEVEL_DEBUG("http icon request.");
 			ReadToCRLF(out) ;
-			pn = NULL ;
+			pn = NO_PARSEDNAME ;
 			http_code = http_icon ;
 		} else 	if (FS_ParsedName(up.file, pn)) {
 			// Can't understand the file name = URL
 			LEVEL_DEBUG("http %s not understood.",up.file);
 			ReadToCRLF(out) ;
-			pn = NULL ;
+			pn = NO_PARSEDNAME ;
 			http_code = http_404 ;
 		} else if (pn->selected_device == NO_DEVICE) {
 			// directory!
@@ -105,7 +105,7 @@ int handle_socket(FILE * out)
 		free(up.line) ;
 	} else {
 		LEVEL_DEBUG("No http data.");
-		pn = NULL ;
+		pn = NO_PARSEDNAME ;
 		http_code = http_400 ;
 	}
 

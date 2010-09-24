@@ -285,7 +285,7 @@ static ZERO_OR_ERROR FS_w_screenX(struct one_wire_query *owq)
 	}
 
 	owq_line = OWQ_create_separate( 0, owq ) ;
-	if ( owq_line == NULL ) {
+	if ( owq_line == NO_ONE_WIRE_QUERY ) {
 		return -ENOMEM ;
 	}
 

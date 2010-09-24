@@ -80,4 +80,7 @@ typedef enum { gbGOOD, gbBAD, gbOTHER, } GOOD_OR_BAD  ; // OTHER breaks the enca
 #define RETURN_GOOD_IF_GOOD(x)	if (GOOD(x) ) { return gbGOOD; }
 #define RETURN_ERROR_IF_BAD(x)	if ( BAD(x) ) { return -EINVAL; }
 
+/* Use this every place we call a void * function (unless the return value is really used). */
+#define VOID_RETURN NULL
+
 #endif							/* OW_LOCALRETURNS_H */

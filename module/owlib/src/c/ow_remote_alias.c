@@ -113,7 +113,7 @@ static void * RemoteAlias_callback(void * v)
 			}
 		}
 	}
-	return NULL ;
+	return VOID_RETURN ;
 }
 
 INDEX_OR_ERROR RemoteAlias(struct parsedname *pn)

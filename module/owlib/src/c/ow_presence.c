@@ -151,14 +151,14 @@ static void * CheckPresence_callback(void * v)
 			}
 		}
 	}
-	return NULL ;
+	return VOID_RETURN ;
 }
 
 static INDEX_OR_ERROR CheckPresence_low(struct parsedname *pn)
 {
 	struct checkpresence_struct cps = { Inbound_Control.head , pn, INDEX_BAD };
 		
-	if ( cps.in != NULL ) {
+	if ( cps.in != NO_CONNECTION ) {
 		CheckPresence_callback( (void *) (&cps) ) ;
 	}
 	return cps.bus_nr;
@@ -208,7 +208,7 @@ static INDEX_OR_ERROR CheckThisConnection(int bus_nr, struct parsedname *pn)
 	struct connection_in * in = find_connection_in(bus_nr) ;
 	INDEX_OR_ERROR connection_result = INDEX_BAD ;
 
-	if ( in == NULL ) {
+	if ( in == NO_CONNECTION ) {
 		return INDEX_BAD ;
 	}
 	

@@ -152,7 +152,8 @@ static void * OW_Browse_Bonjour(void * v)
 
 	if (dnserr != kDNSServiceErr_NoError) {
 		LEVEL_CONNECT("DNSServiceBrowse error = %d", dnserr);
-		return NULL ;
+		MONITOR_RUNLOCK ;
+		return VOID_RETURN ;
 	}
 
 	// Blocks, which is why this is in it's own thread
@@ -163,7 +164,7 @@ static void * OW_Browse_Bonjour(void * v)
 	DNSServiceRefDeallocate(in->master.browse.bonjour_browse);
 	in->master.browse.bonjour_browse = 0 ;
 	MONITOR_RUNLOCK ;
-	return NULL;
+	return VOID_RETURN;
 }
 
 void OW_Browse(struct connection_in *in)

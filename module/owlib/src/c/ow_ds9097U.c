@@ -54,8 +54,9 @@ static void DS2480_setroutines(struct connection_in *in)
 	in->iroutines.PowerByte = DS2480_PowerByte;
 	in->iroutines.ProgramPulse = DS2480_ProgramPulse;
 	in->iroutines.sendback_data = DS2480_sendback_data;
-//    in->iroutines.sendback_bits = ;
-	in->iroutines.select = NULL;
+    in->iroutines.sendback_bits = NO_SENDBACKBITS_ROUTINE;
+	in->iroutines.select = NO_SELECT_ROUTINE;
+	in->iroutines.select_and_sendback = NO_SELECTANDSENDBACK_ROUTINE;
 	in->iroutines.reconnect = DS2480_reconnect ;
 	in->iroutines.close = DS2480_close;
 	in->iroutines.flags = ADAP_FLAG_default;

@@ -121,7 +121,7 @@ static void * USB_monitor_loop( void * v )
 		USB_scan_for_adapters() ;
 	} while (1) ;
 	
-	return NULL ;
+	return VOID_RETURN ;
 }
 
 /* Open a DS9490  -- low level code (to allow for repeats)  */

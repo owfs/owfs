@@ -263,7 +263,7 @@ void *OW_Avahi_Announce( void * v )
 
 	LEVEL_DEBUG("Normal exit.");
 	pthread_exit(NULL);
-	return NULL ;
+	return VOID_RETURN ;
 }
 
 #else /* OW_ZERO && OW_MT */
@@ -273,7 +273,7 @@ void *OW_Avahi_Announce( void * v )
 {
 	(void) v ;
 	LEVEL_CONNECT("Avahi support not present in this build");
-	return NULL ;
+	return VOID_RETURN ;
 }
 
 #endif /* OW_ZERO && OW_MT */

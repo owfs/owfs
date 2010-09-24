@@ -224,7 +224,7 @@ static void * Simultaneous_write(void * v)
 		void *v_ignore;
 		pthread_join(thread, &v_ignore) ;
 	}
-	return NULL ;
+	return VOID_RETURN ;
 }
 
 /* This function is only used by "Simultaneous" */

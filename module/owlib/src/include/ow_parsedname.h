@@ -67,6 +67,8 @@ filetype and extension correspond to property
 subdir points to in-device groupings
 */
 
+#define NO_PARSEDNAME NULL
+
 /* LocalControlFlags information (for remote control) */
 	/* bit0: cacheenabled  bit1: return bus-list */
 	/* presencecheck */
@@ -178,7 +180,7 @@ struct parsedname {
 #define KnownBus(pn)          ((((pn)->state) & ePS_bus) != 0 )
 #define UnsetKnownBus(pn)           do { (pn)->state &= ~ePS_bus; \
                                         (pn)->known_bus=NULL; \
-                                        (pn)->selected_connection=NULL; \
+                                        (pn)->selected_connection=NO_CONNECTION; \
                                     } while(0)
 
 #define ShouldReturnBusList(ppn)  ( ((ppn)->control_flags & SHOULD_RETURN_BUS_LIST) )

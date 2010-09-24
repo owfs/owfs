@@ -182,7 +182,7 @@ static void *watcher(void *void_w)
 		}
 		_MUTEX_UNLOCK(w->mutex);
 	}
-	return NULL ;
+	return VOID_RETURN ;
 }
 
 #ifndef NDEBUG

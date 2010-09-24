@@ -71,8 +71,10 @@ static void *Announce(void *v)
 
 	if (getsockname(out->file_descriptor, &sa, &sl)) {
 		LEVEL_CONNECT("Could not get port number of device.");
-		return NULL;
+		pthread_exit(NULL);
+		return VOID_RETURN;
 	}
+
 	port = ntohs(((struct sockaddr_in *) (&sa))->sin_port) ;
 
 	/* Add the service */
@@ -109,7 +111,7 @@ static void *Announce(void *v)
 	LEVEL_DEBUG("Normal exit");
 	pthread_exit(NULL);
 
-	return NULL;
+	return VOID_RETURN;
 }
 
 void ZeroConf_Announce(struct connection_out *out)
