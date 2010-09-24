@@ -74,7 +74,7 @@ void *DirallHandler(struct handlerdata *hd, struct client_msg *cm, const struct 
 
 	if (cm->ret < 0) {			// error
 		cm->size = cm->payload = 0;
-	} else if (CharblobData(&cb) == NULL) {	// empty
+	} else if (CharblobData(&cb) == NO_CHARBLOB) {	// empty
 		cm->size = cm->payload = 0;
 	} else if ((ret = owstrdup(CharblobData(&cb))) != NULL) {	// try to copy
 		cm->payload = CharblobLength(&cb) + 1;

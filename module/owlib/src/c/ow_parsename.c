@@ -605,7 +605,7 @@ enum parse_enum Parse_Property(char *filename, struct parsedname *pn)
 		switch (pn->selected_filetype->format) {
 		case ft_directory:		// aux or main
 			if (BranchAdd(pn) != 0) {
-				//printf("PN BranchAdd failed for %s\n", pn->path);
+				//printf("PN BranchAdd failed for %s\n", filename);
 				return parse_error;
 			}
 			/* STATISTICS */
@@ -616,6 +616,7 @@ enum parse_enum Parse_Property(char *filename, struct parsedname *pn)
 			STATUNLOCK;
 			return parse_branch;
 		case ft_subdir:
+			//printf("PN %s is a subdirectory\n", filename);
 			pn->subdir = pn->selected_filetype;
 			pn->selected_filetype = NULL;
 			return parse_subprop;

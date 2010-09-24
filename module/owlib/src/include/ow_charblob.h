@@ -26,6 +26,8 @@ $Id$
 #ifndef OW_CHARBLOB_H			/* tedious wrapper */
 #define OW_CHARBLOB_H
 
+#define NO_CHARBLOB	NULL
+
 struct charblob {
 	int troubled;
 	size_t allocated;

@@ -42,6 +42,7 @@ $Id$
 void CharblobClear(struct charblob *cb)
 {
 	SAFEFREE(cb->blob) ;
+	cb->blob = NO_CHARBLOB ;
 	CharblobInit(cb);
 }
 
@@ -49,7 +50,7 @@ void CharblobInit(struct charblob *cb)
 {
 	cb->used = 0;
 	cb->allocated = 0;
-	cb->blob = 0;
+	cb->blob = NO_CHARBLOB;
 	cb->troubled = 0;
 }
 
@@ -71,7 +72,7 @@ int CharblobAdd(const ASCII * a, size_t s, struct charblob *cb)
 	if (cb->used + s > cb->allocated) {
 		int newalloc = cb->allocated + incr;
 		ASCII *temp = owrealloc(cb->blob, newalloc);
-		if (temp) {
+		if (temp != NULL) {
 			memset(&temp[cb->allocated], 0, incr);	// set the new memory to blank
 			cb->allocated = newalloc;
 			cb->blob = temp;
@@ -91,7 +92,7 @@ int CharblobAddChar(const ASCII a, struct charblob *cb)
 	if (cb->used + 1 > cb->allocated) {
 		int newalloc = cb->allocated + 1024;
 		ASCII *temp = owrealloc(cb->blob, newalloc);
-		if (temp) {
+		if (temp != NULL) {
 			memset(&temp[cb->allocated], 0, 1024);	// set the new memory to blank
 			cb->allocated = newalloc;
 			cb->blob = temp;
