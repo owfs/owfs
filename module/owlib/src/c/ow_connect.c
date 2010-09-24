@@ -75,45 +75,47 @@ int BusIsServer(struct connection_in *in)
 
 /* Make a new connection_in entry, but DON'T place it in the chain (yet)*/
 /* Based on a shallow copy of "in" if not NULL */
-struct connection_in *AllocIn(const struct connection_in *in)
+struct connection_in *AllocIn(const struct connection_in *old_in)
 {
 	size_t len = sizeof(struct connection_in);
-	struct connection_in *now = (struct connection_in *) owmalloc(len);
-	if (now != NO_CONNECTION) {
-		if (in) {
-			memcpy(now, in, len);
-			if ( in->name != NULL ) {
-				// Don't make the name point to the same string, make a copy
-				now->name = owstrdup( in->name ) ;
-			}
+	struct connection_in *new_in = (struct connection_in *) owmalloc(len);
+	if (new_in != NO_CONNECTION) {
+		if (old_in == NO_CONNECTION) {
+			// Not a copy
+			memset(new_in, 0, len);
+			new_in->file_descriptor = FILE_DESCRIPTOR_BAD ;
+			/* Not yet a valid bus */
+			new_in->iroutines.flags = ADAP_FLAG_sham ;
 		} else {
-			memset(now, 0, len);
-			now->file_descriptor = FILE_DESCRIPTOR_BAD ;
+			// Copy of prior bus
+			memcpy(new_in, old_in, len);
+			if ( new_in->name != NULL ) {
+				// Don't make the name point to the same string, make a copy
+				new_in->name = owstrdup( old_in->name ) ;
+			}
 		}
 
 		/* not yet linked */
-		now->next = NO_CONNECTION ;
+		new_in->next = NO_CONNECTION ;
 
 		/* Initialize dir-at-once structures */
-		DirblobInit(&(now->main));
-		DirblobInit(&(now->alarm));
+		DirblobInit(&(new_in->main));
+		DirblobInit(&(new_in->alarm));
 
 		/* Support DS1994/DS2404 which require longer delays, and is automatically
 		 * turned on in *_next_both().
 		 * If it's turned off, it will result into a faster reset-sequence.
 		 */
-		now->ds2404_found = 0;
+		new_in->ds2404_found = 0;
 		/* Flag first pass as need to clear all branches if DS2409 present */
-		now->branch.sn[0] = BUSPATH_BAD ;
+		new_in->branch.sn[0] = BUSPATH_BAD ;
 		/* Arbitrary guess at root directory size for allocating cache blob */
-		now->last_root_devs = 10;
-		/* Not yet a valid bus */
-		now->iroutines.flags = ADAP_FLAG_sham ;
-		now->AnyDevices = anydevices_unknown ;
+		new_in->last_root_devs = 10;
+		new_in->AnyDevices = anydevices_unknown ;
 	} else {
-		LEVEL_DEFAULT("Cannot allocate memory for bus master structure,");
+		LEVEL_DEFAULT("Cannot allocate memory for bus master structure");
 	}
-	return now;
+	return new_in;
 }
 
 /* Place a new connection in the chain */
