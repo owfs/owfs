@@ -239,7 +239,7 @@ void Cache_Open(void)
 	if (cache.lifespan > 3600) {
 		cache.lifespan = 3600;	/* 1 hour tops */
 	}
-	cache.retired = time(NULL);
+	cache.retired = NOW_TIME;
 	cache.killed = cache.retired + cache.lifespan;
 }
 
@@ -263,7 +263,7 @@ void Cache_Clear(void)
 	cache.old_ram = 0;
 	cache.new_ram = 0;
 	cache.added = 0;
-	cache.retired = time(NULL);
+	cache.retired = NOW_TIME;
 	cache.killed = cache.retired + cache.lifespan;
 	CACHE_WUNLOCK;
 	/* flipped old database is now out of circulation -- can be destroyed without a lock */
@@ -354,7 +354,7 @@ static GOOD_OR_BAD Cache_Add(const void *data, const size_t datasize, const stru
 
 	// populate the node structure with data
 	LoadTK( pn->sn, pn->selected_filetype, pn->extension, tn );
-	tn->expires = duration + time(NULL);
+	tn->expires = duration + NOW_TIME;
 	tn->dsize = datasize;
 	if (datasize) {
 		memcpy(TREE_DATA(tn), data, datasize);
@@ -404,7 +404,7 @@ GOOD_OR_BAD Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn)
 	// populate node with directory name and dirblob
 	FS_LoadDirectoryOnly(&pn_directory, pn);
 	LoadTK( pn_directory.sn, Directory_Marker, pn->selected_connection->index, tn );
-	tn->expires = duration + time(NULL);
+	tn->expires = duration + NOW_TIME;
 	tn->dsize = size;
 	if (size) {
 		memcpy(TREE_DATA(tn), db->snlist, size);
@@ -451,7 +451,7 @@ GOOD_OR_BAD Cache_Add_Simul(const enum simul_type type, const struct parsedname 
 	FS_LoadDirectoryOnly(&pn_directory, pn);
 	LoadTK( pn_directory.sn, Simul_Marker[type], pn->selected_connection->index, tn) ;
 	LEVEL_DEBUG("Simultaneous add type=%d",type);
-	tn->expires = duration + time(NULL);
+	tn->expires = duration + NOW_TIME;
 	tn->dsize = 0;
 	return Add_Stat(&cache_dir, Cache_Add_Common(tn));
 }
@@ -478,7 +478,7 @@ GOOD_OR_BAD Cache_Add_Device(const int bus_nr, const BYTE * sn)
 
 	LEVEL_DEBUG(SNformat " bus=%d", SNvar(sn), (int) bus_nr);
 	LoadTK(sn, Device_Marker, 0, tn );
-	tn->expires = duration + time(NULL);
+	tn->expires = duration + NOW_TIME;
 	tn->dsize = sizeof(int);
 	memcpy(TREE_DATA(tn), &bus_nr, sizeof(int));
 	return Add_Stat(&cache_dev, Cache_Add_Common(tn));
@@ -516,7 +516,7 @@ GOOD_OR_BAD Cache_Add_Internal(const void *data, const size_t datasize, const st
 
 	LEVEL_DEBUG(SNformat " size=%d", SNvar(pn->sn), (int) datasize);
 	LoadTK( pn->sn, ip->name, EXTENSION_INTERNAL, tn );
-	tn->expires = duration + time(NULL);
+	tn->expires = duration + NOW_TIME;
 	tn->dsize = datasize;
 	if (datasize) {
 		memcpy(TREE_DATA(tn), data, datasize);
@@ -545,7 +545,7 @@ GOOD_OR_BAD Cache_Add_Alias(const ASCII *name, const BYTE * sn)
 
 	LEVEL_DEBUG("Adding " SNformat " alias=%s", SNvar(sn), name);
 	LoadTK( sn, Alias_Marker, 0, tn );
-	tn->expires = time(NULL);
+	tn->expires = NOW_TIME;
 	tn->dsize = size+1;
 	strcpy((ASCII *)TREE_DATA(tn), name);
 	return Add_Stat(&cache_sto, Cache_Add_Store(tn));
@@ -561,7 +561,7 @@ static void * GetFlippedTree( void )
 	cache.temporary_tree_new = NULL;
 	cache.new_ram = 0;
 	cache.added = 0;
-	cache.retired = time(NULL);
+	cache.retired = NOW_TIME;
 	cache.killed = cache.retired + cache.lifespan;
 	return flip ;
 }
@@ -589,7 +589,7 @@ static GOOD_OR_BAD Cache_Add_Common(struct tree_node *tn)
 	node_show(tn);
 	LEVEL_DEBUG("Add to cache sn " SNformat " pointer=%p index=%d size=%d", SNvar(tn->tk.sn), tn->tk.p, tn->tk.extension, tn->dsize);
 	CACHE_WLOCK;
-	if (cache.killed < time(NULL)) {	// old database has timed out
+	if (cache.killed < NOW_TIME) {	// old database has timed out
 		retired_tree = GetFlippedTree() ;
 	}
 	if (Globals.cache_size && (cache.old_ram + cache.new_ram > Globals.cache_size)) {
@@ -808,7 +808,7 @@ GOOD_OR_BAD Cache_Get_Dir(struct dirblob *db, const struct parsedname *pn)
 static enum cache_task_return Cache_Get_Common_Dir(struct dirblob *db, time_t * duration, const struct tree_node *tn)
 {
 	enum cache_task_return ctr_ret;
-	time_t now = time(NULL);
+	time_t now = NOW_TIME;
 	size_t size;
 	struct tree_opaque *opaque;
 	LEVEL_DEBUG("Get from cache sn " SNformat " pointer=%p extension=%d", SNvar(tn->tk.sn), tn->tk.p, tn->tk.extension);
@@ -1061,7 +1061,7 @@ GOOD_OR_BAD Cache_Get_SerialNumber(const ASCII * name, BYTE * sn)
 static enum cache_task_return Cache_Get_Common(void *data, size_t * dsize, time_t * duration, const struct tree_node *tn)
 {
 	enum cache_task_return ctr_ret;
-	time_t now = time(NULL);
+	time_t now = NOW_TIME;
 	struct tree_opaque *opaque;
 	
 	LEVEL_DEBUG("Get from cache sn " SNformat " pointer=%p index=%d size=%d", SNvar(tn->tk.sn), tn->tk.p, tn->tk.extension, (int) dsize[0]);
@@ -1313,7 +1313,7 @@ void Cache_Del_Internal(const struct internal_prop *ip, const struct parsedname 
 static GOOD_OR_BAD Cache_Del_Common(const struct tree_node *tn)
 {
 	struct tree_opaque *opaque;
-	time_t now = time(NULL);
+	time_t now = NOW_TIME;
 	GOOD_OR_BAD ret = gbBAD;
 	LEVEL_DEBUG("Delete from cache sn " SNformat " in=%p index=%d", SNvar(tn->tk.sn), tn->tk.p, tn->tk.extension);
 	CACHE_WLOCK;

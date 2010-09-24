@@ -64,7 +64,7 @@ GOOD_OR_BAD USB_monitor_detect(struct connection_in *in)
 
 	RETURN_BAD_IF_BAD( usb_monitor_in_use(in) ) ;
 
-	if ( pthread_create(&thread, NULL, USB_monitor_loop, (void *) in) != 0 ) {
+	if ( pthread_create(&thread, DEFAULT_THREAD_ATTR, USB_monitor_loop, (void *) in) != 0 ) {
 		ERROR_CALL("Cannot create the USB monitoring program thread");
 		return gbBAD ;
 	}

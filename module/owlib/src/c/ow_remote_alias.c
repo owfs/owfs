@@ -100,7 +100,7 @@ static void * RemoteAlias_callback(void * v)
 	memset( next_ras.sn, 0, SERIAL_NUMBER_SIZE) ;
 		
 	threadbad = (next_ras.in == NO_CONNECTION)
-	|| pthread_create(&thread, NULL, RemoteAlias_callback, (void *) (&next_ras));
+	|| pthread_create(&thread, DEFAULT_THREAD_ATTR, RemoteAlias_callback, (void *) (&next_ras));
 	
 	ras->bus_nr = ServerAlias( ras->sn, ras->in, ras->pn ) ;
 	

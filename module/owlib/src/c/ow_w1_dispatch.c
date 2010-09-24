@@ -88,7 +88,7 @@ static void Dispatch_Packet( struct netlink_parse * nlp)
 			return ;
 		}
 		memcpy( nlp_copy, nlp, sizeof(struct netlink_parse) ) ;
-		if ( pthread_create( &thread, NULL, w1_master_command, (void *) nlp_copy ) == 0 ) {
+		if ( pthread_create( &thread, DEFAULT_THREAD_ATTR, w1_master_command, (void *) nlp_copy ) == 0 ) {
 			LEVEL_DEBUG("Sending this packet to root bus");
 		} else {
 			LEVEL_DEBUG("Thread creation problem");

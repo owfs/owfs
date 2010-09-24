@@ -103,7 +103,7 @@ static ZERO_OR_ERROR FS_dir_both(void (*dirfunc) (void *, const struct parsednam
 	STATUNLOCK;
 
 	FSTATLOCK;
-	StateInfo.dir_time = time(NULL);	// protected by mutex
+	StateInfo.dir_time = NOW_TIME;	// protected by mutex
 	FSTATUNLOCK;
 
 	if (pn_raw_directory->selected_filetype != NO_FILETYPE) {
@@ -268,7 +268,7 @@ static ZERO_OR_ERROR FS_dir_all_connections_loop(void (*dirfunc)
 	pthread_t thread;
 	int threadbad = 1;
 
-	threadbad = (dacs.current==NULL) || pthread_create(&thread, NULL, FS_dir_all_connections_callback, (void *) (&dacs));
+	threadbad = (dacs.current==NULL) || pthread_create(&thread, DEFAULT_THREAD_ATTR, FS_dir_all_connections_callback, (void *) (&dacs));
 
 	memcpy(pn_bus_directory, pn_directory, sizeof(struct parsedname));	// shallow copy
 

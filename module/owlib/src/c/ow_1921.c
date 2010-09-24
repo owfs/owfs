@@ -1025,7 +1025,7 @@ static GOOD_OR_BAD OW_2date(_DATE * d, const BYTE * data)
 	struct tm t;
 
 	/* Prefill entries */
-	d[0] = time(NULL);
+	d[0] = NOW_TIME;
 	if (gmtime_r(d, &t) == NULL) {
 		return gbBAD;
 	}
@@ -1054,7 +1054,7 @@ static GOOD_OR_BAD OW_2mdate(_DATE * d, const BYTE * data)
 	int year;
 
 	/* Prefill entries */
-	d[0] = time(NULL);
+	d[0] = NOW_TIME;
 	if (gmtime_r(d, &t) == NULL) {
 		return gbBAD;
 	}
@@ -1169,7 +1169,7 @@ static GOOD_OR_BAD OW_startmission(UINT freq, struct parsedname *pn)
 
 	RETURN_BAD_IF_BAD(OW_small_read(&data, 1, 0x020E, pn)) ;
 	if ((data & 0x80)) {		/* clock stopped */
-		_DATE d = time(NULL);
+		_DATE d = NOW_TIME;
 		/* start clock */
 		RETURN_BAD_IF_BAD(OW_w_date(&d, pn)) ;
 		UT_delay(1000);			/* wait for the clock to count a second */

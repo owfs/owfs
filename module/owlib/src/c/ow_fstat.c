@@ -95,7 +95,7 @@ ZERO_OR_ERROR FS_fstat_postparse(struct stat *stbuf, const struct parsedname *pn
 		case fc_Avolatile:
 		case fc_second:
 		case fc_statistic:
-			stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = time(NULL);
+			stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = NOW_TIME;
 			break;
 		case fc_stable:
 		case fc_Astable:

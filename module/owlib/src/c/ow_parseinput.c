@@ -311,7 +311,7 @@ static ZERO_OR_ERROR FS_input_date(struct one_wire_query *owq)
 	input_buffer[OWQ_size(owq)] = '\0';	// make sure null-ended
 
 	if (OWQ_size(owq) < 2 || input_buffer[0] == '\0' || input_buffer[0] == '\n') {
-		OWQ_D(owq) = time(NULL);
+		OWQ_D(owq) = NOW_TIME;
 	} else if ((strptime(input_buffer, "%T %a %b %d %Y", &tm) == NULL)	// 12:27:02 Tuesday March 23 2007
 			   && (strptime(input_buffer, "%b %d %Y %T", &tm) == NULL)	// March 23 2007 12:27:03
 			   && (strptime(input_buffer, "%a %b %d %Y %T", &tm) == NULL)	// Tuesday March 23 2007 12:27:02

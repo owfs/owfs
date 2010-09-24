@@ -120,7 +120,7 @@ int ftp_listener_start(struct ftp_listener_s *f)
 
 	daemon_assert(invariant(f));
 
-	error_code = pthread_create(&thread_id, NULL, connection_acceptor, f);
+	error_code = pthread_create(&thread_id, DEFAULT_THREAD_ATTR, connection_acceptor, f);
 
 	if (error_code == 0) {
 		f->listener_running = 1;
@@ -249,7 +249,7 @@ static void *connection_acceptor(void *v)
 			}
 
 
-			error_code = pthread_create(&thread_id, NULL, connection_handler, info);
+			error_code = pthread_create(&thread_id, DEFAULT_THREAD_ATTR, connection_handler, info);
 
 			if (error_code != 0) {
 				errno = error_code;

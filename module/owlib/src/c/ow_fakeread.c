@@ -27,7 +27,7 @@ static ZERO_OR_ERROR FS_read_fake_array(struct one_wire_query *owq);
 #define Random (((_FLOAT)rand())/RAND_MAX)
 #define Random_y (rand()&0x01)
 #define Random_t (Random*100)
-#define Random_d (time(NULL)*(1-.1*Random))
+#define Random_d (NOW_TIME*(1-.1*Random))
 #define Random_i (rand()&0xFF)
 #define Random_u (rand()&0xFF)
 #define Random_b (rand()&0xFF)

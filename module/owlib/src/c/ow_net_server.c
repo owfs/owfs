@@ -277,7 +277,7 @@ static void ProcessListenSocket( struct connection_out * out )
 		_MUTEX_LOCK( handler_thread_mutex ) ;
 		++handler_thread_count ;
 		_MUTEX_UNLOCK( handler_thread_mutex ) ;
-		if ( pthread_create(&tid, NULL, ProcessAcceptSocket, asd ) != 0 ) {
+		if ( pthread_create(&tid, DEFAULT_THREAD_ATTR, ProcessAcceptSocket, asd ) != 0 ) {
 			// Do it in the main routine rather than a thread
 			ProcessAcceptSocket(asd) ;
 		}

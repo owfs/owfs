@@ -26,7 +26,7 @@ GOOD_OR_BAD W1_Browse( void )
 {
 	pthread_t thread_dispatch ;
 
-	if ( pthread_create(&thread_dispatch, NULL, W1_Dispatch, NULL ) != 0 ) {
+	if ( pthread_create(&thread_dispatch, DEFAULT_THREAD_ATTR, W1_Dispatch, NULL ) != 0 ) {
 		ERROR_DEBUG("Couldn't create netlink monitoring thread");
 		return gbBAD ;
 	}

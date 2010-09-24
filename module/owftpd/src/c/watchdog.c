@@ -22,7 +22,7 @@ int watchdog_init(struct watchdog_s *w, int inactivity_timeout)
 	w->oldest = NULL;
 	w->newest = NULL;
 
-	error_code = pthread_create(&thread_id, NULL, watcher, w);
+	error_code = pthread_create(&thread_id, DEFAULT_THREAD_ATTR, watcher, w);
 	if (error_code != 0) {
 		errno = error_code;
 		ERROR_CONNECT("Watchdog thread create problem\n");
@@ -87,7 +87,7 @@ static void insert(struct watchdog_s *w, struct watched_s *watched)
     Set alarm to current time + timeout duration.  Note that this is not 
     strictly legal, since time_t is an abstract data type.
     *********************************************************************/
-	watched->alarm_time = time(NULL) + w->inactivity_timeout;
+	watched->alarm_time = NOW_TIME + w->inactivity_timeout;
 
    /*********************************************************************
     If the system clock got set backwards, we really should search for 

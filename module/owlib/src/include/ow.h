@@ -153,6 +153,7 @@ $Id$
 
 /* Include gettimeofday and all the timerX macros */
 #include "ow_timer.h"
+#define NOW_TIME 	time(NULL)
 
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>			/* for stat */

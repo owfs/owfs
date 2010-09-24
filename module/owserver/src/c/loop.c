@@ -143,7 +143,7 @@ void PingLoop(struct handlerdata *hd)
 		pthread_t thread ;
 		
 		// Create DataHandler
-		if (pthread_create(&thread, NULL, DataHandler, hd)) {
+		if (pthread_create(&thread, DEFAULT_THREAD_ATTR, DataHandler, hd)) {
 			LEVEL_DEBUG("OWSERVER:handler() can't create new thread");
 			DataHandler(hd);		// do it without pings
 			LoopCleanup(hd);

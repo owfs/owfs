@@ -392,7 +392,7 @@ static GOOD_OR_BAD OW_2date(_DATE * d, const BYTE * data)
 	struct tm t;
 
 	/* Prefill entries */
-	d[0] = time(NULL);
+	d[0] = NOW_TIME;
 	if (gmtime_r(d, &t) == NULL) {
 		printf("OW_2date: error1\n");
 		return gbBAD;
@@ -747,7 +747,7 @@ static GOOD_OR_BAD OW_mission_timing(unsigned long mdelay, struct parsedname *pn
 	if (!(cc & 0x01)) {			/* clock stopped */
 		OWQ_allocate_struct_and_pointer(owq_dateset);
 		OWQ_create_temporary(owq_dateset, NULL, 0, 0, pn);
-		OWQ_D(owq_dateset) = time(NULL);
+		OWQ_D(owq_dateset) = NOW_TIME;
 		/* start clock */
 		if (FS_w_date(owq_dateset)) {
 			return gbBAD;		/* set the clock to current time */

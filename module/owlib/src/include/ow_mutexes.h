@@ -54,6 +54,7 @@ $Id$
 
 #if OW_MT
 #include <pthread.h>
+#define DEFAULT_THREAD_ATTR	NULL
 #endif							/* OW_MT */
 
 extern struct mutexes {

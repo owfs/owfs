@@ -28,7 +28,7 @@ void LibSetup(enum opt_program opt)
 	Cache_Open();
 #endif							/* OW_CACHE */
 
-	StateInfo.start_time = time(NULL);
+	StateInfo.start_time = NOW_TIME;
 	errno = 0;					/* set error level none */
 
 }

@@ -622,6 +622,6 @@ static ZERO_OR_ERROR FS_bustime(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_elapsed(struct one_wire_query *owq)
 {
-	OWQ_U(owq) = time(NULL) - StateInfo.start_time;
+	OWQ_U(owq) = NOW_TIME - StateInfo.start_time;
 	return 0;
 }

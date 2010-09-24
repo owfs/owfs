@@ -20,7 +20,7 @@ $Id$
 void HTTPstart(FILE * out, const char *status, const enum content_type ct)
 {
 	char d[44];
-	time_t t = time(NULL);
+	time_t t = NOW_TIME;
 	size_t l = strftime(d, sizeof(d), "%a, %d %b %Y %T GMT", gmtime(&t));
 
 	fprintf(out, "HTTP/1.0 %s\r\n", status);

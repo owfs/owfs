@@ -212,7 +212,7 @@ static void * Simultaneous_write(void * v)
 	
 	
 	threadbad = (ss->in->next == NULL)
-	|| pthread_create(&thread, NULL, Simultaneous_write, (void *) (&ss_next));
+	|| pthread_create(&thread, DEFAULT_THREAD_ATTR, Simultaneous_write, (void *) (&ss_next));
 	
 	memcpy(owq_copy, ss->owq, sizeof(struct one_wire_query));	// shallow copy
 	
