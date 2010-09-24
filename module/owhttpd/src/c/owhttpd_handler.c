@@ -377,7 +377,7 @@ static char * GetPostPath( FILE * out )
 {
 	char * text_in = NULL ;
 	size_t length_in = 0 ;
-	char * path_found = NULL ;
+	char * path_found = NO_PATH ;
 	
 	/* read lines until blank */
 	while (getline(&text_in, &length_in, out)>-1)  {

@@ -68,6 +68,7 @@ subdir points to in-device groupings
 */
 
 #define NO_PARSEDNAME NULL
+#define NO_PATH NULL
 
 /* LocalControlFlags information (for remote control) */
 	/* bit0: cacheenabled  bit1: return bus-list */

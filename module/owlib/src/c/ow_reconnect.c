@@ -22,11 +22,11 @@ $Id$
 GOOD_OR_BAD TestConnection(const struct parsedname *pn)
 {
 	GOOD_OR_BAD ret = 0;
-	struct connection_in *in = pn->selected_connection;
+	struct connection_in *in = (pn == NO_PARSEDNAME) ? NO_CONNECTION : pn->selected_connection;
 
 	//printf("Reconnect = %d / %d\n",selected_connection->reconnect_state,reconnect_error) ;
 	// Test without a lock -- efficient
-	if (pn == NULL || in == NO_CONNECTION || in->reconnect_state < reconnect_error) {
+	if (in == NO_CONNECTION || in->reconnect_state < reconnect_error) {
 		return gbGOOD;
 	}
 	// Lock the bus

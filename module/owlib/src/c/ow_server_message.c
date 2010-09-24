@@ -248,7 +248,7 @@ static ZERO_OR_ERROR ServerDIR(void (*dirfunc) (void *, const struct parsedname 
 	Directory_Element_Init( &des ) ;
 
 	// Receive from owserver -- in a loop for each directory entry
-	while ( (return_path = From_ServerAlloc(&scs, &cm)) != NULL ) {
+	while ( (return_path = From_ServerAlloc(&scs, &cm)) != NO_PATH ) {
 		ZERO_OR_ERROR ret;
 
 		return_path[cm.payload - 1] = '\0';	/* Ensure trailing null */
@@ -437,7 +437,7 @@ static void *From_ServerAlloc(struct server_connection_state * scs, struct clien
 		if (actual_size != sizeof(struct client_msg)) {
 			memset(cm, 0, sizeof(struct client_msg));
 			cm->ret = -EIO;
-			return NULL;
+			return NO_PATH;
 		}
 		cm->payload = ntohl(cm->payload);
 		cm->size = ntohl(cm->size);
@@ -447,27 +447,27 @@ static void *From_ServerAlloc(struct server_connection_state * scs, struct clien
 	} while (cm->payload < 0);
 
 	if (cm->payload == 0) {
-		return NULL;
+		return NO_PATH;
 	}
 	if (cm->ret < 0) {
-		return NULL;
+		return NO_PATH;
 	}
 	if (cm->payload > MAX_OWSERVER_PROTOCOL_PACKET_SIZE) {
-		return NULL;
+		return NO_PATH;
 	}
 
 	msg = owmalloc((size_t) cm->payload + 1) ;
-	if ( msg != NULL ) {
+	if ( msg != NO_PATH ) {
 		tcp_read(scs->file_descriptor, msg, (size_t) (cm->payload), &tv, &actual_size);
 		if ((ssize_t)actual_size != cm->payload) {
 			cm->payload = 0;
 			cm->offset = 0;
 			cm->ret = -EIO;
 			owfree(msg);
-			msg = NULL;
+			msg = NO_PATH;
 		}
 	}
-	if(msg != NULL) {
+	if(msg != NO_PATH) {
 		msg[cm->payload] = '\0';	// safety NULL
 	}
 	return msg;

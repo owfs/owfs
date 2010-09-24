@@ -93,7 +93,7 @@ static ZERO_OR_ERROR FS_ParsedName_anywhere(const char *path, enum parse_pass re
 	if (parse_error_status) {
 		return parse_error_status;
 	}
-	if (path == NULL) {
+	if (path == NO_PATH) {
 		return 0;
 	}
 
@@ -207,9 +207,9 @@ static ZERO_OR_ERROR FS_ParsedName_setup(struct parsedname_pointers *pp, const c
 	CONTROLFLAGSUNLOCK;
 
 	// initialization
-	pp->pathnow = NULL;
-	pp->pathlast = NULL;
-	pp->pathnext = NULL;
+	pp->pathnow = NO_PATH;
+	pp->pathlast = NO_PATH;
+	pp->pathnext = NO_PATH;
 
 	/* Default attributes */
 	pn->state = ePS_normal;
@@ -220,7 +220,7 @@ static ZERO_OR_ERROR FS_ParsedName_setup(struct parsedname_pointers *pp, const c
 
 	/* minimal structure for initial bus "detect" use -- really has connection and LocalControlFlags only */
 	pn->dirlength = -1 ;
-	if (path == NULL) {
+	if (path == NO_PATH) {
 		return 0;
 	}
 
@@ -229,7 +229,7 @@ static ZERO_OR_ERROR FS_ParsedName_setup(struct parsedname_pointers *pp, const c
 	}
 
 	pn->path = (char *) owmalloc(2 * PATH_MAX + 4);
-	if (pn->path == NULL) {
+	if (pn->path == NO_PATH) {
 		return -ENOMEM;
 	}
 
@@ -657,7 +657,7 @@ ZERO_OR_ERROR FS_ParsedNamePlus(const char *path, const char *file, struct parse
 	ZERO_OR_ERROR ret = 0;
 	char *fullpath;
 
-	if (path == NULL) {
+	if (path == NO_PATH) {
 		path = "" ;
 	}
 	if (file == NULL) {
@@ -665,7 +665,7 @@ ZERO_OR_ERROR FS_ParsedNamePlus(const char *path, const char *file, struct parse
 	}
 
 	fullpath = owmalloc(strlen(file) + strlen(path) + 2);
-	if (fullpath == NULL) {
+	if (fullpath == NO_PATH) {
 		return -ENOMEM;
 	}
 	strcpy(fullpath, path);

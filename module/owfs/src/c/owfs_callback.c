@@ -200,7 +200,7 @@ static int CB_read(const char *path, char *buffer, size_t size, off_t offset, st
 	int return_size ;
 	OWQ_allocate_struct_and_pointer( owq ) ;
 
-	if (path == NULL) {
+	if (path == NO_PATH) {
 		path = "/";
 	}
 
