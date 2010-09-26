@@ -51,7 +51,7 @@ $Id$
 /* BAE */
 READ_FUNCTION(FS_r_mem);
 WRITE_FUNCTION(FS_w_mem);
-READ_FUNCTION(FS_r_flash);
+//READ_FUNCTION(FS_r_flash);
 WRITE_FUNCTION(FS_w_flash);
 WRITE_FUNCTION(FS_w_extended);
 WRITE_FUNCTION(FS_writebyte);
@@ -87,7 +87,7 @@ WRITE_FUNCTION(FS_w_pio_bit) ;
 /* ------- Structures ----------- */
 
 #define _FC02_MEMORY_SIZE 128
-#define _FC02_FUNCTION_FLASH_SIZE 0x1000
+#define _FC_MAX_FLASH_SIZE 0x4000
 #define _FC02_FUNCTION_FLASH_OFFSET 0xE400
 #define _FC02_EEPROM_OFFSET 0xE000
 #define _FC02_EEPROM_PAGE_SIZE       512
@@ -197,7 +197,7 @@ struct filetype BAE[] = {
 	{"chip_type", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_type_chip, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 
 	{"firmware", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-	{"firmware/function", _FC02_FUNCTION_FLASH_SIZE, NON_AGGREGATE, ft_binary, fc_stable, FS_r_flash, FS_w_flash, VISIBLE, NO_FILETYPE_DATA,},
+	{"firmware/function", _FC_MAX_FLASH_SIZE, NON_AGGREGATE, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_flash, VISIBLE, NO_FILETYPE_DATA,},
 
 	{"eeprom", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"eeprom/memory",_FC02_EEPROM_PAGE_SIZE*_FC02_EEPROM_PAGES, NON_AGGREGATE, ft_binary, fc_link, FS_eeprom_r_mem, FS_eeprom_w_mem, VISIBLE, NO_FILETYPE_DATA,},
@@ -317,7 +317,7 @@ static GOOD_OR_BAD OW_r_mem_small(BYTE *bytes, size_t size, off_t offset, struct
 static GOOD_OR_BAD OW_eeprom_erase( off_t offset, struct parsedname * pn ) ;
 static void OW_siumulate_eeprom(BYTE * eeprom, const BYTE * data, size_t size) ;
 
-static GOOD_OR_BAD OW_initiate_flash(BYTE * data, struct parsedname *pn);
+static GOOD_OR_BAD OW_initiate_flash(BYTE * data, struct parsedname *pn, int duration);
 static GOOD_OR_BAD OW_write_flash(BYTE * data, struct parsedname *pn);
 
 static uint16_t BAE_uint16(BYTE * p);
@@ -452,27 +452,32 @@ static ZERO_OR_ERROR FS_w_flash(struct one_wire_query *owq)
 	struct parsedname * pn = PN(owq) ;
 	BYTE * rom_image = (BYTE *) OWQ_buffer(owq) ;
 
-	size_t rom_offset ;
+	size_t rom_offset,expected_size ;
+	
 
-	// test size
-	if ( OWQ_size(owq) > _FC02_FUNCTION_FLASH_SIZE ) {
-		LEVEL_DEBUG("Flash size of %d is too large (max %d) .", (int)OWQ_size(owq), (int)_FC02_FUNCTION_FLASH_SIZE ) ;
-		return -EBADMSG ;
-	}
 	if ( OWQ_size(owq) % 0x200 ) {
 		LEVEL_DEBUG("Flash size of %d is not a multiple of 512.", (int)OWQ_size(owq) ) ;
 		return -EBADMSG ;
 	}
-
-	if ( OWQ_offset(owq) != 0 ) {
-		LEVEL_DEBUG("Can only write flash from start of buffer.") ;
-		return -ERANGE ;
+	if ( OWQ_offset(owq) % 0x200 ) {
+		LEVEL_DEBUG("Flash offset %d is not a multiple of 512.", (int)OWQ_offset(owq) ) ;
+		return -EBADMSG ;
 	}
-
-	// start flash process
-	if ( BAD( OW_initiate_flash( rom_image, pn ) ) ) {
-		LEVEL_DEBUG("Unsuccessful flash initialization");
-		return -EFAULT ;
+	//flash firmware may exceed 8192bytes, thus FS_w_flash is called more than once with successive buffers
+	if ( OWQ_offset(owq) == 0 ) {
+		LEVEL_DEBUG("Beginning of flash (from start of buffer).") ;
+		// test size
+		expected_size=1+(rom_image[7]+rom_image[6]*256)-(rom_image[5]+rom_image[4]*256);
+		LEVEL_DEBUG("Flash size=%d, (size calculated from header=%d) .", (int)OWQ_size(owq), (int)expected_size ) ;
+		if ( OWQ_size(owq) > expected_size ) {
+			LEVEL_DEBUG("Flash size of %d is greater than expected %d bytes .", (int)OWQ_size(owq), (int)expected_size ) ;
+			return -ERANGE ;
+		}
+		// start flash process, added duration param calculated as 1ms for 16 bytes
+		if ( BAD( OW_initiate_flash( rom_image, pn, expected_size>>4 ) ) ) {
+			LEVEL_DEBUG("Unsuccessful flash initialization");
+			return -EFAULT ;
+		}
 	}
 
 	// loop though pages, up to 5 attempts for each page
@@ -485,6 +490,8 @@ static ZERO_OR_ERROR FS_w_flash(struct one_wire_query *owq)
 				LEVEL_DEBUG( "Too many failures writing flash at offset %d.", rom_offset ) ;
 				return -EIO ;
 			}
+			LEVEL_DEBUG( "retry %d of 5 when writing flash.", tries ) ;
+			
 		}
 	}
 	
@@ -492,12 +499,14 @@ static ZERO_OR_ERROR FS_w_flash(struct one_wire_query *owq)
 	return 0;
 }
 
+/*
 static ZERO_OR_ERROR FS_r_flash( struct one_wire_query *owq)
 {
 	RETURN_ERROR_IF_BAD( OW_r_mem( (BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq)+_FC02_FUNCTION_FLASH_OFFSET, PN(owq) ) );
 	OWQ_length(owq) = OWQ_size(owq) ;
 	return 0 ;
 }
+*/
 
 /* BAE extended command */
 static ZERO_OR_ERROR FS_w_extended(struct one_wire_query *owq)
@@ -868,7 +877,7 @@ static void BAE_uint32_to_bytes( uint32_t num, unsigned char * p )
 	p[0] = (num>>24)&0xFF ;
 }
 
-static GOOD_OR_BAD OW_initiate_flash( BYTE * data, struct parsedname * pn )
+static GOOD_OR_BAD OW_initiate_flash( BYTE * data, struct parsedname * pn , int duration)
 {
 	BYTE p[1+1+1+32+2] = { _1W_EXTENDED_COMMAND, 32,_1W_ECMD_ERASE_FIRMWARE, } ;
 	BYTE q[] = { _1W_CONFIRM_WRITE, } ;
@@ -876,7 +885,7 @@ static GOOD_OR_BAD OW_initiate_flash( BYTE * data, struct parsedname * pn )
 		TRXN_START,
 		TRXN_WR_CRC16(p, 1+1+1+32, 0),
 		TRXN_WRITE1(q),
-		TRXN_DELAY(180),
+		TRXN_DELAY(duration),
 		TRXN_END,
 	} ;
 
