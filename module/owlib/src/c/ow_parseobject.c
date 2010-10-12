@@ -24,7 +24,8 @@ static GOOD_OR_BAD OWQ_parsename_plus(const char *path, const char * file, struc
 /* Create the Parsename structure and create the buffer */
 struct one_wire_query * OWQ_create_from_path(const char *path)
 {
-	struct one_wire_query * owq = owmalloc( sizeof( struct one_wire_query ) + OWQ_DEFAULT_READ_BUFFER_SIZE ) ;
+	int sz = sizeof( struct one_wire_query ) + OWQ_DEFAULT_READ_BUFFER_SIZE;
+	struct one_wire_query * owq = owmalloc( sz );
 	
 	LEVEL_DEBUG("%s", path);
 
@@ -33,7 +34,7 @@ struct one_wire_query * OWQ_create_from_path(const char *path)
 		return NO_ONE_WIRE_QUERY ;
 	}
 	
-	memset(owq, 0, sizeof(owq));
+	memset(owq, 0, sz);
 	OWQ_cleanup(owq) = owq_cleanup_owq ;
 	
 	if ( GOOD( OWQ_parsename(path,owq) ) ) {
@@ -103,7 +104,8 @@ struct one_wire_query * OWQ_create_sibling(const char *sibling, struct one_wire_
 /* Use an aggregate OWQ as a template for a single element */
 struct one_wire_query * OWQ_create_separate( int extension, struct one_wire_query * owq_aggregate )
 {
-	struct one_wire_query * owq_sep = owmalloc( sizeof( struct one_wire_query ) + OWQ_DEFAULT_READ_BUFFER_SIZE ) ;
+    int sz = sizeof( struct one_wire_query ) + OWQ_DEFAULT_READ_BUFFER_SIZE;
+	struct one_wire_query * owq_sep = owmalloc( sz );
 	
 	LEVEL_DEBUG("%s with extension %d", PN(owq_aggregate)->path,extension);
 
@@ -112,7 +114,7 @@ struct one_wire_query * OWQ_create_separate( int extension, struct one_wire_quer
 		return NO_ONE_WIRE_QUERY ;
 	}
 	
-	memset(owq_sep, 0, sizeof(owq_sep));
+	memset(owq_sep, 0, sz);
 	OWQ_cleanup(owq_sep) = owq_cleanup_owq ;
 	
 	memcpy( PN(owq_sep), PN(owq_aggregate), sizeof(struct parsedname) ) ;
@@ -126,7 +128,8 @@ struct one_wire_query * OWQ_create_separate( int extension, struct one_wire_quer
 /* Use an single OWQ as a template for the aggregate one */
 struct one_wire_query * OWQ_create_aggregate( struct one_wire_query * owq_single )
 {
-	struct one_wire_query * owq_all = owmalloc( sizeof( struct one_wire_query ) + OWQ_DEFAULT_READ_BUFFER_SIZE ) ;
+    int sz = sizeof( struct one_wire_query ) + OWQ_DEFAULT_READ_BUFFER_SIZE;
+	struct one_wire_query * owq_all = owmalloc( sz );
 	
 	LEVEL_DEBUG("%s with extension ALL", PN(owq_single)->path);
 
@@ -135,7 +138,7 @@ struct one_wire_query * OWQ_create_aggregate( struct one_wire_query * owq_single
 		return NO_ONE_WIRE_QUERY ;
 	}
 	
-	memset(owq_all, 0, sizeof(owq_single));
+	memset(owq_all, 0, sz);
 	OWQ_cleanup(owq_all) = owq_cleanup_owq ;
 	
 	memcpy( PN(owq_all), PN(owq_single), sizeof(struct parsedname) ) ;
@@ -221,8 +224,8 @@ static GOOD_OR_BAD OWQ_allocate_array( struct one_wire_query * owq )
 void OWQ_assign_read_buffer(char *buffer, size_t size, off_t offset, struct one_wire_query *owq)
 {
 	OWQ_buffer(owq) = buffer;
-	OWQ_read_buffer(owq) = NULL ;
-	OWQ_write_buffer(owq) = NULL ;
+	//OWQ_read_buffer(owq) = NULL ;
+	//OWQ_write_buffer(owq) = NULL ;
 	OWQ_size(owq) = size;
 	OWQ_offset(owq) = offset;
 }
@@ -230,8 +233,8 @@ void OWQ_assign_read_buffer(char *buffer, size_t size, off_t offset, struct one_
 void OWQ_assign_write_buffer(const char *buffer, size_t size, off_t offset, struct one_wire_query *owq)
 {
 	OWQ_buffer(owq) = buffer;
-	OWQ_read_buffer(owq) = NULL ;
-	OWQ_write_buffer(owq) = NULL ;
+	//OWQ_read_buffer(owq) = NULL ;
+	//OWQ_write_buffer(owq) = NULL ;
 	OWQ_size(owq) = size;
 	OWQ_offset(owq) = offset;
 }
@@ -297,7 +300,7 @@ void OWQ_destroy(struct one_wire_query *owq)
 	}
 	
 	if ( OWQ_cleanup(owq) & owq_cleanup_rbuffer ) {
-		owfree(OWQ_read_buffer(owq)) ;
+		//owfree(OWQ_read_buffer(owq)) ;
 	}
 	
 	if ( OWQ_cleanup(owq) & owq_cleanup_array ) {

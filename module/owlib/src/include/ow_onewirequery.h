@@ -34,8 +34,8 @@ union value_object {
 
 struct one_wire_query {
 	char *buffer;
-	char *read_buffer;
-	const char *write_buffer;
+	//char *read_buffer;
+	//const char *write_buffer;
 	size_t size;
 	off_t offset;
 	struct parsedname pn;
