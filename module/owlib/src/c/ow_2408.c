@@ -513,7 +513,8 @@ static ZERO_OR_ERROR FS_Hscreenyx(struct one_wire_query *owq)
 	return GB_to_Z_OR_E( OW_Hprintyx(&YX, pn) );
 }
 
-// YX structure is set with y,x,string,length, and start position of text 
+// YX structure is set with y,x,string,length, and start position of text
+// Fix from Klaus, dr Tiger
 static GOOD_OR_BAD OW_Hprintyx(struct yx * YX, struct parsedname * pn)
 {
 	BYTE translated_data[2 + 2 * (YX->length-YX->text_start)];
@@ -536,7 +537,7 @@ static GOOD_OR_BAD OW_Hprintyx(struct yx * YX, struct parsedname * pn)
 				chip_command = LCD_COMMAND_SET_DDRAM_ADDRESS + LCD_LINE_END;
 				break;
 			case 4:
-				chip_command = (LCD_COMMAND_SET_DDRAM_ADDRESS + LCD_SECOND_ROW_ADDRESS) + LCD_LINE_START;
+				chip_command = (LCD_COMMAND_SET_DDRAM_ADDRESS + LCD_SECOND_ROW_ADDRESS) + LCD_LINE_END;
 				break;
 			default:
 				LEVEL_DEBUG("Unrecognized row %d",YX->y) ;
