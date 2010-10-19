@@ -541,7 +541,7 @@ static GOOD_OR_BAD OW_Hprintyx(struct yx * YX, struct parsedname * pn)
 				break;
 			default:
 				LEVEL_DEBUG("Unrecognized row %d",YX->y) ;
-				return 1 ;
+				return gbBAD ;
 		}
 		chip_command += YX->x - 1; // add column (0 index)
 		// Initial location (2 half bytes)
