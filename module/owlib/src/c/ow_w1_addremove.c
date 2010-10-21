@@ -32,7 +32,7 @@ static struct connection_in * CreateIn(int bus_master)
 
 	UCLIBCLOCK ;
 	sn_ret = snprintf(name,62,"w1_bus_master%d",bus_master) ;
-	UCLIBCLOCK ;
+	UCLIBCUNLOCK ;
 	if ( sn_ret < 0 ) {
 		RemoveIn(in) ;
 		return NO_CONNECTION ;
