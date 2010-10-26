@@ -342,6 +342,10 @@ if [ -d $RPM_BUILD_ROOT%{prefix}/man ]; then
    mv -f $RPM_BUILD_ROOT%{prefix}/man/mann/* $RPM_BUILD_ROOT%{_mandir}/mann/
    rm -rf $RPM_BUILD_ROOT%{prefix}/man
 fi
+rm -f $RPM_BUILD_ROOT%{_mandir}/man1/*.1so $RPM_BUILD_ROOT%{_mandir}/man1/*.1so.gz
+rm -f $RPM_BUILD_ROOT%{_mandir}/man3/*.3so $RPM_BUILD_ROOT%{_mandir}/man3/*.3so.gz
+rm -f $RPM_BUILD_ROOT%{_mandir}/man5/*.5so $RPM_BUILD_ROOT%{_mandir}/man5/*.5so.gz
+rm -f $RPM_BUILD_ROOT%{_mandir}/mann/*.nso $RPM_BUILD_ROOT%{_mandir}/mann/*.nso.gz
 
 %if %{build_fs}
 install -D -m 644 src/rpm/owfs.conf $RPM_BUILD_ROOT/etc/sysconfig/owfs
