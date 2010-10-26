@@ -13,7 +13,7 @@
 %define build_perl 1
 %define build_python 1
 %define build_php 1
-%define build_side 1
+%define build_side 0
 %define build_tap 1
 %define build_mon 1
 %define build_tcl 1
