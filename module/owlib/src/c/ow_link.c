@@ -169,7 +169,7 @@ GOOD_OR_BAD LINK_detect(struct connection_in *in)
 			in->flow_control = flow_none ;
 			RETURN_GOOD_IF_GOOD( LINK_detect_serial(in) ) ;
 			LEVEL_DEBUG("Second attempt at serial LINK setup");
-			in->flow_control = flow_none ;
+			in->flow_control = flow_hard ;
 			RETURN_GOOD_IF_GOOD( LINK_detect_serial(in) ) ;
 			LEVEL_DEBUG("Third attempt at serial LINK setup");
 			in->flow_control = flow_hard ;
@@ -346,6 +346,7 @@ static void LINK_set_baud(struct connection_in * in)
 	switch ( in->baud ) {
 		case B9600:
 			COM_break(in) ;
+			LINK_flush(in);
 			return ;
 		case B19200:
 			speed_code = "," ;
