@@ -128,7 +128,7 @@ RESET_TYPE DS9490_getstatus(BYTE * buffer, int * readlen, const struct parsednam
 #endif							/* HAVE_USB_INTERRUPT_READ */
 	static int count_have_usb_interrupt_read = 0;
 
-	memset(buffer, 0, 32);		// should not be needed
+	memset(buffer, 0, DS9490_getstatus_BUFFER_LENGTH );		// should not be needed
 
 #ifdef __FreeBSD__				// Clear the Interrupt read buffer before trying to get status
 	{
@@ -154,11 +154,9 @@ RESET_TYPE DS9490_getstatus(BYTE * buffer, int * readlen, const struct parsednam
 		{
 			ret = usb_bulk_read(usb, DS2490_EP1, (ASCII *) buffer, (size_t) 32, in->master.usb.timeout) ;
 		}
-		if ( ret < 0) {
-			LEVEL_DATA("(no HAVE_USB_INTERRUPT_READ) error reading ret=%d", ret);
-		}
 
 		if ( ret < 0 ) {
+			LEVEL_DATA("(no HAVE_USB_INTERRUPT_READ) error reading ret=%d", ret);
 			if (count_have_usb_interrupt_read != 0) {
 				STAT_ADD1_BUS(e_bus_status_errors, in);
 				return BUS_RESET_ERROR;
@@ -166,6 +164,10 @@ RESET_TYPE DS9490_getstatus(BYTE * buffer, int * readlen, const struct parsednam
 			have_usb_interrupt_read = !have_usb_interrupt_read;
 			count_have_usb_interrupt_read = 1;
 			continue;
+		}
+		if (ret > 32 ) {
+			LEVEL_DATA("Bad DS2490 status %d > 32",ret) ;
+			return BUS_RESET_ERROR;
 		}
 		if (ret > 16) {
 			if (ret == 32) {	// FreeBSD buffers the input, so this could just be two readings

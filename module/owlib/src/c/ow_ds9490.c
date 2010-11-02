@@ -515,7 +515,7 @@ static GOOD_OR_BAD DS9490_redetect_match( struct connection_in * in)
 static RESET_TYPE DS9490_reset(const struct parsedname *pn)
 {
 	int i; 
-	BYTE buffer[32];
+	BYTE buffer[ DS9490_getstatus_BUFFER_LENGTH ];
 	int USpeed;
 	struct connection_in * in = pn->selected_connection ;
 	int readlen = 0 ;
@@ -629,7 +629,7 @@ static enum search_status DS9490_next_both(struct device_search *ds, const struc
 // a dirblob. Called from DS9490_next_both every 7 devices to fill.
 static enum search_status DS9490_directory(struct device_search *ds, struct dirblob *db, const struct parsedname *pn)
 {
-	BYTE status_buffer[32];
+	BYTE status_buffer[ DS9490_getstatus_BUFFER_LENGTH ];
 	BYTE EP2_data[SERIAL_NUMBER_SIZE] ; //USB endpoint 3 buffer
 	union {
 		BYTE b[DS2490_BULK_BUFFER_SIZE] ;
@@ -782,32 +782,38 @@ GOOD_OR_BAD DS9490_open_and_name(struct usb_list *ul, struct connection_in *in)
 
 static GOOD_OR_BAD DS9490_sendback_data(const BYTE * data, BYTE * resp, size_t len, const struct parsedname *pn)
 {
-	SIZE_OR_ERROR ret = 0;
-	BYTE buffer[32];
-	int readlen = len ;
+	size_t location = 0 ;
 
-	if (len > USB_FIFO_EACH) {
-		RETURN_BAD_IF_BAD( DS9490_sendback_data(data, resp, USB_FIFO_EACH, pn) ) ;
-		RETURN_BAD_IF_BAD( DS9490_sendback_data(&data[USB_FIFO_EACH], &resp[USB_FIFO_EACH], len - USB_FIFO_EACH, pn) );
-	}
+	while ( location < len ) {
+		BYTE buffer[ DS9490_getstatus_BUFFER_LENGTH ];
+		int readlen ;
 
-	ret = DS9490_write(data, (size_t) len, pn) ;
-	if ( ret < (int) len) {
-		LEVEL_DATA("USBsendback bulk write problem ret=%d", ret);
-		return gbBAD;
-	}
-	// COMM_BLOCK_IO | COMM_IM | COMM_F == 0x0075
-	if (( BAD( USB_Control_Msg(COMM_CMD, COMM_BLOCK_IO | COMM_IM | COMM_F, len, pn)) )
-		|| ( DS9490_getstatus(buffer, &readlen, pn)  != BUS_RESET_OK )	// wait for len bytes
-		) {
-		LEVEL_DATA("USBsendback control error");
-		STAT_ADD1_BUS(e_bus_errors, pn->selected_connection);
-		return gbBAD;
-	}
+		size_t block = len - location ;
+		if ( block > USB_FIFO_EACH ) {
+			block = USB_FIFO_EACH ;
+		}
 
-	if ( DS9490_read(resp, (size_t) len, pn) < 0) {
-		LEVEL_DATA("USBsendback bulk read error");
-		return gbBAD;
+		if ( DS9490_write( &data[location], block, pn) < (int) block) {
+			LEVEL_DATA("USBsendback bulk write problem");
+			return gbBAD;
+		}
+
+		// COMM_BLOCK_IO | COMM_IM | COMM_F == 0x0075
+		readlen = block ;
+		if (( BAD( USB_Control_Msg(COMM_CMD, COMM_BLOCK_IO | COMM_IM | COMM_F, block, pn)) )
+			|| ( DS9490_getstatus(buffer, &readlen, pn)  != BUS_RESET_OK )	// wait for len bytes
+			) {
+			LEVEL_DATA("USBsendback control error");
+			STAT_ADD1_BUS(e_bus_errors, pn->selected_connection);
+			return gbBAD;
+		}
+
+		if ( DS9490_read( &resp[location], block, pn) < 0) {
+			LEVEL_DATA("USBsendback bulk read error");
+			return gbBAD;
+		}
+
+		location += block ;
 	}
 	return gbGOOD;
 }
@@ -863,7 +869,7 @@ static GOOD_OR_BAD DS9490_ProgramPulse(const struct parsedname *pn)
 
 static GOOD_OR_BAD DS9490_HaltPulse(const struct parsedname *pn)
 {
-	BYTE buffer[32];
+	BYTE buffer[ DS9490_getstatus_BUFFER_LENGTH ];
 	struct timeval tv;
 	struct timeval tvtarget;
 	struct timeval tvlimit = { 0, 300000 } ; // 300 millisec from PDKit /ib/other/libUSB/libusbds2490.c
@@ -993,7 +999,7 @@ static GOOD_OR_BAD DS9490_setup_adapter(struct connection_in * in)
 {
 	struct parsedname s_pn;
 	struct parsedname * pn = &s_pn ;
-	BYTE buffer[32];
+	BYTE buffer[ DS9490_getstatus_BUFFER_LENGTH ];
 	int readlen = 0 ;
 
 	FS_ParsedName_Placeholder(pn);	// minimal parsename -- no destroy needed

@@ -429,7 +429,7 @@ static ZERO_OR_ERROR FS_r_ds2490status(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	char res[256];
-	char buffer[32 + 1];
+	char buffer[ DS9490_getstatus_BUFFER_LENGTH ];
 	int ret;
 	res[0] = '\0';
 	if (pn->selected_connection->busmode == bus_usb) {
