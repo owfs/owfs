@@ -144,7 +144,7 @@ static GOOD_OR_BAD OW_full_access(BYTE * data, const struct parsedname *pn);
 /* 2406 memory read */
 static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
 {
-	/* read is not a "paged" endeavor, the CRC comes after a full read */
+	/* read is not a "paged" endeavor, no CRC */
 	OWQ_length(owq) = OWQ_size(owq) ;
 	return GB_to_Z_OR_E(OW_r_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), (size_t) OWQ_offset(owq), PN(owq))) ;
 }
@@ -332,6 +332,7 @@ static ZERO_OR_ERROR FS_voltage(struct one_wire_query *owq)
 	return 0;
 }
 
+/* reads memory directly into the buffer, no CRC */
 static GOOD_OR_BAD OW_r_mem(BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn)
 {
 	BYTE p[] = { _1W_READ_MEMORY, LOW_HIGH_ADDRESS(offset), };
