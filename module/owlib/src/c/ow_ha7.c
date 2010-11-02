@@ -391,14 +391,15 @@ static GOOD_OR_BAD HA7_select_and_sendback(const BYTE * data, BYTE * resp, const
 /* return 0=good
    sendout_data, readin
  */
+#define HA7_CONSERVATIVE_LENGTH 32
 static GOOD_OR_BAD HA7_sendback_data(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
 {
 	size_t location = 0;
 
 	while (location < size) {
 		size_t block = size - location;
-		if (block > 32) {
-			block = 32;
+		if (block > HA7_CONSERVATIVE_LENGTH) {
+			block = HA7_CONSERVATIVE_LENGTH;
 		}
 		// Don't add address (that's the "0")
 		RETURN_BAD_IF_BAD(HA7_sendback_block(&data[location], &resp[location], block, 0, pn)) ;
