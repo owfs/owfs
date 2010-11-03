@@ -39,7 +39,9 @@ void Slurp( FILE_DESCRIPTOR_OR_ERROR file_descriptor, unsigned long usec )
 		if (FD_ISSET(file_descriptor, &readset) == 0) {
 			return ;
 		}
-		ignore_result = read(file_descriptor, data, 1) ;
+		if ( read(file_descriptor, data, 1) < 1 ) {
+			return ;
+		}
 		TrafficInFD("slurp",data,1,file_descriptor);
 	}
 }
