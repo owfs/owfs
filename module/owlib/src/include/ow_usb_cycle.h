@@ -54,6 +54,7 @@ $Id$
 #ifndef OW_USB_CYCLE_H			/* tedious wrapper */
 #define OW_USB_CYCLE_H
 
+#if OW_USB
 #include <sys/types.h> // Mac needs this before <usb.h> according to Peter Peter Radcliffe's work
 #include <usb.h>
 
@@ -77,5 +78,7 @@ void DS9490_connection_init( struct connection_in * in ) ;
 
 #define DS2490_USB_VENDOR  0x04FA
 #define DS2490_USB_PRODUCT 0x2490
+
+#endif /* OW_USB */
 
 #endif							/* OW_USB_CYCLE_H */

@@ -484,8 +484,10 @@ static ZERO_OR_ERROR FS_r_pulldownslewrate(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	if (pn->selected_connection->busmode != bus_usb) {
 		return -ENOTSUP;
+#if OW_USB
 	} else {
 		OWQ_U(owq) = pn->selected_connection->master.usb.pulldownslewrate;
+#endif /* OW_USB */
 	}
 	return 0;
 }
@@ -496,7 +498,7 @@ static ZERO_OR_ERROR FS_w_pulldownslewrate(struct one_wire_query *owq)
 	if (pn->selected_connection->busmode != bus_usb) {
 		return -ENOTSUP;
 	}
-
+#if OW_USB
 	if (OWQ_U(owq) > 7) {
 		return -ENOTSUP;
 	}
@@ -505,7 +507,7 @@ static ZERO_OR_ERROR FS_w_pulldownslewrate(struct one_wire_query *owq)
 	pn->selected_connection->changed_bus_settings |= CHANGED_USB_SLEW ;	// force a reset
 
 	LEVEL_DEBUG("Set slewrate to %d", pn->selected_connection->master.usb.pulldownslewrate);
-
+#endif /* OW_USB */
 	return 0;
 }
 
@@ -519,8 +521,10 @@ static ZERO_OR_ERROR FS_r_writeonelowtime(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	if (pn->selected_connection->busmode != bus_usb) {
 		OWQ_U(owq) = 10;
+#if OW_USB
 	} else {
 		OWQ_U(owq) = pn->selected_connection->master.usb.writeonelowtime + 8;
+#endif /* OW_USB */
 	}
 	return 0;
 }
@@ -532,12 +536,14 @@ static ZERO_OR_ERROR FS_w_writeonelowtime(struct one_wire_query *owq)
 		return -ENOTSUP;
 	}
 
+#if OW_USB
 	if ((OWQ_U(owq) < 8) || (OWQ_U(owq) > 15)) {
 		return -ENOTSUP;
 	}
 
 	pn->selected_connection->master.usb.writeonelowtime = OWQ_U(owq) - 8;
 	pn->selected_connection->changed_bus_settings |= CHANGED_USB_LOW ;	// force a reset
+#endif /* OW_USB */
 
 	return 0;
 }
@@ -552,8 +558,10 @@ static ZERO_OR_ERROR FS_r_datasampleoffset(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	if (pn->selected_connection->busmode != bus_usb) {
 		OWQ_U(owq) = 8;
+#if OW_USB
 	} else {
 		OWQ_U(owq) = pn->selected_connection->master.usb.datasampleoffset + 3;
+#endif /* OW_USB */
 	}
 	return 0;
 }
@@ -565,12 +573,14 @@ static ZERO_OR_ERROR FS_w_datasampleoffset(struct one_wire_query *owq)
 		return -ENOTSUP;
 	}
 
+#if OW_USB
 	if ((OWQ_U(owq) < 3) || (OWQ_U(owq) > 10)) {
 		return -ENOTSUP;
 	}
 
 	pn->selected_connection->master.usb.datasampleoffset = OWQ_U(owq) - 3;
 	pn->selected_connection->changed_bus_settings |= CHANGED_USB_OFFSET;	// force a reset
+#endif /* OW_USB */
 
 	return 0;
 }

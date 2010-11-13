@@ -888,7 +888,7 @@ case "${host_cpu}-${host_os}" in
 		EXTRACFLAGS="$EXTRACFLAGS -D_XOPEN_SOURCE=500"
 		AC_MSG_RESULT([-D_XOPEN_SOURCE=500])
 	;;
-	*-darwin*)
+	*-darwin* | *-netbsd*)
 		AC_MSG_RESULT([no])
 	;;
 	*-freebsd* | *)
@@ -901,6 +901,11 @@ esac
 
 AC_MSG_CHECKING([if cflag _BSD_SOURCE is required])
 case "${host_cpu}-${host_os}" in
+ 	*-netbsd*)
+ 		CFLAGS="$CFLAGS -D_NETBSD_SOURCE=1"
+ 		EXTRACFLAGS="$EXTRACFLAGS -D_NETBSD_SOURCE=1"
+ 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: -D_NETBSD_SOURCE=1" >&5 $as_echo "-D_NETBSD_SOURCE=1" >&6; }
+ 	;;
 	*)
 		# have to add -D_BSD_SOURCE=1 to support major() in sys/sysmacros.h
 		# have to add -D_ISOC99_SOURCE=1 to support lrint() in bits/mathcalls.h

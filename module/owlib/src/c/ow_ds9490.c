@@ -25,10 +25,10 @@ $Id$
 #include "ow_counters.h"
 #include "ow_connection.h"
 #include "ow_codes.h"
-#include "ow_usb_msg.h"
-#include "ow_usb_cycle.h"
 
 #if OW_USB						/* conditional inclusion of USB */
+#include "ow_usb_msg.h"
+#include "ow_usb_cycle.h"
 
 /* Extensive FreeBSD workarounds by Robert Nilsson <rnilsson@mac.com> */
 /* Peter Radcliffe updated support for FreeBSD >= 8 */
