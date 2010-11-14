@@ -255,8 +255,8 @@ static GOOD_OR_BAD LINK_detect_net(struct connection_in * in)
 
 static char * LINK_version_string(struct connection_in * in)
 {
-	char * version_string = owmalloc(MAX_LINK_VERSION_LENGTH) ;
-	enum { lvs_string, lvs_0d, } lvs = lvs_string ;
+	char * version_string = owmalloc(MAX_LINK_VERSION_LENGTH+1) ;
+	enum { lvs_string, lvs_0d, } lvs = lvs_string ; // read state machine
 	int version_index ;
 
 	in->master.serial.tcp.default_discard = 0 ;
@@ -268,7 +268,9 @@ static char * LINK_version_string(struct connection_in * in)
 		LEVEL_DEBUG( "cannot allocate version string" );
 		return NULL ;
 	}
-	memset(version_string, 0, MAX_LINK_VERSION_LENGTH);
+
+	// clear out the buffer
+	memset(version_string, 0, MAX_LINK_VERSION_LENGTH+1);
 
 	if ( BAD( LINK_write(LINK_string(" "), 1, in) ) ) {
 		LEVEL_DEFAULT("LINK version string cannot be requested");
@@ -288,7 +290,7 @@ static char * LINK_version_string(struct connection_in * in)
 					LEVEL_DEBUG("Found string <%s> but no 0x0D 0x0A",version_string) ;
 					break ;
 				case lvs_0d:
-					LEVEL_DEBUG("Found string <%s> but no 0x0A") ;
+					LEVEL_DEBUG("Found string <%s> but no 0x0A",version_string) ;
 					break ;
 			}
 			owfree(version_string);
@@ -302,14 +304,17 @@ static char * LINK_version_string(struct connection_in * in)
 						lvs = lvs_0d ;
 						break ;
 					case lvs_0d:
-						LEVEL_DEBUG("Extra CR char")
-						break ;
+						LEVEL_DEBUG("Extra CR char in <%s>",version_string);
+						owfree(version_string);
+						return NULL ;
 				}
 				break ;
 			case 0x0A:
 				switch ( lvs ) {
 					case lvs_string:
-						LEVEL_DEBUG("No CR before LF char");
+						LEVEL_DEBUG("No CR before LF char in <%s>",version_string);
+						owfree(version_string);
+						return NULL ;
 						// fall through
 					case lvs_0d:
 						return version_string ;
@@ -326,8 +331,8 @@ static char * LINK_version_string(struct connection_in * in)
 				break ;
 		}
 	}
+	LEVEL_DEFAULT("LINK version string too long. <%s> greater than %d chars",version_string,MAX_LINK_VERSION_LENGTH);
 	owfree(version_string) ;
-	LEVEL_DEFAULT("LINK version string too long");
 	return NULL ;
 }
 
