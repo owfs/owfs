@@ -39,4 +39,5 @@ void LibClose(void)
 	SAFEFREE(Globals.announce_name) ;
 	SAFEFREE(Globals.progname) ;
 	SAFEFREE(Globals.fatal_debug_file) ;
+	LEVEL_DEBUG("Libraries closed");
 }

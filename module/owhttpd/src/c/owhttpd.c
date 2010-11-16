@@ -157,6 +157,7 @@ int main(int argc, char *argv[])
 	ServerProcess(Acceptor);
 	LEVEL_DEBUG("ServerProcess done");
 	ow_exit(0);
+	LEVEL_DEBUG("owhttpd done");
 	return 0;
 }
 
