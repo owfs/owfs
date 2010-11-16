@@ -517,6 +517,7 @@ static SIZE_OR_ERROR From_Server( struct server_connection_state * scs, struct c
 static GOOD_OR_BAD To_Server( struct server_connection_state * scs, struct server_msg * sm, struct serverpackage *sp)
 {
 	struct connection_in * in = scs->in ; // for convenience
+	BYTE test_read[1] ;
 	
 	// initialize the variables
 	scs->file_descriptor = FILE_DESCRIPTOR_BAD ;
@@ -544,6 +545,7 @@ static GOOD_OR_BAD To_Server( struct server_connection_state * scs, struct serve
 				break ;
 			default:
 				// persistent connection idle and waiting for use
+				// connection_ion is locked to this is safe
 				scs->file_descriptor = in->file_descriptor;
 				in->file_descriptor = FILE_DESCRIPTOR_PERSISTENT_IN_USE;
 			break ;
@@ -551,6 +553,18 @@ static GOOD_OR_BAD To_Server( struct server_connection_state * scs, struct serve
 		BUSUNLOCKIN(in);
 	}
 	
+	// Check if the server closed the connection
+	// This is contributed by Jacob Joseph to fix a timeout problem.
+	// http://permalink.gmane.org/gmane.comp.file-systems.owfs.devel/7306
+	if (recv(scs->file_descriptor, test_read, 1, MSG_DONTWAIT | MSG_PEEK) <= 0) {
+		LEVEL_DEBUG("Server connection was closed.  Reconnecting.");
+		Close_Persistent( scs);
+		scs->file_descriptor = ClientConnect(in);
+		if ( FILE_DESCRIPTOR_VALID( scs->file_descriptor ) ) {
+			in->file_descriptor = FILE_DESCRIPTOR_PERSISTENT_IN_USE ;
+		}
+	}
+
 	// Now test
 	if ( FILE_DESCRIPTOR_NOT_VALID( scs->file_descriptor ) ) {
 		STAT_ADD1(in->reconnect_state);
