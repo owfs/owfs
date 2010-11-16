@@ -556,13 +556,24 @@ static GOOD_OR_BAD To_Server( struct server_connection_state * scs, struct serve
 	// Check if the server closed the connection
 	// This is contributed by Jacob Joseph to fix a timeout problem.
 	// http://permalink.gmane.org/gmane.comp.file-systems.owfs.devel/7306
-	if (recv(scs->file_descriptor, test_read, 1, MSG_DONTWAIT | MSG_PEEK) <= 0) {
-		LEVEL_DEBUG("Server connection was closed.  Reconnecting.");
-		Close_Persistent( scs);
-		scs->file_descriptor = ClientConnect(in);
-		if ( FILE_DESCRIPTOR_VALID( scs->file_descriptor ) ) {
-			in->file_descriptor = FILE_DESCRIPTOR_PERSISTENT_IN_USE ;
-		}
+	switch (recv(scs->file_descriptor, test_read, 1, MSG_DONTWAIT | MSG_PEEK)) {
+		case -1:
+			if ( errno==EAGAIN || errno==EWOULDBLOCK ) {
+				// No data to be read -- so connection healthy
+				break ;
+			}
+			// real error, fall through to close connection case
+		case 0:
+			LEVEL_DEBUG("Server connection was closed.  Reconnecting.");
+			Close_Persistent( scs);
+			scs->file_descriptor = ClientConnect(in);
+			if ( FILE_DESCRIPTOR_VALID( scs->file_descriptor ) ) {
+				in->file_descriptor = FILE_DESCRIPTOR_PERSISTENT_IN_USE ;
+			}
+			break ;
+		default:
+			// data to be read, so a good connection
+			break ;
 	}
 
 	// Now test
