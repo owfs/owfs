@@ -229,6 +229,7 @@ void FreeOutAll(void)
 	while (next) {
 		now = next;
 		next = now->next;
+		LEVEL_DEBUG("Freeing outbound %s #%d",now->zero.name,now->index);
 		SAFEFREE(now->zero.name) ;
 		SAFEFREE(now->zero.type) ;
 		SAFEFREE(now->zero.domain) ;
