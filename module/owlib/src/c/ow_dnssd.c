@@ -24,9 +24,9 @@ DLHANDLE libdnssd = NULL;
 
 #ifdef HAVE_DLFCN_H
 #include <dlfcn.h>
-#endif
+#endif /* HAVE_DLFCN_H */
 
-#endif
+#endif /* OW_CYGWIN */
 
 _DNSServiceRefSockFD DNSServiceRefSockFD;
 _DNSServiceProcessResult DNSServiceProcessResult;
