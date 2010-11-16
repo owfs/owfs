@@ -160,7 +160,7 @@ static void browse_callback(
 			break;
 
 		case AVAHI_BROWSER_NEW:
-			LEVEL_DEBUG( "NEW: service '%s' of type '%s' in domain '%s'", name, type, domain);
+			LEVEL_DEBUG( "NEW: service '%s' of type '%s' in domain '%s' protocol %d", name, type, domain, (int) protocol);
 
 			/* We ignore the returned resolver object. In the callback
 			function we free it. If the server is terminated before
@@ -207,13 +207,16 @@ void * OW_Avahi_Browse(void * v)
 	DETACH_THREAD;
 
 	/* Create main loop object */
+	in->master.browse.avahi_client = NULL ;
+	in->master.browse.avahi_browser = NULL ;
 	in->master.browse.avahi_poll = avahi_simple_poll_new() ;
 
 	/* Check whether creating the loop object succeeded */
 	if (in->master.browse.avahi_poll!=NULL) {
+		AvahiPoll * simple_poll = avahi_simple_poll_get(in->master.browse.avahi_poll) ;
 		
 		/* Create a new client */
-		in->master.browse.avahi_client = avahi_client_new(avahi_simple_poll_get(in->master.browse.avahi_poll), 0, client_callback, (void *) in, &error);
+		in->master.browse.avahi_client = avahi_client_new( simple_poll, AVAHI_CLIENT_NO_FAIL, client_callback, (void *) in, &error );
 
 		/* Check whether creating the client object succeeded */
 		if (in->master.browse.avahi_client!=NULL) {
