@@ -62,8 +62,6 @@ GOOD_OR_BAD OW_Load_avahi_library(void)
 	return gbBAD ;
 
 #elif defined(HAVE_DLOPEN)
-#if OW_DEBUG
-#endif /* OW_DEBUG */
 	if (
 		(avahi_client=DL_open("libavahi-client.so")) == NULL
 		&&
