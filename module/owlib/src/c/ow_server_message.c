@@ -518,6 +518,9 @@ static GOOD_OR_BAD To_Server( struct server_connection_state * scs, struct serve
 {
 	struct connection_in * in = scs->in ; // for convenience
 	BYTE test_read[1] ;
+	int old_flags ;
+	ssize_t rcv_value ;
+	int saved_errno ;
 	
 	// initialize the variables
 	scs->file_descriptor = FILE_DESCRIPTOR_BAD ;
@@ -556,13 +559,29 @@ static GOOD_OR_BAD To_Server( struct server_connection_state * scs, struct serve
 	// Check if the server closed the connection
 	// This is contributed by Jacob Joseph to fix a timeout problem.
 	// http://permalink.gmane.org/gmane.comp.file-systems.owfs.devel/7306
-	switch (recv(scs->file_descriptor, test_read, 1, MSG_DONTWAIT | MSG_PEEK)) {
+	//rcv_value = recv(scs->file_descriptor, test_read, 1, MSG_DONTWAIT | MSG_PEEK) ;
+	old_flags = fcntl( scs->file_descriptor, F_GETFL, 0 ) ; // save socket flags
+	if ( old_flags == -1 ) {
+		rcv_value = -2 ;
+	} else if ( fcntl( scs->file_descriptor, F_SETFL, old_flags | O_NONBLOCK ) == -1 ) { // set non-blocking
+		rcv_value = -2 ;
+	} else {
+		rcv_value = recv(scs->file_descriptor, test_read, 1, MSG_PEEK) ; // test read the socket to see if closed
+		saved_errno = errno ;
+		if ( fcntl( scs->file_descriptor, F_SETFL, old_flags ) == -1 ) { // restore  socket flags
+			rcv_value = -2 ;
+		}
+	}
+
+	switch ( rcv_value ) {
 		case -1:
-			if ( errno==EAGAIN || errno==EWOULDBLOCK ) {
+			if ( saved_errno==EAGAIN || saved_errno==EWOULDBLOCK ) {
 				// No data to be read -- so connection healthy
 				break ;
 			}
 			// real error, fall through to close connection case
+		case -2:
+			// fnctl error, fall through again
 		case 0:
 			LEVEL_DEBUG("Server connection was closed.  Reconnecting.");
 			Close_Persistent( scs);
