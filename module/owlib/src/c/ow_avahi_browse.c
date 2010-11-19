@@ -11,6 +11,7 @@ See the header file: ow.h for full attribution
 
 #include <config.h>
 #include "owfs_config.h"
+#include "ow.h"
 
 #ifdef HAVE_STDLIB_H
 #include "stdlib.h"  // need this for NULL
