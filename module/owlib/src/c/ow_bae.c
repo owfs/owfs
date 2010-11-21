@@ -86,12 +86,16 @@ WRITE_FUNCTION(FS_w_pio_bit) ;
 
 /* ------- Structures ----------- */
 
-#define _FC02_MEMORY_SIZE 128
-#define _FC_MAX_FLASH_SIZE 0x4000
-#define _FC02_FUNCTION_FLASH_OFFSET 0xE400
+/* common values to all FC chips */
+#define _FC_EEPROM_PAGE_SIZE   512
+#define _FC_MAX_EEPROM_PAGES    32
+#define _FC_EEPROM_OFFSET   0x0200
+#define _FC_MAX_FLASH_SIZE  0x4000
+
+#define _FC02_MEMORY_SIZE      128
 #define _FC02_EEPROM_OFFSET 0xE000
-#define _FC02_EEPROM_PAGE_SIZE       512
 #define _FC02_EEPROM_PAGES       2
+#define _FC03_EEPROM_PAGES       8
 
 #define _FC02_MAX_WRITE_GULP	32
 #define _FC02_MAX_READ_GULP	32
@@ -170,23 +174,25 @@ WRITE_FUNCTION(FS_w_pio_bit) ;
 #define _FC03_IICD       0x3D /* u8 */
 #define _FC03_IICC       0x3E /* u8 */
 #define _FC03_IICFR      0x3F /* u8 */
-#define _FC03_ADC        0x40 /* u16 x 16 */
+#define _FC03_ADC        0x100 /* u16 x 16 */
 
 
 /* Placeholder for special vsibility code for firmware types "personalities" */
+static enum e_visibility VISIBLE_eeprom_pages( const struct parsedname * pn ) ;
+static enum e_visibility VISIBLE_eeprom_bytes( const struct parsedname * pn ) ;
+static enum e_visibility VISIBLE_generic( const struct parsedname * pn ) ;
 static enum e_visibility VISIBLE_910( const struct parsedname * pn ) ;
 static enum e_visibility VISIBLE_911( const struct parsedname * pn ) ;
 
-struct aggregate ABAEeeprom = { _FC02_EEPROM_PAGES, ag_numbers, ag_separate, };
+
+struct aggregate ABAEeeprom = { _FC_MAX_EEPROM_PAGES, ag_numbers, ag_separate, };
 struct aggregate A911pio = { 22, ag_numbers, ag_separate, };
 struct aggregate A911pwm = { 4, ag_numbers, ag_separate, };
 struct aggregate A911adc = { 16, ag_numbers, ag_separate, };
 struct filetype BAE[] = {
 	F_STANDARD,
-	{"memory", _FC02_MEMORY_SIZE, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
-
 	{"command", _FC02_MAX_COMMAND_GULP, NON_AGGREGATE, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_extended, VISIBLE, NO_FILETYPE_DATA,},
-	{"writebyte", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_read_stable, NO_READ_FUNCTION, FS_writebyte, VISIBLE, NO_FILETYPE_DATA, },
+	//{"writebyte", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_read_stable, NO_READ_FUNCTION, FS_writebyte, VISIBLE, NO_FILETYPE_DATA, },
 	{"versionstate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_version_state, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA, },
 	{"version", 5, NON_AGGREGATE, ft_ascii, fc_link, FS_version, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"device_version", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_version_device, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
@@ -200,10 +206,12 @@ struct filetype BAE[] = {
 	{"firmware/function", _FC_MAX_FLASH_SIZE, NON_AGGREGATE, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_flash, VISIBLE, NO_FILETYPE_DATA,},
 
 	{"eeprom", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-	{"eeprom/memory",_FC02_EEPROM_PAGE_SIZE*_FC02_EEPROM_PAGES, NON_AGGREGATE, ft_binary, fc_link, FS_eeprom_r_mem, FS_eeprom_w_mem, VISIBLE, NO_FILETYPE_DATA,},
-	{"eeprom/page",_FC02_EEPROM_PAGE_SIZE, &ABAEeeprom, ft_binary, fc_page, FS_eeprom_r_page, FS_eeprom_w_page, VISIBLE, NO_FILETYPE_DATA,},
-	{"eeprom/erase", PROPERTY_LENGTH_YESNO, &ABAEeeprom, ft_yesno, fc_link, NO_READ_FUNCTION, FS_eeprom_erase, VISIBLE, NO_FILETYPE_DATA,},
+	{"eeprom/memory",_FC_EEPROM_PAGE_SIZE*_FC_MAX_EEPROM_PAGES, NON_AGGREGATE, ft_binary, fc_link, FS_eeprom_r_mem, FS_eeprom_w_mem, VISIBLE_eeprom_bytes, NO_FILETYPE_DATA,},
+	{"eeprom/page",_FC_EEPROM_PAGE_SIZE, &ABAEeeprom, ft_binary, fc_page, FS_eeprom_r_page, FS_eeprom_w_page, VISIBLE_eeprom_pages, NO_FILETYPE_DATA,},
+	{"eeprom/erase", PROPERTY_LENGTH_YESNO, &ABAEeeprom, ft_yesno, fc_link, NO_READ_FUNCTION, FS_eeprom_erase, VISIBLE_eeprom_pages, NO_FILETYPE_DATA,},
 
+	{"generic", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_generic, NO_FILETYPE_DATA,},
+	{"generic/memory", _FC02_MEMORY_SIZE, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE_generic, NO_FILETYPE_DATA,},
 	
 	{"910", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_910, NO_FILETYPE_DATA,},
 	{"910/adcc", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_read_stable, FS_r_8, FS_w_8, VISIBLE_910, {u:_FC02_ADCC,}, },
@@ -315,7 +323,7 @@ static GOOD_OR_BAD OW_type( UINT * localtype, struct parsedname * pn ) ;
 static GOOD_OR_BAD OW_r_mem(BYTE *bytes, size_t size, off_t offset, struct parsedname * pn);
 static GOOD_OR_BAD OW_r_mem_small(BYTE *bytes, size_t size, off_t offset, struct parsedname * pn);
 static GOOD_OR_BAD OW_eeprom_erase( off_t offset, struct parsedname * pn ) ;
-static void OW_siumulate_eeprom(BYTE * eeprom, const BYTE * data, size_t size) ;
+//static void OW_siumulate_eeprom(BYTE * eeprom, const BYTE * data, size_t size) ;
 
 static GOOD_OR_BAD OW_initiate_flash(BYTE * data, struct parsedname *pn, int duration);
 static GOOD_OR_BAD OW_write_flash(BYTE * data, struct parsedname *pn);
@@ -324,6 +332,7 @@ static uint16_t BAE_uint16(BYTE * p);
 static uint32_t BAE_uint32(BYTE * p);
 static void BAE_uint16_to_bytes( uint16_t num, unsigned char * p );
 static void BAE_uint32_to_bytes( uint32_t num, unsigned char * p );
+static size_t eeprom_offset( const struct parsedname * pn );
 
 static int VISIBLE_BAE( const struct parsedname * pn ) ;
 
@@ -357,11 +366,51 @@ static int VISIBLE_BAE( const struct parsedname * pn )
 	return visibility_parameter ;
 }
 
+static enum e_visibility VISIBLE_eeprom_pages( const struct parsedname * pn )
+{
+	switch ( VISIBLE_BAE(pn) ) {
+		case -1:
+			return visible_not_now ;
+		case 910: //modify ABAEeeprom.elements to number of pages;
+			pn->selected_filetype->ag->elements=_FC02_EEPROM_PAGES;
+			return visible_now ;
+		case 911:
+			pn->selected_filetype->ag->elements=_FC03_EEPROM_PAGES; 
+			return visible_now ;
+		default:
+			return visible_not_now ;
+	}
+}
+static enum e_visibility VISIBLE_eeprom_bytes( const struct parsedname * pn )
+{
+	switch ( VISIBLE_BAE(pn) ) {
+		case -1:
+			return visible_not_now ;
+		case 910: 
+			pn->selected_filetype->suglen=_FC02_EEPROM_PAGES * _FC_EEPROM_PAGE_SIZE;
+			return visible_now ;
+		case 911:
+			pn->selected_filetype->suglen=_FC03_EEPROM_PAGES * _FC_EEPROM_PAGE_SIZE; 
+			return visible_now ;
+		default:
+			return visible_not_now ;
+	}
+}
+
+static enum e_visibility VISIBLE_generic( const struct parsedname * pn )
+{
+	switch ( VISIBLE_BAE(pn) ) {
+		case -1:
+			return visible_now ;
+		default:
+			return visible_not_now ;
+	}
+}
+
 static enum e_visibility VISIBLE_910( const struct parsedname * pn )
 {
 	switch ( VISIBLE_BAE(pn) ) {
 		case 910:
-		case -1:
 			return visible_now ;
 		default:
 			return visible_not_now ;
@@ -372,10 +421,18 @@ static enum e_visibility VISIBLE_911( const struct parsedname * pn )
 {
 	switch ( VISIBLE_BAE(pn) ) {
 		case 911:
-		case -1:
 			return visible_now ;
 		default:
 			return visible_not_now ;
+	}
+}
+static size_t eeprom_offset( const struct parsedname * pn )
+{
+	switch ( VISIBLE_BAE(pn) ) {
+		case 910: //future vesion of 910 will work with uniform eeprom offset
+			return _FC02_EEPROM_OFFSET ;
+		default:
+			return _FC_EEPROM_OFFSET ;
 	}
 }
 /* BAE memory functions */
@@ -388,12 +445,12 @@ static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_eeprom_r_mem(struct one_wire_query *owq)
 {
-	return COMMON_offset_process(FS_r_mem,owq, _FC02_EEPROM_OFFSET) ;
+	return COMMON_offset_process(FS_r_mem,owq, eeprom_offset(PN(owq))) ;
 }
 
 static ZERO_OR_ERROR FS_eeprom_r_page(struct one_wire_query *owq)
 {
-	return COMMON_offset_process(FS_eeprom_r_mem,owq, _FC02_EEPROM_PAGE_SIZE * OWQ_pn(owq).extension) ;
+	return COMMON_offset_process(FS_eeprom_r_mem,owq, _FC_EEPROM_PAGE_SIZE * OWQ_pn(owq).extension) ;
 }
 
 static ZERO_OR_ERROR FS_w_mem(struct one_wire_query *owq)
@@ -405,13 +462,14 @@ static ZERO_OR_ERROR FS_eeprom_w_mem(struct one_wire_query *owq)
 {
 	struct parsedname * pn = PN(owq) ;
 	size_t size = OWQ_size(owq) ;
+/*
 	BYTE * eeprom = owmalloc( size ) ;
 	if ( eeprom==NULL ) {
 		return -ENOMEM ;
 	}
 	
 	// read existing eeprom pattern
-	if ( BAD( OW_r_mem(eeprom, size, OWQ_offset(owq)+_FC02_EEPROM_OFFSET, pn)) ) {
+	if ( BAD( OW_r_mem(eeprom, size, OWQ_offset(owq)+eeprom_offset(pn), pn)) ) {
 		LEVEL_DEBUG("Cannot read eeprom prior to writing") ;
 		owfree(eeprom) ;
 		return -EINVAL ;
@@ -419,27 +477,28 @@ static ZERO_OR_ERROR FS_eeprom_w_mem(struct one_wire_query *owq)
 	
 	// modify eeprom with new data
 	OW_siumulate_eeprom(eeprom, (const BYTE *) OWQ_buffer(owq), size) ;
-	
+*/
+
 	// write back
-	if ( BAD( OW_w_mem_eeprom(eeprom, size, OWQ_offset(owq)+_FC02_EEPROM_OFFSET, pn)) ) {
-		LEVEL_DEBUG("Cannot write to eepromm") ;
-		owfree(eeprom) ;
+	if ( BAD( OW_w_mem_eeprom((BYTE *) OWQ_buffer(owq), size, OWQ_offset(owq)+eeprom_offset(pn), pn)) ) {
+		LEVEL_DEBUG("Cannot write to eeprom") ;
+		//owfree(eeprom) ;
 		return -EINVAL ;
 	}
-	owfree(eeprom) ;
+	//owfree(eeprom) ;
 	return 0 ;
 }
 
 static ZERO_OR_ERROR FS_eeprom_w_page(struct one_wire_query *owq)
 {
-	return COMMON_offset_process(FS_eeprom_w_mem,owq, _FC02_EEPROM_PAGE_SIZE * OWQ_pn(owq).extension) ;
+	return COMMON_offset_process(FS_eeprom_w_mem,owq, _FC_EEPROM_PAGE_SIZE * OWQ_pn(owq).extension) ;
 }
 
 static ZERO_OR_ERROR FS_eeprom_erase(struct one_wire_query *owq)
 {
 	struct parsedname * pn = PN(owq) ;
 	if (OWQ_Y(owq)) {
-		off_t offset = _FC02_EEPROM_PAGE_SIZE * pn->extension + _FC02_EEPROM_OFFSET ;
+		off_t offset = _FC_EEPROM_PAGE_SIZE * pn->extension + eeprom_offset(pn) ;
 		return GB_to_Z_OR_E( OW_eeprom_erase(offset,pn) ) ;
 	} else{
 		return 0 ;
@@ -777,6 +836,7 @@ static GOOD_OR_BAD OW_w_mem_eeprom(BYTE * data, size_t size, off_t offset, struc
 	return gbGOOD ;	
 }
 
+/* the crc returned is calculated on buffer transmitted and not on resulting memory contents
 // Simulate eeprom (for correct CRC)
 static void OW_siumulate_eeprom(BYTE * eeprom, const BYTE * data, size_t size)
 {
@@ -785,6 +845,7 @@ static void OW_siumulate_eeprom(BYTE * eeprom, const BYTE * data, size_t size)
 		eeprom[i] &= data[i] ;
 	}
 }
+*/
 
 /* Already constrained to _FC02_MAX_READ_GULP aliquots */
 static GOOD_OR_BAD OW_r_mem_small(BYTE * data, size_t size, off_t offset, struct parsedname * pn)
