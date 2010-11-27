@@ -174,7 +174,15 @@ WRITE_FUNCTION(FS_w_pio_bit) ;
 #define _FC03_IICD       0x3D /* u8 */
 #define _FC03_IICC       0x3E /* u8 */
 #define _FC03_IICFR      0x3F /* u8 */
+#define _FC03_LCDINIT    64   /* u8 */
+#define _FC03_LCDCTRL    65   /* u8 */
+#define _FC03_LCDDATA    66   /* u8 */
+#define _FC03_ELARAM     67   /* u8 */
+#define _FC03_CLARAM     68   /* u16 */
+
 #define _FC03_ADC        0x100 /* u16 x 16 */
+#define _FC03_EALARMC    288  /* u8 */
+#define _FC03_CALARMC    289  /* u8 */
 
 
 /* Placeholder for special vsibility code for firmware types "personalities" */
@@ -206,7 +214,7 @@ struct filetype BAE[] = {
 	{"firmware/function", _FC_MAX_FLASH_SIZE, NON_AGGREGATE, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_flash, VISIBLE, NO_FILETYPE_DATA,},
 
 	{"eeprom", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-	{"eeprom/memory",_FC_EEPROM_PAGE_SIZE*_FC_MAX_EEPROM_PAGES, NON_AGGREGATE, ft_binary, fc_link, FS_eeprom_r_mem, FS_eeprom_w_mem, VISIBLE_eeprom_bytes, NO_FILETYPE_DATA,},
+//	{"eeprom/memory",_FC_EEPROM_PAGE_SIZE*_FC_MAX_EEPROM_PAGES, NON_AGGREGATE, ft_binary, fc_link, FS_eeprom_r_mem, FS_eeprom_w_mem, VISIBLE_eeprom_bytes, NO_FILETYPE_DATA,},
 	{"eeprom/page",_FC_EEPROM_PAGE_SIZE, &ABAEeeprom, ft_binary, fc_page, FS_eeprom_r_page, FS_eeprom_w_page, VISIBLE_eeprom_pages, NO_FILETYPE_DATA,},
 	{"eeprom/erase", PROPERTY_LENGTH_YESNO, &ABAEeeprom, ft_yesno, fc_link, NO_READ_FUNCTION, FS_eeprom_erase, VISIBLE_eeprom_pages, NO_FILETYPE_DATA,},
 
@@ -275,26 +283,35 @@ struct filetype BAE[] = {
 	{"910/pc2", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_910, {u:_FC02_PC2,}, },
 	{"910/pc3", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_910, {u:_FC02_PC3,}, },
 
-	{"911", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
-	{"911/piostate", PROPERTY_LENGTH_UNSIGNED, &A911pio, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, INVISIBLE, {u:_FC03_PIO,}, },
-	{"911/pio", PROPERTY_LENGTH_YESNO, &A911pio, ft_yesno, fc_link, FS_r_911_pio, FS_w_911_pio, VISIBLE_911, NO_FILETYPE_DATA, },
-	{"911/pio_config", PROPERTY_LENGTH_UNSIGNED, &A911pio, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_PIO_CONF,}, },
-	{"911/pio_ds", PROPERTY_LENGTH_YESNO, &A911pio, ft_yesno, fc_link, FS_r_pio_bit, FS_w_pio_bit, VISIBLE_911, {i: 3}, },
-	{"911/pio_pd", PROPERTY_LENGTH_YESNO, &A911pio, ft_yesno, fc_link, FS_r_pio_bit, FS_w_pio_bit, VISIBLE_911, {i: 2}, },
-	{"911/pio_pe", PROPERTY_LENGTH_YESNO, &A911pio, ft_yesno, fc_link, FS_r_pio_bit, FS_w_pio_bit, VISIBLE_911, {i: 1}, },
-	{"911/pio_dd", PROPERTY_LENGTH_YESNO, &A911pio, ft_yesno, fc_link, FS_r_pio_bit, FS_w_pio_bit, VISIBLE_911, {i: 0}, },
-	{"911/tpm1c", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_TPM1C,}, },
-	{"911/tpm2c", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_TPM2C,}, },
-	{"911/period1", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_PERIOD1,}, },
-	{"911/period2", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_PERIOD2,}, },
-	{"911/duty", PROPERTY_LENGTH_UNSIGNED, &A911pwm, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_DUTY,}, },
-	{"911/spic", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_SPIC,}, },
-	{"911/spibr", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_SPIBR,}, },
-	{"911/spid", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_SPID,}, },
-	{"911/iicd", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_IICD,}, },
-	{"911/iicc", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_IICC,}, },
-	{"911/iicfr", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_IICFR,}, },
-	{"911/adc", PROPERTY_LENGTH_UNSIGNED, &A911adc, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_ADC,}, },
+//	{"911", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
+	{"pio", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
+	{"pio/piostate", PROPERTY_LENGTH_UNSIGNED, &A911pio, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, INVISIBLE, {u:_FC03_PIO,}, },
+	{"pio/pio", PROPERTY_LENGTH_YESNO, &A911pio, ft_yesno, fc_link, FS_r_911_pio, FS_w_911_pio, VISIBLE_911, NO_FILETYPE_DATA, },
+	{"pio/pio_config", PROPERTY_LENGTH_UNSIGNED, &A911pio, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_PIO_CONF,}, },
+	{"pio/pio_ds", PROPERTY_LENGTH_YESNO, &A911pio, ft_yesno, fc_link, FS_r_pio_bit, FS_w_pio_bit, VISIBLE_911, {i: 3}, },
+	{"pio/pio_pd", PROPERTY_LENGTH_YESNO, &A911pio, ft_yesno, fc_link, FS_r_pio_bit, FS_w_pio_bit, VISIBLE_911, {i: 2}, },
+	{"pio/pio_pe", PROPERTY_LENGTH_YESNO, &A911pio, ft_yesno, fc_link, FS_r_pio_bit, FS_w_pio_bit, VISIBLE_911, {i: 1}, },
+	{"pio/pio_dd", PROPERTY_LENGTH_YESNO, &A911pio, ft_yesno, fc_link, FS_r_pio_bit, FS_w_pio_bit, VISIBLE_911, {i: 0}, },
+	{"pwm", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
+	{"pwm/tpm1c", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_TPM1C,}, },
+	{"pwm/tpm2c", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_TPM2C,}, },
+	{"pwm/period1", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_PERIOD1,}, },
+	{"pwm/period2", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_PERIOD2,}, },
+	{"pwm/duty", PROPERTY_LENGTH_UNSIGNED, &A911pwm, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_DUTY,}, },
+	{"lcd", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
+	{"lcd/init", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_LCDINIT,}, },
+	{"lcd/char", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, NO_READ_FUNCTION, FS_w_8, VISIBLE_911, {u:_FC03_LCDDATA,}, },
+	{"lcd/control", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_LCDCTRL,}, },
+	{"spi", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
+	{"spi/spic", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_SPIC,}, },
+	{"spi/spibr", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_SPIBR,}, },
+	{"spi/spid", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_SPID,}, },
+	{"iic", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
+	{"iic/iicd", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_IICD,}, },
+	{"iic/iicc", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_IICC,}, },
+	{"iic/iicfr", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_IICFR,}, },
+	{"adc", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
+	{"adc/adc", PROPERTY_LENGTH_UNSIGNED, &A911adc, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_ADC,}, },
 };
 
 DeviceEntryExtended(FC, BAE, DEV_resume | DEV_alarm, NO_GENERIC_READ, NO_GENERIC_WRITE );
@@ -598,7 +615,7 @@ static ZERO_OR_ERROR FS_version_state(struct one_wire_query *owq)
 // there may need to be a 0<->1 sense interchange
 static ZERO_OR_ERROR FS_r_911_pio( struct one_wire_query * owq ) {
 	UINT piostate ;
-	if ( FS_r_sibling_U( &piostate, "911/piostate", owq ) != 0 ) {
+	if ( FS_r_sibling_U( &piostate, "pio/piostate", owq ) != 0 ) {
 		return -EINVAL ;
 	}
 	OWQ_Y(owq) = piostate & 0x01 ;
@@ -607,12 +624,12 @@ static ZERO_OR_ERROR FS_r_911_pio( struct one_wire_query * owq ) {
 
 // there may need to be a 0<->1 sense interchange
 static ZERO_OR_ERROR FS_w_911_pio( struct one_wire_query * owq ) {
-	return FS_w_sibling_U( OWQ_Y(owq), "911/piostate", owq ) ;
+	return FS_w_sibling_U( OWQ_Y(owq), "pio/piostate", owq ) ;
 }
 
 static ZERO_OR_ERROR FS_r_pio_bit( struct one_wire_query * owq ) {
 	UINT pioconf ;
-	if ( FS_r_sibling_U( &pioconf, "911/pio_config", owq ) != 0 ) {
+	if ( FS_r_sibling_U( &pioconf, "pio/pio_config", owq ) != 0 ) {
 		return -EINVAL ;
 	}
 	OWQ_Y(owq) = UT_getbit( (void *) &pioconf, PN(owq)->selected_filetype->data.u ) ;
