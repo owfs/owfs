@@ -63,6 +63,7 @@ struct one_wire_query * OWQ_create_sibling(const char *sibling, struct one_wire_
 	
 	if ( pn_original->selected_filetype == NO_FILETYPE ) {
 		if ( pn_original->subdir == NO_SUBDIR ) {
+			// not a filetype or a subdir
 			return NO_ONE_WIRE_QUERY ;
 		}
 	// Add extension only if original property is aggregate

@@ -74,13 +74,15 @@ enum e_visibility FS_visible( const struct parsedname * pn )
 {
 	struct filetype * ft = pn->selected_filetype ;
 	if ( ft != NO_FILETYPE ) {
+		// filetype exists
 		return ft->visible(pn) ;
 	}
 	ft = pn->subdir ;
 	if ( ft != NO_SUBDIR ) {
+		// this is a subdir
 		return ft->visible(pn) ;
 	}
-	
+	// default is to show
 	return visible_always ;
 }
 
