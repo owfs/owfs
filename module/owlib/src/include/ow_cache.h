@@ -120,7 +120,12 @@ void Cache_Del_Mixed_Individual(const struct parsedname *pn);
 #define Cache_Del_Dir(pn )                  (1)
 #define Cache_Del_Device(pn )               (1)
 #define Cache_Del_Internal(ip,pn )          (1)
+
 #define OWQ_Cache_Del( owq )                (1)
+#define OWQ_Cache_Del_ALL( owq)             (1)
+#define OWQ_Cache_Del_BYTE( owq)            (1)
+#define OWQ_Cache_Del_parts( owq)           (1)
+
 #define Cache_Del_Simul(type,pn)            (1)
 #define Cache_Del_Mixed_Aggregate(pn)       (1)
 #define Cache_Del_Mixed_Individual(pn)      (1)
