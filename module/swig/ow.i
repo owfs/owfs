@@ -6,12 +6,6 @@
 %include "typemaps.i"
 
 %init %{
-#if 0
-// includes not needed here... it just results into duplicate includes
-#include "config.h"
-#include "owfs_config.h"
-#include "ow.h"
-#endif
 API_setup(opt_swig) ;
 %}
 

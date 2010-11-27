@@ -373,24 +373,24 @@ static ZERO_OR_ERROR FS_devdir(void (*dirfunc) (void *, const struct parsedname 
 		ft_pointer = pn_device_directory->subdir + 1; // next element (first one truly in the subdir)
 	} else {
 		// not sub directory
+		subdir_name[0] = '\0' ;
 		subdir_len = 0;
 		ft_pointer = pn_device_directory->selected_device->filetype_array;
 	}
-
 	for (; ft_pointer < lastft; ++ft_pointer) {	/* loop through filetypes */
-		char *slash = strchr(ft_pointer->name, '/'); // marker that there is a subdir involved
-		char *namepart;
+		char *namepart = &ft_pointer->name[subdir_len];
+		
 		if (subdir_len > 0) {	/* subdir */
-			/* test start of name for directory name */
+			/* test that start of name matches directory name */
 			if (strncmp(ft_pointer->name, subdir_name, subdir_len) != 0) {
 				// end of subdir
 				break;
 			}
-		} else if (slash != NULL) {
-			// subdir elements (and we're not in a subdir!)
+		} else if ( strchr( namepart, '/') != NULL) {
+			// subdir elements (and we're not in this subdir!)
 			continue;
 		}
-		namepart = (slash == NULL) ? ft_pointer->name : slash + 1;
+
 		if (ft_pointer->ag!=NON_AGGREGATE) {
 			int extension;
 			int first_extension = (ft_pointer->format == ft_bitfield) ? EXTENSION_BYTE : EXTENSION_ALL;
@@ -435,15 +435,16 @@ static ZERO_OR_ERROR FS_structdevdir(void (*dirfunc) (void *, const struct parse
 		ft_pointer = pn_device_directory->subdir + 1;
 	} else {
 		subdir_len = 0;
+		subdir_name[0] = '\0' ;
 		ft_pointer = pn_device_directory->selected_device->filetype_array;
 	}
 
 	for (; ft_pointer < lastft; ++ft_pointer) {	/* loop through filetypes */
-		char *slash = strchr(ft_pointer->name, '/');
-		char *namepart;
+		char *namepart = &ft_pointer->name[subdir_len];
+		
  		if ( ft_pointer->visible == INVISIBLE ) { // hide always invisible
 			// done without actually calling the visibility function since
-			// the device is genric for structure listings and may not
+			// the device is generic for structure listings and may not
 			// be an actual device.
 			continue ;
 		}
@@ -452,12 +453,10 @@ static ZERO_OR_ERROR FS_structdevdir(void (*dirfunc) (void *, const struct parse
 			if (strncmp(ft_pointer->name, subdir_name, subdir_len) != 0) {
 				break;
 			}
-		} else {				/* primary device directory */
-			if (slash != NULL) {
+		} else if (strchr( namepart, '/') != NULL) {
+				/* ignore further subdir entries */
 				continue;
-			}
 		}
-		namepart = (slash == NULL) ? ft_pointer->name : slash + 1;
 		if (ft_pointer->ag!=NON_AGGREGATE) {
 			// Aggregate property
 			struct parsedname s_pn_file_entry;
