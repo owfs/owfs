@@ -54,7 +54,10 @@ WRITE_FUNCTION(FS_w_mem);
 //READ_FUNCTION(FS_r_flash);
 WRITE_FUNCTION(FS_w_flash);
 WRITE_FUNCTION(FS_w_extended);
-WRITE_FUNCTION(FS_writebyte);
+//WRITE_FUNCTION(FS_writebyte);
+WRITE_FUNCTION(FS_w_lcd_text);
+WRITE_FUNCTION(FS_w_sector_nr);
+READ_FUNCTION(FS_r_sector_nr);
 
 READ_FUNCTION(FS_version_state) ;
 READ_FUNCTION(FS_version) ;
@@ -87,6 +90,8 @@ WRITE_FUNCTION(FS_w_pio_bit) ;
 /* ------- Structures ----------- */
 
 /* common values to all FC chips */
+
+
 #define _FC_EEPROM_PAGE_SIZE   512
 #define _FC_MAX_EEPROM_PAGES    32
 #define _FC_EEPROM_OFFSET   0x0200
@@ -179,6 +184,10 @@ WRITE_FUNCTION(FS_w_pio_bit) ;
 #define _FC03_LCDDATA    66   /* u8 */
 #define _FC03_ELARAM     67   /* u8 */
 #define _FC03_CLARAM     68   /* u16 */
+#define _FC03_ELARAM     67   /* u8 */
+#define _FC03_CLARAM     68   /* u8 */
+#define _FC03_SDINIT     69   /* u8 */
+
 
 #define _FC03_ADC        0x100 /* u16 x 16 */
 #define _FC03_EALARMC    288  /* u8 */
@@ -302,6 +311,11 @@ struct filetype BAE[] = {
 	{"911/lcd/init", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_LCDINIT,}, },
 	{"911/lcd/char", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, NO_READ_FUNCTION, FS_w_8, VISIBLE_911, {u:_FC03_LCDDATA,}, },
 	{"911/lcd/control", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_LCDCTRL,}, },
+	{"911/lcd/text", 255, NON_AGGREGATE, ft_ascii, fc_volatile, NO_READ_FUNCTION, FS_w_lcd_text, VISIBLE_911, NO_FILETYPE_DATA, },
+	
+	{"911/sdcard", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
+	{"911/sdcard/init", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_SDINIT,}, },
+	{"911/sdcard/sector_nr", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_sector_nr, FS_w_sector_nr, VISIBLE_911, NO_FILETYPE_DATA, },
 	{"911/spi", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
 	{"911/spi/spic", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_SPIC,}, },
 	{"911/spi/spibr", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_SPIBR,}, },
@@ -319,6 +333,7 @@ DeviceEntryExtended(FC, BAE, DEV_resume | DEV_alarm, NO_GENERIC_READ, NO_GENERIC
 /* <AE command codes */
 #define _1W_ECMD_ERASE_FIRMWARE 0xBB
 #define _1W_ECMD_FLASH_FIRMWARE 0xBA
+#define _1W_WF_WRITE_LCD_DATA 0x01
 
 #define _1W_READ_VERSION 0x11
 #define _1W_READ_TYPE 0x12
@@ -326,8 +341,11 @@ DeviceEntryExtended(FC, BAE, DEV_resume | DEV_alarm, NO_GENERIC_READ, NO_GENERIC
 #define _1W_READ_BLOCK_WITH_LEN 0x14
 #define _1W_WRITE_BLOCK_WITH_LEN 0x15
 #define _1W_ERASE_EEPROM_PAGE 0x16
-
+#define _1W_WRITE_FLOW      0x17
 #define _1W_CONFIRM_WRITE 0xBC
+
+/* Persistent storage */
+MakeInternalProp(SNR, fc_persistent);	// sector number
 
 /* ------- Functions ------------ */
 
@@ -340,6 +358,8 @@ static GOOD_OR_BAD OW_type( UINT * localtype, struct parsedname * pn ) ;
 static GOOD_OR_BAD OW_r_mem(BYTE *bytes, size_t size, off_t offset, struct parsedname * pn);
 static GOOD_OR_BAD OW_r_mem_small(BYTE *bytes, size_t size, off_t offset, struct parsedname * pn);
 static GOOD_OR_BAD OW_eeprom_erase( off_t offset, struct parsedname * pn ) ;
+static GOOD_OR_BAD OW_w_flow_nocrc(BYTE wf, BYTE * param, size_t plen, BYTE * data, size_t size, struct parsedname *pn);
+
 //static void OW_siumulate_eeprom(BYTE * eeprom, const BYTE * data, size_t size) ;
 
 static GOOD_OR_BAD OW_initiate_flash(BYTE * data, struct parsedname *pn, int duration);
@@ -452,6 +472,47 @@ static size_t eeprom_offset( const struct parsedname * pn )
 			return _FC_EEPROM_OFFSET ;
 	}
 }
+
+static ZERO_OR_ERROR FS_r_sector_nr(struct one_wire_query *owq)
+{
+	struct parsedname *pn = PN(owq);
+	UINT sector_nr;					
+
+	if ( BAD( Cache_Get_Internal_Strict((void *) &sector_nr, sizeof(UINT), InternalProp(SNR), pn)) ) { // record doesn't (yet) exist
+		sector_nr=0;
+	} 
+	OWQ_U(owq) = sector_nr;
+	if (Cache_Add_Internal((void *) &sector_nr, sizeof(UINT), InternalProp(SNR), pn)) {
+		return -EINVAL;
+	}
+	return 0;
+}
+
+static ZERO_OR_ERROR FS_w_sector_nr(struct one_wire_query *owq)
+{
+	struct parsedname *pn = PN(owq);
+	UINT sector_nr;					
+
+	sector_nr = OWQ_U(owq);
+	if (Cache_Add_Internal((void *) &sector_nr, sizeof(UINT), InternalProp(SNR), pn)) {
+		return -EINVAL;
+	}
+	return 0;
+}
+
+static ZERO_OR_ERROR FS_w_lcd_text(struct one_wire_query *owq)
+{
+	struct parsedname *pn = PN(owq);
+	BYTE *start_of_text = (BYTE*)OWQ_buffer(owq);
+	BYTE param; //optional cursor position *not implemented* 
+	LEVEL_DEBUG("lcd text size is %d", (int)OWQ_size(owq) ) ;
+	if (OWQ_offset(owq)) {
+		return -ERANGE;
+	}
+	RETURN_ERROR_IF_BAD(OW_w_flow_nocrc(_1W_WF_WRITE_LCD_DATA, &param, 0, start_of_text, OWQ_size(owq), pn));
+	return 0;
+}
+
 /* BAE memory functions */
 static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
 {
@@ -594,14 +655,14 @@ static ZERO_OR_ERROR FS_w_extended(struct one_wire_query *owq)
 	return GB_to_Z_OR_E( OW_w_extended( (BYTE *) OWQ_buffer(owq), OWQ_size(owq), PN(owq)  ) ) ;
 }
 
-static ZERO_OR_ERROR FS_writebyte(struct one_wire_query *owq)
+/*static ZERO_OR_ERROR FS_writebyte(struct one_wire_query *owq)
 {
 	off_t location = OWQ_U(owq)>>8 ;
 	BYTE data = OWQ_U(owq) & 0xFF ;
 	
 	// Write 1 byte ,
 	return GB_to_Z_OR_E( OW_w_mem( &data, 1, location, PN(owq)  ) ) ;
-}
+}*/
 
 /* BAE version */
 static ZERO_OR_ERROR FS_version_state(struct one_wire_query *owq)
@@ -615,7 +676,7 @@ static ZERO_OR_ERROR FS_version_state(struct one_wire_query *owq)
 // there may need to be a 0<->1 sense interchange
 static ZERO_OR_ERROR FS_r_911_pio( struct one_wire_query * owq ) {
 	UINT piostate ;
-	if ( FS_r_sibling_U( &piostate, "pio/piostate", owq ) != 0 ) {
+	if ( FS_r_sibling_U( &piostate, "911/pio/piostate", owq ) != 0 ) {
 		return -EINVAL ;
 	}
 	OWQ_Y(owq) = piostate & 0x01 ;
@@ -624,12 +685,12 @@ static ZERO_OR_ERROR FS_r_911_pio( struct one_wire_query * owq ) {
 
 // there may need to be a 0<->1 sense interchange
 static ZERO_OR_ERROR FS_w_911_pio( struct one_wire_query * owq ) {
-	return FS_w_sibling_U( OWQ_Y(owq), "pio/piostate", owq ) ;
+	return FS_w_sibling_U( OWQ_Y(owq), "911/pio/piostate", owq ) ;
 }
 
 static ZERO_OR_ERROR FS_r_pio_bit( struct one_wire_query * owq ) {
 	UINT pioconf ;
-	if ( FS_r_sibling_U( &pioconf, "pio/pio_config", owq ) != 0 ) {
+	if ( FS_r_sibling_U( &pioconf, "911/pio/pio_config", owq ) != 0 ) {
 		return -EINVAL ;
 	}
 	OWQ_Y(owq) = UT_getbit( (void *) &pioconf, PN(owq)->selected_filetype->data.u ) ;
@@ -795,6 +856,25 @@ static GOOD_OR_BAD OW_w_extended(BYTE * data, size_t size, struct parsedname *pn
 	/* Copy to write buffer */
 	memcpy(&p[2], data, size);
 	
+	return BUS_transaction(t, pn) ;
+}
+
+// Flow write command without crc 
+static GOOD_OR_BAD OW_w_flow_nocrc(BYTE wf, BYTE * param, size_t plen, BYTE * data, size_t size, struct parsedname *pn)
+{
+	BYTE p[1 + 1 + 1 + 1 + _FC02_MAX_COMMAND_GULP + 2] = { _1W_WRITE_FLOW, wf, 0, BYTE_MASK(plen), };
+	BYTE q[] = { _1W_CONFIRM_WRITE, } ;
+	struct transaction_log t[] = {
+		TRXN_START,
+		TRXN_WR_CRC16(p, 4+plen, 0),
+		TRXN_WRITE1(q),
+		TRXN_DELAY(1),
+		TRXN_WRITE(data, size),
+		TRXN_END,
+	};
+	
+	/* Copy to write buffer */
+	memcpy(&p[4], param, plen);
 	return BUS_transaction(t, pn) ;
 }
 
