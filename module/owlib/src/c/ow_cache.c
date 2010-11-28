@@ -299,6 +299,7 @@ GOOD_OR_BAD OWQ_Cache_Add(const struct one_wire_query *owq)
 		case ft_pressure:
 		case ft_temperature:
 		case ft_tempgap:
+			LEVEL_DEBUG("Adding data for %s", SAFESTRING(pn->path) );
 			return Cache_Add(OWQ_array(owq), (pn->selected_filetype->ag->elements) * sizeof(union value_object), pn);
 		default:
 			return gbBAD;
@@ -312,6 +313,7 @@ GOOD_OR_BAD OWQ_Cache_Add(const struct one_wire_query *owq)
 			if (OWQ_offset(owq) > 0) {
 				return gbBAD;
 			}
+			LEVEL_DEBUG("Adding data for %s", SAFESTRING(pn->path) );
 			return Cache_Add(OWQ_buffer(owq), OWQ_length(owq), pn);
 		case ft_integer:
 		case ft_unsigned:
@@ -321,6 +323,7 @@ GOOD_OR_BAD OWQ_Cache_Add(const struct one_wire_query *owq)
 		case ft_pressure:
 		case ft_temperature:
 		case ft_tempgap:
+			LEVEL_DEBUG("Adding data for %s", SAFESTRING(pn->path) );
 			return Cache_Add(&OWQ_val(owq), sizeof(union value_object), pn);
 		default:
 			return gbBAD;
@@ -399,7 +402,7 @@ GOOD_OR_BAD Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn)
 		return gbBAD;
 	}
 	
-	LEVEL_DEBUG(SNformat " elements=%d", SNvar(pn->sn), DirblobElements(db));
+	LEVEL_DEBUG("Adding duirectory for " SNformat " elements=%d", SNvar(pn->sn), DirblobElements(db));
 	
 	// populate node with directory name and dirblob
 	FS_LoadDirectoryOnly(&pn_directory, pn);
@@ -440,6 +443,7 @@ GOOD_OR_BAD Cache_Add_Simul(const enum simul_type type, const struct parsedname 
 	}
 	
 	// allocate space for the node and data
+	LEVEL_DEBUG("Adding for conversion time for "SNformat, SNvar(pn->sn));
 	tn = (struct tree_node *) owmalloc(sizeof(struct tree_node));
 	if (!tn) {
 		return gbBAD;
@@ -476,7 +480,7 @@ GOOD_OR_BAD Cache_Add_Device(const int bus_nr, const BYTE * sn)
 		return gbBAD;
 	}
 
-	LEVEL_DEBUG(SNformat " bus=%d", SNvar(sn), (int) bus_nr);
+	LEVEL_DEBUG("Adding device location " SNformat " bus=%d", SNvar(sn), (int) bus_nr);
 	LoadTK(sn, Device_Marker, 0, tn );
 	tn->expires = duration + NOW_TIME;
 	tn->dsize = sizeof(int);
@@ -514,7 +518,7 @@ GOOD_OR_BAD Cache_Add_Internal(const void *data, const size_t datasize, const st
 		return gbBAD;
 	}
 
-	LEVEL_DEBUG(SNformat " size=%d", SNvar(pn->sn), (int) datasize);
+	LEVEL_DEBUG("Adding internal data for "SNformat " size=%d", SNvar(pn->sn), (int) datasize);
 	LoadTK( pn->sn, ip->name, EXTENSION_INTERNAL, tn );
 	tn->expires = duration + NOW_TIME;
 	tn->dsize = datasize;
@@ -543,7 +547,7 @@ GOOD_OR_BAD Cache_Add_Alias(const ASCII *name, const BYTE * sn)
 		return gbBAD;
 	}
 
-	LEVEL_DEBUG("Adding " SNformat " alias=%s", SNvar(sn), name);
+	LEVEL_DEBUG("Adding alias for " SNformat " = %s", SNvar(sn), name);
 	LoadTK( sn, Alias_Marker, 0, tn );
 	tn->expires = NOW_TIME;
 	tn->dsize = size+1;
@@ -556,6 +560,7 @@ static void * GetFlippedTree( void )
 {
 	void * flip = cache.temporary_tree_old;
 	/* Flip caches! old = new. New truncated, reset time and counters and flag */
+	LEVEL_DEBUG("Flipping cache tree (purging timed-out data)");
 	cache.temporary_tree_old = cache.temporary_tree_new;
 	cache.old_ram = cache.new_ram;
 	cache.temporary_tree_new = NULL;
@@ -640,7 +645,7 @@ static GOOD_OR_BAD Cache_Add_Store(struct tree_node *tn)
 {
 	struct tree_opaque *opaque;
 	enum { no_add, yes_add, just_update } state = no_add;
-	//printf("Cache_Add_Store\n") ;
+	LEVEL_DEBUG("Adding data to permanent store");
 	STORE_WLOCK;
 	if ((opaque = tsearch(tn, &cache.permanent_tree, tree_compare))) {
 		//printf("CACHE ADD pointer=%p, key=%p\n",tn,opaque->key);
@@ -798,7 +803,7 @@ GOOD_OR_BAD Cache_Get_Dir(struct dirblob *db, const struct parsedname *pn)
 		return gbBAD;
 	}
 
-	LEVEL_DEBUG(SNformat, SNvar(pn->sn));
+	LEVEL_DEBUG("Looking for directory "SNformat, SNvar(pn->sn));
 	FS_LoadDirectoryOnly(&pn_directory, pn);
 	LoadTK( pn_directory.sn, Directory_Marker, pn->selected_connection->index, &tn) ;
 	return Get_Stat(&cache_dir, Cache_Get_Common_Dir(db, &duration, &tn));
@@ -852,7 +857,7 @@ GOOD_OR_BAD Cache_Get_Device(void *bus_nr, const struct parsedname *pn)
 		return gbBAD;
 	}
 
-	LEVEL_DEBUG(SNformat, SNvar(pn->sn));
+	LEVEL_DEBUG("Looking for device "SNformat, SNvar(pn->sn));
 	LoadTK( pn->sn, Device_Marker, 0, &tn ) ;
 	return Get_Stat(&cache_dev, Cache_Get_Common(bus_nr, &size, &duration, &tn));
 }
@@ -910,6 +915,8 @@ GOOD_OR_BAD Cache_Get_Simul_Time(enum simul_type type, time_t * dwell_time, cons
 		// uncachable
 		return gbBAD;
 	}
+
+	LEVEL_DEBUG("Looking for conversion time "SNformat, SNvar(pn->sn));
 	
 	FS_LoadDirectoryOnly(&pn_directory, pn);
 	LoadTK(pn_directory.sn, Simul_Marker[type], pn->selected_connection->index, &tn ) ;
