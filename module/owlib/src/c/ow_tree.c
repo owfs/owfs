@@ -41,9 +41,9 @@ static void Device2Tree(const struct device *d, enum ePN_type type)
 	/*  In order for DeviceDestroy to work on FreeBSD we must copy the keys.
 	    Otherwise, tdestroy will attempt to free implicitly allocated structures.
 	*/
-	// Note, I'm not sure if I should be using owmalloc since owfree is probably not calledby FreeBSD's tdestroy //
+	// Note, I'm not using owmalloc since owfree is probably not calledby FreeBSD's tdestroy //
 	struct device *d_copy ;
-	if ((d_copy = (struct device *) owmalloc(sizeof(struct device)))) {
+	if ((d_copy = (struct device *) malloc(sizeof(struct device)))) {
 		memmove(d_copy, d, sizeof(struct device));
 	} else {
 		LEVEL_DATA("Could not allocate memory for device %s", d->readable_name);

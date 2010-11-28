@@ -499,11 +499,11 @@ property   device sn      extension             *ft       binary data
 
 /* Add an item to the cache */
 /* return 0 if good, 1 if not */
-GOOD_OR_BAD Cache_Add_Internal(const void *data, const size_t datasize, const struct internal_prop *ip, const struct parsedname *pn)
+GOOD_OR_BAD Cache_Add_SlaveSpecific(const void *data, const size_t datasize, const struct internal_prop *ip, const struct parsedname *pn)
 {
 	struct tree_node *tn;
 	time_t duration;
-	//printf("Cache_Add_Internal\n");
+	//printf("Cache_Add_SlaveSpecific\n");
 	if (!pn) {
 		return gbGOOD;				// do check here to avoid needless processing
 	}
@@ -863,7 +863,7 @@ GOOD_OR_BAD Cache_Get_Device(void *bus_nr, const struct parsedname *pn)
 }
 
 /* Does cache get, but doesn't allow play in data size */
-GOOD_OR_BAD Cache_Get_Internal_Strict(void *data, size_t dsize, const struct internal_prop *ip, const struct parsedname *pn)
+GOOD_OR_BAD Cache_Get_SlaveSpecific(void *data, size_t dsize, const struct internal_prop *ip, const struct parsedname *pn)
 {
 	size_t size = dsize;
 	RETURN_BAD_IF_BAD( Cache_Get_Internal(data, &size, ip, pn) ) ;

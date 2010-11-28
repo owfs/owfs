@@ -127,8 +127,7 @@ DeviceEntryExtended(29, DS2408, DEV_alarm | DEV_resume | DEV_ovdr, NO_GENERIC_RE
 #define _ADDRESS_CONTROL_STATUS_REGISTER 0x008D
 
 /* Internal properties */
-//static struct internal_prop ip_init = { "INI", fc_stable };
-MakeInternalProp(INI, fc_stable);	// LCD screen initialized?
+MakeSlaveSpecific(INI, fc_stable);	// LCD screen initialized?
 
 /* Nibbles for LCD controller */
 #define LCD_DATA_FLAG       0x08
@@ -179,7 +178,7 @@ static ZERO_OR_ERROR FS_Mclear(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	int init = 1;
 
-	if ( BAD( Cache_Get_Internal_Strict(&init, sizeof(init), InternalProp(INI), pn)) ) {
+	if ( BAD( Cache_Get_SlaveSpecific(&init, sizeof(init), SlaveSpecificProperty(INI), pn)) ) {
 		OWQ_Y(owq) = 1;
 		if ( FS_r_strobe(owq) != 0 ) {	// set reset pin to strobe mode
 			return -EINVAL;
@@ -194,7 +193,7 @@ static ZERO_OR_ERROR FS_Mclear(struct one_wire_query *owq)
 		// Entry-mode: auto-increment, no shift
 		RETURN_ERROR_IF_BAD( OW_w_pio(0x0F, pn) ) ;
 		RETURN_ERROR_IF_BAD( OW_w_pio(0x06, pn) ) ;
-		Cache_Add_Internal(&init, sizeof(init), InternalProp(INI), pn);
+		Cache_Add_SlaveSpecific(&init, sizeof(init), SlaveSpecificProperty(INI), pn);
 	}
 	// clear
 	RETURN_ERROR_IF_BAD( OW_w_pio(0x01, pn) );
@@ -394,7 +393,7 @@ static GOOD_OR_BAD OW_Hinit(struct parsedname * pn)
 	BYTE data[6];
 
 	// already done?
-	RETURN_GOOD_IF_GOOD( Cache_Get_Internal_Strict(&init, sizeof(init), InternalProp(INI), pn) )
+	RETURN_GOOD_IF_GOOD( Cache_Get_SlaveSpecific(&init, sizeof(init), SlaveSpecificProperty(INI), pn) )
 	
 	if ( BAD( OW_w_control(0x04, pn) )	// strobe
 		|| BAD( OW_r_reg(data, pn) ) ) {
@@ -418,7 +417,7 @@ static GOOD_OR_BAD OW_Hinit(struct parsedname * pn)
 		LEVEL_DEBUG("Error sending setup commands");	
 		return gbBAD;
 	}
-	Cache_Add_Internal(&init, sizeof(init), InternalProp(INI), pn);
+	Cache_Add_SlaveSpecific(&init, sizeof(init), SlaveSpecificProperty(INI), pn);
 	return gbGOOD ;
 }
 

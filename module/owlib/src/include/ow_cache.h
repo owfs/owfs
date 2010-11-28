@@ -51,8 +51,8 @@ enum simul_type { simul_temp, simul_volt, simul_end };
 
 #if OW_CACHE
 
-#define MakeInternalProp(tag,change)  static char ip_name_##tag[] = #tag ; static struct internal_prop ip_##tag = { ip_name_##tag , change }
-#define InternalProp(tag)     (& ip_##tag)
+#define MakeSlaveSpecific(tag,change)  static char ip_name_##tag[] = #tag ; static struct internal_prop ip_##tag = { ip_name_##tag , change }
+#define SlaveSpecificProperty(tag)     (& ip_##tag)
 
 extern struct internal_prop ipSimul[] ;
 
@@ -64,7 +64,7 @@ void Cache_Clear(void);
 GOOD_OR_BAD OWQ_Cache_Add(const struct one_wire_query *owq);
 GOOD_OR_BAD Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn);
 GOOD_OR_BAD Cache_Add_Device(const int bus_nr, const BYTE *sn);
-GOOD_OR_BAD Cache_Add_Internal(const void *data, const size_t datasize, const struct internal_prop *ip, const struct parsedname *pn);
+GOOD_OR_BAD Cache_Add_SlaveSpecific(const void *data, const size_t datasize, const struct internal_prop *ip, const struct parsedname *pn);
 GOOD_OR_BAD Cache_Add_Alias(const ASCII *name, const BYTE * sn) ;
 GOOD_OR_BAD Cache_Add_Simul(const enum simul_type type, const struct parsedname *pn);
 
@@ -72,7 +72,7 @@ GOOD_OR_BAD OWQ_Cache_Get(struct one_wire_query *owq);
 GOOD_OR_BAD Cache_Get(void *data, size_t * dsize, const struct parsedname *pn);
 GOOD_OR_BAD Cache_Get_Dir(struct dirblob *db, const struct parsedname *pn);
 GOOD_OR_BAD Cache_Get_Device(void *bus_nr, const struct parsedname *pn);
-GOOD_OR_BAD Cache_Get_Internal_Strict(void *data, size_t dsize, const struct internal_prop *ip, const struct parsedname *pn);
+GOOD_OR_BAD Cache_Get_SlaveSpecific(void *data, size_t dsize, const struct internal_prop *ip, const struct parsedname *pn);
 GOOD_OR_BAD Cache_Get_Alias(ASCII * name, size_t length, const BYTE * sn) ;
 GOOD_OR_BAD Cache_Get_SerialNumber(const ASCII * name, BYTE * sn) ;
 GOOD_OR_BAD Cache_Get_Simul_Time(enum simul_type type, time_t * dwell_time, const struct parsedname * pn);
@@ -91,8 +91,8 @@ void Cache_Del_Mixed_Individual(const struct parsedname *pn);
 
 #else							/* OW_CACHE */
 
-#define MakeInternalProp(tag, change)
-#define InternalProp(tag)     NULL
+#define MakeSlaveSpecific(tag, change)
+#define SlaveSpecificProperty(tag)     NULL
 
 #define Cache_Open( void )
 #define Cache_Close( void )
@@ -100,7 +100,7 @@ void Cache_Del_Mixed_Individual(const struct parsedname *pn);
 
 #define Cache_Add_Dir(db,pn )               (gbBAD)
 #define Cache_Add_Device(bus_nr,sn )        (gbBAD)
-#define Cache_Add_Internal(data,datasize,ip,pn )    (gbBAD)
+#define Cache_Add_SlaveSpecific(data,datasize,ip,pn )    (gbBAD)
 #define OWQ_Cache_Add( owq )                (gbBAD)
 #define Cache_Add_Alias(name, sn)           (gbBAD)
 #define Cache_Add_Simul(type,pn)            (gbBAD)
@@ -110,8 +110,7 @@ void Cache_Del_Mixed_Individual(const struct parsedname *pn);
 #define OWQ_Cache_Get( owq )                (gbBAD)
 
 #define Cache_Get_Device(bus_nr,pn )        (gbBAD)
-#define Cache_Get_Internal(data,dsize,ip,pn )       (1)
-#define Cache_Get_Internal_Strict(data,dsize,ip,pn )       (gbBAD)
+#define Cache_Get_SlaveSpecific(data,dsize,ip,pn )       (gbBAD)
 #define Cache_Get_Alias(name, length, sn)   (gbBAD)
 #define Cache_Get_SerialNumber(name, sn)    (gbBAD)
 #define Cache_Get_Simul_Time(type,time,pn)  (1)

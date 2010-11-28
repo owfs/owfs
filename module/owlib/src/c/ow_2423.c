@@ -85,8 +85,7 @@ DeviceEntryExtended(1D, DS2423, DEV_ovdr, NO_GENERIC_READ, NO_GENERIC_WRITE);
 #define _1W_COUNTER_FILL 0x00
 
 /* Persistent storage */
-//static struct internal_prop ip_cum = { "CUM", fc_persistent };
-MakeInternalProp(CUM, fc_persistent);	// cumulative
+MakeSlaveSpecific(CUM, fc_persistent);	// cumulative
 
 /* ------- Functions ------------ */
 
@@ -145,7 +144,7 @@ static ZERO_OR_ERROR FS_r_mincount(struct one_wire_query *owq)
 	RETURN_ERROR_IF_BAD( OW_r_counter(owq, 15, 32) ) ;
 	ct[1] = OWQ_U(owq);
 
-	if ( BAD( Cache_Get_Internal_Strict((void *) st, 3 * sizeof(UINT), InternalProp(CUM), pn)) ) {	// record doesn't (yet) exist
+	if ( BAD( Cache_Get_SlaveSpecific((void *) st, 3 * sizeof(UINT), SlaveSpecificProperty(CUM), pn)) ) {	// record doesn't (yet) exist
 		st[2] = ct[0] < ct[1] ? ct[0] : ct[1];
 	} else {
 		UINT d0 = ct[0] - st[0];	//delta counter.A
@@ -156,7 +155,7 @@ static ZERO_OR_ERROR FS_r_mincount(struct one_wire_query *owq)
 	st[1] = ct[1];
 	OWQ_U(owq) = st[2];
 
-	if (Cache_Add_Internal((void *) st, 3 * sizeof(UINT), InternalProp(CUM), pn)) {
+	if (Cache_Add_SlaveSpecific((void *) st, 3 * sizeof(UINT), SlaveSpecificProperty(CUM), pn)) {
 		return -EINVAL;
 	}
 	return 0;
@@ -175,7 +174,7 @@ static ZERO_OR_ERROR FS_w_mincount(struct one_wire_query *owq)
 	RETURN_ERROR_IF_BAD( OW_r_counter(owq, 15, 32) );
 	st[1] = OWQ_U(owq);
 
-	if (Cache_Add_Internal((void *) st, 3 * sizeof(UINT), InternalProp(CUM), pn)) {
+	if (Cache_Add_SlaveSpecific((void *) st, 3 * sizeof(UINT), SlaveSpecificProperty(CUM), pn)) {
 		return -EINVAL;
 	}
 	return 0;

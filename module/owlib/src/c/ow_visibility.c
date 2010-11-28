@@ -58,16 +58,16 @@ enum e_visibility NeverVisible( const struct parsedname * pn )
 }
 
 /* Internal files */
-MakeInternalProp(VIS, fc_persistent);	//cumulative
+MakeSlaveSpecific(VIS, fc_persistent);	//cumulative
 
 GOOD_OR_BAD GetVisibilityCache( int * visibility_parameter, const struct parsedname * pn ) 
 {
-	return Cache_Get_Internal_Strict( visibility_parameter, sizeof(int), InternalProp(VIS), pn) ;
+	return Cache_Get_SlaveSpecific( visibility_parameter, sizeof(int), SlaveSpecificProperty(VIS), pn) ;
 }
 	
 void SetVisibilityCache( int visibility_parameter, const struct parsedname * pn ) 
 {
-	Cache_Add_Internal( &visibility_parameter, sizeof(int), InternalProp(VIS), pn) ;
+	Cache_Add_SlaveSpecific( &visibility_parameter, sizeof(int), SlaveSpecificProperty(VIS), pn) ;
 }
 
 enum e_visibility FS_visible( const struct parsedname * pn )

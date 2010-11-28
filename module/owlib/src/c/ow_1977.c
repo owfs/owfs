@@ -96,10 +96,8 @@ DeviceEntryExtended(37, DS1977, DEV_resume | DEV_ovdr, NO_GENERIC_READ, NO_GENER
 #define _DS1977_PASSWORD_OK  0xAA
 
 /* Persistent storage */
-//static struct internal_prop ip_rea = { "REA", fc_persistent };
-MakeInternalProp(REA, fc_persistent);
-//static struct internal_prop ip_ful = { "FUL", fc_persistent };
-MakeInternalProp(FUL, fc_persistent);
+MakeSlaveSpecific(REA, fc_persistent);
+MakeSlaveSpecific(FUL, fc_persistent);
 
 /* ------- Functions ------------ */
 
@@ -170,11 +168,11 @@ static ZERO_OR_ERROR FS_set(struct one_wire_query *owq)
 #if OW_CACHE
 	switch ( pn->selected_filetype->data.i) {
 		case _ds1977_full:
-			Cache_Add_Internal((BYTE *) OWQ_buffer(owq), 8, InternalProp(FUL) , pn) ;
+			Cache_Add_SlaveSpecific((BYTE *) OWQ_buffer(owq), 8, SlaveSpecificProperty(FUL) , pn) ;
 			break ;
 		case _ds1977_read:
 		default:
-			Cache_Add_Internal((BYTE *) OWQ_buffer(owq), 8, InternalProp(REA) , pn) ;
+			Cache_Add_SlaveSpecific((BYTE *) OWQ_buffer(owq), 8, SlaveSpecificProperty(REA) , pn) ;
 			break ;
 	}
 	return FS_use(owq);
@@ -193,9 +191,9 @@ static ZERO_OR_ERROR FS_use(struct one_wire_query *owq)
 
 	switch ( pn->selected_filetype->data.i) {
 		case _ds1977_full:
-			return Cache_Add_Internal((BYTE *) OWQ_buffer(owq), 8, InternalProp(FUL) , pn)==0 ? 0 : -EINVAL ;
+			return Cache_Add_SlaveSpecific((BYTE *) OWQ_buffer(owq), 8, SlaveSpecificProperty(FUL) , pn)==0 ? 0 : -EINVAL ;
 		case _ds1977_read:
-			return Cache_Add_Internal((BYTE *) OWQ_buffer(owq), 8, InternalProp(REA) , pn)==0 ? 0 : -EINVAL ;
+			return Cache_Add_SlaveSpecific((BYTE *) OWQ_buffer(owq), 8, SlaveSpecificProperty(REA) , pn)==0 ? 0 : -EINVAL ;
 	}
 	return -EINVAL;
 }
@@ -206,10 +204,10 @@ static GOOD_OR_BAD OW_r_mem(BYTE * data, size_t size, off_t offset, struct parse
 	BYTE pwd[8] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, };
 
 #if OW_CACHE
-	if ( GOOD( Cache_Get_Internal_Strict((void *) pwd, sizeof(pwd), InternalProp(REA), pn)) ) {
+	if ( GOOD( Cache_Get_SlaveSpecific((void *) pwd, sizeof(pwd), SlaveSpecificProperty(REA), pn)) ) {
 		RETURN_GOOD_IF_GOOD( OW_r_mem_with_password( pwd, data,size,offset,pn) ) ;
 	}
-	if ( GOOD( Cache_Get_Internal_Strict((void *) pwd, sizeof(pwd), InternalProp(FUL), pn)) ) {
+	if ( GOOD( Cache_Get_SlaveSpecific((void *) pwd, sizeof(pwd), SlaveSpecificProperty(FUL), pn)) ) {
 		RETURN_GOOD_IF_GOOD( OW_r_mem_with_password( pwd, data,size,offset,pn) ) ;
 	}
 #endif							/* OW_CACHE */
@@ -281,7 +279,7 @@ static GOOD_OR_BAD OW_w_mem( BYTE * data, size_t size, off_t offset, struct pars
 	RETURN_BAD_IF_BAD( BUS_transaction( t_read, pn ) ) ;
 
 	// Copy scratchpad to memory
-	if ( BAD( Cache_Get_Internal_Strict((void *) passwd, 8, InternalProp(FUL), pn)) ) {	/* Full passwd */
+	if ( BAD( Cache_Get_SlaveSpecific((void *) passwd, 8, SlaveSpecificProperty(FUL), pn)) ) {	/* Full passwd */
 		memset( passwd, 0xFF, 8 ) ;
 	}
 	p[0] = _1W_COPY_SCRATCHPAD_WITH_PASSWORD ;

@@ -174,7 +174,7 @@ static ZERO_OR_ERROR FS_w_convert_volt(struct one_wire_query *owq)
 			TRXN_END,
 		};
 		if ( GOOD(BUS_transaction(t, &pn_directory)) ) {
-			Cache_Add_Internal(NULL, 0, &ipSimul[simul_volt], &pn_directory);
+			Cache_Add_SlaveSpecific(NULL, 0, &ipSimul[simul_volt], &pn_directory);
 		}
 	}
 	return 0;
@@ -186,7 +186,7 @@ static ZERO_OR_ERROR FS_r_convert(struct one_wire_query *owq)
 	struct parsedname pn_directory;
 
 	FS_LoadDirectoryOnly(&pn_directory, pn);
-	OWQ_Y(owq) = GOOD (Cache_Get_Internal_Strict(NULL, 0, &ipSimul[pn->selected_filetype->data.i], &pn_directory) );
+	OWQ_Y(owq) = GOOD (Cache_Get_SlaveSpecific(NULL, 0, &ipSimul[pn->selected_filetype->data.i], &pn_directory) );
 	return 0;
 }
 

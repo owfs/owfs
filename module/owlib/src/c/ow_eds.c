@@ -107,8 +107,7 @@ DeviceEntryExtended(7E, EDS, DEV_temp | DEV_alarm, NO_GENERIC_READ, NO_GENERIC_W
 static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn) ;
 
 /* Persistent storage */
-//static struct internal_prop ip_cum = { "CUM", fc_persistent };
-MakeInternalProp(TAG, fc_persistent);	// cumulative
+MakeSlaveSpecific(TAG, fc_persistent);	// cumulative
 
 /* EDS memory */
 // Only used to set visibility for specific 
@@ -119,7 +118,7 @@ static ZERO_OR_ERROR FS_r_tag(struct one_wire_query *owq)
 	struct parsedname * pn = PN(owq) ;
 	UINT tag = 0x0000 ;
 
-	if ( GOOD( Cache_Get_Internal_Strict(&tag, sizeof(UINT), InternalProp(TAG), pn)) ) {
+	if ( GOOD( Cache_Get_SlaveSpecific(&tag, sizeof(UINT), SlaveSpecificProperty(TAG), pn)) ) {
 		// Tag exists, find the name
 		int tag_type = N_eds_types ;
 		while ( --tag_type >= 0 ) {
@@ -138,7 +137,7 @@ static ZERO_OR_ERROR FS_r_tag(struct one_wire_query *owq)
 		if ( OWQ_format_output_offset_and_size( data, _EDS_TAG_LENGTH, owq ) ) {
 			return -EINVAL ;
 		}
-		Cache_Add_Internal(&tag, sizeof(UINT), InternalProp(TAG), pn) ;
+		Cache_Add_SlaveSpecific(&tag, sizeof(UINT), SlaveSpecificProperty(TAG), pn) ;
 		return 0 ;
 	}
 	return -EINVAL ;
@@ -162,7 +161,7 @@ static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
 
 static enum e_visibility EDS_visible(const struct parsedname * pn) {
 	UINT tag ;
-	if ( BAD( Cache_Get_Internal_Strict(&tag, sizeof(UINT), InternalProp(TAG), pn)) ) {	// tag doesn't (yet) exist
+	if ( BAD( Cache_Get_SlaveSpecific(&tag, sizeof(UINT), SlaveSpecificProperty(TAG), pn)) ) {	// tag doesn't (yet) exist
 		struct one_wire_query * owq = OWQ_create_from_path(pn->path) ; // for read
 		size_t size = _EDS_TAG_LENGTH ;
 		char data[size] ;
@@ -171,7 +170,7 @@ static enum e_visibility EDS_visible(const struct parsedname * pn) {
 			OWQ_destroy(owq) ;
 		}
 	}
-	if ( BAD( Cache_Get_Internal_Strict(&tag, sizeof(UINT), InternalProp(TAG), pn)) ) {	// tag doesn't (yet) exist
+	if ( BAD( Cache_Get_SlaveSpecific(&tag, sizeof(UINT), SlaveSpecificProperty(TAG), pn)) ) {	// tag doesn't (yet) exist
 		LEVEL_DEBUG("Cannot check visibility tag type for this entry");
 		return visible_now ; // assume visible
 	}
