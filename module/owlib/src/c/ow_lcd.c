@@ -142,7 +142,7 @@ static GOOD_OR_BAD OW_simple_command(BYTE lcd_command_code, const struct parsedn
 static GOOD_OR_BAD OW_w_unpaged_to_screen(BYTE lcd_location, BYTE length, const char *text, const struct parsedname *pn);
 
 /* Internal files */
-MakeSlaveSpecific(CUM, fc_persistent);	//cumulative
+Make_SlaveSpecificTag(CUM, fc_persistent);	//cumulative
 
 /* LCD */
 static ZERO_OR_ERROR FS_simple_command(struct one_wire_query *owq)
@@ -221,7 +221,7 @@ static ZERO_OR_ERROR FS_r_cum(struct one_wire_query *owq)
 	/* just to prime the "CUM" data */
 	RETURN_ERROR_IF_BAD( OW_r_counters(u, PN(owq)) ) ;
 
-	if ( BAD( Cache_Get_SlaveSpecific((void *) u, 4 * sizeof(UINT), SlaveSpecificProperty(CUM), PN(owq))) ) {
+	if ( BAD( Cache_Get_SlaveSpecific((void *) u, 4 * sizeof(UINT), SlaveSpecificTag(CUM), PN(owq))) ) {
 		return -EINVAL;
 	}
 	OWQ_array_U(owq, 0) = u[0];
@@ -239,7 +239,7 @@ static ZERO_OR_ERROR FS_w_cum(struct one_wire_query *owq)
 		OWQ_array_U(owq, 2),
 		OWQ_array_U(owq, 3),
 	};
-	return GB_to_Z_OR_E( Cache_Add_SlaveSpecific((const void *) u, 4 * sizeof(UINT), SlaveSpecificProperty(CUM), PN(owq)) );
+	return GB_to_Z_OR_E( Cache_Add_SlaveSpecific((const void *) u, 4 * sizeof(UINT), SlaveSpecificTag(CUM), PN(owq)) );
 }
 #endif							/*OW_CACHE */
 
@@ -412,7 +412,7 @@ static GOOD_OR_BAD OW_r_counters(UINT * data, const struct parsedname *pn)
 	data[3] = ((UINT) d[7]) << 8 | d[6];
 
 //printf("OW_COUNTER key=%s\n",key);
-	if ( BAD( Cache_Get_SlaveSpecific((void *) cum, sizeof(cum), SlaveSpecificProperty(CUM), pn)) ) {	/* First pass at cumulative */
+	if ( BAD( Cache_Get_SlaveSpecific((void *) cum, sizeof(cum), SlaveSpecificTag(CUM), pn)) ) {	/* First pass at cumulative */
 		cum[0] = data[0];
 		cum[1] = data[1];
 		cum[2] = data[2];
@@ -423,7 +423,7 @@ static GOOD_OR_BAD OW_r_counters(UINT * data, const struct parsedname *pn)
 		cum[2] += data[2];
 		cum[3] += data[3];
 	}
-	Cache_Add_SlaveSpecific((void *) cum, sizeof(cum), SlaveSpecificProperty(CUM), pn);
+	Cache_Add_SlaveSpecific((void *) cum, sizeof(cum), SlaveSpecificTag(CUM), pn);
 	return gbGOOD;
 }
 

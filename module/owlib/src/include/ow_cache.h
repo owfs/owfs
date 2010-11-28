@@ -51,8 +51,8 @@ enum simul_type { simul_temp, simul_volt, simul_end };
 
 #if OW_CACHE
 
-#define MakeSlaveSpecific(tag,change)  static char ip_name_##tag[] = #tag ; static struct internal_prop ip_##tag = { ip_name_##tag , change }
-#define SlaveSpecificProperty(tag)     (& ip_##tag)
+#define Make_SlaveSpecificTag(tag,change)  static char ip_name_##tag[] = #tag ; static struct internal_prop ip_##tag = { ip_name_##tag , change }
+#define SlaveSpecificTag(tag)     (& ip_##tag)
 
 extern struct internal_prop ipSimul[] ;
 
@@ -91,8 +91,8 @@ void Cache_Del_Mixed_Individual(const struct parsedname *pn);
 
 #else							/* OW_CACHE */
 
-#define MakeSlaveSpecific(tag, change)
-#define SlaveSpecificProperty(tag)     NULL
+#define Make_SlaveSpecificTag(tag, change)
+#define SlaveSpecificTag(tag)     NULL
 
 #define Cache_Open( void )
 #define Cache_Close( void )

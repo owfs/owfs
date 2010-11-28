@@ -446,7 +446,7 @@ struct s_TAI8570 {
 	UINT C[6];
 };
 /* Internal files */
-MakeSlaveSpecific(BAR, fc_persistent);
+Make_SlaveSpecificTag(BAR, fc_persistent);
 
 // Read from the TAI8570 microcontroller vias the paired DS2406s
 // Updated by Simon Melhuish, with ref. to AAG C++ code
@@ -784,7 +784,7 @@ static GOOD_OR_BAD testTAI8570(struct s_TAI8570 *tai, struct one_wire_query *owq
 		return gbBAD ;
 	}
 	// See if already cached
-	if ( GOOD( Cache_Get_SlaveSpecific((void *) tai, sizeof(struct s_TAI8570), SlaveSpecificProperty(BAR), pn)) ) {
+	if ( GOOD( Cache_Get_SlaveSpecific((void *) tai, sizeof(struct s_TAI8570), SlaveSpecificTag(BAR), pn)) ) {
 		LEVEL_DEBUG("TAI8570 cache read: reader=" SNformat " writer=" SNformat, SNvar(tai->reader), SNvar(tai->writer));
 		LEVEL_DEBUG("TAI8570 cache read: C1=%u C2=%u C3=%u C4=%u C5=%u C6=%u", tai->C[0], tai->C[1], tai->C[2], tai->C[3], tai->C[4], tai->C[5]);
 		return gbGOOD;
@@ -823,7 +823,7 @@ static GOOD_OR_BAD testTAI8570(struct s_TAI8570 *tai, struct one_wire_query *owq
 
 	LEVEL_DETAIL("TAI8570 C1=%u C2=%u C3=%u C4=%u C5=%u C6=%u", tai->C[0], tai->C[1], tai->C[2], tai->C[3], tai->C[4], tai->C[5]);
 	memcpy(pn->sn, tai->master, 8);	// restore original for cache
-	return Cache_Add_SlaveSpecific((const void *) tai, sizeof(struct s_TAI8570), SlaveSpecificProperty(BAR), pn);
+	return Cache_Add_SlaveSpecific((const void *) tai, sizeof(struct s_TAI8570), SlaveSpecificTag(BAR), pn);
 }
 
 #endif							/* OW_TAI8570 */

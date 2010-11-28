@@ -163,8 +163,8 @@ struct filetype DS28EA00[] = {
 DeviceEntryExtended(42, DS28EA00, DEV_temp | DEV_alarm | DEV_chain, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 /* Internal properties */
-MakeSlaveSpecific(RES, fc_stable);	// resolution
-MakeSlaveSpecific(POW, fc_stable);	// power status
+Make_SlaveSpecificTag(RES, fc_stable);	// resolution
+Make_SlaveSpecificTag(POW, fc_stable);	// power status
 
 struct tempresolution {
 	BYTE config;
@@ -533,7 +533,7 @@ static GOOD_OR_BAD OW_10temp(_FLOAT * temp, enum temperature_problem_flag accept
 static GOOD_OR_BAD OW_power(BYTE * data, const struct parsedname *pn)
 {
 	if (IsUncachedDir(pn)
-		|| BAD( Cache_Get_SlaveSpecific(data, sizeof(BYTE), SlaveSpecificProperty(POW), pn)) ) {
+		|| BAD( Cache_Get_SlaveSpecific(data, sizeof(BYTE), SlaveSpecificTag(POW), pn)) ) {
 		BYTE b4[] = { _1W_READ_POWERMODE, };
 		struct transaction_log tpower[] = {
 			TRXN_START,
@@ -543,7 +543,7 @@ static GOOD_OR_BAD OW_power(BYTE * data, const struct parsedname *pn)
 		};
 	
 		RETURN_BAD_IF_BAD(BUS_transaction(tpower, pn)) ;
-		Cache_Add_SlaveSpecific(data, sizeof(BYTE), SlaveSpecificProperty(POW), pn);
+		Cache_Add_SlaveSpecific(data, sizeof(BYTE), SlaveSpecificTag(POW), pn);
 	}
 	return gbGOOD;
 }
@@ -577,7 +577,7 @@ static GOOD_OR_BAD OW_22temp(_FLOAT * temp, enum temperature_problem_flag accept
 	};
 
 	/* Resolution */
-	if ( BAD( Cache_Get_SlaveSpecific(&stored_resolution, sizeof(stored_resolution), SlaveSpecificProperty(RES), pn))
+	if ( BAD( Cache_Get_SlaveSpecific(&stored_resolution, sizeof(stored_resolution), SlaveSpecificTag(RES), pn))
 		|| stored_resolution != resolution) {
 		BYTE resolution_register = Resolutions[resolution - 9].config;
 		/* Get existing settings */
@@ -587,7 +587,7 @@ static GOOD_OR_BAD OW_22temp(_FLOAT * temp, enum temperature_problem_flag accept
 			must_convert = 1 ; // resolution has changed
 			data[4] = (resolution_register & 0x60) | 0x1F ;
 			RETURN_BAD_IF_BAD(OW_w_scratchpad(&data[2], pn)) ;
-			Cache_Add_SlaveSpecific(&resolution, sizeof(int), SlaveSpecificProperty(RES), pn);
+			Cache_Add_SlaveSpecific(&resolution, sizeof(int), SlaveSpecificTag(RES), pn);
 		}
 	}
 

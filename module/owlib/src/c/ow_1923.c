@@ -165,8 +165,8 @@ struct filetype DS1923[] = {
 DeviceEntryExtended(41, DS1923, DEV_temp | DEV_alarm | DEV_ovdr | DEV_resume, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 /* Persistent storage */
-MakeSlaveSpecific(RPW, fc_persistent);	// Read password
-MakeSlaveSpecific(FPW, fc_persistent);	// Full password
+Make_SlaveSpecificTag(RPW, fc_persistent);	// Read password
+Make_SlaveSpecificTag(FPW, fc_persistent);	// Full password
 
 #define _1W_WRITE_SCRATCHPAD 0x0F
 #define _1W_READ_SCRATCHPAD 0xAA
