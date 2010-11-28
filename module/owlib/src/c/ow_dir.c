@@ -353,7 +353,8 @@ FS_dir_all_connections(void (*dirfunc) (void *, const struct parsedname *), void
 }
 #endif							/* OW_MT */
 
-/* Device directory -- all from memory */
+/* Device directory (i.e. show the properties) -- all from memory */
+/* Respect the Visibility status and also show only the correct subdir level */
 static ZERO_OR_ERROR FS_devdir(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_device_directory)
 {
 	struct filetype *lastft = &(pn_device_directory->selected_device->filetype_array[pn_device_directory->selected_device->count_of_filetypes]);	/* last filetype struct */
@@ -365,28 +366,30 @@ static ZERO_OR_ERROR FS_devdir(void (*dirfunc) (void *, const struct parsedname 
 	STAT_ADD1(dir_dev.calls);
 
 	// Add subdir to name (SubDirectory is within a device, but an extra layer of grouping of properties)
-	if (pn_device_directory->subdir != NO_SUBDIR) {
+	if (pn_device_directory->subdir == NO_SUBDIR) {
+		// not sub directory
+		subdir_name[0] = '\0' ;
+		subdir_len = 0;
+		ft_pointer = pn_device_directory->selected_device->filetype_array;
+	} else {
 		// device subdirectory -- so use the sorted list to find all entries with the same prefix
 		strncpy(subdir_name, pn_device_directory->subdir->name, OW_FULLNAME_MAX);
 		strcat(subdir_name, "/");
 		subdir_len = strlen(subdir_name);
 		ft_pointer = pn_device_directory->subdir + 1; // next element (first one truly in the subdir)
-	} else {
-		// not sub directory
-		subdir_name[0] = '\0' ;
-		subdir_len = 0;
-		ft_pointer = pn_device_directory->selected_device->filetype_array;
 	}
+
 	for (; ft_pointer < lastft; ++ft_pointer) {	/* loop through filetypes */
-		char *namepart = &ft_pointer->name[subdir_len];
-		
-		if (subdir_len > 0) {	/* subdir */
-			/* test that start of name matches directory name */
-			if (strncmp(ft_pointer->name, subdir_name, subdir_len) != 0) {
-				// end of subdir
-				break;
-			}
-		} else if ( strchr( namepart, '/') != NULL) {
+		char *namepart ;
+
+		/* test that start of name matches directory name */
+		if (strncmp(ft_pointer->name, subdir_name, subdir_len) != 0) {
+			// end of subdir
+			break;
+		}
+
+		namepart = &ft_pointer->name[subdir_len]; // point after subdir name
+		if ( strchr( namepart, '/') != NULL) {
 			// subdir elements (and we're not in this subdir!)
 			continue;
 		}
@@ -428,35 +431,42 @@ static ZERO_OR_ERROR FS_structdevdir(void (*dirfunc) (void *, const struct parse
 	uint32_t ignoreflag ;
 
 	// Add subdir to name (SubDirectory is within a device, but an extra layer of grouping of properties)
-	if (pn_device_directory->subdir != NO_SUBDIR) {
+	if (pn_device_directory->subdir == NO_SUBDIR) {
+		// not sub directory
+		subdir_name[0] = '\0' ;
+		subdir_len = 0;
+		ft_pointer = pn_device_directory->selected_device->filetype_array;
+	} else {
+		// device subdirectory -- so use the sorted list to find all entries with the same prefix
 		strncpy(subdir_name, pn_device_directory->subdir->name, OW_FULLNAME_MAX);
 		strcat(subdir_name, "/");
 		subdir_len = strlen(subdir_name);
-		ft_pointer = pn_device_directory->subdir + 1;
-	} else {
-		subdir_len = 0;
-		subdir_name[0] = '\0' ;
-		ft_pointer = pn_device_directory->selected_device->filetype_array;
+		ft_pointer = pn_device_directory->subdir + 1; // next element (first one truly in the subdir)
 	}
 
+
 	for (; ft_pointer < lastft; ++ft_pointer) {	/* loop through filetypes */
-		char *namepart = &ft_pointer->name[subdir_len];
-		
+		char *namepart ;
+
  		if ( ft_pointer->visible == INVISIBLE ) { // hide always invisible
 			// done without actually calling the visibility function since
 			// the device is generic for structure listings and may not
 			// be an actual device.
 			continue ;
 		}
-		if (subdir_len > 0) {	/* subdir */
-			/* test start of name for directory name */
-			if (strncmp(ft_pointer->name, subdir_name, subdir_len) != 0) {
-				break;
-			}
-		} else if (strchr( namepart, '/') != NULL) {
-				/* ignore further subdir entries */
-				continue;
+
+		/* test that start of name matches directory name */
+		if (strncmp(ft_pointer->name, subdir_name, subdir_len) != 0) {
+			// end of subdir
+			break;
 		}
+
+		namepart = &ft_pointer->name[subdir_len]; // point after subdir name
+		if ( strchr( namepart, '/') != NULL) {
+			// subdir elements (and we're not in this subdir!)
+			continue;
+		}
+
 		if (ft_pointer->ag!=NON_AGGREGATE) {
 			// Aggregate property
 			struct parsedname s_pn_file_entry;
