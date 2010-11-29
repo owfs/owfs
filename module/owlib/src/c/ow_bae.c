@@ -345,7 +345,7 @@ DeviceEntryExtended(FC, BAE, DEV_resume | DEV_alarm, NO_GENERIC_READ, NO_GENERIC
 #define _1W_CONFIRM_WRITE 0xBC
 
 /* Persistent storage */
-MakeInternalProp(SNR, fc_persistent);	// sector number
+Make_SlaveSpecificTag(SNR, fc_persistent);	// sector number
 
 /* ------- Functions ------------ */
 
@@ -478,11 +478,11 @@ static ZERO_OR_ERROR FS_r_sector_nr(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	UINT sector_nr;					
 
-	if ( BAD( Cache_Get_Internal_Strict((void *) &sector_nr, sizeof(UINT), InternalProp(SNR), pn)) ) { // record doesn't (yet) exist
+	if ( BAD( Cache_Get_SlaveSpecific((void *) &sector_nr, sizeof(UINT), SlaveSpecificTag(SNR), pn)) ) { // record doesn't (yet) exist
 		sector_nr=0;
 	} 
 	OWQ_U(owq) = sector_nr;
-	if (Cache_Add_Internal((void *) &sector_nr, sizeof(UINT), InternalProp(SNR), pn)) {
+	if (Cache_Add_SlaveSpecific((void *) &sector_nr, sizeof(UINT), SlaveSpecificTag(SNR), pn)) {
 		return -EINVAL;
 	}
 	return 0;
@@ -494,7 +494,7 @@ static ZERO_OR_ERROR FS_w_sector_nr(struct one_wire_query *owq)
 	UINT sector_nr;					
 
 	sector_nr = OWQ_U(owq);
-	if (Cache_Add_Internal((void *) &sector_nr, sizeof(UINT), InternalProp(SNR), pn)) {
+	if (Cache_Add_SlaveSpecific((void *) &sector_nr, sizeof(UINT), SlaveSpecificTag(SNR), pn)) {
 		return -EINVAL;
 	}
 	return 0;
