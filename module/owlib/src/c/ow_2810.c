@@ -39,9 +39,17 @@ $Id$
       whether the elements are stored together and split, or separately and joined
 */
 
+/* Note the DS28E10 has some interesting issues.
+ * The datasheet is not freely available, you have to request it.
+ * On request, and with specific mention that this was OWFS support, I received the datasheet on 10/6/2010.
+ * Each page has an "MAXIM CONFIDENTIAL DISTRIBUTE ONLY UNDER NDA" notice, which I have never signed
+ * I requested clarification on 10/7/2010 and have recieved no response as of 11/28/2010
+ * 50 days seems long enough, so I'm supporting the chip, albeit with no specifics of function except the code
+ * */
+
 #include <config.h>
 #include "owfs_config.h"
-#include "ow_1977.h"
+#include "ow_2810.h"
 
 /* ------- Prototypes ----------- */
 
@@ -361,13 +369,15 @@ static GOOD_OR_BAD validate_address( off_t offset )
 static GOOD_OR_BAD OW_w_secret( const BYTE * secret, struct parsedname *pn)
 {
 	BYTE p[1 + 8 + 2 ] = { _1W_WRITE_SECRET, };
+	BYTE w0[1] = { 0x00 } ;
 	BYTE w4[1] = { 0x00 } ;
 	BYTE w8[1] = { 0x00 } ;
 	struct transaction_log t[] = {
 		TRXN_START,
 		TRXN_WR_CRC16(p,1+8,0),
+		TRXN_POWER(w0,_DS28E10_TPP),
 		TRXN_POWER(w4,_DS28E10_TPP),
-		TRXN_POWER(w4,_DS28E10_TPP),
+		TRXN_WRITE1(w8),
 		TRXN_END,
 	};
 
