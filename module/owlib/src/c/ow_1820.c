@@ -167,16 +167,15 @@ Make_SlaveSpecificTag(RES, fc_stable);	// resolution
 Make_SlaveSpecificTag(POW, fc_stable);	// power status
 
 struct tempresolution {
+	int bits;
 	BYTE config;
 	UINT delay;
 	BYTE mask;
 };
-struct tempresolution Resolutions[] = {
-	{0x1F, 110, 0xF8},			/*  9 bit */
-	{0x3F, 200, 0xFC},			/* 10 bit */
-	{0x5F, 400, 0xFE},			/* 11 bit */
-	{0x7F, 1000, 0xFF},			/* 12 bit */
-};
+struct tempresolution Resolution9  = { 9, 0x1F, 110, 0xF8} ;			/*  9 bit */
+struct tempresolution Resolution10 = {10, 0x3F, 200, 0xFC} ;			/* 10 bit */
+struct tempresolution Resolution11 = {11, 0x5F, 400, 0xFE} ;			/* 11 bit */
+struct tempresolution Resolution12 = {12, 0x7F, 1000, 0xFF};			/* 12 bit */
 
 struct die_limits {
 	BYTE B7[6];
@@ -234,7 +233,7 @@ enum temperature_problem_flag { allow_85C, deny_85C, } ;
 
 /* DS1820&2*/
 static GOOD_OR_BAD OW_10temp(_FLOAT * temp, enum temperature_problem_flag accept_85C, int simul_good, const struct parsedname *pn);
-static GOOD_OR_BAD OW_22temp(_FLOAT * temp, enum temperature_problem_flag accept_85C, int simul_good, int resolution, const struct parsedname *pn);
+static GOOD_OR_BAD OW_22temp(_FLOAT * temp, enum temperature_problem_flag accept_85C, int simul_good, struct tempresolution * Resolution, const struct parsedname *pn);
 static GOOD_OR_BAD OW_power(BYTE * data, const struct parsedname *pn);
 static GOOD_OR_BAD OW_r_templimit(_FLOAT * T, const int Tindex, const struct parsedname *pn);
 static GOOD_OR_BAD OW_w_templimit(const _FLOAT T, const int Tindex, const struct parsedname *pn);
@@ -268,26 +267,36 @@ static ZERO_OR_ERROR FS_10temp(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_22temp(struct one_wire_query *owq)
 {
 	struct parsedname * pn = PN(owq) ;
-	int resolution = pn->selected_filetype->data.i;
+	struct tempresolution * Resolution ;
 
-	switch (resolution) {
-	case 9:
-	case 10:
-	case 11:
-	case 12:
-		// triple try temperatures
-		// first pass include simultaneous
-		if ( GOOD( OW_22temp(&OWQ_F(owq), deny_85C, OWQ_SIMUL_TEST(owq), resolution, pn) ) ) {
-			return 0 ;
-		}
-		// second pass no simultaneous
-		if ( GOOD( OW_22temp(&OWQ_F(owq), deny_85C, 0, resolution, pn) ) ) {
-			return 0 ;
-		}
-		// third pass, accept 85C
-		return GB_to_Z_OR_E(OW_22temp(&OWQ_F(owq), allow_85C, 0, resolution, pn));
+	switch (pn->selected_filetype->data.i) { // bits
+		case 9:
+			Resolution = &Resolution9 ;
+			break ;
+		case 10:
+			Resolution = &Resolution10 ;
+			break ;
+		case 11:
+			Resolution = &Resolution11 ;
+			break ;
+		case 12:
+			Resolution = &Resolution12 ;
+			break ;
+		default:
+			return -ENODEV ;
 	}
-	return -ENODEV;
+
+	// triple try temperatures
+	// first pass include simultaneous
+	if ( GOOD( OW_22temp(&OWQ_F(owq), deny_85C, OWQ_SIMUL_TEST(owq), Resolution, pn) ) ) {
+		return 0 ;
+	}
+	// second pass no simultaneous
+	if ( GOOD( OW_22temp(&OWQ_F(owq), deny_85C, 0, Resolution, pn) ) ) {
+		return 0 ;
+	}
+	// third pass, accept 85C
+	return GB_to_Z_OR_E(OW_22temp(&OWQ_F(owq), allow_85C, 0, Resolution, pn));
 }
 
 // use sibling function for fasttemp to keep cache value consistent
@@ -548,14 +557,13 @@ static GOOD_OR_BAD OW_power(BYTE * data, const struct parsedname *pn)
 	return gbGOOD;
 }
 
-static GOOD_OR_BAD OW_22temp(_FLOAT * temp, enum temperature_problem_flag accept_85C, int simul_good, int resolution, const struct parsedname *pn)
+static GOOD_OR_BAD OW_22temp(_FLOAT * temp, enum temperature_problem_flag accept_85C, int simul_good, struct tempresolution * Resolution, const struct parsedname *pn)
 {
 	BYTE data[9];
 	BYTE convert[] = { _1W_CONVERT_T, };
 	BYTE pow;
-	UINT delay = Resolutions[resolution - 9].delay;
+	UINT delay = Resolution->delay;
 	UINT longdelay = delay * 1.5 ; // failsafe
-	BYTE mask = Resolutions[resolution - 9].mask;
 	int stored_resolution ;
 	int must_convert = 0 ;
 
@@ -578,8 +586,8 @@ static GOOD_OR_BAD OW_22temp(_FLOAT * temp, enum temperature_problem_flag accept
 
 	/* Resolution */
 	if ( BAD( Cache_Get_SlaveSpecific(&stored_resolution, sizeof(stored_resolution), SlaveSpecificTag(RES), pn))
-		|| stored_resolution != resolution) {
-		BYTE resolution_register = Resolutions[resolution - 9].config;
+		|| stored_resolution != Resolution->bits) {
+		BYTE resolution_register = Resolution->config;
 		/* Get existing settings */
 		RETURN_BAD_IF_BAD(OW_r_scratchpad(data, pn)) ;
 		/* Put in new settings (if different) */
@@ -587,7 +595,7 @@ static GOOD_OR_BAD OW_22temp(_FLOAT * temp, enum temperature_problem_flag accept
 			must_convert = 1 ; // resolution has changed
 			data[4] = (resolution_register & 0x60) | 0x1F ;
 			RETURN_BAD_IF_BAD(OW_w_scratchpad(&data[2], pn)) ;
-			Cache_Add_SlaveSpecific(&resolution, sizeof(int), SlaveSpecificTag(RES), pn);
+			Cache_Add_SlaveSpecific(&(Resolution->bits), sizeof(int), SlaveSpecificTag(RES), pn);
 		}
 	}
 
@@ -623,7 +631,7 @@ static GOOD_OR_BAD OW_22temp(_FLOAT * temp, enum temperature_problem_flag accept
 
 	RETURN_BAD_IF_BAD(OW_r_scratchpad(data, pn)) ;
 
-	temp[0] = OW_masked_temperature( data, mask) ;
+	temp[0] = OW_masked_temperature( data, Resolution->mask) ;
 
 	if ( accept_85C==allow_85C || data[0] != 0x50 || data[1] != 0x05 ) {
 		return gbGOOD;
