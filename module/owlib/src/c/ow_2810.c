@@ -114,7 +114,8 @@ static GOOD_OR_BAD OW_verify(BYTE * pwd, off_t offset, struct parsedname *pn);
 static GOOD_OR_BAD OW_r_mem_with_password( BYTE * pwd, BYTE * data, size_t size, off_t offset, struct parsedname *pn) ;
 
 static GOOD_OR_BAD OW_w_secret( const BYTE * secret, struct parsedname *pn) ;
-static GOOD_OR_BAD validate_address( off_t offset ) ;
+static GOOD_OR_BAD validate_user_address( off_t offset ) ;
+static GOOD_OR_BAD validate_rw_address( off_t offset ) ;
 static GOOD_OR_BAD OW_w_page( const BYTE * data, off_t offset, struct parsedname *pn) ;
 static GOOD_OR_BAD OW_w_challenge( const BYTE * challenge, BYTE * response, struct parsedname *pn) ;
 
@@ -343,8 +344,9 @@ static GOOD_OR_BAD OW_verify(BYTE * pwd, off_t offset, struct parsedname *pn)
 	return post[0]==0xFF ? gbBAD : gbGOOD ;
 }
 
-static GOOD_OR_BAD validate_address( off_t offset )
+static GOOD_OR_BAD validate_user_address( off_t offset )
 {
+	// addresses of the data page starts
 	switch ( offset ) {
 		case 0x0000:
 		case 0x0004:
@@ -354,17 +356,22 @@ static GOOD_OR_BAD validate_address( off_t offset )
 		case 0x0014:
 		case 0x0018:
 		case 0x001C:
-		case 0x001D:
-		case 0x001E:
-		case 0x001F:
-		case 0x0020:
-		case 0x0021:
-		case 0x0022:
 			return gbGOOD ;
 		default:
 			return gbBAD ;
 	}
 }
+
+static GOOD_OR_BAD validate_rw_address( off_t offset )
+{
+	// the addresses that can be used for read or write
+
+	RETURN_GOOD_IF_GOOD( validate_user_address(offset) ) ; // data pages
+	if ( 0x001C <= offset && offset <= 0x0022 ) { // configuration area
+		return gbGOOD ;
+	}
+	return gbBAD ;
+} 
 
 static GOOD_OR_BAD OW_w_secret( const BYTE * secret, struct parsedname *pn)
 {
@@ -389,11 +396,13 @@ static GOOD_OR_BAD OW_w_page( const BYTE * data, off_t offset, struct parsedname
 {
 	// 4 bytes only
 	BYTE p[1 + 2 + 4 + 2 ] = { _1W_WRITE_MEMORY, LOW_HIGH_ADDRESS(offset), };
+	BYTE w0[1] = { 0x00 } ;
 	BYTE w4[1] = { 0x00 } ;
 	struct transaction_log t[] = {
 		TRXN_START,
 		TRXN_WR_CRC16(p,1+2+4,0),
-		TRXN_POWER(w4,_DS28E10_TPP),
+		TRXN_POWER(w0,_DS28E10_TPP),
+		TRXN_WRITE1(w4),
 		TRXN_END,
 	};
 
