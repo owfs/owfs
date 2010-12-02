@@ -194,19 +194,30 @@ RESET_TYPE DS9490_getstatus(BYTE * buffer, int * readlen, const struct parsednam
 		}
 
 		if (buffer[8] & STATUSFLAGS_IDLE) {
+#if OW_SHOW_TRAFFIC
+			_Debug_Bytes("USB status registers ---- idle ----", buffer, ret) ; // debugging
+#endif /* OW_SHOW_TRAFFIC */
 			if (*readlen > 0) {
 				// we have enough bytes to read now!
 				// buffer[13] == (ReadBufferStatus)
 				if (buffer[13] >= *readlen) {
 					break;
 				}
+				LEVEL_DEBUG("Problem with buffer[13]=%d and readlen[0]=%d",(int) buffer[13], (int) readlen[0] ) ;
 			} else {
 				break;
 			}
+		} else {
+#if OW_SHOW_TRAFFIC
+			_Debug_Bytes("USB status registers ---- Not idle -----", buffer, ret) ; // debugging
+#endif /* OW_SHOW_TRAFFIC */
 		}
 		// this value might be decreased later...
 		if (++loops > 100) {
 			LEVEL_DATA("never got idle  StatusFlags=%X read=%X", buffer[8], buffer[13]);
+			//reset USB device
+			// probably should reset speed and any other parameters.
+			USB_Control_Msg(CONTROL_CMD, CTL_RESET_DEVICE, 0x0000, pn) ;
 			return BUS_RESET_ERROR;	// adapter never got idle
 		}
 		/* Since result seem to be on the usb bus very quick, I sleep

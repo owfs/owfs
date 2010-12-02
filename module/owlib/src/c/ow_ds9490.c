@@ -105,21 +105,6 @@ static void DS9490_setroutines(struct connection_in *in)
 //#define DS2490_DIR_GULP_ELEMENTS     ((DS2490_BULK_BUFFER_SIZE/SERIAL_NUMBER_SIZE) - 1)
 #define DS2490_DIR_GULP_ELEMENTS     (1)
 
-#define CONTROL_CMD     0x00
-#define COMM_CMD        0x01
-#define MODE_CMD        0x02
-#define TEST_CMD        0x03
-
-#define CTL_RESET_DEVICE        0x0000
-#define CTL_START_EXE           0x0001
-#define CTL_RESUME_EXE          0x0002
-#define CTL_HALT_EXE_IDLE       0x0003
-#define CTL_HALT_EXE_DONE       0x0004
-#define CTL_FLUSH_COMM_CMDS     0x0007
-#define CTL_FLUSH_CV_BUFFER     0x0008
-#define CTL_FLUSH_CMT_BUFFER    0x0009
-#define CTL_GET_COMM_CMDS       0x000A
-
 #define MOD_PULSE_EN            0x0000
 #define MOD_SPEED_CHANGE_EN     0x0001
 #define MOD_1WIRE_SPEED         0x0002
@@ -152,6 +137,7 @@ static void DS9490_setroutines(struct connection_in *in)
 #define COMM_DT                     0x2000
 #define COMM_SPU                    0x1000
 #define COMM_F                      0x0800
+#define COMM_NTF                    0x0400
 #define COMM_ICP                    0x0200
 #define COMM_RST                    0x0100
 

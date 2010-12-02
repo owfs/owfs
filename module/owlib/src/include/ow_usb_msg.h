@@ -67,6 +67,21 @@ void DS9490_close(struct connection_in *in);
 
 extern char badUSBname[] ;
 
+#define CONTROL_CMD     0x00
+#define COMM_CMD        0x01
+#define MODE_CMD        0x02
+#define TEST_CMD        0x03
+
+#define CTL_RESET_DEVICE        0x0000
+#define CTL_START_EXE           0x0001
+#define CTL_RESUME_EXE          0x0002
+#define CTL_HALT_EXE_IDLE       0x0003
+#define CTL_HALT_EXE_DONE       0x0004
+#define CTL_FLUSH_COMM_CMDS     0x0007
+#define CTL_FLUSH_CV_BUFFER     0x0008
+#define CTL_FLUSH_CMT_BUFFER    0x0009
+#define CTL_GET_COMM_CMDS       0x000A
+
 // Device Status Flags
 #define STATUSFLAGS_SPUA                       0x01	// if set Strong Pull-up is active
 #define STATUSFLAGS_PRGA                       0x02	// if set a 12V programming pulse is being generated
