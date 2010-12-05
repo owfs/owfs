@@ -53,7 +53,13 @@ GOOD_OR_BAD BUS_select(const struct parsedname *pn)
 {
 	// match Serial Number command 0x55
 	BYTE sent[9] = { _1W_MATCH_ROM, };
-	int pl = pn->pathlength;
+	int pathlength = pn->pathlength;
+	struct connection_in * in = pn->selected_connection ;
+
+	if ( BusIsServer(in) ) {
+		LEVEL_DEBUG("Calling local select on remote bus for <%s>",SAFESTRING(pn->path) ) ;
+		return gbBAD ;
+	}
 
 	if (Globals.one_device) {
 		return BUS_Skip_Rom(pn);
@@ -64,43 +70,43 @@ GOOD_OR_BAD BUS_select(const struct parsedname *pn)
 		return gbBAD;		/* cannot do branching with eg. LINK ascii */
 	}
 	/* Adapter-specific select routine? */
-	if ( pn->selected_connection->iroutines.select != NO_SELECT_ROUTINE ) {
-		return (pn->selected_connection->iroutines.select) (pn);
+	if ( in->iroutines.select != NO_SELECT_ROUTINE ) {
+		return (in->iroutines.select) (pn);
 	}
 
 	LEVEL_DEBUG("Selecting a path (and device) path=%s SN=" SNformat
-				" last path=" SNformat, SAFESTRING(pn->path), SNvar(pn->sn), SNvar(pn->selected_connection->branch.sn));
+				" last path=" SNformat, SAFESTRING(pn->path), SNvar(pn->sn), SNvar(in->branch.sn));
 
 	/* Very messy, we may need to clear all the DS2409 couplers up the the current branch */
 	if (RootNotBranch(pn)) {	/* no branches, overdrive possible */
-		if (pn->selected_connection->branch.sn[0]) {	// need clear root branch */
+		if (in->branch.sn[0]) {	// need clear root branch */
 			LEVEL_DEBUG("Clearing root branch");
 			BUS_select_closing(pn) ;
 		} else {
 			LEVEL_DEBUG("Continuing root branch");
 			//BUS_reselect_branch(pn) ;
 		}
-		pn->selected_connection->branch.sn[0] = 0x00;	// flag as no branches turned on
-		if (pn->selected_connection->speed == bus_speed_overdrive) {	// overdrive?
+		in->branch.sn[0] = 0x00;	// flag as no branches turned on
+		if (in->speed == bus_speed_overdrive) {	// overdrive?
 			sent[0] = _1W_OVERDRIVE_MATCH_ROM;
 		}
 	} else {
-		if ( (memcmp(pn->selected_connection->branch.sn, pn->bp[pl - 1].sn, SERIAL_NUMBER_SIZE) != 0)
-			|| ( pn->selected_connection->branch.branch != pn->bp[pl - 1].branch) )
+		if ( (memcmp(in->branch.sn, pn->bp[pathlength - 1].sn, SERIAL_NUMBER_SIZE) != 0)
+			|| ( in->branch.branch != pn->bp[pathlength - 1].branch) )
 		{
 			/* different path */
-			LEVEL_DEBUG("Clearing all branches to level %d", pn->pathlength);
+			LEVEL_DEBUG("Clearing all branches to level %d", pathlength);
 			BUS_select_closing(pn) ;
 		} else {
-			LEVEL_DEBUG("Reselecting branch at level %d", pn->pathlength);
+			LEVEL_DEBUG("Reselecting branch at level %d", pathlength);
 			//BUS_reselect_branch(pn) ;
 		}
-		memcpy(pn->selected_connection->branch.sn, pn->bp[pl - 1].sn, SERIAL_NUMBER_SIZE);
-		pn->selected_connection->branch.branch = pn->bp[pl - 1].branch;
+		memcpy(in->branch.sn, pn->bp[pathlength - 1].sn, SERIAL_NUMBER_SIZE);
+		in->branch.branch = pn->bp[pathlength - 1].branch;
 	}
 
 	if ( BAD( BUS_select_opening(pn) ) ) {
-		pn->selected_connection->branch.sn[0] = BUSPATH_BAD ;
+		in->branch.sn[0] = BUSPATH_BAD ;
 		return gbBAD ;
 	}
 
@@ -108,8 +114,8 @@ GOOD_OR_BAD BUS_select(const struct parsedname *pn)
 	if ((pn->selected_device != NO_DEVICE) && (pn->selected_device != DeviceThermostat)) {
 		memcpy(&sent[1], pn->sn, SERIAL_NUMBER_SIZE);
 		if ( BAD(BUS_send_data(sent, 1+SERIAL_NUMBER_SIZE, pn))) {
-			STAT_ADD1_BUS(e_bus_select_errors, pn->selected_connection);
-			LEVEL_CONNECT("Select error for %s on bus %s", pn->selected_device->readable_name, pn->selected_connection->name);
+			STAT_ADD1_BUS(e_bus_select_errors, in);
+			LEVEL_CONNECT("Select error for %s on bus %s", pn->selected_device->readable_name, in->name);
 			return gbBAD;
 		}
 	}

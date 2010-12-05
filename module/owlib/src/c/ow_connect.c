@@ -68,8 +68,12 @@ enum bus_mode get_busmode(struct connection_in *in)
 	return in->busmode;
 }
 
+// return true (non-zero) if the connection_in exists, and is remote
 int BusIsServer(struct connection_in *in)
 {
+	if ( in == NO_CONNECTION ) {
+		return 0 ;
+	}
 	return (in->busmode == bus_server) || (in->busmode == bus_zero);
 }
 

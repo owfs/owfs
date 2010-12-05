@@ -122,7 +122,9 @@ static ZERO_OR_ERROR FS_dir_both(void (*dirfunc) (void *, const struct parsednam
 	} else if (pn_raw_directory->selected_device != NO_DEVICE) {
 		//printf("NO SELECTED_DEVICE\n");
 		// device directory -- not bus-specific
-		if ( IsStructureDir( pn_raw_directory ) ) {
+		if ( BusIsServer( pn_raw_directory->selected_connection) ) {
+			ret = ServerDir(dirfunc, v, pn_raw_directory, flags);
+		} else if ( IsStructureDir( pn_raw_directory ) ) {
 			ret = FS_structdevdir( dirfunc, v, pn_raw_directory ) ;
 		} else {
 			ret = FS_devdir(dirfunc, v, pn_raw_directory);
