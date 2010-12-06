@@ -28,6 +28,7 @@ struct parsedname_pointers {
 	char *pathlast;
 };
 
+static enum parse_enum set_type( enum ePN_type epntype, struct parsedname * pn ) ;
 static enum parse_enum Parse_Unspecified(char *pathnow, enum parse_pass remote_status, struct parsedname *pn);
 static enum parse_enum Parse_Branch(char *pathnow, enum parse_pass remote_status, struct parsedname *pn);
 static enum parse_enum Parse_Real(char *pathnow, enum parse_pass remote_status, struct parsedname *pn);
@@ -109,20 +110,29 @@ static ZERO_OR_ERROR FS_ParsedName_anywhere(const char *path, enum parse_pass re
 				return parse_error_status ;
 			}
 			//printf("%s: Parse %s before corrections: %.4X -- state = %d\n",(back_from_remote)?"BACK":"FORE",pn->path,pn->state,pn->type) ;
-			if (SpecifiedRemoteBus(pn) && !SpecifiedVeryRemoteBus(pn)) {
-				// promote interface of remote bus to local
-				if (pn->type == ePN_interface) {
-					pn->state &= ~ePS_busremote;
-					pn->state |= ePS_buslocal;
-
-					// non-root remote bus
-				} else if (pn->type != ePN_root) {
-					pn->state |= ePS_busveryremote;
-				}
-			}
-			// root buses are considered "real"
-			if (pn->type == ePN_root) {
-				pn->type = ePN_real;	// default state
+			// Play with remote levels
+			switch ( pn->type ) {
+				case ePN_interface:
+					if ( SpecifiedVeryRemoteBus(pn) ) {
+						// veryremote -> remote
+						pn->state &= ~ePS_busveryremote ;
+					} else if ( SpecifiedRemoteBus(pn) ) {
+						// remote -> local
+						pn->state &= ~ePS_busremote ;
+						pn->state |= ePS_buslocal ;
+					}
+					break ;
+				case ePN_root:
+					// root buses are considered "real"
+					pn->type = ePN_real;	// default state
+					break ;
+				default:
+					// everything else gets promoted so directories aren't added on
+					if ( SpecifiedRemoteBus(pn) ) {
+						// very remote
+						pn->state |= ePS_busveryremote;
+					}
+					break ;
 			}
 			//printf("%s: Parse %s after  corrections: %.4X -- state = %d\n\n",(back_from_remote)?"BACK":"FORE",pn->path,pn->state,pn->type) ;
 			return 0;
@@ -138,7 +148,7 @@ static ZERO_OR_ERROR FS_ParsedName_anywhere(const char *path, enum parse_pass re
 		}
 
 		// break out next name in path, make sure pp->pathnext isn't NULL. (SIGSEGV in uClibc)
-		pp->pathnow = (pp->pathnext) ? strsep(&(pp->pathnext), "/") : NULL;
+		pp->pathnow = (pp->pathnext != NULL) ? strsep(&(pp->pathnext), "/") : NULL;
 		//LEVEL_DEBUG("PARSENAME pathnow=[%s] rest=[%s]",pp->pathnow,pp->pathnext) ;
 		if (pp->pathnow == NULL || pp->pathnow[0] == '\0') {
 			pe = parse_done;
@@ -255,10 +265,27 @@ static ZERO_OR_ERROR FS_ParsedName_setup(struct parsedname_pointers *pp, const c
 	/* ---------------------------- */
 
 	CONNIN_RLOCK;
-	pn->selected_connection = Inbound_Control.head ; // Default bus assignment
+	pn->selected_connection = NO_CONNECTION ; // Default bus assignment
 
 	return 0;
 }
+
+/* Used for virtual directories like settings and statistics
+ * If local, applies to all local (this program) and not a
+ * specific local bus.
+ * If remote, pass it on for the remote to handle
+ * */
+static enum parse_enum set_type( enum ePN_type epntype, struct parsedname * pn )
+{
+	if (SpecifiedLocalBus(pn)) {
+		return parse_error;
+	} else if ( ! SpecifiedRemoteBus(pn) ) {
+		pn->type |= ePS_busanylocal;
+	}
+	pn->type = epntype;
+	return parse_nonreal;
+}
+	
 
 // Early parsing -- only bus entries, uncached and text may have preceeded
 static enum parse_enum Parse_Unspecified(char *pathnow, enum parse_pass remote_status, struct parsedname *pn)
@@ -267,32 +294,16 @@ static enum parse_enum Parse_Unspecified(char *pathnow, enum parse_pass remote_s
 		return Parse_Bus(pathnow, pn);
 
 	} else if (strcasecmp(pathnow, "settings") == 0) {
-		if (SpecifiedLocalBus(pn)) {
-			return parse_error;
-		}
-		pn->type = ePN_settings;
-		return parse_nonreal;
+		return set_type( ePN_settings, pn ) ;
 
 	} else if (strcasecmp(pathnow, "statistics") == 0) {
-		if (SpecifiedLocalBus(pn)) {
-			return parse_error;
-		}
-		pn->type = ePN_statistics;
-		return parse_nonreal;
+		return set_type( ePN_statistics, pn ) ;
 
 	} else if (strcasecmp(pathnow, "structure") == 0) {
-		if (SpecifiedLocalBus(pn)) {
-			return parse_error;
-		}
-		pn->type = ePN_structure;
-		return parse_nonreal;
+		return set_type( ePN_structure, pn ) ;
 
 	} else if (strcasecmp(pathnow, "system") == 0) {
-		if (SpecifiedLocalBus(pn)) {
-			return parse_error;
-		}
-		pn->type = ePN_system;
-		return parse_nonreal;
+		return set_type( ePN_system, pn ) ;
 
 	} else if (strcasecmp(pathnow, "interface") == 0) {
 		if (!SpecifiedBus(pn)) {

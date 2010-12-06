@@ -221,6 +221,7 @@ void RemoveIn( struct connection_in * conn )
 	
 	/* Finally delete the structure */
 	owfree(conn);
+	conn = NO_CONNECTION ;
 }
 
 void FreeOutAll(void)

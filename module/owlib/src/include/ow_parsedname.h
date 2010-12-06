@@ -91,7 +91,6 @@ struct buspath {
 #define NO_FILETYPE NULL
 #define NO_SUBDIR NULL
 #define NO_DEVICE NULL
-#define NO_CONNECTION NULL
 
 enum ePN_type {
 	ePN_root,
@@ -107,15 +106,16 @@ enum ePN_type {
 extern char *ePN_name[];		// must match ePN_type
 
 enum ePS_state {
-	ePS_normal = 0x0000,
-	ePS_uncached = 0x0001,
-	ePS_alarm = 0x0002,
-	ePS_text = 0x0004,
-	ePS_bus = 0x0008,
-	ePS_buslocal = 0x0010,
-	ePS_busremote = 0x0020,
-	ePS_busveryremote = 0x0040,
-	ePS_reconnection = 0x0080,
+	ePS_normal        = 0x0000,
+	ePS_uncached      = 0x0001,
+	ePS_alarm         = 0x0002,
+	ePS_text          = 0x0004,
+	ePS_bus           = 0x0008,
+	ePS_buslocal      = 0x0010,
+	ePS_busanylocal   = 0x0020,
+	ePS_busremote     = 0x0040,
+	ePS_busveryremote = 0x0080,
+	ePS_reconnection  = 0x0100,
 };
 
 struct parsedname {
@@ -167,6 +167,7 @@ struct parsedname {
 #define NotUncachedDir(pn)    ( (((pn)->state)&ePS_uncached) == 0 )
 #define  IsUncachedDir(pn)    ( ! NotUncachedDir(pn) )
 #define IsStructureDir(pn)    ( ((pn)->type) == ePN_structure )
+#define IsInterfaceDir(pn)    ( ((pn)->type) == ePN_interface )
 #define    NotAlarmDir(pn)    ( (((pn)->state)&ePS_alarm) == 0 )
 #define     IsAlarmDir(pn)    ( ! NotAlarmDir(pn) )
 #define     NotRealDir(pn)    ( ((pn)->type) != ePN_real )
@@ -189,6 +190,7 @@ struct parsedname {
 #define SpecifiedVeryRemoteBus(pn)     ((((pn)->state) & ePS_busveryremote) != 0 )
 #define SpecifiedRemoteBus(pn)         ((((pn)->state) & ePS_busremote) != 0 )
 #define SpecifiedLocalBus(pn)          ((((pn)->state) & ePS_buslocal) != 0 )
+
 #define SpecifiedBus(pn)          ( SpecifiedLocalBus(pn) || SpecifiedRemoteBus(pn) )
 
 #define RootNotBranch(pn)         (((pn)->pathlength)==0)

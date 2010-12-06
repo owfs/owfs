@@ -191,6 +191,8 @@ struct connection_in {
 	union master_union master;
 };
 
+#define NO_CONNECTION NULL
+
 extern struct inbound_control {
 	int active ; // how many "bus" entries are currently in linked list
 	int next_index ; // increasing sequence number

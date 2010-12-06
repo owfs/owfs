@@ -280,7 +280,7 @@ static ZERO_OR_ERROR FS_w_given_bus(struct one_wire_query *owq)
 		} else {
 			LEVEL_DEBUG("Cannot lock device for writing") ;
 		}
-	} else if (OWQ_pn(owq).type == ePN_interface) {
+	} else if ( IsInterfaceDir(pn) ) {
 		BUSLOCK(pn);
 		write_or_error = FS_w_local(owq);
 		BUSUNLOCK(pn);

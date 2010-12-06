@@ -110,19 +110,24 @@ static ZERO_OR_ERROR FS_dir_both(void (*dirfunc) (void *, const struct parsednam
 		// File, not directory
 		ret = -ENOTDIR;
 
+	} else if (SpecifiedVeryRemoteBus(pn_raw_directory)) {
+		//printf("SPECIFIED_BUS BUS_IS_SERVER (very remote)\n");
+		// Send remotely only (all evaluation done there)
+		ret = ServerDir(dirfunc, v, pn_raw_directory, flags);
+
 	} else if (SpecifiedRemoteBus(pn_raw_directory)) {
-		//printf("SPECIFIED_BUS BUS_IS_SERVER\n");
-		if (!SpecifiedVeryRemoteBus(pn_raw_directory)) {
-			//printf("Add extra INTERFACE\n");
-			FS_interface_dir(dirfunc, v, pn_raw_directory);
-		}
+		//printf("SPECIFIED_BUS BUS_IS_SERVER (just remote)\n");
+		//printf("Add extra INTERFACE\n");
+		FS_interface_dir(dirfunc, v, pn_raw_directory);
 		// Send remotely only (all evaluation done there)
 		ret = ServerDir(dirfunc, v, pn_raw_directory, flags);
 
 	} else if (pn_raw_directory->selected_device != NO_DEVICE) {
-		//printf("NO SELECTED_DEVICE\n");
+		//printf("YES SELECTED_DEVICE\n");
 		// device directory -- not bus-specific
-		if ( BusIsServer( pn_raw_directory->selected_connection) ) {
+		if ( IsInterfaceDir(pn_raw_directory) ) {
+			ret = FS_devdir(dirfunc, v, pn_raw_directory);
+		} else if ( BusIsServer( pn_raw_directory->selected_connection) ) {
 			ret = ServerDir(dirfunc, v, pn_raw_directory, flags);
 		} else if ( IsStructureDir( pn_raw_directory ) ) {
 			ret = FS_structdevdir( dirfunc, v, pn_raw_directory ) ;
