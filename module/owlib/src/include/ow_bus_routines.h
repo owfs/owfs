@@ -3,13 +3,6 @@ $Id$
     OW -- One-Wire filesystem
     version 0.4 7/2/2003
 
-    Function naming scheme:
-    OW -- Generic call to interaface
-    LI -- LINK commands
-    L1 -- 2480B commands
-    FS -- filesystem commands
-    UT -- utility functions
-
     Written 2003 Paul H Alfille
         Fuse code based on "fusexmp" {GPL} by Miklos Szeredi, mszeredi@inf.bme.hu
         Serial code based on "xt" {GPL} by David Querbach, www.realtime.bc.ca
@@ -47,9 +40,7 @@ $Id$
         shall not be used except as stated in the Dallas Semiconductor
         Branding Policy.
     ---------------------------------------------------------------------------
-    Implementation:
-    25-05-2003 iButtonLink device
-*/
+ */
 
 #ifndef OW_BUS_ROUTINES_H			/* tedious wrapper */
 #define OW_BUS_ROUTINES_H
@@ -66,6 +57,8 @@ struct interface_routines {
 	enum search_status (*next_both) (struct device_search * ds, const struct parsedname * pn);
 	/* Send a byte with bus power to follow */
 	GOOD_OR_BAD (*PowerByte) (const BYTE data, BYTE * resp, const UINT delay, const struct parsedname * pn);
+	/* Send a bit with bus power to follow */
+	GOOD_OR_BAD (*PowerBit) (const BYTE data, BYTE * resp, const UINT delay, const struct parsedname * pn);
 	/* Send a 12V 480msec oulse to program EEPROM */
 	GOOD_OR_BAD (*ProgramPulse) (const struct parsedname * pn);
 	/* send and recieve data -- byte at a time */
@@ -88,6 +81,7 @@ struct interface_routines {
 #define NO_RESET_ROUTINE				NULL
 #define NO_NEXT_BOTH_ROUTINE			NULL
 #define NO_POWERBYTE_ROUTINE			NULL
+#define NO_POWERBIT_ROUTINE				NULL
 #define NO_PROGRAMPULSE_ROUTINE			NULL
 #define NO_SENDBACKDATA_ROUTINE			NULL
 #define NO_SELECTANDSENDBACK_ROUTINE	NULL
@@ -143,6 +137,7 @@ GOOD_OR_BAD BUS_readin_data(BYTE * data, const size_t len, const struct parsedna
 GOOD_OR_BAD BUS_verify(BYTE search, const struct parsedname *pn);
 
 GOOD_OR_BAD BUS_PowerByte(const BYTE data, BYTE * resp, UINT delay, const struct parsedname *pn);
+GOOD_OR_BAD BUS_PowerBit(const BYTE data, BYTE * resp, UINT delay, const struct parsedname *pn);
 GOOD_OR_BAD BUS_ProgramPulse(const struct parsedname *pn);
 
 void BUS_close( struct connection_in * in );
