@@ -58,6 +58,8 @@ WRITE_FUNCTION(FS_w_extended);
 WRITE_FUNCTION(FS_w_lcd_text);
 WRITE_FUNCTION(FS_w_sector_nr);
 READ_FUNCTION(FS_r_sector_nr);
+WRITE_FUNCTION(FS_w_sector_data);
+READ_FUNCTION(FS_r_sector_data);
 
 READ_FUNCTION(FS_version_state) ;
 READ_FUNCTION(FS_version) ;
@@ -93,10 +95,11 @@ WRITE_FUNCTION(FS_w_pio_bit) ;
 
 
 #define _FC_EEPROM_PAGE_SIZE   512
+#define _FC_SDCARD_SECTOR_SIZE 512
 #define _FC_MAX_EEPROM_PAGES    32
 #define _FC_EEPROM_OFFSET   0x0200
 #define _FC_MAX_FLASH_SIZE  0x4000
-
+#define _FC_MAX_INTERLEAVE     255
 #define _FC02_MEMORY_SIZE      128
 #define _FC02_EEPROM_OFFSET 0xE000
 #define _FC02_EEPROM_PAGES       2
@@ -316,6 +319,7 @@ struct filetype BAE[] = {
 	{"911/sdcard", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
 	{"911/sdcard/init", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_SDINIT,}, },
 	{"911/sdcard/sector_nr", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_sector_nr, FS_w_sector_nr, VISIBLE_911, NO_FILETYPE_DATA, },
+	{"911/sdcard/sector_data", _FC_SDCARD_SECTOR_SIZE, NON_AGGREGATE, ft_binary, fc_stable, FS_r_sector_data, FS_w_sector_data, VISIBLE_911, NO_FILETYPE_DATA, },
 	{"911/spi", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
 	{"911/spi/spic", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_SPIC,}, },
 	{"911/spi/spibr", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_SPIBR,}, },
@@ -334,6 +338,7 @@ DeviceEntryExtended(FC, BAE, DEV_resume | DEV_alarm, NO_GENERIC_READ, NO_GENERIC
 #define _1W_ECMD_ERASE_FIRMWARE 0xBB
 #define _1W_ECMD_FLASH_FIRMWARE 0xBA
 #define _1W_WF_WRITE_LCD_DATA 0x01
+#define _1W_WF_WRITE_SECTOR_DATA 0x00
 
 #define _1W_READ_VERSION 0x11
 #define _1W_READ_TYPE 0x12
@@ -342,6 +347,7 @@ DeviceEntryExtended(FC, BAE, DEV_resume | DEV_alarm, NO_GENERIC_READ, NO_GENERIC
 #define _1W_WRITE_BLOCK_WITH_LEN 0x15
 #define _1W_ERASE_EEPROM_PAGE 0x16
 #define _1W_WRITE_FLOW      0x17
+#define _1W_READ_FLOW       0x18
 #define _1W_CONFIRM_WRITE 0xBC
 
 /* Persistent storage */
@@ -359,6 +365,8 @@ static GOOD_OR_BAD OW_r_mem(BYTE *bytes, size_t size, off_t offset, struct parse
 static GOOD_OR_BAD OW_r_mem_small(BYTE *bytes, size_t size, off_t offset, struct parsedname * pn);
 static GOOD_OR_BAD OW_eeprom_erase( off_t offset, struct parsedname * pn ) ;
 static GOOD_OR_BAD OW_w_flow_nocrc(BYTE wf, BYTE * param, size_t plen, BYTE * data, size_t size, struct parsedname *pn);
+static GOOD_OR_BAD OW_r_flow_nocrc(BYTE wf, BYTE * param, size_t plen, BYTE * data, size_t size, struct parsedname *pn);
+static GOOD_OR_BAD OW_w_flow_crc(BYTE wf, BYTE * param, size_t plen, BYTE * data, size_t size,size_t chunksize, struct parsedname *pn);
 
 //static void OW_siumulate_eeprom(BYTE * eeprom, const BYTE * data, size_t size) ;
 
@@ -497,6 +505,44 @@ static ZERO_OR_ERROR FS_w_sector_nr(struct one_wire_query *owq)
 	if (Cache_Add_SlaveSpecific((void *) &sector_nr, sizeof(UINT), SlaveSpecificTag(SNR), pn)) {
 		return -EINVAL;
 	}
+	return 0;
+}
+
+static ZERO_OR_ERROR FS_w_sector_data(struct one_wire_query *owq)
+{
+	struct parsedname *pn = PN(owq);
+	BYTE *buffer = (BYTE*)OWQ_buffer(owq);
+	UINT sector_nr;					
+	BYTE data[4] ; 
+	
+	if ( BAD( Cache_Get_SlaveSpecific((void *) &sector_nr, sizeof(UINT), SlaveSpecificTag(SNR), pn)) ) { // record doesn't (yet) exist
+		sector_nr=0;
+	} 
+	LEVEL_DEBUG("write sector %d data len=%d",sector_nr,(int)OWQ_size(owq) ) ;
+	if (OWQ_offset(owq)) {
+		return -ERANGE;
+	}
+	BAE_uint32_to_bytes( sector_nr *512, data ); // convert 32bit value to msb first
+
+	RETURN_ERROR_IF_BAD(OW_w_flow_nocrc(_1W_WF_WRITE_SECTOR_DATA, data, 4, buffer, OWQ_size(owq), pn));
+	//RETURN_ERROR_IF_BAD(OW_w_flow_crc(_1W_WF_WRITE_SECTOR_DATA, (BYTE*)&sector_nr, 4, buffer, OWQ_size(owq),16, pn));
+	return 0;
+}
+static ZERO_OR_ERROR FS_r_sector_data(struct one_wire_query *owq)
+{
+	struct parsedname *pn = PN(owq);
+	BYTE *buffer = (BYTE*)OWQ_buffer(owq);
+	UINT sector_nr;	
+	BYTE data[4];
+	if ( BAD( Cache_Get_SlaveSpecific((void *) &sector_nr, sizeof(UINT), SlaveSpecificTag(SNR), pn)) ) { // record doesn't (yet) exist
+		sector_nr=0;
+	} 
+	LEVEL_DEBUG("read sector %d data len=%d",sector_nr,(int)OWQ_size(owq) ) ;
+	if (OWQ_offset(owq)) {
+		return -ERANGE;
+	}
+	BAE_uint32_to_bytes( sector_nr *512, data ); // convert 32bit value to msb first
+	RETURN_ERROR_IF_BAD(OW_r_flow_nocrc(_1W_WF_WRITE_SECTOR_DATA, data, 4, buffer, OWQ_size(owq), pn));
 	return 0;
 }
 
@@ -875,8 +921,70 @@ static GOOD_OR_BAD OW_w_flow_nocrc(BYTE wf, BYTE * param, size_t plen, BYTE * da
 	
 	/* Copy to write buffer */
 	memcpy(&p[4], param, plen);
-	return BUS_transaction(t, pn) ;
+	RETURN_BAD_IF_BAD( BUS_transaction(t, pn) );
+	return gbGOOD ;	
 }
+// Flow write command WITH crc interleave 
+static GOOD_OR_BAD OW_w_flow_crc(BYTE wf, BYTE * param, size_t plen, BYTE * data, size_t size,size_t chunksize, struct parsedname *pn)
+{
+	BYTE *pt;
+	size_t i;
+	BYTE p[1 + 1 + 1 + 1 + _FC02_MAX_COMMAND_GULP + 2] = { _1W_WRITE_FLOW, wf, chunksize, BYTE_MASK(plen), };
+	BYTE chunk[_FC_MAX_INTERLEAVE+2] ;
+	BYTE q[] = { _1W_CONFIRM_WRITE, } ;
+	struct transaction_log header[] = {
+		TRXN_START,
+		TRXN_WR_CRC16(p, 4+plen, 0),
+		TRXN_WRITE1(q),
+		TRXN_DELAY(1),
+	};
+	struct transaction_log content[] = {
+		TRXN_WR_CRC16(chunk, chunksize,0),
+	};
+	struct transaction_log remainder[] = {
+		TRXN_WRITE(chunk, size % chunksize), //remainder of bloc if not multiple
+	};
+	struct transaction_log trailer[] = {
+		TRXN_END,
+	};
+	LEVEL_DEBUG("Begin stream write of %d bytes", (int)size ) ;
+	memcpy(&p[4], param, plen);
+	RETURN_BAD_IF_BAD(BUS_transaction(header, pn));
+	pt=data;
+	for(i=size/chunksize;i;i--){
+		memcpy(chunk, pt, chunksize);
+		pt+=chunksize;
+		RETURN_BAD_IF_BAD(BUS_transaction(content, pn));
+		LEVEL_DEBUG("chunk write ok, remaining chunks=%d", (int)i ) ;
+	}
+	if (size % chunksize){
+		memcpy(chunk, pt, size % chunksize);
+		RETURN_BAD_IF_BAD( BUS_transaction(remainder, pn) ) ;
+	}
+	RETURN_BAD_IF_BAD( BUS_transaction(trailer, pn) ) ;
+	return gbGOOD ;	
+}
+
+// Flow read command without crc 
+static GOOD_OR_BAD OW_r_flow_nocrc(BYTE wf, BYTE * param, size_t plen, BYTE * data, size_t size, struct parsedname *pn)
+{
+	BYTE p[1 + 1 + 1 + 1 + _FC02_MAX_COMMAND_GULP + 2] = { _1W_READ_FLOW, wf, 0, BYTE_MASK(plen), };
+	BYTE q[] = { _1W_CONFIRM_WRITE, } ;
+	struct transaction_log t[] = {
+		TRXN_START,
+		TRXN_WR_CRC16(p, 4+plen, 0),
+		TRXN_WRITE1(q),
+		TRXN_DELAY(1),
+		TRXN_READ(data, size),
+		TRXN_END,
+	};
+	
+	/* Copy to write buffer */
+	memcpy(&p[4], param, plen);
+	RETURN_ERROR_IF_BAD( BUS_transaction(t, pn)) ;
+	return gbGOOD ;	
+}
+
 
 //read bytes[size] from position
 static GOOD_OR_BAD OW_r_mem(BYTE * data, size_t size, off_t offset, struct parsedname * pn)
