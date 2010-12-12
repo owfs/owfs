@@ -93,37 +93,56 @@ GOOD_OR_BAD BUS_sendback_data(const BYTE * data, BYTE * resp, const size_t len, 
 /* send bytes, and read back -- calls lower level bit routine */
 static GOOD_OR_BAD BUS_sendback_data_bitbang(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn)
 {
-	UINT i, bits = len * 8;
-	int max_bits = MAX_FIFO_SIZE / 8 ;
-	int remain = len - max_bits;
-	BYTE bit_buffer[ bits ] ;
-
 	/* Empty is ok */
 	if (len == 0) {
 		return gbGOOD;
-	}
+	} else {
+		int max_split_bytes = MAX_FIFO_SIZE / 8 ;
+		int remain = len - max_split_bytes;
 	
-	/* Split into smaller packets? */
-	if (remain > 0) {
-		RETURN_BAD_IF_BAD( BUS_sendback_data_bitbang(data, resp, max_bits, pn) );
-		RETURN_BAD_IF_BAD( BUS_sendback_data_bitbang(&data[max_bits], resp ? (&resp[max_bits]) : NULL, remain, pn) );
+		/* Possibly split into smaller packets? */
+		if (remain > 0) {
+			RETURN_BAD_IF_BAD( BUS_sendback_data_bitbang(data, resp, max_split_bytes, pn) );
+			RETURN_BAD_IF_BAD( BUS_sendback_data_bitbang(&data[max_split_bytes], resp ? (&resp[max_split_bytes]) : NULL, remain, pn) );
+		}
 	}
 
-	/* Encode bits */
-	for (i = 0; i < bits; ++i) {
-		bit_buffer[i] = UT_getbit(data, i) ? 0xFF : 0x00;
-	}
+	{
+		UINT i, bits = len * 8;
+		BYTE bit_buffer[ bits ] ;
 
-	/* Communication with bit-level (e.g. DS9097) routine */
-	if ( BAD( BUS_sendback_bits(bit_buffer, bit_buffer, bits, pn)) ) {
-		STAT_ADD1_BUS(e_bus_errors, pn->selected_connection);
-		return gbBAD;
-	}
-
-	/* Decode Bits */
-	if (resp) {
+		/* Encode bits */
 		for (i = 0; i < bits; ++i) {
-			UT_setbit(resp, i, bit_buffer[i] & 0x01);
+#if OW_DEBUG
+			if (Globals.error_level>=e_err_debug) {
+				if ( (i&0x7)==0 ) {
+					int b = i >>3 ;
+					LEVEL_DEBUG("Splitting byte %d of %d = %.2X",b,len,data[b]) ;
+				}
+			}
+#endif /* OW_DEBUG */
+			bit_buffer[i] = UT_getbit(data, i) ? 0xFF : 0x00;
+		}
+
+		/* Communication with bit-level (e.g. DS9097) routine */
+		if ( BAD( BUS_sendback_bits(bit_buffer, bit_buffer, bits, pn)) ) {
+			STAT_ADD1_BUS(e_bus_errors, pn->selected_connection);
+			return gbBAD;
+		}
+
+		/* Decode Bits */
+		if (resp) {
+			for (i = 0; i < bits; ++i) {
+				UT_setbit(resp, i, bit_buffer[i] & 0x01);
+#if OW_DEBUG
+				if (Globals.error_level>=e_err_debug) {
+					if ( (i&0x7)==7 ) {
+						int b = i >>3 ;
+						LEVEL_DEBUG("Consolidating byte %d of %d = %.2X",b,len,resp[b]);
+					}
+				}
+#endif /* OW_DEBUG */
+			}
 		}
 	}
 

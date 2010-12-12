@@ -56,7 +56,8 @@ static void DS2480_setroutines(struct connection_in *in)
 	in->iroutines.PowerByte = DS2480_PowerByte;
 	in->iroutines.PowerBit = DS2480_PowerBit;
 	in->iroutines.ProgramPulse = DS2480_ProgramPulse;
-	in->iroutines.sendback_data = DS2480_sendback_data;
+	in->iroutines.sendback_data = NO_SENDBACKDATA_ROUTINE;
+//	in->iroutines.sendback_data = DS2480_sendback_data;
     in->iroutines.sendback_bits = DS2480_sendback_bits;
 	in->iroutines.select = NO_SELECT_ROUTINE;
 	in->iroutines.select_and_sendback = NO_SELECTANDSENDBACK_ROUTINE;
@@ -291,6 +292,7 @@ static void DS2480_adapter(struct connection_in *in)
 
 static GOOD_OR_BAD DS2480_reconnect(const struct parsedname * pn)
 {
+	LEVEL_DEBUG("Attempting reconnect on %s",SAFESTRING(pn->selected_connection->name));
 	return DS2480_big_reset(pn->selected_connection) ;
 }
 
@@ -697,10 +699,11 @@ static enum search_status DS2480_next_both(struct device_search *ds, const struc
 	// search ON
 	// change back to command mode
 	// send the packet
+	// cannot use single-bit mode with search accerator
 	// search OFF
 	if ( BAD(BUS_send_data(&(ds->search), 1, pn))
 		|| BAD(DS2480_sendout_cmd(&searchon, 1, in))
-		|| BAD( BUS_sendback_data(bitpairs, bitpairs, 16, pn) )
+		|| BAD( DS2480_sendback_data(bitpairs, bitpairs, 16, pn) )
 		|| BAD(DS2480_sendout_cmd(&searchoff, 1, in))
 		) {
 		return search_error;
@@ -803,7 +806,7 @@ static GOOD_OR_BAD DS2480_PowerByte(const BYTE byte, BYTE * resp, const UINT del
 
 //--------------------------------------------------------------------------
 // Send 1 bit of communication to the 1-Wire Net and verify that the
-// 8 bits read from the 1-Wire Net is the same (write operation).
+// bit read from the 1-Wire Net is the same (write operation).
 // Delay delay msec and return to normal
 //
 /* Returns 0=good
@@ -848,13 +851,14 @@ static GOOD_OR_BAD DS2480_sendback_bits(const BYTE * databits, BYTE * respbits, 
 {
 	GOOD_OR_BAD ret;
 	struct connection_in * in = pn->selected_connection ;
-	BYTE bits = CMD_COMM | FUNCTSEL_BIT | DS2480b_speed_byte(in) | PRIME5V_TRUE;
+	BYTE bits = CMD_COMM | FUNCTSEL_BIT | DS2480b_speed_byte(in) | PRIME5V_FALSE;
 	size_t counter ;
 
 	for ( counter=0 ; counter < len ; ++counter ) {
 		BYTE cmd[] = { ((databits[counter] & 0x01) ? BITPOL_ONE : BITPOL_ZERO) | bits, };
+
 		// send the packet
-		// read back the 1 byte response from sending the 5V pulse
+		// read back the 1 byte response from sending the bit
 		RETURN_BAD_IF_BAD( DS2480_sendback_cmd(cmd, &respbits[counter], 1, in) ) ;
 	}
 	return 0 ;
