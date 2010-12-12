@@ -148,13 +148,3 @@ static GOOD_OR_BAD BUS_sendback_data_bitbang(const BYTE * data, BYTE * resp, con
 
 	return gbGOOD;
 }
-
-GOOD_OR_BAD BUS_sendback_bits( const BYTE * databits, BYTE * respbits, const size_t len, const struct parsedname * pn )
-{
-	GOOD_OR_BAD (*sendback_bits) (const BYTE * databits, BYTE * respbits, const size_t len, const struct parsedname * pn) = ((pn)->selected_connection->iroutines.sendback_bits) ;
-	if ( sendback_bits != NO_SENDBACKBITS_ROUTINE ) {
-		return (sendback_bits)((databits),(respbits),(len),(pn)) ;
-	}
-	return gbBAD ;
-}
-

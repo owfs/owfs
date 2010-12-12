@@ -27,17 +27,34 @@ $Id$
 GOOD_OR_BAD BUS_PowerByte(BYTE data, BYTE * resp, UINT delay, const struct parsedname *pn)
 {
 	GOOD_OR_BAD ret;
+	struct connection_in * in = pn->selected_connection ;
 
-	if ( pn->selected_connection->iroutines.PowerByte !=NO_POWERBYTE_ROUTINE ) {
-		ret = (pn->selected_connection->iroutines.PowerByte) (data, resp, delay, pn);
+	if ( in->iroutines.PowerByte !=NO_POWERBYTE_ROUTINE ) {
+		// use available byte level routine
+		ret = (in->iroutines.PowerByte) (data, resp, delay, pn);
+	} else if ( in->iroutines.PowerBit != NO_POWERBIT_ROUTINE && in->iroutines.sendback_bits != NO_SENDBACKBITS_ROUTINE ) {
+		// use available bit level routines
+		BYTE sending[8];
+		BYTE receive[8] ;
+		int i ;
+		for ( i = 0 ; i < 8 ; ++i ) {
+			sending[i] = UT_getbit(&data,i) ? 0xFF : 0x00 ;
+		}
+		ret = BUS_sendback_bits( sending, receive, 7, pn ) ;
+		if ( GOOD(ret) ) {
+			ret = BUS_PowerBit( sending[7], &receive[7], delay, pn ) ;
+		}
+		for ( i = 0 ; i < 8 ; ++i ) {
+			UT_setbit( resp, i, receive[i] ) ;
+		}
 	} else {
-		// send the packet
+		// send with no true power applied
 		ret = BUS_sendback_data(&data, resp, 1, pn);
 		// delay
 		UT_delay(delay);
 	}
 	if ( BAD(ret) ) {
-		STAT_ADD1_BUS(e_bus_pullup_errors, pn->selected_connection);
+		STAT_ADD1_BUS(e_bus_pullup_errors, in);
 		return gbBAD ;
 	}
 	return gbGOOD ;

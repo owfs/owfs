@@ -27,9 +27,10 @@ $Id$
 GOOD_OR_BAD BUS_PowerBit(BYTE data, BYTE * resp, UINT delay, const struct parsedname *pn)
 {
 	GOOD_OR_BAD ret;
+	struct connection_in * in = pn->selected_connection ;
 
-	if ( pn->selected_connection->iroutines.PowerBit !=NO_POWERBIT_ROUTINE ) {
-		ret = (pn->selected_connection->iroutines.PowerBit) (data, resp, delay, pn);
+	if ( in->iroutines.PowerBit !=NO_POWERBIT_ROUTINE ) {
+		ret = (in->iroutines.PowerBit) (data, resp, delay, pn);
 	} else {
 		// send the packet
 		// No real "power" in the default case
@@ -38,7 +39,7 @@ GOOD_OR_BAD BUS_PowerBit(BYTE data, BYTE * resp, UINT delay, const struct parsed
 		UT_delay(delay);
 	}
 	if ( BAD(ret) ) {
-		STAT_ADD1_BUS(e_bus_pullup_errors, pn->selected_connection);
+		STAT_ADD1_BUS(e_bus_pullup_errors, in);
 		return gbBAD ;
 	}
 	return gbGOOD ;
