@@ -118,6 +118,11 @@ static GOOD_OR_BAD LinkVersion_knownstring( const char * reported_string, struct
 {
 	int version_index;
 
+	// bad string
+	if ( reported_string == NULL || reported_string[0] == '\0' ) {
+		return LinkVersion_unknownstring(reported_string,in) ;
+	}
+
 	// loop through LINK version string table looking for a match
 	for (version_index = 0; tbl[version_index].verstring[0] != '0'; version_index++) {
 		if (strstr(reported_string, tbl[version_index].verstring) != NULL) {
@@ -194,6 +199,7 @@ static GOOD_OR_BAD LINK_detect_serial(struct connection_in * in)
 	//COM_break( in ) ;
 	LINK_slurp( in ) ;
 	UT_delay(100) ; // based on http://morpheus.wcf.net/phpbb2/viewtopic.php?t=89&sid=3ab680415917a0ebb1ef020bdc6903ad
+	LINK_slurp( in ) ;
 	
 	version_string = LINK_version_string(in) ;
 	if ( version_string == NULL ) {
@@ -302,6 +308,8 @@ static char * LINK_version_string(struct connection_in * in)
 				switch ( lvs ) {
 					case lvs_string:
 						lvs = lvs_0d ;
+						// end of text
+						version_string[version_index] = '\0' ;
 						break ;
 					case lvs_0d:
 						LEVEL_DEBUG("Extra CR char in <%s>",version_string);
@@ -315,7 +323,6 @@ static char * LINK_version_string(struct connection_in * in)
 						LEVEL_DEBUG("No CR before LF char in <%s>",version_string);
 						owfree(version_string);
 						return NULL ;
-						// fall through
 					case lvs_0d:
 						return version_string ;
 				}
