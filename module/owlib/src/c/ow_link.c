@@ -533,7 +533,19 @@ static GOOD_OR_BAD LINK_read_true_length(BYTE * buf, size_t size, struct connect
 //Special processing for the remote hub (add 0x0A)
 static GOOD_OR_BAD LINK_write(const BYTE * buf, size_t size, struct connection_in *in)
 {
-	return COM_write( buf, size, in ) ;
+	RETURN_GOOD_IF_GOOD( COM_write( buf, size, in ) ) ;
+	switch ( in->busmode ) {
+		case bus_elink:
+			Test_and_Close(in->file_descriptor) ;
+			in->file_descriptor = ClientConnect(in) ;
+			if ( FILE_DESCRIPTOR_VALID(in->file_descriptor) ) {
+				return COM_write( buf, size, in ) ;
+			}
+			break ;
+		default:
+			break ;
+	}
+	return gbBAD;
 }
 
 static GOOD_OR_BAD LINK_search_type(struct device_search *ds, struct connection_in * in)
