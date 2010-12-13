@@ -64,7 +64,9 @@ struct LINK_id LINK_id_tbl[] = {
 static RESET_TYPE LINK_reset(const struct parsedname *pn);
 static enum search_status LINK_next_both(struct device_search *ds, const struct parsedname *pn);
 static GOOD_OR_BAD LINK_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
+static GOOD_OR_BAD LINK_sendback_bits(const BYTE * databits, BYTE * respbits, const size_t size, const struct parsedname *pn);
 static GOOD_OR_BAD LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay, const struct parsedname *pn);
+static GOOD_OR_BAD LINK_PowerBit(const BYTE data, BYTE * resp, const UINT delay, const struct parsedname *pn);
 static void LINK_close(struct connection_in *in) ;
 
 static void LINK_setroutines(struct connection_in *in);
@@ -95,9 +97,10 @@ static void LINK_setroutines(struct connection_in *in)
 	in->iroutines.reset = LINK_reset;
 	in->iroutines.next_both = LINK_next_both;
 	in->iroutines.PowerByte = LINK_PowerByte;
+	in->iroutines.PowerBit = LINK_PowerBit;
     in->iroutines.ProgramPulse = NO_PROGRAMPULSE_ROUTINE;
 	in->iroutines.sendback_data = LINK_sendback_data;
-    in->iroutines.sendback_bits = NO_SENDBACKBITS_ROUTINE;
+    in->iroutines.sendback_bits = LINK_sendback_bits;
 	in->iroutines.select = NO_SELECT_ROUTINE;
 	in->iroutines.select_and_sendback = NO_SELECTANDSENDBACK_ROUTINE;
 	in->iroutines.reconnect = NO_RECONNECT_ROUTINE;
@@ -197,6 +200,7 @@ static GOOD_OR_BAD LINK_detect_serial(struct connection_in * in)
 	RETURN_BAD_IF_BAD(COM_open(in)) ;
 	
 	//COM_break( in ) ;
+	LEVEL_DEBUG("Slurp in initial bytes");
 	LINK_slurp( in ) ;
 	UT_delay(100) ; // based on http://morpheus.wcf.net/phpbb2/viewtopic.php?t=89&sid=3ab680415917a0ebb1ef020bdc6903ad
 	LINK_slurp( in ) ;
@@ -736,10 +740,38 @@ static GOOD_OR_BAD LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay
 	return gbGOOD ;
 }
 
+//  _sendback_bits
+//  Send data and return response block
+//  return 0=good
+static GOOD_OR_BAD LINK_PowerBit(const BYTE data, BYTE * resp, const UINT delay, const struct parsedname *pn)
+{
+	struct connection_in * in = pn->selected_connection ;
+	BYTE buf[2+1+1+in->master.serial.tcp.CRLF_size] ;
+	
+	buf[0] = '~';			//put in power bit mode
+	buf[1] = data ? '1' : '0' ;
+	
+	// send to LINK (wait for final CR)
+	RETURN_BAD_IF_BAD(LINK_write(buf, 2, in) ) ;
+
+	// delay
+	UT_delay(delay);
+	
+	// // take out of power bit mode
+	RETURN_BAD_IF_BAD(LINK_write(LINK_string("\r"), 1, in) ) ;
+		
+	// read back
+	RETURN_BAD_IF_BAD( LINK_readback_data(buf, 1, in) ) ;
+	
+	// place data (converted back to hex) in resp
+	resp[0] = (buf[0]=='0') ? 0x00 : 0xFF ;
+	return gbGOOD;
+}
+
+
 //  _sendback_data
 //  Send data and return response block
 //  return 0=good
-// Assume buffer length (combuffer) is 1 + 32*2 + 1
 #define LINK_SEND_SIZE  32
 static GOOD_OR_BAD LINK_sendback_data(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
 {
@@ -774,6 +806,49 @@ static GOOD_OR_BAD LINK_sendback_data(const BYTE * data, BYTE * resp, const size
 		location += this_length ;
 	}
 	//Debug_Bytes( "ELINK sendback get", resp, size) ;
+	return gbGOOD;
+}
+
+//  _sendback_bits
+//  Send data and return response block
+//  return 0=good
+static GOOD_OR_BAD LINK_sendback_bits(const BYTE * databits, BYTE * respbits, const size_t size, const struct parsedname *pn)
+{
+	struct connection_in * in = pn->selected_connection ;
+	size_t left = size;
+	size_t location = 0 ;
+	BYTE buf[1+LINK_SEND_SIZE+1+1+in->master.serial.tcp.CRLF_size] ;
+	
+	if (size == 0) {
+		return gbGOOD;
+	}
+	
+	Debug_Bytes( "ELINK sendback bits send", databits, size) ;
+	while (left > 0) {
+		// Loop through taking only 32 bytes at a time
+		size_t this_length = (left > LINK_SEND_SIZE) ? LINK_SEND_SIZE : left;
+		size_t i ;
+		
+		buf[0] = 'j';			//put in bit mode
+		for ( i=0 ; i<this_length ; ++i ) {
+			buf[i+1] = databits[i+location] ? '1' : '0' ;
+		}
+		buf[1+this_length] = '\r';	// take out of bit mode
+		
+		// send to LINK
+		RETURN_BAD_IF_BAD(LINK_write(buf, 1+this_length+1, in) ) ;
+		
+		// read back
+		RETURN_BAD_IF_BAD( LINK_readback_data(buf, this_length, in) ) ;
+		
+		// place data (converted back to hex) in resp
+		for ( i=0 ; i<this_length ; ++i ) {
+			respbits[i+location] = (buf[i]=='0') ? 0x00 : 0xFF ;
+		}
+		left -= this_length;
+		location += this_length ;
+	}
+	Debug_Bytes( "ELINK sendback bits get", respbits, size) ;
 	return gbGOOD;
 }
 
