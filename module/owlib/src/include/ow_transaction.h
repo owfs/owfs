@@ -58,11 +58,16 @@ $Id$
 enum transaction_type {
 	trxn_select,
 	trxn_match,
+	trxn_bitmatch,
 	trxn_modify,
+	trxn_bitmodify,
 	trxn_compare,
+	trxn_bitcompare,
 	trxn_read,
+	trxn_bitread,
 	trxn_blind,
 	trxn_power,
+	trxn_bitpower,
 	trxn_program,
 	trxn_reset,
 	trxn_crc8,
@@ -86,15 +91,27 @@ struct transaction_log {
 #define TRXN_START   { NULL, NULL, 0, trxn_select, }
 #define TRXN_END     { NULL, NULL, 0, trxn_end, }
 #define TRXN_RESET   { NULL, NULL, 0, trxn_reset, }
+
 #define TRXN_WRITE(writedata,length)   { writedata, NULL, length, trxn_match, }
+#define TRXN_WRITE_BITS(writedata,length)   { writedata, NULL, length, trxn_bitmatch, }
+
 #define TRXN_READ(readdata,length)    { NULL, readdata, length, trxn_read, }
+#define TRXN_READ_BITS(readdata,length)    { NULL, readdata, length, trxn_bitread, }
+
 #define TRXN_MODIFY(writedata,readdata,length) { writedata, readdata, length, trxn_modify, }
+#define TRXN_MODIFY_BITS(writedata,readdata,length) { writedata, readdata, length, trxn_bitmodify, }
+
 #define TRXN_COMPARE(data1, data2, length) { data1, data2, length, trxn_compare }
+#define TRXN_COMPARE_BITS(data1, data2, length) { data1, data2, length, trxn_bitcompare }
+
 #define TRXN_CRC8(data,length) { data, NULL, length, trxn_crc8, }
 #define TRXN_CRC16(data,length) { data, NULL, length, trxn_crc16, }
 #define TRXN_CRC16_seeded(data,length,seed) { data, seed, length, trxn_crc16, }
+
 #define TRXN_BLIND(writedata,length)  { writedata, NULL, length, trxn_blind, }
+
 #define TRXN_POWER(byte_pointer, msec)  { byte_pointer, byte_pointer, msec, trxn_power, }
+#define TRXN_POWER_BIT(byte_pointer, msec)  { byte_pointer, byte_pointer, msec, trxn_bitpower, }
 
 #define TRXN_DELAY(msec) { NULL, NULL, msec, trxn_delay }
 

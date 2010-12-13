@@ -90,6 +90,13 @@ static GOOD_OR_BAD BUS_transaction_single(const struct transaction_log *t, const
 		}
 		LEVEL_DEBUG("compare = %d", ret);
 		break;
+	case trxn_bitcompare:			// match two strings -- no actual 1-wire
+		if ((t->in == NULL) || (t->out == NULL)
+			|| BAD( BUS_compare_bits( t->in, t->out, t->size)) ) {
+			ret = gbBAD;
+		}
+		LEVEL_DEBUG("compare = %d", ret);
+		break;
 	case trxn_match:			// send data and compare response
 		assert(t->in == NULL);	// else use trxn_compare
 		if (t->size == 0) {		/* ignore for both cases */
@@ -97,6 +104,15 @@ static GOOD_OR_BAD BUS_transaction_single(const struct transaction_log *t, const
 		} else {
 			ret = BUS_send_data(t->out, t->size, pn);
 			LEVEL_DEBUG("send = %d", ret);
+		}
+		break;
+	case trxn_bitmatch:			// send data and compare response
+		assert(t->in == NULL);	// else use trxn_compare
+		if (t->size == 0) {		/* ignore for both cases */
+			break;
+		} else {
+			ret = BUS_send_bits(t->out, t->size, pn);
+			LEVEL_DEBUG("send bits = %d", ret);
 		}
 		break;
 	case trxn_read:
@@ -108,9 +124,22 @@ static GOOD_OR_BAD BUS_transaction_single(const struct transaction_log *t, const
 			LEVEL_DEBUG("readin = %d", ret);
 		}
 		break;
+	case trxn_bitread:
+		assert(t->out == NULL);	// pure read
+		if (t->size == 0) {		/* ignore for all cases */
+			break;
+		} else if (t->out == NULL) {
+			ret = BUS_readin_bits(t->in, t->size, pn);
+			LEVEL_DEBUG("readin bits = %d", ret);
+		}
+		break;
 	case trxn_modify:			// write data and read response. No match needed
 		ret = BUS_sendback_data(t->out, t->in, t->size, pn);
 		LEVEL_DEBUG("modify = %d", ret);
+		break;
+	case trxn_bitmodify:			// write data and read response. No match needed
+		ret = BUS_sendback_bits(t->out, t->in, t->size, pn);
+		LEVEL_DEBUG("bit modify = %d", ret);
 		break;
 	case trxn_blind:			// write data ignore response
 		{
@@ -127,6 +156,10 @@ static GOOD_OR_BAD BUS_transaction_single(const struct transaction_log *t, const
 	case trxn_power:
 		ret = BUS_PowerByte(t->out[0], t->in, t->size, pn);
 		LEVEL_DEBUG("power (%d usec) = %d", t->size, ret);
+		break;
+	case trxn_bitpower:
+		ret = BUS_PowerBit(t->out[0], t->in, t->size, pn);
+		LEVEL_DEBUG("power bit (%d usec) = %d", t->size, ret);
 		break;
 	case trxn_program:
 		ret = BUS_ProgramPulse(pn);

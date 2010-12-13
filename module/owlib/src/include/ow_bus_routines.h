@@ -132,9 +132,12 @@ GOOD_OR_BAD BUS_sendback_bits( const BYTE * databits, BYTE * respbits, const siz
 GOOD_OR_BAD BUS_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 GOOD_OR_BAD BUS_sendback_cmd(const BYTE * cmd, BYTE * resp, const size_t len, const struct parsedname *pn);
 GOOD_OR_BAD BUS_send_data(const BYTE * data, const size_t len, const struct parsedname *pn);
+GOOD_OR_BAD BUS_send_bits(const BYTE * data, const size_t len, const struct parsedname *pn);
 GOOD_OR_BAD BUS_readin_data(BYTE * data, const size_t len, const struct parsedname *pn);
+GOOD_OR_BAD BUS_readin_bits(BYTE * data, const size_t len, const struct parsedname *pn);
 
 GOOD_OR_BAD BUS_verify(BYTE search, const struct parsedname *pn);
+GOOD_OR_BAD BUS_compare_bits(const BYTE * data1, const BYTE * data2, const size_t len);
 
 GOOD_OR_BAD BUS_PowerByte(const BYTE data, BYTE * resp, UINT delay, const struct parsedname *pn);
 GOOD_OR_BAD BUS_PowerBit(const BYTE data, BYTE * resp, UINT delay, const struct parsedname *pn);
