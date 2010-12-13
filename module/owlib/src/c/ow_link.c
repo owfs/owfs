@@ -536,7 +536,7 @@ static GOOD_OR_BAD LINK_write(const BYTE * buf, size_t size, struct connection_i
 	RETURN_GOOD_IF_GOOD( COM_write( buf, size, in ) ) ;
 	switch ( in->busmode ) {
 		case bus_elink:
-			Test_and_Close(in->file_descriptor) ;
+			Test_and_Close(&(in->file_descriptor)) ;
 			in->file_descriptor = ClientConnect(in) ;
 			if ( FILE_DESCRIPTOR_VALID(in->file_descriptor) ) {
 				return COM_write( buf, size, in ) ;
