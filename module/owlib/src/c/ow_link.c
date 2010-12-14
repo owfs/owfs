@@ -539,6 +539,7 @@ static GOOD_OR_BAD LINK_write(const BYTE * buf, size_t size, struct connection_i
 			Test_and_Close(&(in->file_descriptor)) ;
 			in->file_descriptor = ClientConnect(in) ;
 			if ( FILE_DESCRIPTOR_VALID(in->file_descriptor) ) {
+				LINK_slurp(in) ;
 				return COM_write( buf, size, in ) ;
 			}
 			break ;
