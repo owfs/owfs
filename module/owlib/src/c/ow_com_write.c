@@ -30,6 +30,10 @@ GOOD_OR_BAD COM_write( const BYTE * data, size_t length, struct connection_in *c
 		return gbBAD ;
 	}
 
+	if ( FILE_DESCRIPTOR_NOT_VALID(connection->file_descriptor) ) {
+		return gbBAD ;
+	}
+
 	while (to_be_written > 0) {
 		int select_result ;
 
@@ -68,6 +72,9 @@ GOOD_OR_BAD COM_write( const BYTE * data, size_t length, struct connection_in *c
 		} else {			/* timed out or select error */
 			ERROR_CONNECT("Select/timeout error (write) serial port: %s", SAFESTRING(connection->name));
 			STAT_ADD1_BUS(e_bus_timeouts, connection);
+			if ( errno == EBADF ) {
+				Test_and_Close( &(connection->file_descriptor) ) ;
+			}
 			return gbBAD;
 		}
 	}
