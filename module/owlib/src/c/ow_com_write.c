@@ -59,8 +59,9 @@ GOOD_OR_BAD COM_write( const BYTE * data, size_t length, struct connection_in *c
 			TrafficOut("write", &data[length - to_be_written], to_be_written, connection );
 			write_result = write(connection->file_descriptor, &data[length - to_be_written], to_be_written); /* write bytes */ 			
 			if (write_result < 0) {
-				if (errno != EWOULDBLOCK) {
+				if (errno != EWOULDBLOCK && errno != EAGAIN) {
 					ERROR_CONNECT("Trouble writing to serial port: %s", SAFESTRING(connection->name));
+					Test_and_Close( &(connection->file_descriptor) ) ;
 					STAT_ADD1_BUS(e_bus_write_errors, connection);
 					return gbBAD;
 				}
@@ -73,6 +74,7 @@ GOOD_OR_BAD COM_write( const BYTE * data, size_t length, struct connection_in *c
 			ERROR_CONNECT("Select/timeout error (write) serial port: %s", SAFESTRING(connection->name));
 			STAT_ADD1_BUS(e_bus_timeouts, connection);
 			if ( errno == EBADF ) {
+				LEVEL_DEBUG("Close file descriptor -- EBADF");
 				Test_and_Close( &(connection->file_descriptor) ) ;
 			}
 			return gbBAD;

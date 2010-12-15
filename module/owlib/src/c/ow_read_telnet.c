@@ -52,11 +52,30 @@ GOOD_OR_BAD telnet_read(BYTE * buf, const size_t size, struct connection_in *in)
 	size_t current_index = 0 ;
 	size_t total_discard = 0 ;
 	size_t still_needed = size ;
+
+	// test inputs
+	if ( size == 0 ) {
+		return gbGOOD ;
+	}
+	
+	if ( in == NO_CONNECTION ) {
+		return gbBAD ;
+	}
+
+	if ( FILE_DESCRIPTOR_NOT_VALID(in->file_descriptor) ) {
+		return gbBAD ;
+	}
 	
 	// initial read
-	tcp_read( in->file_descriptor, readin_buf, allocated_size, &(in->timeout), &actual_readin) ;
+	if ( tcp_read( in->file_descriptor, readin_buf, allocated_size, &(in->timeout), &actual_readin) < 0 ) {
+		LEVEL_DEBUG("tcp seems closed") ;
+		Test_and_Close( &(in->file_descriptor) ) ;
+		return gbBAD ;
+	}
+	
 	if (actual_readin < size) {
 		LEVEL_CONNECT("Telnet (ethernet) error");
+		Test_and_Close( &(in->file_descriptor) ) ;
 		return gbBAD;
 	}
 
