@@ -43,10 +43,11 @@ noinst_HEADERS =           \
         ow_cache.h         \
         ow_charblob.h      \
         ow_codes.h         \
-        ow_counters.h      \
+        ow_communication.h \
         ow_connection.h    \
         ow_connection_in.h \
         ow_connection_out.h\
+        ow_counters.h      \
         ow_debug.h         \
         ow_detect.h        \
         ow_device.h        \

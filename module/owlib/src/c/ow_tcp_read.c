@@ -57,6 +57,10 @@ ZERO_OR_ERROR tcp_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, BYTE * buffer, 
 {
 	size_t nleft_to_read = requested_size ;
 
+	if ( FILE_DESCRIPTOR_NOT_VALID( file_descriptor ) {
+		return -EBADF ;
+	}
+
 	LEVEL_DEBUG("attempt %d bytes Time: "TVformat,(int)requested_size, TVvar(ptv) ) ;
 	*chars_in = 0 ;
 	while (nleft_to_read > 0) {
