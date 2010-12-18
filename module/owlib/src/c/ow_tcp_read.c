@@ -57,7 +57,7 @@ ZERO_OR_ERROR tcp_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, BYTE * buffer, 
 {
 	size_t nleft_to_read = requested_size ;
 
-	if ( FILE_DESCRIPTOR_NOT_VALID( file_descriptor ) {
+	if ( FILE_DESCRIPTOR_NOT_VALID( file_descriptor ) ) {
 		return -EBADF ;
 	}
 

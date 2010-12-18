@@ -145,6 +145,9 @@ enum e_bus_stat {
 	e_bus_stat_last_marker
 };
 
+// Add serial/tcp/telnet abstraction
+#include "ow_communication.h"
+
 // flag to pn->selected_connection->branch.sn[0] to force select from root dir
 #define BUSPATH_BAD	0xFF
 
