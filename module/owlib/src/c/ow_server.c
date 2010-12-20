@@ -60,12 +60,13 @@ GOOD_OR_BAD Zero_detect(struct connection_in *in)
 	if ( in==NO_CONNECTION ) {
 		return gbBAD ;
 	}
+	SOC(in)->type = ct_tcp ;
 	in->busmode = bus_zero;
-	in->file_descriptor = FILE_DESCRIPTOR_BAD;	// No persistent connection yet
-	if (in->name == NULL) {
+	SOC(in)->file_descriptor = FILE_DESCRIPTOR_BAD;	// No persistent connection yet
+	if (SOC(in)->devicename == NULL) {
 		return gbBAD;
 	}
-	RETURN_BAD_IF_BAD(ClientAddr(in->name, DEFAULT_SERVER_PORT, in)) ;
+	RETURN_BAD_IF_BAD(ClientAddr(SOC(in)->devicename, DEFAULT_SERVER_PORT, in)) ;
 	in->Adapter = adapter_tcp;
 	in->adapter_name = "tcp";
 	Zero_setroutines(&(in->iroutines));
@@ -76,11 +77,12 @@ GOOD_OR_BAD Zero_detect(struct connection_in *in)
 // Actual tcp connection created as needed
 GOOD_OR_BAD Server_detect(struct connection_in *in)
 {
-	if (in->name == NULL) {
+	if (SOC(in)->devicename == NULL) {
 		return gbBAD;
 	}
-	RETURN_BAD_IF_BAD(ClientAddr(in->name, DEFAULT_SERVER_PORT, in)) ;
-	in->file_descriptor = FILE_DESCRIPTOR_BAD;	// No persistent connection yet
+	SOC(in)->type = ct_tcp ;
+	RETURN_BAD_IF_BAD(ClientAddr( SOC(in)->devicename, DEFAULT_SERVER_PORT, in)) ;
+	SOC(in)->file_descriptor = FILE_DESCRIPTOR_BAD;	// No persistent connection yet
 	in->Adapter = adapter_tcp;
 	in->adapter_name = "tcp";
 	in->busmode = bus_server;

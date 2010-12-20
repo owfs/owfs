@@ -435,7 +435,6 @@ static ZERO_OR_ERROR FS_structdevdir(void (*dirfunc) (void *, const struct parse
 	struct filetype *ft_pointer;	/* first filetype struct */
 	char subdir_name[OW_FULLNAME_MAX + 1];
 	size_t subdir_len;
-	uint32_t ignoreflag ;
 
 	// Add subdir to name (SubDirectory is within a device, but an extra layer of grouping of properties)
 	if (pn_device_directory->subdir == NO_SUBDIR) {

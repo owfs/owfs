@@ -155,10 +155,11 @@ static void GetAllDeviceNames( ASCII * remaining_device_list, struct connection_
 
 static void SetConninData( int indx, const char * name, struct connection_in *in )
 {
-	ASCII *oldname = in->name; // destructively parsed and deleted at the end.
+	ASCII *oldname = SOC(in)->devicename; // destructively parsed and deleted at the end.
 	char newname[20] ;
 
-	in->file_descriptor = indx;
+	SOC(in)->file_descriptor = indx;
+	SOC(in)->type = ct_none ;
 	in->master.fake.index = indx;
 	in->master.fake.templow = Globals.templow;
 	in->master.fake.temphigh = Globals.temphigh;
@@ -171,7 +172,7 @@ static void SetConninData( int indx, const char * name, struct connection_in *in
 	GetAllDeviceNames( oldname, in ) ;
 	SAFEFREE(oldname) ;
 
-	in->name = owstrdup(newname);
+	SOC(in)->devicename = owstrdup(newname);
 }
 
 /* Device-specific functions */

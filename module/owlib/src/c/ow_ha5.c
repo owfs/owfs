@@ -76,14 +76,16 @@ GOOD_OR_BAD HA5_detect(struct connection_in *in)
 	// Poison current "Address" for adapter
 	in->master.ha5.sn[0] = 0 ; // so won't match
 
-	Parse_Address( in->name, &ap ) ;
+	Parse_Address( SOC(in)->devicename, &ap ) ;
 	if ( ap.first.type==address_none ) {
 		// Cannot open serial port
 		Free_Address( &ap ) ;
 		return gbBAD ;
 	}
-	strcpy(in->name, ap.first.alpha) ; // subset so will fit
-	in->flow_control = flow_none ;
+	strcpy(SOC(in)->devicename, ap.first.alpha) ; // subset so will fit
+	SOC(in)->dev.serial.flow_control = flow_none ;
+	SOC(in)->type = ct_serial ;
+	SOC(in)->state = cs_virgin ;
 	if ( BAD(COM_open(in)) ) {
 		// Cannot open serial port
 		Free_Address( &ap ) ;
@@ -92,16 +94,16 @@ GOOD_OR_BAD HA5_detect(struct connection_in *in)
 
 	// 9600 isn't valid for the HA5, so we can tell that this value was actually selected
 	if ( Globals.baud != B9600 ) {
-		in->baud = Globals.baud ;
+		SOC(in)->dev.serial.baud = Globals.baud ;
 	} else {
-		in->baud = B115200 ; // works at this fast rate
+		SOC(in)->dev.serial.baud = B115200 ; // works at this fast rate
 	}
 
 	// allowable speeds
-	COM_BaudRestrict( &(in->baud), B1200, B19200, B38400, B115200, 0 ) ;
+	COM_BaudRestrict( &(SOC(in)->dev.serial.baud), B1200, B19200, B38400, B115200, 0 ) ;
 
 	/* Set com port speed*/
-	COM_speed(in->baud,in) ;
+	COM_speed(SOC(in)->dev.serial.baud,in) ;
 
 	in->master.ha5.checksum = Globals.checksum ;
 	in->Adapter = adapter_HA5 ;
@@ -121,7 +123,7 @@ GOOD_OR_BAD HA5_detect(struct connection_in *in)
 	if ( BAD( gbResult ) ) {
 		HA5_close(in) ;
 	} else {		
-		COM_slurp(in->file_descriptor) ;
+		COM_slurp(in) ;
 		HA5_reset(&pn) ;
 	}
 	return gbResult;
@@ -140,16 +142,16 @@ static GOOD_OR_BAD HA5_channel_list( char * alpha_string, struct parsedname * pn
 			continue ;
 		}
 		c = tolower(c) ;
-		LEVEL_DEBUG("Looking for HA5 adapter on %s:%c", current_in->name, c ) ;
+		LEVEL_DEBUG("Looking for HA5 adapter on %s:%c", SOC(current_in)->devicename, c ) ;
 		if ( GOOD( HA5_test_channel(c,pn)) ) {
-			LEVEL_CONNECT("HA5 bus master FOUND on port %s at channel %c", current_in->name, current_in->master.ha5.channel ) ;
+			LEVEL_CONNECT("HA5 bus master FOUND on port %s at channel %c", SOC(current_in)->devicename, current_in->master.ha5.channel ) ;
 			current_in = NewIn( initial_in ) ;
 			if ( current_in == NO_CONNECTION ) {
 				break ;
 			}
 			pn->selected_connection = current_in ;
 		} else {
-			LEVEL_CONNECT("HA5 bus master NOT FOUND on port %s at channel %c", current_in->name, c ) ;
+			LEVEL_CONNECT("HA5 bus master NOT FOUND on port %s at channel %c", SOC(current_in)->devicename, c ) ;
 		}
 	}
 	
@@ -173,13 +175,13 @@ static GOOD_OR_BAD HA5_find_channel(struct parsedname *pn)
 	char c ;
 
 	for ( c = 'a' ; c <= 'z' ; ++c ) {
-		LEVEL_DEBUG("Looking for HA5 adapter on %s:%c", in->name, c ) ;
+		LEVEL_DEBUG("Looking for HA5 adapter on %s:%c", SOC(in)->devicename, c ) ;
 		if ( GOOD( HA5_test_channel(c,pn)) ) {
-			LEVEL_CONNECT("HA5 bus master FOUND on port %s at channel %c", in->name, in->master.ha5.channel ) ;
+			LEVEL_CONNECT("HA5 bus master FOUND on port %s at channel %c", SOC(in)->devicename, in->master.ha5.channel ) ;
 			return gbGOOD ;
 		}
 	}
-	LEVEL_DEBUG("HA5 bus master NOT FOUND on port %s", in->name ) ;
+	LEVEL_DEBUG("HA5 bus master NOT FOUND on port %s", SOC(in)->devicename ) ;
 	in->master.ha5.channel = '\0' ; 
 	return gbBAD;
 }
@@ -233,7 +235,7 @@ static GOOD_OR_BAD HA5_test_channel( char c, const struct parsedname  *pn )
 	int string_length ;
 	struct connection_in * in = pn->selected_connection ;
 
-	COM_slurp(in->file_descriptor) ;
+	COM_slurp(in) ;
 
 	test_string[0] = c ;
 	test_string[1] = 'R' ;
@@ -243,7 +245,7 @@ static GOOD_OR_BAD HA5_test_channel( char c, const struct parsedname  *pn )
 	RETURN_BAD_IF_BAD( COM_read( test_response, 1, pn->selected_connection ) ) ;
 
 	in->master.ha5.channel = c ;
-	COM_slurp(in->file_descriptor) ;
+	COM_slurp(in) ;
 	return gbGOOD ;
 }
 
@@ -625,7 +627,5 @@ static void HA5_powerdown(struct connection_in * in)
 	pn.selected_connection = in;
 
 	COM_write((BYTE*)"P", 1, in) ;
-	if ( FILE_DESCRIPTOR_VALID(in->file_descriptor) ) {
-		COM_slurp(in->file_descriptor) ;
-	}
+	COM_slurp(in) ;
 }

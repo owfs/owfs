@@ -125,7 +125,7 @@ static GOOD_OR_BAD DS2482_PowerByte(const BYTE byte, BYTE * resp, const UINT del
 
 /* Defines for making messages more explicit */
 #define I2Cformat "I2C bus %s, channel %d/%d"
-#define I2Cvar(in)  (in)->name, (in)->master.i2c.index, (in)->master.i2c.channels
+#define I2Cvar(in)  SOC(in)->devicename, (in)->master.i2c.index, (in)->master.i2c.channels
 
 /* Device-specific functions */
 static void DS2482_setroutines(struct connection_in *in)
@@ -154,7 +154,7 @@ GOOD_OR_BAD DS2482_detect(struct connection_in *in)
 	GOOD_OR_BAD gbResult ;
 	enum ds2482_address chip_num ;
 	
-	Parse_Address( in->name, &ap ) ;
+	Parse_Address( SOC(in)->devicename, &ap ) ;
 	
 	switch ( ap.second.type ) {
 		case address_numeric:
@@ -177,7 +177,7 @@ GOOD_OR_BAD DS2482_detect(struct connection_in *in)
 			break ;
 	}
 
-	SAFEFREE( in->name ) ;
+	SAFEFREE( SOC(in)->devicename ) ;
 
 	switch ( ap.first.type ) {
 		case address_all:
@@ -347,7 +347,7 @@ static GOOD_OR_BAD DS2482_detect_single(int lowindex, int highindex, char * i2c_
 	/* open the i2c port */
 	file_descriptor = open(i2c_device, O_RDWR);
 	if ( FILE_DESCRIPTOR_NOT_VALID(file_descriptor) ) {
-		ERROR_CONNECT("Could not open i2c device %s", in->name);
+		ERROR_CONNECT("Could not open i2c device %s", SOC(in)->devicename);
 		return gbBAD;
 	}
 
@@ -362,7 +362,9 @@ static GOOD_OR_BAD DS2482_detect_single(int lowindex, int highindex, char * i2c_
 			BYTE c;
 			LEVEL_CONNECT("Found an i2c device at %s address %.2X", i2c_device, test_address[i2c_index]);
 			/* Provisional setup as a DS2482-100 ( 1 channel ) */
-			in->file_descriptor = file_descriptor;
+			SOC(in)->file_descriptor = file_descriptor;
+			SOC(in)->state = cs_good;
+			SOC(in)->type = ct_i2c ;
 			in->master.i2c.i2c_address = test_address[i2c_index];
 			in->master.i2c.i2c_index = i2c_index;
 			in->master.i2c.index = 0;
@@ -395,10 +397,10 @@ static GOOD_OR_BAD DS2482_detect_single(int lowindex, int highindex, char * i2c_
 			// Note, only the lower nibble of the device config stored
 			
 			// Create name
-			in->name = owmalloc( strlen(i2c_device) + 10 ) ;
-			if ( in-> name ) {
+			SOC(in)->devicename = owmalloc( strlen(i2c_device) + 10 ) ;
+			if ( SOC(in)->devicename ) {
 				UCLIBCLOCK;
-				snprintf(in->name, strlen(i2c_device) + 10, "%s:%.2X", i2c_device, test_address[i2c_index]);
+				snprintf(SOC(in)->devicename, strlen(i2c_device) + 10, "%s:%.2X", i2c_device, test_address[i2c_index]);
 				UCLIBCUNLOCK;
 			}
 
@@ -407,8 +409,9 @@ static GOOD_OR_BAD DS2482_detect_single(int lowindex, int highindex, char * i2c_
 		}
 	}
 	/* fell though, no device found */
-	Test_and_Close( &(in->file_descriptor) ) ;
+	COM_close( in ) ;
 	in->busmode = bus_bad;
+	SOC(in)->state = cs_bad ;
 	return gbBAD;
 }
 
@@ -421,11 +424,11 @@ static GOOD_OR_BAD DS2482_redetect(const struct parsedname *pn)
 	struct address_pair ap ; // to get device name from device:address
 
 	/* open the i2c port */
-	Parse_Address( head->name, &ap ) ;
+	Parse_Address( SOC(head)->devicename, &ap ) ;
 	file_descriptor = open(ap.first.alpha, O_RDWR);
 	Free_Address( &ap ) ;
 	if ( FILE_DESCRIPTOR_NOT_VALID(file_descriptor) ) {
-		ERROR_CONNECT("Could not open i2c device %s", head->name);
+		ERROR_CONNECT("Could not open i2c device %s", SOC(head)->devicename);
 		return gbBAD;
 	}
 
@@ -439,13 +442,15 @@ static GOOD_OR_BAD DS2482_redetect(const struct parsedname *pn)
 			|| BAD(DS2482_readstatus(&c, file_descriptor, DS2482_Chip_reset_usec))	// pause .5 usec then read status
 			|| (c != (DS2482_REG_STS_LL | DS2482_REG_STS_RST))	// make sure status is properly set
 			) {
-			LEVEL_CONNECT("i2c device at %s address %d cannot be reset. Not a DS2482.", head->name, address);
+			LEVEL_CONNECT("i2c device at %s address %d cannot be reset. Not a DS2482.", SOC(head)->devicename, address);
 		} else {
 			struct connection_in * next ;
 			head->master.i2c.current = 0;
-			head->file_descriptor = file_descriptor;
+			SOC(head)->file_descriptor = file_descriptor;
+			SOC(head)->state = cs_good ;
+			SOC(head)->type = ct_i2c ;
 			head->master.i2c.configchip = 0x00;	// default configuration register after RESET	
-			LEVEL_CONNECT("i2c device at %s address %d reset successfully", head->name, address);
+			LEVEL_CONNECT("i2c device at %s address %d reset successfully", SOC(head)->devicename, address);
 			for ( next = head->master.i2c.next; next; next = next->master.i2c.next ) {
 				/* loop through devices, matching those that have the same "head" */
 				/* BUSLOCK also locks the sister channels for this */
@@ -494,7 +499,7 @@ static enum search_status DS2482_next_both(struct device_search *ds, const struc
 	int search_direction = 0;	/* initialization just to forestall incorrect compiler warning */
 	int bit_number;
 	int last_zero = -1;
-	FILE_DESCRIPTOR_OR_ERROR file_descriptor = pn->selected_connection->master.i2c.head->file_descriptor;
+	FILE_DESCRIPTOR_OR_ERROR file_descriptor = SOC(pn->selected_connection->master.i2c.head)->file_descriptor;
 	BYTE bits[3];
 
 	// initialize for search
@@ -557,7 +562,7 @@ static RESET_TYPE DS2482_reset(const struct parsedname *pn)
 {
 	BYTE c;
 	struct connection_in * in = pn->selected_connection ;
-	FILE_DESCRIPTOR_OR_ERROR file_descriptor = in->master.i2c.head->file_descriptor;
+	FILE_DESCRIPTOR_OR_ERROR file_descriptor = SOC(in->master.i2c.head)->file_descriptor;
 
 	/* Make sure we're using the correct channel */
 	if ( BAD(DS2482_channel_select(in)) ) {
@@ -585,7 +590,7 @@ static RESET_TYPE DS2482_reset(const struct parsedname *pn)
 static GOOD_OR_BAD DS2482_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn)
 {
 	struct connection_in * in = pn->selected_connection ;
-	FILE_DESCRIPTOR_OR_ERROR file_descriptor = in->master.i2c.head->file_descriptor;
+	FILE_DESCRIPTOR_OR_ERROR file_descriptor = SOC(in->master.i2c.head)->file_descriptor;
 	size_t i;
 
 	/* Make sure we're using the correct channel */
@@ -706,7 +711,7 @@ static GOOD_OR_BAD DS2482_channel_select(struct connection_in * in)
 {
 	struct connection_in *head = in->master.i2c.head;
 	int chan = in->master.i2c.index;
-	FILE_DESCRIPTOR_OR_ERROR file_descriptor = head->file_descriptor;
+	FILE_DESCRIPTOR_OR_ERROR file_descriptor = SOC(head)->file_descriptor;
 
 	/*
 		Write and verify codes for the CHANNEL_SELECT command (DS2482-800 only).
@@ -758,7 +763,7 @@ static GOOD_OR_BAD DS2482_channel_select(struct connection_in * in)
 static GOOD_OR_BAD SetConfiguration(BYTE c, struct connection_in *in)
 {
 	struct connection_in *head = in->master.i2c.head;
-	FILE_DESCRIPTOR_OR_ERROR file_descriptor = head->file_descriptor;
+	FILE_DESCRIPTOR_OR_ERROR file_descriptor = SOC(head)->file_descriptor;
 	int read_back;
 
 	/* Write, readback, and compare configuration register */
@@ -787,7 +792,7 @@ static GOOD_OR_BAD DS2482_PowerByte(const BYTE byte, BYTE * resp, const UINT del
 	RETURN_BAD_IF_BAD(SetConfiguration(  in->master.i2c.configreg | DS2482_REG_CFG_SPU, in)) ;
 
 	/* send and get byte (and trigger strong pull-up */
-	RETURN_BAD_IF_BAD(DS2482_send_and_get( in->master.i2c.head->file_descriptor, byte, resp)) ;
+	RETURN_BAD_IF_BAD(DS2482_send_and_get( SOC(in->master.i2c.head)->file_descriptor, byte, resp)) ;
 	TrafficOut("power response", resp, 1, in ) ;
 
 	UT_delay(delay);

@@ -25,8 +25,8 @@ static void BadAdapter_close(struct connection_in *in);
 /* It does call lower level functions for higher ones, which of course is pointless since the lower ones don't work either */
 GOOD_OR_BAD BadAdapter_detect(struct connection_in *in)
 {
-	in->file_descriptor = FILE_DESCRIPTOR_BAD;
-	in->iroutines.detect = BadAdapter_detect;
+	SOC(in)->type = ct_none ;
+	SOC(in)->file_descriptor = FILE_DESCRIPTOR_BAD ;
 	in->Adapter = adapter_Bad;	/* OWFS assigned value */
 	in->iroutines.reset = BadAdapter_reset;
 	in->iroutines.next_both = NO_NEXT_BOTH_ROUTINE;
@@ -40,8 +40,8 @@ GOOD_OR_BAD BadAdapter_detect(struct connection_in *in)
 	in->iroutines.close = BadAdapter_close;
 	in->iroutines.flags = ADAP_FLAG_sham;
 	in->adapter_name = "Bad Adapter";
-	SAFEFREE( in->name ) ;
-	in->name = owstrdup("None") ;
+	SAFEFREE( SOC(in)->devicename ) ;
+	SOC(in)->devicename = owstrdup("None") ;
 	in->busmode = bus_bad ;
 	return gbGOOD;
 }

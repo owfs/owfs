@@ -18,8 +18,59 @@ $Id$
 #include <linux/limits.h>
 #endif
 
+static void Slurp( FILE_DESCRIPTOR_OR_ERROR file_descriptor, unsigned long usec ) ;
+
+void COM_slurp( struct connection_in * connection ) {
+	FILE_DESCRIPTOR_OR_ERROR fd ;
+	unsigned long usec ;	
+
+	if ( connection == NO_CONNECTION ) {
+		return ;
+	}
+
+	switch ( SOC(connection)->type ) {
+		case ct_unknown:
+		case ct_none:
+			LEVEL_DEBUG("ERROR!!! ----------- ERROR!");
+			return ;
+		case ct_telnet:
+		case ct_tcp:
+		case ct_netlink:
+			usec = 100000 ;
+			break ;
+		case ct_i2c:
+		case ct_usb:
+			LEVEL_DEBUG("Unimplemented!!!");
+			return ;
+		case ct_serial:
+			usec = 1000 ;
+			break ;
+	}
+
+	switch ( SOC(connection)->state ) {
+		case cs_virgin:
+			LEVEL_DEBUG("Not yet open");
+			return ;
+		case cs_good:
+			break ;
+		case cs_bad:
+			LEVEL_DEBUG("Closed, should reopen");
+			return ;
+		case cs_closed:
+			LEVEL_DEBUG("Truly closed -- error");
+			return ;
+	}
+
+	fd = SOC(connection)->file_descriptor ;
+	if ( FILE_DESCRIPTOR_NOT_VALID( fd ) ) {
+		SOC(connection)->state = cs_bad ;
+		return ;
+	}
+	Slurp( fd, usec ) ;
+}
+
 /* slurp up any pending chars -- used at the start to clear the com buffer */
-void Slurp( FILE_DESCRIPTOR_OR_ERROR file_descriptor, unsigned long usec )
+static void Slurp( FILE_DESCRIPTOR_OR_ERROR file_descriptor, unsigned long usec )
 {
 	BYTE data[1] ;
 	while (1) {

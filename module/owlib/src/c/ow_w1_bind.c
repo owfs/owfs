@@ -40,10 +40,11 @@ void w1_bind( void )
 {
 	struct sockaddr_nl l_local ;
 
-	Test_and_Close( &(Inbound_Control.w1_monitor->file_descriptor) ) ; // just in case
+	SOC(Inbound_Control.w1_monitor)->type = ct_netlink ;
+	Test_and_Close( &(SOC(Inbound_Control.w1_monitor)->file_descriptor) ) ; // just in case
 	
-	Inbound_Control.w1_monitor->file_descriptor = socket(AF_NETLINK, SOCK_DGRAM, NETLINK_CONNECTOR);
-	if ( FILE_DESCRIPTOR_NOT_VALID( Inbound_Control.w1_monitor->file_descriptor ) ) {
+	SOC(Inbound_Control.w1_monitor)->file_descriptor = socket(AF_NETLINK, SOCK_DGRAM, NETLINK_CONNECTOR);
+	if ( FILE_DESCRIPTOR_NOT_VALID( SOC(Inbound_Control.w1_monitor)->file_descriptor ) ) {
 		ERROR_CONNECT("Netlink (w1) socket");
 		return ;
 	}
@@ -52,9 +53,9 @@ void w1_bind( void )
 	l_local.nl_family = AF_NETLINK;
 	l_local.nl_groups = 23;
 
-	if ( bind( Inbound_Control.w1_monitor->file_descriptor, (struct sockaddr *)&l_local, sizeof(struct sockaddr_nl) ) == -1 ) {
+	if ( bind( SOC(Inbound_Control.w1_monitor)->file_descriptor, (struct sockaddr *)&l_local, sizeof(struct sockaddr_nl) ) == -1 ) {
 		ERROR_CONNECT("Netlink (w1) bind");
-		Test_and_Close( &(Inbound_Control.w1_monitor->file_descriptor) );
+		Test_and_Close( &( SOC(Inbound_Control.w1_monitor)->file_descriptor) );
 	}
 }
 

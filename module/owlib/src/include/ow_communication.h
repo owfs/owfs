@@ -29,6 +29,9 @@ enum com_type {
 	ct_telnet,
 	ct_tcp,
 	ct_i2c,
+	ct_usb,
+	ct_netlink,
+	ct_none,
 } ;
 
 enum com_state {
@@ -40,17 +43,26 @@ enum com_state {
 
 struct com_serial {
 	struct termios oldSerialTio;    /*old serial port settings */
-//	enum { flow_none, flow_soft, flow_hard, } flow_control ;
+	enum { flow_none, flow_soft, flow_hard, } flow_control ;
+	speed_t baud; // baud rate in the form of B9600
+} ;
+
+struct com_tcp {
+	char *host;
+	char *service;
+	struct addrinfo *ai;
+	struct addrinfo *ai_ok;
 } ;
 
 struct communication {
 	enum com_type type ;
-	enum com_type state ;
+	enum com_state state ;
 	struct timeval timeout ; // for serial or tcp read
 	FILE_DESCRIPTOR_OR_PERSISTENT file_descriptor;
 	char * devicename ;
 	union {
 		struct com_serial serial ;
+		struct com_tcp tcp ;
 	} dev ;
 } ;
 

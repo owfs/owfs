@@ -224,7 +224,7 @@ GOOD_OR_BAD DS9490_detect(struct connection_in *in)
 	GOOD_OR_BAD gbResult = gbBAD;
 	
 	/* uses "name" before it's cleared by connection_init */
-	Parse_Address( in->name, &ap ) ;
+	Parse_Address( SOC(in)->devicename, &ap ) ;
 
 	DS9490_connection_init( in ) ;
 
@@ -245,7 +245,7 @@ GOOD_OR_BAD DS9490_detect(struct connection_in *in)
 					break ;
 				case address_alpha:
 					if ( strncasecmp(ap.first.alpha,"scan",4) == 0 ) {
-						SAFEFREE(in->name) ;
+						SAFEFREE(SOC(in)->devicename) ;
 						LEVEL_DEBUG("Add USB scanning capability");
 						gbResult = USB_monitor_detect(in) ;
 						break ;
@@ -352,8 +352,8 @@ void DS9490_connection_init( struct connection_in * in )
 	if ( in == NO_CONNECTION ) {
 		return ;
 	}
-	SAFEFREE( in->name ) ;
-	in->name = owstrdup(badUSBname);		// initialized
+	SAFEFREE( SOC(in)->devicename ) ;
+	SOC(in)->devicename = owstrdup(badUSBname);		// initialized
 
 	DS9490_setroutines(in);		// set up close, reconnect, reset, ...
 
@@ -392,7 +392,7 @@ static GOOD_OR_BAD DS9490_reconnect(const struct parsedname *pn)
 	LIBUSBUNLOCK;
 
 	if ( GOOD(ret) ) {
-		LEVEL_DEFAULT("Found USB DS9490 bus master after USB rescan as [%s]", SAFESTRING(in->name));
+		LEVEL_DEFAULT("Found USB DS9490 bus master after USB rescan as [%s]", SAFESTRING(SOC(in)->devicename));
 	}
 	return ret;
 }
@@ -423,12 +423,12 @@ static GOOD_OR_BAD DS9490_redetect_specific_adapter( struct connection_in * in)
 	struct address_pair ap ;
 	GOOD_OR_BAD gbResult ;
 	
-	Parse_Address( in->name, &ap ) ;
+	Parse_Address( SOC(in)->devicename, &ap ) ;
 	if ( ap.first.type != address_numeric || ap.second.type != address_numeric ) {
-		LEVEL_DEBUG("Cannot understand the specific usb address pair to reconnect <%s>",in->name) ;
+		LEVEL_DEBUG("Cannot understand the specific usb address pair to reconnect <%s>",SOC(in)->devicename) ;
 		gbResult = gbBAD ;
 	} else {
-		char * name_copy = owstrdup( in->name ) ; // since DS9490_close clears this value and we may need to restore on error
+		char * name_copy = owstrdup( SOC(in)->devicename ) ; // since DS9490_close clears this value and we may need to restore on error
 
 		/* Have to protect usb_find_busses() and usb_find_devices() with
 		 * a lock since libusb could crash if 2 threads call it at the same time.
@@ -440,8 +440,8 @@ static GOOD_OR_BAD DS9490_redetect_specific_adapter( struct connection_in * in)
 		LIBUSBUNLOCK;
 		
 		if ( BAD(gbResult) ) {
-			SAFEFREE( in->name ) ;
-			in->name = name_copy ; // so no need to free here
+			SAFEFREE( SOC(in)->devicename ) ;
+			SOC(in)->devicename = name_copy ; // so no need to free here
 		} else {
 			owfree( name_copy ) ;
 		}
@@ -458,7 +458,7 @@ static GOOD_OR_BAD DS9490_redetect_match( struct connection_in * in)
 	BYTE sn[SERIAL_NUMBER_SIZE] ;
 	int device_number ;
 
-	LEVEL_DEBUG("Attempting reconnect on %s",SAFESTRING(in->name));
+	LEVEL_DEBUG("Attempting reconnect on %s",SAFESTRING(SOC(in)->devicename));
 
 	// Special case -- originally untagged adapter
 	if ( in->master.usb.ds1420_address[0] == '\0' ) {
@@ -472,7 +472,7 @@ static GOOD_OR_BAD DS9490_redetect_match( struct connection_in * in)
 	// This adapter has no tags, so not the one we want
 	if ( DirblobElements( &db) == 0 ) {
 		DirblobClear( &db ) ;
-		LEVEL_DATA("Empty directory on [%s] (Doesn't match initial scan).", SAFESTRING(in->name));
+		LEVEL_DATA("Empty directory on [%s] (Doesn't match initial scan).", SAFESTRING(SOC(in)->devicename));
 		return gbBAD ;
 	}
 
@@ -480,14 +480,14 @@ static GOOD_OR_BAD DS9490_redetect_match( struct connection_in * in)
 	device_number = 0 ;
 	while ( DirblobGet( device_number, sn, &db ) == 0 ) {
 		if (memcmp(sn, in->master.usb.ds1420_address, SERIAL_NUMBER_SIZE) == 0) {	// same tag device?
-			LEVEL_DATA("Matching device [%s].", SAFESTRING(in->name));
+			LEVEL_DATA("Matching device [%s].", SAFESTRING(SOC(in)->devicename));
 			DirblobClear( &db ) ;
 			return gbGOOD ;
 		}
 		++device_number ;
 	}
 	// Couldn't find correct ds1420 chip on this adapter
-	LEVEL_CONNECT("Couldn't find correct ds1420 chip on this bus master [%s] (want: " SNformat ")", SAFESTRING(in->name), SNvar(in->master.usb.ds1420_address));
+	LEVEL_CONNECT("Couldn't find correct ds1420 chip on this bus master [%s] (want: " SNformat ")", SAFESTRING(SOC(in)->devicename), SNvar(in->master.usb.ds1420_address));
 	DirblobClear( &db ) ;
 	return gbBAD;
 }
@@ -739,14 +739,14 @@ static int FindDiscrepancy(BYTE * last_sn, BYTE * discrepancy_sn)
 GOOD_OR_BAD DS9490_open_and_name(struct usb_list *ul, struct connection_in *in)
 {
 	if (in->master.usb.usb) {
-		LEVEL_DEFAULT("DS9490 %s was NOT closed?", in->name);
+		LEVEL_DEFAULT("DS9490 %s was NOT closed?", SOC(in)->devicename);
 		return gbBAD ;
 	}
 
-	SAFEFREE(in->name) ;
-	in->name = DS9490_device_name(ul);
+	SAFEFREE(SOC(in)->devicename) ;
+	SOC(in)->devicename = DS9490_device_name(ul);
 
-	if (in->name == NULL) {
+	if (SOC(in)->devicename == NULL) {
 		return gbBAD;
 	}
 	
@@ -754,7 +754,7 @@ GOOD_OR_BAD DS9490_open_and_name(struct usb_list *ul, struct connection_in *in)
 		STAT_ADD1_BUS(e_bus_open_errors, in);
 		return gbBAD ;
 	} else if ( BAD( DS9490_setup_adapter(in)) ) {
-		LEVEL_DEFAULT("Error setting up USB DS9490 bus master at %s.", in->name);
+		LEVEL_DEFAULT("Error setting up USB DS9490 bus master at %s.", SOC(in)->devicename);
 		DS9490_close( in ) ;
 		return gbBAD ;
 	}

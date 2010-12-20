@@ -164,27 +164,39 @@ static GOOD_OR_BAD LinkVersion_unknownstring( const char * reported_string, stru
 // bus locking done at a higher level
 GOOD_OR_BAD LINK_detect(struct connection_in *in)
 {
-	if (in->name == NULL) {
+	if (SOC(in)->devicename == NULL) {
 		return gbBAD;
 	}
 
 	in->master.serial.tcp.CRLF_size = 2 ;
 
+	SOC(in)->state = cs_virgin ;
 	switch( in->busmode ) {
 		case bus_elink:
-			return LINK_detect_net( in ) ;
+			SOC(in)->type = ct_tcp ;
+			RETURN_GOOD_IF_GOOD(  LINK_detect_net( in )  );
+			break ;
+
 		case bus_link:
-			in->flow_control = flow_none ;
+			SOC(in)->type = ct_serial ;
+
+			SOC(in)->dev.serial.flow_control = flow_none ;
 			RETURN_GOOD_IF_GOOD( LINK_detect_serial(in) ) ;
+
 			LEVEL_DEBUG("Second attempt at serial LINK setup");
-			in->flow_control = flow_hard ;
+			SOC(in)->dev.serial.flow_control = flow_hard ;
 			RETURN_GOOD_IF_GOOD( LINK_detect_serial(in) ) ;
+
 			LEVEL_DEBUG("Third attempt at serial LINK setup");
-			in->flow_control = flow_hard ;
-			return LINK_detect_serial(in) ;
+			SOC(in)->dev.serial.flow_control = flow_hard ;
+			RETURN_GOOD_IF_GOOD( LINK_detect_serial(in) ) ;
+			break ;
+
 		default:
 			return gbBAD ;
 	}
+	SOC(in)->state = cs_bad ;
+	return gbBAD ;
 }
 
 static GOOD_OR_BAD LINK_detect_serial(struct connection_in * in)
@@ -193,8 +205,8 @@ static GOOD_OR_BAD LINK_detect_serial(struct connection_in * in)
 	
 	/* Set up low-level routines */
 	LINK_setroutines(in);
-	in->timeout.tv_sec = 0 ;
-	in->timeout.tv_usec = 1000 ;
+	SOC(in)->timeout.tv_sec = 0 ;
+	SOC(in)->timeout.tv_usec = 1000 ;
 
 	/* Open the com port */
 	RETURN_BAD_IF_BAD(COM_open(in)) ;
@@ -215,7 +227,7 @@ static GOOD_OR_BAD LINK_detect_serial(struct connection_in * in)
 	/* Now find the dot for the version parsing */
 	if ( GOOD( LinkVersion_knownstring( version_string, LINK_id_tbl, in)) ) {
 		owfree(version_string);
-		in->baud = Globals.baud ;
+		SOC(in)->dev.serial.baud = Globals.baud ;
 		++in->changed_bus_settings ;
 		LINK_reset_in(in) ; // extra reset
 		return gbGOOD;
@@ -233,13 +245,13 @@ static GOOD_OR_BAD LINK_detect_net(struct connection_in * in)
 
 	/* Set up low-level routines */
 	LINKE_setroutines(in);
-	in->timeout.tv_sec = 0 ;
-	in->timeout.tv_usec = 300000 ;
+	SOC(in)->timeout.tv_sec = 0 ;
+	SOC(in)->timeout.tv_usec = 300000 ;
 
 	/* Open the tcp port */
-	RETURN_BAD_IF_BAD(ClientAddr(in->name, DEFAULT_LINK_PORT, in)) ;
-	in->file_descriptor = ClientConnect(in) ;
-	if ( FILE_DESCRIPTOR_NOT_VALID(in->file_descriptor) ) {
+	RETURN_BAD_IF_BAD(ClientAddr(SOC(in)->devicename, DEFAULT_LINK_PORT, in)) ;
+	SOC(in)->file_descriptor = ClientConnect(in) ;
+	if ( FILE_DESCRIPTOR_NOT_VALID(SOC(in)->file_descriptor) ) {
 		return gbBAD;
 	}
 	
@@ -355,11 +367,11 @@ static void LINK_set_baud(struct connection_in * in)
 		return ;
 	}
 
-	COM_BaudRestrict( &(in->baud), B9600, B19200, B38400, B57600, 0 ) ;
+	COM_BaudRestrict( &(SOC(in)->dev.serial.baud), B9600, B19200, B38400, B57600, 0 ) ;
 
-	LEVEL_DEBUG("to %d",COM_BaudRate(in->baud));
+	LEVEL_DEBUG("to %d",COM_BaudRate(SOC(in)->dev.serial.baud));
 	// Find rate parameter
-	switch ( in->baud ) {
+	switch ( SOC(in)->dev.serial.baud ) {
 		case B9600:
 			COM_break(in) ;
 			LINK_flush(in);
@@ -385,7 +397,7 @@ static void LINK_set_baud(struct connection_in * in)
 	LINK_flush(in);
 	if ( BAD( LINK_write(LINK_string(speed_code), 1, in) ) ) {
 		LEVEL_DEBUG("LINK change baud error -- will return to 9600");
-		in->baud = B9600 ;
+		SOC(in)->dev.serial.baud = B9600 ;
 		++in->changed_bus_settings ;
 		return ;
 	}
@@ -396,7 +408,7 @@ static void LINK_set_baud(struct connection_in * in)
 
 	// Change OS view of rate
 	UT_delay(5);
-	COM_speed(in->baud,in) ;
+	COM_speed(SOC(in)->dev.serial.baud,in) ;
 	UT_delay(5);
 	LINK_slurp(in);
 
@@ -405,14 +417,7 @@ static void LINK_set_baud(struct connection_in * in)
 
 static void LINK_flush( struct connection_in * in )
 {
-	switch( in->busmode ) {
-		case bus_elink:
-			tcp_read_flush(in->file_descriptor) ;
-			break ;
-		default:
-			COM_flush(in) ;
-			break ;
-	}
+	COM_flush(in) ;
 }
 
 static RESET_TYPE LINK_reset(const struct parsedname *pn)
@@ -493,13 +498,7 @@ static enum search_status LINK_next_both(struct device_search *ds, const struct 
 
 static void LINK_slurp(struct connection_in *in)
 {
-	switch ( in->busmode ) {
-		case bus_elink:
-			// Only need to add an extra byte sometimes
-			TCP_slurp(in->file_descriptor);
-		default:
-			COM_slurp(in->file_descriptor);
-	}
+	COM_slurp(in);
 }
 
 /* Assymetric */
@@ -536,9 +535,9 @@ static GOOD_OR_BAD LINK_write(const BYTE * buf, size_t size, struct connection_i
 	RETURN_GOOD_IF_GOOD( COM_write( buf, size, in ) ) ;
 	switch ( in->busmode ) {
 		case bus_elink:
-			Test_and_Close(&(in->file_descriptor)) ;
-			in->file_descriptor = ClientConnect(in) ;
-			if ( FILE_DESCRIPTOR_VALID(in->file_descriptor) ) {
+			Test_and_Close(&(SOC(in)->file_descriptor)) ;
+			SOC(in)->file_descriptor = ClientConnect(in) ;
+			if ( FILE_DESCRIPTOR_VALID(SOC(in)->file_descriptor) ) {
 				LINK_slurp(in) ;
 				return COM_write( buf, size, in ) ;
 			}

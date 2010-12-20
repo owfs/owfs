@@ -533,7 +533,7 @@ static GOOD_OR_BAD To_Server( struct server_connection_state * scs, struct serve
 	} else {
 		// Persistence desired
 		BUSLOCKIN(in);
-		switch ( in->file_descriptor ) {
+		switch ( SOC(in)->file_descriptor ) {
 			case FILE_DESCRIPTOR_PERSISTENT_IN_USE:
 				// Currently in use, so make new non-persistent connection
 				scs->file_descriptor = ClientConnect(in);
@@ -543,14 +543,14 @@ static GOOD_OR_BAD To_Server( struct server_connection_state * scs, struct serve
 				// no conection currently, so make a new one
 				scs->file_descriptor = ClientConnect(in);
 				if ( FILE_DESCRIPTOR_VALID( scs->file_descriptor ) ) {
-					in->file_descriptor = FILE_DESCRIPTOR_PERSISTENT_IN_USE ;
+					SOC(in)->file_descriptor = FILE_DESCRIPTOR_PERSISTENT_IN_USE ;
 				}	
 				break ;
 			default:
 				// persistent connection idle and waiting for use
 				// connection_ion is locked to this is safe
-				scs->file_descriptor = in->file_descriptor;
-				in->file_descriptor = FILE_DESCRIPTOR_PERSISTENT_IN_USE;
+				scs->file_descriptor = SOC(in)->file_descriptor;
+				SOC(in)->file_descriptor = FILE_DESCRIPTOR_PERSISTENT_IN_USE;
 			break ;
 		}
 		BUSUNLOCKIN(in);
@@ -587,7 +587,7 @@ static GOOD_OR_BAD To_Server( struct server_connection_state * scs, struct serve
 			Close_Persistent( scs);
 			scs->file_descriptor = ClientConnect(in);
 			if ( FILE_DESCRIPTOR_VALID( scs->file_descriptor ) ) {
-				in->file_descriptor = FILE_DESCRIPTOR_PERSISTENT_IN_USE ;
+				SOC(in)->file_descriptor = FILE_DESCRIPTOR_PERSISTENT_IN_USE ;
 			}
 			break ;
 		default:
@@ -646,7 +646,7 @@ static void Close_Persistent( struct server_connection_state * scs)
 	if (scs->persistence == persistent_yes) {
 		// no persistence wanted
 		BUSLOCKIN(scs->in);
-			scs->in->file_descriptor = FILE_DESCRIPTOR_BAD ;
+			SOC(scs->in)->file_descriptor = FILE_DESCRIPTOR_BAD ;
 		BUSUNLOCKIN(scs->in);
 	}
 	
@@ -777,7 +777,7 @@ static void Release_Persistent( struct server_connection_state * scs, int grante
 
 	// mark as available
 	BUSLOCKIN(scs->in);
-	scs->in->file_descriptor = scs->file_descriptor;
+	SOC(scs->in)->file_descriptor = scs->file_descriptor;
 	BUSUNLOCKIN(scs->in);
 	scs->persistence = persistent_no ; // we no longer own this connection
 	scs->file_descriptor = FILE_DESCRIPTOR_BAD ;

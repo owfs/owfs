@@ -87,15 +87,18 @@ struct connection_in *AllocIn(const struct connection_in *old_in)
 		if (old_in == NO_CONNECTION) {
 			// Not a copy
 			memset(new_in, 0, len);
-			new_in->file_descriptor = FILE_DESCRIPTOR_BAD ;
+			SOC(new_in)->file_descriptor = FILE_DESCRIPTOR_BAD ;
+			SOC(new_in)->type = ct_unknown ;
+			SOC(new_in)->state = cs_virgin ;
+			SOC(new_in)->devicename = NULL ;
 			/* Not yet a valid bus */
 			new_in->iroutines.flags = ADAP_FLAG_sham ;
 		} else {
 			// Copy of prior bus
 			memcpy(new_in, old_in, len);
-			if ( new_in->name != NULL ) {
+			if ( SOC(new_in)->devicename != NULL ) {
 				// Don't make the name point to the same string, make a copy
-				new_in->name = owstrdup( old_in->name ) ;
+				SOC(new_in)->devicename = owstrdup( SOC(old_in)->devicename ) ;
 			}
 		}
 
@@ -214,8 +217,8 @@ void RemoveIn( struct connection_in * conn )
 	BUS_close(conn) ;
 
 	/* Next free up internal resources */
-	Test_and_Close( &(conn->file_descriptor) ) ;
-	SAFEFREE(conn->name) ;
+	COM_close( conn ) ;
+	SAFEFREE(SOC(conn)->devicename) ;
 	DirblobClear(&(conn->main));
 	DirblobClear(&(conn->alarm));
 	

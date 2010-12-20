@@ -21,6 +21,7 @@ $Id$
 GOOD_OR_BAD COM_write( const BYTE * data, size_t length, struct connection_in *connection)
 {
 	ssize_t to_be_written = length ;
+	FILE_DESCRIPTOR_OR_ERROR fd ;
 
 	if ( length == 0 || data == NULL ) {
 		return gbGOOD ;
@@ -30,7 +31,39 @@ GOOD_OR_BAD COM_write( const BYTE * data, size_t length, struct connection_in *c
 		return gbBAD ;
 	}
 
-	if ( FILE_DESCRIPTOR_NOT_VALID(connection->file_descriptor) ) {
+	switch ( SOC(connection)->type ) {
+		case ct_unknown:
+		case ct_none:
+			LEVEL_DEBUG("ERROR!!! ----------- ERROR!");
+			return gbBAD ;
+		case ct_i2c:
+		case ct_usb:
+			LEVEL_DEBUG("Unimplemented!!!");
+			return gbBAD ;
+		case ct_telnet:
+		case ct_tcp:
+		case ct_serial:
+		case ct_netlink:
+			break ;
+	}
+
+	switch ( SOC(connection)->state ) {
+		case cs_virgin:
+			LEVEL_DEBUG("Not yet open");
+			return gbBAD ;
+		case cs_good:
+			break ;
+		case cs_bad:
+			LEVEL_DEBUG("Closed, should reopen");
+			return gbBAD ;
+		case cs_closed:
+			LEVEL_DEBUG("Truly closed -- error");
+			return gbBAD ;
+	}
+
+	fd = SOC(connection)->file_descriptor ;
+	if ( FILE_DESCRIPTOR_NOT_VALID( fd ) ) {
+		SOC(connection)->state = cs_bad ;
 		return gbBAD ;
 	}
 
@@ -44,24 +77,25 @@ GOOD_OR_BAD COM_write( const BYTE * data, size_t length, struct connection_in *c
 
 		/* Initialize readset */
 		FD_ZERO(&writeset);
-		FD_SET(connection->file_descriptor, &writeset);
+		FD_SET( fd, &writeset);
 
 		/* Read if it doesn't timeout first */
-		select_result = select(connection->file_descriptor + 1, NULL, &writeset, NULL, &tv);
+		select_result = select( fd + 1, NULL, &writeset, NULL, &tv);
 		if (select_result > 0) {
 			ssize_t write_result ;
 
-			if (FD_ISSET(connection->file_descriptor, &writeset) == 0) {
-				ERROR_CONNECT("Select no FD found (write) serial port: %s", SAFESTRING(connection->name));
+			if (FD_ISSET( fd, &writeset) == 0) {
+				ERROR_CONNECT("Select no FD found (write) serial port: %s", SAFESTRING(SOC(connection)->devicename));
 				STAT_ADD1_BUS(e_bus_write_errors, connection);
 				return gbBAD;	/* error */
 			}
 			TrafficOut("write", &data[length - to_be_written], to_be_written, connection );
-			write_result = write(connection->file_descriptor, &data[length - to_be_written], to_be_written); /* write bytes */ 			
+			write_result = write( fd, &data[length - to_be_written], to_be_written); /* write bytes */ 			
 			if (write_result < 0) {
 				if (errno != EWOULDBLOCK && errno != EAGAIN) {
-					ERROR_CONNECT("Trouble writing to serial port: %s", SAFESTRING(connection->name));
-					Test_and_Close( &(connection->file_descriptor) ) ;
+					ERROR_CONNECT("Trouble writing to serial port: %s", SAFESTRING(SOC(connection)->devicename));
+					SOC(connection)->state = cs_bad ;
+					Test_and_Close( &(SOC(connection)->file_descriptor) ) ;
 					STAT_ADD1_BUS(e_bus_write_errors, connection);
 					return gbBAD;
 				}
@@ -71,17 +105,18 @@ GOOD_OR_BAD COM_write( const BYTE * data, size_t length, struct connection_in *c
 				to_be_written -= write_result ;	
 			}
 		} else {			/* timed out or select error */
-			ERROR_CONNECT("Select/timeout error (write) serial port: %s", SAFESTRING(connection->name));
+			ERROR_CONNECT("Select/timeout error (write) serial port: %s", SAFESTRING(SOC(connection)->devicename));
 			STAT_ADD1_BUS(e_bus_timeouts, connection);
 			if ( errno == EBADF ) {
+				SOC(connection)->state = cs_bad ;
 				LEVEL_DEBUG("Close file descriptor -- EBADF");
-				Test_and_Close( &(connection->file_descriptor) ) ;
+				Test_and_Close( &(SOC(connection)->file_descriptor) ) ;
 			}
 			return gbBAD;
 		}
 	}
 
-	tcdrain(connection->file_descriptor);
+	tcdrain( fd );
 
 	return gbGOOD ;
 }

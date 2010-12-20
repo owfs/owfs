@@ -59,15 +59,17 @@ GOOD_OR_BAD HA7E_detect(struct connection_in *in)
 	in->master.ha7e.sn[0] = 0 ; // so won't match
 
 	/* Open the com port */
-	in->flow_control = flow_none ;
+	SOC(in)->dev.serial.flow_control = flow_none ;
+	SOC(in)->type = ct_serial ;
+	SOC(in)->state = cs_virgin ;
 	RETURN_BAD_IF_BAD(COM_open(in)) ;
 
 	// set the baud rate to 9600. (Already set to 9600 in COM_open())
-	in->baud = B9600 ;
+	SOC(in)->dev.serial.baud = B9600 ;
 	// allowable speeds
-	COM_BaudRestrict( &(in->baud), B9600, 0 ) ;
-	COM_speed(in->baud, in);
-	COM_slurp(in->file_descriptor) ;
+	COM_BaudRestrict( &(SOC(in)->dev.serial.baud), B9600, 0 ) ;
+	COM_speed(SOC(in)->dev.serial.baud, in);
+	COM_slurp(in) ;
 
 	if ( BAD( gbRESET( HA7E_reset(&pn) ) ) ) {
 		in->Adapter = adapter_HA7E ;
@@ -337,7 +339,5 @@ static void HA7E_powerdown(struct connection_in * in)
 	pn.selected_connection = in;
 
 	COM_write((BYTE*)"P", 1, in) ;
-	if ( FILE_DESCRIPTOR_VALID(in->file_descriptor) ) {
-		COM_slurp(in->file_descriptor) ;
-	}
+	COM_slurp(in) ;
 }

@@ -23,7 +23,7 @@ void Del_InFlight( GOOD_OR_BAD (*nomatch)(struct connection_in * trial,struct co
 		return ;
 	}
 
-	LEVEL_DEBUG("Request master be removed: %s", old_in->name);
+	LEVEL_DEBUG("Request master be removed: %s", SOC(old_in)->devicename);
 
 	CONNIN_WLOCK ;
 	if ( nomatch != NULL ) {
@@ -31,7 +31,7 @@ void Del_InFlight( GOOD_OR_BAD (*nomatch)(struct connection_in * trial,struct co
 		while ( in != NO_CONNECTION ) {
 			struct connection_in * next = in-> next ;
 			if ( BAD( nomatch( old_in, in )) ) {
-				LEVEL_DEBUG("Removing BUS index=%d %s",in->index,in->name);
+				LEVEL_DEBUG("Removing BUS index=%d %s",in->index,SAFESTRING(SOC(in)->devicename));
 				RemoveIn(in) ;
 			}
 			in = next ;

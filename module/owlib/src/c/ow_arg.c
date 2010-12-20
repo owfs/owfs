@@ -72,7 +72,7 @@ GOOD_OR_BAD ARG_EtherWeather(const char *arg)
 	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
-	in->name = (arg!=NULL) ? owstrdup(arg) : NULL;
+	SOC(in)->devicename = (arg!=NULL) ? owstrdup(arg) : NULL;
 	in->busmode = bus_etherweather;
 	return gbGOOD;
 }
@@ -83,7 +83,7 @@ GOOD_OR_BAD ARG_Fake(const char *arg)
 	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
-	in->name = (arg!=NULL) ? owstrdup(arg) : NULL;
+	SOC(in)->devicename = (arg!=NULL) ? owstrdup(arg) : NULL;
 	in->busmode = bus_fake;
 	return gbGOOD;
 }
@@ -110,7 +110,7 @@ GOOD_OR_BAD ARG_HA5( const char *arg)
 	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
-	in->name = (arg!=NULL) ? owstrdup(arg) : NULL;
+	SOC(in)->devicename = (arg!=NULL) ? owstrdup(arg) : NULL;
 	in->busmode = bus_ha5;
 	return gbGOOD;
 }
@@ -124,7 +124,7 @@ GOOD_OR_BAD ARG_HA7(const char *arg)
 		if (in == NO_CONNECTION) {
 			return gbBAD;
 		}
-		in->name = owstrdup(arg);
+		SOC(in)->devicename = owstrdup(arg);
 		in->busmode = bus_ha7net;
 		return gbGOOD;
 	} else {					// Try multicast discovery
@@ -143,7 +143,7 @@ GOOD_OR_BAD ARG_HA7E(const char *arg)
 	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
-	in->name = (arg!=NULL) ? owstrdup(arg) : NULL;
+	SOC(in)->devicename = (arg!=NULL) ? owstrdup(arg) : NULL;
 	in->busmode = bus_ha7e ;
 	return gbGOOD;
 }
@@ -154,7 +154,7 @@ GOOD_OR_BAD ARG_ENET(const char *arg)
 	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
-	in->name = (arg!=NULL) ? owstrdup(arg) : NULL;
+	SOC(in)->devicename = (arg!=NULL) ? owstrdup(arg) : NULL;
 	in->busmode = bus_enet ;
 	return gbGOOD;
 }
@@ -166,7 +166,7 @@ GOOD_OR_BAD ARG_I2C(const char *arg)
 	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
-	in->name = (arg!=NULL) ? owstrdup(arg) : owstrdup(":");
+	SOC(in)->devicename = (arg!=NULL) ? owstrdup(arg) : owstrdup(":");
 	in->busmode = bus_i2c;
 	return gbGOOD;
 	#else							/* OW_I2C */
@@ -181,7 +181,7 @@ GOOD_OR_BAD ARG_Link(const char *arg)
 	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
-	in->name = (arg!=NULL) ? owstrdup(arg) : NULL;
+	SOC(in)->devicename = (arg!=NULL) ? owstrdup(arg) : NULL;
 	switch( ArgType(arg) ) {
 		case arg_addr_null:
 			LEVEL_DEFAULT("LINK error. Please include either a serial device or network address in the command line specification");
@@ -205,7 +205,7 @@ GOOD_OR_BAD ARG_Mock(const char *arg)
 	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
-	in->name = (arg!=NULL) ? owstrdup(arg) : NULL;
+	SOC(in)->devicename = (arg!=NULL) ? owstrdup(arg) : NULL;
 	in->busmode = bus_mock;
 	return gbGOOD;
 }
@@ -216,7 +216,7 @@ GOOD_OR_BAD ARG_W1_monitor(void)
 	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
-	in->name = owstrdup("W1 bus monitor");
+	SOC(in)->devicename = owstrdup("W1 bus monitor");
 	in->busmode = bus_w1_monitor;
 	return gbGOOD;
 }
@@ -228,7 +228,7 @@ GOOD_OR_BAD ARG_USB_monitor(const char *arg)
 	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
-	in->name = (arg==NULL) ? NULL : owstrdup(arg);
+	SOC(in)->devicename = (arg==NULL) ? NULL : owstrdup(arg);
 	in->busmode = bus_usb_monitor;
 	return gbGOOD;
 #else
@@ -244,7 +244,7 @@ GOOD_OR_BAD ARG_Browse(void)
 	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
-	in->name = owstrdup("ZeroConf monitor");
+	SOC(in)->devicename = owstrdup("ZeroConf monitor");
 	in->busmode = bus_browse;
 	return gbGOOD;
 #else
@@ -259,7 +259,7 @@ GOOD_OR_BAD ARG_Net(const char *arg)
 	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
-	in->name = (arg!=NULL) ? owstrdup(arg) : NULL;
+	SOC(in)->devicename = (arg!=NULL) ? owstrdup(arg) : NULL;
 	in->busmode = bus_server;
 	return gbGOOD;
 }
@@ -271,7 +271,7 @@ GOOD_OR_BAD ARG_Parallel(const char *arg)
 	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
-	in->name = (arg!=NULL) ? owstrdup(arg) : NULL;
+	SOC(in)->devicename = (arg!=NULL) ? owstrdup(arg) : NULL;
 	in->busmode = bus_parallel;
 	return gbGOOD;
 	#else							/* OW_PARPORT */
@@ -286,7 +286,7 @@ GOOD_OR_BAD ARG_Passive(char *adapter_type_name, const char *arg)
 	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
-	in->name = (arg!=NULL) ? owstrdup(arg) : NULL;
+	SOC(in)->devicename = (arg!=NULL) ? owstrdup(arg) : NULL;
 	in->busmode = bus_passive;
 	// special set name of adapter here
 	in->adapter_name = adapter_type_name;
@@ -299,7 +299,7 @@ GOOD_OR_BAD ARG_Serial(const char *arg)
 	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
-	in->name = (arg!=NULL) ? owstrdup(arg) : NULL;
+	SOC(in)->devicename = (arg!=NULL) ? owstrdup(arg) : NULL;
 	switch( ArgType(arg) ) {
 		case arg_addr_null:
 			LEVEL_DEFAULT("LINK error. Please include either a serial device or network address in the command line specification");
@@ -333,7 +333,7 @@ GOOD_OR_BAD ARG_Tester(const char *arg)
 	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
-	in->name = (arg!=NULL) ? owstrdup(arg) : NULL;
+	SOC(in)->devicename = (arg!=NULL) ? owstrdup(arg) : NULL;
 	in->busmode = bus_tester;
 	return gbGOOD;
 }
@@ -347,7 +347,7 @@ GOOD_OR_BAD ARG_USB(const char *arg)
 		return gbBAD;
 	}
 	in->busmode = bus_usb;
-	in->name = (arg!=NULL) ? owstrdup(arg) : NULL;
+	SOC(in)->devicename = (arg!=NULL) ? owstrdup(arg) : NULL;
 	return gbGOOD;
 #else							/* OW_USB */
 	LEVEL_DEFAULT("USB support (intentionally) not included in compilation. Check LIBUSB, then reconfigure and recompile.");
@@ -362,7 +362,7 @@ GOOD_OR_BAD ARG_Xport(const char *arg)
 	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
-	in->name = (arg!=NULL) ? owstrdup(arg) : NULL;
+	SOC(in)->devicename = (arg!=NULL) ? owstrdup(arg) : NULL;
 	in->busmode = bus_xport;
 	return gbGOOD;
 }

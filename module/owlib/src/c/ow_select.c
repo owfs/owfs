@@ -115,7 +115,7 @@ GOOD_OR_BAD BUS_select(const struct parsedname *pn)
 		memcpy(&sent[1], pn->sn, SERIAL_NUMBER_SIZE);
 		if ( BAD(BUS_send_data(sent, 1+SERIAL_NUMBER_SIZE, pn))) {
 			STAT_ADD1_BUS(e_bus_select_errors, in);
-			LEVEL_CONNECT("Select error for %s on bus %s", pn->selected_device->readable_name, in->name);
+			LEVEL_CONNECT("Select error for %s on bus %s", pn->selected_device->readable_name, SOC(in)->devicename);
 			return gbBAD;
 		}
 	}
@@ -184,7 +184,7 @@ static GOOD_OR_BAD BUS_select_subbranch(const struct buspath *bp, const struct p
 	LEVEL_DEBUG("Selecting subbranch " SNformat, SNvar(bp->sn));
 	if ( BAD(BUS_transaction_nolock(t, pn)) || (resp[1] != branch[bp->branch])) {
 		STAT_ADD1_BUS(e_bus_select_errors, pn->selected_connection);
-		LEVEL_CONNECT("Select subbranch error on bus %s", pn->selected_connection->name);
+		LEVEL_CONNECT("Select subbranch error on bus %s", SOC(pn->selected_connection)->devicename);
 		return gbBAD;
 	}
 	//printf("subbranch stop\n");

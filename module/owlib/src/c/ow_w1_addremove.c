@@ -38,14 +38,14 @@ static struct connection_in * CreateIn(int bus_master)
 		return NO_CONNECTION ;
 	}	
 
-	in->name = owstrdup(name) ;
+	SOC(in)->devicename = owstrdup(name) ;
 	in->master.w1.id = bus_master ;
 	if ( BAD( W1_detect(in)) ) {
 		RemoveIn(in) ;
 		return NO_CONNECTION ;
 	}	
 		 
-	LEVEL_DEBUG("Created a new bus %s",in->name) ;
+	LEVEL_DEBUG("Created a new bus %s",SOC(in)->devicename) ;
 	return in ;
 }
 
@@ -65,7 +65,12 @@ void AddW1Bus( int bus_master )
 {
 	struct connection_in * new_in = CreateIn(bus_master) ;
 	
+	if ( new_in == NO_CONNECTION ) {
+		return ;
+	}
+
 	LEVEL_DEBUG("Request master be added: w1_master%d.", bus_master);
+	SOC(new_in)->type = ct_none ;
 	Add_InFlight( W1_nomatch, new_in ) ;
 }
 

@@ -22,45 +22,78 @@ $Id$
 /* raw COM port interface routines                */
 /* ---------------------------------------------- */
 
-//
 //open serial port
-// set global pn->si->file_descriptor and devport
-/* return 0=good
- *        -errno = cannot opon
- *        -EFAULT = already open
- */
-/* return 0 for success, 1 for failure */
-GOOD_OR_BAD COM_open(struct connection_in *in)
+// return 0=good
+GOOD_OR_BAD COM_open(struct connection_in *connection)
 {
 	struct termios newSerialTio;	/*new serial port settings */
-	if (in == NO_CONNECTION) {
+	FILE_DESCRIPTOR_OR_ERROR fd ;
+
+	if (connection == NO_CONNECTION) {
 		LEVEL_DEBUG("Attempt to open a NULL serial device");
 		return gbBAD;
 	}
-//    if ((in->file_descriptor = open(in->name, O_RDWR | O_NONBLOCK )) < 0) {
-	in->file_descriptor = open(in->name, O_RDWR | O_NONBLOCK | O_NOCTTY) ;
-	if ( FILE_DESCRIPTOR_NOT_VALID( in->file_descriptor ) ) {
-		ERROR_DEFAULT("Cannot open port: %s Permissions problem?", SAFESTRING(in->name));
+
+	switch ( SOC(connection)->type ) {
+		case ct_unknown:
+		case ct_none:
+			LEVEL_DEBUG("ERROR!!! ----------- ERROR!");
+			return gbBAD ;
+		case ct_telnet:
+		case ct_tcp:
+		case ct_i2c:
+		case ct_netlink:
+		case ct_usb:
+			LEVEL_DEBUG("Unimplemented!!!");
+			return gbBAD ;
+		case ct_serial:
+			break ;
+	}
+
+	switch ( SOC(connection)->state ) {
+		case cs_good:
+			LEVEL_DEBUG("Attempt to reopen a good connection?");
+			return gbGOOD ;
+		case cs_virgin:
+		case cs_bad:
+			break ;
+		case cs_closed:
+			LEVEL_DEBUG("Truly closed -- error");
+			return gbBAD ;
+	}
+
+	fd = open( SOC(connection)->devicename, O_RDWR | O_NONBLOCK | O_NOCTTY) ;
+	connection->soc.file_descriptor = fd ;
+	if ( FILE_DESCRIPTOR_NOT_VALID( fd ) ) {
+		// state doesn't change
+		ERROR_DEFAULT("Cannot open port: %s Permissions problem?", SAFESTRING(SOC(connection)->devicename));
 		return gbBAD;
 	}
-	// valgrind warns about uninitialized memory in tcsetattr(), so clear all.
-	memset(&(in->oldSerialTio), 0, sizeof(struct termios));
-	if ((tcgetattr(in->file_descriptor, &in->oldSerialTio) < 0)) {
-		ERROR_CONNECT("Cannot get old port attributes: %s", SAFESTRING(in->name));
+
+	// assume state is bad
+	SOC(connection)->state = cs_bad ;
+
+	if ( SOC(connection)->state == cs_virgin ) {
+		// valgrind warns about uninitialized memory in tcsetattr(), so clear all.
+		memset( &(SOC(connection)->dev.serial.oldSerialTio), 0, sizeof(struct termios));
+		if ((tcgetattr( fd, &(SOC(connection)->dev.serial.oldSerialTio) ) < 0)) {
+			ERROR_CONNECT("Cannot get old port attributes: %s", SAFESTRING(SOC(connection)->devicename));
+			// proceed anyway
+		}
 	}
 
 	// set baud in structure
-	COM_speed( B9600, in ) ;
+	COM_speed( B9600, connection ) ;
 	memset(&newSerialTio, 0, sizeof(struct termios));
-	if ((tcgetattr(in->file_descriptor, &newSerialTio) < 0)) {
-		ERROR_CONNECT("Cannot get new port attributes: %s", SAFESTRING(in->name));
+	if ((tcgetattr( fd, &newSerialTio) < 0)) {
+		ERROR_CONNECT("Cannot get new port attributes: %s", SAFESTRING(SOC(connection)->devicename));
 	}
 	
 	// Set to non-canonical mode, and no RTS/CTS handshaking
 	newSerialTio.c_iflag &= ~(BRKINT | ICRNL | IGNCR | INLCR | INPCK | ISTRIP | IXON | IXOFF | PARMRK);
 	newSerialTio.c_iflag |= IGNBRK | IGNPAR;
 	newSerialTio.c_oflag &= ~(OPOST);
-	switch( in->flow_control ) {
+	switch( SOC(connection)->dev.serial.flow_control ) {
 		case flow_hard:
 			newSerialTio.c_cflag &= ~(CSIZE | HUPCL | PARENB);
 			newSerialTio.c_cflag |= (CRTSCTS | CLOCAL | CS8 | CREAD);
@@ -77,39 +110,104 @@ GOOD_OR_BAD COM_open(struct connection_in *in)
 	newSerialTio.c_lflag &= ~(ECHO | ECHOE | ECHOK | ECHONL | ICANON | IEXTEN | ISIG);
 	newSerialTio.c_cc[VMIN] = 0;
 	newSerialTio.c_cc[VTIME] = 3;
-	if (tcsetattr(in->file_descriptor, TCSAFLUSH, &newSerialTio)) {
-		ERROR_CONNECT("Cannot set port attributes: %s", SAFESTRING(in->name));
+	if (tcsetattr( fd, TCSAFLUSH, &newSerialTio)) {
+		ERROR_CONNECT("Cannot set port attributes: %s", SAFESTRING(SOC(connection)->devicename));
 		return gbBAD;
 	}
-	tcflush(in->file_descriptor, TCIOFLUSH);
+	tcflush( fd, TCIOFLUSH);
 	//fcntl(pn->si->file_descriptor, F_SETFL, fcntl(pn->si->file_descriptor, F_GETFL, 0) & ~O_NONBLOCK);
+	SOC(connection)->state = cs_good ;
 	return gbGOOD;
 }
 
-void COM_close(struct connection_in *in)
+void COM_close(struct connection_in *connection)
 {
+	FILE_DESCRIPTOR_OR_ERROR fd ;
+
+	if (connection == NO_CONNECTION) {
+		LEVEL_DEBUG("Attempt to close a NULL serial device");
+		return ;
+	}
+
+	switch ( SOC(connection)->type ) {
+		case ct_unknown:
+		case ct_none:
+		case ct_usb:
+			LEVEL_DEBUG("ERROR!!! ----------- ERROR!");
+			return ;
+		case ct_telnet:
+		case ct_tcp:
+		case ct_i2c:
+		case ct_netlink:
+			SOC(connection)->state = cs_bad ;
+			Test_and_Close( &( SOC(connection)->file_descriptor) ) ;
+			LEVEL_DEBUG("Unimplemented!!!");
+			return ;
+		case ct_serial:
+			break ;
+	}
+
+	fd = SOC(connection)->file_descriptor ;
+
+	switch ( SOC(connection)->state ) {
+		case cs_good:
+			break ;
+		case cs_virgin:
+			return ;
+		case cs_bad:
+			// reopen to restore attributes
+			fd = open( SOC(connection)->devicename, O_RDWR | O_NONBLOCK | O_NOCTTY) ;
+			break ;
+		case cs_closed:
+			LEVEL_DEBUG("Truly closed -- error");
+			return ;
+	}
+
 	// restore tty settings
-	if ( FILE_DESCRIPTOR_VALID( in->file_descriptor ) ) {
+	if ( FILE_DESCRIPTOR_VALID( fd ) ) {
 		LEVEL_DEBUG("COM_close: flush");
-		tcflush(in->file_descriptor, TCIOFLUSH);
+		tcflush( fd, TCIOFLUSH);
 		LEVEL_DEBUG("COM_close: restore");
-		if (tcsetattr(in->file_descriptor, TCSANOW, &in->oldSerialTio) < 0) {
-			ERROR_CONNECT("Cannot restore port attributes: %s", SAFESTRING(in->name));
+		if ( tcsetattr( fd, TCSANOW, &(SOC(connection)->dev.serial.oldSerialTio) ) < 0) {
+			ERROR_CONNECT("Cannot restore port attributes: %s", SAFESTRING(SOC(connection)->devicename));
 		}
 		LEVEL_DEBUG("COM_close: close");
-		close(in->file_descriptor);
-		in->file_descriptor = FILE_DESCRIPTOR_BAD;
+		close( fd );
+		SOC(connection)->file_descriptor = FILE_DESCRIPTOR_BAD;
+		SOC(connection)->state = cs_bad ;
 	}
 }
 
-void COM_flush( const struct connection_in *in)
+void COM_flush( const struct connection_in *connection)
 {
-	tcflush(in->file_descriptor, TCIOFLUSH);
+	if (connection == NO_CONNECTION) {
+		LEVEL_DEBUG("Attempt to flush a NULL device");
+		return ;
+	}
+
+	switch ( SOC(connection)->type ) {
+		case ct_unknown:
+		case ct_none:
+			LEVEL_DEBUG("ERROR!!! ----------- ERROR!");
+			return ;
+		case ct_telnet:
+		case ct_tcp:
+			tcp_read_flush( SOC(connection)->file_descriptor) ;
+			break ;
+		case ct_netlink:
+		case ct_i2c:
+		case ct_usb:
+			LEVEL_DEBUG("Unimplemented!!!");
+			return ;
+		case ct_serial:
+			tcflush( SOC(connection)->file_descriptor, TCIOFLUSH);
+			break ;
+	}
 }
 
 void COM_break(struct connection_in *in)
 {
-	tcsendbreak(in->file_descriptor, 0);
+	tcsendbreak(SOC(in)->file_descriptor, 0);
 }
 
 void COM_speed(speed_t new_baud, struct connection_in *in)
@@ -119,18 +217,18 @@ void COM_speed(speed_t new_baud, struct connection_in *in)
 	// read the attribute structure
 	// valgrind warns about uninitialized memory in tcsetattr(), so clear all.
 	memset(&t, 0, sizeof(struct termios));
-	if (tcgetattr(in->file_descriptor, &t) < 0) {
-		ERROR_CONNECT("Could not get com port attributes: %s", SAFESTRING(in->name));
+	if (tcgetattr(SOC(in)->file_descriptor, &t) < 0) {
+		ERROR_CONNECT("Could not get com port attributes: %s", SAFESTRING(SOC(in)->devicename));
 		return;
 	}
 	// set baud in structure
 	if (cfsetospeed(&t, new_baud) < 0 || cfsetispeed(&t, new_baud) < 0) {
-		ERROR_CONNECT("Trouble setting port speed: %s", SAFESTRING(in->name));
+		ERROR_CONNECT("Trouble setting port speed: %s", SAFESTRING(SOC(in)->devicename));
 	}
 	// change baud on port
-	in->baud = new_baud ;
-	if (tcsetattr(in->file_descriptor, TCSAFLUSH, &t) < 0) {
-		ERROR_CONNECT("Could not set com port attributes: %s", SAFESTRING(in->name));
+	in->soc.dev.serial.baud = new_baud ;
+	if (tcsetattr(SOC(in)->file_descriptor, TCSAFLUSH, &t) < 0) {
+		ERROR_CONNECT("Could not set com port attributes: %s", SAFESTRING(SOC(in)->devicename));
 		if (new_baud != B9600) { // avoid infinite recursion
 			COM_speed(B9600, in);
 		}

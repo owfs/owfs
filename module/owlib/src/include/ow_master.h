@@ -29,10 +29,10 @@ $Id$
 enum ds2480b_mode { ds2480b_data_mode, ds2480b_command_mode, } ;
 
 struct master_tcp {
-	char *host;
-	char *service;
-	struct addrinfo *ai;
-	struct addrinfo *ai_ok;
+//	char *host;
+//	char *service;
+//	struct addrinfo *ai;
+//	struct addrinfo *ai_ok;
 	char *type;					// for zeroconf
 	char *domain;				// for zeroconf
 	char *name;					// zeroconf name

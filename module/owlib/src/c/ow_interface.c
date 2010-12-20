@@ -9,36 +9,6 @@ $Id$
     1wire/iButton system from Dallas Semiconductor
 */
 
-/* General Device File format:
-    This device file corresponds to a specific 1wire/iButton chip type
-    ( or a closely related family of chips )
-
-    The connection to the larger program is through the "device" data structure,
-      which must be declared in the acompanying header file.
-
-    The device structure holds the
-      family code,
-      name,
-      device type (chip, interface or pseudo)
-      number of properties,
-      list of property structures, called "filetype".
-
-    Each filetype structure holds the
-      name,
-      estimated length (in bytes),
-      aggregate structure pointer,
-      data format,
-      read function,
-      write funtion,
-      generic data pointer
-
-    The aggregate structure, is present for properties that several members
-    (e.g. pages of memory or entries in a temperature log. It holds:
-      number of elements
-      whether the members are lettered or numbered
-      whether the elements are stored together and split, or separately and joined
-*/
-
 /* Stats are a pseudo-device -- they are a file-system entry and handled as such,
      but have a different caching type to distiguish their handling */
 
@@ -329,7 +299,7 @@ static ZERO_OR_ERROR FS_r_baud(struct one_wire_query *owq)
 		case bus_link:
 		case bus_ha5:
 		case bus_ha7e:
-			OWQ_U(owq) = COM_BaudRate( pn->selected_connection->baud ) ;
+			OWQ_U(owq) = COM_BaudRate( SOC(pn->selected_connection)->dev.serial.baud ) ;
 			return 0;
 		default:
 			return -ENOTSUP ;
@@ -342,7 +312,7 @@ static ZERO_OR_ERROR FS_w_baud(struct one_wire_query *owq)
 	switch ( pn->selected_connection->busmode ) {
 		case bus_serial:
 		case bus_link:
-			pn->selected_connection->baud = COM_MakeBaud( (speed_t) OWQ_U(owq) ) ;
+			SOC(pn->selected_connection)->dev.serial.baud = COM_MakeBaud( (speed_t) OWQ_U(owq) ) ;
 			++pn->selected_connection->changed_bus_settings ;
 			break ;
 		default:
@@ -600,12 +570,9 @@ static ZERO_OR_ERROR FS_name(struct one_wire_query *owq)
 /* special check, -remote file length won't match local sizes */
 static ZERO_OR_ERROR FS_port(struct one_wire_query *owq)
 {
-	char *name = "";
-	struct parsedname *pn = PN(owq);
-	if (pn->selected_connection->name) {
-		name = pn->selected_connection->name;
-	}
-	return OWQ_format_output_offset_and_size_z(name, owq);
+	return OWQ_format_output_offset_and_size_z(
+		SAFESTRING( SOC(PN(owq)->selected_connection)->devicename),
+		owq);
 }
 
 /* special check, -remote file length won't match local sizes */

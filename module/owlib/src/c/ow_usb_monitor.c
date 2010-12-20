@@ -28,7 +28,8 @@ GOOD_OR_BAD USB_monitor_detect(struct connection_in *in)
 	struct address_pair ap ;
 	pthread_t thread ;
 	
-	Parse_Address( in->name, &ap ) ;
+	Parse_Address( SOC(in)->devicename, &ap ) ;
+	SOC(in)->type = ct_none ;
 	if ( ap.first.type == address_numeric ) {
 		Globals.usb_scan_interval = ap.first.number ;
 	} else {
@@ -36,10 +37,10 @@ GOOD_OR_BAD USB_monitor_detect(struct connection_in *in)
 	}
 	Free_Address( &ap ) ;
 
-	SAFEFREE(in->name) ;
-	in->name = owstrdup("USB bus monitor") ;
+	SAFEFREE(SOC(in)->devicename) ;
+	SOC(in)->devicename = owstrdup("USB bus monitor") ;
 
-	in->file_descriptor = FILE_DESCRIPTOR_BAD;
+	SOC(in)->file_descriptor = FILE_DESCRIPTOR_BAD;
 	in->iroutines.detect = USB_monitor_detect;
 	in->Adapter = adapter_browse_monitor;	/* OWFS assigned value */
 	in->iroutines.reset = NO_RESET_ROUTINE;
@@ -90,7 +91,7 @@ static GOOD_OR_BAD usb_monitor_in_use(const struct connection_in * in_selected)
 
 static void USB_monitor_close(struct connection_in *in)
 {
-	SAFEFREE(in->name) ;
+	SAFEFREE(SOC(in)->devicename) ;
 
 	if ( FILE_DESCRIPTOR_VALID( in->master.usb_monitor.shutdown_pipe[fd_pipe_write] ) ) {
 		ignore_result = write( in->master.usb_monitor.shutdown_pipe[fd_pipe_write],"X",1) ; //dummy payload
@@ -138,7 +139,8 @@ static void USB_scan_for_adapters(void)
 		if ( in == NO_CONNECTION ) {
 			return ;
 		}
-		in->name = DS9490_device_name(&ul) ;
+		SOC(in)->devicename = DS9490_device_name(&ul) ;
+		SOC(in)->type = ct_usb ;
 		
 		// Can do detect. Becasue the name makes this a specific adapter (USB pair)
 		// we won't do a directory and won't add the directory and devices with the wrong index

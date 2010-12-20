@@ -21,7 +21,6 @@ static GOOD_OR_BAD browse_in_use(const struct connection_in * in_selected) ;
 GOOD_OR_BAD Browse_detect(struct connection_in *in)
 {
 #if OW_ZERO
-	in->file_descriptor = FILE_DESCRIPTOR_BAD;
 	in->iroutines.detect = Browse_detect;
 	in->Adapter = adapter_browse_monitor;	/* OWFS assigned value */
 	in->iroutines.reset = NO_RESET_ROUTINE;

@@ -85,18 +85,18 @@ static int EtherWeather_command(struct connection_in *in, char command, int data
 	}
 */
 	while (left > 0) {
-		res = write(in->file_descriptor, &packet[datalen + 2 - left], left);
+		res = write(SOC(in)->file_descriptor, &packet[datalen + 2 - left], left);
 		if (res < 0) {
 			if (errno == EINTR) {
 				continue;
 			}
-			ERROR_CONNECT("Trouble writing data to EtherWeather: %s", SAFESTRING(in->name));
+			ERROR_CONNECT("Trouble writing data to EtherWeather: %s", SAFESTRING(SOC(in)->devicename));
 			break;
 		}
 		left -= res;
 	}
 
-	tcdrain(in->file_descriptor);
+	tcdrain(SOC(in)->file_descriptor);
 
 	if (left > 0) {
 		STAT_ADD1_BUS(e_bus_write_errors, in);
@@ -108,7 +108,7 @@ static int EtherWeather_command(struct connection_in *in, char command, int data
 		tvnet.tv_sec += 2;
 	}
 	// Read the response header
-	tcp_read(in->file_descriptor, packet, 2, &tvnet, &readin_size) ;
+	tcp_read(SOC(in)->file_descriptor, packet, 2, &tvnet, &readin_size) ;
 	if (readin_size != 2) {
 		LEVEL_CONNECT("header read error");
 		owfree(packet);
@@ -122,7 +122,7 @@ static int EtherWeather_command(struct connection_in *in, char command, int data
 	}
 	// Then read any data
 	if (datalen > 0) {
-		tcp_read(in->file_descriptor, odata, datalen, &tvnet, &readin_size );
+		tcp_read(SOC(in)->file_descriptor, odata, datalen, &tvnet, &readin_size );
 		if (readin_size != (size_t) datalen) {
 			LEVEL_CONNECT("data read error");
 			owfree(packet);
@@ -269,20 +269,23 @@ GOOD_OR_BAD EtherWeather_detect(struct connection_in *in)
 	/* Set up low-level routines */
 	EtherWeather_setroutines(in);
 
-	if (in->name == NULL) {
+	if (SOC(in)->devicename == NULL) {
 		return gbBAD;
 	}
 
-	RETURN_BAD_IF_BAD(ClientAddr(in->name, DEFAULT_ETHERWEATHER_POST, in)) ;
-	pn.selected_connection->file_descriptor = ClientConnect(in) ;
-	if ( FILE_DESCRIPTOR_NOT_VALID(pn.selected_connection->file_descriptor) ) {
+	RETURN_BAD_IF_BAD(ClientAddr(SOC(in)->devicename, DEFAULT_ETHERWEATHER_POST, in)) ;
+	SOC(in)->file_descriptor = ClientConnect(in) ;
+	SOC(in)->type = ct_tcp ;
+	if ( FILE_DESCRIPTOR_NOT_VALID(SOC(in)->file_descriptor) ) {
+		SOC(in)->state = cs_bad ;
 		return gbBAD;
 	}
+	SOC(in)->state = cs_good ;
 
 
 	/* TODO: probe version, and confirm that it's actually an EtherWeather */
 
-	LEVEL_CONNECT("Connected to EtherWeather at %s", in->name);
+	LEVEL_CONNECT("Connected to EtherWeather at %s", SOC(in)->devicename);
 
 	in->Adapter = adapter_EtherWeather;
 

@@ -119,7 +119,7 @@ SEQ_OR_ERROR W1_send_msg( struct connection_in * in, struct w1_netlink_msg *msg,
 	LEVEL_DEBUG("Netlink send -----------------");
 	Netlink_Print( nlm, cn, w1m, w1c, pdata, length ) ;
 
-	err = send( Inbound_Control.w1_monitor->file_descriptor, nlm, size,  0);
+	err = send( SOC(Inbound_Control.w1_monitor)->file_descriptor, nlm, size,  0);
 	owfree(nlm);
 	if (err == -1) {
 		ERROR_CONNECT("Failed to send w1 netlink message");

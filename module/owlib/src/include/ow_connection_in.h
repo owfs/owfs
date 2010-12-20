@@ -154,14 +154,17 @@ enum e_bus_stat {
 struct connection_in {
 	struct connection_in *next;
 	INDEX_OR_ERROR index;
-	char *name;
-	FILE_DESCRIPTOR_OR_PERSISTENT file_descriptor;
+//	char *name;
+//	FILE_DESCRIPTOR_OR_PERSISTENT file_descriptor;
 	
+	// Serial / tcp / telnet / i2c abstraction
+	struct communication soc ;
+
 	// Com port data:
-	speed_t baud; // baud rate in the form of B9600
-	struct termios oldSerialTio;    /*old serial port settings */
-	enum { flow_none, flow_soft, flow_hard, } flow_control ;
-	struct timeval timeout ; // for serial or tcp read
+//	speed_t baud; // baud rate in the form of B9600
+//	struct termios oldSerialTio;    /*old serial port settings */
+//	enum { flow_none, flow_soft, flow_hard, } flow_control ;
+//	struct timeval timeout ; // for serial or tcp read
 	
 	// For adapters that maintain dir-at-once (or dirgulp):
 	struct dirblob main;        /* main directory */
@@ -193,6 +196,8 @@ struct connection_in {
 
 	union master_union master;
 };
+
+#define SOC( connection )  ( &( (connection)->soc) )
 
 #define NO_CONNECTION NULL
 

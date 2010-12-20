@@ -24,7 +24,7 @@ static struct connection_in * Bus_from_file_descriptor( FILE_DESCRIPTOR_OR_ERROR
 {
 	struct connection_in * in ;
 	for( in = Inbound_Control.head ; in != NO_CONNECTION ; in = in->next ) {
-		if ( in->file_descriptor == file_descriptor ) {
+		if ( SOC(in)->file_descriptor == file_descriptor ) {
 			break ;
 		}
 	}
@@ -33,13 +33,13 @@ static struct connection_in * Bus_from_file_descriptor( FILE_DESCRIPTOR_OR_ERROR
 
 void TrafficOut( const char * data_type, const BYTE * data, size_t length, const struct connection_in * in )
 {
-	fprintf(stderr, "TRAFFIC OUT <%s> bus=%d (%s)\n", SAFESTRING(data_type), in->index, in->name ) ;
+	fprintf(stderr, "TRAFFIC OUT <%s> bus=%d (%s)\n", SAFESTRING(data_type), in->index, SOC(in)->devicename ) ;
 	_Debug_Bytes( in->adapter_name, data, length ) ;
 }
 
 void TrafficIn( const char * data_type, const BYTE * data, size_t length, const struct connection_in * in )
 {
-	fprintf(stderr, "TRAFFIC IN  <%s> bus=%d (%s)\n", SAFESTRING(data_type), in->index, in->name ) ;
+	fprintf(stderr, "TRAFFIC IN  <%s> bus=%d (%s)\n", SAFESTRING(data_type), in->index, SOC(in)->devicename ) ;
 	_Debug_Bytes( in->adapter_name, data, length ) ;
 }
 

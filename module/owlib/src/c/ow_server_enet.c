@@ -69,14 +69,15 @@ GOOD_OR_BAD OWServer_Enet_detect(struct connection_in *in)
 	in->Adapter = adapter_ENET;
 	in->adapter_name = "OWServer_Enet";
 	in->busmode = bus_enet;
-	in->timeout.tv_sec = 0 ;
-	in->timeout.tv_usec = 600000 ;
+	SOC(in)->timeout.tv_sec = 0 ;
+	SOC(in)->timeout.tv_usec = 600000 ;
 
-	if (in->name == NULL) {
+	if ( SOC(in)->devicename == NULL) {
 		return gbBAD;
 	}
 
-	RETURN_BAD_IF_BAD(ClientAddr(in->name, DEFAULT_ENET_PORT, in)) ;
+	SOC(in)->type = ct_telnet ;
+	RETURN_BAD_IF_BAD(ClientAddr(SOC(in)->devicename, DEFAULT_ENET_PORT, in)) ;
 
 	// Always returns 0D0A
 	in->master.serial.tcp.CRLF_size = 2 ;
@@ -88,18 +89,18 @@ GOOD_OR_BAD OWServer_Enet_detect(struct connection_in *in)
 
 	RETURN_GOOD_IF_GOOD( OWServer_Enet_reopen(in)) ;
 	RETURN_GOOD_IF_GOOD( OWServer_Enet_reopen(in)) ;
-	LEVEL_DEFAULT("Problem opening OW_SERVER_ENET on IP address=[%s] port=[%s] -- is the \"1-Wire Setup\" enabled?", SAFESTRING(in->master.tcp.host), in->master.tcp.service );
+	LEVEL_DEFAULT("Problem opening OW_SERVER_ENET on IP address=[%s] port=[%s] -- is the \"1-Wire Setup\" enabled?", SAFESTRING(SOC(in)->dev.tcp.host), SOC(in)->dev.tcp.service );
 	return gbBAD ;
 }
 
 static GOOD_OR_BAD OWServer_Enet_reopen(struct connection_in *in)
 {
-	Test_and_Close( &(in->file_descriptor) ) ;
+	Test_and_Close( &(SOC(in)->file_descriptor) ) ;
 	
 	in->master.serial.tcp.default_discard = 0 ;
 
-	in->file_descriptor = ClientConnect(in) ;
-	if ( FILE_DESCRIPTOR_NOT_VALID(in->file_descriptor) ) {
+	SOC(in)->file_descriptor = ClientConnect(in) ;
+	if ( FILE_DESCRIPTOR_NOT_VALID( SOC(in)->file_descriptor) ) {
 		return gbBAD;
 	}
 
@@ -424,7 +425,7 @@ static void OWServer_Enet_settimeout(struct connection_in *in)
 
 static void OWServer_Enet_testtimeout(struct connection_in *in) 
 {
-	if ( FILE_DESCRIPTOR_NOT_VALID( in->file_descriptor ) ) {
+	if ( FILE_DESCRIPTOR_NOT_VALID( SOC(in)->file_descriptor ) ) {
 		OWServer_Enet_reopen( in ) ;
 	} else {
 		struct timeval tv ;

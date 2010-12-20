@@ -302,9 +302,11 @@ static GOOD_OR_BAD Pack_item(const struct transaction_log *tl, struct transactio
 		tb->select_first = 1;
 		break;
 	case trxn_compare:			// match two strings -- no actual 1-wire
+	case trxn_bitcompare:			// match two strings -- no actual 1-wire
 		LEVEL_DEBUG("pack=COMPARE");
 		break;
 	case trxn_read:
+	case trxn_bitread:
 		LEVEL_DEBUG(" pack=READ");
 		if (tl->size > tb->max_size) {
 			return gbBAD;		// too big for any bundle
@@ -317,7 +319,9 @@ static GOOD_OR_BAD Pack_item(const struct transaction_log *tl, struct transactio
 		}
 		break;
 	case trxn_match:			// write data and match response
+	case trxn_bitmatch:			// write data and match response
 	case trxn_modify:			// write data and read response. No match needed
+	case trxn_bitmodify:			// write data and read response. No match needed
 	case trxn_blind:			// write data and ignore response
 		LEVEL_DEBUG("pack=MATCH MODIFY BLIND");
 		if (tl->size > tb->max_size) {
@@ -331,6 +335,7 @@ static GOOD_OR_BAD Pack_item(const struct transaction_log *tl, struct transactio
 		}
 		break;
 	case trxn_power:
+	case trxn_bitpower:
 	case trxn_program:
 		LEVEL_DEBUG("pack=POWER PROGRAM");
 		if (1 > tb->max_size) {
@@ -389,6 +394,12 @@ static GOOD_OR_BAD Bundle_unpack(struct transaction_bundle *tb)
 				ret = gbBAD;
 			}
 			break;
+		case trxn_bitcompare:			// match two strings -- no actual 1-wire
+			if ((tl->in == NULL) || (tl->out == NULL)
+				|| BAD( BUS_compare_bits( tl->in, tl->out, tl->size)) ) {
+				ret = gbBAD;
+			}
+			break ;
 		case trxn_match:		// send data and compare response
 			LEVEL_DEBUG("unpacking #%d MATCH", packet_index);
 			if (memcmp(tl->out, data, tl->size) != 0) {

@@ -70,6 +70,7 @@ GOOD_OR_BAD W1_detect(struct connection_in *in)
 	pn.selected_connection = in;
 
 	/* Set up low-level routines */
+	SOC(in)->type = ct_none ;
 	W1_setroutines(in);
 	in->master.w1.netlink_pipe[fd_pipe_read] = FILE_DESCRIPTOR_BAD ;
 	in->master.w1.netlink_pipe[fd_pipe_write] = FILE_DESCRIPTOR_BAD ;
@@ -79,7 +80,7 @@ GOOD_OR_BAD W1_detect(struct connection_in *in)
 		return gbBAD ;
 	}
 
-	if (in->name == NULL) {
+	if ( SOC(in)->devicename == NULL) {
 		return gbBAD;
 	}
 

@@ -153,12 +153,9 @@ void COM_close(struct connection_in *in);
 void COM_break(struct connection_in *in);
 GOOD_OR_BAD COM_write( const BYTE * data, size_t length, struct connection_in *connection);
 GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connection);
-void Slurp( FILE_DESCRIPTOR_OR_ERROR file_descriptor, unsigned long usec ) ;
+void COM_slurp( struct connection_in *in);
 
 GOOD_OR_BAD telnet_read(BYTE * buf, const size_t size, struct connection_in *in) ;
-
-#define COM_slurp( file_descriptor ) Slurp( file_descriptor, 1000 )
-#define TCP_slurp( file_descriptor ) Slurp( file_descriptor, 100000 )
 
 void FreeInAll(void);
 void RemoveIn( struct connection_in * conn ) ;

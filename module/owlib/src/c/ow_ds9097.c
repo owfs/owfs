@@ -63,7 +63,9 @@ GOOD_OR_BAD DS9097_detect(struct connection_in *in)
 	in->busmode = bus_passive;	// in case initially tried DS9097U
 
 	/* open the COM port in 9600 Baud  */
-	in->flow_control = flow_none ;
+	SOC(in)->type = ct_serial ;
+	SOC(in)->state = cs_virgin ;
+	SOC(in)->dev.serial.flow_control = flow_none ;
 	RETURN_BAD_IF_BAD(COM_open(in)) ;
 
 	switch( DS9097_reset_in(in) ) {
@@ -76,7 +78,7 @@ GOOD_OR_BAD DS9097_detect(struct connection_in *in)
 
 	/* open the COM port in 9600 Baud  */
 	/* Second pass */
-	in->flow_control = flow_none ;
+	SOC(in)->dev.serial.flow_control = flow_none ;
 	RETURN_BAD_IF_BAD(COM_open(in)) ;
 
 	switch( DS9097_reset_in(in) ) {
@@ -89,7 +91,7 @@ GOOD_OR_BAD DS9097_detect(struct connection_in *in)
 
 	/* open the COM port in 9600 Baud  */
 	/* Third pass, hardware flow control */
-	in->flow_control = flow_hard ;
+	SOC(in)->dev.serial.flow_control = flow_hard ;
 	RETURN_BAD_IF_BAD(COM_open(in)) ;
 
 	switch( DS9097_reset_in(in) ) {
@@ -145,28 +147,26 @@ static RESET_TYPE DS9097_reset_in( struct connection_in * in )
 /* Puts in 9600 baud */
 static GOOD_OR_BAD DS9097_pre_reset(struct termios * term, struct connection_in *in )
 {
-	FILE_DESCRIPTOR_OR_ERROR file_descriptor = in->file_descriptor;
-
-	if ( FILE_DESCRIPTOR_NOT_VALID(file_descriptor) ) {
+	if ( SOC(in)->state != cs_good ) {
 		LEVEL_CONNECT("Bad serial port file descriptor") ;
-		return gbBAD;
+		RETURN_BAD_IF_BAD( COM_open( in  ) );
 	}
 
 	/* 8 data bits */
 	//valgrind warn about uninitialized memory in tcsetattr(), so clear all.
 	memset(term, 0, sizeof(struct termios));
-	if ( tcgetattr(file_descriptor,term) < 0 ) {
+	if ( tcgetattr( SOC(in)->file_descriptor, term) < 0 ) {
 		ERROR_CONNECT( "Canot get serial port settings") ;
 		return gbBAD ;
 	}
 	
 	term->c_cflag = CS8 | CREAD | HUPCL | CLOCAL;
 	if (cfsetospeed(term, B9600) < 0 || cfsetispeed(term, B9600) < 0) {
-		ERROR_CONNECT("Cannot set speed (9600): %s", SAFESTRING(in->name));
+		ERROR_CONNECT("Cannot set speed (9600): %s", SAFESTRING(SOC(in)->devicename));
 		return gbBAD ;
 	}
-	if (tcsetattr(file_descriptor, TCSANOW, term) < 0) {
-		ERROR_CONNECT("Cannot set attributes: %s", SAFESTRING(in->name));
+	if (tcsetattr( SOC(in)->file_descriptor, TCSANOW, term) < 0) {
+		ERROR_CONNECT("Cannot set attributes: %s", SAFESTRING(SOC(in)->devicename));
 		DS9097_post_reset( term, in ) ;
 		return gbBAD;
 	}
@@ -199,12 +199,12 @@ static void DS9097_post_reset(struct termios * term, struct connection_in *in )
 	}
 #else
 	if (cfsetospeed(term, B115200) < 0 || cfsetispeed(term, B115200) < 0) {
-		ERROR_CONNECT("Cannot set speed (115200): %s", SAFESTRING(in->name));
+		ERROR_CONNECT("Cannot set speed (115200): %s", SAFESTRING(SOC(in)->devicename));
 	}
 #endif
 
-	if (tcsetattr(in->file_descriptor, TCSANOW, term) < 0) {
-		ERROR_CONNECT("Cannot set attributes: %s", SAFESTRING(in->name));
+	if (tcsetattr( SOC(in)->file_descriptor, TCSANOW, term) < 0) {
+		ERROR_CONNECT("Cannot set attributes: %s", SAFESTRING(SOC(in)->devicename));
 	}
 	/* Flush the input and output buffers */
 	COM_flush(in); // Adds no appreciable time
@@ -253,8 +253,6 @@ static GOOD_OR_BAD DS9097_sendback_bits(const BYTE * outbits, BYTE * inbits, con
 }
 
 /* Routine to send a string of bits and get another string back */
-/* This seems rather COM-port specific */
-/* Indeed, will move to DS9097 */
 static GOOD_OR_BAD DS9097_send_and_get(const BYTE * bussend, BYTE * busget, const size_t length, struct connection_in * in)
 {
 	RETURN_BAD_IF_BAD( COM_write( bussend, length, in ) ) ;

@@ -101,14 +101,14 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct connection_in * in )
 
 	case bus_zero:
 		if ( BAD( Zero_detect(in) )) {
-			LEVEL_CONNECT("Cannot open server at %s", in->name);
+			LEVEL_CONNECT("Cannot open server at %s", SOC(in)->devicename);
 			return gbBAD ;
 		}
 		break;
 
 	case bus_server:
 		if (BAD( Server_detect(in)) ) {
-			LEVEL_CONNECT("Cannot open server at %s", in->name);
+			LEVEL_CONNECT("Cannot open server at %s", SOC(in)->devicename);
 			return gbBAD ;
 		}
 		break;
@@ -116,7 +116,7 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct connection_in * in )
 	case bus_serial:
 		/* Set up DS2480/LINK interface */
 		if ( BAD( DS2480_detect(in) )) {
-			LEVEL_CONNECT("Cannot detect DS2480 or LINK interface on %s.", in->name);
+			LEVEL_CONNECT("Cannot detect DS2480 or LINK interface on %s.", SOC(in)->devicename);
 		} else {
 			return gbGOOD ;
 		}
@@ -125,14 +125,14 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct connection_in * in )
 
 	case bus_passive:
 		if ( BAD( DS9097_detect(in) )) {
-			LEVEL_DEFAULT("Cannot detect DS9097 (passive) interface on %s.", in->name);
+			LEVEL_DEFAULT("Cannot detect DS9097 (passive) interface on %s.", SOC(in)->devicename);
 			return gbBAD ;
 		}
 		break;
 		
 	case bus_xport:
 		if ( BAD( DS2480_detect(in) )) {
-			LEVEL_DEFAULT("Cannot detect DS2480B via telnet interface on %s.", in->name);
+			LEVEL_DEFAULT("Cannot detect DS2480B via telnet interface on %s.", SOC(in)->devicename);
 			return gbBAD ;
 		}
 		break;
@@ -140,7 +140,7 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct connection_in * in )
 	case bus_i2c:
 #if OW_I2C
 		if ( BAD( DS2482_detect(in) )) {
-			LEVEL_CONNECT("Cannot detect an i2c DS2482-x00 on %s", in->name);
+			LEVEL_CONNECT("Cannot detect an i2c DS2482-x00 on %s", SOC(in)->devicename);
 			return gbBAD ;
 		}
 #endif							/* OW_I2C */
@@ -149,7 +149,7 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct connection_in * in )
 	case bus_ha7net:
 #if OW_HA7
 		if ( BAD( HA7_detect(in) )) {
-			LEVEL_CONNECT("Cannot detect an HA7net server on %s", in->name);
+			LEVEL_CONNECT("Cannot detect an HA7net server on %s", SOC(in)->devicename);
 			return gbBAD ;
 		}
 #endif                          /* OW_HA7 */
@@ -158,7 +158,7 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct connection_in * in )
 	case bus_enet:
 #if OW_HA7
 		if ( BAD( OWServer_Enet_detect(in) )) {
-			LEVEL_CONNECT("Cannot detect an OWServer_Enet on %s", in->name);
+			LEVEL_CONNECT("Cannot detect an OWServer_Enet on %s", SOC(in)->devicename);
 			return gbBAD ;
 		}
 #endif                          /* OW_HA7 */
@@ -166,14 +166,14 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct connection_in * in )
 
 	case bus_ha5:
 		if ( BAD( HA5_detect(in) )) {
-			LEVEL_CONNECT("Cannot detect an HA5 on %s", in->name);
+			LEVEL_CONNECT("Cannot detect an HA5 on %s", SOC(in)->devicename);
 			return gbBAD ;
 		}
 		break;
 
 	case bus_ha7e:
 		if ( BAD( HA7E_detect(in) )) {
-			LEVEL_CONNECT("Cannot detect an HA7E/HA7S on %s", in->name);
+			LEVEL_CONNECT("Cannot detect an HA7E/HA7S on %s", SOC(in)->devicename);
 			return gbBAD ;
 		}
 		break;
@@ -202,14 +202,14 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct connection_in * in )
 	case bus_link:
 	case bus_elink:
 		if ( BAD( LINK_detect(in) )) {
-			LEVEL_CONNECT("Cannot open LINK bus master at %s", in->name);
+			LEVEL_CONNECT("Cannot open LINK bus master at %s", SOC(in)->devicename);
 			return gbBAD ;
 		}
 		break;
 
 	case bus_etherweather:
 		if ( BAD( EtherWeather_detect(in) )) {
-			LEVEL_CONNECT("Cannot detect an EtherWeather server on %s", in->name);
+			LEVEL_CONNECT("Cannot detect an EtherWeather server on %s", SOC(in)->devicename);
 			return gbBAD ;
 		}
 		break;

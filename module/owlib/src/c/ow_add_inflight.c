@@ -23,7 +23,7 @@ void Add_InFlight( GOOD_OR_BAD (*nomatch)(struct connection_in * trial,struct co
 		return ;
 	}
 
-	LEVEL_DEBUG("Request master be added: %s", new_in->name);
+	LEVEL_DEBUG("Request master be added: %s", SOC(new_in)->devicename);
 
 	CONNIN_WLOCK ;
 	if ( nomatch != NO_CONNECTION ) {

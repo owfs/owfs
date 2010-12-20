@@ -62,20 +62,20 @@ GOOD_OR_BAD telnet_read(BYTE * buf, const size_t size, struct connection_in *in)
 		return gbBAD ;
 	}
 
-	if ( FILE_DESCRIPTOR_NOT_VALID(in->file_descriptor) ) {
+	if ( FILE_DESCRIPTOR_NOT_VALID(SOC(in)->file_descriptor) ) {
 		return gbBAD ;
 	}
 	
 	// initial read
-	if ( tcp_read( in->file_descriptor, readin_buf, allocated_size, &(in->timeout), &actual_readin) < 0 ) {
+	if ( tcp_read( SOC(in)->file_descriptor, readin_buf, allocated_size, &(SOC(in)->timeout), &actual_readin) < 0 ) {
 		LEVEL_DEBUG("tcp seems closed") ;
-		Test_and_Close( &(in->file_descriptor) ) ;
+		Test_and_Close( &(SOC(in)->file_descriptor) ) ;
 		return gbBAD ;
 	}
 	
 	if (actual_readin < size) {
 		LEVEL_CONNECT("Telnet (ethernet) error");
-		Test_and_Close( &(in->file_descriptor) ) ;
+		Test_and_Close( &(SOC(in)->file_descriptor) ) ;
 		return gbBAD;
 	}
 
@@ -83,7 +83,7 @@ GOOD_OR_BAD telnet_read(BYTE * buf, const size_t size, struct connection_in *in)
 	while ( still_needed > 0 ) {
 		if ( current_index >= allocated_size ) {
 			// need to read more -- just read what we think we need -- escape chars may require repeat
-			tcp_read( in->file_descriptor, readin_buf, still_needed, &(in->timeout), &actual_readin) ;
+			tcp_read( SOC(in)->file_descriptor, readin_buf, still_needed, &(SOC(in)->timeout), &actual_readin) ;
 			if (actual_readin != still_needed ) {
 				LEVEL_CONNECT("Telnet (ethernet) error");
 				return gbBAD;

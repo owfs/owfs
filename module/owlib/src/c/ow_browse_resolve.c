@@ -32,7 +32,7 @@ void ZeroAdd(const char * name, const char * type, const char * domain, const ch
 
 	in = CreateIn( name, type, domain, host, service ) ;
 	if ( BAD( Zero_detect(in)) ) {
-		LEVEL_DEBUG("Failed to create new %s",in->name) ;
+		LEVEL_DEBUG("Failed to create new %s", SOC(in)->devicename ) ;
 		RemoveIn(in) ;
 	} else {
 		Add_InFlight( Zero_nomatch, in ) ;
@@ -44,8 +44,8 @@ void ZeroDel(const char * name, const char * type, const char * domain )
 	struct connection_in * in = CreateIn( name, type, domain, "", "" ) ;
 	
 	if ( in != NO_CONNECTION ) {
-		SAFEFREE(in->name) ;
-		in->name = owstrdup(name) ;
+		SAFEFREE(SOC(in)->devicename) ;
+		SOC(in)->devicename = owstrdup(name) ;
 		Del_InFlight( Zero_nomatch, in ) ;
 	}
 }
@@ -63,7 +63,8 @@ static struct connection_in * CreateIn(const char * name, const char * type, con
 	UCLIBCLOCK;
 	snprintf(addr_name,127,"%s:%s",host,service) ;
 	UCLIBCUNLOCK;
-	in->name = owstrdup(addr_name) ;
+	SOC(in)->devicename = owstrdup(addr_name) ;
+	SOC(in)->type = ct_tcp ;
 	in->master.tcp.name   = owstrdup( name  ) ;
 	in->master.tcp.type   = owstrdup( type  ) ;
 	in->master.tcp.domain = owstrdup( domain) ;

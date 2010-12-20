@@ -75,11 +75,12 @@ GOOD_OR_BAD HA7_detect(struct connection_in *in)
 
 	in->master.ha7.locked = 0;
 
-	if (in->name == NULL) {
+	if (SOC(in)->devicename == NULL) {
 		return gbBAD;
 	}
 
-	RETURN_BAD_IF_BAD(ClientAddr(in->name, DEFAULT_HA7_PORT, in)) ;
+	SOC(in)->type = ct_tcp ;
+	RETURN_BAD_IF_BAD(ClientAddr(SOC(in)->devicename, DEFAULT_HA7_PORT, in)) ;
 
 	file_descriptor = ClientConnect(in) ;
 	if ( FILE_DESCRIPTOR_NOT_VALID(file_descriptor) ) {
@@ -287,7 +288,7 @@ static GOOD_OR_BAD HA7_write(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const ASC
 			if (errno == EINTR) {
 				continue;
 			}
-			ERROR_CONNECT("Trouble writing data to HA7: %s", SAFESTRING(in->name));
+			ERROR_CONNECT("Trouble writing data to HA7: %s", SAFESTRING(SOC(in)->devicename));
 			break;
 		}
 		sl -= r;
