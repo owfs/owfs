@@ -44,7 +44,7 @@ See: http://www.iana.org/assignments/port-numbers
 #define DEFAULT_ENET_PORT         "8080"
 #define DEFAULT_LINK_PORT         "10001"
 #define DEFAULT_XPORT_PORT        "10001"
-#define DEFAULT_ETHERWEATHER_POST "15862"
+#define DEFAULT_ETHERWEATHER_PORT "15862"
 
 #include "ow.h"
 #include "ow_counters.h"

@@ -51,7 +51,7 @@ GOOD_OR_BAD tcp_open(struct connection_in *connection)
 				def_port = DEFAULT_XPORT_PORT ;
 				break ;
 			case bus_etherweather:
-				def_port = DEFAULT_ETHERWEATHER_POST ;
+				def_port = DEFAULT_ETHERWEATHER_PORT ;
 				break ;
 			case bus_enet:
 				def_port = DEFAULT_ENET_PORT ;

@@ -273,15 +273,8 @@ GOOD_OR_BAD EtherWeather_detect(struct connection_in *in)
 		return gbBAD;
 	}
 
-	RETURN_BAD_IF_BAD(ClientAddr(SOC(in)->devicename, DEFAULT_ETHERWEATHER_POST, in)) ;
-	SOC(in)->file_descriptor = ClientConnect(in) ;
 	SOC(in)->type = ct_tcp ;
-	if ( FILE_DESCRIPTOR_NOT_VALID(SOC(in)->file_descriptor) ) {
-		SOC(in)->state = cs_bad ;
-		return gbBAD;
-	}
-	SOC(in)->state = cs_good ;
-
+	RETURN_BAD_IF_BAD( COM_open(in) ) ;
 
 	/* TODO: probe version, and confirm that it's actually an EtherWeather */
 

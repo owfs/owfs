@@ -249,11 +249,7 @@ static GOOD_OR_BAD LINK_detect_net(struct connection_in * in)
 	SOC(in)->timeout.tv_usec = 300000 ;
 
 	/* Open the tcp port */
-	RETURN_BAD_IF_BAD(ClientAddr(SOC(in)->devicename, DEFAULT_LINK_PORT, in)) ;
-	SOC(in)->file_descriptor = ClientConnect(in) ;
-	if ( FILE_DESCRIPTOR_NOT_VALID(SOC(in)->file_descriptor) ) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD( COM_open(in) ) ;
 	
 	LEVEL_DEBUG("Slurp in initial bytes");
 	LINK_slurp( in ) ;

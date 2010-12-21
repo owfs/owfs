@@ -357,11 +357,7 @@ static GOOD_OR_BAD DS2480_big_reset_net(struct connection_in * in)
 {
 	BYTE reset_byte = (BYTE) ( CMD_COMM | FUNCTSEL_RESET | SPEEDSEL_STD );
 
-	RETURN_BAD_IF_BAD(ClientAddr(SOC(in)->devicename, DEFAULT_XPORT_PORT, in)) ;
-	SOC(in)->file_descriptor = ClientConnect(in) ;
-	if ( FILE_DESCRIPTOR_NOT_VALID(SOC(in)->file_descriptor) ) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD( COM_open(in) ) ;
 	
 	in->master.serial.tcp.default_discard = 0 ;
 

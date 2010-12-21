@@ -77,7 +77,7 @@ GOOD_OR_BAD OWServer_Enet_detect(struct connection_in *in)
 	}
 
 	SOC(in)->type = ct_telnet ;
-	RETURN_BAD_IF_BAD(ClientAddr(SOC(in)->devicename, DEFAULT_ENET_PORT, in)) ;
+	RETURN_BAD_IF_BAD( COM_open(in) ) ;
 
 	// Always returns 0D0A
 	in->master.serial.tcp.CRLF_size = 2 ;

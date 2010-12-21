@@ -80,12 +80,7 @@ GOOD_OR_BAD HA7_detect(struct connection_in *in)
 	}
 
 	SOC(in)->type = ct_tcp ;
-	RETURN_BAD_IF_BAD(ClientAddr(SOC(in)->devicename, DEFAULT_HA7_PORT, in)) ;
-
-	file_descriptor = ClientConnect(in) ;
-	if ( FILE_DESCRIPTOR_NOT_VALID(file_descriptor) ) {
-		return gbBAD;
-	}
+	RETURN_BAD_IF_BAD( COM_open(in) ) ;
 
 	in->Adapter = adapter_HA7NET;
 
