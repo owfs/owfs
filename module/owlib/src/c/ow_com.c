@@ -49,6 +49,8 @@ GOOD_OR_BAD COM_open(struct connection_in *connection)
 			return gbBAD ;
 		case ct_telnet:
 		case ct_tcp:
+			ret = tcp_open( connection ) ;
+			break ;
 		case ct_i2c:
 		case ct_netlink:
 		case ct_usb:

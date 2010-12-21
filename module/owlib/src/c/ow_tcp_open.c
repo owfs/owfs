@@ -59,7 +59,7 @@ GOOD_OR_BAD tcp_open(struct connection_in *connection)
 			default:
 				break ;
 		}
-		RETURN_BAD_IF_BAD( ClientAddr( SOC(connection)->devicename, def_port, connection ) ;
+		RETURN_BAD_IF_BAD( ClientAddr( SOC(connection)->devicename, def_port, connection ) ) ;
 	}
 
 	SOC(connection)->file_descriptor = ClientConnect(connection) ;
