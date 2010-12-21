@@ -56,9 +56,6 @@ void COM_slurp( struct connection_in * connection ) {
 		case cs_bad:
 			LEVEL_DEBUG("Closed, should reopen");
 			return ;
-		case cs_closed:
-			LEVEL_DEBUG("Truly closed -- error");
-			return ;
 	}
 
 	fd = SOC(connection)->file_descriptor ;

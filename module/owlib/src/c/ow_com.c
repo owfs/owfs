@@ -57,9 +57,6 @@ GOOD_OR_BAD COM_open(struct connection_in *connection)
 		case cs_virgin:
 		case cs_bad:
 			break ;
-		case cs_closed:
-			LEVEL_DEBUG("Truly closed -- error");
-			return gbBAD ;
 	}
 
 	fd = open( SOC(connection)->devicename, O_RDWR | O_NONBLOCK | O_NOCTTY) ;
@@ -158,9 +155,6 @@ void COM_close(struct connection_in *connection)
 			// reopen to restore attributes
 			fd = open( SOC(connection)->devicename, O_RDWR | O_NONBLOCK | O_NOCTTY) ;
 			break ;
-		case cs_closed:
-			LEVEL_DEBUG("Truly closed -- error");
-			return ;
 	}
 
 	// restore tty settings

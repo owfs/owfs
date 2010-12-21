@@ -38,7 +38,6 @@ enum com_state {
 	cs_virgin,
 	cs_good,
 	cs_bad,
-	cs_closed,
 } ;
 
 struct com_serial {

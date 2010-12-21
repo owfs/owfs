@@ -56,9 +56,6 @@ GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connecti
 		case cs_bad:
 			LEVEL_DEBUG("Closed, should reopen");
 			return gbBAD ;
-		case cs_closed:
-			LEVEL_DEBUG("Truly closed -- error");
-			return gbBAD ;
 	}
 
 	fd = SOC(connection)->file_descriptor ;
