@@ -363,7 +363,7 @@ static GOOD_OR_BAD DS2482_detect_single(int lowindex, int highindex, char * i2c_
 			LEVEL_CONNECT("Found an i2c device at %s address %.2X", i2c_device, test_address[i2c_index]);
 			/* Provisional setup as a DS2482-100 ( 1 channel ) */
 			SOC(in)->file_descriptor = file_descriptor;
-			SOC(in)->state = cs_good;
+			SOC(in)->state = cs_deflowered;
 			SOC(in)->type = ct_i2c ;
 			in->master.i2c.i2c_address = test_address[i2c_index];
 			in->master.i2c.i2c_index = i2c_index;
@@ -411,7 +411,6 @@ static GOOD_OR_BAD DS2482_detect_single(int lowindex, int highindex, char * i2c_
 	/* fell though, no device found */
 	COM_close( in ) ;
 	in->busmode = bus_bad;
-	SOC(in)->state = cs_bad ;
 	return gbBAD;
 }
 
@@ -431,7 +430,7 @@ static GOOD_OR_BAD DS2482_redetect(const struct parsedname *pn)
 		ERROR_CONNECT("Could not open i2c device %s", SOC(head)->devicename);
 		return gbBAD;
 	}
-
+	
 	/* address is known */
 	if (ioctl(file_descriptor, I2C_SLAVE, head->master.i2c.i2c_address) < 0) {
 		ERROR_CONNECT("Cound not set i2c address to %.2X", address);
@@ -447,7 +446,7 @@ static GOOD_OR_BAD DS2482_redetect(const struct parsedname *pn)
 			struct connection_in * next ;
 			head->master.i2c.current = 0;
 			SOC(head)->file_descriptor = file_descriptor;
-			SOC(head)->state = cs_good ;
+			SOC(head)->state = cs_deflowered ;
 			SOC(head)->type = ct_i2c ;
 			head->master.i2c.configchip = 0x00;	// default configuration register after RESET	
 			LEVEL_CONNECT("i2c device at %s address %d reset successfully", SOC(head)->devicename, address);

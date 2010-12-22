@@ -228,7 +228,7 @@ static GOOD_OR_BAD EtherWeather_PowerByte(const BYTE byte, BYTE * resp, const UI
 
 static void EtherWeather_close(struct connection_in *in)
 {
-	FreeClientAddr(in);
+	// the standard COM-free cleans up the connection
 }
 
 static RESET_TYPE EtherWeather_reset(const struct parsedname *pn)

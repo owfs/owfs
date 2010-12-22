@@ -21,17 +21,6 @@ $Id$
 //open tcp port
 GOOD_OR_BAD tcp_open(struct connection_in *connection)
 {
-	struct termios newSerialTio;	/*new serial port settings */
-	FILE_DESCRIPTOR_OR_ERROR fd ;
-
-	fd = open( SOC(connection)->devicename, O_RDWR | O_NONBLOCK | O_NOCTTY) ;
-	connection->soc.file_descriptor = fd ;
-	if ( FILE_DESCRIPTOR_NOT_VALID( fd ) ) {
-		// state doesn't change
-		ERROR_DEFAULT("Cannot open port: %s Permissions problem?", SAFESTRING(SOC(connection)->devicename));
-		return gbBAD;
-	}
-
 	if ( SOC(connection)->state == cs_virgin ) {
 		char * def_port = NULL ;
 		switch( connection->busmode ) {
@@ -60,8 +49,10 @@ GOOD_OR_BAD tcp_open(struct connection_in *connection)
 				break ;
 		}
 		RETURN_BAD_IF_BAD( ClientAddr( SOC(connection)->devicename, def_port, connection ) ) ;
+		SOC(connection)->file_descriptor = FILE_DESCRIPTOR_BAD ;
 	}
 
+	SOC(connection)->state = cs_deflowered ;
 	SOC(connection)->file_descriptor = ClientConnect(connection) ;
 	if ( FILE_DESCRIPTOR_NOT_VALID(SOC(connection)->file_descriptor) ) {
 		return gbBAD;

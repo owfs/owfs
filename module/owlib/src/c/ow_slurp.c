@@ -21,7 +21,6 @@ $Id$
 static void Slurp( FILE_DESCRIPTOR_OR_ERROR file_descriptor, unsigned long usec ) ;
 
 void COM_slurp( struct connection_in * connection ) {
-	FILE_DESCRIPTOR_OR_ERROR fd ;
 	unsigned long usec ;	
 
 	if ( connection == NO_CONNECTION ) {
@@ -47,23 +46,9 @@ void COM_slurp( struct connection_in * connection ) {
 			break ;
 	}
 
-	switch ( SOC(connection)->state ) {
-		case cs_virgin:
-			LEVEL_DEBUG("Not yet open");
-			return ;
-		case cs_good:
-			break ;
-		case cs_bad:
-			LEVEL_DEBUG("Closed, should reopen");
-			return ;
-	}
+	RETURN_BAD_IF_BAD( COM_test(connection) ) ;
 
-	fd = SOC(connection)->file_descriptor ;
-	if ( FILE_DESCRIPTOR_NOT_VALID( fd ) ) {
-		SOC(connection)->state = cs_bad ;
-		return ;
-	}
-	Slurp( fd, usec ) ;
+	Slurp( SOC(connection)->file_descriptor, usec ) ;
 }
 
 /* slurp up any pending chars -- used at the start to clear the com buffer */

@@ -195,7 +195,6 @@ GOOD_OR_BAD LINK_detect(struct connection_in *in)
 		default:
 			return gbBAD ;
 	}
-	SOC(in)->state = cs_bad ;
 	return gbBAD ;
 }
 
@@ -220,7 +219,7 @@ static GOOD_OR_BAD LINK_detect_serial(struct connection_in * in)
 	version_string = LINK_version_string(in) ;
 	if ( version_string == NULL ) {
 		LEVEL_DEBUG("Cannot get version string");
-		LINK_close(in) ;
+		COM_close(in) ;
 		return gbBAD;
 	}
 
@@ -235,7 +234,7 @@ static GOOD_OR_BAD LINK_detect_serial(struct connection_in * in)
 
 	owfree(version_string);
 	LEVEL_DEFAULT("LINK detection error");
-	LINK_close(in) ;
+	COM_close(in) ;
 	return gbBAD;
 }
 
@@ -267,7 +266,7 @@ static GOOD_OR_BAD LINK_detect_net(struct connection_in * in)
 	}
 
 	LEVEL_DEFAULT("LINK detection error");
-	LINK_close(in) ;
+	COM_close(in) ;
 	return gbBAD;
 }
 
@@ -714,16 +713,8 @@ static GOOD_OR_BAD LINK_directory(struct device_search *ds, struct dirblob *db, 
 
 static void LINK_close(struct connection_in *in)
 {
-	switch( in->busmode ) {
-		case bus_elink:
-			FreeClientAddr(in);
-			break ;
-		case bus_link:
-			COM_close(in) ;
-			break ;
-		default:
-			break ;
-	}
+	// the standard COM_free routine cleans up the connection
+	(void) in ;
 }
 
 static GOOD_OR_BAD LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay, const struct parsedname *pn)

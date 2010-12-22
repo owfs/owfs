@@ -47,22 +47,8 @@ GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connecti
 			break ;
 	}
 
-	switch ( SOC(connection)->state ) {
-		case cs_virgin:
-			LEVEL_DEBUG("Not yet open");
-			return gbBAD ;
-		case cs_good:
-			break ;
-		case cs_bad:
-			LEVEL_DEBUG("Closed, should reopen");
-			return gbBAD ;
-	}
-
+	RETURN_BAD_IF_BAD( COM_test(connection) ) ;
 	fd = SOC(connection)->file_descriptor ;
-	if ( FILE_DESCRIPTOR_NOT_VALID( fd ) ) {
-		SOC(connection)->state = cs_bad ;
-		return gbBAD ;
-	}
 	
 	while (to_be_read > 0) {
 		int select_result ;
@@ -90,6 +76,7 @@ GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connecti
 			if (read_result < 0) {
 				if (errno != EWOULDBLOCK) {
 					ERROR_CONNECT("Trouble reading from serial port: %s", SAFESTRING(SOC(connection)->devicename));
+					COM_close(connection) ;
 					STAT_ADD1_BUS(e_bus_read_errors, connection);
 					return gbBAD;
 				}
@@ -107,6 +94,9 @@ GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connecti
 			if ( errno == EINTR ) {
 				STAT_ADD1_BUS(e_bus_timeouts, connection);
 				continue ;
+			} else if ( errno == EBADF ) {
+				LEVEL_DEBUG("Close file descriptor -- EBADF");
+				COM_close(connection) ;
 			}
 			ERROR_CONNECT("Select error (read) serial port: %s", SAFESTRING(SOC(connection)->devicename));
 			STAT_ADD1_BUS(e_bus_timeouts, connection);

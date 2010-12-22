@@ -29,7 +29,7 @@ GOOD_OR_BAD serial_open(struct connection_in *connection)
 	FILE_DESCRIPTOR_OR_ERROR fd ;
 
 	fd = open( SOC(connection)->devicename, O_RDWR | O_NONBLOCK | O_NOCTTY) ;
-	connection->soc.file_descriptor = fd ;
+	SOC(connection)->file_descriptor = fd ;
 	if ( FILE_DESCRIPTOR_NOT_VALID( fd ) ) {
 		// state doesn't change
 		ERROR_DEFAULT("Cannot open port: %s Permissions problem?", SAFESTRING(SOC(connection)->devicename));
@@ -43,6 +43,7 @@ GOOD_OR_BAD serial_open(struct connection_in *connection)
 			ERROR_CONNECT("Cannot get old port attributes: %s", SAFESTRING(SOC(connection)->devicename));
 			// proceed anyway
 		}
+		SOC(connection)->state = cs_deflowered ;
 	}
 
 	// set baud in structure

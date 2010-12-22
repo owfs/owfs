@@ -36,8 +36,7 @@ enum com_type {
 
 enum com_state {
 	cs_virgin,
-	cs_good,
-	cs_bad,
+	cs_deflowered,
 } ;
 
 struct com_serial {

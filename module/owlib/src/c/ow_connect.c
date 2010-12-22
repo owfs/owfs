@@ -217,8 +217,7 @@ void RemoveIn( struct connection_in * conn )
 	BUS_close(conn) ;
 
 	/* Next free up internal resources */
-	COM_close( conn ) ;
-	SAFEFREE(SOC(conn)->devicename) ;
+	COM_free( conn ) ;
 	DirblobClear(&(conn->main));
 	DirblobClear(&(conn->alarm));
 	

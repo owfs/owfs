@@ -18,30 +18,13 @@ $Id$
 #include <linux/limits.h>
 #endif
 
-/* ---------------------------------------------- */
-/* raw COM port interface routines                */
-/* ---------------------------------------------- */
-
-//open serial port
-// return 0=good
-GOOD_OR_BAD COM_open(struct connection_in *connection)
+GOOD_OR_BAD COM_test( struct connection_in * connection )
 {
-	GOOD_OR_BAD ret ;
-
 	if (connection == NO_CONNECTION) {
 		LEVEL_DEBUG("Attempt to open a NULL serial device");
 		return gbBAD;
 	}
 
-	switch ( SOC(connection)->state ) {
-		case cs_good:
-			LEVEL_DEBUG("Attempt to reopen a good connection?");
-			return gbGOOD ;
-		case cs_virgin:
-		case cs_bad:
-			break ;
-	}
-
 	switch ( SOC(connection)->type ) {
 		case ct_unknown:
 		case ct_none:
@@ -49,7 +32,6 @@ GOOD_OR_BAD COM_open(struct connection_in *connection)
 			return gbBAD ;
 		case ct_telnet:
 		case ct_tcp:
-			ret = tcp_open( connection ) ;
 			break ;
 		case ct_i2c:
 		case ct_netlink:
@@ -57,71 +39,15 @@ GOOD_OR_BAD COM_open(struct connection_in *connection)
 			LEVEL_DEBUG("Unimplemented!!!");
 			return gbBAD ;
 		case ct_serial:
-			ret = serial_open( connection ) ;
 			break ;
 	}
 
-	if ( GOOD(ret) ) {
-		SOC(connection)->state = cs_good ;
-	} else {
-		SOC(connection)->state = cs_bad ;
+	if ( SOC(connection)->state == cs_virgin ) {
+		LEVEL_DEBUG("Auto initialization of %s", SAFESTRING(SOC(connection)->devicename)) ;
+	} else if ( FILE_DESCRIPTOR_VALID( SOC(connection)->file_descriptor ) ) {
+		return gbGOOD ;
 	}
-	return ret ;
-}
-
-void COM_close(struct connection_in *connection)
-{
-	FILE_DESCRIPTOR_OR_ERROR fd ;
-
-	if (connection == NO_CONNECTION) {
-		LEVEL_DEBUG("Attempt to close a NULL serial device");
-		return ;
-	}
-
-	switch ( SOC(connection)->type ) {
-		case ct_unknown:
-		case ct_none:
-		case ct_usb:
-			LEVEL_DEBUG("ERROR!!! ----------- ERROR!");
-			return ;
-		case ct_telnet:
-		case ct_tcp:
-		case ct_i2c:
-		case ct_netlink:
-			SOC(connection)->state = cs_bad ;
-			Test_and_Close( &( SOC(connection)->file_descriptor) ) ;
-			LEVEL_DEBUG("Unimplemented!!!");
-			return ;
-		case ct_serial:
-			break ;
-	}
-
-	fd = SOC(connection)->file_descriptor ;
-
-	switch ( SOC(connection)->state ) {
-		case cs_good:
-			break ;
-		case cs_virgin:
-			return ;
-		case cs_bad:
-			// reopen to restore attributes
-			fd = open( SOC(connection)->devicename, O_RDWR | O_NONBLOCK | O_NOCTTY) ;
-			break ;
-	}
-
-	// restore tty settings
-	if ( FILE_DESCRIPTOR_VALID( fd ) ) {
-		LEVEL_DEBUG("COM_close: flush");
-		tcflush( fd, TCIOFLUSH);
-		LEVEL_DEBUG("COM_close: restore");
-		if ( tcsetattr( fd, TCSANOW, &(SOC(connection)->dev.serial.oldSerialTio) ) < 0) {
-			ERROR_CONNECT("Cannot restore port attributes: %s", SAFESTRING(SOC(connection)->devicename));
-		}
-		LEVEL_DEBUG("COM_close: close");
-		close( fd );
-		SOC(connection)->file_descriptor = FILE_DESCRIPTOR_BAD;
-		SOC(connection)->state = cs_bad ;
-	}
+	return COM_open(connection) ;
 }
 
 void COM_flush( const struct connection_in *connection)

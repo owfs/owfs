@@ -81,6 +81,7 @@ GOOD_OR_BAD HA7_detect(struct connection_in *in)
 
 	SOC(in)->type = ct_tcp ;
 	RETURN_BAD_IF_BAD( COM_open(in) ) ;
+	file_descriptor = SOC(in)->file_descriptor ;
 
 	in->Adapter = adapter_HA7NET;
 
@@ -488,7 +489,8 @@ static GOOD_OR_BAD HA7_select(const struct parsedname *pn)
 
 static void HA7_close(struct connection_in *in)
 {
-	FreeClientAddr(in);
+	// that standard COM_free cleans up the connection
+	(void) in ;
 }
 
 static void toHA7init(struct toHA7 *ha7)

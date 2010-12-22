@@ -147,10 +147,7 @@ static RESET_TYPE DS9097_reset_in( struct connection_in * in )
 /* Puts in 9600 baud */
 static GOOD_OR_BAD DS9097_pre_reset(struct termios * term, struct connection_in *in )
 {
-	if ( SOC(in)->state != cs_good ) {
-		LEVEL_CONNECT("Bad serial port file descriptor") ;
-		RETURN_BAD_IF_BAD( COM_open( in  ) );
-	}
+	RETURN_BAD_IF_BAD( COM_test(in) ) ;
 
 	/* 8 data bits */
 	//valgrind warn about uninitialized memory in tcsetattr(), so clear all.

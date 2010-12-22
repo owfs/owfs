@@ -438,6 +438,6 @@ static void OWServer_Enet_testtimeout(struct connection_in *in)
 
 static void OWServer_Enet_close(struct connection_in *in)
 {
-	FreeClientAddr(in);
+	// the statndard COM_free cleans up the connection
 }
 

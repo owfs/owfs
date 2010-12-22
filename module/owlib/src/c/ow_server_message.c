@@ -548,7 +548,7 @@ static GOOD_OR_BAD To_Server( struct server_connection_state * scs, struct serve
 				break ;
 			default:
 				// persistent connection idle and waiting for use
-				// connection_ion is locked to this is safe
+				// connection_in is locked so this is safe
 				scs->file_descriptor = SOC(in)->file_descriptor;
 				SOC(in)->file_descriptor = FILE_DESCRIPTOR_PERSISTENT_IN_USE;
 			break ;

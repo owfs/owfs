@@ -61,12 +61,12 @@ GOOD_OR_BAD Zero_detect(struct connection_in *in)
 		return gbBAD ;
 	}
 	SOC(in)->type = ct_tcp ;
+	SOC(in)->state = cs_virgin ;
 	in->busmode = bus_zero;
-	SOC(in)->file_descriptor = FILE_DESCRIPTOR_BAD;	// No persistent connection yet
 	if (SOC(in)->devicename == NULL) {
 		return gbBAD;
 	}
-	RETURN_BAD_IF_BAD(ClientAddr(SOC(in)->devicename, DEFAULT_SERVER_PORT, in)) ;
+	RETURN_BAD_IF_BAD( COM_open(in) ) ;
 	in->Adapter = adapter_tcp;
 	in->adapter_name = "tcp";
 	Zero_setroutines(&(in->iroutines));
@@ -81,8 +81,8 @@ GOOD_OR_BAD Server_detect(struct connection_in *in)
 		return gbBAD;
 	}
 	SOC(in)->type = ct_tcp ;
-	RETURN_BAD_IF_BAD(ClientAddr( SOC(in)->devicename, DEFAULT_SERVER_PORT, in)) ;
-	SOC(in)->file_descriptor = FILE_DESCRIPTOR_BAD;	// No persistent connection yet
+	SOC(in)->state = cs_virgin ;
+	RETURN_BAD_IF_BAD( COM_open(in) ) ;
 	in->Adapter = adapter_tcp;
 	in->adapter_name = "tcp";
 	in->busmode = bus_server;
@@ -97,5 +97,4 @@ static void Server_close(struct connection_in *in)
 	SAFEFREE(in->master.tcp.type) ;
 	SAFEFREE(in->master.tcp.domain) ;
 	SAFEFREE(in->master.tcp.name) ;
-	FreeClientAddr(in);
 }

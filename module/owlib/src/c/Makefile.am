@@ -57,6 +57,9 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_cache.c         \
                ow_charblob.c      \
                ow_com.c           \
+               ow_com_close.c     \
+               ow_com_free.c      \
+               ow_com_open.c      \
                ow_com_write.c     \
                ow_com_read.c      \
                ow_connect.c       \
@@ -132,6 +135,7 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_rwlock.c        \
                ow_stats.c         \
                ow_search.c        \
+               ow_serial_free.c   \
                ow_serial_open.c   \
                ow_server.c        \
                ow_server_message.c\
@@ -148,6 +152,7 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_slurp.c         \
                ow_stateinfo.c     \
                ow_system.c        \
+               ow_tcp_free.c      \
                ow_tcp_open.c      \
                ow_tcp_read.c      \
                ow_temp.c          \

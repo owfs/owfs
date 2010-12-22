@@ -56,8 +56,8 @@ static void DS2480_setroutines(struct connection_in *in)
 	in->iroutines.PowerByte = DS2480_PowerByte;
 	in->iroutines.PowerBit = DS2480_PowerBit;
 	in->iroutines.ProgramPulse = DS2480_ProgramPulse;
-	in->iroutines.sendback_data = NO_SENDBACKDATA_ROUTINE;
-//	in->iroutines.sendback_data = DS2480_sendback_data;
+//	in->iroutines.sendback_data = NO_SENDBACKDATA_ROUTINE;
+	in->iroutines.sendback_data = DS2480_sendback_data;
     in->iroutines.sendback_bits = DS2480_sendback_bits;
 	in->iroutines.select = NO_SELECT_ROUTINE;
 	in->iroutines.select_and_sendback = NO_SELECTANDSENDBACK_ROUTINE;
@@ -238,9 +238,10 @@ GOOD_OR_BAD DS2480_detect(struct connection_in *in)
 
 	in->master.serial.tcp.CRLF_size = 2 ;
 
+	SOC(in)->state = cs_virgin ;
 	if ( BAD(DS2480_initialize_repeatedly(in)) ) {
 		LEVEL_DEBUG("Could not initilize the DS9097U even after several tries") ;
-		BUS_close(in) ;
+		COM_close(in) ;
 		return gbBAD ;
 	}
 
@@ -300,14 +301,17 @@ static GOOD_OR_BAD DS2480_big_reset(struct connection_in * in)
 			SOC(in)->type = ct_tcp ;
 			return DS2480_big_reset_net(in) ;
 		default:
-			SOC(in)->dev.serial.flow_control = flow_none ;
 			SOC(in)->type = ct_serial ;
-			SOC(in)->state = cs_virgin ;
-			RETURN_GOOD_IF_GOOD( DS2480_big_reset_serial(in)) ;
+
 			SOC(in)->dev.serial.flow_control = flow_none ;
 			RETURN_GOOD_IF_GOOD( DS2480_big_reset_serial(in)) ;
+
+			SOC(in)->dev.serial.flow_control = flow_none ;
+			RETURN_GOOD_IF_GOOD( DS2480_big_reset_serial(in)) ;
+
 			SOC(in)->dev.serial.flow_control = flow_hard ;
 			RETURN_GOOD_IF_GOOD( DS2480_big_reset_serial(in)) ;
+
 			return gbBAD ;
 	}
 }
@@ -1036,15 +1040,6 @@ static GOOD_OR_BAD DS2480_sendback_data(const BYTE * data, BYTE * resp, const si
 
 static void DS2480_close(struct connection_in *in)
 {
-	switch( in->busmode ) {
-		case bus_elink:
-			FreeClientAddr(in);
-			break ;
-		case bus_link:
-			COM_close(in) ;
-			break ;
-		default:
-			break ;
-	}
+	// the staqndard COM_free cleans up the connection
 }
 
