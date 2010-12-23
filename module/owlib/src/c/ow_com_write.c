@@ -18,11 +18,10 @@ $Id$
 #include <linux/limits.h>
 #endif
 
+static GOOD_OR_BAD COM_write_once( const BYTE * data, size_t length, struct connection_in *connection) ;
+
 GOOD_OR_BAD COM_write( const BYTE * data, size_t length, struct connection_in *connection)
 {
-	ssize_t to_be_written = length ;
-	FILE_DESCRIPTOR_OR_ERROR fd ;
-
 	if ( length == 0 || data == NULL ) {
 		return gbGOOD ;
 	}
@@ -47,8 +46,61 @@ GOOD_OR_BAD COM_write( const BYTE * data, size_t length, struct connection_in *c
 			break ;
 	}
 
+	// is connection thought to be open?
 	RETURN_BAD_IF_BAD( COM_test(connection) ) ;
-	fd = SOC(connection)->file_descriptor ;
+
+	// try the write
+	RETURN_GOOD_IF_GOOD( COM_write_once( data, length, connection ) );
+
+	if ( SOC(connection)->file_descriptor == FILE_DESCRIPTOR_BAD ) {
+		// connection was bad, now closed, try again
+		RETURN_BAD_IF_BAD( COM_test(connection) ) ;
+		COM_slurp(connection) ;
+		return COM_write_once( data, length, connection ) ;
+	}
+
+	// Can't open or another type of error
+	return gbBAD ;
+}
+
+// No retries, let the upper level handle problems.
+GOOD_OR_BAD COM_write_simple( const BYTE * data, size_t length, struct connection_in *connection)
+{
+	if ( length == 0 || data == NULL ) {
+		return gbGOOD ;
+	}
+
+	if ( connection == NO_CONNECTION ) {
+		return gbBAD ;
+	}
+
+	switch ( SOC(connection)->type ) {
+		case ct_unknown:
+		case ct_none:
+			LEVEL_DEBUG("ERROR!!! ----------- ERROR!");
+			return gbBAD ;
+		case ct_i2c:
+		case ct_usb:
+			LEVEL_DEBUG("Unimplemented!!!");
+			return gbBAD ;
+		case ct_telnet:
+		case ct_tcp:
+		case ct_serial:
+		case ct_netlink:
+			break ;
+	}
+
+	if ( SOC(connection)->file_descriptor == FILE_DESCRIPTOR_BAD ) {
+		return gbBAD ;
+	}
+
+	return COM_write_once( data, length, connection ) ;
+}
+
+static GOOD_OR_BAD COM_write_once( const BYTE * data, size_t length, struct connection_in *connection)
+{
+	ssize_t to_be_written = length ;
+	FILE_DESCRIPTOR_OR_ERROR fd = SOC(connection)->file_descriptor ;
 
 	while (to_be_written > 0) {
 		int select_result ;

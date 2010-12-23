@@ -18,8 +18,6 @@ $Id$
 #include "ow_connection.h"
 #include "ow_codes.h"
 
-struct timeval ENET_timeout = { 29, 500000 } ; // Socket times out after 30 seconds (use 29.5 here)
-
 #define BYTE_string(x)  ((BYTE *)(x))
 
 static RESET_TYPE OWServer_Enet_reset(const struct parsedname *pn);
@@ -39,8 +37,6 @@ static RESET_TYPE OWServer_Enet_reset_in(struct connection_in * in);
 static GOOD_OR_BAD OWServer_Enet_directory(struct device_search *ds, struct dirblob *db, struct connection_in * in) ;
 static enum ENET_dir OWServer_Enet_directory_loop(struct device_search *ds, struct dirblob *db, struct connection_in * in) ;
 static GOOD_OR_BAD OWServer_Enet_sendback_part(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn) ;
-static void OWServer_Enet_settimeout(struct connection_in *in) ;
-static void OWServer_Enet_testtimeout(struct connection_in *in) ;
 
 #define BAD_CHAR ( (char) -1 )
 
@@ -95,16 +91,8 @@ GOOD_OR_BAD OWServer_Enet_detect(struct connection_in *in)
 
 static GOOD_OR_BAD OWServer_Enet_reopen(struct connection_in *in)
 {
-	Test_and_Close( &(SOC(in)->file_descriptor) ) ;
-	
-	in->master.serial.tcp.default_discard = 0 ;
+	RETURN_BAD_IF_BAD( COM_open(in) ) ;
 
-	SOC(in)->file_descriptor = ClientConnect(in) ;
-	if ( FILE_DESCRIPTOR_NOT_VALID( SOC(in)->file_descriptor) ) {
-		return gbBAD;
-	}
-
-	OWServer_Enet_settimeout( in ) ; // initial timeout shouldn't be expired.
 	if ( OWServer_Enet_command( "", in ) == '?' ) {
 		return gbGOOD ;
 	}
@@ -343,15 +331,7 @@ static char OWServer_Enet_command( char * cmd_string, struct connection_in * in 
 
 static GOOD_OR_BAD OWServer_Enet_read( BYTE * buf, size_t size, struct connection_in * in )
 {
-	OWServer_Enet_testtimeout( in ) ;
-	if GOOD( telnet_read( buf, size+in->master.serial.tcp.CRLF_size, in ) ) {
-		OWServer_Enet_settimeout( in ) ;
-		return gbGOOD ;
-	}
-	RETURN_BAD_IF_BAD( OWServer_Enet_reopen( in ) ) ;
-	RETURN_BAD_IF_BAD( telnet_read( buf, size+in->master.serial.tcp.CRLF_size, in ) );
-	OWServer_Enet_settimeout( in ) ;
-	return gbGOOD ;
+	return telnet_read( buf, size+in->master.serial.tcp.CRLF_size, in ) ;
 }
 
 static GOOD_OR_BAD OWServer_Enet_write_string( char * buf, struct connection_in *in)
@@ -365,15 +345,13 @@ static GOOD_OR_BAD OWServer_Enet_write_string( char * buf, struct connection_in 
 
 static GOOD_OR_BAD OWServer_Enet_write(const BYTE * buf, size_t size, struct connection_in *in)
 {
-	OWServer_Enet_testtimeout( in ) ;
-	if GOOD( COM_write( buf, size, in ) ) {
-		OWServer_Enet_settimeout( in ) ;
-		return gbGOOD ;
+	RETURN_GOOD_IF_GOOD( COM_write_simple( buf, size, in ) ) ;
+
+	if ( SOC(in)->file_descriptor == FILE_DESCRIPTOR_BAD ) {
+		RETURN_BAD_IF_BAD( OWServer_Enet_reopen( in ) ) ;
+		RETURN_GOOD_IF_GOOD( COM_write_simple( buf, size, in ) ) ;
 	}
-	RETURN_BAD_IF_BAD( OWServer_Enet_reopen( in ) ) ;
-	RETURN_BAD_IF_BAD( COM_write( buf, size, in ) ) ;
-	OWServer_Enet_settimeout( in ) ;
-	return gbGOOD ;
+	return gbBAD ;
 }
 
 #define MAX_ENET_MEMORY_GULP   64
@@ -415,29 +393,8 @@ static GOOD_OR_BAD OWServer_Enet_sendback_data(const BYTE * data, BYTE * resp, c
 	return gbGOOD;
 }
 
-static void OWServer_Enet_settimeout(struct connection_in *in) 
-{
-	struct timeval tv ;
-	timernow( &tv ) ;
-	timeradd( &tv, &ENET_timeout, &(in->master.enet.expired) ) ;
-	
-}
-
-static void OWServer_Enet_testtimeout(struct connection_in *in) 
-{
-	if ( FILE_DESCRIPTOR_NOT_VALID( SOC(in)->file_descriptor ) ) {
-		OWServer_Enet_reopen( in ) ;
-	} else {
-		struct timeval tv ;
-		timernow( &tv ) ;
-		if ( timercmp( &tv, &(in->master.enet.expired), > ) ) {
-			OWServer_Enet_reopen( in ) ;
-		}
-	}
-}
-
 static void OWServer_Enet_close(struct connection_in *in)
 {
 	// the statndard COM_free cleans up the connection
+	(void) in ;
 }
-

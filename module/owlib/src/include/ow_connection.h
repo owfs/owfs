@@ -163,6 +163,8 @@ void COM_flush( const struct connection_in *in);
 void COM_break(struct connection_in *in);
 
 GOOD_OR_BAD COM_write( const BYTE * data, size_t length, struct connection_in *connection);
+GOOD_OR_BAD COM_write_simple( const BYTE * data, size_t length, struct connection_in *connection);
+
 GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connection);
 void COM_slurp( struct connection_in *in);
 
