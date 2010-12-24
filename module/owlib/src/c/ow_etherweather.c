@@ -96,8 +96,6 @@ static int EtherWeather_command(struct connection_in *in, char command, int data
 		left -= res;
 	}
 
-	tcdrain(SOC(in)->file_descriptor);
-
 	if (left > 0) {
 		STAT_ADD1_BUS(e_bus_write_errors, in);
 		owfree(packet);
