@@ -86,6 +86,8 @@ GOOD_OR_BAD HA5_detect(struct connection_in *in)
 	SOC(in)->dev.serial.flow_control = flow_none ;
 	SOC(in)->type = ct_serial ;
 	SOC(in)->state = cs_virgin ;
+	SOC(in)->timeout.tv_sec = Globals.timeout_serial ;
+	SOC(in)->timeout.tv_usec = 0 ;
 	if ( BAD(COM_open(in)) ) {
 		// Cannot open serial port
 		Free_Address( &ap ) ;

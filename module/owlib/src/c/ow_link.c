@@ -204,8 +204,8 @@ static GOOD_OR_BAD LINK_detect_serial(struct connection_in * in)
 	
 	/* Set up low-level routines */
 	LINK_setroutines(in);
-	SOC(in)->timeout.tv_sec = 0 ;
-	SOC(in)->timeout.tv_usec = 1000 ;
+	SOC(in)->timeout.tv_sec = Globals.timeout_serial ;
+	SOC(in)->timeout.tv_usec = 0 ;
 
 	/* Open the com port */
 	RETURN_BAD_IF_BAD(COM_open(in)) ;

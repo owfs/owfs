@@ -62,6 +62,8 @@ GOOD_OR_BAD HA7E_detect(struct connection_in *in)
 	SOC(in)->dev.serial.flow_control = flow_none ;
 	SOC(in)->type = ct_serial ;
 	SOC(in)->state = cs_virgin ;
+	SOC(in)->timeout.tv_sec = Globals.timeout_serial ;
+	SOC(in)->timeout.tv_usec = 0 ;
 	RETURN_BAD_IF_BAD(COM_open(in)) ;
 
 	// set the baud rate to 9600. (Already set to 9600 in COM_open())

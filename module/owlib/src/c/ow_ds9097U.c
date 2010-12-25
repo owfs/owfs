@@ -301,6 +301,8 @@ static GOOD_OR_BAD DS2480_big_reset(struct connection_in * in)
 			SOC(in)->type = ct_tcp ;
 			return DS2480_big_reset_net(in) ;
 		default:
+			SOC(in)->timeout.tv_sec = Globals.timeout_serial ;
+			SOC(in)->timeout.tv_usec = 0 ;
 			SOC(in)->type = ct_serial ;
 
 			SOC(in)->dev.serial.flow_control = flow_none ;

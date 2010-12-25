@@ -66,6 +66,8 @@ GOOD_OR_BAD DS9097_detect(struct connection_in *in)
 	SOC(in)->type = ct_serial ;
 	SOC(in)->state = cs_virgin ;
 	SOC(in)->dev.serial.flow_control = flow_none ;
+	SOC(in)->timeout.tv_sec = Globals.timeout_serial ;
+	SOC(in)->timeout.tv_usec = 0 ;
 	RETURN_BAD_IF_BAD(COM_open(in)) ;
 
 	switch( DS9097_reset_in(in) ) {
