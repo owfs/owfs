@@ -22,25 +22,31 @@ static SIZE_OR_ERROR COM_read_size( BYTE * data, size_t length, struct connectio
 
 GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connection)
 {
-	if ( length == 0 || data == NULL ) {
+	if ( length == 0 ) {
 		return gbGOOD ;
 	}
 	
-	if ( connection == NO_CONNECTION ) {
+	if ( connection == NO_CONNECTION || data == NULL ) {
+		// bad parameters
 		return gbBAD ;
 	}
 
+	// unlike write or open, a closed connection ins't automatically opened.
+	// the reason is that reopening won't have the data waiting. We really need
+	// to restart the transaction from the "write" portion
 	if ( FILE_DESCRIPTOR_NOT_VALID( SOC(connection)->file_descriptor ) ) {
 		return gbBAD ;
 	}
 
 	switch ( SOC(connection)->type ) {
+		// test the type of connection
 		case ct_unknown:
 		case ct_none:
 			LEVEL_DEBUG("ERROR!!! ----------- ERROR!");
 			return gbBAD ;
 		case ct_telnet:
 		case ct_tcp:
+			// network is ok
 			return COM_read_size( data, length, connection ) < 0 ? gbBAD : gbGOOD ;
 		case ct_i2c:
 		case ct_netlink:
@@ -48,9 +54,11 @@ GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connecti
 			LEVEL_DEBUG("Unimplemented!!!");
 			return gbBAD ;
 		case ct_serial:
+		// serial is ok
 		{
 			ssize_t actual = COM_read_size( data, length, connection ) ;
 			if ( FILE_DESCRIPTOR_VALID( SOC(connection)->file_descriptor ) ) {
+				// tcdrain only works on serial conections
 				tcdrain( SOC(connection)->file_descriptor );
 				return actual < 0 ? gbBAD : gbGOOD ;
 			}
