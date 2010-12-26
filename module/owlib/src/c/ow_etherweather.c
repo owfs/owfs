@@ -58,56 +58,30 @@ static void EtherWeather_setroutines(struct connection_in *in);
 
 static int EtherWeather_command(struct connection_in *in, char command, int datalen, const BYTE * idata, BYTE * odata)
 {
-	ssize_t res;
-	ssize_t left = datalen;
-	size_t readin_size ;
 	BYTE *packet;
-
-	struct timeval tvnet = { 0, 200000, };
 
 	// The packet's length field includes the command byte.
 	packet = owmalloc(datalen + 2);
 	packet[0] = datalen + 1;
 	packet[1] = command;
-	memcpy(packet + 2, idata, datalen);
+	memcpy( &packet[2], idata, datalen);
 
-	left = datalen + 2;
-/*
-	char prologue[2];
-	prologue[0] = datalen + 1;
-	prologue[1] = command;
+	SOC(in)->timeout.tv_sec = 0 ;
+	SOC(in)->timeout.tv_usec = 200000 ;
 
-	res = write(in->file_descriptor, prologue, 2);
-	if (res < 1) {
-		ERROR_CONNECT("Trouble writing data to EtherWeather: %s\,
-			SAFESTRING(in->name));
-		return -EIO;
-	}
-*/
-	while (left > 0) {
-		res = write(SOC(in)->file_descriptor, &packet[datalen + 2 - left], left);
-		if (res < 0) {
-			if (errno == EINTR) {
-				continue;
-			}
-			ERROR_CONNECT("Trouble writing data to EtherWeather: %s", SAFESTRING(SOC(in)->devicename));
-			break;
-		}
-		left -= res;
-	}
-
-	if (left > 0) {
+	if ( BAD(COM_write( packet, datalen+2, in) ) ) {
+		ERROR_CONNECT("Trouble writing data to EtherWeather: %s", SAFESTRING(SOC(in)->devicename));
 		STAT_ADD1_BUS(e_bus_write_errors, in);
-		owfree(packet);
-		return -EIO;
+		owfree(packet) ;
+		return -EIO ;
 	}
+
 	// Allow extra time for powered bytes
 	if (command == 'P') {
-		tvnet.tv_sec += 2;
+		SOC(in)->timeout.tv_sec += 2 ;
 	}
 	// Read the response header
-	tcp_read(SOC(in)->file_descriptor, packet, 2, &tvnet, &readin_size) ;
-	if (readin_size != 2) {
+	if ( COM_read_size( packet, 2, in ) != 2 ) {
 		LEVEL_CONNECT("header read error");
 		owfree(packet);
 		return -EIO;
@@ -120,8 +94,7 @@ static int EtherWeather_command(struct connection_in *in, char command, int data
 	}
 	// Then read any data
 	if (datalen > 0) {
-		tcp_read(SOC(in)->file_descriptor, odata, datalen, &tvnet, &readin_size );
-		if (readin_size != (size_t) datalen) {
+		if ( COM_read_size( odata, datalen, in ) != (size_t) datalen ) {
 			LEVEL_CONNECT("data read error");
 			owfree(packet);
 			return -EIO;
