@@ -38,7 +38,7 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
 #include "ow_connection.h"
 
 // write to an internal pipe (in another thread). Use a timepout in case that thread has terminated.
-static int W1_write_pipe( FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct netlink_parse * nlp )
+static GOOD_OR_BAD W1_write_pipe( FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct netlink_parse * nlp )
 {
 	int size = nlp->nlm->nlmsg_len ;
 	do {
@@ -53,22 +53,22 @@ static int W1_write_pipe( FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct netli
 
 		if ( select_value == -1 ) {
 			if (errno != EINTR) {
-				ERROR_CONNECT("Pipe (w1) Select returned -1");
-				return -1 ;
+				ERROR_CONNECT("Netlink dispatch error");
+				return gbBAD ;
 			}
 			// repeat path for EINTR
 		} else if ( select_value == 0 ) {
-			LEVEL_DEBUG("Select returned zero (timeout)");
-			return -1;
+			LEVEL_DEBUG("Netlink dispatch timeout");
+			return gbBAD;
 		} else {
 			int write_ret = write( file_descriptor, (const void *)nlp->nlm, size ) ;
 			if (write_ret < 0 ) {
-				ERROR_DEBUG("Trouble writing to pipe");
+				ERROR_DEBUG("Netlink dispatch write error");
 			} else if ( write_ret < size ) {
 				LEVEL_DEBUG("Only able to write %d of %d bytes to pipe",write_ret, size);
-				return -1 ;
+				return gbBAD ;
 			}
-			return 0 ;
+			return gbGOOD ;
 		}
 	} while (1) ;
 }
@@ -79,10 +79,10 @@ static void Dispatch_Packet( struct netlink_parse * nlp)
 	int bus = NL_BUS(nlp->nlm->nlmsg_seq) ;
 	struct connection_in * in ;
 
-	if ( bus == 0 ) {
+	if ( bus == 0 ) { // root w1 master message -- add and remove
 		/* Need to run the add/remove in a separate thread so that netlink messages can still be parsed and CONNIN_RLOCK won't deadlock */
 		pthread_t thread ;
-		// make a copy for the new thread (which will have to destroy)
+		// make a copy for the new thread (which we will have to destroy)
 		struct netlink_parse * nlp_copy = owmalloc( sizeof(struct netlink_parse) ) ;
 		if ( nlp_copy == NULL ) {
 			return ;
@@ -101,13 +101,17 @@ static void Dispatch_Packet( struct netlink_parse * nlp)
 		//printf("Matching %d/%s/%s/%s/ to bus.%d %d/%s/%s/%s/\n",bus_zero,name,type,domain,now->index,now->busmode,now->master.tcp.name,now->master.tcp.type,now->master.tcp.domain);
 		if ( in->busmode == bus_w1 && in->master.w1.id == bus ) {
 			LEVEL_DEBUG("Sending this packet to w1_bus_master%d",bus);
-			W1_write_pipe(in->master.w1.netlink_pipe[fd_pipe_write], nlp) ;
+			if ( GOOD( W1_write_pipe(in->master.w1.netlink_pipe[fd_pipe_write], nlp) ) {
+				LEVEL_DEBUG("Sending this packet to w1_bus_master%d",bus);
+			} else {
+				LEVEL_DEBUG("Error sending w1_bus_master%d",bus);
+			}
 			CONNIN_RUNLOCK ;
 			return ;
 		}
 	}
 	CONNIN_RUNLOCK ;
-	LEVEL_DEBUG("W1 netlink message for non-existent bus");
+	LEVEL_DEBUG("W1 netlink message for non-existent bus %d",bus);
 }
 
 // Infinite loop waiting for netlink packets, to be sent to internal pipes as appropriate
