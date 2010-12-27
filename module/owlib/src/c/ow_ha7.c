@@ -17,7 +17,6 @@ $Id$
 #include "ow_codes.h"
 
 #if OW_HA7
-
 struct toHA7 {
 	ASCII *command;
 	ASCII lock[10];
@@ -28,11 +27,11 @@ struct toHA7 {
 };
 
 //static void byteprint( const BYTE * b, int size ) ;
-static GOOD_OR_BAD HA7_write(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const ASCII * msg, size_t size, struct connection_in *in);
+static GOOD_OR_BAD HA7_write(const ASCII * msg, size_t size, struct connection_in *in);
 static void toHA7init(struct toHA7 *ha7);
 static void setHA7address(struct toHA7 *ha7, const BYTE * sn);
-static GOOD_OR_BAD HA7_toHA7(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const struct toHA7 *ha7, struct connection_in *in);
-static GOOD_OR_BAD HA7_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct memblob *mb);
+static GOOD_OR_BAD HA7_toHA7( const struct toHA7 *ha7, struct connection_in *in);
+static GOOD_OR_BAD HA7_read( struct memblob *mb, struct connection_in * in );
 static RESET_TYPE HA7_reset(const struct parsedname *pn);
 static enum search_status HA7_next_both(struct device_search *ds, const struct parsedname *pn);
 static GOOD_OR_BAD HA7_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
@@ -64,7 +63,6 @@ static void HA7_setroutines(struct connection_in *in)
 GOOD_OR_BAD HA7_detect(struct connection_in *in)
 {
 	struct parsedname pn;
-	FILE_DESCRIPTOR_OR_ERROR file_descriptor;
 	struct toHA7 ha7;
 
 	FS_ParsedName_Placeholder(&pn);	// minimal parsename -- no destroy needed
@@ -80,66 +78,56 @@ GOOD_OR_BAD HA7_detect(struct connection_in *in)
 	}
 
 	SOC(in)->type = ct_tcp ;
+	SOC(in)->timeout.tv_sec = Globals.timeout_ha7 ;
+	SOC(in)->timeout.tv_usec = 0 ;
 	RETURN_BAD_IF_BAD( COM_open(in) ) ;
-	file_descriptor = SOC(in)->file_descriptor ;
 
 	in->Adapter = adapter_HA7NET;
 
 	toHA7init(&ha7);
 	ha7.command = "ReleaseLock";
-	if (GOOD( HA7_toHA7(file_descriptor, &ha7, in)) ) {
+	if (GOOD( HA7_toHA7( &ha7, in)) ) {
 		struct memblob mb;
-		if ( GOOD( HA7_read(file_descriptor, &mb)) ) {
+		if ( GOOD( HA7_read( &mb, in )) ) {
 			in->adapter_name = "HA7Net";
 			in->busmode = bus_ha7net;
 			in->AnyDevices = anydevices_yes;
 			MemblobClear(&mb);
-			close(file_descriptor);
 			return gbGOOD;
 		}
 	}
-	close(file_descriptor);
+	COM_close(in) ;
 	return gbBAD;
 }
 
 static RESET_TYPE HA7_reset(const struct parsedname *pn)
 {
 	struct memblob mb;
-	FILE_DESCRIPTOR_OR_ERROR file_descriptor = ClientConnect(pn->selected_connection);
 	RESET_TYPE ret = BUS_RESET_OK;
 	struct toHA7 ha7;
-
-	if ( FILE_DESCRIPTOR_NOT_VALID(file_descriptor) ) {
-		return BUS_RESET_ERROR;
-	}
+	struct connection_in * in = pn->selected_connection ;
 
 	toHA7init(&ha7);
 	ha7.command = "Reset";
-	if ( BAD(HA7_toHA7(file_descriptor, &ha7, pn->selected_connection)) ) {
+	if ( BAD(HA7_toHA7( &ha7, in)) ) {
 		LEVEL_DEBUG("Trouble sending reset command");
 		ret = BUS_RESET_ERROR;
-	} else if ( BAD(HA7_read(file_descriptor, &mb)) ) {
+	} else if ( BAD(HA7_read( &mb, in )) ) {
 		LEVEL_DEBUG("Trouble with reset command response");
 		ret = BUS_RESET_ERROR;
 	}
 	MemblobClear(&mb);
-	close(file_descriptor);
 	return ret;
 }
 
 static GOOD_OR_BAD HA7_directory(BYTE search, struct dirblob *db, const struct parsedname *pn)
 {
-	FILE_DESCRIPTOR_OR_ERROR file_descriptor;
 	GOOD_OR_BAD ret = gbGOOD;
 	struct toHA7 ha7;
 	struct memblob mb;
+	struct connection_in * in = pn->selected_connection ;
 
 	DirblobClear(db);
-	file_descriptor = ClientConnect(pn->selected_connection) ;
-	if ( FILE_DESCRIPTOR_NOT_VALID(file_descriptor) ) {
-		db->troubled = 1;
-		return gbBAD;
-	}
 
 	toHA7init(&ha7);
 	ha7.command = "Search";
@@ -147,10 +135,10 @@ static GOOD_OR_BAD HA7_directory(BYTE search, struct dirblob *db, const struct p
 		ha7.conditional[0] = '1';
 	}
 
-	if ( BAD(HA7_toHA7(file_descriptor, &ha7, pn->selected_connection)) ) {
+	if ( BAD(HA7_toHA7( &ha7, in)) ) {
 		ret = gbBAD;
-	} else if ( BAD(HA7_read(file_descriptor, &mb)) ) {
-		STAT_ADD1_BUS(e_bus_read_errors, pn->selected_connection);
+	} else if ( BAD(HA7_read( &mb, in )) ) {
+		STAT_ADD1_BUS(e_bus_read_errors, in);
 		ret = gbBAD;
 	} else {
 		BYTE sn[SERIAL_NUMBER_SIZE];
@@ -178,7 +166,6 @@ static GOOD_OR_BAD HA7_directory(BYTE search, struct dirblob *db, const struct p
 		}
 		MemblobClear(&mb);
 	}
-	close(file_descriptor);
 	return ret;
 }
 
@@ -213,20 +200,20 @@ static enum search_status HA7_next_both(struct device_search *ds, const struct p
 
 #define HA7_READ_BUFFER_LENGTH 2000
 
-static GOOD_OR_BAD HA7_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct memblob *mb)
+static GOOD_OR_BAD HA7_read( struct memblob *mb, struct connection_in * in )
 {
 	ASCII readin_area[HA7_READ_BUFFER_LENGTH + 1];
 	ASCII *start;
 	size_t read_size;
-	struct timeval tvnet = { Globals.timeout_ha7, 0, };
 
 	MemblobInit(mb, HA7_READ_BUFFER_LENGTH);
+	SOC(in)->timeout.tv_sec = 2 ;
+	SOC(in)->timeout.tv_usec = 0 ;
 
 	// Read first block of data from HA7
-	tcp_read(file_descriptor, (BYTE *) readin_area, HA7_READ_BUFFER_LENGTH, &tvnet, &read_size) ;
-	if ( read_size == 0) {
-		LEVEL_CONNECT("(ethernet) error = %d", read_size);
-		//write(1, readin_area, read_size);
+	read_size = COM_read_size( (BYTE*) readin_area, HA7_READ_BUFFER_LENGTH, in) ;
+	if ( read_size <= 0 ) {
+		LEVEL_CONNECT("Read error");
 		return gbBAD;
 	}
 	// make sure null terminated (allocated extra byte in readin_area to always have room)
@@ -243,7 +230,7 @@ static GOOD_OR_BAD HA7_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct mem
 	}
 	// Look for "<body>"
 	if ((start = strstr(readin_area, "<body>")) == NULL) {
-		LEVEL_DATA("esponse: No HTTP body to parse");
+		LEVEL_DATA("response: No HTTP body to parse");
 		MemblobClear(mb);
 		return gbBAD;
 	}
@@ -254,8 +241,8 @@ static GOOD_OR_BAD HA7_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct mem
 	}
 	// loop through reading in HA7_READ_BUFFER_LENGTH blocks
 	while (read_size == HA7_READ_BUFFER_LENGTH) {	// full read, so presume more waiting
-		tcp_read(file_descriptor, (BYTE *) readin_area, HA7_READ_BUFFER_LENGTH, &tvnet, &read_size) ;
-		if (read_size == 0) {
+		read_size = COM_read_size( (BYTE*) readin_area, HA7_READ_BUFFER_LENGTH, in) ;
+		if (read_size <= 0) {
 			LEVEL_DATA("Couldn't get rest of HA7 data (err=%d)", read_size);
 			MemblobClear(mb);
 			return gbBAD;
@@ -270,37 +257,20 @@ static GOOD_OR_BAD HA7_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct mem
 		MemblobClear(mb);
 		return gbBAD;
 	}
+	LEVEL_DEBUG("Successful read of data");
 	//printf("READ FROM HA7:\n%s\n",MemblobData(mb));
 	return gbGOOD;
 }
 
-static GOOD_OR_BAD HA7_write(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const ASCII * msg, size_t length, struct connection_in *in)
+static GOOD_OR_BAD HA7_write( const ASCII * msg, size_t length, struct connection_in *in )
 {
-	ssize_t r, sl = length;
-	ssize_t size = sl;
-	while (sl > 0) {
-		r = write(file_descriptor, &msg[size - sl], sl);
-		if (r < 0) {
-			if (errno == EINTR) {
-				continue;
-			}
-			ERROR_CONNECT("Trouble writing data to HA7: %s", SAFESTRING(SOC(in)->devicename));
-			break;
-		}
-		sl -= r;
-	}
-	if (sl > 0) {
-		STAT_ADD1_BUS(e_bus_write_errors, in);
-		return gbBAD;
-	}
-	return gbGOOD;
+	return COM_write( (const BYTE *) msg, length, in) ;
 }
 
-static GOOD_OR_BAD HA7_toHA7(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const struct toHA7 *ha7, struct connection_in *in)
+static GOOD_OR_BAD HA7_toHA7( const struct toHA7 *ha7, struct connection_in *in)
 {
 	int first = 1;
 	int probable_length;
-	GOOD_OR_BAD ret ;
 	char *full_command;
 	LEVEL_DEBUG
 		("To HA7 command=%s address=%.16s conditional=%.1s lock=%.10s",
@@ -357,9 +327,19 @@ static GOOD_OR_BAD HA7_toHA7(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const str
 
 	LEVEL_DEBUG("To HA7 %s", full_command);
 
-	ret = HA7_write(file_descriptor, full_command, probable_length, in) ;
+	if ( BAD( COM_open(in) ) ) {
+		// force reopen
+		owfree(full_command);
+		return gbBAD ;
+	}
+
+	if ( BAD( HA7_write( full_command, probable_length, in) ) ) {
+		owfree(full_command);
+		return gbBAD ;
+	}
+		
 	owfree(full_command);
-	return ret;
+	return gbGOOD;
 }
 
 // Reset, select, and read/write data
@@ -409,15 +389,10 @@ static GOOD_OR_BAD HA7_sendback_data(const BYTE * data, BYTE * resp, const size_
 // This routine assumes that larger writes have already been broken up
 static GOOD_OR_BAD HA7_sendback_block(const BYTE * data, BYTE * resp, const size_t size, int also_address, const struct parsedname *pn)
 {
-	FILE_DESCRIPTOR_OR_ERROR file_descriptor;
 	struct memblob mb;
 	struct toHA7 ha7;
 	GOOD_OR_BAD ret = gbBAD;
-
-	file_descriptor = ClientConnect(pn->selected_connection) ;
-	if ( FILE_DESCRIPTOR_NOT_VALID(file_descriptor) ) {
-		return gbBAD;
-	}
+	struct connection_in * in =  pn->selected_connection ;
 
 	toHA7init(&ha7);
 	ha7.command = "WriteBlock";
@@ -427,8 +402,8 @@ static GOOD_OR_BAD HA7_sendback_block(const BYTE * data, BYTE * resp, const size
 		setHA7address(&ha7, pn->sn);
 	}
 
-	if ( GOOD( HA7_toHA7(file_descriptor, &ha7, pn->selected_connection)) ) {
-		if ( GOOD( HA7_read(file_descriptor, &mb)) ) {
+	if ( GOOD( HA7_toHA7( &ha7, in)) ) {
+		if ( GOOD( HA7_read( &mb, in )) ) {
 			ASCII *p = (ASCII *) MemblobData(&mb);
 			if ((p = strstr(p, "<INPUT TYPE=\"TEXT\" NAME=\"ResultData_0\""))
 				&& (p = strstr(p, "VALUE=\""))) {
@@ -441,10 +416,9 @@ static GOOD_OR_BAD HA7_sendback_block(const BYTE * data, BYTE * resp, const size
 			}
 			MemblobClear(&mb);
 		} else {
-			STAT_ADD1_BUS(e_bus_read_errors, pn->selected_connection);
+			STAT_ADD1_BUS(e_bus_read_errors, in);
 		}
 	}
-	close(file_descriptor);
 	return gbGOOD;
 }
 
@@ -463,23 +437,19 @@ static void setHA7address(struct toHA7 *ha7, const BYTE * sn)
 static GOOD_OR_BAD HA7_select(const struct parsedname *pn)
 {
 	GOOD_OR_BAD ret = gbBAD;
+	struct connection_in * in =  pn->selected_connection ;
 
 	if (pn->selected_device) {
-		FILE_DESCRIPTOR_OR_ERROR file_descriptor = ClientConnect(pn->selected_connection);
-
-		if ( FILE_DESCRIPTOR_VALID(file_descriptor) ) {
-			struct toHA7 ha7;
-			toHA7init(&ha7);
-			ha7.command = "AddressDevice";
-			setHA7address(&ha7, pn->sn);
-			if ( GOOD( HA7_toHA7(file_descriptor, &ha7, pn->selected_connection)) ) {
-				struct memblob mb;
-				if ( GOOD( HA7_read(file_descriptor, &mb)) ) {
-					MemblobClear(&mb);
-					ret = gbGOOD;
-				}
+		struct toHA7 ha7;
+		toHA7init(&ha7);
+		ha7.command = "AddressDevice";
+		setHA7address(&ha7, pn->sn);
+		if ( GOOD( HA7_toHA7( &ha7, in)) ) {
+			struct memblob mb;
+			if ( GOOD( HA7_read( &mb, in )) ) {
+				MemblobClear(&mb);
+				ret = gbGOOD;
 			}
-			close(file_descriptor);
 		}
 	} else {
 		return HA7_reset(pn)==BUS_RESET_OK ? gbGOOD : gbBAD ;

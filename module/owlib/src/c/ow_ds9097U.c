@@ -298,6 +298,8 @@ static GOOD_OR_BAD DS2480_big_reset(struct connection_in * in)
 {
 	switch (in->busmode) {
 		case bus_xport:
+			SOC(in)->timeout.tv_sec = Globals.timeout_network ;
+			SOC(in)->timeout.tv_usec = 0 ;
 			SOC(in)->type = ct_tcp ;
 			return DS2480_big_reset_net(in) ;
 		default:
@@ -367,12 +369,6 @@ static GOOD_OR_BAD DS2480_big_reset_net(struct connection_in * in)
 	
 	in->master.serial.tcp.default_discard = 0 ;
 
-	if (1) {
-		BYTE data[1] ;
-		size_t read_size ;
-		struct timeval tvnetfirst = { Globals.timeout_network, 0, };
-		tcp_read(SOC(in)->file_descriptor, data, 1, &tvnetfirst, &read_size ) ;
-	}
 	LEVEL_DEBUG("Slurp in initial bytes");
 	DS2480_slurp( in ) ;
 	DS2480_flush(in);

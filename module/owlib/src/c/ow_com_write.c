@@ -120,7 +120,7 @@ static GOOD_OR_BAD COM_write_once( const BYTE * data, size_t length, struct conn
 			ssize_t write_result ;
 
 			if (FD_ISSET( fd, &writeset) == 0) {
-				ERROR_CONNECT("Select no FD found (write) serial port: %s", SAFESTRING(SOC(connection)->devicename));				
+				ERROR_CONNECT("Select no FD found on write to %s", SAFESTRING(SOC(connection)->devicename));				
 				STAT_ADD1_BUS(e_bus_write_errors, connection);
 				return gbBAD;	/* error */
 			}
@@ -128,7 +128,7 @@ static GOOD_OR_BAD COM_write_once( const BYTE * data, size_t length, struct conn
 			write_result = write( fd, &data[length - to_be_written], to_be_written); /* write bytes */ 			
 			if (write_result < 0) {
 				if (errno != EWOULDBLOCK && errno != EAGAIN) {
-					ERROR_CONNECT("Trouble writing to serial port: %s", SAFESTRING(SOC(connection)->devicename));
+					ERROR_CONNECT("Trouble writing to %s", SAFESTRING(SOC(connection)->devicename));
 					COM_close(connection) ;
 					STAT_ADD1_BUS(e_bus_write_errors, connection);
 					return gbBAD;
@@ -139,7 +139,7 @@ static GOOD_OR_BAD COM_write_once( const BYTE * data, size_t length, struct conn
 				to_be_written -= write_result ;	
 			}
 		} else {			/* timed out or select error */
-			ERROR_CONNECT("Select/timeout error (write) serial port: %s", SAFESTRING(SOC(connection)->devicename));
+			ERROR_CONNECT("Select/timeout error writing to %s", SAFESTRING(SOC(connection)->devicename));
 			STAT_ADD1_BUS(e_bus_timeouts, connection);
 			if ( errno == EBADF ) {
 				LEVEL_DEBUG("Close file descriptor -- EBADF");
