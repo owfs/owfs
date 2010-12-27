@@ -173,7 +173,7 @@ GOOD_OR_BAD LINK_detect(struct connection_in *in)
 	SOC(in)->state = cs_virgin ;
 	switch( in->busmode ) {
 		case bus_elink:
-			SOC(in)->type = ct_tcp ;
+			SOC(in)->type = ct_telnet ;
 			RETURN_GOOD_IF_GOOD(  LINK_detect_net( in )  );
 			break ;
 
@@ -496,15 +496,6 @@ static void LINK_slurp(struct connection_in *in)
 	COM_slurp(in);
 }
 
-/* Assymetric */
-/* Read from LINK with timeout on each character */
-// NOTE: from PDkit, reead 1-byte at a time
-// NOTE: change timeout to 40msec from 10msec for LINK
-// returns 0=good 1=bad
-/* return 0=good,
-          -errno = read error
-          -EINTR = timeout
- */
 static GOOD_OR_BAD LINK_read(BYTE * buf, size_t size, struct connection_in *in)
 {
 	return LINK_read_true_length( buf, size+in->master.serial.tcp.CRLF_size, in ) ;
@@ -512,13 +503,7 @@ static GOOD_OR_BAD LINK_read(BYTE * buf, size_t size, struct connection_in *in)
 
 static GOOD_OR_BAD LINK_read_true_length(BYTE * buf, size_t size, struct connection_in *in)
 {
-	switch ( in->busmode ) {
-		case bus_elink:
-			// Only need to add an extra byte sometimes
-			return telnet_read( buf, size, in ) ;
-		default:
-			return COM_read( buf, size, in ) ;
-	}
+	return COM_read( buf, size, in ) ;
 }
 
 // Write a string to the serial port

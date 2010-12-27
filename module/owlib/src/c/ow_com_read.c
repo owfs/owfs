@@ -45,6 +45,7 @@ GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connecti
 			LEVEL_DEBUG("ERROR!!! ----------- ERROR!");
 			return gbBAD ;
 		case ct_telnet:
+			return telnet_read( data, length, connection ) ;
 		case ct_tcp:
 			// network is ok
 			return COM_read_size_low( data, length, connection ) < 0 ? gbBAD : gbGOOD ;

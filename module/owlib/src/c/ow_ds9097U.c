@@ -300,7 +300,7 @@ static GOOD_OR_BAD DS2480_big_reset(struct connection_in * in)
 		case bus_xport:
 			SOC(in)->timeout.tv_sec = Globals.timeout_network ;
 			SOC(in)->timeout.tv_usec = 0 ;
-			SOC(in)->type = ct_tcp ;
+			SOC(in)->type = ct_telnet ;
 			return DS2480_big_reset_net(in) ;
 		default:
 			SOC(in)->timeout.tv_sec = Globals.timeout_serial ;
@@ -922,12 +922,7 @@ static GOOD_OR_BAD DS2480_write(const BYTE * buf, const size_t size, struct conn
 // returns 0=good 1=bad
 static GOOD_OR_BAD DS2480_read(BYTE * buf, const size_t size, struct connection_in * in)
 {
-	switch ( in->busmode ) {
-		case bus_elink:
-			return telnet_read( buf, size, in ) ;
-		default:
-			return COM_read( buf, size, in ) ;
-	}
+	return COM_read( buf, size, in ) ;
 }
 
 //

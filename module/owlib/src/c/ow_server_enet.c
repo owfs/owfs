@@ -331,7 +331,7 @@ static char OWServer_Enet_command( char * cmd_string, struct connection_in * in 
 
 static GOOD_OR_BAD OWServer_Enet_read( BYTE * buf, size_t size, struct connection_in * in )
 {
-	return telnet_read( buf, size+in->master.serial.tcp.CRLF_size, in ) ;
+	return COM_read( buf, size+in->master.serial.tcp.CRLF_size, in ) ;
 }
 
 static GOOD_OR_BAD OWServer_Enet_write_string( char * buf, struct connection_in *in)
