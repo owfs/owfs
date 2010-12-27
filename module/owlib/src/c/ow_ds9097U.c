@@ -1033,6 +1033,7 @@ static GOOD_OR_BAD DS2480_sendback_data(const BYTE * data, BYTE * resp, const si
 
 static void DS2480_close(struct connection_in *in)
 {
-	// the staqndard COM_free cleans up the connection
+	// the standard COM_free cleans up the connection
+	(void) in ;
 }
 

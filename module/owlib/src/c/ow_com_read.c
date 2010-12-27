@@ -43,7 +43,7 @@ GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connecti
 		case ct_unknown:
 		case ct_none:
 			LEVEL_DEBUG("ERROR!!! ----------- ERROR!");
-			return gbBAD ;
+			break ;
 		case ct_telnet:
 			return telnet_read( data, length, connection ) ;
 		case ct_tcp:
@@ -53,7 +53,7 @@ GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connecti
 		case ct_netlink:
 		case ct_usb:
 			LEVEL_DEBUG("Unimplemented!!!");
-			return gbBAD ;
+			break ;
 		case ct_serial:
 		// serial is ok
 		{
@@ -63,9 +63,10 @@ GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connecti
 				tcdrain( SOC(connection)->file_descriptor );
 				return actual < 0 ? gbBAD : gbGOOD ;
 			}
-			return gbBAD ;
+			break ;
 		}
 	}
+	return gbBAD ;
 }
 
 SIZE_OR_ERROR COM_read_size( BYTE * data, size_t length, struct connection_in *connection)

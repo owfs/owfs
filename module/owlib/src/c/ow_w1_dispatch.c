@@ -101,7 +101,7 @@ static void Dispatch_Packet( struct netlink_parse * nlp)
 		//printf("Matching %d/%s/%s/%s/ to bus.%d %d/%s/%s/%s/\n",bus_zero,name,type,domain,now->index,now->busmode,now->master.tcp.name,now->master.tcp.type,now->master.tcp.domain);
 		if ( in->busmode == bus_w1 && in->master.w1.id == bus ) {
 			LEVEL_DEBUG("Sending this packet to w1_bus_master%d",bus);
-			if ( GOOD( W1_write_pipe(in->master.w1.netlink_pipe[fd_pipe_write], nlp) ) {
+			if ( GOOD( W1_write_pipe(in->master.w1.netlink_pipe[fd_pipe_write], nlp) ) ) {
 				LEVEL_DEBUG("Sending this packet to w1_bus_master%d",bus);
 			} else {
 				LEVEL_DEBUG("Error sending w1_bus_master%d",bus);
