@@ -83,7 +83,13 @@ GOOD_OR_BAD HA5_detect(struct connection_in *in)
 		return gbBAD ;
 	}
 	strcpy(SOC(in)->devicename, ap.first.alpha) ; // subset so will fit
-	SOC(in)->dev.serial.flow_control = flow_none ;
+	SOC(in)->baud = B9600 ;
+	SOC(in)->vmin = 0; // minimum chars
+	SOC(in)->vtime = 3; // decisec wait
+	SOC(in)->parity = parity_none; // parity
+	SOC(in)->stop = stop_1; // stop bits
+	SOC(in)->bits = 8; // bits / byte
+	SOC(in)->flow = flow_none; // flow control
 	SOC(in)->type = ct_serial ;
 	SOC(in)->state = cs_virgin ;
 	SOC(in)->timeout.tv_sec = Globals.timeout_serial ;
@@ -96,16 +102,16 @@ GOOD_OR_BAD HA5_detect(struct connection_in *in)
 
 	// 9600 isn't valid for the HA5, so we can tell that this value was actually selected
 	if ( Globals.baud != B9600 ) {
-		SOC(in)->dev.serial.baud = Globals.baud ;
+		SOC(in)->baud = Globals.baud ;
 	} else {
-		SOC(in)->dev.serial.baud = B115200 ; // works at this fast rate
+		SOC(in)->baud = B115200 ; // works at this fast rate
 	}
 
 	// allowable speeds
-	COM_BaudRestrict( &(SOC(in)->dev.serial.baud), B1200, B19200, B38400, B115200, 0 ) ;
+	COM_BaudRestrict( &(SOC(in)->baud), B1200, B19200, B38400, B115200, 0 ) ;
 
 	/* Set com port speed*/
-	COM_speed(SOC(in)->dev.serial.baud,in) ;
+	COM_speed(SOC(in)->baud,in) ;
 
 	in->master.ha5.checksum = Globals.checksum ;
 	in->Adapter = adapter_HA5 ;

@@ -59,7 +59,13 @@ GOOD_OR_BAD HA7E_detect(struct connection_in *in)
 	in->master.ha7e.sn[0] = 0 ; // so won't match
 
 	/* Open the com port */
-	SOC(in)->dev.serial.flow_control = flow_none ;
+	SOC(in)->baud = B9600 ;
+	SOC(in)->vmin = 0; // minimum chars
+	SOC(in)->vtime = 3; // decisec wait
+	SOC(in)->parity = parity_none; // parity
+	SOC(in)->stop = stop_1; // stop bits
+	SOC(in)->bits = 8; // bits / byte
+	SOC(in)->flow = flow_none; // flow control
 	SOC(in)->type = ct_serial ;
 	SOC(in)->state = cs_virgin ;
 	SOC(in)->timeout.tv_sec = Globals.timeout_serial ;
@@ -67,10 +73,10 @@ GOOD_OR_BAD HA7E_detect(struct connection_in *in)
 	RETURN_BAD_IF_BAD(COM_open(in)) ;
 
 	// set the baud rate to 9600. (Already set to 9600 in COM_open())
-	SOC(in)->dev.serial.baud = B9600 ;
+	SOC(in)->baud = B9600 ;
 	// allowable speeds
-	COM_BaudRestrict( &(SOC(in)->dev.serial.baud), B9600, 0 ) ;
-	COM_speed(SOC(in)->dev.serial.baud, in);
+	COM_BaudRestrict( &(SOC(in)->baud), B9600, 0 ) ;
+	COM_speed(SOC(in)->baud, in);
 	COM_slurp(in) ;
 
 	if ( BAD( gbRESET( HA7E_reset(&pn) ) ) ) {

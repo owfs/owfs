@@ -46,39 +46,111 @@ GOOD_OR_BAD serial_open(struct connection_in *connection)
 		SOC(connection)->state = cs_deflowered ;
 	}
 
-	// set baud in structure
-	COM_speed( B9600, connection ) ;
+	return serial_change( connection ) ;
+}
+
+//change serial port settings
+GOOD_OR_BAD serial_change(struct connection_in *connection)
+{
+	struct termios newSerialTio;	/*new serial port settings */
+	FILE_DESCRIPTOR_OR_ERROR fd = SOC(connection)->file_descriptor ;
+	size_t baud = SOC(connection)->baud ;
+
+	// read the attribute structure
+	// valgrind warns about uninitialized memory in tcsetattr(), so clear all.
 	memset(&newSerialTio, 0, sizeof(struct termios));
 	if ((tcgetattr( fd, &newSerialTio) < 0)) {
-		ERROR_CONNECT("Cannot get new port attributes: %s", SAFESTRING(SOC(connection)->devicename));
+		ERROR_CONNECT("Cannot get existing port attributes: %s", SAFESTRING(SOC(connection)->devicename));
 	}
 	
+	// set baud in structure
+	if (cfsetospeed(&newSerialTio, baud) < 0 || cfsetispeed(&newSerialTio, baud) < 0) {
+		ERROR_CONNECT("Trouble setting port speed: %s", SAFESTRING(SOC(connection)->devicename));
+		cfsetospeed(&newSerialTio, B9600) ;
+		cfsetispeed(&newSerialTio, B9600) ;
+		SOC(connection)->baud = B9600 ;
+	}
+
 	// Set to non-canonical mode, and no RTS/CTS handshaking
 	newSerialTio.c_iflag &= ~(BRKINT | ICRNL | IGNCR | INLCR | INPCK | ISTRIP | IXON | IXOFF | PARMRK);
 	newSerialTio.c_iflag |= IGNBRK | IGNPAR;
+
 	newSerialTio.c_oflag &= ~(OPOST);
-	switch( SOC(connection)->dev.serial.flow_control ) {
+
+	newSerialTio.c_cflag &= ~ HUPCL ;
+	newSerialTio.c_cflag |= (CLOCAL | CREAD);
+
+	switch( SOC(connection)->flow ) {
 		case flow_hard:
-			newSerialTio.c_cflag &= ~(CSIZE | HUPCL | PARENB);
-			newSerialTio.c_cflag |= (CRTSCTS | CLOCAL | CS8 | CREAD);
+			newSerialTio.c_cflag |= CRTSCTS ;
 			break ;
 		case flow_none:
-			newSerialTio.c_cflag &= ~(CRTSCTS | CSIZE | HUPCL | PARENB);
-			newSerialTio.c_cflag |= (CLOCAL | CS8 | CREAD);
+			newSerialTio.c_cflag &= ~CRTSCTS;
 			break ;
 		case flow_soft:
 		default:
 			LEVEL_DEBUG("Unsupported COM port flow control");
 			return -ENOTSUP ;
 	}
+
+	// set bit length
+	newSerialTio.c_cflag &= ~ CSIZE ;
+	switch (SOC(connection)->bits) {
+		case 5:
+			newSerialTio.c_cflag |= CS5 ;
+			break ;
+		case 6:
+			newSerialTio.c_cflag |= CS6 ;
+			break ;
+		case 7:
+			newSerialTio.c_cflag |= CS7 ;
+			break ;
+		case 8:
+		default:
+			newSerialTio.c_cflag |= CS8 ;
+			break ;
+	}
+
+	// parity
+	switch (SOC(connection)->parity) {
+		case parity_none:
+			newSerialTio.c_cflag &= ~PARENB ;
+			break ;
+		case parity_even:
+			newSerialTio.c_cflag |= PARENB ;
+			newSerialTio.c_cflag &= ~( PARODD | CMSPAR ) ;
+			break ;
+		case parity_odd:
+			newSerialTio.c_cflag |= PARENB | PARODD;
+			newSerialTio.c_cflag &= ~CMSPAR ;
+			break ;
+		case parity_mark:
+			newSerialTio.c_cflag |= PARENB | PARODD | CMSPAR;
+			break ;
+	}
+
+	// stop bits
+	switch (SOC(connection)->stop) {
+		case stop_15:
+			LEVEL_DEBUG("1.5 Stop bits not supported");
+			SOC(connection)->stop = stop_1 ;
+			// fall through
+		case stop_1:
+			newSerialTio.c_cflag &= ~CSTOPB ;
+			break ;
+		case stop_2:
+			newSerialTio.c_cflag |= CSTOPB ;
+			break ;
+	}
+
+
 	newSerialTio.c_lflag &= ~(ECHO | ECHOE | ECHOK | ECHONL | ICANON | IEXTEN | ISIG);
-	newSerialTio.c_cc[VMIN] = 0;
-	newSerialTio.c_cc[VTIME] = 3;
+	newSerialTio.c_cc[VMIN] = SOC(connection)->vmin;
+	newSerialTio.c_cc[VTIME] = SOC(connection)->vtime;
 	if (tcsetattr( fd, TCSAFLUSH, &newSerialTio)) {
 		ERROR_CONNECT("Cannot set port attributes: %s", SAFESTRING(SOC(connection)->devicename));
 		return gbBAD;
 	}
 	tcflush( fd, TCIOFLUSH);
-	//fcntl(pn->si->file_descriptor, F_SETFL, fcntl(pn->si->file_descriptor, F_GETFL, 0) & ~O_NONBLOCK);
 	return gbGOOD;
 }

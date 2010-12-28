@@ -162,6 +162,8 @@ void COM_speed(speed_t new_baud, struct connection_in *in);
 void COM_flush( const struct connection_in *in);
 void COM_break(struct connection_in *in);
 
+GOOD_OR_BAD serial_change(struct connection_in *connection) ;
+
 GOOD_OR_BAD COM_write( const BYTE * data, size_t length, struct connection_in *connection);
 GOOD_OR_BAD COM_write_simple( const BYTE * data, size_t length, struct connection_in *connection);
 

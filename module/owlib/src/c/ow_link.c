@@ -169,6 +169,13 @@ GOOD_OR_BAD LINK_detect(struct connection_in *in)
 	}
 
 	in->master.serial.tcp.CRLF_size = 2 ;
+	SOC(in)->baud = B9600 ;
+	SOC(in)->vmin = 0; // minimum chars
+	SOC(in)->vtime = 3; // decisec wait
+	SOC(in)->parity = parity_none; // parity
+	SOC(in)->stop = stop_1; // stop bits
+	SOC(in)->bits = 8; // bits / byte
+	SOC(in)->flow = flow_none; // flow control
 
 	SOC(in)->state = cs_virgin ;
 	switch( in->busmode ) {
@@ -180,15 +187,15 @@ GOOD_OR_BAD LINK_detect(struct connection_in *in)
 		case bus_link:
 			SOC(in)->type = ct_serial ;
 
-			SOC(in)->dev.serial.flow_control = flow_none ;
+			SOC(in)->flow = flow_none ;
 			RETURN_GOOD_IF_GOOD( LINK_detect_serial(in) ) ;
 
 			LEVEL_DEBUG("Second attempt at serial LINK setup");
-			SOC(in)->dev.serial.flow_control = flow_hard ;
+			SOC(in)->flow = flow_hard ;
 			RETURN_GOOD_IF_GOOD( LINK_detect_serial(in) ) ;
 
 			LEVEL_DEBUG("Third attempt at serial LINK setup");
-			SOC(in)->dev.serial.flow_control = flow_hard ;
+			SOC(in)->flow = flow_hard ;
 			RETURN_GOOD_IF_GOOD( LINK_detect_serial(in) ) ;
 			break ;
 
@@ -226,7 +233,7 @@ static GOOD_OR_BAD LINK_detect_serial(struct connection_in * in)
 	/* Now find the dot for the version parsing */
 	if ( GOOD( LinkVersion_knownstring( version_string, LINK_id_tbl, in)) ) {
 		owfree(version_string);
-		SOC(in)->dev.serial.baud = Globals.baud ;
+		SOC(in)->baud = Globals.baud ;
 		++in->changed_bus_settings ;
 		LINK_reset_in(in) ; // extra reset
 		return gbGOOD;
@@ -362,11 +369,11 @@ static void LINK_set_baud(struct connection_in * in)
 		return ;
 	}
 
-	COM_BaudRestrict( &(SOC(in)->dev.serial.baud), B9600, B19200, B38400, B57600, 0 ) ;
+	COM_BaudRestrict( &(SOC(in)->baud), B9600, B19200, B38400, B57600, 0 ) ;
 
-	LEVEL_DEBUG("to %d",COM_BaudRate(SOC(in)->dev.serial.baud));
+	LEVEL_DEBUG("to %d",COM_BaudRate(SOC(in)->baud));
 	// Find rate parameter
-	switch ( SOC(in)->dev.serial.baud ) {
+	switch ( SOC(in)->baud ) {
 		case B9600:
 			COM_break(in) ;
 			LINK_flush(in);
@@ -392,7 +399,7 @@ static void LINK_set_baud(struct connection_in * in)
 	LINK_flush(in);
 	if ( BAD( LINK_write(LINK_string(speed_code), 1, in) ) ) {
 		LEVEL_DEBUG("LINK change baud error -- will return to 9600");
-		SOC(in)->dev.serial.baud = B9600 ;
+		SOC(in)->baud = B9600 ;
 		++in->changed_bus_settings ;
 		return ;
 	}
@@ -403,7 +410,7 @@ static void LINK_set_baud(struct connection_in * in)
 
 	// Change OS view of rate
 	UT_delay(5);
-	COM_speed(SOC(in)->dev.serial.baud,in) ;
+	COM_speed(SOC(in)->baud,in) ;
 	UT_delay(5);
 	LINK_slurp(in);
 

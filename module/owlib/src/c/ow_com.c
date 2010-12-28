@@ -98,7 +98,7 @@ void COM_speed(speed_t new_baud, struct connection_in *in)
 		ERROR_CONNECT("Trouble setting port speed: %s", SAFESTRING(SOC(in)->devicename));
 	}
 	// change baud on port
-	in->soc.dev.serial.baud = new_baud ;
+	SOC(in)->baud = new_baud ;
 	if (tcsetattr(SOC(in)->file_descriptor, TCSAFLUSH, &t) < 0) {
 		ERROR_CONNECT("Could not set com port attributes: %s", SAFESTRING(SOC(in)->devicename));
 		if (new_baud != B9600) { // avoid infinite recursion

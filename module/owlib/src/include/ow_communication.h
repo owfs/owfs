@@ -41,8 +41,6 @@ enum com_state {
 
 struct com_serial {
 	struct termios oldSerialTio;    /*old serial port settings */
-	enum { flow_none, flow_soft, flow_hard, } flow_control ;
-	speed_t baud; // baud rate in the form of B9600
 } ;
 
 struct com_tcp {
@@ -62,6 +60,13 @@ struct communication {
 		struct com_serial serial ;
 		struct com_tcp tcp ;
 	} dev ;
+	enum { flow_none, flow_soft, flow_hard, } flow ;
+	speed_t baud; // baud rate in the form of B9600
+	int bits;
+	enum { parity_none, parity_odd, parity_even, parity_mark, } parity ;
+	enum {stop_1, stop_2, stop_15, } stop;
+	cc_t vmin ;
+	cc_t vtime ;
 } ;
 
 #endif							/* OW_COMMUNICATION_H */

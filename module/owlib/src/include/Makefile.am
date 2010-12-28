@@ -103,7 +103,8 @@ noinst_HEADERS =           \
         rwlock.h           \
         netlink.h          \
         w1_netlink.h       \
-        sem.h
+        sem.h              \
+        telnet.h
 
 clean-generic:
 

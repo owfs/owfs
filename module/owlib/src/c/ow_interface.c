@@ -293,13 +293,13 @@ static ZERO_OR_ERROR FS_w_templimit(struct one_wire_query *owq)
 /* Serial baud rate */
 static ZERO_OR_ERROR FS_r_baud(struct one_wire_query *owq)
 {
-	struct parsedname *pn = PN(owq);
-	switch ( pn->selected_connection->busmode ) {
+	struct connection_in * in = PN(owq)->selected_connection ;
+	switch ( in->busmode ) {
 		case bus_serial:
 		case bus_link:
 		case bus_ha5:
 		case bus_ha7e:
-			OWQ_U(owq) = COM_BaudRate( SOC(pn->selected_connection)->dev.serial.baud ) ;
+			OWQ_U(owq) = COM_BaudRate( SOC(in)->baud ) ;
 			return 0;
 		default:
 			return -ENOTSUP ;
@@ -308,12 +308,12 @@ static ZERO_OR_ERROR FS_r_baud(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_w_baud(struct one_wire_query *owq)
 {
-	struct parsedname *pn = PN(owq);
-	switch ( pn->selected_connection->busmode ) {
+	struct connection_in * in = PN(owq)->selected_connection ;
+	switch ( in->busmode ) {
 		case bus_serial:
 		case bus_link:
-			SOC(pn->selected_connection)->dev.serial.baud = COM_MakeBaud( (speed_t) OWQ_U(owq) ) ;
-			++pn->selected_connection->changed_bus_settings ;
+			SOC(in)->baud = COM_MakeBaud( (speed_t) OWQ_U(owq) ) ;
+			++in->changed_bus_settings ;
 			break ;
 		default:
 			break ;
@@ -325,10 +325,10 @@ static ZERO_OR_ERROR FS_w_baud(struct one_wire_query *owq)
 #define DS2482_REG_CFG_PPM     0x02
 static ZERO_OR_ERROR FS_r_PPM(struct one_wire_query *owq)
 {
-	struct parsedname *pn = PN(owq);
-	switch ( pn->selected_connection->busmode ) {
+	struct connection_in * in = PN(owq)->selected_connection ;
+	switch ( in->busmode ) {
 		case bus_i2c:
-			OWQ_Y(owq) = ( (pn->selected_connection->master.i2c.configreg & DS2482_REG_CFG_PPM) != 0x00 ) ;
+			OWQ_Y(owq) = ( (in->master.i2c.configreg & DS2482_REG_CFG_PPM) != 0x00 ) ;
 			return 0;
 		default:
 			return -ENOTSUP ;
@@ -337,13 +337,13 @@ static ZERO_OR_ERROR FS_r_PPM(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_w_PPM(struct one_wire_query *owq)
 {
-	struct parsedname *pn = PN(owq);
-	switch ( pn->selected_connection->busmode ) {
+	struct connection_in * in = PN(owq)->selected_connection ;
+	switch ( in->busmode ) {
 		case bus_i2c:
 			if ( OWQ_Y(owq) ) {
-				pn->selected_connection->master.i2c.configreg |= DS2482_REG_CFG_PPM ;
+				in->master.i2c.configreg |= DS2482_REG_CFG_PPM ;
 			} else {
-				pn->selected_connection->master.i2c.configreg &= ~DS2482_REG_CFG_PPM ;
+				in->master.i2c.configreg &= ~DS2482_REG_CFG_PPM ;
 			}
 			break ;
 		default:
@@ -355,10 +355,10 @@ static ZERO_OR_ERROR FS_w_PPM(struct one_wire_query *owq)
 /* Just some tests for ha5 checksum */
 static ZERO_OR_ERROR FS_r_checksum(struct one_wire_query *owq)
 {
-	struct parsedname *pn = PN(owq);
-	switch ( pn->selected_connection->busmode ) {
+	struct connection_in * in = PN(owq)->selected_connection ;
+	switch ( in->busmode ) {
 		case bus_ha5:
-			OWQ_Y(owq) = pn->selected_connection->master.ha5.checksum;
+			OWQ_Y(owq) = in->master.ha5.checksum;
 			return 0;
 		default:
 			return -ENOTSUP ;
@@ -367,10 +367,10 @@ static ZERO_OR_ERROR FS_r_checksum(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_w_checksum(struct one_wire_query *owq)
 {
-	struct parsedname *pn = PN(owq);
-	switch ( pn->selected_connection->busmode ) {
+	struct connection_in * in = PN(owq)->selected_connection ;
+	switch ( in->busmode ) {
 		case bus_ha5:
-			pn->selected_connection->master.ha5.checksum = OWQ_Y(owq) ;
+			in->master.ha5.checksum = OWQ_Y(owq) ;
 			break ;
 		default:
 			break ;

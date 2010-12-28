@@ -94,7 +94,7 @@ static int EtherWeather_command(struct connection_in *in, char command, int data
 	}
 	// Then read any data
 	if (datalen > 0) {
-		if ( COM_read_size( odata, datalen, in ) != (size_t) datalen ) {
+		if ( COM_read_size( odata, datalen, in ) != datalen ) {
 			LEVEL_CONNECT("data read error");
 			owfree(packet);
 			return -EIO;
@@ -200,6 +200,7 @@ static GOOD_OR_BAD EtherWeather_PowerByte(const BYTE byte, BYTE * resp, const UI
 static void EtherWeather_close(struct connection_in *in)
 {
 	// the standard COM-free cleans up the connection
+	(void) in ;
 }
 
 static RESET_TYPE EtherWeather_reset(const struct parsedname *pn)

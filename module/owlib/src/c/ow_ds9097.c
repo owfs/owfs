@@ -65,7 +65,14 @@ GOOD_OR_BAD DS9097_detect(struct connection_in *in)
 	/* open the COM port in 9600 Baud  */
 	SOC(in)->type = ct_serial ;
 	SOC(in)->state = cs_virgin ;
-	SOC(in)->dev.serial.flow_control = flow_none ;
+	SOC(in)->baud = B9600 ;
+	SOC(in)->vmin = 1; // minimum chars
+	SOC(in)->vtime = 0; // decisec wait
+	SOC(in)->parity = parity_none; // parity
+	SOC(in)->stop = stop_1; // stop bits
+	SOC(in)->bits = 8; // bits / byte
+	SOC(in)->flow = flow_none; // flow control
+	SOC(in)->flow = flow_none ;
 	SOC(in)->timeout.tv_sec = Globals.timeout_serial ;
 	SOC(in)->timeout.tv_usec = 0 ;
 	RETURN_BAD_IF_BAD(COM_open(in)) ;
@@ -80,7 +87,7 @@ GOOD_OR_BAD DS9097_detect(struct connection_in *in)
 
 	/* open the COM port in 9600 Baud  */
 	/* Second pass */
-	SOC(in)->dev.serial.flow_control = flow_none ;
+	SOC(in)->flow = flow_none ;
 	RETURN_BAD_IF_BAD(COM_open(in)) ;
 
 	switch( DS9097_reset_in(in) ) {
@@ -93,7 +100,7 @@ GOOD_OR_BAD DS9097_detect(struct connection_in *in)
 
 	/* open the COM port in 9600 Baud  */
 	/* Third pass, hardware flow control */
-	SOC(in)->dev.serial.flow_control = flow_hard ;
+	SOC(in)->flow = flow_hard ;
 	RETURN_BAD_IF_BAD(COM_open(in)) ;
 
 	switch( DS9097_reset_in(in) ) {

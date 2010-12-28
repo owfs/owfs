@@ -234,7 +234,13 @@ GOOD_OR_BAD DS2480_detect(struct connection_in *in)
 	// Now set desired baud and polarity
 	// BUS_reset will do the actual changes
 	in->master.serial.reverse_polarity = Globals.serial_reverse ;
-	SOC(in)->dev.serial.baud = Globals.baud ;
+	SOC(in)->baud = B9600 ;
+	SOC(in)->vmin = 0; // minimum chars
+	SOC(in)->vtime = 3; // decisec wait
+	SOC(in)->parity = parity_none; // parity
+	SOC(in)->stop = stop_1; // stop bits
+	SOC(in)->bits = 8; // bits / byte
+	SOC(in)->flow = flow_none; // flow control
 
 	in->master.serial.tcp.CRLF_size = 2 ;
 
@@ -307,13 +313,13 @@ static GOOD_OR_BAD DS2480_big_reset(struct connection_in * in)
 			SOC(in)->timeout.tv_usec = 0 ;
 			SOC(in)->type = ct_serial ;
 
-			SOC(in)->dev.serial.flow_control = flow_none ;
+			SOC(in)->flow = flow_none ;
 			RETURN_GOOD_IF_GOOD( DS2480_big_reset_serial(in)) ;
 
-			SOC(in)->dev.serial.flow_control = flow_none ;
+			SOC(in)->flow = flow_none ;
 			RETURN_GOOD_IF_GOOD( DS2480_big_reset_serial(in)) ;
 
-			SOC(in)->dev.serial.flow_control = flow_hard ;
+			SOC(in)->flow = flow_hard ;
 			RETURN_GOOD_IF_GOOD( DS2480_big_reset_serial(in)) ;
 
 			return gbBAD ;
@@ -476,11 +482,11 @@ static GOOD_OR_BAD DS2480_configuration_read(BYTE parameter_code, BYTE value_cod
 static void DS2480_set_baud_control(struct connection_in * in)
 {
 	// restrict allowable baud rates based on device capabilities
-	COM_BaudRestrict( &(SOC(in)->dev.serial.baud), B9600, B19200, B57600, B115200, 0 ) ;
+	COM_BaudRestrict( &(SOC(in)->baud), B9600, B19200, B57600, B115200, 0 ) ;
 
 	// telnet doesn't support in-band baud rate changes,
 	if ( in->busmode == bus_xport ) {
-		SOC(in)->dev.serial.baud = B9600 ;
+		SOC(in)->baud = B9600 ;
 		return ;
 	}
 
@@ -496,7 +502,7 @@ static void DS2480_set_baud_control(struct connection_in * in)
 
 	// uh oh -- undefined state -- not sure what the bus speed is.
 	in->reconnect_state = reconnect_error ;
-	SOC(in)->dev.serial.baud = B9600 ;
+	SOC(in)->baud = B9600 ;
 	++in->changed_bus_settings ;
 	return;
 }
@@ -507,7 +513,7 @@ static GOOD_OR_BAD DS2480_set_baud(struct connection_in * in)
 	BYTE send_code ;
 
 	// Find rate parameter
-	switch ( SOC(in)->dev.serial.baud ) {
+	switch ( SOC(in)->baud ) {
 		case B9600:
 			value_code = PARMSET_9600 ;
 			break ;
@@ -527,7 +533,7 @@ static GOOD_OR_BAD DS2480_set_baud(struct connection_in * in)
 			break ;
 #endif
 		default:
-			SOC(in)->dev.serial.baud = B9600 ;
+			SOC(in)->baud = B9600 ;
 			value_code = PARMSET_9600 ;
 			break ;
 	}
@@ -547,7 +553,7 @@ static GOOD_OR_BAD DS2480_set_baud(struct connection_in * in)
 
 	// Change OS view of rate
 	UT_delay(5);
-	COM_speed( SOC(in)->dev.serial.baud,in) ;
+	COM_speed( SOC(in)->baud,in) ;
 	UT_delay(5);
 	DS2480_slurp(in);
 
