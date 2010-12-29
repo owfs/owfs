@@ -182,11 +182,11 @@ GOOD_OR_BAD telnet_read(BYTE * buf, const size_t size, struct connection_in *in)
 					case TELNET_SE:
 						printf("TELNET: IAC SE\n");
 						++ total_discard ;
-						telnet_read_state = telnet_regular ;					
+						telnet_read_state = telnet_regular ;
+						break ;					
 					default:
-						++ total_discard ;
-						telnet_read_state = telnet_ff ;
-						break ;
+						LEVEL_DEBUG("Unexpected telnet sequence");
+						return gbBAD ;
 				}
 				break ;
 			case telnet_fffb:
