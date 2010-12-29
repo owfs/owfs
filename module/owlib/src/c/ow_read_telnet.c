@@ -178,7 +178,11 @@ GOOD_OR_BAD telnet_read(BYTE * buf, const size_t size, struct connection_in *in)
 					case TELNET_IAC:
 						printf("TELNET: IAC SB %d\n",readin_buf[current_index]);
 						telnet_read_state = telnet_fffa ;
-						break ;					
+						break ;
+					case TELNET_SE:
+						printf("TELNET: IAC SE\n");
+						++ total_discard ;
+						telnet_read_state = telnet_regular ;					
 					default:
 						++ total_discard ;
 						telnet_read_state = telnet_ff ;
