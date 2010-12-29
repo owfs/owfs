@@ -45,6 +45,9 @@ GOOD_OR_BAD COM_open(struct connection_in *connection)
 			LEVEL_DEBUG("ERROR!!! ----------- ERROR!");
 			return gbBAD ;
 		case ct_telnet:
+			SOC(connection)->dev.telnet.telnet_negotiated = 0 ;
+			SOC(connection)->dev.telnet.telnet_supported = 0 ;
+			return tcp_open( connection ) ;		
 		case ct_tcp:
 			return tcp_open( connection ) ;
 		case ct_i2c:

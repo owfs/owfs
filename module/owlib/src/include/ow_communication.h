@@ -48,6 +48,8 @@ struct com_tcp {
 	char *service;
 	struct addrinfo *ai;
 	struct addrinfo *ai_ok;
+	int telnet_negotiated ; // have we attempted telnet negotiation -- reset at each OPEN
+	int telnet_supported ; // servire does telnet settings
 } ;
 
 struct communication {
@@ -59,6 +61,7 @@ struct communication {
 	union {
 		struct com_serial serial ;
 		struct com_tcp tcp ;
+		struct com_tcp telnet ;
 	} dev ;
 	enum { flow_none, flow_soft, flow_hard, } flow ;
 	speed_t baud; // baud rate in the form of B9600
