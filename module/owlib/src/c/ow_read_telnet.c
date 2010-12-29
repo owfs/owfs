@@ -47,7 +47,7 @@ GOOD_OR_BAD telnet_read(BYTE * buf, const size_t size, struct connection_in *in)
 	// state machine for telnet escape chars
 	// handles TELNET protocol, specifically RFC854
 	// http://www.ietf.org/rfc/rfc854.txt
-	enum { telnet_regular, telnet_ff, telnet_fffa, telnet_fffb, } telnet_read_state = telnet_regular ;
+	enum { telnet_regular, telnet_ff, telnet_fffa, telnet_fffaff, telnet_fffb, } telnet_read_state = telnet_regular ;
 
 	size_t actual_readin ;
 	size_t current_index = 0 ;
@@ -161,14 +161,27 @@ GOOD_OR_BAD telnet_read(BYTE * buf, const size_t size, struct connection_in *in)
 			case telnet_fffa:
 				printf("TELNET: IAC SB %d\n",readin_buf[current_index]);
 				switch ( readin_buf[current_index] ) {
-					case TELNET_SE:
+					case TELNET_IAC:
 						// end of escape sequence
 						++ total_discard ;
-						telnet_read_state = telnet_regular ;
-						break ;
+						telnet_read_state = telnet_fffaff ;
+						break ;					
 					default:
 						// stay in this mode
 						++ total_discard ;
+						break ;
+				}
+				break ;
+			case telnet_fffaff:
+				printf("TELNET: IAC SB %d\n",readin_buf[current_index]);
+				switch ( readin_buf[current_index] ) {
+					case TELNET_IAC:
+						printf("TELNET: IAC SB %d\n",readin_buf[current_index]);
+						telnet_read_state = telnet_fffa ;
+						break ;					
+					default:
+						++ total_discard ;
+						telnet_read_state = telnet_ff ;
 						break ;
 				}
 				break ;
