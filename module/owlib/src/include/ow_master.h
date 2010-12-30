@@ -40,7 +40,6 @@ struct master_tcp {
 	
 	// telnet tuning
 	int CRLF_size ; 
-	int default_discard ; // linkhub-telnet escape chars
 };
 
 struct master_serial {

@@ -283,7 +283,6 @@ static char * LINK_version_string(struct connection_in * in)
 	enum { lvs_string, lvs_0d, } lvs = lvs_string ; // read state machine
 	int version_index ;
 
-	in->master.serial.tcp.default_discard = 0 ;
 	in->master.serial.tcp.CRLF_size = 2 ;
 	in->master.link.tmode = e_link_t_unknown ;
 	in->master.link.qmode = e_link_t_unknown ;

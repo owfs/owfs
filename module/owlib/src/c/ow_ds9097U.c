@@ -373,8 +373,6 @@ static GOOD_OR_BAD DS2480_big_reset_net(struct connection_in * in)
 
 	RETURN_BAD_IF_BAD( COM_open(in) ) ;
 	
-	in->master.serial.tcp.default_discard = 0 ;
-
 	LEVEL_DEBUG("Slurp in initial bytes");
 	DS2480_slurp( in ) ;
 	DS2480_flush(in);

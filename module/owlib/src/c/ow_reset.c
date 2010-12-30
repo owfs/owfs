@@ -24,7 +24,7 @@ RESET_TYPE BUS_reset(const struct parsedname *pn)
 	switch ( (in->iroutines.reset) (pn) ) {
 	case BUS_RESET_OK:
 		in->reconnect_state = reconnect_ok;	// Flag as good!
-		if (in->ds2404_found && (in->iroutines.flags&ADAP_FLAG_no2404delay==0) ) {
+		if (in->ds2404_found && ((in->iroutines.flags&ADAP_FLAG_no2404delay)==0) ) {
 			// extra delay for alarming DS1994/DS2404 complience
 			UT_delay(5);
 		}
