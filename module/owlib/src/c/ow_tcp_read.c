@@ -117,7 +117,7 @@ ZERO_OR_ERROR tcp_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, BYTE * buffer, 
 
 void tcp_read_flush( FILE_DESCRIPTOR_OR_ERROR file_descriptor)
 {
-	ASCII buffer[16];
+	BYTE buffer[16+1];
 	ssize_t nread;
 	int flags = fcntl(file_descriptor, F_GETFL, 0);
 	
@@ -133,7 +133,8 @@ void tcp_read_flush( FILE_DESCRIPTOR_OR_ERROR file_descriptor)
  		return;
 	}
 	LEVEL_DEBUG("tcp flush post_set FD=%d",file_descriptor);
-	while ((nread = read(file_descriptor, (BYTE *) buffer, 16)) > 0) {
+	while ((nread = read(file_descriptor,  buffer, 16)) > 0) {
+		buffer[nread] = '\0' ;
 		Debug_Bytes("tcp_read_flush", (BYTE *) buffer, nread);
 		continue;
 	}
