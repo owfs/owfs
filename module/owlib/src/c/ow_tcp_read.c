@@ -127,11 +127,12 @@ void tcp_read_flush( FILE_DESCRIPTOR_OR_ERROR file_descriptor)
 		return;
 	}
 
-	LEVEL_DEBUG("tcp flush");
+	LEVEL_DEBUG("tcp flush post get FD=%d",file_descriptor);
 
 	if (fcntl(file_descriptor, F_SETFL, flags | O_NONBLOCK) < 0) {
  		return;
 	}
+	LEVEL_DEBUG("tcp flush post_set FD=%d",file_descriptor);
 	while ((nread = read(file_descriptor, (BYTE *) buffer, 16)) > 0) {
 		Debug_Bytes("tcp_read_flush", (BYTE *) buffer, nread);
 		continue;
