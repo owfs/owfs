@@ -78,9 +78,6 @@ GOOD_OR_BAD OWServer_Enet_detect(struct connection_in *in)
 	// Always returns 0D0A
 	in->master.serial.tcp.CRLF_size = 2 ;
 	
-	in->master.link.tmode = e_link_t_unknown ;
-	in->master.link.qmode = e_link_t_unknown ;
-
 	memset( in->master.enet.sn, 0x00, SERIAL_NUMBER_SIZE ) ;
 
 	RETURN_GOOD_IF_GOOD( OWServer_Enet_reopen(in)) ;
