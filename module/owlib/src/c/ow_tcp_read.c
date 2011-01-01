@@ -120,12 +120,14 @@ void tcp_read_flush( FILE_DESCRIPTOR_OR_ERROR file_descriptor)
 	ASCII buffer[16];
 	ssize_t nread;
 	int flags = fcntl(file_descriptor, F_GETFL, 0);
-
+	
 	// Apparently you can test for GET_FL success like this
 	// see http://www.informit.com/articles/article.asp?p=99706&seqNum=13&rl=1
 	if (flags < 0) {
 		return;
 	}
+
+	LEVEL_DEBUG("tcp flush");
 
 	if (fcntl(file_descriptor, F_SETFL, flags | O_NONBLOCK) < 0) {
  		return;
