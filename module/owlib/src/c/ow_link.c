@@ -42,13 +42,10 @@ struct LINK_id {
 };
 
 // Steven Bauer added code for the VM links
-struct LINK_id LINKE_id_tbl[] = {
+struct LINK_id LINK_id_tbl[] = {
 	{"1.0", "LinkHub-E v1.0", adapter_LINK_E},
 	{"1.1", "LinkHub-E v1.1", adapter_LINK_E},
-	{"0", "0", 0}
-};
 
-struct LINK_id LINK_id_tbl[] = {
 	{"1.0", "LINK v1.0", adapter_LINK_10},
 	{"1.1", "LINK v1.1", adapter_LINK_11},
 	{"1.2", "LINK v1.2", adapter_LINK_12},
@@ -75,7 +72,7 @@ static void LINKE_setroutines(struct connection_in *in);
 static RESET_TYPE LINK_reset_in(struct connection_in * in);
 static GOOD_OR_BAD LINK_detect_serial(struct connection_in * in) ;
 static GOOD_OR_BAD LINK_detect_net(struct connection_in * in) ;
-static char * LINK_version_string(struct connection_in * in) ;
+static GOOD_OR_BAD LINK_version(struct connection_in * in) ;
 
 static void LINK_set_baud(struct connection_in * in) ;
 static GOOD_OR_BAD LINK_read(BYTE * buf, size_t size, struct connection_in * in);
@@ -86,7 +83,7 @@ static GOOD_OR_BAD LINK_search_type(struct device_search *ds, struct connection_
 
 static GOOD_OR_BAD LINK_readback_data( BYTE * resp, const size_t size, struct connection_in * in);
 
-static GOOD_OR_BAD LinkVersion_knownstring( const char * reported_string, struct LINK_id * tbl, struct connection_in * in ) ;
+static GOOD_OR_BAD LinkVersion_knownstring( const char * reported_string, struct connection_in * in ) ;
 static GOOD_OR_BAD LinkVersion_unknownstring( const char * reported_string, struct connection_in * in ) ;
 static void LINK_flush( struct connection_in * in ) ;
 static void LINK_slurp(struct connection_in *in);
@@ -117,7 +114,7 @@ static void LINKE_setroutines(struct connection_in *in)
 
 #define LINK_string(x)  ((BYTE *)(x))
 
-static GOOD_OR_BAD LinkVersion_knownstring( const char * reported_string, struct LINK_id * tbl, struct connection_in * in )
+static GOOD_OR_BAD LinkVersion_knownstring( const char * reported_string, struct connection_in * in )
 {
 	int version_index;
 
@@ -127,11 +124,11 @@ static GOOD_OR_BAD LinkVersion_knownstring( const char * reported_string, struct
 	}
 
 	// loop through LINK version string table looking for a match
-	for (version_index = 0; tbl[version_index].verstring[0] != '0'; version_index++) {
-		if (strstr(reported_string, tbl[version_index].verstring) != NULL) {
-			LEVEL_DEBUG("Link version Found %s", tbl[version_index].verstring);
-			in->Adapter = tbl[version_index].Adapter;
-			in->adapter_name = tbl[version_index].name;
+	for (version_index = 0; LINK_id_tbl[version_index].verstring[0] != '0'; version_index++) {
+		if (strstr(reported_string, LINK_id_tbl[version_index].verstring) != NULL) {
+			LEVEL_DEBUG("Link version Found %s", LINK_id_tbl[version_index].verstring);
+			in->Adapter = LINK_id_tbl[version_index].Adapter;
+			in->adapter_name = LINK_id_tbl[version_index].name;
 			return gbGOOD;
 		}
 	}
@@ -207,8 +204,6 @@ GOOD_OR_BAD LINK_detect(struct connection_in *in)
 
 static GOOD_OR_BAD LINK_detect_serial(struct connection_in * in)
 {
-	char * version_string ;
-	
 	/* Set up low-level routines */
 	LINK_setroutines(in);
 	SOC(in)->timeout.tv_sec = Globals.timeout_serial ;
@@ -223,23 +218,7 @@ static GOOD_OR_BAD LINK_detect_serial(struct connection_in * in)
 	UT_delay(100) ; // based on http://morpheus.wcf.net/phpbb2/viewtopic.php?t=89&sid=3ab680415917a0ebb1ef020bdc6903ad
 	LINK_slurp( in ) ;
 	
-	version_string = LINK_version_string(in) ;
-	if ( version_string == NULL ) {
-		LEVEL_DEBUG("Cannot get version string");
-		COM_close(in) ;
-		return gbBAD;
-	}
-
-	/* Now find the dot for the version parsing */
-	if ( GOOD( LinkVersion_knownstring( version_string, LINK_id_tbl, in)) ) {
-		owfree(version_string);
-		SOC(in)->baud = Globals.baud ;
-		++in->changed_bus_settings ;
-		LINK_reset_in(in) ; // extra reset
-		return gbGOOD;
-	}
-
-	owfree(version_string);
+	RETURN_GOOD_IF_GOOD( LINK_version(in) ) ;
 	LEVEL_DEFAULT("LINK detection error");
 	COM_close(in) ;
 	return gbBAD;
@@ -247,8 +226,6 @@ static GOOD_OR_BAD LINK_detect_serial(struct connection_in * in)
 
 static GOOD_OR_BAD LINK_detect_net(struct connection_in * in)
 {
-	char * version_string ;
-
 	/* Set up low-level routines */
 	LINKE_setroutines(in);
 	SOC(in)->timeout.tv_sec = 0 ;
@@ -261,25 +238,15 @@ static GOOD_OR_BAD LINK_detect_net(struct connection_in * in)
 	LINK_slurp( in ) ;
 	LINK_flush(in);
 
-	version_string = LINK_version_string(in) ;
-	if ( version_string != NULL ) {
-		/* Now find the dot for the version parsing */
-		if ( GOOD( LinkVersion_knownstring(version_string,LINKE_id_tbl,in)) ) {
-			owfree(version_string) ;
-			LINK_reset_in(in) ; // extra reset
-			return gbGOOD;
-		}
-		owfree(version_string) ;
-	}
-
+	RETURN_GOOD_IF_GOOD( LINK_version(in) ) ;
 	LEVEL_DEFAULT("LINK detection error");
 	COM_close(in) ;
 	return gbBAD;
 }
 
-static char * LINK_version_string(struct connection_in * in)
+static GOOD_OR_BAD LINK_version(struct connection_in * in)
 {
-	char * version_string = owmalloc(MAX_LINK_VERSION_LENGTH+1) ;
+	char version_string[MAX_LINK_VERSION_LENGTH+1] ;
 	enum { lvs_string, lvs_0d, } lvs = lvs_string ; // read state machine
 	int version_index ;
 
@@ -287,18 +254,12 @@ static char * LINK_version_string(struct connection_in * in)
 	in->master.link.tmode = e_link_t_unknown ;
 	in->master.link.qmode = e_link_t_unknown ;
 
-	if ( version_string == NULL ) {
-		LEVEL_DEBUG( "cannot allocate version string" );
-		return NULL ;
-	}
-
 	// clear out the buffer
 	memset(version_string, 0, MAX_LINK_VERSION_LENGTH+1);
 
 	if ( BAD( LINK_write(LINK_string(" "), 1, in) ) ) {
 		LEVEL_DEFAULT("LINK version string cannot be requested");
-		owfree(version_string);
-		return NULL ;
+		return gbBAD ;
 	}
 		
 	/* read the version string */
@@ -311,13 +272,13 @@ static char * LINK_version_string(struct connection_in * in)
 			switch ( lvs ) {
 				case lvs_string:
 					LEVEL_DEBUG("Found string <%s> but no 0x0D 0x0A",version_string) ;
-					break ;
+					return gbBAD ;
 				case lvs_0d:
 					LEVEL_DEBUG("Found string <%s> but no 0x0A",version_string) ;
-					break ;
+					return gbBAD ;
+				default:
+					return gbBAD ;
 			}
-			owfree(version_string);
-			return NULL ;
 		}
 		
 		switch( version_string[version_index] ) {
@@ -330,18 +291,16 @@ static char * LINK_version_string(struct connection_in * in)
 						break ;
 					case lvs_0d:
 						LEVEL_DEBUG("Extra CR char in <%s>",version_string);
-						owfree(version_string);
-						return NULL ;
+						return gbBAD ;
 				}
 				break ;
 			case 0x0A:
 				switch ( lvs ) {
 					case lvs_string:
 						LEVEL_DEBUG("No CR before LF char in <%s>",version_string);
-						owfree(version_string);
-						return NULL ;
+						return gbBAD ;
 					case lvs_0d:
-						return version_string ;
+						return LinkVersion_knownstring( version_string, in ) ;
 				}
 			default:
 				switch ( lvs ) {
@@ -356,8 +315,7 @@ static char * LINK_version_string(struct connection_in * in)
 		}
 	}
 	LEVEL_DEFAULT("LINK version string too long. <%s> greater than %d chars",version_string,MAX_LINK_VERSION_LENGTH);
-	owfree(version_string) ;
-	return NULL ;
+	return gbBAD ;
 }
 
 static void LINK_set_baud(struct connection_in * in)
