@@ -92,7 +92,7 @@ SIZE_OR_ERROR COM_read_size( BYTE * data, size_t length, struct connection_in *c
 
 SIZE_OR_ERROR COM_read_size_low( BYTE * data, size_t length, struct connection_in *connection )
 {
-	ssize_t actual_size ;
+	size_t actual_size ;
 	ZERO_OR_ERROR zoe = tcp_read( SOC(connection)->file_descriptor, data, length, &(SOC(connection)->timeout), &actual_size ) ;
 
 	if ( zoe == -EBADF ) {

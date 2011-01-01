@@ -49,7 +49,7 @@ struct com_tcp {
 	struct addrinfo *ai;
 	struct addrinfo *ai_ok;
 	int telnet_negotiated ; // have we attempted telnet negotiation -- reset at each OPEN
-	int telnet_supported ; // servire does telnet settings
+	int telnet_supported ; // server does telnet settings
 } ;
 
 struct communication {
@@ -67,7 +67,7 @@ struct communication {
 	speed_t baud; // baud rate in the form of B9600
 	int bits;
 	enum { parity_none, parity_odd, parity_even, parity_mark, } parity ;
-	enum {stop_1, stop_2, stop_15, } stop;
+	enum { stop_1, stop_2, stop_15, } stop;
 	cc_t vmin ;
 	cc_t vtime ;
 } ;

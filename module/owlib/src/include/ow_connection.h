@@ -173,6 +173,8 @@ SIZE_OR_ERROR COM_read_size( BYTE * data, size_t length, struct connection_in *c
 void COM_slurp( struct connection_in *in);
 
 GOOD_OR_BAD telnet_read(BYTE * buf, const size_t size, struct connection_in *in) ;
+GOOD_OR_BAD telnet_set(struct connection_in *in) ;
+
 
 void FreeInAll(void);
 void RemoveIn( struct connection_in * conn ) ;

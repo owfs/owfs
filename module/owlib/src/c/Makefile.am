@@ -141,6 +141,7 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_server_message.c\
 			   ow_server_enet.c   \
                ow_select.c        \
+               ow_set_telnet.c    \
                ow_settings.c      \
                ow_sibling.c       \
                ow_sibling_binary.c\
