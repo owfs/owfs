@@ -25,10 +25,7 @@ $Id$
 //open serial port
 GOOD_OR_BAD serial_open(struct connection_in *connection)
 {
-	struct termios newSerialTio;	/*new serial port settings */
-	FILE_DESCRIPTOR_OR_ERROR fd ;
-
-	fd = open( SOC(connection)->devicename, O_RDWR | O_NONBLOCK | O_NOCTTY) ;
+	FILE_DESCRIPTOR_OR_ERROR fd = open( SOC(connection)->devicename, O_RDWR | O_NONBLOCK | O_NOCTTY) ;
 	SOC(connection)->file_descriptor = fd ;
 	if ( FILE_DESCRIPTOR_NOT_VALID( fd ) ) {
 		// state doesn't change
