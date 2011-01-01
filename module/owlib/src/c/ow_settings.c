@@ -9,38 +9,10 @@ $Id$
     1wire/iButton system from Dallas Semiconductor
 */
 
-/* General Device File format:
-    This device file corresponds to a specific 1wire/iButton chip type
-    ( or a closely related family of chips )
-
-    The connection to the larger program is through the "device" data structure,
-      which must be declared in the acompanying header file.
-
-    The device structure holds the
-      family code,
-      name,
-      device type (chip, interface or pseudo)
-      number of properties,
-      list of property structures, called "filetype".
-
-    Each filetype structure holds the
-      name,
-      estimated length (in bytes),
-      aggregate structure pointer,
-      data format,
-      read function,
-      write funtion,
-      generic data pointer
-
-    The aggregate structure, is present for properties that several members
-    (e.g. pages of memory or entries in a temperature log. It holds:
-      number of elements
-      whether the members are lettered or numbered
-      whether the elements are stored together and split, or separately and joined
-*/
-
-/* Stats are a pseudo-device -- they are a file-system entry and handled as such,
-     but have a different caching type to distiguish their handling */
+/* Settings are a pseudo-device -- used to dynamicalls change timeouts and the like
+ * these settings can also be changed at the command line
+ * Except for performance, none of these settings has security implications
+ * */
 
 #include <config.h>
 #include "owfs_config.h"
@@ -57,7 +29,7 @@ WRITE_FUNCTION(FS_w_PS);
 
 /* -------- Structures ---------- */
 
-struct filetype set_cache[] = {
+struct filetype set_timeout[] = {
 	{"volatile", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, VISIBLE, {v:&Globals.timeout_volatile},},
 	{"stable", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, VISIBLE, {v:&Globals.timeout_stable},},
 	{"directory", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, VISIBLE, {v:&Globals.timeout_directory},},
@@ -72,8 +44,8 @@ struct filetype set_cache[] = {
 }
 
 ;
-struct device d_set_cache = { "timeout", "timeout", ePN_settings, COUNT_OF_FILETYPES(set_cache),
-	set_cache, NO_GENERIC_READ, NO_GENERIC_WRITE
+struct device d_set_timeout = { "timeout", "timeout", ePN_settings, COUNT_OF_FILETYPES(set_timeout),
+	set_timeout, NO_GENERIC_READ, NO_GENERIC_WRITE
 };
 struct filetype set_units[] = {
  	{"temperature_scale", 1, NON_AGGREGATE, ft_ascii, fc_static, FS_r_TS, FS_w_TS, VISIBLE, NO_FILETYPE_DATA,},
@@ -90,7 +62,7 @@ struct device d_set_units = { "units", "units", ePN_settings, COUNT_OF_FILETYPES
 static ZERO_OR_ERROR FS_r_timeout(struct one_wire_query *owq)
 {
 	CACHE_RLOCK;
-	OWQ_I(owq) = ((UINT *) OWQ_pn(owq).selected_filetype->data.v)[0];
+	OWQ_U(owq) = ((UINT *) OWQ_pn(owq).selected_filetype->data.v)[0];
 	CACHE_RUNLOCK;
 	return 0;
 }
@@ -102,9 +74,9 @@ static ZERO_OR_ERROR FS_w_timeout(struct one_wire_query *owq)
 	CACHE_WLOCK;
 	//printf("FS_w_timeout!!!\n");
 	previous = ((UINT *) pn->selected_filetype->data.v)[0];
-	((UINT *) pn->selected_filetype->data.v)[0] = OWQ_I(owq);
+	((UINT *) pn->selected_filetype->data.v)[0] = OWQ_U(owq);
 	CACHE_WUNLOCK;
-	if (previous > OWQ_I(owq)) {
+	if (previous > OWQ_U(owq)) {
 		Cache_Clear();
 	}
 	return 0;

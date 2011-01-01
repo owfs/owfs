@@ -158,7 +158,7 @@ void DeviceSort(void)
 	Device2Tree(&d_stats_read, ePN_statistics);
 	Device2Tree(&d_stats_thread, ePN_statistics);
 	Device2Tree(&d_stats_write, ePN_statistics);
-	Device2Tree(&d_set_cache, ePN_settings);
+	Device2Tree(&d_set_timeout, ePN_settings);
 	Device2Tree(&d_set_units, ePN_settings);
 	Device2Tree(&d_sys_process, ePN_system);
 	Device2Tree(&d_sys_connections, ePN_system);

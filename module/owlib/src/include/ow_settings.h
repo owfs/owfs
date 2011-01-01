@@ -18,7 +18,7 @@ $Id$
 #include "ow_standard.h"
 
 /* -------- Structures ---------- */
-DeviceHeader(set_cache);
+DeviceHeader(set_timeout);
 DeviceHeader(set_units);
 
 #endif							/* OW_SETTINGS_H */
