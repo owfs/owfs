@@ -67,7 +67,22 @@ GOOD_OR_BAD telnet_set(struct connection_in *in)
 
 #pragma pack(pop)  /* restore */
 
-	telnet_string.baud = htonl( SOC(in)->baud ) ;
+	switch ( SOC(in)->baud ) {
+		case B115200:
+			telnet_string.baud = htonl( 115200 ) ;
+			break ;
+		case B57600:
+			telnet_string.baud = htonl( 57600 ) ;
+			break ;
+		case B19200:
+			telnet_string.baud = htonl( 19200 ) ;
+			break ;
+		case B9600:
+		default:
+			telnet_string.baud = htonl( 9600 ) ;
+			SOC(in)->baud = B9600 ;
+			break ;
+	}
 
 	telnet_string.size = SOC(in)->bits ;
 
