@@ -166,7 +166,6 @@ GOOD_OR_BAD LINK_detect(struct connection_in *in)
 	}
 
 	in->master.serial.tcp.CRLF_size = 2 ;
-	SOC(in)->baud = B9600 ;
 	SOC(in)->vmin = 0; // minimum chars
 	SOC(in)->vtime = 3; // decisec wait
 	SOC(in)->parity = parity_none; // parity
@@ -184,6 +183,7 @@ GOOD_OR_BAD LINK_detect(struct connection_in *in)
 
 		case bus_link:
 			SOC(in)->type = ct_serial ;
+			SOC(in)->baud = B9600 ;
 
 			SOC(in)->flow = flow_none ;
 			RETURN_GOOD_IF_GOOD( LINK_detect_serial(in) ) ;
