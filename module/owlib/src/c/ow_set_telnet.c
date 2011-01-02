@@ -23,11 +23,11 @@ GOOD_OR_BAD telnet_set(struct connection_in *in)
 #pragma pack(1) /* byte alignment */
 
 	struct {
-		BYTE do_sga[3] ;
-		BYTE do_echo[3] ;
+//		BYTE do_sga[3] ;
+//		BYTE do_echo[3] ;
 		
 		BYTE i_will[3] ;
-		BYTE you_do[3] ;
+//		BYTE you_do[3] ;
 		
 		BYTE pre_baud[4] ;
 		uint32_t baud ;
@@ -35,7 +35,7 @@ GOOD_OR_BAD telnet_set(struct connection_in *in)
 
 		BYTE pre_size[4] ;
 		BYTE size ;
-		BYTE post_size[4] ;
+		BYTE post_size[2] ;
 
 		BYTE pre_parity[4] ;
 		BYTE parity ;
@@ -49,10 +49,10 @@ GOOD_OR_BAD telnet_set(struct connection_in *in)
 		BYTE flow ;
 		BYTE post_flow[2] ;
 	} telnet_string = {
-		.do_sga = { TELNET_IAC, TELNET_DO, TELOPT_SGA, } ,
-		.do_echo = { TELNET_IAC, TELNET_DO, TELOPT_ECHO, } ,
+//		.do_sga = { TELNET_IAC, TELNET_DO, TELOPT_SGA, } ,
+//		.do_echo = { TELNET_IAC, TELNET_DO, TELOPT_ECHO, } ,
 		.i_will = { TELNET_IAC, TELNET_WILL, TELOPT_COM_PORT, } ,
-		.you_do = { TELNET_IAC, TELNET_DO, TELOPT_COM_PORT, } ,
+//		.you_do = { TELNET_IAC, TELNET_DO, TELOPT_COM_PORT, } ,
 		.pre_baud = { TELNET_IAC, TELNET_SB, TELOPT_COM_PORT, COMOPT_BAUDRATE, } ,
 		.post_baud = {TELNET_IAC, TELNET_SE, } ,
 		.pre_size = { TELNET_IAC, TELNET_SB, TELOPT_COM_PORT, COMOPT_DATASIZE, } ,
