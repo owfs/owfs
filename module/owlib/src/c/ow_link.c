@@ -173,6 +173,7 @@ GOOD_OR_BAD LINK_detect(struct connection_in *in)
 	SOC(in)->stop = stop_1; // stop bits
 	SOC(in)->bits = 8; // bits / byte
 	SOC(in)->flow = flow_none; // flow control
+	SOC(in)->dev.telnet.telnet_negotiated = pre_negotiation ;
 
 	SOC(in)->state = cs_virgin ;
 	switch( in->busmode ) {
@@ -238,7 +239,10 @@ static GOOD_OR_BAD LINK_detect_net(struct connection_in * in)
 	LINK_slurp( in ) ;
 	LINK_flush(in);
 
-	RETURN_GOOD_IF_GOOD( LINK_version(in) ) ;
+	if ( GOOD( LINK_version(in) ) ) {
+		SOC(in)->dev.telnet.telnet_negotiated = needs_negotiation ;
+		return gbGOOD ;
+	}
 	LEVEL_DEFAULT("LINK detection error");
 	COM_close(in) ;
 	return gbBAD;

@@ -48,7 +48,7 @@ struct com_tcp {
 	char *service;
 	struct addrinfo *ai;
 	struct addrinfo *ai_ok;
-	int telnet_negotiated ; // have we attempted telnet negotiation -- reset at each OPEN
+	enum { pre_negotiation, needs_negotiation, completed_negotiation, } telnet_negotiated ; // have we attempted telnet negotiation -- reset at each OPEN
 	int telnet_supported ; // server does telnet settings
 } ;
 

@@ -40,9 +40,9 @@ GOOD_OR_BAD COM_write( const BYTE * data, size_t length, struct connection_in *c
 			LEVEL_DEBUG("Unimplemented!!!");
 			return gbBAD ;
 		case ct_telnet:
-			if ( SOC(connection)->dev.telnet.telnet_negotiated == 0 ) {
+			if ( SOC(connection)->dev.telnet.telnet_negotiated == needs_negotiation ) {
 				RETURN_BAD_IF_BAD(  telnet_set( connection ) ) ;
-				SOC(connection)->dev.telnet.telnet_negotiated = 1 ;
+				SOC(connection)->dev.telnet.telnet_negotiated = completed_negotiation ;
 			}
 			break ;
 		case ct_tcp:
