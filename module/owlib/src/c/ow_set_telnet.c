@@ -109,5 +109,7 @@ GOOD_OR_BAD telnet_set(struct connection_in *in)
 			telnet_string.flow = 3 ;
 			break ;
 	}
+
+	return COM_write_simple( &telnet_string, sizeof( telnet_string ) , in ) ;
 }
 	
