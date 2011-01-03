@@ -250,6 +250,7 @@ static GOOD_OR_BAD LINK_detect_net(struct connection_in * in)
 	COM_flush(in) ;
 	COM_break(in);
 	SOC(in)->dev.telnet.telnet_negotiated = needs_negotiation ;
+	SOC(in)->timeout.tv_sec = 1 ;
 	UT_delay(1000) ;
 	LINK_slurp( in ) ;
 	if ( GOOD( LINK_version(in) ) ) {
