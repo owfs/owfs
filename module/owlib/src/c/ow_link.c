@@ -247,6 +247,7 @@ static GOOD_OR_BAD LINK_detect_net(struct connection_in * in)
 	}
 
 	// second try -- send a break and line settings
+	COM_flush(in) ;
 	COM_break(in);
 	SOC(in)->dev.telnet.telnet_negotiated = needs_negotiation ;
 	UT_delay(1000) ;
