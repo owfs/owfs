@@ -19,8 +19,8 @@ $Id$
 
 static RESET_TYPE DS9097_reset(const struct parsedname *pn);
 static RESET_TYPE DS9097_reset_in( struct connection_in * in );
-static GOOD_OR_BAD DS9097_pre_reset(struct termios * term, struct connection_in *in ) ;
-static void DS9097_post_reset(struct termios * term, struct connection_in *in ) ;
+static GOOD_OR_BAD DS9097_pre_reset(struct connection_in *in ) ;
+static void DS9097_post_reset(struct connection_in *in ) ;
 static GOOD_OR_BAD DS9097_sendback_bits(const BYTE * outbits, BYTE * inbits, const size_t length, const struct parsedname *pn);
 static void DS9097_setroutines(struct connection_in *in);
 static GOOD_OR_BAD DS9097_send_and_get(const BYTE * bussend, BYTE * busget, const size_t length, struct connection_in *in);
@@ -88,7 +88,7 @@ GOOD_OR_BAD DS9097_detect(struct connection_in *in)
 	/* open the COM port in 9600 Baud  */
 	/* Second pass */
 	SOC(in)->flow = flow_none ;
-	RETURN_BAD_IF_BAD(COM_open(in)) ;
+	RETURN_BAD_IF_BAD(COM_change(in)) ;
 
 	switch( DS9097_reset_in(in) ) {
 		case BUS_RESET_OK:
@@ -101,7 +101,7 @@ GOOD_OR_BAD DS9097_detect(struct connection_in *in)
 	/* open the COM port in 9600 Baud  */
 	/* Third pass, hardware flow control */
 	SOC(in)->flow = flow_hard ;
-	RETURN_BAD_IF_BAD(COM_open(in)) ;
+	RETURN_BAD_IF_BAD(COM_change(in)) ;
 
 	switch( DS9097_reset_in(in) ) {
 		case BUS_RESET_OK:
@@ -127,18 +127,17 @@ static RESET_TYPE DS9097_reset_in( struct connection_in * in )
 {
 	BYTE resetbyte = RESET_BYTE;
 	BYTE responsebyte;
-	struct termios term;
 
-	if ( BAD( DS9097_pre_reset( &term, in ) ) ) {
+	if ( BAD( DS9097_pre_reset( in ) ) ) {
 		return BUS_RESET_ERROR ;
 	}
 
 	if ( BAD( DS9097_send_and_get(&resetbyte, &responsebyte, 1, in )) ) {
-		DS9097_post_reset( &term, in) ;
+		DS9097_post_reset( in) ;
 		return BUS_RESET_ERROR ;
 	}
 
-	DS9097_post_reset( &term, in) ;
+	DS9097_post_reset(in) ;
 	
 	switch (responsebyte) {
 	case 0x00:
@@ -154,66 +153,42 @@ static RESET_TYPE DS9097_reset_in( struct connection_in * in )
 }
 
 /* Puts in 9600 baud */
-static GOOD_OR_BAD DS9097_pre_reset(struct termios * term, struct connection_in *in )
+static GOOD_OR_BAD DS9097_pre_reset(struct connection_in *in )
 {
 	RETURN_BAD_IF_BAD( COM_test(in) ) ;
 
 	/* 8 data bits */
-	//valgrind warn about uninitialized memory in tcsetattr(), so clear all.
-	memset(term, 0, sizeof(struct termios));
-	if ( tcgetattr( SOC(in)->file_descriptor, term) < 0 ) {
-		ERROR_CONNECT( "Canot get serial port settings") ;
-		return gbBAD ;
-	}
-	
-	term->c_cflag = CS8 | CREAD | HUPCL | CLOCAL;
-	if (cfsetospeed(term, B9600) < 0 || cfsetispeed(term, B9600) < 0) {
-		ERROR_CONNECT("Cannot set speed (9600): %s", SAFESTRING(SOC(in)->devicename));
-		return gbBAD ;
-	}
-	if (tcsetattr( SOC(in)->file_descriptor, TCSANOW, term) < 0) {
+	SOC(in)->bits = 8 ;
+	SOC(in)->baud = B9600 ;
+
+	if ( BAD( COM_change(in)) ) {
 		ERROR_CONNECT("Cannot set attributes: %s", SAFESTRING(SOC(in)->devicename));
-		DS9097_post_reset( term, in ) ;
+		DS9097_post_reset( in ) ;
 		return gbBAD;
 	}
 	return gbGOOD;
 }
 
 /* Restore terminal settings (serial port settings) */
-static void DS9097_post_reset(struct termios * term, struct connection_in *in )
+static void DS9097_post_reset(struct connection_in *in )
 {
-	/* Reset all settings */
-	term->c_lflag = 0;
-	term->c_iflag = 0;
-	term->c_oflag = 0;
-
-	/* 1 byte at a time, no timer */
-	term->c_cc[VMIN] = 1;
-	term->c_cc[VTIME] = 0;
-
 	if (Globals.eightbit_serial) {
 		/* coninue with 8 data bits */
-		term->c_cflag = CS8 | CREAD | HUPCL | CLOCAL;
+		SOC(in)->bits = 8;
 	} else {
 		/* 6 data bits, Receiver enabled, Hangup, Dont change "owner" */
-		term->c_cflag = CS6 | CREAD | HUPCL | CLOCAL;
+		SOC(in)->bits = 6;
 	}
 #ifndef B115200
 	/* MacOSX support max 38400 in termios.h ? */
-	if (cfsetospeed(term, B38400) < 0 || cfsetispeed(term, B38400) < 0) {
-		ERROR_CONNECT("Cannot set speed (38400): %s", SAFESTRING(in->name));
-	}
+	SOC(in)->baud = B38400 ;
 #else
-	if (cfsetospeed(term, B115200) < 0 || cfsetispeed(term, B115200) < 0) {
-		ERROR_CONNECT("Cannot set speed (115200): %s", SAFESTRING(SOC(in)->devicename));
-	}
+	SOC(in)->baud = B115200 ;
 #endif
 
-	if (tcsetattr( SOC(in)->file_descriptor, TCSANOW, term) < 0) {
-		ERROR_CONNECT("Cannot set attributes: %s", SAFESTRING(SOC(in)->devicename));
-	}
 	/* Flush the input and output buffers */
 	COM_flush(in); // Adds no appreciable time
+	COM_change(in) ;
 }
 
 /* Symmetric */

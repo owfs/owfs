@@ -16,18 +16,17 @@ $Id$
 #include "ow_connection.h"
 #include "telnet.h"
 
-
-GOOD_OR_BAD telnet_set(struct connection_in *in)
+GOOD_OR_BAD telnet_change(struct connection_in *in)
 {
 #pragma pack(push) /* Save current */
 #pragma pack(1) /* byte alignment */
 
 	struct {
-//		BYTE do_sga[3] ;
-//		BYTE do_echo[3] ;
+		BYTE do_sga[3] ;
+		BYTE do_echo[3] ;
 		
 		BYTE i_will[3] ;
-//		BYTE you_do[3] ;
+		BYTE you_do[3] ;
 		
 		BYTE pre_baud[4] ;
 		uint32_t baud ;
@@ -49,10 +48,10 @@ GOOD_OR_BAD telnet_set(struct connection_in *in)
 		BYTE flow ;
 		BYTE post_flow[2] ;
 	} telnet_string = {
-//		.do_sga = { TELNET_IAC, TELNET_DO, TELOPT_SGA, } ,
-//		.do_echo = { TELNET_IAC, TELNET_DO, TELOPT_ECHO, } ,
+		.do_sga = { TELNET_IAC, TELNET_DO, TELOPT_SGA, } ,
+		.do_echo = { TELNET_IAC, TELNET_DO, TELOPT_ECHO, } ,
 		.i_will = { TELNET_IAC, TELNET_WILL, TELOPT_COM_PORT, } ,
-//		.you_do = { TELNET_IAC, TELNET_DO, TELOPT_COM_PORT, } ,
+		.you_do = { TELNET_IAC, TELNET_DO, TELOPT_COM_PORT, } ,
 		.pre_baud = { TELNET_IAC, TELNET_SB, TELOPT_COM_PORT, COMOPT_BAUDRATE, } ,
 		.post_baud = {TELNET_IAC, TELNET_SE, } ,
 		.pre_size = { TELNET_IAC, TELNET_SB, TELOPT_COM_PORT, COMOPT_DATASIZE, } ,
@@ -125,6 +124,33 @@ GOOD_OR_BAD telnet_set(struct connection_in *in)
 			break ;
 	}
 
-	return COM_write_simple( &telnet_string, sizeof( telnet_string ) , in ) ;
+	return COM_write_simple( (const BYTE *) &telnet_string, sizeof( telnet_string ) , in ) ;
+}
+	
+GOOD_OR_BAD telnet_purge(struct connection_in *in)
+{
+#pragma pack(push) /* Save current */
+#pragma pack(1) /* byte alignment */
+
+	struct {
+		BYTE pre_purge[4] ;
+		BYTE purge ;
+		BYTE post_purge[2] ;
+	} telnet_string = {
+		.pre_purge = { TELNET_IAC, TELNET_SB, TELOPT_COM_PORT, COMOPT_PURGE, } ,
+		.post_purge = {TELNET_IAC, TELNET_SE, } ,
+	} ;
+
+#pragma pack(pop)  /* restore */
+/*
+ * Purge both the access server receive data
+ * buffer and the access server transmit data
+ * buffer
+ * See: http://www.ietf.org/rfc/rfc2217.txt
+ * */
+
+	telnet_string.purge = 0x03 ;
+
+	return COM_write_simple( (const BYTE *) &telnet_string, sizeof( telnet_string ) , in ) ;
 }
 	

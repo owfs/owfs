@@ -83,7 +83,6 @@ GOOD_OR_BAD HA5_detect(struct connection_in *in)
 		return gbBAD ;
 	}
 	strcpy(SOC(in)->devicename, ap.first.alpha) ; // subset so will fit
-	SOC(in)->baud = B9600 ;
 	SOC(in)->vmin = 0; // minimum chars
 	SOC(in)->vtime = 3; // decisec wait
 	SOC(in)->parity = parity_none; // parity
@@ -94,11 +93,6 @@ GOOD_OR_BAD HA5_detect(struct connection_in *in)
 	SOC(in)->state = cs_virgin ;
 	SOC(in)->timeout.tv_sec = Globals.timeout_serial ;
 	SOC(in)->timeout.tv_usec = 0 ;
-	if ( BAD(COM_open(in)) ) {
-		// Cannot open serial port
-		Free_Address( &ap ) ;
-		return gbBAD ;
-	}
 
 	// 9600 isn't valid for the HA5, so we can tell that this value was actually selected
 	if ( Globals.baud != B9600 ) {
@@ -110,8 +104,11 @@ GOOD_OR_BAD HA5_detect(struct connection_in *in)
 	// allowable speeds
 	COM_BaudRestrict( &(SOC(in)->baud), B1200, B19200, B38400, B115200, 0 ) ;
 
-	/* Set com port speed*/
-	COM_speed(SOC(in)->baud,in) ;
+	if ( BAD(COM_open(in)) ) {
+		// Cannot open serial port
+		Free_Address( &ap ) ;
+		return gbBAD ;
+	}
 
 	in->master.ha5.checksum = Globals.checksum ;
 	in->Adapter = adapter_HA5 ;

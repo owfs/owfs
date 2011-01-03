@@ -40,10 +40,6 @@ GOOD_OR_BAD COM_open(struct connection_in *connection)
 	}
 
 	switch ( SOC(connection)->type ) {
-		case ct_unknown:
-		case ct_none:
-			LEVEL_DEBUG("ERROR!!! ----------- ERROR!");
-			return gbBAD ;
 		case ct_telnet:
 			if ( SOC(connection)->dev.telnet.telnet_negotiated == completed_negotiation ) {
 				 SOC(connection)->dev.telnet.telnet_negotiated = needs_negotiation ;
@@ -59,5 +55,10 @@ GOOD_OR_BAD COM_open(struct connection_in *connection)
 			return gbBAD ;
 		case ct_serial:
 			return serial_open( connection ) ;
+		case ct_unknown:
+		case ct_none:
+		default:
+			LEVEL_DEBUG("ERROR!!! ----------- ERROR!");
+			return gbBAD ;
 	}
 }

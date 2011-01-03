@@ -551,7 +551,7 @@ static GOOD_OR_BAD DS2480_set_baud(struct connection_in * in)
 
 	// Change OS view of rate
 	UT_delay(5);
-	COM_speed( SOC(in)->baud,in) ;
+	COM_change(in) ;
 	UT_delay(5);
 	DS2480_slurp(in);
 
@@ -584,8 +584,8 @@ static RESET_TYPE DS2480_reset(const struct parsedname *pn) {
 
 static RESET_TYPE DS2480_reset_in(struct connection_in * in)
 {
-	if (in->changed_bus_settings > 0) {
-		--in->changed_bus_settings ;
+	if ( in->changed_bus_settings != 0) {
+		in->changed_bus_settings = 0 ;
 		DS2480_set_baud_control(in);	// reset paramters
 	}
 

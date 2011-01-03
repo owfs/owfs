@@ -81,28 +81,3 @@ void COM_break(struct connection_in *in)
 {
 	tcsendbreak(SOC(in)->file_descriptor, 0);
 }
-
-void COM_speed(speed_t new_baud, struct connection_in *in)
-{
-	struct termios t;
-
-	// read the attribute structure
-	// valgrind warns about uninitialized memory in tcsetattr(), so clear all.
-	memset(&t, 0, sizeof(struct termios));
-	if (tcgetattr(SOC(in)->file_descriptor, &t) < 0) {
-		ERROR_CONNECT("Could not get com port attributes: %s", SAFESTRING(SOC(in)->devicename));
-		return;
-	}
-	// set baud in structure
-	if (cfsetospeed(&t, new_baud) < 0 || cfsetispeed(&t, new_baud) < 0) {
-		ERROR_CONNECT("Trouble setting port speed: %s", SAFESTRING(SOC(in)->devicename));
-	}
-	// change baud on port
-	SOC(in)->baud = new_baud ;
-	if (tcsetattr(SOC(in)->file_descriptor, TCSAFLUSH, &t) < 0) {
-		ERROR_CONNECT("Could not set com port attributes: %s", SAFESTRING(SOC(in)->devicename));
-		if (new_baud != B9600) { // avoid infinite recursion
-			COM_speed(B9600, in);
-		}
-	}
-}

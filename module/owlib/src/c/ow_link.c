@@ -326,7 +326,8 @@ static void LINK_set_baud(struct connection_in * in)
 {
 	char * speed_code ;
 
-	if ( in->busmode == bus_elink ) {
+	if ( SOC(in)->type == ct_telnet ) {
+		// telnet pinned at 115200
 		return ;
 	}
 
@@ -371,7 +372,7 @@ static void LINK_set_baud(struct connection_in * in)
 
 	// Change OS view of rate
 	UT_delay(5);
-	COM_speed(SOC(in)->baud,in) ;
+	COM_change(in) ;
 	UT_delay(5);
 	LINK_slurp(in);
 

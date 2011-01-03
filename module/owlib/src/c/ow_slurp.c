@@ -33,6 +33,15 @@ void COM_slurp( struct connection_in * connection ) {
 			LEVEL_DEBUG("ERROR!!! ----------- ERROR!");
 			return ;
 		case ct_telnet:
+			// see if we can tell the port to dump all pending data
+			if ( SOC(connection)->dev.telnet.telnet_negotiated == completed_negotiation ) {
+				if ( BAD( COM_test(connection) ) ) {
+					return ;
+				}
+				telnet_purge( connection ) ;
+			}
+			// now do it the old fashioned way of swallowing the pending data
+			// fall through
 		case ct_tcp:
 		case ct_netlink:
 			usec = 100000 ;
@@ -46,7 +55,9 @@ void COM_slurp( struct connection_in * connection ) {
 			break ;
 	}
 
-	RETURN_BAD_IF_BAD( COM_test(connection) ) ;
+	if ( BAD( COM_test(connection) ) ) {
+		return ;
+	}
 
 	Slurp( SOC(connection)->file_descriptor, usec ) ;
 }

@@ -72,20 +72,15 @@ GOOD_OR_BAD HA7E_detect(struct connection_in *in)
 	SOC(in)->timeout.tv_usec = 0 ;
 	RETURN_BAD_IF_BAD(COM_open(in)) ;
 
-	// set the baud rate to 9600. (Already set to 9600 in COM_open())
-	SOC(in)->baud = B9600 ;
-	// allowable speeds
-	COM_BaudRestrict( &(SOC(in)->baud), B9600, 0 ) ;
-	COM_speed(SOC(in)->baud, in);
 	COM_slurp(in) ;
 
-	if ( BAD( gbRESET( HA7E_reset(&pn) ) ) ) {
+	if ( GOOD( gbRESET( HA7E_reset(&pn) ) ) ) {
 		in->Adapter = adapter_HA7E ;
 		in->adapter_name = "HA7E/S";
 		return gbGOOD;
 	}
 	
-	if ( BAD( gbRESET( HA7E_reset(&pn) ) ) ) {
+	if ( GOOD( gbRESET( HA7E_reset(&pn) ) ) ) {
 		in->Adapter = adapter_HA7E ;
 		in->adapter_name = "HA7E/S";
 		return gbGOOD;

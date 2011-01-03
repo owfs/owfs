@@ -158,11 +158,12 @@ void COM_free(struct connection_in *in);
 void serial_free(struct connection_in *in);
 void tcp_free(struct connection_in *in);
 
-void COM_speed(speed_t new_baud, struct connection_in *in);
 void COM_flush( const struct connection_in *in);
 void COM_break(struct connection_in *in);
 
+GOOD_OR_BAD COM_change( struct connection_in *connection) ;
 GOOD_OR_BAD serial_change(struct connection_in *connection) ;
+GOOD_OR_BAD telnet_change(struct connection_in *in) ;
 
 GOOD_OR_BAD COM_write( const BYTE * data, size_t length, struct connection_in *connection);
 GOOD_OR_BAD COM_write_simple( const BYTE * data, size_t length, struct connection_in *connection);
@@ -171,9 +172,9 @@ GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connecti
 SIZE_OR_ERROR COM_read_size( BYTE * data, size_t length, struct connection_in *connection ) ;
 
 void COM_slurp( struct connection_in *in);
+GOOD_OR_BAD telnet_purge(struct connection_in *in) ;
 
 GOOD_OR_BAD telnet_read(BYTE * buf, const size_t size, struct connection_in *in) ;
-GOOD_OR_BAD telnet_set(struct connection_in *in) ;
 
 
 void FreeInAll(void);

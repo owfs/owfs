@@ -41,7 +41,7 @@ GOOD_OR_BAD COM_write( const BYTE * data, size_t length, struct connection_in *c
 			return gbBAD ;
 		case ct_telnet:
 			if ( SOC(connection)->dev.telnet.telnet_negotiated == needs_negotiation ) {
-				RETURN_BAD_IF_BAD(  telnet_set( connection ) ) ;
+				RETURN_BAD_IF_BAD(  telnet_change( connection ) ) ;
 				SOC(connection)->dev.telnet.telnet_negotiated = completed_negotiation ;
 			}
 			break ;
