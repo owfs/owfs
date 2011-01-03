@@ -257,6 +257,10 @@ static GOOD_OR_BAD LINK_detect_net(struct connection_in * in)
 		SOC(in)->dev.telnet.telnet_negotiated = needs_negotiation ;
 		return gbGOOD ;
 	}
+	if ( GOOD( LINK_version(in) ) ) {
+		SOC(in)->dev.telnet.telnet_negotiated = needs_negotiation ;
+		return gbGOOD ;
+	}
 	LEVEL_DEFAULT("LINK detection error");
 	COM_close(in) ;
 	return gbBAD;
