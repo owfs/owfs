@@ -154,3 +154,22 @@ GOOD_OR_BAD telnet_purge(struct connection_in *in)
 	return COM_write_simple( (const BYTE *) &telnet_string, sizeof( telnet_string ) , in ) ;
 }
 	
+GOOD_OR_BAD telnet_break(struct connection_in *in)
+{
+#pragma pack(push) /* Save current */
+#pragma pack(1) /* byte alignment */
+
+	struct {
+		BYTE send_break[2];
+	} telnet_string = {
+		.send_break = { TELNET_IAC, TELNET_BREAK, } ,
+	} ;
+
+#pragma pack(pop)  /* restore */
+/*
+ * See: http://www.ietf.org/rfc/rfc2217.txt
+ * */
+
+	return COM_write_simple( (const BYTE *) &telnet_string, sizeof( telnet_string ) , in ) ;
+}
+	

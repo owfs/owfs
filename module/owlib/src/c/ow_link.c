@@ -237,8 +237,15 @@ static GOOD_OR_BAD LINK_detect_net(struct connection_in * in)
 	
 	LEVEL_DEBUG("Slurp in initial bytes");
 	LINK_slurp( in ) ;
-	LINK_flush(in);
+	UT_delay(100) ; // based on http://morpheus.wcf.net/phpbb2/viewtopic.php?t=89&sid=3ab680415917a0ebb1ef020bdc6903ad
+	LINK_slurp( in ) ;
+//	LINK_flush(in);
 
+	if ( GOOD( LINK_version(in) ) ) {
+		SOC(in)->dev.telnet.telnet_negotiated = needs_negotiation ;
+		return gbGOOD ;
+	}
+	COM_break(in);
 	if ( GOOD( LINK_version(in) ) ) {
 		SOC(in)->dev.telnet.telnet_negotiated = needs_negotiation ;
 		return gbGOOD ;

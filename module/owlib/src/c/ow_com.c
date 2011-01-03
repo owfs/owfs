@@ -79,5 +79,31 @@ void COM_flush( const struct connection_in *connection)
 
 void COM_break(struct connection_in *in)
 {
-	tcsendbreak(SOC(in)->file_descriptor, 0);
+	if (in == NO_CONNECTION) {
+		LEVEL_DEBUG("Attempt to break a NULL device");
+		return ;
+	}
+
+	if ( BAD( COM_test(in) ) ) {
+		return ;
+	}
+
+	switch ( SOC(in)->type ) {
+		case ct_unknown:
+		case ct_none:
+			LEVEL_DEBUG("ERROR!!! ----------- ERROR!");
+			return ;
+		case ct_telnet:
+			telnet_break(in) ;
+			break ;
+		case ct_tcp:
+		case ct_netlink:
+		case ct_i2c:
+		case ct_usb:
+			LEVEL_DEBUG("Unimplemented!!!");
+			return ;
+		case ct_serial:
+			tcsendbreak(SOC(in)->file_descriptor, 0);
+			break ;
+	}
 }

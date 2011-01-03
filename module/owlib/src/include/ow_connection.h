@@ -160,6 +160,7 @@ void tcp_free(struct connection_in *in);
 
 void COM_flush( const struct connection_in *in);
 void COM_break(struct connection_in *in);
+GOOD_OR_BAD telnet_break(struct connection_in *in) ;
 
 GOOD_OR_BAD COM_change( struct connection_in *connection) ;
 GOOD_OR_BAD serial_change(struct connection_in *connection) ;
