@@ -506,7 +506,8 @@ static GOOD_OR_BAD LINK_search_type(struct device_search *ds, struct connection_
 {
 	char resp[3+in->master.serial.tcp.CRLF_size];
 	int response_length ;
-	
+
+	LEVEL_DEBUG("Test to see if LINK supports the tF0 command");
 	switch ( in->master.link.tmode ) {
 		case e_link_t_unknown:
 			RETURN_BAD_IF_BAD( LINK_write(LINK_string("tF0"), 3, in));
