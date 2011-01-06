@@ -239,6 +239,7 @@ static GOOD_OR_BAD OW_r_templimit(_FLOAT * T, const int Tindex, const struct par
 static GOOD_OR_BAD OW_w_templimit(const _FLOAT T, const int Tindex, const struct parsedname *pn);
 static GOOD_OR_BAD OW_r_scratchpad(BYTE * data, const struct parsedname *pn);
 static GOOD_OR_BAD OW_w_scratchpad(const BYTE * data, const struct parsedname *pn);
+static GOOD_OR_BAD OW_w_store_scratchpad(const BYTE * data, const struct parsedname *pn);
 static GOOD_OR_BAD OW_r_trim(BYTE * trim, const struct parsedname *pn);
 static GOOD_OR_BAD OW_w_trim(const BYTE * trim, const struct parsedname *pn);
 static enum eDie OW_die(const struct parsedname *pn);
@@ -569,7 +570,7 @@ static GOOD_OR_BAD OW_22temp(_FLOAT * temp, enum temperature_problem_flag accept
 
 	struct transaction_log tunpowered[] = {
 		TRXN_START,
-		{convert, convert, delay, trxn_power},
+		TRXN_POWER(convert, delay),
 		TRXN_END,
 	};
 	struct transaction_log tpowered[] = {
@@ -580,7 +581,7 @@ static GOOD_OR_BAD OW_22temp(_FLOAT * temp, enum temperature_problem_flag accept
 	// failsafe
 	struct transaction_log tunpowered_long[] = {
 		TRXN_START,
-		{convert, convert, longdelay, trxn_power},
+		TRXN_POWER(convert, longdelay),
 		TRXN_END,
 	};
 
@@ -594,6 +595,7 @@ static GOOD_OR_BAD OW_22temp(_FLOAT * temp, enum temperature_problem_flag accept
 		if ((data[4] | 0x1F) != resolution_register) {	// ignore lower 5 bits
 			must_convert = 1 ; // resolution has changed
 			data[4] = (resolution_register & 0x60) | 0x1F ;
+			/* only store in scratchpad, not EEPROM */
 			RETURN_BAD_IF_BAD(OW_w_scratchpad(&data[2], pn)) ;
 			Cache_Add_SlaveSpecific(&(Resolution->bits), sizeof(int), SlaveSpecificTag(RES), pn);
 		}
@@ -643,7 +645,7 @@ static GOOD_OR_BAD OW_22temp(_FLOAT * temp, enum temperature_problem_flag accept
 static GOOD_OR_BAD OW_r_templimit(_FLOAT * T, const int Tindex, const struct parsedname *pn)
 {
 	BYTE data[9];
-	BYTE recall[] = { _1W_READ_POWERMODE, };
+	BYTE recall[] = { _1W_RECALL_EEPROM, };
 	struct transaction_log trecall[] = {
 		TRXN_START,
 		TRXN_WRITE1(recall),
@@ -667,7 +669,7 @@ static GOOD_OR_BAD OW_w_templimit(const _FLOAT T, const int Tindex, const struct
 		return gbBAD;
 	}
 	data[2 + Tindex] = (uint8_t) T;
-	return OW_w_scratchpad(&data[2], pn);
+	return OW_w_store_scratchpad(&data[2], pn);
 }
 
 /* read 9 bytes, includes CRC8 which is checked */
@@ -691,24 +693,38 @@ static GOOD_OR_BAD OW_w_scratchpad(const BYTE * data, const struct parsedname *p
 	/* data is 3 bytes long */
 	BYTE d[4] = { _1W_WRITE_SCRATCHPAD, data[0], data[1], data[2], };
 	BYTE pow[] = { _1W_COPY_SCRATCHPAD, };
+
+	/* different processing for DS18S20 and others */
+	int scratch_length = (pn->sn[0] == 0x10) ? 2 : 3 ;
+
 	struct transaction_log twrite[] = {
 		TRXN_START,
-		TRXN_WRITE(d, 4),
+		TRXN_WRITE(d, scratch_length+1),
 		TRXN_END,
 	};
-	struct transaction_log tpower[] = {
+
+	return BUS_transaction(twrite, pn);
+}
+
+/* write 3 bytes (byte2,3,4 of register) */
+static GOOD_OR_BAD OW_w_store_scratchpad(const BYTE * data, const struct parsedname *pn)
+{
+	/* data is 3 bytes long */
+	BYTE d[4] = { _1W_WRITE_SCRATCHPAD, data[0], data[1], data[2], };
+	BYTE pow[] = { _1W_COPY_SCRATCHPAD, };
+
+	/* different processing for DS18S20 and others */
+	int scratch_length = (pn->sn[0] == 0x10) ? 2 : 3 ;
+
+	struct transaction_log twrite[] = {
 		TRXN_START,
-		{pow, pow, 10, trxn_power},
+		TRXN_WRITE(d, scratch_length+1),
+		TRXN_START,
+		TRXN_POWER(pow, 10),
 		TRXN_END,
 	};
 
-	/* different processing for DS18S20 and both DS19B20 and DS1822 */
-	if (pn->sn[0] == 0x10) {
-		twrite->size = 4;
-	}
-
-	RETURN_BAD_IF_BAD(BUS_transaction(twrite, pn)) ;
-	return BUS_transaction(tpower, pn);
+	return BUS_transaction(twrite, pn);
 }
 
 /* Trim values -- undocumented except in AN247.pdf */
