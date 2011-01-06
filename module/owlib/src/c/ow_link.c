@@ -178,6 +178,8 @@ GOOD_OR_BAD LINK_detect(struct connection_in *in)
 	switch( in->busmode ) {
 		case bus_elink:
 			SOC(in)->type = ct_telnet ;
+			SOC(in)->baud = B115200 ;
+
 			RETURN_GOOD_IF_GOOD(  LINK_detect_net( in )  );
 			break ;
 

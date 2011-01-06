@@ -124,10 +124,7 @@ GOOD_OR_BAD telnet_change(struct connection_in *in)
 			break ;
 	}
 
-//	return COM_write_simple( (const BYTE *) &telnet_string, sizeof( telnet_string ) , in ) ;
-	RETURN_BAD_IF_BAD( COM_write_simple( (const BYTE *) &telnet_string, sizeof( telnet_string ) , in ) );
-	COM_slurp(in) ;
-	return gbGOOD ;
+	return COM_write_simple( (const BYTE *) &telnet_string, sizeof( telnet_string ) , in ) ;
 }
 	
 GOOD_OR_BAD telnet_purge(struct connection_in *in)
