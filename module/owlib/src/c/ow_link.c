@@ -178,8 +178,13 @@ GOOD_OR_BAD LINK_detect(struct connection_in *in)
 	switch( in->busmode ) {
 		case bus_elink:
 			SOC(in)->type = ct_telnet ;
-			SOC(in)->baud = B115200 ;
 
+			// Xport or ser2net
+			SOC(in)->baud = B9600 ;
+			RETURN_GOOD_IF_GOOD(  LINK_detect_net( in )  );
+
+			// LinkHub-E
+			SOC(in)->baud = B115200 ;
 			RETURN_GOOD_IF_GOOD(  LINK_detect_net( in )  );
 			break ;
 
@@ -251,14 +256,8 @@ static GOOD_OR_BAD LINK_detect_net(struct connection_in * in)
 	// second try -- send a break and line settings
 	COM_flush(in) ;
 	COM_break(in);
-	SOC(in)->dev.telnet.telnet_negotiated = needs_negotiation ;
-	SOC(in)->timeout.tv_sec = 1 ;
-	UT_delay(1000) ;
+	telnet_change(in);
 	LINK_slurp( in ) ;
-	if ( GOOD( LINK_version(in) ) ) {
-		SOC(in)->dev.telnet.telnet_negotiated = needs_negotiation ;
-		return gbGOOD ;
-	}
 	if ( GOOD( LINK_version(in) ) ) {
 		SOC(in)->dev.telnet.telnet_negotiated = needs_negotiation ;
 		return gbGOOD ;
