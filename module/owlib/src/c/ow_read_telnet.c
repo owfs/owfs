@@ -98,7 +98,7 @@ GOOD_OR_BAD telnet_read(BYTE * buf, const size_t size, struct connection_in *in)
 		switch ( telnet_read_state ) {
 			case telnet_regular :
 				if ( readin_buf[current_index] == TELNET_IAC ) {
-					printf("TELNET: IAC\n");
+					//printf("TELNET: IAC\n");
 					// starting escape sequence
 					// following bytes will better characterize
 					telnet_read_state = telnet_iac ;
@@ -111,7 +111,7 @@ GOOD_OR_BAD telnet_read(BYTE * buf, const size_t size, struct connection_in *in)
 				}
 				break ;
 			case telnet_iac:
-				printf("TELNET: IAC %d\n",readin_buf[current_index]);
+				//printf("TELNET: IAC %d\n",readin_buf[current_index]);
 				switch ( readin_buf[current_index] ) {
 					case TELNET_EOF:
 					case TELNET_SUSP:
@@ -174,7 +174,7 @@ GOOD_OR_BAD telnet_read(BYTE * buf, const size_t size, struct connection_in *in)
 						LEVEL_DEBUG("Unexpected telnet sequence");
 						return gbBAD ;
 					default:
-						printf("TELNET: IAC SB opt=%d\n",readin_buf[current_index]);
+						//printf("TELNET: IAC SB opt=%d\n",readin_buf[current_index]);
 						// stay in this mode
 						telnet_read_state = telnet_sb_opt ;
 						break ;
@@ -186,7 +186,7 @@ GOOD_OR_BAD telnet_read(BYTE * buf, const size_t size, struct connection_in *in)
 						LEVEL_DEBUG("Unexpected telnet sequence");
 						return gbBAD ;
 					default:
-						printf("TELNET: IAC SB sub_opt=%d\n",readin_buf[current_index]);
+						//printf("TELNET: IAC SB sub_opt=%d\n",readin_buf[current_index]);
 						// stay in this mode
 						telnet_read_state = telnet_sb_val ;
 						break ;
@@ -199,7 +199,7 @@ GOOD_OR_BAD telnet_read(BYTE * buf, const size_t size, struct connection_in *in)
 						telnet_read_state = telnet_sb_iac ;
 						break ;
 					default:
-						printf("TELNET: IAC SB val=%d\n",readin_buf[current_index]);
+						//printf("TELNET: IAC SB val=%d\n",readin_buf[current_index]);
 						// stay in this mode
 						break ;
 				}
@@ -207,7 +207,7 @@ GOOD_OR_BAD telnet_read(BYTE * buf, const size_t size, struct connection_in *in)
 			case telnet_sb_iac:
 				switch ( readin_buf[current_index] ) {
 					case TELNET_SE:
-						printf("TELNET: IAC SE\n");
+						//printf("TELNET: IAC SE\n");
 						telnet_read_state = telnet_regular ;
 						break ;					
 					default:
@@ -216,19 +216,19 @@ GOOD_OR_BAD telnet_read(BYTE * buf, const size_t size, struct connection_in *in)
 				}
 				break ;
 			case telnet_will:
-				printf("TELNET: IAC WILL %d\n",readin_buf[current_index]);
+				//printf("TELNET: IAC WILL %d\n",readin_buf[current_index]);
 				// 3 byte sequence
 				// now reading 3rd char
 				telnet_read_state = telnet_regular ;
 				break ;
 			case telnet_wont:
-				printf("TELNET: IAC WONT %d\n",readin_buf[current_index]);
+				//printf("TELNET: IAC WONT %d\n",readin_buf[current_index]);
 				// 3 byte sequence
 				// now reading 3rd char
 				telnet_read_state = telnet_regular ;
 				break ;
 			case telnet_do:
-				printf("TELNET: IAC DO %d\n",readin_buf[current_index]);
+				//printf("TELNET: IAC DO %d\n",readin_buf[current_index]);
 				// 3 byte sequence
 				// now reading 3rd char
 				telnet_read_state = telnet_regular ;

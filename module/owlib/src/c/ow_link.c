@@ -188,6 +188,7 @@ GOOD_OR_BAD LINK_detect(struct connection_in *in)
 			RETURN_GOOD_IF_GOOD(  LINK_detect_net( in )  );
 
 			// LinkHub-E
+			SOC(in)->baud = B115200 ;
 			RETURN_GOOD_IF_GOOD(  LINK_detect_net( in )  );
 
 			// Now try control port reset
