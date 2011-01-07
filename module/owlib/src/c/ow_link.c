@@ -193,6 +193,8 @@ GOOD_OR_BAD LINK_detect(struct connection_in *in)
 			// Now try control port reset
 			RETURN_BAD_IF_BAD( LinkHubE_Control( in ) ) ;
 			SOC(in)->baud = B115200 ;
+			LEVEL_DEBUG("Long pause after LINK Xport reset") ;
+			UT_delay( 5000 ) ;
 			RETURN_GOOD_IF_GOOD(  LINK_detect_net( in )  );
 			
 			break ;
