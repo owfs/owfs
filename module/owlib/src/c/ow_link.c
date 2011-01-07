@@ -66,6 +66,10 @@ static GOOD_OR_BAD LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay
 static GOOD_OR_BAD LINK_PowerBit(const BYTE data, BYTE * resp, const UINT delay, const struct parsedname *pn);
 static void LINK_close(struct connection_in *in) ;
 
+static GOOD_OR_BAD LinkHubE_Control( struct connection_in * in_link ) ;
+static GOOD_OR_BAD Control_com( struct connection_in * in_control ) ;
+
+
 static void LINK_setroutines(struct connection_in *in);
 static void LINKE_setroutines(struct connection_in *in);
 
@@ -184,9 +188,16 @@ GOOD_OR_BAD LINK_detect(struct connection_in *in)
 			RETURN_GOOD_IF_GOOD(  LINK_detect_net( in )  );
 
 			// LinkHub-E
+			RETURN_GOOD_IF_GOOD(  LINK_detect_net( in )  );
+
+			// Now try control port reset
+			RETURN_BAD_IF_BAD( LinkHubE_Control( in ) ) ;
 			SOC(in)->baud = B115200 ;
 			RETURN_GOOD_IF_GOOD(  LINK_detect_net( in )  );
+			
 			break ;
+
+			
 
 		case bus_link:
 			SOC(in)->type = ct_serial ;
@@ -841,4 +852,37 @@ static GOOD_OR_BAD LINK_readback_data( BYTE * buf, const size_t size, struct con
 	}
 		
 	return gbGOOD;
+}
+
+// use the Xport control port to reset
+static GOOD_OR_BAD LinkHubE_Control( struct connection_in * in_link )
+{
+	struct connection_in * in_control = AllocIn( NO_CONNECTION ) ;
+
+	if ( in_control != NO_CONNECTION ) {
+		GOOD_OR_BAD ret ;
+
+		SOC(in_control)->type = ct_telnet ;
+		SOC(in_control)->devicename = owstrdup( SOC(in_link)->dev.tcp.host ) ;
+		in_control->busmode = bus_xport_control ;
+		SOC(in_control)->timeout.tv_sec = 1 ;
+		SOC(in_control)->timeout.tv_usec = 0 ;
+
+		ret = Control_com( in_control ) ;
+
+		RemoveIn( in_control ) ;
+		return ret ;
+	}
+	return gbBAD ;
+}
+
+static GOOD_OR_BAD Control_com( struct connection_in * in_control )
+{
+	RETURN_BAD_IF_BAD( COM_open( in_control ) ) ;
+	COM_slurp( in_control ) ;
+	RETURN_BAD_IF_BAD( COM_write_simple( (BYTE *) "\r", 1, in_control ) ) ;
+	COM_slurp( in_control ) ;
+	RETURN_BAD_IF_BAD( COM_write_simple( (BYTE *) "9\r", 2, in_control ) ) ;
+	COM_slurp( in_control ) ;
+	return gbGOOD ;
 }

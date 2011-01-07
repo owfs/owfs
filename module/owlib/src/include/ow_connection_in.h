@@ -71,6 +71,7 @@ enum bus_mode {
 	bus_bad,
 	bus_w1,
 	bus_w1_monitor,
+	bus_xport_control,
 };
 
 enum adapter_type {

@@ -43,6 +43,7 @@ See: http://www.iana.org/assignments/port-numbers
 #define DEFAULT_HA7_PORT          "80"
 #define DEFAULT_ENET_PORT         "8080"
 #define DEFAULT_LINK_PORT         "10001"
+#define DEFAULT_XPORT_CONTROL_PORT "9999"
 #define DEFAULT_XPORT_PORT        "10001"
 #define DEFAULT_ETHERWEATHER_PORT "15862"
 
