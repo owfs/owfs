@@ -101,7 +101,8 @@ GOOD_OR_BAD FS_Test_Simultaneous( enum simul_type type, UINT delay, const struct
 static ZERO_OR_ERROR FS_w_convert_temp(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
-	struct parsedname pn_directory;
+	struct parsedname s_pn_directory;
+	struct parsedname * pn_directory = &s_pn_directory ;
 	GOOD_OR_BAD ret ;
 	const BYTE cmd_temp[] = { _1W_SKIP_ROM, _1W_CONVERT_T };
 	
@@ -109,11 +110,16 @@ static ZERO_OR_ERROR FS_w_convert_temp(struct one_wire_query *owq)
 		return 0;				// don't send convert
 	}
 	
-	FS_LoadDirectoryOnly(&pn_directory, pn);
-	Cache_Add_Simul(simul_temp, pn);	// Mark start time
+	FS_LoadDirectoryOnly(pn_directory, pn);
 	
 	switch (pn->selected_connection->Adapter) {
 		case adapter_Bad:
+		case adapter_w1_monitor:
+		case adapter_browse_monitor:
+		case adapter_usb_monitor:
+		case adapter_fake:
+		case adapter_tester:
+		case adapter_mock:
 			/* Since writing to /simultaneous/temperature is done recursive to all
 			* adapters, we have to fake a successful write even if it's detected
 			* as a bad adapter. */
@@ -127,26 +133,25 @@ static ZERO_OR_ERROR FS_w_convert_temp(struct one_wire_query *owq)
 				TRXN_WRITE2(cmd_temp),
 				TRXN_END,
 			};
-			ret = BUS_transaction(t, &pn_directory) ;
+			ret = BUS_transaction(t, pn_directory) ;
 		}
 			break ;
 		default: {
 			struct transaction_log t[] = {
 				TRXN_START,
 				TRXN_WRITE2(cmd_temp),
+				TRXN_DELAY(1000),
 				TRXN_END,
 			};
-			BUSLOCK(&pn_directory);
-			ret = BUS_transaction_nolock(t, &pn_directory)
-			|| FS_poll_convert(&pn_directory);
-			BUSUNLOCK(&pn_directory);
+			ret = BUS_transaction(t, pn_directory) ;
 		}
 			break ;
 	}
-	LEVEL_DEBUG("Temperature convert ret=%d", ret);
 	if ( BAD(ret) ) {
-		Cache_Del_Simul(simul_temp, pn);
+		LEVEL_DEBUG("Trouble setting simultaneous for %s",pn_directory->path)
+		return -EINVAL ;
 	}
+	Cache_Add_Simul(simul_temp, pn_directory);	// Mark start time
 	return 0;
 }
 

@@ -419,9 +419,9 @@ GOOD_OR_BAD Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn)
 /* return 0 if good, 1 if not */
 GOOD_OR_BAD Cache_Add_Simul(const enum simul_type type, const struct parsedname *pn)
 {
+	// Note: pn already points to directory
 	time_t duration = TimeOut(fc_volatile);
 	struct tree_node *tn;
-	struct parsedname pn_directory;
 
 	if (pn==NO_PARSEDNAME || pn->selected_connection==NO_CONNECTION) {
 		return gbGOOD;				// do check here to avoid needless processing
@@ -452,8 +452,7 @@ GOOD_OR_BAD Cache_Add_Simul(const enum simul_type type, const struct parsedname 
 	LEVEL_DEBUG(SNformat, SNvar(pn->sn));
 	
 	// populate node with directory name and dirblob
-	FS_LoadDirectoryOnly(&pn_directory, pn);
-	LoadTK( pn_directory.sn, Simul_Marker[type], pn->selected_connection->index, tn) ;
+	LoadTK( pn->sn, Simul_Marker[type], pn->selected_connection->index, tn) ;
 	LEVEL_DEBUG("Simultaneous add type=%d",type);
 	tn->expires = duration + NOW_TIME;
 	tn->dsize = 0;

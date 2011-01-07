@@ -646,7 +646,7 @@ void FS_LoadDirectoryOnly(struct parsedname *pn_directory, const struct parsedna
 		memcpy(pn_directory, pn_original, sizeof(struct parsedname));	//shallow copy
 	}
 	if (RootNotBranch(pn_directory)) {
-		memset(pn_directory->sn, 0, 8);
+		memset(pn_directory->sn, 0, SERIAL_NUMBER_SIZE);
 	} else {
 		--pn_directory->pathlength;
 		memcpy(pn_directory->sn, pn_directory->bp[pn_directory->pathlength].sn, 7);
