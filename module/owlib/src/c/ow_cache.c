@@ -239,8 +239,9 @@ void Cache_Open(void)
 	if (cache.lifespan > 3600) {
 		cache.lifespan = 3600;	/* 1 hour tops */
 	}
-	cache.retired = NOW_TIME;
-	cache.killed = cache.retired + cache.lifespan;
+
+	// Flip once (at start) to set up old tree.
+	GetFlippedTree() ;
 }
 
 /* Note: done in a simgle single thread mode so locking not needed */
@@ -250,25 +251,48 @@ void Cache_Close(void)
 	SAFETDESTROY( cache.permanent_tree, owfree_func);
 }
 
+/* Moves new to old tree, initializes new tree, and returns former old tree location */
+static void * GetFlippedTree( void )
+{
+	void * flip = cache.temporary_tree_old; // old old saved for later clearing
+
+	/* Flip caches! old = new. New truncated, reset time and counters and flag */
+	LEVEL_DEBUG("Flipping cache tree (purging timed-out data)");
+
+	// move "new" pointers to "old"
+	cache.temporary_tree_old = cache.temporary_tree_new;
+	cache.old_ram = cache.new_ram;
+
+	// New cache setup
+	cache.temporary_tree_new = NULL;
+	cache.new_ram = 0;
+	cache.added = 0;
+
+	// set up "old" cache times
+	cache.retired = NOW_TIME;
+	cache.killed = cache.retired + cache.lifespan;
+
+	return flip ;
+}
+
+static void DeleteFlippedTree( void * retired_tree )
+{
+	LEVEL_DEBUG("flip cache. tdestroy() will be called.");
+	SAFETDESTROY( retired_tree, owfree_func);
+	STATLOCK;
+	++cache_flips;			/* statistics */
+	memcpy(&old_avg, &new_avg, sizeof(struct average));
+	AVERAGE_CLEAR(&new_avg);
+	STATUNLOCK;
+}
+
 /* Clear the cache (a change was made that might give stale information) */
 void Cache_Clear(void)
 {
-	void *c_new = NULL;
-	void *c_old = NULL;
 	CACHE_WLOCK;
-	c_old = cache.temporary_tree_old;
-	c_new = cache.temporary_tree_new;
-	cache.temporary_tree_old = NULL;
-	cache.temporary_tree_new = NULL;
-	cache.old_ram = 0;
-	cache.new_ram = 0;
-	cache.added = 0;
-	cache.retired = NOW_TIME;
-	cache.killed = cache.retired + cache.lifespan;
+	DeleteFlippedTree( GetFlippedTree() ) ;
+	DeleteFlippedTree( GetFlippedTree() ) ;
 	CACHE_WUNLOCK;
-	/* flipped old database is now out of circulation -- can be destroyed without a lock */
-	SAFETDESTROY( c_new, owfree_func);
-	SAFETDESTROY( c_old, owfree_func);
 }
 
 /* Wrapper to perform a cache function and add statistics */
@@ -552,33 +576,6 @@ GOOD_OR_BAD Cache_Add_Alias(const ASCII *name, const BYTE * sn)
 	tn->dsize = size+1;
 	strcpy((ASCII *)TREE_DATA(tn), name);
 	return Add_Stat(&cache_sto, Cache_Add_Store(tn));
-}
-
-/* Moves new to old tree, initializes new tree, and returns former old tree location */
-static void * GetFlippedTree( void )
-{
-	void * flip = cache.temporary_tree_old;
-	/* Flip caches! old = new. New truncated, reset time and counters and flag */
-	LEVEL_DEBUG("Flipping cache tree (purging timed-out data)");
-	cache.temporary_tree_old = cache.temporary_tree_new;
-	cache.old_ram = cache.new_ram;
-	cache.temporary_tree_new = NULL;
-	cache.new_ram = 0;
-	cache.added = 0;
-	cache.retired = NOW_TIME;
-	cache.killed = cache.retired + cache.lifespan;
-	return flip ;
-}
-
-static void DeleteFlippedTree( void * retired_tree )
-{
-	LEVEL_DEBUG("flip cache. tdestroy() will be called.");
-	SAFETDESTROY( retired_tree, owfree_func);
-	STATLOCK;
-	++cache_flips;			/* statistics */
-	memcpy(&old_avg, &new_avg, sizeof(struct average));
-	AVERAGE_CLEAR(&new_avg);
-	STATUNLOCK;
 }
 
 /* Add an item to the cache */
@@ -1070,17 +1067,21 @@ static enum cache_task_return Cache_Get_Common(void *data, size_t * dsize, time_
 	time_t now = NOW_TIME;
 	struct tree_opaque *opaque;
 	
-	LEVEL_DEBUG("Get from cache sn " SNformat " pointer=%p index=%d size=%d", SNvar(tn->tk.sn), tn->tk.p, tn->tk.extension, (int) dsize[0]);
+	LEVEL_DEBUG("Search in cache sn " SNformat " pointer=%p index=%d size=%d", SNvar(tn->tk.sn), tn->tk.p, tn->tk.extension, (int) dsize[0]);
 	//node_show(tn);
 	//new_tree();
 	CACHE_RLOCK;
-	if ((opaque = tfind(tn, &cache.temporary_tree_new, tree_compare))
-		|| ((cache.retired + duration[0] > now)
-			&& (opaque = tfind(tn, &cache.temporary_tree_old, tree_compare)))
-		) {
+	opaque = tfind(tn, &cache.temporary_tree_new, tree_compare) ;
+	if ( opaque == NULL ) {
+		// not found in new tree
+		if ( cache.retired + duration[0] > now ) {
+			opaque = tfind(tn, &cache.temporary_tree_old, tree_compare) ;
+		}
+	}
+	if ( opaque != NULL ) {
 		duration[0] = opaque->key->expires - now ;
-		LEVEL_DEBUG("value found in cache. Remaining life: %d seconds.",duration[0]);
 		if (duration[0] > 0) {
+			LEVEL_DEBUG("Value found in cache. Remaining life: %d seconds.",duration[0]);
 			// Compared with >= before, but fc_second(1) always cache for 2 seconds in that case.
 			// Very noticable when reading time-data like "/26.80A742000000/date" for example.
 			if ( dsize[0] >= opaque->key->dsize) {
@@ -1095,10 +1096,11 @@ static enum cache_task_return Cache_Get_Common(void *data, size_t * dsize, time_
 				ctr_ret = ctr_size_mismatch;
 			}
 		} else {
+			LEVEL_DEBUG("Value found in cache, but expired by %d seconds.",-duration[0]);
 			ctr_ret = ctr_expired;
 		}
 	} else {
-		LEVEL_DEBUG("value not found in cache");
+		LEVEL_DEBUG("Value not found in cache");
 		ctr_ret = ctr_not_found;
 	}
 	CACHE_RUNLOCK;
