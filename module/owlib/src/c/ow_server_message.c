@@ -511,7 +511,6 @@ static SIZE_OR_ERROR From_Server( struct server_connection_state * scs, struct c
 		return size;
 	}
 	return cm->payload;
-	return cm->payload;
 }
 
 static GOOD_OR_BAD To_Server( struct server_connection_state * scs, struct server_msg * sm, struct serverpackage *sp)
