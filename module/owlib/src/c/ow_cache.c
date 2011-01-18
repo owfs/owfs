@@ -50,11 +50,11 @@ struct cache_data {
 	void *temporary_tree_new;				// current cache database
 	void *temporary_tree_old;				// older cache database
 	void *permanent_tree;				// persistent database
-	size_t old_ram;				// cache size
-	size_t new_ram;				// cache size
-	time_t retired;				// start time of older
-	time_t killed;				// deathtime of older
-	time_t lifespan;			// lifetime of older
+	size_t old_ram_size;				// cache size
+	size_t new_ram_size;				// cache size
+	time_t time_retired;				// start time of older
+	time_t time_to_kill;				// deathtime of older
+	time_t retired_lifespan;			// lifetime of older
 	UINT added;					// items added
 };
 static struct cache_data cache;
@@ -235,9 +235,9 @@ void Cache_Open(void)
 {
 	memset(&cache, 0, sizeof(struct cache_data));
 
-	cache.lifespan = TimeOut(fc_stable);
-	if (cache.lifespan > 3600) {
-		cache.lifespan = 3600;	/* 1 hour tops */
+	cache.retired_lifespan = TimeOut(fc_stable);
+	if (cache.retired_lifespan > 3600) {
+		cache.retired_lifespan = 3600;	/* 1 hour tops */
 	}
 
 	// Flip once (at start) to set up old tree.
@@ -261,16 +261,16 @@ static void * GetFlippedTree( void )
 
 	// move "new" pointers to "old"
 	cache.temporary_tree_old = cache.temporary_tree_new;
-	cache.old_ram = cache.new_ram;
+	cache.old_ram_size = cache.new_ram_size;
 
 	// New cache setup
 	cache.temporary_tree_new = NULL;
-	cache.new_ram = 0;
+	cache.new_ram_size = 0;
 	cache.added = 0;
 
 	// set up "old" cache times
-	cache.retired = NOW_TIME;
-	cache.killed = cache.retired + cache.lifespan;
+	cache.time_retired = NOW_TIME;
+	cache.time_to_kill = cache.time_retired + cache.retired_lifespan;
 
 	return flip ;
 }
@@ -590,22 +590,22 @@ static GOOD_OR_BAD Cache_Add_Common(struct tree_node *tn)
 	node_show(tn);
 	LEVEL_DEBUG("Add to cache sn " SNformat " pointer=%p index=%d size=%d", SNvar(tn->tk.sn), tn->tk.p, tn->tk.extension, tn->dsize);
 	CACHE_WLOCK;
-	if (cache.killed < NOW_TIME) {	// old database has timed out
+	if (cache.time_to_kill < NOW_TIME) {	// old database has timed out
 		retired_tree = GetFlippedTree() ;
 	}
-	if (Globals.cache_size && (cache.old_ram + cache.new_ram > Globals.cache_size)) {
+	if (Globals.cache_size && (cache.old_ram_size + cache.new_ram_size > Globals.cache_size)) {
 		// failed size test
 		owfree(tn);
 	} else if ((opaque = tsearch(tn, &cache.temporary_tree_new, tree_compare))) {
 		//printf("Cache_Add_Common to %p\n",opaque);
 		if (tn != opaque->key) {
-			cache.new_ram += sizeof(tn) - sizeof(opaque->key);
+			cache.new_ram_size += sizeof(tn) - sizeof(opaque->key);
 			owfree(opaque->key);
 			opaque->key = tn;
 			state = just_update;
 		} else {
 			state = yes_add;
-			cache.new_ram += sizeof(tn);
+			cache.new_ram_size += sizeof(tn);
 		}
 	} else {					// nothing found or added?!? free our memory segment
 		owfree(tn);
@@ -642,8 +642,10 @@ static GOOD_OR_BAD Cache_Add_Store(struct tree_node *tn)
 	struct tree_opaque *opaque;
 	enum { no_add, yes_add, just_update } state = no_add;
 	LEVEL_DEBUG("Adding data to permanent store");
+
 	STORE_WLOCK;
-	if ((opaque = tsearch(tn, &cache.permanent_tree, tree_compare))) {
+	opaque = tsearch(tn, &cache.permanent_tree, tree_compare) ;
+	if ( opaque != NULL ) {
 		//printf("CACHE ADD pointer=%p, key=%p\n",tn,opaque->key);
 		if (tn != opaque->key) {
 			owfree(opaque->key);
@@ -656,6 +658,7 @@ static GOOD_OR_BAD Cache_Add_Store(struct tree_node *tn)
 		owfree(tn);
 	}
 	STORE_WUNLOCK;
+
 	switch (state) {
 	case yes_add:
 		STATLOCK;
@@ -814,13 +817,18 @@ static enum cache_task_return Cache_Get_Common_Dir(struct dirblob *db, time_t * 
 	struct tree_opaque *opaque;
 	LEVEL_DEBUG("Get from cache sn " SNformat " pointer=%p extension=%d", SNvar(tn->tk.sn), tn->tk.p, tn->tk.extension);
 	CACHE_RLOCK;
-	if ((opaque = tfind(tn, &cache.temporary_tree_new, tree_compare))
-		|| ((cache.retired + duration[0] > now)
-			&& (opaque = tfind(tn, &cache.temporary_tree_old, tree_compare)))
-		) {
-		LEVEL_DEBUG("dir found in cache");
+	opaque = tfind(tn, &cache.temporary_tree_new, tree_compare) ;
+	if ( opaque == NULL ) {
+		// not found in new tree
+		if ( cache.time_retired + duration[0] > now ) {
+			// old tree could be new enough
+			opaque = tfind(tn, &cache.temporary_tree_old, tree_compare) ;
+		}
+	}
+	if ( opaque != NULL ) {
 		duration[0] = opaque->key->expires - now ;
 		if (duration[0] >= 0) {
+			LEVEL_DEBUG("Dir found in cache");
 			size = opaque->key->dsize;
 			if (DirblobRecreate(TREE_DATA(opaque->key), size, db) == 0) {
 				//printf("Cache: snlist=%p, devices=%lu, size=%lu\n",*snlist,devices[0],size) ;
@@ -832,11 +840,11 @@ static enum cache_task_return Cache_Get_Common_Dir(struct dirblob *db, time_t * 
 			//char b[26];
 			//printf("GOT DEAD now:%s",ctime_r(&now,b)) ;
 			//printf("        then:%s",ctime_r(&opaque->key->expires,b)) ;
-			LEVEL_DEBUG("Expired in cache");
+			LEVEL_DEBUG("Dir expired in cache");
 			ctr_ret = ctr_expired;
 		}
 	} else {
-		LEVEL_DEBUG("dir not found in cache");
+		LEVEL_DEBUG("Dir not found in cache");
 		ctr_ret = ctr_not_found;
 	}
 	CACHE_RUNLOCK;
@@ -1074,20 +1082,23 @@ static enum cache_task_return Cache_Get_Common(void *data, size_t * dsize, time_
 	opaque = tfind(tn, &cache.temporary_tree_new, tree_compare) ;
 	if ( opaque == NULL ) {
 		// not found in new tree
-		if ( cache.retired + duration[0] > now ) {
+		if ( cache.time_retired + duration[0] > now ) {
+			// retired time isn't too old for this data item
 			opaque = tfind(tn, &cache.temporary_tree_old, tree_compare) ;
 		}
 	}
 	if ( opaque != NULL ) {
+		// modify duration to time left (can be negative if expired)
 		duration[0] = opaque->key->expires - now ;
 		if (duration[0] > 0) {
 			LEVEL_DEBUG("Value found in cache. Remaining life: %d seconds.",duration[0]);
 			// Compared with >= before, but fc_second(1) always cache for 2 seconds in that case.
 			// Very noticable when reading time-data like "/26.80A742000000/date" for example.
 			if ( dsize[0] >= opaque->key->dsize) {
+				// lower data size if stored value is shorter
 				dsize[0] = opaque->key->dsize;
 				//tree_show(opaque,leaf,0);
-				if (dsize[0]) {
+				if (dsize[0] > 0) {
 					memcpy(data, TREE_DATA(opaque->key), dsize[0]);
 				}
 				ctr_ret = ctr_ok;
@@ -1114,10 +1125,11 @@ static enum cache_task_return Cache_Get_Store(void *data, size_t * dsize, time_t
 	enum cache_task_return ctr_ret;
 	(void) duration; // ignored -- no timeout
 	STORE_RLOCK;
-	if ((opaque = tfind(tn, &cache.permanent_tree, tree_compare))) {
+	opaque = tfind(tn, &cache.permanent_tree, tree_compare) ;
+	if ( opaque != NULL ) {
 		if ( dsize[0] >= opaque->key->dsize) {
 			dsize[0] = opaque->key->dsize;
-			if (dsize[0]) {
+			if (dsize[0] > 0) {
 				memcpy(data, TREE_DATA(opaque->key), dsize[0]);
 			}
 			ctr_ret = ctr_ok;
@@ -1324,15 +1336,22 @@ static GOOD_OR_BAD Cache_Del_Common(const struct tree_node *tn)
 	time_t now = NOW_TIME;
 	GOOD_OR_BAD ret = gbBAD;
 	LEVEL_DEBUG("Delete from cache sn " SNformat " in=%p index=%d", SNvar(tn->tk.sn), tn->tk.p, tn->tk.extension);
+
 	CACHE_WLOCK;
-	if ((opaque = tfind(tn, &cache.temporary_tree_new, tree_compare))
-		|| ((cache.killed > now)
-			&& (opaque = tfind(tn, &cache.temporary_tree_old, tree_compare)))
-		) {
+	opaque = tfind(tn, &cache.temporary_tree_new, tree_compare) ;
+	if ( opaque == NULL ) {
+		// not in new tree
+		if ( cache.time_to_kill > now ) {
+			// old tree still alive
+			opaque = tfind(tn, &cache.temporary_tree_old, tree_compare) ;
+		}
+	}
+	if ( opaque != NULL ) {
 		opaque->key->expires = now - 1;
 		ret = gbGOOD;
 	}
 	CACHE_WUNLOCK;
+
 	return ret;
 }
 
@@ -1340,13 +1359,16 @@ static GOOD_OR_BAD Cache_Del_Store(const struct tree_node *tn)
 {
 	struct tree_opaque *opaque;
 	struct tree_node *tn_found = NULL;
+
 	STORE_WLOCK;
-	if ((opaque = tfind(tn, &cache.permanent_tree, tree_compare))) {
+	opaque = tfind(tn, &cache.permanent_tree, tree_compare) ;
+	if ( opaque != NULL ) {
 		tn_found = opaque->key;
 		tdelete(tn, &cache.permanent_tree, tree_compare);
 	}
 	STORE_WUNLOCK;
-	if (!tn_found) {
+
+	if ( tn_found == NULL ) {
 		return gbBAD;
 	}
 
