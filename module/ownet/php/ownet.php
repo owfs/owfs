@@ -101,7 +101,7 @@ class OWNet{
 	protected $timeout=0;
 	protected $use_swig_dir=true;
 
-	function OWNet($host='',$timeout=5,$use_swig_dir=true){
+	function __construct($host='',$timeout=5,$use_swig_dir=true){
 		// just set default configurations
 		$this->setHost($host);
 		$this->timeout=abs((double)$timeout);
