@@ -22,10 +22,6 @@ static GOOD_OR_BAD COM_write_once( const BYTE * data, size_t length, struct conn
 
 GOOD_OR_BAD COM_write( const BYTE * data, size_t length, struct connection_in *connection)
 {
-	if ( length == 0 || data == NULL ) {
-		return gbGOOD ;
-	}
-
 	if ( connection == NO_CONNECTION ) {
 		return gbBAD ;
 	}
@@ -53,6 +49,10 @@ GOOD_OR_BAD COM_write( const BYTE * data, size_t length, struct connection_in *c
 
 	// is connection thought to be open?
 	RETURN_BAD_IF_BAD( COM_test(connection) ) ;
+
+	if ( length == 0 || data == NULL ) {
+		return gbGOOD ;
+	}
 
 	// try the write
 	RETURN_GOOD_IF_GOOD( COM_write_once( data, length, connection ) );
@@ -96,6 +96,7 @@ GOOD_OR_BAD COM_write_simple( const BYTE * data, size_t length, struct connectio
 	}
 
 	if ( SOC(connection)->file_descriptor == FILE_DESCRIPTOR_BAD ) {
+		LEVEL_DEBUG("Writing to closed device %d",SAFESTRING(SOC(connection)->devicename));
 		return gbBAD ;
 	}
 

@@ -205,7 +205,13 @@ static GOOD_OR_BAD BUS_transaction_single(const struct transaction_log *t, const
 			struct parsedname pn2;
 			memcpy(&pn2, pn, sizeof(struct parsedname));	//shallow copy
 			pn2.selected_device = NO_DEVICE;
-			ret = ( BUS_select(&pn2) || BAD(BUS_verify(t->size, pn)) ) ? gbBAD : gbGOOD;
+			if ( BAD( BUS_select(&pn2) )) {
+				ret = gbBAD ;
+			} else if ( BAD(BUS_verify(t->size, pn) )) {
+				ret = gbBAD ;
+			} else {
+				ret = gbGOOD;
+			}
 			LEVEL_DEBUG("verify = %d", ret);
 		}
 		break;

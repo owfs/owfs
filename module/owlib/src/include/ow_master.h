@@ -115,6 +115,7 @@ struct master_enet {
 	enum e_link_t_mode qmode ; //extra '?' after b command
 	unsigned char sn[SERIAL_NUMBER_SIZE] ;       /* last address */
 	struct timeval expired ; // timestamp when socket is known timed out
+	int reopening ; // to avoid infinite recursion
 };
 
 struct master_ha7e {

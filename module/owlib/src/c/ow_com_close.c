@@ -43,10 +43,11 @@ void COM_close(struct connection_in *connection)
 	}
 
 	switch ( SOC(connection)->state ) {
+		case cs_virgin:
+			break ;
+		default:
 		case cs_deflowered:
 			Test_and_Close( &( SOC(connection)->file_descriptor) ) ;
-			break ;
-		case cs_virgin:
 			break ;
 	}
 }

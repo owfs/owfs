@@ -65,8 +65,20 @@ GOOD_OR_BAD OWServer_Enet_detect(struct connection_in *in)
 	in->Adapter = adapter_ENET;
 	in->adapter_name = "OWServer_Enet";
 	in->busmode = bus_enet;
+
+	// A lot of telnet parameters, really only used
+	// to goose the connection when reconnecting
+	// The ENET tolerates telnet, but isn't really
+	// into RFC22117
 	SOC(in)->timeout.tv_sec = 0 ;
 	SOC(in)->timeout.tv_usec = 600000 ;
+	in->master.serial.tcp.CRLF_size = 2 ;
+	SOC(in)->parity = parity_none; // parity
+	SOC(in)->stop = stop_1; // stop bits
+	SOC(in)->bits = 8; // bits / byte
+	SOC(in)->flow = flow_none; // flow control
+	SOC(in)->dev.telnet.telnet_negotiated = needs_negotiation ;
+	SOC(in)->baud = B115200 ;
 
 	if ( SOC(in)->devicename == NULL) {
 		return gbBAD;
@@ -76,7 +88,8 @@ GOOD_OR_BAD OWServer_Enet_detect(struct connection_in *in)
 	RETURN_BAD_IF_BAD( COM_open(in) ) ;
 
 	// Always returns 0D0A
-	in->master.serial.tcp.CRLF_size = 2 ;
+	in->master.enet.tcp.CRLF_size = 2 ;
+	in->master.enet.reopening = 0 ;
 	
 	memset( in->master.enet.sn, 0x00, SERIAL_NUMBER_SIZE ) ;
 
@@ -88,11 +101,24 @@ GOOD_OR_BAD OWServer_Enet_detect(struct connection_in *in)
 
 static GOOD_OR_BAD OWServer_Enet_reopen(struct connection_in *in)
 {
-	RETURN_BAD_IF_BAD( COM_open(in) ) ;
+	if ( in->master.enet.reopening ) {
+		LEVEL_DEBUG("Attempt to double-reopen %s",SAFESTRING(SOC(in)->devicename)) ;
+		return gbBAD ;
+	}
 
+	// clear "stored" Enet device
+	memset( in->master.enet.sn, 0x00, SERIAL_NUMBER_SIZE ) ;
+
+	RETURN_BAD_IF_BAD( COM_open(in) ) ;
+	//printf("ENET: reopen com port\n");
+	telnet_change( in ) ; // Really just to send a prompt
+
+	in->master.enet.reopening = 1 ; // flag in reopening mode
 	if ( OWServer_Enet_command( "", in ) == '?' ) {
+		in->master.enet.reopening = 0 ; // out of reopening mode
 		return gbGOOD ;
 	}
+	in->master.enet.reopening = 0 ; // out of reopening mode
 	LEVEL_DEBUG("Cannot read the initial prompt");
 	return gbBAD ;
 }
@@ -312,12 +338,13 @@ static GOOD_OR_BAD OWServer_Enet_select( const struct parsedname * pn )
 static char OWServer_Enet_command( char * cmd_string, struct connection_in * in )
 {
 	char cmd_response[1+in->master.serial.tcp.CRLF_size] ;
-
+	//printf("ENET: Send command\n");
 	if ( BAD( OWServer_Enet_write_string( cmd_string, in )) ) {
 		LEVEL_DEBUG("Error sending string <%s>", cmd_string ) ;
 		return BAD_CHAR ;
 	}
 
+	//printf("ENET: Get Response\n");
 	if ( BAD( OWServer_Enet_read( BYTE_string(cmd_response), 1, in )) ) {
 		LEVEL_DEBUG("Error reading response to <%s>", cmd_string ) ;
 		return BAD_CHAR ;
@@ -334,6 +361,7 @@ static GOOD_OR_BAD OWServer_Enet_read( BYTE * buf, size_t size, struct connectio
 static GOOD_OR_BAD OWServer_Enet_write_string( char * buf, struct connection_in *in)
 {
 	int length = strlen(buf) ;
+	//printf("ENET: Sending %d length string\n", length);
 	if ( length == 0 ) {
 		return gbGOOD ;
 	}
@@ -343,11 +371,16 @@ static GOOD_OR_BAD OWServer_Enet_write_string( char * buf, struct connection_in 
 static GOOD_OR_BAD OWServer_Enet_write(const BYTE * buf, size_t size, struct connection_in *in)
 {
 	RETURN_GOOD_IF_GOOD( COM_write_simple( buf, size, in ) ) ;
+	//printf("ENET: Error in sending data\n");
 
 	if ( SOC(in)->file_descriptor == FILE_DESCRIPTOR_BAD ) {
+		//printf("ENET: Connection closed\n");
 		RETURN_BAD_IF_BAD( OWServer_Enet_reopen( in ) ) ;
+		//printf("ENET: Connection reopened\n");
 		RETURN_GOOD_IF_GOOD( COM_write_simple( buf, size, in ) ) ;
+		//printf("ENET: Error sending data second time\n");
 	}
+	//printf("ENET: Bad sending experience\n");
 	return gbBAD ;
 }
 
@@ -381,7 +414,7 @@ static GOOD_OR_BAD OWServer_Enet_sendback_part(const BYTE * data, BYTE * resp, c
 static GOOD_OR_BAD OWServer_Enet_sendback_data(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
 {
 	int left;
-
+	//printf("ENET sendback %d bytes\n",(int) size) ;
 	for ( left=size ; left>0 ; left -= MAX_ENET_MEMORY_GULP ) {
 		size_t pass_start = size - left ;
 		size_t pass_size = (left>MAX_ENET_MEMORY_GULP) ? MAX_ENET_MEMORY_GULP : left ;
