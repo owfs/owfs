@@ -183,18 +183,20 @@ GOOD_OR_BAD LINK_detect(struct connection_in *in)
 		case bus_elink:
 			SOC(in)->type = ct_telnet ;
 
-			// Xport or ser2net
-			SOC(in)->baud = B9600 ;
-			RETURN_GOOD_IF_GOOD(  LINK_detect_net( in )  );
-
 			// LinkHub-E
 			SOC(in)->baud = B115200 ;
+			LEVEL_DEBUG("Attempt connection to networked LINK at 115200 baud");
+			RETURN_GOOD_IF_GOOD(  LINK_detect_net( in )  );
+
+			// Xport or ser2net
+			SOC(in)->baud = B9600 ;
+			LEVEL_DEBUG("Attempt connection to networked LINK at 9600 baud");
 			RETURN_GOOD_IF_GOOD(  LINK_detect_net( in )  );
 
 			// Now try control port reset
 			RETURN_BAD_IF_BAD( LinkHubE_Control( in ) ) ;
 			SOC(in)->baud = B115200 ;
-			LEVEL_DEBUG("Long pause after LINK Xport reset") ;
+			LEVEL_DEBUG("Reattempt LINK connection") ;
 			UT_delay( 5000 ) ;
 			RETURN_GOOD_IF_GOOD(  LINK_detect_net( in )  );
 			
@@ -262,20 +264,16 @@ static GOOD_OR_BAD LINK_detect_net(struct connection_in * in)
 	LINK_slurp( in ) ;
 //	LINK_flush(in);
 
-	if ( GOOD( LINK_version(in) ) ) {
-		SOC(in)->dev.telnet.telnet_negotiated = needs_negotiation ;
-		return gbGOOD ;
-	}
+	SOC(in)->dev.telnet.telnet_negotiated = needs_negotiation ;
+	RETURN_GOOD_IF_GOOD( LINK_version(in) ) ;
 
 	// second try -- send a break and line settings
 	COM_flush(in) ;
 	COM_break(in);
 	telnet_change(in);
 	LINK_slurp( in ) ;
-	if ( GOOD( LINK_version(in) ) ) {
-		SOC(in)->dev.telnet.telnet_negotiated = needs_negotiation ;
-		return gbGOOD ;
-	}
+	RETURN_GOOD_IF_GOOD( LINK_version(in) ) ;
+
 	LEVEL_DEFAULT("LINK detection error");
 	COM_close(in) ;
 	return gbBAD;
