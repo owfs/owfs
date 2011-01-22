@@ -18,6 +18,11 @@ $Id$
 #include <linux/limits.h>
 #endif
 
+// Fix an OpenWRT error found by Patryk
+#ifndef CMSPAR
+  #define CMSPAR 010000000000
+#endif
+
 /* ---------------------------------------------- */
 /* raw COM port interface routines                */
 /* ---------------------------------------------- */
