@@ -337,7 +337,7 @@ static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parse
 	struct transaction_log tcopy[] = {
 		TRXN_START,
 		TRXN_WRITE3(p),
-		{&p[3], &p[3], 10, trxn_power,},
+		TRXN_POWER( &p[3], 10 ) ,
 		TRXN_END,
 	};
 

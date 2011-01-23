@@ -494,7 +494,7 @@ static GOOD_OR_BAD OW_10temp(_FLOAT * temp, enum temperature_problem_flag accept
 	BYTE pow;
 	struct transaction_log tunpowered[] = {
 		TRXN_START,
-		{convert, convert, delay, trxn_power},
+		TRXN_POWER( convert, delay),
 		TRXN_END,
 	};
 	struct transaction_log tpowered[] = {
