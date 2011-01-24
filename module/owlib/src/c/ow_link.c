@@ -176,13 +176,11 @@ GOOD_OR_BAD LINK_detect(struct connection_in *in)
 	SOC(in)->stop = stop_1; // stop bits
 	SOC(in)->bits = 8; // bits / byte
 	SOC(in)->flow = flow_none; // flow control
-	SOC(in)->dev.telnet.telnet_negotiated = pre_negotiation ;
+	SOC(in)->dev.telnet.telnet_negotiated = needs_negotiation ;
 
 	SOC(in)->state = cs_virgin ;
-	switch( in->busmode ) {
-		case bus_elink:
-			SOC(in)->type = ct_telnet ;
-
+	switch( SOC(in)->type ) {
+		case ct_telnet:
 			// LinkHub-E
 			SOC(in)->baud = B115200 ;
 			LEVEL_DEBUG("Attempt connection to networked LINK at 115200 baud");
@@ -204,8 +202,7 @@ GOOD_OR_BAD LINK_detect(struct connection_in *in)
 
 			
 
-		case bus_link:
-			SOC(in)->type = ct_serial ;
+		case ct_serial:
 			SOC(in)->baud = B9600 ;
 
 			SOC(in)->flow = flow_none ;
@@ -260,7 +257,7 @@ static GOOD_OR_BAD LINK_detect_net(struct connection_in * in)
 	
 	LEVEL_DEBUG("Slurp in initial bytes");
 	LINK_slurp( in ) ;
-	UT_delay(100) ; // based on http://morpheus.wcf.net/phpbb2/viewtopic.php?t=89&sid=3ab680415917a0ebb1ef020bdc6903ad
+	UT_delay(1000) ; // based on http://morpheus.wcf.net/phpbb2/viewtopic.php?t=89&sid=3ab680415917a0ebb1ef020bdc6903ad
 	LINK_slurp( in ) ;
 //	LINK_flush(in);
 
@@ -859,6 +856,11 @@ static GOOD_OR_BAD LINK_readback_data( BYTE * buf, const size_t size, struct con
 static GOOD_OR_BAD LinkHubE_Control( struct connection_in * in_link )
 {
 	struct connection_in * in_control = AllocIn( NO_CONNECTION ) ;
+
+	if ( SOC(in_link)->dev.tcp.host == NULL ) {
+		LEVEL_DEBUG("No Xport control on local machine");
+		return gbBAD ;
+	}
 
 	if ( in_control != NO_CONNECTION ) {
 		GOOD_OR_BAD ret ;

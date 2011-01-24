@@ -47,7 +47,7 @@ GOOD_OR_BAD ARG_Device(const char *arg)
 			case arg_addr_colon:
 			case arg_addr_ip:			
 			case arg_addr_other:
-				return ARG_Xport(arg) ;
+				return ARG_Serial(arg) ;
 			default:
 				LEVEL_DEFAULT("Cannot access device %s", arg);
 				return gbBAD;
@@ -188,12 +188,14 @@ GOOD_OR_BAD ARG_Link(const char *arg)
 			return gbBAD ;
 		case arg_addr_device:
 			in->busmode = bus_link ; // serial
+			SOC(in)->type = ct_serial ; // network
 			break ;
 		case arg_addr_number: // port
 		case arg_addr_colon:
 		case arg_addr_ip:
 		case arg_addr_other:
-			in->busmode = bus_elink ; // network
+			in->busmode = bus_link ; // link
+			SOC(in)->type = ct_telnet ; // network
 			break ;	
 	}
 	return gbGOOD;
@@ -287,9 +289,24 @@ GOOD_OR_BAD ARG_Passive(char *adapter_type_name, const char *arg)
 		return gbBAD;
 	}
 	SOC(in)->devicename = (arg!=NULL) ? owstrdup(arg) : NULL;
-	in->busmode = bus_passive;
 	// special set name of adapter here
 	in->adapter_name = adapter_type_name;
+	switch( ArgType(arg) ) {
+		case arg_addr_null:
+			LEVEL_DEFAULT("DS2480B-type bus master error. Please include either a serial device or network address in the command line specification");
+			return gbBAD ;
+		case arg_addr_device:
+			in->busmode = bus_passive ; // DS2480B
+			SOC(in)->type = ct_serial ; // network
+			break ;
+		case arg_addr_number: // port
+		case arg_addr_colon:
+		case arg_addr_ip:
+		case arg_addr_other:
+			in->busmode = bus_passive ; // DS2480B
+			SOC(in)->type = ct_telnet ; // network
+			break ;	
+	}
 	return gbGOOD;
 }
 
@@ -302,17 +319,19 @@ GOOD_OR_BAD ARG_Serial(const char *arg)
 	SOC(in)->devicename = (arg!=NULL) ? owstrdup(arg) : NULL;
 	switch( ArgType(arg) ) {
 		case arg_addr_null:
-			LEVEL_DEFAULT("LINK error. Please include either a serial device or network address in the command line specification");
+			LEVEL_DEFAULT("DS2480B-type bus master error. Please include either a serial device or network address in the command line specification");
 			return gbBAD ;
 		case arg_addr_device:
-			in->busmode = bus_serial;
+			in->busmode = bus_serial ; // DS2480B
+			SOC(in)->type = ct_serial ; // network
 			break ;
 		case arg_addr_number: // port
 		case arg_addr_colon:
 		case arg_addr_ip:
 		case arg_addr_other:
-			in->busmode = bus_xport ; // network
-			break ;
+			in->busmode = bus_serial ; // DS2480B
+			SOC(in)->type = ct_telnet ; // network
+			break ;	
 	}
 	return gbGOOD;
 }
@@ -364,5 +383,6 @@ GOOD_OR_BAD ARG_Xport(const char *arg)
 	}
 	SOC(in)->devicename = (arg!=NULL) ? owstrdup(arg) : NULL;
 	in->busmode = bus_xport;
+	SOC(in)->type = ct_telnet ; // network
 	return gbGOOD;
 }

@@ -24,8 +24,9 @@ GOOD_OR_BAD ClientAddr(char *sname, char * default_port, struct connection_in *i
 	struct addrinfo hint;
 	struct address_pair ap ;
 	int ret;
-	
+
 	Parse_Address( sname, &ap ) ;
+
 	switch ( ap.entries ) {
 	case 0: // Complete default address
 		SOC(in)->dev.tcp.host = NULL;
@@ -41,6 +42,10 @@ GOOD_OR_BAD ClientAddr(char *sname, char * default_port, struct connection_in *i
 			// looks like an IP address
 			SOC(in)->dev.tcp.host = owstrdup(ap.first.alpha);
 			SOC(in)->dev.tcp.service = owstrdup(default_port);
+			break ;
+		case address_numeric:
+			SOC(in)->dev.tcp.host = NULL;
+			SOC(in)->dev.tcp.service = owstrdup(ap.first.alpha);
 			break ;
 		default:
 			// assume it's a port if it's the SERVER

@@ -200,7 +200,6 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct connection_in * in )
 		break;
 
 	case bus_link:
-	case bus_elink:
 		if ( BAD( LINK_detect(in) )) {
 			LEVEL_CONNECT("Cannot open LINK bus master at %s", SOC(in)->devicename);
 			return gbBAD ;

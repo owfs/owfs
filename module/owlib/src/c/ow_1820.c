@@ -692,7 +692,6 @@ static GOOD_OR_BAD OW_w_scratchpad(const BYTE * data, const struct parsedname *p
 {
 	/* data is 3 bytes long */
 	BYTE d[4] = { _1W_WRITE_SCRATCHPAD, data[0], data[1], data[2], };
-	BYTE pow[] = { _1W_COPY_SCRATCHPAD, };
 
 	/* different processing for DS18S20 and others */
 	int scratch_length = (pn->sn[0] == 0x10) ? 2 : 3 ;

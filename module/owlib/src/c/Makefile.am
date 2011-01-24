@@ -157,6 +157,7 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_tcp_free.c      \
                ow_tcp_open.c      \
                ow_tcp_read.c      \
+               ow_telnet_write.c  \
                ow_temp.c          \
                ow_testerread.c    \
                ow_thermocouple.c  \

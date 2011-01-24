@@ -169,6 +169,7 @@ GOOD_OR_BAD telnet_change(struct connection_in *in) ;
 
 GOOD_OR_BAD COM_write( const BYTE * data, size_t length, struct connection_in *connection);
 GOOD_OR_BAD COM_write_simple( const BYTE * data, size_t length, struct connection_in *connection);
+GOOD_OR_BAD telnet_write_binary( const BYTE * buf, const size_t size, struct connection_in *in);
 
 GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connection);
 SIZE_OR_ERROR COM_read_size( BYTE * data, size_t length, struct connection_in *connection ) ;

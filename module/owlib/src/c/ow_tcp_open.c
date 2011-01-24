@@ -25,7 +25,6 @@ GOOD_OR_BAD tcp_open(struct connection_in *connection)
 		char * def_port = NULL ;
 		switch( connection->busmode ) {
 			case bus_link:
-			case bus_elink:
 				def_port = DEFAULT_LINK_PORT ;
 				break ;
 			case bus_server:

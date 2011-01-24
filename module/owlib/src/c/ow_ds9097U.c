@@ -31,7 +31,6 @@ static RESET_TYPE DS2480_reset_in(struct connection_in * in);
 static GOOD_OR_BAD DS2480_initialize_repeatedly(struct connection_in * in);
 static GOOD_OR_BAD DS2480_big_reset(struct connection_in * in) ;
 static GOOD_OR_BAD DS2480_big_reset_serial(struct connection_in * in) ;
-static GOOD_OR_BAD DS2480_big_reset_net(struct connection_in * in) ;
 static void DS2480_adapter(struct connection_in *in) ;
 static GOOD_OR_BAD DS2480_big_configuration(struct connection_in * in) ;
 static GOOD_OR_BAD DS2480_read(BYTE * buf, const size_t size, struct connection_in * in);
@@ -302,16 +301,16 @@ static GOOD_OR_BAD DS2480_reconnect(const struct parsedname * pn)
 // do the com port and configuration stuff
 static GOOD_OR_BAD DS2480_big_reset(struct connection_in * in)
 {
-	switch (in->busmode) {
-		case bus_xport:
+	switch (SOC(in)->type) {
+		case ct_telnet:
 			SOC(in)->timeout.tv_sec = Globals.timeout_network ;
 			SOC(in)->timeout.tv_usec = 0 ;
-			SOC(in)->type = ct_telnet ;
-			return DS2480_big_reset_net(in) ;
+			return DS2480_big_reset_serial(in) ;
+
+		case ct_serial:
 		default:
 			SOC(in)->timeout.tv_sec = Globals.timeout_serial ;
 			SOC(in)->timeout.tv_usec = 0 ;
-			SOC(in)->type = ct_serial ;
 
 			SOC(in)->flow = flow_none ;
 			RETURN_GOOD_IF_GOOD( DS2480_big_reset_serial(in)) ;
@@ -356,47 +355,7 @@ static GOOD_OR_BAD DS2480_big_reset_serial(struct connection_in * in)
 	DS2480_reset_in(in) ;
 
 	// delay to let line settle
-	UT_delay(4);
-	// flush the buffers
-	DS2480_flush(in);
-	// ignore response
-	DS2480_slurp( in ) ;
-
-	// Now set desired baud and polarity
-	return DS2480_big_configuration(in) ;
-}
-
-// do the com port and configuration stuff
-static GOOD_OR_BAD DS2480_big_reset_net(struct connection_in * in)
-{
-	BYTE reset_byte = (BYTE) ( CMD_COMM | FUNCTSEL_RESET | SPEEDSEL_STD );
-
-	RETURN_BAD_IF_BAD( COM_open(in) ) ;
-	
-	LEVEL_DEBUG("Slurp in initial bytes");
-	DS2480_slurp( in ) ;
-	DS2480_flush(in);
-
-	// It's in command mode now
-	in->master.serial.mode = ds2480b_command_mode ;
-
-	// send the timing byte (A reset command at 9600 baud)
-	DS2480_write( &reset_byte, 1, in ) ;
-
-	// delay to let line settle
-	UT_delay(4);
-	// flush the buffers
-	DS2480_flush(in);
-	// ignore response
-	DS2480_slurp( in ) ;
-	// Now set desired baud and polarity
-	// BUS_reset will do the actual changes
-	in->changed_bus_settings = 1 ; // Force a mode change
-	// Send a reset again
-	DS2480_reset_in(in) ;
-
-	// delay to let line settle
-	UT_delay(4);
+	UT_delay(400);
 	// flush the buffers
 	DS2480_flush(in);
 	// ignore response
@@ -476,17 +435,11 @@ static GOOD_OR_BAD DS2480_configuration_read(BYTE parameter_code, BYTE value_cod
 
 // configuration of DS2480B -- parameter code is already shifted in the defines (by 4 bites)
 // configuration of DS2480B -- value code is already shifted in the defines (by 1 bit)
-// Set Baud rate -- can't use DS2480_conficuration_code because return byte is in a different speed
+// Set Baud rate -- can't use DS2480_configuration_code because return byte is at a different speed
 static void DS2480_set_baud_control(struct connection_in * in)
 {
 	// restrict allowable baud rates based on device capabilities
 	COM_BaudRestrict( &(SOC(in)->baud), B9600, B19200, B57600, B115200, 0 ) ;
-
-	// telnet doesn't support in-band baud rate changes,
-	if ( in->busmode == bus_xport ) {
-		SOC(in)->baud = B9600 ;
-		return ;
-	}
 
 	if ( GOOD( DS2480_set_baud(in) ) ) {
 		return ;
@@ -916,7 +869,13 @@ static GOOD_OR_BAD DS2480_ProgramPulse(const struct parsedname *pn)
 // Write to the output -- works for tcp and COM
 static GOOD_OR_BAD DS2480_write(const BYTE * buf, const size_t size, struct connection_in * in)
 {
-	return COM_write( buf, size, in ) ;
+	switch( SOC(in)->type ) {
+		case ct_telnet:
+			return telnet_write_binary( buf, size, in) ;
+		case ct_serial:
+		default:
+			return COM_write( buf, size, in ) ;
+	}
 }
 
 /* Assymetric */
