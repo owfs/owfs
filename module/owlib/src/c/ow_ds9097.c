@@ -63,7 +63,6 @@ GOOD_OR_BAD DS9097_detect(struct connection_in *in)
 	in->busmode = bus_passive;	// in case initially tried DS9097U
 
 	/* open the COM port in 9600 Baud  */
-	SOC(in)->type = ct_serial ;
 	SOC(in)->state = cs_virgin ;
 	SOC(in)->baud = B9600 ;
 	SOC(in)->vmin = 1; // minimum chars
@@ -72,7 +71,17 @@ GOOD_OR_BAD DS9097_detect(struct connection_in *in)
 	SOC(in)->stop = stop_1; // stop bits
 	SOC(in)->bits = 8; // bits / byte
 	SOC(in)->flow = flow_none; // flow control
-	SOC(in)->flow = flow_none ;
+
+	switch (SOC(in)->type) {
+		case ct_telnet:
+			SOC(in)->timeout.tv_sec = Globals.timeout_network ;
+			SOC(in)->timeout.tv_usec = 0 ;
+
+		case ct_serial:
+		default:
+			SOC(in)->timeout.tv_sec = Globals.timeout_serial ;
+			SOC(in)->timeout.tv_usec = 0 ;
+	}
 	SOC(in)->timeout.tv_sec = Globals.timeout_serial ;
 	SOC(in)->timeout.tv_usec = 0 ;
 	RETURN_BAD_IF_BAD(COM_open(in)) ;
@@ -236,7 +245,15 @@ static GOOD_OR_BAD DS9097_sendback_bits(const BYTE * outbits, BYTE * inbits, con
 /* Routine to send a string of bits and get another string back */
 static GOOD_OR_BAD DS9097_send_and_get(const BYTE * bussend, BYTE * busget, const size_t length, struct connection_in * in)
 {
-	RETURN_BAD_IF_BAD( COM_write( bussend, length, in ) ) ;
+	switch( SOC(in)->type ) {
+		case ct_telnet:
+			RETURN_BAD_IF_BAD( telnet_write_binary( bussend, length, in) ) ;
+			break ;
+		case ct_serial:
+		default:
+			RETURN_BAD_IF_BAD( COM_write( bussend, length, in ) ) ;
+			break ;
+	}
 
 	/* get back string -- with timeout and partial read loop */
 	return COM_read( busget, length, in ) ;
