@@ -23,6 +23,12 @@ Temperature Voltage and Memory.
 |
 .B volts
 |
+.B counter/cycles
+|
+.B counter/reset
+|
+.B counter/increment
+|
 .so standard_mini.3so
 ]]
 .SH FAMILY CODE
@@ -33,7 +39,10 @@ Temperature Voltage and Memory.
 .I read-write, binary
 .br
 Memory is split into 5 pages of 32 bytes each. Only the first 3 pages are really available, and some of that appears to be reserved. See the datasheet for details.
-.br
+.P
+.I pages/page.0 
+is locked and unlocked transparently for every write.
+.P
 .I ALL
 is an aggregate of the pages. Each page is accessed sequentially.
 .SS temperature
@@ -50,6 +59,24 @@ Conversion takes ~20 msec.
 .I read-only, floating point
 .br
 Voltage read (~10 bits) at the chip's supply voltage Vdd. Range 2.4V to 10V.
+.SS counter/
+A resettable non-volatile counter intended for counting battery discharge cycles.
+.SS counter/cycles
+.I read-only, unsigned integer
+.br
+Cycle counter value. Stored at memory location 0x82.
+.SS counter/increment
+.I write-only, yes/no
+.br
+Any non-zero (true) value will increment
+.I counter/cycles
+by one.
+.SS counter/reset
+.I write-only, yes/no
+.br
+Any non-zero (true) value will reset
+.I counter/cycles
+to zero.
 .SH STANDARD PROPERTIES
 .so standard.3so
 .SH ALARMS
