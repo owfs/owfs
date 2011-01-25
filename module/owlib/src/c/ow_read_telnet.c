@@ -78,15 +78,40 @@ GOOD_OR_BAD telnet_read(BYTE * buf, const size_t size, struct connection_in *in)
 	
 	// loop and look for escape sequances
 	while ( still_needed > 0 ) {
+
+		// see if the state requires a longer read than currently scheduled
+		int minimum_chars  = still_needed ;
+		switch( telnet_read_state ) {
+			case telnet_sb:
+				minimum_chars += 4 ;
+				break ;
+			case telnet_sb_opt:
+				minimum_chars += 3 ;
+				break ;
+			case telnet_sb_val:
+				minimum_chars += 2 ;
+				break ;
+			case telnet_iac:
+			case telnet_sb_iac:
+			case telnet_will:
+			case telnet_wont:
+			case telnet_do:
+			case telnet_dont:
+				minimum_chars += 1 ;
+				break ;
+			case telnet_regular:
+				break ;
+		}
+
 		if ( current_index >= actual_readin ) {
 			// need to read more -- just read what we think we need -- escape chars may require repeat
-			if ( tcp_read( SOC(in)->file_descriptor, readin_buf, still_needed, &(SOC(in)->timeout), &actual_readin) < 0 ) {
+			if ( tcp_read( SOC(in)->file_descriptor, readin_buf, minimum_chars, &(SOC(in)->timeout), &actual_readin) < 0 ) {
 				LEVEL_DEBUG("tcp seems closed") ;
 				Test_and_Close( &(SOC(in)->file_descriptor) ) ;
 				return gbBAD ;
 			}
 
-			if (actual_readin < still_needed) {
+			if (actual_readin < minimum_chars) {
 				LEVEL_CONNECT("Telnet (ethernet) error");
 				Test_and_Close( &(SOC(in)->file_descriptor) ) ;
 				return gbBAD;
