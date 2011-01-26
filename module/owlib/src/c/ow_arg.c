@@ -111,6 +111,7 @@ GOOD_OR_BAD ARG_HA5( const char *arg)
 		return gbBAD;
 	}
 	SOC(in)->devicename = (arg!=NULL) ? owstrdup(arg) : NULL;
+	SOC(in)->type = ct_serial ; // network
 	in->busmode = bus_ha5;
 	return gbGOOD;
 }
@@ -144,6 +145,7 @@ GOOD_OR_BAD ARG_HA7E(const char *arg)
 		return gbBAD;
 	}
 	SOC(in)->devicename = (arg!=NULL) ? owstrdup(arg) : NULL;
+	SOC(in)->type = ct_serial ; // network
 	in->busmode = bus_ha7e ;
 	return gbGOOD;
 }
