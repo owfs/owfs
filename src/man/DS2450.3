@@ -26,6 +26,13 @@ Voltage * 4  and Memory.
 .PP
 .B 20
 [.]XXXXXXXXXXXX[XX][/[
+.B 8bit/volt.[A-D|ALL]
+|
+.B 8bit/volt2.[A-D|ALL]
+]]
+.PP
+.B 20
+[.]XXXXXXXXXXXX[XX][/[
 .B CO2/ppm
 |
 .B CO2/power
@@ -35,17 +42,18 @@ Voltage * 4  and Memory.
 .PP
 .B 20
 [.]XXXXXXXXXXXX[XX][/[
-.B alarm/high.[A-D|ALL]
-|
-.B alarm/low.[A-D|ALL]
-|
 .B memory
 |
 .B pages/page.[0-3|ALL]
 |
-.B PIO.[A-D|ALL]
-|
 .B power
+]
+.PP
+.B 20
+[.]XXXXXXXXXXXX[XX][/[
+.B alarm/high.[A-D|ALL]
+|
+.B alarm/low.[A-D|ALL]
 |
 .B set_alarm/high.[A-D|ALL]
 |
@@ -60,11 +68,10 @@ Voltage * 4  and Memory.
 .B set_alarm/voltlow.[A-D|ALL]
 |
 .B set_alarm/volt2low.[A-D|ALL]
-|
-.B volt.[A-D|ALL]
-|
-.B volt2.[A-D|ALL]
-|
+]
+.PP
+.B 20
+[.]XXXXXXXXXXXX[XX][/[
 .so standard_mini.3so
 ]]
 .SH FAMILY CODE
@@ -170,9 +177,12 @@ is first powered up, and will match the alarm state until explicitly cleared. (B
 .br
 The purpose of the POR is to alert the user that the chip is not yet fully configured, especially alarm thresholds and enabling.
 .SS volt.A ... volt.D volt.ALL
+.SS 8bit/volt.A ... 8bit/volt.D 8bit/volt.ALL
 .I read-only, floating point
 .br
-Voltage read, 16 bit resolution. Range 0 - 5.10V.
+Voltage read, 16 bit resolution (or 8 bit for the 
+.I 8bit
+directory). Range 0 - 5.10V.
 .br
 Output (
 .I PIO
@@ -181,9 +191,12 @@ Output (
 .I ALL
 is an aggregate of the voltages. Readings are made separately.
 .SS volt2.A ... volt2.D volt2.ALL
+.SS 8bit/volt2.A ... 8bit/volt2.D 8bit/volt2.ALL
 .I read-only, floating point
 .br
-Voltage read, 16 bit resolution. Range 0 - 2.55V.
+Voltage read, 16 bit resolution (or 8 bit for the 
+.I 8bit
+directory). Range 0 - 2.55V.
 .br
 Output (
 .I PIO
