@@ -34,8 +34,9 @@ static GOOD_OR_BAD HA5_resync( struct connection_in * in ) ;
 static GOOD_OR_BAD HA5_channel_list( char * alpha_string, struct connection_in * initial_in ) ;
 static GOOD_OR_BAD HA5_test_channel( struct connection_in * in ) ;
 static GOOD_OR_BAD TestChecksum( unsigned char * check_string, int length ) ;
+static GOOD_OR_BAD HA5_checksum_support( struct connection_in * in ) ;
 static GOOD_OR_BAD HA5_find_channel( struct connection_in * in ) ;
-static GOOD_OR_BAD HA5_write( char command, unsigned char * raw_string, int length, struct connection_in * in ) ;
+static GOOD_OR_BAD HA5_write( char command, char * raw_string, int length, struct connection_in * in ) ;
 
 #define HA5MUTEX_INIT(in)		_MUTEX_INIT(in->master.ha5.all_channel_lock)
 #define HA5MUTEX_LOCK(in)		_MUTEX_LOCK(in->master.ha5.all_channel_lock ) ;
@@ -131,9 +132,10 @@ GOOD_OR_BAD HA5_detect(struct connection_in *in)
 static GOOD_OR_BAD HA5_channel_list( char * alpha_string, struct connection_in * initial_in )
 {
 	char * current_char ;
+	int first_time = 1 ; // work-around for new USB com port
 	struct connection_in * current_in = initial_in ;
 
-	for ( current_char = alpha_string ; current_char[0]!= '\0' ; ++current_char ) {
+	for ( current_char = alpha_string ; current_char[0]!= '\0' ; ++ current_char ) {
 		char c = current_char[0];
 		if ( !isalpha(c) ) {
 			LEVEL_DEBUG("Urecognized HA5 channel <%c>",c) ;
@@ -142,10 +144,23 @@ static GOOD_OR_BAD HA5_channel_list( char * alpha_string, struct connection_in *
 		current_in->master.ha5.channel = tolower(c) ;
 		LEVEL_DEBUG("Looking for HA5 adapter on %s:%c", SOC(current_in)->devicename, current_in->master.ha5.channel ) ;
 		if ( GOOD( HA5_test_channel(current_in)) ) {
+			first_time = 0 ;
 			LEVEL_CONNECT("HA5 bus master FOUND on port %s at channel %c", SOC(current_in)->devicename, current_in->master.ha5.channel ) ;
-			current_in = NewIn( initial_in ) ;
+			current_in = NewIn( initial_in ) ; // point to newer space for next candidate
 			if ( current_in == NO_CONNECTION ) {
 				break ;
+			}
+		} else if ( first_time ) {
+			// work around for new USB serial port that seems to need a repeat test
+			first_time = 0 ;
+			if ( GOOD( HA5_test_channel(current_in)) ) {
+				LEVEL_CONNECT("HA5 bus master FOUND on port %s at channel %c", SOC(current_in)->devicename, current_in->master.ha5.channel ) ;
+				current_in = NewIn( initial_in ) ; // point to newer space for next candidate
+				if ( current_in == NO_CONNECTION ) {
+					break ;
+				}
+			} else {
+				LEVEL_CONNECT("HA5 bus master NOT FOUND on port %s at channel %c", SOC(current_in)->devicename, c ) ;
 			}
 		} else {
 			LEVEL_CONNECT("HA5 bus master NOT FOUND on port %s at channel %c", SOC(current_in)->devicename, c ) ;
@@ -158,6 +173,7 @@ static GOOD_OR_BAD HA5_channel_list( char * alpha_string, struct connection_in *
 	}
 	
 	// Remove last addition, it is blank
+	SOC(current_in)->file_descriptor = FILE_DESCRIPTOR_BAD ; // so won't capriciously close this shared file descriptor.
 	RemoveIn( current_in ) ;
 	return gbGOOD ;
 }
@@ -166,11 +182,12 @@ static GOOD_OR_BAD HA5_channel_list( char * alpha_string, struct connection_in *
 /* Arbitrarily assign it to "a" if none found */
 static GOOD_OR_BAD HA5_find_channel( struct connection_in * in )
 {
-	char c ;
+	char test_chars[] = "aabcdefghijklmnopqrstuvwxyz" ; // note 'a' is repeated
+	char * c ;
 
-	for ( c = 'a' ; c <= 'z' ; ++c ) {
+	for ( c = test_chars ; c[0] != '\0' ; ++c ) {
 		// test char set
-		in->master.ha5.channel = c ;
+		in->master.ha5.channel = c[0] ;
 
 		LEVEL_DEBUG("Looking for HA5 adapter on %s:%c", SOC(in)->devicename, in->master.ha5.channel ) ;
 		if ( GOOD( HA5_test_channel(in)) ) {
@@ -183,29 +200,40 @@ static GOOD_OR_BAD HA5_find_channel( struct connection_in * in )
 	return gbBAD;
 }
 
-static GOOD_OR_BAD HA5_write( char command, unsigned char * raw_string, int length, struct connection_in * in )
+static GOOD_OR_BAD HA5_write( char command, char * raw_string, int length, struct connection_in * in )
 {
 	int i ;
 	unsigned int sum = 0 ;
 	BYTE mod_buffer[length+5] ;
 
+	// add the channel
 	mod_buffer[0] = in->master.ha5.channel ;
+
+	// Add the HA5 command
 	mod_buffer[1] = command ;
+
+	// Copy the string
 	if ( length > 0 ) {
 		memcpy( &mod_buffer[2], raw_string, length ) ;
 	}
 
+	// Compute a simple checksum
 	for ( i=0 ; i<length+2 ; ++i ) {
 		sum += mod_buffer[i] ;
 	}
+
+	// Add the checksum
 	num2string( (char *) &mod_buffer[length+2], sum & 0xFF) ;
+
+	// Add the <CR>
 	mod_buffer[length+4] = CR_char ;
 
+	// Write full string to the HA5
 	if ( BAD(COM_write( mod_buffer, length+5, in)) ) {
 		LEVEL_DEBUG("Error with sending HA5 block") ;
 		return gbBAD ;
 	}
-
+	return gbGOOD ;
 }
 
 
@@ -235,11 +263,52 @@ static GOOD_OR_BAD HA5_test_channel( struct connection_in * in )
 {
 	COM_slurp(in) ;
 
+	RETURN_BAD_IF_BAD( HA5_checksum_support(in) ) ;
+
 	if ( HA5_reset_wrapped( in ) == BUS_RESET_OK ) {
 		return gbGOOD ;
 	}
 	
 	return gbBAD ;
+}
+
+// test char already set
+static GOOD_OR_BAD HA5_checksum_support( struct connection_in * in )
+{
+	BYTE resp[3] = { 'X', 'X', 'X', } ;
+
+	// write a BYTE and see if any response (device present)
+	// and then see if a checksum is included in the response
+
+	if ( BAD(HA5_write( 'W', "01FF", 4, in)) ) {
+		LEVEL_DEBUG("Error sending Bit");
+		return gbBAD;
+	}
+	if ( BAD(COM_read(resp, 3, in)) ) {
+		LEVEL_DEBUG("Error reading bit response");
+		return gbBAD;
+	}
+	if ( resp[2] == 0x0D ) {
+		in->master.ha5.checksum = 0 ;
+		LEVEL_DETAIL("HA5 %s in NON-CHECKSUM mode",SAFESTRING(SOC(in)->devicename));
+		return gbGOOD ;
+	} else if ( resp[2] == 'X' ) {
+		// nothing actually read
+		return gbBAD ;
+	}
+	resp[0] = 'X' ;
+	resp[1] = 'X' ;
+	if ( BAD(COM_read(resp, 2, in)) ) {
+		LEVEL_DEBUG("Error reading Bit checksum");
+		return gbBAD;
+	}
+	if ( resp[1] != 0x0D ) {
+		LEVEL_DEBUG("Bad response");
+		return gbBAD ;
+	}
+		in->master.ha5.checksum = 1 ;
+	LEVEL_DETAIL("HA5 %s in CHECKSUM mode",SAFESTRING(SOC(in)->devicename));
+	return gbGOOD ;
 }
 
 static RESET_TYPE HA5_reset(const struct parsedname *pn)
@@ -262,7 +331,7 @@ static RESET_TYPE HA5_reset_wrapped( struct connection_in * in )
 {
 	BYTE resp[2] = { 'X', 'X', } ;
 
-	if ( BAD(HA5_write( 'R', (BYTE *) "", 0, in)) ) {
+	if ( BAD(HA5_write( 'R', "", 0, in)) ) {
 		LEVEL_DEBUG("Error sending HA5 reset");
 		return BUS_RESET_ERROR;
 	}
@@ -347,7 +416,7 @@ static enum search_status HA5_directory(struct device_search *ds, struct dirblob
 	//tF0 -- Normal searching
 
 	// Send the configuration command and check response
-	if ( BAD(HA5_write( (ds->search == _1W_CONDITIONAL_SEARCH_ROM) ? 'C' : 'S', (BYTE *) ",FF", 3, in)) ) {
+	if ( BAD(HA5_write( (ds->search == _1W_CONDITIONAL_SEARCH_ROM) ? 'C' : 'S', ",FF", 3, in)) ) {
 		HA5_resync(in) ;
 		return search_error ;
 	}
@@ -450,17 +519,17 @@ static GOOD_OR_BAD HA5_select( const struct parsedname * pn )
 static GOOD_OR_BAD HA5_select_wrapped( const struct parsedname * pn )
 {
 	struct connection_in * in = pn->selected_connection ;
-	unsigned char send_address[16] ;
+	char send_address[16] ;
 	unsigned char resp_address[19] ;
 
-	num2string( (char *)&send_address[ 0], pn->sn[7] ) ;
-	num2string( (char *)&send_address[ 2], pn->sn[6] ) ;
-	num2string( (char *)&send_address[ 4], pn->sn[5] ) ;
-	num2string( (char *)&send_address[ 6], pn->sn[4] ) ;
-	num2string( (char *)&send_address[ 8], pn->sn[3] ) ;
-	num2string( (char *)&send_address[10], pn->sn[2] ) ;
-	num2string( (char *)&send_address[12], pn->sn[1] ) ;
-	num2string( (char *)&send_address[14], pn->sn[0] ) ;
+	num2string( &send_address[ 0], pn->sn[7] ) ;
+	num2string( &send_address[ 2], pn->sn[6] ) ;
+	num2string( &send_address[ 4], pn->sn[5] ) ;
+	num2string( &send_address[ 6], pn->sn[4] ) ;
+	num2string( &send_address[ 8], pn->sn[3] ) ;
+	num2string( &send_address[10], pn->sn[2] ) ;
+	num2string( &send_address[12], pn->sn[1] ) ;
+	num2string( &send_address[14], pn->sn[0] ) ;
 
 	if ( BAD(HA5_write( 'A', send_address, 16, in)) ) {
 		LEVEL_DEBUG("Error sending HA5 A-ddress") ;
@@ -497,11 +566,11 @@ static GOOD_OR_BAD HA5_select_wrapped( const struct parsedname * pn )
 static GOOD_OR_BAD HA5_sendback_part(char cmd, const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
 {
 	struct connection_in * in = pn->selected_connection ;
-	unsigned char send_data[2+2*size] ;
+	char send_data[2+2*size] ;
 	unsigned char get_data[32*2+3] ;
 
-	num2string( (char *)&send_data[0], size ) ;
-	bytes2string( (char *)&send_data[2], data, size) ;
+	num2string(   &send_data[0], size ) ;
+	bytes2string( &send_data[2], data, size) ;
 
 	if ( BAD(HA5_write( cmd, send_data, 2+2*size, in)) ) {
 		LEVEL_DEBUG("Error with sending HA5 block") ;
