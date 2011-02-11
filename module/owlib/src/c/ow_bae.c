@@ -828,8 +828,10 @@ static ZERO_OR_ERROR FS_type_chip(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_r_8(struct one_wire_query *owq)
 {
 	struct parsedname * pn = PN(owq) ;
-	BYTE data[1] ; // 8/8 = 1
-	RETURN_ERROR_IF_BAD( OW_r_mem_small(data, 1, pn->selected_filetype->data.u + pn->extension, pn ) );
+	int bytes = 8/8 ;
+	BYTE data[bytes] ;
+	
+	RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) );
 	OWQ_U(owq) = data[0] ;
 	return 0 ;
 }
@@ -838,18 +840,21 @@ static ZERO_OR_ERROR FS_r_8(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_w_8(struct one_wire_query *owq)
 {
 	struct parsedname * pn = PN(owq) ;
-	BYTE data[1] ; // 8/8 = 1
+	int bytes = 8/8 ;
+	BYTE data[bytes] ;
 	
 	data[0] = BYTE_MASK( OWQ_U(owq) ) ;
-	return GB_to_Z_OR_E(OW_w_mem(data, 1, pn->selected_filetype->data.u + pn->extension, pn ) ) ;
+	return GB_to_Z_OR_E(OW_w_mem(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) ) ;
 }
 
 /* read a 16 bit value from a register stored in filetype.data */
 static ZERO_OR_ERROR FS_r_16(struct one_wire_query *owq)
 {
 	struct parsedname * pn = PN(owq) ;
-	BYTE data[2] ; // 16/8 = 2
-	RETURN_ERROR_IF_BAD( OW_r_mem_small(data, 2, pn->selected_filetype->data.u + 2 * pn->extension, pn ) );
+	int bytes = 16/8 ;
+	BYTE data[bytes] ;
+	
+	RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) );
 	OWQ_U(owq) = BAE_uint16(data) ;
 	return 0 ;
 }
@@ -858,18 +863,21 @@ static ZERO_OR_ERROR FS_r_16(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_w_16(struct one_wire_query *owq)
 {
 	struct parsedname * pn = PN(owq) ;
-	BYTE data[2] ; // 16/8 = 2
+	int bytes = 16/8 ;
+	BYTE data[bytes] ;
 
 	BAE_uint16_to_bytes( OWQ_U(owq), data ) ;
-	return GB_to_Z_OR_E( OW_w_mem(data, 2, pn->selected_filetype->data.u + 2 * pn->extension, pn ) ) ;
+	return GB_to_Z_OR_E( OW_w_mem(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) ) ;
 }
 
 /* read a 32 bit value from a register stored in filetype.data */
 static ZERO_OR_ERROR FS_r_32(struct one_wire_query *owq)
 {
 	struct parsedname * pn = PN(owq) ;
-	BYTE data[4] ; // 32/8 = 4
-	RETURN_ERROR_IF_BAD( OW_r_mem_small(data, 4, pn->selected_filetype->data.u, pn ) );
+	int bytes = 32/8 ;
+	BYTE data[bytes] ;
+	
+	RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) );
 	OWQ_U(owq) = BAE_uint32(data) ;
 	return 0 ;
 }
@@ -878,10 +886,11 @@ static ZERO_OR_ERROR FS_r_32(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_w_32(struct one_wire_query *owq)
 {
 	struct parsedname * pn = PN(owq) ;
-	BYTE data[4] ; // 32/8 = 2
+	int bytes = 32/8 ;
+	BYTE data[bytes] ;
 	
 	BAE_uint32_to_bytes( OWQ_U(owq), data ) ;
-	return GB_to_Z_OR_E( OW_w_mem(data, 4, pn->selected_filetype->data.u, pn ) ) ;
+	return GB_to_Z_OR_E( OW_w_mem(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) ) ;
 }
 
 /* Lower level functions */
