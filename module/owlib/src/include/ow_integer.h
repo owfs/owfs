@@ -53,6 +53,13 @@ static inline void UT_uint16_to_bytes( const uint16_t num, unsigned char * p )
 	p[1] = (num>>8)&0xFF ;
 }
 
+static inline void UT_uint24_to_bytes( const uint16_t num, unsigned char * p )
+{
+	p[0] = num&0xFF ;
+	p[1] = (num>>8)&0xFF ;
+	p[2] = (num>>16)&0xFF ;
+}
+
 static inline void UT_uint32_to_bytes( const uint32_t num, unsigned char * p )
 {
 	p[0] = num&0xFF ;
