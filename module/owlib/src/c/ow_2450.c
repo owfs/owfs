@@ -91,13 +91,14 @@ enum V_alarm_level {
 #define _1W_2450_PAGESIZE	8
 #define _1W_2450_REGISTERS	4
 
-struct aggregate A2450 = { _1W_2450_REGISTERS, ag_numbers, ag_separate, };
+struct aggregate A2450p = { _1W_2450_PAGES, ag_numbers, ag_separate, };
+struct aggregate A2450 = { _1W_2450_REGISTERS, ag_letters, ag_separate, };
 struct aggregate A2450v = { _1W_2450_REGISTERS, ag_letters, ag_aggregate, };
 struct filetype DS2450[] = {
 	F_STANDARD,
 	{"memory", _1W_2450_PAGESIZE*_1W_2450_PAGES, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-	{"pages/page", _1W_2450_PAGESIZE, &A2450, ft_binary, fc_page, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
+	{"pages/page", _1W_2450_PAGESIZE, &A2450p, ft_binary, fc_page, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
 
 	{"power", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_power, FS_w_power, VISIBLE, NO_FILETYPE_DATA,},
 	{"PIO", PROPERTY_LENGTH_YESNO, &A2450, ft_yesno, fc_stable, FS_r_PIO, FS_w_PIO, VISIBLE, {i:0},},
