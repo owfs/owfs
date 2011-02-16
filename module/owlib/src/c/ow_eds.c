@@ -50,6 +50,7 @@ WRITE_FUNCTION(FS_w_page);
 READ_FUNCTION(FS_r_mem);
 WRITE_FUNCTION(FS_w_mem);
 READ_FUNCTION(FS_r_tag);
+READ_FUNCTION(FS_r_type);
 READ_FUNCTION(FS_temperature);
 
 READ_FUNCTION(FS_r_8) ;
@@ -63,9 +64,6 @@ WRITE_FUNCTION(FS_w_32) ;
 READ_FUNCTION(FS_r_rtd) ;
 WRITE_FUNCTION(FS_w_rtd) ;
 
-static enum e_visibility EDS_visible(const struct parsedname * pn) ;
-
-
 #define _EDS_WRITE_SCRATCHPAD 0x0F
 #define _EDS_READ_SCRATCHPAD 0xAA
 #define _EDS_COPY_SCRATCHPAD 0x55
@@ -75,33 +73,6 @@ static enum e_visibility EDS_visible(const struct parsedname * pn) ;
 
 #define _EDS_PAGES 3
 #define _EDS_PAGESIZE 32
-
-#define _EDS0064   0x0001
-#define _EDS0065   0x0002
-#define _EDS0066   0x0004
-#define _EDS0067   0x0008
-#define _EDS0068   0x0010
-#define _EDS0069   0x0020
-#define _EDS0070   0x0040
-#define _EDS0071   0x0080
-#define _EDS0072   0x0100
-
-#define _EDS_CHIPS_TEMPERATURE (_EDS0064|_EDS0065|_EDS0066|_EDS0067|_EDS0068|_EDS0069)
-struct eds_types {
-	char * name ;
-	unsigned bit ;
-} EDS_types[] = {
-	{ "EDS0064", _EDS0064 },
-	{ "EDS0065", _EDS0065 },
-	{ "EDS0066", _EDS0066 },
-	{ "EDS0067", _EDS0067 },
-	{ "EDS0068", _EDS0068 },
-	{ "EDS0069", _EDS0069,},
-	{ "EDS0070", _EDS0070,},
-	{ "EDS0071", _EDS0071,},
-	{ "EDS0072", _EDS0072,},
-} ;
-#define N_eds_types (sizeof(EDS_types) / sizeof( struct eds_types))
 
 /* EDS0071 locations */
 #define _EDS0071_ID					0x1E // uint16
@@ -124,9 +95,11 @@ struct eds_types {
 #define _EDS0071_Relay_function		0x5E // byte
 #define _EDS0071_Relay_state		0x5F // byte
 
-#define VISIBLE_EDS0071   VISIBLE
+static enum e_visibility VISIBLE_EDS0071( const struct parsedname * pn ) ;
+static enum e_visibility VISIBLE_EDS_TEMP( const struct parsedname * pn ) ;
 
-#define _EDS_TAG_LENGTH 8
+#define _EDS_TAG_LENGTH 30
+#define _EDS_TYPE_LENGTH 7
 
 /* ------- Structures ----------- */
 
@@ -138,8 +111,9 @@ struct filetype EDS[] = {
 	{"pages/page", _EDS_PAGESIZE, &AEDS, ft_binary, fc_page, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
 
 	{"tag", _EDS_TAG_LENGTH, NON_AGGREGATE, ft_ascii, fc_stable, FS_r_tag, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA,},
-	{"local_id", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_16, NO_WRITE_FUNCTION, VISIBLE, {u: _EDS0071_ID,}, },
-	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_temperature, NO_WRITE_FUNCTION, EDS_visible, {i:_EDS_CHIPS_TEMPERATURE},},
+	{"device_type", _EDS_TYPE_LENGTH, NON_AGGREGATE, ft_ascii, fc_link, FS_r_type, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA,},
+	{"device_id", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_16, NO_WRITE_FUNCTION, VISIBLE, {u: _EDS0071_ID,}, },
+	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_temperature, NO_WRITE_FUNCTION, VISIBLE_EDS_TEMP, NO_FILETYPE_DATA,},
 
 	{"EDS0071", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0071, NO_FILETYPE_DATA,},
 	{"EDS0071/temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_r_rtd, NO_WRITE_FUNCTION, VISIBLE_EDS0071, {u: _EDS0071_Temp,}, },
@@ -170,42 +144,70 @@ DeviceEntryExtended(7E, EDS, DEV_temp | DEV_alarm, NO_GENERIC_READ, NO_GENERIC_W
 /* ------- Functions ------------ */
 static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn) ;
 static GOOD_OR_BAD OW_r_mem_small(BYTE * data, size_t size, off_t offset, struct parsedname * pn);
+static int VISIBLE_EDS( const struct parsedname * pn ) ;
 
-/* Persistent storage */
-Make_SlaveSpecificTag(TAG, fc_persistent);	// cumulative
+/* finds the visibility value (0x0071 ...) either cached, or computed via the device_id (then cached) */
+static int VISIBLE_EDS( const struct parsedname * pn )
+{
+	int device_id = -1 ;
+	
+	LEVEL_DEBUG("Checking visibility of %s",SAFESTRING(pn->path)) ;
+	if ( BAD( GetVisibilityCache( &device_id, pn ) ) ) {
+		struct one_wire_query * owq = OWQ_create_from_path(pn->path) ; // for read
+		if ( owq != NULL) {
+			UINT U_device_id ;
+			if ( FS_r_sibling_U( &U_device_id, "device_id", owq ) == 0 ) {
+				device_id = U_device_id ;
+				SetVisibilityCache( device_id, pn ) ;
+			}
+			OWQ_destroy(owq) ;
+		}
+	}
+	return device_id ;
+}
 
-/* EDS memory */
-// Only used to set visibility for specific 
+static enum e_visibility VISIBLE_EDS0071( const struct parsedname * pn )
+{
+	switch ( VISIBLE_EDS(pn) ) {
+		case 0x0071:
+			return visible_now ;
+		default:
+			return visible_not_now ;
+	}
+}
+
+static enum e_visibility VISIBLE_EDS_TEMP( const struct parsedname * pn )
+{
+	switch ( VISIBLE_EDS(pn) ) {
+		case 0x0064:
+		case 0x0065:
+		case 0x0066:
+		case 0x0067:
+		case 0x0068:
+		case 0x0069:
+			return visible_now ;
+		default:
+			return visible_not_now ;
+	}
+}
+
 static ZERO_OR_ERROR FS_r_tag(struct one_wire_query *owq)
 {
-	size_t size = _EDS_PAGESIZE ;
-	char data[_EDS_PAGESIZE] ;
-	struct parsedname * pn = PN(owq) ;
-	UINT tag = 0x0000 ;
+	return FS_r_mem(owq) ;
+}
 
-	if ( GOOD( Cache_Get_SlaveSpecific(&tag, sizeof(UINT), SlaveSpecificTag(TAG), pn)) ) {
-		// Tag exists, find the name
-		int tag_type = N_eds_types ;
-		while ( --tag_type >= 0 ) {
-			if (  tag == EDS_types[tag_type].bit ) {
-				return OWQ_format_output_offset_and_size( EDS_types[tag_type].name, _EDS_TAG_LENGTH, owq ) ;
-			}
-		}
-	} else if ( FS_r_sibling_binary(data,&size,"pages/page.0",owq) == 0 	) { // read device memory
-		int tag_type = N_eds_types ;
-		while ( --tag_type >= 0 ) {
-			if ( strncasecmp( data, EDS_types[tag_type].name, _EDS_TAG_LENGTH ) == 0 ) {
-				tag = EDS_types[tag_type].bit ;
-				break ;
-			}
-		}
-		if ( OWQ_format_output_offset_and_size( data, _EDS_TAG_LENGTH, owq ) ) {
-			return -EINVAL ;
-		}
-		Cache_Add_SlaveSpecific(&tag, sizeof(UINT), SlaveSpecificTag(TAG), pn) ;
-		return 0 ;
-	}
-	return -EINVAL ;
+static ZERO_OR_ERROR FS_r_type(struct one_wire_query *owq)
+{
+	UINT id ;
+	ASCII typ[_EDS_TYPE_LENGTH+1] ;
+
+	RETURN_ERROR_IF_BAD( FS_r_sibling_U( &id, "device_id", owq ) ) ;
+
+	UCLIBCLOCK ;
+	snprintf(typ,sizeof(typ),"EDS%.4X",id);
+	UCLIBCUNLOCK ;
+
+	return OWQ_format_output_offset_and_size_z(typ,owq);
 }
 
 static ZERO_OR_ERROR FS_temperature(struct one_wire_query *owq)
@@ -222,24 +224,6 @@ static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
 	return GB_to_Z_OR_E(COMMON_OWQ_readwrite_paged(owq, 0, pagesize, COMMON_read_memory_F0)) ;
-}
-
-static enum e_visibility EDS_visible(const struct parsedname * pn) {
-	UINT tag ;
-	if ( BAD( Cache_Get_SlaveSpecific(&tag, sizeof(UINT), SlaveSpecificTag(TAG), pn)) ) {	// tag doesn't (yet) exist
-		struct one_wire_query * owq = OWQ_create_from_path(pn->path) ; // for read
-		size_t size = _EDS_TAG_LENGTH ;
-		char data[size] ;
-		if ( owq != NO_ONE_WIRE_QUERY) {
-			FS_r_sibling_binary(data,&size,"tag",owq) ;
-			OWQ_destroy(owq) ;
-		}
-	}
-	if ( BAD( Cache_Get_SlaveSpecific(&tag, sizeof(UINT), SlaveSpecificTag(TAG), pn)) ) {	// tag doesn't (yet) exist
-		LEVEL_DEBUG("Cannot check visibility tag type for this entry");
-		return visible_now ; // assume visible
-	}
-	return ( tag & pn->selected_filetype->data.u ) ? visible_now : visible_not_now ;
 }
 
 static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
