@@ -165,12 +165,12 @@ struct filetype {
 	ZERO_OR_ERROR (*write) (struct one_wire_query *);	// write callback function
 	enum e_visibility (*visible) (const struct parsedname *);	// Show in a directory listing?
 	union {
-		void *v;
-		int i;
-		UINT u;
+		void * v;
+		int    i;
+		UINT   u;
 		_FLOAT f;
 		size_t s;
-		BYTE c;
+		BYTE   c;
 		ASCII *a;
 	} data;						// extra data pointer (used for separating similar but differently named functions)
 };

@@ -64,6 +64,9 @@ WRITE_FUNCTION(FS_w_32) ;
 READ_FUNCTION(FS_r_rtd) ;
 WRITE_FUNCTION(FS_w_rtd) ;
 
+READ_FUNCTION(FS_r_bit) ;
+WRITE_FUNCTION(FS_w_bit) ;
+
 #define _EDS_WRITE_SCRATCHPAD 0x0F
 #define _EDS_READ_SCRATCHPAD 0xAA
 #define _EDS_COPY_SCRATCHPAD 0x55
@@ -101,6 +104,18 @@ static enum e_visibility VISIBLE_EDS_TEMP( const struct parsedname * pn ) ;
 #define _EDS_TAG_LENGTH 30
 #define _EDS_TYPE_LENGTH 7
 
+struct set_bit {
+	ASCII * link ;
+	BYTE  mask ;
+} ;
+
+struct set_bit temp_lo = { "EDS0071/alarm/state", 0x02, } ;
+struct set_bit temp_hi = { "EDS0071/alarm/state", 0x01, } ;
+struct set_bit RTD_lo  = { "EDS0071/alarm/state", 0x08, } ;
+struct set_bit RTD_hi  = { "EDS0071/alarm/state", 0x04, } ;
+struct set_bit relay_state  = { "EDS0071/relay_state", 0x01, } ;
+struct set_bit led_state  = { "EDS0071/relay_state", 0x02, } ;
+
 /* ------- Structures ----------- */
 
 struct aggregate AEDS = { _EDS_PAGES, ag_numbers, ag_separate, };
@@ -110,8 +125,8 @@ struct filetype EDS[] = {
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages/page", _EDS_PAGESIZE, &AEDS, ft_binary, fc_page, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
 
-	{"tag", _EDS_TAG_LENGTH, NON_AGGREGATE, ft_ascii, fc_stable, FS_r_tag, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA,},
-	{"device_type", _EDS_TYPE_LENGTH, NON_AGGREGATE, ft_ascii, fc_link, FS_r_type, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA,},
+	{"tag", _EDS_TAG_LENGTH, NON_AGGREGATE, ft_ascii, fc_stable, FS_r_tag, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"device_type", _EDS_TYPE_LENGTH, NON_AGGREGATE, ft_ascii, fc_link, FS_r_type, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"device_id", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_16, NO_WRITE_FUNCTION, VISIBLE, {u: _EDS0071_ID,}, },
 	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_temperature, NO_WRITE_FUNCTION, VISIBLE_EDS_TEMP, NO_FILETYPE_DATA,},
 
@@ -134,9 +149,17 @@ struct filetype EDS[] = {
 	{"EDS0071/user_byte", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_EDS0071, {u: _EDS0071_free_byte,}, },
 	{"EDS0071/delay", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_EDS0071, {u: _EDS0071_RTD_delay,}, },
 	{"EDS0071/relay_function", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, INVISIBLE, {u: _EDS0071_Relay_function,}, },
-	{"EDS0071/relay_state", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, NO_WRITE_FUNCTION, INVISIBLE, {u: _EDS0071_Relay_state,}, },
+
+	{"EDS0071/relay_state", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, INVISIBLE, {u: _EDS0071_Relay_state,}, },
+	{"EDS0071/relay", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bit, FS_w_bit, VISIBLE_EDS0071, {v: &relay_state,}, },
+	{"EDS0071/led", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bit, FS_w_bit, VISIBLE_EDS0071, {v: &led_state,}, },
+
 	{"EDS0071/alarm", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0071, NO_FILETYPE_DATA,},
 	{"EDS0071/alarm/state", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, NO_WRITE_FUNCTION, INVISIBLE, {u: _EDS0071_Alarm_state,}, },
+	{"EDS0071/alarm/temp_low", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bit, NO_WRITE_FUNCTION, VISIBLE_EDS0071, {v: &temp_lo,}, },
+	{"EDS0071/alarm/temp_hi", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bit, NO_WRITE_FUNCTION, VISIBLE_EDS0071, {v: &temp_hi,}, },
+	{"EDS0071/alarm/RTD_low", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bit, NO_WRITE_FUNCTION, VISIBLE_EDS0071, {v: &RTD_lo,}, },
+	{"EDS0071/alarm/RTD_hi", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bit, NO_WRITE_FUNCTION, VISIBLE_EDS0071, {v: &RTD_hi,}, },
 };
 
 DeviceEntryExtended(7E, EDS, DEV_temp | DEV_alarm, NO_GENERIC_READ, NO_GENERIC_WRITE);
@@ -254,6 +277,35 @@ static ZERO_OR_ERROR FS_w_mem(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 {
 	return COMMON_offset_process( FS_w_mem, owq, OWQ_pn(owq).extension*_EDS_PAGESIZE) ;
+}
+
+static ZERO_OR_ERROR FS_r_bit(struct one_wire_query *owq)
+{
+	struct parsedname * pn = PN(owq) ;
+	struct set_bit * sb = pn->selected_filetype->data.v ;
+	UINT state ;
+
+	RETURN_ERROR_IF_BAD( FS_r_sibling_U( &state, sb->link, owq ) ) ;
+
+	OWQ_Y(owq) = ( ( state & sb->mask ) != 0 ) ;
+	return 0 ;
+}
+
+static ZERO_OR_ERROR FS_w_bit(struct one_wire_query *owq)
+{
+	struct parsedname * pn = PN(owq) ;
+	struct set_bit * sb = pn->selected_filetype->data.v ;
+	UINT state ;
+
+	RETURN_ERROR_IF_BAD( FS_r_sibling_U( &state, sb->link, owq ) ) ;
+
+	if ( OWQ_Y(owq) ) { // set the bit
+		state |= sb->mask ;
+	} else { // clear the bit
+		state &= ~(sb->mask) ;
+	}
+
+	return FS_w_sibling_U( state, sb->link, owq ) ;
 }
 
 /* read an 8 bit value from a register stored in filetype.data plus extension */
