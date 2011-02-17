@@ -9,8 +9,8 @@ $Id$
 	1wire/iButton system from Dallas Semiconductor
 */
 
-#ifndef OW_2505_H
-#define OW_2505_H
+#ifndef OW_EDS_H
+#define OW_EDS_H
 
 #ifndef OWFS_CONFIG_H
 #error Please make sure owfs_config.h is included *before* this header file
@@ -21,4 +21,4 @@ $Id$
 
 DeviceHeader(EDS);
 
-#endif
+#endif /* OW_EDS_H */
