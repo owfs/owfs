@@ -117,15 +117,12 @@ static GOOD_OR_BAD Test_and_Add_Alias( char * name, BYTE * sn )
 
 void FS_dir_entry_aliased(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn)
 {
-	if ( pn->control_flags | ALIAS_REQUEST) {
+	if ( ( pn->control_flags & ALIAS_REQUEST ) != 0 ) {
 		// Want alias substituted
 		struct parsedname s_pn_copy ;
 		struct parsedname * pn_copy = & s_pn_copy ;
 		ASCII path_copy[PATH_MAX+1] ;
 		ASCII * path_pointer = pn->path ;
-		ASCII * path_slash ;
-		BYTE sn[SERIAL_NUMBER_SIZE] ;
-		ASCII * path_copy_pointer ;
 		enum alias_parse_state { aps_initial, aps_next, aps_last } aps = aps_initial ;
 
 		// Shallow copy
@@ -133,20 +130,30 @@ void FS_dir_entry_aliased(void (*dirfunc) (void *, const struct parsedname *), v
 		memset( path_copy, 0, sizeof(path_copy) ) ;
 
 		while ( aps != aps_last ) {
-			path_slash = strchr(path_pointer,'/') ;
-			if ( aps != aps_initial ) {
-				strcat( path_copy, "/") ;
+			ASCII * path_copy_pointer =  & path_copy[strlen(path_copy)] ; // point to end
+
+			ASCII * path_slash = strchr(path_pointer,'/') ;
+			BYTE sn[SERIAL_NUMBER_SIZE] ;
+			
+			if ( aps == aps_initial ) {
+				aps = aps_next ;
+			} else {
+				// add the slash for the next section
+				path_copy_pointer[0] = '/' ;
+				++path_copy_pointer ;
 			}
-			// point to end
-			path_copy_pointer = & path_copy[strlen(path)] ;
+				
 			if ( path_slash == NULL ) {
-				strcpy(path_copy_pointer,path_pointer) ;
+				// last part of path
+				strcpy( path_copy_pointer, path_pointer ) ;
 				aps = aps_last ;
 			} else {
-				strncpy(path_copy_pointer, path_pointer, path_slash-path_pointer) ;
+				// copy this segment
+				strncpy( path_copy_pointer, path_pointer, path_slash-path_pointer) ;
 				path_pointer = path_slash + 1 ; // past '/'
-				aps = aps_next ;
 			}
+			
+			//test this segment for alias
 			if ( Parse_SerialNumber(path_copy_pointer,sn) == sn_valid ) {
 				Cache_Get_Alias(path_copy_pointer,PATH_MAX - (path_copy_pointer-path_copy),sn) ;
 			}
