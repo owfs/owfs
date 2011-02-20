@@ -21,7 +21,7 @@ $Id$
 
 static GOOD_OR_BAD Test_Add_Alias( char * name, BYTE * sn ) ;
 
-GOOD_OR_BAD AliasFile(const ASCII * file)
+GOOD_OR_BAD ReadAliasFile(const ASCII * file)
 {
 	FILE *alias_file_pointer ;
 

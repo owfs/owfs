@@ -552,7 +552,7 @@ GOOD_OR_BAD owopt(const int option_char, const char *arg)
 	//printf("Option %c (%d) Argument=%s\n",c,c,SAFESTRING(arg)) ;
 	switch (option_char) {
 	case 'a' :
-		return AliasFile(arg) ;
+		return ReadAliasFile(arg) ;
 	case 'c':
 		if (config_depth > 4) {
 			LEVEL_DEFAULT("Configuration file layered too deeply (>%d)", config_depth);

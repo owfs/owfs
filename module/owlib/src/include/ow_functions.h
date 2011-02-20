@@ -130,7 +130,7 @@ void FreeClientAddr(struct connection_in *in);
 void ServerProcess(void (*HandlerRoutine) (FILE_DESCRIPTOR_OR_ERROR file_descriptor));
 GOOD_OR_BAD ServerOutSetup(struct connection_out *out);
 
-GOOD_OR_BAD AliasFile(const ASCII * file) ;
+GOOD_OR_BAD ReadAliasFile(const ASCII * file) ;
 
 speed_t COM_MakeBaud( int raw_baud ) ;
 int COM_BaudRate( speed_t B_baud ) ;
