@@ -416,7 +416,7 @@ static ZERO_OR_ERROR Directory_Element( char * current_file, struct directory_el
 	}
 
 	// Now actually do the directory function on this element
-	FS_alias_subst(des->dirfunc,des->v,pn_directory_element) ;
+	FS_dir_entry_aliased(des->dirfunc,des->v,pn_directory_element) ;
 	
 	// Cleanup
 	FS_ParsedName_destroy(pn_directory_element);	// destroy the last parsed name

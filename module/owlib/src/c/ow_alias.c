@@ -115,7 +115,7 @@ static GOOD_OR_BAD Test_and_Add_Alias( char * name, BYTE * sn )
 	return Cache_Add_Alias( name, sn) ;
 }
 
-void FS_alias_subst(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn)
+void FS_dir_entry_aliased(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn)
 {
 	if ( pn->control_flags | ALIAS_REQUEST) {
 		struct parsedname s_pn_copy ;

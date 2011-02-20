@@ -411,7 +411,7 @@ static ZERO_OR_ERROR FS_devdir(void (*dirfunc) (void *, const struct parsedname 
 					switch ( FS_visible(pn_file_entry) ) { // hide hidden properties
 						case visible_now :
 						case visible_always:
-							FS_alias_subst( dirfunc, v, pn_file_entry) ;
+							FS_dir_entry_aliased( dirfunc, v, pn_file_entry) ;
 							STAT_ADD1(dir_dev.entries);
 							break ;
 						default:
@@ -480,24 +480,24 @@ static ZERO_OR_ERROR FS_structdevdir(void (*dirfunc) (void *, const struct parse
 
 			if ( ft_pointer->format == ft_bitfield ) {
 				if (FS_ParsedNamePlusExt(pn_device_directory->path, namepart, EXTENSION_BYTE, ft_pointer->ag->letters, pn_file_entry) == 0) {
-					FS_alias_subst( dirfunc, v, pn_file_entry) ;
+					FS_dir_entry_aliased( dirfunc, v, pn_file_entry) ;
 					FS_ParsedName_destroy(pn_file_entry);
 				}
 			}
 			if (FS_ParsedNamePlusExt(pn_device_directory->path, namepart, EXTENSION_ALL, ft_pointer->ag->letters, pn_file_entry) == 0) {
-				FS_alias_subst( dirfunc, v, pn_file_entry) ;
+				FS_dir_entry_aliased( dirfunc, v, pn_file_entry) ;
 				FS_ParsedName_destroy(pn_file_entry);
 			}
 			// unlike real diretory, only show the first array element since the data is redundant
 			if (FS_ParsedNamePlusExt(pn_device_directory->path, namepart, 0, ft_pointer->ag->letters, pn_file_entry) == 0) {
-				FS_alias_subst( dirfunc, v, pn_file_entry) ;
+				FS_dir_entry_aliased( dirfunc, v, pn_file_entry) ;
 				FS_ParsedName_destroy(pn_file_entry);
 			}
 		} else {
 			struct parsedname s_pn_file_entry;
 			struct parsedname *pn_file_entry = &s_pn_file_entry;
 			if (FS_ParsedNamePlus(pn_device_directory->path, namepart, pn_file_entry) == 0) {
-				FS_alias_subst( dirfunc, v, pn_file_entry) ;
+				FS_dir_entry_aliased( dirfunc, v, pn_file_entry) ;
 				FS_ParsedName_destroy(pn_file_entry);
 			}
 		}
@@ -771,7 +771,7 @@ static ZERO_OR_ERROR FS_dir_plus(void (*dirfunc) (void *, const struct parsednam
  		switch ( FS_visible(pn_plus_directory) ) { // hide hidden properties
 			case visible_now :
 			case visible_always:
-				FS_alias_subst( dirfunc, v, pn_plus_directory) ;
+				FS_dir_entry_aliased( dirfunc, v, pn_plus_directory) ;
 				if ( pn_plus_directory->selected_device ){
 					flags[0] |= pn_plus_directory->selected_device->flags;
 				}

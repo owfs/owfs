@@ -146,7 +146,7 @@ ZERO_OR_ERROR ServerDir(void (*dirfunc) (void *, const struct parsedname *), voi
 /* High-level callback functions */
 ZERO_OR_ERROR FS_dir(void (*dirfunc) (void *, const struct parsedname *), void *v, struct parsedname *pn);
 ZERO_OR_ERROR FS_dir_remote(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn, uint32_t * flags);
-void FS_alias_subst(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn) ;
+void FS_dir_entry_aliased(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn) ;
 
 ZERO_OR_ERROR FS_write(const char *path, const char *buf, const size_t size, const off_t offset);
 ZERO_OR_ERROR FS_write_postparse(struct one_wire_query *owq);
