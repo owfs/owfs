@@ -118,45 +118,47 @@ static GOOD_OR_BAD Test_and_Add_Alias( char * name, BYTE * sn )
 void FS_dir_entry_aliased(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn)
 {
 	if ( pn->control_flags | ALIAS_REQUEST) {
+		// Want alias substituted
 		struct parsedname s_pn_copy ;
 		struct parsedname * pn_copy = & s_pn_copy ;
-		ASCII path[PATH_MAX+1] ;
-		ASCII * pcurrent = pn->path ;
-		ASCII * pnext ;
+		ASCII path_copy[PATH_MAX+1] ;
+		ASCII * path_pointer = pn->path ;
+		ASCII * path_slash ;
 		BYTE sn[SERIAL_NUMBER_SIZE] ;
-		ASCII * pathstart ;
+		ASCII * path_copy_pointer ;
 		enum alias_parse_state { aps_initial, aps_next, aps_last } aps = aps_initial ;
 
 		// Shallow copy
 		memcpy( pn_copy, pn, sizeof(struct parsedname) ) ;
-		memset( path, 0, sizeof(path) ) ;
+		memset( path_copy, 0, sizeof(path_copy) ) ;
 
 		while ( aps != aps_last ) {
-			pnext = strchr(pcurrent,'/') ;
+			path_slash = strchr(path_pointer,'/') ;
 			if ( aps != aps_initial ) {
-				strcat( path, "/") ;
+				strcat( path_copy, "/") ;
 			}
 			// point to end
-			pathstart = & path[strlen(path)] ;
-			if ( pnext == NULL ) {
-				strcpy(pathstart,pcurrent) ;
+			path_copy_pointer = & path_copy[strlen(path)] ;
+			if ( path_slash == NULL ) {
+				strcpy(path_copy_pointer,path_pointer) ;
 				aps = aps_last ;
 			} else {
-				strncpy(pathstart,pcurrent, pnext-pcurrent) ;
-				pcurrent = pnext + 1 ; // past '/'
+				strncpy(path_copy_pointer, path_pointer, path_slash-path_pointer) ;
+				path_pointer = path_slash + 1 ; // past '/'
 				aps = aps_next ;
 			}
-			if ( Parse_SerialNumber(pathstart,sn) == sn_valid ) {
-				Cache_Get_Alias(pathstart,PATH_MAX - (pathstart-path),sn) ;
+			if ( Parse_SerialNumber(path_copy_pointer,sn) == sn_valid ) {
+				Cache_Get_Alias(path_copy_pointer,PATH_MAX - (path_copy_pointer-path_copy),sn) ;
 			}
 		}
 
-		pn_copy->path = path ;
+		pn_copy->path = path_copy ;
 
 		DIRLOCK;
 		dirfunc(v, pn_copy);
 		DIRUNLOCK;
 	} else {
+		// Don't want alias substituted
 		DIRLOCK;
 		dirfunc(v, pn);
 		DIRUNLOCK;
