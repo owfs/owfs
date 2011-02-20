@@ -19,7 +19,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
-static GOOD_OR_BAD Test_Add_Alias( char * name, BYTE * sn ) ;
+static GOOD_OR_BAD Test_and_Add_Alias( char * name, BYTE * sn ) ;
 
 GOOD_OR_BAD ReadAliasFile(const ASCII * file)
 {
@@ -71,7 +71,7 @@ GOOD_OR_BAD ReadAliasFile(const ASCII * file)
 					}
 					name_char[--len] = '\0'  ;
 				}
-				Test_Add_Alias( name_char, sn) ;
+				Test_and_Add_Alias( name_char, sn) ;
 				break ;
 			}
 		}
@@ -83,7 +83,7 @@ GOOD_OR_BAD ReadAliasFile(const ASCII * file)
 	return gbGOOD;
 }
 
-static GOOD_OR_BAD Test_Add_Alias( char * name, BYTE * sn )
+static GOOD_OR_BAD Test_and_Add_Alias( char * name, BYTE * sn )
 {
 	BYTE sn_stored[SERIAL_NUMBER_SIZE] ;
 	if ( strlen(name) > PROPERTY_LENGTH_ALIAS ) {
@@ -109,7 +109,7 @@ static GOOD_OR_BAD Test_Add_Alias( char * name, BYTE * sn )
 		return gbBAD ;
 	}
 	if ( strchr( name, '/' ) ) {
-		LEVEL_CALL("Alias contains confusin path separator \'/\': %s",name ) ;
+		LEVEL_CALL("Alias contains confusing path separator \'/\': %s",name ) ;
 		return gbBAD ;
 	}
 	return Cache_Add_Alias( name, sn) ;
