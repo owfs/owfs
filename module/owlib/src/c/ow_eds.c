@@ -67,6 +67,11 @@ WRITE_FUNCTION(FS_w_rtd) ;
 READ_FUNCTION(FS_r_bit) ;
 WRITE_FUNCTION(FS_w_bit) ;
 
+READ_FUNCTION(FS_71_r_led_control);
+WRITE_FUNCTION(FS_71_w_led_control);
+READ_FUNCTION(FS_71_r_relay_control);
+WRITE_FUNCTION(FS_71_w_relay_control);
+
 #define _EDS_WRITE_SCRATCHPAD 0x0F
 #define _EDS_READ_SCRATCHPAD 0xAA
 #define _EDS_COPY_SCRATCHPAD 0x55
@@ -148,11 +153,17 @@ struct filetype EDS[] = {
 	{"EDS0071/set_alarm/alarm_function", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, INVISIBLE, {u: _EDS0071_Conditional_search,}, },
 	{"EDS0071/user_byte", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_EDS0071, {u: _EDS0071_free_byte,}, },
 	{"EDS0071/delay", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_EDS0071, {u: _EDS0071_RTD_delay,}, },
-	{"EDS0071/relay_function", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, INVISIBLE, {u: _EDS0071_Relay_function,}, },
 
+	{"EDS0071/relay_function", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, INVISIBLE, {u: _EDS0071_Relay_function,}, },
 	{"EDS0071/relay_state", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, INVISIBLE, {u: _EDS0071_Relay_state,}, },
-	{"EDS0071/relay", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bit, FS_w_bit, VISIBLE_EDS0071, {v: &relay_state,}, },
-	{"EDS0071/led", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bit, FS_w_bit, VISIBLE_EDS0071, {v: &led_state,}, },
+
+	{"EDS0071/relay", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0071, NO_FILETYPE_DATA,},
+	{"EDS0071/relay/state", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bit, FS_w_bit, VISIBLE_EDS0071, {v: &relay_state,}, },
+	{"EDS0071/relay/control", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_71_r_relay_control, FS_71_w_relay_control, VISIBLE_EDS0071, NO_FILETYPE_DATA, },
+
+	{"EDS0071/LED", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0071, NO_FILETYPE_DATA,},
+	{"EDS0071/LED/state", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bit, FS_w_bit, VISIBLE_EDS0071, {v: &led_state,}, },
+	{"EDS0071/LED/control", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_71_r_led_control, FS_71_w_led_control, VISIBLE_EDS0071, NO_FILETYPE_DATA, },
 
 	{"EDS0071/alarm", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0071, NO_FILETYPE_DATA,},
 	{"EDS0071/alarm/state", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, NO_WRITE_FUNCTION, INVISIBLE, {u: _EDS0071_Alarm_state,}, },
@@ -277,6 +288,53 @@ static ZERO_OR_ERROR FS_w_mem(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 {
 	return COMMON_offset_process( FS_w_mem, owq, OWQ_pn(owq).extension*_EDS_PAGESIZE) ;
+}
+
+/* Relay and LED function */
+/* 0 -- alarm control with hysteresis */
+/* 1 -- alarm control latched (clear alarms needed) */
+/* 2 -- manual control (state variable) */
+/* 3 -- off */
+static ZERO_OR_ERROR FS_71_r_led_control(struct one_wire_query *owq)
+{
+	struct parsedname * pn = PN(owq) ;
+	UINT state ;
+
+	RETURN_ERROR_IF_BAD( FS_r_sibling_U( &state, "EDS0071/relay_function", owq ) ) ;
+
+	OWQ_U(owq) = ( ( state >> 2 ) & 0x03 ) ;
+	return 0 ;
+}
+
+static ZERO_OR_ERROR FS_71_w_led_control(struct one_wire_query *owq)
+{
+	struct parsedname * pn = PN(owq) ;
+	UINT state ;
+
+	RETURN_ERROR_IF_BAD( FS_r_sibling_U( &state, "EDS0071/relay_function", owq ) ) ;
+	
+	return FS_w_sibling_U( ( state & 0x03 ) | ( ( OWQ_U(owq) & 0x03 ) << 2 ), "EDS0071/relay_function", owq ) ;
+}
+
+static ZERO_OR_ERROR FS_71_r_relay_control(struct one_wire_query *owq)
+{
+	struct parsedname * pn = PN(owq) ;
+	UINT state ;
+
+	RETURN_ERROR_IF_BAD( FS_r_sibling_U( &state, "EDS0071/relay_function", owq ) ) ;
+
+	OWQ_U(owq) = ( state & 0x03 ) ;
+	return 0 ;
+}
+
+static ZERO_OR_ERROR FS_71_w_relay_control(struct one_wire_query *owq)
+{
+	struct parsedname * pn = PN(owq) ;
+	UINT state ;
+
+	RETURN_ERROR_IF_BAD( FS_r_sibling_U( &state, "EDS0071/relay_function", owq ) ) ;
+
+	return FS_w_sibling_U( ( state & 0x0C ) | ( OWQ_U(owq) & 0x03 ), "EDS0071/relay_function", owq ) ;
 }
 
 static ZERO_OR_ERROR FS_r_bit(struct one_wire_query *owq)
