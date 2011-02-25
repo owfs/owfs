@@ -74,6 +74,8 @@ WRITE_FUNCTION(FS_71_w_led_control);
 READ_FUNCTION(FS_71_r_relay_control);
 WRITE_FUNCTION(FS_71_w_relay_control);
 
+WRITE_FUNCTION(FS_clear);
+
 #define _EDS_WRITE_SCRATCHPAD 0x0F
 #define _EDS_READ_SCRATCHPAD 0xAA
 #define _EDS_COPY_SCRATCHPAD 0x55
@@ -221,6 +223,7 @@ struct filetype EDS[] = {
 	{"EDS0064/threshold/temp_hi", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_i8, FS_w_i8, VISIBLE_EDS0064, {u: _EDS0064_Temp_hi,}, },
 	{"EDS0064/threshold/temp_low", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_i8, FS_w_i8, VISIBLE_EDS0064, {u: _EDS0064_Temp_lo,}, },
 	{"EDS0064/alarm", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0064, NO_FILETYPE_DATA,},
+	{"EDS0064/alarm/clear", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_clear, VISIBLE_EDS0064, NO_FILETYPE_DATA, },
 	{"EDS0064/alarm/state", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, NO_WRITE_FUNCTION, INVISIBLE, {u: _EDS0064_Alarm_state,}, },
 	{"EDS0064/alarm/temp_low", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bit, NO_WRITE_FUNCTION, VISIBLE_EDS0064, {v: &eds0064_temp_lo,}, },
 	{"EDS0064/alarm/temp_hi", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bit, NO_WRITE_FUNCTION, VISIBLE_EDS0064, {v: &eds0064_temp_lo,}, },
@@ -258,6 +261,7 @@ struct filetype EDS[] = {
 	{"EDS0065/threshold/humidex_hi", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_i8, FS_w_i8, VISIBLE_EDS0065, {u: _EDS0064_Hdex_hi,}, },
 	{"EDS0065/threshold/humidex_low", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_i8, FS_w_i8, VISIBLE_EDS0065, {u: _EDS0064_Hdex_lo,}, },
 	{"EDS0065/alarm", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0065, NO_FILETYPE_DATA,},
+	{"EDS0065/alarm/clear", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_clear, VISIBLE_EDS0065, NO_FILETYPE_DATA, },
 	{"EDS0065/alarm/state", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, NO_WRITE_FUNCTION, INVISIBLE, {u: _EDS0064_Alarm_state,}, },
 	{"EDS0065/alarm/temp_hi", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bit, NO_WRITE_FUNCTION, VISIBLE_EDS0065, {v: &eds0071_temp_hi,}, },
 	{"EDS0065/alarm/temp_low", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bit, NO_WRITE_FUNCTION, VISIBLE_EDS0065, {v: &eds0064_temp_lo,}, },
@@ -293,6 +297,7 @@ struct filetype EDS[] = {
 	{"EDS0066/threshold/inHg_hi", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_float24, FS_w_float24, VISIBLE_EDS0066, {u: _EDS0064_inHg_hi,}, },
 	{"EDS0066/threshold/inHg_low", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_float24, FS_w_float24, VISIBLE_EDS0066, {u: _EDS0064_inHg_lo,}, },
 	{"EDS0066/alarm", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0066, NO_FILETYPE_DATA,},
+	{"EDS0066/alarm/clear", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_clear, VISIBLE_EDS0066, NO_FILETYPE_DATA, },
 	{"EDS0066/alarm/state", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, NO_WRITE_FUNCTION, INVISIBLE, {u: _EDS0064_Alarm_state,}, },
 	{"EDS0066/alarm/temp_low", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bit, NO_WRITE_FUNCTION, VISIBLE_EDS0066, {v: &eds0064_temp_lo,}, },
 	{"EDS0066/alarm/temp_hi", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bit, NO_WRITE_FUNCTION, VISIBLE_EDS0066, {v: &eds0064_temp_lo,}, },
@@ -319,6 +324,7 @@ struct filetype EDS[] = {
 	{"EDS0067/threshold/light_hi", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_24, FS_w_24, VISIBLE_EDS0067, {u: _EDS0064_Lux_hi,}, },
 	{"EDS0067/threshold/light_low", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_24,FS_w_24, VISIBLE_EDS0067, {u: _EDS0064_Lux_lo,}, },
 	{"EDS0067/alarm", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0067, NO_FILETYPE_DATA,},
+	{"EDS0067/alarm/clear", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_clear, VISIBLE_EDS0067, NO_FILETYPE_DATA, },
 	{"EDS0067/alarm/state", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, NO_WRITE_FUNCTION, INVISIBLE, {u: _EDS0064_Alarm_state,}, },
 	{"EDS0067/alarm/temp_low", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bit, NO_WRITE_FUNCTION, VISIBLE_EDS0067, {v: &eds0064_temp_lo,}, },
 	{"EDS0067/alarm/temp_hi", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bit, NO_WRITE_FUNCTION, VISIBLE_EDS0067, {v: &eds0064_temp_lo,}, },
@@ -373,6 +379,7 @@ struct filetype EDS[] = {
 	{"EDS0068/threshold/light_hi", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_24, FS_w_24, VISIBLE_EDS0068, {u: _EDS0064_Lux_hi,}, },
 	{"EDS0068/threshold/light_low", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_24,FS_w_24, VISIBLE_EDS0068, {u: _EDS0064_Lux_lo,}, },
 	{"EDS0068/alarm", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0068, NO_FILETYPE_DATA,},
+	{"EDS0068/alarm/clear", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_clear, VISIBLE_EDS0068, NO_FILETYPE_DATA, },
 	{"EDS0068/alarm/state", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, NO_WRITE_FUNCTION, INVISIBLE, {u: _EDS0064_Alarm_state,}, },
 	{"EDS0068/alarm/temp_hi", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bit, NO_WRITE_FUNCTION, VISIBLE_EDS0068, {v: &eds0071_temp_hi,}, },
 	{"EDS0068/alarm/temp_low", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bit, NO_WRITE_FUNCTION, VISIBLE_EDS0068, {v: &eds0064_temp_lo,}, },
@@ -405,13 +412,13 @@ struct filetype EDS[] = {
 	{"EDS0071/threshold", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0071, NO_FILETYPE_DATA,},
 	{"EDS0071/threshold/temp_hi", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_float24, FS_w_float24, VISIBLE_EDS0071, {u: _EDS0071_Temp_hi,}, },
 	{"EDS0071/threshold/temp_low", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_float24, FS_w_float24, VISIBLE_EDS0071, {u: _EDS0071_Temp_lo,}, },
-	{"EDS0071/threshold/Rhi", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_float24, FS_w_float24, VISIBLE_EDS0071, {u: _EDS0071_RTD_hi,}, },
-	{"EDS0071/threshold/Rlow", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_float24, FS_w_float24, VISIBLE_EDS0071, {u: _EDS0071_RTD_lo,}, },
+	{"EDS0071/threshold/resistance_hi", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_float24, FS_w_float24, VISIBLE_EDS0071, {u: _EDS0071_RTD_hi,}, },
+	{"EDS0071/threshold/resistance_low", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_float24, FS_w_float24, VISIBLE_EDS0071, {u: _EDS0071_RTD_lo,}, },
 	{"EDS0071/set_alarm", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0071, NO_FILETYPE_DATA,},
 	{"EDS0071/set_alarm/temp_hi", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bit, FS_w_bit, VISIBLE_EDS0071, {v: &eds0071_cond_temp_hi,}, },
 	{"EDS0071/set_alarm/temp_low", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bit, FS_w_bit, VISIBLE_EDS0071, {v: &eds0071_cond_temp_lo,}, },
-	{"EDS0071/set_alarm/RTD_hi", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bit, FS_w_bit, VISIBLE_EDS0071, {v: &eds0071_cond_RTD_hi,}, },
-	{"EDS0071/set_alarm/RTD_low", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bit, FS_w_bit, VISIBLE_EDS0071, {v: &eds0071_cond_RTD_lo,}, },
+	{"EDS0071/set_alarm/resistance__hi", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bit, FS_w_bit, VISIBLE_EDS0071, {v: &eds0071_cond_RTD_hi,}, },
+	{"EDS0071/set_alarm/resistance_low", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bit, FS_w_bit, VISIBLE_EDS0071, {v: &eds0071_cond_RTD_lo,}, },
 	{"EDS0071/set_alarm/alarm_function", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, INVISIBLE, {u: _EDS0071_Conditional_search,}, },
 	{"EDS0071/user_byte", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_EDS0071, {u: _EDS0071_free_byte,}, },
 	{"EDS0071/delay", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_EDS0071, {u: _EDS0071_RTD_delay,}, },
@@ -428,11 +435,12 @@ struct filetype EDS[] = {
 	{"EDS0071/LED/control", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_71_r_led_control, FS_71_w_led_control, VISIBLE_EDS0071, NO_FILETYPE_DATA, },
 
 	{"EDS0071/alarm", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0071, NO_FILETYPE_DATA,},
+	{"EDS0071/alarm/clear", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_clear, VISIBLE_EDS0071, NO_FILETYPE_DATA, },
 	{"EDS0071/alarm/state", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, NO_WRITE_FUNCTION, INVISIBLE, {u: _EDS0071_Alarm_state,}, },
 	{"EDS0071/alarm/temp_low", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bit, NO_WRITE_FUNCTION, VISIBLE_EDS0071, {v: &eds0071_temp_lo,}, },
 	{"EDS0071/alarm/temp_hi", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bit, NO_WRITE_FUNCTION, VISIBLE_EDS0071, {v: &eds0071_temp_lo,}, },
-	{"EDS0071/alarm/RTD_low", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bit, NO_WRITE_FUNCTION, VISIBLE_EDS0071, {v: &eds0071_RTD_lo,}, },
-	{"EDS0071/alarm/RTD_hi", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bit, NO_WRITE_FUNCTION, VISIBLE_EDS0071, {v: &eds0071_RTD_hi,}, },
+	{"EDS0071/alarm/resistance_low", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bit, NO_WRITE_FUNCTION, VISIBLE_EDS0071, {v: &eds0071_RTD_lo,}, },
+	{"EDS0071/alarm/resistance_hi", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bit, NO_WRITE_FUNCTION, VISIBLE_EDS0071, {v: &eds0071_RTD_hi,}, },
 
 	/* EDS0072 */
 	{"EDS0072", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0072, NO_FILETYPE_DATA,},
@@ -471,6 +479,7 @@ struct filetype EDS[] = {
 	{"EDS0072/LED/control", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_71_r_led_control, FS_71_w_led_control, VISIBLE_EDS0072, NO_FILETYPE_DATA, },
 
 	{"EDS0072/alarm", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0072, NO_FILETYPE_DATA,},
+	{"EDS0072/alarm/clear", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_clear, VISIBLE_EDS0072, NO_FILETYPE_DATA, },
 	{"EDS0072/alarm/state", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, NO_WRITE_FUNCTION, INVISIBLE, {u: _EDS0071_Alarm_state,}, },
 	{"EDS0072/alarm/temp_low", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bit, NO_WRITE_FUNCTION, VISIBLE_EDS0072, {v: &eds0071_temp_lo,}, },
 	{"EDS0072/alarm/temp_hi", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bit, NO_WRITE_FUNCTION, VISIBLE_EDS0072, {v: &eds0071_temp_lo,}, },
@@ -484,6 +493,7 @@ DeviceEntryExtended(7E, EDS, DEV_temp | DEV_alarm, NO_GENERIC_READ, NO_GENERIC_W
 static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn) ;
 static GOOD_OR_BAD OW_r_mem_small(BYTE * data, size_t size, off_t offset, struct parsedname * pn);
 static int VISIBLE_EDS( const struct parsedname * pn ) ;
+static GOOD_OR_BAD OW_clear( struct parsedname * pn) ;
 
 /* finds the visibility value (0x0071 ...) either cached, or computed via the device_id (then cached) */
 static int VISIBLE_EDS( const struct parsedname * pn )
@@ -578,6 +588,14 @@ static enum e_visibility VISIBLE_EDS0072( const struct parsedname * pn )
 static ZERO_OR_ERROR FS_r_tag(struct one_wire_query *owq)
 {
 	return FS_r_mem(owq) ;
+}
+
+static ZERO_OR_ERROR FS_clear(struct one_wire_query *owq)
+{
+	if ( OWQ_Y(owq) != 0 ) {
+		RETURN_ERROR_IF_BAD( OW_clear( PN(owq) ) ) ;
+	}
+	return 0 ;
 }
 
 static ZERO_OR_ERROR FS_r_type(struct one_wire_query *owq)
@@ -908,6 +926,19 @@ static GOOD_OR_BAD OW_r_mem_small(BYTE * data, size_t size, off_t offset, struct
 		TRXN_START,
 		TRXN_WRITE3(p),
 		TRXN_READ( data, size),
+		TRXN_END,
+	};
+
+	return BUS_transaction(t, pn);
+}
+
+/* Clear alarms */
+static GOOD_OR_BAD OW_clear( struct parsedname * pn)
+{
+	BYTE p[1] = { _EDS_CLEAR_ALARMS };
+	struct transaction_log t[] = {
+		TRXN_START,
+		TRXN_WRITE1(p),
 		TRXN_END,
 	};
 
