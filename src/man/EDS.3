@@ -170,68 +170,234 @@ microprocessor-based sensors
 .SH FAMILY CODE
 .TP
 .I 7E
-.SH SPECIAL PROPERTIES
-.SS mac_e mac_fw
-.I read-only, binary
+.SH TEMPERATURE
+.SS EDS006X/temperature
+.I read-only, floating-point
 .br
-64 bit or 80 bit
-.I media access control
-number. Unique, and unrelated to the 1-wire address. It is apparently used for ethernet or FireWire addressing, respectively.
+Temperature for the EDS006X series of chips. In the -55C to 125C range, with 0.0636C precision. The temperature is read every second, continually. Data is presented in the specified temperature scale, Celsius by default.
+.SS EDS007X/temperature
+.I read-only, floating-point
+.br
+Temperature for the EDS007X series of chips. Read using a wide-range precise RTD sensor. Typical range is -60C to 260C with 0.15C accuracy, although a range of -200C to 850C is possible. The temperature is read every second unless a longer
+.I EDS007X/delay
+is given. Data is presented in the specified temperature scale, Celsius by default.
+.SS EDS007X/resistance
+.I read-only, floating-point
+.br
+Actual measured resistance (Ohms) of the RTD element. Useful if the RTD element doesn't conform to the typical European IEC 60751 standard.
+.SH HUMIDITY
+.SS EDS006X/humidity
+.I read-only, floating-point
+.br
+Relative humidity in the 0-100 range (percent). Read every 0.2 seconds.
+.SS EDS006X/dew_point
+.I read-only, floating-point
+.br
+Dew point computed from
+.I EDS006X/temperature
+and
+.I EDS006X/humidity
+computered every 0.2 seconds. Data is a calculated temperature and is reported in the specified temperature scale. Default Celsius.
+.SS EDS006X/heat_index
+.I read-only, floating-point
+.br
+Heat index computed from
+.I EDS006X/temperature
+and
+.I EDS006X/humidity
+computered every 0.2 seconds. Data is a calculated temperature and is reported in the specified temperature scale. Default Celsius.
+.SS EDS006X/humidex
+.I read-only, floating-point
+.br
+Humidex (popular in Canada) computed from
+.I EDS006X/temperature
+and
+.I EDS006X/humidity
+computered every 0.2 seconds. Data is a percent and reported in the 0-100 range.
+.SH LIGHT
+.SS EDS006X/light
+.I read-only, unsigned integer
+.br
+Ambient light in Lux. Measured every 0.2 seconds.
+.SH PRESSURE
+.SS EDS006X/pressure
+.read-only, floating-point
+.br
+Ambient pressure, measured every 0.2 seconds. Data in the selected pressure scale (default mBar).
+.SS EDS006X/inHg
+.read-only, floating-point
+.br
+Ambient pressure, measured every 0.2 seconds. Data in the inHg scale.
+.SH THRESHOLD
+High and low range of acceptable sensor readings. Values outside this range will trigger an alarm if the corresponding
+.I EDS00XX/set_alarm flag is set.
+.SS EDS00XX/threshold/temp_hi EDS00XX/threshold/temp_low
+.I read-write, floating-point
+.br
+Threshold temperatures in the specified temperature scale. Default Celsius.
+.SS EDS006X/threshold/humidity_hi EDS006X/threshold/humidity_low
+.SS EDS006X/threshold/dew_point_hi EDS006X/threshold/dew_point_low
+.SS EDS006X/threshold/heat_index_hi EDS006X/threshold/heat_index_low
+.SS EDS006X/threshold/humidex_hi EDS006X/threshold/humidex_low
+.I read-write, floating-point
+.br
+Threshold humidity values. 
+.I Dew point 
+and 
+.I Heat index 
+are in the specified temperature scale. Default Celsius.
+.SS EDS006X/threshold/pressure_hi EDS006X/threshold/pressure_low
+.SS EDS006X/threshold/inHg_hi EDS006X/threshold/inHg_low
+.I read-write, floating-point
+.br
+Threshold barometric pressure values. 
+.I Pressure
+is the specified pressure scale. Default mBar.
+.SS EDS006X/threshold/light_hi EDS006X/threshold/light_low
+.I read-write, unsigned
+.br
+Threshold light (lux) values.
+.SS  EDS007X/threshold/resistance_hi  EDS007X/threshold/resistance_low
+.I read-write, floating-point
+.br
+Threshold RTD resistance values (Ohm).
+.SH SET ALARM
+Set conditional alarm to trigger if corresponding flag is set. Also must set high and low
+.I threshold.
+.SS EDS00XX/set_alarm/temp_hi EDS00XX/set_alarm/temp_low
+.SS EDS006X/set_alarm/humidity_hi EDS006X/set_alarm/humidity_low
+.SS EDS006X/set_alarm/dew_point_hi EDS006X/set_alarm/dew_point_low
+.SS EDS006X/set_alarm/heat_index_hi EDS006X/set_alarm/heat_index_low
+.SS EDS006X/set_alarm/humidex_hi EDS006X/set_alarm/humidex_low
+.SS EDS006X/set_alarm/pressure_hi EDS006X/set_alarm/pressure_low
+.SS EDS006X/set_alarm/inHg_hi EDS006X/set_alarm/inHg_low
+.SS EDS006X/set_alarm/light_hi EDS006X/set_alarm/light_low
+.SS  EDS007X/set_alarm/resistance_hi  EDS007X/set_alarm/resistance_low
+.I read-write, yes-no
+.br
+Flag to set corresponding out-of-range alarm. "1" turns on flag, and "0" turns off.
+.SH ALARM
+Show or clear the out-of-range flags. When set, the device will respond to a conditional search. Clearing the flags is performed with the
+.I EDS00XX/alarm/clear
+command, not just having the measured value return to the center range.
+.SS EDS00XX/alarm/clear
+.I write-only, yes-no
+.br
+Write "1" to clear
+.B ALL
+the alarm flags.
+.SS EDS00XX/alarm/temp_hi EDS00XX/alarm/temp_low
+.SS EDS006X/alarm/humidity_hi EDS006X/alarm/humidity_low
+.SS EDS006X/alarm/dew_point_hi EDS006X/alarm/dew_point_low
+.SS EDS006X/alarm/heat_index_hi EDS006X/alarm/heat_index_low
+.SS EDS006X/alarm/humidex_hi EDS006X/alarm/humidex_low
+.SS EDS006X/alarm/pressure_hi EDS006X/alarm/pressure_low
+.SS EDS006X/alarm/inHg_hi EDS006X/alarm/inHg_low
+.SS EDS006X/alarm/light_hi EDS006X/alarm/light_low
+.SS  EDS007X/alarm/resistance_hi  EDS007X/alarm/resistance_low
+.I read-only, yes-no
+.br
+Flag to set corresponding out-of-range alarm. "1" turns on flag, and "0" turns off.
+.SH RELAY
+Found on the EDS007X. Can be controlled by software or the alarm condition.
+.SS EDS007X/relay/control
+.I read-write, unsigned
+.br
+Set the relay control scheme:
+.TP
+0
+alarm control with hysteresis
+.TP
+1
+alarm control but need
+.I EDS007X/alarm/clear
+to unset
+.TP
+2
+Control with
+.I EDS007X/relay/state
+.TP
+3
+Always off
+.SS EDS007X/relay/state
+.I read-write, yes-no
+.br
+Turn the relay on or off if the
+.I EDS007X/relay/control is set to "2"
+.SH LED light
+Found on the EDS007X. Can be controlled by software or the alarm condition.
+.SS EDS007X/LED/control
+.I read-write, unsigned
+.br
+Set the LED control scheme:
+.TP
+0
+alarm control with hysteresis
+.TP
+1
+alarm control but need
+.I EDS007X/alarm/clear
+to unset
+.TP
+2
+Control with
+.I EDS007X/LED/state
+.TP
+3
+Always off
+.SS EDS007X/LED/state
+.I read-write, yes-no
+.br
+Turn the LED on or off if the
+.I EDS007X/LED/control is set to "2"
+.SH COUNTER
+.SS EDS00XX/counter/seconds
+.I read-only, unsigned integer
+.br
+Approximate seconds since power up.
+.SS EDS007X/counter/samples
+.I read-only, unsigned integer
+.br
+Approximate samples since power up.
+.SH MEMORY
 .SS memory
 .I read-write, binary
 .br
 128 bytes of memory. Initially all bits are set to 1. Writing zero permanently alters the memory.
-.SS pages/page.0 ... pages/page.3 pages/page.ALL
-.I read-write, yes-no
+.SS pages/page.0 ... pages/page.2 pages/page.ALL
+.I read-write, binary
 .br
-Memory is split into 4 pages of 32 bytes each.
+Memory is split into 3 pages of 32 bytes each. Only page 2 is writable.
 .I ALL
 is an aggregate of the pages. Each page is accessed sequentially.
-.SS project
-.I read-only, binary
+.SH SUB-TYPE
+.SS tag
+.I read-only, ascii
 .br
-32 bit
-.I project
-id. Constant 0x0000 for ethernet and  0x00001128 for firewire. See Datasheets.
+Text description of the device. Up to 30 characters.
+.SS device_type
+.I read-only, ascii
+.br
+Device name. E.g: "EDS0071"
+.SS device_id
+.I read-only, unsigned
+.br
+Number corresponding to the hexidecimal type. E.g:
+.br
+EDS0071 -> 0x0071 -> 113 in decimal
 .SH STANDARD PROPERTIES
 .so standard.3so
 .SH ALARMS
 None.
 .SH DESCRIPTION
 .so description.3so
-.SS DS2502 DS1982
+.SS EDS0071
 The
-.B DS2502 (3)
-is used for write-once incremental storage. It's main advantage is for audit trails (i.e. a digital purse).
-.PP
-The
-.B DS2502-E48
-and
-.B DS2502-UNW
-are some of the
-.I UniqueWare
-class of devices. Some of the memory was preprogramed at the factory. See the datasheet for specifics.  The
-.B DS2502
-,
-.B DS2505
-, and
-.B DS2506
-differ in their function by the amount of on-board memory they possess. (The internal protocols are slightly different, but the
-.I OWFS
-system handles this automatically.
+.B EDS0071 (3)
+is a micro-processor based 1-wire slave made by EDS (Embedded Data Systams). Is uses a high accuracy and extended range RTD sensor to accurately measure temperatures.
 .SH ADDRESSING
 .so addressing.3so
 .SH DATASHEET
-.br
-http://pdfserv.maxim-ic.com/en/ds/DS2502.pdf
-.br
-http://pdfserv.maxim-ic.com/en/ds/DS2502-E48.pdf
-.br
-http://pdfserv.maxim-ic.com/en/ds/DS2502-UNW-DS2506S-UNW.pdf
-.br
-http://pdfserv.maxim-ic.com/en/ds/DS1982-F3-DS1982-F5.pdf
-.br
-http://pdfserv.maxim-ic.com/en/ds/DS1982U-DS1986U.pdf
 .SH SEE ALSO
 .so seealso.3so
 .SH AVAILABILITY
