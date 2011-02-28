@@ -34,7 +34,7 @@ libowphp_la_SOURCES = ow_wrap.c php_OW.h
 ow_wrap.c: ../ow.i
 if ENABLE_OWPHP
 # avoid problem when "make dist" and there are no swig available
-	$(SWIG) -php4 -o $@ ../ow.i
+	$(SWIG) -php -o $@ ../ow.i
 else
 	touch ow_wrap.c php_OW.h
 endif
