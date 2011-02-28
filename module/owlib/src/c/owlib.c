@@ -108,7 +108,12 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct connection_in * in )
 
 	case bus_server:
 		if (BAD( Server_detect(in)) ) {
-			LEVEL_CONNECT("Cannot open server at %s", SOC(in)->devicename);
+			LEVEL_CONNECT("Cannot open server at %s -- first attempt.", SOC(in)->devicename);
+			sleep(5); // delay to allow owserver to open it's listen socket
+			if ( GOOD( Server_detect(in)) ) {
+				break ;
+			}
+			LEVEL_CONNECT("Cannot open server at %s -- second (and final) attempt.", SOC(in)->devicename);
 			return gbBAD ;
 		}
 		break;
