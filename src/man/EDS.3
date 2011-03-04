@@ -393,6 +393,22 @@ EDS0071 -> 0x0071 -> 113 in decimal
 None.
 .SH DESCRIPTION
 .so description.3so
+.SS EDS00XX Overview
+The EDS00XX sensors are a family of devices from 
+.I Embedded Data Systems.
+Although provisional support for several types is included, only early
+.I EDS0071
+has been tested with
+.I OWFS.
+.PP
+The sensors all share the same 
+.I 7E
+family code. They have the same first memory page layout with a text
+.I tag
+property that describes them, and a
+.I sub-type
+field giving the particular sensor. The data properties shown in a directory listing will be specific to the sensor
+.I sub-type.
 .SS EDS0071
 The
 .B EDS0071 (3)
