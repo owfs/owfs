@@ -259,17 +259,17 @@ and
 All formats are accepted as input, but the output will be in the specified format.
 .SH EXAMPLE
 .TP
-owdir -s 3000 --format fic
+owdir \-s 3000 \-\-format fic
 Get the device listing (full 16 hex digits, no dots) from the local
 .I owserver
 at port 3000
 .TP
-owread -F --autoserver 51.125499A32000/typeK/temperature
+owread \-F \-\-autoserver 51.125499A32000/typeK/temperature
 Read temperature from the DS2751-based thermocouple on an auto-discovered
 .I owserver
 Temperature in fahrenheit.
 .TP
-owwrite -s 10.0.1.2:3001 32.000800AD23110/pages/page.1 "Passed"
+owwrite -\s 10.0.1.2:3001 32.000800AD23110/pages/page.1 "Passed"
 Connect to a OWFS server process (
 .I owserver
 ) that was started on another machine at tcp port 3001 and write to the memory of a DS2780

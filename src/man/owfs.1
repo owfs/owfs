@@ -34,9 +34,9 @@ Path of a directory to mount the 1-wire file system
 .PP
 The mountpoint is required. There is no default.
 .SS \-\-allow_other
-Shorthand for fuse mount option "-o allow_other"  Allows uther users to see the fuse (owfs) mount point and file system. Requires a setting in /etc/fuse.conf as well.
+Shorthand for fuse mount option "\-o allow_other"  Allows uther users to see the fuse (owfs) mount point and file system. Requires a setting in /etc/fuse.conf as well.
 .SS \-\-fuse-opt "options"
-Sends options to the fuse-mount process. Options should be quoted, e.g. "\"-o allow_other\"" .
+Sends options to the fuse-mount process. Options should be quoted, e.g. "\"\-o allow_other\"" .
 .so temperature.1so
 .so pressure.1so
 .so format.1so
@@ -46,13 +46,13 @@ Sends options to the fuse-mount process. Options should be quoted, e.g. "\"-o al
 .so timeout.1so
 .SH EXAMPLE
 .TP
-owfs -d /dev/ttyS0 -m /mnt/1wire
+owfs \-d /dev/ttyS0 \-m /mnt/1wire
 Bus master on serial port
 .TP
-owfs -F -u -m /mnt/1wire
+owfs \-F \-u \-m /mnt/1wire
 USB adapter, temperatures reported in Fahrenheit
 .TP
-owfs -s 10.0.1.2:4304 -m /mnt/1wire
+owfs \-s 10.0.1.2:4304 \-m /mnt/1wire
 Connect to an 
 .B owserver (1)
 process that was started on another machine at tcp port 4304

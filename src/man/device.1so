@@ -62,7 +62,7 @@ adapter ( and
 .I HA7S
 ) in native ascii mode.
 .TP
-\fI--ha5=port | --ha5=port:a | --ha5=port:acg\fI \fB(HA5)\fB
+\fI\-\-ha5=port | \-\-ha5=port:a | \-\-ha5=port:acg\fI \fB(HA5)\fB
 .B Embedded Data Systems
 .I HA5
 mutidrop adapter in native ascii mode. Up to 26 adapters can share the same port, each with an assigned letter. If no letter specified, the program will scan for the first response (which may be slow).
