@@ -69,6 +69,8 @@ static int MemblobIncrease(size_t length, struct memblob *mb);
 void MemblobClear(struct memblob *mb)
 {
 	SAFEFREE(mb->memory_storage) ;
+	mb->memory_storage = NULL;
+	mb->troubled = 0 ;
 	mb->used = 0;
 	mb->allocated = 0;
 }
@@ -77,6 +79,7 @@ void MemblobInit(struct memblob *mb, size_t increment)
 {
 	mb->used = 0;
 	mb->allocated = 0;
+	mb->troubled = 0 ;
 	mb->increment = increment;
 	mb->memory_storage = NULL;
 }
@@ -89,6 +92,11 @@ BYTE * MemblobData(struct memblob * mb)
 size_t MemblobLength(struct memblob * mb)
 {
 	return mb->used ;
+}
+
+int MemblobPure(struct memblob *mb)
+{
+	return !mb->troubled;
 }
 
 void MemblobTrim(size_t nchars, struct memblob * mb)
@@ -112,6 +120,7 @@ static int MemblobIncrease(size_t length, struct memblob *mb)
 			mb->allocated = newalloc;
 			mb->memory_storage = try_bigger_block;
 		} else {				// allocation failed -- keep old
+			mb->troubled = 1 ;
 			return -ENOMEM;
 		}
 	}

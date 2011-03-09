@@ -55,12 +55,14 @@ $Id$
 #define OW_MEMBLOB_H
 
 struct memblob {
+	int troubled;
 	size_t allocated;
 	size_t increment;
 	size_t used;
 	BYTE *memory_storage;
 };
 
+int MemblobPure(struct memblob *mb) ;
 void MemblobClear(struct memblob *mb);
 void MemblobInit(struct memblob *mb, size_t increment);
 int MemblobAdd(const BYTE * data, size_t length, struct memblob *mb);
