@@ -21,7 +21,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ::EOH
 
-Turn on connection level error messsages and print the address and
+Turn on connection level error messages and print the address and
 type of all sensors on a 1-wire network.
 """
 

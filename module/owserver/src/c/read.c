@@ -62,7 +62,7 @@ void *ReadHandler(struct handlerdata *hd, struct client_msg *cm, struct one_wire
 
 	if (hd->sm.payload >= PATH_MAX) {
 		cm->ret = -EMSGSIZE;
-	} else if ((hd->sm.size <= 0) || (hd->sm.size > MAX_OWSERVER_PROTOCOL_PACKET_SIZE)) {
+	} else if ((hd->sm.size <= 0) || (hd->sm.size > MAX_OWSERVER_PROTOCOL_PAYLOAD_SIZE)) {
 		cm->ret = -EMSGSIZE;
 		LEVEL_DEBUG("ReadHandler: error hd->sm.size == %d", hd->sm.size);
 	} else if ( BAD( OWQ_allocate_read_buffer(owq)) ) {	// allocate read buffer

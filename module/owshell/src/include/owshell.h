@@ -274,7 +274,7 @@ struct serverpackage {
 #define Servertokens(version)    ((version)&0xFFFF)
 
 /* large enough for arrays of 2048 elements of ~49 bytes each */
-#define MAX_OWSERVER_PROTOCOL_PACKET_SIZE  100050
+#define MAX_OWSERVER_PROTOCOL_PAYLOAD_SIZE  100050
 
 /* -------------------------------------------- */
 /* start of program -- for statistics amd file atrtributes */

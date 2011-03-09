@@ -43,7 +43,7 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
 
 SEQ_OR_ERROR W1_send_msg( struct connection_in * in, struct w1_netlink_msg *msg, struct w1_netlink_cmd *cmd, const unsigned char * data)
 {
-	// outer structure -- nlm = netlink messsage
+	// outer structure -- nlm = netlink message
 	struct nlmsghdr *nlm;
 	// second structure -- cn = connection message
 	struct cn_msg *cn;

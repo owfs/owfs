@@ -64,19 +64,19 @@ void *DataHandler(void *v)
 	cm.version = MakeServerprotocol(OWSERVER_PROTOCOL_VERSION);
 	cm.control_flags = hd->sm.control_flags;			// default flag return -- includes persistence state
 
-	/* Pre-handling for special testing mode to exclude certain messsages */
+	/* Pre-handling for special testing mode to exclude certain messages */
 	switch ((enum msg_classification) hd->sm.type) {
 	case msg_dirall:
 	case msg_dirallslash:
 		if (Globals.no_dirall) {
-			LEVEL_DEBUG("DIRALL messsage rejected.") ;
+			LEVEL_DEBUG("DIRALL message rejected.") ;
 			hd->sm.type = msg_error;
 		}
 		break;
 	case msg_get:
 	case msg_getslash:
 		if (Globals.no_get) {
-			LEVEL_DEBUG("GET messsage rejected.") ;
+			LEVEL_DEBUG("GET message rejected.") ;
 			hd->sm.type = msg_error;
 		}
 		break;

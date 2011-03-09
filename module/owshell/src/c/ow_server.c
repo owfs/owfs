@@ -231,7 +231,7 @@ static void *FromServerAlloc(int file_descriptor, struct client_msg *cm)
 		return NULL;
 	if (cm->ret < 0)
 		return NULL;
-	if (cm->payload > MAX_OWSERVER_PROTOCOL_PACKET_SIZE) {
+	if (cm->payload > MAX_OWSERVER_PROTOCOL_PAYLOAD_SIZE) {
 		//printf("FromServerAlloc payload too large\n");
 		return NULL;
 	}
