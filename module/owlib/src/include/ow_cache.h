@@ -89,6 +89,8 @@ void Cache_Del_Simul(enum simul_type type, const struct parsedname *pn) ;
 void Cache_Del_Mixed_Aggregate(const struct parsedname *pn);
 void Cache_Del_Mixed_Individual(const struct parsedname *pn);
 
+void Aliaslist( struct memblob * mb  ) ;
+
 #else							/* OW_CACHE */
 
 #define Make_SlaveSpecificTag(tag, change)
@@ -128,6 +130,8 @@ void Cache_Del_Mixed_Individual(const struct parsedname *pn);
 #define Cache_Del_Simul(type,pn)            (1)
 #define Cache_Del_Mixed_Aggregate(pn)       (1)
 #define Cache_Del_Mixed_Individual(pn)      (1)
+
+#define Aliaslist(mb)     
 
 #endif							/* OW_CACHE */
 

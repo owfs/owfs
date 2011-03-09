@@ -26,6 +26,7 @@ READ_FUNCTION(FS_r_TS);
 WRITE_FUNCTION(FS_w_TS);
 READ_FUNCTION(FS_r_PS);
 WRITE_FUNCTION(FS_w_PS);
+READ_FUNCTION(FS_aliaslist);
 
 /* -------- Structures ---------- */
 
@@ -41,20 +42,24 @@ struct filetype set_timeout[] = {
 	{"ftp", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, VISIBLE, {v:&Globals.timeout_ftp},},
 	{"ha7", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, VISIBLE, {v:&Globals.timeout_ha7},},
 	{"w1", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, VISIBLE, {v:&Globals.timeout_w1},},
-}
-
-;
+};
 struct device d_set_timeout = { "timeout", "timeout", ePN_settings, COUNT_OF_FILETYPES(set_timeout),
 	set_timeout, NO_GENERIC_READ, NO_GENERIC_WRITE
 };
+
 struct filetype set_units[] = {
  	{"temperature_scale", 1, NON_AGGREGATE, ft_ascii, fc_static, FS_r_TS, FS_w_TS, VISIBLE, NO_FILETYPE_DATA,},
  	{"pressure_scale", 12, NON_AGGREGATE, ft_ascii, fc_static, FS_r_PS, FS_w_PS, VISIBLE, NO_FILETYPE_DATA,},
-}
-
-;
+};
 struct device d_set_units = { "units", "units", ePN_settings, COUNT_OF_FILETYPES(set_units),
 	set_units, NO_GENERIC_READ, NO_GENERIC_WRITE
+};
+
+struct filetype set_alias[] = {
+ 	{"list", MAX_OWSERVER_PROTOCOL_PAYLOAD_SIZE, NON_AGGREGATE, ft_ascii, fc_static, FS_aliaslist, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+};
+struct device d_set_alias = { "alias", "alias", ePN_settings, COUNT_OF_FILETYPES(set_alias),
+	set_alias, NO_GENERIC_READ, NO_GENERIC_WRITE
 };
 
 /* ------- Functions ------------ */
@@ -69,7 +74,7 @@ static ZERO_OR_ERROR FS_r_timeout(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_w_timeout(struct one_wire_query *owq)
 {
-	int previous;
+	UINT previous;
 	struct parsedname *pn = PN(owq);
 	CACHE_WLOCK;
 	//printf("FS_w_timeout!!!\n");
@@ -142,4 +147,19 @@ static ZERO_OR_ERROR FS_r_TS(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_r_PS(struct one_wire_query *owq)
 {
 	return OWQ_format_output_offset_and_size_z(PressureScaleName(PressureScale(PN(owq))), owq);
+}
+
+static ZERO_OR_ERROR FS_aliaslist( struct one_wire_query * owq )
+{
+	struct memblob mb ;
+	ZERO_OR_ERROR zoe ;
+	MemblobInit( &mb, PATH_MAX ) ;
+	Aliaslist( &mb ) ;
+	if ( MemblobPure( &mb ) ) {
+		zoe = OWQ_format_output_offset_and_size( MemblobData( &mb ), MemblobLength( &mb ), owq ) ;
+	} else {
+		zoe = -EINVAL ;
+	}
+	MemblobClear( &mb ) ;
+	return zoe ;
 }

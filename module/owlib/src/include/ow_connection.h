@@ -73,7 +73,7 @@ See: http://www.iana.org/assignments/port-numbers
 #endif /* OW_USB */
 
 /* large enough for arrays of 2048 elements of ~49 bytes each */
-#define MAX_OWSERVER_PROTOCOL_PACKET_SIZE  100050
+#define MAX_OWSERVER_PROTOCOL_PAYLOAD_SIZE  100050
 
 /* com port fifo info */
 /* The UART_FIFO_SIZE defines the amount of bytes that are written before

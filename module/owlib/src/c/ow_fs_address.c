@@ -49,19 +49,19 @@ $Id$
 
 ZERO_OR_ERROR FS_address(struct one_wire_query *owq)
 {
-	ASCII ad[16];
+	ASCII ad[SERIAL_NUMBER_SIZE*2];
 	struct parsedname *pn = PN(owq);
-	bytes2string(ad, pn->sn, 8);
-	return OWQ_format_output_offset_and_size(ad, 16, owq);
+	bytes2string(ad, pn->sn, SERIAL_NUMBER_SIZE);
+	return OWQ_format_output_offset_and_size(ad, SERIAL_NUMBER_SIZE*2, owq);
 }
 
 ZERO_OR_ERROR FS_r_address(struct one_wire_query *owq)
 {
 	int sn_index, ad_index;
-	ASCII ad[16];
+	ASCII ad[SERIAL_NUMBER_SIZE*2];
 	struct parsedname *pn = PN(owq);
-	for (sn_index = 7, ad_index = 0; sn_index >= 0; --sn_index, ad_index += 2) {
+	for (sn_index = SERIAL_NUMBER_SIZE-1, ad_index = 0; sn_index >= 0; --sn_index, ad_index += 2) {
 		num2string(&ad[ad_index], pn->sn[sn_index]);
 	}
-	return OWQ_format_output_offset_and_size(ad, 16, owq);
+	return OWQ_format_output_offset_and_size(ad, SERIAL_NUMBER_SIZE*2, owq);
 }

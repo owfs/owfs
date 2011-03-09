@@ -49,7 +49,7 @@ size_t FileLength(const struct parsedname *pn)
 	case ft_ascii:
 	case ft_binary:
 	default:
-		return pn->selected_filetype->suglen;;
+		return pn->selected_filetype->suglen;
 	}
 }
 

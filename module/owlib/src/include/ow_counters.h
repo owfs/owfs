@@ -63,7 +63,7 @@ struct average {
 	UINT current;
 };
 
-struct cache {
+struct cache_stats {
 	UINT tries;
 	UINT hits;
 	UINT adds;
@@ -86,11 +86,11 @@ extern UINT cache_adds;
 extern struct average new_avg;
 extern struct average old_avg;
 extern struct average store_avg;
-extern struct cache cache_ext;
-extern struct cache cache_int;
-extern struct cache cache_dir;
-extern struct cache cache_dev;
-extern struct cache cache_sto;
+extern struct cache_stats cache_ext;
+extern struct cache_stats cache_int;
+extern struct cache_stats cache_dir;
+extern struct cache_stats cache_dev;
+extern struct cache_stats cache_pst;
 
 extern UINT read_calls;
 extern UINT read_cache;

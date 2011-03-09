@@ -20,5 +20,6 @@ $Id$
 /* -------- Structures ---------- */
 DeviceHeader(set_timeout);
 DeviceHeader(set_units);
+DeviceHeader(set_alias);
 
 #endif							/* OW_SETTINGS_H */

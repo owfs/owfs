@@ -452,7 +452,7 @@ static void *From_ServerAlloc(struct server_connection_state * scs, struct clien
 	if (cm->ret < 0) {
 		return NO_PATH;
 	}
-	if (cm->payload > MAX_OWSERVER_PROTOCOL_PACKET_SIZE) {
+	if (cm->payload > MAX_OWSERVER_PROTOCOL_PAYLOAD_SIZE) {
 		return NO_PATH;
 	}
 

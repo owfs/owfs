@@ -49,7 +49,7 @@ void * Simul_Marker[] = { &SimulMarkerLoc[simul_temp], &SimulMarkerLoc[simul_vol
 struct cache_data {
 	void *temporary_tree_new;				// current cache database
 	void *temporary_tree_old;				// older cache database
-	void *permanent_tree;				// persistent database
+	void *persistent_tree;				// persistent database
 	size_t old_ram_size;				// cache size
 	size_t new_ram_size;				// cache size
 	time_t time_retired;				// start time of older
@@ -119,15 +119,15 @@ enum cache_task_return { ctr_ok, ctr_not_found, ctr_expired, ctr_size_mismatch, 
 static void * GetFlippedTree( void ) ;
 static void DeleteFlippedTree( void * retired_tree ) ;
 
-static int Cache_Type_Store( const struct parsedname * pn ) ;
+static int IsThisPersistent( const struct parsedname * pn ) ;
 
 static GOOD_OR_BAD Cache_Add(const void *data, const size_t datasize, const struct parsedname *pn);
 static GOOD_OR_BAD Cache_Add_Common(struct tree_node *tn);
-static GOOD_OR_BAD Cache_Add_Store(struct tree_node *tn);
+static GOOD_OR_BAD Cache_Add_Persistent(struct tree_node *tn);
 
 static enum cache_task_return Cache_Get_Common(void *data, size_t * dsize, time_t * duration, const struct tree_node *tn);
 static enum cache_task_return Cache_Get_Common_Dir(struct dirblob *db, time_t * duration, const struct tree_node *tn);
-static enum cache_task_return Cache_Get_Store(void *data, size_t * dsize, time_t * duration, const struct tree_node *tn);
+static enum cache_task_return Cache_Get_Persistent(void *data, size_t * dsize, time_t * duration, const struct tree_node *tn);
 
 static GOOD_OR_BAD Cache_Get_Simultaneous(enum simul_type type, struct one_wire_query *owq) ;
 static GOOD_OR_BAD Cache_Get_Internal(void *data, size_t * dsize, const struct internal_prop *ip, const struct parsedname *pn);
@@ -135,14 +135,15 @@ static GOOD_OR_BAD Cache_Get_Strict(void *data, size_t dsize, const struct parse
 
 static void Cache_Del(const struct parsedname *pn) ;
 static GOOD_OR_BAD Cache_Del_Common(const struct tree_node *tn);
-static GOOD_OR_BAD Cache_Del_Store(const struct tree_node *tn);
+static GOOD_OR_BAD Cache_Del_Persistent(const struct tree_node *tn);
 
-static GOOD_OR_BAD Add_Stat(struct cache *scache, GOOD_OR_BAD result);
-static GOOD_OR_BAD Get_Stat(struct cache *scache, const enum cache_task_return result);
-static void Del_Stat(struct cache *scache, const int result);
+static GOOD_OR_BAD Add_Stat(struct cache_stats *scache, GOOD_OR_BAD result);
+static GOOD_OR_BAD Get_Stat(struct cache_stats *scache, const enum cache_task_return result);
+static void Del_Stat(struct cache_stats *scache, const int result);
 static int tree_compare(const void *a, const void *b);
 static time_t TimeOut(const enum fc_change change);
 static void Aliasfindaction(const void *node, const VISIT which, const int depth) ;
+static void Aliaslistaction(const void *node, const VISIT which, const int depth) ;
 static void LoadTK( const BYTE * sn, void * p, int extension, struct tree_node * tn ) ;
 
 /* used for the sort/search b-tree routines */
@@ -224,7 +225,7 @@ static void new_tree(void)
 #define node_show(tn)
 #endif							/* CACHE_DEBUG */
 
-static int Cache_Type_Store( const struct parsedname * pn )
+static int IsThisPersistent( const struct parsedname * pn )
 {
 	return (pn->selected_filetype->change==fc_persistent) || (pn->selected_connection->busmode==bus_mock) ;
 }
@@ -248,7 +249,7 @@ void Cache_Open(void)
 void Cache_Close(void)
 {
 	Cache_Clear() ;
-	SAFETDESTROY( cache.permanent_tree, owfree_func);
+	SAFETDESTROY( cache.persistent_tree, owfree_func);
 }
 
 /* Moves new to old tree, initializes new tree, and returns former old tree location */
@@ -296,7 +297,7 @@ void Cache_Clear(void)
 }
 
 /* Wrapper to perform a cache function and add statistics */
-static GOOD_OR_BAD Add_Stat(struct cache *scache, GOOD_OR_BAD result)
+static GOOD_OR_BAD Add_Stat(struct cache_stats *scache, GOOD_OR_BAD result)
 {
 	if ( GOOD(result) ) {
 		STAT_ADD1(scache->adds);
@@ -386,8 +387,8 @@ static GOOD_OR_BAD Cache_Add(const void *data, const size_t datasize, const stru
 	if (datasize) {
 		memcpy(TREE_DATA(tn), data, datasize);
 	}
-	return Cache_Type_Store(pn)?
-		Add_Stat(&cache_sto, Cache_Add_Store(tn)) :
+	return IsThisPersistent(pn)?
+		Add_Stat(&cache_pst, Cache_Add_Persistent(tn)) :
 		Add_Stat(&cache_ext, Cache_Add_Common(tn)) ;
 }
 
@@ -552,7 +553,7 @@ GOOD_OR_BAD Cache_Add_SlaveSpecific(const void *data, const size_t datasize, con
 	//printf("  ADD INTERNAL data[0]=%d size=%d \n",((BYTE *)data)[0],datasize);
 	switch (ip->change) {
 	case fc_persistent:
-		return Add_Stat(&cache_sto, Cache_Add_Store(tn));
+		return Add_Stat(&cache_pst, Cache_Add_Persistent(tn));
 	default:
 		return Add_Stat(&cache_int, Cache_Add_Common(tn));
 	}
@@ -573,9 +574,9 @@ GOOD_OR_BAD Cache_Add_Alias(const ASCII *name, const BYTE * sn)
 	LEVEL_DEBUG("Adding alias for " SNformat " = %s", SNvar(sn), name);
 	LoadTK( sn, Alias_Marker, 0, tn );
 	tn->expires = NOW_TIME;
-	tn->dsize = size+1;
-	strcpy((ASCII *)TREE_DATA(tn), name);
-	return Add_Stat(&cache_sto, Cache_Add_Store(tn));
+	tn->dsize = size;
+	strncpy((ASCII *)TREE_DATA(tn), name, size);
+	return Add_Stat(&cache_pst, Cache_Add_Persistent(tn));
 }
 
 /* Add an item to the cache */
@@ -637,14 +638,14 @@ static GOOD_OR_BAD Cache_Add_Common(struct tree_node *tn)
 /* Add an item to the cache */
 /* retire the cache (flip) if too old, and start a new one (keep the old one for a while) */
 /* return 0 if good, 1 if not */
-static GOOD_OR_BAD Cache_Add_Store(struct tree_node *tn)
+static GOOD_OR_BAD Cache_Add_Persistent(struct tree_node *tn)
 {
 	struct tree_opaque *opaque;
 	enum { no_add, yes_add, just_update } state = no_add;
 	LEVEL_DEBUG("Adding data to permanent store");
 
-	STORE_WLOCK;
-	opaque = tsearch(tn, &cache.permanent_tree, tree_compare) ;
+	PERSISTENT_WLOCK;
+	opaque = tsearch(tn, &cache.persistent_tree, tree_compare) ;
 	if ( opaque != NULL ) {
 		//printf("CACHE ADD pointer=%p, key=%p\n",tn,opaque->key);
 		if (tn != opaque->key) {
@@ -657,7 +658,7 @@ static GOOD_OR_BAD Cache_Add_Store(struct tree_node *tn)
 	} else {					// nothing found or added?!? free our memory segment
 		owfree(tn);
 	}
-	STORE_WUNLOCK;
+	PERSISTENT_WUNLOCK;
 
 	switch (state) {
 	case yes_add:
@@ -675,7 +676,7 @@ static GOOD_OR_BAD Cache_Add_Store(struct tree_node *tn)
 	}
 }
 
-static GOOD_OR_BAD Get_Stat(struct cache *scache, const enum cache_task_return result)
+static GOOD_OR_BAD Get_Stat(struct cache_stats *scache, const enum cache_task_return result)
 {
 	GOOD_OR_BAD gbret = gbBAD ; // default
 	
@@ -786,8 +787,8 @@ GOOD_OR_BAD Cache_Get(void *data, size_t * dsize, const struct parsedname *pn)
 
 	LEVEL_DEBUG(SNformat " size=%d IsUncachedDir=%d", SNvar(pn->sn), (int) dsize[0], IsUncachedDir(pn));
 	LoadTK( pn->sn, pn->selected_filetype, pn->extension, &tn );
-	return Cache_Type_Store(pn) ?
-		Get_Stat(&cache_sto, Cache_Get_Store(data, dsize, &duration, &tn)) :
+	return IsThisPersistent(pn) ?
+		Get_Stat(&cache_pst, Cache_Get_Persistent(data, dsize, &duration, &tn)) :
 		Get_Stat(&cache_ext, Cache_Get_Common(data, dsize, &duration, &tn));
 }
 
@@ -894,7 +895,7 @@ static GOOD_OR_BAD Cache_Get_Internal(void *data, size_t * dsize, const struct i
 	LoadTK( pn->sn, ip->name, EXTENSION_INTERNAL, &tn) ;
 	switch (ip->change) {
 		case fc_persistent:
-			return Get_Stat(&cache_sto, Cache_Get_Store(data, dsize, &duration, &tn));
+			return Get_Stat(&cache_pst, Cache_Get_Persistent(data, dsize, &duration, &tn));
 		default:
 			return Get_Stat(&cache_int, Cache_Get_Common(data, dsize, &duration, &tn));
 	}
@@ -994,15 +995,15 @@ GOOD_OR_BAD Cache_Get_Alias(ASCII * name, size_t length, const BYTE * sn)
 
 	LoadTK(sn, Alias_Marker, 0, &tn ) ;
 
-	STORE_RLOCK;
-	if ((opaque = tfind(&tn, &cache.permanent_tree, tree_compare))) {
+	PERSISTENT_RLOCK;
+	if ((opaque = tfind(&tn, &cache.persistent_tree, tree_compare))) {
 		if ( opaque->key->dsize < length ) {
 			strncpy(name,(ASCII *)TREE_DATA(opaque->key),length);
 			ret = gbGOOD ;
 			LEVEL_DEBUG("Retrieving " SNformat " alias=%s", SNvar(sn), SAFESTRING(name) );
 		}
 	}
-	STORE_RUNLOCK;
+	PERSISTENT_RUNLOCK;
 	return ret ;
 }
 
@@ -1054,7 +1055,7 @@ GOOD_OR_BAD Cache_Get_SerialNumber(const ASCII * name, BYTE * sn)
 	global_aliasfind_struct.dsize = strlen(name) + 1 ;
 	global_aliasfind_struct.name = name ;
 	global_aliasfind_struct.sn = sn ;
-	twalk(cache.permanent_tree, Aliasfindaction);
+	twalk(cache.persistent_tree, Aliasfindaction);
 	ret = global_aliasfind_struct.ret ;
 	ALIASFINDUNLOCK;
 
@@ -1119,13 +1120,13 @@ static enum cache_task_return Cache_Get_Common(void *data, size_t * dsize, time_
 }
 
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
-static enum cache_task_return Cache_Get_Store(void *data, size_t * dsize, time_t * duration, const struct tree_node *tn)
+static enum cache_task_return Cache_Get_Persistent(void *data, size_t * dsize, time_t * duration, const struct tree_node *tn)
 {
 	struct tree_opaque *opaque;
 	enum cache_task_return ctr_ret;
 	(void) duration; // ignored -- no timeout
-	STORE_RLOCK;
-	opaque = tfind(tn, &cache.permanent_tree, tree_compare) ;
+	PERSISTENT_RLOCK;
+	opaque = tfind(tn, &cache.persistent_tree, tree_compare) ;
 	if ( opaque != NULL ) {
 		if ( dsize[0] >= opaque->key->dsize) {
 			dsize[0] = opaque->key->dsize;
@@ -1139,11 +1140,11 @@ static enum cache_task_return Cache_Get_Store(void *data, size_t * dsize, time_t
 	} else {
 		ctr_ret = ctr_not_found;
 	}
-	STORE_RUNLOCK;
+	PERSISTENT_RUNLOCK;
 	return ctr_ret;
 }
 
-static void Del_Stat(struct cache *scache, const int result)
+static void Del_Stat(struct cache_stats *scache, const int result)
 {
 	if ( GOOD( result)) {
 		STAT_ADD1(scache->deletes);
@@ -1209,7 +1210,7 @@ static void Cache_Del(const struct parsedname *pn)
 	LoadTK( pn->sn, pn->selected_filetype, pn->extension, &tn ) ;
 	switch (pn->selected_filetype->change) {
 		case fc_persistent:
-			Del_Stat(&cache_sto, Cache_Del_Store(&tn));
+			Del_Stat(&cache_pst, Cache_Del_Persistent(&tn));
 			break ;
 		default:
 			Del_Stat(&cache_ext, Cache_Del_Common(&tn));
@@ -1237,7 +1238,7 @@ void Cache_Del_Mixed_Individual(const struct parsedname *pn)
 	for ( tn.tk.extension = pn->selected_filetype->ag->elements-1 ; tn.tk.extension >= 0 ; --tn.tk.extension ) {
 		switch (pn->selected_filetype->change) {
 			case fc_persistent:
-				Del_Stat(&cache_sto, Cache_Del_Store(&tn));
+				Del_Stat(&cache_pst, Cache_Del_Persistent(&tn));
 				break ;
 			default:
 				Del_Stat(&cache_ext, Cache_Del_Common(&tn));
@@ -1265,7 +1266,7 @@ void Cache_Del_Mixed_Aggregate(const struct parsedname *pn)
 	LoadTK( pn->sn, pn->selected_filetype, EXTENSION_ALL, &tn) ;
 	switch (pn->selected_filetype->change) {
 		case fc_persistent:
-			Del_Stat(&cache_sto, Cache_Del_Store(&tn));
+			Del_Stat(&cache_pst, Cache_Del_Persistent(&tn));
 			break ;
 		default:
 			Del_Stat(&cache_ext, Cache_Del_Common(&tn));
@@ -1322,7 +1323,7 @@ void Cache_Del_Internal(const struct internal_prop *ip, const struct parsedname 
 	LoadTK(pn->sn, ip->name, 0, &tn);
 	switch (ip->change) {
 	case fc_persistent:
-		Del_Stat(&cache_sto, Cache_Del_Store(&tn));
+		Del_Stat(&cache_pst, Cache_Del_Persistent(&tn));
 		break;
 	default:
 		Del_Stat(&cache_int, Cache_Del_Common(&tn));
@@ -1355,18 +1356,18 @@ static GOOD_OR_BAD Cache_Del_Common(const struct tree_node *tn)
 	return ret;
 }
 
-static GOOD_OR_BAD Cache_Del_Store(const struct tree_node *tn)
+static GOOD_OR_BAD Cache_Del_Persistent(const struct tree_node *tn)
 {
 	struct tree_opaque *opaque;
 	struct tree_node *tn_found = NULL;
 
-	STORE_WLOCK;
-	opaque = tfind(tn, &cache.permanent_tree, tree_compare) ;
+	PERSISTENT_WLOCK;
+	opaque = tfind(tn, &cache.persistent_tree, tree_compare) ;
 	if ( opaque != NULL ) {
 		tn_found = opaque->key;
-		tdelete(tn, &cache.permanent_tree, tree_compare);
+		tdelete(tn, &cache.persistent_tree, tree_compare);
 	}
-	STORE_WUNLOCK;
+	PERSISTENT_WUNLOCK;
 
 	if ( tn_found == NULL ) {
 		return gbBAD;
@@ -1385,6 +1386,56 @@ static void LoadTK( const BYTE * sn, void * p, int extension, struct tree_node *
 	memcpy(tn->tk.sn, sn, SERIAL_NUMBER_SIZE);
 	tn->tk.p = p;
 	tn->tk.extension = extension;
+}
+
+// Alias list from persistent cache
+// formatted as an alias file:
+// NNNNNNNNNNNN=alias_name\n
+//
+// Need to protect a global variable (aliaslist_cb) since twalk has no way of sending user data.
+
+struct memblob * aliaslist_mb ;
+
+static void Aliaslistaction(const void *node, const VISIT which, const int depth)
+{
+	const struct tree_node *p = *(struct tree_node * const *) node;
+	(void) depth;
+	char SN_address[SERIAL_NUMBER_SIZE*2] ;
+	
+	switch (which) {
+	case leaf:
+	case postorder:
+		if ( p->tk.p != Alias_Marker ) {
+			return ;
+		}
+		// Add sn address
+		bytes2string(SN_address, p->tk.sn, SERIAL_NUMBER_SIZE);
+		MemblobAdd( SN_address, SERIAL_NUMBER_SIZE*2, aliaslist_mb ) ;
+		printf("Memblob = <%*s> length=%d \n",MemblobLength(aliaslist_mb),MemblobData(aliaslist_mb),MemblobLength(aliaslist_mb));
+		// Add '='
+		MemblobAdd( "=", 1, aliaslist_mb ) ;
+		printf("Memblob = <%*s> length=%d \n",MemblobLength(aliaslist_mb),MemblobData(aliaslist_mb),MemblobLength(aliaslist_mb));
+		// Add alias name
+		MemblobAdd( (const ASCII *)CONST_TREE_DATA(p), p->dsize, aliaslist_mb ) ;
+		printf("Memblob = <%*s> length=%d \n",MemblobLength(aliaslist_mb),MemblobData(aliaslist_mb),MemblobLength(aliaslist_mb));
+		// Add <CR>
+		MemblobAdd( "\x0D\x0A", 2, aliaslist_mb ) ;
+		printf("Memblob = <%*s> length=%d \n",MemblobLength(aliaslist_mb),MemblobData(aliaslist_mb),MemblobLength(aliaslist_mb));
+		return ;
+	case preorder:
+	case endorder:
+		break;
+	}
+}
+
+void Aliaslist( struct memblob * mb  )
+{
+	PERSISTENT_RLOCK ;
+	ALIASLISTLOCK ;
+	aliaslist_mb = mb ;
+	twalk(cache.persistent_tree, Aliaslistaction);
+	ALIASLISTUNLOCK ;
+	PERSISTENT_RUNLOCK ;
 }
 
 #endif							/* OW_CACHE */

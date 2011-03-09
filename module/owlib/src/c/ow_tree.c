@@ -164,6 +164,7 @@ void DeviceSort(void)
 
 	Device2Tree( & d_set_timeout, ePN_settings);
 	Device2Tree( & d_set_units,   ePN_settings);
+	Device2Tree( & d_set_alias,   ePN_settings);
 
 	Device2Tree( & d_sys_process,     ePN_system);
 	Device2Tree( & d_sys_connections, ePN_system);

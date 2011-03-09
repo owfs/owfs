@@ -67,11 +67,12 @@ extern struct mutexes {
 	pthread_mutex_t typedir_mutex;
 	pthread_mutex_t namefind_mutex;
 	pthread_mutex_t aliasfind_mutex;
+	pthread_mutex_t aliaslist_mutex;
 	
 	pthread_mutexattr_t mattr; // mutex attribute -- used for all mutexes
 	my_rwlock_t lib;
 	my_rwlock_t cache;
-	my_rwlock_t store;
+	my_rwlock_t persistent_cache;
   #ifdef __UCLIBC__
 	pthread_mutex_t uclibc_mutex;
   #endif							/* __UCLIBC__ */
@@ -109,10 +110,10 @@ extern struct mutexes {
 #define CACHE_RLOCK       	RWLOCK_RLOCK(   Mutex.cache  )
 #define CACHE_RUNLOCK     	RWLOCK_RUNLOCK( Mutex.cache  )
 
-#define STORE_WLOCK       	RWLOCK_WLOCK(   Mutex.store )
-#define STORE_WUNLOCK     	RWLOCK_WUNLOCK( Mutex.store )
-#define STORE_RLOCK       	RWLOCK_RLOCK(   Mutex.store )
-#define STORE_RUNLOCK     	RWLOCK_RUNLOCK( Mutex.store )
+#define PERSISTENT_WLOCK    RWLOCK_WLOCK(   Mutex.persistent_cache )
+#define PERSISTENT_WUNLOCK  RWLOCK_WUNLOCK( Mutex.persistent_cache )
+#define PERSISTENT_RLOCK    RWLOCK_RLOCK(   Mutex.persistent_cache )
+#define PERSISTENT_RUNLOCK  RWLOCK_RUNLOCK( Mutex.persistent_cache )
 
 #define CONNIN_WLOCK      	RWLOCK_WLOCK(   Inbound_Control.lock )
 #define CONNIN_WUNLOCK    	RWLOCK_WUNLOCK( Inbound_Control.lock )
@@ -151,6 +152,9 @@ extern struct mutexes {
 #define ALIASFINDLOCK     	_MUTEX_LOCK(  Mutex.aliasfind_mutex)
 #define ALIASFINDUNLOCK   	_MUTEX_UNLOCK(Mutex.aliasfind_mutex)
 
+#define ALIASLISTLOCK     	_MUTEX_LOCK(  Mutex.aliaslist_mutex)
+#define ALIASLISTUNLOCK   	_MUTEX_UNLOCK(Mutex.aliaslist_mutex)
+
 #define BUSLOCK(pn)       	BUS_lock(pn)
 #define BUSUNLOCK(pn)     	BUS_unlock(pn)
 #define BUSLOCKIN(in)     	BUS_lock_in(in)
@@ -184,10 +188,10 @@ extern struct mutexes {
 #define CACHE_RLOCK			return_ok()
 #define CACHE_RUNLOCK		return_ok()
 
-#define STORE_WLOCK			return_ok()
-#define STORE_WUNLOCK		return_ok()
-#define STORE_RLOCK			return_ok()
-#define STORE_RUNLOCK		return_ok()
+#define PERSISTENT_WLOCK	return_ok()
+#define PERSISTENT_WUNLOCK	return_ok()
+#define PERSISTENT_RLOCK	return_ok()
+#define PERSISTENT_RUNLOCK	return_ok()
 
 #define CONNIN_WLOCK		return_ok()
 #define CONNIN_WUNLOCK		return_ok()
@@ -228,6 +232,9 @@ extern struct mutexes {
 
 #define ALIASFINDLOCK		return_ok()
 #define ALIASFINDUNLOCK		return_ok()
+
+#define ALIASLISTLOCK		return_ok()
+#define ALIASLISTUNLOCK		return_ok()
 
 #define UCLIBCLOCK			return_ok()
 #define UCLIBCUNLOCK		return_ok()

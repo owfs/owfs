@@ -55,11 +55,11 @@ UINT cache_adds = 0;
 struct average old_avg = { 0L, 0L, 0L, 0L, };
 struct average new_avg = { 0L, 0L, 0L, 0L, };
 struct average store_avg = { 0L, 0L, 0L, 0L, };
-struct cache cache_ext = { 0L, 0L, 0L, 0L, 0L, };
-struct cache cache_int = { 0L, 0L, 0L, 0L, 0L, };
-struct cache cache_dir = { 0L, 0L, 0L, 0L, 0L, };
-struct cache cache_sto = { 0L, 0L, 0L, 0L, 0L, };
-struct cache cache_dev = { 0L, 0L, 0L, 0L, 0L, };
+struct cache_stats cache_ext = { 0L, 0L, 0L, 0L, 0L, };
+struct cache_stats cache_int = { 0L, 0L, 0L, 0L, 0L, };
+struct cache_stats cache_dir = { 0L, 0L, 0L, 0L, 0L, };
+struct cache_stats cache_pst = { 0L, 0L, 0L, 0L, 0L, };
+struct cache_stats cache_dev = { 0L, 0L, 0L, 0L, 0L, };
 
 UINT read_calls = 0;
 UINT read_cache = 0;
