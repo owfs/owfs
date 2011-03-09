@@ -941,7 +941,7 @@ case "${host_cpu}-${host_os}" in
 		;;
 	*)
 		OSLIBS=""
-		EXTRALIBS="-Wl,--rpath -Wl,$libdir"
+		EXTRALIBS=""
 		AC_MSG_RESULT([${EXTRALIBS}])
 		;;
 esac
@@ -1010,7 +1010,7 @@ if test "${ENABLE_OWFS}" != "false" ; then
 	FUSE_FLAGS="-DFUSE_USE_VERSION=26"
 	FUSE_INCLUDES="-I${fuse_include_path}"
 	FUSE_LIBS="-L${fuse_lib_path}"
-	LD_EXTRALIBS="$save_LD_EXTRALIBS -Wl,--rpath -Wl,${fuse_lib_path}"
+	LD_EXTRALIBS="$save_LD_EXTRALIBS "
 	CPPFLAGS="$save_CPPFLAGS -D_FILE_OFFSET_BITS=64 $FUSE_FLAGS $FUSE_INCLUDES"
 	LDFLAGS="$save_LDFLAGS $FUSE_LIBS"
 
