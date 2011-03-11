@@ -148,7 +148,7 @@ static ZERO_OR_ERROR FS_w_convert_temp(struct one_wire_query *owq)
 			break ;
 	}
 	if ( BAD(ret) ) {
-		LEVEL_DEBUG("Trouble setting simultaneous for %s",pn_directory->path)
+		LEVEL_DEBUG("Trouble setting simultaneous for %s",pn_directory->path);
 		return -EINVAL ;
 	}
 	Cache_Add_Simul(simul_temp, pn_directory);	// Mark start time
