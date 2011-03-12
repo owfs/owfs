@@ -51,8 +51,7 @@ if test -z "$PHPINC"; then
 fi
 
 AC_MSG_CHECKING(for PHP extension-dir)
-# FIXME: FC7/x86_64 seems to be broken and return /lib/ instead of /lib64/
-PHPLIBDIR="`$PHPCONFIG --extension-dir 2>/dev/null | sed "s#/lib/#/lib${LIBPOSTFIX}/#g"`"
+PHPLIBDIR="`$PHPCONFIG --extension-dir 2>/dev/null`"
 if test ! -z "$PHPLIBDIR"; then
 	AC_MSG_RESULT($PHPLIBDIR)
 else
