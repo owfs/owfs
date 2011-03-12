@@ -835,6 +835,8 @@ if test "${ENABLE_OWTCL}" = "true" ; then
 		# TCL_PACKAGE_PATH. TCL_BIN_DIR is usually correct, but this
 		# might contain staging_dir prefix when cross-compiling.
 		OWTCL_INSTALL_PATH="`echo ${TCL_PACKAGE_PATH} | cut -d' ' -f1`"
+		# Debian Hack: do not install in /usr/local/lib/tcltk
+		OWTCL_INSTALL_PATH="/usr/lib/tcltk"
 		AC_SUBST(OWTCL_INSTALL_PATH)
 	fi
 fi
