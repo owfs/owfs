@@ -17,7 +17,7 @@ if HAVE_DARWIN
 	( cd OW; $(PERL) Makefile.PL )
 else
 if HAVE_DEBIAN
-	( cd OW; $(PERL) Makefile.PL PREFIX=@prefix@ )
+	( cd OW; $(PERL) Makefile.PL INSTALLDIRS-vendor )
 else
 	( cd OW; $(PERL) Makefile.PL )
 endif
