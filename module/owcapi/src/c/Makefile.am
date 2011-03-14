@@ -8,6 +8,9 @@ libowcapi_la_SOURCES = owcapi.c
 
 if HAVE_CYGWIN
 libowcapi_la_LDFLAGS = -low ${LD_EXTRALIBS} -shared -no-undefined 
+else if HAVE_DEBIAN
+# Debian patch
+libowcapi_la_LDFLAGS = -low -version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE) -release $(LT_RELEASE) ${PTHREAD_LIBS} ${LD_EXTRALIBS} -shared -shrext .so
 else
 libowcapi_la_LDFLAGS = -low -version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE) -release $(LT_RELEASE) ${PTHREAD_LIBS} ${LIBUSB_LIBS} ${LD_EXTRALIBS} -shared -shrext .so
 endif
