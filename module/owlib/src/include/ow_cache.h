@@ -67,6 +67,7 @@ GOOD_OR_BAD Cache_Add_Device(const int bus_nr, const BYTE *sn);
 GOOD_OR_BAD Cache_Add_SlaveSpecific(const void *data, const size_t datasize, const struct internal_prop *ip, const struct parsedname *pn);
 GOOD_OR_BAD Cache_Add_Alias(const ASCII *name, const BYTE * sn) ;
 GOOD_OR_BAD Cache_Add_Simul(const enum simul_type type, const struct parsedname *pn);
+void Cache_Add_Alias_Bus(const BYTE * alias_name, int datasize, INDEX_OR_ERROR bus);
 
 GOOD_OR_BAD OWQ_Cache_Get(struct one_wire_query *owq);
 GOOD_OR_BAD Cache_Get(void *data, size_t * dsize, const struct parsedname *pn);
@@ -76,6 +77,8 @@ GOOD_OR_BAD Cache_Get_SlaveSpecific(void *data, size_t dsize, const struct inter
 GOOD_OR_BAD Cache_Get_Alias(ASCII * name, size_t length, const BYTE * sn) ;
 GOOD_OR_BAD Cache_Get_SerialNumber(const ASCII * name, BYTE * sn) ;
 GOOD_OR_BAD Cache_Get_Simul_Time(enum simul_type type, time_t * dwell_time, const struct parsedname * pn);
+INDEX_OR_ERROR Cache_Get_Alias_Bus(const BYTE * alias_name, int datasize) ;
+GOOD_OR_BAD Cache_Get_Alias_SN(const BYTE * alias_name, int datasize, BYTE * sn );
 
 void OWQ_Cache_Del(struct one_wire_query *owq);
 void OWQ_Cache_Del_ALL(struct one_wire_query *owq);

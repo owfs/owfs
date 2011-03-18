@@ -47,9 +47,12 @@ void * Simul_Marker[] = { &SimulMarkerLoc[simul_temp], &SimulMarkerLoc[simul_vol
 
 /* Put the globals into a struct to declutter the namespace */
 struct cache_data {
-	void *temporary_tree_new;				// current cache database
-	void *temporary_tree_old;				// older cache database
+	void *temporary_tree_new;			// current cache database
+	void *temporary_tree_old;			// older cache database
 	void *persistent_tree;				// persistent database
+	void *temporary_alias_tree_new;		// current cache database
+	void *temporary_alias_tree_old;		// older cache database
+	void *persistent_alias_tree;		// persistent database
 	size_t old_ram_size;				// cache size
 	size_t new_ram_size;				// cache size
 	time_t time_retired;				// start time of older
@@ -102,6 +105,14 @@ struct tree_node {
 	size_t dsize;
 };
 
+struct alias_tree_node {
+	int size;
+	time_t expires;
+	union {
+		INDEX_OR_ERROR bus;
+		BYTE sn[SERIAL_NUMBER_SIZE];
+	} ;
+};
 
 /* Bad bad C library */
 /* implementation of tfind, tsearch returns an opaque structure */
@@ -114,16 +125,21 @@ struct tree_opaque {
 #define TREE_DATA(tn)    ( (BYTE *)(tn) + sizeof(struct tree_node) )
 #define CONST_TREE_DATA(tn)    ( (const BYTE *)(tn) + sizeof(struct tree_node) )
 
+#define ALIAS_TREE_DATA(atn)    ( (BYTE *)(atn) + sizeof(struct alias_tree_node) )
+#define CONST_ALIAS_TREE_DATA(atn)    ( (const BYTE *)(atn) + sizeof(struct alias_tree_node) )
+
 enum cache_task_return { ctr_ok, ctr_not_found, ctr_expired, ctr_size_mismatch, } ;
 
-static void * GetFlippedTree( void ) ;
-static void DeleteFlippedTree( void * retired_tree ) ;
+static void FlipTree( void ) ;
 
 static int IsThisPersistent( const struct parsedname * pn ) ;
 
 static GOOD_OR_BAD Cache_Add(const void *data, const size_t datasize, const struct parsedname *pn);
 static GOOD_OR_BAD Cache_Add_Common(struct tree_node *tn);
 static GOOD_OR_BAD Cache_Add_Persistent(struct tree_node *tn);
+static void Cache_Add_Alias_Common(struct alias_tree_node *atn);
+static void Cache_Add_Alias_Persistent(struct alias_tree_node *atn);
+static void Cache_Add_Alias_SN(const BYTE * alias_name, int datasize, const BYTE * sn) ;
 
 static enum cache_task_return Cache_Get_Common(void *data, size_t * dsize, time_t * duration, const struct tree_node *tn);
 static enum cache_task_return Cache_Get_Common_Dir(struct dirblob *db, time_t * duration, const struct tree_node *tn);
@@ -136,6 +152,9 @@ static GOOD_OR_BAD Cache_Get_Strict(void *data, size_t dsize, const struct parse
 static void Cache_Del(const struct parsedname *pn) ;
 static GOOD_OR_BAD Cache_Del_Common(const struct tree_node *tn);
 static GOOD_OR_BAD Cache_Del_Persistent(const struct tree_node *tn);
+
+static INDEX_OR_ERROR Cache_Get_Alias_Common( struct alias_tree_node * atn) ;
+static enum cache_task_return Cache_Get_Alias_Persistent( BYTE * sn, const struct alias_tree_node * atn);
 
 static GOOD_OR_BAD Add_Stat(struct cache_stats *scache, GOOD_OR_BAD result);
 static GOOD_OR_BAD Get_Stat(struct cache_stats *scache, const enum cache_task_return result);
@@ -151,6 +170,18 @@ static void LoadTK( const BYTE * sn, void * p, int extension, struct tree_node *
 static int tree_compare(const void *a, const void *b)
 {
 	return memcmp(&((const struct tree_node *) a)->tk, &((const struct tree_node *) b)->tk, sizeof(struct tree_key));
+}
+
+/* used for the sort/search b-tree routines */
+/* big voodoo pointer fuss to just do a standard memory compare of the "key" */
+static int alias_tree_compare(const void *a, const void *b)
+{
+	int da = ((const struct alias_tree_node *) a)->size ;
+	int d = da - ((const struct alias_tree_node *) b)->size ;
+	if ( d != 0 ) {
+		return d ;
+	}
+	return memcmp( CONST_ALIAS_TREE_DATA((const struct alias_tree_node *) a), CONST_ALIAS_TREE_DATA((const struct alias_tree_node *) b), da);
 }
 
 /* Gives the delay for a given property type */
@@ -242,7 +273,7 @@ void Cache_Open(void)
 	}
 
 	// Flip once (at start) to set up old tree.
-	GetFlippedTree() ;
+	FlipTree() ;
 }
 
 /* Note: done in a simgle single thread mode so locking not needed */
@@ -250,12 +281,14 @@ void Cache_Close(void)
 {
 	Cache_Clear() ;
 	SAFETDESTROY( cache.persistent_tree, owfree_func);
+	SAFETDESTROY( cache.persistent_alias_tree, owfree_func);
 }
 
-/* Moves new to old tree, initializes new tree, and returns former old tree location */
-static void * GetFlippedTree( void )
+/* Moves new to old tree, initializes new tree, and clears former old tree location */
+static void FlipTree( void )
 {
 	void * flip = cache.temporary_tree_old; // old old saved for later clearing
+	void * flip_alias = cache.temporary_alias_tree_old; // old old saved for later clearing
 
 	/* Flip caches! old = new. New truncated, reset time and counters and flag */
 	LEVEL_DEBUG("Flipping cache tree (purging timed-out data)");
@@ -263,9 +296,11 @@ static void * GetFlippedTree( void )
 	// move "new" pointers to "old"
 	cache.temporary_tree_old = cache.temporary_tree_new;
 	cache.old_ram_size = cache.new_ram_size;
+	cache.temporary_alias_tree_old = cache.temporary_alias_tree_new;
 
 	// New cache setup
 	cache.temporary_tree_new = NULL;
+	cache.temporary_alias_tree_new = NULL;
 	cache.new_ram_size = 0;
 	cache.added = 0;
 
@@ -273,13 +308,10 @@ static void * GetFlippedTree( void )
 	cache.time_retired = NOW_TIME;
 	cache.time_to_kill = cache.time_retired + cache.retired_lifespan;
 
-	return flip ;
-}
-
-static void DeleteFlippedTree( void * retired_tree )
-{
+	// delete really old tree
 	LEVEL_DEBUG("flip cache. tdestroy() will be called.");
-	SAFETDESTROY( retired_tree, owfree_func);
+	SAFETDESTROY( flip, owfree_func);
+	SAFETDESTROY( flip_alias, owfree_func);
 	STATLOCK;
 	++cache_flips;			/* statistics */
 	memcpy(&old_avg, &new_avg, sizeof(struct average));
@@ -291,8 +323,8 @@ static void DeleteFlippedTree( void * retired_tree )
 void Cache_Clear(void)
 {
 	CACHE_WLOCK;
-	DeleteFlippedTree( GetFlippedTree() ) ;
-	DeleteFlippedTree( GetFlippedTree() ) ;
+	FlipTree() ;
+	FlipTree() ;
 	CACHE_WUNLOCK;
 }
 
@@ -576,6 +608,7 @@ GOOD_OR_BAD Cache_Add_Alias(const ASCII *name, const BYTE * sn)
 	tn->expires = NOW_TIME;
 	tn->dsize = size;
 	strncpy((ASCII *)TREE_DATA(tn), name, size);
+	Cache_Add_Alias_SN( (const BYTE *) name, size, sn ) ;
 	return Add_Stat(&cache_pst, Cache_Add_Persistent(tn));
 }
 
@@ -586,13 +619,12 @@ static GOOD_OR_BAD Cache_Add_Common(struct tree_node *tn)
 {
 	struct tree_opaque *opaque;
 	enum { no_add, yes_add, just_update } state = no_add;
-	void *retired_tree = NULL; // used a a flag for cache flip
 
 	node_show(tn);
 	LEVEL_DEBUG("Add to cache sn " SNformat " pointer=%p index=%d size=%d", SNvar(tn->tk.sn), tn->tk.p, tn->tk.extension, tn->dsize);
 	CACHE_WLOCK;
 	if (cache.time_to_kill < NOW_TIME) {	// old database has timed out
-		retired_tree = GetFlippedTree() ;
+		FlipTree() ;
 	}
 	if (Globals.cache_size && (cache.old_ram_size + cache.new_ram_size > Globals.cache_size)) {
 		// failed size test
@@ -612,10 +644,6 @@ static GOOD_OR_BAD Cache_Add_Common(struct tree_node *tn)
 		owfree(tn);
 	}
 	CACHE_WUNLOCK;
-	/* flipped old database is now out of circulation -- can be destroyed without a lock */
-	if (retired_tree) {
-		DeleteFlippedTree( retired_tree ) ;
-	}
 	/* Added or updated, update statistics */
 	switch (state) {
 		case yes_add: // add new entry
@@ -1410,17 +1438,13 @@ static void Aliaslistaction(const void *node, const VISIT which, const int depth
 		}
 		// Add sn address
 		bytes2string(SN_address, p->tk.sn, SERIAL_NUMBER_SIZE);
-		MemblobAdd( SN_address, SERIAL_NUMBER_SIZE*2, aliaslist_mb ) ;
-		printf("Memblob = <%*s> length=%d \n",MemblobLength(aliaslist_mb),MemblobData(aliaslist_mb),MemblobLength(aliaslist_mb));
+		MemblobAdd( (BYTE *) SN_address, SERIAL_NUMBER_SIZE*2, aliaslist_mb ) ;
 		// Add '='
-		MemblobAdd( "=", 1, aliaslist_mb ) ;
-		printf("Memblob = <%*s> length=%d \n",MemblobLength(aliaslist_mb),MemblobData(aliaslist_mb),MemblobLength(aliaslist_mb));
+		MemblobAdd( (BYTE *) "=", 1, aliaslist_mb ) ;
 		// Add alias name
-		MemblobAdd( (const ASCII *)CONST_TREE_DATA(p), p->dsize, aliaslist_mb ) ;
-		printf("Memblob = <%*s> length=%d \n",MemblobLength(aliaslist_mb),MemblobData(aliaslist_mb),MemblobLength(aliaslist_mb));
+		MemblobAdd( (const BYTE *)CONST_TREE_DATA(p), p->dsize, aliaslist_mb ) ;
 		// Add <CR>
-		MemblobAdd( "\x0D\x0A", 2, aliaslist_mb ) ;
-		printf("Memblob = <%*s> length=%d \n",MemblobLength(aliaslist_mb),MemblobData(aliaslist_mb),MemblobLength(aliaslist_mb));
+		MemblobAdd( (BYTE *) "\x0D\x0A", 2, aliaslist_mb ) ;
 		return ;
 	case preorder:
 	case endorder:
@@ -1439,3 +1463,180 @@ void Aliaslist( struct memblob * mb  )
 }
 
 #endif							/* OW_CACHE */
+
+/* Add an alias to the temporary database of name->bus */
+void Cache_Add_Alias_Bus(const BYTE * alias_name, int datasize, INDEX_OR_ERROR bus)
+{
+	// allocate space for the node and data
+	struct alias_tree_node *atn = (struct alias_tree_node *) owmalloc(sizeof(struct alias_tree_node) + datasize);
+	time_t duration = TimeOut(fc_presence);
+
+	if (atn==NULL) {
+		return ;
+	}
+
+	if (datasize==0) {
+		owfree(atn) ;
+		return ;
+	}
+
+	// populate the node structure with data
+	atn->expires = duration + NOW_TIME;
+	atn->size = datasize;
+	atn->bus = bus ;
+	memcpy( ALIAS_TREE_DATA(atn), alias_name, datasize ) ;
+	
+	Cache_Add_Alias_Common( atn ) ;
+}
+
+/* Add an item to the alias cache */
+/* retire the cache (flip) if too old, and start a new one (keep the old one for a while) */
+/* return 0 if good, 1 if not */
+static void Cache_Add_Alias_Common(struct alias_tree_node *atn)
+{
+	struct tree_opaque *opaque;
+
+	CACHE_WLOCK;
+	if (cache.time_to_kill < NOW_TIME) {	// old database has timed out
+		FlipTree() ;
+	}
+	if (Globals.cache_size && (cache.old_ram_size + cache.new_ram_size > Globals.cache_size)) {
+		// failed size test
+		owfree(atn);
+	} else if ((opaque = tsearch(atn, &cache.temporary_alias_tree_new, alias_tree_compare))) {
+		if ( (void *)atn != (void *) (opaque->key) ) {
+			cache.new_ram_size += sizeof(atn) - sizeof(opaque->key);
+			owfree(opaque->key);
+			opaque->key = (void *) atn;
+		} else {
+			cache.new_ram_size += sizeof(atn);
+		}
+	} else {					// nothing found or added?!? free our memory segment
+		owfree(atn);
+	}
+	CACHE_WUNLOCK;
+}
+
+/* Add an alias/sn to the persistent database of name->sn */
+static void Cache_Add_Alias_SN(const BYTE * alias_name, int datasize, const BYTE * sn)
+{
+	// allocate space for the node and data
+	struct alias_tree_node *atn = (struct alias_tree_node *) owmalloc(sizeof(struct alias_tree_node) + datasize);
+
+	if (atn==NULL) {
+		return ;
+	}
+
+	if (datasize==0) {
+		owfree(atn) ;
+		return ;
+	}
+
+	// populate the node structure with data
+	atn->expires = NOW_TIME;
+	atn->size = datasize;
+	memcpy( atn->sn, sn, SERIAL_NUMBER_SIZE ) ;
+	memcpy( ALIAS_TREE_DATA(atn), alias_name, datasize ) ;
+	
+	Cache_Add_Alias_Persistent( atn ) ;
+}
+
+static void Cache_Add_Alias_Persistent(struct alias_tree_node *atn)
+{
+	struct tree_opaque *opaque;
+
+	PERSISTENT_WLOCK;
+	opaque = tsearch(atn, &cache.persistent_alias_tree, alias_tree_compare) ;
+	if ( opaque != NULL ) {
+		if ( (void *) atn != (void *) (opaque->key) ) {
+			owfree(opaque->key);
+			opaque->key = (void *) atn;
+		}
+	} else {					// nothing found or added?!? free our memory segment
+		owfree(atn);
+	}
+	PERSISTENT_WUNLOCK;
+}
+
+/* Find bus from alias name */
+INDEX_OR_ERROR Cache_Get_Alias_Bus(const BYTE * alias_name, int datasize)
+{
+	// allocate space for the node and data
+	struct alias_tree_node *atn = (struct alias_tree_node *) owmalloc(sizeof(struct alias_tree_node) + datasize);
+
+	if (atn==NULL) {
+		return INDEX_BAD ;
+	}
+
+	if (datasize==0) {
+		owfree(atn) ;
+		return INDEX_BAD ;
+	}
+
+	// populate the node structure with data
+	atn->size = datasize;
+	memcpy( ALIAS_TREE_DATA(atn), alias_name, datasize ) ;
+	
+	return Cache_Get_Alias_Common( atn ) ;
+}
+
+static INDEX_OR_ERROR Cache_Get_Alias_Common( struct alias_tree_node * atn)
+{
+	INDEX_OR_ERROR bus = INDEX_BAD;
+	time_t now = NOW_TIME;
+	struct tree_opaque *opaque;
+	
+	CACHE_RLOCK;
+	opaque = tfind(atn, &cache.temporary_alias_tree_new, alias_tree_compare) ;
+	if ( opaque == NULL ) {
+		// not found in new tree
+		opaque = tfind(atn, &cache.temporary_alias_tree_old, alias_tree_compare) ;
+	}
+	if ( opaque != NULL ) {
+		// modify duration to time left (can be negative if expired)
+		if ( ((struct alias_tree_node *)(opaque->key))->expires > now) {
+			bus = ((struct alias_tree_node *)(opaque->key))->bus ;
+		}
+	}
+	CACHE_RUNLOCK;
+	return bus;
+}
+
+/* sn must point to an 8 byte buffer */
+GOOD_OR_BAD Cache_Get_Alias_SN(const BYTE * alias_name, int datasize, BYTE * sn )
+{
+	// allocate space for the node and data
+	struct alias_tree_node *atn = (struct alias_tree_node *) owmalloc(sizeof(struct alias_tree_node) + datasize);
+
+	if (atn==NULL) {
+		return INDEX_BAD ;
+	}
+
+	if (datasize==0) {
+		owfree(atn) ;
+		return INDEX_BAD ;
+	}
+
+	// populate the node structure with data
+	atn->size = datasize;
+	memcpy( ALIAS_TREE_DATA(atn), alias_name, datasize ) ;
+	
+	return Cache_Get_Alias_Persistent( sn, atn ) ;
+}
+
+/* look in persistent alias->sn tree */
+static enum cache_task_return Cache_Get_Alias_Persistent( BYTE * sn, const struct alias_tree_node * atn)
+{
+	struct tree_opaque *opaque;
+	GOOD_OR_BAD ret = gbBAD ;
+
+	PERSISTENT_RLOCK;
+	opaque = tfind(atn, &cache.persistent_alias_tree, alias_tree_compare) ;
+	if ( opaque != NULL ) {
+		memcpy( sn, ((struct alias_tree_node *)(opaque->key))->sn, SERIAL_NUMBER_SIZE ) ;
+		ret = gbGOOD ;
+	}
+	PERSISTENT_RUNLOCK;
+	return ret;
+}
+
