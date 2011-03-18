@@ -91,6 +91,7 @@ void Cache_Del_Internal(const struct internal_prop *ip, const struct parsedname 
 void Cache_Del_Simul(enum simul_type type, const struct parsedname *pn) ;
 void Cache_Del_Mixed_Aggregate(const struct parsedname *pn);
 void Cache_Del_Mixed_Individual(const struct parsedname *pn);
+void Cache_Del_Alias_Bus(const BYTE * alias_name, int datasize);
 
 void Aliaslist( struct memblob * mb  ) ;
 
@@ -109,6 +110,7 @@ void Aliaslist( struct memblob * mb  ) ;
 #define OWQ_Cache_Add( owq )                (gbBAD)
 #define Cache_Add_Alias(name, sn)           (gbBAD)
 #define Cache_Add_Simul(type,pn)            (gbBAD)
+#define Cache_Add_Alias_Bus(name,size,bus)	(1)
 
 #define Cache_Get(data,dsize,pn )           (gbBAD)
 #define Cache_Get_Dir(db,pn )               (gbBAD)
@@ -119,6 +121,8 @@ void Aliaslist( struct memblob * mb  ) ;
 #define Cache_Get_Alias(name, length, sn)   (gbBAD)
 #define Cache_Get_SerialNumber(name, sn)    (gbBAD)
 #define Cache_Get_Simul_Time(type,time,pn)  (1)
+#define Cache_Get_Alias_Bus(name,size) 		(INDEX_BAD)
+#define Cache_Get_Alias_SN(name,size,sn)	(gbBAD)
 
 #define Cache_Del(pn )                      (1)
 #define Cache_Del_Dir(pn )                  (1)
@@ -133,6 +137,7 @@ void Aliaslist( struct memblob * mb  ) ;
 #define Cache_Del_Simul(type,pn)            (1)
 #define Cache_Del_Mixed_Aggregate(pn)       (1)
 #define Cache_Del_Mixed_Individual(pn)      (1)
+#define Cache_Del_Alias_Bus(name,size)		(1)
 
 #define Aliaslist(mb)     
 

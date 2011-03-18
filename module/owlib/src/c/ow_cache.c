@@ -1462,8 +1462,6 @@ void Aliaslist( struct memblob * mb  )
 	PERSISTENT_RUNLOCK ;
 }
 
-#endif							/* OW_CACHE */
-
 /* Add an alias to the temporary database of name->bus */
 void Cache_Add_Alias_Bus(const BYTE * alias_name, int datasize, INDEX_OR_ERROR bus)
 {
@@ -1640,3 +1638,12 @@ static enum cache_task_return Cache_Get_Alias_Persistent( BYTE * sn, const struc
 	return ret;
 }
 
+/* Delete bus from alias name */
+void Cache_Del_Alias_Bus(const BYTE * alias_name, int datasize)
+{
+	// Cheat -- just change to a bad bus value
+	Cache_Add_Alias_Bus( alias_name, datasize, INDEX_BAD ) ;
+}
+
+
+#endif							/* OW_CACHE */
