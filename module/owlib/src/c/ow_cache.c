@@ -139,7 +139,7 @@ static GOOD_OR_BAD Cache_Add_Common(struct tree_node *tn);
 static GOOD_OR_BAD Cache_Add_Persistent(struct tree_node *tn);
 static void Cache_Add_Alias_Common(struct alias_tree_node *atn);
 static void Cache_Add_Alias_Persistent(struct alias_tree_node *atn);
-static void Cache_Add_Alias_SN(const BYTE * alias_name, int datasize, const BYTE * sn) ;
+static void Cache_Add_Alias_SN(const BYTE * alias_name, const BYTE * sn) ;
 
 static enum cache_task_return Cache_Get_Common(void *data, size_t * dsize, time_t * duration, const struct tree_node *tn);
 static enum cache_task_return Cache_Get_Common_Dir(struct dirblob *db, time_t * duration, const struct tree_node *tn);
@@ -608,7 +608,7 @@ GOOD_OR_BAD Cache_Add_Alias(const ASCII *name, const BYTE * sn)
 	tn->expires = NOW_TIME;
 	tn->dsize = size;
 	strncpy((ASCII *)TREE_DATA(tn), name, size);
-	Cache_Add_Alias_SN( (const BYTE *) name, size, sn ) ;
+	Cache_Add_Alias_SN( (const BYTE *) name, sn ) ;
 	return Add_Stat(&cache_pst, Cache_Add_Persistent(tn));
 }
 
@@ -1014,25 +1014,27 @@ static GOOD_OR_BAD Cache_Get_Simultaneous(enum simul_type type, struct one_wire_
 }
 
 /* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
-/* space already allocated in buffer */
-GOOD_OR_BAD Cache_Get_Alias(ASCII * name, size_t length, const BYTE * sn)
+/* space allocated, needs to be owfree-d */
+GOOD_OR_BAD Cache_Get_Alias(ASCII * name, int * size, const BYTE * sn)
 {
 	struct tree_node tn;
 	struct tree_opaque *opaque;
-	GOOD_OR_BAD ret = gbBAD ;
+	
 
 	LoadTK(sn, Alias_Marker, 0, &tn ) ;
+	name = NULL ;
 
 	PERSISTENT_RLOCK;
 	if ((opaque = tfind(&tn, &cache.persistent_tree, tree_compare))) {
-		if ( opaque->key->dsize < length ) {
-			strncpy(name,(ASCII *)TREE_DATA(opaque->key),length);
-			ret = gbGOOD ;
-			LEVEL_DEBUG("Retrieving " SNformat " alias=%s", SNvar(sn), SAFESTRING(name) );
+		name = owmalloc( opaque->key->dsize ) ;
+		if ( name != NULL ) {
+			size[0] = opaque->key->dsize ;
+			memcpy( name, (ASCII *)TREE_DATA(opaque->key), size[0] ) ;
+			LEVEL_DEBUG("Retrieving " SNformat " alias=%*s", SNvar(sn), name, size[0] );
 		}
 	}
 	PERSISTENT_RUNLOCK;
-	return ret ;
+	return (name == NULL) ? gbBAD : gbGOOD ;
 }
 
 struct {
@@ -1463,10 +1465,12 @@ void Aliaslist( struct memblob * mb  )
 }
 
 /* Add an alias to the temporary database of name->bus */
-void Cache_Add_Alias_Bus(const BYTE * alias_name, int datasize, INDEX_OR_ERROR bus)
+/* alias_name is a null-terminalted string */
+void Cache_Add_Alias_Bus(const BYTE * alias_name, INDEX_OR_ERROR bus)
 {
 	// allocate space for the node and data
-	struct alias_tree_node *atn = (struct alias_tree_node *) owmalloc(sizeof(struct alias_tree_node) + datasize);
+	int datasize = strlen(alias_name) ;
+	struct alias_tree_node *atn = (struct alias_tree_node *) owmalloc(sizeof(struct alias_tree_node) + datasize + 1 );
 	time_t duration = TimeOut(fc_presence);
 
 	if (atn==NULL) {
@@ -1480,9 +1484,9 @@ void Cache_Add_Alias_Bus(const BYTE * alias_name, int datasize, INDEX_OR_ERROR b
 
 	// populate the node structure with data
 	atn->expires = duration + NOW_TIME;
-	atn->size = datasize;
+	atn->size = datasize ;
 	atn->bus = bus ;
-	memcpy( ALIAS_TREE_DATA(atn), alias_name, datasize ) ;
+	memcpy( ALIAS_TREE_DATA(atn), alias_name, datasize + 1 ) ;
 	
 	Cache_Add_Alias_Common( atn ) ;
 }
@@ -1516,10 +1520,12 @@ static void Cache_Add_Alias_Common(struct alias_tree_node *atn)
 }
 
 /* Add an alias/sn to the persistent database of name->sn */
-static void Cache_Add_Alias_SN(const BYTE * alias_name, int datasize, const BYTE * sn)
+/* Alias name must be a null-terminated string */
+static void Cache_Add_Alias_SN(const BYTE * alias_name, const BYTE * sn)
 {
 	// allocate space for the node and data
-	struct alias_tree_node *atn = (struct alias_tree_node *) owmalloc(sizeof(struct alias_tree_node) + datasize);
+	int datasize = strlen(alias_name) ;
+	struct alias_tree_node *atn = (struct alias_tree_node *) owmalloc(sizeof(struct alias_tree_node) + datasize + 1);
 
 	if (atn==NULL) {
 		return ;
@@ -1534,7 +1540,7 @@ static void Cache_Add_Alias_SN(const BYTE * alias_name, int datasize, const BYTE
 	atn->expires = NOW_TIME;
 	atn->size = datasize;
 	memcpy( atn->sn, sn, SERIAL_NUMBER_SIZE ) ;
-	memcpy( ALIAS_TREE_DATA(atn), alias_name, datasize ) ;
+	memcpy( ALIAS_TREE_DATA(atn), alias_name, datasize+1 ) ;
 	
 	Cache_Add_Alias_Persistent( atn ) ;
 }
@@ -1557,10 +1563,12 @@ static void Cache_Add_Alias_Persistent(struct alias_tree_node *atn)
 }
 
 /* Find bus from alias name */
-INDEX_OR_ERROR Cache_Get_Alias_Bus(const BYTE * alias_name, int datasize)
+/* Alias name must be a null-terminated string */
+INDEX_OR_ERROR Cache_Get_Alias_Bus(const BYTE * alias_name)
 {
 	// allocate space for the node and data
-	struct alias_tree_node *atn = (struct alias_tree_node *) owmalloc(sizeof(struct alias_tree_node) + datasize);
+	int datasize = strlen(alias_name) ;
+	struct alias_tree_node *atn = (struct alias_tree_node *) owmalloc(sizeof(struct alias_tree_node) + datasize + 1);
 
 	if (atn==NULL) {
 		return INDEX_BAD ;
@@ -1573,7 +1581,7 @@ INDEX_OR_ERROR Cache_Get_Alias_Bus(const BYTE * alias_name, int datasize)
 
 	// populate the node structure with data
 	atn->size = datasize;
-	memcpy( ALIAS_TREE_DATA(atn), alias_name, datasize ) ;
+	memcpy( ALIAS_TREE_DATA(atn), alias_name, datasize+1 ) ;
 	
 	return Cache_Get_Alias_Common( atn ) ;
 }
@@ -1587,24 +1595,29 @@ static INDEX_OR_ERROR Cache_Get_Alias_Common( struct alias_tree_node * atn)
 	CACHE_RLOCK;
 	opaque = tfind(atn, &cache.temporary_alias_tree_new, alias_tree_compare) ;
 	if ( opaque == NULL ) {
-		// not found in new tree
+		// try old tree
 		opaque = tfind(atn, &cache.temporary_alias_tree_old, alias_tree_compare) ;
 	}
 	if ( opaque != NULL ) {
-		// modify duration to time left (can be negative if expired)
+		// test expiration
 		if ( ((struct alias_tree_node *)(opaque->key))->expires > now) {
 			bus = ((struct alias_tree_node *)(opaque->key))->bus ;
+			LEVEL_DEBUG("Found %s on bus.%d\n",ALIAS_TREE_DATA(atn),bus) ;
 		}
 	}
 	CACHE_RUNLOCK;
+	LEVEL_DEBUG("Finding %s unsuccessful\n",ALIAS_TREE_DATA(atn)) ;
+	owfree(atn) ;
 	return bus;
 }
 
 /* sn must point to an 8 byte buffer */
-GOOD_OR_BAD Cache_Get_Alias_SN(const BYTE * alias_name, int datasize, BYTE * sn )
+/* Alias name must be a null-terminated string */
+GOOD_OR_BAD Cache_Get_Alias_SN(const BYTE * alias_name, BYTE * sn )
 {
 	// allocate space for the node and data
-	struct alias_tree_node *atn = (struct alias_tree_node *) owmalloc(sizeof(struct alias_tree_node) + datasize);
+	int datasize = strlen(alias_name) ;
+	struct alias_tree_node *atn = (struct alias_tree_node *) owmalloc(sizeof(struct alias_tree_node) + datasize+1);
 
 	if (atn==NULL) {
 		return INDEX_BAD ;
@@ -1617,7 +1630,7 @@ GOOD_OR_BAD Cache_Get_Alias_SN(const BYTE * alias_name, int datasize, BYTE * sn 
 
 	// populate the node structure with data
 	atn->size = datasize;
-	memcpy( ALIAS_TREE_DATA(atn), alias_name, datasize ) ;
+	memcpy( ALIAS_TREE_DATA(atn), alias_name, datasize+1 ) ;
 	
 	return Cache_Get_Alias_Persistent( sn, atn ) ;
 }
@@ -1632,17 +1645,22 @@ static enum cache_task_return Cache_Get_Alias_Persistent( BYTE * sn, const struc
 	opaque = tfind(atn, &cache.persistent_alias_tree, alias_tree_compare) ;
 	if ( opaque != NULL ) {
 		memcpy( sn, ((struct alias_tree_node *)(opaque->key))->sn, SERIAL_NUMBER_SIZE ) ;
+		LEVEL_DEBUG("Lookup of %s gives "SNformat"\n", CONST_ALIAS_TREE_DATA(atn), SNvar(sn) ) ;
 		ret = gbGOOD ;
 	}
 	PERSISTENT_RUNLOCK;
+	LEVEL_DEBUG("Lookup of %s unsuccessful\n",CONST_ALIAS_TREE_DATA(atn)) ;
+	owfree(atn) ;
 	return ret;
 }
 
 /* Delete bus from alias name */
-void Cache_Del_Alias_Bus(const BYTE * alias_name, int datasize)
+/* Alias name must be a null-terminated string */
+void Cache_Del_Alias_Bus(const BYTE * alias_name)
 {
 	// Cheat -- just change to a bad bus value
-	Cache_Add_Alias_Bus( alias_name, datasize, INDEX_BAD ) ;
+	LEVEL_DEBUG("Hide %s\n",alias_name) ;
+	Cache_Add_Alias_Bus( alias_name, INDEX_BAD ) ;
 }
 
 
