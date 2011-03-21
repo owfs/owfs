@@ -767,7 +767,9 @@ static ZERO_OR_ERROR FS_dir_plus(void (*dirfunc) (void *, const struct parsednam
 	struct parsedname s_pn_plus_directory;
 	struct parsedname *pn_plus_directory = &s_pn_plus_directory;
 
+printf("About to show %s\n",file);
 	if (FS_ParsedNamePlus(pn_directory->path, file, pn_plus_directory) == 0) {
+printf("About to show %s as path %s\n",file, pn_plus_directory->path);
  		switch ( FS_visible(pn_plus_directory) ) { // hide hidden properties
 			case visible_now :
 			case visible_always:

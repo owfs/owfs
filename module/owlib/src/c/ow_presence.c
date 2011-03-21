@@ -82,6 +82,7 @@ INDEX_OR_ERROR CheckPresence(struct parsedname *pn)
 	bus_nr = CheckPresence_low(pn);	// check only allocated inbound connections
 	if ( INDEX_VALID(bus_nr) ) {
 		SetKnownBus(bus_nr, pn);
+		Cache_Add_Device( bus_nr, pn->sn ) ;
 		return bus_nr;
 	}
 	UnsetKnownBus(pn);

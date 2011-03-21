@@ -27,7 +27,7 @@ $Id$
 /* cacheenabled, presencecheck, tempscale, devform */
 #if OW_CACHE
 int32_t LocalControlFlags = ((uint8_t) fdi) << DEVFORMAT_BIT | ((uint8_t) pressure_mbar) << PRESSURESCALE_BIT | ((uint8_t) temp_celsius) << TEMPSCALE_BIT | ((uint8_t) 1)
-	<< 8 | ((uint8_t) 1);
+	<< 8 | ((uint8_t) 1) | ALIAS_REQUEST ;
 #else
 int32_t LocalControlFlags = ((uint8_t) fdi) << DEVFORMAT_BIT | ((uint8_t) pressure_mbar) << PRESSURESCALE_BIT | ((uint8_t) temp_celsius) << TEMPSCALE_BIT | ((uint8_t) 1)
 	<< 8;

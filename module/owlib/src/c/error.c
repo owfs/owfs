@@ -145,6 +145,8 @@ void _Debug_Bytes(const char *title, const unsigned char *buf, int length)
 	if (length < 0) {
 		fprintf(stderr,"\n-- Attempt to write with bad length\n");
 		return;
+	} else if ( length == 0 ) {
+		return ;
 	}
 	if (buf == NULL) {
 		fprintf(stderr,"\n-- NULL buffer\n");

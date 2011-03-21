@@ -86,6 +86,9 @@ GOOD_OR_BAD ReadAliasFile(const ASCII * file)
 static GOOD_OR_BAD Test_and_Add_Alias( char * name, BYTE * sn )
 {
 	BYTE sn_stored[SERIAL_NUMBER_SIZE] ;
+	ASCII * other_alias ;
+	_Debug_Bytes("alias",name, strlen(name)) ;
+
 	if ( strlen(name) > PROPERTY_LENGTH_ALIAS ) {
 		LEVEL_CALL("Alias too long: sn=" SNformat ", alias=%s max length=%d", SNvar(sn), name,  PROPERTY_LENGTH_ALIAS ) ;
 		return gbBAD ;
@@ -101,12 +104,20 @@ static GOOD_OR_BAD Test_and_Add_Alias( char * name, BYTE * sn )
 	|| strcmp( name, "structure" )==0
 	|| strncmp( name, "bus.", 4 )==0
 	) {
-		LEVEL_CALL("Alias copies intrinsic filename: %s",name ) ;
+		LEVEL_CALL("Alias attempts to redefine reserved filename: %s",name ) ;
 		return gbBAD ;
 	}
-	if ( GOOD( Cache_Get_SerialNumber( name, sn_stored )) && memcmp(sn,sn_stored,SERIAL_NUMBER_SIZE)!=0 ) {
-		LEVEL_CALL("Alias redefines a previous alias: %s " SNformat " and " SNformat,name,SNvar(sn),SNvar(sn_stored) ) ;
-		return gbBAD ;
+
+	other_alias = Cache_Get_Alias( sn ) ;
+	if ( other_alias != NULL ) {
+		if ( strcmp(other_alias,name) == 0 ) {
+			LEVEL_CALL( "Redundant definition of "SNformat" as %s",SNvar(sn),name ) ;
+			owfree(other_alias) ;
+		} else {
+			LEVEL_CALL("Alias redefines "SNformat" from %s to %s -- not allowed!",SNvar(sn),other_alias,name ) ;
+			owfree(other_alias) ;
+			return gbBAD ;
+		}
 	}
 	if ( strchr( name, '/' ) ) {
 		LEVEL_CALL("Alias contains confusing path separator \'/\': %s",name ) ;
@@ -122,15 +133,16 @@ void FS_dir_entry_aliased(void (*dirfunc) (void *, const struct parsedname *), v
 		struct parsedname s_pn_copy ;
 		struct parsedname * pn_copy = & s_pn_copy ;
 		ASCII path_copy[PATH_MAX+1] ;
-		ASCII * path_pointer = pn->path ;
+		ASCII * path_pointer = pn->path ; // current location in original path
 		enum alias_parse_state { aps_initial, aps_next, aps_last } aps = aps_initial ;
 
 		// Shallow copy
 		memcpy( pn_copy, pn, sizeof(struct parsedname) ) ;
 		memset( path_copy, 0, sizeof(path_copy) ) ;
+		printf("About the text alias on %s\n",pn->path);
 
 		while ( aps != aps_last ) {
-			ASCII * path_copy_pointer =  & path_copy[strlen(path_copy)] ; // point to end
+			ASCII * path_copy_pointer =  & path_copy[strlen(path_copy)] ; // point to end of copy
 
 			ASCII * path_slash = strchr(path_pointer,'/') ;
 			BYTE sn[SERIAL_NUMBER_SIZE] ;
@@ -153,9 +165,20 @@ void FS_dir_entry_aliased(void (*dirfunc) (void *, const struct parsedname *), v
 				path_pointer = path_slash + 1 ; // past '/'
 			}
 			
-			//test this segment for alias
+			//test this segment for serial number
 			if ( Parse_SerialNumber(path_copy_pointer,sn) == sn_valid ) {
-				Cache_Get_Alias(path_copy_pointer,PATH_MAX - (path_copy_pointer-path_copy),sn) ;
+				printf("We see serial number in path "SNformat"\n",SNvar(sn)) ;
+				// now test for alias
+				ASCII * name = Cache_Get_Alias( sn ) ;
+				if ( name != NULL ) {
+					printf("It's aliased to %s\n",name);
+					// now test for room
+					if ( path_copy + PATH_MAX > path_copy_pointer + strlen(name) ) {
+						// overwrite serial number with alias name
+						strcpy( path_copy_pointer, name ) ;
+					}
+					owfree( name ) ;
+				}
 			}
 		}
 

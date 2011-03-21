@@ -37,6 +37,7 @@ static enum parse_enum Parse_RealDevice(char *filename, enum parse_pass remote_s
 static enum parse_enum Parse_NonRealDevice(char *filename, struct parsedname *pn);
 static enum parse_enum Parse_Bus(char *pathnow, struct parsedname *pn);
 static enum parse_enum Parse_Alias(char *filename, enum parse_pass remote_status, struct parsedname *pn);
+static enum parse_enum Parse_Alias_Known( char *filename, enum parse_pass remote_status, struct parsedname *pn);
 static void ReplaceAliasInPath( char * filename, struct parsedname * pn);
 
 static ZERO_OR_ERROR FS_ParsedName_anywhere(const char *path, enum parse_pass remote_status, struct parsedname *pn);
@@ -427,6 +428,7 @@ static enum parse_enum Parse_Bus(char *pathnow, struct parsedname *pn)
 	return parse_first;
 }
 
+/* replace alias with sn */
 static void ReplaceAliasInPath( char * filename, struct parsedname * pn)
 {
 	int alias_len = strlen(filename) ;
@@ -435,6 +437,11 @@ static void ReplaceAliasInPath( char * filename, struct parsedname * pn)
 
 	char * alias_loc = pn->path_to_server ;
 	char * post_alias_loc ;
+
+	// check total length
+	if ( strlen(pn->path_to_server) + 14 - alias_len > PATH_MAX ) {
+		return ;
+	}
 	
 	strcpy( alias, "/") ;
 	strcat( alias, filename ) ; // we include an initial / to make the match more accurate
@@ -461,51 +468,70 @@ static void ReplaceAliasInPath( char * filename, struct parsedname * pn)
 	bytes2string( alias_loc, pn->sn, 7 ) ;
 }
 
-static enum parse_enum Parse_Alias(char *filename, enum parse_pass remote_status, struct parsedname *pn)
+/* This is when the alias name in mapped to a known serial number
+ * behaves much more like the standard handling -- bus from sn */
+static enum parse_enum Parse_Alias_Known( char *filename, enum parse_pass remote_status, struct parsedname *pn)
 {
-	if ( GOOD( Cache_Get_SerialNumber(filename,pn->sn)) ) {
-		// Success! The alias is already registered and the serial
-		//  number just now loaded in pn->sn
-		
-		/* Search for known 1-wire device -- keyed to device name (family code in HEX) */
-		pn->selected_device = FS_devicefindhex(pn->sn[0], pn);
+	/* Search for known 1-wire device -- keyed to device name (family code in HEX) */
+	pn->selected_device = FS_devicefindhex(pn->sn[0], pn);
 
-		if (Globals.one_device) {
-			// All devices assumed to be on this bus
-			SetKnownBus(INDEX_DEFAULT, pn);
-		} else if (remote_status == parse_pass_post_remote) {
-			// comming back from owserver, bus already known
-			return parse_prop;
-		} else {
-			// Replace in to_server the alias with the serial number
-			if ( BusIsServer(pn->selected_connection) ) {
-				ReplaceAliasInPath( filename, pn ) ;
-			}
-
-			/* Check the presence, and cache the proper bus number for better performance */
-			INDEX_OR_ERROR bus_nr = CheckPresence(pn);
-			if ( INDEX_NOT_VALID(bus_nr) ) {
-				return parse_error;	/* CheckPresence failed */
-			}
-		}
+	// Now assign a bus
+	if (Globals.one_device) {
+		// All devices assumed to be on this bus
+		SetKnownBus(INDEX_DEFAULT, pn);
+	} else if (remote_status == parse_pass_post_remote) {
+		// comming back from owserver, bus already known
+		// leave alias name in path on the return
 	} else {
-		// Add the Alias to the database
-		INDEX_OR_ERROR bus_nr = RemoteAlias(pn) ;
-		if ( INDEX_NOT_VALID(bus_nr) ) {
-			return parse_error;	/* CheckPresence failed */
-		}
-		SetKnownBus(bus_nr, pn);
-		if ( pn->sn[0] != 0 ) {
-			Cache_Add_Alias( filename, pn->sn ) ;
-		}
-
 		// Replace in to_server the alias with the serial number
 		if ( BusIsServer(pn->selected_connection) ) {
 			ReplaceAliasInPath( filename, pn ) ;
 		}
+
+		/* Check the presence, and cache the proper bus number for better performance */
+		if ( INDEX_NOT_VALID( CheckPresence(pn) ) ) {
+			Cache_Del_Alias_Bus( filename ) ;
+			return parse_error;	/* CheckPresence failed */
+		}
+	}
+	return parse_prop ;
+}
+
+/* Get a device that isn't a serial number -- see if it's an alias */
+static enum parse_enum Parse_Alias(char *filename, enum parse_pass remote_status, struct parsedname *pn)
+{
+	INDEX_OR_ERROR bus ;
+	
+	// See if the alias is known in the permanent list. We get the serial number 
+	if ( GOOD( Cache_Get_Alias_SN(filename,pn->sn)) ) {
+		// Success! The alias is already registered and the serial
+		//  number just now loaded in pn->sn
+		return Parse_Alias_Known( filename, remote_status, pn ) ;
+	}
+
+	bus = Cache_Get_Alias_Bus( filename ) ;
+	if ( bus != INDEX_BAD ) {
+		// This alias is cached in temporary list
+		SetKnownBus(bus, pn);
+		return parse_prop ;
+	}
+
+	bus = RemoteAlias(pn) ;
+	if ( bus == INDEX_BAD ) {
+		return parse_error ;
 	}
 	
-	return parse_prop;
+	// Found the alias (remotely)
+	SetKnownBus(bus, pn);
+
+	if ( pn->sn[0] == 0 && pn->sn[7]==0 ) { // no serial number owserver (older)
+		Cache_Add_Alias_Bus(filename,bus) ;
+	} else {
+		Cache_Add_Alias( filename, pn->sn ) ;
+		Cache_Add_Device( bus, pn->sn ) ;
+	}
+
+	return parse_prop ;
 }
 
 /* Parse Name (only device name) part of string */

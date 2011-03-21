@@ -67,18 +67,17 @@ GOOD_OR_BAD Cache_Add_Device(const int bus_nr, const BYTE *sn);
 GOOD_OR_BAD Cache_Add_SlaveSpecific(const void *data, const size_t datasize, const struct internal_prop *ip, const struct parsedname *pn);
 GOOD_OR_BAD Cache_Add_Alias(const ASCII *name, const BYTE * sn) ;
 GOOD_OR_BAD Cache_Add_Simul(const enum simul_type type, const struct parsedname *pn);
-void Cache_Add_Alias_Bus(const BYTE * alias_name, INDEX_OR_ERROR bus);
+void Cache_Add_Alias_Bus(const ASCII * alias_name, INDEX_OR_ERROR bus);
 
 GOOD_OR_BAD OWQ_Cache_Get(struct one_wire_query *owq);
 GOOD_OR_BAD Cache_Get(void *data, size_t * dsize, const struct parsedname *pn);
 GOOD_OR_BAD Cache_Get_Dir(struct dirblob *db, const struct parsedname *pn);
 GOOD_OR_BAD Cache_Get_Device(void *bus_nr, const struct parsedname *pn);
 GOOD_OR_BAD Cache_Get_SlaveSpecific(void *data, size_t dsize, const struct internal_prop *ip, const struct parsedname *pn);
-GOOD_OR_BAD Cache_Get_Alias(ASCII * name, int * size, const BYTE * sn) ;
-GOOD_OR_BAD Cache_Get_SerialNumber(const ASCII * name, BYTE * sn) ;
+ASCII * Cache_Get_Alias(const BYTE * sn) ;
 GOOD_OR_BAD Cache_Get_Simul_Time(enum simul_type type, time_t * dwell_time, const struct parsedname * pn);
-INDEX_OR_ERROR Cache_Get_Alias_Bus(const BYTE * alias_name) ;
-GOOD_OR_BAD Cache_Get_Alias_SN(const BYTE * alias_name, BYTE * sn );
+INDEX_OR_ERROR Cache_Get_Alias_Bus(const ASCII * alias_name) ;
+GOOD_OR_BAD Cache_Get_Alias_SN(const ASCII * alias_name, BYTE * sn );
 
 void OWQ_Cache_Del(struct one_wire_query *owq);
 void OWQ_Cache_Del_ALL(struct one_wire_query *owq);
@@ -91,7 +90,7 @@ void Cache_Del_Internal(const struct internal_prop *ip, const struct parsedname 
 void Cache_Del_Simul(enum simul_type type, const struct parsedname *pn) ;
 void Cache_Del_Mixed_Aggregate(const struct parsedname *pn);
 void Cache_Del_Mixed_Individual(const struct parsedname *pn);
-void Cache_Del_Alias_Bus(const BYTE * alias_name);
+void Cache_Del_Alias_Bus(const ASCII * alias_name);
 
 void Aliaslist( struct memblob * mb  ) ;
 
@@ -118,7 +117,7 @@ void Aliaslist( struct memblob * mb  ) ;
 
 #define Cache_Get_Device(bus_nr,pn )        (gbBAD)
 #define Cache_Get_SlaveSpecific(data,dsize,ip,pn )       (gbBAD)
-#define Cache_Get_Alias(name, length, sn)   (gbBAD)
+#define Cache_Get_Alias(sn)				   (gbBAD)
 #define Cache_Get_SerialNumber(name, sn)    (gbBAD)
 #define Cache_Get_Simul_Time(type,time,pn)  (1)
 #define Cache_Get_Alias_Bus(name)	 		(INDEX_BAD)

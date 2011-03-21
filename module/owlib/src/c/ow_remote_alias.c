@@ -132,7 +132,6 @@ INDEX_OR_ERROR RemoteAlias(struct parsedname *pn)
 	
 	if ( INDEX_VALID( ras.bus_nr ) ) {
 		memcpy( pn->sn, ras.sn, SERIAL_NUMBER_SIZE ) ;
-		Cache_Add_Device( ras.bus_nr, ras.sn ) ;
 	}
 	LEVEL_DEBUG("Remote alias for %s bus=%d "SNformat,pn->path_to_server,ras.bus_nr,SNvar(ras.sn));
 	return ras.bus_nr;
@@ -149,7 +148,6 @@ INDEX_OR_ERROR RemoteAlias(struct parsedname *pn)
 		INDEX_OR_ERROR bus_nr = ServerAlias( sn, in, pn ) ;
 		if ( INDEX_VALID(bus_nr) ) {
 			memcpy( pn->sn, sn, SERIAL_NUMBER_SIZE ) ;
-			Cache_Add_Device( bus_nr, sn ) ;
 			LEVEL_DEBUG("Remote alias for %s bus=%d "SNformat,pn->path_to_server,bus_nr,SNvar(sn));
 			return bus_nr ;
 		}
