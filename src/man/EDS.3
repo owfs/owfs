@@ -168,11 +168,11 @@ microprocessor-based sensors
 .SS EDS006X/temperature
 .I read-only, floating-point
 .br
-Temperature for the EDS006X series of chips. In the -55C to 125C range, with 0.0636C precision. The temperature is read every second, continually. Data is presented in the specified temperature scale, Celsius by default.
+Temperature for the EDS006X series of chips. In the \-55C to 125C range, with 0.0636C precision. The temperature is read every second, continually. Data is presented in the specified temperature scale, Celsius by default.
 .SS EDS007X/temperature
 .I read-only, floating-point
 .br
-Temperature for the EDS007X series of chips. Read using a wide-range precise RTD sensor. Typical range is -60C to 260C with 0.15C accuracy, although a range of -200C to 850C is possible. The temperature is read every second unless a longer
+Temperature for the EDS007X series of chips. Read using a wide-range precise RTD sensor. Typical range is \-60C to 260C with 0.15C accuracy, although a range of \-200C to 850C is possible. The temperature is read every second unless a longer
 .I EDS007X/delay
 is given. Data is presented in the specified temperature scale, Celsius by default.
 .SS EDS007X/resistance
@@ -215,11 +215,11 @@ computered every 0.2 seconds. Data is a percent and reported in the 0-100 range.
 Ambient light in Lux. Measured every 0.2 seconds.
 .SH PRESSURE
 .SS EDS006X/pressure
-.read-only, floating-point
+.I read-only, floating-point
 .br
 Ambient pressure, measured every 0.2 seconds. Data in the selected pressure scale (default mBar).
 .SS EDS006X/inHg
-.read-only, floating-point
+.I read-only, floating-point
 .br
 Ambient pressure, measured every 0.2 seconds. Data in the inHg scale.
 .SH THRESHOLD

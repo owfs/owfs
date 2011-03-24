@@ -33,7 +33,7 @@ man_MANS = owfs.1 \
            owperl.3 \
            owtcl.3 \
            owfs.5 owfs.conf.5 \
-           owtcl.n ow.n
+           ow.3
 EXTRA_DIST = ${man_MANS} *.?so
 
 install-data-am: install-man install-so-man
@@ -50,13 +50,13 @@ install-so-man:
         list="$$list $$i"; \
 	done; \
 	for manfile in $$list; do \
-	    for i in `sed -n '2,$$ s/^.so //p' $(DESTDIR)/$$manfile`; do \
-			printf "%s\n" H /$$i/d ".r $(srcdir)/$$i" g/^.\\\\\"/d ",w" | ed -s $(DESTDIR)/$$manfile ; \
+	    for i in `sed -n '2,$$ s/^.so //p' $(DESTDIR)/$$manfile | tac`; do \
+			printf "%s\n" H /$$i/d - ".r $(srcdir)/$$i" g/^.\\\\\"/d ",w" | ed -s $(DESTDIR)/$$manfile ; \
 	    done; \
 	done; \
 	for manfile in $$list; do \
-	    for i in `sed -n '2,$$ s/^.so //p' $(DESTDIR)/$$manfile`; do \
-			printf "%s\n" H /$$i/d ".r $(srcdir)/$$i" g/^.\\\"/d ",w" | ed -s $(DESTDIR)/$$manfile ; \
+	    for i in `sed -n '2,$$ s/^.so //p' $(DESTDIR)/$$manfile | tac`; do \
+			printf "%s\n" H /$$i/d - ".r $(srcdir)/$$i" g/^.\\\"/d ",w" | ed -s $(DESTDIR)/$$manfile ; \
 	    done; \
 	done
 

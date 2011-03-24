@@ -48,7 +48,7 @@ and
 .B owperl (3)
 is a perl module that provides an interface to OWFS. The path to each 1-wire device is the same as
 .B owfs (1)
-. Only the top layer has been modified to return native perl strings.
+\&. Only the top layer has been modified to return native perl strings.
 .PP
 .B owperl (3)
 is created by
@@ -81,11 +81,11 @@ and
 .I owhttpd
 programs can access the
 .I owserver
-process simultaneously. In fact, this will probably be the prefered mode of access to OWFS for
+process simultaneously. In fact, this will probably be the preferred mode of access to OWFS for
 .I owperl
 except in trivial applications.
 .SH EXAMPLE
-perl -MOW -e "OW::init('/dev/ttyS1'); printf OW::get('\');"
+perl \-MOW \-e "OW::init('/dev/ttyS1'); printf OW::get('\');"
 .SH SEE ALSO
 .so seealso.3so
 .SH AVAILABILITY

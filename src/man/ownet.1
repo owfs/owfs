@@ -10,7 +10,9 @@
 '\"
 .TH OWNET 1 2008 "OWFS Manpage" "One-Wire File System"
 .SH NAME
-.B ownet (libownet)
+.B ownet
+,
+.B (libownet)
 \- easy C-language 1-wire interface to the owserver protocol
 .SH SYNOPSIS
 .B libownet
@@ -163,7 +165,7 @@ One or more device names (includes tcp, serial, usb...) and command line switche
 for full syntax.
 .TP
 .I Returns
-0 for success. -1 on error and
+0 for success. \-1 on error and
 .I errno
 will be set.
 .I OW_finish
@@ -193,7 +195,7 @@ for full syntax. Unlike
 the arguments are in argv/argc format.
 .TP
 .I Returns
-0 for success. -1 on error and
+0 for success. \-1 on error and
 .I errno
 will be set.
 .I OW_finish
@@ -221,7 +223,7 @@ returns the length of the value/string in
 .I buffer
 .TP
 .I Returns
-number of bytes on success. -1 on error (and
+number of bytes on success. \-1 on error (and
 .I errno
 is set).
 .TP
@@ -265,7 +267,7 @@ is the length of bytes requested.
 is the position in file to start reading.
 .TP
 .I Returns
-number of bytes on success. -1 on error (and
+number of bytes on success. \-1 on error (and
 .I errno
 is set).
 .TP
@@ -288,7 +290,7 @@ is the value to be written.
 is the length of the value
 .I buffer.
 .I Returns
-number of bytes on success. -1 on error (and
+number of bytes on success. \-1 on error (and
 .I errno
 is set).
 .TP
@@ -323,7 +325,7 @@ is the length of bytes to be written.
 is the position in file to start writing.
 .TP
 .I Returns
-number of bytes on success. -1 on error (and
+number of bytes on success. \-1 on error (and
 .I errno
 is set).
 .TP

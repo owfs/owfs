@@ -86,22 +86,22 @@ The only supported true USB bus masters are based on the DS2490 chip. The most c
 .P
 There are also bus masters based on the serial chip with a USB to serial conversion built in. These are supported by the serial bus master protocol. 
 .TP
-.I -u  \fR|\ \fI--usb
+.I \-u  \fR|\ \fI\-\-usb
 DS2490 based bus master (like the DS9490R).
 .TP
-.I -u2  \fR|\ \fI--usb=2
+.I \-u2  \fR|\ \fI\-\-usb=2
 Use the second USB bus master. (The order isn't predicatble, however, since the operating system does not conssitently order USB devices).
 .TP
-.I -uall  \fR|\ \fI--usb=ALL
+.I \-uall  \fR|\ \fI\-\-usb=ALL
 Use all the USB devices.
 .TP
-.I --usb_flextime | --usb_regulartime
+.I \-\-usb_flextime | \-\-usb_regulartime
 Changes the details of 1-wire waveform timing for certain network configurations.
 .TP
-.I --altusb
+.I \-\-altusb
 Willy Robion's alternative USB timing. 
 .TP
-.I --timeout_usb=5
+.I \-\-timeout_usb=5
 Timeout for USB communications. This has a 5 second default and can be changed dynamically under
 .I /settings/timeout/usb
 .SH "* I2C devices"
@@ -123,13 +123,13 @@ can specify (via pin voltages) a subset of addresses on the i2c bus. Those choic
 for i2c masters have the form 
 .I /dev/i2c-0, /dev/i2c-1, ...
 .TP
-\fI-d port\fR | \fI--device=port
+\fI\-d port\fR | \fI\-\-device=port
 This simple form only permits a specific 
 .I port 
 and the first available
 .I i2c_address
 .TP
-\fI--i2c=port\fR | \fI--i2c=port:i2c_address\fR | \fI--i2c=port:ALL
+\fI\-\-i2c=port\fR | \fI\-\-i2c=port:i2c_address\fR | \fI\-\-i2c=port:ALL
 Specific i2c
 .I port
 and the
@@ -138,7 +138,7 @@ is either the first, specific, or all or them. The
 .I i2c_address
 is 0,1,2,...
 .TP
-\fI--i2c\fR | \fI--i2c=:\fR | \fI--i2c=ALL:ALL
+\fI\-\-i2c\fR | \fI\-\-i2c=:\fR | \fI\-\-i2c=ALL:ALL
 Search the available i2c buses for either the first, the first, or every i2c adapter.
 .P
 The
@@ -154,26 +154,26 @@ is of the form tcp_address:port
 .P
 E.g. 192.168.0.1:3000 or localhost:3000
 .TP
-.I --link=network_address
+.I \-\-link=network_address
 LinkHubE network LINK adapter by 
 .B iButtonLink
 .TP
-.I --ha7net=network_address | --ha7net
+.I \-\-ha7net=network_address | \-\-ha7net
 HA7Net network 1-wire adapter with specified tcp address or discovered by udp multicast. By
 .B Embedded Data Systems
 .br
-.I --timeout_ha7=60
+.I \-\-timeout_ha7=60
 specific timeout for HA7Net communications (60 second default).
 .TP
-.I --etherweather=network_address
+.I \-\-etherweather=network_address
 Etherweather adapter
 .TP
-\fI-s network_address\fR | \fI--server=network_address
+\fI\-s network_address\fR | \fI\-\-server=network_address
 Location of an
 .B owserver (1)
 program that talks to the 1-wire bus. The default port is 4304.
 .TP
-.I --timeout_network=5
+.I \-\-timeout_network=5
 Timeout for network bus master communications. This has a 1 second default and can be changed dynamically under
 .I /settings/timeout/network
 .SH "* Simulated devices"
@@ -193,16 +193,16 @@ A more complete hexidecimal unique address. Useful when an actual hardware devic
 DS2408,DS2489
 The 1-wire device name. (Full ID cannot be speciifed in this format).
 .TP
-.I --fake=devices
+.I \-\-fake=devices
 Random address and random values for each read. The device ID is also random (unless specified).
 .TP
-.I --temperature_low=12 --temperature_high=44
+.I \-\-temperature_low=12 \-\-temperature_high=44
 Specify the temperature limits for the
 .I fake
 adapter simulation. These should be in the same temperature scale that is specified in the command line. It is possible to change the limits dynamically for each adapter under
 .I /bus.x/interface/settings/simulated/[temperature_low|temperature_high]
 .TP
-.I --tester=devices
+.I \-\-tester=devices
 Predictable address and predictable values for each read. (See the website for the algorhythm).
 .SH "* w1 kernel module"
 This a linux-specific option for using the operating system's access to bus masters. Root access is required and the implementation was still in progress as of owfs v2.7p12 and linux 2.6.30.
@@ -211,9 +211,9 @@ Bus masters are recognized and added dynamically. Details of the physical bus ma
 .P
 Access is restrict to superuser due to the netlink broadcast protocol employed by w1. Multitasking must be configured (threads) on the compilation.
 .TP
-.I --w1
+.I \-\-w1
 Use the linux kernel w1 virtual bus master.
 .TP
-.I --timeout_w1=10
+.I \-\-timeout_w1=10
 Timeout for w1 netlink communications. This has a 10 second default and can be changed dynamically under
 .I /settings/timeout/w1

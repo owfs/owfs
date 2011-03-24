@@ -46,15 +46,15 @@ to discover the assigned port.
 .so timeout.1so
 .SH EXAMPLE
 .TP
-owhttpd -p 3001 -d /dev/ttyS0
+owhttpd \-p 3001 \-d /dev/ttyS0
 Web server runs on tcp port 3001, serial adapter at ttyS0
 .TP
-owhttpd -p 3001 -s littlehost:4304 --error_level=3
+owhttpd \-p 3001 \-s littlehost:4304 \-\-error_level=3
 Web server on port 3001, from
 .I owserver
 process on host "littlehost", extensive error messages.
 .TP
-owhttpd -p 3001 -u -u2 -r
+owhttpd \-p 3001 \-u \-u2 \-r
 Read-only web server on port 3001, using two usb adapters.
 .SH AVAILABILITY
 http://www.owfs.org

@@ -47,10 +47,10 @@ The well known ftp port, 21, will be used by default. Since this port number is 
 .so timeout.1so
 .SH EXAMPLE
 .TP
-owftpd -d /dev/ttyS0
+owftpd \-d /dev/ttyS0
 Ftp server runs on default tcp port 21, serial adapter at ttyS0
 .TP
-owftpd -s littlehost:4304 --error_level=3
+owftpd \-s littlehost:4304 \-\-error_level=3
 Ftp server on default port 21, from
 .B owserver (1)
 process on host "littlehost", extensive error messages.

@@ -10,7 +10,7 @@
 '\"
 .TH OWSHELL 1 2004 "OWSHELL Manpage" "One-Wire File System"
 .SH NAME
-owshell \- lightweight owserver access
+owdir, owread, owwrite, owget, owpresent \- lightweight owserver access
 .SH SYNOPSIS
 .B owdir
 .I -s 
@@ -266,7 +266,7 @@ Read temperature from the DS2751-based thermocouple on an auto-discovered
 .I owserver
 Temperature in fahrenheit.
 .TP
-owwrite -\s 10.0.1.2:3001 32.000800AD23110/pages/page.1 "Passed"
+owwrite \-s 10.0.1.2:3001 32.000800AD23110/pages/page.1 "Passed"
 Connect to a OWFS server process (
 .I owserver
 ) that was started on another machine at tcp port 3001 and write to the memory of a DS2780

@@ -57,7 +57,7 @@ and clients, to display and help resolve communication problems. Network communi
 TCP port or IPaddress:port for
 .I owtap
 .br
-Other OWFS programs will access owtap via this address. (e.g. owdir -s IP:port /)
+Other OWFS programs will access owtap via this address. (e.g. owdir \-s IP:port /)
 .SS \-s
 TCP port or IPaddress:port for
 .I owserver
@@ -68,7 +68,7 @@ If
 .B owserver (1)
 is started:
 .br
-.B owserver -p 4304 -d /dev/ttyS0
+.B owserver \-p 4304 \-d /dev/ttyS0
 .br
 owserver on tcp port 4304 and connects to a physical 1-wire bus on a serial port.
 .PP
@@ -76,13 +76,13 @@ You can directly query
 .B owserver (1)
 with
 .br
-.B owdir -s 4304 /
+.B owdir \-s 4304 /
 .PP
 To see the protocol in action:
 .br
-.B owtap -s 4304 -p 3000
+.B owtap \-s 4304 \-p 3000
 .br
-.B owdir -p 3000 /
+.B owdir \-p 3000 /
 .PP
 In this case 
 .B owtap (1)

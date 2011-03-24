@@ -10,7 +10,7 @@ package OWNet ;
 
 =head1 NAME
 
-B<OWNet>
+OWNet -
 Light weight access to B<owserver>
 
 =head1 SYNOPSIS
