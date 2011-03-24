@@ -39,7 +39,7 @@ enum msg_classification {
 	msg_read,
 	msg_write,
 	msg_dir,
-	msg_size,					// No longer used, leave here to compatibility
+	msg_size,					// No longer used, leave here for compatibility
 	msg_presence,
 	msg_dirall,
 	msg_get,

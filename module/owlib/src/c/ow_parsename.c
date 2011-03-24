@@ -34,6 +34,9 @@ static enum parse_enum Parse_Branch(char *pathnow, enum parse_pass remote_status
 static enum parse_enum Parse_Real(char *pathnow, enum parse_pass remote_status, struct parsedname *pn);
 static enum parse_enum Parse_NonReal(char *pathnow, struct parsedname *pn);
 static enum parse_enum Parse_RealDevice(char *filename, enum parse_pass remote_status, struct parsedname *pn);
+static enum parse_enum Parse_Property(char *filename, struct parsedname *pn);
+
+static enum parse_enum Parse_RealDeviceSN(enum parse_pass remote_status, struct parsedname *pn);
 static enum parse_enum Parse_NonRealDevice(char *filename, struct parsedname *pn);
 static enum parse_enum Parse_Bus(char *pathnow, struct parsedname *pn);
 static enum parse_enum Parse_Alias(char *filename, enum parse_pass remote_status, struct parsedname *pn);
@@ -435,7 +438,7 @@ static void ReplaceAliasInPath( char * filename, struct parsedname * pn)
 
 	char alias[alias_len + 2] ;
 
-	char * alias_loc = pn->path_to_server ;
+	char * alias_loc ;
 	char * post_alias_loc ;
 
 	// check total length
@@ -445,56 +448,36 @@ static void ReplaceAliasInPath( char * filename, struct parsedname * pn)
 	
 	strcpy( alias, "/") ;
 	strcat( alias, filename ) ; // we include an initial / to make the match more accurate
-	do {
-		alias_loc = strstr( alias_loc, alias ) ;
-		if ( alias_loc == NULL ) {
-			return ;
-		}
+
+	for ( alias_loc = pn->path_to_server; alias_loc != NULL ; alias_loc = strstr( alias_loc, alias ) ) {
 		++alias_loc ; // point after '/'
+
 		post_alias_loc = alias_loc + alias_len ;
-		if ( post_alias_loc[0] == '\0' ) {
-			// alias at end of string, no moving needed
-			break ;
-		} 
-		if ( post_alias_loc[0] == '/' ) {
-			// move rest of path
-			memmove( &alias_loc[14], post_alias_loc, strlen(post_alias_loc)+1 ) ;
-			break ;
-		} 
-		// alias not really found (only partial match)
-		// loop starting one char later
-	} while(1) ;
-	//write in serial number or alias
-	bytes2string( alias_loc, pn->sn, 7 ) ;
+		switch ( post_alias_loc[0] ) {
+			case '\0':
+			case '/':
+				// move rest of path
+				memmove( &alias_loc[14], post_alias_loc, strlen(post_alias_loc)+1 ) ;
+				//write in serial number for alias
+				bytes2string( alias_loc, pn->sn, 7 ) ;
+				return ;
+			default:
+				// alias not really found (only partial match)
+				// loop starting one char later
+				break ;
+		}
+	}
 }
 
 /* This is when the alias name in mapped to a known serial number
  * behaves much more like the standard handling -- bus from sn */
 static enum parse_enum Parse_Alias_Known( char *filename, enum parse_pass remote_status, struct parsedname *pn)
 {
-	/* Search for known 1-wire device -- keyed to device name (family code in HEX) */
-	pn->selected_device = FS_devicefindhex(pn->sn[0], pn);
-
-	// Now assign a bus
-	if (Globals.one_device) {
-		// All devices assumed to be on this bus
-		SetKnownBus(INDEX_DEFAULT, pn);
-	} else if (remote_status == parse_pass_post_remote) {
-		// comming back from owserver, bus already known
-		// leave alias name in path on the return
-	} else {
-		// Replace in to_server the alias with the serial number
-		if ( BusIsServer(pn->selected_connection) ) {
-			ReplaceAliasInPath( filename, pn ) ;
-		}
-
-		/* Check the presence, and cache the proper bus number for better performance */
-		if ( INDEX_NOT_VALID( CheckPresence(pn) ) ) {
-			Cache_Del_Alias_Bus( filename ) ;
-			return parse_error;	/* CheckPresence failed */
-		}
+	if (remote_status == parse_pass_pre_remote) {
+		ReplaceAliasInPath( filename, pn ) ;
 	}
-	return parse_prop ;
+
+	return Parse_RealDeviceSN( remote_status, pn ) ;
 }
 
 /* Get a device that isn't a serial number -- see if it's an alias */
@@ -509,6 +492,10 @@ static enum parse_enum Parse_Alias(char *filename, enum parse_pass remote_status
 		return Parse_Alias_Known( filename, remote_status, pn ) ;
 	}
 
+	// By definition this is a remote device, or non-existent.
+	pn->selected_device = &RemoteDevice ;
+
+	// is alias name cached from previous query?
 	bus = Cache_Get_Alias_Bus( filename ) ;
 	if ( bus != INDEX_BAD ) {
 		// This alias is cached in temporary list
@@ -516,6 +503,7 @@ static enum parse_enum Parse_Alias(char *filename, enum parse_pass remote_status
 		return parse_prop ;
 	}
 
+	// Look for alias in remote buses
 	bus = RemoteAlias(pn) ;
 	if ( bus == INDEX_BAD ) {
 		return parse_error ;
@@ -529,6 +517,7 @@ static enum parse_enum Parse_Alias(char *filename, enum parse_pass remote_status
 	} else {
 		Cache_Add_Alias( filename, pn->sn ) ;
 		Cache_Add_Device( bus, pn->sn ) ;
+		pn->selected_device = FS_devicefindhex(pn->sn[0], pn);
 	}
 
 	return parse_prop ;
@@ -544,12 +533,17 @@ static enum parse_enum Parse_RealDevice(char *filename, enum parse_pass remote_s
 	switch ( Parse_SerialNumber(filename,pn->sn) ) {
 		case sn_alias:
 			return Parse_Alias( filename, remote_status, pn) ;
-		case sn_invalid:
-			return parse_error ;
 		case sn_valid:
-			break ;
+			return Parse_RealDeviceSN( remote_status, pn ) ;
+		case sn_invalid:
+		default:
+			return parse_error ;
 	}
+}
 
+/* Device is known with serial number */
+static enum parse_enum Parse_RealDeviceSN(enum parse_pass remote_status, struct parsedname *pn)
+{
 	/* Search for known 1-wire device -- keyed to device name (family code in HEX) */
 	pn->selected_device = FS_devicefindhex(pn->sn[0], pn);
 
@@ -582,19 +576,25 @@ static enum parse_enum Parse_NonRealDevice(char *filename, struct parsedname *pn
 	return (pn->selected_device == &UnknownDevice) ? parse_error : parse_prop;
 }
 
-enum parse_enum Parse_Property(char *filename, struct parsedname *pn)
+static enum parse_enum Parse_Property(char *filename, struct parsedname *pn)
 {
 	char *dot = filename;
 
-	//printf("FilePart: %s %s\n", filename, pn->path);
+	printf("FilePart: %s %s\n", filename, pn->path);
+
+	// Special case for remote device. Use distant data
+	if ( pn->selected_device == &RemoteDevice ) {
+		// remote device, no known sn, can't handle a prolerty
+		return parse_error ;
+	}
 
 	filename = strsep(&dot, ".");
-	//printf("FP name=%s, dot=%s\n", filename, dot);
+	printf("FP name=%s, dot=%s\n", filename, dot);
 	/* Match to known filetypes for this device */
 	if ((pn->selected_filetype =
 		 bsearch(filename, pn->selected_device->filetype_array,
 				 (size_t) pn->selected_device->count_of_filetypes, sizeof(struct filetype), filetype_cmp))) {
-		//printf("FP known filetype %s\n",pn->selected_filetype->name) ;
+		printf("FP known filetype %s\n",pn->selected_filetype->name) ;
 		/* Filetype found, now process extension */
 		if (dot == NULL || dot[0] == '\0') {	/* no extension */
 			if (pn->selected_filetype->ag != NON_AGGREGATE) {
@@ -606,43 +606,43 @@ enum parse_enum Parse_Property(char *filename, struct parsedname *pn)
 			return parse_error;	/* An extension not allowed when non-aggregate */
 
 		} else if (strcasecmp(dot, "ALL") == 0) {
-			//printf("FP ALL\n");
+			printf("FP ALL\n");
 			pn->extension = EXTENSION_ALL;	/* ALL */
 
 		} else if (pn->selected_filetype->format == ft_bitfield && strcasecmp(dot, "BYTE") == 0) {
 			pn->extension = EXTENSION_BYTE;	/* BYTE */
-			//printf("FP BYTE\n") ;
+			printf("FP BYTE\n") ;
 
 		} else {				/* specific extension */
 			if (pn->selected_filetype->ag->letters == ag_letters) {	/* Letters */
-				//printf("FP letters\n") ;
+				printf("FP letters\n") ;
 				if ((strlen(dot) != 1) || !isupper(dot[0])) {
 					return parse_error;
 				}
 				pn->extension = dot[0] - 'A';	/* Letter extension */
 			} else {			/* Numbers */
 				char *p;
-				//printf("FP numbers\n") ;
+				printf("FP numbers\n") ;
 				pn->extension = strtol(dot, &p, 0);	/* Number conversion */
 				if ((p == dot) || ((pn->extension == 0) && (errno == -EINVAL))) {
 					return parse_error;	/* Bad number */
 				}
 			}
-			//printf("FP ext=%d nr_elements=%d\n", pn->extension, pn->selected_filetype->ag->elements) ;
+			printf("FP ext=%d nr_elements=%d\n", pn->extension, pn->selected_filetype->ag->elements) ;
 			/* Now check range */
 			if ((pn->extension < 0)
 				|| (pn->extension >= pn->selected_filetype->ag->elements)) {
 				//printf("FP Extension out of range %d %d %s\n", pn->extension, pn->selected_filetype->ag->elements, pn->path);
 				return parse_error;	/* Extension out of range */
 			}
-			//printf("FP in range\n") ;
+			printf("FP in range\n") ;
 		}
 
 		//printf("FP Good\n") ;
 		switch (pn->selected_filetype->format) {
 		case ft_directory:		// aux or main
 			if (BranchAdd(pn) != 0) {
-				//printf("PN BranchAdd failed for %s\n", filename);
+				printf("PN BranchAdd failed for %s\n", filename);
 				return parse_error;
 			}
 			/* STATISTICS */
@@ -653,7 +653,7 @@ enum parse_enum Parse_Property(char *filename, struct parsedname *pn)
 			STATUNLOCK;
 			return parse_branch;
 		case ft_subdir:
-			//printf("PN %s is a subdirectory\n", filename);
+			printf("PN %s is a subdirectory\n", filename);
 			pn->subdir = pn->selected_filetype;
 			pn->selected_filetype = NO_FILETYPE;
 			return parse_subprop;
@@ -661,7 +661,7 @@ enum parse_enum Parse_Property(char *filename, struct parsedname *pn)
 			return parse_done;
 		}
 	}
-	//printf("FP not found\n") ;
+	printf("FP not found\n") ;
 	return parse_error;			/* filetype not found */
 }
 

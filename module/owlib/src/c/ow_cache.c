@@ -1585,11 +1585,12 @@ static enum cache_task_return Cache_Get_Alias_Persistent( BYTE * sn, struct alia
 	opaque = tfind(atn, &cache.persistent_alias_tree, alias_tree_compare) ;
 	if ( opaque != NULL ) {
 		memcpy( sn, ((struct alias_tree_node *)(opaque->key))->sn, SERIAL_NUMBER_SIZE ) ;
-		LEVEL_DEBUG("Lookup of %s gives "SNformat"\n", CONST_ALIAS_TREE_DATA(atn), SNvar(sn) ) ;
+		LEVEL_DEBUG("Lookup of %s gives "SNformat, CONST_ALIAS_TREE_DATA(atn), SNvar(sn) ) ;
 		ret = gbGOOD ;
+	} else {
+		LEVEL_DEBUG("Lookup of %s unsuccessful",CONST_ALIAS_TREE_DATA(atn)) ;
 	}
 	PERSISTENT_RUNLOCK;
-	LEVEL_DEBUG("Lookup of %s unsuccessful\n",CONST_ALIAS_TREE_DATA(atn)) ;
 	owfree(atn) ;
 	return ret;
 }

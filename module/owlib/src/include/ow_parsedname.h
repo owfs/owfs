@@ -206,7 +206,4 @@ enum parse_enum {
 	parse_subprop
 };
 
-enum parse_enum Parse_Property(char *filename, struct parsedname *pn);
-
-
 #endif							/* OW_PARSEDNAME_H */

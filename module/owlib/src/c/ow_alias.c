@@ -87,7 +87,7 @@ static GOOD_OR_BAD Test_and_Add_Alias( char * name, BYTE * sn )
 {
 	BYTE sn_stored[SERIAL_NUMBER_SIZE] ;
 	ASCII * other_alias ;
-	_Debug_Bytes("alias",name, strlen(name)) ;
+	//_Debug_Bytes("alias",name, strlen(name)) ;
 
 	if ( strlen(name) > PROPERTY_LENGTH_ALIAS ) {
 		LEVEL_CALL("Alias too long: sn=" SNformat ", alias=%s max length=%d", SNvar(sn), name,  PROPERTY_LENGTH_ALIAS ) ;
@@ -139,7 +139,7 @@ void FS_dir_entry_aliased(void (*dirfunc) (void *, const struct parsedname *), v
 		// Shallow copy
 		memcpy( pn_copy, pn, sizeof(struct parsedname) ) ;
 		memset( path_copy, 0, sizeof(path_copy) ) ;
-		printf("About the text alias on %s\n",pn->path);
+		//printf("About the text alias on %s\n",pn->path);
 
 		while ( aps != aps_last ) {
 			ASCII * path_copy_pointer =  & path_copy[strlen(path_copy)] ; // point to end of copy
@@ -167,11 +167,11 @@ void FS_dir_entry_aliased(void (*dirfunc) (void *, const struct parsedname *), v
 			
 			//test this segment for serial number
 			if ( Parse_SerialNumber(path_copy_pointer,sn) == sn_valid ) {
-				printf("We see serial number in path "SNformat"\n",SNvar(sn)) ;
+				//printf("We see serial number in path "SNformat"\n",SNvar(sn)) ;
 				// now test for alias
 				ASCII * name = Cache_Get_Alias( sn ) ;
 				if ( name != NULL ) {
-					printf("It's aliased to %s\n",name);
+					//printf("It's aliased to %s\n",name);
 					// now test for room
 					if ( path_copy + PATH_MAX > path_copy_pointer + strlen(name) ) {
 						// overwrite serial number with alias name
