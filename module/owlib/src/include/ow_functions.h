@@ -148,8 +148,8 @@ ZERO_OR_ERROR FS_dir(void (*dirfunc) (void *, const struct parsedname *), void *
 ZERO_OR_ERROR FS_dir_remote(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn, uint32_t * flags);
 void FS_dir_entry_aliased(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn) ;
 
-ZERO_OR_ERROR FS_write(const char *path, const char *buf, const size_t size, const off_t offset);
-ZERO_OR_ERROR FS_write_postparse(struct one_wire_query *owq);
+SIZE_OR_ERROR FS_write(const char *path, const char *buf, const size_t size, const off_t offset);
+SIZE_OR_ERROR FS_write_postparse(struct one_wire_query *owq);
 ZERO_OR_ERROR FS_write_local(struct one_wire_query *owq);
 
 SIZE_OR_ERROR FS_get(const char *path, char **return_buffer, size_t * buffer_length) ;
