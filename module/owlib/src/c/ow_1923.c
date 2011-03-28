@@ -309,14 +309,14 @@ static ZERO_OR_ERROR FS_w_mip(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	unsigned long mdelay;
 	BYTE data[3];
-	printf("FS_w_mip:\n");
+	//printf("FS_w_mip:\n");
 	if (OWQ_Y(owq)) {			/* start a mission! */
-		printf("FS_w_mip: start\n");
+		//printf("FS_w_mip: start\n");
 		RETURN_ERROR_IF_BAD( OW_r_mem(data, 3, 0x0216, pn) );
 		mdelay = data[0] | data[1] << 8 | data[2] << 16;
 		return GB_to_Z_OR_E(OW_startmission(mdelay, pn));
 	} else {
-		printf("FS_w_mip: stop\n");
+		//printf("FS_w_mip: stop\n");
 		return GB_to_Z_OR_E( OW_stopmission(pn) );
 	}
 }
@@ -394,11 +394,11 @@ static GOOD_OR_BAD OW_2date(_DATE * d, const BYTE * data)
 	/* Prefill entries */
 	d[0] = NOW_TIME;
 	if (gmtime_r(d, &t) == NULL) {
-		printf("OW_2date: error1\n");
+		//printf("OW_2date: error1\n");
 		return gbBAD;
 	}
 
-	printf
+	//printf
 		("_DATE: sec=%d, min=%d, hour=%d, mday=%d, mon=%d, year=%d, wday=%d, isdst=%d\n",
 		 t.tm_sec, t.tm_min, t.tm_hour, t.tm_mday, t.tm_mon, t.tm_year, t.tm_wday, t.tm_isdst);
 
@@ -416,14 +416,14 @@ static GOOD_OR_BAD OW_2date(_DATE * d, const BYTE * data)
 	//The number of years since 1900.
 	t.tm_year = (data[4] & 0x80 ? 100 : 0) + bcd2dec(data[5] & 0xFF);
 
-	printf("_DATE_READ data=%2X, %2X, %2X, %2X, %2X, %2X\n", data[0], data[1], data[2], data[3], data[4], data[5]);
-	printf
+	//printf("_DATE_READ data=%2X, %2X, %2X, %2X, %2X, %2X\n", data[0], data[1], data[2], data[3], data[4], data[5]);
+	//printf
 		("_DATE: sec=%d, min=%d, hour=%d, mday=%d, mon=%d, year=%d, wday=%d, isdst=%d\n",
 		 t.tm_sec, t.tm_min, t.tm_hour, t.tm_mday, t.tm_mon, t.tm_year, t.tm_wday, t.tm_isdst);
 
 	/* Pass through time_t again to validate */
 	if ((*d = mktime(&t)) == -1) {
-		printf("2date: error2\n");
+		//printf("2date: error2\n");
 		return gbBAD;
 	}
 
@@ -496,7 +496,7 @@ static ZERO_OR_ERROR FS_w_date(struct one_wire_query *owq)
 
 	/* Busy if in mission */
 	if ( BAD( OW_MIP(pn))) {
-		printf("FS_w_date: mip error\n");
+		//printf("FS_w_date: mip error\n");
 		return -EBUSY;				/* Mission in progress */
 	}
 
