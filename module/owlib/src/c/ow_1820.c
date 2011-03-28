@@ -553,6 +553,7 @@ static GOOD_OR_BAD OW_power(BYTE * data, const struct parsedname *pn)
 		};
 	
 		RETURN_BAD_IF_BAD(BUS_transaction(tpower, pn)) ;
+		//LEVEL_DEBUG("TEST cannot read power");
 		Cache_Add_SlaveSpecific(data, sizeof(BYTE), SlaveSpecificTag(POW), pn);
 	}
 	return gbGOOD;
@@ -585,6 +586,7 @@ static GOOD_OR_BAD OW_22temp(_FLOAT * temp, enum temperature_problem_flag accept
 		TRXN_END,
 	};
 
+	//LEVEL_DEBUG("TEST Getting temperature");
 	/* Resolution */
 	if ( BAD( Cache_Get_SlaveSpecific(&stored_resolution, sizeof(stored_resolution), SlaveSpecificTag(RES), pn))
 		|| stored_resolution != Resolution->bits) {
@@ -593,6 +595,7 @@ static GOOD_OR_BAD OW_22temp(_FLOAT * temp, enum temperature_problem_flag accept
 		RETURN_BAD_IF_BAD(OW_r_scratchpad(data, pn)) ;
 		/* Put in new settings (if different) */
 		if ((data[4] | 0x1F) != resolution_register) {	// ignore lower 5 bits
+			LEVEL_DEBUG("TEST resolution changed");
 			must_convert = 1 ; // resolution has changed
 			data[4] = (resolution_register & 0x60) | 0x1F ;
 			/* only store in scratchpad, not EEPROM */
@@ -605,6 +608,7 @@ static GOOD_OR_BAD OW_22temp(_FLOAT * temp, enum temperature_problem_flag accept
 	// first time
 	/* powered? */
 	if (OW_power(&pow, pn)) {
+		LEVEL_DEBUG("TEST unpowered");
 		pow = 0x00;				/* assume unpowered if cannot tell */
 	}
 
@@ -688,6 +692,7 @@ static GOOD_OR_BAD OW_r_scratchpad(BYTE * data, const struct parsedname *pn)
 }
 
 /* write 3 bytes (byte2,3,4 of register) */
+/* Write the scratchpad but not back to static */
 static GOOD_OR_BAD OW_w_scratchpad(const BYTE * data, const struct parsedname *pn)
 {
 	/* data is 3 bytes long */
@@ -706,6 +711,7 @@ static GOOD_OR_BAD OW_w_scratchpad(const BYTE * data, const struct parsedname *p
 }
 
 /* write 3 bytes (byte2,3,4 of register) */
+/* write to scratchpad and store in static */
 static GOOD_OR_BAD OW_w_store_scratchpad(const BYTE * data, const struct parsedname *pn)
 {
 	/* data is 3 bytes long */
@@ -782,6 +788,7 @@ static GOOD_OR_BAD OW_w_trim(const BYTE * trim, const struct parsedname *pn)
 	return gbGOOD;
 }
 
+/* This is the CMOS die for the circuit, not program death */
 static enum eDie OW_die(const struct parsedname *pn)
 {
 	BYTE die[6] = { pn->sn[6], pn->sn[5], pn->sn[4], pn->sn[3], pn->sn[2], pn->sn[1],
@@ -811,6 +818,7 @@ GOOD_OR_BAD FS_poll_convert(const struct parsedname *pn)
 	// the first test is faster for just DS2438 (10 msec)
 	// subsequent polling is slower since the DS18x20 is a slower converter
 	for (i = 0; i < 22; ++i) {
+		//LEVEL_DEBUG("TEST polling %d",i);
 		if ( BAD( BUS_transaction_nolock(t, pn) )) {
 			LEVEL_DEBUG("BUS_transaction failed");
 			break;
