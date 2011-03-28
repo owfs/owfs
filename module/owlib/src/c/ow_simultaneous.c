@@ -74,6 +74,7 @@ struct internal_prop ipSimul[] = {
 };
 
 #define _1W_CONVERT_T             0x44
+#define _1W_READ_POWERMODE        0xB4
 
 /* ------- Functions ------------ */
 static void OW_single2cache(BYTE * sn, const struct parsedname *pn2);
@@ -83,12 +84,14 @@ GOOD_OR_BAD FS_Test_Simultaneous( enum simul_type type, UINT delay, const struct
 	time_t dwell_time ;
 	time_t remaining_delay ;
 
+	LEVEL_DEBUG("TEST Simultaneous valid?");
 	if( BAD( Cache_Get_Simul_Time(type, &dwell_time, pn)) ) {
 		LEVEL_DEBUG("No simultaneous conversion currently valid");
 		return gbBAD ; // No simultaneous valid
 	}
 
 	remaining_delay = delay - 1000 * dwell_time ;
+	LEVEL_DEBUG("TEST remaining delay=%ld, delay=%ld, 1000*dwelltime=%ld",(long int)remaining_delay,(long int)delay, (long int)(1000*dwell_time));
 	if ( remaining_delay > 0 ) {
 		LEVEL_DEBUG("Simultaneous conversion requires %d msec delay",(int) remaining_delay);
 		UT_delay(remaining_delay) ;
@@ -103,16 +106,34 @@ static ZERO_OR_ERROR FS_w_convert_temp(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	struct parsedname s_pn_directory;
 	struct parsedname * pn_directory = &s_pn_directory ;
-	GOOD_OR_BAD ret ;
+	struct connection_in * in = pn->selected_connection ;
+
 	const BYTE cmd_temp[] = { _1W_SKIP_ROM, _1W_CONVERT_T };
-	
+	const BYTE cmd_powermode[] = { _1W_READ_POWERMODE, };
+	BYTE pow[1] ;
+	struct transaction_log tpower[] = {
+		TRXN_START,
+		TRXN_WRITE1(cmd_powermode),
+		TRXN_READ1(pow),
+		TRXN_END,
+	};
+	struct transaction_log t_powered_convert[] = {
+		TRXN_START,
+		TRXN_WRITE2(cmd_temp),
+		TRXN_END,
+	};
+	struct transaction_log t_unpowered_convert[] = {
+		TRXN_START,
+		TRXN_WRITE2(cmd_temp),
+		TRXN_DELAY(1000),
+		TRXN_END,
+	};
+
 	if (OWQ_Y(owq) == 0) {
 		return 0;				// don't send convert
 	}
 	
-	FS_LoadDirectoryOnly(pn_directory, pn);
-	
-	switch (pn->selected_connection->Adapter) {
+	switch (in->Adapter) {
 		case adapter_Bad:
 		case adapter_w1_monitor:
 		case adapter_browse_monitor:
@@ -122,37 +143,50 @@ static ZERO_OR_ERROR FS_w_convert_temp(struct one_wire_query *owq)
 		case adapter_mock:
 			/* Since writing to /simultaneous/temperature is done recursive to all
 			* adapters, we have to fake a successful write even if it's detected
-			* as a bad adapter. */
-			ret = gbGOOD ;
-			break ;
-		case adapter_DS2482_800: {
-			// special case for the 8-channel DS2482-800
-			// Rather than block the whole chip (all 8 channels) by polling
-			struct transaction_log t[] = {
-				TRXN_START,
-				TRXN_WRITE2(cmd_temp),
-				TRXN_END,
-			};
-			ret = BUS_transaction(t, pn_directory) ;
-		}
-			break ;
-		default: {
-			struct transaction_log t[] = {
-				TRXN_START,
-				TRXN_WRITE2(cmd_temp),
-				TRXN_DELAY(1000),
-				TRXN_END,
-			};
-			ret = BUS_transaction(t, pn_directory) ;
-		}
+			* as an unsupported adapter. */
+			return gbGOOD ;
+		default:
 			break ;
 	}
-	if ( BAD(ret) ) {
-		LEVEL_DEBUG("Trouble setting simultaneous for %s",pn_directory->path);
-		return -EINVAL ;
-	}
+
+	FS_LoadDirectoryOnly(pn_directory, pn); // setup up for full directory message
+
+	// Get Power status
+	RETURN_BAD_IF_BAD(BUS_transaction(tpower, pn_directory)) ;
+	LEVEL_DEBUG("TEST read power");
+	
 	Cache_Add_Simul(simul_temp, pn_directory);	// Mark start time
-	return 0;
+	if ( pow[0] != 0 ) {
+		// powered
+		// Send the conversion and let the timing work out when the actual
+		// temperature reading is requested
+		if ( GOOD(BUS_transaction(t_powered_convert, pn_directory) ) ) {
+			return 0 ;
+		}
+	} else if ( in->Adapter == adapter_DS2482_800 ) {
+		// special case for the 8-channel DS2482-800
+		// Rather than block the whole chip (all 8 channels) by polling
+		GOOD_OR_BAD ret ;
+		_MUTEX_LOCK(in->bus_mutex); // channel
+		_MUTEX_LOCK(in->master.i2c.head->master.i2c.all_channel_lock); // master
+		ret = BUS_transaction_nolock(t_powered_convert, pn_directory) ;
+		_MUTEX_UNLOCK(in->master.i2c.head->master.i2c.all_channel_lock); //master
+		if ( GOOD(ret) ) {
+			UT_delay(1000) ; // wait for passive
+		}
+		_MUTEX_UNLOCK(in->bus_mutex); //channel
+		if ( GOOD(ret) ) {
+			return 0 ;
+		}
+	} else {
+		if ( GOOD(BUS_transaction(t_unpowered_convert, pn_directory) )) {
+			return 0 ;
+		}
+	}
+
+	Cache_Del_Simul(simul_temp, pn_directory);	// Clear start time
+	LEVEL_DEBUG("Trouble setting simultaneous for %s",pn_directory->path);
+	return -EINVAL ;
 }
 
 static ZERO_OR_ERROR FS_w_convert_volt(struct one_wire_query *owq)
