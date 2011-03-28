@@ -59,7 +59,7 @@ static ZERO_OR_ERROR FS_write_as_bits( struct one_wire_query *owq_byte ) ;
 
 
 /* return size if ok, else negative */
-ZERO_OR_ERROR FS_write(const char *path, const char *buf, const size_t size, const off_t offset)
+SIZE_OR_ERROR FS_write(const char *path, const char *buf, const size_t size, const off_t offset)
 {
 	ZERO_OR_ERROR write_return;
 	OWQ_allocate_struct_and_pointer(owq);
@@ -77,7 +77,7 @@ ZERO_OR_ERROR FS_write(const char *path, const char *buf, const size_t size, con
 }
 
 /* return size if ok, else negative */
-ZERO_OR_ERROR FS_write_postparse(struct one_wire_query *owq)
+SIZE_OR_ERROR FS_write_postparse(struct one_wire_query *owq)
 {
 	ZERO_OR_ERROR input_or_error;
 	ZERO_OR_ERROR write_or_error;
@@ -94,8 +94,10 @@ ZERO_OR_ERROR FS_write_postparse(struct one_wire_query *owq)
 	}
 
 	if (pn->selected_connection == NO_CONNECTION) {
-		LEVEL_DEBUG("Attempt to write but no 1-wire bus master.");
-		return -ENODEV;			// no buses
+		if (pn->selected_device != DeviceSimultaneous) {
+			LEVEL_DEBUG("Attempt to write but no 1-wire bus master.");
+			return -ENODEV;			// no buses
+		}
 	}
 
 	STATLOCK;
@@ -107,13 +109,13 @@ ZERO_OR_ERROR FS_write_postparse(struct one_wire_query *owq)
 	input_or_error = OWQ_parse_input(owq);
 	Debug_OWQ(owq);
 	if (input_or_error < 0) {
-		LEVEL_DEBUG("Error interpretting input value.") ;
+		LEVEL_DEBUG("Error interpreting input value.") ;
 		return input_or_error;
 	}
 	switch (pn->type) {
 	case ePN_structure:
 	case ePN_statistics:
-		LEVEL_DEBUG("Cannomt write in this type of directory.") ;
+		LEVEL_DEBUG("Cannot write in this type of directory.") ;
 		write_or_error = -ENOTSUP;
 		break;
 	case ePN_system:
@@ -128,6 +130,7 @@ ZERO_OR_ERROR FS_write_postparse(struct one_wire_query *owq)
 			 * available bus.?/simultaneous/temperature
 			 * not just /simultaneous/temperature
 			 */
+			LEVEL_DEBUG("TEST about to write to simultaneous");
 			write_or_error = FS_w_simultaneous(owq);
 		} else {
 			/* First try */
@@ -179,20 +182,22 @@ ZERO_OR_ERROR FS_write_postparse(struct one_wire_query *owq)
 	}
 
 	STATLOCK;
+	// write_or_error is still ZERO_OR_ERROR mode
+	if ( write_or_error == 0 ) {
+		LEVEL_DEBUG("Successful write to %s",pn->path) ;
+	} else {
+		LEVEL_DEBUG("Error writing to %s",pn->path) ;
+	}
 	if (write_or_error == 0) {
 		++write_success;		/* statistics */
 		write_bytes += OWQ_size(owq);	/* statistics */
+		// write_or_error now SIZE_OR_ERROR mode
 		write_or_error = OWQ_size(owq);	/* here's where the size is used! */
 	}
 	AVERAGE_OUT(&write_avg);
 	AVERAGE_OUT(&all_avg);
 	STATUNLOCK;
 
-	if ( write_or_error == 0 ) {
-		LEVEL_DEBUG("Successful write to %s",pn->path) ;
-	} else {
-		LEVEL_DEBUG("Error writing to %s",pn->path) ;
-	}
 	return write_or_error;
 }
 
