@@ -595,7 +595,7 @@ static GOOD_OR_BAD OW_22temp(_FLOAT * temp, enum temperature_problem_flag accept
 		RETURN_BAD_IF_BAD(OW_r_scratchpad(data, pn)) ;
 		/* Put in new settings (if different) */
 		if ((data[4] | 0x1F) != resolution_register) {	// ignore lower 5 bits
-			LEVEL_DEBUG("TEST resolution changed");
+			//LEVEL_DEBUG("TEST resolution changed");
 			must_convert = 1 ; // resolution has changed
 			data[4] = (resolution_register & 0x60) | 0x1F ;
 			/* only store in scratchpad, not EEPROM */
@@ -608,7 +608,7 @@ static GOOD_OR_BAD OW_22temp(_FLOAT * temp, enum temperature_problem_flag accept
 	// first time
 	/* powered? */
 	if (OW_power(&pow, pn)) {
-		LEVEL_DEBUG("TEST unpowered");
+		//LEVEL_DEBUG("TEST unpowered");
 		pow = 0x00;				/* assume unpowered if cannot tell */
 	}
 

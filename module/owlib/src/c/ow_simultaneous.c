@@ -84,7 +84,7 @@ GOOD_OR_BAD FS_Test_Simultaneous( enum simul_type type, UINT delay, const struct
 	time_t dwell_time ;
 	time_t remaining_delay ;
 
-	LEVEL_DEBUG("TEST Simultaneous valid?");
+	//LEVEL_DEBUG("TEST Simultaneous valid?");
 	if( BAD( Cache_Get_Simul_Time(type, &dwell_time, pn)) ) {
 		LEVEL_DEBUG("No simultaneous conversion currently valid");
 		return gbBAD ; // No simultaneous valid
@@ -153,7 +153,7 @@ static ZERO_OR_ERROR FS_w_convert_temp(struct one_wire_query *owq)
 
 	// Get Power status
 	RETURN_BAD_IF_BAD(BUS_transaction(tpower, pn_directory)) ;
-	LEVEL_DEBUG("TEST read power");
+	//LEVEL_DEBUG("TEST read power");
 	
 	Cache_Add_Simul(simul_temp, pn_directory);	// Mark start time
 	if ( pow[0] != 0 ) {
