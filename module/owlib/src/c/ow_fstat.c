@@ -92,13 +92,11 @@ ZERO_OR_ERROR FS_fstat_postparse(struct stat *stbuf, const struct parsedname *pn
 
 		switch (pn->selected_filetype->change) {
 		case fc_volatile:
-		case fc_Avolatile:
 		case fc_second:
 		case fc_statistic:
 			stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = NOW_TIME;
 			break;
 		case fc_stable:
-		case fc_Astable:
 			FSTATLOCK;
 			stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = StateInfo.dir_time;
 			FSTATUNLOCK;

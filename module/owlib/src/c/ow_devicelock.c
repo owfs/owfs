@@ -82,8 +82,6 @@ ZERO_OR_ERROR DeviceLockGet(struct parsedname *pn)
 	// Ignore static and atomic
 	switch (pn->selected_filetype->change) {
 		case fc_static:
-		case fc_Astable:
-		case fc_Avolatile:
 		case fc_statistic:
 			return 0;
 		default:

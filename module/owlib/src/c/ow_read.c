@@ -428,26 +428,102 @@ static SIZE_OR_ERROR FS_r_local(struct one_wire_query *owq)
 /* Structure file */
 static ZERO_OR_ERROR FS_structure(struct one_wire_query *owq)
 {
-	char ft_format_char[] = FT_FORMAT_CHAR;	/* return type */
 	char structure_text[PROPERTY_LENGTH_STRUCTURE+1] ;
 	int output_length;
 	struct parsedname * pn = PN(owq) ;
 	struct filetype * ftype = pn->selected_filetype ;
+	char format_char ;
+	char change_char ;
 
 	// TEMPORARY change type from structure->real to get real length rhather than structure length
 	pn->type = ePN_real;	/* "real" type to get return length, rather than "structure" length */
-	
-	LEVEL_DEBUG("start");
+
+	// Set property type
+	switch ( ftype->format ) {
+		case ft_directory:
+		case ft_subdir:
+			format_char = 'D' ;
+			break ;
+		case ft_integer:
+			format_char = 'i' ;
+			break ;
+		case ft_unsigned:
+			format_char = 'u' ;
+			break ;
+		case ft_float:
+			format_char = 'f' ;
+			break ;
+		case ft_alias:
+			format_char = 'l' ;
+			break ;
+		case ft_ascii:
+		case ft_vascii:
+			format_char = 'a' ;
+			break ;
+		case ft_binary:
+			format_char = 'b' ;
+			break ;
+		case ft_yesno:
+		case ft_bitfield:
+			format_char = 'y' ;
+			break ;
+		case ft_date:
+			format_char = 'd' ;
+			break ;
+		case ft_temperature:
+			format_char = 't' ;
+			break ;
+		case ft_tempgap:
+			format_char = 'g' ;
+			break ;
+		case ft_pressure:
+			format_char = 'p' ;
+			break ;
+		case ft_unknown:
+		default:
+			format_char = '?' ;
+			break ;
+	}
+
+	// Set changability
+	switch ( ftype->change ) {
+		case fc_static:
+		case fc_subdir:
+		case fc_directory:
+			change_char = 'f' ;
+			break ;
+		case fc_stable:
+		case fc_persistent:
+			change_char = 's' ;
+			break ;
+		case fc_volatile:
+		case fc_read_stable:
+		case fc_simultaneous_temperature:
+		case fc_simultaneous_voltage:
+		case fc_uncached:
+		case fc_statistic:
+		case fc_presence:
+		case fc_link:
+		case fc_page:
+			change_char = 'v' ;
+			break ;
+		case fc_second:
+		default:
+			change_char = 't' ;
+			break ;
+	}
+
 	UCLIBCLOCK;
 	output_length = snprintf(structure_text,
 		 PROPERTY_LENGTH_STRUCTURE+1,
-		 "%c,%.6d,%.6d,%.2s,%.6d,",
-		 ft_format_char[ftype->format],
+		 "%c,%.6d,%.6d,%.2s,%.6d,%c,",
+		 format_char,
 		 (ftype->ag) ? pn->extension : 0,
 		 (ftype->ag) ? ftype->ag->elements : 1,
 		 (ftype->read == NO_READ_FUNCTION) ? ((ftype->write == NO_WRITE_FUNCTION) ? "oo" : "wo")
 		                                   : ((ftype->write == NO_WRITE_FUNCTION) ? "ro" : "rw"), 
-		 (int) FullFileLength(PN(owq))
+		 (int) FullFileLength(PN(owq)),
+		 change_char
 		);
 	UCLIBCUNLOCK;
 	LEVEL_DEBUG("length=%d", output_length);

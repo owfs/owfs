@@ -100,19 +100,15 @@ enum ft_format {
 	ft_tempgap,
 	ft_pressure,
 };
-#define FT_FORMAT_CHAR "?DDiuflaabydytgp?"
 
 	/* property changability. Static unchanged, Stable we change, Volatile changes */
 enum fc_change {
-	fc_local,
 	fc_static,       // doesn't change (e.g. chip property)
 	fc_stable,       // only changes if we write to the chip
 	fc_read_stable,  // stable after a read, not a write
-	fc_Astable,      // atomic stable
 	fc_volatile,     // changes on it's own (e.g. external pin voltage)
 	fc_simultaneous_temperature, // volatile with a twist
 	fc_simultaneous_voltage, // volatile with a twist
-	fc_Avolatile,    // Atomic volatile -- don't need to lock device
 	fc_uncached,     // Don't cache (because the read and write interpretation are different)
 	fc_second,       // timer (changes every second)
 	fc_statistic,    // internally held statistic
@@ -138,7 +134,7 @@ struct parsedname;
 #define PROPERTY_LENGTH_TEMPGAP   12
 #define PROPERTY_LENGTH_DATE      24
 #define PROPERTY_LENGTH_YESNO      1
-#define PROPERTY_LENGTH_STRUCTURE 30
+#define PROPERTY_LENGTH_STRUCTURE 32
 #define PROPERTY_LENGTH_DIRECTORY  8
 #define PROPERTY_LENGTH_SUBDIR     0
 #define PROPERTY_LENGTH_ALIAS    256
