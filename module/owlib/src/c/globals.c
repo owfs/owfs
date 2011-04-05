@@ -25,13 +25,7 @@ $Id$
 
 /* State information, sent to remote or kept locally */
 /* cacheenabled, presencecheck, tempscale, devform */
-#if OW_CACHE
-int32_t LocalControlFlags = ((uint8_t) fdi) << DEVFORMAT_BIT | ((uint8_t) pressure_mbar) << PRESSURESCALE_BIT | ((uint8_t) temp_celsius) << TEMPSCALE_BIT | ((uint8_t) 1)
-	<< 8 | ((uint8_t) 1) | ALIAS_REQUEST ;
-#else
-int32_t LocalControlFlags = ((uint8_t) fdi) << DEVFORMAT_BIT | ((uint8_t) pressure_mbar) << PRESSURESCALE_BIT | ((uint8_t) temp_celsius) << TEMPSCALE_BIT | ((uint8_t) 1)
-	<< 8;
-#endif
+int32_t LocalControlFlags ;
 
 // This structure is defined in ow_global.h
 // These are all the tunable constants and flags. Usually they have
@@ -43,6 +37,14 @@ struct global Globals = {
 	.announce_name = NULL,
 	.opt = opt_swig,
 	.progname = NULL,			// "One Wire File System" , Can't allocate here since it's freed
+
+	.temp_scale = temp_celsius,
+	.pressure_scale = pressure_mbar,
+	.format = fdi,
+
+	.uncached = 0,
+	.unaliased = 0,
+	
 	.want_background = 1,
 	.now_background = 0,
 
@@ -101,3 +103,25 @@ struct global Globals = {
 int ignore_result ;
 
 /* Statistics globals are stored in ow_stats.c */
+
+/* State information, sent to remote or kept locally */
+/* cacheenabled, presencecheck, tempscale, devform */
+void SetLocalControlFlags( void )
+{
+	CONTROLFLAGSLOCK;
+	// Clear
+	LocalControlFlags = 0 ;
+	// Device format
+	LocalControlFlags |= (Globals.format) << DEVFORMAT_BIT ;
+	// Pressure scale
+	LocalControlFlags |= (Globals.pressure_scale) << PRESSURESCALE_BIT ;
+	// Temperature scale
+	LocalControlFlags |= (Globals.temp_scale) << TEMPSCALE_BIT ;
+	// Uncached
+	LocalControlFlags |= Globals.uncached ? UNCACHED : 0 ;
+	// Unaliased
+	LocalControlFlags |= Globals.unaliased ? 0 : ALIAS_REQUEST ;
+	// OWNet flag or Presence check
+	LocalControlFlags |= OWNET ;
+	CONTROLFLAGSUNLOCK;
+}

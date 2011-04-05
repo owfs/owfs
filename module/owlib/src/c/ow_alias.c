@@ -97,6 +97,7 @@ static GOOD_OR_BAD Test_and_Add_Alias( char * name, BYTE * sn )
 	if ( strcmp( name, "interface" )==0
 	|| strcmp( name, "settings" )==0
 	|| strcmp( name, "uncached" )==0
+	|| strcmp( name, "unaliased" )==0
 	|| strcmp( name, "text" )==0
 	|| strcmp( name, "alarm" )==0
 	|| strcmp( name, "statistics" )==0
@@ -128,7 +129,7 @@ static GOOD_OR_BAD Test_and_Add_Alias( char * name, BYTE * sn )
 
 void FS_dir_entry_aliased(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn)
 {
-	if ( ( pn->control_flags & ALIAS_REQUEST ) != 0 ) {
+	if ( ( pn->state & ePS_unaliased ) == 0 ) {
 		// Want alias substituted
 		struct parsedname s_pn_copy ;
 		struct parsedname * pn_copy = & s_pn_copy ;

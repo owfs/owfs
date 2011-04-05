@@ -88,6 +88,13 @@ const struct option owopts_long[] = {
 	{"format", required_argument, NO_LINKED_VAR, 'f'},
 	{"pid_file", required_argument, NO_LINKED_VAR, 'P'},
 	{"pid-file", required_argument, NO_LINKED_VAR, 'P'},
+	
+	{"unaliased", no_argument, &Globals.unaliased, 1 },
+	{"aliased", no_argument, &Globals.unaliased, 0 },
+
+	{"uncached", no_argument, &Globals.uncached, 1 },
+	{"cached", no_argument, &Globals.uncached, 0 },
+
 	{"background", no_argument, &Globals.want_background, 1},
 	{"foreground", no_argument, &Globals.want_background, 0},
 	{"fatal_debug", no_argument, &Globals.fatal_debug, 1},
@@ -582,16 +589,20 @@ GOOD_OR_BAD owopt(const int option_char, const char *arg)
 		Globals.readonly = 0;
 		break;
 	case 'C':
-		set_controlflags(&LocalControlFlags, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_celsius);
+		Globals.temp_scale = temp_celsius ;
+		SetLocalControlFlags() ;
 		break;
 	case 'F':
-		set_controlflags(&LocalControlFlags, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_fahrenheit);
+		Globals.temp_scale = temp_fahrenheit ;
+		SetLocalControlFlags() ;
 		break;
 	case 'R':
-		set_controlflags(&LocalControlFlags, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_rankine);
+		Globals.temp_scale = temp_rankine ;
+		SetLocalControlFlags() ;
 		break;
 	case 'K':
-		set_controlflags(&LocalControlFlags, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_kelvin);
+		Globals.temp_scale = temp_kelvin ;
+		SetLocalControlFlags() ;
 		break;
 	case 'V':
 		printf("libow version:\n\t" VERSION "\n");
@@ -616,21 +627,22 @@ GOOD_OR_BAD owopt(const int option_char, const char *arg)
 		}
 	case 'f':
 		if (!strcasecmp(arg, "f.i")) {
-			set_controlflags(&LocalControlFlags, DEVFORMAT_MASK, DEVFORMAT_BIT, fdi);
+			Globals.format = fdi ;
 		} else if (!strcasecmp(arg, "fi")) {
-			set_controlflags(&LocalControlFlags, DEVFORMAT_MASK, DEVFORMAT_BIT, fi);
+			Globals.format = fi ;
 		} else if (!strcasecmp(arg, "f.i.c")) {
-			set_controlflags(&LocalControlFlags, DEVFORMAT_MASK, DEVFORMAT_BIT, fdidc);
+			Globals.format = fdidc ;
 		} else if (!strcasecmp(arg, "f.ic")) {
-			set_controlflags(&LocalControlFlags, DEVFORMAT_MASK, DEVFORMAT_BIT, fdic);
+			Globals.format = fdic ;
 		} else if (!strcasecmp(arg, "fi.c")) {
-			set_controlflags(&LocalControlFlags, DEVFORMAT_MASK, DEVFORMAT_BIT, fidc);
+			Globals.format = fidc ;
 		} else if (!strcasecmp(arg, "fic")) {
-			set_controlflags(&LocalControlFlags, DEVFORMAT_MASK, DEVFORMAT_BIT, fic);
+			Globals.format = fic ;
 		} else {
 			LEVEL_DEFAULT("Unrecognized format type %s", arg);
 			return gbBAD;
 		}
+		SetLocalControlFlags() ;
 		break;
 	case 'P':
 		if (arg == NULL || strlen(arg) == 0) {
@@ -719,14 +731,30 @@ GOOD_OR_BAD owopt(const int option_char, const char *arg)
 	case e_allow_other:		/* allow_other */
 		break;
 		// Pressure scale
-	case e_pressure_mbar: 
+	case e_pressure_mbar:
+		Globals.pressure_scale = pressure_mbar ;
+		SetLocalControlFlags() ;
+		break ;
 	case e_pressure_atm: 
+		Globals.pressure_scale = pressure_atm ;
+		SetLocalControlFlags() ;
+		break ;
 	case e_pressure_mmhg: 
+		Globals.pressure_scale = pressure_mmhg ;
+		SetLocalControlFlags() ;
+		break ;
 	case e_pressure_inhg: 
+		Globals.pressure_scale = pressure_inhg ;
+		SetLocalControlFlags() ;
+		break ;
 	case e_pressure_psi: 
+		Globals.pressure_scale = pressure_psi ;
+		SetLocalControlFlags() ;
+		break ;
 	case e_pressure_Pa:
-		set_controlflags(&LocalControlFlags, PRESSURESCALE_MASK, PRESSURESCALE_BIT, option_char-e_pressure_mbar);
-		break;
+		Globals.pressure_scale = pressure_Pa ;
+		SetLocalControlFlags() ;
+		break ;
 		// TIMEOUTS
 	case e_timeout_volatile:
 	case e_timeout_stable:

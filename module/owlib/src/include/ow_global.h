@@ -49,6 +49,9 @@ $Id$
 #ifndef OW_GLOBAL_H				/* tedious wrapper */
 #define OW_GLOBAL_H
 
+#include "ow_temperature.h"
+#include "ow_pressure.h"
+
 // some improbably sub-absolute-zero number
 #define GLOBAL_UNTOUCHED_TEMP_LIMIT	(-999.)
 
@@ -64,9 +67,14 @@ enum opt_program { opt_owfs, opt_server, opt_httpd, opt_ftpd, opt_tcl,
 struct global {
 	int announce_off;			// use zeroconf?
 	ASCII *announce_name;
+	enum temp_type temp_scale;
+	enum pressure_type pressure_scale ;
+	enum deviceformat format ;
 	enum opt_program opt;
 	ASCII *progname;
 	union antiloop Token;
+	int uncached ; // all requests are from /uncached directory
+	int unaliased ; // all requests are from /unaliased (no alias substitution on results)
 	int want_background;
 	int now_background;
 	int error_level;
@@ -117,5 +125,8 @@ extern struct global Globals;
 
 // generic value for ignorable function returns 
 extern int ignore_result ;
+
+void SetLocalControlFlags( void ) ;
+
 
 #endif							/* OW_GLOBAL_H */

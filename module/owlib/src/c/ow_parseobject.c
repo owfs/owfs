@@ -96,7 +96,11 @@ struct one_wire_query * OWQ_create_sibling(const char *sibling, struct one_wire_
 
 	owq_sib = OWQ_create_from_path(path) ;
 	if ( owq_sib != NO_ONE_WIRE_QUERY ) {
+		// Sib has no offset
 		OWQ_offset(owq_sib) = 0 ;
+		// Make uncached as restrictive as original
+		// Make unaliased as restrictive as original
+		PN(owq_sib)->state |= (pn_original->state & (ePS_uncached|ePS_unaliased) ) ;
 		return owq_sib ;
 	}
 	return NO_ONE_WIRE_QUERY ;

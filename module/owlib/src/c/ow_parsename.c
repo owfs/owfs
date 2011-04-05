@@ -229,6 +229,24 @@ static ZERO_OR_ERROR FS_ParsedName_setup(struct parsedname_pointers *pp, const c
 	pn->state = ePS_normal;
 	pn->type = ePN_root;
 
+	/* uncached attribute */
+	if ( Globals.uncached ) {
+		// local settings (--uncached) can set
+		pn->state |= ePS_uncached;
+	}
+	// Also can be set by path ("/uncached")
+	// Also in owserver, can be set by client flags
+	// sibling inherits parent
+	
+	/* unaliased attribute */
+	if ( Globals.unaliased ) {
+		// local settings (--unalaised) can set
+		pn->state |= ePS_unaliased;
+	}
+	// Also can be set by path ("/unaliased")
+	// Also in owserver, can be set by client flags
+	// sibling inherits parent
+
 	/* No device lock yet assigned */
 	pn->lock = NULL ;
 
@@ -324,6 +342,10 @@ static enum parse_enum Parse_Unspecified(char *pathnow, enum parse_pass remote_s
 		pn->state |= ePS_uncached;
 		return parse_first;
 
+	} else if (strcasecmp(pathnow, "unaliased") == 0) {
+		pn->state |= ePS_unaliased;
+		return parse_first;
+
 	}
 
 	pn->type = ePN_real;
@@ -359,6 +381,10 @@ static enum parse_enum Parse_Real(char *pathnow, enum parse_pass remote_status, 
 		pn->state |= ePS_uncached;
 		return parse_real;
 
+	} else if (strcasecmp(pathnow, "unaliased") == 0) {
+		pn->state |= ePS_unaliased;
+		return parse_real;
+
 	} else {
 		return Parse_RealDevice(pathnow, remote_status, pn);
 	}
@@ -372,6 +398,10 @@ static enum parse_enum Parse_NonReal(char *pathnow, struct parsedname *pn)
 
 	} else if (strcasecmp(pathnow, "uncached") == 0) {
 		pn->state |= ePS_uncached;
+		return parse_nonreal;
+
+	} else if (strcasecmp(pathnow, "unaliased") == 0) {
+		pn->state |= ePS_unaliased;
 		return parse_nonreal;
 
 	} else {

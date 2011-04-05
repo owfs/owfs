@@ -22,6 +22,8 @@ $Id$
 /* Statistics reporting */
 READ_FUNCTION(FS_r_timeout);
 WRITE_FUNCTION(FS_w_timeout);
+READ_FUNCTION(FS_r_yesno);
+WRITE_FUNCTION(FS_w_yesno);
 READ_FUNCTION(FS_r_TS);
 WRITE_FUNCTION(FS_w_TS);
 READ_FUNCTION(FS_r_PS);
@@ -42,6 +44,7 @@ struct filetype set_timeout[] = {
 	{"ftp", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, VISIBLE, {v:&Globals.timeout_ftp},},
 	{"ha7", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, VISIBLE, {v:&Globals.timeout_ha7},},
 	{"w1", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, VISIBLE, {v:&Globals.timeout_w1},},
+	{"uncached", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_yesno, FS_w_yesno, VISIBLE, {v:&Globals.uncached},},
 };
 struct device d_set_timeout = { "timeout", "timeout", ePN_settings, COUNT_OF_FILETYPES(set_timeout),
 	set_timeout, NO_GENERIC_READ, NO_GENERIC_WRITE
@@ -57,6 +60,7 @@ struct device d_set_units = { "units", "units", ePN_settings, COUNT_OF_FILETYPES
 
 struct filetype set_alias[] = {
  	{"list", MAX_OWSERVER_PROTOCOL_PAYLOAD_SIZE, NON_AGGREGATE, ft_ascii, fc_static, FS_aliaslist, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"unaliased", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_yesno, FS_w_yesno, VISIBLE, {v:&Globals.unaliased},},
 };
 struct device d_set_alias = { "alias", "alias", ePN_settings, COUNT_OF_FILETYPES(set_alias),
 	set_alias, NO_GENERIC_READ, NO_GENERIC_WRITE
@@ -87,6 +91,19 @@ static ZERO_OR_ERROR FS_w_timeout(struct one_wire_query *owq)
 	return 0;
 }
 
+static ZERO_OR_ERROR FS_r_yesno(struct one_wire_query *owq)
+{
+	OWQ_Y(owq) = ((UINT *) OWQ_pn(owq).selected_filetype->data.v)[0];
+	return 0;
+}
+
+static ZERO_OR_ERROR FS_w_yesno(struct one_wire_query *owq)
+{
+	((UINT *) OWQ_pn(owq).selected_filetype->data.v)[0] = OWQ_Y(owq);
+	SetLocalControlFlags() ;
+	return 0;
+}
+
 static ZERO_OR_ERROR FS_w_TS(struct one_wire_query *owq)
 {
 	ZERO_OR_ERROR ret = 0;
@@ -94,28 +111,27 @@ static ZERO_OR_ERROR FS_w_TS(struct one_wire_query *owq)
 		return 0;				/* do nothing */
 	}
 
-	CONTROLFLAGSLOCK;
 	switch (OWQ_buffer(owq)[0]) {
 	case 'C':
 	case 'c':
-		set_controlflags(&LocalControlFlags, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_celsius);
+		Globals.temp_scale = temp_celsius ;
 		break;
 	case 'F':
 	case 'f':
-		set_controlflags(&LocalControlFlags, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_fahrenheit);
+		Globals.temp_scale = temp_fahrenheit ;
 		break;
 	case 'R':
 	case 'r':
-		set_controlflags(&LocalControlFlags, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_rankine);
+		Globals.temp_scale = temp_rankine ;
 		break;
 	case 'K':
 	case 'k':
-		set_controlflags(&LocalControlFlags, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_kelvin);
+		Globals.temp_scale = temp_kelvin ;
 		break;
 	default:
 		ret = -EINVAL;
 	}
-	CONTROLFLAGSUNLOCK;
+	SetLocalControlFlags() ;
 	return ret;
 }
 
@@ -123,30 +139,29 @@ static ZERO_OR_ERROR FS_w_PS(struct one_wire_query *owq)
 {
 	int ret = -EINVAL ;
 	enum pressure_type pindex ;
-	if (OWQ_size(owq) == 0 || OWQ_offset(owq) > 0) {
-		return 0;				/* do nothing */
+	if (OWQ_size(owq) < 2 || OWQ_offset(owq) > 0) {
+		return -EINVAL ;				/* do nothing */
 	}
 
-	CONTROLFLAGSLOCK;
 	for ( pindex = 0 ; pindex < pressure_end_mark ; ++pindex ) {
-		if ( strcasecmp(  OWQ_buffer(owq), PressureScaleName(pindex) ) == 0 ) {
-			set_controlflags(&LocalControlFlags, PRESSURESCALE_MASK, PRESSURESCALE_BIT, pindex);
+		if ( strncasecmp(  OWQ_buffer(owq), PressureScaleName(pindex), 2 ) == 0 ) {
+			Globals.pressure_scale = pindex ;
+			SetLocalControlFlags() ;
 			ret = 0 ;
 			break;
 		}
 	}
-	CONTROLFLAGSUNLOCK;
 	return ret;
 }
 
 static ZERO_OR_ERROR FS_r_TS(struct one_wire_query *owq)
 {
-	return OWQ_format_output_offset_and_size_z(TemperatureScaleName(TemperatureScale(PN(owq))), owq);
+	return OWQ_format_output_offset_and_size_z(TemperatureScaleName(Globals.temp_scale), owq);
 }
 
 static ZERO_OR_ERROR FS_r_PS(struct one_wire_query *owq)
 {
-	return OWQ_format_output_offset_and_size_z(PressureScaleName(PressureScale(PN(owq))), owq);
+	return OWQ_format_output_offset_and_size_z(PressureScaleName(Globals.pressure_scale), owq);
 }
 
 static ZERO_OR_ERROR FS_aliaslist( struct one_wire_query * owq )

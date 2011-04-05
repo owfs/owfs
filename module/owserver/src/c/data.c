@@ -112,6 +112,17 @@ void *DataHandler(void *v)
 
 			/* Use client persistent settings (temp scale, display mode ...) */
 			pn->control_flags = hd->sm.control_flags;
+			/* Override some settings from control flags */
+			if ( (pn->control_flags & UNCACHED) != 0 ) {
+				// client wants uncached
+				pn->state |= ePS_uncached;
+			}
+			if ( (pn->control_flags & ALIAS_REQUEST) == 0 ) {
+				// client wants unaliased
+				pn->state |= ePS_unaliased;
+			}
+			
+
 			/* Antilooping tags */
 			pn->tokens = hd->sp.tokens;
 			pn->tokenstring = hd->sp.tokenstring;

@@ -116,6 +116,7 @@ enum ePS_state {
 	ePS_busremote     = 0x0040,
 	ePS_busveryremote = 0x0080,
 	ePS_reconnection  = 0x0100,
+	ePS_unaliased     = 0x0200,
 };
 
 struct parsedname {
@@ -140,17 +141,19 @@ struct parsedname {
 };
 
 /* ---- end Parsedname ----------------- */
-#define SHOULD_RETURN_BUS_LIST    ( (UINT) 0x00000002 )
-#define PERSISTENT_MASK    ( (UINT) 0x00000004 )
+#define SHOULD_RETURN_BUS_LIST      ( (UINT) 0x00000002 )
+#define PERSISTENT_MASK             ( (UINT) 0x00000004 )
 #define PERSISTENT_BIT     2
-#define ALIAS_REQUEST      ( (UINT) 0x00000008 )
-#define SAFEMODE      ( (UINT) 0x00000010 )
-#define TEMPSCALE_MASK ( (UINT) 0x00030000 )
-#define TEMPSCALE_BIT  16
-#define PRESSURESCALE_MASK ( (UINT) 0x001C0000 )
+#define ALIAS_REQUEST               ( (UINT) 0x00000008 )
+#define SAFEMODE                    ( (UINT) 0x00000010 )
+#define UNCACHED                    ( (UINT) 0x00000020 )
+#define OWNET                       ( (UINT) 0x00000100 )
+#define TEMPSCALE_MASK              ( (UINT) 0x00030000 )
+#define TEMPSCALE_BIT      16
+#define PRESSURESCALE_MASK          ( (UINT) 0x001C0000 )
 #define PRESSURESCALE_BIT  18
-#define DEVFORMAT_MASK ( (UINT) 0xFF000000 )
-#define DEVFORMAT_BIT  24
+#define DEVFORMAT_MASK              ( (UINT) 0xFF000000 )
+#define DEVFORMAT_BIT      24
 #define IsPersistent(ppn)         ( ((ppn)->control_flags & PERSISTENT_MASK) )
 #define SetPersistent(ppn,b)      UT_Setbit(((ppn)->control_flags),PERSISTENT_BIT,(b))
 #define TemperatureScale(ppn)     ( (enum temp_type) (((ppn)->control_flags & TEMPSCALE_MASK) >> TEMPSCALE_BIT) )
@@ -158,7 +161,6 @@ struct parsedname {
 #define SGTemperatureScale(sg)    ( (enum temp_type)(((sg) & TEMPSCALE_MASK) >> TEMPSCALE_BIT) )
 #define SGPressureScale(sg)    ( (enum pressure_type)(((sg) & PRESSURESCALE_MASK) >> PRESSURESCALE_BIT) )
 #define DeviceFormat(ppn)         ( (enum deviceformat) (((ppn)->control_flags & DEVFORMAT_MASK) >> DEVFORMAT_BIT) )
-#define set_controlflags(s, mask, bit, val) do { *(s) = (*(s) & ~(mask)) | ((val)<<bit); } while(0)
 
 #define IsDir( pn )    ( ((pn)->selected_device)==NO_DEVICE \
                       || ((pn)->selected_filetype)==NO_FILETYPE  \

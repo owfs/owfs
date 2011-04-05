@@ -54,6 +54,7 @@ void ow_help_job(void)
 	" Information\n"
 	"  --error_level n  Choose verbosity of error/debugging reports 0=low 9=high\n"
 	"  --error_print n  Where debug info is placed 0-mixed 1-syslog 2-console\n"
+	"  --debug          Shortcut for --error_level=9 --foreground\n"
 	"  -V --version     Program and library versions\n"
 	"\n"
 	" Control\n"
@@ -64,21 +65,18 @@ void ow_help_job(void)
 	" Configuration\n"
 	"  -c --configuration filename\n"
 	"                   file to use as additional source of configuration\n"
+	"\n"
+	" Alias\n"
 	"  -a --alias filename\n"
 	"                   file containing device to friendly_name pairs\n"
+	"  --unaliased      No substitution of alias names in return data\n"
+	"  --aliased        Substitute alias names in return (Default action)\n"
 	"\n"
 	" Permission\n"
 	" -r --readonly     Don't allow writing to 1-wire devices\n"
 	" -w --write        Allow writing to 1-wire\n"
 	" --safemode        Even more restrictive: readonly, no uncached, ...\n"
 	"\n"
-	" Development tests (owserver only)\n"
-	"  --pingcrazy      Add lots of keep-alive messages to the owserver protocol\n"
-	"  --no_dirall      DIRALL fails, drops back to older DIR (individual entries)\n"
-	"  --no_get         GET fails, drops back to DIRALL and READ\n"
-	"  --no_persistence persistent connections refused, drops back to non-persistent\n"
-	"\n"
-	"  --debug          Shortcut for --error_level=9 --foreground\n"
 	);
 }
 
@@ -106,9 +104,10 @@ void ow_help_cache(void)
 {
 	printf("Cache and Timing Help\n"
 	"\n"
-	" Cache\n"
+	" Caching (temporary storage of data in program memory for efficiency)\n"
+	"  --uncached          Implicit /uncached in all requests\n"
+	"  --cached            Explicit /uncached needed. (Default action)\n"
 	"  --cache_size n   Size in bytes of max cache memory. 0 for no limit.\n"
-	"  --max_connections   [%3d] Nr of allowed concurrent connections\n"
 	"\n"
 	" Cache timing         [default] (in seconds)\n"
 	"  --timeout_volatile  [%3d] Expiration time for changing data (e.g. temperature)\n"
@@ -124,7 +123,6 @@ void ow_help_cache(void)
 	"  --timeout_ftp       [%3d] Timeout for FTP session\n"
 	"  --timeout_ha7       [%3d] Timeout for HA7Net bus master\n"
 	"  --timeout_w1        [%3d] Timeout for w1 kernel netlink\n"
-	, Globals.concurrent_connections
 	, Globals.timeout_volatile
 	, Globals.timeout_stable
 	, Globals.timeout_directory
@@ -157,6 +155,13 @@ void ow_help_program(void)
 	"\n"
 	" owserver (OWFS server)\n"
 	"  -p --port [ip:]port   TCP address and port number for access\n"
+	"  --max_connections     [%3d] Nr of allowed concurrent connections\n"
+	"\n"
+	" Development tests (owserver only)\n"
+	"  --pingcrazy      Add lots of keep-alive messages to the owserver protocol\n"
+	"  --no_dirall      DIRALL fails, drops back to older DIR (individual entries)\n"
+	"  --no_get         GET fails, drops back to DIRALL and READ\n"
+	"  --no_persistence persistent connections refused, drops back to non-persistent\n"
 	"\n"
 	" owftpd (ftp server)\n"
 	"  -p --port [ip:]port   TCP address and port number for access\n"
@@ -164,6 +169,7 @@ void ow_help_program(void)
 	"  --zero                Announce service via zeroconf\n"
 	"  --announce name       Name for service given in zeroconf broadcast\n"
 	"  --nozero              Don't announce service via zeroconf\n" "\n"
+	, Globals.concurrent_connections
 	);
 }
 

@@ -29,6 +29,7 @@ void LibSetup(enum opt_program opt)
 #endif							/* OW_CACHE */
 
 	StateInfo.start_time = NOW_TIME;
+	SetLocalControlFlags() ; // reset by every option and othere change.
 	errno = 0;					/* set error level none */
 
 }
