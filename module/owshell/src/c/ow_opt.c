@@ -18,6 +18,11 @@ int hexflag = 0 ;
 int slashflag = 0 ;
 int size_of_data = -1 ;
 int offset_into_data = 0 ;
+int uncached = 0 ;
+int unaliased = 0 ;
+enum temp_type temperature_scale = temp_celsius ;
+enum pressure_type pressure_scale = pressure_mbar ;
+enum deviceformat device_format = fdi ;
 
 static void OW_parsevalue(int *var, const ASCII * str);
 
@@ -51,8 +56,14 @@ const struct option owopts_long[] = {
 	{"START", required_argument, NULL, 301 },
 
 	{"timeout_network", required_argument, NULL, 307,},	// timeout -- tcp wait
-	{"timeout_server", required_argument, NULL, 308,},	// timeout -- server wait
 	{"autoserver", no_argument, NULL, 275},
+
+	{"unaliased", no_argument, &unaliased, 1 },
+	{"aliased", no_argument, &unaliased, 0 },
+
+	{"uncached", no_argument, &uncached, 1 },
+	{"cached", no_argument, &uncached, 0 },
+
 
 	{0, 0, 0, 0},
 };
@@ -66,16 +77,16 @@ void owopt(const int c, const char *arg)
 		ow_help();
 		Exit(0);
 	case 'C':
-		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_celsius);
+		temperature_scale = temp_celsius ;
 		break;
 	case 'F':
-		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_fahrenheit);
+		temperature_scale = temp_fahrenheit ;
 		break;
 	case 'R':
-		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_rankine);
+		temperature_scale = temp_rankine ;
 		break;
 	case 'K':
-		set_semiglobal(&SemiGlobal, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_kelvin);
+		temperature_scale = temp_kelvin ;
 		break;
 	case 'V':
 		printf("owshell version:\n\t" VERSION "\n");
@@ -85,17 +96,17 @@ void owopt(const int c, const char *arg)
 		break;
 	case 'f':
 		if (!strcasecmp(arg, "f.i"))
-			set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fdi);
+			device_format = fdi ;
 		else if (!strcasecmp(arg, "fi"))
-			set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fi);
+			device_format = fi ;
 		else if (!strcasecmp(arg, "f.i.c"))
-			set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fdidc);
+			device_format = fdidc ;
 		else if (!strcasecmp(arg, "f.ic"))
-			set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fdic);
+			device_format = fdic ;
 		else if (!strcasecmp(arg, "fi.c"))
-			set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fidc);
+			device_format = fidc ;
 		else if (!strcasecmp(arg, "fic"))
-			set_semiglobal(&SemiGlobal, DEVFORMAT_MASK, DEVFORMAT_BIT, fic);
+			device_format = fic ;
 		else {
 			fprintf(stderr, "Unrecognized format type %s\n", arg);
 			Exit(1);
@@ -129,8 +140,7 @@ void owopt(const int c, const char *arg)
 		}
 		break ;
 	case 307:
-	case 308:
-		OW_parsevalue(&((int *) &Globals.timeout_volatile)[c - 301], arg);
+		OW_parsevalue(&Globals.timeout_network, arg);
 	case 0:
 		break;
 	default:

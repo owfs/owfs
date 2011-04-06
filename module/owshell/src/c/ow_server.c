@@ -52,10 +52,9 @@ int ServerRead(ASCII * path)
 	memset(&cm, 0, sizeof(struct client_msg));
 	sm.type = msg_read;
 	sm.size = size;
-	sm.sg = SetupSemi();
 	sm.offset = offset_into_data;
 
-	if ( size_of_data >=0 && size_of_data < 8096 ) {
+	if ( size_of_data >=0 && size_of_data < 8192 ) {
 		sm.size = size_of_data ;
 	}
 
@@ -96,7 +95,6 @@ int ServerWrite(ASCII * path, ASCII * data)
 	memset(&sm, 0, sizeof(struct server_msg));
 	sm.type = msg_write;
 	sm.size = size;
-	sm.sg = SetupSemi();
 	sm.offset = offset_into_data;
 
 	if (ToServer(connectfd, &sm, &sp)) {
@@ -125,8 +123,6 @@ int ServerDirall(ASCII * path)
 	
 	memset(&sm, 0, sizeof(struct server_msg));
 	sm.type = slashflag ? msg_dirallslash : msg_dirall;
-
-	sm.sg = SetupSemi();
 
 	if (ToServer(connectfd, &sm, &sp)) {
 		cm.ret = -EIO;
@@ -158,8 +154,6 @@ int ServerDir(ASCII * path)
 	memset(&sm, 0, sizeof(struct server_msg));
 	sm.type = msg_dir;
 
-	sm.sg = SetupSemi();
-
 	if (ToServer(connectfd, &sm, &sp)) {
 		cm.ret = -EIO;
 	} else {
@@ -188,8 +182,6 @@ int ServerPresence(ASCII * path)
 	//printf("Presence <%s>\n",path);
 	memset(&sm, 0, sizeof(struct server_msg));
 	sm.type = msg_presence;
-
-	sm.sg = SetupSemi();
 
 	if (ToServer(connectfd, &sm, &sp)) {
 		ret = -EIO;
@@ -309,6 +301,9 @@ static int ToServer(int file_descriptor, struct server_msg *sm, struct serverpac
 	int nio = 0;
 	struct iovec io[5] = { {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}, };
 
+	// Set up flags
+	sm->sg = SetupSemi() ;
+
 	// First block to send, the header
 	io[nio].iov_base = sm;
 	io[nio].iov_len = sizeof(struct server_msg);
@@ -328,26 +323,11 @@ static int ToServer(int file_descriptor, struct server_msg *sm, struct serverpac
         //LEVEL_DEBUG("ToServer data=%s\n", sp->data);
 	}
 
-	if (Globals.opt != opt_server) {	// if not being called from owserver, that's it
-		sp->tokens = 0;
-		sm->version = 0; // shouldn't this be MakeServerprotocol(OWSERVER_PROTOCOL_VERSION);
-	} else {
-		/* I guess this can't happen since it's owshell */
-		if (sp->tokens > 0) {	// owserver: send prior tags
-			io[nio].iov_base = sp->tokenstring;
-			io[nio].iov_len = sp->tokens * sizeof(union antiloop);
-			nio++;
-		}
-		++sp->tokens;
-		sm->version = Servermessage + (sp->tokens);
-		io[nio].iov_base = &(Globals.Token);	// owserver: add our tag
-		io[nio].iov_len = sizeof(union antiloop);
-		nio++;
-	}
+	sp->tokens = 0;
+	sm->version = 0; // shouldn't this be MakeServerprotocol(OWSERVER_PROTOCOL_VERSION);
 
 	//printf("ToServer payload=%d size=%d type=%d tempscale=%X offset=%d\n",payload,sm->size,sm->type,sm->sg,sm->offset);
 	//printf("<%.4d|%.4d\n",sm->type,payload);
-	//printf("Scale=%s\n", TemperatureScaleName(SGTemperatureScale(sm->sg)));
 
 	// encode in network order (just the header)
 	sm->version = htonl(sm->version);
@@ -365,7 +345,21 @@ static int ToServer(int file_descriptor, struct server_msg *sm, struct serverpac
 /* Also ALIAS_REQUEST means that aliases will be applied */
 static uint32_t SetupSemi(void)
 {
-	uint32_t sg = SemiGlobal | SHOULD_RETURN_BUS_LIST | ALIAS_REQUEST ;
+	uint32_t sg = SHOULD_RETURN_BUS_LIST ;
+
+	// Device format
+	sg |= (device_format) << DEVFORMAT_BIT ;
+	// Pressure scale
+	sg |= (pressure_scale) << PRESSURESCALE_BIT ;
+	// Temperature scale
+	sg |= (temperature_scale) << TEMPSCALE_BIT ;
+	// Uncached
+	sg |= uncached ? UNCACHED : 0 ;
+	// Unaliased
+	sg |= unaliased ? 0 : ALIAS_REQUEST ;
+	// OWNet flag or Presence check
+	sg |= OWNET ;
+
 	return sg;
 }
 

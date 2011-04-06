@@ -172,14 +172,6 @@ extern int count_inbound_connections;
 #define OW_FULLNAME_MAX  (OW_NAME_MAX+OW_EXT_MAX)
 #define OW_DEFAULT_LENGTH (128)
 
-
-/* Semi-global information (for remote control) */
-	/* bit0: cacheenabled  bit1: return bus-list */
-	/* presencecheck */
-	/* tempscale */
-	/* device format */
-extern int32_t SemiGlobal;
-
 /* Unique token for owserver loop checks */
 union antiloop {
 	struct {
@@ -198,23 +190,11 @@ struct global {
 	union antiloop Token;
 	int want_background;
 	int now_background;
-	int error_level;
-	int error_print;
 	int readonly;
 	int max_clients;			// for ftp
 	int autoserver;
 	/* Special parameter to trigger William Robison <ibutton@n952.dyndns.ws> timings */
-	int altUSB;
-	/* timeouts -- order must match ow_opt.c values for correct indexing */
-	int timeout_volatile;
-	int timeout_stable;
-	int timeout_directory;
-	int timeout_presence;
-	int timeout_serial;
-	int timeout_usb;
-	int timeout_network;
-	int timeout_server;
-	int timeout_ftp;
+	int timeout_network ;
 
 };
 extern struct global Globals;
@@ -225,7 +205,9 @@ enum deviceformat { fdi, fi, fdidc, fdic, fidc, fic };
 /* Gobal temperature scale */
 enum temp_type { temp_celsius, temp_fahrenheit, temp_kelvin, temp_rankine,
 };
-const char *TemperatureScaleName(enum temp_type t);
+/* Global pressure scale up tp 8 */
+enum pressure_type { pressure_mbar, pressure_atm, pressure_mmhg, pressure_inhg, pressure_psi, pressure_Pa, pressure_end_mark
+};
 
 /* Server (Socket-based) interface */
 enum msg_classification {
@@ -277,14 +259,16 @@ struct serverpackage {
 #define MAX_OWSERVER_PROTOCOL_PAYLOAD_SIZE  100050
 
 /* -------------------------------------------- */
-/* start of program -- for statistics amd file atrtributes */
-extern time_t start_time;
-extern time_t dir_time;			/* time of last directory scan */
 
 extern int hexflag ; // read/write in hex mode?
 extern int slashflag ; // directory with '/'?
 extern int size_of_data ;
 extern int offset_into_data ;
+extern int uncached ;
+extern int unaliased ;
+extern enum temp_type temperature_scale ;
+extern enum pressure_type pressure_scale ;
+extern enum deviceformat device_format ;
 
 ssize_t tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval *ptv);
 int ClientAddr(char *sname);
@@ -303,13 +287,15 @@ int ServerDir(ASCII * path);
 int ServerDirall(ASCII * path);
 int ServerPresence(ASCII * path);
 
-#define SHOULD_RETURN_BUS_LIST    ( (UINT) 0x00000002 )
-#define ALIAS_REQUEST      ( (UINT) 0x00000008 )
-#define TEMPSCALE_MASK ( (UINT) 0x00FF0000 )
+#define SHOULD_RETURN_BUS_LIST      ( (UINT) 0x00000002 )
+#define ALIAS_REQUEST               ( (UINT) 0x00000008 )
+#define TEMPSCALE_MASK              ( (UINT) 0x00FF0000 )
 #define TEMPSCALE_BIT  16
-#define DEVFORMAT_MASK ( (UINT) 0xFF000000 )
+#define PRESSURESCALE_BIT  18
+#define DEVFORMAT_MASK              ( (UINT) 0xFF000000 )
 #define DEVFORMAT_BIT  24
-#define set_semiglobal(s, mask, bit, val) do { *(s) = (*(s) & ~(mask)) | ((val)<<bit); } while(0)
+#define UNCACHED                    ( (UINT) 0x00000020 )
+#define OWNET                       ( (UINT) 0x00000100 )
 
 struct connection_in;
 
@@ -327,8 +313,6 @@ struct connection_in {
 	char *service;
 	struct addrinfo *ai;
 	struct addrinfo *ai_ok;
-
-	char *adapter_name;
 };
 
 extern struct connection_in s_owserver_connection;
