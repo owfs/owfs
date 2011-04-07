@@ -19,8 +19,6 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
-static GOOD_OR_BAD Test_and_Add_Alias( char * name, BYTE * sn ) ;
-
 GOOD_OR_BAD ReadAliasFile(const ASCII * file)
 {
 	FILE *alias_file_pointer ;
@@ -83,7 +81,9 @@ GOOD_OR_BAD ReadAliasFile(const ASCII * file)
 	return gbGOOD;
 }
 
-static GOOD_OR_BAD Test_and_Add_Alias( char * name, BYTE * sn )
+/* Name is a null-terminated string */
+/* sn is an 8-byte serial number */
+GOOD_OR_BAD Test_and_Add_Alias( char * name, BYTE * sn )
 {
 	BYTE sn_stored[SERIAL_NUMBER_SIZE] ;
 	ASCII * other_alias ;

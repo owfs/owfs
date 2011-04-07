@@ -16,7 +16,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 #include "ow_connection.h"
-#include "ow_standard.h" // for FS_alias
+#include "ow_standard.h" // for FS_?_alias
 
 struct server_connection_state {
 	FILE_DESCRIPTOR_OR_ERROR file_descriptor ;
@@ -71,7 +71,7 @@ SIZE_OR_ERROR ServerRead(struct one_wire_query *owq)
 
 	// Alias should show local understanding except if bus.x specified
 	if ( pn_file_entry->selected_filetype->format == ft_alias && ! SpecifiedRemoteBus(pn_file_entry) ) {
-		ignore_result = FS_alias( owq ) ;
+		ignore_result = FS_r_alias( owq ) ;
 		return OWQ_length(owq) ;
 	}
 

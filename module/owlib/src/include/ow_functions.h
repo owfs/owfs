@@ -131,6 +131,7 @@ void ServerProcess(void (*HandlerRoutine) (FILE_DESCRIPTOR_OR_ERROR file_descrip
 GOOD_OR_BAD ServerOutSetup(struct connection_out *out);
 
 GOOD_OR_BAD ReadAliasFile(const ASCII * file) ;
+GOOD_OR_BAD Test_and_Add_Alias( char * name, BYTE * sn ) ;
 
 speed_t COM_MakeBaud( int raw_baud ) ;
 int COM_BaudRate( speed_t B_baud ) ;
