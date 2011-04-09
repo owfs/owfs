@@ -86,12 +86,22 @@ GOOD_OR_BAD ReadAliasFile(const ASCII * file)
 GOOD_OR_BAD Test_and_Add_Alias( char * name, BYTE * sn )
 {
 	BYTE sn_stored[SERIAL_NUMBER_SIZE] ;
-	ASCII * other_alias ;
-	//_Debug_Bytes("alias",name, strlen(name)) ;
+	size_t len ;
 
 	if ( strlen(name) > PROPERTY_LENGTH_ALIAS ) {
 		LEVEL_CALL("Alias too long: sn=" SNformat ", alias=%s max length=%d", SNvar(sn), name,  PROPERTY_LENGTH_ALIAS ) ;
 		return gbBAD ;
+	}
+
+	// Parse off initial spaces
+	while ( name[0] == ' ' ) {
+		++name ;
+	}
+
+	// parse off trailing spaces
+	for ( len = strlen(name) ; len > 0 && name[len-1]==' ' ; ) {
+		-- len ;
+		name[len] = '\0' ;
 	}
 
 	if ( strcmp( name, "interface" )==0
@@ -108,22 +118,23 @@ GOOD_OR_BAD Test_and_Add_Alias( char * name, BYTE * sn )
 		LEVEL_CALL("Alias attempts to redefine reserved filename: %s",name ) ;
 		return gbBAD ;
 	}
-
-	other_alias = Cache_Get_Alias( sn ) ;
-	if ( other_alias != NULL ) {
-		if ( strcmp(other_alias,name) == 0 ) {
-			LEVEL_CALL( "Redundant definition of "SNformat" as %s",SNvar(sn),name ) ;
-			owfree(other_alias) ;
-		} else {
-			LEVEL_CALL("Alias redefines "SNformat" from %s to %s -- not allowed!",SNvar(sn),other_alias,name ) ;
-			owfree(other_alias) ;
-			return gbBAD ;
-		}
-	}
 	if ( strchr( name, '/' ) ) {
 		LEVEL_CALL("Alias contains confusing path separator \'/\': %s",name ) ;
 		return gbBAD ;
 	}
+
+	// Is there another assignment for this alias name already?
+	if ( GOOD( Cache_Get_Alias_SN( name, sn_stored ) ) ) {
+		if ( memcmp( sn, sn_stored, SERIAL_NUMBER_SIZE ) != 0 ) {
+			LEVEL_CALL("Alias %s reassigned from "SNformat" to "SNformat,name,SNvar(sn_stored),SNvar(sn)) ;
+			Cache_Del_Alias(sn_stored) ;
+		}
+	}
+
+	// Delete any prior assignments for this alias
+	Cache_Del_Alias(sn) ;
+
+	// Now add
 	return Cache_Add_Alias( name, sn) ;
 }
 

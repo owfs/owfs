@@ -91,6 +91,7 @@ void Cache_Del_Simul(enum simul_type type, const struct parsedname *pn) ;
 void Cache_Del_Mixed_Aggregate(const struct parsedname *pn);
 void Cache_Del_Mixed_Individual(const struct parsedname *pn);
 void Cache_Del_Alias_Bus(const ASCII * alias_name);
+void Cache_Del_Alias(const BYTE * sn);
 
 void Aliaslist( struct memblob * mb  ) ;
 
@@ -137,6 +138,8 @@ void Aliaslist( struct memblob * mb  ) ;
 #define Cache_Del_Mixed_Aggregate(pn)       (1)
 #define Cache_Del_Mixed_Individual(pn)      (1)
 #define Cache_Del_Alias_Bus(name)			(1)
+#define Cache_Del_Alias(sn)                 (1)
+#define Cache_Del_Alias(sn)                 (1)
 
 #define Aliaslist(mb)     
 

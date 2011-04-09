@@ -302,6 +302,11 @@ static ZERO_OR_ERROR FS_w_local(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	struct filetype * ft = pn->selected_filetype ;
 
+	// Special check for alias -- it's ok for fake and tester and mock as well
+	if ( ft->write == FS_w_alias ) {
+		return FS_write_owq(owq) ;
+	}
+	
 	/* Special case for "fake" adapter */
 	if ( IsRealDir(pn) ) {
 		switch (get_busmode(pn->selected_connection)) {

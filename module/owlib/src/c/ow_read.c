@@ -262,7 +262,7 @@ static SIZE_OR_ERROR FS_r_given_bus(struct one_wire_query *owq)
 }
 
 // This function should return number of bytes read... not status.
-// Works for all the fake directories, like statistics, interface, ...
+// Works for all the virtual directories, like statistics, interface, ...
 // Doesn't need three-peat and bus was already set or not needed.
 static SIZE_OR_ERROR FS_r_virtual(struct one_wire_query *owq)
 {
@@ -350,6 +350,11 @@ static SIZE_OR_ERROR FS_r_local(struct one_wire_query *owq)
 		// at end-of-file... Just return 0 if offset == size
 		LEVEL_DEBUG("Call for read at very end of file") ;
 		return 0 ;
+	}
+
+	// Special check for alias -- it's ok for fake and tester and mock as well
+	if ( ft->read == FS_r_alias ) {
+		return FS_read_owq(owq) ;
 	}
 	
 	if (ft->change != fc_static && ft->format != ft_alias && IsRealDir(pn)) {
