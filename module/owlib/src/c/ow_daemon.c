@@ -127,6 +127,9 @@ GOOD_OR_BAD EnterBackground(void)
 		case opt_ftpd:
 		case opt_server:
 			if (
+				// daemonize
+				//   current directory left unchanged (not root)
+				//   stdin, stdout and stderr sent to /dev/null
 #ifdef HAVE_DAEMON
 				   daemon(1, 0)
 #else							/* HAVE_DAEMON */
