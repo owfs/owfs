@@ -57,10 +57,10 @@ GOOD_OR_BAD USB_monitor_detect(struct connection_in *in)
 	in->adapter_name = "USB scan";
 	in->busmode = bus_usb_monitor ;
 	
+	Init_Pipe( in->master.usb_monitor.shutdown_pipe ) ;
 	if ( pipe( in->master.usb_monitor.shutdown_pipe ) != 0 ) {
 		ERROR_DEFAULT("Cannot allocate a shutdown pipe. The program shutdown may be messy");
-		in->master.usb_monitor.shutdown_pipe[fd_pipe_read] = FILE_DESCRIPTOR_BAD ;
-		in->master.usb_monitor.shutdown_pipe[fd_pipe_write] = FILE_DESCRIPTOR_BAD ;
+		Init_Pipe( in->master.usb_monitor.shutdown_pipe ) ;
 	}
 
 	RETURN_BAD_IF_BAD( usb_monitor_in_use(in) ) ;

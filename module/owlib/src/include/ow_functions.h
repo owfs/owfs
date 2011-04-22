@@ -101,6 +101,7 @@ _DATE UT_toDate(const BYTE * date);
 
 void Test_and_Close( FILE_DESCRIPTOR_OR_ERROR * file_descriptor ) ;
 void Test_and_Close_Pipe( FILE_DESCRIPTOR_OR_ERROR * pipe_fd ) ;
+void Init_Pipe( FILE_DESCRIPTOR_OR_ERROR * pipe_fd ) ;
 
 /* Cache  and Storage functions */
 #include "ow_cache.h"

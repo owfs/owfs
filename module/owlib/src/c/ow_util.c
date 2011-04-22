@@ -134,3 +134,10 @@ void Test_and_Close_Pipe( FILE_DESCRIPTOR_OR_ERROR * pipe_fd )
 	Test_and_Close( &pipe_fd[fd_pipe_read]) ;
 	Test_and_Close( &pipe_fd[fd_pipe_write]) ;
 }
+
+void Init_Pipe( FILE_DESCRIPTOR_OR_ERROR * pipe_fd )
+{
+	pipe_fd[fd_pipe_read] =
+	pipe_fd[fd_pipe_write] =
+	FILE_DESCRIPTOR_BAD ;
+}

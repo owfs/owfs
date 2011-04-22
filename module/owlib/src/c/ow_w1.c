@@ -72,11 +72,11 @@ GOOD_OR_BAD W1_detect(struct connection_in *in)
 	/* Set up low-level routines */
 	SOC(in)->type = ct_none ;
 	W1_setroutines(in);
-	in->master.w1.netlink_pipe[fd_pipe_read] = FILE_DESCRIPTOR_BAD ;
-	in->master.w1.netlink_pipe[fd_pipe_write] = FILE_DESCRIPTOR_BAD ;
+	Init_Pipe( in->master.w1.netlink_pipe ) ;
 
 	if ( pipe( in->master.w1.netlink_pipe ) != 0 ) {
 		ERROR_CONNECT("W1 pipe creation error");
+		Init_Pipe( in->master.w1.netlink_pipe ) ;
 		return gbBAD ;
 	}
 
@@ -131,13 +131,55 @@ static SEQ_OR_ERROR w1_send_search( BYTE search, const struct parsedname *pn )
 	return W1_send_msg( pn->selected_connection, &w1m, &w1c, NULL );
 }
 
+// Work around for omap hdq driver bug which reverses the slave address
+// We check the CRC8 and use reversed if forward is incorrect.
 static void search_callback( struct netlink_parse * nlp, void * v, const struct parsedname * pn )
 {
 	int i ;
+	struct connection_in * in = pn->selected_connection ;
 	struct dirblob *db = v ;
-	(void) pn ;
-	for ( i = 0 ; i < nlp->w1c->len ; i += 8 ) {
-		DirblobAdd(&nlp->data[i], db);
+	BYTE sn[SERIAL_NUMBER_SIZE] ;
+	BYTE * sn_pointer ;
+	
+	for ( i = 0 ; i < nlp->w1c->len ; i += SERIAL_NUMBER_SIZE ) {
+		switch( in->master.w1.w1_slave_order ) {
+			case w1_slave_order_forward:
+				sn_pointer = &nlp->data[i] ;
+				break ;
+			case w1_slave_order_reversed:
+				// reverse bytes
+				sn[0] = nlp->data[i+7] ;
+				sn[1] = nlp->data[i+6] ;
+				sn[2] = nlp->data[i+5] ;
+				sn[3] = nlp->data[i+4] ;
+				sn[4] = nlp->data[i+3] ;
+				sn[5] = nlp->data[i+2] ;
+				sn[6] = nlp->data[i+1] ;
+				sn[7] = nlp->data[i+0] ;
+				sn_pointer = sn ;
+				break ;
+			case w1_slave_order_unknown:
+			default:
+				sn_pointer = &nlp->data[i] ;
+				if ( CRC8(sn_pointer, SERIAL_NUMBER_SIZE) == 0 ) {
+					in->master.w1.w1_slave_order = w1_slave_order_forward ;
+					break ;
+				}
+				// reverse bytes
+				sn[0] = nlp->data[i+7] ;
+				sn[1] = nlp->data[i+6] ;
+				sn[2] = nlp->data[i+5] ;
+				sn[3] = nlp->data[i+4] ;
+				sn[4] = nlp->data[i+3] ;
+				sn[5] = nlp->data[i+2] ;
+				sn[6] = nlp->data[i+1] ;
+				sn[7] = nlp->data[i+0] ;
+				sn_pointer = sn ;
+				in->master.w1.w1_slave_order = w1_slave_order_reversed ;
+				LEVEL_DEBUG( "w1 bus master%d uses reversed slave order", in->master.w1.id ) ;
+				break ;
+		}
+		DirblobAdd(sn_pointer, db);
 	}
 }
 

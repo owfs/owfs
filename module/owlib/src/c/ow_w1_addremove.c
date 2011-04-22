@@ -40,6 +40,8 @@ static struct connection_in * CreateIn(int bus_master)
 
 	SOC(in)->devicename = owstrdup(name) ;
 	in->master.w1.id = bus_master ;
+	in->master.w1.w1_slave_order = w1_slave_order_unknown ;
+	Init_Pipe( in->master.w1.netlink_pipe ) ;
 	if ( BAD( W1_detect(in)) ) {
 		RemoveIn(in) ;
 		return NO_CONNECTION ;

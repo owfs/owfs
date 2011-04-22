@@ -115,11 +115,13 @@ static void W1C_print( struct w1_netlink_cmd * w1c )
 
 void Netlink_Print( struct nlmsghdr * nlm, struct cn_msg * cn, struct w1_netlink_msg * w1m, struct w1_netlink_cmd * w1c, unsigned char * data, int length )
 {
-	NLM_print( nlm ) ;
-	CN_print( cn ) ;
-	W1M_print( w1m ) ;
-	W1C_print( w1c ) ;
-	_Debug_Bytes("Data", data, length) ;
+	if ( Globals.error_level>=e_err_call ) {
+		NLM_print( nlm ) ;
+		CN_print( cn ) ;
+		W1M_print( w1m ) ;
+		W1C_print( w1c ) ;
+		_Debug_Bytes("Data", data, length) ;
+	}
 }
 
 #endif /* OW_W1 */

@@ -136,6 +136,7 @@ struct master_w1 {
 	SEQ_OR_ERROR seq ;
 	int id ; // equivalent to the number part of w1_bus_master23
 	FILE_DESCRIPTOR_OR_ERROR netlink_pipe[2] ;
+	enum enum_w1_slave_order { w1_slave_order_unknown, w1_slave_order_forward, w1_slave_order_reversed } w1_slave_order ;
 #endif /* OW_W1 */
 };
 

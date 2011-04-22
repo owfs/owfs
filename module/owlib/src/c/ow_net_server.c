@@ -293,14 +293,14 @@ void ServerProcess(void (*HandlerRoutine) (FILE_DESCRIPTOR_OR_ERROR file_descrip
 
 	handler_thread_count = 0 ;
 	shutdown_in_progress = 0 ;
-	shutdown_pipe[fd_pipe_read] = FILE_DESCRIPTOR_BAD ;
-	shutdown_pipe[fd_pipe_write] = FILE_DESCRIPTOR_BAD ;
+	Init_Pipe( shutdown_pipe ) ;
 
 	RWLOCK_INIT( shutdown_mutex_rw ) ;
 	_MUTEX_INIT(handler_thread_mutex);
 
 	if ( pipe( shutdown_pipe ) != 0 ) {
 		ERROR_DEFAULT("Cannot allocate a shutdown pipe. The program shutdown may be messy");
+		Init_Pipe( shutdown_pipe ) ;
 	}
 
 	if ( GOOD( SetupListenSockets( HandlerRoutine ) ) ) {
