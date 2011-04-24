@@ -112,6 +112,7 @@ GOOD_OR_BAD HA5_detect(struct connection_in *in)
 	}
 
 	in->master.ha5.checksum = Globals.checksum ;
+	in->master.ha5.reset_flush = 1 ; // assume flush needed
 	in->Adapter = adapter_HA5 ;
 	in->adapter_name = "HA5";
 
@@ -268,8 +269,15 @@ static GOOD_OR_BAD HA5_test_channel( struct connection_in * in )
 	if ( HA5_reset_wrapped( in ) == BUS_RESET_OK ) {
 		return gbGOOD ;
 	}
-	
-	return gbBAD ;
+
+	LEVEL_DEBUG("Try non-flush mode");
+	in->master.ha5.reset_flush = 0 ;
+	if ( HA5_reset_wrapped( in ) == BUS_RESET_OK ) {
+		return gbGOOD ;
+	}
+
+	LEVEL_DEBUG("Succeed despite bad reset");
+	return gbGOOD ;
 }
 
 // test char already set
@@ -280,7 +288,7 @@ static GOOD_OR_BAD HA5_checksum_support( struct connection_in * in )
 	// write a BYTE and see if any response (device present)
 	// and then see if a checksum is included in the response
 
-	if ( BAD(HA5_write( 'W', "01FF", 4, in)) ) {
+	if ( BAD(HA5_write( 'W', "0100", 4, in)) ) {
 		LEVEL_DEBUG("Error sending Bit");
 		return gbBAD;
 	}
@@ -306,7 +314,7 @@ static GOOD_OR_BAD HA5_checksum_support( struct connection_in * in )
 		LEVEL_DEBUG("Bad response");
 		return gbBAD ;
 	}
-		in->master.ha5.checksum = 1 ;
+	in->master.ha5.checksum = 1 ;
 	LEVEL_DETAIL("HA5 %s in CHECKSUM mode",SAFESTRING(SOC(in)->devicename));
 	return gbGOOD ;
 }
@@ -335,7 +343,10 @@ static RESET_TYPE HA5_reset_wrapped( struct connection_in * in )
 		LEVEL_DEBUG("Error sending HA5 reset");
 		return BUS_RESET_ERROR;
 	}
-	COM_flush(in) ;
+	if ( in->master.ha5.reset_flush ) {
+		// Appparenty RS485 problem
+		COM_flush(in) ;
+	}
 	// For some reason, the HA5 doesn't use a checksum for RESET response.
 	if ( BAD(COM_read(resp, 2, in)) ) {
 		LEVEL_DEBUG("Error reading HA5 reset");
