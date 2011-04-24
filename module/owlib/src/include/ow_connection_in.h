@@ -25,13 +25,6 @@ $Id$
 
 /* struct connection_in (for each bus master) as part of ow_connection.h */
 
-enum bus_speed {
-	bus_speed_slow,
-	bus_speed_overdrive,
-};
-
-enum bus_flex { bus_no_flex, bus_yes_flex };
-
 // For forward references
 struct connection_in;
 
@@ -184,8 +177,8 @@ struct connection_in {
 	enum adapter_type Adapter;
 	char *adapter_name;
 	enum e_anydevices AnyDevices;
-	enum bus_speed speed;
-	enum bus_flex flex ;
+	int overdrive;
+	int flex ;
 	int changed_bus_settings;
 	int ds2404_found;
 	int ProgramAvailable;

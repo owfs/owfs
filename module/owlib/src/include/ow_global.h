@@ -114,7 +114,6 @@ struct global {
 	int no_persistence;
 	int eightbit_serial;
 	enum zero_support zero ;
-	int checksum ;
 	int i2c_APU ;
 	int i2c_PPM ;
 	int baud ;

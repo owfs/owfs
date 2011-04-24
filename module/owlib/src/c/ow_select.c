@@ -87,7 +87,7 @@ GOOD_OR_BAD BUS_select(const struct parsedname *pn)
 			//BUS_reselect_branch(pn) ;
 		}
 		in->branch.sn[0] = 0x00;	// flag as no branches turned on
-		if (in->speed == bus_speed_overdrive) {	// overdrive?
+		if (in->overdrive) {	// overdrive?
 			sent[0] = _1W_OVERDRIVE_MATCH_ROM;
 		}
 	} else {
@@ -132,7 +132,7 @@ static GOOD_OR_BAD BUS_Skip_Rom(const struct parsedname *pn)
 
 	RETURN_BAD_IF_BAD( gbRESET( BUS_reset(pn) ) ) ;
 
-	skip[0] = (pn->selected_connection->speed == bus_speed_overdrive) ? _1W_OVERDRIVE_SKIP_ROM : _1W_SKIP_ROM;
+	skip[0] = pn->selected_connection->overdrive ? _1W_OVERDRIVE_SKIP_ROM : _1W_SKIP_ROM;
 	return BUS_transaction_nolock(t, pn);
 }
 

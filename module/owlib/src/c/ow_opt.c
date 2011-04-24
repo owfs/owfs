@@ -245,8 +245,6 @@ const struct option owopts_long[] = {
 	{"no_persistence", no_argument, &Globals.no_persistence, 1},
 	{"8bit", no_argument, &Globals.eightbit_serial, 1},
 	{"6bit", no_argument, &Globals.eightbit_serial, 0},
-	{"checksum", no_argument, &Globals.checksum, 1},
-	{"no_checksum", no_argument, &Globals.checksum, 0},
 	{"ActivePullUp", no_argument, &Globals.i2c_APU, 1},
 	{"activepullup", no_argument, &Globals.i2c_APU, 1},
 	{"APU", no_argument, &Globals.i2c_APU, 1},

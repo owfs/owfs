@@ -179,6 +179,8 @@ $Id$
 #include <sys/mkdev.h>			/* for major() */
 #endif							/* HAVE_SYS_MKDEV_H */
 
+#include <stddef.h> // for offsetof()
+
 /* Can't include search.h when compiling owperl on Fedora Core 1. */
 #ifndef SKIP_SEARCH_H
 #ifndef __USE_GNU

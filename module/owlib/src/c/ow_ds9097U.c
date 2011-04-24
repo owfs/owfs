@@ -225,8 +225,8 @@ GOOD_OR_BAD DS2480_detect(struct connection_in *in)
 	/* Set up low-level routines */
 	DS2480_setroutines(in);
 
-	in->speed = bus_speed_slow ;
-	in->flex = Globals.serial_flextime ? bus_yes_flex : bus_no_flex ;
+	in->overdrive = 0 ;
+	in->flex = Globals.serial_flextime ;
 	SOC(in)->timeout.tv_sec = 0 ;
 	SOC(in)->timeout.tv_usec = 1000 ;
 
@@ -516,9 +516,9 @@ static GOOD_OR_BAD DS2480_set_baud(struct connection_in * in)
 
 static BYTE DS2480b_speed_byte( struct connection_in * in )
 {
-	if ( in->speed == bus_speed_overdrive ) {
+	if ( in->overdrive ) {
 		return SPEEDSEL_OD ;
-	} else if ( in->flex == bus_yes_flex ) {
+	} else if ( in->flex ) {
 		return SPEEDSEL_FLEX ;
 	} else {
 		return SPEEDSEL_STD ;

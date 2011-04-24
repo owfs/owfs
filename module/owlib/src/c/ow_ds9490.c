@@ -520,20 +520,28 @@ static RESET_TYPE DS9490_reset(const struct parsedname *pn)
 
 	memset(buffer, 0, 32);
 
-	USpeed = (in->speed == bus_speed_slow) ?
-		(in->flex==bus_yes_flex ? ONEWIREBUSSPEED_FLEXIBLE : ONEWIREBUSSPEED_REGULAR)
-		: ONEWIREBUSSPEED_OVERDRIVE;
+	// Bus timing
+	if ( in->overdrive ) {
+		USpeed = ONEWIREBUSSPEED_OVERDRIVE ;
+	} else if ( in->flex ) {
+		USpeed = ONEWIREBUSSPEED_FLEXIBLE ;
+	} else {
+		USpeed = ONEWIREBUSSPEED_REGULAR ;
+	}
 
+	// Send reset
 	if ( BAD( USB_Control_Msg(COMM_CMD, COMM_1_WIRE_RESET | COMM_F | COMM_IM | COMM_SE, USpeed, pn)) ) {
 		LEVEL_DATA("Reset command rejected");
 		return BUS_RESET_ERROR;			// fatal error... probably closed usb-handle
 	}
 
-	if (in->ds2404_found && (in->speed == bus_speed_slow)) {
-		// extra delay for alarming DS1994/DS2404 complience
+	// Extra delay?
+	if (in->ds2404_found && (in->overdrive == 0)) {
+		// extra delay for alarming DS1994/DS2404 compliance
 		UT_delay(5);
 	}
 
+	// Read response
 	switch( DS9490_getstatus(buffer, &readlen, pn) ) {
 		case BUS_RESET_SHORT:
 			/* Short detected, but otherwise no bigger problem */
@@ -906,14 +914,14 @@ static GOOD_OR_BAD DS9490_SetSpeed(const struct parsedname *pn)
 
 	if (in->changed_bus_settings | CHANGED_USB_SPEED) {
 		in->changed_bus_settings ^= CHANGED_USB_SPEED ;
-		if (in->speed == bus_speed_overdrive) {
+		if (in->overdrive) {
 			if ( BAD(DS9490_overdrive(pn)) ) {
 				++ ret; 
-				in->speed = bus_speed_slow;
+				in->overdrive = 0 ;
 			} else {
 				LEVEL_DATA("set overdrive speed");
 			}
-		} else if (in->flex==bus_yes_flex) {
+		} else if ( in->flex ) {
 			if ( BAD(USB_Control_Msg(MODE_CMD, MOD_1WIRE_SPEED, ONEWIREBUSSPEED_FLEXIBLE, pn)) ) {
 				++ ret;
 			} else {

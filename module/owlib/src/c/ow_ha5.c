@@ -111,7 +111,7 @@ GOOD_OR_BAD HA5_detect(struct connection_in *in)
 		return gbBAD ;
 	}
 
-	in->master.ha5.checksum = Globals.checksum ;
+	in->master.ha5.checksum = 1 ;
 	in->master.ha5.reset_flush = 1 ; // assume flush needed
 	in->Adapter = adapter_HA5 ;
 	in->adapter_name = "HA5";
@@ -376,7 +376,7 @@ static enum search_status HA5_next_both(struct device_search *ds, const struct p
 		return search_done;
 	}
 
-	COM_flush(pn->selected_connection);
+	COM_flush(in);
 
 	if (ds->index == -1) {
 		enum search_status ret ;

@@ -9,8 +9,7 @@ $Id$
     1wire/iButton system from Dallas Semiconductor
 */
 
-/* Stats are a pseudo-device -- they are a file-system entry and handled as such,
-     but have a different caching type to distiguish their handling */
+/* interface is data and control of bus master */
 
 #include <config.h>
 #include "owfs_config.h"
@@ -25,16 +24,10 @@ READ_FUNCTION(FS_port);
 READ_FUNCTION(FS_version);
 READ_FUNCTION(FS_r_overdrive);
 WRITE_FUNCTION(FS_w_overdrive);
-READ_FUNCTION(FS_r_flextime);
-WRITE_FUNCTION(FS_w_flextime);
-READ_FUNCTION(FS_r_reverse);
-WRITE_FUNCTION(FS_w_reverse);
+READ_FUNCTION(FS_r_yesno);
+WRITE_FUNCTION(FS_w_yesno);
 READ_FUNCTION(FS_r_reconnect);
 WRITE_FUNCTION(FS_w_reconnect);
-READ_FUNCTION(FS_r_checksum);
-WRITE_FUNCTION(FS_w_checksum);
-READ_FUNCTION(FS_r_ds2404_found);
-WRITE_FUNCTION(FS_w_ds2404_found);
 READ_FUNCTION(FS_r_pulldownslewrate);
 WRITE_FUNCTION(FS_w_pulldownslewrate);
 READ_FUNCTION(FS_r_writeonelowtime);
@@ -63,37 +56,94 @@ READ_FUNCTION(FS_elapsed);
 int DS9490_getstatus(BYTE * buffer, int readlen, const struct parsedname *pn);
 #endif
 
+static enum e_visibility VISIBLE_DS2482( const struct parsedname * pn )
+{
+	switch ( pn->selected_connection->busmode ) {
+		case bus_i2c:
+			return visible_now ;
+		default:
+			return visible_not_now ;
+	}
+}
+
+static enum e_visibility VISIBLE_DS9490( const struct parsedname * pn )
+{
+	switch ( pn->selected_connection->busmode ) {
+		case bus_usb:
+			return visible_now ;
+		default:
+			return visible_not_now ;
+	}
+}
+
+static enum e_visibility VISIBLE_DS2480B( const struct parsedname * pn )
+{
+	switch ( pn->selected_connection->busmode ) {
+		case bus_serial:
+		case bus_xport:
+			return visible_now ;
+		default:
+			return visible_not_now ;
+	}
+}
+
+static enum e_visibility VISIBLE_HA5( const struct parsedname * pn )
+{
+	switch ( pn->selected_connection->busmode ) {
+		case bus_ha5:
+			return visible_now ;
+		default:
+			return visible_not_now ;
+	}
+}
+
+static enum e_visibility VISIBLE_PSEUDO( const struct parsedname * pn )
+{
+	switch ( pn->selected_connection->busmode ) {
+		case bus_fake:
+		case bus_tester:
+		case bus_mock:
+			return visible_now ;
+		default:
+			return visible_not_now ;
+	}
+}
+
 /* -------- Structures ---------- */
 /* Rare PUBLIC aggregate structure to allow changing the number of adapters */
 struct filetype interface_settings[] = {
 	{"name", 128, NON_AGGREGATE, ft_vascii, fc_static, FS_name, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"address", 512, NON_AGGREGATE, ft_vascii, fc_static, FS_port, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-	{"overdrive", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_overdrive, FS_w_overdrive, VISIBLE, NO_FILETYPE_DATA,},
+	{"overdrive", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_yesno, FS_w_yesno, VISIBLE, {s:offsetof(struct connection_in,overdrive),},},
 	{"version", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_version, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-	{"flexible_timing", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_flextime, FS_w_flextime, VISIBLE, NO_FILETYPE_DATA,},
-	{"ds2404_found", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_ds2404_found, FS_w_ds2404_found, VISIBLE, NO_FILETYPE_DATA,},
+	{"ds2404_found", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_yesno, FS_w_yesno, VISIBLE, {s:offsetof(struct connection_in,ds2404_found),},},
 	{"reconnect", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_reconnect, FS_w_reconnect, VISIBLE, NO_FILETYPE_DATA,},
 
-	{"usb", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"usb", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_DS9490, NO_FILETYPE_DATA,},
 	#ifdef DEBUG_DS2490
-	{"usb/ds2490status", 128, NON_AGGREGATE, ft_vascii, fc_static, FS_r_ds2490status, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"usb/ds2490status", 128, NON_AGGREGATE, ft_vascii, fc_static, FS_r_ds2490status, NO_WRITE_FUNCTION, VISIBLE_DS9490, NO_FILETYPE_DATA,},
 	#endif
-	{"usb/pulldownslewrate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_pulldownslewrate, FS_w_pulldownslewrate, VISIBLE, NO_FILETYPE_DATA,},
-	{"usb/writeonelowtime", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_writeonelowtime, FS_w_writeonelowtime, VISIBLE, NO_FILETYPE_DATA,},
-	{"usb/datasampleoffset", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_datasampleoffset, FS_w_datasampleoffset, VISIBLE, NO_FILETYPE_DATA,},
+	{"usb/pulldownslewrate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_pulldownslewrate, FS_w_pulldownslewrate, VISIBLE_DS9490, NO_FILETYPE_DATA,},
+	{"usb/writeonelowtime", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_writeonelowtime, FS_w_writeonelowtime, VISIBLE_DS9490, NO_FILETYPE_DATA,},
+	{"usb/datasampleoffset", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_datasampleoffset, FS_w_datasampleoffset, VISIBLE_DS9490, NO_FILETYPE_DATA,},
+	{"usb/flexible_timing", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_yesno, FS_w_yesno, VISIBLE_DS9490, {s:offsetof(struct connection_in,flex),},},
 
-	{"serial", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-	{"serial/reverse_polarity", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_reverse, FS_w_reverse, VISIBLE, NO_FILETYPE_DATA,},
-	{"serial/baudrate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_baud, FS_w_baud, VISIBLE, NO_FILETYPE_DATA,},
-	{"serial/checksum", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_checksum, FS_w_checksum, VISIBLE, NO_FILETYPE_DATA,},
+	{"serial", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_DS2480B, NO_FILETYPE_DATA,},
+	{"serial/reverse_polarity", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_yesno, FS_w_yesno, VISIBLE_DS2480B, {s:offsetof(struct connection_in,master.serial.reverse_polarity),},},
+	{"serial/baudrate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_baud, FS_w_baud, VISIBLE_DS2480B, NO_FILETYPE_DATA,},
+	{"serial/flexible_timing", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_yesno, FS_w_yesno, VISIBLE_DS2480B, {s:offsetof(struct connection_in,flex),},},
 
-	{"i2c", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-	{"i2c/ActivePullUp", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_APU, FS_w_APU, VISIBLE, NO_FILETYPE_DATA,},
-	{"i2c/PulsePresenceMask", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_PPM, FS_w_PPM, VISIBLE, NO_FILETYPE_DATA,},
+	{"ha5", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_HA5, NO_FILETYPE_DATA,},
+	{"ha5/checksum", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_yesno, FS_w_yesno, VISIBLE_HA5, {s:offsetof(struct connection_in,master.ha5.checksum), }, },
+	{"ha5/reset_flush", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_yesno, FS_w_yesno, VISIBLE_HA5, {s:offsetof(struct connection_in,master.ha5.reset_flush), }, },
 
-	{"simulated", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-	{"simulated/templow", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE, {i:1},},
-	{"simulated/temphigh", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE, {i:0},},
+	{"i2c", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_DS2482, NO_FILETYPE_DATA,},
+	{"i2c/ActivePullUp", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_APU, FS_w_APU, VISIBLE_DS2482, NO_FILETYPE_DATA,},
+	{"i2c/PulsePresenceMask", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_PPM, FS_w_PPM, VISIBLE_DS2482, NO_FILETYPE_DATA,},
+
+	{"simulated", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_PSEUDO, NO_FILETYPE_DATA,},
+	{"simulated/templow", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE_PSEUDO, {i:1},},
+	{"simulated/temphigh", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE_PSEUDO, {i:0},},
 };
 struct device d_interface_settings = { 
 	"settings", 
@@ -150,23 +200,7 @@ struct device d_interface_statistics = {
 
 /* ------- Functions ------------ */
 
-
-/* Just some tests to support change of extra delay */
-static ZERO_OR_ERROR FS_r_ds2404_found(struct one_wire_query *owq)
-{
-	struct parsedname *pn = PN(owq);
-	OWQ_Y(owq) = pn->selected_connection->ds2404_found;
-	return 0;
-}
-
-static ZERO_OR_ERROR FS_w_ds2404_found(struct one_wire_query *owq)
-{
-	struct parsedname *pn = PN(owq);
-	pn->selected_connection->ds2404_found = OWQ_Y(owq);
-	return 0;
-}
-
-/* Just some tests to support overdrive */
+/* Just some tests to support reconnection */
 static ZERO_OR_ERROR FS_r_reconnect(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
@@ -174,28 +208,12 @@ static ZERO_OR_ERROR FS_r_reconnect(struct one_wire_query *owq)
 	return 0;
 }
 
-/* Just some tests to support overdrive */
+/* Just some tests to support reconnection */
 static ZERO_OR_ERROR FS_w_reconnect(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	pn->selected_connection->reconnect_state = OWQ_Y(owq) ? reconnect_error : reconnect_ok ;
 	return 0;
-}
-
-/* Just some tests to support flextime */
-static ZERO_OR_ERROR FS_r_flextime(struct one_wire_query *owq)
-{
-    struct parsedname *pn = PN(owq);
-    OWQ_Y(owq) = (pn->selected_connection->flex==bus_yes_flex);
-    return 0;
-}
-
-static ZERO_OR_ERROR FS_w_flextime(struct one_wire_query *owq)
-{
-    struct parsedname *pn = PN(owq);
-    pn->selected_connection->flex = OWQ_Y(owq) ? bus_yes_flex : bus_no_flex ;
-    pn->selected_connection->changed_bus_settings |= CHANGED_USB_SPEED ;
-    return 0;
 }
 
 /* DS2482 APU setting */
@@ -229,30 +247,46 @@ static ZERO_OR_ERROR FS_w_APU(struct one_wire_query *owq)
 	return 0 ;
 }
 
-/* DS2480B reverse_polarity setting */
-static ZERO_OR_ERROR FS_r_reverse(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_yesno( struct one_wire_query * owq )
 {
-	struct parsedname *pn = PN(owq);
-	switch ( pn->selected_connection->busmode ) {
-		case bus_serial:
-			OWQ_Y(owq) = ( pn->selected_connection->master.serial.reverse_polarity ) ;
-			return 0;
-		default:
+	struct parsedname * pn = PN(owq) ;
+	struct connection_in * in = pn->selected_connection ;
+	struct filetype * ft = pn->selected_filetype ;
+	size_t struct_offset = ft->data.s ;
+	char * in_loc = (void *) in ;
+	int * p_yes_no = (int *)(in_loc + struct_offset) ;
+
+	switch( (ft->visible)(pn) ) {
+		case visible_not_now:
+		case visible_never:
 			return -ENOTSUP ;
+		default:
+			break ;
 	}
+
+	OWQ_Y(owq) = p_yes_no[0] ;
+	return 0 ;
 }
 
-static ZERO_OR_ERROR FS_w_reverse(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_w_yesno( struct one_wire_query * owq )
 {
-	struct parsedname *pn = PN(owq);
-	switch ( pn->selected_connection->busmode ) {
-		case bus_serial:
-			pn->selected_connection->master.serial.reverse_polarity = OWQ_Y(owq) ;
-			++pn->selected_connection->changed_bus_settings ;
-			break ;
+	struct parsedname * pn = PN(owq) ;
+	struct connection_in * in = pn->selected_connection ;
+	struct filetype * ft = pn->selected_filetype ;
+	size_t struct_offset = ft->data.s ;
+	char * in_loc = (void *) in ;
+	int * p_yes_no = (int *)(in_loc + struct_offset) ;
+
+	switch( (ft->visible)(pn) ) {
+		case visible_not_now:
+		case visible_never:
+			return -ENOTSUP ;
 		default:
 			break ;
 	}
+
+	p_yes_no[0] = OWQ_Y(owq) ;
+	in->changed_bus_settings |= CHANGED_USB_SPEED ;
 	return 0 ;
 }
 
@@ -352,44 +386,18 @@ static ZERO_OR_ERROR FS_w_PPM(struct one_wire_query *owq)
 	return 0 ;
 }
 
-/* Just some tests for ha5 checksum */
-static ZERO_OR_ERROR FS_r_checksum(struct one_wire_query *owq)
-{
-	struct connection_in * in = PN(owq)->selected_connection ;
-	switch ( in->busmode ) {
-		case bus_ha5:
-			OWQ_Y(owq) = in->master.ha5.checksum;
-			return 0;
-		default:
-			return -ENOTSUP ;
-	}
-}
-
-static ZERO_OR_ERROR FS_w_checksum(struct one_wire_query *owq)
-{
-	struct connection_in * in = PN(owq)->selected_connection ;
-	switch ( in->busmode ) {
-		case bus_ha5:
-			in->master.ha5.checksum = OWQ_Y(owq) ;
-			break ;
-		default:
-			break ;
-	}
-	return 0 ;
-}
-
 /* Just some tests to support overdrive */
 static ZERO_OR_ERROR FS_r_overdrive(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
-	OWQ_Y(owq) = (pn->selected_connection->speed == bus_speed_overdrive);
+	OWQ_Y(owq) = pn->selected_connection->overdrive ;
 	return 0;
 }
 
 static ZERO_OR_ERROR FS_w_overdrive(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
-	pn->selected_connection->speed = OWQ_Y(owq) ? bus_speed_overdrive : bus_speed_slow;
+	pn->selected_connection->overdrive = OWQ_Y(owq) ;
 	pn->selected_connection->changed_bus_settings |= CHANGED_USB_SPEED ;
 	return 0;
 }

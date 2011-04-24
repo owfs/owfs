@@ -148,8 +148,8 @@ GOOD_OR_BAD DS9490_root_dir( struct dirblob * db, struct connection_in * in )
 
 	/* First time pretend there are devices */
 	pn_root.selected_connection->changed_bus_settings |= CHANGED_USB_SPEED ;	// Trigger needing new configuration
-	pn_root.selected_connection->speed = bus_speed_slow;	// not overdrive at start
-	pn_root.selected_connection->flex = Globals.usb_flextime ? bus_yes_flex : bus_no_flex ;
+	pn_root.selected_connection->overdrive = 0 ;	// not overdrive at start
+	pn_root.selected_connection->flex = Globals.usb_flextime ;
 	
 	SetReconnect(&pn_root) ;
 	FS_dir( DS9490_dir_callback, db, &pn_root ) ;

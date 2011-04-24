@@ -90,7 +90,6 @@ struct global Globals = {
 	.no_persistence = 0,
 	.eightbit_serial = 0,
 	.zero = zero_unknown ,
-	.checksum = 1,
 	.i2c_APU = 1 ,
 	.i2c_PPM = 1 ,
 	.baud = B9600 ,
