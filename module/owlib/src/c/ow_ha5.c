@@ -112,7 +112,6 @@ GOOD_OR_BAD HA5_detect(struct connection_in *in)
 	}
 
 	in->master.ha5.checksum = 1 ;
-	in->master.ha5.reset_flush = 1 ; // assume flush needed
 	in->Adapter = adapter_HA5 ;
 	in->adapter_name = "HA5";
 
@@ -270,12 +269,6 @@ static GOOD_OR_BAD HA5_test_channel( struct connection_in * in )
 		return gbGOOD ;
 	}
 
-	LEVEL_DEBUG("Try non-flush mode");
-	in->master.ha5.reset_flush = 0 ;
-	if ( HA5_reset_wrapped( in ) == BUS_RESET_OK ) {
-		return gbGOOD ;
-	}
-
 	LEVEL_DEBUG("Succeed despite bad reset");
 	return gbGOOD ;
 }
@@ -343,10 +336,7 @@ static RESET_TYPE HA5_reset_wrapped( struct connection_in * in )
 		LEVEL_DEBUG("Error sending HA5 reset");
 		return BUS_RESET_ERROR;
 	}
-	if ( in->master.ha5.reset_flush ) {
-		// Appparenty RS485 problem
-		COM_flush(in) ;
-	}
+
 	// For some reason, the HA5 doesn't use a checksum for RESET response.
 	if ( BAD(COM_read(resp, 2, in)) ) {
 		LEVEL_DEBUG("Error reading HA5 reset");

@@ -125,7 +125,6 @@ struct master_ha7e {
 struct master_ha5 {
 	unsigned char sn[SERIAL_NUMBER_SIZE] ;       /* last address */
 	int checksum ;              /* flag to use checksum byte in communication */
-	int reset_flush ;
 	char channel ;
 	pthread_mutex_t all_channel_lock;	// second level mutex for the entire chip */
 	struct connection_in *head;

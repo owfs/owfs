@@ -135,7 +135,6 @@ struct filetype interface_settings[] = {
 
 	{"ha5", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_HA5, NO_FILETYPE_DATA,},
 	{"ha5/checksum", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_yesno, FS_w_yesno, VISIBLE_HA5, {s:offsetof(struct connection_in,master.ha5.checksum), }, },
-	{"ha5/reset_flush", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_yesno, FS_w_yesno, VISIBLE_HA5, {s:offsetof(struct connection_in,master.ha5.reset_flush), }, },
 
 	{"i2c", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_DS2482, NO_FILETYPE_DATA,},
 	{"i2c/ActivePullUp", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_APU, FS_w_APU, VISIBLE_DS2482, NO_FILETYPE_DATA,},
