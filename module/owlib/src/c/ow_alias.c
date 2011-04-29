@@ -106,11 +106,7 @@ GOOD_OR_BAD Test_and_Add_Alias( char * name, BYTE * sn )
 		name[len] = '\0' ;
 	}
 
-	// Anything left of the name?
-	if ( len == 0 ) {
-		LEVEL_DEBUG("Empty alias name") ;
-		return gbBAD ;
-	}
+	// zero length allowed -- will delete this entry.
 
 	// Check length
 	if ( len > PROPERTY_LENGTH_ALIAS ) {
