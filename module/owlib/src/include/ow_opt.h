@@ -50,7 +50,7 @@ $Id$
 
 /* command line options */
 /* These are the owlib-specific options */
-#define OWLIB_OPT "a:m:c:f:p:s:h::u::d:t:CFRKVP:"
+#define OWLIB_OPT "a:m:c:f:p:s:h::u::d:t:CFRKVPrw:"
 extern const struct option owopts_long[];
 
 GOOD_OR_BAD owopt(const int c, const char *arg);
