@@ -83,15 +83,17 @@ GOOD_OR_BAD ReadAliasFile(const ASCII * file)
 
 /* Name is a null-terminated string */
 /* sn is an 8-byte serial number */
+/* 1. Trims name
+ * 2. Checks name length
+ * 3. Refuses reserved words
+ * 4. Refuses path separator (/)
+ * 5. Removes any old assignments to name or serial number
+ * 6. Add new alias
+ * */
 GOOD_OR_BAD Test_and_Add_Alias( char * name, BYTE * sn )
 {
 	BYTE sn_stored[SERIAL_NUMBER_SIZE] ;
 	size_t len ;
-
-	if ( strlen(name) > PROPERTY_LENGTH_ALIAS ) {
-		LEVEL_CALL("Alias too long: sn=" SNformat ", alias=%s max length=%d", SNvar(sn), name,  PROPERTY_LENGTH_ALIAS ) ;
-		return gbBAD ;
-	}
 
 	// Parse off initial spaces
 	while ( name[0] == ' ' ) {
@@ -104,6 +106,19 @@ GOOD_OR_BAD Test_and_Add_Alias( char * name, BYTE * sn )
 		name[len] = '\0' ;
 	}
 
+	// Anything left of the name?
+	if ( len == 0 ) {
+		LEVEL_DEBUG("Empty alias name") ;
+		return gbBAD ;
+	}
+
+	// Check length
+	if ( len > PROPERTY_LENGTH_ALIAS ) {
+		LEVEL_CALL("Alias too long: sn=" SNformat ", Alias=%s, Length=%d, Max length=%d", SNvar(sn), name,  (int) len, PROPERTY_LENGTH_ALIAS ) ;
+		return gbBAD ;
+	}
+
+	// Reserved word?
 	if ( strcmp( name, "interface" )==0
 	|| strcmp( name, "settings" )==0
 	|| strcmp( name, "uncached" )==0
@@ -118,6 +133,8 @@ GOOD_OR_BAD Test_and_Add_Alias( char * name, BYTE * sn )
 		LEVEL_CALL("Alias attempts to redefine reserved filename: %s",name ) ;
 		return gbBAD ;
 	}
+
+	// No path separator allowed in name
 	if ( strchr( name, '/' ) ) {
 		LEVEL_CALL("Alias contains confusing path separator \'/\': %s",name ) ;
 		return gbBAD ;
@@ -125,13 +142,16 @@ GOOD_OR_BAD Test_and_Add_Alias( char * name, BYTE * sn )
 
 	// Is there another assignment for this alias name already?
 	if ( GOOD( Cache_Get_Alias_SN( name, sn_stored ) ) ) {
-		if ( memcmp( sn, sn_stored, SERIAL_NUMBER_SIZE ) != 0 ) {
-			LEVEL_CALL("Alias %s reassigned from "SNformat" to "SNformat,name,SNvar(sn_stored),SNvar(sn)) ;
-			Cache_Del_Alias(sn_stored) ;
+		if ( memcmp( sn, sn_stored, SERIAL_NUMBER_SIZE ) == 0 ) {
+			// repeat assignment
+			return gbGOOD ;
 		}
+		// delete old serial number
+		LEVEL_CALL("Alias %s reassigned from "SNformat" to "SNformat,name,SNvar(sn_stored),SNvar(sn)) ;
+		Cache_Del_Alias(sn_stored) ;
 	}
 
-	// Delete any prior assignments for this alias
+	// Delete any prior assignments for this serial number
 	Cache_Del_Alias(sn) ;
 
 	// Now add
