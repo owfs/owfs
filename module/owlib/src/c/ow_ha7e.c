@@ -65,7 +65,11 @@ GOOD_OR_BAD HA7E_detect(struct connection_in *in)
 	SOC(in)->parity = parity_none; // parity
 	SOC(in)->stop = stop_1; // stop bits
 	SOC(in)->bits = 8; // bits / byte
-	SOC(in)->flow = flow_none; // flow control
+	if ( Globals.serial_hardflow ) {
+		SOC(in)->flow = flow_hard; // flow control
+	} else {
+		SOC(in)->flow = flow_none; // flow control
+	}
 	SOC(in)->state = cs_virgin ;
 	SOC(in)->timeout.tv_sec = Globals.timeout_serial ;
 	SOC(in)->timeout.tv_usec = 0 ;

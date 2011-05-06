@@ -27,6 +27,7 @@ static void DS2480_close(struct connection_in *in) ;
 
 static void DS2480_setroutines(struct connection_in *in);
 
+static GOOD_OR_BAD DS2480_detect_serial(struct connection_in *in) ;
 static RESET_TYPE DS2480_reset_in(struct connection_in * in);
 static GOOD_OR_BAD DS2480_initialize_repeatedly(struct connection_in * in);
 static GOOD_OR_BAD DS2480_big_reset(struct connection_in * in) ;
@@ -239,10 +240,25 @@ GOOD_OR_BAD DS2480_detect(struct connection_in *in)
 	SOC(in)->parity = parity_none; // parity
 	SOC(in)->stop = stop_1; // stop bits
 	SOC(in)->bits = 8; // bits / byte
-	SOC(in)->flow = flow_none; // flow control
-
 	in->master.serial.tcp.CRLF_size = 2 ;
+	
+	if ( Globals.serial_hardflow ) {
+		// first pass with hardware flow control
+		SOC(in)->flow = flow_hard; // flow control
+		RETURN_GOOD_IF_GOOD( DS2480_detect_serial(in) ) ;
+		SOC(in)->flow = flow_none; // flow control	
+	} else {
+		SOC(in)->flow = flow_none; // flow control
+		RETURN_GOOD_IF_GOOD( DS2480_detect_serial(in) ) ;
+		SOC(in)->flow = flow_hard; // flow control	
+	}
 
+	return DS2480_detect_serial(in) ;
+}
+
+// setting for serial port already made
+static GOOD_OR_BAD DS2480_detect_serial(struct connection_in *in)
+{
 	SOC(in)->state = cs_virgin ;
 	if ( BAD(DS2480_initialize_repeatedly(in)) ) {
 		LEVEL_DEBUG("Could not initilize the DS9097U even after several tries") ;

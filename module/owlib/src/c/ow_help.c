@@ -191,6 +191,7 @@ void ow_help_device(void)
 	"  --HA7E=dev      Serial HA7E bus master\n"
 	"  --HA7S=dev      Serial HA7S bus master\n"
 	"  --checksum | --no_checksum for HA5\n"
+	"  --hard | --no_hard Hardware flow control for serial line\n"
 	"\n"
 	" i2c devices\n"
 	"  -d dev          DS2482-x00 bus master (dev is /dev/i2c-0)\n"

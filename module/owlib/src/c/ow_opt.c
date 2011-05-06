@@ -193,6 +193,12 @@ const struct option owopts_long[] = {
 	{"serial_flextime", no_argument, &Globals.serial_flextime, 1},
 	{"serial_regulartime", no_argument, &Globals.serial_flextime, 0},
 	{"serial_regular", no_argument, &Globals.serial_flextime, 0},
+	{ "no_hard", no_argument, &Globals.serial_hardflow, 0 }, // hardware flow control
+	{ "flow_none", no_argument, &Globals.serial_hardflow, 0 }, // hardware flow control
+	{ "no_hardflow", no_argument, &Globals.serial_hardflow, 0 }, // hardware flow control
+	{ "hard", no_argument, &Globals.serial_hardflow, 1 }, // hardware flow control
+	{ "hardware", no_argument, &Globals.serial_hardflow, 1 }, // hardware flow control
+	{ "hardflow", no_argument, &Globals.serial_hardflow, 1 }, // hardware flow control
 	{"serial_standardtime", no_argument, &Globals.serial_flextime, 0},
 	{"serial_standard", no_argument, &Globals.serial_flextime, 0},
 	{"serial_stdtime", no_argument, &Globals.serial_flextime, 0},

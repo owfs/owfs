@@ -91,6 +91,7 @@ struct global {
 	int usb_flextime;
 	int serial_flextime;
 	int serial_reverse; // reverse polarity ?
+	int serial_hardflow ; // hardware flow control
 	/* timeouts -- order must match ow_opt.c values for correct indexing */
 	int timeout_volatile;
 	int timeout_stable;

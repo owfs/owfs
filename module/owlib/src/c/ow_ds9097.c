@@ -70,7 +70,13 @@ GOOD_OR_BAD DS9097_detect(struct connection_in *in)
 	SOC(in)->parity = parity_none; // parity
 	SOC(in)->stop = stop_1; // stop bits
 	SOC(in)->bits = 8; // bits / byte
-	SOC(in)->flow = flow_none; // flow control
+	
+	if ( Globals.serial_hardflow ) {
+		// first pass with hardware flow control
+		SOC(in)->flow = flow_hard; // flow control
+	} else {
+		SOC(in)->flow = flow_none; // flow control
+	}
 
 	switch (SOC(in)->type) {
 		case ct_telnet:

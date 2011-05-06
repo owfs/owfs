@@ -205,6 +205,12 @@ GOOD_OR_BAD LINK_detect(struct connection_in *in)
 		case ct_serial:
 			SOC(in)->baud = B9600 ;
 
+			if ( Globals.serial_hardflow ) {
+				// first pass with hardware flow control
+				SOC(in)->flow = flow_hard ;
+				RETURN_GOOD_IF_GOOD( LINK_detect_serial(in) ) ;
+			}
+
 			SOC(in)->flow = flow_none ;
 			RETURN_GOOD_IF_GOOD( LINK_detect_serial(in) ) ;
 
