@@ -13,6 +13,10 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
+/* For thread ID to aid exitting */
+int main_threadid_init = 0 ;
+pthread_t main_threadid;
+
 /* All ow library setup */
 void LibSetup(enum opt_program opt)
 {

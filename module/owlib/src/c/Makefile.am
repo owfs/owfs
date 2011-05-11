@@ -81,6 +81,7 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_eeef.c          \
                ow_eprom_write.c   \
                ow_etherweather.c  \
+               ow_exit.c          \
                ow_fs_address.c    \
                ow_fs_alias.c      \
                ow_fs_code.c       \

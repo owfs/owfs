@@ -80,6 +80,7 @@ noinst_HEADERS =           \
         ow_parse_sn.h      \
         ow_pid.h           \
         ow_pressure.h      \
+        ow_programs.h      \
         ow_reset.h         \
         ow_settings.h      \
         ow_search.h        \

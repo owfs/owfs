@@ -21,13 +21,6 @@ $Id$
 #include "owcapi.h"
 #include <limits.h>
 
-#if OW_MT
-pthread_t main_threadid;
-#define IS_MAINTHREAD (main_threadid == pthread_self())
-#else							/* OW_MT */
-#define IS_MAINTHREAD 1
-#endif							/* OW_MT */
-
 #define MAX_ARGS 20
 
 static ssize_t ReturnAndErrno(ssize_t ret)

@@ -140,6 +140,7 @@ GOOD_OR_BAD EnterBackground(void)
 				return gbBAD;
 			} else {
 				Globals.now_background = 1;
+				LEVEL_DEFAULT("Entered background mode, quitting.");
 #ifdef __UCLIBC__
 				/* Have to re-initialize pthread since the main-process is gone.
 				 *
@@ -158,7 +159,12 @@ GOOD_OR_BAD EnterBackground(void)
 			PIDstart();
 		}
 	}
-	//printf("Exit Background\n") ;
+
+#if OW_MT
+	main_threadid = pthread_self();
+	main_threadid_init = 1 ;
+	LEVEL_DEBUG("main thread id = %lu", (unsigned long int) main_threadid);
+#endif
 
 	return gbGOOD;
 }

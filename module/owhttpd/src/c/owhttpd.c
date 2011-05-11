@@ -36,67 +36,6 @@ $Id$
 
 static void Acceptor(int listenfd);
 
-#if OW_MT
-pthread_t main_threadid;
-#define IS_MAINTHREAD (main_threadid == pthread_self())
-#else
-#define IS_MAINTHREAD 1
-#endif
-
-static void ow_exit(int e)
-{
-	LEVEL_DEBUG("ow_exit %d", e);
-	if (IS_MAINTHREAD) {
-		LibClose();
-	}
-#ifdef __UCLIBC__
-	/* Process never die on WRT54G router with uClibc if exit() is used */
-	_exit(e);
-#else
-	exit(e);
-#endif
-}
-
-static void exit_handler(int signo, siginfo_t * info, void *context)
-{
-	(void) context;
-#if OW_MT
-	if (info) {
-		LEVEL_DEBUG
-			("exit_handler: for signo=%d, errno %d, code %d, pid=%ld, self=%lu main=%lu",
-			 signo, info->si_errno, info->si_code, (long int) info->si_pid, pthread_self(), main_threadid);
-	} else {
-		LEVEL_DEBUG("exit_handler: for signo=%d, self=%lu, main=%lu", signo, pthread_self(), main_threadid);
-	}
-	if (StateInfo.shutting_down) {
-	  LEVEL_DEBUG("exit_handler: shutdown already in progress. signo=%d, self=%lu, main=%lu", signo, pthread_self(), main_threadid);
-	}
-	if (!StateInfo.shutting_down) {
-		StateInfo.shutting_down = 1;
-
-		if (info != NULL) {
-			if (SI_FROMUSER(info)) {
-				LEVEL_DEBUG("exit_handler: kill from user");
-			}
-			if (SI_FROMKERNEL(info)) {
-				LEVEL_DEBUG("exit_handler: kill from kernel");
-			}
-		}
-		if (!IS_MAINTHREAD) {
-			LEVEL_DEBUG("exit_handler: kill mainthread %lu self=%lu signo=%d", main_threadid, pthread_self(), signo);
-			pthread_kill(main_threadid, signo);
-		} else {
-			LEVEL_DEBUG("exit_handler: ignore signal, mainthread %lu self=%lu signo=%d", main_threadid, pthread_self(), signo);
-		}
-	}
-#else
-	(void) signo;
-	(void) info;
-	StateInfo.shutting_down = 1;
-#endif
-	return;
-}
-
 int main(int argc, char *argv[])
 {
 	int c;
@@ -148,13 +87,11 @@ int main(int argc, char *argv[])
 		ow_exit(1);
 	}
 
-#if OW_MT
-	main_threadid = pthread_self();
-#endif
 	set_exit_signal_handlers(exit_handler);
 	set_signal_handlers(NULL);
 
 	ServerProcess(Acceptor);
+
 	LEVEL_DEBUG("ServerProcess done");
 	ow_exit(0);
 	LEVEL_DEBUG("owhttpd done");

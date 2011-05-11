@@ -17,13 +17,6 @@ API_setup(opt_swig) ;
 // define this to add debug-output from newer swig-versions.
 //#define SWIGRUNTIME_DEBUG 1
 
-#if OW_MT
-    pthread_t main_threadid ;
-    #define IS_MAINTHREAD (main_threadid == pthread_self())
-#else /* OW_MT */
-    #define IS_MAINTHREAD 1
-#endif /* OW_MT */
-
 char *version( ) 
 {
 	return VERSION;

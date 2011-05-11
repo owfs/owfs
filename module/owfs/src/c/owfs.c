@@ -18,29 +18,6 @@ $Id$
 #include "owfs.h"
 #include "ow_connection.h"
 
-#if OW_MT
-pthread_t main_threadid;
-#define IS_MAINTHREAD (main_threadid == pthread_self())
-#else
-#define IS_MAINTHREAD 1
-#endif
-
-static void ow_exit(int e)
-{
-	StateInfo.shutting_down = 1;
-	LEVEL_DEBUG("owfs: ow_exit(%d)", e);
-	if (IS_MAINTHREAD) {
-		LibClose();
-	}
-	//LEVEL_DEBUG("owfs: call _exit(%d)\n", e);
-#ifdef __UCLIBC__
-	/* Process never die on WRT54G router with uClibc if exit() is used */
-	_exit(e);
-#else
-	exit(e);
-#endif
-}
-
 /*
     OW -- One Wire
     Globals variables -- each invokation will have it's own data
@@ -129,10 +106,6 @@ int main(int argc, char *argv[])
 	if ( BAD(LibStart()) ) {
 		ow_exit(1);
 	}
-
-#if OW_MT
-	main_threadid = pthread_self();
-#endif
 
 #if FUSE_VERSION >= 14
 	/* Set up "command line" for main fuse routines */

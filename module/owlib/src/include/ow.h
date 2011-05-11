@@ -320,18 +320,6 @@ struct connection_out;
 /* device display format */
 enum deviceformat { fdi, fi, fdidc, fdic, fidc, fic };
 
-extern void set_signal_handlers(void (*exit_handler)
-	(int signo, siginfo_t * info, void *context));
-void set_exit_signal_handlers(void (*exit_handler)
-	(int signo, siginfo_t * info, void *context));
-
-#ifndef SI_FROMUSER
-#define SI_FROMUSER(siptr)      ((siptr)->si_code <= 0)
-#endif
-#ifndef SI_FROMKERNEL
-#define SI_FROMKERNEL(siptr)    ((siptr)->si_code > 0)
-#endif
-
 /* OWSERVER messages */
 #include "ow_message.h"
 
@@ -354,5 +342,8 @@ void set_exit_signal_handlers(void (*exit_handler)
 
 /* Pressure scale handling */
 #include "ow_pressure.h"
+
+/* Program control */
+#include "ow_programs.h"
 
 #endif							/* OW_H */

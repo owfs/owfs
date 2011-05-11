@@ -48,7 +48,7 @@ GOOD_OR_BAD LibStart(void)
 	MONITOR_WUNLOCK ;
 
 	// Signal handlers
-	IgnoreSignals();
+	//IgnoreSignals();
 	
 	if ( Inbound_Control.head == NO_CONNECTION ) {
 		LEVEL_DEFAULT("No valid 1-wire buses found");

@@ -19,16 +19,9 @@ $Id$
 #include "ow.h"
 #include "ow_connection.h"
 
-pthread_t main_threadid;
 pthread_mutex_t persistence_mutex ;
 #define PERSISTENCELOCK    _MUTEX_LOCK(   persistence_mutex ) ;
 #define PERSISTENCEUNLOCK  _MUTEX_UNLOCK( persistence_mutex ) ;
-
-#if OW_MT
-#define IS_MAINTHREAD (main_threadid == pthread_self())
-#else							/* OW_MT */
-#define IS_MAINTHREAD 1
-#endif							/* OW_MT */
 
 #define TOCLIENTLOCK(hd) _MUTEX_LOCK( (hd)->to_client )
 #define TOCLIENTUNLOCK(hd) _MUTEX_UNLOCK( (hd)->to_client )
