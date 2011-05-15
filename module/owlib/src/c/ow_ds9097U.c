@@ -242,17 +242,12 @@ GOOD_OR_BAD DS2480_detect(struct connection_in *in)
 	SOC(in)->bits = 8; // bits / byte
 	in->master.serial.tcp.CRLF_size = 2 ;
 	
-	if ( Globals.serial_hardflow ) {
-		// first pass with hardware flow control
-		SOC(in)->flow = flow_hard; // flow control
-		RETURN_GOOD_IF_GOOD( DS2480_detect_serial(in) ) ;
-		SOC(in)->flow = flow_none; // flow control	
-	} else {
-		SOC(in)->flow = flow_none; // flow control
-		RETURN_GOOD_IF_GOOD( DS2480_detect_serial(in) ) ;
-		SOC(in)->flow = flow_hard; // flow control	
-	}
+	// first pass with hardware flow control
+	SOC(in)->flow = flow_first; // flow control
+	RETURN_GOOD_IF_GOOD( DS2480_detect_serial(in) ) ;
 
+	SOC(in)->flow = flow_second; // flow control
+	RETURN_BAD_IF_BAD(COM_change(in)) ;
 	return DS2480_detect_serial(in) ;
 }
 

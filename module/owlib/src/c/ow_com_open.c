@@ -51,14 +51,14 @@ GOOD_OR_BAD COM_open(struct connection_in *connection)
 		case ct_i2c:
 		case ct_netlink:
 		case ct_usb:
-			LEVEL_DEBUG("Unimplemented!!!");
+			LEVEL_DEBUG("Unimplemented");
 			return gbBAD ;
 		case ct_serial:
 			return serial_open( connection ) ;
 		case ct_unknown:
 		case ct_none:
 		default:
-			LEVEL_DEBUG("ERROR!!! ----------- ERROR!");
+			LEVEL_DEBUG("Unknown type.");
 			return gbBAD ;
 	}
 }

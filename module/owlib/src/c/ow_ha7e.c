@@ -65,24 +65,22 @@ GOOD_OR_BAD HA7E_detect(struct connection_in *in)
 	SOC(in)->parity = parity_none; // parity
 	SOC(in)->stop = stop_1; // stop bits
 	SOC(in)->bits = 8; // bits / byte
-	if ( Globals.serial_hardflow ) {
-		SOC(in)->flow = flow_hard; // flow control
-	} else {
-		SOC(in)->flow = flow_none; // flow control
-	}
 	SOC(in)->state = cs_virgin ;
 	SOC(in)->timeout.tv_sec = Globals.timeout_serial ;
 	SOC(in)->timeout.tv_usec = 0 ;
+
+	SOC(in)->flow = flow_first; // flow control
 	RETURN_BAD_IF_BAD(COM_open(in)) ;
-
 	COM_slurp(in) ;
-
 	if ( GOOD( gbRESET( HA7E_reset(&pn) ) ) ) {
 		in->Adapter = adapter_HA7E ;
 		in->adapter_name = "HA7E/S";
 		return gbGOOD;
 	}
 	
+	SOC(in)->flow = flow_second; // flow control
+	RETURN_BAD_IF_BAD(COM_change(in)) ;
+	COM_slurp(in) ;
 	if ( GOOD( gbRESET( HA7E_reset(&pn) ) ) ) {
 		in->Adapter = adapter_HA7E ;
 		in->adapter_name = "HA7E/S";

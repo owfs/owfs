@@ -30,7 +30,7 @@ void COM_slurp( struct connection_in * connection ) {
 	switch ( SOC(connection)->type ) {
 		case ct_unknown:
 		case ct_none:
-			LEVEL_DEBUG("ERROR!!! ----------- ERROR!");
+			LEVEL_DEBUG("Unknown type");
 			return ;
 		case ct_telnet:
 			// see if we can tell the port to dump all pending data
@@ -48,7 +48,7 @@ void COM_slurp( struct connection_in * connection ) {
 			break ;
 		case ct_i2c:
 		case ct_usb:
-			LEVEL_DEBUG("Unimplemented!!!");
+			LEVEL_DEBUG("Unimplemented");
 			return ;
 		case ct_serial:
 			usec = 1000 ;

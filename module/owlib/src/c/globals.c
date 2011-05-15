@@ -65,7 +65,7 @@ struct global Globals = {
 	.usb_flextime = 1,
 	.serial_flextime = 1,
 	.serial_reverse = 0,  // 1 is "reverse" polarity
-	.serial_hardflow = 1, // hardware flow control
+	.serial_hardflow = 0, // hardware flow control
 
 	.timeout_volatile = 15,
 	.timeout_stable = 300,

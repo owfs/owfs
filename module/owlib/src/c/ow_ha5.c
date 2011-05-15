@@ -89,12 +89,6 @@ GOOD_OR_BAD HA5_detect(struct connection_in *in)
 	SOC(in)->parity = parity_none; // parity
 	SOC(in)->stop = stop_1; // stop bits
 	SOC(in)->bits = 8; // bits / byte
-	if ( Globals.serial_hardflow ) {
-		SOC(in)->flow = flow_hard; // flow control
-	} else {
-		SOC(in)->flow = flow_none; // flow control
-	}
-	SOC(in)->type = ct_serial ;
 	SOC(in)->state = cs_virgin ;
 	SOC(in)->timeout.tv_sec = Globals.timeout_serial ;
 	SOC(in)->timeout.tv_usec = 0 ;
@@ -109,6 +103,7 @@ GOOD_OR_BAD HA5_detect(struct connection_in *in)
 	// allowable speeds
 	COM_BaudRestrict( &(SOC(in)->baud), B1200, B19200, B38400, B115200, 0 ) ;
 
+	SOC(in)->flow = flow_first; // flow control
 	if ( BAD(COM_open(in)) ) {
 		// Cannot open serial port
 		Free_Address( &ap ) ;
@@ -285,7 +280,7 @@ static GOOD_OR_BAD HA5_checksum_support( struct connection_in * in )
 	// write a BYTE and see if any response (device present)
 	// and then see if a checksum is included in the response
 
-	if ( BAD(HA5_write( 'W', "0100", 4, in)) ) {
+	if ( BAD(HA5_write( 'W', "01FF", 4, in)) ) {
 		LEVEL_DEBUG("Error sending Bit");
 		return gbBAD;
 	}
@@ -293,6 +288,7 @@ static GOOD_OR_BAD HA5_checksum_support( struct connection_in * in )
 		LEVEL_DEBUG("Error reading bit response");
 		return gbBAD;
 	}
+
 	if ( resp[2] == 0x0D ) {
 		in->master.ha5.checksum = 0 ;
 		LEVEL_DETAIL("HA5 %s in NON-CHECKSUM mode",SAFESTRING(SOC(in)->devicename));
@@ -653,7 +649,7 @@ static GOOD_OR_BAD HA5_select_and_sendback(const BYTE * data, BYTE * resp, const
 }
 
 /********************************************************/
-/* HA5_close  ** clean local resources before      	*/
+/* HA5_close -- clean local resources before      	*/
 /*                closing the serial port           	*/
 /*							*/
 /********************************************************/

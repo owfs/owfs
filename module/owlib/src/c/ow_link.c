@@ -205,21 +205,19 @@ GOOD_OR_BAD LINK_detect(struct connection_in *in)
 		case ct_serial:
 			SOC(in)->baud = B9600 ;
 
-			if ( Globals.serial_hardflow ) {
-				// first pass with hardware flow control
-				SOC(in)->flow = flow_hard ;
-				RETURN_GOOD_IF_GOOD( LINK_detect_serial(in) ) ;
-			}
-
-			SOC(in)->flow = flow_none ;
+			SOC(in)->flow = flow_first ;
 			RETURN_GOOD_IF_GOOD( LINK_detect_serial(in) ) ;
 
 			LEVEL_DEBUG("Second attempt at serial LINK setup");
-			SOC(in)->flow = flow_hard ;
+			SOC(in)->flow = flow_second ;
 			RETURN_GOOD_IF_GOOD( LINK_detect_serial(in) ) ;
 
 			LEVEL_DEBUG("Third attempt at serial LINK setup");
-			SOC(in)->flow = flow_hard ;
+			SOC(in)->flow = flow_first ;
+			RETURN_GOOD_IF_GOOD( LINK_detect_serial(in) ) ;
+
+			LEVEL_DEBUG("Fourth attempt at serial LINK setup");
+			SOC(in)->flow = flow_second ;
 			RETURN_GOOD_IF_GOOD( LINK_detect_serial(in) ) ;
 			break ;
 

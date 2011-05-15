@@ -71,13 +71,6 @@ GOOD_OR_BAD DS9097_detect(struct connection_in *in)
 	SOC(in)->stop = stop_1; // stop bits
 	SOC(in)->bits = 8; // bits / byte
 	
-	if ( Globals.serial_hardflow ) {
-		// first pass with hardware flow control
-		SOC(in)->flow = flow_hard; // flow control
-	} else {
-		SOC(in)->flow = flow_none; // flow control
-	}
-
 	switch (SOC(in)->type) {
 		case ct_telnet:
 			SOC(in)->timeout.tv_sec = Globals.timeout_network ;
@@ -88,10 +81,9 @@ GOOD_OR_BAD DS9097_detect(struct connection_in *in)
 			SOC(in)->timeout.tv_sec = Globals.timeout_serial ;
 			SOC(in)->timeout.tv_usec = 0 ;
 	}
-	SOC(in)->timeout.tv_sec = Globals.timeout_serial ;
-	SOC(in)->timeout.tv_usec = 0 ;
 	RETURN_BAD_IF_BAD(COM_open(in)) ;
 
+	SOC(in)->flow = flow_first; // flow control
 	switch( DS9097_reset_in(in) ) {
 		case BUS_RESET_OK:
 		case BUS_RESET_SHORT:
@@ -102,7 +94,7 @@ GOOD_OR_BAD DS9097_detect(struct connection_in *in)
 
 	/* open the COM port in 9600 Baud  */
 	/* Second pass */
-	SOC(in)->flow = flow_none ;
+	SOC(in)->flow = flow_second ;
 	RETURN_BAD_IF_BAD(COM_change(in)) ;
 
 	switch( DS9097_reset_in(in) ) {
@@ -115,7 +107,7 @@ GOOD_OR_BAD DS9097_detect(struct connection_in *in)
 
 	/* open the COM port in 9600 Baud  */
 	/* Third pass, hardware flow control */
-	SOC(in)->flow = flow_hard ;
+	SOC(in)->flow = flow_first ;
 	RETURN_BAD_IF_BAD(COM_change(in)) ;
 
 	switch( DS9097_reset_in(in) ) {

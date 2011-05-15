@@ -42,7 +42,7 @@ GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connecti
 		// test the type of connection
 		case ct_unknown:
 		case ct_none:
-			LEVEL_DEBUG("ERROR!!! ----------- ERROR!");
+			LEVEL_DEBUG("Unknown type");
 			break ;
 		case ct_telnet:
 			return telnet_read( data, length, connection ) ;
@@ -52,10 +52,11 @@ GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connecti
 		case ct_i2c:
 		case ct_netlink:
 		case ct_usb:
-			LEVEL_DEBUG("Unimplemented!!!");
-			break ;
+			LEVEL_DEBUG("Unimplemented");
+			break ; 
 		case ct_serial:
 		// serial is ok
+		// printf("Serial read fd=%d length=%d\n",SOC(connection)->file_descriptor, (int) length);
 		{
 			ssize_t actual = COM_read_size_low( data, length, connection ) ;
 			if ( FILE_DESCRIPTOR_VALID( SOC(connection)->file_descriptor ) ) {

@@ -194,6 +194,10 @@ struct connection_in {
 
 #define NO_CONNECTION NULL
 
+/* Defines for flow control */
+#define flow_first	( (Globals.serial_hardflow) ? flow_hard : flow_none )
+#define flow_second	( (Globals.serial_hardflow) ? flow_none : flow_first )
+
 extern struct inbound_control {
 	int active ; // how many "bus" entries are currently in linked list
 	int next_index ; // increasing sequence number
