@@ -21,7 +21,7 @@ static RESET_TYPE HA5_reset(const struct parsedname *pn);
 static RESET_TYPE HA5_reset_in(struct connection_in * in) ;
 static RESET_TYPE HA5_reset_wrapped(struct connection_in * in) ;
 static enum search_status HA5_next_both(struct device_search *ds, const struct parsedname *pn);
-static GOOD_OR_BAD HA5_sendback_part(char cmd, const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn) ;
+static GOOD_OR_BAD HA5_sendback_part(char cmd, const BYTE * data, BYTE * resp, const size_t size, struct connection_in * in) ;
 static GOOD_OR_BAD HA5_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 static GOOD_OR_BAD HA5_select_and_sendback(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 static void HA5_setroutines(struct connection_in *in);
@@ -37,6 +37,8 @@ static GOOD_OR_BAD TestChecksum( unsigned char * check_string, int length ) ;
 static GOOD_OR_BAD HA5_checksum_support( struct connection_in * in ) ;
 static GOOD_OR_BAD HA5_find_channel( struct connection_in * in ) ;
 static GOOD_OR_BAD HA5_write( char command, char * raw_string, int length, struct connection_in * in ) ;
+static GOOD_OR_BAD HA5_sendback_bits(const BYTE * outbits, BYTE * inbits, const size_t length, const struct parsedname *pn) ;
+static GOOD_OR_BAD HA5_bit( BYTE send, BYTE * receive, struct connection_in * in ) ;
 
 #define HA5MUTEX_INIT(in)		_MUTEX_INIT(in->master.ha5.all_channel_lock)
 #define HA5MUTEX_LOCK(in)		_MUTEX_LOCK(in->master.ha5.all_channel_lock ) ;
@@ -53,7 +55,7 @@ static void HA5_setroutines(struct connection_in *in)
 	in->iroutines.PowerByte = NO_POWERBYTE_ROUTINE;
     in->iroutines.ProgramPulse = NO_PROGRAMPULSE_ROUTINE;
 	in->iroutines.sendback_data = HA5_sendback_data;
-	in->iroutines.sendback_bits = NO_SENDBACKBITS_ROUTINE;
+	in->iroutines.sendback_bits = HA5_sendback_bits;
 	in->iroutines.select = HA5_select ;
 	in->iroutines.select_and_sendback = HA5_select_and_sendback;
 	in->iroutines.reconnect = HA5_reconnect;
@@ -564,9 +566,8 @@ static GOOD_OR_BAD HA5_select_wrapped( const struct parsedname * pn )
 }
 
 //  Send data and return response block -- up to 32 bytes
-static GOOD_OR_BAD HA5_sendback_part(char cmd, const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
+static GOOD_OR_BAD HA5_sendback_part(char cmd, const BYTE * data, BYTE * resp, const size_t size, struct connection_in * in)
 {
-	struct connection_in * in = pn->selected_connection ;
 	char send_data[2+2*size] ;
 	unsigned char get_data[32*2+3] ;
 
@@ -604,15 +605,16 @@ static GOOD_OR_BAD HA5_sendback_part(char cmd, const BYTE * data, BYTE * resp, c
 static GOOD_OR_BAD HA5_sendback_data(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
 {
 	int left;
+	struct connection_in * in = pn->selected_connection ;
 
 	for ( left=size ; left>0 ; left -= 32 ) {
 		GOOD_OR_BAD ret ;
 		size_t pass_start = size - left ;
 		size_t pass_size = (left>32)?32:left ;
 
-		HA5MUTEX_LOCK( pn->selected_connection->master.ha5.head ) ;
-		ret = HA5_sendback_part( 'W', &data[pass_start], &resp[pass_start], pass_size, pn ) ;
-		HA5MUTEX_UNLOCK( pn->selected_connection->master.ha5.head ) ;
+		HA5MUTEX_LOCK( in->master.ha5.head ) ;
+		ret = HA5_sendback_part( 'W', &data[pass_start], &resp[pass_start], pass_size, in ) ;
+		HA5MUTEX_UNLOCK( in->master.ha5.head ) ;
 
 		RETURN_BAD_IF_BAD( ret ) ;
 	}
@@ -640,7 +642,7 @@ static GOOD_OR_BAD HA5_select_and_sendback(const BYTE * data, BYTE * resp, const
 		size_t pass_size = (left>32)?32:left ;
 
 		HA5MUTEX_LOCK( in->master.ha5.head ) ;
-		ret = HA5_sendback_part( block_cmd, &data[pass_start], &resp[pass_start], pass_size, pn ) ;
+		ret = HA5_sendback_part( block_cmd, &data[pass_start], &resp[pass_start], pass_size, in ) ;
 		HA5MUTEX_UNLOCK( in->master.ha5.head ) ;
 		block_cmd = 'W' ; // for next pass
 		RETURN_BAD_IF_BAD( ret ) ;
@@ -649,9 +651,57 @@ static GOOD_OR_BAD HA5_select_and_sendback(const BYTE * data, BYTE * resp, const
 }
 
 /********************************************************/
+/* HA5_sendback_bits -- bit-mode communication      	*/
+/********************************************************/
+
+static GOOD_OR_BAD HA5_sendback_bits(const BYTE * outbits, BYTE * inbits, const size_t length, const struct parsedname *pn)
+{
+	size_t counter ;
+	struct connection_in * in = pn->selected_connection ;
+
+	HA5MUTEX_LOCK( in->master.ha5.head ) ;
+	for ( counter = 0 ; counter < length ; ++counter ) {
+		if ( BAD( HA5_bit( outbits[counter], &inbits[counter], in ) ) ) {
+			HA5MUTEX_UNLOCK( in->master.ha5.head ) ;
+			return gbBAD ;
+		}		
+	} 
+	HA5MUTEX_UNLOCK( in->master.ha5.head ) ;
+
+	return gbGOOD;
+}
+
+static GOOD_OR_BAD HA5_bit( BYTE outbit, BYTE * inbit, struct connection_in * in )
+{
+	BYTE resp[1] = { 'X', } ;
+
+	if ( BAD(HA5_write( 'B', outbit ? "1" : "0" , 1, in)) ) {
+		LEVEL_DEBUG("Error sending HA5 bit");
+		return gbBAD;
+	}
+
+	// For some reason, the HA5 doesn't use a checksum for BIT response.
+	if ( BAD(COM_read(resp, 2, in)) ) {
+		LEVEL_DEBUG("Error reading HA5 bit");
+		return gbBAD;
+	}
+
+	switch ( resp[0] ) {
+		case '0':
+			inbit[0] = 0 ;
+			return gbGOOD ;
+		case '1':
+			inbit[0] = 1 ;
+			return gbGOOD ;
+			default:
+			LEVEL_DEBUG("Unclear HA5 bit response \'%c\'",resp[0]);
+			return gbBAD ;
+	}
+}	
+
+/********************************************************/
 /* HA5_close -- clean local resources before      	*/
 /*                closing the serial port           	*/
-/*							*/
 /********************************************************/
 
 static void HA5_close(struct connection_in *in)
