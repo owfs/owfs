@@ -317,7 +317,7 @@ list.
 
 .TP
 \fBow isdirectory \fIpath
-If \fIpath\fR is the directory - return 1. Otherwise return 0.
+If \fIpath\fR is the directory return 1. Otherwise return 0.
 
 .TP
 \fBow isdir \fIpath
@@ -378,7 +378,7 @@ If \fIpath\fR is exists - return 1. Otherwise return 0.
 .CS
 package require ow
 
-ow open -d /dev/ttyS0 -t 60
+ow open \-d /dev/ttyS0 \-t 60
 
 set save_templow [ow get /28.86BF80000000/templow]
 ow put /28.86BF80000000/templow 10

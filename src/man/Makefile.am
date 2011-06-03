@@ -31,9 +31,9 @@ man_MANS = owfs.1 \
            LCD.3 \
            OWNet.3 \
            owperl.3 \
-           owtcl.3 \
+           owtcl.n \
            owfs.5 owfs.conf.5 \
-           ow.3
+           ow.n
 EXTRA_DIST = ${man_MANS} *.?so
 
 install-data-am: install-man install-so-man
