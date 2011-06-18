@@ -55,6 +55,8 @@ READ_FUNCTION(FS_Humid);
 READ_FUNCTION(FS_Humid_1735);
 READ_FUNCTION(FS_Humid_3600);
 READ_FUNCTION(FS_Humid_4000);
+READ_FUNCTION(FS_Humid_datanab);
+WRITE_FUNCTION(FS_reset_datanab);
 READ_FUNCTION(FS_Current);
 READ_FUNCTION(FS_r_status);
 WRITE_FUNCTION(FS_w_status);
@@ -72,6 +74,8 @@ READ_FUNCTION(FS_S3R1A_current);
 READ_FUNCTION(FS_S3R1A_illuminance);
 READ_FUNCTION(FS_r_S3R1A_gain);
 WRITE_FUNCTION(FS_w_S3R1A_gain);
+
+static enum e_visibility VISIBLE_DATANAB( const struct parsedname * pn ) ;
 
 /* ------- Structures ----------- */
 
@@ -138,6 +142,10 @@ struct filetype DS2438[] = {
 	{"HIH4000", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"HIH4000/humidity", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_Humid_4000, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 
+	{"DATANAB", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_DATANAB, NO_FILETYPE_DATA,},
+	{"DATANAB/humidity", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_Humid_datanab, NO_WRITE_FUNCTION, VISIBLE_DATANAB, NO_FILETYPE_DATA,},
+	{"DATANAB/reset", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_reset_datanab, VISIBLE_DATANAB, NO_FILETYPE_DATA,},
+
 	{"MultiSensor", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"MultiSensor/type", 12, NON_AGGREGATE, ft_vascii, fc_stable, FS_MStype, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 
@@ -177,6 +185,33 @@ static GOOD_OR_BAD OW_r_uint(UINT *U, const UINT address, const struct parsednam
 #define DS2438_ADDRESS_TO_PAGE(a)	((a)>>3)
 #define DS2438_ADDRESS_TO_OFFSET(a)	((a)&0x07)
 
+/* Datanab data */
+struct s_datanab {
+	_FLOAT slope ;
+	_FLOAT offset ;
+};
+/* Internal files */
+Make_SlaveSpecificTag(NAB, fc_persistent);
+
+/* finds the visibility for DATANAB */
+static enum e_visibility VISIBLE_DATANAB( const struct parsedname * pn )
+{
+	int device_id = -1 ;
+	
+	LEVEL_DEBUG("Checking visibility of %s",SAFESTRING(pn->path)) ;
+	if ( BAD( GetVisibilityCache( &device_id, pn ) ) ) {
+		BYTE page3[8] ;
+		if ( GOOD( OW_r_page( page3, 3, pn ) ) ) {
+			if ( memcmp( page3, "HUMIDIT3", 8 ) == 0 ) {
+				device_id = 1 ; // tag for datanab device
+			} else {
+				device_id = 0 ; // not a datanab
+			}
+			SetVisibilityCache( device_id, pn ) ;
+		}
+	}
+	return device_id==1 ? visible_now : visible_not_now ;
+}
 
 /* 2438 A/D */
 static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
@@ -254,7 +289,13 @@ static ZERO_OR_ERROR FS_volts(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_Humid(struct one_wire_query *owq)
 {
 	_FLOAT H = 0.;
-	ZERO_OR_ERROR z_or_e = FS_r_sibling_F( &H, "HIH3600/humidity", owq ) ;
+	ZERO_OR_ERROR z_or_e ;
+
+	if ( VISIBLE_DATANAB(PN(owq)) == visible_not_now ) {
+		z_or_e = FS_r_sibling_F( &H, "HIH3600/humidity", owq ) ;
+	} else {
+		z_or_e = FS_r_sibling_F( &H, "DATANAB/humidity", owq ) ;
+	}
 
 	OWQ_F(owq) = H ;
 	return z_or_e ;
@@ -332,6 +373,48 @@ static ZERO_OR_ERROR FS_Humid_4000(struct one_wire_query *owq)
 	return 0;
 }
 
+/* The Datanab verion of the HIH-4000 */
+static ZERO_OR_ERROR FS_Humid_datanab(struct one_wire_query *owq)
+{
+	_FLOAT T, vis, VAD;
+	_FLOAT humidity_uncompensated ;
+	_FLOAT temperature_adjust ;
+	struct s_datanab nab ;
+	struct parsedname * pn = PN(owq) ;
+
+	if ( VISIBLE_DATANAB(pn) == visible_not_now ) {
+		return -ENOTSUP ;
+	}
+
+	// make sure permanent cache has calibration values
+	// this also serves as a check that device setup was done.
+	if ( BAD( Cache_Get_SlaveSpecific((void *) &nab, sizeof(struct s_datanab), SlaveSpecificTag(NAB), pn) )) {
+		// need to call device setup
+		FS_w_sibling_Y( 1, "DATANAB/reset", owq ) ;
+		if ( BAD( Cache_Get_SlaveSpecific((void *) &nab, sizeof(struct s_datanab), SlaveSpecificTag(NAB), pn) )) {
+			return -EINVAL ;
+		}
+	}
+
+	if (
+		FS_r_sibling_F( &T, "temperature", owq ) != 0
+		|| FS_r_sibling_F( &VAD, "VAD", owq ) != 0
+		|| FS_r_sibling_F( &vis, "vis", owq ) != 0
+	) {
+		return -EINVAL ;
+	}
+
+	// calculation straight from datasheet: http://www.datanab.com/docs/sensors/1WTH_PRB_commDetails.pdf
+	humidity_uncompensated = ( (vis/VAD) * 85.65 - nab.offset ) / nab.slope ;
+	temperature_adjust = 1.0546 - ( 0.00216 * T ) ;
+	if ( temperature_adjust == 0. ) {
+		temperature_adjust = 1. ;
+	}
+	OWQ_F(owq) = humidity_uncompensated / temperature_adjust ;
+
+	return 0 ;
+}
+
 /*
  * Willy Robison's contribution
  *      HTM1735 from Humirel (www.humirel.com) hooked up like everyone
@@ -371,10 +454,41 @@ static ZERO_OR_ERROR FS_Current(struct one_wire_query *owq)
 	return 0 ;
 }
 
+// Set the DataNAB humidity -- sets the vis converting and reads the constants
+static ZERO_OR_ERROR FS_reset_datanab( struct one_wire_query * owq )
+{
+	if ( OWQ_Y(owq) == 1 ) {
+		struct parsedname * pn = PN(owq) ;
+		BYTE page6[8] ;
+		struct s_datanab nab = {
+			.slope = 0.031,
+			.offset = 0.8 ,
+		} ; // default values
+
+		FS_w_sibling_U( 0, "offset", owq ) ; // set current offset to 0
+		FS_w_sibling_Y( 1, "IAD", owq ) ; // turn on current sensor
+		UT_delay(28) ; // wait 28 msec for 1st conversion
+
+		// read slope and offset data stored in page 6 -- with some checks
+		if ( GOOD( OW_r_page( page6, 6, pn ) ) && page6[0]==0xAA && page6[1]==0xAA ) {
+			_FLOAT offset, slope ;
+			slope = ( 256. * page6[4] + page6[5] ) / 100000. ;
+			offset = ( 256. * page6[2] + page6[3] ) / 10000. ;
+			if ( slope != 0. ) {
+				nab.slope = slope ;
+				nab.offset = offset ;
+			}
+		}
+		// store slope and offset in permanent cache
+		Cache_Add_SlaveSpecific((const void *) &nab, sizeof(struct s_datanab), SlaveSpecificTag(NAB), pn ) ;
+	}
+	return 0 ;
+}
+
 // status bit
 static ZERO_OR_ERROR FS_r_status(struct one_wire_query *owq)
 {
-	BYTE page0[8 + 1];
+	BYTE page0[8];
 	RETURN_ERROR_IF_BAD( OW_r_page(page0, 0, PN(owq)) );
 
 	OWQ_Y(owq) = UT_getbit(page0, PN(owq)->selected_filetype->data.i);
@@ -383,7 +497,7 @@ static ZERO_OR_ERROR FS_r_status(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_w_status(struct one_wire_query *owq)
 {
-	BYTE page0[8 + 1];
+	BYTE page0[8];
 	RETURN_ERROR_IF_BAD( OW_r_page(page0, 0, PN(owq)) );
 	UT_setbit(page0, PN(owq)->selected_filetype->data.i, OWQ_Y(owq));
 	RETURN_ERROR_IF_BAD( OW_w_page(page0, 0, PN(owq)) ) ;
@@ -400,12 +514,33 @@ static ZERO_OR_ERROR FS_r_Offset(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_w_Offset(struct one_wire_query *owq)
 {
+	struct parsedname * pn = PN(owq) ;
+	int IAD_status ;
 	int I = OWQ_I(owq);
+	ZERO_OR_ERROR z_or_e ;
+
 	if (I > 255 || I < -256) {
 		return -EINVAL;
 	}
-	RETURN_ERROR_IF_BAD( OW_w_offset(I << 3, PN(owq)) ) ;
-	return 0;
+
+	if ( BAD(FS_r_sibling_Y( &IAD_status, "IAD", owq )) ) {
+		return -EINVAL ;
+	}
+	if ( IAD_status == 1 ) {
+		// need to turn off
+		if ( BAD(FS_w_sibling_Y( 0, "IAD", owq )) ) {
+			return -EINVAL ;
+		}
+	}
+	z_or_e = OW_w_offset(I << 3, pn) ;
+	Cache_Del_Internal(SlaveSpecificTag(NAB), pn) ;
+	if ( IAD_status == 1 ) {
+		// need to turn back on
+		if ( BAD(FS_w_sibling_Y( 1, "IAD", owq )) ) {
+			return -EINVAL ;
+		}
+	}
+	return z_or_e ;
 }
 
 /* set clock */

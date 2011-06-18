@@ -34,6 +34,10 @@ Temperature Voltages (Humidity) and Memory.
 |
 .B HTM1735/humidity
 |
+.B DATANAB/reset
+|
+.B DATANAB/humidity
+|
 .B humidity
 |
 .B B1-R1-A/pressure
@@ -206,6 +210,14 @@ This value is for a design based on Honeywell's HIH-4000 humidity sensor.
 Relative humidity, as percent (1-100 scale).
 .br
 This value is for a design based on Humirel's HTM-1735 humidity sensor.
+.SS DATANAB/humidity
+.I read-only, floating point
+.br
+Based on DataNAB's humidity sensor. It uses a HIH-4000 sensor and the current sensning rather than voltage readings from the DS2438. Calibration values are stored on chip, and a check field is stored in chip memory.
+.SS DATANAB/reset
+.I write-only, yes-no
+.br
+Used to read calibration values and set the chip to current reading more. Should be automatically called when a humidity reading is requested.
 .SS humidity
 .I read-only, floating point
 .br
@@ -216,6 +228,10 @@ The
 actually does not read humidity, but a widely available and publicised circuit based on the chip, does. This design is for the common Honeywell HIH-3610 humidity chip. The mostly compatible HIH-4000 chip uses different temperature compensation, so is better read from the 
 .I HIH4000/humidity
 value. See the datasheets for details.
+.br
+If the chip is instead a DATANAB design, the
+.I DATANAB/humidity
+value will be automatically used.
 .SH BAROMETER PROPERTIES
 .SS B1-R1-A/pressure
 .I read-only, floating point
