@@ -455,6 +455,14 @@ GOOD_OR_BAD Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn)
 	if (duration <= 0) {
 		return 0;				/* in case timeout set to 0 */
 	}
+
+	if ( DirblobElements(db) < 1 ) {
+		// only cache long directories.
+		// zero (or one?) entry is possibly an error and needs to be repeated more quickly
+		LEVEL_DEBUG("Won\'t cache empty directory");
+		Cache_Del_Dir( pn ) ;
+		return gbGOOD ;
+	}
 	
 	// allocate space for the node and data
 	tn = (struct tree_node *) owmalloc(sizeof(struct tree_node) + size);
