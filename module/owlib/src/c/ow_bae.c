@@ -97,7 +97,7 @@ WRITE_FUNCTION(FS_w_pio_bit) ;
 #define _FC_EEPROM_PAGE_SIZE   512
 #define _FC_SDCARD_SECTOR_SIZE 512
 #define _FC_MAX_EEPROM_PAGES    32
-#define _FC_EEPROM_OFFSET   0x0200
+#define _FC_EEPROM_OFFSET   0x0000 //changed adressing scheme, valid from 0911 models 
 #define _FC_MAX_FLASH_SIZE  0x4000
 #define _FC_MAX_INTERLEAVE     255
 #define _FC02_MEMORY_SIZE      128
@@ -169,32 +169,36 @@ WRITE_FUNCTION(FS_w_pio_bit) ;
 #define _FC02_USERO      120  /* u32 */
 #define _FC02_USERP      124  /* u32 */
 
-#define _FC03_PIO        0x00 /* u8 x 22 */
-#define _FC03_PIO_CONF   0x16 /* u8 x 22 */
-#define _FC03_TPM1C      0x2C /* u8 */
-#define _FC03_TPM2C      0x2D /* u8 */
-#define _FC03_PERIOD1    0x2E /* u16 */
-#define _FC03_PERIOD2    0x30 /* u16 */
-#define _FC03_DUTY       0x32 /* u16 x 4 */
-#define _FC03_SPIC       0x3A /* u8 */
-#define _FC03_SPIBR      0x3B /* u8 */
-#define _FC03_SPID       0x3C /* u8 */
-#define _FC03_IICD       0x3D /* u8 */
-#define _FC03_IICC       0x3E /* u8 */
-#define _FC03_IICFR      0x3F /* u8 */
-#define _FC03_LCDINIT    64   /* u8 */
-#define _FC03_LCDCTRL    65   /* u8 */
-#define _FC03_LCDDATA    66   /* u8 */
-#define _FC03_ELARAM     67   /* u8 */
-#define _FC03_CLARAM     68   /* u16 */
-#define _FC03_ELARAM     67   /* u8 */
-#define _FC03_CLARAM     68   /* u8 */
-#define _FC03_SDINIT     69   /* u8 */
 
 
-#define _FC03_ADC        0x100 /* u16 x 16 */
-#define _FC03_EALARMC    288  /* u8 */
-#define _FC03_CALARMC    289  /* u8 */
+#define _FC03_PIO        0x7E00 /* u8 x 22 */
+#define _FC03_PIO_CONF   0x7E16 /* u8 x 22 */
+#define _FC03_TPM1C      0x7E2C    /* u8 */
+#define _FC03_TPM2C      0x7E2D    /* u8 */
+#define _FC03_PERIOD1    0x7E2E    /* u16 */
+#define _FC03_PERIOD2    0x7E30    /* u16 */
+#define _FC03_DUTY       0x7E32    /* u16 */
+#define _FC03_SPIC       0x7E3A    /* u8 */
+#define _FC03_SPIBR      0x7E3B    /* u8 */
+#define _FC03_SPID       0x7E3C    /* u8 */
+#define _FC03_IICD       0x7E3D    /* u8 */
+#define _FC03_IICC       0x7E3E    /* u8 */
+#define _FC03_LCDINIT    0x7E40    /* u8 */
+#define _FC03_LCDCTRL    0x7E41    /* u8 */
+#define _FC03_LCDDATA    0x7E42    /* u8 */
+#define _FC03_ELARAM     0x7E43    /* u8 */
+#define _FC03_CLARAM     0x7E44    /* u8 */
+#define _FC03_SDINIT     0x7E45    /* u8 */
+#define _FC03_SCIC       0x7E46    /* u16 */ //new 
+#define _FC03_IICPIOC    0x7E48    /* u8 */  //new
+#define _FC03_IICPIOD    0x7E49    /* u8 */  //new
+#define _FC03_PC0        0x7E4A    /* u16 */
+
+
+#define _FC03_ADC        0x7F00 /* u16 x 16 */
+#define _FC03_EALARMC    0x7F20   /* u8 */
+#define _FC03_CALARMC    0x7F21   /* u8 */
+
 
 
 /* Placeholder for special vsibility code for firmware types "personalities" */
@@ -296,6 +300,9 @@ struct filetype BAE[] = {
 	{"910/pc3", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_910, {u:_FC02_PC3,}, },
 
 	{"911", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
+	{"911/automation_engine", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
+  {"911/automation_engine/pc0", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_PC0,}, },
+	
 	{"911/pio", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
 	{"911/pio/piostate", PROPERTY_LENGTH_UNSIGNED, &A911pio, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, INVISIBLE, {u:_FC03_PIO,}, },
 	{"911/pio/pio", PROPERTY_LENGTH_YESNO, &A911pio, ft_yesno, fc_link, FS_r_911_pio, FS_w_911_pio, VISIBLE_911, NO_FILETYPE_DATA, },
@@ -327,9 +334,10 @@ struct filetype BAE[] = {
 	{"911/iic", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
 	{"911/iic/iicd", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_IICD,}, },
 	{"911/iic/iicc", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_IICC,}, },
-	{"911/iic/iicfr", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_IICFR,}, },
+	{"911/serial", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
+	{"911/serial/scic", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_SCIC,}, },
 	{"911/adc", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
-	{"911/adc/adc", PROPERTY_LENGTH_UNSIGNED, &A911adc, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_ADC,}, },
+	{"911/adc/adc", PROPERTY_LENGTH_UNSIGNED, &A911adc, ft_unsigned, fc_volatile, FS_r_16, NO_WRITE_FUNCTION, VISIBLE_911, {u:_FC03_ADC,}, },
 };
 
 DeviceEntryExtended(FC, BAE, DEV_resume | DEV_alarm, NO_GENERIC_READ, NO_GENERIC_WRITE );
@@ -338,7 +346,8 @@ DeviceEntryExtended(FC, BAE, DEV_resume | DEV_alarm, NO_GENERIC_READ, NO_GENERIC
 #define _1W_ECMD_ERASE_FIRMWARE 0xBB
 #define _1W_ECMD_FLASH_FIRMWARE 0xBA
 #define _1W_WF_WRITE_LCD_DATA 0x01
-#define _1W_WF_WRITE_SECTOR_DATA 0x00
+#define _1W_WF_READ_SECTOR_DATA 0x02
+#define _1W_WF_WRITE_SECTOR_DATA 0x03
 
 #define _1W_READ_VERSION 0x11
 #define _1W_READ_TYPE 0x12
@@ -346,8 +355,7 @@ DeviceEntryExtended(FC, BAE, DEV_resume | DEV_alarm, NO_GENERIC_READ, NO_GENERIC
 #define _1W_READ_BLOCK_WITH_LEN 0x14
 #define _1W_WRITE_BLOCK_WITH_LEN 0x15
 #define _1W_ERASE_EEPROM_PAGE 0x16
-#define _1W_WRITE_FLOW      0x17
-#define _1W_READ_FLOW       0x18
+#define _1W_FLOW      0x17
 #define _1W_CONFIRM_WRITE 0xBC
 
 /* Persistent storage */
@@ -542,7 +550,7 @@ static ZERO_OR_ERROR FS_r_sector_data(struct one_wire_query *owq)
 		return -ERANGE;
 	}
 	BAE_uint32_to_bytes( sector_nr *512, data ); // convert 32bit value to msb first
-	RETURN_ERROR_IF_BAD(OW_r_flow_nocrc(_1W_WF_WRITE_SECTOR_DATA, data, 4, buffer, OWQ_size(owq), pn));
+	RETURN_ERROR_IF_BAD(OW_r_flow_nocrc(_1W_WF_READ_SECTOR_DATA, data, 4, buffer, OWQ_size(owq), pn));
 	return 0;
 }
 
@@ -663,9 +671,17 @@ static ZERO_OR_ERROR FS_w_flash(struct one_wire_query *owq)
 		}
 	}
 
+	
 	// loop though pages, up to 5 attempts for each page
 	for ( rom_offset=0 ; rom_offset<OWQ_size(owq) ; rom_offset += _FC02_MAX_WRITE_GULP ) {
 		int tries = 0 ;
+//just for diagnostic...   
+        {UINT v;
+            if (BAD(OW_version( &v, PN(owq) ) ))
+           {      LEVEL_DEBUG("Cannot read version after begin flash initialization");}
+            else LEVEL_DEBUG("version=%04X",v);
+        }
+        		
 		LEVEL_DEBUG("Flash up to %d bytes.",rom_offset);
 		while ( BAD( OW_write_flash( &rom_image[rom_offset], pn ) ) ) {
 			++tries ;
@@ -917,7 +933,7 @@ static GOOD_OR_BAD OW_w_extended(BYTE * data, size_t size, struct parsedname *pn
 // Flow write command without crc 
 static GOOD_OR_BAD OW_w_flow_nocrc(BYTE wf, BYTE * param, size_t plen, BYTE * data, size_t size, struct parsedname *pn)
 {
-	BYTE p[1 + 1 + 1 + 1 + _FC02_MAX_COMMAND_GULP + 2] = { _1W_WRITE_FLOW, wf, 0, BYTE_MASK(plen), };
+	BYTE p[1 + 1 + 1 + 1 + _FC02_MAX_COMMAND_GULP + 2] = { _1W_FLOW, BYTE_MASK(plen),wf, 0,  };
 	BYTE q[] = { _1W_CONFIRM_WRITE, } ;
 	struct transaction_log t[] = {
 		TRXN_START,
@@ -927,7 +943,7 @@ static GOOD_OR_BAD OW_w_flow_nocrc(BYTE wf, BYTE * param, size_t plen, BYTE * da
 		TRXN_WRITE(data, size),
 		TRXN_END,
 	};
-	
+	LEVEL_DEBUG("Send flow command") ;
 	/* Copy to write buffer */
 	memcpy(&p[4], param, plen);
 	RETURN_BAD_IF_BAD( BUS_transaction(t, pn) );
@@ -938,7 +954,7 @@ static GOOD_OR_BAD OW_w_flow_crc(BYTE wf, BYTE * param, size_t plen, BYTE * data
 {
 	BYTE *pt;
 	size_t i;
-	BYTE p[1 + 1 + 1 + 1 + _FC02_MAX_COMMAND_GULP + 2] = { _1W_WRITE_FLOW, wf, chunksize, BYTE_MASK(plen), };
+	BYTE p[1 + 1 + 1 + 1 + _FC02_MAX_COMMAND_GULP + 2] = { _1W_FLOW, BYTE_MASK(plen),wf, chunksize,  };
 	BYTE chunk[_FC_MAX_INTERLEAVE+2] ;
 	BYTE q[] = { _1W_CONFIRM_WRITE, } ;
 	struct transaction_log header[] = {
@@ -977,7 +993,7 @@ static GOOD_OR_BAD OW_w_flow_crc(BYTE wf, BYTE * param, size_t plen, BYTE * data
 // Flow read command without crc 
 static GOOD_OR_BAD OW_r_flow_nocrc(BYTE wf, BYTE * param, size_t plen, BYTE * data, size_t size, struct parsedname *pn)
 {
-	BYTE p[1 + 1 + 1 + 1 + _FC02_MAX_COMMAND_GULP + 2] = { _1W_READ_FLOW, wf, 0, BYTE_MASK(plen), };
+	BYTE p[1 + 1 + 1 + 1 + _FC02_MAX_COMMAND_GULP + 2] = { _1W_FLOW, BYTE_MASK(plen), wf, 0, };
 	BYTE q[] = { _1W_CONFIRM_WRITE, } ;
 	struct transaction_log t[] = {
 		TRXN_START,
@@ -1172,6 +1188,7 @@ static GOOD_OR_BAD OW_write_flash( BYTE * data, struct parsedname * pn )
 {
 	BYTE p[1+1+1+32+2] = { _1W_EXTENDED_COMMAND, 32,_1W_ECMD_FLASH_FIRMWARE,  } ;
 	BYTE q[] = { _1W_CONFIRM_WRITE, } ;
+	GOOD_OR_BAD ret;
 	struct transaction_log t[] = {
 		TRXN_START,
 		TRXN_WR_CRC16(p, 1+1+1+32, 0),
@@ -1181,7 +1198,9 @@ static GOOD_OR_BAD OW_write_flash( BYTE * data, struct parsedname * pn )
 	} ;
 	
 	memcpy(&p[3], data, 32 ) ;
-	return BUS_transaction(t, pn) ;
+	 ret=BUS_transaction(t, pn) ;
+	_Debug_Bytes("write flash buffer details",p,37);
+	return ret;
 }
 
 static GOOD_OR_BAD OW_eeprom_erase( off_t offset, struct parsedname * pn )
