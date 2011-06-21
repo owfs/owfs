@@ -60,9 +60,9 @@ AM_CONFIG_HEADER(src/include/config.h)
 AC_PREREQ(2.57)dnl
 AC_PREFIX_DEFAULT(/opt/owfs)dnl
 
-AC_PATH_PROG(ECHO,echo,$PATH)dnl
-AC_PATH_PROG(TEST,test,$PATH)dnl
-AC_PATH_PROG(RM,rm,$PATH)dnl
+AC_PATH_PROG(ECHO,echo,,$PATH)dnl
+AC_PATH_PROG(TEST,test,,$PATH)dnl
+AC_PATH_PROG(RM,rm,,$PATH)dnl
 AC_PATH_PROG(RPM,rpm,,$PATH)dnl
 AC_PATH_PROG(RPMBUILD,rpmbuild,,$PATH)dnl
 AC_PATH_PROG([SWIG],[swig],,$PATH)dnl
