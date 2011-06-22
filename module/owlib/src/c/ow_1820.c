@@ -47,6 +47,7 @@ $Id$
 /* DS18S20&2 Temperature */
 // READ_FUNCTION( FS_tempdata ) ;
 READ_FUNCTION(FS_10temp);
+READ_FUNCTION(FS_10temp_link);
 READ_FUNCTION(FS_22temp);
 READ_FUNCTION(FS_fasttemp);
 READ_FUNCTION(FS_slowtemp);
@@ -70,6 +71,11 @@ READ_FUNCTION(FS_sense);
 struct filetype DS18S20[] = {
 	F_STANDARD,
 	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_simultaneous_temperature, FS_10temp, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"temperature9", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_link, FS_10temp_link, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA,},
+	{"temperature10", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_link, FS_10temp_link, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA,},
+	{"temperature11", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_link, FS_10temp_link, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA,},
+	{"temperature12", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_link, FS_10temp_link, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA,},
+	{"fasttemp",      PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_link, FS_10temp_link, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA,},
 	{"templow", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE, {i:1},},
 	{"temphigh", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE, {i:0},},
 	{"power", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
@@ -262,6 +268,11 @@ static ZERO_OR_ERROR FS_10temp(struct one_wire_query *owq)
 	}
 	// third pass, accept 85C
 	return GB_to_Z_OR_E(OW_10temp(&OWQ_F(owq), allow_85C, 0, pn));
+}
+
+static ZERO_OR_ERROR FS_10temp_link(struct one_wire_query *owq)
+{
+	return FS_r_sibling_F(&OWQ_F(owq),"temperature",owq) ;
 }
 
 /* For DS1822 and DS18B20 -- resolution stuffed in ft->data */
