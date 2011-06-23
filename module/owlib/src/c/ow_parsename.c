@@ -113,6 +113,15 @@ static ZERO_OR_ERROR FS_ParsedName_anywhere(const char *path, enum parse_pass re
 				FS_ParsedName_destroy(pn);
 				return parse_error_status ;
 			}
+
+			if ( pp->pathnext != NULL ) {
+				// extra text -- make this an error
+				LEVEL_DEBUG("Extra text in file %s",pp->pathnext) ;
+				parse_error_status = -ENOENT;
+				pe = parse_done;
+				continue;				
+			}
+			
 			//printf("%s: Parse %s before corrections: %.4X -- state = %d\n",(back_from_remote)?"BACK":"FORE",pn->path,pn->state,pn->type) ;
 			// Play with remote levels
 			switch ( pn->type ) {
@@ -126,6 +135,7 @@ static ZERO_OR_ERROR FS_ParsedName_anywhere(const char *path, enum parse_pass re
 						pn->state |= ePS_buslocal ;
 					}
 					break ;
+					
 				case ePN_root:
 					// root buses are considered "real"
 					pn->type = ePN_real;	// default state
@@ -672,6 +682,10 @@ static enum parse_enum Parse_Property(char *filename, struct parsedname *pn)
 		//printf("FP Good\n") ;
 		switch (pn->selected_filetype->format) {
 		case ft_directory:		// aux or main
+			if ( pn->type == ePN_structure ) {
+				// special case, structure for aux and main
+				return parse_done;
+			}
 			if (BranchAdd(pn) != 0) {
 				//printf("PN BranchAdd failed for %s\n", filename);
 				return parse_error;
