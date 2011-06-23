@@ -131,7 +131,7 @@ void *DataHandler(void *v)
 
 			switch ((enum msg_classification) hd->sm.type) {
 			case msg_presence:
-				LEVEL_CALL("Presence message on %s bus number=%d", SAFESTRING(pn->path), pn->known_bus->index);
+				LEVEL_CALL("Presence message for %s", SAFESTRING(pn->path));
 				// Basically, if we were able to ParsedName it's here!
 				cm.size = 0;
 				retbuffer = owmalloc( SERIAL_NUMBER_SIZE ) ;
