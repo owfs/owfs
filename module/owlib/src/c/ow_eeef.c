@@ -55,7 +55,7 @@ struct filetype HobbyBoards_EF[] = {
 	{"type", PROPERTY_LENGTH_TYPE, NON_AGGREGATE, ft_ascii, fc_link, FS_localtype, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 };
 
-DeviceEntry(EE, HobbyBoards_EF, NO_GENERIC_READ, NO_GENERIC_WRITE);
+DeviceEntry(EF, HobbyBoards_EF, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 
 #define _EEEF_READ_VERSION 0x11
