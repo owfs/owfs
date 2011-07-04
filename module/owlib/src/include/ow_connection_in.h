@@ -141,8 +141,9 @@ enum e_bus_stat {
 // Add serial/tcp/telnet abstraction
 #include "ow_communication.h"
 
-// flag to pn->selected_connection->branch.sn[0] to force select from root dir
+// flag to pn->selected_connection->branch.branch to force select from root dir
 #define BUSPATH_BAD	0xFF
+
 
 struct connection_in {
 	struct connection_in *next;

@@ -648,9 +648,11 @@ void FS_LoadDirectoryOnly(struct parsedname *pn_directory, const struct parsedna
 	if (RootNotBranch(pn_directory)) {
 		memset(pn_directory->sn, 0, SERIAL_NUMBER_SIZE);
 	} else {
+		// Stuff the branch into the checksum slot
+		// Makes the branch address unique (DS2409 id + branch)
 		--pn_directory->pathlength;
-		memcpy(pn_directory->sn, pn_directory->bp[pn_directory->pathlength].sn, 7);
-		pn_directory->sn[7] = pn_directory->bp[pn_directory->pathlength].branch;
+		memcpy(pn_directory->sn, pn_directory->bp[pn_directory->pathlength].sn, SERIAL_NUMBER_SIZE-1);
+		pn_directory->sn[SERIAL_NUMBER_SIZE-1] = pn_directory->bp[pn_directory->pathlength].branch;
 	}
 	pn_directory->selected_device = NO_DEVICE;
 }

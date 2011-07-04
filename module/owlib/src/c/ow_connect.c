@@ -115,7 +115,7 @@ struct connection_in *AllocIn(const struct connection_in *old_in)
 		 */
 		new_in->ds2404_found = 0;
 		/* Flag first pass as need to clear all branches if DS2409 present */
-		new_in->branch.sn[0] = BUSPATH_BAD ;
+		new_in->branch.branch = BUSPATH_BAD ;
 		/* Arbitrary guess at root directory size for allocating cache blob */
 		new_in->last_root_devs = 10;
 		new_in->AnyDevices = anydevices_unknown ;

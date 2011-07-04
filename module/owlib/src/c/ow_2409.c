@@ -166,6 +166,7 @@ static GOOD_OR_BAD OW_discharge(const struct parsedname *pn)
 {
 	BYTE dis[] = { _1W_DISCHARGE_LINES, };
 	BYTE alo[] = { _1W_ALL_LINES_OFF, };
+	GOOD_OR_BAD gbRet ;
 	struct transaction_log t[] = {
 		TRXN_START,
 		TRXN_WRITE1(dis),
@@ -175,12 +176,12 @@ static GOOD_OR_BAD OW_discharge(const struct parsedname *pn)
 		TRXN_END,
 	};
 
-	// Could certainly couple this with next transaction
 	BUSLOCK(pn);
-	pn->selected_connection->branch.sn[0] = BUSPATH_BAD ;
+	pn->selected_connection->branch.branch = BUSPATH_BAD ;
+	gbRet = BUS_transaction_nolock(t, pn) ;
 	BUSUNLOCK(pn);
 
-	return BUS_transaction(t, pn) ;
+	return gbRet ;
 }
 
 /* Added by Jan Kandziora */

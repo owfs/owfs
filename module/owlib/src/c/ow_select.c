@@ -42,13 +42,6 @@ static GOOD_OR_BAD BUS_select_closing(const struct parsedname *pn) ;
     reset, send_data, sendback_data
  */
 
-/* Now you might wonder, why the low in BUS_select_low?
-   There is a vague thought that higher level selection -- specifically
-   for the DS9490 with it's intrinsic path commands might be implemented.
-   Obviously not yet.
-   Well, you asked
-*/
-
 GOOD_OR_BAD BUS_select(const struct parsedname *pn)
 {
 	// match Serial Number command 0x55
@@ -79,14 +72,14 @@ GOOD_OR_BAD BUS_select(const struct parsedname *pn)
 
 	/* Very messy, we may need to clear all the DS2409 couplers up the the current branch */
 	if (RootNotBranch(pn)) {	/* no branches, overdrive possible */
-		if (in->branch.sn[0]) {	// need clear root branch */
+		if (in->branch.branch != BUSPATH_BAD ) {	// need clear root branch */
 			LEVEL_DEBUG("Clearing root branch");
 			BUS_select_closing(pn) ;
 		} else {
 			LEVEL_DEBUG("Continuing root branch");
 			//BUS_reselect_branch(pn) ;
 		}
-		in->branch.sn[0] = 0x00;	// flag as no branches turned on
+		in->branch.branch = BUSPATH_BAD;	// flag as no branches turned on
 		if (in->overdrive) {	// overdrive?
 			sent[0] = _1W_OVERDRIVE_MATCH_ROM;
 		}
@@ -106,7 +99,7 @@ GOOD_OR_BAD BUS_select(const struct parsedname *pn)
 	}
 
 	if ( BAD( BUS_select_opening(pn) ) ) {
-		in->branch.sn[0] = BUSPATH_BAD ;
+		in->branch.branch = BUSPATH_BAD ;
 		return gbBAD ;
 	}
 
@@ -178,6 +171,20 @@ static GOOD_OR_BAD BUS_select_subbranch(const struct buspath *bp, const struct p
 		TRXN_END,
 	};
 
+	// bp->branch has an index into the branch (main=0, aux=1) set in Parsename from the DS2409 file data field.
+	//We'll test the range here for safety
+	switch( branch[bp->branch] ) {
+		case 0:
+		case 1:
+			break;
+		default:
+			LEVEL_DEBUG("Calling illegal branch path");
+			return gbBAD ;
+	}
+
+	// Response to "Smart-ON" commands:
+	// first byte reset status (which we ignore)
+	// second byte, echo of smart-on command (which we test)
 	memcpy(&sent[1], bp->sn, SERIAL_NUMBER_SIZE);
 	sent[SERIAL_NUMBER_SIZE+1] = branch[bp->branch];
 	sent[SERIAL_NUMBER_SIZE+2] = 0xFF;
