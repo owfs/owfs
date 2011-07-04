@@ -153,9 +153,6 @@ enum search_status BUS_next_both_bitbang(struct device_search *ds, const struct 
 		
 		// initialize for search
 		// if the last call was not the last one
-		if (pn->selected_connection->AnyDevices == anydevices_no) {
-			ds->LastDevice = 1;
-		}
 		if (ds->LastDevice) {
 			return search_done;
 		}
@@ -164,6 +161,13 @@ enum search_status BUS_next_both_bitbang(struct device_search *ds, const struct 
 		if ( BAD( BUS_send_data(&(ds->search), 1, pn)) ) {
 			return search_error ;
 		}
+
+		// Need data from a reset for AnyDevices -- obtained from BUS_data_send above
+		if (pn->selected_connection->AnyDevices == anydevices_no) {
+			ds->LastDevice = 1;
+			return search_done;
+		}
+
 		// loop to do the search
 		for (bit_number = 0;; ++bit_number) {
 			bits[1] = bits[2] = 0xFF;
