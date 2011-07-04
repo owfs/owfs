@@ -578,10 +578,6 @@ static enum search_status DS9490_next_both(struct device_search *ds, const struc
 		&(pn->selected_connection->alarm) : &(pn->selected_connection->main);
 	int dir_gulp_elements = (pn->pathlength==0) ? DS2490_DIR_GULP_ELEMENTS : 1 ;
 
-	if (pn->selected_connection->AnyDevices == anydevices_no) {
-		return search_done;
-	}
-
 	// LOOK FOR NEXT ELEMENT
 	++ds->index;
 	LEVEL_DEBUG("Index %d", ds->index);
@@ -643,6 +639,11 @@ static enum search_status DS9490_directory(struct device_search *ds, struct dirb
 		return search_error ;
 	}
 
+	if ( pn->selected_connection->AnyDevices == anydevices_no ) {
+		// empty bus detected, no presence pulse detected
+		return search_done ;
+	}
+	
 	SetupDiscrepancy(ds, EP2_data);
 
 	// set the search start location
@@ -665,9 +666,9 @@ static enum search_status DS9490_directory(struct device_search *ds, struct dirb
 	bytes_back = status_buffer[13];
 	LEVEL_DEBUG("Got %d bytes from USB search", bytes_back);
 	if (bytes_back == 0) {
-		/* Nothing found on the bus. Have to return something != 0 to avoid
+		/* Nothing found on the bus. Have to return something != search_good to avoid
 		 * getting stuck in loop in FS_realdir() and FS_alarmdir()
-		 * which ends when ret!=0 */
+		 * which ends when ret!=search_good */
 		LEVEL_DATA("ReadBufferstatus == 0");
 		return search_done;
 	} else if ( bytes_back % SERIAL_NUMBER_SIZE != 0 ) {
