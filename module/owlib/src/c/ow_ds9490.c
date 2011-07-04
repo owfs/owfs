@@ -599,14 +599,6 @@ static enum search_status DS9490_next_both(struct device_search *ds, const struc
 	switch ( DirblobGet(ds->index % dir_gulp_elements, ds->sn, db) ) {
 		case 0:
 			LEVEL_DEBUG("SN found: " SNformat, SNvar(ds->sn));
-			/* test for special device families */
-			switch (ds->sn[0]) {
-				case 0x00:
-					LEVEL_DATA("NULL family found");
-					return search_error;
-				default:
-					break;
-			}
 			return search_good;
 		case -ENODEV:
 		default:
