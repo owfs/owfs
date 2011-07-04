@@ -559,7 +559,7 @@ static enum search_status DS2482_next_both(struct device_search *ds, const struc
 // return 1 shorted, 0 ok, <0 error
 static RESET_TYPE DS2482_reset(const struct parsedname *pn)
 {
-	BYTE c;
+	BYTE status_byte;
 	struct connection_in * in = pn->selected_connection ;
 	FILE_DESCRIPTOR_OR_ERROR file_descriptor = SOC(in->master.i2c.head)->file_descriptor;
 
@@ -577,13 +577,13 @@ static RESET_TYPE DS2482_reset(const struct parsedname *pn)
 	// rstl+rsth+.25 usec
 
 	/* read status */
-	if ( BAD( DS2482_readstatus(&c, file_descriptor, DS2482_1wire_reset_usec) ) ) {
+	if ( BAD( DS2482_readstatus(&status_byte, file_descriptor, DS2482_1wire_reset_usec) ) ) {
 		return BUS_RESET_ERROR;			// 8 * Tslot
 	}
 
-	in->AnyDevices = (c & DS2482_REG_STS_PPD) ? anydevices_yes : anydevices_no ;
+	in->AnyDevices = (status_byte & DS2482_REG_STS_PPD) ? anydevices_yes : anydevices_no ;
 	LEVEL_DEBUG("DS2482 "I2Cformat" Any devices found on reset? %s",I2Cvar(in),in->AnyDevices==anydevices_yes?"Yes":"No");
-	return (c & DS2482_REG_STS_SD) ? BUS_RESET_SHORT : BUS_RESET_OK;
+	return (status_byte & DS2482_REG_STS_SD) ? BUS_RESET_SHORT : BUS_RESET_OK;
 }
 
 static GOOD_OR_BAD DS2482_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn)
