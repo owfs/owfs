@@ -130,9 +130,6 @@ static enum search_status EtherWeather_next_both(struct device_search *ds, const
 	BYTE sendbuf[9];
 
 	// if the last call was not the last one
-	if (pn->selected_connection->AnyDevices == anydevices_no) {
-		ds->LastDevice = 1;
-	}
 	if (ds->LastDevice) {
 		return search_done;
 	}
