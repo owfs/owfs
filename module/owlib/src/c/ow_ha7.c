@@ -174,9 +174,6 @@ static enum search_status HA7_next_both(struct device_search *ds, const struct p
 	struct dirblob *db = (ds->search == _1W_CONDITIONAL_SEARCH_ROM) ?
 		&(pn->selected_connection->alarm) : &(pn->selected_connection->main);
 
-	if (pn->selected_connection->AnyDevices == anydevices_no) {
-		ds->LastDevice = 1;
-	}
 	if (ds->LastDevice) {
 		return search_done;
 	}
