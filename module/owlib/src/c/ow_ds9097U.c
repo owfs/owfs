@@ -622,15 +622,18 @@ static enum search_status DS2480_next_both(struct device_search *ds, const struc
 	BYTE searchoff = (BYTE) ( CMD_COMM | FUNCTSEL_SEARCHOFF | DS2480b_speed_byte(in) );
 	int i;
 
-	if ( in->AnyDevices == anydevices_no ) {
-		ds->LastDevice = 1;
-	}
 	if (ds->LastDevice) {
 		return search_done;
 	}
 
 	if ( BAD( BUS_select(pn) ) ) {
 		return search_error;
+	}
+
+	// need the reset done in BUS-select to set AnyDevices
+	if ( in->AnyDevices == anydevices_no ) {
+		ds->LastDevice = 1;
+		return search_done;
 	}
 
 	// build the command stream

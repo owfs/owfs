@@ -503,15 +503,18 @@ static enum search_status DS2482_next_both(struct device_search *ds, const struc
 
 	// initialize for search
 	// if the last call was not the last one
-	if (pn->selected_connection->AnyDevices == anydevices_no) {
-		ds->LastDevice = 1;
-	}
 	if (ds->LastDevice) {
 		return search_done;
 	}
 
 	if ( BAD( BUS_select(pn) ) ) {
 		return search_error ;
+	}
+
+	// need the reset done in BUS-select to set AnyDevices
+	if ( in->AnyDevices == anydevices_no ) {
+		ds->LastDevice = 1;
+		return search_done;
 	}
 
 	/* Make sure we're using the correct channel */
