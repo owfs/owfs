@@ -512,7 +512,7 @@ static enum search_status DS2482_next_both(struct device_search *ds, const struc
 	}
 
 	// need the reset done in BUS-select to set AnyDevices
-	if ( in->AnyDevices == anydevices_no ) {
+	if ( pn->selected_connection->AnyDevices == anydevices_no ) {
 		ds->LastDevice = 1;
 		return search_done;
 	}
