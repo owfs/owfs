@@ -17,6 +17,7 @@ $Id$
 #include "ow_codes.h"
 
 //static void byteprint( const BYTE * b, int size ) ;
+GOOD_OR_BAD HA5_detect_parsed(struct address_pair *ap, struct connection_in *in);
 static RESET_TYPE HA5_reset(const struct parsedname *pn);
 static RESET_TYPE HA5_reset_in(struct connection_in * in) ;
 static RESET_TYPE HA5_reset_wrapped(struct connection_in * in) ;
@@ -36,6 +37,9 @@ static GOOD_OR_BAD HA5_test_channel( struct connection_in * in ) ;
 static GOOD_OR_BAD TestChecksum( unsigned char * check_string, int length ) ;
 static GOOD_OR_BAD HA5_checksum_support( struct connection_in * in ) ;
 static GOOD_OR_BAD HA5_find_channel( struct connection_in * in ) ;
+static void HA5_slurp( struct connection_in *in) ;
+static void HA5_flush( struct connection_in *in) ;
+static GOOD_OR_BAD HA5_read( BYTE * data, size_t length, struct connection_in *in) ;
 static GOOD_OR_BAD HA5_write( char command, char * raw_string, int length, struct connection_in * in ) ;
 static GOOD_OR_BAD HA5_sendback_bits(const BYTE * outbits, BYTE * inbits, const size_t length, const struct parsedname *pn) ;
 static GOOD_OR_BAD HA5_bit( BYTE send, BYTE * receive, struct connection_in * in ) ;
@@ -67,7 +71,7 @@ static void HA5_setroutines(struct connection_in *in)
 GOOD_OR_BAD HA5_detect(struct connection_in *in)
 {
 	struct address_pair ap ;
-	GOOD_OR_BAD gbResult ;
+	GOOD_OR_BAD gbResult ; // default
 
 	/* Set up low-level routines */
 	HA5_setroutines(in);
@@ -77,23 +81,9 @@ GOOD_OR_BAD HA5_detect(struct connection_in *in)
 	HA5MUTEX_INIT(in); // closed in HA5_close
 
 	// Poison current "Address" for adapter
-	in->master.ha5.sn[0] = 0 ; // so won't match
+	memset( in->master.ha5.sn, 0x00, SERIAL_NUMBER_SIZE ) ;
 
-	Parse_Address( SOC(in)->devicename, &ap ) ;
-	if ( ap.first.type==address_none ) {
-		// No serial port specified
-		Free_Address( &ap ) ;
-		return gbBAD ;
-	}
-	strcpy(SOC(in)->devicename, ap.first.alpha) ; // subset so will fit
-	SOC(in)->vmin = 0; // minimum chars
-	SOC(in)->vtime = 3; // decisec wait
-	SOC(in)->parity = parity_none; // parity
-	SOC(in)->stop = stop_1; // stop bits
-	SOC(in)->bits = 8; // bits / byte
-	SOC(in)->state = cs_virgin ;
-	SOC(in)->timeout.tv_sec = Globals.timeout_serial ;
-	SOC(in)->timeout.tv_usec = 0 ;
+	COM_set_standard( in ) ; // standard COM port settings
 
 	// 9600 isn't valid for the HA5, so we can tell that this value was actually selected
 	if ( Globals.baud != B9600 ) {
@@ -105,10 +95,72 @@ GOOD_OR_BAD HA5_detect(struct connection_in *in)
 	// allowable speeds
 	COM_BaudRestrict( &(SOC(in)->baud), B1200, B19200, B38400, B115200, 0 ) ;
 
-	SOC(in)->flow = flow_first; // flow control
-	if ( BAD(COM_open(in)) ) {
+	Parse_Address( SOC(in)->devicename, &ap ) ;
+
+	gbResult = HA5_detect_parsed( &ap, in) ;
+
+	Free_Address( &ap ) ;
+
+	if ( GOOD( gbResult ) ) {
+		HA5_slurp(in) ;
+		HA5_reset_in(in) ;
+	}
+	return gbResult ;
+}
+
+
+// Detect now that the name has been parsed
+GOOD_OR_BAD HA5_detect_parsed(struct address_pair *ap, struct connection_in *in)
+{
+	GOOD_OR_BAD gbResult ;
+	char * channel_list = NULL ;
+
+	// Create name (ip:port or /dev/tty) and optional channel list
+	switch (SOC(in)->type) {
+		case ct_telnet:
+			// address:port:channel_list
+			if ( ap->first.type != address_none ) {
+				// IP address exists
+				strcpy(SOC(in)->devicename, ap->first.alpha) ; // subset so will fit
+				if ( ap->second.type != address_none ) {
+					// Add :port
+					strcat(SOC(in)->devicename, ":") ; // subset so will fit
+					strcat(SOC(in)->devicename, ap->second.alpha) ; // subset so will fit
+				}
+			} else if ( ap->second.type != address_none ) {
+				// just :port
+				strcpy(SOC(in)->devicename, ap->second.alpha) ; // subset so will fit
+			} else {
+				// No tcp address or port specified
+				return gbBAD ;
+			}
+
+			if ( ap->third.type != address_none ) {
+				// Channel specified
+				channel_list = ap->third.alpha ;
+			}
+			break ;
+
+		case ct_serial:
+		default:
+			// device:channel_list
+			if ( ap->first.type != address_none ) {
+				// device address exists
+				strcpy(SOC(in)->devicename, ap->first.alpha) ; // subset so will fit
+			} else {
+				// No serial port specified
+				return gbBAD ;
+			}
+
+			if ( ap->second.type != address_none ) {
+				// Channel specified
+				channel_list = ap->second.alpha ;
+			}
+			break ;
+	}
+
+	if ( BAD(COM_open(in->master.ha5.head )) ) {
 		// Cannot open serial port
-		Free_Address( &ap ) ;
 		return gbBAD ;
 	}
 
@@ -117,16 +169,12 @@ GOOD_OR_BAD HA5_detect(struct connection_in *in)
 	in->adapter_name = "HA5";
 
 	/* Find the channels */
-	if ( ap.second.type == address_none ) { // scan for channel
+	if ( channel_list == NULL ) { // scan for channel
 		gbResult = HA5_find_channel(in) ;
 	} else { // A list of channels
-		gbResult = HA5_channel_list( ap.second.alpha, in ) ;
+		gbResult = HA5_channel_list( channel_list, in ) ;
 	}
 
-	if ( GOOD( gbResult ) ) {
-		COM_slurp(in) ;
-		HA5_reset_in(in) ;
-	}
 	return gbResult;
 }
 
@@ -142,40 +190,43 @@ static GOOD_OR_BAD HA5_channel_list( char * alpha_string, struct connection_in *
 			LEVEL_DEBUG("Urecognized HA5 channel <%c>",c) ;
 			continue ;
 		}
+
 		current_in->master.ha5.channel = tolower(c) ;
 		LEVEL_DEBUG("Looking for HA5 adapter on %s:%c", SOC(current_in)->devicename, current_in->master.ha5.channel ) ;
-		if ( GOOD( HA5_test_channel(current_in)) ) {
+
+		if (
+		GOOD( HA5_test_channel(current_in))
+		|| ( first_time && GOOD( HA5_test_channel(current_in)) )
+		) {
+
+			// work around for new USB serial port that seems to need a repeat test
 			first_time = 0 ;
+
 			LEVEL_CONNECT("HA5 bus master FOUND on port %s at channel %c", SOC(current_in)->devicename, current_in->master.ha5.channel ) ;
 			current_in = NewIn( initial_in ) ; // point to newer space for next candidate
+
 			if ( current_in == NO_CONNECTION ) {
 				break ;
 			}
-		} else if ( first_time ) {
-			// work around for new USB serial port that seems to need a repeat test
-			first_time = 0 ;
-			if ( GOOD( HA5_test_channel(current_in)) ) {
-				LEVEL_CONNECT("HA5 bus master FOUND on port %s at channel %c", SOC(current_in)->devicename, current_in->master.ha5.channel ) ;
-				current_in = NewIn( initial_in ) ; // point to newer space for next candidate
-				if ( current_in == NO_CONNECTION ) {
-					break ;
-				}
-			} else {
-				LEVEL_CONNECT("HA5 bus master NOT FOUND on port %s at channel %c", SOC(current_in)->devicename, c ) ;
-			}
-		} else {
-			LEVEL_CONNECT("HA5 bus master NOT FOUND on port %s at channel %c", SOC(current_in)->devicename, c ) ;
+			// Only head has a valid file descriptor
+			SOC(current_in)->file_descriptor = FILE_DESCRIPTOR_BAD ;
+			continue ;
 		}
+
+		LEVEL_CONNECT("HA5 bus master NOT FOUND on port %s at channel %c", SOC(current_in)->devicename, c ) ;
 	}
 	
 	// Now see if we've added any adapters
 	if ( current_in == initial_in ) {
+		LEVEL_CONNECT("No HA5 adapters found in channel(s): %s",SAFESTRING(alpha_string) );
 		return gbBAD ;
 	}
 	
-	// Remove last addition, it is blank
-	SOC(current_in)->file_descriptor = FILE_DESCRIPTOR_BAD ; // so won't capriciously close this shared file descriptor.
-	RemoveIn( current_in ) ;
+	if ( current_in != NO_CONNECTION ) {
+		// Remove last addition, it is blank
+		RemoveIn( current_in ) ;
+	}
+	
 	return gbGOOD ;
 }
 
@@ -230,13 +281,17 @@ static GOOD_OR_BAD HA5_write( char command, char * raw_string, int length, struc
 	mod_buffer[length+4] = CR_char ;
 
 	// Write full string to the HA5
-	if ( BAD(COM_write( mod_buffer, length+5, in)) ) {
+	if ( BAD(COM_write( mod_buffer, length+5, in->master.ha5.head )) ) {
 		LEVEL_DEBUG("Error with sending HA5 block") ;
 		return gbBAD ;
 	}
 	return gbGOOD ;
 }
 
+static GOOD_OR_BAD HA5_read( BYTE * data, size_t length, struct connection_in * in)
+{
+	return COM_read( data, length, in->master.ha5.head  ) ;
+}
 
 static GOOD_OR_BAD TestChecksum( unsigned char * check_string, int length )
 {
@@ -254,15 +309,15 @@ static GOOD_OR_BAD TestChecksum( unsigned char * check_string, int length )
 static GOOD_OR_BAD HA5_reconnect( const struct parsedname  *pn )
 {
 	struct connection_in * in = pn->selected_connection ;
-	COM_close(in) ;
-	RETURN_BAD_IF_BAD( COM_open(in) ) ;
+	COM_close(in->master.ha5.head ) ;
+	RETURN_BAD_IF_BAD( COM_open(in->master.ha5.head ) ) ;
 	return HA5_test_channel( in ) ;
 }
 
 // test char already set
 static GOOD_OR_BAD HA5_test_channel( struct connection_in * in )
 {
-	COM_slurp(in) ;
+	HA5_slurp(in) ;
 
 	RETURN_BAD_IF_BAD( HA5_checksum_support(in) ) ;
 
@@ -273,6 +328,16 @@ static GOOD_OR_BAD HA5_test_channel( struct connection_in * in )
 	LEVEL_DEBUG("Succeed despite bad reset");
 	return gbGOOD ;
 }
+
+static void HA5_slurp( struct connection_in * in )
+{
+	COM_slurp( in->master.ha5.head  ) ;
+} 
+
+static void HA5_flush( struct connection_in * in )
+{
+	COM_flush( in->master.ha5.head  ) ;
+} 
 
 // test char already set
 static GOOD_OR_BAD HA5_checksum_support( struct connection_in * in )
@@ -286,7 +351,7 @@ static GOOD_OR_BAD HA5_checksum_support( struct connection_in * in )
 		LEVEL_DEBUG("Error sending Bit");
 		return gbBAD;
 	}
-	if ( BAD(COM_read(resp, 3, in)) ) {
+	if ( BAD(HA5_read(resp, 3, in)) ) {
 		LEVEL_DEBUG("Error reading bit response");
 		return gbBAD;
 	}
@@ -301,7 +366,7 @@ static GOOD_OR_BAD HA5_checksum_support( struct connection_in * in )
 	}
 	resp[0] = 'X' ;
 	resp[1] = 'X' ;
-	if ( BAD(COM_read(resp, 2, in)) ) {
+	if ( BAD(HA5_read(resp, 2, in)) ) {
 		LEVEL_DEBUG("Error reading Bit checksum");
 		return gbBAD;
 	}
@@ -340,7 +405,7 @@ static RESET_TYPE HA5_reset_wrapped( struct connection_in * in )
 	}
 
 	// For some reason, the HA5 doesn't use a checksum for RESET response.
-	if ( BAD(COM_read(resp, 2, in)) ) {
+	if ( BAD(HA5_read(resp, 2, in)) ) {
 		LEVEL_DEBUG("Error reading HA5 reset");
 		return BUS_RESET_ERROR;
 	}
@@ -368,7 +433,7 @@ static enum search_status HA5_next_both(struct device_search *ds, const struct p
 		return search_done;
 	}
 
-	COM_flush(in);
+	HA5_flush(in);
 
 	if (ds->index == -1) {
 		enum search_status ret ;
@@ -424,7 +489,7 @@ static enum search_status HA5_directory(struct device_search *ds, struct dirblob
 		return search_error ;
 	}
 
-	if ( BAD(COM_read(resp, 1, in)) ) {
+	if ( BAD(HA5_read(resp, 1, in)) ) {
 		HA5_resync(in) ;
 		return search_error ;
 	}
@@ -441,7 +506,7 @@ static enum search_status HA5_directory(struct device_search *ds, struct dirblob
 		//device
 
 		if ( in->master.ha5.checksum ) {
-			if ( BAD(COM_read(&resp[1], 19, in)) ) {
+			if ( BAD(HA5_read(&resp[1], 19, in)) ) {
 				HA5_resync(in) ;
 				return search_error ;
 			}
@@ -455,7 +520,7 @@ static enum search_status HA5_directory(struct device_search *ds, struct dirblob
 				return search_error ;
 			}
 		} else {
-			if ( BAD(COM_read(&resp[1], 17, in)) ) {
+			if ( BAD(HA5_read(&resp[1], 17, in)) ) {
 				HA5_resync(in) ;
 				return search_error ;
 			}
@@ -494,9 +559,9 @@ static enum search_status HA5_directory(struct device_search *ds, struct dirblob
 
 static GOOD_OR_BAD HA5_resync( struct connection_in * in )
 {
-	COM_flush(in);
+	HA5_flush(in->master.ha5.head );
 	HA5_reset_in(in);
-	COM_flush(in);
+	HA5_flush(in->master.ha5.head );
 
 	// Poison current "Address" for adapter
 	in->master.ha5.sn[0] = 0 ; // so won't match
@@ -540,7 +605,7 @@ static GOOD_OR_BAD HA5_select_wrapped( const struct parsedname * pn )
 	}
 
 	if ( in->master.ha5.checksum ) {
-		if ( BAD(COM_read(resp_address,19,in)) ) {
+		if ( BAD(HA5_read(resp_address,19,in)) ) {
 			LEVEL_DEBUG("Error with reading HA5 select") ;
 			return HA5_resync(in) ;
 		}
@@ -549,7 +614,7 @@ static GOOD_OR_BAD HA5_select_wrapped( const struct parsedname * pn )
 			return HA5_resync(in) ;
 		}
 	} else {
-		if ( BAD(COM_read(resp_address,17,in)) ) {
+		if ( BAD(HA5_read(resp_address,17,in)) ) {
 			LEVEL_DEBUG("Error with reading HA5 select") ;
 			return HA5_resync(in) ;
 		}
@@ -581,7 +646,7 @@ static GOOD_OR_BAD HA5_sendback_part(char cmd, const BYTE * data, BYTE * resp, c
 	}
 
 	if ( in->master.ha5.checksum ) {
-		if ( BAD(COM_read( get_data, size*2+3, in)) ) {
+		if ( BAD(HA5_read( get_data, size*2+3, in)) ) {
 			LEVEL_DEBUG("Error with reading HA5 block") ;
 			HA5_resync(in) ;
 			return gbBAD ;
@@ -592,7 +657,7 @@ static GOOD_OR_BAD HA5_sendback_part(char cmd, const BYTE * data, BYTE * resp, c
 			return gbBAD ;
 		}
 	} else {
-		if ( BAD(COM_read( get_data, size*2+1, in)) ) {
+		if ( BAD(HA5_read( get_data, size*2+1, in)) ) {
 			LEVEL_DEBUG("Error with reading HA5 block") ;
 			HA5_resync(in) ;
 			return gbBAD ;
@@ -681,7 +746,7 @@ static GOOD_OR_BAD HA5_bit( BYTE outbit, BYTE * inbit, struct connection_in * in
 	}
 
 	// For some reason, the HA5 doesn't use a checksum for BIT response.
-	if ( BAD(COM_read(resp, 2, in)) ) {
+	if ( BAD(HA5_read(resp, 2, in)) ) {
 		LEVEL_DEBUG("Error reading HA5 bit");
 		return gbBAD;
 	}
@@ -708,6 +773,8 @@ static void HA5_close(struct connection_in *in)
 {
 	if ( in->master.ha5.head == in ) {
 		HA5MUTEX_DESTROY(in);
+	} else {
+		SOC(in)->state = cs_virgin ;
 	}
 }
 
