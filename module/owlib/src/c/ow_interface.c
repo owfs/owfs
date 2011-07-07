@@ -23,6 +23,7 @@ READ_FUNCTION(FS_name);
 READ_FUNCTION(FS_port);
 READ_FUNCTION(FS_version);
 READ_FUNCTION(FS_r_overdrive);
+READ_FUNCTION(FS_r_channel);
 WRITE_FUNCTION(FS_w_overdrive);
 READ_FUNCTION(FS_r_yesno);
 WRITE_FUNCTION(FS_w_yesno);
@@ -135,6 +136,7 @@ struct filetype interface_settings[] = {
 
 	{"ha5", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_HA5, NO_FILETYPE_DATA,},
 	{"ha5/checksum", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_yesno, FS_w_yesno, VISIBLE_HA5, {s:offsetof(struct connection_in,master.ha5.checksum), }, },
+	{"ha5/channel", 1, NON_AGGREGATE, ft_ascii, fc_static, FS_r_channel, NO_WRITE_FUNCTION, VISIBLE_HA5, NO_FILETYPE_DATA, },
 
 	{"i2c", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_DS2482, NO_FILETYPE_DATA,},
 	{"i2c/ActivePullUp", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_APU, FS_w_APU, VISIBLE_DS2482, NO_FILETYPE_DATA,},
@@ -383,6 +385,12 @@ static ZERO_OR_ERROR FS_w_PPM(struct one_wire_query *owq)
 			break ;
 	}
 	return 0 ;
+}
+
+/* For HA5 channel -- a single letter */
+static ZERO_OR_ERROR FS_r_channel(struct one_wire_query *owq)
+{
+	return OWQ_format_output_offset_and_size( (char *) &(PN(owq)->selected_connection->master.ha5.channel), 1, owq);
 }
 
 /* Just some tests to support overdrive */
