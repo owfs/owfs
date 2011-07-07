@@ -153,6 +153,8 @@ GOOD_OR_BAD tcp_open(struct connection_in *in);
 
 GOOD_OR_BAD COM_test( struct connection_in * connection );
 
+void COM_set_standard( struct connection_in *connection) ;
+
 void COM_close(struct connection_in *in);
 
 void COM_free(struct connection_in *in);

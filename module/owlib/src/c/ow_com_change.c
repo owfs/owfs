@@ -51,3 +51,29 @@ GOOD_OR_BAD COM_change( struct connection_in *connection)
 			return gbBAD ;
 	}
 }
+
+void COM_set_standard( struct connection_in *connection)
+{
+	SOC(connection) -> baud            = B9600 ;
+	SOC(connection) -> vmin            = 0;           // minimum chars
+	SOC(connection) -> vtime           = 3;           // decisec wait
+	SOC(connection) -> parity          = parity_none; // parity
+	SOC(connection) -> stop            = stop_1;      // stop bits
+	SOC(connection) -> bits            = 8;           // bits/byte
+	SOC(connection) -> state           = cs_virgin ;
+
+	switch (SOC(connection)->type) {
+		case ct_telnet:
+			SOC(connection)->timeout.tv_sec = Globals.timeout_network ;
+			SOC(connection)->timeout.tv_usec = 0 ;
+			break ;
+
+		case ct_serial:
+		default:
+			SOC(connection)->timeout.tv_sec = Globals.timeout_serial ;
+			SOC(connection)->timeout.tv_usec = 0 ;
+			break ;
+	}
+
+	SOC(connection) -> flow            = flow_first;  // flow control
+}
