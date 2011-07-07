@@ -22,10 +22,10 @@ static enum arg_address ArgType( const char * arg )
 {
 	if ( arg == NULL ) {
 		return arg_addr_null ;
-	} else if ( strchr( arg, ':' ) ) {
-		return arg_addr_colon ;
 	} else if ( strchr( arg, '/' ) ) {
 		return arg_addr_device ;
+	} else if ( strchr( arg, ':' ) ) {
+		return arg_addr_colon ;
 	} else if ( strspn( arg, "0123456789" ) == strlen(arg) ) {
 		return arg_addr_number ;
 	} else if ( strchr(                     arg,                      '.' )
@@ -130,11 +130,13 @@ GOOD_OR_BAD ARG_HA5( const char *arg)
 	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
-	SOC(in)->devicename = (arg!=NULL) ? owstrdup(arg) : NULL;
+	if ( arg == NULL ) {
+		return gbBAD ;
+	}
+	SOC(in)->devicename = owstrdup(arg) ;
 	in->busmode = bus_ha5;
 	return Serial_or_telnet( arg, in ) ;
 }
-
 
 GOOD_OR_BAD ARG_HA7(const char *arg)
 {
