@@ -228,15 +228,11 @@ GOOD_OR_BAD DS2480_detect(struct connection_in *in)
 
 	in->overdrive = 0 ;
 	in->flex = Globals.serial_flextime ;
-	SOC(in)->timeout.tv_sec = 0 ;
-	SOC(in)->timeout.tv_usec = 1000 ;
 
 	// Now set desired baud and polarity
 	// BUS_reset will do the actual changes
 	in->master.serial.reverse_polarity = Globals.serial_reverse ;
 	COM_set_standard( in ) ; // standard COM port settings
-
-	in->master.serial.tcp.CRLF_size = 2 ;
 	
 	// first pass with hardware flow control
 	RETURN_GOOD_IF_GOOD( DS2480_detect_serial(in) ) ;

@@ -69,15 +69,11 @@ GOOD_OR_BAD OWServer_Enet_detect(struct connection_in *in)
 	// A lot of telnet parameters, really only used
 	// to goose the connection when reconnecting
 	// The ENET tolerates telnet, but isn't really
-	// into RFC22117
+	// into RFC2217
+	COM_set_standard(in) ;
 	SOC(in)->timeout.tv_sec = 0 ;
 	SOC(in)->timeout.tv_usec = 600000 ;
-	in->master.serial.tcp.CRLF_size = 2 ;
-	SOC(in)->parity = parity_none; // parity
-	SOC(in)->stop = stop_1; // stop bits
-	SOC(in)->bits = 8; // bits / byte
 	SOC(in)->flow = flow_none; // flow control
-	SOC(in)->dev.telnet.telnet_negotiated = needs_negotiation ;
 	SOC(in)->baud = B115200 ;
 
 	if ( SOC(in)->devicename == NULL) {
@@ -88,7 +84,6 @@ GOOD_OR_BAD OWServer_Enet_detect(struct connection_in *in)
 	RETURN_BAD_IF_BAD( COM_open(in) ) ;
 
 	// Always returns 0D0A
-	in->master.enet.tcp.CRLF_size = 2 ;
 	in->master.enet.reopening = 0 ;
 	
 	memset( in->master.enet.sn, 0x00, SERIAL_NUMBER_SIZE ) ;

@@ -170,10 +170,7 @@ GOOD_OR_BAD LINK_detect(struct connection_in *in)
 	}
 
 	COM_set_standard( in ) ; // standard COM port settings
-	in->master.serial.tcp.CRLF_size = 2 ;
-	SOC(in)->dev.telnet.telnet_negotiated = needs_negotiation ;
 
-	SOC(in)->state = cs_virgin ;
 	switch( SOC(in)->type ) {
 		case ct_telnet:
 			// LinkHub-E
@@ -281,7 +278,6 @@ static GOOD_OR_BAD LINK_version(struct connection_in * in)
 	enum { lvs_string, lvs_0d, } lvs = lvs_string ; // read state machine
 	int version_index ;
 
-	in->master.serial.tcp.CRLF_size = 2 ;
 	in->master.link.tmode = e_link_t_unknown ;
 	in->master.link.qmode = e_link_t_unknown ;
 

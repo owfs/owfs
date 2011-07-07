@@ -61,6 +61,9 @@ void COM_set_standard( struct connection_in *connection)
 	SOC(connection) -> stop            = stop_1;      // stop bits
 	SOC(connection) -> bits            = 8;           // bits/byte
 	SOC(connection) -> state           = cs_virgin ;
+	SOC(connection) -> dev.telnet.telnet_negotiated = needs_negotiation ;
+
+	connection->master.enet.tcp.CRLF_size = 2 ;
 
 	switch (SOC(connection)->type) {
 		case ct_telnet:
