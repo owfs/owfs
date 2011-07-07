@@ -135,9 +135,16 @@ GOOD_OR_BAD HA5_detect_parsed(struct address_pair *ap, struct connection_in *in)
 				return gbBAD ;
 			}
 
-			if ( ap->third.type != address_none ) {
-				// Channel specified
-				channel_list = ap->third.alpha ;
+			switch ( ap->third.type ) {
+				case address_all:
+					channel_list = "abcdefghijklmnopqrstuvwxyz" ;
+					break ;
+				case address_alpha:		
+					// Channel specified
+					channel_list = ap->third.alpha ;
+					break ;
+				default:
+					channel_list = NULL ;
 			}
 			break ;
 
@@ -152,9 +159,16 @@ GOOD_OR_BAD HA5_detect_parsed(struct address_pair *ap, struct connection_in *in)
 				return gbBAD ;
 			}
 
-			if ( ap->second.type != address_none ) {
-				// Channel specified
-				channel_list = ap->second.alpha ;
+			switch ( ap->second.type ) {
+				case address_all:
+					channel_list = "abcdefghijklmnopqrstuvwxyz" ;
+					break ;
+				case address_alpha:		
+					// Channel specified
+					channel_list = ap->second.alpha ;
+					break ;
+				default:
+					channel_list = NULL ;
 			}
 			break ;
 	}
