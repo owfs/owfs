@@ -57,6 +57,7 @@ struct address_pair {
 	int entries ;
 	struct address_entry first ;
 	struct address_entry second ;
+	struct address_entry third ;
 } ;
 
 void Parse_Address( char * address, struct address_pair * ap ) ;
