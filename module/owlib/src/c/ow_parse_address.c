@@ -3,7 +3,7 @@ $Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
-    email: palfille@earthlink.net
+    email: paul.alfille@gmail.com
     Released under the GPL
     See the header file: ow.h for full attribution
     1wire/iButton system from Dallas Semiconductor
@@ -22,6 +22,10 @@ static void Parse_Single_Address( struct address_entry * ae )
 {
 	int q1,q2,q3,q4 ;
 	if ( ae->alpha == NULL  ) {
+		// null entry
+		ae->type = address_none ;
+	} else if ( ae->alpha[0] == '\0' ) {
+		// blank entry (actually no trim or whitespace)
 		ae->type = address_none ;
 	} else if ( strncasecmp( ae->alpha, "all", 3 ) == 0 ) {
 		ae->type = address_all ;
@@ -55,7 +59,9 @@ static void Parse_Single_Address( struct address_entry * ae )
 void Parse_Address( char * address, struct address_pair * ap )
 {
 	char * colon ;
+	char * colon2 ;
 
+	// Set up address structure into previously allocated structure
 	if ( ap == NULL ) {
 		return ;
 	}
@@ -68,27 +74,47 @@ void Parse_Address( char * address, struct address_pair * ap )
 	}
 
 	// copy the text string
+	// All entries will point into this text copy
 	ap->first.alpha = owstrdup(address) ;
 	if ( ap->first.alpha == NULL ) {
 		return ;
 	}
+
 	colon = strchr( ap->first.alpha, ':' ) ;
 
-	if ( colon == NULL ) { // not found
+	if ( colon != NULL ) { // 1st colon exists
+		// Colon exists, second entry, so add a null at colon to separate the string.
+		*colon = '\0' ;
+		// second part starts after colon position
+		ap->second.alpha = colon + 1 ; // part of first.alpha
+	}
+	Parse_Single_Address( &(ap->first) ) ;
+
+	if ( colon == NULL ) {
 		// no colon, so only one entry
 		ap->entries = 1 ;
-		Parse_Single_Address( &(ap->first) ) ;
 		return ;
 	}
 	
-	// Colon exists, second entry, so add a null at colon to separate the string.
-	*colon = '\0' ;
-	Parse_Single_Address( &(ap->first) ) ;
+	colon2 = strchr( ap->second.alpha, ':' ) ;
 
-	// second part starts after colon position
-	ap->entries = 2 ;
-	ap->second.alpha = colon + 1 ; // part of first.alpha
+	if ( colon2 != NULL ) { // 2nd colon exists
+		// Colon exists, third entry, so add a null at colon to separate the string.
+		*colon2 = '\0' ;
+		// third part starts after colon position
+		ap->third.alpha = colon2 + 1 ; // still part of first.alpha
+	}
 	Parse_Single_Address( &(ap->second) ) ;
+
+	if ( colon2 == NULL ) {
+		// no colon2, so only two entries
+		ap->entries = 2 ;
+		return ;
+	}
+	
+	// third part starts after colon2 position
+	ap->entries = 3 ;
+	Parse_Single_Address( &(ap->third) ) ;
 }
 
 void Free_Address( struct address_pair * ap )
@@ -98,8 +124,8 @@ void Free_Address( struct address_pair * ap )
 	}
 	// Eliminates ap->second.alpha, too
 	SAFEFREE( ap->first.alpha ) ;
-	ap->first.type = address_none ;
-	ap->second.type = address_none ;
+
+	Init_Address( ap ) ;
 }	
 	
 static void Init_Address( struct address_pair * ap )
@@ -107,9 +133,14 @@ static void Init_Address( struct address_pair * ap )
 	if ( ap == NULL ) {
 		return ;
 	}
+
 	ap->first.alpha = NULL ;
-	ap->second.alpha = NULL ;
 	ap->first.type = address_none ;
+
+	ap->second.alpha = NULL ;
 	ap->second.type = address_none ;
+
+	ap->third.alpha = NULL ;
+	ap->third.type = address_none ;
 }	
 	
