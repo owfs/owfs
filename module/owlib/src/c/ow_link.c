@@ -169,13 +169,8 @@ GOOD_OR_BAD LINK_detect(struct connection_in *in)
 		return gbBAD;
 	}
 
+	COM_set_standard( in ) ; // standard COM port settings
 	in->master.serial.tcp.CRLF_size = 2 ;
-	SOC(in)->vmin = 0; // minimum chars
-	SOC(in)->vtime = 3; // decisec wait
-	SOC(in)->parity = parity_none; // parity
-	SOC(in)->stop = stop_1; // stop bits
-	SOC(in)->bits = 8; // bits / byte
-	SOC(in)->flow = flow_none; // flow control
 	SOC(in)->dev.telnet.telnet_negotiated = needs_negotiation ;
 
 	SOC(in)->state = cs_virgin ;

@@ -63,24 +63,10 @@ GOOD_OR_BAD DS9097_detect(struct connection_in *in)
 	in->busmode = bus_passive;	// in case initially tried DS9097U
 
 	/* open the COM port in 9600 Baud  */
-	SOC(in)->state = cs_virgin ;
-	SOC(in)->baud = B9600 ;
+	COM_set_standard( in ) ; // standard COM port settings
 	SOC(in)->vmin = 1; // minimum chars
 	SOC(in)->vtime = 0; // decisec wait
-	SOC(in)->parity = parity_none; // parity
-	SOC(in)->stop = stop_1; // stop bits
-	SOC(in)->bits = 8; // bits / byte
 	
-	switch (SOC(in)->type) {
-		case ct_telnet:
-			SOC(in)->timeout.tv_sec = Globals.timeout_network ;
-			SOC(in)->timeout.tv_usec = 0 ;
-
-		case ct_serial:
-		default:
-			SOC(in)->timeout.tv_sec = Globals.timeout_serial ;
-			SOC(in)->timeout.tv_usec = 0 ;
-	}
 	RETURN_BAD_IF_BAD(COM_open(in)) ;
 
 	SOC(in)->flow = flow_first; // flow control

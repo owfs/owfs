@@ -234,16 +234,11 @@ GOOD_OR_BAD DS2480_detect(struct connection_in *in)
 	// Now set desired baud and polarity
 	// BUS_reset will do the actual changes
 	in->master.serial.reverse_polarity = Globals.serial_reverse ;
-	SOC(in)->baud = B9600 ;
-	SOC(in)->vmin = 0; // minimum chars
-	SOC(in)->vtime = 3; // decisec wait
-	SOC(in)->parity = parity_none; // parity
-	SOC(in)->stop = stop_1; // stop bits
-	SOC(in)->bits = 8; // bits / byte
+	COM_set_standard( in ) ; // standard COM port settings
+
 	in->master.serial.tcp.CRLF_size = 2 ;
 	
 	// first pass with hardware flow control
-	SOC(in)->flow = flow_first; // flow control
 	RETURN_GOOD_IF_GOOD( DS2480_detect_serial(in) ) ;
 
 	SOC(in)->flow = flow_second; // flow control

@@ -59,17 +59,7 @@ GOOD_OR_BAD HA7E_detect(struct connection_in *in)
 	in->master.ha7e.sn[0] = 0 ; // so won't match
 
 	/* Open the com port */
-	SOC(in)->baud = B9600 ;
-	SOC(in)->vmin = 0; // minimum chars
-	SOC(in)->vtime = 3; // decisec wait
-	SOC(in)->parity = parity_none; // parity
-	SOC(in)->stop = stop_1; // stop bits
-	SOC(in)->bits = 8; // bits / byte
-	SOC(in)->state = cs_virgin ;
-	SOC(in)->timeout.tv_sec = Globals.timeout_serial ;
-	SOC(in)->timeout.tv_usec = 0 ;
-
-	SOC(in)->flow = flow_first; // flow control
+	COM_set_standard( in ) ; // standard COM port settings
 	RETURN_BAD_IF_BAD(COM_open(in)) ;
 	COM_slurp(in) ;
 	if ( GOOD( gbRESET( HA7E_reset(&pn) ) ) ) {
