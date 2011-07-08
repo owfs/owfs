@@ -64,8 +64,8 @@ struct filetype DS2409[] = {
 	{"sensed", PROPERTY_LENGTH_BITFIELD, &A2409, ft_bitfield, fc_volatile, FS_r_sensed, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"branch", PROPERTY_LENGTH_BITFIELD, &A2409, ft_bitfield, fc_volatile, FS_r_branch, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"event", PROPERTY_LENGTH_BITFIELD, &A2409, ft_bitfield, fc_volatile, FS_r_event, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-	{"aux", 0, NON_AGGREGATE, ft_directory, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, {i:1},},
-	{"main", 0, NON_AGGREGATE, ft_directory, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, {i:0},},
+	{"aux", 0, NON_AGGREGATE, ft_directory, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, {i:eBranch_aux},},
+	{"main", 0, NON_AGGREGATE, ft_directory, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, {i:eBranch_main},},
 };
 
 DeviceEntry(1F, DS2409, NO_GENERIC_READ, NO_GENERIC_WRITE);
@@ -177,7 +177,7 @@ static GOOD_OR_BAD OW_discharge(const struct parsedname *pn)
 	};
 
 	BUSLOCK(pn);
-	pn->selected_connection->branch.branch = BUSPATH_BAD ;
+	pn->selected_connection->branch.branch = eBranch_bad ;
 	gbRet = BUS_transaction_nolock(t, pn) ;
 	BUSUNLOCK(pn);
 

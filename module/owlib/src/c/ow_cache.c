@@ -29,6 +29,10 @@ $Id$
 // generic unique address for directories.
 int DirMarkerLoc ;
 void * Directory_Marker = &DirMarkerLoc ;
+int AuxDirMarkerLoc ;
+void * AuxDirectory_Marker = &AuxDirMarkerLoc ;
+int MainDirMarkerLoc ;
+void * MainDirectory_Marker = &MainDirMarkerLoc ;
 
 // Devices are sn-based
 // generic unique address for devices.

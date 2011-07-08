@@ -77,6 +77,13 @@ subdir points to in-device groupings
 	/* device format */
 extern int32_t LocalControlFlags;
 
+// flag to pn->selected_connection->branch.branch to force select from root dir
+enum eBranch {
+	eBranch_bad =  0xFF,
+	eBranch_main = 0x00,
+	eBranch_aux =  0x01,
+};
+
 struct buspath {
 	BYTE sn[SERIAL_NUMBER_SIZE];
 	BYTE branch;
