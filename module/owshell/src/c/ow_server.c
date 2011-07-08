@@ -367,6 +367,6 @@ static void WriteHex( char * buffer, int length )
 {
 	int i ;
 	for ( i=0 ; i<length ; ++i ) {
-		printf("%.2X",buffer[i]);
+		printf("%.2X", (unsigned char) buffer[i]);
 	}
 }
