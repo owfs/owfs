@@ -82,13 +82,13 @@ proc ::OW::_join {args} {
 proc ::OW::_set {path} {
     set path "/[string trim $path {/}]"
     if {[exists $path]} {
-	if {![exists ::OW::id_set]} {set ::OW::id_set 0}
-	incr ::OW::id_set
-	set nid "owcmd$::OW::id_set"
-#        regsub -all {\W} $path {_} nid
-        set evalstr [format {proc ::OW::%s {args} {return [eval ::OW::device %s $args]}} $nid $path]
+	set id_set 0
+	while {[info commands [set nid "::OW::owcmd$id_set"]] != ""} {
+	    incr id_set
+	}
+        set evalstr [format {proc %s {args} {return [eval ::OW::device %s $args]}} $nid $path]
         eval $evalstr
-        return "::OW::$nid"
+        return $nid
     } else {
         error "node \"$path\" not exists"
     }
