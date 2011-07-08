@@ -362,8 +362,17 @@ static uint32_t SetupSemi(void)
 
 static void Write( char * buffer, int length)
  {
- 	int i ;
- 	for ( i=0 ; i<length ; ++i ) {
-		printf( hexflag ? "%.2X" : "%c", (unsigned char) buffer[i]);
- 	}
+	int i ;
+	char *fmt;
+
+	/*
+ 	 * Write binary (raw) or hex-formatted ASCII depending on
+	 * the value of "hexflag" (set through the CLI argument
+	 * --hex).
+	 */
+	fmt = hexflag ? "%.2X" : "%c";
+
+	for ( i=0 ; i<length ; ++i ) {
+		printf( fmt, (unsigned char) buffer[i]);
+	}
  }
