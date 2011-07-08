@@ -18,7 +18,7 @@ static int FromServer(int file_descriptor, struct client_msg *cm, char *msg, siz
 static void *FromServerAlloc(int file_descriptor, struct client_msg *cm);
 static int ToServer(int file_descriptor, struct server_msg *sm, struct serverpackage *sp);
 static uint32_t SetupSemi(void);
-static void WriteHex( char * buffer, int length ) ;
+static void Write( char * buffer, int length ) ;
 
 void Server_detect(void)
 {
@@ -40,7 +40,7 @@ int ServerRead(ASCII * path)
 	struct client_msg cm;
 	struct serverpackage sp = { path, NULL, 0, NULL, 0, };
 	int connectfd = ClientConnect();
-	int size = 8096;
+	int size = 65536;
 	char buf[size + 1];
 	int ret = 0;
 
@@ -54,7 +54,7 @@ int ServerRead(ASCII * path)
 	sm.size = size;
 	sm.offset = offset_into_data;
 
-	if ( size_of_data >=0 && size_of_data < 8192 ) {
+	if ( size_of_data >=0 && size_of_data <= 65536 ) {
 		sm.size = size_of_data ;
 	}
 
@@ -66,13 +66,10 @@ int ServerRead(ASCII * path)
 		ret = -EIO;
 	} else {
 		ret = cm.ret;
-		if (ret <= 0 || ret > size) {
+		if (ret < 0 || ret > size ) {
 			fprintf(stderr, "ServerRead: Data error on %s\n", path);
-		} else if ( hexflag ) {
-			WriteHex( buf, ret ) ;
 		} else {
-			buf[ret] = '\0';
-			printf("%s", buf);
+			Write( buf, ret ) ;
 		}
 	}
 	close(connectfd);
@@ -363,10 +360,10 @@ static uint32_t SetupSemi(void)
 	return sg;
 }
 
-static void WriteHex( char * buffer, int length )
-{
-	int i ;
-	for ( i=0 ; i<length ; ++i ) {
-		printf("%.2X", (unsigned char) buffer[i]);
-	}
-}
+static void Write( char * buffer, int length)
+ {
+ 	int i ;
+ 	for ( i=0 ; i<length ; ++i ) {
+		printf( hexflag ? "%.2X" : "%c", (unsigned char) buffer[i]);
+ 	}
+ }
