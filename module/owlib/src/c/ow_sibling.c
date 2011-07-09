@@ -47,12 +47,12 @@ ZERO_OR_ERROR FS_w_sibling_bitwork(UINT set, UINT mask, const char * sibling, st
 {
 	ZERO_OR_ERROR write_error = -EINVAL ;
 	struct one_wire_query * owq_sibling  = OWQ_create_sibling( sibling, owq ) ;
-
 	if ( owq_sibling == NO_ONE_WIRE_QUERY ) {
 		return -EINVAL ;
 	}
 	if ( FS_read_local(owq_sibling) == 0 ) {
-		UINT bitfield = OWQ_U(owq) ;
+//		UINT bitfield = OWQ_U(owq) ; //the original state does not come from owq, but from owq_sibling
+		UINT bitfield = OWQ_U(owq_sibling) ;
 
 		// clear mask:
 		bitfield &= ~mask ;
@@ -61,6 +61,7 @@ ZERO_OR_ERROR FS_w_sibling_bitwork(UINT set, UINT mask, const char * sibling, st
 		bitfield |= (set & mask) ;
 
 		OWQ_U(owq_sibling) = bitfield ;
+LEVEL_DEBUG("w sibling bit work  set=%04X  mask=%04X, sibling=%s, bitfield=%04X", set,mask, sibling,bitfield) ;
 
 		write_error = FS_write_local(owq_sibling);
 	}

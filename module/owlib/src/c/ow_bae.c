@@ -89,6 +89,14 @@ WRITE_FUNCTION(FS_w_911_pio) ;
 READ_FUNCTION(FS_r_pio_bit) ;
 WRITE_FUNCTION(FS_w_pio_bit) ;
 
+READ_FUNCTION(FS_r_cnt1_bit) ;
+READ_FUNCTION(FS_r_cnt2_bit) ;
+WRITE_FUNCTION(FS_w_cnt1_bit);
+WRITE_FUNCTION(FS_w_cnt2_bit);
+
+READ_FUNCTION(FS_r_cmp_bit);
+WRITE_FUNCTION(FS_w_cmp_bit);
+
 /* ------- Structures ----------- */
 
 /* common values to all FC chips */
@@ -194,6 +202,15 @@ WRITE_FUNCTION(FS_w_pio_bit) ;
 #define _FC03_IICPIOD    0x7E49    /* u8 */  //new
 #define _FC03_PC0        0x7E4A    /* u16 */
 
+#define _FC03_RTC        0x7F22   /* u32 */
+#define _FC03_RND        0x7F26   /* u8 */
+
+#define _FC03_CNT1       0x7F28   /* u32 */
+#define _FC03_CNT2       0x7F2C   /* u32 */
+#define _FC03_CNTCMP     0x7F30   /* u32 */
+#define _FC03_CMPC       0x7E3F    /* u8 */
+
+
 
 #define _FC03_ADC        0x7F00 /* u16 x 16 */
 #define _FC03_EALARMC    0x7F20   /* u8 */
@@ -211,8 +228,12 @@ static enum e_visibility VISIBLE_911( const struct parsedname * pn ) ;
 
 struct aggregate ABAEeeprom = { _FC_MAX_EEPROM_PAGES, ag_numbers, ag_separate, };
 struct aggregate A911pio = { 22, ag_numbers, ag_separate, };
+struct aggregate A911pioc = { 22, ag_numbers, ag_separate, };
+struct aggregate A911cnt1 = { 4, ag_numbers, ag_separate, };
+struct aggregate A911cnt2 = { 4, ag_numbers, ag_separate, };
 struct aggregate A911pwm = { 4, ag_numbers, ag_separate, };
 struct aggregate A911adc = { 16, ag_numbers, ag_separate, };
+
 struct filetype BAE[] = {
 	F_STANDARD,
 	{"command", _FC02_MAX_COMMAND_GULP, NON_AGGREGATE, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_extended, VISIBLE, NO_FILETYPE_DATA,},
@@ -306,17 +327,42 @@ struct filetype BAE[] = {
 	{"911/pio", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
 	{"911/pio/piostate", PROPERTY_LENGTH_UNSIGNED, &A911pio, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, INVISIBLE, {u:_FC03_PIO,}, },
 	{"911/pio/pio", PROPERTY_LENGTH_YESNO, &A911pio, ft_yesno, fc_link, FS_r_911_pio, FS_w_911_pio, VISIBLE_911, NO_FILETYPE_DATA, },
-	{"911/pio/pio_config", PROPERTY_LENGTH_UNSIGNED, &A911pio, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_PIO_CONF,}, },
-	{"911/pio/pio_ds", PROPERTY_LENGTH_YESNO, &A911pio, ft_yesno, fc_link, FS_r_pio_bit, FS_w_pio_bit, VISIBLE_911, {i: 3}, },
-	{"911/pio/pio_pd", PROPERTY_LENGTH_YESNO, &A911pio, ft_yesno, fc_link, FS_r_pio_bit, FS_w_pio_bit, VISIBLE_911, {i: 2}, },
-	{"911/pio/pio_pe", PROPERTY_LENGTH_YESNO, &A911pio, ft_yesno, fc_link, FS_r_pio_bit, FS_w_pio_bit, VISIBLE_911, {i: 1}, },
-	{"911/pio/pio_dd", PROPERTY_LENGTH_YESNO, &A911pio, ft_yesno, fc_link, FS_r_pio_bit, FS_w_pio_bit, VISIBLE_911, {i: 0}, },
+	{"911/pio/pio_config", PROPERTY_LENGTH_UNSIGNED, &A911pioc, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, INVISIBLE, {u:_FC03_PIO_CONF,}, },
+	{"911/pio/pio_ds", PROPERTY_LENGTH_YESNO, &A911pioc, ft_yesno, fc_link, FS_r_pio_bit, FS_w_pio_bit, VISIBLE_911, {u:3,}, },
+	{"911/pio/pio_pe", PROPERTY_LENGTH_YESNO, &A911pioc, ft_yesno, fc_link, FS_r_pio_bit, FS_w_pio_bit, VISIBLE_911, {u:1,}, },
+	{"911/pio/pio_dd", PROPERTY_LENGTH_YESNO, &A911pioc, ft_yesno, fc_link, FS_r_pio_bit, FS_w_pio_bit, VISIBLE_911, {u:0,}, },
+
+	{"911/counter1", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
+	{"911/counter1/count", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_32, FS_w_32, VISIBLE_911, {u:_FC03_CNT1,}, },
+	{"911/counter1/config", PROPERTY_LENGTH_UNSIGNED, &A911cnt1, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, INVISIBLE, {u:_FC03_PIO_CONF+10,}, },
+	{"911/counter1/pulldown", PROPERTY_LENGTH_YESNO, &A911cnt1, ft_yesno, fc_link, FS_r_cnt1_bit, FS_w_cnt1_bit, VISIBLE_911, {u:2,}, },
+	{"911/counter1/enable", PROPERTY_LENGTH_YESNO, &A911cnt1, ft_yesno, fc_link, FS_r_cnt1_bit, FS_w_cnt1_bit, VISIBLE_911, {u:4,}, },
+	
+	{"911/counter2", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
+	{"911/counter2/count", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_32, FS_w_32, VISIBLE_911, {u:_FC03_CNT2,}, },
+	{"911/counter2/config", PROPERTY_LENGTH_UNSIGNED, &A911cnt2, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, INVISIBLE, {u:_FC03_PIO_CONF+16,}, },
+	{"911/counter2/pulldown", PROPERTY_LENGTH_YESNO, &A911cnt2, ft_yesno, fc_link, FS_r_cnt2_bit, FS_w_cnt2_bit, VISIBLE_911, {u:2,}, },
+	{"911/counter2/enable", PROPERTY_LENGTH_YESNO, &A911cnt2, ft_yesno, fc_link, FS_r_cnt2_bit, FS_w_cnt2_bit, VISIBLE_911, {u:4,}, },
+
+	{"911/rtc", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
+	{"911/rtc/seconds", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_32, FS_w_32, VISIBLE_911, {u:_FC03_RTC,}, },
+	{"911/rtc/rnd", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_RND,}, },
+
+	{"911/acmp", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
+	{"911/acmp/config", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, INVISIBLE, {u:_FC03_CMPC,}, },
+	{"911/acmp/acmp_enable", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_cmp_bit, FS_w_cmp_bit, VISIBLE_911, {u:7,}, },
+	{"911/acmp/out_enable", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_cmp_bit, FS_w_cmp_bit, VISIBLE_911, {u:0,}, },
+	{"911/acmp/cmp_state", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_cmp_bit, NO_WRITE_FUNCTION, VISIBLE_911, {u:3,}, },
+	{"911/acmp/changed", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_cmp_bit, FS_w_cmp_bit, VISIBLE_911, {u:5,}, },
+	{"911/acmp/internal_ref", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_cmp_bit, FS_w_cmp_bit, VISIBLE_911, {u:6,}, },
+		
 	{"911/pwm", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
 	{"911/pwm/tpm1c", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_TPM1C,}, },
 	{"911/pwm/tpm2c", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_TPM2C,}, },
 	{"911/pwm/period1", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_PERIOD1,}, },
 	{"911/pwm/period2", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_PERIOD2,}, },
 	{"911/pwm/duty", PROPERTY_LENGTH_UNSIGNED, &A911pwm, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_DUTY,}, },
+
 	{"911/lcd", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
 	{"911/lcd/init", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_LCDINIT,}, },
 	{"911/lcd/char", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, NO_READ_FUNCTION, FS_w_8, VISIBLE_911, {u:_FC03_LCDDATA,}, },
@@ -327,15 +373,19 @@ struct filetype BAE[] = {
 	{"911/sdcard/init", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_SDINIT,}, },
 	{"911/sdcard/sector_nr", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_sector_nr, FS_w_sector_nr, VISIBLE_911, NO_FILETYPE_DATA, },
 	{"911/sdcard/sector_data", _FC_SDCARD_SECTOR_SIZE, NON_AGGREGATE, ft_binary, fc_stable, FS_r_sector_data, FS_w_sector_data, VISIBLE_911, NO_FILETYPE_DATA, },
+
 	{"911/spi", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
 	{"911/spi/spic", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_SPIC,}, },
 	{"911/spi/spibr", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_SPIBR,}, },
 	{"911/spi/spid", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_SPID,}, },
+
 	{"911/iic", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
 	{"911/iic/iicd", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_IICD,}, },
 	{"911/iic/iicc", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_IICC,}, },
+
 	{"911/serial", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
 	{"911/serial/scic", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_SCIC,}, },
+
 	{"911/adc", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
 	{"911/adc/adc", PROPERTY_LENGTH_UNSIGNED, &A911adc, ft_unsigned, fc_volatile, FS_r_16, NO_WRITE_FUNCTION, VISIBLE_911, {u:_FC03_ADC,}, },
 };
@@ -752,15 +802,60 @@ static ZERO_OR_ERROR FS_w_911_pio( struct one_wire_query * owq ) {
 
 static ZERO_OR_ERROR FS_r_pio_bit( struct one_wire_query * owq ) {
 	UINT pioconf ;
+    UINT bitnr=PN(owq)->selected_filetype->data.u ;
 	if ( FS_r_sibling_U( &pioconf, "911/pio/pio_config", owq ) != 0 ) {
 		return -EINVAL ;
 	}
-	OWQ_Y(owq) = UT_getbit( (void *) &pioconf, PN(owq)->selected_filetype->data.u ) ;
+	OWQ_Y(owq) = UT_getbit( (void *) &pioconf, bitnr ) ;
+    LEVEL_DEBUG("sibling bit read bitnr=%d, set=%04X  mask=%04X", bitnr ,OWQ_Y(owq)<<bitnr, 1<<bitnr) ;
+	return 0 ;
+} 
+static ZERO_OR_ERROR FS_w_pio_bit( struct one_wire_query * owq ) {
+    UINT bitnr=PN(owq)->selected_filetype->data.u ;
+    LEVEL_DEBUG("sibling bit write bitnr=%d, set=%04X  mask=%04X", bitnr ,OWQ_Y(owq)<<bitnr, 1<<bitnr) ;
+	return FS_w_sibling_bitwork( OWQ_Y(owq)<<bitnr, 1<<bitnr, "911/pio/pio_config", owq ) ;
+}
+static ZERO_OR_ERROR FS_r_cnt1_bit( struct one_wire_query * owq ) {
+	UINT pioconf ;
+    UINT bitnr=PN(owq)->selected_filetype->data.u ;
+    LEVEL_DEBUG("counter1/config: read bit nr %d ", bitnr ) ;
+	if ( FS_r_sibling_U( &pioconf, "911/counter1/config", owq ) != 0 ) {
+		return -EINVAL ;
+	}
+	OWQ_Y(owq) = UT_getbit( (void *) &pioconf, bitnr ) ;
+	return 0 ;
+}
+static ZERO_OR_ERROR FS_r_cnt2_bit( struct one_wire_query * owq ) {
+    UINT pioconf ;
+    UINT bitnr=PN(owq)->selected_filetype->data.u ;
+	if ( FS_r_sibling_U( &pioconf, "911/counter2/config", owq ) != 0 ) {
+		return -EINVAL ;
+	}
+	OWQ_Y(owq) = UT_getbit( (void *) &pioconf, bitnr ) ;
 	return 0 ;
 }
 
-static ZERO_OR_ERROR FS_w_pio_bit( struct one_wire_query * owq ) {
-	return FS_w_sibling_bitwork( OWQ_Y(owq), (1<<(PN(owq)->selected_filetype->data.u)), "911/pio_config", owq ) ;
+static ZERO_OR_ERROR FS_w_cnt1_bit( struct one_wire_query * owq ) {
+    UINT bitnr=PN(owq)->selected_filetype->data.u ;
+	return FS_w_sibling_bitwork( OWQ_Y(owq)<<bitnr, 1<<bitnr, "911/counter1/config", owq ) ;
+}
+static ZERO_OR_ERROR FS_w_cnt2_bit( struct one_wire_query * owq ) {
+    UINT bitnr=PN(owq)->selected_filetype->data.u ;
+	return FS_w_sibling_bitwork( OWQ_Y(owq)<<bitnr, 1<<bitnr, "911/counter2/config", owq ) ;
+}
+
+static ZERO_OR_ERROR FS_r_cmp_bit( struct one_wire_query * owq ) {
+    UINT pioconf ;
+    UINT bitnr=PN(owq)->selected_filetype->data.u ;
+	if ( FS_r_sibling_U( &pioconf, "911/acmp/config", owq ) != 0 ) {
+		return -EINVAL ;
+	}
+	OWQ_Y(owq) = UT_getbit( (void *) &pioconf, bitnr ) ;
+	return 0 ;
+}
+static ZERO_OR_ERROR FS_w_cmp_bit( struct one_wire_query * owq ) {
+    UINT bitnr=PN(owq)->selected_filetype->data.u ;
+	return FS_w_sibling_bitwork( OWQ_Y(owq)<<bitnr, 1<<bitnr, "911/acmp/config", owq ) ;
 }
 
 static ZERO_OR_ERROR FS_version(struct one_wire_query *owq)
@@ -1088,7 +1183,8 @@ static GOOD_OR_BAD OW_r_mem_small(BYTE * data, size_t size, off_t offset, struct
 	};
 
 	RETURN_BAD_IF_BAD(BUS_transaction(t, pn)) ;
-
+	LEVEL_DEBUG("Read from BAE size=%d offset=%x\n",(int)size,(unsigned int)offset) ;
+	Debug_Bytes("BAE read",p,1+2+1+size) ;
 	memcpy(data, &p[4], size);
 	return gbGOOD;
 }
