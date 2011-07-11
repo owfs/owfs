@@ -84,6 +84,20 @@ WRITE_FUNCTION(FS_w_bit);
 WRITE_FUNCTION(FS_charge);
 WRITE_FUNCTION(FS_refresh);
 
+READ_FUNCTION(FS_WS603_temperature);
+READ_FUNCTION(FS_WS603_r_data);
+READ_FUNCTION(FS_WS603_r_param);
+READ_FUNCTION(FS_WS603_wind_speed);
+READ_FUNCTION(FS_WS603_wind_direction);
+READ_FUNCTION(FS_WS603_r_led);
+READ_FUNCTION(FS_WS603_light);
+READ_FUNCTION(FS_WS603_volt);
+READ_FUNCTION(FS_WS603_r_wind_calibration);
+WRITE_FUNCTION(FS_WS603_w_wind_calibration);
+READ_FUNCTION(FS_WS603_r_direction_calibration);
+WRITE_FUNCTION(FS_WS603_w_direction_calibration);
+WRITE_FUNCTION(FS_WS603_led_control);
+
 #if OW_THERMOCOUPLE
 READ_FUNCTION(FS_thermocouple);
 READ_FUNCTION(FS_rangelow);
@@ -291,6 +305,7 @@ struct filetype DS2755[] = {
 
 DeviceEntryExtended(35, DS2755, DEV_alarm, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
+struct aggregate Aled_control = { 4, ag_numbers, ag_aggregate, };
 struct filetype DS2760[] = {
 	F_STANDARD,
 	{"memory", 256, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
@@ -324,6 +339,21 @@ struct filetype DS2760[] = {
 	{"swen", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_bit, NO_WRITE_FUNCTION, VISIBLE, {u:(_1W_DS27XX_STATUS_REG << 8) | 3},},
 	{"uv", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_bit, FS_w_bit, VISIBLE, {u:(_1W_DS27XX_PROTECT_REG << 8) | 6},},
 	F_thermocouple
+
+	{"WS603", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"WS603/calibration", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"WS603/calibration/wind_speed", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_WS603_r_wind_calibration, FS_WS603_w_wind_calibration, VISIBLE, NO_FILETYPE_DATA,},
+	{"WS603/calibration/direction", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_WS603_r_direction_calibration, FS_WS603_w_direction_calibration, VISIBLE, NO_FILETYPE_DATA,},
+	{"WS603/temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_link, FS_WS603_temperature, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"WS603/data_string", 5, NON_AGGREGATE, ft_binary, fc_volatile, FS_WS603_r_data, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA,},
+	{"WS603/param_string", 5, NON_AGGREGATE, ft_binary, fc_stable, FS_WS603_r_param, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA,},
+	{"WS603/wind_speed", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_link, FS_WS603_wind_speed, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"WS603/direction", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_WS603_wind_direction, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"WS603/led", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_WS603_r_led, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"WS603/led_control", PROPERTY_LENGTH_UNSIGNED, &Aled_control, ft_unsigned, fc_stable, NO_READ_FUNCTION, FS_WS603_led_control, VISIBLE, NO_FILETYPE_DATA,},
+	{"WS603/light", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_WS603_light, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"WS603/volt", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_WS603_volt, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+
 };
 
 DeviceEntry(30, DS2760, NO_GENERIC_READ, NO_GENERIC_WRITE);
@@ -439,6 +469,17 @@ DeviceEntry(3D, DS2781, NO_GENERIC_READ, NO_GENERIC_WRITE);
 #define _1W_STOP_CHARGE 0xBE
 #define _1W_RESET 0xC4
 
+#define _WS603_COMMAND_ADDRESS 0x80
+#define _WS603_RESPONSE_ADDRESS 0x88
+
+#define _WS603_READ_DATA 0xA1
+#define _WS603_READ_PARAMETER 0xA0
+#define _WS603_LED_CONTROL 0xA2
+#define _WS603_WIND_SPEED_CALIBRATION 0xA3
+#define _WS603_WIND_DIRECTION_CALIBRATION 0xA4
+
+#define WS603_ENDBYTE(b) ( ( ( (b) & 0x0F ) << 1 ) | 0x0E )
+
 /* ------- Functions ------------ */
 
 /* DS2406 */
@@ -456,6 +497,12 @@ static GOOD_OR_BAD OW_w_int8(const int *I, off_t offset, const struct parsedname
 static GOOD_OR_BAD OW_cmd(const BYTE cmd, const struct parsedname *pn);
 static struct LockPage * LP( const struct parsedname * pn ) ;
 
+char WS603_CHECKSUM( BYTE * byt, int length ) ;
+static GOOD_OR_BAD WS603_Send( BYTE * byt, int length, struct parsedname * pn ) ;
+static GOOD_OR_BAD WS603_Get( BYTE cmd, BYTE * byt, int length, struct parsedname * pn ) ;
+static GOOD_OR_BAD WS603_Transaction( BYTE * cmd, int length, BYTE * resp, struct parsedname * pn ) ;
+static GOOD_OR_BAD WS603_Get_Readings( BYTE * data, struct parsedname * pn ) ;
+static GOOD_OR_BAD WS603_Get_Parameters( BYTE * data, struct parsedname * pn ) ;
 
 /* 2406 memory read */
 static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
@@ -468,7 +515,7 @@ static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
 /* 2406 memory write */
 static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 {
-//printf("2406 read size=%d, offset=%d\n",(int)size,(int)offset);
+	//printf("2406 read size=%d, offset=%d\n",(int)size,(int)offset);
 	return GB_to_Z_OR_E(OW_r_mem((BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq) +
 			((struct LockPage *) OWQ_pn(owq).selected_filetype->data.v)->offset[OWQ_pn(owq).extension], PN(owq))) ;
 }
@@ -853,6 +900,184 @@ static ZERO_OR_ERROR FS_w_pio(struct one_wire_query *owq)
 	return FS_w_bit(owq);
 }
 
+static ZERO_OR_ERROR FS_WS603_temperature(struct one_wire_query *owq)
+{
+	return FS_r_sibling_F( &OWQ_F(owq), "temperature", owq ) ;
+}
+
+static ZERO_OR_ERROR FS_WS603_r_data( struct one_wire_query *owq)
+{
+	BYTE data[5] ;
+
+	RETURN_ERROR_IF_BAD( WS603_Get_Readings( data, PN(owq) ) ) ;
+	return OWQ_format_output_offset_and_size( (char *) data, 5, owq);
+}
+
+static ZERO_OR_ERROR FS_WS603_r_param( struct one_wire_query *owq)
+{
+	BYTE data[5] ;
+
+	RETURN_ERROR_IF_BAD( WS603_Get_Parameters( data, PN(owq) ) ) ;
+	return OWQ_format_output_offset_and_size( (char *) data, 5, owq);
+}
+
+static ZERO_OR_ERROR FS_WS603_wind_speed( struct one_wire_query *owq)
+{
+	size_t length = 5 ;
+	BYTE data[length] ;
+	UINT wind_cal ;
+
+	if ( FS_r_sibling_binary( (char *) data, &length, "WS603/data_string", owq ) ) {
+		return -EINVAL ;
+	}
+
+	if ( FS_r_sibling_U( &wind_cal, "WS603/calibration/wind_speed", owq ) ) {
+		wind_cal = 100 ;
+	} else if ( wind_cal == 0 || wind_cal >199 ) {
+		wind_cal = 100 ;
+	}
+
+	OWQ_F(owq) = data[0]*2.453*1.069*1000*wind_cal/(3600.*100.) ;
+	return 0 ;
+}
+
+static ZERO_OR_ERROR FS_WS603_wind_direction( struct one_wire_query *owq)
+{
+	size_t length = 5 ;
+	BYTE data[length] ;
+
+	if ( FS_r_sibling_binary( (char *) data, &length, "WS603/data_string", owq ) ) {
+		return -EINVAL ;
+	}
+
+	OWQ_U(owq) = data[1] ;
+	return 0 ;
+}
+
+static ZERO_OR_ERROR FS_WS603_r_led( struct one_wire_query *owq)
+{
+	size_t length = 5 ;
+	BYTE data[length] ;
+
+	if ( FS_r_sibling_binary( (char *) data, &length, "WS603/data_string", owq ) ) {
+		return -EINVAL ;
+	}
+
+	OWQ_U(owq) = data[2] ;
+	return 0 ;
+}
+
+static ZERO_OR_ERROR FS_WS603_light( struct one_wire_query *owq)
+{
+	size_t length = 5 ;
+	BYTE data[length] ;
+
+	if ( FS_r_sibling_binary( (char *) data, &length, "WS603/data_string", owq ) ) {
+		return -EINVAL ;
+	}
+
+	OWQ_U(owq) = data[3] ;
+	return 0 ;
+}
+
+static ZERO_OR_ERROR FS_WS603_volt( struct one_wire_query *owq)
+{
+	size_t length = 5 ;
+	BYTE data[length] ;
+
+	if ( FS_r_sibling_binary( (char *) data, &length, "WS603/data_string", owq ) ) {
+		return -EINVAL ;
+	}
+
+	OWQ_U(owq) = data[4] ;
+	return 0 ;
+}
+
+static ZERO_OR_ERROR FS_WS603_light_mode( struct one_wire_query *owq)
+{
+	size_t length = 5 ;
+	BYTE data[length] ;
+
+	if ( FS_r_sibling_binary( (char *) data, &length, "WS603/param_string", owq ) ) {
+		return -EINVAL ;
+	}
+
+	OWQ_U(owq) = data[0] ;
+	return 0 ;
+}
+
+static ZERO_OR_ERROR FS_WS603_r_wind_calibration( struct one_wire_query *owq)
+{
+	size_t length = 5 ;
+	BYTE data[length] ;
+
+	if ( FS_r_sibling_binary( (char *) data, &length, "WS603/param_string", owq ) ) {
+		return -EINVAL ;
+	}
+
+	OWQ_U(owq) = data[1] ;
+	return 0 ;
+}
+
+static ZERO_OR_ERROR FS_WS603_w_wind_calibration( struct one_wire_query *owq)
+{
+	BYTE data[4] = {
+		_WS603_WIND_SPEED_CALIBRATION,
+		OWQ_U(owq) & 0xFF,
+		0x00,
+		0x00, } ;
+	return GB_to_Z_OR_E( WS603_Send( data, 4, PN(owq) ) ) ;
+}
+
+static ZERO_OR_ERROR FS_WS603_r_direction_calibration( struct one_wire_query *owq)
+{
+	size_t length = 5 ;
+	BYTE data[length] ;
+
+	if ( FS_r_sibling_binary( (char *) data, &length, "WS603/param_string", owq ) ) {
+		return -EINVAL ;
+	}
+
+	OWQ_U(owq) = data[2] ;
+	return 0 ;
+}
+
+static ZERO_OR_ERROR FS_WS603_w_direction_calibration( struct one_wire_query *owq)
+{
+	BYTE data[4] = {
+		_WS603_WIND_DIRECTION_CALIBRATION,
+		OWQ_U(owq) & 0xFF,
+		0x00,
+		0x00, } ;
+	return GB_to_Z_OR_E( WS603_Send( data, 4, PN(owq) ) ) ;
+}
+
+static ZERO_OR_ERROR FS_WS603_led_control( struct one_wire_query *owq)
+{
+	BYTE data[7] = {
+		_WS603_LED_CONTROL,
+		OWQ_array_U(owq, 0) & 0xFF,
+		OWQ_array_U(owq, 1) & 0xFF,
+		OWQ_array_U(owq, 2) & 0xFF,
+		OWQ_array_U(owq, 3) & 0xFF,
+		0x00,
+		0x00, } ;
+	return GB_to_Z_OR_E( WS603_Send( data, 7, PN(owq) ) ) ;
+}
+
+static ZERO_OR_ERROR FS_WS603_light_threshold( struct one_wire_query *owq)
+{
+	size_t length = 5 ;
+	BYTE data[length] ;
+
+	if ( FS_r_sibling_binary( (char *) data, &length, "WS603/param_string", owq ) ) {
+		return -EINVAL ;
+	}
+
+	OWQ_U(owq) = data[2] ;
+	return 0 ;
+}
+
 static struct LockPage * LP( const struct parsedname * pn )
 {
 	switch( pn->sn[0])
@@ -1073,3 +1298,86 @@ static ZERO_OR_ERROR FS_thermocouple(struct one_wire_query *owq)
 	return 0;
 }
 #endif							/* OW_THERMOCOUPLE */
+
+// Based on Les Arbes notes http://www.lesarbresdesign.info/automation/ws603-weather-instrument
+static GOOD_OR_BAD WS603_Send( BYTE * byt, int length, struct parsedname * pn )
+{
+	int repeat ;
+	BYTE resp[length] ;
+
+	// Finish setting up string
+	byt[length-2] = WS603_CHECKSUM( byt, length-2 ) ;
+	byt[length-1] = WS603_ENDBYTE( byt[0] ) ;
+
+	// Send the command and check that it was received
+	for ( repeat = 0 ; repeat < 20;  ++repeat ) {
+		if ( GOOD(OW_w_sram( byt, length, _WS603_COMMAND_ADDRESS, pn ) )
+		&& ( GOOD( OW_r_sram( resp, length, _WS603_COMMAND_ADDRESS, pn ) ) )
+		) {
+			if ( memcmp( byt, resp, length ) == 0 ) {
+				return gbGOOD ;
+			}
+		}
+		UT_delay(20) ;
+	}
+	LEVEL_DEBUG("Cannot send command to WS603") ;
+	return gbBAD ;
+}
+
+// Based on Les Arbes notes http://www.lesarbresdesign.info/automation/ws603-weather-instrument
+static GOOD_OR_BAD WS603_Get( BYTE cmd, BYTE * byt, int length, struct parsedname * pn )
+{
+	int repeat ;
+
+	// Send the command and check that it was received
+	for ( repeat = 0 ; repeat < 21;  ++repeat ) {
+		UT_delay(20) ;
+		if ( GOOD( OW_r_sram( (BYTE *)byt, length, _WS603_RESPONSE_ADDRESS, pn ) ) ) {
+			if ( ( byt[0] == cmd ) && ( byt[length-1] == WS603_CHECKSUM( byt, length-1 ) ) ) {
+				return gbGOOD ;
+			}
+		}
+	}
+	LEVEL_DEBUG("Cannot read response to WS603") ;
+	return gbBAD ;
+}
+
+static GOOD_OR_BAD WS603_Transaction( BYTE * cmd, int length, BYTE * resp, struct parsedname * pn )
+{
+	RETURN_BAD_IF_BAD( WS603_Send( cmd, length, pn ) ) ;
+	return WS603_Get( cmd[0], resp, 7, pn ) ;
+}
+
+char WS603_CHECKSUM( BYTE * byt, int length )
+{
+	int l ;
+	BYTE sum = 0 ;
+	for ( l=0 ; l < length ; ++l ) {
+		sum += byt[l] ;
+	}
+	return sum & 0xFF ;
+}
+
+// return 5 bytes of data
+static GOOD_OR_BAD WS603_Get_Readings( BYTE * data, struct parsedname * pn )
+{
+	BYTE resp[7] ;
+	BYTE cmd[3] = { _WS603_READ_DATA, 0x00, 0x00, } ;
+
+	RETURN_BAD_IF_BAD( WS603_Transaction( cmd, 3, resp, pn ) ) ;
+	memcpy( data, &resp[1], 5 ) ;
+	return gbGOOD ;
+}
+
+// return 5 bytes of data
+static GOOD_OR_BAD WS603_Get_Parameters( BYTE * data, struct parsedname * pn )
+{
+	BYTE resp[7] ;
+	BYTE cmd[3] = { _WS603_READ_PARAMETER, 0x00, 0x00, } ;
+
+	RETURN_BAD_IF_BAD( WS603_Transaction( cmd, 3, resp, pn ) ) ;
+	memcpy( data, &resp[1], 5 ) ;
+	return gbGOOD ;
+}
+
+
