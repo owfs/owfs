@@ -478,7 +478,7 @@ DeviceEntry(3D, DS2781, NO_GENERIC_READ, NO_GENERIC_WRITE);
 #define _WS603_WIND_SPEED_CALIBRATION 0xA3
 #define _WS603_WIND_DIRECTION_CALIBRATION 0xA4
 
-#define WS603_ENDBYTE(b) ( ( ( (b) & 0x0F ) << 1 ) | 0x0E )
+#define WS603_ENDBYTE(b) ( ( ( (b) & 0x0F ) *16 ) + 0x0E )
 
 /* ------- Functions ------------ */
 
