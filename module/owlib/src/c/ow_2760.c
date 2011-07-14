@@ -96,7 +96,9 @@ READ_FUNCTION(FS_WS603_r_wind_calibration);
 WRITE_FUNCTION(FS_WS603_w_wind_calibration);
 READ_FUNCTION(FS_WS603_r_direction_calibration);
 WRITE_FUNCTION(FS_WS603_w_direction_calibration);
+READ_FUNCTION(FS_WS603_r_light_threshold);
 WRITE_FUNCTION(FS_WS603_led_control);
+WRITE_FUNCTION(FS_WS603_r_led_model);
 
 #if OW_THERMOCOUPLE
 READ_FUNCTION(FS_thermocouple);
@@ -349,9 +351,13 @@ struct filetype DS2760[] = {
 	{"WS603/param_string", 5, NON_AGGREGATE, ft_binary, fc_stable, FS_WS603_r_param, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA,},
 	{"WS603/wind_speed", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_link, FS_WS603_wind_speed, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"WS603/direction", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_WS603_wind_direction, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-	{"WS603/led", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_WS603_r_led, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-	{"WS603/led_control", PROPERTY_LENGTH_UNSIGNED, &Aled_control, ft_unsigned, fc_stable, NO_READ_FUNCTION, FS_WS603_led_control, VISIBLE, NO_FILETYPE_DATA,},
-	{"WS603/light", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_WS603_light, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"WS603/led", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"WS603/led/status", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_WS603_r_led, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"WS603/led/control", PROPERTY_LENGTH_UNSIGNED, &Aled_control, ft_unsigned, fc_stable, NO_READ_FUNCTION, FS_WS603_led_control, VISIBLE, NO_FILETYPE_DATA,},
+	{"WS603/led/model", PROPERTY_LENGTH_UNSIGNED, &Aled_control, ft_unsigned, fc_stable, NO_READ_FUNCTION, FS_WS603_r_led_model, VISIBLE, NO_FILETYPE_DATA,},
+	{"WS603/light", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"WS603/light/intensity", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_WS603_light, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"WS603/light/threshold", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_WS603_r_light_threshold, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"WS603/volt", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_WS603_volt, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 
 };
@@ -993,7 +999,7 @@ static ZERO_OR_ERROR FS_WS603_volt( struct one_wire_query *owq)
 	return 0 ;
 }
 
-static ZERO_OR_ERROR FS_WS603_light_mode( struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_WS603_r_led_model( struct one_wire_query *owq)
 {
 	size_t length = 5 ;
 	BYTE data[length] ;
@@ -1065,7 +1071,7 @@ static ZERO_OR_ERROR FS_WS603_led_control( struct one_wire_query *owq)
 	return GB_to_Z_OR_E( WS603_Send( data, 7, PN(owq) ) ) ;
 }
 
-static ZERO_OR_ERROR FS_WS603_light_threshold( struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_WS603_r_light_threshold( struct one_wire_query *owq)
 {
 	size_t length = 5 ;
 	BYTE data[length] ;
@@ -1074,7 +1080,7 @@ static ZERO_OR_ERROR FS_WS603_light_threshold( struct one_wire_query *owq)
 		return -EINVAL ;
 	}
 
-	OWQ_U(owq) = data[2] ;
+	OWQ_U(owq) = data[3] ;
 	return 0 ;
 }
 
