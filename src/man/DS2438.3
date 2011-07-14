@@ -12,7 +12,7 @@
 .SH NAME
 .B DS2438 \- Smart Battery Monitor
 .SH SYNOPSIS
-Temperature Voltages (Humidity) and Memory.
+.SS Temperature Voltages and Current.
 .PP
 .B 26
 [.]XXXXXXXXXXXX[XX][/[
@@ -30,31 +30,7 @@ Temperature Voltages (Humidity) and Memory.
 |
 .B endcharge/udate
 |
-.B HIH4000/humidity
-|
-.B HTM1735/humidity
-|
-.B DATANAB/reset
-|
-.B DATANAB/humidity
-|
-.B humidity
-|
-.B B1-R1-A/pressure
-|
-.B B1-R1-A/gain
-|
-.B B1-R1-A/offset
-|
-.B S3-R1-A/current
-|
-.B S3-R1-A/illuminance
-|
-.B S3-R1-A/gain
-|
 .B IAD
-|
-.B MultiSensor/type
 |
 .B offset
 |
@@ -71,6 +47,43 @@ Temperature Voltages (Humidity) and Memory.
 .B vis
 |
 .so standard_mini.3so
+]]
+.SS Humidity sensor
+.PP
+.B 26
+[.]XXXXXXXXXXXX[XX][/[
+.B HIH4000/humidity
+|
+.B HTM1735/humidity
+|
+.B DATANAB/reset
+|
+.B DATANAB/humidity
+|
+.B humidity
+|
+.B temperature
+]]
+.SS Barometer
+.PP
+.B 26
+[.]XXXXXXXXXXXX[XX][/[
+.B B1-R1-A/pressure
+|
+.B B1-R1-A/gain
+|
+.B B1-R1-A/offset
+|
+]]
+.SS Light
+.PP
+.B 26
+[.]XXXXXXXXXXXX[XX][/[
+.B S3-R1-A/current
+|
+.B S3-R1-A/illuminance
+|
+.B S3-R1-A/gain
 ]]
 .SH FAMILY CODE
 .PP

@@ -12,7 +12,7 @@
 .SH NAME
 DS2755, DS2756 \- Multichemistry Battery Fuel Gauge
 .SH SYNOPSIS
-Temperature Voltage, Current, Memory, and Switch.
+.SS Temperature Voltage, Current, Memory, and Switch.
 .PP
 .B 35
 [.]XXXXXXXXXXXX[XX][/[
@@ -29,12 +29,6 @@ Temperature Voltage, Current, Memory, and Switch.
 .B sensed
 |
 .B temperature
-|
-.B typeX/range_low
-|
-.B typeX/range_high
-|
-.B typeX/temperature
 |
 .B vbias
 |
@@ -68,6 +62,17 @@ Temperature Voltage, Current, Memory, and Switch.
 .br
 .so standard_mini.3so
 ]]
+.SS Thermocouple
+.PP
+.B 35
+[.]XXXXXXXXXXXX[XX][/[
+.B temperature
+|
+.B typeX/range_low
+|
+.B typeX/range_high
+|
+.B typeX/temperature
 .SH FAMILY CODE
 .PP
 .I 35
@@ -146,26 +151,6 @@ or
 for choices. Default is Celsius.
 .br
 Conversion is continuous.
-.SS typeX/
-.I directory
-.br
-Thermocouple circuit using the
-.I  DS2755
-to read the Seebeck voltage and the reference temperature. Since the type interpretation of the values read depends on the type of thermocouple, the correct directory must be chosen. Supported thermocouple types include types B, E, J, K, N, R, S and T.
-.SS typeX/range_low typeX/ranges_high
-.I read-only, flaoting point
-.br
-The lower and upper temperature supported by this thermocouple (at least by the conversion routines). In the globally chosen temperature units.
-.SS typeX/temperature
-.I read-only, floating point
-.br
-Thermocouple temperature. Requires a voltage and temperature conversion. Returned in globally chosen temperature units.
-.br
-Note: there are two types of temperature measurements possible. The
-.I temperature
-value in the main device directory is the reference temperature read at the chip. The
-.I typeX/temperature
-value is at the thermocouple junction, probably remote from the chip.
 .SS vbias
 .I read-write, floating point
 .br
@@ -212,6 +197,27 @@ Integral of
 .I vis - vbias
 over time. Units are in
 .B volthours
+.SH THERMOCOUPLE
+.SS typeX/
+.I directory
+.br
+Thermocouple circuit using the
+.I  DS2755
+to read the Seebeck voltage and the reference temperature. Since the type interpretation of the values read depends on the type of thermocouple, the correct directory must be chosen. Supported thermocouple types include types B, E, J, K, N, R, S and T.
+.SS typeX/range_low typeX/ranges_high
+.I read-only, flaoting point
+.br
+The lower and upper temperature supported by this thermocouple (at least by the conversion routines). In the globally chosen temperature units.
+.SS typeX/temperature
+.I read-only, floating point
+.br
+Thermocouple temperature. Requires a voltage and temperature conversion. Returned in globally chosen temperature units.
+.br
+Note: there are two types of temperature measurements possible. The
+.I temperature
+value in the main device directory is the reference temperature read at the chip. The
+.I typeX/temperature
+value is at the thermocouple junction, probably remote from the chip.
 .SH OBSCURE PROPERTIES
 .SS pmod por uven pie0 pie1 ios uben ovd rnaop
 .I varies, yes-no
