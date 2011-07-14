@@ -77,6 +77,14 @@ WRITE_FUNCTION(FS_w_S3R1A_gain);
 
 static enum e_visibility VISIBLE_DATANAB( const struct parsedname * pn ) ;
 
+// src deserves some explanation:
+//   1 -- VDD (battery) measured
+//   0 -- VAD (other) measured
+enum voltage_source {
+	voltage_source_VAD = 0,
+	voltage_source_VDD = 1,
+} ;
+
 /* ------- Structures ----------- */
 
 struct aggregate A2437 = { 8, ag_numbers, ag_separate, };
@@ -85,8 +93,8 @@ struct filetype DS2437[] = {
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages/page", 8, &A2437, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
 
-	{"VDD", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_volts, NO_WRITE_FUNCTION, VISIBLE, {i:1},},
-	{"VAD", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_volts, NO_WRITE_FUNCTION, VISIBLE, {i:0},},
+	{"VDD", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_volts, NO_WRITE_FUNCTION, VISIBLE, {i:voltage_source_VAD},},
+	{"VAD", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_volts, NO_WRITE_FUNCTION, VISIBLE, {i:voltage_source_VAD},},
 	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_simultaneous_temperature, FS_temp, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"vis", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_Current, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"IAD", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_status, FS_w_status, VISIBLE, {i:0},},
@@ -113,8 +121,8 @@ struct filetype DS2438[] = {
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages/page", 8, &A2438, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
 
-	{"VDD", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_volts, NO_WRITE_FUNCTION, VISIBLE, {i:1},},
-	{"VAD", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_volts, NO_WRITE_FUNCTION, VISIBLE, {i:0},},
+	{"VDD", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_volts, NO_WRITE_FUNCTION, VISIBLE, {i:voltage_source_VDD},},
+	{"VAD", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_volts, NO_WRITE_FUNCTION, VISIBLE, {i:voltage_source_VAD},},
 	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_simultaneous_temperature, FS_temp, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"humidity", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_link, FS_Humid, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"vis", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_Current, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
@@ -175,11 +183,12 @@ DeviceEntryExtended(26, DS2438, DEV_temp | DEV_volt, NO_GENERIC_READ, NO_GENERIC
 static GOOD_OR_BAD OW_r_page(BYTE * p, const int page, const struct parsedname *pn);
 static GOOD_OR_BAD OW_w_page(const BYTE * p, const int page, const struct parsedname *pn);
 static GOOD_OR_BAD OW_temp(_FLOAT * T, int simul_good, const struct parsedname *pn);
-static GOOD_OR_BAD OW_volts(_FLOAT * V, const int src, const struct parsedname *pn);
+static GOOD_OR_BAD OW_volts(_FLOAT * V, enum voltage_source src, const struct parsedname *pn);
 static GOOD_OR_BAD OW_r_int(int *I, const UINT address, const struct parsedname *pn);
 static GOOD_OR_BAD OW_w_int(const int I, const UINT address, const struct parsedname *pn);
 static GOOD_OR_BAD OW_w_offset(const int I, const struct parsedname *pn);
 static GOOD_OR_BAD OW_r_uint(UINT *U, const UINT address, const struct parsedname *pn);
+static GOOD_OR_BAD OW_set_AD( enum voltage_source src, const struct parsedname *pn);
 
 /* 8 Byte pages */
 #define DS2438_ADDRESS_TO_PAGE(a)	((a)>>3)
@@ -347,6 +356,10 @@ static ZERO_OR_ERROR FS_Humid_3600(struct one_wire_query *owq)
 
 /* The HIH-4010 and HIH-4020 are newer versions of the HIH-4000 */
 /* Used in the Hobbyboards humidity product */
+/* Formula from Honeywell datasheet (2007)
+ * http://sensing.honeywell.com/index.cfm/ci_id/142534/la_id/1/document/1/re_id/0
+ *
+ * */ 
 static ZERO_OR_ERROR FS_Humid_4000(struct one_wire_query *owq)
 {
 	_FLOAT T, VAD, VDD;
@@ -824,13 +837,12 @@ static GOOD_OR_BAD OW_temp(_FLOAT * T, int simul_good, const struct parsedname *
 	return gbGOOD;
 }
 
-static GOOD_OR_BAD OW_volts(_FLOAT * V, const int src, const struct parsedname *pn)
+static GOOD_OR_BAD OW_set_AD( enum voltage_source src, const struct parsedname *pn)
 {
 	// src deserves some explanation:
 	//   1 -- VDD (battery) measured
 	//   0 -- VAD (other) measured
 	BYTE data[9];
-	static BYTE v[] = { _1W_CONVERT_V, };
 	static BYTE w[] = { _1W_WRITE_SCRATCHPAD, 0x00, };
 	struct transaction_log tsource[] = {
 		TRXN_START,
@@ -838,6 +850,26 @@ static GOOD_OR_BAD OW_volts(_FLOAT * V, const int src, const struct parsedname *
 		TRXN_WRITE(data, 8),
 		TRXN_END,
 	};
+
+	// set voltage source command
+	RETURN_BAD_IF_BAD(OW_r_page(data, 0, pn));
+
+	if ( UT_getbit( data, 3 ) == src ) {
+		// correct setting already. Leave there
+		return gbGOOD ;
+	}
+	UT_setbit(data, 3, src);	// AD bit in status register
+	return BUS_transaction(tsource, pn) ;
+
+}
+
+static GOOD_OR_BAD OW_volts(_FLOAT * V, enum voltage_source src, const struct parsedname *pn)
+{
+	// src deserves some explanation:
+	//   1 -- VDD (battery) measured
+	//   0 -- VAD (other) measured
+	BYTE data[9];
+	static BYTE v[] = { _1W_CONVERT_V, };
 	struct transaction_log tconvert[] = {
 		TRXN_START,
 		TRXN_WRITE1(v),
@@ -846,9 +878,7 @@ static GOOD_OR_BAD OW_volts(_FLOAT * V, const int src, const struct parsedname *
 	};
 
 	// set voltage source command
-	RETURN_BAD_IF_BAD(OW_r_page(data, 0, pn));
-	UT_setbit(data, 3, src);	// AD bit in status register
-	RETURN_BAD_IF_BAD(BUS_transaction(tsource, pn)) ;
+	RETURN_BAD_IF_BAD( OW_set_AD( src, pn ) );
 
 	// write conversion command
 	RETURN_BAD_IF_BAD(BUS_transaction(tconvert, pn)) ;
