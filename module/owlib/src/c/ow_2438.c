@@ -350,7 +350,7 @@ static ZERO_OR_ERROR FS_Humid_3600(struct one_wire_query *owq)
 	humidity_uncompensated = (VAD / VDD - (0.8 / VDD)) / .0062 ;
 	temperature_compensation = 1.0546 - 0.00216 * T ;
 	OWQ_F(owq) = humidity_uncompensated / temperature_compensation ;
-
+    //printf( "%g,%g,%g,%g\n", VAD, VDD, T, OWQ_F(owq) ) ;
 	return 0;
 }
 
@@ -764,6 +764,7 @@ static ZERO_OR_ERROR FS_w_S3R1A_gain(struct one_wire_query *owq)
 }
 
 /* DS2438 read page (8 bytes) */
+/* p is 8 bytes long */
 static GOOD_OR_BAD OW_r_page(BYTE * p, const int page, const struct parsedname *pn)
 {
 	BYTE data[9];
@@ -788,6 +789,7 @@ static GOOD_OR_BAD OW_r_page(BYTE * p, const int page, const struct parsedname *
 }
 
 /* write 8 bytes */
+/* p is 8 bytes long */
 static GOOD_OR_BAD OW_w_page(const BYTE * p, const int page, const struct parsedname *pn)
 {
 	BYTE data[9];
@@ -842,25 +844,33 @@ static GOOD_OR_BAD OW_set_AD( enum voltage_source src, const struct parsedname *
 	// src deserves some explanation:
 	//   1 -- VDD (battery) measured
 	//   0 -- VAD (other) measured
-	BYTE data[9];
-	static BYTE w[] = { _1W_WRITE_SCRATCHPAD, 0x00, };
-	struct transaction_log tsource[] = {
+	BYTE data[1];
+	BYTE r[] = { _1W_READ_SCRATCHPAD, 0, }; // page 0
+	struct transaction_log tread[] = {
 		TRXN_START,
+		TRXN_WRITE2(r),
+		TRXN_READ(data, 1),
+		TRXN_END,
+	};
+	BYTE w[] = { _1W_WRITE_SCRATCHPAD, 0, }; // page 0
+	struct transaction_log twrite[] = {
+		TRXN_START,				// 0
 		TRXN_WRITE2(w),
-		TRXN_WRITE(data, 8),
+		TRXN_WRITE(data, 1),
 		TRXN_END,
 	};
 
-	// set voltage source command
-	RETURN_BAD_IF_BAD(OW_r_page(data, 0, pn));
+	// read to scratch, then in
+	RETURN_BAD_IF_BAD(BUS_transaction(tread, pn)) ;
 
-	if ( UT_getbit( data, 3 ) == src ) {
+	if ( UT_getbit( data, 3 ) == (BYTE) src ) {
 		// correct setting already. Leave there
 		return gbGOOD ;
 	}
-	UT_setbit(data, 3, src);	// AD bit in status register
-	return BUS_transaction(tsource, pn) ;
 
+	UT_setbit( data, 3, (BYTE) src ) ;
+
+	return BUS_transaction(twrite, pn) ;
 }
 
 static GOOD_OR_BAD OW_volts(_FLOAT * V, enum voltage_source src, const struct parsedname *pn)
@@ -885,8 +895,7 @@ static GOOD_OR_BAD OW_volts(_FLOAT * V, enum voltage_source src, const struct pa
 
 	// read back registers
 	RETURN_BAD_IF_BAD(OW_r_page(data, 0, pn));
-	//printf("DS2438 current read %.2X %.2X %g\n",data[6],data[5],(_FLOAT)( ( ((int)data[6]) <<8 )|data[5] ));
-	//V[0] = .01 * (_FLOAT)( ( ((int)data[4]) <<8 )|data[3] ) ;
+
 	V[0] = .01 * (_FLOAT) UT_int16(&data[3]);
 	return gbGOOD;
 }
