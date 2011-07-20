@@ -62,6 +62,9 @@ struct device_search {
 	int index;
 	BYTE sn[SERIAL_NUMBER_SIZE];
 	BYTE search;
+
+	// For adapters that maintain dir-at-once (or dirgulp):
+	struct dirblob gulp;
 };
 
 enum search_status  BUS_first(struct device_search *ds, const struct parsedname *pn);
@@ -69,5 +72,5 @@ enum search_status  BUS_next(struct device_search *ds, const struct parsedname *
 enum search_status  BUS_first_alarm(struct device_search *ds, const struct parsedname *pn);
 enum search_status  BUS_next_both(struct device_search *ds, const struct parsedname *pn);
 enum search_status  BUS_next_both_bitbang(struct device_search *ds, const struct parsedname *pn) ;
-
+void BUS_next_cleanup( struct device_search *ds ) ;
 #endif							/* OW_SEARCH_H */

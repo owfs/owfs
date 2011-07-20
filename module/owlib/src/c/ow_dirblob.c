@@ -117,14 +117,14 @@ int DirblobSearch(BYTE * sn, const struct dirblob *db)
 {
 	int device_index;
 	if (db == NULL || db->devices < 1) {
-		return -1;
+		return INDEX_BAD;
 	}
 	for (device_index = 0; device_index < db->devices; ++device_index) {
 		if (memcmp(sn, &(db->snlist[DIRBLOB_ELEMENT_LENGTH * device_index]), DIRBLOB_ELEMENT_LENGTH) == 0) {
 			return device_index;
 		}
 	}
-	return -1;
+	return INDEX_BAD;
 }
 
 // used in cache, fixes up a dirblob when retrieved from the cache

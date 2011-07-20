@@ -52,6 +52,10 @@ struct master_fake {
 	int index;
 	_FLOAT templow;
 	_FLOAT temphigh;
+
+	// For adapters that maintain dir-at-once (or dirgulp):
+	struct dirblob main;        /* main directory */
+	struct dirblob alarm;       /* alarm directory */
 };
 
 struct master_usb {

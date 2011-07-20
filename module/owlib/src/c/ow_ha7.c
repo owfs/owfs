@@ -40,7 +40,7 @@ static GOOD_OR_BAD HA7_sendback_block(const BYTE * data, BYTE * resp, const size
 static GOOD_OR_BAD HA7_select(const struct parsedname *pn);
 static void HA7_setroutines(struct connection_in *in);
 static void HA7_close(struct connection_in *in);
-static GOOD_OR_BAD HA7_directory(BYTE search, struct dirblob *db, const struct parsedname *pn);
+static GOOD_OR_BAD HA7_directory( struct device_search *ds, const struct parsedname *pn);
 
 static void HA7_setroutines(struct connection_in *in)
 {
@@ -120,18 +120,18 @@ static RESET_TYPE HA7_reset(const struct parsedname *pn)
 	return ret;
 }
 
-static GOOD_OR_BAD HA7_directory(BYTE search, struct dirblob *db, const struct parsedname *pn)
+static GOOD_OR_BAD HA7_directory( struct device_search *ds, const struct parsedname *pn)
 {
 	GOOD_OR_BAD ret = gbGOOD;
 	struct toHA7 ha7;
 	struct memblob mb;
 	struct connection_in * in = pn->selected_connection ;
 
-	DirblobClear(db);
+	DirblobClear(&(ds->gulp));
 
 	toHA7init(&ha7);
 	ha7.command = "Search";
-	if (search == _1W_CONDITIONAL_SEARCH_ROM) {
+	if ( ds->search == _1W_CONDITIONAL_SEARCH_ROM) {
 		ha7.conditional[0] = '1';
 	}
 
@@ -162,7 +162,7 @@ static GOOD_OR_BAD HA7_directory(BYTE search, struct dirblob *db, const struct p
 				ret = gbBAD;
 				break;
 			}
-			DirblobAdd(sn, db);
+			DirblobAdd(sn, &(ds->gulp));
 		}
 		MemblobClear(&mb);
 	}
@@ -171,19 +171,16 @@ static GOOD_OR_BAD HA7_directory(BYTE search, struct dirblob *db, const struct p
 
 static enum search_status HA7_next_both(struct device_search *ds, const struct parsedname *pn)
 {
-	struct dirblob *db = (ds->search == _1W_CONDITIONAL_SEARCH_ROM) ?
-		&(pn->selected_connection->alarm) : &(pn->selected_connection->main);
-
 	if (ds->LastDevice) {
 		return search_done;
 	}
 
 	if (++(ds->index) == 0) {
-		if ( BAD(HA7_directory(ds->search, db, pn)) ) {
+		if ( BAD(HA7_directory( ds, pn )) ) {
 			return search_error;
 		}
 	}
-	switch ( DirblobGet(ds->index, ds->sn, db) ) {
+	switch ( DirblobGet(ds->index, ds->sn, &(ds->gulp) ) ) {
 		case 0:
 			LEVEL_DEBUG("SN found: " SNformat "", SNvar(ds->sn));
 			return search_good;

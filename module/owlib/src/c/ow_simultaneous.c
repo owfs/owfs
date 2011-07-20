@@ -237,7 +237,7 @@ static ZERO_OR_ERROR FS_r_present(struct one_wire_query *owq)
 		case adapter_fake:
 		case adapter_tester:
 			// fake adapter -- simple memory look
-			OWQ_Y(owq) = (DirblobElements(&(pn->selected_connection->main)) > 0);
+			OWQ_Y(owq) = (DirblobElements(&(pn->selected_connection->master.fake.main)) > 0);
 		default:
 		{
 			struct parsedname pn_directory;
@@ -284,8 +284,8 @@ static ZERO_OR_ERROR FS_r_single(struct one_wire_query *owq)
 		case adapter_fake:
 		case adapter_tester:
 		case adapter_mock:
-			if (DirblobElements(&(pn->selected_connection->main)) == 1) {
-				DirblobGet(0, resp, &(pn->selected_connection->main));
+			if (DirblobElements(&(pn->selected_connection->master.fake.main)) == 1) {
+				DirblobGet(0, resp, &(pn->selected_connection->master.fake.main));
 				FS_devicename(ad, sizeof(ad), resp, pn);
 			}
 			break ;

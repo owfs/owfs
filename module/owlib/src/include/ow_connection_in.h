@@ -156,9 +156,6 @@ struct connection_in {
 //	enum { flow_none, flow_soft, flow_hard, } flow_control ;
 //	struct timeval timeout ; // for serial or tcp read
 	
-	// For adapters that maintain dir-at-once (or dirgulp):
-	struct dirblob main;        /* main directory */
-	struct dirblob alarm;       /* alarm directory */
 	pthread_mutex_t bus_mutex;
 	pthread_mutex_t dev_mutex;
 	void *dev_db;				// dev-lock tree

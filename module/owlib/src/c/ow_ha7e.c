@@ -23,7 +23,7 @@ static GOOD_OR_BAD HA7E_sendback_part(const BYTE * data, BYTE * resp, const size
 static GOOD_OR_BAD HA7E_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
 static void HA7E_setroutines(struct connection_in *in);
 static void HA7E_close(struct connection_in *in);
-static GOOD_OR_BAD HA7E_directory(struct device_search *ds, struct dirblob *db, const struct parsedname *pn);
+static GOOD_OR_BAD HA7E_directory( struct device_search *ds, const struct parsedname *pn);
 static GOOD_OR_BAD HA7E_select( const struct parsedname * pn ) ;
 static GOOD_OR_BAD HA7E_resync( const struct parsedname * pn ) ;
 static void HA7E_powerdown(struct connection_in * in) ;
@@ -103,9 +103,6 @@ static RESET_TYPE HA7E_reset(const struct parsedname *pn)
 
 static enum search_status HA7E_next_both(struct device_search *ds, const struct parsedname *pn)
 {
-	struct dirblob *db = (ds->search == _1W_CONDITIONAL_SEARCH_ROM) ?
-		&(pn->selected_connection->alarm) : &(pn->selected_connection->main);
-
 	if (ds->LastDevice) {
 		return search_done;
 	}
@@ -113,7 +110,7 @@ static enum search_status HA7E_next_both(struct device_search *ds, const struct 
 	COM_flush(pn->selected_connection);
 
 	if (ds->index == -1) {
-		if ( BAD( HA7E_directory(ds, db, pn) ) ) {
+		if ( BAD( HA7E_directory(ds, pn) ) ) {
 			return search_error;
 		}
 	}
@@ -122,7 +119,7 @@ static enum search_status HA7E_next_both(struct device_search *ds, const struct 
 
 	LEVEL_DEBUG("Index %d", ds->index);
 
-	switch ( DirblobGet(ds->index, ds->sn, db) ) {
+	switch ( DirblobGet(ds->index, ds->sn, &(ds->gulp)) ) {
 	case 0:
 		LEVEL_DEBUG("SN found: " SNformat "\n", SNvar(ds->sn));
 		return search_good;
@@ -143,13 +140,13 @@ static enum search_status HA7E_next_both(struct device_search *ds, const struct 
 /* Only called for the first element, everything else comes from dirblob */
 /* returns 0 even if no elements, errors only on communication errors    */
 /************************************************************************/
-static GOOD_OR_BAD HA7E_directory(struct device_search *ds, struct dirblob *db, const struct parsedname *pn)
+static GOOD_OR_BAD HA7E_directory(struct device_search *ds, const struct parsedname *pn)
 {
 	char resp[17];
 	BYTE sn[SERIAL_NUMBER_SIZE];
 	char *first, *next, *current ;
 
-	DirblobClear(db);
+	DirblobClear( &(ds->gulp) );
 
 	//Depending on the search type, the HA7E search function
 	//needs to be selected
@@ -212,7 +209,7 @@ static GOOD_OR_BAD HA7E_directory(struct device_search *ds, struct dirblob *db, 
 			return HA7E_resync(pn) ;
 		}
 
-		DirblobAdd(sn, db);
+		DirblobAdd(sn, &(ds->gulp) );
 	}
 }
 

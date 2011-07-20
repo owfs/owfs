@@ -28,7 +28,7 @@ static GOOD_OR_BAD HA5_select_and_sendback(const BYTE * data, BYTE * resp, const
 static void HA5_setroutines(struct connection_in *in);
 static void HA5_close(struct connection_in *in);
 static GOOD_OR_BAD HA5_reconnect( const struct parsedname  *pn ) ;
-static enum search_status HA5_directory(struct device_search *ds, struct dirblob *db, const struct parsedname *pn);
+static enum search_status HA5_directory(struct device_search *ds,const struct parsedname *pn);
 static GOOD_OR_BAD HA5_select( const struct parsedname * pn ) ;
 static GOOD_OR_BAD HA5_select_wrapped( const struct parsedname * pn ) ;
 static GOOD_OR_BAD HA5_resync( struct connection_in * in ) ;
@@ -440,8 +440,6 @@ static RESET_TYPE HA5_reset_wrapped( struct connection_in * in )
 static enum search_status HA5_next_both(struct device_search *ds, const struct parsedname *pn)
 {
 	struct connection_in * in = pn->selected_connection ;
-	struct dirblob *db = (ds->search == _1W_CONDITIONAL_SEARCH_ROM) ?
-		&(in->alarm) : &(in->main);
 
 	if (ds->LastDevice) {
 		return search_done;
@@ -452,7 +450,7 @@ static enum search_status HA5_next_both(struct device_search *ds, const struct p
 	if (ds->index == -1) {
 		enum search_status ret ;
 		HA5MUTEX_LOCK( in->master.ha5.head ) ;
-		ret = HA5_directory(ds, db, pn) ;
+		ret = HA5_directory(ds, pn) ;
 		HA5MUTEX_UNLOCK( in->master.ha5.head ) ;
 
 		if ( ret != search_good ) {
@@ -464,7 +462,7 @@ static enum search_status HA5_next_both(struct device_search *ds, const struct p
 	++ds->index;
 	LEVEL_DEBUG("Index %d", ds->index);
 
-	switch ( DirblobGet(ds->index, ds->sn, db) ) {
+	switch ( DirblobGet(ds->index, ds->sn, &(ds->gulp) ) ) {
 		case 0:
 			LEVEL_DEBUG("SN found: " SNformat, SNvar(ds->sn));
 			return search_good;
@@ -485,12 +483,12 @@ static enum search_status HA5_next_both(struct device_search *ds, const struct p
 /* Only called for the first element, everything else comes from dirblob */
 /* returns 0 even if no elements, errors only on communication errors    */
 /************************************************************************/
-static enum search_status HA5_directory(struct device_search *ds, struct dirblob *db, const struct parsedname *pn)
+static enum search_status HA5_directory(struct device_search *ds, const struct parsedname *pn)
 {
 	unsigned char resp[20];
 	struct connection_in * in = pn->selected_connection ;
 
-	DirblobClear(db);
+	DirblobClear( &(ds->gulp) );
 
 	//Depending on the search type, the HA5 search function
 	//needs to be selected
@@ -565,7 +563,7 @@ static enum search_status HA5_directory(struct device_search *ds, struct dirblob
 			HA5_resync(in) ;
 			return search_error ;
 		}
-		DirblobAdd(sn, db);
+		DirblobAdd(sn, &(ds->gulp) );
 		resp[0] = wrap_char ;
 	}
 	return search_good ;

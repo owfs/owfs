@@ -105,10 +105,6 @@ struct connection_in *AllocIn(const struct connection_in *old_in)
 		/* not yet linked */
 		new_in->next = NO_CONNECTION ;
 
-		/* Initialize dir-at-once structures */
-		DirblobInit(&(new_in->main));
-		DirblobInit(&(new_in->alarm));
-
 		/* Support DS1994/DS2404 which require longer delays, and is automatically
 		 * turned on in *_next_both().
 		 * If it's turned off, it will result into a faster reset-sequence.
@@ -135,10 +131,6 @@ struct connection_in *LinkIn(struct connection_in *now)
 		Inbound_Control.head = now;
 		now->index = Inbound_Control.next_index++;
 		++Inbound_Control.active ;
-
-		/* Initialize dir-at-once structures */
-		DirblobInit(&(now->main));
-		DirblobInit(&(now->alarm));
 
 		_MUTEX_INIT(now->bus_mutex);
 		_MUTEX_INIT(now->dev_mutex);
@@ -218,8 +210,6 @@ void RemoveIn( struct connection_in * conn )
 
 	/* Next free up internal resources */
 	COM_free( conn ) ;
-	DirblobClear(&(conn->main));
-	DirblobClear(&(conn->alarm));
 	
 	/* Finally delete the structure */
 	owfree(conn);

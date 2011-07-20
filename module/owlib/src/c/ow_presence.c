@@ -48,6 +48,7 @@ $Id$
 /* ------- Prototypes ------------ */
 static INDEX_OR_ERROR CheckPresence_low(struct parsedname *pn);
 static INDEX_OR_ERROR CheckThisConnection(int bus_nr, struct parsedname *pn) ;
+static GOOD_OR_BAD PresenceFromDirblob( struct parsedname * pn ) ;
 
 /* ------- Functions ------------ */
 
@@ -188,7 +189,7 @@ ZERO_OR_ERROR FS_present(struct one_wire_query *owq)
 	if (NotRealDir(pn) || pn->selected_device == DeviceSimultaneous || pn->selected_device == DeviceThermostat) {
 		OWQ_Y(owq) = 1;
 	} else if ( pn->selected_connection->iroutines.flags & ADAP_FLAG_presence_from_dirblob ) {
-		OWQ_Y(owq) = (DirblobSearch(pn->sn, &(pn->selected_connection->main)) >= 0);
+		OWQ_Y(owq) = GOOD( PresenceFromDirblob(pn) ) ;
 	} else if ( pn->selected_connection->iroutines.flags & ADAP_FLAG_sham ) {
 		OWQ_Y(owq) = 0 ;
 	} else {
@@ -224,13 +225,13 @@ static INDEX_OR_ERROR CheckThisConnection(int bus_nr, struct parsedname *pn)
 		if ( INDEX_VALID( ServerPresence(pn_copy) ) ) {
 			connection_result =  in->index;
 		}
-	} else if ( in->iroutines.flags & ADAP_FLAG_presence_from_dirblob ) {
-		// local connection with a dirblob (like fake, mock, ...)
-		if ( DirblobSearch(pn_copy->sn, &(in->main)) >= 0 ) {
-			connection_result =  in->index;
-		}
 	} else if ( in->iroutines.flags & ADAP_FLAG_sham ) {
 		return INDEX_BAD ;
+	} else if ( in->iroutines.flags & ADAP_FLAG_presence_from_dirblob ) {
+		// local connection with a dirblob (like fake, mock, ...)
+		if ( GOOD( PresenceFromDirblob( pn_copy ) ) ) {
+			connection_result =  in->index ;
+		}
 	} else {
 		// local connection but need to ask directly
 		struct transaction_log t[] = {
@@ -250,3 +251,30 @@ static INDEX_OR_ERROR CheckThisConnection(int bus_nr, struct parsedname *pn)
 	return connection_result ;
 }
 
+static GOOD_OR_BAD PresenceFromDirblob( struct parsedname * pn )
+{
+	struct dirblob db;	// cached dirblob
+	if ( GOOD( Cache_Get_Dir( &db , pn ) ) ) {
+		// Use the dirblob from the cache
+		GOOD_OR_BAD ret = ( DirblobSearch(pn->sn, &db ) >= 0 ) ? gbGOOD : gbBAD ;
+		printf("--------- Found in cache\n");
+		DirblobClear( &db ) ;
+		return ret ;
+	} else {
+		// look through actual directory
+		struct device_search ds ;
+		enum search_status nextboth = BUS_first( &ds, pn ) ;
+		printf("--------- Did first\n");
+		while ( nextboth == search_good ) {
+			if ( memcmp( ds.sn, pn->sn, SERIAL_NUMBER_SIZE ) == 0 ) {
+				// found it. Early exit.
+				BUS_next_cleanup( &ds );
+				return gbGOOD ;
+			}
+			// Not found. Clean up done by BUS_next in this case
+			printf("--------- Do next\n");
+			nextboth = BUS_next( &ds, pn ) ;
+		}
+		return gbBAD ;
+	}
+}

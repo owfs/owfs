@@ -34,8 +34,8 @@ static GOOD_OR_BAD OWServer_Enet_write(const BYTE * buf, size_t size, struct con
 static GOOD_OR_BAD OWServer_Enet_write_string( char * buf, struct connection_in *in) ;
 static char OWServer_Enet_command( char * cmd_string, struct connection_in * in ) ;
 static RESET_TYPE OWServer_Enet_reset_in(struct connection_in * in);
-static GOOD_OR_BAD OWServer_Enet_directory(struct device_search *ds, struct dirblob *db, struct connection_in * in) ;
-static enum ENET_dir OWServer_Enet_directory_loop(struct device_search *ds, struct dirblob *db, struct connection_in * in) ;
+static GOOD_OR_BAD OWServer_Enet_directory(struct device_search *ds, struct connection_in * in) ;
+static enum ENET_dir OWServer_Enet_directory_loop(struct device_search *ds, struct connection_in * in) ;
 static GOOD_OR_BAD OWServer_Enet_sendback_part(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn) ;
 
 #define BAD_CHAR ( (char) -1 )
@@ -146,8 +146,6 @@ static RESET_TYPE OWServer_Enet_reset_in(struct connection_in * in)
 static enum search_status OWServer_Enet_next_both(struct device_search *ds, const struct parsedname *pn)
 {
 	struct connection_in * in = pn->selected_connection ;
-	struct dirblob *db = (ds->search == _1W_CONDITIONAL_SEARCH_ROM) ?
-		&(in->alarm) : &(in->main);
 
 	//Special case for DS2409 hub, use low-level code
 	if ( pn->pathlength>0 ) {
@@ -159,7 +157,7 @@ static enum search_status OWServer_Enet_next_both(struct device_search *ds, cons
 	}
 
 	if (ds->index == -1) {
-		if ( BAD(OWServer_Enet_directory(ds, db, in)) ) {
+		if ( BAD(OWServer_Enet_directory(ds, in)) ) {
 			return search_error;
 		}
 	}
@@ -168,7 +166,7 @@ static enum search_status OWServer_Enet_next_both(struct device_search *ds, cons
 	++ds->index;
 	LEVEL_DEBUG("Index %d", ds->index);
 
-	switch ( DirblobGet(ds->index, ds->sn, db) ) {
+	switch ( DirblobGet(ds->index, ds->sn, &(ds->gulp) ) ) {
 		case 0:
 			LEVEL_DEBUG("SN found: " SNformat "", SNvar(ds->sn));
 			return search_good;
@@ -185,10 +183,10 @@ static enum search_status OWServer_Enet_next_both(struct device_search *ds, cons
 
 enum ENET_dir { ENET_dir_ok, ENET_dir_repeat, ENET_dir_bad } ;
 
-static GOOD_OR_BAD OWServer_Enet_directory(struct device_search *ds, struct dirblob *db, struct connection_in * in) {
+static GOOD_OR_BAD OWServer_Enet_directory(struct device_search *ds, struct connection_in * in) {
 	int i ;
 	for ( i=0 ; i<10 ; ++i ) {
-		switch ( OWServer_Enet_directory_loop( ds, db, in ) ) {
+		switch ( OWServer_Enet_directory_loop( ds, in ) ) {
 			case ENET_dir_ok:
 				return gbGOOD ;
 			case ENET_dir_repeat:
@@ -203,7 +201,7 @@ static GOOD_OR_BAD OWServer_Enet_directory(struct device_search *ds, struct dirb
 	return gbBAD ;
 }
 
-static enum ENET_dir OWServer_Enet_directory_loop(struct device_search *ds, struct dirblob *db, struct connection_in * in)
+static enum ENET_dir OWServer_Enet_directory_loop(struct device_search *ds, struct connection_in * in)
 {
 	char resp[DEVICE_LENGTH+in->master.serial.tcp.CRLF_size];
 	char * search_first ;
@@ -217,7 +215,7 @@ static enum ENET_dir OWServer_Enet_directory_loop(struct device_search *ds, stru
 		search_next = "s\r" ;
 	}
 	
-	DirblobClear(db);
+	DirblobClear( &(ds->gulp) );
 
 	if (ds->search != _1W_CONDITIONAL_SEARCH_ROM) {
 		in->AnyDevices = anydevices_no;
@@ -285,7 +283,7 @@ static enum ENET_dir OWServer_Enet_directory_loop(struct device_search *ds, stru
 			return ENET_dir_repeat;
 		}
 
-		DirblobAdd(sn, db);
+		DirblobAdd(sn, &(ds->gulp) );
 
 		if (ds->search != _1W_CONDITIONAL_SEARCH_ROM) {
 			in->AnyDevices = anydevices_yes;

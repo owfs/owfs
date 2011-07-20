@@ -38,7 +38,7 @@ static void W1_close(struct connection_in *in);
 
 static SEQ_OR_ERROR w1_send_touch( const BYTE * data, size_t size, const struct parsedname *pn );
 static SEQ_OR_ERROR w1_send_selecttouch( const BYTE * data, size_t size, const struct parsedname *pn );
-static SEQ_OR_ERROR w1_send_search( BYTE search, const struct parsedname *pn );
+static SEQ_OR_ERROR w1_send_search( struct device_search *ds, const struct parsedname *pn );
 static SEQ_OR_ERROR w1_send_reset( const struct parsedname *pn );
 
 static void W1_setroutines(struct connection_in *in)
@@ -114,7 +114,7 @@ static RESET_TYPE W1_reset(const struct parsedname *pn)
 	return W1_Process_Response( NULL, w1_send_reset(pn), NULL, pn ) == nrs_complete ? BUS_RESET_OK : BUS_RESET_ERROR ;
 }
 
-static SEQ_OR_ERROR w1_send_search( BYTE search, const struct parsedname *pn )
+static SEQ_OR_ERROR w1_send_search( struct device_search *ds, const struct parsedname *pn )
 {
 	struct w1_netlink_msg w1m;
 	struct w1_netlink_cmd w1c;
@@ -124,7 +124,7 @@ static SEQ_OR_ERROR w1_send_search( BYTE search, const struct parsedname *pn )
 	w1m.id.mst.id = pn->selected_connection->master.w1.id ;
 
 	memset(&w1c, 0, W1_W1C_LENGTH);
-	w1c.cmd = (search==_1W_CONDITIONAL_SEARCH_ROM) ? W1_CMD_ALARM_SEARCH : W1_CMD_SEARCH ;
+	w1c.cmd = (ds->search==_1W_CONDITIONAL_SEARCH_ROM) ? W1_CMD_ALARM_SEARCH : W1_CMD_SEARCH ;
 	w1c.len = 0 ;
 
 	LEVEL_DEBUG("Sending w1 search (list devices) message");
@@ -137,7 +137,7 @@ static void search_callback( struct netlink_parse * nlp, void * v, const struct 
 {
 	int i ;
 	struct connection_in * in = pn->selected_connection ;
-	struct dirblob *db = v ;
+	struct device_search *ds = v ;
 	BYTE sn[SERIAL_NUMBER_SIZE] ;
 	BYTE * sn_pointer ;
 	
@@ -179,26 +179,23 @@ static void search_callback( struct netlink_parse * nlp, void * v, const struct 
 				LEVEL_DEBUG( "w1 bus master%d uses reversed slave order", in->master.w1.id ) ;
 				break ;
 		}
-		DirblobAdd(sn_pointer, db);
+		DirblobAdd(sn_pointer, &(ds->gulp) );
 	}
 }
 
 static enum search_status W1_next_both(struct device_search *ds, const struct parsedname *pn)
 {
-	struct dirblob *db = (ds->search == _1W_CONDITIONAL_SEARCH_ROM) ?
-		&(pn->selected_connection->alarm) : &(pn->selected_connection->main);
-
 	if (ds->LastDevice) {
 		return search_done;
 	}
 	if (++(ds->index) == 0) {
-		DirblobClear(db);
-		if ( W1_Process_Response( search_callback, w1_send_search(ds->search,pn), db, pn ) != nrs_complete) {
+		DirblobClear( &(ds->gulp) );
+		if ( W1_Process_Response( search_callback, w1_send_search(ds,pn), ds, pn ) != nrs_complete) {
 			return search_error;
 		}
 	}
 
-	switch ( DirblobGet(ds->index, ds->sn, db) ) {
+	switch ( DirblobGet(ds->index, ds->sn, &(ds->gulp) ) ) {
 		case 0:
 			LEVEL_DEBUG("SN found: " SNformat "", SNvar(ds->sn));
 			return search_good;

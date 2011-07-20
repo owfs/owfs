@@ -52,6 +52,9 @@ static void BUS_first_both(struct device_search *ds)
 	ds->LastDiscrepancy = -1;
 	ds->LastDevice = 0;
 	ds->index = -1;				// true place in dirblob
+
+	/* Initialize dir-at-once structure */
+	DirblobInit(&(ds->gulp));
 }
 
 //--------------------------------------------------------------------------
@@ -72,12 +75,20 @@ enum search_status BUS_next(struct device_search *ds, const struct parsedname *p
 			Cache_Add_Device(pn->selected_connection->index,ds->sn) ;
 			return search_good ;
 		case search_done:
+			BUS_next_cleanup(ds);
 			return search_done;
 		case search_error:
 		default:
+			BUS_next_cleanup(ds);
 			return search_error;
 	}
 }
+
+void BUS_next_cleanup( struct device_search *ds )
+{
+	DirblobClear(&(ds->gulp));
+}	
+
 
 /* try the directory search 3 times.
  * Since ds->LastDescrepancy is alertered only on success a repeat is legal

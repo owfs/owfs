@@ -45,6 +45,9 @@ static void Fake_setroutines(struct connection_in *in)
 	in->iroutines.reconnect = NO_RECONNECT_ROUTINE;
 	in->iroutines.close = Fake_close;
 	in->iroutines.flags = ADAP_FLAG_no2409path | ADAP_FLAG_presence_from_dirblob | ADAP_FLAG_no2404delay ;
+
+	DirblobInit( &(in->master.fake.main) );
+	DirblobInit( &(in->master.fake.alarm) );
 }
 
 static GOOD_OR_BAD Fake_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn)
@@ -82,8 +85,8 @@ static void GetDefaultDeviceName(BYTE * dn, const BYTE * sn, const struct connec
 			// family code complement
 			dn[4] = BYTE_INVERSE(sn[0]) ;
 			// "device" number
-			dn[5] = BYTE_MASK(DirblobElements(&(in->main)) >> 0) ;
-			dn[6] = BYTE_MASK(DirblobElements(&(in->main)) >> 8) ;
+			dn[5] = BYTE_MASK(DirblobElements(&(in->master.fake.main)) >> 0) ;
+			dn[6] = BYTE_MASK(DirblobElements(&(in->master.fake.main)) >> 8) ;
 			break ;
 		case bus_fake:
 		case bus_mock:
@@ -130,12 +133,12 @@ static void GetDeviceName(const ASCII ** strpointer, struct connection_in * in)
 			sn[6] = dn[6] ;
 		} else {
 			// Bad device name
-			LEVEL_DEFAULT("Device %d <%s> not recognized for %s %d -- ignored",DirblobElements(&(in->main))+1,*strpointer,in->adapter_name,in->master.fake.index);
+			LEVEL_DEFAULT("Device %d <%s> not recognized for %s %d -- ignored",DirblobElements(&(in->master.fake.main))+1,*strpointer,in->adapter_name,in->master.fake.index);
 			return ;
 		}
 	}
 	sn[SERIAL_NUMBER_SIZE-1] = CRC8compute(sn, SERIAL_NUMBER_SIZE-1, 0);
-	DirblobAdd(sn, &(in->main));	// Ignore bad return
+	DirblobAdd(sn, &(in->master.fake.main));	// Ignore bad return
 }
 
 static void GetAllDeviceNames( ASCII * remaining_device_list, struct connection_in * in )
@@ -150,7 +153,7 @@ static void GetAllDeviceNames( ASCII * remaining_device_list, struct connection_
 		}
 		GetDeviceName( &current_device_start, in ) ;
 	}
-	in->AnyDevices = (DirblobElements(&(in->main)) > 0) ? anydevices_yes : anydevices_no ;
+	in->AnyDevices = (DirblobElements(&(in->master.fake.main)) > 0) ? anydevices_yes : anydevices_no ;
 }
 
 static void SetConninData( int indx, const char * name, struct connection_in *in )
@@ -247,7 +250,8 @@ static GOOD_OR_BAD Fake_sendback_bits(const BYTE * data, BYTE * resp, const size
 
 static void Fake_close(struct connection_in *in)
 {
-	(void) in;
+	DirblobClear( &(in->master.fake.main) );
+	DirblobClear( &(in->master.fake.alarm) );
 }
 
 static enum search_status Fake_next_both(struct device_search *ds, const struct parsedname *pn)
@@ -256,7 +260,7 @@ static enum search_status Fake_next_both(struct device_search *ds, const struct 
 		ds->LastDevice = 1;
 		return search_done;
 	}
-	if (DirblobGet(++ds->index, ds->sn, &(pn->selected_connection->main))) {
+	if (DirblobGet(++ds->index, ds->sn, &(pn->selected_connection->master.fake.main))) {
 		ds->LastDevice = 1;
 		return search_done;
 	}

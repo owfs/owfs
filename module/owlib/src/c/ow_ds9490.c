@@ -78,7 +78,7 @@ static GOOD_OR_BAD DS9490_ProgramPulse(const struct parsedname *pn);
 static GOOD_OR_BAD DS9490_overdrive(const struct parsedname *pn);
 static void SetupDiscrepancy(const struct device_search *ds, BYTE * discrepancy);
 static int FindDiscrepancy(BYTE * last_sn, BYTE * discrepancy_sn);
-static enum search_status DS9490_directory(struct device_search *ds, struct dirblob *db, const struct parsedname *pn);
+static enum search_status DS9490_directory(struct device_search *ds, const struct parsedname *pn);
 static GOOD_OR_BAD DS9490_SetSpeed(const struct parsedname *pn);
 static void DS9490_SetFlexParameters(struct connection_in *in) ;
 
@@ -574,8 +574,6 @@ static RESET_TYPE DS9490_reset(const struct parsedname *pn)
 
 static enum search_status DS9490_next_both(struct device_search *ds, const struct parsedname *pn)
 {
-	struct dirblob *db = (ds->search == _1W_CONDITIONAL_SEARCH_ROM) ?
-		&(pn->selected_connection->alarm) : &(pn->selected_connection->main);
 	int dir_gulp_elements = (pn->pathlength==0) ? DS2490_DIR_GULP_ELEMENTS : 1 ;
 
 	// LOOK FOR NEXT ELEMENT
@@ -586,7 +584,7 @@ static enum search_status DS9490_next_both(struct device_search *ds, const struc
 		if (ds->LastDevice) {
 			return search_done;
 		}
-		switch ( DS9490_directory(ds, db, pn) ) {
+		switch ( DS9490_directory(ds, pn) ) {
 			case search_done:
 				return search_done;
 			case search_error:
@@ -596,7 +594,7 @@ static enum search_status DS9490_next_both(struct device_search *ds, const struc
 		}
 	}
 
-	switch ( DirblobGet(ds->index % dir_gulp_elements, ds->sn, db) ) {
+	switch ( DirblobGet(ds->index % dir_gulp_elements, ds->sn, &(ds->gulp) ) ) {
 		case 0:
 			LEVEL_DEBUG("SN found: " SNformat, SNvar(ds->sn));
 			return search_good;
@@ -609,7 +607,7 @@ static enum search_status DS9490_next_both(struct device_search *ds, const struc
 
 // Read up to 7 (DS2490_DIR_GULP_ELEMENTS) at a time, and  place into
 // a dirblob. Called from DS9490_next_both every 7 devices to fill.
-static enum search_status DS9490_directory(struct device_search *ds, struct dirblob *db, const struct parsedname *pn)
+static enum search_status DS9490_directory(struct device_search *ds, const struct parsedname *pn)
 {
 	BYTE status_buffer[ DS9490_getstatus_BUFFER_LENGTH ];
 	BYTE EP2_data[SERIAL_NUMBER_SIZE] ; //USB endpoint 3 buffer
@@ -624,7 +622,7 @@ static enum search_status DS9490_directory(struct device_search *ds, struct dirb
 	int dir_gulp_elements = (pn->pathlength==0) ? DS2490_DIR_GULP_ELEMENTS : 1 ;
 	int readlen = 0 ;
 	
-	DirblobClear(db);
+	DirblobClear(&(ds->gulp));
 
 	if ( BAD( BUS_select(pn) ) ) {
 		LEVEL_DEBUG("Selection problem before a directory listing") ;
@@ -692,7 +690,7 @@ static enum search_status DS9490_directory(struct device_search *ds, struct dirb
 	}
 	// all ok, so add the devices
 	for (device_index = 0; device_index < devices_found; ++device_index) {
-		DirblobAdd(EP3.sn[device_index], db);
+		DirblobAdd(EP3.sn[device_index], &(ds->gulp));
 	}
 	ds->LastDiscrepancy = FindDiscrepancy(EP3.sn[devices_found-1], EP3.sn[devices_found]);
 	ds->LastDevice = (bytes_back == devices_found * SERIAL_NUMBER_SIZE);	// no more to read

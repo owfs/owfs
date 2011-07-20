@@ -82,7 +82,7 @@ static void LINK_set_baud(struct connection_in * in) ;
 static GOOD_OR_BAD LINK_read(BYTE * buf, size_t size, struct connection_in * in);
 static GOOD_OR_BAD LINK_read_true_length(BYTE * buf, size_t size, struct connection_in *in) ;
 static GOOD_OR_BAD LINK_write(const BYTE * buf, size_t size, struct connection_in *in);
-static GOOD_OR_BAD LINK_directory(struct device_search *ds, struct dirblob *db, struct connection_in * in);
+static GOOD_OR_BAD LINK_directory(struct device_search *ds, struct connection_in * in);
 static GOOD_OR_BAD LINK_search_type(struct device_search *ds, struct connection_in * in) ;
 
 static GOOD_OR_BAD LINK_readback_data( BYTE * resp, const size_t size, struct connection_in * in);
@@ -449,8 +449,6 @@ static RESET_TYPE LINK_reset_in(struct connection_in * in)
 static enum search_status LINK_next_both(struct device_search *ds, const struct parsedname *pn)
 {
 	struct connection_in * in = pn->selected_connection ;
-	struct dirblob *db = (ds->search == _1W_CONDITIONAL_SEARCH_ROM) ?
-		&(in->alarm) : &(in->main);
 
 	//Special case for DS2409 hub, use low-level code
 	if ( pn->pathlength>0 ) {
@@ -462,7 +460,7 @@ static enum search_status LINK_next_both(struct device_search *ds, const struct 
 	}
 
 	if (ds->index == -1) {
-		if ( BAD(LINK_directory(ds, db, in)) ) {
+		if ( BAD(LINK_directory(ds, in)) ) {
 			return search_error;
 		}
 	}
@@ -471,7 +469,7 @@ static enum search_status LINK_next_both(struct device_search *ds, const struct 
 	++ds->index;
 	LEVEL_DEBUG("Index %d", ds->index);
 
-	switch ( DirblobGet(ds->index, ds->sn, db) ) {
+	switch ( DirblobGet(ds->index, ds->sn, &(ds->gulp) ) ) {
 		case 0:
 			LEVEL_DEBUG("SN found: " SNformat "", SNvar(ds->sn));
 			return search_good;
@@ -580,11 +578,11 @@ static GOOD_OR_BAD LINK_search_type(struct device_search *ds, struct connection_
 #define COMMA_LENGTH 1
 #define PLUS_LENGTH 1
 
-static GOOD_OR_BAD LINK_directory(struct device_search *ds, struct dirblob *db, struct connection_in * in)
+static GOOD_OR_BAD LINK_directory(struct device_search *ds, struct connection_in * in)
 {
 	char resp[DEVICE_LENGTH+COMMA_LENGTH+PLUS_LENGTH+in->master.serial.tcp.CRLF_size];
 
-	DirblobClear(db);
+	DirblobClear( &(ds->gulp) );
 
 	// Send the configuration command and check response
 	RETURN_BAD_IF_BAD( LINK_search_type( ds, in )) ;
@@ -654,7 +652,7 @@ static GOOD_OR_BAD LINK_directory(struct device_search *ds, struct dirblob *db, 
 			return gbBAD;
 		}
 
-		DirblobAdd(sn, db);
+		DirblobAdd(sn,  &(ds->gulp) );
 
 		switch (resp[0]) {
 		case '+':

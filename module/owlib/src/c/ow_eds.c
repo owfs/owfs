@@ -63,6 +63,8 @@ READ_FUNCTION(FS_r_24) ;
 WRITE_FUNCTION(FS_w_24) ;
 READ_FUNCTION(FS_r_32) ;
 WRITE_FUNCTION(FS_w_32) ;
+READ_FUNCTION(FS_r_float8) ;
+WRITE_FUNCTION(FS_w_float8) ;
 READ_FUNCTION(FS_r_float24) ;
 WRITE_FUNCTION(FS_w_float24) ;
 
@@ -220,8 +222,8 @@ struct filetype EDS[] = {
 	{"EDS0064/set_alarm/temp_low", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bit, FS_w_bit, VISIBLE_EDS0064, {v: &eds0064_cond_temp_lo,}, },
 	{"EDS0064/set_alarm/alarm_function", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, INVISIBLE, {u: _EDS0064_Conditional_search,}, },
 	{"EDS0064/threshold", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0064, NO_FILETYPE_DATA,},
-	{"EDS0064/threshold/temp_hi", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_i8, FS_w_i8, VISIBLE_EDS0064, {u: _EDS0064_Temp_hi,}, },
-	{"EDS0064/threshold/temp_low", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_i8, FS_w_i8, VISIBLE_EDS0064, {u: _EDS0064_Temp_lo,}, },
+	{"EDS0064/threshold/temp_hi", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0064, {u: _EDS0064_Temp_hi,}, },
+	{"EDS0064/threshold/temp_low", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0064, {u: _EDS0064_Temp_lo,}, },
 	{"EDS0064/alarm", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0064, NO_FILETYPE_DATA,},
 	{"EDS0064/alarm/clear", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_clear, VISIBLE_EDS0064, NO_FILETYPE_DATA, },
 	{"EDS0064/alarm/state", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, NO_WRITE_FUNCTION, INVISIBLE, {u: _EDS0064_Alarm_state,}, },
@@ -250,8 +252,8 @@ struct filetype EDS[] = {
 	{"EDS0065/set_alarm/dew_point_low", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bit, FS_w_bit, VISIBLE_EDS0065, {v: &eds0064_cond_dp_lo,}, },
 	{"EDS0065/set_alarm/alarm_function", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, INVISIBLE, {u: _EDS0064_Conditional_search,}, },
 	{"EDS0065/threshold", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0065, NO_FILETYPE_DATA,},
-	{"EDS0065/threshold/temp_hi", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_i8, FS_w_i8, VISIBLE_EDS0065, {u: _EDS0064_Temp_hi,}, },
-	{"EDS0065/threshold/temp_low", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_i8, FS_w_i8, VISIBLE_EDS0065, {u: _EDS0064_Temp_lo,}, },
+	{"EDS0065/threshold/temp_hi", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0065, {u: _EDS0064_Temp_hi,}, },
+	{"EDS0065/threshold/temp_low", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0065, {u: _EDS0064_Temp_lo,}, },
 	{"EDS0065/threshold/humidity_hi", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_i8, FS_w_i8, VISIBLE_EDS0065, {u: _EDS0064_Hum_hi,}, },
 	{"EDS0065/threshold/humidity_low", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_i8, FS_w_i8, VISIBLE_EDS0065, {u: _EDS0064_Hum_lo,}, },
 	{"EDS0065/threshold/dew_point_hi", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_i8, FS_w_i8, VISIBLE_EDS0065, {u: _EDS0064_Dew_hi,}, },
@@ -290,8 +292,8 @@ struct filetype EDS[] = {
 	{"EDS0066/set_alarm/inHg_low", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bit, FS_w_bit, VISIBLE_EDS0066, {v: &eds0064_cond_inHg_lo,}, },
 	{"EDS0066/set_alarm/alarm_function", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, INVISIBLE, {u: _EDS0064_Conditional_search,}, },
 	{"EDS0066/threshold", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0066, NO_FILETYPE_DATA,},
-	{"EDS0066/threshold/temp_hi", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_i8, FS_w_i8, VISIBLE_EDS0066, {u: _EDS0064_Temp_hi,}, },
-	{"EDS0066/threshold/temp_low", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_i8, FS_w_i8, VISIBLE_EDS0066, {u: _EDS0064_Temp_lo,}, },
+	{"EDS0066/threshold/temp_hi", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0066, {u: _EDS0064_Temp_hi,}, },
+	{"EDS0066/threshold/temp_low", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0066, {u: _EDS0064_Temp_lo,}, },
 	{"EDS0066/threshold/pressure_hi", PROPERTY_LENGTH_PRESSURE, NON_AGGREGATE, ft_pressure, fc_stable, FS_r_float24, FS_w_float24, VISIBLE_EDS0066, {u: _EDS0064_mbar_hi,}, },
 	{"EDS0066/threshold/pressure_low", PROPERTY_LENGTH_PRESSURE, NON_AGGREGATE, ft_pressure, fc_stable, FS_r_float24, FS_w_float24, VISIBLE_EDS0066, {u: _EDS0064_mbar_lo,}, },
 	{"EDS0066/threshold/inHg_hi", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_float24, FS_w_float24, VISIBLE_EDS0066, {u: _EDS0064_inHg_hi,}, },
@@ -319,8 +321,8 @@ struct filetype EDS[] = {
 	{"EDS0067/set_alarm/light_low", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bit, FS_w_bit, VISIBLE_EDS0067, {v: &eds0064_cond_lux_lo,}, },
 	{"EDS0067/set_alarm/alarm_function", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, INVISIBLE, {u: _EDS0064_Conditional_search,}, },
 	{"EDS0067/threshold", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0067, NO_FILETYPE_DATA,},
-	{"EDS0067/threshold/temp_hi", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_i8, FS_w_i8, VISIBLE_EDS0067, {u: _EDS0064_Temp_hi,}, },
-	{"EDS0067/threshold/temp_low", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_i8, FS_w_i8, VISIBLE_EDS0067, {u: _EDS0064_Temp_lo,}, },
+	{"EDS0067/threshold/temp_hi", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0067, {u: _EDS0064_Temp_hi,}, },
+	{"EDS0067/threshold/temp_low", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0067, {u: _EDS0064_Temp_lo,}, },
 	{"EDS0067/threshold/light_hi", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_24, FS_w_24, VISIBLE_EDS0067, {u: _EDS0064_Lux_hi,}, },
 	{"EDS0067/threshold/light_low", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_24,FS_w_24, VISIBLE_EDS0067, {u: _EDS0064_Lux_lo,}, },
 	{"EDS0067/alarm", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0067, NO_FILETYPE_DATA,},
@@ -362,8 +364,8 @@ struct filetype EDS[] = {
 	{"EDS0068/set_alarm/light_low", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bit, FS_w_bit, VISIBLE_EDS0068, {v: &eds0064_cond_lux_lo,}, },
 	{"EDS0068/set_alarm/alarm_function", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, INVISIBLE, {u: _EDS0064_Conditional_search,}, },
 	{"EDS0068/threshold", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0068, NO_FILETYPE_DATA,},
-	{"EDS0068/threshold/temp_hi", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_i8, FS_w_i8, VISIBLE_EDS0068, {u: _EDS0064_Temp_hi,}, },
-	{"EDS0068/threshold/temp_low", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_i8, FS_w_i8, VISIBLE_EDS0068, {u: _EDS0064_Temp_lo,}, },
+	{"EDS0068/threshold/temp_hi", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0068, {u: _EDS0064_Temp_hi,}, },
+	{"EDS0068/threshold/temp_low", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0068, {u: _EDS0064_Temp_lo,}, },
 	{"EDS0068/threshold/humidity_hi", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_i8, FS_w_i8, VISIBLE_EDS0068, {u: _EDS0064_Hum_hi,}, },
 	{"EDS0068/threshold/humidity_low", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_i8, FS_w_i8, VISIBLE_EDS0068, {u: _EDS0064_Hum_lo,}, },
 	{"EDS0068/threshold/dew_point_hi", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_i8, FS_w_i8, VISIBLE_EDS0068, {u: _EDS0064_Dew_hi,}, },
@@ -610,6 +612,19 @@ static ZERO_OR_ERROR FS_r_type(struct one_wire_query *owq)
 	UCLIBCUNLOCK ;
 
 	return OWQ_format_output_offset_and_size_z(typ,owq);
+}
+
+/* 8 bit float */
+static ZERO_OR_ERROR FS_r_float8(struct one_wire_query *owq)
+{
+	struct parsedname * pn = PN(owq) ;
+	int bytes = 8/8 ;
+	BYTE data[bytes] ;
+	
+	RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) );
+	printf("<<<<<<<<<<<<<<<<< data byte = %.2X\n",data[0]) ;
+	OWQ_F(owq) = (_FLOAT) ((int8_t) (data[0] )) ;
+	return 0 ;
 }
 
 /* 16 bit float in DS18B20 format */
@@ -872,6 +887,16 @@ static ZERO_OR_ERROR FS_w_float24(struct one_wire_query *owq)
 	uint32_t big = 2048. * OWQ_F(owq) ;
 	OWQ_U(owq) = big + 0x1000000 ; // overflow the 24bit range to handle negatives in 2's complement
 	return FS_w_24(owq) ;
+}
+
+/* write an 8 bit value from a register stored in filetype.data */
+/* write as a signed float*/
+static ZERO_OR_ERROR FS_w_float8(struct one_wire_query *owq)
+{
+	int8_t val = OWQ_F(owq) ;
+	printf(">>>>>>>>>>>>>>>>> data byte = %.2X float=%g\n",val,OWQ_F(owq));
+	OWQ_I(owq) = val ;
+	return FS_w_8(owq) ;
 }
 
 static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
