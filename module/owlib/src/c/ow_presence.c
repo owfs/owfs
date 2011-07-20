@@ -257,14 +257,12 @@ static GOOD_OR_BAD PresenceFromDirblob( struct parsedname * pn )
 	if ( GOOD( Cache_Get_Dir( &db , pn ) ) ) {
 		// Use the dirblob from the cache
 		GOOD_OR_BAD ret = ( DirblobSearch(pn->sn, &db ) >= 0 ) ? gbGOOD : gbBAD ;
-		printf("--------- Found in cache\n");
 		DirblobClear( &db ) ;
 		return ret ;
 	} else {
 		// look through actual directory
 		struct device_search ds ;
 		enum search_status nextboth = BUS_first( &ds, pn ) ;
-		printf("--------- Did first\n");
 		while ( nextboth == search_good ) {
 			if ( memcmp( ds.sn, pn->sn, SERIAL_NUMBER_SIZE ) == 0 ) {
 				// found it. Early exit.
@@ -272,7 +270,6 @@ static GOOD_OR_BAD PresenceFromDirblob( struct parsedname * pn )
 				return gbGOOD ;
 			}
 			// Not found. Clean up done by BUS_next in this case
-			printf("--------- Do next\n");
 			nextboth = BUS_next( &ds, pn ) ;
 		}
 		return gbBAD ;
