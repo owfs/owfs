@@ -212,13 +212,17 @@ void FS_dir_entry_aliased(void (*dirfunc) (void *, const struct parsedname *), v
 
 		pn_copy->path = path_copy ;
 
-		DIRLOCK;
-		dirfunc(v, pn_copy);
-		DIRUNLOCK;
+		if ( dirfunc != NULL ) {
+			DIRLOCK;
+			dirfunc(v, pn_copy);
+			DIRUNLOCK;
+		}
 	} else {
 		// Don't want alias substituted
-		DIRLOCK;
-		dirfunc(v, pn);
-		DIRUNLOCK;
+		if ( dirfunc != NULL ) {
+			DIRLOCK;
+			dirfunc(v, pn);
+			DIRUNLOCK;
+		}
 	}
 }
