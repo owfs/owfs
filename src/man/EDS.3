@@ -156,11 +156,11 @@ microprocessor-based sensors
 .B threshold/temp_[hi|low]
 |
 .B threshold/RTD_[hi_low]
-|
-.B LED/[state|control]
-|
-.B relay/[state|control]
 ]]
+.SS LED ( all )
+.B 7E.XXXXXXXXXXXX/EDS00XX/LED/[state|control]
+.SS relay ( all )
+.B 7E.XXXXXXXXXXXX/EDS00XX/relay/[state|control]
 .SH FAMILY CODE
 .TP
 .I 7E
@@ -293,8 +293,8 @@ the alarm flags.
 .br
 Flag to set corresponding out-of-range alarm. "1" turns on flag, and "0" turns off.
 .SH RELAY
-Found on the EDS007X. Can be controlled by software or the alarm condition.
-.SS EDS007X/relay/control
+Optionally found on the EDS006X and EDS007X. Can be controlled by software or the alarm condition.
+.SS EDS00XX/relay/control
 .I read-write, unsigned
 .br
 Set the relay control scheme:
@@ -304,23 +304,23 @@ alarm control with hysteresis
 .TP
 1
 alarm control but need
-.I EDS007X/alarm/clear
+.I EDS00XX/alarm/clear
 to unset
 .TP
 2
 Control with
-.I EDS007X/relay/state
+.I EDS00XX/relay/state
 .TP
 3
 Always off
-.SS EDS007X/relay/state
+.SS EDS00XX/relay/state
 .I read-write, yes-no
 .br
 Turn the relay on or off if the
-.I EDS007X/relay/control is set to "2"
+.I EDS00XX/relay/control is set to "2"
 .SH LED light
-Found on the EDS007X. Can be controlled by software or the alarm condition.
-.SS EDS007X/LED/control
+Found on the EDS006X and EDS007X. Can be controlled by software or the alarm condition.
+.SS EDS00XX/LED/control
 .I read-write, unsigned
 .br
 Set the LED control scheme:
@@ -330,20 +330,20 @@ alarm control with hysteresis
 .TP
 1
 alarm control but need
-.I EDS007X/alarm/clear
+.I EDS00XX/alarm/clear
 to unset
 .TP
 2
 Control with
-.I EDS007X/LED/state
+.I EDS00XX/LED/state
 .TP
 3
 Always off
-.SS EDS007X/LED/state
+.SS EDS00XX/LED/state
 .I read-write, yes-no
 .br
 Turn the LED on or off if the
-.I EDS007X/LED/control is set to "2"
+.I EDS00XX/LED/control is set to "2"
 .SH COUNTER
 .SS EDS00XX/counter/seconds
 .I read-only, unsigned integer
