@@ -171,7 +171,7 @@ static ZERO_OR_ERROR FS_aliaslist( struct one_wire_query * owq )
 	MemblobInit( &mb, PATH_MAX ) ;
 	Aliaslist( &mb ) ;
 	if ( MemblobPure( &mb ) ) {
-		zoe = OWQ_format_output_offset_and_size( MemblobData( &mb ), MemblobLength( &mb ), owq ) ;
+		zoe = OWQ_format_output_offset_and_size( (char *) MemblobData( &mb ), MemblobLength( &mb ), owq ) ;
 	} else {
 		zoe = -EINVAL ;
 	}

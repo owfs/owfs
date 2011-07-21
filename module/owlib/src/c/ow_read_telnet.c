@@ -80,7 +80,7 @@ GOOD_OR_BAD telnet_read(BYTE * buf, const size_t size, struct connection_in *in)
 	while ( still_needed > 0 ) {
 
 		// see if the state requires a longer read than currently scheduled
-		int minimum_chars  = still_needed ;
+		size_t minimum_chars  = still_needed ;
 		switch( telnet_read_state ) {
 			case telnet_sb:
 				minimum_chars += 4 ;

@@ -59,7 +59,7 @@ void set_signal_handlers(void (*handler)
 	}
 }
 
-void set_exit_signal_handlers(void (*exit_handler)
+void set_exit_signal_handlers(void (*ex_handler)
 	(int signo, siginfo_t * info, void *context))
 {
 	struct sigaction sa;
@@ -71,7 +71,7 @@ void set_exit_signal_handlers(void (*exit_handler)
 
 	while(sigs[i] > 0) {
 		sa.sa_flags = SA_SIGINFO;
-		sa.sa_sigaction = exit_handler;
+		sa.sa_sigaction = ex_handler;
 		if (sigaction(sigs[i], &sa, NULL) == -1) {
 			LEVEL_DEFAULT("Cannot handle signal %d", sigs[i]);
 			exit(1);

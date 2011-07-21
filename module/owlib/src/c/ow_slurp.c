@@ -21,7 +21,7 @@ $Id$
 static void Slurp( FILE_DESCRIPTOR_OR_ERROR file_descriptor, unsigned long usec ) ;
 
 void COM_slurp( struct connection_in * connection ) {
-	unsigned long usec ;	
+	unsigned long usec = 0 ; // just to suppress compiler warning
 
 	if ( connection == NO_CONNECTION ) {
 		return ;
