@@ -37,6 +37,7 @@ noinst_HEADERS =           \
         ow_arg.h           \
         ow_avahi.h         \
         ow_bae.h           \
+        ow_bitfield.h      \
         ow_bitwork.h       \
         ow_busnumber.h     \
         ow_bus_routines.h  \

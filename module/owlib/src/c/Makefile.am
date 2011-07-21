@@ -4,6 +4,7 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_dnssd.c         \
 	           ow_arg.c           \
                ow_baud.c          \
+               ow_bitfield.c      \
 			   ow_byte.c          \
                compat.c           \
                getaddrinfo.c      \

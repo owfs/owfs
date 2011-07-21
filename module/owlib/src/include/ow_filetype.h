@@ -171,6 +171,8 @@ struct filetype {
 	} data;						// extra data pointer (used for separating similar but differently named functions)
 };
 
+#include "ow_bitfield.h" // read/write bit fields
+
 /* --------- end Filetype -------------------- */
 
 #endif							/* OW_FILETYPE_H */
