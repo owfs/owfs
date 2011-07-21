@@ -78,6 +78,10 @@ WRITE_FUNCTION(FS_71_w_relay_control);
 
 WRITE_FUNCTION(FS_clear);
 
+/* Extensive testing of the EDS0068 threchold writing shows a delay
+ * is needed before a written value is readable */
+#define _EDS_WRITE_DELAY_msec 700
+
 #define _EDS_WRITE_SCRATCHPAD 0x0F
 #define _EDS_READ_SCRATCHPAD 0xAA
 #define _EDS_COPY_SCRATCHPAD 0x55
@@ -222,7 +226,7 @@ struct filetype EDS[] = {
 	{"EDS0064/set_alarm/temp_low", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bit, FS_w_bit, VISIBLE_EDS0064, {v: &eds0064_cond_temp_lo,}, },
 	{"EDS0064/set_alarm/alarm_function", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, INVISIBLE, {u: _EDS0064_Conditional_search,}, },
 	{"EDS0064/threshold", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0064, NO_FILETYPE_DATA,},
-	{"EDS0064/threshold/temp_hi", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0064, {u: _EDS0064_Temp_hi,}, },
+	{"EDS0064/threshold/temp_hi" , PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0064, {u: _EDS0064_Temp_hi,}, },
 	{"EDS0064/threshold/temp_low", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0064, {u: _EDS0064_Temp_lo,}, },
 	{"EDS0064/alarm", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0064, NO_FILETYPE_DATA,},
 	{"EDS0064/alarm/clear", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_clear, VISIBLE_EDS0064, NO_FILETYPE_DATA, },
@@ -252,16 +256,16 @@ struct filetype EDS[] = {
 	{"EDS0065/set_alarm/dew_point_low", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bit, FS_w_bit, VISIBLE_EDS0065, {v: &eds0064_cond_dp_lo,}, },
 	{"EDS0065/set_alarm/alarm_function", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, INVISIBLE, {u: _EDS0064_Conditional_search,}, },
 	{"EDS0065/threshold", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0065, NO_FILETYPE_DATA,},
-	{"EDS0065/threshold/temp_hi", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0065, {u: _EDS0064_Temp_hi,}, },
+	{"EDS0065/threshold/temp_hi" , PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0065, {u: _EDS0064_Temp_hi,}, },
 	{"EDS0065/threshold/temp_low", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0065, {u: _EDS0064_Temp_lo,}, },
-	{"EDS0065/threshold/humidity_hi", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_i8, FS_w_i8, VISIBLE_EDS0065, {u: _EDS0064_Hum_hi,}, },
+	{"EDS0065/threshold/humidity_hi" , PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_i8, FS_w_i8, VISIBLE_EDS0065, {u: _EDS0064_Hum_hi,}, },
 	{"EDS0065/threshold/humidity_low", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_i8, FS_w_i8, VISIBLE_EDS0065, {u: _EDS0064_Hum_lo,}, },
-	{"EDS0065/threshold/dew_point_hi", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_i8, FS_w_i8, VISIBLE_EDS0065, {u: _EDS0064_Dew_hi,}, },
-	{"EDS0065/threshold/dew_point_low", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_i8, FS_w_i8, VISIBLE_EDS0065, {u: _EDS0064_Dew_lo,}, },
-	{"EDS0065/threshold/heat_index_hi", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_i8, FS_w_i8, VISIBLE_EDS0065, {u: _EDS0064_HI_hi,}, },
-	{"EDS0065/threshold/heat_index_low", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_i8, FS_w_i8, VISIBLE_EDS0065, {u: _EDS0064_HI_lo,}, },
-	{"EDS0065/threshold/humidex_hi", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_i8, FS_w_i8, VISIBLE_EDS0065, {u: _EDS0064_Hdex_hi,}, },
-	{"EDS0065/threshold/humidex_low", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_i8, FS_w_i8, VISIBLE_EDS0065, {u: _EDS0064_Hdex_lo,}, },
+	{"EDS0065/threshold/dew_point_hi" , PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0065, {u: _EDS0064_Dew_hi,}, },
+	{"EDS0065/threshold/dew_point_low", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0065, {u: _EDS0064_Dew_lo,}, },
+	{"EDS0065/threshold/heat_index_hi" , PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0065, {u: _EDS0064_HI_hi,}, },
+	{"EDS0065/threshold/heat_index_low", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0065, {u: _EDS0064_HI_lo,}, },
+	{"EDS0065/threshold/humidex_hi" , PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0065, {u: _EDS0064_Hdex_hi,}, },
+	{"EDS0065/threshold/humidex_low", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0065, {u: _EDS0064_Hdex_lo,}, },
 	{"EDS0065/alarm", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0065, NO_FILETYPE_DATA,},
 	{"EDS0065/alarm/clear", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_clear, VISIBLE_EDS0065, NO_FILETYPE_DATA, },
 	{"EDS0065/alarm/state", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, NO_WRITE_FUNCTION, INVISIBLE, {u: _EDS0064_Alarm_state,}, },
@@ -292,11 +296,11 @@ struct filetype EDS[] = {
 	{"EDS0066/set_alarm/inHg_low", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bit, FS_w_bit, VISIBLE_EDS0066, {v: &eds0064_cond_inHg_lo,}, },
 	{"EDS0066/set_alarm/alarm_function", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, INVISIBLE, {u: _EDS0064_Conditional_search,}, },
 	{"EDS0066/threshold", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0066, NO_FILETYPE_DATA,},
-	{"EDS0066/threshold/temp_hi", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0066, {u: _EDS0064_Temp_hi,}, },
+	{"EDS0066/threshold/temp_hi" , PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0066, {u: _EDS0064_Temp_hi,}, },
 	{"EDS0066/threshold/temp_low", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0066, {u: _EDS0064_Temp_lo,}, },
-	{"EDS0066/threshold/pressure_hi", PROPERTY_LENGTH_PRESSURE, NON_AGGREGATE, ft_pressure, fc_stable, FS_r_float24, FS_w_float24, VISIBLE_EDS0066, {u: _EDS0064_mbar_hi,}, },
+	{"EDS0066/threshold/pressure_hi" , PROPERTY_LENGTH_PRESSURE, NON_AGGREGATE, ft_pressure, fc_stable, FS_r_float24, FS_w_float24, VISIBLE_EDS0066, {u: _EDS0064_mbar_hi,}, },
 	{"EDS0066/threshold/pressure_low", PROPERTY_LENGTH_PRESSURE, NON_AGGREGATE, ft_pressure, fc_stable, FS_r_float24, FS_w_float24, VISIBLE_EDS0066, {u: _EDS0064_mbar_lo,}, },
-	{"EDS0066/threshold/inHg_hi", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_float24, FS_w_float24, VISIBLE_EDS0066, {u: _EDS0064_inHg_hi,}, },
+	{"EDS0066/threshold/inHg_hi" , PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_float24, FS_w_float24, VISIBLE_EDS0066, {u: _EDS0064_inHg_hi,}, },
 	{"EDS0066/threshold/inHg_low", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_float24, FS_w_float24, VISIBLE_EDS0066, {u: _EDS0064_inHg_lo,}, },
 	{"EDS0066/alarm", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0066, NO_FILETYPE_DATA,},
 	{"EDS0066/alarm/clear", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_clear, VISIBLE_EDS0066, NO_FILETYPE_DATA, },
@@ -321,10 +325,10 @@ struct filetype EDS[] = {
 	{"EDS0067/set_alarm/light_low", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bit, FS_w_bit, VISIBLE_EDS0067, {v: &eds0064_cond_lux_lo,}, },
 	{"EDS0067/set_alarm/alarm_function", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, INVISIBLE, {u: _EDS0064_Conditional_search,}, },
 	{"EDS0067/threshold", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0067, NO_FILETYPE_DATA,},
-	{"EDS0067/threshold/temp_hi", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0067, {u: _EDS0064_Temp_hi,}, },
+	{"EDS0067/threshold/temp_hi" , PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0067, {u: _EDS0064_Temp_hi,}, },
 	{"EDS0067/threshold/temp_low", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0067, {u: _EDS0064_Temp_lo,}, },
-	{"EDS0067/threshold/light_hi", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_24, FS_w_24, VISIBLE_EDS0067, {u: _EDS0064_Lux_hi,}, },
-	{"EDS0067/threshold/light_low", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_24,FS_w_24, VISIBLE_EDS0067, {u: _EDS0064_Lux_lo,}, },
+	{"EDS0067/threshold/light_hi ", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_24, FS_w_24, VISIBLE_EDS0067, {u: _EDS0064_Lux_hi,}, },
+	{"EDS0067/threshold/light_low", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_24, FS_w_24, VISIBLE_EDS0067, {u: _EDS0064_Lux_lo,}, },
 	{"EDS0067/alarm", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0067, NO_FILETYPE_DATA,},
 	{"EDS0067/alarm/clear", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_clear, VISIBLE_EDS0067, NO_FILETYPE_DATA, },
 	{"EDS0067/alarm/state", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, NO_WRITE_FUNCTION, INVISIBLE, {u: _EDS0064_Alarm_state,}, },
@@ -364,22 +368,22 @@ struct filetype EDS[] = {
 	{"EDS0068/set_alarm/light_low", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bit, FS_w_bit, VISIBLE_EDS0068, {v: &eds0064_cond_lux_lo,}, },
 	{"EDS0068/set_alarm/alarm_function", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, INVISIBLE, {u: _EDS0064_Conditional_search,}, },
 	{"EDS0068/threshold", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0068, NO_FILETYPE_DATA,},
-	{"EDS0068/threshold/temp_hi", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0068, {u: _EDS0064_Temp_hi,}, },
+	{"EDS0068/threshold/temp_hi" , PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0068, {u: _EDS0064_Temp_hi,}, },
 	{"EDS0068/threshold/temp_low", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0068, {u: _EDS0064_Temp_lo,}, },
-	{"EDS0068/threshold/humidity_hi", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_i8, FS_w_i8, VISIBLE_EDS0068, {u: _EDS0064_Hum_hi,}, },
-	{"EDS0068/threshold/humidity_low", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_i8, FS_w_i8, VISIBLE_EDS0068, {u: _EDS0064_Hum_lo,}, },
-	{"EDS0068/threshold/dew_point_hi", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_i8, FS_w_i8, VISIBLE_EDS0068, {u: _EDS0064_Dew_hi,}, },
-	{"EDS0068/threshold/dew_point_low", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_i8, FS_w_i8, VISIBLE_EDS0068, {u: _EDS0064_Dew_lo,}, },
-	{"EDS0068/threshold/heat_index_hi", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_i8, FS_w_i8, VISIBLE_EDS0068, {u: _EDS0064_HI_hi,}, },
-	{"EDS0068/threshold/heat_index_low", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_i8, FS_w_i8, VISIBLE_EDS0068, {u: _EDS0064_HI_lo,}, },
-	{"EDS0068/threshold/humidex_hi", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_i8, FS_w_i8, VISIBLE_EDS0068, {u: _EDS0064_Hdex_hi,}, },
-	{"EDS0068/threshold/humidex_low", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_i8, FS_w_i8, VISIBLE_EDS0068, {u: _EDS0064_Hdex_lo,}, },
-	{"EDS0068/threshold/pressure_hi", PROPERTY_LENGTH_PRESSURE, NON_AGGREGATE, ft_pressure, fc_stable, FS_r_float24, FS_w_float24, VISIBLE_EDS0068, {u: _EDS0064_mbar_hi,}, },
+	{"EDS0068/threshold/humidity_hi" , PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0068, {u: _EDS0064_Hum_hi,}, },
+	{"EDS0068/threshold/humidity_low", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0068, {u: _EDS0064_Hum_lo,}, },
+	{"EDS0068/threshold/dew_point_hi" , PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0068, {u: _EDS0064_Dew_hi,}, },
+	{"EDS0068/threshold/dew_point_low", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0068, {u: _EDS0064_Dew_lo,}, },
+	{"EDS0068/threshold/heat_index_hi" , PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0068, {u: _EDS0064_HI_hi,}, },
+	{"EDS0068/threshold/heat_index_low", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0068, {u: _EDS0064_HI_lo,}, },
+	{"EDS0068/threshold/humidex_hi" , PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0068, {u: _EDS0064_Hdex_hi,}, },
+	{"EDS0068/threshold/humidex_low", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0068, {u: _EDS0064_Hdex_lo,}, },
+	{"EDS0068/threshold/pressure_hi" , PROPERTY_LENGTH_PRESSURE, NON_AGGREGATE, ft_pressure, fc_stable, FS_r_float24, FS_w_float24, VISIBLE_EDS0068, {u: _EDS0064_mbar_hi,}, },
 	{"EDS0068/threshold/pressure_low", PROPERTY_LENGTH_PRESSURE, NON_AGGREGATE, ft_pressure, fc_stable, FS_r_float24, FS_w_float24, VISIBLE_EDS0068, {u: _EDS0064_mbar_lo,}, },
-	{"EDS0068/threshold/inHg_hi", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_float24, FS_w_float24, VISIBLE_EDS0068, {u: _EDS0064_inHg_hi,}, },
+	{"EDS0068/threshold/inHg_hi" , PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_float24, FS_w_float24, VISIBLE_EDS0068, {u: _EDS0064_inHg_hi,}, },
 	{"EDS0068/threshold/inHg_low", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_float24, FS_w_float24, VISIBLE_EDS0068, {u: _EDS0064_inHg_lo,}, },
-	{"EDS0068/threshold/light_hi", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_24, FS_w_24, VISIBLE_EDS0068, {u: _EDS0064_Lux_hi,}, },
-	{"EDS0068/threshold/light_low", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_24,FS_w_24, VISIBLE_EDS0068, {u: _EDS0064_Lux_lo,}, },
+	{"EDS0068/threshold/light_hi" , PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_24, FS_w_24, VISIBLE_EDS0068, {u: _EDS0064_Lux_hi,}, },
+	{"EDS0068/threshold/light_low", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_24, FS_w_24, VISIBLE_EDS0068, {u: _EDS0064_Lux_lo,}, },
 	{"EDS0068/alarm", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0068, NO_FILETYPE_DATA,},
 	{"EDS0068/alarm/clear", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_clear, VISIBLE_EDS0068, NO_FILETYPE_DATA, },
 	{"EDS0068/alarm/state", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, NO_WRITE_FUNCTION, INVISIBLE, {u: _EDS0064_Alarm_state,}, },
@@ -493,6 +497,7 @@ DeviceEntryExtended(7E, EDS, DEV_temp | DEV_alarm, NO_GENERIC_READ, NO_GENERIC_W
 
 /* ------- Functions ------------ */
 static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn) ;
+static GOOD_OR_BAD OW_w_mem_crc(BYTE * data, size_t size, off_t offset, struct parsedname *pn) ;
 static GOOD_OR_BAD OW_r_mem_small(BYTE * data, size_t size, off_t offset, struct parsedname * pn);
 static int VISIBLE_EDS( const struct parsedname * pn ) ;
 static GOOD_OR_BAD OW_clear( struct parsedname * pn) ;
@@ -622,7 +627,6 @@ static ZERO_OR_ERROR FS_r_float8(struct one_wire_query *owq)
 	BYTE data[bytes] ;
 	
 	RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) );
-	printf("<<<<<<<<<<<<<<<<< data byte = %.2X\n",data[0]) ;
 	OWQ_F(owq) = (_FLOAT) ((int8_t) (data[0] )) ;
 	return 0 ;
 }
@@ -637,6 +641,35 @@ static ZERO_OR_ERROR FS_r_float16(struct one_wire_query *owq)
 	RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) );
 	OWQ_F(owq) = (_FLOAT) ((int16_t) ((data[1] << 8) | data[0] )) * .0625 ;
 	return 0 ;
+}
+
+/* 24 bit float with resolution 1/2048th  */
+static ZERO_OR_ERROR FS_r_float24(struct one_wire_query *owq)
+{
+	struct parsedname * pn = PN(owq) ;
+	int bytes = 24/8 ;
+	BYTE data[bytes] ;
+	
+	RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) );
+	// use 32 bit with 0 for lowest byte
+	OWQ_F(owq) = (_FLOAT) ((int32_t) ((data[2] << 24) | (data[1] << 16) | ( data[0] << 8 ) )) / ( 2048.*256.) ;
+	return 0 ;
+}
+
+/* write a 24 bit value from a register stored in filetype.data */
+/* write as a signed float with resolution 1/2048th */
+static ZERO_OR_ERROR FS_w_float24(struct one_wire_query *owq)
+{
+	struct parsedname * pn = PN(owq) ;
+	int bytes = 24/8 ;
+	BYTE data[bytes] ;
+	int32_t big = 256. * 2048. * OWQ_F(owq) ;
+
+	data[0] = (big>>8) & 0xFF ;
+	data[1] = (big>>16) & 0xFF ;
+	data[2] = (big>>24) & 0xFF ;
+	
+	return GB_to_Z_OR_E( OW_w_mem( data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) ) ;
 }
 
 static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
@@ -851,50 +884,12 @@ static ZERO_OR_ERROR FS_r_32(struct one_wire_query *owq)
 	return 0 ;
 }
 
-/* write a 32 bit value from a register stored in filetype.data */
-static ZERO_OR_ERROR FS_w_32(struct one_wire_query *owq)
-{
-	struct parsedname * pn = PN(owq) ;
-	int bytes = 32/8 ;
-	BYTE data[bytes] ;
-	
-	UT_uint32_to_bytes( OWQ_U(owq), data ) ;
-	return GB_to_Z_OR_E( OW_w_mem(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) ) ;
-}
-
-/* read a 24 bit value from a register stored in filetype.data */
-/* write as a signed float with resolution 1/2048th */
-static ZERO_OR_ERROR FS_r_float24(struct one_wire_query *owq)
-{
-	_FLOAT f ;
-
-	RETURN_ERROR_IF_BAD( FS_r_24(owq) );
-
-	if ( OWQ_U(owq) >= 0x800000 ) {
-		f = 0x1000000 - OWQ_U(owq) ;
-		f = -f ;
-	} else {
-		f = OWQ_U(owq) ;
-	}
-	OWQ_F(owq) = f / 2048. ;
-	return 0 ;
-}
-
-/* write a 24 bit value from a register stored in filetype.data */
-/* write as a signed float with resolution 1/2048th */
-static ZERO_OR_ERROR FS_w_float24(struct one_wire_query *owq)
-{
-	uint32_t big = 2048. * OWQ_F(owq) ;
-	OWQ_U(owq) = big + 0x1000000 ; // overflow the 24bit range to handle negatives in 2's complement
-	return FS_w_24(owq) ;
-}
-
 /* write an 8 bit value from a register stored in filetype.data */
 /* write as a signed float*/
 static ZERO_OR_ERROR FS_w_float8(struct one_wire_query *owq)
 {
 	int8_t val = OWQ_F(owq) ;
-	printf(">>>>>>>>>>>>>>>>> data byte = %.2X float=%g\n",val,OWQ_F(owq));
+
 	OWQ_I(owq) = val ;
 	return FS_w_8(owq) ;
 }
@@ -902,36 +897,33 @@ static ZERO_OR_ERROR FS_w_float8(struct one_wire_query *owq)
 static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
 {
 	BYTE p[3 + 1 + _EDS_PAGESIZE + 2] = { _EDS_WRITE_SCRATCHPAD, LOW_HIGH_ADDRESS(offset), };
-	int rest = _EDS_PAGESIZE - (offset & 0x1F);
-	struct transaction_log tcopy[] = {
+	struct transaction_log twrite[] = {
 		TRXN_START,
 		TRXN_WRITE(p, 3 + size),
 		TRXN_END,
 	};
-	struct transaction_log tcopy_crc[] = {
-		TRXN_START,
-		TRXN_WR_CRC16(p, 3 + size, 0),
-		TRXN_END,
-	};
 	struct transaction_log tread[] = {
 		TRXN_START,
-		TRXN_WR_CRC16(p, 3, 1 + rest),
+		TRXN_WRITE1(p),
+		TRXN_READ( &p[1], 3 + size),
 		TRXN_COMPARE(&p[4], data, size),
 		TRXN_END,
 	};
-	struct transaction_log twrite[] = {
+	struct transaction_log tcopy[] = {
 		TRXN_START,
 		TRXN_WRITE(p, 4),
+		TRXN_DELAY(_EDS_WRITE_DELAY_msec),
 		TRXN_END,
 	};
 
-	/* Copy to scratchpad -- use CRC16 if write to end of page, but don't force it */
-	memcpy(&p[3], data, size);
-	if ((offset + size) & 0x1F) {	/* to end of page */
-		RETURN_BAD_IF_BAD(BUS_transaction(tcopy, pn)) ;
-	} else {
-		RETURN_BAD_IF_BAD(BUS_transaction(tcopy_crc, pn)) ;
+	// use different scheme for write that goes to page end (use CRC)
+	if ( ( (offset + size) & 0x1F) == 0 ) {	/* to end of page */
+		return OW_w_mem_crc( data, size, offset, pn ) ;
 	}
+
+	/* Copy to scratchpad */
+	memcpy(&p[3], data, size);
+	RETURN_BAD_IF_BAD(BUS_transaction(twrite, pn)) ;
 
 	/* Re-read scratchpad and compare */
 	/* Note: location of data has now shifted down a byte for E/S register */
@@ -940,7 +932,43 @@ static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parse
 
 	/* write Scratchpad to SRAM */
 	p[0] = _EDS_COPY_SCRATCHPAD;
-	return BUS_transaction(twrite, pn) ;
+	return BUS_transaction(tcopy, pn) ;
+}
+
+// write to end of page (size is appropriate)
+static GOOD_OR_BAD OW_w_mem_crc(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
+{
+	BYTE p[3 + 1 + _EDS_PAGESIZE + 2] = { _EDS_WRITE_SCRATCHPAD, LOW_HIGH_ADDRESS(offset), };
+	struct transaction_log twrite[] = {
+		TRXN_START,
+		TRXN_WR_CRC16(p, 3 + size, 0),
+		TRXN_END,
+	};
+	struct transaction_log tread[] = {
+		TRXN_START,
+		TRXN_WR_CRC16(p, 1, 3 + size),
+		TRXN_COMPARE(&p[4], data, size),
+		TRXN_END,
+	};
+	struct transaction_log tcopy[] = {
+		TRXN_START,
+		TRXN_WRITE(p, 4),
+		TRXN_DELAY(_EDS_WRITE_DELAY_msec),
+		TRXN_END,
+	};
+
+	/* Copy to scratchpad -- use CRC16 */
+	memcpy(&p[3], data, size);
+	RETURN_BAD_IF_BAD(BUS_transaction(twrite, pn)) ;
+
+	/* Re-read scratchpad and compare */
+	/* Note: location of data has now shifted down a byte for E/S register */
+	p[0] = _EDS_READ_SCRATCHPAD;
+	RETURN_BAD_IF_BAD(BUS_transaction(tread, pn)) ;
+
+	/* write Scratchpad to SRAM */
+	p[0] = _EDS_COPY_SCRATCHPAD;
+	return BUS_transaction(tcopy, pn) ;
 }
 
 /* Read a few bytes within a page */
