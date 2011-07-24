@@ -218,6 +218,8 @@ struct filetype EDS[] = {
 
 	{"EDS0064/counter", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0064, NO_FILETYPE_DATA,},
 	{"EDS0064/counter/seconds", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_32, NO_WRITE_FUNCTION, VISIBLE_EDS0064, {u: _EDS0064_Seconds_counter,}, },
+	{"EDS0064/relay_function", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, INVISIBLE, {u: _EDS0064_Relay_function,}, },
+	{"EDS0064/relay_state", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, INVISIBLE, {u: _EDS0064_Relay_state,}, },
 
 	{"EDS0064/set_alarm", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0064, NO_FILETYPE_DATA,},
 	{"EDS0064/set_alarm/temp_hi" , PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0064, {v: &eds0064_cond_temp_hi,}, },
@@ -249,6 +251,8 @@ struct filetype EDS[] = {
 	{"EDS0065/dew_point", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_r_float16, NO_WRITE_FUNCTION, VISIBLE_EDS0065, {u: _EDS0064_Dew,}, },
 	{"EDS0065/humidex", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_float16, NO_WRITE_FUNCTION, VISIBLE_EDS0065, {u: _EDS0064_Humidex,}, },
 	{"EDS0065/heat_index", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_r_float16, NO_WRITE_FUNCTION, VISIBLE_EDS0065, {u: _EDS0064_Hindex,}, },
+	{"EDS0065/relay_function", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, INVISIBLE, {u: _EDS0064_Relay_function,}, },
+	{"EDS0065/relay_state", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, INVISIBLE, {u: _EDS0064_Relay_state,}, },
 
 	{"EDS0065/counter", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0065, NO_FILETYPE_DATA,},
 	{"EDS0065/counter/seconds", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_32, NO_WRITE_FUNCTION, VISIBLE_EDS0065, {u: _EDS0064_Seconds_counter,}, },
@@ -305,6 +309,8 @@ struct filetype EDS[] = {
 	{"EDS0066/temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_r_float16, NO_WRITE_FUNCTION, VISIBLE_EDS0066, {u: _EDS0064_Temp,}, },
 	{"EDS0066/pressure", PROPERTY_LENGTH_PRESSURE, NON_AGGREGATE, ft_pressure, fc_volatile, FS_r_float24, NO_WRITE_FUNCTION, VISIBLE_EDS0066, {u: _EDS0064_mbar,}, },
 	{"EDS0066/inHg", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_float24, NO_WRITE_FUNCTION, VISIBLE_EDS0066, {u: _EDS0064_inHg,}, },
+	{"EDS0066/relay_function", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, INVISIBLE, {u: _EDS0064_Relay_function,}, },
+	{"EDS0066/relay_state", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, INVISIBLE, {u: _EDS0064_Relay_state,}, },
 
 	{"EDS0066/counter", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0066, NO_FILETYPE_DATA,},
 	{"EDS0066/counter/seconds", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_32, NO_WRITE_FUNCTION, VISIBLE_EDS0066, {u: _EDS0064_Seconds_counter,}, },
@@ -348,6 +354,8 @@ struct filetype EDS[] = {
 	{"EDS0067", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0067, NO_FILETYPE_DATA,},
 	{"EDS0067/temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_r_float16, NO_WRITE_FUNCTION, VISIBLE_EDS0067, {u: _EDS0064_Temp,}, },
 	{"EDS0067/light", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_24, NO_WRITE_FUNCTION, VISIBLE_EDS0067, {u: _EDS0064_Lux,}, },
+	{"EDS0067/relay_function", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, INVISIBLE, {u: _EDS0064_Relay_function,}, },
+	{"EDS0067/relay_state", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, INVISIBLE, {u: _EDS0064_Relay_state,}, },
 
 	{"EDS0067/counter", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0067, NO_FILETYPE_DATA,},
 	{"EDS0067/counter/seconds", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_32, NO_WRITE_FUNCTION, VISIBLE_EDS0067, {u: _EDS0064_Seconds_counter,}, },
@@ -391,6 +399,8 @@ struct filetype EDS[] = {
 	{"EDS0068/pressure", PROPERTY_LENGTH_PRESSURE, NON_AGGREGATE, ft_pressure, fc_volatile, FS_r_float24, NO_WRITE_FUNCTION, VISIBLE_EDS0068, {u: _EDS0064_mbar,}, },
 	{"EDS0068/inHg", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_float24, NO_WRITE_FUNCTION, VISIBLE_EDS0068, {u: _EDS0064_inHg,}, },
 	{"EDS0068/light", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_24, NO_WRITE_FUNCTION, VISIBLE_EDS0068, {u: _EDS0064_Lux,}, },
+	{"EDS0068/relay_function", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, INVISIBLE, {u: _EDS0064_Relay_function,}, },
+	{"EDS0068/relay_state", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, INVISIBLE, {u: _EDS0064_Relay_state,}, },
 
 	{"EDS0068/counter", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0068, NO_FILETYPE_DATA,},
 	{"EDS0068/counter/seconds", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_32, NO_WRITE_FUNCTION, VISIBLE_EDS0068, {u: _EDS0064_Seconds_counter,}, },
