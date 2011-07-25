@@ -601,6 +601,7 @@ static ZERO_OR_ERROR FS_r_sector_data(struct one_wire_query *owq)
 	}
 	BAE_uint32_to_bytes( sector_nr *512, data ); // convert 32bit value to msb first
 	RETURN_ERROR_IF_BAD(OW_r_flow_nocrc(_1W_WF_READ_SECTOR_DATA, data, 4, buffer, OWQ_size(owq), pn));
+	OWQ_length(owq) = OWQ_size(owq) ;
 	return 0;
 }
 
