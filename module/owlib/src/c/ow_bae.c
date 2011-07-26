@@ -322,7 +322,7 @@ struct filetype BAE[] = {
 
 	{"911", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
 	{"911/automation_engine", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
-  {"911/automation_engine/pc0", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_PC0,}, },
+	{"911/automation_engine/pc0", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_PC0,}, },
 	
 	{"911/pio", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
 	{"911/pio/piostate", PROPERTY_LENGTH_UNSIGNED, &A911pio, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, INVISIBLE, {u:_FC03_PIO,}, },
@@ -560,6 +560,7 @@ static ZERO_OR_ERROR FS_w_sector_nr(struct one_wire_query *owq)
 	UINT sector_nr;					
 
 	sector_nr = OWQ_U(owq);
+	FS_del_sibling( "911/sdcard/sector_data", owq ) ;
 	if (Cache_Add_SlaveSpecific((void *) &sector_nr, sizeof(UINT), SlaveSpecificTag(SNR), pn)) {
 		return -EINVAL;
 	}
