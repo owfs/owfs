@@ -590,6 +590,8 @@ static ZERO_OR_ERROR FS_read_owq(struct one_wire_query *owq)
 			return read_error;
 		}
 		OWQ_Cache_Add(owq); // Only add good attempts
+	} else {
+		LEVEL_DEBUG("Data obtained from cache") ;
 	}
 	return 0;
 }
