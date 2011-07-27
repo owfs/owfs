@@ -265,7 +265,7 @@ static void new_tree(void)
 
 static int IsThisPersistent( const struct parsedname * pn )
 {
-	return ( (pn->selected_filetype->change==fc_persistent) || get_busmode(pn->selected_connection) ) ;
+	return ( (pn->selected_filetype->change==fc_persistent) || get_busmode(pn->selected_connection)==bus_mock ) ;
 }
 
 /* DB cache creation code */
@@ -1231,6 +1231,8 @@ static void Cache_Del(const struct parsedname *pn)
 {
 	struct tree_node tn;
 	time_t duration;
+
+	//printf("Cache_Del\n") ;
 	//printf("Cache_Del\n") ;
 	if (!pn) {
 		return;	// do check here to avoid needless processing
