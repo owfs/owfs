@@ -26,6 +26,9 @@ static ZERO_OR_ERROR FS_write_a_bit(struct one_wire_query *owq_bit);
 static ZERO_OR_ERROR FS_write_in_parts( struct one_wire_query *owq_all );
 static ZERO_OR_ERROR FS_write_a_part( struct one_wire_query *owq_part );
 static ZERO_OR_ERROR FS_write_as_bits( struct one_wire_query *owq_byte ) ;
+static ZERO_OR_ERROR FS_write_real(struct one_wire_query *owq) ;
+static ZERO_OR_ERROR FS_write_post_stats(struct one_wire_query *owq) ;
+static ZERO_OR_ERROR FS_write_post_input(struct one_wire_query *owq) ;
 
 /* ---------------------------------------------- */
 /* Filesystem callback functions                  */
@@ -79,7 +82,6 @@ SIZE_OR_ERROR FS_write(const char *path, const char *buf, const size_t size, con
 /* return size if ok, else negative */
 SIZE_OR_ERROR FS_write_postparse(struct one_wire_query *owq)
 {
-	ZERO_OR_ERROR input_or_error;
 	ZERO_OR_ERROR write_or_error;
 	struct parsedname *pn = PN(owq);
 
@@ -106,80 +108,7 @@ SIZE_OR_ERROR FS_write_postparse(struct one_wire_query *owq)
 	++write_calls;				/* statistics */
 	STATUNLOCK;
 
-	input_or_error = OWQ_parse_input(owq);
-	Debug_OWQ(owq);
-	if (input_or_error < 0) {
-		LEVEL_DEBUG("Error interpreting input value.") ;
-		return input_or_error;
-	}
-	switch (pn->type) {
-	case ePN_structure:
-	case ePN_statistics:
-		LEVEL_DEBUG("Cannot write in this type of directory.") ;
-		write_or_error = -ENOTSUP;
-		break;
-	case ePN_system:
-	case ePN_settings:
-		write_or_error = FS_w_given_bus(owq);
-		break;
-	default:					// ePN_real
-
-		/* handle DeviceSimultaneous */
-		if (pn->selected_device == DeviceSimultaneous) {
-			/* writing to /simultaneous/temperature will write to ALL
-			 * available bus.?/simultaneous/temperature
-			 * not just /simultaneous/temperature
-			 */
-			LEVEL_DEBUG("TEST about to write to simultaneous");
-			write_or_error = FS_w_simultaneous(owq);
-		} else {
-			/* First try */
-			/* in and bus_nr already set */
-			STAT_ADD1(write_tries[0]);
-			write_or_error = FS_w_given_bus(owq);
-
-			/* Second Try */
-			/* if not a specified bus, relook for chip location */
-			if (write_or_error < 0) {	// second look -- initial write gave an error
-				STAT_ADD1(write_tries[1]);
-				if (SpecifiedBus(pn)) {
-					write_or_error = BAD(TestConnection(pn)) ? -ECONNABORTED : FS_w_given_bus(owq);
-					if (write_or_error < 0) {	// third try
-						STAT_ADD1(write_tries[2]);
-						write_or_error = BAD(TestConnection(pn)) ? -ECONNABORTED : FS_w_given_bus(owq);
-					}
-				} else if (BusIsServer(pn->selected_connection)) {
-					int bus_nr = pn->selected_connection->index ; // current selected bus
-					INDEX_OR_ERROR busloc_or_error = ReCheckPresence(pn) ;
-					// special handling or remote
-					// only repeat if the bus number is wrong
-					// because the remote does the rewrites
-					if ( bus_nr != busloc_or_error ) {
-						if (busloc_or_error < 0) {
-							write_or_error = -ENOENT;
-						} else {
-							write_or_error = FS_w_given_bus(owq);
-							if (write_or_error < 0) {	// third try
-								STAT_ADD1(write_tries[2]);
-								write_or_error = BAD(TestConnection(pn)) ? -ECONNABORTED : FS_w_given_bus(owq);
-							}
-						}
-					}				
-				} else {
-					INDEX_OR_ERROR busloc_or_error = ReCheckPresence(pn);
-					if (busloc_or_error < 0) {
-						write_or_error = -ENOENT;
-					} else {
-						write_or_error = FS_w_given_bus(owq);
-						if (write_or_error < 0) {	// third try
-							STAT_ADD1(write_tries[2]);
-							write_or_error = BAD(TestConnection(pn)) ? -ECONNABORTED : FS_w_given_bus(owq);
-						}
-					}
-				}
-			}
-		}
-	}
+	write_or_error = FS_write_post_stats( owq ) ;
 
 	STATLOCK;
 	// write_or_error is still ZERO_OR_ERROR mode
@@ -199,6 +128,140 @@ SIZE_OR_ERROR FS_write_postparse(struct one_wire_query *owq)
 	STATUNLOCK;
 
 	return write_or_error;
+}
+
+/* return 0 if ok, else negative */
+/* Handles 3-peat */
+static ZERO_OR_ERROR FS_write_post_stats(struct one_wire_query *owq)
+{
+	// Parse the data to be written
+	ZERO_OR_ERROR input_or_error = OWQ_parse_input(owq);
+
+	Debug_OWQ(owq);
+	if (input_or_error < 0) {
+		LEVEL_DEBUG("Error interpreting input value.") ;
+		return input_or_error ;
+	}
+	return FS_write_post_input( owq ) ;
+}
+
+/* return 0 if ok, else negative */
+/* Handles 3-peat */
+static ZERO_OR_ERROR FS_write_post_input(struct one_wire_query *owq)
+{
+	struct parsedname *pn = PN(owq);
+
+	// Write differently depending on the type of directory
+	switch (pn->type) {
+		case ePN_structure:
+		case ePN_statistics:
+			LEVEL_DEBUG("Cannot write in this type of directory.") ;
+			return -ENOTSUP;
+		case ePN_system:
+		case ePN_settings:
+			return FS_w_given_bus(owq);
+		case ePN_real:				// ePN_real
+			/* handle DeviceSimultaneous */
+			if (pn->selected_device == DeviceSimultaneous) {
+				/* writing to /simultaneous/temperature will write to ALL
+				 * available bus.?/simultaneous/temperature
+				 * not just /simultaneous/temperature
+				 */
+				LEVEL_DEBUG("TEST about to write to simultaneous");
+				return FS_w_simultaneous(owq);
+			} else {
+				// Normal path for most writes to actual devices
+				return FS_write_real(owq) ;
+			}
+		case ePN_root:
+		case ePN_interface:
+		default:
+			return -ENOTSUP ;
+	}
+}
+
+/* write to a real 1-wire device */
+/* If error, try twice more */
+static ZERO_OR_ERROR FS_write_real(struct one_wire_query *owq)
+{
+	ZERO_OR_ERROR write_or_error;
+	struct parsedname *pn = PN(owq);
+	struct filetype * ft = pn->selected_filetype ;
+	INDEX_OR_ERROR initial_bus = pn->selected_connection->index ; // current selected bus
+	INDEX_OR_ERROR rechecked_bus ;
+
+	if ( ft->write == FS_w_alias ) {
+		// Special check for alias
+		// it's ok for fake and tester and mock as well
+		// so do this before the fake test
+		return FS_write_owq(owq) ;
+	}
+
+	/* Special case for "fake" adapter */
+	switch (get_busmode(pn->selected_connection)) {
+		case bus_mock:
+			// Mock -- write even "unwritable" to the cache for testing
+			OWQ_Cache_Add(owq) ;
+			// fall through
+		case bus_fake:
+		case bus_tester:
+			return ( ft->write == NO_WRITE_FUNCTION ) ? -ENOTSUP : 0 ;
+		default:
+			// non-virtual devices get handled below
+			break ;
+	}
+
+	/* First try */
+	/* in and bus_nr already set */
+	STAT_ADD1(write_tries[0]);
+	write_or_error = FS_w_given_bus(owq);
+	if ( write_or_error ==0 ) {
+		return 0 ;
+	}
+
+	/* Second Try */
+	STAT_ADD1(write_tries[1]);
+	if (SpecifiedBus(pn)) {
+		// The bus number casn't be changed -- it was specified in the path
+		write_or_error = FS_w_given_bus(owq);
+		if ( write_or_error == 0 ) {
+			return 0 ;
+		}
+
+		// The bus number casn't be changed -- it was specified in the path
+		STAT_ADD1(write_tries[2]);
+		return FS_w_given_bus(owq);
+	}
+
+	/* Recheck location */
+	/* if not a specified bus, relook for chip location */
+	rechecked_bus = ReCheckPresence(pn) ;
+	if ( rechecked_bus < 0 ) {
+		// can't find the location
+		return -ENOENT ;
+	}
+
+	if ( initial_bus == rechecked_bus ) {
+		// special handling for remote
+		// only repeat if the bus number is wrong
+		// because the remote does the rewrites
+		if (BusIsServer(pn->selected_connection)) {
+			return write_or_error ;
+		}
+		// try again
+		STAT_ADD1(write_tries[1]);
+		write_or_error = FS_w_given_bus(owq);
+		if ( write_or_error == 0 ) {
+			return 0 ;
+		}
+		// third try
+		STAT_ADD1(write_tries[2]);
+		return FS_w_given_bus(owq);
+	}		
+
+	// Changed location retry everything
+	LEVEL_DEBUG("Bus location changed from %d to %d\n",initial_bus,rechecked_bus);
+	return FS_write_real(owq);
 }
 
 #if OW_MT
@@ -267,32 +330,33 @@ static ZERO_OR_ERROR FS_w_simultaneous(struct one_wire_query *owq)
 
 #endif /* OW_MT */
 
-/* return 0 if ok, else negative */
+/* Write now that connection is set */
 static ZERO_OR_ERROR FS_w_given_bus(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
-	ZERO_OR_ERROR write_or_error;
 
 	if ( BAD(TestConnection(pn)) ) {
-		write_or_error = -ECONNABORTED;
+		return -ECONNABORTED;
 	} else if (KnownBus(pn) && BusIsServer(pn->selected_connection)) {
-		write_or_error = ServerWrite(owq);
+		return ServerWrite(owq);
 	} else if (OWQ_pn(owq).type == ePN_real) {
-		write_or_error = DeviceLockGet(pn);
+		ZERO_OR_ERROR write_or_error = DeviceLockGet(pn);
 		if (write_or_error == 0) {
 			write_or_error = FS_w_local(owq);
 			DeviceLockRelease(pn);
 		} else {
 			LEVEL_DEBUG("Cannot lock device for writing") ;
 		}
+		return write_or_error ;
 	} else if ( IsInterfaceDir(pn) ) {
+		ZERO_OR_ERROR write_or_error;
 		BUSLOCK(pn);
 		write_or_error = FS_w_local(owq);
 		BUSUNLOCK(pn);
+		return write_or_error ;
 	} else {
-		write_or_error = FS_w_local(owq);
+		return FS_w_local(owq);
 	}
-	return write_or_error;
 }
 
 /* return 0 if ok */
@@ -302,30 +366,20 @@ static ZERO_OR_ERROR FS_w_local(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	struct filetype * ft = pn->selected_filetype ;
 
-	// Special check for alias -- it's ok for fake and tester and mock as well
-	if ( ft->write == FS_w_alias ) {
-		return FS_write_owq(owq) ;
-	}
-	
-	/* Special case for "fake" adapter */
-	if ( IsRealDir(pn) ) {
-		switch (get_busmode(pn->selected_connection)) {
-			case bus_mock:
-				// Mock -- write even "unwritable" to the cache for testing
-				OWQ_Cache_Add(owq) ;
-				// fall through
-			case bus_fake:
-			case bus_tester:
-				return ( ft->write == NO_WRITE_FUNCTION ) ? -ENOTSUP : 0 ;
-			default:
-				// non-virtual devices get handled below
-				break ;
-		}
-	}
-
 	/* Writable? */
 	if ( ft->write == NO_WRITE_FUNCTION ) {
 		return -ENOTSUP;
+	}
+
+	/* Special case for "fake" adapter */
+	switch (get_busmode(pn->selected_connection)) {
+		case bus_mock:
+		case bus_fake:
+		case bus_tester:
+			return 0 ;
+		default:
+			// non-virtual devices get handled below
+			break ;
 	}
 
 	/* Non-array? */
