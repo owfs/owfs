@@ -124,6 +124,7 @@ DeviceEntryExtended(29, DS2408, DEV_alarm | DEV_resume | DEV_ovdr, NO_GENERIC_RE
 #define _1W_RESET_ACTIVITY_LATCHES 0xC3
 
 #define _ADDRESS_PIO_LOGIC_STATE 0x0088
+#define _ADDRESS_ALARM_REGISTERS 0x008B
 #define _ADDRESS_CONTROL_STATUS_REGISTER 0x008D
 
 /* Internal properties */
@@ -723,7 +724,7 @@ static GOOD_OR_BAD OW_w_s_alarm(const BYTE * data, const struct parsedname *pn)
 	BYTE new_register[6];
 	BYTE control_value[1];
 	BYTE alarm_access[] = { _1W_WRITE_CONDITIONAL_SEARCH_REGISTER,
-		LOW_HIGH_ADDRESS(_ADDRESS_CONTROL_STATUS_REGISTER),
+		LOW_HIGH_ADDRESS(_ADDRESS_ALARM_REGISTERS),
 	};
 	struct transaction_log t[] = {
 		TRXN_START,
