@@ -384,7 +384,7 @@ static ZERO_OR_ERROR FS_w_local(struct one_wire_query *owq)
 
 	/* Non-array? */
 	if ( ft->ag == NON_AGGREGATE ) {
-		LEVEL_DEBUG("Write an non-array element %s",pn->path);
+		LEVEL_DEBUG("Write a non-array element %s",pn->path);
 		return FS_write_owq(owq);
 	}
 
