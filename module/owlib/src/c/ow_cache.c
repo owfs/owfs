@@ -265,7 +265,7 @@ static void new_tree(void)
 
 static int IsThisPersistent( const struct parsedname * pn )
 {
-	return (pn->selected_filetype->change==fc_persistent) || (pn->selected_connection->busmode==bus_mock) ;
+	return ( (pn->selected_filetype->change==fc_persistent) || get_busmode(pn->selected_connection) ) ;
 }
 
 /* DB cache creation code */
@@ -401,14 +401,21 @@ static GOOD_OR_BAD Cache_Add(const void *data, const size_t datasize, const stru
 {
 	struct tree_node *tn;
 	time_t duration;
+	int persistent ;
 
 	if (!pn || IsAlarmDir(pn)) {
 		return gbGOOD;				// do check here to avoid needless processing
 	}
 
-	duration = TimeOut(pn->selected_filetype->change);
-	if (duration <= 0) {
-		return gbGOOD;				/* in case timeout set to 0 */
+	// Special handling of Mock
+	persistent = IsThisPersistent(pn) ;
+	if ( persistent ) {
+		duration = 1 ;
+	} else {
+		duration = TimeOut(pn->selected_filetype->change);
+		if (duration <= 0) {
+			return gbGOOD;				/* in case timeout set to 0 */
+		}
 	}
 
 	// allocate space for the node and data
@@ -426,7 +433,7 @@ static GOOD_OR_BAD Cache_Add(const void *data, const size_t datasize, const stru
 	if (datasize) {
 		memcpy(TREE_DATA(tn), data, datasize);
 	}
-	return IsThisPersistent(pn)?
+	return persistent ?
 		Add_Stat(&cache_pst, Cache_Add_Persistent(tn)) :
 		Add_Stat(&cache_ext, Cache_Add_Common(tn)) ;
 }
@@ -821,20 +828,28 @@ GOOD_OR_BAD Cache_Get(void *data, size_t * dsize, const struct parsedname *pn)
 {
 	time_t duration;
 	struct tree_node tn;
-	//printf("Cache_Get\n") ;
+	int persistent ;
+
 	// do check here to avoid needless processing
 	if (IsUncachedDir(pn) || IsAlarmDir(pn)) {
 		return gbBAD;
 	}
 
-	duration = TimeOut(pn->selected_filetype->change);
-	if (duration <= 0) {
-		return gbBAD;
+	// Special handling of Mock
+	persistent = IsThisPersistent(pn) ;
+	if ( persistent ) {
+		duration = 1 ;
+	} else {
+		duration = TimeOut(pn->selected_filetype->change);
+		if (duration <= 0) {
+			return gbBAD;				/* in case timeout set to 0 */
+		}
 	}
+
 
 	LEVEL_DEBUG(SNformat " size=%d IsUncachedDir=%d", SNvar(pn->sn), (int) dsize[0], IsUncachedDir(pn));
 	LoadTK( pn->sn, pn->selected_filetype, pn->extension, &tn );
-	return IsThisPersistent(pn) ?
+	return persistent ?
 		Get_Stat(&cache_pst, Cache_Get_Persistent(data, dsize, &duration, &tn)) :
 		Get_Stat(&cache_ext, Cache_Get_Common(data, dsize, &duration, &tn));
 }
