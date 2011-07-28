@@ -58,7 +58,7 @@ enum e_visibility NeverVisible( const struct parsedname * pn )
 }
 
 /* Internal files */
-Make_SlaveSpecificTag(VIS, fc_persistent);	//cumulative
+Make_SlaveSpecificTag(VIS, fc_persistent);	// used for all visibility work
 
 GOOD_OR_BAD GetVisibilityCache( int * visibility_parameter, const struct parsedname * pn ) 
 {
