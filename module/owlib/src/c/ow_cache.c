@@ -1608,11 +1608,11 @@ static INDEX_OR_ERROR Cache_Get_Alias_Common( struct alias_tree_node * atn)
 		// test expiration
 		if ( ((struct alias_tree_node *)(opaque->key))->expires > now) {
 			bus = ((struct alias_tree_node *)(opaque->key))->bus ;
-			LEVEL_DEBUG("Found %s on bus.%d\n",ALIAS_TREE_DATA(atn),bus) ;
+			LEVEL_DEBUG("Found %s on bus.%d",ALIAS_TREE_DATA(atn),bus) ;
 		}
 	}
 	CACHE_RUNLOCK;
-	LEVEL_DEBUG("Finding %s unsuccessful\n",ALIAS_TREE_DATA(atn)) ;
+	LEVEL_DEBUG("Finding %s unsuccessful",ALIAS_TREE_DATA(atn)) ;
 	owfree(atn) ;
 	return bus;
 }
@@ -1700,7 +1700,7 @@ static void Cache_Del_Alias_Persistent( struct alias_tree_node * atn)
 void Cache_Del_Alias_Bus(const ASCII * alias_name)
 {
 	// Cheat -- just change to a bad bus value
-	LEVEL_DEBUG("Hide %s\n",alias_name) ;
+	LEVEL_DEBUG("Hide %s",alias_name) ;
 	Cache_Add_Alias_Bus( alias_name, INDEX_BAD ) ;
 }
 
