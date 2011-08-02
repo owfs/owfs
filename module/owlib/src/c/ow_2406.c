@@ -73,6 +73,8 @@ READ_FUNCTION(FS_pressure);
 #endif							/* OW_TAI8570 */
  READ_FUNCTION(FS_voltage);
 
+static enum e_visibility VISIBLE_T8A( const struct parsedname * pn ) ;
+
 /* ------- Structures ----------- */
 
 struct aggregate A2406 = { 2, ag_letters, ag_aggregate, };
@@ -100,8 +102,8 @@ struct filetype DS2406[] = {
 	{"TAI8570/sibling", 16, NON_AGGREGATE, ft_ascii, fc_stable, FS_sibling, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 #endif							/* OW_TAI8570 */
 
-	{"T8A", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-	{"T8A/volt", PROPERTY_LENGTH_FLOAT, &AT8Ac, ft_float, fc_volatile, FS_voltage, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"T8A", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_T8A, NO_FILETYPE_DATA,},
+	{"T8A/volt", PROPERTY_LENGTH_FLOAT, &AT8Ac, ft_float, fc_volatile, FS_voltage, NO_WRITE_FUNCTION, VISIBLE_T8A, NO_FILETYPE_DATA,},
 };
 
 DeviceEntryExtended(12, DS2406, DEV_alarm, NO_GENERIC_READ, NO_GENERIC_WRITE);
@@ -140,6 +142,43 @@ static GOOD_OR_BAD OW_access(BYTE * data, const struct parsedname *pn);
 static GOOD_OR_BAD OW_syncaccess(BYTE * data, const struct parsedname *pn);
 static GOOD_OR_BAD OW_clear(const struct parsedname *pn);
 static GOOD_OR_BAD OW_full_access(BYTE * data, const struct parsedname *pn);
+static int VISIBLE_2406( const struct parsedname * pn );
+
+/* finds the visibility of the DS2406-based T8A */
+static int VISIBLE_2406( const struct parsedname * pn )
+{
+	int device_id = -1 ; // Unknown
+	
+	LEVEL_DEBUG("Checking visibility of %s",SAFESTRING(pn->path)) ;
+	if ( BAD( GetVisibilityCache( &device_id, pn ) ) ) {
+		struct one_wire_query * owq = OWQ_create_from_path(pn->path) ; // for read
+		size_t memsize = 15 ;
+		BYTE mem[memsize] ;
+		if ( owq != NULL) {
+			UINT U_device_id ;
+			if ( FS_r_sibling_binary( mem, &memsize, "memory", owq ) == 0 ) {
+				if ( memcmp( "#M5Z" , mem[10], 4 ) == 0 ) {
+					device_id = 1 ; // T8A
+				} else {
+					device_id = 0 ; // non T8A
+				}
+				SetVisibilityCache( device_id, pn ) ;
+			}
+			OWQ_destroy(owq) ;
+		}
+	}
+	return device_id ;
+}
+
+static enum e_visibility VISIBLE_T8A( const struct parsedname * pn )
+{
+	switch ( VISIBLE_2406(pn) ) {
+		case 1:
+			return visible_now ;
+		default:
+			return visible_not_now ;
+	}
+}
 
 /* 2406 memory read */
 static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
