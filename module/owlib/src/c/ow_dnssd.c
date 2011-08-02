@@ -56,12 +56,12 @@ int OW_Load_dnssd_library(void)
 #if OW_CYGWIN
 		//{ "/opt/owfs/lib/libdns_sd.dll" },
 		{"libdns_sd.dll"},
+
 #elif OW_DARWIN
 	// MacOSX have dnssd functions in libSystem
-	char libdirs[2][80] = {
 		{"libSystem.dylib"},
+
 #elif defined(HAVE_DLOPEN)
-	char libdirs[3][80] = {
 		{"/opt/owfs/lib/libdns_sd.so"},
 		{"libdns_sd.so"},
 #endif
