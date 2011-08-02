@@ -38,7 +38,7 @@ _DNSServiceReconfirmRecord DNSServiceReconfirmRecord;
 _DNSServiceCreateConnection DNSServiceCreateConnection;
 _DNSServiceEnumerateDomains DNSServiceEnumerateDomains;
 
- #define DNSfunction_link( name )  name = (_##name) DL_sym( libdnssd, #name );\
+#define DNSfunction_link( name )  name = (_##name) DL_sym( libdnssd, #name );\
 	if ( name == NULL ) {\
 		LEVEL_CONNECT("Zeroconf/Bonjour is disabled since "#name" isn't found");\
 		return -1;\
@@ -48,89 +48,35 @@ _DNSServiceEnumerateDomains DNSServiceEnumerateDomains;
 
 int OW_Load_dnssd_library(void)
 {
-	int i = 0;
-#if OW_CYGWIN
+	int i ;
+	libdnssd = NULL ; // marker for successful opening of library
+
 	char libdirs[3][80] = {
+
+#if OW_CYGWIN
 		//{ "/opt/owfs/lib/libdns_sd.dll" },
 		{"libdns_sd.dll"},
-		{""}
-	};
-
-	while (*libdirs[i]) {
-		/* Cygwin has dlopen and it seems to be ok to use it actually. */
-		if (!(libdnssd = DL_open(libdirs[i]))) {
-			/* Couldn't open that lib, but continue anyway */
-#if 0
-			char *derr;
-			derr = DL_error();
-			fprintf(stderr, "dlopen [%s] failed [%s]\n", libdirs[i], derr);
-#endif
-			i++;
-			continue;
-		} else {
-			//fprintf(stderr, "DL_open [%s] success\n", libdirs[i]);
-			break;
-		}
-	}
-#if 0
-	/* This file compiled with Microsoft Visual C doesn't work actually... */
-	if (!libdnssd) {
-		char file[255];
-		strcpy(file, "dnssd.dll");
-		if (!(libdnssd = DL_open(file))) {
-			/* Couldn't open that lib, but continue anyway */
-		}
-	}
-#endif
-
 #elif OW_DARWIN
-
 	// MacOSX have dnssd functions in libSystem
 	char libdirs[2][80] = {
 		{"libSystem.dylib"},
-		{""}
-	};
-
-	while (*libdirs[i]) {
-		if (!(libdnssd = DL_open(libdirs[i]))) {
-			/* Couldn't open that lib, but continue anyway */
-#if 0
-			char *derr;
-			derr = DL_error();
-			fprintf(stderr, "%s failed [%s]\n", libdirs[i], derr);
-#endif
-			i++;
-			continue;
-		} else {
-			//fprintf(stderr, "DL_open [%s] success\n", libdirs[i]);
-			break;
-		}
-	}
-
 #elif defined(HAVE_DLOPEN)
-
 	char libdirs[3][80] = {
 		{"/opt/owfs/lib/libdns_sd.so"},
 		{"libdns_sd.so"},
-		{""}
+#endif
+
+		{""} // needed at end
 	};
 
-	while (*libdirs[i]) {
-		if (!(libdnssd = DL_open(libdirs[i]))) {
-			/* Couldn't open that lib, but continue anyway */
-#if 0
-			char *derr;
-			derr = DL_error();
-			fprintf(stderr, "DL_open [%s] failed [%s]\n", libdirs[i], derr);
-#endif
-			i++;
-			continue;
-		} else {
-			//fprintf(stderr, "DL_open [%s] success\n", libdirs[i]);
-			break;
+	for ( i=0 ; *libdirs[i] ; ++i ) {
+		libdnssd = DL_open( libdirs[i] ) ;
+
+		if ( libdnssd != NULL ) {
+			LEVEL_CONNECT( "DL_open [%s] success", libdirs[i] );
+			break ;
 		}
 	}
-#endif
 
 	if (libdnssd == NULL) {
 		LEVEL_CONNECT("Zeroconf/Bonjour is disabled since dnssd library isn't found");
