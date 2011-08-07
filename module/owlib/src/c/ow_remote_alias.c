@@ -93,20 +93,25 @@ static void * RemoteAlias_callback(void * v)
 	struct remotealias_struct * ras = (struct remotealias_struct *) v ;
 	struct remotealias_struct next_ras ;
 	
+	// set up for next server connection
 	next_ras.in = NextServer(ras->in->next) ;
 	next_ras.pn = ras->pn ;
 	next_ras.bus_nr = INDEX_BAD ;
 
 	memset( next_ras.sn, 0, SERIAL_NUMBER_SIZE) ;
 		
+	// launch thread for next server connection
 	threadbad = (next_ras.in == NO_CONNECTION)
 	|| pthread_create(&thread, DEFAULT_THREAD_ATTR, RemoteAlias_callback, (void *) (&next_ras));
 	
+	// Result for this server connection (while next one is processing)
 	ras->bus_nr = ServerAlias( ras->sn, ras->in, ras->pn ) ;
 	
 	if (threadbad == 0) {		/* was a thread created? */
 		void *vv;
 		if (pthread_join(thread, &vv)==0) {
+			// Set answer to the next bus if it's found
+			// else use current answer
 			if ( INDEX_VALID(next_ras.bus_nr) ) {
 				ras->bus_nr = next_ras.bus_nr ;
 				memcpy( ras->sn, next_ras.sn, SERIAL_NUMBER_SIZE ) ;
