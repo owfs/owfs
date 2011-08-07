@@ -48,6 +48,8 @@ static void ShowDirCallback(void *v, const struct parsedname *pn_entry)
 	FILE *out = v;
 	const char *nam;
 	const char *typ;
+	char * escaped_path = httpescape( pn_entry->path ) ;
+
 	if (IsDir(pn_entry)) {
 		nam = FS_DirName(pn_entry);
 		typ = name_directory;
@@ -55,9 +57,14 @@ static void ShowDirCallback(void *v, const struct parsedname *pn_entry)
 		nam = pn_entry->selected_device->readable_name;
 		typ = name_onewire_chip;
 	}
+
 	fprintf(out,
-			"<TR><TD><A HREF='%s'><CODE><B><BIG>%s</BIG></B></CODE></A></TD><TD>%s</TD><TD>%s</TD></TR>", pn_entry->path, FS_DirName(pn_entry), nam,
+			"<TR><TD><A HREF='%s'><CODE><B><BIG>%s</BIG></B></CODE></A></TD><TD>%s</TD><TD>%s</TD></TR>", escaped_path==NULL ? pn_entry->path : escaped_path, FS_DirName(pn_entry), nam,
 			typ);
+
+	if ( escaped_path ) {
+		owfree( escaped_path ) ;
+	}
 }
 
 	/* Misnamed. Actually all directory */
@@ -88,7 +95,11 @@ void ShowDir(FILE * out, struct parsedname * pn)
 	fprintf(out, "<TABLE BGCOLOR=\"#DDDDDD\" BORDER=1>");
 
 	if (b != 1) {
-		fprintf(out, "<TR><TD><A HREF='%.*s'><CODE><B><BIG>up</BIG></B></CODE></A></TD><TD>higher level</TD><TD>directory</TD></TR>", b, pn->path);
+		char * escaped_path = httpescape( pn->path ) ;
+		fprintf(out, "<TR><TD><A HREF='%.*s'><CODE><B><BIG>up</BIG></B></CODE></A></TD><TD>higher level</TD><TD>directory</TD></TR>", b, escaped_path==NULL ? pn->path : escaped_path );
+		if ( escaped_path ) {
+			owfree( escaped_path ) ;
+		}
 	} else {
 		fprintf(out, "<TR><TD><A HREF='/'><CODE><B><BIG>top</BIG></B></CODE></A></TD><TD>highest level</TD><TD>directory</TD></TR>");
 	}

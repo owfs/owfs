@@ -42,3 +42,55 @@ void httpunescape(BYTE * httpstr)
 		in++;
 	}
 }
+
+/* HTTP encode */
+char * httpescape( char * original_string )
+{
+	char * original_p = original_string ;
+	char * escaped_string ;
+	char * escaped_p ;
+
+	if ( original_string == NULL ) {
+		return NULL ;
+	}
+
+	escaped_p = escaped_string = owmalloc( strlen(original_string)*3 + 1 ) ;
+
+	if ( escaped_string == NULL ) {
+		return NULL ;
+	}
+
+	while (1) {
+		switch ( *original_p ) {
+			case '\0':
+				*escaped_p = '\0' ;
+				return escaped_string ;
+			case ' ':
+			case '!':
+			case '"':
+			case '#':
+			case '$':
+			case '%':
+			case '@':
+			case '\'':
+			case '(':
+			case ')':
+			case '<':
+			case '>':
+			case ';':
+			case ':':
+			case '+':
+			case ',':
+			case '=':
+				UCLIBCLOCK;
+				escaped_p += sprintf( escaped_p, "%%%.2X", *original_p++ ) ;
+				UCLIBCUNLOCK;
+				break ;
+			default:
+				*escaped_p++ = *original_p++ ;
+				break ;
+		}
+	}
+}
+
+				

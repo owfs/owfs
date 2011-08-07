@@ -76,7 +76,7 @@ int handle_socket(FILE * out)
 			pn = NO_PARSEDNAME ;
 			http_code = http_404 ;
 		} else if (strcasecmp(up.file, "/favicon.ico") == 0) {
-			// secial case for the icon
+			// special case for the icon
 			LEVEL_DEBUG("http icon request.");
 			ReadToCRLF(out) ;
 			pn = NO_PARSEDNAME ;
@@ -98,6 +98,21 @@ int handle_socket(FILE * out)
 		} else if (strcmp(up.cmd, "GET") == 0) {
 			LEVEL_DEBUG("http GET request.");
 			http_code = handle_GET( out, &up ) ;
+			// special case for possible alias changes
+			// Parsedname structure may point to a device that no longer exists
+			if ( http_code == http_ok ) { // was able to write
+				FS_ParsedName_destroy(pn);
+				if (FS_ParsedName(up.file, pn)) {
+					// Can't understand the device name any more
+					LEVEL_DEBUG("Alias change for %s",up.file);
+					if (FS_ParsedName("/", pn)) {
+						// Try to set to root
+						LEVEL_DEBUG("Set to root");
+						pn = NO_PARSEDNAME ;
+						http_code = http_404 ;
+					}
+				}
+			}
 		} else {
 			ReadToCRLF(out) ;
 			http_code = http_400 ;
@@ -109,11 +124,9 @@ int handle_socket(FILE * out)
 		http_code = http_400 ;
 	}
 
-	/*
-	* This is necessary for some stupid *
-	* * operating system such as SunOS
-	*/
+	// This is necessary for SunOS
 	fflush(out);
+	
 	switch ( http_code ) {
 		case http_icon:
 			Favicon(out);
@@ -131,7 +144,7 @@ int handle_socket(FILE * out)
 			ShowDevice(out, pn);
 			break ;
 	}
-	if ( pn ) {
+	if ( pn != NO_PARSEDNAME ) {
 		FS_ParsedName_destroy(pn);
 	}
 	
@@ -158,6 +171,7 @@ static enum http_return handle_GET(FILE * out, struct urlparse * up)
 		OWQ_allocate_struct_and_pointer(owq_write);
 		size_t req_leng = strlen(up->request) ;
 		size_t fil_leng = strlen(up->file) ;
+		char * remove_filetype = NULL ; // remove the filetype from the file name
 
 		// see if the URL includes the property twice -- happens if only a property is shown
 		if ( req_leng <= fil_leng && strcasecmp(up->request,&up->file[fil_leng-req_leng])==0 ) {
@@ -165,7 +179,8 @@ static enum http_return handle_GET(FILE * out, struct urlparse * up)
 			if ( FS_ParsedName(up->file,&s_pn)==0 ) {
 				if ( s_pn.selected_filetype != NO_FILETYPE ) {
 					LEVEL_DEBUG("Property name %s duplicated on command line. Not a problem.",up->request) ;
-					up->file[fil_leng-req_leng-1] = '\0';
+					remove_filetype = &up->file[fil_leng-req_leng-1] ;
+					remove_filetype[0] = '\0';
 				}
 				FS_ParsedName_destroy(&s_pn);
 			}
@@ -181,6 +196,11 @@ static enum http_return handle_GET(FILE * out, struct urlparse * up)
 		ChangeData(owq_write);
 		
 		OWQ_destroy(owq_write);
+
+		if ( remove_filetype != NULL ) {
+			// restore full URL path
+			remove_filetype[0] = '/' ;
+		}
 		return http_ok ;
 	}
 }
