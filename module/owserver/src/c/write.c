@@ -42,7 +42,6 @@ $Id$
 /* sm has been read, cm has been zeroed */
 /* pn is configured */
 /* data is what will be written, of sm->size length */
-/* Read, will return: */
 /* cm fully constructed */
 /* cm.ret is also set to an error <0 or the written length */
 void WriteHandler(struct handlerdata *hd, struct client_msg *cm, struct one_wire_query *owq)
