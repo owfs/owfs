@@ -28,7 +28,7 @@ static ZERO_OR_ERROR FS_write_a_bit(struct one_wire_query *owq_bit);
 static ZERO_OR_ERROR FS_write_in_parts( struct one_wire_query *owq_all );
 static ZERO_OR_ERROR FS_write_a_part( struct one_wire_query *owq_part );
 static ZERO_OR_ERROR FS_write_as_bits( struct one_wire_query *owq_byte ) ;
-static ZERO_OR_ERROR FS_write_real(struct one_wire_query *owq) ;
+static ZERO_OR_ERROR FS_write_real(int depth, struct one_wire_query *owq) ;
 static ZERO_OR_ERROR FS_write_post_stats(struct one_wire_query *owq) ;
 static ZERO_OR_ERROR FS_write_post_input(struct one_wire_query *owq) ;
 
@@ -169,7 +169,7 @@ static ZERO_OR_ERROR FS_write_post_input(struct one_wire_query *owq)
 				return -ENODEV;			// no buses
 			} else {
 				// Normal path for most writes to actual devices
-				return FS_write_real(owq) ;
+				return FS_write_real(0,owq) ; // start with 0 depth
 			}
 		case ePN_interface:
 			return FS_w_interface(owq) ;
@@ -181,7 +181,7 @@ static ZERO_OR_ERROR FS_write_post_input(struct one_wire_query *owq)
 
 /* write to a real 1-wire device */
 /* If error, try twice more */
-static ZERO_OR_ERROR FS_write_real(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_write_real(int depth, struct one_wire_query *owq)
 {
 	ZERO_OR_ERROR write_or_error;
 	struct parsedname *pn = PN(owq);
@@ -189,10 +189,16 @@ static ZERO_OR_ERROR FS_write_real(struct one_wire_query *owq)
 	INDEX_OR_ERROR initial_bus = pn->selected_connection->index ; // current selected bus
 	INDEX_OR_ERROR rechecked_bus ;
 
+	if ( depth > 1 ) {
+		LEVEL_DEBUG("Too many bus changes for write");
+		return -ENODEV ;
+	}
+
 	if ( ft->write == FS_w_alias ) {
 		// Special check for alias
 		// it's ok for fake and tester and mock as well
 		// so do this before the fake test
+		// also no need to three-peat.
 		return FS_write_owq(owq) ;
 	}
 
@@ -260,7 +266,7 @@ static ZERO_OR_ERROR FS_write_real(struct one_wire_query *owq)
 
 	// Changed location retry everything
 	LEVEL_DEBUG("Bus location changed from %d to %d\n",initial_bus,rechecked_bus);
-	return FS_write_real(owq);
+	return FS_write_real(depth+1,owq);
 }
 
 #if OW_MT
