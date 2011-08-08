@@ -17,6 +17,8 @@ $Id$
 
 /* ------- Prototypes ----------- */
 static ZERO_OR_ERROR FS_w_given_bus(struct one_wire_query *owq);
+static ZERO_OR_ERROR FS_w_settings(struct one_wire_query *owq);
+static ZERO_OR_ERROR FS_w_interface(struct one_wire_query *owq);
 static ZERO_OR_ERROR FS_w_local(struct one_wire_query *owq);
 static ZERO_OR_ERROR FS_w_simultaneous(struct one_wire_query *owq);
 static ZERO_OR_ERROR FS_write_owq(struct one_wire_query *owq);
@@ -95,13 +97,6 @@ SIZE_OR_ERROR FS_write_postparse(struct one_wire_query *owq)
 		return -EISDIR;			// not a file
 	}
 
-	if (pn->selected_connection == NO_CONNECTION) {
-		if (pn->selected_device != DeviceSimultaneous) {
-			LEVEL_DEBUG("Attempt to write but no 1-wire bus master.");
-			return -ENODEV;			// no buses
-		}
-	}
-
 	STATLOCK;
 	AVERAGE_IN(&write_avg);
 	AVERAGE_IN(&all_avg);
@@ -155,11 +150,12 @@ static ZERO_OR_ERROR FS_write_post_input(struct one_wire_query *owq)
 	switch (pn->type) {
 		case ePN_structure:
 		case ePN_statistics:
+		case ePN_system:
+			// No writable features here
 			LEVEL_DEBUG("Cannot write in this type of directory.") ;
 			return -ENOTSUP;
-		case ePN_system:
 		case ePN_settings:
-			return FS_w_given_bus(owq);
+			return FS_w_settings(owq);
 		case ePN_real:				// ePN_real
 			/* handle DeviceSimultaneous */
 			if (pn->selected_device == DeviceSimultaneous) {
@@ -167,14 +163,17 @@ static ZERO_OR_ERROR FS_write_post_input(struct one_wire_query *owq)
 				 * available bus.?/simultaneous/temperature
 				 * not just /simultaneous/temperature
 				 */
-				LEVEL_DEBUG("TEST about to write to simultaneous");
 				return FS_w_simultaneous(owq);
+			} else if (pn->selected_connection == NO_CONNECTION) {
+				LEVEL_DEBUG("Attempt to write but no 1-wire bus master.");
+				return -ENODEV;			// no buses
 			} else {
 				// Normal path for most writes to actual devices
 				return FS_write_real(owq) ;
 			}
-		case ePN_root:
 		case ePN_interface:
+			return FS_w_interface(owq) ;
+		case ePN_root:
 		default:
 			return -ENOTSUP ;
 	}
@@ -329,6 +328,39 @@ static ZERO_OR_ERROR FS_w_simultaneous(struct one_wire_query *owq)
 }
 
 #endif /* OW_MT */
+
+/* Write to interface dir */
+static ZERO_OR_ERROR FS_w_interface(struct one_wire_query *owq)
+{
+	struct parsedname *pn = PN(owq);
+
+	if ( pn->selected_connection == NO_CONNECTION ) {
+		LEVEL_DEBUG("Attempt to write to no bus for /settings");
+		return -ENODEV ;
+	} else if ( SpecifiedLocalBus(pn) ) {
+		return FS_w_local(owq);
+	} else {
+		return ServerWrite(owq);
+	}
+}
+
+/* Write to settings dir */
+static ZERO_OR_ERROR FS_w_settings(struct one_wire_query *owq)
+{
+	struct parsedname *pn = PN(owq);
+
+	if ( BAD(TestConnection(pn)) ) {
+		// safe for connection_in == NULL
+		return -ECONNABORTED;
+	} else if (KnownBus(pn) && BusIsServer(pn->selected_connection)) {
+		return ServerWrite(owq);
+	} else if ( pn->selected_connection == NO_CONNECTION ) {
+		LEVEL_DEBUG("Attempt to write to local bus for /settings");
+		return -ENODEV ;
+	} else {
+		return FS_w_local(owq);
+	}
+}
 
 /* Write now that connection is set */
 static ZERO_OR_ERROR FS_w_given_bus(struct one_wire_query *owq)
