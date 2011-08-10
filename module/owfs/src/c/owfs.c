@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
 	struct Fuse_option fuse_options;
 
 	/* Set up owlib */
-	LibSetup(opt_owfs);
+	LibSetup(program_type_filesystem);
 
 	/* grab our executable name */
 	if (argc > 0) {

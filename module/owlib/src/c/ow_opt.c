@@ -285,19 +285,19 @@ static int ParseInterp(struct lineparse *lp)
 			*prog_char = tolower(*prog_char);
 		}
 		if (strstr(lp->prog, "server") != NULL) {
-			if ((Globals.opt == opt_server) == lp->reverse_prog) {
+			if ((Globals.program_type == program_type_server) == lp->reverse_prog) {
 				return 0;
 			}
 		} else if (strstr(lp->prog, "http") != NULL) {
-			if ((Globals.opt == opt_httpd) == lp->reverse_prog) {
+			if ((Globals.program_type == program_type_httpd) == lp->reverse_prog) {
 				return 0;
 			}
 		} else if (strstr(lp->prog, "ftp") != NULL) {
-			if ((Globals.opt == opt_ftpd) == lp->reverse_prog) {
+			if ((Globals.program_type == program_type_ftpd) == lp->reverse_prog) {
 				return 0;
 			}
 		} else if (strstr(lp->prog, "fs") != NULL) {
-			if ((Globals.opt == opt_owfs) == lp->reverse_prog) {
+			if ((Globals.program_type == program_type_filesystem) == lp->reverse_prog) {
 				return 0;
 			}
 		} else {
@@ -614,17 +614,17 @@ GOOD_OR_BAD owopt(const int option_char, const char *arg)
 	case 's':
 		return ARG_Net(arg);
 	case 'p':
-		switch (Globals.opt) {
-		case opt_httpd:
-		case opt_server:
-		case opt_ftpd:
+		switch (Globals.program_type) {
+		case program_type_httpd:
+		case program_type_server:
+		case program_type_ftpd:
 			return ARG_Server(arg);
 		default:
 			return gbGOOD;
 		}
 	case 'm':
-		switch (Globals.opt) {
-		case opt_owfs:
+		switch (Globals.program_type) {
+		case program_type_filesystem:
 			return ARG_Server(arg);
 		default:
 			return gbGOOD;

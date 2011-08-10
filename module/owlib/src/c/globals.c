@@ -35,7 +35,7 @@ int32_t LocalControlFlags ;
 struct global Globals = {
 	.announce_off = 0,
 	.announce_name = NULL,
-	.opt = opt_swig,
+	.program_type = program_type_swig,
 	.progname = NULL,			// "One Wire File System" , Can't allocate here since it's freed
 
 	.temp_scale = temp_celsius,

@@ -39,13 +39,13 @@ pthread_cond_t access_cond ;
 
 int access_num = 0;
 
-void API_setup(enum opt_program opt)
+void API_setup(enum enum_program_type program_type)
 {
 	static int deja_vue = 0;
 	// poor mans lock for the Lib Setup and Lock Setup
 	if (++deja_vue == 1) {
 		// first time through
-		LibSetup(opt);
+		LibSetup(program_type);
 		INITINIT ;
 		ACCESSINIT ;
 		StateInfo.owlib_state = lib_state_setup;
@@ -75,7 +75,7 @@ GOOD_OR_BAD API_init(const char *command_line)
 	GOOD_OR_BAD return_code = gbGOOD;
 
 	if (StateInfo.owlib_state == lib_state_pre) {
-		LibSetup(Globals.opt);	// use previous or default value
+		LibSetup(Globals.program_type);	// use previous or default value
 		StateInfo.owlib_state = lib_state_setup;
 	}
 	LIB_WLOCK;

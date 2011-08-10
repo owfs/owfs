@@ -6,7 +6,7 @@
 %include "typemaps.i"
 
 %init %{
-API_setup(opt_swig) ;
+API_setup(program_type_swig) ;
 %}
 
 %{

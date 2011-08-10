@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
 	int c;
 
 	/* Set up owlib */
-	LibSetup(opt_httpd);
+	LibSetup(program_type_httpd);
 
 	/* grab our executable name */
 	if (argc > 0) {

@@ -116,8 +116,8 @@ static void create_services(struct announce_avahi_struct * aas)
 		}
 		port = ntohs(((struct sockaddr_in *) (&sa))->sin_port) ;
 		/* Add the service */
-		switch (Globals.opt) {
-			case opt_httpd:
+		switch (Globals.program_type) {
+			case program_type_httpd:
 				service_name = (Globals.announce_name) ? Globals.announce_name : "OWFS (1-wire) Web" ;
 				UCLIBCLOCK;
 				snprintf(name,62,"%s <%d>",service_name,(int)port);
@@ -125,14 +125,14 @@ static void create_services(struct announce_avahi_struct * aas)
 				ret1 = avahi_entry_group_add_service( aas->group, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC, 0, name,"_http._tcp", NULL, NULL, port, NULL) ;
 				ret2 = avahi_entry_group_add_service( aas->group, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC, 0, name,"_owhttpd._tcp", NULL, NULL, port, NULL) ;
 				break ;
-			case opt_server:
+			case program_type_server:
 				service_name = (Globals.announce_name) ? Globals.announce_name : "OWFS (1-wire) Server" ;
 				UCLIBCLOCK;
 				snprintf(name,62,"%s <%d>",service_name,(int)port);
 				UCLIBCUNLOCK;
 				ret1 = avahi_entry_group_add_service( aas->group, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC, 0, name,"_owserver._tcp", NULL, NULL, port, NULL) ;
 				break;
-			case opt_ftpd:
+			case program_type_ftpd:
 				service_name = (Globals.announce_name) ? Globals.announce_name : "OWFS (1-wire) FTP" ;
 				UCLIBCLOCK;
 				snprintf(name,62,"%s <%d>",service_name,(int)port);
@@ -162,14 +162,14 @@ static void create_services(struct announce_avahi_struct * aas)
 		aas->out->zero.name = owstrdup(name) ;
 
 		SAFEFREE( aas->out->zero.type ) ;
-		switch (Globals.opt) {
-			case opt_httpd:
+		switch (Globals.program_type) {
+			case program_type_httpd:
 				aas->out->zero.type = owstrdup("_owhttpd._tcp") ;
 				break ;
-			case opt_server:
+			case program_type_server:
 				aas->out->zero.type = owstrdup("_owserver._tcp") ;
 				break;
-			case opt_ftpd:
+			case program_type_ftpd:
 				aas->out->zero.type = owstrdup("_ftp._tcp") ;
 				break;
 			default:

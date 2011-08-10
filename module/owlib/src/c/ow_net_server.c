@@ -121,11 +121,11 @@ GOOD_OR_BAD ServerOutSetup(struct connection_out *out)
 	if ( out->name == NULL ) { // NULL name means default attempt
 		char * default_port ;
 		// First time through, try default port
-		switch (Globals.opt) {
-			case opt_server:
+		switch (Globals.program_type) {
+			case program_type_server:
 				default_port = DEFAULT_SERVER_PORT ;
 				break ;
-			case opt_ftpd:
+			case program_type_ftpd:
 				default_port = DEFAULT_FTP_PORT ;
 				break ;
 			default:

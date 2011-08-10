@@ -47,7 +47,7 @@ void OW_set_error_level(const char *params)
 ssize_t OW_init(const char *params)
 {
 	/* Set up owlib */
-	API_setup(opt_c);
+	API_setup(program_type_clibrary);
 
 	/* Proceed with init while lock held */
 	/* grab our executable name */
@@ -64,7 +64,7 @@ ssize_t OW_init(const char *params)
 ssize_t OW_init_args(int argc, char **argv)
 {
 	/* Set up owlib */
-	API_setup(opt_c);
+	API_setup(program_type_clibrary);
 
 	/* grab our executable name */
 	if (argc > 0) {

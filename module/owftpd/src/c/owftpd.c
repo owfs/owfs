@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
 	sigset_t myset;
 
 	/* Set up owlib */
-	LibSetup(opt_ftpd);
+	LibSetup(program_type_ftpd);
 
 	/* grab our executable name */
 	if (argc > 0) {

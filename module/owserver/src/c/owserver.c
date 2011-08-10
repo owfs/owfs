@@ -45,7 +45,7 @@ int main(int argc, char **argv)
 	int c;
 
 	/* Set up owlib */
-	LibSetup(opt_server);
+	LibSetup(program_type_server);
 
 	/* grab our executable name */
 	if (argc > 0) {

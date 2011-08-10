@@ -78,8 +78,8 @@ static void *Announce(void *v)
 	port = ntohs(((struct sockaddr_in *) (&sa))->sin_port) ;
 
 	/* Add the service */
-	switch (Globals.opt) {
-		case opt_httpd:
+	switch (Globals.program_type) {
+		case program_type_httpd:
 			service_name = (Globals.announce_name) ? Globals.announce_name : "OWFS (1-wire) Web" ;
 			UCLIBCLOCK;
 			snprintf(name,62,"%s <%d>",service_name,(int)port);
@@ -88,14 +88,14 @@ static void *Announce(void *v)
 			Announce_Post_Register(sref, err) ;
 			err = DNSServiceRegister(&sref, 0, 0, name,"_owhttpd._tcp", NULL, NULL, port, 0, NULL, RegisterBack, out) ;
 			break ;
-		case opt_server:
+		case program_type_server:
 			service_name = (Globals.announce_name) ? Globals.announce_name : "OWFS (1-wire) Server" ;
 			UCLIBCLOCK;
 			snprintf(name,62,"%s <%d>",service_name,(int)port);
 			UCLIBCUNLOCK;
 			err = DNSServiceRegister(&sref, 0, 0, name,"_owserver._tcp", NULL, NULL, port, 0, NULL, RegisterBack, out) ;
 			break;
-		case opt_ftpd:
+		case program_type_ftpd:
 			service_name = (Globals.announce_name) ? Globals.announce_name : "OWFS (1-wire) FTP" ;
 			UCLIBCLOCK;
 			snprintf(name,62,"%s <%d>",service_name,(int)port);

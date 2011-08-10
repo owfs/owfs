@@ -119,13 +119,13 @@ GOOD_OR_BAD EnterBackground(void)
 	 * (or process-group id) which libusb-win32 is depending on. */
 	//printf("Enter Background\n") ;
 	if (Globals.want_background) {
-		switch (Globals.opt) {
-		case opt_owfs:
+		switch (Globals.program_type) {
+		case program_type_filesystem:
 			// handles PID from a callback
 			break;
-		case opt_httpd:
-		case opt_ftpd:
-		case opt_server:
+		case program_type_httpd:
+		case program_type_ftpd:
+		case program_type_server:
 			if (
 				// daemonize
 				//   current directory left unchanged (not root)
@@ -155,7 +155,7 @@ GOOD_OR_BAD EnterBackground(void)
 			break;
 		}
 	} else {					// not background
-		if (Globals.opt != opt_owfs) {
+		if (Globals.program_type != program_type_filesystem) {
 			PIDstart();
 		}
 	}

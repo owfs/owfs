@@ -17,15 +17,15 @@ $Id$
 
 void ow_help_general(void)
 {
-	switch (Globals.opt) {
-	case opt_owfs:
+	switch (Globals.program_type) {
+	case program_type_filesystem:
 		printf("Syntax: %s [options] device mountpoint\n", SAFESTRING(Globals.progname));
 		break;
-	case opt_httpd:
-	case opt_server:
+	case program_type_httpd:
+	case program_type_server:
 		printf("Syntax: %s [options] device clientport\n", SAFESTRING(Globals.progname));
 		break;
-	case opt_ftpd:
+	case program_type_ftpd:
 	default:
 		printf("Syntax: %s [options] device\n", SAFESTRING(Globals.progname));
 		break;

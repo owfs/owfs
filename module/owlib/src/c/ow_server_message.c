@@ -684,7 +684,7 @@ static SIZE_OR_ERROR WriteToServer(int file_descriptor, struct server_msg *sm, s
 	}
 
 	sm->version = MakeServerprotocol(OWSERVER_PROTOCOL_VERSION);
-	if (Globals.opt == opt_server) {
+	if (Globals.program_type == program_type_server) {
 		tokens = sp->tokens;
 		sm->version |= MakeServermessage;
 
@@ -719,7 +719,7 @@ static SIZE_OR_ERROR WriteToServer(int file_descriptor, struct server_msg *sm, s
 		++traffic_counter;
 		TrafficOutFD("write data" ,io[traffic_counter].iov_base,io[traffic_counter].iov_len,file_descriptor);
 	}
-	if ( Globals.opt == opt_server ) {
+	if ( Globals.program_type == program_type_server ) {
 		if (sp->tokens > 0) {		// owserver: send prior tags
 			++traffic_counter;
 			TrafficOutFD("write old tokens" ,io[traffic_counter].iov_base,io[traffic_counter].iov_len,file_descriptor);

@@ -59,8 +59,8 @@ $Id$
 
 enum zero_support { zero_unknown, zero_none, zero_bonjour, zero_avahi, } ;
 
-enum opt_program { opt_owfs, opt_server, opt_httpd, opt_ftpd, opt_tcl,
-	opt_swig, opt_c,
+enum enum_program_type { program_type_filesystem, program_type_server, program_type_httpd, program_type_ftpd, program_type_tcl,
+	program_type_swig, program_type_clibrary,
 };
 
 /* Globals information (for local control) */
@@ -70,7 +70,7 @@ struct global {
 	enum temp_type temp_scale;
 	enum pressure_type pressure_scale ;
 	enum deviceformat format ;
-	enum opt_program opt;
+	enum enum_program_type program_type;
 	ASCII *progname;
 	union antiloop Token;
 	int uncached ; // all requests are from /uncached directory

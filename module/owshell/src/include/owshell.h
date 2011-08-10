@@ -121,9 +121,6 @@ typedef int INT;
 /* These are the owlib-specific options */
 #define OWLIB_OPT "m:c:f:p:s:hu::d:t:CFRKVP:"
 extern const struct option owopts_long[];
-enum opt_program { opt_owfs, opt_server, opt_httpd, opt_ftpd, opt_tcl,
-	opt_swig, opt_c,
-};
 void owopt(const int c, const char *arg);
 
 /* Several different structures:
@@ -185,7 +182,6 @@ union antiloop {
 struct global {
 	int announce_off;			// use zeroconf?
 	ASCII *announce_name;
-	enum opt_program opt;
 	ASCII *progname;
 	union antiloop Token;
 	int want_background;

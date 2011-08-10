@@ -50,7 +50,7 @@ $Id$
 #define  WRITE_FUNCTION( fname )  static int fname( struct one_wire_query * owq )
 
 /* Prototypes for owlib.c -- libow overall control */
-void LibSetup(enum opt_program op);
+void LibSetup(enum enum_program_type op);
 GOOD_OR_BAD LibStart(void);
 void HandleSignals(void);
 void LibStop(void);
@@ -193,7 +193,7 @@ void BUS_lock_in(struct connection_in *in);
 void BUS_unlock_in(struct connection_in *in);
 
 /* API wrappers for swig and owcapi */
-void API_setup(enum opt_program opt);
+void API_setup(enum enum_program_type opt);
 GOOD_OR_BAD API_init(const char *command_line);
 void API_set_error_level(const char *params);
 void API_set_error_print(const char *params);

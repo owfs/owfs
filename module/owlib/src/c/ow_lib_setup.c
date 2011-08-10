@@ -18,12 +18,12 @@ int main_threadid_init = 0 ;
 pthread_t main_threadid;
 
 /* All ow library setup */
-void LibSetup(enum opt_program opt)
+void LibSetup(enum enum_program_type program_type)
 {
 	/* Setup the multithreading synchronizing locks */
 	LockSetup();
 
-	Globals.opt = opt;
+	Globals.program_type = program_type;
 
 	/* special resort in case static data (devices and filetypes) not properly sorted */
 	DeviceSort();
