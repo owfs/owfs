@@ -146,8 +146,7 @@ static void * CheckPresence_callback(void * v)
 	cps->bus_nr = CheckThisConnection( cps->in->index, cps->pn ) ;
 	
 	if (threadbad == 0) {		/* was a thread created? */
-		void *vv;
-		if (pthread_join(thread, &vv)==0) {
+		if (pthread_join(thread, NULL)==0) {
 			if ( INDEX_VALID(next_cps.bus_nr) ) {
 				cps->bus_nr = next_cps.bus_nr ;
 			}

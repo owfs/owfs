@@ -294,8 +294,7 @@ static void * Simultaneous_write(void * v)
 	FS_w_given_bus(owq_copy);
 
 	if (threadbad == 0) {		/* was a thread created? */
-		void *v_ignore;
-		pthread_join(thread, &v_ignore) ;
+		pthread_join(thread, NULL) ;
 	}
 	return VOID_RETURN ;
 }

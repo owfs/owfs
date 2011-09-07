@@ -143,18 +143,16 @@ void PingLoop(struct handlerdata *hd)
 		pthread_t thread ;
 		
 		// Create DataHandler
-		if (pthread_create(&thread, DEFAULT_THREAD_ATTR, DataHandler, hd)) {
+		if (pthread_create(&thread, DEFAULT_THREAD_ATTR, DataHandler, hd) != 0) {
 			LEVEL_DEBUG("OWSERVER:handler() can't create new thread");
 			DataHandler(hd);		// do it without pings
 		} else {
-			void *vo;
-
 			// ping vs data loop
 			do {
 				current_toclient = Ping_or_Send( current_toclient, hd ) ;
 			} while ( current_toclient != toclient_complete ) ;
 
-			if (pthread_join(thread, &vo)) {
+			if (pthread_join(thread, NULL) != 0) {
 				LEVEL_DEBUG("Error waiting for finish of data thread");
 			}
 		}

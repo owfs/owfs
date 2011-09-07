@@ -295,9 +295,8 @@ static ZERO_OR_ERROR FS_dir_all_connections_loop(void (*dirfunc)
 	//printf("FS_dir_all_connections4 pid=%ld adapter=%d ret=%d\n",pthread_self(), pn_directory->selected_connection->index,ret);
 	/* See if next bus was also queried */
 	if (threadbad == 0) {		/* was a thread created? */
-		void *vo;
-		if (pthread_join(thread, &vo)) {
-			return ret;			/* wait for it (or return only this result) */
+		if (pthread_join(thread, NULL)!= 0) {
+			return ret;			/* cannot join, so return only this result */
 		}
 		if (dacs.ret >= 0) {
 			return dacs.ret;	/* is it an error return? Then return this one */

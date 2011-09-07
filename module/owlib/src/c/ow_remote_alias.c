@@ -108,8 +108,7 @@ static void * RemoteAlias_callback(void * v)
 	ras->bus_nr = ServerAlias( ras->sn, ras->in, ras->pn ) ;
 	
 	if (threadbad == 0) {		/* was a thread created? */
-		void *vv;
-		if (pthread_join(thread, &vv)==0) {
+		if (pthread_join(thread, NULL)==0) {
 			// Set answer to the next bus if it's found
 			// else use current answer
 			if ( INDEX_VALID(next_ras.bus_nr) ) {
