@@ -572,7 +572,7 @@ static enum search_status HA5_directory(struct device_search *ds, const struct p
 static GOOD_OR_BAD HA5_resync( struct connection_in * in )
 {
 	HA5_flush(in->master.ha5.head );
-	HA5_reset_in(in);
+	HA5_reset_wrapped(in);
 	HA5_flush(in->master.ha5.head );
 
 	// Poison current "Address" for adapter
