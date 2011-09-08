@@ -81,7 +81,7 @@ static int EtherWeather_command(struct connection_in *in, char command, int data
 		SOC(in)->timeout.tv_sec += 2 ;
 	}
 	// Read the response header
-	if ( COM_read_size( packet, 2, in ) != 2 ) {
+	if ( BAD(COM_read( packet, 2, in )) ) {
 		LEVEL_CONNECT("header read error");
 		owfree(packet);
 		return -EIO;
@@ -94,7 +94,7 @@ static int EtherWeather_command(struct connection_in *in, char command, int data
 	}
 	// Then read any data
 	if (datalen > 0) {
-		if ( COM_read_size( odata, datalen, in ) != datalen ) {
+		if ( BAD(COM_read( odata, datalen, in )) ) {
 			LEVEL_CONNECT("data read error");
 			owfree(packet);
 			return -EIO;

@@ -887,7 +887,6 @@ static GOOD_OR_BAD DS2480_write(const BYTE * buf, const size_t size, struct conn
 /* Read from DS2480 with timeout on each character */
 // NOTE: from PDkit, read 1-byte at a time
 // NOTE: change timeout to 40msec from 10msec for LINK (emulation mode)
-// returns 0=good 1=bad
 static GOOD_OR_BAD DS2480_read(BYTE * buf, const size_t size, struct connection_in * in)
 {
 	return COM_read( buf, size, in ) ;

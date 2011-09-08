@@ -205,7 +205,7 @@ static GOOD_OR_BAD HA7_read( struct memblob *mb, struct connection_in * in )
 	SOC(in)->timeout.tv_usec = 0 ;
 
 	// Read first block of data from HA7
-	read_size = COM_read_size( (BYTE*) readin_area, HA7_READ_BUFFER_LENGTH, in) ;
+	read_size = COM_read_with_timeout( (BYTE*) readin_area, HA7_READ_BUFFER_LENGTH, in) ;
 	if ( read_size <= 0 ) {
 		LEVEL_CONNECT("Read error");
 		return gbBAD;
@@ -235,7 +235,7 @@ static GOOD_OR_BAD HA7_read( struct memblob *mb, struct connection_in * in )
 	}
 	// loop through reading in HA7_READ_BUFFER_LENGTH blocks
 	while (read_size == HA7_READ_BUFFER_LENGTH) {	// full read, so presume more waiting
-		read_size = COM_read_size( (BYTE*) readin_area, HA7_READ_BUFFER_LENGTH, in) ;
+		read_size = COM_read_with_timeout( (BYTE*) readin_area, HA7_READ_BUFFER_LENGTH, in) ;
 		if (read_size <= 0) {
 			LEVEL_DATA("Couldn't get rest of HA7 data (err=%d)", read_size);
 			MemblobClear(mb);

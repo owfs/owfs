@@ -18,8 +18,10 @@ $Id$
 #include <linux/limits.h>
 #endif
 
-SIZE_OR_ERROR COM_read_size_low( BYTE * data, size_t length, struct connection_in *connection ) ;
+static SIZE_OR_ERROR COM_read_get_size( BYTE * data, size_t length, struct connection_in *connection ) ;
 
+// read length bytes.
+// return BAD if any error or timeout before full length
 GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connection)
 {
 	if ( length == 0 ) {
@@ -48,7 +50,7 @@ GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connecti
 			return telnet_read( data, length, connection ) ;
 		case ct_tcp:
 			// network is ok
-			return COM_read_size_low( data, length, connection ) < 0 ? gbBAD : gbGOOD ;
+			return COM_read_get_size( data, length, connection ) == length ? gbGOOD : gbBAD ;
 		case ct_i2c:
 		case ct_netlink:
 		case ct_usb:
@@ -58,11 +60,11 @@ GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connecti
 		// serial is ok
 		// printf("Serial read fd=%d length=%d\n",SOC(connection)->file_descriptor, (int) length);
 		{
-			ssize_t actual = COM_read_size_low( data, length, connection ) ;
+			ssize_t actual = COM_read_get_size( data, length, connection ) ;
 			if ( FILE_DESCRIPTOR_VALID( SOC(connection)->file_descriptor ) ) {
 				// tcdrain only works on serial conections
 				tcdrain( SOC(connection)->file_descriptor );
-				return actual < 0 ? gbBAD : gbGOOD ;
+				return actual == length ? gbGOOD : gbBAD ;
 			}
 			break ;
 		}
@@ -70,7 +72,9 @@ GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connecti
 	return gbBAD ;
 }
 
-SIZE_OR_ERROR COM_read_size( BYTE * data, size_t length, struct connection_in *connection)
+// try to read bytes and return number actually read.
+// Timeout ok
+SIZE_OR_ERROR COM_read_with_timeout( BYTE * data, size_t length, struct connection_in *connection)
 {
 	if ( length == 0 ) {
 		return 0 ;
@@ -86,17 +90,27 @@ SIZE_OR_ERROR COM_read_size( BYTE * data, size_t length, struct connection_in *c
 	// to restart the transaction from the "write" portion
 	if ( FILE_DESCRIPTOR_NOT_VALID( SOC(connection)->file_descriptor ) ) {
 		return -EBADF ;
-	}
+	} else {
+		size_t actual_size ;
+		ZERO_OR_ERROR zoe = tcp_read( SOC(connection)->file_descriptor, data, length, &(SOC(connection)->timeout), &actual_size ) ;
 
-	return COM_read_size_low( data, length, connection ) ;
+		if ( zoe == -EBADF ) {
+			COM_close(connection) ;
+			return zoe ;
+		} else {
+			return actual_size ;
+		}
+	}
 }
 
-SIZE_OR_ERROR COM_read_size_low( BYTE * data, size_t length, struct connection_in *connection )
+// Read only if no errors
+// Returns actual read size
+static SIZE_OR_ERROR COM_read_get_size( BYTE * data, size_t length, struct connection_in *connection )
 {
 	size_t actual_size ;
 	ZERO_OR_ERROR zoe = tcp_read( SOC(connection)->file_descriptor, data, length, &(SOC(connection)->timeout), &actual_size ) ;
 
-	if ( zoe == -EBADF ) {
+	if ( zoe < 0 ) {
 		COM_close(connection) ;
 		return zoe ;
 	} else {

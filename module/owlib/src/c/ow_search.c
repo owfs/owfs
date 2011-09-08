@@ -91,7 +91,7 @@ void BUS_next_cleanup( struct device_search *ds )
 
 
 /* try the directory search 3 times.
- * Since ds->LastDescrepancy is alertered only on success a repeat is legal
+ * Since ds->LastDescrepancy is altered only on success a repeat is legal
  * */
 static enum search_status BUS_next_3try(struct device_search *ds, const struct parsedname *pn)
 {
