@@ -135,6 +135,7 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_reconnect.c     \
 			   ow_remote_alias.c  \
 			   ow_reset.c         \
+			   ow_return_code.c   \
                ow_rwlock.c        \
                ow_stats.c         \
                ow_search.c        \

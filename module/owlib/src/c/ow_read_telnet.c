@@ -123,7 +123,9 @@ GOOD_OR_BAD telnet_read(BYTE * buf, const size_t size, struct connection_in *in)
 		switch ( telnet_read_state ) {
 			case telnet_regular :
 				if ( readin_buf[current_index] == TELNET_IAC ) {
-					//printf("TELNET: IAC\n");
+#if OW_SHOW_TRAFFIC
+					LEVEL_DEBUG("TELNET: IAC");
+#endif /* OW_SHOW_TRAFFIC */
 					// starting escape sequence
 					// following bytes will better characterize
 					telnet_read_state = telnet_iac ;
@@ -154,6 +156,9 @@ GOOD_OR_BAD telnet_read(BYTE * buf, const size_t size, struct connection_in *in)
 					case TELNET_GA:
 						// 2 byte sequence
 						// just read 2nd character
+#if OW_SHOW_TRAFFIC
+						LEVEL_DEBUG("TELNET: End 2-byte sequence");
+#endif /* OW_SHOW_TRAFFIC */
 						telnet_read_state = telnet_regular ;
 						break ;
 					case TELNET_SB:
@@ -186,6 +191,9 @@ GOOD_OR_BAD telnet_read(BYTE * buf, const size_t size, struct connection_in *in)
 						// make this a single regular FF char
 						buf[size - still_needed] = 0xFF ;
 						-- still_needed ;
+#if OW_SHOW_TRAFFIC
+						LEVEL_DEBUG("TELNET: FF escape sequence");
+#endif /* OW_SHOW_TRAFFIC */
 						telnet_read_state = telnet_regular ;
 						break ;
 					default:
@@ -233,6 +241,9 @@ GOOD_OR_BAD telnet_read(BYTE * buf, const size_t size, struct connection_in *in)
 				switch ( readin_buf[current_index] ) {
 					case TELNET_SE:
 						//printf("TELNET: IAC SE\n");
+#if OW_SHOW_TRAFFIC
+						LEVEL_DEBUG("TELNET: End multi-byte sequence");
+#endif /* OW_SHOW_TRAFFIC */
 						telnet_read_state = telnet_regular ;
 						break ;					
 					default:
@@ -244,24 +255,35 @@ GOOD_OR_BAD telnet_read(BYTE * buf, const size_t size, struct connection_in *in)
 				//printf("TELNET: IAC WILL %d\n",readin_buf[current_index]);
 				// 3 byte sequence
 				// now reading 3rd char
+#if OW_SHOW_TRAFFIC
+				LEVEL_DEBUG("TELNET: End 3-byte sequence");
+#endif /* OW_SHOW_TRAFFIC */
 				telnet_read_state = telnet_regular ;
 				break ;
 			case telnet_wont:
 				//printf("TELNET: IAC WONT %d\n",readin_buf[current_index]);
 				// 3 byte sequence
 				// now reading 3rd char
+#if OW_SHOW_TRAFFIC
+				LEVEL_DEBUG("TELNET: End 3-byte sequence");
+#endif /* OW_SHOW_TRAFFIC */
 				telnet_read_state = telnet_regular ;
 				break ;
 			case telnet_do:
 				//printf("TELNET: IAC DO %d\n",readin_buf[current_index]);
 				// 3 byte sequence
 				// now reading 3rd char
+#if OW_SHOW_TRAFFIC
+				LEVEL_DEBUG("TELNET: End 3-byte sequence");
+#endif /* OW_SHOW_TRAFFIC */
 				telnet_read_state = telnet_regular ;
 				break ;
 			case telnet_dont:
-				printf("TELNET: IAC DONT %d\n",readin_buf[current_index]);
 				// 3 byte sequence
 				// now reading 3rd char
+#if OW_SHOW_TRAFFIC
+				LEVEL_DEBUG("TELNET: End 3-byte sequence");
+#endif /* OW_SHOW_TRAFFIC */
 				telnet_read_state = telnet_regular ;
 				break ;
 		}

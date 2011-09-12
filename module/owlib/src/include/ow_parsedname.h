@@ -143,6 +143,7 @@ struct parsedname {
 	struct connection_in *selected_connection;	// which bus is assigned to this item
 	uint32_t control_flags;				// more state info, packed for network transmission
 	struct devlock *lock;			// pointer to a device-specific lock
+	int return_code ; // return (error) code
 	int tokens;				// for anti-loop work
 	BYTE *tokenstring;			// List of tokens from owservers passed
 };

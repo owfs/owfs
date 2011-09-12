@@ -346,4 +346,7 @@ enum deviceformat { fdi, fi, fdidc, fdic, fidc, fic };
 /* Program control */
 #include "ow_programs.h"
 
+/* Return and error codes */
+#include "ow_return_code.h"
+
 #endif							/* OW_H */

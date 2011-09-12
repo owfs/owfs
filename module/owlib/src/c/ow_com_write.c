@@ -37,6 +37,9 @@ GOOD_OR_BAD COM_write( const BYTE * data, size_t length, struct connection_in *c
 			return gbBAD ;
 		case ct_telnet:
 			if ( SOC(connection)->dev.telnet.telnet_negotiated == needs_negotiation ) {
+#if OW_SHOW_TRAFFIC
+				LEVEL_DEBUG("TELNET: Do negotiation");
+#endif /* OW_SHOW_TRAFFIC */
 				RETURN_BAD_IF_BAD(  telnet_change( connection ) ) ;
 				SOC(connection)->dev.telnet.telnet_negotiated = completed_negotiation ;
 			}
@@ -56,11 +59,16 @@ GOOD_OR_BAD COM_write( const BYTE * data, size_t length, struct connection_in *c
 
 	// try the write
 	RETURN_GOOD_IF_GOOD( COM_write_once( data, length, connection ) );
+	
+	LEVEL_DEBUG("Trouble writing to %s", SAFESTRING(SOC(connection)->devicename) ) ;
 
 	if ( SOC(connection)->file_descriptor == FILE_DESCRIPTOR_BAD ) {
 		// connection was bad, now closed, try again
+		LEVEL_DEBUG("Need to reopen %s", SAFESTRING(SOC(connection)->devicename) ) ;
 		RETURN_BAD_IF_BAD( COM_test(connection) ) ;
+		LEVEL_DEBUG("Reopened %s, now slurp", SAFESTRING(SOC(connection)->devicename) ) ;
 		COM_slurp(connection) ;
+		LEVEL_DEBUG("Write again to %s", SAFESTRING(SOC(connection)->devicename) ) ;
 		return COM_write_once( data, length, connection ) ;
 	}
 
