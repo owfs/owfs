@@ -13,7 +13,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
-char * return_code_strings[N_RETURN_CODES] {
+char * return_code_strings[N_RETURN_CODES] = {
 	"SUCCESS", // e_rc_success (first entry)
 	"Not initialized",
 	"Unknown error", // e_rc_last (last entry)
