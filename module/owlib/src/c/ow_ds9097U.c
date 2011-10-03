@@ -264,7 +264,7 @@ static GOOD_OR_BAD DS2480_initialize_repeatedly(struct connection_in * in)
 	int init_cycles ;
 
 	for ( init_cycles = 0 ; init_cycles < DS9097U_INIT_CYCLES ; ++init_cycles ) {
-		LEVEL_DEBUG("Attempt #%d to initialize the DS9097U",init_cycles) ;
+		LEVEL_DEBUG("Attempt %d of %d to initialize the DS9097U",init_cycles,DS9097U_INIT_CYCLES) ;
 		RETURN_GOOD_IF_GOOD( DS2480_big_reset(in) ) ;
 	}
 
