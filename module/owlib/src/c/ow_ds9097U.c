@@ -68,7 +68,7 @@ static void DS2480_setroutines(struct connection_in *in)
 }
 
 // Number of times to try init (from digitemp code))
-#define DS9097U_INIT_CYCLES   10
+#define DS9097U_INIT_CYCLES   3
 
 /* --------------------------- */
 /* DS2480 defines from PDkit   */
