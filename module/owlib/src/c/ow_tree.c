@@ -155,20 +155,22 @@ void DeviceSort(void)
 	Device2Tree( & d_LCD,            ePN_real);
 	Device2Tree( & d_simultaneous,   ePN_real);
 	
-	Device2Tree( & d_stats_cache,     ePN_statistics);
-	Device2Tree( & d_stats_directory, ePN_statistics);
-	Device2Tree( & d_stats_errors,    ePN_statistics);
-	Device2Tree( & d_stats_read,      ePN_statistics);
-	Device2Tree( & d_stats_thread,    ePN_statistics);
-	Device2Tree( & d_stats_write,     ePN_statistics);
+	Device2Tree( & d_stats_cache,          ePN_statistics);
+	Device2Tree( & d_stats_directory,      ePN_statistics);
+	Device2Tree( & d_stats_errors,         ePN_statistics);
+	Device2Tree( & d_stats_read,           ePN_statistics);
+	Device2Tree( & d_stats_thread,         ePN_statistics);
+	Device2Tree( & d_stats_write,          ePN_statistics);
+	Device2Tree( & d_stats_return_code,    ePN_statistics);
 
-	Device2Tree( & d_set_timeout, ePN_settings);
-	Device2Tree( & d_set_units,   ePN_settings);
-	Device2Tree( & d_set_alias,   ePN_settings);
+	Device2Tree( & d_set_timeout,          ePN_settings);
+	Device2Tree( & d_set_units,            ePN_settings);
+	Device2Tree( & d_set_alias,            ePN_settings);
+	Device2Tree( & d_set_return_code,      ePN_settings);
 
-	Device2Tree( & d_sys_process,     ePN_system);
-	Device2Tree( & d_sys_connections, ePN_system);
-	Device2Tree( & d_sys_configure,   ePN_system);
+	Device2Tree( & d_sys_process,          ePN_system);
+	Device2Tree( & d_sys_connections,      ePN_system);
+	Device2Tree( & d_sys_configure,        ePN_system);
 
 	Device2Tree( & d_interface_settings,   ePN_interface);
 	Device2Tree( & d_interface_statistics, ePN_interface);
