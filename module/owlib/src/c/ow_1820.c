@@ -147,8 +147,7 @@ struct filetype DS1825[] = {
 
 DeviceEntryExtended(3B, DS1825, DEV_temp | DEV_alarm, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
-struct aggregate A28EA00 = { 2, ag_letters, ag_aggregate, };
-
+static struct aggregate A28EA00 = { 2, ag_letters, ag_aggregate, };
 struct filetype DS28EA00[] = {
 	F_STANDARD,
 	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_link, FS_slowtemp, NO_WRITE_FUNCTION, VISIBLE, {i:12},},

@@ -63,7 +63,7 @@ WRITE_FUNCTION(FS_w_user);
 
 /* ------- Structures ----------- */
 
-struct aggregate A2415 = { 4, ag_numbers, ag_aggregate, };
+static struct aggregate A2415 = { 4, ag_numbers, ag_aggregate, };
 struct filetype DS2415[] = {
 	F_STANDARD,
 	{"ControlRegister", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_control, FS_w_control, INVISIBLE, NO_FILETYPE_DATA, },

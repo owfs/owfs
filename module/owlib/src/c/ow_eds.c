@@ -149,59 +149,59 @@ static enum e_visibility VISIBLE_EDS0072( const struct parsedname * pn ) ;
 #define _EDS_TYPE_LENGTH 7
 
 // struct bitfield { "alias_link", number_of_bits, shift_left, }
-struct bitfield eds0064_cond_temp_hi   = { "EDS0064/set_alarm/alarm_function", 1, 0, } ;
-struct bitfield eds0064_cond_temp_lo   = { "EDS0064/set_alarm/alarm_function", 1, 1, } ;
-struct bitfield eds0064_cond_hum_hi    = { "EDS0064/set_alarm/alarm_function", 1, 2, } ;
-struct bitfield eds0064_cond_hum_lo    = { "EDS0064/set_alarm/alarm_function", 1, 3, } ;
-struct bitfield eds0064_cond_dp_hi     = { "EDS0064/set_alarm/alarm_function", 1, 4, } ;
-struct bitfield eds0064_cond_dp_lo     = { "EDS0064/set_alarm/alarm_function", 1, 5, } ;
-struct bitfield eds0064_cond_hdex_hi   = { "EDS0064/set_alarm/alarm_function", 1, 6, } ;
-struct bitfield eds0064_cond_hdex_lo   = { "EDS0064/set_alarm/alarm_function", 1, 7, } ;
-struct bitfield eds0064_cond_hindex_hi = { "EDS0064/set_alarm/alarm_function", 1, 8, } ;
-struct bitfield eds0064_cond_hindex_lo = { "EDS0064/set_alarm/alarm_function", 1, 9, } ;
-struct bitfield eds0064_cond_mbar_hi   = { "EDS0064/set_alarm/alarm_function", 1, 10, } ;
-struct bitfield eds0064_cond_mbar_lo   = { "EDS0064/set_alarm/alarm_function", 1, 11, } ;
-struct bitfield eds0064_cond_inHg_hi   = { "EDS0064/set_alarm/alarm_function", 1, 12, } ;
-struct bitfield eds0064_cond_inHg_lo   = { "EDS0064/set_alarm/alarm_function", 1, 13, } ;
-struct bitfield eds0064_cond_lux_hi    = { "EDS0064/set_alarm/alarm_function", 1, 14, } ;
-struct bitfield eds0064_cond_lux_lo    = { "EDS0064/set_alarm/alarm_function", 1, 15, } ;
-struct bitfield eds0064_temp_hi   = { "EDS0064/alarm/state", 1, 0, } ;
-struct bitfield eds0064_temp_lo   = { "EDS0064/alarm/state", 1, 1, } ;
-struct bitfield eds0064_hum_hi    = { "EDS0064/alarm/state", 1, 2, } ;
-struct bitfield eds0064_hum_lo    = { "EDS0064/alarm/state", 1, 3, } ;
-struct bitfield eds0064_dp_hi     = { "EDS0064/alarm/state", 1, 4, } ;
-struct bitfield eds0064_dp_lo     = { "EDS0064/alarm/state", 1, 5, } ;
-struct bitfield eds0064_hdex_hi   = { "EDS0064/alarm/state", 1, 6, } ;
-struct bitfield eds0064_hdex_lo   = { "EDS0064/alarm/state", 1, 7, } ;
-struct bitfield eds0064_hindex_hi = { "EDS0064/alarm/state", 1, 8, } ;
-struct bitfield eds0064_hindex_lo = { "EDS0064/alarm/state", 1, 9, } ;
-struct bitfield eds0064_mbar_hi   = { "EDS0064/alarm/state", 1, 10, } ;
-struct bitfield eds0064_mbar_lo   = { "EDS0064/alarm/state", 1, 11, } ;
-struct bitfield eds0064_inHg_hi   = { "EDS0064/alarm/state", 1, 12, } ;
-struct bitfield eds0064_inHg_lo   = { "EDS0064/alarm/state", 1, 13, } ;
-struct bitfield eds0064_lux_hi    = { "EDS0064/alarm/state", 1, 14, } ;
-struct bitfield eds0064_lux_lo    = { "EDS0064/alarm/state", 1, 15, } ;
-struct bitfield eds0064_relay_state  = { "EDS0064/relay_state", 1, 0, } ;
-struct bitfield eds0064_led_state  = { "EDS0064/relay_state", 1, 1, } ;
-struct bitfield eds0064_led_function  = { "EDS0064/relay_function", 2, 2, } ;
+static struct bitfield eds0064_cond_temp_hi   = { "EDS0064/set_alarm/alarm_function", 1, 0, } ;
+static struct bitfield eds0064_cond_temp_lo   = { "EDS0064/set_alarm/alarm_function", 1, 1, } ;
+static struct bitfield eds0064_cond_hum_hi    = { "EDS0064/set_alarm/alarm_function", 1, 2, } ;
+static struct bitfield eds0064_cond_hum_lo    = { "EDS0064/set_alarm/alarm_function", 1, 3, } ;
+static struct bitfield eds0064_cond_dp_hi     = { "EDS0064/set_alarm/alarm_function", 1, 4, } ;
+static struct bitfield eds0064_cond_dp_lo     = { "EDS0064/set_alarm/alarm_function", 1, 5, } ;
+static struct bitfield eds0064_cond_hdex_hi   = { "EDS0064/set_alarm/alarm_function", 1, 6, } ;
+static struct bitfield eds0064_cond_hdex_lo   = { "EDS0064/set_alarm/alarm_function", 1, 7, } ;
+static struct bitfield eds0064_cond_hindex_hi = { "EDS0064/set_alarm/alarm_function", 1, 8, } ;
+static struct bitfield eds0064_cond_hindex_lo = { "EDS0064/set_alarm/alarm_function", 1, 9, } ;
+static struct bitfield eds0064_cond_mbar_hi   = { "EDS0064/set_alarm/alarm_function", 1, 10, } ;
+static struct bitfield eds0064_cond_mbar_lo   = { "EDS0064/set_alarm/alarm_function", 1, 11, } ;
+static struct bitfield eds0064_cond_inHg_hi   = { "EDS0064/set_alarm/alarm_function", 1, 12, } ;
+static struct bitfield eds0064_cond_inHg_lo   = { "EDS0064/set_alarm/alarm_function", 1, 13, } ;
+static struct bitfield eds0064_cond_lux_hi    = { "EDS0064/set_alarm/alarm_function", 1, 14, } ;
+static struct bitfield eds0064_cond_lux_lo    = { "EDS0064/set_alarm/alarm_function", 1, 15, } ;
+static struct bitfield eds0064_temp_hi   = { "EDS0064/alarm/state", 1, 0, } ;
+static struct bitfield eds0064_temp_lo   = { "EDS0064/alarm/state", 1, 1, } ;
+static struct bitfield eds0064_hum_hi    = { "EDS0064/alarm/state", 1, 2, } ;
+static struct bitfield eds0064_hum_lo    = { "EDS0064/alarm/state", 1, 3, } ;
+static struct bitfield eds0064_dp_hi     = { "EDS0064/alarm/state", 1, 4, } ;
+static struct bitfield eds0064_dp_lo     = { "EDS0064/alarm/state", 1, 5, } ;
+static struct bitfield eds0064_hdex_hi   = { "EDS0064/alarm/state", 1, 6, } ;
+static struct bitfield eds0064_hdex_lo   = { "EDS0064/alarm/state", 1, 7, } ;
+static struct bitfield eds0064_hindex_hi = { "EDS0064/alarm/state", 1, 8, } ;
+static struct bitfield eds0064_hindex_lo = { "EDS0064/alarm/state", 1, 9, } ;
+static struct bitfield eds0064_mbar_hi   = { "EDS0064/alarm/state", 1, 10, } ;
+static struct bitfield eds0064_mbar_lo   = { "EDS0064/alarm/state", 1, 11, } ;
+static struct bitfield eds0064_inHg_hi   = { "EDS0064/alarm/state", 1, 12, } ;
+static struct bitfield eds0064_inHg_lo   = { "EDS0064/alarm/state", 1, 13, } ;
+static struct bitfield eds0064_lux_hi    = { "EDS0064/alarm/state", 1, 14, } ;
+static struct bitfield eds0064_lux_lo    = { "EDS0064/alarm/state", 1, 15, } ;
+static struct bitfield eds0064_relay_state  = { "EDS0064/relay_state", 1, 0, } ;
+static struct bitfield eds0064_led_state  = { "EDS0064/relay_state", 1, 1, } ;
+static struct bitfield eds0064_led_function  = { "EDS0064/relay_function", 2, 2, } ;
 
 // struct bitfield { "alias_link", number_of_bits, shift_left, }
-struct bitfield eds0071_cond_temp_hi = { "EDS0071/set_alarm/alarm_function", 1, 0, } ;
-struct bitfield eds0071_cond_temp_lo = { "EDS0071/set_alarm/alarm_function", 1, 1, } ;
-struct bitfield eds0071_cond_RTD_hi  = { "EDS0071/set_alarm/alarm_function", 1, 2, } ;
-struct bitfield eds0071_cond_RTD_lo  = { "EDS0071/set_alarm/alarm_function", 1, 3, } ;
-struct bitfield eds0071_temp_hi = { "EDS0071/alarm/state", 1, 0, } ;
-struct bitfield eds0071_temp_lo = { "EDS0071/alarm/state", 1, 1, } ;
-struct bitfield eds0071_RTD_hi  = { "EDS0071/alarm/state", 1, 2, } ;
-struct bitfield eds0071_RTD_lo  = { "EDS0071/alarm/state", 1, 3, } ;
-struct bitfield eds0071_relay_state  = { "EDS0071/relay_state", 1, 0, } ;
-struct bitfield eds0071_led_state  = { "EDS0071/relay_state", 1, 1, } ;
-struct bitfield eds0071_relay_function  = { "EDS0071/relay_function", 2, 0, } ;
-struct bitfield eds0071_led_function  = { "EDS0071/relay_function", 2, 2, } ;
+static struct bitfield eds0071_cond_temp_hi = { "EDS0071/set_alarm/alarm_function", 1, 0, } ;
+static struct bitfield eds0071_cond_temp_lo = { "EDS0071/set_alarm/alarm_function", 1, 1, } ;
+static struct bitfield eds0071_cond_RTD_hi  = { "EDS0071/set_alarm/alarm_function", 1, 2, } ;
+static struct bitfield eds0071_cond_RTD_lo  = { "EDS0071/set_alarm/alarm_function", 1, 3, } ;
+static struct bitfield eds0071_temp_hi = { "EDS0071/alarm/state", 1, 0, } ;
+static struct bitfield eds0071_temp_lo = { "EDS0071/alarm/state", 1, 1, } ;
+static struct bitfield eds0071_RTD_hi  = { "EDS0071/alarm/state", 1, 2, } ;
+static struct bitfield eds0071_RTD_lo  = { "EDS0071/alarm/state", 1, 3, } ;
+static struct bitfield eds0071_relay_state  = { "EDS0071/relay_state", 1, 0, } ;
+static struct bitfield eds0071_led_state  = { "EDS0071/relay_state", 1, 1, } ;
+static struct bitfield eds0071_relay_function  = { "EDS0071/relay_function", 2, 0, } ;
+static struct bitfield eds0071_led_function  = { "EDS0071/relay_function", 2, 2, } ;
 
 /* ------- Structures ----------- */
 
-struct aggregate AEDS = { _EDS_PAGES, ag_numbers, ag_separate, };
+static struct aggregate AEDS = { _EDS_PAGES, ag_numbers, ag_separate, };
 struct filetype EDS[] = {
 	F_STANDARD,
 	{"memory", _EDS_PAGES * _EDS_PAGESIZE, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},

@@ -54,7 +54,7 @@ READ_FUNCTION(FS_counter);
 
 /* ------- Structures ----------- */
 
-struct aggregate A1963S = { 16, ag_numbers, ag_separate, };
+static struct aggregate A1963S = { 16, ag_numbers, ag_separate, };
 struct filetype DS1963S[] = {
 	F_STANDARD,
 	{"memory", 512, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
@@ -68,7 +68,7 @@ struct filetype DS1963S[] = {
 
 DeviceEntryExtended(18, DS1963S, DEV_resume | DEV_ovdr, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
-struct aggregate A1963L = { 16, ag_numbers, ag_separate, };
+static struct aggregate A1963L = { 16, ag_numbers, ag_separate, };
 struct filetype DS1963L[] = {
 	F_STANDARD,
 	{"memory", 512, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},

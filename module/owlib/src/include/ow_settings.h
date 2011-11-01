@@ -21,5 +21,6 @@ $Id$
 DeviceHeader(set_timeout);
 DeviceHeader(set_units);
 DeviceHeader(set_alias);
+DeviceHeader(set_return_code);
 
 #endif							/* OW_SETTINGS_H */

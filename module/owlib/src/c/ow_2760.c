@@ -178,7 +178,7 @@ READ_FUNCTION(FS_rangehigh);
 
 #define _1W_DS2780_PARAM_REG 0x60
 
-struct LockPage {
+static struct LockPage {
 	int pages;
 	size_t reg;
 	size_t size;
@@ -199,19 +199,19 @@ struct LockPage {
 #define Size2770	16
 #define Size2780	16
 
-struct LockPage P2720 = { Pages2720, 0x07, Size2720, {0x20, 0x30, 0x00,}, };
-struct LockPage P2751 = { Pages2751, 0x07, Size2751, {0x20, 0x30, 0x00,}, };
-struct LockPage P2755 = { Pages2755, 0x07, Size2755, {0x20, 0x40, 0x60,}, };
-struct LockPage P2760 = { Pages2760, 0x07, Size2760, {0x20, 0x30, 0x00,}, };
-struct LockPage P2770 = { Pages2770, 0x07, Size2770, {0x20, 0x30, 0x40,}, };
-struct LockPage P2780 = { Pages2780, 0x1F, Size2780, {0x20, 0x60, 0x00,}, };
+static struct LockPage P2720 = { Pages2720, 0x07, Size2720, {0x20, 0x30, 0x00,}, };
+static struct LockPage P2751 = { Pages2751, 0x07, Size2751, {0x20, 0x30, 0x00,}, };
+static struct LockPage P2755 = { Pages2755, 0x07, Size2755, {0x20, 0x40, 0x60,}, };
+static struct LockPage P2760 = { Pages2760, 0x07, Size2760, {0x20, 0x30, 0x00,}, };
+static struct LockPage P2770 = { Pages2770, 0x07, Size2770, {0x20, 0x30, 0x40,}, };
+static struct LockPage P2780 = { Pages2780, 0x1F, Size2780, {0x20, 0x60, 0x00,}, };
 
-struct aggregate L2720 = { Pages2720, ag_numbers, ag_separate };
-struct aggregate L2751 = { Pages2751, ag_numbers, ag_separate };
-struct aggregate L2755 = { Pages2755, ag_numbers, ag_separate };
-struct aggregate L2760 = { Pages2760, ag_numbers, ag_separate };
-struct aggregate L2770 = { Pages2770, ag_numbers, ag_separate };
-struct aggregate L2780 = { Pages2780, ag_numbers, ag_separate };
+static struct aggregate L2720 = { Pages2720, ag_numbers, ag_separate };
+static struct aggregate L2751 = { Pages2751, ag_numbers, ag_separate };
+static struct aggregate L2755 = { Pages2755, ag_numbers, ag_separate };
+static struct aggregate L2760 = { Pages2760, ag_numbers, ag_separate };
+static struct aggregate L2770 = { Pages2770, ag_numbers, ag_separate };
+static struct aggregate L2780 = { Pages2780, ag_numbers, ag_separate };
 
 struct filetype DS2720[] = {
 	F_STANDARD,
@@ -503,7 +503,7 @@ static GOOD_OR_BAD OW_w_int8(const int *I, off_t offset, const struct parsedname
 static GOOD_OR_BAD OW_cmd(const BYTE cmd, const struct parsedname *pn);
 static struct LockPage * LP( const struct parsedname * pn ) ;
 
-char WS603_CHECKSUM( BYTE * byt, int length ) ;
+static char WS603_CHECKSUM( BYTE * byt, int length ) ;
 static GOOD_OR_BAD WS603_Send( BYTE * byt, int length, struct parsedname * pn ) ;
 static GOOD_OR_BAD WS603_Get( BYTE cmd, BYTE * byt, int length, struct parsedname * pn ) ;
 static GOOD_OR_BAD WS603_Transaction( BYTE * cmd, int length, BYTE * resp, struct parsedname * pn ) ;
@@ -1354,7 +1354,7 @@ static GOOD_OR_BAD WS603_Transaction( BYTE * cmd, int length, BYTE * resp, struc
 	return WS603_Get( cmd[0], resp, 7, pn ) ;
 }
 
-char WS603_CHECKSUM( BYTE * byt, int length )
+static char WS603_CHECKSUM( BYTE * byt, int length )
 {
 	int l ;
 	BYTE sum = 0 ;

@@ -142,10 +142,10 @@ struct Mission {
 	int samples;
 };
 
-struct aggregate A1921p = { 16, ag_numbers, ag_separate, };
-struct aggregate A1921l = { LOG_DATA_ELEMENTS, ag_numbers, ag_mixed, };
-struct aggregate A1921h = { HISTOGRAM_DATA_ELEMENTS, ag_numbers, ag_mixed, };
-struct aggregate A1921m = { 12, ag_numbers, ag_aggregate, };
+static struct aggregate A1921p = { 16, ag_numbers, ag_separate, };
+static struct aggregate A1921l = { LOG_DATA_ELEMENTS, ag_numbers, ag_mixed, };
+static struct aggregate A1921h = { HISTOGRAM_DATA_ELEMENTS, ag_numbers, ag_mixed, };
+static struct aggregate A1921m = { 12, ag_numbers, ag_aggregate, };
 struct filetype DS1921[] = {
 	F_STANDARD,
 	{"memory", 512, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},

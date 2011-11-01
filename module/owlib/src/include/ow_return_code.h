@@ -32,27 +32,39 @@ $Id$
 #ifndef OW_RETURN_CODE_H				/* tedious wrapper */
 #define OW_RETURN_CODE_H
 
+#include "ow_debug.h"
+
 // Not stand-alone but part of ow_h
 
-enum e_return_code {
-	e_rc_success = 0 ,
-	e_rc_inval = 9 ,
-	e_rc_last,
-} ;
+extern char * return_code_strings[] ;
 
-#define N_RETURN_CODES (e_rc_last)
+// Fragile: return_code_out_of_bounds is set to the last entry in the error (return_code) list
+// it's defined in ow_return_code.c
+#define return_code_out_of_bounds 210
 
-extern char * return_code_strings[N_RETURN_CODES] ;
+extern int return_code_calls[] ;
 
-extern int return_code_calls[N_RETURN_CODES] ;
+#define N_RETURN_CODES (return_code_out_of_bounds+1)
 
-#define RETURN_CODE_OUT_OF_RANGE (rc)  ((rc)<e_rc_success || (rc)>e_rc_last)
+#define RETURN_CODE_INIT(pn)  do { (pn)->return_code = 0 ; ++return_code_calls[0]; } while (0) ;
 
-#define RETURN_CODE_INIT(pn)  do { (pn)->return_code = e_rc_success ; } while (0) ;
+#define RETURN_IF_ERROR(pn)		if ( (pn)->return_code != 0 ) { return ; }
 
-#define RETURN_CODE_SET(rc,pn)  do { int rcs_r = rc ; \
-			if ( RETURN_CODE_OUT_OF_RANGE(rc) ) { LEVEL_DEBUG("Bad return_code %d",rc); rcs_r = e_rc_last ; } \
-			LEVEL_DEBUG("Set return_code %d <%s> for %s",rcs_r,return_code_strings[rcs_r],(pn)->path); (pn)->return_code = rcs_r ; ++ return_code_calls[rcs_r]; \
-			} while (0) ;
+#ifndef __FILE__
+  #define __FILE__ ""
+#endif
+
+#ifndef __LINE__
+  #define __LINE__ ""
+#endif
+
+#ifndef __func__
+  #define __func__ ""
+#endif
+
+#define RETURN_CODE_SET(rc,pn)    return_code_set_d( rc, pn, __FILE__, __LINE__, __func__ )
+
+void return_code_set( int rc, struct parsedname * pn, const char * d_file, const char * d_line, const char * d_func ) ;
+void Return_code_setup(void) ;
 
 #endif							/* OW_RETURN_CODE_H */

@@ -20,6 +20,8 @@ pthread_t main_threadid;
 /* All ow library setup */
 void LibSetup(enum enum_program_type program_type)
 {
+	Return_code_setup() ;
+	
 	/* Setup the multithreading synchronizing locks */
 	LockSetup();
 

@@ -61,7 +61,7 @@ WRITE_FUNCTION(FS_w_change_password);
 
 /* ------- Structures ----------- */
 
-struct aggregate A1991 = { _DS1991_PAGES, ag_numbers, ag_separate, };
+static struct aggregate A1991 = { _DS1991_PAGES, ag_numbers, ag_separate, };
 struct filetype DS1991[] = {
 	F_STANDARD,
 	{"memory", 144, NON_AGGREGATE, ft_binary, fc_link, FS_r_memory, FS_w_memory, VISIBLE, NO_FILETYPE_DATA,},

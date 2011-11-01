@@ -91,9 +91,9 @@ enum V_alarm_level {
 #define _1W_2450_PAGESIZE	8
 #define _1W_2450_REGISTERS	4
 
-struct aggregate A2450p = { _1W_2450_PAGES, ag_numbers, ag_separate, };
-struct aggregate A2450 = { _1W_2450_REGISTERS, ag_letters, ag_separate, };
-struct aggregate A2450v = { _1W_2450_REGISTERS, ag_letters, ag_aggregate, };
+static struct aggregate A2450p = { _1W_2450_PAGES, ag_numbers, ag_separate, };
+static struct aggregate A2450 = { _1W_2450_REGISTERS, ag_letters, ag_separate, };
+static struct aggregate A2450v = { _1W_2450_REGISTERS, ag_letters, ag_aggregate, };
 struct filetype DS2450[] = {
 	F_STANDARD,
 	{"memory", _1W_2450_PAGESIZE*_1W_2450_PAGES, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},

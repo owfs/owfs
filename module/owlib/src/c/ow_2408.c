@@ -91,7 +91,7 @@ WRITE_FUNCTION(FS_Honoff);
 
 /* ------- Structures ----------- */
 
-struct aggregate A2408 = { 8, ag_numbers, ag_aggregate, };
+static struct aggregate A2408 = { 8, ag_numbers, ag_aggregate, };
 struct filetype DS2408[] = {
 	F_STANDARD,
 	{"power", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},

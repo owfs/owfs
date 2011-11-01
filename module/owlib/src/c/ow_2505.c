@@ -62,8 +62,8 @@ WRITE_FUNCTION(FS_w_mem);
 
 /* ------- Structures ----------- */
 
-struct aggregate A2505 = { 64, ag_numbers, ag_separate, };
-struct aggregate A2505s = { 11, ag_numbers, ag_separate, };
+static struct aggregate A2505 = { 64, ag_numbers, ag_separate, };
+static struct aggregate A2505s = { 11, ag_numbers, ag_separate, };
 struct filetype DS2505[] = {
 	F_STANDARD,
 	{"memory", 2048, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
@@ -88,8 +88,8 @@ struct filetype DS1985U[] = {
 
 DeviceEntry(8B, DS1985U, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
-struct aggregate A2506 = { 256, ag_numbers, ag_separate, };
-struct aggregate A2506s = { 11, ag_numbers, ag_separate, };
+static struct aggregate A2506 = { 256, ag_numbers, ag_separate, };
+static struct aggregate A2506s = { 11, ag_numbers, ag_separate, };
 struct filetype DS2506[] = {
 	F_STANDARD,
 	{"memory", 8192, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},

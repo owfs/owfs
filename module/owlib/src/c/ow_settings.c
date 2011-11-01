@@ -29,6 +29,7 @@ WRITE_FUNCTION(FS_w_TS);
 READ_FUNCTION(FS_r_PS);
 WRITE_FUNCTION(FS_w_PS);
 READ_FUNCTION(FS_aliaslist);
+READ_FUNCTION(FS_return_code);
 
 /* -------- Structures ---------- */
 
@@ -65,6 +66,16 @@ struct filetype set_alias[] = {
 struct device d_set_alias = { "alias", "alias", ePN_settings, COUNT_OF_FILETYPES(set_alias),
 	set_alias, NO_GENERIC_READ, NO_GENERIC_WRITE
 };
+
+static struct aggregate Areturn_code = { N_RETURN_CODES, ag_numbers, ag_separate, };
+struct filetype set_return_code[] = {
+	{"text", 128, &Areturn_code, ft_ascii, fc_static, FS_return_code, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+};
+
+struct device d_set_return_code = { "return_codes", "return_codes", 0, COUNT_OF_FILETYPES(set_return_code),
+	set_return_code, NO_GENERIC_READ, NO_GENERIC_WRITE
+};
+
 
 /* ------- Functions ------------ */
 
@@ -177,4 +188,9 @@ static ZERO_OR_ERROR FS_aliaslist( struct one_wire_query * owq )
 	}
 	MemblobClear( &mb ) ;
 	return zoe ;
+}
+
+static ZERO_OR_ERROR FS_return_code(struct one_wire_query *owq)
+{
+	return OWQ_format_output_offset_and_size_z(return_code_strings[PN(owq)->extension], owq);
 }

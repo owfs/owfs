@@ -226,13 +226,13 @@ static enum e_visibility VISIBLE_910( const struct parsedname * pn ) ;
 static enum e_visibility VISIBLE_911( const struct parsedname * pn ) ;
 
 
-struct aggregate ABAEeeprom = { _FC_MAX_EEPROM_PAGES, ag_numbers, ag_separate, };
-struct aggregate A911pio = { 22, ag_numbers, ag_separate, };
-struct aggregate A911pioc = { 22, ag_numbers, ag_separate, };
-struct aggregate A911cnt1 = { 4, ag_numbers, ag_separate, };
-struct aggregate A911cnt2 = { 4, ag_numbers, ag_separate, };
-struct aggregate A911pwm = { 4, ag_numbers, ag_separate, };
-struct aggregate A911adc = { 16, ag_numbers, ag_separate, };
+static struct aggregate ABAEeeprom = { _FC_MAX_EEPROM_PAGES, ag_numbers, ag_separate, };
+static struct aggregate A911pio = { 22, ag_numbers, ag_separate, };
+static struct aggregate A911pioc = { 22, ag_numbers, ag_separate, };
+static struct aggregate A911cnt1 = { 4, ag_numbers, ag_separate, };
+static struct aggregate A911cnt2 = { 4, ag_numbers, ag_separate, };
+static struct aggregate A911pwm = { 4, ag_numbers, ag_separate, };
+static struct aggregate A911adc = { 16, ag_numbers, ag_separate, };
 
 struct filetype BAE[] = {
 	F_STANDARD,

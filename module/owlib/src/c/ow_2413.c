@@ -58,7 +58,7 @@ READ_FUNCTION(FS_sense);
 
 /* ------- Structures ----------- */
 
-struct aggregate A2413 = { 2, ag_letters, ag_aggregate, };
+static struct aggregate A2413 = { 2, ag_letters, ag_aggregate, };
 struct filetype DS2413[] = {
 	F_STANDARD,
 	{"piostate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_piostate, FS_w_piostate, INVISIBLE, NO_FILETYPE_DATA, },

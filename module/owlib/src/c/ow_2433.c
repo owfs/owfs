@@ -53,7 +53,7 @@ WRITE_FUNCTION(FS_w_mem);
 
  /* ------- Structures ----------- */
 
-struct aggregate A2431 = { 4, ag_numbers, ag_separate, };
+static struct aggregate A2431 = { 4, ag_numbers, ag_separate, };
 struct filetype DS2431[] = {
 	F_STANDARD,
 	{"memory", 128, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
@@ -63,7 +63,7 @@ struct filetype DS2431[] = {
 
 DeviceEntryExtended(2D, DS2431, DEV_ovdr | DEV_resume, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
-struct aggregate A2433 = { 16, ag_numbers, ag_separate, };
+static struct aggregate A2433 = { 16, ag_numbers, ag_separate, };
 struct filetype DS2433[] = {
 	F_STANDARD,
 	{"memory", 512, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
@@ -73,7 +73,7 @@ struct filetype DS2433[] = {
 
 DeviceEntryExtended(23, DS2433, DEV_ovdr, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
-struct aggregate A28EC20 = { 80, ag_numbers, ag_separate, };
+static struct aggregate A28EC20 = { 80, ag_numbers, ag_separate, };
 struct filetype DS28EC20[] = {
 	F_STANDARD,
 	{"memory", 2560, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},

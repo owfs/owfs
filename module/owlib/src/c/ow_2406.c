@@ -77,9 +77,9 @@ static enum e_visibility VISIBLE_T8A( const struct parsedname * pn ) ;
 
 /* ------- Structures ----------- */
 
-struct aggregate A2406 = { 2, ag_letters, ag_aggregate, };
-struct aggregate A2406p = { 4, ag_numbers, ag_separate, };
-struct aggregate AT8Ac = { 8, ag_numbers, ag_separate, }; // 8 channel T8A volt meter
+static struct aggregate A2406 = { 2, ag_letters, ag_aggregate, };
+static struct aggregate A2406p = { 4, ag_numbers, ag_separate, };
+static struct aggregate AT8Ac = { 8, ag_numbers, ag_separate, }; // 8 channel T8A volt meter
 struct filetype DS2406[] = {
 	F_STANDARD,
 	{"memory", 128, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},

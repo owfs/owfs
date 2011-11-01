@@ -62,7 +62,7 @@ WRITE_FUNCTION(FS_w_flag);
 
 /* ------- Structures ----------- */
 
-struct aggregate A2404 = { 16, ag_numbers, ag_separate, };
+static struct aggregate A2404 = { 16, ag_numbers, ag_separate, };
 struct filetype DS2404[] = {
 	F_STANDARD,
 	{"memory", 512, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},

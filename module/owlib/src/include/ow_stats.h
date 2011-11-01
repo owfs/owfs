@@ -24,5 +24,6 @@ DeviceHeader(stats_write);
 DeviceHeader(stats_directory);
 DeviceHeader(stats_errors);
 DeviceHeader(stats_thread);
+DeviceHeader(stats_return_code);
 
 #endif							/* OW_STATS */

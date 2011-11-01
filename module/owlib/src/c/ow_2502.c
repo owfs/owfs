@@ -54,7 +54,7 @@ READ_FUNCTION(FS_r_param);
 
 /* ------- Structures ----------- */
 
-struct aggregate A2502 = { 4, ag_numbers, ag_separate, };
+static struct aggregate A2502 = { 4, ag_numbers, ag_separate, };
 struct filetype DS2502[] = {
 	F_STANDARD,
 	{"memory", 128, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
