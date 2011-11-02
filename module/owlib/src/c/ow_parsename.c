@@ -224,6 +224,7 @@ static ZERO_OR_ERROR FS_ParsedName_setup(struct parsedname_pointers *pp, const c
 
 	memset(pn, 0, sizeof(struct parsedname));
 	pn->known_bus = NULL;		/* all buses */
+	RETURN_CODE_INIT(pn);
 
 	/* Set the persistent state info (temp scale, ...) -- will be overwritten by client settings in the server */
 	CONTROLFLAGSLOCK;
