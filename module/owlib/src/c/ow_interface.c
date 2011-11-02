@@ -112,7 +112,7 @@ static enum e_visibility VISIBLE_PSEUDO( const struct parsedname * pn )
 
 /* -------- Structures ---------- */
 /* Rare PUBLIC aggregate structure to allow changing the number of adapters */
-struct filetype interface_settings[] = {
+static struct filetype interface_settings[] = {
 	{"name", 128, NON_AGGREGATE, ft_vascii, fc_static, FS_name, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"address", 512, NON_AGGREGATE, ft_vascii, fc_static, FS_port, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"overdrive", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_yesno, FS_w_yesno, VISIBLE, {s:offsetof(struct connection_in,overdrive),},},
@@ -156,7 +156,7 @@ struct device d_interface_settings = {
 	NO_GENERIC_WRITE
 };
 
-struct filetype interface_statistics[] = {
+static struct filetype interface_statistics[] = {
 	{"elapsed_time", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_elapsed, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"bus_time", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_statistic, FS_bustime, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"reconnects", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat_p, NO_WRITE_FUNCTION, VISIBLE, {i:e_bus_reconnects},},

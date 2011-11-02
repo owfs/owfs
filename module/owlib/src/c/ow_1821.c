@@ -33,7 +33,7 @@ READ_FUNCTION(FS_r_thf);
 WRITE_FUNCTION(FS_w_thf);
 
 /* -------- Structures ---------- */
-struct filetype DS1821[] = {
+static struct filetype DS1821[] = {
 	F_type,
 	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_temperature, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"polarity", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_polarity, FS_w_polarity, VISIBLE, NO_FILETYPE_DATA,},

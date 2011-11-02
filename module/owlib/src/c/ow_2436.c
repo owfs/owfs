@@ -59,7 +59,7 @@ READ_FUNCTION(FS_counter) ;
 /* ------- Structures ----------- */
 
 static struct aggregate A2436 = { 3, ag_numbers, ag_separate, };
-struct filetype DS2436[] = {
+static struct filetype DS2436[] = {
 	F_STANDARD,
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages/page", _1W_2436_PAGESIZE, &A2436, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},

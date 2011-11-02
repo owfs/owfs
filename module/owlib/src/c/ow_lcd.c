@@ -95,7 +95,7 @@ static struct aggregate ALCD = { 4, ag_numbers, ag_aggregate, };
 static struct aggregate ALCD_L16 = { 4, ag_numbers, ag_separate, };
 static struct aggregate ALCD_L20 = { 4, ag_numbers, ag_separate, };
 static struct aggregate ALCD_L40 = { 2, ag_numbers, ag_separate, };
-struct filetype LCD[] = {
+static struct filetype LCD[] = {
 	F_STANDARD,
 	{"memory", 112, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, VISIBLE, NO_FILETYPE_DATA,},
 

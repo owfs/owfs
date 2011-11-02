@@ -234,7 +234,7 @@ static struct aggregate A911cnt2 = { 4, ag_numbers, ag_separate, };
 static struct aggregate A911pwm = { 4, ag_numbers, ag_separate, };
 static struct aggregate A911adc = { 16, ag_numbers, ag_separate, };
 
-struct filetype BAE[] = {
+static struct filetype BAE[] = {
 	F_STANDARD,
 	{"command", _FC02_MAX_COMMAND_GULP, NON_AGGREGATE, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_extended, VISIBLE, NO_FILETYPE_DATA,},
 	//{"writebyte", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_read_stable, NO_READ_FUNCTION, FS_writebyte, VISIBLE, NO_FILETYPE_DATA, },

@@ -64,7 +64,7 @@ WRITE_FUNCTION(FS_w_user);
 /* ------- Structures ----------- */
 
 static struct aggregate A2415 = { 4, ag_numbers, ag_aggregate, };
-struct filetype DS2415[] = {
+static struct filetype DS2415[] = {
 	F_STANDARD,
 	{"ControlRegister", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_control, FS_w_control, INVISIBLE, NO_FILETYPE_DATA, },
 	{"user", PROPERTY_LENGTH_UNSIGNED, &A2415, ft_bitfield, fc_link, FS_r_user, FS_w_user, VISIBLE, NO_FILETYPE_DATA,},
@@ -75,7 +75,7 @@ struct filetype DS2415[] = {
 
 DeviceEntry(24, DS2415, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
-struct filetype DS2417[] = {
+static struct filetype DS2417[] = {
 	F_STANDARD,
 	{"ControlRegister", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_control, FS_w_control, INVISIBLE, NO_FILETYPE_DATA, },
 	{"enable", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_enable, FS_w_enable, VISIBLE, NO_FILETYPE_DATA,},

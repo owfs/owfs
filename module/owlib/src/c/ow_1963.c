@@ -55,7 +55,7 @@ READ_FUNCTION(FS_counter);
 /* ------- Structures ----------- */
 
 static struct aggregate A1963S = { 16, ag_numbers, ag_separate, };
-struct filetype DS1963S[] = {
+static struct filetype DS1963S[] = {
 	F_STANDARD,
 	{"memory", 512, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
@@ -69,7 +69,7 @@ struct filetype DS1963S[] = {
 DeviceEntryExtended(18, DS1963S, DEV_resume | DEV_ovdr, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 static struct aggregate A1963L = { 16, ag_numbers, ag_separate, };
-struct filetype DS1963L[] = {
+static struct filetype DS1963L[] = {
 	F_STANDARD,
 	{"memory", 512, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},

@@ -64,7 +64,7 @@ enum _ds1977_passwords { _ds1977_full, _ds1977_read, _ds1977_control } ;
 off_t _ds1977_pwd_loc[] = { 0x7FC0, 0x7FC8, 0x7FD0, } ;
 
 static struct aggregate A1977 = { 511, ag_numbers, ag_separate, };
-struct filetype DS1977[] = {
+static struct filetype DS1977[] = {
 	F_STANDARD,
 	{"memory", 32704, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},

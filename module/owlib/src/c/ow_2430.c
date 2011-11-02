@@ -56,7 +56,7 @@ WRITE_FUNCTION(FS_w_application);
 
 /* ------- Structures ----------- */
 
-struct filetype DS2430A[] = {
+static struct filetype DS2430A[] = {
 	F_STANDARD,
 	{"memory", _DS2430A_MEM_SIZE, NON_AGGREGATE, ft_binary, fc_link, FS_r_memory, FS_w_memory, VISIBLE, NO_FILETYPE_DATA,},
 

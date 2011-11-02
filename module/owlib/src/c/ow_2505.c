@@ -64,7 +64,7 @@ WRITE_FUNCTION(FS_w_mem);
 
 static struct aggregate A2505 = { 64, ag_numbers, ag_separate, };
 static struct aggregate A2505s = { 11, ag_numbers, ag_separate, };
-struct filetype DS2505[] = {
+static struct filetype DS2505[] = {
 	F_STANDARD,
 	{"memory", 2048, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
@@ -76,7 +76,7 @@ struct filetype DS2505[] = {
 
 DeviceEntry(0B, DS2505, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
-struct filetype DS1985U[] = {
+static struct filetype DS1985U[] = {
 	F_STANDARD,
 	{"memory", 2048, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
@@ -90,7 +90,7 @@ DeviceEntry(8B, DS1985U, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 static struct aggregate A2506 = { 256, ag_numbers, ag_separate, };
 static struct aggregate A2506s = { 11, ag_numbers, ag_separate, };
-struct filetype DS2506[] = {
+static struct filetype DS2506[] = {
 	F_STANDARD,
 	{"memory", 8192, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
@@ -102,7 +102,7 @@ struct filetype DS2506[] = {
 
 DeviceEntryExtended(0F, DS2506, DEV_ovdr, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
-struct filetype DS1986U[] = {
+static struct filetype DS1986U[] = {
 	F_STANDARD,
 	{"memory", 8192, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},

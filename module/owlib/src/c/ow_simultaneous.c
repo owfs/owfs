@@ -56,7 +56,7 @@ READ_FUNCTION(FS_r_present);
 READ_FUNCTION(FS_r_single);
 
 /* -------- Structures ---------- */
-struct filetype simultaneous[] = {
+static struct filetype simultaneous[] = {
 	{"temperature", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_convert, FS_w_convert_temp, VISIBLE, {i:simul_temp},},
 	{"voltage", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_convert, FS_w_convert_volt, VISIBLE, {i:simul_volt},},
 	{"present", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_present, NO_WRITE_FUNCTION, VISIBLE, {i:_1W_READ_ROM},},

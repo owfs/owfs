@@ -130,7 +130,7 @@ READ_FUNCTION(FS_time);
 READ_FUNCTION(FS_return_code);
 
 /* -------- Structures ---------- */
-struct filetype stats_cache[] = {
+static struct filetype stats_cache[] = {
 	{"flips", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&cache_flips},},
 	{"additions", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&cache_adds},},
 
@@ -186,7 +186,7 @@ struct device d_stats_cache = { "cache", "cache", 0, COUNT_OF_FILETYPES(stats_ca
 	// Note, the store hit rate and deletions are not shown -- too much information!
 
 static struct aggregate Aread = { 3, ag_numbers, ag_separate, };
-struct filetype stats_read[] = {
+static struct filetype stats_read[] = {
 	{"calls", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&read_calls},},
 	{"cachesuccess", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&read_cache},},
 	{"cachebytes", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&read_cachebytes},},
@@ -197,7 +197,7 @@ struct filetype stats_read[] = {
 
 struct device d_stats_read = { "read", "read", 0, COUNT_OF_FILETYPES(stats_read), stats_read, NO_GENERIC_READ, NO_GENERIC_WRITE };
 
-struct filetype stats_write[] = {
+static struct filetype stats_write[] = {
 	{"calls", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&write_calls},},
 	{"success", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&write_success},},
 	{"bytes", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&write_bytes},},
@@ -206,7 +206,7 @@ struct filetype stats_write[] = {
 
 struct device d_stats_write = { "write", "write", 0, COUNT_OF_FILETYPES(stats_write), stats_write, NO_GENERIC_READ, NO_GENERIC_WRITE };
 
-struct filetype stats_directory[] = {
+static struct filetype stats_directory[] = {
 	{"maxdepth", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&dir_depth},},
 
 	{"bus", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
@@ -223,7 +223,7 @@ struct device d_stats_directory = { "directory", "directory", 0, COUNT_OF_FILETY
 	stats_directory, NO_GENERIC_READ, NO_GENERIC_WRITE
 };
 
-struct filetype stats_thread[] = {
+static struct filetype stats_thread[] = {
 	{"directory", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"directory/now", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&dir_avg.current},},
 	{"directory/sum", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_statistic, FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v:&dir_avg.sum},},
@@ -254,7 +254,7 @@ struct device d_stats_thread = { "threads", "threads", 0, COUNT_OF_FILETYPES(sta
 };
 
 static struct aggregate Areturn_code = { N_RETURN_CODES, ag_numbers, ag_separate, };
-struct filetype stats_return_code[] = {
+static struct filetype stats_return_code[] = {
 	{"responses", PROPERTY_LENGTH_UNSIGNED, &Areturn_code, ft_unsigned, fc_statistic, FS_return_code, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 };
 
@@ -264,7 +264,7 @@ struct device d_stats_return_code = { "return_codes", "return_codes", 0, COUNT_O
 
 #define FS_stat_ROW(var) {"" #var "",PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE  , ft_unsigned, fc_statistic,   FS_stat, NO_WRITE_FUNCTION, VISIBLE, {v: & var,} }
 
-struct filetype stats_errors[] = {
+static struct filetype stats_errors[] = {
 	{"max_delay", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_statistic, FS_time, NO_WRITE_FUNCTION, VISIBLE, {v:&max_delay},},
 
 // ow_net.c

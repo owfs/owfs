@@ -122,7 +122,7 @@ static struct aggregate A1923p = { 18, ag_numbers, ag_separate, };
 static struct aggregate A1923l = { 2048, ag_numbers, ag_mixed, };
 static struct aggregate A1923h = { 63, ag_numbers, ag_mixed, };
 static struct aggregate A1923m = { 12, ag_numbers, ag_aggregate, };
-struct filetype DS1923[] = {
+static struct filetype DS1923[] = {
 	F_STANDARD,
 #if 0
 	/* Just test functions */

@@ -62,7 +62,7 @@ WRITE_FUNCTION(FS_w_change_password);
 /* ------- Structures ----------- */
 
 static struct aggregate A1991 = { _DS1991_PAGES, ag_numbers, ag_separate, };
-struct filetype DS1991[] = {
+static struct filetype DS1991[] = {
 	F_STANDARD,
 	{"memory", 144, NON_AGGREGATE, ft_binary, fc_link, FS_r_memory, FS_w_memory, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
@@ -80,7 +80,7 @@ struct filetype DS1991[] = {
 
 DeviceEntry(02, DS1991, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
-struct filetype DS1425[] = {
+static struct filetype DS1425[] = {
 	F_STANDARD,
 	{"memory", 144, NON_AGGREGATE, ft_binary, fc_link, FS_r_memory, FS_w_memory, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},

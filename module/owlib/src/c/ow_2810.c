@@ -69,7 +69,7 @@ WRITE_FUNCTION(FS_use);
 /* ------- Structures ----------- */
 
 static struct aggregate A28E10 = { 7, ag_numbers, ag_separate, };
-struct filetype DS28E10[] = {
+static struct filetype DS28E10[] = {
 	F_STANDARD,
 	{"memory", 36, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 	{"user", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},

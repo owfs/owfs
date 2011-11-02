@@ -88,7 +88,7 @@ enum voltage_source {
 /* ------- Structures ----------- */
 
 static struct aggregate A2437 = { 8, ag_numbers, ag_separate, };
-struct filetype DS2437[] = {
+static struct filetype DS2437[] = {
 	F_STANDARD,
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages/page", 8, &A2437, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
@@ -116,7 +116,7 @@ DeviceEntryExtended(1E, DS2437, DEV_temp | DEV_volt, NO_GENERIC_READ, NO_GENERIC
 
 
 static struct aggregate A2438 = { 8, ag_numbers, ag_separate, };
-struct filetype DS2438[] = {
+static struct filetype DS2438[] = {
 	F_STANDARD,
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages/page", 8, &A2438, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},

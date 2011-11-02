@@ -213,7 +213,7 @@ static struct aggregate L2760 = { Pages2760, ag_numbers, ag_separate };
 static struct aggregate L2770 = { Pages2770, ag_numbers, ag_separate };
 static struct aggregate L2780 = { Pages2780, ag_numbers, ag_separate };
 
-struct filetype DS2720[] = {
+static struct filetype DS2720[] = {
 	F_STANDARD,
 	{"memory", 256, NULL, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages", PROPERTY_LENGTH_SUBDIR, NULL, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
@@ -233,7 +233,7 @@ struct filetype DS2720[] = {
 
 DeviceEntry(31, DS2720, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
-struct filetype DS2740[] = {
+static struct filetype DS2740[] = {
 	F_STANDARD,
 	{"memory", 256, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 
@@ -247,7 +247,7 @@ struct filetype DS2740[] = {
 
 DeviceEntry(36, DS2740, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
-struct filetype DS2751[] = {
+static struct filetype DS2751[] = {
 	F_STANDARD,
 	{"memory", 256, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
@@ -274,7 +274,7 @@ struct filetype DS2751[] = {
 
 DeviceEntry(51, DS2751, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
-struct filetype DS2755[] = {
+static struct filetype DS2755[] = {
 	F_STANDARD,
 	{"memory", 256, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
@@ -308,7 +308,7 @@ struct filetype DS2755[] = {
 DeviceEntryExtended(35, DS2755, DEV_alarm, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 struct aggregate Aled_control = { 4, ag_numbers, ag_aggregate, };
-struct filetype DS2760[] = {
+static struct filetype DS2760[] = {
 	F_STANDARD,
 	{"memory", 256, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
@@ -364,7 +364,7 @@ struct filetype DS2760[] = {
 
 DeviceEntry(30, DS2760, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
-struct filetype DS2770[] = {
+static struct filetype DS2770[] = {
 	F_STANDARD,
 	{"memory", 256, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
@@ -395,7 +395,7 @@ struct filetype DS2770[] = {
 DeviceEntry(2E, DS2770, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 /* DS2780 also includees the DS2775 DS2776 DS2784 */
-struct filetype DS2780[] = {
+static struct filetype DS2780[] = {
 	F_STANDARD,
 	{"memory", 256, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
@@ -427,7 +427,7 @@ struct filetype DS2780[] = {
 
 DeviceEntry(32, DS2780, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
-struct filetype DS2781[] = {
+static struct filetype DS2781[] = {
 	F_STANDARD,
 	{"memory", 256, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},

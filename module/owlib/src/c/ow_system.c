@@ -58,7 +58,7 @@ READ_FUNCTION(FS_define);
 
 /* -------- Structures ---------- */
 /* special entry -- picked off by parsing before filetypes tried */
-struct filetype sys_process[] = {
+static struct filetype sys_process[] = {
 	{"pidfile", 128, NON_AGGREGATE, ft_vascii, fc_static, FS_pidfile, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	// variable length
 	{"pid", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_pid, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
@@ -67,7 +67,7 @@ struct device d_sys_process = { "process", "process", ePN_system, COUNT_OF_FILET
 	sys_process, NO_GENERIC_READ, NO_GENERIC_WRITE
 };
 
-struct filetype sys_connections[] = {
+static struct filetype sys_connections[] = {
 	{"count_current_buses", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_in, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"count_outbound_connections", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_out, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 };
@@ -76,7 +76,7 @@ struct device d_sys_connections = { "connections", "connections", ePN_system,
 	sys_connections, NO_GENERIC_READ, NO_GENERIC_WRITE
 };
 
-struct filetype sys_configure[] = {
+static struct filetype sys_configure[] = {
 	{"threaded", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_integer, fc_static, FS_define, NO_WRITE_FUNCTION, VISIBLE, {i:OW_MT},},
 	{"tai8570", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_integer, fc_static, FS_define, NO_WRITE_FUNCTION, VISIBLE, {i:OW_TAI8570},},
 	{"thermocouples", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_integer, fc_static, FS_define, NO_WRITE_FUNCTION, VISIBLE, {i:OW_THERMOCOUPLE},},

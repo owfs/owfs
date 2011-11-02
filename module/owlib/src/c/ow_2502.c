@@ -55,7 +55,7 @@ READ_FUNCTION(FS_r_param);
 /* ------- Structures ----------- */
 
 static struct aggregate A2502 = { 4, ag_numbers, ag_separate, };
-struct filetype DS2502[] = {
+static struct filetype DS2502[] = {
 	F_STANDARD,
 	{"memory", 128, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
@@ -64,7 +64,7 @@ struct filetype DS2502[] = {
 
 DeviceEntry(09, DS2502, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
-struct filetype DS1982U[] = {
+static struct filetype DS1982U[] = {
 	F_STANDARD,
 	{"memory", 128, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},

@@ -56,7 +56,7 @@ READ_FUNCTION(FS_r_event);
 /* ------- Structures ----------- */
 
 static struct aggregate A2409 = { 2, ag_numbers, ag_aggregate, };
-struct filetype DS2409[] = {
+static struct filetype DS2409[] = {
 	F_STANDARD,
 	{"discharge", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_discharge, VISIBLE, NO_FILETYPE_DATA,},
 	{"clearevent", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_clearevent, VISIBLE, NO_FILETYPE_DATA,},

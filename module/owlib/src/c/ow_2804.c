@@ -69,7 +69,7 @@ WRITE_FUNCTION(FS_w_por);
 
 static struct aggregate A2804 = { 2, ag_numbers, ag_aggregate, };
 static struct aggregate A2804p = { 16, ag_numbers, ag_separate, };
-struct filetype DS28E04[] = {
+static struct filetype DS28E04[] = {
 	F_STANDARD,
 	{"memory", 550, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},

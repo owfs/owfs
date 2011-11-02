@@ -33,7 +33,7 @@ READ_FUNCTION(FS_return_code);
 
 /* -------- Structures ---------- */
 
-struct filetype set_timeout[] = {
+static struct filetype set_timeout[] = {
 	{"volatile", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, VISIBLE, {v:&Globals.timeout_volatile},},
 	{"stable", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, VISIBLE, {v:&Globals.timeout_stable},},
 	{"directory", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, VISIBLE, {v:&Globals.timeout_directory},},
@@ -51,7 +51,7 @@ struct device d_set_timeout = { "timeout", "timeout", ePN_settings, COUNT_OF_FIL
 	set_timeout, NO_GENERIC_READ, NO_GENERIC_WRITE
 };
 
-struct filetype set_units[] = {
+static struct filetype set_units[] = {
  	{"temperature_scale", 1, NON_AGGREGATE, ft_ascii, fc_static, FS_r_TS, FS_w_TS, VISIBLE, NO_FILETYPE_DATA,},
  	{"pressure_scale", 12, NON_AGGREGATE, ft_ascii, fc_static, FS_r_PS, FS_w_PS, VISIBLE, NO_FILETYPE_DATA,},
 };
@@ -59,7 +59,7 @@ struct device d_set_units = { "units", "units", ePN_settings, COUNT_OF_FILETYPES
 	set_units, NO_GENERIC_READ, NO_GENERIC_WRITE
 };
 
-struct filetype set_alias[] = {
+static struct filetype set_alias[] = {
  	{"list", MAX_OWSERVER_PROTOCOL_PAYLOAD_SIZE, NON_AGGREGATE, ft_ascii, fc_static, FS_aliaslist, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"unaliased", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_yesno, FS_w_yesno, VISIBLE, {v:&Globals.unaliased},},
 };
@@ -68,7 +68,7 @@ struct device d_set_alias = { "alias", "alias", ePN_settings, COUNT_OF_FILETYPES
 };
 
 static struct aggregate Areturn_code = { N_RETURN_CODES, ag_numbers, ag_separate, };
-struct filetype set_return_code[] = {
+static struct filetype set_return_code[] = {
 	{"text", 128, &Areturn_code, ft_ascii, fc_static, FS_return_code, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 };
 

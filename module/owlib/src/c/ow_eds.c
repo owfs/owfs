@@ -202,7 +202,7 @@ static struct bitfield eds0071_led_function  = { "EDS0071/relay_function", 2, 2,
 /* ------- Structures ----------- */
 
 static struct aggregate AEDS = { _EDS_PAGES, ag_numbers, ag_separate, };
-struct filetype EDS[] = {
+static struct filetype EDS[] = {
 	F_STANDARD,
 	{"memory", _EDS_PAGES * _EDS_PAGESIZE, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},

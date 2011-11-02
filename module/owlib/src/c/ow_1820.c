@@ -68,7 +68,7 @@ WRITE_FUNCTION(FS_w_pio);
 READ_FUNCTION(FS_sense);
 
 /* -------- Structures ---------- */
-struct filetype DS18S20[] = {
+static struct filetype DS18S20[] = {
 	F_STANDARD,
 	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_simultaneous_temperature, FS_10temp, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"temperature9", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_link, FS_10temp_link, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA,},
@@ -89,7 +89,7 @@ struct filetype DS18S20[] = {
 
 DeviceEntryExtended(10, DS18S20, DEV_temp | DEV_alarm, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
-struct filetype DS18B20[] = {
+static struct filetype DS18B20[] = {
 	F_STANDARD,
 	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_link, FS_slowtemp, NO_WRITE_FUNCTION, VISIBLE, {i:12},},
 	{"temperature9", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_simultaneous_temperature, FS_22temp, NO_WRITE_FUNCTION, VISIBLE, {i:9},},
@@ -110,7 +110,7 @@ struct filetype DS18B20[] = {
 
 DeviceEntryExtended(28, DS18B20, DEV_temp | DEV_alarm, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
-struct filetype DS1822[] = {
+static struct filetype DS1822[] = {
 	F_STANDARD,
 	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_link, FS_slowtemp, NO_WRITE_FUNCTION, VISIBLE, {i:12},},
 	{"temperature9", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_simultaneous_temperature, FS_22temp, NO_WRITE_FUNCTION, VISIBLE, {i:9},},
@@ -131,7 +131,7 @@ struct filetype DS1822[] = {
 
 DeviceEntryExtended(22, DS1822, DEV_temp | DEV_alarm, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
-struct filetype DS1825[] = {
+static struct filetype DS1825[] = {
 	F_STANDARD,
 	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_link, FS_slowtemp, NO_WRITE_FUNCTION, VISIBLE, {i:12},},
 	{"temperature9", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_simultaneous_temperature, FS_22temp, NO_WRITE_FUNCTION, VISIBLE, {i:9},},
@@ -148,7 +148,7 @@ struct filetype DS1825[] = {
 DeviceEntryExtended(3B, DS1825, DEV_temp | DEV_alarm, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 static struct aggregate A28EA00 = { 2, ag_letters, ag_aggregate, };
-struct filetype DS28EA00[] = {
+static struct filetype DS28EA00[] = {
 	F_STANDARD,
 	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_link, FS_slowtemp, NO_WRITE_FUNCTION, VISIBLE, {i:12},},
 	{"temperature9", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_simultaneous_temperature, FS_22temp, NO_WRITE_FUNCTION, VISIBLE, {i:9},},

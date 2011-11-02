@@ -52,13 +52,13 @@ $Id$
 
 /* ------- Structures ----------- */
 
-struct filetype DS2401[] = {
+static struct filetype DS2401[] = {
 	F_STANDARD,
 };
 
 DeviceEntry(01, DS2401, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
-struct filetype DS1420[] = {
+static struct filetype DS1420[] = {
 	F_STANDARD,
 };
 

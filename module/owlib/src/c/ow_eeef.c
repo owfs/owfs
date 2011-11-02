@@ -32,7 +32,7 @@ READ_FUNCTION(FS_UVI_valid);
 
 /* ------- Structures ----------- */
 
-struct filetype HobbyBoards_EE[] = {
+static struct filetype HobbyBoards_EE[] = {
 	F_STANDARD_NO_TYPE,
 	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_temperature, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"temperature_offset", PROPERTY_LENGTH_TEMPGAP, NON_AGGREGATE, ft_tempgap, fc_stable, FS_r_temperature_offset, FS_w_temperature_offset, VISIBLE, NO_FILETYPE_DATA,},
@@ -48,7 +48,7 @@ struct filetype HobbyBoards_EE[] = {
 
 DeviceEntry(EE, HobbyBoards_EE, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
-struct filetype HobbyBoards_EF[] = {
+static struct filetype HobbyBoards_EF[] = {
 	F_STANDARD_NO_TYPE,
 	{"version", 5, NON_AGGREGATE, ft_ascii, fc_stable, FS_version, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"type_number", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_type_number, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
