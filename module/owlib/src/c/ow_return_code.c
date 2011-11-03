@@ -246,7 +246,7 @@ void return_code_set( int rc, struct parsedname * pn, const char * d_file, const
 	// Already set?
 	#if OW_DEBUG
 		if (Globals.error_level>=e_err_debug) {
-			err_msg( e_err_type_level, e_err_debug, d_file, d_line, d_func, "%s: Resetting error from %d <%s> to %d",SAFESTRING(pn->path),pn->return_code,return_code_strings[return_code_out_of_bounds],rc); 
+			err_msg( e_err_type_level, e_err_debug, d_file, d_line, d_func, "%s: Resetting error from %d <%s> to %d",SAFESTRING(pn->path),pn->return_code,return_code_strings[pn->return_code],rc); 
 		}
 	#endif
 	}
@@ -270,6 +270,42 @@ void return_code_set( int rc, struct parsedname * pn, const char * d_file, const
 		#if OW_DEBUG
 			if (Globals.error_level>=e_err_debug) {
 				err_msg( e_err_type_level, e_err_debug, d_file, d_line, d_func, "%s: Set error to %d <%s>",SAFESTRING(pn->path),rc,return_code_strings[rc]); 
+			}
+		#endif
+		}
+	}
+}
+
+void return_code_set_scalar( int rc, int * pi, const char * d_file, const char * d_line, const char * d_func )
+{
+	if ( *pi != 0 ) {
+	// Already set?
+	#if OW_DEBUG
+		if (Globals.error_level>=e_err_debug) {
+			err_msg( e_err_type_level, e_err_debug, d_file, d_line, d_func, "Resetting error from %d <%s> to %d",*pi,return_code_strings[*pi],rc); 
+		}
+	#endif
+	}
+
+	if ( rc > return_code_out_of_bounds || rc < 0 ) {
+	// Out of bounds?
+	#if OW_DEBUG
+		if (Globals.error_level>=e_err_debug) {
+			err_msg( e_err_type_level, e_err_debug, d_file, d_line, d_func, "Reset out of bounds error from %d to %d <%s>",rc,return_code_out_of_bounds,return_code_strings[return_code_out_of_bounds]);
+		}
+	#endif
+		*pi = return_code_out_of_bounds ;
+		++ return_code_calls[return_code_out_of_bounds] ;
+	} else {
+	// Error and success
+		*pi = rc ;
+		++ return_code_calls[rc] ;
+		if ( rc != 0 ) {
+		// Error found
+			-- return_code_calls[0] ;
+		#if OW_DEBUG
+			if (Globals.error_level>=e_err_debug) {
+				err_msg( e_err_type_level, e_err_debug, d_file, d_line, d_func, "Set error to %d <%s>",rc,return_code_strings[rc]); 
 			}
 		#endif
 		}

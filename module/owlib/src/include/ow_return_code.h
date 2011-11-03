@@ -62,9 +62,11 @@ extern int return_code_calls[] ;
   #define __func__ ""
 #endif
 
-#define RETURN_CODE_SET(rc,pn)    return_code_set_d( rc, pn, __FILE__, __LINE__, __func__ )
+#define RETURN_CODE_SET(rc,pn)    return_code_set_scalar( rc, pn, __FILE__, __LINE__, __func__ )
+#define RETURN_CODE_SET_SCALAR(i,pn)    return_code_set_scalar( rc, &(i), __FILE__, __LINE__, __func__ )
 
 void return_code_set( int rc, struct parsedname * pn, const char * d_file, const char * d_line, const char * d_func ) ;
+void return_code_set_scalar( int rc, int * pi, const char * d_file, const char * d_line, const char * d_func ) ;
 void Return_code_setup(void) ;
 
 #endif							/* OW_RETURN_CODE_H */
