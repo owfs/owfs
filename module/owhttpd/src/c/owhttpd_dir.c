@@ -16,7 +16,7 @@ $Id$
 
 /* --------------- Functions ---------------- */
 static void ShowDirText(FILE * out, struct parsedname * pn);
-
+static void ShowDirJson(FILE * out, struct parsedname * pn);
 /* Find he next higher level by search for last slash that doesn't end the string */
 /* return length of "higher level" */
 /* Assumes good path:
@@ -74,6 +74,9 @@ void ShowDir(FILE * out, struct parsedname * pn)
 	if (pn->state & ePS_text) {
 		ShowDirText(out, pn);
 		return;
+	} else if (pn->state & ePS_json) {
+		ShowDirJson(out, pn);
+		return;
 	}
 
 	HTTPstart(out, "200 OK", ct_html);
@@ -108,6 +111,7 @@ void ShowDir(FILE * out, struct parsedname * pn)
 	fprintf(out, "</TABLE>");
 	HTTPfoot(out);
 }
+
 static void ShowDirTextCallback(void *v, const struct parsedname *const pn_entry)
 {
 	/* uncached tag */
@@ -131,5 +135,31 @@ static void ShowDirText(FILE * out, struct parsedname * pn)
 	HTTPstart(out, "200 OK", ct_text);
 
 	FS_dir(ShowDirTextCallback, out, pn);
+	return;
+}
+
+static void ShowDirJsonCallback(void *v, const struct parsedname *const pn_entry)
+{
+	/* uncached tag */
+	/* device name */
+	/* Have to allocate all buffers to make it work for Coldfire */
+	FILE *out = v;
+	const char *nam;
+
+	if (IsDir(pn_entry)) {
+		nam = FS_DirName(pn_entry);
+	} else {
+		nam = pn_entry->selected_device->readable_name;
+	}
+	fprintf(out, "\"%s\":[],\n", nam ) ;
+}
+
+static void ShowDirJson(FILE * out, struct parsedname * pn)
+{
+	HTTPstart(out, "200 OK", ct_text);
+
+	fprintf(out, "{" );
+	FS_dir(ShowDirJsonCallback, out, pn);
+	fprintf(out, "}" );
 	return;
 }

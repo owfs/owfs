@@ -124,6 +124,7 @@ enum ePS_state {
 	ePS_busveryremote = 0x0080,
 	ePS_reconnection  = 0x0100,
 	ePS_unaliased     = 0x0200,
+	ePS_json          = 0x0400,
 };
 
 struct parsedname {

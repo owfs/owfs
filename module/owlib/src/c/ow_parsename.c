@@ -346,6 +346,10 @@ static enum parse_enum Parse_Unspecified(char *pathnow, enum parse_pass remote_s
 		return parse_nonreal;
 
 	} else if (strcasecmp(pathnow, "text") == 0) {
+		pn->state |= ePS_json;
+		return parse_first;
+
+	} else if (strcasecmp(pathnow, "json") == 0) {
 		pn->state |= ePS_text;
 		return parse_first;
 
@@ -384,6 +388,10 @@ static enum parse_enum Parse_Real(char *pathnow, enum parse_pass remote_status, 
 		pn->state |= ePS_text;
 		return parse_real;
 
+	} else if (strcasecmp(pathnow, "json") == 0) {
+		pn->state |= ePS_json;
+		return parse_real;
+
 	} else if (strcasecmp(pathnow, "thermostat") == 0) {
 		pn->selected_device = DeviceThermostat;
 		return parse_prop;
@@ -405,6 +413,10 @@ static enum parse_enum Parse_NonReal(char *pathnow, struct parsedname *pn)
 {
 	if (strcasecmp(pathnow, "text") == 0) {
 		pn->state |= ePS_text;
+		return parse_nonreal;
+
+	} else if (strcasecmp(pathnow, "json") == 0) {
+		pn->state |= ePS_json;
 		return parse_nonreal;
 
 	} else if (strcasecmp(pathnow, "uncached") == 0) {

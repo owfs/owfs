@@ -37,9 +37,10 @@ void HTTPstart(FILE * out, const char *status, const enum content_type ct)
 	case ct_icon:
 		fprintf(out, "Content-Length: 894\r\n");
 		fprintf(out, "Connection: close\r\n");
-		/* fall through */
+		break ;
 	case ct_text:
 		fprintf(out, "Content-Type: text/plain\r\n");
+		break ;
 	}
 	fprintf(out, "\r\n");
 }

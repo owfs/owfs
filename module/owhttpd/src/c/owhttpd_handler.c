@@ -31,8 +31,8 @@ struct urlparse {
 enum http_return { http_ok, http_dir, http_icon, http_400, http_404 } ;
 
 	/* Error page functions */
-static void Bad400(FILE * out);
-static void Bad404(FILE * out);
+static void Bad400(FILE * out, struct parsedname * pn);
+static void Bad404(FILE * out, struct parsedname * pn);
 
 /* URL parsing function */
 static void URLparse(struct urlparse *up);
@@ -132,10 +132,10 @@ int handle_socket(FILE * out)
 			Favicon(out);
 			break ;
 		case http_400:
-			Bad400(out);
+			Bad400(out,pn);
 			break ;
 		case http_404:
-			Bad404(out);
+			Bad404(out,pn);
 			break ;
 		case http_dir:
 			ShowDir(out, pn);
@@ -335,25 +335,41 @@ static void URLparse(struct urlparse *up)
 }
 
 
-static void Bad400(FILE * out)
+static void Bad400(FILE * out, struct parsedname *pn)
 {
 	LEVEL_CALL("Return a 400 HTTP error code");
-	HTTPstart(out, "400 Bad Request", ct_html);
-	HTTPtitle(out, "Error 400 -- Bad request");
-	HTTPheader(out, "Unrecognized Request");
-	fprintf(out, "<P>The 1-wire web server is carefully constrained for security and stability. Your requested web page is not recognized.</P>");
-	fprintf(out, "<P>Navigate from the <A HREF=\"/\">Main page</A> for best results.</P>");
+	if ( pn->state & ePS_text ) {
+		HTTPstart(out, "400 Bad Request", ct_text);
+		fprintf(out, "400 Bad request");
+	} else if ( pn->state & ePS_json ) {
+		HTTPstart(out, "400 Bad Request", ct_text);
+		fprintf(out, "null");
+	} else {
+		HTTPstart(out, "400 Bad Request", ct_html);
+		HTTPtitle(out, "Error 400 -- Bad request");
+		HTTPheader(out, "Unrecognized Request");
+		fprintf(out, "<P>The 1-wire web server is carefully constrained for security and stability. Your requested web page is not recognized.</P>");
+		fprintf(out, "<P>Navigate from the <A HREF=\"/\">Main page</A> for best results.</P>");
+	}
 	HTTPfoot(out);
 }
 
-static void Bad404(FILE * out)
+static void Bad404(FILE * out, struct parsedname *pn)
 {
 	LEVEL_CALL("Return a 404 HTTP error code");
-	HTTPstart(out, "404 Not Found", ct_html);
-	HTTPtitle(out, "Error 400 -- Item doesn't exist");
-	HTTPheader(out, "Non-existent Device");
-	fprintf(out, "<P>The 1-wire web server is carefully constrained for security and stability. Your requested device is not recognized.</P>");
-	fprintf(out, "<P>Navigate from the <A HREF=\"/\">Main page</A> for best results.</P>");
+	if ( pn->state & ePS_text ) {
+		HTTPstart(out, "404 Not Found", ct_text);
+		fprintf(out, "404 Not Found");
+	} else if ( pn->state & ePS_json ) {
+		HTTPstart(out, "404 Not Found", ct_text);
+		fprintf(out, "null");
+	} else {
+		HTTPstart(out, "404 Not Found", ct_html);
+		HTTPtitle(out, "Error 404 -- Item doesn't exist");
+		HTTPheader(out, "Nonexistent Device");
+		fprintf(out, "<P>The 1-wire web server is carefully constrained for security and stability. Your requested device is not recognized.</P>");
+		fprintf(out, "<P>Navigate from the <A HREF=\"/\">Main page</A> for best results.</P>");
+	}
 	HTTPfoot(out);
 }
 

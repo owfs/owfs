@@ -34,6 +34,14 @@ static void ShowTextReadonly(FILE * out, struct one_wire_query *owq);
 static void ShowTextWriteonly(FILE * out, struct one_wire_query *owq);
 static void ShowTextStructure(FILE * out, struct one_wire_query *owq);
 
+static void ShowJson(FILE * out, const struct parsedname *pn_entry);
+static void ShowJsonDirectory(FILE * out, const struct parsedname *pn_entry);
+static void ShowJsonReadWrite(FILE * out, struct one_wire_query *owq);
+static void ShowJsonReadonly(FILE * out, struct one_wire_query *owq);
+static void ShowJsonWriteonly(FILE * out, struct one_wire_query *owq);
+static void ShowJsonStructure(FILE * out, struct one_wire_query *owq);
+static void StructureDetailJson(FILE * out, const char * structure_details );
+
 /* --------------- Functions ---------------- */
 
 /* Device entry -- table line for a filetype */
@@ -417,10 +425,221 @@ static void ShowDeviceText(FILE * out, struct parsedname *pn)
 	}
 }
 
+/* Device entry -- table line for a filetype */
+static void ShowJson(FILE * out, const struct parsedname *pn_entry)
+{
+	struct one_wire_query *owq = OWQ_create_from_path(pn_entry->path); // for read or dir
+
+	if (owq == NO_ONE_WIRE_QUERY) {
+		fprintf(out, "null");
+	} else if ( BAD( OWQ_allocate_read_buffer(owq)) ) {
+		fprintf(out, "null");
+	} else if (pn_entry->selected_filetype == NO_FILETYPE) {
+		ShowJsonDirectory(out, pn_entry);
+	} else if (IsStructureDir(pn_entry)) {
+		ShowJsonStructure(out, owq);
+	} else if (pn_entry->selected_filetype->format == ft_directory || pn_entry->selected_filetype->format == ft_subdir) {
+		ShowJsonDirectory(out, pn_entry);
+	} else if (pn_entry->selected_filetype->write == NO_WRITE_FUNCTION || Globals.readonly) {
+		// Unwritable
+		if (pn_entry->selected_filetype->read != NO_READ_FUNCTION) {
+			ShowJsonReadonly(out, owq);
+		}
+	} else {					// Writeable
+		if (pn_entry->selected_filetype->write == NO_READ_FUNCTION) {
+			ShowJsonWriteonly(out, owq);
+		} else {
+			ShowJsonReadWrite(out, owq);
+		}
+	}
+	OWQ_destroy(owq);
+}
+
+/* Device entry -- table line for a filetype */
+static void ShowJsonStructure(FILE * out, struct one_wire_query *owq)
+{
+	SIZE_OR_ERROR read_return = FS_read_postparse(owq);
+	if (read_return < 0) {
+		fprintf(out, "null");
+		return;
+	}
+	fprintf(out, "\"%.*s\":", read_return, OWQ_buffer(owq));
+	StructureDetailJson( out, OWQ_buffer(owq) ) ;
+}
+
+/* Detailed (parsed) structure entry */
+static void StructureDetailJson(FILE * out, const char * structure_details )
+{
+	char format_type ;
+	int extension ;
+	int elements ;
+	char rw[4] ;
+	int size ;
+
+	if ( sscanf( structure_details, "%c,%d,%d,%2s,%d,", &format_type, &extension, &elements, rw, &size ) < 5 ) {
+		return ;
+	}
+
+	fprintf(out, "\"");
+	switch( format_type ) {
+		case 'b':
+			fprintf(out, "Binary string");
+			break ;
+		case 'a':
+			fprintf(out, "Ascii string");
+			break ;
+		case 'D':
+			fprintf(out, "Directory");
+			break ;
+		case 'i':
+			fprintf(out, "Integer value");
+			break ;
+		case 'u':
+			fprintf(out, "Unsigned integer value");
+			break ;
+		case 'f':
+			fprintf(out, "Floating point value");
+			break ;
+		case 'l':
+			fprintf(out, "Alias");
+			break ;
+		case 'y':
+			fprintf(out, "Yes/No value");
+			break ;
+		case 'd':
+			fprintf(out, "Date value");
+			break ;
+		case 't':
+			fprintf(out, "Temperature value");
+			break ;
+		case 'g':
+			fprintf(out, "Delta temperature value");
+			break ;
+		case 'p':
+			fprintf(out, "Pressure value");
+			break ;
+		default:
+			fprintf(out, "Unknown value type");
+	}
+
+	fprintf(out, "\", \"");
+
+	if ( elements == 1 ) {
+		fprintf(out, "Singleton");
+	} else if ( extension == EXTENSION_BYTE ) {
+		fprintf(out, "Array of %d bits as a BYTE",elements);
+	} else if ( extension == EXTENSION_ALL ) {
+		fprintf(out, "Array of %d elements combined",elements);
+	} else {
+		fprintf(out, "Element %d (of %d)",extension,elements);
+	}
+
+	fprintf(out, "\", \"");
+
+	if ( strncasecmp( rw, "rw", 2 ) == 0 ) {
+		fprintf(out, "Read/Write");
+	} else if ( strncasecmp( rw, "ro", 2 ) == 0 ) {
+		fprintf(out, "Read only");
+	} else if ( strncasecmp( rw, "wo", 2 ) == 0 ) {
+		fprintf(out, "Write only");
+	} else{
+		fprintf(out, "No access");
+	}
+
+	fprintf(out, "\", \"");
+
+	if ( format_type == 'b' ) {
+		fprintf(out, "%d bytes",size);
+	} else {
+		fprintf(out, "%d characters",size);
+	}
+	fprintf( out, "\"]" );
+}
+
+/* Device entry -- table line for a filetype */
+static void ShowJsonReadWrite(FILE * out, struct one_wire_query *owq)
+{
+	struct parsedname * pn = PN(owq) ;
+	SIZE_OR_ERROR read_return = FS_read_postparse(owq);
+
+	if (read_return < 0) {
+		fprintf(out, "null");
+		return;
+	}
+
+	switch (pn->selected_filetype->format) {
+	case ft_binary:
+		{
+			int i;
+			fprintf(out,"\"");
+			for (i = 0; i < read_return; ++i) {
+				fprintf(out, "%.2hhX", OWQ_buffer(owq)[i]);
+			}
+			fprintf(out,"\"");
+			break;
+		}
+	case ft_yesno:
+	case ft_bitfield:
+		if (PN(owq)->extension >= 0) {
+			fprintf(out, "\"%s\"", OWQ_buffer(owq)[0]=='0'?"false":"true");
+			break;
+		}
+		// fall through
+	default:
+		fprintf(out, "\"%.*s\"", read_return, OWQ_buffer(owq));
+		break;
+	}
+}
+
+/* Device entry -- table line for a filetype */
+static void ShowJsonReadonly(FILE * out, struct one_wire_query *owq)
+{
+	ShowJsonReadWrite(out, owq);
+}
+
+/* Device entry -- table line for a filetype */
+static void ShowJsonWriteonly(FILE * out, struct one_wire_query *owq)
+{
+	(void) owq ;
+	fprintf(out,"null") ;
+}
+static void ShowJsonDirectory(FILE * out, const struct parsedname *pn_entry)
+{
+	(void) pn_entry;
+	fprintf(out,"[]") ;
+}
+
+/* Now show the device */
+static void ShowDeviceJsonCallback(void *v, const struct parsedname * pn_entry)
+{
+	FILE *out = v;
+	fprintf(out, "\"%s\":",FS_DirName(pn_entry) ) ;
+	ShowJson(out, pn_entry);
+	fprintf(out, ",\n" ) ;
+}
+
+static void ShowDeviceJson(FILE * out, struct parsedname *pn)
+{
+	HTTPstart(out, "200 OK", ct_text);
+
+	if (pn->selected_filetype == NO_DEVICE) {	/* whole device */
+		fprintf(out, "{\n" ) ;
+		FS_dir(ShowDeviceJsonCallback, out, pn);
+		fprintf(out, "}" );
+	} else {					/* Single item */
+		//printf("single item path=%s\n", pn->path);
+		ShowJson(out, pn);
+	}
+}
+
+
 void ShowDevice(FILE * out, struct parsedname *pn)
 {
 	if (pn->state & ePS_text) {
 		ShowDeviceText(out, pn);
+		return;
+	} else if (pn->state & ePS_json) {
+		ShowDeviceJson(out, pn);
 		return;
 	}
 
