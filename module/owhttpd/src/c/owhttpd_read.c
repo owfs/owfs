@@ -476,7 +476,7 @@ static void StructureDetailJson(FILE * out, const char * structure_details )
 	char rw[4] ;
 	int size ;
 
-	if ( sscanf( structure_details, "%c,%d,%d,%2s,%d,", &format_type, &extension, &elements, rw, &size ) < 5 ) {
+	if ( sscanf( structure_details, "[\"%c\",\"%d\",\"%d\",\"%2s\",\"%d\",", &format_type, &extension, &elements, rw, &size ) < 5 ) {
 		return ;
 	}
 
