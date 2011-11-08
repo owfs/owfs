@@ -465,7 +465,7 @@ static GOOD_OR_BAD OW_r_pio(int *pio, struct parsedname *pn)
 /* Write a pio register */
 static GOOD_OR_BAD OW_w_pio( int pio, struct parsedname *pn)
 {
-	BYTE p[0];
+	BYTE p[1];
 	RETURN_BAD_IF_BAD( OW_r_mem(p, 1, _ADDRESS_CONTROL_PAGE + 2 * pn->extension, pn) ) ;
 	p[0] |= _1W_2450_OE | _1W_2450_OC ;
 	if ( pio==0 ) {
