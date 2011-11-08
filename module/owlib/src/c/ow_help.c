@@ -34,6 +34,7 @@ void ow_help_general(void)
 	"Help resources:\n"
 	" %s --help              This page\n"
 	" %s --help=device       Bus master device options\n"
+	" %s --help=error        List of error return codes\n"
 	" %s --help=program      Program services (mountpoint, port)\n"
 	" %s --help=cache        Cache and communication timing\n"
 	" %s --help=job          Job control and debugging\n"
@@ -42,7 +43,7 @@ void ow_help_general(void)
 	" man %s                 man page for this program\n"
 	"  and man pages for individual 1-wire devices e.g. 'man DS2409'\n",
 	SAFESTRING(Globals.progname), SAFESTRING(Globals.progname),
-	SAFESTRING(Globals.progname), SAFESTRING(Globals.progname),
+	SAFESTRING(Globals.progname), SAFESTRING(Globals.progname), SAFESTRING(Globals.progname),
 	SAFESTRING(Globals.progname), SAFESTRING(Globals.progname), SAFESTRING(Globals.progname)
 	);
 }
@@ -135,6 +136,15 @@ void ow_help_cache(void)
 	, Globals.timeout_ha7
 	, Globals.timeout_w1
 		   );
+}
+
+void ow_help_error(void)
+{
+	int return_code ;
+	printf("Error return codes Help\n");
+	for ( return_code=0 ; return_code < N_RETURN_CODES ; ++return_code ) {
+		printf("%3d. %s\n",return_code,return_code_strings[return_code]);
+	}
 }
 
 void ow_help_program(void)
@@ -239,6 +249,10 @@ void FS_help(const char *arg)
 		case 'd':
 		case 'D':
 			ow_help_device();
+			break;
+		case 'e':
+		case 'E':
+			ow_help_error();
 			break;
 		case 'p':
 		case 'P':
