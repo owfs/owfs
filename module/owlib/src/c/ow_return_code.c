@@ -83,7 +83,7 @@ char * return_code_strings[] = {
 	"Write - read-only mode",
 	"Write - data communication error",
 	"Directory - output path too long",
-	"Directory - not a directory",
+	"Directory - not a directory", // 69
 	"Presence - not a device", // 70
 	"Unknown query type",
 	"Owserver protocol - socket problem",
@@ -240,8 +240,13 @@ void Return_code_setup(void)
 	}
 }
 
-void return_code_set( int rc, struct parsedname * pn, const char * d_file, const char * d_line, const char * d_func )
+void return_code_set( int raw_rc, struct parsedname * pn, const char * d_file, const char * d_line, const char * d_func )
 {
+	int rc = raw_rc ;
+	if ( rc > 0 ) {
+		rc = -rc ;
+	}
+
 	if ( pn->return_code != 0 ) {
 	// Already set?
 	#if OW_DEBUG
@@ -276,8 +281,13 @@ void return_code_set( int rc, struct parsedname * pn, const char * d_file, const
 	}
 }
 
-void return_code_set_scalar( int rc, int * pi, const char * d_file, const char * d_line, const char * d_func )
+void return_code_set_scalar( int raw_rc, int * pi, const char * d_file, const char * d_line, const char * d_func )
 {
+	int rc = raw_rc ;
+	if ( rc > 0 ) {
+		rc = -rc ;
+	}
+
 	if ( *pi != 0 ) {
 	// Already set?
 	#if OW_DEBUG
