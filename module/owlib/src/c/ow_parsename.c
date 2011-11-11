@@ -94,12 +94,10 @@ static ZERO_OR_ERROR FS_ParsedName_anywhere(const char *path, enum parse_pass re
 
 	LEVEL_CALL("path=[%s]", SAFESTRING(path));
 
-	parse_error_status = FS_ParsedName_setup(pp, path, pn);
-	if (parse_error_status) {
-		return parse_error_status;
-	}
+	RETURN_CODE_ERROR_RETURN( FS_ParsedName_setup(pp, path, pn) );
+
 	if (path == NO_PATH) {
-		return 0;
+		RETURN_CODE_RETURN( 0 ) ; // success (by default)
 	}
 
 	while (1) {
@@ -116,8 +114,7 @@ static ZERO_OR_ERROR FS_ParsedName_anywhere(const char *path, enum parse_pass re
 
 			if ( pp->pathnext != NULL ) {
 				// extra text -- make this an error
-				LEVEL_DEBUG("Extra text in file %s",pp->pathnext) ;
-				parse_error_status = -ENOENT;
+				RETURN_CODE_SET_SCALAR( parse_error_status, 77 ) ; // extra text in path
 				pe = parse_done;
 				continue;				
 			}
@@ -152,8 +149,7 @@ static ZERO_OR_ERROR FS_ParsedName_anywhere(const char *path, enum parse_pass re
 			return 0;
 
 		case parse_error:
-			//LEVEL_DEBUG("PARSENAME parse_error") ;
-			parse_error_status = -ENOENT;
+			RETURN_CODE_SET_SCALAR( parse_error_status, 27 ) ; // bad path syntax
 			pe = parse_done;
 			continue;
 
@@ -219,7 +215,7 @@ static ZERO_OR_ERROR FS_ParsedName_anywhere(const char *path, enum parse_pass re
 static ZERO_OR_ERROR FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path, struct parsedname *pn)
 {
 	if (pn == NO_PARSEDNAME) {
-		return -EINVAL;
+		RETURN_CODE_RETURN( 78 ); // unexpected null pointer
 	}
 
 	memset(pn, 0, sizeof(struct parsedname));
@@ -264,16 +260,16 @@ static ZERO_OR_ERROR FS_ParsedName_setup(struct parsedname_pointers *pp, const c
 	/* minimal structure for initial bus "detect" use -- really has connection and LocalControlFlags only */
 	pn->dirlength = -1 ;
 	if (path == NO_PATH) {
-		return 0;
+		return 0; // success
 	}
 
 	if (strlen(path) > PATH_MAX) {
-		return -EBADF;
+		RETURN_CODE_RETURN( 26 ) ; // path too long
 	}
 
 	pn->path = (char *) owmalloc(2 * PATH_MAX + 4);
 	if (pn->path == NO_PATH) {
-		return -ENOMEM;
+		RETURN_CODE_RETURN( 79 ) ; // unable to allocate memory
 	}
 
 	/* Have to save pn->path at once */
@@ -300,7 +296,7 @@ static ZERO_OR_ERROR FS_ParsedName_setup(struct parsedname_pointers *pp, const c
 	CONNIN_RLOCK;
 	pn->selected_connection = NO_CONNECTION ; // Default bus assignment
 
-	return 0;
+	return 0 ; // success
 }
 
 /* Used for virtual directories like settings and statistics
@@ -730,7 +726,7 @@ static ZERO_OR_ERROR BranchAdd(struct parsedname *pn)
 		void *temp = pn->bp;
 		if ((pn->bp = owrealloc(temp, (BRANCH_INCR + pn->pathlength) * sizeof(struct buspath))) == NULL) {
 			SAFEFREE(temp) ;
-			return -ENOMEM;
+			RETURN_CODE_RETURN( 79 ) ; // unable to allocate memory
 		}
 	}
 	memcpy(pn->bp[pn->pathlength].sn, pn->sn, SERIAL_NUMBER_SIZE);	/* copy over DS2409 name */
@@ -761,7 +757,7 @@ ZERO_OR_ERROR FS_ParsedNamePlus(const char *path, const char *file, struct parse
 
 	fullpath = owmalloc(strlen(file) + strlen(path) + 2);
 	if (fullpath == NO_PATH) {
-		return -ENOMEM;
+		RETURN_CODE_RETURN( 79 ) ; // unable to allocate memory
 	}
 	strcpy(fullpath, path);
 	if (fullpath[strlen(fullpath) - 1] != '/') {

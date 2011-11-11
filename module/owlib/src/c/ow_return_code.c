@@ -91,9 +91,9 @@ char * return_code_strings[] = {
 	"legacy - Bad message",
 	"Owserver protocol - version mismatch", // 75
 	"Owserver protocol - packet size error",
-	"Unassigned error 77",
-	"Unassigned error 78",
-	"Unassigned error 79",
+	"Path - extra text in path",
+	"Internal - unexpected null pointer",
+	"Internal - unable to allocate memory",
 	"Unassigned error 80", // 80
 	"Unassigned error 81",
 	"Unassigned error 82",
@@ -281,7 +281,7 @@ void return_code_set( int raw_rc, struct parsedname * pn, const char * d_file, c
 	}
 }
 
-void return_code_set_scalar( int raw_rc, int * pi, const char * d_file, const char * d_line, const char * d_func )
+void return_code_set_scalar( int raw_rc, int * pi, const char * d_file, int d_line, const char * d_func )
 {
 	int rc = raw_rc ;
 	if ( rc > 0 ) {

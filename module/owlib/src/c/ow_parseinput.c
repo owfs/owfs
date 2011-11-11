@@ -122,7 +122,7 @@ static ZERO_OR_ERROR FS_input_yesno(struct one_wire_query *owq)
 	if (OWQ_size(owq) > DEFAULT_INPUT_BUFFER_LENGTH) {
 		input_buffer = owmalloc(OWQ_size(owq) + 1);
 		if (input_buffer == NULL) {
-			return -ENOMEM;
+			RETURN_CODE_RETURN( 79 ) ; // unable to allocate memory
 		}
 	}
 	memcpy(input_buffer, OWQ_buffer(owq), OWQ_size(owq));

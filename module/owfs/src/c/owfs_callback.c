@@ -170,7 +170,7 @@ static void FS_getdir_callback(void *v, const struct parsedname *pn_entry)
 static int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler)
 {
 	struct parsedname pn;
-	ZERO_OR_ERROR ret ;
+	ZERO_OR_ERROR return_code ;
 
 	RETURN_CODE_ERROR_RETURN( FS_ParsedName(path, &pn) ) ;
 	
@@ -182,14 +182,14 @@ static int FS_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler)
 		FS_dir(FS_getdir_callback, &gds, &pn);
 		FILLER(h, ".");
 		FILLER(h, "..");
-		ret = 0 ; // success
+		RETURN_CODE_SET_SCALAR( return_code, 0  ) ; // success
 	} else {					/* property */
-		ret = 69 ; // Directory - not a directory
+		RETURN_CODE_SET_SCALAR( return_code, 69 ) ; // Directory - not a directory
 	}
 
 	/* Clean up */
 	FS_ParsedName_destroy(&pn);
-	RETURN_CODE_RETURN( ret ); // Casting ZERO_OR_ERROR to int for pedantry
+	return return_code;
 }
 
 #ifdef FUSE22PLUS
