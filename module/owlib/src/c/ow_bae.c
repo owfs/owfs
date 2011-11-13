@@ -55,7 +55,9 @@ WRITE_FUNCTION(FS_w_mem);
 WRITE_FUNCTION(FS_w_flash);
 WRITE_FUNCTION(FS_w_extended);
 //WRITE_FUNCTION(FS_writebyte);
-WRITE_FUNCTION(FS_w_lcd_text);
+WRITE_FUNCTION(FS_w_iic);
+WRITE_FUNCTION(FS_r_iic);
+WRITE_FUNCTION(FS_w_seq_text);
 WRITE_FUNCTION(FS_w_sector_nr);
 READ_FUNCTION(FS_r_sector_nr);
 WRITE_FUNCTION(FS_w_sector_data);
@@ -177,44 +179,278 @@ WRITE_FUNCTION(FS_w_cmp_bit);
 #define _FC02_USERO      120  /* u32 */
 #define _FC02_USERP      124  /* u32 */
 
+#define _FC03_IICC       0x7E00    /* u8 */
+#define _FC03_LCDC       0x7E01    /* u8 */
+#define _FC03_SCIC       0x7E02    /* u16 */
+#define _FC03_SDC        0x7E04    /* u8 */
+#define _FC03_SPIC       0x7E05    /* u16 */
+#define _FC03_PC0        0x7E07    /* u16 */
+#define _FC03_CLATCH     0x7E09    /* u8 */
+
+#define _FC03_SEQW_LCDD 0x00
+#define _FC03_SEQW_SD 0x02
+#define _FC03_SEQW_IIC 0x03
+#define _FC03_SEQW_SCI 0x04
+#define _FC03_SEQR_SD 0x00
+#define _FC03_SEQR_IIC 0x01
+#define _FC03_SEQR_SCI 0x02
+
+#define _FC03_WR_BEGIN_IIC 0x00
+#define _FC03_WR_END_IIC 0x01
+#define _FC03_WR_BEGIN_SD_W 0x02
+#define _FC03_WR_END_SD_W 0x03
+#define _FC03_WR_BEGIN_SD_R 0x04
+#define _FC03_WR_END_SD_R 0x05
+
+#define _FC03_ADC0       0x7F00    /* u16 */
+#define _FC03_ADC1       0x7F02    /* u16 */
+#define _FC03_ADC2       0x7F04    /* u16 */
+#define _FC03_ADC3       0x7F06    /* u16 */
+#define _FC03_ADC4       0x7F08    /* u16 */
+#define _FC03_ADC5       0x7F0A    /* u16 */
+#define _FC03_ADC6       0x7F0C    /* u16 */
+#define _FC03_ADC7       0x7F0E    /* u16 */
+#define _FC03_ADC8       0x7F10    /* u16 */
+#define _FC03_ADC9       0x7F12    /* u16 */
+#define _FC03_ADC10      0x7F14    /* u16 */
+#define _FC03_ADC11      0x7F16    /* u16 */
+#define _FC03_ADC12      0x7F18    /* u16 */
+#define _FC03_ADC13      0x7F1A    /* u16 */
+#define _FC03_ADC14      0x7F1C    /* u16 */
+#define _FC03_ADC15      0x7F1E    /* u16 */
+#define _FC03_COUNT0     0x7F20    /* u32 */
+#define _FC03_COUNT1     0x7F24    /* u32 */
+#define _FC03_COUNT2     0x7F28    /* u32 */
+#define _FC03_COUNT3     0x7F2C    /* u32 */
+#define _FC03_COUNT4     0x7F30    /* u32 */
+#define _FC03_COUNT5     0x7F34    /* u32 */
+#define _FC03_COUNT6     0x7F38    /* u32 */
+#define _FC03_COUNT7     0x7F3C    /* u32 */
+#define _FC03_COUNT8     0x7F40    /* u32 */
+#define _FC03_COUNT9     0x7F44    /* u32 */
+#define _FC03_COUNT10    0x7F48    /* u32 */
+#define _FC03_COUNT11    0x7F4C    /* u32 */
+#define _FC03_COUNT12    0x7F50    /* u32 */
+#define _FC03_COUNT13    0x7F54    /* u32 */
+#define _FC03_COUNT14    0x7F58    /* u32 */
+#define _FC03_COUNT15    0x7F5C    /* u32 */
+#define _FC03_COUNT16    0x7F60    /* u32 */
+#define _FC03_COUNT17    0x7F64    /* u32 */
+#define _FC03_COUNT18    0x7F68    /* u32 */
+#define _FC03_COUNT19    0x7F6C    /* u32 */
+#define _FC03_COUNT20    0x7F70    /* u32 */
+#define _FC03_COUNT21    0x7F74    /* u32 */
+#define _FC03_EALARMC    0x7F78    /* u8 */
+#define _FC03_OWIDLETIME 0x7F79    /* u8 */
+#define _FC03_RTCH       0x7F7A    /* u32 */
+#define _FC03_RTCL       0x7F7E    /* u8 */
+#define _FC03_TIMER1     0x7F7F    /* u16 */
+#define _FC03_TIMER2     0x7F81    /* u16 */
+#define _FC03_UALARM     0x7F83    /* u32 */
+#define _FC03_UALARM_EN  0x7F87    /* u32 */
+#define _FC03_USER_ARRAY 0x7F8B    /* u256 */
+#define _FC03_USER_BYTES 0x7FAB    /* u128 */
+#define _FC03_USER_WORDS 0x7FBB    /* u256 */
+#define _FC03_USER_WW    0x7FDB    /* u256 */
 
 
-#define _FC03_PIO        0x7E00 /* u8 x 22 */
-#define _FC03_PIO_CONF   0x7E16 /* u8 x 22 */
-#define _FC03_TPM1C      0x7E2C    /* u8 */
-#define _FC03_TPM2C      0x7E2D    /* u8 */
-#define _FC03_PERIOD1    0x7E2E    /* u16 */
-#define _FC03_PERIOD2    0x7E30    /* u16 */
-#define _FC03_DUTY       0x7E32    /* u16 */
-#define _FC03_SPIC       0x7E3A    /* u8 */
-#define _FC03_SPIBR      0x7E3B    /* u8 */
-#define _FC03_SPID       0x7E3C    /* u8 */
-#define _FC03_IICD       0x7E3D    /* u8 */
-#define _FC03_IICC       0x7E3E    /* u8 */
-#define _FC03_LCDINIT    0x7E40    /* u8 */
-#define _FC03_LCDCTRL    0x7E41    /* u8 */
-#define _FC03_LCDDATA    0x7E42    /* u8 */
-#define _FC03_ELARAM     0x7E43    /* u8 */
-#define _FC03_CLARAM     0x7E44    /* u8 */
-#define _FC03_SDINIT     0x7E45    /* u8 */
-#define _FC03_SCIC       0x7E46    /* u16 */ //new 
-#define _FC03_IICPIOC    0x7E48    /* u8 */  //new
-#define _FC03_IICPIOD    0x7E49    /* u8 */  //new
-#define _FC03_PC0        0x7E4A    /* u16 */
-
-#define _FC03_RTC        0x7F22   /* u32 */
-#define _FC03_RND        0x7F26   /* u8 */
-
-#define _FC03_CNT1       0x7F28   /* u32 */
-#define _FC03_CNT2       0x7F2C   /* u32 */
-#define _FC03_CNTCMP     0x7F30   /* u32 */
-#define _FC03_CMPC       0x7E3F    /* u8 */
 
 
+#define _FC03_PIO0       0x7900    /* u8 */
+#define _FC03_PIO1       0x7901    /* u8 */
+#define _FC03_PIO2       0x7902    /* u8 */
+#define _FC03_PIO3       0x7903    /* u8 */
+#define _FC03_PIO4       0x7904    /* u8 */
+#define _FC03_PIO5       0x7905    /* u8 */
+#define _FC03_PIO6       0x7906    /* u8 */
+#define _FC03_PIO7       0x7907    /* u8 */
+#define _FC03_PIO8       0x7908    /* u8 */
+#define _FC03_PIO9       0x7909    /* u8 */
+#define _FC03_PIO10      0x790A    /* u8 */
+#define _FC03_PIO11      0x790B    /* u8 */
+#define _FC03_PIO12      0x790C    /* u8 */
+#define _FC03_PIO13      0x790D    /* u8 */
+#define _FC03_PIO14      0x790E    /* u8 */
+#define _FC03_PIO15      0x790F    /* u8 */
+#define _FC03_PIO16      0x7910    /* u8 */
+#define _FC03_PIO17      0x7911    /* u8 */
+#define _FC03_PIO18      0x7912    /* u8 */
+#define _FC03_PIO19      0x7913    /* u8 */
+#define _FC03_PIO20      0x7914    /* u8 */
+#define _FC03_PIO21      0x7915    /* u8 */
+#define _FC03_PIODIR0    0x7916    /* u8 */
+#define _FC03_PIODIR1    0x7917    /* u8 */
+#define _FC03_PIODIR2    0x7918    /* u8 */
+#define _FC03_PIODIR3    0x7919    /* u8 */
+#define _FC03_PIODIR4    0x791A    /* u8 */
+#define _FC03_PIODIR5    0x791B    /* u8 */
+#define _FC03_PIODIR6    0x791C    /* u8 */
+#define _FC03_PIODIR7    0x791D    /* u8 */
+#define _FC03_PIODIR8    0x791E    /* u8 */
+#define _FC03_PIODIR9    0x791F    /* u8 */
+#define _FC03_PIODIR10   0x7920    /* u8 */
+#define _FC03_PIODIR11   0x7921    /* u8 */
+#define _FC03_PIODIR12   0x7922    /* u8 */
+#define _FC03_PIODIR13   0x7923    /* u8 */
+#define _FC03_PIODIR14   0x7924    /* u8 */
+#define _FC03_PIODIR15   0x7925    /* u8 */
+#define _FC03_PIODIR16   0x7926    /* u8 */
+#define _FC03_PIODIR17   0x7927    /* u8 */
+#define _FC03_PIODIR18   0x7928    /* u8 */
+#define _FC03_PIODIR19   0x7929    /* u8 */
+#define _FC03_PIODIR20   0x792A    /* u8 */
+#define _FC03_PIODIR21   0x792B    /* u8 */
+#define _FC03_PIODS0     0x792C    /* u8 */
+#define _FC03_PIODS1     0x792D    /* u8 */
+#define _FC03_PIODS2     0x792E    /* u8 */
+#define _FC03_PIODS3     0x792F    /* u8 */
+#define _FC03_PIODS4     0x7930    /* u8 */
+#define _FC03_PIODS5     0x7931    /* u8 */
+#define _FC03_PIODS6     0x7932    /* u8 */
+#define _FC03_PIODS7     0x7933    /* u8 */
+#define _FC03_PIODS8     0x7934    /* u8 */
+#define _FC03_PIODS9     0x7935    /* u8 */
+#define _FC03_PIODS10    0x7936    /* u8 */
+#define _FC03_PIODS11    0x7937    /* u8 */
+#define _FC03_PIODS12    0x7938    /* u8 */
+#define _FC03_PIODS13    0x7939    /* u8 */
+#define _FC03_PIODS14    0x793A    /* u8 */
+#define _FC03_PIODS15    0x793B    /* u8 */
+#define _FC03_PIODS16    0x793C    /* u8 */
+#define _FC03_PIODS17    0x793D    /* u8 */
+#define _FC03_PIODS18    0x793E    /* u8 */
+#define _FC03_PIODS19    0x793F    /* u8 */
+#define _FC03_PIODS20    0x7940    /* u8 */
+#define _FC03_PIODS21    0x7941    /* u8 */
+#define _FC03_PIOPE0     0x7942    /* u8 */
+#define _FC03_PIOPE1     0x7943    /* u8 */
+#define _FC03_PIOPE2     0x7944    /* u8 */
+#define _FC03_PIOPE3     0x7945    /* u8 */
+#define _FC03_PIOPE4     0x7946    /* u8 */
+#define _FC03_PIOPE5     0x7947    /* u8 */
+#define _FC03_PIOPE6     0x7948    /* u8 */
+#define _FC03_PIOPE7     0x7949    /* u8 */
+#define _FC03_PIOPE8     0x794A    /* u8 */
+#define _FC03_PIOPE9     0x794B    /* u8 */
+#define _FC03_PIOPE10    0x794C    /* u8 */
+#define _FC03_PIOPE11    0x794D    /* u8 */
+#define _FC03_PIOPE12    0x794E    /* u8 */
+#define _FC03_PIOPE13    0x794F    /* u8 */
+#define _FC03_PIOPE14    0x7950    /* u8 */
+#define _FC03_PIOPE15    0x7951    /* u8 */
+#define _FC03_PIOPE16    0x7952    /* u8 */
+#define _FC03_PIOPE17    0x7953    /* u8 */
+#define _FC03_PIOPE18    0x7954    /* u8 */
+#define _FC03_PIOPE19    0x7955    /* u8 */
+#define _FC03_PIOPE20    0x7956    /* u8 */
+#define _FC03_PIOPE21    0x7957    /* u8 */
+#define _FC03_LATCH0     0x7958    /* u8 */
+#define _FC03_LATCH1     0x7959    /* u8 */
+#define _FC03_LATCH2     0x795A    /* u8 */
+#define _FC03_LATCH3     0x795B    /* u8 */
+#define _FC03_LATCH4     0x795C    /* u8 */
+#define _FC03_LATCH5     0x795D    /* u8 */
+#define _FC03_LATCH6     0x795E    /* u8 */
+#define _FC03_LATCH7     0x795F    /* u8 */
+#define _FC03_LATCH8     0x7960    /* u8 */
+#define _FC03_LATCH9     0x7961    /* u8 */
+#define _FC03_LATCH10    0x7962    /* u8 */
+#define _FC03_LATCH11    0x7963    /* u8 */
+#define _FC03_LATCH12    0x7964    /* u8 */
+#define _FC03_LATCH13    0x7965    /* u8 */
+#define _FC03_LATCH14    0x7966    /* u8 */
+#define _FC03_LATCH15    0x7967    /* u8 */
+#define _FC03_LATCH16    0x7968    /* u8 */
+#define _FC03_LATCH17    0x7969    /* u8 */
+#define _FC03_LATCH18    0x796A    /* u8 */
+#define _FC03_LATCH19    0x796B    /* u8 */
+#define _FC03_LATCH20    0x796C    /* u8 */
+#define _FC03_LATCH21    0x796D    /* u8 */
+#define _FC03_ECOUNT0    0x796E    /* u8 */
+#define _FC03_ECOUNT1    0x796F    /* u8 */
+#define _FC03_ECOUNT2    0x7970    /* u8 */
+#define _FC03_ECOUNT3    0x7971    /* u8 */
+#define _FC03_ECOUNT4    0x7972    /* u8 */
+#define _FC03_ECOUNT5    0x7973    /* u8 */
+#define _FC03_ECOUNT6    0x7974    /* u8 */
+#define _FC03_ECOUNT7    0x7975    /* u8 */
+#define _FC03_ECOUNT8    0x7976    /* u8 */
+#define _FC03_ECOUNT9    0x7977    /* u8 */
+#define _FC03_ECOUNT10   0x7978    /* u8 */
+#define _FC03_ECOUNT11   0x7979    /* u8 */
+#define _FC03_ECOUNT12   0x797A    /* u8 */
+#define _FC03_ECOUNT13   0x797B    /* u8 */
+#define _FC03_ECOUNT14   0x797C    /* u8 */
+#define _FC03_ECOUNT15   0x797D    /* u8 */
+#define _FC03_ECOUNT16   0x797E    /* u8 */
+#define _FC03_ECOUNT17   0x797F    /* u8 */
+#define _FC03_ECOUNT18   0x7980    /* u8 */
+#define _FC03_ECOUNT19   0x7981    /* u8 */
+#define _FC03_ECOUNT20   0x7982    /* u8 */
+#define _FC03_ECOUNT21   0x7983    /* u8 */
+#define _FC03_ALARM0     0x7984    /* u8 */
+#define _FC03_ALARM1     0x7985    /* u8 */
+#define _FC03_ALARM2     0x7986    /* u8 */
+#define _FC03_ALARM3     0x7987    /* u8 */
+#define _FC03_ALARM4     0x7988    /* u8 */
+#define _FC03_ALARM5     0x7989    /* u8 */
+#define _FC03_ALARM6     0x798A    /* u8 */
+#define _FC03_ALARM7     0x798B    /* u8 */
+#define _FC03_ALARM8     0x798C    /* u8 */
+#define _FC03_ALARM9     0x798D    /* u8 */
+#define _FC03_ALARM10    0x798E    /* u8 */
+#define _FC03_ALARM11    0x798F    /* u8 */
+#define _FC03_ALARM12    0x7990    /* u8 */
+#define _FC03_ALARM13    0x7991    /* u8 */
+#define _FC03_ALARM14    0x7992    /* u8 */
+#define _FC03_ALARM15    0x7993    /* u8 */
+#define _FC03_ALARM16    0x7994    /* u8 */
+#define _FC03_ALARM17    0x7995    /* u8 */
+#define _FC03_ALARM18    0x7996    /* u8 */
+#define _FC03_ALARM19    0x7997    /* u8 */
+#define _FC03_ALARM20    0x7998    /* u8 */
+#define _FC03_ALARM21    0x7999    /* u8 */
+#define _FC03_EENCODER0  0x799A    /* u8 */
+#define _FC03_EENCODER5  0x799B    /* u8 */
+#define _FC03_EENCODER8  0x799C    /* u8 */
+#define _FC03_EENCODER9  0x799D    /* u8 */
+#define _FC03_EENCODER16 0x799E    /* u8 */
+#define _FC03_EENCODER17 0x799F    /* u8 */
+#define _FC03_PULLDOWN0  0x79A0    /* u8 */
+#define _FC03_PULLDOWN1  0x79A1    /* u8 */
+#define _FC03_PULLDOWN2  0x79A2    /* u8 */
+#define _FC03_PULLDOWN3  0x79A3    /* u8 */
+#define _FC03_PULLDOWN4  0x79A4    /* u8 */
+#define _FC03_PULLDOWN5  0x79A5    /* u8 */
+#define _FC03_PULLDOWN6  0x79A6    /* u8 */
+#define _FC03_PULLDOWN7  0x79A7    /* u8 */
+#define _FC03_CAPFLAG1   0x79A8    /* u8 */
+#define _FC03_CAPFLAG2   0x79A9    /* u8 */
+#define _FC03_CAPFLAG3   0x79AA    /* u8 */
+#define _FC03_CAPFLAG4   0x79AB    /* u8 */
+#define _FC03_ACMPE      0x79AC    /* u8 */
+#define _FC03_ACMPIS     0x79AD    /* u8 */
+#define _FC03_ACMPLATCH  0x79AE    /* u8 */
+#define _FC03_ACMPO      0x79AF    /* u8 */
+#define _FC03_ACMPOE     0x79B0    /* u8 */
+#define _FC03_TPM1C      0x7A00    /* u8 */
+#define _FC03_TPM2C      0x7A01    /* u8 */
 
-#define _FC03_ADC        0x7F00 /* u16 x 16 */
-#define _FC03_EALARMC    0x7F20   /* u8 */
-#define _FC03_CALARMC    0x7F21   /* u8 */
+#define _FC03_TPM1C      0x7A00    /* u8 */
+#define _FC03_TPM2C      0x7A01    /* u8 */
+#define _FC03_PERIOD1    0x7A02    /* u16 */
+#define _FC03_PERIOD2    0x7A04    /* u16 */
+#define _FC03_DUTY1C0    0x7A06    /* u16 */
+#define _FC03_DUTY1C1    0x7A08    /* u16 */
+#define _FC03_DUTY2C0    0x7A0A    /* u16 */
+#define _FC03_DUTY2C1    0x7A0C    /* u16 */
+#define _FC03_C1CH0      0x7A0E    /* u8 */
+#define _FC03_C1CH1      0x7A0F    /* u8 */
+#define _FC03_C2CH0      0x7A10    /* u8 */
+#define _FC03_C2CH1      0x7A11    /* u8 */
+#define _FC03_NBYTES     0x7A12    /* u8 */
+ 
+
 
 
 
@@ -228,11 +464,20 @@ static enum e_visibility VISIBLE_911( const struct parsedname * pn ) ;
 
 static struct aggregate ABAEeeprom = { _FC_MAX_EEPROM_PAGES, ag_numbers, ag_separate, };
 static struct aggregate A911pio = { 22, ag_numbers, ag_separate, };
-static struct aggregate A911pioc = { 22, ag_numbers, ag_separate, };
-static struct aggregate A911cnt1 = { 4, ag_numbers, ag_separate, };
-static struct aggregate A911cnt2 = { 4, ag_numbers, ag_separate, };
+static struct aggregate A911piodd = { 22, ag_numbers, ag_separate, };
+static struct aggregate A911piods = { 22, ag_numbers, ag_separate, };
+static struct aggregate A911piope = { 22, ag_numbers, ag_separate, };
+static struct aggregate A911piopd = { 8, ag_numbers, ag_separate, };
+static struct aggregate A911latch = { 22, ag_numbers, ag_separate, };
+static struct aggregate A911elatch = { 22, ag_numbers, ag_separate, };
+static struct aggregate A911counter = { 18, ag_numbers, ag_separate, };
+static struct aggregate A911ecount = { 18, ag_numbers, ag_separate, };
 static struct aggregate A911pwm = { 4, ag_numbers, ag_separate, };
 static struct aggregate A911adc = { 16, ag_numbers, ag_separate, };
+static struct aggregate A911userb = { 16, ag_numbers, ag_separate, };
+static struct aggregate A911userw = { 16, ag_numbers, ag_separate, };
+static struct aggregate A911userdw = { 8, ag_numbers, ag_separate, };
+static struct aggregate A911userarray = { 32, ag_numbers, ag_separate, };
 
 static struct filetype BAE[] = {
 	F_STANDARD,
@@ -323,14 +568,83 @@ static struct filetype BAE[] = {
 	{"911", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
 	{"911/automation_engine", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
 	{"911/automation_engine/pc0", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_PC0,}, },
-	
 	{"911/pio", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
-	{"911/pio/piostate", PROPERTY_LENGTH_UNSIGNED, &A911pio, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, INVISIBLE, {u:_FC03_PIO,}, },
-	{"911/pio/pio", PROPERTY_LENGTH_YESNO, &A911pio, ft_yesno, fc_link, FS_r_911_pio, FS_w_911_pio, VISIBLE_911, NO_FILETYPE_DATA, },
-	{"911/pio/pio_config", PROPERTY_LENGTH_UNSIGNED, &A911pioc, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, INVISIBLE, {u:_FC03_PIO_CONF,}, },
+	{"911/pio/pio",   PROPERTY_LENGTH_YESNO, &A911pio , ft_yesno, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_PIO0,}, },
+	{"911/pio/direction", PROPERTY_LENGTH_YESNO, &A911piodd, ft_yesno, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_PIODIR0,}, },
+	{"911/pio/strenght",  PROPERTY_LENGTH_YESNO, &A911piods, ft_yesno, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_PIODS0,}, },
+	{"911/pio/pull_enable", PROPERTY_LENGTH_YESNO, &A911piope, ft_yesno, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_PIOPE0,}, },
+	{"911/pio/pull_down", PROPERTY_LENGTH_YESNO, &A911piopd, ft_yesno, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_PULLDOWN0,}, },
+	{"911/alarm", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
+	{"911/alarm/latch", PROPERTY_LENGTH_YESNO, &A911latch, ft_yesno, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_LATCH0,}, },
+	{"911/alarm/enable_latch", PROPERTY_LENGTH_YESNO, &A911elatch, ft_yesno, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_ALARM0,}, },
+	{"911/alarm/clear_latchs",  PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_CLATCH,}, },
+	{"911/alarm/enable_global",  PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_EALARMC,}, },
+	{"911/alarm/userbits",  PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_unsigned, fc_volatile,  FS_r_32, FS_w_32, VISIBLE_911, {u:_FC03_UALARM,}, },
+	{"911/alarm/userbits_enable",  PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_unsigned, fc_volatile,  FS_r_32, FS_w_32, VISIBLE_911, {u:_FC03_UALARM_EN,}, },
+	{"911/counters", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
+	{"911/counters/count", PROPERTY_LENGTH_UNSIGNED, &A911counter, ft_unsigned, fc_volatile, FS_r_32, FS_w_32, VISIBLE_911, {u:_FC03_COUNT0,}, },
+	{"911/counters/enable_counter", PROPERTY_LENGTH_YESNO, &A911ecount, ft_yesno, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_ECOUNT0,}, },
+	{"911/counters/enable_encoder0",  PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_EENCODER0,}, },
+	{"911/counters/enable_encoder5",  PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_EENCODER5,}, },
+	{"911/counters/enable_encoder8",  PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_EENCODER8,}, },
+	{"911/counters/enable_encoder9",  PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_EENCODER9,}, },
+	{"911/counters/enable_encoder16",  PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_EENCODER16,}, },
+	{"911/counters/enable_encoder17",  PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_EENCODER17,}, },
+  {"911/timers", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
+	{"911/timers/countdown", PROPERTY_LENGTH_UNSIGNED, &A911userarray, ft_unsigned, fc_volatile, FS_r_8, FS_w_8,  VISIBLE_911, {u:_FC03_USER_ARRAY,}, },
+	{"911/timers/countdown_number",  PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_NBYTES,}, },
+	{"911/timers/clock", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile,  FS_r_32, FS_w_32, VISIBLE_911, {u:_FC03_RTCH,}, },
+	{"911/timers/random", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile,  FS_r_8, NO_WRITE_FUNCTION, VISIBLE_911, {u:_FC03_RTCL,}, },
+	{"911/user_registers", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
+	{"911/user_registers/byte", PROPERTY_LENGTH_UNSIGNED, &A911userb, ft_unsigned, fc_volatile, FS_r_8, FS_w_8,  VISIBLE_911, {u:_FC03_USER_BYTES,}, },
+	{"911/user_registers/word", PROPERTY_LENGTH_UNSIGNED, &A911userw, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_USER_WORDS,}, },
+	{"911/user_registers/dword", PROPERTY_LENGTH_UNSIGNED, &A911userdw, ft_unsigned, fc_volatile, FS_r_32, FS_w_32, VISIBLE_911, {u:_FC03_USER_WW,}, },
+	{"911/analog", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
+	{"911/analog/adc", PROPERTY_LENGTH_UNSIGNED, &A911adc, ft_unsigned, fc_volatile, FS_r_16, NO_WRITE_FUNCTION, VISIBLE_911, {u:_FC03_ADC0,}, },
+	{"911/analog/comparator", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
+	{"911/analog/comparator/acmp_enable", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_ACMPE,}, },
+	{"911/analog/comparator/out_enable", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_ACMPOE,}, },
+	{"911/analog/comparator/out_state", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_8, NO_WRITE_FUNCTION, VISIBLE_911, {u:_FC03_ACMPO,}, },
+	{"911/analog/comparator/internal_ref", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_ACMPIS,}, },
+	{"911/analog/comparator/changed", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_ACMPLATCH,}, },
+	{"911/pwm1", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
+	{"911/pwm1/ref_clock", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_TPM1C,}, },
+	{"911/pwm1/period", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_PERIOD1,}, },
+	{"911/pwm1/mode0", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_C1CH0,}, },
+	{"911/pwm1/mode1", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_C1CH1,}, },
+	{"911/pwm1/duty0", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_DUTY1C0,}, },
+	{"911/pwm1/duty1", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_DUTY1C1,}, },
+	{"911/pwm2", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
+	{"911/pwm2/ref_clock", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_TPM2C,}, },
+	{"911/pwm2/period", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_PERIOD2,}, },
+	{"911/pwm2/mode0", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_C2CH0,}, },
+	{"911/pwm2/mode1", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_C2CH1,}, },
+	{"911/pwm2/duty0", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_DUTY2C0,}, },
+	{"911/pwm2/duty1", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_DUTY2C1,}, },
+	{"911/iic", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
+	{"911/iic/init", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_IICC,}, },
+	{"911/iic/cat9554", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
+	{"911/iic/cat9554/direction", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_iic, FS_w_iic, VISIBLE_911, {a:"x40x03$0-x40x03=$0"}, },
+	{"911/iic/cat9554/pio", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_iic, FS_w_iic, VISIBLE_911, {a:"x40x01$0-x40x01=$0"}, },
+	{"911/sdcard", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
+	{"911/sdcard/init", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_SDC,}, },
+	{"911/sdcard/sector_nr", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_sector_nr, FS_w_sector_nr, VISIBLE_911, NO_FILETYPE_DATA, },
+	{"911/sdcard/sector_data", _FC_SDCARD_SECTOR_SIZE, NON_AGGREGATE, ft_binary, fc_stable, FS_r_sector_data, FS_w_sector_data, VISIBLE_911, NO_FILETYPE_DATA, },
+	{"911/lcd", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
+	{"911/lcd/init", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_LCDC,}, },
+	{"911/lcd/text", 255, NON_AGGREGATE, ft_ascii, fc_volatile, NO_READ_FUNCTION, FS_w_seq_text, VISIBLE_911, {u:_FC03_SEQW_LCDD,}, },
+	{"911/serial", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
+	{"911/serial/scic", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_SCIC,}, },
+	{"911/serial/dataout", 255, NON_AGGREGATE, ft_ascii, fc_volatile, NO_READ_FUNCTION, FS_w_seq_text, VISIBLE_911, {u:_FC03_SEQW_SCI,}, },
+
+	
+/*{"911/pio/piostate", PROPERTY_LENGTH_UNSIGNED, &A911pio, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, INVISIBLE, {u:_FC03_PIO0,}, },
+	{"911/pio/pio",    PROPERTY_LENGTH_YESNO, &A911pio, ft_yesno, fc_link, FS_r_911_pio, FS_w_911_pio, VISIBLE_911, NO_FILETYPE_DATA, },
+  {"911/pio/pio_config", PROPERTY_LENGTH_UNSIGNED, &A911pioc, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, INVISIBLE, {u:_FC03_PIO_CONF,}, },
 	{"911/pio/pio_ds", PROPERTY_LENGTH_YESNO, &A911pioc, ft_yesno, fc_link, FS_r_pio_bit, FS_w_pio_bit, VISIBLE_911, {u:3,}, },
 	{"911/pio/pio_pe", PROPERTY_LENGTH_YESNO, &A911pioc, ft_yesno, fc_link, FS_r_pio_bit, FS_w_pio_bit, VISIBLE_911, {u:1,}, },
 	{"911/pio/pio_dd", PROPERTY_LENGTH_YESNO, &A911pioc, ft_yesno, fc_link, FS_r_pio_bit, FS_w_pio_bit, VISIBLE_911, {u:0,}, },
+
 
 	{"911/counter1", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
 	{"911/counter1/count", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_32, FS_w_32, VISIBLE_911, {u:_FC03_CNT1,}, },
@@ -344,18 +658,7 @@ static struct filetype BAE[] = {
 	{"911/counter2/pulldown", PROPERTY_LENGTH_YESNO, &A911cnt2, ft_yesno, fc_link, FS_r_cnt2_bit, FS_w_cnt2_bit, VISIBLE_911, {u:2,}, },
 	{"911/counter2/enable", PROPERTY_LENGTH_YESNO, &A911cnt2, ft_yesno, fc_link, FS_r_cnt2_bit, FS_w_cnt2_bit, VISIBLE_911, {u:4,}, },
 
-	{"911/rtc", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
-	{"911/rtc/seconds", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_32, FS_w_32, VISIBLE_911, {u:_FC03_RTC,}, },
-	{"911/rtc/rnd", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_RND,}, },
 
-	{"911/acmp", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
-	{"911/acmp/config", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, INVISIBLE, {u:_FC03_CMPC,}, },
-	{"911/acmp/acmp_enable", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_cmp_bit, FS_w_cmp_bit, VISIBLE_911, {u:7,}, },
-	{"911/acmp/out_enable", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_cmp_bit, FS_w_cmp_bit, VISIBLE_911, {u:0,}, },
-	{"911/acmp/cmp_state", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_cmp_bit, NO_WRITE_FUNCTION, VISIBLE_911, {u:3,}, },
-	{"911/acmp/changed", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_cmp_bit, FS_w_cmp_bit, VISIBLE_911, {u:5,}, },
-	{"911/acmp/internal_ref", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_cmp_bit, FS_w_cmp_bit, VISIBLE_911, {u:6,}, },
-		
 	{"911/pwm", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
 	{"911/pwm/tpm1c", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_TPM1C,}, },
 	{"911/pwm/tpm2c", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_TPM2C,}, },
@@ -363,31 +666,16 @@ static struct filetype BAE[] = {
 	{"911/pwm/period2", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_PERIOD2,}, },
 	{"911/pwm/duty", PROPERTY_LENGTH_UNSIGNED, &A911pwm, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_DUTY,}, },
 
-	{"911/lcd", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
-	{"911/lcd/init", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_LCDINIT,}, },
-	{"911/lcd/char", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, NO_READ_FUNCTION, FS_w_8, VISIBLE_911, {u:_FC03_LCDDATA,}, },
-	{"911/lcd/control", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_LCDCTRL,}, },
-	{"911/lcd/text", 255, NON_AGGREGATE, ft_ascii, fc_volatile, NO_READ_FUNCTION, FS_w_lcd_text, VISIBLE_911, NO_FILETYPE_DATA, },
 	
-	{"911/sdcard", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
-	{"911/sdcard/init", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_SDINIT,}, },
-	{"911/sdcard/sector_nr", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_sector_nr, FS_w_sector_nr, VISIBLE_911, NO_FILETYPE_DATA, },
-	{"911/sdcard/sector_data", _FC_SDCARD_SECTOR_SIZE, NON_AGGREGATE, ft_binary, fc_stable, FS_r_sector_data, FS_w_sector_data, VISIBLE_911, NO_FILETYPE_DATA, },
-
+	
 	{"911/spi", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
 	{"911/spi/spic", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_SPIC,}, },
 	{"911/spi/spibr", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_SPIBR,}, },
 	{"911/spi/spid", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_SPID,}, },
 
-	{"911/iic", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
-	{"911/iic/iicd", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_IICD,}, },
-	{"911/iic/iicc", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_IICC,}, },
-
 	{"911/serial", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
 	{"911/serial/scic", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_SCIC,}, },
-
-	{"911/adc", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
-	{"911/adc/adc", PROPERTY_LENGTH_UNSIGNED, &A911adc, ft_unsigned, fc_volatile, FS_r_16, NO_WRITE_FUNCTION, VISIBLE_911, {u:_FC03_ADC,}, },
+*/
 };
 
 DeviceEntryExtended(FC, BAE, DEV_resume | DEV_alarm, NO_GENERIC_READ, NO_GENERIC_WRITE );
@@ -395,9 +683,23 @@ DeviceEntryExtended(FC, BAE, DEV_resume | DEV_alarm, NO_GENERIC_READ, NO_GENERIC
 /* <AE command codes */
 #define _1W_ECMD_ERASE_FIRMWARE 0xBB
 #define _1W_ECMD_FLASH_FIRMWARE 0xBA
-#define _1W_WF_WRITE_LCD_DATA 0x01
-#define _1W_WF_READ_SECTOR_DATA 0x02
-#define _1W_WF_WRITE_SECTOR_DATA 0x03
+
+#define _1W_BEGIN_IIC 0x00
+#define _1W_END_IIC 0x01
+#define _1W_BEGIN_LCD 0x02
+#define _1W_BEGIN_SD_W 0x03
+#define _1W_END_SD_W 0x04
+#define _1W_BEGIN_SD_R 0x05
+#define _1W_END_SD_R 0x06
+
+#define _1W_SEQW_LCD 0
+#define _1W_SEQW_SD 1
+#define _1W_SEQW_IIC 2
+#define _1W_SEQW_SCI 3
+#define _1W_SEQR_SD 0
+#define _1W_SEQR_IIC 1
+#define _1W_SEQR_SCI 2
+
 
 #define _1W_READ_VERSION 0x11
 #define _1W_READ_TYPE 0x12
@@ -405,7 +707,11 @@ DeviceEntryExtended(FC, BAE, DEV_resume | DEV_alarm, NO_GENERIC_READ, NO_GENERIC
 #define _1W_READ_BLOCK_WITH_LEN 0x14
 #define _1W_WRITE_BLOCK_WITH_LEN 0x15
 #define _1W_ERASE_EEPROM_PAGE 0x16
-#define _1W_FLOW      0x17
+
+#define _1W_WRCMD			  	0x17
+#define _1W_SEQWCMD  			0x18
+#define _1W_SEQRCMD  			0x19
+#define _1W_QUERY_DATA_COMMAND 	0x1A
 #define _1W_CONFIRM_WRITE 0xBC
 
 /* Persistent storage */
@@ -422,9 +728,16 @@ static GOOD_OR_BAD OW_type( UINT * localtype, struct parsedname * pn ) ;
 static GOOD_OR_BAD OW_r_mem(BYTE *bytes, size_t size, off_t offset, struct parsedname * pn);
 static GOOD_OR_BAD OW_r_mem_small(BYTE *bytes, size_t size, off_t offset, struct parsedname * pn);
 static GOOD_OR_BAD OW_eeprom_erase( off_t offset, struct parsedname * pn ) ;
-static GOOD_OR_BAD OW_w_flow_nocrc(BYTE wf, BYTE * param, size_t plen, BYTE * data, size_t size, struct parsedname *pn);
-static GOOD_OR_BAD OW_r_flow_nocrc(BYTE wf, BYTE * param, size_t plen, BYTE * data, size_t size, struct parsedname *pn);
-static GOOD_OR_BAD OW_w_flow_crc(BYTE wf, BYTE * param, size_t plen, BYTE * data, size_t size,size_t chunksize, struct parsedname *pn);
+
+static GOOD_OR_BAD OW_wr_complete_transaction( int wlen,BYTE func, int* rlen, BYTE * wparam, BYTE * rparam, int timeout, struct parsedname *pn);
+static GOOD_OR_BAD OW_seqw_complete_transaction(int wlen, BYTE func, BYTE * wparam, int timeout, struct parsedname *pn);
+static GOOD_OR_BAD OW_seqr_complete_transaction(int *rlen,BYTE func,BYTE * rparam, int timeout,  struct parsedname *pn);
+static GOOD_OR_BAD OW_query_cmd(int *prlen, BYTE *retcode,BYTE * rparam , struct parsedname *pn);
+
+/*static GOOD_OR_BAD OW_w_flow_nocrc(BYTE wf, BYTE * param, size_t plen, BYTE * data, size_t size, struct parsedname *pn);
+  static GOOD_OR_BAD OW_r_flow_nocrc(BYTE wf, BYTE * param, size_t plen, BYTE * data, size_t size, struct parsedname *pn);
+  static GOOD_OR_BAD OW_w_flow_crc(BYTE wf, BYTE * param, size_t plen, BYTE * data, size_t size,size_t chunksize, struct parsedname *pn);
+*/
 
 //static void OW_siumulate_eeprom(BYTE * eeprom, const BYTE * data, size_t size) ;
 
@@ -539,6 +852,7 @@ static size_t eeprom_offset( const struct parsedname * pn )
 	}
 }
 
+
 static ZERO_OR_ERROR FS_r_sector_nr(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
@@ -571,51 +885,238 @@ static ZERO_OR_ERROR FS_w_sector_data(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	BYTE *buffer = (BYTE*)OWQ_buffer(owq);
+	BYTE rparam[_FC02_MAX_WRITE_GULP+1];
+	BYTE wparam[4] ; 
 	UINT sector_nr;					
-	BYTE data[4] ; 
-	
-	if ( BAD( Cache_Get_SlaveSpecific((void *) &sector_nr, sizeof(UINT), SlaveSpecificTag(SNR), pn)) ) { // record doesn't (yet) exist
-		sector_nr=0;
-	} 
-	LEVEL_DEBUG("write sector %d data len=%d",sector_nr,(int)OWQ_size(owq) ) ;
-	if (OWQ_offset(owq)) {
-		return -ERANGE;
-	}
-	BAE_uint32_to_bytes( sector_nr *512, data ); // convert 32bit value to msb first
+	int size=(int)OWQ_size(owq);
+	int wlen,rlen,i,retry;
+	int timeout=100;
+	if (BAD( Cache_Get_SlaveSpecific((void *) &sector_nr, sizeof(UINT), SlaveSpecificTag(SNR), pn))) sector_nr=0; // record doesn't (yet) exist
 
-	RETURN_ERROR_IF_BAD(OW_w_flow_nocrc(_1W_WF_WRITE_SECTOR_DATA, data, 4, buffer, OWQ_size(owq), pn));
-	//RETURN_ERROR_IF_BAD(OW_w_flow_crc(_1W_WF_WRITE_SECTOR_DATA, (BYTE*)&sector_nr, 4, buffer, OWQ_size(owq),16, pn));
-	return 0;
+	LEVEL_DEBUG("write SD sector %d data len=%d",sector_nr,size ) ;
+	if (OWQ_offset(owq)) return -ERANGE;
+	if (size!=512) return -ERANGE;
+	BAE_uint32_to_bytes( sector_nr*512, wparam ); // convert 32bit value to msb first
+	rlen=0;
+	wlen=4;
+	RETURN_ERROR_IF_BAD(OW_wr_complete_transaction(wlen,_FC03_WR_BEGIN_SD_W, &rlen, wparam, rparam, timeout, pn));
+	wlen= _FC02_MAX_WRITE_GULP;
+	retry=0;
+	for(i=size;i;)
+	{
+		if (i>_FC02_MAX_WRITE_GULP) wlen=_FC02_MAX_WRITE_GULP; else wlen=i;
+		LEVEL_DEBUG("WRITE SD %d bytes at offset %d ",size,512-i ) ;
+		if (BAD(OW_seqw_complete_transaction(wlen,_FC03_SEQW_SD, buffer, timeout, pn)))
+		{
+			if (retry++>3) return gbBAD;
+		}
+		else
+		{
+			buffer+=wlen;
+			i-=wlen;
+			retry=0;
+		}
+	}
+	rlen=0;
+	wlen=0;
+	LEVEL_DEBUG("WRITE SD END, send trailer " ) ;
+	return OW_wr_complete_transaction(wlen,_FC03_WR_END_SD_W, &rlen, wparam, rparam, timeout, pn);
 }
+
 static ZERO_OR_ERROR FS_r_sector_data(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	BYTE *buffer = (BYTE*)OWQ_buffer(owq);
-	UINT sector_nr;	
-	BYTE data[4];
-	if ( BAD( Cache_Get_SlaveSpecific((void *) &sector_nr, sizeof(UINT), SlaveSpecificTag(SNR), pn)) ) { // record doesn't (yet) exist
-		sector_nr=0;
-	} 
-	LEVEL_DEBUG("read sector %d data len=%d",sector_nr,(int)OWQ_size(owq) ) ;
-	if (OWQ_offset(owq)) {
-		return -ERANGE;
+	BYTE rparam[_FC02_MAX_READ_GULP+1];
+	BYTE wparam[4] ; 
+	UINT sector_nr;					
+	int size=(int)OWQ_size(owq);
+	int wlen,rlen,i,retry;
+	int timeout=100;
+	if (BAD( Cache_Get_SlaveSpecific((void *) &sector_nr, sizeof(UINT), SlaveSpecificTag(SNR), pn))) sector_nr=0; // record doesn't (yet) exist
+
+	LEVEL_DEBUG("read SD sector %d data len=%d",sector_nr,size ) ;
+	if (OWQ_offset(owq)) return -ERANGE;
+	if (size!=512) return -ERANGE;
+	BAE_uint32_to_bytes( sector_nr*512, wparam ); // convert 32bit value to msb first
+	rlen=0;
+	wlen=4;
+	retry=0;
+	RETURN_ERROR_IF_BAD(OW_wr_complete_transaction(wlen,_FC03_WR_BEGIN_SD_R, &rlen, wparam, rparam, timeout, pn));
+	rlen= _FC02_MAX_READ_GULP;
+	for(i=size;i;)
+	{
+		if (i>_FC02_MAX_READ_GULP) rlen=_FC02_MAX_WRITE_GULP; else rlen=i;
+		LEVEL_DEBUG("READ SD %d bytes at offset %d ",size,512-i ) ;
+		if (BAD(OW_seqr_complete_transaction(&rlen,_FC03_SEQR_SD, buffer, timeout, pn)))
+		{
+			if (retry++>3) return gbBAD;
+		}
+		else
+		{
+				buffer+=rlen;
+				i-=rlen;
+				retry=0;
+		}
 	}
-	BAE_uint32_to_bytes( sector_nr *512, data ); // convert 32bit value to msb first
-	RETURN_ERROR_IF_BAD(OW_r_flow_nocrc(_1W_WF_READ_SECTOR_DATA, data, 4, buffer, OWQ_size(owq), pn));
-	OWQ_length(owq) = OWQ_size(owq) ;
-	return 0;
+	OWQ_length(owq) = OWQ_size(owq);
+	rlen=0;
+	wlen=0;
+	LEVEL_DEBUG("READ SD END, send trailer " ) ;
+	return OW_wr_complete_transaction(wlen,_FC03_WR_END_SD_R, &rlen, wparam, rparam, timeout, pn);
 }
 
-static ZERO_OR_ERROR FS_w_lcd_text(struct one_wire_query *owq)
+
+int hex_digit(BYTE c)
+{
+	int v;
+	if ((c>='0') && (c<='9')) v=c-'0';
+	else if ((c>='a') && (c<='a')) v=c-'a'+10;
+			 else if ((c>='A') && (c<='F')) v=c-'A'+10;
+			  		else v=-1000;
+	return v;		  		
+}
+
+GOOD_OR_BAD scan_token_read(char* mask,BYTE *buffer, struct one_wire_query *owq)
+{
+int i,j,v;
+char *pt=mask;
+	LEVEL_DEBUG("begin token read loop: " ) ;
+	OWQ_U(owq)=0;
+	for(i=0;*pt;pt++)
+	{
+			v=hex_digit(*pt)*16 + hex_digit(*(pt+1));
+			if (v>=0) { 
+				pt+=2;
+				if (buffer[i++]!=v) return gbBAD;  //if the received byte doen not match the mask, return error
+			}
+			switch (*pt)
+			{
+				case '?': i++; // '?' in mask means to ignore this received byte
+				case '$': if ((*(pt+1)>='0') && (*(pt+1) <='7'))  //store received byte on position j
+									{
+										pt++;
+										j=*pt-'0';
+ 									  OWQ_U(owq)|= buffer[i++]<<j; 
+										LEVEL_DEBUG("after token assign: @%d(%d)  %08x", j,buffer[i], OWQ_U(owq) ) ;
+									}
+			}
+	}
+	return gbGOOD;
+}
+
+
+//mask example:set_part-get_part. ex.: "x40x01$0-x40x01=$0"
+// set_part contains a writebloc and an optional readbloc separated by '=' :
+//     ex.:"x40x01$0" write two fixed value bytes followed by lo byte of value to set, read nothing
+// get_part contains a writebloc and a mandatory readbloc separated by '=' :
+//     ex.:"x40x01=$0" write two fixed value bytes then read one byte. this read byte will be assigned to read value 
+
+
+void scan_token_write(char* mask,BYTE *buffer,	int *plenw,int * plenr, struct one_wire_query *owq)
+{
+int i,j,v;
+char *pt=mask;
+	*plenw=-1;
+	LEVEL_DEBUG("begin token write loop: " ) ;
+	
+	for(i=0;*pt;pt++)
+	{
+			v=hex_digit(*pt)*16 + hex_digit(*(pt+1));
+			if (v>=0) { buffer[i++]=v;pt+=2;}
+			switch (*pt)
+			{
+				case '=': *plenw=i; //write limit, after '=' this is the receive mask
+									break;
+				case '$': if ((*(pt+1)>='0') && (*(pt+1)<='7')) 
+									{
+										pt++;
+										j=*pt-'0';
+										LEVEL_DEBUG("token test: @%d= %d", j,BYTE_MASK(OWQ_U(owq)>>j) ) ;
+										buffer[i++]= BYTE_MASK(OWQ_U(owq)>>j); // BYTE_MASK(OWQ_array_U(owq,j));
+									}
+									break;
+			}
+	}
+	if (*plenw<0) *plenw=i; 
+	*plenr=i-*plenw;
+	buffer[i]='\0'; //just for level debug
+}
+
+static ZERO_OR_ERROR FS_w_iic(struct one_wire_query *owq) //generic write to iic
+{
+	struct parsedname *pn = PN(owq);
+	BYTE wparam[(_FC02_MAX_WRITE_GULP+1)*2];
+	BYTE *rparam;
+	int wlen,rlen,timeout;
+	char mask[255],*pt; 
+	rparam=wparam+_FC02_MAX_WRITE_GULP+1;
+	if (OWQ_offset(owq)) return -ERANGE;
+	strcpy(mask,pn->selected_filetype->data.a);
+	pt=strchr(mask,'-');
+	if (pt==NULL) return -EINVAL; //invalid mask for generic iic
+	*pt=0; //split mask write and mask read
+	scan_token_write(mask, wparam, &wlen, &rlen, owq);
+	timeout=100; 
+	LEVEL_DEBUG("iic write: wlen=%d mask=%s wparam=%s", wlen,mask,wparam ) ;
+	RETURN_ERROR_IF_BAD(OW_wr_complete_transaction(wlen,_FC03_WR_BEGIN_IIC, &rlen, wparam, rparam, timeout, pn));
+	pt=strchr(mask,'=');
+	if (pt) RETURN_ERROR_IF_BAD(scan_token_read(pt+1, rparam,  owq)); 
+	wlen=rlen=0;
+	return OW_wr_complete_transaction(wlen,_FC03_WR_END_IIC, &rlen, wparam, rparam, timeout, pn);
+}
+
+static ZERO_OR_ERROR FS_r_iic(struct one_wire_query *owq) //generic read from iic
+{
+	BYTE wparam[(_FC02_MAX_WRITE_GULP+1)*2];
+	BYTE *rparam;
+	int wlen, rlen, timeout;
+	char mask[255],*pt;
+	struct parsedname *pn = PN(owq);
+	rparam=wparam+_FC02_MAX_WRITE_GULP+1;
+	if (OWQ_offset(owq)) return -ERANGE;
+	strcpy(mask,pn->selected_filetype->data.a);
+	pt=strchr(mask,'-');
+	if (pt==NULL) return -EINVAL; //invalid mask for generic iic
+	scan_token_write(pt+1, wparam, &wlen, &rlen, owq); 
+	pt=strchr(mask,'=');
+	if (pt==NULL) return -EINVAL; //read mask has no '=' token!
+	timeout=100;
+	LEVEL_DEBUG("iic read: wlen=%d mask=%s wparam=%s", wlen,mask,wparam ) ;
+	RETURN_ERROR_IF_BAD(OW_wr_complete_transaction(wlen,_FC03_WR_BEGIN_IIC, &rlen, wparam, rparam, timeout, pn));
+	RETURN_ERROR_IF_BAD(scan_token_read(pt+1, rparam,  owq)); 
+	wlen=rlen=0;
+	return OW_wr_complete_transaction(wlen,_FC03_WR_END_IIC, &rlen, wparam, rparam, timeout, pn);
+}
+
+static ZERO_OR_ERROR FS_w_seq_text(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	BYTE *start_of_text = (BYTE*)OWQ_buffer(owq);
-	BYTE param; //optional cursor position *not implemented* 
-	LEVEL_DEBUG("lcd text size is %d", (int)OWQ_size(owq) ) ;
-	if (OWQ_offset(owq)) {
-		return -ERANGE;
+	int i,retry,wlen,timeout;
+	int size=(int)OWQ_size(owq);
+	BYTE func=BYTE_MASK(PN(owq)->selected_filetype->data.u);
+	LEVEL_DEBUG("SEQ text func=%d len=%d, offset=%d",func, size,OWQ_offset(owq) ) ;
+	if (func==_FC03_SEQW_LCDD) size--; //remove last CR for lcd
+	retry=0;
+	timeout=100;
+  if (size<=0)	return -EINVAL;
+	for(i=size;i;)
+	{
+		if (i>_FC02_MAX_WRITE_GULP) wlen=_FC02_MAX_WRITE_GULP; else wlen=i;
+		LEVEL_DEBUG("WRITE seq %d bytes at position %d ",wlen,size-i ) ;
+		if (BAD(OW_seqw_complete_transaction(wlen,func, start_of_text, timeout, pn)))
+		{
+			if (retry++>3) return -EINVAL;
+		}
+		else
+		{
+			start_of_text+=wlen;
+			i-=wlen;
+			retry=0;
+		}
 	}
-	RETURN_ERROR_IF_BAD(OW_w_flow_nocrc(_1W_WF_WRITE_LCD_DATA, &param, 0, start_of_text, OWQ_size(owq), pn));
+	LEVEL_DEBUG("SEQ text end" ) ;
 	return 0;
 }
 
@@ -787,6 +1288,7 @@ static ZERO_OR_ERROR FS_version_state(struct one_wire_query *owq)
 	return 0 ;
 }
 
+/*
 // there may need to be a 0<->1 sense interchange
 static ZERO_OR_ERROR FS_r_911_pio( struct one_wire_query * owq ) {
 	UINT piostate ;
@@ -859,6 +1361,7 @@ static ZERO_OR_ERROR FS_w_cmp_bit( struct one_wire_query * owq ) {
     UINT bitnr=PN(owq)->selected_filetype->data.u ;
 	return FS_w_sibling_bitwork( OWQ_Y(owq)<<bitnr, 1<<bitnr, "911/acmp/config", owq ) ;
 }
+*/
 
 static ZERO_OR_ERROR FS_version(struct one_wire_query *owq)
 {
@@ -1028,6 +1531,7 @@ static GOOD_OR_BAD OW_w_extended(BYTE * data, size_t size, struct parsedname *pn
 }
 
 // Flow write command without crc 
+/*
 static GOOD_OR_BAD OW_w_flow_nocrc(BYTE wf, BYTE * param, size_t plen, BYTE * data, size_t size, struct parsedname *pn)
 {
 	BYTE p[1 + 1 + 1 + 1 + _FC02_MAX_COMMAND_GULP + 2] = { _1W_FLOW, BYTE_MASK(plen),wf, 0,  };
@@ -1041,7 +1545,7 @@ static GOOD_OR_BAD OW_w_flow_nocrc(BYTE wf, BYTE * param, size_t plen, BYTE * da
 		TRXN_END,
 	};
 	LEVEL_DEBUG("Send flow command") ;
-	/* Copy to write buffer */
+// Copy to write buffer 
 	memcpy(&p[4], param, plen);
 	RETURN_BAD_IF_BAD( BUS_transaction(t, pn) );
 	return gbGOOD ;	
@@ -1087,6 +1591,7 @@ static GOOD_OR_BAD OW_w_flow_crc(BYTE wf, BYTE * param, size_t plen, BYTE * data
 	return gbGOOD ;	
 }
 
+
 // Flow read command without crc 
 static GOOD_OR_BAD OW_r_flow_nocrc(BYTE wf, BYTE * param, size_t plen, BYTE * data, size_t size, struct parsedname *pn)
 {
@@ -1100,13 +1605,146 @@ static GOOD_OR_BAD OW_r_flow_nocrc(BYTE wf, BYTE * param, size_t plen, BYTE * da
 		TRXN_READ(data, size),
 		TRXN_END,
 	};
-	
-	/* Copy to write buffer */
+	// Copy to write buffer 
 	memcpy(&p[4], param, plen);
 	RETURN_ERROR_IF_BAD( BUS_transaction(t, pn)) ;
+	Debug_Bytes("BAE flow read",data,size) ;
 	return gbGOOD ;	
 }
+*/
 
+static GOOD_OR_BAD OW_poll_until_timeout(int *prlen, BYTE * rparam, int timeout, struct parsedname *pn)
+{
+	UINT tries;
+	BYTE retcode;	
+	int rlen;  //temporary var to hold len received rlen when retcode==0xff
+	GOOD_OR_BAD r;
+	LEVEL_DEBUG("BAE Query result until timeout (%d ms), expected rlen=%d", timeout, *prlen) ;
+	tries=0;
+	
+	while (1)
+	{
+			LEVEL_DEBUG( "try %d when querying result from previous function.", tries ) ;
+		  r=OW_query_cmd(&rlen, &retcode,rparam,pn );
+		  if (BAD(r))
+		  {
+			  	++tries ;
+					if ( tries > 5 ) 
+					{
+	 			 		LEVEL_DEBUG( "Too many failures getting result from previous function." ) ;
+						return -EIO ;
+					}
+		  }
+		  else
+		  {
+					if (retcode==0xff) 
+					{
+							timeout-=10;
+							if (timeout<=0) 	{
+									LEVEL_DEBUG( "Timeout getting result from previous function." ) ;
+									return -EINVAL ;
+							}
+							UT_delay(10); //10ms delay if slave still busy
+					}
+					else 
+					{
+							 *prlen=rlen; //only when retcode is not 0xff 
+							 LEVEL_DEBUG( "Previous command terminated with retcode=%d, rlen=%d.", retcode,rlen ) ;
+							 if (retcode==0) return gbGOOD;
+		 					 return -EINVAL ;
+					}
+			}
+	}
+}
+
+//WR command 0X17  with query until return of result
+static GOOD_OR_BAD OW_wr_complete_transaction( int wlen,BYTE func, int *rlen, BYTE * wparam, BYTE * rparam, int timeout, struct parsedname *pn)
+{
+	BYTE p[1 + 1 + 1 + 1 + _FC02_MAX_COMMAND_GULP + 2] = { _1W_WRCMD, BYTE_MASK(wlen), BYTE_MASK(func), BYTE_MASK(*rlen), 0, };
+	BYTE q[] = { _1W_CONFIRM_WRITE, } ;
+	struct transaction_log t[] = {
+		TRXN_START,
+		TRXN_WR_CRC16(p, 4+wlen, 0),
+		TRXN_WRITE1(q),
+		TRXN_DELAY(1), //any WR commands require at least 1ms before query result
+		TRXN_END,
+	};
+	LEVEL_DEBUG("BAE WR transaction function=%d, wlen=%d, rlen=%d", func, wlen, *rlen) ;
+	Debug_Bytes("WR_cmd, data:",wparam,wlen) ;
+	memcpy(p+4, wparam, wlen);
+	RETURN_ERROR_IF_BAD(BUS_transaction(t, pn)) ;
+	return OW_poll_until_timeout(rlen, rparam, timeout, pn);
+}
+// SEQW command 0X18 with query until return of result
+static GOOD_OR_BAD OW_seqw_complete_transaction(int wlen, BYTE func, BYTE * wparam, int timeout, struct parsedname *pn)
+{
+	BYTE p[1 + 1 + 1 + _FC02_MAX_COMMAND_GULP + 2] = { _1W_SEQWCMD, BYTE_MASK(wlen), BYTE_MASK(func), 0, };
+	BYTE q[] = { _1W_CONFIRM_WRITE, } ;
+	struct transaction_log t[] = {
+		TRXN_START,
+		TRXN_WR_CRC16(p, 3+wlen, 0),
+		TRXN_WRITE1(q),
+		TRXN_DELAY(1), //any SEQ commands require at least 1ms before query result
+		TRXN_END,
+	};
+	int rlen=0;
+	LEVEL_DEBUG("BAE SEQWR transaction function=%d, wlen=%d", func, wlen) ;
+	Debug_Bytes("SEQW_cmd, data:",wparam,wlen) ;
+	memcpy(p+3, wparam, wlen);
+	RETURN_ERROR_IF_BAD( BUS_transaction(t, pn)) ;
+	return OW_poll_until_timeout(&rlen, p, timeout, pn);
+	
+}
+
+//SEQR command 0X19  with query until return of result
+static GOOD_OR_BAD OW_seqr_complete_transaction(int *rlen,BYTE func,BYTE * rparam, int timeout,  struct parsedname *pn)
+{
+	BYTE p[1 + 1 + 1 + 2] = { _1W_SEQRCMD, BYTE_MASK(*rlen), BYTE_MASK(func), 0, };
+	BYTE q[] = { _1W_CONFIRM_WRITE, } ;
+
+	struct transaction_log t[] = {
+		TRXN_START,
+		TRXN_WR_CRC16(p, 3, 0),
+		TRXN_WRITE1(q),
+		TRXN_DELAY(1), //any SEQ commands require at least 1ms before query result
+		TRXN_END,
+	};
+	LEVEL_DEBUG( "BAE SEQR transaction: function=%d, rlen= %d", func, *rlen ) ;
+	RETURN_ERROR_IF_BAD(BUS_transaction(t, pn));
+	return OW_poll_until_timeout(rlen, rparam, timeout, pn);
+}
+
+//QUERY command 0x1A
+static GOOD_OR_BAD OW_query_cmd(int *prlen, BYTE *retcode,BYTE * rparam , struct parsedname *pn)
+{
+	BYTE p[1 + 1 + 1 + _FC02_MAX_COMMAND_GULP + 2] = { _1W_QUERY_DATA_COMMAND };
+	int rlen;
+	struct transaction_log t[] = {
+		TRXN_START,
+		TRXN_WRITE1(p),  //query command
+		TRXN_READ2(p+1), //retcode and len
+		TRXN_END,
+	};
+	LEVEL_DEBUG( "query_cmd: getting header ") ;
+	RETURN_BAD_IF_BAD( BUS_transaction(t, pn)) ;
+	LEVEL_DEBUG( "query_cmd: header received: retcode=%d, rlen=%d ", p[1],p[2]) ;
+	retcode[0]=p[1]; //retcode of previous command
+	rlen=p[2];
+	*prlen=rlen;
+	if (p[1]==0xff)  return gbGOOD;  //no communication error, but still busy processing the previous command
+	else
+	{
+		struct transaction_log t2[] = {
+			TRXN_READ(p+3,rlen+2),
+			TRXN_CRC16(p,rlen+3+2),
+			TRXN_END,
+		};
+		RETURN_BAD_IF_BAD( BUS_transaction(t2, pn)) ;
+		memcpy(rparam,p+3, rlen);
+		Debug_Bytes("BAE query_cmd, received:",rparam,rlen) ;
+	  return gbGOOD ;	
+	}
+}
 
 //read bytes[size] from position
 static GOOD_OR_BAD OW_r_mem(BYTE * data, size_t size, off_t offset, struct parsedname * pn)
