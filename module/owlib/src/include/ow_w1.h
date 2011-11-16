@@ -67,9 +67,8 @@ struct netlink_parse {
 void * w1_master_command(void * v) ;
 
 void w1_parse_master_list(struct netlink_parse * nlp);
-void Netlink_Parse_Destroy( struct netlink_parse * nlp ) ;
 GOOD_OR_BAD Netlink_Parse_Get( struct netlink_parse * nlp ) ;
-GOOD_OR_BAD Get_and_Parse_Pipe( FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct netlink_parse * nlp ) ;
+GOOD_OR_BAD Netlink_Parse_Buffer( struct netlink_parse * nlp ) ;
 void Netlink_Print( struct nlmsghdr * nlm, struct cn_msg * cn, struct w1_netlink_msg * w1m, struct w1_netlink_cmd * w1c, unsigned char * data, int length ) ;
 enum Netlink_Read_Status W1_Process_Response( void (* nrs_callback)( struct netlink_parse * nlp, void  *v, const struct parsedname * pn), SEQ_OR_ERROR seq, void * v, const struct parsedname * pn ) ;
 

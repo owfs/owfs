@@ -5,7 +5,7 @@ Written 2008 Paul H Alfille
 email: paul.alfille@gmail.com
 Released under the GPLv2
 Much thanks to Evgeniy Polyakov
-This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
+This file itself  is a modestly modified version of w1d by Evgeniy Polyakov
 */
 
 /*
@@ -36,6 +36,11 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
 
 #include "ow_w1.h"
 #include "ow_connection.h"
+
+static GOOD_OR_BAD W1_write_pipe( FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct netlink_parse * nlp ) ;
+static void Dispatch_Packet( struct netlink_parse * nlp) ;
+static void Dispatch_Packet_root( struct netlink_parse * nlp) ;
+static void Dispatch_Packet_nonroot( struct netlink_parse * nlp) ;
 
 // write to an internal pipe (in another thread). Use a timepout in case that thread has terminated.
 static GOOD_OR_BAD W1_write_pipe( FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct netlink_parse * nlp )
@@ -77,26 +82,57 @@ static GOOD_OR_BAD W1_write_pipe( FILE_DESCRIPTOR_OR_ERROR file_descriptor, stru
 static void Dispatch_Packet( struct netlink_parse * nlp)
 {
 	int bus = NL_BUS(nlp->nlm->nlmsg_seq) ;
-	struct connection_in * in ;
 
-	if ( bus == 0 ) { // root w1 master message -- add and remove
-		/* Need to run the add/remove in a separate thread so that netlink messages can still be parsed and CONNIN_RLOCK won't deadlock */
-		pthread_t thread ;
-		// make a copy for the new thread (which we will have to destroy)
-		struct netlink_parse * nlp_copy = owmalloc( sizeof(struct netlink_parse) ) ;
-		if ( nlp_copy == NULL ) {
-			return ;
-		}
-		memcpy( nlp_copy, nlp, sizeof(struct netlink_parse) ) ;
-		if ( pthread_create( &thread, DEFAULT_THREAD_ATTR, w1_master_command, (void *) nlp_copy ) == 0 ) {
-			LEVEL_DEBUG("Sending this packet to root bus");
-		} else {
-			LEVEL_DEBUG("Thread creation problem");
-		}
+	// root w1 master message -- add and remove
+	if ( bus == 0 ) {
+		// root w1 master message -- add and remove
+		Dispatch_Packet_root( nlp ) ;
+	} else {
+		// non-root w1 message -- individual bus master messages
+		CONNIN_RLOCK ;
+		Dispatch_Packet_nonroot( nlp ) ;
+		CONNIN_RUNLOCK ;
+	}
+}
+
+// Get the w1 bus id from the nlm sequence number and dispatch to that bus
+static void Dispatch_Packet_root( struct netlink_parse * nlp)
+{
+	// root w1 master message -- add and remove
+
+	/* Need to run the add/remove in a separate thread so that netlink messages can still be parsed and CONNIN_RLOCK won't deadlock */
+	pthread_t thread ;
+
+	// make a copy for the new thread (which we will have to destroy)
+	struct netlink_parse * nlp_copy = owmalloc( sizeof(struct netlink_parse) ) ;
+	if ( nlp_copy == NULL ) {
+		return ;
+	}
+	memcpy( nlp_copy, nlp, sizeof(struct netlink_parse) ) ;
+	nlp_copy = nlp->nlm ;
+	
+	if ( BAD( Netlink_Parse_Buffer(nlp_copy) ) ) {
+		SAFEFREE( nlp_copy->nlm ) ;
+		owfree( nlp_copy ) ;
 		return ;
 	}
 
-	CONNIN_RLOCK ;
+	if ( pthread_create( &thread, DEFAULT_THREAD_ATTR, w1_master_command, (void *) nlp_copy ) == 0 ) {
+		LEVEL_DEBUG("Sending this packet to root bus");
+	} else {
+		SAFEFREE( nlp_copy->nlm ) ;
+		owfree( nlp_copy ) ;
+		LEVEL_DEBUG("Thread creation problem");
+	}
+	return ;
+}
+
+// Get the w1 bus id from the nlm sequence number and dispatch to that bus
+static void Dispatch_Packet_nonroot( struct netlink_parse * nlp)
+{
+	int bus = NL_BUS(nlp->nlm->nlmsg_seq) ;
+	struct connection_in * in ;
+
 	for ( in = Inbound_Control.head ; in != NO_CONNECTION ; in = in->next ) {
 		//printf("Matching %d/%s/%s/%s/ to bus.%d %d/%s/%s/%s/\n",bus_zero,name,type,domain,now->index,now->busmode,now->master.tcp.name,now->master.tcp.type,now->master.tcp.domain);
 		if ( in->busmode == bus_w1 && in->master.w1.id == bus ) {
@@ -106,11 +142,9 @@ static void Dispatch_Packet( struct netlink_parse * nlp)
 			} else {
 				LEVEL_DEBUG("Error sending w1_bus_master%d",bus);
 			}
-			CONNIN_RUNLOCK ;
 			return ;
 		}
 	}
-	CONNIN_RUNLOCK ;
 	LEVEL_DEBUG("W1 netlink message for non-existent bus %d",bus);
 }
 
@@ -125,12 +159,13 @@ void * W1_Dispatch( void * v )
 
 	while ( FILE_DESCRIPTOR_VALID( SOC(Inbound_Control.w1_monitor)->file_descriptor ) ) {
 		struct netlink_parse nlp ;
+		nlp.nlm = NULL ;
 
 		LEVEL_DEBUG("Dispatch loop");
-		if ( Netlink_Parse_Get( &nlp ) == 0 ) {
+		if ( GOOD ( Netlink_Parse_Get( &nlp ) ) ) {
 			Dispatch_Packet( &nlp ) ;
-			Netlink_Parse_Destroy(&nlp) ;
 		}
+		SAFEFREE( nlp.nlm ) ;
 	}
 	LEVEL_DEBUG("Normal exit.");
 	return VOID_RETURN;

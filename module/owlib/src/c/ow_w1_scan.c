@@ -40,6 +40,8 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
 void * w1_master_command(void * v)
 {
 	struct netlink_parse * nlp = v ;
+	// This is a structure that was allocated in Dispatch_Packet()
+	// It needs to be destroyed before this (detached) thread is finished.
 	
 	DETACH_THREAD;
 
@@ -68,7 +70,10 @@ void * w1_master_command(void * v)
 				break ;
 		}
 	}
+	
+	SAFEFREE(nlp->nlm) ;
 	owfree(nlp) ;
+	
 	return VOID_RETURN ;
 }
 

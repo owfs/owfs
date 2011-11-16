@@ -1,4 +1,10 @@
 /*
+$Id$
+Much thanks to Evgeniy Polyakov
+This file itself is a snapshop version of netlink.h by Evgeniy Polyakov
+*/
+
+/*
  * w1_netlink.h
  *
  * Copyright (c) 2003 Evgeniy Polyakov <johnpol@2ka.mipt.ru>
