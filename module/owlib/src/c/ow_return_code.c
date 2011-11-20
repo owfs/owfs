@@ -243,7 +243,8 @@ void Return_code_setup(void)
 void return_code_set( int raw_rc, struct parsedname * pn, const char * d_file, const char * d_line, const char * d_func )
 {
 	int rc = raw_rc ;
-	if ( rc > 0 ) {
+	if ( rc < 0 ) {
+		// make positive
 		rc = -rc ;
 	}
 
@@ -284,21 +285,14 @@ void return_code_set( int raw_rc, struct parsedname * pn, const char * d_file, c
 void return_code_set_scalar( int raw_rc, int * pi, const char * d_file, int d_line, const char * d_func )
 {
 	int rc = raw_rc ;
-	if ( rc > 0 ) {
+	if ( rc < 0 ) {
+		// make positive
 		rc = -rc ;
-	}
-
-	if ( *pi != 0 ) {
-	// Already set?
-	#if OW_DEBUG
-		if (Globals.error_level>=e_err_debug) {
-			err_msg( e_err_type_level, e_err_debug, d_file, d_line, d_func, "Resetting error from %d <%s> to %d",*pi,return_code_strings[*pi],rc); 
-		}
-	#endif
 	}
 
 	if ( rc > return_code_out_of_bounds || rc < 0 ) {
 	// Out of bounds?
+	//printf("Return code out of bounds\n");
 	#if OW_DEBUG
 		if (Globals.error_level>=e_err_debug) {
 			err_msg( e_err_type_level, e_err_debug, d_file, d_line, d_func, "Reset out of bounds error from %d to %d <%s>",rc,return_code_out_of_bounds,return_code_strings[return_code_out_of_bounds]);
@@ -308,10 +302,12 @@ void return_code_set_scalar( int raw_rc, int * pi, const char * d_file, int d_li
 		++ return_code_calls[return_code_out_of_bounds] ;
 	} else {
 	// Error and success
+	//printf("Return code in bounds\n");
 		*pi = rc ;
 		++ return_code_calls[rc] ;
 		if ( rc != 0 ) {
-		// Error found
+			//printf("Return code still non-zero\n");
+			// Error found
 			-- return_code_calls[0] ;
 		#if OW_DEBUG
 			if (Globals.error_level>=e_err_debug) {
@@ -320,4 +316,5 @@ void return_code_set_scalar( int raw_rc, int * pi, const char * d_file, int d_li
 		#endif
 		}
 	}
+	//printf("Return code done\n");
 }
