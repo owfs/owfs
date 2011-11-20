@@ -287,7 +287,7 @@ GOOD_OR_BAD DS9490_open(struct usb_list *ul, struct connection_in *in)
 	usb_close(usb);
 	in->master.usb.usb = NULL;
 
-	LEVEL_DEBUG("Did not successfully open DS9490 %s",SOC(in)->devicename) ;
+	LEVEL_DEBUG("Did not successfully open DS9490 %s -- permission problem?",SOC(in)->devicename) ;
 	STAT_ADD1_BUS(e_bus_open_errors, in);
 	return gbBAD;
 }
