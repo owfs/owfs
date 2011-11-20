@@ -108,9 +108,10 @@ void err_msg(enum e_err_type errnoflag, enum e_err_level level, const char * fil
 	default:
 		return;
 	}
-
+//printf("About to format an error \n");
 	va_start(ap, fmt);
 	err_format( format, errno_save, level_string, file, line, func, fmt) ;
+//printf("About to print an error\n");
 
 	UCLIBCLOCK;
 	/* Create output string */
@@ -121,6 +122,7 @@ void err_msg(enum e_err_type errnoflag, enum e_err_level level, const char * fil
 #endif
 	UCLIBCUNLOCK;
 	va_end(ap);
+//printf("About to output an error \n");
 
 	if (sl == e_err_print_syslog) {	/* All output to syslog */
 		if (!log_available) {
@@ -134,6 +136,7 @@ void err_msg(enum e_err_type errnoflag, enum e_err_level level, const char * fil
 		fputs("\n", stderr);
 		fflush(stderr);
 	}
+//printf("About to leave an error \n");
 	return;
 }
 
@@ -146,6 +149,7 @@ void _Debug_Bytes(const char *title, const unsigned char *buf, int length)
 		fprintf(stderr,"\n-- Attempt to write with bad length\n");
 		return;
 	} else if ( length == 0 ) {
+		fprintf(stderr,"\n");
 		return ;
 	}
 	if (buf == NULL) {
@@ -209,6 +213,7 @@ void fatal_error(const char * file, int line, const char * func, const char *fmt
 		} else {
 			fflush(stdout);			/* in case stdout and stderr are the same */
 			fputs(buf, stderr);
+			fprintf(stderr,"\n");
 			fflush(stderr);
 		}
 	}
