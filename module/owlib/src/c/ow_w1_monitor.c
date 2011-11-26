@@ -27,6 +27,7 @@ GOOD_OR_BAD W1_monitor_detect(struct connection_in *in)
 	struct timeval tvslack = { 1, 0 } ; // 1 second
 	
 	SOC(in)->file_descriptor = FILE_DESCRIPTOR_BAD;
+	SOC(in)->type = ct_none ;
 	in->iroutines.detect = W1_monitor_detect;
 	in->Adapter = adapter_w1_monitor;	/* OWFS assigned value */
 	in->iroutines.reset = NO_RESET_ROUTINE;
@@ -56,7 +57,7 @@ GOOD_OR_BAD W1_monitor_detect(struct connection_in *in)
 	in->master.w1_monitor.seq = SEQ_INIT ;
 	in->master.w1_monitor.pid = 0 ;
 	
-	w1_bind() ; // sets in->file_descriptor
+	w1_bind(in) ; // sets in->file_descriptor
 	if ( FILE_DESCRIPTOR_NOT_VALID( SOC(in)->file_descriptor ) ) {
 		ERROR_DEBUG("Netlink problem -- are you root?");
 		Inbound_Control.w1_monitor = NO_CONNECTION ;
