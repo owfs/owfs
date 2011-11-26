@@ -104,23 +104,27 @@ static void Dispatch_Packet_root( struct netlink_parse * nlp)
 	pthread_t thread ;
 
 	// make a copy for the new thread (which we will have to destroy)
-	struct netlink_parse * nlp_copy = owmalloc( sizeof(struct netlink_parse) ) ;
+	// the copy includes the packet
+	// and the actual message appended to the end
+	struct netlink_parse * nlp_copy = owmalloc( sizeof(struct netlink_parse) + nlp->nlm->nlmsg_len ) ;
 	if ( nlp_copy == NULL ) {
 		return ;
 	}
 	memcpy( nlp_copy, nlp, sizeof(struct netlink_parse) ) ;
-	nlp_copy = nlp->nlm ;
+	nlp_copy->nlm = &nlp_copy[0] + sizeof(struct netlink_parse) ;
+	memcpy( nlp_copy->nlm, nlp->nlm, nlp->nlm->nlmsg_len ) ;
 	
+	// Need run through parser to set pointers to new buffer
 	if ( BAD( Netlink_Parse_Buffer(nlp_copy) ) ) {
 		SAFEFREE( nlp_copy->nlm ) ;
 		owfree( nlp_copy ) ;
 		return ;
 	}
 
+	// Now send
 	if ( pthread_create( &thread, DEFAULT_THREAD_ATTR, w1_master_command, (void *) nlp_copy ) == 0 ) {
 		LEVEL_DEBUG("Sending this packet to root bus");
 	} else {
-		SAFEFREE( nlp_copy->nlm ) ;
 		owfree( nlp_copy ) ;
 		LEVEL_DEBUG("Thread creation problem");
 	}
