@@ -71,7 +71,6 @@ void * w1_master_command(void * v)
 		}
 	}
 	
-	SAFEFREE(nlp->nlm) ;
 	owfree(nlp) ;
 	
 	return VOID_RETURN ;
