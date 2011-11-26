@@ -59,9 +59,11 @@ SEQ_OR_ERROR W1_send_msg( struct connection_in * in, struct w1_netlink_msg *msg,
 
 	// NULL connection for initial LIST_MASTERS, not assigned to a specific bus
 	if ( in != NO_CONNECTION ) {
+		// this bus is locked
 		seq = ++in->master.w1.seq ;
 		bus = in->master.w1.id;
 	} else {
+		// need to lock master w1 before incrementing
 		_MUTEX_LOCK(Inbound_Control.w1_monitor->master.w1_monitor.seq_mutex) ;
 		seq = ++Inbound_Control.w1_monitor->master.w1_monitor.seq ;
 		_MUTEX_UNLOCK(Inbound_Control.w1_monitor->master.w1_monitor.seq_mutex) ;
@@ -69,17 +71,21 @@ SEQ_OR_ERROR W1_send_msg( struct connection_in * in, struct w1_netlink_msg *msg,
 	}
 
 	// figure out the full message length and allocate space
-	size = W1_NLM_LENGTH + W1_CN_LENGTH + W1_W1M_LENGTH ;
+	size = W1_NLM_LENGTH + W1_CN_LENGTH + W1_W1M_LENGTH ; // default length before data
 	if ( cmd != NULL ) {
+		
 		length = cmd->len ;
-		size += W1_W1C_LENGTH + length;
+		// add command field
+		size += W1_W1C_LENGTH ;
 	} else {
 		length = msg->len ;
-		size += length;
 	}
+	// add data length
+	size += length ;
 
 	nlm = owmalloc(size);
 	if (nlm==NULL) {
+		// memory allocation error
 		return SEQ_BAD;
 	}
 
@@ -87,39 +93,42 @@ SEQ_OR_ERROR W1_send_msg( struct connection_in * in, struct w1_netlink_msg *msg,
 	memset(nlm, 0, size);
 	nlm->nlmsg_seq = MAKE_NL_SEQ( bus, seq );
 	nlm->nlmsg_type = NLMSG_DONE;
-	nlm->nlmsg_len = size;
+	nlm->nlmsg_len = size; // full message
 	nlm->nlmsg_flags = 0;
 	//nlm->nlmsg_flags = NLM_F_REQUEST;
 	nlm->nlmsg_pid = Inbound_Control.w1_monitor->master.w1_monitor.pid ;
 
 	// set the cn fields
-	cn = (struct cn_msg *)(nlm + 1);
+	cn = (struct cn_msg *)(nlm + 1); // just after nlm field
 	cn->id.idx = CN_W1_IDX;
 	cn->id.val = CN_W1_VAL;
 	cn->seq = nlm->nlmsg_seq;
 	cn->ack = cn->seq; // intentionally non-zero ;
 	cn->flags = 0 ;
-	cn->len = size - W1_NLM_LENGTH - W1_CN_LENGTH ;
+	cn->len = size - W1_NLM_LENGTH - W1_CN_LENGTH ; // size not including nlm or cn
 
 	// set the w1m (and optionally w1c) fields
-	w1m = (struct w1_netlink_msg *)(cn + 1);
+	w1m = (struct w1_netlink_msg *)(cn + 1); // just after cn field
 	memcpy(w1m, msg, W1_W1M_LENGTH);
-	w1m->len = cn->len - W1_W1M_LENGTH ;
+	w1m->len = cn->len - W1_W1M_LENGTH ; // size minus nlm, cn and w1m
 	if ( cmd != NULL ) {
-		w1c = (struct w1_netlink_cmd *)(w1m + 1);
-		pdata = (unsigned char *)(w1c + 1);
-		memcpy(w1c, cmd, W1_W1C_LENGTH);
+		w1c = (struct w1_netlink_cmd *)(w1m + 1); // just after w1m
+		pdata = (unsigned char *)(w1c + 1); // data just after w1c
+		memcpy(w1c, cmd, W1_W1C_LENGTH); // set command
 	} else {
 		w1c = NULL ;
-		pdata = (unsigned char *)(w1m + 1);
+		pdata = (unsigned char *)(w1m + 1); // data just after w1m
 	}
 	if ( length > 0 ) {
 		memcpy(pdata, data, length);
+	} else {
+		pdata =NULL ; // no data
 	}
 	LEVEL_DEBUG("Netlink send -----------------");
 	Netlink_Print( nlm, cn, w1m, w1c, pdata, length ) ;
 
-	err = send( SOC(Inbound_Control.w1_monitor)->file_descriptor, nlm, size,  0);
+//	err = send( SOC(Inbound_Control.w1_monitor)->file_descriptor, nlm, size,  0);
+	err = COM_write( nlm, size, Inbound_Control.w1_monitor) ;
 	owfree(nlm);
 	if (err == -1) {
 		ERROR_CONNECT("Failed to send w1 netlink message");
