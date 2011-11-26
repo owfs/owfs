@@ -56,6 +56,8 @@
  * are used for message routing and 
  * must be registered in connector.h for in-kernel usage.
  */
+#pragma pack(push)  /* push current alignment to stack */
+#pragma pack(1)     /* set alignment to 1 byte boundary */
 
 struct cb_id {
 	__u32 idx;
@@ -96,5 +98,6 @@ struct cn_ctl_msg {
 	__u32 len;
 	__u8 data[0];
 };
+#pragma pack(pop)   /* restore original alignment from stack */
 
 #endif				/* __CONNECTOR_H */

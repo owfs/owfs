@@ -35,6 +35,9 @@ This file itself is a snapshop version of netlink.h by Evgeniy Polyakov
 #define CN_W1_VAL      1
 #endif
 
+#pragma pack(push)  /* push current alignment to stack */
+#pragma pack(1)     /* set alignment to 1 byte boundary */
+
 enum w1_netlink_message_types {
 	W1_SLAVE_ADD = 0,
 	W1_SLAVE_REMOVE,
@@ -77,5 +80,6 @@ struct w1_netlink_cmd
 	__u16				len;
 	__u8				data[0];
 };
+#pragma pack(pop)   /* restore original alignment from stack */
 
 #endif /* __W1_NETLINK_H */

@@ -29,9 +29,11 @@ struct sockaddr_nl
 	sa_family_t	nl_family;	/* AF_NETLINK	*/
 	unsigned short	nl_pad;		/* zero		*/
 	uint32_t		nl_pid;		/* process pid	*/
-       	uint32_t		nl_groups;	/* multicast groups mask */
+    uint32_t		nl_groups;	/* multicast groups mask */
 };
 
+#pragma pack(push)  /* push current alignment to stack */
+#pragma pack(1)     /* set alignment to 1 byte boundary */
 struct nlmsghdr
 {
 	uint32_t		nlmsg_len;	/* Length of message including header */
@@ -40,6 +42,7 @@ struct nlmsghdr
 	uint32_t		nlmsg_seq;	/* Sequence number */
 	uint32_t		nlmsg_pid;	/* Sending process PID */
 };
+#pragma pack(pop)   /* restore original alignment from stack */
 
 /* Flags values */
 
