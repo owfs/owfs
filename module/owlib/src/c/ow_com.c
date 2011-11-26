@@ -30,11 +30,11 @@ GOOD_OR_BAD COM_test( struct connection_in * connection )
 		case ct_none:
 			LEVEL_DEBUG("ERROR!!! ----------- ERROR!");
 			return gbBAD ;
+		case ct_netlink:
 		case ct_telnet:
 		case ct_tcp:
 			break ;
 		case ct_i2c:
-		case ct_netlink:
 		case ct_usb:
 			LEVEL_DEBUG("Unimplemented!!!");
 			return gbBAD ;
@@ -62,11 +62,11 @@ void COM_flush( const struct connection_in *connection)
 		case ct_none:
 			LEVEL_DEBUG("ERROR!!! ----------- ERROR!");
 			return ;
+		case ct_netlink:
 		case ct_telnet:
 		case ct_tcp:
 			tcp_read_flush( SOC(connection)->file_descriptor) ;
 			break ;
-		case ct_netlink:
 		case ct_i2c:
 		case ct_usb:
 			LEVEL_DEBUG("Unimplemented!!!");
