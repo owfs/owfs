@@ -36,27 +36,32 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
 #include "ow_w1.h"
 #include "ow_connection.h"
 
-void w1_bind( void )
+// Bind the master netlink socket for all communication
+// responses will have to be routed to appropriate bus master
+GOOD_OR_BAD w1_bind( struct connection_in * in )
 {
 	struct sockaddr_nl l_local ;
 
-	SOC(Inbound_Control.w1_monitor)->type = ct_netlink ;
-	Test_and_Close( &(SOC(Inbound_Control.w1_monitor)->file_descriptor) ) ; // just in case
+	SOC(in)->type = ct_netlink ;
+	Test_and_Close( &(SOC(in)->file_descriptor) ) ; // just in case
 	
-	SOC(Inbound_Control.w1_monitor)->file_descriptor = socket(AF_NETLINK, SOCK_DGRAM, NETLINK_CONNECTOR);
-	if ( FILE_DESCRIPTOR_NOT_VALID( SOC(Inbound_Control.w1_monitor)->file_descriptor ) ) {
+	SOC(in)->file_descriptor = socket(AF_NETLINK, SOCK_DGRAM, NETLINK_CONNECTOR);
+	if ( FILE_DESCRIPTOR_NOT_VALID( SOC(in)->file_descriptor ) ) {
 		ERROR_CONNECT("Netlink (w1) socket");
-		return ;
+		return gbBAD;
 	}
 
-	l_local.nl_pid = Inbound_Control.w1_monitor->master.w1_monitor.pid = getpid() ;
+	l_local.nl_pid = in->master.w1_monitor.pid = getpid() ;
 	l_local.nl_family = AF_NETLINK;
 	l_local.nl_groups = 23;
 
-	if ( bind( SOC(Inbound_Control.w1_monitor)->file_descriptor, (struct sockaddr *)&l_local, sizeof(struct sockaddr_nl) ) == -1 ) {
+	if ( bind( SOC(in)->file_descriptor, (struct sockaddr *)&l_local, sizeof(struct sockaddr_nl) ) == -1 ) {
 		ERROR_CONNECT("Netlink (w1) bind");
-		Test_and_Close( &( SOC(Inbound_Control.w1_monitor)->file_descriptor) );
+		Test_and_Close( &( SOC(in)->file_descriptor) );
+		return gbBAD ;
 	}
+	SOC(in)->state = cs_deflowered ;
+	return gbGOOD ;
 }
 
 #endif /* OW_W1 */

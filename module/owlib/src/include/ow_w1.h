@@ -40,7 +40,7 @@ enum Netlink_Read_Status {
 struct connection_in ;
 struct parsedname ;
 
-void w1_bind( void ) ;
+GOOD_OR_BAD w1_bind( struct connection_in * in ) ;
 
 void RemoveW1Bus( int bus_master ) ;
 void AddW1Bus( int bus_master ) ;
