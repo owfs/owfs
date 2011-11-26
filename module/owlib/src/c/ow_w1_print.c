@@ -39,6 +39,7 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
 static void NLM_print( struct nlmsghdr * nlm )
 {
 	if ( nlm == NULL ) {
+		printf("NLMSGHDR: NULL nlm field\n") ;
 		return ;
 	}
 	printf("NLMSGHDR: len=%u type=%u (",nlm->nlmsg_len, nlm->nlmsg_type) ;
@@ -49,6 +50,7 @@ static void NLM_print( struct nlmsghdr * nlm )
 		printcase( NLMSG_DONE );
 		printcase( NLMSG_OVERRUN );
 		default:
+			printf("NLMSG unknown message type %d",nlm->nlmsg_type);
 			break ;
 	}
 	printf(") flags=%u seq=%u|%u pid=%u\n",nlm->nlmsg_flags, NL_BUS(nlm->nlmsg_seq), NL_SEQ(nlm->nlmsg_seq), nlm->nlmsg_pid ) ;
@@ -57,6 +59,7 @@ static void NLM_print( struct nlmsghdr * nlm )
 static void CN_print( struct cn_msg * cn )
 {
 	if ( cn == NULL ) {
+		printf("CN_MSG: NULL cn field\n") ;
 		return ;
 	}
 	printf("CN_MSG: idx/val=%u/%u (",cn->id.idx,cn->id.val) ;
@@ -67,6 +70,7 @@ static void CN_print( struct cn_msg * cn )
 		printcase( CN_W1_IDX );
 		printcase( CN_IDX_V86D );
 		default:
+			printf("CN unknown message type %d",cn->id.idx);
 			break ;
 	}
 	printf(") seq=%u|%u ack=%u len=%u flags=%u\n",NL_BUS(cn->seq),NL_SEQ(cn->seq),cn->ack,cn->len,cn->flags) ;
@@ -75,6 +79,7 @@ static void CN_print( struct cn_msg * cn )
 static void W1M_print( struct w1_netlink_msg * w1m )
 {
 	if ( w1m == NULL ) {
+		printf("W1_NETLINK_MSG: NULL w1m field\n") ;
 		return ;
 	}
 	printf("W1_NETLINK_MSG: type=%u (",w1m->type) ;
@@ -88,6 +93,7 @@ static void W1M_print( struct w1_netlink_msg * w1m )
 		printcase( W1_SLAVE_CMD );
 		printcase( W1_LIST_MASTERS );
 		default:
+			printf("W1_NETLINK_MSG unknown message type %d",w1m->type);
 			break ;
 	}
 	printf(") len=%u id=%u\n",w1m->len, w1m->id.mst.id ) ;
@@ -96,6 +102,7 @@ static void W1M_print( struct w1_netlink_msg * w1m )
 static void W1C_print( struct w1_netlink_cmd * w1c )
 {
 	if ( w1c == NULL ) {
+		printf("W1_NETLINK_CMD: NULL w1c field\n") ;
 		return ;
 	}
 	printf("W1_NETLINK_CMD: cmd=%u (",w1c->cmd ) ;
@@ -108,6 +115,7 @@ static void W1C_print( struct w1_netlink_cmd * w1c )
 		printcase( W1_CMD_TOUCH );
 		printcase( W1_CMD_RESET );
 		default:
+			printf("W1_NETLINK_CMD unknown message type %d",w1c->cmd);
 			break ;
 	}
 	printf(") len=%u\n", w1c->len) ;
@@ -120,7 +128,11 @@ void Netlink_Print( struct nlmsghdr * nlm, struct cn_msg * cn, struct w1_netlink
 		CN_print( cn ) ;
 		W1M_print( w1m ) ;
 		W1C_print( w1c ) ;
-		_Debug_Bytes("Data", data, length) ;
+		if ( data != NULL ) {
+			_Debug_Bytes("Data", data, length) ;
+		} else {
+			printf("NULL data\n");
+		}
 	}
 }
 
