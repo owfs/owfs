@@ -94,8 +94,7 @@ SEQ_OR_ERROR W1_send_msg( struct connection_in * in, struct w1_netlink_msg *msg,
 	nlm->nlmsg_seq = MAKE_NL_SEQ( bus, seq );
 	nlm->nlmsg_type = NLMSG_DONE;
 	nlm->nlmsg_len = size; // full message
-	nlm->nlmsg_flags = 0;
-	//nlm->nlmsg_flags = NLM_F_REQUEST;
+	nlm->nlmsg_flags = NLM_F_REQUEST ;
 	nlm->nlmsg_pid = Inbound_Control.w1_monitor->master.w1_monitor.pid ;
 
 	// set the cn fields
@@ -126,14 +125,14 @@ SEQ_OR_ERROR W1_send_msg( struct connection_in * in, struct w1_netlink_msg *msg,
 	}
 	LEVEL_DEBUG("Netlink send -----------------");
 	Netlink_Print( nlm, cn, w1m, w1c, pdata, length ) ;
-
-//	err = send( SOC(Inbound_Control.w1_monitor)->file_descriptor, nlm, size,  0);
-	err = COM_write( nlm, size, Inbound_Control.w1_monitor) ;
+	err = send( SOC(Inbound_Control.w1_monitor)->file_descriptor, nlm, size,  0);
+	//err = COM_write( nlm, size, Inbound_Control.w1.monitor ) ;
 	owfree(nlm);
 	if (err == -1) {
 		ERROR_CONNECT("Failed to send w1 netlink message");
 		return SEQ_BAD ;
 	}
+	LEVEL_DEBUG("NETLINK sent %d", (int) seq);
 	return seq;
 }
 
