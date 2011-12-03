@@ -57,12 +57,13 @@ SEQ_OR_ERROR w1_list_masters( void )
 
 void w1_parse_master_list(struct netlink_parse * nlp)
 {
-	int * bus_master = (int *) nlp->data ;
+	int * bus_master = (int32_t *) nlp->data ;
 	int num_masters = nlp->data_size / 4 ;
 	int i ;
 	
 	LEVEL_DEBUG("W1 List %d masters",num_masters);
 	for ( i=0  ;i<num_masters ; ++i ) {
+		//printf("W1 master %d of %d data size %d\n",i,num_masters,nlp->data_size);
 		AddW1Bus( bus_master[i] ) ;
 	}
 }
