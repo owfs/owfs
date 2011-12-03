@@ -86,9 +86,11 @@ static void Dispatch_Packet( struct netlink_parse * nlp)
 	// root w1 master message -- add and remove
 	if ( bus == 0 ) {
 		// root w1 master message -- add and remove
+		LEVEL_DEBUG("Netlink message directed to root W1 master");
 		Dispatch_Packet_root( nlp ) ;
 	} else {
 		// non-root w1 message -- individual bus master messages
+		LEVEL_DEBUG("Netlink message directed to W1 bus master %d",bus);
 		CONNIN_RLOCK ;
 		Dispatch_Packet_nonroot( nlp ) ;
 		CONNIN_RUNLOCK ;
