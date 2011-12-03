@@ -15,7 +15,7 @@ $Id$
 
 #include "ow_connection.h"
 
-static struct connection_in * CreateIn(const char * name, const char * type, const char * domain, const char * host, const char * service );
+static struct connection_in * CreateZeroIn(const char * name, const char * type, const char * domain, const char * host, const char * service );
 static struct connection_out *FindOut(const char * name, const char * type, const char * domain);
 static GOOD_OR_BAD Zero_nomatch(struct connection_in * trial,struct connection_in * existing);
 static GOOD_OR_BAD string_null_or_match( const char * one, const char * two );
@@ -30,7 +30,7 @@ void ZeroAdd(const char * name, const char * type, const char * domain, const ch
 		return ;
 	}
 
-	in = CreateIn( name, type, domain, host, service ) ;
+	in = CreateZeroIn( name, type, domain, host, service ) ;
 	if ( BAD( Zero_detect(in)) ) {
 		LEVEL_DEBUG("Failed to create new %s", SOC(in)->devicename ) ;
 		RemoveIn(in) ;
@@ -41,7 +41,7 @@ void ZeroAdd(const char * name, const char * type, const char * domain, const ch
 
 void ZeroDel(const char * name, const char * type, const char * domain )
 {
-	struct connection_in * in = CreateIn( name, type, domain, "", "" ) ;
+	struct connection_in * in = CreateZeroIn( name, type, domain, "", "" ) ;
 	
 	if ( in != NO_CONNECTION ) {
 		SAFEFREE(SOC(in)->devicename) ;
@@ -50,7 +50,7 @@ void ZeroDel(const char * name, const char * type, const char * domain )
 	}
 }
 
-static struct connection_in * CreateIn(const char * name, const char * type, const char * domain, const char * host, const char * service )
+static struct connection_in * CreateZeroIn(const char * name, const char * type, const char * domain, const char * host, const char * service )
 {
 	char addr_name[128] ;
 	struct connection_in * in = AllocIn(NO_CONNECTION);
