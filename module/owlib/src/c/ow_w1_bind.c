@@ -45,9 +45,11 @@ GOOD_OR_BAD w1_bind( struct connection_in * in )
 	SOC(in)->type = ct_netlink ;
 	Test_and_Close( &(SOC(in)->file_descriptor) ) ; // just in case
 	
-	SOC(in)->file_descriptor = socket(AF_NETLINK, SOCK_DGRAM, NETLINK_CONNECTOR);
+	// Example from http://lxr.linux.no/linux+v3.0/Documentation/connector/ucon.c#L114
+	//SOC(in)->file_descriptor = socket(PF_NETLINK, SOCK_DGRAM, NETLINK_CONNECTOR);
+	SOC(in)->file_descriptor = socket(PF_NETLINK, SOCK_RAW, NETLINK_CONNECTOR);
 	if ( FILE_DESCRIPTOR_NOT_VALID( SOC(in)->file_descriptor ) ) {
-		ERROR_CONNECT("Netlink (w1) socket");
+		ERROR_CONNECT("Netlink (w1) socket (are you root?)");
 		return gbBAD;
 	}
 
@@ -56,7 +58,7 @@ GOOD_OR_BAD w1_bind( struct connection_in * in )
 	l_local.nl_groups = 23;
 
 	if ( bind( SOC(in)->file_descriptor, (struct sockaddr *)&l_local, sizeof(struct sockaddr_nl) ) == -1 ) {
-		ERROR_CONNECT("Netlink (w1) bind");
+		ERROR_CONNECT("Netlink (w1) bind (are you root?)");
 		Test_and_Close( &( SOC(in)->file_descriptor) );
 		return gbBAD ;
 	}
