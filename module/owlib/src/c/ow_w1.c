@@ -140,7 +140,7 @@ static void search_callback( struct netlink_parse * nlp, void * v, const struct 
 	struct device_search *ds = v ;
 	BYTE sn[SERIAL_NUMBER_SIZE] ;
 	BYTE * sn_pointer ;
-	
+
 	for ( i = 0 ; i < nlp->w1c->len ; i += SERIAL_NUMBER_SIZE ) {
 		switch( in->master.w1.w1_slave_order ) {
 			case w1_slave_order_forward:
@@ -189,6 +189,7 @@ static enum search_status W1_next_both(struct device_search *ds, const struct pa
 		return search_done;
 	}
 	if (++(ds->index) == 0) {
+		// first pass, load the directory
 		DirblobClear( &(ds->gulp) );
 		if ( W1_Process_Response( search_callback, w1_send_search(ds,pn), ds, pn ) != nrs_complete) {
 			return search_error;
