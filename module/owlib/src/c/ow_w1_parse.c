@@ -143,6 +143,7 @@ GOOD_OR_BAD Netlink_Parse_Get( struct netlink_parse * nlp )
 }
 
 /* Reads a packet from a pipe that was originally a netlink packet */
+/* allocate buffer but free unless able to read and parse nlm fully */
 static GOOD_OR_BAD Get_and_Parse_Pipe( FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct netlink_parse * nlp )
 {
 	struct nlmsghdr peek_nlm ;
@@ -165,12 +166,16 @@ static GOOD_OR_BAD Get_and_Parse_Pipe( FILE_DESCRIPTOR_OR_ERROR file_descriptor,
 	memcpy( nlp->nlm, &peek_nlm, W1_NLM_LENGTH ) ;
 	// read rest of packet
 	if ( read( file_descriptor, &(nlp->nlm[W1_NLM_LENGTH]), peek_nlm.nlmsg_len - W1_NLM_LENGTH ) != (ssize_t) peek_nlm.nlmsg_len - W1_NLM_LENGTH ) {
+		owfree(nlp->nlm) ;
+		nlp->nml = NULL ;
 		ERROR_DEBUG("Pipe (w1) read body error");
 		return gbBAD ;
 	}
 
 	if ( BAD( Netlink_Parse_Buffer( nlp )) ) {
 		LEVEL_DEBUG("Buffer parsing error");
+		owfree(nlp->nlm) ;
+		nlp->nml = NULL ;
 		return gbBAD ;
 	}
 
@@ -212,7 +217,7 @@ enum Netlink_Read_Status W1_Process_Response( void (* nrs_callback)( struct netl
 		LEVEL_DEBUG("Loop waiting for netlink piped message");
 		if ( BAD( Get_and_Parse_Pipe( file_descriptor, &nlp )) ) {
 			LEVEL_DEBUG("Error reading pipe for w1_bus_master%d",bus);
-			owfree(nlp.nlm) ;
+			// Don't need to free since nlm not set if BAD
 			return nrs_error ;
 		}
 		if ( NL_SEQ(nlp.nlm->nlmsg_seq) != (unsigned int) seq ) {
