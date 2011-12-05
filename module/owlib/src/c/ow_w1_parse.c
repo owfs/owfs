@@ -167,7 +167,7 @@ static GOOD_OR_BAD Get_and_Parse_Pipe( FILE_DESCRIPTOR_OR_ERROR file_descriptor,
 	// read rest of packet
 	if ( read( file_descriptor, &(nlp->nlm[W1_NLM_LENGTH]), peek_nlm.nlmsg_len - W1_NLM_LENGTH ) != (ssize_t) peek_nlm.nlmsg_len - W1_NLM_LENGTH ) {
 		owfree(nlp->nlm) ;
-		nlp->nml = NULL ;
+		nlp->nlm = NULL ;
 		ERROR_DEBUG("Pipe (w1) read body error");
 		return gbBAD ;
 	}
@@ -175,7 +175,7 @@ static GOOD_OR_BAD Get_and_Parse_Pipe( FILE_DESCRIPTOR_OR_ERROR file_descriptor,
 	if ( BAD( Netlink_Parse_Buffer( nlp )) ) {
 		LEVEL_DEBUG("Buffer parsing error");
 		owfree(nlp->nlm) ;
-		nlp->nml = NULL ;
+		nlp->nlm = NULL ;
 		return gbBAD ;
 	}
 
