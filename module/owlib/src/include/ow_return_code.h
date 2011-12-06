@@ -74,7 +74,7 @@ extern int return_code_calls[] ;
 /* Conditional return with return code */
 #define RETURN_CODE_ERROR_RETURN(rc)	do { int i ; RETURN_CODE_SET_SCALAR(i,rc) ; if ( i != 0 ) { return -i; } } while(0) ;
 
-void return_code_set( int rc, struct parsedname * pn, const char * d_file, const char * d_line, const char * d_func ) ;
+void return_code_set( int rc, struct parsedname * pn, const char * d_file, int d_line, const char * d_func ) ;
 void return_code_set_scalar( int rc, int * pi, const char * d_file, int d_line, const char * d_func ) ;
 void Return_code_setup(void) ;
 
