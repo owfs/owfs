@@ -132,7 +132,7 @@ SEQ_OR_ERROR W1_send_msg( struct connection_in * in, struct w1_netlink_msg *msg,
 		ERROR_CONNECT("Failed to send w1 netlink message");
 		return SEQ_BAD ;
 	}
-	LEVEL_DEBUG("NETLINK sent %d", (int) seq);
+	LEVEL_DEBUG("NETLINK sent seq=%d", (int) seq);
 	return seq;
 }
 
