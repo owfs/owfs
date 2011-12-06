@@ -48,7 +48,7 @@ static char * GetPostPath( FILE * out ) ;
 /* Main handler for a web page */
 int handle_socket(FILE * out)
 {
-	enum http_return http_code ;
+	enum http_return http_code = http_ok ;
 
 	struct urlparse up;
 
