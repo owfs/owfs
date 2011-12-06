@@ -64,6 +64,7 @@ void DeviceDestroy(void);
 int filetype_cmp(const void *name, const void *ex);
 ZERO_OR_ERROR FS_ParsedNamePlus(const char *path, const char *file, struct parsedname *pn);
 ZERO_OR_ERROR FS_ParsedNamePlusExt(const char *path, const char *file, int extension, enum ag_index alphanumeric, struct parsedname *pn);
+ZERO_OR_ERROR FS_ParsedNamePlusText(const char *path, const char *file, const char *extension, struct parsedname *pn);
 ZERO_OR_ERROR FS_ParsedName(const char *fn, struct parsedname *pn);
 ZERO_OR_ERROR FS_ParsedName_BackFromRemote(const char *fn, struct parsedname *pn);
 void FS_ParsedName_destroy(struct parsedname *pn);

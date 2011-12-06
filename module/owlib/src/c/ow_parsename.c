@@ -58,6 +58,7 @@ void FS_ParsedName_destroy(struct parsedname *pn)
 	}
 	LEVEL_DEBUG("%s", SAFESTRING(pn->path));
 	CONNIN_RUNLOCK ;
+	SAFEFREE(pn->sparse_name);
 	SAFEFREE(pn->bp) ;
 	SAFEFREE(pn->path) ;
 }
@@ -220,6 +221,7 @@ static ZERO_OR_ERROR FS_ParsedName_setup(struct parsedname_pointers *pp, const c
 
 	memset(pn, 0, sizeof(struct parsedname));
 	pn->known_bus = NULL;		/* all buses */
+	pn->sparse_name = NULL ;
 	RETURN_CODE_INIT(pn);
 
 	/* Set the persistent state info (temp scale, ...) -- will be overwritten by client settings in the server */
@@ -638,85 +640,104 @@ static enum parse_enum Parse_Property(char *filename, struct parsedname *pn)
 		return parse_error ;
 	}
 
+	// separate filename.dot
 	filename = strsep(&dot, ".");
 	//printf("FP name=%s, dot=%s\n", filename, dot);
+
 	/* Match to known filetypes for this device */
-	if ((pn->selected_filetype =
+	pn->selected_filetype =
 		 bsearch(filename, pn->selected_device->filetype_array,
-				 (size_t) pn->selected_device->count_of_filetypes, sizeof(struct filetype), filetype_cmp))) {
-		//printf("FP known filetype %s\n",pn->selected_filetype->name) ;
-		/* Filetype found, now process extension */
-		if (dot == NULL || dot[0] == '\0') {	/* no extension */
-			if (pn->selected_filetype->ag != NON_AGGREGATE) {
-				return parse_error;	/* aggregate filetypes need an extension */
-			}
-			pn->extension = 0;	/* default when no aggregate */
-
-		} else if (pn->selected_filetype->ag == NON_AGGREGATE) {
-			return parse_error;	/* An extension not allowed when non-aggregate */
-
-		} else if (strcasecmp(dot, "ALL") == 0) {
-			//printf("FP ALL\n");
-			pn->extension = EXTENSION_ALL;	/* ALL */
-
-		} else if (pn->selected_filetype->format == ft_bitfield && strcasecmp(dot, "BYTE") == 0) {
-			pn->extension = EXTENSION_BYTE;	/* BYTE */
-			//printf("FP BYTE\n") ;
-
-		} else {				/* specific extension */
-			if (pn->selected_filetype->ag->letters == ag_letters) {	/* Letters */
-				//printf("FP letters\n") ;
-				if ((strlen(dot) != 1) || !isupper(dot[0])) {
-					return parse_error;
-				}
-				pn->extension = dot[0] - 'A';	/* Letter extension */
-			} else {			/* Numbers */
-				char *p;
-				//printf("FP numbers\n") ;
-				pn->extension = strtol(dot, &p, 0);	/* Number conversion */
-				if ((p == dot) || ((pn->extension == 0) && (errno == -EINVAL))) {
-					return parse_error;	/* Bad number */
-				}
-			}
-			//printf("FP ext=%d nr_elements=%d\n", pn->extension, pn->selected_filetype->ag->elements) ;
-			/* Now check range */
-			if ((pn->extension < 0)
-				|| (pn->extension >= pn->selected_filetype->ag->elements)) {
-				//printf("FP Extension out of range %d %d %s\n", pn->extension, pn->selected_filetype->ag->elements, pn->path);
-				return parse_error;	/* Extension out of range */
-			}
-			//printf("FP in range\n") ;
+				 (size_t) pn->selected_device->count_of_filetypes, sizeof(struct filetype), filetype_cmp) ;
+				 
+	if ( pn->selected_filetype == NO_FILETYPE ) {
+		LEVEL_DEBUG("Unknown property fo this device %s",SAFESTRING(filename) ) ;
+		return parse_error;			/* filetype not found */
+	}
+		
+	//printf("FP known filetype %s\n",pn->selected_filetype->name) ;
+	/* Filetype found, now process extension */
+	if (dot == NULL || dot[0] == '\0') {	/* no extension */
+		if (pn->selected_filetype->ag != NON_AGGREGATE) {
+			return parse_error;	/* aggregate filetypes need an extension */
 		}
+		pn->extension = 0;	/* default when no aggregate */
 
-		//printf("FP Good\n") ;
-		switch (pn->selected_filetype->format) {
-		case ft_directory:		// aux or main
-			if ( pn->type == ePN_structure ) {
-				// special case, structure for aux and main
-				return parse_done;
+	} else if (pn->selected_filetype->ag == NON_AGGREGATE) {
+		return parse_error;	/* An extension not allowed when non-aggregate */
+
+	} else if (strcasecmp(dot, "ALL") == 0) {
+		//printf("FP ALL\n");
+		pn->extension = EXTENSION_ALL;	/* ALL */
+
+	} else if (pn->selected_filetype->ag->combined==ag_sparse)  { /* Sparse */
+		if (pn->selected_filetype->ag->letters == ag_letters) {	/* text string */
+			pn->extension = 0;	/* text extension, not number */
+			pn->sparse_name = owstrdup(dot) ;
+		} else {			/* Numbers */
+			char *p;
+			//printf("FP numbers\n") ;
+			pn->extension = strtol(dot, &p, 0);	/* Number conversion */
+			if ((p == dot) || ((pn->extension == 0) && (errno == -EINVAL))) {
+				return parse_error;	/* Bad number */
 			}
-			if (BranchAdd(pn) != 0) {
-				//printf("PN BranchAdd failed for %s\n", filename);
+		}
+		
+	
+	} else if (pn->selected_filetype->format == ft_bitfield && strcasecmp(dot, "BYTE") == 0) {
+		pn->extension = EXTENSION_BYTE;	/* BYTE */
+		//printf("FP BYTE\n") ;
+
+	} else {				/* specific extension */
+		if (pn->selected_filetype->ag->letters == ag_letters) {	/* Letters */
+			//printf("FP letters\n") ;
+			if ((strlen(dot) != 1) || !isupper(dot[0])) {
 				return parse_error;
 			}
-			/* STATISTICS */
-			STATLOCK;
-			if (pn->pathlength > dir_depth) {
-				dir_depth = pn->pathlength;
+			pn->extension = dot[0] - 'A';	/* Letter extension */
+		} else {			/* Numbers */
+			char *p;
+			//printf("FP numbers\n") ;
+			pn->extension = strtol(dot, &p, 0);	/* Number conversion */
+			if ((p == dot) || ((pn->extension == 0) && (errno == -EINVAL))) {
+				return parse_error;	/* Bad number */
 			}
-			STATUNLOCK;
-			return parse_branch;
-		case ft_subdir:
-			//printf("PN %s is a subdirectory\n", filename);
-			pn->subdir = pn->selected_filetype;
-			pn->selected_filetype = NO_FILETYPE;
-			return parse_subprop;
-		default:
+		}
+		//printf("FP ext=%d nr_elements=%d\n", pn->extension, pn->selected_filetype->ag->elements) ;
+		/* Now check range */
+		if ((pn->extension < 0)
+			|| (pn->extension >= pn->selected_filetype->ag->elements)) {
+			//printf("FP Extension out of range %d %d %s\n", pn->extension, pn->selected_filetype->ag->elements, pn->path);
+			return parse_error;	/* Extension out of range */
+		}
+		//printf("FP in range\n") ;
+	}
+
+	//printf("FP Good\n") ;
+	switch (pn->selected_filetype->format) {
+	case ft_directory:		// aux or main
+		if ( pn->type == ePN_structure ) {
+			// special case, structure for aux and main
 			return parse_done;
 		}
+		if (BranchAdd(pn) != 0) {
+			//printf("PN BranchAdd failed for %s\n", filename);
+			return parse_error;
+		}
+		/* STATISTICS */
+		STATLOCK;
+		if (pn->pathlength > dir_depth) {
+			dir_depth = pn->pathlength;
+		}
+		STATUNLOCK;
+		return parse_branch;
+	case ft_subdir:
+		//printf("PN %s is a subdirectory\n", filename);
+		pn->subdir = pn->selected_filetype;
+		pn->selected_filetype = NO_FILETYPE;
+		return parse_subprop;
+	default:
+		return parse_done;
 	}
-	//printf("FP not found\n") ;
-	return parse_error;			/* filetype not found */
 }
 
 static ZERO_OR_ERROR BranchAdd(struct parsedname *pn)
@@ -775,17 +796,28 @@ ZERO_OR_ERROR FS_ParsedNamePlus(const char *path, const char *file, struct parse
 /* Parse a path/file combination */
 ZERO_OR_ERROR FS_ParsedNamePlusExt(const char *path, const char *file, int extension, enum ag_index alphanumeric, struct parsedname *pn)
 {
+	if (extension == EXTENSION_BYTE ) {
+		return FS_ParsedNamePlusText(path, file, "BYTE", pn);
+	} else if (extension == EXTENSION_ALL ) {
+		return FS_ParsedNamePlusText(path, file, "ALL", pn);
+	} else if (alphanumeric == ag_letters) {
+		char name[2] = { 'A'+extension, 0x00, } ;
+		return FS_ParsedNamePlusText(path, file, name, pn);
+	} else {
+		char name[OW_FULLNAME_MAX];
+		UCLIBCLOCK;
+		snprintf(name, OW_FULLNAME_MAX, "%s.%d", file, extension);
+		UCLIBCUNLOCK;
+		return FS_ParsedNamePlusText(path, file, name, pn);
+	}
+}
+
+/* Parse a path/file combination */
+ZERO_OR_ERROR FS_ParsedNamePlusText(const char *path, const char *file, const char *extension, struct parsedname *pn)
+{
 	char name[OW_FULLNAME_MAX];
 	UCLIBCLOCK;
-	if (extension == EXTENSION_BYTE ) {
-		snprintf(name, OW_FULLNAME_MAX, "%s.BYTE", file);
-	} else if (extension == EXTENSION_ALL ) {
-		snprintf(name, OW_FULLNAME_MAX, "%s.ALL", file);
-	} else if (alphanumeric == ag_letters) {
-		snprintf(name, OW_FULLNAME_MAX, "%s.%c", file, extension + 'A');
-	} else {
-		snprintf(name, OW_FULLNAME_MAX, "%s.%d", file, extension);
-	}
+		snprintf(name, OW_FULLNAME_MAX, "%s.%s", file, extension );
 	UCLIBCUNLOCK;
 	return FS_ParsedNamePlus(path, name, pn);
 }

@@ -400,7 +400,40 @@ static ZERO_OR_ERROR FS_devdir(void (*dirfunc) (void *, const struct parsedname 
 			continue;
 		}
 
-		if (ft_pointer->ag!=NON_AGGREGATE) {
+		if (ft_pointer->ag==NON_AGGREGATE) {
+			FS_dir_plus(dirfunc, v, &ignoreflag, pn_device_directory, namepart);
+			STAT_ADD1(dir_dev.entries);
+		} else if (ft_pointer->ag->combined==ag_sparse) {
+			struct parsedname s_pn_file_entry;
+			struct parsedname *pn_file_entry = &s_pn_file_entry;
+			if (ft_pointer->ag->letters==ag_letters) {
+				if (FS_ParsedNamePlusText(pn_device_directory->path, namepart, "xxx", pn_file_entry) == 0) {
+					switch ( FS_visible(pn_file_entry) ) { // hide hidden properties
+						case visible_now :
+						case visible_always:
+							FS_dir_entry_aliased( dirfunc, v, pn_file_entry) ;
+							STAT_ADD1(dir_dev.entries);
+							break ;
+						default:
+							break ;
+					}
+					FS_ParsedName_destroy(pn_file_entry);
+				}
+			} else {
+				if (FS_ParsedNamePlusText(pn_device_directory->path, namepart, "000", pn_file_entry) == 0) {
+					switch ( FS_visible(pn_file_entry) ) { // hide hidden properties
+						case visible_now :
+						case visible_always:
+							FS_dir_entry_aliased( dirfunc, v, pn_file_entry) ;
+							STAT_ADD1(dir_dev.entries);
+							break ;
+						default:
+							break ;
+					}
+					FS_ParsedName_destroy(pn_file_entry);
+				}
+			}
+		} else {
 			int extension;
 			int first_extension = (ft_pointer->format == ft_bitfield) ? EXTENSION_BYTE : EXTENSION_ALL;
 			struct parsedname s_pn_file_entry;
@@ -419,9 +452,6 @@ static ZERO_OR_ERROR FS_devdir(void (*dirfunc) (void *, const struct parsedname 
 					FS_ParsedName_destroy(pn_file_entry);
 				}
 			}
-		} else {
-			FS_dir_plus(dirfunc, v, &ignoreflag, pn_device_directory, namepart);
-			STAT_ADD1(dir_dev.entries);
 		}
 	}
 	return 0;
@@ -472,7 +502,30 @@ static ZERO_OR_ERROR FS_structdevdir(void (*dirfunc) (void *, const struct parse
 			continue;
 		}
 
-		if (ft_pointer->ag!=NON_AGGREGATE) {
+		if (ft_pointer->ag==NON_AGGREGATE) {
+			struct parsedname s_pn_file_entry;
+			struct parsedname *pn_file_entry = &s_pn_file_entry;
+			if (FS_ParsedNamePlus(pn_device_directory->path, namepart, pn_file_entry) == 0) {
+				FS_dir_entry_aliased( dirfunc, v, pn_file_entry) ;
+				FS_ParsedName_destroy(pn_file_entry);
+			}
+		} else if (ft_pointer->ag->combined==ag_sparse) {
+			// Aggregate property
+			struct parsedname s_pn_file_entry;
+			struct parsedname *pn_file_entry = &s_pn_file_entry;
+
+			if ( ft_pointer->ag->letters == ag_letters ) {
+				if (FS_ParsedNamePlusText(pn_device_directory->path, namepart, "xxx", pn_file_entry) == 0) {
+					FS_dir_entry_aliased( dirfunc, v, pn_file_entry) ;
+					FS_ParsedName_destroy(pn_file_entry);
+				}
+			} else {
+				if (FS_ParsedNamePlusText(pn_device_directory->path, namepart, "000", pn_file_entry) == 0) {
+					FS_dir_entry_aliased( dirfunc, v, pn_file_entry) ;
+					FS_ParsedName_destroy(pn_file_entry);
+				}
+			}
+		} else {
 			// Aggregate property
 			struct parsedname s_pn_file_entry;
 			struct parsedname *pn_file_entry = &s_pn_file_entry;
@@ -487,15 +540,8 @@ static ZERO_OR_ERROR FS_structdevdir(void (*dirfunc) (void *, const struct parse
 				FS_dir_entry_aliased( dirfunc, v, pn_file_entry) ;
 				FS_ParsedName_destroy(pn_file_entry);
 			}
-			// unlike real diretory, only show the first array element since the data is redundant
+			// unlike real directory, only show the first array element since the data is redundant
 			if (FS_ParsedNamePlusExt(pn_device_directory->path, namepart, 0, ft_pointer->ag->letters, pn_file_entry) == 0) {
-				FS_dir_entry_aliased( dirfunc, v, pn_file_entry) ;
-				FS_ParsedName_destroy(pn_file_entry);
-			}
-		} else {
-			struct parsedname s_pn_file_entry;
-			struct parsedname *pn_file_entry = &s_pn_file_entry;
-			if (FS_ParsedNamePlus(pn_device_directory->path, namepart, pn_file_entry) == 0) {
 				FS_dir_entry_aliased( dirfunc, v, pn_file_entry) ;
 				FS_ParsedName_destroy(pn_file_entry);
 			}

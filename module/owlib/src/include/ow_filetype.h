@@ -65,7 +65,14 @@ step on each other, but the conversion time for individual is rather costly.
  */
 
 enum ag_index { ag_numbers, ag_letters, };
-enum ag_combined { ag_separate, ag_aggregate, ag_mixed, };
+
+enum ag_combined { 
+	ag_separate, 
+	ag_aggregate, 
+	ag_mixed, 
+	ag_sparse,
+	};
+
 /* aggregate defines array properties */
 struct aggregate {
 	int elements;				/* Maximum number of elements */
