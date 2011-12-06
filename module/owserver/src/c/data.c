@@ -148,10 +148,7 @@ void *DataHandler(void *v)
 				break;
 			case msg_write:
 				LEVEL_CALL("Write message");
-				if ( hd->sp.datasize < 0) {
-					// Allow zero length writes (useful for clearing alias name)
-					cm.ret = -EMSGSIZE;
-				} else if ( (int) hd->sp.datasize < hd->sm.size ) {
+				if ( (int) hd->sp.datasize < hd->sm.size ) {
 					cm.ret = -EMSGSIZE;
 				} else {
 					/* set buffer (size already set) */
