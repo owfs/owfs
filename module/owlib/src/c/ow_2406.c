@@ -157,7 +157,7 @@ static int VISIBLE_2406( const struct parsedname * pn )
 		if ( owq != NULL) {
 			UINT U_device_id ;
 			if ( FS_r_sibling_binary( mem, &memsize, "memory", owq ) == 0 ) {
-				if ( memcmp( "#M5Z" , mem[10], 4 ) == 0 ) {
+				if ( memcmp( "#M5Z" , &mem[10], 4 ) == 0 ) {
 					device_id = 1 ; // T8A
 				} else {
 					device_id = 0 ; // non T8A
