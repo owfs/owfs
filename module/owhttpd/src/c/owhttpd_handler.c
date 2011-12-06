@@ -338,7 +338,10 @@ static void URLparse(struct urlparse *up)
 static void Bad400(FILE * out, struct parsedname *pn)
 {
 	LEVEL_CALL("Return a 400 HTTP error code");
-	if ( pn->state & ePS_text ) {
+	if ( pn == NULL ) {
+		HTTPstart(out, "400 Bad Request", ct_text);
+		fprintf(out, "null");
+	} else if ( pn->state & ePS_text ) {
 		HTTPstart(out, "400 Bad Request", ct_text);
 		fprintf(out, "400 Bad request");
 	} else if ( pn->state & ePS_json ) {
@@ -357,7 +360,10 @@ static void Bad400(FILE * out, struct parsedname *pn)
 static void Bad404(FILE * out, struct parsedname *pn)
 {
 	LEVEL_CALL("Return a 404 HTTP error code");
-	if ( pn->state & ePS_text ) {
+	if ( pn == NULL ) {
+		HTTPstart(out, "404 Not Found", ct_text);
+		fprintf(out, "null");
+	} else if ( pn->state & ePS_text ) {
 		HTTPstart(out, "404 Not Found", ct_text);
 		fprintf(out, "404 Not Found");
 	} else if ( pn->state & ePS_json ) {
