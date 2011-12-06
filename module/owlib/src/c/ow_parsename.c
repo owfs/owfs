@@ -806,7 +806,7 @@ ZERO_OR_ERROR FS_ParsedNamePlusExt(const char *path, const char *file, int exten
 	} else {
 		char name[OW_FULLNAME_MAX];
 		UCLIBCLOCK;
-		snprintf(name, OW_FULLNAME_MAX, "%s.%d", file, extension);
+		snprintf(name, OW_FULLNAME_MAX, "%d", extension);
 		UCLIBCUNLOCK;
 		return FS_ParsedNamePlusText(path, file, name, pn);
 	}
