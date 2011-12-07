@@ -59,7 +59,7 @@ void FS_devicename(char *buffer, const size_t length, const BYTE * sn, const str
 const char *FS_DirName(const struct parsedname *pn)
 {
 	char *slash;
-	if (pn == NULL || pn->path == NULL) {
+	if (pn == NULL) {
 		return "";
 	}
 	slash = strrchr(pn->path, '/');

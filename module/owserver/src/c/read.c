@@ -70,22 +70,15 @@ void *ReadHandler(struct handlerdata *hd, struct client_msg *cm, struct one_wire
 		cm->ret = -ENOBUFS;
 	} else {
 		struct parsedname *pn = PN(owq);
-		char *path = "";
 
 		if ( OWQ_size(owq) > (size_t) hd->sm.size ) {
 			OWQ_size(owq) = hd->sm.size ;
 		}
 		OWQ_offset(owq) = hd->sm.offset ;
 
-		if (pn->path) {
-			path = pn->path;
-		}
-		LEVEL_DEBUG("ReadHandler: call FS_read_postparse on %s", path);
+		LEVEL_DEBUG("ReadHandler: call FS_read_postparse on %s", pn->path);
 		read_or_error = FS_read_postparse(owq);
-		if (pn->path) {
-			path = pn->path;
-		}
-		LEVEL_DEBUG("ReadHandler: FS_read_postparse read on %s return = %d", path, read_or_error);
+		LEVEL_DEBUG("ReadHandler: FS_read_postparse read on %s return = %d", pn->path, read_or_error);
 
 		Debug_OWQ(owq);
 

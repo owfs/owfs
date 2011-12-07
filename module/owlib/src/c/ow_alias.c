@@ -160,17 +160,17 @@ void FS_dir_entry_aliased(void (*dirfunc) (void *, const struct parsedname *), v
 		// Want alias substituted
 		struct parsedname s_pn_copy ;
 		struct parsedname * pn_copy = & s_pn_copy ;
-		ASCII path_copy[PATH_MAX+1] ;
-		ASCII * path_pointer = pn->path ; // current location in original path
+
+		const ASCII * path_pointer = pn->path ; // current location in original path
 		enum alias_parse_state { aps_initial, aps_next, aps_last } aps = aps_initial ;
 
 		// Shallow copy
 		memcpy( pn_copy, pn, sizeof(struct parsedname) ) ;
-		memset( path_copy, 0, sizeof(path_copy) ) ;
+		pn_copy->path[0] = '\0' ;
 		//printf("About the text alias on %s\n",pn->path);
 
 		while ( aps != aps_last ) {
-			ASCII * path_copy_pointer =  & path_copy[strlen(path_copy)] ; // point to end of copy
+			ASCII * path_copy_pointer =  & (pn_copy->path[strlen(pn_copy->path)]) ; // point to end of copy
 
 			ASCII * path_slash = strchr(path_pointer,'/') ;
 			BYTE sn[SERIAL_NUMBER_SIZE] ;
@@ -201,7 +201,7 @@ void FS_dir_entry_aliased(void (*dirfunc) (void *, const struct parsedname *), v
 				if ( name != NULL ) {
 					//printf("It's aliased to %s\n",name);
 					// now test for room
-					if ( path_copy + PATH_MAX > path_copy_pointer + strlen(name) ) {
+					if ( pn_copy->path + PATH_MAX > path_copy_pointer + strlen(name) ) {
 						// overwrite serial number with alias name
 						strcpy( path_copy_pointer, name ) ;
 					}
@@ -209,8 +209,6 @@ void FS_dir_entry_aliased(void (*dirfunc) (void *, const struct parsedname *), v
 				}
 			}
 		}
-
-		pn_copy->path = path_copy ;
 
 		if ( dirfunc != NULL ) {
 			DIRLOCK;

@@ -60,7 +60,6 @@ void FS_ParsedName_destroy(struct parsedname *pn)
 	CONNIN_RUNLOCK ;
 	SAFEFREE(pn->sparse_name);
 	SAFEFREE(pn->bp) ;
-	SAFEFREE(pn->path) ;
 }
 
 // Path is either NULL (in which case a minimal structure is created that doesn't need Destroy -- used for Bus Master setups)
@@ -269,15 +268,9 @@ static ZERO_OR_ERROR FS_ParsedName_setup(struct parsedname_pointers *pp, const c
 		RETURN_CODE_RETURN( 26 ) ; // path too long
 	}
 
-	pn->path = (char *) owmalloc(2 * PATH_MAX + 4);
-	if (pn->path == NO_PATH) {
-		RETURN_CODE_RETURN( 79 ) ; // unable to allocate memory
-	}
-
 	/* Have to save pn->path at once */
 	strcpy(pn->path, "/"); // initial slash
 	strcpy(pn->path+1, path[0]=='/'?path+1:path);
-	pn->path_to_server = pn->path + strlen(pn->path) + 1;
 	strcpy(pn->path_to_server, pn->path);
 
 	/* make a copy for destructive parsing  without initial '/'*/

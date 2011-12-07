@@ -18,7 +18,7 @@ $Id$
 void _print_owq(struct one_wire_query *owq)
 {
 	char c[32];
-	fprintf(stderr,"OWQ OneWireQuery structure of %s\n", OWQ_pn(owq).path);
+	fprintf(stderr,"OWQ OneWireQuery structure of %s\n", PN(owq)->path);
 	fprintf(stderr,"    OneWireQuery size=%lu offset=%lu, extension=%d\n",
 		   (unsigned long) OWQ_size(owq), (unsigned long) OWQ_offset(owq), (int) OWQ_pn(owq).extension);
 	if ( OWQ_buffer(owq) != NULL ) {

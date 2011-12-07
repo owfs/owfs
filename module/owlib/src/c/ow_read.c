@@ -196,7 +196,7 @@ static SIZE_OR_ERROR FS_read_distribute(struct one_wire_query *owq)
 	// Device not locked
 	SIZE_OR_ERROR read_or_error = 0;
 
-	LEVEL_DEBUG("%s", OWQ_pn(owq).path);
+	LEVEL_DEBUG("%s", PN(owq)->path);
 	STATLOCK;
 	AVERAGE_IN(&read_avg);
 	AVERAGE_IN(&all_avg);
@@ -218,7 +218,7 @@ static SIZE_OR_ERROR FS_read_distribute(struct one_wire_query *owq)
 	AVERAGE_OUT(&all_avg);
 	STATUNLOCK;
 
-	LEVEL_DEBUG("%s return %d", OWQ_pn(owq).path, read_or_error);
+	LEVEL_DEBUG("%s returns %d", PN(owq)->path, read_or_error);
 	//printf("FS_read_distribute: pid=%ld return %d\n", pthread_self(), read_or_error);
 	return read_or_error;
 }
