@@ -452,7 +452,7 @@ static enum search_status LINK_next_both(struct device_search *ds, const struct 
 	struct connection_in * in = pn->selected_connection ;
 
 	//Special case for DS2409 hub, use low-level code
-	if ( pn->pathlength>0 ) {
+	if ( pn->ds2409_depth>0 ) {
 		return search_error ;
 	}
 

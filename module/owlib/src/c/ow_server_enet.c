@@ -148,7 +148,7 @@ static enum search_status OWServer_Enet_next_both(struct device_search *ds, cons
 	struct connection_in * in = pn->selected_connection ;
 
 	//Special case for DS2409 hub, use low-level code
-	if ( pn->pathlength>0 ) {
+	if ( pn->ds2409_depth>0 ) {
 		return search_error ;
 	}
 

@@ -60,7 +60,7 @@ Parsed name has several components:
 sn is the serial number of the device
 dev and ft are pointers to device and filetype
   members corresponding to the element
-buspath and pathlength interpret the route through
+ds2409_hubs and ds2409_depth interpret the route through
   DS2409 branch controllers
 filetype and extension correspond to property
   (filetype) details
@@ -84,7 +84,7 @@ enum eBranch {
 	eBranch_aux =  0x01,
 };
 
-struct buspath {
+struct ds2409_hubs {
 	BYTE sn[SERIAL_NUMBER_SIZE];
 	BYTE branch;
 };
@@ -140,8 +140,8 @@ struct parsedname {
 	char * sparse_name;         // text extension for a spare array value
 	struct filetype *subdir;		// in-device grouping
 	int dirlength ;				// Length of just directory part of path
-	UINT pathlength;			// DS2409 branching depth
-	struct buspath *bp;			// DS2409 branching route
+	UINT ds2409_depth;			// DS2409 branching depth
+	struct ds2409_hubs *bp;			// DS2409 branching route
 	struct connection_in *selected_connection;	// which bus is assigned to this item
 	uint32_t control_flags;				// more state info, packed for network transmission
 	struct devlock *lock;			// pointer to a device-specific lock
@@ -205,7 +205,7 @@ struct parsedname {
 
 #define SpecifiedBus(pn)          ( SpecifiedLocalBus(pn) || SpecifiedRemoteBus(pn) )
 
-#define RootNotBranch(pn)         (((pn)->pathlength)==0)
+#define RootNotBranch(pn)         (((pn)->ds2409_depth)==0)
 
 enum parse_enum {
 	parse_first,

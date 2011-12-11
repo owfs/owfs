@@ -177,7 +177,7 @@ struct connection_in {
 	int ds2404_found;
 	int ProgramAvailable;
 	size_t last_root_devs;
-	struct buspath branch;		// Branch currently selected
+	struct ds2409_hubs branch;		// Branch currently selected
 
 	size_t bundling_length;
 

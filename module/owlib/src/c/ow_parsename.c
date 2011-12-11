@@ -718,8 +718,8 @@ static enum parse_enum Parse_Property(char *filename, struct parsedname *pn)
 		}
 		/* STATISTICS */
 		STATLOCK;
-		if (pn->pathlength > dir_depth) {
-			dir_depth = pn->pathlength;
+		if (pn->ds2409_depth > dir_depth) {
+			dir_depth = pn->ds2409_depth;
 		}
 		STATUNLOCK;
 		return parse_branch;
@@ -736,16 +736,16 @@ static enum parse_enum Parse_Property(char *filename, struct parsedname *pn)
 static ZERO_OR_ERROR BranchAdd(struct parsedname *pn)
 {
 	//printf("BRANCHADD\n");
-	if ((pn->pathlength % BRANCH_INCR) == 0) {
+	if ((pn->ds2409_depth % BRANCH_INCR) == 0) {
 		void *temp = pn->bp;
-		if ((pn->bp = owrealloc(temp, (BRANCH_INCR + pn->pathlength) * sizeof(struct buspath))) == NULL) {
+		if ((pn->bp = owrealloc(temp, (BRANCH_INCR + pn->ds2409_depth) * sizeof(struct ds2409_hubs))) == NULL) {
 			SAFEFREE(temp) ;
 			RETURN_CODE_RETURN( 79 ) ; // unable to allocate memory
 		}
 	}
-	memcpy(pn->bp[pn->pathlength].sn, pn->sn, SERIAL_NUMBER_SIZE);	/* copy over DS2409 name */
-	pn->bp[pn->pathlength].branch = pn->selected_filetype->data.i;
-	++pn->pathlength;
+	memcpy(pn->bp[pn->ds2409_depth].sn, pn->sn, SERIAL_NUMBER_SIZE);	/* copy over DS2409 name */
+	pn->bp[pn->ds2409_depth].branch = pn->selected_filetype->data.i;
+	++pn->ds2409_depth;
 	pn->selected_filetype = NO_FILETYPE;
 	pn->selected_device = NO_DEVICE;
 	return 0;

@@ -17,7 +17,7 @@ $Id$
 #include "ow_codes.h"
 
 static GOOD_OR_BAD Turnoff(const struct parsedname *pn);
-static GOOD_OR_BAD BUS_select_subbranch(const struct buspath *bp, const struct parsedname *pn);
+static GOOD_OR_BAD BUS_select_subbranch(const struct ds2409_hubs *bp, const struct parsedname *pn);
 static GOOD_OR_BAD BUS_Skip_Rom(const struct parsedname *pn);
 static GOOD_OR_BAD BUS_select_opening(const struct parsedname *pn) ;
 static GOOD_OR_BAD BUS_select_closing(const struct parsedname *pn) ;
@@ -46,7 +46,7 @@ GOOD_OR_BAD BUS_select(const struct parsedname *pn)
 {
 	// match Serial Number command 0x55
 	BYTE sent[9] = { _1W_MATCH_ROM, };
-	int pathlength = pn->pathlength;
+	int ds2409_depth = pn->ds2409_depth;
 	struct connection_in * in = pn->selected_connection ;
 
 	if ( BusIsServer(in) ) {
@@ -84,18 +84,18 @@ GOOD_OR_BAD BUS_select(const struct parsedname *pn)
 			sent[0] = _1W_OVERDRIVE_MATCH_ROM;
 		}
 	} else {
-		if ( (memcmp(in->branch.sn, pn->bp[pathlength - 1].sn, SERIAL_NUMBER_SIZE) != 0)
-			|| ( in->branch.branch != pn->bp[pathlength - 1].branch) )
+		if ( (memcmp(in->branch.sn, pn->bp[ds2409_depth - 1].sn, SERIAL_NUMBER_SIZE) != 0)
+			|| ( in->branch.branch != pn->bp[ds2409_depth - 1].branch) )
 		{
 			/* different path */
-			LEVEL_DEBUG("Clearing all branches to level %d", pathlength);
+			LEVEL_DEBUG("Clearing all branches to level %d", ds2409_depth);
 			BUS_select_closing(pn) ;
 		} else {
-			LEVEL_DEBUG("Reselecting branch at level %d", pathlength);
+			LEVEL_DEBUG("Reselecting branch at level %d", ds2409_depth);
 			//BUS_reselect_branch(pn) ;
 		}
-		memcpy(in->branch.sn, pn->bp[pathlength - 1].sn, SERIAL_NUMBER_SIZE);
-		in->branch.branch = pn->bp[pathlength - 1].branch;
+		memcpy(in->branch.sn, pn->bp[ds2409_depth - 1].sn, SERIAL_NUMBER_SIZE);
+		in->branch.branch = pn->bp[ds2409_depth - 1].branch;
 	}
 
 	if ( BAD( BUS_select_opening(pn) ) ) {
@@ -136,7 +136,7 @@ static GOOD_OR_BAD BUS_select_opening(const struct parsedname *pn)
 
 	RETURN_BAD_IF_BAD( gbRESET( BUS_reset(pn) ) ) ;
 
-	for ( level=0 ; level<(int)pn->pathlength ; ++level ) {
+	for ( level=0 ; level<(int)pn->ds2409_depth ; ++level ) {
 		RETURN_BAD_IF_BAD( BUS_select_subbranch(&(pn->bp[level]), pn) ) ;
 	}
 	return gbGOOD ;
@@ -148,7 +148,7 @@ static GOOD_OR_BAD BUS_select_closing(const struct parsedname *pn)
 	int turnoff_level ;
 	
 	// step through turning off levels
-	for ( turnoff_level=0 ; turnoff_level<=(int)pn->pathlength ; ++turnoff_level ) {
+	for ( turnoff_level=0 ; turnoff_level<=(int)pn->ds2409_depth ; ++turnoff_level ) {
 		int level ;
 		RETURN_BAD_IF_BAD( gbRESET( BUS_reset(pn) ) ) ;
 		RETURN_BAD_IF_BAD(Turnoff(pn) ) ;
@@ -160,7 +160,7 @@ static GOOD_OR_BAD BUS_select_closing(const struct parsedname *pn)
 }
 
 /* Select the specific branch */
-static GOOD_OR_BAD BUS_select_subbranch(const struct buspath *bp, const struct parsedname *pn)
+static GOOD_OR_BAD BUS_select_subbranch(const struct ds2409_hubs *bp, const struct parsedname *pn)
 {
 	BYTE sent[11] = { _1W_MATCH_ROM, };
 	BYTE resp[2];

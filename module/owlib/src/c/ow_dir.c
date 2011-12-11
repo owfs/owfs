@@ -144,7 +144,7 @@ static ZERO_OR_ERROR FS_dir_both(void (*dirfunc) (void *, const struct parsednam
 		if (IsAlarmDir(pn_raw_directory)) {	/* root or branch directory -- alarm state */
 			ret = FS_alarmdir(dirfunc, v, pn_raw_directory);
 		} else {
-			if (pn_raw_directory->pathlength == 0) {
+			if (pn_raw_directory->ds2409_depth == 0) {
 				// only add funny directories for non-micro hub (DS2409) branches
 				FS_interface_dir(dirfunc, v, pn_raw_directory);
 			}
@@ -168,7 +168,7 @@ static ZERO_OR_ERROR FS_dir_both(void (*dirfunc) (void *, const struct parsednam
 		ret = FS_dir_all_connections(dirfunc, v, pn_raw_directory, flags);
 		if ((Globals.program_type != program_type_server)
 			|| ShouldReturnBusList(pn_raw_directory)) {
-			if (pn_raw_directory->pathlength == 0) {
+			if (pn_raw_directory->ds2409_depth == 0) {
 				// only add funny directories for non-micro hub (DS2409) branches
 				FS_busdir(dirfunc, v, pn_raw_directory);
 				FS_uncached_dir(dirfunc, v, pn_raw_directory);
@@ -695,9 +695,9 @@ void FS_LoadDirectoryOnly(struct parsedname *pn_directory, const struct parsedna
 	} else {
 		// Stuff the branch into the checksum slot
 		// Makes the branch address unique (DS2409 id + branch)
-		--pn_directory->pathlength;
-		memcpy(pn_directory->sn, pn_directory->bp[pn_directory->pathlength].sn, SERIAL_NUMBER_SIZE-1);
-		pn_directory->sn[SERIAL_NUMBER_SIZE-1] = pn_directory->bp[pn_directory->pathlength].branch;
+		--pn_directory->ds2409_depth;
+		memcpy(pn_directory->sn, pn_directory->bp[pn_directory->ds2409_depth].sn, SERIAL_NUMBER_SIZE-1);
+		pn_directory->sn[SERIAL_NUMBER_SIZE-1] = pn_directory->bp[pn_directory->ds2409_depth].branch;
 	}
 	pn_directory->selected_device = NO_DEVICE;
 }

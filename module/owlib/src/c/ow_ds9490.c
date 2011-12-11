@@ -574,7 +574,7 @@ static RESET_TYPE DS9490_reset(const struct parsedname *pn)
 
 static enum search_status DS9490_next_both(struct device_search *ds, const struct parsedname *pn)
 {
-	int dir_gulp_elements = (pn->pathlength==0) ? DS2490_DIR_GULP_ELEMENTS : 1 ;
+	int dir_gulp_elements = (pn->ds2409_depth==0) ? DS2490_DIR_GULP_ELEMENTS : 1 ;
 
 	// LOOK FOR NEXT ELEMENT
 	++ds->index;
@@ -619,7 +619,7 @@ static enum search_status DS9490_directory(struct device_search *ds, const struc
 	int bytes_back;
 	int devices_found;
 	int device_index;
-	int dir_gulp_elements = (pn->pathlength==0) ? DS2490_DIR_GULP_ELEMENTS : 1 ;
+	int dir_gulp_elements = (pn->ds2409_depth==0) ? DS2490_DIR_GULP_ELEMENTS : 1 ;
 	int readlen = 0 ;
 	
 	DirblobClear(&(ds->gulp));
