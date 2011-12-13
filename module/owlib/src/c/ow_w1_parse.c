@@ -64,7 +64,7 @@ GOOD_OR_BAD Netlink_Parse_Buffer( struct netlink_parse * nlp )
 		return gbBAD ;
 	}
 
-	/* CONNECTOOR MESSAGE */
+	/* CONNECTOR MESSAGE */
 	nlp->cn  = (struct cn_msg *) &nlm_buffer[W1_NLM_LENGTH] ;
 	//printf("cn=%p nlm=%p \n" , nlp->cn, nlp->nlm ) ;
 
