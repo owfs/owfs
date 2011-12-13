@@ -54,6 +54,7 @@ GOOD_OR_BAD w1_bind( struct connection_in * in )
 	}
 
 	l_local.nl_pid = in->master.w1_monitor.pid = getpid() ;
+	l_local.nl_pad = 0;
 	l_local.nl_family = AF_NETLINK;
 	l_local.nl_groups = 23;
 
