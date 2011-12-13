@@ -94,7 +94,7 @@ SEQ_OR_ERROR W1_send_msg( struct connection_in * in, struct w1_netlink_msg *msg,
 	nlm->nlmsg_seq = MAKE_NL_SEQ( bus, seq );
 	nlm->nlmsg_type = NLMSG_DONE;
 	nlm->nlmsg_len = size; // full message
-	nlm->nlmsg_flags = NLM_F_REQUEST ;
+	nlm->nlmsg_flags = NLM_F_REQUEST ; // required for userspace -> kernel
 	nlm->nlmsg_pid = Inbound_Control.w1_monitor->master.w1_monitor.pid ;
 
 	// set the cn fields
