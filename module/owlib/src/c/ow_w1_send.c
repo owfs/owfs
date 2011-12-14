@@ -85,14 +85,14 @@ SEQ_OR_ERROR W1_send_msg( struct connection_in * in, struct w1_netlink_msg *msg,
 	// add data length
 	nlm_payload += data_size ;
 
-	nlm = owmalloc( NLMSG_ALIGN(nlm_payload) );
+	nlm = owmalloc( NLMSG_SPACE(nlm_payload) );
 	if (nlm==NULL) {
 		// memory allocation error
 		return SEQ_BAD;
 	}
 
 	// set the nlm fields
-	memset(nlm, 0, NLMSG_ALIGN(nlm_payload) );
+	memset(nlm, 0, NLMSG_SPACE(nlm_payload) );
 	nlm->nlmsg_seq = MAKE_NL_SEQ( bus, seq );
 	nlm->nlmsg_type = NLMSG_DONE;
 	nlm->nlmsg_len = NLMSG_LENGTH(nlm_payload) ; // full message
