@@ -64,7 +64,7 @@ GOOD_OR_BAD Netlink_Parse_Buffer( struct netlink_parse * nlp )
 	}
 
 	// test length
-	if ( nlm->nlmsg_len < W1_NLM_LENGTH + W1_NLM_LENGTH + W1_CN_LENGTH + W1_W1M_LENGTH ) {
+	if ( nlm->nlmsg_len < W1_NLM_LENGTH + W1_CN_LENGTH + W1_W1M_LENGTH ) {
 		LEVEL_DEBUG("Netlink (w1) Bad message length (%d)",nlm->nlmsg_len );
 		return gbBAD ;
 	}
