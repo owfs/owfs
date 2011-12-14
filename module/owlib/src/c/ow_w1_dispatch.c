@@ -45,7 +45,7 @@ static void Dispatch_Packet_nonroot( struct netlink_parse * nlp) ;
 // write to an internal pipe (in another thread). Use a timepout in case that thread has terminated.
 static GOOD_OR_BAD W1_write_pipe( FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct netlink_parse * nlp )
 {
-	int size = nlp->nlm->nlmsg_len ;
+	int size = NLMSG_SPACE(nlp->nlm->nlmsg_len) ;
 	do {
 		int select_value ;
 		struct timeval tv = { Globals.timeout_w1, 0 } ;
@@ -108,17 +108,16 @@ static void Dispatch_Packet_root( struct netlink_parse * nlp)
 	// make a copy for the new thread (which we will have to destroy)
 	// the copy includes the packet
 	// and the actual message appended to the end
-	struct netlink_parse * nlp_copy = owmalloc( sizeof(struct netlink_parse) + nlp->nlm->nlmsg_len ) ;
+	struct netlink_parse * nlp_copy = owmalloc( sizeof(struct netlink_parse) + NLMSG_SPACE(nlp->nlm->nlmsg_len) ) ;
 	if ( nlp_copy == NULL ) {
 		return ;
 	}
 	memcpy( nlp_copy, nlp, sizeof(struct netlink_parse) ) ;
-	nlp_copy->nlm = &nlp_copy[0] + sizeof(struct netlink_parse) ;
-	memcpy( nlp_copy->nlm, nlp->nlm, nlp->nlm->nlmsg_len ) ;
+	nlp_copy->nlm = nlp_copy->follow ;
+	memcpy( nlp_copy->follow, nlp->nlm, nlp->nlm->nlmsg_len ) ;
 	
 	// Need run through parser to set pointers to new buffer
 	if ( BAD( Netlink_Parse_Buffer(nlp_copy) ) ) {
-		SAFEFREE( nlp_copy->nlm ) ;
 		owfree( nlp_copy ) ;
 		return ;
 	}

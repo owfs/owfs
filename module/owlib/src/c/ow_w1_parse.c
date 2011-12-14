@@ -41,42 +41,46 @@ static GOOD_OR_BAD Get_and_Parse_Pipe( FILE_DESCRIPTOR_OR_ERROR file_descriptor,
 GOOD_OR_BAD Netlink_Parse_Buffer( struct netlink_parse * nlp )
 {
 	/* NLM Netlink header */
-	// already loaded in nlp->nlm
-	unsigned char * nlm_buffer = nlp->nlm ;
-	//printf("buf=%p nlm=%p \n" , nlm_buffer, nlp->nlm ) ;
+	struct nlmsghdr * nlm = nlp->nlm ;
+
+	// test message
+	if ( ! NLMSG_OK(nlm,nlm->nlmsg_len) ) {
+		LEVEL_DEBUG("Netlink message truncated");
+		// non-peek
+		return gbBAD ;
+	}
 
 	// test pid
-	if ( nlp->nlm->nlmsg_pid != 0 ) {
+	if ( nlm->nlmsg_pid != 0 ) {
 		LEVEL_DEBUG("Netlink (w1) Not from kernel");
 		// non-peek
 		return gbBAD ;
 	}
 
 	// test type
-	if ( nlp->nlm->nlmsg_type != NLMSG_DONE ) {
+	if ( nlm->nlmsg_type != NLMSG_DONE ) {
 		LEVEL_DEBUG("Netlink (w1) Bad message type");
 		return gbBAD ;
 	}
 
 	// test length
-	if ( nlp->nlm->nlmsg_len < W1_NLM_LENGTH + W1_CN_LENGTH + W1_W1M_LENGTH ) {
-		LEVEL_DEBUG("Netlink (w1) Bad message length (%d)",nlp->nlm->nlmsg_len);
+	if ( nlm->nlmsg_len < W1_NLM_LENGTH + W1_NLM_LENGTH + W1_CN_LENGTH + W1_W1M_LENGTH ) {
+		LEVEL_DEBUG("Netlink (w1) Bad message length (%d)",nlm->nlmsg_len );
 		return gbBAD ;
 	}
 
 	/* CONNECTOR MESSAGE */
-	nlp->cn  = (struct cn_msg *) &nlm_buffer[W1_NLM_LENGTH] ;
-	//printf("cn=%p nlm=%p \n" , nlp->cn, nlp->nlm ) ;
+	nlp->cn  = (struct cn_msg *) NLMSG_DATA(nlm) ;
 
 	// sequence numbers
-	if ( nlp->nlm->nlmsg_seq != nlp->cn->seq ) {
-		LEVEL_DEBUG("Netlink (w1) sequence numbers internally inconsistent nlm_seq=%u|%u cn_seq=%u|%u", NL_BUS(nlp->nlm->nlmsg_seq), NL_SEQ(nlp->nlm->nlmsg_seq),NL_BUS(nlp->cn->seq),NL_SEQ(nlp->cn->seq));
+	if ( nlm->nlmsg_seq != nlp->cn->seq ) {
+		LEVEL_DEBUG("Netlink (w1) sequence numbers internally inconsistent nlm_seq=%u|%u cn_seq=%u|%u", NL_BUS(nlm->nlmsg_seq), NL_SEQ(nlm->nlmsg_seq),NL_BUS(nlp->cn->seq),NL_SEQ(nlp->cn->seq));
 		return gbBAD ;
 	}
 
 	/* W1_NETLINK_MESSAGE */
-	nlp->w1m = (struct w1_netlink_msg *) &nlm_buffer[W1_NLM_LENGTH + W1_CN_LENGTH] ;
-	//printf("w1m=%p nlm=%p \n" , nlp->w1m, nlp->nlm ) ;
+	nlp->w1m = (struct w1_netlink_msg *) nlp->cn->data ;
+	//printf("w1m=%p nlm=%p \n" , nlp->w1m, nlm ) ;
 
 	/* W1_NETLINK_COMMAND -- optional depending on w1_netlink_message type */
 	switch (nlp->w1m->type) {
@@ -91,7 +95,7 @@ GOOD_OR_BAD Netlink_Parse_Buffer( struct netlink_parse * nlp )
 			break ;
 		case W1_MASTER_CMD:
 		case W1_SLAVE_CMD:
-			nlp->w1c = (struct w1_netlink_cmd *) &nlm_buffer[W1_NLM_LENGTH + W1_CN_LENGTH + W1_W1M_LENGTH] ;
+			nlp->w1c = (struct w1_netlink_cmd *) nlp->w1m->data ;
 			nlp->data = nlp->w1c->data ;
 			nlp->data_size = nlp->w1c->len ;
 	}
