@@ -70,7 +70,7 @@ GOOD_OR_BAD Netlink_Parse_Buffer( struct netlink_parse * nlp )
 
 	// sequence numbers
 	if ( nlp->nlm->nlmsg_seq != nlp->cn->seq ) {
-		LEVEL_DEBUG("Netlink (w1) sequence numbers internally inconsistent nlm_seq=%u|%u cn_seq=%u|%u", NL_BUS(nlm->nlmsg_seq), NL_SEQ(nlm->nlmsg_seq),NL_BUS(cn->seq),NL_SEQ(cn->seq));
+		LEVEL_DEBUG("Netlink (w1) sequence numbers internally inconsistent nlm_seq=%u|%u cn_seq=%u|%u", NL_BUS(nlp->nlm->nlmsg_seq), NL_SEQ(nlp->nlm->nlmsg_seq),NL_BUS(nlp->cn->seq),NL_SEQ(nlp->cn->seq));
 		return gbBAD ;
 	}
 
