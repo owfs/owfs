@@ -169,29 +169,28 @@ void FS_dir_entry_aliased(void (*dirfunc) (void *, const struct parsedname *), v
 		pn_copy->path[0] = '\0' ;
 		//printf("About the text alias on %s\n",pn->path);
 
+		// copy segments of path (delimitted by "/") to copy
+		// aps is "state machine" state
 		while ( aps != aps_last ) {
-			ASCII * path_copy_pointer =  & (pn_copy->path[strlen(pn_copy->path)]) ; // point to end of copy
-
+			ASCII * path_copy_pointer ; // point to end of copy
 			ASCII * path_slash = strchr(path_pointer,'/') ;
 			BYTE sn[SERIAL_NUMBER_SIZE] ;
 			
-			if ( aps == aps_initial ) {
+			if ( aps == aps_initial ) { // first pass
 				aps = aps_next ;
-			} else {
+			} else { // not first pass
 				// add the slash for the next section
-				path_copy_pointer[0] = '/' ;
-				++path_copy_pointer ;
+				strcat(pn_copy->path,"/");
 			}
+			path_copy_pointer =  & (pn_copy->path[strlen(pn_copy->path)]) ; // point to end of copy
 				
 			if ( path_slash == NULL ) {
 				// last part of path
-				strcpy( path_copy_pointer, path_pointer ) ;
+				path_slash = & path_pointer[strlen(path_pointer)] ; // pointer after string
 				aps = aps_last ;
-			} else {
-				// copy this segment
-				strncpy( path_copy_pointer, path_pointer, path_slash-path_pointer) ;
-				path_pointer = path_slash + 1 ; // past '/'
 			}
+			strncpy( path_copy_pointer, path_pointer, path_slash-path_pointer) ;
+			path_pointer = path_slash + 1 ; // past '/'
 			
 			//test this segment for serial number
 			if ( Parse_SerialNumber(path_copy_pointer,sn) == sn_valid ) {
@@ -208,6 +207,7 @@ void FS_dir_entry_aliased(void (*dirfunc) (void *, const struct parsedname *), v
 					owfree( name ) ;
 				}
 			}
+			LEVEL_DEBUG( "Alias path so far: %s",pn_copy->path ) ;
 		}
 
 		if ( dirfunc != NULL ) {
