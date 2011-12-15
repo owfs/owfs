@@ -161,51 +161,53 @@ void FS_dir_entry_aliased(void (*dirfunc) (void *, const struct parsedname *), v
 		struct parsedname s_pn_copy ;
 		struct parsedname * pn_copy = & s_pn_copy ;
 
-		const ASCII * path_pointer = pn->path ; // current location in original path
-		enum alias_parse_state { aps_initial, aps_next, aps_last } aps = aps_initial ;
+		ASCII path[PATH_MAX+3] ;
+		ASCII * path_pointer = path ; // current location in original path
 
 		// Shallow copy
 		memcpy( pn_copy, pn, sizeof(struct parsedname) ) ;
 		pn_copy->path[0] = '\0' ;
-		//printf("About the text alias on %s\n",pn->path);
+
+		// path copy to use for separation
+		strcpy( path, pn->path ) ;
 
 		// copy segments of path (delimitted by "/") to copy
-		// aps is "state machine" state
-		while ( aps != aps_last ) {
-			ASCII * path_copy_pointer ; // point to end of copy
-			ASCII * path_slash = strchr(path_pointer,'/') ;
+		while( path_pointer != NULL ) {
+			ASCII * path_segment = strsep( &path_pointer, "/" ) ;
 			BYTE sn[SERIAL_NUMBER_SIZE] ;
 			
-			if ( aps == aps_initial ) { // first pass
-				aps = aps_next ;
-			} else { // not first pass
-				// add the slash for the next section
-				strcat(pn_copy->path,"/");
+			if ( PATH_MAX < strlen(pn_copy->path) + strlen(path_segment) ) {
+				// too long, just use initial copy
+				strcpy( pn_copy->path, pn->path ) ;
+				break ;
 			}
-			path_copy_pointer =  & (pn_copy->path[strlen(pn_copy->path)]) ; // point to end of copy
-				
-			if ( path_slash == NULL ) {
-				// last part of path
-				path_slash = & path_pointer[strlen(path_pointer)] ; // pointer after string
-				aps = aps_last ;
-			}
-			strncpy( path_copy_pointer, path_pointer, path_slash-path_pointer) ;
-			path_pointer = path_slash + 1 ; // past '/'
 			
 			//test this segment for serial number
-			if ( Parse_SerialNumber(path_copy_pointer,sn) == sn_valid ) {
+			if ( Parse_SerialNumber(path_segment,sn) == sn_valid ) {
 				//printf("We see serial number in path "SNformat"\n",SNvar(sn)) ;
 				// now test for alias
 				ASCII * name = Cache_Get_Alias( sn ) ;
 				if ( name != NULL ) {
 					//printf("It's aliased to %s\n",name);
 					// now test for room
-					if ( pn_copy->path + PATH_MAX > path_copy_pointer + strlen(name) ) {
-						// overwrite serial number with alias name
-						strcpy( path_copy_pointer, name ) ;
+					if ( PATH_MAX < strlen(pn_copy->path) + strlen(name) ) {
+						// too long, just use initial copy
+						strcpy( pn_copy->path, pn->path ) ;
+						owfree(name) ;
+						break ;
 					}
+					// overwrite serial number with alias name
+					strcat( pn_copy->path, name ) ;
 					owfree( name ) ;
+				} else {
+					strcat( pn_copy->path, path_segment ) ;
 				}
+			} else {
+				strcat( pn_copy->path, path_segment ) ;
+			}
+			
+			if ( path_pointer != NULL ) {
+				strcat( pn_copy->path, "/" ) ;
 			}
 			LEVEL_DEBUG( "Alias path so far: %s",pn_copy->path ) ;
 		}
