@@ -151,6 +151,8 @@ GOOD_OR_BAD Netlink_Parse_Get( struct netlink_parse * nlp )
 static GOOD_OR_BAD Get_and_Parse_Pipe( FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct netlink_parse * nlp )
 {
 	struct nlmsghdr peek_nlm ;
+	struct nlmsghdr * nlm ;
+	size_t payload_length ;
 
 	// first read start of message to get length and details
 	if ( read( file_descriptor, &peek_nlm, W1_NLM_LENGTH ) != W1_NLM_LENGTH ) {
@@ -161,24 +163,26 @@ static GOOD_OR_BAD Get_and_Parse_Pipe( FILE_DESCRIPTOR_OR_ERROR file_descriptor,
 	LEVEL_DEBUG("Pipe header: len=%u type=%u seq=%u|%u pid=%u ",peek_nlm.nlmsg_len,peek_nlm.nlmsg_type,NL_BUS(peek_nlm.nlmsg_seq),NL_SEQ(peek_nlm.nlmsg_seq),peek_nlm.nlmsg_pid);
 
 	// allocate space
-	nlp->nlm = owmalloc( peek_nlm.nlmsg_len ) ;
-	if ( nlp->nlm == NULL ) {
-		LEVEL_DEBUG("Netlink (w1) Cannot allocate %d byte buffer for data",peek_nlm.nlmsg_len) ;
+	nlm = owmalloc( NLMSG_SPACE(peek_nlm.nlmsg_len) ) ;
+	nlp->nlm = nlm ;
+	if ( nlm == NULL ) {
+		LEVEL_DEBUG("Netlink (w1) Cannot allocate %d byte buffer for data", NLMSG_SPACE(peek_nlm.nlmsg_len)) ;
 		return gbBAD ;
 	}
 
-	memcpy( nlp->nlm, &peek_nlm, W1_NLM_LENGTH ) ;
+	memcpy( nlm, &peek_nlm, W1_NLM_LENGTH ) ; // copy header
 	// read rest of packet
-	if ( read( file_descriptor, &(nlp->nlm[W1_NLM_LENGTH]), peek_nlm.nlmsg_len - W1_NLM_LENGTH ) != (ssize_t) peek_nlm.nlmsg_len - W1_NLM_LENGTH ) {
-		owfree(nlp->nlm) ;
+	payload_length = NLMSG_PAYLOAD(nlm,peek_nlm.nlmsg_len) ;
+	if ( read( file_descriptor, NLMSG_DATA(nlm), payload_length ) != (ssize_t) payload_length ) {
+		owfree(nlm) ;
 		nlp->nlm = NULL ;
-		ERROR_DEBUG("Pipe (w1) read body error");
+		ERROR_DEBUG("Pipe (w1) read payload error");
 		return gbBAD ;
 	}
 
 	if ( BAD( Netlink_Parse_Buffer( nlp )) ) {
 		LEVEL_DEBUG("Buffer parsing error");
-		owfree(nlp->nlm) ;
+		owfree(nlm) ;
 		nlp->nlm = NULL ;
 		return gbBAD ;
 	}
