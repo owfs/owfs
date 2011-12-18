@@ -264,6 +264,7 @@ static void ProcessListenSocket( struct connection_out * out )
 	// allocate space to pass variables to thread -- cleaned up in thread handler
 	asd = owmalloc( sizeof(struct Accept_Socket_Data) ) ;
 	if ( asd == NULL ) {
+		LEVEL_DEBUG("Could not allocate memory to handle this request");
 		close( acceptfd ) ;
 		return ;
 	}
@@ -279,6 +280,7 @@ static void ProcessListenSocket( struct connection_out * out )
 		_MUTEX_UNLOCK( handler_thread_mutex ) ;
 		if ( pthread_create(&tid, DEFAULT_THREAD_ATTR, ProcessAcceptSocket, asd ) != 0 ) {
 			// Do it in the main routine rather than a thread
+			LEVEL_DEBUG("Thread creation problem. Will handle request unthreaded");
 			ProcessAcceptSocket(asd) ;
 		}
 	}
