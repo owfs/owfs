@@ -134,6 +134,8 @@ void Favicon(FILE * out)
 {
 	int i;
 	HTTPstart(out, "200 OK", ct_icon);
-	for (i = 0; i < 894; ++i)
+	for (i = 0; i < 894; ++i) {
 		fprintf(out, "%c", favicon[i]);
+	}
+	HTTPfoot(out);
 }
