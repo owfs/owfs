@@ -38,7 +38,7 @@ static void Bad404(FILE * out, struct parsedname * pn);
 static void URLparse(struct urlparse *up);
 static enum http_return handle_GET(FILE * out, struct urlparse * up) ;
 static enum http_return handle_POST(FILE * out, struct urlparse * up) ;
-static int ReadToCRLF( FILE * out ) ;
+static void ReadToCRLF( FILE * out ) ;
 static void TrimBoundary( char ** boundary ) ;
 static int GetPostData( char * boundary, struct memblob * mb, FILE * out ) ;
 static char * GetPostPath( FILE * out ) ;
@@ -379,7 +379,7 @@ static void Bad404(FILE * out, struct parsedname *pn)
 	HTTPfoot(out);
 }
 
-static int ReadToCRLF( FILE * out )
+static void ReadToCRLF( FILE * out )
 {
 	char * text_in = NULL ;
 	size_t length_in = 0 ;
@@ -388,16 +388,14 @@ static int ReadToCRLF( FILE * out )
 	while (getline(&text_in, &length_in, out)>0)  {
 		LEVEL_DEBUG("More data:%s",text_in);
 		if ( strcmp(text_in, "\r\n")==0 || strcmp(text_in, "\n")==0 ) {
-			if ( text_in ) {
-				free( text_in) ;
-			}
-			return 0 ;
+			break ;
 		}
 	}
-	if ( text_in ) {
+	
+	
+	if ( text_in != NULL ) {
 		free( text_in) ;
 	}
-	return 1 ;
 }
 
 static void TrimBoundary( char ** boundary )
