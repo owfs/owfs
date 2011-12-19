@@ -193,5 +193,6 @@ ssize_t OW_put(const char *path, const char *buffer, size_t buffer_length)
 
 void OW_finish(void)
 {
+	SAFEFREE(Globals.progname);
 	API_finish();
 }

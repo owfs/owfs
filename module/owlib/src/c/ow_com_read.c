@@ -50,7 +50,7 @@ GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connecti
 			return telnet_read( data, length, connection ) ;
 		case ct_tcp:
 			// network is ok
-			return COM_read_get_size( data, length, connection ) == length ? gbGOOD : gbBAD ;
+			return COM_read_get_size( data, length, connection ) == (ssize_t) length ? gbGOOD : gbBAD ;
 		case ct_i2c:
 		case ct_netlink:
 		case ct_usb:
@@ -64,7 +64,7 @@ GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connecti
 			if ( FILE_DESCRIPTOR_VALID( SOC(connection)->file_descriptor ) ) {
 				// tcdrain only works on serial conections
 				tcdrain( SOC(connection)->file_descriptor );
-				return actual == length ? gbGOOD : gbBAD ;
+				return actual == (ssize_t) length ? gbGOOD : gbBAD ;
 			}
 			break ;
 		}

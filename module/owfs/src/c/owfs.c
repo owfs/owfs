@@ -148,6 +148,7 @@ int main(int argc, char *argv[])
 #endif							/* FUSE_VERSION <= 25 */
 	Fuse_cleanup(&fuse_options);
 #endif
+
 	ow_exit(0);
 	return 0;
 }
