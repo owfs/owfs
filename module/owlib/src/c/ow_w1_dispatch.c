@@ -68,7 +68,7 @@ static GOOD_OR_BAD W1_write_pipe( FILE_DESCRIPTOR_OR_ERROR file_descriptor, stru
 			int write_ret = write( file_descriptor, (const void *)nlp->nlm, nlp->nlm->nlmsg_len ) ;
 			if (write_ret < 0 ) {
 				ERROR_DEBUG("Netlink dispatch write error");
-			} else if ( write_ret < nlp->nlm->nlmsg_len ) {
+			} else if ( (size_t) write_ret < nlp->nlm->nlmsg_len ) {
 				LEVEL_DEBUG("Only able to write %d of %d bytes to pipe",write_ret, nlp->nlm->nlmsg_len);
 				return gbBAD ;
 			}
@@ -112,7 +112,7 @@ static void Dispatch_Packet_root( struct netlink_parse * nlp)
 		return ;
 	}
 	memcpy( nlp_copy, nlp, sizeof(struct netlink_parse) ) ;
-	nlp_copy->nlm = nlp_copy->follow ;
+	nlp_copy->nlm = (struct nlmsghdr *) nlp_copy->follow ;
 	memcpy( nlp_copy->follow, nlp->nlm, nlp->nlm->nlmsg_len ) ;
 	
 	// Need run through parser to set pointers to new buffer
