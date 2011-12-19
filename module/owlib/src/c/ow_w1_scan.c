@@ -51,19 +51,22 @@ void * w1_master_command(void * v)
 		int bus_master = nlp->w1m->id.mst.id ;
 		switch (nlp->w1m->type) {
 			case W1_LIST_MASTERS:
+				LEVEL_DEBUG("Netlink (w1) list all bus masters");
 				w1_parse_master_list( nlp );
 				break;
 			case W1_MASTER_ADD:
+				LEVEL_DEBUG("Netlink (w1) add a bus master");
 				AddW1Bus(bus_master) ;
 				break;
 			case W1_MASTER_REMOVE:
+				LEVEL_DEBUG("Netlink (w1) remove a bus master");
 				RemoveW1Bus(bus_master) ;
 				break;
 			case W1_SLAVE_ADD:
 			case W1_SLAVE_REMOVE:
 				// ignored since there is no bus attribution and real use will discover the change.
 				// at some point we could make the w1 master lists static and only changed when triggered by one of these messages.
-				LEVEL_DEBUG("Netlink (w1) Slave announcements");
+				LEVEL_DEBUG("Netlink (w1) Slave announcements (ignored)");
 				break ;
 			default:
 				LEVEL_DEBUG("Netlink (w1) Other command.");

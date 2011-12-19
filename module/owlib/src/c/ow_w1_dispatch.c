@@ -45,7 +45,6 @@ static void Dispatch_Packet_nonroot( struct netlink_parse * nlp) ;
 // write to an internal pipe (in another thread). Use a timepout in case that thread has terminated.
 static GOOD_OR_BAD W1_write_pipe( FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct netlink_parse * nlp )
 {
-	int size = NLMSG_SPACE(nlp->nlm->nlmsg_len) ;
 	do {
 		int select_value ;
 		struct timeval tv = { Globals.timeout_w1, 0 } ;
@@ -66,11 +65,11 @@ static GOOD_OR_BAD W1_write_pipe( FILE_DESCRIPTOR_OR_ERROR file_descriptor, stru
 			LEVEL_DEBUG("Netlink dispatch timeout");
 			return gbBAD;
 		} else {
-			int write_ret = write( file_descriptor, (const void *)nlp->nlm, size ) ;
+			int write_ret = write( file_descriptor, (const void *)nlp->nlm, nlp->nlm->nlmsg_len ) ;
 			if (write_ret < 0 ) {
 				ERROR_DEBUG("Netlink dispatch write error");
-			} else if ( write_ret < size ) {
-				LEVEL_DEBUG("Only able to write %d of %d bytes to pipe",write_ret, size);
+			} else if ( write_ret < nlp->nlm->nlmsg_len ) {
+				LEVEL_DEBUG("Only able to write %d of %d bytes to pipe",write_ret, nlp->nlm->nlmsg_len);
 				return gbBAD ;
 			}
 			return gbGOOD ;
