@@ -387,7 +387,7 @@ static void ReadToCRLF( FILE * out )
 
 	/* read lines until blank */
 	while ( (getline_length = getline(&text_in, &length_in, out)) > 0 )  {
-_		LEVEL_DEBUG("More (%d) data:%s",(int)getline_length,text_in);
+		LEVEL_DEBUG("More (%d) data:%s",(int)getline_length,text_in);
 		if ( strcmp(text_in, "\r\n")==0 || strcmp(text_in, "\n")==0 ) {
 			break ;
 		}
