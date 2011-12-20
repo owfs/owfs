@@ -214,7 +214,7 @@ void * OW_Avahi_Browse(void * v)
 
 	/* Check whether creating the loop object succeeded */
 	if (in->master.browse.avahi_poll!=NULL) {
-		AvahiPoll * simple_poll = avahi_simple_poll_get(in->master.browse.avahi_poll) ;
+		const AvahiPoll * simple_poll = avahi_simple_poll_get(in->master.browse.avahi_poll) ;
 		
 		/* Create a new client */
 		in->master.browse.avahi_client = avahi_client_new( simple_poll, AVAHI_CLIENT_NO_FAIL, client_callback, (void *) in, &error );
