@@ -655,13 +655,11 @@ static enum parse_enum Parse_Property(char *filename, struct parsedname *pn)
 		}
 		pn->extension = 0;	/* default when no aggregate */
 
+	// Non-aggregate cannot have an extension
 	} else if (pn->selected_filetype->ag == NON_AGGREGATE) {
 		return parse_error;	/* An extension not allowed when non-aggregate */
 
-	} else if (strcasecmp(dot, "ALL") == 0) {
-		//printf("FP ALL\n");
-		pn->extension = EXTENSION_ALL;	/* ALL */
-
+	// Sparse uses the extension verbatim (text or number)
 	} else if (pn->selected_filetype->ag->combined==ag_sparse)  { /* Sparse */
 		if (pn->selected_filetype->ag->letters == ag_letters) {	/* text string */
 			pn->extension = 0;	/* text extension, not number */
@@ -674,12 +672,18 @@ static enum parse_enum Parse_Property(char *filename, struct parsedname *pn)
 				return parse_error;	/* Bad number */
 			}
 		}
-		
+
+	// Non-sparse "ALL"
+	} else if (strcasecmp(dot, "ALL") == 0) {
+		//printf("FP ALL\n");
+		pn->extension = EXTENSION_ALL;	/* ALL */
 	
+	// Non-sparse "BYTE"
 	} else if (pn->selected_filetype->format == ft_bitfield && strcasecmp(dot, "BYTE") == 0) {
 		pn->extension = EXTENSION_BYTE;	/* BYTE */
 		//printf("FP BYTE\n") ;
 
+	// Non-sparse extension -- interpret and check bounds
 	} else {				/* specific extension */
 		if (pn->selected_filetype->ag->letters == ag_letters) {	/* Letters */
 			//printf("FP letters\n") ;

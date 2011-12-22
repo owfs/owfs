@@ -427,6 +427,9 @@ static ZERO_OR_ERROR FS_w_local(struct one_wire_query *owq)
 
 	/* array */
 	switch ( ft->ag->combined ) {
+		case ag_sparse:
+			// avoid cache
+			return (ft->write) (owq);;
 		case ag_aggregate:
 			switch (pn->extension) {
 				case EXTENSION_BYTE:

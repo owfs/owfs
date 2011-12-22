@@ -385,6 +385,10 @@ static SIZE_OR_ERROR FS_r_local(struct one_wire_query *owq)
 	 * Read together and manually separate? */
 	/* array */
 	switch ( ft->ag->combined ) {
+		case ag_sparse:
+			// skip cache test and storing
+			return (ft->read) (owq);
+
 		case ag_aggregate:
 			switch (pn->extension) {
 				case EXTENSION_BYTE:

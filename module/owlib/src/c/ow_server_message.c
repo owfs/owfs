@@ -670,7 +670,7 @@ static SIZE_OR_ERROR WriteToServer(int file_descriptor, struct server_msg *sm, s
 
 	// Next block, the path
 	if (sp->path != 0) {	// send path (if not null)
-		io[nio].iov_base = sp->path ;
+		io[nio].iov_base = sp->path ; // gives a spurious compiler error -- constant is OK HERE!
 		io[nio].iov_len = strlen(sp->path) + 1;
 		payload =  io[nio].iov_len ;
 		nio++;
