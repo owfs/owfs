@@ -80,8 +80,6 @@ READ_FUNCTION(FS_r_read_bits);
 READ_FUNCTION(FS_r_is_index_prime);
 READ_FUNCTION(FS_r_extension_characters);
 
-static enum e_visibility VISIBLE_T8A( const struct parsedname * pn ) ;
-
 /* ------- Structures ----------- */
 
 static struct aggregate AExample_bits = { 8, ag_numbers, ag_aggregate, };
