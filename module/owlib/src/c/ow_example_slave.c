@@ -161,12 +161,12 @@ static ZERO_OR_ERROR FS_r_is_index_prime(struct one_wire_query *owq)
 	} else {
 		int idiv = 1 ; // test devisor 
 		
-		OWQ_Y(owq) = 0 ; // assume non-prime
+		OWQ_Y(owq) = 1 ; // assume prime
 		
 		do {
 			idiv += 2 ;
 			if ( array_index % idiv == 0 ) {
-				OWQ_Y(owq) = 1 ; // prime
+				OWQ_Y(owq) = 0 ; // non-prime
 				break ;
 			}
 		} while ( idiv < (array_index/idiv) ) ;
