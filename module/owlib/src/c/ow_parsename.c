@@ -643,7 +643,7 @@ static enum parse_enum Parse_Property(char *filename, struct parsedname *pn)
 				 (size_t) pn->selected_device->count_of_filetypes, sizeof(struct filetype), filetype_cmp) ;
 				 
 	if ( pn->selected_filetype == NO_FILETYPE ) {
-		LEVEL_DEBUG("Unknown property fo this device %s",SAFESTRING(filename) ) ;
+		LEVEL_DEBUG("Unknown property for this device %s",SAFESTRING(filename) ) ;
 		return parse_error;			/* filetype not found */
 	}
 		

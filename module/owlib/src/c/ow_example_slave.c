@@ -92,7 +92,7 @@ static struct filetype Example_slave[] = {
 	{"read_number", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_integer, fc_stable, FS_r_read_number, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"bits", PROPERTY_LENGTH_BITFIELD, &AExample_bits, ft_bitfield, fc_stable, FS_r_read_bits, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 	{"is_index_prime", PROPERTY_LENGTH_YESNO, &AExample_prime, ft_yesno, fc_volatile, FS_r_is_index_prime, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-	{"extension_characters", PROPERTY_LENGTH_UNSIGNED, &AExample_chars, ft_yesno, fc_volatile, FS_r_extension_characters, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"extension_characters", PROPERTY_LENGTH_UNSIGNED, &AExample_chars, ft_unsigned, fc_volatile, FS_r_extension_characters, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
 };
 
 DeviceEntryExtended(DD, Example_slave, DEV_alarm, NO_GENERIC_READ, NO_GENERIC_WRITE);
