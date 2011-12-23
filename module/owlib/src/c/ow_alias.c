@@ -209,7 +209,7 @@ void FS_dir_entry_aliased(void (*dirfunc) (void *, const struct parsedname *), v
 			if ( path_pointer != NULL ) {
 				strcat( pn_copy->path, "/" ) ;
 			}
-			LEVEL_DEBUG( "Alias path so far: %s",pn_copy->path ) ;
+			//LEVEL_DEBUG( "Alias path so far: %s",pn_copy->path ) ;
 		}
 
 		if ( dirfunc != NULL ) {
