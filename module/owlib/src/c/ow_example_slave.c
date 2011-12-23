@@ -148,6 +148,9 @@ static ZERO_OR_ERROR FS_r_is_index_prime(struct one_wire_query *owq)
 	
 	array_index = pn->extension ;
 	
+	// Prime number test
+	// pick off negatives, 0, 1, 2, evens
+	// Then test by dividing by odds up to square root
 	if ( array_index < 1 ) {
 		return -EINVAL ;
 	} else if ( array_index == 1 ) {
@@ -162,7 +165,7 @@ static ZERO_OR_ERROR FS_r_is_index_prime(struct one_wire_query *owq)
 		OWQ_Y(owq) = 1 ; // assume prime
 		
 		do {
-			idiv += 2 ;
+			idiv += 2 ; // still odd
 			if ( array_index % idiv == 0 ) {
 				OWQ_Y(owq) = 0 ; // non-prime
 				break ;
