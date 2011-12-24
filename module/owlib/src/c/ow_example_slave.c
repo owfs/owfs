@@ -9,6 +9,8 @@ $Id$
 	1wire/iButton system from Dallas Semiconductor
 */
 
+/* Example slave -- 1-wire slave example to show developers how to write support for a new 1-wire device */
+
 /* General Device File format:
     This device file corresponds to a specific 1wire/iButton chip type
 	( or a closely related family of chips )
@@ -40,7 +42,7 @@ $Id$
 
 // Example_slave
 
-/* Note for a new slave device:
+/* Notes for a new slave device -- what files to change
 
 A. Property functions:
   1. Create this file with READ_FUNCTION and WRITE_FUNCTION for the different properties
@@ -48,6 +50,7 @@ A. Property functions:
   3. Create the DeviceEntry or DeviceEntryExtended struct
   4. Write all the appropriate property functions
   5. Add any visibility functions if needed
+  6. Add this file and the header file to the CVS
  
 B. Header
   1. Create a similarly named header file in ../include
@@ -62,19 +65,35 @@ C. Makefile and include
 D. Device tree
   1. Add the appropriate entry to the device tree in
   * ow_tree.c
+  * 
+  SUMMARY:
+  * create the slave_support file (this one) and the (simple) header file
+  * add references to the slave in ow_tree.c ow_devices.h and both Makefile.am
+  * Add the files the the CVS repository
 
 */ 
  
 
 #include <config.h>
 #include "owfs_config.h"
-#include "ow_2406.h"
-
-#define TAI8570					/* AAG barometer */
+#include "ow_example_slave.h"
 
 /* ------- Prototypes ----------- */
 
-/* DS2406 switch */
+/* Here are the functions that perform the tasks of the listed properties
+ * Unually there is on function for each read and write task, but there is
+ * a data field that can be used to distinguish similar tasks and pool the code
+ * 
+ * The functions get the onw_wire_query structure that contains buffers for data or results
+ * and the parsedname structure that contains information on the name, serial number, 
+ * extra data and extension
+ * 
+ * sometimes it makes sense to have an internal (hidden) field that corresponds better
+ * to the devices registers, and different "linked" properties that access the register
+ * for presentation
+ */
+
+/* Example slave */
 READ_FUNCTION(FS_r_read_number);
 READ_FUNCTION(FS_r_read_bits);
 READ_FUNCTION(FS_r_is_index_prime);
@@ -82,6 +101,24 @@ READ_FUNCTION(FS_r_extension_characters);
 
 /* ------- Structures ----------- */
 
+/* Here are the "aggregate" structures
+ * For properties that have an extension
+ * e.g. PIO.A PIO.B
+ * one set of functions can be used to manage the data
+ * 
+ * There are several aggregate types:
+ * 1. aggregate -- a single internal value is access on the slave, but it's also addressable separately
+ *              And example would be an 8-bit register that corresponds to 8 pio pins. Read set and cleared
+ *              together by the chip, but owfs can use then separately or as a single entity
+ *              e.g. DS2408 PIO pins
+ * 2. separate -- a set of values that have similar structure, but are treated separately internally
+ *              owfs can pretend they are individual or unified
+ *              e.g. DS2450 voltage readings
+ * 3. sparse   -- the "extension" the value after the dot, isn't really an index, but rather a field that can
+ *              be used in the property processing. Perhaps a memory location or a parameter setting
+ *              An example could be a baud rate or parity setting.
+ *              Clearly there is no "ALL" since the range of the extension is essentially unknown and unlimitted.
+ */
 static struct aggregate AExample_bits = { 8, ag_numbers, ag_aggregate, };
 static struct aggregate AExample_prime = { 0, ag_numbers, ag_sparse, };
 static struct aggregate AExample_chars = { 0, ag_letters, ag_sparse, };
