@@ -50,7 +50,9 @@ GOOD_OR_BAD COM_open(struct connection_in *connection)
 		case ct_tcp:
 			return tcp_open( connection ) ;
 		case ct_netlink:
+#if OW_W1
 			return w1_bind( connection ) ;
+#endif /* OW_W1 */
 		case ct_i2c:
 		case ct_usb:
 			LEVEL_DEBUG("Unimplemented");
