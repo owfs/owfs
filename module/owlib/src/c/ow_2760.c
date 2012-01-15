@@ -178,7 +178,7 @@ READ_FUNCTION(FS_rangehigh);
 
 #define _1W_DS2780_PARAM_REG 0x60
 
-static struct LockPage {
+struct LockPage {
 	int pages;
 	size_t reg;
 	size_t size;
@@ -1119,19 +1119,19 @@ static GOOD_OR_BAD OW_recall_eeprom( const size_t size, const off_t offset, cons
 		TRXN_END,
 	};
 	int eeprom_range ;
-	struct LockPage * Lockpage = Lockpage(pn) ;
+	struct LockPage * lp = Lockpage(pn) ;
 	
 	if ( Lockpage == NULL ) {
 		LEVEL_DEBUG("No eeprom information for this device.") ;
 		return gbGOOD ;
 	}
-	for ( eeprom_range = 0 ; eeprom_range < Lockpage->pages ; ++eeprom_range ) {
-		off_t range_offset = Lockpage->offset[eeprom_range] ;
+	for ( eeprom_range = 0 ; eeprom_range < lp->pages ; ++eeprom_range ) {
+		off_t range_offset = lp->offset[eeprom_range] ;
 		if ( (off_t)(offset+size) <= range_offset ) {
 			// before this range
 			continue ;
 		}
-		if ( offset >= (off_t)(range_offset + Lockpage->size) ) {
+		if ( offset >= (off_t)(range_offset + lp->size) ) {
 			// after this range
 			continue ;
 		}
@@ -1171,19 +1171,19 @@ static GOOD_OR_BAD OW_copy_eeprom(const size_t size, const off_t offset, const s
 		TRXN_END,
 	};
 	int eeprom_range ;
-	struct LockPage * Lockpage = Lockpage(pn) ;
+	struct LockPage * lp = Lockpage(pn) ;
 	
 	if ( Lockpage == NULL ) {
 		LEVEL_DEBUG("No eeprom information for this device.") ;
 		return gbGOOD ;
 	}
-	for ( eeprom_range = 0 ; eeprom_range < Lockpage->pages ; ++eeprom_range ) {
-		off_t range_offset = Lockpage->offset[eeprom_range] ;
+	for ( eeprom_range = 0 ; eeprom_range < lp->pages ; ++eeprom_range ) {
+		off_t range_offset = lp->offset[eeprom_range] ;
 		if ( (off_t) (offset+size) <= range_offset ) {
 			// before this range
 			continue ;
 		}
-		if ( offset >= (off_t)(range_offset + Lockpage->size) ) {
+		if ( offset >= (off_t)(range_offset + lp->size) ) {
 			// after this range
 			continue ;
 		}
