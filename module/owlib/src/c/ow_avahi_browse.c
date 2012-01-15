@@ -17,7 +17,7 @@ See the header file: ow.h for full attribution
 #include "stdlib.h"  // need this for NULL
 #endif /* HAVE_STDLIB_H */
 
-#if OW_ZERO && OW_MT && ( ! OW_CYGWIN )
+#if OW_ZERO && OW_MT && ! OW_CYGWIN
 
 #include "ow_connection.h"
 

@@ -154,7 +154,6 @@ struct master_w1_monitor {
 	pthread_mutex_t seq_mutex;	// mutex for w1 sequence number */
 	pthread_mutex_t read_mutex;  // mutex for w1 netlink read time
 #endif /* OW_W1 */
-	
 };
 
 struct master_usb_monitor {
