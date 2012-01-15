@@ -501,7 +501,7 @@ static GOOD_OR_BAD OW_w_int(const int *I, off_t offset, const struct parsedname 
 static GOOD_OR_BAD OW_r_int8(int *I, off_t offset, const struct parsedname *pn);
 static GOOD_OR_BAD OW_w_int8(const int *I, off_t offset, const struct parsedname *pn);
 static GOOD_OR_BAD OW_cmd(const BYTE cmd, const struct parsedname *pn);
-static struct LockPage * LP( const struct parsedname * pn ) ;
+static struct LockPage * Lockpage( const struct parsedname * pn ) ;
 
 static char WS603_CHECKSUM( BYTE * byt, int length ) ;
 static GOOD_OR_BAD WS603_Send( BYTE * byt, int length, struct parsedname * pn ) ;
@@ -1084,7 +1084,7 @@ static ZERO_OR_ERROR FS_WS603_r_light_threshold( struct one_wire_query *owq)
 	return 0 ;
 }
 
-static struct LockPage * LP( const struct parsedname * pn )
+static struct LockPage * Lockpage( const struct parsedname * pn )
 {
 	switch( pn->sn[0])
 	{
@@ -1119,19 +1119,19 @@ static GOOD_OR_BAD OW_recall_eeprom( const size_t size, const off_t offset, cons
 		TRXN_END,
 	};
 	int eeprom_range ;
-	struct LockPage * lp = LP(pn) ;
+	struct LockPage * Lockpage = Lockpage(pn) ;
 	
-	if ( lp == NULL ) {
+	if ( Lockpage == NULL ) {
 		LEVEL_DEBUG("No eeprom information for this device.") ;
 		return gbGOOD ;
 	}
-	for ( eeprom_range = 0 ; eeprom_range < lp->pages ; ++eeprom_range ) {
-		off_t range_offset = lp->offset[eeprom_range] ;
+	for ( eeprom_range = 0 ; eeprom_range < Lockpage->pages ; ++eeprom_range ) {
+		off_t range_offset = Lockpage->offset[eeprom_range] ;
 		if ( (off_t)(offset+size) <= range_offset ) {
 			// before this range
 			continue ;
 		}
-		if ( offset >= (off_t)(range_offset + lp->size) ) {
+		if ( offset >= (off_t)(range_offset + Lockpage->size) ) {
 			// after this range
 			continue ;
 		}
@@ -1171,19 +1171,19 @@ static GOOD_OR_BAD OW_copy_eeprom(const size_t size, const off_t offset, const s
 		TRXN_END,
 	};
 	int eeprom_range ;
-	struct LockPage * lp = LP(pn) ;
+	struct LockPage * Lockpage = Lockpage(pn) ;
 	
-	if ( lp == NULL ) {
+	if ( Lockpage == NULL ) {
 		LEVEL_DEBUG("No eeprom information for this device.") ;
 		return gbGOOD ;
 	}
-	for ( eeprom_range = 0 ; eeprom_range < lp->pages ; ++eeprom_range ) {
-		off_t range_offset = lp->offset[eeprom_range] ;
+	for ( eeprom_range = 0 ; eeprom_range < Lockpage->pages ; ++eeprom_range ) {
+		off_t range_offset = Lockpage->offset[eeprom_range] ;
 		if ( (off_t) (offset+size) <= range_offset ) {
 			// before this range
 			continue ;
 		}
-		if ( offset >= (off_t)(range_offset + lp->size) ) {
+		if ( offset >= (off_t)(range_offset + Lockpage->size) ) {
 			// after this range
 			continue ;
 		}
