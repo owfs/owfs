@@ -158,6 +158,7 @@ Section "USB (Universal Serial Bus) driver installation"
   SectionIn 1
   MessageBox MB_OK "Going to Sourceforge for libusb-win32 installation."
   ExecShell "open" "http://sourceforge.net/projects/libusb-win32/files/libusb-win32-releases/0.1.12.2/libusb-win32-filter-bin-0.1.12.2.exe/download"
+  ExecWait 'rundll32 libusb0.dll,usb_install_driver_np_rundll $INSTDIR\driver\ds9490.inf'
 SectionEnd
 
 #########
