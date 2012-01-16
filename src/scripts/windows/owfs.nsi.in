@@ -107,9 +107,7 @@ Section "OWFS program files" Bins
   SectionIn 1 2 RO
   SetOutPath $INSTDIR
   File /r "${OPTDIR}\*"
-  File /oname=bin\libusb0.dll ${OPTDIR}\bin\cygusb0.dll
-  File /oname=drivers\libusb0.sys "\cygwin\lib\libusb\libusb0.sys"
-  File "*.ico"
+   File "*.ico"
   WriteUninstaller "$INSTDIR\owfs_uninstall.exe"
   WriteRegStr HKLM "Software\OWFS\Version" "String Value" "${VERSION}"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OWFS" "DisplayName" "OWFS -- One Wire Filesystem"
@@ -120,25 +118,6 @@ Section "OWFS program files" Bins
   WriteRegStr HKLM "Software\Python\PythonCore\2.5\PythonPath\OWFS" "" '"$INSTDIR"'
   WriteRegStr HKLM "Software\Python\PythonCore\2.4.4\PythonPath\OWFS" "" '"$INSTDIR"'
 
-SectionEnd
-
-#########
-# USB driver
-#########
-Section "Install USB Driver" SecUsbDrv
-  SectionIn 1
-#  Call IsNt
-#  Pop $R0
-#  ${If} $R0 != false
-    SetOutPath "$WINDIR\system32"
-    File /oname=libusb0.dll ${OPTDIR}\bin\cygusb0.dll
-#    ExecWait 'rundll32 libusb0.dll,usb_install_driver_np_rundll $INSTDIR\driver\apcupsd.inf'
-    ExecWait 'rundll32 libusb0.dll,usb_install_driver_np_rundll $INSTDIR\driver\ds9490.inf'
-#  ${Else}
-#    MessageBox MB_OK "The USB driver cannot be automatically installed on Win98 or WinMe. \
-#                      Please see $INSTDIR\driver\install.txt for instructions on installing \
-#                      the driver by hand."
-#  ${EndIf}
 SectionEnd
 
 #########
@@ -173,11 +152,20 @@ Section "Add to Desktop"
 SectionEnd
 
 #########
+# USB driver
+#########
+Section "USB (Universal Serial Bus) driver installation"
+  SectionIn 1
+  MessageBox MB_OK "Going to Sourceforge for libusb-win32 installation."
+  ExecShell "open" "http://sourceforge.net/projects/libusb-win32/files/libusb-win32-releases/0.1.12.2/libusb-win32-filter-bin-0.1.12.2.exe/download"
+SectionEnd
+
+#########
 # Bonjour
 #########
 Section "Bonjour (zeroconf autodiscovery) installation"
   SectionIn 1
-  MessageBox MB_OK "Going to Apple site for installation."
+  MessageBox MB_OK "Going to Apple site for Bonjour installation."
   ExecShell "open" "http://developer.apple.com/networking/bonjour/download/"
 SectionEnd
 
@@ -192,7 +180,7 @@ SectionEnd
 
 Section "USB Support Installation"
   MessageBox MB_OK "Going to LibUsb-Win32 site for installation."
-  ExecShell "open" "http://libusb-win32.sourceforge.net/"
+  ExecShell "open" "http://sourceforge.net/projects/libusb-win32/files/libusb-win32-releases/0.1.12.2/libusb-win32-src-0.1.12.2.tar.gz/download"
 SectionEnd
 
 Section "Cygwin Installation"
