@@ -19,3 +19,26 @@ $Id$
 #include "ow_connection.h"
 #include "ow_codes.h"
 
+void OW_channel_init( struct connection_in * in )
+{
+	if ( in == NO_CONNECTION ) {
+		return ;
+	}
+	in->channel_info.channel = '\0' ;
+	in->channel_info.head = in ;
+	_MUTEX_INIT(in->channel_info.all_channel_lock);
+}
+
+void OW_channel_close( struct connection_in * in )
+{
+	if ( in == NO_CONNECTION ) {
+		return ;
+	}
+	if ( in->channel_info.head == in ) {
+		_MUTEX_DESTROY(in->channel_info.all_channel_lock);
+	}
+	in->channel_info.head = NO_CONNECTION ;
+}
+
+	
+	

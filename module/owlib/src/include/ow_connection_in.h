@@ -212,6 +212,6 @@ extern struct inbound_control {
 } Inbound_Control ; // Single global struct -- see ow_connect.c
 
 // Channel-specific routines
-#include ow_channel.h
+#include "ow_channel.h"
 
 #endif							/* OW_CONNECTION_IN_H */
