@@ -119,6 +119,8 @@ struct master_enet {
 	enum e_link_t_mode qmode ; //extra '?' after b command
 	unsigned char sn[SERIAL_NUMBER_SIZE] ;       /* last address */
 	int channel ; // for the new ENET3 -- use '0' for old single channel version
+	pthread_mutex_t all_channel_lock;	// second level mutex for the entire chip */
+	struct connection_in *head;
 	struct timeval expired ; // timestamp when socket is known timed out
 	int reopening ; // to avoid infinite recursion
 };

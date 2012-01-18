@@ -87,6 +87,10 @@ GOOD_OR_BAD OWServer_Enet_detect(struct connection_in *in)
 	in->master.enet.reopening = 0 ;
 	
 	memset( in->master.enet.sn, 0x00, SERIAL_NUMBER_SIZE ) ;
+	
+	// Assume single channel
+	in->master.enet.channel = 0 ;
+	in->master.enet.head = in ; // refer to the head (this channnel)
 
 	RETURN_GOOD_IF_GOOD( OWServer_Enet_reopen(in)) ;
 	RETURN_GOOD_IF_GOOD( OWServer_Enet_reopen(in)) ;
