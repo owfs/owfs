@@ -56,6 +56,7 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_bus_data.c      \
                ow_buslock.c       \
                ow_cache.c         \
+               ow_channel.c       \
                ow_charblob.c      \
                ow_com.c           \
                ow_com_change.c    \
