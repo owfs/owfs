@@ -14,8 +14,8 @@ $Id$
 #include "ow.h"
 #include "ow_connection.h"
 
-/* Routines for handling a linked list of connections in and out */
-/* typical connection in would be gtmhe serial port or USB */
+/* Routines for handling a linked list of connections in*/
+/* typical connection in would be the serial port or USB */
 
 /* Globals */
 struct inbound_control Inbound_Control = {
@@ -26,12 +26,6 @@ struct inbound_control Inbound_Control = {
 	.next_tester = 0,
 	.next_mock = 0,
 	.w1_monitor = NO_CONNECTION ,
-};
-
-struct outbound_control Outbound_Control = {
-	.active = 0,
-	.next_index = 0,
-	.head = NULL,
 };
 
 struct connection_in *find_connection_in(int bus_number)
@@ -144,26 +138,6 @@ struct connection_in *NewIn(const struct connection_in *in) {
 	return LinkIn( AllocIn(in) ) ;
 }
 
-struct connection_out *NewOut(void)
-{
-	size_t len = sizeof(struct connection_out);
-	struct connection_out *now = (struct connection_out *) owmalloc(len);
-	if (now) {
-		memset(now, 0, len);
-		now->next = Outbound_Control.head;
-		Outbound_Control.head = now;
-		now->index = Outbound_Control.next_index++;
-		++Outbound_Control.active ;
-
-		// Zero sref's -- done with struct memset
-		//now->sref0 = 0 ;
-		//now->sref1 = 0 ;
-	} else {
-		LEVEL_DEFAULT("Cannot allocate memory for server structure,");
-	}
-	return now;
-}
-
 /* Free all connection_in in reverse order (Added to head on creation, head-first deletion) */
 void FreeInAll( void )
 {
@@ -214,39 +188,4 @@ void RemoveIn( struct connection_in * conn )
 	/* Finally delete the structure */
 	owfree(conn);
 	conn = NO_CONNECTION ;
-}
-
-void FreeOutAll(void)
-{
-	struct connection_out *next = Outbound_Control.head;
-	struct connection_out *now;
-
-	Outbound_Control.head = NULL;
-	Outbound_Control.active = 0;
-	while (next) {
-		now = next;
-		next = now->next;
-		LEVEL_DEBUG("Freeing outbound %s #%d",now->zero.name,now->index);
-		SAFEFREE(now->zero.name) ;
-		SAFEFREE(now->zero.type) ;
-		SAFEFREE(now->zero.domain) ;
-		SAFEFREE(now->name) ;
-		SAFEFREE(now->host) ;
-		SAFEFREE(now->service) ;
-		if (now->ai) {
-			freeaddrinfo(now->ai);
-			now->ai = NULL;
-		}
-#if OW_ZERO
-		if (libdnssd != NULL) {
-			if (now->sref0) {
-				DNSServiceRefDeallocate(now->sref0);
-			}
-			if (now->sref1) {
-				DNSServiceRefDeallocate(now->sref1);
-			}
-		}
-#endif
-		owfree(now);
-	}
 }

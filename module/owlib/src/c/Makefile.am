@@ -66,6 +66,7 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_com_write.c     \
                ow_com_read.c      \
                ow_connect.c       \
+               ow_connect_out.c   \
                ow_crc.c           \
                ow_daemon.c        \
                ow_date.c          \
