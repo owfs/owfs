@@ -23,7 +23,7 @@ $Id$
 /* ---------------------------------------------- */
 
 //free serial port and restore attributes
-
+/* Called on head of multibus group */
 void serial_free(struct connection_in *connection)
 {
 	FILE_DESCRIPTOR_OR_ERROR fd ;

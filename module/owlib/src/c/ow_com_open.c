@@ -26,29 +26,32 @@ $Id$
 //open a port (serial or tcp)
 GOOD_OR_BAD COM_open(struct connection_in *connection)
 {
+	struct connection_in * head_in ;
 	if (connection == NO_CONNECTION) {
 		LEVEL_DEBUG("Attempt to open a NULL serial device");
 		return gbBAD;
 	}
 
-	switch ( SOC(connection)->state ) {
+	head_in = connection->channel_info.head ; // head of multigroup bus
+
+	switch ( SOC(head_in)->state ) {
 		case cs_deflowered:
 			// Attempt to reopen a good connection?
-			COM_close(connection) ;
+			COM_close(head_in) ;
 			break ;
 		case cs_virgin:
 			break ;
 	}
 
-	switch ( SOC(connection)->type ) {
+	switch ( SOC(head_in)->type ) {
 		case ct_telnet:
-			if ( SOC(connection)->dev.telnet.telnet_negotiated == completed_negotiation ) {
-				 SOC(connection)->dev.telnet.telnet_negotiated = needs_negotiation ;
+			if ( SOC(head_in)->dev.telnet.telnet_negotiated == completed_negotiation ) {
+				 SOC(head_in)->dev.telnet.telnet_negotiated = needs_negotiation ;
 			}
-			SOC(connection)->dev.telnet.telnet_supported = 0 ;
-			return tcp_open( connection ) ;		
+			SOC(head_in)->dev.telnet.telnet_supported = 0 ;
+			return tcp_open( head_in ) ;		
 		case ct_tcp:
-			return tcp_open( connection ) ;
+			return tcp_open( head_in ) ;
 		case ct_netlink:
 #if OW_W1
 			return w1_bind( connection ) ;
@@ -58,7 +61,7 @@ GOOD_OR_BAD COM_open(struct connection_in *connection)
 			LEVEL_DEBUG("Unimplemented");
 			return gbBAD ;
 		case ct_serial:
-			return serial_open( connection ) ;
+			return serial_open( head_in ) ;
 		case ct_unknown:
 		case ct_none:
 		default:

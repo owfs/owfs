@@ -22,6 +22,7 @@ static SIZE_OR_ERROR COM_read_get_size( BYTE * data, size_t length, struct conne
 
 // read length bytes.
 // return BAD if any error or timeout before full length
+/* Called on head of multibus group */
 GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connection)
 {
 	if ( length == 0 ) {
@@ -74,6 +75,7 @@ GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connecti
 
 // try to read bytes and return number actually read.
 // Timeout ok
+/* Called on head of multibus group */
 SIZE_OR_ERROR COM_read_with_timeout( BYTE * data, size_t length, struct connection_in *connection)
 {
 	if ( length == 0 ) {
@@ -105,6 +107,7 @@ SIZE_OR_ERROR COM_read_with_timeout( BYTE * data, size_t length, struct connecti
 
 // Read only if no errors
 // Returns actual read size
+/* Called on head of multibus group */
 static SIZE_OR_ERROR COM_read_get_size( BYTE * data, size_t length, struct connection_in *connection )
 {
 	size_t actual_size ;

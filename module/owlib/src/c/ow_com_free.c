@@ -25,6 +25,11 @@ void COM_free(struct connection_in *connection)
 		return ;
 	}
 
+	if ( connection != connection->channel_info.head ) {
+		// Not the head of the multi-bus device
+		return ;
+	}
+
 	switch ( SOC(connection)->type ) {
 		case ct_unknown:
 		case ct_none:

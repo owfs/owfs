@@ -23,7 +23,7 @@ $Id$
 /* ---------------------------------------------- */
 
 //free serial port and restore attributes
-
+/* Called on head of multigroup bus */
 void tcp_free(struct connection_in *connection)
 {
 	if ( SOC(connection)->state == cs_virgin ) {

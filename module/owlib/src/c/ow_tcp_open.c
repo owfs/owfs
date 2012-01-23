@@ -19,6 +19,7 @@ $Id$
 #endif
 
 //open tcp port
+/* Called on head of multibus group */
 GOOD_OR_BAD tcp_open(struct connection_in *connection)
 {
 	if ( SOC(connection)->state == cs_virgin ) {

@@ -27,7 +27,7 @@ $Id$
 /* raw COM port interface routines                */
 /* ---------------------------------------------- */
 
-//open serial port
+//open serial port ( called on head of connection_in group from com_open )
 GOOD_OR_BAD serial_open(struct connection_in *connection)
 {
 	FILE_DESCRIPTOR_OR_ERROR fd = open( SOC(connection)->devicename, O_RDWR | O_NONBLOCK | O_NOCTTY) ;

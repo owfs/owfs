@@ -26,6 +26,7 @@ void OW_channel_init( struct connection_in * in )
 	}
 	in->channel_info.channel = '\0' ;
 	in->channel_info.head = in ;
+	in->channel_info.psoc = &(in->soc) ;
 	_MUTEX_INIT(in->channel_info.all_channel_lock);
 }
 
@@ -40,5 +41,20 @@ void OW_channel_close( struct connection_in * in )
 	in->channel_info.head = NO_CONNECTION ;
 }
 
-	
+void OW_channel_lock( struct connection_in * in )
+{
+	struct connection_in * head_in = in->channel_info.head ;
+	if ( head_in != NO_CONNECTION ) {
+		_MUTEX_LOCK(head_in->channel_info.all_channel_lock ) ;
+	}
+}
+
+void OW_channel_unlock( struct connection_in * in )
+{
+	struct connection_in * head_in = in->channel_info.head ;
+	if ( head_in != NO_CONNECTION ) {
+		_MUTEX_UNLOCK(head_in->channel_info.all_channel_lock ) ;
+	}
+}
+
 	

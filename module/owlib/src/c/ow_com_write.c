@@ -20,6 +20,7 @@ $Id$
 
 static GOOD_OR_BAD COM_write_once( const BYTE * data, size_t length, struct connection_in *connection) ;
 
+/* Called on head of multibus group */
 GOOD_OR_BAD COM_write( const BYTE * data, size_t length, struct connection_in *connection)
 {
 	if ( connection == NO_CONNECTION ) {
@@ -79,6 +80,7 @@ GOOD_OR_BAD COM_write( const BYTE * data, size_t length, struct connection_in *c
 }
 
 // No retries, let the upper level handle problems.
+
 GOOD_OR_BAD COM_write_simple( const BYTE * data, size_t length, struct connection_in *connection)
 {
 	if ( length == 0 || data == NULL ) {
@@ -113,6 +115,7 @@ GOOD_OR_BAD COM_write_simple( const BYTE * data, size_t length, struct connectio
 	return COM_write_once( data, length, connection ) ;
 }
 
+/* Called on head of multibus group */
 static GOOD_OR_BAD COM_write_once( const BYTE * data, size_t length, struct connection_in *connection)
 {
 	ssize_t to_be_written = length ;

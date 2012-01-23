@@ -27,5 +27,7 @@ $Id$
 /* included in ow_connection.h as the bus-master specific portion of the connection_in structure */
 void OW_channel_init( struct connection_in * in ) ;
 void OW_channel_close( struct connection_in * in ) ;
+void OW_channel_lock( struct connection_in * in ) ;
+void OW_channel_unlock( struct connection_in * in ) ;
 
 #endif							/* OW_CHANNEL_H */

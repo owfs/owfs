@@ -20,12 +20,14 @@ $Id$
 
 void COM_close(struct connection_in *connection)
 {
+	struct connection_in * head_in ;
 	if (connection == NO_CONNECTION) {
 		LEVEL_DEBUG("Attempt to close a NULL device");
 		return ;
 	}
+	head_in = connection->channel_info.head ;
 
-	switch ( SOC(connection)->type ) {
+	switch ( SOC(head_in)->type ) {
 		case ct_unknown:
 		case ct_none:
 		case ct_usb:
@@ -42,12 +44,12 @@ void COM_close(struct connection_in *connection)
 			break ;
 	}
 
-	switch ( SOC(connection)->state ) {
+	switch ( SOC(head_in)->state ) {
 		case cs_virgin:
 			break ;
 		default:
 		case cs_deflowered:
-			Test_and_Close( &( SOC(connection)->file_descriptor) ) ;
+			Test_and_Close( &( SOC(head_in)->file_descriptor) ) ;
 			break ;
 	}
 }

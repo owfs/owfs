@@ -9,6 +9,18 @@ $Id$
     1wire/iButton system from Dallas Semiconductor
 */
 
+/* This is the busmaster code for the DS2480B-based DS9097U
+ * The serial adapter from Dallas Maxim
+ */ 
+ 
+/* Multimaster:
+ * In general the link is DS9097U a multimaster design (only one bus master per serial or telnet port)
+ * None the less, all settings are assigned to the head line
+ */
+ 
+ 
+
+
 #include <config.h>
 #include "owfs_config.h"
 #include "ow.h"

@@ -20,14 +20,18 @@ $Id$
 void BUS_lock(const struct parsedname *pn)
 {
 	if (pn) {
-		BUS_lock_in(pn->selected_connection);
+		struct connection_in * in = pn->selected_connection ;
+		OW_channel_lock(in) ;
+		BUS_lock_in(in);
 	}
 }
 
 void BUS_unlock(const struct parsedname *pn)
 {
 	if (pn) {
-		BUS_unlock_in(pn->selected_connection);
+		struct connection_in * in = pn->selected_connection ;
+		BUS_unlock_in(in);
+		OW_channel_unlock(in) ;
 	}
 }
 
