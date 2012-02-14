@@ -38,9 +38,6 @@
 #include <stdlib.h>
 #include <libintl.h>
 
-#undef _
-#define _(X)   X
-
 /* Treat '-W foo' the same as the long option '--foo',
  * disabled for the moment since it costs about 2k... */
 #undef SPECIAL_TREATMENT_FOR_W
@@ -299,9 +296,6 @@ static const char *_getopt_initialize(int argc, char *const *argv, const char *o
 
 int _getopt_internal(int argc, char *const *argv, const char *optstring, const struct option *longopts, int *longind, int long_only)
 {
-	int print_errors = opterr;
-	if (optstring[0] == ':')
-		print_errors = 0;
 
 	if (argc < 1)
 		return -1;
@@ -441,9 +435,7 @@ int _getopt_internal(int argc, char *const *argv, const char *optstring, const s
 			}
 
 		if (ambig && !exact) {
-			if (print_errors) {
-				fprintf(stderr, _("%s: option `%s' is ambiguous\n"), argv[0], argv[optind]);
-			}
+			PRINT_ERROR( "%s: option `%s' is ambiguous\n", argv[0], argv[optind]);
 			nextchar += strlen(nextchar);
 			optind++;
 			optopt = 0;
@@ -459,20 +451,13 @@ int _getopt_internal(int argc, char *const *argv, const char *optstring, const s
 				if (pfound->has_arg)
 					optarg = nameend + 1;
 				else {
-					if (print_errors) {
-
-						if (argv[optind - 1][1] == '-') {
-							/* --option */
-							fprintf(stderr, _("\
-					%s: option `--%s' doesn't allow an argument\n"), argv[0], pfound->name);
-						} else {
-							/* +option or -option */
-							fprintf(stderr, _("\
-					%s: option `%c%s' doesn't allow an argument\n"), argv[0], argv[optind - 1][0], pfound->name);
-						}
-
+					if (argv[optind - 1][1] == '-') {
+						/* --option */
+						PRINT_ERROR( "%s: option `--%s' doesn't allow an argument\n", argv[0], pfound->name);
+					} else {
+						/* +option or -option */
+						PRINT_ERROR("%s: option `%c%s' doesn't allow an argument\n", argv[0], argv[optind - 1][0], pfound->name);
 					}
-
 					nextchar += strlen(nextchar);
 
 					optopt = pfound->val;
@@ -482,9 +467,7 @@ int _getopt_internal(int argc, char *const *argv, const char *optstring, const s
 				if (optind < argc)
 					optarg = argv[optind++];
 				else {
-					if (print_errors) {
-						fprintf(stderr, _("%s: option `%s' requires an argument\n"), argv[0], argv[optind - 1]);
-					}
+					PRINT_ERROR("%s: option `%s' requires an argument\n", argv[0], argv[optind - 1]);
 					nextchar += strlen(nextchar);
 					optopt = pfound->val;
 					return optstring[0] == ':' ? ':' : '?';
@@ -505,16 +488,12 @@ int _getopt_internal(int argc, char *const *argv, const char *optstring, const s
 		   option, then it's an error.
 		   Otherwise interpret it as a short option.  */
 		if (!long_only || argv[optind][1] == '-' || my_index(optstring, *nextchar) == NULL) {
-			if (print_errors) {
-
-				if (argv[optind][1] == '-') {
-					/* --option */
-					fprintf(stderr, _("%s: unrecognized option `--%s'\n"), argv[0], nextchar);
-				} else {
-					/* +option or -option */
-					fprintf(stderr, _("%s: unrecognized option `%c%s'\n"), argv[0], argv[optind][0], nextchar);
-				}
-
+			if (argv[optind][1] == '-') {
+				/* --option */
+				PRINT_ERROR("%s: unrecognized option `--%s'\n", argv[0], nextchar);
+			} else {
+				/* +option or -option */
+				PRINT_ERROR("%s: unrecognized option `%c%s'\n", argv[0], argv[optind][0], nextchar);
 			}
 			nextchar = (char *) "";
 			optind++;
@@ -534,10 +513,8 @@ int _getopt_internal(int argc, char *const *argv, const char *optstring, const s
 			++optind;
 
 		if (temp == NULL || c == ':') {
-			if (print_errors) {
-				/* 1003.2 specifies the format of this message.  */
-				fprintf(stderr, _("%s: illegal option -- %c\n"), argv[0], c);
-			}
+			/* 1003.2 specifies the format of this message.  */
+			PRINT_ERROR("%s: illegal option -- %c\n", argv[0], c);
 			optopt = c;
 			return '?';
 		}
@@ -559,10 +536,8 @@ int _getopt_internal(int argc, char *const *argv, const char *optstring, const s
 				   we must advance to the next element now.  */
 				optind++;
 			} else if (optind == argc) {
-				if (print_errors) {
-					/* 1003.2 specifies the format of this message.  */
-					fprintf(stderr, _("%s: option requires an argument -- %c\n"), argv[0], c);
-				}
+				/* 1003.2 specifies the format of this message.  */
+				PRINT_ERROR("%s: option requires an argument -- %c\n", argv[0], c);
 				optopt = c;
 				if (optstring[0] == ':')
 					c = ':';
@@ -599,9 +574,7 @@ int _getopt_internal(int argc, char *const *argv, const char *optstring, const s
 						ambig = 1;
 				}
 			if (ambig && !exact) {
-				if (print_errors) {
-					fprintf(stderr, _("%s: option `-W %s' is ambiguous\n"), argv[0], argv[optind]);
-				}
+				PRINT_ERROR("%s: option `-W %s' is ambiguous\n", argv[0], argv[optind]);
 				nextchar += strlen(nextchar);
 				optind++;
 				return '?';
@@ -614,11 +587,7 @@ int _getopt_internal(int argc, char *const *argv, const char *optstring, const s
 					if (pfound->has_arg)
 						optarg = nameend + 1;
 					else {
-						if (print_errors) {
-							fprintf(stderr, _("\
-					%s: option `-W %s' doesn't allow an argument\n"), argv[0], pfound->name);
-						}
-
+						PRINT_ERROR("%s: option `-W %s' doesn't allow an argument\n", argv[0], pfound->name);
 						nextchar += strlen(nextchar);
 						return '?';
 					}
@@ -626,9 +595,7 @@ int _getopt_internal(int argc, char *const *argv, const char *optstring, const s
 					if (optind < argc)
 						optarg = argv[optind++];
 					else {
-						if (print_errors) {
-							fprintf(stderr, _("%s: option `%s' requires an argument\n"), argv[0], argv[optind - 1]);
-						}
+						PRINT_ERROR("%s: option `%s' requires an argument\n", argv[0], argv[optind - 1]);
 						nextchar += strlen(nextchar);
 						return optstring[0] == ':' ? ':' : '?';
 					}
@@ -663,10 +630,8 @@ int _getopt_internal(int argc, char *const *argv, const char *optstring, const s
 					   we must advance to the next element now.  */
 					optind++;
 				} else if (optind == argc) {
-					if (print_errors) {
-						/* 1003.2 specifies the format of this message.  */
-						fprintf(stderr, _("%s: option requires an argument -- %c\n"), argv[0], c);
-					}
+					/* 1003.2 specifies the format of this message.  */
+					PRINT_ERROR("%s: option requires an argument -- %c\n", argv[0], c);
 					optopt = c;
 					if (optstring[0] == ':')
 						c = ':';

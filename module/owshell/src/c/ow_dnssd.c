@@ -55,12 +55,12 @@ int OW_Load_dnssd_library(void)
 #if 0
 			char *derr;
 			derr = DL_error();
-			fprintf(stderr, "dlopen [%s] failed [%s]\n", libdirs[i], derr);
+			PRINT_ERROR("dlopen [%s] failed [%s]\n", libdirs[i], derr);
 #endif
 			i++;
 			continue;
 		} else {
-			//fprintf(stderr, "DL_open [%s] success\n", libdirs[i]);
+			//PRINT_ERROR("DL_open [%s] success\n", libdirs[i]);
 			break;
 		}
 	}
@@ -89,12 +89,12 @@ int OW_Load_dnssd_library(void)
 #if 0
 			char *derr;
 			derr = DL_error();
-			fprintf(stderr, "DL_open [%s] failed [%s]\n", libdirs[i], derr);
+			PRINT_ERROR("DL_open [%s] failed [%s]\n", libdirs[i], derr);
 #endif
 			i++;
 			continue;
 		} else {
-			//fprintf(stderr, "DL_open [%s] success\n", libdirs[i]);
+			//PRINT_ERROR("DL_open [%s] success\n", libdirs[i]);
 			break;
 		}
 	}
@@ -113,19 +113,19 @@ int OW_Load_dnssd_library(void)
 #if 0
 			char *derr;
 			derr = DL_error();
-			fprintf(stderr, "DL_open [%s] failed [%s]\n", libdirs[i], derr);
+			PRINT_ERROR("DL_open [%s] failed [%s]\n", libdirs[i], derr);
 #endif
 			i++;
 			continue;
 		} else {
-			//fprintf(stderr, "DL_open [%s] success\n", libdirs[i]);
+			//PRINT_ERROR("DL_open [%s] success\n", libdirs[i]);
 			break;
 		}
 	}
 #endif
 
 	if (libdnssd == NULL) {
-		//fprintf(stderr, "Zeroconf/Bonjour is disabled since dnssd library isn't found\n");
+		//PRINT_ERROR("Zeroconf/Bonjour is disabled since dnssd library isn't found\n");
 		return -1;
 	}
 

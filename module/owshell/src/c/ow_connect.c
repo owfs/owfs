@@ -26,7 +26,7 @@ struct connection_in *NewIn(void)
 		owserver_connection = now;
 		now->index = 0;
 	} else {
-		fprintf(stderr, "Cannot allocate memory for adapter structure,\n");
+		PRINT_ERROR( "Cannot allocate memory for adapter structure,\n");
 	}
 	return now;
 }

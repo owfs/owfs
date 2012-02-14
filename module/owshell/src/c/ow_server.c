@@ -23,12 +23,12 @@ static void Write( char * buffer, int length ) ;
 void Server_detect(void)
 {
 	if (count_inbound_connections == 0) {
-		fprintf(stderr, "No owserver_connection defined\n");
+		PRINT_ERROR("No owserver_connection defined\n");
 		errno = ENOENT ;
 		Exit(1);
 	}
 	if (owserver_connection->name == NULL || ClientAddr(owserver_connection->name)) {
-		fprintf(stderr, "Could not connect with owserver %s\n", owserver_connection->name);
+		PRINT_ERROR("Could not connect with owserver %s\n", owserver_connection->name);
 		errno = ENOENT ;
 		Exit(1);
 	}
@@ -59,15 +59,15 @@ int ServerRead(ASCII * path)
 	}
 
 	if (ToServer(connectfd, &sm, &sp)) {
-		fprintf(stderr, "ServerRead: Error sending request for %s\n", path);
+		PRINT_ERROR("ServerRead: Error sending request for %s\n", path);
 		ret = -EIO;
 	} else if (FromServer(connectfd, &cm, buf, size) < 0) {
-		fprintf(stderr, "ServerRead: Error receiving data on %s\n", path);
+		PRINT_ERROR("ServerRead: Error receiving data on %s\n", path);
 		ret = -EIO;
 	} else {
 		ret = cm.ret;
 		if (ret < 0 || ret > size ) {
-			fprintf(stderr, "ServerRead: Data error on %s\n", path);
+			PRINT_ERROR("ServerRead: Data error on %s\n", path);
 		} else {
 			Write( buf, ret ) ;
 		}

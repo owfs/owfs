@@ -24,9 +24,9 @@ static void HandleCall(DNSServiceRef sref)
 	int file_descriptor;
 	DNSServiceErrorType err = kDNSServiceErr_Unknown;
 	//file_descriptor = DNSServiceRefSockFD(NULL) ;
-	//fprintf(stderr, "HandleCall: file_descriptor=%d (just a test of function-call, should result -1)\n", file_descriptor);
+	//PRINT_ERROR("HandleCall: file_descriptor=%d (just a test of function-call, should result -1)\n", file_descriptor);
 	file_descriptor = DNSServiceRefSockFD(sref);
-	//fprintf(stderr, "HandleCall: file_descriptor=%d\n", file_descriptor);
+	//PRINT_ERROR("HandleCall: file_descriptor=%d\n", file_descriptor);
 	if (file_descriptor >= 0) {
 		while (1) {
 			fd_set readfd;
@@ -39,22 +39,22 @@ static void HandleCall(DNSServiceRef sref)
 				if (errno == EINTR) {
 					continue;
 				}
-				perror("Service Discovery select returned error\n");
+				PERROR("Service Discovery select returned error\n");
 			} else if (rc > 0) {
 				if (FD_ISSET(file_descriptor, &readfd)) {
 					err = DNSServiceProcessResult(sref);
 				}
 			} else {
-				perror("Service Discovery timed out\n");
+				PERROR("Service Discovery timed out\n");
 			}
 			break;
 		}
 	} else {
-		fprintf(stderr, "No Service Discovery socket\n");
+		PRINT_ERROR("No Service Discovery socket\n");
 	}
 	DNSServiceRefDeallocate(sref);
 	if (err != kDNSServiceErr_NoError) {
-		fprintf(stderr, "Service Discovery Process result error  0x%X\n", (int) err);
+		PRINT_ERROR("Service Discovery Process result error  0x%X\n", (int) err);
 		Exit(1);
 	}
 }
@@ -72,9 +72,9 @@ static void ResolveBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 	(void) f;
 	(void) i;
 	(void) e;
-	//fprintf(stderr, "ResolveBack ref=%ld flags=%ld index=%ld, error=%d name=%s host=%s port=%d\n",(long int)s,(long int)f,(long int)i,(int)e,SAFESTRING(name),SAFESTRING(host),ntohs(port)) ;
+	//PRINT_ERROR("ResolveBack ref=%ld flags=%ld index=%ld, error=%d name=%s host=%s port=%d\n",(long int)s,(long int)f,(long int)i,(int)e,SAFESTRING(name),SAFESTRING(host),ntohs(port)) ;
 	if (snprintf(name, 120, "%s:%d", SAFESTRING(host), ntohs(port)) < 0) {
-		perror("Trouble with zeroconf resolve return\n");
+		PERROR("Trouble with zeroconf resolve return\n");
 	} else if (count_inbound_connections < 1) {
 		++count_inbound_connections;
 		owserver_connection->name = strdup(name);
@@ -90,7 +90,7 @@ static void BrowseBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 	(void) context;
 	(void) i ;
 	(void) s ;
-	//fprintf(stderr, "BrowseBack ref=%ld flags=%ld index=%ld, error=%d name=%s type=%s domain=%s\n",(long int)s,(long int)f,(long int)i,(int)e,SAFESTRING(name),SAFESTRING(type),SAFESTRING(domain)) ;
+	//PRINT_ERROR("BrowseBack ref=%ld flags=%ld index=%ld, error=%d name=%s type=%s domain=%s\n",(long int)s,(long int)f,(long int)i,(int)e,SAFESTRING(name),SAFESTRING(type),SAFESTRING(domain)) ;
 
 	if (e == kDNSServiceErr_NoError) {
 
@@ -101,13 +101,13 @@ static void BrowseBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 				HandleCall(sr);
 				return;
 			} else {
-				fprintf(stderr, "Service Resolve error on %s\n", SAFESTRING(name));
+				PRINT_ERROR("Service Resolve error on %s\n", SAFESTRING(name));
 			}
 		} else {
-			fprintf(stderr, "OWSERVER %s is leaving\n", name);
+			PRINT_ERROR("OWSERVER %s is leaving\n", name);
 		}
 	} else {
-		fprintf(stderr, "Browse callback error = %d\n", (int) e);
+		PRINT_ERROR("Browse callback error = %d\n", (int) e);
 	}
 	Exit(1);
 }
@@ -121,7 +121,7 @@ void OW_Browse(void)
 	if (dnserr == kDNSServiceErr_NoError) {
 		HandleCall(sref);
 	} else {
-		fprintf(stderr, "DNSServiceBrowse error = %d\n", (int) dnserr);
+		PRINT_ERROR("DNSServiceBrowse error = %d\n", (int) dnserr);
 		Exit(1);
 	}
 }
@@ -130,7 +130,7 @@ void OW_Browse(void)
 
 void OW_Browse(void)
 {
-	fprintf(stderr, "OWFS is compiled without Zeroconf/Bonjour support.\n");
+	PRINT_ERROR("OWFS is compiled without Zeroconf/Bonjour support.\n");
 }
 
 #endif							/* OW_ZERO */

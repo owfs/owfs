@@ -28,6 +28,7 @@ static void OW_parsevalue(int *var, const ASCII * str);
 
 const struct option owopts_long[] = {
 	{"help", no_argument, NULL, 'h'},
+	{"quiet", no_argument, NULL, 'q'},
 	{"server", required_argument, NULL, 's'},
 	{"Celsius", no_argument, NULL, 'C'},
 	{"Fahrenheit", no_argument, NULL, 'F'},
@@ -76,6 +77,9 @@ void owopt(const int c, const char *arg)
 	case 'h':
 		ow_help();
 		Exit(0);
+	case 'q':
+		Globals.quiet = 1 ; // squash error messages
+		break ;
 	case 'C':
 		temperature_scale = temp_celsius ;
 		break;
@@ -108,34 +112,34 @@ void owopt(const int c, const char *arg)
 		else if (!strcasecmp(arg, "fic"))
 			device_format = fic ;
 		else {
-			fprintf(stderr, "Unrecognized format type %s\n", arg);
+			PRINT_ERROR("Unrecognized 1-wire slave format: %s\n", arg);
 			Exit(1);
 		}
 		break;
 	case 275:					// autoserver
 #if OW_ZERO
 		if (libdnssd == NULL) {
-			fprintf(stderr, "Zeroconf/Bonjour is disabled since dnssd library isn't found.\n");
+			PRINT_ERROR("Zeroconf/Bonjour is disabled since dnssd library isn't found.\n");
 			Exit(0);
 		} else {
 			OW_Browse();
 		}
 #else
-		fprintf(stderr, "Zeroconf/Bonjour is disabled since it's compiled without support.\n");
+		PRINT_ERROR("Zeroconf/Bonjour is disabled since it's compiled without support.\n");
 		Exit(0);
 #endif
 		break;
 	case 300:
 		OW_parsevalue(&size_of_data, arg);
 		if ( size_of_data < 0 || size_of_data > 64000 ) {
-			fprintf(stderr, "Bad data size value. (%d).\n", size_of_data) ;
+			PRINT_ERROR("Bad data size value. (%d).\n", size_of_data) ;
 			Exit(1);
 		}
 		break ;
 	case 301:
 		OW_parsevalue(&offset_into_data, arg);
 		if ( offset_into_data < 0 || offset_into_data > 64000 ) {
-			fprintf(stderr, "Bad data offset value. (%d).\n", offset_into_data) ;
+			PRINT_ERROR("Bad data offset value. (%d).\n", offset_into_data) ;
 			Exit(1);
 		}
 		break ;
@@ -152,7 +156,7 @@ void ARG_Net(const char *arg)
 {
 	++count_inbound_connections;
 	if (count_inbound_connections > 1) {
-		fprintf(stderr, "Cannot link to more than one owserver. (%s and %s).\n", owserver_connection->name, arg);
+		PRINT_ERROR("Cannot link to more than one owserver. (%s and %s).\n", owserver_connection->name, arg);
 		Exit(1);
 	}
 	owserver_connection->name = strdup(arg);
@@ -164,7 +168,7 @@ static void OW_parsevalue(int *var, const ASCII * str)
 	errno = 0;
 	I = strtol(str, NULL, 10);
 	if (errno) {
-		fprintf(stderr, "Bad configuration value %s\n", str);
+		PRINT_ERROR("Bad configuration value %s\n", str);
 		Exit(1);
 	}
 	var[0] = I;

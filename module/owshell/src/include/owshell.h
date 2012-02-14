@@ -119,7 +119,7 @@ typedef int INT;
 
 /* command line options */
 /* These are the owlib-specific options */
-#define OWLIB_OPT "m:c:f:p:s:hu::d:t:CFRKVP:"
+#define OWLIB_OPT "m:c:f:p:s:hqu::d:t:CFRKVP:"
 extern const struct option owopts_long[];
 void owopt(const int c, const char *arg);
 
@@ -189,6 +189,7 @@ struct global {
 	int readonly;
 	int max_clients;			// for ftp
 	int autoserver;
+	int quiet ;
 	/* Special parameter to trigger William Robison <ibutton@n952.dyndns.ws> timings */
 	int timeout_network ;
 
@@ -292,6 +293,9 @@ int ServerPresence(ASCII * path);
 #define DEVFORMAT_BIT  24
 #define UNCACHED                    ( (UINT) 0x00000020 )
 #define OWNET                       ( (UINT) 0x00000100 )
+
+#define PRINT_ERROR(...)		while ( ! Globals.quiet ) { fprintf( stderr, __VA_ARGS__ ) ; break ; }
+#define PERROR(...)				while ( ! Globals.quiet ) { perror( __VA_ARGS__ ) ; break ; }
 
 struct connection_in;
 

@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (optind < argc) {
-		fprintf(stderr, "Unpaired <path> <value> entry: %s\n", argv[optind]);
+		PRINT_ERROR("Unpaired <path> <value> entry: %s\n", argv[optind]);
 		rc = -EINVAL;
 	}
 	if ( rc >= 0 ) {
@@ -94,7 +94,7 @@ static int HexVal( char c )
 		case 'E': case 'e': return 14 ;
 		case 'F': case 'f': return 15 ;
 		default:
-			fprintf(stderr,"Unrecognized hex character %c\n",c) ;
+			PRINT_ERROR("Unrecognized hex character %c\n",c) ;
 			Exit(1) ;
 	}
 	return -1 ; // never gets here
@@ -109,7 +109,7 @@ static char * HexConvert( char * input_string )
 	int char_pointer = 0 ;
 
 	if ( return_string == NULL ) {
-		fprintf(stderr,"Out of memory.\n") ;
+		PRINT_ERROR("Out of memory.\n") ;
 		errno = ENOMEM ;
 		Exit(1) ;
 	}
