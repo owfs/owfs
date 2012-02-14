@@ -443,7 +443,7 @@ static GOOD_OR_BAD Bundle_unpack(struct transaction_bundle *tb)
 			}
 			break;
 		case trxn_crc16:
-			LEVEL_DEBUG("npacking #%d CRC16", packet_index);
+			LEVEL_DEBUG("unpacking #%d CRC16", packet_index);
 			if (CRC16(tl->out, tl->size) != 0) {
 				ret = gbBAD;
 			}
