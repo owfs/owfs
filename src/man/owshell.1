@@ -12,6 +12,7 @@
 .SH NAME
 owdir, owread, owwrite, owget, owpresent \- lightweight owserver access
 .SH SYNOPSIS
+.SS Minimal options
 .B owdir
 .I -s 
 [host:]port
@@ -32,7 +33,7 @@ filepath value
 [host:]port
 [directory] | filepath
 .br
-.PP
+.SS Server discovery
 .B owdir
 .I --autoserver
 [directory]
@@ -48,8 +49,10 @@ filepath value
 .B owget
 .I --autoserver
 [directory] | filepath
-.PP
+.br
+.SS Full options
 .B owdir
+.I -q --quiet
 .I -f --format
 f[.]i[[.]c]
 ] [
@@ -60,6 +63,7 @@ f[.]i[[.]c]
 [directory] [directory2 ...]
 .PP
 .B owread
+.I -q --quiet
 .I -C --celsius
 .I -K --kelvin
 .I -F --fahrenheit
@@ -76,8 +80,9 @@ bytes
 .I -s 
 [host:]port
 filepath [filepath2 ...]
-.br
+.PP
 .B owwrite
+.I -q --quiet
 .I -C --celsius
 .I -K --kelvin
 .I -F --fahrenheit
@@ -93,6 +98,7 @@ offset
 filepath value [filepath2 value2 ...]
 .PP
 .B owget
+.I -q --quiet
 .I -f --format
 f[.]i[[.]c]
 .I -C --celsius
@@ -113,7 +119,8 @@ bytes
 .I -s 
 [host:]port
 [directory] | filepath
-.PP
+.br
+.SS Version
 .B owdir
 .I \-V \-\-version
 .br
@@ -126,7 +133,7 @@ bytes
 .B owget
 .I \-V \-\-version
 .br
-.PP
+.SS Help
 .B owdir
 .I \-h | \-\-help
 .br
@@ -215,6 +222,8 @@ Connect via tcp (network) to an
 process that is connected to a physical 1-wire bus. This allows multiple processes to share the same bus. The
 .I owserver
 process can be local or remote.
+.PP
+If the server option is not specified, the default is the local machine and the IANA allocated default port of 4304. Thus "-s localhost:4304" is the equivalent.
 .SH DATA OPTIONS
 .SH \-\-hex
 Hexidecimal mode. For reading data, each byte of character will be displayed as two characrters 0-9ABCDEF. Most useful for reading memory locations. No spaces between data.
@@ -227,10 +236,10 @@ Read or write memory locations starting at the offset byte rather than the begin
 Read up to the specified number of bytes of a memory location.
 .SH HELP OPTIONS
 .SS \-h \-\-help
-Shows basic summary of options.
+Shows (this) basic summary of options.
 .SS \-V \-\-version
 .I Version
-of this program and related libraries.
+of this program.
 .SH DISPLAY OPTIONS
 .SS \-\-dir
 Modify the display of directories to indicate which entries are also directories. A directory member will have a trailing '/' if it is a directory itself. This aids recursive searches.
