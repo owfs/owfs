@@ -241,7 +241,7 @@ static GOOD_OR_BAD Bundle_pack(const struct transaction_log *tl, const struct pa
 	for (t_index = tl; t_index->type != trxn_end; ++t_index) {
 		switch (Pack_item(t_index, tb)) {
 		case gbGOOD:
-			LEVEL_DEBUG("Item addedn");
+			LEVEL_DEBUG("Item added");
 			break;
 		case gbBAD:
 			LEVEL_DEBUG("Item cannot be bundled");
