@@ -676,6 +676,8 @@ GOOD_OR_BAD owopt(const int option_char, const char *arg)
 		break;
 	case e_debug:
 		// shortcut for --foreground --error_level=9
+		printf("DEBUG MODE\n");
+		printf("libow version:\n\t" VERSION "\n");
 		Globals.want_background = 0 ; //foreground
 		Globals.error_level = 9 ;
 		break ;
