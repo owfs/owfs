@@ -142,6 +142,7 @@ static GOOD_OR_BAD OW_access(BYTE * data, const struct parsedname *pn);
 static GOOD_OR_BAD OW_syncaccess(BYTE * data, const struct parsedname *pn);
 static GOOD_OR_BAD OW_clear(const struct parsedname *pn);
 static GOOD_OR_BAD OW_full_access(BYTE * data, const struct parsedname *pn);
+static GOOD_OR_BAD OW_voltage(_FLOAT * V, struct parsedname *pn );
 static int VISIBLE_2406( const struct parsedname * pn );
 
 /* finds the visibility of the DS2406-based T8A */
@@ -156,7 +157,7 @@ static int VISIBLE_2406( const struct parsedname * pn )
 		BYTE mem[memsize] ;
 		if ( owq != NULL) {
 			if ( FS_r_sibling_binary( (char *) mem, &memsize, "memory", owq ) == 0 ) {
-				if ( memcmp( "#M5Z" , &mem[10], 4 ) == 0 ) {
+				if ( memcmp( "A189" , &mem[1], 4 ) == 0 ) {
 					device_id = 1 ; // T8A
 				} else {
 					device_id = 0 ; // non T8A
@@ -322,51 +323,13 @@ static ZERO_OR_ERROR FS_w_pio(struct one_wire_query *owq)
    Written by Chase Shimmin cshimmin@berkeley.edu */
 static ZERO_OR_ERROR FS_voltage(struct one_wire_query *owq)
 {
-	// channel select byte, based on zero-indexed channel number
-	BYTE ch_select = (OWQ_pn(owq).extension << 2) + 0x02;
-	BYTE channel_info ;
-	BYTE data[1+7+2] = { ch_select, } ;
-
-	// this is the complete byte sequence we want to write to the ds2406 so it will
-	// select the appropriate channel and initiate adc, and also so it can write
-	// back the results to the trailing 0xFF bytes.
-	BYTE p[] = { _1W_CHANNEL_ACCESS,
-		_DS2406_ALR|_DS2406_TOG|_DS2406_CHS0|_DS2406_CRC1, 0xFF, // Channel control
-	} ;
-
-	// most & least significant bytes. for the latter, we're actually only interested
-	// in the least significant nibble.
-	BYTE msb, lsb;
-
-	// 'modify' transaction -- so we can read back the trailing bytes.
-	struct transaction_log t[] = {
-		TRXN_START,
-		TRXN_WRITE3(p),
-		TRXN_READ1(&channel_info),
-		TRXN_WR_CRC16(data,1,7),
-		TRXN_END,
-	};
-
+	_FLOAT V ;
+	
 	FS_del_sibling( "infobyte", owq ) ;
 
-	RETURN_ERROR_IF_BAD(BUS_transaction(t, PN(owq))) ;
+	RETURN_ERROR_IF_BAD( OW_voltage( &V, PN(owq) ) ) ;
 
-	// grab the msb from the adc (in this case, it will be written in the 6th byte sent out)
-	// then take the ones complement and reverse bits.
-	msb = data[5];
-	msb = ~msb;
-	msb = ((msb * 0x0802LU & 0x22110LU) | (msb * 0x8020LU & 0x88440LU)) * 0x10101LU >> 16;
-
-	// grab the lsb (8th byte), 1s complement, reverse it, and take the 4 original L.S. bits.
-	lsb = data[7];
-	lsb = ~lsb;
-	lsb = ((lsb * 0x0802LU & 0x22110LU) | (lsb * 0x8020LU & 0x88440LU)) * 0x10101LU >> 16;
-	lsb >>= 4;
-	lsb &= 0xF;
-
-	// convert the traslated and combined msb and lsb into voltages (this is a 0-5v 12-bit adc
-	// so multiply by 5 and divide by 2^12. Then write it into the float field in the OWQ union & return
-	OWQ_F(owq) = ((msb << 4) + lsb) * 5.0 / 4096;
+	OWQ_F(owq) = V;
 	return 0;
 }
 
@@ -474,6 +437,56 @@ static GOOD_OR_BAD OW_full_access(BYTE * data, const struct parsedname *pn)
 	data[1] = p[4];
 	return gbGOOD;
 }
+
+/* Support for EmbeddedDataSystems's T8A 8 channel A/D
+   Written by Chase Shimmin cshimmin@berkeley.edu */
+static GOOD_OR_BAD OW_voltage(_FLOAT * V, struct parsedname * pn )
+{
+	// channel select byte, based on zero-indexed channel number
+	BYTE ch_select = (pn->extension << 2) + 0x02;
+	BYTE data[8+2] = { ch_select,0xFF,0xFF,0xFF, 0xFF,0xFF,0xFF,0xFF, 0xFF,0xFF, } ;
+
+	// this is the complete byte sequence we want to write to the ds2406 so it will
+	// select the appropriate channel and initiate adc, and also so it can write
+	// back the results to the trailing 0xFF bytes.
+	BYTE p[] = { _1W_CHANNEL_ACCESS,
+		_DS2406_ALR|_DS2406_TOG|_DS2406_CHS0|_DS2406_CRC1, 0xFF, // Channel control
+	} ;
+
+	// 'modify' transaction -- so we can read back the trailing bytes.
+	struct transaction_log t[] = {
+		TRXN_START,
+		TRXN_WRITE3(p),
+		TRXN_MODIFY( data, data, 8+2 ),
+		TRXN_CRC16( data, 8+2 ),
+		TRXN_END,
+	};
+
+	// most & least significant bytes. for the latter, we're actually only interested
+	// in the least significant nibble.
+	BYTE msb, lsb;
+
+	RETURN_BAD_IF_BAD(BUS_transaction(t, pn)) ;
+
+	// grab the msb from the adc (in this case, it will be written in the 6th byte sent out)
+	// then take the ones complement and reverse bits.
+	msb = data[5];
+	msb = ~msb;
+	msb = ((msb * 0x0802LU & 0x22110LU) | (msb * 0x8020LU & 0x88440LU)) * 0x10101LU >> 16;
+
+	// grab the lsb (8th byte), 1s complement, reverse it, and take the 4 original L.S. bits.
+	lsb = data[7];
+	lsb = ~lsb;
+	lsb = ((lsb * 0x0802LU & 0x22110LU) | (lsb * 0x8020LU & 0x88440LU)) * 0x10101LU >> 16;
+	lsb >>= 4;
+	lsb &= 0xF;
+
+	// convert the traslated and combined msb and lsb into voltages (this is a 0-5v 12-bit adc
+	// so multiply by 5 and divide by 2^12. Then write it into the float field in the OWQ union & return
+	V[0] = ((msb << 4) + lsb) * 5.0 / 4096;
+	return 0;
+}
+
 
 #if OW_TAI8570
 struct s_TAI8570 {
