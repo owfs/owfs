@@ -443,6 +443,9 @@ static ZERO_OR_ERROR FS_structure(struct one_wire_query *owq)
 	struct filetype * ftype = pn->selected_filetype ;
 	char format_char ;
 	char change_char ;
+	int index_num ;
+	int elements_num ;
+	
 
 	// TEMPORARY change type from structure->real to get real length rhather than structure length
 	pn->type = ePN_real;	/* "real" type to get return length, rather than "structure" length */
@@ -494,6 +497,24 @@ static ZERO_OR_ERROR FS_structure(struct one_wire_query *owq)
 			break ;
 	}
 
+	// Set index
+	index_num = (ftype->ag) ? pn->extension : 0 ;
+	
+	// Set elements
+	if ( ft-> ag ) { // array
+		if ( ft -> ag -> combined == ag_sparse) {
+			if ( ft -> ag -> letters == ag_letters) {
+				element_num = -1 ;
+			} else { // numbered
+				element_num = 0 ;
+			}
+		} else { // non sparse
+			element_num = ftype->ag->elements ;
+		}
+	} else { // scallar
+		element_num = 1 ;
+	}
+
 	// Set changability
 	switch ( ftype->change ) {
 		case fc_static:
@@ -527,8 +548,8 @@ static ZERO_OR_ERROR FS_structure(struct one_wire_query *owq)
 		 PROPERTY_LENGTH_STRUCTURE+1,
 		 "%c,%.6d,%.6d,%.2s,%.6d,%c,",
 		 format_char,
-		 (ftype->ag) ? pn->extension : 0,
-		 (ftype->ag) ? ftype->ag->elements : 1,
+		 index_num ,
+		 element_num,
 		 (ftype->read == NO_READ_FUNCTION) ? ((ftype->write == NO_WRITE_FUNCTION) ? "oo" : "wo")
 		                                   : ((ftype->write == NO_WRITE_FUNCTION) ? "ro" : "rw"), 
 		 (int) FullFileLength(PN(owq)),
