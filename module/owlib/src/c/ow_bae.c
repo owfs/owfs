@@ -971,7 +971,7 @@ int hex_digit(BYTE c)
 {
 	int v;
 	if ((c>='0') && (c<='9')) v=c-'0';
-	else if ((c>='a') && (c<='a')) v=c-'a'+10;
+	else if ((c>='a') && (c<='f')) v=c-'a'+10;
 			 else if ((c>='A') && (c<='F')) v=c-'A'+10;
 			  		else v=-1000;
 	return v;		  		
