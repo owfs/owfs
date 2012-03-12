@@ -501,18 +501,18 @@ static ZERO_OR_ERROR FS_structure(struct one_wire_query *owq)
 	index_num = (ftype->ag) ? pn->extension : 0 ;
 	
 	// Set elements
-	if ( ft-> ag ) { // array
-		if ( ft -> ag -> combined == ag_sparse) {
-			if ( ft -> ag -> letters == ag_letters) {
-				element_num = -1 ;
+	if ( ftype-> ag ) { // array
+		if ( ftype -> ag -> combined == ag_sparse) {
+			if ( ftype -> ag -> letters == ag_letters) {
+				elements_num = -1 ;
 			} else { // numbered
-				element_num = 0 ;
+				elements_num = 0 ;
 			}
 		} else { // non sparse
-			element_num = ftype->ag->elements ;
+			elements_num = ftype->ag->elements ;
 		}
 	} else { // scallar
-		element_num = 1 ;
+		elements_num = 1 ;
 	}
 
 	// Set changability
@@ -549,7 +549,7 @@ static ZERO_OR_ERROR FS_structure(struct one_wire_query *owq)
 		 "%c,%.6d,%.6d,%.2s,%.6d,%c,",
 		 format_char,
 		 index_num ,
-		 element_num,
+		 elements_num,
 		 (ftype->read == NO_READ_FUNCTION) ? ((ftype->write == NO_WRITE_FUNCTION) ? "oo" : "wo")
 		                                   : ((ftype->write == NO_WRITE_FUNCTION) ? "ro" : "rw"), 
 		 (int) FullFileLength(PN(owq)),
