@@ -124,6 +124,9 @@ $Id$
 
 #include <unistd.h>
 #include <fcntl.h>
+#ifndef O_CLOEXEC
+#define O_CLOEXEC 0
+#endif
 
 #ifndef __USE_XOPEN
 #define __USE_XOPEN				/* for strptime fuction */

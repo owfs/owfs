@@ -345,10 +345,13 @@ static GOOD_OR_BAD DS2482_detect_single(int lowindex, int highindex, char * i2c_
 	FILE_DESCRIPTOR_OR_ERROR file_descriptor;
 
 	/* open the i2c port */
-	file_descriptor = open(i2c_device, O_RDWR);
+	file_descriptor = open(i2c_device, O_RDWR | O_CLOEXEC);
 	if ( FILE_DESCRIPTOR_NOT_VALID(file_descriptor) ) {
 		ERROR_CONNECT("Could not open i2c device %s", SOC(in)->devicename);
 		return gbBAD;
+	} else {
+		// in case O_CLOEXEC not supported
+		fcntl (file_descriptor, F_SETFD, FD_CLOEXEC) ;
 	}
 
 	/* Set up low-level routines */
@@ -424,11 +427,14 @@ static GOOD_OR_BAD DS2482_redetect(const struct parsedname *pn)
 
 	/* open the i2c port */
 	Parse_Address( SOC(head)->devicename, &ap ) ;
-	file_descriptor = open(ap.first.alpha, O_RDWR);
+	file_descriptor = open(ap.first.alpha, O_RDWR | O_CLOEXEC );
 	Free_Address( &ap ) ;
 	if ( FILE_DESCRIPTOR_NOT_VALID(file_descriptor) ) {
 		ERROR_CONNECT("Could not open i2c device %s", SOC(head)->devicename);
 		return gbBAD;
+	} else {
+		// in case O_CLOEXEC not supported
+		fcntl (file_descriptor, F_SETFD, FD_CLOEXEC) ;
 	}
 	
 	/* address is known */
