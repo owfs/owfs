@@ -47,7 +47,7 @@ GOOD_OR_BAD w1_bind( struct connection_in * in )
 	
 	// Example from http://lxr.linux.no/linux+v3.0/Documentation/connector/ucon.c#L114
 	//SOC(in)->file_descriptor = socket(PF_NETLINK, SOCK_DGRAM, NETLINK_CONNECTOR);
-	SOC(in)->file_descriptor = socket(PF_NETLINK, SOCK_RAW, NETLINK_CONNECTOR);
+	SOC(in)->file_descriptor = socket(PF_NETLINK, SOCK_RAW | SOCK_CLOEXEC , NETLINK_CONNECTOR);
 	if ( FILE_DESCRIPTOR_NOT_VALID( SOC(in)->file_descriptor ) ) {
 		ERROR_CONNECT("Netlink (w1) socket (are you root?)");
 		return gbBAD;

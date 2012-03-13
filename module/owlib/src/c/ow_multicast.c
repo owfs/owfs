@@ -70,7 +70,7 @@ static void Setup_HA7_hint( struct addrinfo * hint )
 	hint->ai_flags = AI_CANONNAME | AI_NUMERICHOST;
 #endif
 	hint->ai_family = AF_INET;
-	hint->ai_socktype = SOCK_DGRAM; // udp
+	hint->ai_socktype = SOCK_DGRAM | SOCK_CLOEXEC ; // udp
 	hint->ai_protocol = 0;
 }
 
