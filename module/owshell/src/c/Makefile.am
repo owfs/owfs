@@ -12,7 +12,7 @@ COMMON_OWSHELL_SOURCE = ow_opt.c   \
                getopt.c     \
                globals.c
 
-bin_PROGRAMS = owget owdir owread owwrite owpresent
+bin_PROGRAMS = owget owdir owread owwrite owpresent owexist
 owget_SOURCES = ${COMMON_OWSHELL_SOURCE} \
                owget.c
 
@@ -27,6 +27,9 @@ owwrite_SOURCES = ${COMMON_OWSHELL_SOURCE} \
 
 owpresent_SOURCES = ${COMMON_OWSHELL_SOURCE} \
                owpresent.c
+
+owexist_SOURCES = ${COMMON_OWSHELL_SOURCE} \
+               owexist.c
 
 AM_CFLAGS = -I../include \
 	-I../../../owlib/src/include \

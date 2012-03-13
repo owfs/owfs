@@ -120,6 +120,7 @@ FILE_DESCRIPTOR_OR_ERROR ClientConnect(struct connection_in *in)
 	if (ai) {
 		file_descriptor = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
 		if ( FILE_DESCRIPTOR_VALID(file_descriptor) ) {
+			fcntl (file_descriptor, F_SETFD, FD_CLOEXEC); // for safe forking
 			if (connect(file_descriptor, ai->ai_addr, ai->ai_addrlen) == 0) {
 				return file_descriptor;
 			}
@@ -131,6 +132,7 @@ FILE_DESCRIPTOR_OR_ERROR ClientConnect(struct connection_in *in)
 	do {
 		file_descriptor = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
 		if ( FILE_DESCRIPTOR_VALID(file_descriptor) ) {
+			fcntl (file_descriptor, F_SETFD, FD_CLOEXEC); // for safe forking
 			if (connect(file_descriptor, ai->ai_addr, ai->ai_addrlen) == 0) {
 				SOC(in)->dev.tcp.ai_ok = ai;
 				return file_descriptor;

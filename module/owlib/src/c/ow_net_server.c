@@ -107,6 +107,7 @@ static FILE_DESCRIPTOR_OR_ERROR ServerListen(struct connection_out *out)
 		} else if (listen(file_descriptor, 10) != 0) {
 			ERROR_CONNECT("Listen problem [%s]", SAFESTRING(out->name));
 		} else {
+			fcntl (file_descriptor, F_SETFD, FD_CLOEXEC); // for safe forking
 			out->file_descriptor = file_descriptor;
 			return file_descriptor;
 		}

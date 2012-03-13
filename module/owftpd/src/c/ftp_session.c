@@ -587,6 +587,7 @@ static int set_pasv(struct ftp_session_s *f, sockaddr_storage_t * bind_addr)
 		reply(f, 500, "Error creating server socket; %s.", strerror(errno));
 		return -1;
 	}
+	fcntl (socket_fd, F_SETFD, FD_CLOEXEC); // for safe forking
 
 	for (;;) {
 		port = get_passive_port();
@@ -1179,6 +1180,7 @@ static int open_connection(struct ftp_session_s *f)
 			reply(f, 425, "Error creating socket; %s.", strerror(errno));
 			return -1;
 		}
+		fcntl (socket_fd, F_SETFD, FD_CLOEXEC); // for safe forking
 		if (connect(socket_fd, (struct sockaddr *) &f->data_port, sizeof(sockaddr_storage_t)) != 0) {
 			reply(f, 425, "Error connecting; %s.", strerror(errno));
 			close(socket_fd);
