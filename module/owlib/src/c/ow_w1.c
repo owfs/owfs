@@ -79,7 +79,9 @@ GOOD_OR_BAD W1_detect(struct connection_in *in)
 		Init_Pipe( in->master.w1.netlink_pipe ) ;
 		return gbBAD ;
 	}
-
+	fcntl (in->master.w1.netlink_pipe[fd_pipe_read], F_SETFD, FD_CLOEXEC); // for safe forking
+	fcntl (in->master.w1.netlink_pipe[fd_pipe_write], F_SETFD, FD_CLOEXEC); // for safe forking
+	
 	if ( SOC(in)->devicename == NULL) {
 		return gbBAD;
 	}
