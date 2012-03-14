@@ -35,7 +35,7 @@ $Id$
                  e.g. 3001 or 10.183.180.101:3001 or /tmp/1wire
 */
 
-#include "owserver.h"
+#include "owexternal.h"
 
 /*
  * lower level routine for actually handling a request

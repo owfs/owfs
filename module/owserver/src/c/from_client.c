@@ -35,7 +35,7 @@ $Id$
                  e.g. 3001 or 10.183.180.101:3001 or /tmp/1wire
 */
 
-#include "owserver.h"
+#include "owexternal.h"
 
 /* read from client, free return pointer if not Null */
 int FromClient(struct handlerdata *hd)

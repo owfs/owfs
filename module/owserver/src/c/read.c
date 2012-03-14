@@ -35,7 +35,7 @@ $Id$
                  e.g. 3001 or 10.183.180.101:3001 or /tmp/1wire
 */
 
-#include "owserver.h"
+#include "owexternal.h"
 
 /* Read, called from Handler with the following caveates: */
 /* path is path, already parsed, and null terminated */
