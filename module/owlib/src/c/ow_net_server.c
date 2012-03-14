@@ -124,6 +124,7 @@ GOOD_OR_BAD ServerOutSetup(struct connection_out *out)
 		// First time through, try default port
 		switch (Globals.program_type) {
 			case program_type_server:
+			case program_type_external:
 				default_port = DEFAULT_SERVER_PORT ;
 				break ;
 			case program_type_ftpd:

@@ -23,6 +23,7 @@ void ow_help_general(void)
 		break;
 	case program_type_httpd:
 	case program_type_server:
+	case program_type_external:
 		printf("Syntax: %s [options] device clientport\n", SAFESTRING(Globals.progname));
 		break;
 	case program_type_ftpd:

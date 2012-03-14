@@ -126,6 +126,7 @@ GOOD_OR_BAD EnterBackground(void)
 		case program_type_httpd:
 		case program_type_ftpd:
 		case program_type_server:
+		case program_type_external:
 			if (
 				// daemonize
 				//   current directory left unchanged (not root)

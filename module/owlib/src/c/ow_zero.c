@@ -89,6 +89,7 @@ static void *Announce(void *v)
 			err = DNSServiceRegister(&sref, 0, 0, name,"_owhttpd._tcp", NULL, NULL, port, 0, NULL, RegisterBack, out) ;
 			break ;
 		case program_type_server:
+		case program_type_external:
 			service_name = (Globals.announce_name) ? Globals.announce_name : "OWFS (1-wire) Server" ;
 			UCLIBCLOCK;
 			snprintf(name,62,"%s <%d>",service_name,(int)port);

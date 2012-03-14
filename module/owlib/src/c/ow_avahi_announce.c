@@ -126,6 +126,7 @@ static void create_services(struct announce_avahi_struct * aas)
 				ret2 = avahi_entry_group_add_service( aas->group, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC, 0, name,"_owhttpd._tcp", NULL, NULL, port, NULL) ;
 				break ;
 			case program_type_server:
+			case program_type_external:
 				service_name = (Globals.announce_name) ? Globals.announce_name : "OWFS (1-wire) Server" ;
 				UCLIBCLOCK;
 				snprintf(name,62,"%s <%d>",service_name,(int)port);
@@ -168,6 +169,9 @@ static void create_services(struct announce_avahi_struct * aas)
 				break ;
 			case program_type_server:
 				aas->out->zero.type = owstrdup("_owserver._tcp") ;
+				break;
+			case program_type_external:
+				aas->out->zero.type = owstrdup("_owexternal._tcp") ;
 				break;
 			case program_type_ftpd:
 				aas->out->zero.type = owstrdup("_ftp._tcp") ;

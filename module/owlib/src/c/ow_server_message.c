@@ -660,6 +660,7 @@ static SIZE_OR_ERROR WriteToServer(int file_descriptor, struct server_msg *sm, s
 	int tokens = 0;
 	int nio = 0;
 	int traffic_counter ;
+	int server_type = Globals.program_type==program_type_server || Globals.program_type==program_type_external ;
 	struct iovec io[5] = { {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}, };
 	struct server_msg net_sm ;
 
@@ -684,7 +685,7 @@ static SIZE_OR_ERROR WriteToServer(int file_descriptor, struct server_msg *sm, s
 	}
 
 	sm->version = MakeServerprotocol(OWSERVER_PROTOCOL_VERSION);
-	if (Globals.program_type == program_type_server) {
+	if ( server_type ) {
 		tokens = sp->tokens;
 		sm->version |= MakeServermessage;
 
@@ -719,7 +720,7 @@ static SIZE_OR_ERROR WriteToServer(int file_descriptor, struct server_msg *sm, s
 		++traffic_counter;
 		TrafficOutFD("write data" ,io[traffic_counter].iov_base,io[traffic_counter].iov_len,file_descriptor);
 	}
-	if ( Globals.program_type == program_type_server ) {
+	if ( server_type ) {
 		if (sp->tokens > 0) {		// owserver: send prior tags
 			++traffic_counter;
 			TrafficOutFD("write old tokens" ,io[traffic_counter].iov_base,io[traffic_counter].iov_len,file_descriptor);

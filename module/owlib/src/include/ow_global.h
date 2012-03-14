@@ -60,7 +60,7 @@ $Id$
 enum zero_support { zero_unknown, zero_none, zero_bonjour, zero_avahi, } ;
 
 enum enum_program_type { program_type_filesystem, program_type_server, program_type_httpd, program_type_ftpd, program_type_tcl,
-	program_type_swig, program_type_clibrary,
+	program_type_swig, program_type_clibrary, program_type_external,
 };
 
 /* Globals information (for local control) */

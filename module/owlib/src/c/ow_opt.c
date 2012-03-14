@@ -288,6 +288,10 @@ static int ParseInterp(struct lineparse *lp)
 			if ((Globals.program_type == program_type_server) == lp->reverse_prog) {
 				return 0;
 			}
+		} else if (strstr(lp->prog, "external") != NULL) {
+			if ((Globals.program_type == program_type_external) == lp->reverse_prog) {
+				return 0;
+			}
 		} else if (strstr(lp->prog, "http") != NULL) {
 			if ((Globals.program_type == program_type_httpd) == lp->reverse_prog) {
 				return 0;
@@ -617,6 +621,7 @@ GOOD_OR_BAD owopt(const int option_char, const char *arg)
 		switch (Globals.program_type) {
 		case program_type_httpd:
 		case program_type_server:
+		case program_type_external:
 		case program_type_ftpd:
 			return ARG_Server(arg);
 		default:
