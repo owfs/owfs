@@ -433,6 +433,26 @@ AC_ARG_ENABLE(owserver,
 AC_SUBST(ENABLE_OWSERVER)
 AM_CONDITIONAL(ENABLE_OWSERVER, test "${ENABLE_OWSERVER}" = "true")
 
+#Check owexternal
+AC_MSG_CHECKING(if owexternal is enabled)
+ENABLE_OWEXTERNAL="true"
+AC_ARG_ENABLE(owexternal,
+[  --enable-owexternal     Enable owexternal module (default true)],
+[
+	AC_MSG_RESULT([$enableval])
+	if test ! "$enableval" = "yes" ; then
+		ENABLE_OWEXTERNAL="false"
+	else
+		ENABLE_OWLIB="true"
+	fi
+],
+[
+	ENABLE_OWLIB="true"
+	AC_MSG_RESULT([yes (default)])
+])
+AC_SUBST(ENABLE_OWEXTERNAL)
+AM_CONDITIONAL(ENABLE_OWEXTERNAL, test "${ENABLE_OWEXTERNAL}" = "true")
+
 #Check ownet
 ENABLE_OWNET="true"
 AC_MSG_CHECKING(if ownet is enabled)
@@ -1672,6 +1692,11 @@ AC_CONFIG_FILES([
 	module/owserver/src/include/Makefile
 	module/owserver/src/c/Makefile
 
+	module/owexternal/Makefile
+	module/owexternal/src/Makefile
+	module/owexternal/src/include/Makefile
+	module/owexternal/src/c/Makefile
+
 	module/owftpd/Makefile
 	module/owftpd/src/Makefile
 	module/owftpd/src/include/Makefile
@@ -1847,6 +1872,11 @@ if test "${ENABLE_OWSERVER}" = "true"; then
 	AC_MSG_RESULT([                 owserver is enabled])
 else
 	AC_MSG_RESULT([                 owserver is DISABLED])
+fi
+if test "${ENABLE_OWEXTERNAL}" = "true"; then
+	AC_MSG_RESULT([               owexternal is enabled])
+else
+	AC_MSG_RESULT([               owexternal is DISABLED])
 fi
 if test "${ENABLE_OWNET}" = "true"; then
 	AC_MSG_RESULT([                    ownet is enabled])
