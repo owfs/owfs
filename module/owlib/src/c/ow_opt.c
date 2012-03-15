@@ -280,10 +280,7 @@ static int ParseInterp(struct lineparse *lp)
 				lp->reverse_prog ? "Not " : "", SAFESTRING(lp->prog), SAFESTRING(lp->opt), SAFESTRING(lp->val));
 	// Check for program specification
 	if (lp->prog != NULL) {
-		ASCII *prog_char;
-		for (prog_char = lp->prog; *prog_char; ++prog_char) {
-			*prog_char = tolower(*prog_char);
-		}
+		// lp-> prog already in lower case
 		if (strstr(lp->prog, "server") != NULL) {
 			if ((Globals.program_type == program_type_server) == lp->reverse_prog) {
 				return 0; // ignore this line -- doesn't apply
@@ -416,22 +413,26 @@ static void ParseTheLine(struct lineparse *lp)
 			switch (parse_state) {
 			case ps_in_opt:
 			case ps_pre_equals:
+				*current_char = '\0';
+				lp->prog = lp->opt;
+				lp->opt = NULL;
+				{	// put in lower case
+					ASCII *prog_char;
+					for (prog_char = lp->prog; *prog_char; ++prog_char) {
+						*prog_char = tolower(*prog_char);
+					}
+				}
 				// special cases for sensor and property lines
 				// they use a different syntax
 				if (strstr(lp->prog, "sensor") != NULL) {
 					// sensor line for external device
 					lp->prog = NULL ;
-					lp->opt = NULL ;
 					// return AddSensor(current_char+1) ;
 				} else if (strstr(lp->prog, "property") != NULL) {
 					// property line for external device
 					lp->prog = NULL ;
-					lp->opt = NULL ;
 					// return AddProperty(current_char+1) ;
 				}
-				*current_char = '\0';
-				lp->prog = lp->opt;
-				lp->opt = NULL;
 				parse_state = ps_pre_opt;
 				break;
 			case ps_pre_value:	// not ignored before values, of course
@@ -495,7 +496,7 @@ static GOOD_OR_BAD ConfigurationFile(const ASCII * file)
 		while (getline(&(lp.line), &(lp.line_length), configuration_file_pointer)>=0) {
 			++lp.line_number;
 			ParseTheLine(&lp);
-			if ( BAD( owopt(ParseInterp(&lp), lp.val) ) {
+			if ( BAD( owopt(ParseInterp(&lp), lp.val) ) ) {
 				ret = gbBAD ;
 				break ;
 			}
