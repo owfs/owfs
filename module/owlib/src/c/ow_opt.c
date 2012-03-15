@@ -286,23 +286,23 @@ static int ParseInterp(struct lineparse *lp)
 		}
 		if (strstr(lp->prog, "server") != NULL) {
 			if ((Globals.program_type == program_type_server) == lp->reverse_prog) {
-				return 0;
+				return 0; // ignore this line -- doesn't apply
 			}
 		} else if (strstr(lp->prog, "external") != NULL) {
 			if ((Globals.program_type == program_type_external) == lp->reverse_prog) {
-				return 0;
+				return 0; // ignore this line -- doesn't apply
 			}
 		} else if (strstr(lp->prog, "http") != NULL) {
 			if ((Globals.program_type == program_type_httpd) == lp->reverse_prog) {
-				return 0;
+				return 0; // ignore this line -- doesn't apply
 			}
 		} else if (strstr(lp->prog, "ftp") != NULL) {
 			if ((Globals.program_type == program_type_ftpd) == lp->reverse_prog) {
-				return 0;
+				return 0; // ignore this line -- doesn't apply
 			}
 		} else if (strstr(lp->prog, "fs") != NULL) {
 			if ((Globals.program_type == program_type_filesystem) == lp->reverse_prog) {
-				return 0;
+				return 0; // ignore this line -- doesn't apply
 			}
 		} else {
 			LEVEL_DEFAULT("Configuration file (%s:%d) Unrecognized program %s. Option=%s, Value=%s", SAFESTRING(lp->file), lp->line_number,
@@ -342,7 +342,7 @@ static int ParseInterp(struct lineparse *lp)
 
 // Parse the configuration file line
 // Basically look for lines of form opt=val
-// optional white space1
+// optional white space
 // optional '='
 // optional val
 // Comment with #
@@ -416,6 +416,19 @@ static void ParseTheLine(struct lineparse *lp)
 			switch (parse_state) {
 			case ps_in_opt:
 			case ps_pre_equals:
+				// special cases for sensor and property lines
+				// they use a different syntax
+				if (strstr(lp->prog, "sensor") != NULL) {
+					// sensor line for external device
+					lp->prog = NULL ;
+					lp->opt = NULL ;
+					// return AddSensor(current_char+1) ;
+				} else if (strstr(lp->prog, "property") != NULL) {
+					// property line for external device
+					lp->prog = NULL ;
+					lp->opt = NULL ;
+					// return AddProperty(current_char+1) ;
+				}
 				*current_char = '\0';
 				lp->prog = lp->opt;
 				lp->opt = NULL;
