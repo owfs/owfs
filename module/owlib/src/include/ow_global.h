@@ -59,8 +59,10 @@ $Id$
 
 enum zero_support { zero_unknown, zero_none, zero_bonjour, zero_avahi, } ;
 
-enum enum_program_type { program_type_filesystem, program_type_server, program_type_httpd, program_type_ftpd, program_type_tcl,
-	program_type_swig, program_type_clibrary, program_type_external,
+enum enum_program_type { 
+	program_type_filesystem, program_type_server, program_type_httpd, program_type_ftpd, program_type_external, 
+	program_type_tcl, program_type_swig, program_type_clibrary, 
+	program_option_sensor, program_option_property,
 };
 
 /* Globals information (for local control) */
@@ -71,6 +73,7 @@ struct global {
 	enum pressure_type pressure_scale ;
 	enum deviceformat format ;
 	enum enum_program_type program_type;
+	int allow_other ;
 	ASCII *progname;
 	union antiloop Token;
 	int uncached ; // all requests are from /uncached directory

@@ -180,7 +180,7 @@ const struct option owopts_long[] = {
 	{"w1", no_argument, NO_LINKED_VAR, e_w1_monitor},
 	{"W1", no_argument, NO_LINKED_VAR, e_w1_monitor},
 	{"announce", required_argument, NO_LINKED_VAR, e_announce},
-	{"allow_other", no_argument, NO_LINKED_VAR, e_allow_other},
+	{"allow_other", no_argument, &Globals.allow_other, 1},
 	{"altUSB", no_argument, &Globals.altUSB, 1},	/* Willy Robison's tweaks */
 	{"altusb", no_argument, &Globals.altUSB, 1},	/* Willy Robison's tweaks */
 	{"usb_flextime", no_argument, &Globals.usb_flextime, 1},
@@ -755,8 +755,6 @@ GOOD_OR_BAD owopt(const int option_char, const char *arg)
 		return ARG_Browse();
 	case e_announce:
 		Globals.announce_name = owstrdup(arg);
-		break;
-	case e_allow_other:		/* allow_other */
 		break;
 		// Pressure scale
 	case e_pressure_mbar:

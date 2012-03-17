@@ -34,7 +34,6 @@ char *fuse_open_opt = NULL;
 int main(int argc, char *argv[])
 {
 	int c;
-	int allow_other = 0;
 	struct Fuse_option fuse_options;
 
 	/* Set up owlib */
@@ -68,9 +67,6 @@ int main(int argc, char *argv[])
 			if (fuse_open_opt == NULL) {
 				ow_exit(0);
 			}
-			break;
-		case e_allow_other:	/* allow_other */
-			allow_other = 1;
 			break;
 		}
 		if ( BAD( owopt(c, optarg) ) ) {
@@ -125,7 +121,7 @@ int main(int argc, char *argv[])
 	LEVEL_DEBUG("fuse_mnt_opt=[%s]", fuse_mnt_opt);
 	Fuse_parse(fuse_open_opt, &fuse_options);
 	LEVEL_DEBUG("fuse_open_opt=[%s]", fuse_open_opt);
-	if (allow_other) {
+	if (Globals.allow_other) {
 		Fuse_add("-o", &fuse_options);	// add "-o allow_other" to permit other users access
 		Fuse_add("allow_other", &fuse_options);
 	}
