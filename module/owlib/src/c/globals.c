@@ -37,7 +37,7 @@ struct global Globals = {
 	.announce_name = NULL,
 	.program_type = program_type_swig,
 	.progname = NULL,			// "One Wire File System" , Can't allocate here since it's freed
-	.allow_other = 0 ; // for fuse
+	.allow_other = 0 , // for fuse
 
 	.temp_scale = temp_celsius,
 	.pressure_scale = pressure_mbar,
