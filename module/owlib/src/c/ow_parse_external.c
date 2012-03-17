@@ -22,7 +22,7 @@ $Id$
  
 // Look through text_string, ignore backslash and match quoting varibles
 // allocates a new string with the token
-char * string_parse( char * text_string, char delim, char ** last_char )
+static char * string_parse( char * text_string, char delim, char ** last_char )
 {
 	char * copy_string ;
 	char * old_string_pointer = text_string ;
@@ -87,4 +87,56 @@ char * string_parse( char * text_string, char delim, char ** last_char )
 		}
 	}
 }
-				
+	
+static char * trim_parse( char * raw_string )
+{
+	char * start_position ;
+	char * end_position ;
+	char * return_string ;
+	for ( start_position = raw_string ; start_position[0] ; ++ start_position ) {
+		if ( start_position[0] != ' ' ) {
+			break ;
+		}
+	}
+	return_string = owstrdup ( start_position ) ;
+	owfree( raw_string ) ;
+	
+	for ( end_position = return_string + strlen( return_string ) ; end_position >= return_string ; -- end_position ) {
+		if ( end_position[0] == '\0' ) {
+			continue ;
+		} else if ( end_position[0] != ' ' ) {
+			break ;
+		} else {
+			end_position[0] = '\0' ;
+		}
+	}
+	
+	return return_string ;
+}
+
+static char * unquote_parse( raw_string )
+{
+	if ( raw_string == NULL ) {
+		return NULL ;
+	}
+	switch ( raw_string[0] ) {		
+	case '"':
+	case '\'':
+		if ( raw_string[1] == '\0' ) {
+			owfree( raw_string ) ;
+			return owstrdup("") ;
+		} else {
+			char * unquoted = owstrdup( raw_string+1 ) ;
+			char * unquoted_end = unquoted + strlen(unquoted) -1 ;
+			if ( unquoted_end[0] == raw_string[0] ) {
+				unquoted_end[0] = '\0' ;
+			}
+			owfree( raw_string ) ;
+			return unquoted ;
+		}
+		break
+	default:
+		return raw_string ;
+	}
+}	
+	
