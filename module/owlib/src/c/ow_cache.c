@@ -1499,7 +1499,6 @@ void Cache_Add_Alias_Bus(const ASCII * alias_name, INDEX_OR_ERROR bus)
 
 /* Add an item to the alias cache */
 /* retire the cache (flip) if too old, and start a new one (keep the old one for a while) */
-/* return 0 if good, 1 if not */
 static void Cache_Add_Alias_Common(struct alias_tree_node *atn)
 {
 	struct tree_opaque *opaque;
