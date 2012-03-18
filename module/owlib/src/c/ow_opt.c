@@ -20,6 +20,7 @@ $Id$
 #include "ow.h"
 #include "ow_connection.h"
 #include "ow_pid.h"
+#include "ow_external.h"
 
 struct lineparse {
 	char * line;
@@ -427,11 +428,13 @@ static void ParseTheLine(struct lineparse *lp)
 				if (strstr(lp->prog, "sensor") != NULL) {
 					// sensor line for external device
 					lp->prog = NULL ;
-					// return AddSensor(current_char+1) ;
+					// AddSensor(current_char+1) ;
+					return ;
 				} else if (strstr(lp->prog, "property") != NULL) {
 					// property line for external device
 					lp->prog = NULL ;
-					// return AddProperty(current_char+1) ;
+					// AddProperty(current_char+1) ;
+					return ;
 				}
 				parse_state = ps_pre_opt;
 				break;

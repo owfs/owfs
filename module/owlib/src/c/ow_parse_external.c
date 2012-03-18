@@ -19,7 +19,18 @@ $Id$
 #include <config.h>
 #include "owfs_config.h"
 #include "ow.h"
- 
+#include "ow_external.h"
+
+static char * string_parse( char * text_string, char delim, char ** last_char );
+static char * trim_parse( char * raw_string );
+static char * unquote_parse( char * raw_string );
+static int LastParam( char * input_string ) ;
+static void create_just_print( char * s_family, char * s_prop, char * s_data );
+static void create_subdirs( char * s_family, char * s_prop );
+
+void * property_tree = NULL ;
+void * sensor_tree = NULL ;
+
 // Look through text_string, ignore backslash and match quoting varibles
 // allocates a new string with the token
 static char * string_parse( char * text_string, char delim, char ** last_char )
@@ -114,7 +125,7 @@ static char * trim_parse( char * raw_string )
 	return return_string ;
 }
 
-static char * unquote_parse( raw_string )
+static char * unquote_parse( char * raw_string )
 {
 	if ( raw_string == NULL ) {
 		return NULL ;
@@ -134,9 +145,304 @@ static char * unquote_parse( raw_string )
 			owfree( raw_string ) ;
 			return unquoted ;
 		}
-		break
+		break ;
 	default:
 		return raw_string ;
 	}
 }	
 	
+static int LastParam( char * input_string )
+{
+	if ( input_string == NULL ) {
+		return 1 ;
+	} else {
+		int len = strlen(input_string) ;
+		if ( len == 0 ) {
+			return 1 ;
+		}
+		if ( input_string[len-1] != ',' ) {
+			return 1 ;
+		}
+		input_string[len-1] = '\0' ;
+		return 0 ;
+	}
+}
+
+// Gets a string with property,family,structure,read_function,write_function,property_data,extra
+// write, data and extra are optional
+void AddSensor( char * input_string )
+{
+	char * s_family ;
+	char * s_property ;
+	char * s_structure ;
+	char * s_read ;
+	char * s_write ;
+	char * s_data ;
+	char * s_other ;
+	char * end_pointer ;
+	char * start_pointer = input_string ;
+	
+	if ( input_string == NULL ) {
+		return ;
+	}
+	
+	// property
+	s_property = string_parse( start_pointer, ',' , &end_pointer ) ;
+	start_pointer = end_pointer ;
+	if ( !LastParam( s_property ) ) {
+		++start_pointer ;
+	}
+	s_property = unquote_parse(trim_parse(s_property)) ;
+
+	// family
+	s_family = string_parse( start_pointer, ',' , &end_pointer ) ;
+	start_pointer = end_pointer ;
+	if ( !LastParam( s_property ) ) {
+		++start_pointer ;
+	}
+	s_family = unquote_parse(trim_parse(s_family)) ;
+
+	// structure
+	s_structure = string_parse( start_pointer, ',' , &end_pointer ) ;
+	start_pointer = end_pointer ;
+	if ( !LastParam( s_property ) ) {
+		++start_pointer ;
+	}
+	s_structure = unquote_parse(trim_parse(s_structure)) ;
+
+	// read
+	s_read = string_parse( start_pointer, ',' , &end_pointer ) ;
+	start_pointer = end_pointer ;
+	if ( !LastParam( s_property ) ) {
+		++start_pointer ;
+	}
+	s_read = unquote_parse(trim_parse(s_read)) ;
+
+	// write
+	s_write = string_parse( start_pointer, ',' , &end_pointer ) ;
+	start_pointer = end_pointer ;
+	if ( !LastParam( s_property ) ) {
+		++start_pointer ;
+	}
+	s_write = unquote_parse(trim_parse(s_write)) ;
+
+	// data
+	s_data = string_parse( start_pointer, ',' , &end_pointer ) ;
+	start_pointer = end_pointer ;
+	if ( !LastParam( s_property ) ) {
+		++start_pointer ;
+	}
+	s_data = unquote_parse(trim_parse(s_data)) ;
+
+	// other
+	s_other = string_parse( start_pointer, ',' , &end_pointer ) ;
+	start_pointer = end_pointer ;
+	if ( !LastParam( s_property ) ) {
+		++start_pointer ;
+	}
+	s_other = unquote_parse(trim_parse(s_other)) ;
+
+	// test minimums
+	if ( strlen( s_family ) > 0 && strlen( s_property ) > 0 ) {
+		// Actually add
+		AddPropertyToTree( s_family, s_property, s_structure, s_read, s_write, s_data, s_other ) ;
+		create_subdirs( s_family, s_property ) ;
+	}
+
+	// Clean up
+	owfree( s_property ) ;
+	owfree( s_family ) ;
+	owfree( s_structure ) ;
+	owfree( s_read ) ;
+	owfree( s_write ) ;
+	owfree( s_data ) ;
+	owfree( s_other ) ;
+}
+
+// Gets a string with name,family, and description
+// description is optional
+void AddSensor( char * input_string )
+{
+	char * s_name ;
+	char * s_family ;
+	char * s_description = NULL ;
+	char * end_pointer ;
+	char * start_pointer ;
+	int is_there_more ;
+	
+	if ( input_string == NULL ) {
+		return ;
+	}
+	
+	// name
+	s_name = string_parse( input_string, ',' , &end_pointer ) ;
+	is_there_more = !LastParam( s_name ) ;
+	if ( !is_there_more ) {
+		owfree( s_name ) ;
+		return ;
+	}
+	s_name = unquote_parse(trim_parse(s_name)) ;
+
+	// family
+	start_pointer = end_pointer+1 ;
+	s_family = string_parse( start_pointer+1, ',' , &end_pointer ) ;
+	is_there_more = !LastParam( s_family ) ;
+	s_family = unquote_parse(trim_parse(s_family)) ;
+
+	// description
+	if ( is_there_more ) {
+		start_pointer = end_pointer+1 ;
+		s_description = string_parse( start_pointer+1, ',' , &end_pointer ) ;
+		is_there_more = !LastParam( s_description ) ; // for side effects
+		s_description = unquote_parse(trim_parse(s_description)) ;		
+	} else {
+		s_description = owstrdup("") ;
+	}
+
+	// Actually add
+	AddSensorToTree( s_name, s_family, s_description ) ;
+	create_just_print( s_family, "family", s_family ) ;
+	create_just_print( s_family, "type", "external" ) ;
+
+	// Clean up
+	owfree( s_name );
+	owfree( s_family ) ;
+	owfree( s_description ) ;
+}
+
+int sensor_compare( const void * a , const void * b )
+{
+	const struct sensor_node * na = a ;
+	const struct sensor_node * nb = b ;
+	return strcmp( na->name, nb->name ) ;
+}
+
+int property_compare( const void * a , const void * b )
+{
+	const struct property_node * na = a ;
+	const struct property_node * nb = b ;
+	int c = strcmp( na->family, nb->family ) ;
+	if ( c==0 ) {
+		return strcmp( na->property, nb->property ) ;
+	}
+	return c ;
+}
+
+struct sensor_node * create_sensor_node( char * s_name, char * s_family, char * s_description )
+{
+	int l_name = strlen(s_name)+1;
+	int l_family = strlen(s_family)+1;
+	int l_description = strlen(s_description)+1;
+
+	struct sensor_node * s = owmalloc( sizeof(struct sensor_node) 
+	+ l_name +  l_family + l_description ) ;
+
+	if ( s==NULL) {
+		return NULL ;
+	}
+
+	s->name = s->payload ;
+	strcpy( s->name, s_name ) ;
+
+	s->family = s->name + l_name ;
+	strcpy( s->family, s_family ) ;
+
+	s->description = s->family + l_family ;
+	strcpy( s->description, s_description ) ;
+
+	return s ;
+}
+
+struct property_node * create_property_node( char * s_property, char * s_family, char * s_structure, char * s_read, char * s_write, char * s_data, char * s_other )
+{
+	int l_family = strlen( s_family )+1 ;
+	int l_property = strlen( s_property )+1 ;
+	int l_structure = strlen ( s_structure )+1 ;
+	int l_read = strlen( s_read )+1 ;
+	int l_write = strlen( s_write )+1 ;
+	int l_data = strlen( s_data )+1 ;
+	int l_other = strlen( s_other )+1 ;
+
+	struct property_node * s = owmalloc( sizeof(struct property_node) 
+	+ l_family + l_property + l_structure + l_read + l_write + l_data + l_other ) ;
+	
+	if ( s==NULL) {
+		return NULL ;
+	}
+
+	s->family = s->payload ;
+	strcpy( s->family, s_family ) ;
+
+	s->property = s->family + l_family ;
+	strcpy( s->property, s_property ) ;
+
+	s->structure = s->family + l_family ;
+	strcpy( s->property, s_property ) ;
+
+	s->read = s->structure + l_structure ;
+	strcpy( s->read, s_read ) ;
+
+	s->write = s->read + l_read ;
+	strcpy( s->write, s_write ) ;
+
+	s->data = s->write + l_write ;
+	strcpy( s->data, s_data ) ;
+
+	s->other = s->data + l_data ;
+	strcpy( s->other, s_other ) ;
+
+	return s ;
+}
+
+void AddSensorToTree( char * s_name, char * s_family, char * s_description )
+{
+	struct sensor_node * n = create_sensor_node( s_name, s_family, s_description ) ;
+	struct sensor_node * s = tsearch( (void *) n, &sensor_tree, sensor_compare ) ;
+	
+	if ( s != n ) {
+		// already exists
+		owfree( n ) ;
+	}
+}
+
+void AddPropertyToTree( char * s_family, char * s_property, char * s_structure, char * s_read, char * s_write, char * s_data, char * s_other )
+{
+	struct property_node * n = create_property_node( s_family, s_property, s_structure, s_read, s_write, s_data, s_other ) ;
+	struct property_node * s = tsearch( (void *) n, &property_tree, property_compare ) ;
+	
+	if ( s != n ) {
+		// already exists
+		owfree( n ) ;
+	}
+}
+
+static void create_just_print( char * s_family, char * s_prop, char * s_data )
+{
+	char structure_string[50] ;
+	
+	snprintf( structure_string, 49, "%c,%.6d,%.6d,%.2s,%.6d,%c,",
+		'a',
+		0,
+		1,
+		"ro",
+		strlen(s_data),
+		'f' ) ;
+	AddPropertyToTree( s_family, s_prop, structure_string, "just_print_data", "", s_data, "" ) ;
+}
+
+static void create_subdirs( char * s_family, char * s_prop )
+{
+	char * slash ;
+	char * subdir = owstrdup( s_prop ) ;
+	
+	if ( subdir == NULL ) {
+		return ;
+	}
+	
+	while ( (slash = strrchr( subdir, '/' )) != NULL ) {
+		slash[0] = '\0' ;
+		AddPropertyToTree( s_family, subdir, "D,0,1,oo,0,f","","","","" ) ;
+	}
+	
+	owfree(subdir) ;
+}
