@@ -170,10 +170,19 @@ static int LastParam( char * input_string )
 
 // Gets a string with property,family,structure,read_function,write_function,property_data,extra
 // write, data and extra are optional
-void AddSensor( char * input_string )
+/*
+ * property
+ * family
+ * structure
+ * read
+ * write
+ * data
+ * other
+ * */
+void AddProperty( char * input_string )
 {
-	char * s_family ;
 	char * s_property ;
+	char * s_family ;
 	char * s_structure ;
 	char * s_read ;
 	char * s_write ;
@@ -261,6 +270,11 @@ void AddSensor( char * input_string )
 
 // Gets a string with name,family, and description
 // description is optional
+/*
+ * name
+ * family
+ * description
+ * */
 void AddSensor( char * input_string )
 {
 	char * s_name ;
@@ -401,7 +415,10 @@ void AddSensorToTree( char * s_name, char * s_family, char * s_description )
 	
 	if ( s != n ) {
 		// already exists
+		LEVEL_DEBUG("Duplicate sensor entry: %s,%s,%s",s_name,s_family,s_description);
 		owfree( n ) ;
+	} else {
+		LEVEL_DEBUG("New sensor entry: %s,%s,%s",s_name,s_family,s_description);
 	}
 }
 
@@ -412,8 +429,11 @@ void AddPropertyToTree( char * s_family, char * s_property, char * s_structure, 
 	
 	if ( s != n ) {
 		// already exists
+		LEVEL_DEBUG("Duplicate property entry: %s,%s,%s,%s,%s,%s,%s",s_property,s_family,s_structure,s_read,s_write,s_data,s_other););
 		owfree( n ) ;
-	}
+	} else {
+		LEVEL_DEBUG("New property entry: %s,%s,%s,%s,%s,%s,%s",s_property,s_family,s_structure,s_read,s_write,s_data,s_other););
+	}		
 }
 
 static void create_just_print( char * s_family, char * s_prop, char * s_data )
