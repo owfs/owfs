@@ -29,6 +29,7 @@ static void create_just_print( char * s_family, char * s_prop, char * s_data );
 static void create_subdirs( char * s_family, char * s_prop );
 
 void * property_tree = NULL ;
+void * family_tree = NULL ;
 void * sensor_tree = NULL ;
 
 // Look through text_string, ignore backslash and match quoting varibles
@@ -254,6 +255,7 @@ void AddProperty( char * input_string )
 	// test minimums
 	if ( strlen( s_family ) > 0 && strlen( s_property ) > 0 ) {
 		// Actually add
+		AddFamilyToTree( s_family ) ;
 		AddPropertyToTree( s_family, s_property, s_structure, s_read, s_write, s_data, s_other ) ;
 		create_subdirs( s_family, s_property ) ;
 	}
@@ -314,6 +316,7 @@ void AddSensor( char * input_string )
 	}
 
 	// Actually add
+	AddFamilyToTree( s_family ) ;
 	AddSensorToTree( s_name, s_family, s_description ) ;
 	create_just_print( s_family, "family", s_family ) ;
 	create_just_print( s_family, "type", "external" ) ;
@@ -329,6 +332,13 @@ int sensor_compare( const void * a , const void * b )
 	const struct sensor_node * na = a ;
 	const struct sensor_node * nb = b ;
 	return strcmp( na->name, nb->name ) ;
+}
+
+int family_compare( const void * a , const void * b )
+{
+	const struct sensor_node * na = a ;
+	const struct sensor_node * nb = b ;
+	return strcmp( na->family, nb->family ) ;
 }
 
 int property_compare( const void * a , const void * b )
@@ -363,6 +373,23 @@ struct sensor_node * create_sensor_node( char * s_name, char * s_family, char * 
 
 	s->description = s->family + l_family ;
 	strcpy( s->description, s_description ) ;
+
+	return s ;
+}
+
+struct family_node * create_sensor_node( char * s_family )
+{
+	int l_family = strlen(s_family)+1;
+
+	struct sensor_node * s = owmalloc( sizeof(struct sensor_node) 
+	+  l_family ) ;
+
+	if ( s==NULL) {
+		return NULL ;
+	}
+
+	s->family = s->payload ;
+	strcpy( s->family, s_family ) ;
 
 	return s ;
 }
@@ -419,6 +446,20 @@ void AddSensorToTree( char * s_name, char * s_family, char * s_description )
 		owfree( n ) ;
 	} else {
 		LEVEL_DEBUG("New sensor entry: %s,%s,%s",s_name,s_family,s_description);
+	}
+}
+
+void AddFamilyToTree( char * s_family )
+{
+	struct sensor_node * n = create_sensor_node( s_family ) ;
+	struct sensor_node * s = tsearch( (void *) n, &family_tree, family_compare ) ;
+	
+	if ( s != n ) {
+		// already exists
+		LEVEL_DEBUG("Duplicate family entry: %s",s_family);
+		owfree( n ) ;
+	} else {
+		LEVEL_DEBUG("New family entry: %s",s_family);
 	}
 }
 
