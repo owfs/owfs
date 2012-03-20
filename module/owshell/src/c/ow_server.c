@@ -25,12 +25,12 @@ void Server_detect(void)
 	if (count_inbound_connections == 0) {
 		PRINT_ERROR("No owserver_connection defined\n");
 		errno = ENOENT ;
-		Exit(1);
+		Exit(2);
 	}
 	if (owserver_connection->name == NULL || ClientAddr(owserver_connection->name)) {
 		PRINT_ERROR("Could not connect with owserver %s\n", owserver_connection->name);
 		errno = ENOENT ;
-		Exit(1);
+		Exit(2);
 	}
 }
 

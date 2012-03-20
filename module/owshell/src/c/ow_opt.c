@@ -120,13 +120,13 @@ void owopt(const int c, const char *arg)
 #if OW_ZERO
 		if (libdnssd == NULL) {
 			PRINT_ERROR("Zeroconf/Bonjour is disabled since dnssd library isn't found.\n");
-			Exit(0);
+			Exit(1);
 		} else {
 			OW_Browse();
 		}
 #else
 		PRINT_ERROR("Zeroconf/Bonjour is disabled since it's compiled without support.\n");
-		Exit(0);
+		Exit(1);
 #endif
 		break;
 	case 300:
