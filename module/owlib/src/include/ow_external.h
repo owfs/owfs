@@ -69,7 +69,7 @@ int property_compare( const void * a , const void * b ) ;
 int family_compare( const void * a , const void * b ) ;
 struct sensor_node * create_sensor_node( char * s_name, char * s_family, char * s_description ) ;
 struct property_node * create_property_node( char * s_property, char * s_family, char * s_structure, char * s_read, char * s_write, char * s_data, char * s_other ) ;
-struct family_node * create_property_node( char * s_family ) ;
+struct family_node * create_family_node( char * s_family ) ;
 void AddSensorToTree( char * s_name, char * s_family, char * s_description ) ;
 void AddPropertyToTree( char * s_family, char * s_property, char * s_structure, char * s_read, char * s_write, char * s_data, char * s_other );
 void AddFamilyToTree( char * s_family );

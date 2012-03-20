@@ -377,11 +377,11 @@ struct sensor_node * create_sensor_node( char * s_name, char * s_family, char * 
 	return s ;
 }
 
-struct family_node * create_sensor_node( char * s_family )
+struct family_node * create_family_node( char * s_family )
 {
 	int l_family = strlen(s_family)+1;
 
-	struct sensor_node * s = owmalloc( sizeof(struct sensor_node) 
+	struct family_node * s = owmalloc( sizeof(struct sensor_node) 
 	+  l_family ) ;
 
 	if ( s==NULL) {
@@ -451,8 +451,8 @@ void AddSensorToTree( char * s_name, char * s_family, char * s_description )
 
 void AddFamilyToTree( char * s_family )
 {
-	struct sensor_node * n = create_sensor_node( s_family ) ;
-	struct sensor_node * s = tsearch( (void *) n, &family_tree, family_compare ) ;
+	struct family_node * n = create_family_node( s_family ) ;
+	struct family_node * s = tsearch( (void *) n, &family_tree, family_compare ) ;
 	
 	if ( s != n ) {
 		// already exists
@@ -470,10 +470,10 @@ void AddPropertyToTree( char * s_family, char * s_property, char * s_structure, 
 	
 	if ( s != n ) {
 		// already exists
-		LEVEL_DEBUG("Duplicate property entry: %s,%s,%s,%s,%s,%s,%s",s_property,s_family,s_structure,s_read,s_write,s_data,s_other););
+		LEVEL_DEBUG("Duplicate property entry: %s,%s,%s,%s,%s,%s,%s",s_property,s_family,s_structure,s_read,s_write,s_data,s_other);
 		owfree( n ) ;
 	} else {
-		LEVEL_DEBUG("New property entry: %s,%s,%s,%s,%s,%s,%s",s_property,s_family,s_structure,s_read,s_write,s_data,s_other););
+		LEVEL_DEBUG("New property entry: %s,%s,%s,%s,%s,%s,%s",s_property,s_family,s_structure,s_read,s_write,s_data,s_other);
 	}		
 }
 
@@ -486,7 +486,7 @@ static void create_just_print( char * s_family, char * s_prop, char * s_data )
 		0,
 		1,
 		"ro",
-		strlen(s_data),
+		(int) strlen(s_data),
 		'f' ) ;
 	AddPropertyToTree( s_family, s_prop, structure_string, "just_print_data", "", s_data, "" ) ;
 }
