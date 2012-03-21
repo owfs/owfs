@@ -184,7 +184,12 @@ void AddProperty( char * input_string )
 {
 	char * s_property ;
 	char * s_family ;
-	char * s_structure ;
+	char * s_dummy ;
+	char s_type ;
+	size_t s_array ;
+	enum external_array_type s_eat_type ;
+	size_t s_length ;
+	char s_persistance ;
 	char * s_read ;
 	char * s_write ;
 	char * s_data ;
@@ -212,13 +217,113 @@ void AddProperty( char * input_string )
 	}
 	s_family = unquote_parse(trim_parse(s_family)) ;
 
-	// structure
-	s_structure = string_parse( start_pointer, ',' , &end_pointer ) ;
+	// type
+	s_dummy = string_parse( start_pointer, ',' , &end_pointer ) ;
 	start_pointer = end_pointer ;
-	if ( !LastParam( s_property ) ) {
+	if ( !LastParam( s_dummy ) ) {
 		++start_pointer ;
 	}
-	s_structure = unquote_parse(trim_parse(s_structure)) ;
+	s_dummy = unquote_parse(trim_parse(s_dummy)) ;
+	switch ( s_dummy[0] ) {
+		case 'D':
+		case 'i':
+		case 'u':
+		case 'f':
+		case 'a':
+		case 'b':
+		case 'y':
+		case 'd':
+		case 't':
+		case 'g':
+		case 'p':
+			s_type = s_dummy[0] ;
+			break ;
+		default:
+			LEVEL_DEFAULT("Unrecognized variable type <%s> for property <%s> family <%s>",s_dummy,s_property,s_family);
+			return ;
+	}
+
+	// array
+	s_dummy = string_parse( start_pointer, ',' , &end_pointer ) ;
+	start_pointer = end_pointer ;
+	if ( !LastParam( s_dummy ) ) {
+		++start_pointer ;
+	}
+	s_dummy = unquote_parse(trim_parse(s_dummy)) ;
+	switch ( s_dummy[0] ) {
+		case '1':
+		case '0':
+		case '\0':
+			s_eat_type = eat_scalar ;
+			s_array = 1 ;
+			break ;
+		case '-':
+			s_array = 1 ;
+			switch ( s_dummy[1] ) {
+				case '1':
+					s_eat_type = eat_sparse ;
+					break ;
+				default:
+					s_eat_type = eat_sparse_lettered ;
+					break ;
+			}
+			break ;
+		case '+':
+			if ( isalpha(s_dummy[1]) ) {
+				s_array = toupper(s_dummy[1]) - 'A' ;
+				s_eat_type = eat_aggregate_lettered ;
+			} else {
+				s_array = strtol( s_dummy, NULL, 0 ) ;
+				s_eat_type = eat_aggregate ;
+			}
+			break ;
+		default:
+			if ( isalpha(s_dummy[0]) ) {
+				s_array = toupper(s_dummy[0]) - 'A' ;
+				s_eat_type = eat_separate_lettered ;
+			} else {
+				s_array = strtol( s_dummy, NULL, 0 ) ;
+				s_eat_type = eat_separate ;
+			}
+			break ;
+	}
+	if ( s_array < 1 ) {
+		LEVEL_DEFAULT("Unrecognized array type <%s> for property <%s> family <%s>",s_dummy,s_property,s_family);
+		return ;
+	}
+
+	// length
+	s_dummy = string_parse( start_pointer, ',' , &end_pointer ) ;
+	start_pointer = end_pointer ;
+	if ( !LastParam( s_dummy ) ) {
+		++start_pointer ;
+	}
+	s_dummy = unquote_parse(trim_parse(s_dummy)) ;
+	s_length = strtol( s_dummy, NULL, 0 ) ;
+	if ( s_length < 0 ) {
+		LEVEL_DEFAULT("Unrecognized variable length <%s> for property <%s> family <%s>",s_dummy,s_property,s_family);
+		return ;
+	}
+
+	// persistance
+	s_dummy = string_parse( start_pointer, ',' , &end_pointer ) ;
+	start_pointer = end_pointer ;
+	if ( !LastParam( s_dummy ) ) {
+		++start_pointer ;
+	}
+	s_dummy = unquote_parse(trim_parse(s_dummy)) ;
+	switch ( s_dummy[0] ) {
+		case 'f':
+		case 's':
+		case 'v':
+		case 't':
+		case 'u':
+			s_persistance = s_dummy[0] ;
+			break ;
+		default:
+			LEVEL_DEFAULT("Unrecognized persistance <%s> for property <%s> family <%s>",s_dummy,s_property,s_family);
+			return ;
+	}
 
 	// read
 	s_read = string_parse( start_pointer, ',' , &end_pointer ) ;
@@ -256,14 +361,13 @@ void AddProperty( char * input_string )
 	if ( strlen( s_family ) > 0 && strlen( s_property ) > 0 ) {
 		// Actually add
 		AddFamilyToTree( s_family ) ;
-		AddPropertyToTree( s_family, s_property, s_structure, s_read, s_write, s_data, s_other ) ;
+		AddPropertyToTree( s_family, s_property, s_type, s_array, s_eat_type, s_length, s_persistance, s_read, s_write, s_data, s_other ) ;
 		create_subdirs( s_family, s_property ) ;
 	}
 
 	// Clean up
 	owfree( s_property ) ;
 	owfree( s_family ) ;
-	owfree( s_structure ) ;
 	owfree( s_read ) ;
 	owfree( s_write ) ;
 	owfree( s_data ) ;
@@ -394,18 +498,17 @@ struct family_node * create_family_node( char * s_family )
 	return s ;
 }
 
-struct property_node * create_property_node( char * s_property, char * s_family, char * s_structure, char * s_read, char * s_write, char * s_data, char * s_other )
+struct property_node * create_property_node( char * s_property, char * s_family, char s_type, size_t s_array, enum external_array_type s_eat_type, size_t s_length, char s_persistance, char * s_read, char * s_write, char * s_data, char * s_other )
 {
 	int l_family = strlen( s_family )+1 ;
 	int l_property = strlen( s_property )+1 ;
-	int l_structure = strlen ( s_structure )+1 ;
 	int l_read = strlen( s_read )+1 ;
 	int l_write = strlen( s_write )+1 ;
 	int l_data = strlen( s_data )+1 ;
 	int l_other = strlen( s_other )+1 ;
 
 	struct property_node * s = owmalloc( sizeof(struct property_node) 
-	+ l_family + l_property + l_structure + l_read + l_write + l_data + l_other ) ;
+	+ l_family + l_property + l_read + l_write + l_data + l_other ) ;
 	
 	if ( s==NULL) {
 		return NULL ;
@@ -417,10 +520,17 @@ struct property_node * create_property_node( char * s_property, char * s_family,
 	s->property = s->family + l_family ;
 	strcpy( s->property, s_property ) ;
 
-	s->structure = s->family + l_family ;
-	strcpy( s->property, s_property ) ;
+	s->type = s_type ;
+	
+	s->array = s_array ;
+	
+	s->eat_type = s_eat_type ;
+	
+	s->length = s_length ;
+	
+	s->persistance = s_persistance ;
 
-	s->read = s->structure + l_structure ;
+	s->read = s->family + l_family ;
 	strcpy( s->read, s_read ) ;
 
 	s->write = s->read + l_read ;
@@ -463,32 +573,23 @@ void AddFamilyToTree( char * s_family )
 	}
 }
 
-void AddPropertyToTree( char * s_family, char * s_property, char * s_structure, char * s_read, char * s_write, char * s_data, char * s_other )
+void AddPropertyToTree( char * s_family, char * s_property,  char s_type, size_t s_array, enum external_array_type s_eat_type, size_t s_length, char s_persistance, char * s_read, char * s_write, char * s_data, char * s_other )
 {
-	struct property_node * n = create_property_node( s_family, s_property, s_structure, s_read, s_write, s_data, s_other ) ;
+	struct property_node * n = create_property_node( s_family, s_property, s_type, s_array, s_eat_type, s_length, s_persistance, s_read, s_write, s_data, s_other ) ;
 	struct property_node * s = tsearch( (void *) n, &property_tree, property_compare ) ;
 	
 	if ( s != n ) {
 		// already exists
-		LEVEL_DEBUG("Duplicate property entry: %s,%s,%s,%s,%s,%s,%s",s_property,s_family,s_structure,s_read,s_write,s_data,s_other);
+		LEVEL_DEBUG("Duplicate property entry: %s,%s,%s,%s,%s,%s",s_property,s_family,s_read,s_write,s_data,s_other);
 		owfree( n ) ;
 	} else {
-		LEVEL_DEBUG("New property entry: %s,%s,%s,%s,%s,%s,%s",s_property,s_family,s_structure,s_read,s_write,s_data,s_other);
+		LEVEL_DEBUG("New property entry: %s,%s,%s,%s,%s,%s",s_property,s_family,s_read,s_write,s_data,s_other);
 	}		
 }
 
 static void create_just_print( char * s_family, char * s_prop, char * s_data )
 {
-	char structure_string[50] ;
-	
-	snprintf( structure_string, 49, "%c,%.6d,%.6d,%.2s,%.6d,%c,",
-		'a',
-		0,
-		1,
-		"ro",
-		(int) strlen(s_data),
-		'f' ) ;
-	AddPropertyToTree( s_family, s_prop, structure_string, "just_print_data", "", s_data, "" ) ;
+	AddPropertyToTree( s_family, s_prop, 'a', 1, eat_scalar, strlen(s_data), 'f', "just_print_data", "", s_data, "" ) ;
 }
 
 static void create_subdirs( char * s_family, char * s_prop )
@@ -502,7 +603,7 @@ static void create_subdirs( char * s_family, char * s_prop )
 	
 	while ( (slash = strrchr( subdir, '/' )) != NULL ) {
 		slash[0] = '\0' ;
-		AddPropertyToTree( s_family, subdir, "D,0,1,oo,0,f","","","","" ) ;
+		AddPropertyToTree( s_family, subdir, 'D', 0, eat_scalar, 0, 'f', "", "", "", "" ) ;
 	}
 	
 	owfree(subdir) ;

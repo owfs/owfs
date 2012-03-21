@@ -44,10 +44,16 @@ struct sensor_node {
 	char payload[0] ;
 } ;
 
+enum external_array_type { eat_scalar, eat_separate, eat_separate_lettered, eat_aggregate, eat_aggregate_lettered, eat_sparse, eat_sparse_lettered, } ;
+
 struct property_node {
 	char * family ;
 	char * property ;
-	char * structure ;
+	char type ;
+	size_t array ;
+	enum external_array_type eat_type ;
+	size_t length ;
+	char persistance ;
 	char * read ;
 	char * write ;
 	char * data ;
@@ -68,10 +74,10 @@ int sensor_compare( const void * a , const void * b ) ;
 int property_compare( const void * a , const void * b ) ;
 int family_compare( const void * a , const void * b ) ;
 struct sensor_node * create_sensor_node( char * s_name, char * s_family, char * s_description ) ;
-struct property_node * create_property_node( char * s_property, char * s_family, char * s_structure, char * s_read, char * s_write, char * s_data, char * s_other ) ;
+struct property_node * create_property_node( char * s_property, char * s_family, char s_type, size_t s_array, enum external_array_type s_eat_type, size_t s_length, char s_persistance, char * s_read, char * s_write, char * s_data, char * s_other ) ;
 struct family_node * create_family_node( char * s_family ) ;
 void AddSensorToTree( char * s_name, char * s_family, char * s_description ) ;
-void AddPropertyToTree( char * s_family, char * s_property, char * s_structure, char * s_read, char * s_write, char * s_data, char * s_other );
+void AddPropertyToTree( char * s_family, char * s_property,  char s_type, size_t s_array, enum external_array_type s_eat_type, size_t s_length, char s_persistance, char * s_read, char * s_write, char * s_data, char * s_other );
 void AddFamilyToTree( char * s_family );
 
 #endif							/* OW_EXTERNAL_H */
