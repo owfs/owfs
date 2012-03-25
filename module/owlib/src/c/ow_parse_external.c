@@ -28,9 +28,36 @@ static int LastParam( char * input_string ) ;
 static void create_just_print( char * s_family, char * s_prop, char * s_data );
 static void create_subdirs( char * s_family, char * s_prop );
 
+static void AddFamilyToTree( char * s_family ) ;
+static struct family_node * create_family_node( char * s_family ) ;
+
+static void AddSensorToTree( char * s_name, char * s_family, char * s_description, char * data ) ;
+static struct sensor_node * create_sensor_node( char * s_name, char * s_family, char * s_description, char * s_data ) ;
+
+static void AddPropertyToTree( char * s_family, char * s_property,  char s_type, size_t s_array, enum external_array_type s_eat_type, size_t s_length, char s_persistance, char * s_read, char * s_write, char * s_data, char * s_other ) ;
+static struct property_node * create_property_node( char * s_property, char * s_family, char s_type, size_t s_array, enum external_array_type s_eat_type, size_t s_length, char s_persistance, char * s_read, char * s_write, char * s_data, char * s_other ) ;
+
+static int property_compare( const void * a , const void * b ) ;
+static int family_compare( const void * a , const void * b ) ;
+static int sensor_compare( const void * a , const void * b ) ;
+
+
 void * property_tree = NULL ;
 void * family_tree = NULL ;
 void * sensor_tree = NULL ;
+
+// ForAddSensor and AddProperty
+// uses the various tools to get a string into s_name (name is given)
+// start_pointer (a char *) is used and updated.
+#define GetQuotedString( name ) do {                               \
+	char * end_pointer ;                                          \
+	s_##name = string_parse( start_pointer, ',', &end_pointer ) ; \
+	start_pointer = end_pointer ;                                 \
+	if ( ! LastParam( s_##name ) ) {                               \
+		++ start_pointer ;                                        \
+	}                                                             \
+	s_##name = unquote_parse( trim_parse( s_##name ) ) ;          \
+} while (0) ;
 
 // Look through text_string, ignore backslash and match quoting varibles
 // allocates a new string with the token
@@ -186,15 +213,14 @@ void AddProperty( char * input_string )
 	char * s_family ;
 	char * s_dummy ;
 	char s_type ;
-	size_t s_array ;
+	ssize_t s_array ;
 	enum external_array_type s_eat_type ;
-	size_t s_length ;
+	ssize_t s_length ;
 	char s_persistance ;
 	char * s_read ;
 	char * s_write ;
 	char * s_data ;
 	char * s_other ;
-	char * end_pointer ;
 	char * start_pointer = input_string ;
 	
 	if ( input_string == NULL ) {
@@ -202,28 +228,13 @@ void AddProperty( char * input_string )
 	}
 	
 	// property
-	s_property = string_parse( start_pointer, ',' , &end_pointer ) ;
-	start_pointer = end_pointer ;
-	if ( !LastParam( s_property ) ) {
-		++start_pointer ;
-	}
-	s_property = unquote_parse(trim_parse(s_property)) ;
+	GetQuotedString( property ) ;
 
 	// family
-	s_family = string_parse( start_pointer, ',' , &end_pointer ) ;
-	start_pointer = end_pointer ;
-	if ( !LastParam( s_property ) ) {
-		++start_pointer ;
-	}
-	s_family = unquote_parse(trim_parse(s_family)) ;
+	GetQuotedString( family ) ;
 
 	// type
-	s_dummy = string_parse( start_pointer, ',' , &end_pointer ) ;
-	start_pointer = end_pointer ;
-	if ( !LastParam( s_dummy ) ) {
-		++start_pointer ;
-	}
-	s_dummy = unquote_parse(trim_parse(s_dummy)) ;
+	GetQuotedString( dummy ) ;
 	switch ( s_dummy[0] ) {
 		case 'D':
 		case 'i':
@@ -244,12 +255,7 @@ void AddProperty( char * input_string )
 	}
 
 	// array
-	s_dummy = string_parse( start_pointer, ',' , &end_pointer ) ;
-	start_pointer = end_pointer ;
-	if ( !LastParam( s_dummy ) ) {
-		++start_pointer ;
-	}
-	s_dummy = unquote_parse(trim_parse(s_dummy)) ;
+	GetQuotedString( dummy ) ;
 	switch ( s_dummy[0] ) {
 		case '1':
 		case '0':
@@ -293,12 +299,7 @@ void AddProperty( char * input_string )
 	}
 
 	// length
-	s_dummy = string_parse( start_pointer, ',' , &end_pointer ) ;
-	start_pointer = end_pointer ;
-	if ( !LastParam( s_dummy ) ) {
-		++start_pointer ;
-	}
-	s_dummy = unquote_parse(trim_parse(s_dummy)) ;
+	GetQuotedString( dummy ) ;
 	s_length = strtol( s_dummy, NULL, 0 ) ;
 	if ( s_length < 0 ) {
 		LEVEL_DEFAULT("Unrecognized variable length <%s> for property <%s> family <%s>",s_dummy,s_property,s_family);
@@ -306,12 +307,7 @@ void AddProperty( char * input_string )
 	}
 
 	// persistance
-	s_dummy = string_parse( start_pointer, ',' , &end_pointer ) ;
-	start_pointer = end_pointer ;
-	if ( !LastParam( s_dummy ) ) {
-		++start_pointer ;
-	}
-	s_dummy = unquote_parse(trim_parse(s_dummy)) ;
+	GetQuotedString( dummy ) ;
 	switch ( s_dummy[0] ) {
 		case 'f':
 		case 's':
@@ -326,36 +322,16 @@ void AddProperty( char * input_string )
 	}
 
 	// read
-	s_read = string_parse( start_pointer, ',' , &end_pointer ) ;
-	start_pointer = end_pointer ;
-	if ( !LastParam( s_property ) ) {
-		++start_pointer ;
-	}
-	s_read = unquote_parse(trim_parse(s_read)) ;
+	GetQuotedString( read ) ;
 
 	// write
-	s_write = string_parse( start_pointer, ',' , &end_pointer ) ;
-	start_pointer = end_pointer ;
-	if ( !LastParam( s_property ) ) {
-		++start_pointer ;
-	}
-	s_write = unquote_parse(trim_parse(s_write)) ;
+	GetQuotedString( write ) ;
 
 	// data
-	s_data = string_parse( start_pointer, ',' , &end_pointer ) ;
-	start_pointer = end_pointer ;
-	if ( !LastParam( s_property ) ) {
-		++start_pointer ;
-	}
-	s_data = unquote_parse(trim_parse(s_data)) ;
+	GetQuotedString( data ) ;
 
 	// other
-	s_other = string_parse( start_pointer, ',' , &end_pointer ) ;
-	start_pointer = end_pointer ;
-	if ( !LastParam( s_property ) ) {
-		++start_pointer ;
-	}
-	s_other = unquote_parse(trim_parse(s_other)) ;
+	GetQuotedString( other ) ;
 
 	// test minimums
 	if ( strlen( s_family ) > 0 && strlen( s_property ) > 0 ) {
@@ -386,66 +362,55 @@ void AddSensor( char * input_string )
 	char * s_name ;
 	char * s_family ;
 	char * s_description = NULL ;
-	char * end_pointer ;
-	char * start_pointer ;
-	int is_there_more ;
+	char * s_data = NULL ;
+	char * start_pointer = input_string ;
 	
 	if ( input_string == NULL ) {
 		return ;
 	}
 	
 	// name
-	s_name = string_parse( input_string, ',' , &end_pointer ) ;
-	is_there_more = !LastParam( s_name ) ;
-	if ( !is_there_more ) {
-		owfree( s_name ) ;
-		return ;
-	}
-	s_name = unquote_parse(trim_parse(s_name)) ;
+	GetQuotedString( name ) ;
 
 	// family
-	start_pointer = end_pointer+1 ;
-	s_family = string_parse( start_pointer+1, ',' , &end_pointer ) ;
-	is_there_more = !LastParam( s_family ) ;
-	s_family = unquote_parse(trim_parse(s_family)) ;
+	GetQuotedString( family ) ;
 
 	// description
-	if ( is_there_more ) {
-		start_pointer = end_pointer+1 ;
-		s_description = string_parse( start_pointer+1, ',' , &end_pointer ) ;
-		is_there_more = !LastParam( s_description ) ; // for side effects
-		s_description = unquote_parse(trim_parse(s_description)) ;		
-	} else {
-		s_description = owstrdup("") ;
-	}
+	GetQuotedString( description ) ;
 
-	// Actually add
-	AddFamilyToTree( s_family ) ;
-	AddSensorToTree( s_name, s_family, s_description ) ;
-	create_just_print( s_family, "family", s_family ) ;
-	create_just_print( s_family, "type", "external" ) ;
+	// data
+	GetQuotedString( data ) ;
+
+	if ( strlen(s_name) > 0 && strlen(s_family) > 0 ) {
+		// Actually add
+		AddFamilyToTree( s_family ) ;
+		AddSensorToTree( s_name, s_family, s_description, s_data ) ;
+		create_just_print( s_family, "family", s_family ) ;
+		create_just_print( s_family, "type", "external" ) ;
+	}
 
 	// Clean up
 	owfree( s_name );
 	owfree( s_family ) ;
 	owfree( s_description ) ;
+	owfree( s_data ) ;
 }
 
-int sensor_compare( const void * a , const void * b )
+static int sensor_compare( const void * a , const void * b )
 {
 	const struct sensor_node * na = a ;
 	const struct sensor_node * nb = b ;
 	return strcmp( na->name, nb->name ) ;
 }
 
-int family_compare( const void * a , const void * b )
+static int family_compare( const void * a , const void * b )
 {
 	const struct sensor_node * na = a ;
 	const struct sensor_node * nb = b ;
 	return strcmp( na->family, nb->family ) ;
 }
 
-int property_compare( const void * a , const void * b )
+static int property_compare( const void * a , const void * b )
 {
 	const struct property_node * na = a ;
 	const struct property_node * nb = b ;
@@ -456,14 +421,15 @@ int property_compare( const void * a , const void * b )
 	return c ;
 }
 
-struct sensor_node * create_sensor_node( char * s_name, char * s_family, char * s_description )
+static struct sensor_node * create_sensor_node( char * s_name, char * s_family, char * s_description, char * s_data )
 {
 	int l_name = strlen(s_name)+1;
 	int l_family = strlen(s_family)+1;
 	int l_description = strlen(s_description)+1;
+	int l_data = strlen(s_data)+1;
 
 	struct sensor_node * s = owmalloc( sizeof(struct sensor_node) 
-	+ l_name +  l_family + l_description ) ;
+	+ l_name +  l_family + l_description + l_data ) ;
 
 	if ( s==NULL) {
 		return NULL ;
@@ -478,10 +444,13 @@ struct sensor_node * create_sensor_node( char * s_name, char * s_family, char * 
 	s->description = s->family + l_family ;
 	strcpy( s->description, s_description ) ;
 
+	s->data = s->description + l_description ;
+	strcpy( s->data, s_data ) ;
+
 	return s ;
 }
 
-struct family_node * create_family_node( char * s_family )
+static struct family_node * create_family_node( char * s_family )
 {
 	int l_family = strlen(s_family)+1;
 
@@ -498,7 +467,7 @@ struct family_node * create_family_node( char * s_family )
 	return s ;
 }
 
-struct property_node * create_property_node( char * s_property, char * s_family, char s_type, size_t s_array, enum external_array_type s_eat_type, size_t s_length, char s_persistance, char * s_read, char * s_write, char * s_data, char * s_other )
+static struct property_node * create_property_node( char * s_property, char * s_family, char s_type, size_t s_array, enum external_array_type s_eat_type, size_t s_length, char s_persistance, char * s_read, char * s_write, char * s_data, char * s_other )
 {
 	int l_family = strlen( s_family )+1 ;
 	int l_property = strlen( s_property )+1 ;
@@ -545,21 +514,21 @@ struct property_node * create_property_node( char * s_property, char * s_family,
 	return s ;
 }
 
-void AddSensorToTree( char * s_name, char * s_family, char * s_description )
+static void AddSensorToTree( char * s_name, char * s_family, char * s_description, char * s_data )
 {
-	struct sensor_node * n = create_sensor_node( s_name, s_family, s_description ) ;
+	struct sensor_node * n = create_sensor_node( s_name, s_family, s_description, s_data ) ;
 	struct sensor_node * s = tsearch( (void *) n, &sensor_tree, sensor_compare ) ;
 	
 	if ( s != n ) {
 		// already exists
-		LEVEL_DEBUG("Duplicate sensor entry: %s,%s,%s",s_name,s_family,s_description);
+		LEVEL_DEBUG("Duplicate sensor entry: %s,%s,%s,%s",s_name,s_family,s_description,s_data);
 		owfree( n ) ;
 	} else {
-		LEVEL_DEBUG("New sensor entry: %s,%s,%s",s_name,s_family,s_description);
+		LEVEL_DEBUG("New sensor entry: %s,%s,%s,%s",s_name,s_family,s_description,s_data);
 	}
 }
 
-void AddFamilyToTree( char * s_family )
+static void AddFamilyToTree( char * s_family )
 {
 	struct family_node * n = create_family_node( s_family ) ;
 	struct family_node * s = tsearch( (void *) n, &family_tree, family_compare ) ;
@@ -573,7 +542,7 @@ void AddFamilyToTree( char * s_family )
 	}
 }
 
-void AddPropertyToTree( char * s_family, char * s_property,  char s_type, size_t s_array, enum external_array_type s_eat_type, size_t s_length, char s_persistance, char * s_read, char * s_write, char * s_data, char * s_other )
+static void AddPropertyToTree( char * s_family, char * s_property,  char s_type, size_t s_array, enum external_array_type s_eat_type, size_t s_length, char s_persistance, char * s_read, char * s_write, char * s_data, char * s_other )
 {
 	struct property_node * n = create_property_node( s_family, s_property, s_type, s_array, s_eat_type, s_length, s_persistance, s_read, s_write, s_data, s_other ) ;
 	struct property_node * s = tsearch( (void *) n, &property_tree, property_compare ) ;
