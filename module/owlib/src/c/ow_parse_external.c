@@ -235,23 +235,53 @@ void AddProperty( char * input_string )
 
 	// type
 	GetQuotedString( dummy ) ;
+	s_type = s_dummy[0] ;
 	switch ( s_dummy[0] ) {
 		case 'D':
+			s_length = PROPERTY_LENGTH_DIRECTORY ;
+			break ;
 		case 'i':
+			s_length = PROPERTY_LENGTH_INTEGER ;
+			break ;
 		case 'u':
+			s_length = PROPERTY_LENGTH_UNSIGNED ;
+			break ;
 		case 'f':
+			s_length = PROPERTY_LENGTH_FLOAT ;
+			break ;
 		case 'a':
+			s_length = 1 ;
+			break ;
 		case 'b':
+			s_length = 1 ;
+			break ;
 		case 'y':
+			s_length = PROPERTY_LENGTH_YESNO ;
+			break ;
 		case 'd':
+			s_length = PROPERTY_LENGTH_DATE ;
+			break ;
 		case 't':
+			s_length = PROPERTY_LENGTH_TEMP ;
+			break ;
 		case 'g':
+			s_length = PROPERTY_LENGTH_TEMPGAP ;
+			break ;
 		case 'p':
-			s_type = s_dummy[0] ;
+			s_length = PROPERTY_LENGTH_PRESSURE ;
 			break ;
 		default:
 			LEVEL_DEFAULT("Unrecognized variable type <%s> for property <%s> family <%s>",s_dummy,s_property,s_family);
 			return ;
+	}
+	if ( s_dummy[1] ) { 
+		int temp_length ;
+		temp_length = strtol( &s_dummy[1], NULL, 0 ) ;
+		if ( temp_length < 1 ) {
+			LEVEL_DEFAULT("Unrecognized variable length <%s> for property <%s> family <%s>",s_dummy,s_property,s_family);
+			return ;
+		}
+		s_length = temp_length ;
 	}
 
 	// array
@@ -295,14 +325,6 @@ void AddProperty( char * input_string )
 	}
 	if ( s_array < 1 ) {
 		LEVEL_DEFAULT("Unrecognized array type <%s> for property <%s> family <%s>",s_dummy,s_property,s_family);
-		return ;
-	}
-
-	// length
-	GetQuotedString( dummy ) ;
-	s_length = strtol( s_dummy, NULL, 0 ) ;
-	if ( s_length < 0 ) {
-		LEVEL_DEFAULT("Unrecognized variable length <%s> for property <%s> family <%s>",s_dummy,s_property,s_family);
 		return ;
 	}
 
