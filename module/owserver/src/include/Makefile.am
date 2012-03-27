@@ -1,4 +1,4 @@
-noinst_HEADERS = owexternal.h
+noinst_HEADERS = owserver.h
 
 clean-generic:
 
