@@ -1,7 +1,7 @@
 # $Id$
 
-bin_PROGRAMS = owexternal
-owexternal_SOURCES = owexternal.c\
+bin_PROGRAMS = owserver
+owexternal_SOURCES = owserver.c  \
                    from_client.c \
                    to_client.c   \
                    read.c        \

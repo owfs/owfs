@@ -35,7 +35,7 @@ $Id$
                  e.g. 3001 or 10.183.180.101:3001 or /tmp/1wire
 */
 
-#include "owexternal.h"
+#include "owserver.h"
 
 /* Counters for persistent connections */
 int persistent_connections = 0;
