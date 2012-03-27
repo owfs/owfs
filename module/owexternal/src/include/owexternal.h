@@ -11,8 +11,8 @@ $Id$
 
 /* OWSERVER - specific header */
 
-#ifndef OWSERVER_H
-#define OWSERVER_H
+#ifndef OWEXTERNAL_H
+#define OWEXTERNAL_H
 
 #include <config.h>
 #include "owfs_config.h"
@@ -84,4 +84,4 @@ void PingLoop(struct handlerdata *hd) ;
 
 #endif /* OW_MT */
 
-#endif							/* OWSERVER_H */
+#endif							/* OWEXTERNAL_H */

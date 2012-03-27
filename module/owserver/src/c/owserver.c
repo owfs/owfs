@@ -43,7 +43,7 @@ static void SetupAntiloop(void);
 int main(int argc, char **argv)
 {
 	int c;
-
+	
 	/* Set up owlib */
 	LibSetup(program_type_server);
 
@@ -96,7 +96,7 @@ int main(int argc, char **argv)
 
 	/* Set up "Antiloop" -- a unique token */
 	SetupAntiloop();
-	ServerProcess(Handler);
+	ServerProcess( Handler );
 	LEVEL_DEBUG("ServerProcess done");
 #if OW_MT
 	_MUTEX_DESTROY(persistence_mutex);

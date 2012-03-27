@@ -69,7 +69,7 @@ void *DirallslashHandler(struct handlerdata *hd, struct client_msg *cm, const st
 void *DataHandler(void *v);
 
 /* Handle a client request, including timeout pings */
-void Handler(int file_descriptor);
+void Handler(FILE_DESCRIPTOR_OR_ERROR file_descriptor);
 
 /* Send a response to client of an error */
 void ErrorToClient(struct handlerdata *hd, struct client_msg * cm ) ;

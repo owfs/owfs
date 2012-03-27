@@ -1,7 +1,7 @@
 # $Id$
 
 bin_PROGRAMS = owserver
-owexternal_SOURCES = owserver.c  \
+owserver_SOURCES = owserver.c  \
                    from_client.c \
                    to_client.c   \
                    read.c        \
@@ -15,7 +15,7 @@ owexternal_SOURCES = owserver.c  \
                    loop.c        \
                    ping.c
                    
-owexternal_DEPENDENCIES = ../../../owlib/src/c/libow.la
+owserver_DEPENDENCIES = ../../../owlib/src/c/libow.la
 
 AM_CFLAGS = -I../include \
 	-I../../../owlib/src/include \

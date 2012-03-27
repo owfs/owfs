@@ -49,7 +49,7 @@ static void SingleHandler(struct handlerdata *hd);
  * Main routine for actually handling a request
  * deals with a connection
  */
-void Handler(int file_descriptor)
+void Handler(FILE_DESCRIPTOR_OR_ERROR file_descriptor)
 {
 	struct handlerdata hd;
 	struct timeval tv_low = { Globals.timeout_persistent_low, 0, };
@@ -170,7 +170,7 @@ static void SingleHandler(struct handlerdata *hd)
 }
 
 #else							/* no OW_MT */
-void Handler(int file_descriptor)
+void Handler(FILE_DESCRIPTOR_OR_ERROR file_descriptor)
 {
 	struct handlerdata hd;
 	hd.file_descriptor = file_descriptor;
