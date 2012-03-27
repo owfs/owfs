@@ -682,7 +682,7 @@ static GOOD_OR_BAD OW_w_templimit(const _FLOAT T, const int Tindex, const struct
 	if (OW_r_scratchpad(data, pn)) {
 		return gbBAD;
 	}
-	data[2 + Tindex] = (uint8_t) T;
+	data[2 + Tindex] = (int8_t) T;
 	return OW_w_store_scratchpad(&data[2], pn);
 }
 
