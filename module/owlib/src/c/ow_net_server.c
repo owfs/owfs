@@ -65,7 +65,9 @@ static GOOD_OR_BAD ServerAddr(const char * default_port, struct connection_out *
 	}
 	memset(&hint, 0, sizeof(struct addrinfo));
 	hint.ai_flags = AI_PASSIVE;
-	hint.ai_socktype = SOCK_STREAM | SOCK_CLOEXEC ;
+	// SOCK_CLOEXEC causes problems
+	//	hint.ai_socktype = SOCK_STREAM | SOCK_CLOEXEC ;
+	hint.ai_socktype = SOCK_STREAM ;
 #if OW_CYGWIN || defined(__FreeBSD__)
 	hint.ai_family = AF_INET;	// FreeBSD will bind IP6 preferentially
 #else							/* __FreeBSD__ */
