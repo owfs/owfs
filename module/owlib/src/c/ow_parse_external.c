@@ -539,9 +539,9 @@ static struct property_node * create_property_node( char * s_property, char * s_
 static void AddSensorToTree( char * s_name, char * s_family, char * s_description, char * s_data )
 {
 	struct sensor_node * n = create_sensor_node( s_name, s_family, s_description, s_data ) ;
-	struct sensor_node * s = tsearch( (void *) n, &sensor_tree, sensor_compare ) ;
+	void * s = tsearch( (void *) n, &sensor_tree, sensor_compare ) ;
 	
-	if ( s != n ) {
+	if ( (*(struct sensor_node **)s) != n ) {
 		// already exists
 		LEVEL_DEBUG("Duplicate sensor entry: %s,%s,%s,%s",s_name,s_family,s_description,s_data);
 		owfree( n ) ;
@@ -553,9 +553,9 @@ static void AddSensorToTree( char * s_name, char * s_family, char * s_descriptio
 static void AddFamilyToTree( char * s_family )
 {
 	struct family_node * n = create_family_node( s_family ) ;
-	struct family_node * s = tsearch( (void *) n, &family_tree, family_compare ) ;
+	void * s = tsearch( (void *) n, &family_tree, family_compare ) ;
 	
-	if ( s != n ) {
+	if ( (*(struct family_node**)s) != n ) {
 		// already exists
 		LEVEL_DEBUG("Duplicate family entry: %s",s_family);
 		owfree( n ) ;
@@ -567,9 +567,9 @@ static void AddFamilyToTree( char * s_family )
 static void AddPropertyToTree( char * s_family, char * s_property,  char s_type, size_t s_array, enum external_array_type s_eat_type, size_t s_length, char s_persistance, char * s_read, char * s_write, char * s_data, char * s_other )
 {
 	struct property_node * n = create_property_node( s_family, s_property, s_type, s_array, s_eat_type, s_length, s_persistance, s_read, s_write, s_data, s_other ) ;
-	struct property_node * s = tsearch( (void *) n, &property_tree, property_compare ) ;
+	void * s = tsearch( (void *) n, &property_tree, property_compare ) ;
 	
-	if ( s != n ) {
+	if ( (*(struct property_node **)s) != n ) {
 		// already exists
 		LEVEL_DEBUG("Duplicate property entry: %s,%s,%s,%s,%s,%s",s_property,s_family,s_read,s_write,s_data,s_other);
 		owfree( n ) ;
