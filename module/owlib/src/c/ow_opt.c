@@ -427,13 +427,15 @@ static void ParseTheLine(struct lineparse *lp)
 				// they use a different syntax
 				if (strstr(lp->prog, "sensor") != NULL) {
 					// sensor line for external device
+					LEVEL_DEBUG("SENSOR entry found");
 					lp->prog = NULL ;
-					// AddSensor(current_char+1) ;
+					AddSensor(current_char+1) ;
 					return ;
 				} else if (strstr(lp->prog, "property") != NULL) {
 					// property line for external device
+					LEVEL_DEBUG("PROPERTY entry found");
 					lp->prog = NULL ;
-					// AddProperty(current_char+1) ;
+					AddProperty(current_char+1) ;
 					return ;
 				}
 				parse_state = ps_pre_opt;
