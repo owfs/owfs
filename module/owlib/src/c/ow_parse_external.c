@@ -199,8 +199,8 @@ static int LastParam( char * input_string )
 // Gets a string with property,family,structure,read_function,write_function,property_data,extra
 // write, data and extra are optional
 /*
- * property
  * family
+ * property
  * structure
  * read
  * write
@@ -209,8 +209,8 @@ static int LastParam( char * input_string )
  * */
 void AddProperty( char * input_string )
 {
-	char * s_property ;
 	char * s_family ;
+	char * s_property ;
 	char * s_dummy ;
 	char s_type ;
 	ssize_t s_array ;
@@ -227,11 +227,16 @@ void AddProperty( char * input_string )
 		return ;
 	}
 	
-	// property
-	GetQuotedString( property ) ;
-
+	if ( ! Globals.allow_external ) {
+		LEVEL_DEBUG("External prgroams not supported by %s",Globals.progname) ;
+		return ;
+	}
+	
 	// family
 	GetQuotedString( family ) ;
+
+	// property
+	GetQuotedString( property ) ;
 
 	// type
 	GetQuotedString( dummy ) ;
@@ -388,6 +393,11 @@ void AddSensor( char * input_string )
 	char * start_pointer = input_string ;
 	
 	if ( input_string == NULL ) {
+		return ;
+	}
+	
+	if ( ! Globals.allow_external ) {
+		LEVEL_DEBUG("External prgroams not supported by %s",Globals.progname) ;
 		return ;
 	}
 	
@@ -600,7 +610,6 @@ static void create_subdirs( char * s_family, char * s_prop )
 	if ( subdir == NULL ) {
 		return ;
 	}
-	
 	while ( (slash = strrchr( subdir, '/' )) != NULL ) {
 		slash[0] = '\0' ;
 		AddPropertyToTree( s_family, subdir, 'D', 0, eat_scalar, 0, 'f', "", "", "", "" ) ;

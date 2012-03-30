@@ -73,6 +73,7 @@ struct global {
 	enum pressure_type pressure_scale ;
 	enum deviceformat format ;
 	enum enum_program_type program_type;
+	int allow_external ; // allow this program to call external programs for read/write -- dangerous
 	int allow_other ;
 	ASCII *progname;
 	union antiloop Token;
