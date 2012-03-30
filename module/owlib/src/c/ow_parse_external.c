@@ -427,8 +427,8 @@ static int sensor_compare( const void * a , const void * b )
 
 static int family_compare( const void * a , const void * b )
 {
-	const struct sensor_node * na = a ;
-	const struct sensor_node * nb = b ;
+	const struct family_node * na = a ;
+	const struct family_node * nb = b ;
 	return strcmp( na->family, nb->family ) ;
 }
 
@@ -456,6 +456,9 @@ static struct sensor_node * create_sensor_node( char * s_name, char * s_family, 
 	if ( s==NULL) {
 		return NULL ;
 	}
+	
+	memset( s, 0, sizeof(struct sensor_node) 
+	+ l_name +  l_family + l_description + l_data ) ;
 
 	s->name = s->payload ;
 	strcpy( s->name, s_name ) ;
@@ -483,6 +486,9 @@ static struct family_node * create_family_node( char * s_family )
 		return NULL ;
 	}
 
+	memset( s, 0, sizeof(struct sensor_node) 
+	+  l_family ) ;
+
 	s->family = s->payload ;
 	strcpy( s->family, s_family ) ;
 
@@ -504,6 +510,9 @@ static struct property_node * create_property_node( char * s_property, char * s_
 	if ( s==NULL) {
 		return NULL ;
 	}
+
+	memset( s, 0, sizeof(struct property_node) 
+	+ l_family + l_property + l_read + l_write + l_data + l_other ) ;
 
 	s->family = s->payload ;
 	strcpy( s->family, s_family ) ;

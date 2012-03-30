@@ -44,6 +44,9 @@ struct sensor_node {
 	char * data ;
 	char payload[0] ;
 } ;
+struct sensor_wrap {
+	struct sensor_node n ;
+} ;
 
 enum external_array_type { eat_scalar, eat_separate, eat_separate_lettered, eat_aggregate, eat_aggregate_lettered, eat_sparse, eat_sparse_lettered, } ;
 
@@ -61,10 +64,16 @@ struct property_node {
 	char * other ;
 	char payload[0] ;
 } ;
+struct property_wrap {
+	struct property_node n ;
+} ;
 
 struct family_node {
 	char * family ;
 	char payload[0] ;
+} ;
+struct family_wrap {
+	struct family_node n ;
 } ;
 
 extern void * property_tree ;
