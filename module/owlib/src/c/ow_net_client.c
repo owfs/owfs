@@ -68,7 +68,8 @@ GOOD_OR_BAD ClientAddr(char *sname, char * default_port, struct connection_in *i
 	Free_Address( &ap ) ;
 
 	memset(&hint, 0, sizeof(struct addrinfo));
-	hint.ai_socktype = SOCK_STREAM | SOCK_CLOEXEC ;
+//    hint.ai_socktype = SOCK_STREAM | SOCK_CLOEXEC ;
+    hint.ai_socktype = SOCK_STREAM ;
 
 #if OW_CYGWIN
 	hint.ai_family = AF_INET;
