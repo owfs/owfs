@@ -363,7 +363,8 @@ FS_dir_all_connections(void (*dirfunc) (void *, const struct parsedname *), void
 /* Respect the Visibility status and also show only the correct subdir level */
 static ZERO_OR_ERROR FS_devdir(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_device_directory)
 {
-	struct filetype *lastft = &(pn_device_directory->selected_device->filetype_array[pn_device_directory->selected_device->count_of_filetypes]);	/* last filetype struct */
+	struct device * dev = pn_device_directory->selected_device ;
+	struct filetype *lastft = &(dev->filetype_array[dev->count_of_filetypes]);	/* last filetype struct */
 	struct filetype *ft_pointer;	/* first filetype struct */
 	char subdir_name[OW_FULLNAME_MAX + 1];
 	size_t subdir_len;
@@ -376,7 +377,7 @@ static ZERO_OR_ERROR FS_devdir(void (*dirfunc) (void *, const struct parsedname 
 		// not sub directory
 		subdir_name[0] = '\0' ;
 		subdir_len = 0;
-		ft_pointer = pn_device_directory->selected_device->filetype_array;
+		ft_pointer = dev->filetype_array;
 	} else {
 		// device subdirectory -- so use the sorted list to find all entries with the same prefix
 		strncpy(subdir_name, pn_device_directory->subdir->name, OW_FULLNAME_MAX);
