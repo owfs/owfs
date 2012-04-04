@@ -80,4 +80,6 @@ extern void * property_tree ;
 extern void * family_tree ;
 extern void * sensor_tree ;
 
+int sensor_compare( const void * a , const void * b ) ;
+
 #endif							/* OW_EXTERNAL_H */

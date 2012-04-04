@@ -97,24 +97,24 @@ static struct aggregate ALCD_L20 = { 4, ag_numbers, ag_separate, };
 static struct aggregate ALCD_L40 = { 2, ag_numbers, ag_separate, };
 static struct filetype LCD[] = {
 	F_STANDARD,
-	{"memory", 112, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, VISIBLE, NO_FILETYPE_DATA,},
+	{"memory", 112, NON_AGGREGATE, ft_binary, fc_stable, FS_r_memory, FS_w_memory, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
 
-	{"LCDon", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_simple_command, VISIBLE, {u:PACK_ON_OFF(_LCD_COMMAND_POWER_ON, _LCD_COMMAND_POWER_OFF)},},
-	{"backlight", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_simple_command, VISIBLE, {u:PACK_ON_OFF(_LCD_COMMAND_BACKLIGHT_ON, _LCD_COMMAND_BACKLIGHT_OFF)},},
-	{"version", _LCD_PAGE_SIZE, NON_AGGREGATE, ft_ascii, fc_stable, FS_r_version, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-	{"gpio", PROPERTY_LENGTH_BITFIELD, &ALCD, ft_bitfield, fc_volatile, FS_r_gpio, FS_w_gpio, VISIBLE, NO_FILETYPE_DATA,},
-	{"register", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_register, FS_w_register, VISIBLE, NO_FILETYPE_DATA,},
-	{"data", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_data, FS_w_data, VISIBLE, NO_FILETYPE_DATA,},
-	{"counters", PROPERTY_LENGTH_UNSIGNED, &ALCD, ft_unsigned, fc_volatile, FS_r_counters, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"LCDon", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_simple_command, VISIBLE, {u:PACK_ON_OFF(_LCD_COMMAND_POWER_ON, _LCD_COMMAND_POWER_OFF)}, ftt_internal,},
+	{"backlight", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_simple_command, VISIBLE, {u:PACK_ON_OFF(_LCD_COMMAND_BACKLIGHT_ON, _LCD_COMMAND_BACKLIGHT_OFF)}, ftt_internal,},
+	{"version", _LCD_PAGE_SIZE, NON_AGGREGATE, ft_ascii, fc_stable, FS_r_version, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
+	{"gpio", PROPERTY_LENGTH_BITFIELD, &ALCD, ft_bitfield, fc_volatile, FS_r_gpio, FS_w_gpio, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
+	{"register", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_register, FS_w_register, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
+	{"data", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_data, FS_w_data, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
+	{"counters", PROPERTY_LENGTH_UNSIGNED, &ALCD, ft_unsigned, fc_volatile, FS_r_counters, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
 #if OW_CACHE
-	{"cumulative", PROPERTY_LENGTH_UNSIGNED, &ALCD, ft_unsigned, fc_volatile, FS_r_cum, FS_w_cum, VISIBLE, NO_FILETYPE_DATA,},
+	{"cumulative", PROPERTY_LENGTH_UNSIGNED, &ALCD, ft_unsigned, fc_volatile, FS_r_cum, FS_w_cum, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
 #endif							/*OW_CACHE */
-	{"screen16", 128, NON_AGGREGATE, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_w_screenX, VISIBLE, {i:16},},
-	{"screen20", 128, NON_AGGREGATE, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_w_screenX, VISIBLE, {i:20},},
-	{"screen40", 128, NON_AGGREGATE, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_w_screenX, VISIBLE, {i:40},},
-	{"line16", 16, &ALCD_L16, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_w_lineX, VISIBLE, {i:16},},
-	{"line20", 20, &ALCD_L20, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_w_lineX, VISIBLE, {i:20},},
-	{"line40", 40, &ALCD_L40, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_w_lineX, VISIBLE, {i:40},},
+	{"screen16", 128, NON_AGGREGATE, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_w_screenX, VISIBLE, {i:16}, ftt_internal,},
+	{"screen20", 128, NON_AGGREGATE, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_w_screenX, VISIBLE, {i:20}, ftt_internal,},
+	{"screen40", 128, NON_AGGREGATE, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_w_screenX, VISIBLE, {i:40}, ftt_internal,},
+	{"line16", 16, &ALCD_L16, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_w_lineX, VISIBLE, {i:16}, ftt_internal,},
+	{"line20", 20, &ALCD_L20, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_w_lineX, VISIBLE, {i:20}, ftt_internal,},
+	{"line40", 40, &ALCD_L40, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_w_lineX, VISIBLE, {i:40}, ftt_internal,},
 };
 
 DeviceEntryExtended(FF, LCD, DEV_alarm, NO_GENERIC_READ, NO_GENERIC_WRITE);

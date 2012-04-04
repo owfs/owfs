@@ -157,6 +157,8 @@ struct parsedname;
 
 #include "ow_visibility.h"
 
+enum filetype_type { ftt_internal, ftt_script, } ;
+
 /* filetype gives -file types- for chip properties */
 struct filetype {
 	char *name;
@@ -176,7 +178,12 @@ struct filetype {
 		BYTE   c;
 		ASCII *a;
 	} data;						// extra data pointer (used for separating similar but differently named functions)
+	enum filetype_type ftt ;
 };
+
+// Special flags for scripts (located elsewhere)
+extern struct filetype * ft_script_read ;
+extern struct filetype * ft_script_write ;
 
 #include "ow_bitfield.h" // read/write bit fields
 

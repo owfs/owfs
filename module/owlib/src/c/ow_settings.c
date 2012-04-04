@@ -34,34 +34,34 @@ READ_FUNCTION(FS_return_code);
 /* -------- Structures ---------- */
 
 static struct filetype set_timeout[] = {
-	{"volatile", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, VISIBLE, {v:&Globals.timeout_volatile},},
-	{"stable", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, VISIBLE, {v:&Globals.timeout_stable},},
-	{"directory", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, VISIBLE, {v:&Globals.timeout_directory},},
-	{"presence", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, VISIBLE, {v:&Globals.timeout_presence},},
-	{"serial", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, VISIBLE, {v:&Globals.timeout_serial},},
-	{"usb", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, VISIBLE, {v:&Globals.timeout_usb},},
-	{"network", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, VISIBLE, {v:&Globals.timeout_network},},
-	{"server", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, VISIBLE, {v:&Globals.timeout_server},},
-	{"ftp", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, VISIBLE, {v:&Globals.timeout_ftp},},
-	{"ha7", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, VISIBLE, {v:&Globals.timeout_ha7},},
-	{"w1", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, VISIBLE, {v:&Globals.timeout_w1},},
-	{"uncached", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_yesno, FS_w_yesno, VISIBLE, {v:&Globals.uncached},},
+	{"volatile", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, VISIBLE, {v:&Globals.timeout_volatile}, ftt_internal,},
+	{"stable", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, VISIBLE, {v:&Globals.timeout_stable}, ftt_internal,},
+	{"directory", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, VISIBLE, {v:&Globals.timeout_directory}, ftt_internal,},
+	{"presence", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, VISIBLE, {v:&Globals.timeout_presence}, ftt_internal,},
+	{"serial", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, VISIBLE, {v:&Globals.timeout_serial}, ftt_internal,},
+	{"usb", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, VISIBLE, {v:&Globals.timeout_usb}, ftt_internal,},
+	{"network", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, VISIBLE, {v:&Globals.timeout_network}, ftt_internal,},
+	{"server", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, VISIBLE, {v:&Globals.timeout_server}, ftt_internal,},
+	{"ftp", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, VISIBLE, {v:&Globals.timeout_ftp}, ftt_internal,},
+	{"ha7", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, VISIBLE, {v:&Globals.timeout_ha7}, ftt_internal,},
+	{"w1", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_timeout, FS_w_timeout, VISIBLE, {v:&Globals.timeout_w1}, ftt_internal,},
+	{"uncached", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_yesno, FS_w_yesno, VISIBLE, {v:&Globals.uncached}, ftt_internal,},
 };
 struct device d_set_timeout = { "timeout", "timeout", ePN_settings, COUNT_OF_FILETYPES(set_timeout),
 	set_timeout, NO_GENERIC_READ, NO_GENERIC_WRITE
 };
 
 static struct filetype set_units[] = {
- 	{"temperature_scale", 1, NON_AGGREGATE, ft_ascii, fc_static, FS_r_TS, FS_w_TS, VISIBLE, NO_FILETYPE_DATA,},
- 	{"pressure_scale", 12, NON_AGGREGATE, ft_ascii, fc_static, FS_r_PS, FS_w_PS, VISIBLE, NO_FILETYPE_DATA,},
+ 	{"temperature_scale", 1, NON_AGGREGATE, ft_ascii, fc_static, FS_r_TS, FS_w_TS, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
+ 	{"pressure_scale", 12, NON_AGGREGATE, ft_ascii, fc_static, FS_r_PS, FS_w_PS, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
 };
 struct device d_set_units = { "units", "units", ePN_settings, COUNT_OF_FILETYPES(set_units),
 	set_units, NO_GENERIC_READ, NO_GENERIC_WRITE
 };
 
 static struct filetype set_alias[] = {
- 	{"list", MAX_OWSERVER_PROTOCOL_PAYLOAD_SIZE, NON_AGGREGATE, ft_ascii, fc_static, FS_aliaslist, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-	{"unaliased", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_yesno, FS_w_yesno, VISIBLE, {v:&Globals.unaliased},},
+ 	{"list", MAX_OWSERVER_PROTOCOL_PAYLOAD_SIZE, NON_AGGREGATE, ft_ascii, fc_static, FS_aliaslist, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
+	{"unaliased", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_yesno, FS_w_yesno, VISIBLE, {v:&Globals.unaliased}, ftt_internal,},
 };
 struct device d_set_alias = { "alias", "alias", ePN_settings, COUNT_OF_FILETYPES(set_alias),
 	set_alias, NO_GENERIC_READ, NO_GENERIC_WRITE
@@ -69,7 +69,7 @@ struct device d_set_alias = { "alias", "alias", ePN_settings, COUNT_OF_FILETYPES
 
 static struct aggregate Areturn_code = { N_RETURN_CODES, ag_numbers, ag_separate, };
 static struct filetype set_return_code[] = {
-	{"text", 128, &Areturn_code, ft_ascii, fc_static, FS_return_code, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"text", 128, &Areturn_code, ft_ascii, fc_static, FS_return_code, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
 };
 
 struct device d_set_return_code = { "return_codes", "return_codes", 0, COUNT_OF_FILETYPES(set_return_code),

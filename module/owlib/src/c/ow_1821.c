@@ -35,14 +35,14 @@ WRITE_FUNCTION(FS_w_thf);
 /* -------- Structures ---------- */
 static struct filetype DS1821[] = {
 	F_type,
-	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_temperature, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-	{"polarity", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_polarity, FS_w_polarity, VISIBLE, NO_FILETYPE_DATA,},
-	{"templow", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE, {i:1},},
-	{"temphigh", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE, {i:0},},
-	{"templowflag", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_tlf, FS_w_tlf, VISIBLE, NO_FILETYPE_DATA,},
-	{"temphighflag", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_thf, FS_w_thf, VISIBLE, NO_FILETYPE_DATA,},
-	{"thermostatmode", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_thermomode, FS_w_thermomode, VISIBLE, NO_FILETYPE_DATA,},
-	{"1shot", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_oneshot, FS_w_oneshot, VISIBLE, NO_FILETYPE_DATA,}
+	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_temperature, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
+	{"polarity", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_polarity, FS_w_polarity, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
+	{"templow", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE, {i:1}, ftt_internal,},
+	{"temphigh", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE, {i:0}, ftt_internal,},
+	{"templowflag", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_tlf, FS_w_tlf, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
+	{"temphighflag", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_thf, FS_w_thf, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
+	{"thermostatmode", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_thermomode, FS_w_thermomode, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
+	{"1shot", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_oneshot, FS_w_oneshot, VISIBLE, NO_FILETYPE_DATA, ftt_internal,}
 }
 
 ;

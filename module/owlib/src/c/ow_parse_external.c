@@ -21,6 +21,10 @@ $Id$
 #include "ow.h"
 #include "ow_external.h"
 
+// Special flags for scripts (located elsewhere)
+struct filetype * ft_script_read ;
+struct filetype * ft_script_write ;
+
 static char * string_parse( char * text_string, char delim, char ** last_char );
 static char * trim_parse( char * raw_string );
 static char * unquote_parse( char * raw_string );
@@ -39,8 +43,6 @@ static struct property_node * create_property_node( char * s_property, char * s_
 
 static int property_compare( const void * a , const void * b ) ;
 static int family_compare( const void * a , const void * b ) ;
-static int sensor_compare( const void * a , const void * b ) ;
-
 
 void * property_tree = NULL ;
 void * family_tree = NULL ;
@@ -428,7 +430,7 @@ void AddSensor( char * input_string )
 	owfree( s_data ) ;
 }
 
-static int sensor_compare( const void * a , const void * b )
+int sensor_compare( const void * a , const void * b )
 {
 	const struct sensor_node * na = a ;
 	const struct sensor_node * nb = b ;

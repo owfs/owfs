@@ -58,14 +58,14 @@ READ_FUNCTION(FS_r_event);
 static struct aggregate A2409 = { 2, ag_numbers, ag_aggregate, };
 static struct filetype DS2409[] = {
 	F_STANDARD,
-	{"discharge", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_discharge, VISIBLE, NO_FILETYPE_DATA,},
-	{"clearevent", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_clearevent, VISIBLE, NO_FILETYPE_DATA,},
-	{"control", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_control, FS_w_control, VISIBLE, NO_FILETYPE_DATA,},
-	{"sensed", PROPERTY_LENGTH_BITFIELD, &A2409, ft_bitfield, fc_volatile, FS_r_sensed, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-	{"branch", PROPERTY_LENGTH_BITFIELD, &A2409, ft_bitfield, fc_volatile, FS_r_branch, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-	{"event", PROPERTY_LENGTH_BITFIELD, &A2409, ft_bitfield, fc_volatile, FS_r_event, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-	{"aux", 0, NON_AGGREGATE, ft_directory, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, {i:eBranch_aux},},
-	{"main", 0, NON_AGGREGATE, ft_directory, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, {i:eBranch_main},},
+	{"discharge", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_discharge, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
+	{"clearevent", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_clearevent, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
+	{"control", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_control, FS_w_control, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
+	{"sensed", PROPERTY_LENGTH_BITFIELD, &A2409, ft_bitfield, fc_volatile, FS_r_sensed, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
+	{"branch", PROPERTY_LENGTH_BITFIELD, &A2409, ft_bitfield, fc_volatile, FS_r_branch, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
+	{"event", PROPERTY_LENGTH_BITFIELD, &A2409, ft_bitfield, fc_volatile, FS_r_event, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
+	{"aux", 0, NON_AGGREGATE, ft_directory, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, {i:eBranch_aux}, ftt_internal,},
+	{"main", 0, NON_AGGREGATE, ft_directory, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, {i:eBranch_main}, ftt_internal,},
 };
 
 DeviceEntry(1F, DS2409, NO_GENERIC_READ, NO_GENERIC_WRITE);

@@ -130,6 +130,7 @@ enum ePS_state {
 struct parsedname {
 	char path[2*PATH_MAX+2];				// full device name
 	char path_to_server[PATH_MAX+2];			// path without first bus
+	char device_name[PATH_MAX+2];		// for external name
 	struct connection_in *known_bus;	// where this device is located
 	enum ePN_type type;			// real? settings? ...
 	enum ePS_state state;			// alarm?

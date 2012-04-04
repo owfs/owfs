@@ -66,21 +66,21 @@ off_t _ds1977_pwd_loc[] = { 0x7FC0, 0x7FC8, 0x7FD0, } ;
 static struct aggregate A1977 = { 511, ag_numbers, ag_separate, };
 static struct filetype DS1977[] = {
 	F_STANDARD,
-	{"memory", 32704, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA,},
-	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-	{"pages/page", 64, &A1977, ft_binary, fc_page, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA,},
+	{"memory", 32704, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
+	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
+	{"pages/page", 64, &A1977, ft_binary, fc_page, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
 
-	{"version", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_ver, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
+	{"version", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_ver, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
 
-	{"set_password", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-	{"set_password/read", 8, NON_AGGREGATE, ft_binary, fc_stable, NO_READ_FUNCTION, FS_set, VISIBLE, {i:_ds1977_full},},
-	{"set_password/full", 8, NON_AGGREGATE, ft_binary, fc_stable, NO_READ_FUNCTION, FS_set, VISIBLE, {i:_ds1977_read},},
-	{"set_password/enabled", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_pwd, FS_w_pwd, VISIBLE, NO_FILETYPE_DATA,},
+	{"set_password", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
+	{"set_password/read", 8, NON_AGGREGATE, ft_binary, fc_stable, NO_READ_FUNCTION, FS_set, VISIBLE, {i:_ds1977_full}, ftt_internal,},
+	{"set_password/full", 8, NON_AGGREGATE, ft_binary, fc_stable, NO_READ_FUNCTION, FS_set, VISIBLE, {i:_ds1977_read}, ftt_internal,},
+	{"set_password/enabled", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_pwd, FS_w_pwd, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
 
 #if OW_CACHE
-	{"use_password", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA,},
-	{"use_password/read", 8, NON_AGGREGATE, ft_binary, fc_stable, NO_READ_FUNCTION, FS_use, VISIBLE, {i:_ds1977_full},},
-	{"use_password/full", 8, NON_AGGREGATE, ft_binary, fc_stable, NO_READ_FUNCTION, FS_use, VISIBLE, {i:_ds1977_read},},
+	{"use_password", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
+	{"use_password/read", 8, NON_AGGREGATE, ft_binary, fc_stable, NO_READ_FUNCTION, FS_use, VISIBLE, {i:_ds1977_full}, ftt_internal,},
+	{"use_password/full", 8, NON_AGGREGATE, ft_binary, fc_stable, NO_READ_FUNCTION, FS_use, VISIBLE, {i:_ds1977_read}, ftt_internal,},
 #endif							/*OW_CACHE */
 };
 

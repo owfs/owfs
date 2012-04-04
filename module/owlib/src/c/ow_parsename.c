@@ -278,6 +278,9 @@ static ZERO_OR_ERROR FS_ParsedName_setup(struct parsedname_pointers *pp, const c
 	/* pointer to rest of path after current token peeled off */
 	pp->pathnext = pp->pathcpy;
 	pn->dirlength = strlen(pn->path) ;
+	
+	/* device name */
+	pn->device_name[0] = '\0' ;
 
 	/* connection_in list and start */
 	/* ---------------------------- */
@@ -575,8 +578,11 @@ static enum parse_enum Parse_Alias(char *filename, enum parse_pass remote_status
  */
 static enum parse_enum Parse_RealDevice(char *filename, enum parse_pass remote_status, struct parsedname *pn)
 {
+	strcpy( pn->device_name, filename ) ; // save device name
 	switch ( Parse_SerialNumber(filename,pn->sn) ) {
 		case sn_alias:
+//			if ( FindExternalSensor( filename ) {
+	//			
 			return Parse_Alias( filename, remote_status, pn) ;
 		case sn_valid:
 			return Parse_RealDeviceSN( remote_status, pn ) ;
@@ -617,6 +623,7 @@ static enum parse_enum Parse_RealDeviceSN(enum parse_pass remote_status, struct 
 static enum parse_enum Parse_NonRealDevice(char *filename, struct parsedname *pn)
 {
 	//printf("Parse_NonRealDevice: [%s] [%s]\n", filename, pn->path);
+	strcpy( pn->device_name, filename ) ; // save device name
 	FS_devicefind(filename, pn);
 	return (pn->selected_device == &UnknownDevice) ? parse_error : parse_prop;
 }
