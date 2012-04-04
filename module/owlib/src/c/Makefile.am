@@ -135,6 +135,7 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_printparse.c    \
 			   ow_programpulse.c  \
                ow_read.c          \
+               ow_read_external.c \
                ow_read_telnet.c   \
                ow_reconnect.c     \
 			   ow_remote_alias.c  \
