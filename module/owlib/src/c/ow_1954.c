@@ -62,10 +62,10 @@ WRITE_FUNCTION(FS_reset);
 
 static struct filetype DS1954[] = {
 	F_STANDARD,
-	{"ipr", 128, NON_AGGREGATE, ft_binary, fc_volatile, FS_r_ipr, FS_w_ipr, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
-	{"io_buffer", 8, NON_AGGREGATE, ft_binary, fc_volatile, FS_r_io, FS_w_io, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
-	{"status", 4, NON_AGGREGATE, ft_binary, fc_volatile, FS_r_status, FS_w_status, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
-	{"reset", 1, NON_AGGREGATE, ft_yesno, fc_volatile, NO_READ_FUNCTION, FS_reset, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
+	{"ipr", 128, NON_AGGREGATE, ft_binary, fc_volatile, FS_r_ipr, FS_w_ipr, VISIBLE, NO_FILETYPE_DATA, },
+	{"io_buffer", 8, NON_AGGREGATE, ft_binary, fc_volatile, FS_r_io, FS_w_io, VISIBLE, NO_FILETYPE_DATA, },
+	{"status", 4, NON_AGGREGATE, ft_binary, fc_volatile, FS_r_status, FS_w_status, VISIBLE, NO_FILETYPE_DATA, },
+	{"reset", 1, NON_AGGREGATE, ft_yesno, fc_volatile, NO_READ_FUNCTION, FS_reset, VISIBLE, NO_FILETYPE_DATA, },
 };
 
 DeviceEntryExtended(16, DS1954, DEV_ovdr, NO_GENERIC_READ, NO_GENERIC_WRITE);

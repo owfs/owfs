@@ -82,28 +82,28 @@ static struct aggregate A2406p = { 4, ag_numbers, ag_separate, };
 static struct aggregate AT8Ac = { 8, ag_numbers, ag_separate, }; // 8 channel T8A volt meter
 static struct filetype DS2406[] = {
 	F_STANDARD,
-	{"memory", 128, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
-	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
-	{"pages/page", 32, &A2406p, ft_binary, fc_page, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
+	{"memory", 128, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA, },
+	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"pages/page", 32, &A2406p, ft_binary, fc_page, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA, },
 
-	{"power", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
-	{"channels", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_channel, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
-	{"PIO", PROPERTY_LENGTH_BITFIELD, &A2406, ft_bitfield, fc_stable, FS_r_pio, FS_w_pio, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
-	{"sensed", PROPERTY_LENGTH_BITFIELD, &A2406, ft_bitfield, fc_link, FS_sense, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
-	{"latch", PROPERTY_LENGTH_BITFIELD, &A2406, ft_bitfield, fc_volatile, FS_r_latch, FS_w_latch, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
-	{"flipflop", PROPERTY_LENGTH_BITFIELD, &A2406, ft_bitfield, fc_volatile, FS_r_flipflop, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
-	{"set_alarm", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_s_alarm, FS_w_s_alarm, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
-	{"infobyte", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_infobyte, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA, ftt_internal, },
+	{"power", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"channels", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_channel, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"PIO", PROPERTY_LENGTH_BITFIELD, &A2406, ft_bitfield, fc_stable, FS_r_pio, FS_w_pio, VISIBLE, NO_FILETYPE_DATA, },
+	{"sensed", PROPERTY_LENGTH_BITFIELD, &A2406, ft_bitfield, fc_link, FS_sense, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"latch", PROPERTY_LENGTH_BITFIELD, &A2406, ft_bitfield, fc_volatile, FS_r_latch, FS_w_latch, VISIBLE, NO_FILETYPE_DATA, },
+	{"flipflop", PROPERTY_LENGTH_BITFIELD, &A2406, ft_bitfield, fc_volatile, FS_r_flipflop, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"set_alarm", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_s_alarm, FS_w_s_alarm, VISIBLE, NO_FILETYPE_DATA, },
+	{"infobyte", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_infobyte, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA, },
 
 #if OW_TAI8570
-	{"TAI8570", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
-	{"TAI8570/temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_temp, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
-	{"TAI8570/pressure", PROPERTY_LENGTH_PRESSURE, NON_AGGREGATE, ft_pressure, fc_volatile, FS_pressure, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
-	{"TAI8570/sibling", 16, NON_AGGREGATE, ft_ascii, fc_stable, FS_sibling, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
+	{"TAI8570", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"TAI8570/temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_temp, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"TAI8570/pressure", PROPERTY_LENGTH_PRESSURE, NON_AGGREGATE, ft_pressure, fc_volatile, FS_pressure, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"TAI8570/sibling", 16, NON_AGGREGATE, ft_ascii, fc_stable, FS_sibling, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 #endif							/* OW_TAI8570 */
 
-	{"T8A", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_T8A, NO_FILETYPE_DATA, ftt_internal,},
-	{"T8A/volt", PROPERTY_LENGTH_FLOAT, &AT8Ac, ft_float, fc_volatile, FS_voltage, NO_WRITE_FUNCTION, VISIBLE_T8A, NO_FILETYPE_DATA, ftt_internal,},
+	{"T8A", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_T8A, NO_FILETYPE_DATA, },
+	{"T8A/volt", PROPERTY_LENGTH_FLOAT, &AT8Ac, ft_float, fc_volatile, FS_voltage, NO_WRITE_FUNCTION, VISIBLE_T8A, NO_FILETYPE_DATA, },
 };
 
 DeviceEntryExtended(12, DS2406, DEV_alarm, NO_GENERIC_READ, NO_GENERIC_WRITE);

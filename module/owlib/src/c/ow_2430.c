@@ -58,10 +58,10 @@ WRITE_FUNCTION(FS_w_application);
 
 static struct filetype DS2430A[] = {
 	F_STANDARD,
-	{"memory", _DS2430A_MEM_SIZE, NON_AGGREGATE, ft_binary, fc_link, FS_r_memory, FS_w_memory, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
+	{"memory", _DS2430A_MEM_SIZE, NON_AGGREGATE, ft_binary, fc_link, FS_r_memory, FS_w_memory, VISIBLE, NO_FILETYPE_DATA, },
 
-	{"application", 8, NON_AGGREGATE, ft_binary, fc_stable, FS_r_application, FS_w_application, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
-	{"status", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_status, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
+	{"application", 8, NON_AGGREGATE, ft_binary, fc_stable, FS_r_application, FS_w_application, VISIBLE, NO_FILETYPE_DATA, },
+	{"status", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_status, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 };
 
 DeviceEntry(14, DS2430A, NO_GENERIC_READ, NO_GENERIC_WRITE);

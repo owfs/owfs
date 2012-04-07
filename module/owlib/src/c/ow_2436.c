@@ -61,14 +61,14 @@ READ_FUNCTION(FS_counter) ;
 static struct aggregate A2436 = { 3, ag_numbers, ag_separate, };
 static struct filetype DS2436[] = {
 	F_STANDARD,
-	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
-	{"pages/page", _1W_2436_PAGESIZE, &A2436, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
-	{"volts", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_volts, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
-	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_temp, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
-	{"counter", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
-	{"counter/increment", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_uncached, NO_READ_FUNCTION, FS_increment, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
-	{"counter/reset", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_uncached, NO_READ_FUNCTION, FS_reset, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
-	{"counter/cycles", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_counter, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
+	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"pages/page", _1W_2436_PAGESIZE, &A2436, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA, },
+	{"volts", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_volts, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_temp, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"counter", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"counter/increment", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_uncached, NO_READ_FUNCTION, FS_increment, VISIBLE, NO_FILETYPE_DATA, },
+	{"counter/reset", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_uncached, NO_READ_FUNCTION, FS_reset, VISIBLE, NO_FILETYPE_DATA, },
+	{"counter/cycles", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_counter, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 };
 
 DeviceEntry(1B, DS2436, NO_GENERIC_READ, NO_GENERIC_WRITE);

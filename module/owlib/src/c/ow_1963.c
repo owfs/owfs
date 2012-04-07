@@ -57,13 +57,13 @@ READ_FUNCTION(FS_counter);
 static struct aggregate A1963S = { 16, ag_numbers, ag_separate, };
 static struct filetype DS1963S[] = {
 	F_STANDARD,
-	{"memory", 512, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
-	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
-	{"pages/page", 32, &A1963S, ft_binary, fc_page, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
-	{"pages/count", PROPERTY_LENGTH_UNSIGNED, &A1963S, ft_unsigned, fc_volatile, FS_counter, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
-	{"pages/password", 8, NON_AGGREGATE, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_password, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
+	{"memory", 512, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA, },
+	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"pages/page", 32, &A1963S, ft_binary, fc_page, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA, },
+	{"pages/count", PROPERTY_LENGTH_UNSIGNED, &A1963S, ft_unsigned, fc_volatile, FS_counter, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"pages/password", 8, NON_AGGREGATE, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_password, VISIBLE, NO_FILETYPE_DATA, },
 
-	{"password", 8, NON_AGGREGATE, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_password, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
+	{"password", 8, NON_AGGREGATE, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_password, VISIBLE, NO_FILETYPE_DATA, },
 };
 
 DeviceEntryExtended(18, DS1963S, DEV_resume | DEV_ovdr, NO_GENERIC_READ, NO_GENERIC_WRITE);
@@ -71,10 +71,10 @@ DeviceEntryExtended(18, DS1963S, DEV_resume | DEV_ovdr, NO_GENERIC_READ, NO_GENE
 static struct aggregate A1963L = { 16, ag_numbers, ag_separate, };
 static struct filetype DS1963L[] = {
 	F_STANDARD,
-	{"memory", 512, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
-	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
-	{"pages/page", 32, &A1963L, ft_binary, fc_page, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
-	{"pages/count", PROPERTY_LENGTH_UNSIGNED, &A1963L, ft_unsigned, fc_volatile, FS_counter, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, ftt_internal,},
+	{"memory", 512, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA, },
+	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"pages/page", 32, &A1963L, ft_binary, fc_page, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA, },
+	{"pages/count", PROPERTY_LENGTH_UNSIGNED, &A1963L, ft_unsigned, fc_volatile, FS_counter, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 };
 
 DeviceEntryExtended(1A, DS1963L, DEV_ovdr, NO_GENERIC_READ, NO_GENERIC_WRITE);
