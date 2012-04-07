@@ -45,6 +45,7 @@ static void ReplaceAliasInPath( char * filename, struct parsedname * pn);
 
 static ZERO_OR_ERROR FS_ParsedName_anywhere(const char *path, enum parse_pass remote_status, struct parsedname *pn);
 static ZERO_OR_ERROR FS_ParsedName_setup(struct parsedname_pointers *pp, const char *path, struct parsedname *pn);
+static char * find_segment_in_path( char * segment, char * path ) ;
 
 #define BRANCH_INCR (9)
 
@@ -280,7 +281,7 @@ static ZERO_OR_ERROR FS_ParsedName_setup(struct parsedname_pointers *pp, const c
 	pn->dirlength = strlen(pn->path) ;
 	
 	/* device name */
-	pn->device_name[0] = '\0' ;
+	pn->device_name = NULL ;
 
 	/* connection_in list and start */
 	/* ---------------------------- */
@@ -479,40 +480,52 @@ static enum parse_enum Parse_Bus(char *pathnow, struct parsedname *pn)
 	return parse_first;
 }
 
+// search path for this exact mathing path segment
+static char * find_segment_in_path( char * segment, char * path )
+{
+	int segment_length = strlen(segment) ;
+	char augmented_segment[ segment_length + 2 ] ;
+	
+	char * path_pointer = path ;
+	
+	augmented_segment[0] = '/' ;
+	strcpy( &augmented_segment[1], segment ) ;
+	
+	while ( (path_pointer = strstr( path_pointer , augmented_segment )) != NULL ) {
+		++ path_pointer ; // point after '/'
+		switch( path_pointer[segment_length] ) {
+			case '\0':
+			case '/':
+				return path_pointer ;
+			default:
+				// not a full match -- try again
+				break ;
+		}
+	}
+	
+	return NULL ;
+}
+
 /* replace alias with sn */
 static void ReplaceAliasInPath( char * filename, struct parsedname * pn)
 {
 	int alias_len = strlen(filename) ;
 
-	char alias[alias_len + 2] ;
-
-	char * alias_loc ;
-	char * post_alias_loc ;
-
 	// check total length
-	if ( strlen(pn->path_to_server) + 14 - alias_len > PATH_MAX ) {
-		return ;
-	}
-	
-	strcpy( alias, "/") ;
-	strcat( alias, filename ) ; // we include an initial / to make the match more accurate
+	if ( strlen(pn->path_to_server) + 14 - alias_len <= PATH_MAX ) {
+		// find the alias
+		char * alias_loc = find_segment_in_path( filename, pn->path_to_server ) ;
+		
+		if ( alias_loc != NULL ) {
+			char * post_alias_loc ;
 
-	for ( alias_loc = pn->path_to_server; alias_loc != NULL ; alias_loc = strstr( alias_loc, alias ) ) {
-		++alias_loc ; // point after '/'
+			++alias_loc ; // point after '/'
+			post_alias_loc = alias_loc + alias_len ;
 
-		post_alias_loc = alias_loc + alias_len ;
-		switch ( post_alias_loc[0] ) {
-			case '\0':
-			case '/':
-				// move rest of path
-				memmove( &alias_loc[14], post_alias_loc, strlen(post_alias_loc)+1 ) ;
-				//write in serial number for alias
-				bytes2string( alias_loc, pn->sn, 7 ) ;
-				return ;
-			default:
-				// alias not really found (only partial match)
-				// loop starting one char later
-				break ;
+			// move rest of path
+			memmove( &alias_loc[14], post_alias_loc, strlen(post_alias_loc)+1 ) ;
+			//write in serial number for alias
+			bytes2string( alias_loc, pn->sn, 7 ) ;
 		}
 	}
 }
@@ -578,7 +591,7 @@ static enum parse_enum Parse_Alias(char *filename, enum parse_pass remote_status
  */
 static enum parse_enum Parse_RealDevice(char *filename, enum parse_pass remote_status, struct parsedname *pn)
 {
-	strcpy( pn->device_name, filename ) ; // save device name
+	pn->device_name = find_segment_in_path( filename, pn->path ) ;
 	switch ( Parse_SerialNumber(filename,pn->sn) ) {
 		case sn_alias:
 //			if ( FindExternalSensor( filename ) {
@@ -623,7 +636,7 @@ static enum parse_enum Parse_RealDeviceSN(enum parse_pass remote_status, struct 
 static enum parse_enum Parse_NonRealDevice(char *filename, struct parsedname *pn)
 {
 	//printf("Parse_NonRealDevice: [%s] [%s]\n", filename, pn->path);
-	strcpy( pn->device_name, filename ) ; // save device name
+	pn->device_name = find_segment_in_path( filename, pn->path ) ;
 	FS_devicefind(filename, pn);
 	return (pn->selected_device == &UnknownDevice) ? parse_error : parse_prop;
 }
