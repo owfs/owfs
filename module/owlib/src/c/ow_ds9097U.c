@@ -690,12 +690,13 @@ static enum search_status DS2480_next_both(struct device_search *ds, const struc
 		}
 	}
 
+	if ( sn[0]==0xFF && sn[1]==0xFF && sn[2]==0xFF && sn[3]==0xFF && sn[4]==0xFF && sn[5]==0xFF && sn[6]==0xFF && sn[7]==0xFF ) {
+		// special case for no alarm present
+		return search_done ;
+	}
+
 	// CRC check
 	if (CRC8(sn, 8) || (ds->LastDiscrepancy == 63) || (sn[0] == 0)) {
-		if ( sn[0]==0xFF && sn[1]==0xFF && sn[2]==0xFF && sn[3]==0xFF && sn[4]==0xFF && sn[5]==0xFF && sn[6]==0xFF && sn[7]==0xFF ) {
-			// special case for no alarm present
-			return search_done ;
-		}
 		return search_error;
 	}
 
