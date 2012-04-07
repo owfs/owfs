@@ -431,11 +431,17 @@ static void ParseTheLine(struct lineparse *lp)
 					lp->prog = NULL ;
 					AddSensor(current_char+1) ;
 					return ;
+				} else if (strstr(lp->prog, "script") != NULL) {
+					// property line for external device
+					LEVEL_DEBUG("SCRIPT entry found <%s>", current_char+1);
+					lp->prog = NULL ;
+					AddProperty(current_char+1,et_script) ;
+					return ;
 				} else if (strstr(lp->prog, "property") != NULL) {
 					// property line for external device
-					LEVEL_DEBUG("PROPERTY entry found <%s>", current_char+1);
+					LEVEL_DEBUG("PROPERTY (SCRIPT) entry found <%s>", current_char+1);
 					lp->prog = NULL ;
-					AddProperty(current_char+1) ;
+					AddProperty(current_char+1,et_script) ;
 					return ;
 				}
 				parse_state = ps_pre_opt;

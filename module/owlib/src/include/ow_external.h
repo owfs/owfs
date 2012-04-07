@@ -34,8 +34,13 @@ $Id$
 #ifndef OW_EXTERNAL_H			/* tedious wrapper */
 #define OW_EXTERNAL_H
 
-void AddSensor( char * input_string ) ;
-void AddProperty( char * input_string ) ;
+enum external_type {
+	et_none,
+	et_internal,
+	et_script,
+	et_tcp,
+	et_udp,
+} ;
 
 struct sensor_node {
 	char * name ;
@@ -43,9 +48,6 @@ struct sensor_node {
 	char * description ;
 	char * data ;
 	char payload[0] ;
-} ;
-struct sensor_wrap {
-	struct sensor_node n ;
 } ;
 
 enum external_array_type { eat_scalar, eat_separate, eat_separate_lettered, eat_aggregate, eat_aggregate_lettered, eat_sparse, eat_sparse_lettered, } ;
@@ -62,24 +64,23 @@ struct property_node {
 	char * write ;
 	char * data ;
 	char * other ;
+	enum external_type et ;
 	char payload[0] ;
-} ;
-struct property_wrap {
-	struct property_node n ;
 } ;
 
 struct family_node {
 	char * family ;
 	char payload[0] ;
 } ;
-struct family_wrap {
-	struct family_node n ;
-} ;
 
 extern void * property_tree ;
 extern void * family_tree ;
 extern void * sensor_tree ;
 
+void AddSensor( char * input_string ) ;
+void AddProperty( char * input_string, enum external_type et ) ;
+
 int sensor_compare( const void * a , const void * b ) ;
+int property_compare( const void * a , const void * b ) ;
 
 #endif							/* OW_EXTERNAL_H */

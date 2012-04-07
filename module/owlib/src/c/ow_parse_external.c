@@ -38,10 +38,9 @@ static struct family_node * create_family_node( char * s_family ) ;
 static void AddSensorToTree( char * s_name, char * s_family, char * s_description, char * data ) ;
 static struct sensor_node * create_sensor_node( char * s_name, char * s_family, char * s_description, char * s_data ) ;
 
-static void AddPropertyToTree( char * s_family, char * s_property,  char s_type, size_t s_array, enum external_array_type s_eat_type, size_t s_length, char s_persistance, char * s_read, char * s_write, char * s_data, char * s_other ) ;
-static struct property_node * create_property_node( char * s_property, char * s_family, char s_type, size_t s_array, enum external_array_type s_eat_type, size_t s_length, char s_persistance, char * s_read, char * s_write, char * s_data, char * s_other ) ;
+static void AddPropertyToTree( char * s_family, char * s_property,  char s_type, size_t s_array, enum external_array_type s_eat_type, size_t s_length, char s_persistance, char * s_read, char * s_write, char * s_data, char * s_other, enum external_type et ) ;
+static struct property_node * create_property_node( char * s_property, char * s_family, char s_type, size_t s_array, enum external_array_type s_eat_type, size_t s_length, char s_persistance, char * s_read, char * s_write, char * s_data, char * s_other, enum external_type et ) ;
 
-static int property_compare( const void * a , const void * b ) ;
 static int family_compare( const void * a , const void * b ) ;
 
 void * property_tree = NULL ;
@@ -209,7 +208,7 @@ static int LastParam( char * input_string )
  * data
  * other
  * */
-void AddProperty( char * input_string )
+void AddProperty( char * input_string, enum external_type et )
 {
 	char * s_family ;
 	char * s_property ;
@@ -366,7 +365,7 @@ void AddProperty( char * input_string )
 	if ( strlen( s_family ) > 0 && strlen( s_property ) > 0 ) {
 		// Actually add
 		AddFamilyToTree( s_family ) ;
-		AddPropertyToTree( s_family, s_property, s_type, s_array, s_eat_type, s_length, s_persistance, s_read, s_write, s_data, s_other ) ;
+		AddPropertyToTree( s_family, s_property, s_type, s_array, s_eat_type, s_length, s_persistance, s_read, s_write, s_data, s_other, et ) ;
 		create_subdirs( s_family, s_property ) ;
 	}
 
@@ -444,7 +443,7 @@ static int family_compare( const void * a , const void * b )
 	return strcmp( na->family, nb->family ) ;
 }
 
-static int property_compare( const void * a , const void * b )
+int property_compare( const void * a , const void * b )
 {
 	const struct property_node * na = a ;
 	const struct property_node * nb = b ;
@@ -507,7 +506,7 @@ static struct family_node * create_family_node( char * s_family )
 	return s ;
 }
 
-static struct property_node * create_property_node( char * s_property, char * s_family, char s_type, size_t s_array, enum external_array_type s_eat_type, size_t s_length, char s_persistance, char * s_read, char * s_write, char * s_data, char * s_other )
+static struct property_node * create_property_node( char * s_property, char * s_family, char s_type, size_t s_array, enum external_array_type s_eat_type, size_t s_length, char s_persistance, char * s_read, char * s_write, char * s_data, char * s_other, enum external_type et )
 {
 	int l_family = strlen( s_family )+1 ;
 	int l_property = strlen( s_property )+1 ;
@@ -553,6 +552,8 @@ static struct property_node * create_property_node( char * s_property, char * s_
 
 	s->other = s->data + l_data ;
 	strcpy( s->other, s_other ) ;
+	
+	s->et = et ;
 
 	return s ;
 }
@@ -585,9 +586,9 @@ static void AddFamilyToTree( char * s_family )
 	}
 }
 
-static void AddPropertyToTree( char * s_family, char * s_property,  char s_type, size_t s_array, enum external_array_type s_eat_type, size_t s_length, char s_persistance, char * s_read, char * s_write, char * s_data, char * s_other )
+static void AddPropertyToTree( char * s_family, char * s_property,  char s_type, size_t s_array, enum external_array_type s_eat_type, size_t s_length, char s_persistance, char * s_read, char * s_write, char * s_data, char * s_other, enum external_type et )
 {
-	struct property_node * n = create_property_node( s_family, s_property, s_type, s_array, s_eat_type, s_length, s_persistance, s_read, s_write, s_data, s_other ) ;
+	struct property_node * n = create_property_node( s_family, s_property, s_type, s_array, s_eat_type, s_length, s_persistance, s_read, s_write, s_data, s_other, et ) ;
 	void * s = tsearch( (void *) n, &property_tree, property_compare ) ;
 	
 	if ( (*(struct property_node **)s) != n ) {
@@ -601,7 +602,7 @@ static void AddPropertyToTree( char * s_family, char * s_property,  char s_type,
 
 static void create_just_print( char * s_family, char * s_prop, char * s_data )
 {
-	AddPropertyToTree( s_family, s_prop, 'a', 1, eat_scalar, strlen(s_data), 'f', "just_print_data", "", s_data, "" ) ;
+	AddPropertyToTree( s_family, s_prop, 'a', 1, eat_scalar, strlen(s_data), 'f', "just_print_data", "", s_data, "", et_internal ) ;
 }
 
 static void create_subdirs( char * s_family, char * s_prop )
@@ -614,7 +615,7 @@ static void create_subdirs( char * s_family, char * s_prop )
 	}
 	while ( (slash = strrchr( subdir, '/' )) != NULL ) {
 		slash[0] = '\0' ;
-		AddPropertyToTree( s_family, subdir, 'D', 0, eat_scalar, 0, 'f', "", "", "", "" ) ;
+		AddPropertyToTree( s_family, subdir, 'D', 0, eat_scalar, 0, 'f', "", "", "", "", et_none ) ;
 	}
 	
 	owfree(subdir) ;
