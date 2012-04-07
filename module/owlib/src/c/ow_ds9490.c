@@ -40,15 +40,6 @@ $Id$
 #include <dev/usb/usb.h>
 #define USB_CLEAR_HALT BSD_usb_clear_halt
 #endif /* __FreeBSD__ < 8 */
-struct usb_dev_handle {
-	FILE_DESCRIPTOR_OR_ERROR file_descriptor;
-	struct usb_bus *bus;
-	struct usb_device *device;
-	int config;
-	int interface;
-	int altsetting;
-	void *impl_info;
-};
 #endif /* __FreeBSD__ */
 
 #ifndef USB_CLEAR_HALT
