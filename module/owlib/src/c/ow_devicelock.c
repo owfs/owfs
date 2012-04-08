@@ -70,6 +70,11 @@ ZERO_OR_ERROR DeviceLockGet(struct parsedname *pn)
 	}
 
 	/* Need locking? */
+	/* Exclude external */
+	if ( pn->selected_filetype->read == FS_r_external || pn->selected_filetype->write == FS_w_external ) {
+		return 0 ;
+	}
+	
 	// Test type
 	switch (pn->selected_filetype->format) {
 		case ft_directory:
