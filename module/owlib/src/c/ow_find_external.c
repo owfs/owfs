@@ -51,4 +51,18 @@ struct property_node * Find_External_Property( char * family, char * property )
 	return (struct property_node *) tfind( (void *) (&property_key), &property_tree, property_compare ) ;
 }
 
+int family_compare( const void * a , const void * b )
+{
+	const struct family_node * na = a ;
+	const struct family_node * nb = b ;
+	return strcmp( na->family, nb->family ) ;
+}
 
+struct family_node * Find_External_Family( char * family )
+{
+	struct family_node family_key = {
+		.family = family,
+		} ;
+	// find family node
+	return (struct family_node *) tfind( (void *) (&family_key), &family_tree, family_compare ) ;
+}

@@ -55,20 +55,13 @@ ZERO_OR_ERROR FS_r_external( struct one_wire_query * owq )
 
 static ZERO_OR_ERROR OW_trees_for_read( char * device, char * property, struct one_wire_query * owq )
 {
-	struct sensor_node sense_key = {
-		.name = device,
-		} ;
 	// find sensor node
-	struct sensor_node * sense_n = tfind( (void *) (&sense_key), &sensor_tree, sensor_compare ) ;
+	struct sensor_node * sense_n = Find_External_Sensor( device ) ;
 	
 	if ( sense_n != NULL ) {
 		// found
-		struct property_node property_key = {
-			.family = sense_n->family ,
-			.property = property ,
-		} ;
 		// find property node
-		struct property_node * property_n = tfind( (void *) (&property_key), &property_tree, property_compare ) ;
+		struct property_node * property_n = Find_External_Property( sense_n->family, property ) ;
 		
 		if ( property_n != NULL ) {
 			switch ( property_n->et ) {

@@ -41,8 +41,6 @@ static struct sensor_node * create_sensor_node( char * s_name, char * s_family, 
 static void AddPropertyToTree( char * s_family, char * s_property,  char s_type, size_t s_array, enum external_array_type s_eat_type, size_t s_length, char s_persistance, char * s_read, char * s_write, char * s_data, char * s_other, enum external_type et ) ;
 static struct property_node * create_property_node( char * s_property, char * s_family, char s_type, size_t s_array, enum external_array_type s_eat_type, size_t s_length, char s_persistance, char * s_read, char * s_write, char * s_data, char * s_other, enum external_type et ) ;
 
-static int family_compare( const void * a , const void * b ) ;
-
 void * property_tree = NULL ;
 void * family_tree = NULL ;
 void * sensor_tree = NULL ;
@@ -427,13 +425,6 @@ void AddSensor( char * input_string )
 	owfree( s_family ) ;
 	owfree( s_description ) ;
 	owfree( s_data ) ;
-}
-
-static int family_compare( const void * a , const void * b )
-{
-	const struct family_node * na = a ;
-	const struct family_node * nb = b ;
-	return strcmp( na->family, nb->family ) ;
 }
 
 static struct sensor_node * create_sensor_node( char * s_name, char * s_family, char * s_description, char * s_data )

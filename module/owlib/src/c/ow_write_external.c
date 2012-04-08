@@ -24,11 +24,11 @@ $Id$
    the returned value is obvious
 */
 
-static ZERO_OR_ERROR OW_trees_for_read( char * device, char * property, struct one_wire_query * owq ) ;
+static ZERO_OR_ERROR OW_trees_for_write( char * device, char * property, struct one_wire_query * owq ) ;
 
-static ZERO_OR_ERROR OW_read_external_script( struct sensor_node * sensor_n, struct property_node * property_n, struct one_wire_query * owq ) ;
+static ZERO_OR_ERROR OW_write_external_script( struct sensor_node * sensor_n, struct property_node * property_n, struct one_wire_query * owq ) ;
 
-static ZERO_OR_ERROR OW_script_read( FILE * script_f, struct one_wire_query * owq ) ;
+static ZERO_OR_ERROR OW_script_write( FILE * script_f, struct one_wire_query * owq ) ;
 
 // ------------------------
 
@@ -46,29 +46,22 @@ ZERO_OR_ERROR FS_w_external( struct one_wire_query * owq )
 			property = strsep( &extension, "." ) ;
 		}
 
-		zoe = OW_trees_for_read( device, property, owq ) ;
+		zoe = OW_trees_for_write( device, property, owq ) ;
 
 		owfree( device_property ) ; // clean up
 	}
 	return zoe ;
 }
 
-static ZERO_OR_ERROR OW_trees_for_read( char * device, char * property, struct one_wire_query * owq )
+static ZERO_OR_ERROR OW_trees_for_write( char * device, char * property, struct one_wire_query * owq )
 {
-	struct sensor_node sense_key = {
-		.name = device,
-		} ;
 	// find sensor node
-	struct sensor_node * sense_n = tfind( (void *) (&sense_key), &sensor_tree, sensor_compare ) ;
+	struct sensor_node * sense_n = Find_External_Sensor( device ) ;
 	
 	if ( sense_n != NULL ) {
 		// found
-		struct property_node property_key = {
-			.family = sense_n->family ,
-			.property = property ,
-		} ;
 		// find property node
-		struct property_node * property_n = tfind( (void *) (&property_key), &property_tree, property_compare ) ;
+		struct property_node * property_n = Find_External_Property( sense_n->family, property ) ;
 		
 		if ( property_n != NULL ) {
 			switch ( property_n->et ) {
@@ -77,7 +70,7 @@ static ZERO_OR_ERROR OW_trees_for_read( char * device, char * property, struct o
 				case et_internal:
 					return -ENOTSUP ;
 				case et_script:
-					return OW_read_external_script( sense_n, property_n, owq ) ;
+					return OW_write_external_script( sense_n, property_n, owq ) ;
 				default:
 					return -ENOTSUP ;
 			}
@@ -86,7 +79,7 @@ static ZERO_OR_ERROR OW_trees_for_read( char * device, char * property, struct o
 	return -ENOENT ;
 }
 
-static ZERO_OR_ERROR OW_read_external_script( struct sensor_node * sensor_n, struct property_node * property_n, struct one_wire_query * owq )
+static ZERO_OR_ERROR OW_write_external_script( struct sensor_node * sensor_n, struct property_node * property_n, struct one_wire_query * owq )
 {
 	char cmd[PATH_MAX+1] ;
 	struct parsedname * pn = PN(owq) ;
@@ -104,7 +97,7 @@ static ZERO_OR_ERROR OW_read_external_script( struct sensor_node * sensor_n, str
 			sensor_n->name, // sensor name
 			property_n->property, // property,
 			pn->extension, // extension
-			"read", // mode
+			"write", // mode
 			(int) OWQ_size(owq), // size
 			(int) OWQ_offset(owq), // offset
 			sensor_n->data, // sensor-specific data
@@ -117,7 +110,7 @@ static ZERO_OR_ERROR OW_read_external_script( struct sensor_node * sensor_n, str
 			sensor_n->name, // sensor name
 			property_n->property, // property,
 			pn->sparse_name, // extension
-			"read", // mode
+			"write", // mode
 			(int) OWQ_size(owq), // size
 			(int) OWQ_offset(owq), // offset
 			sensor_n->data, // sensor-specific data
@@ -130,29 +123,34 @@ static ZERO_OR_ERROR OW_read_external_script( struct sensor_node * sensor_n, str
 		return -EINVAL ;
 	}
 	
-	script_f = popen( cmd, "r" ) ;
+	script_f = popen( cmd, "w" ) ;
 	if ( script_f == NULL ) {
-		ERROR_DEBUG("Cannot create external program link for reading %s/%s",sensor_n->name,property_n->property);
+		ERROR_DEBUG("Cannot create external program link for writing %s/%s",sensor_n->name,property_n->property);
 		return -EIO ;
 	}
 	
-	zoe = OW_script_read( script_f, owq ) ;
+	zoe = OW_script_write( script_f, owq ) ;
 	
 	fclose( script_f ) ;
 	return zoe ;
 }
 
-static ZERO_OR_ERROR OW_script_read( FILE * script_f, struct one_wire_query * owq )
+static ZERO_OR_ERROR OW_script_write( FILE * script_f, struct one_wire_query * owq )
 {
 	size_t fr_return ;
 
-	memset( OWQ_buffer(owq), 0, OWQ_size(owq) ) ;
-	fr_return = fread( OWQ_buffer(owq), OWQ_size(owq), 1, script_f ) ;
+	int po_return = OWQ_parse_output(owq) ; // load data in buffer
+	
+	if ( po_return < 0 ) {
+		return -EINVAL ;
+	}
+	
+	fr_return = fwrite( OWQ_buffer(owq), po_return, 1, script_f ) ;
 	
 	if ( fr_return == 0 && ferror(script_f) != 0 ) {
-		LEVEL_DEBUG( "Could not read script data back for %s",PN(owq)->path ) ;
+		LEVEL_DEBUG( "Could not write script data back for %s",PN(owq)->path ) ;
 		return -EIO ;
 	}
 	
-	return OWQ_parse_input( owq ) ;
+	return 0 ;
 }

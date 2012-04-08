@@ -13,6 +13,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow_devices.h"
 #include "ow_counters.h"
+#include "ow_external.h"
 
 static ZERO_OR_ERROR BranchAdd(struct parsedname *pn);
 
@@ -38,6 +39,7 @@ static enum parse_enum Parse_Property(char *filename, struct parsedname *pn);
 
 static enum parse_enum Parse_RealDeviceSN(enum parse_pass remote_status, struct parsedname *pn);
 static enum parse_enum Parse_NonRealDevice(char *filename, struct parsedname *pn);
+static enum parse_enum Parse_External_Device( char *filename, struct parsedname *pn) ;
 static enum parse_enum Parse_Bus(char *pathnow, struct parsedname *pn);
 static enum parse_enum Parse_Alias(char *filename, enum parse_pass remote_status, struct parsedname *pn);
 static enum parse_enum Parse_Alias_Known( char *filename, enum parse_pass remote_status, struct parsedname *pn);
@@ -594,9 +596,11 @@ static enum parse_enum Parse_RealDevice(char *filename, enum parse_pass remote_s
 	pn->device_name = find_segment_in_path( filename, pn->path ) ;
 	switch ( Parse_SerialNumber(filename,pn->sn) ) {
 		case sn_not_sn:
-//			if ( FindExternalSensor( filename ) {
-	//			
-			return Parse_Alias( filename, remote_status, pn) ;
+			if ( Find_External_Sensor( filename ) ) {
+				return Parse_External_Device( filename, pn ) ;
+			} else {
+				return Parse_Alias( filename, remote_status, pn) ;
+			}
 		case sn_valid:
 			return Parse_RealDeviceSN( remote_status, pn ) ;
 		case sn_invalid:
@@ -628,6 +632,19 @@ static enum parse_enum Parse_RealDeviceSN(enum parse_pass remote_status, struct 
 
 	return parse_prop;
 }
+
+/* Device is known with serial number */
+static enum parse_enum Parse_External_Device( char *filename, struct parsedname *pn)
+{
+	struct sensor_node * sensor_n = Find_External_Sensor( filename ) ;
+	struct family_node * family_n = Find_External_Family( sensor_n->family ) ;
+	
+	// Still an open question of which "connection_in" to use -- perhaps a special flag?
+
+	pn->selected_device = family_n->dev ;
+	return parse_prop;
+}
+
 
 /* Parse Name (non-device name) part of string */
 /* Return -ENOENT if not a valid name
@@ -809,6 +826,8 @@ ZERO_OR_ERROR FS_ParsedNamePlus(const char *path, const char *file, struct parse
 	//printf("PARSENAMEPLUS free\n") ;
 	return ret;
 }
+
+
 
 /* Parse a path/file combination */
 ZERO_OR_ERROR FS_ParsedNamePlusExt(const char *path, const char *file, int extension, enum ag_index alphanumeric, struct parsedname *pn)

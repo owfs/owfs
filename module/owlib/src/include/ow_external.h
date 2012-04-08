@@ -34,6 +34,9 @@ $Id$
 #ifndef OW_EXTERNAL_H			/* tedious wrapper */
 #define OW_EXTERNAL_H
 
+/* Predeclare */
+struct device ;
+
 enum external_type {
 	et_none,
 	et_internal,
@@ -70,6 +73,7 @@ struct property_node {
 
 struct family_node {
 	char * family ;
+	struct device * dev ;
 	char payload[0] ;
 } ;
 
@@ -81,9 +85,11 @@ void AddSensor( char * input_string ) ;
 void AddProperty( char * input_string, enum external_type et ) ;
 
 struct sensor_node * Find_External_Sensor( char * sensor ) ;
+struct family_node * Find_External_Family( char * family ) ;
 struct property_node * Find_External_Property( char * family, char * property ) ;
 
 int sensor_compare( const void * a , const void * b ) ;
+int family_compare( const void * a , const void * b ) ;
 int property_compare( const void * a , const void * b ) ;
 
 #endif							/* OW_EXTERNAL_H */
