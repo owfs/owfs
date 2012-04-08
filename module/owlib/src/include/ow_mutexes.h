@@ -68,6 +68,7 @@ extern struct mutexes {
 	pthread_mutex_t namefind_mutex;
 	pthread_mutex_t aliasfind_mutex;
 	pthread_mutex_t aliaslist_mutex;
+	pthread_mutex_t externalcount_mutex;
 	
 	pthread_mutexattr_t mattr; // mutex attribute -- used for all mutexes
 	my_rwlock_t lib;
@@ -155,6 +156,9 @@ extern struct mutexes {
 #define ALIASLISTLOCK     	_MUTEX_LOCK(  Mutex.aliaslist_mutex)
 #define ALIASLISTUNLOCK   	_MUTEX_UNLOCK(Mutex.aliaslist_mutex)
 
+#define EXTERNALCOUNTLOCK   _MUTEX_LOCK(  Mutex.externalcount_mutex)
+#define EXTERNALCOUNTUNLOCK _MUTEX_UNLOCK(Mutex.externalcount_mutex)
+
 #define BUSLOCK(pn)       	BUS_lock(pn)
 #define BUSUNLOCK(pn)     	BUS_unlock(pn)
 #define BUSLOCKIN(in)     	BUS_lock_in(in)
@@ -235,6 +239,9 @@ extern struct mutexes {
 
 #define ALIASLISTLOCK		return_ok()
 #define ALIASLISTUNLOCK		return_ok()
+
+#define EXTERNALCOUNTLOCK	return_ok()
+#define EXTERNALCOUNTUNLOCK	return_ok()
 
 #define UCLIBCLOCK			return_ok()
 #define UCLIBCUNLOCK		return_ok()

@@ -34,8 +34,8 @@ $Id$
 #ifndef OW_EXTERNAL_H			/* tedious wrapper */
 #define OW_EXTERNAL_H
 
-/* Predeclare */
-struct device ;
+#include "ow_device.h"
+#include "ow_filetype.h"
 
 enum external_type {
 	et_none,
@@ -53,27 +53,22 @@ struct sensor_node {
 	char payload[0] ;
 } ;
 
-enum external_array_type { eat_scalar, eat_separate, eat_separate_lettered, eat_aggregate, eat_aggregate_lettered, eat_sparse, eat_sparse_lettered, } ;
-
 struct property_node {
 	char * family ;
 	char * property ;
-	char type ;
-	size_t array ;
-	enum external_array_type eat_type ;
-	size_t length ;
-	char persistance ;
 	char * read ;
 	char * write ;
 	char * data ;
 	char * other ;
 	enum external_type et ;
+	struct filetype ft ;
+	struct aggregate ag ;
 	char payload[0] ;
 } ;
 
 struct family_node {
+	struct device dev ; // Must be first since this is actual entry in device tree.
 	char * family ;
-	struct device * dev ;
 	char payload[0] ;
 } ;
 

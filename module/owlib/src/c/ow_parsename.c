@@ -641,7 +641,7 @@ static enum parse_enum Parse_External_Device( char *filename, struct parsedname 
 	
 	// Still an open question of which "connection_in" to use -- perhaps a special flag?
 
-	pn->selected_device = family_n->dev ;
+	pn->selected_device = &(family_n->dev) ;
 	return parse_prop;
 }
 
