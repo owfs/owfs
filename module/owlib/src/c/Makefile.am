@@ -86,6 +86,7 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_etherweather.c  \
                ow_example_slave.c \
                ow_exit.c          \
+               ow_find_external.c \
                ow_fs_address.c    \
                ow_fs_alias.c      \
                ow_fs_code.c       \
@@ -192,6 +193,7 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_w1_select.c     \
                ow_w1_send.c       \
                ow_write.c         \
+               ow_write_external.c\
                ow_zero.c          \
                owlib.c            \
                error.c            \

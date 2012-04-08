@@ -429,29 +429,11 @@ void AddSensor( char * input_string )
 	owfree( s_data ) ;
 }
 
-int sensor_compare( const void * a , const void * b )
-{
-	const struct sensor_node * na = a ;
-	const struct sensor_node * nb = b ;
-	return strcmp( na->name, nb->name ) ;
-}
-
 static int family_compare( const void * a , const void * b )
 {
 	const struct family_node * na = a ;
 	const struct family_node * nb = b ;
 	return strcmp( na->family, nb->family ) ;
-}
-
-int property_compare( const void * a , const void * b )
-{
-	const struct property_node * na = a ;
-	const struct property_node * nb = b ;
-	int c = strcmp( na->family, nb->family ) ;
-	if ( c==0 ) {
-		return strcmp( na->property, nb->property ) ;
-	}
-	return c ;
 }
 
 static struct sensor_node * create_sensor_node( char * s_name, char * s_family, char * s_description, char * s_data )

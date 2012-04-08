@@ -80,6 +80,9 @@ extern void * sensor_tree ;
 void AddSensor( char * input_string ) ;
 void AddProperty( char * input_string, enum external_type et ) ;
 
+struct sensor_node * Find_External_Sensor( char * sensor ) ;
+struct property_node * Find_External_Property( char * family, char * property ) ;
+
 int sensor_compare( const void * a , const void * b ) ;
 int property_compare( const void * a , const void * b ) ;
 
