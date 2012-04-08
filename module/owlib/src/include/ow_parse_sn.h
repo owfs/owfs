@@ -43,7 +43,7 @@ $Id$
 #ifndef OW_PARSE_SN_H			/* tedious wrapper */
 #define OW_PARSE_SN_H
 
-enum parse_serialnumber { sn_valid, sn_invalid, sn_alias, } ;
+enum parse_serialnumber { sn_valid, sn_invalid, sn_not_sn, } ;
 
 enum parse_serialnumber Parse_SerialNumber(char *sn_char, BYTE * sn) ;
 

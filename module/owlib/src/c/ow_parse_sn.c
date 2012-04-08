@@ -25,7 +25,7 @@ enum parse_serialnumber Parse_SerialNumber(char *sn_char, BYTE * sn)
 		if (isxdigit(*sn_char)) {
 			ID[i] = *sn_char;
 		} else {
-			return sn_alias; // non-hex
+			return sn_not_sn; // non-hex
 		}
 	}
 	sn[0] = string2num(&ID[0]);
@@ -48,6 +48,6 @@ enum parse_serialnumber Parse_SerialNumber(char *sn_char, BYTE * sn)
 		}
 		sn_char += 2 ;
 	}
-	return ( *sn_char == '\0' ) ? sn_valid : sn_alias ;
+	return ( *sn_char == '\0' ) ? sn_valid : sn_not_sn ;
 }
 

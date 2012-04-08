@@ -9,13 +9,6 @@ $Id$
     1wire/iButton system from Dallas Semiconductor
 */
 
-/* ow_parse_external -- read the SENSOR and PROPERTY lines */
-
-/* in general the lines are comma separated tokens
- * with backslash escaping and
- * quote and double quote matching
- * */
-
 #include <config.h>
 #include "owfs_config.h"
 #include "ow.h"
@@ -23,16 +16,13 @@ $Id$
 
 
 /* strategy for external read:
-   A single read function for each communication scheme e.g. script
-   The actual device record and actual familt record is obtained from the trees.
+   A common read function for all communication schemes e.g. script
+   The actual device record and actual family record is obtained from the trees.
    The script is called (via popen) or other method for other types
    The device should be locked for the communication
    arguments include fields from the tree records and owq
    the returned value is obvious
 */
-
-
-READ_FUNCTION( FS_r_external ) ;
 
 static ZERO_OR_ERROR OW_trees_for_read( char * device, char * property, struct one_wire_query * owq ) ;
 

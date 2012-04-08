@@ -593,7 +593,7 @@ static enum parse_enum Parse_RealDevice(char *filename, enum parse_pass remote_s
 {
 	pn->device_name = find_segment_in_path( filename, pn->path ) ;
 	switch ( Parse_SerialNumber(filename,pn->sn) ) {
-		case sn_alias:
+		case sn_not_sn:
 //			if ( FindExternalSensor( filename ) {
 	//			
 			return Parse_Alias( filename, remote_status, pn) ;

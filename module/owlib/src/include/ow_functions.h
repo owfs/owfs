@@ -166,6 +166,9 @@ SIZE_OR_ERROR FS_read_local( struct one_wire_query *owq);
 
 size_t FileLength_vascii(struct one_wire_query *owq);
 
+ZERO_OR_ERROR FS_r_external( struct one_wire_query * owq ) ;
+ZERO_OR_ERROR FS_w_external( struct one_wire_query * owq ) ;
+
 #include "ow_sibling.h"
 
 ZERO_OR_ERROR FS_fstat(const char *path, struct stat *stbuf);
