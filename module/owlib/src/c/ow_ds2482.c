@@ -225,7 +225,7 @@ static GOOD_OR_BAD DS2482_detect_sys( int any, enum ds2482_address chip_num, str
 		int sn_ret ;
 
 		UCLIBCLOCK ;
-		sn_ret = snprintf( dev_name, 128-1, "/dev/%s", i2c_bus->d_name ) ;
+		sn_ret = snprintf( dev_name, 128, "/dev/%s", i2c_bus->d_name ) ;
 		UCLIBCUNLOCK ;
 		if ( sn_ret < 0 ) {
 			break ;
@@ -344,10 +344,20 @@ static GOOD_OR_BAD DS2482_detect_single(int lowindex, int highindex, char * i2c_
 	int i2c_index;
 	FILE_DESCRIPTOR_OR_ERROR file_descriptor;
 
+	/* Sanity check */
+	if ( lowindex < 0 ) {
+		LEVEL_DEBUG("Bad lower bound");
+		return gbBAD ;
+	}
+	if ( highindex >= sizeof(test_address)/sizeof(int) ) {
+		LEVEL_DEBUG("Bad upper bound");
+		return gbBAD ;
+	}
+	
 	/* open the i2c port */
 	file_descriptor = open(i2c_device, O_RDWR | O_CLOEXEC);
 	if ( FILE_DESCRIPTOR_NOT_VALID(file_descriptor) ) {
-		ERROR_CONNECT("Could not open i2c device %s", SOC(in)->devicename);
+		ERROR_CONNECT("Could not open i2c device %s", i2c_device);
 		return gbBAD;
 	} else {
 		// in case O_CLOEXEC not supported
@@ -358,17 +368,18 @@ static GOOD_OR_BAD DS2482_detect_single(int lowindex, int highindex, char * i2c_
 	DS2482_setroutines(in);
 
 	for (i2c_index = lowindex; i2c_index <= highindex; ++i2c_index) {
+		int trial_address = test_address[i2c_index] ;
 		/* set the candidate address */
-		if (ioctl(file_descriptor, I2C_SLAVE, test_address[i2c_index]) < 0) {
-			ERROR_CONNECT("Cound not set trial i2c address to %.2X", test_address[i2c_index]);
+		if (ioctl(file_descriptor, I2C_SLAVE, trial_address) < 0) {
+			ERROR_CONNECT("Cound not set trial i2c address to %.2X", trial_address);
 		} else {
 			BYTE c;
-			LEVEL_CONNECT("Found an i2c device at %s address %.2X", i2c_device, test_address[i2c_index]);
+			LEVEL_CONNECT("Found an i2c device at %s address %.2X", i2c_device, trial_address);
 			/* Provisional setup as a DS2482-100 ( 1 channel ) */
 			SOC(in)->file_descriptor = file_descriptor;
 			SOC(in)->state = cs_deflowered;
 			SOC(in)->type = ct_i2c ;
-			in->master.i2c.i2c_address = test_address[i2c_index];
+			in->master.i2c.i2c_address = trial_address;
 			in->master.i2c.i2c_index = i2c_index;
 			in->master.i2c.index = 0;
 			in->master.i2c.channels = 1;
@@ -392,10 +403,10 @@ static GOOD_OR_BAD DS2482_detect_single(int lowindex, int highindex, char * i2c_
 				|| BAD(DS2482_readstatus(&c, file_descriptor, DS2482_Chip_reset_usec))	// pause .5 usec then read status
 				|| (c != (DS2482_REG_STS_LL | DS2482_REG_STS_RST))	// make sure status is properly set
 				) {
-				LEVEL_CONNECT("i2c device at %s address %.2X cannot be reset. Not a DS2482.", i2c_index, test_address[i2c_index]);
+				LEVEL_CONNECT("i2c device at %s address %.2X cannot be reset. Not a DS2482.", i2c_device, trial_address);
 				continue;
 			}
-			LEVEL_CONNECT("i2c device at %s address %.2X appears to be DS2482-x00", i2c_index, test_address[i2c_index]);
+			LEVEL_CONNECT("i2c device at %s address %.2X appears to be DS2482-x00", i2c_device, trial_address);
 			in->master.i2c.configchip = 0x00;	// default configuration register after RESET
 			// Note, only the lower nibble of the device config stored
 			
@@ -403,7 +414,7 @@ static GOOD_OR_BAD DS2482_detect_single(int lowindex, int highindex, char * i2c_
 			SOC(in)->devicename = owmalloc( strlen(i2c_device) + 10 ) ;
 			if ( SOC(in)->devicename ) {
 				UCLIBCLOCK;
-				snprintf(SOC(in)->devicename, strlen(i2c_device) + 10, "%s:%.2X", i2c_device, test_address[i2c_index]);
+				snprintf(SOC(in)->devicename, strlen(i2c_device) + 10, "%s:%.2X", i2c_device, trial_address);
 				UCLIBCUNLOCK;
 			}
 
