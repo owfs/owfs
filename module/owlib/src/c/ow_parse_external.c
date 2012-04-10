@@ -21,10 +21,6 @@ $Id$
 #include "ow.h"
 #include "ow_external.h"
 
-// Special flags for scripts (located elsewhere)
-struct filetype * ft_script_read ;
-struct filetype * ft_script_write ;
-
 static char * string_parse( char * text_string, char delim, char ** last_char );
 static char * trim_parse( char * raw_string );
 static char * unquote_parse( char * raw_string );

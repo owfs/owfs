@@ -178,10 +178,6 @@ struct filetype {
 	} data;						// extra data pointer (used for separating similar but differently named functions)
 };
 
-// Special flags for scripts (located elsewhere)
-extern struct filetype * ft_script_read ;
-extern struct filetype * ft_script_write ;
-
 #include "ow_bitfield.h" // read/write bit fields
 
 /* --------- end Filetype -------------------- */
