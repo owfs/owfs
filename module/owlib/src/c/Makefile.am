@@ -86,6 +86,7 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_etherweather.c  \
                ow_example_slave.c \
                ow_exit.c          \
+               ow_external.c      \
                ow_find_external.c \
                ow_fs_address.c    \
                ow_fs_alias.c      \

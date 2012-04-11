@@ -27,7 +27,11 @@ struct sensor_node * Find_External_Sensor( char * sensor )
 		.name = sensor,
 		} ;
 	// find sensor node
-	return (struct sensor_node *) tfind( (void *) (&sense_key), &sensor_tree, sensor_compare ) ;
+	struct {
+		struct sensor_node * key ;
+		char other[0] ;
+	} * opaque = tfind( (void *) (&sense_key), &sensor_tree, sensor_compare ) ;
+	return opaque==NULL ? NULL : opaque->key ;
 }
 	
 int property_compare( const void * a , const void * b )
@@ -48,7 +52,11 @@ struct property_node * Find_External_Property( char * family, char * property )
 		.property = property ,
 	} ;
 	// find property node
-	return (struct property_node *) tfind( (void *) (&property_key), &property_tree, property_compare ) ;
+	struct {
+		struct property_node * key ;
+		char other[0] ;
+	} * opaque = tfind( (void *) (&property_key), &property_tree, property_compare ) ;
+	return opaque==NULL ? NULL : opaque->key ;
 }
 
 int family_compare( const void * a , const void * b )
@@ -64,5 +72,9 @@ struct family_node * Find_External_Family( char * family )
 		.family = family,
 		} ;
 	// find family node
-	return (struct family_node *) tfind( (void *) (&family_key), &family_tree, family_compare ) ;
+	struct {
+		struct family_node * key ;
+		char other[0] ;
+	} * opaque = tfind( (void *) (&family_key), &family_tree, family_compare ) ;
+	return opaque==NULL ? NULL : opaque->key ;
 }

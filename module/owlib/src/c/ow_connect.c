@@ -26,6 +26,7 @@ struct inbound_control Inbound_Control = {
 	.next_tester = 0,
 	.next_mock = 0,
 	.w1_monitor = NO_CONNECTION ,
+	.external = NO_CONNECTION ,
 };
 
 struct connection_in *find_connection_in(int bus_number)

@@ -66,6 +66,7 @@ GOOD_OR_BAD Mock_detect(struct connection_in *in);
 GOOD_OR_BAD EtherWeather_detect(struct connection_in *in);
 GOOD_OR_BAD Browse_detect(struct connection_in *in);
 GOOD_OR_BAD W1_monitor_detect(struct connection_in *in);
+GOOD_OR_BAD External_detect(struct connection_in *in);
 
 #if OW_HA7
 GOOD_OR_BAD HA7_detect(struct connection_in *in);

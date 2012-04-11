@@ -639,9 +639,8 @@ static enum parse_enum Parse_External_Device( char *filename, struct parsedname 
 	struct sensor_node * sensor_n = Find_External_Sensor( filename ) ;
 	struct family_node * family_n = Find_External_Family( sensor_n->family ) ;
 	
-	// Still an open question of which "connection_in" to use -- perhaps a special flag?
-
 	pn->selected_device = &(family_n->dev) ;
+	SetKnownBus(Inbound_Control.external->index, pn);
 	return parse_prop;
 }
 

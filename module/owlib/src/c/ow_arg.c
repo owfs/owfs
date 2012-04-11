@@ -97,6 +97,20 @@ GOOD_OR_BAD ARG_EtherWeather(const char *arg)
 	return gbGOOD;
 }
 
+GOOD_OR_BAD ARG_External(const char *arg)
+{
+	if ( Inbound_Control.external == NULL ) {
+		struct connection_in *in = NewIn(NO_CONNECTION);
+		if (in == NO_CONNECTION) {
+			return gbBAD;
+		}
+		SOC(in)->devicename = owstrdup("external") ;
+		in->busmode = bus_external;
+		Inbound_Control.external = in ;
+		return gbGOOD;
+	}
+}
+
 GOOD_OR_BAD ARG_Fake(const char *arg)
 {
 	struct connection_in *in = NewIn(NO_CONNECTION);

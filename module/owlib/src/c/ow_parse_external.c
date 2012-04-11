@@ -25,8 +25,8 @@ static char * string_parse( char * text_string, char delim, char ** last_char );
 static char * trim_parse( char * raw_string );
 static char * unquote_parse( char * raw_string );
 static int LastParam( char * input_string ) ;
-static void create_just_print( char * s_family, char * s_prop, char * s_data );
-static void create_subdirs( char * s_family, char * s_prop );
+static void create_just_print( char * s_prop, char * s_family, char * s_data );
+static void create_subdirs( char * s_prop, char * s_family );
 
 static void AddFamilyToTree( char * s_family ) ;
 static struct family_node * create_family_node( char * s_family ) ;
@@ -34,7 +34,7 @@ static struct family_node * create_family_node( char * s_family ) ;
 static void AddSensorToTree( char * s_name, char * s_family, char * s_description, char * data ) ;
 static struct sensor_node * create_sensor_node( char * s_name, char * s_family, char * s_description, char * s_data ) ;
 
-static void AddPropertyToTree( char * s_family, char * s_property,  enum ft_format s_format, size_t s_array, enum ag_combined s_combined, enum ag_index s_index_type, size_t s_length, enum fc_change s_change, char * s_read, char * s_write, char * s_data, char * s_other, enum external_type et ) ;
+static void AddPropertyToTree( char * s_property, char * s_family, enum ft_format s_format, size_t s_array, enum ag_combined s_combined, enum ag_index s_index_type, size_t s_length, enum fc_change s_change, char * s_read, char * s_write, char * s_data, char * s_other, enum external_type et ) ;
 static struct property_node * create_property_node( char * s_property, char * s_family, enum ft_format s_format, size_t s_array, enum ag_combined s_combined, enum ag_index s_index_type, size_t s_length, enum fc_change s_change, char * s_read, char * s_write, char * s_data, char * s_other, enum external_type et ) ;
 
 void * property_tree = NULL ;
@@ -61,7 +61,8 @@ static char * string_parse( char * text_string, char delim, char ** last_char )
 	char * copy_string ;
 	char * old_string_pointer = text_string ;
 	char * new_string_pointer ;
-		
+
+//printf("->>>STRING (%c) PARSE <%s>\n",delim,text_string);
 	if ( text_string == NULL ) {
 		*last_char = text_string ;
 		return owstrdup("") ;
@@ -79,6 +80,7 @@ static char * string_parse( char * text_string, char delim, char ** last_char )
 		if ( current_char == '\0' ) {
 			// end of string
 			*last_char = old_string_pointer ;
+//printf("<<<-STRING (%c) PARSE <%s>, end:<%s>\n",delim,copy_string,*last_char);
 			return copy_string ;
 		} else if ( current_char == '\\' ) {
 			// backslash, use next char literally
@@ -89,6 +91,7 @@ static char * string_parse( char * text_string, char delim, char ** last_char )
 			} else {
 				// unless there is no next char
 				*last_char = old_string_pointer + 1 ;
+//printf("<<<-STRING (%c) PARSE <%s>, end:<%s>\n",delim,copy_string,*last_char);
 				return copy_string ;
 			}
 		} else if ( current_char == delim ) {
@@ -96,15 +99,18 @@ static char * string_parse( char * text_string, char delim, char ** last_char )
 			// point to it, and null terminate
 			*last_char = old_string_pointer ;
 			new_string_pointer[1] = '\0' ;
+//printf("<<<-STRING (%c) PARSE <%s>, end:<%s>\n",delim,copy_string,*last_char);
 			return copy_string ;
 		} else if ( current_char == '"' || current_char == '\'' ) {
 			// quotation -- find matching end
 			char * quote_last_char ;
 			char * quoted_string = string_parse( old_string_pointer+1, current_char, &quote_last_char ) ; 
+//printf("----STRING (%c) PARSE Quote <%s> end:<%s>\n",delim,quoted_string,quote_last_char);
 			if ( quoted_string ) {
 				strcpy( new_string_pointer+1, quoted_string ) ;
 				new_string_pointer += strlen( quoted_string ) + 1 ;
 				if ( quote_last_char[0] == current_char ) {
+					quote_last_char[0] = '\0' ; // clear trailing quote
 					old_string_pointer = quote_last_char + 1 ;
 				} else {
 					old_string_pointer = quote_last_char ;
@@ -113,6 +119,7 @@ static char * string_parse( char * text_string, char delim, char ** last_char )
 			} else {
 				new_string_pointer[1] = '\0' ;
 				*last_char = old_string_pointer ;
+//printf("<<<-STRING (%c) PARSE <%s>, end:<%s>\n",delim,copy_string,*last_char);
 				return copy_string ;
 			}
 		} else {
@@ -194,8 +201,8 @@ static int LastParam( char * input_string )
 // Gets a string with property,family,structure,read_function,write_function,property_data,extra
 // write, data and extra are optional
 /*
- * family
  * property
+ * family
  * structure
  * read
  * write
@@ -204,8 +211,8 @@ static int LastParam( char * input_string )
  * */
 void AddProperty( char * input_string, enum external_type et )
 {
-	char * s_family ;
-	char * s_property ;
+	char * s_family = NULL ;
+	char * s_property = NULL ;
 	char * s_dummy ;
 	ssize_t s_array ;
 	enum ag_combined s_combined ;
@@ -213,10 +220,10 @@ void AddProperty( char * input_string, enum external_type et )
 	enum ft_format s_format ;
 	ssize_t s_length ;
 	enum fc_change s_change ;
-	char * s_read ;
-	char * s_write ;
-	char * s_data ;
-	char * s_other ;
+	char * s_read = NULL ;
+	char * s_write = NULL ;
+	char * s_data = NULL ;
+	char * s_other = NULL;
 	char * start_pointer = input_string ;
 	
 	if ( input_string == NULL ) {
@@ -227,12 +234,12 @@ void AddProperty( char * input_string, enum external_type et )
 		LEVEL_DEBUG("External prgroams not supported by %s",Globals.progname) ;
 		return ;
 	}
-	
-	// family
-	GetQuotedString( family ) ;
 
 	// property
 	GetQuotedString( property ) ;
+	
+	// family
+	GetQuotedString( family ) ;
 
 	// type
 	GetQuotedString( dummy ) ;
@@ -386,7 +393,7 @@ void AddProperty( char * input_string, enum external_type et )
 	if ( strlen( s_family ) > 0 && strlen( s_property ) > 0 ) {
 		// Actually add
 		AddFamilyToTree( s_family ) ;
-		AddPropertyToTree( s_family, s_property, s_format, s_array, s_combined, s_index_type, s_length, s_change, s_read, s_write, s_data, s_other, et ) ;
+		AddPropertyToTree( s_property, s_family, s_format, s_array, s_combined, s_index_type, s_length, s_change, s_read, s_write, s_data, s_other, et ) ;
 		create_subdirs( s_family, s_property ) ;
 	}
 
@@ -408,8 +415,8 @@ void AddProperty( char * input_string, enum external_type et )
  * */
 void AddSensor( char * input_string )
 {
-	char * s_name ;
-	char * s_family ;
+	char * s_name = NULL ;
+	char * s_family = NULL ;
 	char * s_description = NULL ;
 	char * s_data = NULL ;
 	char * start_pointer = input_string ;
@@ -439,8 +446,8 @@ void AddSensor( char * input_string )
 		// Actually add
 		AddFamilyToTree( s_family ) ;
 		AddSensorToTree( s_name, s_family, s_description, s_data ) ;
-		create_just_print( s_family, "family", s_family ) ;
-		create_just_print( s_family, "type", "external" ) ;
+		create_just_print( "family", s_family, s_family   ) ;
+		create_just_print( "type",   s_family, "external" ) ;
 	}
 
 	// Clean up
@@ -513,28 +520,28 @@ static struct family_node * create_family_node( char * s_family )
 
 static struct property_node * create_property_node( char * s_property, char * s_family, enum ft_format s_format, size_t s_array, enum ag_combined s_combined, enum ag_index s_index_type, size_t s_length, enum fc_change s_change, char * s_read, char * s_write, char * s_data, char * s_other, enum external_type et )
 {
-	int l_family = strlen( s_family )+1 ;
 	int l_property = strlen( s_property )+1 ;
+	int l_family = strlen( s_family )+1 ;
 	int l_read = strlen( s_read )+1 ;
 	int l_write = strlen( s_write )+1 ;
 	int l_data = strlen( s_data )+1 ;
 	int l_other = strlen( s_other )+1 ;
 
 	struct property_node * s = owmalloc( sizeof(struct property_node) 
-	+ l_family + l_property + l_read + l_write + l_data + l_other ) ;
+	+ l_property + l_family + l_read + l_write + l_data + l_other ) ;
 	
 	if ( s==NULL) {
 		return NULL ;
 	}
 
 	memset( s, 0, sizeof(struct property_node) 
-	+ l_family + l_property + l_read + l_write + l_data + l_other ) ;
+	+ l_property + l_family + l_read + l_write + l_data + l_other ) ;
 
-	s->family = s->payload ;
-	strcpy( s->family, s_family ) ;
-
-	s->property = s->family + l_family ;
+	s->property = s->payload ;
 	strcpy( s->property, s_property ) ;
+
+	s->family = s->property + l_property ;
+	strcpy( s->family, s_family ) ;
 
 	s->read = s->family + l_family ;
 	strcpy( s->read, s_read ) ;
@@ -587,9 +594,12 @@ static struct property_node * create_property_node( char * s_property, char * s_
 static void AddSensorToTree( char * s_name, char * s_family, char * s_description, char * s_data )
 {
 	struct sensor_node * n = create_sensor_node( s_name, s_family, s_description, s_data ) ;
-	void * s = tsearch( (void *) n, &sensor_tree, sensor_compare ) ;
+	struct {
+		struct sensor_node * key ;
+		char other[0] ;
+	} * opaque = tsearch( (void *) n, &sensor_tree, sensor_compare ) ;
 	
-	if ( (*(struct sensor_node **)s) != n ) {
+	if ( opaque->key != n ) {
 		// already exists
 		LEVEL_DEBUG("Duplicate sensor entry: %s,%s,%s,%s",s_name,s_family,s_description,s_data);
 		owfree( n ) ;
@@ -601,23 +611,30 @@ static void AddSensorToTree( char * s_name, char * s_family, char * s_descriptio
 static void AddFamilyToTree( char * s_family )
 {
 	struct family_node * n = create_family_node( s_family ) ;
-	void * s = tsearch( (void *) n, &family_tree, family_compare ) ;
+	struct {
+		struct family_node * key ;
+		char other[0] ;
+	} * opaque = tsearch( (void *) n, &family_tree, family_compare ) ;
 	
-	if ( (*(struct family_node**)s) != n ) {
+	if ( opaque->key != n ) {
 		// already exists
 		LEVEL_DEBUG("Duplicate family entry: %s",s_family);
 		owfree( n ) ;
 	} else {
+		ARG_External(NULL);
 		LEVEL_DEBUG("New family entry: %s",s_family);
 	}
 }
 
-static void AddPropertyToTree( char * s_family, char * s_property,  enum ft_format s_format, size_t s_array, enum ag_combined s_combined, enum ag_index s_index_type, size_t s_length, enum fc_change s_change, char * s_read, char * s_write, char * s_data, char * s_other, enum external_type et )
+static void AddPropertyToTree( char * s_property, char * s_family, enum ft_format s_format, size_t s_array, enum ag_combined s_combined, enum ag_index s_index_type, size_t s_length, enum fc_change s_change, char * s_read, char * s_write, char * s_data, char * s_other, enum external_type et )
 {
-	struct property_node * n = create_property_node( s_family, s_property, s_format, s_array, s_combined, s_index_type, s_length, s_change, s_read, s_write, s_data, s_other, et ) ;
-	void * s = tsearch( (void *) n, &property_tree, property_compare ) ;
+	struct property_node * n = create_property_node( s_property, s_family, s_format, s_array, s_combined, s_index_type, s_length, s_change, s_read, s_write, s_data, s_other, et ) ;
+	struct {
+		struct property_node * key ;
+		char other[0] ;
+	} * opaque = tsearch( (void *) n, &property_tree, property_compare ) ;
 	
-	if ( (*(struct property_node **)s) != n ) {
+	if ( opaque->key != n ) {
 		// already exists
 		LEVEL_DEBUG("Duplicate property entry: %s,%s,%s,%s,%s,%s",s_property,s_family,s_read,s_write,s_data,s_other);
 		owfree( n ) ;
@@ -626,12 +643,12 @@ static void AddPropertyToTree( char * s_family, char * s_property,  enum ft_form
 	}		
 }
 
-static void create_just_print( char * s_family, char * s_prop, char * s_data )
+static void create_just_print( char * s_prop, char * s_family, char * s_data )
 {
-	AddPropertyToTree( s_family, s_prop, ft_ascii, 1, ag_separate, ag_numbers, strlen(s_data), fc_static, "just_print_data", "", s_data, "", et_internal ) ;
+	AddPropertyToTree( s_prop, s_family, ft_ascii, 1, ag_separate, ag_numbers, strlen(s_data), fc_static, "just_print_data", "", s_data, "", et_internal ) ;
 }
 
-static void create_subdirs( char * s_family, char * s_prop )
+static void create_subdirs( char * s_prop, char * s_family )
 {
 	char * slash ;
 	char * subdir = owstrdup( s_prop ) ;
@@ -641,7 +658,7 @@ static void create_subdirs( char * s_family, char * s_prop )
 	}
 	while ( (slash = strrchr( subdir, '/' )) != NULL ) {
 		slash[0] = '\0' ;
-		AddPropertyToTree( s_family, subdir, ft_directory, 0, ag_separate, ag_numbers, 0, fc_subdir, "", "", "", "", et_none ) ;
+		AddPropertyToTree( subdir, s_family, ft_directory, 0, ag_separate, ag_numbers, 0, fc_subdir, "", "", "", "", et_none ) ;
 	}
 	
 	owfree(subdir) ;

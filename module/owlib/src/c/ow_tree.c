@@ -80,6 +80,13 @@ static void free_node(void *nodep)
 void DeviceDestroy(void)
 {
 	UINT i;
+
+	// clear external trees
+	tdestroy( sensor_tree, owfree_func ) ;
+	tdestroy( family_tree, owfree_func ) ;
+	tdestroy( property_tree, owfree_func ) ;
+
+	// clear these trees -- have static data
 	for (i = 0; i < (sizeof(Tree) / sizeof(void *)); i++) {
 		/* ePN_structure is just a duplicate of ePN_real */
 		if (i != ePN_structure) {
@@ -242,7 +249,6 @@ static void External_propertycount_action(const void *nodep, const VISIT which, 
 	const struct property_node *p = *(struct property_node * const *) nodep;
 	(void) depth;
 
-	printf("Comparing %s with %s\n",p->family, global_externalcount_struct.f->family ) ;
 	switch (which) {
 	case leaf:
 	case postorder:
@@ -260,7 +266,6 @@ static void External_propertycopy_action(const void *nodep, const VISIT which, c
 	const struct property_node *p = *(struct property_node * const *) nodep;
 	(void) depth;
 
-	printf("Comparing %s with %s\n",p->family, global_externalcount_struct.f->family ) ;
 	switch (which) {
 	case leaf:
 	case postorder:
@@ -291,8 +296,7 @@ static void External_family_action(const void *nodep, const VISIT which, const i
 		// First count
 		global_externalcount_struct.f = p ;
 		global_externalcount_struct.count = 0 ;
-		printf("About to make property count pass for family <%s>\n",p->family) ;
-		twalk(&property_tree, External_propertycount_action);
+		twalk( property_tree, External_propertycount_action);
 		
 		// Refind this node to allow assignment
 		non_const_f = Find_External_Family( p->family ) ;
@@ -304,8 +308,7 @@ static void External_family_action(const void *nodep, const VISIT which, const i
 		
 		// Next copy
 		global_externalcount_struct.count = 0 ;
-		printf("About to make property copy pass for family <%s>\n",p->family) ;
-		twalk(&property_tree, External_propertycopy_action);
+		twalk( property_tree, External_propertycopy_action);
 		
 		// Finally add to tree
 		Device2Tree( & (p->dev), ePN_real);
@@ -320,7 +323,7 @@ static void External_Process(void)
 {
 	EXTERNALCOUNTLOCK;
 
-	twalk(&family_tree, External_family_action);
+	twalk( family_tree, External_family_action);
 
 	EXTERNALCOUNTUNLOCK;
 }

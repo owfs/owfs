@@ -23,6 +23,9 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct connection_in * in ) ;
 /* Start the owlib process -- already in background */
 GOOD_OR_BAD LibStart(void)
 {
+	/* Build device and filetype arrays (including externals) */
+	DeviceSort();
+
 	Globals.zero = zero_none ;
 #if OW_ZERO
 #if OW_MT

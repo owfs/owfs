@@ -27,9 +27,6 @@ void LibSetup(enum enum_program_type program_type)
 
 	Globals.program_type = program_type;
 
-	/* special resort in case static data (devices and filetypes) not properly sorted */
-	DeviceSort();
-
 #if OW_CACHE
 	Cache_Open();
 #endif							/* OW_CACHE */

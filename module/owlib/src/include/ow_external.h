@@ -54,8 +54,8 @@ struct sensor_node {
 } ;
 
 struct property_node {
-	char * family ;
 	char * property ;
+	char * family ;
 	char * read ;
 	char * write ;
 	char * data ;

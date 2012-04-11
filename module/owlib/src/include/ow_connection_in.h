@@ -64,6 +64,7 @@ enum bus_mode {
 	bus_w1,
 	bus_w1_monitor,
 	bus_xport_control,
+	bus_external,
 };
 
 enum adapter_type {
@@ -97,6 +98,7 @@ enum adapter_type {
 	adapter_browse_monitor,
 	adapter_xport,
 	adapter_usb_monitor,
+	adapter_external,
 };
 
 enum e_reconnect {
@@ -210,6 +212,7 @@ extern struct inbound_control {
 	int next_mock ; // count mock buses
 
 	struct connection_in * w1_monitor ;
+	struct connection_in * external ;
 } Inbound_Control ; // Single global struct -- see ow_connect.c
 
 // Channel-specific routines
