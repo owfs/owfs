@@ -29,21 +29,40 @@ READ_FUNCTION(FS_r_in_case);
 WRITE_FUNCTION(FS_w_in_case);
 READ_FUNCTION(FS_UVI);
 READ_FUNCTION(FS_UVI_valid);
+READ_FUNCTION(FS_r_sensor);
+
+static enum e_visibility VISIBLE_EF_UVI( const struct parsedname * pn ) ;
+static enum e_visibility VISIBLE_EF_MOISTURE( const struct parsedname * pn ) ;
+static enum e_visibility VISIBLE_EF_MOISTURE_LOG( const struct parsedname * pn ) ;
+static enum e_visibility VISIBLE_EF_SNIFFER( const struct parsedname * pn ) ;
+static enum e_visibility VISIBLE_EF_HUB( const struct parsedname * pn ) ;
+
+enum e_EF_type {
+	eft_UVI = 1,
+	eft_MOI = 2,
+	eft_LOG = 3,
+	eft_SNF = 4,
+	eft_HUB = 5,
+} ;
+
 
 /* ------- Structures ----------- */
+static struct aggregate AMOIST = { 4, ag_numbers, ag_aggregate, };
 
 static struct filetype HobbyBoards_EE[] = {
 	F_STANDARD_NO_TYPE,
-	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_temperature, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
-	{"temperature_offset", PROPERTY_LENGTH_TEMPGAP, NON_AGGREGATE, ft_tempgap, fc_stable, FS_r_temperature_offset, FS_w_temperature_offset, VISIBLE, NO_FILETYPE_DATA, },
+	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_temperature, NO_WRITE_FUNCTION, VISIBLE_EF_UVI, NO_FILETYPE_DATA, },
+	{"temperature_offset", PROPERTY_LENGTH_TEMPGAP, NON_AGGREGATE, ft_tempgap, fc_stable, FS_r_temperature_offset, FS_w_temperature_offset, VISIBLE_EF_UVI, NO_FILETYPE_DATA, },
 	{"version", 5, NON_AGGREGATE, ft_ascii, fc_stable, FS_version, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"type_number", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_type_number, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"type", PROPERTY_LENGTH_TYPE, NON_AGGREGATE, ft_ascii, fc_link, FS_localtype, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
-	{"UVI", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
-	{"UVI/UVI", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_UVI, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
-	{"UVI/valid", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_UVI_valid, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
-	{"UVI/UVI_offset", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_UVI_offset, FS_w_UVI_offset, VISIBLE, NO_FILETYPE_DATA, },
-	{"UVI/in_case", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_in_case, FS_w_in_case, VISIBLE, NO_FILETYPE_DATA, },
+	{"UVI", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EF_UVI, NO_FILETYPE_DATA, },
+	{"UVI/UVI", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_UVI, NO_WRITE_FUNCTION, VISIBLE_EF_UVI, NO_FILETYPE_DATA, },
+	{"UVI/valid", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_UVI_valid, NO_WRITE_FUNCTION, VISIBLE_EF_UVI, NO_FILETYPE_DATA, },
+	{"UVI/UVI_offset", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_UVI_offset, FS_w_UVI_offset, VISIBLE_EF_UVI, NO_FILETYPE_DATA, },
+	{"UVI/in_case", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_in_case, FS_w_in_case, VISIBLE_EF_UVI, NO_FILETYPE_DATA, },
+	{"moisture", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EF_MOISTURE, NO_FILETYPE_DATA, },
+	{"moisture/sensor", PROPERTY_LENGTH_INTEGER, &AMOIST, ft_integer, fc_volatile, FS_r_sensor, NO_WRITE_FUNCTION, VISIBLE_EF_MOISTURE, NO_FILETYPE_DATA, },
 };
 
 DeviceEntry(EE, HobbyBoards_EE, NO_GENERIC_READ, NO_GENERIC_WRITE);
@@ -69,6 +88,82 @@ DeviceEntry(EF, HobbyBoards_EF, NO_GENERIC_READ, NO_GENERIC_WRITE);
 #define _EEEF_SET_IN_CASE 0x27
 #define _EEEF_READ_IN_CASE 0x28
 
+#define _EEEF_READ_SENSOR 0x21
+#define _EEEF_SET_LEAF 0x22
+#define _EEEF_GET_LEAF 0x23
+
+static enum e_EF_type VISIBLE_EF( const struct parsedname * pn ) ;
+
+/* finds the visibility value (0x0071 ...) either cached, or computed via the device_id (then cached) */
+static enum e_EF_type VISIBLE_EF( const struct parsedname * pn )
+{
+	int eft = -1 ;
+	
+	LEVEL_DEBUG("Checking visibility of %s",SAFESTRING(pn->path)) ;
+	if ( BAD( GetVisibilityCache( &eft, pn ) ) ) {
+		struct one_wire_query * owq = OWQ_create_from_path(pn->path) ; // for read
+		if ( owq != NULL) {
+			UINT U_eft ;
+			if ( FS_r_sibling_U( &U_eft, "type_number", owq ) == 0 ) {
+				eft = U_eft ;
+				SetVisibilityCache( eft, pn ) ;
+			}
+			OWQ_destroy(owq) ;
+		}
+	}
+	return (enum e_EF_type) eft ;
+}
+
+static enum e_visibility VISIBLE_EF_UVI( const struct parsedname * pn )
+{
+	switch ( VISIBLE_EF(pn) ) {
+		case eft_UVI:
+			return visible_now ;
+		default:
+			return visible_not_now ;
+	}
+}
+
+static enum e_visibility VISIBLE_EF_MOISTURE( const struct parsedname * pn )
+{
+	switch ( VISIBLE_EF(pn) ) {
+		case eft_MOI:
+			return visible_now ;
+		default:
+			return visible_not_now ;
+	}
+}
+
+static enum e_visibility VISIBLE_EF_MOISTURE_LOG( const struct parsedname * pn )
+{
+	switch ( VISIBLE_EF(pn) ) {
+		case eft_LOG:
+			return visible_now ;
+		default:
+			return visible_not_now ;
+	}
+}
+
+static enum e_visibility VISIBLE_EF_SNIFFER( const struct parsedname * pn )
+{
+	switch ( VISIBLE_EF(pn) ) {
+		case eft_SNF:
+			return visible_now ;
+		default:
+			return visible_not_now ;
+	}
+}
+
+static enum e_visibility VISIBLE_EF_HUB( const struct parsedname * pn )
+{
+	switch ( VISIBLE_EF(pn) ) {
+		case eft_HUB:
+			return visible_now ;
+		default:
+			return visible_not_now ;
+	}
+}
+
 /* ------- Functions ------------ */
 
 /* prototypes */
@@ -83,6 +178,8 @@ static GOOD_OR_BAD OW_r_temperature_offset(_FLOAT * T, struct parsedname * pn) ;
 
 static GOOD_OR_BAD OW_read(BYTE command, BYTE * bytes, size_t size, struct parsedname * pn) ;
 static GOOD_OR_BAD OW_write(BYTE command, BYTE byte, struct parsedname * pn);
+
+static GOOD_OR_BAD OW_r_wetness( int *wetness, struct parsedname * pn);
 
 // returns major/minor as 2 hex bytes (ascii)
 static ZERO_OR_ERROR FS_version(struct one_wire_query *owq)
@@ -189,9 +286,17 @@ static ZERO_OR_ERROR FS_localtype(struct one_wire_query *owq)
         return -EINVAL ;
     }
 
-    switch (type_number) {
-        case 0x01:
-            return OWQ_format_output_offset_and_size_z("Hobby_Boards_UVI", owq) ;
+    switch ((enum e_EF_type) type_number) {
+        case eft_UVI:
+            return OWQ_format_output_offset_and_size_z("HB_UVI_METER", owq) ;
+        case eft_MOI:
+            return OWQ_format_output_offset_and_size_z("HB_MOISTURE_METER", owq) ;
+        case eft_LOG:
+            return OWQ_format_output_offset_and_size_z("HB_MOISTURE_METER_DATALOGGER", owq) ;
+        case eft_SNF:
+            return OWQ_format_output_offset_and_size_z("HB_SNIFFER", owq) ;
+        case eft_HUB:
+            return OWQ_format_output_offset_and_size_z("HB_HUB", owq) ;
         default:
             return FS_type(owq);
     }
@@ -236,6 +341,20 @@ static ZERO_OR_ERROR FS_w_in_case(struct one_wire_query *owq)
 {
     BYTE in_case = OWQ_Y(owq) ? 0xFF : 0x00 ;
     return GB_to_Z_OR_E( OW_write(_EEEF_SET_IN_CASE,in_case,PN(owq))) ;
+}
+
+static ZERO_OR_ERROR FS_r_sensor(struct one_wire_query *owq)
+{
+	int w[4] ;
+	
+	RETURN_ERROR_IF_BAD( OW_r_wetness( w, PN(owq) ) ) ;
+	
+	OWQ_array_I(owq, 0) = w[0] ;
+	OWQ_array_I(owq, 1) = w[1] ;
+	OWQ_array_I(owq, 2) = w[2] ;
+	OWQ_array_I(owq, 3) = w[3] ;
+
+	return 0 ;
 }
 
 static GOOD_OR_BAD OW_version(BYTE * major, BYTE * minor, struct parsedname * pn)
@@ -323,5 +442,19 @@ static GOOD_OR_BAD OW_write(BYTE command, BYTE byte, struct parsedname * pn)
         TRXN_END,
     };
     return  BUS_transaction(t, pn) ;
+}
+
+static GOOD_OR_BAD OW_r_wetness( int *wetness, struct parsedname * pn)
+{
+    BYTE w[4] ;
+    
+	RETURN_BAD_IF_BAD(OW_read(_EEEF_READ_SENSOR, w, 4, pn)) ;
+
+    wetness[0] = (uint8_t) w[0] ;
+    wetness[1] = (uint8_t) w[1] ;
+    wetness[2] = (uint8_t) w[2] ;
+    wetness[3] = (uint8_t) w[3] ;
+
+    return gbGOOD ;
 }
 
