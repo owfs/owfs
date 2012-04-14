@@ -16,6 +16,7 @@ $Id$
 #include "ow_connection.h"
 #include "ow_dirblob.h"
 #include "ow.h"
+#include "ow_external.h"
 
 static enum search_status PossiblyLockedBusCall( enum search_status (* first_next)(struct device_search *, const struct parsedname *), struct device_search * ds, const struct parsedname * pn ) ;
 
@@ -30,6 +31,7 @@ static ZERO_OR_ERROR FS_cache2real(void (*dirfunc) (void *, const struct parsedn
 static ZERO_OR_ERROR FS_busdir(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_directory);
 
 static void FS_stype_dir(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_root_directory);
+static ZERO_OR_ERROR FS_externaldir(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_external_directory);
 static void FS_interface_dir(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_root_directory);
 static void FS_alarm_entry(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_root_directory);
 static void FS_simultaneous_entry(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_root_directory);
@@ -558,6 +560,11 @@ static ZERO_OR_ERROR FS_alarmdir(void (*dirfunc) (void *, const struct parsednam
 	struct device_search ds;	// holds search state
 	uint32_t ignoreflag ;
 
+	/* Special handling for External directory -- no alarm */
+	if ( get_busmode(pn_alarm_directory->selected_connection) == bus_external ) {
+		return 0 ;
+	}
+
 	/* cache from Server if this is a remote bus */
 	if (BusIsServer(pn_alarm_directory->selected_connection)) {
 		return ServerDir(dirfunc, v, pn_alarm_directory, &ignoreflag);
@@ -713,6 +720,11 @@ static ZERO_OR_ERROR FS_cache2real(void (*dirfunc) (void *, const struct parsedn
 	struct dirblob db;
 	BYTE sn[8];
 
+	/* Special handling for External directory -- just walk tree */
+	if ( get_busmode(pn_real_directory->selected_connection) == bus_external ) {
+		return FS_externaldir(dirfunc, v, pn_real_directory) ;
+	}
+	
 	/* Test to see whether we should get the directory "directly" */
 	if (SpecifiedBus(pn_real_directory) || IsUncachedDir(pn_real_directory)
 		|| BAD( Cache_Get_Dir(&db, pn_real_directory)) ) {
@@ -784,6 +796,53 @@ static ZERO_OR_ERROR FS_typedir(void (*dirfunc) (void *, const struct parsedname
 	twalk(Tree[pn_type_directory->type], Typediraction);
 
 	TYPEDIRUNLOCK;
+
+	return 0;
+}
+
+// must lock a global struct for walking through tree -- limitation of "twalk"
+// struct for walking through tree -- cannot send data except globally
+struct {
+	void (*dirfunc) (void *, const struct parsedname *);
+	void *v;
+	struct parsedname *pn_directory;
+} externaldir_action_struct;
+
+static void Externaldiraction(const void *nodep, const VISIT which, const int depth)
+{
+	const struct sensor_node *p = *(struct sensor_node * const *) nodep;
+	uint32_t ignoreflag ;
+	(void) depth;
+
+	switch (which) {
+	case leaf:
+	case postorder:
+		FS_dir_plus(externaldir_action_struct.dirfunc, externaldir_action_struct.v, &ignoreflag, externaldir_action_struct.pn_directory,p->name);
+	default:
+		break;
+	}
+}
+
+/* Show the external entries */
+/* Only the sensors */
+static ZERO_OR_ERROR FS_externaldir(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_external_directory)
+{
+	struct parsedname s_pn_external_device;
+	struct parsedname *pn_external_device = &s_pn_external_device;
+
+
+	memcpy(pn_external_device, pn_external_directory, sizeof(struct parsedname));	// shallow copy
+
+	LEVEL_DEBUG("called on %s", pn_external_directory->path);
+
+	EXTERNALDIRLOCK;
+
+	externaldir_action_struct.dirfunc = dirfunc;
+	externaldir_action_struct.v = v;
+	externaldir_action_struct.pn_directory = pn_external_device;
+	twalk( sensor_tree, Externaldiraction);
+
+	EXTERNALDIRUNLOCK;
 
 	return 0;
 }

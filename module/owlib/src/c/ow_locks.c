@@ -64,6 +64,7 @@ void LockSetup(void)
 	_MUTEX_INIT(Mutex.fstat_mutex);
 	_MUTEX_INIT(Mutex.dir_mutex);
 	_MUTEX_INIT(Mutex.typedir_mutex);
+	_MUTEX_INIT(Mutex.externaldir_mutex);
 	_MUTEX_INIT(Mutex.namefind_mutex);
 	_MUTEX_INIT(Mutex.aliasfind_mutex);
 	_MUTEX_INIT(Mutex.externalcount_mutex);

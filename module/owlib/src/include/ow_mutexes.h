@@ -65,6 +65,7 @@ extern struct mutexes {
 	pthread_mutex_t dir_mutex;
 	pthread_mutex_t libusb_mutex;
 	pthread_mutex_t typedir_mutex;
+	pthread_mutex_t externaldir_mutex;
 	pthread_mutex_t namefind_mutex;
 	pthread_mutex_t aliasfind_mutex;
 	pthread_mutex_t aliaslist_mutex;
@@ -146,6 +147,9 @@ extern struct mutexes {
 
 #define TYPEDIRLOCK       	_MUTEX_LOCK(  Mutex.typedir_mutex)
 #define TYPEDIRUNLOCK     	_MUTEX_UNLOCK(Mutex.typedir_mutex)
+
+#define EXTERNALDIRLOCK       _MUTEX_LOCK(  Mutex.externaldir_mutex)
+#define EXTERNALDIRUNLOCK     _MUTEX_UNLOCK(Mutex.externaldir_mutex)
 
 #define NAMEFINDLOCK      	_MUTEX_LOCK(  Mutex.namefind_mutex)
 #define NAMEFINDUNLOCK    	_MUTEX_UNLOCK(Mutex.namefind_mutex)
@@ -230,6 +234,9 @@ extern struct mutexes {
 
 #define TYPEDIRLOCK			return_ok()
 #define TYPEDIRUNLOCK		return_ok()
+
+#define EXTERNALDIRLOCK		return_ok()
+#define EXTERNALDIRUNLOCK	return_ok()
 
 #define NAMEFINDLOCK		return_ok()
 #define NAMEFINDUNLOCK		return_ok()
