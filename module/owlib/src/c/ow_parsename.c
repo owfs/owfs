@@ -665,7 +665,7 @@ static enum parse_enum Parse_Property(char *filename, struct parsedname *pn)
 
 	// Special case for remote device. Use distant data
 	if ( pn->selected_device == &RemoteDevice ) {
-		// remote device, no known sn, can't handle a prolerty
+		// remote device, no known sn, can't handle a property
 		return parse_error ;
 	}
 

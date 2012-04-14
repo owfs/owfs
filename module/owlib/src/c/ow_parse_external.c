@@ -394,7 +394,7 @@ void AddProperty( char * input_string, enum external_type et )
 		// Actually add
 		AddFamilyToTree( s_family ) ;
 		AddPropertyToTree( s_property, s_family, s_format, s_array, s_combined, s_index_type, s_length, s_change, s_read, s_write, s_data, s_other, et ) ;
-		create_subdirs( s_family, s_property ) ;
+		create_subdirs( s_property, s_family ) ;
 	}
 
 	// Clean up
@@ -658,7 +658,7 @@ static void create_subdirs( char * s_prop, char * s_family )
 	}
 	while ( (slash = strrchr( subdir, '/' )) != NULL ) {
 		slash[0] = '\0' ;
-		AddPropertyToTree( subdir, s_family, ft_directory, 0, ag_separate, ag_numbers, 0, fc_subdir, "", "", "", "", et_none ) ;
+		AddPropertyToTree( subdir, s_family, ft_subdir, 1, ag_separate, ag_numbers, 0, fc_subdir, "", "", "", "", et_none ) ;
 	}
 	
 	owfree(subdir) ;

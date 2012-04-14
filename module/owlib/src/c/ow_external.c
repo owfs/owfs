@@ -32,12 +32,14 @@ static void External_setroutines(struct connection_in *in)
 	in->iroutines.select_and_sendback = NO_SELECTANDSENDBACK_ROUTINE;
 	in->iroutines.reconnect = NO_RECONNECT_ROUTINE;
 	in->iroutines.close = NO_CLOSE_ROUTINE;
-	in->iroutines.flags = ADAP_FLAG_dirgulp | ADAP_FLAG_bundle | ADAP_FLAG_dir_auto_reset | ADAP_FLAG_no2404delay | ADAP_FLAG_presence_from_dirblob ;
+	in->iroutines.flags = 0 ;
 	in->bundling_length = 1;
 }
 
 GOOD_OR_BAD External_detect(struct connection_in *in)
 {
 	External_setroutines(in);
+	in->Adapter = adapter_external;
+	in->adapter_name = "External";
 	return gbGOOD ;
 }

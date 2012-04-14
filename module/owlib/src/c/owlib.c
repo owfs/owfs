@@ -250,6 +250,11 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct connection_in * in )
 		/* the scanning starts with "W1_Browse" in LibStart and continues in it's own thread */
 		/* No connection_in entries should have been created for w1 yet */
 		break ;
+
+	case bus_external:
+		RETURN_BAD_IF_BAD( External_detect(in) ) ;
+		break;
+
 	case bus_bad:
 	default:
 		return gbBAD ;
