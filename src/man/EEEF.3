@@ -13,6 +13,8 @@
 EEEF \- HobbyBoards EE/EF Microprocessor-based slaves
 .br
 UVI \- Ultra Violet (UV) Index sensor
+.br
+Moisture \- Soild and Leaf moisture measurements
 .SH SYNOPSIS
 General EE device
 .br
@@ -60,6 +62,10 @@ General EF device
 |
 .so standard_mini.3so
 ]]
+.PP
+Moisture Meter
+.br
+.B Moisture/sensor.[0-3]
 .SH FAMILY CODE
 .TP
 .I EE
@@ -70,6 +76,9 @@ UVI
 .TP
 .I EF
 Device without temperature
+.TP
+.I EF
+Moisture Meter
 .SH TEMPERATURE PROPERTIES
 .SS temperature
 .I read-only, floating point
@@ -97,6 +106,20 @@ Flag to apply compensation for the protective case. Stored on-device non-volatil
 .SS UVI/valid
 .I read-only, yes-no
 Flag the the EE device type matches the known UVI type.
+.SH Moisture Meter
+.SS moisture/sensor.[0 1 2 3 ALL]
+.I read-only integer
+.br
+Up to 4 sensors reading moisture can be attached. 
+.I OWFS
+addresses the sensors as 0 through 3 while the datasheet uses 1-4.
+Two types of external sensors are supported (and the data range):
+.TP
+Watermark Soil Moisture Sensor
+0-199
+.TP
+Leaf Wetness Sensor
+0-99
 .SH IDENTIFICATION PROPERTIES
 .SS version
 .I read-only, ascii
@@ -108,7 +131,19 @@ Firmware version for the EE/EF device. Reported in HH.HH format where HH is a he
 Index of the type of sensor built into this device. Current known assignments:
 .TP
 1
-UVI
+UVI (Ultraviolet index)
+.TP
+2
+Moisture meter
+.TP
+3
+Moisture meter with datalogger
+.TP
+4
+Sniffer
+.TP
+5
+Hub
 .SH STANDARD PROPERTIES
 .so standard.3so
 .SH ALARMS
