@@ -65,7 +65,7 @@ General EF device
 .PP
 Moisture Meter
 .br
-.B Moisture/sensor.[0-3]
+.B Moisture/sensor.[0-3|ALL]
 .SH FAMILY CODE
 .TP
 .I EE
@@ -107,7 +107,7 @@ Flag to apply compensation for the protective case. Stored on-device non-volatil
 .I read-only, yes-no
 Flag the the EE device type matches the known UVI type.
 .SH Moisture Meter
-.SS moisture/sensor.[0 1 2 3 ALL]
+.SS moisture/sensor.0 .. moisture/sensor.3 moisture/sensor.ALL
 .I read-only integer
 .br
 Up to 4 sensors reading moisture can be attached. 
@@ -173,6 +173,8 @@ directory.
 .SH DATASHEET
 .br
 http://www.hobby-boards.com/catalog/links/uvi2-r1/UVI%20Meter%20User%20Manual.pdf
+.br
+http://www.hobby-boards.com/download/manuals/Moisture%20Meter.pdf
 .SH SEE ALSO
 .so seealso.3so
 .SH AVAILABILITY
