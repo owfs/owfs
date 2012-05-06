@@ -1692,11 +1692,6 @@ AC_CONFIG_FILES([
 	module/owserver/src/include/Makefile
 	module/owserver/src/c/Makefile
 
-	module/owexternal/Makefile
-	module/owexternal/src/Makefile
-	module/owexternal/src/include/Makefile
-	module/owexternal/src/c/Makefile
-
 	module/owftpd/Makefile
 	module/owftpd/src/Makefile
 	module/owftpd/src/include/Makefile
