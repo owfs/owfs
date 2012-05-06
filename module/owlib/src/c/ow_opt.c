@@ -96,6 +96,9 @@ const struct option owopts_long[] = {
 	{"uncached", no_argument, &Globals.uncached, 1 },
 	{"cached", no_argument, &Globals.uncached, 0 },
 
+	{"external", no_argument, &Globals.allow_external, 1},
+	{"no_external", no_argument, &Globals.allow_external, 0},
+
 	{"background", no_argument, &Globals.want_background, 1},
 	{"foreground", no_argument, &Globals.want_background, 0},
 	{"fatal_debug", no_argument, &Globals.fatal_debug, 1},

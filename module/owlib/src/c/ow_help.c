@@ -239,7 +239,12 @@ void ow_help_device(void)
 	"\n"
 	" Linux Kernel Device\n"
 	"  --w1            Scan for kernel-managed bus masters\n"
-	"\n" " 1-wire device selection\n" "  --one-device     Only single device on bus, use ROM SKIP command\n");
+	"\n" 
+	"  --external      Allow external scripts to be called\n"
+	"  --no_external   Do not allow external scripts to be called\n"
+	
+	"\n" 
+	" 1-wire device selection\n" "  --one-device     Only single device on bus, use ROM SKIP command\n");
 }
 
 void FS_help(const char *arg)

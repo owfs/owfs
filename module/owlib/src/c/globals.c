@@ -99,8 +99,8 @@ struct global Globals = {
 	.templow = GLOBAL_UNTOUCHED_TEMP_LIMIT,
 	.temphigh = GLOBAL_UNTOUCHED_TEMP_LIMIT,
 	
-	.allow_external = 1 , // for testing
-//	.allow_external = 0 , // unless program == owexternal
+//	.allow_external = 1 , // for testing
+	.allow_external = 0 , // unless program == owexternal
 };
 
 // generic value for ignorable function returns 
