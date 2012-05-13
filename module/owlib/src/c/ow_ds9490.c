@@ -496,7 +496,9 @@ static RESET_TYPE DS9490_reset(const struct parsedname *pn)
 	int USpeed;
 	struct connection_in * in = pn->selected_connection ;
 	int readlen = 0 ;
-	
+
+	LEVEL_DEBUG("DS9490 RESET. changed %d, flex: %d", in->changed_bus_settings, in->flex) ;	
+
 	if (in->master.usb.usb == NULL || in->master.usb.dev == NULL) {
 		LEVEL_DEBUG("Attempting RESET on null bus") ;
 		return BUS_RESET_ERROR;
@@ -536,18 +538,21 @@ static RESET_TYPE DS9490_reset(const struct parsedname *pn)
 	switch( DS9490_getstatus(buffer, &readlen, pn) ) {
 		case BUS_RESET_SHORT:
 			/* Short detected, but otherwise no bigger problem */
+			LEVEL_DEBUG("DS9490_Reset: SHORT");
 			return BUS_RESET_SHORT ;
 		case BUS_RESET_OK:
+			LEVEL_DEBUG("DS9490_Reset: OK");
 			break ;
 		case BUS_RESET_ERROR:
 		default:
+			LEVEL_DEBUG("DS9490_Reset: ERROR");
 			return BUS_RESET_ERROR;
 	}
 	//USBpowered = (buffer[8]&STATUSFLAGS_PMOD) == STATUSFLAGS_PMOD ;
 	in->AnyDevices = anydevices_yes ;
 	for (i = 16; i < readlen; i++) {
 		BYTE val = buffer[i];
-		LEVEL_DEBUG("Status bytes[%d]: %X", i, val);
+		LEVEL_DEBUG("Reset: Status bytes[%d]: %X", i, val);
 		if (val != ONEWIREDEVICEDETECT) {
 			// check for NRS bit (0x01)
 			if (val & COMMCMDERRORRESULT_NRS) {
@@ -805,7 +810,7 @@ static GOOD_OR_BAD DS9490_sendback_data(const BYTE * data, BYTE * resp, size_t l
 // Delay delay msec and return to normal
 static GOOD_OR_BAD DS9490_PowerByte(BYTE byte, BYTE * resp, UINT delay, const struct parsedname *pn)
 {
-	LEVEL_DATA("start");
+	LEVEL_DATA("DS9490_PowerByte start");
 
 	/* This is more likely to be the correct way to handle powerbytes */
 	if ( BAD( USB_Control_Msg(COMM_CMD, COMM_BYTE_IO | COMM_IM | COMM_SPU, byte & 0xFF, pn)) ) {
@@ -817,6 +822,7 @@ static GOOD_OR_BAD DS9490_PowerByte(BYTE byte, BYTE * resp, UINT delay, const st
 		return gbBAD ;
 	}
 	/* Delay with strong pullup */
+	LEVEL_DEBUG("DS9490_PowerByte DELAY:%d", delay);
 	UT_delay(delay);
 	DS9490_HaltPulse(pn);
 	return gbGOOD ;
@@ -877,7 +883,7 @@ static GOOD_OR_BAD DS9490_HaltPulse(const struct parsedname *pn)
 			return gbBAD;
 		}
 	} while ( timercmp( &tv, &tvtarget, >) ) ;
-	LEVEL_DATA("timeout");
+	LEVEL_DATA("DS9490_HaltPulse timeout");
 	return gbBAD;
 }
 
