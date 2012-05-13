@@ -1027,7 +1027,9 @@ static void DS9490_SetFlexParameters(struct connection_in *in)
 		in->master.usb.datasampleoffset = PARMSET_DS0_W0R_8us;
 	} else {
 		/* This seem to be the default value when reseting the ds2490 chip */
-		in->master.usb.pulldownslewrate = PARMSET_Slew0p83Vus;
+		// Change by Michael Markstaller from datasheet
+		in->master.usb.pulldownslewrate = PARMSET_Slew1p10Vus;
+//		in->master.usb.pulldownslewrate = PARMSET_Slew0p83Vus;
 		in->master.usb.writeonelowtime = PARMSET_W1L_12us;
 		in->master.usb.datasampleoffset = PARMSET_DS0_W0R_7us;
 	}
