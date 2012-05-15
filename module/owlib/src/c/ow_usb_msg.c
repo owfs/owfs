@@ -186,7 +186,21 @@ RESET_TYPE DS9490_getstatus(BYTE * buffer, int * readlen, const struct parsednam
 
 		if (buffer[8] & STATUSFLAGS_IDLE) {
 #if OW_SHOW_TRAFFIC
-			_Debug_Bytes("USB status registers ---- idle ----", buffer, ret) ; // debugging
+			// See note below for register info
+			LEVEL_DEBUG("USB status registers (Idle) EFlags:%u->SPU:%u Dspeed:%u,Speed:%u,SPUdur:%u, PDslew:%u, W1lowtime:%u, W0rectime:%u, DevState:%u, CC1:%u, CC2:%u, CCState:%u, DataOutState:%u, DataInState:%u", 
+			    buffer[0], (buffer[0]&0x01), (buffer[0]&0x04 ? 1 : 0), 
+			    buffer[1],
+			    buffer[2], 
+			    buffer[4],
+			    buffer[5],
+			    buffer[6],
+			    buffer[8],
+			    buffer[9],
+			    buffer[10],
+			    buffer[11],
+			    buffer[12],
+			    buffer[13]
+			    );
 #endif /* OW_SHOW_TRAFFIC */
 			if (*readlen > 0) {
 				// we have enough bytes to read now!
@@ -200,8 +214,22 @@ RESET_TYPE DS9490_getstatus(BYTE * buffer, int * readlen, const struct parsednam
 			}
 		} else {
 #if OW_SHOW_TRAFFIC
-			_Debug_Bytes("USB status registers ---- Not idle -----", buffer, ret) ; // debugging
-#endif /* OW_SHOW_TRAFFIC */
+			// See note below for register info
+			LEVEL_DEBUG("USB status registers (Not idle) EFlags:%u->SPU:%u Dspeed:%u,Speed:%u,SPUdur:%u, PDslew:%u, W1lowtime:%u, W0rectime:%u, DevState:%u, CC1:%u, CC2:%u, CCState:%u, DataOutState:%u, DataInState:%u", 
+			    buffer[0], (buffer[0]&0x01), (buffer[0]&0x04 ? 1 : 0), 
+			    buffer[1],
+			    buffer[2], 
+			    buffer[4],
+			    buffer[5],
+			    buffer[6],
+			    buffer[8],
+			    buffer[9],
+			    buffer[10],
+			    buffer[11],
+			    buffer[12],
+			    buffer[13]
+			    );
+ #endif /* OW_SHOW_TRAFFIC */
 		}
 		// this value might be decreased later...
 		if (++loops > 100) {
@@ -350,5 +378,33 @@ SIZE_OR_ERROR DS9490_write(const BYTE * buf, size_t size, const struct parsednam
 	TrafficOut("write",buf,size,pn->selected_connection);
 	return ret;
 }
+
+// Notes from Michael Markstaller:
+/*
+        Datasheet DS2490 page 29 table 16
+        0: Enable Flags: SPUE=1(bit0) If set to 1, the strong pullup to 5V is enabled, if set to 0, it is disabled. 
+        bit1 should be 0 but is 1 ?! SPCE = 4(bit2) If set to 1, a dynamic 1-Wire bus speed change through a Communication command is enabled, if set to 0, it is disabled.
+        1: 1-Wire Speed
+        2: Strong Pullup Duration
+        3: (Reserved)
+        4: Pulldown Slew Rate
+        5: Write-1 Low Time
+        6: Data Sample Offset / Write-0 Recovery Time
+        7: reserved
+        8: Device Status Flags: bit0: SPUA if set to 1, the strong pullup to 5V is currently active, if set to 0, it is inactive.
+            bit3(8): PMOD if set to 1, the DS2490 is powered from USB and external sources, if set to 0, all DS2490 power is provided from USB. FIXME: expose this to clients to check!
+            bit4(16): HALT if set to 1, the DS2490 is currently halted, if set to 0, the device is not halted.
+            bit5(32): IDLE if set to 1, the DS2490 is currently idle, if set to 0, the device is not idle.
+            bit5(64): EPOF: Endpoint 0 FIFO status, see: If EP0F is set to 1, the Endpoint 0 FIFO was full when a new control transfer setup packet was
+                received. This is an error condition in that the setup packet received is discarded due to the full
+                condition. To recover from this state the USB host must send a CTL_RESET_DEVICE command; the
+                device will also recover with a power on reset cycle. Note that the DS2490 will accept and process a
+                CTL_RESET_DEVICE command if the EP0F = 1 state occurs. If EP0F = 0, no FIFO error condition exists.
+        9: Communication Command, Byte 1
+        10: Communication Command, Byte 2
+        11: Communication Command Buffer Status
+        12: 1-Wire Data Out Buffer Status
+        13: 1-Wire Data In Buffer Status
+*/
 
 #endif							/* OW_USB */
