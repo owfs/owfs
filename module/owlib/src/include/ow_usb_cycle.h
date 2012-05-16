@@ -73,8 +73,6 @@ GOOD_OR_BAD USB_next_until_n(struct usb_list *ul, int num) ;
 GOOD_OR_BAD DS9490_root_dir( struct dirblob * db, struct connection_in * in ) ;
 GOOD_OR_BAD DS9490_ID_this_master(struct connection_in *in);
 char *DS9490_device_name(const struct usb_list *ul);
-GOOD_OR_BAD DS9490_open_and_name(struct usb_list *ul, struct connection_in *in);
-void DS9490_connection_init( struct connection_in * in ) ;
 
 #define DS2490_USB_VENDOR  0x04FA
 #define DS2490_USB_PRODUCT 0x2490

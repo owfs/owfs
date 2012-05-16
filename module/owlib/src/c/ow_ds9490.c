@@ -49,6 +49,7 @@ $Id$
 /* All the rest of the code sees is the DS9490_detect routine and the iroutine structure */
 
 static RESET_TYPE DS9490_reset(const struct parsedname *pn);
+static void BUS_ERROR_fix(const struct parsedname *pn);
 
 static GOOD_OR_BAD DS9490_detect_single_adapter(int usb_nr, struct connection_in *in);
 static GOOD_OR_BAD DS9490_detect_all_adapters(struct connection_in * in_first);
@@ -72,6 +73,8 @@ static int FindDiscrepancy(BYTE * last_sn, BYTE * discrepancy_sn);
 static enum search_status DS9490_directory(struct device_search *ds, const struct parsedname *pn);
 static GOOD_OR_BAD DS9490_SetSpeed(const struct parsedname *pn);
 static void DS9490_SetFlexParameters(struct connection_in *in) ;
+static GOOD_OR_BAD DS9490_open_and_name(struct usb_list *ul, struct connection_in *in);
+static void DS9490_connection_init( struct connection_in * in ) ;
 
 /* Device-specific routines */
 static void DS9490_setroutines(struct connection_in *in)
@@ -338,7 +341,7 @@ static GOOD_OR_BAD DS9490_detect_all_adapters(struct connection_in * in_first)
 	return gbGOOD ;
 }
 
-void DS9490_connection_init( struct connection_in * in )
+static void DS9490_connection_init( struct connection_in * in )
 {
 	if ( in == NO_CONNECTION ) {
 		return ;
@@ -349,6 +352,7 @@ void DS9490_connection_init( struct connection_in * in )
 	DS9490_setroutines(in);		// set up close, reconnect, reset, ...
 
 	in->busmode = bus_usb;
+	in->flex = 1 ; // Michael Markstaller suggests this
 	in->master.usb.usb = NULL ; // no handle yet
 	in->master.usb.usb_bus_number = in->master.usb.usb_dev_number = -1 ;
 	memset( in->master.usb.ds1420_address, 0, SERIAL_NUMBER_SIZE ) ;
@@ -500,7 +504,11 @@ static RESET_TYPE DS9490_reset(const struct parsedname *pn)
 	LEVEL_DEBUG("DS9490 RESET. changed %d, flex: %d", in->changed_bus_settings, in->flex) ;	
 
 	if (in->master.usb.usb == NULL || in->master.usb.dev == NULL) {
+		// From Michael Markstaller:
 		LEVEL_DEBUG("Attempting RESET on null bus") ;
+		//FIXME! what doees it mean? no action/reconnect is even tried-> shouldn't we just drop this BM and let uscan rediscover it? DS9490 must always have an ID chip..
+		// Actually no, the home-brewed DS2490-based masters that people have built have no ID chip
+		BUS_ERROR_fix(pn) ;
 		return BUS_RESET_ERROR;
 	}
 
@@ -523,8 +531,11 @@ static RESET_TYPE DS9490_reset(const struct parsedname *pn)
 	}
 
 	// Send reset
+	//FIXME: from Michael Markstaller: changed hard to flexible speed as it gets wrong somewhere, only want flexible
 	if ( BAD( USB_Control_Msg(COMM_CMD, COMM_1_WIRE_RESET | COMM_F | COMM_IM | COMM_SE, USpeed, pn)) ) {
+//	if ( BAD( USB_Control_Msg(COMM_CMD, COMM_1_WIRE_RESET | COMM_F | COMM_IM | COMM_SE, ONEWIREBUSSPEED_FLEXIBLE, pn)) ) {
 		LEVEL_DATA("Reset command rejected");
+		BUS_ERROR_fix(pn) ;
 		return BUS_RESET_ERROR;			// fatal error... probably closed usb-handle
 	}
 
@@ -546,6 +557,7 @@ static RESET_TYPE DS9490_reset(const struct parsedname *pn)
 		case BUS_RESET_ERROR:
 		default:
 			LEVEL_DEBUG("DS9490_Reset: ERROR");
+			BUS_ERROR_fix(pn) ;
 			return BUS_RESET_ERROR;
 	}
 	//USBpowered = (buffer[8]&STATUSFLAGS_PMOD) == STATUSFLAGS_PMOD ;
@@ -564,6 +576,33 @@ static RESET_TYPE DS9490_reset(const struct parsedname *pn)
 	}
 	return BUS_RESET_OK;
 }
+
+static void BUS_ERROR_fix(const struct parsedname *pn)
+{
+	LEVEL_DEBUG("DS9490_Reset: ERROR -- will attempt a fix");
+	/* FIXME: FIXED. In ow_usb_msg.c an USB-reset was was issued:
+	* USB_Control_Msg(CONTROL_CMD, CTL_RESET_DEVICE, 0x0000, pn) ;
+	* So we need to setup the Adapter again 
+	* Though here is probably the wrong place, duplicated code from _setup_adaptor
+	*/
+
+	// enable both program and strong pulses
+	if ( BAD( USB_Control_Msg(MODE_CMD, MOD_PULSE_EN, ENABLE_PROGRAM_AND_PULSE, pn)) ) {
+		LEVEL_DATA("EnableProgram error");
+	}
+	// enable speed changes
+	if ( BAD( USB_Control_Msg(MODE_CMD, MOD_SPEED_CHANGE_EN, 1, pn)) ) {
+		LEVEL_DATA("RESET_Error: SpeedEnable error");
+	}
+	// set the strong pullup duration to infinite
+	if ( BAD( USB_Control_Msg(COMM_CMD, COMM_SET_DURATION | COMM_IM, 0x0000, pn)) ) {
+		LEVEL_DATA("StrongPullup error");
+	}
+	
+	// Don't set speed right now, it calls reset for infinite recursion. Just set for next pass
+	++ 	pn->selected_connection->changed_bus_settings ;
+}
+
 
 /* ------------------------------------------------------------ */
 /* --- USB Directory functions  --------------------------------*/
@@ -726,12 +765,8 @@ static int FindDiscrepancy(BYTE * last_sn, BYTE * discrepancy_sn)
 /* ------------------------------------------------------------ */
 /* --- USB Open and Close --------------------------------------*/
 
-/* Open usb device,
-   unload ds9490r kernel module if it is interfering
-   set all the interface magic
-   set callback routines and adapter entries
-*/
-GOOD_OR_BAD DS9490_open_and_name(struct usb_list *ul, struct connection_in *in)
+// Open usb device,
+static GOOD_OR_BAD DS9490_open_and_name(struct usb_list *ul, struct connection_in *in)
 {
 	if (in->master.usb.usb) {
 		LEVEL_DEFAULT("DS9490 %s was NOT closed?", SOC(in)->devicename);
