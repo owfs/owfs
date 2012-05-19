@@ -44,13 +44,19 @@ foreach my $line (@lines) {
 	} elsif ($line =~ m/MALLOC/) {
 		$status[++$#status] = "alloc" ;
 	} elsif ($line =~ m/REALLOC/) {
-		$status[++$#status] = "alloc" ;
+		if ($line =~ /free/) {
+			$status[++$#status] = "free" ;
+		} else {
+			$status[++$#status] = "alloc" ;
+		}
 	} elsif ($line =~ m/STRDUP/) {
 		$status[++$#status] = "alloc" ;
 	} elsif ($line =~ m/CALLOC /) {
 		$status[++$#status] = "alloc" ;
 	} else {
+		# probably a debug message, not memory data
 		$status[++$#status] = "unknown" ;
+		$addr[$#addr] = "txt" ;
 	}
 }
 
