@@ -22,19 +22,35 @@ die (
 	."See http://www.owfs.org\n"
 ) if ( $#ARGV >= 0 ) ;
 
+# read in all the lines, revered
 my @lines = reverse(<>) ;
+
+# array of addresses (for each line)
 my @addr ;
+# array of results (for each line)
 my @status ;
 
 foreach my $line (@lines) {
 	$line =~ /^([0123456789abcdefABCDEFxXS]+) / ;
-	$addr[++$#addr] = $1 ;
-	if ($line =~ m/\(nil\)/) {
+	if ( defined($1)) {
+		$addr[++$#addr] = $1 ;
+	} else {
+		$addr[++$#addr] = "txt" ;
+	}
+	if ($line =~ m/^\(nil\)/) {
 		$status[++$#status] = "nil" ;
 	} elsif ($line =~ m/FREE/) {
 		$status[++$#status] = "free" ;
-	} else {
+	} elsif ($line =~ m/MALLOC/) {
 		$status[++$#status] = "alloc" ;
+	} elsif ($line =~ m/REALLOC/) {
+		$status[++$#status] = "alloc" ;
+	} elsif ($line =~ m/STRDUP/) {
+		$status[++$#status] = "alloc" ;
+	} elsif ($line =~ m/CALLOC /) {
+		$status[++$#status] = "alloc" ;
+	} else {
+		$status[++$#status] = "unknown" ;
 	}
 }
 
