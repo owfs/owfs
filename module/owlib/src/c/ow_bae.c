@@ -79,25 +79,14 @@ WRITE_FUNCTION(FS_eeprom_w_page);
 READ_FUNCTION(FS_eeprom_r_mem);
 WRITE_FUNCTION(FS_eeprom_w_mem);
 
+READ_FUNCTION(FS_r_8_ext) ;
+WRITE_FUNCTION(FS_w_8_ext) ;
 READ_FUNCTION(FS_r_8) ;
 WRITE_FUNCTION(FS_w_8) ;
 READ_FUNCTION(FS_r_16) ;
 WRITE_FUNCTION(FS_w_16) ;
 READ_FUNCTION(FS_r_32) ;
 WRITE_FUNCTION(FS_w_32) ;
-
-READ_FUNCTION(FS_r_911_pio) ;
-WRITE_FUNCTION(FS_w_911_pio) ;
-READ_FUNCTION(FS_r_pio_bit) ;
-WRITE_FUNCTION(FS_w_pio_bit) ;
-
-READ_FUNCTION(FS_r_cnt1_bit) ;
-READ_FUNCTION(FS_r_cnt2_bit) ;
-WRITE_FUNCTION(FS_w_cnt1_bit);
-WRITE_FUNCTION(FS_w_cnt2_bit);
-
-READ_FUNCTION(FS_r_cmp_bit);
-WRITE_FUNCTION(FS_w_cmp_bit);
 
 /* ------- Structures ----------- */
 
@@ -121,6 +110,7 @@ WRITE_FUNCTION(FS_w_cmp_bit);
 
 /* BAE registers -- memory mapped */
 #define _FC02_ADC        50   /* u8 */
+#define _FC02_ADC10      62   /* u16 */
 #define _FC02_ADCAN      24   /* u16 */
 #define _FC02_ADCAP      22   /* u16 */
 #define _FC02_ADCC       2    /* u8 */
@@ -181,11 +171,12 @@ WRITE_FUNCTION(FS_w_cmp_bit);
 
 #define _FC03_IICC       0x7E00    /* u8 */
 #define _FC03_LCDC       0x7E01    /* u8 */
-#define _FC03_SCIC       0x7E02    /* u16 */
 #define _FC03_SDC        0x7E04    /* u8 */
 #define _FC03_SPIC       0x7E05    /* u16 */
 #define _FC03_PC0        0x7E07    /* u16 */
 #define _FC03_CLATCH     0x7E09    /* u8 */
+#define _FC03_SCIC       0x7E0A    /* u8 */
+
 
 #define _FC03_SEQW_LCDD 0x00
 #define _FC03_SEQW_SD 0x02
@@ -251,10 +242,7 @@ WRITE_FUNCTION(FS_w_cmp_bit);
 #define _FC03_USER_ARRAY 0x7F8B    /* u256 */
 #define _FC03_USER_BYTES 0x7FAB    /* u128 */
 #define _FC03_USER_WORDS 0x7FBB    /* u256 */
-#define _FC03_USER_WW    0x7FDB    /* u256 */
-
-
-
+#define _FC03_USER_DW    0x7FDB    /* u256 */
 
 #define _FC03_PIO0       0x7900    /* u8 */
 #define _FC03_PIO1       0x7901    /* u8 */
@@ -439,17 +427,26 @@ WRITE_FUNCTION(FS_w_cmp_bit);
 #define _FC03_TPM1C      0x7A00    /* u8 */
 #define _FC03_TPM2C      0x7A01    /* u8 */
 #define _FC03_PERIOD1    0x7A02    /* u16 */
+ 
 #define _FC03_PERIOD2    0x7A04    /* u16 */
+ 
 #define _FC03_DUTY1C0    0x7A06    /* u16 */
+ 
 #define _FC03_DUTY1C1    0x7A08    /* u16 */
+ 
 #define _FC03_DUTY2C0    0x7A0A    /* u16 */
+ 
 #define _FC03_DUTY2C1    0x7A0C    /* u16 */
+ 
 #define _FC03_C1CH0      0x7A0E    /* u8 */
 #define _FC03_C1CH1      0x7A0F    /* u8 */
 #define _FC03_C2CH0      0x7A10    /* u8 */
 #define _FC03_C2CH1      0x7A11    /* u8 */
 #define _FC03_NBYTES     0x7A12    /* u8 */
- 
+#define _FC03_BAUDDIV    0x7A13    /* u16 */
+
+#define _FC03_GLOBAL_MEM 0x7C00    /* u8[64]*/
+
 
 
 
@@ -472,12 +469,16 @@ static struct aggregate A911latch = { 22, ag_numbers, ag_separate, };
 static struct aggregate A911elatch = { 22, ag_numbers, ag_separate, };
 static struct aggregate A911counter = { 18, ag_numbers, ag_separate, };
 static struct aggregate A911ecount = { 18, ag_numbers, ag_separate, };
-static struct aggregate A911pwm = { 4, ag_numbers, ag_separate, };
 static struct aggregate A911adc = { 16, ag_numbers, ag_separate, };
 static struct aggregate A911userb = { 16, ag_numbers, ag_separate, };
 static struct aggregate A911userw = { 16, ag_numbers, ag_separate, };
 static struct aggregate A911userdw = { 8, ag_numbers, ag_separate, };
 static struct aggregate A911userarray = { 32, ag_numbers, ag_separate, };
+static struct aggregate A911globalmem = { 64, ag_numbers, ag_separate, };
+static struct aggregate A911globalmemory = { 0, ag_numbers, ag_sparse, };
+
+
+
 
 static struct filetype BAE[] = {
 	F_STANDARD,
@@ -536,6 +537,7 @@ static struct filetype BAE[] = {
 	{"910/out", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_read_stable, FS_r_8, FS_w_8, VISIBLE_910, {u:_FC02_OUT,}, },
 	{"910/pio", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_910, {u:_FC02_PIO,}, },
 	{"910/adc", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, NO_WRITE_FUNCTION, VISIBLE_910, {u:_FC02_ADC,}, },
+	{"910/adc10", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, NO_WRITE_FUNCTION, VISIBLE_910, {u:_FC02_ADC10,}, },
 	{"910/cnt", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, NO_WRITE_FUNCTION, VISIBLE_910, {u:_FC02_CNT,}, },
 	{"910/alarm", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_910, {u:_FC02_ALARM,}, },
 	{"910/ovruncnt", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_910, {u:_FC02_OVRUNCNT,}, },
@@ -568,7 +570,9 @@ static struct filetype BAE[] = {
 	{"911", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA, },
 	{"911/automation_engine", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA, },
 	{"911/automation_engine/pc0", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_PC0,}, },
-	{"911/pio", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA, },
+	{"911/automation_engine/global_mem", PROPERTY_LENGTH_UNSIGNED, &A911globalmem, ft_unsigned, fc_volatile, FS_r_8, FS_w_8,  VISIBLE_911, {u:_FC03_GLOBAL_MEM,}, },
+	{"911/automation_engine/global_memory", PROPERTY_LENGTH_UNSIGNED, &A911globalmemory, ft_unsigned, fc_volatile, FS_r_8_ext, FS_w_8_ext,  VISIBLE_911, {v:(int[2]){_FC03_GLOBAL_MEM, 64,},}, },
+	{"911/pio", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
 	{"911/pio/pio",   PROPERTY_LENGTH_YESNO, &A911pio , ft_yesno, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_PIO0,}, },
 	{"911/pio/direction", PROPERTY_LENGTH_YESNO, &A911piodd, ft_yesno, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_PIODIR0,}, },
 	{"911/pio/strenght",  PROPERTY_LENGTH_YESNO, &A911piods, ft_yesno, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_PIODS0,}, },
@@ -598,8 +602,8 @@ static struct filetype BAE[] = {
 	{"911/user_registers", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA, },
 	{"911/user_registers/byte", PROPERTY_LENGTH_UNSIGNED, &A911userb, ft_unsigned, fc_volatile, FS_r_8, FS_w_8,  VISIBLE_911, {u:_FC03_USER_BYTES,}, },
 	{"911/user_registers/word", PROPERTY_LENGTH_UNSIGNED, &A911userw, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_USER_WORDS,}, },
-	{"911/user_registers/dword", PROPERTY_LENGTH_UNSIGNED, &A911userdw, ft_unsigned, fc_volatile, FS_r_32, FS_w_32, VISIBLE_911, {u:_FC03_USER_WW,}, },
-	{"911/analog", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA, },
+	{"911/user_registers/dword", PROPERTY_LENGTH_UNSIGNED, &A911userdw, ft_unsigned, fc_volatile, FS_r_32, FS_w_32, VISIBLE_911, {u:_FC03_USER_DW,}, },
+	{"911/analog", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
 	{"911/analog/adc", PROPERTY_LENGTH_UNSIGNED, &A911adc, ft_unsigned, fc_volatile, FS_r_16, NO_WRITE_FUNCTION, VISIBLE_911, {u:_FC03_ADC0,}, },
 	{"911/analog/comparator", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA, },
 	{"911/analog/comparator/acmp_enable", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_ACMPE,}, },
@@ -610,18 +614,18 @@ static struct filetype BAE[] = {
 	{"911/pwm1", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA, },
 	{"911/pwm1/ref_clock", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_TPM1C,}, },
 	{"911/pwm1/period", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_PERIOD1,}, },
-	{"911/pwm1/mode0", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_C1CH0,}, },
-	{"911/pwm1/mode1", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_C1CH1,}, },
-	{"911/pwm1/duty0", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_DUTY1C0,}, },
-	{"911/pwm1/duty1", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_DUTY1C1,}, },
-	{"911/pwm2", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA, },
+	{"911/pwm1/mode_ch0", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_C1CH0,}, },
+	{"911/pwm1/mode_ch1", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_C1CH1,}, },
+	{"911/pwm1/duty_ch0", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_DUTY1C0,}, },
+	{"911/pwm1/duty_ch1", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_DUTY1C1,}, },
+	{"911/pwm2", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
 	{"911/pwm2/ref_clock", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_TPM2C,}, },
 	{"911/pwm2/period", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_PERIOD2,}, },
-	{"911/pwm2/mode0", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_C2CH0,}, },
-	{"911/pwm2/mode1", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_C2CH1,}, },
-	{"911/pwm2/duty0", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_DUTY2C0,}, },
-	{"911/pwm2/duty1", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_DUTY2C1,}, },
-	{"911/iic", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA, },
+	{"911/pwm2/mode_ch0", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_C2CH0,}, },
+	{"911/pwm2/mode_ch1", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_C2CH1,}, },
+	{"911/pwm2/duty_ch0", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_DUTY2C0,}, },
+	{"911/pwm2/duty_ch1", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_DUTY2C1,}, },
+	{"911/iic", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
 	{"911/iic/init", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_IICC,}, },
 	{"911/iic/cat9554", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA, },
 	{"911/iic/cat9554/direction", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_iic, FS_w_iic, VISIBLE_911, {a:"x40x03$0-x40x03=$0"}, },
@@ -633,12 +637,14 @@ static struct filetype BAE[] = {
 	{"911/lcd", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA, },
 	{"911/lcd/init", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_LCDC,}, },
 	{"911/lcd/text", 255, NON_AGGREGATE, ft_ascii, fc_volatile, NO_READ_FUNCTION, FS_w_seq_text, VISIBLE_911, {u:_FC03_SEQW_LCDD,}, },
-	{"911/serial", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA, },
-	{"911/serial/scic", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_SCIC,}, },
+	{"911/serial", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
+	{"911/serial/baud_divisor", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_BAUDDIV,}, },
+	{"911/serial/scic", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_SCIC,}, },
 	{"911/serial/dataout", 255, NON_AGGREGATE, ft_ascii, fc_volatile, NO_READ_FUNCTION, FS_w_seq_text, VISIBLE_911, {u:_FC03_SEQW_SCI,}, },
 
 	
-/*{"911/pio/piostate", PROPERTY_LENGTH_UNSIGNED, &A911pio, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, INVISIBLE, {u:_FC03_PIO0,}, },
+/*
+  {"911/pio/piostate", PROPERTY_LENGTH_UNSIGNED, &A911pio, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, INVISIBLE, {u:_FC03_PIO0,}, },
 	{"911/pio/pio",    PROPERTY_LENGTH_YESNO, &A911pio, ft_yesno, fc_link, FS_r_911_pio, FS_w_911_pio, VISIBLE_911, NO_FILETYPE_DATA, },
   {"911/pio/pio_config", PROPERTY_LENGTH_UNSIGNED, &A911pioc, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, INVISIBLE, {u:_FC03_PIO_CONF,}, },
 	{"911/pio/pio_ds", PROPERTY_LENGTH_YESNO, &A911pioc, ft_yesno, fc_link, FS_r_pio_bit, FS_w_pio_bit, VISIBLE_911, {u:3,}, },
@@ -666,8 +672,6 @@ static struct filetype BAE[] = {
 	{"911/pwm/period2", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_PERIOD2,}, },
 	{"911/pwm/duty", PROPERTY_LENGTH_UNSIGNED, &A911pwm, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_DUTY,}, },
 
-	
-	
 	{"911/spi", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA, },
 	{"911/spi/spic", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_SPIC,}, },
 	{"911/spi/spibr", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_SPIBR,}, },
@@ -1288,80 +1292,7 @@ static ZERO_OR_ERROR FS_version_state(struct one_wire_query *owq)
 	return 0 ;
 }
 
-/*
-// there may need to be a 0<->1 sense interchange
-static ZERO_OR_ERROR FS_r_911_pio( struct one_wire_query * owq ) {
-	UINT piostate ;
-	if ( FS_r_sibling_U( &piostate, "911/pio/piostate", owq ) != 0 ) {
-		return -EINVAL ;
-	}
-	OWQ_Y(owq) = piostate & 0x01 ;
-	return 0 ;
-}
 
-// there may need to be a 0<->1 sense interchange
-static ZERO_OR_ERROR FS_w_911_pio( struct one_wire_query * owq ) {
-	return FS_w_sibling_U( OWQ_Y(owq), "911/pio/piostate", owq ) ;
-}
-
-static ZERO_OR_ERROR FS_r_pio_bit( struct one_wire_query * owq ) {
-	UINT pioconf ;
-    UINT bitnr=PN(owq)->selected_filetype->data.u ;
-	if ( FS_r_sibling_U( &pioconf, "911/pio/pio_config", owq ) != 0 ) {
-		return -EINVAL ;
-	}
-	OWQ_Y(owq) = UT_getbit( (void *) &pioconf, bitnr ) ;
-    LEVEL_DEBUG("sibling bit read bitnr=%d, set=%04X  mask=%04X", bitnr ,OWQ_Y(owq)<<bitnr, 1<<bitnr) ;
-	return 0 ;
-} 
-static ZERO_OR_ERROR FS_w_pio_bit( struct one_wire_query * owq ) {
-    UINT bitnr=PN(owq)->selected_filetype->data.u ;
-    LEVEL_DEBUG("sibling bit write bitnr=%d, set=%04X  mask=%04X", bitnr ,OWQ_Y(owq)<<bitnr, 1<<bitnr) ;
-	return FS_w_sibling_bitwork( OWQ_Y(owq)<<bitnr, 1<<bitnr, "911/pio/pio_config", owq ) ;
-}
-static ZERO_OR_ERROR FS_r_cnt1_bit( struct one_wire_query * owq ) {
-	UINT pioconf ;
-    UINT bitnr=PN(owq)->selected_filetype->data.u ;
-    LEVEL_DEBUG("counter1/config: read bit nr %d ", bitnr ) ;
-	if ( FS_r_sibling_U( &pioconf, "911/counter1/config", owq ) != 0 ) {
-		return -EINVAL ;
-	}
-	OWQ_Y(owq) = UT_getbit( (void *) &pioconf, bitnr ) ;
-	return 0 ;
-}
-static ZERO_OR_ERROR FS_r_cnt2_bit( struct one_wire_query * owq ) {
-    UINT pioconf ;
-    UINT bitnr=PN(owq)->selected_filetype->data.u ;
-	if ( FS_r_sibling_U( &pioconf, "911/counter2/config", owq ) != 0 ) {
-		return -EINVAL ;
-	}
-	OWQ_Y(owq) = UT_getbit( (void *) &pioconf, bitnr ) ;
-	return 0 ;
-}
-
-static ZERO_OR_ERROR FS_w_cnt1_bit( struct one_wire_query * owq ) {
-    UINT bitnr=PN(owq)->selected_filetype->data.u ;
-	return FS_w_sibling_bitwork( OWQ_Y(owq)<<bitnr, 1<<bitnr, "911/counter1/config", owq ) ;
-}
-static ZERO_OR_ERROR FS_w_cnt2_bit( struct one_wire_query * owq ) {
-    UINT bitnr=PN(owq)->selected_filetype->data.u ;
-	return FS_w_sibling_bitwork( OWQ_Y(owq)<<bitnr, 1<<bitnr, "911/counter2/config", owq ) ;
-}
-
-static ZERO_OR_ERROR FS_r_cmp_bit( struct one_wire_query * owq ) {
-    UINT pioconf ;
-    UINT bitnr=PN(owq)->selected_filetype->data.u ;
-	if ( FS_r_sibling_U( &pioconf, "911/acmp/config", owq ) != 0 ) {
-		return -EINVAL ;
-	}
-	OWQ_Y(owq) = UT_getbit( (void *) &pioconf, bitnr ) ;
-	return 0 ;
-}
-static ZERO_OR_ERROR FS_w_cmp_bit( struct one_wire_query * owq ) {
-    UINT bitnr=PN(owq)->selected_filetype->data.u ;
-	return FS_w_sibling_bitwork( OWQ_Y(owq)<<bitnr, 1<<bitnr, "911/acmp/config", owq ) ;
-}
-*/
 
 static ZERO_OR_ERROR FS_version(struct one_wire_query *owq)
 {
@@ -1439,6 +1370,41 @@ static ZERO_OR_ERROR FS_type_chip(struct one_wire_query *owq)
 	OWQ_U(owq) = t & 0xFF ;
 	return z_or_e ;
 }
+
+static ZERO_OR_ERROR FS_r_8_ext(struct one_wire_query *owq)
+{
+	struct parsedname * pn = PN(owq) ;
+	int bytes = 8/8 ;
+	BYTE data[bytes] ;
+	int array_index, ofs, uplimit, *v; 
+	array_index = pn->extension ;
+	v=(int*) pn->selected_filetype->data.v;
+	ofs= v[0];
+	uplimit=v[1];
+	LEVEL_DEBUG("test numeric extension : ofs=%d, uplimit=%d extension=%d", ofs,uplimit,array_index ) ;
+
+	if ((array_index<0) || (array_index>=uplimit)) return -EINVAL ;
+	RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, ofs + bytes * array_index, pn ) );
+	OWQ_U(owq) = data[0] ;
+	return 0 ;
+}
+
+static ZERO_OR_ERROR FS_w_8_ext(struct one_wire_query *owq)
+{
+	struct parsedname * pn = PN(owq) ;
+	int bytes = 8/8 ;
+	BYTE data[bytes] ;
+	int array_index, ofs, uplimit, *v; 
+	array_index = pn->extension ;
+	v=(int*) pn->selected_filetype->data.v;
+	ofs= v[0];
+	uplimit=v[1];
+	if ((array_index<0) || (array_index>=uplimit)) return -EINVAL ;
+	
+	data[0] = BYTE_MASK( OWQ_U(owq) ) ;
+	return GB_to_Z_OR_E(OW_w_mem(data, bytes,  ofs + bytes * array_index, pn ) ) ;
+}
+
 
 /* read an 8 bit value from a register stored in filetype.data plus extension */
 static ZERO_OR_ERROR FS_r_8(struct one_wire_query *owq)
