@@ -582,6 +582,8 @@ static ZERO_OR_ERROR FS_read_all( struct one_wire_query *owq_all)
 	// bitfield, convert to .BYTE format and write ( and delete cache ) as BYTE.
 	if ( pn->selected_filetype->format == ft_bitfield ) {
 		struct one_wire_query * owq_byte = OWQ_create_separate( EXTENSION_BYTE, owq_all ) ;
+		int ret = -EINVAL ;
+
 		if ( owq_byte != NO_ONE_WIRE_QUERY ) {
 			if ( FS_read_owq( owq_byte ) >= 0 ) {
 				size_t elements = pn->selected_filetype->ag->elements;
@@ -590,12 +592,11 @@ static ZERO_OR_ERROR FS_read_all( struct one_wire_query *owq_all)
 				for ( extension=0 ; extension < elements ; ++extension ) {
 					OWQ_array_Y(owq_all,extension) = UT_getbit( (BYTE *) &OWQ_U(owq_byte), extension ) ;
 				}
-				return 0 ;
+				ret = 0 ;
 			}
 			OWQ_destroy( owq_byte ) ;
-			return -EINVAL ;
 		}
-		return -ENOENT ;
+		return ret ;
 	}
 	return FS_read_owq( owq_all ) ;
 }
