@@ -22,6 +22,8 @@ $Id$
 /* ---------------------------------------------- */
 int main(int argc, char *argv[])
 {
+	int fd ;
+	
 	Setup();
 
 	/* process command line arguments */
@@ -35,7 +37,15 @@ int main(int argc, char *argv[])
 
 	DefaultOwserver();
 	Server_detect(); // Exit(1) if problem.
-
+	
+	fd = ClientConnect() ;
+	if ( fd == -1 ) {
+		PRINT_ERROR("Cannot connect\n");
+		Exit(1);
+	}
+	
+	// Success!
+	close(fd);
 	Exit(0) ;
 
 }

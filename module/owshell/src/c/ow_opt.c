@@ -28,6 +28,7 @@ static void OW_parsevalue(int *var, const ASCII * str);
 
 const struct option owopts_long[] = {
 	{"help", no_argument, NULL, 'h'},
+	{"debug",no_argument,&Globals.quiet,1},
 	{"quiet", no_argument, NULL, 'q'},
 	{"server", required_argument, NULL, 's'},
 	{"Celsius", no_argument, NULL, 'C'},

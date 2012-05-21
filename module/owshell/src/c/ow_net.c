@@ -94,8 +94,9 @@ int ClientConnect(void)
 	if (ai) {
 		file_descriptor = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
 		if (file_descriptor >= 0) {
-			if (connect(file_descriptor, ai->ai_addr, ai->ai_addrlen) == 0)
+			if (connect(file_descriptor, ai->ai_addr, ai->ai_addrlen) == 0) {
 				return file_descriptor;
+			}
 			close(file_descriptor);
 		}
 	}
