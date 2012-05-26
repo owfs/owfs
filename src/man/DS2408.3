@@ -22,6 +22,8 @@ DS2408 \- 1-Wire 8 Channel Addressable Switch
 |
 .B LCD_H/[clear|home|yxscreen|screen|message|onoff]
 |
+.B LCD_H/redefchar.[0-7|ALL] LCD_H/redefchar_hex.[0-7|ALL]
+|
 .B PIO.[0-7|ALL|BYTE]
 |
 .B power
@@ -237,6 +239,22 @@ Writes a
 .I message
 to the LCD screen after clearing the screen first.
 This is the easiest way to display a message.
+.SS LCD_H/redefchar.0-7|ALL
+.I write-only, binary
+.br
+Redefines one of 8 user-designed character glyphs for the LCD screen (5x8 pixels).
+.PP
+Each byte defines a horizontal line top to bottom. All 5 pixels corresponds to 0x1F and a blank line is 0x00.
+.PP
+Format is 8 binary bytes.
+.SS LCD_H/redefchar_hex.0-7|ALL
+.I write-only, ascii
+.br
+Redefines one of 8 user-designed character glyphs for the LCD screen (5x8 pixels).
+.PP
+Each byte defines a horizontal line top to bottom. All 5 pixels corresponds to 0x1F and a blank line is 0x00.
+.PP
+Format is 8 hexidecomal bytes (16 characters).
 .SH LCD_M LCD SCREEN PROPERITES
 This mode uses the 
 .I DS2408

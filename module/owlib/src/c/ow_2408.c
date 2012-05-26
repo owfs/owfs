@@ -86,12 +86,17 @@ WRITE_FUNCTION(FS_Hscreen);
 WRITE_FUNCTION(FS_Hscreenyx);
 WRITE_FUNCTION(FS_Hmessage);
 WRITE_FUNCTION(FS_Honoff);
+WRITE_FUNCTION(FS_redefchar);
+WRITE_FUNCTION(FS_redefchar_hex);
 
 #define PROPERTY_LENGTH_LCD_MESSAGE   128
+#define LCD_REDEFCHAR_LENGTH 8
+#define LCD_REDEFCHAR_LENGTH_HEX (LCD_REDEFCHAR_LENGTH*2)
 
 /* ------- Structures ----------- */
 
 static struct aggregate A2408 = { 8, ag_numbers, ag_aggregate, };
+static struct aggregate A2408c = { 8, ag_numbers, ag_separate, };
 static struct filetype DS2408[] = {
 	F_STANDARD,
 	{"power", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
@@ -113,6 +118,8 @@ static struct filetype DS2408[] = {
 	{"LCD_H/screenyx", PROPERTY_LENGTH_LCD_MESSAGE, NON_AGGREGATE, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_Hscreenyx, VISIBLE, NO_FILETYPE_DATA, },
 	{"LCD_H/message", PROPERTY_LENGTH_LCD_MESSAGE, NON_AGGREGATE, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_Hmessage, VISIBLE, NO_FILETYPE_DATA, },
 	{"LCD_H/onoff", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, NO_READ_FUNCTION, FS_Honoff, VISIBLE, NO_FILETYPE_DATA, },
+	{"LCD/redefchar", LCD_REDEFCHAR_LENGTH, &A2408c, ft_binary, fc_stable, NO_READ_FUNCTION, FS_redefchar, VISIBLE, NO_FILETYPE_DATA, },
+	{"LCD/redefchar_hex", LCD_REDEFCHAR_LENGTH, &A2408c, ft_binary, fc_stable, NO_READ_FUNCTION, FS_redefchar_hex, VISIBLE, NO_FILETYPE_DATA, },
 };
 
 DeviceEntryExtended(29, DS2408, DEV_alarm | DEV_resume | DEV_ovdr, NO_GENERIC_READ, NO_GENERIC_WRITE);
@@ -146,6 +153,7 @@ static GOOD_OR_BAD OW_w_pio(const BYTE data, const struct parsedname *pn);
 static GOOD_OR_BAD OW_r_reg(BYTE * data, const struct parsedname *pn);
 static GOOD_OR_BAD OW_w_s_alarm(const BYTE * data, const struct parsedname *pn);
 static GOOD_OR_BAD OW_w_pios(const BYTE * data, const size_t size, const struct parsedname *pn);
+static GOOD_OR_BAD OW_redefchar(char * pattern, struct parsedname * pn);
 
 /* 2408 switch */
 /* 2408 switch -- is Vcc powered?*/
@@ -583,6 +591,36 @@ static ZERO_OR_ERROR FS_Honoff(struct one_wire_query *owq)
 	return 0;
 }
 
+static ZERO_OR_ERROR FS_redefchar(struct one_wire_query *owq)
+{
+	struct parsedname *pn = PN(owq);
+	
+	if ( OWQ_size(owq) != LCD_REDEFCHAR_LENGTH ) {
+		return -ERANGE ;
+	}
+	if ( OWQ_offset(owq) != 0 ) {
+		return -ERANGE ;
+	}
+		
+	return GB_to_Z_OR_E( OW_redefchar( OWQ_buffer(owq), pn ) ) ;
+}
+
+static ZERO_OR_ERROR FS_redefchar_hex(struct one_wire_query *owq)
+{
+	struct parsedname *pn = PN(owq);
+	BYTE data[LCD_REDEFCHAR_LENGTH] ;
+	
+	if ( OWQ_size(owq) != LCD_REDEFCHAR_LENGTH * 2 ) {
+		return -ERANGE ;
+	}
+	if ( OWQ_offset(owq) != 0 ) {
+		return -ERANGE ;
+	}
+	string2bytes( OWQ_buffer(owq), data, LCD_REDEFCHAR_LENGTH ) ;
+		
+	return GB_to_Z_OR_E( OW_redefchar( OWQ_buffer(owq), pn ) ) ;
+}
+
 /* Read 6 bytes --
    0x88 PIO logic State
    0x89 PIO output Latch state
@@ -746,4 +784,30 @@ static GOOD_OR_BAD OW_w_s_alarm(const BYTE * data, const struct parsedname *pn)
 
 	return (data[0] != new_register[3]) || (data[1] != new_register[4])
 		|| (control_value[0] != (new_register[5] & 0x0F)) ? gbBAD : gbGOOD;
+}
+
+/* Redefine a character */
+static GOOD_OR_BAD OW_redefchar(char * pattern, struct parsedname * pn)
+{
+	int i ;
+	int j = 0;
+	int char_num = pn->extension * 8 + 0x40 ;
+	int datalength = 2 * (LCD_REDEFCHAR_LENGTH+1) ; // nibbles for data plus index
+	BYTE data[ datalength ] ;
+
+	RETURN_BAD_IF_BAD( OW_Hinit(pn) ) ;
+
+	i = j = 0;
+	
+	// Start with char num
+	data[j++] = (char_num & 0xF0);
+	data[j++] = (char_num << 4) & 0xF0;
+
+	// Add pattern
+	for ( i = 0 ; i < LCD_REDEFCHAR_LENGTH ; ++i ) {
+		data[j++] = (pattern[i] & 0xF0) | 0x08;
+		data[j++] = ((pattern[i] << 4) & 0xF0) | 0x08;
+	}
+
+	return OW_w_pios(data, datalength, pn) ;
 }
