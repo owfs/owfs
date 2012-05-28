@@ -123,6 +123,7 @@ See: http://www.iana.org/assignments/port-numbers
 
 /* -------------------------------------------- */
 /* Inbound connections (bus masters) ---------- */
+#include "ow_port_in.h"
 #include "ow_connection_in.h"
 
 /* -------------------------------------------- */
