@@ -112,11 +112,9 @@ DS9123OwithOther.frm:7090:            WriteToPIC doowrx8, nullcmd, nullcmd, null
 /* _detect is a bit of a misnomer, no detection is actually done */
 /* Note, devfd alread allocated */
 /* Note, terminal settings already saved */
-ZERO_OR_ERROR DS9123O_detect(struct connection_in *in)
+ZERO_OR_ERROR DS9123O_detect(struct port_in *pin)
 {
-	struct stateinfo si;
-	struct parsedname pn;
-	int ret;
+	struct connection_in * in = pin->first ;
 
 	return -ENOTSUP;
 }

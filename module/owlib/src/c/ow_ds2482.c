@@ -148,8 +148,9 @@ static void DS2482_setroutines(struct connection_in *in)
 /* All the rest of the program sees is the DS2482_detect and the entry in iroutines */
 /* Open a DS2482 */
 /* Top level detect routine */
-GOOD_OR_BAD DS2482_detect(struct connection_in *in)
+GOOD_OR_BAD DS2482_detect(struct port_in *pin)
 {
+	struct connection_in * in = pin->first ;
 	struct address_pair ap ;
 	GOOD_OR_BAD gbResult ;
 	enum ds2482_address chip_num ;

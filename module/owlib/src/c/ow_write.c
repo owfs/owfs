@@ -271,27 +271,63 @@ static ZERO_OR_ERROR FS_write_real(int depth, struct one_wire_query *owq)
 
 #if OW_MT
 struct simultaneous_struct {
-	struct connection_in *in;
-	const struct one_wire_query *owq ;
+	struct port_in * pin ;
+	struct connection_in * cin;
+	struct one_wire_query owq ;
 };
 
-static void * Simultaneous_write(void * v)
+static void * Simultaneous_write_callback_conn(void * v)
 {
 	struct simultaneous_struct *ss = (struct simultaneous_struct *) v;
-	struct simultaneous_struct ss_next = { ss->in->next, ss->owq };
+	struct simultaneous_struct ss_next ;
 	pthread_t thread;
-	int threadbad = 1;
-	OWQ_allocate_struct_and_pointer(owq_copy);
+	int threadbad = 0;
 	
+	if ( ss->cin == NULL ) {
+		return VOID_RETURN;
+	}
 	
-	threadbad = (ss->in->next == NULL)
-	|| pthread_create(&thread, DEFAULT_THREAD_ATTR, Simultaneous_write, (void *) (&ss_next));
+	ss_next.cin = ss->cin->next ;
+	if ( ss_next.cin == NO_CONNECTION ) {
+		threadbad = 1 ;
+	} else {
+		ss_next.pin = ss->pin ;
+		memcpy( &(ss_next.owq), &(ss->owq), sizeof(struct one_wire_query));	// shallow copy
+		threadbad = pthread_create(&thread, DEFAULT_THREAD_ATTR, Simultaneous_write_callback_conn, (void *) (&ss_next)) ;
+	}
 	
-	memcpy(owq_copy, ss->owq, sizeof(struct one_wire_query));	// shallow copy
+	SetKnownBus(ss->cin->index, PN( &(ss->owq)) );
 	
-	SetKnownBus(ss->in->index, PN(owq_copy));
+	FS_w_given_bus( &(ss->owq) );
+
+	if (threadbad == 0) {		/* was a thread created? */
+		pthread_join(thread, NULL) ;
+	}
+	return VOID_RETURN ;
+}
+
+static void * Simultaneous_write_callback_port(void * v)
+{
+	struct simultaneous_struct *ss = (struct simultaneous_struct *) v;
+	struct simultaneous_struct ss_next ;
+	pthread_t thread;
+	int threadbad = 0;
+
+	if ( ss->pin == NULL ) {
+		return VOID_RETURN;
+	}
 	
-	FS_w_given_bus(owq_copy);
+	ss_next.pin = ss->pin->next ;
+	if ( ss_next.pin == NULL ) {
+		threadbad = 1 ;
+	} else {
+		memcpy( &(ss_next.owq), &(ss->owq), sizeof(struct one_wire_query));	// shallow copy
+		threadbad = pthread_create(&thread, DEFAULT_THREAD_ATTR, Simultaneous_write_callback_port, (void *) (&ss_next)) ;
+	}
+	
+	ss->cin = ss->pin->first ;
+	
+	Simultaneous_write_callback_conn(v) ;
 
 	if (threadbad == 0) {		/* was a thread created? */
 		pthread_join(thread, NULL) ;
@@ -304,9 +340,11 @@ static ZERO_OR_ERROR FS_w_simultaneous(struct one_wire_query *owq)
 {
 	if (SpecifiedBus(PN(owq))) {
 		return FS_w_given_bus(owq);
-	} else if (Inbound_Control.head) {
-		struct simultaneous_struct ss = { Inbound_Control.head, owq };
-		Simultaneous_write( (void *) (&ss) ) ;
+	} else {
+		struct simultaneous_struct ss ;
+		ss.pin = Inbound_Control.head_port ; 
+		memcpy( &(ss.owq), owq, sizeof(struct one_wire_query));	// shallow copy
+		Simultaneous_write_callback_port( (void *) (&ss) ) ;
 	}
 	return 0;
 }
@@ -318,15 +356,19 @@ static ZERO_OR_ERROR FS_w_simultaneous(struct one_wire_query *owq)
 {
 	if (SpecifiedBus(PN(owq))) {
 		return FS_w_given_bus(owq);
-	} else if (Inbound_Control.head) {
-		struct connection_in * in;
+	} else if (Inbound_Control.head_port) {
+		struct port_in * pin ;
 		OWQ_allocate_struct_and_pointer(owq_given);
-		
+
 		memcpy(owq_given, owq, sizeof(struct one_wire_query));	// shallow copy
-		
-		for( in=Inbound_Control.head; in ; in=in->next ) {
-			SetKnownBus(in->index, PN(owq_given));
-			FS_w_given_bus(owq_given);
+
+		for ( pin=Inbound_Control.head_port ; pin != NULL ; pin = pin->next ) {
+			struct connection_in * cin;
+					
+			for( cin=pin->first; cin!=NO_CONNECTION ; cin=cin->next ) {
+				SetKnownBus(cin->index, PN(owq_given));
+				FS_w_given_bus(owq_given);
+			}
 		}
 	}
 	return 0;

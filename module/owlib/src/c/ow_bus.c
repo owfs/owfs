@@ -13,11 +13,11 @@ $Id$
 #include "owfs_config.h"
 #include "ow_connection.h"
 
-GOOD_OR_BAD BUS_detect( struct connection_in * in )
+GOOD_OR_BAD BUS_detect( struct port_in * pin )
 {
-	GOOD_OR_BAD (*detect) (struct connection_in * in) = in->iroutines.detect ;
+	GOOD_OR_BAD (*detect) (struct port_in * pin) = pin->first->iroutines.detect ;
 	if ( detect != NO_DETECT_ROUTINE ) {
-		return (detect)(in) ;
+		return (detect)(pin) ;
 	}
 	return gbBAD ;
 }

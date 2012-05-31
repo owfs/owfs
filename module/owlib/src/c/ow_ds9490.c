@@ -212,8 +212,9 @@ static void DS9490_setroutines(struct connection_in *in)
 /* --- USB detection routines ----------------------------------*/
 
 /* Main routine for detecting (and setting up) the DS2490 1-wire USB chip */
-GOOD_OR_BAD DS9490_detect(struct connection_in *in)
+GOOD_OR_BAD DS9490_detect(struct port_in *pin)
 {
+	struct connection_in * in = pin->first ;
 	struct address_pair ap ;
 	GOOD_OR_BAD gbResult = gbBAD;
 	

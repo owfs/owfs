@@ -55,8 +55,9 @@ static void Zero_setroutines(struct interface_routines *f)
 
 // bus_zero is a server found by zeroconf/Bonjour
 // It differs in that the server must respond
-GOOD_OR_BAD Zero_detect(struct connection_in *in)
+GOOD_OR_BAD Zero_detect(struct port_in *pin)
 {
+	struct connection_in * in = pin->first ;
 	if ( in==NO_CONNECTION ) {
 		return gbBAD ;
 	}
@@ -75,8 +76,9 @@ GOOD_OR_BAD Zero_detect(struct connection_in *in)
 
 // Set up inbound connection to an owserver
 // Actual tcp connection created as needed
-GOOD_OR_BAD Server_detect(struct connection_in *in)
+GOOD_OR_BAD Server_detect(struct port_in *pin)
 {
+	struct connection_in * in = pin->first ;
 	if (SOC(in)->devicename == NULL) {
 		return gbBAD;
 	}

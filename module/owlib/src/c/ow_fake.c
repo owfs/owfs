@@ -182,8 +182,9 @@ static void SetConninData( int indx, const char * name, struct connection_in *in
 /* Since this is simulated bus master, it's creation cannot fail */
 /* in->name starts with a list of devices which is destructovely parsed and freed */
 /* in->name end with a name-index format */
-GOOD_OR_BAD Fake_detect(struct connection_in *in)
+GOOD_OR_BAD Fake_detect(struct port_in *pin)
 {
+	struct connection_in * in = pin->first ;
 	Fake_setroutines(in);		// set up close, reconnect, reset, ...
 	in->iroutines.detect = Fake_detect;
 
@@ -199,8 +200,9 @@ GOOD_OR_BAD Fake_detect(struct connection_in *in)
 /* Since this is simulated bus master, it's creation cannot fail */
 /* in->name starts with a list of devices which is destructovely parsed and freed */
 /* in->name end with a name-index format */
-GOOD_OR_BAD Mock_detect(struct connection_in *in)
+GOOD_OR_BAD Mock_detect(struct port_in *pin)
 {
+	struct connection_in * in = pin->first ;
 	Fake_setroutines(in);		// set up close, reconnect, reset, ...
 	in->iroutines.detect = Mock_detect;
 
@@ -215,8 +217,9 @@ GOOD_OR_BAD Mock_detect(struct connection_in *in)
 /* Since this is simulated bus master, it's creation cannot fail */
 /* in->name starts with a list of devices which is destructovely parsed and freed */
 /* in->name end with a name-index format */
-GOOD_OR_BAD Tester_detect(struct connection_in *in)
+GOOD_OR_BAD Tester_detect(struct port_in *pin)
 {
+	struct connection_in * in = pin->first ;
 	Fake_setroutines(in);		// set up close, reconnect, reset, ...
 	in->iroutines.detect = Tester_detect;
 

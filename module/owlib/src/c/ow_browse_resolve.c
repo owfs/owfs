@@ -15,14 +15,14 @@ $Id$
 
 #include "ow_connection.h"
 
-static struct connection_in * CreateZeroIn(const char * name, const char * type, const char * domain, const char * host, const char * service );
+static struct port_in * CreateZeroPort(const char * name, const char * type, const char * domain, const char * host, const char * service );
 static struct connection_out *FindOut(const char * name, const char * type, const char * domain);
 static GOOD_OR_BAD Zero_nomatch(struct connection_in * trial,struct connection_in * existing);
 static GOOD_OR_BAD string_null_or_match( const char * one, const char * two );
 
 void ZeroAdd(const char * name, const char * type, const char * domain, const char * host, const char * service)
 {
-	struct connection_in * in ;
+	struct port_in * pin ;
 
 	// Don't add yourself
 	if ( FindOut(name,type,domain) != NULL ) {
@@ -30,31 +30,42 @@ void ZeroAdd(const char * name, const char * type, const char * domain, const ch
 		return ;
 	}
 
-	in = CreateZeroIn( name, type, domain, host, service ) ;
-	if ( BAD( Zero_detect(in)) ) {
-		LEVEL_DEBUG("Failed to create new %s", SOC(in)->devicename ) ;
-		RemoveIn(in) ;
-	} else {
-		Add_InFlight( Zero_nomatch, in ) ;
+	pin = CreateZeroPort( name, type, domain, host, service ) ;
+	if ( pin != NULL ) {
+		if ( BAD( Zero_detect(pin)) ) {
+			LEVEL_DEBUG("Failed to create new %s", SOC(pin->first)->devicename ) ;
+			RemovePort(pin) ;
+		} else {
+			Add_InFlight( Zero_nomatch, pin ) ;
+		}
 	}
 }
 
 void ZeroDel(const char * name, const char * type, const char * domain )
 {
-	struct connection_in * in = CreateZeroIn( name, type, domain, "", "" ) ;
+	struct port_in * pin = CreateZeroPort( name, type, domain, "", "" ) ;
 	
-	if ( in != NO_CONNECTION ) {
-		SAFEFREE(SOC(in)->devicename) ;
-		SOC(in)->devicename = owstrdup(name) ;
-		Del_InFlight( Zero_nomatch, in ) ;
+	if ( pin != NULL ) {
+		struct connection_in * in = pin->first ;
+		if ( in != NO_CONNECTION ) {
+			SAFEFREE(SOC(in)->devicename) ;
+			SOC(in)->devicename = owstrdup(name) ;
+			Del_InFlight( Zero_nomatch, pin ) ;
+		}
 	}
 }
 
-static struct connection_in * CreateZeroIn(const char * name, const char * type, const char * domain, const char * host, const char * service )
+static struct port_in * CreateZeroPort(const char * name, const char * type, const char * domain, const char * host, const char * service )
 {
 	char addr_name[128] ;
-	struct connection_in * in = AllocIn(NO_CONNECTION);
+	struct port_in * pin = AllocPort(NO_CONNECTION);
+	struct connection_in * in ;
 
+	if ( pin == NULL ) {
+		LEVEL_DEBUG( "Cannot allocate position for a new Port Master %s (%s:%s) -- ignored",name,host,service) ;
+		return NO_CONNECTION ;
+	}
+	in = pin->first ;
 	if ( in == NO_CONNECTION ) {
 		LEVEL_DEBUG( "Cannot allocate position for a new Bus Master %s (%s:%s) -- ignored",name,host,service) ;
 		return NO_CONNECTION ;
@@ -69,7 +80,7 @@ static struct connection_in * CreateZeroIn(const char * name, const char * type,
 	in->master.tcp.type   = owstrdup( type  ) ;
 	in->master.tcp.domain = owstrdup( domain) ;
 
-	return in ;
+	return pin ;
 }
 
 // GOOD means no match

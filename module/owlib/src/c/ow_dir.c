@@ -244,79 +244,130 @@ static void FS_simultaneous_entry(void (*dirfunc) (void *, const struct parsedna
 /* path is the path which "pn_directory" parses */
 /* FS_dir_all_connections produces the data that can vary: device lists, etc. */
 
-static ZERO_OR_ERROR FS_dir_all_connections_loop(void (*dirfunc)
-									    (void *, const struct parsedname * const),
-									   void *v, struct connection_in * in, const struct parsedname *pn_directory, uint32_t * flags);
-
 struct dir_all_connections_struct {
-	struct connection_in * current ;
-	const struct parsedname *pn_directory;
+	struct port_in * pin ;
+	struct connection_in * cin ;
+	struct parsedname pn_directory;
 	void (*dirfunc) (void *, const struct parsedname *);
 	void *v;
-	uint32_t *flags;
+	uint32_t flags;
 	ZERO_OR_ERROR ret;
 };
 
 /* Embedded function */
-static void *FS_dir_all_connections_callback(void *v)
+static void *FS_dir_all_connections_callback_conn(void *v)
 {
 	struct dir_all_connections_struct *dacs = v;
-	dacs->ret = FS_dir_all_connections_loop(dacs->dirfunc, dacs->v, dacs->current, dacs->pn_directory, dacs->flags);
-	pthread_exit(NULL);
-	return VOID_RETURN;
-}
-
-static ZERO_OR_ERROR FS_dir_all_connections_loop(void (*dirfunc)
-	(void *, const struct parsedname *), void *v,
-	struct connection_in * current, const struct parsedname *pn_directory, uint32_t * flags)
-{
-	ZERO_OR_ERROR ret = 0;
-	struct dir_all_connections_struct dacs = { current->next, pn_directory, dirfunc, v, flags, 0 };
-	struct parsedname s_pn_bus_directory;
-	struct parsedname *pn_bus_directory = &s_pn_bus_directory;
+	struct dir_all_connections_struct dacs_next ;
 	pthread_t thread;
-	int threadbad = 1;
+	int threadbad = 0;
+	
+	// set up structure
+	dacs_next.cin = dacs->cin->next ;
 
-	threadbad = (dacs.current==NULL) || pthread_create(&thread, DEFAULT_THREAD_ATTR, FS_dir_all_connections_callback, (void *) (&dacs));
-
-	memcpy(pn_bus_directory, pn_directory, sizeof(struct parsedname));	// shallow copy
-
-	SetKnownBus(current->index, pn_bus_directory);
-
-	if ( BAD(TestConnection(pn_bus_directory)) ) {	// reconnect ok?
-		ret = -ECONNABORTED;
-	} else if (BusIsServer(pn_bus_directory->selected_connection)) {	/* is this a remote bus? */
-		//printf("FS_dir_all_connections: Call ServerDir %s\n", pn_directory->path);
-		ret = ServerDir(dirfunc, v, pn_bus_directory, flags);
-	} else if (IsAlarmDir(pn_bus_directory)) {	/* root or branch directory -- alarm state */
-		//printf("FS_dir_all_connections: Call FS_alarmdir %s\n", pn_directory->path);
-		ret = FS_alarmdir(dirfunc, v, pn_bus_directory);
+	if ( dacs_next.cin == NO_CONNECTION ) {
+		threadbad = 1 ;
 	} else {
-		ret = FS_cache2real(dirfunc, v, pn_bus_directory, flags);
+		dacs_next.pin = dacs->pin ;
+		dacs_next.dirfunc = dacs->dirfunc ;
+		memcpy( &(dacs_next.pn_directory), &(dacs->pn_directory), sizeof(struct parsedname));	// shallow copy
+		dacs_next.v = dacs->v ;
+		dacs_next.flags = dacs->flags ;
+		dacs_next.ret = dacs->ret ;
+		threadbad = pthread_create(&thread, DEFAULT_THREAD_ATTR, FS_dir_all_connections_callback_conn, (void *) (&dacs_next));
 	}
-	//printf("FS_dir_all_connections4 pid=%ld adapter=%d ret=%d\n",pthread_self(), pn_directory->selected_connection->index,ret);
+
+	SetKnownBus(dacs->cin->index, &(dacs->pn_directory) );
+
+	if ( BAD(TestConnection( &(dacs->pn_directory) )) ) {	// reconnect ok?
+		dacs->ret = -ECONNABORTED;
+	} else if (BusIsServer(dacs->pn_directory.selected_connection)) {	/* is this a remote bus? */
+		//printf("FS_dir_all_connections: Call ServerDir %s\n", dacs->pn_directory->path);
+		dacs->ret = ServerDir(dacs->dirfunc, dacs->v, &(dacs->pn_directory), &(dacs->flags));
+	} else if (IsAlarmDir( &(dacs->pn_directory) ) ) {	/* root or branch directory -- alarm state */
+		//printf("FS_dir_all_connections: Call FS_alarmdir %s\n", dacs->pn_directory->path);
+		dacs->ret = FS_alarmdir(dacs->dirfunc, dacs->v, &(dacs->pn_directory) );
+	} else {
+		dacs->ret = FS_cache2real(dacs->dirfunc, dacs->v, &(dacs->pn_directory), &(dacs->flags));
+	}
+	//printf("FS_dir_all_connections4 pid=%ld adapter=%d ret=%d\n",pthread_self(), dacs->pn_directory->selected_connection->index,ret);
 	/* See if next bus was also queried */
 	if (threadbad == 0) {		/* was a thread created? */
 		if (pthread_join(thread, NULL)!= 0) {
-			return ret;			/* cannot join, so return only this result */
+			return VOID_RETURN ;			/* cannot join, so return only this result */
 		}
-		if (dacs.ret >= 0) {
-			return dacs.ret;	/* is it an error return? Then return this one */
-		}
+		if (dacs_next.ret >= 0) {
+			dacs->ret = dacs_next.ret;	/* is it an error return? Then return this one */
+		} else {
+			dacs->flags |= dacs_next.flags ;
+		}		
 	}
-	return ret;
+	return VOID_RETURN;
+}
+
+static void *FS_dir_all_connections_callback_port(void *v)
+{
+	struct dir_all_connections_struct *dacs = v;
+	struct dir_all_connections_struct dacs_next ;
+	pthread_t thread;
+	int threadbad = 0;
+	
+	if ( dacs->pin == NULL ) {
+		return VOID_RETURN;
+	}
+
+	// set up structure
+	dacs_next.pin = dacs->pin->next ;
+
+	if ( dacs_next.pin == NULL ) {
+		threadbad = 1 ;
+	} else {
+		dacs_next.dirfunc = dacs->dirfunc ;
+		memcpy( &(dacs_next.pn_directory), &(dacs->pn_directory), sizeof(struct parsedname));	// shallow copy
+		dacs_next.v = dacs->v ;
+		dacs_next.flags = dacs->flags ;
+		dacs_next.ret = dacs->ret ;
+		threadbad = pthread_create(&thread, DEFAULT_THREAD_ATTR, FS_dir_all_connections_callback_port, (void *) (&dacs_next));
+	}
+
+	dacs->cin = dacs->pin->first ;
+	if ( dacs->cin != NO_CONNECTION ) {
+		FS_dir_all_connections_callback_conn( v ) ;
+	}
+		
+	//printf("FS_dir_all_connections4 pid=%ld adapter=%d ret=%d\n",pthread_self(), dacs->pn_directory->selected_connection->index,ret);
+	/* See if next bus was also queried */
+	if (threadbad == 0) {		/* was a thread created? */
+		if (pthread_join(thread, NULL)!= 0) {
+			return VOID_RETURN ;			/* cannot join, so return only this result */
+		}
+		if (dacs_next.ret >= 0) {
+			dacs->ret = dacs_next.ret;	/* is it an error return? Then return this one */
+		} else {
+			dacs->flags |= dacs_next.flags ;
+		}		
+	}
+	return VOID_RETURN;
 }
 
 static ZERO_OR_ERROR
 FS_dir_all_connections(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_directory, uint32_t * flags)
 {
-	struct connection_in * in = Inbound_Control.head ;
-	// Make sure head isn't NULL
-	if ( in == NO_CONNECTION ) {
-		return 0 ;
-	}
+	struct dir_all_connections_struct dacs ;
+		
+	// set up structure
+	dacs.pin = Inbound_Control.head_port ; 
+	dacs.dirfunc = dirfunc ;
+	memcpy( &(dacs.pn_directory), pn_directory, sizeof(struct parsedname));	// shallow copy
+	dacs.v = v ;
+	dacs.flags = 0 ;
+	dacs.ret = 0 ;
+	
 	// Start iterating through buses
-	return FS_dir_all_connections_loop(dirfunc, v, in, pn_directory, flags);
+	FS_dir_all_connections_callback_port(  (void *) (& dacs) ) ;
+	
+	*flags = dacs.flags ;	
+	return dacs.ret ;
 }
 
 #else							/* OW_MT */
@@ -327,33 +378,36 @@ static ZERO_OR_ERROR
 FS_dir_all_connections(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_directory, uint32_t * flags)
 {
 	ZERO_OR_ERROR ret = 0;
-	struct connection_in * in;
+	struct port_in * pin;
 	struct parsedname s_pn_selected_connection;
 	struct parsedname *pn_selected_connection = &s_pn_selected_connection;
 
 	memcpy(pn_selected_connection, pn_directory, sizeof(struct parsedname));	//shallow copy
 
-	for (in = Inbound_Control.head ; in != NO_CONNECTION ; in = in->next ) {
-		SetKnownBus(in->index, pn_selected_connection);
+	for ( pin = Inbound_Control.head_port ; pin != NULL ; pin = pin->next ) {
+		struct connection_in * cin;
+		for ( cin = pin->first ; cin != NO_CONNECTION ; cin = cin->next ) {
+			SetKnownBus(cin->index, pn_selected_connection);
 
-		if ( BAD(TestConnection(pn_selected_connection)) ) {
-			continue ;
-		}
-		if (BusIsServer(pn_selected_connection->selected_connection)) {	/* is this a remote bus? */
-			ZERO_OR_ERROR server = ServerDir(dirfunc, v, pn_selected_connection, flags);
-			if ( server ) {
-				ret = server ;
+			if ( BAD(TestConnection(pn_selected_connection)) ) {
+				continue ;
 			}
-			continue ;
-		}
-		/* local bus */
-		if (IsAlarmDir(pn_selected_connection)) {	/* root or branch directory -- alarm state */
-			ZERO_OR_ERROR alarm_return = FS_alarmdir(dirfunc, v, pn_selected_connection);
-			if ( alarm_return ) {
-				ret = alarm_return ;
+			if (BusIsServer(pn_selected_connection->selected_connection)) {	/* is this a remote bus? */
+				ZERO_OR_ERROR server = ServerDir(dirfunc, v, pn_selected_connection, flags);
+				if ( server ) {
+					ret = server ;
+				}
+				continue ;
 			}
-		} else {
-			ret = FS_cache2real(dirfunc, v, pn_selected_connection, flags);
+			/* local bus */
+			if (IsAlarmDir(pn_selected_connection)) {	/* root or branch directory -- alarm state */
+				ZERO_OR_ERROR alarm_return = FS_alarmdir(dirfunc, v, pn_selected_connection);
+				if ( alarm_return ) {
+					ret = alarm_return ;
+				}
+			} else {
+				ret = FS_cache2real(dirfunc, v, pn_selected_connection, flags);
+			}
 		}
 	}
 
@@ -851,18 +905,21 @@ static ZERO_OR_ERROR FS_externaldir(void (*dirfunc) (void *, const struct parsed
 static ZERO_OR_ERROR FS_busdir(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_directory)
 {
 	char bus[OW_FULLNAME_MAX];
-	struct connection_in * in ;
+	struct port_in * pin ;
 	uint32_t ignoreflag ;
 
 	if (!RootNotBranch(pn_directory)) {
 		return 0;
 	}
 
-	for ( in = Inbound_Control.head ; in != NO_CONNECTION ; in = in->next ) {
-		UCLIBCLOCK;
-		snprintf(bus, OW_FULLNAME_MAX, "bus.%d", in->index);
-		UCLIBCUNLOCK;
-		FS_dir_plus(dirfunc, v, &ignoreflag, pn_directory, bus);
+	for ( pin = Inbound_Control.head_port ; pin != NULL ; pin = pin->next ) {
+		struct connection_in * cin ;
+		for ( cin = pin->first ; cin != NO_CONNECTION ; cin = cin->next ) {
+			UCLIBCLOCK;
+			snprintf(bus, OW_FULLNAME_MAX, "bus.%d", cin->index);
+			UCLIBCUNLOCK;
+			FS_dir_plus(dirfunc, v, &ignoreflag, pn_directory, bus);
+		}
 	}
 
 	return 0;

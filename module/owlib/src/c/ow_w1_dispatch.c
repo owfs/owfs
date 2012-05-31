@@ -135,17 +135,21 @@ static void Dispatch_Packet_root( struct netlink_parse * nlp)
 static void Dispatch_Packet_nonroot( struct netlink_parse * nlp)
 {
 	int bus = NL_BUS(nlp->nlm->nlmsg_seq) ;
-	struct connection_in * in ;
+	struct port_in * pin ;
+	
+	for ( pin = Inbound_Control.head_port ; pin != NULL ; pin = pin->next ) {
+		struct connection_in * cin ;
 
-	for ( in = Inbound_Control.head ; in != NO_CONNECTION ; in = in->next ) {
-		//printf("Matching %d/%s/%s/%s/ to bus.%d %d/%s/%s/%s/\n",bus_zero,name,type,domain,now->index,now->busmode,now->master.tcp.name,now->master.tcp.type,now->master.tcp.domain);
-		if ( in->busmode == bus_w1 && in->master.w1.id == bus ) {
-			if ( GOOD( W1_write_pipe(in->master.w1.netlink_pipe[fd_pipe_write], nlp) ) ) {
-				LEVEL_DEBUG("Sending this packet to w1_bus_master%d",bus);
-			} else {
-				LEVEL_DEBUG("Error sending w1_bus_master%d",bus);
+		for ( cin = pin->first ; cin != NO_CONNECTION ; cin = cin->next ) {
+			//printf("Matching %d/%s/%s/%s/ to bus.%d %d/%s/%s/%s/\n",bus_zero,name,type,domain,cin->index,cin->busmode,cin->master.tcp.name,cin->master.tcp.type,cin->master.tcp.domain);
+			if ( cin->busmode == bus_w1 && cin->master.w1.id == bus ) {
+				if ( GOOD( W1_write_pipe(cin->master.w1.netlink_pipe[fd_pipe_write], nlp) ) ) {
+					LEVEL_DEBUG("Sending this packet to w1_bus_master%d",bus);
+				} else {
+					LEVEL_DEBUG("Error sending w1_bus_master%d",bus);
+				}
+				return ;
 			}
-			return ;
 		}
 	}
 	LEVEL_DEBUG("W1 netlink message for non-existent bus %d",bus);

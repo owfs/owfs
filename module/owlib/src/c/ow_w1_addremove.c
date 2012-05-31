@@ -17,13 +17,14 @@ $Id$
 #include "ow_w1.h"
 #include "ow_connection.h"
 
-static struct connection_in * CreateW1In(int bus_master) ;
+static struct port_in * CreateW1Port(int bus_master) ;
 static GOOD_OR_BAD W1_nomatch( struct connection_in * trial, struct connection_in * existing ) ;
 
 // Create a new bus master (W1 type)
-static struct connection_in * CreateW1In(int bus_master)
+static struct port_in * CreateW1Port(int bus_master)
 {
-	struct connection_in * in = AllocIn(NO_CONNECTION) ;
+	struct port_in * pin = AllocPort(NULL) ;
+	struct connection_in * in = pin->first ;
 	char name[63] ;
 	int sn_ret ;
 
@@ -35,8 +36,8 @@ static struct connection_in * CreateW1In(int bus_master)
 	sn_ret = snprintf(name,62,"w1_bus_master%d",bus_master) ;
 	UCLIBCUNLOCK ;
 	if ( sn_ret < 0 ) {
-		RemoveIn(in) ;
-		return NO_CONNECTION ;
+		RemovePort(pin) ;
+		return NULL ;
 	}	
 
 	SOC(in)->devicename = owstrdup(name) ;
@@ -44,13 +45,13 @@ static struct connection_in * CreateW1In(int bus_master)
 	in->busmode = bus_w1 ;
 	in->master.w1.w1_slave_order = w1_slave_order_unknown ;
 	Init_Pipe( in->master.w1.netlink_pipe ) ;
-	if ( BAD( W1_detect(in)) ) {
-		RemoveIn(in) ;
-		return NO_CONNECTION ;
+	if ( BAD( W1_detect(pin)) ) {
+		RemovePort(pin) ;
+		return NULL ;
 	}	
 		 
 	LEVEL_DEBUG("Setup structure for %s",SOC(in)->devicename) ;
-	return in ;
+	return pin ;
 }
 
 static GOOD_OR_BAD W1_nomatch( struct connection_in * trial, struct connection_in * existing )
@@ -67,22 +68,22 @@ static GOOD_OR_BAD W1_nomatch( struct connection_in * trial, struct connection_i
 
 void AddW1Bus( int bus_master )
 {
-	struct connection_in * new_in = CreateW1In(bus_master) ;
+	struct port_in * new_pin = CreateW1Port(bus_master) ;
 	
-	if ( new_in == NO_CONNECTION ) {
+	if ( new_pin == NULL ) {
 		return ;
 	}
 
 	LEVEL_DEBUG("Request master be added: w1_bus_master%d.", bus_master);
-	SOC(new_in)->type = ct_none ;
-	Add_InFlight( W1_nomatch, new_in ) ;
+	SOC(new_pin->first)->type = ct_none ;
+	Add_InFlight( W1_nomatch, new_pin ) ;
 }
 
 void RemoveW1Bus( int bus_master )
 {
-	struct connection_in * in = CreateW1In( bus_master ) ;
+	struct port_in * pin = CreateW1Port( bus_master ) ;
 	
-	Del_InFlight( W1_nomatch, in ) ; // tolerant of in==NO_CONNECTION
+	Del_InFlight( W1_nomatch, pin ) ; // tolerant of pin==NULL
 }
 
 #endif /* OW_W1 && OW_MT */

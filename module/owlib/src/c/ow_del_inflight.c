@@ -17,26 +17,31 @@ $Id$
 /* This allows removing Bus Masters while program is running
  * The master is usually only read-locked for normal operation
  * write lock is done in a separate thread when no requests are being processed */
-void Del_InFlight( GOOD_OR_BAD (*nomatch)(struct connection_in * trial,struct connection_in * existing), struct connection_in * old_in )
+void Del_InFlight( GOOD_OR_BAD (*nomatch)(struct connection_in * trial,struct connection_in * existing), struct port_in * old_pin )
 {
-	if ( old_in == NO_CONNECTION ) {
+	struct connection_in * old_in ;
+	if ( old_pin == NULL ) {
 		return ;
 	}
 
+	old_in = old_pin->first ;
 	LEVEL_DEBUG("Request master be removed: %s", SOC(old_in)->devicename);
 
 	CONNIN_WLOCK ;
 	if ( nomatch != NULL ) {
-		struct connection_in * in = Inbound_Control.head ;
-		while ( in != NO_CONNECTION ) {
-			struct connection_in * next = in-> next ;
-			if ( BAD( nomatch( old_in, in )) ) {
-				LEVEL_DEBUG("Removing BUS index=%d %s",in->index,SAFESTRING(SOC(in)->devicename));
-				RemoveIn(in) ;
+		struct port_in * pin ;
+		for ( pin = Inbound_Control.head_port ; pin != NULL ; pin = pin->next ) {
+			struct connection_in * cin = pin->first ;
+			while ( cin != NO_CONNECTION ) {
+				struct connection_in * next = cin->next ;
+				if ( BAD( nomatch( old_in, cin )) ) {
+					LEVEL_DEBUG("Removing BUS index=%d %s",cin->index,SAFESTRING(SOC(cin)->devicename));
+					RemoveIn(cin) ;
+				}
+				cin = next ;
 			}
-			in = next ;
 		}
 	}
 	CONNIN_WUNLOCK ;
-	RemoveIn(old_in);
+	RemovePort(old_pin);
 }

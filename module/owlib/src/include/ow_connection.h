@@ -190,11 +190,11 @@ void FreeOutAll(void);
 void DelIn(struct connection_in *in);
 
 struct connection_in *AllocIn(const struct connection_in *in);
-struct connection_in *LinkIn(struct connection_in *in);
-struct connection_in *NewIn(const struct connection_in *in);
+struct connection_in *LinkIn(struct connection_in *in, struct port_in * head);
+struct connection_in *NewIn(const struct connection_in *in );
 
-void Add_InFlight( GOOD_OR_BAD (*nomatch)(struct connection_in * trial,struct connection_in * existing), struct connection_in * new_in );
-void Del_InFlight( GOOD_OR_BAD (*nomatch)(struct connection_in * trial,struct connection_in * existing), struct connection_in * new_in );
+void Add_InFlight( GOOD_OR_BAD (*nomatch)(struct connection_in * trial,struct connection_in * existing), struct port_in * new_pin );
+void Del_InFlight( GOOD_OR_BAD (*nomatch)(struct connection_in * trial,struct connection_in * existing), struct port_in * new_pin );
 
 struct connection_in *find_connection_in(int nr);
 int SetKnownBus( int bus_number, struct parsedname * pn) ;

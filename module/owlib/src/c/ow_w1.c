@@ -62,8 +62,9 @@ static void W1_setroutines(struct connection_in *in)
 	in->bundling_length = W1_FIFO_SIZE;	// arbitrary number
 }
 
-GOOD_OR_BAD W1_detect(struct connection_in *in)
+GOOD_OR_BAD W1_detect(struct port_in *pin)
 {
+	struct connection_in * in = pin->first ;
 	struct parsedname pn;
 
 	FS_ParsedName_Placeholder(&pn);	// minimal parsename -- no destroy needed
@@ -282,9 +283,9 @@ static void W1_close(struct connection_in *in)
 
 #else							/* OW_W1  && OW_MT */
 
-GOOD_OR_BAD W1_detect(struct connection_in *in)
+GOOD_OR_BAD W1_detect(struct port_in *pin)
 {
-	(void) in ;
+	(void) pin ;
 	LEVEL_CONNECT("Kernel 1-wire support was not configured in") ;
 	return gbBAD ;
 }

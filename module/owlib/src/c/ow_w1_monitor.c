@@ -22,8 +22,9 @@ static void W1_monitor_close(struct connection_in *in);
 static GOOD_OR_BAD w1_monitor_in_use(const struct connection_in * in_selected) ;
 
 /* Device-specific functions */
-GOOD_OR_BAD W1_monitor_detect(struct connection_in *in)
+GOOD_OR_BAD W1_monitor_detect(struct port_in *pin)
 {
+	struct connection_in * in = pin->first ;
 	struct timeval tvslack = { 1, 0 } ; // 1 second
 	
 	SOC(in)->file_descriptor = FILE_DESCRIPTOR_BAD;
@@ -70,16 +71,20 @@ GOOD_OR_BAD W1_monitor_detect(struct connection_in *in)
 // is there already a W! monitor in the Inbound list? You only need one.
 static GOOD_OR_BAD w1_monitor_in_use(const struct connection_in * in_selected)
 {
-	struct connection_in *in;
+	struct port_in * pin ;
+	
+	for ( pin = Inbound_Control.head_port ; pin != NULL ; pin = pin->next ) {
+		struct connection_in *cin;
 
-	for (in = Inbound_Control.head; in != NO_CONNECTION; in = in->next) {
-		if ( in == in_selected ) {
-			continue ;
+		for (cin = pin->first; cin != NO_CONNECTION; cin = cin->next) {
+			if ( cin == in_selected ) {
+				continue ;
+			}
+			if ( cin->busmode != bus_w1_monitor ) {
+				continue ;
+			}
+			return gbBAD ;
 		}
-		if ( in->busmode != bus_w1_monitor ) {
-			continue ;
-		}
-		return gbBAD ;
 	}
 	return gbGOOD;					// not found in the current inbound list
 }
@@ -92,9 +97,9 @@ static void W1_monitor_close(struct connection_in *in)
 
 #else /* OW_W1 && OW_MT */
 
-GOOD_OR_BAD W1_monitor_detect(struct connection_in *in)
+GOOD_OR_BAD W1_monitor_detect(struct port_in *pin)
 {
-	(void) in ;
+	(void) pin ;
 	LEVEL_DEFAULT("W1 (the linux kernel 1-wire system) is not supported");
 	return gbBAD ;
 }

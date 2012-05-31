@@ -170,8 +170,9 @@ static GOOD_OR_BAD LinkVersion_unknownstring( const char * reported_string, stru
 }
 
 // bus locking done at a higher level
-GOOD_OR_BAD LINK_detect(struct connection_in *in)
+GOOD_OR_BAD LINK_detect(struct port_in *pin)
 {
+	struct connection_in * in = pin->first ;
 	struct connection_in * head_in ;
 	if (SOC(in)->devicename == NULL) {
 		return gbBAD;

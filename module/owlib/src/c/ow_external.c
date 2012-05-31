@@ -36,8 +36,9 @@ static void External_setroutines(struct connection_in *in)
 	in->bundling_length = 1;
 }
 
-GOOD_OR_BAD External_detect(struct connection_in *in)
+GOOD_OR_BAD External_detect(struct port_in *pin)
 {
+	struct connection_in * in = pin->first ;
 	External_setroutines(in);
 	in->Adapter = adapter_external;
 	in->adapter_name = "External";

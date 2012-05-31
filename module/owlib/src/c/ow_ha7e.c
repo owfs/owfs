@@ -45,8 +45,9 @@ static void HA7E_setroutines(struct connection_in *in)
 	in->bundling_length = HA7E_FIFO_SIZE;
 }
 
-GOOD_OR_BAD HA7E_detect(struct connection_in *in)
+GOOD_OR_BAD HA7E_detect(struct port_in *pin)
 {
+	struct connection_in * in = pin->first ;
 	struct parsedname pn;
 
 	FS_ParsedName_Placeholder(&pn);	// minimal parsename -- no destroy needed

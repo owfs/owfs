@@ -225,9 +225,9 @@ static void EtherWeather_setroutines(struct connection_in *in)
 	in->iroutines.flags = ADAP_FLAG_overdrive | ADAP_FLAG_dirgulp | ADAP_FLAG_no2409path | ADAP_FLAG_no2404delay ;
 }
 
-GOOD_OR_BAD EtherWeather_detect(struct connection_in *in)
+GOOD_OR_BAD EtherWeather_detect(struct port_in *pin)
 {
-
+	struct connection_in * in = pin->first ;
 	struct parsedname pn;
 
 	FS_ParsedName_Placeholder(&pn);	// minimal parsename -- no destroy needed

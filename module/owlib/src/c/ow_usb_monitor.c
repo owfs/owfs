@@ -23,8 +23,9 @@ static void USB_scan_for_adapters(void) ;
 static void * USB_monitor_loop( void * v );
 
 /* Device-specific functions */
-GOOD_OR_BAD USB_monitor_detect(struct connection_in *in)
+GOOD_OR_BAD USB_monitor_detect(struct port_in *pin)
 {
+	struct connection_in * in = pin->first ;
 	struct address_pair ap ;
 	pthread_t thread ;
 	
@@ -77,16 +78,20 @@ GOOD_OR_BAD USB_monitor_detect(struct connection_in *in)
 
 static GOOD_OR_BAD usb_monitor_in_use(const struct connection_in * in_selected)
 {
-	struct connection_in *in;
+	struct port_in * pin ;
+	
+	for ( pin = Inbound_Control.head_port ; pin != NULL ; pin = pin->next ) {
+		struct connection_in * cin;
 
-	for (in = Inbound_Control.head; in != NO_CONNECTION; in = in->next) {
-		if ( in == in_selected ) {
-			continue ;
+		for (cin = pin->first; cin != NO_CONNECTION; cin = cin->next) {
+			if ( cin == in_selected ) {
+				continue ;
+			}
+			if ( cin->busmode != bus_usb_monitor ) {
+				continue ;
+			}
+			return gbBAD ;
 		}
-		if ( in->busmode != bus_usb_monitor ) {
-			continue ;
-		}
-		return gbBAD ;
 	}
 	return gbGOOD;					// not found in the current inbound list
 }
@@ -137,21 +142,23 @@ static void USB_scan_for_adapters(void)
 	LEVEL_DEBUG("USB SCAN!");
 	USB_first(&ul);
 	while ( GOOD(USB_next(&ul)) ) {
-		struct connection_in * in = AllocIn(NO_CONNECTION) ;
-		if ( in == NO_CONNECTION ) {
+		struct port_in * pin = AllocPort(NULL) ;
+		struct connection_in * in ;
+		if ( pin == NULL ) {
 			return ;
 		}
+		in = pin->first ;
 		SOC(in)->devicename = DS9490_device_name(&ul) ;
 		SOC(in)->type = ct_usb ;
 		
 		// Can do detect. Becasue the name makes this a specific adapter (USB pair)
 		// we won't do a directory and won't add the directory and devices with the wrong index
-		if ( BAD( DS9490_detect(in)) ) {
+		if ( BAD( DS9490_detect(pin)) ) {
 			// Remove the extra connection
-			RemoveIn(in);
+			RemovePort(pin);
 		} else {
 			// Add the device, but no need to check for bad match
-			Add_InFlight( NULL, in ) ;
+			Add_InFlight( NULL, pin ) ;
 		}
 	}
 
@@ -160,9 +167,9 @@ static void USB_scan_for_adapters(void)
 
 #else /*  OW_USB && OW_MT */
 
-GOOD_OR_BAD USB_monitor_detect(struct connection_in *in)
+GOOD_OR_BAD USB_monitor_detect(struct port_in *pin)
 {
-	(void) in ;
+	(void) pin ;
 	LEVEL_CALL( "USB monitoring support not enabled" ) ;
 	return gbBAD ;
 }

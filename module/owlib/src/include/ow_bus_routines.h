@@ -50,7 +50,7 @@ $Id$
 /* Interface-specific routines ---------------- */
 struct interface_routines {
 	/* Detect if adapter is present, and open -- usually called outside of this routine */
-	GOOD_OR_BAD (*detect) (struct connection_in * in);
+	GOOD_OR_BAD (*detect) (struct port_in * pin);
 	/* reset the interface -- actually the 1-wire bus */
 	RESET_TYPE (*reset) (const struct parsedname * pn);
 	/* Bulk of search routine, after set ups for first or alarm or family */
@@ -121,7 +121,7 @@ struct interface_routines {
 
 #define AdapterSupports2409(pn)	(((pn)->selected_connection->iroutines.flags&ADAP_FLAG_no2409path)==0)
 
-GOOD_OR_BAD BUS_detect( struct connection_in * in ) ;
+GOOD_OR_BAD BUS_detect( struct port_in * pin ) ;
 
 RESET_TYPE BUS_reset(const struct parsedname *pn);
 

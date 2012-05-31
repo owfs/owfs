@@ -57,8 +57,9 @@ static void OWServer_Enet_setroutines(struct connection_in *in)
 	in->bundling_length = HA7E_FIFO_SIZE;
 }
 
-GOOD_OR_BAD OWServer_Enet_detect(struct connection_in *in)
+GOOD_OR_BAD OWServer_Enet_detect(struct port_in *pin)
 {
+	struct connection_in * in = pin->first ;
 	/* Set up low-level routines */
 	OWServer_Enet_setroutines(in);
 

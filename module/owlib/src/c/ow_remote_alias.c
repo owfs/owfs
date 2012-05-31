@@ -66,54 +66,95 @@ static struct connection_in * NextServer( struct connection_in * in )
 
 static INDEX_OR_ERROR ServerAlias( BYTE * sn, struct connection_in * in, struct parsedname * pn ) 
 {
-	struct parsedname s_pn_copy;
-	struct parsedname * pn_copy = &s_pn_copy ;
-	INDEX_OR_ERROR bus_nr ;
-
-	memcpy(pn_copy, pn, sizeof(struct parsedname));	// shallow copy
-	pn_copy->selected_connection = in;
-	bus_nr = ServerPresence( pn_copy) ;
-	memcpy( sn, pn_copy->sn, SERIAL_NUMBER_SIZE );
-	return bus_nr ;
+	if ( in != NO_CONNECTION ) {
+		struct parsedname s_pn_copy;
+		struct parsedname * pn_copy = &s_pn_copy ;
+		INDEX_OR_ERROR bus_nr ;
+		
+		memcpy(pn_copy, pn, sizeof(struct parsedname));	// shallow copy
+		pn_copy->selected_connection = in;
+		bus_nr = ServerPresence( pn_copy) ;
+		memcpy( sn, pn_copy->sn, SERIAL_NUMBER_SIZE );
+		return bus_nr ;
+	}
+	return INDEX_BAD ;
 }	
 
 #if OW_MT
 
 struct remotealias_struct {
-	struct connection_in *in;
+	struct port_in * pin;
+	struct connection_in *cin;
 	struct parsedname *pn;
 	BYTE sn[SERIAL_NUMBER_SIZE] ;
 	INDEX_OR_ERROR bus_nr;
 };
 
-static void * RemoteAlias_callback(void * v)
+static void * RemoteAlias_callback_conn(void * v)
 {
-	pthread_t thread;
-	int threadbad = 1;
 	struct remotealias_struct * ras = (struct remotealias_struct *) v ;
-	struct remotealias_struct next_ras ;
+	struct remotealias_struct ras_next ;
+	pthread_t thread;
+	int threadbad = 0;
 	
 	// set up for next server connection
-	next_ras.in = NextServer(ras->in->next) ;
-	next_ras.pn = ras->pn ;
-	next_ras.bus_nr = INDEX_BAD ;
-
-	memset( next_ras.sn, 0, SERIAL_NUMBER_SIZE) ;
-		
-	// launch thread for next server connection
-	threadbad = (next_ras.in == NO_CONNECTION)
-	|| pthread_create(&thread, DEFAULT_THREAD_ATTR, RemoteAlias_callback, (void *) (&next_ras));
+	ras_next.cin = NextServer(ras->cin->next) ;
+	if ( ras_next.cin == NO_CONNECTION ) {
+		threadbad = 1 ;
+	} else {
+		ras_next.pin = ras->pin ;
+		ras_next.pn = ras->pn ;
+		ras_next.bus_nr = INDEX_BAD ;
+		memset( ras_next.sn, 0, SERIAL_NUMBER_SIZE) ;
+		threadbad = pthread_create(&thread, DEFAULT_THREAD_ATTR, RemoteAlias_callback_conn, (void *) (&ras_next)) ;
+	}
 	
 	// Result for this server connection (while next one is processing)
-	ras->bus_nr = ServerAlias( ras->sn, ras->in, ras->pn ) ;
+	ras->bus_nr = ServerAlias( ras->sn, ras->cin, ras->pn ) ;
 	
 	if (threadbad == 0) {		/* was a thread created? */
 		if (pthread_join(thread, NULL)==0) {
 			// Set answer to the next bus if it's found
 			// else use current answer
-			if ( INDEX_VALID(next_ras.bus_nr) ) {
-				ras->bus_nr = next_ras.bus_nr ;
-				memcpy( ras->sn, next_ras.sn, SERIAL_NUMBER_SIZE ) ;
+			if ( INDEX_VALID(ras_next.bus_nr) ) {
+				ras->bus_nr = ras_next.bus_nr ;
+				memcpy( ras->sn, ras_next.sn, SERIAL_NUMBER_SIZE ) ;
+			}
+		}
+	}
+	return VOID_RETURN ;
+}
+
+static void * RemoteAlias_callback_port(void * v)
+{
+	struct remotealias_struct * ras = (struct remotealias_struct *) v ;
+	struct remotealias_struct ras_next ;
+	pthread_t thread;
+	int threadbad = 0;
+	
+	// set up for next server connection
+	ras_next.pin = ras->pin->next ;
+	if ( ras_next.pin == NULL ) {
+		threadbad = 1 ;
+	} else {
+		ras_next.pn = ras->pn ;
+		ras_next.bus_nr = INDEX_BAD ;
+		memset( ras_next.sn, 0, SERIAL_NUMBER_SIZE) ;
+		threadbad = pthread_create(&thread, DEFAULT_THREAD_ATTR, RemoteAlias_callback_port, (void *) (&ras_next)) ;
+	}
+	
+	ras->cin = NextServer( ras->pin->first ) ;
+	if ( ras->cin != NO_CONNECTION ) {
+		RemoteAlias_callback_conn(v) ;
+	}
+	
+	if (threadbad == 0) {		/* was a thread created? */
+		if (pthread_join(thread, NULL)==0) {
+			// Set answer to the next bus if it's found
+			// else use current answer
+			if ( INDEX_VALID(ras_next.bus_nr) ) {
+				ras->bus_nr = ras_next.bus_nr ;
+				memcpy( ras->sn, ras_next.sn, SERIAL_NUMBER_SIZE ) ;
 			}
 		}
 	}
@@ -124,36 +165,42 @@ INDEX_OR_ERROR RemoteAlias(struct parsedname *pn)
 {
 	struct remotealias_struct ras ; 
 	
-	ras.in = NextServer(Inbound_Control.head) ;
+	ras.pin = Inbound_Control.head_port ;
 	ras.pn = pn ;
 	ras.bus_nr = INDEX_BAD ;
-
 	memset( ras.sn, 0, SERIAL_NUMBER_SIZE) ;
-	
-	if ( ras.in != NO_CONNECTION ) {
-		RemoteAlias_callback( (void *) (&ras) ) ;
+
+	if ( ras.pin != NULL ) {
+		RemoteAlias_callback_port( (void *) (&ras) ) ;
 	}
 	
+	memcpy( pn->sn, ras.sn, SERIAL_NUMBER_SIZE ) ;
+
 	if ( INDEX_VALID( ras.bus_nr ) ) {
-		memcpy( pn->sn, ras.sn, SERIAL_NUMBER_SIZE ) ;
+		LEVEL_DEBUG("Remote alias for %s bus=%d "SNformat,pn->path_to_server,ras.bus_nr,SNvar(ras.sn));
+	} else {
+		LEVEL_DEBUG("Remote alias for %s not found",pn->path_to_server);
 	}
-	LEVEL_DEBUG("Remote alias for %s bus=%d "SNformat,pn->path_to_server,ras.bus_nr,SNvar(ras.sn));
-	return ras.bus_nr;
+	return ras.bus_nr;		
 }
 
 #else							/* OW_MT */
 
 INDEX_OR_ERROR RemoteAlias(struct parsedname *pn)
 {
-	struct connection_in * in ;
+	struct port_in * pin ;
 	
-	for ( in=NextServer(Inbound_Control.head) ; in ; in=NextServer(in->next) ) {
-		BYTE sn[SERIAL_NUMBER_SIZE] ;
-		INDEX_OR_ERROR bus_nr = ServerAlias( sn, in, pn ) ;
-		if ( INDEX_VALID(bus_nr) ) {
-			memcpy( pn->sn, sn, SERIAL_NUMBER_SIZE ) ;
-			LEVEL_DEBUG("Remote alias for %s bus=%d "SNformat,pn->path_to_server,bus_nr,SNvar(sn));
-			return bus_nr ;
+	for ( pin = Inbound_Control.head_port ; pin ; pin = pin->first ) {
+		struct connection_in * cin ;
+		
+		for ( cin=NextServer(pin->first) ; cin ; cin=NextServer(cin->next) ) {
+			BYTE sn[SERIAL_NUMBER_SIZE] ;
+			INDEX_OR_ERROR bus_nr = ServerAlias( sn, cin, pn ) ;
+			if ( INDEX_VALID(bus_nr) ) {
+				memcpy( pn->sn, sn, SERIAL_NUMBER_SIZE ) ;
+				LEVEL_DEBUG("Remote alias for %s bus=%d "SNformat,pn->path_to_server,bus_nr,SNvar(sn));
+				return bus_nr ;
+			}
 		}
 	}
 	return INDEX_BAD;				// no success

@@ -233,8 +233,9 @@ static void DS2480_setroutines(struct connection_in *in)
 /* Reset and detect a DS2480B */
 /* returns 0=good */
 // bus locking at a higher level
-GOOD_OR_BAD DS2480_detect(struct connection_in *in)
+GOOD_OR_BAD DS2480_detect(struct port_in *pin)
 {
+	struct connection_in * in = pin->first ;
 	/* Set up low-level routines */
 	DS2480_setroutines(in);
 

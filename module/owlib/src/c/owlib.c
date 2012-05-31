@@ -18,7 +18,7 @@ $Id$
 static void IgnoreSignals(void);
 static void SetupTemperatureLimits( void );
 static void SetupInboundConnections(void);
-static GOOD_OR_BAD SetupSingleInboundConnection( struct connection_in * in ) ;
+static GOOD_OR_BAD SetupSingleInboundConnection( struct port_in * pin ) ;
 
 /* Start the owlib process -- already in background */
 GOOD_OR_BAD LibStart(void)
@@ -53,7 +53,7 @@ GOOD_OR_BAD LibStart(void)
 	// Signal handlers
 	IgnoreSignals();
 	
-	if ( Inbound_Control.head == NO_CONNECTION ) {
+	if ( Inbound_Control.head_port == NULL ) {
 		LEVEL_DEFAULT("No valid 1-wire buses found");
 		return gbBAD ;
 	}
@@ -84,36 +84,37 @@ static void SetupTemperatureLimits( void )
 
 static void SetupInboundConnections(void)
 {
-	struct connection_in *in = Inbound_Control.head;
+	struct port_in *pin = Inbound_Control.head_port;
 
 	// cycle through connections analyzing them
-	while (in != NO_CONNECTION) {
-		struct connection_in * next = in->next ;
-		if ( BAD( SetupSingleInboundConnection(in) ) ) {				
+	while (pin != NULL) {
+		struct port_in * next = pin->next ;
+		if ( BAD( SetupSingleInboundConnection(pin) ) ) {				
 			/* flag that that the adapter initiation was unsuccessful */
-			STAT_ADD1_BUS(e_bus_detect_errors, in);
-			RemoveIn( in ) ;
+			STAT_ADD1_BUS(e_bus_detect_errors, pin->first);
+			RemoveIn( pin->first ) ;
 		}
-		in = next ;
+		pin = next ;
 	}
 }
 	
-static GOOD_OR_BAD SetupSingleInboundConnection( struct connection_in * in )
+static GOOD_OR_BAD SetupSingleInboundConnection( struct port_in * pin )
 {
+	struct connection_in * in = pin->first ;
 	switch (get_busmode(in)) {
 
 	case bus_zero:
-		if ( BAD( Zero_detect(in) )) {
+		if ( BAD( Zero_detect(pin) )) {
 			LEVEL_CONNECT("Cannot open server at %s", SOC(in)->devicename);
 			return gbBAD ;
 		}
 		break;
 
 	case bus_server:
-		if (BAD( Server_detect(in)) ) {
+		if (BAD( Server_detect(pin)) ) {
 			LEVEL_CONNECT("Cannot open server at %s -- first attempt.", SOC(in)->devicename);
 			sleep(5); // delay to allow owserver to open it's listen socket
-			if ( GOOD( Server_detect(in)) ) {
+			if ( GOOD( Server_detect(pin)) ) {
 				break ;
 			}
 			LEVEL_CONNECT("Cannot open server at %s -- second (and final) attempt.", SOC(in)->devicename);
@@ -123,7 +124,7 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct connection_in * in )
 
 	case bus_serial:
 		/* Set up DS2480/LINK interface */
-		if ( BAD( DS2480_detect(in) )) {
+		if ( BAD( DS2480_detect(pin) )) {
 			LEVEL_CONNECT("Cannot detect DS2480 or LINK interface on %s.", SOC(in)->devicename);
 		} else {
 			return gbGOOD ;
@@ -132,14 +133,14 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct connection_in * in )
 		in->adapter_name = "DS9097";	// need to set adapter name for this approach to passive adapter
 
 	case bus_passive:
-		if ( BAD( DS9097_detect(in) )) {
+		if ( BAD( DS9097_detect(pin) )) {
 			LEVEL_DEFAULT("Cannot detect DS9097 (passive) interface on %s.", SOC(in)->devicename);
 			return gbBAD ;
 		}
 		break;
 		
 	case bus_xport:
-		if ( BAD( DS2480_detect(in) )) {
+		if ( BAD( DS2480_detect(pin) )) {
 			LEVEL_DEFAULT("Cannot detect DS2480B via telnet interface on %s.", SOC(in)->devicename);
 			return gbBAD ;
 		}
@@ -147,7 +148,7 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct connection_in * in )
 		
 	case bus_i2c:
 #if OW_I2C
-		if ( BAD( DS2482_detect(in) )) {
+		if ( BAD( DS2482_detect(pin) )) {
 			LEVEL_CONNECT("Cannot detect an i2c DS2482-x00 on %s", SOC(in)->devicename);
 			return gbBAD ;
 		}
@@ -156,7 +157,7 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct connection_in * in )
 
 	case bus_ha7net:
 #if OW_HA7
-		if ( BAD( HA7_detect(in) )) {
+		if ( BAD( HA7_detect(pin) )) {
 			LEVEL_CONNECT("Cannot detect an HA7net server on %s", SOC(in)->devicename);
 			return gbBAD ;
 		}
@@ -165,7 +166,7 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct connection_in * in )
 
 	case bus_enet:
 #if OW_HA7
-		if ( BAD( OWServer_Enet_detect(in) )) {
+		if ( BAD( OWServer_Enet_detect(pin) )) {
 			LEVEL_CONNECT("Cannot detect an OWServer_Enet on %s", SOC(in)->devicename);
 			return gbBAD ;
 		}
@@ -173,14 +174,14 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct connection_in * in )
 	break;
 
 	case bus_ha5:
-		if ( BAD( HA5_detect(in) )) {
+		if ( BAD( HA5_detect(pin) )) {
 			LEVEL_CONNECT("Cannot detect an HA5 on %s", SOC(in)->devicename);
 			return gbBAD ;
 		}
 		break;
 
 	case bus_ha7e:
-		if ( BAD( HA7E_detect(in) )) {
+		if ( BAD( HA7E_detect(pin) )) {
 			LEVEL_CONNECT("Cannot detect an HA7E/HA7S on %s", SOC(in)->devicename);
 			return gbBAD ;
 		}
@@ -188,7 +189,7 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct connection_in * in )
 
 	case bus_parallel:
 #if OW_PARPORT
-		if ( BAD( DS1410_detect(in) )) {
+		if ( BAD( DS1410_detect(pin) )) {
 			LEVEL_DEFAULT("Cannot detect the DS1410E parallel bus master");
 			return gbBAD ;
 		}
@@ -200,7 +201,7 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct connection_in * in )
 		/* in->master.usb.ds1420_address should be set to identify the
 		 * adapter just in case it's disconnected. It's done in the
 		 * DS9490_next_both() if not set. */
-		if ( BAD( DS9490_detect(in) )) {
+		if ( BAD( DS9490_detect(pin) )) {
 			LEVEL_DEFAULT("Cannot open USB bus master");
 			return gbBAD ;
 		}
@@ -208,41 +209,41 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct connection_in * in )
 		break;
 
 	case bus_link:
-		if ( BAD( LINK_detect(in) )) {
+		if ( BAD( LINK_detect(pin) )) {
 			LEVEL_CONNECT("Cannot open LINK bus master at %s", SOC(in)->devicename);
 			return gbBAD ;
 		}
 		break;
 
 	case bus_etherweather:
-		if ( BAD( EtherWeather_detect(in) )) {
+		if ( BAD( EtherWeather_detect(pin) )) {
 			LEVEL_CONNECT("Cannot detect an EtherWeather server on %s", SOC(in)->devicename);
 			return gbBAD ;
 		}
 		break;
 
 	case bus_browse:
-		RETURN_BAD_IF_BAD( Browse_detect(in) ) ;
+		RETURN_BAD_IF_BAD( Browse_detect(pin) ) ;
 		break;
 
 	case bus_fake:
-		Fake_detect(in);	// never fails
+		Fake_detect(pin);	// never fails
 		break;
 
 	case bus_tester:
-		Tester_detect(in);	// never fails
+		Tester_detect(pin);	// never fails
 		break;
 
 	case bus_mock:
-		Mock_detect(in);	// never fails
+		Mock_detect(pin);	// never fails
 		break;
 
 	case bus_w1_monitor:
-		RETURN_BAD_IF_BAD( W1_monitor_detect(in) ) ;
+		RETURN_BAD_IF_BAD( W1_monitor_detect(pin) ) ;
 		break;
 
 	case bus_usb_monitor:
-		RETURN_BAD_IF_BAD( USB_monitor_detect(in) ) ;
+		RETURN_BAD_IF_BAD( USB_monitor_detect(pin) ) ;
 		break;
 
 	case bus_w1:
@@ -252,7 +253,7 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct connection_in * in )
 		break ;
 
 	case bus_external:
-		RETURN_BAD_IF_BAD( External_detect(in) ) ;
+		RETURN_BAD_IF_BAD( External_detect(pin) ) ;
 		break;
 
 	case bus_bad:

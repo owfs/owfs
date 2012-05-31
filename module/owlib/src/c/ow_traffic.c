@@ -22,13 +22,18 @@ $Id$
 
 static struct connection_in * Bus_from_file_descriptor( FILE_DESCRIPTOR_OR_ERROR file_descriptor )
 {
-	struct connection_in * in ;
-	for( in = Inbound_Control.head ; in != NO_CONNECTION ; in = in->next ) {
-		if ( SOC(in)->file_descriptor == file_descriptor ) {
-			break ;
+	struct port_in * pin ; 
+	
+	for ( pin=Inbound_Control.head_port ; pin != NULL ; pin=pin->next ) {
+		struct connection_in * cin ;
+		for( cin = pin->first ; cin != NO_CONNECTION ; cin = cin->next ) {
+			if ( SOC(cin)->file_descriptor == file_descriptor ) {
+				break ;
+			}
 		}
+		return cin ;
 	}
-	return in ;
+	return NO_CONNECTION ;
 }
 
 void TrafficOut( const char * data_type, const BYTE * data, size_t length, const struct connection_in * in )

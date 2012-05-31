@@ -60,8 +60,9 @@ static void HA7_setroutines(struct connection_in *in)
 	in->bundling_length = HA7_FIFO_SIZE;	// arbitrary number
 }
 
-GOOD_OR_BAD HA7_detect(struct connection_in *in)
+GOOD_OR_BAD HA7_detect(struct port_in *pin)
 {
+	struct connection_in * in = pin->first ;
 	struct parsedname pn;
 	struct toHA7 ha7;
 

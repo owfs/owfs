@@ -217,19 +217,23 @@ GOOD_OR_BAD DS9490_ID_this_master(struct connection_in *in)
 
 static GOOD_OR_BAD usbdevice_in_use(const struct usb_list *ul)
 {
-	struct connection_in *in;
+	struct port_in * pin ; 
+	
+	for ( pin = Inbound_Control.head_port ; pin != NULL ; pin = pin->next ) {
+		struct connection_in *cin;
 
-	for (in = Inbound_Control.head; in != NO_CONNECTION; in = in->next) {
-		if ( in->busmode != bus_usb ) {
-			continue ;
+		for (cin = pin->first; cin != NO_CONNECTION; cin = cin->next) {
+			if ( cin->busmode != bus_usb ) {
+				continue ;
+			}
+			if ( cin->master.usb.usb_bus_number != ul->usb_bus_number ) {
+				continue ;
+			}
+			if ( cin->master.usb.usb_dev_number != ul->usb_dev_number ) {
+				continue ;
+			}
+			return gbBAD;			// It seems to be in use already
 		}
-		if ( in->master.usb.usb_bus_number != ul->usb_bus_number ) {
-			continue ;
-		}
-		if ( in->master.usb.usb_dev_number != ul->usb_dev_number ) {
-			continue ;
-		}
-		return gbBAD;			// It seems to be in use already
 	}
 	return gbGOOD;					// not found in the current inbound list
 }

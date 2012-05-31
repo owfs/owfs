@@ -68,8 +68,9 @@ static void HA5_setroutines(struct connection_in *in)
 	in->bundling_length = HA5_FIFO_SIZE;
 }
 
-GOOD_OR_BAD HA5_detect(struct connection_in *in)
+GOOD_OR_BAD HA5_detect(struct port_in *pin)
 {
+	struct connection_in * in = pin->first ;
 	struct address_pair ap ;
 	GOOD_OR_BAD gbResult ; // default
 

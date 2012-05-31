@@ -45,46 +45,48 @@ $Id$
 #ifndef OW_DETECT_H			/* tedious wrapper */
 #define OW_DETECT_H
 
-GOOD_OR_BAD Server_detect(struct connection_in *in);
-GOOD_OR_BAD Zero_detect(struct connection_in *in);
-GOOD_OR_BAD DS2480_detect(struct connection_in *in);
+#include "ow_port_in.h"
+
+GOOD_OR_BAD Server_detect(struct port_in * pin);
+GOOD_OR_BAD Zero_detect(struct port_in * pin);
+GOOD_OR_BAD DS2480_detect(struct port_in * pin);
 
 #if OW_PARPORT
-GOOD_OR_BAD DS1410_detect(struct connection_in *in);
+GOOD_OR_BAD DS1410_detect(struct port_in * pin);
 #endif							/* OW_PARPORT */
 
-GOOD_OR_BAD DS9097_detect(struct connection_in *in);
-GOOD_OR_BAD LINK_detect(struct connection_in *in);
-GOOD_OR_BAD HA7E_detect(struct connection_in *in);
-GOOD_OR_BAD OWServer_Enet_detect(struct connection_in *in);
-GOOD_OR_BAD HA5_detect(struct connection_in *in);
-GOOD_OR_BAD BadAdapter_detect(struct connection_in *in);
-GOOD_OR_BAD LINKE_detect(struct connection_in *in);
-GOOD_OR_BAD Fake_detect(struct connection_in *in);
-GOOD_OR_BAD Tester_detect(struct connection_in *in);
-GOOD_OR_BAD Mock_detect(struct connection_in *in);
-GOOD_OR_BAD EtherWeather_detect(struct connection_in *in);
-GOOD_OR_BAD Browse_detect(struct connection_in *in);
-GOOD_OR_BAD W1_monitor_detect(struct connection_in *in);
-GOOD_OR_BAD External_detect(struct connection_in *in);
+GOOD_OR_BAD DS9097_detect(struct port_in * pin);
+GOOD_OR_BAD LINK_detect(struct port_in * pin);
+GOOD_OR_BAD HA7E_detect(struct port_in * pin);
+GOOD_OR_BAD OWServer_Enet_detect(struct port_in * pin);
+GOOD_OR_BAD HA5_detect(struct port_in * pin);
+GOOD_OR_BAD BadAdapter_detect(struct port_in * pin);
+GOOD_OR_BAD LINKE_detect(struct port_in * pin);
+GOOD_OR_BAD Fake_detect(struct port_in * pin);
+GOOD_OR_BAD Tester_detect(struct port_in * pin);
+GOOD_OR_BAD Mock_detect(struct port_in * pin);
+GOOD_OR_BAD EtherWeather_detect(struct port_in * pin);
+GOOD_OR_BAD Browse_detect(struct port_in * pin);
+GOOD_OR_BAD W1_monitor_detect(struct port_in * pin);
+GOOD_OR_BAD External_detect(struct port_in * pin);
 
 #if OW_HA7
-GOOD_OR_BAD HA7_detect(struct connection_in *in);
+GOOD_OR_BAD HA7_detect(struct port_in * pin);
 GOOD_OR_BAD FS_FindHA7(void);
 #endif							/* OW_HA7 */
 
 #if OW_W1
-GOOD_OR_BAD W1_detect(struct connection_in * in) ;
+GOOD_OR_BAD W1_detect(struct port_in * pin) ;
 GOOD_OR_BAD W1_Browse( void ) ;
 #endif /* OW_W1 */
 
 #if OW_I2C
-GOOD_OR_BAD DS2482_detect(struct connection_in *in);
+GOOD_OR_BAD DS2482_detect(struct port_in * pin);
 #endif							/* OW_I2C */
 
 #if OW_USB
-GOOD_OR_BAD DS9490_detect(struct connection_in *in);
-GOOD_OR_BAD USB_monitor_detect(struct connection_in *in) ;
+GOOD_OR_BAD DS9490_detect(struct port_in * pin);
+GOOD_OR_BAD USB_monitor_detect(struct port_in * pin) ;
 #endif							/* OW_USB */
 
 #endif							/* OW_DETECT_H */

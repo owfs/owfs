@@ -23,8 +23,9 @@ static void BadAdapter_close(struct connection_in *in);
 /* Device-specific functions */
 /* Note, the "Bad"adapter" ha not function, and returns "-ENOTSUP" (not supported) for most functions */
 /* It does call lower level functions for higher ones, which of course is pointless since the lower ones don't work either */
-GOOD_OR_BAD BadAdapter_detect(struct connection_in *in)
+GOOD_OR_BAD BadAdapter_detect(struct port_in *pin)
 {
+	struct connection_in * in = pin->first ;
 	SOC(in)->type = ct_none ;
 	SOC(in)->file_descriptor = FILE_DESCRIPTOR_BAD ;
 	in->Adapter = adapter_Bad;	/* OWFS assigned value */

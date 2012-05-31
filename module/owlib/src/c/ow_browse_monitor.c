@@ -18,8 +18,9 @@ static void Browse_close(struct connection_in *in);
 static GOOD_OR_BAD browse_in_use(const struct connection_in * in_selected) ;
 
 /* Device-specific functions */
-GOOD_OR_BAD Browse_detect(struct connection_in *in)
+GOOD_OR_BAD Browse_detect(struct port_in *pin)
 {
+	struct connection_in * in = pin->first ;
 #if OW_ZERO
 	in->iroutines.detect = Browse_detect;
 	in->Adapter = adapter_browse_monitor;	/* OWFS assigned value */
@@ -62,16 +63,20 @@ GOOD_OR_BAD Browse_detect(struct connection_in *in)
 
 static GOOD_OR_BAD browse_in_use(const struct connection_in * in_selected)
 {
-	struct connection_in *in;
+	struct port_in * pin ;
+	
+	for ( pin = Inbound_Control.head_port ; pin ; pin = pin->next ) {
+		struct connection_in *cin;
 
-	for (in = Inbound_Control.head; in != NO_CONNECTION; in = in->next) {
-		if ( in == in_selected ) {
-			continue ;
+		for (cin = pin->first; cin != NO_CONNECTION; cin = cin->next) {
+			if ( cin == in_selected ) {
+				continue ;
+			}
+			if ( cin->busmode != bus_browse ) {
+				continue ;
+			}
+			return gbBAD ;
 		}
-		if ( in->busmode != bus_browse ) {
-			continue ;
-		}
-		return gbBAD ;
 	}
 	return gbGOOD;					// not found in the current inbound list
 }

@@ -29,11 +29,6 @@ $Id$
 struct connection_in;
 struct port_in ;
 
-/* -------------------------------------------- */
-/* bUS-MASTER-specific routines ---------------- */
-#include "ow_master.h"
-
-
 struct port_in {
 	struct port_in * next ;
 	struct connection_in *first;
@@ -41,5 +36,10 @@ struct port_in {
 	
 	pthread_mutex_t port_mutex;
 };
+
+void RemovePort( struct port_in * pin ) ;
+struct port_in * AllocPort( const struct port_in * old_pin ) ;
+struct port_in *LinkPort(struct port_in *pin) ;
+struct port_in *NewPort(const struct port_in *pin) ;
 
 #endif							/* OW_PORT_IN_H */

@@ -128,27 +128,66 @@ INDEX_OR_ERROR ReCheckPresence(struct parsedname *pn)
 #if OW_MT
 
 struct checkpresence_struct {
-	struct connection_in *in;
+	struct port_in * pin;
+	struct connection_in * cin;
 	struct parsedname *pn;
 	INDEX_OR_ERROR bus_nr;
 };
 
-static void * CheckPresence_callback(void * v)
+static void * CheckPresence_callback_conn(void * v)
 {
-	pthread_t thread;
-	int threadbad ;
 	struct checkpresence_struct * cps = (struct checkpresence_struct *) v ;
-	struct checkpresence_struct next_cps = { cps->in->next, cps->pn, INDEX_BAD };
+	struct checkpresence_struct cps_next ;
+	pthread_t thread;
+	int threadbad = 0 ;
 	
-	threadbad = (next_cps.in == NO_CONNECTION)
-	|| (pthread_create(&thread, DEFAULT_THREAD_ATTR, CheckPresence_callback, (void *) (&next_cps)) != 0) ;
+	cps_next.cin = cps->cin->next ;
+	if ( cps_next.cin == NO_CONNECTION ) {
+		threadbad = 1 ;
+	} else {
+		cps_next.pin = cps->pin ;
+		cps_next.pn = cps->pn ;
+		cps_next.bus_nr = INDEX_BAD ;
+		threadbad = pthread_create(&thread, DEFAULT_THREAD_ATTR, CheckPresence_callback_conn, (void *) (&cps_next)) ;
+	}
 	
-	cps->bus_nr = CheckThisConnection( cps->in->index, cps->pn ) ;
+	cps->bus_nr = CheckThisConnection( cps->cin->index, cps->pn ) ;
 	
 	if (threadbad == 0) {		/* was a thread created? */
 		if (pthread_join(thread, NULL)==0) {
-			if ( INDEX_VALID(next_cps.bus_nr) ) {
-				cps->bus_nr = next_cps.bus_nr ;
+			if ( INDEX_VALID(cps_next.bus_nr) ) {
+				cps->bus_nr = cps_next.bus_nr ;
+			}
+		}
+	}
+	return VOID_RETURN ;
+}
+
+static void * CheckPresence_callback_port(void * v)
+{
+	struct checkpresence_struct * cps = (struct checkpresence_struct *) v ;
+	struct checkpresence_struct cps_next ;
+	pthread_t thread;
+	int threadbad = 0 ;
+	
+	cps_next.pin = cps->pin->next ;
+	if ( cps_next.pin == NULL ) {
+		threadbad = 1 ;
+	} else {
+		cps_next.pn = cps->pn ;
+		cps_next.bus_nr = INDEX_BAD ;
+		threadbad = pthread_create(&thread, DEFAULT_THREAD_ATTR, CheckPresence_callback_port, (void *) (&cps_next)) ;
+	}
+	
+	cps->cin = cps->pin->first ;
+	if ( cps->cin != NO_CONNECTION ) {
+		CheckPresence_callback_conn(v) ;
+	}
+			
+	if (threadbad == 0) {		/* was a thread created? */
+		if (pthread_join(thread, NULL)==0) {
+			if ( INDEX_VALID(cps_next.bus_nr) ) {
+				cps->bus_nr = cps_next.bus_nr ;
 			}
 		}
 	}
@@ -157,11 +196,12 @@ static void * CheckPresence_callback(void * v)
 
 static INDEX_OR_ERROR CheckPresence_low(struct parsedname *pn)
 {
-	struct checkpresence_struct cps = { Inbound_Control.head , pn, INDEX_BAD };
+	struct checkpresence_struct cps = { Inbound_Control.head_port, NULL, pn, INDEX_BAD };
 		
-	if ( cps.in != NO_CONNECTION ) {
-		CheckPresence_callback( (void *) (&cps) ) ;
+	if ( cps.pin != NULL ) {
+		CheckPresence_callback_port( (void *) (&cps) ) ;
 	}
+
 	return cps.bus_nr;
 }
 
@@ -169,12 +209,15 @@ static INDEX_OR_ERROR CheckPresence_low(struct parsedname *pn)
 
 static INDEX_OR_ERROR CheckPresence_low(struct parsedname *pn)
 {
-	struct connection_in * in ;
+	struct port_in * pin ;
 	
-	for ( in=Inbound_Control.head ; in ; in=in->next ) {
-		int bus_nr = CheckThisConnection( in->index, pn ) ;
-		if ( INDEX_VALID(bus_nr) ) {
-			return bus_nr ;
+	for ( pin=Inbound_Control.head_port ; pin ; pin=pin->next ) {
+		struct connection_in * cin ;
+		for ( cin=pin->first ; cin ; cin=cin->next ) {
+			int bus_nr = CheckThisConnection( in->index, pn ) ;
+			if ( INDEX_VALID(bus_nr) ) {
+				return bus_nr ;
+			}
 		}
 	}
 	return INDEX_BAD;				// no success

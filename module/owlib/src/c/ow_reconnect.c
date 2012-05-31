@@ -54,7 +54,7 @@ GOOD_OR_BAD TestConnection(const struct parsedname *pn)
 			// reconnect method exists
 			ret = (in->iroutines.reconnect) (pn) ;	// call bus-specific reconnect
 		} else {
-			ret = BUS_detect(in) ;	// call initial opener
+			ret = BUS_detect(in->head) ;	// call initial opener
 		}
 		if ( BAD( ret ) ) {
 			in->reconnect_state = reconnect_ok + 1 ;

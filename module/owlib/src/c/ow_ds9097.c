@@ -53,8 +53,9 @@ static void DS9097_setroutines(struct connection_in *in)
 
 /* _detect is a bit of a misnomer, no detection is actually done */
 // no bus locking here (higher up)
-GOOD_OR_BAD DS9097_detect(struct connection_in *in)
+GOOD_OR_BAD DS9097_detect(struct port_in *pin)
 {
+	struct connection_in * in = pin->first ;
 	/* Set up low-level routines */
 	DS9097_setroutines(in);
 

@@ -31,12 +31,14 @@ struct inbound_control Inbound_Control = {
 
 struct connection_in *find_connection_in(int bus_number)
 {
-	struct connection_in *c_in;
-	// step through inbound linked list
-
-	for (c_in = Inbound_Control.head; c_in != NO_CONNECTION; c_in = c_in->next) {
-		if (c_in->index == bus_number) {
-			return c_in;
+	struct port_in * pin ;
+	
+	for ( pin = Inbound_Control.head_port ; pin != NULL ; pin = pin->next ) {
+		struct connection_in *cin;
+		for ( cin = pin->first; cin != NO_CONNECTION; cin = cin->next) {
+			if (cin->index == bus_number) {
+				return cin;
+			}
 		}
 	}
 	LEVEL_DEBUG("Couldn't find bus number %d",bus_number);
@@ -120,16 +122,57 @@ struct connection_in *AllocIn(const struct connection_in *old_in)
 	return new_in;
 }
 
-/* Place a new connection in the chain */
-struct connection_in *LinkIn(struct connection_in *now)
+struct port_in * AllocPort( const struct port_in * old_pin )
 {
+	size_t len = sizeof(struct port_in);
+	struct port_in *new_pin = (struct port_in *) owmalloc(len);
+	if ( new_pin != NULL ) {
+		if (old_pin == NO_CONNECTION) {
+			// Not a copy
+			memset(new_pin, 0, len);
+			new_pin->connections = 1 ;
+			new_pin->first = AllocIn(NO_CONNECTION) ;
+		} else {
+			// Copy of prior bus
+			memcpy(new_pin, old_pin, len);
+			new_pin->connections = 1 ;
+			new_pin->first = AllocIn(old_pin->first) ;		
+		}
+		
+		if ( new_pin->first == NO_CONNECTION ) {
+			owfree(new_pin) ;
+			return NULL ;
+		}
+		
+		/* port not yet linked */
+		new_pin->next = NULL ;
+		/* connnection_in needs to be linked */
+		new_pin->first->head = new_pin ;
+
+	} else {
+		LEVEL_DEFAULT("Cannot allocate memory for port master structure");
+	}
+	return new_pin;
+}
+
+/* Place a new connection in the chain */
+struct connection_in *LinkIn(struct connection_in *now, struct port_in * head)
+{
+	struct port_in * pin = head ;
 	if (now) {
+		if ( pin == NULL ) {
+			// No port supplied
+			pin = NewPort(NULL) ;
+			RemoveIn(pin->first) ;
+		}
 		// Housekeeping to place in linked list
 		// Locking done at a higher level
-		now->next = Inbound_Control.head;	/* put in linked list at start */
-		Inbound_Control.head = now;
+		now->next = pin->first;	/* put in linked list at start */
+		pin->first = now;
+		now->head = pin ;
 		now->index = Inbound_Control.next_index++;
 		++Inbound_Control.active ;
+		++head->connections ;
 
 		_MUTEX_INIT(now->bus_mutex);
 		_MUTEX_INIT(now->dev_mutex);
@@ -138,38 +181,82 @@ struct connection_in *LinkIn(struct connection_in *now)
 	return now;
 }
 
+/* Place a new connection in the chain */
+struct port_in *LinkPort(struct port_in *pin)
+{
+	if (pin != NULL) {
+		struct connection_in * cin ;
+		
+		// Housekeeping to place in linked list
+		// Locking done at a higher level
+		pin->next = Inbound_Control.head_port;	/* put in linked list at start */
+		Inbound_Control.head_port = pin ;
+
+		_MUTEX_INIT(pin->port_mutex);
+		
+		for ( cin = pin->first ; cin != NO_CONNECTION ; cin = cin->next ) {
+			cin->index = Inbound_Control.next_index++;
+			++Inbound_Control.active ;
+
+			_MUTEX_INIT(cin->bus_mutex);
+			_MUTEX_INIT(cin->dev_mutex);
+			cin->dev_db = NULL;
+		}
+	}
+	return pin;
+}
+
 /* Create a new inbound structure and place it in the chain */
-struct connection_in *NewIn(const struct connection_in *in) {
-	return LinkIn( AllocIn(in) ) ;
+struct connection_in *NewIn(const struct connection_in *in) 
+{
+	struct port_in * pin = NULL ;
+	if ( in != NO_CONNECTION ) {
+		pin = in->head ;
+	}
+	return LinkIn( AllocIn(in),pin ) ;
+}
+
+/* Create a new inbound structure and place it in the chain */
+struct port_in *NewPort(const struct port_in *pin) 
+{
+	return LinkPort( AllocPort(pin) ) ;
 }
 
 /* Free all connection_in in reverse order (Added to head on creation, head-first deletion) */
 void FreeInAll( void )
 {
-	while ( Inbound_Control.head ) {
-		RemoveIn(Inbound_Control.head);
+	while ( Inbound_Control.head_port ) {
+		RemovePort(Inbound_Control.head_port);
 	}
 }
 
 void RemoveIn( struct connection_in * conn )
 {
+	struct port_in * pin ;
+	
 	/* NULL safe */
 	if ( conn == NO_CONNECTION ) {
 		return ;
 	}
 
+	pin = conn->head ;
+
 	/* First unlink from list */
-	if ( Inbound_Control.head == conn ) {
+	if ( pin == NULL ) {
+		// free-floating
+	} else if ( pin->first == conn ) {
 		/* Head of list, easy */
-		Inbound_Control.head = conn->next ;
+		pin->first = conn->next ;
+		-- pin->connections ;
 		--Inbound_Control.active ;
 	} else {
 		struct connection_in * now ;
 		/* find in list and splice out */
-		for ( now = Inbound_Control.head ; now != NO_CONNECTION ; now = now->next ) {
+		for ( now = pin->first ; now != NO_CONNECTION ; now = now->next ) {
 			/* Works even if not linked, since won't match and will just fall through */
 			if ( now->next == conn ) {
 				now->next = conn->next ;
+				-- pin->connections ;
 				--Inbound_Control.active ;
 				break ;
 			}
@@ -193,4 +280,43 @@ void RemoveIn( struct connection_in * conn )
 	/* Finally delete the structure */
 	owfree(conn);
 	conn = NO_CONNECTION ;
+}
+
+void RemovePort( struct port_in * pin )
+{
+	/* NULL safe */
+	if ( pin == NULL ) {
+		return ;
+	}
+
+	/* First delete connections */
+	while ( pin->first != NO_CONNECTION ) {
+		RemoveIn( pin->first ) ;
+	}
+
+	/* Next unlink from list */
+	if ( pin == Inbound_Control.head_port ) {
+		/* Head of list, easy */
+		Inbound_Control.head_port = pin->next ;
+	} else {
+		struct port_in * now ;
+		/* find in list and splice out */
+		for ( now = Inbound_Control.head_port ; now != NULL ; now = now->next ) {
+			/* Works even if not linked, since won't match and will just fall through */
+			if ( now->next == pin ) {
+				now->next = pin->next ;
+				break ;
+			}
+		}
+	}
+
+	/* Now free up thread-sync resources */
+	if ( pin != NULL ) {
+		/* Only if actually linked in and possibly active */
+		_MUTEX_DESTROY(pin->port_mutex);
+	}
+
+	/* Finally delete the structure */
+	owfree(pin);
+	pin = NULL ;
 }
