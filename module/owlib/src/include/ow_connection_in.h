@@ -206,7 +206,6 @@ struct connection_in {
 extern struct inbound_control {
 	int active ; // how many "bus" entries are currently in linked list
 	int next_index ; // increasing sequence number
-	struct connection_in * head ; // head of a linked list of "bus" entries
 	struct port_in * head_port ; // head of a linked list of "bus" entries
 	my_rwlock_t monitor_lock; // allow monitor processes
 	my_rwlock_t lock; // RW lock of linked list

@@ -52,12 +52,9 @@ void HTTPtitle(FILE * out, const char *title)
 
 void HTTPheader(FILE * out, const char *head)
 {
-	struct connection_in * in ;
-	in = Inbound_Control.head ;
 	fprintf(out,
 			"<BODY " BODYCOLOR "><TABLE " TOPTABLE
-			"><TR><TD>OWFS on %s</TD><TD><A HREF='/'>Bus listing</A></TD><TD><A HREF='http://www.owfs.org'>OWFS homepage</A></TD><TD><A HREF='http://www.maxim-ic.com'>Dallas/Maxim</A></TD><TD>by <A HREF='mailto://palfille@earthlink.net'>Paul H Alfille</A></TD></TR></TABLE>\n",
-			(in==NO_CONNECTION)?"no buses":SAFESTRING(SOC(in)->devicename));
+			"><TR><TD>OWFS</TD><TD><A HREF='/'>Bus listing</A></TD><TD><A HREF='http://www.owfs.org'>OWFS homepage</A></TD><TD><A HREF='http://www.maxim-ic.com'>Dallas/Maxim</A></TD><TD>by <A HREF='mailto://palfille@earthlink.net'>Paul H Alfille</A></TD></TR></TABLE>\n");
 	fprintf(out, "<H1>%s</H1><HR>\n", head);
 }
 

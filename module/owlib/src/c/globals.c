@@ -16,7 +16,6 @@ $Id$
 
 /* Globals for port and bus communication */
 /* connections globals stored in ow_connect.c */
-/* i.e. connection_in * Inbound_Control.head ...         */
 
 /* char * pid_file in ow_opt.c */
 

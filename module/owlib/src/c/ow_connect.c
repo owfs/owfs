@@ -21,7 +21,7 @@ $Id$
 struct inbound_control Inbound_Control = {
 	.active = 0,
 	.next_index = 0,
-	.head = NO_CONNECTION,
+	.head_port = NULL,
 	.next_fake = 0,
 	.next_tester = 0,
 	.next_mock = 0,
