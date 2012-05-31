@@ -61,7 +61,7 @@ GOOD_OR_BAD DS9097_detect(struct port_in *pin)
 
 	in->Adapter = adapter_DS9097;
 	// in->adapter_name already set, to support HA3 and HA4B
-	in->busmode = bus_passive;	// in case initially tried DS9097U
+	pin->busmode = bus_passive;	// in case initially tried DS9097U
 
 	/* open the COM port in 9600 Baud  */
 	COM_set_standard( in ) ; // standard COM port settings

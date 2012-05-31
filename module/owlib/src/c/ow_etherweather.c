@@ -252,7 +252,7 @@ GOOD_OR_BAD EtherWeather_detect(struct port_in *pin)
 	in->Adapter = adapter_EtherWeather;
 
 	in->adapter_name = "EtherWeather";
-	in->busmode = bus_etherweather;
+	pin->busmode = bus_etherweather;
 
 	return gbGOOD;
 }

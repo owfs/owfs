@@ -41,7 +41,7 @@ void BUS_lock_in(struct connection_in *in)
 		return;
 	}
 	_MUTEX_LOCK(in->bus_mutex);
-	if (in->busmode == bus_i2c && in->master.i2c.channels > 1) {
+	if (get_busmode(in) == bus_i2c && in->master.i2c.channels > 1) {
 		_MUTEX_LOCK(in->master.i2c.head->master.i2c.all_channel_lock);
 	}
 	timernow( &(in->last_lock) );	/* for statistics */
@@ -69,7 +69,7 @@ void BUS_unlock_in(struct connection_in *in)
 	++in->bus_stat[e_bus_unlocks];
 	STATUNLOCK;
 
-	if (in->busmode == bus_i2c && in->master.i2c.channels > 1) {
+	if (get_busmode(in) == bus_i2c && in->master.i2c.channels > 1) {
 		_MUTEX_UNLOCK(in->master.i2c.head->master.i2c.all_channel_lock);
 	}
 	_MUTEX_UNLOCK(in->bus_mutex);

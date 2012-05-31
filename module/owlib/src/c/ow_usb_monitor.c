@@ -56,7 +56,7 @@ GOOD_OR_BAD USB_monitor_detect(struct port_in *pin)
 	in->iroutines.close = USB_monitor_close;
 	in->iroutines.flags = ADAP_FLAG_sham;
 	in->adapter_name = "USB scan";
-	in->busmode = bus_usb_monitor ;
+	pin->busmode = bus_usb_monitor ;
 	
 	Init_Pipe( in->master.usb_monitor.shutdown_pipe ) ;
 	if ( pipe( in->master.usb_monitor.shutdown_pipe ) != 0 ) {
@@ -83,11 +83,11 @@ static GOOD_OR_BAD usb_monitor_in_use(const struct connection_in * in_selected)
 	for ( pin = Inbound_Control.head_port ; pin != NULL ; pin = pin->next ) {
 		struct connection_in * cin;
 
+		if ( pin->busmode != bus_usb_monitor ) {
+			continue ;
+		}
 		for (cin = pin->first; cin != NO_CONNECTION; cin = cin->next) {
 			if ( cin == in_selected ) {
-				continue ;
-			}
-			if ( cin->busmode != bus_usb_monitor ) {
 				continue ;
 			}
 			return gbBAD ;

@@ -38,35 +38,6 @@ struct port_in ;
 #define CHANGED_USB_LOW    0x004
 #define CHANGED_USB_OFFSET 0x008
 
-//enum server_type { srv_unknown, srv_direct, srv_client, src_
-/* Network connection structure */
-enum bus_mode {
-	bus_unknown = 0,
-	bus_serial,
-	bus_xport,
-	bus_passive,
-	bus_usb,
-	bus_usb_monitor,
-	bus_parallel,
-	bus_server,
-	bus_zero,
-	bus_browse,
-	bus_i2c,
-	bus_ha7net,
-	bus_ha5,
-	bus_ha7e,
-	bus_enet,
-	bus_fake,
-	bus_tester,
-	bus_mock,
-	bus_link,
-	bus_etherweather,
-	bus_bad,
-	bus_w1,
-	bus_w1_monitor,
-	bus_xport_control,
-	bus_external,
-};
 
 enum adapter_type {
 	adapter_DS9097 = 0,
@@ -170,7 +141,6 @@ struct connection_in {
 
 	struct timeval bus_time;
 
-	enum bus_mode busmode;
 	struct interface_routines iroutines;
 	enum adapter_type Adapter;
 	char *adapter_name;

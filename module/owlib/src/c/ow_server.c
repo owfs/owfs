@@ -63,7 +63,7 @@ GOOD_OR_BAD Zero_detect(struct port_in *pin)
 	}
 	SOC(in)->type = ct_tcp ;
 	SOC(in)->state = cs_virgin ;
-	in->busmode = bus_zero;
+	pin->busmode = bus_zero;
 	if (SOC(in)->devicename == NULL) {
 		return gbBAD;
 	}
@@ -87,7 +87,7 @@ GOOD_OR_BAD Server_detect(struct port_in *pin)
 	RETURN_BAD_IF_BAD( COM_open(in) ) ;
 	in->Adapter = adapter_tcp;
 	in->adapter_name = "tcp";
-	in->busmode = bus_server;
+	pin->busmode = bus_server;
 	Server_setroutines(&(in->iroutines));
 	return gbGOOD;
 }

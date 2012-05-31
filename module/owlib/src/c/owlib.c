@@ -101,7 +101,7 @@ static void SetupInboundConnections(void)
 static GOOD_OR_BAD SetupSingleInboundConnection( struct port_in * pin )
 {
 	struct connection_in * in = pin->first ;
-	switch (get_busmode(in)) {
+	switch (pin->busmode) {
 
 	case bus_zero:
 		if ( BAD( Zero_detect(pin) )) {

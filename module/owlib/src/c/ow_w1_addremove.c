@@ -42,7 +42,7 @@ static struct port_in * CreateW1Port(int bus_master)
 
 	SOC(in)->devicename = owstrdup(name) ;
 	in->master.w1.id = bus_master ;
-	in->busmode = bus_w1 ;
+	pin->busmode = bus_w1 ;
 	in->master.w1.w1_slave_order = w1_slave_order_unknown ;
 	Init_Pipe( in->master.w1.netlink_pipe ) ;
 	if ( BAD( W1_detect(pin)) ) {
@@ -56,7 +56,7 @@ static struct port_in * CreateW1Port(int bus_master)
 
 static GOOD_OR_BAD W1_nomatch( struct connection_in * trial, struct connection_in * existing )
 {
-	if ( existing->busmode != bus_w1 ) {
+	if ( get_busmode(existing) != bus_w1 ) {
 		return gbGOOD ;
 	}
 	if ( trial->master.w1.id != existing->master.w1.id ) {

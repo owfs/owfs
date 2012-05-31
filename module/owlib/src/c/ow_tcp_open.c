@@ -24,7 +24,7 @@ GOOD_OR_BAD tcp_open(struct connection_in *connection)
 {
 	if ( SOC(connection)->state == cs_virgin ) {
 		char * def_port = NULL ;
-		switch( connection->busmode ) {
+		switch( get_busmode(connection) ) {
 			case bus_link:
 				def_port = DEFAULT_LINK_PORT ;
 				break ;

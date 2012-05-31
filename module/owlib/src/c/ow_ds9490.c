@@ -222,6 +222,7 @@ GOOD_OR_BAD DS9490_detect(struct port_in *pin)
 	Parse_Address( SOC(in)->devicename, &ap ) ;
 
 	DS9490_connection_init( in ) ;
+	pin->busmode = bus_usb;
 
 	switch ( ap.entries ) {
 		case 0:
@@ -352,7 +353,6 @@ static void DS9490_connection_init( struct connection_in * in )
 
 	DS9490_setroutines(in);		// set up close, reconnect, reset, ...
 
-	in->busmode = bus_usb;
 	in->flex = 1 ; // Michael Markstaller suggests this
 	in->master.usb.usb = NULL ; // no handle yet
 	in->master.usb.usb_bus_number = in->master.usb.usb_dev_number = -1 ;

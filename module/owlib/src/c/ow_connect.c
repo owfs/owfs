@@ -64,7 +64,7 @@ enum bus_mode get_busmode(struct connection_in *in)
 	if (in == NO_CONNECTION) {
 		return bus_unknown;
 	}
-	return in->busmode;
+	return in->head->busmode;
 }
 
 // return true (non-zero) if the connection_in exists, and is remote
@@ -73,7 +73,13 @@ int BusIsServer(struct connection_in *in)
 	if ( in == NO_CONNECTION ) {
 		return 0 ;
 	}
-	return (in->busmode == bus_server) || (in->busmode == bus_zero);
+	switch ( get_busmode(in) ) {
+		case bus_server:
+		case bus_zero:
+			return 1 ;
+		default:
+			return 0 ;
+	}
 }
 
 /* Make a new connection_in entry, but DON'T place it in the chain (yet)*/

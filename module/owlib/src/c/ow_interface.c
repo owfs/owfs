@@ -59,7 +59,7 @@ int DS9490_getstatus(BYTE * buffer, int readlen, const struct parsedname *pn);
 
 static enum e_visibility VISIBLE_DS2482( const struct parsedname * pn )
 {
-	switch ( pn->selected_connection->busmode ) {
+	switch ( get_busmode(pn->selected_connection) ) {
 		case bus_i2c:
 			return visible_now ;
 		default:
@@ -69,7 +69,7 @@ static enum e_visibility VISIBLE_DS2482( const struct parsedname * pn )
 
 static enum e_visibility VISIBLE_DS9490( const struct parsedname * pn )
 {
-	switch ( pn->selected_connection->busmode ) {
+	switch ( get_busmode(pn->selected_connection) ) {
 		case bus_usb:
 			return visible_now ;
 		default:
@@ -79,7 +79,7 @@ static enum e_visibility VISIBLE_DS9490( const struct parsedname * pn )
 
 static enum e_visibility VISIBLE_DS2480B( const struct parsedname * pn )
 {
-	switch ( pn->selected_connection->busmode ) {
+	switch ( get_busmode(pn->selected_connection) ) {
 		case bus_serial:
 		case bus_xport:
 			return visible_now ;
@@ -90,7 +90,7 @@ static enum e_visibility VISIBLE_DS2480B( const struct parsedname * pn )
 
 static enum e_visibility VISIBLE_HA5( const struct parsedname * pn )
 {
-	switch ( pn->selected_connection->busmode ) {
+	switch ( get_busmode(pn->selected_connection) ) {
 		case bus_ha5:
 			return visible_now ;
 		default:
@@ -100,7 +100,7 @@ static enum e_visibility VISIBLE_HA5( const struct parsedname * pn )
 
 static enum e_visibility VISIBLE_PSEUDO( const struct parsedname * pn )
 {
-	switch ( pn->selected_connection->busmode ) {
+	switch ( get_busmode(pn->selected_connection) ) {
 		case bus_fake:
 		case bus_tester:
 		case bus_mock:
@@ -222,7 +222,7 @@ static ZERO_OR_ERROR FS_w_reconnect(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_r_APU(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
-	switch ( pn->selected_connection->busmode ) {
+	switch ( get_busmode(pn->selected_connection) ) {
 		case bus_i2c:
 			OWQ_Y(owq) = ( (pn->selected_connection->master.i2c.configreg & DS2482_REG_CFG_APU) != 0x00 ) ;
 			return 0;
@@ -234,7 +234,7 @@ static ZERO_OR_ERROR FS_r_APU(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_w_APU(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
-	switch ( pn->selected_connection->busmode ) {
+	switch ( get_busmode(pn->selected_connection) ) {
 		case bus_i2c:
 			if ( OWQ_Y(owq) ) {
 				pn->selected_connection->master.i2c.configreg |= DS2482_REG_CFG_APU ;
@@ -295,7 +295,7 @@ static ZERO_OR_ERROR FS_w_yesno( struct one_wire_query * owq )
 static ZERO_OR_ERROR FS_r_templimit(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
-	switch ( pn->selected_connection->busmode ) {
+	switch ( get_busmode(pn->selected_connection) ) {
 		case bus_fake:
 		case bus_mock:
 		case bus_tester:
@@ -309,7 +309,7 @@ static ZERO_OR_ERROR FS_r_templimit(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_w_templimit(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
-	switch ( pn->selected_connection->busmode ) {
+	switch ( get_busmode(pn->selected_connection) ) {
 		case bus_fake:
 		case bus_mock:
 		case bus_tester:
@@ -329,7 +329,7 @@ static ZERO_OR_ERROR FS_w_templimit(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_r_baud(struct one_wire_query *owq)
 {
 	struct connection_in * in = PN(owq)->selected_connection ;
-	switch ( in->busmode ) {
+	switch ( get_busmode(in) ) {
 		case bus_serial:
 		case bus_link:
 		case bus_ha5:
@@ -344,7 +344,7 @@ static ZERO_OR_ERROR FS_r_baud(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_w_baud(struct one_wire_query *owq)
 {
 	struct connection_in * in = PN(owq)->selected_connection ;
-	switch ( in->busmode ) {
+	switch ( get_busmode(in) ) {
 		case bus_serial:
 		case bus_link:
 			SOC(in)->baud = COM_MakeBaud( (speed_t) OWQ_U(owq) ) ;
@@ -361,7 +361,7 @@ static ZERO_OR_ERROR FS_w_baud(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_r_PPM(struct one_wire_query *owq)
 {
 	struct connection_in * in = PN(owq)->selected_connection ;
-	switch ( in->busmode ) {
+	switch ( get_busmode(in) ) {
 		case bus_i2c:
 			OWQ_Y(owq) = ( (in->master.i2c.configreg & DS2482_REG_CFG_PPM) != 0x00 ) ;
 			return 0;
@@ -373,7 +373,7 @@ static ZERO_OR_ERROR FS_r_PPM(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_w_PPM(struct one_wire_query *owq)
 {
 	struct connection_in * in = PN(owq)->selected_connection ;
-	switch ( in->busmode ) {
+	switch ( get_busmode(in) ) {
 		case bus_i2c:
 			if ( OWQ_Y(owq) ) {
 				in->master.i2c.configreg |= DS2482_REG_CFG_PPM ;
@@ -417,7 +417,7 @@ static ZERO_OR_ERROR FS_r_ds2490status(struct one_wire_query *owq)
 	char buffer[ DS9490_getstatus_BUFFER_LENGTH ];
 	int ret;
 	res[0] = '\0';
-	if (pn->selected_connection->busmode == bus_usb) {
+	if (get_busmode(pn->selected_connection) == bus_usb) {
 #if OW_USB
 		ret = DS9490_getstatus(buffer, 0, PN(owq));
 		if (ret < 0) {
@@ -467,7 +467,7 @@ static ZERO_OR_ERROR FS_r_ds2490status(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_r_pulldownslewrate(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
-	if (pn->selected_connection->busmode != bus_usb) {
+	if (get_busmode(pn->selected_connection) != bus_usb) {
 		return -ENOTSUP;
 #if OW_USB
 	} else {
@@ -480,7 +480,7 @@ static ZERO_OR_ERROR FS_r_pulldownslewrate(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_w_pulldownslewrate(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
-	if (pn->selected_connection->busmode != bus_usb) {
+	if (get_busmode(pn->selected_connection) != bus_usb) {
 		return -ENOTSUP;
 	}
 #if OW_USB
@@ -504,7 +504,7 @@ static ZERO_OR_ERROR FS_w_pulldownslewrate(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_r_writeonelowtime(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
-	if (pn->selected_connection->busmode != bus_usb) {
+	if (get_busmode(pn->selected_connection) != bus_usb) {
 		OWQ_U(owq) = 10;
 #if OW_USB
 	} else {
@@ -517,7 +517,7 @@ static ZERO_OR_ERROR FS_r_writeonelowtime(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_w_writeonelowtime(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
-	if (pn->selected_connection->busmode != bus_usb) {
+	if (get_busmode(pn->selected_connection) != bus_usb) {
 		return -ENOTSUP;
 	}
 
@@ -541,7 +541,7 @@ static ZERO_OR_ERROR FS_w_writeonelowtime(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_r_datasampleoffset(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
-	if (pn->selected_connection->busmode != bus_usb) {
+	if (get_busmode(pn->selected_connection) != bus_usb) {
 		OWQ_U(owq) = 8;
 #if OW_USB
 	} else {
@@ -554,7 +554,7 @@ static ZERO_OR_ERROR FS_r_datasampleoffset(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_w_datasampleoffset(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
-	if (pn->selected_connection->busmode != bus_usb){
+	if (get_busmode(pn->selected_connection) != bus_usb){
 		return -ENOTSUP;
 	}
 

@@ -89,7 +89,7 @@ GOOD_OR_BAD W1_detect(struct port_in *pin)
 
 	in->Adapter = adapter_w1;
 	in->adapter_name = "w1";
-	in->busmode = bus_w1;
+	pin->busmode = bus_w1;
 	in->master.w1.seq = SEQ_INIT;
 	return gbGOOD;
 }

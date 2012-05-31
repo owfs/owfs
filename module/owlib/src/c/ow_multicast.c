@@ -135,20 +135,22 @@ GOOD_OR_BAD FS_FindHA7(void)
 
 	for (now = ai; now; now = now->ai_next) {
 		ASCII name[INET_ADDRSTRLEN+20]; // tcp quad + port
+		struct port_in * pin ;
 		struct connection_in *in;
 
 		if ( Get_HA7_response( now, name ) ) {
 			continue ;
 		}
 
-		in = NewIn(NO_CONNECTION) ;
-		if (in == NO_CONNECTION) {
+		pin = NewPort(NO_CONNECTION) ;
+		if (pin == NULL) {
 			continue;
 		}
+		in = pin->first ;
 
 		SOC(in)->type = ct_tcp ;
 		SOC(in)->devicename = owstrdup(name);
-		in->busmode = bus_ha7net;
+		pin->busmode = bus_ha7net;
 
 		LEVEL_CONNECT("HA7Net bus master discovered at %s",SOC(in)->devicename);
 		++number_found ;

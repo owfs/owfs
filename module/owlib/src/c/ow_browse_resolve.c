@@ -86,7 +86,7 @@ static struct port_in * CreateZeroPort(const char * name, const char * type, con
 // GOOD means no match
 static GOOD_OR_BAD Zero_nomatch(struct connection_in * trial,struct connection_in * existing)
 {
-	if ( existing->busmode != bus_zero ) {
+	if ( get_busmode(existing) != bus_zero ) {
 		return gbGOOD ;
 	}
 	if ( BAD( string_null_or_match( trial->master.tcp.name   , existing->master.tcp.name   )) ) {

@@ -451,7 +451,7 @@ GOOD_OR_BAD Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn)
 		return gbGOOD;				// do check here to avoid needless processing
 	}
 	
-	switch ( pn->selected_connection->busmode ) {
+	switch ( get_busmode(pn->selected_connection) ) {
 		case bus_fake:
 		case bus_tester:
 		case bus_mock:
@@ -506,7 +506,7 @@ GOOD_OR_BAD Cache_Add_Simul(const enum simul_type type, const struct parsedname 
 		return gbGOOD;				// do check here to avoid needless processing
 	}
 	
-	switch ( pn->selected_connection->busmode ) {
+	switch ( get_busmode(pn->selected_connection) ) {
 		case bus_fake:
 		case bus_tester:
 		case bus_mock:

@@ -396,7 +396,6 @@ static GOOD_OR_BAD DS2482_detect_single(int lowindex, int highindex, char * i2c_
 				in->master.i2c.configreg |= DS2482_REG_CFG_PPM ;
 			}
 			_MUTEX_INIT(in->master.i2c.all_channel_lock);
-			in->busmode = bus_i2c;
 			in->Adapter = adapter_DS2482_100;
 
 			/* write the RESET code */
@@ -425,7 +424,6 @@ static GOOD_OR_BAD DS2482_detect_single(int lowindex, int highindex, char * i2c_
 	}
 	/* fell though, no device found */
 	COM_close( in ) ;
-	in->busmode = bus_bad;
 	return gbBAD;
 }
 

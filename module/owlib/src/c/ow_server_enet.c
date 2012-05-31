@@ -65,7 +65,7 @@ GOOD_OR_BAD OWServer_Enet_detect(struct port_in *pin)
 
 	in->Adapter = adapter_ENET;
 	in->adapter_name = "OWServer_Enet";
-	in->busmode = bus_enet;
+	pin->busmode = bus_enet;
 
 	// A lot of telnet parameters, really only used
 	// to goose the connection when reconnecting

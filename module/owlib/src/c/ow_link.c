@@ -879,7 +879,7 @@ static GOOD_OR_BAD LinkHubE_Control( struct connection_in * in_link )
 
 	SOC(in_control)->type = ct_telnet ;
 	SOC(in_control)->devicename = owstrdup( SOC(in_link)->dev.tcp.host ) ;
-	in_control->busmode = bus_xport_control ;
+	p_control->busmode = bus_xport_control ;
 	SOC(in_control)->timeout.tv_sec = 1 ;
 	SOC(in_control)->timeout.tv_usec = 0 ;
 

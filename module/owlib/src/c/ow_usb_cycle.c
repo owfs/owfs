@@ -222,10 +222,10 @@ static GOOD_OR_BAD usbdevice_in_use(const struct usb_list *ul)
 	for ( pin = Inbound_Control.head_port ; pin != NULL ; pin = pin->next ) {
 		struct connection_in *cin;
 
+		if ( pin->busmode != bus_usb ) {
+			continue ;
+		}
 		for (cin = pin->first; cin != NO_CONNECTION; cin = cin->next) {
-			if ( cin->busmode != bus_usb ) {
-				continue ;
-			}
 			if ( cin->master.usb.usb_bus_number != ul->usb_bus_number ) {
 				continue ;
 			}

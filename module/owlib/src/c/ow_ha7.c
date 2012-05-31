@@ -91,7 +91,7 @@ GOOD_OR_BAD HA7_detect(struct port_in *pin)
 		struct memblob mb;
 		if ( GOOD( HA7_read( &mb, in )) ) {
 			in->adapter_name = "HA7Net";
-			in->busmode = bus_ha7net;
+			pin->busmode = bus_ha7net;
 			in->AnyDevices = anydevices_yes;
 			MemblobClear(&mb);
 			return gbGOOD;

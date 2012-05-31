@@ -43,7 +43,7 @@ GOOD_OR_BAD BadAdapter_detect(struct port_in *pin)
 	in->adapter_name = "Bad Adapter";
 	SAFEFREE( SOC(in)->devicename ) ;
 	SOC(in)->devicename = owstrdup("None") ;
-	in->busmode = bus_bad ;
+	pin->busmode = bus_bad ;
 	return gbGOOD;
 }
 

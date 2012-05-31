@@ -36,7 +36,7 @@ GOOD_OR_BAD Browse_detect(struct port_in *pin)
 	in->iroutines.close = Browse_close;
 	in->iroutines.flags = ADAP_FLAG_sham;
 	in->adapter_name = "ZeroConf monitor";
-	in->busmode = bus_browse ;
+	pin->busmode = bus_browse ;
 	
 	RETURN_BAD_IF_BAD( browse_in_use(in) ) ;
 
@@ -68,11 +68,11 @@ static GOOD_OR_BAD browse_in_use(const struct connection_in * in_selected)
 	for ( pin = Inbound_Control.head_port ; pin ; pin = pin->next ) {
 		struct connection_in *cin;
 
+		if ( pin->busmode != bus_browse ) {
+			continue ;
+		}
 		for (cin = pin->first; cin != NO_CONNECTION; cin = cin->next) {
 			if ( cin == in_selected ) {
-				continue ;
-			}
-			if ( cin->busmode != bus_browse ) {
 				continue ;
 			}
 			return gbBAD ;

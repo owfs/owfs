@@ -75,7 +75,7 @@ static void GetNextByte( const ASCII ** strpointer, BYTE default_byte, BYTE * sn
 // set up default device ID
 static void GetDefaultDeviceName(BYTE * dn, const BYTE * sn, const struct connection_in * in)
 {
-	switch (in->busmode) {
+	switch (get_busmode(in)) {
 		case bus_tester:
 			// "bus number"
 			dn[1] = BYTE_MASK(in->master.tester.index >> 0) ;

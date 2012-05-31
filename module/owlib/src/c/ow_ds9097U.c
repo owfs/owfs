@@ -241,6 +241,7 @@ GOOD_OR_BAD DS2480_detect(struct port_in *pin)
 
 	in->overdrive = 0 ;
 	in->flex = Globals.serial_flextime ;
+	pin->busmode = bus_serial;
 
 	// Now set desired baud and polarity
 	// BUS_reset will do the actual changes
@@ -264,8 +265,6 @@ static GOOD_OR_BAD DS2480_detect_serial(struct connection_in *in)
 		COM_close(in) ;
 		return gbBAD ;
 	}
-
-	in->busmode = bus_serial;
 
 	DS2480_adapter(in) ;
 	return gbGOOD ;
