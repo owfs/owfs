@@ -862,28 +862,32 @@ static GOOD_OR_BAD LINK_readback_data( BYTE * buf, const size_t size, struct con
 // use the Xport control port to reset
 static GOOD_OR_BAD LinkHubE_Control( struct connection_in * in_link )
 {
-	struct connection_in * in_control = AllocIn( NO_CONNECTION ) ;
+	struct port_in * p_control = AllocPort( NULL ) ;
+	struct connection_in * in_control ;
+	GOOD_OR_BAD ret ;
+	
+	if ( p_control == NULL ) {
+		return gbBAD ;
+	}
+	
+	in_control = p_control->first ;
 
 	if ( SOC(in_link)->dev.tcp.host == NULL ) {
 		LEVEL_DEBUG("No Xport control on local machine");
 		return gbBAD ;
 	}
 
-	if ( in_control != NO_CONNECTION ) {
-		GOOD_OR_BAD ret ;
+	SOC(in_control)->type = ct_telnet ;
+	SOC(in_control)->devicename = owstrdup( SOC(in_link)->dev.tcp.host ) ;
+	in_control->busmode = bus_xport_control ;
+	SOC(in_control)->timeout.tv_sec = 1 ;
+	SOC(in_control)->timeout.tv_usec = 0 ;
 
-		SOC(in_control)->type = ct_telnet ;
-		SOC(in_control)->devicename = owstrdup( SOC(in_link)->dev.tcp.host ) ;
-		in_control->busmode = bus_xport_control ;
-		SOC(in_control)->timeout.tv_sec = 1 ;
-		SOC(in_control)->timeout.tv_usec = 0 ;
+	ret = Control_com( in_control ) ;
 
-		ret = Control_com( in_control ) ;
+	RemovePort( p_control ) ;
 
-		RemoveIn( in_control ) ;
-		return ret ;
-	}
-	return gbBAD ;
+	return ret ;
 }
 
 static GOOD_OR_BAD Control_com( struct connection_in * in_control )

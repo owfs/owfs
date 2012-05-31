@@ -14,6 +14,8 @@ $Id$
 #include "ow.h"
 #include "ow_connection.h"
 
+static struct connection_in *AllocIn(const struct connection_in *old_in) ;
+
 /* Routines for handling a linked list of connections in*/
 /* typical connection in would be the serial port or USB */
 
@@ -76,7 +78,7 @@ int BusIsServer(struct connection_in *in)
 
 /* Make a new connection_in entry, but DON'T place it in the chain (yet)*/
 /* Based on a shallow copy of "in" if not NULL */
-struct connection_in *AllocIn(const struct connection_in *old_in)
+static struct connection_in *AllocIn(const struct connection_in *old_in)
 {
 	size_t len = sizeof(struct connection_in);
 	struct connection_in *new_in = (struct connection_in *) owmalloc(len);
