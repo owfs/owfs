@@ -77,5 +77,6 @@ void RemovePort( struct port_in * pin ) ;
 struct port_in * AllocPort( const struct port_in * old_pin ) ;
 struct port_in *LinkPort(struct port_in *pin) ;
 struct port_in *NewPort(const struct port_in *pin) ;
+struct connection_in * AddtoPort( struct port_in * pin, struct connection_in * template ) ;
 
 #endif							/* OW_PORT_IN_H */

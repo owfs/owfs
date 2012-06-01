@@ -130,6 +130,9 @@ See: http://www.iana.org/assignments/port-numbers
 /* Outbound connections (ownet clients) ---------- */
 #include "ow_connection_out.h"
 
+/* This bug-fix/workaround function seem to be fixed now... At least on
+ * the platforms I have tested it on... printf() in owserver/src/c/owserver.c
+ * returned very strange result on c->busmode before... but not anymore */
 int BusIsServer(struct connection_in *in);
 
 // mode bit flags for level
@@ -186,7 +189,6 @@ void FreeOutAll(void);
 void DelIn(struct connection_in *in);
 
 struct connection_in *LinkIn(struct connection_in *in, struct port_in * head);
-struct connection_in *NewIn(const struct connection_in *in );
 
 void Add_InFlight( GOOD_OR_BAD (*nomatch)(struct connection_in * trial,struct connection_in * existing), struct port_in * new_pin );
 void Del_InFlight( GOOD_OR_BAD (*nomatch)(struct connection_in * trial,struct connection_in * existing), struct port_in * new_pin );

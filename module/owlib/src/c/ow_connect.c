@@ -215,16 +215,6 @@ struct port_in *LinkPort(struct port_in *pin)
 }
 
 /* Create a new inbound structure and place it in the chain */
-struct connection_in *NewIn(const struct connection_in *in) 
-{
-	struct port_in * pin = NULL ;
-	if ( in != NO_CONNECTION ) {
-		pin = in->head ;
-	}
-	return LinkIn( AllocIn(in),pin ) ;
-}
-
-/* Create a new inbound structure and place it in the chain */
 struct port_in *NewPort(const struct port_in *pin) 
 {
 	return LinkPort( AllocPort(pin) ) ;
@@ -328,3 +318,16 @@ void RemovePort( struct port_in * pin )
 	owfree(pin);
 	pin = NULL ;
 }
+
+struct connection_in * AddtoPort( struct port_in * pin, struct connection_in * template )
+{
+	struct connection_in * add_in = AllocIn( template ) ;
+	struct connection_in * look_in ;
+	
+	if ( add_in == NO_CONNECTION ) {
+		return add_in ;
+	}
+	
+	LinkIn( add_in, pin ) ;
+}
+	

@@ -243,7 +243,7 @@ GOOD_OR_BAD DS9490_detect(struct port_in *pin)
 					if ( strncasecmp(ap.first.alpha,"scan",4) == 0 ) {
 						SAFEFREE(SOC(in)->devicename) ;
 						LEVEL_DEBUG("Add USB scanning capability");
-						gbResult = USB_monitor_detect(in) ;
+						gbResult = USB_monitor_detect(pin) ;
 						break ;
 					}
 					// fall through
@@ -326,7 +326,7 @@ static GOOD_OR_BAD DS9490_detect_all_adapters(struct connection_in * in_first)
 			LEVEL_DEBUG("Cannot access USB device %.d:%.d", ul.usb_bus_number, ul.usb_dev_number );
 			continue;
 		} else{
-			in = NewIn(in_first) ;
+			in = AddtoPort(in_first->head,in_first) ;
 			if ( in == NO_CONNECTION ) {
 				return gbGOOD ;
 			}

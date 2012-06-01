@@ -244,7 +244,7 @@ static GOOD_OR_BAD DS2482_detect_sys( int any, enum ds2482_address chip_num, str
 		}
 
 		// ALL? then set up a new connection_in slot for the next one
-		in_current = NewIn(in_current) ;
+		in_current = AddtoPort(in_current->head, in_current) ;
 		if ( in_current == NO_CONNECTION ) {
 			break ;
 		}
@@ -290,7 +290,7 @@ static GOOD_OR_BAD DS2482_detect_dir( int any, enum ds2482_address chip_num, str
 		}
 
 		// ALL? then set up a new connection_in slot
-		in_current = NewIn(in_current) ;
+		in_current = AddtoPort(in_current->head, in_current) ;
 		if ( in_current == NO_CONNECTION ) {
 			break ;
 		}
@@ -325,7 +325,7 @@ static GOOD_OR_BAD DS2482_detect_bus(enum ds2482_address chip_num, char * i2c_de
 					if ( start_chip > 7 ) {
 						return gbGOOD ;
 					}
-					all_in = NewIn(all_in) ;
+					all_in = AddtoPort(in_original->head, all_in) ;
 					if ( all_in == NO_CONNECTION ) {
 						return gbBAD ;
 					}
@@ -691,7 +691,7 @@ static GOOD_OR_BAD CreateChannels(struct connection_in *head)
 	head->master.i2c.index = 0;
 	head->adapter_name = name[0];
 	for (i = 1; i < 8; ++i) {
-		struct connection_in * added = NewIn(head);
+		struct connection_in * added = AddtoPort(head->head,head);
 		prior->master.i2c.next = added ;
 		if (added == NO_CONNECTION) {
 			return gbBAD;
