@@ -38,6 +38,17 @@ static enum arg_address ArgType( const char * arg )
 	return arg_addr_other ;
 }
 
+static void arg_data( const char * arg, struct port_in * pin )
+{
+	if ( arg == NULL ) {
+		SOC(pin->first)->devicename = NULL ;
+		pin->init_data = NULL ;
+	} else {
+		SOC(pin->first)->devicename = owstrdup(arg) ;
+		pin->init_data = owstrdup(arg) ;
+	}
+}
+
 // Test whether address is a serial port, or a serial over telnet (ser2net)
 static GOOD_OR_BAD Serial_or_telnet( const char * arg, struct connection_in * in )
 {
@@ -104,6 +115,7 @@ GOOD_OR_BAD ARG_EtherWeather(const char *arg)
 
 GOOD_OR_BAD ARG_External(const char *arg)
 {
+	(void) arg ;
 	if ( Inbound_Control.external == NULL ) {
 		struct port_in * pin = NewPort( NULL ) ;
 		struct connection_in * in ;
@@ -114,11 +126,11 @@ GOOD_OR_BAD ARG_External(const char *arg)
 		if (in == NO_CONNECTION) {
 			return gbBAD;
 		}
-		SOC(in)->devicename = owstrdup("external") ;
+		arg_data("external",pin) ;
 		pin->busmode = bus_external;
 		Inbound_Control.external = in ;
-		return gbGOOD;
 	}
+	return gbGOOD;
 }
 
 GOOD_OR_BAD ARG_Fake(const char *arg)
@@ -132,7 +144,7 @@ GOOD_OR_BAD ARG_Fake(const char *arg)
 	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
-	SOC(in)->devicename = (arg!=NULL) ? owstrdup(arg) : NULL;
+	arg_data(arg,pin) ;
 	pin->busmode = bus_fake;
 	return gbGOOD;
 }
@@ -167,7 +179,7 @@ GOOD_OR_BAD ARG_HA5( const char *arg)
 	if ( arg == NULL ) {
 		return gbBAD ;
 	}
-	SOC(in)->devicename = owstrdup(arg) ;
+	arg_data(arg,pin) ;
 	pin->busmode = bus_ha5;
 	return Serial_or_telnet( arg, in ) ;
 }
@@ -185,7 +197,7 @@ GOOD_OR_BAD ARG_HA7(const char *arg)
 		if (in == NO_CONNECTION) {
 			return gbBAD;
 		}
-		SOC(in)->devicename = owstrdup(arg);
+		arg_data(arg,pin) ;
 		pin->busmode = bus_ha7net;
 		return gbGOOD;
 	} else {					// Try multicast discovery
@@ -209,7 +221,7 @@ GOOD_OR_BAD ARG_HA7E(const char *arg)
 	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
-	SOC(in)->devicename = (arg!=NULL) ? owstrdup(arg) : NULL;
+	arg_data(arg,pin) ;
 	pin->busmode = bus_ha7e ;
 	return Serial_or_telnet( arg, in ) ;
 }
@@ -225,7 +237,7 @@ GOOD_OR_BAD ARG_ENET(const char *arg)
 	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
-	SOC(in)->devicename = (arg!=NULL) ? owstrdup(arg) : NULL;
+	arg_data(arg,pin) ;
 	pin->busmode = bus_enet ;
 	return gbGOOD;
 }
@@ -242,7 +254,7 @@ GOOD_OR_BAD ARG_I2C(const char *arg)
 	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
-	SOC(in)->devicename = (arg!=NULL) ? owstrdup(arg) : owstrdup(":");
+	arg_data( (arg!=NULL) ? arg : ":" , pin ) ;
 	pin->busmode = bus_i2c;
 	return gbGOOD;
 	#else							/* OW_I2C */
@@ -262,7 +274,7 @@ GOOD_OR_BAD ARG_Link(const char *arg)
 	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
-	SOC(in)->devicename = (arg!=NULL) ? owstrdup(arg) : NULL;
+	arg_data(arg,pin) ;
 	pin->busmode = bus_link ; // link
 	return Serial_or_telnet( arg, in ) ;
 }
@@ -278,7 +290,7 @@ GOOD_OR_BAD ARG_Mock(const char *arg)
 	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
-	SOC(in)->devicename = (arg!=NULL) ? owstrdup(arg) : NULL;
+	arg_data(arg,pin) ;
 	pin->busmode = bus_mock;
 	return gbGOOD;
 }
@@ -294,7 +306,7 @@ GOOD_OR_BAD ARG_W1_monitor(void)
 	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
-	SOC(in)->devicename = owstrdup("W1 bus monitor");
+	arg_data("W1 bus monitor",pin) ;
 	pin->busmode = bus_w1_monitor;
 	return gbGOOD;
 }
@@ -311,7 +323,7 @@ GOOD_OR_BAD ARG_USB_monitor(const char *arg)
 	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
-	SOC(in)->devicename = (arg==NULL) ? NULL : owstrdup(arg);
+	arg_data(arg,pin) ;
 	pin->busmode = bus_usb_monitor;
 	return gbGOOD;
 #else
@@ -332,7 +344,7 @@ GOOD_OR_BAD ARG_Browse(void)
 	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
-	SOC(in)->devicename = owstrdup("ZeroConf monitor");
+	arg_data("ZeroConf monitor",pin) ;
 	pin->busmode = bus_browse;
 	return gbGOOD;
 #else
@@ -352,7 +364,7 @@ GOOD_OR_BAD ARG_Net(const char *arg)
 	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
-	SOC(in)->devicename = (arg!=NULL) ? owstrdup(arg) : NULL;
+	arg_data(arg,pin) ;
 	pin->busmode = bus_server;
 	return gbGOOD;
 }
@@ -369,7 +381,7 @@ GOOD_OR_BAD ARG_Parallel(const char *arg)
 	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
-	SOC(in)->devicename = (arg!=NULL) ? owstrdup(arg) : NULL;
+	arg_data(arg,pin) ;
 	pin->busmode = bus_parallel;
 	return gbGOOD;
 	#else							/* OW_PARPORT */
@@ -389,7 +401,7 @@ GOOD_OR_BAD ARG_Passive(char *adapter_type_name, const char *arg)
 	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
-	SOC(in)->devicename = (arg!=NULL) ? owstrdup(arg) : NULL;
+	arg_data(arg,pin) ;
 	// special set name of adapter here
 	in->adapter_name = adapter_type_name;
 	pin->busmode = bus_passive ; // DS9097
@@ -407,7 +419,7 @@ GOOD_OR_BAD ARG_Serial(const char *arg)
 	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
-	SOC(in)->devicename = (arg!=NULL) ? owstrdup(arg) : NULL;
+	arg_data(arg,pin) ;
 	pin->busmode = bus_serial ; // DS2480B
 	return Serial_or_telnet( arg, in ) ;
 }
@@ -433,7 +445,7 @@ GOOD_OR_BAD ARG_Tester(const char *arg)
 	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
-	SOC(in)->devicename = (arg!=NULL) ? owstrdup(arg) : NULL;
+	arg_data(arg,pin) ;
 	pin->busmode = bus_tester;
 	return gbGOOD;
 }
@@ -452,7 +464,7 @@ GOOD_OR_BAD ARG_USB(const char *arg)
 		return gbBAD;
 	}
 	pin->busmode = bus_usb;
-	SOC(in)->devicename = (arg!=NULL) ? owstrdup(arg) : NULL;
+	arg_data(arg,pin) ;
 	return gbGOOD;
 #else							/* OW_USB */
 	LEVEL_DEFAULT("USB support (intentionally) not included in compilation. Check LIBUSB, then reconfigure and recompile.");
@@ -472,7 +484,7 @@ GOOD_OR_BAD ARG_Xport(const char *arg)
 	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
-	SOC(in)->devicename = (arg!=NULL) ? owstrdup(arg) : NULL;
+	arg_data(arg,pin) ;
 	pin->busmode = bus_xport;
 	SOC(in)->type = ct_telnet ; // network
 	return gbGOOD;

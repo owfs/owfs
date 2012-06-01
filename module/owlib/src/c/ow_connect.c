@@ -309,10 +309,9 @@ void RemovePort( struct port_in * pin )
 	}
 
 	/* Now free up thread-sync resources */
-	if ( pin != NULL ) {
-		/* Only if actually linked in and possibly active */
-		_MUTEX_DESTROY(pin->port_mutex);
-	}
+	/* Only if actually linked in and possibly active */
+	_MUTEX_DESTROY(pin->port_mutex);
+	SAFEFREE(pin->init_data) ;
 
 	/* Finally delete the structure */
 	owfree(pin);

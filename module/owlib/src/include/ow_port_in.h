@@ -64,6 +64,7 @@ struct port_in {
 	struct connection_in *first;
 	int connections ;
 	enum bus_mode busmode;
+	char * init_data ;
 	
 	pthread_mutex_t port_mutex;
 };
