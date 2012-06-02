@@ -52,7 +52,7 @@ static RESET_TYPE DS9490_reset(const struct parsedname *pn);
 static void BUS_ERROR_fix(const struct parsedname *pn);
 
 static GOOD_OR_BAD DS9490_detect_single_adapter(int usb_nr, struct connection_in *in);
-static GOOD_OR_BAD DS9490_detect_all_adapters(struct connection_in * in_first);
+static GOOD_OR_BAD DS9490_detect_all_adapters(struct port_in * pin_first);
 static GOOD_OR_BAD DS9490_detect_specific_adapter(int bus_nr, int dev_nr, struct connection_in * in) ;
 
 static GOOD_OR_BAD DS9490_reconnect(const struct parsedname *pn);
@@ -233,7 +233,7 @@ GOOD_OR_BAD DS9490_detect(struct port_in *pin)
 			switch( ap.first.type ) {
 				case address_all:
 					LEVEL_DEBUG("Look for all USB adapters");
-					gbResult = DS9490_detect_all_adapters(in) ;
+					gbResult = DS9490_detect_all_adapters(pin) ;
 					break ;
 				case address_numeric:
 					LEVEL_DEBUG("Look for USB adapter number %d",ap.first.number);
@@ -311,13 +311,14 @@ static GOOD_OR_BAD DS9490_detect_specific_adapter(int bus_nr, int dev_nr, struct
 }
 
 /* Open a DS9490  -- low level code (to allow for repeats)  */
-static GOOD_OR_BAD DS9490_detect_all_adapters(struct connection_in * in_first)
+static GOOD_OR_BAD DS9490_detect_all_adapters(struct port_in * pin_first)
 {
 	struct usb_list ul;
-	struct connection_in * in = in_first ;
+	struct port_in * pin = pin_first ;
 
 	USB_first(&ul);
 	while ( GOOD(USB_next(&ul)) ) {
+		struct connection_in * in = pin->first ;
 		if ( BAD(DS9490_open_and_name(&ul, in)) ) {
 			LEVEL_DEBUG("Cannot open USB device %.d:%.d", ul.usb_bus_number, ul.usb_dev_number );
 			continue ;
@@ -326,20 +327,20 @@ static GOOD_OR_BAD DS9490_detect_all_adapters(struct connection_in * in_first)
 			LEVEL_DEBUG("Cannot access USB device %.d:%.d", ul.usb_bus_number, ul.usb_dev_number );
 			continue;
 		} else{
-			in = AddtoPort(in_first->head,in_first) ;
-			if ( in == NO_CONNECTION ) {
+			pin = NewPort(pin) ;
+			if ( pin == NULL ) {
 				return gbGOOD ;
 			}
 			// set up the new connection for the next adapter
-			DS9490_connection_init(in) ;
+			DS9490_connection_init(pin->first) ;
 		}
 	}
-	if ( in == in_first ) {
+	if ( pin == pin_first ) {
 		LEVEL_CONNECT("No USB DS9490 bus masters used");
 		return gbBAD;
 	}
 	// Remove the extra connection
-	RemoveIn(in);
+	RemovePort(pin);
 	return gbGOOD ;
 }
 

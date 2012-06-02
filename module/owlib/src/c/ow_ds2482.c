@@ -52,10 +52,10 @@ enum ds2482_address {
 	ds2482_too_far
 } ;
 
-static GOOD_OR_BAD DS2482_detect_bus(enum ds2482_address chip_num, char * i2c_device, struct connection_in *in) ;
-static GOOD_OR_BAD DS2482_detect_sys( int any, enum ds2482_address chip_num, struct connection_in *in) ;
-static GOOD_OR_BAD DS2482_detect_dir( int any, enum ds2482_address chip_num, struct connection_in *in) ;
-static GOOD_OR_BAD DS2482_detect_single(int lowindex, int highindex, char * i2c_device, struct connection_in *in) ;
+static GOOD_OR_BAD DS2482_detect_bus(enum ds2482_address chip_num, char * i2c_device, struct port_in *pin) ;
+static GOOD_OR_BAD DS2482_detect_sys( int any, enum ds2482_address chip_num, struct port_in *pin) ;
+static GOOD_OR_BAD DS2482_detect_dir( int any, enum ds2482_address chip_num, struct port_in *pin) ;
+static GOOD_OR_BAD DS2482_detect_single(int lowindex, int highindex, char * i2c_device, struct port_in *pin) ;
 static enum search_status DS2482_next_both(struct device_search *ds, const struct parsedname *pn);
 static GOOD_OR_BAD DS2482_triple(BYTE * bits, int direction, FILE_DESCRIPTOR_OR_ERROR file_descriptor);
 static GOOD_OR_BAD DS2482_send_and_get(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const BYTE wr, BYTE * rd);
@@ -183,15 +183,15 @@ GOOD_OR_BAD DS2482_detect(struct port_in *pin)
 	switch ( ap.first.type ) {
 		case address_all:
 			// All adapters
-			gbResult = DS2482_detect_sys( 0, chip_num, in ) ;
+			gbResult = DS2482_detect_sys( 0, chip_num, pin ) ;
 			break ;
 		case address_none:
 			// Any adapter -- first one found
-			gbResult = DS2482_detect_sys( 1, chip_num, in ) ;
+			gbResult = DS2482_detect_sys( 1, chip_num, pin ) ;
 			break ;
 		default:
 			// traditional, actual bus specified
-			gbResult = DS2482_detect_bus( chip_num, ap.first.alpha, in ) ;
+			gbResult = DS2482_detect_bus( chip_num, ap.first.alpha, pin ) ;
 			break ;
 	}
 	
@@ -204,12 +204,12 @@ GOOD_OR_BAD DS2482_detect(struct port_in *pin)
 /* Use sysfs to find i2c adapters */
 /* cycle through SYSFS_I2C_Path */
 /* return GOOD if any found */
-static GOOD_OR_BAD DS2482_detect_sys( int any, enum ds2482_address chip_num, struct connection_in *in_original)
+static GOOD_OR_BAD DS2482_detect_sys( int any, enum ds2482_address chip_num, struct port_in *pin_original)
 {
 	DIR * i2c_list_dir ;
 	struct dirent * i2c_bus ;
 	int found = 0 ;
-	struct connection_in * in_current = in_original ;
+	struct port_in * pin_current = pin_original ;
 
 	// We'll look in this directory for available i2c adapters.
 	// This may be linux 2.6 specific
@@ -217,7 +217,7 @@ static GOOD_OR_BAD DS2482_detect_sys( int any, enum ds2482_address chip_num, str
 	if ( i2c_list_dir == NULL ) {
 		ERROR_CONNECT( "Cannot open %d to find available i2c devices",SYSFS_I2C_Path ) ;
 		// Use the cruder approach of trying all possible numbers
-		return DS2482_detect_dir( any, chip_num, in_original ) ;
+		return DS2482_detect_dir( any, chip_num, pin_original ) ;
 	}
 
 	/* cycle through entries in /sys/class/i2c-adapter */
@@ -233,34 +233,43 @@ static GOOD_OR_BAD DS2482_detect_sys( int any, enum ds2482_address chip_num, str
 		}
 
 		// Now look for the ds2482's
-		if ( BAD( DS2482_detect_bus( chip_num, dev_name, in_current ) ) ) {
+		if ( BAD( DS2482_detect_bus( chip_num, dev_name, pin_current ) ) ) {
 			continue ; // none found on this i2c bus
 		}
 
 		// at least one found on this i2c bus
 		++found ;
 		if ( any ) { // found one -- that's enough
-			break ;
+			closedir( i2c_list_dir ) ;
+			return gbGOOD ;
 		}
 
 		// ALL? then set up a new connection_in slot for the next one
-		in_current = AddtoPort(in_current->head, in_current) ;
-		if ( in_current == NO_CONNECTION ) {
+		pin_current = NewPort(pin_current) ;
+		if ( pin_current == NULL ) {
 			break ;
 		}
 	}
 
 	closedir( i2c_list_dir ) ;
-	return found>0 ? gbGOOD : gbBAD ;
+	
+	if ( found==0 ) {
+		return gbBAD ;
+	}
+
+	if ( pin_current != pin_original ) {
+		RemovePort( pin_current ) ;
+	}
+	return gbGOOD ;
 }
 
 /* non sysfs method -- try by bus name */
 /* cycle through /dev/i2c-n */
 /* returns GOOD if any adpters found */
-static GOOD_OR_BAD DS2482_detect_dir( int any, enum ds2482_address chip_num, struct connection_in *in_original)
+static GOOD_OR_BAD DS2482_detect_dir( int any, enum ds2482_address chip_num, struct port_in *pin_original)
 {
 	int found = 0 ;
-	struct connection_in * in_current = in_original ;
+	struct port_in * pin_current = pin_original ;
 	int bus = 0 ;
 	int sn_ret ;
 
@@ -279,54 +288,61 @@ static GOOD_OR_BAD DS2482_detect_dir( int any, enum ds2482_address chip_num, str
 		}
 
 		// Now look for the ds2482's
-		if ( BAD( DS2482_detect_bus( chip_num, dev_name, in_current ) ) ) {
+		if ( BAD( DS2482_detect_bus( chip_num, dev_name, pin_current ) ) ) {
 			continue ;
 		}
 
 		// at least one found
 		++found ;
 		if ( any ) {
-			break ;
+			return gbGOOD ;
 		}
 
 		// ALL? then set up a new connection_in slot
-		in_current = AddtoPort(in_current->head, in_current) ;
-		if ( in_current == NO_CONNECTION ) {
+		pin_current = NewPort(pin_current) ;
+		if ( pin_current == NULL ) {
 			break ;
 		}
 	}
 
-	return found>0 ? gbGOOD : gbBAD ;
+	if ( found == 0 ) {
+		return gbBAD ;
+	}
+	
+	if ( pin_original != pin_current ) {
+		RemovePort(pin_current) ;
+	}
+	return gbGOOD ;
 }
 
 /* Try to see if there is a DS2482 device on the specified i2c bus */
 /* Includes  a fix from Pascal Baerten */
-static GOOD_OR_BAD DS2482_detect_bus(enum ds2482_address chip_num, char * i2c_device, struct connection_in * in_original)
+static GOOD_OR_BAD DS2482_detect_bus(enum ds2482_address chip_num, char * i2c_device, struct port_in * pin_original)
 {
 	switch (chip_num) {
 		case ds2482_any:
 			// usual case, find the first adapter
-			return DS2482_detect_single( 0, 7, i2c_device, in_original ) ;
+			return DS2482_detect_single( 0, 7, i2c_device, pin_original ) ;
 		case ds2482_all:
 			// Look through all the possible i2c addresses
 			{
 				int start_chip = 0 ;
-				struct connection_in * all_in = in_original ;
+				struct port_in * all_pin = pin_original ;
 				do {
-					if ( BAD( DS2482_detect_single( start_chip, 7, i2c_device, all_in ) ) ) {
-						if ( in_original == all_in ) { //first time
+					if ( BAD( DS2482_detect_single( start_chip, 7, i2c_device, all_pin ) ) ) {
+						if ( pin_original == all_pin ) { //first time
 							return gbBAD ;
 						}
 						LEVEL_DEBUG("Cleaning excess allocated i2c structure");
-						RemoveIn(all_in); //Pascal Baerten :this removes the false DS2482-100 provisioned
+						RemovePort(all_pin); //Pascal Baerten :this removes the false DS2482-100 provisioned
 						return gbGOOD ;
 					}
-					start_chip = all_in->master.i2c.i2c_index + 1 ;
+					start_chip = all_pin->first->master.i2c.i2c_index + 1 ;
 					if ( start_chip > 7 ) {
 						return gbGOOD ;
 					}
-					all_in = AddtoPort(in_original->head, all_in) ;
-					if ( all_in == NO_CONNECTION ) {
+					all_pin = NewPort(all_pin) ;
+					if ( all_pin == NULL ) {
 						return gbBAD ;
 					}
 				} while (1) ;
@@ -334,16 +350,17 @@ static GOOD_OR_BAD DS2482_detect_bus(enum ds2482_address chip_num, char * i2c_de
 			break ;
 		default:
 			// specific i2c address
-			return DS2482_detect_single( chip_num, chip_num, i2c_device, in_original ) ;
+			return DS2482_detect_single( chip_num, chip_num, i2c_device, pin_original ) ;
 	}
 }
 
 /* Try to see if there is a DS2482 device on the specified i2c bus */
-static GOOD_OR_BAD DS2482_detect_single(int lowindex, int highindex, char * i2c_device, struct connection_in *in)
+static GOOD_OR_BAD DS2482_detect_single(int lowindex, int highindex, char * i2c_device, struct port_in *pin)
 {
 	int test_address[8] = { 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, };	// the last 4 are -800 only
 	int i2c_index;
 	FILE_DESCRIPTOR_OR_ERROR file_descriptor;
+	struct connection_in * in = pin->first ;
 
 	/* Sanity check */
 	if ( lowindex < 0 ) {
