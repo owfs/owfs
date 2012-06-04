@@ -174,9 +174,13 @@ GOOD_OR_BAD LINK_detect(struct port_in *pin)
 {
 	struct connection_in * in = pin->first ;
 	struct connection_in * head_in ;
-	if (SOC(in)->devicename == NULL) {
+
+	if (pin->init_data == NULL) {
 		return gbBAD;
+	} else {
+		SOC(in)->devicename = owstrdup(pin->init_data) ;
 	}
+
 	head_in = in->channel_info.head ;
 
 	COM_set_standard( head_in ) ; // standard COM port settings

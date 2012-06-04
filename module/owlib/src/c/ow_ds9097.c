@@ -68,6 +68,11 @@ GOOD_OR_BAD DS9097_detect(struct port_in *pin)
 	SOC(in)->vmin = 1; // minimum chars
 	SOC(in)->vtime = 0; // decisec wait
 	
+	if (pin->init_data == NULL) {
+		return gbBAD;
+	} else {
+		SOC(in)->devicename = owstrdup(pin->init_data) ;
+	}
 	RETURN_BAD_IF_BAD(COM_open(in)) ;
 
 	SOC(in)->flow = flow_first; // flow control

@@ -238,8 +238,10 @@ GOOD_OR_BAD EtherWeather_detect(struct port_in *pin)
 	/* Set up low-level routines */
 	EtherWeather_setroutines(in);
 
-	if (SOC(in)->devicename == NULL) {
+	if (pin->init_data == NULL) {
 		return gbBAD;
+	} else {
+		SOC(in)->devicename = owstrdup(pin->init_data) ;
 	}
 
 	SOC(in)->type = ct_tcp ;

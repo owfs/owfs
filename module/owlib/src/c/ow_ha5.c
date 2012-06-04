@@ -84,6 +84,12 @@ GOOD_OR_BAD HA5_detect(struct port_in *pin)
 	// Poison current "Address" for adapter
 	memset( in->master.ha5.sn, 0x00, SERIAL_NUMBER_SIZE ) ;
 
+	if (pin->init_data == NULL) {
+		return gbBAD;
+	} else {
+		SOC(in)->devicename = owstrdup(pin->init_data) ;
+	}
+
 	COM_set_standard( in ) ; // standard COM port settings
 
 	// 9600 isn't valid for the HA5, so we can tell that this value was actually selected

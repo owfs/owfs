@@ -29,7 +29,13 @@ GOOD_OR_BAD USB_monitor_detect(struct port_in *pin)
 	struct address_pair ap ;
 	pthread_t thread ;
 	
-	Parse_Address( SOC(in)->devicename, &ap ) ;
+	if (pin->init_data == NULL) {
+		return gbBAD;
+	} else {
+		SOC(in)->devicename = owstrdup(pin->init_data) ;
+	}
+
+	Parse_Address( pin->init_data, &ap ) ;
 	SOC(in)->type = ct_none ;
 	if ( ap.first.type == address_numeric ) {
 		Globals.usb_scan_interval = ap.first.number ;

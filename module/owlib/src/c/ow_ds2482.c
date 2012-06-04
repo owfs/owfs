@@ -155,7 +155,12 @@ GOOD_OR_BAD DS2482_detect(struct port_in *pin)
 	GOOD_OR_BAD gbResult ;
 	enum ds2482_address chip_num ;
 	
-	Parse_Address( SOC(in)->devicename, &ap ) ;
+	if (pin->init_data == NULL) {
+		return gbBAD;
+	} else {
+		SOC(in)->devicename = owstrdup(pin->init_data) ;
+	}
+	Parse_Address( pin->init_data, &ap ) ;
 	
 	switch ( ap.second.type ) {
 		case address_numeric:
@@ -367,7 +372,7 @@ static GOOD_OR_BAD DS2482_detect_single(int lowindex, int highindex, char * i2c_
 		LEVEL_DEBUG("Bad lower bound");
 		return gbBAD ;
 	}
-	if ( highindex >= sizeof(test_address)/sizeof(int) ) {
+	if ( highindex >= (int) (sizeof(test_address)/sizeof(int)) ) {
 		LEVEL_DEBUG("Bad upper bound");
 		return gbBAD ;
 	}

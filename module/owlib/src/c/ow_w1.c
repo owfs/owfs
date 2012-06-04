@@ -83,8 +83,10 @@ GOOD_OR_BAD W1_detect(struct port_in *pin)
 	fcntl (in->master.w1.netlink_pipe[fd_pipe_read], F_SETFD, FD_CLOEXEC); // for safe forking
 	fcntl (in->master.w1.netlink_pipe[fd_pipe_write], F_SETFD, FD_CLOEXEC); // for safe forking
 	
-	if ( SOC(in)->devicename == NULL) {
+	if (pin->init_data == NULL) {
 		return gbBAD;
+	} else {
+		SOC(in)->devicename = owstrdup(pin->init_data) ;
 	}
 
 	in->Adapter = adapter_w1;

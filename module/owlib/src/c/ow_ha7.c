@@ -74,8 +74,10 @@ GOOD_OR_BAD HA7_detect(struct port_in *pin)
 
 	in->master.ha7.locked = 0;
 
-	if (SOC(in)->devicename == NULL) {
+	if (pin->init_data == NULL) {
 		return gbBAD;
+	} else {
+		SOC(in)->devicename = owstrdup(pin->init_data) ;
 	}
 
 	SOC(in)->type = ct_tcp ;
@@ -413,6 +415,7 @@ static GOOD_OR_BAD HA7_sendback_block(const BYTE * data, BYTE * resp, const size
 		} else {
 			STAT_ADD1_BUS(e_bus_read_errors, in);
 		}
+		return ret ;
 	}
 	return gbGOOD;
 }

@@ -72,7 +72,7 @@ struct port_in {
 /* This bug-fix/workaround function seem to be fixed now... At least on
  * the platforms I have tested it on... printf() in owserver/src/c/owserver.c
  * returned very strange result on c->busmode before... but not anymore */
-enum bus_mode get_busmode(struct connection_in *c);
+enum bus_mode get_busmode(const struct connection_in *c);
 
 void RemovePort( struct port_in * pin ) ;
 struct port_in * AllocPort( const struct port_in * old_pin ) ;

@@ -24,13 +24,14 @@ static GOOD_OR_BAD W1_nomatch( struct connection_in * trial, struct connection_i
 static struct port_in * CreateW1Port(int bus_master)
 {
 	struct port_in * pin = AllocPort(NULL) ;
-	struct connection_in * in = pin->first ;
+	struct connection_in * in ;
 	char name[63] ;
 	int sn_ret ;
 
-	if ( in == NO_CONNECTION ) {
-		return NO_CONNECTION ;
+	if ( pin == NO_CONNECTION ) {
+		return NULL ;
 	}
+	in = pin->first ;
 
 	UCLIBCLOCK ;
 	sn_ret = snprintf(name,62,"w1_bus_master%d",bus_master) ;

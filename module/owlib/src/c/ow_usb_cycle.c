@@ -145,7 +145,6 @@ GOOD_OR_BAD DS9490_root_dir( struct dirblob * db, struct connection_in * in )
 		return gbBAD ;
 	}
 	DirblobInit( db ) ;
-
 	/* First time pretend there are devices */
 	pn_root.selected_connection->changed_bus_settings |= CHANGED_USB_SPEED ;	// Trigger needing new configuration
 	pn_root.selected_connection->overdrive = 0 ;	// not overdrive at start
@@ -172,6 +171,7 @@ GOOD_OR_BAD DS9490_ID_this_master(struct connection_in *in)
 	struct dirblob db ;
 	BYTE sn[SERIAL_NUMBER_SIZE] ;
 	int device_number ;
+
 	
 	RETURN_BAD_IF_BAD( DS9490_root_dir( &db, in ) ) ;
 

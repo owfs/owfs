@@ -28,8 +28,8 @@ static GOOD_OR_BAD Fake_sendback_data(const BYTE * data, BYTE * resp, const size
 static void GetNextByte( const ASCII ** strpointer, BYTE default_byte, BYTE * sn ) ;
 static void GetDeviceName(const ASCII ** strpointer, struct connection_in * in) ;
 static void GetDefaultDeviceName(BYTE * dn, const BYTE * sn, const struct connection_in * in) ;
-static void GetAllDeviceNames( ASCII * remaining_device_list, struct connection_in * in ) ;
-static void SetConninData( int indx, const char * name, struct connection_in *in ) ;
+static void GetAllDeviceNames( struct port_in * pin ) ;
+static void SetConninData( int indx, const char * type, struct port_in *pin ) ;
 
 static void Fake_setroutines(struct connection_in *in)
 {
@@ -141,8 +141,11 @@ static void GetDeviceName(const ASCII ** strpointer, struct connection_in * in)
 	DirblobAdd(sn, &(in->master.fake.main));	// Ignore bad return
 }
 
-static void GetAllDeviceNames( ASCII * remaining_device_list, struct connection_in * in )
+static void GetAllDeviceNames( struct port_in * pin )
 {
+	struct connection_in * in = pin->first ;
+	ASCII * remaining_device_list = owstrdup( pin->init_data ) ;
+
 	while (remaining_device_list != NULL) {
 		const ASCII *current_device_start;
 		for (current_device_start = strsep(&remaining_device_list, " ,"); current_device_start[0] != '\0'; ++current_device_start) {
@@ -153,29 +156,29 @@ static void GetAllDeviceNames( ASCII * remaining_device_list, struct connection_
 		}
 		GetDeviceName( &current_device_start, in ) ;
 	}
+	SAFEFREE( remaining_device_list ) ;
 	in->AnyDevices = (DirblobElements(&(in->master.fake.main)) > 0) ? anydevices_yes : anydevices_no ;
 }
 
-static void SetConninData( int indx, const char * name, struct connection_in *in )
+static void SetConninData( int indx, const char * type, struct port_in *pin )
 {
-	ASCII *oldname = SOC(in)->devicename; // destructively parsed and deleted at the end.
-	char newname[20] ;
+	struct connection_in * in = pin->first ;
+	char name[20] ;
 
 	SOC(in)->file_descriptor = indx;
 	SOC(in)->type = ct_none ;
 	in->master.fake.index = indx;
 	in->master.fake.templow = Globals.templow;
 	in->master.fake.temphigh = Globals.temphigh;
-	LEVEL_CONNECT("Setting up %s Bus Master (%d)", in->adapter_name, indx);
+	LEVEL_CONNECT("Setting up %s Bus Master (%d)", type, indx);
 
 	UCLIBCLOCK ;
-	snprintf(newname, 18, "%s.%d", name, indx);
+	snprintf(name, 18, "%s.%d", type, indx);
 	UCLIBCUNLOCK ;
 
-	GetAllDeviceNames( oldname, in ) ;
-	SAFEFREE(oldname) ;
+	GetAllDeviceNames( pin ) ;
 
-	SOC(in)->devicename = owstrdup(newname);
+	SOC(in)->devicename = owstrdup(name);
 }
 
 /* Device-specific functions */
@@ -191,7 +194,7 @@ GOOD_OR_BAD Fake_detect(struct port_in *pin)
 	in->adapter_name = "Simulated-Random";
 	in->Adapter = adapter_fake;
 
-	SetConninData( Inbound_Control.next_fake++, "fake", in  );
+	SetConninData( Inbound_Control.next_fake++, "fake", pin  );
 
 	return gbGOOD;
 }
@@ -208,7 +211,7 @@ GOOD_OR_BAD Mock_detect(struct port_in *pin)
 
 	in->adapter_name = "Simulated-Mock";
 	in->Adapter = adapter_mock;
-	SetConninData( Inbound_Control.next_mock++, "mock", in  );
+	SetConninData( Inbound_Control.next_mock++, "mock", pin  );
 
 	return gbGOOD;
 }
@@ -225,7 +228,7 @@ GOOD_OR_BAD Tester_detect(struct port_in *pin)
 
 	in->adapter_name = "Simulated-Computed";
 	in->Adapter = adapter_tester;
-	SetConninData( Inbound_Control.next_tester++, "tester", in  );
+	SetConninData( Inbound_Control.next_tester++, "tester", pin  );
 
 	return gbGOOD;
 }

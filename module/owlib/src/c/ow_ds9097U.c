@@ -236,6 +236,13 @@ static void DS2480_setroutines(struct connection_in *in)
 GOOD_OR_BAD DS2480_detect(struct port_in *pin)
 {
 	struct connection_in * in = pin->first ;
+
+	if (pin->init_data == NULL) {
+		return gbBAD;
+	} else {
+		SOC(in)->devicename = owstrdup(pin->init_data) ;
+	}
+
 	/* Set up low-level routines */
 	DS2480_setroutines(in);
 

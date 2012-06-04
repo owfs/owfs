@@ -59,6 +59,12 @@ GOOD_OR_BAD HA7E_detect(struct port_in *pin)
 	// Poison current "Address" for adapter
 	in->master.ha7e.sn[0] = 0 ; // so won't match
 
+	if (pin->init_data == NULL) {
+		return gbBAD;
+	} else {
+		SOC(in)->devicename = owstrdup(pin->init_data) ;
+	}
+
 	/* Open the com port */
 	COM_set_standard( in ) ; // standard COM port settings
 	RETURN_BAD_IF_BAD(COM_open(in)) ;

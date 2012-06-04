@@ -27,6 +27,12 @@ GOOD_OR_BAD W1_monitor_detect(struct port_in *pin)
 	struct connection_in * in = pin->first ;
 	struct timeval tvslack = { 1, 0 } ; // 1 second
 	
+	if (pin->init_data == NULL) {
+		return gbBAD;
+	} else {
+		SOC(in)->devicename = owstrdup(pin->init_data) ;
+	}
+
 	SOC(in)->file_descriptor = FILE_DESCRIPTOR_BAD;
 	SOC(in)->type = ct_none ;
 	in->iroutines.detect = W1_monitor_detect;

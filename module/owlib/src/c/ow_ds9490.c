@@ -219,7 +219,7 @@ GOOD_OR_BAD DS9490_detect(struct port_in *pin)
 	GOOD_OR_BAD gbResult = gbBAD;
 	
 	/* uses "name" before it's cleared by connection_init */
-	Parse_Address( SOC(in)->devicename, &ap ) ;
+	Parse_Address( pin->init_data, &ap ) ;
 
 	DS9490_connection_init( in ) ;
 	pin->busmode = bus_usb;
@@ -241,7 +241,6 @@ GOOD_OR_BAD DS9490_detect(struct port_in *pin)
 					break ;
 				case address_alpha:
 					if ( strncasecmp(ap.first.alpha,"scan",4) == 0 ) {
-						SAFEFREE(SOC(in)->devicename) ;
 						LEVEL_DEBUG("Add USB scanning capability");
 						gbResult = USB_monitor_detect(pin) ;
 						break ;
@@ -269,7 +268,6 @@ GOOD_OR_BAD DS9490_detect(struct port_in *pin)
 static GOOD_OR_BAD DS9490_detect_single_adapter(int usb_nr, struct connection_in * in)
 {
 	struct usb_list ul;
-
 	USB_first(&ul);
 
 	if ( usb_nr == 1 ) {
@@ -349,7 +347,6 @@ static void DS9490_connection_init( struct connection_in * in )
 	if ( in == NO_CONNECTION ) {
 		return ;
 	}
-	SAFEFREE( SOC(in)->devicename ) ;
 	SOC(in)->devicename = owstrdup(badUSBname);		// initialized
 
 	DS9490_setroutines(in);		// set up close, reconnect, reset, ...
@@ -420,13 +417,11 @@ static GOOD_OR_BAD DS9490_redetect_specific_adapter( struct connection_in * in)
 	struct address_pair ap ;
 	GOOD_OR_BAD gbResult ;
 	
-	Parse_Address( SOC(in)->devicename, &ap ) ;
+	Parse_Address( in->head->init_data, &ap ) ;
 	if ( ap.first.type != address_numeric || ap.second.type != address_numeric ) {
-		LEVEL_DEBUG("Cannot understand the specific usb address pair to reconnect <%s>",SOC(in)->devicename) ;
+		LEVEL_DEBUG("Cannot understand the specific usb address pair to reconnect <%s>",in->head->init_data) ;
 		gbResult = gbBAD ;
 	} else {
-		char * name_copy = owstrdup( SOC(in)->devicename ) ; // since DS9490_close clears this value and we may need to restore on error
-
 		/* Have to protect usb_find_busses() and usb_find_devices() with
 		 * a lock since libusb could crash if 2 threads call it at the same time.
 		 * It's not called until DS9490_redetect_low(), but I lock here just
@@ -434,14 +429,7 @@ static GOOD_OR_BAD DS9490_redetect_specific_adapter( struct connection_in * in)
 		LIBUSBLOCK;
 		DS9490_close( in ) ;
 		gbResult = DS9490_detect_specific_adapter( ap.first.number, ap.second.number, in) ;
-		LIBUSBUNLOCK;
-		
-		if ( BAD(gbResult) ) {
-			SAFEFREE( SOC(in)->devicename ) ;
-			SOC(in)->devicename = name_copy ; // so no need to free here
-		} else {
-			owfree( name_copy ) ;
-		}
+		LIBUSBUNLOCK;	
 	}
 
 	Free_Address( &ap ) ;

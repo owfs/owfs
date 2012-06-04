@@ -59,7 +59,7 @@ int SetKnownBus( int bus_number, struct parsedname * pn)
 	return 0 ;
 }
 
-enum bus_mode get_busmode(struct connection_in *in)
+enum bus_mode get_busmode(const struct connection_in *in)
 {
 	if (in == NO_CONNECTION) {
 		return bus_unknown;
@@ -135,7 +135,7 @@ struct port_in * AllocPort( const struct port_in * old_pin )
 	size_t len = sizeof(struct port_in);
 	struct port_in *new_pin = (struct port_in *) owmalloc(len);
 	if ( new_pin != NULL ) {
-		if (old_pin == NO_CONNECTION) {
+		if (old_pin == NULL) {
 			// Not a copy
 			memset(new_pin, 0, len);
 			new_pin->connections = 1 ;
@@ -144,7 +144,10 @@ struct port_in * AllocPort( const struct port_in * old_pin )
 			// Copy of prior bus
 			memcpy(new_pin, old_pin, len);
 			new_pin->connections = 1 ;
-			new_pin->first = AllocIn(old_pin->first) ;		
+			new_pin->first = AllocIn(old_pin->first) ;
+			if ( old_pin->init_data != NULL ) {
+				new_pin->init_data = owstrdup( old_pin->init_data ) ;
+			}		
 		}
 		
 		if ( new_pin->first == NO_CONNECTION ) {
@@ -321,12 +324,11 @@ void RemovePort( struct port_in * pin )
 struct connection_in * AddtoPort( struct port_in * pin, struct connection_in * template )
 {
 	struct connection_in * add_in = AllocIn( template ) ;
-	struct connection_in * look_in ;
 	
 	if ( add_in == NO_CONNECTION ) {
-		return add_in ;
+		return NO_CONNECTION ;
 	}
 	
-	LinkIn( add_in, pin ) ;
+	return LinkIn( add_in, pin ) ;
 }
 	

@@ -77,8 +77,10 @@ GOOD_OR_BAD OWServer_Enet_detect(struct port_in *pin)
 	SOC(in)->flow = flow_none; // flow control
 	SOC(in)->baud = B115200 ;
 
-	if ( SOC(in)->devicename == NULL) {
+	if (pin->init_data == NULL) {
 		return gbBAD;
+	} else {
+		SOC(in)->devicename = owstrdup(pin->init_data) ;
 	}
 
 	SOC(in)->type = ct_telnet ;

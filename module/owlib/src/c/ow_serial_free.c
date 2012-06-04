@@ -27,6 +27,7 @@ $Id$
 void serial_free(struct connection_in *connection)
 {
 	FILE_DESCRIPTOR_OR_ERROR fd ;
+	struct port_in * pin = connection->head ;
 
 	if ( SOC(connection)->state == cs_virgin ) {
 		return ;
@@ -35,7 +36,7 @@ void serial_free(struct connection_in *connection)
 	fd = SOC(connection)->file_descriptor ;
 	if ( FILE_DESCRIPTOR_NOT_VALID( fd ) ) {
 		// reopen to restore attributes
-		fd = open( SOC(connection)->devicename, O_RDWR | O_NONBLOCK | O_NOCTTY | O_CLOEXEC ) ;
+		fd = open( pin->init_data, O_RDWR | O_NONBLOCK | O_NOCTTY | O_CLOEXEC ) ;
 	}
 
 	// restore tty settings
@@ -46,7 +47,7 @@ void serial_free(struct connection_in *connection)
 		tcflush( fd, TCIOFLUSH);
 		LEVEL_DEBUG("COM_close: restore");
 		if ( tcsetattr( fd, TCSANOW, &(SOC(connection)->dev.serial.oldSerialTio) ) < 0) {
-			ERROR_CONNECT("Cannot restore port attributes: %s", SAFESTRING(SOC(connection)->devicename));
+			ERROR_CONNECT("Cannot restore port attributes: %s", pin->init_data);
 		}
 	}
 	Test_and_Close( &( SOC(connection)->file_descriptor) ) ;
