@@ -41,7 +41,7 @@ static struct port_in * CreateW1Port(int bus_master)
 		return NULL ;
 	}	
 
-	SOC(in)->devicename = owstrdup(name) ;
+	pin->init_data = owstrdup(name) ;
 	in->master.w1.id = bus_master ;
 	pin->busmode = bus_w1 ;
 	in->master.w1.w1_slave_order = w1_slave_order_unknown ;
@@ -72,6 +72,7 @@ void AddW1Bus( int bus_master )
 	struct port_in * new_pin = CreateW1Port(bus_master) ;
 	
 	if ( new_pin == NULL ) {
+		LEVEL_DEBUG("cannot create a new W1 master");
 		return ;
 	}
 
