@@ -93,8 +93,8 @@ int ftp_listener_init(struct ftp_listener_s *f)
 		ERROR_CONNECT("Error creating pipe for internal use");
 		return 0;
 	}
-	fcntl (f->shutdown_request_fd[fd_pipe_read], F_SETFD, FD_CLOEXEC); // for safe forking
-	fcntl (f->shutdown_request_fd[fd_pipe_write], F_SETFD, FD_CLOEXEC); // for safe forking
+//	fcntl (f->shutdown_request_fd[fd_pipe_read], F_SETFD, FD_CLOEXEC); // for safe forking
+//	fcntl (f->shutdown_request_fd[fd_pipe_write], F_SETFD, FD_CLOEXEC); // for safe forking
 
 	/* now load the values into the structure, since we can't fail from
 	   here */

@@ -69,8 +69,8 @@ GOOD_OR_BAD USB_monitor_detect(struct port_in *pin)
 		ERROR_DEFAULT("Cannot allocate a shutdown pipe. The program shutdown may be messy");
 		Init_Pipe( in->master.usb_monitor.shutdown_pipe ) ;
 	}
-	fcntl (in->master.usb_monitor.shutdown_pipe[fd_pipe_read], F_SETFD, FD_CLOEXEC); // for safe forking
-	fcntl (in->master.usb_monitor.shutdown_pipe[fd_pipe_write], F_SETFD, FD_CLOEXEC); // for safe forking
+//	fcntl (in->master.usb_monitor.shutdown_pipe[fd_pipe_read], F_SETFD, FD_CLOEXEC); // for safe forking
+//	fcntl (in->master.usb_monitor.shutdown_pipe[fd_pipe_write], F_SETFD, FD_CLOEXEC); // for safe forking
 
 	RETURN_BAD_IF_BAD( usb_monitor_in_use(in) ) ;
 

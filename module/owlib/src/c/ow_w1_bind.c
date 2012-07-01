@@ -53,7 +53,7 @@ GOOD_OR_BAD w1_bind( struct connection_in * in )
 		ERROR_CONNECT("Netlink (w1) socket (are you root?)");
 		return gbBAD;
 	}
-	fcntl (SOC(in)->file_descriptor, F_SETFD, FD_CLOEXEC); // for safe forking
+//	fcntl (SOC(in)->file_descriptor, F_SETFD, FD_CLOEXEC); // for safe forking
 
 	l_local.nl_pid = in->master.w1_monitor.pid = getpid() ;
 	l_local.nl_pad = 0;

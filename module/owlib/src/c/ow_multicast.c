@@ -90,7 +90,7 @@ static int Get_HA7_response( struct addrinfo *now, char * name )
 		ERROR_DEBUG("Cannot get socket file descriptor for broadcast.");
 		return 1;
 	}
-	fcntl (file_descriptor, F_SETFD, FD_CLOEXEC); // for safe forking
+//	fcntl (file_descriptor, F_SETFD, FD_CLOEXEC); // for safe forking
 	if (setsockopt(file_descriptor, SOL_SOCKET, SO_BROADCAST, &on, sizeof(on)) == -1) {
 		ERROR_DEBUG("Cannot set socket option for broadcast.");
 		return 1;

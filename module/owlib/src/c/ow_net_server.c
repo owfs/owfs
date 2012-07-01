@@ -109,7 +109,7 @@ static FILE_DESCRIPTOR_OR_ERROR ServerListen(struct connection_out *out)
 		} else if (listen(file_descriptor, 10) != 0) {
 			ERROR_CONNECT("Listen problem [%s]", SAFESTRING(out->name));
 		} else {
-			fcntl (file_descriptor, F_SETFD, FD_CLOEXEC); // for safe forking
+//			fcntl (file_descriptor, F_SETFD, FD_CLOEXEC); // for safe forking
 			out->file_descriptor = file_descriptor;
 			return file_descriptor;
 		}
@@ -308,8 +308,8 @@ void ServerProcess(void (*HandlerRoutine) (FILE_DESCRIPTOR_OR_ERROR file_descrip
 		ERROR_DEFAULT("Cannot allocate a shutdown pipe. The program shutdown may be messy");
 		Init_Pipe( shutdown_pipe ) ;
 	}
-	fcntl (shutdown_pipe[fd_pipe_read], F_SETFD, FD_CLOEXEC); // for safe forking
-	fcntl (shutdown_pipe[fd_pipe_write], F_SETFD, FD_CLOEXEC); // for safe forking
+//	fcntl (shutdown_pipe[fd_pipe_read], F_SETFD, FD_CLOEXEC); // for safe forking
+//	fcntl (shutdown_pipe[fd_pipe_write], F_SETFD, FD_CLOEXEC); // for safe forking
 		
 	if ( GOOD( SetupListenSockets( HandlerRoutine ) ) ) {
 		while (	GOOD( ListenCycle() ) ) {

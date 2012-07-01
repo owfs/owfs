@@ -36,13 +36,11 @@ void serial_free(struct connection_in *connection)
 	fd = SOC(connection)->file_descriptor ;
 	if ( FILE_DESCRIPTOR_NOT_VALID( fd ) ) {
 		// reopen to restore attributes
-		fd = open( pin->init_data, O_RDWR | O_NONBLOCK | O_NOCTTY | O_CLOEXEC ) ;
+		fd = open( pin->init_data, O_RDWR | O_NONBLOCK | O_NOCTTY ) ;
 	}
 
 	// restore tty settings
 	if ( FILE_DESCRIPTOR_VALID( fd ) ) {
-		// in case O_CLOEXEC not supported
-		fcntl (fd, F_SETFD, FD_CLOEXEC) ;
 		LEVEL_DEBUG("COM_close: flush");
 		tcflush( fd, TCIOFLUSH);
 		LEVEL_DEBUG("COM_close: restore");

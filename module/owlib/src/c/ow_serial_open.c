@@ -36,9 +36,6 @@ GOOD_OR_BAD serial_open(struct connection_in *connection)
 		// state doesn't change
 		ERROR_DEFAULT("Cannot open port: %s Permissions problem?", SAFESTRING(SOC(connection)->devicename));
 		return gbBAD;
-	} else {
-		// in case O_CLOEXEC not supported
-		fcntl (fd, F_SETFD, FD_CLOEXEC) ;
 	}
 
 	if ( SOC(connection)->state == cs_virgin ) {

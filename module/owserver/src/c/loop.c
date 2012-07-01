@@ -50,8 +50,8 @@ static GOOD_OR_BAD LoopSetup(struct handlerdata *hd)
 		ERROR_DEBUG("Cannot create pipe pair for keep-alive pulses") ;
 		return gbBAD ;
 	}
-	fcntl (hd->ping_pipe[fd_pipe_read], F_SETFD, FD_CLOEXEC); // for safe forking
-	fcntl (hd->ping_pipe[fd_pipe_write], F_SETFD, FD_CLOEXEC); // for safe forking
+//	fcntl (hd->ping_pipe[fd_pipe_read], F_SETFD, FD_CLOEXEC); // for safe forking
+//	fcntl (hd->ping_pipe[fd_pipe_write], F_SETFD, FD_CLOEXEC); // for safe forking
 	hd->toclient = toclient_postping ;
 	return gbGOOD ;
 }
