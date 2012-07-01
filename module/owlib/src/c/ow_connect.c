@@ -138,12 +138,10 @@ struct port_in * AllocPort( const struct port_in * old_pin )
 		if (old_pin == NULL) {
 			// Not a copy
 			memset(new_pin, 0, len);
-			new_pin->connections = 1 ;
 			new_pin->first = AllocIn(NO_CONNECTION) ;
 		} else {
 			// Copy of prior bus
 			memcpy(new_pin, old_pin, len);
-			new_pin->connections = 1 ;
 			new_pin->first = AllocIn(old_pin->first) ;
 			if ( old_pin->init_data != NULL ) {
 				new_pin->init_data = owstrdup( old_pin->init_data ) ;
@@ -151,10 +149,12 @@ struct port_in * AllocPort( const struct port_in * old_pin )
 		}
 		
 		if ( new_pin->first == NO_CONNECTION ) {
+			LEVEL_DEBUG("Port creation incomplete");
 			owfree(new_pin) ;
 			return NULL ;
 		}
 		
+		new_pin->connections = 1 ;
 		/* port not yet linked */
 		new_pin->next = NULL ;
 		/* connnection_in needs to be linked */
