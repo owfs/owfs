@@ -865,12 +865,22 @@ static GOOD_OR_BAD testTAI8570(struct s_TAI8570 *tai, struct one_wire_query *owq
 		LEVEL_DETAIL("Trouble reading TAI8570 calibration constants");
 		return gbBAD;
 	}
+	
+	// Set data
 	tai->C[0] = ((cal[0]) >> 1);
 	tai->C[1] = ((cal[3]) & 0x3F) | (((cal[2]) & 0x3F) << 6);
 	tai->C[2] = ((cal[3]) >> 6);
 	tai->C[3] = ((cal[2]) >> 6);
-	tai->C[4] = ((cal[1]) >> 6) | (((cal[0]) & 0x01) << 10);
+	tai->C[4] = (((cal[1]) >> 6) & 0x3FF) | (((cal[0]) & 0x01) << 10);
 	tai->C[5] = ((cal[1]) & 0x3F);
+	
+	// Enforce data lenths
+	tai->C[0] &= 0x7FFF; // 15 bit
+	tai->C[1] &= 0x0FFF; // 12 bit
+	tai->C[2] &= 0x03FF; // 10 bit
+	tai->C[3] &= 0x03FF; // 10 bit
+	tai->C[4] &= 0x07FF; // 11 bit
+	tai->C[5] &= 0x003F; //  6 bit
 
 	LEVEL_DETAIL("TAI8570 C1=%u C2=%u C3=%u C4=%u C5=%u C6=%u", tai->C[0], tai->C[1], tai->C[2], tai->C[3], tai->C[4], tai->C[5]);
 	memcpy(pn->sn, tai->master, 8);	// restore original for cache
