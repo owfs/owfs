@@ -65,7 +65,17 @@ General EF device
 .PP
 Moisture Meter
 .br
-.B Moisture/sensor.[0-3|ALL]
+.B moisture/sensor.[0-3|ALL]
+.br
+.B moisture/is_moisture.[0-3|ALL|BYTE]
+|
+.B moisture/is_leaf.[0-3|ALL|BYTE]
+.br
+.B moisture/calibrate/min
+|
+.B moisture/calibrate/max
+|
+.B moisture/calibrate/raw.[0-4|ALL]
 .SH FAMILY CODE
 .TP
 .I EE
@@ -120,6 +130,40 @@ Watermark Soil Moisture Sensor
 .TP
 Leaf Wetness Sensor
 0-99
+.SS moisture/is_moisture.0 .. moisture/is_moisture.3 moisture/is_moisture.ALL
+.SS moisture/is_leaf.0 .. moisture/is_leaf.3 moisture/is_leaf.ALL
+.I read-write yes_no
+.br
+Set or get the type of sensor attached to each channel. Note that 
+.I OWFS
+addresses the sensors as 0 through 3 while the datasheet uses 1-4.
+Two types of external sensors are supported:
+.TP
+Watermark Soil Moisture
+Sensor
+.TP
+Leaf Wetness
+Sensor
+.P
+Note that
+.I is_leaf
+and 
+.I is_moisture
+are complementary and clearing one sets the other.
+
+.SS moisture/calibrate/min
+.SS moisture/calibrate/max
+.I read-write unsigned integer
+.br
+Set or get the upper and lower range for the raw data for leaf wetness scaling. See the datasheet for details.
+
+.SS moisture/calibrate/raw.0 .. moisture/calibrate/raw.3 moisture/calibrate/raw.ALL
+.I read-only unsigned integer
+.br
+Read the raw leaf wetness values for setting scaling. See the datasheet for details.
+Note that 
+.I OWFS
+addresses the sensors as 0 through 3 while the datasheet uses 1-4.
 .SH IDENTIFICATION PROPERTIES
 .SS version
 .I read-only, ascii
