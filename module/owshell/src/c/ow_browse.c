@@ -14,7 +14,7 @@ $Id$
 #if OW_ZERO
 
 static void ResolveBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
-						DNSServiceErrorType e, const char *n, const char *host, uint16_t port, uint16_t tl, const char *t, void *c);
+						DNSServiceErrorType e, const char *n, const char *host, uint16_t port, uint16_t tl, const unsigned char *t, void *c);
 static void BrowseBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 					   DNSServiceErrorType e, const char *name, const char *type, const char *domain, void *context);
 static void HandleCall(DNSServiceRef sref);
@@ -61,7 +61,7 @@ static void HandleCall(DNSServiceRef sref)
 
 
 static void ResolveBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
-						DNSServiceErrorType e, const char *n, const char *host, uint16_t port, uint16_t tl, const char *t, void *c)
+						DNSServiceErrorType e, const char *n, const char *host, uint16_t port, uint16_t tl, const unsigned char *t, void *c)
 {
 	ASCII name[121];
 	(void) tl;
