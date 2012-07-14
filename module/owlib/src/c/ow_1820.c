@@ -49,6 +49,7 @@ $Id$
 READ_FUNCTION(FS_10temp);
 READ_FUNCTION(FS_10temp_link);
 READ_FUNCTION(FS_22temp);
+READ_FUNCTION(FS_MAXtemp);
 READ_FUNCTION(FS_fasttemp);
 READ_FUNCTION(FS_slowtemp);
 READ_FUNCTION(FS_power);
@@ -66,6 +67,10 @@ READ_FUNCTION(FS_r_pio);
 READ_FUNCTION(FS_r_latch);
 WRITE_FUNCTION(FS_w_pio);
 READ_FUNCTION(FS_sense);
+READ_FUNCTION(FS_r_mem);
+WRITE_FUNCTION(FS_w_mem);
+READ_FUNCTION(FS_r_page);
+WRITE_FUNCTION(FS_w_page);
 
 /* -------- Structures ---------- */
 static struct filetype DS18S20[] = {
@@ -167,6 +172,18 @@ static struct filetype DS28EA00[] = {
 
 DeviceEntryExtended(42, DS28EA00, DEV_temp | DEV_alarm | DEV_chain, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
+static struct aggregate AMAX = { 16, ag_numbers, ag_separate, };
+static struct filetype MAX31826[] = {
+	F_STANDARD,
+	{"memory", 128, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA, },
+	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"pages/page", 8, &AMAX, ft_binary, fc_page, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA, },
+	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_simultaneous_temperature, FS_MAXtemp, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"power", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+};
+
+DeviceEntryExtended(3B, MAX31826, DEV_temp, NO_GENERIC_READ, NO_GENERIC_WRITE);
+
 /* Internal properties */
 Make_SlaveSpecificTag(RES, fc_stable);	// resolution
 Make_SlaveSpecificTag(POW, fc_stable);	// power status
@@ -181,6 +198,7 @@ struct tempresolution Resolution9  = { 9, 0x1F, 110, 0xF8} ;			/*  9 bit */
 struct tempresolution Resolution10 = {10, 0x3F, 200, 0xFC} ;			/* 10 bit */
 struct tempresolution Resolution11 = {11, 0x5F, 400, 0xFE} ;			/* 11 bit */
 struct tempresolution Resolution12 = {12, 0x7F, 1000, 0xFF};			/* 12 bit */
+struct tempresolution ResolutionMAX = {12, 0x7F, 150, 0xFF};			/* 12 bit */
 
 struct die_limits {
 	BYTE B7[6];
@@ -232,6 +250,12 @@ struct die_limits DIE[] = {
 #define _DEFAULT_BLANKET_TRIM_1   0x9D
 #define _DEFAULT_BLANKET_TRIM_2   0xBB
 
+#define _1W_WRITE_SCRATCHPAD2     0x0F
+#define _1W_READ_SCRATCHPAD2      0xAA
+#define _1W_COPY_SCRATCHPAD2      0x55
+#define _1W_COPY_SCRATCHPAD2_DO   0xA5
+#define _1W_READ_MEMORY           0xF0
+
 enum temperature_problem_flag { allow_85C, deny_85C, } ;
 
 /* ------- Functions ------------ */
@@ -239,6 +263,7 @@ enum temperature_problem_flag { allow_85C, deny_85C, } ;
 /* DS1820&2*/
 static GOOD_OR_BAD OW_10temp(_FLOAT * temp, enum temperature_problem_flag accept_85C, int simul_good, const struct parsedname *pn);
 static GOOD_OR_BAD OW_22temp(_FLOAT * temp, enum temperature_problem_flag accept_85C, int simul_good, struct tempresolution * Resolution, const struct parsedname *pn);
+static GOOD_OR_BAD OW_MAXtemp(_FLOAT * temp, enum temperature_problem_flag accept_85C, int simul_good, struct tempresolution * Resolution, const struct parsedname *pn);
 static GOOD_OR_BAD OW_power(BYTE * data, const struct parsedname *pn);
 static GOOD_OR_BAD OW_r_templimit(_FLOAT * T, const int Tindex, const struct parsedname *pn);
 static GOOD_OR_BAD OW_w_templimit(const _FLOAT T, const int Tindex, const struct parsedname *pn);
@@ -308,6 +333,24 @@ static ZERO_OR_ERROR FS_22temp(struct one_wire_query *owq)
 	}
 	// third pass, accept 85C
 	return GB_to_Z_OR_E(OW_22temp(&OWQ_F(owq), allow_85C, 0, Resolution, pn));
+}
+
+/* For MAX31826 */
+static ZERO_OR_ERROR FS_MAXtemp(struct one_wire_query *owq)
+{
+	struct parsedname * pn = PN(owq) ;
+
+	// triple try temperatures
+	// first pass include simultaneous
+	if ( GOOD( OW_MAXtemp(&OWQ_F(owq), deny_85C, OWQ_SIMUL_TEST(owq), &ResolutionMAX, pn) ) ) {
+		return 0 ;
+	}
+	// second pass no simultaneous
+	if ( GOOD( OW_MAXtemp(&OWQ_F(owq), deny_85C, 0, &ResolutionMAX, pn) ) ) {
+		return 0 ;
+	}
+	// third pass, accept 85C
+	return GB_to_Z_OR_E(OW_MAXtemp(&OWQ_F(owq), allow_85C, 0, &ResolutionMAX, pn));
 }
 
 // use sibling function for fasttemp to keep cache value consistent
@@ -495,6 +538,20 @@ static ZERO_OR_ERROR FS_w_blanket(struct one_wire_query *owq)
 	}
 }
 
+static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
+{
+	size_t pagesize = 8;
+	OWQ_length(owq) = OWQ_size(owq) ;
+	return GB_to_Z_OR_E( OW_r_mem(OWQ_buffer(owq),OWQ_size(owq),OWQ_offset(owq),PN(owq)) ) ;
+}
+
+static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
+{
+	size_t pagesize = 8;
+	OWQ_length(owq) = OWQ_size(owq) ;
+	return GB_to_Z_OR_E( OW_r_mem(OWQ_buffer(owq),OWQ_size(owq),OWQ_offset(owq)+OWQ_pn(owq).extension*pagesize,PN(owq)) ) ;
+}
+
 /* get the temp from the scratchpad buffer after starting a conversion and waiting */
 static GOOD_OR_BAD OW_10temp(_FLOAT * temp, enum temperature_problem_flag accept_85C, int simul_good, const struct parsedname *pn)
 {
@@ -613,6 +670,74 @@ static GOOD_OR_BAD OW_22temp(_FLOAT * temp, enum temperature_problem_flag accept
 			Cache_Add_SlaveSpecific(&(Resolution->bits), sizeof(int), SlaveSpecificTag(RES), pn);
 		}
 	}
+
+	/* Conversion */
+	// first time
+	/* powered? */
+	if (OW_power(&pow, pn)) {
+		//LEVEL_DEBUG("TEST unpowered");
+		pow = 0x00;				/* assume unpowered if cannot tell */
+	}
+
+	if ( accept_85C == allow_85C ) {
+		// must be desperate
+		LEVEL_DEBUG("Unpowered temperature conversion -- %d msec", longdelay);
+		// If not powered, no Simultaneous for this chip
+		RETURN_BAD_IF_BAD(BUS_transaction(tunpowered_long, pn)) ;	
+	} else if (!pow) {					// unpowered, deliver power, no communication allowed
+		LEVEL_DEBUG("Unpowered temperature conversion -- %d msec", delay);
+		// If not powered, no Simultaneous for this chip
+		RETURN_BAD_IF_BAD(BUS_transaction(tunpowered, pn)) ;
+	} else if ( must_convert || !simul_good ) {
+		// No Simultaneous active, so need to "convert"
+		// powered, so release bus immediately after issuing convert
+		GOOD_OR_BAD ret;
+		LEVEL_DEBUG("Powered temperature conversion");
+		BUSLOCK(pn);
+		ret = BUS_transaction_nolock(tpowered, pn) || FS_poll_convert(pn);
+		BUSUNLOCK(pn);
+		RETURN_BAD_IF_BAD(ret)
+	} else {
+		// valid simultaneous, just delay if needed
+		RETURN_BAD_IF_BAD( FS_Test_Simultaneous( simul_temp, delay, pn)) ;
+	}
+
+	RETURN_BAD_IF_BAD(OW_r_scratchpad(data, pn)) ;
+
+	temp[0] = OW_masked_temperature( data, Resolution->mask) ;
+
+	if ( accept_85C==allow_85C || data[0] != 0x50 || data[1] != 0x05 ) {
+		return gbGOOD;
+	}
+	return gbBAD ;
+}
+
+static GOOD_OR_BAD OW_MAXtemp(_FLOAT * temp, enum temperature_problem_flag accept_85C, int simul_good, struct tempresolution * Resolution, const struct parsedname *pn)
+{
+	BYTE data[9];
+	BYTE convert[] = { _1W_CONVERT_T, };
+	BYTE pow;
+	UINT delay = Resolution->delay;
+	UINT longdelay = delay * 1.5 ; // failsafe
+	int stored_resolution ;
+	int must_convert = 0 ;
+
+	struct transaction_log tunpowered[] = {
+		TRXN_START,
+		TRXN_POWER(convert, delay),
+		TRXN_END,
+	};
+	struct transaction_log tpowered[] = {
+		TRXN_START,
+		TRXN_WRITE1(convert),
+		TRXN_END,
+	};
+	// failsafe
+	struct transaction_log tunpowered_long[] = {
+		TRXN_START,
+		TRXN_POWER(convert, longdelay),
+		TRXN_END,
+	};
 
 	/* Conversion */
 	// first time
@@ -884,3 +1009,45 @@ static _FLOAT OW_masked_temperature( BYTE * data, BYTE mask )
 	// Torsten Godau <tg@solarlabs.de> found a problem with 9-bit resolution
 	return (_FLOAT) ((int16_t) ((data[1] << 8) | (data[0] & mask))) * .0625 ;
 }
+
+static GOOD_OR_BAD OW_r_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
+{
+	BYTE p[] = { _1W_READ_MEMORY, offset & 0x7F, };
+	struct transaction_log t[] = {
+		TRXN_START,
+		TRXN_WRITE2(p),
+		TRXN_READ(data,size),
+		TRXN_END,
+	};
+	
+	return BUS_transaction(t, pn) ;
+}
+
+static GOOD_OR_BAD OW_w_page( BYTE * data, size_t size, off_t offset, struct parsedname * pn )
+{
+	int page = offset / 8 ;
+	off_t page_offset = offset % 8 ;
+	BYTE p[2+8+1] = { _1W_WRITE_SCRATCHPAD2, page*8, } ;
+	BYTE q[] = { _1W_COPY_SCRATCHPAD2, 1W_COPY_SCRATCHPAD2_DO, } ;
+	struct transaction_log t_write[] = {
+		TRXN_START,
+		TRXN_WRITE( p, 2+8 ),
+		TRXN_READ1( &p[2+8] ),
+		TRXN_CRC8( p, 2+8+1 ),
+		TRXN_END,
+	} ;
+	struct transaction_log t_copy[] = {
+		TRXN_START,
+		TRXN_WRITE2( q ),
+		TRXN_READ1( &p[2+8] ),
+		TRXN_CRC8( p, 2+8+1 ),
+		TRXN_END,
+	} ;
+
+	if ( size != 8 ) {
+		RETURN_BAD_IF_BAD( OW_r_mem( &p[2], 8, page*8, pn ) ) ;
+	}
+
+	memcpy( &p[2+page_offset], data, size ) ;
+
+}	 
