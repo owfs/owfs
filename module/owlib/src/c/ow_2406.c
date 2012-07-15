@@ -87,7 +87,7 @@ static enum e_visibility VISIBLE_T8A( const struct parsedname * pn ) ;
 static struct aggregate A2406 = { 2, ag_letters, ag_aggregate, };
 static struct aggregate A2406p = { 4, ag_numbers, ag_separate, };
 static struct aggregate AT8Ac = { 8, ag_numbers, ag_separate, }; // 8 channel T8A volt meter
-static struct aggregate ATAI8470 = { 6, ag_numbers, ag_aggregate, } ;
+static struct aggregate ATAI8570 = { 6, ag_numbers, ag_aggregate, } ;
 static struct filetype DS2406[] = {
 	F_STANDARD,
 	{"memory", 128, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA, },
@@ -105,7 +105,7 @@ static struct filetype DS2406[] = {
 
 #if OW_TAI8570
 	{"TAI8570", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
-	{"TAI8570/C", PROPERTY_LENGTH_UNSIGNED, &ATAI8470, ft_unsigned, fc_static, FS_r_C, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA, },
+	{"TAI8570/C", PROPERTY_LENGTH_UNSIGNED, &ATAI8570, ft_unsigned, fc_static, FS_r_C, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA, },
 	{"TAI8570/D1", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_D1, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA, },
 	{"TAI8570/D2", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_D2, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA, },
 	{"TAI8570/temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_link, FS_temperature, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
@@ -587,7 +587,7 @@ static ZERO_OR_ERROR FS_r_D1(struct one_wire_query *owq)
 
 	RETURN_BAD_IF_BAD( TAI8570_SenseValue(&D, SEC_READD1, &tai, &pn_copy) );
 	LEVEL_DEBUG("TAI8570 Raw Pressure (D1) = %lu", D);
-	OWQ_F(owq) = D ;
+	OWQ_U(owq) = D ;
 	return 0;
 }
 
@@ -606,7 +606,7 @@ static ZERO_OR_ERROR FS_r_D2(struct one_wire_query *owq)
 
 	RETURN_BAD_IF_BAD( TAI8570_SenseValue(&D, SEC_READD2, &tai, &pn_copy) );
 	LEVEL_DEBUG("TAI8570 Raw Temperature (D2) = %lu", D);
-	OWQ_F(owq) = D ;
+	OWQ_U(owq) = D ;
 	return 0;
 }
 
