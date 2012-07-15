@@ -29,6 +29,7 @@ man_MANS = owfs.1 \
            EDS.3 EDS0064.3 EDS0065.3 EDS0066.3 EDS0067.3 EDS0068.3 EDS0071.3 EDS0072.3 \
            Thermachron.3 \
            LCD.3 \
+           MAX31826.3 \
            OWNet.3 \
            owperl.3 \
            owtcl.n \
