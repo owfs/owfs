@@ -62,6 +62,7 @@ READ_FUNCTION(FS_r_trimvalid);
 READ_FUNCTION(FS_r_blanket);
 WRITE_FUNCTION(FS_w_blanket);
 READ_FUNCTION(FS_r_ad);
+READ_FUNCTION(FS_r_bit7);
 READ_FUNCTION(FS_r_piostate);
 READ_FUNCTION(FS_r_pio);
 READ_FUNCTION(FS_r_latch);
@@ -71,6 +72,10 @@ READ_FUNCTION(FS_r_mem);
 WRITE_FUNCTION(FS_w_mem);
 READ_FUNCTION(FS_r_page);
 WRITE_FUNCTION(FS_w_page);
+
+static enum e_visibility VISIBLE_DS1825( const struct parsedname * pn ) ;
+static enum e_visibility VISIBLE_MAX31826( const struct parsedname * pn ) ;
+
 
 /* -------- Structures ---------- */
 static struct filetype DS18S20[] = {
@@ -136,18 +141,23 @@ static struct filetype DS1822[] = {
 
 DeviceEntryExtended(22, DS1822, DEV_temp | DEV_alarm, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
+static struct aggregate AMAX = { 16, ag_numbers, ag_separate, };
 static struct filetype DS1825[] = {
 	F_STANDARD,
 	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_link, FS_slowtemp, NO_WRITE_FUNCTION, VISIBLE, {i:12}, },
-	{"temperature9", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_simultaneous_temperature, FS_22temp, NO_WRITE_FUNCTION, VISIBLE, {i:9}, },
-	{"temperature10", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_simultaneous_temperature, FS_22temp, NO_WRITE_FUNCTION, VISIBLE, {i:10}, },
-	{"temperature11", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_simultaneous_temperature, FS_22temp, NO_WRITE_FUNCTION, VISIBLE, {i:11}, },
-	{"temperature12", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_simultaneous_temperature, FS_22temp, NO_WRITE_FUNCTION, VISIBLE, {i:12}, },
-	{"fasttemp", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_link, FS_fasttemp, NO_WRITE_FUNCTION, VISIBLE, {i:9}, },
-	{"templow", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE, {i:1}, },
-	{"temphigh", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE, {i:0}, },
+	{"temperature9", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_simultaneous_temperature, FS_MAXtemp, NO_WRITE_FUNCTION, VISIBLE_DS1825, {i:9}, },
+	{"temperature10", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_simultaneous_temperature, FS_MAXtemp, NO_WRITE_FUNCTION, VISIBLE_DS1825, {i:10}, },
+	{"temperature11", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_simultaneous_temperature, FS_MAXtemp, NO_WRITE_FUNCTION, VISIBLE_DS1825, {i:11}, },
+	{"temperature12", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_simultaneous_temperature, FS_MAXtemp, NO_WRITE_FUNCTION, VISIBLE, {i:12}, },
+	{"fasttemp", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_link, FS_fasttemp, NO_WRITE_FUNCTION, VISIBLE_DS1825, {i:9}, },
+	{"templow", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE_DS1825, {i:1}, },
+	{"temphigh", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE_DS1825, {i:0}, },
 	{"power", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"prog_addr", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_ad, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"bit7", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_bit7, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA, },
+	{"memory", 128, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE_MAX31826, NO_FILETYPE_DATA, },
+	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_MAX31826, NO_FILETYPE_DATA, },
+	{"pages/page", 8, &AMAX, ft_binary, fc_page, FS_r_page, FS_w_page, VISIBLE_MAX31826, NO_FILETYPE_DATA, },
 };
 
 DeviceEntryExtended(3B, DS1825, DEV_temp | DEV_alarm, NO_GENERIC_READ, NO_GENERIC_WRITE);
@@ -171,18 +181,6 @@ static struct filetype DS28EA00[] = {
 };
 
 DeviceEntryExtended(42, DS28EA00, DEV_temp | DEV_alarm | DEV_chain, NO_GENERIC_READ, NO_GENERIC_WRITE);
-
-static struct aggregate AMAX = { 16, ag_numbers, ag_separate, };
-static struct filetype MAX31826[] = {
-	F_STANDARD,
-	{"memory", 128, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA, },
-	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
-	{"pages/page", 8, &AMAX, ft_binary, fc_page, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA, },
-	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_simultaneous_temperature, FS_MAXtemp, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
-	{"power", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
-};
-
-DeviceEntryExtended(3B, MAX31826, DEV_temp, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 /* Internal properties */
 Make_SlaveSpecificTag(RES, fc_stable);	// resolution
@@ -277,6 +275,50 @@ static GOOD_OR_BAD OW_w_pio(BYTE pio, const struct parsedname *pn);
 static GOOD_OR_BAD OW_read_piostate(UINT * piostate, const struct parsedname *pn) ;
 static _FLOAT OW_masked_temperature( BYTE * data, BYTE mask ) ;
 
+static GOOD_OR_BAD OW_r_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn) ;
+static GOOD_OR_BAD OW_w_mem( BYTE * data, size_t size, off_t offset, struct parsedname * pn ) ;
+static GOOD_OR_BAD OW_w_page( BYTE * data, size_t size, off_t offset, struct parsedname * pn ) ;
+
+/* finds the visibility value (0x0071 ...) either cached, or computed via the device_id (then cached) */
+static int VISIBLE_3B( const struct parsedname * pn )
+{
+	int bit7 = -1 ;
+	
+	LEVEL_DEBUG("Checking visibility of %s",SAFESTRING(pn->path)) ;
+	if ( BAD( GetVisibilityCache( &bit7, pn ) ) ) {
+		struct one_wire_query * owq = OWQ_create_from_path(pn->path) ; // for read
+		if ( owq != NULL) {
+			UINT U_bit7 ;
+			if ( FS_r_sibling_U( &U_bit7, "bit7", owq ) == 0 ) {
+				bit7 = U_bit7 ;
+				SetVisibilityCache( bit7, pn ) ;
+			}
+			OWQ_destroy(owq) ;
+		}
+	}
+	return bit7 ;
+}
+
+static enum e_visibility VISIBLE_DS1825( const struct parsedname * pn )
+{
+	switch ( VISIBLE_3B(pn) ) {
+		case 0x0000:
+			return visible_now ;
+		default:
+			return visible_not_now ;
+	}
+}
+
+static enum e_visibility VISIBLE_MAX31826( const struct parsedname * pn )
+{
+	switch ( VISIBLE_3B(pn) ) {
+		case 0x80:
+			return visible_now ;
+		default:
+			return visible_not_now ;
+	}
+}
+
 static ZERO_OR_ERROR FS_10temp(struct one_wire_query *owq)
 {
 	struct parsedname * pn = PN(owq) ;
@@ -340,6 +382,16 @@ static ZERO_OR_ERROR FS_MAXtemp(struct one_wire_query *owq)
 {
 	struct parsedname * pn = PN(owq) ;
 
+	switch( VISIBLE_3B( pn ) ) {
+		case 0x80 :
+			break ;
+		case -1:
+			LEVEL_DEBUG( "Cannot distiguish between the DS1825 and MAX31826 for "SNformat, SNvar(pn->sn) ) ;
+		// fall through
+		default:
+			return FS_22temp( owq ) ;
+	}
+	
 	// triple try temperatures
 	// first pass include simultaneous
 	if ( GOOD( OW_MAXtemp(&OWQ_F(owq), deny_85C, OWQ_SIMUL_TEST(owq), &ResolutionMAX, pn) ) ) {
@@ -437,6 +489,14 @@ static ZERO_OR_ERROR FS_r_ad(struct one_wire_query *owq)
 	BYTE data[9];
 	RETURN_ERROR_IF_BAD(OW_r_scratchpad(data, PN(owq))) ;
 	OWQ_U(owq) = data[4] & 0x0F;
+	return 0;
+}
+
+static ZERO_OR_ERROR FS_r_bit7(struct one_wire_query *owq)
+{
+	BYTE data[9];
+	RETURN_ERROR_IF_BAD(OW_r_scratchpad(data, PN(owq))) ;
+	OWQ_U(owq) = (data[4] & 0x80) ;
 	return 0;
 }
 
@@ -540,16 +600,32 @@ static ZERO_OR_ERROR FS_w_blanket(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
 {
-	size_t pagesize = 8;
 	OWQ_length(owq) = OWQ_size(owq) ;
-	return GB_to_Z_OR_E( OW_r_mem(OWQ_buffer(owq),OWQ_size(owq),OWQ_offset(owq),PN(owq)) ) ;
+	return GB_to_Z_OR_E( OW_r_mem( (BYTE *)OWQ_buffer(owq),OWQ_size(owq),OWQ_offset(owq),PN(owq)) ) ;
+}
+
+static ZERO_OR_ERROR FS_w_mem(struct one_wire_query *owq)
+{
+	OWQ_length(owq) = OWQ_size(owq) ;
+	return GB_to_Z_OR_E( OW_w_mem( (BYTE *)OWQ_buffer(owq),OWQ_size(owq),OWQ_offset(owq),PN(owq)) ) ;
 }
 
 static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 8;
+	struct parsedname * pn = PN(owq) ;
+
 	OWQ_length(owq) = OWQ_size(owq) ;
-	return GB_to_Z_OR_E( OW_r_mem(OWQ_buffer(owq),OWQ_size(owq),OWQ_offset(owq)+OWQ_pn(owq).extension*pagesize,PN(owq)) ) ;
+	return GB_to_Z_OR_E( OW_r_mem( (BYTE *)OWQ_buffer(owq),OWQ_size(owq),OWQ_offset(owq)+pn->extension*pagesize,pn) ) ;
+}
+
+static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
+{
+	size_t pagesize = 8;
+	struct parsedname * pn = PN(owq) ;
+
+	OWQ_length(owq) = OWQ_size(owq) ;
+	return GB_to_Z_OR_E( OW_w_mem( (BYTE *)OWQ_buffer(owq),OWQ_size(owq),OWQ_offset(owq)+pn->extension*pagesize,pn) ) ;
 }
 
 /* get the temp from the scratchpad buffer after starting a conversion and waiting */
@@ -719,7 +795,6 @@ static GOOD_OR_BAD OW_MAXtemp(_FLOAT * temp, enum temperature_problem_flag accep
 	BYTE pow;
 	UINT delay = Resolution->delay;
 	UINT longdelay = delay * 1.5 ; // failsafe
-	int stored_resolution ;
 	int must_convert = 0 ;
 
 	struct transaction_log tunpowered[] = {
@@ -1023,31 +1098,95 @@ static GOOD_OR_BAD OW_r_mem(BYTE * data, size_t size, off_t offset, struct parse
 	return BUS_transaction(t, pn) ;
 }
 
+// write into eeprom
+// need to split into pages
+static GOOD_OR_BAD OW_w_mem( BYTE * data, size_t size, off_t offset, struct parsedname * pn )
+{
+	int pagesize = 8 ;
+	BYTE * dataloc = data ;
+	size_t left_to_write = size ;
+	off_t current_off = offset ;
+	off_t page_boundary_next = offset + pagesize - (offset % pagesize ) ;
+	
+	// loop through pages
+	while ( left_to_write > 0 ) {
+		off_t this_write = left_to_write ;
+		
+		// trim length of write to fit in page
+		if ( current_off + this_write > page_boundary_next ) {
+			this_write = page_boundary_next - current_off ;
+		}
+
+		// write this page
+		RETURN_BAD_IF_BAD( OW_w_page( dataloc, this_write, current_off, pn ) ) ;
+		
+		// update pointers and counters
+		dataloc += this_write ;
+		left_to_write -= this_write ;
+		current_off += this_write ;
+		page_boundary_next += pagesize ;
+	}
+	
+	return gbGOOD ;
+}
+
+// write into a "page"
+// we assume that the "size" won't cross page boundary
 static GOOD_OR_BAD OW_w_page( BYTE * data, size_t size, off_t offset, struct parsedname * pn )
 {
-	int page = offset / 8 ;
-	off_t page_offset = offset % 8 ;
-	BYTE p[2+8+1] = { _1W_WRITE_SCRATCHPAD2, page*8, } ;
-	BYTE q[] = { _1W_COPY_SCRATCHPAD2, 1W_COPY_SCRATCHPAD2_DO, } ;
+	size_t pagesize = 8 ;
+	off_t page_offset = offset - (offset % pagesize ) ;
+
+	BYTE p_write[2+pagesize+1] ;
+	BYTE p_read[2+pagesize+1] ;
+	BYTE p_copy[2] ;
+
 	struct transaction_log t_write[] = {
 		TRXN_START,
-		TRXN_WRITE( p, 2+8 ),
-		TRXN_READ1( &p[2+8] ),
-		TRXN_CRC8( p, 2+8+1 ),
+		TRXN_WRITE( p_write, 2+pagesize ),
+		TRXN_READ1( &p_write[2+pagesize] ),
+		TRXN_CRC8( p_write, 2+pagesize+1 ),
+		TRXN_END,
+	} ;
+	struct transaction_log t_read[] = {
+		TRXN_START,
+		TRXN_WRITE2( p_read ),
+		TRXN_READ( &p_read[2], pagesize+1 ),
+		TRXN_CRC8( p_read, 2+pagesize+1 ),
+		TRXN_COMPARE( &p_write[2+pagesize], &p_read[2+pagesize], pagesize ) ,
 		TRXN_END,
 	} ;
 	struct transaction_log t_copy[] = {
 		TRXN_START,
-		TRXN_WRITE2( q ),
-		TRXN_READ1( &p[2+8] ),
-		TRXN_CRC8( p, 2+8+1 ),
+		TRXN_WRITE1( p_copy ),
+		TRXN_POWER( &p_copy[1], 25 ), // 25 msec
 		TRXN_END,
 	} ;
 
-	if ( size != 8 ) {
-		RETURN_BAD_IF_BAD( OW_r_mem( &p[2], 8, page*8, pn ) ) ;
+	if ( size == 0 ) {
+		return gbGOOD ;
 	}
 
-	memcpy( &p[2+page_offset], data, size ) ;
+	// is this a partial page (need to read the full page first to fill the buffer)
+	if ( size != pagesize ) {
+		RETURN_BAD_IF_BAD( OW_r_mem( &p_write[2], pagesize, page_offset, pn ) ) ;
+	}
 
+	// Copy data into loaded buffer
+	memcpy( &p_write[2 + (offset - page_offset)], data, size ) ;
+
+	// write to scratchpad 2
+	p_write[0] = _1W_WRITE_SCRATCHPAD2 ;
+	p_write[1] = page_offset ;
+	RETURN_BAD_IF_BAD( BUS_transaction( t_write, pn ) ) ;
+
+	// read from scratchpad 2 and compare
+	p_read[0] = _1W_READ_SCRATCHPAD2 ;
+	p_read[1] = page_offset ;
+	RETURN_BAD_IF_BAD( BUS_transaction( t_read, pn ) ) ;
+	
+	// copy scratchpad 2 to eeprom
+	p_copy[0] = _1W_COPY_SCRATCHPAD2 ;
+	p_copy[1] = _1W_COPY_SCRATCHPAD2_DO ;
+	return BUS_transaction( t_copy, pn ) ;
 }	 
