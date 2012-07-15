@@ -17,7 +17,7 @@ Programmable Resolution 1-Wire Digital Thermometer with ID
 .B MAX31826
 Digital Temperature Sensor with 1Kb Lockable EEPROM
 .SH SYNOPSIS
-Thermometer with hardware address pins.
+.SS Thermometer with hardware address pins
 .PP
 .B 3B
 [.]XXXXXXXXXXXX[XX][/[
@@ -30,6 +30,22 @@ Thermometer with hardware address pins.
 .B temphigh
 |
 .B templow
+|
+.so standard_mini.3so
+]]
+.SS Digital Temperature Sensor with 1Kb Lockable EEPROM
+.PP
+.B 3B
+[.]XXXXXXXXXXXX[XX][/[
+.B temperature
+|
+.B power
+|
+.B memory
+|
+.B pages/page.[0-15|ALL]
+|
+.B prog_addr
 |
 .so standard_mini.3so
 ]]
@@ -56,12 +72,32 @@ Measured temperature with 12 bit resolution.
 .SS temperature9 temperature10 temperature11 temperature12
 .I read-only, floating point
 Measured temperature at 9 to 12 bit resolution. There is a tradeoff of time versus accuracy in the temperature measurement.
+.PP
+The
+.B MAX31826
+measures all temperatures at 12 bit resoltion and will return that resolution to all the possible temperature properties.
 .SS fasttemp
 .I read-only, floating point
 .br
 Equivalent to
 .I temperature9
 .so temperature_threshold.3so
+.PP
+The 
+.B MAX31826
+does NOT have temperature thresholds and temperature alarm.
+.SH MEMORY
+Only the
+.B MAX31826 
+supports memory functions.
+.SS pages/page.0 .. pages/page.15 pages/page.ALL
+.I read/write, binary
+.br
+EEPROM memory pages of 8 bytes each. See the datasheet about locking contents.
+.SS memory
+.I read/write, binary
+.br
+EEPROM memory of 128 bytes. See the datasheet about locking contents.
 .SH STANDARD PROPERTIES
 .so standard.3so
 .SH DESCRIPTION
@@ -81,14 +117,42 @@ and
 For truly versatile temperature measurements, see the protean
 .B DS1921 (3) Thermachron (3).
 .PP
-Although the
+The
 .B DS1825 (3)
-can select between 4 resolutions, this program simplifies the interface by only implementing the fastest/roughest and slowest/best.
+can select between 4 resolutionsspanning the fastest/roughest and slowest/best.
+.SS MAX31826
+The
+.B MAX31826
+shares a family code with the
+.B DS1825
+but has differences in some of its functions.
+.PP
+The 
+.B MAX31826
+has 128 btes of EEPROM memory (as 16 pages of 8 bytes) while the
+.B DS1825
+has no memory available.
+.PP
+The 
+.B MAX31826
+measures temperature at 12 bit resolution as fast as the 
+.B DS1825's
+lowest resolution (and always uses 12-bit resolution). On the other hand it has no temperature thresholds or alarm function.
 .SH ADDRESSING
 .so addressing.3so
+.PP
+Both the
+.B MAX31826
+and the 
+.B DS1825
+allow hardware selection of part of the address, which can assist selecting between chips is some circuit designs.
 .SH DATASHEET
-.br
+.TP
+.B DS1825
 http://pdfserv.maxim-ic.com/en/ds/DS1825.pdf
+.TP
+.B MAX31826
+http://datasheets.maxim-ic.com/en/ds/MAX31826.pdf
 .SH SEE ALSO
 .so seealso.3so
 .SH AVAILABILITY
