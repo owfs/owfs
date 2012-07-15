@@ -67,9 +67,16 @@ WRITE_FUNCTION(FS_w_s_alarm);
 READ_FUNCTION(FS_power);
 READ_FUNCTION(FS_channel);
 #if OW_TAI8570
+READ_FUNCTION(FS_r_C);
+READ_FUNCTION(FS_r_D1);
+READ_FUNCTION(FS_r_D2);
 READ_FUNCTION(FS_sibling);
-READ_FUNCTION(FS_temp);
+READ_FUNCTION(FS_temperature);
 READ_FUNCTION(FS_pressure);
+READ_FUNCTION(FS_temperature_5534);
+READ_FUNCTION(FS_pressure_5534);
+READ_FUNCTION(FS_temperature_5540);
+READ_FUNCTION(FS_pressure_5540);
 #endif							/* OW_TAI8570 */
  READ_FUNCTION(FS_voltage);
 
@@ -80,6 +87,7 @@ static enum e_visibility VISIBLE_T8A( const struct parsedname * pn ) ;
 static struct aggregate A2406 = { 2, ag_letters, ag_aggregate, };
 static struct aggregate A2406p = { 4, ag_numbers, ag_separate, };
 static struct aggregate AT8Ac = { 8, ag_numbers, ag_separate, }; // 8 channel T8A volt meter
+static struct aggregate ATAI8470 = { 6, ag_numbers, ag_aggregate, } ;
 static struct filetype DS2406[] = {
 	F_STANDARD,
 	{"memory", 128, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA, },
@@ -97,9 +105,16 @@ static struct filetype DS2406[] = {
 
 #if OW_TAI8570
 	{"TAI8570", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
-	{"TAI8570/temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_temp, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
-	{"TAI8570/pressure", PROPERTY_LENGTH_PRESSURE, NON_AGGREGATE, ft_pressure, fc_volatile, FS_pressure, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"TAI8570/C", PROPERTY_LENGTH_UNSIGNED, &ATAI8470, ft_unsigned, fc_static, FS_r_C, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA, },
+	{"TAI8570/D1", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_D1, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA, },
+	{"TAI8570/D2", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_D2, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA, },
+	{"TAI8570/temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_link, FS_temperature, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"TAI8570/pressure", PROPERTY_LENGTH_PRESSURE, NON_AGGREGATE, ft_pressure, fc_link, FS_pressure, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"TAI8570/DA5534/temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_link, FS_temperature_5534, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"TAI8570/DA5534/pressure", PROPERTY_LENGTH_PRESSURE, NON_AGGREGATE, ft_pressure, fc_link, FS_pressure_5534, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"TAI8570/sibling", 16, NON_AGGREGATE, ft_ascii, fc_stable, FS_sibling, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"TAI8570/DA5540/temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_link, FS_temperature_5540, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"TAI8570/DA5540/pressure", PROPERTY_LENGTH_PRESSURE, NON_AGGREGATE, ft_pressure, fc_link, FS_pressure_5540, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 #endif							/* OW_TAI8570 */
 
 	{"T8A", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_T8A, NO_FILETYPE_DATA, },
@@ -557,10 +572,9 @@ static ZERO_OR_ERROR FS_sibling(struct one_wire_query *owq)
 	return OWQ_format_output_offset_and_size(sib, 16, owq);
 }
 
-static ZERO_OR_ERROR FS_temp(struct one_wire_query *owq)
+static ZERO_OR_ERROR FS_r_D1(struct one_wire_query *owq)
 {
-	UINT D2;
-	int UT1, dT;
+	UINT D;
 	struct s_TAI8570 tai;
 	struct parsedname pn_copy;
 
@@ -571,43 +585,263 @@ static ZERO_OR_ERROR FS_temp(struct one_wire_query *owq)
 		return -ENOENT;
 	}
 
+	RETURN_BAD_IF_BAD( TAI8570_SenseValue(&D, SEC_READD1, &tai, &pn_copy) );
+	LEVEL_DEBUG("TAI8570 Raw Pressure (D1) = %lu", D);
+	OWQ_F(owq) = D ;
+	return 0;
+}
+
+static ZERO_OR_ERROR FS_r_D2(struct one_wire_query *owq)
+{
+	UINT D;
+	struct s_TAI8570 tai;
+	struct parsedname pn_copy;
+
+	FS_del_sibling( "infobyte", owq ) ;
+
+	memcpy(&pn_copy, PN(owq), sizeof(struct parsedname));	//shallow copy
+	if ( BAD( testTAI8570(&tai, owq) ) ) {
+		return -ENOENT;
+	}
+
+	RETURN_BAD_IF_BAD( TAI8570_SenseValue(&D, SEC_READD2, &tai, &pn_copy) );
+	LEVEL_DEBUG("TAI8570 Raw Temperature (D2) = %lu", D);
+	OWQ_F(owq) = D ;
+	return 0;
+}
+
+static ZERO_OR_ERROR FS_r_C(struct one_wire_query *owq)
+{
+	struct s_TAI8570 tai;
+
+	FS_del_sibling( "infobyte", owq ) ;
+
+	if ( BAD( testTAI8570(&tai, owq) ) ) {
+		return -ENOENT;
+	}
+
+	OWQ_array_U( owq, 0 ) = tai.C[0] ;
+	OWQ_array_U( owq, 1 ) = tai.C[1] ;
+	OWQ_array_U( owq, 2 ) = tai.C[2] ;
+	OWQ_array_U( owq, 3 ) = tai.C[3] ;
+	OWQ_array_U( owq, 4 ) = tai.C[4] ;
+	OWQ_array_U( owq, 5 ) = tai.C[5] ;
+	return 0;
+}
+
+static ZERO_OR_ERROR FS_temperature(struct one_wire_query *owq)
+{
+	UINT D2;
+	UINT UT1 ;
+	_FLOAT dT;
+	struct s_TAI8570 tai;
+
+	FS_del_sibling( "infobyte", owq ) ;
+
+	if ( BAD( testTAI8570(&tai, owq) ) ) {
+		return -ENOENT;
+	}
+	
+	if ( FS_r_sibling_U( &D2, "TAI8570/D2", owq ) != 0 ) {
+		return -EINVAL ;
+	} 
+
 	UT1 = 8 * tai.C[4] + 20224;
-	RETURN_BAD_IF_BAD( TAI8570_SenseValue(&D2, SEC_READD2, &tai, &pn_copy) );
-	LEVEL_DEBUG("TAI8570 Raw Temperature (D2) = %lu", D2);
 	dT = D2 - UT1;
+
 	OWQ_F(owq) = (200. + dT * (tai.C[5] + 50.) / 1024.) / 10.;
+
 	return 0;
 }
 
 static ZERO_OR_ERROR FS_pressure(struct one_wire_query *owq)
 {
-	_FLOAT TEMP ;
+	UINT D1 ;
+	UINT D2 ;
+	UINT UT1 ;
+	_FLOAT dT ;
+	_FLOAT OFF, SENS, X ;
+	struct s_TAI8570 tai;
 
 	FS_del_sibling( "infobyte", owq ) ;
 
-	if ( FS_r_sibling_F( &TEMP, "TAI8570/temperature", owq )==0 ) {
-		struct parsedname pn_copy;
-		struct s_TAI8570 tai;
-		UINT D1;
+	if ( BAD( testTAI8570(&tai, owq) ) ) {
+		return -ENOENT;
+	}
+		
+	if ( FS_r_sibling_U( &D1, "TAI8570/D1", owq ) != 0 ) {
+		return -EINVAL ;
+	} 
+	
+	if ( FS_r_sibling_U( &D2, "TAI8570/D2", owq ) != 0 ) {
+		return -EINVAL ;
+	} 
 
-		memcpy(&pn_copy, PN(owq), sizeof(struct parsedname));	//shallow copy
-		if ( BAD( testTAI8570(&tai, owq) ) ) {
-			return -ENOENT;
-		} else if ( BAD( TAI8570_SenseValue(&D1, SEC_READD1, &tai, &pn_copy) ) ) {
-			return -EINVAL;
-		} else {
-			_FLOAT dT = (TEMP * 10. - 200.) * 1024. / (tai.C[5] + 50.);
-			_FLOAT OFF = 4. * tai.C[1] + ((tai.C[3] - 512.) * dT) / 4096.;
-			_FLOAT SENS = 24576. + tai.C[0] + (tai.C[2] * dT) / 1024.;
-			_FLOAT X = (SENS * (D1 - 7168.)) / 16384. - OFF;
+	UT1 = 8 * tai.C[4] + 20224;
+	dT = D2 - UT1;
+	OFF = 4. * tai.C[1] + ((tai.C[3] - 512.) * dT) / 4096.;
+	SENS = 24576. + tai.C[0] + (tai.C[2] * dT) / 1024.;
+	X = (SENS * (D1 - 7168.)) / 16384. - OFF;
 
-			LEVEL_DEBUG("TAI8570 Raw Pressure (D1) = %lu", D1);
-			OWQ_F(owq) = 250. + X / 32.;
-			return  0;
-		}
+	OWQ_F(owq) = 250. + X / 32.;
+
+	return  0;
+}
+
+static ZERO_OR_ERROR FS_temperature_5534(struct one_wire_query *owq)
+{
+	UINT D2;
+	UINT UT1 ; 
+	_FLOAT dT;
+	struct s_TAI8570 tai;
+
+	FS_del_sibling( "infobyte", owq ) ;
+
+	if ( BAD( testTAI8570(&tai, owq) ) ) {
+		return -ENOENT;
+	}
+	
+	if ( FS_r_sibling_U( &D2, "TAI8570/D2", owq ) != 0 ) {
+		return -EINVAL ;
+	} 
+
+	UT1 = 8 * tai.C[4] + 20224;
+
+	if ( D2 >= UT1 ) {
+		dT = D2 - UT1;
+		OWQ_F(owq) = (200. + dT * (tai.C[5] + 50.) / 1024.) / 10.;
+	} else {
+		dT = D2 - UT1;
+		dT = dT - (dT/256.)*(dT/256.) ;
+		OWQ_F(owq) = (200. + dT * (tai.C[5] + 50.) / 1024. + dT / 256. ) / 10.;
 	}
 
-	return -EINVAL ;
+	return 0;
+}
+
+static ZERO_OR_ERROR FS_pressure_5534(struct one_wire_query *owq)
+{
+	UINT D1 ;
+	UINT D2 ;
+	UINT UT1 ;
+	_FLOAT dT ;
+	_FLOAT OFF, SENS, X ;
+	struct s_TAI8570 tai;
+
+	FS_del_sibling( "infobyte", owq ) ;
+
+	if ( BAD( testTAI8570(&tai, owq) ) ) {
+		return -ENOENT;
+	}
+		
+	if ( FS_r_sibling_U( &D1, "TAI8570/D1", owq ) != 0 ) {
+		return -EINVAL ;
+	} 
+	
+	if ( FS_r_sibling_U( &D2, "TAI8570/D2", owq ) != 0 ) {
+		return -EINVAL ;
+	} 
+
+	UT1 = 8 * tai.C[4] + 20224;
+	if ( D2 >= UT1 ) {
+		dT = D2 - UT1;
+	} else {
+		dT = D2 - UT1;
+		dT = dT - (dT/256.)*(dT/256.) ;
+	}
+	OFF = 4. * tai.C[1] + ((tai.C[3] - 512.) * dT) / 4096.;
+	SENS = 24576. + tai.C[0] + (tai.C[2] * dT) / 1024.;
+	X = (SENS * (D1 - 7168.)) / 16384. - OFF;
+
+	OWQ_F(owq) = 250. + X / 32.;
+
+	return  0;
+}
+
+static ZERO_OR_ERROR FS_temperature_5540(struct one_wire_query *owq)
+{
+	UINT D2;
+	int UT1 ;
+	_FLOAT dT;
+	_FLOAT T2, TEMP ;
+	struct s_TAI8570 tai;
+
+	FS_del_sibling( "infobyte", owq ) ;
+
+	if ( BAD( testTAI8570(&tai, owq) ) ) {
+		return -ENOENT;
+	}
+	
+	if ( FS_r_sibling_U( &D2, "TAI8570/D2", owq ) != 0 ) {
+		return -EINVAL ;
+	} 
+
+	UT1 = 8 * tai.C[4] + 20224;
+	dT = D2 - UT1;
+
+	TEMP = (200. + dT * (tai.C[5] + 50.) / 1024.) ;
+	
+	if ( TEMP < 200 ) {
+		T2 = 11 * ( tai.C[5] + 24 ) * ( (200 - TEMP) / 1024. )*( (200 - TEMP) / 1024. ) ;
+	} else if ( TEMP <= 450 ) {
+		T2 = 0. ;
+	} else {
+		T2 =  3 * ( tai.C[5] + 24 ) * ( (450 - TEMP) / 1024. )*( (450 - TEMP) / 1024. ) ;
+	}
+
+	OWQ_F(owq) = ( TEMP - T2 ) / 10. ;
+
+	return 0;
+}
+
+static ZERO_OR_ERROR FS_pressure_5540(struct one_wire_query *owq)
+{
+	UINT D1 ;
+	UINT D2 ;
+	UINT UT1 ;
+	_FLOAT dT ;
+	_FLOAT T2, TEMP ;
+	_FLOAT OFF, SENS, X ;
+	_FLOAT P, P2 ;
+	struct s_TAI8570 tai;
+
+	FS_del_sibling( "infobyte", owq ) ;
+
+	if ( BAD( testTAI8570(&tai, owq) ) ) {
+		return -ENOENT;
+	}
+		
+	if ( FS_r_sibling_U( &D1, "TAI8570/D1", owq ) != 0 ) {
+		return -EINVAL ;
+	} 
+	
+	if ( FS_r_sibling_U( &D2, "TAI8570/D2", owq ) != 0 ) {
+		return -EINVAL ;
+	} 
+
+	UT1 = 8 * tai.C[4] + 20224;
+	dT = D2 - UT1;
+
+	TEMP = (200. + dT * (tai.C[5] + 50.) / 1024.) ;
+	
+	OFF = 4. * tai.C[1] + ((tai.C[3] - 512.) * dT) / 4096.;
+	SENS = 24576. + tai.C[0] + (tai.C[2] * dT) / 1024.;
+	X = (SENS * (D1 - 7168.)) / 16384. - OFF;
+	P = 10 * (250. + X / 32. );
+
+	if ( TEMP < 200 ) {
+		T2 = 11 * ( tai.C[5] + 24 ) * ( (200 - TEMP) / 1024. )*( (200 - TEMP) / 1024. ) ;
+		P2 = 3 * T2 * ( P - 3500 ) / 16384. ;
+	} else if ( TEMP <= 450 ) {
+		P2 = 0. ;
+	} else {
+		T2 =  3 * ( tai.C[5] + 24 ) * ( (450 - TEMP) / 1024. )*( (450 - TEMP) / 1024. ) ;
+		P2 =  T2 * ( P - 10000 ) / 8192. ;
+	}
+
+	OWQ_F(owq) = ( P - P2 ) / 10. ;
+
+	return  0;
 }
 
 // Read a page and confirm its a valid tmax page
