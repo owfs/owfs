@@ -615,6 +615,7 @@ sub dir($$) {
 	# new MSG_DIRALL method -- single packet
 	_ToServer($self,$MSG_DIRALL,$DEFAULT_BLOCK_LENGTH,$NO_OFFSET,$path) || return ;
 	my @r = _FromServer($self) ;
+	return if !@r ;
 	if (@r) {
 		$self->{SOCK} = undef if $self->{PERSIST} == 0 ;
 		return $r[6] ;
