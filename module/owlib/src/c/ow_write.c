@@ -401,7 +401,7 @@ static ZERO_OR_ERROR FS_w_settings(struct one_wire_query *owq)
 		return -ECONNABORTED;
 	} else if (KnownBus(pn) && BusIsServer(pn->selected_connection)) {
 		return ServerWrite(owq);
-	} else if ( pn->selected_connection == NO_CONNECTION ) {
+	} else if ( pn->selected_connection != NO_CONNECTION ) {
 		LEVEL_DEBUG("Attempt to write to local bus for /settings");
 		return -ENODEV ;
 	} else {
