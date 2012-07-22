@@ -214,7 +214,7 @@ static INDEX_OR_ERROR CheckPresence_low(struct parsedname *pn)
 	for ( pin=Inbound_Control.head_port ; pin ; pin=pin->next ) {
 		struct connection_in * cin ;
 		for ( cin=pin->first ; cin ; cin=cin->next ) {
-			int bus_nr = CheckThisConnection( in->index, pn ) ;
+			int bus_nr = CheckThisConnection( cin->index, pn ) ;
 			if ( INDEX_VALID(bus_nr) ) {
 				return bus_nr ;
 			}
