@@ -38,6 +38,8 @@
 |
 .B set_alarm
 |
+.B out_of_testmode
+|
 .so standard_mini.3so
 ]]
 .SH FAMILY CODE
@@ -119,6 +121,12 @@ configured as STRB output
 Specifies whether the device has performed power-on reset. This bit can only
 be cleared to 0 under software control. As long as this bit is 1 the device
 will allways respond to a conditional search.
+.SS out_of_testmode
+.I write-only, yes-no
+.br
+Write "1" to this property to make sure the device has been properly initialized on startup.
+.PP
+The datasheet says that under some conditions the startup (power-up) will leave the device in the "testmode" state. Any problems with "Channel Access Write" will trigger this property automaticlly, but this property makes explicit initialization possible as well.
 .SS set_alarm
 .I read-write, integer unsigned (0-333333333)
 .br

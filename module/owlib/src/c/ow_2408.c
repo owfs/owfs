@@ -70,6 +70,7 @@ READ_FUNCTION(FS_r_pio);
 WRITE_FUNCTION(FS_w_pio);
 READ_FUNCTION(FS_sense);
 READ_FUNCTION(FS_power);
+WRITE_FUNCTION(FS_out_of_testmode);
 READ_FUNCTION(FS_r_latch);
 WRITE_FUNCTION(FS_w_latch);
 READ_FUNCTION(FS_r_s_alarm);
@@ -100,6 +101,7 @@ static struct aggregate A2408c = { 8, ag_numbers, ag_separate, };
 static struct filetype DS2408[] = {
 	F_STANDARD,
 	{"power", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"out_of_testmode", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, NO_READ_FUNCTION,  FS_out_of_testmode, VISIBLE, NO_FILETYPE_DATA, },
 	{"PIO", PROPERTY_LENGTH_BITFIELD, &A2408, ft_bitfield, fc_stable, FS_r_pio, FS_w_pio, VISIBLE, NO_FILETYPE_DATA, },
 	{"sensed", PROPERTY_LENGTH_BITFIELD, &A2408, ft_bitfield, fc_volatile, FS_sense, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"latch", PROPERTY_LENGTH_BITFIELD, &A2408, ft_bitfield, fc_volatile, FS_r_latch, FS_w_latch, VISIBLE, NO_FILETYPE_DATA, },
@@ -154,6 +156,7 @@ static GOOD_OR_BAD OW_r_reg(BYTE * data, const struct parsedname *pn);
 static GOOD_OR_BAD OW_w_s_alarm(const BYTE * data, const struct parsedname *pn);
 static GOOD_OR_BAD OW_w_pios(const BYTE * data, const size_t size, const struct parsedname *pn);
 static GOOD_OR_BAD OW_redefchar(char * pattern, struct parsedname * pn);
+static GOOD_OR_BAD OW_out_of_test_mode( struct parsedname * pn ) ;
 
 /* 2408 switch */
 /* 2408 switch -- is Vcc powered?*/
@@ -162,6 +165,14 @@ static ZERO_OR_ERROR FS_power(struct one_wire_query *owq)
 	BYTE data[6];
 	RETURN_ERROR_IF_BAD( OW_r_reg(data, PN(owq)) );
 	OWQ_Y(owq) = UT_getbit(&data[5], 7);
+	return 0;
+}
+
+static ZERO_OR_ERROR FS_out_of_testmode(struct one_wire_query *owq)
+{
+	if ( OWQ_Y(owq) ) {
+		RETURN_ERROR_IF_BAD( OW_out_of_test_mode(PN(owq) ) );
+	}
 	return 0;
 }
 
@@ -658,7 +669,12 @@ static GOOD_OR_BAD OW_w_pio(const BYTE data, const struct parsedname *pn)
 		TRXN_END,
 	};
 
-	RETURN_BAD_IF_BAD(BUS_transaction(t, pn)) ;
+	if ( BAD(BUS_transaction(t, pn)) ) {
+		// may be in test mode, which causes Channel Access Write to fail
+		// fix now, but need another attempt to see if will work
+		OW_out_of_test_mode(pn) ;
+		return gbBAD ;
+	}
 
 	if (read_back[0] != 0xAA) {
 		return gbBAD;
@@ -691,7 +707,14 @@ static GOOD_OR_BAD OW_w_pios(const BYTE * data, const size_t size, const struct 
 		formatted_data[formatted_data_index + 2] = 0xFF;
 		formatted_data[formatted_data_index + 3] = 0xFF;
 	}
-	RETURN_BAD_IF_BAD(BUS_transaction(t, pn)) ;
+	
+	if ( BAD(BUS_transaction(t, pn)) ) {
+		// may be in test mode, which causes Channel Access Write to fail
+		// fix now, but need another attempt to see if will work
+		OW_out_of_test_mode(pn) ;
+		return gbBAD ;
+	}
+	
 	for (i = 0; i < size; ++i) {
 		int formatted_data_index = 4 * i;
 		BYTE rdata = ((BYTE)~data[i]);  // get rid of warning: comparison of promoted ~unsigned with unsigned
@@ -785,6 +808,19 @@ static GOOD_OR_BAD OW_w_s_alarm(const BYTE * data, const struct parsedname *pn)
 	return (data[0] != new_register[3]) || (data[1] != new_register[4])
 		|| (control_value[0] != (new_register[5] & 0x0F)) ? gbBAD : gbGOOD;
 }
+
+// very strange command to get out of test mode.
+// Uses a different 1-wire command 
+static GOOD_OR_BAD OW_out_of_test_mode( struct parsedname * pn )
+{
+	BYTE out_of_test[] = { 0x96, SNvar(pn->sn), 0x3C, } ;
+	struct transaction_log t[] = {
+		TRXN_RESET,
+		TRXN_WRITE(out_of_test, 1 + SERIAL_NUMBER_SIZE + 1 ),
+		TRXN_END,
+	};
+	return BUS_transaction( out_of_test ) ;
+}	
 
 /* Redefine a character */
 static GOOD_OR_BAD OW_redefchar(char * pattern, struct parsedname * pn)
