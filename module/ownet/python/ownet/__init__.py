@@ -249,8 +249,7 @@ class Sensor(object):
 
         try:
             #print 'Sensor.__getattr__(%s)' % name
-            attr = object._connection.read(object.__getattribute__(self, '_attrs')[name])
-        except KeyError:
+            attr = self._connection.read(object.__getattribute__(self, '_attrs')[name])
             raise AttributeError, name
 
         return attr
