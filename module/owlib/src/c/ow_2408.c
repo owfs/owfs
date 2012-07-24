@@ -156,7 +156,7 @@ static GOOD_OR_BAD OW_r_reg(BYTE * data, const struct parsedname *pn);
 static GOOD_OR_BAD OW_w_s_alarm(const BYTE * data, const struct parsedname *pn);
 static GOOD_OR_BAD OW_w_pios(const BYTE * data, const size_t size, const struct parsedname *pn);
 static GOOD_OR_BAD OW_redefchar(char * pattern, struct parsedname * pn);
-static GOOD_OR_BAD OW_out_of_test_mode( struct parsedname * pn ) ;
+static GOOD_OR_BAD OW_out_of_test_mode( const struct parsedname * pn ) ;
 
 /* 2408 switch */
 /* 2408 switch -- is Vcc powered?*/
@@ -811,7 +811,7 @@ static GOOD_OR_BAD OW_w_s_alarm(const BYTE * data, const struct parsedname *pn)
 
 // very strange command to get out of test mode.
 // Uses a different 1-wire command 
-static GOOD_OR_BAD OW_out_of_test_mode( struct parsedname * pn )
+static GOOD_OR_BAD OW_out_of_test_mode( const struct parsedname * pn )
 {
 	BYTE out_of_test[] = { 0x96, SNvar(pn->sn), 0x3C, } ;
 	struct transaction_log t[] = {
@@ -819,7 +819,7 @@ static GOOD_OR_BAD OW_out_of_test_mode( struct parsedname * pn )
 		TRXN_WRITE(out_of_test, 1 + SERIAL_NUMBER_SIZE + 1 ),
 		TRXN_END,
 	};
-	return BUS_transaction( out_of_test ) ;
+	return BUS_transaction( t, pn ) ;
 }	
 
 /* Redefine a character */
