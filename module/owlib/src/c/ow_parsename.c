@@ -521,7 +521,6 @@ static void ReplaceAliasInPath( char * filename, struct parsedname * pn)
 		if ( alias_loc != NULL ) {
 			char * post_alias_loc ;
 
-			++alias_loc ; // point after '/'
 			post_alias_loc = alias_loc + alias_len ;
 
 			// move rest of path
