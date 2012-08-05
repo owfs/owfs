@@ -140,9 +140,18 @@ DeviceEntryExtended(29, DS2408, DEV_alarm | DEV_resume | DEV_ovdr, NO_GENERIC_RE
 Make_SlaveSpecificTag(INI, fc_stable);	// LCD screen initialized?
 
 /* Nibbles for LCD controller */
+/* From Klaus Der Tiger:
+ * Since at least 2.7p6 there has been a bug causing all three buttons of
+ * the Hobbyboards LCD module (using a DS2408) to malfunction. This is due
+ * to the fact, that the three lowest bits of the port register are set to
+ * 0 during initialization of the display module, turning the output
+ * transistors on and by that taking the sensing voltage away from the
+ * buttons.
+* */
 #define LCD_DATA_FLAG       0x08
-#define NIBBLE_ONE(x)       ((x)&0xF0)
-#define NIBBLE_TWO(x)       (((x)<<4)&0xF0)
+#define LCD_BUTTON_MASK		0x07
+#define NIBBLE_ONE(x)       ( ((x)&0xF0) | LCD_BUTTON_MASK )
+#define NIBBLE_TWO(x)       ( (((x)<<4)&0xF0) | LCD_BUTTON_MASK )
 #define NIBBLE_CTRL( x )    NIBBLE_ONE(x)               , NIBBLE_TWO(x)
 #define NIBBLE_DATA( x )    NIBBLE_ONE(x)|LCD_DATA_FLAG , NIBBLE_TWO(x)|LCD_DATA_FLAG
 
@@ -403,11 +412,11 @@ static GOOD_OR_BAD OW_Hinit(struct parsedname * pn)
 {
 	int init = 1;
 	// clear, display on, mode
-	BYTE start[] = { LCD_COMMAND_ATTENTION, };
+	BYTE start[] = { NIBBLE_ONE(LCD_COMMAND_ATTENTION), };
 	BYTE next[] = {
-		LCD_COMMAND_ATTENTION,
-		LCD_COMMAND_ATTENTION,
-		LCD_COMMAND_4_BIT,
+		NIBBLE_ONE(LCD_COMMAND_ATTENTION),
+		NIBBLE_ONE(LCD_COMMAND_ATTENTION),
+		NIBBLE_ONE(LCD_COMMAND_4_BIT),
 		NIBBLE_CTRL(LCD_COMMAND_4_BIT_2_LINES),
 	};
 	BYTE data[6];
