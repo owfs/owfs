@@ -37,6 +37,11 @@ WRITE_FUNCTION(FS_w_leaf);
 READ_FUNCTION(FS_r_cal);
 WRITE_FUNCTION(FS_w_cal);
 READ_FUNCTION(FS_r_raw);
+READ_FUNCTION(FS_r_hub_config);
+WRITE_FUNCTION(FS_w_hub_config);
+READ_FUNCTION(FS_r_channels);
+WRITE_FUNCTION(FS_w_channels);
+READ_FUNCTION(FS_short);
 
 static enum e_visibility VISIBLE_EF_UVI( const struct parsedname * pn ) ;
 static enum e_visibility VISIBLE_EF_MOISTURE( const struct parsedname * pn ) ;
@@ -75,11 +80,13 @@ static struct filetype HobbyBoards_EE[] = {
 DeviceEntry(EE, HobbyBoards_EE, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 static struct aggregate AMOIST = { 4, ag_numbers, ag_aggregate, };
+static struct aggregate AHUB = { 4, ag_numbers, ag_aggregate, };
 static struct filetype HobbyBoards_EF[] = {
 	F_STANDARD_NO_TYPE,
 	{"version", 5, NON_AGGREGATE, ft_ascii, fc_stable, FS_version, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"type_number", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_type_number, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"type", PROPERTY_LENGTH_TYPE, NON_AGGREGATE, ft_ascii, fc_link, FS_localtype, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	
 	{"moisture", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EF_MOISTURE, NO_FILETYPE_DATA, },
 	{"moisture/sensor", PROPERTY_LENGTH_INTEGER, &AMOIST, ft_integer, fc_volatile, FS_r_sensor, NO_WRITE_FUNCTION, VISIBLE_EF_MOISTURE, NO_FILETYPE_DATA, },
 	{"moisture/is_moisture", PROPERTY_LENGTH_BITFIELD, &AMOIST, ft_bitfield, fc_stable, FS_r_moist, FS_w_moist, VISIBLE_EF_MOISTURE, NO_FILETYPE_DATA, },
@@ -87,6 +94,11 @@ static struct filetype HobbyBoards_EF[] = {
 	{"moisture/calibrate/min", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_cal, FS_w_cal, VISIBLE_EF_MOISTURE, {i:cal_min,}, },
 	{"moisture/calibrate/max", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_cal, FS_w_cal, VISIBLE_EF_MOISTURE, {i:cal_min,}, },
 	{"moisture/calibrate/raw", PROPERTY_LENGTH_UNSIGNED, &AMOIST, ft_unsigned, fc_volatile, FS_r_raw, NO_WRITE_FUNCTION, VISIBLE_EF_MOISTURE, NO_FILETYPE_DATA, },
+
+	{"hub", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EF_HUB, NO_FILETYPE_DATA, },
+	{"hub/config", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_hub_config, FS_w_hub_config, INVISIBLE, NO_FILETYPE_DATA, },
+	{"hub/branch", PROPERTY_LENGTH_BITFIELD, &AHUB, ft_bitfield, fc_stable, FS_r_channels, FS_w_channels, VISIBLE_EF_HUB, NO_FILETYPE_DATA, },
+	{"hub/short", PROPERTY_LENGTH_BITFIELD, &AHUB, ft_bitfield, fc_stable, FS_short, NO_WRITE_FUNCTION, VISIBLE_EF_HUB, NO_FILETYPE_DATA, },
 };
 
 DeviceEntry(EF, HobbyBoards_EF, NO_GENERIC_READ, NO_GENERIC_WRITE);
@@ -111,6 +123,15 @@ DeviceEntry(EF, HobbyBoards_EF, NO_GENERIC_READ, NO_GENERIC_WRITE);
 #define _EEEF_SET_LEAF_MIN 0x26
 #define _EEEF_GET_LEAF_MIN 0x27
 #define _EEEF_GET_LEAF_RAW 0x31
+
+#define _EEEF_HUB_SET_CHANNELS 0x21
+#define _EEEF_HUB_GET_CHANNELS_ACTIVE 0x22
+#define _EEEF_HUB_GET_CHANNELS_SHORTED 0x23
+#define _EEEF_HUB_SET_CONFIG 0x60
+#define _EEEF_HUB_GET_CONFIG 0x61
+#define _EEEF_HUB_SINGLE_CHANNEL_BIT 0x02
+#define _EEEF_HUB_SET_CHANNEL_BIT 0x10
+#define _EEEF_HUB_SET_CHANNEL_MASK 0x0F
 
 static enum e_EF_type VISIBLE_EF( const struct parsedname * pn ) ;
 
@@ -468,6 +489,91 @@ static ZERO_OR_ERROR FS_r_raw(struct one_wire_query *owq)
 	OWQ_array_U(owq,3) = raw[3] ;
 			
     return 0 ;
+}
+
+static ZERO_OR_ERROR FS_r_hub_config(struct one_wire_query *owq)
+{
+    BYTE config ;
+    
+    if ( BAD( OW_read( _EEEF_HUB_GET_CONFIG, &config, 1, PN(owq) ) ) ) {
+		return -EINVAL ;
+	}
+	OWQ_U(owq) = config ;
+	return 0 ;
+}
+
+static ZERO_OR_ERROR FS_w_hub_config(struct one_wire_query *owq)
+{
+    BYTE config = OWQ_U(owq) ;
+
+    return GB_to_Z_OR_E( OW_write(_EEEF_HUB_SET_CONFIG, &config, 1, PN(owq))) ;
+}
+
+static ZERO_OR_ERROR FS_r_channels(struct one_wire_query *owq)
+{
+    BYTE channels ;
+    
+    if ( BAD( OW_read( _EEEF_HUB_GET_CHANNELS_ACTIVE, &channels, 1, PN(owq) ) ) ) {
+		return -EINVAL ;
+	}
+	OWQ_U(owq) = channels ;
+	return 0 ;
+}
+
+static ZERO_OR_ERROR FS_w_channels(struct one_wire_query *owq)
+{
+	struct parsedname * pn = PN(owq) ;
+    BYTE channels = OWQ_U(owq) & _EEEF_HUB_SET_CHANNEL_MASK ;
+    UINT config ;
+    
+    // Take out of single channel mode if needed
+    // Only if more than one channel selected 
+    switch ( channels & 0x0F ) {
+		case 0x00:
+		case 0x01:
+		case 0x02:
+		case 0x04:
+		case 0x08:
+			// single channel (or none), leave single channels mode alone
+			break ;
+		default:
+			if ( FS_r_sibling_U( &config, "hub/config", owq ) != 0 ) {
+				LEVEL_DEBUG("Could not read Hub configuration");
+				return -EINVAL ;
+			}
+			if ( config & _EEEF_HUB_SINGLE_CHANNEL_BIT ) {
+				// need to clean single channel
+				if ( FS_w_sibling_U( config & ~_EEEF_HUB_SINGLE_CHANNEL_BIT, "hub/config", owq ) != 0 ) {
+					LEVEL_DEBUG("Could not write Hub configuration");
+					return -EINVAL ;
+				}
+			}
+			break ;
+	}
+
+	// Clear directory cache
+	Cache_Del_Dir( pn ) ;
+
+	// Set channels
+	channels |= _EEEF_HUB_SET_CHANNEL_BIT ;
+    RETURN_ERROR_IF_BAD( OW_write(_EEEF_HUB_SET_CHANNELS, &channels, 1, pn) ) ;
+    
+	// Clear channels
+	channels = ~channels ;
+    RETURN_ERROR_IF_BAD( OW_write(_EEEF_HUB_SET_CHANNELS, &channels, 1, pn) ) ;
+
+    return 0 ;
+}
+
+static ZERO_OR_ERROR FS_short(struct one_wire_query *owq)
+{
+    BYTE channels ;
+    
+    if ( BAD( OW_read( _EEEF_HUB_GET_CHANNELS_SHORTED, &channels, 1, PN(owq) ) ) ) {
+		return -EINVAL ;
+	}
+	OWQ_U(owq) = channels ;
+	return 0 ;
 }
 
 static GOOD_OR_BAD OW_version(BYTE * major, BYTE * minor, struct parsedname * pn)
