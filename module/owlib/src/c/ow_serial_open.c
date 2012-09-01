@@ -31,7 +31,7 @@ $Id$
 GOOD_OR_BAD serial_open(struct connection_in *connection)
 {
 	FILE_DESCRIPTOR_OR_ERROR fd = open( SOC(connection)->devicename, O_RDWR | O_NONBLOCK | O_NOCTTY) ;
-	SOC(connection)->file_descriptor = fd ;
+	connection->head->file_descriptor = fd ;
 	if ( FILE_DESCRIPTOR_NOT_VALID( fd ) ) {
 		// state doesn't change
 		ERROR_DEFAULT("Cannot open port: %s Permissions problem?", SAFESTRING(SOC(connection)->devicename));
@@ -55,7 +55,7 @@ GOOD_OR_BAD serial_open(struct connection_in *connection)
 GOOD_OR_BAD serial_change(struct connection_in *connection)
 {
 	struct termios newSerialTio;	/*new serial port settings */
-	FILE_DESCRIPTOR_OR_ERROR fd = SOC(connection)->file_descriptor ;
+	FILE_DESCRIPTOR_OR_ERROR fd = connection->head->file_descriptor ;
 	size_t baud = SOC(connection)->baud ;
 
 	// read the attribute structure

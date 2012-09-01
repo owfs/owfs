@@ -47,7 +47,7 @@ GOOD_OR_BAD USB_monitor_detect(struct port_in *pin)
 	SAFEFREE(SOC(in)->devicename) ;
 	SOC(in)->devicename = owstrdup("USB bus monitor") ;
 
-	SOC(in)->file_descriptor = FILE_DESCRIPTOR_BAD;
+	in->head->file_descriptor = FILE_DESCRIPTOR_BAD;
 	in->iroutines.detect = USB_monitor_detect;
 	in->Adapter = adapter_browse_monitor;	/* OWFS assigned value */
 	in->iroutines.reset = NO_RESET_ROUTINE;

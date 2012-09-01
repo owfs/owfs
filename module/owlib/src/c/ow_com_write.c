@@ -65,7 +65,7 @@ GOOD_OR_BAD COM_write( const BYTE * data, size_t length, struct connection_in *c
 	
 	LEVEL_DEBUG("Trouble writing to %s", SAFESTRING(SOC(connection)->devicename) ) ;
 
-	if ( SOC(connection)->file_descriptor == FILE_DESCRIPTOR_BAD ) {
+	if ( connection->head->file_descriptor == FILE_DESCRIPTOR_BAD ) {
 		// connection was bad, now closed, try again
 		LEVEL_DEBUG("Need to reopen %s", SAFESTRING(SOC(connection)->devicename) ) ;
 		RETURN_BAD_IF_BAD( COM_test(connection) ) ;
@@ -107,7 +107,7 @@ GOOD_OR_BAD COM_write_simple( const BYTE * data, size_t length, struct connectio
 			break ;
 	}
 
-	if ( SOC(connection)->file_descriptor == FILE_DESCRIPTOR_BAD ) {
+	if ( connection->head->file_descriptor == FILE_DESCRIPTOR_BAD ) {
 		LEVEL_DEBUG("Writing to closed device %d",SAFESTRING(SOC(connection)->devicename));
 		return gbBAD ;
 	}
@@ -119,7 +119,7 @@ GOOD_OR_BAD COM_write_simple( const BYTE * data, size_t length, struct connectio
 static GOOD_OR_BAD COM_write_once( const BYTE * data, size_t length, struct connection_in *connection)
 {
 	ssize_t to_be_written = length ;
-	FILE_DESCRIPTOR_OR_ERROR fd = SOC(connection)->file_descriptor ;
+	FILE_DESCRIPTOR_OR_ERROR fd = connection->head->file_descriptor ;
 
 	while (to_be_written > 0) {
 		int select_result ;

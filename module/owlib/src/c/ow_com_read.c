@@ -37,7 +37,7 @@ GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connecti
 	// unlike write or open, a closed connection isn't automatically opened.
 	// the reason is that reopening won't have the data waiting. We really need
 	// to restart the transaction from the "write" portion
-	if ( FILE_DESCRIPTOR_NOT_VALID( SOC(connection)->file_descriptor ) ) {
+	if ( FILE_DESCRIPTOR_NOT_VALID( connection->head->file_descriptor ) ) {
 		return gbBAD ;
 	}
 
@@ -59,12 +59,12 @@ GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connecti
 			break ; 
 		case ct_serial:
 		// serial is ok
-		// printf("Serial read fd=%d length=%d\n",SOC(connection)->file_descriptor, (int) length);
+		// printf("Serial read fd=%d length=%d\n",connection->head->file_descriptor, (int) length);
 		{
 			ssize_t actual = COM_read_get_size( data, length, connection ) ;
-			if ( FILE_DESCRIPTOR_VALID( SOC(connection)->file_descriptor ) ) {
+			if ( FILE_DESCRIPTOR_VALID( connection->head->file_descriptor ) ) {
 				// tcdrain only works on serial conections
-				tcdrain( SOC(connection)->file_descriptor );
+				tcdrain( connection->head->file_descriptor );
 				return actual == (ssize_t) length ? gbGOOD : gbBAD ;
 			}
 			break ;
@@ -90,11 +90,11 @@ SIZE_OR_ERROR COM_read_with_timeout( BYTE * data, size_t length, struct connecti
 	// unlike write or open, a closed connection isn't automatically opened.
 	// the reason is that reopening won't have the data waiting. We really need
 	// to restart the transaction from the "write" portion
-	if ( FILE_DESCRIPTOR_NOT_VALID( SOC(connection)->file_descriptor ) ) {
+	if ( FILE_DESCRIPTOR_NOT_VALID( connection->head->file_descriptor ) ) {
 		return -EBADF ;
 	} else {
 		size_t actual_size ;
-		ZERO_OR_ERROR zoe = tcp_read( SOC(connection)->file_descriptor, data, length, &(SOC(connection)->timeout), &actual_size ) ;
+		ZERO_OR_ERROR zoe = tcp_read( connection->head->file_descriptor, data, length, &(SOC(connection)->timeout), &actual_size ) ;
 
 		if ( zoe == -EBADF ) {
 			COM_close(connection) ;
@@ -111,7 +111,7 @@ SIZE_OR_ERROR COM_read_with_timeout( BYTE * data, size_t length, struct connecti
 static SIZE_OR_ERROR COM_read_get_size( BYTE * data, size_t length, struct connection_in *connection )
 {
 	size_t actual_size ;
-	ZERO_OR_ERROR zoe = tcp_read( SOC(connection)->file_descriptor, data, length, &(SOC(connection)->timeout), &actual_size ) ;
+	ZERO_OR_ERROR zoe = tcp_read( connection->head->file_descriptor, data, length, &(SOC(connection)->timeout), &actual_size ) ;
 
 	if ( zoe < 0 ) {
 		COM_close(connection) ;

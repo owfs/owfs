@@ -65,6 +65,7 @@ struct port_in {
 	int connections ;
 	enum bus_mode busmode;
 	char * init_data ;
+	FILE_DESCRIPTOR_OR_PERSISTENT file_descriptor;
 	
 	pthread_mutex_t port_mutex;
 };

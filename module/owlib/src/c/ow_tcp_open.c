@@ -52,12 +52,12 @@ GOOD_OR_BAD tcp_open(struct connection_in *connection)
 				break ;
 		}
 		RETURN_BAD_IF_BAD( ClientAddr( SOC(connection)->devicename, def_port, connection ) ) ;
-		SOC(connection)->file_descriptor = FILE_DESCRIPTOR_BAD ;
+		connection->head->file_descriptor = FILE_DESCRIPTOR_BAD ;
 	}
 
 	SOC(connection)->state = cs_deflowered ;
-	SOC(connection)->file_descriptor = ClientConnect(connection) ;
-	if ( FILE_DESCRIPTOR_NOT_VALID(SOC(connection)->file_descriptor) ) {
+	connection->head->file_descriptor = ClientConnect(connection) ;
+	if ( FILE_DESCRIPTOR_NOT_VALID(connection->head->file_descriptor) ) {
 		return gbBAD;
 	}
 	return gbGOOD ;

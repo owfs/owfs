@@ -43,26 +43,26 @@ GOOD_OR_BAD w1_bind( struct connection_in * in )
 	struct sockaddr_nl l_local ;
 
 	SOC(in)->type = ct_netlink ;
-	Test_and_Close( &(SOC(in)->file_descriptor) ) ; // just in case
+	Test_and_Close( &(in->head->file_descriptor) ) ; // just in case
 	
 	// Example from http://lxr.linux.no/linux+v3.0/Documentation/connector/ucon.c#L114
-	//SOC(in)->file_descriptor = socket(PF_NETLINK, SOCK_DGRAM, NETLINK_CONNECTOR);
-//    SOC(in)->file_descriptor = socket(PF_NETLINK, SOCK_RAW | SOCK_CLOEXEC , NETLINK_CONNECTOR);
-    SOC(in)->file_descriptor = socket(PF_NETLINK, SOCK_RAW , NETLINK_CONNECTOR);
-	if ( FILE_DESCRIPTOR_NOT_VALID( SOC(in)->file_descriptor ) ) {
+	//in->head->file_descriptor = socket(PF_NETLINK, SOCK_DGRAM, NETLINK_CONNECTOR);
+//    in->head->file_descriptor = socket(PF_NETLINK, SOCK_RAW | SOCK_CLOEXEC , NETLINK_CONNECTOR);
+    in->head->file_descriptor = socket(PF_NETLINK, SOCK_RAW , NETLINK_CONNECTOR);
+	if ( FILE_DESCRIPTOR_NOT_VALID( in->head->file_descriptor ) ) {
 		ERROR_CONNECT("Netlink (w1) socket (are you root?)");
 		return gbBAD;
 	}
-//	fcntl (SOC(in)->file_descriptor, F_SETFD, FD_CLOEXEC); // for safe forking
+//	fcntl (in->head->file_descriptor, F_SETFD, FD_CLOEXEC); // for safe forking
 
 	l_local.nl_pid = in->master.w1_monitor.pid = getpid() ;
 	l_local.nl_pad = 0;
 	l_local.nl_family = AF_NETLINK;
 	l_local.nl_groups = 23;
 
-	if ( bind( SOC(in)->file_descriptor, (struct sockaddr *)&l_local, sizeof(struct sockaddr_nl) ) == -1 ) {
+	if ( bind( in->head->file_descriptor, (struct sockaddr *)&l_local, sizeof(struct sockaddr_nl) ) == -1 ) {
 		ERROR_CONNECT("Netlink (w1) bind (are you root?)");
-		Test_and_Close( &( SOC(in)->file_descriptor) );
+		Test_and_Close( &( in->head->file_descriptor) );
 		return gbBAD ;
 	}
 	SOC(in)->state = cs_deflowered ;

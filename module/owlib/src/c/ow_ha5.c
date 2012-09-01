@@ -229,8 +229,6 @@ static GOOD_OR_BAD HA5_channel_list( char * alpha_string, struct connection_in *
 			if ( current_in == NO_CONNECTION ) {
 				break ;
 			}
-			// Only head has a valid file descriptor
-			SOC(current_in)->file_descriptor = FILE_DESCRIPTOR_BAD ;
 			continue ;
 		}
 

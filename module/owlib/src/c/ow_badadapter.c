@@ -27,7 +27,7 @@ GOOD_OR_BAD BadAdapter_detect(struct port_in *pin)
 {
 	struct connection_in * in = pin->first ;
 	SOC(in)->type = ct_none ;
-	SOC(in)->file_descriptor = FILE_DESCRIPTOR_BAD ;
+	in->head->file_descriptor = FILE_DESCRIPTOR_BAD ;
 	in->Adapter = adapter_Bad;	/* OWFS assigned value */
 	in->iroutines.reset = BadAdapter_reset;
 	in->iroutines.next_both = NO_NEXT_BOTH_ROUTINE;

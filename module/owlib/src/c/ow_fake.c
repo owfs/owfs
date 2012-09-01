@@ -165,7 +165,7 @@ static void SetConninData( int indx, const char * type, struct port_in *pin )
 	struct connection_in * in = pin->first ;
 	char name[20] ;
 
-	SOC(in)->file_descriptor = indx;
+	in->head->file_descriptor = indx;
 	SOC(in)->type = ct_none ;
 	in->master.fake.index = indx;
 	in->master.fake.templow = Globals.templow;

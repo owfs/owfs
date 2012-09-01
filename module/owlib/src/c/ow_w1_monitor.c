@@ -33,7 +33,7 @@ GOOD_OR_BAD W1_monitor_detect(struct port_in *pin)
 		SOC(in)->devicename = owstrdup(pin->init_data) ;
 	}
 
-	SOC(in)->file_descriptor = FILE_DESCRIPTOR_BAD;
+	in->head->file_descriptor = FILE_DESCRIPTOR_BAD;
 	SOC(in)->type = ct_none ;
 	in->iroutines.detect = W1_monitor_detect;
 	in->Adapter = adapter_w1_monitor;	/* OWFS assigned value */
@@ -65,7 +65,7 @@ GOOD_OR_BAD W1_monitor_detect(struct port_in *pin)
 	in->master.w1_monitor.pid = 0 ;
 	
 	w1_bind(in) ; // sets in->file_descriptor
-	if ( FILE_DESCRIPTOR_NOT_VALID( SOC(in)->file_descriptor ) ) {
+	if ( FILE_DESCRIPTOR_NOT_VALID( in->head->file_descriptor ) ) {
 		ERROR_DEBUG("Netlink problem -- are you root?");
 		Inbound_Control.w1_monitor = NO_CONNECTION ;
 		return gbBAD ;

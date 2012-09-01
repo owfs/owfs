@@ -72,7 +72,7 @@ GOOD_OR_BAD telnet_read(BYTE * buf, const size_t size, struct connection_in *in)
 		return gbBAD ;
 	}
 
-	if ( FILE_DESCRIPTOR_NOT_VALID(SOC(in)->file_descriptor) ) {
+	if ( FILE_DESCRIPTOR_NOT_VALID(in->head->file_descriptor) ) {
 		return gbBAD ;
 	}
 	
@@ -105,15 +105,15 @@ GOOD_OR_BAD telnet_read(BYTE * buf, const size_t size, struct connection_in *in)
 
 		if ( current_index >= actual_readin ) {
 			// need to read more -- just read what we think we need -- escape chars may require repeat
-			if ( tcp_read( SOC(in)->file_descriptor, readin_buf, minimum_chars, &(SOC(in)->timeout), &actual_readin) < 0 ) {
+			if ( tcp_read( in->head->file_descriptor, readin_buf, minimum_chars, &(SOC(in)->timeout), &actual_readin) < 0 ) {
 				LEVEL_DEBUG("tcp seems closed") ;
-				Test_and_Close( &(SOC(in)->file_descriptor) ) ;
+				Test_and_Close( &(in->head->file_descriptor) ) ;
 				return gbBAD ;
 			}
 
 			if (actual_readin < minimum_chars) {
 				LEVEL_CONNECT("Telnet (ethernet) error");
-				Test_and_Close( &(SOC(in)->file_descriptor) ) ;
+				Test_and_Close( &(in->head->file_descriptor) ) ;
 				return gbBAD;
 			}
 

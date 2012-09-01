@@ -33,7 +33,7 @@ void serial_free(struct connection_in *connection)
 		return ;
 	}
 
-	fd = SOC(connection)->file_descriptor ;
+	fd = pin->file_descriptor ;
 	if ( FILE_DESCRIPTOR_NOT_VALID( fd ) ) {
 		// reopen to restore attributes
 		fd = open( pin->init_data, O_RDWR | O_NONBLOCK | O_NOCTTY ) ;
@@ -48,6 +48,6 @@ void serial_free(struct connection_in *connection)
 			ERROR_CONNECT("Cannot restore port attributes: %s", pin->init_data);
 		}
 	}
-	Test_and_Close( &( SOC(connection)->file_descriptor) ) ;
+	Test_and_Close( &( pin->file_descriptor) ) ;
 }
 

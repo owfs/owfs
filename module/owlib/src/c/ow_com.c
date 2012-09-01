@@ -44,7 +44,7 @@ GOOD_OR_BAD COM_test( struct connection_in * connection )
 
 	if ( SOC(connection)->state == cs_virgin ) {
 		LEVEL_DEBUG("Auto initialization of %s", SAFESTRING(SOC(connection)->devicename)) ;
-	} else if ( FILE_DESCRIPTOR_VALID( SOC(connection)->file_descriptor ) ) {
+	} else if ( FILE_DESCRIPTOR_VALID( connection->head->file_descriptor ) ) {
 		return gbGOOD ;
 	}
 	return COM_open(connection) ;
@@ -65,14 +65,14 @@ void COM_flush( const struct connection_in *connection)
 		case ct_netlink:
 		case ct_telnet:
 		case ct_tcp:
-			tcp_read_flush( SOC(connection)->file_descriptor) ;
+			tcp_read_flush( connection->head->file_descriptor) ;
 			break ;
 		case ct_i2c:
 		case ct_usb:
 			LEVEL_DEBUG("Unimplemented!!!");
 			return ;
 		case ct_serial:
-			tcflush( SOC(connection)->file_descriptor, TCIOFLUSH);
+			tcflush( connection->head->file_descriptor, TCIOFLUSH);
 			break ;
 	}
 }
@@ -103,7 +103,7 @@ void COM_break(struct connection_in *in)
 			LEVEL_DEBUG("Unimplemented!!!");
 			return ;
 		case ct_serial:
-			tcsendbreak(SOC(in)->file_descriptor, 0);
+			tcsendbreak(in->head->file_descriptor, 0);
 			break ;
 	}
 }

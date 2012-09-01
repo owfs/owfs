@@ -49,7 +49,7 @@ void COM_close(struct connection_in *connection)
 			break ;
 		default:
 		case cs_deflowered:
-			Test_and_Close( &( SOC(head_in)->file_descriptor) ) ;
+			Test_and_Close( &( head_in->head->file_descriptor) ) ;
 			break ;
 	}
 }

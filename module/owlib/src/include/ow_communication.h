@@ -56,7 +56,7 @@ struct communication {
 	enum com_type type ;
 	enum com_state state ;
 	struct timeval timeout ; // for serial or tcp read
-	FILE_DESCRIPTOR_OR_PERSISTENT file_descriptor;
+//	FILE_DESCRIPTOR_OR_PERSISTENT file_descriptor;
 	char * devicename ;
 	union {
 		struct com_serial serial ;

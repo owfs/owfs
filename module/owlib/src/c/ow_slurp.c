@@ -59,7 +59,7 @@ void COM_slurp( struct connection_in * connection ) {
 		return ;
 	}
 
-	Slurp( SOC(connection)->file_descriptor, usec ) ;
+	Slurp( connection->head->file_descriptor, usec ) ;
 }
 
 /* slurp up any pending chars -- used at the start to clear the com buffer */

@@ -373,7 +373,7 @@ static GOOD_OR_BAD OWServer_Enet_write(const BYTE * buf, size_t size, struct con
 	RETURN_GOOD_IF_GOOD( COM_write_simple( buf, size, in ) ) ;
 	//printf("ENET: Error in sending data\n");
 
-	if ( SOC(in)->file_descriptor == FILE_DESCRIPTOR_BAD ) {
+	if ( in->head->file_descriptor == FILE_DESCRIPTOR_BAD ) {
 		//printf("ENET: Connection closed\n");
 		RETURN_BAD_IF_BAD( OWServer_Enet_reopen( in ) ) ;
 		//printf("ENET: Connection reopened\n");

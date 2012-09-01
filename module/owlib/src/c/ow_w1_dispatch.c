@@ -167,7 +167,7 @@ void * W1_Dispatch( void * v )
 
 	w1_list_masters() ; // ask for master list
 
-	while ( FILE_DESCRIPTOR_VALID( SOC(Inbound_Control.w1_monitor)->file_descriptor ) ) {
+	while ( FILE_DESCRIPTOR_VALID( Inbound_Control.w1_monitor->head->file_descriptor ) ) {
 		struct netlink_parse nlp ;
 		nlp.nlm = NULL ;
 

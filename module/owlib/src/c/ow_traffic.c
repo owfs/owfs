@@ -25,13 +25,9 @@ static struct connection_in * Bus_from_file_descriptor( FILE_DESCRIPTOR_OR_ERROR
 	struct port_in * pin ; 
 	
 	for ( pin=Inbound_Control.head_port ; pin != NULL ; pin=pin->next ) {
-		struct connection_in * cin ;
-		for( cin = pin->first ; cin != NO_CONNECTION ; cin = cin->next ) {
-			if ( SOC(cin)->file_descriptor == file_descriptor ) {
-				break ;
-			}
+		if ( pin->file_descriptor == file_descriptor ) {
+			return pin->first ;
 		}
-		return cin ;
 	}
 	return NO_CONNECTION ;
 }
