@@ -29,6 +29,9 @@ Temperature and Light
 .B EDS0068
 Temperature, Barometric Pressure and Light
 .TP
+.B EDS0070
+Vibration
+.TP
 .B EDS0071
 RTD 4-wire temperature
 .TP
@@ -66,11 +69,13 @@ microprocessor-based sensors
 |
 .B counters/seconds
 |
-.B alarm/ temp_[hi|low]
+.B alarm/temp_[hi|low]
 |
-.B set_alarm/ temp_[hi|low]
+.B alarm/clear
 |
-.B threshold/ temp_[hi|low]
+.B set_alarm/temp_[hi|low]
+|
+.B threshold/temp_[hi|low]
 ]]
 .SS Humidity ( EDS0065/8 )
 .B 7E.XXXXXXXXXXXX/EDS006X
@@ -83,29 +88,32 @@ microprocessor-based sensors
 |
 .B heat_index
 |
-.B alarm/ humidity_[hi|low]
+.B alarm/humidity_[hi|low]
 |
-.B alarm/ humidex_[hi|low]
+.B alarm/humidex_[hi|low]
 |
-.B alarm/ dew_point_[hi|low]
+.B alarm/dew_point_[hi|low]
 |
-.B alarm/ heat_index_[hi|low]
+.B alarm/heat_index_[hi|low]
 |
-.B set_alarm/ humidity_[hi|low]
+.B alarm/clear
 |
-.B set_alarm/ humidex_[hi|low]
+.B set_alarm/humidity_[hi|low]
 |
-.B set_alarm/ dew_point_[hi|low]
+.B set_alarm/humidex_[hi|low]
 |
-.B set_alarm/ heat_index_[hi|low]
+.B set_alarm/dew_point_[hi|low]
 |
-.B threshold/ humidity_[hi|low]
+.B set_alarm/heat_index_[hi|low]
 |
-.B threshold/ humidex_[hi|low]
+.B threshold/humidity_[hi|low]
 |
-.B threshold/ dew_point_[hi|low]
+.br
+.B threshold/humidex_[hi|low]
 |
-.B threshold/ heat_index_[hi|low]
+.B threshold/dew_point_[hi|low]
+|
+.B threshold/heat_index_[hi|low]
 ]]
 .SS Barometric Pressure ( EDS0066/8 )
 .B 7E.XXXXXXXXXXXX/EDS006X
@@ -114,28 +122,53 @@ microprocessor-based sensors
 |
 .B inHg
 |
-.B alarm/ pressure_[hi|low]
+.B alarm/pressure_[hi|low]
 |
-.B alarm/ inHg_[hi|low]
+.B alarm/inHg_[hi|low]
 |
-.B set_alarm/ pressure_[hi|low]
+.B alarm/clear
 |
-.B set_alarm/ inHg_[hi|low]
+.B set_alarm/pressure_[hi|low]
 |
-.B threshold/ pressure_[hi|low]
+.B set_alarm/inHg_[hi|low]
 |
-.B threshold/ inHg_[hi|low]
+.B threshold/pressure_[hi|low]
+|
+.B threshold/inHg_[hi|low]
 ]]
 .SS Light ( EDS0067/8 )
 .B 7E.XXXXXXXXXXXX/EDS006X
 [/[
 .B light
 |
-.B alarm/ light_[hi|low]
+.B alarm/light_[hi|low]
 |
-.B set_alarm/ light_[hi|low]
+.B alarm/clear
 |
-.B threshold/ light_[hi|low]
+.B set_alarm/light_[hi|low]
+|
+.B threshold/light_[hi|low]
+]]
+.SS Vibration ( EDS0070 )
+.B 7E.XXXXXXXXXXXX/EDS0070
+[/[
+.B vib_level
+|
+.B vib_peak
+|
+.B vib_min
+|
+.B vib_max
+|
+.B counter/seconds
+|
+.B alarm/vib_[hi|low]
+|
+.B alarm/clear
+|
+.B set_alarm/vib_[hi|low]
+|
+.B threshold/vib_[hi|low]
 ]]
 .SS RTD Temperature ( EDS0071/2 )
 .B 7E.XXXXXXXXXXXX/EDS007X
@@ -157,6 +190,8 @@ microprocessor-based sensors
 .B alarm/temp_[hi|low]
 |
 .B alarm/RTD_[hi_low]
+|
+.B alarm/clear
 |
 .B set_alarm/temp_[hi|low]
 |
@@ -216,7 +251,7 @@ Humidex (popular in Canada) computed from
 .I EDS006X/temperature
 and
 .I EDS006X/humidity
-computered every 0.2 seconds. Data is a percent and reported in the 0-100 range.
+computed every 0.2 seconds. Data is a percent and reported in the 0-100 range.
 .SH LIGHT
 .SS EDS006X/light
 .I read-only, unsigned integer
@@ -231,6 +266,23 @@ Ambient pressure, measured every 0.2 seconds. Data in the selected pressure scal
 .I read-only, floating-point
 .br
 Ambient pressure, measured every 0.2 seconds. Data in the inHg scale.
+.SH VIBRATION
+.SS EDS0070/vib_level
+.I read_only, unsigned integer
+.br
+Vibration registered by sensor (instantaneous value) in 0-1023 range.
+.SS EDS0070/vib_peak
+.I read_only, unsigned integer
+.br
+Vibration registered by sensor (highest recent value -- slowly decays) in 0-1023 range.
+.SS EDS0070/vib_min
+.I read_only, unsigned integer
+.br
+Vibration registered by sensor (lowest value) in 0-1023 range.
+.SS EDS0070/vib_max
+.I read_only, unsigned integer
+.br
+Vibration registered by sensor (highest value) in 0-1023 range.
 .SH THRESHOLD
 High and low range of acceptable sensor readings. Values outside this range will trigger an alarm if the corresponding
 .I EDS00XX/set_alarm flag is set.
@@ -260,7 +312,11 @@ is the specified pressure scale. Default mBar.
 .I read-write, unsigned
 .br
 Threshold light (lux) values.
-.SS  EDS007X/threshold/resistance_hi  EDS007X/threshold/resistance_low
+.SS EDS0070/threshold/vib_hi EDS0070/threshold/vib_low
+.I read-write, unsigned
+.br
+Vibration sensor alarm limits in 0-1023 range.
+.SS EDS007X/threshold/resistance_hi  EDS007X/threshold/resistance_low
 .I read-write, floating-point
 .br
 Threshold RTD resistance values (Ohm).
@@ -275,7 +331,8 @@ Set conditional alarm to trigger if corresponding flag is set. Also must set hig
 .SS EDS006X/set_alarm/pressure_hi EDS006X/set_alarm/pressure_low
 .SS EDS006X/set_alarm/inHg_hi EDS006X/set_alarm/inHg_low
 .SS EDS006X/set_alarm/light_hi EDS006X/set_alarm/light_low
-.SS  EDS007X/set_alarm/resistance_hi  EDS007X/set_alarm/resistance_low
+.SS EDS0070/set_alarm/vib_hi EDS0070/set_alarm/vib_low
+.SS EDS007X/set_alarm/resistance_hi EDS007X/set_alarm/resistance_low
 .I read-write, yes-no
 .br
 Flag to set corresponding out-of-range alarm. "1" turns on flag, and "0" turns off.
@@ -297,7 +354,8 @@ the alarm flags.
 .SS EDS006X/alarm/pressure_hi EDS006X/alarm/pressure_low
 .SS EDS006X/alarm/inHg_hi EDS006X/alarm/inHg_low
 .SS EDS006X/alarm/light_hi EDS006X/alarm/light_low
-.SS  EDS007X/alarm/resistance_hi  EDS007X/alarm/resistance_low
+.SS EDS0070/alarm/vib_hi EDS007X/alarm/vib_low
+.SS EDS007X/alarm/resistance_hi EDS007X/alarm/resistance_low
 .I read-only, yes-no
 .br
 Flag to set corresponding out-of-range alarm. "1" turns on flag, and "0" turns off.
@@ -419,8 +477,15 @@ is a micro-processor based 1-wire slave made by EDS (Embedded Data Systams). Is 
 .SH ADDRESSING
 .so addressing.3so
 .SH DATASHEET
-.br
+.TP
+Environmental sensors
 https://www.embeddeddatasystems.com/1-Wire-Interface-for-4-Wire-RTD_p_165.html
+.TP
+Vibration
+http://www.embeddeddatasystems.com/assets/images/supportFiles/manuals/EN-UserMan%20%20OW-Vibration%20V01.pdf
+.TP
+RTD
+https://docs.google.com/viewer?a=v&pid=explorer&chrome=true&srcid=0B_K3iXLLAI7vMjVhNWQzYzItZTRhMi00NGY2LWI4NTQtYjZlYTgzYzY0NmNm&hl=en
 .SH SEE ALSO
 .so seealso.3so
 .SH AVAILABILITY
