@@ -19,9 +19,11 @@ Ultra Violet (UV) Index sensor
 .TP
 Moisture
 Soil and Leaf moisture measurements
+.TP
+HUB
+4-channel hub with switchable branches
 .SH SYNOPSIS
-General EE device
-.br
+.SS General EE device
 .B EE
 [.]XXXXXXXXXXXX[XX][/[
 .B temperature
@@ -34,9 +36,7 @@ General EE device
 |
 .so standard_mini.3so
 ]]
-.PP
-UVI sensor
-.br
+.SS UVI sensor
 .B EE
 [.]XXXXXXXXXXXX[XX][/[
 .B UVI/UVI
@@ -55,9 +55,7 @@ UVI sensor
 |
 .B temperature_offset
 ]]
-.PP
-General EF device
-.br
+.SS General EF device
 .B EF
 [.]XXXXXXXXXXXX[XX][/[
 .B version
@@ -66,9 +64,7 @@ General EF device
 |
 .so standard_mini.3so
 ]]
-.PP
-Moisture Meter
-.br
+.SS Moisture Meter
 .B moisture/sensor.[0-3|ALL]
 .br
 .B moisture/is_moisture.[0-3|ALL|BYTE]
@@ -80,6 +76,10 @@ Moisture Meter
 .B moisture/calibrate/max
 |
 .B moisture/calibrate/raw.[0-4|ALL]
+.SS Hub
+. B hub/branch.[0-3|ALL|BYTE]
+|
+. B hub/short.[0-3|ALL|BYTE]
 .SH FAMILY CODE
 .TP
 .I EE
@@ -93,6 +93,9 @@ Device without temperature
 .TP
 .I EF
 Moisture Meter
+.TP
+.I EF
+Hub
 .SH TEMPERATURE PROPERTIES
 .SS temperature
 .I read-only, floating point
@@ -168,6 +171,25 @@ Read the raw leaf wetness values for setting scaling. See the datasheet for deta
 Note that 
 .I OWFS
 addresses the sensors as 0 through 3 while the datasheet uses 1-4.
+.SH Hub
+4-channel hub. Individual branches can be switched on and off.
+.SS hub/branch.0 .. hub/branch.3 hub/branch.ALL hub/branch.BYTE
+.I read-write, yes-no
+.br
+The HobbyBoards hub has four 1-wire bus lines. Each branch is electricaly isolated from reflections and shorts, and can be optionally excluded from the 1-wire network.
+.PP
+You can turn each
+.I branch
+on or off by writing 0 (off) or 1 (on) to the corresponding property. Note that
+.I OWFS
+indexes the branches 0 to 3 while the datasheet uses 1 to 4.
+.PP
+The easiest way to turn all the branches on is to write 15 (0x0F) to
+.I hub/branch.BYTE
+.SS hub/short.0 .. hub/short.3 hub/short.ALL hub/short.BYTE
+.I read-only, yes-no
+.br
+Is the corresponding branch in "short" condition? (Electrically shorted out).
 .SH IDENTIFICATION PROPERTIES
 .SS version
 .I read-only, ascii
@@ -225,6 +247,9 @@ http://www.hobby-boards.com/catalog/links/uvi2-r1/UVI%20Meter%20User%20Manual.pd
 .TP
 .B Moisture and Leaf Sensor
 http://www.hobby-boards.com/download/manuals/Moisture%20Meter.pdf
+.TP
+.B 4 Channel Hub
+http://www.hobby-boards.com/download/manuals/4%20Channel%20Hub.pdf
 .SH SEE ALSO
 .so seealso.3so
 .SH AVAILABILITY
