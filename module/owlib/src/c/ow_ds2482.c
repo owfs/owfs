@@ -397,7 +397,7 @@ static GOOD_OR_BAD DS2482_detect_single(int lowindex, int highindex, char * i2c_
 			LEVEL_CONNECT("Found an i2c device at %s address %.2X", i2c_device, trial_address);
 			/* Provisional setup as a DS2482-100 ( 1 channel ) */
 			in->head->file_descriptor = file_descriptor;
-			SOC(in)->state = cs_deflowered;
+			pin->state = cs_deflowered;
 			SOC(in)->type = ct_i2c ;
 			in->master.i2c.i2c_address = trial_address;
 			in->master.i2c.i2c_index = i2c_index;
@@ -478,7 +478,7 @@ static GOOD_OR_BAD DS2482_redetect(const struct parsedname *pn)
 			struct connection_in * next ;
 			head->master.i2c.current = 0;
 			head->head->file_descriptor = file_descriptor;
-			SOC(head)->state = cs_deflowered ;
+			head->head->state = cs_deflowered ;
 			SOC(head)->type = ct_i2c ;
 			head->master.i2c.configchip = 0x00;	// default configuration register after RESET	
 			LEVEL_CONNECT("i2c device at %s address %d reset successfully", SOC(head)->devicename, address);

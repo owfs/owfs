@@ -22,7 +22,7 @@ $Id$
 /* Called on head of multibus group */
 GOOD_OR_BAD tcp_open(struct connection_in *connection)
 {
-	if ( SOC(connection)->state == cs_virgin ) {
+	if ( connection->head->state == cs_virgin ) {
 		char * def_port = NULL ;
 		switch( get_busmode(connection) ) {
 			case bus_link:
@@ -55,7 +55,7 @@ GOOD_OR_BAD tcp_open(struct connection_in *connection)
 		connection->head->file_descriptor = FILE_DESCRIPTOR_BAD ;
 	}
 
-	SOC(connection)->state = cs_deflowered ;
+	connection->head->state = cs_deflowered ;
 	connection->head->file_descriptor = ClientConnect(connection) ;
 	if ( FILE_DESCRIPTOR_NOT_VALID(connection->head->file_descriptor) ) {
 		return gbBAD;

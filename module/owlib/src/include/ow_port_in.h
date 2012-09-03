@@ -55,6 +55,12 @@ enum bus_mode {
 	bus_external,
 };
 
+enum com_state {
+	cs_virgin,
+	cs_deflowered,
+} ;
+
+
 // For forward references
 struct connection_in;
 struct port_in ;
@@ -65,7 +71,9 @@ struct port_in {
 	int connections ;
 	enum bus_mode busmode;
 	char * init_data ;
+
 	FILE_DESCRIPTOR_OR_PERSISTENT file_descriptor;
+	enum com_state state ;
 	
 	pthread_mutex_t port_mutex;
 };

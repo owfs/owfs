@@ -34,7 +34,7 @@ GOOD_OR_BAD COM_open(struct connection_in *connection)
 
 	head_in = connection->channel_info.head ; // head of multigroup bus
 
-	switch ( SOC(head_in)->state ) {
+	switch ( connection->head->state ) {
 		case cs_deflowered:
 			// Attempt to reopen a good connection?
 			COM_close(head_in) ;

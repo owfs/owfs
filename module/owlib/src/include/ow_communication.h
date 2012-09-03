@@ -34,10 +34,12 @@ enum com_type {
 	ct_none,
 } ;
 
+/*
 enum com_state {
 	cs_virgin,
 	cs_deflowered,
 } ;
+*/
 
 struct com_serial {
 	struct termios oldSerialTio;    /*old serial port settings */
@@ -54,7 +56,7 @@ struct com_tcp {
 
 struct communication {
 	enum com_type type ;
-	enum com_state state ;
+//	enum com_state state ;
 	struct timeval timeout ; // for serial or tcp read
 //	FILE_DESCRIPTOR_OR_PERSISTENT file_descriptor;
 	char * devicename ;

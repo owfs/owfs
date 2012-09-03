@@ -29,7 +29,7 @@ void serial_free(struct connection_in *connection)
 	FILE_DESCRIPTOR_OR_ERROR fd ;
 	struct port_in * pin = connection->head ;
 
-	if ( SOC(connection)->state == cs_virgin ) {
+	if ( pin->state == cs_virgin ) {
 		return ;
 	}
 

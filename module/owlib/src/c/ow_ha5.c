@@ -791,7 +791,7 @@ static void HA5_close(struct connection_in *in)
 	if ( in->master.ha5.head == in ) {
 		HA5MUTEX_DESTROY(in);
 	} else {
-		SOC(in)->state = cs_virgin ;
+		in->head->state = cs_virgin ;
 	}
 }
 

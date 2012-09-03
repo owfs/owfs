@@ -48,5 +48,5 @@ void COM_free(struct connection_in *connection)
 	}
 
 	SAFEFREE(SOC(connection)->devicename) ;
-	SOC(connection)->state = cs_virgin ;
+	connection->head->state = cs_virgin ;
 }

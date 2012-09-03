@@ -93,7 +93,7 @@ static struct connection_in *AllocIn(const struct connection_in *old_in)
 			// Not a copy
 			memset(new_in, 0, len);
 			SOC(new_in)->type = ct_unknown ;
-			SOC(new_in)->state = cs_virgin ;
+			new_in->head->state = cs_virgin ;
 			SOC(new_in)->devicename = NULL ;
 			/* Indirection to head of list for multichannel devices */
 			OW_channel_init(new_in) ;

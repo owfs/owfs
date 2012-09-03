@@ -42,7 +42,7 @@ GOOD_OR_BAD COM_test( struct connection_in * connection )
 			break ;
 	}
 
-	if ( SOC(connection)->state == cs_virgin ) {
+	if ( connection->head->state == cs_virgin ) {
 		LEVEL_DEBUG("Auto initialization of %s", SAFESTRING(SOC(connection)->devicename)) ;
 	} else if ( FILE_DESCRIPTOR_VALID( connection->head->file_descriptor ) ) {
 		return gbGOOD ;

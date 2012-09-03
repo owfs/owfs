@@ -65,7 +65,7 @@ GOOD_OR_BAD w1_bind( struct connection_in * in )
 		Test_and_Close( &( in->head->file_descriptor) );
 		return gbBAD ;
 	}
-	SOC(in)->state = cs_deflowered ;
+	in->head->state = cs_deflowered ;
 	return gbGOOD ;
 }
 

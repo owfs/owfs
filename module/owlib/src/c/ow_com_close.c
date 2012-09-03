@@ -44,7 +44,7 @@ void COM_close(struct connection_in *connection)
 			break ;
 	}
 
-	switch ( SOC(head_in)->state ) {
+	switch ( connection->head->state ) {
 		case cs_virgin:
 			break ;
 		default:

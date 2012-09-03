@@ -266,7 +266,7 @@ GOOD_OR_BAD DS2480_detect(struct port_in *pin)
 // setting for serial port already made
 static GOOD_OR_BAD DS2480_detect_serial(struct connection_in *in)
 {
-	SOC(in)->state = cs_virgin ;
+	in->head->state = cs_virgin ;
 	if ( BAD(DS2480_initialize_repeatedly(in)) ) {
 		LEVEL_DEBUG("Could not initilize the DS9097U even after several tries") ;
 		COM_close(in) ;

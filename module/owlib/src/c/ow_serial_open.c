@@ -38,14 +38,14 @@ GOOD_OR_BAD serial_open(struct connection_in *connection)
 		return gbBAD;
 	}
 
-	if ( SOC(connection)->state == cs_virgin ) {
+	if ( connection->head->state == cs_virgin ) {
 		// valgrind warns about uninitialized memory in tcsetattr(), so clear all.
 		memset( &(SOC(connection)->dev.serial.oldSerialTio), 0, sizeof(struct termios));
 		if ((tcgetattr( fd, &(SOC(connection)->dev.serial.oldSerialTio) ) < 0)) {
 			ERROR_CONNECT("Cannot get old port attributes: %s", SAFESTRING(SOC(connection)->devicename));
 			// proceed anyway
 		}
-		SOC(connection)->state = cs_deflowered ;
+		connection->head->state = cs_deflowered ;
 	}
 
 	return serial_change( connection ) ;
