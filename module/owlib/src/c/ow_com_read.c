@@ -25,6 +25,8 @@ static SIZE_OR_ERROR COM_read_get_size( BYTE * data, size_t length, struct conne
 /* Called on head of multibus group */
 GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connection)
 {
+	struct port_in * pin ;
+	
 	if ( length == 0 ) {
 		return gbGOOD ;
 	}
@@ -33,15 +35,16 @@ GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connecti
 		// bad parameters
 		return gbBAD ;
 	}
+	pin = connection->head ;
 
 	// unlike write or open, a closed connection isn't automatically opened.
 	// the reason is that reopening won't have the data waiting. We really need
 	// to restart the transaction from the "write" portion
-	if ( FILE_DESCRIPTOR_NOT_VALID( connection->head->file_descriptor ) ) {
+	if ( FILE_DESCRIPTOR_NOT_VALID( pin->file_descriptor ) ) {
 		return gbBAD ;
 	}
 
-	switch ( SOC(connection)->type ) {
+	switch ( pin->type ) {
 		// test the type of connection
 		case ct_unknown:
 		case ct_none:
@@ -59,12 +62,12 @@ GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connecti
 			break ; 
 		case ct_serial:
 		// serial is ok
-		// printf("Serial read fd=%d length=%d\n",connection->head->file_descriptor, (int) length);
+		// printf("Serial read fd=%d length=%d\n",pin->file_descriptor, (int) length);
 		{
 			ssize_t actual = COM_read_get_size( data, length, connection ) ;
-			if ( FILE_DESCRIPTOR_VALID( connection->head->file_descriptor ) ) {
+			if ( FILE_DESCRIPTOR_VALID( pin->file_descriptor ) ) {
 				// tcdrain only works on serial conections
-				tcdrain( connection->head->file_descriptor );
+				tcdrain( pin->file_descriptor );
 				return actual == (ssize_t) length ? gbGOOD : gbBAD ;
 			}
 			break ;
@@ -78,6 +81,8 @@ GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connecti
 /* Called on head of multibus group */
 SIZE_OR_ERROR COM_read_with_timeout( BYTE * data, size_t length, struct connection_in *connection)
 {
+	struct port_in * pin ;
+	
 	if ( length == 0 ) {
 		return 0 ;
 	}
@@ -86,15 +91,16 @@ SIZE_OR_ERROR COM_read_with_timeout( BYTE * data, size_t length, struct connecti
 		// bad parameters
 		return -EIO ;
 	}
+	pin = connection->head ;
 
 	// unlike write or open, a closed connection isn't automatically opened.
 	// the reason is that reopening won't have the data waiting. We really need
 	// to restart the transaction from the "write" portion
-	if ( FILE_DESCRIPTOR_NOT_VALID( connection->head->file_descriptor ) ) {
+	if ( FILE_DESCRIPTOR_NOT_VALID( pin->file_descriptor ) ) {
 		return -EBADF ;
 	} else {
 		size_t actual_size ;
-		ZERO_OR_ERROR zoe = tcp_read( connection->head->file_descriptor, data, length, &(SOC(connection)->timeout), &actual_size ) ;
+		ZERO_OR_ERROR zoe = tcp_read( pin->file_descriptor, data, length, &(pin->timeout), &actual_size ) ;
 
 		if ( zoe == -EBADF ) {
 			COM_close(connection) ;
@@ -111,7 +117,8 @@ SIZE_OR_ERROR COM_read_with_timeout( BYTE * data, size_t length, struct connecti
 static SIZE_OR_ERROR COM_read_get_size( BYTE * data, size_t length, struct connection_in *connection )
 {
 	size_t actual_size ;
-	ZERO_OR_ERROR zoe = tcp_read( connection->head->file_descriptor, data, length, &(SOC(connection)->timeout), &actual_size ) ;
+	struct port_in * pin = connection->head ;
+	ZERO_OR_ERROR zoe = tcp_read( pin->file_descriptor, data, length, &(pin->timeout), &actual_size ) ;
 
 	if ( zoe < 0 ) {
 		COM_close(connection) ;

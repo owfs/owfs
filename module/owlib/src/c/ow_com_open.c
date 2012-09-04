@@ -26,15 +26,18 @@ $Id$
 //open a port (serial or tcp)
 GOOD_OR_BAD COM_open(struct connection_in *connection)
 {
+	struct port_in * pin ;
 	struct connection_in * head_in ;
+	
 	if (connection == NO_CONNECTION) {
 		LEVEL_DEBUG("Attempt to open a NULL serial device");
 		return gbBAD;
 	}
 
 	head_in = connection->channel_info.head ; // head of multigroup bus
+	pin = connection->head ;
 
-	switch ( connection->head->state ) {
+	switch ( pin->state ) {
 		case cs_deflowered:
 			// Attempt to reopen a good connection?
 			COM_close(head_in) ;
@@ -43,12 +46,12 @@ GOOD_OR_BAD COM_open(struct connection_in *connection)
 			break ;
 	}
 
-	switch ( SOC(head_in)->type ) {
+	switch ( pin->type ) {
 		case ct_telnet:
-			if ( SOC(head_in)->dev.telnet.telnet_negotiated == completed_negotiation ) {
-				 SOC(head_in)->dev.telnet.telnet_negotiated = needs_negotiation ;
+			if ( pin->dev.telnet.telnet_negotiated == completed_negotiation ) {
+				 pin->dev.telnet.telnet_negotiated = needs_negotiation ;
 			}
-			SOC(head_in)->dev.telnet.telnet_supported = 0 ;
+			pin->dev.telnet.telnet_supported = 0 ;
 			return tcp_open( head_in ) ;		
 		case ct_tcp:
 			return tcp_open( head_in ) ;

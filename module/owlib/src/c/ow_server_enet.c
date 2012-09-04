@@ -72,10 +72,10 @@ GOOD_OR_BAD OWServer_Enet_detect(struct port_in *pin)
 	// The ENET tolerates telnet, but isn't really
 	// into RFC2217
 	COM_set_standard(in) ;
-	SOC(in)->timeout.tv_sec = 0 ;
-	SOC(in)->timeout.tv_usec = 600000 ;
-	SOC(in)->flow = flow_none; // flow control
-	SOC(in)->baud = B115200 ;
+	pin->timeout.tv_sec = 0 ;
+	pin->timeout.tv_usec = 600000 ;
+	pin->flow = flow_none; // flow control
+	pin->baud = B115200 ;
 
 	if (pin->init_data == NULL) {
 		return gbBAD;
@@ -83,7 +83,7 @@ GOOD_OR_BAD OWServer_Enet_detect(struct port_in *pin)
 		SOC(in)->devicename = owstrdup(pin->init_data) ;
 	}
 
-	SOC(in)->type = ct_telnet ;
+	pin->type = ct_telnet ;
 	RETURN_BAD_IF_BAD( COM_open(in) ) ;
 
 	// Always returns 0D0A
@@ -97,7 +97,7 @@ GOOD_OR_BAD OWServer_Enet_detect(struct port_in *pin)
 
 	RETURN_GOOD_IF_GOOD( OWServer_Enet_reopen(in)) ;
 	RETURN_GOOD_IF_GOOD( OWServer_Enet_reopen(in)) ;
-	LEVEL_DEFAULT("Problem opening OW_SERVER_ENET on IP address=[%s] port=[%s] -- is the \"1-Wire Setup\" enabled?", SAFESTRING(SOC(in)->dev.tcp.host), SOC(in)->dev.tcp.service );
+	LEVEL_DEFAULT("Problem opening OW_SERVER_ENET on IP address=[%s] port=[%s] -- is the \"1-Wire Setup\" enabled?", pin->dev.tcp.host, pin->dev.tcp.service );
 	return gbBAD ;
 }
 

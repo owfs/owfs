@@ -44,7 +44,7 @@ void serial_free(struct connection_in *connection)
 		LEVEL_DEBUG("COM_close: flush");
 		tcflush( fd, TCIOFLUSH);
 		LEVEL_DEBUG("COM_close: restore");
-		if ( tcsetattr( fd, TCSANOW, &(SOC(connection)->dev.serial.oldSerialTio) ) < 0) {
+		if ( tcsetattr( fd, TCSANOW, &(pin->dev.serial.oldSerialTio) ) < 0) {
 			ERROR_CONNECT("Cannot restore port attributes: %s", pin->init_data);
 		}
 	}

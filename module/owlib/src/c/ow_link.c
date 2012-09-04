@@ -185,21 +185,21 @@ GOOD_OR_BAD LINK_detect(struct port_in *pin)
 
 	COM_set_standard( head_in ) ; // standard COM port settings
 
-	switch( SOC(head_in)->type ) {
+	switch( pin->type ) {
 		case ct_telnet:
 			// LinkHub-E
-			SOC(head_in)->baud = B115200 ;
+			pin->baud = B115200 ;
 			LEVEL_DEBUG("Attempt connection to networked LINK at 115200 baud");
 			RETURN_GOOD_IF_GOOD(  LINK_detect_net( head_in )  );
 
 			// Xport or ser2net
-			SOC(head_in)->baud = B9600 ;
+			pin->baud = B9600 ;
 			LEVEL_DEBUG("Attempt connection to networked LINK at 9600 baud");
 			RETURN_GOOD_IF_GOOD(  LINK_detect_net( head_in )  );
 
 			// Now try control port reset
 			RETURN_BAD_IF_BAD( LinkHubE_Control( head_in ) ) ;
-			SOC(head_in)->baud = B115200 ;
+			pin->baud = B115200 ;
 			LEVEL_DEBUG("Reattempt LINK connection") ;
 			UT_delay( 5000 ) ;
 			RETURN_GOOD_IF_GOOD(  LINK_detect_net( head_in )  );
@@ -209,21 +209,21 @@ GOOD_OR_BAD LINK_detect(struct port_in *pin)
 			
 
 		case ct_serial:
-			SOC(head_in)->baud = B9600 ;
+			pin->baud = B9600 ;
 
-			SOC(in)->flow = flow_first ;
+			pin->flow = flow_first ;
 			RETURN_GOOD_IF_GOOD( LINK_detect_serial(head_in) ) ;
 
 			LEVEL_DEBUG("Second attempt at serial LINK setup");
-			SOC(head_in)->flow = flow_second ;
+			pin->flow = flow_second ;
 			RETURN_GOOD_IF_GOOD( LINK_detect_serial(head_in) ) ;
 
 			LEVEL_DEBUG("Third attempt at serial LINK setup");
-			SOC(head_in)->flow = flow_first ;
+			pin->flow = flow_first ;
 			RETURN_GOOD_IF_GOOD( LINK_detect_serial(head_in) ) ;
 
 			LEVEL_DEBUG("Fourth attempt at serial LINK setup");
-			SOC(head_in)->flow = flow_second ;
+			pin->flow = flow_second ;
 			RETURN_GOOD_IF_GOOD( LINK_detect_serial(head_in) ) ;
 			break ;
 
@@ -235,11 +235,12 @@ GOOD_OR_BAD LINK_detect(struct port_in *pin)
 
 static GOOD_OR_BAD LINK_detect_serial(struct connection_in * in)
 {
+	struct port_in * pin = in->head ;
 	struct connection_in * head_in = in->channel_info.head ;
 	/* Set up low-level routines */
 	LINK_setroutines(head_in);
-	SOC(head_in)->timeout.tv_sec = Globals.timeout_serial ;
-	SOC(head_in)->timeout.tv_usec = 0 ;
+	pin->timeout.tv_sec = Globals.timeout_serial ;
+	pin->timeout.tv_usec = 0 ;
 
 	/* Open the com port */
 	RETURN_BAD_IF_BAD(COM_open(head_in)) ;
@@ -258,11 +259,12 @@ static GOOD_OR_BAD LINK_detect_serial(struct connection_in * in)
 
 static GOOD_OR_BAD LINK_detect_net(struct connection_in * in)
 {
+	struct port_in * pin = in->head ;
 	struct connection_in * head_in = in->channel_info.head ;
 	/* Set up low-level routines */
 	LINKE_setroutines(head_in);
-	SOC(head_in)->timeout.tv_sec = 0 ;
-	SOC(head_in)->timeout.tv_usec = 300000 ;
+	pin->timeout.tv_sec = 0 ;
+	pin->timeout.tv_usec = 300000 ;
 
 	/* Open the tcp port */
 	RETURN_BAD_IF_BAD( COM_open(head_in) ) ;
@@ -273,7 +275,7 @@ static GOOD_OR_BAD LINK_detect_net(struct connection_in * in)
 	LINK_slurp( head_in ) ;
 //	LINK_flush(in);
 
-	SOC(in)->dev.telnet.telnet_negotiated = needs_negotiation ;
+	pin->dev.telnet.telnet_negotiated = needs_negotiation ;
 	RETURN_GOOD_IF_GOOD( LINK_version(head_in) ) ;
 
 	// second try -- send a break and line settings
@@ -364,19 +366,20 @@ static GOOD_OR_BAD LINK_version(struct connection_in * in)
 
 static void LINK_set_baud(struct connection_in * in)
 {
+	struct port_in * pin = in->head ;
 	struct connection_in * head_in = in->channel_info.head ;
 	char * speed_code ;
 
-	if ( SOC(head_in)->type == ct_telnet ) {
+	if ( pin->type == ct_telnet ) {
 		// telnet pinned at 115200
 		return ;
 	}
 
-	COM_BaudRestrict( &(SOC(head_in)->baud), B9600, B19200, B38400, B57600, 0 ) ;
+	COM_BaudRestrict( &(pin->baud), B9600, B19200, B38400, B57600, 0 ) ;
 
-	LEVEL_DEBUG("to %d",COM_BaudRate(SOC(head_in)->baud));
+	LEVEL_DEBUG("to %d",COM_BaudRate(pin->baud));
 	// Find rate parameter
-	switch ( SOC(head_in)->baud ) {
+	switch ( pin->baud ) {
 		case B9600:
 			COM_break(head_in) ;
 			LINK_flush(in);
@@ -402,7 +405,7 @@ static void LINK_set_baud(struct connection_in * in)
 	LINK_flush(in);
 	if ( BAD( LINK_write(LINK_string(speed_code), 1, in) ) ) {
 		LEVEL_DEBUG("LINK change baud error -- will return to 9600");
-		SOC(head_in)->baud = B9600 ;
+		pin->baud = B9600 ;
 		++head_in->changed_bus_settings ;
 		return ;
 	}
@@ -876,16 +879,16 @@ static GOOD_OR_BAD LinkHubE_Control( struct connection_in * in_link )
 	
 	in_control = p_control->first ;
 
-	if ( SOC(in_link)->dev.tcp.host == NULL ) {
+	if ( p_control->dev.tcp.host == NULL ) {
 		LEVEL_DEBUG("No Xport control on local machine");
 		return gbBAD ;
 	}
 
-	SOC(in_control)->type = ct_telnet ;
-	SOC(in_control)->devicename = owstrdup( SOC(in_link)->dev.tcp.host ) ;
+	p_control->type = ct_telnet ;
+	SOC(in_control)->devicename = owstrdup( p_control->dev.tcp.host ) ;
 	p_control->busmode = bus_xport_control ;
-	SOC(in_control)->timeout.tv_sec = 1 ;
-	SOC(in_control)->timeout.tv_usec = 0 ;
+	p_control->timeout.tv_sec = 1 ;
+	p_control->timeout.tv_usec = 0 ;
 
 	ret = Control_com( in_control ) ;
 

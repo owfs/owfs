@@ -80,9 +80,9 @@ GOOD_OR_BAD HA7_detect(struct port_in *pin)
 		SOC(in)->devicename = owstrdup(pin->init_data) ;
 	}
 
-	SOC(in)->type = ct_tcp ;
-	SOC(in)->timeout.tv_sec = Globals.timeout_ha7 ;
-	SOC(in)->timeout.tv_usec = 0 ;
+	pin->type = ct_tcp ;
+	pin->timeout.tv_sec = Globals.timeout_ha7 ;
+	pin->timeout.tv_usec = 0 ;
 	RETURN_BAD_IF_BAD( COM_open(in) ) ;
 
 	in->Adapter = adapter_HA7NET;
@@ -199,13 +199,15 @@ static enum search_status HA7_next_both(struct device_search *ds, const struct p
 
 static GOOD_OR_BAD HA7_read( struct memblob *mb, struct connection_in * in )
 {
+	struct port_in * pin = in->head ;
+	
 	ASCII readin_area[HA7_READ_BUFFER_LENGTH + 1];
 	ASCII *start;
 	size_t read_size;
 
 	MemblobInit(mb, HA7_READ_BUFFER_LENGTH);
-	SOC(in)->timeout.tv_sec = 2 ;
-	SOC(in)->timeout.tv_usec = 0 ;
+	pin->timeout.tv_sec = 2 ;
+	pin->timeout.tv_usec = 0 ;
 
 	// Read first block of data from HA7
 	read_size = COM_read_with_timeout( (BYTE*) readin_area, HA7_READ_BUFFER_LENGTH, in) ;

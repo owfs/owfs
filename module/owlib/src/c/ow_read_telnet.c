@@ -40,6 +40,7 @@ unlikely. Handling these would be just the same as the FF FA codes above.
 */
 GOOD_OR_BAD telnet_read(BYTE * buf, const size_t size, struct connection_in *in)
 {
+	struct port_in * pin ;
 	// temporary buffer (add some extra space)
 	BYTE readin_buf[size+2] ;
 
@@ -71,8 +72,9 @@ GOOD_OR_BAD telnet_read(BYTE * buf, const size_t size, struct connection_in *in)
 	if ( in == NO_CONNECTION ) {
 		return gbBAD ;
 	}
+	pin = in->head ;
 
-	if ( FILE_DESCRIPTOR_NOT_VALID(in->head->file_descriptor) ) {
+	if ( FILE_DESCRIPTOR_NOT_VALID(pin->file_descriptor) ) {
 		return gbBAD ;
 	}
 	
@@ -105,15 +107,15 @@ GOOD_OR_BAD telnet_read(BYTE * buf, const size_t size, struct connection_in *in)
 
 		if ( current_index >= actual_readin ) {
 			// need to read more -- just read what we think we need -- escape chars may require repeat
-			if ( tcp_read( in->head->file_descriptor, readin_buf, minimum_chars, &(SOC(in)->timeout), &actual_readin) < 0 ) {
+			if ( tcp_read( pin->file_descriptor, readin_buf, minimum_chars, &(pin->timeout), &actual_readin) < 0 ) {
 				LEVEL_DEBUG("tcp seems closed") ;
-				Test_and_Close( &(in->head->file_descriptor) ) ;
+				Test_and_Close( &(pin->file_descriptor) ) ;
 				return gbBAD ;
 			}
 
 			if (actual_readin < minimum_chars) {
 				LEVEL_CONNECT("Telnet (ethernet) error");
-				Test_and_Close( &(in->head->file_descriptor) ) ;
+				Test_and_Close( &(pin->file_descriptor) ) ;
 				return gbBAD;
 			}
 

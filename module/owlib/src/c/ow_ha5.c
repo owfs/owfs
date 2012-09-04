@@ -94,13 +94,13 @@ GOOD_OR_BAD HA5_detect(struct port_in *pin)
 
 	// 9600 isn't valid for the HA5, so we can tell that this value was actually selected
 	if ( Globals.baud != B9600 ) {
-		SOC(in)->baud = Globals.baud ;
+		pin->baud = Globals.baud ;
 	} else {
-		SOC(in)->baud = B115200 ; // works at this fast rate
+		pin->baud = B115200 ; // works at this fast rate
 	}
 
 	// allowable speeds
-	COM_BaudRestrict( &(SOC(in)->baud), B1200, B19200, B38400, B115200, 0 ) ;
+	COM_BaudRestrict( &(pin->baud), B1200, B19200, B38400, B115200, 0 ) ;
 
 	Parse_Address( SOC(in)->devicename, &ap ) ;
 
@@ -123,7 +123,7 @@ GOOD_OR_BAD HA5_detect_parsed(struct address_pair *ap, struct connection_in *in)
 	char * channel_list = NULL ;
 
 	// Create name (ip:port or /dev/tty) and optional channel list
-	switch (SOC(in)->type) {
+	switch (in->head->type) {
 		case ct_telnet:
 			// address:port:channel_list
 			if ( ap->first.type != address_none ) {

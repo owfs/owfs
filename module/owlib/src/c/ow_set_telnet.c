@@ -65,8 +65,9 @@ GOOD_OR_BAD telnet_change(struct connection_in *in)
 	} ;
 
 #pragma pack(pop)  /* restore */
+	struct port_in * pin = in->head ;
 
-	switch ( SOC(in)->baud ) {
+	switch ( pin->baud ) {
 		case B115200:
 			telnet_string.baud = htonl( 115200 ) ;
 			break ;
@@ -79,13 +80,13 @@ GOOD_OR_BAD telnet_change(struct connection_in *in)
 		case B9600:
 		default:
 			telnet_string.baud = htonl( 9600 ) ;
-			SOC(in)->baud = B9600 ;
+			pin->baud = B9600 ;
 			break ;
 	}
 
-	telnet_string.size = SOC(in)->bits ;
+	telnet_string.size = pin->bits ;
 
-	switch ( SOC(in)->parity ) {
+	switch ( pin->parity ) {
 		case parity_none:
 			telnet_string.parity = 1 ;
 			break ;
@@ -100,7 +101,7 @@ GOOD_OR_BAD telnet_change(struct connection_in *in)
 			break ;
 	}
 
-	switch ( SOC(in)->stop ) {
+	switch ( pin->stop ) {
 		case stop_1 :
 			telnet_string.stop = 1 ;
 			break ;
@@ -112,7 +113,7 @@ GOOD_OR_BAD telnet_change(struct connection_in *in)
 			break ;
 	}
 
-	switch ( SOC(in)->flow ) {
+	switch ( pin->flow ) {
 		case flow_none :
 			telnet_string.flow = 1 ;
 			break ;

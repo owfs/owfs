@@ -75,7 +75,7 @@ static struct port_in * CreateZeroPort(const char * name, const char * type, con
 	snprintf(addr_name,127,"%s:%s",host,service) ;
 	UCLIBCUNLOCK;
 	SOC(in)->devicename = owstrdup(addr_name) ;
-	SOC(in)->type = ct_tcp ;
+	pin->type = ct_tcp ;
 	in->master.tcp.name   = owstrdup( name  ) ;
 	in->master.tcp.type   = owstrdup( type  ) ;
 	in->master.tcp.domain = owstrdup( domain) ;

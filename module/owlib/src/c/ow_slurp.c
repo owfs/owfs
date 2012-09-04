@@ -27,14 +27,14 @@ void COM_slurp( struct connection_in * connection ) {
 		return ;
 	}
 
-	switch ( SOC(connection)->type ) {
+	switch ( connection->head->type ) {
 		case ct_unknown:
 		case ct_none:
 			LEVEL_DEBUG("Unknown type");
 			return ;
 		case ct_telnet:
 			// see if we can tell the port to dump all pending data
-			if ( SOC(connection)->dev.telnet.telnet_negotiated == completed_negotiation ) {
+			if ( connection->head->dev.telnet.telnet_negotiated == completed_negotiation ) {
 				if ( BAD( COM_test(connection) ) ) {
 					return ;
 				}

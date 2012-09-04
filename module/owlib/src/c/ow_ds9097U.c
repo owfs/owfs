@@ -258,7 +258,7 @@ GOOD_OR_BAD DS2480_detect(struct port_in *pin)
 	// first pass with hardware flow control
 	RETURN_GOOD_IF_GOOD( DS2480_detect_serial(in) ) ;
 
-	SOC(in)->flow = flow_second; // flow control
+	pin->flow = flow_second; // flow control
 	RETURN_BAD_IF_BAD(COM_change(in)) ;
 	return DS2480_detect_serial(in) ;
 }
@@ -322,24 +322,26 @@ static GOOD_OR_BAD DS2480_reconnect(const struct parsedname * pn)
 // do the com port and configuration stuff
 static GOOD_OR_BAD DS2480_big_reset(struct connection_in * in)
 {
-	switch (SOC(in)->type) {
+	struct port_in * pin = in->head ;
+	
+	switch (pin->type) {
 		case ct_telnet:
-			SOC(in)->timeout.tv_sec = Globals.timeout_network ;
-			SOC(in)->timeout.tv_usec = 0 ;
+			pin->timeout.tv_sec = Globals.timeout_network ;
+			pin->timeout.tv_usec = 0 ;
 			return DS2480_big_reset_serial(in) ;
 
 		case ct_serial:
 		default:
-			SOC(in)->timeout.tv_sec = Globals.timeout_serial ;
-			SOC(in)->timeout.tv_usec = 0 ;
+			pin->timeout.tv_sec = Globals.timeout_serial ;
+			pin->timeout.tv_usec = 0 ;
 
-			SOC(in)->flow = flow_none ;
+			pin->flow = flow_none ;
 			RETURN_GOOD_IF_GOOD( DS2480_big_reset_serial(in)) ;
 
-			SOC(in)->flow = flow_none ;
+			pin->flow = flow_none ;
 			RETURN_GOOD_IF_GOOD( DS2480_big_reset_serial(in)) ;
 
-			SOC(in)->flow = flow_hard ;
+			pin->flow = flow_hard ;
 			RETURN_GOOD_IF_GOOD( DS2480_big_reset_serial(in)) ;
 
 			return gbBAD ;
@@ -459,8 +461,10 @@ static GOOD_OR_BAD DS2480_configuration_read(BYTE parameter_code, BYTE value_cod
 // Set Baud rate -- can't use DS2480_configuration_code because return byte is at a different speed
 static void DS2480_set_baud_control(struct connection_in * in)
 {
+	struct port_in * pin = in->head ;
+	
 	// restrict allowable baud rates based on device capabilities
-	COM_BaudRestrict( &(SOC(in)->baud), B9600, B19200, B57600, B115200, 0 ) ;
+	COM_BaudRestrict( &(pin->baud), B9600, B19200, B57600, B115200, 0 ) ;
 
 	if ( GOOD( DS2480_set_baud(in) ) ) {
 		return ;
@@ -474,7 +478,7 @@ static void DS2480_set_baud_control(struct connection_in * in)
 
 	// uh oh -- undefined state -- not sure what the bus speed is.
 	in->reconnect_state = reconnect_error ;
-	SOC(in)->baud = B9600 ;
+	pin->baud = B9600 ;
 	++in->changed_bus_settings ;
 	return;
 }
@@ -485,7 +489,7 @@ static GOOD_OR_BAD DS2480_set_baud(struct connection_in * in)
 	BYTE send_code ;
 
 	// Find rate parameter
-	switch ( SOC(in)->baud ) {
+	switch ( in->head->baud ) {
 		case B9600:
 			value_code = PARMSET_9600 ;
 			break ;
@@ -505,7 +509,7 @@ static GOOD_OR_BAD DS2480_set_baud(struct connection_in * in)
 			break ;
 #endif
 		default:
-			SOC(in)->baud = B9600 ;
+			in->head->baud = B9600 ;
 			value_code = PARMSET_9600 ;
 			break ;
 	}
@@ -894,7 +898,7 @@ static GOOD_OR_BAD DS2480_ProgramPulse(const struct parsedname *pn)
 // Write to the output -- works for tcp and COM
 static GOOD_OR_BAD DS2480_write(const BYTE * buf, const size_t size, struct connection_in * in)
 {
-	switch( SOC(in)->type ) {
+	switch( in->head->type ) {
 		case ct_telnet:
 			return telnet_write_binary( buf, size, in) ;
 		case ct_serial:

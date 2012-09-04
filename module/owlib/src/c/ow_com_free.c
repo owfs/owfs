@@ -30,7 +30,7 @@ void COM_free(struct connection_in *connection)
 		return ;
 	}
 
-	switch ( SOC(connection)->type ) {
+	switch ( connection->head->type ) {
 		case ct_unknown:
 		case ct_none:
 		case ct_usb:

@@ -33,8 +33,8 @@ GOOD_OR_BAD W1_monitor_detect(struct port_in *pin)
 		SOC(in)->devicename = owstrdup(pin->init_data) ;
 	}
 
-	in->head->file_descriptor = FILE_DESCRIPTOR_BAD;
-	SOC(in)->type = ct_none ;
+	pin->file_descriptor = FILE_DESCRIPTOR_BAD;
+	pin->type = ct_none ;
 	in->iroutines.detect = W1_monitor_detect;
 	in->Adapter = adapter_w1_monitor;	/* OWFS assigned value */
 	in->iroutines.reset = NO_RESET_ROUTINE;

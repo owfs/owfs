@@ -75,7 +75,7 @@ GOOD_OR_BAD HA7E_detect(struct port_in *pin)
 		return gbGOOD;
 	}
 	
-	SOC(in)->flow = flow_second; // flow control
+	pin->flow = flow_second; // flow control
 	RETURN_BAD_IF_BAD(COM_change(in)) ;
 	COM_slurp(in) ;
 	if ( GOOD( gbRESET( HA7E_reset(&pn) ) ) ) {

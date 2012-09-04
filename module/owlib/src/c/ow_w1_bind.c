@@ -40,32 +40,33 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
 // responses will have to be routed to appropriate bus master
 GOOD_OR_BAD w1_bind( struct connection_in * in )
 {
+	struct port_in * pin = in->head ;
 	struct sockaddr_nl l_local ;
 
-	SOC(in)->type = ct_netlink ;
-	Test_and_Close( &(in->head->file_descriptor) ) ; // just in case
+	in->head->type = ct_netlink ;
+	Test_and_Close( &(pin->file_descriptor) ) ; // just in case
 	
 	// Example from http://lxr.linux.no/linux+v3.0/Documentation/connector/ucon.c#L114
-	//in->head->file_descriptor = socket(PF_NETLINK, SOCK_DGRAM, NETLINK_CONNECTOR);
-//    in->head->file_descriptor = socket(PF_NETLINK, SOCK_RAW | SOCK_CLOEXEC , NETLINK_CONNECTOR);
-    in->head->file_descriptor = socket(PF_NETLINK, SOCK_RAW , NETLINK_CONNECTOR);
-	if ( FILE_DESCRIPTOR_NOT_VALID( in->head->file_descriptor ) ) {
+	//pin->file_descriptor = socket(PF_NETLINK, SOCK_DGRAM, NETLINK_CONNECTOR);
+//    pin->file_descriptor = socket(PF_NETLINK, SOCK_RAW | SOCK_CLOEXEC , NETLINK_CONNECTOR);
+    pin->file_descriptor = socket(PF_NETLINK, SOCK_RAW , NETLINK_CONNECTOR);
+	if ( FILE_DESCRIPTOR_NOT_VALID( pin->file_descriptor ) ) {
 		ERROR_CONNECT("Netlink (w1) socket (are you root?)");
 		return gbBAD;
 	}
-//	fcntl (in->head->file_descriptor, F_SETFD, FD_CLOEXEC); // for safe forking
+//	fcntl (pin->file_descriptor, F_SETFD, FD_CLOEXEC); // for safe forking
 
 	l_local.nl_pid = in->master.w1_monitor.pid = getpid() ;
 	l_local.nl_pad = 0;
 	l_local.nl_family = AF_NETLINK;
 	l_local.nl_groups = 23;
 
-	if ( bind( in->head->file_descriptor, (struct sockaddr *)&l_local, sizeof(struct sockaddr_nl) ) == -1 ) {
+	if ( bind( pin->file_descriptor, (struct sockaddr *)&l_local, sizeof(struct sockaddr_nl) ) == -1 ) {
 		ERROR_CONNECT("Netlink (w1) bind (are you root?)");
-		Test_and_Close( &( in->head->file_descriptor) );
+		Test_and_Close( &( pin->file_descriptor) );
 		return gbBAD ;
 	}
-	in->head->state = cs_deflowered ;
+	pin->state = cs_deflowered ;
 	return gbGOOD ;
 }
 

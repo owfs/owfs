@@ -92,7 +92,7 @@ static struct connection_in *AllocIn(const struct connection_in *old_in)
 		if (old_in == NO_CONNECTION) {
 			// Not a copy
 			memset(new_in, 0, len);
-			SOC(new_in)->type = ct_unknown ;
+			new_in->head->type = ct_unknown ;
 			new_in->head->state = cs_virgin ;
 			SOC(new_in)->devicename = NULL ;
 			/* Indirection to head of list for multichannel devices */

@@ -21,6 +21,7 @@ $Id$
 
 GOOD_OR_BAD ClientAddr(char *sname, char * default_port, struct connection_in *in)
 {
+	struct port_in * pin = in->head ;
 	struct addrinfo hint;
 	struct address_pair ap ;
 	int ret;
@@ -29,40 +30,40 @@ GOOD_OR_BAD ClientAddr(char *sname, char * default_port, struct connection_in *i
 
 	switch ( ap.entries ) {
 	case 0: // Complete default address
-		SOC(in)->dev.tcp.host = NULL;
-		SOC(in)->dev.tcp.service = owstrdup(default_port);
+		pin->dev.tcp.host = NULL;
+		pin->dev.tcp.service = owstrdup(default_port);
 		break ;
 	case 1: // single entry -- usually port unless a dotted quad
 		switch ( ap.first.type ) {
 		case address_none:
-			SOC(in)->dev.tcp.host = NULL;
-			SOC(in)->dev.tcp.service = owstrdup(default_port);
+			pin->dev.tcp.host = NULL;
+			pin->dev.tcp.service = owstrdup(default_port);
 			break ;
 		case address_dottedquad:
 			// looks like an IP address
-			SOC(in)->dev.tcp.host = owstrdup(ap.first.alpha);
-			SOC(in)->dev.tcp.service = owstrdup(default_port);
+			pin->dev.tcp.host = owstrdup(ap.first.alpha);
+			pin->dev.tcp.service = owstrdup(default_port);
 			break ;
 		case address_numeric:
-			SOC(in)->dev.tcp.host = NULL;
-			SOC(in)->dev.tcp.service = owstrdup(ap.first.alpha);
+			pin->dev.tcp.host = NULL;
+			pin->dev.tcp.service = owstrdup(ap.first.alpha);
 			break ;
 		default:
 			// assume it's a port if it's the SERVER
 			if ( strcasecmp( default_port, DEFAULT_SERVER_PORT ) == 0 ) {
-				SOC(in)->dev.tcp.host = NULL;
-				SOC(in)->dev.tcp.service = owstrdup(ap.first.alpha);
+				pin->dev.tcp.host = NULL;
+				pin->dev.tcp.service = owstrdup(ap.first.alpha);
 			} else {
-				SOC(in)->dev.tcp.host = owstrdup(ap.first.alpha);
-				SOC(in)->dev.tcp.service = owstrdup(default_port);
+				pin->dev.tcp.host = owstrdup(ap.first.alpha);
+				pin->dev.tcp.service = owstrdup(default_port);
 			}
 			break ;
 		}
 		break ;
 	case 2:
 	default: // address:port format -- unambiguous
-		SOC(in)->dev.tcp.host = ( ap.first.type == address_none ) ? NULL : owstrdup(ap.first.alpha) ;
-		SOC(in)->dev.tcp.service = ( ap.second.type == address_none ) ? owstrdup(default_port) : owstrdup(ap.second.alpha) ;
+		pin->dev.tcp.host = ( ap.first.type == address_none ) ? NULL : owstrdup(ap.first.alpha) ;
+		pin->dev.tcp.service = ( ap.second.type == address_none ) ? owstrdup(default_port) : owstrdup(ap.second.alpha) ;
 		break ;
 	}
 	Free_Address( &ap ) ;
@@ -73,16 +74,16 @@ GOOD_OR_BAD ClientAddr(char *sname, char * default_port, struct connection_in *i
 
 #if OW_CYGWIN
 	hint.ai_family = AF_INET;
-	if( SOC(in)->dev.tcp.host == NULL) {
+	if( pin->dev.tcp.host == NULL) {
 		/* getaddrinfo doesn't work with host=NULL for cygwin */
-		SOC(in)->dev.tcp.host = owstrdup("127.0.0.1");
+		pin->dev.tcp.host = owstrdup("127.0.0.1");
 	}
 #else
 	hint.ai_family = AF_UNSPEC;
 #endif
 
-	LEVEL_DEBUG("IP address=[%s] port=[%s]", SAFESTRING( SOC(in)->dev.tcp.host), SOC(in)->dev.tcp.service);
-	ret = getaddrinfo( SOC(in)->dev.tcp.host, SOC(in)->dev.tcp.service, &hint, &( SOC(in)->dev.tcp.ai) ) ;
+	LEVEL_DEBUG("IP address=[%s] port=[%s]", SAFESTRING( pin->dev.tcp.host), pin->dev.tcp.service);
+	ret = getaddrinfo( pin->dev.tcp.host, pin->dev.tcp.service, &hint, &( pin->dev.tcp.ai) ) ;
 	if ( ret != 0 ) {
 		LEVEL_CONNECT("GETADDRINFO error %s", gai_strerror(ret));
 		return gbBAD;
@@ -92,22 +93,24 @@ GOOD_OR_BAD ClientAddr(char *sname, char * default_port, struct connection_in *i
 
 void FreeClientAddr(struct connection_in *in)
 {
-	SAFEFREE( SOC(in)->dev.tcp.host) ;
-	SAFEFREE( SOC(in)->dev.tcp.service) ;
-	if ( SOC(in)->dev.tcp.ai != NULL ) {
-		freeaddrinfo( SOC(in)->dev.tcp.ai);
-		SOC(in)->dev.tcp.ai = NULL;
+	struct port_in * pin = in->head ;
+	SAFEFREE( pin->dev.tcp.host) ;
+	SAFEFREE( pin->dev.tcp.service) ;
+	if ( pin->dev.tcp.ai != NULL ) {
+		freeaddrinfo( pin->dev.tcp.ai);
+		pin->dev.tcp.ai = NULL;
 	}
-	SOC(in)->dev.tcp.ai_ok = NULL;
+	pin->dev.tcp.ai_ok = NULL;
 }
 
 /* Usually called with BUS locked, to protect ai settings */
 FILE_DESCRIPTOR_OR_ERROR ClientConnect(struct connection_in *in)
 {
+	struct port_in * pin = in->head ;
 	FILE_DESCRIPTOR_OR_ERROR file_descriptor;
 	struct addrinfo *ai;
 
-	if ( SOC(in)->dev.tcp.ai == NULL) {
+	if ( pin->dev.tcp.ai == NULL) {
 		LEVEL_DEBUG("Client address not yet parsed");
 		return FILE_DESCRIPTOR_BAD;
 	}
@@ -117,7 +120,7 @@ FILE_DESCRIPTOR_OR_ERROR ClientConnect(struct connection_in *in)
 	 * the in-device and loop through the list until it works.
 	 * Not a perfect solution, but it should work at least.
 	 */
-	ai = SOC(in)->dev.tcp.ai_ok;
+	ai = pin->dev.tcp.ai_ok;
 	if (ai) {
 		file_descriptor = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
 		if ( FILE_DESCRIPTOR_VALID(file_descriptor) ) {
@@ -128,18 +131,18 @@ FILE_DESCRIPTOR_OR_ERROR ClientConnect(struct connection_in *in)
 		}
 	}
 
-	ai = SOC(in)->dev.tcp.ai;		// loop from first address info since it failed.
+	ai = pin->dev.tcp.ai;		// loop from first address info since it failed.
 	do {
 		file_descriptor = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
 		if ( FILE_DESCRIPTOR_VALID(file_descriptor) ) {
 			if (connect(file_descriptor, ai->ai_addr, ai->ai_addrlen) == 0) {
-				SOC(in)->dev.tcp.ai_ok = ai;
+				pin->dev.tcp.ai_ok = ai;
 				return file_descriptor;
 			}
 			close(file_descriptor);
 		}
 	} while ((ai = ai->ai_next));
-	SOC(in)->dev.tcp.ai_ok = NULL;
+	pin->dev.tcp.ai_ok = NULL;
 
 	ERROR_CONNECT("Socket problem");
 	STAT_ADD1(NET_connection_errors);

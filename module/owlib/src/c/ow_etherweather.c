@@ -58,6 +58,7 @@ static void EtherWeather_setroutines(struct connection_in *in);
 
 static int EtherWeather_command(struct connection_in *in, char command, int datalen, const BYTE * idata, BYTE * odata)
 {
+	struct port_in * pin = in->head ;
 	BYTE *packet;
 
 	// The packet's length field includes the command byte.
@@ -66,8 +67,8 @@ static int EtherWeather_command(struct connection_in *in, char command, int data
 	packet[1] = command;
 	memcpy( &packet[2], idata, datalen);
 
-	SOC(in)->timeout.tv_sec = 0 ;
-	SOC(in)->timeout.tv_usec = 200000 ;
+	pin->timeout.tv_sec = 0 ;
+	pin->timeout.tv_usec = 200000 ;
 
 	if ( BAD(COM_write( packet, datalen+2, in) ) ) {
 		ERROR_CONNECT("Trouble writing data to EtherWeather: %s", SAFESTRING(SOC(in)->devicename));
@@ -78,7 +79,7 @@ static int EtherWeather_command(struct connection_in *in, char command, int data
 
 	// Allow extra time for powered bytes
 	if (command == 'P') {
-		SOC(in)->timeout.tv_sec += 2 ;
+		pin->timeout.tv_sec += 2 ;
 	}
 	// Read the response header
 	if ( BAD(COM_read( packet, 2, in )) ) {
@@ -244,7 +245,7 @@ GOOD_OR_BAD EtherWeather_detect(struct port_in *pin)
 		SOC(in)->devicename = owstrdup(pin->init_data) ;
 	}
 
-	SOC(in)->type = ct_tcp ;
+	pin->type = ct_tcp ;
 	RETURN_BAD_IF_BAD( COM_open(in) ) ;
 
 	/* TODO: probe version, and confirm that it's actually an EtherWeather */

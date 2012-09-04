@@ -77,7 +77,7 @@ void AddW1Bus( int bus_master )
 	}
 
 	LEVEL_DEBUG("Request master be added: w1_bus_master%d.", bus_master);
-	SOC(new_pin->first)->type = ct_none ;
+	new_pin->type = ct_none ;
 	Add_InFlight( W1_nomatch, new_pin ) ;
 }
 

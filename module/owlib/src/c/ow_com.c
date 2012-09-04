@@ -25,7 +25,7 @@ GOOD_OR_BAD COM_test( struct connection_in * connection )
 		return gbBAD;
 	}
 
-	switch ( SOC(connection)->type ) {
+	switch ( connection->head->type ) {
 		case ct_unknown:
 		case ct_none:
 			LEVEL_DEBUG("ERROR!!! ----------- ERROR!");
@@ -57,7 +57,7 @@ void COM_flush( const struct connection_in *connection)
 		return ;
 	}
 
-	switch ( SOC(connection)->type ) {
+	switch ( connection->head->type ) {
 		case ct_unknown:
 		case ct_none:
 			LEVEL_DEBUG("ERROR!!! ----------- ERROR!");
@@ -88,7 +88,7 @@ void COM_break(struct connection_in *in)
 		return ;
 	}
 
-	switch ( SOC(in)->type ) {
+	switch ( in->head->type ) {
 		case ct_unknown:
 		case ct_none:
 			LEVEL_DEBUG("ERROR!!! ----------- ERROR!");

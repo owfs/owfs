@@ -71,7 +71,7 @@ GOOD_OR_BAD W1_detect(struct port_in *pin)
 	pn.selected_connection = in;
 
 	/* Set up low-level routines */
-	SOC(in)->type = ct_none ;
+	pin->type = ct_none ;
 	W1_setroutines(in);
 	Init_Pipe( in->master.w1.netlink_pipe ) ;
 

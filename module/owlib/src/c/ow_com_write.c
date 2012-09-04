@@ -23,11 +23,14 @@ static GOOD_OR_BAD COM_write_once( const BYTE * data, size_t length, struct conn
 /* Called on head of multibus group */
 GOOD_OR_BAD COM_write( const BYTE * data, size_t length, struct connection_in *connection)
 {
+	struct port_in * pin ;
+	
 	if ( connection == NO_CONNECTION ) {
 		return gbBAD ;
 	}
+	pin = connection->head ;
 
-	switch ( SOC(connection)->type ) {
+	switch ( pin->type ) {
 		case ct_unknown:
 		case ct_none:
 			LEVEL_DEBUG("Bad bus type for writing %s",SAFESTRING(SOC(connection)->devicename));
@@ -39,12 +42,12 @@ GOOD_OR_BAD COM_write( const BYTE * data, size_t length, struct connection_in *c
 			return gbBAD ;
 		case ct_telnet:
 			// telnet gets special processing to send communication parameters (in band)
-			if ( SOC(connection)->dev.telnet.telnet_negotiated == needs_negotiation ) {
+			if ( pin->dev.telnet.telnet_negotiated == needs_negotiation ) {
 #if OW_SHOW_TRAFFIC
 				LEVEL_DEBUG("TELNET: Do negotiation");
 #endif /* OW_SHOW_TRAFFIC */
 				RETURN_BAD_IF_BAD(  telnet_change( connection ) ) ;
-				SOC(connection)->dev.telnet.telnet_negotiated = completed_negotiation ;
+				pin->dev.telnet.telnet_negotiated = completed_negotiation ;
 			}
 			break ;
 		case ct_tcp:
@@ -83,6 +86,8 @@ GOOD_OR_BAD COM_write( const BYTE * data, size_t length, struct connection_in *c
 
 GOOD_OR_BAD COM_write_simple( const BYTE * data, size_t length, struct connection_in *connection)
 {
+	struct port_in * pin ;
+	
 	if ( length == 0 || data == NULL ) {
 		return gbGOOD ;
 	}
@@ -90,8 +95,9 @@ GOOD_OR_BAD COM_write_simple( const BYTE * data, size_t length, struct connectio
 	if ( connection == NO_CONNECTION ) {
 		return gbBAD ;
 	}
+	pin = connection->head ;
 
-	switch ( SOC(connection)->type ) {
+	switch ( pin->type ) {
 		case ct_unknown:
 		case ct_none:
 			LEVEL_DEBUG("ERROR!!! ----------- ERROR!");
@@ -107,7 +113,7 @@ GOOD_OR_BAD COM_write_simple( const BYTE * data, size_t length, struct connectio
 			break ;
 	}
 
-	if ( connection->head->file_descriptor == FILE_DESCRIPTOR_BAD ) {
+	if ( pin->file_descriptor == FILE_DESCRIPTOR_BAD ) {
 		LEVEL_DEBUG("Writing to closed device %d",SAFESTRING(SOC(connection)->devicename));
 		return gbBAD ;
 	}

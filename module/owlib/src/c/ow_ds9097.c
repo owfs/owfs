@@ -65,8 +65,8 @@ GOOD_OR_BAD DS9097_detect(struct port_in *pin)
 
 	/* open the COM port in 9600 Baud  */
 	COM_set_standard( in ) ; // standard COM port settings
-	SOC(in)->vmin = 1; // minimum chars
-	SOC(in)->vtime = 0; // decisec wait
+	pin->vmin = 1; // minimum chars
+	pin->vtime = 0; // decisec wait
 	
 	if (pin->init_data == NULL) {
 		return gbBAD;
@@ -75,7 +75,7 @@ GOOD_OR_BAD DS9097_detect(struct port_in *pin)
 	}
 	RETURN_BAD_IF_BAD(COM_open(in)) ;
 
-	SOC(in)->flow = flow_first; // flow control
+	pin->flow = flow_first; // flow control
 	switch( DS9097_reset_in(in) ) {
 		case BUS_RESET_OK:
 		case BUS_RESET_SHORT:
@@ -86,7 +86,7 @@ GOOD_OR_BAD DS9097_detect(struct port_in *pin)
 
 	/* open the COM port in 9600 Baud  */
 	/* Second pass */
-	SOC(in)->flow = flow_second ;
+	pin->flow = flow_second ;
 	RETURN_BAD_IF_BAD(COM_change(in)) ;
 
 	switch( DS9097_reset_in(in) ) {
@@ -99,7 +99,7 @@ GOOD_OR_BAD DS9097_detect(struct port_in *pin)
 
 	/* open the COM port in 9600 Baud  */
 	/* Third pass, hardware flow control */
-	SOC(in)->flow = flow_first ;
+	pin->flow = flow_first ;
 	RETURN_BAD_IF_BAD(COM_change(in)) ;
 
 	switch( DS9097_reset_in(in) ) {
@@ -154,11 +154,13 @@ static RESET_TYPE DS9097_reset_in( struct connection_in * in )
 /* Puts in 9600 baud */
 static GOOD_OR_BAD DS9097_pre_reset(struct connection_in *in )
 {
+	struct port_in * pin = in->head ;
+
 	RETURN_BAD_IF_BAD( COM_test(in) ) ;
 
 	/* 8 data bits */
-	SOC(in)->bits = 8 ;
-	SOC(in)->baud = B9600 ;
+	pin->bits = 8 ;
+	pin->baud = B9600 ;
 
 	if ( BAD( COM_change(in)) ) {
 		ERROR_CONNECT("Cannot set attributes: %s", SAFESTRING(SOC(in)->devicename));
@@ -171,18 +173,20 @@ static GOOD_OR_BAD DS9097_pre_reset(struct connection_in *in )
 /* Restore terminal settings (serial port settings) */
 static void DS9097_post_reset(struct connection_in *in )
 {
+	struct port_in * pin = in->head ;
+
 	if (Globals.eightbit_serial) {
 		/* coninue with 8 data bits */
-		SOC(in)->bits = 8;
+		pin->bits = 8;
 	} else {
 		/* 6 data bits, Receiver enabled, Hangup, Dont change "owner" */
-		SOC(in)->bits = 6;
+		pin->bits = 6;
 	}
 #ifndef B115200
 	/* MacOSX support max 38400 in termios.h ? */
-	SOC(in)->baud = B38400 ;
+	pin->baud = B38400 ;
 #else
-	SOC(in)->baud = B115200 ;
+	pin->baud = B115200 ;
 #endif
 
 	/* Flush the input and output buffers */
@@ -235,7 +239,7 @@ static GOOD_OR_BAD DS9097_sendback_bits(const BYTE * outbits, BYTE * inbits, con
 /* Routine to send a string of bits and get another string back */
 static GOOD_OR_BAD DS9097_send_and_get(const BYTE * bussend, BYTE * busget, const size_t length, struct connection_in * in)
 {
-	switch( SOC(in)->type ) {
+	switch( in->head->type ) {
 		case ct_telnet:
 			RETURN_BAD_IF_BAD( telnet_write_binary( bussend, length, in) ) ;
 			break ;

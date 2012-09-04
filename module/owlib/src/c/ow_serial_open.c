@@ -30,22 +30,23 @@ $Id$
 //open serial port ( called on head of connection_in group from com_open )
 GOOD_OR_BAD serial_open(struct connection_in *connection)
 {
+	struct port_in * pin = connection->head ;
 	FILE_DESCRIPTOR_OR_ERROR fd = open( SOC(connection)->devicename, O_RDWR | O_NONBLOCK | O_NOCTTY) ;
-	connection->head->file_descriptor = fd ;
+	pin->file_descriptor = fd ;
 	if ( FILE_DESCRIPTOR_NOT_VALID( fd ) ) {
 		// state doesn't change
 		ERROR_DEFAULT("Cannot open port: %s Permissions problem?", SAFESTRING(SOC(connection)->devicename));
 		return gbBAD;
 	}
 
-	if ( connection->head->state == cs_virgin ) {
+	if ( pin->state == cs_virgin ) {
 		// valgrind warns about uninitialized memory in tcsetattr(), so clear all.
-		memset( &(SOC(connection)->dev.serial.oldSerialTio), 0, sizeof(struct termios));
-		if ((tcgetattr( fd, &(SOC(connection)->dev.serial.oldSerialTio) ) < 0)) {
+		memset( &(pin->dev.serial.oldSerialTio), 0, sizeof(struct termios));
+		if ((tcgetattr( fd, &(pin->dev.serial.oldSerialTio) ) < 0)) {
 			ERROR_CONNECT("Cannot get old port attributes: %s", SAFESTRING(SOC(connection)->devicename));
 			// proceed anyway
 		}
-		connection->head->state = cs_deflowered ;
+		pin->state = cs_deflowered ;
 	}
 
 	return serial_change( connection ) ;
@@ -54,9 +55,10 @@ GOOD_OR_BAD serial_open(struct connection_in *connection)
 //change serial port settings
 GOOD_OR_BAD serial_change(struct connection_in *connection)
 {
+	struct port_in * pin = connection->head ;
 	struct termios newSerialTio;	/*new serial port settings */
-	FILE_DESCRIPTOR_OR_ERROR fd = connection->head->file_descriptor ;
-	size_t baud = SOC(connection)->baud ;
+	FILE_DESCRIPTOR_OR_ERROR fd = pin->file_descriptor ;
+	size_t baud = pin->baud ;
 
 	// read the attribute structure
 	// valgrind warns about uninitialized memory in tcsetattr(), so clear all.
@@ -70,7 +72,7 @@ GOOD_OR_BAD serial_change(struct connection_in *connection)
 		ERROR_CONNECT("Trouble setting port speed: %s", SAFESTRING(SOC(connection)->devicename));
 		cfsetospeed(&newSerialTio, B9600) ;
 		cfsetispeed(&newSerialTio, B9600) ;
-		SOC(connection)->baud = B9600 ;
+		pin->baud = B9600 ;
 	}
 
 	// Set to non-canonical mode, and no RTS/CTS handshaking
@@ -82,7 +84,7 @@ GOOD_OR_BAD serial_change(struct connection_in *connection)
 	newSerialTio.c_cflag &= ~ HUPCL ;
 	newSerialTio.c_cflag |= (CLOCAL | CREAD);
 
-	switch( SOC(connection)->flow ) {
+	switch( pin->flow ) {
 		case flow_hard:
 			newSerialTio.c_cflag |= CRTSCTS ;
 			break ;
@@ -97,7 +99,7 @@ GOOD_OR_BAD serial_change(struct connection_in *connection)
 
 	// set bit length
 	newSerialTio.c_cflag &= ~ CSIZE ;
-	switch (SOC(connection)->bits) {
+	switch (pin->bits) {
 		case 5:
 			newSerialTio.c_cflag |= CS5 ;
 			break ;
@@ -114,7 +116,7 @@ GOOD_OR_BAD serial_change(struct connection_in *connection)
 	}
 
 	// parity
-	switch (SOC(connection)->parity) {
+	switch (pin->parity) {
 		case parity_none:
 			newSerialTio.c_cflag &= ~PARENB ;
 			break ;
@@ -132,10 +134,10 @@ GOOD_OR_BAD serial_change(struct connection_in *connection)
 	}
 
 	// stop bits
-	switch (SOC(connection)->stop) {
+	switch (pin->stop) {
 		case stop_15:
 			LEVEL_DEBUG("1.5 Stop bits not supported");
-			SOC(connection)->stop = stop_1 ;
+			pin->stop = stop_1 ;
 			// fall through
 		case stop_1:
 			newSerialTio.c_cflag &= ~CSTOPB ;
@@ -147,8 +149,8 @@ GOOD_OR_BAD serial_change(struct connection_in *connection)
 
 
 	newSerialTio.c_lflag &= ~(ECHO | ECHOE | ECHOK | ECHONL | ICANON | IEXTEN | ISIG);
-	newSerialTio.c_cc[VMIN] = SOC(connection)->vmin;
-	newSerialTio.c_cc[VTIME] = SOC(connection)->vtime;
+	newSerialTio.c_cc[VMIN] = pin->vmin;
+	newSerialTio.c_cc[VTIME] = pin->vtime;
 	if (tcsetattr( fd, TCSAFLUSH, &newSerialTio)) {
 		ERROR_CONNECT("Cannot set port attributes: %s", SAFESTRING(SOC(connection)->devicename));
 		return gbBAD;
