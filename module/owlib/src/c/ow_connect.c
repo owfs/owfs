@@ -92,8 +92,6 @@ static struct connection_in *AllocIn(const struct connection_in *old_in)
 		if (old_in == NO_CONNECTION) {
 			// Not a copy
 			memset(new_in, 0, len);
-			new_in->head->type = ct_unknown ;
-			new_in->head->state = cs_virgin ;
 			SOC(new_in)->devicename = NULL ;
 			/* Indirection to head of list for multichannel devices */
 			OW_channel_init(new_in) ;
@@ -149,6 +147,8 @@ struct port_in * AllocPort( const struct port_in * old_pin )
 		
 		// never copy file_descriptor (it's unique to port)
 		new_pin->file_descriptor = FILE_DESCRIPTOR_BAD ;
+		new_pin->type = ct_unknown ;
+		new_pin->state = cs_virgin ;
 
 		if ( new_pin->first == NO_CONNECTION ) {
 			LEVEL_DEBUG("Port creation incomplete");
