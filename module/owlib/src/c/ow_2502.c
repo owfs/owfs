@@ -86,33 +86,38 @@ DeviceEntry(89, DS1982U, NO_GENERIC_READ, NO_GENERIC_WRITE);
 /* ------- Functions ------------ */
 
 /* DS2502 */
-static GOOD_OR_BAD OW_r_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
-static GOOD_OR_BAD OW_r_data(BYTE * data, struct parsedname *pn);
+static GOOD_OR_BAD OW_r_page( BYTE * data, size_t size, off_t offset, struct parsedname *pn);
+static GOOD_OR_BAD OW_w_bytes(BYTE * data, size_t size, off_t offset, struct parsedname *pn) ;
+static GOOD_OR_BAD OW_w_byte(BYTE data, off_t offset, struct parsedname *pn) ;
 
 /* 2502 memory */
 static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	return GB_to_Z_OR_E(COMMON_readwrite_paged(owq, 0, pagesize, OW_r_mem)) ;
+	return GB_to_Z_OR_E( COMMON_readwrite_paged(owq, 0, pagesize, OW_r_page) ) ;
 }
 
 static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 {
 	size_t pagesize = 32;
-	return COMMON_offset_process( FS_r_mem, owq, OWQ_pn(owq).extension*pagesize) ;
+	return GB_to_Z_OR_E( OW_r_page( (BYTE *) OWQ_buffer(owq), OWQ_size(owq), OWQ_offset(owq) + pagesize * PN(owq)->extension, PN(owq) ) ) ;
 }
 
 static ZERO_OR_ERROR FS_r_param(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
-	BYTE data[32];
-	RETURN_ERROR_IF_BAD( OW_r_data(data, pn) );
-	return OWQ_format_output_offset_and_size((ASCII *) & data[pn->selected_filetype->data.i], FileLength(pn), owq);
+	size_t pagesize = 32;
+	BYTE data[pagesize];
+	off_t param_offset = pn->selected_filetype->data.i ;
+	
+	RETURN_ERROR_IF_BAD( OW_r_page(data, pagesize-param_offset, param_offset, pn) );
+	return OWQ_format_output_offset_and_size((ASCII *) data, FileLength(pn), owq);
 }
 
 static ZERO_OR_ERROR FS_w_mem(struct one_wire_query *owq)
 {
-	return COMMON_write_eprom_mem_owq(owq) ;
+	size_t pagesize = 1;
+	return GB_to_Z_OR_E( COMMON_readwrite_paged(owq, 0, pagesize, OW_w_bytes) ) ;
 }
 
 static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
@@ -121,7 +126,9 @@ static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 	return COMMON_offset_process( FS_w_mem, owq, OWQ_pn(owq).extension*pagesize ) ;
 }
 
-static GOOD_OR_BAD OW_r_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
+// reads to end of page and discards extra
+// uses CRC8
+static GOOD_OR_BAD OW_r_page(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
 {
 	BYTE p[4] = { _1W_READ_DATA_CRC8, LOW_HIGH_ADDRESS(offset), };
 	BYTE q[33];
@@ -141,14 +148,28 @@ static GOOD_OR_BAD OW_r_mem(BYTE * data, size_t size, off_t offset, struct parse
 	return gbGOOD;
 }
 
-static GOOD_OR_BAD OW_r_data(BYTE * data, struct parsedname *pn)
+// placeholder for OW_w_byte but uses common arguments for COMMON_readwrite_paged
+static GOOD_OR_BAD OW_w_bytes(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
 {
-	BYTE p[32];
+	(void) size ; // must be 1
+	return OW_w_byte( data[0], offset, pn ) ;
+} 
 
-	RETURN_BAD_IF_BAD( OW_r_mem(p, 32, 0, pn) ) ;
-	if ( CRC16(p, 3 + p[0])) {
-		return gbBAD;
-	}
-	memcpy(data, &p[1], p[0]);
-	return gbGOOD;
+static GOOD_OR_BAD OW_w_byte(BYTE data, off_t offset, struct parsedname *pn)
+{
+	BYTE p[5] = { _1W_WRITE_MEMORY, LOW_HIGH_ADDRESS(offset), data, 0xFF };
+	BYTE q[1];
+	struct transaction_log t[] = {
+		TRXN_START,
+		TRXN_WRITE(p,4),
+		TRXN_READ1(&p[4]),
+		TRXN_CRC8(p, 4+1),
+		TRXN_PROGRAM,
+		TRXN_READ1(q),
+		TRXN_COMPARE(q,&data,1) ,
+		TRXN_END,
+	};
+
+	return BUS_transaction(t, pn) ;
 }
+
