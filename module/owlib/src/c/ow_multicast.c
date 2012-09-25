@@ -149,6 +149,7 @@ GOOD_OR_BAD FS_FindHA7(void)
 		in = pin->first ;
 
 		pin->type = ct_tcp ;
+		pin->init_data = owstrdup(name);
 		DEVICENAME(in) = owstrdup(name);
 		pin->busmode = bus_ha7net;
 

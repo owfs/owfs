@@ -245,7 +245,7 @@ GOOD_OR_BAD ARG_ENET(const char *arg)
 
 GOOD_OR_BAD ARG_I2C(const char *arg)
 {
-	#if OW_I2C
+#if OW_I2C
 	struct port_in * pin = NewPort( NULL ) ;
 	struct connection_in * in ;
 	if ( pin == NULL ) {
@@ -258,10 +258,10 @@ GOOD_OR_BAD ARG_I2C(const char *arg)
 	arg_data( (arg!=NULL) ? arg : ":" , pin ) ;
 	pin->busmode = bus_i2c;
 	return gbGOOD;
-	#else							/* OW_I2C */
+#else							/* OW_I2C */
 	LEVEL_DEFAULT("I2C (smbus DS2482-X00) support (intentionally) not included in compilation. Reconfigure and recompile.");
 	return gbBAD;
-	#endif							/* OW_I2C */
+#endif							/* OW_I2C */
 }
 
 GOOD_OR_BAD ARG_Link(const char *arg)
@@ -372,7 +372,7 @@ GOOD_OR_BAD ARG_Net(const char *arg)
 
 GOOD_OR_BAD ARG_Parallel(const char *arg)
 {
-	#if OW_PARPORT
+#if OW_PARPORT
 	struct port_in * pin = NewPort( NULL ) ;
 	struct connection_in * in ;
 	if ( pin == NULL ) {
@@ -385,10 +385,10 @@ GOOD_OR_BAD ARG_Parallel(const char *arg)
 	arg_data(arg,pin) ;
 	pin->busmode = bus_parallel;
 	return gbGOOD;
-	#else							/* OW_PARPORT */
+#else							/* OW_PARPORT */
 	LEVEL_DEFAULT("Parallel port support (intentionally) not included in compilation. For DS1410E. That's ok, it doesn't work anyways.");
 	return gbBAD;
-	#endif							/* OW_PARPORT */
+#endif							/* OW_PARPORT */
 }
 
 GOOD_OR_BAD ARG_Passive(char *adapter_type_name, const char *arg)
