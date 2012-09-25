@@ -38,6 +38,7 @@ static enum arg_address ArgType( const char * arg )
 	return arg_addr_other ;
 }
 
+// Put initial port configuration in init_data and connection_in devicename
 static void arg_data( const char * arg, struct port_in * pin )
 {
 	if ( arg == NULL ) {
