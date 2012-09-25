@@ -149,10 +149,10 @@ GOOD_OR_BAD FS_FindHA7(void)
 		in = pin->first ;
 
 		pin->type = ct_tcp ;
-		SOC(in)->devicename = owstrdup(name);
+		DEVICENAME(in) = owstrdup(name);
 		pin->busmode = bus_ha7net;
 
-		LEVEL_CONNECT("HA7Net bus master discovered at %s",SOC(in)->devicename);
+		LEVEL_CONNECT("HA7Net bus master discovered at %s",DEVICENAME(in));
 		++number_found ;
 	}
 	freeaddrinfo(ai);

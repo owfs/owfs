@@ -33,12 +33,12 @@ GOOD_OR_BAD COM_write( const BYTE * data, size_t length, struct connection_in *c
 	switch ( pin->type ) {
 		case ct_unknown:
 		case ct_none:
-			LEVEL_DEBUG("Bad bus type for writing %s",SAFESTRING(SOC(connection)->devicename));
+			LEVEL_DEBUG("Bad bus type for writing %s",SAFESTRING(DEVICENAME(connection)));
 			return gbBAD ;
 		case ct_i2c:
 		case ct_usb:
 			// usb and i2c use their own write logic currently
-			LEVEL_DEBUG("Unimplemented write %s",SAFESTRING(SOC(connection)->devicename));
+			LEVEL_DEBUG("Unimplemented write %s",SAFESTRING(DEVICENAME(connection)));
 			return gbBAD ;
 		case ct_telnet:
 			// telnet gets special processing to send communication parameters (in band)
@@ -66,15 +66,15 @@ GOOD_OR_BAD COM_write( const BYTE * data, size_t length, struct connection_in *c
 	// try the write
 	RETURN_GOOD_IF_GOOD( COM_write_once( data, length, connection ) );
 	
-	LEVEL_DEBUG("Trouble writing to %s", SAFESTRING(SOC(connection)->devicename) ) ;
+	LEVEL_DEBUG("Trouble writing to %s", SAFESTRING(DEVICENAME(connection)) ) ;
 
 	if ( connection->head->file_descriptor == FILE_DESCRIPTOR_BAD ) {
 		// connection was bad, now closed, try again
-		LEVEL_DEBUG("Need to reopen %s", SAFESTRING(SOC(connection)->devicename) ) ;
+		LEVEL_DEBUG("Need to reopen %s", SAFESTRING(DEVICENAME(connection)) ) ;
 		RETURN_BAD_IF_BAD( COM_test(connection) ) ;
-		LEVEL_DEBUG("Reopened %s, now slurp", SAFESTRING(SOC(connection)->devicename) ) ;
+		LEVEL_DEBUG("Reopened %s, now slurp", SAFESTRING(DEVICENAME(connection)) ) ;
 		COM_slurp(connection) ;
-		LEVEL_DEBUG("Write again to %s", SAFESTRING(SOC(connection)->devicename) ) ;
+		LEVEL_DEBUG("Write again to %s", SAFESTRING(DEVICENAME(connection)) ) ;
 		return COM_write_once( data, length, connection ) ;
 	}
 
@@ -114,7 +114,7 @@ GOOD_OR_BAD COM_write_simple( const BYTE * data, size_t length, struct connectio
 	}
 
 	if ( pin->file_descriptor == FILE_DESCRIPTOR_BAD ) {
-		LEVEL_DEBUG("Writing to closed device %d",SAFESTRING(SOC(connection)->devicename));
+		LEVEL_DEBUG("Writing to closed device %d",SAFESTRING(DEVICENAME(connection)));
 		return gbBAD ;
 	}
 
@@ -144,7 +144,7 @@ static GOOD_OR_BAD COM_write_once( const BYTE * data, size_t length, struct conn
 			ssize_t write_result ;
 
 			if (FD_ISSET( fd, &writeset) == 0) {
-				ERROR_CONNECT("Select no FD found on write to %s", SAFESTRING(SOC(connection)->devicename));				
+				ERROR_CONNECT("Select no FD found on write to %s", SAFESTRING(DEVICENAME(connection)));				
 				STAT_ADD1_BUS(e_bus_write_errors, connection);
 				return gbBAD;	/* error */
 			}
@@ -152,7 +152,7 @@ static GOOD_OR_BAD COM_write_once( const BYTE * data, size_t length, struct conn
 			write_result = write( fd, &data[length - to_be_written], to_be_written); /* write bytes */ 			
 			if (write_result < 0) {
 				if (errno != EWOULDBLOCK && errno != EAGAIN) {
-					ERROR_CONNECT("Trouble writing to %s", SAFESTRING(SOC(connection)->devicename));
+					ERROR_CONNECT("Trouble writing to %s", SAFESTRING(DEVICENAME(connection)));
 					COM_close(connection) ;
 					STAT_ADD1_BUS(e_bus_write_errors, connection);
 					return gbBAD;
@@ -163,7 +163,7 @@ static GOOD_OR_BAD COM_write_once( const BYTE * data, size_t length, struct conn
 				to_be_written -= write_result ;	
 			}
 		} else {			/* timed out or select error */
-			ERROR_CONNECT("Select/timeout error writing to %s", SAFESTRING(SOC(connection)->devicename));
+			ERROR_CONNECT("Select/timeout error writing to %s", SAFESTRING(DEVICENAME(connection)));
 			STAT_ADD1_BUS(e_bus_timeouts, connection);
 			if ( errno == EBADF ) {
 				LEVEL_DEBUG("Close file descriptor -- EBADF");

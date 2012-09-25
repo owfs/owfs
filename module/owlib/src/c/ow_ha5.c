@@ -87,7 +87,7 @@ GOOD_OR_BAD HA5_detect(struct port_in *pin)
 	if (pin->init_data == NULL) {
 		return gbBAD;
 	} else {
-		SOC(in)->devicename = owstrdup(pin->init_data) ;
+		DEVICENAME(in) = owstrdup(pin->init_data) ;
 	}
 
 	COM_set_standard( in ) ; // standard COM port settings
@@ -102,7 +102,7 @@ GOOD_OR_BAD HA5_detect(struct port_in *pin)
 	// allowable speeds
 	COM_BaudRestrict( &(pin->baud), B1200, B19200, B38400, B115200, 0 ) ;
 
-	Parse_Address( SOC(in)->devicename, &ap ) ;
+	Parse_Address( DEVICENAME(in), &ap ) ;
 
 	gbResult = HA5_detect_parsed( &ap, in) ;
 
@@ -128,15 +128,15 @@ GOOD_OR_BAD HA5_detect_parsed(struct address_pair *ap, struct connection_in *in)
 			// address:port:channel_list
 			if ( ap->first.type != address_none ) {
 				// IP address exists
-				strcpy(SOC(in)->devicename, ap->first.alpha) ; // subset so will fit
+				strcpy(DEVICENAME(in), ap->first.alpha) ; // subset so will fit
 				if ( ap->second.type != address_none ) {
 					// Add :port
-					strcat(SOC(in)->devicename, ":") ; // subset so will fit
-					strcat(SOC(in)->devicename, ap->second.alpha) ; // subset so will fit
+					strcat(DEVICENAME(in), ":") ; // subset so will fit
+					strcat(DEVICENAME(in), ap->second.alpha) ; // subset so will fit
 				}
 			} else if ( ap->second.type != address_none ) {
 				// just :port
-				strcpy(SOC(in)->devicename, ap->second.alpha) ; // subset so will fit
+				strcpy(DEVICENAME(in), ap->second.alpha) ; // subset so will fit
 			} else {
 				// No tcp address or port specified
 				return gbBAD ;
@@ -160,7 +160,7 @@ GOOD_OR_BAD HA5_detect_parsed(struct address_pair *ap, struct connection_in *in)
 			// device:channel_list
 			if ( ap->first.type != address_none ) {
 				// device address exists
-				strcpy(SOC(in)->devicename, ap->first.alpha) ; // subset so will fit
+				strcpy(DEVICENAME(in), ap->first.alpha) ; // subset so will fit
 			} else {
 				// No serial port specified
 				return gbBAD ;
@@ -213,7 +213,7 @@ static GOOD_OR_BAD HA5_channel_list( char * alpha_string, struct connection_in *
 		}
 
 		current_in->master.ha5.channel = tolower(c) ;
-		LEVEL_DEBUG("Looking for HA5 adapter on %s:%c", SOC(current_in)->devicename, current_in->master.ha5.channel ) ;
+		LEVEL_DEBUG("Looking for HA5 adapter on %s:%c", DEVICENAME(current_in), current_in->master.ha5.channel ) ;
 
 		if (
 		GOOD( HA5_test_channel(current_in))
@@ -223,7 +223,7 @@ static GOOD_OR_BAD HA5_channel_list( char * alpha_string, struct connection_in *
 			// work around for new USB serial port that seems to need a repeat test
 			first_time = 0 ;
 
-			LEVEL_CONNECT("HA5 bus master FOUND on port %s at channel %c", SOC(current_in)->devicename, current_in->master.ha5.channel ) ;
+			LEVEL_CONNECT("HA5 bus master FOUND on port %s at channel %c", DEVICENAME(current_in), current_in->master.ha5.channel ) ;
 			current_in = AddtoPort( initial_in->head, initial_in ) ; // point to newer space for next candidate
 
 			if ( current_in == NO_CONNECTION ) {
@@ -232,7 +232,7 @@ static GOOD_OR_BAD HA5_channel_list( char * alpha_string, struct connection_in *
 			continue ;
 		}
 
-		LEVEL_CONNECT("HA5 bus master NOT FOUND on port %s at channel %c", SOC(current_in)->devicename, c ) ;
+		LEVEL_CONNECT("HA5 bus master NOT FOUND on port %s at channel %c", DEVICENAME(current_in), c ) ;
 	}
 	
 	// Now see if we've added any adapters
@@ -260,13 +260,13 @@ static GOOD_OR_BAD HA5_find_channel( struct connection_in * in )
 		// test char set
 		in->master.ha5.channel = c[0] ;
 
-		LEVEL_DEBUG("Looking for HA5 adapter on %s:%c", SOC(in)->devicename, in->master.ha5.channel ) ;
+		LEVEL_DEBUG("Looking for HA5 adapter on %s:%c", DEVICENAME(in), in->master.ha5.channel ) ;
 		if ( GOOD( HA5_test_channel(in)) ) {
-			LEVEL_CONNECT("HA5 bus master FOUND on port %s at channel %c", SOC(in)->devicename, in->master.ha5.channel ) ;
+			LEVEL_CONNECT("HA5 bus master FOUND on port %s at channel %c", DEVICENAME(in), in->master.ha5.channel ) ;
 			return gbGOOD ;
 		}
 	}
-	LEVEL_DEBUG("HA5 bus master NOT FOUND on port %s", SOC(in)->devicename ) ;
+	LEVEL_DEBUG("HA5 bus master NOT FOUND on port %s", DEVICENAME(in) ) ;
 	in->master.ha5.channel = '\0' ; 
 	return gbBAD;
 }
@@ -377,7 +377,7 @@ static GOOD_OR_BAD HA5_checksum_support( struct connection_in * in )
 
 	if ( resp[2] == 0x0D ) {
 		in->master.ha5.checksum = 0 ;
-		LEVEL_DETAIL("HA5 %s in NON-CHECKSUM mode",SAFESTRING(SOC(in)->devicename));
+		LEVEL_DETAIL("HA5 %s in NON-CHECKSUM mode",SAFESTRING(DEVICENAME(in)));
 		return gbGOOD ;
 	} else if ( resp[2] == 'X' ) {
 		// nothing actually read
@@ -394,7 +394,7 @@ static GOOD_OR_BAD HA5_checksum_support( struct connection_in * in )
 		return gbBAD ;
 	}
 	in->master.ha5.checksum = 1 ;
-	LEVEL_DETAIL("HA5 %s in CHECKSUM mode",SAFESTRING(SOC(in)->devicename));
+	LEVEL_DETAIL("HA5 %s in CHECKSUM mode",SAFESTRING(DEVICENAME(in)));
 	return gbGOOD ;
 }
 

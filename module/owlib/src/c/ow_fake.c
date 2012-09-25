@@ -178,7 +178,7 @@ static void SetConninData( int indx, const char * type, struct port_in *pin )
 
 	GetAllDeviceNames( pin ) ;
 
-	SOC(in)->devicename = owstrdup(name);
+	DEVICENAME(in) = owstrdup(name);
 }
 
 /* Device-specific functions */

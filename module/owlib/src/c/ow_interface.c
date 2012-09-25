@@ -586,7 +586,7 @@ static ZERO_OR_ERROR FS_name(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_port(struct one_wire_query *owq)
 {
 	return OWQ_format_output_offset_and_size_z(
-		SAFESTRING( SOC(PN(owq)->selected_connection)->devicename),
+		SAFESTRING( DEVICENAME(PN(owq)->selected_connection)),
 		owq);
 }
 

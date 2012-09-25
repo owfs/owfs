@@ -122,7 +122,8 @@ struct connection_in {
 //	char *name;
 //	FILE_DESCRIPTOR_OR_PERSISTENT file_descriptor;
 	
-	// Serial / tcp / telnet / i2c abstraction
+	// Formerly Serial / tcp / telnet / i2c abstraction
+	// Now only holds device name since the port manages communication details
 	struct communication soc ;
 
 	// Com port data:
@@ -165,7 +166,7 @@ struct connection_in {
 	union master_union master;
 };
 
-#define SOC( connection )  ( &( (connection)->soc) )
+#define DEVICENAME( connection )  ( (&( (connection)->soc))->devicename )
 
 #define NO_CONNECTION NULL
 

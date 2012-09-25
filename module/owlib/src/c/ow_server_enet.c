@@ -80,7 +80,7 @@ GOOD_OR_BAD OWServer_Enet_detect(struct port_in *pin)
 	if (pin->init_data == NULL) {
 		return gbBAD;
 	} else {
-		SOC(in)->devicename = owstrdup(pin->init_data) ;
+		DEVICENAME(in) = owstrdup(pin->init_data) ;
 	}
 
 	pin->type = ct_telnet ;
@@ -104,7 +104,7 @@ GOOD_OR_BAD OWServer_Enet_detect(struct port_in *pin)
 static GOOD_OR_BAD OWServer_Enet_reopen(struct connection_in *in)
 {
 	if ( in->master.enet.reopening ) {
-		LEVEL_DEBUG("Attempt to double-reopen %s",SAFESTRING(SOC(in)->devicename)) ;
+		LEVEL_DEBUG("Attempt to double-reopen %s",SAFESTRING(DEVICENAME(in))) ;
 		return gbBAD ;
 	}
 

@@ -71,7 +71,7 @@ GOOD_OR_BAD DS9097_detect(struct port_in *pin)
 	if (pin->init_data == NULL) {
 		return gbBAD;
 	} else {
-		SOC(in)->devicename = owstrdup(pin->init_data) ;
+		DEVICENAME(in) = owstrdup(pin->init_data) ;
 	}
 	RETURN_BAD_IF_BAD(COM_open(in)) ;
 
@@ -163,7 +163,7 @@ static GOOD_OR_BAD DS9097_pre_reset(struct connection_in *in )
 	pin->baud = B9600 ;
 
 	if ( BAD( COM_change(in)) ) {
-		ERROR_CONNECT("Cannot set attributes: %s", SAFESTRING(SOC(in)->devicename));
+		ERROR_CONNECT("Cannot set attributes: %s", SAFESTRING(DEVICENAME(in)));
 		DS9097_post_reset( in ) ;
 		return gbBAD;
 	}

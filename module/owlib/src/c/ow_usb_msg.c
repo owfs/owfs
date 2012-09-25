@@ -70,7 +70,7 @@ GOOD_OR_BAD USB_Control_Msg(BYTE bRequest, UINT wValue, UINT wIndex, const struc
 	}
 	ret = usb_control_msg(usb, CONTROL_REQUEST_TYPE, bRequest, wValue, wIndex, NULL, 0, in->master.usb.timeout);
 #if OW_SHOW_TRAFFIC
-	fprintf(stderr, "TRAFFIC OUT <control> bus=%d (%s)\n", in->index, SOC(in)->devicename ) ;
+	fprintf(stderr, "TRAFFIC OUT <control> bus=%d (%s)\n", in->index, DEVICENAME(in) ) ;
 	fprintf(stderr, "\tbus name=%s request type=0x%.2X, wValue=0x%X, wIndex=0x%X, return code=%d\n",in->adapter_name, bRequest, wValue, wIndex, ret) ;
 #endif /* OW_SHOW_TRAFFIC */
 	if( ret < 0 ) {
@@ -285,14 +285,14 @@ GOOD_OR_BAD DS9490_open(struct usb_list *ul, struct connection_in *in)
 	in->master.usb.timeout = 1000 * Globals.timeout_usb;
 
 	if ( usb_set_configuration(usb, 1) != 0 ) {
-		LEVEL_CONNECT("Failed to set configuration on USB DS9490 bus master at %s.", SOC(in)->devicename);
+		LEVEL_CONNECT("Failed to set configuration on USB DS9490 bus master at %s.", DEVICENAME(in));
 	} else if ( usb_claim_interface(usb, 0) != 0 ) {
-		LEVEL_CONNECT("Failed to claim interface on USB DS9490 bus master at %s.", SOC(in)->devicename);
+		LEVEL_CONNECT("Failed to claim interface on USB DS9490 bus master at %s.", DEVICENAME(in));
 	} else {
 		if ( usb_set_altinterface(usb, 3) != 0 ) {
-			LEVEL_CONNECT("Failed to set alt interface on USB DS9490 bus master at %s.", SOC(in)->devicename);
+			LEVEL_CONNECT("Failed to set alt interface on USB DS9490 bus master at %s.", DEVICENAME(in));
 		} else {
-			LEVEL_DEFAULT("Opened USB DS9490 bus master at %s.", SOC(in)->devicename);
+			LEVEL_DEFAULT("Opened USB DS9490 bus master at %s.", DEVICENAME(in));
 
 			// clear endpoints
 			if ( USB_CLEAR_HALT(usb, DS2490_EP3) || USB_CLEAR_HALT(usb, DS2490_EP2) || USB_CLEAR_HALT(usb, DS2490_EP1) ) {
@@ -306,7 +306,7 @@ GOOD_OR_BAD DS9490_open(struct usb_list *ul, struct connection_in *in)
 	usb_close(usb);
 	in->master.usb.usb = NULL;
 
-	LEVEL_DEBUG("Did not successfully open DS9490 %s -- permission problem?",SOC(in)->devicename) ;
+	LEVEL_DEBUG("Did not successfully open DS9490 %s -- permission problem?",DEVICENAME(in)) ;
 	STAT_ADD1_BUS(e_bus_open_errors, in);
 	return gbBAD;
 }
@@ -330,12 +330,12 @@ void DS9490_close(struct connection_in *in)
 			in->master.usb.dev = NULL;	// force a re-scan
 			LEVEL_CONNECT("usb_close() failed ret=%d", ret);
 		}
-		LEVEL_CONNECT("Closed USB DS9490 bus master at %s. ret=%d", SOC(in)->devicename, ret);
+		LEVEL_CONNECT("Closed USB DS9490 bus master at %s. ret=%d", DEVICENAME(in), ret);
 	}
 	in->master.usb.usb = NULL;
 	in->master.usb.dev = NULL;
-	SAFEFREE(SOC(in)->devicename) ;
-	SOC(in)->devicename = owstrdup(badUSBname);
+	SAFEFREE(DEVICENAME(in)) ;
+	DEVICENAME(in) = owstrdup(badUSBname);
 }
 
 /* ------------------------------------------------------------ */

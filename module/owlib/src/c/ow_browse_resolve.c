@@ -33,7 +33,7 @@ void ZeroAdd(const char * name, const char * type, const char * domain, const ch
 	pin = CreateZeroPort( name, type, domain, host, service ) ;
 	if ( pin != NULL ) {
 		if ( BAD( Zero_detect(pin)) ) {
-			LEVEL_DEBUG("Failed to create new %s", SOC(pin->first)->devicename ) ;
+			LEVEL_DEBUG("Failed to create new %s", DEVICENAME(pin->first) ) ;
 			RemovePort(pin) ;
 		} else {
 			Add_InFlight( Zero_nomatch, pin ) ;
@@ -48,8 +48,8 @@ void ZeroDel(const char * name, const char * type, const char * domain )
 	if ( pin != NULL ) {
 		struct connection_in * in = pin->first ;
 		if ( in != NO_CONNECTION ) {
-			SAFEFREE(SOC(in)->devicename) ;
-			SOC(in)->devicename = owstrdup(name) ;
+			SAFEFREE(DEVICENAME(in)) ;
+			DEVICENAME(in) = owstrdup(name) ;
 			Del_InFlight( Zero_nomatch, pin ) ;
 		}
 	}
@@ -74,7 +74,7 @@ static struct port_in * CreateZeroPort(const char * name, const char * type, con
 	UCLIBCLOCK;
 	snprintf(addr_name,127,"%s:%s",host,service) ;
 	UCLIBCUNLOCK;
-	SOC(in)->devicename = owstrdup(addr_name) ;
+	DEVICENAME(in) = owstrdup(addr_name) ;
 	pin->type = ct_tcp ;
 	in->master.tcp.name   = owstrdup( name  ) ;
 	in->master.tcp.type   = owstrdup( type  ) ;

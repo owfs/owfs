@@ -125,7 +125,7 @@ static GOOD_OR_BAD DS2482_PowerByte(const BYTE byte, BYTE * resp, const UINT del
 
 /* Defines for making messages more explicit */
 #define I2Cformat "I2C bus %s, channel %d/%d"
-#define I2Cvar(in)  SOC(in)->devicename, (in)->master.i2c.index, (in)->master.i2c.channels
+#define I2Cvar(in)  DEVICENAME(in), (in)->master.i2c.index, (in)->master.i2c.channels
 
 /* Device-specific functions */
 static void DS2482_setroutines(struct connection_in *in)
@@ -158,7 +158,7 @@ GOOD_OR_BAD DS2482_detect(struct port_in *pin)
 	if (pin->init_data == NULL) {
 		return gbBAD;
 	} else {
-		SOC(in)->devicename = owstrdup(pin->init_data) ;
+		DEVICENAME(in) = owstrdup(pin->init_data) ;
 	}
 	Parse_Address( pin->init_data, &ap ) ;
 	
@@ -183,7 +183,7 @@ GOOD_OR_BAD DS2482_detect(struct port_in *pin)
 			break ;
 	}
 
-	SAFEFREE( SOC(in)->devicename ) ;
+	SAFEFREE( DEVICENAME(in) ) ;
 
 	switch ( ap.first.type ) {
 		case address_all:
@@ -430,10 +430,10 @@ static GOOD_OR_BAD DS2482_detect_single(int lowindex, int highindex, char * i2c_
 			// Note, only the lower nibble of the device config stored
 			
 			// Create name
-			SOC(in)->devicename = owmalloc( strlen(i2c_device) + 10 ) ;
-			if ( SOC(in)->devicename ) {
+			DEVICENAME(in) = owmalloc( strlen(i2c_device) + 10 ) ;
+			if ( DEVICENAME(in) ) {
 				UCLIBCLOCK;
-				snprintf(SOC(in)->devicename, strlen(i2c_device) + 10, "%s:%.2X", i2c_device, trial_address);
+				snprintf(DEVICENAME(in), strlen(i2c_device) + 10, "%s:%.2X", i2c_device, trial_address);
 				UCLIBCUNLOCK;
 			}
 
@@ -455,11 +455,11 @@ static GOOD_OR_BAD DS2482_redetect(const struct parsedname *pn)
 	struct address_pair ap ; // to get device name from device:address
 
 	/* open the i2c port */
-	Parse_Address( SOC(head)->devicename, &ap ) ;
+	Parse_Address( DEVICENAME(head), &ap ) ;
 	file_descriptor = open(ap.first.alpha, O_RDWR );
 	Free_Address( &ap ) ;
 	if ( FILE_DESCRIPTOR_NOT_VALID(file_descriptor) ) {
-		ERROR_CONNECT("Could not open i2c device %s", SOC(head)->devicename);
+		ERROR_CONNECT("Could not open i2c device %s", DEVICENAME(head));
 		return gbBAD;
 	}
 	
@@ -473,7 +473,7 @@ static GOOD_OR_BAD DS2482_redetect(const struct parsedname *pn)
 			|| BAD(DS2482_readstatus(&c, file_descriptor, DS2482_Chip_reset_usec))	// pause .5 usec then read status
 			|| (c != (DS2482_REG_STS_LL | DS2482_REG_STS_RST))	// make sure status is properly set
 			) {
-			LEVEL_CONNECT("i2c device at %s address %d cannot be reset. Not a DS2482.", SOC(head)->devicename, address);
+			LEVEL_CONNECT("i2c device at %s address %d cannot be reset. Not a DS2482.", DEVICENAME(head), address);
 		} else {
 			struct connection_in * next ;
 			head->master.i2c.current = 0;
@@ -481,7 +481,7 @@ static GOOD_OR_BAD DS2482_redetect(const struct parsedname *pn)
 			head->head->state = cs_deflowered ;
 			head->head->type = ct_i2c ;
 			head->master.i2c.configchip = 0x00;	// default configuration register after RESET	
-			LEVEL_CONNECT("i2c device at %s address %d reset successfully", SOC(head)->devicename, address);
+			LEVEL_CONNECT("i2c device at %s address %d reset successfully", DEVICENAME(head), address);
 			for ( next = head->master.i2c.next; next; next = next->master.i2c.next ) {
 				/* loop through devices, matching those that have the same "head" */
 				/* BUSLOCK also locks the sister channels for this */

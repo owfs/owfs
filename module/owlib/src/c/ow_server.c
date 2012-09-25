@@ -68,7 +68,7 @@ GOOD_OR_BAD Zero_detect(struct port_in *pin)
 	if (pin->init_data == NULL) {
 		return gbBAD;
 	} else {
-		SOC(in)->devicename = owstrdup(pin->init_data) ;
+		DEVICENAME(in) = owstrdup(pin->init_data) ;
 	}
 
 	RETURN_BAD_IF_BAD( COM_open(in) ) ;
@@ -87,7 +87,7 @@ GOOD_OR_BAD Server_detect(struct port_in *pin)
 	if (pin->init_data == NULL) {
 		return gbBAD;
 	} else {
-		SOC(in)->devicename = owstrdup(pin->init_data) ;
+		DEVICENAME(in) = owstrdup(pin->init_data) ;
 	}
 
 	pin->type = ct_tcp ;

@@ -92,7 +92,7 @@ static struct connection_in *AllocIn(const struct connection_in *old_in)
 		if (old_in == NO_CONNECTION) {
 			// Not a copy
 			memset(new_in, 0, len);
-			SOC(new_in)->devicename = NULL ;
+			DEVICENAME(new_in) = NULL ; 
 			/* Indirection to head of list for multichannel devices */
 			OW_channel_init(new_in) ;
 			/* Not yet a valid bus */
@@ -100,9 +100,9 @@ static struct connection_in *AllocIn(const struct connection_in *old_in)
 		} else {
 			// Copy of prior bus
 			memcpy(new_in, old_in, len);
-			if ( SOC(new_in)->devicename != NULL ) {
+			if ( DEVICENAME(new_in) != NULL ) {
 				// Don't make the name point to the same string, make a copy
-				SOC(new_in)->devicename = owstrdup( SOC(old_in)->devicename ) ;
+				DEVICENAME(new_in) = owstrdup( DEVICENAME(old_in) ) ;
 			}
 			/* Indirection to head of list for multichannel devices */
 			new_in->channel_info.head = old_in ;

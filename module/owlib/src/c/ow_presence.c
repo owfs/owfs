@@ -285,9 +285,9 @@ static INDEX_OR_ERROR CheckThisConnection(int bus_nr, struct parsedname *pn)
 		}
 	}
 	if ( connection_result == INDEX_BAD ) {
-		LEVEL_DEBUG("Presence of "SNformat" NOT found on bus %s",SNvar(pn_copy->sn),SAFESTRING(SOC(in)->devicename)) ;
+		LEVEL_DEBUG("Presence of "SNformat" NOT found on bus %s",SNvar(pn_copy->sn),SAFESTRING(DEVICENAME(in))) ;
 	} else {
-		LEVEL_DEBUG("Presence of "SNformat" FOUND on bus %s",SNvar(pn_copy->sn),SAFESTRING(SOC(in)->devicename)) ;
+		LEVEL_DEBUG("Presence of "SNformat" FOUND on bus %s",SNvar(pn_copy->sn),SAFESTRING(DEVICENAME(in))) ;
 		Cache_Add_Device(in->index,pn_copy->sn) ; // add or update cache */
 	}
 	return connection_result ;

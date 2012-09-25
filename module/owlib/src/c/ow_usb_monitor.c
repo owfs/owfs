@@ -32,7 +32,7 @@ GOOD_OR_BAD USB_monitor_detect(struct port_in *pin)
 	if (pin->init_data == NULL) {
 		return gbBAD;
 	} else {
-		SOC(in)->devicename = owstrdup(pin->init_data) ;
+		DEVICENAME(in) = owstrdup(pin->init_data) ;
 	}
 
 	Parse_Address( pin->init_data, &ap ) ;
@@ -44,8 +44,8 @@ GOOD_OR_BAD USB_monitor_detect(struct port_in *pin)
 	}
 	Free_Address( &ap ) ;
 
-	SAFEFREE(SOC(in)->devicename) ;
-	SOC(in)->devicename = owstrdup("USB bus monitor") ;
+	SAFEFREE(DEVICENAME(in)) ;
+	DEVICENAME(in) = owstrdup("USB bus monitor") ;
 
 	pin->file_descriptor = FILE_DESCRIPTOR_BAD;
 	in->iroutines.detect = USB_monitor_detect;
@@ -104,7 +104,7 @@ static GOOD_OR_BAD usb_monitor_in_use(const struct connection_in * in_selected)
 
 static void USB_monitor_close(struct connection_in *in)
 {
-	SAFEFREE(SOC(in)->devicename) ;
+	SAFEFREE(DEVICENAME(in)) ;
 
 	if ( FILE_DESCRIPTOR_VALID( in->master.usb_monitor.shutdown_pipe[fd_pipe_write] ) ) {
 		ignore_result = write( in->master.usb_monitor.shutdown_pipe[fd_pipe_write],"X",1) ; //dummy payload
@@ -154,7 +154,7 @@ static void USB_scan_for_adapters(void)
 			return ;
 		}
 		in = pin->first ;
-		SOC(in)->devicename = DS9490_device_name(&ul) ;
+		DEVICENAME(in) = DS9490_device_name(&ul) ;
 		pin->type = ct_usb ;
 		
 		// Can do detect. Becasue the name makes this a specific adapter (USB pair)

@@ -51,7 +51,7 @@ static struct port_in * CreateW1Port(int bus_master)
 		return NULL ;
 	}	
 		 
-	LEVEL_DEBUG("Setup structure for %s",SOC(in)->devicename) ;
+	LEVEL_DEBUG("Setup structure for %s",DEVICENAME(in)) ;
 	return pin ;
 }
 

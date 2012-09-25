@@ -141,7 +141,7 @@ GOOD_OR_BAD DS9490_root_dir( struct dirblob * db, struct connection_in * in )
 	UCLIBCUNLOCK;
 
 	if ( FS_ParsedName(path, &pn_root) != 0 ) {
-		LEVEL_DATA("Cannot get root directory on [%s] Parsing %s error.", SAFESTRING(SOC(in)->devicename), path);
+		LEVEL_DATA("Cannot get root directory on [%s] Parsing %s error.", SAFESTRING(DEVICENAME(in)), path);
 		return gbBAD ;
 	}
 	DirblobInit( db ) ;
@@ -179,7 +179,7 @@ GOOD_OR_BAD DS9490_ID_this_master(struct connection_in *in)
 	if ( DirblobElements( &db) == 0 ) {
 		DirblobClear( &db ) ;
 		memset( in->master.usb.ds1420_address, 0, SERIAL_NUMBER_SIZE ) ;
-		LEVEL_DEFAULT("Set DS9490 %s unique id 0x00 (no devices at all)", SAFESTRING(SOC(in)->devicename)) ;
+		LEVEL_DEFAULT("Set DS9490 %s unique id 0x00 (no devices at all)", SAFESTRING(DEVICENAME(in))) ;
 		return gbGOOD ;
 	}
 	
@@ -188,7 +188,7 @@ GOOD_OR_BAD DS9490_ID_this_master(struct connection_in *in)
 	while ( DirblobGet( device_number, sn, &db ) == 0 ) {
 		if (sn[0] == 0x81) {	// 0x81 family code
 			memcpy(in->master.usb.ds1420_address, sn, SERIAL_NUMBER_SIZE);
-			LEVEL_DEFAULT("Set DS9490 %s unique id to " SNformat, SAFESTRING(SOC(in)->devicename), SNvar(in->master.usb.ds1420_address));
+			LEVEL_DEFAULT("Set DS9490 %s unique id to " SNformat, SAFESTRING(DEVICENAME(in)), SNvar(in->master.usb.ds1420_address));
 			DirblobClear( &db ) ;
 			return gbGOOD ;
 		}
@@ -200,7 +200,7 @@ GOOD_OR_BAD DS9490_ID_this_master(struct connection_in *in)
 	while ( DirblobGet( device_number, sn, &db ) == 0 ) {
 		if (sn[0] == 0x01) {	// 0x01 family code
 			memcpy(in->master.usb.ds1420_address, sn, SERIAL_NUMBER_SIZE);
-			LEVEL_DEFAULT("Set DS9490 %s unique id to " SNformat, SAFESTRING(SOC(in)->devicename), SNvar(in->master.usb.ds1420_address));
+			LEVEL_DEFAULT("Set DS9490 %s unique id to " SNformat, SAFESTRING(DEVICENAME(in)), SNvar(in->master.usb.ds1420_address));
 			DirblobClear( &db ) ;
 			return gbGOOD ;
 		}
@@ -210,7 +210,7 @@ GOOD_OR_BAD DS9490_ID_this_master(struct connection_in *in)
 	// Take the first device, whatever it is
 	DirblobGet( 0, sn, &db ) ;
 	memcpy(in->master.usb.ds1420_address, sn, SERIAL_NUMBER_SIZE);
-	LEVEL_DEFAULT("Set DS9490 %s unique id to " SNformat, SAFESTRING(SOC(in)->devicename), SNvar(in->master.usb.ds1420_address));
+	LEVEL_DEFAULT("Set DS9490 %s unique id to " SNformat, SAFESTRING(DEVICENAME(in)), SNvar(in->master.usb.ds1420_address));
 	DirblobClear( &db ) ;
 	return gbGOOD;
 }

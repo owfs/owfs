@@ -119,7 +119,7 @@ ZERO_OR_ERROR DS9123O_detect(struct port_in *pin)
 	if (pin->init_data == NULL) {
 		return gbBAD;
 	} else {
-		SOC(in)->devicename = owstrdup(pin->init_data) ;
+		DEVICENAME(in) = owstrdup(pin->init_data) ;
 	}
 
 	return -ENOTSUP;

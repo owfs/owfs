@@ -42,10 +42,10 @@ static enum arg_address ArgType( const char * arg )
 static void arg_data( const char * arg, struct port_in * pin )
 {
 	if ( arg == NULL ) {
-		SOC(pin->first)->devicename = NULL ;
+		DEVICENAME(pin->first) = NULL ;
 		pin->init_data = NULL ;
 	} else {
-		SOC(pin->first)->devicename = owstrdup(arg) ;
+		DEVICENAME(pin->first) = owstrdup(arg) ;
 		pin->init_data = owstrdup(arg) ;
 	}
 }
@@ -109,7 +109,7 @@ GOOD_OR_BAD ARG_EtherWeather(const char *arg)
 	if (in == NO_CONNECTION) {
 		return gbBAD;
 	}
-	SOC(in)->devicename = (arg!=NULL) ? owstrdup(arg) : NULL;
+	arg_data( arg, pin ) ;
 	pin->busmode = bus_etherweather;
 	return gbGOOD;
 }

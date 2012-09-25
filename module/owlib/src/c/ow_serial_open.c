@@ -31,11 +31,11 @@ $Id$
 GOOD_OR_BAD serial_open(struct connection_in *connection)
 {
 	struct port_in * pin = connection->head ;
-	FILE_DESCRIPTOR_OR_ERROR fd = open( SOC(connection)->devicename, O_RDWR | O_NONBLOCK | O_NOCTTY) ;
+	FILE_DESCRIPTOR_OR_ERROR fd = open( DEVICENAME(connection), O_RDWR | O_NONBLOCK | O_NOCTTY) ;
 	pin->file_descriptor = fd ;
 	if ( FILE_DESCRIPTOR_NOT_VALID( fd ) ) {
 		// state doesn't change
-		ERROR_DEFAULT("Cannot open port: %s Permissions problem?", SAFESTRING(SOC(connection)->devicename));
+		ERROR_DEFAULT("Cannot open port: %s Permissions problem?", SAFESTRING(DEVICENAME(connection)));
 		return gbBAD;
 	}
 
@@ -43,7 +43,7 @@ GOOD_OR_BAD serial_open(struct connection_in *connection)
 		// valgrind warns about uninitialized memory in tcsetattr(), so clear all.
 		memset( &(pin->dev.serial.oldSerialTio), 0, sizeof(struct termios));
 		if ((tcgetattr( fd, &(pin->dev.serial.oldSerialTio) ) < 0)) {
-			ERROR_CONNECT("Cannot get old port attributes: %s", SAFESTRING(SOC(connection)->devicename));
+			ERROR_CONNECT("Cannot get old port attributes: %s", SAFESTRING(DEVICENAME(connection)));
 			// proceed anyway
 		}
 		pin->state = cs_deflowered ;
@@ -64,12 +64,12 @@ GOOD_OR_BAD serial_change(struct connection_in *connection)
 	// valgrind warns about uninitialized memory in tcsetattr(), so clear all.
 	memset(&newSerialTio, 0, sizeof(struct termios));
 	if ((tcgetattr( fd, &newSerialTio) < 0)) {
-		ERROR_CONNECT("Cannot get existing port attributes: %s", SAFESTRING(SOC(connection)->devicename));
+		ERROR_CONNECT("Cannot get existing port attributes: %s", SAFESTRING(DEVICENAME(connection)));
 	}
 	
 	// set baud in structure
 	if (cfsetospeed(&newSerialTio, baud) < 0 || cfsetispeed(&newSerialTio, baud) < 0) {
-		ERROR_CONNECT("Trouble setting port speed: %s", SAFESTRING(SOC(connection)->devicename));
+		ERROR_CONNECT("Trouble setting port speed: %s", SAFESTRING(DEVICENAME(connection)));
 		cfsetospeed(&newSerialTio, B9600) ;
 		cfsetispeed(&newSerialTio, B9600) ;
 		pin->baud = B9600 ;
@@ -152,7 +152,7 @@ GOOD_OR_BAD serial_change(struct connection_in *connection)
 	newSerialTio.c_cc[VMIN] = pin->vmin;
 	newSerialTio.c_cc[VTIME] = pin->vtime;
 	if (tcsetattr( fd, TCSAFLUSH, &newSerialTio)) {
-		ERROR_CONNECT("Cannot set port attributes: %s", SAFESTRING(SOC(connection)->devicename));
+		ERROR_CONNECT("Cannot set port attributes: %s", SAFESTRING(DEVICENAME(connection)));
 		return gbBAD;
 	}
 	tcflush( fd, TCIOFLUSH);

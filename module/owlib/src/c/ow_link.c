@@ -178,7 +178,7 @@ GOOD_OR_BAD LINK_detect(struct port_in *pin)
 	if (pin->init_data == NULL) {
 		return gbBAD;
 	} else {
-		SOC(in)->devicename = owstrdup(pin->init_data) ;
+		DEVICENAME(in) = owstrdup(pin->init_data) ;
 	}
 
 	head_in = in->channel_info.head ;
@@ -885,7 +885,7 @@ static GOOD_OR_BAD LinkHubE_Control( struct connection_in * in_link )
 	}
 
 	p_control->type = ct_telnet ;
-	SOC(in_control)->devicename = owstrdup( p_control->dev.tcp.host ) ;
+	DEVICENAME(in_control) = owstrdup( p_control->dev.tcp.host ) ;
 	p_control->busmode = bus_xport_control ;
 	p_control->timeout.tv_sec = 1 ;
 	p_control->timeout.tv_usec = 0 ;

@@ -240,7 +240,7 @@ GOOD_OR_BAD DS2480_detect(struct port_in *pin)
 	if (pin->init_data == NULL) {
 		return gbBAD;
 	} else {
-		SOC(in)->devicename = owstrdup(pin->init_data) ;
+		DEVICENAME(in) = owstrdup(pin->init_data) ;
 	}
 
 	/* Set up low-level routines */
@@ -315,7 +315,7 @@ static void DS2480_adapter(struct connection_in *in)
 
 static GOOD_OR_BAD DS2480_reconnect(const struct parsedname * pn)
 {
-	LEVEL_DEBUG("Attempting reconnect on %s",SAFESTRING(SOC(pn->selected_connection)->devicename));
+	LEVEL_DEBUG("Attempting reconnect on %s",SAFESTRING(DEVICENAME(pn->selected_connection)));
 	return DS2480_big_reset(pn->selected_connection) ;
 }
 
@@ -469,12 +469,12 @@ static void DS2480_set_baud_control(struct connection_in * in)
 	if ( GOOD( DS2480_set_baud(in) ) ) {
 		return ;
 	}
-	LEVEL_DEBUG("Failed first attempt at resetting baud rate of bus master %s",SAFESTRING(SOC(in)->devicename)) ;
+	LEVEL_DEBUG("Failed first attempt at resetting baud rate of bus master %s",SAFESTRING(DEVICENAME(in))) ;
 
 	if ( GOOD( DS2480_set_baud(in) ) ) {
 		return ;
 	}
-	LEVEL_DEBUG("Failed second attempt at resetting baud rate of bus master %s",SAFESTRING(SOC(in)->devicename)) ;
+	LEVEL_DEBUG("Failed second attempt at resetting baud rate of bus master %s",SAFESTRING(DEVICENAME(in))) ;
 
 	// uh oh -- undefined state -- not sure what the bus speed is.
 	in->reconnect_state = reconnect_error ;

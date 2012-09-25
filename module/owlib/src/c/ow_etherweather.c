@@ -71,7 +71,7 @@ static int EtherWeather_command(struct connection_in *in, char command, int data
 	pin->timeout.tv_usec = 200000 ;
 
 	if ( BAD(COM_write( packet, datalen+2, in) ) ) {
-		ERROR_CONNECT("Trouble writing data to EtherWeather: %s", SAFESTRING(SOC(in)->devicename));
+		ERROR_CONNECT("Trouble writing data to EtherWeather: %s", SAFESTRING(DEVICENAME(in)));
 		STAT_ADD1_BUS(e_bus_write_errors, in);
 		owfree(packet) ;
 		return -EIO ;
@@ -242,7 +242,7 @@ GOOD_OR_BAD EtherWeather_detect(struct port_in *pin)
 	if (pin->init_data == NULL) {
 		return gbBAD;
 	} else {
-		SOC(in)->devicename = owstrdup(pin->init_data) ;
+		DEVICENAME(in) = owstrdup(pin->init_data) ;
 	}
 
 	pin->type = ct_tcp ;
@@ -250,7 +250,7 @@ GOOD_OR_BAD EtherWeather_detect(struct port_in *pin)
 
 	/* TODO: probe version, and confirm that it's actually an EtherWeather */
 
-	LEVEL_CONNECT("Connected to EtherWeather at %s", SOC(in)->devicename);
+	LEVEL_CONNECT("Connected to EtherWeather at %s", DEVICENAME(in));
 
 	in->Adapter = adapter_EtherWeather;
 

@@ -105,19 +105,19 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct port_in * pin )
 
 	case bus_zero:
 		if ( BAD( Zero_detect(pin) )) {
-			LEVEL_CONNECT("Cannot open server at %s", SOC(in)->devicename);
+			LEVEL_CONNECT("Cannot open server at %s", DEVICENAME(in));
 			return gbBAD ;
 		}
 		break;
 
 	case bus_server:
 		if (BAD( Server_detect(pin)) ) {
-			LEVEL_CONNECT("Cannot open server at %s -- first attempt.", SOC(in)->devicename);
+			LEVEL_CONNECT("Cannot open server at %s -- first attempt.", DEVICENAME(in));
 			sleep(5); // delay to allow owserver to open it's listen socket
 			if ( GOOD( Server_detect(pin)) ) {
 				break ;
 			}
-			LEVEL_CONNECT("Cannot open server at %s -- second (and final) attempt.", SOC(in)->devicename);
+			LEVEL_CONNECT("Cannot open server at %s -- second (and final) attempt.", DEVICENAME(in));
 			return gbBAD ;
 		}
 		break;
@@ -125,7 +125,7 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct port_in * pin )
 	case bus_serial:
 		/* Set up DS2480/LINK interface */
 		if ( BAD( DS2480_detect(pin) )) {
-			LEVEL_CONNECT("Cannot detect DS2480 or LINK interface on %s.", SOC(in)->devicename);
+			LEVEL_CONNECT("Cannot detect DS2480 or LINK interface on %s.", DEVICENAME(in));
 		} else {
 			return gbGOOD ;
 		}
@@ -134,14 +134,14 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct port_in * pin )
 
 	case bus_passive:
 		if ( BAD( DS9097_detect(pin) )) {
-			LEVEL_DEFAULT("Cannot detect DS9097 (passive) interface on %s.", SOC(in)->devicename);
+			LEVEL_DEFAULT("Cannot detect DS9097 (passive) interface on %s.", DEVICENAME(in));
 			return gbBAD ;
 		}
 		break;
 		
 	case bus_xport:
 		if ( BAD( DS2480_detect(pin) )) {
-			LEVEL_DEFAULT("Cannot detect DS2480B via telnet interface on %s.", SOC(in)->devicename);
+			LEVEL_DEFAULT("Cannot detect DS2480B via telnet interface on %s.", DEVICENAME(in));
 			return gbBAD ;
 		}
 		break;
@@ -149,7 +149,7 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct port_in * pin )
 	case bus_i2c:
 #if OW_I2C
 		if ( BAD( DS2482_detect(pin) )) {
-			LEVEL_CONNECT("Cannot detect an i2c DS2482-x00 on %s", SOC(in)->devicename);
+			LEVEL_CONNECT("Cannot detect an i2c DS2482-x00 on %s", DEVICENAME(in));
 			return gbBAD ;
 		}
 #endif							/* OW_I2C */
@@ -158,7 +158,7 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct port_in * pin )
 	case bus_ha7net:
 #if OW_HA7
 		if ( BAD( HA7_detect(pin) )) {
-			LEVEL_CONNECT("Cannot detect an HA7net server on %s", SOC(in)->devicename);
+			LEVEL_CONNECT("Cannot detect an HA7net server on %s", DEVICENAME(in));
 			return gbBAD ;
 		}
 #endif                          /* OW_HA7 */
@@ -167,7 +167,7 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct port_in * pin )
 	case bus_enet:
 #if OW_HA7
 		if ( BAD( OWServer_Enet_detect(pin) )) {
-			LEVEL_CONNECT("Cannot detect an OWServer_Enet on %s", SOC(in)->devicename);
+			LEVEL_CONNECT("Cannot detect an OWServer_Enet on %s", DEVICENAME(in));
 			return gbBAD ;
 		}
 #endif                          /* OW_HA7 */
@@ -175,14 +175,14 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct port_in * pin )
 
 	case bus_ha5:
 		if ( BAD( HA5_detect(pin) )) {
-			LEVEL_CONNECT("Cannot detect an HA5 on %s", SOC(in)->devicename);
+			LEVEL_CONNECT("Cannot detect an HA5 on %s", DEVICENAME(in));
 			return gbBAD ;
 		}
 		break;
 
 	case bus_ha7e:
 		if ( BAD( HA7E_detect(pin) )) {
-			LEVEL_CONNECT("Cannot detect an HA7E/HA7S on %s", SOC(in)->devicename);
+			LEVEL_CONNECT("Cannot detect an HA7E/HA7S on %s", DEVICENAME(in));
 			return gbBAD ;
 		}
 		break;
@@ -210,14 +210,14 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct port_in * pin )
 
 	case bus_link:
 		if ( BAD( LINK_detect(pin) )) {
-			LEVEL_CONNECT("Cannot open LINK bus master at %s", SOC(in)->devicename);
+			LEVEL_CONNECT("Cannot open LINK bus master at %s", DEVICENAME(in));
 			return gbBAD ;
 		}
 		break;
 
 	case bus_etherweather:
 		if ( BAD( EtherWeather_detect(pin) )) {
-			LEVEL_CONNECT("Cannot detect an EtherWeather server on %s", SOC(in)->devicename);
+			LEVEL_CONNECT("Cannot detect an EtherWeather server on %s", DEVICENAME(in));
 			return gbBAD ;
 		}
 		break;

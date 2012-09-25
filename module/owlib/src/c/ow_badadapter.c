@@ -41,8 +41,8 @@ GOOD_OR_BAD BadAdapter_detect(struct port_in *pin)
 	in->iroutines.close = BadAdapter_close;
 	in->iroutines.flags = ADAP_FLAG_sham;
 	in->adapter_name = "Bad Adapter";
-	SAFEFREE( SOC(in)->devicename ) ;
-	SOC(in)->devicename = owstrdup("None") ;
+	SAFEFREE( DEVICENAME(in) ) ;
+	DEVICENAME(in) = owstrdup("None") ;
 	pin->busmode = bus_bad ;
 	return gbGOOD;
 }

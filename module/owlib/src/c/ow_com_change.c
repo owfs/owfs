@@ -43,7 +43,7 @@ GOOD_OR_BAD COM_change( struct connection_in *connection)
 			return gbGOOD ;
 		case ct_tcp:
 		case ct_netlink:
-			LEVEL_DEBUG("Cannot change baud rate on %s",SAFESTRING(SOC(connection)->devicename)) ;
+			LEVEL_DEBUG("Cannot change baud rate on %s",SAFESTRING(DEVICENAME(connection))) ;
 			return gbGOOD ;
 		case ct_serial:
 			return serial_change( connection ) ;
