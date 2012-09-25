@@ -178,6 +178,7 @@ static void SetConninData( int indx, const char * type, struct port_in *pin )
 
 	GetAllDeviceNames( pin ) ;
 
+	// Device name and init_data diverge now
 	DEVICENAME(in) = owstrdup(name);
 }
 

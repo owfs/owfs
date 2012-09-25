@@ -31,8 +31,6 @@ GOOD_OR_BAD USB_monitor_detect(struct port_in *pin)
 	
 	if (pin->init_data == NULL) {
 		return gbBAD;
-	} else {
-		DEVICENAME(in) = owstrdup(pin->init_data) ;
 	}
 
 	Parse_Address( pin->init_data, &ap ) ;
@@ -155,6 +153,7 @@ static void USB_scan_for_adapters(void)
 		}
 		in = pin->first ;
 		DEVICENAME(in) = DS9490_device_name(&ul) ;
+		pin->init_data = owstrdup( DEVICENAME(in) ) ;
 		pin->type = ct_usb ;
 		
 		// Can do detect. Becasue the name makes this a specific adapter (USB pair)

@@ -240,9 +240,8 @@ GOOD_OR_BAD EtherWeather_detect(struct port_in *pin)
 	EtherWeather_setroutines(in);
 
 	if (pin->init_data == NULL) {
+		LEVEL_DEFAULT("Etherweather bus master requires a port name");
 		return gbBAD;
-	} else {
-		DEVICENAME(in) = owstrdup(pin->init_data) ;
 	}
 
 	pin->type = ct_tcp ;

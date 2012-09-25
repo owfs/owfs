@@ -76,8 +76,6 @@ GOOD_OR_BAD HA7_detect(struct port_in *pin)
 
 	if (pin->init_data == NULL) {
 		return gbBAD;
-	} else {
-		DEVICENAME(in) = owstrdup(pin->init_data) ;
 	}
 
 	pin->type = ct_tcp ;

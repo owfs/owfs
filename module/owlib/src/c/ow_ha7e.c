@@ -60,9 +60,8 @@ GOOD_OR_BAD HA7E_detect(struct port_in *pin)
 	in->master.ha7e.sn[0] = 0 ; // so won't match
 
 	if (pin->init_data == NULL) {
+		LEVEL_DEFAULT("HA7E bus master requires port name");
 		return gbBAD;
-	} else {
-		DEVICENAME(in) = owstrdup(pin->init_data) ;
 	}
 
 	/* Open the com port */

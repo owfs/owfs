@@ -155,11 +155,6 @@ GOOD_OR_BAD DS2482_detect(struct port_in *pin)
 	GOOD_OR_BAD gbResult ;
 	enum ds2482_address chip_num ;
 	
-	if (pin->init_data == NULL) {
-		return gbBAD;
-	} else {
-		DEVICENAME(in) = owstrdup(pin->init_data) ;
-	}
 	Parse_Address( pin->init_data, &ap ) ;
 	
 	switch ( ap.second.type ) {

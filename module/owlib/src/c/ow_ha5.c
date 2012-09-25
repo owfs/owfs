@@ -85,9 +85,8 @@ GOOD_OR_BAD HA5_detect(struct port_in *pin)
 	memset( in->master.ha5.sn, 0x00, SERIAL_NUMBER_SIZE ) ;
 
 	if (pin->init_data == NULL) {
+		LEVEL_DEFAULT("HA5 bus master requires port name");
 		return gbBAD;
-	} else {
-		DEVICENAME(in) = owstrdup(pin->init_data) ;
 	}
 
 	COM_set_standard( in ) ; // standard COM port settings

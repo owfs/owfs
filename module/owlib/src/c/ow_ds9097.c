@@ -69,9 +69,8 @@ GOOD_OR_BAD DS9097_detect(struct port_in *pin)
 	pin->vtime = 0; // decisec wait
 	
 	if (pin->init_data == NULL) {
+		LEVEL_DEFAULT("DS9097 (passive) busmaster requires port name");
 		return gbBAD;
-	} else {
-		DEVICENAME(in) = owstrdup(pin->init_data) ;
 	}
 	RETURN_BAD_IF_BAD(COM_open(in)) ;
 

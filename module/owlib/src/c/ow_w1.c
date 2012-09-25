@@ -65,10 +65,6 @@ static void W1_setroutines(struct connection_in *in)
 GOOD_OR_BAD W1_detect(struct port_in *pin)
 {
 	struct connection_in * in = pin->first ;
-	struct parsedname pn;
-
-	FS_ParsedName_Placeholder(&pn);	// minimal parsename -- no destroy needed
-	pn.selected_connection = in;
 
 	/* Set up low-level routines */
 	pin->type = ct_none ;
@@ -79,14 +75,6 @@ GOOD_OR_BAD W1_detect(struct port_in *pin)
 		ERROR_CONNECT("W1 pipe creation error");
 		Init_Pipe( in->master.w1.netlink_pipe ) ;
 		return gbBAD ;
-	}
-//	fcntl (in->master.w1.netlink_pipe[fd_pipe_read], F_SETFD, FD_CLOEXEC); // for safe forking
-//	fcntl (in->master.w1.netlink_pipe[fd_pipe_write], F_SETFD, FD_CLOEXEC); // for safe forking
-	
-	if (pin->init_data == NULL) {
-		return gbBAD;
-	} else {
-		DEVICENAME(in) = owstrdup(pin->init_data) ;
 	}
 
 	in->Adapter = adapter_w1;

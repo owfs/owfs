@@ -238,9 +238,8 @@ GOOD_OR_BAD DS2480_detect(struct port_in *pin)
 	struct connection_in * in = pin->first ;
 
 	if (pin->init_data == NULL) {
+		LEVEL_DEFAULT("DS2480B-based bus master needs a port name");
 		return gbBAD;
-	} else {
-		DEVICENAME(in) = owstrdup(pin->init_data) ;
 	}
 
 	/* Set up low-level routines */

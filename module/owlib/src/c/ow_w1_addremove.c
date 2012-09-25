@@ -42,6 +42,7 @@ static struct port_in * CreateW1Port(int bus_master)
 	}	
 
 	pin->init_data = owstrdup(name) ;
+	DEVICENAME(in) = owstrdup(name) ;
 	in->master.w1.id = bus_master ;
 	pin->busmode = bus_w1 ;
 	in->master.w1.w1_slave_order = w1_slave_order_unknown ;
