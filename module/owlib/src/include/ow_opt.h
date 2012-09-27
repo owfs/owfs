@@ -50,7 +50,7 @@ $Id$
 
 /* command line options */
 /* These are the owlib-specific options */
-#define OWLIB_OPT "a:m:c:f:p:s:h::u::d:t:CFRKVPrw:"
+#define OWLIB_OPT "a:m:c:f:p:s:h::u::d:t:CFRKVP:rw:"
 extern const struct option owopts_long[];
 
 GOOD_OR_BAD owopt(const int c, const char *arg);
@@ -62,7 +62,8 @@ enum e_long_option { e_error_print = 257, e_error_level, e_debug,
 	e_fuse_opt, e_fuse_open_opt,
 	e_max_clients,
 	e_safemode,
-	e_ha7, e_fake, e_link, e_ha3, e_ha4b, e_ha5, e_ha7e, e_tester, e_mock, e_etherweather, e_passive, e_i2c, e_xport, e_enet, 
+	e_ha7, e_fake, e_link, e_ha3, e_ha4b, e_ha5, e_ha7e, e_tester, e_mock, e_etherweather, e_passive, e_i2c, e_xport, 
+	e_enet, e_enet2, 
 	e_w1_monitor, e_usb_monitor, e_browse,
 	e_pressure_mbar, e_pressure_atm, e_pressure_mmhg, e_pressure_inhg, e_pressure_psi, e_pressure_Pa, e_pressure_6, e_pressure_7,
 	e_announce,
