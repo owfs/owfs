@@ -158,6 +158,8 @@ struct connection_in {
 	// telnet tuning
 	int CRLF_size ; 
 
+	unsigned char remembered_sn[SERIAL_NUMBER_SIZE] ;       /* last address */
+	
 	size_t bundling_length;
 
 	struct { // Channel info for bus masters that share a common comminucation channel */

@@ -141,7 +141,7 @@ static GOOD_OR_BAD OWServer_Enet_setup(struct port_in *pin)
 	// Always returns 0D0A
 	in->master.enet.reopening = 0 ;
 	
-	memset( in->master.enet.sn, 0x00, SERIAL_NUMBER_SIZE ) ;
+	memset( in->remembered_sn, 0x00, SERIAL_NUMBER_SIZE ) ; // poison to block match
 	return gbGOOD ;
 }
 
@@ -155,7 +155,7 @@ static GOOD_OR_BAD OWServer_Enet_reopen(struct connection_in *in)
 	}
 
 	// clear "stored" Enet device
-	memset( in->master.enet.sn, 0x00, SERIAL_NUMBER_SIZE ) ;
+	memset( in->remembered_sn, 0x00, SERIAL_NUMBER_SIZE ) ;
 
 	RETURN_BAD_IF_BAD( COM_open(in) ) ;
 
@@ -344,7 +344,7 @@ static enum ENET_dir OWServer_Enet_directory_loop(struct device_search *ds, stru
 		sn[0] = string2num(&resp[14]);
 		LEVEL_DEBUG("SN found: " SNformat, SNvar(sn));
 		// Set as current "Address" for adapter
-		memcpy( in->master.enet.sn, sn, SERIAL_NUMBER_SIZE) ;
+		memcpy( in->remembered_sn, sn, SERIAL_NUMBER_SIZE) ;
 
 		// CRC check
 		if (CRC8(sn, SERIAL_NUMBER_SIZE) || (sn[0] == 0x00)) {
@@ -378,7 +378,7 @@ static GOOD_OR_BAD OWServer_Enet_select( const struct parsedname * pn )
 		return gbGOOD ;
 	}
 
-	if ( memcmp( pn->sn, in->master.enet.sn, SERIAL_NUMBER_SIZE ) != 0 ) {
+	if ( memcmp( pn->sn, in->remembered_sn, SERIAL_NUMBER_SIZE ) != 0 ) {
 		char send_address[SERIAL_NUMBER_SIZE*2+1] ;
 		num2string( &send_address[ 0], pn->sn[7] ) ;
 		num2string( &send_address[ 2], pn->sn[6] ) ;
@@ -390,7 +390,7 @@ static GOOD_OR_BAD OWServer_Enet_select( const struct parsedname * pn )
 		num2string( &send_address[14], pn->sn[0] ) ;
 		send_address[16] = '\0' ;
 		// Set as current "Address" for adapter
-		memcpy( in->master.enet.sn, pn->sn, SERIAL_NUMBER_SIZE) ;
+		memcpy( in->remembered_sn, pn->sn, SERIAL_NUMBER_SIZE) ;
 		return_char = OWServer_Enet_command( 'A', send_address , in ) ;
 	} else { // Serial number already loaded in adapter
 		return_char = OWServer_Enet_command( 'M', "" , in ) ;

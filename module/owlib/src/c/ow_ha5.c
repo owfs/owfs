@@ -82,7 +82,7 @@ GOOD_OR_BAD HA5_detect(struct port_in *pin)
 	HA5MUTEX_INIT(in); // closed in HA5_close
 
 	// Poison current "Address" for adapter
-	memset( in->master.ha5.sn, 0x00, SERIAL_NUMBER_SIZE ) ;
+	memset( in->remembered_sn, 0x00, SERIAL_NUMBER_SIZE ) ;
 
 	if (pin->init_data == NULL) {
 		LEVEL_DEFAULT("HA5 bus master requires port name");
@@ -556,7 +556,7 @@ static enum search_status HA5_directory(struct device_search *ds, const struct p
 		sn[0] = string2num((char *)&resp[14]);
 
 		// Set as current "Address" for adapter
-		memcpy( in->master.ha5.sn, sn, 8) ;
+		memcpy( in->remembered_sn, sn, SERIAL_NUMBER_SIZE ) ;
 
 		LEVEL_DEBUG("SN found: " SNformat, SNvar(sn));
 		// CRC check
@@ -580,7 +580,7 @@ static GOOD_OR_BAD HA5_resync( struct connection_in * in )
 	HA5_flush(in->master.ha5.head );
 
 	// Poison current "Address" for adapter
-	in->master.ha5.sn[0] = 0 ; // so won't match
+	memset( in->remembered_sn, 0, SERIAL_NUMBER_SIZE ) ; // so won't match
 
 	return gbBAD ;
 }
@@ -641,7 +641,7 @@ static GOOD_OR_BAD HA5_select_wrapped( const struct parsedname * pn )
 	}
 
 	// Set as current "Address" for adapter
-	memcpy( in->master.ha5.sn, pn->sn, SERIAL_NUMBER_SIZE) ;
+	memcpy( in->remembered_sn, pn->sn, SERIAL_NUMBER_SIZE) ;
 
 	return gbGOOD ;
 }
@@ -708,7 +708,7 @@ static GOOD_OR_BAD HA5_select_and_sendback(const BYTE * data, BYTE * resp, const
 	int left;
 	char block_cmd ;
 
-	if ( memcmp( pn->sn, in->master.ha5.sn, SERIAL_NUMBER_SIZE ) ) {
+	if ( memcmp( pn->sn, in->remembered_sn, SERIAL_NUMBER_SIZE ) ) {
 		// Need a formal change of device
 		RETURN_BAD_IF_BAD( HA5_select(pn) ) ;
 		block_cmd = 'W' ;

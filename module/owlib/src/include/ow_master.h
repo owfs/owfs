@@ -26,8 +26,6 @@ $Id$
 
 /* included in ow_connection.h as the bus-master specific portion of the connection_in structure */
 
-enum ds2480b_mode { ds2480b_data_mode, ds2480b_command_mode, } ;
-
 struct master_server {
 	char *type;					// for zeroconf
 	char *domain;				// for zeroconf
@@ -36,7 +34,7 @@ struct master_server {
 } ;
 
 struct master_serial {
-	enum ds2480b_mode mode ;
+	enum ds2480b_mode { ds2480b_data_mode, ds2480b_command_mode, } mode ;
 	int reverse_polarity ;
 };
 
@@ -100,19 +98,13 @@ struct master_link {
 };
 
 struct master_enet {
-	unsigned char sn[SERIAL_NUMBER_SIZE] ;       /* last address */
 	char channel ; // for the new ENET2 -- use '0' for old single channel version
 	pthread_mutex_t all_channel_lock;	// second level mutex for the entire chip */
 	struct timeval expired ; // timestamp when socket is known timed out
 	int reopening ; // to avoid infinite recursion
 };
 
-struct master_ha7e {
-	unsigned char sn[SERIAL_NUMBER_SIZE] ;       /* last address */
-};
-
 struct master_ha5 {
-	unsigned char sn[SERIAL_NUMBER_SIZE] ;       /* last address */
 	int checksum ;              /* flag to use checksum byte in communication */
 	char channel ;
 	pthread_mutex_t all_channel_lock;	// second level mutex for the entire chip */
@@ -174,7 +166,6 @@ union master_union {
 	struct master_fake mock;
 	struct master_ha5 ha5;
 	struct master_ha7 ha7;
-	struct master_ha7e ha7e ;
 	struct master_enet enet ;
 	struct master_w1 w1;
 	struct master_w1_monitor w1_monitor ;

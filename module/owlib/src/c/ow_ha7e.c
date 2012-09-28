@@ -57,7 +57,7 @@ GOOD_OR_BAD HA7E_detect(struct port_in *pin)
 	HA7E_setroutines(in);
 
 	// Poison current "Address" for adapter
-	in->master.ha7e.sn[0] = 0 ; // so won't match
+	memset( in->remembered_sn, 0x00, SERIAL_NUMBER_SIZE ) ;
 
 	if (pin->init_data == NULL) {
 		LEVEL_DEFAULT("HA7E bus master requires port name");
@@ -200,7 +200,7 @@ static GOOD_OR_BAD HA7E_directory(struct device_search *ds, const struct parsedn
 		sn[0] = string2num(&resp[14]);
 
 		// Set as current "Address" for adapter
-		memcpy( pn->selected_connection->master.ha7e.sn, sn, SERIAL_NUMBER_SIZE) ;
+		memcpy( pn->selected_connection->remembered_sn, sn, SERIAL_NUMBER_SIZE) ;
 
 		LEVEL_DEBUG("SN found: " SNformat, SNvar(sn));
 		if ( resp[16]!=0x0D ) {
@@ -226,7 +226,7 @@ static GOOD_OR_BAD HA7E_resync( const struct parsedname * pn )
 	COM_flush(pn->selected_connection);
 
 	// Poison current "Address" for adapter
-	pn->selected_connection->master.ha7e.sn[0] = 0 ; // so won't match
+	memset( pn->selected_connection->remembered_sn, 0, SERIAL_NUMBER_SIZE ) ; // so won't match
 
 	return gbBAD ;
 }
@@ -251,7 +251,7 @@ static GOOD_OR_BAD HA7E_select( const struct parsedname * pn )
 	num2string( &send_address[15], pn->sn[0] ) ;
 	send_address[17] = 0x0D;
 
-	if ( memcmp( pn->sn, pn->selected_connection->master.ha7e.sn, SERIAL_NUMBER_SIZE ) ) {
+	if ( memcmp( pn->sn, pn->selected_connection->remembered_sn, SERIAL_NUMBER_SIZE ) ) {
 		if ( BAD(COM_write((BYTE*)send_address,18,pn->selected_connection)) ) {
 			LEVEL_DEBUG("Error with sending HA7E A-ddress") ;
 			return HA7E_resync(pn) ;
@@ -272,7 +272,7 @@ static GOOD_OR_BAD HA7E_select( const struct parsedname * pn )
 	}
 
 	// Set as current "Address" for adapter
-	memcpy( pn->selected_connection->master.ha7e.sn, pn->sn, SERIAL_NUMBER_SIZE) ;
+	memcpy( pn->selected_connection->remembered_sn, pn->sn, SERIAL_NUMBER_SIZE) ;
 
 	return gbGOOD ;
 }
