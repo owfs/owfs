@@ -232,6 +232,7 @@ GOOD_OR_BAD DS9490_detect(struct port_in *pin)
 		case 1:
 			switch( ap.first.type ) {
 				case address_all:
+				case address_asterix:
 					LEVEL_DEBUG("Look for all USB adapters");
 					gbResult = DS9490_detect_all_adapters(pin) ;
 					break ;
@@ -239,13 +240,10 @@ GOOD_OR_BAD DS9490_detect(struct port_in *pin)
 					LEVEL_DEBUG("Look for USB adapter number %d",ap.first.number);
 					gbResult = DS9490_detect_single_adapter( ap.first.number, in) ;
 					break ;
-				case address_alpha:
-					if ( strncasecmp(ap.first.alpha,"scan",4) == 0 ) {
-						LEVEL_DEBUG("Add USB scanning capability");
-						gbResult = USB_monitor_detect(pin) ;
-						break ;
-					}
-					// fall through
+				case address_scan:
+					// completely change personality!
+					gbResult = USB_monitor_detect(pin) ;
+					break ;
 				default:
 					LEVEL_DEFAULT("Unclear what <%s> means in USB specification, will use first adapter.",ap.first.alpha) ;
 					gbResult = DS9490_detect_single_adapter( 1, in) ;
@@ -255,6 +253,7 @@ GOOD_OR_BAD DS9490_detect(struct port_in *pin)
 		case 2:
 			if ( ap.first.type != address_numeric || ap.second.type != address_numeric ) {
 				LEVEL_DEFAULT("USB address <%s:%s> not in number:number format",ap.first.alpha,ap.second.alpha) ;
+				gbResult = gbBAD ;
 			} else {
 				gbResult = DS9490_detect_specific_adapter( ap.first.number, ap.second.number, in ) ;
 			}

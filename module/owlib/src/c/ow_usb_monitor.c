@@ -29,25 +29,46 @@ GOOD_OR_BAD USB_monitor_detect(struct port_in *pin)
 	struct address_pair ap ;
 	pthread_t thread ;
 	
-	if (pin->init_data == NULL) {
-		return gbBAD;
-	}
-
+	/* init_data has form "scan" or "scan:15" (15 seconds) */
 	Parse_Address( pin->init_data, &ap ) ;
-	pin->type = ct_none ;
-	if ( ap.first.type == address_numeric ) {
-		Globals.usb_scan_interval = ap.first.number ;
-	} else {
-		Globals.usb_scan_interval = DEFAULT_USB_SCAN_INTERVAL ;
+
+	switch ( ap.entries ) {
+		case 0:
+			Globals.usb_scan_interval = DEFAULT_USB_SCAN_INTERVAL ;
+			break ;
+		case 1:
+			switch( ap.first.type ) {
+				case address_numeric:
+					Globals.usb_scan_interval = ap.first.number ;
+					break ;
+				default:
+					Globals.usb_scan_interval = DEFAULT_USB_SCAN_INTERVAL ;
+					break ;
+			}
+			break ;
+		case 2:
+			switch( ap.second.type ) {
+				case address_numeric:
+					Globals.usb_scan_interval = ap.second.number ;
+					break ;
+				default:
+					Globals.usb_scan_interval = DEFAULT_USB_SCAN_INTERVAL ;
+					break ;
+			}
+			break ;
 	}
 	Free_Address( &ap ) ;
 
+	pin->type = ct_none ;
+
+	SAFEFREE(pin->init_data) ;
+	pin->init_data = owstrdup("USB bus monitor") ;
 	SAFEFREE(DEVICENAME(in)) ;
 	DEVICENAME(in) = owstrdup("USB bus monitor") ;
 
 	pin->file_descriptor = FILE_DESCRIPTOR_BAD;
 	in->iroutines.detect = USB_monitor_detect;
-	in->Adapter = adapter_browse_monitor;	/* OWFS assigned value */
+	in->Adapter = adapter_usb_monitor;
 	in->iroutines.reset = NO_RESET_ROUTINE;
 	in->iroutines.next_both = NO_NEXT_BOTH_ROUTINE;
 	in->iroutines.PowerByte = NO_POWERBYTE_ROUTINE;
@@ -67,10 +88,11 @@ GOOD_OR_BAD USB_monitor_detect(struct port_in *pin)
 		ERROR_DEFAULT("Cannot allocate a shutdown pipe. The program shutdown may be messy");
 		Init_Pipe( in->master.usb_monitor.shutdown_pipe ) ;
 	}
-//	fcntl (in->master.usb_monitor.shutdown_pipe[fd_pipe_read], F_SETFD, FD_CLOEXEC); // for safe forking
-//	fcntl (in->master.usb_monitor.shutdown_pipe[fd_pipe_write], F_SETFD, FD_CLOEXEC); // for safe forking
 
-	RETURN_BAD_IF_BAD( usb_monitor_in_use(in) ) ;
+	if ( BAD( usb_monitor_in_use(in) ) ) {
+		LEVEL_CONNECT("Second call for USB scanning ignored") ;
+		return bgBAD ;
+	}
 
 	if ( pthread_create(&thread, DEFAULT_THREAD_ATTR, USB_monitor_loop, (void *) in) != 0 ) {
 		ERROR_CALL("Cannot create the USB monitoring program thread");
