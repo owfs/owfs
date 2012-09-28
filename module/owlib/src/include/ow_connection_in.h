@@ -118,21 +118,14 @@ enum e_bus_stat {
 
 struct connection_in {
 	struct connection_in *next;
-	struct port_in * head ;
-	INDEX_OR_ERROR index;
-//	char *name;
-//	FILE_DESCRIPTOR_OR_PERSISTENT file_descriptor;
+	struct port_in * head ; // pointer to port_in that owns us.
+	INDEX_OR_ERROR index; // gneral index in all the list
+	int channel ; // index (0-based) in this port's channels
 	
 	// Formerly Serial / tcp / telnet / i2c abstraction
 	// Now only holds device name since the port manages communication details
 	struct communication soc ;
 
-	// Com port data:
-//	speed_t baud; // baud rate in the form of B9600
-//	struct termios oldSerialTio;    /*old serial port settings */
-//	enum { flow_none, flow_soft, flow_hard, } flow_control ;
-//	struct timeval timeout ; // for serial or tcp read
-	
 	pthread_mutex_t bus_mutex;
 	pthread_mutex_t dev_mutex;
 	void *dev_db;				// dev-lock tree

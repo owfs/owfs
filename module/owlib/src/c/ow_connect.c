@@ -157,6 +157,8 @@ struct port_in * AllocPort( const struct port_in * old_pin )
 		}
 		
 		new_pin->connections = 1 ;
+		new_pin->first->channel = 0 ;
+		
 		/* port not yet linked */
 		new_pin->next = NULL ;
 		/* connnection_in needs to be linked */
@@ -166,32 +168,6 @@ struct port_in * AllocPort( const struct port_in * old_pin )
 		LEVEL_DEFAULT("Cannot allocate memory for port master structure");
 	}
 	return new_pin;
-}
-
-/* Place a new connection in the chain */
-struct connection_in *LinkIn(struct connection_in *now, struct port_in * head)
-{
-	struct port_in * pin = head ;
-	if (now) {
-		if ( pin == NULL ) {
-			// No port supplied
-			pin = NewPort(NULL) ;
-			RemoveIn(pin->first) ;
-		}
-		// Housekeeping to place in linked list
-		// Locking done at a higher level
-		now->next = pin->first;	/* put in linked list at start */
-		pin->first = now;
-		now->head = pin ;
-		now->index = Inbound_Control.next_index++;
-		++Inbound_Control.active ;
-		++head->connections ;
-
-		_MUTEX_INIT(now->bus_mutex);
-		_MUTEX_INIT(now->dev_mutex);
-		now->dev_db = NULL;
-	}
-	return now;
 }
 
 /* Place a new connection in the chain */
@@ -328,9 +304,25 @@ struct connection_in * AddtoPort( struct port_in * pin )
 	struct connection_in * add_in = AllocIn( pin->first ) ;
 	
 	if ( add_in == NO_CONNECTION ) {
+		// cannot allocate
 		return NO_CONNECTION ;
 	}
+
+	// Housekeeping to place in linked list
+	// Locking done at a higher level
 	
-	return LinkIn( add_in, pin ) ;
+	add_in->next = pin->first;	/* put in linked list at start */
+	pin->first = add_in;
+	add_in->head = pin ;
+
+	add_in->channel = pin->connections ;
+	++pin->connections ;
+	add_in->index = Inbound_Control.next_index++;
+	++Inbound_Control.active ;
+
+	_MUTEX_INIT(add_in->bus_mutex);
+	_MUTEX_INIT(add_in->dev_mutex);
+	add_in->dev_db = NULL;
+	
+	return add_in ;
 }
-	
