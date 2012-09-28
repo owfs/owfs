@@ -686,7 +686,7 @@ static GOOD_OR_BAD OW_get_power( struct parsedname * pn )
 		BYTE p[1];
 		/* get power flag -- to see if pullup can be avoided */
 		RETURN_BAD_IF_BAD( OW_r_mem(p, 1, _ADDRESS_POWERED, pn) ) ;
-		power = (p[1]==_1W_2450_POWERED) ? 1 : 0 ; 
+		power = (p[0]==_1W_2450_POWERED) ? 1 : 0 ; 
 		Cache_Add_SlaveSpecific(&power, sizeof(power), SlaveSpecificTag(POW), pn);
 	}
 	return power==1 ? gbGOOD : gbBAD ;
