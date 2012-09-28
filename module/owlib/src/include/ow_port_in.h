@@ -43,6 +43,7 @@ enum bus_mode {
 	bus_ha5,
 	bus_ha7e,
 	bus_enet,
+	bus_enet2,
 	bus_fake,
 	bus_tester,
 	bus_mock,
@@ -124,6 +125,6 @@ void RemovePort( struct port_in * pin ) ;
 struct port_in * AllocPort( const struct port_in * old_pin ) ;
 struct port_in *LinkPort(struct port_in *pin) ;
 struct port_in *NewPort(const struct port_in *pin) ;
-struct connection_in * AddtoPort( struct port_in * pin, struct connection_in * template ) ;
+struct connection_in * AddtoPort( struct port_in * pin ) ;
 
 #endif							/* OW_PORT_IN_H */

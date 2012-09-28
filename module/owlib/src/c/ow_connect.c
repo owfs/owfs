@@ -323,9 +323,9 @@ void RemovePort( struct port_in * pin )
 	pin = NULL ;
 }
 
-struct connection_in * AddtoPort( struct port_in * pin, struct connection_in * template )
+struct connection_in * AddtoPort( struct port_in * pin )
 {
-	struct connection_in * add_in = AllocIn( template ) ;
+	struct connection_in * add_in = AllocIn( pin->first ) ;
 	
 	if ( add_in == NO_CONNECTION ) {
 		return NO_CONNECTION ;

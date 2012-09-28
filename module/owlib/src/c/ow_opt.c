@@ -142,6 +142,11 @@ const struct option owopts_long[] = {
 	{"Enet", optional_argument, NO_LINKED_VAR, e_enet},
 	{"ENET", optional_argument, NO_LINKED_VAR, e_enet},
 	{"OW-Server-Enet", optional_argument, NO_LINKED_VAR, e_enet},
+	{"enet2", optional_argument, NO_LINKED_VAR, e_enet2},
+	{"Enet2", optional_argument, NO_LINKED_VAR, e_enet2},
+	{"ENET2", optional_argument, NO_LINKED_VAR, e_enet2},
+	{"OW-Server-Enet2", optional_argument, NO_LINKED_VAR, e_enet2},
+	{"OW-Server-Enet-2", optional_argument, NO_LINKED_VAR, e_enet2},
 	{"FAKE", required_argument, NO_LINKED_VAR, e_fake},	/* Fake */
 	{"Fake", required_argument, NO_LINKED_VAR, e_fake},	/* Fake */
 	{"fake", required_argument, NO_LINKED_VAR, e_fake},	/* Fake */
@@ -743,6 +748,8 @@ GOOD_OR_BAD owopt(const int option_char, const char *arg)
 		return ARG_HA7E(arg);
 	case e_enet:
 		return ARG_ENET(arg);
+	case e_enet2:
+		return ARG_ENET2(arg);
 	case e_fake:
 		return ARG_Fake(arg);
 	case e_link:

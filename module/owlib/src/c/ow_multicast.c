@@ -9,7 +9,7 @@ $Id$
     1wire/iButton system from Dallas Semiconductor
 */
 
-/* ow_net holds the network utility routines. Many stolen unashamedly from Steven's Book */
+/* ow_net holds the network utility routines. Mainly stolen unashamedly from Steven's Book */
 /* Much modification by Christian Magnusson especially for Valgrind and embedded */
 /* non-threaded fixes by Jerry Scharf */
 
@@ -126,9 +126,9 @@ GOOD_OR_BAD FS_FindHA7(void)
 	int number_found = 0;
 	int getaddr_error ;
 
-	LEVEL_DEBUG("Attempting udp multicast search for the HA7Net bus master at 224.1.2.3:4567");
+	LEVEL_DEBUG("Attempting udp multicast search for the HA7Net bus master at %s:%s",HA7_DISCOVERY_ADDRESS,HA7_DISCOVERY_PORT);
 	Setup_HA7_hint( &hint ) ;
-	if ((getaddr_error = getaddrinfo("224.1.2.3", "4567", &hint, &ai))) {
+	if ((getaddr_error = getaddrinfo(HA7_DISCOVERY_ADDRESS, HA7_DISCOVERY_PORT, &hint, &ai))) {
 		LEVEL_CONNECT("Couldn't set up HA7 broadcast message %s", gai_strerror(getaddr_error));
 		return gbBAD;
 	}

@@ -115,12 +115,9 @@ struct master_link {
 
 struct master_enet {
 	struct master_tcp tcp;      // mirror master.server
-	enum e_link_t_mode tmode ; // extra ',' before tF0 command
-	enum e_link_t_mode qmode ; //extra '?' after b command
 	unsigned char sn[SERIAL_NUMBER_SIZE] ;       /* last address */
-	char channel ; // for the new ENET3 -- use '0' for old single channel version
+	char channel ; // for the new ENET2 -- use '0' for old single channel version
 	pthread_mutex_t all_channel_lock;	// second level mutex for the entire chip */
-	struct connection_in *head;
 	struct timeval expired ; // timestamp when socket is known timed out
 	int reopening ; // to avoid infinite recursion
 };

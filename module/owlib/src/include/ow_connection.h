@@ -42,10 +42,17 @@ See: http://www.iana.org/assignments/port-numbers
 #define DEFAULT_FTP_PORT          "21"
 #define DEFAULT_HA7_PORT          "80"
 #define DEFAULT_ENET_PORT         "8080"
+#define DEFAULT_ENET2_PORT        "8080"
 #define DEFAULT_LINK_PORT         "10001"
 #define DEFAULT_XPORT_CONTROL_PORT "9999"
 #define DEFAULT_XPORT_PORT        "10001"
 #define DEFAULT_ETHERWEATHER_PORT "15862"
+
+#define HA7_DISCOVERY_PORT        "4567"
+#define HA7_DISCOVERY_ADDRESS     "224.1.2.3"
+
+#define ENET2_DISCOVERY_PORT      30303
+#define ENET2_DISCOVERY_ADDRESS   "255.255.255.255"
 
 #include "ow.h"
 #include "ow_counters.h"
@@ -101,6 +108,8 @@ See: http://www.iana.org/assignments/port-numbers
 #define W1_FIFO_SIZE 128
 #define LINK_FIFO_SIZE UART_FIFO_SIZE
 #define HA7E_FIFO_SIZE UART_FIFO_SIZE
+#define ENET_FIFO_SIZE 128
+#define ENET2_FIFO_SIZE 128
 #define HA5_FIFO_SIZE UART_FIFO_SIZE
 #define LINKE_FIFO_SIZE 1500
 #define I2C_FIFO_SIZE 1

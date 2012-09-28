@@ -20,6 +20,7 @@ $Id$
 
 #define BYTE_string(x)  ((BYTE *)(x))
 
+static GOOD_OR_BAD OWServer_Enet_setup(struct port_in *pin);
 static RESET_TYPE OWServer_Enet_reset(const struct parsedname *pn);
 static void OWServer_Enet_close(struct connection_in *in);
 
@@ -29,10 +30,11 @@ static void OWServer_Enet_setroutines(struct connection_in *in);
 static GOOD_OR_BAD OWServer_Enet_select( const struct parsedname * pn ) ;
 
 static GOOD_OR_BAD OWServer_Enet_reopen(struct connection_in *in) ;
+static GOOD_OR_BAD OWServer_Enet_reopen_prompt(struct connection_in *in) ;
 static GOOD_OR_BAD OWServer_Enet_read( BYTE * buf, size_t size, struct connection_in * in ) ;
 static GOOD_OR_BAD OWServer_Enet_write(const BYTE * buf, size_t size, struct connection_in *in) ;
-static GOOD_OR_BAD OWServer_Enet_write_string( char * buf, struct connection_in *in) ;
-static char OWServer_Enet_command( char * cmd_string, struct connection_in * in ) ;
+static GOOD_OR_BAD OWServer_Enet_write_string( char cmd, char * buf, struct connection_in *in) ;
+static char OWServer_Enet_command( char cmd, char * cmd_string, struct connection_in * in ) ;
 static RESET_TYPE OWServer_Enet_reset_in(struct connection_in * in);
 static GOOD_OR_BAD OWServer_Enet_directory(struct device_search *ds, struct connection_in * in) ;
 static enum ENET_dir OWServer_Enet_directory_loop(struct device_search *ds, struct connection_in * in) ;
@@ -54,18 +56,70 @@ static void OWServer_Enet_setroutines(struct connection_in *in)
 	in->iroutines.reconnect = NO_RECONNECT_ROUTINE;
 	in->iroutines.close = OWServer_Enet_close;
 	in->iroutines.flags = ADAP_FLAG_dirgulp | ADAP_FLAG_no2409path | ADAP_FLAG_overdrive | ADAP_FLAG_bundle | ADAP_FLAG_no2404delay ;
-	in->bundling_length = HA7E_FIFO_SIZE;
+	in->bundling_length = ENET_FIFO_SIZE;
 }
 
 GOOD_OR_BAD OWServer_Enet_detect(struct port_in *pin)
 {
 	struct connection_in * in = pin->first ;
-	/* Set up low-level routines */
-	OWServer_Enet_setroutines(in);
+
+	RETURN_BAD_IF_BAD( OWServer_Enet_setup(pin) ) ;
 
 	in->Adapter = adapter_ENET;
 	in->adapter_name = "OWServer_Enet";
 	pin->busmode = bus_enet;
+	
+	// Assume single channel
+	in->master.enet.channel = 0 ;
+
+	RETURN_GOOD_IF_GOOD( OWServer_Enet_reopen(in)) ;
+	RETURN_GOOD_IF_GOOD( OWServer_Enet_reopen(in)) ;
+	LEVEL_DEFAULT("Problem opening OW_SERVER_ENET on IP address=[%s] port=[%s] -- is the \"1-Wire Setup\" enabled?", pin->dev.tcp.host, pin->dev.tcp.service );
+
+	return gbBAD ;
+}
+
+GOOD_OR_BAD OWServer_Enet2_detect(struct port_in *pin)
+{
+	struct connection_in * in = pin->first ;
+	struct connection_in * in2 ;
+	struct connection_in * in3 ;
+
+	RETURN_BAD_IF_BAD( OWServer_Enet_setup(pin) ) ;
+
+	in->Adapter = adapter_ENET2;
+	in->adapter_name = "OWServer_Enet";
+	pin->busmode = bus_enet2;
+	
+	// Assume 3 channels
+	in->master.enet.channel = 1 ;
+
+	LEVEL_DEBUG("Add 2nd ENET2 port");
+	in2 = AddtoPort( pin ) ;
+	if ( in2 == NO_CONNECTION ) {
+		return gbBAD ;
+	}
+	in2->master.enet.channel = 2 ;
+
+	LEVEL_DEBUG("Add 3rd ENET2 port");
+	in3 = AddtoPort( pin ) ;
+	if ( in3 == NO_CONNECTION ) {
+		return gbBAD ;
+	}
+	in3->master.enet.channel = 3 ;
+
+	RETURN_GOOD_IF_GOOD( OWServer_Enet_reopen(in)) ;
+	RETURN_GOOD_IF_GOOD( OWServer_Enet_reopen(in)) ;
+	LEVEL_DEFAULT("Problem opening OW_SERVER_ENET on IP address=[%s] port=[%s] -- is the \"1-Wire Setup\" enabled?", pin->dev.tcp.host, pin->dev.tcp.service );
+
+	return gbBAD ;
+}
+
+static GOOD_OR_BAD OWServer_Enet_setup(struct port_in *pin)
+{
+	struct connection_in * in = pin->first ;
+	/* Set up low-level routines */
+	OWServer_Enet_setroutines(in);
 
 	// A lot of telnet parameters, really only used
 	// to goose the connection when reconnecting
@@ -73,7 +127,7 @@ GOOD_OR_BAD OWServer_Enet_detect(struct port_in *pin)
 	// into RFC2217
 	COM_set_standard(in) ;
 	pin->timeout.tv_sec = 0 ;
-	pin->timeout.tv_usec = 600000 ;
+	pin->timeout.tv_usec = 6000000 ;
 	pin->flow = flow_none; // flow control
 	pin->baud = B115200 ;
 
@@ -88,19 +142,13 @@ GOOD_OR_BAD OWServer_Enet_detect(struct port_in *pin)
 	in->master.enet.reopening = 0 ;
 	
 	memset( in->master.enet.sn, 0x00, SERIAL_NUMBER_SIZE ) ;
-	
-	// Assume single channel
-	in->master.enet.channel = 0 ;
-	in->master.enet.head = in ; // refer to the head (this channnel)
-
-	RETURN_GOOD_IF_GOOD( OWServer_Enet_reopen(in)) ;
-	RETURN_GOOD_IF_GOOD( OWServer_Enet_reopen(in)) ;
-	LEVEL_DEFAULT("Problem opening OW_SERVER_ENET on IP address=[%s] port=[%s] -- is the \"1-Wire Setup\" enabled?", pin->dev.tcp.host, pin->dev.tcp.service );
-	return gbBAD ;
+	return gbGOOD ;
 }
 
 static GOOD_OR_BAD OWServer_Enet_reopen(struct connection_in *in)
 {
+	GOOD_OR_BAD gbReturn ;
+
 	if ( in->master.enet.reopening ) {
 		LEVEL_DEBUG("Attempt to double-reopen %s",SAFESTRING(DEVICENAME(in))) ;
 		return gbBAD ;
@@ -110,17 +158,33 @@ static GOOD_OR_BAD OWServer_Enet_reopen(struct connection_in *in)
 	memset( in->master.enet.sn, 0x00, SERIAL_NUMBER_SIZE ) ;
 
 	RETURN_BAD_IF_BAD( COM_open(in) ) ;
-	//printf("ENET: reopen com port\n");
-	telnet_change( in ) ; // Really just to send a prompt
 
 	in->master.enet.reopening = 1 ; // flag in reopening mode
-	if ( OWServer_Enet_command( "", in ) == '?' ) {
-		in->master.enet.reopening = 0 ; // out of reopening mode
-		return gbGOOD ;
+	telnet_change( in ) ; // Really just to send a prompt
+	gbReturn = OWServer_Enet_reopen_prompt( in ) ;
+	if ( BAD(gbReturn) ) {
+		gbReturn = OWServer_Enet_reopen_prompt( in ) ;
 	}
 	in->master.enet.reopening = 0 ; // out of reopening mode
-	LEVEL_DEBUG("Cannot read the initial prompt");
-	return gbBAD ;
+
+	return gbReturn ;
+}
+
+static GOOD_OR_BAD OWServer_Enet_reopen_prompt(struct connection_in *in)
+{
+	char cmd_response[1+in->master.serial.tcp.CRLF_size] ;
+	
+	if ( BAD( OWServer_Enet_read( BYTE_string(cmd_response), 1, in )) ) {
+		LEVEL_DEBUG("Error reading inital telnet prompt" ) ;
+		return gbBAD ;
+	}
+	switch( cmd_response[0] ) {
+		case '+':
+		case '?':
+			return gbGOOD ;
+		default:
+			return gbBAD ;
+	}
 }
 
 static RESET_TYPE OWServer_Enet_reset(const struct parsedname *pn)
@@ -130,7 +194,7 @@ static RESET_TYPE OWServer_Enet_reset(const struct parsedname *pn)
 
 static RESET_TYPE OWServer_Enet_reset_in(struct connection_in * in)
 {
-	char reset_response = OWServer_Enet_command( "R\r", in ) ;
+	char reset_response = OWServer_Enet_command( 'R', "", in ) ;
 	
 	switch ( reset_response ) {
 		case 'P':
@@ -139,7 +203,7 @@ static RESET_TYPE OWServer_Enet_reset_in(struct connection_in * in)
 		case 'N':
 			in->AnyDevices = anydevices_no;
 			return BUS_RESET_OK;
-		case BAD_CHAR:
+		case '!':
 			LEVEL_DEBUG("Problem sending reset character");
 			return BUS_RESET_ERROR;
 		default:
@@ -209,15 +273,15 @@ static GOOD_OR_BAD OWServer_Enet_directory(struct device_search *ds, struct conn
 static enum ENET_dir OWServer_Enet_directory_loop(struct device_search *ds, struct connection_in * in)
 {
 	char resp[DEVICE_LENGTH+in->master.serial.tcp.CRLF_size];
-	char * search_first ;
-	char * search_next ;
+	char search_first ;
+	char search_next ;
 
 	if ( ds->search == _1W_CONDITIONAL_SEARCH_ROM ) {
-		search_first = "C\r" ;
-		search_next = "c\r" ;
+		search_first = 'C' ;
+		search_next =  'c' ;
 	} else {
-		search_first = "S\r" ;
-		search_next = "s\r" ;
+		search_first = 'S' ;
+		search_next =  's' ;
 	}
 	
 	DirblobClear( &(ds->gulp) );
@@ -227,7 +291,7 @@ static enum ENET_dir OWServer_Enet_directory_loop(struct device_search *ds, stru
 	}
 
 	// send the first search
-	if ( BAD( OWServer_Enet_write_string( search_first, in)) ) {
+	if ( BAD( OWServer_Enet_write_string( search_first, "", in)) ) {
 		return ENET_dir_bad ;
 	}
 
@@ -295,7 +359,7 @@ static enum ENET_dir OWServer_Enet_directory_loop(struct device_search *ds, stru
 		}
 
 		// send the subsequent search
-		if ( BAD(OWServer_Enet_write_string( search_next, in)) ) {
+		if ( BAD(OWServer_Enet_write_string( search_next, "", in)) ) {
 			return ENET_dir_bad ;
 		}
 	} while (1) ;
@@ -305,7 +369,7 @@ static enum ENET_dir OWServer_Enet_directory_loop(struct device_search *ds, stru
 static GOOD_OR_BAD OWServer_Enet_select( const struct parsedname * pn )
 {
 	struct connection_in * in = pn->selected_connection ;
-	char send_address[] = "A7766554433221100\r" ;
+	char return_char ;
 
 	// Apparently need to reset before select (Unlike the HA7S)
 	RETURN_BAD_IF_BAD( gbRESET( BUS_reset(pn)) ) ;
@@ -315,29 +379,32 @@ static GOOD_OR_BAD OWServer_Enet_select( const struct parsedname * pn )
 	}
 
 	if ( memcmp( pn->sn, in->master.enet.sn, SERIAL_NUMBER_SIZE ) != 0 ) {
-		num2string( &send_address[ 1], pn->sn[7] ) ;
-		num2string( &send_address[ 3], pn->sn[6] ) ;
-		num2string( &send_address[ 5], pn->sn[5] ) ;
-		num2string( &send_address[ 7], pn->sn[4] ) ;
-		num2string( &send_address[ 9], pn->sn[3] ) ;
-		num2string( &send_address[11], pn->sn[2] ) ;
-		num2string( &send_address[13], pn->sn[1] ) ;
-		num2string( &send_address[15], pn->sn[0] ) ;
+		char send_address[SERIAL_NUMBER_SIZE*2+1] ;
+		num2string( &send_address[ 0], pn->sn[7] ) ;
+		num2string( &send_address[ 2], pn->sn[6] ) ;
+		num2string( &send_address[ 4], pn->sn[5] ) ;
+		num2string( &send_address[ 6], pn->sn[4] ) ;
+		num2string( &send_address[ 8], pn->sn[3] ) ;
+		num2string( &send_address[10], pn->sn[2] ) ;
+		num2string( &send_address[12], pn->sn[1] ) ;
+		num2string( &send_address[14], pn->sn[0] ) ;
+		send_address[16] = '\0' ;
 		// Set as current "Address" for adapter
 		memcpy( in->master.enet.sn, pn->sn, SERIAL_NUMBER_SIZE) ;
+		return_char = OWServer_Enet_command( 'A', send_address , in ) ;
 	} else { // Serial number already loaded in adapter
-		strcpy( send_address, "M\r" ) ;
+		return_char = OWServer_Enet_command( 'M', "" , in ) ;
 	}
 
-	return (OWServer_Enet_command( send_address, in ) == '+') ? gbGOOD : gbBAD ;
+	return ( return_char == '+') ? gbGOOD : gbBAD ;
 }
 
 /* send a command and get the '+' */
-static char OWServer_Enet_command( char * cmd_string, struct connection_in * in )
+static char OWServer_Enet_command( char cmd, char * cmd_string, struct connection_in * in )
 {
 	char cmd_response[1+in->master.serial.tcp.CRLF_size] ;
-	//printf("ENET: Send command\n");
-	if ( BAD( OWServer_Enet_write_string( cmd_string, in )) ) {
+
+	if ( BAD( OWServer_Enet_write_string( cmd, cmd_string, in )) ) {
 		LEVEL_DEBUG("Error sending string <%s>", cmd_string ) ;
 		return BAD_CHAR ;
 	}
@@ -356,47 +423,48 @@ static GOOD_OR_BAD OWServer_Enet_read( BYTE * buf, size_t size, struct connectio
 	return COM_read( buf, size+in->master.serial.tcp.CRLF_size, in ) ;
 }
 
-static GOOD_OR_BAD OWServer_Enet_write_string( char * buf, struct connection_in *in)
+static GOOD_OR_BAD OWServer_Enet_write_string( char cmd, char * buf, struct connection_in *in)
 {
-	int length = strlen(buf) ;
-	//printf("ENET: Sending %d length string\n", length);
-	if ( length == 0 ) {
-		return gbGOOD ;
+	char full_buffer[ENET2_FIFO_SIZE+4] ;
+	int length = 1 ; // cmd
+	
+	full_buffer[0] = cmd ;
+
+	if ( in->Adapter == adapter_ENET2 ) {
+		// add channel char
+		length ++ ;
+		full_buffer[1] = in->master.enet.channel + '0' ;
 	}
-	return OWServer_Enet_write( BYTE_string(buf), length, in ) ;
+	strcpy( &full_buffer[length], buf ) ;
+	strcat( full_buffer, "\r" ) ;
+
+	return OWServer_Enet_write( BYTE_string(full_buffer), strlen(full_buffer), in ) ;
 }
 
 static GOOD_OR_BAD OWServer_Enet_write(const BYTE * buf, size_t size, struct connection_in *in)
 {
 	RETURN_GOOD_IF_GOOD( COM_write_simple( buf, size, in ) ) ;
-	//printf("ENET: Error in sending data\n");
 
 	if ( in->head->file_descriptor == FILE_DESCRIPTOR_BAD ) {
-		//printf("ENET: Connection closed\n");
 		RETURN_BAD_IF_BAD( OWServer_Enet_reopen( in ) ) ;
-		//printf("ENET: Connection reopened\n");
 		RETURN_GOOD_IF_GOOD( COM_write_simple( buf, size, in ) ) ;
-		//printf("ENET: Error sending data second time\n");
 	}
-	//printf("ENET: Bad sending experience\n");
 	return gbBAD ;
 }
 
-#define MAX_ENET_MEMORY_GULP   64
+#define MAX_ENET_MEMORY_GULP   ENET_FIFO_SIZE/2
 
-//  Send data and return response block -- up to 32 bytes
+//  Send data and return response block
 static GOOD_OR_BAD OWServer_Enet_sendback_part(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
 {
 	struct connection_in * in = pn->selected_connection ;
-	char send_data[1+MAX_ENET_MEMORY_GULP*2+3] ;
-	char get_data[MAX_ENET_MEMORY_GULP*2+in->master.serial.tcp.CRLF_size] ;
+	char send_data[ENET_FIFO_SIZE+1] ;
+	char  get_data[ENET_FIFO_SIZE+4] ;
 
-	send_data[0] = 'W' ;
-	bytes2string(&send_data[1], data, size) ;
-	send_data[1+2*size] = '\r' ;
-	send_data[1+2*size+1] = '\0' ;
+	bytes2string( send_data, data, size ) ;
+	send_data[2*size] = '\0' ;
 
-	if ( BAD( OWServer_Enet_write_string( send_data, in)) ) {
+	if ( BAD( OWServer_Enet_write_string( 'W', send_data, in)) ) {
 		LEVEL_DEBUG("Error with sending ENET block") ;
 		return gbBAD ;
 	}

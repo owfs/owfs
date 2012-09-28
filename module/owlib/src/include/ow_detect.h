@@ -59,6 +59,7 @@ GOOD_OR_BAD DS9097_detect(struct port_in * pin);
 GOOD_OR_BAD LINK_detect(struct port_in * pin);
 GOOD_OR_BAD HA7E_detect(struct port_in * pin);
 GOOD_OR_BAD OWServer_Enet_detect(struct port_in * pin);
+GOOD_OR_BAD OWServer_Enet2_detect(struct port_in * pin);
 GOOD_OR_BAD HA5_detect(struct port_in * pin);
 GOOD_OR_BAD BadAdapter_detect(struct port_in * pin);
 GOOD_OR_BAD LINKE_detect(struct port_in * pin);
@@ -73,6 +74,7 @@ GOOD_OR_BAD External_detect(struct port_in * pin);
 #if OW_HA7
 GOOD_OR_BAD HA7_detect(struct port_in * pin);
 GOOD_OR_BAD FS_FindHA7(void);
+GOOD_OR_BAD FS_FindENET( void );
 #endif							/* OW_HA7 */
 
 #if OW_W1
