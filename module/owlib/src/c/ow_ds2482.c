@@ -160,13 +160,14 @@ GOOD_OR_BAD DS2482_detect(struct port_in *pin)
 	switch ( ap.second.type ) {
 		case address_numeric:
 			if ( ap.second.number < ds2482_18 || ap.second.number >= ds2482_too_far ) {
-				LEVEL_CALL("DS2482 bus address <%s> invalid. Will scan.", ap.second.alpha) ;
+				LEVEL_CALL("DS2482 bus address <%s> invalid. Will search.", ap.second.alpha) ;
 				chip_num = ds2482_any ;
 			} else {
 				chip_num = ap.second.number ;
 			}
 			break ;
 		case address_all:
+		case address_asterix:
 			chip_num = ds2482_all ;
 			break ;
 		case address_none:
@@ -182,6 +183,7 @@ GOOD_OR_BAD DS2482_detect(struct port_in *pin)
 
 	switch ( ap.first.type ) {
 		case address_all:
+		case address_asterix:
 			// All adapters
 			gbResult = DS2482_detect_sys( 0, chip_num, pin ) ;
 			break ;
@@ -702,7 +704,7 @@ static GOOD_OR_BAD CreateChannels(struct connection_in *head)
 	head->master.i2c.index = 0;
 	head->adapter_name = name[0];
 	for (i = 1; i < 8; ++i) {
-		struct connection_in * added = AddtoPort(head->head,head);
+		struct connection_in * added = AddtoPort(head->head);
 		prior->master.i2c.next = added ;
 		if (added == NO_CONNECTION) {
 			return gbBAD;

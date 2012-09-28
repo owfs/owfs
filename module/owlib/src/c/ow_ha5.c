@@ -223,7 +223,7 @@ static GOOD_OR_BAD HA5_channel_list( char * alpha_string, struct connection_in *
 			first_time = 0 ;
 
 			LEVEL_CONNECT("HA5 bus master FOUND on port %s at channel %c", DEVICENAME(current_in), current_in->master.ha5.channel ) ;
-			current_in = AddtoPort( initial_in->head, initial_in ) ; // point to newer space for next candidate
+			current_in = AddtoPort( initial_in->head ) ; // point to newer space for next candidate
 
 			if ( current_in == NO_CONNECTION ) {
 				break ;

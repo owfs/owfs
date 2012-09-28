@@ -46,7 +46,7 @@ $Id$
 #define OW_PARSE_ADDRESS_H
 
 struct address_entry {
-	enum { address_none, address_alpha, address_all, address_numeric, address_dottedquad, } type ;
+	enum { address_none, address_alpha, address_all, address_scan, address_asterix, address_numeric, address_dottedquad, } type ;
 	char * alpha ;
 	int number ;
 } ;

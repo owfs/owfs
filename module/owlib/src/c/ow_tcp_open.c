@@ -23,7 +23,7 @@ $Id$
 GOOD_OR_BAD tcp_open(struct connection_in *connection)
 {
 	if ( connection->head->state == cs_virgin ) {
-		char * def_port = NULL ;
+		char * def_port = "" ;
 		switch( get_busmode(connection) ) {
 			case bus_link:
 				def_port = DEFAULT_LINK_PORT ;
@@ -44,6 +44,9 @@ GOOD_OR_BAD tcp_open(struct connection_in *connection)
 				break ;
 			case bus_enet:
 				def_port = DEFAULT_ENET_PORT ;
+				break ;
+			case bus_enet2:
+				def_port = DEFAULT_ENET2_PORT ;
 				break ;
 			case bus_xport_control:
 				def_port = DEFAULT_XPORT_CONTROL_PORT ;

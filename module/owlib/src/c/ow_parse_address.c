@@ -29,6 +29,10 @@ static void Parse_Single_Address( struct address_entry * ae )
 		ae->type = address_none ;
 	} else if ( strncasecmp( ae->alpha, "all", 3 ) == 0 ) {
 		ae->type = address_all ;
+	} else if ( strncasecmp( ae->alpha, "scan", 4 ) == 0 ) {
+		ae->type = address_scan ;
+	} else if ( strncasecmp( ae->alpha, "*", 1 ) == 0 ) {
+		ae->type = address_asterix ;
 	} else {
 		switch( sscanf( ae->alpha, "%i.%i.%i.%i", &q1, &q2, &q3, &q4 ) ) {
 		case 4:
