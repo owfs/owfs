@@ -25,7 +25,7 @@ GOOD_OR_BAD COM_change( struct connection_in *connection)
 	if ( connection == NO_CONNECTION ) {
 		return gbBAD ;
 	}
-	pin = connection->head ;
+	pin = connection->pown ;
 
 	// is connection thought to be open?
 	RETURN_BAD_IF_BAD( COM_test(connection) ) ;
@@ -57,7 +57,7 @@ GOOD_OR_BAD COM_change( struct connection_in *connection)
 
 void COM_set_standard( struct connection_in *connection)
 {
-	struct port_in * pin = connection->head ;
+	struct port_in * pin = connection->pown ;
 	
 	pin -> baud            = B9600 ;
 	pin -> vmin            = 0;           // minimum chars

@@ -30,7 +30,7 @@ void COM_free(struct connection_in *connection)
 		return ;
 	}
 
-	switch ( connection->head->type ) {
+	switch ( connection->pown->type ) {
 		case ct_unknown:
 		case ct_none:
 		case ct_usb:
@@ -48,5 +48,5 @@ void COM_free(struct connection_in *connection)
 	}
 
 	SAFEFREE(DEVICENAME(connection)) ;
-	connection->head->state = cs_virgin ;
+	connection->pown->state = cs_virgin ;
 }

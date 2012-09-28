@@ -235,7 +235,7 @@ GOOD_OR_BAD LINK_detect(struct port_in *pin)
 
 static GOOD_OR_BAD LINK_detect_serial(struct connection_in * in)
 {
-	struct port_in * pin = in->head ;
+	struct port_in * pin = in->pown ;
 	struct connection_in * head_in = in->channel_info.head ;
 	/* Set up low-level routines */
 	LINK_setroutines(head_in);
@@ -259,7 +259,7 @@ static GOOD_OR_BAD LINK_detect_serial(struct connection_in * in)
 
 static GOOD_OR_BAD LINK_detect_net(struct connection_in * in)
 {
-	struct port_in * pin = in->head ;
+	struct port_in * pin = in->pown ;
 	struct connection_in * head_in = in->channel_info.head ;
 	/* Set up low-level routines */
 	LINKE_setroutines(head_in);
@@ -366,7 +366,7 @@ static GOOD_OR_BAD LINK_version(struct connection_in * in)
 
 static void LINK_set_baud(struct connection_in * in)
 {
-	struct port_in * pin = in->head ;
+	struct port_in * pin = in->pown ;
 	struct connection_in * head_in = in->channel_info.head ;
 	char * speed_code ;
 

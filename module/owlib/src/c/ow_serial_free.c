@@ -27,7 +27,7 @@ $Id$
 void serial_free(struct connection_in *connection)
 {
 	FILE_DESCRIPTOR_OR_ERROR fd ;
-	struct port_in * pin = connection->head ;
+	struct port_in * pin = connection->pown ;
 
 	if ( pin->state == cs_virgin ) {
 		return ;

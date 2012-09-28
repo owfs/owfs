@@ -40,10 +40,10 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
 // responses will have to be routed to appropriate bus master
 GOOD_OR_BAD w1_bind( struct connection_in * in )
 {
-	struct port_in * pin = in->head ;
+	struct port_in * pin = in->pown ;
 	struct sockaddr_nl l_local ;
 
-	in->head->type = ct_netlink ;
+	pin->type = ct_netlink ;
 	Test_and_Close( &(pin->file_descriptor) ) ; // just in case
 	
 	// Example from http://lxr.linux.no/linux+v3.0/Documentation/connector/ucon.c#L114

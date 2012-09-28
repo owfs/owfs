@@ -122,7 +122,7 @@ GOOD_OR_BAD HA5_detect_parsed(struct address_pair *ap, struct connection_in *in)
 	char * channel_list = NULL ;
 
 	// Create name (ip:port or /dev/tty) and optional channel list
-	switch (in->head->type) {
+	switch (in->pown->type) {
 		case ct_telnet:
 			// address:port:channel_list
 			if ( ap->first.type != address_none ) {
@@ -223,7 +223,7 @@ static GOOD_OR_BAD HA5_channel_list( char * alpha_string, struct connection_in *
 			first_time = 0 ;
 
 			LEVEL_CONNECT("HA5 bus master FOUND on port %s at channel %c", DEVICENAME(current_in), current_in->master.ha5.channel ) ;
-			current_in = AddtoPort( initial_in->head ) ; // point to newer space for next candidate
+			current_in = AddtoPort( initial_in->pown ) ; // point to newer space for next candidate
 
 			if ( current_in == NO_CONNECTION ) {
 				break ;
@@ -790,7 +790,7 @@ static void HA5_close(struct connection_in *in)
 	if ( in->master.ha5.head == in ) {
 		HA5MUTEX_DESTROY(in);
 	} else {
-		in->head->state = cs_virgin ;
+		in->pown->state = cs_virgin ;
 	}
 }
 

@@ -65,7 +65,7 @@ GOOD_OR_BAD telnet_change(struct connection_in *in)
 	} ;
 
 #pragma pack(pop)  /* restore */
-	struct port_in * pin = in->head ;
+	struct port_in * pin = in->pown ;
 
 	switch ( pin->baud ) {
 		case B115200:

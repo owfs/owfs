@@ -25,7 +25,7 @@ GOOD_OR_BAD COM_test( struct connection_in * connection )
 		return gbBAD;
 	}
 
-	switch ( connection->head->type ) {
+	switch ( connection->pown->type ) {
 		case ct_unknown:
 		case ct_none:
 			LEVEL_DEBUG("ERROR!!! ----------- ERROR!");
@@ -42,9 +42,9 @@ GOOD_OR_BAD COM_test( struct connection_in * connection )
 			break ;
 	}
 
-	if ( connection->head->state == cs_virgin ) {
+	if ( connection->pown->state == cs_virgin ) {
 		LEVEL_DEBUG("Auto initialization of %s", SAFESTRING(DEVICENAME(connection))) ;
-	} else if ( FILE_DESCRIPTOR_VALID( connection->head->file_descriptor ) ) {
+	} else if ( FILE_DESCRIPTOR_VALID( connection->pown->file_descriptor ) ) {
 		return gbGOOD ;
 	}
 	return COM_open(connection) ;
@@ -57,7 +57,7 @@ void COM_flush( const struct connection_in *connection)
 		return ;
 	}
 
-	switch ( connection->head->type ) {
+	switch ( connection->pown->type ) {
 		case ct_unknown:
 		case ct_none:
 			LEVEL_DEBUG("ERROR!!! ----------- ERROR!");
@@ -65,14 +65,14 @@ void COM_flush( const struct connection_in *connection)
 		case ct_netlink:
 		case ct_telnet:
 		case ct_tcp:
-			tcp_read_flush( connection->head->file_descriptor) ;
+			tcp_read_flush( connection->pown->file_descriptor) ;
 			break ;
 		case ct_i2c:
 		case ct_usb:
 			LEVEL_DEBUG("Unimplemented!!!");
 			return ;
 		case ct_serial:
-			tcflush( connection->head->file_descriptor, TCIOFLUSH);
+			tcflush( connection->pown->file_descriptor, TCIOFLUSH);
 			break ;
 	}
 }
@@ -88,7 +88,7 @@ void COM_break(struct connection_in *in)
 		return ;
 	}
 
-	switch ( in->head->type ) {
+	switch ( in->pown->type ) {
 		case ct_unknown:
 		case ct_none:
 			LEVEL_DEBUG("ERROR!!! ----------- ERROR!");
@@ -103,7 +103,7 @@ void COM_break(struct connection_in *in)
 			LEVEL_DEBUG("Unimplemented!!!");
 			return ;
 		case ct_serial:
-			tcsendbreak(in->head->file_descriptor, 0);
+			tcsendbreak(in->pown->file_descriptor, 0);
 			break ;
 	}
 }

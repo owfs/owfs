@@ -22,7 +22,9 @@ $Id$
 /* Called on head of multibus group */
 GOOD_OR_BAD tcp_open(struct connection_in *connection)
 {
-	if ( connection->head->state == cs_virgin ) {
+	struct port_in * pin = connection->pown ;
+	
+	if ( pin->state == cs_virgin ) {
 		char * def_port = "" ;
 		switch( get_busmode(connection) ) {
 			case bus_link:
@@ -55,12 +57,12 @@ GOOD_OR_BAD tcp_open(struct connection_in *connection)
 				break ;
 		}
 		RETURN_BAD_IF_BAD( ClientAddr( DEVICENAME(connection), def_port, connection ) ) ;
-		connection->head->file_descriptor = FILE_DESCRIPTOR_BAD ;
+		pin->file_descriptor = FILE_DESCRIPTOR_BAD ;
 	}
 
-	connection->head->state = cs_deflowered ;
-	connection->head->file_descriptor = ClientConnect(connection) ;
-	if ( FILE_DESCRIPTOR_NOT_VALID(connection->head->file_descriptor) ) {
+	pin->state = cs_deflowered ;
+	pin->file_descriptor = ClientConnect(connection) ;
+	if ( FILE_DESCRIPTOR_NOT_VALID(pin->file_descriptor) ) {
 		return gbBAD;
 	}
 	return gbGOOD ;

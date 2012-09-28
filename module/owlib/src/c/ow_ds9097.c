@@ -153,7 +153,7 @@ static RESET_TYPE DS9097_reset_in( struct connection_in * in )
 /* Puts in 9600 baud */
 static GOOD_OR_BAD DS9097_pre_reset(struct connection_in *in )
 {
-	struct port_in * pin = in->head ;
+	struct port_in * pin = in->pown ;
 
 	RETURN_BAD_IF_BAD( COM_test(in) ) ;
 
@@ -172,7 +172,7 @@ static GOOD_OR_BAD DS9097_pre_reset(struct connection_in *in )
 /* Restore terminal settings (serial port settings) */
 static void DS9097_post_reset(struct connection_in *in )
 {
-	struct port_in * pin = in->head ;
+	struct port_in * pin = in->pown ;
 
 	if (Globals.eightbit_serial) {
 		/* coninue with 8 data bits */
@@ -238,7 +238,7 @@ static GOOD_OR_BAD DS9097_sendback_bits(const BYTE * outbits, BYTE * inbits, con
 /* Routine to send a string of bits and get another string back */
 static GOOD_OR_BAD DS9097_send_and_get(const BYTE * bussend, BYTE * busget, const size_t length, struct connection_in * in)
 {
-	switch( in->head->type ) {
+	switch( in->pown->type ) {
 		case ct_telnet:
 			RETURN_BAD_IF_BAD( telnet_write_binary( bussend, length, in) ) ;
 			break ;

@@ -35,7 +35,7 @@ GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connecti
 		// bad parameters
 		return gbBAD ;
 	}
-	pin = connection->head ;
+	pin = connection->pown ;
 
 	// unlike write or open, a closed connection isn't automatically opened.
 	// the reason is that reopening won't have the data waiting. We really need
@@ -91,7 +91,7 @@ SIZE_OR_ERROR COM_read_with_timeout( BYTE * data, size_t length, struct connecti
 		// bad parameters
 		return -EIO ;
 	}
-	pin = connection->head ;
+	pin = connection->pown ;
 
 	// unlike write or open, a closed connection isn't automatically opened.
 	// the reason is that reopening won't have the data waiting. We really need
@@ -117,7 +117,7 @@ SIZE_OR_ERROR COM_read_with_timeout( BYTE * data, size_t length, struct connecti
 static SIZE_OR_ERROR COM_read_get_size( BYTE * data, size_t length, struct connection_in *connection )
 {
 	size_t actual_size ;
-	struct port_in * pin = connection->head ;
+	struct port_in * pin = connection->pown ;
 	ZERO_OR_ERROR zoe = tcp_read( pin->file_descriptor, data, length, &(pin->timeout), &actual_size ) ;
 
 	if ( zoe < 0 ) {

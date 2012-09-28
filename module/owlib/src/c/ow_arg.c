@@ -58,13 +58,13 @@ static GOOD_OR_BAD Serial_or_telnet( const char * arg, struct connection_in * in
 			LEVEL_DEFAULT("Error with device. Specify a serial port, or a serial-over-telnet network address");
 			return gbBAD ;
 		case arg_addr_device:
-			in->head->type = ct_serial ; // serial port
+			in->pown->type = ct_serial ; // serial port
 			break ;
 		case arg_addr_number: // port
 		case arg_addr_colon:
 		case arg_addr_ip:
 		case arg_addr_other:
-			in->head->type = ct_telnet ; // network
+			in->pown->type = ct_telnet ; // network
 			break ;	
 	}
 	return gbGOOD;

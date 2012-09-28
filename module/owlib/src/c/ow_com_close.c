@@ -26,7 +26,7 @@ void COM_close(struct connection_in *connection)
 		LEVEL_DEBUG("Attempt to close a NULL device");
 		return ;
 	}
-	pin = connection->head ;
+	pin = connection->pown ;
 
 	switch ( pin->type ) {
 		case ct_unknown:

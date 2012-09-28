@@ -265,7 +265,7 @@ GOOD_OR_BAD DS2480_detect(struct port_in *pin)
 // setting for serial port already made
 static GOOD_OR_BAD DS2480_detect_serial(struct connection_in *in)
 {
-	in->head->state = cs_virgin ;
+	in->pown->state = cs_virgin ;
 	if ( BAD(DS2480_initialize_repeatedly(in)) ) {
 		LEVEL_DEBUG("Could not initilize the DS9097U even after several tries") ;
 		COM_close(in) ;
@@ -321,7 +321,7 @@ static GOOD_OR_BAD DS2480_reconnect(const struct parsedname * pn)
 // do the com port and configuration stuff
 static GOOD_OR_BAD DS2480_big_reset(struct connection_in * in)
 {
-	struct port_in * pin = in->head ;
+	struct port_in * pin = in->pown ;
 	
 	switch (pin->type) {
 		case ct_telnet:
@@ -460,7 +460,7 @@ static GOOD_OR_BAD DS2480_configuration_read(BYTE parameter_code, BYTE value_cod
 // Set Baud rate -- can't use DS2480_configuration_code because return byte is at a different speed
 static void DS2480_set_baud_control(struct connection_in * in)
 {
-	struct port_in * pin = in->head ;
+	struct port_in * pin = in->pown ;
 	
 	// restrict allowable baud rates based on device capabilities
 	COM_BaudRestrict( &(pin->baud), B9600, B19200, B57600, B115200, 0 ) ;
@@ -488,7 +488,7 @@ static GOOD_OR_BAD DS2480_set_baud(struct connection_in * in)
 	BYTE send_code ;
 
 	// Find rate parameter
-	switch ( in->head->baud ) {
+	switch ( in->pown->baud ) {
 		case B9600:
 			value_code = PARMSET_9600 ;
 			break ;
@@ -508,7 +508,7 @@ static GOOD_OR_BAD DS2480_set_baud(struct connection_in * in)
 			break ;
 #endif
 		default:
-			in->head->baud = B9600 ;
+			in->pown->baud = B9600 ;
 			value_code = PARMSET_9600 ;
 			break ;
 	}
@@ -897,7 +897,7 @@ static GOOD_OR_BAD DS2480_ProgramPulse(const struct parsedname *pn)
 // Write to the output -- works for tcp and COM
 static GOOD_OR_BAD DS2480_write(const BYTE * buf, const size_t size, struct connection_in * in)
 {
-	switch( in->head->type ) {
+	switch( in->pown->type ) {
 		case ct_telnet:
 			return telnet_write_binary( buf, size, in) ;
 		case ct_serial:

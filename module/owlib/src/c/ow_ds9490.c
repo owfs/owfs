@@ -416,9 +416,9 @@ static GOOD_OR_BAD DS9490_redetect_specific_adapter( struct connection_in * in)
 	struct address_pair ap ;
 	GOOD_OR_BAD gbResult ;
 	
-	Parse_Address( in->head->init_data, &ap ) ;
+	Parse_Address( in->pown->init_data, &ap ) ;
 	if ( ap.first.type != address_numeric || ap.second.type != address_numeric ) {
-		LEVEL_DEBUG("Cannot understand the specific usb address pair to reconnect <%s>",in->head->init_data) ;
+		LEVEL_DEBUG("Cannot understand the specific usb address pair to reconnect <%s>",in->pown->init_data) ;
 		gbResult = gbBAD ;
 	} else {
 		/* Have to protect usb_find_busses() and usb_find_devices() with

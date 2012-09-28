@@ -197,7 +197,7 @@ static enum search_status HA7_next_both(struct device_search *ds, const struct p
 
 static GOOD_OR_BAD HA7_read( struct memblob *mb, struct connection_in * in )
 {
-	struct port_in * pin = in->head ;
+	struct port_in * pin = in->pown ;
 	
 	ASCII readin_area[HA7_READ_BUFFER_LENGTH + 1];
 	ASCII *start;

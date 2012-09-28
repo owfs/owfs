@@ -111,7 +111,7 @@ GOOD_OR_BAD Netlink_Parse_Get( struct netlink_parse * nlp )
 
 	// first peek at message to get length and details
 	LEVEL_DEBUG("Wait to peek at message");
-	int recv_len = recv( Inbound_Control.w1_monitor->head->file_descriptor, &peek_nlm, W1_NLM_LENGTH, MSG_PEEK );
+	int recv_len = recv( Inbound_Control.w1_monitor->pown->file_descriptor, &peek_nlm, W1_NLM_LENGTH, MSG_PEEK );
 
 	// Set time of last read
 	_MUTEX_LOCK(Inbound_Control.w1_monitor->master.w1_monitor.read_mutex) ;
@@ -132,7 +132,7 @@ GOOD_OR_BAD Netlink_Parse_Get( struct netlink_parse * nlp )
 	}
 
 	// read whole packet
-	recv_len = recv( Inbound_Control.w1_monitor->head->file_descriptor, &(nlp->nlm[0]), peek_nlm.nlmsg_len, 0 );
+	recv_len = recv( Inbound_Control.w1_monitor->pown->file_descriptor, &(nlp->nlm[0]), peek_nlm.nlmsg_len, 0 );
 	if (recv_len == -1) {
 		ERROR_DEBUG("Netlink (w1) recv body error");
 		return gbBAD ;

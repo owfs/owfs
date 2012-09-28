@@ -26,7 +26,7 @@ $Id$
 /* Called on head of multigroup bus */
 void tcp_free(struct connection_in *connection)
 {
-	if ( connection->head->state == cs_virgin ) {
+	if ( connection->pown->state == cs_virgin ) {
 		return ;
 	}
 

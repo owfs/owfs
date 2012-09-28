@@ -334,7 +334,7 @@ static ZERO_OR_ERROR FS_r_baud(struct one_wire_query *owq)
 		case bus_link:
 		case bus_ha5:
 		case bus_ha7e:
-			OWQ_U(owq) = COM_BaudRate( in->head->baud ) ;
+			OWQ_U(owq) = COM_BaudRate( in->pown->baud ) ;
 			return 0;
 		default:
 			return -ENOTSUP ;
@@ -347,7 +347,7 @@ static ZERO_OR_ERROR FS_w_baud(struct one_wire_query *owq)
 	switch ( get_busmode(in) ) {
 		case bus_serial:
 		case bus_link:
-			in->head->baud = COM_MakeBaud( (speed_t) OWQ_U(owq) ) ;
+			in->pown->baud = COM_MakeBaud( (speed_t) OWQ_U(owq) ) ;
 			++in->changed_bus_settings ;
 			break ;
 		default:

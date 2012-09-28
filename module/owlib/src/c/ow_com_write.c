@@ -28,7 +28,7 @@ GOOD_OR_BAD COM_write( const BYTE * data, size_t length, struct connection_in *c
 	if ( connection == NO_CONNECTION ) {
 		return gbBAD ;
 	}
-	pin = connection->head ;
+	pin = connection->pown ;
 
 	switch ( pin->type ) {
 		case ct_unknown:
@@ -68,7 +68,7 @@ GOOD_OR_BAD COM_write( const BYTE * data, size_t length, struct connection_in *c
 	
 	LEVEL_DEBUG("Trouble writing to %s", SAFESTRING(DEVICENAME(connection)) ) ;
 
-	if ( connection->head->file_descriptor == FILE_DESCRIPTOR_BAD ) {
+	if ( connection->pown->file_descriptor == FILE_DESCRIPTOR_BAD ) {
 		// connection was bad, now closed, try again
 		LEVEL_DEBUG("Need to reopen %s", SAFESTRING(DEVICENAME(connection)) ) ;
 		RETURN_BAD_IF_BAD( COM_test(connection) ) ;
@@ -95,7 +95,7 @@ GOOD_OR_BAD COM_write_simple( const BYTE * data, size_t length, struct connectio
 	if ( connection == NO_CONNECTION ) {
 		return gbBAD ;
 	}
-	pin = connection->head ;
+	pin = connection->pown ;
 
 	switch ( pin->type ) {
 		case ct_unknown:
@@ -125,7 +125,7 @@ GOOD_OR_BAD COM_write_simple( const BYTE * data, size_t length, struct connectio
 static GOOD_OR_BAD COM_write_once( const BYTE * data, size_t length, struct connection_in *connection)
 {
 	ssize_t to_be_written = length ;
-	FILE_DESCRIPTOR_OR_ERROR fd = connection->head->file_descriptor ;
+	FILE_DESCRIPTOR_OR_ERROR fd = connection->pown->file_descriptor ;
 
 	while (to_be_written > 0) {
 		int select_result ;

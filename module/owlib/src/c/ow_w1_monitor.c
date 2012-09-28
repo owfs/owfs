@@ -59,7 +59,7 @@ GOOD_OR_BAD W1_monitor_detect(struct port_in *pin)
 	in->master.w1_monitor.pid = 0 ;
 	
 	w1_bind(in) ; // sets in->file_descriptor
-	if ( FILE_DESCRIPTOR_NOT_VALID( in->head->file_descriptor ) ) {
+	if ( FILE_DESCRIPTOR_NOT_VALID( in->pown->file_descriptor ) ) {
 		ERROR_DEBUG("Netlink problem -- are you root?");
 		Inbound_Control.w1_monitor = NO_CONNECTION ;
 		return gbBAD ;

@@ -27,14 +27,14 @@ void COM_slurp( struct connection_in * connection ) {
 		return ;
 	}
 
-	switch ( connection->head->type ) {
+	switch ( connection->pown->type ) {
 		case ct_unknown:
 		case ct_none:
 			LEVEL_DEBUG("Unknown type");
 			return ;
 		case ct_telnet:
 			// see if we can tell the port to dump all pending data
-			if ( connection->head->dev.telnet.telnet_negotiated == completed_negotiation ) {
+			if ( connection->pown->dev.telnet.telnet_negotiated == completed_negotiation ) {
 				if ( BAD( COM_test(connection) ) ) {
 					return ;
 				}
@@ -59,7 +59,7 @@ void COM_slurp( struct connection_in * connection ) {
 		return ;
 	}
 
-	Slurp( connection->head->file_descriptor, usec ) ;
+	Slurp( connection->pown->file_descriptor, usec ) ;
 }
 
 /* slurp up any pending chars -- used at the start to clear the com buffer */

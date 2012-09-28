@@ -72,7 +72,7 @@ GOOD_OR_BAD telnet_read(BYTE * buf, const size_t size, struct connection_in *in)
 	if ( in == NO_CONNECTION ) {
 		return gbBAD ;
 	}
-	pin = in->head ;
+	pin = in->pown ;
 
 	if ( FILE_DESCRIPTOR_NOT_VALID(pin->file_descriptor) ) {
 		return gbBAD ;

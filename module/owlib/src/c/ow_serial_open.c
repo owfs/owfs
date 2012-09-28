@@ -30,7 +30,7 @@ $Id$
 //open serial port ( called on head of connection_in group from com_open )
 GOOD_OR_BAD serial_open(struct connection_in *connection)
 {
-	struct port_in * pin = connection->head ;
+	struct port_in * pin = connection->pown ;
 	FILE_DESCRIPTOR_OR_ERROR fd = open( DEVICENAME(connection), O_RDWR | O_NONBLOCK | O_NOCTTY) ;
 	pin->file_descriptor = fd ;
 	if ( FILE_DESCRIPTOR_NOT_VALID( fd ) ) {
@@ -55,7 +55,7 @@ GOOD_OR_BAD serial_open(struct connection_in *connection)
 //change serial port settings
 GOOD_OR_BAD serial_change(struct connection_in *connection)
 {
-	struct port_in * pin = connection->head ;
+	struct port_in * pin = connection->pown ;
 	struct termios newSerialTio;	/*new serial port settings */
 	FILE_DESCRIPTOR_OR_ERROR fd = pin->file_descriptor ;
 	size_t baud = pin->baud ;

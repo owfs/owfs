@@ -40,9 +40,9 @@ void BUS_lock_in(struct connection_in *in)
 	if (!in) {
 		return;
 	}
-	if ( in->head != NULL ) {
-		if ( in->head->connections > 1 ) {
-			_MUTEX_LOCK(in->head->port_mutex);
+	if ( in->pown != NULL ) {
+		if ( in->pown->connections > 1 ) {
+			_MUTEX_LOCK(in->pown->port_mutex);
 		}
 	}
 	_MUTEX_LOCK(in->bus_mutex);
@@ -78,9 +78,9 @@ void BUS_unlock_in(struct connection_in *in)
 		_MUTEX_UNLOCK(in->master.i2c.head->master.i2c.all_channel_lock);
 	}
 	_MUTEX_UNLOCK(in->bus_mutex);
-	if ( in->head != NULL ) {
-		if ( in->head->connections > 1 ) {
-			_MUTEX_UNLOCK(in->head->port_mutex);
+	if ( in->pown != NULL ) {
+		if ( in->pown->connections > 1 ) {
+			_MUTEX_UNLOCK(in->pown->port_mutex);
 		}
 	}
 }

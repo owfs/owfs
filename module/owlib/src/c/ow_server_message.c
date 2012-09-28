@@ -516,6 +516,7 @@ static SIZE_OR_ERROR From_Server( struct server_connection_state * scs, struct c
 static GOOD_OR_BAD To_Server( struct server_connection_state * scs, struct server_msg * sm, struct serverpackage *sp)
 {
 	struct connection_in * in = scs->in ; // for convenience
+	struct port_in * pin = in->pown ;
 	BYTE test_read[1] ;
 	int old_flags ;
 	ssize_t rcv_value ;
@@ -532,7 +533,7 @@ static GOOD_OR_BAD To_Server( struct server_connection_state * scs, struct serve
 	} else {
 		// Persistence desired
 		BUSLOCKIN(in);
-		switch ( in->head->file_descriptor ) {
+		switch ( pin->file_descriptor ) {
 			case FILE_DESCRIPTOR_PERSISTENT_IN_USE:
 				// Currently in use, so make new non-persistent connection
 				scs->file_descriptor = ClientConnect(in);
@@ -542,14 +543,14 @@ static GOOD_OR_BAD To_Server( struct server_connection_state * scs, struct serve
 				// no conection currently, so make a new one
 				scs->file_descriptor = ClientConnect(in);
 				if ( FILE_DESCRIPTOR_VALID( scs->file_descriptor ) ) {
-					in->head->file_descriptor = FILE_DESCRIPTOR_PERSISTENT_IN_USE ;
+					pin->file_descriptor = FILE_DESCRIPTOR_PERSISTENT_IN_USE ;
 				}	
 				break ;
 			default:
 				// persistent connection idle and waiting for use
 				// connection_in is locked so this is safe
-				scs->file_descriptor = in->head->file_descriptor;
-				in->head->file_descriptor = FILE_DESCRIPTOR_PERSISTENT_IN_USE;
+				scs->file_descriptor = pin->file_descriptor;
+				pin->file_descriptor = FILE_DESCRIPTOR_PERSISTENT_IN_USE;
 			break ;
 		}
 		BUSUNLOCKIN(in);
@@ -586,7 +587,7 @@ static GOOD_OR_BAD To_Server( struct server_connection_state * scs, struct serve
 			Close_Persistent( scs);
 			scs->file_descriptor = ClientConnect(in);
 			if ( FILE_DESCRIPTOR_VALID( scs->file_descriptor ) ) {
-				in->head->file_descriptor = FILE_DESCRIPTOR_PERSISTENT_IN_USE ;
+				in->pown->file_descriptor = FILE_DESCRIPTOR_PERSISTENT_IN_USE ;
 			}
 			break ;
 		default:
@@ -645,7 +646,7 @@ static void Close_Persistent( struct server_connection_state * scs)
 	if (scs->persistence == persistent_yes) {
 		// no persistence wanted
 		BUSLOCKIN(scs->in);
-			scs->in->head->file_descriptor = FILE_DESCRIPTOR_BAD ;
+			scs->in->pown->file_descriptor = FILE_DESCRIPTOR_BAD ;
 		BUSUNLOCKIN(scs->in);
 	}
 	
@@ -777,7 +778,7 @@ static void Release_Persistent( struct server_connection_state * scs, int grante
 
 	// mark as available
 	BUSLOCKIN(scs->in);
-	scs->in->head->file_descriptor = scs->file_descriptor;
+	scs->in->pown->file_descriptor = scs->file_descriptor;
 	BUSUNLOCKIN(scs->in);
 	scs->persistence = persistent_no ; // we no longer own this connection
 	scs->file_descriptor = FILE_DESCRIPTOR_BAD ;

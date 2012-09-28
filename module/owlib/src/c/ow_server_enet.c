@@ -445,7 +445,7 @@ static GOOD_OR_BAD OWServer_Enet_write(const BYTE * buf, size_t size, struct con
 {
 	RETURN_GOOD_IF_GOOD( COM_write_simple( buf, size, in ) ) ;
 
-	if ( in->head->file_descriptor == FILE_DESCRIPTOR_BAD ) {
+	if ( in->pown->file_descriptor == FILE_DESCRIPTOR_BAD ) {
 		RETURN_BAD_IF_BAD( OWServer_Enet_reopen( in ) ) ;
 		RETURN_GOOD_IF_GOOD( COM_write_simple( buf, size, in ) ) ;
 	}

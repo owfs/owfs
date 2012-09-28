@@ -21,7 +21,7 @@ $Id$
 
 GOOD_OR_BAD ClientAddr(char *sname, char * default_port, struct connection_in *in)
 {
-	struct port_in * pin = in->head ;
+	struct port_in * pin = in->pown ;
 	struct addrinfo hint;
 	struct address_pair ap ;
 	int ret;
@@ -93,7 +93,7 @@ GOOD_OR_BAD ClientAddr(char *sname, char * default_port, struct connection_in *i
 
 void FreeClientAddr(struct connection_in *in)
 {
-	struct port_in * pin = in->head ;
+	struct port_in * pin = in->pown ;
 	SAFEFREE( pin->dev.tcp.host) ;
 	SAFEFREE( pin->dev.tcp.service) ;
 	if ( pin->dev.tcp.ai != NULL ) {
@@ -106,7 +106,7 @@ void FreeClientAddr(struct connection_in *in)
 /* Usually called with BUS locked, to protect ai settings */
 FILE_DESCRIPTOR_OR_ERROR ClientConnect(struct connection_in *in)
 {
-	struct port_in * pin = in->head ;
+	struct port_in * pin = in->pown ;
 	FILE_DESCRIPTOR_OR_ERROR file_descriptor;
 	struct addrinfo *ai;
 

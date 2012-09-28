@@ -118,7 +118,7 @@ enum e_bus_stat {
 
 struct connection_in {
 	struct connection_in *next;
-	struct port_in * head ; // pointer to port_in that owns us.
+	struct port_in * pown ; // pointer to port_in that owns us.
 	INDEX_OR_ERROR index; // gneral index in all the list
 	int channel ; // index (0-based) in this port's channels
 	

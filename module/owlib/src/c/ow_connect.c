@@ -64,7 +64,7 @@ enum bus_mode get_busmode(const struct connection_in *in)
 	if (in == NO_CONNECTION) {
 		return bus_unknown;
 	}
-	return in->head->busmode;
+	return in->pown->busmode;
 }
 
 // return true (non-zero) if the connection_in exists, and is remote
@@ -162,7 +162,7 @@ struct port_in * AllocPort( const struct port_in * old_pin )
 		/* port not yet linked */
 		new_pin->next = NULL ;
 		/* connnection_in needs to be linked */
-		new_pin->first->head = new_pin ;
+		new_pin->first->pown = new_pin ;
 
 	} else {
 		LEVEL_DEFAULT("Cannot allocate memory for port master structure");
@@ -218,7 +218,7 @@ void RemoveIn( struct connection_in * conn )
 		return ;
 	}
 
-	pin = conn->head ;
+	pin = conn->pown ;
 
 	/* First unlink from list */
 	if ( pin == NULL ) {
@@ -313,7 +313,7 @@ struct connection_in * AddtoPort( struct port_in * pin )
 	
 	add_in->next = pin->first;	/* put in linked list at start */
 	pin->first = add_in;
-	add_in->head = pin ;
+	add_in->pown = pin ;
 
 	add_in->channel = pin->connections ;
 	++pin->connections ;

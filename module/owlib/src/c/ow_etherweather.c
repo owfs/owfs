@@ -58,7 +58,7 @@ static void EtherWeather_setroutines(struct connection_in *in);
 
 static int EtherWeather_command(struct connection_in *in, char command, int datalen, const BYTE * idata, BYTE * odata)
 {
-	struct port_in * pin = in->head ;
+	struct port_in * pin = in->pown ;
 	BYTE *packet;
 
 	// The packet's length field includes the command byte.
