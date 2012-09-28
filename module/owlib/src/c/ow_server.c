@@ -100,7 +100,7 @@ GOOD_OR_BAD Server_detect(struct port_in *pin)
 // actual connections opened and closed independently
 static void Server_close(struct connection_in *in)
 {
-	SAFEFREE(in->master.tcp.type) ;
-	SAFEFREE(in->master.tcp.domain) ;
-	SAFEFREE(in->master.tcp.name) ;
+	SAFEFREE(in->master.server.type) ;
+	SAFEFREE(in->master.server.domain) ;
+	SAFEFREE(in->master.server.name) ;
 }

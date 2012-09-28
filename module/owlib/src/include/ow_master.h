@@ -28,22 +28,14 @@ $Id$
 
 enum ds2480b_mode { ds2480b_data_mode, ds2480b_command_mode, } ;
 
-struct master_tcp {
-//	char *host;
-//	char *service;
-//	struct addrinfo *ai;
-//	struct addrinfo *ai_ok;
+struct master_server {
 	char *type;					// for zeroconf
 	char *domain;				// for zeroconf
 	char *name;					// zeroconf name
 	int no_dirall;				// flag that server doesn't support DIRALL
-	
-	// telnet tuning
-	int CRLF_size ; 
-};
+} ;
 
 struct master_serial {
-	struct master_tcp tcp;      // mirror master.server
 	enum ds2480b_mode mode ;
 	int reverse_polarity ;
 };
@@ -95,26 +87,19 @@ struct master_i2c {
 };
 
 struct master_ha7 {
-	struct master_tcp tcp;		// mirror master.server
 	ASCII lock[10];
 	int locked;
 	int found;
 };
 
-struct master_etherweather {
-	struct master_tcp tcp;
-};
-
 enum e_link_t_mode { e_link_t_unknown, e_link_t_extra, e_link_t_none } ;
 
 struct master_link {
-	struct master_tcp tcp;      // mirror master.server
 	enum e_link_t_mode tmode ; // extra ',' before tF0 command
 	enum e_link_t_mode qmode ; //extra '?' after b command
 };
 
 struct master_enet {
-	struct master_tcp tcp;      // mirror master.server
 	unsigned char sn[SERIAL_NUMBER_SIZE] ;       /* last address */
 	char channel ; // for the new ENET2 -- use '0' for old single channel version
 	pthread_mutex_t all_channel_lock;	// second level mutex for the entire chip */
@@ -181,7 +166,7 @@ struct master_browse {
 union master_union {
 	struct master_serial serial;
 	struct master_link link;
-	struct master_tcp tcp;
+	struct master_server server ;
 	struct master_usb usb;
 	struct master_i2c i2c;
 	struct master_fake fake;
@@ -191,7 +176,6 @@ union master_union {
 	struct master_ha7 ha7;
 	struct master_ha7e ha7e ;
 	struct master_enet enet ;
-	struct master_etherweather etherweather;
 	struct master_w1 w1;
 	struct master_w1_monitor w1_monitor ;
 	struct master_browse browse;

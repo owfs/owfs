@@ -77,9 +77,9 @@ static struct port_in * CreateZeroPort(const char * name, const char * type, con
 	DEVICENAME(in) = owstrdup(addr_name) ;
 	pin->init_data = owstrdup(addr_name) ;
 	pin->type = ct_tcp ;
-	in->master.tcp.name   = owstrdup( name  ) ;
-	in->master.tcp.type   = owstrdup( type  ) ;
-	in->master.tcp.domain = owstrdup( domain) ;
+	in->master.server.name   = owstrdup( name  ) ;
+	in->master.server.type   = owstrdup( type  ) ;
+	in->master.server.domain = owstrdup( domain) ;
 
 	return pin ;
 }
@@ -90,13 +90,13 @@ static GOOD_OR_BAD Zero_nomatch(struct connection_in * trial,struct connection_i
 	if ( get_busmode(existing) != bus_zero ) {
 		return gbGOOD ;
 	}
-	if ( BAD( string_null_or_match( trial->master.tcp.name   , existing->master.tcp.name   )) ) {
+	if ( BAD( string_null_or_match( trial->master.server.name   , existing->master.server.name   )) ) {
 		return gbGOOD ;
 	}
-	if ( BAD( string_null_or_match( trial->master.tcp.type   , existing->master.tcp.type   )) ) {
+	if ( BAD( string_null_or_match( trial->master.server.type   , existing->master.server.type   )) ) {
 		return gbGOOD ;
 	}
-	if ( BAD( string_null_or_match( trial->master.tcp.domain , existing->master.tcp.domain )) ) {
+	if ( BAD( string_null_or_match( trial->master.server.domain , existing->master.server.domain )) ) {
 		return gbGOOD ;
 	}
 	return gbBAD ;

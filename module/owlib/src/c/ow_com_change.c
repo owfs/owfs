@@ -68,7 +68,7 @@ void COM_set_standard( struct connection_in *connection)
 	pin -> state           = cs_virgin ;
 	pin -> dev.telnet.telnet_negotiated = needs_negotiation ;
 
-	connection->master.enet.tcp.CRLF_size = 2 ;
+	connection->CRLF_size = 2 ;
 
 	switch (pin->type) {
 		case ct_telnet:

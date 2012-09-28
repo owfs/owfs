@@ -193,7 +193,7 @@ ZERO_OR_ERROR ServerDir(void (*dirfunc) (void *, const struct parsedname * const
 	struct connection_in * in = pn_whole_directory->selected_connection ;
 
 	// Do we know this server doesn't support DIRALL?
-	if (in->master.tcp.no_dirall) {
+	if (in->master.server.no_dirall) {
 		return ServerDIR(dirfunc, v, pn_whole_directory, flags);
 	}
 	// Did we ask for no DIRALL explicitly?
@@ -206,7 +206,7 @@ ZERO_OR_ERROR ServerDir(void (*dirfunc) (void *, const struct parsedname * const
 	}
 	// try DIRALL and see if supported
 	if ((ret = ServerDIRALL(dirfunc, v, pn_whole_directory, flags)) == -ENOMSG) {
-		in->master.tcp.no_dirall = 1;
+		in->master.server.no_dirall = 1;
 		return ServerDIR(dirfunc, v, pn_whole_directory, flags);
 	}
 	return ret;

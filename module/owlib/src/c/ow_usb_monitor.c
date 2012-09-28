@@ -61,8 +61,7 @@ GOOD_OR_BAD USB_monitor_detect(struct port_in *pin)
 
 	pin->type = ct_none ;
 
-	SAFEFREE(pin->init_data) ;
-	pin->init_data = owstrdup("USB bus monitor") ;
+	// Device name will not be init_data copy
 	SAFEFREE(DEVICENAME(in)) ;
 	DEVICENAME(in) = owstrdup("USB bus monitor") ;
 
@@ -81,7 +80,7 @@ GOOD_OR_BAD USB_monitor_detect(struct port_in *pin)
 	in->iroutines.close = USB_monitor_close;
 	in->iroutines.flags = ADAP_FLAG_sham;
 	in->adapter_name = "USB scan";
-	pin->busmode = bus_usb_monitor ;
+	pin->busmode = bus_usb_monitor ; // repeat since can come via usb=scan
 	
 	Init_Pipe( in->master.usb_monitor.shutdown_pipe ) ;
 	if ( pipe( in->master.usb_monitor.shutdown_pipe ) != 0 ) {
@@ -91,7 +90,7 @@ GOOD_OR_BAD USB_monitor_detect(struct port_in *pin)
 
 	if ( BAD( usb_monitor_in_use(in) ) ) {
 		LEVEL_CONNECT("Second call for USB scanning ignored") ;
-		return bgBAD ;
+		return gbBAD ;
 	}
 
 	if ( pthread_create(&thread, DEFAULT_THREAD_ATTR, USB_monitor_loop, (void *) in) != 0 ) {

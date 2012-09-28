@@ -144,7 +144,6 @@ static void Dispatch_Packet_nonroot( struct netlink_parse * nlp)
 			continue ;
 		}
 		for ( cin = pin->first ; cin != NO_CONNECTION ; cin = cin->next ) {
-			//printf("Matching %d/%s/%s/%s/ to bus.%d %d/%s/%s/%s/\n",bus_zero,name,type,domain,cin->index,pin->busmode,cin->master.tcp.name,cin->master.tcp.type,cin->master.tcp.domain);
 			if ( cin->master.w1.id == bus ) {
 				if ( GOOD( W1_write_pipe(cin->master.w1.netlink_pipe[fd_pipe_write], nlp) ) ) {
 					LEVEL_DEBUG("Sending this packet to w1_bus_master%d",bus);

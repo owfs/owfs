@@ -354,7 +354,7 @@ static GOOD_OR_BAD LINK_version(struct connection_in * in)
 						// add to string
 						break ; 
 					case lvs_0d:
-						++in->master.serial.tcp.CRLF_size;
+						++in->CRLF_size;
 						break ;
 				}
 				break ;
@@ -435,7 +435,7 @@ static RESET_TYPE LINK_reset(const struct parsedname *pn)
 
 static RESET_TYPE LINK_reset_in(struct connection_in * in)
 {
-	BYTE resp[1+in->master.serial.tcp.CRLF_size];
+	BYTE resp[1+in->CRLF_size];
 
 	if (in->changed_bus_settings > 0) {
 		--in->changed_bus_settings ;
@@ -509,7 +509,7 @@ static void LINK_slurp(struct connection_in *in)
 
 static GOOD_OR_BAD LINK_read(BYTE * buf, size_t size, struct connection_in *in)
 {
-	return LINK_read_true_length( buf, size+in->master.serial.tcp.CRLF_size, in ) ;
+	return LINK_read_true_length( buf, size+in->CRLF_size, in ) ;
 }
 
 static GOOD_OR_BAD LINK_read_true_length(BYTE * buf, size_t size, struct connection_in *in)
@@ -528,7 +528,7 @@ static GOOD_OR_BAD LINK_write(const BYTE * buf, size_t size, struct connection_i
 
 static GOOD_OR_BAD LINK_search_type(struct device_search *ds, struct connection_in * in)
 {
-	char resp[3+in->master.serial.tcp.CRLF_size];
+	char resp[3+in->CRLF_size];
 	int response_length ;
 
 	LEVEL_DEBUG("Test to see if LINK supports the tF0 command");
@@ -601,7 +601,7 @@ static GOOD_OR_BAD LINK_search_type(struct device_search *ds, struct connection_
 
 static GOOD_OR_BAD LINK_directory(struct device_search *ds, struct connection_in * in)
 {
-	char resp[DEVICE_LENGTH+COMMA_LENGTH+PLUS_LENGTH+in->master.serial.tcp.CRLF_size];
+	char resp[DEVICE_LENGTH+COMMA_LENGTH+PLUS_LENGTH+in->CRLF_size];
 
 	DirblobClear( &(ds->gulp) );
 
@@ -636,7 +636,7 @@ static GOOD_OR_BAD LINK_directory(struct device_search *ds, struct connection_in
 			break ;
 	}
 	
-	if ( BAD(LINK_read(LINK_string(&resp[1+in->master.serial.tcp.CRLF_size]), DEVICE_LENGTH+COMMA_LENGTH+PLUS_LENGTH-1-in->master.serial.tcp.CRLF_size, in)) ) {
+	if ( BAD(LINK_read(LINK_string(&resp[1+in->CRLF_size]), DEVICE_LENGTH+COMMA_LENGTH+PLUS_LENGTH-1-in->CRLF_size, in)) ) {
 		return gbBAD;
 	}
 
@@ -705,7 +705,7 @@ static GOOD_OR_BAD LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay
 {
 	struct connection_in * in = pn->selected_connection ;
 	ASCII buf[3] = "pxx";
-	BYTE respond[2+in->master.serial.tcp.CRLF_size] ;
+	BYTE respond[2+in->CRLF_size] ;
 	
 	num2string(&buf[1], data);
 	
@@ -729,7 +729,7 @@ static GOOD_OR_BAD LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay
 static GOOD_OR_BAD LINK_PowerBit(const BYTE data, BYTE * resp, const UINT delay, const struct parsedname *pn)
 {
 	struct connection_in * in = pn->selected_connection ;
-	BYTE buf[2+1+1+in->master.serial.tcp.CRLF_size] ;
+	BYTE buf[2+1+1+in->CRLF_size] ;
 	
 	buf[0] = '~';			//put in power bit mode
 	buf[1] = data ? '1' : '0' ;
@@ -761,7 +761,7 @@ static GOOD_OR_BAD LINK_sendback_data(const BYTE * data, BYTE * resp, const size
 	struct connection_in * in = pn->selected_connection ;
 	size_t left = size;
 	size_t location = 0 ;
-	BYTE buf[1+LINK_SEND_SIZE*2+1+1+in->master.serial.tcp.CRLF_size] ;
+	BYTE buf[1+LINK_SEND_SIZE*2+1+1+in->CRLF_size] ;
 	
 	if (size == 0) {
 		return gbGOOD;
@@ -800,7 +800,7 @@ static GOOD_OR_BAD LINK_sendback_bits(const BYTE * databits, BYTE * respbits, co
 	struct connection_in * in = pn->selected_connection ;
 	size_t left = size;
 	size_t location = 0 ;
-	BYTE buf[1+LINK_SEND_SIZE+1+1+in->master.serial.tcp.CRLF_size] ;
+	BYTE buf[1+LINK_SEND_SIZE+1+1+in->CRLF_size] ;
 	
 	if (size == 0) {
 		return gbGOOD;

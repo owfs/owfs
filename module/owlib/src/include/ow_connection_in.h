@@ -155,6 +155,9 @@ struct connection_in {
 	size_t last_root_devs;
 	struct ds2409_hubs branch;		// Branch currently selected
 
+	// telnet tuning
+	int CRLF_size ; 
+
 	size_t bundling_length;
 
 	struct { // Channel info for bus masters that share a common comminucation channel */

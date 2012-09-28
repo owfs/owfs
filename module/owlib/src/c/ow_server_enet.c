@@ -172,7 +172,7 @@ static GOOD_OR_BAD OWServer_Enet_reopen(struct connection_in *in)
 
 static GOOD_OR_BAD OWServer_Enet_reopen_prompt(struct connection_in *in)
 {
-	char cmd_response[1+in->master.serial.tcp.CRLF_size] ;
+	char cmd_response[1+in->CRLF_size] ;
 	
 	if ( BAD( OWServer_Enet_read( BYTE_string(cmd_response), 1, in )) ) {
 		LEVEL_DEBUG("Error reading inital telnet prompt" ) ;
@@ -272,7 +272,7 @@ static GOOD_OR_BAD OWServer_Enet_directory(struct device_search *ds, struct conn
 
 static enum ENET_dir OWServer_Enet_directory_loop(struct device_search *ds, struct connection_in * in)
 {
-	char resp[DEVICE_LENGTH+in->master.serial.tcp.CRLF_size];
+	char resp[DEVICE_LENGTH+in->CRLF_size];
 	char search_first ;
 	char search_next ;
 
@@ -321,7 +321,7 @@ static enum ENET_dir OWServer_Enet_directory_loop(struct device_search *ds, stru
 			case 'D':
 			case 'E':
 			case 'F':
-				read_so_far = EXCLAIM_LENGTH+in->master.serial.tcp.CRLF_size ;
+				read_so_far = EXCLAIM_LENGTH+in->CRLF_size ;
 				break ;
 			default:
 				return ENET_dir_repeat ;
@@ -402,7 +402,7 @@ static GOOD_OR_BAD OWServer_Enet_select( const struct parsedname * pn )
 /* send a command and get the '+' */
 static char OWServer_Enet_command( char cmd, char * cmd_string, struct connection_in * in )
 {
-	char cmd_response[1+in->master.serial.tcp.CRLF_size] ;
+	char cmd_response[1+in->CRLF_size] ;
 
 	if ( BAD( OWServer_Enet_write_string( cmd, cmd_string, in )) ) {
 		LEVEL_DEBUG("Error sending string <%s>", cmd_string ) ;
@@ -420,7 +420,7 @@ static char OWServer_Enet_command( char cmd, char * cmd_string, struct connectio
 
 static GOOD_OR_BAD OWServer_Enet_read( BYTE * buf, size_t size, struct connection_in * in )
 {
-	return COM_read( buf, size+in->master.serial.tcp.CRLF_size, in ) ;
+	return COM_read( buf, size+in->CRLF_size, in ) ;
 }
 
 static GOOD_OR_BAD OWServer_Enet_write_string( char cmd, char * buf, struct connection_in *in)
