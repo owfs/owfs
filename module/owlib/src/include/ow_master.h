@@ -96,10 +96,6 @@ struct master_link {
 	enum e_link_t_mode qmode ; //extra '?' after b command
 };
 
-struct master_enet {
-	int reopening ; // to avoid infinite recursion
-};
-
 struct master_ha5 {
 	int checksum ;              /* flag to use checksum byte in communication */
 	char channel ;
@@ -162,7 +158,6 @@ union master_union {
 	struct master_fake mock;
 	struct master_ha5 ha5;
 	struct master_ha7 ha7;
-	struct master_enet enet ;
 	struct master_w1 w1;
 	struct master_w1_monitor w1_monitor ;
 	struct master_browse browse;

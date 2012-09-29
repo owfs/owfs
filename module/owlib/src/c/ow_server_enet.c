@@ -128,9 +128,6 @@ static GOOD_OR_BAD OWServer_Enet_setup(struct port_in *pin)
 
 	pin->type = ct_telnet ;
 	RETURN_BAD_IF_BAD( COM_open(in) ) ;
-printf("Opened\n");
-	// Always returns 0D0A
-//	in->master.enet.reopening = 0 ;
 	
 	memset( in->remembered_sn, 0x00, SERIAL_NUMBER_SIZE ) ; // poison to block match
 	return gbGOOD ;
@@ -138,27 +135,17 @@ printf("Opened\n");
 
 static GOOD_OR_BAD OWServer_Enet_reopen(struct connection_in *in)
 {
-	GOOD_OR_BAD gbReturn ;
-
-//	if ( in->master.enet.reopening ) {
-//		LEVEL_DEBUG("Attempt to double-reopen %s",SAFESTRING(DEVICENAME(in))) ;
-//		return gbBAD ;
-//	}
-
 	// clear "stored" Enet device
 	memset( in->remembered_sn, 0x00, SERIAL_NUMBER_SIZE ) ;
 
 	RETURN_BAD_IF_BAD( COM_open(in) ) ;
 
-//	in->master.enet.reopening = 1 ; // flag in reopening mode
 	telnet_change( in ) ; // Really just to send a prompt
-	gbReturn = OWServer_Enet_reopen_prompt( in ) ;
-	if ( BAD(gbReturn) ) {
-		gbReturn = OWServer_Enet_reopen_prompt( in ) ;
+	if ( BAD( OWServer_Enet_reopen_prompt( in ) ) ) {
+		return OWServer_Enet_reopen_prompt( in ) ;
 	}
-//	in->master.enet.reopening = 0 ; // out of reopening mode
 
-	return gbReturn ;
+	return gbGOOD;
 }
 
 static GOOD_OR_BAD OWServer_Enet_reopen_prompt(struct connection_in *in)
