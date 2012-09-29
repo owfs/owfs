@@ -34,8 +34,8 @@ GOOD_OR_BAD COM_open(struct connection_in *connection)
 		return gbBAD;
 	}
 
-	head_in = connection->channel_info.head ; // head of multigroup bus
 	pin = connection->pown ;
+	head_in = pin->first ; // head of multigroup bus
 
 	switch ( pin->state ) {
 		case cs_deflowered:

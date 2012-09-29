@@ -173,7 +173,6 @@ static GOOD_OR_BAD LinkVersion_unknownstring( const char * reported_string, stru
 GOOD_OR_BAD LINK_detect(struct port_in *pin)
 {
 	struct connection_in * in = pin->first ;
-	struct connection_in * head_in ;
 
 	if (pin->init_data == NULL) {
 		// requires input string
@@ -181,28 +180,26 @@ GOOD_OR_BAD LINK_detect(struct port_in *pin)
 		return gbBAD;
 	}
 
-	head_in = in->channel_info.head ;
-
-	COM_set_standard( head_in ) ; // standard COM port settings
+	COM_set_standard( in ) ; // standard COM port settings
 
 	switch( pin->type ) {
 		case ct_telnet:
 			// LinkHub-E
 			pin->baud = B115200 ;
 			LEVEL_DEBUG("Attempt connection to networked LINK at 115200 baud");
-			RETURN_GOOD_IF_GOOD(  LINK_detect_net( head_in )  );
+			RETURN_GOOD_IF_GOOD(  LINK_detect_net( in )  );
 
 			// Xport or ser2net
 			pin->baud = B9600 ;
 			LEVEL_DEBUG("Attempt connection to networked LINK at 9600 baud");
-			RETURN_GOOD_IF_GOOD(  LINK_detect_net( head_in )  );
+			RETURN_GOOD_IF_GOOD(  LINK_detect_net( in )  );
 
 			// Now try control port reset
-			RETURN_BAD_IF_BAD( LinkHubE_Control( head_in ) ) ;
+			RETURN_BAD_IF_BAD( LinkHubE_Control( in ) ) ;
 			pin->baud = B115200 ;
 			LEVEL_DEBUG("Reattempt LINK connection") ;
 			UT_delay( 5000 ) ;
-			RETURN_GOOD_IF_GOOD(  LINK_detect_net( head_in )  );
+			RETURN_GOOD_IF_GOOD(  LINK_detect_net( in )  );
 			
 			break ;
 
@@ -212,19 +209,19 @@ GOOD_OR_BAD LINK_detect(struct port_in *pin)
 			pin->baud = B9600 ;
 
 			pin->flow = flow_first ;
-			RETURN_GOOD_IF_GOOD( LINK_detect_serial(head_in) ) ;
+			RETURN_GOOD_IF_GOOD( LINK_detect_serial(in) ) ;
 
 			LEVEL_DEBUG("Second attempt at serial LINK setup");
 			pin->flow = flow_second ;
-			RETURN_GOOD_IF_GOOD( LINK_detect_serial(head_in) ) ;
+			RETURN_GOOD_IF_GOOD( LINK_detect_serial(in) ) ;
 
 			LEVEL_DEBUG("Third attempt at serial LINK setup");
 			pin->flow = flow_first ;
-			RETURN_GOOD_IF_GOOD( LINK_detect_serial(head_in) ) ;
+			RETURN_GOOD_IF_GOOD( LINK_detect_serial(in) ) ;
 
 			LEVEL_DEBUG("Fourth attempt at serial LINK setup");
 			pin->flow = flow_second ;
-			RETURN_GOOD_IF_GOOD( LINK_detect_serial(head_in) ) ;
+			RETURN_GOOD_IF_GOOD( LINK_detect_serial(in) ) ;
 			break ;
 
 		default:
@@ -236,58 +233,56 @@ GOOD_OR_BAD LINK_detect(struct port_in *pin)
 static GOOD_OR_BAD LINK_detect_serial(struct connection_in * in)
 {
 	struct port_in * pin = in->pown ;
-	struct connection_in * head_in = in->channel_info.head ;
 	/* Set up low-level routines */
-	LINK_setroutines(head_in);
+	LINK_setroutines(in);
 	pin->timeout.tv_sec = Globals.timeout_serial ;
 	pin->timeout.tv_usec = 0 ;
 
 	/* Open the com port */
-	RETURN_BAD_IF_BAD(COM_open(head_in)) ;
+	RETURN_BAD_IF_BAD(COM_open(in)) ;
 	
 	//COM_break( in ) ;
 	LEVEL_DEBUG("Slurp in initial bytes");
-	LINK_slurp( head_in ) ;
+	LINK_slurp( in ) ;
 	UT_delay(100) ; // based on http://morpheus.wcf.net/phpbb2/viewtopic.php?t=89&sid=3ab680415917a0ebb1ef020bdc6903ad
-	LINK_slurp( head_in ) ;
+	LINK_slurp( in ) ;
 	
 	RETURN_GOOD_IF_GOOD( LINK_version(in) ) ;
 	LEVEL_DEFAULT("LINK detection error");
-	COM_close(head_in) ;
+	COM_close(in) ;
 	return gbBAD;
 }
 
 static GOOD_OR_BAD LINK_detect_net(struct connection_in * in)
 {
 	struct port_in * pin = in->pown ;
-	struct connection_in * head_in = in->channel_info.head ;
 	/* Set up low-level routines */
-	LINKE_setroutines(head_in);
+	LINKE_setroutines(in);
 	pin->timeout.tv_sec = 0 ;
 	pin->timeout.tv_usec = 300000 ;
 
 	/* Open the tcp port */
-	RETURN_BAD_IF_BAD( COM_open(head_in) ) ;
+	RETURN_BAD_IF_BAD( COM_open(in) ) ;
 	
 	LEVEL_DEBUG("Slurp in initial bytes");
 //	LINK_slurp( in ) ;
 	UT_delay(1000) ; // based on http://morpheus.wcf.net/phpbb2/viewtopic.php?t=89&sid=3ab680415917a0ebb1ef020bdc6903ad
-	LINK_slurp( head_in ) ;
+	LINK_slurp( in ) ;
 //	LINK_flush(in);
 
 	pin->dev.telnet.telnet_negotiated = needs_negotiation ;
-	RETURN_GOOD_IF_GOOD( LINK_version(head_in) ) ;
+	RETURN_GOOD_IF_GOOD( LINK_version(in) ) ;
 
 	// second try -- send a break and line settings
 	LEVEL_DEBUG("Second try -- send BREAK");
-	COM_flush(head_in) ;
-	COM_break(head_in);
-	telnet_change(head_in);
+	COM_flush(in) ;
+	COM_break(in);
+	telnet_change(in);
 //	LINK_slurp( in ) ;
 	RETURN_GOOD_IF_GOOD( LINK_version(in) ) ;
 
 	LEVEL_DEFAULT("LINK detection error");
-	COM_close(head_in) ;
+	COM_close(in) ;
 	return gbBAD;
 }
 
@@ -367,7 +362,6 @@ static GOOD_OR_BAD LINK_version(struct connection_in * in)
 static void LINK_set_baud(struct connection_in * in)
 {
 	struct port_in * pin = in->pown ;
-	struct connection_in * head_in = in->channel_info.head ;
 	char * speed_code ;
 
 	if ( pin->type == ct_telnet ) {
@@ -381,7 +375,7 @@ static void LINK_set_baud(struct connection_in * in)
 	// Find rate parameter
 	switch ( pin->baud ) {
 		case B9600:
-			COM_break(head_in) ;
+			COM_break(in) ;
 			LINK_flush(in);
 			return ;
 		case B19200:
@@ -406,7 +400,7 @@ static void LINK_set_baud(struct connection_in * in)
 	if ( BAD( LINK_write(LINK_string(speed_code), 1, in) ) ) {
 		LEVEL_DEBUG("LINK change baud error -- will return to 9600");
 		pin->baud = B9600 ;
-		++head_in->changed_bus_settings ;
+		++in->changed_bus_settings ;
 		return ;
 	}
 
@@ -416,7 +410,7 @@ static void LINK_set_baud(struct connection_in * in)
 
 	// Change OS view of rate
 	UT_delay(5);
-	COM_change(head_in) ;
+	COM_change(in) ;
 	UT_delay(5);
 	LINK_slurp(in);
 
@@ -425,7 +419,7 @@ static void LINK_set_baud(struct connection_in * in)
 
 static void LINK_flush( struct connection_in * in )
 {
-	COM_flush(in->channel_info.head) ;
+	COM_flush(in) ;
 }
 
 static RESET_TYPE LINK_reset(const struct parsedname *pn)
@@ -504,7 +498,7 @@ static enum search_status LINK_next_both(struct device_search *ds, const struct 
 
 static void LINK_slurp(struct connection_in *in)
 {
-	COM_slurp(in->channel_info.head);
+	COM_slurp(in);
 }
 
 static GOOD_OR_BAD LINK_read(BYTE * buf, size_t size, struct connection_in *in)
@@ -514,7 +508,7 @@ static GOOD_OR_BAD LINK_read(BYTE * buf, size_t size, struct connection_in *in)
 
 static GOOD_OR_BAD LINK_read_true_length(BYTE * buf, size_t size, struct connection_in *in)
 {
-	return COM_read( buf, size, in->channel_info.head ) ;
+	return COM_read( buf, size, in ) ;
 }
 
 // Write a string to the serial port
@@ -523,7 +517,7 @@ static GOOD_OR_BAD LINK_read_true_length(BYTE * buf, size_t size, struct connect
 //Special processing for the remote hub (add 0x0A)
 static GOOD_OR_BAD LINK_write(const BYTE * buf, size_t size, struct connection_in *in)
 {
-	return COM_write( buf, size, in->channel_info.head ) ;
+	return COM_write( buf, size, in ) ;
 }
 
 static GOOD_OR_BAD LINK_search_type(struct device_search *ds, struct connection_in * in)

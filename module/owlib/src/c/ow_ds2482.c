@@ -402,7 +402,6 @@ static GOOD_OR_BAD DS2482_detect_single(int lowindex, int highindex, char * i2c_
 			in->master.i2c.channels = 1;
 			in->master.i2c.current = 0;
 			in->master.i2c.head = in;
-			in->master.i2c.next = NO_CONNECTION;
 			in->adapter_name = "DS2482-100";
 			in->master.i2c.configreg = 0x00 ;	// default configuration setting desired
 			if ( Globals.i2c_APU ) {
@@ -479,7 +478,7 @@ static GOOD_OR_BAD DS2482_redetect(const struct parsedname *pn)
 			head->pown->type = ct_i2c ;
 			head->master.i2c.configchip = 0x00;	// default configuration register after RESET	
 			LEVEL_CONNECT("i2c device at %s address %d reset successfully", DEVICENAME(head), address);
-			for ( next = head->master.i2c.next; next; next = next->master.i2c.next ) {
+			for ( next = head->pown->first; next; next = next->next ) {
 				/* loop through devices, matching those that have the same "head" */
 				/* BUSLOCK also locks the sister channels for this */
 				next->reconnect_state = reconnect_ok;
@@ -705,13 +704,11 @@ static GOOD_OR_BAD CreateChannels(struct connection_in *head)
 	head->adapter_name = name[0];
 	for (i = 1; i < 8; ++i) {
 		struct connection_in * added = AddtoPort(head->pown);
-		prior->master.i2c.next = added ;
 		if (added == NO_CONNECTION) {
 			return gbBAD;
 		}
 		added->master.i2c.index = i;
 		added->adapter_name = name[i];
-		added->master.i2c.next = NO_CONNECTION ; // for now
 		prior = added ;
 	}
 	return gbGOOD;

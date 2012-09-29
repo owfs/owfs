@@ -25,7 +25,7 @@ void COM_free(struct connection_in *connection)
 		return ;
 	}
 
-	if ( connection != connection->channel_info.head ) {
+	if ( connection != connection->pown->first ) {
 		// Not the head of the multi-bus device
 		return ;
 	}

@@ -69,9 +69,6 @@ GOOD_OR_BAD OWServer_Enet_detect(struct port_in *pin)
 	in->adapter_name = "OWServer_Enet";
 	pin->busmode = bus_enet;
 	
-	// Assume single channel
-	in->master.enet.channel = 0 ;
-
 	RETURN_GOOD_IF_GOOD( OWServer_Enet_reopen(in)) ;
 	RETURN_GOOD_IF_GOOD( OWServer_Enet_reopen(in)) ;
 	LEVEL_DEFAULT("Problem opening OW_SERVER_ENET on IP address=[%s] port=[%s] -- is the \"1-Wire Setup\" enabled?", pin->dev.tcp.host, pin->dev.tcp.service );
@@ -84,29 +81,23 @@ GOOD_OR_BAD OWServer_Enet2_detect(struct port_in *pin)
 	struct connection_in * in = pin->first ;
 	struct connection_in * in2 ;
 	struct connection_in * in3 ;
-
 	RETURN_BAD_IF_BAD( OWServer_Enet_setup(pin) ) ;
 
 	in->Adapter = adapter_ENET2;
 	in->adapter_name = "OWServer_Enet";
 	pin->busmode = bus_enet2;
 	
-	// Assume 3 channels
-	in->master.enet.channel = 1 ;
-
 	LEVEL_DEBUG("Add 2nd ENET2 port");
 	in2 = AddtoPort( pin ) ;
 	if ( in2 == NO_CONNECTION ) {
 		return gbBAD ;
 	}
-	in2->master.enet.channel = 2 ;
 
 	LEVEL_DEBUG("Add 3rd ENET2 port");
 	in3 = AddtoPort( pin ) ;
 	if ( in3 == NO_CONNECTION ) {
 		return gbBAD ;
 	}
-	in3->master.enet.channel = 3 ;
 
 	RETURN_GOOD_IF_GOOD( OWServer_Enet_reopen(in)) ;
 	RETURN_GOOD_IF_GOOD( OWServer_Enet_reopen(in)) ;
@@ -137,9 +128,9 @@ static GOOD_OR_BAD OWServer_Enet_setup(struct port_in *pin)
 
 	pin->type = ct_telnet ;
 	RETURN_BAD_IF_BAD( COM_open(in) ) ;
-
+printf("Opened\n");
 	// Always returns 0D0A
-	in->master.enet.reopening = 0 ;
+//	in->master.enet.reopening = 0 ;
 	
 	memset( in->remembered_sn, 0x00, SERIAL_NUMBER_SIZE ) ; // poison to block match
 	return gbGOOD ;
@@ -149,23 +140,23 @@ static GOOD_OR_BAD OWServer_Enet_reopen(struct connection_in *in)
 {
 	GOOD_OR_BAD gbReturn ;
 
-	if ( in->master.enet.reopening ) {
-		LEVEL_DEBUG("Attempt to double-reopen %s",SAFESTRING(DEVICENAME(in))) ;
-		return gbBAD ;
-	}
+//	if ( in->master.enet.reopening ) {
+//		LEVEL_DEBUG("Attempt to double-reopen %s",SAFESTRING(DEVICENAME(in))) ;
+//		return gbBAD ;
+//	}
 
 	// clear "stored" Enet device
 	memset( in->remembered_sn, 0x00, SERIAL_NUMBER_SIZE ) ;
 
 	RETURN_BAD_IF_BAD( COM_open(in) ) ;
 
-	in->master.enet.reopening = 1 ; // flag in reopening mode
+//	in->master.enet.reopening = 1 ; // flag in reopening mode
 	telnet_change( in ) ; // Really just to send a prompt
 	gbReturn = OWServer_Enet_reopen_prompt( in ) ;
 	if ( BAD(gbReturn) ) {
 		gbReturn = OWServer_Enet_reopen_prompt( in ) ;
 	}
-	in->master.enet.reopening = 0 ; // out of reopening mode
+//	in->master.enet.reopening = 0 ; // out of reopening mode
 
 	return gbReturn ;
 }
@@ -433,7 +424,7 @@ static GOOD_OR_BAD OWServer_Enet_write_string( char cmd, char * buf, struct conn
 	if ( in->Adapter == adapter_ENET2 ) {
 		// add channel char
 		length ++ ;
-		full_buffer[1] = in->master.enet.channel + '0' ;
+		full_buffer[1] = in->channel + '1' ;
 	}
 	strcpy( &full_buffer[length], buf ) ;
 	strcat( full_buffer, "\r" ) ;

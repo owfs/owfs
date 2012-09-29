@@ -256,7 +256,7 @@ GOOD_OR_BAD ARG_ENET2(const char *arg)
 	}
 	arg_data(arg,pin) ;
 	pin->busmode = bus_enet2 ;
-	FS_FindENET() ;
+//	FS_FindENET() ;
 	return gbGOOD;
 }
 

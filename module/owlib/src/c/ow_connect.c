@@ -93,8 +93,6 @@ static struct connection_in *AllocIn(const struct connection_in *old_in)
 			// Not a copy
 			memset(new_in, 0, len);
 			DEVICENAME(new_in) = NULL ; 
-			/* Indirection to head of list for multichannel devices */
-			OW_channel_init(new_in) ;
 			/* Not yet a valid bus */
 			new_in->iroutines.flags = ADAP_FLAG_sham ;
 		} else {
@@ -104,8 +102,6 @@ static struct connection_in *AllocIn(const struct connection_in *old_in)
 				// Don't make the name point to the same string, make a copy
 				DEVICENAME(new_in) = owstrdup( DEVICENAME(old_in) ) ;
 			}
-			/* Indirection to head of list for multichannel devices */
-			new_in->channel_info.head = old_in ;
 		}
 		
 		/* not yet linked */

@@ -81,7 +81,6 @@ struct master_i2c {
 	pthread_mutex_t all_channel_lock;	// second level mutex for the entire chip */
 	int current;
 	struct connection_in *head;
-	struct connection_in *next;
 };
 
 struct master_ha7 {
@@ -98,9 +97,6 @@ struct master_link {
 };
 
 struct master_enet {
-	char channel ; // for the new ENET2 -- use '0' for old single channel version
-	pthread_mutex_t all_channel_lock;	// second level mutex for the entire chip */
-	struct timeval expired ; // timestamp when socket is known timed out
 	int reopening ; // to avoid infinite recursion
 };
 
