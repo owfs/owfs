@@ -21,100 +21,9 @@ $Id$
 #include <arpa/inet.h>
 #endif
 
-#if OW_HA7
-/* Multicast to discover HA7 servers */
-/* Wait 10 seconds for responses */
-/* returns number found (>=0) or <0 on error */
-/* Taken from Embedded Data Systems' documentation */
-/* http://www.talk1wire.com/?q=node/7 */
-
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <time.h>
-#include <string.h>
-#include <stdio.h>
-
-#include <unistd.h>
-
-
+#include "jsmn.h"
 /* from http://stackoverflow.com/questions/337422/how-to-udp-broadcast-with-c-in-linux */
-
-GOOD_OR_BAD FS_FindENET( void )
-{
-    struct sockaddr_in out_addr;
-    int fd;
-    char * message = "D";
-	int broadcastEnable=1;
-
-    if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
-    {
-        perror("socket");
-        return gbBAD;
-    }
-
-    /* set up destination address */
-    memset(&out_addr,0,sizeof(out_addr));
-    out_addr.sin_family = AF_INET;
-    out_addr.sin_addr.s_addr = htonl(INADDR_BROADCAST);
-    out_addr.sin_port=htons(ENET2_DISCOVERY_PORT);
-
-    if ((setsockopt(fd, SOL_SOCKET, SO_BROADCAST, &broadcastEnable, sizeof(broadcastEnable))) < 0)
-    {
-        perror("sockopt");
-        return gbBAD;
-    }
-
-	if (sendto(fd, message, strlen(message), 0,(struct sockaddr *) &out_addr, sizeof(out_addr)) < 0)
-	{
-		perror("sendto");
-		return gbBAD;
-	}
-	
-	while(1)
-	{
-		char buf[512] ;
-		struct sockaddr_in in_addr;
-		unsigned int fromLength = sizeof(in_addr);
-		int read_in ;
-		memset(buf,0,sizeof(buf));
-		read_in = recvfrom(fd, buf, 512, 0, (struct sockaddr *) &in_addr, &fromLength) ;
-		if ( read_in < 0 ) {
-			perror("recvfrom");
-		}
-
-		printf("SERVER: read %d bytes from IP %s <%s>\n", read_in, inet_ntoa(in_addr.sin_addr), buf);
-	}
-	close(fd);
- 
-    return gbGOOD ;
-}
-/*
-
-static int Test_HA7_response( struct HA7_response * ha7_response )
-{
-	LEVEL_DEBUG("From ha7_response: signature=%.2s, command=%X, port=%d, ssl=%d, MAC=%.12s, device=%s",
-	ha7_response->signature,
-	ntohs(ha7_response->command),
-	ntohs(ha7_response->port),
-	ntohs(ha7_response->sslport),
-	ha7_response->serial_num,
-	ha7_response->dev_name) ;
-
-	if (memcmp("HA", ha7_response->signature, 2)) {
-		LEVEL_CONNECT("HA7 response signature error");
-		return 1;
-	}
-	if ( 0x8001 != ntohs(ha7_response->command) ) {
-		LEVEL_CONNECT("HA7 response command error");
-		return 1;
-	}
-	return 0 ;
-}
-
-static void Setup_HA7_hint( struct addrinfo * hint )
+static void Setup_ENET_hint( struct addrinfo * hint )
 {
 	memset(hint, 0, sizeof(struct addrinfo));
 #ifdef AI_NUMERICSERV
@@ -128,50 +37,175 @@ static void Setup_HA7_hint( struct addrinfo * hint )
 	hint->ai_protocol = 0;
 }
 
-static int Get_HA7_response( struct addrinfo *now, char * name )
+#define RESPONSE_BUFFER_LENGTH 512
+
+static GOOD_OR_BAD send_ENET_discover( FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct addrinfo *now )
 {
-	struct timeval tv = { 50, 0 };
+    char * message = "D";
+
+	if (sendto(file_descriptor, message, strlen(message), 0, now->ai_addr, now->ai_addrlen) < 0) {
+		ERROR_CONNECT("Trouble sending broadcast message");
+		return gbBAD ;
+	}
+	return gbGOOD ;
+}
+
+static GOOD_OR_BAD set_ENET_broadcast( FILE_DESCRIPTOR_OR_ERROR file_descriptor )
+{
+	int broadcastEnable=1;
+
+	if (setsockopt(file_descriptor, SOL_SOCKET, SO_BROADCAST, &broadcastEnable, sizeof(broadcastEnable)) == -1) {
+		ERROR_DEBUG("Cannot set socket option for broadcast.");
+		return gbBAD ;
+	}
+	
+	return gbGOOD ;
+}
+
+// maximun number of JSON tokens
+#define jsmnTOKnum	50
+#define ENET_PARAM_SIZE 100
+
+static void parse_ENET_response( char * response_buffer, int * found_version, char * found_ip, char * found_port )
+{
+	// use jsmn JSON parsing code
+	jsmn_parser parser ;
+	jsmntok_t tokens[jsmnTOKnum] ;
+	int token_index ;
+	enum { jsp_key, jsp_value, jsp_version, jsp_ip, jsp_port } jsp_string  = jsp_key ;
+	
+	jsmn_init( &parser ) ;
+	switch ( jsmn_parse( &parser, response_buffer, tokens, jsmnTOKnum ) ) {
+		case JSMN_ERROR_NOMEM:
+			LEVEL_DEBUG("Not enough JSON tokens were provided");
+			break ;
+		case JSMN_ERROR_INVAL:
+			LEVEL_DEBUG("Invalid character inside JSON string");
+			break ;
+		case JSMN_ERROR_PART:
+			LEVEL_DEBUG("The string is not a full JSON packet, more bytes expected");
+			break ;
+		case JSMN_SUCCESS:
+			break ;
+	}
+	//printf("PARSED tokens=%d\n",parser.toknext);
+	for ( token_index = 0 ; token_index < parser.toknext ; ++token_index ) {
+		int length = tokens[token_index].end - tokens[token_index].start ;
+		char * tok_start = &response_buffer[tokens[token_index].start] ;
+
+		// printf("Type %d Start %d End %d Size %d Length %d\n",tokens[token_index].type, tokens[token_index].start, tokens[token_index].end, tokens[token_index].size, length ) ;
+
+		switch ( tokens[token_index].type ) {
+			case JSMN_PRIMITIVE:
+				//printf("Primative ");
+				jsp_string = jsp_key ; // expect a key next
+				break ;
+			case JSMN_OBJECT:
+				//printf("Object ");
+				jsp_string = jsp_key ; // expect a key next
+				break ;
+			case JSMN_ARRAY:
+				//printf("Array ");
+				jsp_string = jsp_key ; // expect a key next
+				break ;
+			case JSMN_STRING:
+				//printf("String <%.*s>\n",length,tok_start);
+				switch ( jsp_string ) {
+					case jsp_key:
+						// see if this is a special (interesting) key
+						if ( strncmp( "IP", tok_start, length ) == 0 ) {
+							//printf("IP match\n");
+							jsp_string = jsp_ip ; // IP address next
+						} else if ( strncmp( "TCPIntfPort", tok_start, length ) == 0 ) {
+							//printf("PORT match\n");
+							jsp_string = jsp_port ; // telnet port next
+						} else if ( strncmp( "FWVer", tok_start, length ) == 0 ) {
+							//printf("Firmware match\n");
+							jsp_string = jsp_version ; // telnet port next
+						} else {
+							//printf("No match\n");
+							jsp_string = jsp_value ; // value follows key (but not an interesting one)
+						}
+						break ;
+					case jsp_value:
+						jsp_string = jsp_key ; // new key follow value
+						break ;
+					case jsp_ip:
+						jsp_string = jsp_key ; // new key follow value
+						if ( ENET_PARAM_SIZE > length ) {
+							memcpy( found_ip, tok_start, length ) ;
+							found_ip[length] = '\0' ;
+						}
+						break ;
+					case jsp_port:
+						jsp_string = jsp_key ; // new key follow value
+						if ( ENET_PARAM_SIZE > length ) {
+							memcpy( found_port, tok_start, length ) ;
+							found_port[length] = '\0' ;
+						}
+						break ;
+					case jsp_version:
+						jsp_string = jsp_key ; // new key follow value
+						switch ( tok_start[0] ) {
+							case '1':
+								found_version[0] = 1 ;
+								break ;
+							case '2':
+								found_version[0] = 2 ;
+								break ;
+							default:
+								found_version[0] = 0 ;
+								break ;
+						}
+						break ;
+				}
+				break ;
+		}
+	}
+}
+
+static int Get_ENET_response( struct addrinfo *now )
+{
+	struct timeval tv = { 2, 0 };
 	FILE_DESCRIPTOR_OR_ERROR file_descriptor;
-	struct HA7_response ha7_response ;
+	char response_buffer[RESPONSE_BUFFER_LENGTH] ;
 
 	struct sockaddr_in from ;
 	socklen_t fromlen = sizeof(struct sockaddr_in) ;
-	int on = 1;
 
 	file_descriptor = socket(now->ai_family, now->ai_socktype, now->ai_protocol) ;
 	if ( FILE_DESCRIPTOR_NOT_VALID(file_descriptor) ) {
 		ERROR_DEBUG("Cannot get socket file descriptor for broadcast.");
 		return 1;
 	}
-//	fcntl (file_descriptor, F_SETFD, FD_CLOEXEC); // for safe forking
-	if (setsockopt(file_descriptor, SOL_SOCKET, SO_BROADCAST, &on, sizeof(on)) == -1) {
-		ERROR_DEBUG("Cannot set socket option for broadcast.");
-		return 1;
-	}
-	if (sendto(file_descriptor, "HA\000\001", 4, 0, now->ai_addr, now->ai_addrlen)
-		!= 4) {
-		ERROR_CONNECT("Trouble sending broadcast message");
-		return 1;
-	}
 
-	// now read
-	if ( udp_read(file_descriptor, &ha7_response, sizeof(struct HA7_response), &tv, &from, &fromlen) != sizeof(struct HA7_response) ) {
-		LEVEL_CONNECT("HA7 response bad length");
-		return 1;
-	}
+	RETURN_BAD_IF_BAD( set_ENET_broadcast( file_descriptor ) ) ;
+	
+	RETURN_BAD_IF_BAD( send_ENET_discover( file_descriptor, now ) ) ;
 
-	if ( Test_HA7_response( &ha7_response ) ) {
-		return 1 ;
-	}
-
-	UCLIBCLOCK ;
-	snprintf(name,INET_ADDRSTRLEN+20,"%s:%d",inet_ntoa(from.sin_addr),ntohs(ha7_response.port));
-	UCLIBCUNLOCK ;
+	/* now read */
+	do {
+		ssize_t response = udp_read(file_descriptor, response_buffer, RESPONSE_BUFFER_LENGTH-1, &tv, &from, &fromlen) ;
+		char enet_ip[ENET_PARAM_SIZE] ;
+		char enet_port[ENET_PARAM_SIZE] ;
+		int enet_version = 0 ;
+		
+		if ( response < 0 ) {
+			LEVEL_CONNECT("ENET response timeout");
+			break ;
+		}
+		response_buffer[response] = '\0' ; // null terminated string
+		enet_ip[0] = '\0' ;
+		enet_port[0] = '\0' ;
+		parse_ENET_response( response_buffer, &enet_version, enet_ip, enet_port ) ;
+		printf( "------- %d bytes from ENET\n%*s\n", (int)response, (int)response, response_buffer ) ;
+		printf(" IP=%s PORT=%s Version=%d\n", enet_ip, enet_port, enet_version ) ;
+	} while (1) ;
 
 	return 0 ;
 }
 
-GOOD_OR_BAD FS_FindHA7(void)
+GOOD_OR_BAD FS_FindENET(void)
 {
 	struct addrinfo *ai;
 	struct addrinfo hint;
@@ -179,41 +213,48 @@ GOOD_OR_BAD FS_FindHA7(void)
 	int number_found = 0;
 	int getaddr_error ;
 
-	LEVEL_DEBUG("Attempting udp multicast search for the HA7Net bus master at %s:%s",HA7_DISCOVERY_ADDRESS,HA7_DISCOVERY_PORT);
-	Setup_HA7_hint( &hint ) ;
-	if ((getaddr_error = getaddrinfo(HA7_DISCOVERY_ADDRESS, HA7_DISCOVERY_PORT, &hint, &ai))) {
-		LEVEL_CONNECT("Couldn't set up HA7 broadcast message %s", gai_strerror(getaddr_error));
+	LEVEL_DEBUG("Attempting udp broadcast search for the ENET bus master at %s:%s",INADDR_BROADCAST,ENET2_DISCOVERY_PORT);
+	Setup_ENET_hint( &hint ) ;
+
+	if ((getaddr_error = getaddrinfo("255.255.255.255", "30303", &hint, &ai))) {
+		LEVEL_CONNECT("Couldn't set up ENET broadcast message %s", gai_strerror(getaddr_error));
 		return gbBAD;
 	}
 
 	for (now = ai; now; now = now->ai_next) {
-		ASCII name[INET_ADDRSTRLEN+20]; // tcp quad + port
-		struct port_in * pin ;
-		struct connection_in *in;
-
-		if ( Get_HA7_response( now, name ) ) {
+		if ( Get_ENET_response( now ) ) {
 			continue ;
 		}
 
-		pin = NewPort(NO_CONNECTION) ;
-		if (pin == NULL) {
-			continue;
-		}
-		in = pin->first ;
-
-		pin->type = ct_tcp ;
-		pin->init_data = owstrdup(name);
-		DEVICENAME(in) = owstrdup(name);
-		pin->busmode = bus_ha7net;
-
-		LEVEL_CONNECT("HA7Net bus master discovered at %s",DEVICENAME(in));
 		++number_found ;
 	}
 	freeaddrinfo(ai);
 	return number_found > 0 ? gbGOOD : gbBAD ;
 }
-* 
-* 
-*/
 
-#endif							/* OW_HA7 */
+GOOD_OR_BAD FS_QueryENET( struct port_in * pin )
+{
+	struct addrinfo *ai;
+	struct addrinfo hint;
+	struct addrinfo *now;
+	int number_found = 0;
+	int getaddr_error ;
+
+	LEVEL_DEBUG("Attempting udp broadcast search for the ENET bus master at %s:%s",INADDR_BROADCAST,ENET2_DISCOVERY_PORT);
+	Setup_ENET_hint( &hint ) ;
+
+	if ((getaddr_error = getaddrinfo("255.255.255.255", "30303", &hint, &ai))) {
+		LEVEL_CONNECT("Couldn't set up ENET broadcast message %s", gai_strerror(getaddr_error));
+		return gbBAD;
+	}
+
+	for (now = ai; now; now = now->ai_next) {
+		if ( Get_ENET_response( now ) ) {
+			continue ;
+		}
+
+		++number_found ;
+	}
+	freeaddrinfo(ai);
+	return number_found > 0 ? gbGOOD : gbBAD ;
+}
