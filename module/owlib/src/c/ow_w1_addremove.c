@@ -18,7 +18,7 @@ $Id$
 #include "ow_connection.h"
 
 static struct port_in * CreateW1Port(int bus_master) ;
-static GOOD_OR_BAD W1_nomatch( struct connection_in * trial, struct connection_in * existing ) ;
+static GOOD_OR_BAD W1_nomatch( struct port_in * trial, struct port_in * existing ) ;
 
 // Create a new bus master (W1 type)
 static struct port_in * CreateW1Port(int bus_master)
@@ -56,12 +56,12 @@ static struct port_in * CreateW1Port(int bus_master)
 	return pin ;
 }
 
-static GOOD_OR_BAD W1_nomatch( struct connection_in * trial, struct connection_in * existing )
+static GOOD_OR_BAD W1_nomatch( struct port_in * trial, struct port_in * existing )
 {
-	if ( get_busmode(existing) != bus_w1 ) {
+	if ( get_busmode(existing->first) != bus_w1 ) {
 		return gbGOOD ;
 	}
-	if ( trial->master.w1.id != existing->master.w1.id ) {
+	if ( trial->first->master.w1.id != existing->first->master.w1.id ) {
 		return gbGOOD ;
 	}
 	return gbBAD;
@@ -84,9 +84,12 @@ void AddW1Bus( int bus_master )
 
 void RemoveW1Bus( int bus_master )
 {
-	struct port_in * pin = CreateW1Port( bus_master ) ;
+	struct port_in * pin = CreateW1Port( bus_master ) ; // example port
 	
-	Del_InFlight( W1_nomatch, pin ) ; // tolerant of pin==NULL
+	if ( pin != NULL ) {
+		Del_InFlight( W1_nomatch, pin ) ; // tolerant of pin==NULL
+		RemovePort( pin ) ; // remove example
+	}
 }
 
 #endif /* OW_W1 && OW_MT */

@@ -90,7 +90,7 @@ static void SetupInboundConnections(void)
 	while (pin != NULL) {
 		struct port_in * next = pin->next ; // read before potential delete
 		if ( BAD( SetupSingleInboundConnection(pin) ) ) {				
-			RemovePort( pint ) ;
+			RemovePort( pin ) ;
 		}
 		pin = next ;
 	}

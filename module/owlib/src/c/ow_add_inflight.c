@@ -17,30 +17,25 @@ $Id$
 /* This allows adding new Bus Masters while program is running
  * The master is usually only read-locked for normal operation
  * write lock is done in a separate thread when no requests are being processed */
-void Add_InFlight( GOOD_OR_BAD (*nomatch)(struct connection_in * trial,struct connection_in * existing), struct port_in * new_pin )
+void Add_InFlight( GOOD_OR_BAD (*nomatch)(struct port_in * trial,struct port_in * existing), struct port_in * new_pin )
 {
-	struct connection_in * new_in ;
 	if ( new_pin == NULL ) {
 		return ;
 	}
 
-	new_in = new_pin->first ;
-	LEVEL_DEBUG("Request master be added: %s", DEVICENAME(new_in));
+	LEVEL_DEBUG("Request master be added: %s", DEVICENAME(new_pin->first));
 
 	CONNIN_WLOCK ;
 	if ( nomatch != NULL ) {
 		struct port_in * pin ;
 		for ( pin = Inbound_Control.head_port ; pin != NULL ; pin = pin->next ) {
-			struct connection_in * cin ;
-			for ( cin = pin->first ; cin != NO_CONNECTION ; cin = cin->next ) {
-				if ( GOOD( nomatch( new_in, cin )) ) {
-					continue ;
-				}
-				LEVEL_DEBUG("Already exists as index=%d",cin->index) ;
-				CONNIN_WUNLOCK ;
-				RemovePort( new_pin ) ;
-				return ;
+			if ( GOOD( nomatch( new_pin, pin )) ) {
+				continue ;
 			}
+			LEVEL_DEBUG("Already exists as index=%d",pin->first->index) ;
+			CONNIN_WUNLOCK ;
+			RemovePort( new_pin ) ;
+			return ;
 		}
 	}
 	LinkPort(new_pin);

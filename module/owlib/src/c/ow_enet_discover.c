@@ -43,6 +43,7 @@ static GOOD_OR_BAD send_ENET_discover( FILE_DESCRIPTOR_OR_ERROR file_descriptor,
 {
     char * message = "D";
 
+	printf("---- Sending\n");
 	if (sendto(file_descriptor, message, strlen(message), 0, now->ai_addr, now->ai_addrlen) < 0) {
 		ERROR_CONNECT("Trouble sending broadcast message");
 		return gbBAD ;

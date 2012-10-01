@@ -199,8 +199,8 @@ void DelIn(struct connection_in *in);
 
 struct connection_in *LinkIn(struct connection_in *in, struct port_in * head);
 
-void Add_InFlight( GOOD_OR_BAD (*nomatch)(struct connection_in * trial,struct connection_in * existing), struct port_in * new_pin );
-void Del_InFlight( GOOD_OR_BAD (*nomatch)(struct connection_in * trial,struct connection_in * existing), struct port_in * new_pin );
+void Add_InFlight( GOOD_OR_BAD (*nomatch)(struct port_in * trial,struct port_in * existing), struct port_in * new_pin );
+void Del_InFlight( GOOD_OR_BAD (*nomatch)(struct port_in * trial,struct port_in * existing), struct port_in * new_pin );
 
 struct connection_in *find_connection_in(int nr);
 int SetKnownBus( int bus_number, struct parsedname * pn) ;

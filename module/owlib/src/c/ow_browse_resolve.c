@@ -17,7 +17,7 @@ $Id$
 
 static struct port_in * CreateZeroPort(const char * name, const char * type, const char * domain, const char * host, const char * service );
 static struct connection_out *FindOut(const char * name, const char * type, const char * domain);
-static GOOD_OR_BAD Zero_nomatch(struct connection_in * trial,struct connection_in * existing);
+static GOOD_OR_BAD Zero_nomatch(struct port_in * trial,struct port_in * existing);
 static GOOD_OR_BAD string_null_or_match( const char * one, const char * two );
 
 void ZeroAdd(const char * name, const char * type, const char * domain, const char * host, const char * service)
@@ -43,15 +43,11 @@ void ZeroAdd(const char * name, const char * type, const char * domain, const ch
 
 void ZeroDel(const char * name, const char * type, const char * domain )
 {
-	struct port_in * pin = CreateZeroPort( name, type, domain, "", "" ) ;
+	struct port_in * pin = CreateZeroPort( name, type, domain, "", "" ) ; // example
 	
 	if ( pin != NULL ) {
-		struct connection_in * in = pin->first ;
-		if ( in != NO_CONNECTION ) {
-			SAFEFREE(DEVICENAME(in)) ;
-			DEVICENAME(in) = owstrdup(name) ;
-			Del_InFlight( Zero_nomatch, pin ) ;
-		}
+		Del_InFlight( Zero_nomatch, pin ) ;
+		RemovePort( pin ) ; // remove example
 	}
 }
 
@@ -85,18 +81,18 @@ static struct port_in * CreateZeroPort(const char * name, const char * type, con
 }
 
 // GOOD means no match
-static GOOD_OR_BAD Zero_nomatch(struct connection_in * trial,struct connection_in * existing)
+static GOOD_OR_BAD Zero_nomatch(struct port_in * trial,struct port_in * existing)
 {
-	if ( get_busmode(existing) != bus_zero ) {
+	if ( get_busmode(existing->first) != bus_zero ) {
 		return gbGOOD ;
 	}
-	if ( BAD( string_null_or_match( trial->master.server.name   , existing->master.server.name   )) ) {
+	if ( BAD( string_null_or_match( trial->first->master.server.name   , existing->first->master.server.name   )) ) {
 		return gbGOOD ;
 	}
-	if ( BAD( string_null_or_match( trial->master.server.type   , existing->master.server.type   )) ) {
+	if ( BAD( string_null_or_match( trial->first->master.server.type   , existing->first->master.server.type   )) ) {
 		return gbGOOD ;
 	}
-	if ( BAD( string_null_or_match( trial->master.server.domain , existing->master.server.domain )) ) {
+	if ( BAD( string_null_or_match( trial->first->master.server.domain , existing->first->master.server.domain )) ) {
 		return gbGOOD ;
 	}
 	return gbBAD ;
