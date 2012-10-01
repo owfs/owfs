@@ -88,11 +88,9 @@ static void SetupInboundConnections(void)
 
 	// cycle through connections analyzing them
 	while (pin != NULL) {
-		struct port_in * next = pin->next ;
+		struct port_in * next = pin->next ; // read before potential delete
 		if ( BAD( SetupSingleInboundConnection(pin) ) ) {				
-			/* flag that that the adapter initiation was unsuccessful */
-			STAT_ADD1_BUS(e_bus_detect_errors, pin->first);
-			RemoveIn( pin->first ) ;
+			RemovePort( pint ) ;
 		}
 		pin = next ;
 	}
