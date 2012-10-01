@@ -72,9 +72,25 @@ GOOD_OR_BAD W1_monitor_detect(struct port_in * pin);
 GOOD_OR_BAD External_detect(struct port_in * pin);
 
 #if OW_HA7
+struct enet_member ;
+struct enet_member {
+	int version ;
+	struct enet_member * next ;
+	char name[0] ;
+}; 
+
+struct enet_list {
+	int members ;
+	struct enet_member * head ;
+} ;
+
 GOOD_OR_BAD HA7_detect(struct port_in * pin);
 GOOD_OR_BAD FS_FindHA7(void);
-GOOD_OR_BAD FS_FindENET( void );
+void Find_ENET_all( struct enet_list * elist ) ;
+void Find_ENET_Specific( char * addr, struct enet_list * elist ) ;
+void enet_list_init( struct enet_list * elist ) ;
+void enet_list_kill( struct enet_list * elist ) ;
+void enet_list_add( char * ip, char * port, int version, struct enet_list * elist ) ;
 #endif							/* OW_HA7 */
 
 #if OW_W1

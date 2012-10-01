@@ -228,7 +228,7 @@ void ow_help_device(void)
 	"  --HA7NET        HA7NET bus master address auto-discovered\n"
 	"  --ENET=address  OWServer-Enet or ENET2 bus master\n"
 	"  --ENET          OWServer-Enet or ENET2 automatically discovered\n"
-	"  --ENET=scan     Keep looking for ENET or ENET2 bus masters\n"
+//	"  --ENET=scan     Keep looking for ENET or ENET2 bus masters\n"
 	"  --etherweather=address EtherWeather\n"
 	"  --autoserver    Find owserver using zeroconf\n"
 	"\n"

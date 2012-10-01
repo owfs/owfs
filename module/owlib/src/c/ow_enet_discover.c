@@ -43,7 +43,6 @@ static GOOD_OR_BAD send_ENET_discover( FILE_DESCRIPTOR_OR_ERROR file_descriptor,
 {
     char * message = "D";
 
-	printf("---- Sending\n");
 	if (sendto(file_descriptor, message, strlen(message), 0, now->ai_addr, now->ai_addrlen) < 0) {
 		ERROR_CONNECT("Trouble sending broadcast message");
 		return gbBAD ;
@@ -165,7 +164,7 @@ static void parse_ENET_response( char * response_buffer, int * found_version, ch
 	}
 }
 
-static int Get_ENET_response( struct addrinfo *now )
+static GOOD_OR_BAD Get_ENET_response( int multiple, struct enet_list * elist, struct addrinfo *now )
 {
 	struct timeval tv = { 2, 0 };
 	FILE_DESCRIPTOR_OR_ERROR file_descriptor;
@@ -180,7 +179,9 @@ static int Get_ENET_response( struct addrinfo *now )
 		return 1;
 	}
 
-	RETURN_BAD_IF_BAD( set_ENET_broadcast( file_descriptor ) ) ;
+	if ( multiple ) {
+		RETURN_BAD_IF_BAD( set_ENET_broadcast( file_descriptor ) ) ;
+	}
 	
 	RETURN_BAD_IF_BAD( send_ENET_discover( file_descriptor, now ) ) ;
 
@@ -199,63 +200,91 @@ static int Get_ENET_response( struct addrinfo *now )
 		enet_ip[0] = '\0' ;
 		enet_port[0] = '\0' ;
 		parse_ENET_response( response_buffer, &enet_version, enet_ip, enet_port ) ;
-		printf( "------- %d bytes from ENET\n%*s\n", (int)response, (int)response, response_buffer ) ;
-		printf(" IP=%s PORT=%s Version=%d\n", enet_ip, enet_port, enet_version ) ;
+		enet_list_add( enet_ip, enet_port, enet_version, elist ) ;
+		//printf( "------- %d bytes from ENET\n%*s\n", (int)response, (int)response, response_buffer ) ;
+		//printf(" IP=%s PORT=%s Version=%d\n", enet_ip, enet_port, enet_version ) ;
+		if ( multiple == 0 ) {
+			return gbGOOD ;
+		}
 	} while (1) ;
 
-	return 0 ;
+	return gbBAD ;
 }
 
-GOOD_OR_BAD FS_FindENET(void)
+void Find_ENET_all( struct enet_list * elist )
 {
 	struct addrinfo *ai;
 	struct addrinfo hint;
 	struct addrinfo *now;
-	int number_found = 0;
 	int getaddr_error ;
 
-	LEVEL_DEBUG("Attempting udp broadcast search for the ENET bus master at %s:%s",INADDR_BROADCAST,ENET2_DISCOVERY_PORT);
 	Setup_ENET_hint( &hint ) ;
 
 	if ((getaddr_error = getaddrinfo("255.255.255.255", "30303", &hint, &ai))) {
 		LEVEL_CONNECT("Couldn't set up ENET broadcast message %s", gai_strerror(getaddr_error));
-		return gbBAD;
+		return;
 	}
 
 	for (now = ai; now; now = now->ai_next) {
-		if ( Get_ENET_response( now ) ) {
+		if ( Get_ENET_response( 1, elist, now ) ) {
 			continue ;
 		}
-
-		++number_found ;
 	}
 	freeaddrinfo(ai);
-	return number_found > 0 ? gbGOOD : gbBAD ;
 }
 
-GOOD_OR_BAD FS_QueryENET( struct port_in * pin )
+void Find_ENET_Specific( char * addr, struct enet_list * elist )
 {
 	struct addrinfo *ai;
 	struct addrinfo hint;
 	struct addrinfo *now;
-	int number_found = 0;
 	int getaddr_error ;
 
-	LEVEL_DEBUG("Attempting udp broadcast search for the ENET bus master at %s:%s",INADDR_BROADCAST,ENET2_DISCOVERY_PORT);
 	Setup_ENET_hint( &hint ) ;
 
-	if ((getaddr_error = getaddrinfo("255.255.255.255", "30303", &hint, &ai))) {
+	if ((getaddr_error = getaddrinfo(addr, "30303", &hint, &ai))) {
 		LEVEL_CONNECT("Couldn't set up ENET broadcast message %s", gai_strerror(getaddr_error));
-		return gbBAD;
+		return;
 	}
 
 	for (now = ai; now; now = now->ai_next) {
-		if ( Get_ENET_response( now ) ) {
+		if ( Get_ENET_response( 0, elist, now ) ) {
 			continue ;
 		}
-
-		++number_found ;
 	}
 	freeaddrinfo(ai);
-	return number_found > 0 ? gbGOOD : gbBAD ;
 }
+
+void enet_list_init( struct enet_list * elist )
+{
+	elist->members = 0 ;
+	elist->head = NULL ;
+}
+
+void enet_list_kill( struct enet_list * elist )
+{
+	while ( elist->head ) {
+		struct enet_member * head = elist->head ;
+		elist->head = head->next ;
+		owfree( head ) ;
+		--elist->members ;
+	}
+}
+ 
+void enet_list_add( char * ip, char * port, int version, struct enet_list * elist )
+{
+	struct enet_member * new = (struct enet_member *) owmalloc( sizeof( struct enet_member ) + 2 + strlen( ip ) + strlen( port ) ) ;
+
+	if ( new == NULL ) {
+		return ;
+	}
+	
+	new->version = version ;
+	strcpy( new->name, ip ) ;
+	strcat( new->name, ":" ) ;
+	strcat( new->name, port ) ;
+	new->next = elist->head ;
+	++elist->members ;
+	elist->head = new ;
+}
+

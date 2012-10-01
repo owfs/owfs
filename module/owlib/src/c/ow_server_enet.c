@@ -28,6 +28,7 @@ static GOOD_OR_BAD OWServer_Enet_sendback_data(const BYTE * data, BYTE * resp, c
 static void OWServer_Enet_setroutines(struct connection_in *in);
 static GOOD_OR_BAD OWServer_Enet_select( const struct parsedname * pn ) ;
 
+GOOD_OR_BAD OWServer_Enet_setup(char * enet_name, int enet_version, struct port_in *pin) ;
 static GOOD_OR_BAD OWServer_Enet_reopen(struct connection_in *in) ;
 static GOOD_OR_BAD OWServer_Enet_reopen_prompt(struct connection_in *in) ;
 static GOOD_OR_BAD OWServer_Enet_read( BYTE * buf, size_t size, struct connection_in * in ) ;
@@ -60,10 +61,86 @@ static void OWServer_Enet_setroutines(struct connection_in *in)
 
 GOOD_OR_BAD OWServer_Enet_detect(struct port_in *pin)
 {
+	struct address_pair ap ;
+	GOOD_OR_BAD gbResult = gbBAD;
+	struct enet_list elist ;
+	struct enet_member * em ;
+	
+	enet_list_init( &elist ) ;
+	Parse_Address( pin->init_data, &ap ) ;
+
+	switch ( ap.entries ) {
+		case 0:
+			// Minimal specification, so use first USB device
+			Find_ENET_all( &elist ) ;
+			break ;
+		case 1:
+			switch( ap.first.type ) {
+				case address_all:
+				case address_asterix:
+					LEVEL_DEBUG("Look for all ENET adapters");
+					Find_ENET_all( &elist ) ;
+					break ;
+				default:
+					Find_ENET_Specific( ap.first.alpha, &elist ) ;
+					break ;
+			}
+			break ;
+		case 2:
+			Find_ENET_Specific( ap.first.alpha, &elist ) ;
+			break ;
+	}
+	Free_Address( &ap ) ;
+printf("Parsed\n");
+	em = elist.head ;
+	if ( em == NULL ) {
+		// no enet's found
+		gbResult = gbBAD ;
+	} else {
+		gbResult = OWServer_Enet_setup( em->name, em->version, pin ) ;
+		for ( em = em->next; em ; em = em->next ) {
+			struct port_in * pnew = AllocPort( NULL ) ;
+			if ( pnew == NULL ) {
+				break ;
+			}
+			if ( GOOD(OWServer_Enet_setup( em->name, em->version, pnew )) ) {
+				LinkPort(pnew) ;
+			} else {
+				RemovePort( pnew ) ;
+			}
+		}
+	}
+
+	enet_list_kill( &elist ) ;
+	return gbResult ;
+}
+
+GOOD_OR_BAD OWServer_Enet_setup(char * enet_name, int enet_version, struct port_in *pin)
+{
 	struct connection_in * in = pin->first ;
+	struct port_in * p_index ;
+
+	for ( p_index = Inbound_Control.head_port; p_index; p_index = p_index->next ) {
+		if ( pin == p_index ) {
+			continue ;
+		}
+		if ( strcmp( enet_name, p_index->init_data ) == 0 ) {
+			return gbBAD ;
+		}
+	}
 
 	/* Set up low-level routines */
 	OWServer_Enet_setroutines(in);
+	pin->busmode = bus_enet ;
+
+	SAFEFREE(pin->init_data) ;
+	pin->init_data = owstrdup( enet_name ) ;
+	
+	SAFEFREE( DEVICENAME(in) ) ;
+	DEVICENAME(in) = owstrdup( enet_name ) ;
+	
+	in->master.enet.version = enet_version ;
+	
 
 	// A lot of telnet parameters, really only used
 	// to goose the connection when reconnecting
@@ -74,12 +151,6 @@ GOOD_OR_BAD OWServer_Enet_detect(struct port_in *pin)
 	pin->timeout.tv_usec = 6000000 ;
 	pin->flow = flow_none; // flow control
 	pin->baud = B115200 ;
-
-	in->master.enet.version = 0 ;
-
-	if (pin->init_data == NULL) {
-		return gbBAD;
-	}
 
 	pin->type = ct_telnet ;
 	RETURN_BAD_IF_BAD( COM_open(in) ) ;
@@ -133,7 +204,7 @@ static GOOD_OR_BAD OWServer_Enet_reopen(struct connection_in *in)
 		return OWServer_Enet_reopen_prompt( in ) ;
 	}
 
-	printf("IP=%s PORT=%s\n",in->pown->dev.tcp.host,in->pown->dev.tcp.service) ;
+	//printf("IP=%s PORT=%s\n",in->pown->dev.tcp.host,in->pown->dev.tcp.service) ;
 
 	return gbGOOD;
 }
@@ -460,4 +531,5 @@ static GOOD_OR_BAD OWServer_Enet_sendback_data(const BYTE * data, BYTE * resp, c
 static void OWServer_Enet_close(struct connection_in *in)
 {
 	// the standard COM_free cleans up the connection
+	(void) in ;
 }
