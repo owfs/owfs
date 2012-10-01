@@ -89,6 +89,12 @@ struct master_ha7 {
 	int found;
 };
 
+struct master_enet {
+	int version;
+	char * ip ;
+	char * port ;
+};
+
 enum e_link_t_mode { e_link_t_unknown, e_link_t_extra, e_link_t_none } ;
 
 struct master_link {
@@ -156,6 +162,7 @@ union master_union {
 	struct master_fake fake;
 	struct master_fake tester;
 	struct master_fake mock;
+	struct master_enet enet;
 	struct master_ha5 ha5;
 	struct master_ha7 ha7;
 	struct master_w1 w1;
