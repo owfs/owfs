@@ -23,13 +23,7 @@ $Id$
 /* return < 0 if failure */
 ssize_t udp_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, void *vptr, size_t n, const struct timeval * ptv, struct sockaddr_in *from, socklen_t *fromlen)
 {
-	size_t nleft;
-	char *ptr;
-
-	ptr = vptr;
-	nleft = n;
-
-	while (nleft > 0) {
+	while ( 1 ) {
 		int select_result;
 		fd_set readset;
 		struct timeval tv ;
@@ -42,25 +36,22 @@ ssize_t udp_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, void *vptr, size_t n,
 		timercpy( &tv, ptv ) ;
 		select_result = select(file_descriptor + 1, &readset, NULL, NULL, &tv);
 		if (select_result > 0) {
-			ssize_t read_or_error;
+			ssize_t read_or_error = 0 ;
+			
 			/* Is there something to read? */
 			if (FD_ISSET(file_descriptor, &readset) == 0) {
 				return -EIO;	/* error */
 			}
-			read_or_error = recvfrom(file_descriptor, ptr, nleft, 0, (struct sockaddr *)from, fromlen) ;
+			
+			read_or_error = recvfrom(file_descriptor, vptr, n, 0, (struct sockaddr *)from, fromlen) ;
+			
 			if ( read_or_error < 0 ) {
-				if (errno == EINTR) {
-					errno = 0;	// clear errno. We never use it anyway.
-				} else {
-					ERROR_DATA("udp read error");
-					return -EIO;
-				}
-			} else if (read_or_error == 0) {
-				break;			/* EOF */
+				errno = 0;	// clear errno. We never use it anyway.
+				ERROR_DATA("udp read error");
+				return -EIO;
 			} else {
 				//Debug_Bytes( "UDPread",ptr, nread ) ;
-				nleft -= read_or_error;
-				ptr += read_or_error;
+				return read_or_error ;
 			}
 		} else if (select_result < 0) {	/* select error */
 			if (errno == EINTR) {
@@ -70,9 +61,8 @@ ssize_t udp_read(FILE_DESCRIPTOR_OR_ERROR file_descriptor, void *vptr, size_t n,
 			ERROR_DATA("udp read selection error (network)");
 			return -EIO;
 		} else {				/* timed out */
-			LEVEL_CONNECT("udp read timeout after %d bytes", n - nleft);
+			LEVEL_CONNECT("udp read timeout");
 			return -EAGAIN;
 		}
 	}
-	return (n - nleft);			/* return >= 0 */
 }
