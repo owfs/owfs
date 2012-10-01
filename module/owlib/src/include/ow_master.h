@@ -91,8 +91,6 @@ struct master_ha7 {
 
 struct master_enet {
 	int version;
-	char * ip ;
-	char * port ;
 };
 
 enum e_link_t_mode { e_link_t_unknown, e_link_t_extra, e_link_t_none } ;

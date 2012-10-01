@@ -75,8 +75,6 @@ GOOD_OR_BAD OWServer_Enet_detect(struct port_in *pin)
 	pin->flow = flow_none; // flow control
 	pin->baud = B115200 ;
 
-	in->master.enet.ip = NULL ;
-	in->master.enet.port = NULL ;
 	in->master.enet.version = 0 ;
 
 	if (pin->init_data == NULL) {
@@ -87,7 +85,6 @@ GOOD_OR_BAD OWServer_Enet_detect(struct port_in *pin)
 	RETURN_BAD_IF_BAD( COM_open(in) ) ;
 	
 	memset( in->remembered_sn, 0x00, SERIAL_NUMBER_SIZE ) ; // poison to block match
-	return gbGOOD ;
 
 	in->Adapter = adapter_ENET;
 	in->adapter_name = "OWServer_Enet";
@@ -106,8 +103,6 @@ GOOD_OR_BAD OWServer_Enet_detect(struct port_in *pin)
 		if ( in2 == NO_CONNECTION ) {
 			return gbBAD ;
 		}
-		in2->master.enet.port = owstrdup( in->master.enet.port ) ;
-		in2->master.enet.ip = owstrdup( in->master.enet.ip ) ;
 		in2->master.enet.version = in->master.enet.version ;
 
 		LEVEL_DEBUG("Add 3rd ENET2 port");
@@ -115,8 +110,6 @@ GOOD_OR_BAD OWServer_Enet_detect(struct port_in *pin)
 		if ( in3 == NO_CONNECTION ) {
 			return gbBAD ;
 		}
-		in3->master.enet.port = owstrdup( in->master.enet.port ) ;
-		in3->master.enet.ip = owstrdup( in->master.enet.ip ) ;
 		in3->master.enet.version = in->master.enet.version ;
 	}
 
@@ -139,6 +132,8 @@ static GOOD_OR_BAD OWServer_Enet_reopen(struct connection_in *in)
 	if ( BAD( OWServer_Enet_reopen_prompt( in ) ) ) {
 		return OWServer_Enet_reopen_prompt( in ) ;
 	}
+
+	printf("IP=%s PORT=%s\n",in->pown->dev.tcp.host,in->pown->dev.tcp.service) ;
 
 	return gbGOOD;
 }
@@ -465,6 +460,4 @@ static GOOD_OR_BAD OWServer_Enet_sendback_data(const BYTE * data, BYTE * resp, c
 static void OWServer_Enet_close(struct connection_in *in)
 {
 	// the standard COM_free cleans up the connection
-	SAFEFREE(in->master.enet.port) ;
-	SAFEFREE(in->master.enet.ip) ;	
 }
