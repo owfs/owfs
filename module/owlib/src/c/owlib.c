@@ -173,15 +173,6 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct port_in * pin )
 #endif                          /* OW_HA7 */
 	break;
 
-	case bus_enet2:
-#if OW_HA7
-		if ( BAD( OWServer_Enet2_detect(pin) )) {
-			LEVEL_CONNECT("Cannot detect an OWServer_Enet-2 on %s", DEVICENAME(in));
-			return gbBAD ;
-		}
-#endif                          /* OW_HA7 */
-	break;
-
 	case bus_ha5:
 		if ( BAD( HA5_detect(pin) )) {
 			LEVEL_CONNECT("Cannot detect an HA5 on %s", DEVICENAME(in));

@@ -47,9 +47,6 @@ GOOD_OR_BAD tcp_open(struct connection_in *connection)
 			case bus_enet:
 				def_port = DEFAULT_ENET_PORT ;
 				break ;
-			case bus_enet2:
-				def_port = DEFAULT_ENET2_PORT ;
-				break ;
 			case bus_xport_control:
 				def_port = DEFAULT_XPORT_CONTROL_PORT ;
 				break ;

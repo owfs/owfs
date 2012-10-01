@@ -243,23 +243,6 @@ GOOD_OR_BAD ARG_ENET(const char *arg)
 	return gbGOOD;
 }
 
-GOOD_OR_BAD ARG_ENET2(const char *arg)
-{
-	struct port_in * pin = NewPort( NULL ) ;
-	struct connection_in * in ;
-	if ( pin == NULL ) {
-		return gbBAD;
-	}
-	in = pin->first ;
-	if (in == NO_CONNECTION) {
-		return gbBAD;
-	}
-	arg_data(arg,pin) ;
-	pin->busmode = bus_enet2 ;
-//	FS_FindENET() ;
-	return gbGOOD;
-}
-
 GOOD_OR_BAD ARG_I2C(const char *arg)
 {
 #if OW_I2C

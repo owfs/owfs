@@ -20,7 +20,6 @@ $Id$
 
 #define BYTE_string(x)  ((BYTE *)(x))
 
-static GOOD_OR_BAD OWServer_Enet_setup(struct port_in *pin);
 static RESET_TYPE OWServer_Enet_reset(const struct parsedname *pn);
 static void OWServer_Enet_close(struct connection_in *in);
 
@@ -63,52 +62,6 @@ GOOD_OR_BAD OWServer_Enet_detect(struct port_in *pin)
 {
 	struct connection_in * in = pin->first ;
 
-	RETURN_BAD_IF_BAD( OWServer_Enet_setup(pin) ) ;
-
-	in->Adapter = adapter_ENET;
-	in->adapter_name = "OWServer_Enet";
-	pin->busmode = bus_enet;
-	
-	RETURN_GOOD_IF_GOOD( OWServer_Enet_reopen(in)) ;
-	RETURN_GOOD_IF_GOOD( OWServer_Enet_reopen(in)) ;
-	LEVEL_DEFAULT("Problem opening OW_SERVER_ENET on IP address=[%s] port=[%s] -- is the \"1-Wire Setup\" enabled?", pin->dev.tcp.host, pin->dev.tcp.service );
-
-	return gbBAD ;
-}
-
-GOOD_OR_BAD OWServer_Enet2_detect(struct port_in *pin)
-{
-	struct connection_in * in = pin->first ;
-	struct connection_in * in2 ;
-	struct connection_in * in3 ;
-	RETURN_BAD_IF_BAD( OWServer_Enet_setup(pin) ) ;
-
-	in->Adapter = adapter_ENET2;
-	in->adapter_name = "OWServer_Enet";
-	pin->busmode = bus_enet2;
-	
-	LEVEL_DEBUG("Add 2nd ENET2 port");
-	in2 = AddtoPort( pin ) ;
-	if ( in2 == NO_CONNECTION ) {
-		return gbBAD ;
-	}
-
-	LEVEL_DEBUG("Add 3rd ENET2 port");
-	in3 = AddtoPort( pin ) ;
-	if ( in3 == NO_CONNECTION ) {
-		return gbBAD ;
-	}
-
-	RETURN_GOOD_IF_GOOD( OWServer_Enet_reopen(in)) ;
-	RETURN_GOOD_IF_GOOD( OWServer_Enet_reopen(in)) ;
-	LEVEL_DEFAULT("Problem opening OW_SERVER_ENET on IP address=[%s] port=[%s] -- is the \"1-Wire Setup\" enabled?", pin->dev.tcp.host, pin->dev.tcp.service );
-
-	return gbBAD ;
-}
-
-static GOOD_OR_BAD OWServer_Enet_setup(struct port_in *pin)
-{
-	struct connection_in * in = pin->first ;
 	/* Set up low-level routines */
 	OWServer_Enet_setroutines(in);
 
@@ -122,6 +75,10 @@ static GOOD_OR_BAD OWServer_Enet_setup(struct port_in *pin)
 	pin->flow = flow_none; // flow control
 	pin->baud = B115200 ;
 
+	in->master.enet.ip = NULL ;
+	in->master.enet.port = NULL ;
+	in->master.enet.version = 0 ;
+
 	if (pin->init_data == NULL) {
 		return gbBAD;
 	}
@@ -131,6 +88,44 @@ static GOOD_OR_BAD OWServer_Enet_setup(struct port_in *pin)
 	
 	memset( in->remembered_sn, 0x00, SERIAL_NUMBER_SIZE ) ; // poison to block match
 	return gbGOOD ;
+
+	in->Adapter = adapter_ENET;
+	in->adapter_name = "OWServer_Enet";
+	pin->busmode = bus_enet;
+	
+	if ( in->master.enet.version == 0 ) {
+		LEVEL_DEBUG("Unrecognized ENET firmware version") ;
+		return gbBAD ;
+	}
+	
+	if ( in->master.enet.version == 2 ) {
+		struct connection_in * in2 ;
+		struct connection_in * in3 ;
+		LEVEL_DEBUG("Add 2nd ENET2 port");
+		in2 = AddtoPort( pin ) ;
+		if ( in2 == NO_CONNECTION ) {
+			return gbBAD ;
+		}
+		in2->master.enet.port = owstrdup( in->master.enet.port ) ;
+		in2->master.enet.ip = owstrdup( in->master.enet.ip ) ;
+		in2->master.enet.version = in->master.enet.version ;
+
+		LEVEL_DEBUG("Add 3rd ENET2 port");
+		in3 = AddtoPort( pin ) ;
+		if ( in3 == NO_CONNECTION ) {
+			return gbBAD ;
+		}
+		in3->master.enet.port = owstrdup( in->master.enet.port ) ;
+		in3->master.enet.ip = owstrdup( in->master.enet.ip ) ;
+		in3->master.enet.version = in->master.enet.version ;
+	}
+
+
+	RETURN_GOOD_IF_GOOD( OWServer_Enet_reopen(in)) ;
+	RETURN_GOOD_IF_GOOD( OWServer_Enet_reopen(in)) ;
+	LEVEL_DEFAULT("Problem opening OW_SERVER_ENET on IP address=[%s] port=[%s] -- is the \"1-Wire Setup\" enabled?", pin->dev.tcp.host, pin->dev.tcp.service );
+
+	return gbBAD ;
 }
 
 static GOOD_OR_BAD OWServer_Enet_reopen(struct connection_in *in)
@@ -408,7 +403,7 @@ static GOOD_OR_BAD OWServer_Enet_write_string( char cmd, char * buf, struct conn
 	
 	full_buffer[0] = cmd ;
 
-	if ( in->Adapter == adapter_ENET2 ) {
+	if ( in->master.enet.version == 2 ) {
 		// add channel char
 		length ++ ;
 		full_buffer[1] = in->channel + '1' ;
@@ -469,6 +464,7 @@ static GOOD_OR_BAD OWServer_Enet_sendback_data(const BYTE * data, BYTE * resp, c
 
 static void OWServer_Enet_close(struct connection_in *in)
 {
-	// the statndard COM_free cleans up the connection
-	(void) in ;
+	// the standard COM_free cleans up the connection
+	SAFEFREE(in->master.enet.port) ;
+	SAFEFREE(in->master.enet.ip) ;	
 }

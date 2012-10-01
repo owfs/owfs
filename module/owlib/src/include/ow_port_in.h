@@ -43,7 +43,6 @@ enum bus_mode {
 	bus_ha5,
 	bus_ha7e,
 	bus_enet,
-	bus_enet2,
 	bus_fake,
 	bus_tester,
 	bus_mock,

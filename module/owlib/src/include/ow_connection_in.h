@@ -61,7 +61,6 @@ enum adapter_type {
 	adapter_HA5,
 	adapter_HA7E,
 	adapter_ENET,
-	adapter_ENET2,
 	adapter_EtherWeather,
 	adapter_fake,
 	adapter_tester,
