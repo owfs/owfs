@@ -4,6 +4,7 @@ noinst_HEADERS =           \
         i2c-dev.h          \
         compat_netdb.h     \
         connector.h        \
+        jsmn.h             \
         ow.h               \
         ow_1820.h          \
         ow_1821.h          \

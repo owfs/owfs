@@ -10,6 +10,7 @@ OWLIB_SOURCE = ow_dl.c            \
                getaddrinfo.c      \
                getline.c          \
                getopt.c           \
+               jsmn.c             \
                ow_none.c          \
                ow_1820.c          \
                ow_1821.c          \
