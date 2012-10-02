@@ -117,6 +117,12 @@ static struct connection_in *AllocIn(const struct connection_in *old_in)
 		/* Arbitrary guess at root directory size for allocating cache blob */
 		new_in->last_root_devs = 10;
 		new_in->AnyDevices = anydevices_unknown ;
+
+		++Inbound_Control.active ;
+		new_in->index = Inbound_Control.next_index++;
+		_MUTEX_INIT(new_in->bus_mutex);
+		_MUTEX_INIT(new_in->dev_mutex);
+		new_in->dev_db = NULL;
 	} else {
 		LEVEL_DEFAULT("Cannot allocate memory for bus master structure");
 	}
@@ -170,23 +176,12 @@ struct port_in * AllocPort( const struct port_in * old_pin )
 struct port_in *LinkPort(struct port_in *pin)
 {
 	if (pin != NULL) {
-		struct connection_in * cin ;
-		
 		// Housekeeping to place in linked list
 		// Locking done at a higher level
 		pin->next = Inbound_Control.head_port;	/* put in linked list at start */
 		Inbound_Control.head_port = pin ;
 
 		_MUTEX_INIT(pin->port_mutex);
-		
-		for ( cin = pin->first ; cin != NO_CONNECTION ; cin = cin->next ) {
-			cin->index = Inbound_Control.next_index++;
-			++Inbound_Control.active ;
-
-			_MUTEX_INIT(cin->bus_mutex);
-			_MUTEX_INIT(cin->dev_mutex);
-			cin->dev_db = NULL;
-		}
 	}
 	return pin;
 }
@@ -238,13 +233,14 @@ void RemoveIn( struct connection_in * conn )
 		}
 	}
 
-	/* Now free up thread-sync resources */
-	if ( conn->next != NO_CONNECTION ) {
-		/* Only if actually linked in and possibly active */
-		_MUTEX_DESTROY(conn->bus_mutex);
-		_MUTEX_DESTROY(conn->dev_mutex);
-		SAFETDESTROY( conn->dev_db, owfree_func);
+	if ( conn->index == Inbound_Control.next_index-1 ) {
+		Inbound_Control.next_index-- ;
 	}
+
+	/* Now free up thread-sync resources */
+	_MUTEX_DESTROY(conn->bus_mutex);
+	_MUTEX_DESTROY(conn->dev_mutex);
+	SAFETDESTROY( conn->dev_db, owfree_func);
 
 	/* Close master-specific resources */
 	BUS_close(conn) ;
@@ -313,12 +309,6 @@ struct connection_in * AddtoPort( struct port_in * pin )
 
 	add_in->channel = pin->connections ;
 	++pin->connections ;
-	add_in->index = Inbound_Control.next_index++;
-	++Inbound_Control.active ;
 
-	_MUTEX_INIT(add_in->bus_mutex);
-	_MUTEX_INIT(add_in->dev_mutex);
-	add_in->dev_db = NULL;
-	
 	return add_in ;
 }
