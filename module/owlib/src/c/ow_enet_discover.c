@@ -92,6 +92,8 @@ static void parse_ENET_response( char * response_buffer, int * found_version, ch
 	for ( token_index = 0 ; token_index < parser.toknext ; ++token_index ) {
 		int length = tokens[token_index].end - tokens[token_index].start ;
 		char * tok_start = &response_buffer[tokens[token_index].start] ;
+		char temp_null = tok_start[length] ;
+		tok_start[length] = '\0' ; // null terminate temporarily
 
 		// printf("Type %d Start %d End %d Size %d Length %d\n",tokens[token_index].type, tokens[token_index].start, tokens[token_index].end, tokens[token_index].size, length ) ;
 
@@ -109,18 +111,18 @@ static void parse_ENET_response( char * response_buffer, int * found_version, ch
 				jsp_string = jsp_key ; // expect a key next
 				break ;
 			case JSMN_STRING:
-				//printf("String <%.*s>\n",length,tok_start);
 				switch ( jsp_string ) {
 					case jsp_key:
 						// see if this is a special (interesting) key
-						if ( strncmp( "IP", tok_start, length ) == 0 ) {
+						//printf("Key <%s>\n",tok_start);
+						if ( strcmp( "IP", tok_start ) == 0 ) {
 							//printf("IP match\n");
 							jsp_string = jsp_ip ; // IP address next
-						} else if ( strncmp( "TCPIntfPort", tok_start, length ) == 0 ) {
+						} else if ( strcmp( "TCPIntfPort", tok_start ) == 0 ) {
 							//printf("PORT match\n");
 							jsp_string = jsp_port ; // telnet port next
-						} else if ( strncmp( "FWVer", tok_start, length ) == 0 ) {
-							//printf("Firmware match\n");
+						} else if ( strcmp( "Product", tok_start ) == 0 ) {
+							//printf("Product match\n");
 							jsp_string = jsp_version ; // telnet port next
 						} else {
 							//printf("No match\n");
@@ -128,39 +130,36 @@ static void parse_ENET_response( char * response_buffer, int * found_version, ch
 						}
 						break ;
 					case jsp_value:
+						//printf("Value <%s>\n",tok_start);
 						jsp_string = jsp_key ; // new key follow value
 						break ;
 					case jsp_ip:
+						//printf("IP <%s>\n",tok_start);
 						jsp_string = jsp_key ; // new key follow value
 						if ( ENET_PARAM_SIZE > length ) {
-							memcpy( found_ip, tok_start, length ) ;
-							found_ip[length] = '\0' ;
+							strcpy( found_ip, tok_start ) ;
 						}
 						break ;
 					case jsp_port:
+						//printf("Port <%s>\n",tok_start);
 						jsp_string = jsp_key ; // new key follow value
 						if ( ENET_PARAM_SIZE > length ) {
-							memcpy( found_port, tok_start, length ) ;
-							found_port[length] = '\0' ;
+							strcpy( found_port, tok_start ) ;
 						}
 						break ;
 					case jsp_version:
+						//printf("Product <%s>\n",tok_start);
 						jsp_string = jsp_key ; // new key follow value
-						switch ( tok_start[0] ) {
-							case '1':
-								found_version[0] = 1 ;
-								break ;
-							case '2':
-								found_version[0] = 2 ;
-								break ;
-							default:
-								found_version[0] = 0 ;
-								break ;
+						if ( strstr( tok_start, "v2" ) != NULL ) {
+							found_version[0] = 2 ; 
+						} else {
+							found_version[0] = 1 ;
 						}
 						break ;
 				}
 				break ;
 		}
+		tok_start[length] = temp_null ; // restore char
 	}
 }
 
@@ -276,6 +275,11 @@ void enet_list_add( char * ip, char * port, int version, struct enet_list * elis
 	struct enet_member * new = (struct enet_member *) owmalloc( sizeof( struct enet_member ) + 2 + strlen( ip ) + strlen( port ) ) ;
 
 	if ( new == NULL ) {
+		return ;
+	}
+	
+	if ( strcmp( port, "0" ) == 0 ) {
+		LEVEL_CALL("ENET at %s has 1-wire telnet access disabled.\n--> Use the Web configuration http://%s '1-Wire Setup'",ip,ip) ;
 		return ;
 	}
 	

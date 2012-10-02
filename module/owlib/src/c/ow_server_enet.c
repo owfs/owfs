@@ -91,14 +91,15 @@ GOOD_OR_BAD OWServer_Enet_detect(struct port_in *pin)
 			break ;
 	}
 	Free_Address( &ap ) ;
-printf("Parsed\n");
+
 	em = elist.head ;
 	if ( em == NULL ) {
 		// no enet's found
 		gbResult = gbBAD ;
 	} else {
 		gbResult = OWServer_Enet_setup( em->name, em->version, pin ) ;
-		for ( em = em->next; em ; em = em->next ) {
+		em = em->next ;
+		while ( em != NULL ) {
 			struct port_in * pnew = AllocPort( NULL ) ;
 			if ( pnew == NULL ) {
 				break ;
@@ -108,6 +109,7 @@ printf("Parsed\n");
 			} else {
 				RemovePort( pnew ) ;
 			}
+			em = em->next ;
 		}
 	}
 
@@ -117,16 +119,18 @@ printf("Parsed\n");
 
 GOOD_OR_BAD OWServer_Enet_setup(char * enet_name, int enet_version, struct port_in *pin)
 {
-	struct connection_in * in = pin->first ;
-	struct port_in * p_index ;
-
-	for ( p_index = Inbound_Control.head_port; p_index; p_index = p_index->next ) {
-		if ( pin == p_index ) {
-			continue ;
+	struct connection_in * in = pin -> first ;
+	struct port_in * p_index  = Inbound_Control.head_port ;
+	
+	while ( p_index != NULL ) {
+		if ( p_index->init_data == NULL ) {
+		} else if ( pin == p_index ) {
+		} else {
+			if ( strcmp( enet_name, p_index->init_data ) == 0 ) {
+				return gbBAD ;
+			}
 		}
-		if ( strcmp( enet_name, p_index->init_data ) == 0 ) {
-			return gbBAD ;
-		}
+		p_index = p_index->next ;
 	}
 
 	/* Set up low-level routines */
