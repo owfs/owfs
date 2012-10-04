@@ -56,6 +56,7 @@ $Id$
 #define GLOBAL_UNTOUCHED_TEMP_LIMIT	(-999.)
 
 #define DEFAULT_USB_SCAN_INTERVAL 10 /* seconds */
+#define DEFAULT_ENET_SCAN_INTERVAL 60 /* seconds */
 
 enum zero_support { zero_unknown, zero_none, zero_bonjour, zero_avahi, } ;
 
@@ -113,6 +114,7 @@ struct global {
 	int clients_persistent_low;
 	int clients_persistent_high;
 	int usb_scan_interval ;
+	int enet_scan_interval ;
 	int pingcrazy;
 	int no_dirall;
 	int no_get;

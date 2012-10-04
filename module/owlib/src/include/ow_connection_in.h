@@ -70,6 +70,7 @@ enum adapter_type {
 	adapter_browse_monitor,
 	adapter_xport,
 	adapter_usb_monitor,
+	adapter_enet_monitor,
 	adapter_external,
 };
 

@@ -34,6 +34,7 @@ enum bus_mode {
 	bus_passive,
 	bus_usb,
 	bus_usb_monitor,
+	bus_enet_monitor,
 	bus_parallel,
 	bus_server,
 	bus_zero,

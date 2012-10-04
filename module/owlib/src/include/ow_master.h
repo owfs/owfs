@@ -133,6 +133,10 @@ struct master_usb_monitor {
 	FILE_DESCRIPTOR_OR_ERROR shutdown_pipe[2] ;
 };
 
+struct master_enet_monitor {
+	FILE_DESCRIPTOR_OR_ERROR shutdown_pipe[2] ;
+};
+
 struct master_browse {
 #if OW_ZERO
 	DNSServiceRef bonjour_browse;
@@ -167,6 +171,7 @@ union master_union {
 	struct master_w1_monitor w1_monitor ;
 	struct master_browse browse;
 	struct master_usb_monitor usb_monitor ;
+	struct master_enet_monitor enet_monitor ;
 };
 
 

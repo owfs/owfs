@@ -81,6 +81,12 @@ GOOD_OR_BAD OWServer_Enet_detect(struct port_in *pin)
 					LEVEL_DEBUG("Look for all ENET adapters");
 					Find_ENET_all( &elist ) ;
 					break ;
+				case address_scan:
+					// completely change personality!
+					Free_Address( &ap ) ;
+					enet_list_kill( &elist ) ;
+					return ENET_monitor_detect(pin) ;
+					break ;
 				default:
 					Find_ENET_Specific( ap.first.alpha, &elist ) ;
 					break ;

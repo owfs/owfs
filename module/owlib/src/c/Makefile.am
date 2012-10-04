@@ -83,6 +83,7 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_eds.c           \
                ow_eeef.c          \
                ow_enet_discover.c \
+               ow_enet_monitor.c  \
                ow_eprom_write.c   \
                ow_etherweather.c  \
                ow_example_slave.c \

@@ -106,15 +106,10 @@ static GOOD_OR_BAD usb_monitor_in_use(const struct connection_in * in_selected)
 	struct port_in * pin ;
 	
 	for ( pin = Inbound_Control.head_port ; pin != NULL ; pin = pin->next ) {
-		struct connection_in * cin;
-
 		if ( pin->busmode != bus_usb_monitor ) {
 			continue ;
 		}
-		for (cin = pin->first; cin != NO_CONNECTION; cin = cin->next) {
-			if ( cin == in_selected ) {
-				continue ;
-			}
+		if ( pin->first != in_selected ) {
 			return gbBAD ;
 		}
 	}

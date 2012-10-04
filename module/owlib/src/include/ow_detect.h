@@ -88,9 +88,11 @@ GOOD_OR_BAD HA7_detect(struct port_in * pin);
 GOOD_OR_BAD FS_FindHA7(void);
 void Find_ENET_all( struct enet_list * elist ) ;
 void Find_ENET_Specific( char * addr, struct enet_list * elist ) ;
+GOOD_OR_BAD OWServer_Enet_setup(char * enet_name, int enet_version, struct port_in *pin) ;
 void enet_list_init( struct enet_list * elist ) ;
 void enet_list_kill( struct enet_list * elist ) ;
 void enet_list_add( char * ip, char * port, int version, struct enet_list * elist ) ;
+GOOD_OR_BAD ENET_monitor_detect(struct port_in * pin) ;
 #endif							/* OW_HA7 */
 
 #if OW_W1
