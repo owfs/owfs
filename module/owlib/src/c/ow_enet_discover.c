@@ -168,6 +168,8 @@ static GOOD_OR_BAD Get_ENET_response( int multiple, struct enet_list * elist, st
 	struct timeval tv = { 2, 0 };
 	FILE_DESCRIPTOR_OR_ERROR file_descriptor;
 	char response_buffer[RESPONSE_BUFFER_LENGTH] ;
+	
+	int at_least_one = 0 ;
 
 	struct sockaddr_in from ;
 	socklen_t fromlen = sizeof(struct sockaddr_in) ;
@@ -192,9 +194,12 @@ static GOOD_OR_BAD Get_ENET_response( int multiple, struct enet_list * elist, st
 		int enet_version = 0 ;
 		
 		if ( response < 0 ) {
-			LEVEL_CONNECT("ENET response timeout");
+			if ( at_least_one == 0 ) {
+				LEVEL_CONNECT("ENET response timeout");
+			}
 			break ;
 		}
+		at_least_one = 1 ;
 		response_buffer[response] = '\0' ; // null terminated string
 		enet_ip[0] = '\0' ;
 		enet_port[0] = '\0' ;
