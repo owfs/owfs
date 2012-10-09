@@ -167,7 +167,10 @@ int ServerWrite(struct request_packet *rp)
 {
 	struct server_msg sm;
 	struct client_msg cm;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
 	struct serverpackage sp = { rp->path, (BYTE *) rp->write_value, rp->data_length, rp->tokenstring, rp->tokens, };
+#pragma GCC diagnostic pop	
 	int persistent = 1;
 	int connectfd;
 	int ret = 0;
@@ -447,35 +450,25 @@ static int ToServer(int file_descriptor, struct server_msg *sm, struct serverpac
 	nio++;
 
 	// Next block, the path
-	if ((io[nio].iov_base = sp->path)) {	// send path (if not null)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
+		// writev really handles data as const, but it isn't written that way
+	if ((io[nio].iov_base = (ASCII *) sp->path) != NULL) {	// send path (if not null)
+#pragma GCC diagnostic pop
 		io[nio].iov_len = payload = strlen(sp->path) + 1;
 		nio++;
 		LEVEL_DEBUG("ToServer path=%s\n", sp->path);
 	}
 
 	// next block, data (only for writes)
-	if ((sp->datasize>0) && (io[nio].iov_base = sp->data)) {	// send data only for writes (if datasize not zero)
+	if ((sp->datasize>0) && ( (io[nio].iov_base = sp->data)!= NULL) ) {	// send data only for writes (if datasize not zero)
 		payload += (io[nio].iov_len = sp->datasize);
 		nio++;
         LEVEL_DEBUG("ToServer data=%s\n", sp->data);
 	}
 
-	if (1) {					// if not being called from owserver, that's it
-		sp->tokens = 0;
-		sm->version = 0; // shouldn't this be MakeServerprotocol(OWSERVER_PROTOCOL_VERSION);
-	} else {
-		/* I guess this can't happen since it's ownet */
-		if (sp->tokens > 0) {	// owserver: send prior tags
-			io[nio].iov_base = sp->tokenstring;
-			io[nio].iov_len = sp->tokens * sizeof(union antiloop);
-			nio++;
-		}
-		++sp->tokens;
-		sm->version = Servermessage + (sp->tokens);
-		io[nio].iov_base = &(Globals.Token);	// owserver: add our tag
-		io[nio].iov_len = sizeof(union antiloop);
-		nio++;
-	}
+	sp->tokens = 0; // ownet isn't a server
+	sm->version = 0; // shouldn't this be MakeServerprotocol(OWSERVER_PROTOCOL_VERSION);
 
 	//printf("ToServer payload=%d size=%d type=%d tempscale=%X offset=%d\n",payload,sm->size,sm->type,sm->sg,sm->offset);
 	//printf("<%.4d|%.4d\n",sm->type,payload);
