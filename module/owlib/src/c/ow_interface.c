@@ -22,9 +22,7 @@ $Id$
 READ_FUNCTION(FS_name);
 READ_FUNCTION(FS_port);
 READ_FUNCTION(FS_version);
-READ_FUNCTION(FS_r_overdrive);
 READ_FUNCTION(FS_r_channel);
-WRITE_FUNCTION(FS_w_overdrive);
 READ_FUNCTION(FS_r_yesno);
 WRITE_FUNCTION(FS_w_yesno);
 READ_FUNCTION(FS_r_reconnect);
@@ -391,22 +389,6 @@ static ZERO_OR_ERROR FS_w_PPM(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_r_channel(struct one_wire_query *owq)
 {
 	return OWQ_format_output_offset_and_size( (char *) &(PN(owq)->selected_connection->master.ha5.channel), 1, owq);
-}
-
-/* Just some tests to support overdrive */
-static ZERO_OR_ERROR FS_r_overdrive(struct one_wire_query *owq)
-{
-	struct parsedname *pn = PN(owq);
-	OWQ_Y(owq) = pn->selected_connection->overdrive ;
-	return 0;
-}
-
-static ZERO_OR_ERROR FS_w_overdrive(struct one_wire_query *owq)
-{
-	struct parsedname *pn = PN(owq);
-	pn->selected_connection->overdrive = OWQ_Y(owq) ;
-	pn->selected_connection->changed_bus_settings |= CHANGED_USB_SPEED ;
-	return 0;
 }
 
 #ifdef DEBUG_DS2490
