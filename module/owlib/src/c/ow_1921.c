@@ -59,7 +59,6 @@ READ_FUNCTION(FS_r_logudate);
 READ_FUNCTION(FS_logelements);
 READ_FUNCTION(FS_r_temperature);
 READ_FUNCTION(FS_bitread);
-WRITE_FUNCTION(FS_bitwrite);
 READ_FUNCTION(FS_rbitread);
 WRITE_FUNCTION(FS_easystart);
 
@@ -377,20 +376,6 @@ static ZERO_OR_ERROR FS_bitread(struct one_wire_query *owq)
 	RETURN_ERROR_IF_BAD(OW_small_read(&d, 1, br->location, pn)) ;
 	OWQ_Y(owq) = UT_getbit(&d, br->bit);
 	return 0;
-}
-
-static ZERO_OR_ERROR FS_bitwrite(struct one_wire_query *owq)
-{
-	BYTE d;
-	struct parsedname *pn = PN(owq);
-	struct BitRead *br;
-	if (pn->selected_filetype->data.v == NULL) {
-		return -EINVAL;
-	}
-	br = ((struct BitRead *) (pn->selected_filetype->data.v));
-	RETURN_ERROR_IF_BAD(OW_small_read(&d, 1, br->location, pn)) ;
-	UT_setbit(&d, br->bit, OWQ_Y(owq));
-	return GB_to_Z_OR_E(OW_w_mem(&d, 1, br->location, pn)) ;
 }
 
 static ZERO_OR_ERROR FS_rbitread(struct one_wire_query *owq)
