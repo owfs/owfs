@@ -28,7 +28,6 @@ static GOOD_OR_BAD OWServer_Enet_sendback_data(const BYTE * data, BYTE * resp, c
 static void OWServer_Enet_setroutines(struct connection_in *in);
 static GOOD_OR_BAD OWServer_Enet_select( const struct parsedname * pn ) ;
 
-GOOD_OR_BAD OWServer_Enet_setup(char * enet_name, int enet_version, struct port_in *pin) ;
 static GOOD_OR_BAD OWServer_Enet_reopen(struct connection_in *in) ;
 static GOOD_OR_BAD OWServer_Enet_reopen_prompt(struct connection_in *in) ;
 static GOOD_OR_BAD OWServer_Enet_read( BYTE * buf, size_t size, struct connection_in * in ) ;
