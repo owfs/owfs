@@ -44,9 +44,9 @@ void httpunescape(BYTE * httpstr)
 }
 
 /* HTTP encode */
-char * httpescape( char * original_string )
+char * httpescape( const char * original_string )
 {
-	char * original_p = original_string ;
+	const char * original_p = original_string ;
 	char * escaped_string ;
 	char * escaped_p ;
 

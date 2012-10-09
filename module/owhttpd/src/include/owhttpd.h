@@ -60,6 +60,6 @@ void Favicon(FILE * out);
 
 /* in owhttpd_escape */
 void httpunescape(BYTE * httpstr) ;
-char * httpescape( char * original_string ) ;
+char * httpescape( const char * original_string ) ;
 
 #endif							/* OWHTTPD_H */

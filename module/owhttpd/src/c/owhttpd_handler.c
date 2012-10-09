@@ -48,7 +48,7 @@ static char * GetPostPath( FILE * out ) ;
 /* Main handler for a web page */
 int handle_socket(FILE * out)
 {
-	enum http_return http_code = http_ok ;
+	enum http_return http_code ;
 
 	struct urlparse up;
 
@@ -208,7 +208,7 @@ static enum http_return handle_GET(FILE * out, struct urlparse * up)
 /* The HTTP request is a POST message */
 static enum http_return handle_POST(FILE * out, struct urlparse * up)
 {
-	enum http_return http_code ;
+	enum http_return http_code = http_404 ; // default error mode
 
 	char * boundary = NULL ;
 	size_t boundary_length ;
@@ -234,23 +234,18 @@ static enum http_return handle_POST(FILE * out, struct urlparse * up)
 					if ( GOOD( OWQ_allocate_write_buffer( (char *) MemblobData(&mb), MemblobLength(&mb), 0, owq)) ) {
 						PostData(owq);
 						http_code = http_ok ;
-					} else {
-						http_code = http_404 ;
 					}
 					OWQ_destroy(owq) ;
 				} else {
 					LEVEL_DEBUG("Can't create %s",post_path);
-					http_code = http_404 ;
 				}
 			} else {
 				LEVEL_DEBUG("Can't read full binary data from file upload");
-				http_code = http_404 ;
 			}
 			MemblobClear( &mb ) ;
 			owfree(post_path ) ;
 		} else {
 			LEVEL_DEBUG("Can't read property name from file upload");
-			http_code = http_404 ;
 		}
 	}
 	if ( boundary ) {
