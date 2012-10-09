@@ -473,6 +473,18 @@ static GOOD_OR_BAD Bundle_unpack(struct transaction_bundle *tb)
 		case trxn_select:
 			LEVEL_DEBUG("unpacking #%d NOP or SELECT", packet_index);
 			break;
+		case trxn_bitmatch:
+			LEVEL_DEBUG("Unsupported transaction request trxn_bitmatch");
+			break ;
+		case trxn_bitmodify:
+			LEVEL_DEBUG("Unsupported transaction request trxn_bitmodify");
+			break ;
+		case trxn_bitread:
+			LEVEL_DEBUG("Unsupported transaction request trxn_bitread");
+			break ;
+		case trxn_bitpower:
+			LEVEL_DEBUG("Unsupported transaction request trxn_bitpower");
+			break ;
 		}
 		if ( BAD(ret) ) {
 			break;
