@@ -45,8 +45,6 @@ READ_FUNCTION(FS_short);
 
 static enum e_visibility VISIBLE_EF_UVI( const struct parsedname * pn ) ;
 static enum e_visibility VISIBLE_EF_MOISTURE( const struct parsedname * pn ) ;
-static enum e_visibility VISIBLE_EF_MOISTURE_LOG( const struct parsedname * pn ) ;
-static enum e_visibility VISIBLE_EF_SNIFFER( const struct parsedname * pn ) ;
 static enum e_visibility VISIBLE_EF_HUB( const struct parsedname * pn ) ;
 
 enum e_EF_type {
