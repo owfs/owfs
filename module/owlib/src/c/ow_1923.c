@@ -75,17 +75,14 @@ READ_FUNCTION(FS_bitread);
 WRITE_FUNCTION(FS_bitwrite);
 READ_FUNCTION(FS_rbitread);
 WRITE_FUNCTION(FS_rbitwrite);
-READ_FUNCTION(FS_clearmem);
 READ_FUNCTION(FS_r_mem);
 WRITE_FUNCTION(FS_w_mem);
 READ_FUNCTION(FS_r_page);
 WRITE_FUNCTION(FS_w_page);
-READ_FUNCTION(FS_r_run);
 WRITE_FUNCTION(FS_w_run);
 WRITE_FUNCTION(FS_w_mip);
 READ_FUNCTION(FS_r_delay);
 WRITE_FUNCTION(FS_w_delay);
-READ_FUNCTION(FS_enable_osc);
 
 
 /* ------- Structures ----------- */
@@ -119,9 +116,6 @@ struct Mission {
 };
 
 static struct aggregate A1923p = { 18, ag_numbers, ag_separate, };
-static struct aggregate A1923l = { 2048, ag_numbers, ag_mixed, };
-static struct aggregate A1923h = { 63, ag_numbers, ag_mixed, };
-static struct aggregate A1923m = { 12, ag_numbers, ag_aggregate, };
 static struct filetype DS1923[] = {
 	F_STANDARD,
 #if 0
@@ -152,21 +146,9 @@ static struct filetype DS1923[] = {
 	{"mission/delay", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_delay, FS_w_delay, VISIBLE, NO_FILETYPE_DATA, },
 	{"mission/samplingtemp", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_bitread, NO_WRITE_FUNCTION, VISIBLE, {v:&BitReads[3]}, },
 	{"mission/samplinghumidity", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_bitread, NO_WRITE_FUNCTION, VISIBLE, {v:&BitReads[4]}, },
-#if 0
-	{"mission/frequency", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, {u: FS_r_samplerate}, {u: FS_w_samplerate}, VISIBLE, NO_FILETYPE_DATA, },
-	{"mission/samples", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, {u: FS_r_3byte}, {o: NULL}, VISIBLE, {s:0x021A}, },
-	{"mission/delay", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_delay, FS_w_delay, VISIBLE, NO_FILETYPE_DATA, },
-	{"mission/date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_volatile, {d:FS_mdate}, NO_READ_FUNCTION, NO_WRITE_FUNCTION,VISIBLE, NO_FILETYPE_DATA },
-	{"mission/date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_volatile, {d: FS_mdate}, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
-	{"mission/easystart", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, {o: NULL}, {u: FS_easystart}, VISIBLE, NO_FILETYPE_DATA, },
-#endif
 };
 
 DeviceEntryExtended(41, DS1923, DEV_temp | DEV_alarm | DEV_ovdr | DEV_resume, NO_GENERIC_READ, NO_GENERIC_WRITE);
-
-/* Persistent storage */
-Make_SlaveSpecificTag(RPW, fc_persistent);	// Read password
-Make_SlaveSpecificTag(FPW, fc_persistent);	// Full password
 
 #define _1W_WRITE_SCRATCHPAD 0x0F
 #define _1W_READ_SCRATCHPAD 0xAA
@@ -251,34 +233,6 @@ static ZERO_OR_ERROR FS_w_delay(struct one_wire_query *owq)
 		return -EBUSY;
 	}
 	return GB_to_Z_OR_E( OW_w_mem(data, 3, 0x0216, PN(owq))) ;
-}
-
-/* Just a test-function */
-static ZERO_OR_ERROR FS_enable_osc(struct one_wire_query *owq)
-{
-	struct parsedname *pn = PN(owq);
-#if 0
-	/* Just write to address without any check */
-	BYTE d = 0x01;
-	RETURN_ERROR_IF_BAD( OW_w_mem(&d, 1, 0x0212, pn) );
-#else
-	RETURN_ERROR_IF_BAD(OW_oscillator(1, pn));
-#endif
-	memset(OWQ_buffer(owq), 0, 1);
-	return 0;
-}
-
-/* clock running? */
-static ZERO_OR_ERROR FS_r_run(struct one_wire_query *owq)
-{
-	BYTE cr;
-	RETURN_ERROR_IF_BAD( OW_r_mem(&cr, 1, 0x0212, PN(owq)) );
-	// only bit 0 and 1 should be used!
-	if (cr & 0xFC) {
-		return -EINVAL;
-	}
-	OWQ_Y(owq) = (cr & 0x01);
-	return 0;
 }
 
 /* stop/start clock running */
@@ -398,9 +352,7 @@ static GOOD_OR_BAD OW_2date(_DATE * d, const BYTE * data)
 		return gbBAD;
 	}
 
-	//printf
-		("_DATE: sec=%d, min=%d, hour=%d, mday=%d, mon=%d, year=%d, wday=%d, isdst=%d\n",
-		 t.tm_sec, t.tm_min, t.tm_hour, t.tm_mday, t.tm_mon, t.tm_year, t.tm_wday, t.tm_isdst);
+	//printf("_DATE: sec=%d, min=%d, hour=%d, mday=%d, mon=%d, year=%d, wday=%d, isdst=%d\n",t.tm_sec, t.tm_min, t.tm_hour, t.tm_mday, t.tm_mon, t.tm_year, t.tm_wday, t.tm_isdst);
 
 #define bcd2dec(x) (((x)&0x70)>>4)*10 + ((x)&0x0F)
 	t.tm_sec = bcd2dec(data[0]);
@@ -417,9 +369,7 @@ static GOOD_OR_BAD OW_2date(_DATE * d, const BYTE * data)
 	t.tm_year = (data[4] & 0x80 ? 100 : 0) + bcd2dec(data[5] & 0xFF);
 
 	//printf("_DATE_READ data=%2X, %2X, %2X, %2X, %2X, %2X\n", data[0], data[1], data[2], data[3], data[4], data[5]);
-	//printf
-		("_DATE: sec=%d, min=%d, hour=%d, mday=%d, mon=%d, year=%d, wday=%d, isdst=%d\n",
-		 t.tm_sec, t.tm_min, t.tm_hour, t.tm_mday, t.tm_mon, t.tm_year, t.tm_wday, t.tm_isdst);
+	//printf("_DATE: sec=%d, min=%d, hour=%d, mday=%d, mon=%d, year=%d, wday=%d, isdst=%d\n",t.tm_sec, t.tm_min, t.tm_hour, t.tm_mday, t.tm_mon, t.tm_year, t.tm_wday, t.tm_isdst);
 
 	/* Pass through time_t again to validate */
 	if ((*d = mktime(&t)) == -1) {
