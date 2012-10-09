@@ -229,17 +229,17 @@ static GOOD_OR_BAD OWQ_allocate_array( struct one_wire_query * owq )
 void OWQ_assign_read_buffer(char *buffer, size_t size, off_t offset, struct one_wire_query *owq)
 {
 	OWQ_buffer(owq) = buffer;
-	//OWQ_read_buffer(owq) = NULL ;
-	//OWQ_write_buffer(owq) = NULL ;
 	OWQ_size(owq) = size;
 	OWQ_offset(owq) = offset;
 }
 
 void OWQ_assign_write_buffer(const char *buffer, size_t size, off_t offset, struct one_wire_query *owq)
 {
-	OWQ_buffer(owq) = buffer;
-	//OWQ_read_buffer(owq) = NULL ;
-	//OWQ_write_buffer(owq) = NULL ;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
+	// OWQ_buffer used for both read (non-const) and write (const)
+	OWQ_buffer(owq) = (char *) buffer;
+#pragma GCC diagnostic pop
 	OWQ_size(owq) = size;
 	OWQ_offset(owq) = offset;
 }
