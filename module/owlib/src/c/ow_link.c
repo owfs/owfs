@@ -73,10 +73,6 @@ static GOOD_OR_BAD LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay
 static GOOD_OR_BAD LINK_PowerBit(const BYTE data, BYTE * resp, const UINT delay, const struct parsedname *pn);
 static void LINK_close(struct connection_in *in) ;
 
-static GOOD_OR_BAD LinkHubE_Control( struct connection_in * in_link ) ;
-static GOOD_OR_BAD Control_com( struct connection_in * in_control ) ;
-
-
 static void LINK_setroutines(struct connection_in *in);
 static void LINKE_setroutines(struct connection_in *in);
 
@@ -194,13 +190,6 @@ GOOD_OR_BAD LINK_detect(struct port_in *pin)
 			LEVEL_DEBUG("Attempt connection to networked LINK at 9600 baud");
 			RETURN_GOOD_IF_GOOD(  LINK_detect_net( in )  );
 
-			// Now try control port reset
-			RETURN_BAD_IF_BAD( LinkHubE_Control( in ) ) ;
-			pin->baud = B115200 ;
-			LEVEL_DEBUG("Reattempt LINK connection") ;
-			UT_delay( 5000 ) ;
-			RETURN_GOOD_IF_GOOD(  LINK_detect_net( in )  );
-			
 			break ;
 
 			
@@ -858,46 +847,4 @@ static GOOD_OR_BAD LINK_readback_data( BYTE * buf, const size_t size, struct con
 	}
 		
 	return gbGOOD;
-}
-
-// use the Xport control port to reset
-static GOOD_OR_BAD LinkHubE_Control( struct connection_in * in_link )
-{
-	struct port_in * p_control = AllocPort( NULL ) ;
-	struct connection_in * in_control ;
-	GOOD_OR_BAD ret ;
-	
-	if ( p_control == NULL ) {
-		return gbBAD ;
-	}
-	
-	in_control = p_control->first ;
-
-	if ( p_control->dev.tcp.host == NULL ) {
-		LEVEL_DEBUG("No Xport control on local machine");
-		return gbBAD ;
-	}
-
-	p_control->type = ct_telnet ;
-	DEVICENAME(in_control) = owstrdup( p_control->dev.tcp.host ) ;
-	p_control->busmode = bus_xport_control ;
-	p_control->timeout.tv_sec = 1 ;
-	p_control->timeout.tv_usec = 0 ;
-
-	ret = Control_com( in_control ) ;
-
-	RemovePort( p_control ) ;
-
-	return ret ;
-}
-
-static GOOD_OR_BAD Control_com( struct connection_in * in_control )
-{
-	RETURN_BAD_IF_BAD( COM_open( in_control ) ) ;
-	COM_slurp( in_control ) ;
-	RETURN_BAD_IF_BAD( COM_write_simple( (BYTE *) "\r", 1, in_control ) ) ;
-	COM_slurp( in_control ) ;
-	RETURN_BAD_IF_BAD( COM_write_simple( (BYTE *) "9\r", 2, in_control ) ) ;
-	COM_slurp( in_control ) ;
-	return gbGOOD ;
 }
