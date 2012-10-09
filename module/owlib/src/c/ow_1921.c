@@ -61,7 +61,6 @@ READ_FUNCTION(FS_r_temperature);
 READ_FUNCTION(FS_bitread);
 WRITE_FUNCTION(FS_bitwrite);
 READ_FUNCTION(FS_rbitread);
-WRITE_FUNCTION(FS_rbitwrite);
 WRITE_FUNCTION(FS_easystart);
 
 READ_FUNCTION(FS_alarmudate);
@@ -86,8 +85,6 @@ READ_FUNCTION(FS_r_page);
 WRITE_FUNCTION(FS_w_page);
 READ_FUNCTION(FS_r_samplerate);
 WRITE_FUNCTION(FS_w_samplerate);
-READ_FUNCTION(FS_r_run);
-WRITE_FUNCTION(FS_w_run);
 READ_FUNCTION(FS_r_3byte);
 READ_FUNCTION(FS_r_atime);
 WRITE_FUNCTION(FS_w_atime);
@@ -403,12 +400,6 @@ static ZERO_OR_ERROR FS_rbitread(struct one_wire_query *owq)
 	return ret;
 }
 
-static ZERO_OR_ERROR FS_rbitwrite(struct one_wire_query *owq)
-{
-	OWQ_Y(owq) = !OWQ_Y(owq);
-	return FS_bitwrite(owq);
-}
-
 /* histogram counts */
 static ZERO_OR_ERROR FS_r_histogram(struct one_wire_query *owq)
 {
@@ -705,21 +696,6 @@ static ZERO_OR_ERROR FS_w_counter(struct one_wire_query *owq)
 
 	OW_date(&d, data);
 	return GB_to_Z_OR_E( OW_w_mem(data, 7, 0x0200, pn) ) ;
-}
-
-/* stop/start clock running */
-static ZERO_OR_ERROR FS_w_run(struct one_wire_query *owq)
-{
-	return GB_to_Z_OR_E( OW_w_run(OWQ_Y(owq), PN(owq)) );
-}
-
-/* clock running? */
-static ZERO_OR_ERROR FS_r_run(struct one_wire_query *owq)
-{
-	BYTE cr;
-	RETURN_ERROR_IF_BAD(OW_small_read(&cr, 1, 0x020E, PN(owq))) ;
-	OWQ_Y(owq) = ((cr & 0x80) == 0);
-	return 0;
 }
 
 /* start/stop mission */
