@@ -673,9 +673,9 @@ static SIZE_OR_ERROR WriteToServer(int file_descriptor, struct server_msg *sm, s
 	// Next block, the path
 	if (sp->path != 0) {	// send path (if not null)
 #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wignored-qualifiers"
+#pragma GCC diagnostic ignored "-Wcast-qual"
 		// writev should take const data pointers, but I can't fix the library
-		io[nio].iov_base = sp->path ; // gives a spurious compiler error -- constant is OK HERE!
+		io[nio].iov_base = (char *) sp->path ; // gives a spurious compiler error -- constant is OK HERE!
 #pragma GCC diagnostic pop
 		io[nio].iov_len = strlen(sp->path) + 1;
 		payload =  io[nio].iov_len ;
