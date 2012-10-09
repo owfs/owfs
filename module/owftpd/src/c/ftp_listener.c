@@ -388,11 +388,13 @@ static void connection_handler_cleanup(void *v)
 
 void ftp_listener_stop(struct ftp_listener_s *f)
 {
-	int ignore ;
 	daemon_assert(invariant(f));
 
 	/* write a byte to the listening thread - this will wake it up */
-	ignore =  write(f->shutdown_request_fd[fd_pipe_write], "", 1);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-result"
+	write(f->shutdown_request_fd[fd_pipe_write], "", 1);
+#pragma GCC diagnostic pop
 
 	/* wait for client connections to complete */
 	_MUTEX_LOCK(f->mutex);
