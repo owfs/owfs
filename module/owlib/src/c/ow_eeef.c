@@ -175,26 +175,6 @@ static enum e_visibility VISIBLE_EF_MOISTURE( const struct parsedname * pn )
 	}
 }
 
-static enum e_visibility VISIBLE_EF_MOISTURE_LOG( const struct parsedname * pn )
-{
-	switch ( VISIBLE_EF(pn) ) {
-		case eft_LOG:
-			return visible_now ;
-		default:
-			return visible_not_now ;
-	}
-}
-
-static enum e_visibility VISIBLE_EF_SNIFFER( const struct parsedname * pn )
-{
-	switch ( VISIBLE_EF(pn) ) {
-		case eft_SNF:
-			return visible_now ;
-		default:
-			return visible_not_now ;
-	}
-}
-
 static enum e_visibility VISIBLE_EF_HUB( const struct parsedname * pn )
 {
 	switch ( VISIBLE_EF(pn) ) {
