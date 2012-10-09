@@ -40,17 +40,21 @@ $Id$
 /* Send fully configured message back to client.
    data is optional and length depends on "payload"
  */
-int ToClient(int file_descriptor, struct client_msg *machine_order_cm, char *data)
+int ToClient(int file_descriptor, struct client_msg *machine_order_cm, const char *data)
 {
 	struct client_msg s_cm;
 	struct client_msg *network_order_cm = &s_cm;
 	
-	// note data should be (const char *) but iovec complains about const arguments
 	int nio = 1;
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
+	// note data should be (const char *) but iovec complains about const arguments
 	struct iovec io[] = {
 		{network_order_cm, sizeof(struct client_msg),},
-		{data, machine_order_cm->payload,},
+		{ (char *) data, machine_order_cm->payload,},
 	};
+#pragma GCC diagnostic pop
 
 	LEVEL_DEBUG("payload=%d size=%d, ret=%d, sg=0x%X offset=%d ", machine_order_cm->payload, machine_order_cm->size, machine_order_cm->ret,
 		     machine_order_cm->control_flags, machine_order_cm->offset);

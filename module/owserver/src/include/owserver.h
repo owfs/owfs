@@ -48,7 +48,7 @@ struct handlerdata {
 int FromClient(struct handlerdata *hd);
 
 /* Send fully configured message back to client */
-int ToClient(int file_descriptor, struct client_msg *cm, char *data);
+int ToClient(int file_descriptor, struct client_msg *cm, const char *data);
 
 /* Read from 1-wire bus and return file contents */
 void *ReadHandler(struct handlerdata *hd, struct client_msg *cm, struct one_wire_query *owq);

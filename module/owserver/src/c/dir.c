@@ -52,7 +52,7 @@ struct dirhandlerstruct {
 static void DirHandlerCallback(void *v, const struct parsedname *pn_entry)
 {
 	struct dirhandlerstruct *dhs = (struct dirhandlerstruct *) v;
-	char *path = pn_entry->path;
+	const char *path = pn_entry->path;
 
 	LEVEL_DEBUG("owserver Calling dir=%s", SAFESTRING(path));
 
