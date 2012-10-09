@@ -164,7 +164,11 @@ static void SingleHandler(struct handlerdata *hd)
 	PingLoop( hd ) ;
 
 	if (hd->sp.path) {
-		owfree(hd->sp.path);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
+	// allocated in From_Client with owmalloc, but cast to const
+		owfree( (void *) hd->sp.path);
+#pragma GCC diagnostic pop
 		hd->sp.path = NULL;
 	}
 }
@@ -178,7 +182,11 @@ void Handler(FILE_DESCRIPTOR_OR_ERROR file_descriptor)
 		DataHandler(&hd);
 	}
 	if (hd.sp.path) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
+	// allocated in From_Client with owmalloc, but cast to const
 		owfree(hd.sp.path);
+#pragma GCC diagnostic pop
 		hd.sp.path = NULL;
 	}
 }
