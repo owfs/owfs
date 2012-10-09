@@ -73,8 +73,6 @@ READ_FUNCTION(FS_r_abias);
 WRITE_FUNCTION(FS_w_abias);
 READ_FUNCTION(FS_r_templim);
 WRITE_FUNCTION(FS_w_templim);
-READ_FUNCTION(FS_r_voltlim);
-WRITE_FUNCTION(FS_w_voltlim);
 READ_FUNCTION(FS_r_vbias);
 WRITE_FUNCTION(FS_w_vbias);
 READ_FUNCTION(FS_r_timer);
@@ -620,25 +618,7 @@ static ZERO_OR_ERROR FS_w_vh(struct one_wire_query *owq)
 	return GB_to_Z_OR_E(OW_w_int(&I, _1W_DS27XX_ACCUMULATED, PN(owq)));
 }
 
-// Volt-limits
-static ZERO_OR_ERROR FS_r_voltlim(struct one_wire_query *owq)
-{
-	struct parsedname *pn = PN(owq);
-	int I;
-	RETURN_ERROR_IF_BAD( OW_r_int(&I, pn->selected_filetype->data.u, pn) ) ;
-	OWQ_F(owq) = .00000625 * I;
-	return 0;
-}
-
-// Volt-limits
-static ZERO_OR_ERROR FS_w_voltlim(struct one_wire_query *owq)
-{
-	struct parsedname *pn = PN(owq);
-	int I = OWQ_F(owq) / .00000625;
-	return GB_to_Z_OR_E(OW_w_int(&I, pn->selected_filetype->data.u, pn) ) ;
-}
-
-// Volt-limits
+// temperature-limits
 static ZERO_OR_ERROR FS_r_templim(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
@@ -648,7 +628,7 @@ static ZERO_OR_ERROR FS_r_templim(struct one_wire_query *owq)
 	return 0;
 }
 
-// Volt-limits
+// Temperature-limits
 static ZERO_OR_ERROR FS_w_templim(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
@@ -1121,7 +1101,7 @@ static GOOD_OR_BAD OW_recall_eeprom( const size_t size, const off_t offset, cons
 	int eeprom_range ;
 	struct LockPage * lp = Lockpage(pn) ;
 	
-	if ( Lockpage == NULL ) {
+	if ( lp == NULL ) {
 		LEVEL_DEBUG("No eeprom information for this device.") ;
 		return gbGOOD ;
 	}
@@ -1173,7 +1153,7 @@ static GOOD_OR_BAD OW_copy_eeprom(const size_t size, const off_t offset, const s
 	int eeprom_range ;
 	struct LockPage * lp = Lockpage(pn) ;
 	
-	if ( Lockpage == NULL ) {
+	if ( lp == NULL ) {
 		LEVEL_DEBUG("No eeprom information for this device.") ;
 		return gbGOOD ;
 	}
