@@ -694,7 +694,6 @@ static GOOD_OR_BAD HeadChannel(struct connection_in *head)
  */
 static GOOD_OR_BAD CreateChannels(struct connection_in *head)
 {
-	struct connection_in * prior = head ;
 	int i;
 	char *name[] = { "DS2482-800(0)", "DS2482-800(1)", "DS2482-800(2)",
 		"DS2482-800(3)", "DS2482-800(4)", "DS2482-800(5)", "DS2482-800(6)",
@@ -709,7 +708,6 @@ static GOOD_OR_BAD CreateChannels(struct connection_in *head)
 		}
 		added->master.i2c.index = i;
 		added->adapter_name = name[i];
-		prior = added ;
 	}
 	return gbGOOD;
 }
