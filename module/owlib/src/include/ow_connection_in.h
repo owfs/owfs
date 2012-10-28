@@ -155,13 +155,6 @@ struct connection_in {
 	
 	size_t bundling_length;
 
-	struct { // Channel info for bus masters that share a common comminucation channel */
-		char channel ;
-		pthread_mutex_t all_channel_lock;	// second level mutex for the entire chip */
-		struct connection_in *head;
-		struct communication * psoc ;
-	} channel_info ;
-
 	union master_union master;
 };
 

@@ -163,22 +163,9 @@ static ZERO_OR_ERROR FS_w_convert_temp(struct one_wire_query *owq)
 		if ( GOOD(BUS_transaction(t_powered_convert, pn_directory) ) ) {
 			return 0 ;
 		}
-	} else if ( in->Adapter == adapter_DS2482_800 ) {
-		// special case for the 8-channel DS2482-800
-		// Rather than block the whole chip (all 8 channels) by polling
-		GOOD_OR_BAD ret ;
-		_MUTEX_LOCK(in->bus_mutex); // channel
-		_MUTEX_LOCK(in->master.i2c.head->master.i2c.all_channel_lock); // master
-		ret = BUS_transaction_nolock(t_powered_convert, pn_directory) ;
-		_MUTEX_UNLOCK(in->master.i2c.head->master.i2c.all_channel_lock); //master
-		if ( GOOD(ret) ) {
-			UT_delay(1000) ; // wait for passive
-		}
-		_MUTEX_UNLOCK(in->bus_mutex); //channel
-		if ( GOOD(ret) ) {
-			return 0 ;
-		}
 	} else {
+		// Unpowered prohibits other bus traffic.
+		// This is at the port level, so could be all channels of the DS2482-800, etc
 		if ( GOOD(BUS_transaction(t_unpowered_convert, pn_directory) )) {
 			return 0 ;
 		}

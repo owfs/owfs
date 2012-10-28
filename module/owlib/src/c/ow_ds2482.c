@@ -89,10 +89,11 @@ static GOOD_OR_BAD DS2482_PowerByte(const BYTE byte, BYTE * resp, const UINT del
 #define DS2482_CMD_1WIRE_TRIPLET       0x78	/* Param: Dir byte (bit7) */
 
 /* Values for DS2482_CMD_SET_READ_PTR */
-#define DS2482_PTR_CODE_STATUS         0xF0
-#define DS2482_PTR_CODE_DATA           0xE1
-#define DS2482_PTR_CODE_CHANNEL        0xD2	/* DS2482-800 only */
-#define DS2482_PTR_CODE_CONFIG         0xC3
+#define DS2482_STATUS_REGISTER         		 0xF0
+#define DS2482_READ_DATA_REGISTER            0xE1
+#define DS2482_DEVICE_CONFIGURATION_REGISTER 0xC3
+#define DS2482_CHANNEL_SELECTION_REGISTER    0xD2	/* DS2482-800 only */
+#define DS2482_PORT_CONFIGURATION_REGISTER   0xB4   /* DS2483 only */
 
 /**
  * Configure Register bit definitions
@@ -101,7 +102,8 @@ static GOOD_OR_BAD DS2482_PowerByte(const BYTE byte, BYTE * resp, const UINT del
  */
 #define DS2482_REG_CFG_1WS     0x08
 #define DS2482_REG_CFG_SPU     0x04
-#define DS2482_REG_CFG_PPM     0x02
+#define DS2482_REG_CFG_PDN     0x02 /* DS2483 only, power down */
+#define DS2482_REG_CFG_PPM     0x02 /* non-DS2483, presence pulse masking */
 #define DS2482_REG_CFG_APU     0x01
 
 /**
@@ -410,7 +412,6 @@ static GOOD_OR_BAD DS2482_detect_single(int lowindex, int highindex, char * i2c_
 			if ( Globals.i2c_PPM ) {
 				in->master.i2c.configreg |= DS2482_REG_CFG_PPM ;
 			}
-			_MUTEX_INIT(in->master.i2c.all_channel_lock);
 			in->Adapter = adapter_DS2482_100;
 
 			/* write the RESET code */
@@ -649,7 +650,7 @@ static GOOD_OR_BAD DS2482_send_and_get(FILE_DESCRIPTOR_OR_ERROR file_descriptor,
 	RETURN_BAD_IF_BAD( DS2482_readstatus(&c, file_descriptor, DS2482_1wire_write_usec) ) ;
 
 	/* Select the data register */
-	if (i2c_smbus_write_byte_data(file_descriptor, DS2482_CMD_SET_READ_PTR, DS2482_PTR_CODE_DATA) < 0) {
+	if (i2c_smbus_write_byte_data(file_descriptor, DS2482_CMD_SET_READ_PTR, DS2482_READ_DATA_REGISTER) < 0) {
 		return gbBAD;
 	}
 
@@ -830,9 +831,6 @@ static void DS2482_close(struct connection_in *in)
 {
 	if (in == NO_CONNECTION) {
 		return;
-	}
-	if (in->master.i2c.index == 0) {
-		_MUTEX_DESTROY(in->master.i2c.all_channel_lock);
 	}
 }
 #endif							/* OW_I2C */
