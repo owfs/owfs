@@ -74,6 +74,7 @@ struct master_i2c {
 	int channels;
 	int index;
 	int i2c_address;
+	enum ds248x_type { ds2482_unknown, ds2482_100, ds2482_101, ds2482_800, ds2483, } type ;
 	int i2c_index ;
 	BYTE configreg;
 	BYTE configchip;
