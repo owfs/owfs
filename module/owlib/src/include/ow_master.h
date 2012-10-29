@@ -102,7 +102,6 @@ struct master_link {
 struct master_ha5 {
 	int checksum ;              /* flag to use checksum byte in communication */
 	char channel ;
-	pthread_mutex_t all_channel_lock;	// second level mutex for the entire chip */
 	struct connection_in *head;
 };
 

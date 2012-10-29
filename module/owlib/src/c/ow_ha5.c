@@ -44,11 +44,6 @@ static GOOD_OR_BAD HA5_write( char command, char * raw_string, int length, struc
 static GOOD_OR_BAD HA5_sendback_bits(const BYTE * outbits, BYTE * inbits, const size_t length, const struct parsedname *pn) ;
 static GOOD_OR_BAD HA5_bit( BYTE send, BYTE * receive, struct connection_in * in ) ;
 
-#define HA5MUTEX_INIT(in)		_MUTEX_INIT(in->master.ha5.all_channel_lock)
-#define HA5MUTEX_LOCK(in)		_MUTEX_LOCK(in->master.ha5.all_channel_lock ) ;
-#define HA5MUTEX_UNLOCK(in)		_MUTEX_UNLOCK(in->master.ha5.all_channel_lock);
-#define HA5MUTEX_DESTROY(in)	_MUTEX_DESTROY(in->master.ha5.all_channel_lock);
-
 #define CR_char		(0x0D)
 
 static void HA5_setroutines(struct connection_in *in)
@@ -79,7 +74,6 @@ GOOD_OR_BAD HA5_detect(struct port_in *pin)
 
 	/* By definition, this is the head adapter on this port */
 	in->master.ha5.head = in ;
-	HA5MUTEX_INIT(in); // closed in HA5_close
 
 	// Poison current "Address" for adapter
 	memset( in->remembered_sn, 0x00, SERIAL_NUMBER_SIZE ) ;
@@ -404,13 +398,7 @@ static RESET_TYPE HA5_reset(const struct parsedname *pn)
 
 static RESET_TYPE HA5_reset_in( struct connection_in * in )
 {
-	RESET_TYPE ret ;
-
-	HA5MUTEX_LOCK( in->master.ha5.head ) ;
-	ret = HA5_reset_wrapped(in) ;
-	HA5MUTEX_UNLOCK( in->master.ha5.head ) ;
-
-	return ret ;
+	return HA5_reset_wrapped(in) ;
 }
 
 static RESET_TYPE HA5_reset_wrapped( struct connection_in * in )
@@ -452,12 +440,7 @@ static enum search_status HA5_next_both(struct device_search *ds, const struct p
 	HA5_flush(in);
 
 	if (ds->index == -1) {
-		enum search_status ret ;
-		HA5MUTEX_LOCK( in->master.ha5.head ) ;
-		ret = HA5_directory(ds, pn) ;
-		HA5MUTEX_UNLOCK( in->master.ha5.head ) ;
-
-		if ( ret != search_good ) {
+		if ( HA5_directory(ds, pn) != search_good ) {
 			return search_error;
 		}
 	}
@@ -587,17 +570,11 @@ static GOOD_OR_BAD HA5_resync( struct connection_in * in )
 
 static GOOD_OR_BAD HA5_select( const struct parsedname * pn )
 {
-	GOOD_OR_BAD ret ;
-
 	if ( (pn->selected_device==NO_DEVICE) || (pn->selected_device==DeviceThermostat) ) {
 		RETURN_BAD_IF_BAD( gbRESET( HA5_reset_in(pn->selected_connection) ) ) ;
 	}
 
-	HA5MUTEX_LOCK( pn->selected_connection->master.ha5.head ) ;
-	ret = HA5_select_wrapped(pn) ;
-	HA5MUTEX_UNLOCK( pn->selected_connection->master.ha5.head ) ;
-
-	return ret ;
+	return HA5_select_wrapped(pn) ;
 }
 
 static GOOD_OR_BAD HA5_select_wrapped( const struct parsedname * pn )
@@ -689,15 +666,10 @@ static GOOD_OR_BAD HA5_sendback_data(const BYTE * data, BYTE * resp, const size_
 	struct connection_in * in = pn->selected_connection ;
 
 	for ( left=size ; left>0 ; left -= 32 ) {
-		GOOD_OR_BAD ret ;
 		size_t pass_start = size - left ;
 		size_t pass_size = (left>32)?32:left ;
 
-		HA5MUTEX_LOCK( in->master.ha5.head ) ;
-		ret = HA5_sendback_part( 'W', &data[pass_start], &resp[pass_start], pass_size, in ) ;
-		HA5MUTEX_UNLOCK( in->master.ha5.head ) ;
-
-		RETURN_BAD_IF_BAD( ret ) ;
+		RETURN_BAD_IF_BAD( HA5_sendback_part( 'W', &data[pass_start], &resp[pass_start], pass_size, in ) ) ;
 	}
 	return gbGOOD;
 }
@@ -722,9 +694,7 @@ static GOOD_OR_BAD HA5_select_and_sendback(const BYTE * data, BYTE * resp, const
 		size_t pass_start = size - left ;
 		size_t pass_size = (left>32)?32:left ;
 
-		HA5MUTEX_LOCK( in->master.ha5.head ) ;
 		ret = HA5_sendback_part( block_cmd, &data[pass_start], &resp[pass_start], pass_size, in ) ;
-		HA5MUTEX_UNLOCK( in->master.ha5.head ) ;
 		block_cmd = 'W' ; // for next pass
 		RETURN_BAD_IF_BAD( ret ) ;
 	}
@@ -740,14 +710,9 @@ static GOOD_OR_BAD HA5_sendback_bits(const BYTE * outbits, BYTE * inbits, const 
 	size_t counter ;
 	struct connection_in * in = pn->selected_connection ;
 
-	HA5MUTEX_LOCK( in->master.ha5.head ) ;
 	for ( counter = 0 ; counter < length ; ++counter ) {
-		if ( BAD( HA5_bit( outbits[counter], &inbits[counter], in ) ) ) {
-			HA5MUTEX_UNLOCK( in->master.ha5.head ) ;
-			return gbBAD ;
-		}		
+		RETURN_BAD_IF_BAD( HA5_bit( outbits[counter], &inbits[counter], in ) ) ;
 	} 
-	HA5MUTEX_UNLOCK( in->master.ha5.head ) ;
 
 	return gbGOOD;
 }
@@ -788,7 +753,6 @@ static GOOD_OR_BAD HA5_bit( BYTE outbit, BYTE * inbit, struct connection_in * in
 static void HA5_close(struct connection_in *in)
 {
 	if ( in->master.ha5.head == in ) {
-		HA5MUTEX_DESTROY(in);
 	} else {
 		in->pown->state = cs_virgin ;
 	}
