@@ -69,6 +69,10 @@ struct interface_routines {
 	GOOD_OR_BAD (*sendback_bits) (const BYTE * databits, BYTE * respbits, const size_t len, const struct parsedname * pn);
 	/* select a device */
 	GOOD_OR_BAD (*select) (const struct parsedname * pn);
+	/* Set configuration parameters */
+	GOOD_OR_BAD (*set_config) (void * p, const struct parsedname * pn);
+	/* Get configuration parameters */
+	GOOD_OR_BAD (*get_config) (void * p, const struct parsedname * pn);
 	/* reconnect with a balky device */
 	GOOD_OR_BAD (*reconnect) (const struct parsedname * pn);
 	/* Close the connection (port) */
@@ -87,6 +91,8 @@ struct interface_routines {
 #define NO_SELECTANDSENDBACK_ROUTINE	NULL
 #define NO_SENDBACKBITS_ROUTINE			NULL
 #define NO_SELECT_ROUTINE				NULL
+#define NO_SET_CONFIG_ROUTINE			NULL
+#define NO_GET_CONFIG_ROUTINE			NULL
 #define NO_RECONNECT_ROUTINE			NULL
 #define NO_CLOSE_ROUTINE				NULL
 
@@ -139,7 +145,9 @@ GOOD_OR_BAD BUS_readin_bits(BYTE * data, const size_t len, const struct parsedna
 GOOD_OR_BAD BUS_verify(BYTE search, const struct parsedname *pn);
 GOOD_OR_BAD BUS_compare_bits(const BYTE * data1, const BYTE * data2, const size_t len);
 
-GOOD_OR_BAD BUS_PowerByte(const BYTE data, BYTE * resp, UINT delay, const struct parsedname *pn);
+GOOD_OR_BAD BUS_Set_Config(void * param, const struct parsedname *pn);
+GOOD_OR_BAD BUS_Get_Config(void * param, const struct parsedname *pn);
+
 GOOD_OR_BAD BUS_PowerBit(const BYTE data, BYTE * resp, UINT delay, const struct parsedname *pn);
 GOOD_OR_BAD BUS_ProgramPulse(const struct parsedname *pn);
 

@@ -141,6 +141,8 @@ static void DS2482_setroutines(struct connection_in *in)
 	in->iroutines.sendback_bits = NO_SENDBACKBITS_ROUTINE;
 	in->iroutines.select = NO_SELECT_ROUTINE;
 	in->iroutines.select_and_sendback = NO_SELECTANDSENDBACK_ROUTINE;
+	in->iroutines.set_config = NO_SET_CONFIG_ROUTINE;
+	in->iroutines.get_config = NO_GET_CONFIG_ROUTINE;
 	in->iroutines.reconnect = DS2482_redetect;
 	in->iroutines.close = DS2482_close;
 	in->iroutines.flags = ADAP_FLAG_overdrive;

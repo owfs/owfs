@@ -32,6 +32,8 @@ static void Server_setroutines(struct interface_routines *f)
     f->sendback_bits = NO_SENDBACKBITS_ROUTINE;
     f->select        = NO_SELECT_ROUTINE;
     f->select_and_sendback = NO_SELECTANDSENDBACK_ROUTINE;
+	f->set_config = NO_SET_CONFIG_ROUTINE;
+	f->get_config = NO_GET_CONFIG_ROUTINE;
 	f->reconnect = NO_RECONNECT_ROUTINE;
 	f->close = Server_close;
 	f->flags = 0 ;
@@ -48,6 +50,8 @@ static void Zero_setroutines(struct interface_routines *f)
     f->sendback_bits = NO_SENDBACKBITS_ROUTINE;
     f->select        = NO_SELECT_ROUTINE;
     f->select_and_sendback = NO_SELECTANDSENDBACK_ROUTINE;
+	f->set_config = NO_SET_CONFIG_ROUTINE;
+	f->get_config = NO_GET_CONFIG_ROUTINE;
 	f->reconnect = NO_RECONNECT_ROUTINE;
 	f->close = Server_close;
 	f->flags = 0 ;

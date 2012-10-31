@@ -37,6 +37,8 @@ GOOD_OR_BAD BadAdapter_detect(struct port_in *pin)
 	in->iroutines.sendback_bits = BadAdapter_sendback_bits;
 	in->iroutines.select = NO_SELECT_ROUTINE;
 	in->iroutines.select_and_sendback = NO_SELECTANDSENDBACK_ROUTINE;
+	in->iroutines.set_config = NO_SET_CONFIG_ROUTINE;
+	in->iroutines.get_config = NO_GET_CONFIG_ROUTINE;
 	in->iroutines.reconnect = NO_RECONNECT_ROUTINE;
 	in->iroutines.close = BadAdapter_close;
 	in->iroutines.flags = ADAP_FLAG_sham;

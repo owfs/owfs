@@ -57,6 +57,8 @@ static void HA5_setroutines(struct connection_in *in)
 	in->iroutines.sendback_bits = HA5_sendback_bits;
 	in->iroutines.select = HA5_select ;
 	in->iroutines.select_and_sendback = HA5_select_and_sendback;
+	in->iroutines.set_config = NO_SET_CONFIG_ROUTINE;
+	in->iroutines.get_config = NO_GET_CONFIG_ROUTINE;
 	in->iroutines.reconnect = HA5_reconnect;
 	in->iroutines.close = HA5_close;
 	in->iroutines.flags = ADAP_FLAG_dirgulp | ADAP_FLAG_bundle | ADAP_FLAG_dir_auto_reset | ADAP_FLAG_no2404delay | ADAP_FLAG_presence_from_dirblob ;

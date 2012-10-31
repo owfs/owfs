@@ -52,6 +52,8 @@ static void OWServer_Enet_setroutines(struct connection_in *in)
     in->iroutines.sendback_bits = NO_SENDBACKBITS_ROUTINE;
 	in->iroutines.select = OWServer_Enet_select ;
 	in->iroutines.select_and_sendback = NO_SELECTANDSENDBACK_ROUTINE ;
+	in->iroutines.set_config = NO_SET_CONFIG_ROUTINE;
+	in->iroutines.get_config = NO_GET_CONFIG_ROUTINE;
 	in->iroutines.reconnect = NO_RECONNECT_ROUTINE;
 	in->iroutines.close = OWServer_Enet_close;
 	in->iroutines.flags = ADAP_FLAG_dirgulp | ADAP_FLAG_no2409path | ADAP_FLAG_overdrive | ADAP_FLAG_bundle | ADAP_FLAG_no2404delay ;

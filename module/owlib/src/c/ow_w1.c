@@ -53,6 +53,8 @@ static void W1_setroutines(struct connection_in *in)
 	in->iroutines.sendback_bits = NO_SENDBACKBITS_ROUTINE;
 	in->iroutines.select = NO_SELECT_ROUTINE;
 	in->iroutines.select_and_sendback = NO_SELECTANDSENDBACK_ROUTINE;
+	in->iroutines.set_config = NO_SET_CONFIG_ROUTINE;
+	in->iroutines.get_config = NO_GET_CONFIG_ROUTINE;
 	in->iroutines.reconnect = NO_RECONNECT_ROUTINE;
 	in->iroutines.close = W1_close;
 	// Directory obtained in a single gulp (W1_LIST_SLAVES)
