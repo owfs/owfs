@@ -120,8 +120,8 @@ static struct filetype DS2408[] = {
 	{"LCD_H/screenyx", PROPERTY_LENGTH_LCD_MESSAGE, NON_AGGREGATE, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_Hscreenyx, VISIBLE, NO_FILETYPE_DATA, },
 	{"LCD_H/message", PROPERTY_LENGTH_LCD_MESSAGE, NON_AGGREGATE, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_Hmessage, VISIBLE, NO_FILETYPE_DATA, },
 	{"LCD_H/onoff", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, NO_READ_FUNCTION, FS_Honoff, VISIBLE, NO_FILETYPE_DATA, },
-	{"LCD/redefchar", LCD_REDEFCHAR_LENGTH, &A2408c, ft_binary, fc_stable, NO_READ_FUNCTION, FS_redefchar, VISIBLE, NO_FILETYPE_DATA, },
-	{"LCD/redefchar_hex", LCD_REDEFCHAR_LENGTH, &A2408c, ft_binary, fc_stable, NO_READ_FUNCTION, FS_redefchar_hex, VISIBLE, NO_FILETYPE_DATA, },
+	{"LCD_H/redefchar", LCD_REDEFCHAR_LENGTH, &A2408c, ft_binary, fc_stable, NO_READ_FUNCTION, FS_redefchar, VISIBLE, NO_FILETYPE_DATA, },
+	{"LCD_H/redefchar_hex", LCD_REDEFCHAR_LENGTH, &A2408c, ft_binary, fc_stable, NO_READ_FUNCTION, FS_redefchar_hex, VISIBLE, NO_FILETYPE_DATA, },
 };
 
 DeviceEntryExtended(29, DS2408, DEV_alarm | DEV_resume | DEV_ovdr, NO_GENERIC_READ, NO_GENERIC_WRITE);
@@ -630,7 +630,7 @@ static ZERO_OR_ERROR FS_redefchar_hex(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	BYTE data[LCD_REDEFCHAR_LENGTH] ;
 	
-	if ( OWQ_size(owq) != LCD_REDEFCHAR_LENGTH * 2 ) {
+	if ( OWQ_size(owq) != LCD_REDEFCHAR_LENGTH_HEX ) {
 		return -ERANGE ;
 	}
 	if ( OWQ_offset(owq) != 0 ) {
@@ -638,7 +638,7 @@ static ZERO_OR_ERROR FS_redefchar_hex(struct one_wire_query *owq)
 	}
 	string2bytes( OWQ_buffer(owq), data, LCD_REDEFCHAR_LENGTH ) ;
 		
-	return GB_to_Z_OR_E( OW_redefchar( OWQ_buffer(owq), pn ) ) ;
+	return GB_to_Z_OR_E( OW_redefchar( data, pn ) ) ;
 }
 
 /* Read 6 bytes --
