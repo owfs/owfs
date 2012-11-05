@@ -93,7 +93,7 @@ struct global Globals = {
 	.eightbit_serial = 0,
 	.zero = zero_unknown ,
 	.i2c_APU = 1 ,
-	.i2c_PPM = 1 ,
+	.i2c_PPM = 0 , // to prevent confusing the DS2483
 	.baud = B9600 ,
 
 	.templow = GLOBAL_UNTOUCHED_TEMP_LIMIT,

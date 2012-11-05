@@ -61,6 +61,7 @@ static GOOD_OR_BAD DS2482_triple(BYTE * bits, int direction, FILE_DESCRIPTOR_OR_
 static GOOD_OR_BAD DS2482_send_and_get(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const BYTE wr, BYTE * rd);
 static RESET_TYPE DS2482_reset(const struct parsedname *pn);
 static GOOD_OR_BAD DS2482_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
+static GOOD_OR_BAD DS2483_test(FILE_DESCRIPTOR_OR_ERROR file_descriptor);
 static void DS2482_setroutines(struct connection_in *in);
 static GOOD_OR_BAD HeadChannel(struct connection_in *head);
 static GOOD_OR_BAD CreateChannels(struct connection_in *head);
@@ -667,6 +668,18 @@ static GOOD_OR_BAD DS2482_send_and_get(FILE_DESCRIPTOR_OR_ERROR file_descriptor,
 	return gbGOOD;
 }
 
+/* Is this a DS2483? Try to set to new register */
+static GOOD_OR_BAD DS2483_test(FILE_DESCRIPTOR_OR_ERROR file_descriptor)
+{
+	/* Select the data register */
+	if (i2c_smbus_write_byte_data(file_descriptor, DS2482_CMD_SET_READ_PTR, DS2482_PORT_CONFIGURATION_REGISTER) < 0) {
+		LEVEL_DEBUG("Cannot set to port configuration -- not a DS2483");
+		return gbBAD;
+	}
+	LEVEL_DEBUG("Can set to port configuration! a DS2483!");
+	return gbGOOD;
+}
+
 /* It's a DS2482 -- whether 1 channel or 8 channel not yet determined */
 /* All general stored data will be assigned to this "head" channel */
 static GOOD_OR_BAD HeadChannel(struct connection_in *head)
@@ -677,6 +690,7 @@ static GOOD_OR_BAD HeadChannel(struct connection_in *head)
 	if ( BAD(DS2482_channel_select(head)) ) {	/* Couldn't switch */
 		head->master.i2c.index = 0;	/* restore correct value */
 		LEVEL_CONNECT("DS2482-100 (Single channel)");
+		DS2483_test(head->pown->file_descriptor);
 		return gbGOOD;				/* happy as DS2482-100 */
 	}
 
@@ -762,15 +776,18 @@ static GOOD_OR_BAD DS2482_channel_select(struct connection_in * in)
 
 		/* Select command */
 		if (i2c_smbus_write_byte_data(file_descriptor, DS2482_CMD_CHANNEL_SELECT, W_chan[chan]) < 0) {
+			LEVEL_DEBUG("Channel select set error");
 			return gbBAD;
 		}
 
 		/* Read back and confirm */
 		read_back = i2c_smbus_read_byte(file_descriptor);
 		if (read_back < 0) {
+			LEVEL_DEBUG("Channel select get error");
 			return gbBAD; // flag for DS2482-100 vs -800 detection
 		}
 		if (((BYTE) read_back) != R_chan[chan]) {
+			LEVEL_DEBUG("Channel selected doesn't match");
 			return gbBAD; // flag for DS2482-100 vs -800 detection
 		}
 
