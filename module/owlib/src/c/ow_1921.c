@@ -1263,7 +1263,7 @@ static GOOD_OR_BAD OW_r_logdate_single(struct Mission *mission, struct one_wire_
 	}
 
 	if (pass) {
-		OWQ_D(owq) = mission->start + (mission->samples - LOG_DATA_ELEMENTS - extension) * mission->interval;
+		OWQ_D(owq) = mission->start + (mission->samples - LOG_DATA_ELEMENTS + extension) * mission->interval;
 	} else {
 		OWQ_D(owq) = mission->start + extension * mission->interval;
 	}
@@ -1281,7 +1281,7 @@ static GOOD_OR_BAD OW_r_logdate_all(struct Mission *mission, struct one_wire_que
 
 	if (pass) {
 		for (i = 0; i < LOG_DATA_ELEMENTS; ++i)
-			OWQ_array_D(owq, i) = mission->start + (mission->samples - LOG_DATA_ELEMENTS - i) * mission->interval;
+			OWQ_array_D(owq, i) = mission->start + (mission->samples - LOG_DATA_ELEMENTS + i) * mission->interval;
 	} else {
 		for (i = 0; i < LOG_DATA_ELEMENTS; ++i)
 			OWQ_array_D(owq, i) = mission->start + i * mission->interval;
@@ -1299,7 +1299,7 @@ static GOOD_OR_BAD OW_r_logudate_single(struct Mission *mission, struct one_wire
 	}
 
 	if (pass) {
-		OWQ_U(owq) = mission->start + (mission->samples - LOG_DATA_ELEMENTS - extension) * mission->interval;
+		OWQ_U(owq) = mission->start + (mission->samples - LOG_DATA_ELEMENTS + extension) * mission->interval;
 	} else {
 		OWQ_U(owq) = mission->start + extension * mission->interval;
 	}
@@ -1317,7 +1317,7 @@ static GOOD_OR_BAD OW_r_logudate_all(struct Mission *mission, struct one_wire_qu
 
 	if (pass) {
 		for (i = 0; i < LOG_DATA_ELEMENTS; ++i) {
-			OWQ_array_U(owq, i) = mission->start + (mission->samples - LOG_DATA_ELEMENTS - i) * mission->interval;
+			OWQ_array_U(owq, i) = mission->start + (mission->samples - LOG_DATA_ELEMENTS + i) * mission->interval;
 		}
 	} else {
 		for (i = 0; i < LOG_DATA_ELEMENTS; ++i) {
