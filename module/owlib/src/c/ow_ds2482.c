@@ -690,7 +690,12 @@ static GOOD_OR_BAD HeadChannel(struct connection_in *head)
 	if ( BAD(DS2482_channel_select(head)) ) {	/* Couldn't switch */
 		head->master.i2c.index = 0;	/* restore correct value */
 		LEVEL_CONNECT("DS2482-100 (Single channel)");
-		DS2483_test(head->pown->file_descriptor);
+		if ( GOOD(DS2483_test(head->pown->file_descriptor)) ) {
+			head->master.i2c.type = ds2483 ;
+		} else {
+				head->master.i2c.type = ds2482_100 ;
+		}
+
 		return gbGOOD;				/* happy as DS2482-100 */
 	}
 
@@ -698,6 +703,7 @@ static GOOD_OR_BAD HeadChannel(struct connection_in *head)
 	LEVEL_CONNECT("DS2482-800 (Eight channels)");
 	/* Must be a DS2482-800 */
 	head->master.i2c.channels = 8;
+	head->master.i2c.type = ds2482_800 ;
 	head->Adapter = adapter_DS2482_800;
 
 	return CreateChannels(head);
