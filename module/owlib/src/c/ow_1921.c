@@ -202,7 +202,7 @@ static struct filetype DS1921[] = {
 	{"undertemp/end", PROPERTY_LENGTH_DATE, &A1921m, ft_date, fc_volatile, FS_alarmend, NO_WRITE_FUNCTION, VISIBLE, {s:0x0220}, },
 	{"undertemp/count", PROPERTY_LENGTH_UNSIGNED, &A1921m, ft_unsigned, fc_volatile, FS_alarmcnt, NO_WRITE_FUNCTION, VISIBLE, {s:0x0220}, },
 	{"undertemp/elements", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_alarmelems, NO_WRITE_FUNCTION, VISIBLE, {s:0x0220}, },
-	{"undertemp/temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_alarmtemp, FS_w_alarmtemp, VISIBLE, {s:0x020C}, },
+	{"undertemp/temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_alarmtemp, FS_w_alarmtemp, VISIBLE, {s:0x020B}, },
 
 	{"log", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"log/temperature", PROPERTY_LENGTH_TEMP, &A1921l, ft_temperature, fc_volatile, FS_r_logtemp, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
