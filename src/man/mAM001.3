@@ -8,55 +8,84 @@
 '\" Free for all use. No waranty. None. Use at your own risk.
 '\" $Id$
 '\"
-.TH mCM001 3  2003 "OWFS Manpage" "One-Wire File System"
+.TH mAM001 3  2003 "OWFS Manpage" "One-Wire File System"
 .SH NAME
 .TP
-.B mCM001
-AC Current Monitor
+.B mAM001
+Analog Input Module
 .SH SYNOPSIS
-.SS AC Amp meter.
+.SS Voltage or current meter.
 .PP
-.B A2
+.B B2
 [.]XXXXXXXXXXXX[XX][/[
 .B current
+|
+.B volts
 |
 .so standard_mini.3so
 ]]
 .SH FAMILY CODE
 .PP
-.I A2
+.I B2
 .SH SPECIAL PROPERTIES
+Note that the 
+.I volts 
+and 
+.I current 
+are mutually exclusive and set by switches on the sensor case.
+.PP
+Although both
+.I volts
+and
+.I current 
+will give a value, only one of the two is correct. (Based on the electrical connections and switch settings).
 .SS current
 .I read-write, floating point
 .br
 Reads the current.
 .TP
 Range
-0-5A
+0-20mA
 .TP
 Resolution
-.01A
+12 bit (5 uA)
 .TP
 Units
 A (amperes)
 .TP
 Frequency
-AC (alternating current 50-60Hz)
+DC
+.SS volts
+.I read-write, floating point
+.br
+Reads the voltage.
+.TP
+Range
+0-10V
+.TP
+Resolution
+12 bit (2.5 mV)
+.TP
+Units
+V (volts)
+.TP
+Frequency
+DC
 .SH STANDARD PROPERTIES
 .so standard.3so
 .SH ALARMS
 None.
 .SH DESCRIPTION
 .so description.3so
-.SS mCM001
+.SS mAM001
 The
-.B mCM001 (3)
-is a Current meter from CMC Industrial Electronics. It is packaged for industrial use.
+.B mAM001 (3)
+is a voltage or current meter from CMC Industrial Electronics. It is packaged for industrial use.
 .SH ADDRESSING
 .so addressing.3so
 .SH WEBSITE
 .br
-http://www.cmciel.com/products-solutions/individual-products/ac-current-sensor-mcm001/
+http://www.cmciel.com/products-solutions/individual-products/analog-input-mam001/
 .SH SEE ALSO
 .so seealso.3so
 .SH AVAILABILITY
