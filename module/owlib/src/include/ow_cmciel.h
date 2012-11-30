@@ -20,5 +20,6 @@ $Id$
 /* ------- Structures ----------- */
 
 DeviceHeader(mTS017);
+DeviceHeader(mCM001);
 
 #endif /* OW_CMCIEL_H */

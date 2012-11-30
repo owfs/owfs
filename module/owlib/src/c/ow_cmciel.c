@@ -43,6 +43,7 @@ $Id$
 READ_FUNCTION(FS_r_data);
 READ_FUNCTION(FS_r_data17);
 READ_FUNCTION(FS_r_temperature);
+READ_FUNCTION(FS_r_current);
 
 /* ------- Structures ----------- */
 #define mTS017_type      0x4000  // bit 14
@@ -55,13 +56,21 @@ READ_FUNCTION(FS_r_temperature);
 /* Infrared temperature sensor */
 static struct filetype mTS017[] = {
 	F_STANDARD,
-	{"reading", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_data17, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"reading", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_data17, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA, },
 	{"object", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_temperature, NO_WRITE_FUNCTION, VISIBLE, { u:mTS017_object}, },
 	{"ambient", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_temperature, NO_WRITE_FUNCTION, VISIBLE, { u:mTS017_ambient}, },
 };
 
 DeviceEntry(A1, mTS017, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
+/* AC current meter */
+static struct filetype mCM001[] = {
+	F_STANDARD,
+	{"reading", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_data, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA, },
+	{"current", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_current, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+};
+
+DeviceEntry(A2, mCM001, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 #define _1W_READ_SCRATCHPAD 0xBE
 #define _1W_WRITE_CONFIG    0x4E
@@ -198,4 +207,17 @@ static GOOD_OR_BAD OW_set_read_mode(BYTE read_mode, struct parsedname *pn)
 	return OW_w_config( _CMCIEL_ADDRESS_CONFIG, read_mode, pn ) ;
 }
 
+/* mCM001 AC current */
+static ZERO_OR_ERROR FS_r_current(struct one_wire_query *owq)
+{
+	UINT reading ;
+	
+	if ( FS_r_sibling_U( &reading, "reading", owq ) < 0 ) {
+		return -EINVAL ;
+	}
+	
+	OWQ_F(owq) = reading / 100. ;
+	
+	return 0 ;
+}
 
