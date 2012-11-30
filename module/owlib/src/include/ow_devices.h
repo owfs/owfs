@@ -47,6 +47,7 @@ $Id$
 #include "ow_2804.h"			// switch
 #include "ow_2890.h"			// potentiometer
 #include "ow_bae.h"			    // Pascal Baerten's PIC-based device
+#include "ow_cmciel.h"          // CMCIEL like infraread temperature
 #include "ow_eds.h"             // Embedded Data Systems
 #include "ow_eeef.h"			// Hobby Boards UVI etc
 #include "ow_example_slave.h"   // Example of slave programming

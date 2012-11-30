@@ -44,6 +44,7 @@ noinst_HEADERS =           \
         ow_bus_routines.h  \
         ow_cache.h         \
         ow_charblob.h      \
+        ow_cmciel.h        \
         ow_codes.h         \
         ow_communication.h \
         ow_connection.h    \
