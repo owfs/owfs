@@ -44,6 +44,8 @@ READ_FUNCTION(FS_r_data);
 READ_FUNCTION(FS_r_data17);
 READ_FUNCTION(FS_r_temperature);
 READ_FUNCTION(FS_r_current);
+READ_FUNCTION(FS_r_AM001_v);
+READ_FUNCTION(FS_r_AM001_a);
 
 /* ------- Structures ----------- */
 #define mTS017_type      0x4000  // bit 14
@@ -71,6 +73,16 @@ static struct filetype mCM001[] = {
 };
 
 DeviceEntry(A2, mCM001, NO_GENERIC_READ, NO_GENERIC_WRITE);
+
+/* Analog Imput meter */
+static struct filetype mAM001[] = {
+	F_STANDARD,
+	{"reading", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_data, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA, },
+	{"current", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_AM001_a, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"volts", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_AM001_v, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+};
+
+DeviceEntry(B2, mAM001, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 #define _1W_READ_SCRATCHPAD 0xBE
 #define _1W_WRITE_CONFIG    0x4E
@@ -217,6 +229,33 @@ static ZERO_OR_ERROR FS_r_current(struct one_wire_query *owq)
 	}
 	
 	OWQ_F(owq) = reading / 100. ;
+	
+	return 0 ;
+}
+
+/* mAM001 Analog input */
+static ZERO_OR_ERROR FS_r_AM001_a(struct one_wire_query *owq)
+{
+	UINT reading ;
+	
+	if ( FS_r_sibling_U( &reading, "reading", owq ) < 0 ) {
+		return -EINVAL ;
+	}
+	
+	OWQ_F(owq) = .02 * reading / 10000. ;
+	
+	return 0 ;
+}
+
+static ZERO_OR_ERROR FS_r_AM001_v(struct one_wire_query *owq)
+{
+	UINT reading ;
+	
+	if ( FS_r_sibling_U( &reading, "reading", owq ) < 0 ) {
+		return -EINVAL ;
+	}
+	
+	OWQ_F(owq) = 10. * reading / 10000. ;
 	
 	return 0 ;
 }
