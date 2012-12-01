@@ -22,5 +22,6 @@ $Id$
 DeviceHeader(mTS017);
 DeviceHeader(mCM001);
 DeviceHeader(mAM001);
+DeviceHeader(mRS001);
 
 #endif /* OW_CMCIEL_H */

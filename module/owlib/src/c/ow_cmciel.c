@@ -46,6 +46,7 @@ READ_FUNCTION(FS_r_temperature);
 READ_FUNCTION(FS_r_current);
 READ_FUNCTION(FS_r_AM001_v);
 READ_FUNCTION(FS_r_AM001_a);
+READ_FUNCTION(FS_r_RPM);
 
 /* ------- Structures ----------- */
 #define mTS017_type      0x4000  // bit 14
@@ -59,8 +60,8 @@ READ_FUNCTION(FS_r_AM001_a);
 static struct filetype mTS017[] = {
 	F_STANDARD,
 	{"reading", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_data17, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA, },
-	{"object", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_temperature, NO_WRITE_FUNCTION, VISIBLE, { u:mTS017_object}, },
-	{"ambient", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_temperature, NO_WRITE_FUNCTION, VISIBLE, { u:mTS017_ambient}, },
+	{"object", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_temperature, fc_link, FS_r_temperature, NO_WRITE_FUNCTION, VISIBLE, { u:mTS017_object}, },
+	{"ambient", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_temperature, fc_link, FS_r_temperature, NO_WRITE_FUNCTION, VISIBLE, { u:mTS017_ambient}, },
 };
 
 DeviceEntry(A1, mTS017, NO_GENERIC_READ, NO_GENERIC_WRITE);
@@ -69,20 +70,29 @@ DeviceEntry(A1, mTS017, NO_GENERIC_READ, NO_GENERIC_WRITE);
 static struct filetype mCM001[] = {
 	F_STANDARD,
 	{"reading", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_data, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA, },
-	{"current", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_current, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"current", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_link, FS_r_current, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 };
 
 DeviceEntry(A2, mCM001, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
-/* Analog Imput meter */
+/* Analog Input meter */
 static struct filetype mAM001[] = {
 	F_STANDARD,
 	{"reading", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_data, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA, },
-	{"current", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_AM001_a, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
-	{"volts", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_AM001_v, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"current", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_link, FS_r_AM001_a, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"volts", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_link, FS_r_AM001_v, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 };
 
 DeviceEntry(B2, mAM001, NO_GENERIC_READ, NO_GENERIC_WRITE);
+
+/* Rotation Sensor */
+static struct filetype mRS001[] = {
+	F_STANDARD,
+	{"reading", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_data, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA, },
+	{"RPM", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_RPM, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+};
+
+DeviceEntry(A0, mRS001, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 #define _1W_READ_SCRATCHPAD 0xBE
 #define _1W_WRITE_CONFIG    0x4E
@@ -256,6 +266,20 @@ static ZERO_OR_ERROR FS_r_AM001_v(struct one_wire_query *owq)
 	}
 	
 	OWQ_F(owq) = 10. * reading / 10000. ;
+	
+	return 0 ;
+}
+
+/* mRS001 Rotation Sensor */
+static ZERO_OR_ERROR FS_r_RPM(struct one_wire_query *owq)
+{
+	UINT reading ;
+	
+	if ( FS_r_sibling_U( &reading, "reading", owq ) < 0 ) {
+		return -EINVAL ;
+	}
+	
+	OWQ_I(owq) = (int16_t) reading ;
 	
 	return 0 ;
 }
