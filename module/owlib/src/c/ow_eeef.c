@@ -89,8 +89,9 @@ static struct filetype HobbyBoards_EF[] = {
 	{"moisture/sensor", PROPERTY_LENGTH_INTEGER, &AMOIST, ft_integer, fc_volatile, FS_r_sensor, NO_WRITE_FUNCTION, VISIBLE_EF_MOISTURE, NO_FILETYPE_DATA, },
 	{"moisture/is_moisture", PROPERTY_LENGTH_BITFIELD, &AMOIST, ft_bitfield, fc_stable, FS_r_moist, FS_w_moist, VISIBLE_EF_MOISTURE, NO_FILETYPE_DATA, },
 	{"moisture/is_leaf", PROPERTY_LENGTH_BITFIELD, &AMOIST, ft_bitfield, fc_link, FS_r_leaf, FS_w_leaf, VISIBLE_EF_MOISTURE, NO_FILETYPE_DATA, },
+	{"moisture/calibrate", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EF_MOISTURE, NO_FILETYPE_DATA, },
 	{"moisture/calibrate/min", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_cal, FS_w_cal, VISIBLE_EF_MOISTURE, {i:cal_min,}, },
-	{"moisture/calibrate/max", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_cal, FS_w_cal, VISIBLE_EF_MOISTURE, {i:cal_min,}, },
+	{"moisture/calibrate/max", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_cal, FS_w_cal, VISIBLE_EF_MOISTURE, {i:cal_max,}, },
 	{"moisture/calibrate/raw", PROPERTY_LENGTH_UNSIGNED, &AMOIST, ft_unsigned, fc_volatile, FS_r_raw, NO_WRITE_FUNCTION, VISIBLE_EF_MOISTURE, NO_FILETYPE_DATA, },
 
 	{"hub", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EF_HUB, NO_FILETYPE_DATA, },
@@ -198,7 +199,7 @@ static GOOD_OR_BAD OW_r_temperature_offset(_FLOAT * T, struct parsedname * pn) ;
 static GOOD_OR_BAD OW_read(BYTE command, BYTE * bytes, size_t size, struct parsedname * pn) ;
 static GOOD_OR_BAD OW_write(BYTE command, BYTE * bytes, size_t size, struct parsedname * pn);
 
-static GOOD_OR_BAD OW_r_wetness( int *wetness, struct parsedname * pn);
+static GOOD_OR_BAD OW_r_wetness( UINT *wetness, struct parsedname * pn);
 
 static GOOD_OR_BAD OW_r_doubles( BYTE command, UINT * dubs, int elements, struct parsedname * pn ) ;
 static GOOD_OR_BAD OW_w_doubles( BYTE command, UINT * dubs, int elements, struct parsedname * pn ) ;
@@ -367,7 +368,7 @@ static ZERO_OR_ERROR FS_w_in_case(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_r_sensor(struct one_wire_query *owq)
 {
-	int w[4] ;
+	UINT w[4] ;
 	
 	RETURN_ERROR_IF_BAD( OW_r_wetness( w, PN(owq) ) ) ;
 	
@@ -384,19 +385,19 @@ static ZERO_OR_ERROR FS_r_sensor(struct one_wire_query *owq)
 // 1 = leaf wetness sensor
 static ZERO_OR_ERROR FS_r_moist(struct one_wire_query *owq)
 {
-    BYTE field ;
+    BYTE moist ;
     
-    if ( BAD( OW_read( _EEEF_GET_LEAF, &field, 1, PN(owq) ) ) ) {
+    if ( BAD( OW_read( _EEEF_GET_LEAF, &moist, 1, PN(owq) ) ) ) {
 		return -EINVAL ;
 	}
-	OWQ_U(owq) = field ;
+	OWQ_U(owq) = (~moist) & 0x0F ;
 	return 0 ;
 }
 
 static ZERO_OR_ERROR FS_w_moist(struct one_wire_query *owq)
 {
-    BYTE field = OWQ_U(owq) & 0x0F ;
-    return GB_to_Z_OR_E( OW_write(_EEEF_SET_LEAF, &field, 1, PN(owq))) ;
+    BYTE moist = (~OWQ_U(owq)) & 0x0F ;
+    return GB_to_Z_OR_E( OW_write(_EEEF_SET_LEAF, &moist, 1, PN(owq))) ;
 }
 
 static ZERO_OR_ERROR FS_r_leaf(struct one_wire_query *owq)
@@ -642,7 +643,7 @@ static GOOD_OR_BAD OW_write(BYTE command, BYTE * bytes, size_t size, struct pars
     return  BUS_transaction(t, pn) ;
 }
 
-static GOOD_OR_BAD OW_r_wetness( int *wetness, struct parsedname * pn)
+static GOOD_OR_BAD OW_r_wetness( UINT *wetness, struct parsedname * pn)
 {
     BYTE w[4] ;
     
