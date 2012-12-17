@@ -52,13 +52,13 @@ install-so-man:
         list="$$list $$i"; \
 	done; \
 	for manfile in $$list; do \
-	    for i in `sed -n '2,$$ s/^.so //p' $(DESTDIR)/$$manfile | tac`; do \
-			printf "%s\n" H /$$i/d - ".r $(srcdir)/$$i" g/^.\\\\\"/d ",w" | ed -s $(DESTDIR)/$$manfile ; \
+	    for i in `sed -n '2,$$ s/^.so //p' $(DESTDIR)$$manfile | tac`; do \
+			printf "%s\n" H /$$i/d - ".r $(srcdir)/$$i" g/^.\\\\\"/d ",w" | ed -s $(DESTDIR)$$manfile ; \
 	    done; \
 	done; \
 	for manfile in $$list; do \
-	    for i in `sed -n '2,$$ s/^.so //p' $(DESTDIR)/$$manfile | tac`; do \
-			printf "%s\n" H /$$i/d - ".r $(srcdir)/$$i" g/^.\\\"/d ",w" | ed -s $(DESTDIR)/$$manfile ; \
+	    for i in `sed -n '2,$$ s/^.so //p' $(DESTDIR)$$manfile | tac`; do \
+			printf "%s\n" H /$$i/d - ".r $(srcdir)/$$i" g/^.\\\"/d ",w" | ed -s $(DESTDIR)$$manfile ; \
 	    done; \
 	done
 
