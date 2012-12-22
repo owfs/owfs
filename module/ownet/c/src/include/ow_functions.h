@@ -73,13 +73,9 @@ $Id$
 void LockSetup(void);
 
 ssize_t tcp_read(int file_descriptor, void *vptr, size_t n, const struct timeval *ptv);
-void tcp_read_flush(int file_descriptor);
 int ClientAddr(char *sname, struct connection_in *in);
-int ClientConnect(struct connection_in *in);
+FILE_DESCRIPTOR_OR_ERROR ClientConnect(struct connection_in *in);
 void FreeClientAddr(struct connection_in *in);
-
-int ARG_Net(const char *arg);
-int ARG_Generic(const char *arg);
 
 void BUS_lock_in(struct connection_in *in);
 void BUS_unlock_in(struct connection_in *in);

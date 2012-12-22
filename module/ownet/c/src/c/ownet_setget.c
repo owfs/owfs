@@ -20,20 +20,20 @@ void OWNET_set_temperature_scale(char temperature_scale)
 	switch (temperature_scale) {
 	case 'R':
 	case 'r':
-		set_semiglobal(&ow_Global.sg, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_rankine);
+		set_semiglobal(&ow_Global.control_flags, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_rankine);
 		break;
 	case 'K':
 	case 'k':
-		set_semiglobal(&ow_Global.sg, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_kelvin);
+		set_semiglobal(&ow_Global.control_flags, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_kelvin);
 		break;
 	case 'F':
 	case 'f':
-		set_semiglobal(&ow_Global.sg, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_fahrenheit);
+		set_semiglobal(&ow_Global.control_flags, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_fahrenheit);
 		break;
 	case 'C':
 	case 'c':
 	default:
-		set_semiglobal(&ow_Global.sg, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_celsius);
+		set_semiglobal(&ow_Global.control_flags, TEMPSCALE_MASK, TEMPSCALE_BIT, temp_celsius);
 		break;
 	}
 }
@@ -56,21 +56,21 @@ char OWNET_get_temperature_scale(void)
 void OWNET_set_device_format(const char *device_format)
 {
 	if (device_format == NULL) {
-		set_semiglobal(&ow_Global.sg, DEVFORMAT_MASK, DEVFORMAT_BIT, fdi);
+		set_semiglobal(&ow_Global.control_flags, DEVFORMAT_MASK, DEVFORMAT_BIT, fdi);
 	} else if (0 == strcasecmp(device_format, "f.i")) {
-		set_semiglobal(&ow_Global.sg, DEVFORMAT_MASK, DEVFORMAT_BIT, fdi);
+		set_semiglobal(&ow_Global.control_flags, DEVFORMAT_MASK, DEVFORMAT_BIT, fdi);
 	} else if (0 == strcasecmp(device_format, "fi")) {
-		set_semiglobal(&ow_Global.sg, DEVFORMAT_MASK, DEVFORMAT_BIT, fi);
+		set_semiglobal(&ow_Global.control_flags, DEVFORMAT_MASK, DEVFORMAT_BIT, fi);
 	} else if (0 == strcasecmp(device_format, "f.i.c")) {
-		set_semiglobal(&ow_Global.sg, DEVFORMAT_MASK, DEVFORMAT_BIT, fdidc);
+		set_semiglobal(&ow_Global.control_flags, DEVFORMAT_MASK, DEVFORMAT_BIT, fdidc);
 	} else if (0 == strcasecmp(device_format, "f.ic")) {
-		set_semiglobal(&ow_Global.sg, DEVFORMAT_MASK, DEVFORMAT_BIT, fdic);
+		set_semiglobal(&ow_Global.control_flags, DEVFORMAT_MASK, DEVFORMAT_BIT, fdic);
 	} else if (0 == strcasecmp(device_format, "fi.c")) {
-		set_semiglobal(&ow_Global.sg, DEVFORMAT_MASK, DEVFORMAT_BIT, fidc);
+		set_semiglobal(&ow_Global.control_flags, DEVFORMAT_MASK, DEVFORMAT_BIT, fidc);
 	} else if (0 == strcasecmp(device_format, "fic")) {
-		set_semiglobal(&ow_Global.sg, DEVFORMAT_MASK, DEVFORMAT_BIT, fic);
+		set_semiglobal(&ow_Global.control_flags, DEVFORMAT_MASK, DEVFORMAT_BIT, fic);
 	} else {
-		set_semiglobal(&ow_Global.sg, DEVFORMAT_MASK, DEVFORMAT_BIT, fdi);
+		set_semiglobal(&ow_Global.control_flags, DEVFORMAT_MASK, DEVFORMAT_BIT, fdi);
 	}
 }
 

@@ -71,57 +71,10 @@ See: http://www.iana.org/assignments/port-numbers
 /* large enough for arrays of 2048 elements of ~49 bytes each */
 #define MAX_OWSERVER_PROTOCOL_PAYLOAD_SIZE  100050
 
-/* com port fifo info */
-/* The UART_FIFO_SIZE defines the amount of bytes that are written before
- * reading the reply. Any positive value should work and 16 is probably low
- * enough to avoid losing bytes in even most extreme situations on all modern
- * UARTs, and values bigger than that will probably work on almost any
- * system... The value affects readout performance asymptotically, value of 1
- * should give equivalent performance with the old implementation.
- *   -- Jari Kirma
- *
- * Note: Each bit sent to the 1-wire net requeires 1 byte to be sent to
- *       the uart.
- */
-#define UART_FIFO_SIZE 160
-
-/** USB bulk endpoint FIFO size
-  Need one for each for read and write
-  This is for alt setting "3" -- 64 bytes, 1msec polling
-*/
-#define USB_FIFO_EACH 64
-#define USB_FIFO_READ 0
-#define USB_FIFO_WRITE USB_FIFO_EACH
-#define USB_FIFO_SIZE ( USB_FIFO_EACH + USB_FIFO_EACH )
-#define HA7_FIFO_SIZE 32000
-#define LINK_FIFO_SIZE UART_FIFO_SIZE
-#define LINKE_FIFO_SIZE 1500
-#define I2C_FIFO_SIZE 1
-
-#if USB_FIFO_SIZE > UART_FIFO_SIZE
-#define MAX_FIFO_SIZE USB_FIFO_SIZE
-#else
-#define MAX_FIFO_SIZE UART_FIFO_SIZE
-#endif
 
 struct connection_in;
 
 /* -------------------------------------------- */
-/* Interface-specific routines ---------------- */
-struct interface_routines {
-	/* Detect if adapter is present, and open -- usually called outside of this routine */
-	int (*detect) (struct connection_in * in);
-	/* reset the interface -- actually the 1-wire bus */
-	void (*close) (struct connection_in * in);
-	/* capabilities flags */
-	UINT flags;
-};
-#define BUS_detect(in)                      (((in)->iroutines.detect(in)))
-#define BUS_close(in)                       (((in)->iroutines.close(in)))
-
-#if OW_MT
-#else							/* OW_MT */
-#endif							/* OW_MT */
 
 struct connin_tcp {
 	char *host;
@@ -142,64 +95,30 @@ enum bus_mode {
 	bus_zero,
 };
 
-enum connection_state {
-	connection_vacant,
-	connection_pending,
-	connection_active,
-};
-
-enum adapter_type {
-	adapter_tcp = 9,
-};
-
-enum e_reconnect {
-	reconnect_bad = -1,
-	reconnect_ok = 0,
-	reconnect_error = 5,
-};
-
-struct device_search {
-	int LastDiscrepancy;		// for search
-	int LastDevice;				// for search
-	int index;
-	BYTE sn[8];
-	BYTE search;
-};
-
 struct connection_in {
 	struct connection_in *next;
-	int index;
-	enum connection_state state;
+	struct connection_in *prior;
+	int handle;
 	char *name;
-	int file_descriptor;
+	FILE_DESCRIPTOR_OR_ERROR file_descriptor;
 #if OW_MT
 	pthread_mutex_t bus_mutex;
 #endif							/* OW_MT */
 
 	enum bus_mode busmode;
-	struct interface_routines iroutines;
-	enum adapter_type Adapter;
-	char *adapter_name;
-
 	/* Static buffer for conmmunication */
 	/* Since only used during actual transfer to/from the adapter,
 	   should be protected from contention even when multithreading allowed */
 	size_t bundling_length;
-	union {
-		struct connin_tcp tcp;
-	} connin;
+	struct connin_tcp tcp;
 };
 
 extern struct connection_in *head_inbound_list;
 
-#define  FD_PERSISTENT_IN_USE    -2
-#define  FD_PERSISTENT_NONE      -1
-#define  FD_CURRENT_BAD          -1
 /* This bug-fix/workaround function seem to be fixed now... At least on
  * the platforms I have tested it on... printf() in owserver/src/c/owserver.c
  * returned very strange result on c->busmode before... but not anymore */
 enum bus_mode get_busmode(struct connection_in *c);
-int BusIsServer(struct connection_in *in);
 
 void FreeIn(struct connection_in *target);
 void FreeInAll(void);
@@ -216,6 +135,5 @@ void OW_Browse(void);
 */
 int Server_detect(struct connection_in *in);
 int Zero_detect(struct connection_in *in);
-int BadAdapter_detect(struct connection_in *in);
 
 #endif							/* OW_CONNECTION_H */

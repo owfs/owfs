@@ -21,7 +21,7 @@ OWNET_HANDLE OWNET_init(const char *owserver_tcp_address_and_port)
 	struct connection_in *slot_found;
 
 	static int deja_vue = 0;
-	// poor mans lock for the Lib Setup and Lock Setup
+	// poor man's lock for the Lib Setup and Lock Setup
 	if (++deja_vue == 1) {
 		/* Setup the multithreading synchronizing locks */
 		LockSetup();
@@ -42,8 +42,7 @@ OWNET_HANDLE OWNET_init(const char *owserver_tcp_address_and_port)
 		}
 		slot_found->busmode = bus_server;
 		if (Server_detect(slot_found) == 0) {
-			slot_found->state = connection_active;
-			handle = slot_found->index;
+			handle = slot_found->handle;
 		} else {
 			FreeIn(slot_found);
 			handle = -EADDRNOTAVAIL;

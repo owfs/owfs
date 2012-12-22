@@ -51,7 +51,7 @@ struct server_msg {
 	int32_t version;
 	int32_t payload;
 	int32_t type;
-	int32_t sg;
+	int32_t control_flags;
 	int32_t size;
 	int32_t offset;
 };
@@ -61,7 +61,7 @@ struct client_msg {
 	int32_t version;
 	int32_t payload;
 	int32_t ret;
-	int32_t sg;
+	int32_t control_flags;
 	int32_t size;
 	int32_t offset;
 };

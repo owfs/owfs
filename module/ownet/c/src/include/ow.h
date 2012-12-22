@@ -156,6 +156,10 @@ $Id$
 #define EPROTO EIO
 #endif							/* EPROTO */
 
+/* File descriptors */
+typedef int FILE_DESCRIPTOR_OR_ERROR ;
+#define  FILE_DESCRIPTOR_BAD     -1
+#define  FILE_DESCRIPTOR_PERSISTENT_IN_USE    -2
 
 /* Define our understanding of integers, floats, ... */
 #include "ow_localtypes.h"

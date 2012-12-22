@@ -79,13 +79,12 @@ static void ResolveBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 		}
 		if (in) {
 			if (Zero_detect(in)) {
-				//BadAdapter_detect(in);
 				printf("Zero_detect failed\n");
 				exit(1);
 			} else {
-				in->connin.tcp.type = strdup(bs->type);
-				in->connin.tcp.domain = strdup(bs->domain);
-				in->connin.tcp.fqdn = strdup(n);
+				in->tcp.type = strdup(bs->type);
+				in->tcp.domain = strdup(bs->domain);
+				in->tcp.fqdn = strdup(n);
 			}
 			BUSUNLOCKIN(in);
 		}
@@ -122,8 +121,8 @@ static struct connection_in *FindIn(struct BrowseStruct *bs)
 	struct connection_in *now;
 	for (now = head_inbound_list; now; now = now->next) {
 		if (now->busmode != bus_zero || strcasecmp(now->name, bs->name)
-			|| strcasecmp(now->connin.tcp.type, bs->type)
-			|| strcasecmp(now->connin.tcp.domain, bs->domain)
+			|| strcasecmp(now->tcp.type, bs->type)
+			|| strcasecmp(now->tcp.domain, bs->domain)
 			)
 			continue;
 		BUSLOCKIN(now);
@@ -155,9 +154,9 @@ static void BrowseBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 				DNSServiceRef sr;
 
 				if (DNSServiceResolve(&sr, 0, 0, name, type, domain, ResolveBack, bs) == kDNSServiceErr_NoError) {
-					int file_descriptor = DNSServiceRefSockFD(sr);
+					FILE_DESCRIPTOR_OR_ERROR file_descriptor = DNSServiceRefSockFD(sr);
 					DNSServiceErrorType err = kDNSServiceErr_Unknown;
-					if (file_descriptor >= 0) {
+					if (file_descriptor > FILE_DESCRIPTOR_BAD) {
 						while (1) {
 							fd_set readfd;
 							struct timeval tv = { 120, 0 };

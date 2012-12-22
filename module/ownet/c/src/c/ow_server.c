@@ -17,37 +17,23 @@ $Id$
 #include "ow.h"
 #include "ow_server.h"
 
-static int FromServer(int file_descriptor, struct client_msg *cm, char *msg, size_t size);
-static void *FromServerAlloc(int file_descriptor, struct client_msg *cm);
-static int ToServer(int file_descriptor, struct server_msg *sm, struct serverpackage *sp);
-static void Server_setroutines(struct interface_routines *f);
-static void Zero_setroutines(struct interface_routines *f);
-static void Server_close(struct connection_in *in);
-static uint32_t SetupSemi(int persistent);
-static int ConnectToServer(struct connection_in *in);
-static int ToServerTwice(int file_descriptor, int persistent, struct server_msg *sm, struct serverpackage *sp, struct connection_in *in);
+struct server_connection_state {
+	FILE_DESCRIPTOR_OR_ERROR file_descriptor ;
+	enum persistent_state { persistent_yes, persistent_no, } persistence ;
+	struct connection_in * in ;
+} ;
 
-static int PersistentStart(int *persistent, struct connection_in *in);
-static void PersistentEnd(int file_descriptor, int persistent, int granted, struct connection_in *in);
-static void PersistentFree(int file_descriptor, struct connection_in *in);
-static void PersistentClear(int file_descriptor, struct connection_in *in);
-static int PersistentRequest(struct connection_in *in);
-static int PersistentReRequest(int file_descriptor, struct connection_in *in);
+static uint32_t SetupSemi(int persistent);
+
+static void Release_Persistent( struct server_connection_state * scs, int granted ) ;
+static void Close_Persistent( struct server_connection_state * scs) ;
+static int To_Server( struct server_connection_state * scs, struct server_msg * sm, struct serverpackage *sp) ;
+static int WriteToServer(int file_descriptor, struct server_msg *sm, struct serverpackage *sp);
+static int From_Server( struct server_connection_state * scs, struct client_msg *cm, char *msg, size_t size);
+static void *From_ServerAlloc(struct server_connection_state * scs, struct client_msg *cm) ;
 
 static int ServerDIR(void (*dirfunc) (void *, const char *), void *v, struct request_packet *rp);
 static int ServerDIRALL(void (*dirfunc) (void *, const char *), void *v, struct request_packet *rp);
-
-static void Server_setroutines(struct interface_routines *f)
-{
-	f->detect = Server_detect;
-	f->close = Server_close;
-}
-
-static void Zero_setroutines(struct interface_routines *f)
-{
-	f->detect = Server_detect;
-	f->close = Server_close;
-}
 
 // bus_zero is a server found by zeroconf/Bonjour
 // It differs in that the server must respond
@@ -59,11 +45,8 @@ int Zero_detect(struct connection_in *in)
 		return -1;
 	if (ClientAddr(in->name, in))
 		return -1;
-	in->file_descriptor = FD_PERSISTENT_NONE;	// No persistent connection yet
-	in->Adapter = adapter_tcp;
-	in->adapter_name = "tcp";
+	in->file_descriptor = FILE_DESCRIPTOR_BAD;	// No persistent connection yet
 	in->busmode = bus_zero;
-	Zero_setroutines(&(in->iroutines));
 	return 0;
 }
 
@@ -75,23 +58,9 @@ int Server_detect(struct connection_in *in)
 		return -1;
 	if (ClientAddr(in->name, in))
 		return -1;
-	in->file_descriptor = FD_PERSISTENT_NONE;	// No persistent connection yet
-	in->Adapter = adapter_tcp;
-	in->adapter_name = "tcp";
+	in->file_descriptor = FILE_DESCRIPTOR_BAD;	// No persistent connection yet
 	in->busmode = bus_server;
-	Server_setroutines(&(in->iroutines));
 	return 0;
-}
-
-// Free up the owserver inbound connection
-// actual connections opened and closed independently
-static void Server_close(struct connection_in *in)
-{
-	if (in->file_descriptor > FD_PERSISTENT_NONE) {	// persistent connection
-		close(in->file_descriptor);
-		in->file_descriptor = FD_PERSISTENT_NONE;
-	}
-	FreeClientAddr(in);
 }
 
 // Send to an owserver using the READ message
@@ -101,32 +70,33 @@ int ServerRead(struct request_packet *rp)
 	struct client_msg cm;
 	struct serverpackage sp = { rp->path, NULL, 0, rp->tokenstring, rp->tokens, };
 	int persistent = 1;
-	int connectfd;
-	int ret = 0;
+	struct server_connection_state scs ;
 
 	memset(&sm, 0, sizeof(struct server_msg));
 	memset(&cm, 0, sizeof(struct client_msg));
 	sm.type = msg_read;
 	sm.size = rp->data_length;
 	sm.offset = rp->data_offset;
+	scs.persistence = persistent_yes ;
+	scs.persistence = persistent_yes ;
+	scs.in =rp->owserver ;
 
 	LEVEL_CALL("SERVER READ path=%s\n", SAFESTRING(rp->path));
 
-	connectfd = PersistentStart(&persistent, rp->owserver);
-	if (connectfd > FD_CURRENT_BAD) {
-		sm.sg = SetupSemi(persistent);
-		if ((connectfd = ToServerTwice(connectfd, persistent, &sm, &sp, rp->owserver)) < 0) {
-			ret = -EIO;
-		} else if (FromServer(connectfd, &cm, (ASCII *) rp->read_value, rp->data_length) < 0) {
-			ret = -EIO;
-		} else {
-			ret = cm.ret;
-		}
-	} else {
-		ret = -EIO;
+	// Send to owserver
+	sm.control_flags = SetupSemi(persistent);
+	if ( To_Server( &scs, &sm, &sp) == 1 ) {
+		Release_Persistent( &scs, 0);
+		return -EIO ;
 	}
-	PersistentEnd(connectfd, persistent, cm.sg & PERSISTENT_MASK, rp->owserver);
-	return ret;
+	
+	// Receive from owserver
+	if ( From_Server( &scs, &cm, (ASCII *) rp->read_value, rp->data_length) < 0 ) {
+		Release_Persistent( &scs, 0);
+		return -EIO ;
+	}
+	Release_Persistent( &scs, cm.control_flags & PERSISTENT_MASK);
+	return cm.ret;
 }
 
 // Send to an owserver using the PRESENT message
@@ -136,30 +106,31 @@ int ServerPresence(struct request_packet *rp)
 	struct client_msg cm;
 	struct serverpackage sp = { rp->path, NULL, 0, rp->tokenstring, rp->tokens, };
 	int persistent = 1;
-	int connectfd;
-	int ret = 0;
+	struct server_connection_state scs ;
 
 	memset(&sm, 0, sizeof(struct server_msg));
 	memset(&cm, 0, sizeof(struct client_msg));
 	sm.type = msg_presence;
+	scs.persistence = persistent_yes ;
+	scs.in =rp->owserver ;
 
 	LEVEL_CALL("SERVER PRESENCE path=%s\n", SAFESTRING(rp->path));
 
-	connectfd = PersistentStart(&persistent, rp->owserver);
-	if (connectfd > FD_CURRENT_BAD) {
-		sm.sg = SetupSemi(persistent);
-		if ((connectfd = ToServerTwice(connectfd, persistent, &sm, &sp, rp->owserver)) < 0) {
-			ret = -EIO;
-		} else if (FromServer(connectfd, &cm, NULL, 0) < 0) {
-			ret = -EIO;
-		} else {
-			ret = cm.ret;
-		}
-	} else {
-		ret = -EIO;
+	// Send to owserver
+	sm.control_flags = SetupSemi(persistent);
+	if ( To_Server( &scs, &sm, &sp) == 1 ) {
+		Release_Persistent( &scs, 0 ) ;
+		return 1 ;
 	}
-	PersistentEnd(connectfd, persistent, cm.sg & PERSISTENT_MASK, rp->owserver);
-	return ret;
+
+	// Receive from owserver
+	if (From_Server(&scs, &cm, NULL, 0) < 0) {
+		Release_Persistent(&scs, 0 );
+		return 1 ;
+	}
+
+	Release_Persistent(&scs, cm.control_flags & PERSISTENT_MASK);
+	return cm.ret;
 }
 
 // Send to an owserver using the WRITE message
@@ -172,37 +143,40 @@ int ServerWrite(struct request_packet *rp)
 	struct serverpackage sp = { rp->path, (BYTE *) rp->write_value, rp->data_length, rp->tokenstring, rp->tokens, };
 #pragma GCC diagnostic pop	
 	int persistent = 1;
-	int connectfd;
-	int ret = 0;
+	struct server_connection_state scs ;
 
 	memset(&sm, 0, sizeof(struct server_msg));
 	memset(&cm, 0, sizeof(struct client_msg));
 	sm.type = msg_write;
 	sm.size = rp->data_length;
 	sm.offset = rp->data_offset;
+	scs.persistence = persistent_yes ;
+	scs.in =rp->owserver ;
 
 	LEVEL_CALL("SERVER WRITE path=%s\n", SAFESTRING(rp->path));
 
-	connectfd = PersistentStart(&persistent, rp->owserver);
-	if (connectfd > FD_CURRENT_BAD) {
-		sm.sg = SetupSemi(persistent);
-		if ((connectfd = ToServerTwice(connectfd, persistent, &sm, &sp, rp->owserver)) < 0) {
-			ret = -EIO;
-		} else if (FromServer(connectfd, &cm, NULL, 0) < 0) {
-			ret = -EIO;
-		} else {
-			uint32_t sg = cm.sg & ~(SHOULD_RETURN_BUS_LIST | PERSISTENT_MASK);
-			ret = cm.ret;
-			if (ow_Global.sg != sg) {
-				//printf("ServerRead: cm.sg changed!  SemiGlobal=%X cm.sg=%X\n", SemiGlobal, cm.sg);
-				ow_Global.sg = sg;
-			}
-		}
-	} else {
-		ret = -EIO;
+	// Send to owserver
+	sm.control_flags = SetupSemi(persistent);
+	if ( To_Server( &scs, &sm, &sp) == 1 ) {
+		Release_Persistent( &scs, 0 ) ;
+		return -EIO ;
 	}
-	PersistentEnd(connectfd, persistent, cm.sg & PERSISTENT_MASK, rp->owserver);
-	return ret;
+
+	// Receive from owserver
+	if ( From_Server( &scs, &cm, NULL, 0) < 0) {
+		Release_Persistent( &scs, 0 ) ;
+		return -EIO ;
+	}
+	{
+		uint32_t control_flags = cm.control_flags & ~(SHOULD_RETURN_BUS_LIST | PERSISTENT_MASK );
+		if (ow_Global.control_flags != control_flags) {
+			// replace control flags (except safemode persists)
+			ow_Global.control_flags = control_flags;
+		}
+	}
+
+	Release_Persistent(&scs, cm.control_flags & PERSISTENT_MASK);
+	return cm.ret;
 }
 
 // Send to an owserver using either the DIR or DIRALL message
@@ -210,12 +184,12 @@ int ServerDir(void (*dirfunc) (void *, const char *), void *v, struct request_pa
 {
 	int ret;
 	// Do we know this server doesn't support DIRALL?
-	if (rp->owserver->connin.tcp.no_dirall) {
+	if (rp->owserver->tcp.no_dirall) {
 		return ServerDIR(dirfunc, v, rp);
 	}
 	// try DIRALL and see if supported
 	if ((ret = ServerDIRALL(dirfunc, v, rp)) == -ENOMSG) {
-		rp->owserver->connin.tcp.no_dirall = 1;
+		rp->owserver->tcp.no_dirall = 1;
 		return ServerDIR(dirfunc, v, rp);
 	}
 	return ret;
@@ -228,37 +202,34 @@ static int ServerDIR(void (*dirfunc) (void *, const char *), void *v, struct req
 	struct client_msg cm;
 	struct serverpackage sp = { rp->path, NULL, 0, rp->tokenstring, rp->tokens, };
 	int persistent = 1;
-	int connectfd;
-	int ret;
+	struct server_connection_state scs ;
+	char *return_path;
 
 	memset(&sm, 0, sizeof(struct server_msg));
 	memset(&cm, 0, sizeof(struct client_msg));
 	sm.type = msg_dir;
+	scs.persistence = persistent_yes ;
+	scs.in =rp->owserver ;
 
 	LEVEL_CALL("SERVER DIR path=%s\n", SAFESTRING(rp->path));
 
-	connectfd = PersistentStart(&persistent, rp->owserver);
-	if (connectfd > FD_CURRENT_BAD) {
-		sm.sg = SetupSemi(persistent);
-		if ((connectfd = ToServerTwice(connectfd, persistent, &sm, &sp, rp->owserver)) < 0) {
-			ret = -EIO;
-		} else {
-			char *return_path;
-
-			while ((return_path = FromServerAlloc(connectfd, &cm))) {
-				return_path[cm.payload - 1] = '\0';	/* Ensure trailing null */
-				LEVEL_DEBUG("ServerDir: got=[%s]\n", return_path);
-				dirfunc(v, return_path);
-				free(return_path);
-			}
-
-			ret = cm.ret;
-		}
-	} else {
-		ret = -EIO;
+	// Send to owserver
+	sm.control_flags = SetupSemi(persistent);
+	if ( To_Server( &scs, &sm, &sp) == 1 ) {
+		Release_Persistent( &scs, 0 ) ;
+		return -EIO ;
 	}
-	PersistentEnd(connectfd, persistent, cm.sg & PERSISTENT_MASK, rp->owserver);
-	return ret;
+
+	// Receive from owserver -- in a loop for each directory entry
+	while ( (return_path = From_ServerAlloc(&scs, &cm))  != NULL ) {
+		return_path[cm.payload - 1] = '\0';	/* Ensure trailing null */
+		LEVEL_DEBUG("ServerDir: got=[%s]\n", return_path);
+		dirfunc(v, return_path);
+		free(return_path);
+	}
+
+	Release_Persistent(&scs, cm.control_flags & PERSISTENT_MASK);
+	return cm.ret;
 }
 
 // Send to an owserver using the DIRALL message
@@ -269,30 +240,25 @@ static int ServerDIRALL(void (*dirfunc) (void *, const char *), void *v, struct 
 	struct client_msg cm;
 	struct serverpackage sp = { rp->path, NULL, 0, rp->tokenstring, rp->tokens, };
 	int persistent = 1;
-	int connectfd;
-	int ret;
+	struct server_connection_state scs ;
 
 	memset(&sm, 0, sizeof(struct server_msg));
 	memset(&cm, 0, sizeof(struct client_msg));
 	sm.type = msg_dirall;
+	scs.persistence = persistent_yes ;
+	scs.in =rp->owserver ;
 
 	LEVEL_CALL("SERVER DIRALL path=%s\n", SAFESTRING(rp->path));
 
-	// Get a file descriptor, possibly a persistent one
-	connectfd = PersistentStart(&persistent, rp->owserver);
-	if (connectfd < 0) {
-		PersistentEnd(connectfd, persistent, cm.sg & PERSISTENT_MASK, rp->owserver);
-		return -EIO;
+	// Send to owserver
+	sm.control_flags = SetupSemi(persistent);
+	if ( To_Server( &scs, &sm, &sp) == 1 ) {
+		Release_Persistent( &scs, 0 ) ;
+		return -EIO ;
 	}
-	// Now try to get header. If fails, may need a new non-persistent file_descriptor
-	sm.sg = SetupSemi(persistent);
-	connectfd = ToServerTwice(connectfd, persistent, &sm, &sp, rp->owserver);
-	if (connectfd < 0) {
-		PersistentEnd(connectfd, persistent, cm.sg & PERSISTENT_MASK, rp->owserver);
-		return -EIO;
-	}
-	// Success, get data
-	comma_separated_list = FromServerAlloc(connectfd, &cm);
+
+	// Receive from owserver
+	comma_separated_list = From_ServerAlloc(&scs, &cm);
 	LEVEL_DEBUG("DIRALL got %s\n", SAFESTRING(comma_separated_list));
 	if (cm.ret == 0) {
 		ASCII *current_file;
@@ -305,191 +271,19 @@ static int ServerDIRALL(void (*dirfunc) (void *, const char *), void *v, struct 
 			dirfunc(v, current_file);
 		}
 	}
+
 	// free the allocated memory
 	if (comma_separated_list != NULL) {
 		free(comma_separated_list);
 	}
-	ret = cm.ret;
 
-	PersistentEnd(connectfd, persistent, cm.sg & PERSISTENT_MASK, rp->owserver);
-	return ret;
+	Release_Persistent( &scs, cm.control_flags & PERSISTENT_MASK );
+	return cm.ret;
 }
-
-/* read from server, free return pointer if not Null */
-/* Adds an extra null byte at end */
-static void *FromServerAlloc(int file_descriptor, struct client_msg *cm)
-{
-	char *msg;
-	int ret;
-	struct timeval tv = { ow_Global.timeout_network + 1, 0, };
-
-	do {						/* loop until non delay message (payload>=0) */
-		//printf("OW_SERVER loop1\n");
-		ret = tcp_read(file_descriptor, cm, sizeof(struct client_msg), &tv);
-		if (ret != sizeof(struct client_msg)) {
-			memset(cm, 0, sizeof(struct client_msg));
-			cm->ret = -EIO;
-			return NULL;
-		}
-		cm->payload = ntohl(cm->payload);
-		cm->size = ntohl(cm->size);
-		cm->ret = ntohl(cm->ret);
-		cm->sg = ntohl(cm->sg);
-		cm->offset = ntohl(cm->offset);
-	} while (cm->payload < 0);
-	//printf("OW_SERVER loop1 done\n");
-
-	//printf("FromServerAlloc payload=%d size=%d ret=%d sg=%X offset=%d\n",cm->payload,cm->size,cm->ret,cm->sg,cm->offset);
-	//printf(">%.4d|%.4d\n",cm->ret,cm->payload);
-	if (cm->payload == 0)
-		return NULL;
-	if (cm->ret < 0)
-		return NULL;
-	if (cm->payload > MAX_OWSERVER_PROTOCOL_PAYLOAD_SIZE) {
-		//printf("FromServerAlloc payload too large\n");
-		return NULL;
-	}
-
-	if ((msg = (char *) malloc((size_t) cm->payload + 1))) {
-		ret = tcp_read(file_descriptor, msg, (size_t) (cm->payload), &tv);
-		if (ret != cm->payload) {
-			//printf("FromServer couldn't read payload\n");
-			cm->payload = 0;
-			cm->offset = 0;
-			cm->ret = -EIO;
-			free(msg);
-			msg = NULL;
-		}
-		//printf("FromServer payload read ok\n");
-	}
-	msg[cm->payload] = '\0';	// safety NULL
-	return msg;
-}
-
-/* Read from server -- return negative on error,
-    return 0 or positive giving size of data element */
-static int FromServer(int file_descriptor, struct client_msg *cm, char *msg, size_t size)
-{
-	size_t rtry;
-	size_t ret;
-	struct timeval tv = { ow_Global.timeout_network + 1, 0, };
-
-	do {						// read regular header, or delay (delay when payload<0)
-		//printf("OW_SERVER loop2\n");
-		ret = tcp_read(file_descriptor, cm, sizeof(struct client_msg), &tv);
-		if (ret != sizeof(struct client_msg)) {
-			//printf("OW_SERVER loop2 bad\n");
-			cm->size = 0;
-			cm->ret = -EIO;
-			return -EIO;
-		}
-
-		cm->payload = ntohl(cm->payload);
-		cm->size = ntohl(cm->size);
-		cm->ret = ntohl(cm->ret);
-		cm->sg = ntohl(cm->sg);
-		cm->offset = ntohl(cm->offset);
-	} while (cm->payload < 0);	// flag to show a delay message
-	//printf("OW_SERVER loop2 done\n");
-
-	//printf("FromServer payload=%d size=%d ret=%d sg=%d offset=%d\n",cm->payload,cm->size,cm->ret,cm->sg,cm->offset);
-	//printf(">%.4d|%.4d\n",cm->ret,cm->payload);
-	if (cm->payload == 0)
-		return 0;				// No payload, done.
-
-	rtry = cm->payload < (ssize_t) size ? (size_t) cm->payload : size;
-	ret = tcp_read(file_descriptor, msg, rtry, &tv);	// read expected payload now.
-	if (ret != rtry) {
-		cm->ret = -EIO;
-		return -EIO;
-	}
-
-	if (cm->payload > (ssize_t) size) {	// Uh oh. payload bigger than expected. read it in and discard
-		size_t d = cm->payload - size;
-		char extra[d];
-		ret = tcp_read(file_descriptor, extra, d, &tv);
-		if (ret != d) {
-			cm->ret = -EIO;
-			return -EIO;
-		}
-		return size;
-	}
-	return cm->payload;
-}
-
-/* Send a message to server, or try a new connection and send again */
-/* return file descriptor */
-static int ToServerTwice(int file_descriptor, int persistent, struct server_msg *sm, struct serverpackage *sp, struct connection_in *in)
-{
-	int newfd;
-	if (ToServer(file_descriptor, sm, sp) == 0)
-		return file_descriptor;
-	if (persistent == 0) {
-		close(file_descriptor);
-		return FD_CURRENT_BAD;
-	}
-	newfd = PersistentReRequest(file_descriptor, in);
-	if (newfd < 0)
-		return FD_CURRENT_BAD;
-	if (ToServer(newfd, sm, sp) == 0)
-		return newfd;
-	close(newfd);
-	return FD_CURRENT_BAD;
-}
-
-// should be const char * data but iovec has problems with const arguments
-static int ToServer(int file_descriptor, struct server_msg *sm, struct serverpackage *sp)
-{
-	int payload = 0;
-	int nio = 0;
-	struct iovec io[5] = { {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}, };
-
-	// First block to send, the header
-	io[nio].iov_base = sm;
-	io[nio].iov_len = sizeof(struct server_msg);
-	nio++;
-
-	// Next block, the path
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wcast-qual"
-		// writev really handles data as const, but it isn't written that way
-	if ((io[nio].iov_base = (ASCII *) sp->path) != NULL) {	// send path (if not null)
-#pragma GCC diagnostic pop
-		io[nio].iov_len = payload = strlen(sp->path) + 1;
-		nio++;
-		LEVEL_DEBUG("ToServer path=%s\n", sp->path);
-	}
-
-	// next block, data (only for writes)
-	if ((sp->datasize>0) && ( (io[nio].iov_base = sp->data)!= NULL) ) {	// send data only for writes (if datasize not zero)
-		payload += (io[nio].iov_len = sp->datasize);
-		nio++;
-        LEVEL_DEBUG("ToServer data=%s\n", sp->data);
-	}
-
-	sp->tokens = 0; // ownet isn't a server
-	sm->version = 0; // shouldn't this be MakeServerprotocol(OWSERVER_PROTOCOL_VERSION);
-
-	//printf("ToServer payload=%d size=%d type=%d tempscale=%X offset=%d\n",payload,sm->size,sm->type,sm->sg,sm->offset);
-	//printf("<%.4d|%.4d\n",sm->type,payload);
-	//printf("Scale=%s\n", TemperatureScaleName(SGTemperatureScale(sm->sg)));
-
-	// encode in network order (just the header)
-	sm->version = htonl(sm->version);
-	sm->payload = htonl(payload);
-	sm->size = htonl(sm->size);
-	sm->type = htonl(sm->type);
-	sm->sg = htonl(sm->sg);
-	sm->offset = htonl(sm->offset);
-
-	Debug_Writev(io, nio);
-	return writev(file_descriptor, io, nio) != (ssize_t) (payload + sizeof(struct server_msg) + sp->tokens * sizeof(union antiloop));
-}
-
 /* flag the sg for "virtual root" -- the remote bus was specifically requested */
 static uint32_t SetupSemi(int persistent)
 {
-	uint32_t sg = ow_Global.sg;
+	uint32_t sg = ow_Global.control_flags;
 
 	sg &= ~PERSISTENT_MASK;
 	if (persistent) {
@@ -502,15 +296,6 @@ static uint32_t SetupSemi(int persistent)
 	return sg;
 }
 
-/* Wrapper for ClientConnect */
-static int ConnectToServer(struct connection_in *in)
-{
-	int file_descriptor;
-
-	file_descriptor = ClientConnect(in);
-	return file_descriptor;
-}
-
 /* Request a persistent connection
    Three possibilities:
      1. no persistent connection currently (in->file_descriptor = -1)
@@ -521,94 +306,315 @@ static int ConnectToServer(struct connection_in *in)
      3. in use, (in->file_descriptor = -2)
         return -1
 */
-static int PersistentRequest(struct connection_in *in)
-{
-	int file_descriptor;
-	BUSLOCKIN(in);
-	if (in->file_descriptor == FD_PERSISTENT_IN_USE) {	// in use
-		file_descriptor = FD_CURRENT_BAD;
-	} else if (in->file_descriptor > FD_PERSISTENT_NONE) {	// available
-		file_descriptor = in->file_descriptor;
-		in->file_descriptor = FD_PERSISTENT_IN_USE;
-	} else if ((file_descriptor = ConnectToServer(in)) == FD_CURRENT_BAD) {	// can't get a connection
-		file_descriptor = FD_CURRENT_BAD;
-	} else {					// new connection -- make it persistent
-		in->file_descriptor = FD_PERSISTENT_IN_USE;
-	}
-	BUSUNLOCKIN(in);
-	return file_descriptor;
-}
-
-/* A persistent connection didn't work (probably expired on the other end
-   recreate it, or clear and return -1
- */
-static int PersistentReRequest(int file_descriptor, struct connection_in *in)
-{
-	close(file_descriptor);
-	BUSLOCKIN(in);
-	file_descriptor = ConnectToServer(in);
-	if (file_descriptor == FD_CURRENT_BAD) {	// bad connection
-		in->file_descriptor = FD_PERSISTENT_NONE;
-	}
-	// else leave as in->file_descriptor = -2
-	BUSUNLOCKIN(in);
-	return file_descriptor;
-}
-
-/* Clear a persistent connection */
-static void PersistentClear(int file_descriptor, struct connection_in *in)
-{
-	if (file_descriptor > FD_CURRENT_BAD) {
-		close(file_descriptor);
-	}
-	BUSLOCKIN(in);
-	in->file_descriptor = FD_PERSISTENT_NONE;
-	BUSUNLOCKIN(in);
-}
-
-/* Free a persistent connection */
-static void PersistentFree(int file_descriptor, struct connection_in *in)
-{
-	if (file_descriptor == FD_CURRENT_BAD) {
-		PersistentClear(file_descriptor, in);
-	} else {
-		BUSLOCKIN(in);
-		in->file_descriptor = file_descriptor;
-		BUSUNLOCKIN(in);
-	}
-}
-
-/* All the startup code
-   file_descriptor will get the file descriptor
-   persistent starts 0 or 1 for whether persistence is wanted
-   persistent returns 0 or 1 for whether persistence is granted
-*/
-static int PersistentStart(int *persistent, struct connection_in *in)
-{
-	int file_descriptor;
-	if (*persistent == 0) {		// no persistence wanted
-		file_descriptor = ConnectToServer(in);
-		*persistent = 0;		// still not persistent
-	} else if ((file_descriptor = PersistentRequest(in)) == FD_CURRENT_BAD) {	// tried but failed
-		file_descriptor = ConnectToServer(in);	// non-persistent backup request
-		*persistent = 0;		// not persistent
-	} else {					// successfully
-		*persistent = 1;		// flag as persistent
-	}
-	return file_descriptor;
-}
 
 /* Clean up at end of routine,
    either leave connection open and persistent flag available,
-   or close and leave available
+   or close
 */
-static void PersistentEnd(int file_descriptor, int persistent, int granted, struct connection_in *in)
+static void Release_Persistent( struct server_connection_state * scs, int granted )
 {
-	if (persistent == 0) {		// non-persistence from the start
-		close(file_descriptor);
-	} else if (granted == 0) {	// not granted
-		PersistentClear(file_descriptor, in);
-	} else {					// Let the persistent connection be used
-		PersistentFree(file_descriptor, in);
+	if ( granted == 0 ) {
+		Close_Persistent( scs ) ;
+		return ;
 	}
+	
+	if ( scs->file_descriptor <= FILE_DESCRIPTOR_BAD  ) {
+		Close_Persistent( scs ) ;
+		return ;
+	}
+	
+	if (scs->persistence == persistent_no) {		
+		// non-persistence from the start
+		Close_Persistent( scs ) ;
+		return ;
+	}
+
+	// mark as available
+	BUSLOCKIN(scs->in);
+	scs->in->file_descriptor = scs->file_descriptor;
+	BUSUNLOCKIN(scs->in);
+	scs->persistence = persistent_no ; // we no longer own this connection
+	scs->file_descriptor = FILE_DESCRIPTOR_BAD ;
+}
+
+static void Close_Persistent( struct server_connection_state * scs)
+{
+	// First set up the file descriptor based on persistent state
+	if (scs->persistence == persistent_yes) {
+		// no persistence wanted
+		BUSLOCKIN(scs->in);
+			scs->in->file_descriptor = FILE_DESCRIPTOR_BAD ;
+		BUSUNLOCKIN(scs->in);
+	}
+	
+	scs->persistence = persistent_no ;
+	if ( scs->file_descriptor > FILE_DESCRIPTOR_BAD ) {
+		close(scs->file_descriptor) ;
+		scs->file_descriptor = FILE_DESCRIPTOR_BAD ;
+	}
+}
+
+/* return 0 good, 1 bad */
+static int To_Server( struct server_connection_state * scs, struct server_msg * sm, struct serverpackage *sp)
+{
+	struct connection_in * in = scs->in ; // for convenience
+	BYTE test_read[1] ;
+	int old_flags ;
+	ssize_t rcv_value ;
+	int saved_errno ;
+	
+	// initialize the variables
+	scs->file_descriptor = FILE_DESCRIPTOR_BAD ;
+
+	// First set up the file descriptor based on persistent state
+	if (scs->persistence == persistent_no) {		
+		// no persistence wanted
+		scs->file_descriptor = ClientConnect(in);
+	} else {
+		// Persistence desired
+		BUSLOCKIN(in);
+		switch ( in->file_descriptor ) {
+			case FILE_DESCRIPTOR_PERSISTENT_IN_USE:
+				// Currently in use, so make new non-persistent connection
+				scs->file_descriptor = ClientConnect(in);
+				scs->persistence = persistent_no ;
+				break ;
+			case FILE_DESCRIPTOR_BAD:
+				// no conection currently, so make a new one
+				scs->file_descriptor = ClientConnect(in);
+				if ( scs->file_descriptor > FILE_DESCRIPTOR_BAD ) {
+					in->file_descriptor = FILE_DESCRIPTOR_PERSISTENT_IN_USE ;
+				}	
+				break ;
+			default:
+				// persistent connection idle and waiting for use
+				// connection_in is locked so this is safe
+				scs->file_descriptor = in->file_descriptor;
+				in->file_descriptor = FILE_DESCRIPTOR_PERSISTENT_IN_USE;
+			break ;
+		}
+		BUSUNLOCKIN(in);
+	}
+	
+	// Check if the server closed the connection
+	// This is contributed by Jacob Joseph to fix a timeout problem.
+	// http://permalink.gmane.org/gmane.comp.file-systems.owfs.devel/7306
+	//rcv_value = recv(scs->file_descriptor, test_read, 1, MSG_DONTWAIT | MSG_PEEK) ;
+	old_flags = fcntl( scs->file_descriptor, F_GETFL, 0 ) ; // save socket flags
+	if ( old_flags == -1 ) {
+		rcv_value = -2 ;
+	} else if ( fcntl( scs->file_descriptor, F_SETFL, old_flags | O_NONBLOCK ) == -1 ) { // set non-blocking
+		rcv_value = -2 ;
+	} else {
+		rcv_value = recv(scs->file_descriptor, test_read, 1, MSG_PEEK) ; // test read the socket to see if closed
+		saved_errno = errno ;
+		if ( fcntl( scs->file_descriptor, F_SETFL, old_flags ) == -1 ) { // restore  socket flags
+			rcv_value = -2 ;
+		}
+	}
+
+	switch ( rcv_value ) {
+		case -1:
+			if ( saved_errno==EAGAIN || saved_errno==EWOULDBLOCK ) {
+				// No data to be read -- so connection healthy
+				break ;
+			}
+			// real error, fall through to close connection case
+		case -2:
+			// fnctl error, fall through again
+		case 0:
+			LEVEL_DEBUG("Server connection was closed.  Reconnecting.");
+			Close_Persistent( scs);
+			scs->file_descriptor = ClientConnect(in);
+			if ( scs->file_descriptor > FILE_DESCRIPTOR_BAD ) {
+				in->file_descriptor = FILE_DESCRIPTOR_PERSISTENT_IN_USE ;
+			}
+			break ;
+		default:
+			// data to be read, so a good connection
+			break ;
+	}
+
+	// Now test
+	if ( scs->file_descriptor <= FILE_DESCRIPTOR_BAD ) {
+		Close_Persistent( scs ) ;
+		return 1 ;
+	}
+
+	// Do the real work
+	if (WriteToServer(scs->file_descriptor, sm, sp) >= 0) {
+		// successful message
+		return 0;
+	}
+
+	// This is where it gets a bit tricky. For non-persistent conections we're done'
+	if ( scs->persistence == persistent_no ) {
+		// not persistent, so no reconnection needed
+		Close_Persistent( scs ) ;
+		return 1 ;
+	}
+	
+	// perhaps the persistent connection is stale?
+	// Make a new one
+	scs->file_descriptor = ClientConnect(in) ;
+
+	// Now retest
+	if ( scs->file_descriptor <= FILE_DESCRIPTOR_BAD ) {
+		// couldn't make that new connection -- free everything
+		Close_Persistent( scs ) ;
+		return 1 ;
+	}
+	
+	// Leave in->file_descriptor = FILE_DESCRIPTOR_PERSISTENT_IN_USE
+
+	// Second attempt at the write, now with new connection
+	if (WriteToServer(scs->file_descriptor, sm, sp) >= 0) {
+		// successful message
+		return 0;
+	}
+
+	// bad write the second time -- clear everything
+	Close_Persistent( scs ) ;
+	return 1 ;
+}
+
+// should be const char * data but iovec has problems with const arguments
+static int WriteToServer(int file_descriptor, struct server_msg *sm, struct serverpackage *sp)
+{
+	int payload = 0;
+	int tokens = 0;
+	int nio = 0;
+	struct iovec io[5] = { {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}, };
+	struct server_msg net_sm ;
+
+	sp->tokens = 0; // ownet isn't a server
+	sm->version = 0; // shouldn't this be MakeServerprotocol(OWSERVER_PROTOCOL_VERSION);
+
+	// First block to send, the header
+	io[nio].iov_base = &net_sm;
+	io[nio].iov_len = sizeof(struct server_msg);
+	nio++;
+
+	// Next block, the path
+	if (sp->path != 0) {	// send path (if not null)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
+		// writev should take const data pointers, but I can't fix the library
+		io[nio].iov_base = (char *) sp->path ; // gives a spurious compiler error -- constant is OK HERE!
+#pragma GCC diagnostic pop
+		io[nio].iov_len = strlen(sp->path) + 1;
+		payload =  io[nio].iov_len ;
+		nio++;
+		LEVEL_DEBUG("ToServer path=%s\n", sp->path);
+	}
+	// next block, data (only for writes)
+	if ((sp->datasize>0) && (sp->data!=NULL)) {	// send data only for writes (if datasize not zero)
+		io[nio].iov_base = sp->data ;
+		io[nio].iov_len = sp->datasize ;
+		payload += sp->datasize;
+		nio++;
+        LEVEL_DEBUG("ToServer data=%s\n", sp->data);
+	}
+
+	// encode in network order (just the header)
+	net_sm.version       = htonl( sm->version       );
+	net_sm.payload       = htonl( payload           );
+	net_sm.size          = htonl( sm->size          );
+	net_sm.type          = htonl( sm->type          );
+	net_sm.control_flags = htonl( sm->control_flags );
+	net_sm.offset        = htonl( sm->offset        );
+
+	return writev(file_descriptor, io, nio) != (ssize_t) (payload + sizeof(struct server_msg) + tokens * sizeof(union antiloop));
+}
+
+/* Read from server -- return negative on error,
+    return 0 or positive giving size of data element */
+static int From_Server( struct server_connection_state * scs, struct client_msg *cm, char *msg, size_t size)
+{
+	size_t rtry;
+	size_t actual_read ;
+	struct timeval tv1 = { ow_Global.timeout_network + 1, 0, };
+	struct timeval tv2 = { ow_Global.timeout_network + 1, 0, };
+
+	do {						// read regular header, or delay (delay when payload<0)
+		actual_read = tcp_read(scs->file_descriptor, (BYTE *) cm, sizeof(struct client_msg), &tv1);
+		if (actual_read != sizeof(struct client_msg)) {
+			cm->size = 0;
+			cm->ret = -EIO;
+			return -EIO;
+		}
+
+		cm->payload       = ntohl(cm->payload);
+		cm->size          = ntohl(cm->size);
+		cm->ret           = ntohl(cm->ret);
+		cm->control_flags = ntohl(cm->control_flags);
+		cm->offset        = ntohl(cm->offset);
+		
+	} while (cm->payload < 0);	// flag to show a delay message
+
+	if (cm->payload == 0) {
+		return 0;				// No payload, done.
+	}
+	rtry = cm->payload < (ssize_t) size ? (size_t) cm->payload : size;
+	actual_read = tcp_read(scs->file_descriptor, (BYTE *) msg, rtry, &tv2);	// read expected payload now.
+	if (actual_read != rtry) {
+		LEVEL_DEBUG("Read only %d of %d\n",(int)actual_read,(int)rtry) ;
+		cm->ret = -EIO;
+		return -EIO;
+	}
+	if (cm->payload > (ssize_t) size) {	// Uh oh. payload bigger than expected. close the connection
+		Close_Persistent( scs ) ;
+		return size;
+	}
+	return cm->payload;
+}
+
+/* read from server, you must free return pointer if not Null */
+/* Adds an extra null byte at end */
+static void *From_ServerAlloc(struct server_connection_state * scs, struct client_msg *cm)
+{
+	BYTE *msg;
+	struct timeval tv1 = { ow_Global.timeout_network + 1, 0, };
+	struct timeval tv2 = { ow_Global.timeout_network + 1, 0, };
+	size_t actual_size ;
+
+	do {						/* loop until non delay message (payload>=0) */
+		actual_size = tcp_read(scs->file_descriptor, (BYTE *) cm, sizeof(struct client_msg), &tv1 );
+		if (actual_size != sizeof(struct client_msg)) {
+			memset(cm, 0, sizeof(struct client_msg));
+			cm->ret = -EIO;
+			return NULL;
+		}
+		cm->payload = ntohl(cm->payload);
+		cm->size = ntohl(cm->size);
+		cm->ret = ntohl(cm->ret);
+		cm->control_flags = ntohl(cm->control_flags);
+		cm->offset = ntohl(cm->offset);
+	} while (cm->payload < 0);
+
+	if (cm->payload == 0) {
+		return NULL;
+	}
+	if (cm->ret < 0) {
+		return NULL;
+	}
+	if (cm->payload > MAX_OWSERVER_PROTOCOL_PAYLOAD_SIZE) {
+		return NULL;
+	}
+
+	msg = malloc((size_t) cm->payload + 1) ;
+	if ( msg != NULL ) {
+		actual_size = tcp_read(scs->file_descriptor, msg, (size_t) (cm->payload), &tv2 );
+		if ((ssize_t)actual_size != cm->payload) {
+			cm->payload = 0;
+			cm->offset = 0;
+			cm->ret = -EIO;
+			free(msg);
+			msg = NULL;
+		}
+	}
+	if(msg != NULL) {
+		msg[cm->payload] = '\0';	// safety NULL
+	}
+	return msg;
 }
