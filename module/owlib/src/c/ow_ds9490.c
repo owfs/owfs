@@ -187,24 +187,24 @@ static void DS9490_setroutines(struct connection_in *in)
 #define PARMSET_Slew0p70Vus 0x6
 #define PARMSET_Slew0p55Vus 0x7
 
-#define PARMSET_W1L_08us 0x0
-#define PARMSET_W1L_09us 0x1
-#define PARMSET_W1L_10us 0x2
-#define PARMSET_W1L_11us 0x3
-#define PARMSET_W1L_12us 0x4
-#define PARMSET_W1L_13us 0x5
-#define PARMSET_W1L_14us 0x6
-#define PARMSET_W1L_15us 0x7
+#define PARMSET_W1L_04us 0x0
+#define PARMSET_W1L_05us 0x1
+#define PARMSET_W1L_06us 0x2
+#define PARMSET_W1L_07us 0x3
+#define PARMSET_W1L_08us 0x4
+#define PARMSET_W1L_09us 0x5
+#define PARMSET_W1L_10us 0x6
+#define PARMSET_W1L_11us 0x7
 
-#define PARMSET_DS0_W0R_3us 0x0
-#define PARMSET_DS0_W0R_4us 0x1
-#define PARMSET_DS0_W0R_5us 0x2
-#define PARMSET_DS0_W0R_6us 0x3
-#define PARMSET_DS0_W0R_7us 0x4
-#define PARMSET_DS0_W0R_8us 0x5
-#define PARMSET_DS0_W0R_9us 0x6
-#define PARMSET_DS0_W0R_10us 0x7
-
+#define PARMSET_DS0_W0R_10us 0x0
+#define PARMSET_DS0_W0R_12us 0x1
+#define PARMSET_DS0_W0R_14us 0x2
+#define PARMSET_DS0_W0R_16us 0x3
+#define PARMSET_DS0_W0R_18us 0x4
+#define PARMSET_DS0_W0R_20us 0x5
+#define PARMSET_DS0_W0R_22us 0x6
+#define PARMSET_DS0_W0R_24us 0x7
+ 
 /* From datasheet http://datasheets.maxim-ic.com/en/ds/DS2490.pdf page 15 */
 /* 480 usec = 8usec * 60 and 60(decimal) = 0x3C */
 /* 480 usec is the recommended program pulse duration in the DS2406 DS2502 DS2505 datasheets */
@@ -1055,15 +1055,15 @@ static void DS9490_SetFlexParameters(struct connection_in *in)
 	// default values for bus-timing when using --altUSB
 	if (Globals.altUSB) {
 		in->master.usb.pulldownslewrate = PARMSET_Slew1p37Vus;
-		in->master.usb.writeonelowtime = PARMSET_W1L_10us;
-		in->master.usb.datasampleoffset = PARMSET_DS0_W0R_8us;
+		in->master.usb.writeonelowtime = PARMSET_W1L_06us;
+		in->master.usb.datasampleoffset = PARMSET_DS0_W0R_20us;
 	} else {
 		/* This seem to be the default value when reseting the ds2490 chip */
 		// Change by Michael Markstaller from datasheet
 		in->master.usb.pulldownslewrate = PARMSET_Slew1p10Vus;
 //		in->master.usb.pulldownslewrate = PARMSET_Slew0p83Vus;
-		in->master.usb.writeonelowtime = PARMSET_W1L_12us;
-		in->master.usb.datasampleoffset = PARMSET_DS0_W0R_7us;
+		in->master.usb.writeonelowtime = PARMSET_W1L_08us;
+		in->master.usb.datasampleoffset = PARMSET_DS0_W0R_18us;
 	}
 	in->changed_bus_settings |= CHANGED_USB_SLEW | CHANGED_USB_LOW | CHANGED_USB_OFFSET ;
 }
