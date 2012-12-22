@@ -47,6 +47,8 @@ READ_FUNCTION(FS_r_current);
 READ_FUNCTION(FS_r_AM001_v);
 READ_FUNCTION(FS_r_AM001_a);
 READ_FUNCTION(FS_r_RPM);
+READ_FUNCTION(FS_r_vibration);
+WRITE_FUNCTION(FS_w_vib_mode);
 
 /* ------- Structures ----------- */
 #define mTS017_type      0x4000  // bit 14
@@ -56,6 +58,8 @@ READ_FUNCTION(FS_r_RPM);
 #define mTS017_single    0x0000  // bit 15
 #define mTS017_multi     0x8000  // bit 15
 
+enum e_mVM001 { e_mVM001_peak=1, e_mVM001_rms=2, e_mVM001_multi=4, } ;
+
 /* Infrared temperature sensor */
 static struct filetype mTS017[] = {
 	F_STANDARD,
@@ -64,7 +68,21 @@ static struct filetype mTS017[] = {
 	{"ambient", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_temperature, fc_link, FS_r_temperature, NO_WRITE_FUNCTION, VISIBLE, { u:mTS017_ambient}, },
 };
 
-DeviceEntry(A1, mTS017, NO_GENERIC_READ, NO_GENERIC_WRITE);
+DeviceEntry(A6, mTS017, NO_GENERIC_READ, NO_GENERIC_WRITE);
+
+/* Vibration Sensor */
+static struct filetype mVM001[] = {
+	F_STANDARD,
+	{"reading", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_data, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA, },
+	{"RMS", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_link, FS_r_vibration, NO_WRITE_FUNCTION, VISIBLE, { i:e_mVM001_rms, }, },
+	{"peak", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_link, FS_r_vibration, NO_WRITE_FUNCTION, VISIBLE, { i:e_mVM001_peak, }, },
+	{"configure", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"configure/read_mode", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, NO_READ_FUNCTION, FS_w_vib_mode, VISIBLE, NO_FILETYPE_DATA, },
+	{"configure/peak_interval", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"configure/multiplex_interval", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+};
+
+DeviceEntry(A1, mVM001, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 /* AC current meter */
 static struct filetype mCM001[] = {
@@ -98,25 +116,42 @@ DeviceEntry(A0, mRS001, NO_GENERIC_READ, NO_GENERIC_WRITE);
 #define _1W_WRITE_CONFIG    0x4E
 #define _1W_READ_CONFIG     0x4F
 
-#define _CMCIEL_CONFIG_OBJECT     0x01
-#define _CMCIEL_CONFIG_AMBIENT    0x02
-#define _CMCIEL_CONFIG_MULTIPLEX  0x04
-#define _CMCIEL_CONFIG_UNPROTECT  0x08
-#define _CMCIEL_CONFIG_PARAMETERS 0x20
-#define _CMCIEL_CONFIG_EMISSIVITY 0x40
+#define _mTS017_CONFIG_OBJECT     0x01
+#define _mTS017_CONFIG_AMBIENT    0x02
+#define _mTS017_CONFIG_MULTIPLEX  0x04
+#define _mTS017_CONFIG_UNPROTECT  0x08
+#define _mTS017_CONFIG_PARAMETERS 0x20
+#define _mTS017_CONFIG_EMISSIVITY 0x40
 
-#define _CMCIEL_ADDRESS_CONFIG                0x55
-#define _CMCIEL_ADDRESS_EMISSIVITY_LOW        0xA1
-#define _CMCIEL_ADDRESS_EMISSIVITY_HI         0xA2
-#define _CMCIEL_ADDRESS_HAND_DETECT_THRESHOLD 0xA3
-#define _CMCIEL_ADDRESS_HAND_DETECT_HOLD      0xA4
-#define _CMCIEL_ADDRESS_AVG_NUMBER            0xA5
-#define _CMCIEL_ADDRESS_AVG_OVERRIDE          0xA6
+#define _mTS017_ADDRESS_CONFIG                0x55
+#define _mTS017_ADDRESS_EMISSIVITY_LOW        0xA1
+#define _mTS017_ADDRESS_EMISSIVITY_HI         0xA2
+#define _mTS017_ADDRESS_HAND_DETECT_THRESHOLD 0xA3
+#define _mTS017_ADDRESS_HAND_DETECT_HOLD      0xA4
+#define _mTS017_ADDRESS_AVG_NUMBER            0xA5
+#define _mTS017_ADDRESS_AVG_OVERRIDE          0xA6
+
+#define _mVM001_CONFIG_OBJECT     0x01
+#define _mVM001_CONFIG_AMBIENT    0x02
+#define _mVM001_CONFIG_MULTIPLEX  0x04
+#define _mVM001_CONFIG_UNPROTECT  0x10
+
+#define _mVM001_ADDRESS_CONFIG                0x55
+#define _mVM001_ADDRESS_READ_MODE             0x80
+#define _mVM001_ADDRESS_PEAK_INTERVAL         0x81
+#define _mVM001_ADDRESS_MULTIPLEX_INTERVAL    0x82
+
+/* Internal properties */
+Make_SlaveSpecificTag(VIB, fc_stable);	// vibration mode
 
 /* ------- Functions ------------ */
 
 /*  */
+static GOOD_OR_BAD OW_w_config(BYTE config0, BYTE config1, struct parsedname *pn);
 static GOOD_OR_BAD OW_reading( BYTE * data, struct parsedname *pn);
+static GOOD_OR_BAD OW_set_vib_mode(BYTE read_mode, struct parsedname *pn) ;
+static GOOD_OR_BAD OW_unprotect(struct parsedname *pn) ;
+static GOOD_OR_BAD OW_set_read_mode(BYTE read_mode, struct parsedname *pn);
 
 /* mTS017 */
 static ZERO_OR_ERROR FS_r_temperature(struct one_wire_query *owq)
@@ -152,6 +187,56 @@ static ZERO_OR_ERROR FS_r_temperature(struct one_wire_query *owq)
 	}
 	
 	return -EINVAL ;
+}
+
+/* mvM001 Vibration */
+static ZERO_OR_ERROR FS_r_vibration(struct one_wire_query *owq)
+{
+	struct parsedname *pn = PN(owq);
+	UINT reading ;
+	BYTE vib_mode = pn->selected_filetype->data.i ;
+	
+	if ( FS_w_sibling_U( vib_mode, "configure/read_mode", owq ) < 0 ) {
+		return -EINVAL ;
+	}
+	
+	if ( FS_r_sibling_U( &reading, "reading", owq ) < 0 ) {
+		return -EINVAL ;
+	}
+	
+	OWQ_F(owq) = .01 * reading ;
+
+	return -EINVAL ;
+}
+
+static ZERO_OR_ERROR FS_w_vib_mode(struct one_wire_query *owq)
+{
+	struct parsedname *pn = PN(owq);
+	UINT vib_request = OWQ_U(owq) ;
+	BYTE vib_stored ;
+
+	switch (vib_request) {
+		case e_mVM001_peak:
+		case e_mVM001_rms:
+		case e_mVM001_multi:
+			break ;
+		default:
+			return -EINVAL ;
+	}
+	
+	if ( BAD( Cache_Get_SlaveSpecific(&vib_stored, sizeof(vib_stored), SlaveSpecificTag(VIB), pn)) ) {
+		if ( vib_stored == vib_request ) {
+			return 0 ;
+		}
+	}
+	
+	if ( BAD( OW_set_vib_mode( vib_request, pn ) ) ) {
+		return -EINVAL ;
+	}
+
+	Cache_Add_SlaveSpecific(&vib_request, sizeof(vib_request), SlaveSpecificTag(VIB), pn);
+	
+	return 0 ;
 }
 
 //; Special version for the mTS017 that knows about multiplexing for the cache
@@ -219,14 +304,21 @@ static GOOD_OR_BAD OW_w_config(BYTE config0, BYTE config1, struct parsedname *pn
 
 static GOOD_OR_BAD OW_unprotect(struct parsedname *pn)
 {
-	return OW_w_config( _CMCIEL_ADDRESS_CONFIG, _CMCIEL_CONFIG_UNPROTECT, pn ) ;
+	return OW_w_config( _mTS017_ADDRESS_CONFIG, _mTS017_CONFIG_UNPROTECT, pn ) ;
 }
 
 static GOOD_OR_BAD OW_set_read_mode(BYTE read_mode, struct parsedname *pn)
 {
-	// 0=object 1=ambient 4= multiplex
+	// 1=object 2=ambient 4= multiplex
 	RETURN_BAD_IF_BAD( OW_unprotect(pn) ) ;
-	return OW_w_config( _CMCIEL_ADDRESS_CONFIG, read_mode, pn ) ;
+	return OW_w_config( _mTS017_ADDRESS_CONFIG, read_mode, pn ) ;
+}
+
+static GOOD_OR_BAD OW_set_vib_mode(BYTE read_mode, struct parsedname *pn)
+{
+	// 1=peak 2=rms 4= multiplex
+	RETURN_BAD_IF_BAD( OW_unprotect(pn) ) ;
+	return OW_w_config( _mVM001_ADDRESS_READ_MODE, read_mode, pn ) ;
 }
 
 /* mCM001 AC current */
