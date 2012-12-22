@@ -45,7 +45,7 @@ $Id$
 
 /* ------- Prototypes ----------- */
 
-/* DS2423 counter */
+/* DS2502 counter */
 READ_FUNCTION(FS_r_page);
 WRITE_FUNCTION(FS_w_page);
 READ_FUNCTION(FS_r_mem);
@@ -77,11 +77,27 @@ static struct filetype DS1982U[] = {
 
 DeviceEntry(89, DS1982U, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
-#define _1W_READ_MEMORY 0xF0
-#define _1W_READ_STATUS 0xAA
-#define _1W_READ_DATA_CRC8 0xC3
-#define _1W_WRITE_MEMORY 0x0F
-#define _1W_WRITE_STATUS 0x55
+#define _1W_READ_MEMORY     0xF0
+#define _1W_READ_STATUS     0xAA
+#define _1W_READ_DATA_CRC8  0xC3
+#define _1W_WRITE_MEMORY    0x0F
+#define _1W_WRITE_STATUS    0x55
+// DS2704 specific
+#define _1W_WRITE_CHALLENGE             0x0C
+#define _1W_COMPUTE_MAC_WITHOUT         0x36
+#define _1W_COMPUTE_MAC_WITH            0x35
+#define _1W_CLEAR_SECRET                0x5A
+#define _1W_COMPUTE_NEXT_SECRET_WITHOUT 0x30
+#define _1W_COMPUTE_NEXT_SECRET_WITH    0x33
+#define _1W_LOCK_SECRET                 0x6A
+#define _1W_READ_ALL                    0x65
+#define _1W_READ_SCRATCHPAD             0x69
+#define _1W_WRITE_SCRATCHPAD            0x6C
+#define _1W_COPY_SCRATCHPAD             0x48
+#define _1W_SET_OVERDRIVE               0x8B
+#define _1W_CLEAR_OVERDRIVE             0x8D
+#define _1W_RESET                       0xBB
+
 
 /* ------- Functions ------------ */
 
