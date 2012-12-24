@@ -7,8 +7,12 @@ EXAMPLEA = ownetexample
 EXAMPLEA_OBJS = ownetexample.o
 EXAMPLEB = ownet_tree
 EXAMPLEB_OBJS = ownet_tree.o
+EXAMPLEC = ownet_rep_test
+EXAMPLEC_OBJS = ownet_rep_test.o
+EXAMPLED = ownet_init_test
+EXAMPLED_OBJS = ownet_init_test.o
 
-all:	$(EXAMPLEA) $(EXAMPLEB)
+all:	$(EXAMPLEA) $(EXAMPLEB) $(EXAMPLEC) $(EXAMPLED)
 
 ifeq "$(shell uname)" "Darwin"
 
@@ -21,6 +25,12 @@ $(EXAMPLEA): $(EXAMPLEA_OBJS)
 $(EXAMPLEB): $(EXAMPLEB_OBJS)
 	gcc $(CFLAGS) -o $@ $(EXAMPLEB_OBJS) $(DARWINLDFLAGS)
 
+$(EXAMPLEC): $(EXAMPLEC_OBJS)
+	gcc $(CFLAGS) -o $@ $(EXAMPLEC_OBJS) $(DARWINLDFLAGS)
+
+$(EXAMPLED): $(EXAMPLED_OBJS)
+	gcc $(CFLAGS) -o $@ $(EXAMPLED_OBJS) $(DARWINLDFLAGS)
+
 else
 
 # Compile-flags for Linux and Cygwin
@@ -32,10 +42,16 @@ $(EXAMPLEA): $(EXAMPLEA_OBJS)
 $(EXAMPLEB): $(EXAMPLEB_OBJS)
 	gcc $(CFLAGS) -o $@ $(EXAMPLEB_OBJS) $(LDFLAGS)
 
+$(EXAMPLEC): $(EXAMPLEC_OBJS)
+	gcc $(CFLAGS) -o $@ $(EXAMPLEC_OBJS) $(LDFLAGS)
+
+$(EXAMPLED): $(EXAMPLED_OBJS)
+	gcc $(CFLAGS) -o $@ $(EXAMPLED_OBJS) $(LDFLAGS)
+
 endif
 
 %.o: %.c
 	@CC@ $(CFLAGS) -c -o $@ $<
 
 clean:
-	$(RM) -f $(EXAMPLEA) $(EXAMPLEB) *.o *~ .~ Makefile
+	$(RM) -f $(EXAMPLEA) $(EXAMPLEB) $(EXAMPLEC) $(EXAMPLED) *.o *~ .~ Makefile
