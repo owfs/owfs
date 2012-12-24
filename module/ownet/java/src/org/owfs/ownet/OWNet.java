@@ -46,6 +46,7 @@ import java.util.Vector;
  *             Connect/Disconnect introduced
  *             fix for large packet socket reads, timeout added
  * 2007/01/30: Beautifying and grouping methods
+ * 2012/12/22: Pressure format finals added
  */
 
 public class OWNet {
@@ -129,13 +130,30 @@ public class OWNet {
      * Temperature format: (R) Rankine
      */
     static public final int OWNET_FLAG_T_R      = 0x0030000;
+	
+	
+    // ################################
+    // pressure scale format
+    // ################################
+    // Pressure format: mbar
+    static public final int OWNET_FLAG_P_mbar = 0x0000000;
+    // Pressure format: atm
+    static public final int OWNET_FLAG_P_atm  = 0x0040000;
+    // Pressure format: mmHg
+    static public final int OWNET_FLAG_P_mmHg = 0x0080000;
+    // Pressure format: inHg
+    static public final int OWNET_FLAG_P_inHg = 0x00C0000;
+    // Pressure format: psi
+    static public final int OWNET_FLAG_P_psi  = 0x0100000;
+    // Pressure format: Pa
+    static public final int OWNET_FLAG_P_Pa   = 0x0140000;
 
-    static public final int OWNET_FLAG_PERSIST     = 0x0000004; // for Persistent connections
+
+    static public final int OWNET_FLAG_PERSIST      = 0x0000004; // for Persistent connections
 
     static private final int OWNET_DEFAULT_SG_FLAGS = 0x0000103;
-//
-// class private variables
-//
+
+    // class private variables
     private  String remoteServer = OWNET_DEFAULT_HOST;          // remote server
     private     int remotePort   = OWNET_DEFAULT_PORT;          // remote port
     private     int sg_flags     = OWNET_DEFAULT_SG_FLAGS;      // formating flags + persistent bit
@@ -144,7 +162,6 @@ public class OWNet {
     private     int defDataLen   = OWNET_DEFAULT_DATALEN;       // default data length for read/write commands
 
     // socket connection
-
     private Socket owsocket = null;
     private DataInputStream in = null;
     private DataOutputStream out = null;
