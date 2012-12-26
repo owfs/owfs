@@ -164,11 +164,16 @@ static void SingleHandler(struct handlerdata *hd)
 	PingLoop( hd ) ;
 
 	if (hd->sp.path) {
+#if ( __GNUC__ > 4 ) || (__GNUC__ == 4 && __GNUC_MINOR__ > 4 )
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-qual"
 	// allocated in From_Client with owmalloc, but cast to const
 		owfree( (void *) hd->sp.path);
 #pragma GCC diagnostic pop
+#else
+	// allocated in From_Client with owmalloc, but cast to const
+		owfree( (void *) hd->sp.path);
+#endif
 		hd->sp.path = NULL;
 	}
 }

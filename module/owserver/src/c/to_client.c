@@ -47,6 +47,7 @@ int ToClient(int file_descriptor, struct client_msg *machine_order_cm, const cha
 	
 	int nio = 1;
 
+#if ( __GNUC__ > 4 ) || (__GNUC__ == 4 && __GNUC_MINOR__ > 4 )
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-qual"
 	// note data should be (const char *) but iovec complains about const arguments
@@ -55,7 +56,13 @@ int ToClient(int file_descriptor, struct client_msg *machine_order_cm, const cha
 		{ (char *) data, machine_order_cm->payload,},
 	};
 #pragma GCC diagnostic pop
-
+#else
+	// note data should be (const char *) but iovec complains about const arguments
+	struct iovec io[] = {
+		{network_order_cm, sizeof(struct client_msg),},
+		{ (char *) data, machine_order_cm->payload,},
+	};
+#endif
 	LEVEL_DEBUG("payload=%d size=%d, ret=%d, sg=0x%X offset=%d ", machine_order_cm->payload, machine_order_cm->size, machine_order_cm->ret,
 		     machine_order_cm->control_flags, machine_order_cm->offset);
 

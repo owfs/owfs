@@ -369,11 +369,15 @@ SIZE_OR_ERROR DS9490_write(const BYTE * buf, size_t size, const struct parsednam
 		return 0;
 	}
 
+	// usb library doesn't require a const data type for writing
+#if ( __GNUC__ > 4 ) || (__GNUC__ == 4 && __GNUC_MINOR__ > 4 )
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-qual"
-	// usb library doesn't require a const data type for writing
 	ret = usb_bulk_write(usb, DS2490_EP2, (ASCII *) buf, (int) size, in->master.usb.timeout) ;
 #pragma GCC diagnostic pop
+#else
+	ret = usb_bulk_write(usb, DS2490_EP2, (ASCII *) buf, (int) size, in->master.usb.timeout) ;
+#endif
 	if ( ret < 0 ) {
 		LEVEL_DATA("failed ret=%d", ret);
 		USB_CLEAR_HALT(usb, DS2490_EP2);

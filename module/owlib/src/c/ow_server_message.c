@@ -673,11 +673,15 @@ static SIZE_OR_ERROR WriteToServer(int file_descriptor, struct server_msg *sm, s
 
 	// Next block, the path
 	if (sp->path != 0) {	// send path (if not null)
+		// writev should take const data pointers, but I can't fix the library
+#if ( __GNUC__ > 4 ) || (__GNUC__ == 4 && __GNUC_MINOR__ > 4 )
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-qual"
-		// writev should take const data pointers, but I can't fix the library
 		io[nio].iov_base = (char *) sp->path ; // gives a spurious compiler error -- constant is OK HERE!
 #pragma GCC diagnostic pop
+#else
+		io[nio].iov_base = (char *) sp->path ; // gives a spurious compiler error -- constant is OK HERE!
+#endif
 		io[nio].iov_len = strlen(sp->path) + 1;
 		payload =  io[nio].iov_len ;
 		nio++;

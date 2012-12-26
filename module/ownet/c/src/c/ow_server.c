@@ -133,15 +133,20 @@ int ServerPresence(struct request_packet *rp)
 	return cm.ret;
 }
 
+
 // Send to an owserver using the WRITE message
 int ServerWrite(struct request_packet *rp)
 {
 	struct server_msg sm;
 	struct client_msg cm;
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wcast-qual"
+#if ( __GNUC__ > 4 ) || (__GNUC__ == 4 && __GNUC_MINOR__ > 4 )
+#pragma GCC diagnostic push \
+#pragma GCC diagnostic ignored "-Wcast-qual" \
 	struct serverpackage sp = { rp->path, (BYTE *) rp->write_value, rp->data_length, rp->tokenstring, rp->tokens, };
 #pragma GCC diagnostic pop	
+#else
+	struct serverpackage sp = { rp->path, (BYTE *) rp->write_value, rp->data_length, rp->tokenstring, rp->tokens, };
+#endif
 	int persistent = 1;
 	struct server_connection_state scs ;
 
@@ -497,11 +502,15 @@ static int WriteToServer(int file_descriptor, struct server_msg *sm, struct serv
 
 	// Next block, the path
 	if (sp->path != 0) {	// send path (if not null)
+		// writev should take const data pointers, but I can't fix the library
+#if ( __GNUC__ > 4 ) || (__GNUC__ == 4 && __GNUC_MINOR__ > 4 )
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-qual"
-		// writev should take const data pointers, but I can't fix the library
 		io[nio].iov_base = (char *) sp->path ; // gives a spurious compiler error -- constant is OK HERE!
 #pragma GCC diagnostic pop
+#else
+		io[nio].iov_base = (char *) sp->path ; // gives a spurious compiler error -- constant is OK HERE!
+#endif
 		io[nio].iov_len = strlen(sp->path) + 1;
 		payload =  io[nio].iov_len ;
 		nio++;

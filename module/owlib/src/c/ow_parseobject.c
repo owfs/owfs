@@ -235,11 +235,15 @@ void OWQ_assign_read_buffer(char *buffer, size_t size, off_t offset, struct one_
 
 void OWQ_assign_write_buffer(const char *buffer, size_t size, off_t offset, struct one_wire_query *owq)
 {
+	// OWQ_buffer used for both read (non-const) and write (const)
+#if ( __GNUC__ > 4 ) || (__GNUC__ == 4 && __GNUC_MINOR__ > 4 )
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-qual"
-	// OWQ_buffer used for both read (non-const) and write (const)
 	OWQ_buffer(owq) = (char *) buffer;
 #pragma GCC diagnostic pop
+#else
+	OWQ_buffer(owq) = (char *) buffer;
+#endif
 	OWQ_size(owq) = size;
 	OWQ_offset(owq) = offset;
 }

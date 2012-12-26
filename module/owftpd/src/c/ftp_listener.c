@@ -391,11 +391,14 @@ void ftp_listener_stop(struct ftp_listener_s *f)
 	daemon_assert(invariant(f));
 
 	/* write a byte to the listening thread - this will wake it up */
+#if ( __GNUC__ > 4 ) || (__GNUC__ == 4 && __GNUC_MINOR__ > 4 )
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-result"
 	write(f->shutdown_request_fd[fd_pipe_write], "", 1);
 #pragma GCC diagnostic pop
-
+#else
+	write(f->shutdown_request_fd[fd_pipe_write], "", 1);
+#endif
 	/* wait for client connections to complete */
 	_MUTEX_LOCK(f->mutex);
 	while (f->num_connections > 0) {
