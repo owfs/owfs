@@ -9,6 +9,9 @@
   *
   *  Author: George M. Zouganelis (gzoug@aueb.gr)
   * Version: $Id$
+  *               OWNet.cs,v 1.3 2012/20/12 adho (adam.horvath@hotswap.eu)
+  *                      Added: public byte[] safeReadRaw(String path)
+  *                      And    public byte[] safeWriteRaw(String path)
   *
   * 
   * OWFS is an open source project developed by Paul Alfille 
@@ -231,7 +234,7 @@ namespace org.owfs.ownet {
 		     	try {
     		 	   owsocket.ReceiveTimeout=_defaultTimeout;
 		     	   //owsocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.SendTimeout, _defaultTimeout);
-    		    } catch (Exception e) {
+    		    } catch (Exception) {
 		        }
     	}
     }
@@ -397,7 +400,7 @@ namespace org.owfs.ownet {
 		   	 netStream.Write(buf,0,4);
 		   	 netStream.Flush();
 		   }
-		} catch (Exception e) {
+		} catch (Exception) {
 		   // if persistent connection has timeout
 			if (_persistentConnection) {
 				disconnect(true);
@@ -449,15 +452,38 @@ namespace org.owfs.ownet {
     }
 
     /// <summary>
+    /// Get a data packet from remote server
+    /// </summary>
+    /// <param name="packetHeader">ownet's header msg packet to use for receiving auxilary data</param>
+    /// <returns>data received from remote server</returns>
+    private byte[] getPacketDataRaw(int[] packetHeader) /* throws IOException */
+    {
+        byte[] data = new byte[packetHeader[OWNET_PROT_PAYLOAD]];
+        netStream.Read(data, 0, packetHeader[OWNET_PROT_PAYLOAD]);
+        return data;
+    }
+
+    /// <summary>
     /// Transmit a string as null terminated
     /// </summary>
     /// <param name="str">String to transmit</param>
-	private void sendCString(String str) /* throws IOException */
-	{	
-		byte[] buf = Encoding.ASCII.GetBytes(str);
-		netStream.Write(buf,0,buf.Length);
-		netStream.WriteByte(0);
-		netStream.Flush();
+    private void sendCString(String str) /* throws IOException */
+    {	
+        byte[] buf = Encoding.ASCII.GetBytes(str);
+        netStream.Write(buf,0,buf.Length);
+        netStream.WriteByte(0);
+        netStream.Flush();
+    }
+
+    /// <summary>
+    /// Transmit a string as null terminated
+    /// </summary>
+    /// <param name="str">String to transmit</param>
+    private void sendRaw(byte[] buf) /* throws IOException */
+    {
+        netStream.Write(buf, 0, buf.Length);
+        netStream.WriteByte(0);
+        netStream.Flush();
     }
 
     /// <summary>
@@ -491,6 +517,38 @@ namespace org.owfs.ownet {
 
     }
 
+    /// <summary>
+    /// Internal method to read from server
+    /// </summary>
+    /// <param name="path">attribute's path</param>
+    /// <param name="expectedDataLen">expected length of data to receive</param>
+    /// <returns>attribute's value</returns>
+    private byte[] OW_ReadRaw(String path, int expectedDataLen) /* throws IOException */
+    {
+        byte[] retVal = null;
+        int[] msg = null;
+
+        // try to connect to remote server
+        // possible exception must be caught by the calling method
+        connect();
+        sendPacket(OWNET_MSG_READ, path.Length + 1, expectedDataLen);
+        sendCString(path);
+        msg = getPacket();
+        if (msg[OWNET_PROT_RETVALUE] >= 0)
+        {
+            if (msg[OWNET_PROT_PAYLOAD] >= 0) retVal = getPacketDataRaw(msg);
+        }
+        else
+        {
+            disconnect(false);
+            throw new Exception("Error reading from server. Error " + msg[OWNET_PROT_RETVALUE]);
+        }
+        // close streams and connection
+        // possible exception must be caught by the calling method
+        disconnect(false);
+        return retVal;
+    }
+
 	/// <summary>
     /// Internal method to read from server, using default excpected datalen
     /// </summary>
@@ -498,8 +556,19 @@ namespace org.owfs.ownet {
     /// <returns>attribute's value</returns>
 	private String OW_Read(String path) /* throws IOException */
     {
-        return OW_Read(path,_defaultDataLen);
+        return OW_Read(path, _defaultDataLen);
     }
+
+    /// <summary>
+    /// Internal method to read from server, using default excpected datalen
+    /// </summary>
+    /// <param name="path">attribute's path</param>
+    /// <returns>attribute's value</returns>
+    private byte[] OW_ReadRaw(String path) /* throws IOException */
+    {
+        return OW_ReadRaw(path, _defaultDataLen);
+    }
+
 
 
  
@@ -509,7 +578,7 @@ namespace org.owfs.ownet {
     /// <param name="path">attribute's path</param>
     /// <param name="value">value to set</param>
     /// <returns>sucess state (most likely to be true or exception)</returns>
-	private bool OW_Write(String path, String value) /* throws IOException */
+    private bool OW_Write(String path, String value) /* throws IOException */
     {
         bool retVal = false;
         int[] msg = null;
@@ -525,8 +594,44 @@ namespace org.owfs.ownet {
 
         if (msg[OWNET_PROT_RETVALUE] >= 0) 
         {
-          retVal = true;
+            retVal = true;
         } else {
+            disconnect(false);
+            throw new Exception("Error writing to server. Error " + msg[OWNET_PROT_RETVALUE]);
+        }
+
+        // close streams and connection
+        // possible exception must be caught by the calling method
+        disconnect(false);
+        return retVal;
+    }
+
+    /// <summary>
+    /// Internal method to write to server
+    /// </summary>
+    /// <param name="path">attribute's path</param>
+    /// <param name="value">value to set</param>
+    /// <returns>sucess state (most likely to be true or exception)</returns>
+    private bool OW_WriteRaw(String path, byte[] value) /* throws IOException */
+    {
+        bool retVal = false;
+        int[] msg = null;
+
+        // try to connect to remote server
+        // possible exception must be caught by the calling method
+        connect();
+
+        sendPacket(OWNET_MSG_WRITE, path.Length + 1 + value.Length + 1, value.Length + 1);
+        sendCString(path);
+        sendRaw(value);
+        msg = getPacket();
+
+        if (msg[OWNET_PROT_RETVALUE] >= 0)
+        {
+            retVal = true;
+        }
+        else
+        {
             disconnect(false);
             throw new Exception("Error writing to server. Error " + msg[OWNET_PROT_RETVALUE]);
         }
@@ -635,7 +740,7 @@ namespace org.owfs.ownet {
     /// <returns>true on successful connection </returns>
     public bool safeConnect() 
     {
-        try { connect(); } catch (Exception e) {return false;}
+        try { connect(); } catch (Exception) {return false;}
         return true;
     }
 
@@ -656,7 +761,7 @@ namespace org.owfs.ownet {
     /// <returns>true on successful disconnect</returns>
     public bool safeDisconnect()
     {
-        try { disconnect(true); } catch (Exception e) {return false;}
+        try { disconnect(true); } catch (Exception) {return false;}
         return true;
     }
 
@@ -680,10 +785,38 @@ namespace org.owfs.ownet {
     {
       try {
         return OW_Read(path);
-      } catch (Exception e) {
+      } catch (Exception) {
         return "";
       }
     }
+
+    /// <summary>
+    /// Read from server or throw IOException on error
+    /// </summary>
+    /// <param name="path">attribute's path</param>
+    /// <returns>attribute's value</returns>
+    public byte[] ReadRaw(String path) /* throws IOException */
+    {
+        return OW_ReadRaw(path);
+    }
+
+    /// <summary>
+    /// Read from server and swallow any IOException
+    /// </summary>
+    /// <param name="path">attribute's path</param>
+    /// <returns>attribute's value, empty on error</returns>
+    public byte[] safeReadRaw(String path)
+    {
+        try
+        {
+            return OW_ReadRaw(path);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
 
     /// <summary>
     /// Write to server or throw IOException on error
@@ -691,9 +824,21 @@ namespace org.owfs.ownet {
     /// <param name="path">attribute's path</param>
     /// <param name="value">value to set</param>
     /// <returns>sucess state (most likely to be true or exception)</returns>
-	public bool Write(String path, String value) /* throws IOException */
-	{
+    public bool Write(String path, String value) /* throws IOException */
+    {
         return OW_Write(path,value);
+    }
+
+
+    /// <summary>
+    /// Write to server or throw IOException on error
+    /// </summary>
+    /// <param name="path">attribute's path</param>
+    /// <param name="value">value to set</param>
+    /// <returns>sucess state (most likely to be true or exception)</returns>
+    public bool WriteRaw(String path, byte[] value) /* throws IOException */
+    {
+        return OW_WriteRaw(path, value);
     }
 
     /// <summary>
@@ -703,10 +848,28 @@ namespace org.owfs.ownet {
     /// <param name="value">value to set</param>
     /// <returns>sucess state, false on error</returns>
     public bool safeWrite(String path, String value){
-    	try {
-          return OW_Write(path,value);
-        } catch (Exception e) {
-          return false;
+        try {
+            return OW_Write(path,value);
+        } catch (Exception) {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Write to server and swallow any IOException
+    /// </summary>
+    /// <param name="path">attribute's path</param>
+    /// <param name="value">value to set</param>
+    /// <returns>sucess state, false on error</returns>
+    public bool safeWriteRaw(String path, byte[] value)
+    {
+        try
+        {
+            return OW_WriteRaw(path, value);
+        }
+        catch (Exception)
+        {
+            return false;
         }
     }
 
@@ -728,7 +891,7 @@ namespace org.owfs.ownet {
     public bool safePresence(String path){
         try {
           return OW_Presence(path);
-        } catch (Exception e) {
+        } catch (Exception) {
           return false;
         }
     }
@@ -753,7 +916,7 @@ namespace org.owfs.ownet {
         String[] retVal = {};
         try {
           retVal =  OW_Dir(path,false);
-        } catch (Exception e) { }
+        } catch (Exception) { }
         return retVal;
     }
 
@@ -776,7 +939,7 @@ namespace org.owfs.ownet {
         String[] retVal = {};
         try {
             retVal = OW_Dir(path,true);
-		} catch (Exception e) { }
+		} catch (Exception) { }
         return retVal;
     }
 
