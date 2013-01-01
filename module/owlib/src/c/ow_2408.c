@@ -850,8 +850,8 @@ static GOOD_OR_BAD OW_redefchar(char * pattern, struct parsedname * pn)
 
 	// Add pattern
 	for ( i = 0 ; i < LCD_REDEFCHAR_LENGTH ; ++i ) {
-		data[j++] = (pattern[i] & 0xF0) | 0x08;
-		data[j++] = ((pattern[i] << 4) & 0xF0) | 0x08;
+		data[j++] = NIBBLE_ONE(pattern[i]) | LCD_DATA_FLAG;
+		data[j++] = NIBBLE_TWO(pattern[i]) | LCD_DATA_FLAG;
 	}
 
 	return OW_w_pios(data, datalength, pn) ;
