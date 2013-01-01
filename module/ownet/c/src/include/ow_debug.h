@@ -35,7 +35,6 @@ enum e_err_print { e_err_print_mixed, e_err_print_syslog,
 	e_err_print_console,
 };
 
-#if OW_MT
 extern const char mutex_init_failed[];
 extern const char mutex_destroy_failed[];
 extern const char mutex_lock_failed[];
@@ -51,7 +50,6 @@ extern const char cond_signal_failed[];
 extern const char cond_wait_failed[];
 extern const char cond_init_failed[];
 extern const char cond_destroy_failed[];
-#endif
 
 void err_msg(enum e_err_type errnoflag, enum e_err_level level, const char *fmt, ...);
 void _Debug_Bytes(const char *title, const unsigned char *buf, int length);
@@ -125,7 +123,6 @@ extern int log_available;
 #define SNformat	"%.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X"
 #define SNvar(sn)	(sn)[0],(sn)[1],(sn)[2],(sn)[3],(sn)[4],(sn)[5],(sn)[6],(sn)[7]
 
-#if OW_MT
 /* Need to define those functions to get FILE and LINE information */
 #define my_pthread_mutex_init(mutex, attr) \
 { \
@@ -222,7 +219,5 @@ extern int log_available;
 		FATAL_ERROR(cond_destroy_failed, mrc, strerror(mrc)); \
 	} \
 }
-
-#endif /* OW_MT */
 
 #endif							/* OW_DEBUG_H */

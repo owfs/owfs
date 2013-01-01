@@ -13,7 +13,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
-#if OW_ZERO && OW_MT
+#if OW_ZERO
 
 #include "ow_connection.h"
 
@@ -186,7 +186,7 @@ void OW_Browse(struct connection_in *in)
 	}
 }
 
-#else	/* OW_ZERO && OW_MT */
+#else	/* OW_ZERO */
 
 void OW_Browse(struct connection_in *in)
 {
@@ -195,4 +195,4 @@ void OW_Browse(struct connection_in *in)
 }
 
 
-#endif	/* OW_ZERO && OW_MT*/
+#endif	/* OW_ZERO */

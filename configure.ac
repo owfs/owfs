@@ -13,8 +13,8 @@ AC_INIT
 # (In our case it's better to always keep AGE to 0, since nobody else will use our library)
 
 VERSION_MAJOR=2
-VERSION_MINOR=8
-VERSION_PATCHLEVEL=21
+VERSION_MINOR=9
+VERSION_PATCHLEVEL=0
 
 OWFS_INTERFACE_AGE=0
 OWFS_BINARY_AGE=0
@@ -274,45 +274,26 @@ AC_SUBST(ENABLE_THERMOCOUPLE)
 AM_CONDITIONAL(ENABLE_THERMOCOUPLE, test "${ENABLE_THERMOCOUPLE}" = "true")
 
 # Check for threading
-ENABLE_MT="true"
-AC_MSG_CHECKING([if multithreading is enabled])
-AC_ARG_ENABLE(mt,
-[  --enable-mt             Enable multithreading support (default true)],
-[
-	AC_MSG_RESULT([$enableval])
-	if ! test "$enableval" = "yes" ; then
-		ENABLE_MT="false"
-	fi
-],
-[
-	AC_MSG_RESULT([yes (default)])
-])
-
-if test "${ENABLE_MT}" = "true" ; then
-	ACX_PTHREAD
-	if test "$acx_pthread_ok" = "yes"; then
-		#CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
-		# can't set pthread flags for all compilations, since owshell doesn't need it.
-		if test "$cross_compiling" = yes; then
-			# We need to link libow.so with -lpthread on some cross-platforms
-			# since owtcl.so doesn't work otherwise. -pthread is not enough
-			if test x"$PTHREAD_LIBS" = x -a "x$PTHREAD_CFLAGS" = "x-pthread"; then
-				AC_MSG_RESULT([add -lpthread to PTHREAD_LIBS])
-				PTHREAD_LIBS="-lpthread"
-			fi
+ACX_PTHREAD
+if test "$acx_pthread_ok" = "yes"; then
+	#CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+	# can't set pthread flags for all compilations, since owshell doesn't need it.
+	if test "$cross_compiling" = yes; then
+		# We need to link libow.so with -lpthread on some cross-platforms
+		# since owtcl.so doesn't work otherwise. -pthread is not enough
+		if test x"$PTHREAD_LIBS" = x -a "x$PTHREAD_CFLAGS" = "x-pthread"; then
+			AC_MSG_RESULT([add -lpthread to PTHREAD_LIBS])
+			PTHREAD_LIBS="-lpthread"
 		fi
-
-		ENABLE_MT="true"
-	else
-		ENABLE_MT="false"
-		PTHREAD_CFLAGS=""
-		PTHREAD_LIBS=""
-		PTHREAD_CC=""
 	fi
-fi
-AC_SUBST(ENABLE_MT)
-AM_CONDITIONAL(ENABLE_MT, test "${ENABLE_MT}" = "true")
 
+	ENABLE_MT="true"
+else
+	ENABLE_MT="false"
+	PTHREAD_CFLAGS=""
+	PTHREAD_LIBS=""
+	PTHREAD_CC=""
+fi
 
 # Check for i2c support
 ENABLE_I2C="true"
@@ -1551,13 +1532,6 @@ if test "$gcc_cv_header_string" = "yes"; then
 	AC_DEFINE(STRING_WITH_STRINGS, 1, [Define to 1 if string.h may be included along with strings.h])
 fi
 
-if test "${ENABLE_MT}" = "true" ; then
-	OW_MT=1
-else
-	OW_MT=0
-fi
-AC_SUBST(OW_MT)
-
 if test "${ENABLE_I2C}" = "true" ; then
 	OW_I2C=1
 else
@@ -1653,7 +1627,6 @@ AC_HEADER_STDBOOL
 AC_STRUCT_TM
 
 # Checks for library functions.
-
 AC_FUNC_FORK
 #AC_FUNC_MALLOC
 #AC_FUNC_MKTIME
@@ -1795,11 +1768,6 @@ if test "${ENABLE_W1}" = "true"; then
 	AC_MSG_RESULT([                       W1 is enabled])
 else
 	AC_MSG_RESULT([                       W1 is DISABLED])
-fi
-if test "${ENABLE_MT}" = "true"; then
-	AC_MSG_RESULT([           Multithreading is enabled])
-else
-	AC_MSG_RESULT([           Multithreading is DISABLED])
 fi
 if test "${ENABLE_PARPORT}" = "true"; then
 	AC_MSG_RESULT([    Parallel port DS1410E is enabled])

@@ -32,7 +32,7 @@ This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
 #include <config.h>
 #include "owfs_config.h"
 
-#if OW_W1 && OW_MT
+#if OW_W1
 
 #include "ow_w1.h"
 #include "ow_connection.h"
@@ -76,4 +76,4 @@ GOOD_OR_BAD W1PipeSelect_timeout( FILE_DESCRIPTOR_OR_ERROR file_descriptor )
 	} while (1) ;
 }
 
-#endif /* OW_W1 && OW_MT */
+#endif /* OW_W1 */

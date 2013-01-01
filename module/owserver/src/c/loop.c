@@ -37,8 +37,6 @@ $Id$
 
 #include "owserver.h"
 
-#if OW_MT						// Handler for multithreaded approach -- with ping
-
 static void LoopCleanup(struct handlerdata *hd);
 static enum toclient_state Ping_or_Send( enum toclient_state last_toclient, struct handlerdata * hd );
 static GOOD_OR_BAD LoopSetup(struct handlerdata *hd) ;
@@ -161,5 +159,3 @@ void PingLoop(struct handlerdata *hd)
 		LoopCleanup(hd);
 	}
 }
-
-#endif							/* OW_MT */

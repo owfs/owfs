@@ -18,7 +18,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow_connection.h"
 
-#if OW_W1 && OW_MT
+#if OW_W1
 
 #include "ow_w1.h"
 
@@ -34,4 +34,4 @@ GOOD_OR_BAD W1_Browse( void )
 	return gbGOOD ;
 }
 
-#endif /* OW_W1 && OW_MT */
+#endif /* OW_W1 */

@@ -19,15 +19,10 @@ $Id$
 #include "ow.h"
 
 /* ------- Globals ----------- */
-#if OW_MT
 pthread_mutex_t init_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t access_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t access_cond = PTHREAD_COND_INITIALIZER;
-#else /* not OW_MT */
-pthread_mutex_t init_mutex ;
-pthread_mutex_t access_mutex ;
-pthread_cond_t access_cond ;
-#endif /* OW_MT */
+
 #define INITINIT       _MUTEX_INIT( init_mutex )
 #define ACCESSINIT     _MUTEX_INIT( access_mutex )
 #define INITLOCK       _MUTEX_LOCK(    init_mutex   )

@@ -58,7 +58,6 @@ $Id$
 #define OWFS_MINOR      "@VERSION_MINOR@"
 #define OWFS_PATCHLEVEL "@VERSION_PATCHLEVEL@"
 
-#define OW_MT           @OW_MT@
 #define OW_ALLOC_DEBUG  @OW_ALLOC_DEBUG@
 #define OW_SHOW_TRAFFIC @OW_SHOW_TRAFFIC@
 #define OW_CACHE        @OW_CACHE@

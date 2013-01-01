@@ -104,7 +104,6 @@ extern int log_available;
 #define SNformat	"%.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X"
 #define SNvar(sn)	(sn)[0],(sn)[1],(sn)[2],(sn)[3],(sn)[4],(sn)[5],(sn)[6],(sn)[7]
 
-#if OW_MT
 /* Need to define those functions to get FILE and LINE information */
 
 extern const char  mutex_init_failed[];
@@ -166,26 +165,5 @@ extern const char  cond_destroy_failed[];
 #define my_pthread_cond_destroy(cond)	                do {\
 	int mrc = pthread_cond_destroy(cond);	                \
 	if(mrc != 0) { FATAL_ERROR( cond_destroy_failed,      mrc, strerror(mrc)); }} while (0)
-
-//extern const char rwlock_init_failed[];
-//extern const char rwlock_read_lock_failed[];
-//extern const char rwlock_read_unlock_failed[];
-
-#else /* not OW_MT */
-
-#define my_pthread_mutex_init(mutex, attr)              do {} while(0)
-#define my_pthread_mutex_destroy(mutex)                 do {} while(0)
-#define my_pthread_mutex_lock(mutex)                    do {} while (0)
-#define my_pthread_mutex_unlock(mutex)                  do {} while (0)
-#define my_pthread_mutexattr_init(attr)                 do {} while (0)
-#define my_pthread_mutexattr_destroy(attr)              do {} while (0)
-#define my_pthread_mutexattr_settype(attr, typ)         do {} while (0)
-#define my_pthread_cond_timedwait(cond, mutex, abstime)	do {} while (0)
-#define my_pthread_cond_wait(cond, mutex)	            do {} while (0)
-#define my_pthread_cond_signal(cond)	                do {} while (0)
-#define my_pthread_cond_init(cond, attr)                do {} while (0)
-#define my_pthread_cond_destroy(cond)	                do {} while (0)
-
-#endif /* OW_MT */
 
 #endif							/* OW_DEBUG_H */

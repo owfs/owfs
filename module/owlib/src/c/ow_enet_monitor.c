@@ -15,7 +15,7 @@ $Id$
 #include "ow_connection.h"
 #include "ow_usb_msg.h"
 
-#if OW_HA7 && OW_MT
+#if OW_HA7
 
 static void ENET_monitor_close(struct connection_in *in);
 static GOOD_OR_BAD ENET_monitor_in_use(const struct port_in * pin) ;
@@ -186,7 +186,7 @@ static void ENET_scan_for_adapters(void)
 	MONITOR_RUNLOCK ;
 }
 
-#else /*  OW_HA7 && OW_MT */
+#else /*  OW_HA7 */
 
 GOOD_OR_BAD ENET_monitor_detect(struct port_in *pin)
 {
@@ -195,4 +195,4 @@ GOOD_OR_BAD ENET_monitor_detect(struct port_in *pin)
 	return gbBAD ;
 }
 
-#endif /*  OW_HA7 && OW_MT */
+#endif /*  OW_HA7 */

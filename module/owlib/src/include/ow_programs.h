@@ -35,13 +35,9 @@ void set_exit_signal_handlers(void (*exit_handler)
 #define SI_FROMKERNEL(siptr)    ((siptr)->si_code > 0)
 #endif
 
-#if OW_MT
-  extern int main_threadid_init ;
-  extern pthread_t main_threadid;
-  #define IS_MAINTHREAD ( (main_threadid_init==1) && (main_threadid == pthread_self()) )
-#else
-  #define IS_MAINTHREAD 1
-#endif
+extern int main_threadid_init ;
+extern pthread_t main_threadid;
+#define IS_MAINTHREAD ( (main_threadid_init==1) && (main_threadid == pthread_self()) )
 
 /* Exit handler */
 void exit_handler(int signo, siginfo_t * info, void *context) ;

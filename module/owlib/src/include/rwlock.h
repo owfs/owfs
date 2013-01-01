@@ -13,8 +13,6 @@
 
 #include "owfs_config.h"
 
-#if OW_MT
-
 #include <pthread.h>
 #include "sem.h"
 
@@ -31,11 +29,5 @@ inline void my_rwlock_write_unlock(my_rwlock_t * rwlock);
 inline void my_rwlock_read_lock(my_rwlock_t * rwlock);
 inline void my_rwlock_read_unlock(my_rwlock_t * rwlock);
 void my_rwlock_destroy(my_rwlock_t * rwlock);
-
-#else /* not OW_MT */
-
-typedef int my_rwlock_t ;
-
-#endif							/* OW_MT */
 
 #endif							/* RWLOCK */

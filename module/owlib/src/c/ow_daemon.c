@@ -161,11 +161,9 @@ GOOD_OR_BAD EnterBackground(void)
 		}
 	}
 
-#if OW_MT
 	main_threadid = pthread_self();
 	main_threadid_init = 1 ;
 	LEVEL_DEBUG("main thread id = %lu", (unsigned long int) main_threadid);
-#endif
 
 	return gbGOOD;
 }

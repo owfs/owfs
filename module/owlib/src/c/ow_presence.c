@@ -125,8 +125,6 @@ INDEX_OR_ERROR ReCheckPresence(struct parsedname *pn)
 
 /* Check if device exists -- -1 no, >=0 yes (bus number) */
 /* lower level, cycle through the devices */
-#if OW_MT
-
 struct checkpresence_struct {
 	struct port_in * pin;
 	struct connection_in * cin;
@@ -204,25 +202,6 @@ static INDEX_OR_ERROR CheckPresence_low(struct parsedname *pn)
 
 	return cps.bus_nr;
 }
-
-#else							/* OW_MT */
-
-static INDEX_OR_ERROR CheckPresence_low(struct parsedname *pn)
-{
-	struct port_in * pin ;
-	
-	for ( pin=Inbound_Control.head_port ; pin ; pin=pin->next ) {
-		struct connection_in * cin ;
-		for ( cin=pin->first ; cin ; cin=cin->next ) {
-			int bus_nr = CheckThisConnection( cin->index, pn ) ;
-			if ( INDEX_VALID(bus_nr) ) {
-				return bus_nr ;
-			}
-		}
-	}
-	return INDEX_BAD;				// no success
-}
-#endif							/* OW_MT */
 
 ZERO_OR_ERROR FS_present(struct one_wire_query *owq)
 {

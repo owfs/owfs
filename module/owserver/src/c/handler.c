@@ -41,8 +41,6 @@ $Id$
 int persistent_connections = 0;
 int handler_count = 0 ;
 
-#if OW_MT						// Handler for multithreaded approach -- with ping
-
 static void SingleHandler(struct handlerdata *hd);
 
 /*
@@ -177,23 +175,3 @@ static void SingleHandler(struct handlerdata *hd)
 		hd->sp.path = NULL;
 	}
 }
-
-#else							/* no OW_MT */
-void Handler(FILE_DESCRIPTOR_OR_ERROR file_descriptor)
-{
-	struct handlerdata hd;
-	hd.file_descriptor = file_descriptor;
-	if (FromClient(&hd) == 0) {
-		DataHandler(&hd);
-	}
-	if (hd.sp.path) {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wcast-qual"
-	// allocated in From_Client with owmalloc, but cast to const
-		owfree(hd.sp.path);
-#pragma GCC diagnostic pop
-		hd.sp.path = NULL;
-	}
-}
-
-#endif							/* OW_MT */

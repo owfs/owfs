@@ -234,9 +234,8 @@ static SIZE_OR_ERROR FS_r_given_bus(struct one_wire_query *owq)
 
 	if (KnownBus(pn) && BusIsServer(pn->selected_connection)) {
 		/* The bus is not local... use a network connection instead */
-#if OW_MT
 		LEVEL_DEBUG("pid=%ld call ServerRead", pthread_self());
-#endif							/* OW_MT */
+
 		// Read afar -- returns already formatted in buffer
 		read_or_error = ServerRead(owq);
 		LEVEL_DEBUG("back from server");

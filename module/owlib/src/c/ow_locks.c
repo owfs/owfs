@@ -19,7 +19,6 @@ $Id$
 
 /* ------- Globals ----------- */
 
-#if OW_MT
   #ifdef __UCLIBC__
     #if ((__UCLIBC_MAJOR__ << 16)+(__UCLIBC_MINOR__ << 8)+(__UCLIBC_SUBLEVEL__) < 0x00091D)
 	/* If uClibc < 0.9.29, then re-initialize internal pthread-structs */
@@ -27,7 +26,6 @@ $Id$
 	void __pthread_initialize(void);
     #endif							/* UCLIBC_VERSION */
  #endif							/* __UCLIBC__ */
-#endif							/* OW_MT */
 
 // Global structure holding mutexes
 struct mutexes Mutex ;
@@ -35,7 +33,6 @@ struct mutexes Mutex ;
 /* Essentially sets up mutexes to protect global data/devices */
 void LockSetup(void)
 {
-#if OW_MT
 	/* global mutex attribute */
 	_MUTEX_ATTR_INIT(Mutex.mattr);
   #ifdef __UCLIBC__
@@ -77,5 +74,4 @@ void LockSetup(void)
   #if OW_USB
 	_MUTEX_INIT(Mutex.libusb_mutex);
   #endif							/* OW_USB */
-#endif							/* OW_MT */
 }

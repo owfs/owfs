@@ -15,8 +15,6 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
-#if OW_MT
-
 void my_rwlock_init(my_rwlock_t * my_rwlock)
 {
 	my_pthread_mutex_init(&(my_rwlock->protect_reader_count), Mutex.pmattr);
@@ -66,5 +64,3 @@ void my_rwlock_destroy(my_rwlock_t * my_rwlock)
 	sem_destroy(&(my_rwlock->allow_readers));
 	sem_destroy(&(my_rwlock->no_processes));
 }
-
-#endif							/* OW_MT */

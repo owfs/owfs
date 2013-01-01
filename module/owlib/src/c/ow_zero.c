@@ -13,7 +13,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow_connection.h"
 
-#if OW_ZERO && OW_MT
+#if OW_ZERO
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -137,7 +137,7 @@ void ZeroConf_Announce(struct connection_out *out)
 	}
 }
 
-#else							/* OW_ZERO && OW_MT  */
+#else							/* OW_ZERO */
 
 void ZeroConf_Announce(struct connection_out *out)
 {

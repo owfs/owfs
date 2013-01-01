@@ -14,7 +14,7 @@ $Id$
 #include "ow.h"
 #include "ow_connection.h"
 
-#if OW_W1 && OW_MT
+#if OW_W1
 
 #include "ow_w1.h"
 
@@ -97,7 +97,7 @@ static void W1_monitor_close(struct connection_in *in)
 	_MUTEX_DESTROY(in->master.w1_monitor.read_mutex);
 }
 
-#else /* OW_W1 && OW_MT */
+#else /* OW_W1 */
 
 GOOD_OR_BAD W1_monitor_detect(struct port_in *pin)
 {
@@ -106,4 +106,4 @@ GOOD_OR_BAD W1_monitor_detect(struct port_in *pin)
 	return gbBAD ;
 }
 
-#endif /* OW_W1 && OW_MT */
+#endif /* OW_W1 */

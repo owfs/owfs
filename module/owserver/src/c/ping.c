@@ -37,8 +37,6 @@ $Id$
 
 #include "owserver.h"
 
-#if OW_MT						// Handler for multithreaded approach -- with ping
-
 /*
  * Routine for handling a single request
    returns 0 if ok, else non-zero for error
@@ -56,5 +54,3 @@ void PingClient(struct handlerdata *hd)
 {
 		ToClient(hd->file_descriptor, &ping_cm, NULL);	// send the ping
 }
-
-#endif							/* OW_MT */

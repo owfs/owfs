@@ -223,8 +223,6 @@ static GOOD_OR_BAD ListenCycle( void )
 	return gbBAD ;
 }
 
-#if OW_MT
-
 // Read data from the waiting socket and do the actual work
 static void *ProcessAcceptSocket(void *arg)
 {
@@ -339,61 +337,3 @@ void ServerProcess(void (*HandlerRoutine) (FILE_DESCRIPTOR_OR_ERROR file_descrip
 	/* Cleanup that may never be reached */
 	return;
 }
-
-#else /* OW_MT */
-
-// Read data from the waiting socket and do the actual work
-static void *ProcessAcceptSocket(void *arg)
-{
-	struct Accept_Socket_Data * asd = (struct Accept_Socket_Data *) arg;
-
-	// Do the actual work
-	asd->out->HandlerRoutine( asd->acceptfd );
-
-	// cleanup
-	Test_and_Close( &(asd->acceptfd) );
-	owfree(asd);
-	LEVEL_DEBUG("Normal exit.");
-
-	return VOID_RETURN;
-}
-
-static void ProcessListenSocket( struct connection_out * out )
-{
-	FILE_DESCRIPTOR_OR_ERROR acceptfd;
-	struct Accept_Socket_Data * asd ;
-
-	acceptfd = accept(out->file_descriptor, NULL, NULL);
-
-	if ( FILE_DESCRIPTOR_NOT_VALID( acceptfd ) ) {
-		return ;
-	}
-
-	// allocate space to pass variables to thread -- cleaned up in thread handler
-	asd = owmalloc( sizeof(struct Accept_Socket_Data) ) ;
-	if ( asd == NULL ) {
-		close( acceptfd ) ;
-		return ;
-	}
-	asd->acceptfd = acceptfd ;
-	asd->out = out ;
-
-	ProcessAcceptSocket(asd) ;
-}
-
-/* Setup Servers -- select on each port */
-void ServerProcess(void (*HandlerRoutine) (FILE_DESCRIPTOR_OR_ERROR file_descriptor))
-{
-	if ( GOOD( SetupListenSockets( HandlerRoutine ) ) ) {
-		while (	GOOD( ListenCycle() ) ) {
-		}
-		CloseListenSockets() ;
-	} else {
-		LEVEL_DEFAULT("Isolated from any control -- exit") ;
-	}
-	/* Cleanup that may never be reached */
-	return;
-}
-
-#endif /* OW_MT */
-

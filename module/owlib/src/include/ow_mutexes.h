@@ -51,11 +51,8 @@ $Id$
 #ifndef OW_MUTEXES_H			/* tedious wrapper */
 #define OW_MUTEXES_H
 
-
-#if OW_MT
 #include <pthread.h>
 #define DEFAULT_THREAD_ATTR	NULL
-#endif							/* OW_MT */
 
 extern struct mutexes {
 	pthread_mutex_t stat_mutex;
@@ -82,7 +79,6 @@ extern struct mutexes {
 
 
 
-#if OW_MT
 #define _MUTEX_ATTR_INIT(at)	my_pthread_mutexattr_init(    &(at) )
 #define _MUTEX_ATTR_SET(at,typ)	my_pthread_mutexattr_settype( &(at) , typ )
 #define _MUTEX_ATTR_DESTROY(at)	my_pthread_mutexattr_destroy( &(at) )
@@ -176,89 +172,5 @@ extern struct mutexes {
 #endif							/* __UCLIBC__ */
 
 #define DETACH_THREAD		pthread_detach(pthread_self())
-
-#else							/* OW_MT */
-
-#define _MUTEX_ATTR_DESTROY(at)	return_ok()
-
-#define _MUTEX_INIT(mut)	(void) mut
-#define _MUTEX_DESTROY(mut)	(void) mut
-#define _MUTEX_LOCK(mut)	return_ok()
-#define _MUTEX_UNLOCK(mut)	return_ok()
-
-#define LIB_WLOCK			return_ok()
-#define LIB_WUNLOCK			return_ok()
-#define LIB_RLOCK			return_ok()
-#define LIB_RUNLOCK			return_ok()
-
-#define CACHE_WLOCK			return_ok()
-#define CACHE_WUNLOCK		return_ok()
-#define CACHE_RLOCK			return_ok()
-#define CACHE_RUNLOCK		return_ok()
-
-#define PERSISTENT_WLOCK	return_ok()
-#define PERSISTENT_WUNLOCK	return_ok()
-#define PERSISTENT_RLOCK	return_ok()
-#define PERSISTENT_RUNLOCK	return_ok()
-
-#define CONNIN_WLOCK		return_ok()
-#define CONNIN_WUNLOCK		return_ok()
-#define CONNIN_RLOCK		return_ok()
-#define CONNIN_RUNLOCK		return_ok()
-
-#define MONITOR_WLOCK      	return_ok()
-#define MONITOR_WUNLOCK    	return_ok()
-#define MONITOR_RLOCK      	return_ok()
-#define MONITOR_RUNLOCK    	return_ok()
-
-#define STATLOCK			return_ok()
-#define STATUNLOCK			return_ok()
-
-#define CONTROLFLAGSLOCK	return_ok()
-#define CONTROLFLAGSUNLOCK	return_ok()
-
-#define FSTATLOCK			return_ok()
-#define FSTATUNLOCK			return_ok()
-
-#define SIMULLOCK			return_ok()
-#define SIMULUNLOCK			return_ok()
-
-#define DIRLOCK				return_ok()
-#define DIRUNLOCK			return_ok()
-
-#define UCLIBCLOCK			return_ok()
-#define UCLIBCUNLOCK		return_ok()
-
-#define LIBUSBLOCK			return_ok()
-#define LIBUSBUNLOCK		return_ok()
-
-#define TYPEDIRLOCK			return_ok()
-#define TYPEDIRUNLOCK		return_ok()
-
-#define EXTERNALDIRLOCK		return_ok()
-#define EXTERNALDIRUNLOCK	return_ok()
-
-#define NAMEFINDLOCK		return_ok()
-#define NAMEFINDUNLOCK		return_ok()
-
-#define ALIASFINDLOCK		return_ok()
-#define ALIASFINDUNLOCK		return_ok()
-
-#define ALIASLISTLOCK		return_ok()
-#define ALIASLISTUNLOCK		return_ok()
-
-#define EXTERNALCOUNTLOCK	return_ok()
-#define EXTERNALCOUNTUNLOCK	return_ok()
-
-#define UCLIBCLOCK			return_ok()
-#define UCLIBCUNLOCK		return_ok()
-#define BUSLOCK(pn)			return_ok()
-#define BUSUNLOCK(pn)		return_ok()
-#define BUSLOCKIN(in)		return_ok()
-#define BUSUNLOCKIN(in)		return_ok()
-
-#define DETACH_THREAD		do {} while(0)
-
-#endif							/* OW_MT */
 
 #endif							/* OW_MUTEXES_H */

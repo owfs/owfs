@@ -14,8 +14,6 @@ $Id$
 #include "ow.h"
 #include "ow_connection.h"
 
-# if OW_MT
-
 // dynamically created access control for a 1-wire device
 // used to negotiate between different threads (queries)
 struct devlock {
@@ -145,18 +143,3 @@ void DeviceLockRelease(struct parsedname *pn)
 		pn->lock = NULL;
 	}
 }
-
-#else							/* not OW_MT */
-
-ZERO_OR_ERROR DeviceLockGet(struct parsedname *pn)
-{
-	(void) pn;					// suppress compiler warning in the trivial case.
-	return 0 ;
-}
-
-void DeviceLockRelease(struct parsedname *pn)
-{
-	(void) pn;					// suppress compiler warning in the trivial case.
-}
-
-#endif							/* OW_MT */

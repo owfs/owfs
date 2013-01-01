@@ -93,17 +93,15 @@ int main(int argc, char **argv)
 	set_exit_signal_handlers(exit_handler);
 	set_signal_handlers(NULL);
 
-#if OW_MT
 	_MUTEX_INIT(persistence_mutex);
-#endif
 
 	/* Set up "Antiloop" -- a unique token */
 	SetupAntiloop();
 	ServerProcess( Handler );
 	LEVEL_DEBUG("ServerProcess done");
-#if OW_MT
+
 	_MUTEX_DESTROY(persistence_mutex);
-#endif
+
 	ow_exit(0);
 	return 0;
 }

@@ -214,14 +214,13 @@ void *DataHandler(void *v)
 		ErrorToClient(hd, &cm) ;
 	}
 
-#if OW_MT
 	// Signal to PingLoop that we're done.
 	hd->toclient = toclient_complete ;
 	if ( hd->ping_pipe[fd_pipe_write] != FILE_DESCRIPTOR_BAD ) {
 		ignore_result = write( hd->ping_pipe[fd_pipe_write],"X",1) ; //dummy payload
 	}
-#endif /* OW_MT */
 	TOCLIENTUNLOCK(hd);
+
 	if (retbuffer) {
 		owfree(retbuffer);
 	}

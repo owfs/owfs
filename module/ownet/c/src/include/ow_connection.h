@@ -101,9 +101,7 @@ struct connection_in {
 	int handle;
 	char *name;
 	FILE_DESCRIPTOR_OR_ERROR file_descriptor;
-#if OW_MT
 	pthread_mutex_t bus_mutex;
-#endif							/* OW_MT */
 
 	enum bus_mode busmode;
 	/* Static buffer for conmmunication */

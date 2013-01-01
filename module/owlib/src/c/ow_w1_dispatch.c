@@ -32,7 +32,7 @@ This file itself  is a modestly modified version of w1d by Evgeniy Polyakov
 #include <config.h>
 #include "owfs_config.h"
 
-#if OW_W1 && OW_MT
+#if OW_W1
 
 #include "ow_w1.h"
 #include "ow_connection.h"
@@ -180,4 +180,4 @@ void * W1_Dispatch( void * v )
 	return VOID_RETURN;
 }
 
-#endif /* OW_W1 && OW_MT */
+#endif /* OW_W1 */

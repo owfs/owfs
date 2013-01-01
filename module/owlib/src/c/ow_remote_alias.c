@@ -80,8 +80,6 @@ static INDEX_OR_ERROR ServerAlias( BYTE * sn, struct connection_in * in, struct 
 	return INDEX_BAD ;
 }	
 
-#if OW_MT
-
 struct remotealias_struct {
 	struct port_in * pin;
 	struct connection_in *cin;
@@ -183,26 +181,3 @@ INDEX_OR_ERROR RemoteAlias(struct parsedname *pn)
 	}
 	return ras.bus_nr;		
 }
-
-#else							/* OW_MT */
-
-INDEX_OR_ERROR RemoteAlias(struct parsedname *pn)
-{
-	struct port_in * pin ;
-	
-	for ( pin = Inbound_Control.head_port ; pin ; pin = pin->first ) {
-		struct connection_in * cin ;
-		
-		for ( cin=NextServer(pin->first) ; cin ; cin=NextServer(cin->next) ) {
-			BYTE sn[SERIAL_NUMBER_SIZE] ;
-			INDEX_OR_ERROR bus_nr = ServerAlias( sn, cin, pn ) ;
-			if ( INDEX_VALID(bus_nr) ) {
-				memcpy( pn->sn, sn, SERIAL_NUMBER_SIZE ) ;
-				LEVEL_DEBUG("Remote alias for %s bus=%d "SNformat,pn->path_to_server,bus_nr,SNvar(sn));
-				return bus_nr ;
-			}
-		}
-	}
-	return INDEX_BAD;				// no success
-}
-#endif							/* OW_MT */

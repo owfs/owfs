@@ -31,7 +31,7 @@ void ow_exit(int exit_code)
 void exit_handler(int signo, siginfo_t * info, void *context)
 {
 	(void) context;
-#if OW_MT
+
 	if (info) {
 		LEVEL_DEBUG
 			("Signal=%d, errno %d, code %d, pid=%ld, Threads: this=%lu main=%lu",
@@ -59,10 +59,4 @@ void exit_handler(int signo, siginfo_t * info, void *context)
 			LEVEL_DEBUG("Ignore kill from this thread. main=%lu this=%lu Signal=%d", main_threadid, pthread_self(), signo);
 		}
 	}
-#else
-	(void) signo;
-	(void) info;
-	StateInfo.shutting_down = 1;
-#endif
-	return;
 }

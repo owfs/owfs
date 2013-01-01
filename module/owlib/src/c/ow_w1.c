@@ -13,7 +13,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow_connection.h"
 
-#if OW_W1 && OW_MT
+#if OW_W1
 
 #include "ow_w1.h"
 #include "ow_codes.h"
@@ -273,7 +273,7 @@ static void W1_close(struct connection_in *in)
 	Test_and_Close_Pipe( in->master.w1.netlink_pipe );
 }
 
-#else							/* OW_W1  && OW_MT */
+#else							/* OW_W1 */
 
 GOOD_OR_BAD W1_detect(struct port_in *pin)
 {
@@ -282,4 +282,4 @@ GOOD_OR_BAD W1_detect(struct port_in *pin)
 	return gbBAD ;
 }
 
-#endif							/* OW_W1  && OW_MT */
+#endif							/* OW_W1 */

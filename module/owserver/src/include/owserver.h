@@ -74,14 +74,10 @@ void Handler(FILE_DESCRIPTOR_OR_ERROR file_descriptor);
 /* Send a response to client of an error */
 void ErrorToClient(struct handlerdata *hd, struct client_msg * cm ) ;
 
-#if OW_MT
-
 /* Send a timeout ping */
 void PingClient(struct handlerdata *hd);
 
 /* Loop waiting for finish sending pings */
 void PingLoop(struct handlerdata *hd) ;
-
-#endif /* OW_MT */
 
 #endif							/* OWSERVER_H */

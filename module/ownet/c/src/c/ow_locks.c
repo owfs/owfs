@@ -19,17 +19,14 @@ $Id$
 /* ------- Globalss ----------- */
 
 #ifdef __UCLIBC__
-#if OW_MT
 #if ((__UCLIBC_MAJOR__ << 16)+(__UCLIBC_MINOR__ << 8)+(__UCLIBC_SUBLEVEL__) < 0x00091D)
 /* If uClibc < 0.9.29, then re-initialize internal pthread-structs */
 extern char *__pthread_initial_thread_bos;
 void __pthread_initialize(void);
 #endif							/* UCLIBC_VERSION */
-#endif							/* OW_MT */
 #endif							/* __UCLIBC */
 
 struct mutexes Mutex = {
-#if OW_MT
 #ifdef __UCLIBC__
 /* vsnprintf() doesn't seem to be thread-safe in uClibc
    even if thread-support is enabled. */
@@ -38,14 +35,12 @@ struct mutexes Mutex = {
 /* mutex attribute -- needed for uClibc programming */
 /* we create at start, and destroy at end */
 	.pmattr = NULL,
-#endif							/* OW_MT */
 };
 
 /* Essentially sets up mutexes to protect global data/devices */
 void LockSetup(void)
 {
 #ifdef __UCLIBC__
-#if OW_MT
 #if ((__UCLIBC_MAJOR__ << 16)+(__UCLIBC_MINOR__ << 8)+(__UCLIBC_SUBLEVEL__) < 0x00091D)
 	/* If uClibc < 0.9.29, then re-initialize internal pthread-structs
 	 * pthread and mutexes doesn't work after daemon() is called and
@@ -62,35 +57,27 @@ void LockSetup(void)
 	my_pthread_mutexattr_init(&Mutex.mattr);
 	my_pthread_mutexattr_settype(&Mutex.mattr, PTHREAD_MUTEX_ADAPTIVE_NP);
 	Mutex.pmattr = &Mutex.mattr;
-#endif							/* OW_MT */
 #endif							/* __UCLIBC */
 
-#if OW_MT
 	my_rwlock_init(&Mutex.lib);
 	my_rwlock_init(&Mutex.connin);
 #ifdef __UCLIBC__
 	my_pthread_mutex_init(&Mutex.uclibc_mutex, Mutex.pmattr);
 #endif							/* UCLIBC */
-#endif							/* OW_MT */
 }
 
 void BUS_lock_in(struct connection_in *in)
 {
 	//printf("BUS_lock_in: in=%p\n", in);
-	if (!in)
-		return;
-#if OW_MT
-	my_pthread_mutex_lock(&(in->bus_mutex));
-#endif							/* OW_MT */
+	if (in) {
+		my_pthread_mutex_lock(&(in->bus_mutex));
+	}
 }
 
 void BUS_unlock_in(struct connection_in *in)
 {
 	//printf("BUS_unlock_in: in=%p\n", in);
-	if (!in)
-		return;
-
-#if OW_MT
-	my_pthread_mutex_unlock(&(in->bus_mutex));
-#endif							/* OW_MT */
+	if (in) {
+		my_pthread_mutex_unlock(&(in->bus_mutex));
+	}
 }

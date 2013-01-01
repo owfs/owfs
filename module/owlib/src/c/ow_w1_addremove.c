@@ -12,7 +12,7 @@ $Id$
 #include <config.h>
 #include "owfs_config.h"
 
-#if OW_W1 && OW_MT
+#if OW_W1
 
 #include "ow_w1.h"
 #include "ow_connection.h"
@@ -92,4 +92,4 @@ void RemoveW1Bus( int bus_master )
 	}
 }
 
-#endif /* OW_W1 && OW_MT */
+#endif /* OW_W1 */

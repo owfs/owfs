@@ -239,8 +239,6 @@ static void FS_simultaneous_entry(void (*dirfunc) (void *, const struct parsedna
 	FS_dir_plus(dirfunc, v, &ignoreflag, pn_root_directory, "simultaneous");
 }
 
-#if OW_MT
-
 /* path is the path which "pn_directory" parses */
 /* FS_dir_all_connections produces the data that can vary: device lists, etc. */
 
@@ -369,51 +367,6 @@ FS_dir_all_connections(void (*dirfunc) (void *, const struct parsedname *), void
 	*flags = dacs.flags ;	
 	return dacs.ret ;
 }
-
-#else							/* OW_MT */
-
-/* path is the path which "pn_directory" parses */
-/* FS_dir_all_connections produces the data that can vary: device lists, etc. */
-static ZERO_OR_ERROR
-FS_dir_all_connections(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_directory, uint32_t * flags)
-{
-	ZERO_OR_ERROR ret = 0;
-	struct port_in * pin;
-	struct parsedname s_pn_selected_connection;
-	struct parsedname *pn_selected_connection = &s_pn_selected_connection;
-
-	memcpy(pn_selected_connection, pn_directory, sizeof(struct parsedname));	//shallow copy
-
-	for ( pin = Inbound_Control.head_port ; pin != NULL ; pin = pin->next ) {
-		struct connection_in * cin;
-		for ( cin = pin->first ; cin != NO_CONNECTION ; cin = cin->next ) {
-			SetKnownBus(cin->index, pn_selected_connection);
-
-			if ( BAD(TestConnection(pn_selected_connection)) ) {
-				continue ;
-			}
-			if (BusIsServer(pn_selected_connection->selected_connection)) {	/* is this a remote bus? */
-				ZERO_OR_ERROR server = ServerDir(dirfunc, v, pn_selected_connection, flags);
-				if ( server ) {
-					ret = server ;
-				}
-				continue ;
-			}
-			/* local bus */
-			if (IsAlarmDir(pn_selected_connection)) {	/* root or branch directory -- alarm state */
-				ZERO_OR_ERROR alarm_return = FS_alarmdir(dirfunc, v, pn_selected_connection);
-				if ( alarm_return ) {
-					ret = alarm_return ;
-				}
-			} else {
-				ret = FS_cache2real(dirfunc, v, pn_selected_connection, flags);
-			}
-		}
-	}
-
-	return ret;
-}
-#endif							/* OW_MT */
 
 /* Device directory (i.e. show the properties) -- all from memory */
 /* Respect the Visibility status and also show only the correct subdir level */

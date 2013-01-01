@@ -15,8 +15,6 @@ $Id$
 
 #if OW_ZERO
 
-#if OW_MT
-
 #include "ow_connection.h"
 
 struct RefStruct {
@@ -209,15 +207,6 @@ void OW_Browse(void)
 		LEVEL_CONNECT("DNSServiceBrowse error = %d\n", dnserr);
 	}
 }
-
-#else							/* OW_MT */
-
-void OW_Browse(void)
-{
-	LEVEL_CONNECT("Zeroconf/Bonjour requires multithreading support (a compile-time configuration setting).\n");
-}
-
-#endif							/* OW_MT */
 
 #else							/* OW_ZERO */
 

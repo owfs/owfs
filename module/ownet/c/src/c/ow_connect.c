@@ -63,9 +63,7 @@ struct connection_in *NewIn(void)
 		
 		now->handle = count_inbound_connections++;
 		now->file_descriptor = FILE_DESCRIPTOR_BAD ;
-#if OW_MT
 		my_pthread_mutex_init(&(now->bus_mutex), Mutex.pmattr);
-#endif							/* OW_MT */
 	}
 
 	return now;
@@ -97,9 +95,7 @@ void FreeIn(struct connection_in *target)
 		target->name = NULL;
 	}
 
-#if OW_MT
 	my_pthread_mutex_destroy(&(target->bus_mutex));
-#endif
 
 	// file descriptor
 	if ( target->file_descriptor > FILE_DESCRIPTOR_BAD ) {

@@ -30,7 +30,6 @@ $Id$
 
 /* module/ownet/c/src/c/error.c & module/owlib/src/c/error.c are identical */
 
-#if OW_MT
 const char mutex_init_failed[] = "mutex_init failed rc=%d [%s]\n";
 const char mutex_destroy_failed[] = "mutex_destroy failed rc=%d [%s]\n";
 const char mutex_lock_failed[] = "mutex_lock failed rc=%d [%s]\n";
@@ -46,7 +45,6 @@ const char cond_signal_failed[] = "cond_signal failed rc=%d [%s]\n";
 const char cond_wait_failed[] = "cond_wait failed rc=%d [%s]\n";
 const char cond_init_failed[] = "cond_init failed rc=%d [%s]\n";
 const char cond_destroy_failed[] = "cond_destroy failed rc=%d [%s]\n";
-#endif
 
 static void err_format(char * format, int errno_save, const char * level_string, const char * file, int line, const char * func, const char * fmt);
 static void hex_print( const char * buf, int length ) ;

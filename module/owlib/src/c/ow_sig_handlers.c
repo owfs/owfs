@@ -16,7 +16,7 @@ $Id$
 static void DefaultSignalHandler(int signo, siginfo_t * info, void *context)
 {
 	(void) context;
-#if OW_MT
+
 	if (info) {
 		LEVEL_DEBUG
 			("Signal handler for %d, errno %d, code %d, pid=%ld, self=%lu",
@@ -24,13 +24,7 @@ static void DefaultSignalHandler(int signo, siginfo_t * info, void *context)
 	} else {
 		LEVEL_DEBUG("Signal handler for %d, self=%lu", signo, pthread_self());
 	}
-#else							/* OW_MT */
-	if (info) {
-		LEVEL_DEBUG("Signal handler for %d, errno %d, code %d, pid=%ld", signo, info->si_errno, info->si_code, (long int) info->si_pid);
-	} else {
-		LEVEL_DEBUG("Signal handler for %d", signo);
-	}
-#endif							/* OW_MT */
+
 	return;
 }
 

@@ -269,7 +269,6 @@ static ZERO_OR_ERROR FS_write_real(int depth, struct one_wire_query *owq)
 	return FS_write_real(depth+1,owq);
 }
 
-#if OW_MT
 struct simultaneous_struct {
 	struct port_in * pin ;
 	struct connection_in * cin;
@@ -348,33 +347,6 @@ static ZERO_OR_ERROR FS_w_simultaneous(struct one_wire_query *owq)
 	}
 	return 0;
 }
-
-#else /* not OW_MT */
-
-/* This function is only used by "Simultaneous" */
-static ZERO_OR_ERROR FS_w_simultaneous(struct one_wire_query *owq)
-{
-	if (SpecifiedBus(PN(owq))) {
-		return FS_w_given_bus(owq);
-	} else if (Inbound_Control.head_port) {
-		struct port_in * pin ;
-		OWQ_allocate_struct_and_pointer(owq_given);
-
-		memcpy(owq_given, owq, sizeof(struct one_wire_query));	// shallow copy
-
-		for ( pin=Inbound_Control.head_port ; pin != NULL ; pin = pin->next ) {
-			struct connection_in * cin;
-					
-			for( cin=pin->first; cin!=NO_CONNECTION ; cin=cin->next ) {
-				SetKnownBus(cin->index, PN(owq_given));
-				FS_w_given_bus(owq_given);
-			}
-		}
-	}
-	return 0;
-}
-
-#endif /* OW_MT */
 
 /* Write to interface dir */
 static ZERO_OR_ERROR FS_w_interface(struct one_wire_query *owq)

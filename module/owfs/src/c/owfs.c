@@ -125,18 +125,9 @@ int main(int argc, char *argv[])
 		Fuse_add("-o", &fuse_options);	// add "-o allow_other" to permit other users access
 		Fuse_add("allow_other", &fuse_options);
 	}
-#if OW_MT == 0
-	Fuse_add("-s", &fuse_options);	// single threaded
-#endif							/* OW_MT */
+
 	Globals.now_background = Globals.want_background;	// tell "error" that we are background
-#if 0
-	{
-		int i;
-		for (i = 0; i < fuse_options.argc; i++) {
-			LEVEL_DEBUG("fuse_options.argv[%d]=[%s]", i, fuse_options.argv[i]);
-		}
-	}
-#endif
+
 #if FUSE_VERSION > 25
 	fuse_main(fuse_options.argc, fuse_options.argv, &owfs_oper, NULL);
 #else							/* FUSE_VERSION <= 25 */
