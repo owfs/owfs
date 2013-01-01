@@ -140,8 +140,8 @@ int ServerWrite(struct request_packet *rp)
 	struct server_msg sm;
 	struct client_msg cm;
 #if ( __GNUC__ > 4 ) || (__GNUC__ == 4 && __GNUC_MINOR__ > 4 )
-#pragma GCC diagnostic push \
-#pragma GCC diagnostic ignored "-Wcast-qual" \
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
 	struct serverpackage sp = { rp->path, (BYTE *) rp->write_value, rp->data_length, rp->tokenstring, rp->tokens, };
 #pragma GCC diagnostic pop	
 #else
