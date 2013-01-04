@@ -98,7 +98,6 @@ READ_FUNCTION(FS_WS603_r_light_threshold);
 WRITE_FUNCTION(FS_WS603_led_control);
 WRITE_FUNCTION(FS_WS603_r_led_model);
 
-#if OW_THERMOCOUPLE
 READ_FUNCTION(FS_thermocouple);
 READ_FUNCTION(FS_rangelow);
 READ_FUNCTION(FS_rangehigh);
@@ -145,10 +144,6 @@ READ_FUNCTION(FS_rangehigh);
 	{"typeT/temperature",PROPERTY_LENGTH_TEMP, NON_AGGREGATE,ft_temperature, fc_volatile,   FS_thermocouple, NO_WRITE_FUNCTION  , VISIBLE, {i:e_type_t}, } , \
 	{"typeT/range_low"  ,PROPERTY_LENGTH_TEMP, NON_AGGREGATE,ft_temperature, fc_static  ,   FS_rangelow, NO_WRITE_FUNCTION     , VISIBLE, {i:e_type_t}, } , \
 	{"typeT/range_high" ,PROPERTY_LENGTH_TEMP, NON_AGGREGATE,ft_temperature, fc_static  ,   FS_rangehigh, NO_WRITE_FUNCTION     , VISIBLE, {i:e_type_t}, } ,
-
-#else							/* OW_THERMOCOUPLE */
-#define F_thermocouple
-#endif							/* OW_THERMOCOUPLE */
 
 #define _1W_DS27XX_PROTECT_REG 0x00
 
@@ -1251,7 +1246,6 @@ static GOOD_OR_BAD OW_lock(const struct parsedname *pn)
 	return BUS_transaction(t, pn);
 }
 
-#if OW_THERMOCOUPLE
 static ZERO_OR_ERROR FS_rangelow(struct one_wire_query *owq)
 {
 	OWQ_F(owq) = Thermocouple_range_low(OWQ_pn(owq).selected_filetype->data.i);
@@ -1283,7 +1277,6 @@ static ZERO_OR_ERROR FS_thermocouple(struct one_wire_query *owq)
 
 	return 0;
 }
-#endif							/* OW_THERMOCOUPLE */
 
 // Based on Les Arbes notes http://www.lesarbresdesign.info/automation/ws603-weather-instrument
 static GOOD_OR_BAD WS603_Send( BYTE * byt, int length, struct parsedname * pn )

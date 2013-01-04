@@ -77,7 +77,6 @@ struct device d_sys_connections = { "connections", "connections", ePN_system,
 };
 
 static struct filetype sys_configure[] = {
-	{"thermocouples", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_integer, fc_static, FS_define, NO_WRITE_FUNCTION, VISIBLE, {i:OW_THERMOCOUPLE}, },
 	{"parport", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_integer, fc_static, FS_define, NO_WRITE_FUNCTION, VISIBLE, {i:OW_PARPORT}, },
 	{"USB", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_integer, fc_static, FS_define, NO_WRITE_FUNCTION, VISIBLE, {i:OW_USB}, },
 	{"i2c", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_integer, fc_static, FS_define, NO_WRITE_FUNCTION, VISIBLE, {i:OW_I2C}, },

@@ -14,8 +14,6 @@ $Id$
 #include "owfs_config.h"
 #include "ow_thermocouple.h"
 
-#if OW_THERMOCOUPLE
-
 /* ------- Structures ----------- */
 
 // Note: highest order polynomial coefficient comes first
@@ -173,8 +171,6 @@ static _FLOAT Poly4Value(_FLOAT * c, _FLOAT x)
 {
 	return c[5] + x * (c[4] + x * (c[3] + x * (c[2] + x * (c[1] + c[0] * x))));
 }
-
-#endif							/* OW_THERMOCOUPLE */
 
 #ifdef THERMOCOUPLE_TEST
 #include <stdio.h>
