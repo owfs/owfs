@@ -66,7 +66,6 @@ READ_FUNCTION(FS_r_s_alarm);
 WRITE_FUNCTION(FS_w_s_alarm);
 READ_FUNCTION(FS_power);
 READ_FUNCTION(FS_channel);
-#if OW_TAI8570
 READ_FUNCTION(FS_r_C);
 READ_FUNCTION(FS_r_D1);
 READ_FUNCTION(FS_r_D2);
@@ -77,7 +76,6 @@ READ_FUNCTION(FS_temperature_5534);
 READ_FUNCTION(FS_pressure_5534);
 READ_FUNCTION(FS_temperature_5540);
 READ_FUNCTION(FS_pressure_5540);
-#endif							/* OW_TAI8570 */
  READ_FUNCTION(FS_voltage);
 
 static enum e_visibility VISIBLE_T8A( const struct parsedname * pn ) ;
@@ -103,7 +101,7 @@ static struct filetype DS2406[] = {
 	{"set_alarm", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_s_alarm, FS_w_s_alarm, VISIBLE, NO_FILETYPE_DATA, },
 	{"infobyte", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_infobyte, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA, },
 
-#if OW_TAI8570
+	// AAG Barometer
 	{"TAI8570", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"TAI8570/C", PROPERTY_LENGTH_UNSIGNED, &ATAI8570, ft_unsigned, fc_static, FS_r_C, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA, },
 	{"TAI8570/D1", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_D1, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA, },
@@ -115,8 +113,8 @@ static struct filetype DS2406[] = {
 	{"TAI8570/sibling", 16, NON_AGGREGATE, ft_ascii, fc_stable, FS_sibling, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"TAI8570/DA5540/temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_link, FS_temperature_5540, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"TAI8570/DA5540/pressure", PROPERTY_LENGTH_PRESSURE, NON_AGGREGATE, ft_pressure, fc_link, FS_pressure_5540, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
-#endif							/* OW_TAI8570 */
 
+	// EDS voltage
 	{"T8A", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_T8A, NO_FILETYPE_DATA, },
 	{"T8A/volt", PROPERTY_LENGTH_FLOAT, &AT8Ac, ft_float, fc_volatile, FS_voltage, NO_WRITE_FUNCTION, VISIBLE_T8A, NO_FILETYPE_DATA, },
 
@@ -504,8 +502,6 @@ static GOOD_OR_BAD OW_voltage(_FLOAT * V, struct parsedname * pn )
 	return 0;
 }
 
-
-#if OW_TAI8570
 struct s_TAI8570 {
 	BYTE master[8];
 	BYTE sibling[8];
@@ -1122,5 +1118,3 @@ static GOOD_OR_BAD testTAI8570(struct s_TAI8570 *tai, struct one_wire_query *owq
 	memcpy(pn->sn, tai->master, 8);	// restore original for cache
 	return Cache_Add_SlaveSpecific((const void *) tai, sizeof(struct s_TAI8570), SlaveSpecificTag(BAR), pn);
 }
-
-#endif							/* OW_TAI8570 */

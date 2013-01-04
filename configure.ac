@@ -239,23 +239,6 @@ AC_ARG_ENABLE(ownetlib,
 AC_SUBST(ENABLE_OWNETLIB)
 AM_CONDITIONAL(ENABLE_OWNETLIB, test "${ENABLE_OWNETLIB}" = "true")
 
-# Test if TAI8570 barometer should be supported
-ENABLE_TAI8570="true"
-AC_MSG_CHECKING([if TAI8570 barometer support is enabled])
-AC_ARG_ENABLE(tai8570,
-[  --enable-tai8570        Enable tai8570 barometer support (default true)],
-[
-	AC_MSG_RESULT([$enableval])
-	if ! test "$enableval" = "yes" ; then
-		ENABLE_TAI8570="false"
-	fi
-],
-[
-	AC_MSG_RESULT([yes (default)])
-])
-AC_SUBST(ENABLE_TAI8570)
-AM_CONDITIONAL(ENABLE_TAI8570, test "${ENABLE_TAI8570}" = "true")
-
 # Test if thermocouples should be supported
 ENABLE_THERMOCOUPLE="true"
 AC_MSG_CHECKING([if thermocouple support is enabled])
@@ -1773,11 +1756,6 @@ if test "${ENABLE_PARPORT}" = "true"; then
 	AC_MSG_RESULT([    Parallel port DS1410E is enabled])
 else
 	AC_MSG_RESULT([    Parallel port DS1410E is DISABLED])
-fi
-if test "${ENABLE_TAI8570}" = "true"; then
-	AC_MSG_RESULT([        TAI8570 barometer is enabled])
-else
-	AC_MSG_RESULT([        TAI8570 barometer is DISABLED])
 fi
 if test "${ENABLE_THERMOCOUPLE}" = "true"; then
 	AC_MSG_RESULT([             Thermocouple is enabled])
