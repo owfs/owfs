@@ -22,6 +22,9 @@ $Id$
 #endif
 
 #include "jsmn.h"
+
+#if OW_HA7
+
 /* from http://stackoverflow.com/questions/337422/how-to-udp-broadcast-with-c-in-linux */
 static void Setup_ENET_hint( struct addrinfo * hint )
 {
@@ -297,3 +300,4 @@ void enet_list_add( char * ip, char * port, int version, struct enet_list * elis
 	elist->head = new ;
 }
 
+#endif /* OW_HA7 */
