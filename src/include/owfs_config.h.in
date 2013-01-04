@@ -64,11 +64,9 @@ $Id$
 #define OW_USB          @OW_USB@
 #define OW_PARPORT      @OW_PARPORT@
 #define OW_DEBUG        @OW_DEBUG@
-#define OW_TAI8570      @OW_TAI8570@
 #define OW_HA7          @OW_HA7@
 #define OW_W1           @OW_W1@
 #define OW_I2C          @OW_I2C@
-#define OW_THERMOCOUPLE @OW_THERMOCOUPLE@
 #define OW_ZERO         @OW_ZERO@
 #define OW_CYGWIN       @OW_CYGWIN@
 #define OW_DARWIN       @OW_DARWIN@

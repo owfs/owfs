@@ -239,23 +239,6 @@ AC_ARG_ENABLE(ownetlib,
 AC_SUBST(ENABLE_OWNETLIB)
 AM_CONDITIONAL(ENABLE_OWNETLIB, test "${ENABLE_OWNETLIB}" = "true")
 
-# Test if thermocouples should be supported
-ENABLE_THERMOCOUPLE="true"
-AC_MSG_CHECKING([if thermocouple support is enabled])
-AC_ARG_ENABLE(thermocouple,
-[  --enable-thermocouple   Enable thermocouple support (default true)],
-[
-	AC_MSG_RESULT([$enableval])
-	if ! test "$enableval" = "yes" ; then
-		ENABLE_THERMOCOUPLE="false"
-	fi
-],
-[
-	AC_MSG_RESULT([yes (default)])
-])
-AC_SUBST(ENABLE_THERMOCOUPLE)
-AM_CONDITIONAL(ENABLE_THERMOCOUPLE, test "${ENABLE_THERMOCOUPLE}" = "true")
-
 # Check for threading
 ACX_PTHREAD
 if test "$acx_pthread_ok" = "yes"; then
@@ -1571,20 +1554,6 @@ else
 fi
 AC_SUBST(OW_DEBUG)
 
-if test "${ENABLE_TAI8570}" = "true" ; then
-	OW_TAI8570=1
-else
-	OW_TAI8570=0
-fi
-AC_SUBST(OW_TAI8570)
-
-if test "${ENABLE_THERMOCOUPLE}" = "true" ; then
-	OW_THERMOCOUPLE=1
-else
-	OW_THERMOCOUPLE=0
-fi
-AC_SUBST(OW_THERMOCOUPLE)
-
 if test "${ENABLE_OWMALLOC}" = "true" ; then
 	OW_ALLOC_DEBUG=1
 else
@@ -1756,11 +1725,6 @@ if test "${ENABLE_PARPORT}" = "true"; then
 	AC_MSG_RESULT([    Parallel port DS1410E is enabled])
 else
 	AC_MSG_RESULT([    Parallel port DS1410E is DISABLED])
-fi
-if test "${ENABLE_THERMOCOUPLE}" = "true"; then
-	AC_MSG_RESULT([             Thermocouple is enabled])
-else
-	AC_MSG_RESULT([             Thermocouple is DISABLED])
 fi
 if test "${ENABLE_ZERO}" = "true"; then
 	AC_MSG_RESULT([         Zeroconf/Bonjour is enabled])
