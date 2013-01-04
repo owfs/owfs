@@ -52,10 +52,8 @@ READ_FUNCTION(FS_r_page);
 WRITE_FUNCTION(FS_w_page);
 READ_FUNCTION(FS_counter);
 READ_FUNCTION(FS_pagecount);
-#if OW_CACHE
 READ_FUNCTION(FS_r_mincount);
 WRITE_FUNCTION(FS_w_mincount);
-#endif							/* OW_CACHE */
 
 /* ------- Structures ----------- */
 
@@ -69,9 +67,7 @@ static struct filetype DS2423[] = {
 	{"pages/count", PROPERTY_LENGTH_UNSIGNED, &A2423, ft_unsigned, fc_volatile, FS_pagecount, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 
 	{"counters", PROPERTY_LENGTH_UNSIGNED, &A2423c, ft_unsigned, fc_volatile, FS_counter, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
-#if OW_CACHE
 	{"mincount", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_mincount, FS_w_mincount, VISIBLE, NO_FILETYPE_DATA, },
-#endif							/*OW_CACHE */
 };
 
 DeviceEntryExtended(1D, DS2423, DEV_ovdr, NO_GENERIC_READ, NO_GENERIC_WRITE);
@@ -130,7 +126,6 @@ static ZERO_OR_ERROR FS_pagecount(struct one_wire_query *owq)
 	return GB_to_Z_OR_E(OW_r_counter(owq, OWQ_pn(owq).extension, pagesize)) ;
 }
 
-#if OW_CACHE
 /* Special code for cumulative counters -- read/write -- uses the caching system for storage */
 /* Different from LCD system, counters are NOT reset with each read */
 static ZERO_OR_ERROR FS_r_mincount(struct one_wire_query *owq)
@@ -179,7 +174,6 @@ static ZERO_OR_ERROR FS_w_mincount(struct one_wire_query *owq)
 	}
 	return 0;
 }
-#endif							/*OW_CACHE */
 
 static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
 {

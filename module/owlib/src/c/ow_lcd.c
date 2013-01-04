@@ -57,10 +57,8 @@ WRITE_FUNCTION(FS_w_memory);
 READ_FUNCTION(FS_r_register);
 WRITE_FUNCTION(FS_w_register);
 WRITE_FUNCTION(FS_simple_command);
-#if OW_CACHE
 READ_FUNCTION(FS_r_cum);
 WRITE_FUNCTION(FS_w_cum);
-#endif							/* OW_CACHE */
 WRITE_FUNCTION(FS_w_screenX);
 WRITE_FUNCTION(FS_w_lineX);
 
@@ -106,9 +104,7 @@ static struct filetype LCD[] = {
 	{"register", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_register, FS_w_register, VISIBLE, NO_FILETYPE_DATA, },
 	{"data", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_data, FS_w_data, VISIBLE, NO_FILETYPE_DATA, },
 	{"counters", PROPERTY_LENGTH_UNSIGNED, &ALCD, ft_unsigned, fc_volatile, FS_r_counters, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
-#if OW_CACHE
 	{"cumulative", PROPERTY_LENGTH_UNSIGNED, &ALCD, ft_unsigned, fc_volatile, FS_r_cum, FS_w_cum, VISIBLE, NO_FILETYPE_DATA, },
-#endif							/*OW_CACHE */
 	{"screen16", 128, NON_AGGREGATE, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_w_screenX, VISIBLE, {i:16}, },
 	{"screen20", 128, NON_AGGREGATE, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_w_screenX, VISIBLE, {i:20}, },
 	{"screen40", 128, NON_AGGREGATE, ft_ascii, fc_stable, NO_READ_FUNCTION, FS_w_screenX, VISIBLE, {i:40}, },
@@ -213,7 +209,7 @@ static ZERO_OR_ERROR FS_r_counters(struct one_wire_query *owq)
 	return 0;
 }
 
-#if OW_CACHE					/* Special code for cumulative counters -- read/write -- uses the caching system for storage */
+/* caching system for storage */
 static ZERO_OR_ERROR FS_r_cum(struct one_wire_query *owq)
 {
 	UINT u[4];
@@ -241,7 +237,6 @@ static ZERO_OR_ERROR FS_w_cum(struct one_wire_query *owq)
 	};
 	return GB_to_Z_OR_E( Cache_Add_SlaveSpecific((const void *) u, 4 * sizeof(UINT), SlaveSpecificTag(CUM), PN(owq)) );
 }
-#endif							/*OW_CACHE */
 
 static ZERO_OR_ERROR FS_w_lineX(struct one_wire_query *owq)
 {

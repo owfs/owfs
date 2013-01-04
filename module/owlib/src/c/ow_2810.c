@@ -62,9 +62,7 @@ READ_FUNCTION(FS_ver);
 READ_FUNCTION(FS_r_pwd);
 WRITE_FUNCTION(FS_w_pwd);
 WRITE_FUNCTION(FS_set);
-#if OW_CACHE
 WRITE_FUNCTION(FS_use);
-#endif							/* OW_CACHE */
 
 /* ------- Structures ----------- */
 
@@ -83,11 +81,9 @@ static struct filetype DS28E10[] = {
 	{"set_password/full", 8, NON_AGGREGATE, ft_binary, fc_stable, NO_READ_FUNCTION, FS_set, VISIBLE, {i:_ds1977_read}, },
 	{"set_password/enabled", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_pwd, FS_w_pwd, VISIBLE, NO_FILETYPE_DATA, },
 
-#if OW_CACHE
 	{"use_password", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"use_password/read", 8, NON_AGGREGATE, ft_binary, fc_stable, NO_READ_FUNCTION, FS_use, VISIBLE, {i:_ds1977_full}, },
 	{"use_password/full", 8, NON_AGGREGATE, ft_binary, fc_stable, NO_READ_FUNCTION, FS_use, VISIBLE, {i:_ds1977_read}, },
-#endif							/*OW_CACHE */
 };
 
 DeviceEntryExtended(44, DS28E10, DEV_resume | DEV_ovdr, NO_GENERIC_READ, NO_GENERIC_WRITE);
@@ -176,7 +172,6 @@ static ZERO_OR_ERROR FS_set(struct one_wire_query *owq)
 	/* Verify */
 	RETURN_ERROR_IF_BAD(OW_verify((BYTE *) OWQ_buffer(owq), _ds1977_pwd_loc[pn->selected_filetype->data.i], pn) ) ;
 	
-#if OW_CACHE
 	switch ( pn->selected_filetype->data.i) {
 		case _ds1977_full:
 			Cache_Add_SlaveSpecific((BYTE *) OWQ_buffer(owq), 8, SlaveSpecificTag(FUL) , pn) ;
@@ -189,10 +184,8 @@ static ZERO_OR_ERROR FS_set(struct one_wire_query *owq)
 	return FS_use(owq);
 #else
 	return 0 ;
-#endif /* OW_CACHE */
 }
 
-#if OW_CACHE
 static ZERO_OR_ERROR FS_use(struct one_wire_query *owq)
 {
 	struct parsedname * pn = PN(owq) ;
@@ -208,20 +201,17 @@ static ZERO_OR_ERROR FS_use(struct one_wire_query *owq)
 	}
 	return -EINVAL;
 }
-#endif							/* OW_CACHE */
 
 static GOOD_OR_BAD OW_r_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
 {
 	BYTE pwd[8] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, };
 
-#if OW_CACHE
 	if ( GOOD( Cache_Get_SlaveSpecific((void *) pwd, sizeof(pwd), SlaveSpecificTag(REA), pn)) ) {
 		RETURN_GOOD_IF_GOOD( OW_r_mem_with_password( pwd, data,size,offset,pn) ) ;
 	}
 	if ( GOOD( Cache_Get_SlaveSpecific((void *) pwd, sizeof(pwd), SlaveSpecificTag(FUL), pn)) ) {
 		RETURN_GOOD_IF_GOOD( OW_r_mem_with_password( pwd, data,size,offset,pn) ) ;
 	}
-#endif							/* OW_CACHE */
 	return OW_r_mem_with_password(pwd, data, size, offset, pn);
 }
 

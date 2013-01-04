@@ -1082,24 +1082,6 @@ AC_SUBST(FUSE_INCLUDES)
 AC_SUBST(ENABLE_OWFS)
 AM_CONDITIONAL(ENABLE_OWFS, test "${ENABLE_OWFS}" = "true")
 
-# Check if the cache is enabled.
-AC_MSG_CHECKING(if caching is enabled)
-ENABLE_CACHE="true"
-AC_ARG_ENABLE(cache,
-[  --enable-cache          Enable caching (default true)],
-[
-	AC_MSG_RESULT([$enableval])
-
-	if test ! "$enableval" = "yes" ; then
-		ENABLE_CACHE=false
-	fi
-],
-[
-	AC_MSG_RESULT([yes (default)])
-])
-AC_SUBST(ENABLE_CACHE)
-AM_CONDITIONAL(ENABLE_CACHE, test "${ENABLE_CACHE}" = "true")
-
 # Check if the zeroconf/bonjour is enabled.
 AC_MSG_CHECKING(if zeroconf/bonjour is enabled)
 ENABLE_ZERO="true"
@@ -1494,13 +1476,6 @@ else
 fi
 AC_SUBST(OW_W1)
 
-if test "${ENABLE_CACHE}" = "true" ; then
-	OW_CACHE=1
-else
-	OW_CACHE=0
-fi
-AC_SUBST(OW_CACHE)
-
 if test "${ENABLE_USB}" = "true" ; then
 	OW_USB=1
 else
@@ -1671,11 +1646,6 @@ AC_MSG_RESULT([    Deployment location: ${prefix}])
 AC_MSG_RESULT()
 AC_MSG_RESULT([Compile-time options:])
 
-if test "${ENABLE_CACHE}" = "true"; then
-	AC_MSG_RESULT([                  Caching is enabled])
-else
-	AC_MSG_RESULT([                  Caching is DISABLED])
-fi
 if test "${ENABLE_USB}" = "true"; then
 	AC_MSG_RESULT([                      USB is enabled])
 else

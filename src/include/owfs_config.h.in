@@ -60,11 +60,9 @@ $Id$
 
 #define OW_ALLOC_DEBUG  @OW_ALLOC_DEBUG@
 #define OW_SHOW_TRAFFIC @OW_SHOW_TRAFFIC@
-#define OW_CACHE        @OW_CACHE@
 #define OW_USB          @OW_USB@
 #define OW_PARPORT      @OW_PARPORT@
 #define OW_DEBUG        @OW_DEBUG@
-#define OW_HA7          @OW_HA7@
 #define OW_W1           @OW_W1@
 #define OW_I2C          @OW_I2C@
 #define OW_ZERO         @OW_ZERO@

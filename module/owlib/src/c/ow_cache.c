@@ -19,7 +19,6 @@ $Id$
 
 //#define CACHE_DEBUG
 
-#if OW_CACHE
 #include <limits.h>
 
 #define EXTENSION_INTERNAL  -2
@@ -1702,6 +1701,3 @@ void Cache_Del_Alias_Bus(const ASCII * alias_name)
 	LEVEL_DEBUG("Hide %s",alias_name) ;
 	Cache_Add_Alias_Bus( alias_name, INDEX_BAD ) ;
 }
-
-
-#endif							/* OW_CACHE */

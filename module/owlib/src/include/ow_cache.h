@@ -49,8 +49,6 @@ struct internal_prop {
 
 enum simul_type { simul_temp, simul_volt, simul_end };
 
-#if OW_CACHE
-
 #define Make_SlaveSpecificTag(tag,change)  static char ip_name_##tag[] = #tag ; static struct internal_prop ip_##tag = { ip_name_##tag , change }
 #define SlaveSpecificTag(tag)     (& ip_##tag)
 
@@ -94,55 +92,5 @@ void Cache_Del_Alias_Bus(const ASCII * alias_name);
 void Cache_Del_Alias(const BYTE * sn);
 
 void Aliaslist( struct memblob * mb  ) ;
-
-#else							/* OW_CACHE */
-
-#define Make_SlaveSpecificTag(tag, change)
-#define SlaveSpecificTag(tag)     NULL
-
-#define Cache_Open( void )
-#define Cache_Close( void )
-#define Cache_Clear( void )
-
-#define Cache_Add_Dir(db,pn )               (gbBAD)
-#define Cache_Add_Device(bus_nr,sn )        (gbBAD)
-#define Cache_Add_SlaveSpecific(data,datasize,ip,pn )    (gbBAD)
-#define OWQ_Cache_Add( owq )                (gbBAD)
-#define Cache_Add_Alias(name, sn)           (gbBAD)
-#define Cache_Add_Simul(type,pn)            (gbBAD)
-#define Cache_Add_Alias_Bus(name,bus)		(1)
-
-#define Cache_Get(data,dsize,pn )           (gbBAD)
-#define Cache_Get_Dir(db,pn )               (gbBAD)
-#define OWQ_Cache_Get( owq )                (gbBAD)
-
-#define Cache_Get_Device(bus_nr,pn )        (gbBAD)
-#define Cache_Get_SlaveSpecific(data,dsize,ip,pn )       (gbBAD)
-#define Cache_Get_Alias(sn)				   (gbBAD)
-#define Cache_Get_SerialNumber(name, sn)    (gbBAD)
-#define Cache_Get_Simul_Time(type,time,pn)  (1)
-#define Cache_Get_Alias_Bus(name)	 		(INDEX_BAD)
-#define Cache_Get_Alias_SN(name,sn)			(gbBAD)
-
-#define Cache_Del(pn )                      (1)
-#define Cache_Del_Dir(pn )                  (1)
-#define Cache_Del_Device(pn )               (1)
-#define Cache_Del_Internal(ip,pn )          (1)
-
-#define OWQ_Cache_Del( owq )                (1)
-#define OWQ_Cache_Del_ALL( owq)             (1)
-#define OWQ_Cache_Del_BYTE( owq)            (1)
-#define OWQ_Cache_Del_parts( owq)           (1)
-
-#define Cache_Del_Simul(type,pn)            (1)
-#define Cache_Del_Mixed_Aggregate(pn)       (1)
-#define Cache_Del_Mixed_Individual(pn)      (1)
-#define Cache_Del_Alias_Bus(name)			(1)
-#define Cache_Del_Alias(sn)                 (1)
-#define Cache_Del_Alias(sn)                 (1)
-
-#define Aliaslist(mb)     
-
-#endif							/* OW_CACHE */
 
 #endif							/* OWCACHE_H */
