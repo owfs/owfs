@@ -16,7 +16,6 @@ $Id$
 #include "ow_connection.h"
 #include "ow_codes.h"
 
-#if OW_HA7
 struct toHA7 {
 	ASCII *command;
 	ASCII lock[10];
@@ -467,5 +466,3 @@ static void toHA7init(struct toHA7 *ha7)
 {
 	memset(ha7, 0, sizeof(struct toHA7));
 }
-
-#endif							/* OW_HA7 */

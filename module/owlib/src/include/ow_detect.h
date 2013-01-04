@@ -71,7 +71,6 @@ GOOD_OR_BAD Browse_detect(struct port_in * pin);
 GOOD_OR_BAD W1_monitor_detect(struct port_in * pin);
 GOOD_OR_BAD External_detect(struct port_in * pin);
 
-#if OW_HA7
 struct enet_member ;
 struct enet_member {
 	int version ;
@@ -93,7 +92,6 @@ void enet_list_init( struct enet_list * elist ) ;
 void enet_list_kill( struct enet_list * elist ) ;
 void enet_list_add( char * ip, char * port, int version, struct enet_list * elist ) ;
 GOOD_OR_BAD ENET_monitor_detect(struct port_in * pin) ;
-#endif							/* OW_HA7 */
 
 #if OW_W1
 GOOD_OR_BAD W1_detect(struct port_in * pin) ;

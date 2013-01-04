@@ -18,8 +18,6 @@ $Id$
 #include "ow_connection.h"
 #include "ow_codes.h"
 
-#if OW_HA7
-
 #define BYTE_string(x)  ((BYTE *)(x))
 
 static RESET_TYPE OWServer_Enet_reset(const struct parsedname *pn);
@@ -546,5 +544,3 @@ static void OWServer_Enet_close(struct connection_in *in)
 	// the standard COM_free cleans up the connection
 	(void) in ;
 }
-
-#endif /* OW_HA7 */

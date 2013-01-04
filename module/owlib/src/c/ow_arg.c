@@ -187,7 +187,6 @@ GOOD_OR_BAD ARG_HA5( const char *arg)
 
 GOOD_OR_BAD ARG_HA7(const char *arg)
 {
-#if OW_HA7
 	if (arg != NULL) {
 		struct port_in * pin = NewPort( NULL ) ;
 		struct connection_in * in ;
@@ -205,10 +204,6 @@ GOOD_OR_BAD ARG_HA7(const char *arg)
 		//printf("Find HA7\n");
 		return FS_FindHA7();
 	}
-#else							/* OW_HA7 */
-	LEVEL_DEFAULT("HA7 support (intentionally) not included in compilation. Reconfigure and recompile.");
-	return gbBAD;
-#endif							/* OW_HA7 */
 }
 
 GOOD_OR_BAD ARG_HA7E(const char *arg)

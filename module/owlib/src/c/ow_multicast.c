@@ -22,7 +22,6 @@ $Id$
 #include <arpa/inet.h>
 #endif
 
-#if OW_HA7
 /* Multicast to discover HA7 servers */
 /* Wait 10 seconds for responses */
 /* returns number found (>=0) or <0 on error */
@@ -159,4 +158,3 @@ GOOD_OR_BAD FS_FindHA7(void)
 	freeaddrinfo(ai);
 	return number_found > 0 ? gbGOOD : gbBAD ;
 }
-#endif							/* OW_HA7 */

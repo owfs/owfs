@@ -280,24 +280,6 @@ AC_SUBST(ENABLE_I2C)
 AM_CONDITIONAL(ENABLE_I2C, test "${ENABLE_I2C}" = "true")
 
 
-# Check for HA7Net
-ENABLE_HA7="true"
-AC_MSG_CHECKING([if HA7Net is enabled])
-AC_ARG_ENABLE(ha7,
-[  --enable-ha7            Enable ha7 support (default true)],
-[
-	AC_MSG_RESULT([$enableval])
-	if ! test "$enableval" = "yes" ; then
-		ENABLE_HA7="false"
-	fi
-],
-[
-    AC_MSG_RESULT([yes (default)])
-])
-AC_SUBST(ENABLE_HA7)
-AM_CONDITIONAL(ENABLE_HA7, test "${ENABLE_HA7}" = "true")
-
-
 # Check for W1 (linux kernel module)
 ENABLE_W1="true"
 AC_MSG_CHECKING([if W1 is enabled])
@@ -1505,13 +1487,6 @@ else
 fi
 AC_SUBST(OW_I2C)
 
-if test "${ENABLE_HA7}" = "true" ; then
-	OW_HA7=1
-else
-	OW_HA7=0
-fi
-AC_SUBST(OW_HA7)
-
 if test "${ENABLE_W1}" = "true" ; then
 	OW_W1=1
 else
@@ -1710,11 +1685,6 @@ if test "${ENABLE_I2C}" = "true"; then
 	AC_MSG_RESULT([                      I2C is enabled])
 else
 	AC_MSG_RESULT([                      I2C is DISABLED])
-fi
-if test "${ENABLE_HA7}" = "true"; then
-	AC_MSG_RESULT([                   HA7Net is enabled])
-else
-	AC_MSG_RESULT([                   HA7Net is DISABLED])
 fi
 if test "${ENABLE_W1}" = "true"; then
 	AC_MSG_RESULT([                       W1 is enabled])
