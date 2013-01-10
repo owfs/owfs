@@ -52,6 +52,10 @@ READ_FUNCTION(FS_r_mem);
 WRITE_FUNCTION(FS_w_mem);
 READ_FUNCTION(FS_r_param);
 
+static enum e_visibility VISIBLE_DS2502( const struct parsedname * pn ) ;
+static enum e_visibility VISIBLE_DS2407( const struct parsedname * pn ) ;
+
+
 /* ------- Structures ----------- */
 
 static struct aggregate A2502 = { 4, ag_numbers, ag_separate, };
@@ -105,6 +109,48 @@ DeviceEntry(89, DS1982U, NO_GENERIC_READ, NO_GENERIC_WRITE);
 static GOOD_OR_BAD OW_r_page( BYTE * data, size_t size, off_t offset, struct parsedname *pn);
 static GOOD_OR_BAD OW_w_bytes(BYTE * data, size_t size, off_t offset, struct parsedname *pn) ;
 static GOOD_OR_BAD OW_w_byte(BYTE data, off_t offset, struct parsedname *pn) ;
+static GOOD_OR_BAD OW_r_all(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
+
+/* finds the visibility value DS2502 vs expanded DS2407 */
+enum family_19_type { unknown_19=-1, ds2502_19, ds2407_19, } ;
+
+static int VISIBLE_19( const struct parsedname * pn )
+{
+	int device_id = unknown_19 ;
+	
+	LEVEL_DEBUG("Checking visibility of %s",SAFESTRING(pn->path)) ;
+	if ( BAD( GetVisibilityCache( &device_id, pn ) ) ) {
+		BYTE a_byte[1] ;
+		// use technique and address only specified on DS2407
+		if ( BAD( OW_r_all( a_byte, 1, 0x0080, pn ) ) ) {
+			device_id = ds2502_19 ;
+		} else {
+			device_id = ds2407_19 ;
+		} 
+		SetVisibilityCache( device_id, pn ) ;
+	}
+	return device_id ;
+}
+
+static enum e_visibility VISIBLE_DS2502( const struct parsedname * pn )
+{
+	switch ( VISIBLE_19(pn) ) {
+		case ds2502_19:
+			return visible_now ;
+		default:
+			return visible_not_now ;
+	}
+}
+
+static enum e_visibility VISIBLE_DS2407( const struct parsedname * pn )
+{
+	switch ( VISIBLE_19(pn) ) {
+		case ds2407_19:
+			return visible_now ;
+		default:
+			return visible_not_now ;
+	}
+}
 
 /* 2502 memory */
 static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
@@ -163,6 +209,24 @@ static GOOD_OR_BAD OW_r_page(BYTE * data, size_t size, off_t offset, struct pars
 	memcpy(data, q, size);
 	return gbGOOD;
 }
+
+// use new read_all command
+static GOOD_OR_BAD OW_r_all(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
+{
+	BYTE p[4] = { _1W_READ_ALL, LOW_HIGH_ADDRESS(offset), };
+	struct transaction_log t[] = {
+		TRXN_START,
+		TRXN_WRITE3(p),
+		TRXN_READ1(&p[3]),
+		TRXN_CRC8(p, 4),
+		TRXN_READ(data, size),
+	};
+	RETURN_BAD_IF_BAD(BUS_transaction(t, pn)) ;
+
+	return gbGOOD;
+}
+
+
 
 // placeholder for OW_w_byte but uses common arguments for COMMON_readwrite_paged
 static GOOD_OR_BAD OW_w_bytes(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
