@@ -69,7 +69,7 @@ WRITE_FUNCTION(FS_w_float24) ;
 
 WRITE_FUNCTION(FS_clear);
 
-/* Extensive testing of the EDS0068 threchold writing shows a delay
+/* Extensive testing of the EDS0068 threshold writing shows a delay
  * is needed before a written value is readable */
 #define _EDS_WRITE_DELAY_msec 700
 
@@ -153,6 +153,19 @@ WRITE_FUNCTION(FS_clear);
 #define _EDS0071_Relay_function		0x5E // byte
 #define _EDS0071_Relay_state		0x5F // byte
 
+/* EDS0082 locations */
+#define _EDS0082_Tag				0x00 // 30 chars
+#define _EDS0082_ID					0x1E // uint16
+#define _EDS0082_Alarm_state		0x2C // byte
+#define _EDS0082_Seconds_counter	0x2E // uint32
+#define _EDS0082_level   			0x30 // uint16 * 8
+#define _EDS0082_min    			0x40 // uint16 * 8
+#define _EDS0082_max    			0x50 // uint16 * 8
+#define _EDS0082_Threshold_hi_lo	0x60 // uint16 * 16
+#define _EDS0082_Conditional_search	0x9A // uint16
+#define _EDS0082_Relay_function		0x9E // byte
+#define _EDS0082_Relay_state		0x9F // byte
+
 static enum e_visibility VISIBLE_EDS0064( const struct parsedname * pn ) ;
 static enum e_visibility VISIBLE_EDS0065( const struct parsedname * pn ) ;
 static enum e_visibility VISIBLE_EDS0066( const struct parsedname * pn ) ;
@@ -161,6 +174,11 @@ static enum e_visibility VISIBLE_EDS0068( const struct parsedname * pn ) ;
 static enum e_visibility VISIBLE_EDS0070( const struct parsedname * pn ) ;
 static enum e_visibility VISIBLE_EDS0071( const struct parsedname * pn ) ;
 static enum e_visibility VISIBLE_EDS0072( const struct parsedname * pn ) ;
+static enum e_visibility VISIBLE_EDS0080( const struct parsedname * pn ) ;
+static enum e_visibility VISIBLE_EDS0081( const struct parsedname * pn ) ;
+static enum e_visibility VISIBLE_EDS0082( const struct parsedname * pn ) ;
+static enum e_visibility VISIBLE_EDS0083( const struct parsedname * pn ) ;
+static enum e_visibility VISIBLE_EDS0085( const struct parsedname * pn ) ;
 
 #define _EDS_TAG_LENGTH 30
 #define _EDS_TYPE_LENGTH 7
@@ -626,6 +644,54 @@ static struct filetype EDS[] = {
 	{"EDS0072/LED", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0072, NO_FILETYPE_DATA, },
 	{"EDS0072/LED/state", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0072, {v: &eds0071_led_state,}, },
 	{"EDS0072/LED/control", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0072, {v: &eds0071_led_function,}, },
+
+	/* EDS0082 */
+	{"EDS0082", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0072, NO_FILETYPE_DATA, },
+	{"EDS0082/temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_r_float24, NO_WRITE_FUNCTION, VISIBLE_EDS0072, {u: _EDS0071_Temp,}, },
+	{"EDS0082/resistance", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_float24, NO_WRITE_FUNCTION, VISIBLE_EDS0072, {u: _EDS0071_RTD,}, },
+	{"EDS0082/raw", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_24, NO_WRITE_FUNCTION, INVISIBLE, {u: _EDS0071_Conversion,}, },
+	{"EDS0082/user_byte", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_EDS0072, {u: _EDS0071_free_byte,}, },
+	{"EDS0082/delay", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_EDS0072, {u: _EDS0071_RTD_delay,}, },
+	{"EDS0082/relay_function", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, INVISIBLE, {u: _EDS0071_Relay_function,}, },
+	{"EDS0082/relay_state", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, INVISIBLE, {u: _EDS0071_Relay_state,}, },
+
+	{"EDS0072/calibration", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0072, NO_FILETYPE_DATA, },
+	{"EDS0072/calibration/constant", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_32, NO_WRITE_FUNCTION, VISIBLE_EDS0072, {u: _EDS0071_Calibration,}, },
+	{"EDS0072/calibration/key", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_8, FS_w_8, VISIBLE_EDS0072, {u: _EDS0071_Calibration_key,}, },
+
+	{"EDS0072/counter", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0072, NO_FILETYPE_DATA, },
+	{"EDS0072/counter/seconds", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_32, NO_WRITE_FUNCTION, VISIBLE_EDS0072, {u: _EDS0071_Seconds_counter,}, },
+	{"EDS0072/counter/samples", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_32, NO_WRITE_FUNCTION, VISIBLE_EDS0072, {u: _EDS0071_Conversion_counter,}, },
+
+	{"EDS0072/set_alarm", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0072, NO_FILETYPE_DATA, },
+	{"EDS0072/set_alarm/temp_hi" , PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0072, {v: &eds0071_cond_temp_hi,}, },
+	{"EDS0072/set_alarm/temp_hi" , PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0072, {v: &eds0071_cond_temp_hi,}, },
+	{"EDS0072/set_alarm/temp_low", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0072, {v: &eds0071_cond_temp_lo,}, },
+	{"EDS0072/set_alarm/RTD_hi" , PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0072, {v: &eds0071_cond_RTD_hi,}, },
+	{"EDS0072/set_alarm/RTD_low", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0072, {v: &eds0071_cond_RTD_lo,}, },
+	{"EDS0072/set_alarm/alarm_function", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, INVISIBLE, {u: _EDS0071_Conditional_search,}, },
+
+	{"EDS0072/threshold", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0071, NO_FILETYPE_DATA, },
+	{"EDS0072/threshold/temp_hi" , PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_float24, FS_w_float24, VISIBLE_EDS0072, {u: _EDS0071_Temp_hi,}, },
+	{"EDS0072/threshold/temp_low", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_float24, FS_w_float24, VISIBLE_EDS0072, {u: _EDS0071_Temp_lo,}, },
+	{"EDS0072/threshold/resistance_hi" , PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_float24, FS_w_float24, VISIBLE_EDS0072, {u: _EDS0071_RTD_hi,}, },
+	{"EDS0072/threshold/resistance_low", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_float24, FS_w_float24, VISIBLE_EDS0072, {u: _EDS0071_RTD_lo,}, },
+
+	{"EDS0072/alarm", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0072, NO_FILETYPE_DATA, },
+	{"EDS0072/alarm/clear", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_clear, VISIBLE_EDS0072, NO_FILETYPE_DATA, },
+	{"EDS0072/alarm/state", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, NO_WRITE_FUNCTION, INVISIBLE, {u: _EDS0071_Alarm_state,}, },
+	{"EDS0072/alarm/temp_hi" , PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, NO_WRITE_FUNCTION, VISIBLE_EDS0072, {v: &eds0071_temp_hi,}, },
+	{"EDS0072/alarm/temp_low", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, NO_WRITE_FUNCTION, VISIBLE_EDS0072, {v: &eds0071_temp_lo,}, },
+	{"EDS0072/alarm/RTD_hi" , PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, NO_WRITE_FUNCTION, VISIBLE_EDS0072, {v: &eds0071_RTD_hi,}, },
+	{"EDS0072/alarm/RTD_low", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, NO_WRITE_FUNCTION, VISIBLE_EDS0072, {v: &eds0071_RTD_lo,}, },
+
+	{"EDS0072/relay", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0072, NO_FILETYPE_DATA, },
+	{"EDS0072/relay/state", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0072, {v: &eds0071_relay_state,}, },
+	{"EDS0072/relay/control", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0072, {v: &eds0071_relay_function,}, },
+
+	{"EDS0072/LED", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0072, NO_FILETYPE_DATA, },
+	{"EDS0072/LED/state", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0072, {v: &eds0071_led_state,}, },
+	{"EDS0072/LED/control", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0072, {v: &eds0071_led_function,}, },
 };
 
 DeviceEntryExtended(7E, EDS, DEV_temp | DEV_alarm, NO_GENERIC_READ, NO_GENERIC_WRITE);
@@ -657,85 +723,28 @@ static int VISIBLE_EDS( const struct parsedname * pn )
 	return device_id ;
 }
 
-static enum e_visibility VISIBLE_EDS0064( const struct parsedname * pn )
-{
-	switch ( VISIBLE_EDS(pn) ) {
-		case 0x0064:
-			return visible_now ;
-		default:
-			return visible_not_now ;
-	}
-}
+#define VISIBLE_FN(id)  static enum e_visibility VISIBLE_EDS##id( const struct parsedname * pn ){\
+	return ( VISIBLE_EDS(pn) == 0x##id ) ? visible_now : visible_not_now ; }
 
-static enum e_visibility VISIBLE_EDS0065( const struct parsedname * pn )
-{
-	switch ( VISIBLE_EDS(pn) ) {
-		case 0x0065:
-			return visible_now ;
-		default:
-			return visible_not_now ;
-	}
-}
+VISIBLE_FN(0064) ;
+VISIBLE_FN(0065) ;
+VISIBLE_FN(0066) ;
+VISIBLE_FN(0067) ;
+VISIBLE_FN(0068) ;
 
-static enum e_visibility VISIBLE_EDS0066( const struct parsedname * pn )
-{
-	switch ( VISIBLE_EDS(pn) ) {
-		case 0x0066:
-			return visible_now ;
-		default:
-			return visible_not_now ;
-	}
-}
+VISIBLE_FN(0070) ;
+VISIBLE_FN(0071) ;
+VISIBLE_FN(0072) ;
 
-static enum e_visibility VISIBLE_EDS0067( const struct parsedname * pn )
-{
-	switch ( VISIBLE_EDS(pn) ) {
-		case 0x0067:
-			return visible_now ;
-		default:
-			return visible_not_now ;
-	}
-}
+VISIBLE_FN(0080) ;
+VISIBLE_FN(0081) ;
+VISIBLE_FN(0082) ;
+VISIBLE_FN(0083) ;
+VISIBLE_FN(0085) ;
 
-static enum e_visibility VISIBLE_EDS0068( const struct parsedname * pn )
-{
-	switch ( VISIBLE_EDS(pn) ) {
-		case 0x0068:
-			return visible_now ;
-		default:
-			return visible_not_now ;
-	}
-}
-
-static enum e_visibility VISIBLE_EDS0070( const struct parsedname * pn )
-{
-	switch ( VISIBLE_EDS(pn) ) {
-		case 0x0070:
-			return visible_now ;
-		default:
-			return visible_not_now ;
-	}
-}
-
-static enum e_visibility VISIBLE_EDS0071( const struct parsedname * pn )
-{
-	switch ( VISIBLE_EDS(pn) ) {
-		case 0x0071:
-			return visible_now ;
-		default:
-			return visible_not_now ;
-	}
-}
-
-static enum e_visibility VISIBLE_EDS0072( const struct parsedname * pn )
-{
-	switch ( VISIBLE_EDS(pn) ) {
-		case 0x0072:
-			return visible_now ;
-		default:
-			return visible_not_now ;
-	}
-}
+VISIBLE_FN(0090) ;
+VISIBLE_FN(0091) ;
+VISIBLE_FN(0092) ;
 
 static ZERO_OR_ERROR FS_r_tag(struct one_wire_query *owq)
 {
