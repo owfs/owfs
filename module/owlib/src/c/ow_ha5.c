@@ -114,7 +114,6 @@ GOOD_OR_BAD HA5_detect(struct port_in *pin)
 // Detect now that the name has been parsed
 GOOD_OR_BAD HA5_detect_parsed(struct address_pair *ap, struct connection_in *in)
 {
-	GOOD_OR_BAD gbResult ;
 	char * channel_list = NULL ;
 
 	// Create name (ip:port or /dev/tty) and optional channel list
@@ -186,12 +185,17 @@ GOOD_OR_BAD HA5_detect_parsed(struct address_pair *ap, struct connection_in *in)
 
 	/* Find the channels */
 	if ( channel_list == NULL ) { // scan for channel
-		gbResult = HA5_find_channel(in) ;
+		if ( BAD( HA5_find_channel(in) ) ) {
+			RETURN_BAD_IF_BAD( serial_powercycle(in) ) ;
+			return HA5_find_channel(in) ;
+		}
 	} else { // A list of channels
-		gbResult = HA5_channel_list( channel_list, in ) ;
+		if ( BAD( HA5_channel_list( channel_list, in ) ) ) {
+			RETURN_BAD_IF_BAD( serial_powercycle(in) ) ;
+			return HA5_channel_list( channel_list, in ) ;
+		}
 	}
-
-	return gbResult;
+	return gbGOOD ;
 }
 
 static GOOD_OR_BAD HA5_channel_list( char * alpha_string, struct connection_in * initial_in )
@@ -323,8 +327,7 @@ static GOOD_OR_BAD TestChecksum( unsigned char * check_string, int length )
 static GOOD_OR_BAD HA5_reconnect( const struct parsedname  *pn )
 {
 	struct connection_in * in = pn->selected_connection ;
-	COM_close(in->master.ha5.head ) ;
-	RETURN_BAD_IF_BAD( COM_open(in->master.ha5.head ) ) ;
+	RETURN_BAD_IF_BAD(serial_powercycle(in->master.ha5.head)) ;
 	return HA5_test_channel( in ) ;
 }
 

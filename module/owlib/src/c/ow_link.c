@@ -240,6 +240,15 @@ static GOOD_OR_BAD LINK_detect_serial(struct connection_in * in)
 	
 	RETURN_GOOD_IF_GOOD( LINK_version(in) ) ;
 	LEVEL_DEFAULT("LINK detection error");
+	
+	serial_powercycle(in) ;
+	LEVEL_DEBUG("Slurp in initial bytes");
+	LINK_slurp( in ) ;
+	UT_delay(100) ; // based on http://morpheus.wcf.net/phpbb2/viewtopic.php?t=89&sid=3ab680415917a0ebb1ef020bdc6903ad
+	LINK_slurp( in ) ;
+	
+	RETURN_GOOD_IF_GOOD( LINK_version(in) ) ;
+	LEVEL_DEFAULT("LINK detection error");
 	COM_close(in) ;
 	return gbBAD;
 }

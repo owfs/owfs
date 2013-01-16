@@ -84,6 +84,15 @@ GOOD_OR_BAD DS9097_detect(struct port_in *pin)
 		default:
 			break ;
 	}
+	if ( GOOD(serial_powercycle(in)) ) {
+		switch( DS9097_reset_in(in) ) {
+			case BUS_RESET_OK:
+			case BUS_RESET_SHORT:
+				return gbGOOD ;
+			default:
+				break ;
+		}
+	}
 
 	/* open the COM port in 9600 Baud  */
 	/* Second pass */

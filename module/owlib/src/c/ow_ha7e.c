@@ -75,6 +75,14 @@ GOOD_OR_BAD HA7E_detect(struct port_in *pin)
 		in->adapter_name = "HA7E/S";
 		return gbGOOD;
 	}
+	if ( GOOD( serial_powercycle(in) ) ) {
+		COM_slurp(in) ;
+		if ( GOOD( gbRESET( HA7E_reset(&pn) ) ) ) {
+			in->Adapter = adapter_HA7E ;
+			in->adapter_name = "HA7E/S";
+			return gbGOOD;
+		}
+	}
 	
 	pin->flow = flow_second; // flow control
 	RETURN_BAD_IF_BAD(COM_change(in)) ;

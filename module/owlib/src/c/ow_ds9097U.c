@@ -339,6 +339,9 @@ static GOOD_OR_BAD DS2480_big_reset(struct connection_in * in)
 			pin->flow = flow_none ;
 			RETURN_GOOD_IF_GOOD( DS2480_big_reset_serial(in)) ;
 
+			serial_powercycle(in) ;
+			RETURN_GOOD_IF_GOOD( DS2480_big_reset_serial(in)) ;
+
 			pin->flow = flow_none ;
 			RETURN_GOOD_IF_GOOD( DS2480_big_reset_serial(in)) ;
 

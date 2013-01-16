@@ -98,6 +98,17 @@ GOOD_OR_BAD HA7_detect(struct port_in *pin)
 			return gbGOOD;
 		}
 	}
+	serial_powercycle(in) ;
+	if (GOOD( HA7_toHA7( &ha7, in)) ) {
+		struct memblob mb;
+		if ( GOOD( HA7_read( &mb, in )) ) {
+			in->adapter_name = "HA7Net";
+			pin->busmode = bus_ha7net;
+			in->AnyDevices = anydevices_yes;
+			MemblobClear(&mb);
+			return gbGOOD;
+		}
+	}
 	COM_close(in) ;
 	return gbBAD;
 }

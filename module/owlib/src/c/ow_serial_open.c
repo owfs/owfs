@@ -158,3 +158,35 @@ GOOD_OR_BAD serial_change(struct connection_in *connection)
 	tcflush( fd, TCIOFLUSH);
 	return gbGOOD;
 }
+
+//change set to 0 baud for 1 second
+GOOD_OR_BAD serial_powercycle(struct connection_in *connection)
+{
+	struct port_in * pin = connection->pown ;
+	FILE_DESCRIPTOR_OR_ERROR fd = pin->file_descriptor ;
+	size_t baud = pin->baud ;
+
+	if ( pin->type != ct_serial ) {
+		return gbGOOD ;
+	}
+
+	if ( FILE_DESCRIPTOR_NOT_VALID(fd) ) {
+		LEVEL_DEBUG("Cannot power cycle a closed serial port");
+		return gbBAD ;
+	}
+	
+	// temporary
+	pin->baud = B0 ;
+	
+	if ( GOOD(serial_change( connection )) ) {
+		LEVEL_DEBUG("Sleep after setting DTR/RTS pins off");
+		sleep(2) ;
+	}
+
+	// restore
+	pin->baud = baud ;
+	
+	// Close for good measure
+	Test_and_Close( &( pin->file_descriptor) ) ;
+	return serial_open( connection ) ;
+}
