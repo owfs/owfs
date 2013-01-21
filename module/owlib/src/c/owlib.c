@@ -28,11 +28,12 @@ GOOD_OR_BAD LibStart(void)
 
 	Globals.zero = zero_none ;
 #if OW_ZERO
-	// Avahi only implementd with multithreading
+#ifndef OS_DARWIN
 	if ( GOOD( OW_Load_avahi_library()) ) {
 		Globals.zero = zero_avahi ;
 		//OW_Load_dnssd_library() ; // until avahi browse implemented
 	} else
+#endif /* OW_DARWIN */
 	if ( OW_Load_dnssd_library() == 0 ) {
 		Globals.zero = zero_bonjour ;
 	}

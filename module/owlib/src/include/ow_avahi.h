@@ -34,7 +34,7 @@ USA.
 #ifndef OW_AVAHI_H
 #define OW_AVAHI_H
 
-#ifndef OW_DARWIN // not for Macintosh OSX
+#if ! OW_DARWIN // not for Macintosh OSX
 
 #ifdef HAVE_STDINT_H
 #include <stdint.h>

@@ -170,13 +170,13 @@ static void * OW_Browse_Bonjour(void * v)
 void OW_Browse(struct connection_in *in)
 {
 	if ( Globals.zero == zero_avahi ) {
-#if !OW_CYGWIN
+#if ! OW_CYGWIN && ! OW_DARWIN
 		pthread_t thread;
 		int err = pthread_create(&thread, DEFAULT_THREAD_ATTR, OW_Avahi_Browse, (void *) in);
 		if (err) {
 			LEVEL_CONNECT("Avahi Browse thread error %d.", err);
 		}
-#endif
+#endif /* ! OW_CYGWIN && ! OW_DARWIN */
 	} else if ( Globals.zero == zero_bonjour ) {
 		pthread_t thread;
 		int err = pthread_create(&thread, DEFAULT_THREAD_ATTR, OW_Browse_Bonjour, (void *) in);

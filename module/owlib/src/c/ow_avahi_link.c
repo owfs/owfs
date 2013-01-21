@@ -12,7 +12,7 @@ See the header file: ow.h for full attribution
 #include <config.h>
 #include "owfs_config.h"
 
-#if OW_ZERO
+#if OW_ZERO && ! OW_DARWIN
 
 #include "ow.h"
 
@@ -57,10 +57,6 @@ GOOD_OR_BAD OW_Load_avahi_library(void)
 #if OW_CYGWIN
 	LEVEL_DEBUG("No avahi in Cygwin");
 	return gbBAD ;
-#elif OW_DARWIN
-	LEVEL_DEBUG("At least currently, it's easier to use the native Bonjour on Mac OSX");
-	return gbBAD ;
-
 #elif defined(HAVE_DLOPEN)
 	if (
 		(avahi_client=DL_open("libavahi-client.so")) == NULL
@@ -124,5 +120,5 @@ void OW_Free_avahi_library(void)
 		avahi_common = NULL;
 	}
 }
-				
-#endif							/* OW_ZERO */
+
+#endif							/* OW_ZERO && ! OW_DARWIN */

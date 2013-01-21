@@ -120,14 +120,14 @@ void ZeroConf_Announce(struct connection_out *out)
 	if ( Globals.announce_off) {
 		return;
 	} else if ( Globals.zero == zero_avahi ) {
-#if !OW_CYGWIN
+#if ! OW_CYGWIN && ! OW_DARWIN
 		// avahi only implemented with multithreading
 		pthread_t thread;
 		int err = pthread_create(&thread, DEFAULT_THREAD_ATTR, OW_Avahi_Announce, (void *) out);
 		if (err) {
 			LEVEL_CONNECT("Avahi registration thread error %d.", err);
 		}
-#endif
+#endif /* ! OW_CYGWIN && ! OW_DARWIN */
 	} else if ( Globals.zero == zero_bonjour ) {
 		pthread_t thread;
 		int err = pthread_create(&thread, DEFAULT_THREAD_ATTR, Announce, (void *) out);

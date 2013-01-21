@@ -14,7 +14,7 @@ See the header file: ow.h for full attribution
 #include "owfs_config.h"
 #include "ow_connection.h"
 
-#if OW_ZERO && !OW_CYGWIN
+#if OW_ZERO && !OW_CYGWIN && !OW_DARWIN
 
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
@@ -270,14 +270,4 @@ void *OW_Avahi_Announce( void * v )
 	return VOID_RETURN ;
 }
 
-#else /* OW_ZERO */
-
-// Should be called in it's own thread
-void *OW_Avahi_Announce( void * v )
-{
-	(void) v ;
-	LEVEL_CONNECT("Avahi support not present in this build");
-	return VOID_RETURN ;
-}
-
-#endif /* OW_ZERO && !OW_CYGWIN */
+#endif /* OW_ZERO && !OW_CYGWIN && !OW_DARWIN */
