@@ -34,6 +34,8 @@ USA.
 #ifndef OW_AVAHI_H
 #define OW_AVAHI_H
 
+#ifndef OW_DARWIN // not for Macintosh OSX
+
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
 #endif
@@ -404,5 +406,7 @@ GOOD_OR_BAD OW_Load_avahi_library(void) ;
 void OW_Free_avahi_library(void) ;
 void *OW_Avahi_Announce( void * v ) ;
 void *OW_Avahi_Browse(void * v) ;
+
+#endif /* OW_DARWIN */
 
 #endif 	/* OW_AVAHI_H */
