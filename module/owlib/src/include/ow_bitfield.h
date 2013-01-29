@@ -42,5 +42,7 @@ struct bitfield {
 
 ZERO_OR_ERROR FS_r_bitfield(struct one_wire_query *owq) ;
 ZERO_OR_ERROR FS_w_bitfield(struct one_wire_query *owq) ;
+ZERO_OR_ERROR FS_r_bit_array(struct one_wire_query *owq) ;
+ZERO_OR_ERROR FS_w_bit_array(struct one_wire_query *owq) ;
 
 #endif							/* OW_BITFIELD_H */
