@@ -346,8 +346,8 @@ sub _BonjourLookup($) {
 		$self->{SOCK} = undef ;
 	return ;
 	} ;
-	$self->{ADDR} = $self->{SOCK}->peeraddr ;
-	$self->{PORT} = $self->{SOCK}->peerport ;
+	$self->{ADDR} = $self->{SOCK}->peeraddr || return ;
+	$self->{PORT} = $self->{SOCK}->peerport || return ;
 	return 1 ;
 }
 
@@ -378,7 +378,7 @@ sub _FromServerBinaryParse($$) {
 	my $length_wanted = shift ;
 	return '' if $length_wanted == 0 ;
 
-	my $fileno = $self->{SOCK}->fileno ;
+	my $fileno = $self->{SOCK}->fileno  or return undef ;
 	my $selectreadbits = '' ;
 	vec($selectreadbits,$fileno,1) = 1 ;
 
