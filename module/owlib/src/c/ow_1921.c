@@ -1034,7 +1034,7 @@ static GOOD_OR_BAD OW_2mdate(_DATE * d, const BYTE * data)
 		t.tm_year += 100;
 
 	/* Pass through time_t again to validate */
-	if ((d[0] = mktime(&t)) == (time_t) - 1) {
+	if ((d[0] = timegm(&t)) == (time_t) - 1) {
 		return gbBAD;
 	}
 	return gbGOOD;

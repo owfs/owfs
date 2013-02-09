@@ -197,6 +197,11 @@ $Id$
 ssize_t getline (char **lineptr, size_t *n, FILE *stream) ;
 #endif /* HAVE_GETLINE */
 
+/* If no timegm, use our version */
+#if (!defined _BSD_SOURCE && !defined _SVID_SOURCE)
+#include <time.h>
+time_t timegm(struct tm *tm)
+#endif
 
 /* Parport enabled uses two flags (one a holdover from the embedded work) */
 #ifdef USE_NO_PARPORT

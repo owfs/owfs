@@ -9,6 +9,7 @@ OWLIB_SOURCE = ow_dl.c            \
                compat.c           \
                getaddrinfo.c      \
                getline.c          \
+               timegm.c           \
                getopt.c           \
                jsmn.c             \
                ow_none.c          \
