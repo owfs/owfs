@@ -1016,7 +1016,7 @@ static GOOD_OR_BAD OW_2mdate(_DATE * d, const BYTE * data)
 
 	/* Prefill entries */
 	d[0] = NOW_TIME;
-	if (mktime_r(d, &t) == NULL) {
+	if (gmtime_r(d, &t) == NULL) {
 		return gbBAD;
 	}
 	year = t.tm_year;
