@@ -372,7 +372,7 @@ static GOOD_OR_BAD OW_2date(_DATE * d, const BYTE * data)
 	//printf("_DATE: sec=%d, min=%d, hour=%d, mday=%d, mon=%d, year=%d, wday=%d, isdst=%d\n",t.tm_sec, t.tm_min, t.tm_hour, t.tm_mday, t.tm_mon, t.tm_year, t.tm_wday, t.tm_isdst);
 
 	/* Pass through time_t again to validate */
-	if ((*d = mktime(&t)) == -1) {
+	if ((*d = timegm(&t)) == -1) {
 		//printf("2date: error2\n");
 		return gbBAD;
 	}
