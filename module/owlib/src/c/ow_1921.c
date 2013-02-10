@@ -1002,7 +1002,7 @@ static GOOD_OR_BAD OW_2date(_DATE * d, const BYTE * data)
 //printf("_DATE: sec=%d, min=%d, hour=%d, mday=%d, mon=%d, year=%d, wday=%d, isdst=%d\n",tm.tm_sec,tm.tm_min,tm.tm_hour,tm.tm_mday,tm.tm_mon,tm.tm_year,tm.tm_wday,tm.tm_isdst) ;
 
 	/* Pass through time_t again to validate */
-	if ((d[0] = mktime(&t)) == (time_t) - 1) {
+	if ((d[0] = timegm(&t)) == (time_t) - 1) {
 		return gbBAD;
 	}
 	return gbGOOD;
@@ -1016,7 +1016,7 @@ static GOOD_OR_BAD OW_2mdate(_DATE * d, const BYTE * data)
 
 	/* Prefill entries */
 	d[0] = NOW_TIME;
-	if (gmtime_r(d, &t) == NULL) {
+	if (mktime_r(d, &t) == NULL) {
 		return gbBAD;
 	}
 	year = t.tm_year;
