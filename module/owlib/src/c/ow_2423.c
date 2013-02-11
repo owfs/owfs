@@ -66,7 +66,9 @@ static struct filetype DS2423[] = {
 	{"pages/page", 32, &A2423, ft_binary, fc_page, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA, },
 	{"pages/count", PROPERTY_LENGTH_UNSIGNED, &A2423, ft_unsigned, fc_volatile, FS_pagecount, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 
-	{"counters", PROPERTY_LENGTH_UNSIGNED, &A2423c, ft_unsigned, fc_volatile, FS_counter, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	// Serg Oskin recommends changing "counters" to "count" -- done but old name is still invisibly available.
+	{"counters", PROPERTY_LENGTH_UNSIGNED, &A2423c, ft_unsigned, fc_volatile, FS_counter, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA, },
+	{"counter", PROPERTY_LENGTH_UNSIGNED, &A2423c, ft_unsigned, fc_volatile, FS_counter, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"mincount", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_mincount, FS_w_mincount, VISIBLE, NO_FILETYPE_DATA, },
 };
 

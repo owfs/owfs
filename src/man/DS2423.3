@@ -18,7 +18,7 @@ RAM and counters.
 .PP
 .B 1D
 [.]XXXXXXXXXXXX[XX][/[
-.B counters.[A|B|ALL]
+.B counter.[A|B|ALL]
 |
 .B memory
 |
@@ -32,7 +32,7 @@ RAM and counters.
 .PP
 .I 1D
 .SH SPECIAL PROPERTIES
-.SS counters.A counters.B counters.ALL
+.SS counter.A counter.B counter.ALL
 .I read-only, unsigned integer
 .br
 Debounced external counter. Associated with RAM
@@ -43,6 +43,10 @@ Note: counter increments only. It is reset when the chip loses power.
 .br
 .I ALL
 returns the two values, separated by a comma. They are read sequentially.
+.P
+The property was called
+.I counters
+prior to OWFS version 2.9p1 and the old name is invisibly recognized for backwards compatibility.
 .SS memory
 .I read-write, binary
 .br
