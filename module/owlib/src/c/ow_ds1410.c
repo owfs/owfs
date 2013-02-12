@@ -14,9 +14,10 @@ $Id$
 #include "ow.h"
 
 /* The parallel adapter has never worked for us, let's not pretend */
-
+#if OW_PARPORT
 GOOD_OR_BAD DS1410_detect(struct port_in *pin)
 {
 	(void) pin;
 	return gbBAD;
 }
+#endif /* OW_PARPORT */

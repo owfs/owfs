@@ -151,7 +151,9 @@ static GOOD_OR_BAD OW_w_config(BYTE config0, BYTE config1, struct parsedname *pn
 static GOOD_OR_BAD OW_reading( BYTE * data, struct parsedname *pn);
 static GOOD_OR_BAD OW_set_vib_mode(BYTE read_mode, struct parsedname *pn) ;
 static GOOD_OR_BAD OW_unprotect(struct parsedname *pn) ;
+#if 0
 static GOOD_OR_BAD OW_set_read_mode(BYTE read_mode, struct parsedname *pn);
+#endif
 
 /* mTS017 */
 static ZERO_OR_ERROR FS_r_temperature(struct one_wire_query *owq)
@@ -307,12 +309,14 @@ static GOOD_OR_BAD OW_unprotect(struct parsedname *pn)
 	return OW_w_config( _mTS017_ADDRESS_CONFIG, _mTS017_CONFIG_UNPROTECT, pn ) ;
 }
 
+#if 0
 static GOOD_OR_BAD OW_set_read_mode(BYTE read_mode, struct parsedname *pn)
 {
 	// 1=object 2=ambient 4= multiplex
 	RETURN_BAD_IF_BAD( OW_unprotect(pn) ) ;
 	return OW_w_config( _mTS017_ADDRESS_CONFIG, read_mode, pn ) ;
 }
+#endif
 
 static GOOD_OR_BAD OW_set_vib_mode(BYTE read_mode, struct parsedname *pn)
 {

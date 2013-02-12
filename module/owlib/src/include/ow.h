@@ -89,6 +89,7 @@ $Id$
 
 #ifdef HAVE_SYS_TYPES_H
 #ifdef __FreeBSD__
+#include <sys/param.h>
 #define __BSD_VISIBLE 1
 #endif /* __FreeBSD__ */
 #include <sys/types.h>			/* for stat */

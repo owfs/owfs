@@ -75,7 +75,7 @@ ZERO_OR_ERROR FS_r_bit_array(struct one_wire_query *owq)
 
 	for ( i = 0 ; i < elements ; ++i ) {
 		// extract bits
-		UT_setbit( &array, i, UT_getbit( data, i*bf->size + bf->shift ) ) ;
+		UT_setbit( (void *) &array, i, UT_getbit( data, i*bf->size + bf->shift ) ) ;
 	}
 
 	OWQ_U(owq) = array ;
@@ -97,7 +97,7 @@ ZERO_OR_ERROR FS_w_bit_array(struct one_wire_query *owq)
 	UT_uint32_to_bytes( val, data ) ;
 	
 	for ( i = 0 ; i < elements ; ++i ) {
-		UT_setbit( data, i*bf->size + bf->shift, UT_getbit( &array, i) ) ;
+		UT_setbit( data, i*bf->size + bf->shift, UT_getbit( (void *) &array, i) ) ;
 	}
 
 	// write it out

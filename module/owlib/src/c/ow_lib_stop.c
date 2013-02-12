@@ -14,10 +14,6 @@ $Id$
 #include "ow.h"
 #include "ow_connection.h"
 
-static void no_op( void * v ) {
-	(void) v ;
-}
-
 /* Just close in/out devices and clear cache. Just enough to make it possible
    to call LibStart() again. This is called from swig/ow.i to when script
    wants to initialize a new server-connection. */

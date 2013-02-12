@@ -453,7 +453,9 @@ WRITE_FUNCTION(FS_w_32) ;
 
 /* Placeholder for special vsibility code for firmware types "personalities" */
 static enum e_visibility VISIBLE_eeprom_pages( const struct parsedname * pn ) ;
+#if 0 /* eeprom bytes only for testing */
 static enum e_visibility VISIBLE_eeprom_bytes( const struct parsedname * pn ) ;
+#endif /* eeprom bytes only for testing */
 static enum e_visibility VISIBLE_generic( const struct parsedname * pn ) ;
 static enum e_visibility VISIBLE_910( const struct parsedname * pn ) ;
 static enum e_visibility VISIBLE_911( const struct parsedname * pn ) ;
@@ -753,6 +755,8 @@ static uint32_t BAE_uint32(BYTE * p);
 static void BAE_uint16_to_bytes( uint16_t num, unsigned char * p );
 static void BAE_uint32_to_bytes( uint32_t num, unsigned char * p );
 static size_t eeprom_offset( const struct parsedname * pn );
+static int hex_digit(BYTE c);
+static GOOD_OR_BAD scan_token_read(char* mask,BYTE *buffer, struct one_wire_query *owq);
 
 static int VISIBLE_BAE( const struct parsedname * pn ) ;
 
@@ -801,6 +805,8 @@ static enum e_visibility VISIBLE_eeprom_pages( const struct parsedname * pn )
 			return visible_not_now ;
 	}
 }
+
+#if 0 /* eeprom bytes only for testing */
 static enum e_visibility VISIBLE_eeprom_bytes( const struct parsedname * pn )
 {
 	switch ( VISIBLE_BAE(pn) ) {
@@ -816,6 +822,7 @@ static enum e_visibility VISIBLE_eeprom_bytes( const struct parsedname * pn )
 			return visible_not_now ;
 	}
 }
+#endif /* eeprom bytes only for testing */
 
 static enum e_visibility VISIBLE_generic( const struct parsedname * pn )
 {
@@ -970,8 +977,7 @@ static ZERO_OR_ERROR FS_r_sector_data(struct one_wire_query *owq)
 	return OW_wr_complete_transaction(wlen,_FC03_WR_END_SD_R, &rlen, wparam, rparam, timeout, pn);
 }
 
-
-int hex_digit(BYTE c)
+static int hex_digit(BYTE c)
 {
 	int v;
 	if ((c>='0') && (c<='9')) v=c-'0';
@@ -981,10 +987,10 @@ int hex_digit(BYTE c)
 	return v;		  		
 }
 
-GOOD_OR_BAD scan_token_read(char* mask,BYTE *buffer, struct one_wire_query *owq)
+static GOOD_OR_BAD scan_token_read(char* mask,BYTE *buffer, struct one_wire_query *owq)
 {
-int i,j,v;
-char *pt=mask;
+	int i,j,v;
+	char *pt=mask;
 	LEVEL_DEBUG("begin token read loop: " ) ;
 	OWQ_U(owq)=0;
 	for(i=0;*pt;pt++)
@@ -996,26 +1002,25 @@ char *pt=mask;
 			}
 			switch (*pt)
 			{
-				case '?': i++; // '?' in mask means to ignore this received byte
-				case '$': if ((*(pt+1)>='0') && (*(pt+1) <='7'))  //store received byte on position j
-									{
-										pt++;
-										j=*pt-'0';
- 									  OWQ_U(owq)|= buffer[i++]<<j; 
-										LEVEL_DEBUG("after token assign: @%d(%d)  %08x", j,buffer[i], OWQ_U(owq) ) ;
-									}
+				case '?': 
+					i++; // '?' in mask means to ignore this received byte
+				case '$': 
+					if ((*(pt+1)>='0') && (*(pt+1) <='7')) { //store received byte on position j
+						pt++;
+						j=*pt-'0';
+						OWQ_U(owq)|= buffer[i++]<<j; 
+						LEVEL_DEBUG("after token assign: @%d(%d)  %08x", j,buffer[i], OWQ_U(owq) ) ;
+					}
 			}
 	}
 	return gbGOOD;
 }
-
 
 //mask example:set_part-get_part. ex.: "x40x01$0-x40x01=$0"
 // set_part contains a writebloc and an optional readbloc separated by '=' :
 //     ex.:"x40x01$0" write two fixed value bytes followed by lo byte of value to set, read nothing
 // get_part contains a writebloc and a mandatory readbloc separated by '=' :
 //     ex.:"x40x01=$0" write two fixed value bytes then read one byte. this read byte will be assigned to read value 
-
 
 void scan_token_write(char* mask,BYTE *buffer,	int *plenw,int * plenr, struct one_wire_query *owq)
 {

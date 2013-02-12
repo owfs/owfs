@@ -24,10 +24,10 @@ typedef struct {
 } my_rwlock_t;
 
 void my_rwlock_init(my_rwlock_t * rwlock);
-inline void my_rwlock_write_lock(my_rwlock_t * rwlock);
-inline void my_rwlock_write_unlock(my_rwlock_t * rwlock);
-inline void my_rwlock_read_lock(my_rwlock_t * rwlock);
-inline void my_rwlock_read_unlock(my_rwlock_t * rwlock);
+void my_rwlock_write_lock(my_rwlock_t * rwlock);
+void my_rwlock_write_unlock(my_rwlock_t * rwlock);
+void my_rwlock_read_lock(my_rwlock_t * rwlock);
+void my_rwlock_read_unlock(my_rwlock_t * rwlock);
 void my_rwlock_destroy(my_rwlock_t * rwlock);
 
 #endif							/* RWLOCK */

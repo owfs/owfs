@@ -464,7 +464,7 @@ static GOOD_OR_BAD DS2482_redetect(const struct parsedname *pn)
 	}
 	
 	/* address is known */
-	if (ioctl(file_descriptor, I2C_SLAVE, head->master.i2c.i2c_address) < 0) {
+	if (ioctl(file_descriptor, I2C_SLAVE, address) < 0) {
 		ERROR_CONNECT("Cound not set i2c address to %.2X", address);
 	} else {
 		BYTE c;

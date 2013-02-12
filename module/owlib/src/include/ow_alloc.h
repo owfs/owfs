@@ -28,7 +28,12 @@ $Id$
     ---------------------------------------------------------------------------
 */
 
-// Define for full memmory allocation debugging
+//* Special routines for tracking memory leakage */
+/* Turned on by
+ * ./configure --enable-owmalloc
+ * */
+
+// Can test also by uncommenting the following line:
 // #define OW_ALLOC_DEBUG
 
 #ifndef OW_ALLOC_H			/* tedious wrapper */

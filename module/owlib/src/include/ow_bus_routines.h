@@ -149,6 +149,7 @@ GOOD_OR_BAD BUS_Set_Config(void * param, const struct parsedname *pn);
 GOOD_OR_BAD BUS_Get_Config(void * param, const struct parsedname *pn);
 
 GOOD_OR_BAD BUS_PowerBit(const BYTE data, BYTE * resp, UINT delay, const struct parsedname *pn);
+GOOD_OR_BAD BUS_PowerByte(const BYTE data, BYTE * resp, UINT delay, const struct parsedname *pn);
 GOOD_OR_BAD BUS_ProgramPulse(const struct parsedname *pn);
 
 void BUS_close( struct connection_in * in );

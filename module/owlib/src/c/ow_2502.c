@@ -52,9 +52,10 @@ READ_FUNCTION(FS_r_mem);
 WRITE_FUNCTION(FS_w_mem);
 READ_FUNCTION(FS_r_param);
 
+#if 0
 static enum e_visibility VISIBLE_DS2502( const struct parsedname * pn ) ;
 static enum e_visibility VISIBLE_DS2407( const struct parsedname * pn ) ;
-
+#endif
 
 /* ------- Structures ----------- */
 
@@ -109,8 +110,11 @@ DeviceEntry(89, DS1982U, NO_GENERIC_READ, NO_GENERIC_WRITE);
 static GOOD_OR_BAD OW_r_page( BYTE * data, size_t size, off_t offset, struct parsedname *pn);
 static GOOD_OR_BAD OW_w_bytes(BYTE * data, size_t size, off_t offset, struct parsedname *pn) ;
 static GOOD_OR_BAD OW_w_byte(BYTE data, off_t offset, struct parsedname *pn) ;
+#if 0
 static GOOD_OR_BAD OW_r_all(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
+#endif
 
+#if 0
 /* finds the visibility value DS2502 vs expanded DS2407 */
 enum family_19_type { unknown_19=-1, ds2502_19, ds2407_19, } ;
 
@@ -151,6 +155,7 @@ static enum e_visibility VISIBLE_DS2407( const struct parsedname * pn )
 			return visible_not_now ;
 	}
 }
+#endif
 
 /* 2502 memory */
 static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
@@ -210,6 +215,7 @@ static GOOD_OR_BAD OW_r_page(BYTE * data, size_t size, off_t offset, struct pars
 	return gbGOOD;
 }
 
+#if 0
 // use new read_all command
 static GOOD_OR_BAD OW_r_all(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
 {
@@ -225,8 +231,7 @@ static GOOD_OR_BAD OW_r_all(BYTE * data, size_t size, off_t offset, struct parse
 
 	return gbGOOD;
 }
-
-
+#endif
 
 // placeholder for OW_w_byte but uses common arguments for COMMON_readwrite_paged
 static GOOD_OR_BAD OW_w_bytes(BYTE * data, size_t size, off_t offset, struct parsedname *pn)

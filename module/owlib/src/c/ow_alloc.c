@@ -30,6 +30,12 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
+#if OW_ALLOC_DEBUG
+/* Special routines for tracking memory leakage */
+/* Turned on by
+ * ./configure --enable-owmalloc
+ * */
+
 void *OWcalloc(const char * file, int line, const char * func, size_t nmemb, size_t size)
 {
 	void * v = calloc(nmemb,size);
@@ -69,3 +75,5 @@ char *OWstrdup(const char * file, int line, const char * func, const char *s)
 	printf("%p alloc %s:%s[%d] STRDUP s=%s\n",c,file,func,line,s);
 	return c;
 }
+
+#endif							/* OW_ALLOC_H */

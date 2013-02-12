@@ -217,7 +217,6 @@ static ZERO_OR_ERROR ServerDIR(void (*dirfunc) (void *, const struct parsedname 
 {
 	struct server_msg sm;
 	struct client_msg cm;
-	struct connection_in * in = pn_whole_directory->selected_connection ;
 	struct serverpackage sp = { pn_whole_directory->path_to_server, NULL, 0,
 		pn_whole_directory->tokenstring, pn_whole_directory->tokens,
 	};
@@ -233,7 +232,7 @@ static ZERO_OR_ERROR ServerDIR(void (*dirfunc) (void *, const struct parsedname 
 	sm.type = msg_dir;
 
 	LEVEL_CALL("SERVER(%d) path=%s path_to_server=%s",
-			   in->index, SAFESTRING(pn_whole_directory->path), SAFESTRING(pn_whole_directory->path_to_server));
+			   scs.in->index, SAFESTRING(pn_whole_directory->path), SAFESTRING(pn_whole_directory->path_to_server));
 
 	// Send to owserver
 	sm.control_flags = SetupControlFlags( pn_whole_directory);
