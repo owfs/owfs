@@ -498,6 +498,7 @@ static ZERO_OR_ERROR FS_r_ad(struct one_wire_query *owq)
 	return 0;
 }
 
+// used to differentiate MAX31286 from DS1825
 static ZERO_OR_ERROR FS_r_bit7(struct one_wire_query *owq)
 {
 	BYTE data[9];
