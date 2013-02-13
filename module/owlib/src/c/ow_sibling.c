@@ -61,7 +61,7 @@ ZERO_OR_ERROR FS_w_sibling_bitwork(UINT set, UINT mask, const char * sibling, st
 		bitfield |= (set & mask) ;
 
 		OWQ_U(owq_sibling) = bitfield ;
-LEVEL_DEBUG("w sibling bit work  set=%04X  mask=%04X, sibling=%s, bitfield=%04X", set,mask, sibling,bitfield) ;
+		LEVEL_DEBUG("w sibling bit work  set=%04X  mask=%04X, sibling=%s, bitfield=%04X", set,mask, sibling,bitfield) ;
 
 		write_error = FS_write_local(owq_sibling);
 	}
