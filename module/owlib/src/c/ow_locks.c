@@ -65,6 +65,7 @@ void LockSetup(void)
 	_MUTEX_INIT(Mutex.namefind_mutex);
 	_MUTEX_INIT(Mutex.aliasfind_mutex);
 	_MUTEX_INIT(Mutex.externalcount_mutex);
+	_MUTEX_INIT(Mutex.timegm_mutex);
 
 	RWLOCK_INIT(Mutex.lib);
 	RWLOCK_INIT(Mutex.cache);

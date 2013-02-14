@@ -38,6 +38,7 @@ time_t timegm(struct tm *tm)
 	time_t ret;
 	char *tz;
 
+	TIMEGMLOCK ;
 	tz = getenv("TZ");
 	setenv("TZ", "", 1);
 	tzset();
@@ -47,6 +48,8 @@ time_t timegm(struct tm *tm)
 	else
 		unsetenv("TZ");
 	tzset();
+	TIMEGMUNLOCK ;
+	
 	return ret;
 }
 
