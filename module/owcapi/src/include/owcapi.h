@@ -23,14 +23,14 @@ extern "C" {
 #endif
 
 /* initialization, required before any other calls. Should be paired with a finish
-    OW_init -- simplest, just a device name
+   OW_init -- simplest, just a device name
               /dev/ttyS0 for serial
               u or u# for USB
               #### for TCP/IP port (owserver)
-   OW_init_string -- looks just like the command line to owfs or owhttpd
+              looks just like the command line to owfs or owhttpd
    OW_init_args -- char** array usually from the main() call
 
-  return value = 0 good
+   return value = 0 good
                < 0 error
   
   No need to call OW_finish if an error
