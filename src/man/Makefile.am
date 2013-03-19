@@ -26,7 +26,7 @@ man_MANS = owfs.1 \
            DS2804.3 DS28E04.3 DS28EA00.3 DS28EC20.3 \
            DS2890.3 \
            EEEF.3 UVI.3 \
-           mCM001.3 mAM001.3 mRS001.3\
+           mCM001.3 mAM001.3 mRS001.3 mDI001.3\
            EDS.3 EDS0064.3 EDS0065.3 EDS0066.3 EDS0067.3 EDS0068.3 EDS0071.3 EDS0072.3 \
            Thermachron.3 \
            LCD.3 \
