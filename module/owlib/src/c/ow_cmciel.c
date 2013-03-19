@@ -112,6 +112,29 @@ static struct filetype mRS001[] = {
 
 DeviceEntry(A0, mRS001, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
+// struct bitfield { "alias_link", number_of_bits, shift_left, }
+static struct bitfield mDI001_switch  = { "reading", 4, 0, } ;
+static struct bitfield mDI001_shorted = { "reading", 4, 4, } ;
+static struct bitfield mDI001_open    = { "reading", 8, 0, } ;
+static struct bitfield mDI001_switch_closed  = { "switch", 1, 0, } ;
+static struct bitfield mDI001_loop_shorted   = { "shorted", 1, 0, } ;
+static struct bitfield mDI001_loop_open      = { "open", 1, 0, } ;
+
+/* Digital Input Sensor */
+static struct aggregate mDI001_state = { 4, ag_numbers, ag_aggregate, }; // 4 inputs
+static struct filetype mDI001[] = {
+	F_STANDARD,
+	{"reading", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_data, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA, },
+	{"switch", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_bitfield, NO_WRITE_FUNCTION, INVISIBLE, {v: &mDI001_switch,}, },
+	{"shorted", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_bitfield, NO_WRITE_FUNCTION, INVISIBLE, {v: &mDI001_shorted,}, },
+	{"open", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_bitfield, NO_WRITE_FUNCTION, INVISIBLE, {v: &mDI001_open,}, },
+	{"switch_closed", PROPERTY_LENGTH_BITFIELD, &mDI001_state, ft_bitfield, fc_volatile, FS_r_bit_array, NO_WRITE_FUNCTION, VISIBLE, {v: &mDI001_switch_closed,}, },
+	{"loop_shorted", PROPERTY_LENGTH_BITFIELD, &mDI001_state, ft_bitfield, fc_volatile, FS_r_bit_array, NO_WRITE_FUNCTION, VISIBLE, {v: &mDI001_loop_shorted,}, },
+	{"loop_open", PROPERTY_LENGTH_BITFIELD, &mDI001_state, ft_bitfield, fc_volatile, FS_r_bit_array, NO_WRITE_FUNCTION, VISIBLE, {v: &mDI001_loop_open,}, },
+};
+
+DeviceEntry(A5, mDI001, NO_GENERIC_READ, NO_GENERIC_WRITE);
+
 #define _1W_READ_SCRATCHPAD 0xBE
 #define _1W_WRITE_CONFIG    0x4E
 #define _1W_READ_CONFIG     0x4F

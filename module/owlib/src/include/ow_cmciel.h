@@ -23,5 +23,6 @@ DeviceHeader(mTS017);
 DeviceHeader(mCM001);
 DeviceHeader(mAM001);
 DeviceHeader(mRS001);
+DeviceHeader(mDI001);
 
 #endif /* OW_CMCIEL_H */
