@@ -250,6 +250,7 @@ class Sensor(object):
         try:
             #print 'Sensor.__getattr__(%s)' % name
             attr = self._connection.read(object.__getattribute__(self, '_attrs')[name])
+        except:
             raise AttributeError, name
 
         return attr
