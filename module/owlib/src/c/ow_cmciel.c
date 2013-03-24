@@ -164,6 +164,21 @@ DeviceEntry(A5, mDI001, NO_GENERIC_READ, NO_GENERIC_WRITE);
 #define _mVM001_ADDRESS_PEAK_INTERVAL         0x81
 #define _mVM001_ADDRESS_MULTIPLEX_INTERVAL    0x82
 
+#define _mDI001_ADDRESS_CONFIG                0x55
+#define _mDI001_ADDRESS_READ_PARAMETER        0x01
+#define _mDI001_CONFIG_UNPROTECT              0x08
+#define _mDI001_CONFIG_PROTECT                0x10
+
+#define _mDI001_CONFIG_MASK                   0xF000
+#define _mDI001_CONFIG_TIME                   0x6000
+#define _mDI001_CONFIG_STATUS                 0x8000
+#define _mDI001_CONFIG_RAW1                   0x9000
+#define _mDI001_CONFIG_RAW2                   0xA000
+#define _mDI001_CONFIG_RAW3                   0xB000
+#define _mDI001_CONFIG_RAW4                   0xC000
+#define _mDI001_CONFIG_DELAY                  0xD000
+
+
 /* Internal properties */
 Make_SlaveSpecificTag(VIB, fc_stable);	// vibration mode
 
