@@ -26,10 +26,6 @@ $Id$
 /* Called on head of multigroup bus */
 void tcp_free(struct connection_in *connection)
 {
-	if ( connection->pown->state == cs_virgin ) {
-		return ;
-	}
-
 	COM_close( connection ) ;
 	FreeClientAddr( connection ) ;
 }

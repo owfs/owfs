@@ -116,8 +116,6 @@ static GOOD_OR_BAD ENET_monitor_in_use(const struct port_in * pin)
 
 static void ENET_monitor_close(struct connection_in *in)
 {
-	SAFEFREE(DEVICENAME(in)) ;
-
 	if ( FILE_DESCRIPTOR_VALID( in->master.enet_monitor.shutdown_pipe[fd_pipe_write] ) ) {
 		ignore_result = write( in->master.enet_monitor.shutdown_pipe[fd_pipe_write],"X",1) ; //dummy payload
 	}		

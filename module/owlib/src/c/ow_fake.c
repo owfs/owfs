@@ -147,6 +147,7 @@ static void GetAllDeviceNames( struct port_in * pin )
 {
 	struct connection_in * in = pin->first ;
 	ASCII * remaining_device_list = owstrdup( pin->init_data ) ;
+	ASCII * remember_location = remaining_device_list ;
 
 	while (remaining_device_list != NULL) {
 		const ASCII *current_device_start;
@@ -158,7 +159,7 @@ static void GetAllDeviceNames( struct port_in * pin )
 		}
 		GetDeviceName( &current_device_start, in ) ;
 	}
-	SAFEFREE( remaining_device_list ) ;
+	SAFEFREE( remember_location ) ;
 	in->AnyDevices = (DirblobElements(&(in->master.fake.main)) > 0) ? anydevices_yes : anydevices_no ;
 }
 
@@ -181,6 +182,7 @@ static void SetConninData( int indx, const char * type, struct port_in *pin )
 	GetAllDeviceNames( pin ) ;
 
 	// Device name and init_data diverge now
+	SAFEFREE(DEVICENAME(in)) ;
 	DEVICENAME(in) = owstrdup(name);
 }
 

@@ -64,10 +64,12 @@ void API_set_error_print(const char *params)
 }
 
 
-/* Swig ensures that API_LibSetup is called first, but still we check */
+/* Swig ensures that API_Setup is called first, but still we check */
 GOOD_OR_BAD API_init(const char *command_line)
 {
 	GOOD_OR_BAD return_code = gbGOOD;
+
+	LEVEL_DEBUG("OWLIB started with <%s>",SAFESTRING(command_line));
 
 	if (StateInfo.owlib_state == lib_state_pre) {
 		LibSetup(Globals.program_type);	// use previous or default value
@@ -83,24 +85,27 @@ GOOD_OR_BAD API_init(const char *command_line)
 	if (StateInfo.owlib_state == lib_state_setup) {
 		return_code = owopt_packed(command_line);
 		if ( BAD(return_code) ) {
-			LIB_WUNLOCK;
-			return return_code;
+			goto init_exit ;
 		}
 
 		return_code = LibStart();
 		if ( BAD(return_code) ) {
-			LIB_WUNLOCK;
-			return return_code;
+			goto init_exit ;
 		}
 
 		StateInfo.owlib_state = lib_state_started;
 	}
+	
+init_exit:	
 	LIB_WUNLOCK;
+	LEVEL_DEBUG("OWLIB started with <%s>",SAFESTRING(command_line));
 	return return_code;
 }
 
 void API_finish(void)
 {
+	LEVEL_DEBUG("OWLIB being stopped");
+	
 	if (StateInfo.owlib_state == lib_state_pre) {
 		return;
 	}

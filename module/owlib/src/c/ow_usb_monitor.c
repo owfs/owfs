@@ -120,8 +120,6 @@ static GOOD_OR_BAD usb_monitor_in_use(const struct connection_in * in_selected)
 
 static void USB_monitor_close(struct connection_in *in)
 {
-	SAFEFREE(DEVICENAME(in)) ;
-
 	if ( FILE_DESCRIPTOR_VALID( in->master.usb_monitor.shutdown_pipe[fd_pipe_write] ) ) {
 		ignore_result = write( in->master.usb_monitor.shutdown_pipe[fd_pipe_write],"X",1) ; //dummy payload
 	}		

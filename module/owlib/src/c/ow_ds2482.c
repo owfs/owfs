@@ -184,8 +184,6 @@ GOOD_OR_BAD DS2482_detect(struct port_in *pin)
 			break ;
 	}
 
-	SAFEFREE( DEVICENAME(in) ) ;
-
 	switch ( ap.first.type ) {
 		case address_all:
 		case address_asterix:
@@ -430,6 +428,7 @@ static GOOD_OR_BAD DS2482_detect_single(int lowindex, int highindex, char * i2c_
 			// Note, only the lower nibble of the device config stored
 			
 			// Create name
+			SAFEFREE( DEVICENAME(in) ) ;
 			DEVICENAME(in) = owmalloc( strlen(i2c_device) + 10 ) ;
 			if ( DEVICENAME(in) ) {
 				UCLIBCLOCK;

@@ -349,6 +349,7 @@ GOOD_OR_BAD ARG_Browse(void)
 #endif
 }
 
+// This is to connect to owserver as a (remote) bus
 GOOD_OR_BAD ARG_Net(const char *arg)
 {
 	struct port_in * pin = NewPort( NULL ) ;
@@ -420,6 +421,7 @@ GOOD_OR_BAD ARG_Serial(const char *arg)
 	return Serial_or_telnet( arg, in ) ;
 }
 
+// This is owserver's listening port
 GOOD_OR_BAD ARG_Server(const char *arg)
 {
 	struct connection_out *out = NewOut();

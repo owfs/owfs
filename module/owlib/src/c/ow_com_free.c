@@ -25,8 +25,7 @@ void COM_free(struct connection_in *connection)
 		return ;
 	}
 
-	if ( connection != connection->pown->first ) {
-		// Not the head of the multi-bus device
+	if ( connection->pown->state == cs_virgin ) {
 		return ;
 	}
 
@@ -47,6 +46,5 @@ void COM_free(struct connection_in *connection)
 			break ;
 	}
 
-	SAFEFREE(DEVICENAME(connection)) ;
 	connection->pown->state = cs_virgin ;
 }

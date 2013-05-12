@@ -246,7 +246,7 @@ void RemoveIn( struct connection_in * conn )
 	BUS_close(conn) ;
 
 	/* Next free up internal resources */
-	COM_free( conn ) ;
+	SAFEFREE( DEVICENAME(conn) ) ;
 	
 	/* Finally delete the structure */
 	owfree(conn);
@@ -259,6 +259,9 @@ void RemovePort( struct port_in * pin )
 	if ( pin == NULL ) {
 		return ;
 	}
+
+	/* Free port */
+	COM_free( pin->first ) ;
 
 	/* First delete connections */
 	while ( pin->first != NO_CONNECTION ) {
