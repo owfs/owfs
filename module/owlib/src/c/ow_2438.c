@@ -826,7 +826,7 @@ static GOOD_OR_BAD OW_temp(_FLOAT * T, int simul_good, const struct parsedname *
 	};
 	// write conversion command
 	if ( simul_good ) {
-		RETURN_BAD_IF_BAD( FS_Test_Simultaneous( simul_temp, delay, pn) ) ;
+		RETURN_BAD_IF_BAD( FS_Test_Simultaneous( SlaveSpecificTag(S_T), delay, pn) ) ;
 	} else {
 		RETURN_BAD_IF_BAD(BUS_transaction(tconvert, pn)) ;
 	}

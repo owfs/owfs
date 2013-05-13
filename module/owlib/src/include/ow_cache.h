@@ -47,12 +47,12 @@ struct internal_prop {
 	enum fc_change change;
 };
 
-enum simul_type { simul_temp, simul_volt, simul_end };
-
 #define Make_SlaveSpecificTag(tag,change)  static char ip_name_##tag[] = #tag ; static struct internal_prop ip_##tag = { ip_name_##tag , change }
+#define Make_SlaveSpecificTag_exportable(tag,change)  char ip_name_##tag[] = #tag ; struct internal_prop ip_##tag = { ip_name_##tag , change }
 #define SlaveSpecificTag(tag)     (& ip_##tag)
 
-extern struct internal_prop ipSimul[] ;
+extern struct internal_prop ip_S_T ;
+extern struct internal_prop ip_S_V ;
 
 /* Cache  and Storage functions */
 void Cache_Open(void);
@@ -64,7 +64,7 @@ GOOD_OR_BAD Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn)
 GOOD_OR_BAD Cache_Add_Device(const int bus_nr, const BYTE *sn);
 GOOD_OR_BAD Cache_Add_SlaveSpecific(const void *data, const size_t datasize, const struct internal_prop *ip, const struct parsedname *pn);
 GOOD_OR_BAD Cache_Add_Alias(const ASCII *name, const BYTE * sn) ;
-GOOD_OR_BAD Cache_Add_Simul(const enum simul_type type, const struct parsedname *pn);
+GOOD_OR_BAD Cache_Add_Simul(const struct internal_prop *ip, const struct parsedname *pn);
 void Cache_Add_Alias_Bus(const ASCII * alias_name, INDEX_OR_ERROR bus);
 
 GOOD_OR_BAD OWQ_Cache_Get(struct one_wire_query *owq);
@@ -73,7 +73,7 @@ GOOD_OR_BAD Cache_Get_Dir(struct dirblob *db, const struct parsedname *pn);
 GOOD_OR_BAD Cache_Get_Device(void *bus_nr, const struct parsedname *pn);
 GOOD_OR_BAD Cache_Get_SlaveSpecific(void *data, size_t dsize, const struct internal_prop *ip, const struct parsedname *pn);
 ASCII * Cache_Get_Alias(const BYTE * sn) ;
-GOOD_OR_BAD Cache_Get_Simul_Time(enum simul_type type, time_t * dwell_time, const struct parsedname * pn);
+GOOD_OR_BAD Cache_Get_Simul_Time(const struct internal_prop *ip, time_t * dwell_time, const struct parsedname * pn);
 INDEX_OR_ERROR Cache_Get_Alias_Bus(const ASCII * alias_name) ;
 GOOD_OR_BAD Cache_Get_Alias_SN(const ASCII * alias_name, BYTE * sn );
 
@@ -85,7 +85,7 @@ void OWQ_Cache_Del_parts(struct one_wire_query *owq);
 void Cache_Del_Dir(const struct parsedname *pn);
 void Cache_Del_Device(const struct parsedname *pn);
 void Cache_Del_Internal(const struct internal_prop *ip, const struct parsedname *pn);
-void Cache_Del_Simul(enum simul_type type, const struct parsedname *pn) ;
+void Cache_Del_Simul(const struct internal_prop *ip, const struct parsedname *pn) ;
 void Cache_Del_Mixed_Aggregate(const struct parsedname *pn);
 void Cache_Del_Mixed_Individual(const struct parsedname *pn);
 void Cache_Del_Alias_Bus(const ASCII * alias_name);

@@ -43,10 +43,6 @@ void * Device_Marker = &DevMarkerLoc ;
 int AliasMarkerLoc ;
 void * Alias_Marker = &AliasMarkerLoc ;
 
-// Simultaneous Dir are bus-based
-// generic unique address for Simultaneous.
-int SimulMarkerLoc[simul_end] ;
-void * Simul_Marker[] = { &SimulMarkerLoc[simul_temp], &SimulMarkerLoc[simul_volt], } ;
 
 /* Put the globals into a struct to declutter the namespace */
 struct cache_data {
@@ -145,7 +141,7 @@ static enum cache_task_return Cache_Get_Common(void *data, size_t * dsize, time_
 static enum cache_task_return Cache_Get_Common_Dir(struct dirblob *db, time_t * duration, const struct tree_node *tn);
 static enum cache_task_return Cache_Get_Persistent(void *data, size_t * dsize, time_t * duration, const struct tree_node *tn);
 
-static GOOD_OR_BAD Cache_Get_Simultaneous(enum simul_type type, struct one_wire_query *owq) ;
+static GOOD_OR_BAD Cache_Get_Simultaneous(const struct internal_prop *ip, struct one_wire_query *owq) ;
 static GOOD_OR_BAD Cache_Get_Internal(void *data, size_t * dsize, const struct internal_prop *ip, const struct parsedname *pn);
 static GOOD_OR_BAD Cache_Get_Strict(void *data, size_t dsize, const struct parsedname *pn);
 
@@ -495,27 +491,18 @@ GOOD_OR_BAD Cache_Add_Dir(const struct dirblob *db, const struct parsedname *pn)
 
 /* Add a Simultaneous entry to the cache */
 /* return 0 if good, 1 if not */
-GOOD_OR_BAD Cache_Add_Simul(const enum simul_type type, const struct parsedname *pn)
+GOOD_OR_BAD Cache_Add_Simul(const struct internal_prop *ip, const struct parsedname *pn)
 {
 	// Note: pn already points to directory
-	time_t duration = TimeOut(fc_volatile);
+	time_t duration = TimeOut(ip->change);
 	struct tree_node *tn;
 
 	if (pn==NO_PARSEDNAME || pn->selected_connection==NO_CONNECTION) {
 		return gbGOOD;				// do check here to avoid needless processing
 	}
 	
-	switch ( get_busmode(pn->selected_connection) ) {
-		case bus_fake:
-		case bus_tester:
-		case bus_mock:
-		case bus_bad:
-		case bus_unknown:
-			return gbGOOD ;
-		default:
-			break ;
-	}
-	
+	// Already removed inappropriate busmodes (like fake and usb_monitor)
+	// Now test requested time
 	if (duration <= 0) {
 		return gbGOOD;				/* in case timeout set to 0 */
 	}
@@ -530,8 +517,8 @@ GOOD_OR_BAD Cache_Add_Simul(const enum simul_type type, const struct parsedname 
 	LEVEL_DEBUG(SNformat, SNvar(pn->sn));
 	
 	// populate node with directory name and dirblob
-	LoadTK( pn->sn, Simul_Marker[type], pn->selected_connection->index, tn) ;
-	LEVEL_DEBUG("Simultaneous add type=%d",type);
+	LoadTK( pn->sn, ip->name, 0, tn) ;
+	LEVEL_DEBUG("Simultaneous add type=%s",ip->name);
 	tn->expires = duration + NOW_TIME;
 	tn->dsize = 0;
 	return Add_Stat(&cache_dir, Cache_Add_Common(tn));
@@ -770,9 +757,9 @@ GOOD_OR_BAD OWQ_Cache_Get(struct one_wire_query *owq)
 
 	switch (pn->selected_filetype->change) {
 	case fc_simultaneous_temperature:
-		return Cache_Get_Simultaneous(simul_temp, owq) ;
+		return Cache_Get_Simultaneous(SlaveSpecificTag(S_T), owq) ;
 	case fc_simultaneous_voltage:
-		return Cache_Get_Simultaneous(simul_volt, owq) ;
+		return Cache_Get_Simultaneous(SlaveSpecificTag(S_T), owq) ;
 	default:
 		break ;
 	}
@@ -967,7 +954,7 @@ If the property isn't independently cached, return false (1)
 If the simultaneous conversion is more recent, return false (1)
 Else return the cached value and true (0)
 */
-GOOD_OR_BAD Cache_Get_Simul_Time(enum simul_type type, time_t * dwell_time, const struct parsedname * pn)
+GOOD_OR_BAD Cache_Get_Simul_Time(const struct internal_prop *ip, time_t * dwell_time, const struct parsedname * pn)
 {
 	// valid cached primary data -- see if a simultaneous conversion should be used instead
 	struct tree_node tn;
@@ -976,7 +963,7 @@ GOOD_OR_BAD Cache_Get_Simul_Time(enum simul_type type, time_t * dwell_time, cons
 	size_t dsize_simul = 0 ;
 	struct parsedname pn_directory ;
 
-	duration = TimeOut(ipSimul[type].change); // time allocated this conversion
+	duration = TimeOut(ip->change); // time allocated this conversion
 	if ( duration <= 0) {
 		// uncachable
 		return gbBAD;
@@ -985,7 +972,7 @@ GOOD_OR_BAD Cache_Get_Simul_Time(enum simul_type type, time_t * dwell_time, cons
 	LEVEL_DEBUG("Looking for conversion time "SNformat, SNvar(pn->sn));
 	
 	FS_LoadDirectoryOnly(&pn_directory, pn);
-	LoadTK(pn_directory.sn, Simul_Marker[type], pn->selected_connection->index, &tn ) ;
+	LoadTK(pn_directory.sn, ip->name, 0, &tn ) ;
 	if ( Get_Stat(&cache_int, Cache_Get_Common(NULL, &dsize_simul, &time_left, &tn)) ) {
 		return gbBAD ;
 	}
@@ -1000,7 +987,7 @@ GOOD_OR_BAD Cache_Get_Simul_Time(enum simul_type type, time_t * dwell_time, cons
  * return true if simultaneous is the prefered method
  * bad if no simultaneous, or it's not the best
 */
-static GOOD_OR_BAD Cache_Get_Simultaneous(enum simul_type type, struct one_wire_query *owq)
+static GOOD_OR_BAD Cache_Get_Simultaneous(const struct internal_prop *ip, struct one_wire_query *owq)
 {
 	struct tree_node tn;
 	time_t duration ;
@@ -1021,7 +1008,7 @@ static GOOD_OR_BAD Cache_Get_Simultaneous(enum simul_type type, struct one_wire_
 		// valid cached primary data -- see if a simultaneous conversion should be used instead
 		time_t dwell_time_data = duration - time_left ;
 		
-		if ( BAD( Cache_Get_Simul_Time( type, &dwell_time_simul, pn)) ) {
+		if ( BAD( Cache_Get_Simul_Time( ip, &dwell_time_simul, pn)) ) {
 			// Simul not found or timed out
 			LEVEL_DEBUG("Simultaneous conversion not found.") ;
 			OWQ_SIMUL_CLR(owq) ;
@@ -1037,7 +1024,7 @@ static GOOD_OR_BAD Cache_Get_Simultaneous(enum simul_type type, struct one_wire_
 		return gbGOOD ;
 	}
 	// fall through -- no cached primary data
-	if ( BAD( Cache_Get_Simul_Time( type, &dwell_time_simul, pn)) ) {
+	if ( BAD( Cache_Get_Simul_Time( ip, &dwell_time_simul, pn)) ) {
 		// no simultaneous either
 		OWQ_SIMUL_CLR(owq) ;
 		return gbBAD ;
@@ -1319,13 +1306,13 @@ void Cache_Del_Dir(const struct parsedname *pn)
 	Del_Stat(&cache_dir, Cache_Del_Common(&tn));
 }
 
-void Cache_Del_Simul(enum simul_type type, const struct parsedname *pn)
+void Cache_Del_Simul(const struct internal_prop *ip, const struct parsedname *pn)
 {
 	struct tree_node tn;
 	struct parsedname pn_directory;
 	
 	FS_LoadDirectoryOnly(&pn_directory, pn);
-	LoadTK(pn_directory.sn, Simul_Marker[type], pn->selected_connection->index, &tn );
+	LoadTK(pn_directory.sn, ip->name, 0, &tn );
 	Del_Stat(&cache_dir, Cache_Del_Common(&tn));
 }
 

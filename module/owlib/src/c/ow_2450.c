@@ -437,7 +437,7 @@ static GOOD_OR_BAD OW_convert( int simul_good, int delay, struct parsedname *pn)
 	/* See if a conversion was globally triggered */
 	if ( GOOD(OW_get_power(pn) ) ) {
 		if ( simul_good ) { 
-			return FS_Test_Simultaneous( simul_volt, delay, pn) ;
+			return FS_Test_Simultaneous( SlaveSpecificTag(S_V), delay, pn) ;
 		} 
 		// Start conversion
 		// 6 msec for 16bytex4channel (5.2)

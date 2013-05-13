@@ -55,10 +55,14 @@ WRITE_FUNCTION(FS_w_convert_volt);
 READ_FUNCTION(FS_r_present);
 READ_FUNCTION(FS_r_single);
 
+/* Internal properties */
+Make_SlaveSpecificTag_exportable(S_T, fc_volatile);	// simultaneous temperature
+Make_SlaveSpecificTag_exportable(S_V, fc_volatile);	// simultaneous voltage
+
 /* -------- Structures ---------- */
 static struct filetype simultaneous[] = {
-	{"temperature", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_convert, FS_w_convert_temp, VISIBLE, {i:simul_temp}, },
-	{"voltage", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_convert, FS_w_convert_volt, VISIBLE, {i:simul_volt}, },
+	{"temperature", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_convert, FS_w_convert_temp, VISIBLE, {v:SlaveSpecificTag(S_T)}, },
+	{"voltage", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_convert, FS_w_convert_volt, VISIBLE, {v:SlaveSpecificTag(S_V)}, },
 	{"present", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_present, NO_WRITE_FUNCTION, VISIBLE, {i:_1W_READ_ROM}, },
 	{"present_ds2400", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_present, NO_WRITE_FUNCTION, VISIBLE, {i:_1W_OLD_READ_ROM}, },
 	{"single", 18, NON_AGGREGATE, ft_ascii, fc_volatile, FS_r_single, NO_WRITE_FUNCTION, VISIBLE, {i:_1W_READ_ROM}, },
@@ -67,25 +71,19 @@ static struct filetype simultaneous[] = {
 
 DeviceEntry(simultaneous, simultaneous, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
-// in this order: enum sumul_type { simul_temp, simul_volt, } ;
-struct internal_prop ipSimul[] = {
-	{"temperature", fc_volatile},
-	{"voltage", fc_volatile},
-};
-
 #define _1W_CONVERT_T             0x44
 #define _1W_READ_POWERMODE        0xB4
 
 /* ------- Functions ------------ */
 static void OW_single2cache(BYTE * sn, const struct parsedname *pn2);
 
-GOOD_OR_BAD FS_Test_Simultaneous( enum simul_type type, UINT delay, const struct parsedname * pn)
+GOOD_OR_BAD FS_Test_Simultaneous( const struct internal_prop *ip, UINT delay, const struct parsedname * pn)
 {
 	time_t dwell_time ;
 	time_t remaining_delay ;
 
 	//LEVEL_DEBUG("TEST Simultaneous valid?");
-	if( BAD( Cache_Get_Simul_Time(type, &dwell_time, pn)) ) {
+	if( BAD( Cache_Get_Simul_Time( ip, &dwell_time, pn)) ) {
 		LEVEL_DEBUG("No simultaneous conversion currently valid");
 		return gbBAD ; // No simultaneous valid
 	}
@@ -152,10 +150,10 @@ static ZERO_OR_ERROR FS_w_convert_temp(struct one_wire_query *owq)
 	FS_LoadDirectoryOnly(pn_directory, pn); // setup up for full directory message
 
 	// Get Power status
+	LEVEL_DEBUG("TEST if bus powered");
 	RETURN_BAD_IF_BAD(BUS_transaction(tpower, pn_directory)) ;
-	//LEVEL_DEBUG("TEST read power");
 	
-	Cache_Add_Simul(simul_temp, pn_directory);	// Mark start time
+	Cache_Add_Simul(pn->selected_filetype->data.v, pn_directory);	// Mark start time
 	if ( pow[0] != 0 ) {
 		// powered
 		// Send the conversion and let the timing work out when the actual
@@ -171,7 +169,7 @@ static ZERO_OR_ERROR FS_w_convert_temp(struct one_wire_query *owq)
 		}
 	}
 
-	Cache_Del_Simul(simul_temp, pn_directory);	// Clear start time
+	Cache_Del_Simul(pn->selected_filetype->data.v, pn_directory);	// Clear start time
 	LEVEL_DEBUG("Trouble setting simultaneous for %s",pn_directory->path);
 	return -EINVAL ;
 }
@@ -180,29 +178,43 @@ static ZERO_OR_ERROR FS_w_convert_volt(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	struct parsedname pn_directory;
+	struct connection_in * in = pn->selected_connection ;
+
+	BYTE cmd_volt[] = { _1W_SKIP_ROM, 0x3C, 0x0F, 0x00, 0xFF, 0xFF };
+	struct transaction_log t[] = {
+		TRXN_START,
+		TRXN_WR_CRC16(cmd_volt, 4, 0),
+		TRXN_DELAY(5),
+		TRXN_END,
+	};
 	
 	if (OWQ_Y(owq) == 0) {
 		return 0;				// don't send convert
 	}
 	
 	FS_LoadDirectoryOnly(&pn_directory, pn);
-	Cache_Del_Internal(&ipSimul[simul_volt], &pn_directory);	// remove existing entry
+	Cache_Del_Internal(pn->selected_filetype->data.v, &pn_directory);	// remove existing entry
 	
-	/* Since writing to /simultaneous/temperature is done recursive to all
-	* adapters, we have to fake a successful write even if it's detected
-	* as a bad adapter. */
-	if (pn->selected_connection->Adapter != adapter_Bad) {
-		BYTE cmd_volt[] = { _1W_SKIP_ROM, 0x3C, 0x0F, 0x00, 0xFF, 0xFF };
-		struct transaction_log t[] = {
-			TRXN_START,
-			TRXN_WR_CRC16(cmd_volt, 4, 0),
-			TRXN_DELAY(5),
-			TRXN_END,
-		};
-		if ( GOOD(BUS_transaction(t, &pn_directory)) ) {
-			Cache_Add_SlaveSpecific(NULL, 0, &ipSimul[simul_volt], &pn_directory);
-		}
+	switch (in->Adapter) {
+		case adapter_Bad:
+		case adapter_w1_monitor:
+		case adapter_browse_monitor:
+		case adapter_usb_monitor:
+		case adapter_fake:
+		case adapter_tester:
+		case adapter_mock:
+			/* Since writing to /simultaneous/voltage is done recursive to all
+			* adapters, we have to fake a successful write even if it's detected
+			* as an unsupported adapter. */
+			return gbGOOD ;
+		default:
+			break ;
 	}
+
+	if ( GOOD(BUS_transaction(t, &pn_directory)) ) {
+		Cache_Add_SlaveSpecific(NULL, 0, pn->selected_filetype->data.v, &pn_directory);
+	}
+
 	return 0;
 }
 
@@ -212,7 +224,7 @@ static ZERO_OR_ERROR FS_r_convert(struct one_wire_query *owq)
 	struct parsedname pn_directory;
 
 	FS_LoadDirectoryOnly(&pn_directory, pn);
-	OWQ_Y(owq) = GOOD (Cache_Get_SlaveSpecific(NULL, 0, &ipSimul[pn->selected_filetype->data.i], &pn_directory) );
+	OWQ_Y(owq) = GOOD (Cache_Get_SlaveSpecific(NULL, 0, pn->selected_filetype->data.v, &pn_directory) );
 	return 0;
 }
 
@@ -251,7 +263,7 @@ static ZERO_OR_ERROR FS_r_present(struct one_wire_query *owq)
 				if (CRC8(resp, SERIAL_NUMBER_SIZE)) {
 					return 0;		// crc8 error -- more than one device
 				}
-				OW_single2cache(resp, &pn_directory);
+//				OW_single2cache(resp, &pn_directory);
 			} else {				// no devices
 				OWQ_Y(owq) = 0;
 			}
@@ -296,7 +308,7 @@ static ZERO_OR_ERROR FS_r_single(struct one_wire_query *owq)
 			RETURN_ERROR_IF_BAD(BUS_transaction(t, &pn_directory)) ;
 			LEVEL_DEBUG("dat=" SNformat " crc8=%02x", SNvar(resp), CRC8(resp, 7));
 			if ((memcmp(resp, collisions, SERIAL_NUMBER_SIZE) != 0) && (memcmp(resp, match, SERIAL_NUMBER_SIZE) != 0) && (CRC8(resp, SERIAL_NUMBER_SIZE) == 0)) {	// non-empty, and no CRC error
-				OW_single2cache(resp, &pn_directory);
+//				OW_single2cache(resp, &pn_directory);
 				/* Return device id. */
 				FS_devicename(ad, sizeof(ad), resp, pn);
 			} else {

@@ -377,7 +377,6 @@ static enum parse_enum Parse_Branch(char *pathnow, enum parse_pass remote_status
 static enum parse_enum Parse_Real(char *pathnow, enum parse_pass remote_status, struct parsedname *pn)
 {
 	if (strcasecmp(pathnow, "simultaneous") == 0) {
-		LEVEL_DEBUG("TEST set simultaneous");
 		pn->selected_device = DeviceSimultaneous;
 		return parse_prop;
 

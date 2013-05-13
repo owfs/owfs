@@ -680,7 +680,7 @@ static GOOD_OR_BAD OW_10temp(_FLOAT * temp, enum temperature_problem_flag accept
 		RETURN_BAD_IF_BAD(ret) ;
 	} else {
 		// simultaneous -- delay if needed
-		RETURN_BAD_IF_BAD( FS_Test_Simultaneous( simul_temp, delay, pn)) ;
+		RETURN_BAD_IF_BAD( FS_Test_Simultaneous( SlaveSpecificTag(S_T), delay, pn)) ;
 	}
 
 	RETURN_BAD_IF_BAD(OW_r_scratchpad(data, pn)) ;
@@ -793,7 +793,7 @@ static GOOD_OR_BAD OW_22temp(_FLOAT * temp, enum temperature_problem_flag accept
 		RETURN_BAD_IF_BAD(ret)
 	} else {
 		// valid simultaneous, just delay if needed
-		RETURN_BAD_IF_BAD( FS_Test_Simultaneous( simul_temp, delay, pn)) ;
+		RETURN_BAD_IF_BAD( FS_Test_Simultaneous( SlaveSpecificTag(S_T), delay, pn)) ;
 	}
 
 	RETURN_BAD_IF_BAD(OW_r_scratchpad(data, pn)) ;
@@ -860,7 +860,7 @@ static GOOD_OR_BAD OW_MAXtemp(_FLOAT * temp, enum temperature_problem_flag accep
 		RETURN_BAD_IF_BAD(ret)
 	} else {
 		// valid simultaneous, just delay if needed
-		RETURN_BAD_IF_BAD( FS_Test_Simultaneous( simul_temp, delay, pn)) ;
+		RETURN_BAD_IF_BAD( FS_Test_Simultaneous( SlaveSpecificTag(S_T), delay, pn)) ;
 	}
 
 	RETURN_BAD_IF_BAD(OW_r_scratchpad(data, pn)) ;

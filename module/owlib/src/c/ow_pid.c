@@ -14,7 +14,7 @@ $Id$
 #include "ow.h"
 #include "ow_pid.h"
 
-/* Globalss */
+/* Globals */
 int pid_created = 0;			/* flag flag when file actually created */
 char *pid_file = NULL;			/* filename where PID number stored */
 
@@ -37,14 +37,13 @@ void PIDstart(void)
 	}
 }
 
-/* All ow library closeup */
+/* At library closeup */
 void PIDstop(void)
 {
 	if (pid_created && pid_file) {
 		if (unlink(pid_file)) {
 			ERROR_CONNECT("Cannot remove PID file: %s", pid_file);
 		}
-		owfree(pid_file);
-		pid_file = NULL;
+		SAFEFREE(pid_file);
 	}
 }
