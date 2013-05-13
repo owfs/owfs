@@ -343,11 +343,11 @@ static enum parse_enum Parse_Unspecified(char *pathnow, enum parse_pass remote_s
 		return parse_nonreal;
 
 	} else if (strcasecmp(pathnow, "text") == 0) {
-		pn->state |= ePS_json;
+		pn->state |= ePS_text;
 		return parse_first;
 
 	} else if (strcasecmp(pathnow, "json") == 0) {
-		pn->state |= ePS_text;
+		pn->state |= ePS_json;
 		return parse_first;
 
 	} else if (strcasecmp(pathnow, "uncached") == 0) {

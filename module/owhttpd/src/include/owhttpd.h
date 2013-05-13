@@ -38,7 +38,7 @@ $Id$
 int handle_socket(FILE * out);
 
 /* in owhttpd_present */
-enum content_type { ct_text, ct_html, ct_icon };
+enum content_type { ct_text, ct_html, ct_icon, ct_json, };
 void HTTPstart(FILE * out, const char *status, const enum content_type ct);
 void HTTPtitle(FILE * out, const char *title);
 void HTTPheader(FILE * out, const char *head);

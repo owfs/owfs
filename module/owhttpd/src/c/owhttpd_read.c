@@ -620,7 +620,7 @@ static void ShowDeviceJsonCallback(void *v, const struct parsedname * pn_entry)
 
 static void ShowDeviceJson(FILE * out, struct parsedname *pn)
 {
-	HTTPstart(out, "200 OK", ct_text);
+	HTTPstart(out, "200 OK", ct_json);
 
 	if (pn->selected_filetype == NO_DEVICE) {	/* whole device */
 		fprintf(out, "{\n" ) ;

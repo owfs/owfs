@@ -156,7 +156,7 @@ static void ShowDirJsonCallback(void *v, const struct parsedname *const pn_entry
 
 static void ShowDirJson(FILE * out, struct parsedname * pn)
 {
-	HTTPstart(out, "200 OK", ct_text);
+	HTTPstart(out, "200 OK", ct_json);
 
 	fprintf(out, "{" );
 	FS_dir(ShowDirJsonCallback, out, pn);

@@ -41,6 +41,9 @@ void HTTPstart(FILE * out, const char *status, const enum content_type ct)
 	case ct_text:
 		fprintf(out, "Content-Type: text/plain\r\n");
 		break ;
+	case ct_json:
+		fprintf(out, "Content-Type: application/json\r\n");
+		break ;
 	}
 	fprintf(out, "\r\n");
 }

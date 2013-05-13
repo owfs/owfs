@@ -340,7 +340,7 @@ static void Bad400(FILE * out, struct parsedname *pn)
 		HTTPstart(out, "400 Bad Request", ct_text);
 		fprintf(out, "400 Bad request");
 	} else if ( pn->state & ePS_json ) {
-		HTTPstart(out, "400 Bad Request", ct_text);
+		HTTPstart(out, "400 Bad Request", ct_json);
 		fprintf(out, "null");
 	} else {
 		HTTPstart(out, "400 Bad Request", ct_html);
@@ -362,7 +362,7 @@ static void Bad404(FILE * out, struct parsedname *pn)
 		HTTPstart(out, "404 Not Found", ct_text);
 		fprintf(out, "404 Not Found");
 	} else if ( pn->state & ePS_json ) {
-		HTTPstart(out, "404 Not Found", ct_text);
+		HTTPstart(out, "404 Not Found", ct_json);
 		fprintf(out, "null");
 	} else {
 		HTTPstart(out, "404 Not Found", ct_html);
