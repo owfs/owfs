@@ -106,11 +106,16 @@ static struct filetype DS2406[] = {
 	{"TAI8570/C", PROPERTY_LENGTH_UNSIGNED, &ATAI8570, ft_unsigned, fc_static, FS_r_C, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA, },
 	{"TAI8570/D1", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_D1, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA, },
 	{"TAI8570/D2", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_D2, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA, },
+	{"TAI8570/sibling", 16, NON_AGGREGATE, ft_ascii, fc_stable, FS_sibling, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+
 	{"TAI8570/temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_link, FS_temperature, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"TAI8570/pressure", PROPERTY_LENGTH_PRESSURE, NON_AGGREGATE, ft_pressure, fc_link, FS_pressure, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+
+	{"TAI8570/DA5534", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"TAI8570/DA5534/temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_link, FS_temperature_5534, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"TAI8570/DA5534/pressure", PROPERTY_LENGTH_PRESSURE, NON_AGGREGATE, ft_pressure, fc_link, FS_pressure_5534, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
-	{"TAI8570/sibling", 16, NON_AGGREGATE, ft_ascii, fc_stable, FS_sibling, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+
+	{"TAI8570/DA5540", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"TAI8570/DA5540/temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_link, FS_temperature_5540, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"TAI8570/DA5540/pressure", PROPERTY_LENGTH_PRESSURE, NON_AGGREGATE, ft_pressure, fc_link, FS_pressure_5540, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 
@@ -645,7 +650,7 @@ static ZERO_OR_ERROR FS_temperature(struct one_wire_query *owq)
 	} 
 
 	UT1 = 8 * tai.C[4] + 20224;
-	dT = D2 - UT1;
+	dT = (_FLOAT)D2 - (_FLOAT)UT1;
 
 	OWQ_F(owq) = (200. + dT * (tai.C[5] + 50.) / 1024.) / 10.;
 
@@ -676,7 +681,7 @@ static ZERO_OR_ERROR FS_pressure(struct one_wire_query *owq)
 	} 
 
 	UT1 = 8 * tai.C[4] + 20224;
-	dT = D2 - UT1;
+	dT = (_FLOAT)D2 - (_FLOAT)UT1;
 	OFF = 4. * tai.C[1] + ((tai.C[3] - 512.) * dT) / 4096.;
 	SENS = 24576. + tai.C[0] + (tai.C[2] * dT) / 1024.;
 	X = (SENS * (D1 - 7168.)) / 16384. - OFF;
