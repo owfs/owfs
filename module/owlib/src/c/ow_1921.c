@@ -98,6 +98,7 @@ READ_FUNCTION(FS_r_controlrbit);
 WRITE_FUNCTION(FS_w_controlrbit);
 READ_FUNCTION(FS_r_statusbit);
 WRITE_FUNCTION(FS_w_statusbit);
+WRITE_FUNCTION(FS_clrmem);
 
 /* ------- Structures ----------- */
 #define HISTOGRAM_DATA_ELEMENTS 63
@@ -174,7 +175,7 @@ static struct filetype DS1921[] = {
 
 	{"mission", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"mission/enable", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_controlrbit, FS_w_controlrbit, VISIBLE, {u:_MASK_DS1921_MISSION_ENABLE}, },
-	{"mission/clear", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_controlbit, FS_w_controlbit, INVISIBLE, {u:_MASK_DS1921_CLEAR_MEMORY}, },
+	{"mission/clear", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, NO_READ_FUNCTION, FS_clrmem, VISIBLE, {u:_MASK_DS1921_CLEAR_MEMORY}, },
 	{"mission/running", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_bitread, FS_w_mip, VISIBLE, {v:&BitReads[1]}, },
 	{"mission/frequency", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_samplerate, FS_w_samplerate, VISIBLE, NO_FILETYPE_DATA, },
 	{"mission/samples", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_3byte, NO_WRITE_FUNCTION, VISIBLE, {s:0x021A}, },
@@ -344,6 +345,15 @@ static ZERO_OR_ERROR FS_w_controlbit(struct one_wire_query *owq)
 	UINT Y = OWQ_Y(owq) ? mask : 0 ;
 
 	return FS_w_sibling_bitwork( Y, mask, "ControlRegister", owq ) ;
+}
+
+static ZERO_OR_ERROR FS_clrmem(struct one_wire_query *owq)
+{
+	/* clear memory */
+	if OWQ_Y(owq) {
+		return GB_to_Z_OR_E( OW_clearmemory(PN(owq)) ) ;
+	}
+	return 0;
 }
 
 static ZERO_OR_ERROR FS_r_statusbit(struct one_wire_query *owq)
@@ -887,6 +897,9 @@ static ZERO_OR_ERROR FS_easystart(struct one_wire_query *owq)
 	/* write 0x020E -- 0x0214 */
 	BYTE data[] = { 0x86, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, };
 
+	/* clear memory */
+	RETURN_BAD_IF_BAD( OW_clearmemory(PN(owq))) ;
+
 	/* Stop clock, no rollover, no delay, temp alarms on, alarms cleared */
 	if ( BAD( OW_w_mem(data, 7, 0x020E, PN(owq)) ) ) {
 		return -EINVAL;
@@ -1109,8 +1122,10 @@ static GOOD_OR_BAD OW_alarmlog(int *t, int *c, off_t offset, struct parsedname *
 
 static GOOD_OR_BAD OW_stopmission(struct parsedname *pn)
 {
-	BYTE data = 0x00;			/* dummy */
-	return OW_small_read(&data, 1, 0x0210, pn);
+	/* write 0 to bit 5 of status register 0x0214 to stop the mission */
+	BYTE data = 0xDF;
+
+	return OW_w_mem(&data, 1, 0x0214, pn);
 }
 
 static GOOD_OR_BAD OW_startmission(UINT freq, struct parsedname *pn)
@@ -1135,9 +1150,6 @@ static GOOD_OR_BAD OW_startmission(UINT freq, struct parsedname *pn)
 		RETURN_BAD_IF_BAD(OW_w_date(&d, pn)) ;
 		UT_delay(1000);			/* wait for the clock to count a second */
 	}
-
-	/* clear memory */
-	RETURN_BAD_IF_BAD( OW_clearmemory(pn)) ;
 
 	/* finally, set the sample interval (to start the mission) */
 	data = BYTE_MASK(freq);
