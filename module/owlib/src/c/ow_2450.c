@@ -153,10 +153,29 @@ Make_SlaveSpecificTag(POW, fc_stable);	// power status
 #define _1W_2450_REG_D 6
 
 #define _1W_2450_RC_MASK 0x0F // resolution mask in control page
-#define _1W_2450_OC 0x40 // Output control
-#define _1W_2450_OE 0x80 // Outout enable
 
-#define _1W_2450_IR 0x01 // Input DAC range
+// First control byte
+#define _1W_2450_RES_01 0x0001 // 1 bit resolution
+#define _1W_2450_RES_02 0x0010 // 2 bit resolution
+#define _1W_2450_RES_03 0x0011 // 3 bit resolution
+#define _1W_2450_RES_04 0x0100 // 4 bit resolution
+#define _1W_2450_RES_05 0x0101 // 5 bit resolution
+#define _1W_2450_RES_06 0x0110 // 6 bit resolution
+#define _1W_2450_RES_07 0x0111 // 7 bit resolution
+#define _1W_2450_RES_08 0x1000 // 8 bit resolution
+#define _1W_2450_RES_09 0x1001 // 9 bit resolution
+#define _1W_2450_RES_10 0x1010 // 10 bit resolution
+#define _1W_2450_RES_11 0x1011 // 11 bit resolution
+#define _1W_2450_RES_12 0x1100 // 12 bit resolution
+#define _1W_2450_RES_13 0x1101 // 13 bit resolution
+#define _1W_2450_RES_14 0x1110 // 14 bit resolution
+#define _1W_2450_RES_15 0x1111 // 15 bit resolution
+#define _1W_2450_RES_16 0x0000 // 16 bit resolution
+#define _1W_2450_OC 0x0040 // Output control
+#define _1W_2450_OE 0x0080 // Outout enable
+
+// Second control Byte
+#define _1W_2450_IR 0x0001 // Input DAC range
 #define _1W_2450_AEL 0x04 // Alarm low enable
 #define _1W_2450_AEH 0x08 // Alarm high enable 
 #define _1W_2450_AFL 0x10 // Alarm low flag
