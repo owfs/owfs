@@ -46,6 +46,7 @@ $Id$
 enum parse_serialnumber { sn_valid, sn_invalid, sn_not_sn, } ;
 
 enum parse_serialnumber Parse_SerialNumber(char *sn_char, BYTE * sn) ;
+int SerialNumber_length(char *sn_char, BYTE * sn) ;
 
 
 #endif							/* OW_PARSE_SN_H */

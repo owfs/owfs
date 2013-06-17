@@ -28,6 +28,7 @@ void LibSetup(enum enum_program_type program_type)
 	Globals.program_type = program_type;
 
 	Cache_Open();
+	Detail_Init();
 
 	StateInfo.start_time = NOW_TIME;
 	SetLocalControlFlags() ; // reset by every option and other change.

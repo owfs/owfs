@@ -61,6 +61,7 @@ void FS_ParsedName_destroy(struct parsedname *pn)
 	}
 	LEVEL_DEBUG("%s", SAFESTRING(pn->path));
 	CONNIN_RUNLOCK ;
+	Detail_Free( pn ) ;
 	SAFEFREE(pn->sparse_name);
 	SAFEFREE(pn->bp) ;
 }
@@ -149,6 +150,8 @@ static ZERO_OR_ERROR FS_ParsedName_anywhere(const char *path, enum parse_pass re
 					break ;
 			}
 			//printf("%s: Parse %s after  corrections: %.4X -- state = %d\n\n",(back_from_remote)?"BACK":"FORE",pn->path,pn->state,pn->type) ;
+			// set up detail debugging
+			Detail_Test( pn ) ;
 			return 0;
 
 		case parse_error:

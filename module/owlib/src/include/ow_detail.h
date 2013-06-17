@@ -45,36 +45,14 @@ $Id$
 
 /* Cannot stand alone -- part of ow.h but separated for clarity */
 
-#ifndef OW_OPT_H				/* tedious wrapper */
-#define OW_OPT_H
+#ifndef OW_DETAIL_H				/* tedious wrapper */
+#define OW_DETAIL_H
 
-/* command line options */
-/* These are the owlib-specific options */
-#define OWLIB_OPT "a:m:c:f:p:s:h::u::d:t:CFRKVP:rw:"
-extern const struct option owopts_long[];
+void Detail_Init( void ) ;
+void Detail_Close( void ) ;
+void Detail_Test( struct parsedname * pn ) ;
+void Detail_Free( struct parsedname * pn ) ;
+GOOD_OR_BAD Detail_Add( const char *arg ) ;
 
-GOOD_OR_BAD owopt(const int c, const char *arg);
-GOOD_OR_BAD owopt_packed(const char *params);
 
-// All these command line arguments are after the printable ascii characters
-enum e_long_option { e_error_print = 257, e_error_level, e_debug,
-	e_cache_size,
-	e_fuse_opt, e_fuse_open_opt,
-	e_max_clients,
-	e_safemode,
-	e_ha7, e_fake, e_link, e_ha3, e_ha4b, e_ha5, e_ha7e, e_tester, e_mock, e_etherweather, e_passive, e_i2c, e_xport, 
-	e_enet,
-	e_w1_monitor, e_usb_monitor, e_browse,
-	e_pressure_mbar, e_pressure_atm, e_pressure_mmhg, e_pressure_inhg, e_pressure_psi, e_pressure_Pa, e_pressure_6, e_pressure_7,
-	e_announce,
-	e_timeout_volatile, e_timeout_stable, e_timeout_directory, e_timeout_presence,
-	e_timeout_serial, e_timeout_usb, e_timeout_network, e_timeout_server, e_timeout_ftp, e_timeout_ha7, e_timeout_w1,
-	e_timeout_persistent_low, e_timeout_persistent_high, e_clients_persistent_low, e_clients_persistent_high,
-	e_concurrent_connections,
-	e_fatal_debug_file,
-	e_baud,
-	e_templow, e_temphigh,
-	e_detail,
-};
-
-#endif							/* OW_OPT_H */
+#endif							/* OW_DETAIL_H */

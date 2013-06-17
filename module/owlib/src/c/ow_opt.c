@@ -271,6 +271,7 @@ const struct option owopts_long[] = {
 	{"no_presencepulsemasking", no_argument, &Globals.i2c_PPM, 0},
 	{"no_PPM", no_argument, &Globals.i2c_PPM, 0},
 	{"no_ppm", no_argument, &Globals.i2c_PPM, 0},
+	{"detail", required_argument, NO_LINKED_VAR, e_detail},	/* slave detail */
 	{0, 0, 0, 0},
 };
 
@@ -716,6 +717,7 @@ GOOD_OR_BAD owopt(const int option_char, const char *arg)
 		printf("libow version:\n\t" VERSION "\n");
 		Globals.want_background = 0 ; //foreground
 		Globals.error_level = 9 ;
+		Globals.error_level_restore = 9 ;
 		break ;
 	case e_concurrent_connections:
 		RETURN_BAD_IF_BAD(OW_parsevalue_I(&arg_to_integer, arg)) ;
@@ -829,6 +831,9 @@ GOOD_OR_BAD owopt(const int option_char, const char *arg)
 		break;
 	case e_safemode:
 		LocalControlFlags |= SAFEMODE ;
+		break ;
+	case e_detail:
+		return Detail_Add(arg) ;
 		break;
 	case 0:
 		break;

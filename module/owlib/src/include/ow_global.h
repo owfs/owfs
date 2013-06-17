@@ -83,6 +83,7 @@ struct global {
 	int want_background;
 	int now_background;
 	int error_level;
+	int error_level_restore;
 	int error_print;
 	int fatal_debug;
 	int concurrent_connections;

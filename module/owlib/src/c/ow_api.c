@@ -51,6 +51,7 @@ void API_set_error_level(const char *params)
 {
 	if (params != NULL) {
 		Globals.error_level = atoi(params);
+		Globals.error_level_restore = Globals.error_level;
 	}
 	return;
 }

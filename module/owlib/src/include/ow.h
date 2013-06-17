@@ -333,6 +333,9 @@ enum deviceformat { fdi, fi, fdidc, fdic, fidc, fic };
 /* Separated out into ow_global.h for readability */
 #include "ow_global.h"
 
+/* Allow detail debugging of individual slave */
+#include "ow_detail.h"
+
 /* State information for the program */
 /* Separated out into ow_stateinfo.h for readability */
 #include "ow_stateinfo.h"

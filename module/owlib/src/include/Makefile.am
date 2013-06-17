@@ -52,6 +52,7 @@ noinst_HEADERS =           \
         ow_connection_out.h\
         ow_counters.h      \
         ow_debug.h         \
+        ow_detail.h        \
         ow_detect.h        \
         ow_device.h        \
         ow_devices.h       \

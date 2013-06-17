@@ -51,3 +51,30 @@ enum parse_serialnumber Parse_SerialNumber(char *sn_char, BYTE * sn)
 	return ( *sn_char == '\0' ) ? sn_valid : sn_not_sn ;
 }
 
+// returns number of valid bytes in serial number
+int SerialNumber_length(char *sn_char, BYTE * sn)
+{
+	int bytes;
+
+	for ( bytes = 0 ; bytes < SERIAL_NUMBER_SIZE ; ++bytes ) {
+		char ID[2] ;
+		if (*sn_char == '.') { // ignore dots
+			++sn_char;
+		}
+		if (isxdigit(*sn_char)) {
+			ID[0] = *sn_char;
+		} else {
+			return bytes; // non-hex
+		}
+		++sn_char ;
+		if (isxdigit(*sn_char)) {
+			ID[1] = *sn_char;
+		} else {
+			return bytes; // non-hex
+		}
+		sn[bytes] = string2num(ID);
+		++sn_char ;
+	}
+	return SERIAL_NUMBER_SIZE ;
+}
+	

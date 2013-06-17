@@ -22,6 +22,7 @@ void LibClose(void)
 	LibStop();
 	PIDstop();
 	DeviceDestroy();
+	Detail_Close() ;
 
 	_MUTEX_ATTR_DESTROY(Mutex.mattr);
 
