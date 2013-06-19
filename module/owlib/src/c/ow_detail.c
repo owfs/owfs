@@ -78,6 +78,7 @@ GOOD_OR_BAD Detail_Add( const char *arg )
 		length[0] = SerialNumber_length( this_p, sn ) ;
 		if ( length[0] > 0 ) {
 			++ DD.details ;
+			Globals.want_background = 0 ; //foreground
 			DirblobAdd( sn, &(DD.sn) ) ;
 			DirblobAdd( length, &(DD.length) ) ;
 		}
