@@ -259,8 +259,9 @@ owtcl_ObjCmdProc(Owtcl_Set_error_print)
 owtcl_ObjCmdProc(Owtcl_Put)
 {
 	OwtclStateType *OwtclStatePtr = (OwtclStateType *) clientData;
-	char *path, *value;
-	int path_len, value_len, r;
+	char *path, *value=NULL;
+	Tcl_UniChar *uvalue;
+	int path_len, value_len, r, v;
 	int tcl_return = TCL_OK;
 	owtcl_ArgObjIncr;
 
@@ -270,11 +271,19 @@ owtcl_ObjCmdProc(Owtcl_Put)
 		tcl_return = TCL_ERROR;
 		goto common_exit;
 	}
-	if (objc == 3)
-		value = Tcl_GetStringFromObj(objv[2], &value_len);
+	if (objc == 3) {
+		uvalue = Tcl_GetUnicodeFromObj(objv[2], &value_len);
+		value = malloc(value_len);
+		if (value != NULL)
+			for (v=0 ; v < value_len ; v++)
+				value[v]=(char)uvalue[v];
+	}	
 	else {
-		value = "\n";
-		value_len = 1;
+		value=malloc(1);
+		if (value != NULL) {
+			value[0] = '\n';
+			value_len = 1;
+		}
 	}
 
 	/* Check we are connected to onewire host(s). */
@@ -293,6 +302,7 @@ owtcl_ObjCmdProc(Owtcl_Put)
 	}
 
   common_exit:
+	free(value);
 	owtcl_ArgObjDecr;
 	return tcl_return;
 }
@@ -368,7 +378,7 @@ owtcl_ObjCmdProc(Owtcl_Get)
 			resultPtr = Tcl_NewStringObj(buf, -1);
 		}
 	} else {
-		resultPtr = Tcl_NewStringObj(buf, -1);
+		resultPtr = Tcl_NewStringObj(buf, s);
 	}
 	Tcl_SetObjResult(interp, resultPtr);
 	free(buf);
