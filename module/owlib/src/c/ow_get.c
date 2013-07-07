@@ -49,15 +49,15 @@ static void getdir( struct charblob * cb, struct one_wire_query * owq )
 static char * copy_buffer( char * data, int size )
 {
 	char * data_copy = NULL ; // default
-	if ( size < 1 ) {
+	if ( size < 0 ) {
 		return NULL ;
 	}
-	data_copy = malloc( size+1 ) ;
+	data_copy = malloc( size+1 ) ; // cannot use owmalloc since this buffer cleanup is handled by the calling program.
 	if ( data_copy == NULL ) {
 		return NULL ;
 	}
 	memcpy( data_copy, data, size ) ;
-	data_copy[size] = '\0' ;
+	data_copy[size] = '\0' ; // null end char
 	return data_copy ;
 }
 
@@ -68,7 +68,7 @@ SIZE_OR_ERROR FS_get(const char *path, char **return_buffer, size_t * buffer_len
 
 	/* Check the parameters */
 	if (return_buffer == NULL) {
-		//  No buffer for read result.
+		//  No buffer supplied for read result.
 		return -EINVAL;
 	}
 
@@ -100,11 +100,12 @@ SIZE_OR_ERROR FS_get(const char *path, char **return_buffer, size_t * buffer_len
 
 	/* Check the parameters */
 	if (*return_buffer == NULL) {
-		//  no data.
+		//  error
 		return -EINVAL;
 	}
 
 	if ( buffer_length != NULL ) {
+		// return buffer length as well
 		*buffer_length = size ;
 	}
 	return size ;
