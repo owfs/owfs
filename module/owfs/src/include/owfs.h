@@ -6,7 +6,7 @@ $Id$
 
     By Paul H Alfille
     {c} 2003 GPL
-    palfille@earthlink.net
+    paul.alfille@gmail.com
 */
 
 /* OWFS - specific header */

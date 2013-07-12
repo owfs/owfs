@@ -5,7 +5,7 @@ $Id$
 
     By Paul H Alfille
     {c} 2003-5 GPL
-    palfille@earthlink.net
+    paul.alfille@gmail.com
 */
 
 /* OWCAPI - specific header */

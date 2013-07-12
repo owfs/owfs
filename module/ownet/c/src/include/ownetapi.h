@@ -5,7 +5,7 @@ $Id$
 
     By Paul H Alfille
     {c} 2008 GPL
-    palfille@earthlink.net
+    paul.alfille@gmail.com
 */
 
 /* This is the libownet header

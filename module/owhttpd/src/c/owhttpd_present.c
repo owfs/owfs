@@ -57,7 +57,7 @@ void HTTPheader(FILE * out, const char *head)
 {
 	fprintf(out,
 			"<BODY " BODYCOLOR "><TABLE " TOPTABLE
-			"><TR><TD>OWFS</TD><TD><A HREF='/'>Bus listing</A></TD><TD><A HREF='http://www.owfs.org'>OWFS homepage</A></TD><TD><A HREF='http://www.maxim-ic.com'>Dallas/Maxim</A></TD><TD>by <A HREF='mailto://palfille@earthlink.net'>Paul H Alfille</A></TD></TR></TABLE>\n");
+			"><TR><TD>OWFS</TD><TD><A HREF='/'>Bus listing</A></TD><TD><A HREF='http://www.owfs.org'>OWFS homepage</A></TD><TD><A HREF='http://www.maxim-ic.com'>Dallas/Maxim</A></TD><TD>by <A HREF='mailto://paul.alfille@gmail.com'>Paul H Alfille</A></TD></TR></TABLE>\n");
 	fprintf(out, "<H1>%s</H1><HR>\n", head);
 }
 

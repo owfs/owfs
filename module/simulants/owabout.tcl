@@ -23,7 +23,7 @@ Description: owsim mimics the real 1-wire server: owserver
   1-wire parameters like temperature can be set on screen rather than measured.
     
     
-Author: Paul H Alfille <palfille@earthlink.net>
+Author: Paul H Alfille <paul.alfille@gmail.com>
     
 Copyright: June 2006 GPL 2.0 license (though a more liberal license may be possible).
     

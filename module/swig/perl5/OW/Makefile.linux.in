@@ -5,7 +5,7 @@ use ExtUtils::MakeMaker ;
 WriteMakefile(
     'CC'	=>	'@CC@',
     'ABSTRACT'	=>	q[Perl interface to the 1-wire filesytem] ,
-    'AUTHOR'	=>	q[Paul H Alfille <palfille@earthlink.net>] ,
+    'AUTHOR'	=>	q[Paul H Alfille <paul.alfille@gmail.com>] ,
     'VERSION'	=>	q[@VERSION@],
 # Avoid compilation problem for Fedora Core 1 and Slackware 10.2
     'DEFINE'    =>	q[@PTHREAD_CFLAGS@ -D_FILE_OFFSET_BITS=64 -DSKIP_SEARCH_H @DEFS@],
