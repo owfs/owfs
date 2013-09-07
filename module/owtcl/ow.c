@@ -316,6 +316,8 @@ owtcl_ObjCmdProc(Owtcl_Get)
 {
 	OwtclStateType *OwtclStatePtr = (OwtclStateType *) clientData;
 	char *arg, *path, *buf = NULL, *d, *p;
+	Tcl_UniChar *uvalue;
+	int v;
 	int tcl_return = TCL_OK, r, s, lst;
 	size_t ss;
 	Tcl_Obj *resultPtr;
@@ -378,7 +380,20 @@ owtcl_ObjCmdProc(Owtcl_Get)
 			resultPtr = Tcl_NewStringObj(buf, -1);
 		}
 	} else {
-		resultPtr = Tcl_NewStringObj(buf, s);
+		if ((s==1) && (buf[0]==0)) {
+			tcl_return = TCL_OK;
+			goto common_exit;
+		}
+
+		uvalue = malloc(2*s);
+		if (uvalue == NULL) {
+			tcl_return = TCL_OK;
+			goto common_exit;
+		}
+		for (v=0 ; v < s ; v++)
+			uvalue[v]=(Tcl_UniChar)buf[v];
+		resultPtr = Tcl_NewUnicodeObj(uvalue, s);
+		free(uvalue);
 	}
 	Tcl_SetObjResult(interp, resultPtr);
 	free(buf);
