@@ -79,6 +79,11 @@ $Id$
 
 #define _FILE_OFFSET_BITS   64
 
+#ifdef __FreeBSD__
+/* from Johan Ström: needed for sys/param.h if sys/types.h sees it */
+#define __BSD_VISIBLE 1 
+#endif /* __FreeBSD__ */
+
 #ifdef HAVE_FEATURES_H
 #include <features.h>
 #endif							/* HAVE_FEATURES_H */
@@ -90,7 +95,6 @@ $Id$
 #ifdef HAVE_SYS_TYPES_H
 #ifdef __FreeBSD__
 #include <sys/param.h>
-#define __BSD_VISIBLE 1
 #endif /* __FreeBSD__ */
 #include <sys/types.h>			/* for stat */
 #endif							/* HAVE_SYS_TYPES_H */
