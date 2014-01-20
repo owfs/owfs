@@ -164,7 +164,7 @@ static GOOD_OR_BAD OW_w_pio(const BYTE data, const struct parsedname *pn);
 static GOOD_OR_BAD OW_r_reg(BYTE * data, const struct parsedname *pn);
 static GOOD_OR_BAD OW_w_s_alarm(const BYTE * data, const struct parsedname *pn);
 static GOOD_OR_BAD OW_w_pios(const BYTE * data, const size_t size, const struct parsedname *pn);
-static GOOD_OR_BAD OW_redefchar(char * pattern, struct parsedname * pn);
+static GOOD_OR_BAD OW_redefchar(ASCII * pattern, struct parsedname * pn);
 static GOOD_OR_BAD OW_out_of_test_mode( const struct parsedname * pn ) ;
 
 /* 2408 switch */
@@ -638,7 +638,7 @@ static ZERO_OR_ERROR FS_redefchar_hex(struct one_wire_query *owq)
 	}
 	string2bytes( OWQ_buffer(owq), data, LCD_REDEFCHAR_LENGTH ) ;
 		
-	return GB_to_Z_OR_E( OW_redefchar( data, pn ) ) ;
+	return GB_to_Z_OR_E( OW_redefchar( (ASCII *) data, pn ) ) ;
 }
 
 /* Read 6 bytes --
@@ -832,7 +832,7 @@ static GOOD_OR_BAD OW_out_of_test_mode( const struct parsedname * pn )
 }	
 
 /* Redefine a character */
-static GOOD_OR_BAD OW_redefchar(char * pattern, struct parsedname * pn)
+static GOOD_OR_BAD OW_redefchar(ASCII * pattern, struct parsedname * pn)
 {
 	int i ;
 	int j = 0;

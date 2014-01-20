@@ -542,7 +542,7 @@ static ZERO_OR_ERROR FS_r_scratchpad(struct one_wire_query *owq)
 		return -EINVAL ;
 	}
 
-	return OWQ_format_output_offset_and_size(s, 9, owq);
+	return OWQ_format_output_offset_and_size( (const ASCII *) s, 9, owq);
 }
 
 static ZERO_OR_ERROR FS_r_trim(struct one_wire_query *owq)
