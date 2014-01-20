@@ -159,6 +159,7 @@ void _Debug_Bytes(const char *title, const unsigned char *buf, int length)
 	ascii_print( (const char *) buf, length ) ;
 }
 
+/* calls exit() so never returns */
 void fatal_error(const char * file, int line, const char * func, const char *fmt, ...)
 {
 	va_list ap;
@@ -235,6 +236,7 @@ void fatal_error(const char * file, int line, const char * func, const char *fmt
 	}
 #endif /* OWNETC_OW_DEBUG */
 	va_end(ap);
+	exit(EXIT_FAILURE) ;
 }
 
 static void err_format(char * format, int errno_save, const char * level_string, const char * file, int line, const char * func, const char * fmt)

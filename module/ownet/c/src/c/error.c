@@ -203,6 +203,7 @@ void _Debug_Writev(struct iovec *io, int iosz)
 	}
 }
 
+/* Dies with exit after message */
 void fatal_error(char *file, int row, const char *fmt, ...)
 {
 	va_list ap;
@@ -249,6 +250,7 @@ void fatal_error(char *file, int row, const char *fmt, ...)
 	}
 #endif /* OWNETC_OW_DEBUG */
 	va_end(ap);
+	exit(EXIT_FAILURE) ;
 }
 
 

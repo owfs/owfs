@@ -90,7 +90,7 @@ extern int log_available;
 #define ERROR_DETAIL(...)     do { } while (0)
 #define ERROR_DEBUG(...)      do { } while (0)
 
-#define FATAL_ERROR(...)      do { } while (0)
+#define FATAL_ERROR(...)      do { exit(EXIT_FAILURE) } while (0)
 
 #define Debug_Bytes(title,buf,length)    do { } while (0)
 #define Debug_OWQ(owq)        do { } while (0)
