@@ -94,6 +94,8 @@ extern struct mutexes {
 #define RWLOCK_INIT(rw)		my_rwlock_init(    &(rw) )
 #define RWLOCK_DESTROY(rw)	my_rwlock_destroy( &(rw) )
 
+#define _SEM_INIT(sem, shared, value)	my_sem_init(  &(sem) , (shared), (value) )
+
 #define RWLOCK_WLOCK(mut)	my_rwlock_write_lock(   &(mut) )
 #define RWLOCK_WUNLOCK(mut)	my_rwlock_write_unlock( &(mut) )
 

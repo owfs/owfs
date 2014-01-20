@@ -63,6 +63,7 @@ extern struct mutexes {
 #endif							/* __UCLIBC__ */
 } Mutex;
 
+#define _SEM_INIT(sem, shared, value)	my_sem_init(  &(sem) , (shared), (value) )
 
 #define LIB_WLOCK         my_rwlock_write_lock(   &Mutex.lib    ) ;
 #define LIB_WUNLOCK       my_rwlock_write_unlock( &Mutex.lib    ) ;
