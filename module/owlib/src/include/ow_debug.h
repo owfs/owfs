@@ -109,11 +109,12 @@ extern const char  sem_init_failed[];
 #define my_sem_init(sem, shared, value)              do {\
 	int mrc = sem_init(sem, shared, value);	            \
 	if(mrc != 0) { fprintf(stderr, sem_init_failed,        errno, strerror(errno)); \
-		if(errno == 28) \
-			fprintf(stderr, "Too many semaphores running, please run "\
-					"fewer apps utilizing semaphores (owfs apps for example), or tweak sysctl kern.ipc.sem*. Exiting.\n"); \
-		exit(1);			\
+		if(errno == 28) { \
+			LEVEL_DEFAULT("Too many semaphores running, please run fewer apps utilizing semaphores (owfs apps for example), or tweak sysctl kern.ipc.sem*. Exiting.\n"); \
+		} \
+		FATAL_ERROR(sem_init_failed, mrc, strerror(mrc));			\
 	}} while(0)
+ 
  
 /* Need to define those functions to get FILE and LINE information */
 

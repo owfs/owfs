@@ -18,8 +18,8 @@ $Id$
 void my_rwlock_init(my_rwlock_t * my_rwlock)
 {
 	my_pthread_mutex_init(&(my_rwlock->protect_reader_count), Mutex.pmattr);
-	sem_init(&(my_rwlock->allow_readers), 0, 1);
-	sem_init(&(my_rwlock->no_processes), 0, 1);
+	_SEM_INIT(my_rwlock->allow_readers, 0, 1);
+	_SEM_INIT(my_rwlock->no_processes, 0, 1);
 	my_rwlock->reader_count = 1;
 }
 

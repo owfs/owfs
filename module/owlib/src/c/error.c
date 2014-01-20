@@ -30,6 +30,7 @@ $Id$
 
 /* module/ownet/c/src/c/error.c & module/owlib/src/c/error.c are identical */
 
+const char sem_init_failed[] = "semaphore_init failed rc=%d [%s]\n";
 const char mutex_init_failed[] = "mutex_init failed rc=%d [%s]\n";
 const char mutex_destroy_failed[] = "mutex_destroy failed rc=%d [%s]\n";
 const char mutex_lock_failed[] = "mutex_lock failed rc=%d [%s]\n";
