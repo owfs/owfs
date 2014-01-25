@@ -178,6 +178,25 @@ WRITE_FUNCTION(FS_clear);
 #define _EDS0082_Relay_function		0x9E // byte
 #define _EDS0082_Relay_state		0x9F // byte
 
+/* EDS0090 locations */
+#define _EDS0090_Tag				0x00 // 30 chars
+#define _EDS0090_ID					0x1E // uint16
+#define _EDS0090_Input_state		0x22 // byte
+#define _EDS0090_Latch_state		0x23 // byte
+#define _EDS0090_Output_state		0x24 // byte
+#define _EDS0090_Pulldown_state		0x25 // byte
+#define _EDS0090_Alarm_state		0x2A // byte
+#define _EDS0090_Seconds_counter	0x2C // uint32
+#define _EDS0090_Pulse_counter		0x30 // uint32 * 8
+#define _EDS0090_Conditional_search	0x50 // uint16
+#define _EDS0090_Pulse_reset		0x54 // byte
+#define _EDS0090_Latch_reset		0x55 // byte
+#define _EDS0090_Alarm_value		0x58 // uint16
+#define _EDS0090_Pulldown_value		0x5B // byte
+#define _EDS0090_Output_value		0x5C // byte
+#define _EDS0090_Relay_function		0x5E // byte
+#define _EDS0090_Relay_state		0x5F // byte
+
 static enum e_visibility VISIBLE_EDS0064( const struct parsedname * pn ) ;
 static enum e_visibility VISIBLE_EDS0065( const struct parsedname * pn ) ;
 static enum e_visibility VISIBLE_EDS0066( const struct parsedname * pn ) ;
@@ -190,6 +209,9 @@ static enum e_visibility VISIBLE_EDS0080( const struct parsedname * pn ) ;
 static enum e_visibility VISIBLE_EDS0082( const struct parsedname * pn ) ;
 static enum e_visibility VISIBLE_EDS0083( const struct parsedname * pn ) ;
 static enum e_visibility VISIBLE_EDS0085( const struct parsedname * pn ) ;
+static enum e_visibility VISIBLE_EDS0090( const struct parsedname * pn ) ;
+static enum e_visibility VISIBLE_EDS0091( const struct parsedname * pn ) ;
+static enum e_visibility VISIBLE_EDS0092( const struct parsedname * pn ) ;
 
 #define _EDS_TAG_LENGTH 30
 #define _EDS_TYPE_LENGTH 7
@@ -227,19 +249,20 @@ static struct bitfield eds0064_inHg_hi   = { "EDS0064/alarm/state", 1, 12, } ;
 static struct bitfield eds0064_inHg_lo   = { "EDS0064/alarm/state", 1, 13, } ;
 static struct bitfield eds0064_lux_hi    = { "EDS0064/alarm/state", 1, 14, } ;
 static struct bitfield eds0064_lux_lo    = { "EDS0064/alarm/state", 1, 15, } ;
-static struct bitfield eds0064_relay_state  = { "EDS0064/relay_state", 1, 0, } ;
-static struct bitfield eds0064_led_state  = { "EDS0064/relay_state", 1, 1, } ;
-static struct bitfield eds0064_led_function  = { "EDS0064/relay_function", 2, 2, } ;
+static struct bitfield eds0064_relay_state  = 	{ "EDS0064/relay_state", 1, 0, } ;
+static struct bitfield eds0064_led_state  = 	{ "EDS0064/relay_state", 1, 1, } ;
+static struct bitfield eds0064_relay_function = { "EDS0064/relay_function", 2, 0, } ;
+static struct bitfield eds0064_led_function  = 	{ "EDS0064/relay_function", 2, 2, } ;
 
 // struct bitfield { "alias_link", number_of_bits, shift_left, }
-static struct bitfield eds0070_cond_vib_hi = { "EDS0070/set_alarm/alarm_function", 1, 2, } ;
-static struct bitfield eds0070_cond_vib_lo = { "EDS0070/set_alarm/alarm_function", 1, 3, } ;
-static struct bitfield eds0070_vib_hi = { "EDS0070/alarm/state", 1, 2, } ;
-static struct bitfield eds0070_vib_lo = { "EDS0070/alarm/state", 1, 3, } ;
-static struct bitfield eds0070_relay_state  = { "EDS0070/relay_state", 1, 0, } ;
-static struct bitfield eds0070_led_state  = { "EDS0070/relay_state", 1, 1, } ;
-static struct bitfield eds0070_relay_function  = { "EDS0070/relay_function", 2, 0, } ;
-static struct bitfield eds0070_led_function  = { "EDS0070/relay_function", 2, 2, } ;
+static struct bitfield eds0070_cond_vib_hi = 	{ "EDS0070/set_alarm/alarm_function", 1, 2, } ;
+static struct bitfield eds0070_cond_vib_lo = 	{ "EDS0070/set_alarm/alarm_function", 1, 3, } ;
+static struct bitfield eds0070_vib_hi = 		{ "EDS0070/alarm/state", 1, 2, } ;
+static struct bitfield eds0070_vib_lo = 		{ "EDS0070/alarm/state", 1, 3, } ;
+static struct bitfield eds0070_relay_state  = 	{ "EDS0070/relay_state", 1, 0, } ;
+static struct bitfield eds0070_led_state  = 	{ "EDS0070/relay_state", 1, 1, } ;
+static struct bitfield eds0070_relay_function = { "EDS0070/relay_function", 2, 0, } ;
+static struct bitfield eds0070_led_function  = 	{ "EDS0070/relay_function", 2, 2, } ;
 
 // struct bitfield { "alias_link", number_of_bits, shift_left, }
 static struct bitfield eds0071_cond_temp_hi = { "EDS0071/set_alarm/alarm_function", 1, 0, } ;
@@ -250,20 +273,30 @@ static struct bitfield eds0071_temp_hi = { "EDS0071/alarm/state", 1, 0, } ;
 static struct bitfield eds0071_temp_lo = { "EDS0071/alarm/state", 1, 1, } ;
 static struct bitfield eds0071_RTD_hi  = { "EDS0071/alarm/state", 1, 2, } ;
 static struct bitfield eds0071_RTD_lo  = { "EDS0071/alarm/state", 1, 3, } ;
-static struct bitfield eds0071_relay_state  = { "EDS0071/relay_state", 1, 0, } ;
-static struct bitfield eds0071_led_state  = { "EDS0071/relay_state", 1, 1, } ;
-static struct bitfield eds0071_relay_function  = { "EDS0071/relay_function", 2, 0, } ;
-static struct bitfield eds0071_led_function  = { "EDS0071/relay_function", 2, 2, } ;
+static struct bitfield eds0071_relay_state  = 	{ "EDS0071/relay_state", 1, 0, } ;
+static struct bitfield eds0071_led_state  = 	{ "EDS0071/relay_state", 1, 1, } ;
+static struct bitfield eds0071_relay_function = { "EDS0071/relay_function", 2, 0, } ;
+static struct bitfield eds0071_led_function  = 	{ "EDS0071/relay_function", 2, 2, } ;
 
 // struct bitfield { "alias_link", number_of_bits, shift_left, }
 static struct bitfield eds0082_alarm_hi  = { "EDS0082/alarm/state", 2, 0, } ;
 static struct bitfield eds0082_alarm_lo  = { "EDS0082/alarm/state", 2, 1, } ;
 static struct bitfield eds0082_conditional_hi  = { "EDS0082/set_alarm/alarm_function", 2, 0, } ;
 static struct bitfield eds0082_conditional_lo  = { "EDS0082/set_alarm/alarm_function", 2, 1, } ;
-static struct bitfield eds0082_relay_state  = { "EDS0082/relay_state", 1, 0, } ;
-static struct bitfield eds0082_led_state  = { "EDS0082/relay_state", 1, 1, } ;
-static struct bitfield eds0082_relay_function  = { "EDS0082/relay_function", 2, 0, } ;
-static struct bitfield eds0082_led_function  = { "EDS0082/relay_function", 2, 2, } ;
+static struct bitfield eds0082_relay_state  = 	{ "EDS0082/relay_state", 1, 0, } ;
+static struct bitfield eds0082_led_state  = 	{ "EDS0082/relay_state", 1, 1, } ;
+static struct bitfield eds0082_relay_function = { "EDS0082/relay_function", 2, 0, } ;
+static struct bitfield eds0082_led_function  = 	{ "EDS0082/relay_function", 2, 2, } ;
+
+// struct bitfield { "alias_link", number_of_bits, shift_left, }
+static struct bitfield eds0090_cond_hi = { "EDS0090/set_alarm/alarm_function", 1, 0, } ;
+static struct bitfield eds0090_cond_lo = { "EDS0090/set_alarm/alarm_function", 1, 1, } ;
+static struct bitfield eds0090_alarm_hi  = { "EDS0090/alarm/state", 2, 0, } ;
+static struct bitfield eds0090_alarm_lo  = { "EDS0090/alarm/state", 2, 1, } ;
+static struct bitfield eds0090_relay_state  = 	{ "EDS0090/relay_state", 1, 0, } ;
+static struct bitfield eds0090_led_state  = 	{ "EDS0090/relay_state", 1, 1, } ;
+static struct bitfield eds0090_relay_function = { "EDS0090/relay_function", 2, 0, } ;
+static struct bitfield eds0090_led_function  = 	{ "EDS0090/relay_function", 2, 2, } ;
 
 /* ------- Structures ----------- */
 
@@ -275,6 +308,8 @@ static struct aggregate AEDS_82_state = { 8, ag_numbers, ag_aggregate, }; // 8 s
 static struct aggregate AEDS_85_data = { 4, ag_numbers, ag_separate, }; // 4 voltages
 static struct aggregate AEDS_85_limit = { 4*2, ag_numbers, ag_separate, }; // 4 voltages hi/lo
 static struct aggregate AEDS_85_state = { 4, ag_numbers, ag_aggregate, }; // 4 states
+static struct aggregate AEDS_90_state = { 8, ag_numbers, ag_aggregate, }; // 8 bits
+static struct aggregate AEDS_90_inputs = { 8, ag_numbers, ag_separate, }; // 8 inputs
 static struct filetype EDS[] = {
 	F_STANDARD,
 	{"memory", _EDS_PAGES * _EDS_PAGESIZE, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE, NO_FILETYPE_DATA, },
@@ -311,7 +346,7 @@ static struct filetype EDS[] = {
 
 	{"EDS0064/relay", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0064, NO_FILETYPE_DATA, },
 	{"EDS0064/relay/state", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0064, {v: &eds0064_relay_state,}, },
-	{"EDS0064/relay/control", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0064, {v: &eds0064_led_function,}, },
+	{"EDS0064/relay/control", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0064, {v: &eds0064_relay_function,}, },
 
 	{"EDS0064/LED", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0064, NO_FILETYPE_DATA, },
 	{"EDS0064/LED/state", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0064, {v: &eds0064_led_state,}, },
@@ -371,7 +406,7 @@ static struct filetype EDS[] = {
 
 	{"EDS0065/relay", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0065, NO_FILETYPE_DATA, },
 	{"EDS0065/relay/state", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0065, {v: &eds0064_relay_state,}, },
-	{"EDS0065/relay/control", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0065, {v: &eds0064_led_function,}, },
+	{"EDS0065/relay/control", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0065, {v: &eds0064_relay_function,}, },
 
 	{"EDS0065/LED", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0065, NO_FILETYPE_DATA, },
 	{"EDS0065/LED/state", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0065, {v: &eds0064_led_state,}, },
@@ -417,7 +452,7 @@ static struct filetype EDS[] = {
 
 	{"EDS0066/relay", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0066, NO_FILETYPE_DATA, },
 	{"EDS0066/relay/state", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0066, {v: &eds0064_relay_state,}, },
-	{"EDS0066/relay/control", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0066, {v: &eds0064_led_function,}, },
+	{"EDS0066/relay/control", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0066, {v: &eds0064_relay_function,}, },
 
 	{"EDS0066/LED", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0066, NO_FILETYPE_DATA, },
 	{"EDS0066/LED/state", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0066, {v: &eds0064_led_state,}, },
@@ -456,10 +491,10 @@ static struct filetype EDS[] = {
 
 	{"EDS0067/relay", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0067, NO_FILETYPE_DATA, },
 	{"EDS0067/relay/state", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0067, {v: &eds0064_relay_state,}, },
-	{"EDS0067/relay/control", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0067, {v: &eds0064_led_function,}, },
+	{"EDS0067/relay/control", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0067, {v: &eds0064_relay_function,}, },
 
 	{"EDS0067/LED", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0067, NO_FILETYPE_DATA, },
-	{"EDS0067/LED/state", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0068, {v: &eds0064_led_state,}, },
+	{"EDS0067/LED/state", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0067, {v: &eds0064_led_state,}, },
 	{"EDS0067/LED/control", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0067, {v: &eds0064_led_function,}, },
 
 	/* EDS 0068 */
@@ -537,7 +572,7 @@ static struct filetype EDS[] = {
 
 	{"EDS0068/relay", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0068, NO_FILETYPE_DATA, },
 	{"EDS0068/relay/state", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0068, {v: &eds0064_relay_state,}, },
-	{"EDS0068/relay/control", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0068, {v: &eds0064_led_function,}, },
+	{"EDS0068/relay/control", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0068, {v: &eds0064_relay_function,}, },
 
 	{"EDS0068/LED", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0068, NO_FILETYPE_DATA, },
 	{"EDS0068/LED/state", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0068, {v: &eds0064_led_state,}, },
@@ -644,7 +679,6 @@ static struct filetype EDS[] = {
 	{"EDS0072/counter/samples", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_32, NO_WRITE_FUNCTION, VISIBLE_EDS0072, {u: _EDS0071_Conversion_counter,}, },
 
 	{"EDS0072/set_alarm", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0072, NO_FILETYPE_DATA, },
-	{"EDS0072/set_alarm/temp_hi" , PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0072, {v: &eds0071_cond_temp_hi,}, },
 	{"EDS0072/set_alarm/temp_hi" , PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0072, {v: &eds0071_cond_temp_hi,}, },
 	{"EDS0072/set_alarm/temp_low", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0072, {v: &eds0071_cond_temp_lo,}, },
 	{"EDS0072/set_alarm/RTD_hi" , PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0072, {v: &eds0071_cond_RTD_hi,}, },
@@ -755,7 +789,7 @@ static struct filetype EDS[] = {
 	{"EDS0083", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0083, NO_FILETYPE_DATA, },
 	{"EDS0083/memory", _EDS_8X_PAGES * _EDS_PAGESIZE, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE_EDS0083, NO_FILETYPE_DATA, },
 	{"EDS0083/pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0083, NO_FILETYPE_DATA, },
-	{"EDS0083/pages/page", _EDS_PAGESIZE, &AEDS_8X, ft_binary, fc_page, FS_r_page, FS_w_page, VISIBLE_EDS0082, NO_FILETYPE_DATA, },
+	{"EDS0083/pages/page", _EDS_PAGESIZE, &AEDS_8X, ft_binary, fc_page, FS_r_page, FS_w_page, VISIBLE_EDS0083, NO_FILETYPE_DATA, },
 
 	{"EDS0083/current", PROPERTY_LENGTH_FLOAT, &AEDS_85_data, ft_float, fc_volatile, FS_r_current, NO_WRITE_FUNCTION, VISIBLE_EDS0083, {u: _EDS0082_level,}, },
 	{"EDS0083/min_current", PROPERTY_LENGTH_FLOAT, &AEDS_85_data, ft_float, fc_volatile, FS_r_current, NO_WRITE_FUNCTION, VISIBLE_EDS0083, {u: _EDS0082_min,}, },
@@ -794,7 +828,7 @@ static struct filetype EDS[] = {
 	{"EDS0085", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0085, NO_FILETYPE_DATA, },
 	{"EDS0085/memory", _EDS_8X_PAGES * _EDS_PAGESIZE, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE_EDS0085, NO_FILETYPE_DATA, },
 	{"EDS0085/pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0085, NO_FILETYPE_DATA, },
-	{"EDS0085/pages/page", _EDS_PAGESIZE, &AEDS_8X, ft_binary, fc_page, FS_r_page, FS_w_page, VISIBLE_EDS0082, NO_FILETYPE_DATA, },
+	{"EDS0085/pages/page", _EDS_PAGESIZE, &AEDS_8X, ft_binary, fc_page, FS_r_page, FS_w_page, VISIBLE_EDS0085, NO_FILETYPE_DATA, },
 
 	{"EDS0085/volts", PROPERTY_LENGTH_FLOAT, &AEDS_85_data, ft_float, fc_volatile, FS_r_voltage, NO_WRITE_FUNCTION, VISIBLE_EDS0085, {u: _EDS0082_level,}, },
 	{"EDS0085/min_volts", PROPERTY_LENGTH_FLOAT, &AEDS_85_data, ft_float, fc_volatile, FS_r_voltage, NO_WRITE_FUNCTION, VISIBLE_EDS0085, {u: _EDS0082_min,}, },
@@ -828,6 +862,46 @@ static struct filetype EDS[] = {
 	{"EDS0085/LED", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0085, NO_FILETYPE_DATA, },
 	{"EDS0085/LED/state", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0085, {v: &eds0082_led_state,}, },
 	{"EDS0085/LED/control", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0085, {v: &eds0082_led_function,}, },
+
+	/* EDS0090 */
+	{"EDS0090", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0090, NO_FILETYPE_DATA, },
+	{"EDS0090/input", PROPERTY_LENGTH_BITFIELD, &AEDS_90_state, ft_bitfield, fc_stable, FS_r_8, NO_WRITE_FUNCTION, VISIBLE_EDS0090, {u: _EDS0090_Input_state,}, },
+	
+	{"EDS0090/relay_function", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, INVISIBLE, {u: _EDS0090_Relay_function,}, },
+	{"EDS0090/relay_state", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, INVISIBLE, {u: _EDS0090_Relay_state,}, },
+
+	{"EDS0090/counter", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0090, NO_FILETYPE_DATA, },
+	{"EDS0090/counter/seconds", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_32, NO_WRITE_FUNCTION, VISIBLE_EDS0090, {u: _EDS0090_Seconds_counter,}, },
+	{"EDS0090/counter/pulses", PROPERTY_LENGTH_UNSIGNED, &AEDS_90_inputs, ft_unsigned, fc_volatile, FS_r_32, NO_WRITE_FUNCTION, VISIBLE_EDS0090, {u: _EDS0090_Pulse_counter,}, },
+	{"EDS0090/counter/reset", PROPERTY_LENGTH_BITFIELD, &AEDS_90_state, ft_unsigned, ft_bitfield, FS_r_8, FS_w_8, VISIBLE_EDS0090, {u: _EDS0090_Pulse_reset,}, },
+
+	{"EDS0090/output", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0090, NO_FILETYPE_DATA, },
+	{"EDS0090/output/set", PROPERTY_LENGTH_BITFIELD, &AEDS_90_state, ft_bitfield, fc_volatile, FS_r_8, FS_w_8	, VISIBLE_EDS0090, {u: _EDS0090_Output_value,}, },
+	{"EDS0090/output/off", PROPERTY_LENGTH_BITFIELD, &AEDS_90_state, ft_bitfield, fc_volatile, FS_r_8, NO_WRITE_FUNCTION, VISIBLE_EDS0090, {u: _EDS0090_Output_value,}, },
+	{"EDS0090/output/reset", PROPERTY_LENGTH_BITFIELD, &AEDS_90_state, ft_unsigned, ft_bitfield, FS_r_8, FS_w_8, VISIBLE_EDS0090, {u: _EDS0090_Latch_reset,}, },
+
+	{"EDS0090/latch", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0090, NO_FILETYPE_DATA, },
+	{"EDS0090/latch/state", PROPERTY_LENGTH_BITFIELD, &AEDS_90_state, ft_bitfield, fc_volatile, FS_r_8, NO_WRITE_FUNCTION, VISIBLE_EDS0090, {u: _EDS0090_Latch_state,}, },
+	{"EDS0090/latch/reset", PROPERTY_LENGTH_BITFIELD, &AEDS_90_state, ft_unsigned, ft_bitfield, FS_r_8, FS_w_8, VISIBLE_EDS0090, {u: _EDS0090_Latch_reset,}, },
+
+	{"EDS0090/alarm", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0090, NO_FILETYPE_DATA, },
+	{"EDS0082/alarm/clear", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_clear, VISIBLE_EDS0082, NO_FILETYPE_DATA, },
+	{"EDS0090/alarm/state", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, NO_WRITE_FUNCTION, INVISIBLE, {u: _EDS0090_Alarm_state,}, },
+	{"EDS0090/alarm/hi", PROPERTY_LENGTH_BITFIELD, &AEDS_90_state, ft_bitfield, fc_volatile, FS_r_bit_array, NO_WRITE_FUNCTION, VISIBLE_EDS0090, {v: &eds0090_alarm_hi,}, },
+	{"EDS0090/alarm/low", PROPERTY_LENGTH_BITFIELD, &AEDS_90_state, ft_bitfield, fc_volatile, FS_r_bit_array, NO_WRITE_FUNCTION, VISIBLE_EDS0090, {v: &eds0090_alarm_lo,}, },
+
+	{"EDS0090/set_alarm", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0090, NO_FILETYPE_DATA, },
+	{"EDS0090/set_alarm/temp_hi" , PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0090, {v: &eds0090_cond_hi,}, },
+	{"EDS0090/set_alarm/temp_low", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0090, {v: &eds0090_cond_lo,}, },
+	{"EDS0090/set_alarm/alarm_function", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, INVISIBLE, {u: _EDS0090_Conditional_search,}, },
+
+	{"EDS0090/relay", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0090, NO_FILETYPE_DATA, },
+	{"EDS0090/relay/state", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0090, {v: &eds0090_relay_state,}, },
+	{"EDS0090/relay/control", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0090, {v: &eds0090_led_function,}, },
+
+	{"EDS0090/LED", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0090, NO_FILETYPE_DATA, },
+	{"EDS0090/LED/state", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0090, {v: &eds0090_led_state,}, },
+	{"EDS0090/LED/control", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0090, {v: &eds0090_led_function,}, },
 };
 
 DeviceEntryExtended(7E, EDS, DEV_temp | DEV_alarm, NO_GENERIC_READ, NO_GENERIC_WRITE);
@@ -878,9 +952,9 @@ VISIBLE_FN(0082) ;
 VISIBLE_FN(0083) ;
 VISIBLE_FN(0085) ;
 
-//VISIBLE_FN(0090) ;
-//VISIBLE_FN(0091) ;
-//VISIBLE_FN(0092) ;
+VISIBLE_FN(0090) ;
+VISIBLE_FN(0091) ;
+VISIBLE_FN(0092) ;
 
 static ZERO_OR_ERROR FS_r_tag(struct one_wire_query *owq)
 {
@@ -916,7 +990,16 @@ static ZERO_OR_ERROR FS_r_float8(struct one_wire_query *owq)
 	int bytes = 8/8 ;
 	BYTE data[bytes] ;
 	
-	RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) );
+	switch (pn->extension) {
+		case EXTENSION_BYTE:
+		case EXTENSION_ALL:
+			// No real extension
+			RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u, pn ) );
+			break ;
+		default:
+			RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) );
+			break ;
+	}
 	OWQ_F(owq) = (_FLOAT) ((int8_t) (data[0] )) ;
 	return 0 ;
 }
@@ -928,7 +1011,16 @@ static ZERO_OR_ERROR FS_r_float16(struct one_wire_query *owq)
 	int bytes = 16/8 ;
 	BYTE data[bytes] ;
 	
-	RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) );
+	switch (pn->extension) {
+		case EXTENSION_BYTE:
+		case EXTENSION_ALL:
+			// No real extension
+			RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u, pn ) );
+			break ;
+		default:
+			RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) );
+			break ;
+	}
 	OWQ_F(owq) = (_FLOAT) ((int16_t) ((data[1] << 8) | data[0] )) * .0625 ;
 	return 0 ;
 }
@@ -940,7 +1032,17 @@ static ZERO_OR_ERROR FS_r_float24(struct one_wire_query *owq)
 	int bytes = 24/8 ;
 	BYTE data[bytes] ;
 	
-	RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) );
+	switch (pn->extension) {
+		case EXTENSION_BYTE:
+		case EXTENSION_ALL:
+			// No real extension
+			RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u, pn ) );
+			break ;
+		default:
+			RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) );
+			break ;
+	}
+
 	// use 32 bit with 0 for lowest byte
 	OWQ_F(owq) = (_FLOAT) ((int32_t) ((data[2] << 24) | (data[1] << 16) | ( data[0] << 8 ) )) / ( 2048.*256.) ;
 	return 0 ;
@@ -959,7 +1061,14 @@ static ZERO_OR_ERROR FS_w_float24(struct one_wire_query *owq)
 	data[1] = (big>>16) & 0xFF ;
 	data[2] = (big>>24) & 0xFF ;
 	
-	return GB_to_Z_OR_E( OW_w_mem( data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) ) ;
+	switch (pn->extension) {
+		case EXTENSION_BYTE:
+		case EXTENSION_ALL:
+			// No real extension
+			return GB_to_Z_OR_E( OW_w_mem( data, bytes, pn->selected_filetype->data.u, pn ) ) ;
+		default:
+			return GB_to_Z_OR_E( OW_w_mem( data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) ) ;
+	}
 }
 
 static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
@@ -1005,7 +1114,16 @@ static ZERO_OR_ERROR FS_r_i8(struct one_wire_query *owq)
 	int bytes = 8/8 ;
 	BYTE data[bytes] ;
 	
-	RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) );
+	switch (pn->extension) {
+		case EXTENSION_BYTE:
+		case EXTENSION_ALL:
+			// No real extension
+			RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u, pn ) );
+			break ;
+		default:
+			RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) );
+			break ;
+	}
 	OWQ_I(owq) = (int8_t) data[0] ;
 	return 0 ;
 }
@@ -1018,7 +1136,14 @@ static ZERO_OR_ERROR FS_w_i8(struct one_wire_query *owq)
 	BYTE data[bytes] ;
 	
 	data[0] = BYTE_MASK( OWQ_I(owq) ) ;
-	return GB_to_Z_OR_E(OW_w_mem(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) ) ;
+	switch (pn->extension) {
+		case EXTENSION_BYTE:
+		case EXTENSION_ALL:
+			// No real extension
+			return GB_to_Z_OR_E(OW_w_mem(data, bytes, pn->selected_filetype->data.u, pn ) ) ;
+		default:
+			return GB_to_Z_OR_E(OW_w_mem(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) ) ;
+	}
 }
 
 /* read an 8 bit value from a register stored in filetype.data plus extension */
@@ -1028,7 +1153,16 @@ static ZERO_OR_ERROR FS_r_8(struct one_wire_query *owq)
 	int bytes = 8/8 ;
 	BYTE data[bytes] ;
 	
-	RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) );
+	switch (pn->extension) {
+		case EXTENSION_BYTE:
+		case EXTENSION_ALL:
+			// No real extension
+			RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u, pn ) );
+			break ;
+		default:
+			RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) );
+			break ;
+	}
 	OWQ_U(owq) = data[0] ;
 	return 0 ;
 }
@@ -1041,7 +1175,14 @@ static ZERO_OR_ERROR FS_w_8(struct one_wire_query *owq)
 	BYTE data[bytes] ;
 	
 	data[0] = BYTE_MASK( OWQ_U(owq) ) ;
-	return GB_to_Z_OR_E(OW_w_mem(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) ) ;
+	switch (pn->extension) {
+		case EXTENSION_BYTE:
+		case EXTENSION_ALL:
+			// No real extension
+			return GB_to_Z_OR_E(OW_w_mem(data, bytes, pn->selected_filetype->data.u, pn ) ) ;
+		default:
+			return GB_to_Z_OR_E(OW_w_mem(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) ) ;
+	}
 }
 
 /* read a 16 bit value from a register stored in filetype.data */
@@ -1051,8 +1192,16 @@ static ZERO_OR_ERROR FS_r_16(struct one_wire_query *owq)
 	int bytes = 16/8 ;
 	BYTE data[bytes] ;
 	
-	RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) );
-
+	switch (pn->extension) {
+		case EXTENSION_BYTE:
+		case EXTENSION_ALL:
+			// No real extension
+			RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u, pn ) );
+			break ;
+		default:
+			RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) );
+			break ;
+	}
 	OWQ_U(owq) = UT_int16(data) ;
 
 	return 0 ;
@@ -1066,7 +1215,14 @@ static ZERO_OR_ERROR FS_w_24(struct one_wire_query *owq)
 	BYTE data[bytes] ;
 
 	UT_uint16_to_bytes( OWQ_U(owq), data ) ;
-	return GB_to_Z_OR_E( OW_w_mem(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) ) ;
+	switch (pn->extension) {
+		case EXTENSION_BYTE:
+		case EXTENSION_ALL:
+			// No real extension
+			return GB_to_Z_OR_E( OW_w_mem(data, bytes, pn->selected_filetype->data.u, pn ) ) ;
+		default:
+			return GB_to_Z_OR_E( OW_w_mem(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) ) ;
+	}
 }
 
 static ZERO_OR_ERROR FS_r_voltage(struct one_wire_query *owq)
@@ -1075,8 +1231,16 @@ static ZERO_OR_ERROR FS_r_voltage(struct one_wire_query *owq)
 	int bytes = 16/8 ;
 	BYTE data[bytes] ;
 	
-	RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) ) ;	
-
+	switch (pn->extension) {
+		case EXTENSION_BYTE:
+		case EXTENSION_ALL:
+			// No real extension
+			RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u, pn ) ) ;	
+			break ;
+		default:
+			RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) ) ;	
+			break ;
+	}
 	OWQ_F(owq) = (data[0]+256*data[1]) / 2048. ;
 	return 0 ;
 }
@@ -1087,8 +1251,16 @@ static ZERO_OR_ERROR FS_r_current(struct one_wire_query *owq)
 	int bytes = 16/8 ;
 	BYTE data[bytes] ;
 	
-	RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) ) ;	
-
+	switch (pn->extension) {
+		case EXTENSION_BYTE:
+		case EXTENSION_ALL:
+			// No real extension
+			RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u, pn ) ) ;	
+			break ;
+		default:
+			RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) ) ;	
+			break ;
+	}
 	OWQ_F(owq) = (data[0]+256*data[1]) / 2048. / 1000.; // read in A not mA
 	return 0 ;
 }
@@ -1100,7 +1272,7 @@ static ZERO_OR_ERROR FS_r_vlimit(struct one_wire_query *owq)
 	ZERO_OR_ERROR zoe ;
 	
 	// reset extension to "doubled size" (for the hi/lo pairs)
-	pn->extension *= 2 ;
+	pn->extension = 2 * extension ;
 
 	zoe = FS_r_voltage( owq) ; // read as integer (16 bits) including index and address
 	
@@ -1117,7 +1289,7 @@ static ZERO_OR_ERROR FS_r_climit(struct one_wire_query *owq)
 	ZERO_OR_ERROR zoe ;
 	
 	// reset extension to "doubled size" (for the hi/lo pairs)
-	pn->extension *= 2 ;
+	pn->extension = 2 * extension ;
 
 	zoe = FS_r_current( owq) ; // read as integer (16 bits) including index and address
 	
@@ -1146,7 +1318,7 @@ static ZERO_OR_ERROR FS_w_vlimit(struct one_wire_query *owq)
 	ZERO_OR_ERROR zoe ;
 	
 	// reset extension to "doubled size" (for the hi/lo pairs)
-	pn->extension *= 2 ;
+	pn->extension = 2 * extension ;
 
 	zoe = FS_w_voltage( owq) ; // write as integer (16 bits) including index and address
 	
@@ -1163,7 +1335,7 @@ static ZERO_OR_ERROR FS_w_climit(struct one_wire_query *owq)
 	ZERO_OR_ERROR zoe ;
 	
 	// reset extension to "doubled size" (for the hi/lo pairs)
-	pn->extension *= 2 ;
+	pn->extension = 2 * extension ;
 
 	zoe = FS_w_current( owq) ; // write as integer (16 bits) including index and address
 	
@@ -1180,7 +1352,16 @@ static ZERO_OR_ERROR FS_r_24(struct one_wire_query *owq)
 	int bytes = 24/8 ;
 	BYTE data[bytes] ;
 	
-	RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) );
+	switch (pn->extension) {
+		case EXTENSION_BYTE:
+		case EXTENSION_ALL:
+			// No real extension
+			RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u, pn ) );
+			break ;
+		default:
+			RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) );
+			break ;
+	}
 	OWQ_U(owq) = UT_int24(data) ;
 	return 0 ;
 }
@@ -1193,7 +1374,14 @@ static ZERO_OR_ERROR FS_w_16(struct one_wire_query *owq)
 	BYTE data[bytes] ;
 
 	UT_uint16_to_bytes( OWQ_U(owq), data ) ;
-	return GB_to_Z_OR_E( OW_w_mem(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) ) ;
+	switch (pn->extension) {
+		case EXTENSION_BYTE:
+		case EXTENSION_ALL:
+			// No real extension
+			return GB_to_Z_OR_E( OW_w_mem(data, bytes, pn->selected_filetype->data.u, pn ) ) ;
+		default:
+			return GB_to_Z_OR_E( OW_w_mem(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) ) ;
+	}
 }
 
 /* read a 32 bit value from a register stored in filetype.data */
@@ -1203,7 +1391,16 @@ static ZERO_OR_ERROR FS_r_32(struct one_wire_query *owq)
 	int bytes = 32/8 ;
 	BYTE data[bytes] ;
 	
-	RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) );
+	switch (pn->extension) {
+		case EXTENSION_BYTE:
+		case EXTENSION_ALL:
+			// No real extension
+			RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u, pn ) );
+			break ;
+		default:
+			RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) );
+			break ;
+	}
 	OWQ_U(owq) = UT_int32(data) ;
 	return 0 ;
 }
