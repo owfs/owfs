@@ -897,7 +897,7 @@ static struct filetype EDS[] = {
 
 	{"EDS0090/relay", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0090, NO_FILETYPE_DATA, },
 	{"EDS0090/relay/state", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0090, {v: &eds0090_relay_state,}, },
-	{"EDS0090/relay/control", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0090, {v: &eds0090_led_function,}, },
+	{"EDS0090/relay/control", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0090, {v: &eds0090_relay_function,}, },
 
 	{"EDS0090/LED", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0090, NO_FILETYPE_DATA, },
 	{"EDS0090/LED/state", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0090, {v: &eds0090_led_state,}, },
