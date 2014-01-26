@@ -873,26 +873,26 @@ static struct filetype EDS[] = {
 	{"EDS0090/counter", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0090, NO_FILETYPE_DATA, },
 	{"EDS0090/counter/seconds", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_32, NO_WRITE_FUNCTION, VISIBLE_EDS0090, {u: _EDS0090_Seconds_counter,}, },
 	{"EDS0090/counter/pulses", PROPERTY_LENGTH_UNSIGNED, &AEDS_90_inputs, ft_unsigned, fc_volatile, FS_r_32, NO_WRITE_FUNCTION, VISIBLE_EDS0090, {u: _EDS0090_Pulse_counter,}, },
-	{"EDS0090/counter/reset", PROPERTY_LENGTH_BITFIELD, &AEDS_90_state, ft_unsigned, ft_bitfield, FS_r_8, FS_w_8, VISIBLE_EDS0090, {u: _EDS0090_Pulse_reset,}, },
+	{"EDS0090/counter/reset", PROPERTY_LENGTH_BITFIELD, &AEDS_90_state, ft_bitfield, fc_volatile, FS_r_8, FS_w_8, VISIBLE_EDS0090, {u: _EDS0090_Pulse_reset,}, },
 
 	{"EDS0090/output", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0090, NO_FILETYPE_DATA, },
 	{"EDS0090/output/set", PROPERTY_LENGTH_BITFIELD, &AEDS_90_state, ft_bitfield, fc_volatile, FS_r_8, FS_w_8	, VISIBLE_EDS0090, {u: _EDS0090_Output_value,}, },
 	{"EDS0090/output/off", PROPERTY_LENGTH_BITFIELD, &AEDS_90_state, ft_bitfield, fc_volatile, FS_r_8, NO_WRITE_FUNCTION, VISIBLE_EDS0090, {u: _EDS0090_Output_value,}, },
-	{"EDS0090/output/reset", PROPERTY_LENGTH_BITFIELD, &AEDS_90_state, ft_unsigned, ft_bitfield, FS_r_8, FS_w_8, VISIBLE_EDS0090, {u: _EDS0090_Latch_reset,}, },
+	{"EDS0090/output/reset", PROPERTY_LENGTH_BITFIELD, &AEDS_90_state, ft_bitfield, fc_volatile, FS_r_8, FS_w_8, VISIBLE_EDS0090, {u: _EDS0090_Latch_reset,}, },
 
 	{"EDS0090/latch", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0090, NO_FILETYPE_DATA, },
 	{"EDS0090/latch/state", PROPERTY_LENGTH_BITFIELD, &AEDS_90_state, ft_bitfield, fc_volatile, FS_r_8, NO_WRITE_FUNCTION, VISIBLE_EDS0090, {u: _EDS0090_Latch_state,}, },
-	{"EDS0090/latch/reset", PROPERTY_LENGTH_BITFIELD, &AEDS_90_state, ft_unsigned, ft_bitfield, FS_r_8, FS_w_8, VISIBLE_EDS0090, {u: _EDS0090_Latch_reset,}, },
+	{"EDS0090/latch/reset", PROPERTY_LENGTH_BITFIELD, &AEDS_90_state, ft_bitfield, fc_volatile, FS_r_8, FS_w_8, VISIBLE_EDS0090, {u: _EDS0090_Latch_reset,}, },
 
 	{"EDS0090/alarm", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0090, NO_FILETYPE_DATA, },
-	{"EDS0082/alarm/clear", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_clear, VISIBLE_EDS0082, NO_FILETYPE_DATA, },
+	{"EDS0082/alarm/clear", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_clear, VISIBLE_EDS0090, NO_FILETYPE_DATA, },
 	{"EDS0090/alarm/state", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, NO_WRITE_FUNCTION, INVISIBLE, {u: _EDS0090_Alarm_state,}, },
 	{"EDS0090/alarm/hi", PROPERTY_LENGTH_BITFIELD, &AEDS_90_state, ft_bitfield, fc_volatile, FS_r_bit_array, NO_WRITE_FUNCTION, VISIBLE_EDS0090, {v: &eds0090_alarm_hi,}, },
 	{"EDS0090/alarm/low", PROPERTY_LENGTH_BITFIELD, &AEDS_90_state, ft_bitfield, fc_volatile, FS_r_bit_array, NO_WRITE_FUNCTION, VISIBLE_EDS0090, {v: &eds0090_alarm_lo,}, },
 
 	{"EDS0090/set_alarm", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0090, NO_FILETYPE_DATA, },
-	{"EDS0090/set_alarm/temp_hi" , PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0090, {v: &eds0090_cond_hi,}, },
-	{"EDS0090/set_alarm/temp_low", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0090, {v: &eds0090_cond_lo,}, },
+	{"EDS0090/set_alarm/hi" , PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0090, {v: &eds0090_cond_hi,}, },
+	{"EDS0090/set_alarm/low", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0090, {v: &eds0090_cond_lo,}, },
 	{"EDS0090/set_alarm/alarm_function", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, INVISIBLE, {u: _EDS0090_Conditional_search,}, },
 
 	{"EDS0090/relay", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0090, NO_FILETYPE_DATA, },
