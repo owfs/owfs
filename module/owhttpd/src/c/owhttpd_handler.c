@@ -31,8 +31,9 @@ struct urlparse {
 enum http_return { http_ok, http_dir, http_icon, http_400, http_404 } ;
 
 	/* Error page functions */
-static void Bad400(FILE * out, struct parsedname * pn);
-static void Bad404(FILE * out, struct parsedname * pn);
+enum content_type PoorMansParser( char * bad_url ) ;
+static void Bad400(FILE * out, const enum content_type ct);
+static void Bad404(FILE * out, const enum content_type ct);
 
 /* URL parsing function */
 static void URLparse(struct urlparse *up);
@@ -132,10 +133,10 @@ int handle_socket(FILE * out)
 			Favicon(out);
 			break ;
 		case http_400:
-			Bad400(out,pn);
+			Bad400(out,PoorMansParser(up.file));
 			break ;
 		case http_404:
-			Bad404(out,pn);
+			Bad404(out,PoorMansParser(up.file));
 			break ;
 		case http_dir:
 			ShowDir(out, pn);
@@ -330,46 +331,46 @@ static void URLparse(struct urlparse *up)
 }
 
 
-static void Bad400(FILE * out, struct parsedname *pn)
+static void Bad400(FILE * out, const enum content_type ct)
 {
 	LEVEL_CALL("Return a 400 HTTP error code");
-	if ( pn == NULL ) {
-		HTTPstart(out, "400 Bad Request", ct_text);
-		fprintf(out, "null");
-	} else if ( pn->state & ePS_text ) {
-		HTTPstart(out, "400 Bad Request", ct_text);
-		fprintf(out, "400 Bad request");
-	} else if ( pn->state & ePS_json ) {
-		HTTPstart(out, "400 Bad Request", ct_json);
-		fprintf(out, "null");
-	} else {
-		HTTPstart(out, "400 Bad Request", ct_html);
-		HTTPtitle(out, "Error 400 -- Bad request");
-		HTTPheader(out, "Unrecognized Request");
-		fprintf(out, "<P>The 1-wire web server is carefully constrained for security and stability. Your requested web page is not recognized.</P>");
-		fprintf(out, "<P>Navigate from the <A HREF=\"/\">Main page</A> for best results.</P>");
+	switch( ct ) {
+		case ct_text:
+			HTTPstart(out, "400 Bad Request", ct_text);
+			fprintf(out, "400 Bad request");
+			break ;
+		case ct_json:
+			HTTPstart(out, "400 Bad Request", ct_json);
+			fprintf(out, "null");
+			break ;
+		default:
+			HTTPstart(out, "400 Bad Request", ct_html);
+			HTTPtitle(out, "Error 400 -- Bad request");
+			HTTPheader(out, "Unrecognized Request");
+			fprintf(out, "<P>The 1-wire web server is carefully constrained for security and stability. Your requested web page is not recognized.</P>");
+			fprintf(out, "<P>Navigate from the <A HREF=\"/\">Main page</A> for best results.</P>");
 	}
 	HTTPfoot(out);
 }
 
-static void Bad404(FILE * out, struct parsedname *pn)
+static void Bad404(FILE * out, const enum content_type ct)
 {
 	LEVEL_CALL("Return a 404 HTTP error code");
-	if ( pn == NULL ) {
-		HTTPstart(out, "404 Not Found", ct_text);
-		fprintf(out, "null");
-	} else if ( pn->state & ePS_text ) {
-		HTTPstart(out, "404 Not Found", ct_text);
-		fprintf(out, "404 Not Found");
-	} else if ( pn->state & ePS_json ) {
-		HTTPstart(out, "404 Not Found", ct_json);
-		fprintf(out, "null");
-	} else {
-		HTTPstart(out, "404 Not Found", ct_html);
-		HTTPtitle(out, "Error 404 -- Item doesn't exist");
-		HTTPheader(out, "Nonexistent Device");
-		fprintf(out, "<P>The 1-wire web server is carefully constrained for security and stability. Your requested device is not recognized.</P>");
-		fprintf(out, "<P>Navigate from the <A HREF=\"/\">Main page</A> for best results.</P>");
+	switch( ct ) {
+		case ct_text:
+			HTTPstart(out, "404 Not Found", ct_text);
+			fprintf(out, "404 Not Found");
+			break ;
+		case ct_json:
+			HTTPstart(out, "404 Not Found", ct_json);
+			fprintf(out, "null");
+			break ;
+		default:
+			HTTPstart(out, "404 Not Found", ct_html);
+			HTTPtitle(out, "Error 404 -- Item doesn't exist");
+			HTTPheader(out, "Nonexistent Device");
+			fprintf(out, "<P>The 1-wire web server is carefully constrained for security and stability. Your requested device is not recognized.</P>");
+			fprintf(out, "<P>Navigate from the <A HREF=\"/\">Main page</A> for best results.</P>");
 	}
 	HTTPfoot(out);
 }
@@ -475,3 +476,21 @@ static int GetPostData( char * boundary, struct memblob * mb, FILE * out )
 	LEVEL_DEBUG("HTTP error -- no ending MIME boundary");
 	return 1 ;
 }
+
+// Parse the line for just the text or json key since there was an error and Parsedname is null
+enum content_type PoorMansParser( char * bad_url )
+{
+	if ( bad_url == NULL ) {
+		return ct_html ;
+	} else if ( strstr( bad_url, "json" ) != NULL ) {
+		return ct_json ;
+	} else if ( strstr( bad_url, "JSON" ) != NULL ) {
+		return ct_json ;
+	} else if ( strstr( bad_url, "text" ) != NULL ) {
+		return ct_text ;
+	} else if ( strstr( bad_url, "TEXT" ) != NULL ) {
+		return ct_text ;
+	}
+	return ct_html ;
+}
+			
