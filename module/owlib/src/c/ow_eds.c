@@ -907,6 +907,8 @@ static struct filetype EDS[] = {
 DeviceEntryExtended(7E, EDS, DEV_temp | DEV_alarm, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 /* ------- Functions ------------ */
+static GOOD_OR_BAD OW_r_withoffset( BYTE * data, int bytes, struct parsedname * pn ) ;
+static ZERO_OR_ERROR OW_w_withoffset( BYTE * data, int bytes, struct parsedname * pn ) ;
 static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn) ;
 static GOOD_OR_BAD OW_w_mem_crc(BYTE * data, size_t size, off_t offset, struct parsedname *pn) ;
 static GOOD_OR_BAD OW_r_mem_small(BYTE * data, size_t size, off_t offset, struct parsedname * pn);
@@ -990,16 +992,7 @@ static ZERO_OR_ERROR FS_r_float8(struct one_wire_query *owq)
 	int bytes = 8/8 ;
 	BYTE data[bytes] ;
 	
-	switch (pn->extension) {
-		case EXTENSION_BYTE:
-		case EXTENSION_ALL:
-			// No real extension
-			RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u, pn ) );
-			break ;
-		default:
-			RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) );
-			break ;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_withoffset(data, bytes, pn ) );
 	OWQ_F(owq) = (_FLOAT) ((int8_t) (data[0] )) ;
 	return 0 ;
 }
@@ -1011,16 +1004,7 @@ static ZERO_OR_ERROR FS_r_float16(struct one_wire_query *owq)
 	int bytes = 16/8 ;
 	BYTE data[bytes] ;
 	
-	switch (pn->extension) {
-		case EXTENSION_BYTE:
-		case EXTENSION_ALL:
-			// No real extension
-			RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u, pn ) );
-			break ;
-		default:
-			RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) );
-			break ;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_withoffset(data, bytes, pn ) );
 	OWQ_F(owq) = (_FLOAT) ((int16_t) ((data[1] << 8) | data[0] )) * .0625 ;
 	return 0 ;
 }
@@ -1032,16 +1016,7 @@ static ZERO_OR_ERROR FS_r_float24(struct one_wire_query *owq)
 	int bytes = 24/8 ;
 	BYTE data[bytes] ;
 	
-	switch (pn->extension) {
-		case EXTENSION_BYTE:
-		case EXTENSION_ALL:
-			// No real extension
-			RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u, pn ) );
-			break ;
-		default:
-			RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) );
-			break ;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_withoffset(data, bytes, pn ) );
 
 	// use 32 bit with 0 for lowest byte
 	OWQ_F(owq) = (_FLOAT) ((int32_t) ((data[2] << 24) | (data[1] << 16) | ( data[0] << 8 ) )) / ( 2048.*256.) ;
@@ -1061,14 +1036,7 @@ static ZERO_OR_ERROR FS_w_float24(struct one_wire_query *owq)
 	data[1] = (big>>16) & 0xFF ;
 	data[2] = (big>>24) & 0xFF ;
 	
-	switch (pn->extension) {
-		case EXTENSION_BYTE:
-		case EXTENSION_ALL:
-			// No real extension
-			return GB_to_Z_OR_E( OW_w_mem( data, bytes, pn->selected_filetype->data.u, pn ) ) ;
-		default:
-			return GB_to_Z_OR_E( OW_w_mem( data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) ) ;
-	}
+	return OW_w_withoffset( data, bytes, pn ) ;
 }
 
 static ZERO_OR_ERROR FS_r_mem(struct one_wire_query *owq)
@@ -1114,16 +1082,7 @@ static ZERO_OR_ERROR FS_r_i8(struct one_wire_query *owq)
 	int bytes = 8/8 ;
 	BYTE data[bytes] ;
 	
-	switch (pn->extension) {
-		case EXTENSION_BYTE:
-		case EXTENSION_ALL:
-			// No real extension
-			RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u, pn ) );
-			break ;
-		default:
-			RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) );
-			break ;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_withoffset(data, bytes, pn ) );
 	OWQ_I(owq) = (int8_t) data[0] ;
 	return 0 ;
 }
@@ -1136,14 +1095,7 @@ static ZERO_OR_ERROR FS_w_i8(struct one_wire_query *owq)
 	BYTE data[bytes] ;
 	
 	data[0] = BYTE_MASK( OWQ_I(owq) ) ;
-	switch (pn->extension) {
-		case EXTENSION_BYTE:
-		case EXTENSION_ALL:
-			// No real extension
-			return GB_to_Z_OR_E(OW_w_mem(data, bytes, pn->selected_filetype->data.u, pn ) ) ;
-		default:
-			return GB_to_Z_OR_E(OW_w_mem(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) ) ;
-	}
+	return OW_w_withoffset( data, bytes, pn ) ;
 }
 
 /* read an 8 bit value from a register stored in filetype.data plus extension */
@@ -1153,16 +1105,7 @@ static ZERO_OR_ERROR FS_r_8(struct one_wire_query *owq)
 	int bytes = 8/8 ;
 	BYTE data[bytes] ;
 	
-	switch (pn->extension) {
-		case EXTENSION_BYTE:
-		case EXTENSION_ALL:
-			// No real extension
-			RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u, pn ) );
-			break ;
-		default:
-			RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) );
-			break ;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_withoffset(data, bytes, pn ) );
 	OWQ_U(owq) = data[0] ;
 	return 0 ;
 }
@@ -1175,14 +1118,7 @@ static ZERO_OR_ERROR FS_w_8(struct one_wire_query *owq)
 	BYTE data[bytes] ;
 	
 	data[0] = BYTE_MASK( OWQ_U(owq) ) ;
-	switch (pn->extension) {
-		case EXTENSION_BYTE:
-		case EXTENSION_ALL:
-			// No real extension
-			return GB_to_Z_OR_E(OW_w_mem(data, bytes, pn->selected_filetype->data.u, pn ) ) ;
-		default:
-			return GB_to_Z_OR_E(OW_w_mem(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) ) ;
-	}
+	return OW_w_withoffset( data, bytes, pn ) ;
 }
 
 /* read a 16 bit value from a register stored in filetype.data */
@@ -1192,16 +1128,7 @@ static ZERO_OR_ERROR FS_r_16(struct one_wire_query *owq)
 	int bytes = 16/8 ;
 	BYTE data[bytes] ;
 	
-	switch (pn->extension) {
-		case EXTENSION_BYTE:
-		case EXTENSION_ALL:
-			// No real extension
-			RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u, pn ) );
-			break ;
-		default:
-			RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) );
-			break ;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_withoffset(data, bytes, pn ) );
 	OWQ_U(owq) = UT_int16(data) ;
 
 	return 0 ;
@@ -1215,14 +1142,7 @@ static ZERO_OR_ERROR FS_w_24(struct one_wire_query *owq)
 	BYTE data[bytes] ;
 
 	UT_uint16_to_bytes( OWQ_U(owq), data ) ;
-	switch (pn->extension) {
-		case EXTENSION_BYTE:
-		case EXTENSION_ALL:
-			// No real extension
-			return GB_to_Z_OR_E( OW_w_mem(data, bytes, pn->selected_filetype->data.u, pn ) ) ;
-		default:
-			return GB_to_Z_OR_E( OW_w_mem(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) ) ;
-	}
+	return OW_w_withoffset( data, bytes, pn ) ;
 }
 
 static ZERO_OR_ERROR FS_r_voltage(struct one_wire_query *owq)
@@ -1231,16 +1151,7 @@ static ZERO_OR_ERROR FS_r_voltage(struct one_wire_query *owq)
 	int bytes = 16/8 ;
 	BYTE data[bytes] ;
 	
-	switch (pn->extension) {
-		case EXTENSION_BYTE:
-		case EXTENSION_ALL:
-			// No real extension
-			RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u, pn ) ) ;	
-			break ;
-		default:
-			RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) ) ;	
-			break ;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_withoffset(data, bytes, pn ) );
 	OWQ_F(owq) = (data[0]+256*data[1]) / 2048. ;
 	return 0 ;
 }
@@ -1251,16 +1162,7 @@ static ZERO_OR_ERROR FS_r_current(struct one_wire_query *owq)
 	int bytes = 16/8 ;
 	BYTE data[bytes] ;
 	
-	switch (pn->extension) {
-		case EXTENSION_BYTE:
-		case EXTENSION_ALL:
-			// No real extension
-			RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u, pn ) ) ;	
-			break ;
-		default:
-			RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) ) ;	
-			break ;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_withoffset(data, bytes, pn ) );
 	OWQ_F(owq) = (data[0]+256*data[1]) / 2048. / 1000.; // read in A not mA
 	return 0 ;
 }
@@ -1352,16 +1254,7 @@ static ZERO_OR_ERROR FS_r_24(struct one_wire_query *owq)
 	int bytes = 24/8 ;
 	BYTE data[bytes] ;
 	
-	switch (pn->extension) {
-		case EXTENSION_BYTE:
-		case EXTENSION_ALL:
-			// No real extension
-			RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u, pn ) );
-			break ;
-		default:
-			RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) );
-			break ;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_withoffset(data, bytes, pn ) );
 	OWQ_U(owq) = UT_int24(data) ;
 	return 0 ;
 }
@@ -1374,14 +1267,7 @@ static ZERO_OR_ERROR FS_w_16(struct one_wire_query *owq)
 	BYTE data[bytes] ;
 
 	UT_uint16_to_bytes( OWQ_U(owq), data ) ;
-	switch (pn->extension) {
-		case EXTENSION_BYTE:
-		case EXTENSION_ALL:
-			// No real extension
-			return GB_to_Z_OR_E( OW_w_mem(data, bytes, pn->selected_filetype->data.u, pn ) ) ;
-		default:
-			return GB_to_Z_OR_E( OW_w_mem(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) ) ;
-	}
+	return OW_w_withoffset( data, bytes, pn ) ;
 }
 
 /* read a 32 bit value from a register stored in filetype.data */
@@ -1391,16 +1277,7 @@ static ZERO_OR_ERROR FS_r_32(struct one_wire_query *owq)
 	int bytes = 32/8 ;
 	BYTE data[bytes] ;
 	
-	switch (pn->extension) {
-		case EXTENSION_BYTE:
-		case EXTENSION_ALL:
-			// No real extension
-			RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u, pn ) );
-			break ;
-		default:
-			RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) );
-			break ;
-	}
+	RETURN_ERROR_IF_BAD( OW_r_withoffset(data, bytes, pn ) );
 	OWQ_U(owq) = UT_int32(data) ;
 	return 0 ;
 }
@@ -1413,6 +1290,32 @@ static ZERO_OR_ERROR FS_w_float8(struct one_wire_query *owq)
 
 	OWQ_I(owq) = val ;
 	return FS_w_8(owq) ;
+}
+
+/* read a memory area (including extension offset) into a buffer */
+static GOOD_OR_BAD OW_r_withoffset( BYTE * data, int bytes, struct parsedname * pn )
+{
+	switch (pn->extension) {
+		case EXTENSION_BYTE:
+		case EXTENSION_ALL:
+			// No real extension
+			return OW_r_mem_small(data, bytes, pn->selected_filetype->data.u, pn ) ;
+		default:
+			return OW_r_mem_small(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) ;
+	}
+}
+
+/* write a memory area (including extension offset) from a buffer */
+static ZERO_OR_ERROR OW_w_withoffset( BYTE * data, int bytes, struct parsedname * pn )
+{
+	switch (pn->extension) {
+		case EXTENSION_BYTE:
+		case EXTENSION_ALL:
+			// No real extension
+			return GB_to_Z_OR_E(OW_w_mem(data, bytes, pn->selected_filetype->data.u, pn ) ) ;
+		default:
+			return GB_to_Z_OR_E(OW_w_mem(data, bytes, pn->selected_filetype->data.u + bytes * pn->extension, pn ) ) ;
+	}
 }
 
 static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn)
