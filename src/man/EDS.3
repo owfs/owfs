@@ -37,6 +37,9 @@ RTD 4-wire temperature
 .TP
 .B EDS0072
 RTD 3-wire temperature
+.TP
+.B EDS0090
+8 Discrete I/O
 .SH SYNOPSIS
 .B Embedded Data Systems
 microprocessor-based sensors
@@ -201,6 +204,20 @@ microprocessor-based sensors
 |
 .B threshold/RTD_[hi_low]
 ]]
+.SS I/O ( EDS0090 )
+.B 7E.XXXXXXXXXXXX/EDS009X 
+[/[
+.B input.[0-7|ALL]
+|
+.B counter/[seconds | pulses.[0-7|ALL]|reset.[0-7|ALL|BYTE]]
+|
+.B output/[set.[0-7|ALL|BYTE]|off.[0-7|ALL|BYTE]|reset.[0-7|ALL|BYTE]]
+|
+.B latch/[state.[0-7|ALL|BYTE]|reset.[0-7|ALL|BYTE]]
+|
+.B alarm/[hi.[0-7|ALL]|low.[0-7|ALL]|clear]
+|
+.B set_alarm/[hi.[0-7|ALL]|low.[0-7|ALL]]
 .SS LED ( all )
 .B 7E.XXXXXXXXXXXX/EDS00XX/LED/[state|control]
 .SS relay ( all )
@@ -290,10 +307,10 @@ High and low range of acceptable sensor readings. Values outside this range will
 .I read-write, floating-point
 .br
 Threshold temperatures in the specified temperature scale. Default Celsius.
-.SS EDS006X/threshold/humidity_hi EDS006X/threshold/humidity_low
-.SS EDS006X/threshold/dew_point_hi EDS006X/threshold/dew_point_low
-.SS EDS006X/threshold/heat_index_hi EDS006X/threshold/heat_index_low
-.SS EDS006X/threshold/humidex_hi EDS006X/threshold/humidex_low
+.SS EDS006X/threshold/humidity_hi \tEDS006X/threshold/humidity_low
+.SS EDS006X/threshold/dew_point_hi \tEDS006X/threshold/dew_point_low
+.SS EDS006X/threshold/heat_index_hi \tEDS006X/threshold/heat_index_low
+.SS EDS006X/threshold/humidex_hi \tEDS006X/threshold/humidex_low
 .I read-write, floating-point
 .br
 Threshold humidity values. 
@@ -301,38 +318,38 @@ Threshold humidity values.
 and 
 .I Heat index 
 are in the specified temperature scale. Default Celsius.
-.SS EDS006X/threshold/pressure_hi EDS006X/threshold/pressure_low
-.SS EDS006X/threshold/inHg_hi EDS006X/threshold/inHg_low
+.SS EDS006X/threshold/pressure_hi \tEDS006X/threshold/pressure_low
+.SS EDS006X/threshold/inHg_hi \tEDS006X/threshold/inHg_low
 .I read-write, floating-point
 .br
 Threshold barometric pressure values. 
 .I Pressure
 is the specified pressure scale. Default mBar.
-.SS EDS006X/threshold/light_hi EDS006X/threshold/light_low
+.SS EDS006X/threshold/light_hi \tEDS006X/threshold/light_low
 .I read-write, unsigned
 .br
 Threshold light (lux) values.
-.SS EDS0070/threshold/vib_hi EDS0070/threshold/vib_low
+.SS EDS0070/threshold/vib_hi \tEDS0070/threshold/vib_low
 .I read-write, unsigned
 .br
 Vibration sensor alarm limits in 0-1023 range.
-.SS EDS007X/threshold/resistance_hi  EDS007X/threshold/resistance_low
+.SS EDS007X/threshold/resistance_hi  \tEDS007X/threshold/resistance_low
 .I read-write, floating-point
 .br
 Threshold RTD resistance values (Ohm).
 .SH SET ALARM
 Set conditional alarm to trigger if corresponding flag is set. Also must set high and low
 .I threshold.
-.SS EDS00XX/set_alarm/temp_hi EDS00XX/set_alarm/temp_low
-.SS EDS006X/set_alarm/humidity_hi EDS006X/set_alarm/humidity_low
-.SS EDS006X/set_alarm/dew_point_hi EDS006X/set_alarm/dew_point_low
-.SS EDS006X/set_alarm/heat_index_hi EDS006X/set_alarm/heat_index_low
-.SS EDS006X/set_alarm/humidex_hi EDS006X/set_alarm/humidex_low
-.SS EDS006X/set_alarm/pressure_hi EDS006X/set_alarm/pressure_low
-.SS EDS006X/set_alarm/inHg_hi EDS006X/set_alarm/inHg_low
-.SS EDS006X/set_alarm/light_hi EDS006X/set_alarm/light_low
-.SS EDS0070/set_alarm/vib_hi EDS0070/set_alarm/vib_low
-.SS EDS007X/set_alarm/resistance_hi EDS007X/set_alarm/resistance_low
+.SS EDS00XX/set_alarm/temp_hi \tEDS00XX/set_alarm/temp_low
+.SS EDS006X/set_alarm/humidity_hi \tEDS006X/set_alarm/humidity_low
+.SS EDS006X/set_alarm/dew_point_hi \tEDS006X/set_alarm/dew_point_low
+.SS EDS006X/set_alarm/heat_index_hi \tEDS006X/set_alarm/heat_index_low
+.SS EDS006X/set_alarm/humidex_hi \tEDS006X/set_alarm/humidex_low
+.SS EDS006X/set_alarm/pressure_hi \tEDS006X/set_alarm/pressure_low
+.SS EDS006X/set_alarm/inHg_hi \tEDS006X/set_alarm/inHg_low
+.SS EDS006X/set_alarm/light_hi \tEDS006X/set_alarm/light_low
+.SS EDS0070/set_alarm/vib_hi \tEDS0070/set_alarm/vib_low
+.SS EDS007X/set_alarm/resistance_hi \tEDS007X/set_alarm/resistance_low
 .I read-write, yes-no
 .br
 Flag to set corresponding out-of-range alarm. "1" turns on flag, and "0" turns off.
@@ -346,19 +363,21 @@ command, not just having the measured value return to the center range.
 Write "1" to clear
 .B ALL
 the alarm flags.
-.SS EDS00XX/alarm/temp_hi EDS00XX/alarm/temp_low
-.SS EDS006X/alarm/humidity_hi EDS006X/alarm/humidity_low
-.SS EDS006X/alarm/dew_point_hi EDS006X/alarm/dew_point_low
-.SS EDS006X/alarm/heat_index_hi EDS006X/alarm/heat_index_low
-.SS EDS006X/alarm/humidex_hi EDS006X/alarm/humidex_low
-.SS EDS006X/alarm/pressure_hi EDS006X/alarm/pressure_low
-.SS EDS006X/alarm/inHg_hi EDS006X/alarm/inHg_low
-.SS EDS006X/alarm/light_hi EDS006X/alarm/light_low
-.SS EDS0070/alarm/vib_hi EDS007X/alarm/vib_low
-.SS EDS007X/alarm/resistance_hi EDS007X/alarm/resistance_low
+.SS EDS00XX/alarm/temp_hi \tEDS00XX/alarm/temp_low
+.SS EDS006X/alarm/humidity_hi \tEDS006X/alarm/humidity_low
+.SS EDS006X/alarm/dew_point_hi \tEDS006X/alarm/dew_point_low
+.SS EDS006X/alarm/heat_index_hi \tEDS006X/alarm/heat_index_low
+.SS EDS006X/alarm/humidex_hi \tEDS006X/alarm/humidex_low
+.SS EDS006X/alarm/pressure_hi \tEDS006X/alarm/pressure_low
+.SS EDS006X/alarm/inHg_hi \tEDS006X/alarm/inHg_low
+.SS EDS006X/alarm/light_hi \tEDS006X/alarm/light_low
+.SS EDS0070/alarm/vib_hi \tEDS007X/alarm/vib_low
+.SS EDS007X/alarm/resistance_hi \tEDS007X/alarm/resistance_low
+.SS EDS0090/alarm/hi[0-7|ALL] \tEDS0090/alarm/low[0-7|ALL]
 .I read-only, yes-no
 .br
-Flag to set corresponding out-of-range alarm. "1" turns on flag, and "0" turns off.
+Show corresponding out-of-range alarm. "1" means in alarm state. Can only be turned off with
+.I clear
 .SH RELAY
 Optionally found on the EDS006X and EDS007X. Can be controlled by software or the alarm condition.
 .SS EDS00XX/relay/control
@@ -486,6 +505,9 @@ http://www.embeddeddatasystems.com/assets/images/supportFiles/manuals/EN-UserMan
 .TP
 RTD
 https://docs.google.com/viewer?a=v&pid=explorer&chrome=true&srcid=0B_K3iXLLAI7vMjVhNWQzYzItZTRhMi00NGY2LWI4NTQtYjZlYTgzYzY0NmNm&hl=en
+.TP
+I/O
+http://www.embeddeddatasystems.com/assets/images/EN-USERMAN%20OW-IO-DIO8%20v1p0.pdf
 .SH SEE ALSO
 .so seealso.3so
 .SH AVAILABILITY
