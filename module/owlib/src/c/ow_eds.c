@@ -210,8 +210,8 @@ static enum e_visibility VISIBLE_EDS0082( const struct parsedname * pn ) ;
 static enum e_visibility VISIBLE_EDS0083( const struct parsedname * pn ) ;
 static enum e_visibility VISIBLE_EDS0085( const struct parsedname * pn ) ;
 static enum e_visibility VISIBLE_EDS0090( const struct parsedname * pn ) ;
-static enum e_visibility VISIBLE_EDS0091( const struct parsedname * pn ) ;
-static enum e_visibility VISIBLE_EDS0092( const struct parsedname * pn ) ;
+//static enum e_visibility VISIBLE_EDS0091( const struct parsedname * pn ) ;
+//static enum e_visibility VISIBLE_EDS0092( const struct parsedname * pn ) ;
 
 #define _EDS_TAG_LENGTH 30
 #define _EDS_TYPE_LENGTH 7
@@ -291,8 +291,8 @@ static struct bitfield eds0082_led_function  = 	{ "EDS0082/relay_function", 2, 2
 // struct bitfield { "alias_link", number_of_bits, shift_left, }
 static struct bitfield eds0090_cond_hi = { "EDS0090/set_alarm/alarm_function", 1, 0, } ;
 static struct bitfield eds0090_cond_lo = { "EDS0090/set_alarm/alarm_function", 1, 1, } ;
-static struct bitfield eds0090_alarm_hi  = { "EDS0090/alarm/state", 2, 0, } ;
-static struct bitfield eds0090_alarm_lo  = { "EDS0090/alarm/state", 2, 1, } ;
+static struct bitfield eds0090_alarm_hi  = { "EDS0090/alarm/state", 1, 0, } ;
+static struct bitfield eds0090_alarm_lo  = { "EDS0090/alarm/state", 1, 1, } ;
 static struct bitfield eds0090_relay_state  = 	{ "EDS0090/relay_state", 1, 0, } ;
 static struct bitfield eds0090_led_state  = 	{ "EDS0090/relay_state", 1, 1, } ;
 static struct bitfield eds0090_relay_function = { "EDS0090/relay_function", 2, 0, } ;
@@ -887,13 +887,13 @@ static struct filetype EDS[] = {
 	{"EDS0090/alarm", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0090, NO_FILETYPE_DATA, },
 	{"EDS0082/alarm/clear", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_clear, VISIBLE_EDS0090, NO_FILETYPE_DATA, },
 	{"EDS0090/alarm/state", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, NO_WRITE_FUNCTION, INVISIBLE, {u: _EDS0090_Alarm_state,}, },
-	{"EDS0090/alarm/hi", PROPERTY_LENGTH_BITFIELD, &AEDS_90_state, ft_bitfield, fc_volatile, FS_r_bit_array, NO_WRITE_FUNCTION, VISIBLE_EDS0090, {v: &eds0090_alarm_hi,}, },
-	{"EDS0090/alarm/low", PROPERTY_LENGTH_BITFIELD, &AEDS_90_state, ft_bitfield, fc_volatile, FS_r_bit_array, NO_WRITE_FUNCTION, VISIBLE_EDS0090, {v: &eds0090_alarm_lo,}, },
+	{"EDS0090/alarm/hi", PROPERTY_LENGTH_BITFIELD, &AEDS_90_state, ft_bitfield, fc_link, FS_r_bit_array, NO_WRITE_FUNCTION, VISIBLE_EDS0090, {v: &eds0090_alarm_hi,}, },
+	{"EDS0090/alarm/low", PROPERTY_LENGTH_BITFIELD, &AEDS_90_state, ft_bitfield, fc_link, FS_r_bit_array, NO_WRITE_FUNCTION, VISIBLE_EDS0090, {v: &eds0090_alarm_lo,}, },
 
 	{"EDS0090/set_alarm", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0090, NO_FILETYPE_DATA, },
-	{"EDS0090/set_alarm/hi" , PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0090, {v: &eds0090_cond_hi,}, },
-	{"EDS0090/set_alarm/low", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0090, {v: &eds0090_cond_lo,}, },
 	{"EDS0090/set_alarm/alarm_function", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, INVISIBLE, {u: _EDS0090_Conditional_search,}, },
+	{"EDS0090/set_alarm/hi" , PROPERTY_LENGTH_BITFIELD, &AEDS_90_state, ft_bitfield, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0090, {v: &eds0090_cond_hi,}, },
+	{"EDS0090/set_alarm/low", PROPERTY_LENGTH_BITFIELD, &AEDS_90_state, ft_bitfield, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0090, {v: &eds0090_cond_lo,}, },
 
 	{"EDS0090/relay", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0090, NO_FILETYPE_DATA, },
 	{"EDS0090/relay/state", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE_EDS0090, {v: &eds0090_relay_state,}, },
@@ -955,8 +955,8 @@ VISIBLE_FN(0083) ;
 VISIBLE_FN(0085) ;
 
 VISIBLE_FN(0090) ;
-VISIBLE_FN(0091) ;
-VISIBLE_FN(0092) ;
+//VISIBLE_FN(0091) ;
+//VISIBLE_FN(0092) ;
 
 static ZERO_OR_ERROR FS_r_tag(struct one_wire_query *owq)
 {
