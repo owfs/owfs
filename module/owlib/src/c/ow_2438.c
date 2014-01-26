@@ -640,7 +640,7 @@ static ZERO_OR_ERROR FS_w_B1R1A_offset(struct one_wire_query *owq)
 		return -EINVAL;
 	}
 	/* Offset in units of 1/20 millibars */
-	i = round(offset * 20.0);
+	i = lrint(offset * 20.0);
 	/* Write page 3 byte 6&7 for B1-R1-A offset -- Egil Kvaleberg */
 	return GB_to_Z_OR_E(OW_w_int(i, (3 << 3) + 6, PN(owq))) ;
 }
@@ -670,7 +670,7 @@ static ZERO_OR_ERROR FS_w_B1R1A_gain(struct one_wire_query *owq)
 		return -EINVAL;
 	}
 	/* Gain in units of 1/1000 millibars/volt */
-	i = round(gain * 1000.0);
+	i = lrint(gain * 1000.0);
 	/* Write page 3 byte 4&5 for B1-R1-A gain -- Egil Kvaleberg */
 	return GB_to_Z_OR_E(OW_w_int(i, (3 << 3) + 4, PN(owq))) ;
 }
@@ -758,7 +758,7 @@ static ZERO_OR_ERROR FS_w_S3R1A_gain(struct one_wire_query *owq)
 		return -EINVAL;
 	}
 	/* Gain in units of 1/10 lx/uA */
-	u = round(gain * 10.0);
+	u = lrint(gain * 10.0);
 	/* Write page 3 byte 2&3 for illuminance gain -- Egil Kvaleberg */
 	return GB_to_Z_OR_E(OW_w_int(u, (3 << 3) + 2, PN(owq))) ;
 }
