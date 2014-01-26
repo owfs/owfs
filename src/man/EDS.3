@@ -435,6 +435,16 @@ Turn the LED on or off if the
 .I read-only, unsigned integer
 .br
 Approximate seconds since power up.
+.SS EDS0090/counter/pulses.0-7 | ALL
+.I read-only, unsigned integer
+.br
+Pulses on each channel since power up or reset. Channel should be set to input (
+.I EDS0090/output/set.x
+=0 )
+.SS EDS0090/counter/reset.0-7 | ALL | BYTE
+.I read-write, yes-no
+.br
+Clear the pulse count on the corresponding channel.
 .SS EDS007X/counter/samples
 .I read-only, unsigned integer
 .br
