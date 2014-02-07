@@ -62,7 +62,6 @@ READ_FUNCTION(FS_r_trimvalid);
 READ_FUNCTION(FS_r_blanket);
 WRITE_FUNCTION(FS_w_blanket);
 READ_FUNCTION(FS_r_ad);
-READ_FUNCTION(FS_r_bit7);
 READ_FUNCTION(FS_r_piostate);
 READ_FUNCTION(FS_r_pio);
 READ_FUNCTION(FS_r_latch);
@@ -76,7 +75,16 @@ READ_FUNCTION(FS_r_scratchpad);
 
 static enum e_visibility VISIBLE_DS1825( const struct parsedname * pn ) ;
 static enum e_visibility VISIBLE_MAX31826( const struct parsedname * pn ) ;
+static enum e_visibility VISIBLE_MAX31850( const struct parsedname * pn ) ;
 
+enum threeB = { 
+    Unknown_3B, 
+    DS1825_3B, 
+    MAX31826_3B, 
+    MAX31850_3B, 
+    } ;
+
+#define SCRATCHPAD_LENGTH 9
 
 /* -------- Structures ---------- */
 static struct filetype DS18S20[] = {
@@ -90,7 +98,7 @@ static struct filetype DS18S20[] = {
 	{"templow", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE, {i:1}, },
 	{"temphigh", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE, {i:0}, },
 	{"power", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
-	{"scratchpad", 9, NON_AGGREGATE, ft_binary, fc_volatile, FS_r_scratchpad, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"scratchpad", SCRATCHPAD_LENGTH, NON_AGGREGATE, ft_binary, fc_volatile, FS_r_scratchpad, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 
 	{"errata", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"errata/trim", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_trim, FS_w_trim, VISIBLE, NO_FILETYPE_DATA, },
@@ -113,7 +121,7 @@ static struct filetype DS18B20[] = {
 	{"templow", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE, {i:1}, },
 	{"temphigh", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE, {i:0}, },
 	{"power", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
-	{"scratchpad", 9, NON_AGGREGATE, ft_binary, fc_volatile, FS_r_scratchpad, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"scratchpad", SCRATCHPAD_LENGTH, NON_AGGREGATE, ft_binary, fc_volatile, FS_r_scratchpad, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 
 	{"errata", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"errata/trim", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_trim, FS_w_trim, VISIBLE, NO_FILETYPE_DATA, },
@@ -135,7 +143,7 @@ static struct filetype DS1822[] = {
 	{"templow", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE, {i:1}, },
 	{"temphigh", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE, {i:0}, },
 	{"power", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
-	{"scratchpad", 9, NON_AGGREGATE, ft_binary, fc_volatile, FS_r_scratchpad, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"scratchpad", SCRATCHPAD_LENGTH, NON_AGGREGATE, ft_binary, fc_volatile, FS_r_scratchpad, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 
 	{"errata", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"errata/trim", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_trim, FS_w_trim, VISIBLE, NO_FILETYPE_DATA, },
@@ -146,6 +154,7 @@ static struct filetype DS1822[] = {
 
 DeviceEntryExtended(22, DS1822, DEV_temp | DEV_alarm, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
+/* The DS1825 also incldes the MAX31826 MAX31850 and MAX31851 */
 static struct aggregate AMAX = { 16, ag_numbers, ag_separate, };
 static struct filetype DS1825[] = {
 	F_STANDARD,
@@ -157,13 +166,13 @@ static struct filetype DS1825[] = {
 	{"fasttemp", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_link, FS_fasttemp, NO_WRITE_FUNCTION, VISIBLE_DS1825, {i:9}, },
 	{"templow", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE_DS1825, {i:1}, },
 	{"temphigh", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE_DS1825, {i:0}, },
+	{"cold_junction", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_link, FS_slowtemp, NO_WRITE_FUNCTION, VISIBLE, {i:12}, },
 	{"power", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"prog_addr", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_ad, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
-	{"bit7", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_bit7, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA, },
 	{"memory", 128, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE_MAX31826, NO_FILETYPE_DATA, },
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_MAX31826, NO_FILETYPE_DATA, },
 	{"pages/page", 8, &AMAX, ft_binary, fc_page, FS_r_page, FS_w_page, VISIBLE_MAX31826, NO_FILETYPE_DATA, },
-	{"scratchpad", 9, NON_AGGREGATE, ft_binary, fc_volatile, FS_r_scratchpad, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"scratchpad", SCRATCHPAD_LENGTH, NON_AGGREGATE, ft_binary, fc_volatile, FS_r_scratchpad, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 };
 
 DeviceEntryExtended(3B, DS1825, DEV_temp | DEV_alarm, NO_GENERIC_READ, NO_GENERIC_WRITE);
@@ -286,44 +295,37 @@ static GOOD_OR_BAD OW_w_mem( BYTE * data, size_t size, off_t offset, struct pars
 static GOOD_OR_BAD OW_w_page( BYTE * data, size_t size, off_t offset, struct parsedname * pn ) ;
 
 /* finds the visibility value (0x0071 ...) either cached, or computed via the device_id (then cached) */
-static int VISIBLE_3B( const struct parsedname * pn )
+static enum threeB VISIBLE_3B( const struct parsedname * pn )
 {
-	int bit7 = -1 ;
+	enum threeB e3B = Unknown_3B ;
 	
 	LEVEL_DEBUG("Checking visibility of %s",SAFESTRING(pn->path)) ;
-	if ( BAD( GetVisibilityCache( &bit7, pn ) ) ) {
+	if ( BAD( GetVisibilityCache( &e3B, pn ) ) ) {
 		struct one_wire_query * owq = OWQ_create_from_path(pn->path) ; // for read
 		if ( owq != NULL) {
-			UINT U_bit7 ;
-			if ( FS_r_sibling_U( &U_bit7, "bit7", owq ) == 0 ) {
-				bit7 = U_bit7 ;
-				SetVisibilityCache( bit7, pn ) ;
+			BYTE data[SCRATCHPAD_LENGTH] ;
+			if ( FS_r_sibling_binary( data, SCRATCHPAD_LENGTH, "scratchpad", owq ) == 0 ) {
+				if ( (data[4] & 0x80) == 0 ) {
+					e3B = DS1825_3B ;
+				} else if ( (data[2]==0xFF) && (data[3]==0xFF) )
+					e3B = MAX31825_3B ;
+				} else {
+					e3B = MAX31850_3B ;
+				}
+				SetVisibilityCache( e3B, pn ) ;
 			}
 			OWQ_destroy(owq) ;
 		}
 	}
-	return bit7 ;
+	return e3B ;
 }
 
-static enum e_visibility VISIBLE_DS1825( const struct parsedname * pn )
-{
-	switch ( VISIBLE_3B(pn) ) {
-		case 0x0000:
-			return visible_now ;
-		default:
-			return visible_not_now ;
-	}
-}
-
-static enum e_visibility VISIBLE_MAX31826( const struct parsedname * pn )
-{
-	switch ( VISIBLE_3B(pn) ) {
-		case 0x80:
-			return visible_now ;
-		default:
-			return visible_not_now ;
-	}
-}
+#define VISIBLE_FN( id )  static enum e_visibility VISIBLE_##id(const parsedname * pn ) {\
+	return VISIBLE_3D(pn)==id##_3B ? visible_now : visible_not_now ; }
+	
+VISIBLE_FN( DS1825 ) ;
+VISIBLE_FN( MAX31825 ) ;
+VISIBLE_FN( MAX31850 ) ;
 
 static ZERO_OR_ERROR FS_10temp(struct one_wire_query *owq)
 {
@@ -492,18 +494,9 @@ static ZERO_OR_ERROR FS_r_templimit(struct one_wire_query *owq)
 /* DS1825 hardware programmable address */
 static ZERO_OR_ERROR FS_r_ad(struct one_wire_query *owq)
 {
-	BYTE data[9];
+	BYTE data[SCRATCHPAD_LENGTH];
 	RETURN_ERROR_IF_BAD(OW_r_scratchpad(data, PN(owq))) ;
 	OWQ_U(owq) = data[4] & 0x0F;
-	return 0;
-}
-
-// used to differentiate MAX31286 from DS1825
-static ZERO_OR_ERROR FS_r_bit7(struct one_wire_query *owq)
-{
-	BYTE data[9];
-	RETURN_ERROR_IF_BAD(OW_r_scratchpad(data, PN(owq))) ;
-	OWQ_U(owq) = (data[4] & 0x80) ;
 	return 0;
 }
 
@@ -536,7 +529,7 @@ static ZERO_OR_ERROR FS_r_die(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_r_scratchpad(struct one_wire_query *owq)
 {
-	BYTE s[9] ;
+	BYTE s[SCRATCHPAD_LENGTH] ;
 	
 	if ( BAD(OW_r_scratchpad( s, PN(owq) ) ) ) {
 		return -EINVAL ;
@@ -649,7 +642,7 @@ static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 /* get the temp from the scratchpad buffer after starting a conversion and waiting */
 static GOOD_OR_BAD OW_10temp(_FLOAT * temp, enum temperature_problem_flag accept_85C, int simul_good, const struct parsedname *pn)
 {
-	BYTE data[9];
+	BYTE data[SCRATCHPAD_LENGTH];
 	BYTE convert[] = { _1W_CONVERT_T, };
 	UINT delay = 1100;			// hard wired
 	BYTE pow;
@@ -722,7 +715,7 @@ static GOOD_OR_BAD OW_power(BYTE * data, const struct parsedname *pn)
 
 static GOOD_OR_BAD OW_22temp(_FLOAT * temp, enum temperature_problem_flag accept_85C, int simul_good, struct tempresolution * Resolution, const struct parsedname *pn)
 {
-	BYTE data[9];
+	BYTE data[SCRATCHPAD_LENGTH];
 	BYTE convert[] = { _1W_CONVERT_T, };
 	BYTE pow;
 	UINT delay = Resolution->delay;
@@ -808,7 +801,7 @@ static GOOD_OR_BAD OW_22temp(_FLOAT * temp, enum temperature_problem_flag accept
 
 static GOOD_OR_BAD OW_MAXtemp(_FLOAT * temp, enum temperature_problem_flag accept_85C, int simul_good, struct tempresolution * Resolution, const struct parsedname *pn)
 {
-	BYTE data[9];
+	BYTE data[SCRATCHPAD_LENGTH];
 	BYTE convert[] = { _1W_CONVERT_T, };
 	BYTE pow;
 	UINT delay = Resolution->delay;
@@ -876,7 +869,7 @@ static GOOD_OR_BAD OW_MAXtemp(_FLOAT * temp, enum temperature_problem_flag accep
 /* Limits Tindex=0 high 1=low */
 static GOOD_OR_BAD OW_r_templimit(_FLOAT * T, const int Tindex, const struct parsedname *pn)
 {
-	BYTE data[9];
+	BYTE data[SCRATCHPAD_LENGTH];
 	BYTE recall[] = { _1W_RECALL_EEPROM, };
 	struct transaction_log trecall[] = {
 		TRXN_START,
@@ -895,7 +888,7 @@ static GOOD_OR_BAD OW_r_templimit(_FLOAT * T, const int Tindex, const struct par
 /* Limits Tindex=0 high 1=low */
 static GOOD_OR_BAD OW_w_templimit(const _FLOAT T, const int Tindex, const struct parsedname *pn)
 {
-	BYTE data[9];
+	BYTE data[SCRATCHPAD_LENGTH];
 
 	if (OW_r_scratchpad(data, pn)) {
 		return gbBAD;
@@ -912,8 +905,8 @@ static GOOD_OR_BAD OW_r_scratchpad(BYTE * data, const struct parsedname *pn)
 	struct transaction_log tread[] = {
 		TRXN_START,
 		TRXN_WRITE1(be),
-		TRXN_READ(data, 9),
-		TRXN_CRC8(data, 9),
+		TRXN_READ(data, SCRATCHPAD_LENGTH),
+		TRXN_CRC8(data, SCRATCHPAD_LENGTH),
 		TRXN_END,
 	};
 	return BUS_transaction(tread, pn);
