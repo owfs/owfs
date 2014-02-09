@@ -500,6 +500,48 @@ static ZERO_OR_ERROR FS_r_ad(struct one_wire_query *owq)
 	return 0;
 }
 
+static ZERO_OR_ERROR FS_thermocouple(struct one_wire_query * owq )
+{
+	BYTE data[SCRATCHPAD_LENGTH];
+	BYTE masked[2] ;
+	if ( FS_r_sibling_binary( data, SCRATCHPAD_LENGTH, "scratchpad", owq ) != 0 ) {
+		return -EINVAL ;
+	}
+	
+	if ( (data[0] & 0x01)  || (data[2] & 0x07)) {
+		// Fault flag
+		LEVEL_DEBUG("Error flag on thermocouple read of %s",PN(owq)->path) ;
+		return -EFAULT ;
+	}
+	
+	masked[0] = data[0] & 0xFC ; // ignore last 2 bits
+	masked[1] = data[1] ;
+	OWQ_F(owq) = UT_int_16(masked) / 16. ; 
+	
+	return 0 ;
+}
+
+static ZERO_OR_ERROR FS_coldjunction(struct one_wire_query * owq )
+{
+	BYTE data[SCRATCHPAD_LENGTH];
+	BYTE masked[2] ;
+	if ( FS_r_sibling_binary( data, SCRATCHPAD_LENGTH, "scratchpad", owq ) != 0 ) {
+		return -EINVAL ;
+	}
+	
+	if ( (data[0] & 0x01)  || (data[2] & 0x07)) {
+		// Fault flag
+		LEVEL_DEBUG("Error flag on thermocouple read of %s",PN(owq)->path) ;
+		return -EFAULT ;
+	}
+	
+	masked[0] = data[2] & 0xF0 ; // ignore last 2 bits
+	masked[1] = data[3] ;
+	OWQ_F(owq) = UT_int_16(masked) / 256. ; 
+	
+	return 0 ;
+}
+
 static ZERO_OR_ERROR FS_w_templimit(struct one_wire_query *owq)
 {
 	return GB_to_Z_OR_E(OW_w_templimit(OWQ_F(owq), PN(owq)->selected_filetype->data.i, PN(owq)));
