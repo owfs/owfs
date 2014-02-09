@@ -117,7 +117,7 @@ void API_finish(void)
 }
 
 // called before read/write/dir operation -- tests setup state
-// pair with API_access_stop
+// pair with API_access_end
 int API_access_start(void)
 {
 	if (StateInfo.owlib_state == lib_state_pre) {

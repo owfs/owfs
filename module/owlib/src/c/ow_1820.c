@@ -307,7 +307,7 @@ static enum threeB VISIBLE_3B( const struct parsedname * pn )
 			if ( FS_r_sibling_binary( data, SCRATCHPAD_LENGTH, "scratchpad", owq ) == 0 ) {
 				if ( (data[4] & 0x80) == 0 ) {
 					e3B = DS1825_3B ;
-				} else if ( (data[2]==0xFF) && (data[3]==0xFF) )
+				} else if ( (data[2]==0xFF) && (data[3]==0xFF) ) {
 					e3B = MAX31825_3B ;
 				} else {
 					e3B = MAX31850_3B ;
@@ -320,8 +320,8 @@ static enum threeB VISIBLE_3B( const struct parsedname * pn )
 	return e3B ;
 }
 
-#define VISIBLE_FN( id )  static enum e_visibility VISIBLE_##id(const parsedname * pn ) {\
-	return VISIBLE_3D(pn)==id##_3B ? visible_now : visible_not_now ; }
+#define VISIBLE_FN( id )  static enum e_visibility VISIBLE_##id(const struct parsedname * pn ) {\
+	return ( VISIBLE_3D(pn)==id##_3B ) ? visible_now : visible_not_now ; }
 	
 VISIBLE_FN( DS1825 ) ;
 VISIBLE_FN( MAX31825 ) ;
