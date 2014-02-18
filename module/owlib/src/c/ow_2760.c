@@ -908,7 +908,7 @@ static ZERO_OR_ERROR FS_WS603_wind_speed( struct one_wire_query *owq)
 	BYTE data[length] ;
 	UINT wind_cal ;
 
-	if ( FS_r_sibling_binary( (char *) data, &length, "WS603/data_string", owq ) ) {
+	if ( FS_r_sibling_binary( data, &length, "WS603/data_string", owq ) ) {
 		return -EINVAL ;
 	}
 
@@ -927,7 +927,7 @@ static ZERO_OR_ERROR FS_WS603_wind_direction( struct one_wire_query *owq)
 	size_t length = 5 ;
 	BYTE data[length] ;
 
-	if ( FS_r_sibling_binary( (char *) data, &length, "WS603/data_string", owq ) ) {
+	if ( FS_r_sibling_binary( data, &length, "WS603/data_string", owq ) ) {
 		return -EINVAL ;
 	}
 
@@ -940,7 +940,7 @@ static ZERO_OR_ERROR FS_WS603_r_led( struct one_wire_query *owq)
 	size_t length = 5 ;
 	BYTE data[length] ;
 
-	if ( FS_r_sibling_binary( (char *) data, &length, "WS603/data_string", owq ) ) {
+	if ( FS_r_sibling_binary( data, &length, "WS603/data_string", owq ) ) {
 		return -EINVAL ;
 	}
 
@@ -953,7 +953,7 @@ static ZERO_OR_ERROR FS_WS603_light( struct one_wire_query *owq)
 	size_t length = 5 ;
 	BYTE data[length] ;
 
-	if ( FS_r_sibling_binary( (char *) data, &length, "WS603/data_string", owq ) ) {
+	if ( FS_r_sibling_binary( data, &length, "WS603/data_string", owq ) ) {
 		return -EINVAL ;
 	}
 
@@ -966,7 +966,7 @@ static ZERO_OR_ERROR FS_WS603_volt( struct one_wire_query *owq)
 	size_t length = 5 ;
 	BYTE data[length] ;
 
-	if ( FS_r_sibling_binary( (char *) data, &length, "WS603/data_string", owq ) ) {
+	if ( FS_r_sibling_binary( data, &length, "WS603/data_string", owq ) ) {
 		return -EINVAL ;
 	}
 
@@ -979,7 +979,7 @@ static ZERO_OR_ERROR FS_WS603_r_led_model( struct one_wire_query *owq)
 	size_t length = 5 ;
 	BYTE data[length] ;
 
-	if ( FS_r_sibling_binary( (char *) data, &length, "WS603/param_string", owq ) ) {
+	if ( FS_r_sibling_binary( data, &length, "WS603/param_string", owq ) ) {
 		return -EINVAL ;
 	}
 
@@ -992,7 +992,7 @@ static ZERO_OR_ERROR FS_WS603_r_wind_calibration( struct one_wire_query *owq)
 	size_t length = 5 ;
 	BYTE data[length] ;
 
-	if ( FS_r_sibling_binary( (char *) data, &length, "WS603/param_string", owq ) ) {
+	if ( FS_r_sibling_binary( data, &length, "WS603/param_string", owq ) ) {
 		return -EINVAL ;
 	}
 
@@ -1015,7 +1015,7 @@ static ZERO_OR_ERROR FS_WS603_r_direction_calibration( struct one_wire_query *ow
 	size_t length = 5 ;
 	BYTE data[length] ;
 
-	if ( FS_r_sibling_binary( (char *) data, &length, "WS603/param_string", owq ) ) {
+	if ( FS_r_sibling_binary( data, &length, "WS603/param_string", owq ) ) {
 		return -EINVAL ;
 	}
 
@@ -1051,7 +1051,7 @@ static ZERO_OR_ERROR FS_WS603_r_light_threshold( struct one_wire_query *owq)
 	size_t length = 5 ;
 	BYTE data[length] ;
 
-	if ( FS_r_sibling_binary( (char *) data, &length, "WS603/param_string", owq ) ) {
+	if ( FS_r_sibling_binary( data, &length, "WS603/param_string", owq ) ) {
 		return -EINVAL ;
 	}
 
