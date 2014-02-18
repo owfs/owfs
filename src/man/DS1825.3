@@ -16,8 +16,11 @@ Programmable Resolution 1-Wire Digital Thermometer with ID
 .TP
 .B MAX31826
 Digital Temperature Sensor with 1Kb Lockable EEPROM
+.TP
+.B MAX31850 MAX31851
+Cold-Junction Compensated Thermocouple
 .SH SYNOPSIS
-.SS Thermometer with hardware address pins
+.SS Thermometer with hardware address pins (DS1825)
 .PP
 .B 3B
 [.]XXXXXXXXXXXX[XX][/[
@@ -33,7 +36,7 @@ Digital Temperature Sensor with 1Kb Lockable EEPROM
 |
 .so standard_mini.3so
 ]]
-.SS Digital Temperature Sensor with 1Kb Lockable EEPROM
+.SS Digital Temperature Sensor with 1Kb Lockable EEPROM (MAX31826)
 .PP
 .B 3B
 [.]XXXXXXXXXXXX[XX][/[
@@ -44,6 +47,28 @@ Digital Temperature Sensor with 1Kb Lockable EEPROM
 .B memory
 |
 .B pages/page.[0-15|ALL]
+|
+.B prog_addr
+|
+.so standard_mini.3so
+]]
+.SS Cold-Junction Compensated Thermocouple (MAX31850 and MAX31851)
+.PP
+.B 3B
+[.]XXXXXXXXXXXX[XX][/[
+.B temperature
+|
+.B thermocouple
+|
+.B fault
+|
+.B open_circuit
+|
+.B ground_short
+|
+.B vdd_short
+|
+.B power
 |
 .B prog_addr
 |
@@ -68,19 +93,39 @@ that is set in the factory.
 .SS temperature
 .I read-only, floating point
 .br
-Measured temperature with 12 bit resolution. 
+Measured temperature with 12 bit resolution.
+.P
+For the 
+.B MAX31850 MAX 31851
+this is the
+.I cold-junction temperature
+-- the temperature at the chip. See
+.I thermocouple
 .SS temperature9 temperature10 temperature11 temperature12
 .I read-only, floating point
+(
+.B DS1825 
+only)
+.P
 Measured temperature at 9 to 12 bit resolution. There is a tradeoff of time versus accuracy in the temperature measurement.
 .PP
 The
-.B MAX31826
-measures all temperatures at 12 bit resoltion and will return that resolution to all the possible temperature properties.
+.B MAX31826 MAX31850 MAX31851
+measure all temperatures at 12 bit resoltion and will return that resolution to all the possible temperature properties.
 .SS fasttemp
 .I read-only, floating point
 .br
 Equivalent to
 .I temperature9
+.SS thermocouple
+.I read-only, floating point
+(
+.B MAX31850 MAX31851
+only)
+.P
+Measured temperature of the thermocouple at 16bit resolution. Cold-junction temperature compensated.
+.PP
+The actual thermocouple type used is set by the selected chip type, and is not discoverable in software.
 .so temperature_threshold.3so
 .PP
 The 
@@ -98,6 +143,26 @@ EEPROM memory pages of 8 bytes each. See the datasheet about locking contents.
 .I read/write, binary
 .br
 EEPROM memory of 128 bytes. See the datasheet about locking contents.
+.SH FAULT REPORTING
+Only the
+.B MAX31850 MAX31851
+supports fault reporting.
+.SS fault
+.I read-only, yes-no
+.br
+Fault in last thermocouple conversion
+.SS open_circuit
+.I read-only, yes-no
+.br
+Thermocouple leads disconnected.
+.SS ground_short
+.I read-only, yes-no
+.br
+Thermocouple lead shorted to ground.
+.SS vdd_short
+.I read-only, yes-no
+.br
+Thermocouple lead shorted to supply voltage.
 .SH STANDARD PROPERTIES
 .so standard.3so
 .SH DESCRIPTION

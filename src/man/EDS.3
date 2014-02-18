@@ -503,6 +503,19 @@ field giving the particular sensor. The data properties shown in a directory lis
 The
 .B EDS0071 (3)
 is a micro-processor based 1-wire slave made by EDS (Embedded Data Systams). Is uses a high accuracy and extended range RTD sensor to accurately measure temperatures.
+.SS Memory
+The
+.I EDS00XX
+sensors are read and controlled by accessing parts of their on-chip memory. Although the raw memory contents are exposed in the 
+.I memory
+and
+.I pages
+fields, all the available functionality is best accessed by the other fields. In fact, directly changing memory will confuse
+.I OWFS.
+.SS Relay and LED
+All the
+.I EDS00XX
+sensors have an LED and optional relay. Both can be controlled either directly, or when the sensors reaches an alarm state.
 .SH ADDRESSING
 .so addressing.3so
 .SH DATASHEET

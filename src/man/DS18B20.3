@@ -13,6 +13,9 @@
 .TP
 .B DS18B20
 Programmable Resolution 1-Wire Digital Thermometer
+.TP
+.B MAX31820
+Ambient Temperature Sensor
 .SH SYNOPSIS
 Thermometer.
 .PP
@@ -70,12 +73,18 @@ is one of several available 1-wire temperature sensors. It is the replacement fo
 .B DS18S20 (3)
 Alternatives are
 .B DS1822 (3)
-as well as temperature/vlotage measurements in the
+as well as temperature/voltage measurements in the
 .B DS2436 (3)
 and
 .B DS2438 (3).
 For truly versatile temperature measurements, see the protean
 .B DS1921 (3) Thermachron (3).
+.P
+The
+.B MAX31820
+is functionally identical to the
+.B DS18B20
+except for it's voltage requirements.
 .br
 The
 .B DS18B20 (3)
