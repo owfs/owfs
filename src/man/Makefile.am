@@ -30,6 +30,7 @@ man_MANS = owfs.1 \
            MAX31820.3 MAX31826.3 MAX31850.3 MAX31851.3\
            EDS.3 EDS0064.3 EDS0065.3 EDS0066.3 EDS0067.3 EDS0068.3\
            EDS0070.3 EDS0071.3 EDS0072.3\
+           EDS0080.3 EDS0082.3 EDS0083.3 EDS0085.3\
            EDS0090.3 \
            Thermachron.3 \
            LCD.3 \

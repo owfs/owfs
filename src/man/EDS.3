@@ -38,6 +38,18 @@ RTD 4-wire temperature
 .B EDS0072
 RTD 3-wire temperature
 .TP
+.B EDS0080
+8 Channel Analog Current Input
+.TP
+.B EDS0082
+8 Channel Analog Voltage Input
+.TP
+.B EDS0083
+4 Channel Analog Current Input
+.TP
+.B EDS0085
+4 Channel Analog Voltage Input
+.TP
 .B EDS0090
 8 Discrete I/O
 .SH SYNOPSIS
@@ -204,6 +216,58 @@ microprocessor-based sensors
 |
 .B threshold/RTD_[hi_low]
 ]]
+.SS Analog Current ( EDS0080 [0-7] EDS0083 [0-3] )
+.B 7E.XXXXXXXXXXXX/EDS0080
+[/[
+.B current.[0-7|ALL]
+|
+.B max_current.[0-7|ALL]
+|
+.B min_current.[0-7|ALL]
+|
+.B threshold/current_hi.[0-7|ALL]
+|
+.B threshold/current_low.[0-7|ALL]
+|
+.B alarm/current_hi.[0-7|ALL|BYTE]
+|
+.B alarm/current_low.[0-7|ALL|BYTE]
+|
+.B set_alarm/current_hi.[0-7|ALL|BYTE]
+|
+.B set_alarm/current_low.[0-7|ALL|BYTE]
+|
+.B counter/seconds
+|
+.B memory
+|
+.B pages/page.[0-4|ALL]
+.SS Analog Voltage ( EDS0082 [0-7] EDS0085 [0-3] )
+.B 7E.XXXXXXXXXXXX/EDS0082
+[/[
+.B volts.[0-7|ALL]
+|
+.B max_volts.[0-7|ALL]
+|
+.B min_volts.[0-7|ALL]
+|
+.B threshold/volts_hi.[0-7|ALL]
+|
+.B threshold/volts_low.[0-7|ALL]
+|
+.B alarm/volts_hi.[0-7|ALL|BYTE]
+|
+.B alarm/volts_low.[0-7|ALL|BYTE]
+|
+.B set_alarm/volts_hi.[0-7|ALL|BYTE]
+|
+.B set_alarm/volts_low.[0-7|ALL|BYTE]
+|
+.B counter/seconds
+|
+.B memory
+|
+.B pages/page.[0-4|ALL]
 .SS I/O ( EDS0090 )
 .B 7E.XXXXXXXXXXXX/EDS009X 
 [/[
@@ -300,6 +364,40 @@ Vibration registered by sensor (lowest value) in 0-1023 range.
 .I read_only, unsigned integer
 .br
 Vibration registered by sensor (highest value) in 0-1023 range.
+.SH CURRENT
+The 
+.B EDS0080
+and
+.B EDS0083
+measure current in the 4-20mA range, with upper and threshold limits and the ability to set an alarm and independently trigger a relay if the value is out of range.
+.SS EDS0080/current.[0-7|ALL] EDS0083/current.[0-3|ALL]
+.I read-only, floating point
+.br
+Current current level. (4-20mA)
+.SS EDS0080/max_current.[0-7|ALL] EDS0080/max_current.[0-3|ALL]
+.SS EDS0083/min_current.[0-7|ALL] EDS0083/min_current.[0-3|ALL]
+.I read-only, floating point
+.br
+Maximum and minimum current readings since last
+.I alarm/clear
+command.
+.SH VOLTAGE
+The 
+.B EDS0082
+and
+.B EDS0085
+measure voltage in the 0-10V range, with upper and threshold limits and the ability to set an alarm and independently trigger a relay if the value is out of range.
+.SS EDS0082/volts.[0-7|ALL] EDS0085/volts.[0-3|ALL]
+.I read-only, floating point
+.br
+Current voltage level. (0-10V)
+.SS EDS0082/max_volts.[0-7|ALL] EDS0085/max_volts.[0-3|ALL]
+.SS EDS0082/min_volts.[0-7|ALL] EDS0085/min_volts.[0-3|ALL]
+.I read-only, floating point
+.br
+Maximum and minimum voltage readings since last
+.I alarm/clear
+command.
 .SH THRESHOLD
 High and low range of acceptable sensor readings. Values outside this range will trigger an alarm if the corresponding
 .I EDS00XX/set_alarm flag is set.
@@ -310,7 +408,7 @@ Threshold temperatures in the specified temperature scale. Default Celsius.
 .SS EDS006X/threshold/humidity_hi \tEDS006X/threshold/humidity_low
 .SS EDS006X/threshold/dew_point_hi \tEDS006X/threshold/dew_point_low
 .SS EDS006X/threshold/heat_index_hi \tEDS006X/threshold/heat_index_low
-.SS EDS006X/threshold/humidex_hi \tEDS006X/threshold/humidex_low
+.SS EDS006X/threshold/humidex_hi \t\tEDS006X/threshold/humidex_low
 .I read-write, floating-point
 .br
 Threshold humidity values. 
@@ -337,19 +435,30 @@ Vibration sensor alarm limits in 0-1023 range.
 .I read-write, floating-point
 .br
 Threshold RTD resistance values (Ohm).
+.SS EDS0080/threshold/current_hi.[0-7|ALL]\tEDS0080/threshold/current_low.[0-7|ALL]
+.SS EDS0082/threshold/volts_hi.[0-7|ALL]\tEDS0082/threshold/volts_low.[0-7|ALL]
+.SS EDS0083/threshold/current_hi.[0-3|ALL]\tEDS0083/threshold/current_low.[0-3|ALL]
+.SS EDS0085/threshold/volts_hi.[0-3|ALL]\tEDS0085/threshold/volts_low.[0-3|ALL|]
+.I read-write, floating-point
+.br
+Voltage or current threshold limits
 .SH SET ALARM
 Set conditional alarm to trigger if corresponding flag is set. Also must set high and low
 .I threshold.
-.SS EDS00XX/set_alarm/temp_hi \tEDS00XX/set_alarm/temp_low
+.SS EDS00XX/set_alarm/temp_hi \t\tEDS00XX/set_alarm/temp_low
 .SS EDS006X/set_alarm/humidity_hi \tEDS006X/set_alarm/humidity_low
 .SS EDS006X/set_alarm/dew_point_hi \tEDS006X/set_alarm/dew_point_low
 .SS EDS006X/set_alarm/heat_index_hi \tEDS006X/set_alarm/heat_index_low
-.SS EDS006X/set_alarm/humidex_hi \tEDS006X/set_alarm/humidex_low
+.SS EDS006X/set_alarm/humidex_hi \t\tEDS006X/set_alarm/humidex_low
 .SS EDS006X/set_alarm/pressure_hi \tEDS006X/set_alarm/pressure_low
-.SS EDS006X/set_alarm/inHg_hi \tEDS006X/set_alarm/inHg_low
-.SS EDS006X/set_alarm/light_hi \tEDS006X/set_alarm/light_low
-.SS EDS0070/set_alarm/vib_hi \tEDS0070/set_alarm/vib_low
+.SS EDS006X/set_alarm/inHg_hi \t\tEDS006X/set_alarm/inHg_low
+.SS EDS006X/set_alarm/light_hi \t\tEDS006X/set_alarm/light_low
+.SS EDS0070/set_alarm/vib_hi \t\tEDS0070/set_alarm/vib_low
 .SS EDS007X/set_alarm/resistance_hi \tEDS007X/set_alarm/resistance_low
+.SS EDS0080/set_alarm/current_hi.[0-7|ALL|BYTE]\tEDS0080/set_alarm/current_low.[0-7|ALL|BYTE]
+.SS EDS0082/set_alarm/volts_hi.[0-7|ALL|BYTE]\tEDS0082/set_alarm/volts_low.[0-7|ALL|BYTE]
+.SS EDS0083/set_alarm/current_hi.[0-3|ALL|BYTE]\tEDS0083/set_alarm/current_low.[0-3|ALL|BYTE]
+.SS EDS0085/set_alarm/volts_hi.[0-3|ALL|BYTE]\tEDS0085/set_alarm/volts_low.[0-3|ALL|BYTE]
 .I read-write, yes-no
 .br
 Flag to set corresponding out-of-range alarm. "1" turns on flag, and "0" turns off.
@@ -363,16 +472,20 @@ command, not just having the measured value return to the center range.
 Write "1" to clear
 .B ALL
 the alarm flags.
-.SS EDS00XX/alarm/temp_hi \tEDS00XX/alarm/temp_low
+.SS EDS00XX/alarm/temp_hi \t\tEDS00XX/alarm/temp_low
 .SS EDS006X/alarm/humidity_hi \tEDS006X/alarm/humidity_low
 .SS EDS006X/alarm/dew_point_hi \tEDS006X/alarm/dew_point_low
 .SS EDS006X/alarm/heat_index_hi \tEDS006X/alarm/heat_index_low
-.SS EDS006X/alarm/humidex_hi \tEDS006X/alarm/humidex_low
+.SS EDS006X/alarm/humidex_hi \t\tEDS006X/alarm/humidex_low
 .SS EDS006X/alarm/pressure_hi \tEDS006X/alarm/pressure_low
-.SS EDS006X/alarm/inHg_hi \tEDS006X/alarm/inHg_low
-.SS EDS006X/alarm/light_hi \tEDS006X/alarm/light_low
-.SS EDS0070/alarm/vib_hi \tEDS007X/alarm/vib_low
+.SS EDS006X/alarm/inHg_hi \t\tEDS006X/alarm/inHg_low
+.SS EDS006X/alarm/light_hi \t\tEDS006X/alarm/light_low
+.SS EDS0070/alarm/vib_hi \t\tEDS007X/alarm/vib_low
 .SS EDS007X/alarm/resistance_hi \tEDS007X/alarm/resistance_low
+.SS EDS0080/alarm/current_hi.[0-7|ALL|BYTE]\tEDS0080/alarm/current_low.[0-7|ALL|BYTE]
+.SS EDS0082/alarm/volts_hi.[0-7|ALL|BYTE]\tEDS0082/alarm/volts_low.[0-7|ALL|BYTE]
+.SS EDS0083/alarm/current_hi.[0-3|ALL|BYTE]\tEDS0083/alarm/current_low.[0-3|ALL|BYTE]
+.SS EDS0085/alarm/volts_hi.[0-3|ALL|BYTE]\tEDS0085/alarm/volts_low.[0-3|ALL|BYTE]
 .SS EDS0090/alarm/hi[0-7|ALL] \tEDS0090/alarm/low[0-7|ALL]
 .I read-only, yes-no
 .br
@@ -462,6 +575,22 @@ functions is better accomplished through the data fields, which expose all the c
 Memory is split into 3 pages of 32 bytes each. Only page 2 is writable.
 .I ALL
 is an aggregate of the pages. Each page is accessed sequentially.
+.SS EDS008X/memory
+.I read-write, binary
+.br
+160 bytes of memory. Not all is writable. Access to
+.I EDS008X
+functions is better accomplished through the data fields, which expose all the chip features. The
+.I EDS008X
+has more memory than the other chips, so a separate entry in the sudbirectory makes it available.
+.SS EDS008X/pages/page.0-4 EDS008X/pages/page.ALL
+.I read-write, binary
+.br
+Memory is split into 5 pages of 32 bytes each. Only page 5 is writable.  The
+.I EDS008X
+has more memory than the other chips, so a separate entry in the sudbirectory makes the extra pages available.
+.I ALL
+is an aggregate of the pages. Each page is accessed sequentially.
 .SH SUB-TYPE
 .SS tag
 .I read-only, ascii
@@ -520,17 +649,22 @@ sensors have an LED and optional relay. Both can be controlled either directly, 
 .so addressing.3so
 .SH DATASHEET
 .TP
-Environmental sensors
-https://www.embeddeddatasystems.com/1-Wire-Interface-for-4-Wire-RTD_p_165.html
-.TP
-Vibration
+.B EDS0064 EDS0065 EDS0066 EDS0067 EDS0068
+https://docs.google.com/viewer?a=v&pid=explorer&chrome=true&srcid=0B_K3iXLLAI7vN2E4NGUwMGItMzc5MS00NDNmLTljZGYtN2NmM2Q3YWE5NmVh&hl=en
+.B EDS0070
 http://www.embeddeddatasystems.com/assets/images/supportFiles/manuals/EN-UserMan%20%20OW-Vibration%20V01.pdf
 .TP
-RTD
+.B EDS0071 EDS0072
 https://docs.google.com/viewer?a=v&pid=explorer&chrome=true&srcid=0B_K3iXLLAI7vMjVhNWQzYzItZTRhMi00NGY2LWI4NTQtYjZlYTgzYzY0NmNm&hl=en
 .TP
-I/O
-http://www.embeddeddatasystems.com/assets/images/EN-USERMAN%20OW-IO-DIO8%20v1p0.pdf
+.B EDS0080 EDS0083
+https://eds.zendesk.com/attachments/token/ulnpj6mvpp6yzwo/?name=EN-USERMAN+OW-IO-AIX-420+v1p0.pdf
+.TP
+.B EDS0082 EDS0085
+https://eds.zendesk.com/attachments/token/vyai6ylpw6edala/?name=EN-USERMAN+OW-IO-AIX-10V+v1p0.pdf
+.TP
+.B EDS0090
+8 Discrete I/O
 .SH SEE ALSO
 .so seealso.3so
 .SH AVAILABILITY
