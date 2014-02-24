@@ -197,8 +197,10 @@ void BUS_lock_in(struct connection_in *in);
 void BUS_unlock_in(struct connection_in *in);
 
 /* API wrappers for swig and owcapi */
+enum restart_init { restart_if_repeat, continue_if_repeat, } ; // behavior if init called a second time
 void API_setup(enum enum_program_type opt);
-GOOD_OR_BAD API_init(const char *command_line);
+GOOD_OR_BAD API_init(const char *command_line, enum restart_init repeat);
+GOOD_OR_BAD API_init_args(int argc, char **argv, enum restart_init repeat) ;
 void API_set_error_level(const char *params);
 void API_set_error_print(const char *params);
 void API_finish(void);

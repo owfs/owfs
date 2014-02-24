@@ -23,6 +23,9 @@ $Id$
 
 #define MAX_ARGS 20
 
+static ssize_t OW_init_both(const char *params, enum restart_init repeat) ;
+static ssize_t OW_init_args_both(int argc, char **argv, enum restart_init repeat);
+
 static ssize_t ReturnAndErrno(ssize_t ret)
 {
 	if (ret < 0) {
@@ -46,6 +49,16 @@ void OW_set_error_level(const char *params)
 
 ssize_t OW_init(const char *params)
 {
+	return OW_init_both( params, restart_if_repeat ) ;
+}
+
+ssize_t OW_safe_init(const char *params)
+{
+	return OW_init_both( params, continue_if_repeat ) ;
+}
+
+static ssize_t OW_init_both(const char *params, enum restart_init repeat)
+{
 	/* Set up owlib */
 	API_setup(program_type_clibrary);
 
@@ -53,7 +66,7 @@ ssize_t OW_init(const char *params)
 	/* grab our executable name */
 	Globals.progname = owstrdup("OWCAPI");
 
-	if ( BAD( API_init(params) ) ) {
+	if ( BAD( API_init(params, repeat) ) ) {
 		API_finish();
 		return ReturnAndErrno(-EINVAL) ;
 	}
@@ -63,41 +76,22 @@ ssize_t OW_init(const char *params)
 
 ssize_t OW_init_args(int argc, char **argv)
 {
+	return OW_init_args_both( argc, argv, restart_if_repeat ) ;
+}
+
+ssize_t OW_safe_init_args(int argc, char **argv)
+{
+	return OW_init_args_both( argc, argv, continue_if_repeat ) ;
+}
+
+static ssize_t OW_init_args_both(int argc, char **argv, enum restart_init repeat)
+{
 	/* Set up owlib */
 	API_setup(program_type_clibrary);
 
-	/* grab our executable name */
-	if (argc > 0) {
-		Globals.progname = owstrdup(argv[0]);
-	}
-
-	// process the command line flags
-	do {
-		int c = getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL) ;
-		if ( c == -1 ) {
-			break ;
-		}
-		if ( BAD( owopt(c, optarg) ) ) {
-			// clean up and exit
-			API_finish() ;
-			return ReturnAndErrno( -EINVAL ) ;
-		}
-	} while ( 1 ) ;
-
-	/* non-option arguments */
-	while (optind < argc) {
-		if ( BAD( ARG_Generic(argv[optind]) ) ) {
-			// clean up and exit
-			API_finish() ;
-			return ReturnAndErrno( -EINVAL ) ;
-		}
-		++optind;
-	}
-
-	if ( BAD( API_init(NULL) ) ) {
-		// clean up and exit
-		API_finish() ;
-		return ReturnAndErrno( -EINVAL ) ;
+	if ( BAD( API_init_args( argc, argv, repeat) ) ) {
+		API_finish();
+		return ReturnAndErrno(-EINVAL) ;
 	}
 
 	return ReturnAndErrno(0);

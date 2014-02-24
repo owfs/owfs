@@ -34,6 +34,9 @@ pthread_cond_t access_cond = PTHREAD_COND_INITIALIZER;
 
 int access_num = 0;
 
+static GOOD_OR_BAD setup_from_commandline( const char *command_line ) ;
+static GOOD_OR_BAD setup_from_args( int argc, char **argv ) ;
+
 void API_setup(enum enum_program_type program_type)
 {
 	static int deja_vue = 0;
@@ -64,9 +67,8 @@ void API_set_error_print(const char *params)
 	return;
 }
 
-
 /* Swig ensures that API_Setup is called first, but still we check */
-GOOD_OR_BAD API_init(const char *command_line)
+GOOD_OR_BAD API_init(const char *command_line, enum restart_init repeat)
 {
 	GOOD_OR_BAD return_code = gbGOOD;
 
@@ -79,27 +81,86 @@ GOOD_OR_BAD API_init(const char *command_line)
 	LIB_WLOCK;
 	// stop if started
 	if (StateInfo.owlib_state == lib_state_started) {
+		if ( repeat == continue_if_repeat ) {
+			LEVEL_DEBUG("Init called on running system -- will ignore");
+			goto init_exit ;
+		}
+		LEVEL_DEBUG("Init called on running system -- will stop and start again");
 		LibStop();
 		StateInfo.owlib_state = lib_state_setup;
 	}
 	// now restart
 	if (StateInfo.owlib_state == lib_state_setup) {
-		return_code = owopt_packed(command_line);
-		if ( BAD(return_code) ) {
-			goto init_exit ;
-		}
-
-		return_code = LibStart();
-		if ( BAD(return_code) ) {
-			goto init_exit ;
-		}
-
-		StateInfo.owlib_state = lib_state_started;
+		return_code = setup_from_commandline( command_line ) ;
 	}
 	
 init_exit:	
 	LIB_WUNLOCK;
 	LEVEL_DEBUG("OWLIB started with <%s>",SAFESTRING(command_line));
+	return return_code;
+}
+
+static GOOD_OR_BAD setup_from_commandline( const char *command_line )
+{
+	RETURN_BAD_IF_BAD( owopt_packed(command_line) ) ;
+	RETURN_BAD_IF_BAD( LibStart() );
+	StateInfo.owlib_state = lib_state_started;
+	return gbGOOD ;
+}	
+
+static GOOD_OR_BAD setup_from_args( int argc, char **argv )
+{
+	/* grab our executable name */
+	if (argc > 0) {
+		Globals.progname = owstrdup(argv[0]);
+	}
+
+	// process the command line flags
+	do {
+		int c = getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL) ;
+		if ( c == -1 ) {
+			break ;
+		}
+		RETURN_BAD_IF_BAD( owopt(c, optarg) ) ;
+	} while ( 1 ) ;
+
+	/* non-option arguments */
+	while (optind < argc) {
+		RETURN_BAD_IF_BAD( ARG_Generic(argv[optind]) ) ;
+		++optind;
+	}
+	StateInfo.owlib_state = lib_state_started;
+	return gbGOOD ;
+}
+
+/* Swig ensures that API_Setup is called first, but still we check */
+GOOD_OR_BAD API_init_args(int argc, char **argv, enum restart_init repeat)
+{
+	GOOD_OR_BAD return_code = gbGOOD;
+
+	if (StateInfo.owlib_state == lib_state_pre) {
+		LibSetup(Globals.program_type);	// use previous or default value
+		StateInfo.owlib_state = lib_state_setup;
+	}
+	LIB_WLOCK;
+	// stop if started
+	if (StateInfo.owlib_state == lib_state_started) {
+		if ( repeat == continue_if_repeat ) {
+			LEVEL_DEBUG("Init called on running system -- will ignore");
+			goto init_exit ;
+		}
+		LEVEL_DEBUG("Init called on running system -- will stop and start again");
+		LibStop();
+		StateInfo.owlib_state = lib_state_setup;
+	}
+	// now restart
+	if (StateInfo.owlib_state == lib_state_setup) {
+		return_code = setup_from_args( argc, argv ) ;
+	}
+	
+init_exit:	
+	LIB_WUNLOCK;
+	LEVEL_DEBUG("OWLIB started");
 	return return_code;
 }
 

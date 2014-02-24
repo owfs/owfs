@@ -24,7 +24,7 @@ char *version( )
 
 int init( const char * dev ) 
 {
-	if ( BAD(API_init(dev)) ) {
+	if ( BAD(API_init(dev, restart_if_repeat)) ) {
 		return 0 ; // error
 	}
 	return 1 ;

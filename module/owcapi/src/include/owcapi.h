@@ -38,6 +38,23 @@ extern "C" {
 	ssize_t OW_init(const char *params);
 	ssize_t OW_init_args(int argc, char **args);
 
+/* repeat initialization can be the true init, or called safely a second time
+ * this allows init to be called more than once, but the parameters are ignored after the first one.
+   OW_safe_init -- simplest, just a device name
+              /dev/ttyS0 for serial
+              u or u# for USB
+              #### for TCP/IP port (owserver)
+              looks just like the command line to owfs or owhttpd
+   OW_safe_init_args -- char** array usually from the main() call
+
+   return value = 0 good
+               < 0 error
+  
+  No need to call OW_finish if an error
+*/
+	ssize_t OW_safe_init(const char *params);
+	ssize_t OW_safe_init_args(int argc, char **args);
+
 	void OW_set_error_level(const char *params);
 	void OW_set_error_print(const char *params);
 
