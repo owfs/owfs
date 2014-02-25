@@ -122,6 +122,10 @@ struct interface_routines {
 // Adapter doesn't support "presence" -- use the last dirblob instead.
 #define ADAP_FLAG_presence_from_dirblob 0x00004000
 
+// Adapter allows power-byte not to block other channels
+#define ADAP_FLAG_unlock_during_delay 0x00008000
+
+
 // Adapter is a sham.
 #define ADAP_FLAG_sham 0x00008000
 

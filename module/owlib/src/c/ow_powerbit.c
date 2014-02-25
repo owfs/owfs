@@ -31,6 +31,27 @@ GOOD_OR_BAD BUS_PowerBit(BYTE data, BYTE * resp, UINT delay, const struct parsed
 
 	if ( in->iroutines.PowerBit !=NO_POWERBIT_ROUTINE ) {
 		ret = (in->iroutines.PowerBit) (data, resp, delay, pn);
+	} else if (in->iroutines.flags & ADAP_FLAG_unlock_during_delay) {
+		/* Very tricky -- we will release the port but not the channel 
+		 * so other threads can use the port's other channels
+		 * but we have to be careful of deadlocks
+		 * by fully releasing before relocking.
+		 * We are locking and releasing out of sequence
+		 * */
+		// No real "power" in the default case
+		ret = BUS_sendback_bits(&data, resp, 1, pn);
+		// delay
+		PORTUNLOCKIN(in);
+		// we no longer have exclusive control of the channel
+		UT_delay(delay);
+		CHANNELUNLOCKIN(in);
+		// Could sneak into this channel
+		BUSLOCKIN(in);
+		// Wait for other thread to complete
+		/* we need to relock because that's what the surrounding code expects 
+		 * -- that this routine is called with locked port and channel 
+		 * and leaves with same
+		 * */
 	} else {
 		// send the packet
 		// No real "power" in the default case

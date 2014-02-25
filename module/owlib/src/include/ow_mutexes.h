@@ -173,6 +173,10 @@ extern struct mutexes {
 #define BUSUNLOCK(pn)     	BUS_unlock(pn)
 #define BUSLOCKIN(in)     	BUS_lock_in(in)
 #define BUSUNLOCKIN(in)   	BUS_unlock_in(in)
+#define CHANNELLOCKIN(in)   CHANNEL_lock_in(in)
+#define CHANNELUNLOCKIN(in) CHANNEL_unlock_in(in)
+#define PORTLOCKIN(in)     	PORT_lock_in(in)
+#define PORTUNLOCKIN(in)   	PORT_unlock_in(in)
 #ifdef __UCLIBC__
 #define UCLIBCLOCK        	_MUTEX_LOCK(  Mutex.uclibc_mutex)
 #define UCLIBCUNLOCK      	_MUTEX_UNLOCK(Mutex.uclibc_mutex)

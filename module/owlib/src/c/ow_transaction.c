@@ -16,6 +16,12 @@ $Id$
 #include "ow_connection.h"
 #include <assert.h>
 
+/* Transactions of a sequence of commands to the bus master
+ * usually they can't be interrupted (at least for this bus master) so are locked
+ * they are sent as a sequence of individual commands in an array that has to be processed.
+ * There is some attempt to aggregate them for better efficiency
+ * */
+
 struct transaction_bundle {
 	const struct transaction_log *start;
 	int packets;
@@ -54,6 +60,7 @@ GOOD_OR_BAD BUS_transaction(const struct transaction_log *tl, const struct parse
 	return ret;
 }
 
+/* A few sequences start with teh bus already locked */
 GOOD_OR_BAD BUS_transaction_nolock(const struct transaction_log *tl, const struct parsedname *pn)
 {
 	const struct transaction_log *t = tl;

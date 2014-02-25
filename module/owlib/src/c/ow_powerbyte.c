@@ -19,11 +19,6 @@ $Id$
 // Send 8 bits of communication to the 1-Wire Net
 // Delay delay msec and return to normal
 //
-// Power is supplied by normal pull-up resistor, nothing special
-//
-/* Returns 0=good
-   bad = -EIO
- */
 GOOD_OR_BAD BUS_PowerByte(BYTE data, BYTE * resp, UINT delay, const struct parsedname *pn)
 {
 	GOOD_OR_BAD ret;
@@ -47,6 +42,27 @@ GOOD_OR_BAD BUS_PowerByte(BYTE data, BYTE * resp, UINT delay, const struct parse
 		for ( i = 0 ; i < 8 ; ++i ) {
 			UT_setbit( resp, i, receive[i] ) ;
 		}
+	} else if (in->iroutines.flags & ADAP_FLAG_unlock_during_delay) {
+		/* Very tricky -- we will release the port but not the channel 
+		 * so other threads can use the port's other channels
+		 * but we have to be careful of deadlocks
+		 * by fully releasing before relocking.
+		 * We are locking and releasing out of sequence
+		 * */
+		// send with no true power applied
+		ret = BUS_sendback_data(&data, resp, 1, pn);
+		// delay
+		PORTUNLOCKIN(in);
+		// we no longer have exclusive control of the channel
+		UT_delay(delay);
+		CHANNELUNLOCKIN(in);
+		// Could sneak into this channel
+		BUSLOCKIN(in);
+		// Wait for other thread to complete
+		/* we need to relock because that's what the surrounding code expects 
+		 * -- that this routine is called with locked port and channel 
+		 * and leaves with same
+		 * */
 	} else {
 		// send with no true power applied
 		ret = BUS_sendback_data(&data, resp, 1, pn);

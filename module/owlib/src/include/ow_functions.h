@@ -109,7 +109,6 @@ void Init_Pipe( FILE_DESCRIPTOR_OR_ERROR * pipe_fd ) ;
 void FS_LoadDirectoryOnly(struct parsedname *pn_directory, const struct parsedname *pn_original);
 
 GOOD_OR_BAD FS_Test_Simultaneous( const struct internal_prop *ip, UINT delay, const struct parsedname * pn) ;
-GOOD_OR_BAD FS_poll_convert(const struct parsedname *pn);
 
 // ow_locks.c
 void LockSetup(void);
@@ -195,6 +194,10 @@ void BUS_lock(const struct parsedname *pn);
 void BUS_unlock(const struct parsedname *pn);
 void BUS_lock_in(struct connection_in *in);
 void BUS_unlock_in(struct connection_in *in);
+void CHANNEL_lock_in(struct connection_in *in);
+void CHANNEL_unlock_in(struct connection_in *in);
+void PORT_lock_in(struct connection_in *in);
+void PORT_unlock_in(struct connection_in *in);
 
 /* API wrappers for swig and owcapi */
 enum restart_init { restart_if_repeat, continue_if_repeat, } ; // behavior if init called a second time

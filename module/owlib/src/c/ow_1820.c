@@ -309,6 +309,7 @@ static GOOD_OR_BAD OW_temperature_ready( enum temperature_problem_flag accept_85
 
 static GOOD_OR_BAD OW_read_piostate(UINT * piostate, const struct parsedname *pn) ;
 static _FLOAT OW_masked_temperature( BYTE * data, struct tempresolution * Resolution ) ;
+static GOOD_OR_BAD OW_poll_convert(const struct parsedname *pn) ;
 
 static GOOD_OR_BAD OW_r_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn) ;
 static GOOD_OR_BAD OW_w_mem( BYTE * data, size_t size, off_t offset, struct parsedname * pn ) ;
@@ -813,13 +814,20 @@ static GOOD_OR_BAD OW_temperature_ready( enum temperature_problem_flag accept_85
 		RETURN_BAD_IF_BAD(BUS_transaction(tunpowered, pn)) ;
 	} else if ( must_convert || !simul_good ) {
 		// No Simultaneous active, so need to "convert"
-		// powered, so release bus immediately after issuing convert
-		GOOD_OR_BAD ret;
-		LEVEL_DEBUG("Powered temperature conversion");
-		BUSLOCK(pn);
-		ret = BUS_transaction_nolock(tpowered, pn) || FS_poll_convert(pn);
-		BUSUNLOCK(pn);
-		RETURN_BAD_IF_BAD(ret)
+		if ( pn->selected_connection->iroutines.flags & ADAP_FLAG_unlock_during_delay ) {
+			// better to put in delay on this channel and allow other channels to work
+			LEVEL_DEBUG("Powered temperature conversion just one channel -- %d msec", delay);
+			// If not powered, no Simultaneous for this chip
+			RETURN_BAD_IF_BAD(BUS_transaction(tunpowered, pn)) ;
+		} else {
+			// powered, so poll bus for faster conversion
+			GOOD_OR_BAD ret;
+			LEVEL_DEBUG("Powered temperature conversion -- poll for completion");
+			BUSLOCK(pn);
+			ret = BUS_transaction_nolock(tpowered, pn) || OW_poll_convert(pn);
+			BUSUNLOCK(pn);
+			RETURN_BAD_IF_BAD(ret)
+		}
 	} else {
 		// valid simultaneous, just delay if needed
 		RETURN_BAD_IF_BAD( FS_Test_Simultaneous( SlaveSpecificTag(S_T), delay, pn)) ;
@@ -1055,7 +1063,7 @@ static enum eDie OW_die(const struct parsedname *pn)
 
 /* Powered temperature measurements -- need to poll line since it is held low during measurement */
 /* We check every 10 msec (arbitrary) up to 1.25 seconds */
-GOOD_OR_BAD FS_poll_convert(const struct parsedname *pn)
+static GOOD_OR_BAD OW_poll_convert(const struct parsedname *pn)
 {
 	int i;
 	BYTE p[1];

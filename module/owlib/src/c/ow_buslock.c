@@ -21,7 +21,7 @@ void BUS_lock(const struct parsedname *pn)
 {
 	if (pn) {
 		struct connection_in * in = pn->selected_connection ;
-		BUS_lock_in(in);
+		BUSLOCKIN(in);
 	}
 }
 
@@ -29,26 +29,35 @@ void BUS_unlock(const struct parsedname *pn)
 {
 	if (pn) {
 		struct connection_in * in = pn->selected_connection ;
-		BUS_unlock_in(in);
+		BUSUNLOCKIN(in);
 	}
 }
 
 void BUS_lock_in(struct connection_in *in)
 {
+	PORTLOCKIN(in) ;
+	CHANNELLOCKIN(in) ;
+}
+
+void BUS_unlock_in(struct connection_in *in)
+{
+	CHANNELUNLOCKIN(in) ;
+	PORTUNLOCKIN(in) ;
+}
+
+/* Lock just the bus master channel (and keep time statistics) */
+void CHANNEL_lock_in(struct connection_in *in)
+{
 	if (!in) {
 		return;
-	}
-	if ( in->pown != NULL ) {
-		if ( in->pown->connections > 1 ) {
-			_MUTEX_LOCK(in->pown->port_mutex);
-		}
 	}
 	_MUTEX_LOCK(in->bus_mutex);
 	timernow( &(in->last_lock) );	/* for statistics */
 	STAT_ADD1_BUS(e_bus_locks, in);
 }
 
-void BUS_unlock_in(struct connection_in *in)
+/* Unlock just the bus master channel (and keep time statistics) */
+void CHANNEL_unlock_in(struct connection_in *in)
 {
 	struct timeval tv;
 
@@ -70,6 +79,25 @@ void BUS_unlock_in(struct connection_in *in)
 	STATUNLOCK;
 
 	_MUTEX_UNLOCK(in->bus_mutex);
+}
+
+void PORT_lock_in(struct connection_in *in)
+{
+	if (!in) {
+		return;
+	}
+	if ( in->pown != NULL ) {
+		if ( in->pown->connections > 1 ) {
+			_MUTEX_LOCK(in->pown->port_mutex);
+		}
+	}
+}
+
+void PORT_unlock_in(struct connection_in *in)
+{
+	if (!in) {
+		return;
+	}
 	if ( in->pown != NULL ) {
 		if ( in->pown->connections > 1 ) {
 			_MUTEX_UNLOCK(in->pown->port_mutex);
