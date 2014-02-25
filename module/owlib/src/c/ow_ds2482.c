@@ -155,7 +155,6 @@ static void DS2482_setroutines(struct connection_in *in)
 /* Top level detect routine */
 GOOD_OR_BAD DS2482_detect(struct port_in *pin)
 {
-	struct connection_in * in = pin->first ;
 	struct address_pair ap ;
 	GOOD_OR_BAD gbResult ;
 	enum ds2482_address chip_num ;

@@ -326,15 +326,3 @@ static ZERO_OR_ERROR FS_r_single(struct one_wire_query *owq)
 	}
 	return OWQ_format_output_offset_and_size_z(ad, owq);
 }
-
-// Do cache for single item
-static void OW_single2cache(BYTE * sn, const struct parsedname *pn)
-{
-	struct dirblob db;
-	DirblobInit(&db);
-	DirblobAdd(sn, &db);
-	if (DirblobPure(&db)) {
-		Cache_Add_Dir(&db, pn);	// Directory cache
-	}
-	Cache_Add_Device(pn->selected_connection->index, sn);	// Device cache
-}

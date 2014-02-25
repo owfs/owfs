@@ -14,6 +14,7 @@ $Id$
 #include "ow_generic_read.h"
 
 /* ------- Prototypes ----------- */
+/*
 static ZERO_OR_ERROR UnpagedRead( struct generic_read * gread, struct one_wire_query *owq )
 {
 	size_t size = OWQ_size(owq) ;
@@ -40,6 +41,7 @@ static ZERO_OR_ERROR UnpagedRead( struct generic_read * gread, struct one_wire_q
 	owfree(p) ;
 	return 0 ;
 }
+*/
 
 ZERO_OR_ERROR Generic_Read( struct one_wire_query *owq)
 {
