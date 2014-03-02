@@ -24,7 +24,7 @@ struct one_wire_query * ALLtoBYTE(struct one_wire_query *owq_all)
 	}
 
 	for ( extension = 0 ; extension < elements ; ++extension ) {
-		UT_setbit( (BYTE *) &OWQ_U(owq_byte), extension, OWQ_array_Y(owq_all,extension) ) ;
+		UT_setbit_U( &OWQ_U(owq_byte), extension, OWQ_array_Y(owq_all,extension) ) ;
 	}
 	return owq_byte ;
 }	 
@@ -40,7 +40,7 @@ struct one_wire_query * BYTEtoALL(struct one_wire_query *owq_byte)
 	}
 
 	for ( extension = 0 ; extension < elements ; ++extension ) {
-		OWQ_array_Y(owq_all,extension) = UT_getbit( (BYTE *) &OWQ_U(owq_byte), extension ) ;
+		OWQ_array_Y(owq_all,extension) = UT_getbit_U( OWQ_U(owq_byte), extension ) ;
 	}
 	return owq_all ;
 }	 

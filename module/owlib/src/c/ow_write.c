@@ -654,7 +654,7 @@ static ZERO_OR_ERROR FS_write_as_bits( struct one_wire_query *owq_byte )
 	for ( extension = 0 ; extension < elements ; ++extension ) {
 		ZERO_OR_ERROR z ;
 		OWQ_pn(owq_bit).extension = extension ;
-		OWQ_Y(owq_bit) = UT_getbit( (BYTE *) &OWQ_U(owq_byte), extension ) ;
+		OWQ_Y(owq_bit) = UT_getbit_U( OWQ_U(owq_byte), extension ) ;
 		z = FS_write_owq( owq_bit ) ;
 		if ( z != 0 ) {
 			z_or_e = z ;
@@ -688,7 +688,7 @@ static ZERO_OR_ERROR FS_write_a_bit(struct one_wire_query *owq_bit)
 	
 	if ( owq_byte != NO_ONE_WIRE_QUERY ) {
 		if ( FS_read_local( owq_byte ) >= 0 ) {
-			UT_setbit( (BYTE *) &OWQ_U( owq_byte ), OWQ_pn(owq_bit).extension, OWQ_Y(owq_bit) ) ;
+			UT_setbit_U( &OWQ_U( owq_byte ), OWQ_pn(owq_bit).extension, OWQ_Y(owq_bit) ) ;
 			z_or_e = FS_write_owq( owq_byte ) ;
 		}
 		OWQ_destroy( owq_byte ) ;

@@ -13,8 +13,6 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
-// #define UT_getbit(buf, loc)  ( ( (buf)[(loc)>>3]>>((loc)&0x7) ) &0x01 )
-
 /* Set and get a bit from a binary buffer */
 /* Robin Gilks discovered that this is not endian-safe for setting bits in integers
  * so see UT_getbit_U and UT_getbit_U

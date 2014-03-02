@@ -589,7 +589,7 @@ static ZERO_OR_ERROR FS_read_all( struct one_wire_query *owq_all)
 				size_t extension;
 			
 				for ( extension=0 ; extension < elements ; ++extension ) {
-					OWQ_array_Y(owq_all,extension) = UT_getbit( (BYTE *) &OWQ_U(owq_byte), extension ) ;
+					OWQ_array_Y(owq_all,extension) = UT_getbit_U( OWQ_U(owq_byte), extension ) ;
 				}
 				ret = 0 ;
 			}
@@ -647,7 +647,7 @@ static ZERO_OR_ERROR FS_read_in_parts( struct one_wire_query *owq_all )
 			return -EINVAL ;
 		}
 		for (extension = 0; extension < elements; ++extension) {
-			OWQ_array_Y(owq_all,extension) = UT_getbit( (BYTE *) &OWQ_U(owq_part), extension ) ;
+			OWQ_array_Y(owq_all,extension) = UT_getbit_U( OWQ_U(owq_part), extension ) ;
 		}
 		OWQ_destroy( owq_part ) ;
 		return 0 ;
@@ -715,7 +715,7 @@ static ZERO_OR_ERROR FS_read_all_bits(struct one_wire_query *owq_byte)
 			OWQ_destroy(owq_bit);
 			return -EINVAL;
 		}
-		UT_setbit( (BYTE *) &OWQ_U(owq_byte), extension, OWQ_Y(owq_bit) ) ;
+		UT_setbit_U( &OWQ_U(owq_byte), extension, OWQ_Y(owq_bit) ) ;
 	}
 
 	OWQ_destroy(owq_bit);
@@ -736,7 +736,7 @@ static ZERO_OR_ERROR FS_read_a_bit( struct one_wire_query *owq_bit )
 
 	/* read the UINT */
 	if ( FS_read_owq(owq_byte) >= 0) {
-		OWQ_Y(owq_bit) = UT_getbit((void *) &OWQ_U(owq_byte), pn->extension) ;
+		OWQ_Y(owq_bit) = UT_getbit_U( OWQ_U(owq_byte), pn->extension) ;
 		z_or_e = 0 ;
 	}
 
