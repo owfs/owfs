@@ -100,6 +100,8 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_fs_crc8.c       \
                ow_fs_id.c         \
                ow_fs_type.c       \
+               ow_getbit.c        \
+               ow_getbit_U.c      \
                ow_ha5.c           \
                ow_ha7.c           \
                ow_ha7e.c          \

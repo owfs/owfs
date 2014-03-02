@@ -93,10 +93,16 @@ char num2char(const BYTE n);
 void num2string(char *s, const BYTE n);
 void string2bytes(const char *str, BYTE * b, const int bytes);
 void bytes2string(char *str, const BYTE * b, const int bytes);
-int UT_getbit(const BYTE * buf, const int loc);
-int UT_get2bit(const BYTE * buf, const int loc);
-void UT_setbit(BYTE * buf, const int loc, const int bit);
-void UT_set2bit(BYTE * buf, const int loc, const int bits);
+
+int UT_getbit(const BYTE * buf, int loc);
+void UT_setbit(BYTE * buf, int loc, int bit);
+
+int UT_getbit_U(UINT U, int loc);
+void UT_setbit_U(UINT * U, int loc, int bit);
+
+int UT_get2bit(const BYTE * buf, int loc);
+void UT_set2bit(BYTE * buf, int loc, int bits);
+
 void UT_fromDate(const _DATE D, BYTE * data);
 _DATE UT_toDate(const BYTE * date);
 

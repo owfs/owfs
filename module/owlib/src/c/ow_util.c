@@ -69,42 +69,6 @@ void bytes2string(char *str, const BYTE * b, const int bytes)
 	}
 }
 
-// #define UT_getbit(buf, loc)  ( ( (buf)[(loc)>>3]>>((loc)&0x7) ) &0x01 )
-int UT_getbit(const BYTE * buf, const int loc)
-{
-	return (((buf[loc >> 3]) >> (loc & 0x7)) & 0x01);
-}
-int UT_get2bit(const BYTE * buf, const int loc)
-{
-	return (((buf[loc >> 2]) >> ((loc & 0x3) << 1)) & 0x03);
-}
-void UT_setbit(BYTE * buf, const int loc, const int bit)
-{
-	if (bit) {
-		buf[loc >> 3] |= 0x01 << (loc & 0x7);
-	} else {
-		buf[loc >> 3] &= ~(0x01 << (loc & 0x7));
-	}
-}
-void UT_set2bit(BYTE * buf, const int loc, const int bits)
-{
-	BYTE *p = &buf[loc >> 2];
-	switch (loc & 3) {
-	case 0:
-		*p = (*p & 0xFC) | bits;
-		return;
-	case 1:
-		*p = (*p & 0xF3) | (bits << 2);
-		return;
-	case 2:
-		*p = (*p & 0xCF) | (bits << 4);
-		return;
-	case 3:
-		*p = (*p & 0x3F) | (bits << 6);
-		return;
-	}
-}
-
 void UT_fromDate(const _DATE d, BYTE * data)
 {
 	data[0] = BYTE_MASK(d);
