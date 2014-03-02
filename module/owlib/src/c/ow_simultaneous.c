@@ -75,7 +75,7 @@ DeviceEntry(simultaneous, simultaneous, NO_GENERIC_READ, NO_GENERIC_WRITE);
 #define _1W_READ_POWERMODE        0xB4
 
 /* ------- Functions ------------ */
-static void OW_single2cache(BYTE * sn, const struct parsedname *pn2);
+//static void OW_single2cache(BYTE * sn, const struct parsedname *pn2);
 
 GOOD_OR_BAD FS_Test_Simultaneous( const struct internal_prop *ip, UINT delay, const struct parsedname * pn)
 {

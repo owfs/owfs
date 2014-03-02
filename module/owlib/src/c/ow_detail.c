@@ -83,5 +83,6 @@ GOOD_OR_BAD Detail_Add( const char *arg )
 			DirblobAdd( length, &(DD.length) ) ;
 		}
 	}
+	return gbGOOD ;
 }
 
