@@ -341,7 +341,7 @@ static void Bad400(FILE * out, const enum content_type ct)
 			break ;
 		case ct_json:
 			HTTPstart(out, "400 Bad Request", ct_json);
-			fprintf(out, "null");
+			fprintf(out, "{}");
 			break ;
 		default:
 			HTTPstart(out, "400 Bad Request", ct_html);
@@ -349,8 +349,8 @@ static void Bad400(FILE * out, const enum content_type ct)
 			HTTPheader(out, "Unrecognized Request");
 			fprintf(out, "<P>The 1-wire web server is carefully constrained for security and stability. Your requested web page is not recognized.</P>");
 			fprintf(out, "<P>Navigate from the <A HREF=\"/\">Main page</A> for best results.</P>");
+			HTTPfoot(out);
 	}
-	HTTPfoot(out);
 }
 
 static void Bad404(FILE * out, const enum content_type ct)
@@ -363,7 +363,7 @@ static void Bad404(FILE * out, const enum content_type ct)
 			break ;
 		case ct_json:
 			HTTPstart(out, "404 Not Found", ct_json);
-			fprintf(out, "null");
+			fprintf(out, "{}");
 			break ;
 		default:
 			HTTPstart(out, "404 Not Found", ct_html);
@@ -371,9 +371,9 @@ static void Bad404(FILE * out, const enum content_type ct)
 			HTTPheader(out, "Nonexistent Device");
 			fprintf(out, "<P>The 1-wire web server is carefully constrained for security and stability. Your requested device is not recognized.</P>");
 			fprintf(out, "<P>Navigate from the <A HREF=\"/\">Main page</A> for best results.</P>");
-	}
-	HTTPfoot(out);
-}
+			HTTPfoot(out);
+}	}
+
 
 static void ReadToCRLF( FILE * out )
 {

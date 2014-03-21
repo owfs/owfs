@@ -628,7 +628,9 @@ static void ShowDeviceJson(FILE * out, struct parsedname *pn)
 		fprintf(out, "}" );
 	} else {					/* Single item */
 		//printf("single item path=%s\n", pn->path);
+		fprintf(out, "[ " ) ;		
 		ShowJson(out, pn);
+		fprintf(out, " ]" ) ;		
 	}
 }
 
