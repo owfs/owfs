@@ -438,17 +438,18 @@ static ZERO_OR_ERROR FS_r_Elabnet_version(struct one_wire_query *owq)
 	return OWQ_format_output_offset_and_size_z(res, owq);
 }
 
-SIZE_OR_ERROR ELABNET_SendCMD(const BYTE * tx, const size_t size, BYTE * rx, const size_t rxsize, struct connection_in * in, int tout);
+SIZE_OR_ERROR ELABNET_SendCMD(const BYTE * tx, size_t size, BYTE * rx, size_t rxsize, struct connection_in * in, int tout);
 
 /* List available features */
 static ZERO_OR_ERROR FS_r_Elabnet_features(struct one_wire_query *owq)
 {
 	struct connection_in * in = PN(owq)->selected_connection ;
-	struct parsedname *pn = PN(owq);
 	char res[256] = {0};
-	const char cmd_listlics[] = "ks\n";
-	
-	ELABNET_SendCMD(cmd_listlics, 3, res, sizeof(res), in, 500);
+	const BYTE cmd_listlics[] = "ks\n";
+
+	// some "magic" numbers -- 3 must be command length
+	// 500 meaning is unclear.
+	ELABNET_SendCMD(cmd_listlics, 3, (BYTE *) res, sizeof(res), in, 500);
 	return OWQ_format_output_offset_and_size_z(res, owq);
 }
 
@@ -456,23 +457,23 @@ static ZERO_OR_ERROR FS_r_Elabnet_features(struct one_wire_query *owq)
 ZERO_OR_ERROR FS_w_Elabnet_activationcode(struct one_wire_query *owq)
 {
 	struct connection_in * in = PN(owq)->selected_connection ;
-	struct parsedname *pn = PN(owq);
 	size_t size = OWQ_size(owq) ;
-	BYTE res[10];
-        BYTE * cmd_string = owmalloc( size+5 ) ;
-                        
-        if ( cmd_string == NULL ) {
-            return -ENOMEM ;
-        }
+	BYTE * cmd_string = owmalloc( size+5 ) ;
+					
+	if ( cmd_string == NULL ) {
+		return -ENOMEM ;
+	}
 
-        cmd_string[0] = 'k';
-        cmd_string[1] = 'a';
-        memcpy(&cmd_string[2], OWQ_buffer(owq), size ) ;
-        cmd_string[size+2] = '\r';
+	cmd_string[0] = 'k';
+	cmd_string[1] = 'a';
+	memcpy(&cmd_string[2], OWQ_buffer(owq), size ) ;
+	cmd_string[size+2] = '\r';
+	
+	// Writes from and to cmd_string
 	ELABNET_SendCMD(cmd_string, size + 3, cmd_string, size + 3, in, 500);
 
-        owfree(cmd_string) ;
-        return 0;
+	owfree(cmd_string) ;
+	return 0;
 }
 
 /* Read serialnumber */
@@ -480,6 +481,8 @@ static ZERO_OR_ERROR FS_r_Elabnet_serial(struct one_wire_query *owq)
 {
 	struct connection_in * in = PN(owq)->selected_connection ;
 	OWQ_U(owq) = in->master.elabnet.serial_number;
+	
+	return 0 ;
 }
 
 #ifdef DEBUG_DS2490
