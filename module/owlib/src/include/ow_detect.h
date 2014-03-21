@@ -57,6 +57,7 @@ GOOD_OR_BAD DS1410_detect(struct port_in * pin);
 
 GOOD_OR_BAD DS9097_detect(struct port_in * pin);
 GOOD_OR_BAD LINK_detect(struct port_in * pin);
+GOOD_OR_BAD ELABNET_detect(struct port_in * pin);
 GOOD_OR_BAD HA7E_detect(struct port_in * pin);
 GOOD_OR_BAD OWServer_Enet_detect(struct port_in * pin);
 GOOD_OR_BAD OWServer_Enet2_detect(struct port_in * pin);

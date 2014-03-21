@@ -72,6 +72,7 @@ enum adapter_type {
 	adapter_usb_monitor,
 	adapter_enet_monitor,
 	adapter_external,
+	adapter_elabnet,
 };
 
 enum e_reconnect {
