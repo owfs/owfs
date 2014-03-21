@@ -98,6 +98,22 @@ GOOD_OR_BAD ARG_Device(const char *arg)
 	return ARG_Serial(arg);
 }
 
+GOOD_OR_BAD ARG_Elabnet(const char *arg)
+{
+	struct port_in * pin = NewPort( NULL ) ;
+	struct connection_in * in ;
+	if ( pin == NULL ) {
+		return gbBAD;
+	}
+	in = pin->first ;
+	if (in == NO_CONNECTION) {
+		return gbBAD;
+	}
+	arg_data(arg,pin) ;
+	pin->busmode = bus_elabnet ; // elabnet
+	return Serial_or_telnet( arg, in ) ;
+}
+
 GOOD_OR_BAD ARG_EtherWeather(const char *arg)
 {
 	struct port_in * pin = NewPort( NULL ) ;
