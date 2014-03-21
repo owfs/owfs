@@ -86,6 +86,7 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_ds9490.c        \
                ow_eds.c           \
                ow_eeef.c          \
+               ow_elabnet.c       \
                ow_enet_discover.c \
                ow_enet_monitor.c  \
                ow_eprom_write.c   \
