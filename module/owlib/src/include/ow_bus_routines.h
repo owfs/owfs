@@ -123,7 +123,7 @@ struct interface_routines {
 #define ADAP_FLAG_presence_from_dirblob 0x00004000
 
 // Adapter allows power-byte not to block other channels
-#define ADAP_FLAG_unlock_during_delay 0x00008000
+#define ADAP_FLAG_unlock_during_delay 0x00010000
 
 
 // Adapter is a sham.
