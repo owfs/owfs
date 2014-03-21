@@ -208,6 +208,13 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct port_in * pin )
 		}
 		break;
 
+	case bus_elabnet:
+		if ( BAD( ELABNET_detect(pin) )) {
+			LEVEL_CONNECT("Cannot open ELABNET bus master at %s", DEVICENAME(in));
+			return gbBAD ;
+		}
+		break;
+
 	case bus_etherweather:
 		if ( BAD( EtherWeather_detect(pin) )) {
 			LEVEL_CONNECT("Cannot detect an EtherWeather server on %s", DEVICENAME(in));
