@@ -197,6 +197,7 @@ void ow_help_device(void)
 	"  --serial_flextime | --serial_regulartime (timing adjustments for DS2480B)\n"
 	"  --straight_polarity | --reverse_polarity (for DS2480B based bus master)\n"
 	"  --LINK=dev      Serial LINK bus master (non-emulation)\n"
+	"  --elabnet=dev   Elabnet with serial address\n"
 	"  --HA3=dev       Serial HA3 bus master\n"
 	"  --HA4B=dev      Serial HA4B bus master\n"
 	"  --HA5=dev:ah     Serial HA5 bus master Channel a and h ( of a-z))\n"
