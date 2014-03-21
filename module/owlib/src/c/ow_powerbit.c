@@ -47,17 +47,7 @@ GOOD_OR_BAD BUS_PowerBit(BYTE data, BYTE * resp, UINT delay, const struct parsed
 
 	if ( in->iroutines.PowerBit !=NO_POWERBIT_ROUTINE ) {
 		// use available bit level routine
-		if (in->iroutines.flags & ADAP_FLAG_unlock_during_delay) {
-			/* Can unlock port (but not channel) */
-			PORTUNLOCKIN(in);
-			ret = (in->iroutines.PowerBit) (data, resp, delay, pn);
-			CHANNELUNLOCKIN(in); // have to release channel, too
-			// now need to relock for further work in transaction
-			BUSLOCKIN(in);
-		} else {
-			// adapter doesn't support other channels during power		
-			ret = (in->iroutines.PowerBit) (data, resp, delay, pn);
-		}
+		ret = (in->iroutines.PowerBit) (data, resp, delay, pn);
 	} else { // send a bit and delay (use normal pull-up for power)
 		if (in->iroutines.flags & ADAP_FLAG_unlock_during_delay) {
 			ret = BUS_sendback_bits(&data, resp, 1, pn);

@@ -42,18 +42,7 @@ GOOD_OR_BAD BUS_PowerByte(BYTE data, BYTE * resp, UINT delay, const struct parse
 
 	if ( in->iroutines.PowerByte != NO_POWERBYTE_ROUTINE ) {
 		// use available byte level routine
-		if (in->iroutines.flags & ADAP_FLAG_unlock_during_delay) {
-			/* Can unlock port (but not channel) */
-			PORTUNLOCKIN(in);
-			// other channels are accessible, but this channel is still locked
-			ret = (in->iroutines.PowerByte) (data, resp, delay, pn);
-			CHANNELUNLOCKIN(in); // have to release channel, too
-			// now need to relock for further work in transaction
-			BUSLOCKIN(in);
-		} else {
-			// adapter doesn't support other channels during power		
-			ret = (in->iroutines.PowerByte) (data, resp, delay, pn);
-		}
+		ret = (in->iroutines.PowerByte) (data, resp, delay, pn);
 	} else if ( in->iroutines.PowerBit != NO_POWERBIT_ROUTINE && in->iroutines.sendback_bits != NO_SENDBACKBITS_ROUTINE ) {
 		// use available bit level routine
 		BYTE sending[8];
