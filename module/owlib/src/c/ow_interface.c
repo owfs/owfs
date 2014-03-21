@@ -55,6 +55,13 @@ READ_FUNCTION(FS_elapsed);
 int DS9490_getstatus(BYTE * buffer, int readlen, const struct parsedname *pn);
 #endif
 
+/* Elabnet functions */
+READ_FUNCTION(FS_r_Elabnet_version);
+READ_FUNCTION(FS_r_Elabnet_serial);
+READ_FUNCTION(FS_r_Elabnet_channel);
+READ_FUNCTION(FS_r_Elabnet_features);
+READ_FUNCTION(FS_w_Elabnet_activationcode);
+
 static enum e_visibility VISIBLE_DS2482( const struct parsedname * pn )
 {
 	switch ( get_busmode(pn->selected_connection) ) {
@@ -80,6 +87,7 @@ static enum e_visibility VISIBLE_DS2480B( const struct parsedname * pn )
 	switch ( get_busmode(pn->selected_connection) ) {
 		case bus_serial:
 		case bus_xport:
+		case bus_elabnet:
 			return visible_now ;
 		default:
 			return visible_not_now ;
@@ -90,6 +98,16 @@ static enum e_visibility VISIBLE_HA5( const struct parsedname * pn )
 {
 	switch ( get_busmode(pn->selected_connection) ) {
 		case bus_ha5:
+			return visible_now ;
+		default:
+			return visible_not_now ;
+	}
+}
+
+static enum e_visibility VISIBLE_PBM( const struct parsedname * pn )
+{
+	switch ( get_busmode(pn->selected_connection) ) {
+		case bus_elabnet:
 			return visible_now ;
 		default:
 			return visible_not_now ;
@@ -135,6 +153,14 @@ static struct filetype interface_settings[] = {
 	{"ha5", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_HA5, NO_FILETYPE_DATA, },
 	{"ha5/checksum", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_yesno, FS_w_yesno, VISIBLE_HA5, {s:offsetof(struct connection_in,master.ha5.checksum), }, },
 	{"ha5/channel", 1, NON_AGGREGATE, ft_ascii, fc_static, FS_r_channel, NO_WRITE_FUNCTION, VISIBLE_HA5, NO_FILETYPE_DATA, },
+
+	/* Elabnet PBM */
+	{"PBM", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_PBM, NO_FILETYPE_DATA, },
+	{"PBM/port", 1, NON_AGGREGATE, ft_ascii, fc_static, FS_r_Elabnet_channel, NO_WRITE_FUNCTION, VISIBLE_PBM, NO_FILETYPE_DATA, },
+	{"PBM/firmware_version", 64, NON_AGGREGATE, ft_ascii, fc_static, FS_r_Elabnet_version, NO_WRITE_FUNCTION, VISIBLE_PBM, NO_FILETYPE_DATA, },
+	{"PBM/serial", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_Elabnet_serial, NO_WRITE_FUNCTION, VISIBLE_PBM, NO_FILETYPE_DATA, },
+	{"PBM/features", 256, NON_AGGREGATE, ft_ascii, fc_static, FS_r_Elabnet_features, NO_WRITE_FUNCTION, VISIBLE_PBM, NO_FILETYPE_DATA, },
+	{"PBM/activation_code", 128, NON_AGGREGATE, ft_ascii, fc_static,  NO_READ_FUNCTION, FS_w_Elabnet_activationcode, VISIBLE_PBM, NO_FILETYPE_DATA, },
 
 	{"i2c", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_DS2482, NO_FILETYPE_DATA, },
 	{"i2c/ActivePullUp", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_APU, FS_w_APU, VISIBLE_DS2482, NO_FILETYPE_DATA, },
@@ -332,6 +358,7 @@ static ZERO_OR_ERROR FS_r_baud(struct one_wire_query *owq)
 		case bus_link:
 		case bus_ha5:
 		case bus_ha7e:
+		case bus_elabnet:
 			OWQ_U(owq) = COM_BaudRate( in->pown->baud ) ;
 			return 0;
 		default:
@@ -345,6 +372,7 @@ static ZERO_OR_ERROR FS_w_baud(struct one_wire_query *owq)
 	switch ( get_busmode(in) ) {
 		case bus_serial:
 		case bus_link:
+		case bus_elabnet:
 			in->pown->baud = COM_MakeBaud( (speed_t) OWQ_U(owq) ) ;
 			++in->changed_bus_settings ;
 			break ;
@@ -389,6 +417,69 @@ static ZERO_OR_ERROR FS_w_PPM(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_r_channel(struct one_wire_query *owq)
 {
 	return OWQ_format_output_offset_and_size( (char *) &(PN(owq)->selected_connection->master.ha5.channel), 1, owq);
+}
+
+/* For PBM channel -- a single letter */
+static ZERO_OR_ERROR FS_r_Elabnet_channel(struct one_wire_query *owq)
+{
+	char port = PN(owq)->selected_connection->master.elabnet.channel + '1';
+	return OWQ_format_output_offset_and_size(&port, 1, owq);
+}
+
+/* PBM Firmware version */
+static ZERO_OR_ERROR FS_r_Elabnet_version(struct one_wire_query *owq)
+{
+	struct connection_in * in = PN(owq)->selected_connection ;
+	int majorvers = in->master.elabnet.version >> 16;
+	int minorvers = in->master.elabnet.version & 0xffff;
+	char res[64];
+	res[0] = '\0';
+	sprintf(res, "%d.%3.3d", majorvers, minorvers);
+	return OWQ_format_output_offset_and_size_z(res, owq);
+}
+
+SIZE_OR_ERROR ELABNET_SendCMD(const BYTE * tx, const size_t size, BYTE * rx, const size_t rxsize, struct connection_in * in, int tout);
+
+/* List available features */
+static ZERO_OR_ERROR FS_r_Elabnet_features(struct one_wire_query *owq)
+{
+	struct connection_in * in = PN(owq)->selected_connection ;
+	struct parsedname *pn = PN(owq);
+	char res[256] = {0};
+	const char cmd_listlics[] = "ks\n";
+	
+	ELABNET_SendCMD(cmd_listlics, 3, res, sizeof(res), in, 500);
+	return OWQ_format_output_offset_and_size_z(res, owq);
+}
+
+/* Add new license into device */
+ZERO_OR_ERROR FS_w_Elabnet_activationcode(struct one_wire_query *owq)
+{
+	struct connection_in * in = PN(owq)->selected_connection ;
+	struct parsedname *pn = PN(owq);
+	size_t size = OWQ_size(owq) ;
+	BYTE res[10];
+        BYTE * cmd_string = owmalloc( size+5 ) ;
+                        
+        if ( cmd_string == NULL ) {
+            return -ENOMEM ;
+        }
+
+        cmd_string[0] = 'k';
+        cmd_string[1] = 'a';
+        memcpy(&cmd_string[2], OWQ_buffer(owq), size ) ;
+        cmd_string[size+2] = '\r';
+	ELABNET_SendCMD(cmd_string, size + 3, cmd_string, size + 3, in, 500);
+
+        owfree(cmd_string) ;
+        return 0;
+}
+
+/* Read serialnumber */
+static ZERO_OR_ERROR FS_r_Elabnet_serial(struct one_wire_query *owq)
+{
+	struct connection_in * in = PN(owq)->selected_connection ;
+	OWQ_U(owq) = in->master.elabnet.serial_number;
 }
 
 #ifdef DEBUG_DS2490
