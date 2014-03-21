@@ -48,6 +48,7 @@ enum bus_mode {
 	bus_tester,
 	bus_mock,
 	bus_link,
+	bus_elabnet,
 	bus_etherweather,
 	bus_bad,
 	bus_w1,
