@@ -114,7 +114,11 @@ static SIZE_OR_ERROR OWQ_parse_output_integer(struct one_wire_query *owq)
 	char c[PROPERTY_LENGTH_INTEGER + 2];
 
 	UCLIBCLOCK;
-	len = snprintf(c, PROPERTY_LENGTH_INTEGER + 1, "%*d", PROPERTY_LENGTH_INTEGER, OWQ_I(owq));
+	if ( ShouldTrim(PN(owq)) ) {
+		len = snprintf(c, PROPERTY_LENGTH_INTEGER + 1, "%1d", OWQ_I(owq));
+	} else {
+		len = snprintf(c, PROPERTY_LENGTH_INTEGER + 1, "%*d", PROPERTY_LENGTH_INTEGER, OWQ_I(owq));
+	}
 	UCLIBCUNLOCK;
 	if ((len < 0) || ((size_t) len > PROPERTY_LENGTH_INTEGER)) {
 		return -EMSGSIZE;
@@ -130,7 +134,11 @@ static SIZE_OR_ERROR OWQ_parse_output_unsigned(struct one_wire_query *owq)
 	char c[PROPERTY_LENGTH_UNSIGNED + 2];
 
 	UCLIBCLOCK;
-	len = snprintf(c, PROPERTY_LENGTH_UNSIGNED + 1, "%*u", PROPERTY_LENGTH_UNSIGNED, OWQ_U(owq));
+	if ( ShouldTrim(PN(owq)) ) {
+		len = snprintf(c, PROPERTY_LENGTH_UNSIGNED + 1, "%1u", OWQ_U(owq));
+	} else {
+		len = snprintf(c, PROPERTY_LENGTH_UNSIGNED + 1, "%*u", PROPERTY_LENGTH_UNSIGNED, OWQ_U(owq));
+	}
 	UCLIBCUNLOCK;
 	if ((len < 0) || ((size_t) len > PROPERTY_LENGTH_UNSIGNED)) {
 		return -EMSGSIZE;
@@ -162,7 +170,11 @@ static SIZE_OR_ERROR OWQ_parse_output_float(struct one_wire_query *owq)
 	}
 
 	UCLIBCLOCK;
-	len = snprintf(c, PROPERTY_LENGTH_FLOAT + 1, "%*G", PROPERTY_LENGTH_FLOAT, F);
+	if ( ShouldTrim(PN(owq)) ) {
+		len = snprintf(c, PROPERTY_LENGTH_FLOAT + 1, "%1G", F);
+	} else {
+		len = snprintf(c, PROPERTY_LENGTH_FLOAT + 1, "%*G", PROPERTY_LENGTH_FLOAT, F);
+	}
 	UCLIBCUNLOCK;
 	if ((len < 0) || ((size_t) len > PROPERTY_LENGTH_FLOAT)) {
 		return -EMSGSIZE;
@@ -186,7 +198,7 @@ static SIZE_OR_ERROR OWQ_parse_output_yesno(struct one_wire_query *owq)
 		return -EMSGSIZE;
 	}
 	OWQ_buffer(owq)[0] = ((OWQ_Y(owq) & 0x1) == 0) ? '0' : '1';
-	return PROPERTY_LENGTH_YESNO;
+	return ShouldTrim(PN(owq))? 1 : PROPERTY_LENGTH_YESNO;
 }
 
 ZERO_OR_ERROR OWQ_format_output_offset_and_size_z(const char *string, struct one_wire_query *owq)
