@@ -354,6 +354,8 @@ static uint32_t SetupSemi(void)
 	sg |= uncached ? UNCACHED : 0 ;
 	// Unaliased
 	sg |= unaliased ? 0 : ALIAS_REQUEST ;
+	// Trim
+	sg |= trim ? 0 : TRIM ;
 	// OWNet flag or Presence check
 	sg |= OWNET ;
 

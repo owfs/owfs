@@ -190,6 +190,7 @@ struct global {
 	int max_clients;			// for ftp
 	int autoserver;
 	int quiet ;
+	int trim ;
 	/* Special parameter to trigger William Robison <ibutton@n952.dyndns.ws> timings */
 	int timeout_network ;
 
@@ -263,6 +264,7 @@ extern int size_of_data ;
 extern int offset_into_data ;
 extern int uncached ;
 extern int unaliased ;
+extern int trim ;
 extern enum temp_type temperature_scale ;
 extern enum pressure_type pressure_scale ;
 extern enum deviceformat device_format ;
@@ -292,6 +294,7 @@ int ServerPresence(ASCII * path);
 #define DEVFORMAT_MASK              ( (UINT) 0xFF000000 )
 #define DEVFORMAT_BIT  24
 #define UNCACHED                    ( (UINT) 0x00000020 )
+#define TRIM                        ( (UINT) 0x00000040 )
 #define OWNET                       ( (UINT) 0x00000100 )
 
 #define PRINT_ERROR(...)		while ( ! Globals.quiet ) { fprintf( stderr, __VA_ARGS__ ) ; break ; }

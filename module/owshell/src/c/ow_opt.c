@@ -20,6 +20,7 @@ int size_of_data = -1 ;
 int offset_into_data = 0 ;
 int uncached = 0 ;
 int unaliased = 0 ;
+int trim = 0 ;
 enum temp_type temperature_scale = temp_celsius ;
 enum pressure_type pressure_scale = pressure_mbar ;
 enum deviceformat device_format = fdi ;
@@ -62,6 +63,9 @@ const struct option owopts_long[] = {
 
 	{"unaliased", no_argument, &unaliased, 1 },
 	{"aliased", no_argument, &unaliased, 0 },
+
+	{"trim", no_argument, &trim, 1 },
+	{"TRIM", no_argument, &trim, 1 },
 
 	{"uncached", no_argument, &uncached, 1 },
 	{"cached", no_argument, &uncached, 0 },
