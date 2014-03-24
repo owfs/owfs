@@ -125,7 +125,6 @@ enum ePS_state {
 	ePS_reconnection  = 0x0100,
 	ePS_unaliased     = 0x0200,
 	ePS_json          = 0x0400,
-	ePS_trim          = 0x0800,
 };
 
 struct parsedname {
@@ -194,6 +193,8 @@ struct parsedname {
 #define   SetReconnect(pn)    do { ((pn)->state)|=ePS_reconnection; } while(0)
 
 #define     InSafeMode(pn)    ( (((pn)->control_flags) & SAFEMODE ) != 0 )
+
+#define     ShouldTrim(pn)    ( (((pn)->control_flags) & TRIM ) != 0 )
 
 #define KnownBus(pn)          ((((pn)->state) & ePS_bus) != 0 )
 #define UnsetKnownBus(pn)           do { (pn)->state &= ~ePS_bus; \
