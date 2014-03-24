@@ -50,6 +50,7 @@ static char * GetPostPath( FILE * out ) ;
 int handle_socket(FILE * out)
 {
 	enum http_return http_code ;
+	enum content_type pmp = ct_html;
 
 	struct urlparse up;
 
@@ -118,6 +119,17 @@ int handle_socket(FILE * out)
 			ReadToCRLF(out) ;
 			http_code = http_400 ;
 		}
+		switch ( http_code ) {
+			case http_400:
+			case http_404:
+				// need to call this before freeing up.file
+				pmp = PoorMansParser(up.file) ;
+				break ;
+			default:
+				// not an error
+				break ;
+		}
+		// allocated by getline
 		free(up.line) ;
 	} else {
 		LEVEL_DEBUG("No http data.");
@@ -133,10 +145,10 @@ int handle_socket(FILE * out)
 			Favicon(out);
 			break ;
 		case http_400:
-			Bad400(out,PoorMansParser(up.file));
+			Bad400(out,pmp);
 			break ;
 		case http_404:
-			Bad404(out,PoorMansParser(up.file));
+			Bad404(out,pmp);
 			break ;
 		case http_dir:
 			ShowDir(out, pn);
@@ -481,16 +493,22 @@ static int GetPostData( char * boundary, struct memblob * mb, FILE * out )
 enum content_type PoorMansParser( char * bad_url )
 {
 	if ( bad_url == NULL ) {
+		LEVEL_DEBUG("Error on http request assume html");
 		return ct_html ;
 	} else if ( strstr( bad_url, "json" ) != NULL ) {
+		LEVEL_DEBUG("Error on http request <%s> assume json",bad_url);
 		return ct_json ;
 	} else if ( strstr( bad_url, "JSON" ) != NULL ) {
+		LEVEL_DEBUG("Error on http request <%s> assume json",bad_url);
 		return ct_json ;
 	} else if ( strstr( bad_url, "text" ) != NULL ) {
+		LEVEL_DEBUG("Error on http request <%s> assume text",bad_url);
 		return ct_text ;
 	} else if ( strstr( bad_url, "TEXT" ) != NULL ) {
+		LEVEL_DEBUG("Error on http request <%s> assume text",bad_url);
 		return ct_text ;
 	}
+	LEVEL_DEBUG("Error on http request <%s> assume html",bad_url);
 	return ct_html ;
 }
 			
