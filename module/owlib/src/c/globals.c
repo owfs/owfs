@@ -125,8 +125,10 @@ void SetLocalControlFlags( void )
 	LocalControlFlags |= (Globals.temp_scale) << TEMPSCALE_BIT ;
 	// Uncached
 	LocalControlFlags |= Globals.uncached ? UNCACHED : 0 ;
-	// Unaliased
-	LocalControlFlags |= Globals.unaliased ? 0 : ALIAS_REQUEST ;
+	// Uncached
+	LocalControlFlags |= Globals.uncached ? UNCACHED : 0 ;
+	// Trim
+	LocalControlFlags |= Globals.trim ? 0 : TRIM ;
 	// OWNet flag or Presence check
 	LocalControlFlags |= OWNET ;
 	CONTROLFLAGSUNLOCK;
