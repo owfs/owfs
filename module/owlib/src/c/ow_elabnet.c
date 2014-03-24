@@ -151,7 +151,7 @@ static GOOD_OR_BAD ELABNET_detect_serial(struct connection_in * in)
 	    sscanf(search+1, "%d", &serial_number);
 	}
 
-	pin->baud = B230400;
+	pin->baud = B115200;
 	ELABNET_set_baud(in);
 
 	/* read more info from device */
