@@ -55,6 +55,7 @@ READ_FUNCTION(FS_pid);
 READ_FUNCTION(FS_in);
 READ_FUNCTION(FS_out);
 READ_FUNCTION(FS_define);
+READ_FUNCTION(FS_trim);
 
 /* -------- Structures ---------- */
 /* special entry -- picked off by parsing before filetypes tried */
@@ -82,6 +83,7 @@ static struct filetype sys_configure[] = {
 	{"i2c", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_integer, fc_static, FS_define, NO_WRITE_FUNCTION, VISIBLE, {i:OW_I2C}, },
 	{"DebugInfo", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_integer, fc_static, FS_define, NO_WRITE_FUNCTION, VISIBLE, {i:OW_DEBUG}, },
 	{"zeroconf", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_integer, fc_static, FS_define, NO_WRITE_FUNCTION, VISIBLE, {i:1}, },
+	{"trim", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_trim, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 };
 struct device d_sys_configure = { "configuration", "configuration", ePN_system,
 	COUNT_OF_FILETYPES(sys_configure),
@@ -102,6 +104,12 @@ static ZERO_OR_ERROR FS_pidfile(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_pid(struct one_wire_query *owq)
 {
 	OWQ_U(owq) = getpid();
+	return 0;
+}
+
+static ZERO_OR_ERROR FS_trim(struct one_wire_query *owq)
+{
+	OWQ_Y(owq) = ShouldTrim(PN(owq));
 	return 0;
 }
 
