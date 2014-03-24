@@ -125,6 +125,7 @@ enum ePS_state {
 	ePS_reconnection  = 0x0100,
 	ePS_unaliased     = 0x0200,
 	ePS_json          = 0x0400,
+	ePS_trim          = 0x0800,
 };
 
 struct parsedname {
@@ -159,6 +160,7 @@ struct parsedname {
 #define ALIAS_REQUEST               ( (UINT) 0x00000008 )
 #define SAFEMODE                    ( (UINT) 0x00000010 )
 #define UNCACHED                    ( (UINT) 0x00000020 )
+#define TRIM                        ( (UINT) 0x00000040 )
 #define OWNET                       ( (UINT) 0x00000100 )
 #define TEMPSCALE_MASK              ( (UINT) 0x00030000 )
 #define TEMPSCALE_BIT      16
