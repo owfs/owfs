@@ -92,6 +92,7 @@ struct global Globals = {
 	.no_get = 0,
 	.no_persistence = 0,
 	.eightbit_serial = 0,
+	.trim = 0, // don't whitespace trim results by default
 	.zero = zero_unknown ,
 	.i2c_APU = 1 ,
 	.i2c_PPM = 0 , // to prevent confusing the DS2483

@@ -276,6 +276,8 @@ const struct option owopts_long[] = {
 	{"no_presencepulsemasking", no_argument, &Globals.i2c_PPM, 0},
 	{"no_PPM", no_argument, &Globals.i2c_PPM, 0},
 	{"no_ppm", no_argument, &Globals.i2c_PPM, 0},
+	{"trim", no_argument, &Globals.trim, 1},
+	{"TRIM", no_argument, &Globals.trim, 1},
 	{"detail", required_argument, NO_LINKED_VAR, e_detail},	/* slave detail */
 	{"details", required_argument, NO_LINKED_VAR, e_detail},	/* slave detail */
 	{0, 0, 0, 0},

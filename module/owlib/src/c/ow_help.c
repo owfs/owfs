@@ -100,6 +100,8 @@ void ow_help_temperature(void)
 	"\n"
 	" Pressure scale\n"
 	"  --atm --mbar --inHg --mmHg --Pa --psi (mbar is the default)\n"
+	"\n"
+	"  --trim              remove extra spaces from numerical values\n"
 	);
 }
 

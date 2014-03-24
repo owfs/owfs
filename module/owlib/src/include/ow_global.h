@@ -121,6 +121,7 @@ struct global {
 	int no_get;
 	int no_persistence;
 	int eightbit_serial;
+	int trim;
 	enum zero_support zero ;
 	int i2c_APU ;
 	int i2c_PPM ;
