@@ -147,11 +147,8 @@ const struct option owopts_long[] = {
 	{"fake", required_argument, NO_LINKED_VAR, e_fake},	/* Fake */
 	{"link", required_argument, NO_LINKED_VAR, e_link},	/* link in ascii mode */
 	{"LINK", required_argument, NO_LINKED_VAR, e_link},	/* link in ascii mode */
-	{"elab", required_argument, NO_LINKED_VAR, e_elabnet}, /* Dirk Opfer's elabnet bus master */
-	{"ELAB", required_argument, NO_LINKED_VAR, e_elabnet}, /* Dirk Opfer's elabnet bus master */
-	{"elabnet", required_argument, NO_LINKED_VAR, e_elabnet}, /* Dirk Opfer's elabnet bus master */
-	{"Elabnet", required_argument, NO_LINKED_VAR, e_elabnet}, /* Dirk Opfer's elabnet bus master */
-	{"ELABNET", required_argument, NO_LINKED_VAR, e_elabnet}, /* Dirk Opfer's elabnet bus master */
+	{"PBM", required_argument, NO_LINKED_VAR, e_pbm}, /* Dirk Opfer's elabnet "power bus master" */
+	{"pbm", required_argument, NO_LINKED_VAR, e_pbm}, /* Dirk Opfer's elabnet "power bus master" */
 	{"HA3", required_argument, NO_LINKED_VAR, e_ha3},
 	{"ha3", required_argument, NO_LINKED_VAR, e_ha3},
 	{"HA4B", required_argument, NO_LINKED_VAR, e_ha4b},
@@ -759,7 +756,7 @@ GOOD_OR_BAD owopt(const int option_char, const char *arg)
 		return ARG_Link(arg);
 	case e_passive:
 		return ARG_Passive("Passive", arg);
-	case e_elabnet:
+	case e_pbm:
 		return ARG_PBM(arg);
 	case e_ha3:
 		return ARG_Passive("HA3", arg);
