@@ -355,7 +355,7 @@ static uint32_t SetupSemi(void)
 	// Unaliased
 	sg |= unaliased ? 0 : ALIAS_REQUEST ;
 	// Trim
-	sg |= trim ? 0 : TRIM ;
+	sg |= trim ? TRIM : 0 ;
 	// OWNet flag or Presence check
 	sg |= OWNET ;
 
