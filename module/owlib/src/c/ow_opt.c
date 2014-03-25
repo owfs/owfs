@@ -760,7 +760,7 @@ GOOD_OR_BAD owopt(const int option_char, const char *arg)
 	case e_passive:
 		return ARG_Passive("Passive", arg);
 	case e_elabnet:
-		return ARG_Elabnet(arg);
+		return ARG_PBM(arg);
 	case e_ha3:
 		return ARG_Passive("HA3", arg);
 	case e_ha4b:

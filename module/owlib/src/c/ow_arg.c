@@ -98,7 +98,7 @@ GOOD_OR_BAD ARG_Device(const char *arg)
 	return ARG_Serial(arg);
 }
 
-GOOD_OR_BAD ARG_Elabnet(const char *arg)
+GOOD_OR_BAD ARG_PBM(const char *arg)
 {
 	struct port_in * pin = NewPort( NULL ) ;
 	struct connection_in * in ;
