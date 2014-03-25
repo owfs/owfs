@@ -110,7 +110,7 @@ GOOD_OR_BAD ARG_PBM(const char *arg)
 		return gbBAD;
 	}
 	arg_data(arg,pin) ;
-	pin->busmode = bus_elabnet ; // elabnet
+	pin->busmode = bus_pbm ; // elabnet
 	return Serial_or_telnet( arg, in ) ;
 }
 

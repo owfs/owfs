@@ -87,7 +87,7 @@ static enum e_visibility VISIBLE_DS2480B( const struct parsedname * pn )
 	switch ( get_busmode(pn->selected_connection) ) {
 		case bus_serial:
 		case bus_xport:
-		case bus_elabnet:
+		case bus_pbm:
 			return visible_now ;
 		default:
 			return visible_not_now ;
@@ -107,7 +107,7 @@ static enum e_visibility VISIBLE_HA5( const struct parsedname * pn )
 static enum e_visibility VISIBLE_PBM( const struct parsedname * pn )
 {
 	switch ( get_busmode(pn->selected_connection) ) {
-		case bus_elabnet:
+		case bus_pbm:
 			return visible_now ;
 		default:
 			return visible_not_now ;
@@ -358,7 +358,7 @@ static ZERO_OR_ERROR FS_r_baud(struct one_wire_query *owq)
 		case bus_link:
 		case bus_ha5:
 		case bus_ha7e:
-		case bus_elabnet:
+		case bus_pbm:
 			OWQ_U(owq) = COM_BaudRate( in->pown->baud ) ;
 			return 0;
 		default:
@@ -372,7 +372,7 @@ static ZERO_OR_ERROR FS_w_baud(struct one_wire_query *owq)
 	switch ( get_busmode(in) ) {
 		case bus_serial:
 		case bus_link:
-		case bus_elabnet:
+		case bus_pbm:
 			in->pown->baud = COM_MakeBaud( (speed_t) OWQ_U(owq) ) ;
 			++in->changed_bus_settings ;
 			break ;
