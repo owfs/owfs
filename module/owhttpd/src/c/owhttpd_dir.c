@@ -138,12 +138,38 @@ static void ShowDirText(FILE * out, struct parsedname * pn)
 	return;
 }
 
+void JSON_dir_init( struct JsonCBstruct * jcbs, FILE * out )
+{
+	jcbs->not_first = 0 ;
+	jcbs->out = out ;
+}
+	
+void JSON_dir_entry( struct JsonCBstruct * jcbs, const char * format, const char * data )
+{
+	// handle comma (so not after last entry)
+	if ( jcbs->not_first ) {
+		fprintf(jcbs->out, ",\n" ) ;
+	} else {
+		jcbs->not_first = 1 ;
+	}
+	fprintf(jcbs->out, format, data ) ;
+}
+
+
+void JSON_dir_finish( struct JsonCBstruct * jcbs )
+{
+	if ( jcbs->not_first ) {
+		fprintf(jcbs->out, "\n" ) ;
+	}
+}	
+
+
 static void ShowDirJsonCallback(void *v, const struct parsedname *const pn_entry)
 {
 	/* uncached tag */
 	/* device name */
 	/* Have to allocate all buffers to make it work for Coldfire */
-	FILE *out = v;
+	struct JsonCBstruct * jcbs = v ;
 	const char *nam;
 
 	if (IsDir(pn_entry)) {
@@ -151,15 +177,22 @@ static void ShowDirJsonCallback(void *v, const struct parsedname *const pn_entry
 	} else {
 		nam = pn_entry->selected_device->readable_name;
 	}
-	fprintf(out, "\"%s\":[],\n", nam ) ;
+	
+	JSON_dir_entry( jcbs, "\"%s\":[]", nam ) ;
 }
 
 static void ShowDirJson(FILE * out, struct parsedname * pn)
 {
+	struct JsonCBstruct jcbs ;
+	
+	JSON_dir_init( &jcbs, out ) ;
+
 	HTTPstart(out, "200 OK", ct_json);
 
 	fprintf(out, "{" );
-	FS_dir(ShowDirJsonCallback, out, pn);
+	FS_dir(ShowDirJsonCallback, &jcbs, pn);
+	
+	JSON_dir_finish( &jcbs ) ;
 	fprintf(out, "}" );
 	return;
 }

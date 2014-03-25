@@ -612,10 +612,9 @@ static void ShowJsonDirectory(FILE * out, const struct parsedname *pn_entry)
 /* Now show the device */
 static void ShowDeviceJsonCallback(void *v, const struct parsedname * pn_entry)
 {
-	FILE *out = v;
-	fprintf(out, "\"%s\":",FS_DirName(pn_entry) ) ;
-	ShowJson(out, pn_entry);
-	fprintf(out, ",\n" ) ;
+	struct JsonCBstruct * jcbs = v ;
+	JSON_dir_entry(jcbs, "\"%s\":",FS_DirName(pn_entry) ) ;
+	ShowJson(jcbs->out, pn_entry);
 }
 
 static void ShowDeviceJson(FILE * out, struct parsedname *pn)
@@ -623,8 +622,11 @@ static void ShowDeviceJson(FILE * out, struct parsedname *pn)
 	HTTPstart(out, "200 OK", ct_json);
 
 	if (pn->selected_filetype == NO_DEVICE) {	/* whole device */
+		struct JsonCBstruct jcbs ;
+		JSON_dir_init( &jcbs, out ) ;
 		fprintf(out, "{\n" ) ;
-		FS_dir(ShowDeviceJsonCallback, out, pn);
+		FS_dir(ShowDeviceJsonCallback, &jcbs, pn);
+		JSON_dir_finish(&jcbs) ;
 		fprintf(out, "}" );
 	} else {					/* Single item */
 		//printf("single item path=%s\n", pn->path);

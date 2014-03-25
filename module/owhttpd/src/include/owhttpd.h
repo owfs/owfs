@@ -52,8 +52,16 @@ void ChangeData(struct one_wire_query *owq);
 void ShowDevice(FILE * out, struct parsedname *const pn);
 
 /* in owhttpd_dir.c */
+struct JsonCBstruct {
+	FILE * out ;
+	int not_first ;
+} ;
+
 void ShowDir(FILE * out, struct parsedname * pn);
 int Backup(const char *path);
+void JSON_dir_init( struct JsonCBstruct * jcbs, FILE * out ) ;
+void JSON_dir_entry( struct JsonCBstruct * jcbs, const char * format, const char * data ) ;
+void JSON_dir_finish( struct JsonCBstruct * jcbs ) ;
 
 /* in ow_favicon.c */
 void Favicon(FILE * out);
@@ -61,5 +69,6 @@ void Favicon(FILE * out);
 /* in owhttpd_escape */
 void httpunescape(BYTE * httpstr) ;
 char * httpescape( const char * original_string ) ;
+
 
 #endif							/* OWHTTPD_H */

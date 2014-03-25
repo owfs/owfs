@@ -123,7 +123,7 @@ static SIZE_OR_ERROR OWQ_parse_output_integer(struct one_wire_query *owq)
 	if ((len < 0) || ((size_t) len > PROPERTY_LENGTH_INTEGER)) {
 		return -EMSGSIZE;
 	}
-	return OWQ_parse_output_offset_and_size(c, PROPERTY_LENGTH_INTEGER, owq);
+	return OWQ_parse_output_offset_and_size(c, len, owq);
 }
 
 static SIZE_OR_ERROR OWQ_parse_output_unsigned(struct one_wire_query *owq)
@@ -143,7 +143,7 @@ static SIZE_OR_ERROR OWQ_parse_output_unsigned(struct one_wire_query *owq)
 	if ((len < 0) || ((size_t) len > PROPERTY_LENGTH_UNSIGNED)) {
 		return -EMSGSIZE;
 	}
-	return OWQ_parse_output_offset_and_size(c, PROPERTY_LENGTH_UNSIGNED, owq);
+	return OWQ_parse_output_offset_and_size(c, len, owq);
 }
 
 static SIZE_OR_ERROR OWQ_parse_output_float(struct one_wire_query *owq)
@@ -179,7 +179,7 @@ static SIZE_OR_ERROR OWQ_parse_output_float(struct one_wire_query *owq)
 	if ((len < 0) || ((size_t) len > PROPERTY_LENGTH_FLOAT)) {
 		return -EMSGSIZE;
 	}
-	return OWQ_parse_output_offset_and_size(c, PROPERTY_LENGTH_FLOAT, owq);
+	return OWQ_parse_output_offset_and_size(c, len, owq);
 }
 
 static SIZE_OR_ERROR OWQ_parse_output_date(struct one_wire_query *owq)
