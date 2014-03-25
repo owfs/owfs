@@ -106,7 +106,7 @@ struct master_ha5 {
 	struct connection_in *head;
 };
 
-struct master_elabnet {
+struct master_pbm {
 	char channel;
 	unsigned int version;
 	unsigned int serial_number;
@@ -173,7 +173,7 @@ union master_union {
 	struct master_enet enet;
 	struct master_ha5 ha5;
 	struct master_ha7 ha7;
-	struct master_elabnet elabnet;
+	struct master_pbm pbm;
 	struct master_w1 w1;
 	struct master_w1_monitor w1_monitor ;
 	struct master_browse browse;

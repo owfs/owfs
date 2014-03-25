@@ -209,8 +209,8 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct port_in * pin )
 		break;
 
 	case bus_pbm:
-		if ( BAD( ELABNET_detect(pin) )) {
-			LEVEL_CONNECT("Cannot open ELABNET bus master at %s", DEVICENAME(in));
+		if ( BAD( PBM_detect(pin) )) {
+			LEVEL_CONNECT("Cannot open PBM bus master at %s", DEVICENAME(in));
 			return gbBAD ;
 		}
 		break;
