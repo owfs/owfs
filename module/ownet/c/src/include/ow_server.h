@@ -54,6 +54,7 @@ extern struct ow_global {
 #define TEMPSCALE_BIT  16
 #define DEVFORMAT_MASK ( (UINT) 0xFF000000 )
 #define DEVFORMAT_BIT  24
+#define TRIM                        ( (UINT) 0x00000040 )
 #define IsPersistent         ( ow_Global.control_flags & PERSISTENT_MASK )
 #define SetPersistent(b)      UT_Setbit(ow_Global.control_flags,PERSISTENT_BIT,(b))
 #define TemperatureScale     ( (enum temp_type) ((ow_Global.control_flags & TEMPSCALE_MASK) >> TEMPSCALE_BIT) )

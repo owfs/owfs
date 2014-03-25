@@ -92,3 +92,14 @@ const char *OWNET_get_device_format(void)
 		return "f.i";
 	}
 }
+
+void OWNET_set_trim( int trim_state )
+{
+	ow_Global.control_flags &= ~TRIM ; // clear trim
+	ow_Global.control_flags |= trim_state ? TRIM : 0 ;
+}
+
+int OWNET_get_trim( void )
+{
+	return (ow_Global.control_flags & TRIM) != 0 ;
+}

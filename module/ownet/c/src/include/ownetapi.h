@@ -158,6 +158,16 @@ extern "C" {
 	void OWNET_set_device_format(const char *device_format);
 	const char *OWNET_get_device_format(void);
 
+/* get and set trim state
+ * This just means removing extra spaces from
+ * numeric values
+ * which is easier for some data parsing
+   Note that trim state applies to all HANDLES
+*/
+	void OWNET_set_trim( int trim_state ) ;
+	int OWNET_get_trim( void ) ;
+
+
 #ifdef __cplusplus
 }
 #endif
