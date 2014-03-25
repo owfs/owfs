@@ -97,17 +97,17 @@ Pressure scale can also be specified in the I<address>. Same syntax as the other
 
 =over
 
-=item --mbar     millibar (default)
+=item -mbar     millibar (default)
 
-=item --atm      atmosphere
+=item -atm      atmosphere
 
-=item --mmHg     mm Mercury
+=item -mmHg     mm Mercury
 
-=item --inHg     inch Mercury
+=item -inHg     inch Mercury
 
-=item --psi      pounds per inch^2
+=item -psi      pounds per inch^2
 
-=item --Pa       pascal
+=item -Pa       pascal
 
 =back
 
@@ -133,7 +133,15 @@ Show directories that are themselves directories with a '/' suffix ( e.g. /10.67
 
 =over
 
-=item -slash  show directory elements
+=item --slash  show directory elements
+
+=back
+
+Trim whitespace from numeric values
+
+=over
+
+=item -trim  trim spaces
 
 =back
 
@@ -245,6 +253,11 @@ sub _new($$) {
 		$format = 0x1000000 , last FORMAT if $addr =~ /-fi/ ;
 	}
 
+	my $trim = 0 ;
+	TRIM: {
+		$trim = 0x00000040 , last TRIM if $addr =~ /-trim/ ;
+	}
+
 	# Verbose flag
 	$self->{VERBOSE} = 1 if $addr =~ /-v/i ;
 	
@@ -267,7 +280,7 @@ sub _new($$) {
 
 	$self->{ADDR} = $addr ;
 	$self->{PORT} = $port ;
-	$self->{SG} = $DEFAULT_SG + $tempscale + $presscale + $format ;
+	$self->{SG} = $DEFAULT_SG + $tempscale + $presscale + $format + $trim ;
 	$self->{VER} = 0 ;
 }
 
