@@ -97,6 +97,8 @@ int main(int argc, char **argv)
 
 	/* Set up "Antiloop" -- a unique token */
 	SetupAntiloop();
+	
+	/* Call up main processing routine -- waits for network queries */ 
 	ServerProcess( Handler );
 	LEVEL_DEBUG("ServerProcess done");
 
