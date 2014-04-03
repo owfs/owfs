@@ -191,7 +191,7 @@ void OW_Browse(struct connection_in *in)
 void OW_Browse(struct connection_in *in)
 {
 	(void) in ;
-	LEVEL_CONNECT("Avahi and Bonjour (and Multithreading) was not enabled");
+	LEVEL_CONNECT("Avahi and Bonjour not enabled");
 }
 
 
