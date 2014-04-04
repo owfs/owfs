@@ -24,7 +24,8 @@ if HAVE_FREEBSD
 	$(PERL) -pi -e 's/ doc_(perl|site|\$$\(INSTALLDIRS\))_install$$//' OW/Makefile
 
 # The FreeBSD Makefile trickery disables installing of perllocal.pod, as per http://lists.freebsd.org/pipermail/freebsd-perl/2005-June/000666.html
-+endifendif
+endif
+endif
 endif
 
 OW/ow_wrap.c: ../ow.i OW/Makefile ${LIBOW}
