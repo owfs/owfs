@@ -142,7 +142,7 @@ void ZeroConf_Announce(struct connection_out *out)
 void ZeroConf_Announce(struct connection_out *out)
 {
 	(void) out;
-	LEVEL_CONNECT("Zeroconf and/or Multithreading are not enabled");
+	LEVEL_CONNECT("Zeroconf not enabled");
 	return;
 }
 
