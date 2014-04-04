@@ -77,6 +77,9 @@ def write_configuration(define_macros, include_dirs, libraries, library_dirs,
 enable_usb = '@ENABLE_USB@'
 enable_mt = '@ENABLE_MT@'
 have_darwin = '@HAVE_DARWIN@'
+have_freebsd = '@HAVE_FREEBSD@'
+
+bsd_fixes = have_darwin == 'true' or have_freebsd == 'true'
 
 # have to split up the _CFLAGS, _LIBS variables since there are problem
 # when they contain spaces. The append() function doesn't work very good.
@@ -109,7 +112,7 @@ if enable_mt == 'true':
     if len('@PTHREAD_LIBS@') > 1:
 	my_extra_link_args = my_extra_link_args + string.split('@PTHREAD_LIBS@', ' ')
 
-if have_darwin == 'true':
+if bsd_fixes:
     my_extra_link_args = my_extra_link_args + string.split('../../owlib/src/c/.libs/libow.so', ' ')
 
 if len('@PYLDFLAGS@') > 1:
@@ -132,7 +135,7 @@ my_libraries = [ 'ow' ]
 #    my_extra_objects = ""
 #    my_libraries = [ 'ow' ]
 
-if have_darwin == 'true':
+if bsd_fixes:
     my_libraries = [ ]
 
 removals = ['-Wstrict-prototypes']

@@ -41,7 +41,15 @@ man_MANS = owfs.1 \
            ow.n
 EXTRA_DIST = ${man_MANS} *.?so
 
-install-data-am: install-man install-so-man
+if !HAVE_FREEBSD
+ install-data-am: install-man install-so-man
+else
+# The -so-man target seems to go through all manpages, remove lines starting with .so, 
+# but this does not work on FreeBSD.
+# However, it is not required anyway (our man does not show these lines at least?)
+# so lets just skip it.
+ install-data-am: install-man
+endif
 
 install-so-man:
 	for i in $(man_MANS); do \

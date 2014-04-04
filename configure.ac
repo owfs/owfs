@@ -111,6 +111,7 @@ AM_CONDITIONAL(HAVE_DEBIAN, test "${HAVE_DEBIAN}" = "true")
 
 
 HAVE_DARWIN="false"
+HAVE_FREEBSD="false"
 HAVE_CYGWIN="false"
 
 AC_MSG_CHECKING([for special host])
@@ -124,6 +125,10 @@ case "$host" in
 		HAVE_DARWIN="true"
 		AC_MSG_RESULT([Darwin])
 		;;
+	*-freebsd*)
+		HAVE_FREEBSD="true"
+		AC_MSG_RESULT([FreeBSD])
+		;;
 	*)
 		AC_MSG_RESULT([Other host])
 		;;
@@ -132,6 +137,8 @@ AC_SUBST(HAVE_DARWIN)
 AM_CONDITIONAL(HAVE_DARWIN, test "${HAVE_DARWIN}" = "true")
 AC_SUBST(HAVE_CYGWIN)
 AM_CONDITIONAL(HAVE_CYGWIN, test "${HAVE_CYGWIN}" = "true")
+AC_SUBST(HAVE_FREEBSD)
+AM_CONDITIONAL(HAVE_FREEBSD, test "${HAVE_FREEBSD}" = "true")
 
 PIC_FLAGS=""
 if test "$lt_prog_compiler_pic_works" = yes; then

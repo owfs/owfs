@@ -20,7 +20,11 @@ if HAVE_DEBIAN
 	( cd OW; $(PERL) Makefile.PL INSTALLDIRS=vendor )
 else
 	( cd OW; $(PERL) Makefile.PL )
-endif
+if HAVE_FREEBSD
+	$(PERL) -pi -e 's/ doc_(perl|site|\$$\(INSTALLDIRS\))_install$$//' OW/Makefile
+
+# The FreeBSD Makefile trickery disables installing of perllocal.pod, as per http://lists.freebsd.org/pipermail/freebsd-perl/2005-June/000666.html
++endifendif
 endif
 
 OW/ow_wrap.c: ../ow.i OW/Makefile ${LIBOW}
