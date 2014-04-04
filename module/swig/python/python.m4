@@ -32,7 +32,7 @@ AC_ARG_WITH(python, [  --with-python           Set location of Python executable
 AC_ARG_WITH(pythonconfig, [  --with-pythonconfig        Set location of python-config executable],[ PYTHONCONFIGBIN="$withval"], [PYTHONCONFIGBIN=yes])
 
 if test "x$PYTHONCONFIGBIN" = xyes; then
-      AC_CHECK_PROGS(PYTHONCONFIG, python-config python2.5-config python2.4-config python2.3-config)
+       AC_CHECK_PROGS(PYTHONCONFIG, python-config python2.7-config python2.5-config python2.4-config python2.3-config)
 else
       PYTHONCONFIG="$PYTHONCONFIGBIN"
 fi
@@ -44,7 +44,7 @@ else
 # First figure out the name of the Python executable
 
 if test "x$PYBIN" = xyes; then
-AC_CHECK_PROGS(PYTHON, python python2.5 python2.4 python2.3 python2.2 python2.1 python2.0 python1.6 python1.5 python1.4 python)
+AC_CHECK_PROGS(PYTHON, python python2.7 python2.5 python2.4 python2.3 python2.2 python2.1 python2.0 python1.6 python1.5 python1.4 python)
 else
 PYTHON="$PYBIN"
 fi
