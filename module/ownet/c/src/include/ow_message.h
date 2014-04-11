@@ -74,8 +74,21 @@ struct serverpackage {
 	size_t tokens;
 };
 
-#define Servermessage       (((int32_t)1)<<16)
-#define isServermessage( version )    (((version)&Servermessage)!=0)
-#define Servertokens(version)    ((version)&0xFFFF)
+// Current version of the protocol
+#define OWSERVER_PROTOCOL_VERSION   0
+
+// lower 16 bits is token size (only FROM owserver of course)
+#define Servertokens(tokens)		((tokens)&0xFFFF)
+#define MakeServertokens(tokens)	(tokens)
+
+// bit 17 is FROM server flag
+#define ServermessageMASK		(((int32_t)1)<<16)
+#define MakeServermessage		ServermessageMASK
+#define isServermessage(version)	(((version) & ServermessageMASK) == ServermessageMASK)
+
+//owserver protocol
+#define ServerprotocolMASK		((0xFF)<<17)
+#define Serverprotocol(version) (((version) & ServerprotocolMASK) >> 17 )
+#define MakeServerprotocol(protocol) ((protocol) << 17)
 
 #endif							/* OW_MESSAGE_H */

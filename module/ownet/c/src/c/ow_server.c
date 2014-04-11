@@ -493,9 +493,17 @@ static int WriteToServer(int file_descriptor, struct server_msg *sm, struct serv
 	struct server_msg net_sm ;
 
 	sp->tokens = 0; // ownet isn't a server
-	sm->version = 0; // shouldn't this be MakeServerprotocol(OWSERVER_PROTOCOL_VERSION);
+	sm->version = MakeServerprotocol(OWSERVER_PROTOCOL_VERSION);
 
 	// First block to send, the header
+	// encode in network order (just the header)
+	net_sm.version       = htonl( sm->version       );
+	net_sm.payload       = htonl( payload           );
+	net_sm.size          = htonl( sm->size          );
+	net_sm.type          = htonl( sm->type          );
+	net_sm.control_flags = htonl( sm->control_flags );
+	net_sm.offset        = htonl( sm->offset        );
+
 	io[nio].iov_base = &net_sm;
 	io[nio].iov_len = sizeof(struct server_msg);
 	nio++;
@@ -512,27 +520,23 @@ static int WriteToServer(int file_descriptor, struct server_msg *sm, struct serv
 		io[nio].iov_base = (char *) sp->path ; // gives a spurious compiler error -- constant is OK HERE!
 #endif
 		io[nio].iov_len = strlen(sp->path) + 1;
-		payload =  io[nio].iov_len ;
+		payload =  io[nio].iov_len +1;
 		nio++;
 		LEVEL_DEBUG("ToServer path=%s\n", sp->path);
 	}
-	// next block, data (only for writes)
+
+	// Next block, data (only for writes)
 	if ((sp->datasize>0) && (sp->data!=NULL)) {	// send data only for writes (if datasize not zero)
 		io[nio].iov_base = sp->data ;
 		io[nio].iov_len = sp->datasize ;
 		payload += sp->datasize;
 		nio++;
-        LEVEL_DEBUG("ToServer data=%s\n", sp->data);
+        LEVEL_DEBUG("ToServer data size=%d bytes\n", sp->datasize);
 	}
 
-	// encode in network order (just the header)
-	net_sm.version       = htonl( sm->version       );
-	net_sm.payload       = htonl( payload           );
-	net_sm.size          = htonl( sm->size          );
-	net_sm.type          = htonl( sm->type          );
-	net_sm.control_flags = htonl( sm->control_flags );
-	net_sm.offset        = htonl( sm->offset        );
-
+	// Next block, tokens (there aren't any since this isn't an owserver)
+	
+	// Now do the actual write
 	return writev(file_descriptor, io, nio) != (ssize_t) (payload + sizeof(struct server_msg) + tokens * sizeof(union antiloop));
 }
 
