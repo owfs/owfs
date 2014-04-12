@@ -38,7 +38,7 @@ $Id$
 #include "owserver.h"
 
 /* --- Prototypes ------------ */
-static void SetupAntiloop(void);
+static void SetupAntiloop(int argc, char **argv);
 
 int main(int argc, char **argv)
 {
@@ -96,7 +96,7 @@ int main(int argc, char **argv)
 	_MUTEX_INIT(persistence_mutex);
 
 	/* Set up "Antiloop" -- a unique token */
-	SetupAntiloop();
+	SetupAntiloop( argc, argv );
 	
 	/* Call up main processing routine -- waits for network queries */ 
 	ServerProcess( Handler );
@@ -108,9 +108,42 @@ int main(int argc, char **argv)
 	return 0;
 }
 
-static void SetupAntiloop(void)
+#define ARG_STRING_LENGTH 500
+static void SetupAntiloop(int argc, char **argv)
 {
-	struct tms t;
-	Globals.Token.simple.pid = getpid();
-	Globals.Token.simple.clock = times(&t);
+	// a structure of relatively unique items to hash together
+	struct {
+		struct tms t;
+		pid_t pid ;
+		long int rand ;
+		char args[ARG_STRING_LENGTH+1] ;
+	} data_struct ;
+	
+	int argnum ; 
+	int left = ARG_STRING_LENGTH ;
+	
+	// current time
+	times( & (data_struct.t) );
+	
+	// process ID
+	data_struct.pid = getpid() ;
+	
+	// random number (seeded from current time)
+	srandom(time(0)) ;
+	data_struct.rand = random() ;
+	
+	// command line arguments (don't clear out buffer)
+	for ( argnum=0 ; argnum < argc ; ++argc ) ;
+	{
+		int argsize = strlen( argv[argnum] ) ;
+		if ( argsize > left ) {
+			argsize = left ;
+		}
+		strncat( data_struct.args, argv[argnum], argsize ) ;
+		left -= argsize ;
+	}
+	
+	// use MD5 has (gives the required 16 bytes)
+	md5( (void *) &data_struct, sizeof(data_struct) , Globals.Token.uuid ) ;
+	
 }
