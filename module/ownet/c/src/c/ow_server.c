@@ -492,20 +492,9 @@ static int WriteToServer(int file_descriptor, struct server_msg *sm, struct serv
 	struct iovec io[5] = { {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}, {NULL, 0}, };
 	struct server_msg net_sm ;
 
-	sp->tokens = 0; // ownet isn't a server
-	sm->version = MakeServerprotocol(OWSERVER_PROTOCOL_VERSION);
 
 	// First block to send, the header
-	// encode in network order (just the header)
-	net_sm.version       = htonl( sm->version       );
-	net_sm.payload       = htonl( payload           );
-	net_sm.size          = htonl( sm->size          );
-	net_sm.type          = htonl( sm->type          );
-	net_sm.control_flags = htonl( sm->control_flags );
-	net_sm.offset        = htonl( sm->offset        );
-
-	io[nio].iov_base = &net_sm;
-	io[nio].iov_len = sizeof(struct server_msg);
+	// We'll do this last since the header values (e.g. payload) change
 	nio++;
 
 	// Next block, the path
@@ -534,10 +523,30 @@ static int WriteToServer(int file_descriptor, struct server_msg *sm, struct serv
         LEVEL_DEBUG("ToServer data size=%d bytes\n", sp->datasize);
 	}
 
-	// Next block, tokens (there aren't any since this isn't an owserver)
+	// Next block, old tokens (there aren't any since this isn't an owserver)
+	// Next block, new token (there aren't any since this isn't an owserver)
+	sp->tokens = 0; // ownet isn't a server
 	
+	// First block to send, the header
+	// revisit now that the header values are set
+	sm->version = MakeServerprotocol(OWSERVER_PROTOCOL_VERSION);
+
+	// encode in network order (just the header)
+	net_sm.version       = htonl( sm->version       );
+	net_sm.payload       = htonl( payload           );
+	net_sm.size          = htonl( sm->size          );
+	net_sm.type          = htonl( sm->type          );
+	net_sm.control_flags = htonl( sm->control_flags );
+	net_sm.offset        = htonl( sm->offset        );
+
+	io[0].iov_base = &net_sm;
+	io[0].iov_len = sizeof(struct server_msg);
+
+	// debug data on packet
+	LEVEL_DEBUG("version=%u payload=%d size=%d type=%d SG=%X offset=%d",sm->version,payload,sm->size,sm->type,sm->control_flags,sm->offset);
+
 	// Now do the actual write
-	return writev(file_descriptor, io, nio) != (ssize_t) (payload + sizeof(struct server_msg) + tokens * sizeof(union antiloop));
+	return writev(file_descriptor, io, nio) != (ssize_t) (payload + sizeof(struct server_msg) + tokens * sizeof(struct antiloop));
 }
 
 /* Read from server -- return negative on error,

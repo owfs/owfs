@@ -69,7 +69,7 @@ int FromClient(struct handlerdata *hd)
 	/* figure out length of rest of message: payload plus tokens */
 	trueload = hd->sm.payload;
 	if (isServermessage(hd->sm.version)) {
-		trueload += sizeof(union antiloop) * Servertokens(hd->sm.version);
+		trueload += sizeof(struct antiloop) * Servertokens(hd->sm.version);
 		LEVEL_DEBUG("FromClient (servermessage) payload=%d nrtokens=%d trueload=%d size=%d type=%d controlflags=0x%X offset=%d", hd->sm.payload, Servertokens(hd->sm.version), trueload, hd->sm.size, hd->sm.type, hd->sm.control_flags, hd->sm.offset);
 	} else {
 		LEVEL_DEBUG("FromClient (no servermessage) payload=%d size=%d type=%d controlflags=0x%X offset=%d", hd->sm.payload, hd->sm.size, hd->sm.type, hd->sm.control_flags, hd->sm.offset);
@@ -119,8 +119,8 @@ int FromClient(struct handlerdata *hd)
 		BYTE *p = &msg[hd->sm.payload];	// end of normal buffer
 		hd->sp.tokenstring = p;
 		hd->sp.tokens = Servertokens(hd->sm.version);
-		for (i = 0; i < hd->sp.tokens; ++i, p += sizeof(union antiloop)) {
-			if (memcmp(p, &(Globals.Token), sizeof(union antiloop)) == 0) {
+		for (i = 0; i < hd->sp.tokens; ++i, p += sizeof(struct antiloop)) {
+			if (memcmp(p, &(Globals.Token), sizeof(struct antiloop)) == 0) {
 				owfree(msg);
 				hd->sm.type = msg_error;
 				LEVEL_CALL("owserver loop suppression");
