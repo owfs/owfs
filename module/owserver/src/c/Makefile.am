@@ -10,7 +10,7 @@ endif
 
 bin_PROGRAMS = $(MODULE_OWSERVER) $(MODULE_OWEXTERNAL)
 
-owserver_SOURCES = owserver.c  \
+owserver_SOURCES = owserver.c    \
                    from_client.c \
                    to_client.c   \
                    read.c        \
@@ -22,6 +22,7 @@ owserver_SOURCES = owserver.c  \
                    error.c       \
                    handler.c     \
                    loop.c        \
+                   md5.c         \
                    ping.c
                    
 owserver_DEPENDENCIES = ../../../owlib/src/c/libow.la

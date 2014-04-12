@@ -80,4 +80,7 @@ void PingClient(struct handlerdata *hd);
 /* Loop waiting for finish sending pings */
 void PingLoop(struct handlerdata *hd) ;
 
+/* Create a md5 hash (for the token) */
+void md5(const uint8_t *initial_msg, size_t initial_len, uint8_t *digest) ;
+
 #endif							/* OWSERVER_H */
