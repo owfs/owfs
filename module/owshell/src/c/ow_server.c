@@ -335,7 +335,7 @@ static int ToServer(int file_descriptor, struct server_msg *sm, struct serverpac
 	sm->offset = htonl(sm->offset);
 
 	//Debug_Writev(io, nio);
-	return writev(file_descriptor, io, nio) != (ssize_t) (payload + sizeof(struct server_msg) + sp->tokens * sizeof(union antiloop));
+	return writev(file_descriptor, io, nio) != (ssize_t) (payload + sizeof(struct server_msg) + sp->tokens * sizeof(struct antiloop));
 }
 
 /* flag the sg for "virtual root" -- the remote bus was specifically requested */

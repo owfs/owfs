@@ -56,7 +56,7 @@ struct global {
 	DNSServiceRef browse;
 #endif
 	ASCII *progname;
-	union antiloop Token;
+	struct antiloop Token;
 	int now_background;
 	int error_level;
 	int error_print;

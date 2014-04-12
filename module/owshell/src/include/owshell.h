@@ -170,11 +170,7 @@ extern int count_inbound_connections;
 #define OW_DEFAULT_LENGTH (128)
 
 /* Unique token for owserver loop checks */
-union antiloop {
-	struct {
-		pid_t pid;
-		clock_t clock;
-	} simple;
+struct antiloop {
 	BYTE uuid[16];
 };
 
@@ -183,7 +179,7 @@ struct global {
 	int announce_off;			// use zeroconf?
 	ASCII *announce_name;
 	ASCII *progname;
-	union antiloop Token;
+	struct antiloop Token;
 	int want_background;
 	int now_background;
 	int readonly;

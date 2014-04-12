@@ -24,11 +24,7 @@ Written 2003 Paul H Alfille
 #define OW_MESSAGE_H
 
 /* Unique token for owserver loop checks */
-union antiloop {
-	struct {
-		pid_t pid;
-		clock_t clock;
-	} simple;
+struct antiloop {
 	BYTE uuid[16];
 };
 
