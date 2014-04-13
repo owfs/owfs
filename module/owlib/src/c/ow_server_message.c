@@ -685,8 +685,8 @@ static SIZE_OR_ERROR WriteToServer(int file_descriptor, struct server_msg *sm, s
 #else
 		io[nio].iov_base = (char *) sp->path ; // gives a spurious compiler error -- constant is OK HERE!
 #endif
-		io[nio].iov_len = strlen(sp->path) + 1;
-		payload =  io[nio].iov_len +1; // we're adding the null (though it isn't required post 2.9p3)
+		io[nio].iov_len = strlen(sp->path) + 1; // we're adding the null (though it isn't required post 2.9p3)
+		payload =  io[nio].iov_len; 
 		nio++;
 	}
 
@@ -699,6 +699,7 @@ static SIZE_OR_ERROR WriteToServer(int file_descriptor, struct server_msg *sm, s
 	}
 
 	if ( server_type ) {
+		printf("---------------- Server type = YES\n");
 		tokens = sp->tokens;
 
 		// Next block prior tokens (if an owserver)
@@ -721,14 +722,14 @@ static SIZE_OR_ERROR WriteToServer(int file_descriptor, struct server_msg *sm, s
 
 		// put token information in header (lower 17 bits of version)
 		sm->version |= MakeServermessage; // bit 17
-		sm->version |= MakeServertokens(tokens+1); // lower 16 bits
+		sm->version |= MakeServertokens(tokens); // lower 16 bits
 		nio++;
+	} else {
+		printf("---------------- Server type = NO\n");
 	}
-
 	
 	// First block to send, the header
 	// revisit now that the header values are set
-	sm->version = MakeServerprotocol(OWSERVER_PROTOCOL_VERSION);
 
 	// encode in network order (just the header)
 	net_sm.version       = htonl( sm->version       );

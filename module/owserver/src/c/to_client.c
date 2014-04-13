@@ -45,7 +45,7 @@ int ToClient(int file_descriptor, struct client_msg *machine_order_cm, const cha
 	struct client_msg s_cm;
 	struct client_msg *network_order_cm = &s_cm;
 	
-	int nio = 1;
+	int nio = 1; // at least header
 
 #if ( __GNUC__ > 4 ) || (__GNUC__ == 4 && __GNUC_MINOR__ > 4 )
 #pragma GCC diagnostic push
@@ -63,24 +63,8 @@ int ToClient(int file_descriptor, struct client_msg *machine_order_cm, const cha
 		{ (char *) data, machine_order_cm->payload,},
 	};
 #endif
-	LEVEL_DEBUG("payload=%d size=%d, ret=%d, sg=0x%X offset=%d ", machine_order_cm->payload, machine_order_cm->size, machine_order_cm->ret,
-		     machine_order_cm->control_flags, machine_order_cm->offset);
 
-	/* If payload==0, no extra data
-		If payload <0, flag to show a delay message, again no data
-	*/
-	if(machine_order_cm->payload < 0) {
-		io[1].iov_len = 0;
-		LEVEL_DEBUG("Send delay message");
-	} else if ( machine_order_cm->payload == 0 ) {
-		io[1].iov_len = 0;
-	} else if ( data == NULL ) {
-		LEVEL_DEBUG("Bad data pointer -- NULL") ;
-		io[1].iov_len = 0;
-	} else {
-		++nio;
-	}
-
+	// Prep header
 	network_order_cm->version       = htonl( machine_order_cm->version       );
 	network_order_cm->payload       = htonl( machine_order_cm->payload       );
 	network_order_cm->ret           = htonl( machine_order_cm->ret           );
@@ -88,9 +72,23 @@ int ToClient(int file_descriptor, struct client_msg *machine_order_cm, const cha
 	network_order_cm->size          = htonl( machine_order_cm->size          );
 	network_order_cm->offset        = htonl( machine_order_cm->offset        );
 
-	if(machine_order_cm->payload >= 0) {
+	LEVEL_DEBUG("payload=%d size=%d, ret=%d, sg=0x%X offset=%d ", machine_order_cm->payload, machine_order_cm->size, machine_order_cm->ret,
+		     machine_order_cm->control_flags, machine_order_cm->offset);
+
+	/* If payload==0, no extra data
+		If payload <0, flag to show a delay message, again no data
+	*/
+
+	if(machine_order_cm->payload < 0) {
+		LEVEL_DEBUG("Send delay message (ping)");
+	} else if ( machine_order_cm->payload == 0 ) {
+		LEVEL_DEBUG("No data") ;
+	} else if ( data == NULL ) {
+		LEVEL_DEBUG("Bad data pointer -- NULL") ;
+	} else {
+		nio = 2; // add data segment
 		TrafficOutFD("to server data",io[1].iov_base,io[1].iov_len,file_descriptor);
 	}
-	
+
 	return writev(file_descriptor, io, nio) != (ssize_t) (io[0].iov_len + io[1].iov_len);
 }

@@ -44,7 +44,6 @@ int FromClient(struct handlerdata *hd)
 	ssize_t trueload;
 	size_t actual_read ;
 	struct timeval tv = { Globals.timeout_server, 0, };
-	//printf("FromClient\n");
 
 	/* Clear return structure */
 	memset(&hd->sp, 0, sizeof(struct serverpackage));
@@ -85,7 +84,8 @@ int FromClient(struct handlerdata *hd)
 	}
 
 	/* Can allocate space? */
-	if ((msg = owmalloc(trueload)) == NULL) {	/* create a buffer */
+	if ((msg = owmalloc(trueload+2)) == NULL) {	/* create a buffer */
+		// Adds an extra byte for the path null
 		hd->sm.type = msg_error;
 		return -ENOMEM;
 	}
@@ -94,21 +94,40 @@ int FromClient(struct handlerdata *hd)
 	tcp_read(hd->file_descriptor, msg, trueload, &tv, &actual_read) ;
 	if ((ssize_t)actual_read != trueload) {	/* read in the expected data */
 		hd->sm.type = msg_error;
-		owfree(msg);
-		return -EIO;
+		goto BADDATA ;
 	}
 
-	/* path has null termination? */
+	/* New algorithm as of 2.9p4 -- no longer use terminating null as path length
+	 * now use payload length and data size (for writes)
+	 * */
 	if (hd->sm.payload) {
-		int pathlen;
-		if (memchr(msg, 0, (size_t) hd->sm.payload) == NULL) {
-			hd->sm.type = msg_error;
-			owfree(msg);
-			return -EINVAL;
+		int pathlen = hd->sm.payload ;
+		if ( hd->sm.type == msg_write ) {
+			// only for write -- everything else has just path
+			pathlen -= hd->sm.size ;
+			if ( pathlen <= 0 ) {
+				LEVEL_DEBUG("Data size mismatch") ;
+				goto BADDATA ;
+			}
+			if ( msg[pathlen-1] == '\0' ) {
+				// already null-terminated string
+				// no reason to increase size, shift data, and add null
+				hd->sp.data = & msg[pathlen];
+			} else {
+				// make room for null at end of path (needed for some clients)
+				// we allocated extra space and will use memmove that allows overlapping
+				memmove( &msg[pathlen+1], &msg[pathlen], hd->sm.size ) ;
+				msg[pathlen] = '\0' ; // terminating null
+				hd->sp.data = & msg[pathlen+1];
+			}
+			hd->sp.datasize = hd->sm.size;
+		} else {
+			// add null for the rest
+			msg[hd->sm.payload] = '\0' ; // terminating null
+			hd->sp.data = NULL;
+			hd->sp.datasize = 0;
 		}
-		pathlen = strlen( (char *) msg) + 1;
-		hd->sp.data = & msg[pathlen];
-		hd->sp.datasize = hd->sm.payload - pathlen;
+		hd->sp.path = (char *) msg;
 	} else {
 		hd->sp.data = NULL;
 		hd->sp.datasize = 0;
@@ -121,13 +140,15 @@ int FromClient(struct handlerdata *hd)
 		hd->sp.tokens = Servertokens(hd->sm.version);
 		for (i = 0; i < hd->sp.tokens; ++i, p += sizeof(struct antiloop)) {
 			if (memcmp(p, &(Globals.Token), sizeof(struct antiloop)) == 0) {
-				owfree(msg);
 				hd->sm.type = msg_error;
 				LEVEL_CALL("owserver loop suppression");
-				return -ELOOP;
+				goto BADDATA ;
 			}
 		}
 	}
-	hd->sp.path = (char *) msg;
 	return 0;
+	
+BADDATA:
+	owfree(msg);
+	return -EINVAL;
 }
