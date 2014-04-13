@@ -56,6 +56,9 @@ READ_FUNCTION(FS_in);
 READ_FUNCTION(FS_out);
 READ_FUNCTION(FS_define);
 READ_FUNCTION(FS_trim);
+READ_FUNCTION(FS_version);
+
+#define VERSION_LENGTH 20
 
 /* -------- Structures ---------- */
 /* special entry -- picked off by parsing before filetypes tried */
@@ -84,6 +87,7 @@ static struct filetype sys_configure[] = {
 	{"DebugInfo", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_integer, fc_static, FS_define, NO_WRITE_FUNCTION, VISIBLE, {i:OW_DEBUG}, },
 	{"zeroconf", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_integer, fc_static, FS_define, NO_WRITE_FUNCTION, VISIBLE, {i:1}, },
 	{"trim", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_trim, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"version", VERSION_LENGTH, NON_AGGREGATE, ft_ascii, fc_static, FS_version, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 };
 struct device d_sys_configure = { "configuration", "configuration", ePN_system,
 	COUNT_OF_FILETYPES(sys_configure),
@@ -105,6 +109,14 @@ static ZERO_OR_ERROR FS_pid(struct one_wire_query *owq)
 {
 	OWQ_U(owq) = getpid();
 	return 0;
+}
+
+static ZERO_OR_ERROR FS_version( struct one_wire_query *owq)
+{
+	char ver[VERSION_LENGTH+1] ;
+	memset(ver,0,VERSION_LENGTH+1);
+	strncpy(ver,VERSION,VERSION_LENGTH) ;
+	return OWQ_format_output_offset_and_size_z(ver, owq);
 }
 
 static ZERO_OR_ERROR FS_trim(struct one_wire_query *owq)
