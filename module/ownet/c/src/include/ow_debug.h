@@ -110,7 +110,7 @@ extern int log_available;
 #define ERROR_DETAIL(...)     { } while (0);
 #define ERROR_DEBUG(...)      { } while (0);
 
-#define FATAL_ERROR(...)      { exit(EXIT_FAILURE) } while (0);
+#define FATAL_ERROR(...)      { exit(EXIT_FAILURE); } while (0);
 
 #define Debug_Bytes(title,buf,length)    { } while (0);
 #define Debug_Writev(io, iosz)    { } while (0);
