@@ -699,7 +699,6 @@ static SIZE_OR_ERROR WriteToServer(int file_descriptor, struct server_msg *sm, s
 	}
 
 	if ( server_type ) {
-		printf("---------------- Server type = YES\n");
 		tokens = sp->tokens;
 
 		// Next block prior tokens (if an owserver)
@@ -724,8 +723,6 @@ static SIZE_OR_ERROR WriteToServer(int file_descriptor, struct server_msg *sm, s
 		sm->version |= MakeServermessage; // bit 17
 		sm->version |= MakeServertokens(tokens); // lower 16 bits
 		nio++;
-	} else {
-		printf("---------------- Server type = NO\n");
 	}
 	
 	// First block to send, the header
