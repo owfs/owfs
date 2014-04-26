@@ -27,7 +27,7 @@ static ZERO_OR_ERROR FS_structdevdir(void (*dirfunc) (void *, const struct parse
 static ZERO_OR_ERROR FS_alarmdir(void (*dirfunc) (void *, const struct parsedname * const), void *v, const struct parsedname *pn2);
 static ZERO_OR_ERROR FS_typedir(void (*dirfunc) (void *, const struct parsedname * const), void *v, const struct parsedname *pn_type_directory);
 static ZERO_OR_ERROR FS_realdir(void (*dirfunc) (void *, const struct parsedname * const), void *v, const struct parsedname *pn2, uint32_t * flags);
-static ZERO_OR_ERROR FS_cache2real(void (*dirfunc) (void *, const struct parsedname * const), void *v, const struct parsedname *pn2, uint32_t * flags);
+static ZERO_OR_ERROR FS_cache_or_real(void (*dirfunc) (void *, const struct parsedname * const), void *v, const struct parsedname *pn2, uint32_t * flags);
 static ZERO_OR_ERROR FS_busdir(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_directory);
 
 static void FS_stype_dir(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_root_directory);
@@ -151,7 +151,7 @@ static ZERO_OR_ERROR FS_dir_both(void (*dirfunc) (void *, const struct parsednam
 				FS_interface_dir(dirfunc, v, pn_raw_directory);
 			}
 			/* Now get the actual devices */
-			ret = FS_cache2real(dirfunc, v, pn_raw_directory, flags);
+			ret = FS_cache_or_real(dirfunc, v, pn_raw_directory, flags);
 			/* simultaneous directory */
 			if (flags[0] & (DEV_temp | DEV_volt)) {
 				FS_simultaneous_entry(dirfunc, v, pn_raw_directory);
@@ -286,7 +286,7 @@ static void *FS_dir_all_connections_callback_conn(void *v)
 		//printf("FS_dir_all_connections: Call FS_alarmdir %s\n", dacs->pn_directory->path);
 		dacs->ret = FS_alarmdir(dacs->dirfunc, dacs->v, &(dacs->pn_directory) );
 	} else {
-		dacs->ret = FS_cache2real(dacs->dirfunc, dacs->v, &(dacs->pn_directory), &(dacs->flags));
+		dacs->ret = FS_cache_or_real(dacs->dirfunc, dacs->v, &(dacs->pn_directory), &(dacs->flags));
 	}
 	//printf("FS_dir_all_connections4 pid=%ld adapter=%d ret=%d\n",pthread_self(), dacs->pn_directory->selected_connection->index,ret);
 	/* See if next bus was also queried */
@@ -721,7 +721,7 @@ void FS_LoadDirectoryOnly(struct parsedname *pn_directory, const struct parsedna
 /* not within a device, nor alarm state */
 /* Also, adapters and stats handled elsewhere */
 /* Cache2Real try the cache first, else get directory from bus (and add to cache) */
-static ZERO_OR_ERROR FS_cache2real(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_real_directory, uint32_t * flags)
+static ZERO_OR_ERROR FS_cache_or_real(void (*dirfunc) (void *, const struct parsedname *), void *v, const struct parsedname *pn_real_directory, uint32_t * flags)
 {
 	size_t dindex;
 	struct dirblob db;
@@ -733,13 +733,16 @@ static ZERO_OR_ERROR FS_cache2real(void (*dirfunc) (void *, const struct parsedn
 	}
 	
 	/* Test to see whether we should get the directory "directly" */
-	if (SpecifiedBus(pn_real_directory) || IsUncachedDir(pn_real_directory)
-		|| BAD( Cache_Get_Dir(&db, pn_real_directory)) ) {
-		//printf("FS_cache2real: didn't find anything at bus %d\n", pn_real_directory->selected_connection->index);
+	if (
+		SpecifiedBus(pn_real_directory) 
+		|| IsUncachedDir(pn_real_directory) // asking for uncached
+		|| BAD( Cache_Get_Dir(&db, pn_real_directory)) // cache'd version isn't available (or old)
+		) {
+		// directly
 		return FS_realdir(dirfunc, v, pn_real_directory, flags);
 	}
-	//printf("Post test cache for dir, snlist=%p, devices=%lu\n",snlist,devices) ;
-	/* We have a cached list in snlist. Note that we have to free this memory */
+
+	// Use cached version of directory
 
 	/* STATISTICS */
 	STAT_ADD1(dir_main.calls);
