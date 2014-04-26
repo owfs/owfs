@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -66,11 +65,15 @@ void FS_ParsedName_destroy(struct parsedname *pn)
 	SAFEFREE(pn->bp) ;
 }
 
-// Path is either NULL (in which case a minimal structure is created that doesn't need Destroy -- used for Bus Master setups)
-// Or Path is a full "filename" type string of form: 10.1243Ab000 or uncached/bus.0/statistics etc.
-// The Path passed in isn't altered, but 2 copies are made -- one with the full path, the other (to_server) has the first bus.n removed.
-// An initial / is added to the path, and the full length has to be less than MAX_PATH (2048)
-// For efficiency, the two path copies are allocated in the same call, and so can be removed together.
+/* 
+ * Path is either NULL (in which case a minimal structure is created that doesn't need Destroy -- used for Bus Master setups)
+ * or Path is a full "filename" type string of form: 10.1243Ab000 or uncached/bus.0/statistics etc.
+ * 
+ * The Path passed in isn't altered, but 2 copies are made -- one with the full path, the other (to_server) has the first bus.n removed.
+ * An initial / is added to the path, and the full length has to be less than MAX_PATH (2048)
+ * 
+ * For efficiency, the two path copies are allocated in the same memory allocation call, and so can be removed together.
+ * */
 
 /* Parse a path to check it's validity and attach to the propery data structures */
 ZERO_OR_ERROR FS_ParsedName(const char *path, struct parsedname *pn)
@@ -127,6 +130,7 @@ static ZERO_OR_ERROR FS_ParsedName_anywhere(const char *path, enum parse_pass re
 			// Play with remote levels
 			switch ( pn->type ) {
 				case ePN_interface:
+					// /interface is interesting -- it's actually a property of the calling server
 					if ( SpecifiedVeryRemoteBus(pn) ) {
 						// veryremote -> remote
 						pn->state &= ~ePS_busveryremote ;
@@ -151,7 +155,7 @@ static ZERO_OR_ERROR FS_ParsedName_anywhere(const char *path, enum parse_pass re
 			}
 			//printf("%s: Parse %s after  corrections: %.4X -- state = %d\n\n",(back_from_remote)?"BACK":"FORE",pn->path,pn->state,pn->type) ;
 			// set up detail debugging
-			Detail_Test( pn ) ;
+			Detail_Test( pn ) ; // turns on debug mode only during this device's query
 			return 0;
 
 		case parse_error:
@@ -163,16 +167,28 @@ static ZERO_OR_ERROR FS_ParsedName_anywhere(const char *path, enum parse_pass re
 			break;
 		}
 
-		// break out next name in path, make sure pp->pathnext isn't NULL. (SIGSEGV in uClibc)
-		pp->pathnow = (pp->pathnext != NULL) ? strsep(&(pp->pathnext), "/") : NULL;
-		//LEVEL_DEBUG("PARSENAME pathnow=[%s] rest=[%s]",pp->pathnow,pp->pathnext) ;
-		if (pp->pathnow == NULL || pp->pathnow[0] == '\0') {
-			pe = parse_done;
-			continue;
+		// break out next name in path
+		if ( pp->pathnext == NULL ) {
+			// make sure pp->pathnext isn't NULL. (SIGSEGV in uClibc)
+			pp->pathnow = NULL ;
+		} else {
+			pp->pathnow = strsep(&(pp->pathnext), "/") ;
 		}
+		//LEVEL_DEBUG("PARSENAME pathnow=[%s] rest=[%s]",pp->pathnow,pp->pathnext) ;
+
+		// test next path segment for existence
+		if (pp->pathnow == NULL || pp->pathnow[0] == '\0') {
+			// done parsing
+			pe = parse_done;
+		}
+
 		// rest of state machine on parsename
 		switch (pe) {
 
+		case parse_done:
+			// nothing left to process -- will be handled in next loop pass
+			break ;
+		
 		case parse_first:
 			//LEVEL_DEBUG("PARSENAME parse_first") ;
 			pe = Parse_Unspecified(pp->pathnow, remote_status, pn);

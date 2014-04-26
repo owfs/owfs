@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -56,11 +55,14 @@ static ZERO_OR_ERROR FS_dir_plus(void (*dirfunc) (void *, const struct parsednam
     pn_directory->selected_device and pn_directory->sn still set
     pn_directory->selected_filetype loops through
 */
-/* path is the path which "pn_directory" parses */
+
 /* FS_dir produces the "invariant" portion of the directory, passing on to
    FS_dir_all_connections the variable part */
 ZERO_OR_ERROR FS_dir(void (*dirfunc) (void *, const struct parsedname *), void *v, struct parsedname *pn_directory)
 {
+	/* applies 'dirfunc' to each directory element of pn_directory */
+	/* void * v is extra information passed along */
+	
 	uint32_t flags;
 	LEVEL_DEBUG("path=%s", pn_directory->path);
 	pn_directory->control_flags |= ALIAS_REQUEST ; // All local directory queries want alias translation

@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -12,6 +11,9 @@ $Id$
 #include <config.h>
 #include "owfs_config.h"
 #include "ow.h"
+
+// Switch to debug mode when this device is referenced
+// Unfortunately, this only occurs after parsing.
 
 struct debug_detail { // global
 	int details ; // number of details to match
