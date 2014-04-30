@@ -156,8 +156,8 @@ void *tsearch(__const void *key, void **vrootp, __compar_fn_t compar)
 		if ((r = (*compar) (key, (*rootp)->key)) == 0) {	/* T2: */
 			return (*rootp);	/* we found it! */
 		}
-		rootp = (r < 0) ? &(*rootp)->left :	/* T3: follow left branch */
-			&(*rootp)->right;	/* T4: follow right branch */
+		rootp = (r < 0) ? &(*rootp)->left :	/* T3: follow left tree branch */
+			&(*rootp)->right;	/* T4: follow right tree branch */
 	}
 	q = (node *) owmalloc(sizeof(node));	/* T5: key not found */
 	if (q != (struct node_t *) 0) {	/* make new node */
@@ -191,8 +191,8 @@ void *tfind(__const void *key, void *__const * vrootp, __compar_fn_t compar)
 		if ((r = (*compar) (key, (*rootp)->key)) == 0) {	/* T2: */
 			return (*rootp);	/* we found it! */
 		}
-		rootp = (r < 0) ? &(*rootp)->left :	/* T3: follow left branch */
-			&(*rootp)->right;	/* T4: follow right branch */
+		rootp = (r < 0) ? &(*rootp)->left :	/* T3: follow left tree branch */
+			&(*rootp)->right;	/* T4: follow right tree branch */
 	}
 	return NULL;
 }
@@ -224,8 +224,8 @@ void *tdelete(__const void *key, void **vrootp, __compar_fn_t compar)
 	}
 	while ((cmp = (*compar) (key, (*rootp)->key)) != 0) {
 		p = *rootp;
-		rootp = (cmp < 0) ? &(*rootp)->left :	/* follow left branch */
-			&(*rootp)->right;	/* follow right branch */
+		rootp = (cmp < 0) ? &(*rootp)->left :	/* follow left tree branch */
+			&(*rootp)->right;	/* follow right tree branch */
 		if (*rootp == (struct node_t *) 0) {
 			return ((struct node_t *) 0);	/* key not found */
 		}

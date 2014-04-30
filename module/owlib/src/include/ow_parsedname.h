@@ -80,6 +80,7 @@ extern int32_t LocalControlFlags;
 // flag to pn->selected_connection->branch.branch to force select from root dir
 enum eBranch {
 	eBranch_bad =  0xFF,
+	eBranch_cleared =  0xFE,
 	eBranch_main = 0x00,
 	eBranch_aux =  0x01,
 };

@@ -147,7 +147,8 @@ struct connection_in {
 	int ds2404_found;
 	int ProgramAvailable;
 	size_t last_root_devs;
-	struct ds2409_hubs branch;		// Branch currently selected
+	struct ds2409_hubs branch;		// ds2409 branch currently selected
+			// or the special eBranch_bad and eBranch_cleared
 
 	// telnet tuning
 	int CRLF_size ; 

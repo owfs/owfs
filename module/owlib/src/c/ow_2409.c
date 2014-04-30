@@ -89,7 +89,11 @@ static GOOD_OR_BAD OW_w_control(const UINT data, const struct parsedname *pn);
 /* discharge 2409 lines */
 static ZERO_OR_ERROR FS_discharge(struct one_wire_query *owq)
 {
-	if ((OWQ_Y(owq) != 0) && BAD( OW_discharge(PN(owq)) ) ) {
+	if ( OWQ_Y(owq)==0 ) {
+		// didn't really ask for it.
+		return 0;
+	}
+	if ( BAD( OW_discharge(PN(owq)) ) ) {
 		return -EINVAL;
 	}
 	return 0;
@@ -99,7 +103,12 @@ static ZERO_OR_ERROR FS_discharge(struct one_wire_query *owq)
 /* Added by Jan Kandziora */
 static ZERO_OR_ERROR FS_clearevent(struct one_wire_query *owq)
 {
-	if ((OWQ_Y(owq)!=0) && BAD( OW_clearevent(PN(owq)) ) ) {
+	
+	if ( OWQ_Y(owq)==0 ) {
+		// didn't really ask for it.
+		return 0;
+	}
+	if ( BAD( OW_clearevent(PN(owq)) ) ) {
 		return -EINVAL;
 	}
 	return 0;
@@ -177,7 +186,10 @@ static GOOD_OR_BAD OW_discharge(const struct parsedname *pn)
 	};
 
 	BUSLOCK(pn);
+	
+	// Mark this branching as needing a reset
 	pn->selected_connection->branch.branch = eBranch_bad ;
+
 	gbRet = BUS_transaction_nolock(t, pn) ;
 	BUSUNLOCK(pn);
 

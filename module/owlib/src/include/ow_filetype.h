@@ -87,7 +87,8 @@ struct aggregate {
      The devices act as directories of properties.
      The files are either properties of the device, or sometimes special directories themselves.
      If properties, they can be integer, text, etc or special directory types.
-     There is also the directory type, ft_directory reflects a branch type, which restarts the parsing process.
+     There is also the directory type, ft_directory reflects a branch type, 
+     * which restarts the parsing process.
 */
 enum ft_format {
 	ft_unknown,

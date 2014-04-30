@@ -151,7 +151,7 @@ static enum search_status HA7E_next_both(struct device_search *ds, const struct 
 /*	HA7E_directory: searches the Directory stores it in a dirblob	     */
 /*			& stores in in a dirblob object depending if it              */
 /*			Supports conditional searches of the bus for 	             */
-/*			/alarm branch					                             */
+/*			/alarm directory 				                             */
 /*                                                                       */
 /* Only called for the first element, everything else comes from dirblob */
 /* returns 0 even if no elements, errors only on communication errors    */

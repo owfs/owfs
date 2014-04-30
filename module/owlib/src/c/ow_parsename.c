@@ -638,6 +638,7 @@ static enum parse_enum Parse_RealDeviceSN(enum parse_pass remote_status, struct 
 	}
 
 	if (Globals.one_device) {
+		// Single slave device -- use faster routines
 		SetKnownBus(INDEX_DEFAULT, pn);
 	} else {
 		/* Check the presence, and cache the proper bus number for better performance */

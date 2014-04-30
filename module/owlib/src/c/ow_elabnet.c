@@ -459,7 +459,7 @@ static GOOD_OR_BAD PBM_search_type(struct device_search *ds, struct connection_i
 /*	PBM_directory: searches the Directory stores it in a dirblob	*/
 /*			& stores in in a dirblob object depending if it */
 /*			Supports conditional searches of the bus for 	*/
-/*			/alarm branch					*/
+/*			/alarm directory					*/
 /*                                                                      */
 /* Only called for the first element, everything else comes from dirblob*/
 /* returns 0 even if no elements, errors only on communication errors   */
