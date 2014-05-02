@@ -132,7 +132,7 @@ static void SetupAntiloop(int argc, char **argv)
 	data_struct.rand = random() ;
 	
 	// command line arguments (don't clear out buffer)
-	for ( argnum=0 ; argnum < argc ; ++argnum ) ;
+	for ( argnum=0 ; argnum < argc ; ++argnum )
 	{
 		int argsize = strlen( argv[argnum] ) ;
 		if ( argsize > left ) {
