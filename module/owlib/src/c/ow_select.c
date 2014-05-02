@@ -142,7 +142,7 @@ static GOOD_OR_BAD BUS_select_branched_path(const struct parsedname *pn)
 	// initial reset
 	RETURN_BAD_IF_BAD( gbRESET( BUS_reset(pn) ) ) ;
 	for ( level=0 ; level<branch_depth ; ++level ) {
-		LEVEL_DEBUG("XXXX select bp path %d of %d =" SNformat, level, pn->ds2409_depth, SNvar((pn->bp[level].sn))) ;
+		//LEVEL_DEBUG("XXXX select bp path %d of %d =" SNformat, level, pn->ds2409_depth, SNvar((pn->bp[level].sn))) ;
 		RETURN_BAD_IF_BAD( BUS_select_branch(&(pn->bp[level]), pn) ) ;
 	}
 	return gbGOOD ;
@@ -241,9 +241,11 @@ static GOOD_OR_BAD Turnoff(const struct parsedname *pn)
 	struct transaction_log t[] = {
 		TRXN_WRITE2(sent),
 		TRXN_READ1(get),
-		TRXN_COMPARE(&get[0],&sent[1],1),
 		TRXN_END,
 	};
-
-	return BUS_transaction_nolock(t, pn);
+	GOOD_OR_BAD ret = BUS_transaction_nolock(t, pn);
+	if ( get[0] != sent[1] ) {
+		LEVEL_DEBUG("No DS2409 microlan hub found at this level");
+	}
+	return ret ;
 }
