@@ -35,7 +35,7 @@ import ConfigParser
 import ow
 
 
-__version__ = '0.0-%s' % '$Id$'.split( )[ 2 ]
+__version__ = '0.0'
 
 if not os.path.exists( 'owtest.ini' ):
     raise IOError, 'owtest.ini'

@@ -33,7 +33,7 @@ import ConfigParser
 import ow
 
 
-__version__ = '0.0-%s' % '$Id$'.split( )[ 2 ]
+__version__ = '0.0'
 load    = True
 
 

@@ -24,7 +24,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 Utility functions for unittests.
 """
 
-__version__ = '0.0-%s' % '$Id$'.split( )[ 2 ]
+__version__ = '0.0'
 
 load = False
 

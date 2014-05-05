@@ -35,7 +35,7 @@ import re
 
 __author__ = 'Peter Kropf'
 __email__ = 'pkropf@gmail.com'
-__version__ = '$Id$'.split()[2]
+__version__ = '1.9'
 
 
 class exError(Exception):

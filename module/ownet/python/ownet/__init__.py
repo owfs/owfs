@@ -38,7 +38,7 @@ from connection import Connection
 
 __author__ = 'Peter Kropf'
 __email__ = 'pkropf@gmail.com'
-__version__ = '0.3' + '-' + '$Id$'.split()[2]
+__version__ = '0.3'
 
 
 #

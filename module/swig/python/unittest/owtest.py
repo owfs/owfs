@@ -32,7 +32,7 @@ import glob
 import unittest
 
 
-__version__ = '0.0-%s' % '$Id$'.split( )[ 2 ]
+__version__ = '0.0'
 
 
 def Suite( ):

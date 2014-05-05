@@ -34,7 +34,7 @@ from ow import _OW
 
 __author__ = 'Peter Kropf'
 __email__ = 'pkropf@gmail.com'
-__version__ = _OW.version( ) + '-%s' % '$Id$'.split( )[ 2 ]
+__version__ = _OW.version( )
 
 
 #
