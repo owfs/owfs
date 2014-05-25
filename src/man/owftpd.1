@@ -14,12 +14,12 @@
 \- Anoymous FTP server for 1-wire access
 .SH SYNOPSIS
 .B owftpd
-.so cmdline_mini.1so
+.so man1/cmdline_mini.1so
 [
 .I \-p
 host:tcp-port ]
 .SH "DESCRIPTION"
-.so description.1so
+.so man1/description.1so
 .SS owftpd
 .B owhttpd (1)
 is an anonymous ftp (file-transfer-protocol) server that shows the Dallas/Maxim 1-Wire bus attached to a computer. The main directory shows the devices found, You can then navigate to individual devices, view and set their properties.
@@ -32,19 +32,19 @@ and
 , where the URL corresponds to the filename.
 .PP
 The ftp server is a modified version of oftpd by Shane Kerr. It serves no files from the disk, only virtual files from the 1-wire bus. Security should therefore be good. Only the 1-wire bus is at risk.
-.so device.1so
+.so man1/device.1so
 .SH SPECIFIC OPTIONS
 .SS \-p host:portnum
 (Optional) Sets the tcp port the ftp server runs on. Access with the URL ftp://anonymous@servernameoripaddress:portnum
 .PP
 The well known ftp port, 21, will be used by default. Since this port number is in the restricted range, special permission is usually required.
-.so temperature.1so
-.so pressure.1so
-.so format.1so
-.so job_control.1so
-.so configuration.1so
-.so help.1so
-.so timeout.1so
+.so man1/temperature.1so
+.so man1/pressure.1so
+.so man1/format.1so
+.so man1/job_control.1so
+.so man1/configuration.1so
+.so man1/help.1so
+.so man1/timeout.1so
 .SH EXAMPLE
 .TP
 owftpd \-d /dev/ttyS0
@@ -57,7 +57,7 @@ process on host "littlehost", extensive error messages.
 .SH AVAILABILITY
 http://www.owfs.org
 .SH SEE ALSO
-.so seealso.1so
+.so man1/seealso.1so
 
 .SH AUTHOR
 Paul Alfille (paul.alfille@gmail.com)

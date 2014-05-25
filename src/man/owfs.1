@@ -14,10 +14,10 @@
 \- 1-wire filesystem
 .SH SYNOPSIS
 .B owfs
-.so cmdline_mini.1so
+.so man1/cmdline_mini.1so
 .I \-m mountdir
 .SH "DESCRIPTION"
-.so description.1so
+.so man1/description.1so
 .SS owfs
 .B owfs (1)
 is the filesystem client of the 
@@ -27,7 +27,7 @@ family of programs. It runs on linux, freebsd and Mac OS X, and requires the
 kernel module and library. (http://fuse.sourceforge.net) which is a user-mode filesystem driver.
 .PP
 Essentially, the entire 1-wire bus is mounted to a place in your filesystem. All the 1-wire devices are accessible using standard file operations (read, write, directory listing). The system is safe, no actual files are exposed, these files are virtual. Not all operations are supported. Specifically, file creation, deletion, linking and renaming are not allowed. (You can link from outside to a owfs file, but not the other way around).
-.so device.1so
+.so man1/device.1so
 .SH SPECIFIC OPTIONS
 .SS \-m \-\-mountpoint=directory_path
 Path of a directory to mount the 1-wire file system
@@ -37,13 +37,13 @@ The mountpoint is required. There is no default.
 Shorthand for fuse mount option "\-o allow_other"  Allows uther users to see the fuse (owfs) mount point and file system. Requires a setting in /etc/fuse.conf as well.
 .SS \-\-fuse-opt "options"
 Sends options to the fuse-mount process. Options should be quoted, e.g. "\"\-o allow_other\"" .
-.so temperature.1so
-.so pressure.1so
-.so format.1so
-.so job_control.1so
-.so configuration.1so
-.so help.1so
-.so timeout.1so
+.so man1/temperature.1so
+.so man1/pressure.1so
+.so man1/format.1so
+.so man1/job_control.1so
+.so man1/configuration.1so
+.so man1/help.1so
+.so man1/timeout.1so
 .SH EXAMPLE
 .TP
 owfs \-d /dev/ttyS0 \-m /mnt/1wire
@@ -57,7 +57,7 @@ Connect to an
 .B owserver (1)
 process that was started on another machine at tcp port 4304
 .SH SEE ALSO
-.so seealso.1so
+.so man1/seealso.1so
 .SH AVAILABILITY
 http://www.owfs.org
 .SH AUTHOR

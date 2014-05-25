@@ -14,11 +14,11 @@
 \- Tiny webserver for 1-wire control
 .SH SYNOPSIS
 .B owhttpd
-.so cmdline_mini.1so
+.so man1/cmdline_mini.1so
 .I \-p
 tcp-port
 .SH "DESCRIPTION"
-.so description.1so
+.so man1/description.1so
 .SS owhttpd
 .B owhttpd (1)
 is a small webserver that shows the Dallas/Maxim 1-Wire bus attached to a serial port. The main view shows the devices found, You can then navigate to individual devices, and view/alter their properties.
@@ -36,14 +36,14 @@ Sets the tcp port the web server runs on. Access with the URL http://servernameo
 If no port is specified, an ephemeral port is selected by the operating system. Use
 .I zeroconf (Bonjour)
 to discover the assigned port.
-.so device.1so
-.so temperature.1so
-.so pressure.1so
-.so format.1so
-.so job_control.1so
-.so configuration.1so
-.so help.1so
-.so timeout.1so
+.so man1/device.1so
+.so man1/temperature.1so
+.so man1/pressure.1so
+.so man1/format.1so
+.so man1/job_control.1so
+.so man1/configuration.1so
+.so man1/help.1so
+.so man1/timeout.1so
 .SH EXAMPLE
 .TP
 owhttpd \-p 3001 \-d /dev/ttyS0
@@ -59,6 +59,6 @@ Read-only web server on port 3001, using two usb adapters.
 .SH AVAILABILITY
 http://www.owfs.org
 .SH SEE ALSO
-.so seealso.1so
+.so man1/seealso.1so
 .SH AUTHOR
 Paul Alfille (paul.alfille@gmail.com)

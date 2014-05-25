@@ -14,11 +14,11 @@
 \- Backend server (daemon) for 1-wire control
 .SH SYNOPSIS
 .B owserver
-.so cmdline_mini.1so
+.so man1/cmdline_mini.1so
 .I \-p
 tcp-port
 .SH "DESCRIPTION"
-.so description.1so
+.so man1/description.1so
 .SS owserver
 .B owserver (1)
 is the backend component of the OWFS 1-wire bus control system.
@@ -49,7 +49,7 @@ buffer?)
 .PP
 .B owserver (1)
 is by default multithreaded. Optional data caching is in the server, not clients, so all the clients gain efficiency.
-.so device.1so
+.so man1/device.1so
 .SH SPECIFIC OPTIONS
 .SS \-p
 TCP port or IPaddress:port for
@@ -58,14 +58,14 @@ TCP port or IPaddress:port for
 Other OWFS programs will access owserver via this address. (e.g. owfs \-s IP:port /1wire)
 .PP
 If no port is specified, the default well-known port (4304 -- assigned by the IANA) will be used.
-.so temperature.1so
-.so pressure.1so
-.so format.1so
-.so job_control.1so
-.so configuration.1so
-.so help.1so
-.so timeout.1so
-.so persistent_thresholds.1so
+.so man1/temperature.1so
+.so man1/pressure.1so
+.so man1/format.1so
+.so man1/job_control.1so
+.so man1/configuration.1so
+.so man1/help.1so
+.so man1/timeout.1so
+.so man1/persistent_thresholds.1so
 .SH DEVELOPER OPTIONS
 .SS --no_dirall
 Reject DIRALL messages (requests directory as a single message), forcing client to use older DIR method (each element is an individual message)
@@ -80,7 +80,7 @@ Interject many "keep-alive" (PING) responses. Usually PING responses are only se
 .B owserver -p 3001 -d /dev/ttyS0
 runs owserver on tcp port 3001 and connects to a physical 1-wire bus on a serial port.
 .SH SEE ALSO
-.so seealso.1so
+.so man1/seealso.1so
 .SH AVAILABILITY
 http://www.owfs.org
 .SH AUTHOR
