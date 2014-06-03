@@ -14,19 +14,14 @@ $Id$
 #include "ow.h"
 #include "ow_server.h"
 
-/* Globalss for port and bus communication */
+/* Globals for port and bus communication */
 /* connections globals stored in ow_connect.c */
 /* i.e. connection_in * head_inbound_list ...         */
 
 /* State information, sent to remote or kept locally */
-/* cacheenabled, presencecheck, tempscale, devform */
-#if OW_CACHE
+/* presencecheck, tempscale, devform */
 int32_t SemiGlobal = ((uint8_t) fdi) << 24 | ((uint8_t) temp_celsius) << 16 | ((uint8_t) 1)
 	<< 8 | ((uint8_t) 1);
-#else
-int32_t SemiGlobal = ((uint8_t) fdi) << 24 | ((uint8_t) temp_celsius) << 16 | ((uint8_t) 1)
-	<< 8;
-#endif
 
 struct global Globals = {
 #if OW_ZERO
