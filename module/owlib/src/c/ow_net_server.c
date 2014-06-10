@@ -106,7 +106,7 @@ static FILE_DESCRIPTOR_OR_ERROR ServerListen(struct connection_out *out)
 		} else if (bind(file_descriptor, out->ai_ok->ai_addr, out->ai_ok->ai_addrlen) != 0) {
 			// this is where the default linking to a busy port shows up
 			ERROR_CONNECT("Bind problem [%s]", SAFESTRING(out->name));
-		} else if (listen(file_descriptor, 10) != 0) {
+		} else if (listen(file_descriptor, SOMAXCONN) != 0) {
 			ERROR_CONNECT("Listen problem [%s]", SAFESTRING(out->name));
 		} else {
 //			fcntl (file_descriptor, F_SETFD, FD_CLOEXEC); // for safe forking
