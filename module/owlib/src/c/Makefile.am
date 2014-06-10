@@ -2,10 +2,10 @@
 
 OWLIB_SOURCE = ow_dl.c            \
                ow_dnssd.c         \
-	           ow_arg.c           \
+               ow_arg.c           \
                ow_baud.c          \
                ow_bitfield.c      \
-			   ow_byte.c          \
+               ow_byte.c          \
                compat.c           \
                getaddrinfo.c      \
                getline.c          \
@@ -45,7 +45,7 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_alias.c         \
                ow_alloc.c         \
                ow_api.c           \
-	           ow_avahi_announce.c\
+               ow_avahi_announce.c\
                ow_avahi_browse.c  \
                ow_avahi_link.c    \
                ow_badadapter.c    \
@@ -128,7 +128,7 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_name.c          \
                ow_net_client.c    \
                ow_net_server.c    \
-			   ow_offset.c        \
+               ow_offset.c        \
                ow_opt.c           \
                ow_parse_address.c \
                ow_parse_external.c\
@@ -139,19 +139,19 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_parseshallow.c  \
                ow_parse_sn.c      \
                ow_pid.c           \
-			   ow_powerbyte.c     \
-			   ow_powerbit.c      \
+               ow_powerbyte.c     \
+               ow_powerbit.c      \
                ow_presence.c      \
                ow_pressure.c      \
                ow_printparse.c    \
-			   ow_programpulse.c  \
+               ow_programpulse.c  \
                ow_read.c          \
                ow_read_external.c \
                ow_read_telnet.c   \
                ow_reconnect.c     \
-			   ow_remote_alias.c  \
-			   ow_reset.c         \
-			   ow_return_code.c   \
+               ow_remote_alias.c  \
+               ow_reset.c         \
+               ow_return_code.c   \
                ow_rwlock.c        \
                ow_stats.c         \
                ow_search.c        \
@@ -159,7 +159,7 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_serial_open.c   \
                ow_server.c        \
                ow_server_message.c\
-			   ow_server_enet.c   \
+               ow_server_enet.c   \
                ow_select.c        \
                ow_set_telnet.c    \
                ow_settings.c      \
@@ -189,7 +189,7 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_usb_monitor.c   \
                ow_util.c          \
                ow_verify.c        \
-			   ow_visibility.c    \
+               ow_visibility.c    \
                ow_w1.c            \
                ow_w1_addremove.c  \
                ow_w1_bind.c       \
@@ -207,6 +207,7 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_zero.c          \
                owlib.c            \
                error.c            \
+               sd-daemon.c        \
                globals.c
 
 lib_LTLIBRARIES = libow.la

@@ -113,6 +113,7 @@ noinst_HEADERS =           \
         netlink.h          \
         w1_netlink.h       \
         sem.h              \
+        sd-daemon.h        \
         telnet.h
 
 clean-generic:
