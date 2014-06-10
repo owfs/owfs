@@ -19,6 +19,13 @@ $Id$
 
 static void External_setroutines(struct connection_in *in);
 
+/* External program link
+ * Use programs instead of 1-wire slave
+ * The initial setup is in ow_parse_external.c
+ * Reads and writes are in ow_read_external.c and ow_write_external.c
+ * and ___ in ow_fi9nd_external.c
+ * */
+
 static void External_setroutines(struct connection_in *in)
 {
 	in->iroutines.detect = External_detect;
