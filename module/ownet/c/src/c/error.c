@@ -56,11 +56,7 @@ void err_msg(enum e_err_type errnoflag, enum e_err_level level, const char *fmt,
 	int errno_save = errno;		/* value caller might want printed */
 	int n;
 	char buf[MAXLINE + 1];
-	enum e_err_print sl;		// 2=console 1=syslog
 	va_list ap;
-
-	/* Print where? */
-	sl = e_err_print_console;
 
 	va_start(ap, fmt);
 	UCLIBCLOCK;
@@ -77,40 +73,31 @@ void err_msg(enum e_err_type errnoflag, enum e_err_level level, const char *fmt,
 	UCLIBCUNLOCK;
 	va_end(ap);
 
-	if (sl == e_err_print_syslog) {	/* All output to syslog */
-		strcat(buf, "\n");
-		if (!log_available) {
-			openlog("OWFS", LOG_PID, LOG_DAEMON);
-			log_available = 1;
-		}
-		syslog(level <= e_err_default ? LOG_INFO : LOG_NOTICE, "%s\n", buf);
-	} else {
-		fflush(stdout);			/* in case stdout and stderr are the same */
-		switch (level) {
-		case e_err_default:
-			fputs("DEFAULT: ", stderr);
-			break;
-		case e_err_connect:
-			fputs("CONNECT: ", stderr);
-			break;
-		case e_err_call:
-			fputs("   CALL: ", stderr);
-			break;
-		case e_err_data:
-			fputs("   DATA: ", stderr);
-			break;
-		case e_err_detail:
-			fputs(" DETAIL: ", stderr);
-			break;
-		case e_err_debug:
-		case e_err_beyond:
-		default:
-			fputs("  DEBUG: ", stderr);
-			break;
-		}
-		fputs(buf, stderr);
-		fflush(stderr);
+	fflush(stdout);			/* in case stdout and stderr are the same */
+	switch (level) {
+	case e_err_default:
+		fputs("DEFAULT: ", stderr);
+		break;
+	case e_err_connect:
+		fputs("CONNECT: ", stderr);
+		break;
+	case e_err_call:
+		fputs("   CALL: ", stderr);
+		break;
+	case e_err_data:
+		fputs("   DATA: ", stderr);
+		break;
+	case e_err_detail:
+		fputs(" DETAIL: ", stderr);
+		break;
+	case e_err_debug:
+	case e_err_beyond:
+	default:
+		fputs("  DEBUG: ", stderr);
+		break;
 	}
+	fputs(buf, stderr);
+	fflush(stderr);
 	return;
 }
 
