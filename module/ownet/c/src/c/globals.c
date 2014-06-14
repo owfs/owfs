@@ -29,7 +29,6 @@ struct global Globals = {
 #endif
 
 	.progname = NULL,			// "One Wire File System" , Can't allocate here since it's freed
-	.now_background = 0,
 
 	.error_level = e_err_default,
 	.error_print = e_err_print_mixed,

@@ -180,8 +180,6 @@ struct global {
 	ASCII *announce_name;
 	ASCII *progname;
 	struct antiloop Token;
-	int want_background;
-	int now_background;
 	int readonly;
 	int max_clients;			// for ftp
 	int autoserver;

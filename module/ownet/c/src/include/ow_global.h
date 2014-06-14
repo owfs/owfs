@@ -57,7 +57,6 @@ struct global {
 #endif
 	ASCII *progname;
 	struct antiloop Token;
-	int now_background;
 	int error_level;
 	int error_print;
 	int readonly;
