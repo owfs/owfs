@@ -60,19 +60,7 @@ void err_msg(enum e_err_type errnoflag, enum e_err_level level, const char *fmt,
 	va_list ap;
 
 	/* Print where? */
-	switch (Globals.error_print) {
-	case e_err_print_mixed:
-		sl = e_err_print_console;
-		break;
-	case e_err_print_syslog:
-		sl = e_err_print_syslog;
-		break;
-	case e_err_print_console:
-		sl = e_err_print_console;
-		break;
-	default:
-		return;
-	}
+	sl = e_err_print_console;
 
 	va_start(ap, fmt);
 	UCLIBCLOCK;

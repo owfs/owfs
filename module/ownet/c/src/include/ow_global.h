@@ -58,7 +58,6 @@ struct global {
 	ASCII *progname;
 	struct antiloop Token;
 	int error_level;
-	int error_print;
 	int readonly;
 };
 extern struct global Globals;

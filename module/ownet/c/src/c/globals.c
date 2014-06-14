@@ -31,7 +31,6 @@ struct global Globals = {
 	.progname = NULL,			// "One Wire File System" , Can't allocate here since it's freed
 
 	.error_level = e_err_default,
-	.error_print = e_err_print_mixed,
 
 	.readonly = 0,
 };
