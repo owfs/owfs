@@ -44,7 +44,7 @@ $Id$
     25-05-2003 iButtonLink device
 */
 
-/* CAnn stand alone -- separated out of ow.h for clarity */
+/* Can stand alone -- separated out of ow.h for clarity */
 
 #ifndef OW_GLOBAL_H				/* tedious wrapper */
 #define OW_GLOBAL_H
@@ -66,6 +66,18 @@ enum enum_program_type {
 	program_option_sensor, program_option_property,
 };
 
+/* Daemon status
+ * can be running as foreground or background
+ * this is for a state machine implementation
+ * sd is systemd which is foreground
+ * sd cannot be changed
+ * want_bg is default state
+ * goes to bg if proper program type and can daemonize
+ * */
+enum enum_daemon_status {
+	e_daemon_want_bg, e_daemon_bg, e_daemon_sd, e_daemon_fg,
+} ;
+
 /* Globals information (for local control) */
 struct global {
 	int announce_off;			// use zeroconf?
@@ -74,6 +86,7 @@ struct global {
 	enum pressure_type pressure_scale ;
 	enum deviceformat format ;
 	enum enum_program_type program_type;
+	enum enum_daemon_status daemon_status ;
 	int allow_external ; // allow this program to call external programs for read/write -- dangerous
 	int allow_other ;
 	ASCII *progname;
