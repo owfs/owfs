@@ -99,8 +99,8 @@ const struct option owopts_long[] = {
 	{"external", no_argument, &Globals.allow_external, 1},
 	{"no_external", no_argument, &Globals.allow_external, 0},
 
-	{"background", no_argument, &Globals.want_background, 1},
-	{"foreground", no_argument, &Globals.want_background, 0},
+	{"background", no_argument, NO_LINKED_VAR, e_want_background},
+	{"foreground", no_argument, NO_LINKED_VAR, e_want_foreground},
 	{"fatal_debug", no_argument, &Globals.fatal_debug, 1},
 	{"fatal-debug", no_argument, &Globals.fatal_debug, 1},
 	{"fatal_debug_file", required_argument, NO_LINKED_VAR, e_fatal_debug_file},
@@ -720,7 +720,13 @@ GOOD_OR_BAD owopt(const int option_char, const char *arg)
 		// shortcut for --foreground --error_level=9
 		printf("DEBUG MODE\n");
 		printf("libow version:\n\t" VERSION "\n");
-		Globals.want_background = 0 ; //foreground
+		switch (Globals.daemon_status) {
+			case e_daemon_want_bg:
+				Globals.daemon_status = e_daemon_fg ;
+				break ;
+			default:
+				break ;
+		}		
 		Globals.error_level = 9 ;
 		Globals.error_level_restore = 9 ;
 		break ;
@@ -740,6 +746,26 @@ GOOD_OR_BAD owopt(const int option_char, const char *arg)
 		RETURN_BAD_IF_BAD(OW_parsevalue_I(&arg_to_integer, arg)) ;
 		Globals.max_clients = (int) arg_to_integer;
 		break;
+	case e_want_background:
+		switch (Globals.daemon_status) {
+			case e_daemon_fg:
+			case e_daemon_unknown:
+				Globals.daemon_status = e_daemon_want_bg ;
+				break ;
+			default:
+				break ;
+		}		
+		break ;
+	case e_want_foreground:
+		switch (Globals.daemon_status) {
+			case e_daemon_want_bg:
+			case e_daemon_unknown:
+				Globals.daemon_status = e_daemon_fg ;
+				break ;
+			default:
+				break ;
+		}		
+		break ;
 	case e_i2c:
 		return ARG_I2C(arg);
 	case e_ha5:

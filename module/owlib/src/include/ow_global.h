@@ -75,7 +75,7 @@ enum enum_program_type {
  * goes to bg if proper program type and can daemonize
  * */
 enum enum_daemon_status {
-	e_daemon_want_bg, e_daemon_bg, e_daemon_sd, e_daemon_fg,
+	e_daemon_want_bg, e_daemon_bg, e_daemon_sd, e_daemon_fg, e_daemon_unknown,
 } ;
 
 /* Globals information (for local control) */
@@ -93,8 +93,6 @@ struct global {
 	struct antiloop Token;
 	int uncached ; // all requests are from /uncached directory
 	int unaliased ; // all requests are from /unaliased (no alias substitution on results)
-	int want_background;
-	int now_background;
 	int error_level;
 	int error_level_restore;
 	int error_print;

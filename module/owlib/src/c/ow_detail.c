@@ -80,7 +80,14 @@ GOOD_OR_BAD Detail_Add( const char *arg )
 		length[0] = SerialNumber_length( this_p, sn ) ;
 		if ( length[0] > 0 ) {
 			++ DD.details ;
-			Globals.want_background = 0 ; //foreground
+			switch (Globals.daemon_status) {
+				case e_daemon_want_bg:
+				case e_daemon_unknown:
+					Globals.daemon_status = e_daemon_fg ;
+					break ;
+				default:
+					break ;
+			}		
 			DirblobAdd( sn, &(DD.sn) ) ;
 			DirblobAdd( length, &(DD.length) ) ;
 		}

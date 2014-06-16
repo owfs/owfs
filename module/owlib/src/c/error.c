@@ -96,7 +96,15 @@ void err_msg(enum e_err_type errnoflag, enum e_err_level level, const char * fil
 	/* Print where? */
 	switch (Globals.error_print) {
 	case e_err_print_mixed:
-		sl = Globals.now_background ? e_err_print_syslog : e_err_print_console;
+		switch (Globals.daemon_status) {
+			case e_daemon_want_bg:
+			case e_daemon_bg:
+				sl = e_err_print_syslog ;
+				break ;
+			default:
+				sl = e_err_print_console;
+				break ;
+		}		
 		break;
 	case e_err_print_syslog:
 		sl = e_err_print_syslog;
@@ -192,7 +200,15 @@ void fatal_error(const char * file, int line, const char * func, const char *fmt
 		/* Print where? */
 		switch (Globals.error_print) {
 			case e_err_print_mixed:
-				sl = Globals.now_background ? e_err_print_syslog : e_err_print_console;
+				switch (Globals.daemon_status) {
+					case e_daemon_want_bg:
+					case e_daemon_bg:
+						sl = e_err_print_syslog ;
+						break ;
+					default:
+						sl = e_err_print_console;
+						break ;
+				}		
 				break;
 			case e_err_print_syslog:
 				sl = e_err_print_syslog;

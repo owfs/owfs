@@ -111,12 +111,19 @@ int main(int argc, char *argv[])
 	Fuse_add("-o", &fuse_options);	// add "-o direct_io" to prevent buffering
 	Fuse_add("direct_io", &fuse_options);
 #endif							/* FUSE_VERSION >= 22 */
-	if (!Globals.want_background) {
-		Fuse_add("-f", &fuse_options);	// foreground for fuse too
-		if (Globals.error_level > 2) {
-			Fuse_add("-d", &fuse_options);	// debug for fuse too
-		}
-	}
+	switch (Globals.daemon_status) {
+		case e_daemon_want_bg:
+		case e_daemon_bg:
+			Fuse_add("-f", &fuse_options);	// foreground for fuse too
+			if (Globals.error_level > 2) {
+				Fuse_add("-d", &fuse_options);	// debug for fuse too
+			}
+			Globals.daemon_status = e_daemon_bg;
+			break ;
+		default:
+			break ;
+	}		
+
 	Fuse_parse(fuse_mnt_opt, &fuse_options);
 	LEVEL_DEBUG("fuse_mnt_opt=[%s]", fuse_mnt_opt);
 	Fuse_parse(fuse_open_opt, &fuse_options);
@@ -125,8 +132,6 @@ int main(int argc, char *argv[])
 		Fuse_add("-o", &fuse_options);	// add "-o allow_other" to permit other users access
 		Fuse_add("allow_other", &fuse_options);
 	}
-
-	Globals.now_background = Globals.want_background;	// tell "error" that we are background
 
 #if FUSE_VERSION > 25
 	fuse_main(fuse_options.argc, fuse_options.argv, &owfs_oper, NULL);

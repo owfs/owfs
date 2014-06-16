@@ -118,47 +118,50 @@ GOOD_OR_BAD EnterBackground(void)
 	 * use the adapter after daemon otherwise. Some permissions are changed on the process
 	 * (or process-group id) which libusb-win32 is depending on. */
 	//printf("Enter Background\n") ;
-	if (Globals.want_background) {
-		switch (Globals.program_type) {
-		case program_type_filesystem:
-			// handles PID from a callback
-			break;
-		case program_type_httpd:
-		case program_type_ftpd:
-		case program_type_server:
-		case program_type_external:
-			if (
-				// daemonize
-				//   current directory left unchanged (not root)
-				//   stdin, stdout and stderr sent to /dev/null
-#ifdef HAVE_DAEMON
-				   daemon(1, 0)
-#else							/* HAVE_DAEMON */
-				   my_daemon(1, 0)
-#endif							/* HAVE_DAEMON */
-				) {
-				LEVEL_DEFAULT("Cannot enter background mode, quitting.");
-				return gbBAD;
-			} else {
-				Globals.now_background = 1;
-				LEVEL_DEFAULT("Entered background mode, quitting.");
-#ifdef __UCLIBC__
-				/* Have to re-initialize pthread since the main-process is gone.
-				 *
-				 * This workaround will probably be fixed in uClibc-0.9.28
-				 * Other uClibc developers have noticed similar problems which are
-				 * trigged when pthread functions are used in shared libraries. */
-				LockSetup();
-#endif							/* __UCLIBC__ */
+	switch (Globals.daemon_status) {
+		case e_daemon_want_bg:
+			switch (Globals.program_type) {
+			case program_type_filesystem:
+				// handles PID from a callback
+				break;
+			case program_type_httpd:
+			case program_type_ftpd:
+			case program_type_server:
+			case program_type_external:
+				if (
+					// daemonize
+					//   current directory left unchanged (not root)
+					//   stdin, stdout and stderr sent to /dev/null
+				#ifdef HAVE_DAEMON
+					   daemon(1, 0)
+				#else							/* HAVE_DAEMON */
+					   my_daemon(1, 0)
+				#endif							/* HAVE_DAEMON */
+					) {
+					LEVEL_DEFAULT("Cannot enter background mode, quitting.");
+					return gbBAD;
+				} else {
+					Globals.daemon_status = e_daemon_bg ;
+					LEVEL_DEFAULT("Entered background mode, quitting.");
+				#ifdef __UCLIBC__
+					/* Have to re-initialize pthread since the main-process is gone.
+					 *
+					 * This workaround will probably be fixed in uClibc-0.9.28
+					 * Other uClibc developers have noticed similar problems which are
+					 * trigged when pthread functions are used in shared libraries. */
+					LockSetup();
+				#endif							/* __UCLIBC__ */
+				}
+			default: // other type of program
+				PIDstart();
+				break;
 			}
-		default:
-			PIDstart();
+			break ;
+		default: // not  want-background
+			if (Globals.program_type != program_type_filesystem) {
+				PIDstart();
+			}
 			break;
-		}
-	} else {					// not background
-		if (Globals.program_type != program_type_filesystem) {
-			PIDstart();
-		}
 	}
 
 	main_threadid = pthread_self();
