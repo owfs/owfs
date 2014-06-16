@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -440,11 +439,21 @@ GOOD_OR_BAD ARG_Serial(const char *arg)
 // This is owserver's listening port
 GOOD_OR_BAD ARG_Server(const char *arg)
 {
-	struct connection_out *out = NewOut();
-	if (out == NULL) {
-		return gbBAD;
-	}
-	out->name = (arg!=NULL) ? owstrdup(arg) : NULL;
+	switch (Globals.daemon_status) {
+		case e_daemon_sd:
+		case e_daemon_sd_done:
+			LEVEL_DEBUG("Systemd mode: Ignore %s",arg);
+			break ;
+		default:
+		{
+			struct connection_out *out = NewOut();
+			if (out == NULL) {
+				return gbBAD;
+			}
+			out->name = (arg!=NULL) ? owstrdup(arg) : NULL;
+		}
+			break ;
+	}		
 	return gbGOOD;
 }
 

@@ -173,6 +173,7 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_slurp.c         \
                ow_stateinfo.c     \
                ow_system.c        \
+               ow_systemd.c       \
                ow_tcp_free.c      \
                ow_tcp_open.c      \
                ow_tcp_read.c      \

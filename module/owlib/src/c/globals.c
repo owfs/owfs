@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -45,9 +44,8 @@ struct global Globals = {
 	.uncached = 0,
 	.unaliased = 0,
 	
-	.want_background = 1,
-	.now_background = 0,
-
+	.daemon_status = e_daemon_want_bg ,
+	
 	.error_level = e_err_default,
 	.error_level_restore = e_err_default,
 	.error_print = e_err_print_mixed,

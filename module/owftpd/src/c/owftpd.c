@@ -14,6 +14,7 @@ int main(int argc, char *argv[])
 
 	/* Set up owlib */
 	LibSetup(program_type_ftpd);
+	Setup_Systemd() ; // systemd?
 
 	/* grab our executable name */
 	if (argc > 0) {
@@ -35,6 +36,7 @@ int main(int argc, char *argv[])
 	/* FTP on default port? */
 	if (Outbound_Control.active == 0) {
 		ARG_Server(NULL);	// default or ephemeral port
+		// except systemd
 	}
 
 	/* non-option args are adapters */
@@ -55,7 +57,7 @@ int main(int argc, char *argv[])
 	// SIGTERM is used to kill all outprocesses which hang in accept()
 	pthread_sigmask(SIG_BLOCK, &myset, NULL);
 
-	/* Set up adapters */
+	/* Set up adapters and systemd */
 	if ( BAD(LibStart()) ) {
 		ow_exit(1);
 	}

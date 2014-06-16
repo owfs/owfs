@@ -136,6 +136,7 @@ void FreeClientAddr(struct connection_in *in);
 
 void ServerProcess(void (*HandlerRoutine) (FILE_DESCRIPTOR_OR_ERROR file_descriptor));
 GOOD_OR_BAD ServerOutSetup(struct connection_out *out);
+void Setup_Systemd( void ) ;
 
 GOOD_OR_BAD ReadAliasFile(const ASCII * file) ;
 GOOD_OR_BAD Test_and_Add_Alias( char * name, BYTE * sn ) ;

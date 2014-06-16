@@ -45,6 +45,7 @@ int main(int argc, char **argv)
 	
 	/* Set up owlib */
 	LibSetup(program_type_server);
+	Setup_Systemd() ; // systemd?
 
 	/* grab our executable name */
 	if (argc > 0) {
@@ -74,7 +75,7 @@ int main(int argc, char **argv)
 	}
 
 	if (Outbound_Control.active == 0) {
-		ARG_Server(NULL);		// make the default assignment
+		ARG_Server(NULL);		// make the default assignment or systemd
 	}
 
 
@@ -83,7 +84,7 @@ int main(int argc, char **argv)
 		ow_exit(1);
 	}
 
-	/* Set up adapters */
+	/* Set up adapters and systemd*/
 	if ( BAD(LibStart()) ) {
 		ow_exit(1);
 	}

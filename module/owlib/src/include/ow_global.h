@@ -75,7 +75,7 @@ enum enum_program_type {
  * goes to bg if proper program type and can daemonize
  * */
 enum enum_daemon_status {
-	e_daemon_want_bg, e_daemon_bg, e_daemon_sd, e_daemon_fg, e_daemon_unknown,
+	e_daemon_want_bg, e_daemon_bg, e_daemon_sd, e_daemon_sd_done, e_daemon_fg, e_daemon_unknown,
 } ;
 
 /* Globals information (for local control) */

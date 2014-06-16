@@ -42,6 +42,7 @@ int main(int argc, char *argv[])
 
 	/* Set up owlib */
 	LibSetup(program_type_httpd);
+	Setup_Systemd() ; // systemd?
 
 	/* grab our executable name */
 	if (argc > 0) {
@@ -67,14 +68,22 @@ int main(int argc, char *argv[])
 		++optind;
 	}
 
-	if (Outbound_Control.active == 0) {
-		if (Globals.zero == zero_none) {
-			LEVEL_DEFAULT("%s would be \"locked in\" so will quit.\nBonjour and Avahi not available.", argv[0]);
-			ow_exit(1);
-		} else {
-			LEVEL_CONNECT("%s will use an ephemeral port", argv[0]) ;
-		}
-		ARG_Server(NULL);		// make an ephemeral assignment
+	switch (Globals.daemon_status) {
+		case e_daemon_sd:
+		case e_daemon_sd_done:
+			// systemd done later
+			break ;
+		default:
+			if (Outbound_Control.active == 0) {
+				if (Globals.zero == zero_none) {
+					LEVEL_DEFAULT("%s would be \"locked in\" so will quit.\nBonjour and Avahi not available.", argv[0]);
+					ow_exit(1);
+				} else {
+					LEVEL_CONNECT("%s will use an ephemeral port", argv[0]) ;
+				}
+				ARG_Server(NULL);		// make an ephemeral assignment
+			}
+			break ;
 	}
 
 	/* become a daemon if not told otherwise */
@@ -82,7 +91,7 @@ int main(int argc, char *argv[])
 		ow_exit(1);
 	}
 
-	/* Set up adapters */
+	/* Set up adapters and systemd */
 	if ( BAD(LibStart()) ) {
 		ow_exit(1);
 	}

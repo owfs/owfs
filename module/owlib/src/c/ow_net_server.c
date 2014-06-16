@@ -85,6 +85,11 @@ static GOOD_OR_BAD ServerAddr(const char * default_port, struct connection_out *
 
 static FILE_DESCRIPTOR_OR_ERROR ServerListen(struct connection_out *out)
 {
+	if ( Globals.daemon_status == e_daemon_sd ) {
+		// system listen file descriptor already set by systemd
+		return out->file_descriptor ;
+	}
+	
 	if (out->ai == NULL) {
 		LEVEL_CONNECT("Server address not yet parsed [%s]", SAFESTRING(out->name));
 		return FILE_DESCRIPTOR_BAD;
@@ -145,8 +150,10 @@ GOOD_OR_BAD ServerOutSetup(struct connection_out *out)
 		}
 	}
 
-	// second time through, use ephemeral port
-	RETURN_BAD_IF_BAD( ServerAddr( "0", out ) ) ;
+	if ( Globals.daemon_status != e_daemon_sd ) {
+		// second time through, use ephemeral port
+		RETURN_BAD_IF_BAD( ServerAddr( "0", out ) ) ;
+	}
 
 	return FILE_DESCRIPTOR_VALID(ServerListen(out)) ? gbGOOD : gbBAD ;
 }
