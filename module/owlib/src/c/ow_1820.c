@@ -759,8 +759,10 @@ static GOOD_OR_BAD OW_test_resolution( int * resolution_changed, struct tempreso
 			data[4] = (resolution_register & 0x60) | 0x1F ;
 			/* only store in scratchpad, not EEPROM */
 			RETURN_BAD_IF_BAD(OW_w_scratchpad(&data[2], pn)) ;
-			Cache_Add_SlaveSpecific(&(Resolution->bits), sizeof(int), SlaveSpecificTag(RES), pn);
 		}
+		// Always add a succesful/correct result to cache, else we will be re-reading
+		// every time if we use default resolution
+		Cache_Add_SlaveSpecific(&(Resolution->bits), sizeof(int), SlaveSpecificTag(RES), pn);
 	}
 
 	return gbGOOD;	
