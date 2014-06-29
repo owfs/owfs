@@ -317,6 +317,7 @@ void ServerProcess(void (*HandlerRoutine) (FILE_DESCRIPTOR_OR_ERROR file_descrip
 //	fcntl (shutdown_pipe[fd_pipe_write], F_SETFD, FD_CLOEXEC); // for safe forking
 		
 	if ( GOOD( SetupListenSockets( HandlerRoutine ) ) ) {
+		Announce_Systemd() ; // systemd mode -- ready for business
 		while (	GOOD( ListenCycle() ) ) {
 		}
 

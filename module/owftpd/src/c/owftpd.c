@@ -1,5 +1,8 @@
 /*
- * $Id$
+ * owftpd -- an ftp server for owfs 1-wire "virtual" files.
+ * No actual file contents are exposed.
+ * see owfs.org
+ * Paul Alfille -- GPLv2
  */
 
 #include "owftpd.h"
@@ -83,6 +86,7 @@ int main(int argc, char *argv[])
 	sigaddset(&myset, SIGTERM);
 
 	while (!StateInfo.shutting_down) {
+		Announce_Systemd() ; // If in systemd mode announce we're ready.
 		if ((err = sigwait(&myset, &signo)) == 0) {
 			if (signo == SIGHUP) {
 				LEVEL_DEBUG("owftpd: ignore signo=%d", signo);

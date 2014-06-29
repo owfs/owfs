@@ -36,3 +36,11 @@ void Setup_Systemd( void )
 		Globals.daemon_status = e_daemon_sd ;
 	}
 }
+
+// Announce systemd is ready
+void Announce_Systemd( void )
+{
+	if ( Globals.daemon_status == e_daemon_sd ) {
+		sd_notify( 0,"READY=1" ) ;
+	}
+}

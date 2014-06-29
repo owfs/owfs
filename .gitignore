@@ -53,3 +53,42 @@ nytprof.out
 *.in
 .deps/
 .libs/
+
+	aclocal.m4
+	autom4te.cache/
+	module/owfs/src/c/owfs
+	module/owftpd/src/c/owftpd
+	module/owhttpd/src/c/owhttpd
+	module/ownet/perl5/OWNet/blib/
+	module/ownet/perl5/OWNet/pm_to_blib
+	module/ownet/php/examples/ownet_example.php
+	module/owserver/src/c/owexternal
+	module/owserver/src/c/owserver
+	module/owshell/src/c/owdir
+	module/owshell/src/c/owexist
+	module/owshell/src/c/owget
+	module/owshell/src/c/owpresent
+	module/owshell/src/c/owread
+	module/owshell/src/c/owwrite
+	module/owtcl/ow.tcl.h
+	module/owtcl/pkgIndex.tcl
+	module/swig/perl5/OW/Makefile.PL
+	module/swig/perl5/OW/Makefile.linux
+	module/swig/perl5/OW/Makefile.osx
+	module/swig/perl5/OW/OW.pm
+	module/swig/perl5/OW/blib/
+	module/swig/perl5/OW/ow_wrap.c
+	module/swig/perl5/OW/pm_to_blib
+	module/swig/php/OW.php
+	module/swig/php/example/load_php_OW.php
+	module/swig/php/ow_wrap.c
+	module/swig/php/php_OW.h
+	module/swig/python/OW.py
+	module/swig/python/build/
+	module/swig/python/ow_wrap.c
+	module/swig/python/setup.py
+	src/include/config.h
+	src/include/owfs_config.h
+	src/include/stamp-h1
+	src/rpm/owfs.spec
+	src/scripts/windows/owfs.nsi
