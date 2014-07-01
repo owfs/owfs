@@ -1,0 +1,12 @@
+[Unit]
+Description=Backend server for 1-wire control
+Documentation=man:owserver(1)
+
+[Service]
+#User=ow
+#Group=ow
+ExecStart=/usr/bin/owserver --foreground --w1
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

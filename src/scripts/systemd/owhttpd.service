@@ -1,0 +1,14 @@
+[Unit]
+Description=Tiny webserver for 1-wire control
+Documentation=man:owhttpd(1)
+Requires=owserver.service
+After=owserver.service
+After=avahi-daemon.service
+
+[Service]
+ExecStart=/usr/bin/owhttpd --foreground --server=127.0.0.1
+User=ow
+Group=ow
+
+[Install]
+WantedBy=multi-user.target
