@@ -654,6 +654,10 @@ GOOD_OR_BAD owopt(const int option_char, const char *arg)
 	case 's':
 		return ARG_Net(arg);
 	case 'p':
+		if ( Globals.daemon_status == e_daemon_sd ) {
+			LEVEL_DEFAULT("systemd mode -- ignore 'p' option");
+			return gbGOOD ;
+		}
 		switch (Globals.program_type) {
 		case program_type_httpd:
 		case program_type_server:
@@ -747,6 +751,9 @@ GOOD_OR_BAD owopt(const int option_char, const char *arg)
 		break;
 	case e_want_background:
 		switch (Globals.daemon_status) {
+			case e_daemon_sd:
+				LEVEL_DEFAULT("systemd mode -- ignore background request");
+				break ;
 			case e_daemon_fg:
 			case e_daemon_unknown:
 				Globals.daemon_status = e_daemon_want_bg ;
@@ -757,6 +764,9 @@ GOOD_OR_BAD owopt(const int option_char, const char *arg)
 		break ;
 	case e_want_foreground:
 		switch (Globals.daemon_status) {
+			case e_daemon_sd:
+				LEVEL_DEFAULT("systemd mode -- ignore foreground request");
+				break ;
 			case e_daemon_want_bg:
 			case e_daemon_unknown:
 				Globals.daemon_status = e_daemon_fg ;
