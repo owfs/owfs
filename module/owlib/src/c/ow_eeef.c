@@ -46,6 +46,8 @@ READ_FUNCTION(FS_short);
 static enum e_visibility VISIBLE_EF_UVI( const struct parsedname * pn ) ;
 static enum e_visibility VISIBLE_EF_MOISTURE( const struct parsedname * pn ) ;
 static enum e_visibility VISIBLE_EF_HUB( const struct parsedname * pn ) ;
+static enum e_visibility VISIBLE_EF_BAROMETER( const struct parsedname * pn ) ;
+static enum e_visibility VISIBLE_EF_HUMIDITY( const struct parsedname * pn ) ;
 
 enum e_EF_type {
 	eft_UVI = 1,
@@ -53,6 +55,8 @@ enum e_EF_type {
 	eft_LOG = 3,
 	eft_SNF = 4,
 	eft_HUB = 5,
+	eft_BAR = 6,
+	eft_HUM = 7,
 } ;
 
 enum e_cal_type {
@@ -113,6 +117,19 @@ DeviceEntry(EF, HobbyBoards_EF, NO_GENERIC_READ, NO_GENERIC_WRITE);
 #define _EEEF_READ_UVI_OFFSET 0x26
 #define _EEEF_SET_IN_CASE 0x27
 #define _EEEF_READ_IN_CASE 0x28
+
+#define _EEEF_GET_POLLING_FREQUENCY 0x14
+#define _EEEF_SET_POLLING_FREQUENCY 0x94
+#define _EEEF_GET_AVAILABLE_POLLING_FREQUENCIES 0x15
+
+#define _EEEF_GET_LOCATION 0x16
+#define _EEEF_SET_LOCATION 0x96
+
+#define _EEEF_GET_CONFIG 0x61
+#define _EEEF_SET_CONFIG 0xE1
+
+#define _EEEF_REBOOT 0xF1
+#define _EEEF_RESET_TO_FACTORY_DEFAULTS 0xF7
 
 #define _EEEF_READ_SENSOR 0x21
 #define _EEEF_SET_LEAF 0x22
