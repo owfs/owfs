@@ -319,7 +319,7 @@ static ZERO_OR_ERROR FS_r_s_alarm(struct one_wire_query *owq)
 	U = (d[5] & 0x03) * 100000000;
 	/* registers 0x8B and 0x8C */
 	for (i = 0, p = 1; i < 8; ++i, p *= 10) {
-		U += UT_getbit(&d[3], i) | (UT_getbit(&d[4], i) << 1) * p;
+		U += (UT_getbit(&d[4], i) | (UT_getbit(&d[3], i) << 1)) * p;
 	}
 	OWQ_U(owq) = U;
 	return 0;
