@@ -683,7 +683,8 @@ static GOOD_OR_BAD OW_set_resolution( struct tempresolution ** Resolution, const
 					Resolution[0] = &ResolutionMAX ;
 					return gbGOOD ;
 				case MAX31850_3B:
-					Resolution[0] = &ResolutionCLD ;
+					//Resolution[0] = &ResolutionCLD ;
+					Resolution[0] = &ResolutionTCP ;
 					return gbGOOD ;
 				case Unknown_3B:
 					LEVEL_DEBUG("Cannot tell type (Family 3B)") ;
@@ -888,7 +889,8 @@ static GOOD_OR_BAD OW_22temp(_FLOAT * temp, enum temperature_problem_flag accept
 static GOOD_OR_BAD OW_thermocouple(_FLOAT * temp, enum temperature_problem_flag accept_85C, int simul_good, const struct parsedname *pn)
 {
 	BYTE data[SCRATCHPAD_LENGTH];
-	struct tempresolution * Resolution = &ResolutionTCP ;
+	//struct tempresolution * Resolution = &ResolutionTCP ;
+	struct tempresolution * Resolution = &ResolutionCLD ;
 
 	RETURN_BAD_IF_BAD( OW_temperature_ready( accept_85C, simul_good, Resolution, pn ) ) ;
 
@@ -1132,6 +1134,11 @@ static GOOD_OR_BAD OW_w_pio(BYTE pio, const struct parsedname *pn)
 static _FLOAT OW_masked_temperature( BYTE * data, struct tempresolution * Resolution )
 {
 	// Torsten Godau <tg@solarlabs.de> found a problem with 9-bit resolution
+	//printf("%s", "TEMPERATURE REGISTERS, data[1]: ");
+	//printf("%x", data[1]);
+	//printf("%s", ", data[0]: ");
+	//printf("%x\n", data[0]);
+	//printf("%s %x %s %f \n", "ResMask: ", Resolution->mask, "ResScale: ", Resolution->scale);
 	return (_FLOAT) ((int16_t) ((data[1] << 8) | (data[0] & (Resolution->mask)))) / Resolution->scale ;
 }
 
