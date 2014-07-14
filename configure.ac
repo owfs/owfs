@@ -1652,7 +1652,7 @@ AC_CONFIG_FILES([
 	src/scripts/usb/Makefile
 	src/scripts/usb/cygwin/Makefile
 	src/scripts/usb/windows/Makefile
-	src/scripts/usb/systemd/Makefile
+	src/scripts/systemd/Makefile
 	src/include/owfs_config.h
 ])
 AC_OUTPUT

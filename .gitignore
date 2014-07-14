@@ -95,3 +95,4 @@ src/include/owfs_config.h
 src/include/stamp-h1
 src/rpm/owfs.spec
 src/scripts/windows/owfs.nsi
+/src/scripts/systemd/Makefile.in
