@@ -1,0 +1,9 @@
+[Unit]
+Description=Listening socket for owserver
+Documentation=man:owserver(1)
+
+[Socket]
+ListenStream=4304
+
+[Install]
+WantedBy=sockets.target

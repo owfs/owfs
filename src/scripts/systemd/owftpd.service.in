@@ -1,8 +1,6 @@
 [Unit]
 Description=Anonymous FTP server for 1-wire access
 Documentation=man:owftpd(1)
-Requires=owserver.service
-After=owserver.service
 
 [Service]
 ExecStart=@bindir@/owftpd --foreground --server=127.0.0.1

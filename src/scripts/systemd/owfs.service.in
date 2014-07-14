@@ -1,8 +1,6 @@
 [Unit]
 Description=1-wire filesystem FUSE mount
 Documentation=man:owfs(1)
-Requires=owserver.service
-After=owserver.service
 
 [Service]
 Type=forking
