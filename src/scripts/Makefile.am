@@ -1,4 +1,4 @@
-SUBDIRS = usb windows
+SUBDIRS = usb windows systemd
 
 clean-generic:
 
