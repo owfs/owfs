@@ -54,6 +54,9 @@ nytprof.out
 .deps/
 .libs/
 
+!src/scripts/systemd/*.in
+src/scripts/systemd/*.service
+
 aclocal.m4
 autom4te.cache/
 module/owfs/src/c/owfs
