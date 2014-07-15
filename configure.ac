@@ -569,6 +569,7 @@ AC_ARG_ENABLE(owperl,
 [
 	if test -z "$SWIG" ; then
 		AC_MSG_RESULT([no (swig disabled)])
+		ENABLE_OWPERL="false"
 	else
 		AC_MSG_RESULT([yes (default)])
 	fi
@@ -630,6 +631,7 @@ AC_ARG_ENABLE(owphp,
 [
 	if test -z "$SWIG" ; then
 		AC_MSG_RESULT([no (swig disabled)])
+		ENABLE_OWPHP="false"
 	else
 		AC_MSG_RESULT([yes (default)])
 	fi
@@ -700,6 +702,7 @@ AC_ARG_ENABLE(owpython,
 [
 	if test -z "$SWIG" ; then
 		AC_MSG_RESULT([no (swig disabled)])
+		ENABLE_OWPYTHON="false"
 	else
 		AC_MSG_RESULT([yes (default)])
 	fi
