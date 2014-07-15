@@ -20,7 +20,7 @@ char *pid_file = NULL;			/* filename where PID number stored */
 
 void PIDstart(void)
 {
-/* store the PID */
+	/* store the PID */
 	pid_t pid_num = getpid();
 
 	if (pid_file) {
@@ -35,6 +35,10 @@ void PIDstart(void)
 			pid_created = 1;
 		}
 	}
+	
+	/* Send the PID to systemd 
+	 * -- will be a NOP if systed not available */
+	sd_notifyf( 0, "MAINPID=%d",pid_num ) ;
 }
 
 /* At library closeup */
