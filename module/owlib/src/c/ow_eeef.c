@@ -43,6 +43,15 @@ READ_FUNCTION(FS_r_channels);
 WRITE_FUNCTION(FS_w_channels);
 READ_FUNCTION(FS_short);
 
+READ_FUNCTION(FS_r_location);
+WRITE_FUNCTION(FS_w_location);
+READ_FUNCTION(FS_r_avail);
+READ_FUNCTION(FS_r_poll);
+WRITE_FUNCTION(FS_w_poll);
+READ_FUNCTION(FS_r_config);
+WRITE_FUNCTION(FS_w_config);
+WRITE_FUNCTION(FS_command);
+
 static enum e_visibility VISIBLE_EF_UVI( const struct parsedname * pn ) ;
 static enum e_visibility VISIBLE_EF_MOISTURE( const struct parsedname * pn ) ;
 static enum e_visibility VISIBLE_EF_HUB( const struct parsedname * pn ) ;
@@ -63,49 +72,6 @@ enum e_cal_type {
 	cal_min ,
 	cal_max ,
 } ;
-
-/* ------- Structures ----------- */
-static struct filetype HobbyBoards_EE[] = {
-	F_STANDARD_NO_TYPE,
-	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_temperature, NO_WRITE_FUNCTION, VISIBLE_EF_UVI, NO_FILETYPE_DATA, },
-	{"temperature_offset", PROPERTY_LENGTH_TEMPGAP, NON_AGGREGATE, ft_tempgap, fc_stable, FS_r_temperature_offset, FS_w_temperature_offset, VISIBLE_EF_UVI, NO_FILETYPE_DATA, },
-	{"version", 5, NON_AGGREGATE, ft_ascii, fc_stable, FS_version, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
-	{"type_number", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_type_number, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
-	{"type", PROPERTY_LENGTH_TYPE, NON_AGGREGATE, ft_ascii, fc_link, FS_localtype, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
-	{"UVI", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EF_UVI, NO_FILETYPE_DATA, },
-	{"UVI/UVI", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_UVI, NO_WRITE_FUNCTION, VISIBLE_EF_UVI, NO_FILETYPE_DATA, },
-	{"UVI/valid", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_UVI_valid, NO_WRITE_FUNCTION, VISIBLE_EF_UVI, NO_FILETYPE_DATA, },
-	{"UVI/UVI_offset", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_UVI_offset, FS_w_UVI_offset, VISIBLE_EF_UVI, NO_FILETYPE_DATA, },
-	{"UVI/in_case", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_in_case, FS_w_in_case, VISIBLE_EF_UVI, NO_FILETYPE_DATA, },
-};
-
-DeviceEntry(EE, HobbyBoards_EE, NO_GENERIC_READ, NO_GENERIC_WRITE);
-
-static struct aggregate AMOIST = { 4, ag_numbers, ag_aggregate, };
-static struct aggregate AHUB = { 4, ag_numbers, ag_aggregate, };
-static struct filetype HobbyBoards_EF[] = {
-	F_STANDARD_NO_TYPE,
-	{"version", 5, NON_AGGREGATE, ft_ascii, fc_stable, FS_version, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
-	{"type_number", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_type_number, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
-	{"type", PROPERTY_LENGTH_TYPE, NON_AGGREGATE, ft_ascii, fc_link, FS_localtype, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
-	
-	{"moisture", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EF_MOISTURE, NO_FILETYPE_DATA, },
-	{"moisture/sensor", PROPERTY_LENGTH_INTEGER, &AMOIST, ft_integer, fc_volatile, FS_r_sensor, NO_WRITE_FUNCTION, VISIBLE_EF_MOISTURE, NO_FILETYPE_DATA, },
-	{"moisture/is_moisture", PROPERTY_LENGTH_BITFIELD, &AMOIST, ft_bitfield, fc_stable, FS_r_moist, FS_w_moist, VISIBLE_EF_MOISTURE, NO_FILETYPE_DATA, },
-	{"moisture/is_leaf", PROPERTY_LENGTH_BITFIELD, &AMOIST, ft_bitfield, fc_link, FS_r_leaf, FS_w_leaf, VISIBLE_EF_MOISTURE, NO_FILETYPE_DATA, },
-	{"moisture/calibrate", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EF_MOISTURE, NO_FILETYPE_DATA, },
-	{"moisture/calibrate/min", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_cal, FS_w_cal, VISIBLE_EF_MOISTURE, {i:cal_min,}, },
-	{"moisture/calibrate/max", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_cal, FS_w_cal, VISIBLE_EF_MOISTURE, {i:cal_max,}, },
-	{"moisture/calibrate/raw", PROPERTY_LENGTH_UNSIGNED, &AMOIST, ft_unsigned, fc_volatile, FS_r_raw, NO_WRITE_FUNCTION, VISIBLE_EF_MOISTURE, NO_FILETYPE_DATA, },
-
-	{"hub", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EF_HUB, NO_FILETYPE_DATA, },
-	{"hub/config", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_hub_config, FS_w_hub_config, INVISIBLE, NO_FILETYPE_DATA, },
-	{"hub/branch", PROPERTY_LENGTH_BITFIELD, &AHUB, ft_bitfield, fc_stable, FS_r_channels, FS_w_channels, VISIBLE_EF_HUB, NO_FILETYPE_DATA, },
-	{"hub/short", PROPERTY_LENGTH_BITFIELD, &AHUB, ft_bitfield, fc_stable, FS_short, NO_WRITE_FUNCTION, VISIBLE_EF_HUB, NO_FILETYPE_DATA, },
-};
-
-DeviceEntry(EF, HobbyBoards_EF, NO_GENERIC_READ, NO_GENERIC_WRITE);
-
 
 #define _EEEF_READ_VERSION 0x11
 #define _EEEF_READ_TYPE 0x12
@@ -149,6 +115,65 @@ DeviceEntry(EF, HobbyBoards_EF, NO_GENERIC_READ, NO_GENERIC_WRITE);
 #define _EEEF_HUB_SET_CHANNEL_BIT 0x10
 #define _EEEF_HUB_SET_CHANNEL_MASK 0x0F
 
+/* ------- Structures ----------- */
+static struct filetype HobbyBoards_EE[] = {
+	F_STANDARD_NO_TYPE,
+	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_temperature, NO_WRITE_FUNCTION, VISIBLE_EF_UVI, NO_FILETYPE_DATA, },
+	{"temperature_offset", PROPERTY_LENGTH_TEMPGAP, NON_AGGREGATE, ft_tempgap, fc_stable, FS_r_temperature_offset, FS_w_temperature_offset, VISIBLE_EF_UVI, NO_FILETYPE_DATA, },
+	{"version", 5, NON_AGGREGATE, ft_ascii, fc_stable, FS_version, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"type_number", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_type_number, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"type", PROPERTY_LENGTH_TYPE, NON_AGGREGATE, ft_ascii, fc_link, FS_localtype, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"UVI", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EF_UVI, NO_FILETYPE_DATA, },
+	{"UVI/UVI", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_UVI, NO_WRITE_FUNCTION, VISIBLE_EF_UVI, NO_FILETYPE_DATA, },
+	{"UVI/valid", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_UVI_valid, NO_WRITE_FUNCTION, VISIBLE_EF_UVI, NO_FILETYPE_DATA, },
+	{"UVI/UVI_offset", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_UVI_offset, FS_w_UVI_offset, VISIBLE_EF_UVI, NO_FILETYPE_DATA, },
+	{"UVI/in_case", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_in_case, FS_w_in_case, VISIBLE_EF_UVI, NO_FILETYPE_DATA, },
+};
+
+DeviceEntry(EE, HobbyBoards_EE, NO_GENERIC_READ, NO_GENERIC_WRITE);
+
+static struct aggregate AMOIST = { 4, ag_numbers, ag_aggregate, };
+static struct aggregate AHUB = { 4, ag_numbers, ag_aggregate, };
+static struct filetype HobbyBoards_EF[] = {
+	F_STANDARD_NO_TYPE,
+	{"version", 5, NON_AGGREGATE, ft_ascii, fc_stable, FS_version, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"type_number", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_type_number, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"type", PROPERTY_LENGTH_TYPE, NON_AGGREGATE, ft_ascii, fc_link, FS_localtype, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	
+	{"moisture", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EF_MOISTURE, NO_FILETYPE_DATA, },
+	{"moisture/sensor", PROPERTY_LENGTH_INTEGER, &AMOIST, ft_integer, fc_volatile, FS_r_sensor, NO_WRITE_FUNCTION, VISIBLE_EF_MOISTURE, NO_FILETYPE_DATA, },
+	{"moisture/is_moisture", PROPERTY_LENGTH_BITFIELD, &AMOIST, ft_bitfield, fc_stable, FS_r_moist, FS_w_moist, VISIBLE_EF_MOISTURE, NO_FILETYPE_DATA, },
+	{"moisture/is_leaf", PROPERTY_LENGTH_BITFIELD, &AMOIST, ft_bitfield, fc_link, FS_r_leaf, FS_w_leaf, VISIBLE_EF_MOISTURE, NO_FILETYPE_DATA, },
+	{"moisture/calibrate", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EF_MOISTURE, NO_FILETYPE_DATA, },
+	{"moisture/calibrate/min", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_cal, FS_w_cal, VISIBLE_EF_MOISTURE, {i:cal_min,}, },
+	{"moisture/calibrate/max", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_cal, FS_w_cal, VISIBLE_EF_MOISTURE, {i:cal_max,}, },
+	{"moisture/calibrate/raw", PROPERTY_LENGTH_UNSIGNED, &AMOIST, ft_unsigned, fc_volatile, FS_r_raw, NO_WRITE_FUNCTION, VISIBLE_EF_MOISTURE, NO_FILETYPE_DATA, },
+	
+	{"humidity", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EF_HUMIDITY, NO_FILETYPE_DATA, },
+	{"humidity/polling_frequency", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_poll, FS_w_poll, VISIBLE_EF_HUMIDITY, NO_FILETYPE_DATA, } ,
+	{"humidity/polling_available", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_avail, NO_WRITE_FUNCTION, VISIBLE_EF_HUMIDITY, NO_FILETYPE_DATA, } ,
+	{"humidity/location", 21, NON_AGGREGATE, ft_ascii, fc_stable, FS_r_location, FS_w_location, VISIBLE_EF_HUMIDITY, NO_FILETYPE_DATA, } ,
+	{"humidity/config", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_config, FS_w_config, VISIBLE_EF_HUMIDITY, NO_FILETYPE_DATA, } ,
+	{"humidity/reboot", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_command, VISIBLE_EF_HUMIDITY, {c:_EEEF_REBOOT,}, } ,
+	{"humidity/reset", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_command, VISIBLE_EF_HUMIDITY, {c:_EEEF_RESET_TO_FACTORY_DEFAULTS,}, } ,
+	
+	{"barometer", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EF_BAROMETER, NO_FILETYPE_DATA, },
+	{"barometer/polling_frequency", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_poll, FS_w_poll, VISIBLE_EF_BAROMETER, NO_FILETYPE_DATA, } ,
+	{"barometer/polling_available", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_avail, NO_WRITE_FUNCTION, VISIBLE_EF_BAROMETER, NO_FILETYPE_DATA, } ,
+	{"barometer/location", 21, NON_AGGREGATE, ft_ascii, fc_stable, FS_r_location, FS_w_location, VISIBLE_EF_BAROMETER, NO_FILETYPE_DATA, } ,
+	{"barometer/config", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_config, FS_w_config, VISIBLE_EF_BAROMETER, NO_FILETYPE_DATA, } ,
+	{"barometer/reboot", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_command, VISIBLE_EF_BAROMETER, {c:_EEEF_REBOOT,}, } ,
+	{"barometer/reset", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_command, VISIBLE_EF_BAROMETER, {c:_EEEF_RESET_TO_FACTORY_DEFAULTS,}, } ,
+	
+	{"hub", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EF_HUB, NO_FILETYPE_DATA, },
+	{"hub/config", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_hub_config, FS_w_hub_config, INVISIBLE, NO_FILETYPE_DATA, },
+	{"hub/branch", PROPERTY_LENGTH_BITFIELD, &AHUB, ft_bitfield, fc_stable, FS_r_channels, FS_w_channels, VISIBLE_EF_HUB, NO_FILETYPE_DATA, },
+	{"hub/short", PROPERTY_LENGTH_BITFIELD, &AHUB, ft_bitfield, fc_stable, FS_short, NO_WRITE_FUNCTION, VISIBLE_EF_HUB, NO_FILETYPE_DATA, },
+};
+
+DeviceEntry(EF, HobbyBoards_EF, NO_GENERIC_READ, NO_GENERIC_WRITE);
+
+
 static enum e_EF_type VISIBLE_EF( const struct parsedname * pn ) ;
 
 /* finds the visibility value (0x0071 ...) either cached, or computed via the device_id (then cached) */
@@ -191,6 +216,26 @@ static enum e_visibility VISIBLE_EF_MOISTURE( const struct parsedname * pn )
 	}
 }
 
+static enum e_visibility VISIBLE_EF_BAROMETER( const struct parsedname * pn )
+{
+	switch ( VISIBLE_EF(pn) ) {
+		case eft_BAR:
+			return visible_now ;
+		default:
+			return visible_not_now ;
+	}
+}
+
+static enum e_visibility VISIBLE_EF_HUMIDITY( const struct parsedname * pn )
+{
+	switch ( VISIBLE_EF(pn) ) {
+		case eft_HUM:
+			return visible_now ;
+		default:
+			return visible_not_now ;
+	}
+}
+
 static enum e_visibility VISIBLE_EF_HUB( const struct parsedname * pn )
 {
 	switch ( VISIBLE_EF(pn) ) {
@@ -218,6 +263,8 @@ static GOOD_OR_BAD OW_write(BYTE command, BYTE * bytes, size_t size, struct pars
 
 static GOOD_OR_BAD OW_r_wetness( UINT *wetness, struct parsedname * pn);
 
+static GOOD_OR_BAD OW_command( BYTE cmd, struct parsedname * pn);
+
 static GOOD_OR_BAD OW_r_doubles( BYTE command, UINT * dubs, int elements, struct parsedname * pn ) ;
 static GOOD_OR_BAD OW_w_doubles( BYTE command, UINT * dubs, int elements, struct parsedname * pn ) ;
 
@@ -236,6 +283,30 @@ static ZERO_OR_ERROR FS_version(struct one_wire_query *owq)
     return OWQ_format_output_offset_and_size(v, 5, owq);
 }
 
+static ZERO_OR_ERROR FS_r_location(struct one_wire_query *owq)
+{
+    char loc[21];
+
+	memset(loc,0,21);
+    RETURN_ERROR_IF_BAD(OW_read(_EEEF_GET_LOCATION, (BYTE *)loc,20,PN(owq))) ;
+
+    return OWQ_format_output_offset_and_size_z(loc, owq);
+}
+
+static ZERO_OR_ERROR FS_w_location(struct one_wire_query *owq)
+{
+    char loc[21];
+    size_t len = OWQ_length(owq) ;
+    
+    if ( len > 20 ) {
+		len = 20 ;
+	}
+
+	memset(loc,0,21);
+	memcpy( loc, OWQ_buffer(owq), len ) ;
+    return GB_to_Z_OR_E( OW_write( _EEEF_SET_LOCATION, (BYTE *)loc, 21, PN(owq)) ) ;
+}
+
 static ZERO_OR_ERROR FS_type_number(struct one_wire_query *owq)
 {
     BYTE type_number ;
@@ -245,6 +316,16 @@ static ZERO_OR_ERROR FS_type_number(struct one_wire_query *owq)
     OWQ_U(owq) = type_number ;
 
     return 0;
+}
+
+static ZERO_OR_ERROR FS_command( struct one_wire_query *owq)
+{
+	struct parsedname * pn = PN(owq) ;
+	BYTE cmd = pn->selected_filetype->data.c ;
+	if ( OWQ_Y(owq) ) {
+		return GB_to_Z_OR_E( OW_command( cmd, pn ) ) ;
+	}
+	return 0 ;
 }
 
 static ZERO_OR_ERROR FS_temperature(struct one_wire_query *owq)
@@ -381,6 +462,45 @@ static ZERO_OR_ERROR FS_w_in_case(struct one_wire_query *owq)
 {
     BYTE in_case = OWQ_Y(owq) ? 0xFF : 0x00 ;
     return GB_to_Z_OR_E( OW_write(_EEEF_SET_IN_CASE, &in_case, 1, PN(owq))) ;
+}
+
+static ZERO_OR_ERROR FS_r_avail(struct one_wire_query *owq)
+{
+	BYTE pfreq[1] ;
+	
+	RETURN_ERROR_IF_BAD( OW_read( _EEEF_GET_AVAILABLE_POLLING_FREQUENCIES, pfreq, 1, PN(owq) ) ) ;
+	OWQ_U(owq) = pfreq[0] ;
+	return 0 ;
+}
+
+static ZERO_OR_ERROR FS_r_poll(struct one_wire_query *owq)
+{
+	BYTE pfreq[1] ;
+	
+	RETURN_ERROR_IF_BAD( OW_read( _EEEF_GET_POLLING_FREQUENCY, pfreq, 1, PN(owq) ) ) ;
+	OWQ_U(owq) = pfreq[0] ;
+	return 0 ;
+}
+
+static ZERO_OR_ERROR FS_w_poll(struct one_wire_query *owq)
+{
+	BYTE pfreq = OWQ_U(owq) ;
+	return GB_to_Z_OR_E( OW_write(_EEEF_SET_POLLING_FREQUENCY, &pfreq, 1, PN(owq))) ;
+}
+
+static ZERO_OR_ERROR FS_r_config(struct one_wire_query *owq)
+{
+	BYTE conf[1] ;
+	
+	RETURN_ERROR_IF_BAD( OW_read( _EEEF_GET_CONFIG, conf, 1, PN(owq) ) ) ;
+	OWQ_U(owq) = conf[0] ;
+	return 0 ;
+}
+
+static ZERO_OR_ERROR FS_w_config(struct one_wire_query *owq)
+{
+	BYTE conf = OWQ_U(owq) ;
+	return GB_to_Z_OR_E( OW_write(_EEEF_SET_CONFIG, &conf, 1, PN(owq))) ;
 }
 
 static ZERO_OR_ERROR FS_r_sensor(struct one_wire_query *owq)
@@ -655,6 +775,16 @@ static GOOD_OR_BAD OW_write(BYTE command, BYTE * bytes, size_t size, struct pars
         TRXN_START,
         TRXN_WRITE1(c),
         TRXN_WRITE(bytes,size),
+        TRXN_END,
+    };
+    return  BUS_transaction(t, pn) ;
+}
+
+static GOOD_OR_BAD OW_command( BYTE cmd, struct parsedname * pn)
+{
+    struct transaction_log t[] = {
+        TRXN_START,
+        TRXN_WRITE1(&cmd),
         TRXN_END,
     };
     return  BUS_transaction(t, pn) ;
