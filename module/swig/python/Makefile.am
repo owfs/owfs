@@ -22,7 +22,7 @@ install-data-local:
 # Other options are (but not needed): --install-data="/$(DESTDIR)$(PYSITEDIR)" --install-script="/$(DESTDIR)$(PYSITEDIR)" --install-header=
 
 clean-local:
-	@RM@ -f *~ .*~ *.o configuration.log
+	@RM@ -f configuration.log
 	@RM@ -rf build OW.py ow_wrap.c
 
 clean-generic:

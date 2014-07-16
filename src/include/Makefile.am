@@ -1,5 +1,4 @@
 owfsincludedir = ${prefix}/include
-owfsinclude_HEADERS = owfs_config.h
 
 clean-generic:
 

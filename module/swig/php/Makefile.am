@@ -1,8 +1,8 @@
 # $Id$
 
 
-EXTRA_DIST = php.m4 example/owdir.php example/load_php_OW.php.in example/load_php_OW.php
-#noinst_DATA = ow_wrap.c php_OW.h
+EXTRA_DIST = php.m4 example/owdir.php example/load_php_OW.php.in
+DISTCLEANFILES = example/load_php_OW.php
 
 #use libtool to build the php extension
 lib_LTLIBRARIES = libowphp.la
@@ -29,14 +29,11 @@ AM_CFLAGS = -fexceptions \
 
 LDADD = -L../../owlib/src/c -low ${PTHREAD_LIBS} ${LD_EXTRALIBS} ${OSLIBS}
 
-libowphp_la_SOURCES = ow_wrap.c php_OW.h
+nodist_libowphp_la_SOURCES = ow_wrap.c php_OW.h
 
 ow_wrap.c: ../ow.i
 if ENABLE_OWPHP
-# avoid problem when "make dist" and there are no swig available
 	$(SWIG) -php -o $@ ../ow.i
-else
-	touch ow_wrap.c php_OW.h
 endif
 
 #install-data-local:
@@ -46,8 +43,7 @@ endif
 #	ln -sf ../../../lib/libowphp.so $(DESTDIR)$(EXTENSION_DIR)/php_OW.so
 
 clean-local:
-	@RM@ -f *~ .*~ *.o OW.* ow_wrap.c php_OW.h
+	@RM@ -f OW.* ow_wrap.c php_OW.h
 
 clean-generic:
-
 	@RM@ -f *~ .*~
