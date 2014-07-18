@@ -1,5 +1,3 @@
-# $Id$
-
 bin_PROGRAMS = owfs
 owfs_SOURCES = owfs.c owfs_callback.c fuse_line.c
 owfs_DEPENDENCIES = ../../../owlib/src/c/libow.la
@@ -25,6 +23,3 @@ AM_CFLAGS = -I../include \
 
 LDADD = -low ${FUSE_LIBS} ${LIBUSB_LIBS} ${PTHREAD_LIBS} ${LD_EXTRALIBS} ${OSLIBS}
 
-clean-generic:
-
-	@RM@ -f *~ .*~

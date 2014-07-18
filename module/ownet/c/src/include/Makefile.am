@@ -22,6 +22,3 @@ EXTRA_DIST = ${header_DATA} \
         rwlock.h          \
         sem.h
 
-clean-generic:
-
-	@RM@ -f *~ .*~

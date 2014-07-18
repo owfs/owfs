@@ -1,5 +1,3 @@
-## $Id$
-
 EXTRA_DIST = perl5.m4 OW/META.yml OW/README OW/MANIFEST OW/Changes OW/Makefile.linux.in OW/Makefile.osx.in OW/t/OW.t example/owdir.pl example/tree.pl
 
 DISTCLEANFILES = OW/Makefile.linux OW/Makefile.osx
@@ -45,8 +43,4 @@ install-data-local: OW/Makefile OW/ow_wrap.c OW/blib/lib/OW.pm
 clean-local:
 	if test -f OW/Makefile; then cd OW; $(MAKE) clean; fi
 	@RM@ -f OW/Makefile.old OW/Makefile OW/Makefile.PL OW/OW.pm OW/OW.bs OW/ow_wrap.c
-
-clean-generic:
-
-	@RM@ -f *~ .*~
 

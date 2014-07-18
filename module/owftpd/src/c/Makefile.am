@@ -1,5 +1,3 @@
-# $Id$
-
 bin_PROGRAMS = owftpd
 owftpd_SOURCES = file_list.c \
                  file_cd.c    \
@@ -31,7 +29,3 @@ AM_CFLAGS = -I../include \
 
 LDADD = -low ${LIBUSB_LIBS} ${PTHREAD_LIBS} ${LD_EXTRALIBS} ${OSLIBS}
 
-
-clean-generic:
-
-	@RM@ -f *~ .*~

@@ -1,5 +1,3 @@
-# $Id$
-
 SUBDIRS = ow
 EXTRA_DIST = python.m4 \
 	examples/check_ow.py examples/errormessages.py examples/raw_access.py examples/temperature.py examples/tree.py examples/xmlrpc_client.py examples/xmlrpc_server.py \
@@ -25,5 +23,3 @@ clean-local:
 	@RM@ -f configuration.log
 	@RM@ -rf build OW.py ow_wrap.c
 
-clean-generic:
-	@RM@ -f *~ .*~

@@ -1,4 +1,3 @@
-# $Id$
 
 EXTRA_DIST = ow.i
 
@@ -22,6 +21,3 @@ endif
 
 SUBDIRS = $(SWIG_SUBDIRPERL) $(SWIG_SUBDIRPYTHON) $(SWIG_SUBDIRPHP)
 
-clean-generic:
-
-	@RM@ -f *~ .*~

@@ -5,7 +5,3 @@ EXTRA_DIST = owfs.conf owfs.init \
 	owhttpd.conf owhttpd.init \
 	owftpd.conf owftpd.init
 
-clean-generic:
-
-	@RM@ -f *~ .*~
-

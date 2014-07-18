@@ -1,5 +1,3 @@
-# $Id$
-
 LIBOWNET_SOURCE =	    \
         compat.c        \
         error.c         \
@@ -60,8 +58,4 @@ AM_CFLAGS = -I../include \
 	${EXTRACFLAGS} \
 	${PTHREAD_CFLAGS} \
 	${PIC_FLAGS}
-
-clean-generic:
-
-	@RM@ -f *~ .*~
 

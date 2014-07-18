@@ -5,7 +5,3 @@ EXTRA_DIST = example++/owcapiexample.cpp example++/Makefile.example example++/Ma
 
 DISTCLEANFILES = example++/Makefile example/Makefile
 
-clean-generic:
-
-	@RM@ -f *~ .*~
-

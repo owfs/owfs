@@ -5,7 +5,3 @@ EXTRA_DIST = example/ownetexample.c example/Makefile.example example/Makefile.in
 
 DISTCLEANFILES = example/Makefile
 
-clean-generic:
-
-	@RM@ -f *~ .*~
-

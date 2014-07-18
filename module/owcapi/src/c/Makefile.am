@@ -1,5 +1,3 @@
-# $Id$
-
 libowcapi_la_DEPENDENCIES = ../../../owlib/src/c/libow.la
 
 lib_LTLIBRARIES = libowcapi.la
@@ -36,6 +34,3 @@ AM_CFLAGS = -I../include \
 	${LIBUSB_CFLAGS} \
 	${PIC_FLAGS}
 
-clean-generic:
-
-	@RM@ -f *~ .*~

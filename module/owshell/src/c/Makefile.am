@@ -1,5 +1,3 @@
-# $Id$
-
 COMMON_OWSHELL_SOURCE = ow_opt.c   \
                ow_help.c    \
                ow_server.c  \
@@ -47,6 +45,3 @@ AM_CFLAGS = -I../include \
 
 LDADD = ${LD_EXTRALIBS} ${OSLIBS}
 
-clean-generic:
-
-	@RM@ -f *~ .*~

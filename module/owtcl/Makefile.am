@@ -1,5 +1,3 @@
-# $Id$
-
 include version.h
 
 EXTRA_DIST = owtclInitScript.h tcl.m4 ow.tcl example/owdir.tcl example/test.tcl
@@ -56,10 +54,6 @@ AM_CFLAGS = -I../owlib/src/include \
 
 clean-local:
 	@RM@ -f ow.tcl.h pkgIndex.tcl darwin-relink
-
-clean-generic:
-
-	@RM@ -f *~ .*~
 
 ow.tcl.h: ow.tcl ${ow_la_DEPENDENCIES}
 	sed -e '/^$\#/d' -e '/^$$/d' -e 's/\\\"/\\\\"/g' -e 's/\"/\\"/g' -e 's/^/"/' -e 's/$$/\\n"/' <ow.tcl > $@ || { $(RM) $@; exit 1; }

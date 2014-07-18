@@ -8,7 +8,3 @@ EXTRA_DIST = ds9490.inf ds9490.cat README.txt
 #	@INSTALL@ -d ${DESTDIR}${prefix}/drivers
 #	@INSTALL@ ${EXTRA_DIST} ${DESTDIR}${prefix}/drivers/
 
-clean-generic:
-
-	@RM@ -f *~ .*~
-

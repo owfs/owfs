@@ -1,5 +1,3 @@
-## $Id$
-
 if ENABLE_OWPHP
 if ENABLE_PHP
   OWNET_SUBDIRPHP = php
@@ -24,6 +22,3 @@ endif
 
 SUBDIRS = $(OWNET_SUBDIROWNETLIB) $(OWNET_SUBDIRPHP) $(OWNET_SUBDIRPYTHON) $(OWNET_SUBDIRPERL)
 
-clean-generic:
-
-	@RM@ -f *~ .*~

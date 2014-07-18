@@ -1,5 +1,3 @@
-## $Id$
-
 EXTRA_DIST = setup.py MANIFEST.in Readme.txt Readme_pypi.txt examples/check_ow.py examples/temperatures.py ownet/__init__.py ownet/connection.py
 
 install-data-local:
@@ -11,6 +9,3 @@ install-data-local:
 
 clean-local:
 	@RM@ -rf build
-
-clean-generic:
-	@RM@ -f *~ .*~

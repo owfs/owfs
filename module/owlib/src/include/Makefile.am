@@ -116,7 +116,3 @@ noinst_HEADERS =           \
         sd-daemon.h        \
         telnet.h
 
-clean-generic:
-
-	@RM@ -f *~ .*~
-

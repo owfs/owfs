@@ -1,5 +1,3 @@
-## $Id$
-
 EXTRA_DIST = OWNet/README OWNet/MANIFEST OWNet/Changes OWNet/Makefile.PL OWNet/lib/OWNet.pm OWNet/t/OWNet.t examples/test.pl examples/test2.pl
 
 all: OWNet/Makefile
@@ -23,7 +21,6 @@ endif
 #	( cd OWNet; $(MAKE) ; $(MAKE) test; $(MAKE) install )
 
 clean-generic:
-	@RM@ -f *~ .*~
 	if test -f OWNet/Makefile; then cd OWNet; $(MAKE) clean; fi
 	@RM@ -f OWNet/Makefile.old OWNet/Makefile
 

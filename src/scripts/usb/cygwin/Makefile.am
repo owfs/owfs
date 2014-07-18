@@ -17,7 +17,3 @@ install-data-local:
 #	@INSTALL@ ${EXTRA_DIST} ${DESTDIR}${prefix}/drivers/
 endif
 
-clean-generic:
-
-	@RM@ -f *~ .*~
-

@@ -1,5 +1,3 @@
-# $Id$
-
 OWLIB_SOURCE = ow_dl.c            \
                ow_dnssd.c         \
                ow_arg.c           \
@@ -248,8 +246,4 @@ AM_CFLAGS = -I../include \
 	${PTHREAD_CFLAGS} \
 	${LIBUSB_CFLAGS} \
 	${PIC_FLAGS}
-
-clean-generic:
-
-	@RM@ -f *~ .*~
 

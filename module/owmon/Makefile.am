@@ -1,5 +1,3 @@
-# $Id$
-
 EXTRA_DIST = owmon.tcl
 
 install:

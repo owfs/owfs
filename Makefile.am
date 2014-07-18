@@ -8,10 +8,6 @@ clean-generic:
 
 	@RM@ -f *~ .*~
 
-distclean-generic:
-
-	@RM@ -rf auto*cache
-
 preparerpm: dist
 
 	@ if @TEST@ -z "@RPMBUILD@" ; then \

@@ -1,5 +1,3 @@
-# $Id$
-
 
 EXTRA_DIST = php.m4 example/owdir.php example/load_php_OW.php.in
 DISTCLEANFILES = example/load_php_OW.php
@@ -45,5 +43,3 @@ endif
 clean-local:
 	@RM@ -f OW.* ow_wrap.c php_OW.h
 
-clean-generic:
-	@RM@ -f *~ .*~
