@@ -7,6 +7,8 @@ systemdsystemunit_DATA = \
 	owserver.service \
 	owserver.socket
 
+EXTRA_DIST = $(wildcard *.service.in) $(wildcard *.socket.in)
+
 $(systemdsystemunit_DATA): Makefile
 	rm -f $@ $@.tmp
 	sourcedir=''; \
