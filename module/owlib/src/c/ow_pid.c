@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -13,6 +12,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 #include "ow_pid.h"
+#include "sd-daemon.h"
 
 /* Globals */
 int pid_created = 0;			/* flag flag when file actually created */
