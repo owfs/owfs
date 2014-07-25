@@ -47,6 +47,11 @@ static inline int32_t UT_int32(const BYTE * p)
 	return (((int32_t) p[3]) << 24) | (((uint32_t) p[2]) << 16) | (((uint32_t) p[1]) << 8) | ((uint32_t) p[0]);
 }
 
+static inline void UT_uint8_to_bytes( const uint8_t num, unsigned char * p )
+{
+	p[0] = num&0xFF ;
+}
+
 static inline void UT_uint16_to_bytes( const uint16_t num, unsigned char * p )
 {
 	p[0] = num&0xFF ;
