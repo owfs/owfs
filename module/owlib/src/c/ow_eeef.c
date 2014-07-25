@@ -45,12 +45,10 @@ READ_FUNCTION(FS_short);
 
 READ_FUNCTION(FS_r_location);
 WRITE_FUNCTION(FS_w_location);
-READ_FUNCTION(FS_r_avail);
-READ_FUNCTION(FS_r_poll);
-WRITE_FUNCTION(FS_w_poll);
-READ_FUNCTION(FS_r_config);
-WRITE_FUNCTION(FS_w_config);
 WRITE_FUNCTION(FS_command);
+
+READ_FUNCTION(FS_r_variable);
+WRITE_FUNCTION(FS_w_variable);
 
 static enum e_visibility VISIBLE_EF_UVI( const struct parsedname * pn ) ;
 static enum e_visibility VISIBLE_EF_MOISTURE( const struct parsedname * pn ) ;
@@ -72,6 +70,8 @@ enum e_cal_type {
 	cal_min ,
 	cal_max ,
 } ;
+
+#define _EEEF_BLANK	0x00
 
 #define _EEEF_READ_VERSION 0x11
 #define _EEEF_READ_TYPE 0x12
@@ -115,6 +115,33 @@ enum e_cal_type {
 #define _EEEF_HUB_SET_CHANNEL_BIT 0x10
 #define _EEEF_HUB_SET_CHANNEL_MASK 0x0F
 
+struct location_pair {
+	BYTE read ;
+	BYTE write ;
+	int size ;
+	enum var_type { vt_bytes, vt_unsigned, vt_signed, } type ;
+} ;
+
+struct location_pair lp_config = {
+	_EEEF_GET_CONFIG,
+	_EEEF_SET_CONFIG,
+	1,
+	vt_unsigned,
+} ;
+struct location_pair lp_polling = {
+	_EEEF_GET_POLLING_FREQUENCY,
+	_EEEF_SET_POLLING_FREQUENCY,
+	1,
+	vt_unsigned,
+} ;
+struct location_pair lp_available_polling = {
+	_EEEF_GET_AVAILABLE_POLLING_FREQUENCIES,
+	_EEEF_BLANK,
+	1,
+	vt_unsigned,
+} ;
+
+
 /* ------- Structures ----------- */
 static struct filetype HobbyBoards_EE[] = {
 	F_STANDARD_NO_TYPE,
@@ -150,18 +177,18 @@ static struct filetype HobbyBoards_EF[] = {
 	{"moisture/calibrate/raw", PROPERTY_LENGTH_UNSIGNED, &AMOIST, ft_unsigned, fc_volatile, FS_r_raw, NO_WRITE_FUNCTION, VISIBLE_EF_MOISTURE, NO_FILETYPE_DATA, },
 	
 	{"humidity", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EF_HUMIDITY, NO_FILETYPE_DATA, },
-	{"humidity/polling_frequency", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_poll, FS_w_poll, VISIBLE_EF_HUMIDITY, NO_FILETYPE_DATA, } ,
-	{"humidity/polling_available", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_avail, NO_WRITE_FUNCTION, VISIBLE_EF_HUMIDITY, NO_FILETYPE_DATA, } ,
+	{"humidity/polling_frequency", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_variable, FS_w_variable, VISIBLE_EF_HUMIDITY, {v:&lp_polling, }, } ,
+	{"humidity/polling_available", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_variable, NO_WRITE_FUNCTION, VISIBLE_EF_HUMIDITY, {v:&lp_available_polling, }, } ,
 	{"humidity/location", 21, NON_AGGREGATE, ft_ascii, fc_stable, FS_r_location, FS_w_location, VISIBLE_EF_HUMIDITY, NO_FILETYPE_DATA, } ,
-	{"humidity/config", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_config, FS_w_config, VISIBLE_EF_HUMIDITY, NO_FILETYPE_DATA, } ,
+	{"humidity/config", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_variable, FS_w_variable, VISIBLE_EF_HUMIDITY, {v:&lp_config, }, } ,
 	{"humidity/reboot", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_command, VISIBLE_EF_HUMIDITY, {c:_EEEF_REBOOT,}, } ,
 	{"humidity/reset", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_command, VISIBLE_EF_HUMIDITY, {c:_EEEF_RESET_TO_FACTORY_DEFAULTS,}, } ,
 	
 	{"barometer", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EF_BAROMETER, NO_FILETYPE_DATA, },
-	{"barometer/polling_frequency", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_poll, FS_w_poll, VISIBLE_EF_BAROMETER, NO_FILETYPE_DATA, } ,
-	{"barometer/polling_available", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_avail, NO_WRITE_FUNCTION, VISIBLE_EF_BAROMETER, NO_FILETYPE_DATA, } ,
+	{"barometer/polling_frequency", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_variable, FS_w_variable, VISIBLE_EF_BAROMETER, {v:&lp_polling, }, } ,
+	{"barometer/polling_available", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_variable, NO_WRITE_FUNCTION, VISIBLE_EF_BAROMETER, {v:&lp_available_polling, }, } ,
 	{"barometer/location", 21, NON_AGGREGATE, ft_ascii, fc_stable, FS_r_location, FS_w_location, VISIBLE_EF_BAROMETER, NO_FILETYPE_DATA, } ,
-	{"barometer/config", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_config, FS_w_config, VISIBLE_EF_BAROMETER, NO_FILETYPE_DATA, } ,
+	{"barometer/config", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_variable, FS_w_variable, VISIBLE_EF_BAROMETER, {v:&lp_config, }, } ,
 	{"barometer/reboot", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_command, VISIBLE_EF_BAROMETER, {c:_EEEF_REBOOT,}, } ,
 	{"barometer/reset", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_command, VISIBLE_EF_BAROMETER, {c:_EEEF_RESET_TO_FACTORY_DEFAULTS,}, } ,
 	
@@ -464,45 +491,6 @@ static ZERO_OR_ERROR FS_w_in_case(struct one_wire_query *owq)
     return GB_to_Z_OR_E( OW_write(_EEEF_SET_IN_CASE, &in_case, 1, PN(owq))) ;
 }
 
-static ZERO_OR_ERROR FS_r_avail(struct one_wire_query *owq)
-{
-	BYTE pfreq[1] ;
-	
-	RETURN_ERROR_IF_BAD( OW_read( _EEEF_GET_AVAILABLE_POLLING_FREQUENCIES, pfreq, 1, PN(owq) ) ) ;
-	OWQ_U(owq) = pfreq[0] ;
-	return 0 ;
-}
-
-static ZERO_OR_ERROR FS_r_poll(struct one_wire_query *owq)
-{
-	BYTE pfreq[1] ;
-	
-	RETURN_ERROR_IF_BAD( OW_read( _EEEF_GET_POLLING_FREQUENCY, pfreq, 1, PN(owq) ) ) ;
-	OWQ_U(owq) = pfreq[0] ;
-	return 0 ;
-}
-
-static ZERO_OR_ERROR FS_w_poll(struct one_wire_query *owq)
-{
-	BYTE pfreq = OWQ_U(owq) ;
-	return GB_to_Z_OR_E( OW_write(_EEEF_SET_POLLING_FREQUENCY, &pfreq, 1, PN(owq))) ;
-}
-
-static ZERO_OR_ERROR FS_r_config(struct one_wire_query *owq)
-{
-	BYTE conf[1] ;
-	
-	RETURN_ERROR_IF_BAD( OW_read( _EEEF_GET_CONFIG, conf, 1, PN(owq) ) ) ;
-	OWQ_U(owq) = conf[0] ;
-	return 0 ;
-}
-
-static ZERO_OR_ERROR FS_w_config(struct one_wire_query *owq)
-{
-	BYTE conf = OWQ_U(owq) ;
-	return GB_to_Z_OR_E( OW_write(_EEEF_SET_CONFIG, &conf, 1, PN(owq))) ;
-}
-
 static ZERO_OR_ERROR FS_r_sensor(struct one_wire_query *owq)
 {
 	UINT w[4] ;
@@ -571,6 +559,97 @@ static ZERO_OR_ERROR FS_r_cal(struct one_wire_query *owq)
 	}
 			
     return GB_to_Z_OR_E( OW_r_doubles( command, &OWQ_U(owq), 1, PN(owq))) ;
+}
+
+static ZERO_OR_ERROR FS_r_variable(struct one_wire_query *owq)
+{
+	struct parsedname * pn = PN(owq) ;
+	struct filetype * ft = pn->selected_filetype ;
+	struct location_pair * lp = ( struct location_pair *) ft->data.v ;
+	BYTE cmd = lp->read ;
+	int size = lp->size ;
+	BYTE data[size] ;
+	enum var_type vt = lp->type ;
+	
+	// valid command?
+	if ( cmd == _EEEF_BLANK ) {
+		return -EINVAL ;
+	}
+	
+	// read data
+	RETURN_ERROR_IF_BAD( OW_read( cmd, data, size, pn ) ) ;
+
+	switch( vt ) {
+		case vt_unsigned:
+			switch ( size ) {
+				case 1:
+					OWQ_U(owq) = UT_uint8( data ) ;
+					break ;
+				case 2:
+					OWQ_U(owq) = UT_uint16( data ) ;
+					break ;
+				case 4:
+					OWQ_U(owq) = UT_uint32( data ) ;
+					break ;
+				default:
+					return -EINVAL ;
+			}
+		case vt_signed:
+			switch ( size ) {
+				case 1:
+					OWQ_U(owq) = UT_int8( data ) ;
+					break ;
+				case 2:
+					OWQ_U(owq) = UT_int16( data ) ;
+					break ;
+				case 4:
+					OWQ_U(owq) = UT_int32( data ) ;
+					break ;
+				default:
+					return -EINVAL ;
+			}
+			break ;
+	}
+
+	return 0 ;
+}
+
+static ZERO_OR_ERROR FS_w_variable(struct one_wire_query *owq)
+{
+	struct parsedname * pn = PN(owq) ;
+	struct filetype * ft = pn->selected_filetype ;
+	struct location_pair * lp = ( struct location_pair *) ft->data.v ;
+	BYTE cmd = lp->read ;
+	int size = lp->size ;
+	BYTE data[size] ;
+	enum var_type vt = lp->type ;
+	
+	// valid command?
+	if ( cmd == _EEEF_BLANK ) {
+		return -EINVAL ;
+	}
+	
+
+	switch( vt ) {
+		case vt_signed:
+		case vt_unsigned:
+			switch ( size ) {
+				case 1:
+					UT_uint8_to_bytes( OWQ_U(owq), data ) ;
+					break ;
+				case 2:
+					UT_uint16_to_bytes( OWQ_U(owq), data ) ;
+					break ;
+				case 4:
+					UT_uint32_to_bytes( OWQ_U(owq), data ) ;
+					break ;
+				default:
+					return -EINVAL ;
+			}
+	}
+
+	// write data
+	return GB_to_Z_OR_E( OW_write( cmd, data, size, pn ) ) ;
 }
 
 static ZERO_OR_ERROR FS_w_cal(struct one_wire_query *owq)
