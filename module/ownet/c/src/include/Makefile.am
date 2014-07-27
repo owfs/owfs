@@ -17,8 +17,10 @@ EXTRA_DIST = ${header_DATA} \
         ow_message.h      \
         ow_mutexes.h      \
         ownetapi.h        \
+        ow_pressure.h     \
         ow_server.h       \
         ow_stub.h         \
+        ow_temperature.h  \
         rwlock.h          \
         sem.h
 

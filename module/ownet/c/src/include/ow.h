@@ -198,11 +198,14 @@ extern int count_inbound_connections;
 
 /* device display format */
 enum deviceformat { fdi, fi, fdidc, fdic, fidc, fic };
-/* Gobal temperature scale */
-enum temp_type { temp_celsius, temp_fahrenheit, temp_kelvin, temp_rankine,
-};
 
 void SetSignals(void);
+
+/* Temperature scale handling */
+#include "ow_temperature.h"
+
+/* Pressure scale handling */
+#include "ow_pressure.h"
 
 /* OWSERVER messages */
 #include "ow_message.h"
