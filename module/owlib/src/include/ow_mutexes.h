@@ -1,5 +1,5 @@
 /*
-$Id$
+
     OW -- One-Wire filesystem
     version 0.4 7/2/2003
 

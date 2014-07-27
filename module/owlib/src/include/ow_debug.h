@@ -1,4 +1,4 @@
-/* $Id$
+/*
    Debug and error messages
    Meant to be included in ow.h
    Separated just for readability

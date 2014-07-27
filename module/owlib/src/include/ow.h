@@ -1,5 +1,4 @@
 /*
-$Id$
     OW -- One-Wire filesystem
     version 0.4 7/2/2003
 
@@ -350,7 +349,7 @@ enum deviceformat { fdi, fi, fdidc, fdic, fidc, fic };
 #include "ow_arg.h"
 #include "ow_functions.h"
 
-/* Temerature scale handling */
+/* Temperature scale handling */
 #include "ow_temperature.h"
 
 /* Pressure scale handling */
