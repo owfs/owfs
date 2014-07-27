@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -17,18 +16,9 @@ $Id$
 /* ------- Prototypes ----------- */
 
 /* Hobby boards UVI and colleagues */
-READ_FUNCTION(FS_temperature);
 READ_FUNCTION(FS_version);
 READ_FUNCTION(FS_type_number);
 READ_FUNCTION(FS_localtype);
-READ_FUNCTION(FS_r_temperature_offset);
-WRITE_FUNCTION(FS_w_temperature_offset);
-READ_FUNCTION(FS_r_UVI_offset);
-WRITE_FUNCTION(FS_w_UVI_offset);
-READ_FUNCTION(FS_r_in_case);
-WRITE_FUNCTION(FS_w_in_case);
-READ_FUNCTION(FS_UVI);
-READ_FUNCTION(FS_UVI_valid);
 READ_FUNCTION(FS_r_sensor);
 READ_FUNCTION(FS_r_moist);
 WRITE_FUNCTION(FS_w_moist);
@@ -42,10 +32,6 @@ WRITE_FUNCTION(FS_w_hub_config);
 READ_FUNCTION(FS_r_channels);
 WRITE_FUNCTION(FS_w_channels);
 READ_FUNCTION(FS_short);
-
-READ_FUNCTION(FS_r_location);
-WRITE_FUNCTION(FS_w_location);
-WRITE_FUNCTION(FS_command);
 
 READ_FUNCTION(FS_r_variable);
 WRITE_FUNCTION(FS_w_variable);
@@ -75,14 +61,14 @@ enum e_cal_type {
 
 #define _EEEF_READ_VERSION 0x11
 #define _EEEF_READ_TYPE 0x12
-#define _EEEF_READ_TEMPERATURE 0x21
+#define _EEEF_GET_TEMPERATURE 0x21
 #define _EEEF_SET_TEMPERATURE_OFFSET 0x22
-#define _EEEF_READ_TEMPERATURE_OFFSET 0x23
-#define _EEEF_READ_UVI 0x24
+#define _EEEF_GET_TEMPERATURE_OFFSET 0x23
+#define _EEEF_GET_UVI 0x24
 #define _EEEF_SET_UVI_OFFSET 0x25
-#define _EEEF_READ_UVI_OFFSET 0x26
+#define _EEEF_GET_UVI_OFFSET 0x26
 #define _EEEF_SET_IN_CASE 0x27
-#define _EEEF_READ_IN_CASE 0x28
+#define _EEEF_GET_IN_CASE 0x28
 
 #define _EEEF_GET_POLLING_FREQUENCY 0x14
 #define _EEEF_SET_POLLING_FREQUENCY 0x94
@@ -115,11 +101,34 @@ enum e_cal_type {
 #define _EEEF_HUB_SET_CHANNEL_BIT 0x10
 #define _EEEF_HUB_SET_CHANNEL_MASK 0x0F
 
+#define _EEEF_HB_TEMPERATURE_C 0x40
+#define _EEEF_GET_KPA 0x22
+
+#define _EEEF_GET_PRESSURE_ALTITUDE 0x24
+#define _EEEF_SET_ALTITUDE 0xA6
+#define _EEEF_GET_ALTITUDE 0x26
+
+#define _EEEF_GET_TC_HUMIDITY 0x21
+#define _EEEF_GET_RAW_HUMIDITY 0x22
+#define _EEEF_GET_TC_HUMIDITY_OFFSET 0x24
+#define _EEEF_SET_TC_HUMIDITY_OFFSET 0xA4
+
 struct location_pair {
 	BYTE read ;
 	BYTE write ;
 	int size ;
-	enum var_type { vt_bytes, vt_unsigned, vt_signed, } type ;
+	enum var_type {
+		vt_unsigned, 
+		vt_signed,
+		vt_location,
+		vt_command,
+		vt_ee_temperature,
+		vt_temperature,
+		vt_pressure,
+		vt_humidity,
+		vt_uvi,
+		vt_incase,
+	} type ;
 } ;
 
 struct location_pair lp_config = {
@@ -140,21 +149,113 @@ struct location_pair lp_available_polling = {
 	1,
 	vt_unsigned,
 } ;
+struct location_pair lp_factory = {
+	_EEEF_BLANK,
+	_EEEF_RESET_TO_FACTORY_DEFAULTS,
+	0,
+	vt_command,
+} ;
+struct location_pair lp_reboot = {
+	_EEEF_BLANK,
+	_EEEF_REBOOT,
+	0,
+	vt_command,
+} ;
+struct location_pair lp_hb_temperature = {
+	_EEEF_HB_TEMPERATURE_C,
+	_EEEF_BLANK,
+	2,
+	vt_temperature,
+} ;
+struct location_pair lp_ee_temperature = {
+	_EEEF_GET_TEMPERATURE,
+	_EEEF_BLANK,
+	2,
+	vt_ee_temperature,
+} ;
+struct location_pair lp_ee_temperature_offset = {
+	_EEEF_GET_TEMPERATURE_OFFSET,
+	_EEEF_SET_TEMPERATURE_OFFSET,
+	2,
+	vt_ee_temperature,
+} ;
+struct location_pair lp_uvi = {
+	_EEEF_GET_UVI,
+	_EEEF_BLANK,
+	1,
+	vt_uvi,
+} ;
+struct location_pair lp_uvi_offset = {
+	_EEEF_GET_UVI_OFFSET,
+	_EEEF_SET_UVI_OFFSET,
+	1,
+	vt_uvi,
+} ;
+struct location_pair lp_incase = {
+	_EEEF_GET_IN_CASE,
+	_EEEF_SET_IN_CASE,
+	1,
+	vt_incase,
+} ;
+struct location_pair lp_pressure = {
+	_EEEF_GET_KPA,
+	_EEEF_BLANK,
+	2,
+	vt_pressure,
+} ;
+struct location_pair lp_pressurealtitude = {
+	_EEEF_GET_PRESSURE_ALTITUDE,
+	_EEEF_BLANK,
+	2,
+	vt_signed,
+} ;
+struct location_pair lp_altitude = {
+	_EEEF_GET_ALTITUDE,
+	_EEEF_SET_ALTITUDE,
+	2,
+	vt_signed,
+} ;
+
+struct location_pair lp_raw_humidity = {
+	_EEEF_GET_RAW_HUMIDITY,
+	_EEEF_BLANK,
+	2,
+	vt_humidity,
+} ;
+struct location_pair lp_tc_humidity = {
+	_EEEF_GET_TC_HUMIDITY,
+	_EEEF_BLANK,
+	2,
+	vt_humidity,
+} ;
+struct location_pair lp_tc_humidity_offset = {
+	_EEEF_GET_TC_HUMIDITY_OFFSET,
+	_EEEF_SET_TC_HUMIDITY_OFFSET,
+	2,
+	vt_humidity,
+} ;
+
+#define _EEEF_LOCATION_LENGTH 21
+struct location_pair lp_location = {
+	_EEEF_GET_LOCATION,
+	_EEEF_SET_LOCATION,
+	_EEEF_LOCATION_LENGTH,
+	vt_location,
+} ;
 
 
 /* ------- Structures ----------- */
 static struct filetype HobbyBoards_EE[] = {
 	F_STANDARD_NO_TYPE,
-	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_temperature, NO_WRITE_FUNCTION, VISIBLE_EF_UVI, NO_FILETYPE_DATA, },
-	{"temperature_offset", PROPERTY_LENGTH_TEMPGAP, NON_AGGREGATE, ft_tempgap, fc_stable, FS_r_temperature_offset, FS_w_temperature_offset, VISIBLE_EF_UVI, NO_FILETYPE_DATA, },
+	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_r_variable, NO_WRITE_FUNCTION, VISIBLE_EF_UVI, {v:&lp_ee_temperature,}, },
+	{"temperature_offset", PROPERTY_LENGTH_TEMPGAP, NON_AGGREGATE, ft_tempgap, fc_stable, FS_r_variable, FS_w_variable, VISIBLE_EF_UVI, {v:&lp_ee_temperature_offset}, },
 	{"version", 5, NON_AGGREGATE, ft_ascii, fc_stable, FS_version, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"type_number", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_type_number, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"type", PROPERTY_LENGTH_TYPE, NON_AGGREGATE, ft_ascii, fc_link, FS_localtype, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"UVI", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EF_UVI, NO_FILETYPE_DATA, },
-	{"UVI/UVI", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_UVI, NO_WRITE_FUNCTION, VISIBLE_EF_UVI, NO_FILETYPE_DATA, },
-	{"UVI/valid", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_UVI_valid, NO_WRITE_FUNCTION, VISIBLE_EF_UVI, NO_FILETYPE_DATA, },
-	{"UVI/UVI_offset", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_UVI_offset, FS_w_UVI_offset, VISIBLE_EF_UVI, NO_FILETYPE_DATA, },
-	{"UVI/in_case", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_in_case, FS_w_in_case, VISIBLE_EF_UVI, NO_FILETYPE_DATA, },
+	{"UVI/UVI", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_variable, NO_WRITE_FUNCTION, VISIBLE_EF_UVI, {v:&lp_uvi}, },
+	{"UVI/UVI_offset", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_variable, FS_w_variable, VISIBLE_EF_UVI, {v:&lp_uvi_offset}, },
+	{"UVI/in_case", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_variable, FS_w_variable, VISIBLE_EF_UVI, {v:&lp_incase}, },
 };
 
 DeviceEntry(EE, HobbyBoards_EE, NO_GENERIC_READ, NO_GENERIC_WRITE);
@@ -179,18 +280,26 @@ static struct filetype HobbyBoards_EF[] = {
 	{"humidity", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EF_HUMIDITY, NO_FILETYPE_DATA, },
 	{"humidity/polling_frequency", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_variable, FS_w_variable, VISIBLE_EF_HUMIDITY, {v:&lp_polling, }, } ,
 	{"humidity/polling_available", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_variable, NO_WRITE_FUNCTION, VISIBLE_EF_HUMIDITY, {v:&lp_available_polling, }, } ,
-	{"humidity/location", 21, NON_AGGREGATE, ft_ascii, fc_stable, FS_r_location, FS_w_location, VISIBLE_EF_HUMIDITY, NO_FILETYPE_DATA, } ,
+	{"humidity/location", _EEEF_LOCATION_LENGTH, NON_AGGREGATE, ft_ascii, fc_stable, FS_r_variable, FS_w_variable, VISIBLE_EF_HUMIDITY, {v:&lp_location,}, } ,
 	{"humidity/config", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_variable, FS_w_variable, VISIBLE_EF_HUMIDITY, {v:&lp_config, }, } ,
-	{"humidity/reboot", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_command, VISIBLE_EF_HUMIDITY, {c:_EEEF_REBOOT,}, } ,
-	{"humidity/reset", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_command, VISIBLE_EF_HUMIDITY, {c:_EEEF_RESET_TO_FACTORY_DEFAULTS,}, } ,
+	{"humidity/reboot", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_w_variable, VISIBLE_EF_HUMIDITY, {v:&lp_reboot,}, } ,
+	{"humidity/reset", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_w_variable, VISIBLE_EF_HUMIDITY, {v:&lp_factory,}, } ,
+	{"humidity/temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_r_variable, NO_WRITE_FUNCTION, VISIBLE_EF_HUMIDITY, {v:&lp_hb_temperature,}, } ,
+	{"humidity/humidity_raw", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_variable, NO_WRITE_FUNCTION, VISIBLE_EF_HUMIDITY, {v:&lp_raw_humidity,}, } ,
+	{"humidity/humidity_corrected", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_variable, NO_WRITE_FUNCTION, VISIBLE_EF_HUMIDITY, {v:&lp_tc_humidity,}, } ,
+	{"humidity/humidity_offset", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_variable, FS_w_variable, VISIBLE_EF_HUMIDITY, {v:&lp_tc_humidity_offset,}, } ,
 	
 	{"barometer", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EF_BAROMETER, NO_FILETYPE_DATA, },
 	{"barometer/polling_frequency", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_variable, FS_w_variable, VISIBLE_EF_BAROMETER, {v:&lp_polling, }, } ,
 	{"barometer/polling_available", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_variable, NO_WRITE_FUNCTION, VISIBLE_EF_BAROMETER, {v:&lp_available_polling, }, } ,
-	{"barometer/location", 21, NON_AGGREGATE, ft_ascii, fc_stable, FS_r_location, FS_w_location, VISIBLE_EF_BAROMETER, NO_FILETYPE_DATA, } ,
+	{"barometer/location", _EEEF_LOCATION_LENGTH, NON_AGGREGATE, ft_ascii, fc_stable, FS_r_variable, FS_w_variable, VISIBLE_EF_BAROMETER, {v:&lp_location,}, } ,
 	{"barometer/config", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_variable, FS_w_variable, VISIBLE_EF_BAROMETER, {v:&lp_config, }, } ,
-	{"barometer/reboot", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_command, VISIBLE_EF_BAROMETER, {c:_EEEF_REBOOT,}, } ,
-	{"barometer/reset", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_command, VISIBLE_EF_BAROMETER, {c:_EEEF_RESET_TO_FACTORY_DEFAULTS,}, } ,
+	{"barometer/reboot", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_w_variable, VISIBLE_EF_BAROMETER, {v:&lp_reboot,}, } ,
+	{"barometer/reset", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_w_variable, VISIBLE_EF_BAROMETER, {v:&lp_factory,}, } ,
+	{"barometer/temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_r_variable, NO_WRITE_FUNCTION, VISIBLE_EF_BAROMETER, {v:&lp_hb_temperature,}, } ,
+	{"barometer/pressure", PROPERTY_LENGTH_PRESSURE, NON_AGGREGATE, ft_pressure, fc_volatile, FS_r_variable, NO_WRITE_FUNCTION, VISIBLE_EF_BAROMETER, {v:&lp_pressure,}, } ,
+	{"barometer/pressure_altitude", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_integer, fc_volatile, FS_r_variable, NO_WRITE_FUNCTION, VISIBLE_EF_BAROMETER, {v:&lp_pressurealtitude,}, } ,
+	{"barometer/altitude", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_integer, fc_volatile, FS_r_variable, FS_w_variable, VISIBLE_EF_BAROMETER, {v:&lp_altitude,}, } ,
 	
 	{"hub", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EF_HUB, NO_FILETYPE_DATA, },
 	{"hub/config", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_hub_config, FS_w_hub_config, INVISIBLE, NO_FILETYPE_DATA, },
@@ -279,21 +388,19 @@ static enum e_visibility VISIBLE_EF_HUB( const struct parsedname * pn )
 static GOOD_OR_BAD OW_version(BYTE * major, BYTE * minor, struct parsedname * pn) ;
 static GOOD_OR_BAD OW_type(BYTE * type_number, struct parsedname * pn) ;
 
-static GOOD_OR_BAD OW_UVI(_FLOAT * UVI, struct parsedname * pn) ;
-static GOOD_OR_BAD OW_r_UVI_offset(_FLOAT * UVI, struct parsedname * pn) ;
-
-static GOOD_OR_BAD OW_temperature(_FLOAT * T, struct parsedname * pn) ;
-static GOOD_OR_BAD OW_r_temperature_offset(_FLOAT * T, struct parsedname * pn) ;
-
 static GOOD_OR_BAD OW_read(BYTE command, BYTE * bytes, size_t size, struct parsedname * pn) ;
 static GOOD_OR_BAD OW_write(BYTE command, BYTE * bytes, size_t size, struct parsedname * pn);
 
 static GOOD_OR_BAD OW_r_wetness( UINT *wetness, struct parsedname * pn);
 
-static GOOD_OR_BAD OW_command( BYTE cmd, struct parsedname * pn);
-
 static GOOD_OR_BAD OW_r_doubles( BYTE command, UINT * dubs, int elements, struct parsedname * pn ) ;
 static GOOD_OR_BAD OW_w_doubles( BYTE command, UINT * dubs, int elements, struct parsedname * pn ) ;
+
+#ifdef HAVE_LRINT
+    #define Roundoff(x) (UINT) lrint(x)
+#else
+    #define Roundoff(x) (UINT) (x+.49)
+#endif
 
 // returns major/minor as 2 hex bytes (ascii)
 static ZERO_OR_ERROR FS_version(struct one_wire_query *owq)
@@ -310,30 +417,6 @@ static ZERO_OR_ERROR FS_version(struct one_wire_query *owq)
     return OWQ_format_output_offset_and_size(v, 5, owq);
 }
 
-static ZERO_OR_ERROR FS_r_location(struct one_wire_query *owq)
-{
-    char loc[21];
-
-	memset(loc,0,21);
-    RETURN_ERROR_IF_BAD(OW_read(_EEEF_GET_LOCATION, (BYTE *)loc,20,PN(owq))) ;
-
-    return OWQ_format_output_offset_and_size_z(loc, owq);
-}
-
-static ZERO_OR_ERROR FS_w_location(struct one_wire_query *owq)
-{
-    char loc[21];
-    size_t len = OWQ_length(owq) ;
-    
-    if ( len > 20 ) {
-		len = 20 ;
-	}
-
-	memset(loc,0,21);
-	memcpy( loc, OWQ_buffer(owq), len ) ;
-    return GB_to_Z_OR_E( OW_write( _EEEF_SET_LOCATION, (BYTE *)loc, 21, PN(owq)) ) ;
-}
-
 static ZERO_OR_ERROR FS_type_number(struct one_wire_query *owq)
 {
     BYTE type_number ;
@@ -343,88 +426,6 @@ static ZERO_OR_ERROR FS_type_number(struct one_wire_query *owq)
     OWQ_U(owq) = type_number ;
 
     return 0;
-}
-
-static ZERO_OR_ERROR FS_command( struct one_wire_query *owq)
-{
-	struct parsedname * pn = PN(owq) ;
-	BYTE cmd = pn->selected_filetype->data.c ;
-	if ( OWQ_Y(owq) ) {
-		return GB_to_Z_OR_E( OW_command( cmd, pn ) ) ;
-	}
-	return 0 ;
-}
-
-static ZERO_OR_ERROR FS_temperature(struct one_wire_query *owq)
-{
-    _FLOAT T ;
-
-    RETURN_ERROR_IF_BAD(OW_temperature(&T,PN(owq))) ;
-
-    OWQ_F(owq) = T ;
-
-    return 0;
-}
-
-static ZERO_OR_ERROR FS_UVI(struct one_wire_query *owq)
-{
-    _FLOAT UVI ;
-
-    RETURN_ERROR_IF_BAD( OW_UVI(&UVI,PN(owq))) ;
-
-    OWQ_F(owq) = UVI ;
-
-    return 0;
-}
-
-static ZERO_OR_ERROR FS_r_UVI_offset(struct one_wire_query *owq)
-{
-    _FLOAT UVI ;
-
-    RETURN_ERROR_IF_BAD(OW_r_UVI_offset(&UVI,PN(owq))) ;
-
-    OWQ_F(owq) = UVI ;
-
-    return 0;
-}
-
-static ZERO_OR_ERROR FS_r_temperature_offset(struct one_wire_query *owq)
-{
-    _FLOAT T ;
-
-    RETURN_BAD_IF_BAD(OW_r_temperature_offset(&T,PN(owq))) ;
-
-    OWQ_F(owq) = T ;
-
-    return 0;
-}
-
-static ZERO_OR_ERROR FS_w_temperature_offset(struct one_wire_query *owq)
-{
-    BYTE c ;
-
-#ifdef HAVE_LRINT
-    c = lrint(2.0*OWQ_F(owq));    // round off
-#else
-    c = 2.0*OWQ_F(owq);
-#endif
-
-    RETURN_ERROR_IF_BAD(OW_write(_EEEF_SET_TEMPERATURE_OFFSET, &c, 1, PN(owq))) ;
-
-    return 0;
-}
-
-static ZERO_OR_ERROR FS_w_UVI_offset(struct one_wire_query *owq)
-{
-    BYTE c ;
-
-#ifdef HAVE_LRINT
-    c = lrint(10.0*OWQ_F(owq));    // round off
-#else
-    c = 10.0*OWQ_F(owq)+.49;
-#endif
-
-    return GB_to_Z_OR_E(OW_write(_EEEF_SET_UVI_OFFSET, &c, 1, PN(owq))) ;
 }
 
 static ZERO_OR_ERROR FS_localtype(struct one_wire_query *owq)
@@ -448,47 +449,6 @@ static ZERO_OR_ERROR FS_localtype(struct one_wire_query *owq)
         default:
             return FS_type(owq);
     }
-}
-
-static ZERO_OR_ERROR FS_UVI_valid(struct one_wire_query *owq)
-{
-    UINT type_number = 0 ;
-    ZERO_OR_ERROR z_or_e = FS_r_sibling_U( &type_number, "type_number", owq ) ;
-
-    switch (type_number) {
-        case 0x01:
-            OWQ_Y(owq) = 1 ;
-            break ;
-        default:
-            OWQ_Y(owq) = 0 ;
-            break ;
-    }
-    return z_or_e ;
-}
-
-static ZERO_OR_ERROR FS_r_in_case(struct one_wire_query *owq)
-{
-    BYTE in_case ;
-    
-	RETURN_ERROR_IF_BAD( OW_read(_EEEF_READ_IN_CASE,&in_case,1,PN(owq))) ;
-
-    switch(in_case) {
-        case 0x00:
-            OWQ_Y(owq) = 0 ;
-            break ;
-        case 0xFF:
-            OWQ_Y(owq) = 1 ;
-            break ;
-        default:
-            return -EINVAL ;
-    }
-    return 0 ;
-}
-
-static ZERO_OR_ERROR FS_w_in_case(struct one_wire_query *owq)
-{
-    BYTE in_case = OWQ_Y(owq) ? 0xFF : 0x00 ;
-    return GB_to_Z_OR_E( OW_write(_EEEF_SET_IN_CASE, &in_case, 1, PN(owq))) ;
 }
 
 static ZERO_OR_ERROR FS_r_sensor(struct one_wire_query *owq)
@@ -568,8 +528,11 @@ static ZERO_OR_ERROR FS_r_variable(struct one_wire_query *owq)
 	struct location_pair * lp = ( struct location_pair *) ft->data.v ;
 	BYTE cmd = lp->read ;
 	int size = lp->size ;
-	BYTE data[size] ;
+	BYTE data[size+1] ;
 	enum var_type vt = lp->type ;
+	
+	// clear buffer
+	memset( data, 0, size+1 ) ;
 	
 	// valid command?
 	if ( cmd == _EEEF_BLANK ) {
@@ -609,6 +572,35 @@ static ZERO_OR_ERROR FS_r_variable(struct one_wire_query *owq)
 					return -EINVAL ;
 			}
 			break ;
+		case vt_location:
+			return OWQ_format_output_offset_and_size_z( (ASCII*)data, owq);
+		case vt_humidity:
+			// to percent
+			OWQ_F(owq) = ( (_FLOAT) (UT_int16(data)) ) * 0.01 ;
+			break ;
+		case vt_temperature:
+			OWQ_F(owq) = ( (_FLOAT) (UT_int8(data)) ) * 0.1 ;
+			break ;
+		case vt_uvi:
+			if ( data[0] == 0xFF ) {
+				// error flag
+				return -EINVAL ;
+			}
+			OWQ_F(owq) = ( (_FLOAT) (UT_int16(data)) ) * 0.1 ;
+			break ;
+		case vt_ee_temperature:
+			OWQ_F(owq) = ( (_FLOAT) (UT_int16(data)) ) * 0.5 ;
+			break ;
+		case vt_pressure:
+			// kPa to mbar
+			OWQ_F(owq) = ( (_FLOAT) (UT_int16(data)) ) * 10.0 ;
+			break ;
+		case vt_incase:
+			OWQ_Y(owq) = (data[0]!=0x00) ;
+			break ;
+		case vt_command:
+		default:
+			break ;
 	}
 
 	return 0 ;
@@ -621,9 +613,12 @@ static ZERO_OR_ERROR FS_w_variable(struct one_wire_query *owq)
 	struct location_pair * lp = ( struct location_pair *) ft->data.v ;
 	BYTE cmd = lp->read ;
 	int size = lp->size ;
-	BYTE data[size] ;
+	BYTE data[size+1] ;
 	enum var_type vt = lp->type ;
 	
+	// clear buffer
+	memset( data, 0, size+1 );
+
 	// valid command?
 	if ( cmd == _EEEF_BLANK ) {
 		return -EINVAL ;
@@ -646,6 +641,36 @@ static ZERO_OR_ERROR FS_w_variable(struct one_wire_query *owq)
 				default:
 					return -EINVAL ;
 			}
+			break ;
+		case vt_location:
+		{	
+			int len = size ;
+			if ( len > _EEEF_LOCATION_LENGTH-1 ) {
+				len = _EEEF_LOCATION_LENGTH-1 ;
+			}
+			memcpy( data, OWQ_buffer(owq), len ) ;
+		}
+			break ;
+		case vt_command:
+			if ( ! OWQ_Y(owq) ) {
+				return 0 ;
+			}
+			break ;	
+		case vt_uvi:
+			UT_uint8_to_bytes( Roundoff(OWQ_F(owq) * 10.0), data ) ;
+			break ;
+		case vt_humidity:
+			UT_uint16_to_bytes( Roundoff(OWQ_F(owq) * 100.0), data ) ;
+			break ;
+		case vt_ee_temperature:
+			UT_uint16_to_bytes( Roundoff(OWQ_F(owq) * 2.), data ) ;
+			break ;
+		case vt_incase:
+			data[0] = OWQ_Y(owq) ? 0xFF : 0x00 ;
+			break ;
+		case vt_temperature:
+		case vt_pressure:
+			return -EINVAL ;
 	}
 
 	// write data
@@ -789,52 +814,6 @@ static GOOD_OR_BAD OW_type(BYTE * type_number, struct parsedname * pn)
     return gbGOOD ;
 }
 
-static GOOD_OR_BAD OW_UVI(_FLOAT * UVI, struct parsedname * pn)
-{
-    BYTE u[1] ;
-    
-	RETURN_BAD_IF_BAD( OW_read(_EEEF_READ_UVI, u, 1, pn) ) ;
-	
-    if (u[0]==0xFF) {
-        return gbBAD;
-    }
-    UVI[0] = 0.1 * ((_FLOAT) u[0]) ;
-    return gbGOOD ;
-}
-
-static GOOD_OR_BAD OW_r_UVI_offset(_FLOAT * UVI, struct parsedname * pn)
-{
-    BYTE u[1] ;
-    
-	RETURN_BAD_IF_BAD( OW_read(_EEEF_READ_UVI_OFFSET, u, 1, pn) );
-	
-    if (u[0]==0xFF) {
-        return gbBAD;
-    }
-    UVI[0] = 0.1 * ((_FLOAT) ((signed char) u[0])) ;
-    return gbGOOD ;
-}
-
-static GOOD_OR_BAD OW_r_temperature_offset(_FLOAT * T, struct parsedname * pn)
-{
-    BYTE t[1] ;
-    
-	RETURN_BAD_IF_BAD(OW_read(_EEEF_READ_TEMPERATURE_OFFSET, t, 1, pn)) ;
-
-    T[0] = 0.5 * ((_FLOAT) ((signed char)t[0])) ;
-    return gbGOOD ;
-}
-
-static GOOD_OR_BAD OW_temperature(_FLOAT * temperature, struct parsedname * pn)
-{
-    BYTE t[2] ;
-    
-	RETURN_BAD_IF_BAD(OW_read(_EEEF_READ_TEMPERATURE, t, 2, pn)) ;
-
-    temperature[0] = (_FLOAT) 0.5 * UT_int16(t) ;
-    return gbGOOD ;
-}
-
 static GOOD_OR_BAD OW_read(BYTE command, BYTE * bytes, size_t size, struct parsedname * pn)
 {
     BYTE c[] = { command,} ;
@@ -854,16 +833,6 @@ static GOOD_OR_BAD OW_write(BYTE command, BYTE * bytes, size_t size, struct pars
         TRXN_START,
         TRXN_WRITE1(c),
         TRXN_WRITE(bytes,size),
-        TRXN_END,
-    };
-    return  BUS_transaction(t, pn) ;
-}
-
-static GOOD_OR_BAD OW_command( BYTE cmd, struct parsedname * pn)
-{
-    struct transaction_log t[] = {
-        TRXN_START,
-        TRXN_WRITE1(&cmd),
         TRXN_END,
     };
     return  BUS_transaction(t, pn) ;
