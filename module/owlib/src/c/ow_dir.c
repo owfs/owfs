@@ -727,7 +727,7 @@ static ZERO_OR_ERROR FS_cache_or_real(void (*dirfunc) (void *, const struct pars
 {
 	size_t dindex;
 	struct dirblob db;
-	BYTE sn[8];
+	BYTE sn[SERIAL_NUMBER_SIZE];
 
 	/* Special handling for External directory -- just walk tree */
 	if ( get_busmode(pn_real_directory->selected_connection) == bus_external ) {
