@@ -1575,6 +1575,7 @@ AS_IF([test "x$def_systemdsystemunitdir" = "x"],
 AS_IF([test "x$with_systemdsystemunitdir" != "xno"],
        [AC_SUBST([systemdsystemunitdir], [$with_systemdsystemunitdir])])
 AM_CONDITIONAL([HAVE_SYSTEMD], [test "x$with_systemdsystemunitdir" != "xno"])
+AC_CHECK_LIB([rt],[mq_getattr])
 
 AC_CONFIG_FILES([
 	Makefile
