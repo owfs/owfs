@@ -97,3 +97,6 @@ src/rpm/owfs.spec
 src/scripts/windows/owfs.nsi
 /src/scripts/systemd/Makefile.in
 /src/scripts/systemd/owserver.socket
+
+cov-int*
+cov-int/*
