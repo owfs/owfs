@@ -243,13 +243,14 @@ struct location_pair lp_location = {
 	vt_location,
 } ;
 
+#define _EEEF_version_length  7
 
 /* ------- Structures ----------- */
 static struct filetype HobbyBoards_EE[] = {
 	F_STANDARD_NO_TYPE,
 	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_r_variable, NO_WRITE_FUNCTION, VISIBLE_EF_UVI, {v:&lp_ee_temperature,}, },
 	{"temperature_offset", PROPERTY_LENGTH_TEMPGAP, NON_AGGREGATE, ft_tempgap, fc_stable, FS_r_variable, FS_w_variable, VISIBLE_EF_UVI, {v:&lp_ee_temperature_offset}, },
-	{"version", 5, NON_AGGREGATE, ft_ascii, fc_stable, FS_version, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"version", _EEEF_version_length, NON_AGGREGATE, ft_ascii, fc_stable, FS_version, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"type_number", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_type_number, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"type", PROPERTY_LENGTH_TYPE, NON_AGGREGATE, ft_ascii, fc_link, FS_localtype, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"UVI", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EF_UVI, NO_FILETYPE_DATA, },
@@ -264,7 +265,7 @@ static struct aggregate AMOIST = { 4, ag_numbers, ag_aggregate, };
 static struct aggregate AHUB = { 4, ag_numbers, ag_aggregate, };
 static struct filetype HobbyBoards_EF[] = {
 	F_STANDARD_NO_TYPE,
-	{"version", 5, NON_AGGREGATE, ft_ascii, fc_stable, FS_version, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"version", _EEEF_version_length, NON_AGGREGATE, ft_ascii, fc_stable, FS_version, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"type_number", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_type_number, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"type", PROPERTY_LENGTH_TYPE, NON_AGGREGATE, ft_ascii, fc_link, FS_localtype, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	
@@ -405,16 +406,17 @@ static GOOD_OR_BAD OW_w_doubles( BYTE command, UINT * dubs, int elements, struct
 // returns major/minor as 2 hex bytes (ascii)
 static ZERO_OR_ERROR FS_version(struct one_wire_query *owq)
 {
-    char v[6];
+    char v[_EEEF_version_length];
     BYTE major, minor ;
+    int ret_size ;
 
     RETURN_ERROR_IF_BAD(OW_version(&major,&minor,PN(owq))) ;
 
     UCLIBCLOCK;
-    snprintf(v,6,"%.2X.%.2X",major,minor);
+    ret_size = snprintf(v,_EEEF_version_length,"%u.%u",major,minor);
     UCLIBCUNLOCK;
 
-    return OWQ_format_output_offset_and_size(v, 5, owq);
+    return OWQ_format_output_offset_and_size(v, ret_size, owq);
 }
 
 static ZERO_OR_ERROR FS_type_number(struct one_wire_query *owq)

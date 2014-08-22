@@ -194,7 +194,9 @@ Is the corresponding branch in "short" condition? (Electrically shorted out).
 .SS version
 .I read-only, ascii
 .br
-Firmware version for the EE/EF device. Reported in HH.HH format where HH is a hex digit (0-9A-F).
+Firmware version for the EE/EF device. Reported in nn.nn format where nn is major/minor decimal value.
+.P
+Note: This format was changed as of version owfs-2.9p6 at the request of the HobbyBoards. Formerly reported in HH.HH format where HH is a hex digit (0-9A-F).
 .SS type_number
 .I read-only, integer
 .br
