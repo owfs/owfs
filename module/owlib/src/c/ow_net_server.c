@@ -238,10 +238,10 @@ static void *ProcessAcceptSocket(void *arg)
 
 	// Do the actual work
 	asd->out->HandlerRoutine( asd->acceptfd );
+	// memory freed in calling routine
 
 	// cleanup
 	Test_and_Close( &(asd->acceptfd) );
-	owfree(asd);
 	LEVEL_DEBUG("Normal exit.");
 
 	// All done. If shutdown in progress and this is a last handler thread, send a message to the main thread.
@@ -293,6 +293,8 @@ static void ProcessListenSocket( struct connection_out * out )
 			ProcessAcceptSocket(asd) ;
 		}
 	}
+	owfree(asd); // free memory
+
 	RWLOCK_RUNLOCK( shutdown_mutex_rw ) ;
 }
 
