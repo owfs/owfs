@@ -35,6 +35,7 @@ void LockSetup(void)
 {
 	/* global mutex attribute */
 	_MUTEX_ATTR_INIT(Mutex.mattr);
+
   #ifdef __UCLIBC__
     #if ((__UCLIBC_MAJOR__ << 16)+(__UCLIBC_MINOR__ << 8)+(__UCLIBC_SUBLEVEL__) < 0x00091D)
 	/* If uClibc < 0.9.29, then re-initialize internal pthread-structs
@@ -60,10 +61,13 @@ void LockSetup(void)
 	_MUTEX_INIT(Mutex.controlflags_mutex);
 	_MUTEX_INIT(Mutex.fstat_mutex);
 	_MUTEX_INIT(Mutex.dir_mutex);
+  #if OW_USB
+	_MUTEX_INIT(Mutex.libusb_mutex);
+  #endif							/* OW_USB */
 	_MUTEX_INIT(Mutex.typedir_mutex);
 	_MUTEX_INIT(Mutex.externaldir_mutex);
 	_MUTEX_INIT(Mutex.namefind_mutex);
-	_MUTEX_INIT(Mutex.aliasfind_mutex);
+	_MUTEX_INIT(Mutex.aliaslist_mutex);
 	_MUTEX_INIT(Mutex.externalcount_mutex);
 	_MUTEX_INIT(Mutex.timegm_mutex);
 	_MUTEX_INIT(Mutex.detail_mutex);
@@ -73,7 +77,4 @@ void LockSetup(void)
 	RWLOCK_INIT(Mutex.persistent_cache);
 	RWLOCK_INIT(Inbound_Control.lock);
 	RWLOCK_INIT(Inbound_Control.monitor_lock);
-  #if OW_USB
-	_MUTEX_INIT(Mutex.libusb_mutex);
-  #endif							/* OW_USB */
 }

@@ -58,13 +58,13 @@ extern struct mutexes {
 	pthread_mutex_t stat_mutex;
 	pthread_mutex_t controlflags_mutex;
 	pthread_mutex_t fstat_mutex;
-	pthread_mutex_t simul_mutex;
 	pthread_mutex_t dir_mutex;
+  #if OW_USB
 	pthread_mutex_t libusb_mutex;
+  #endif                                                        /* OW_USB */
 	pthread_mutex_t typedir_mutex;
 	pthread_mutex_t externaldir_mutex;
 	pthread_mutex_t namefind_mutex;
-	pthread_mutex_t aliasfind_mutex;
 	pthread_mutex_t aliaslist_mutex;
 	pthread_mutex_t externalcount_mutex;
 	pthread_mutex_t timegm_mutex;
@@ -136,9 +136,6 @@ extern struct mutexes {
 #define FSTATLOCK         	_MUTEX_LOCK(  Mutex.fstat_mutex  )
 #define FSTATUNLOCK       	_MUTEX_UNLOCK(Mutex.fstat_mutex  )
 
-#define SIMULLOCK         	_MUTEX_LOCK(  Mutex.simul_mutex  )
-#define SIMULUNLOCK       	_MUTEX_UNLOCK(Mutex.simul_mutex  )
-
 #define DIRLOCK           	_MUTEX_LOCK(  Mutex.dir_mutex    )
 #define DIRUNLOCK         	_MUTEX_UNLOCK(Mutex.dir_mutex    )
 
@@ -153,9 +150,6 @@ extern struct mutexes {
 
 #define NAMEFINDLOCK      	_MUTEX_LOCK(  Mutex.namefind_mutex)
 #define NAMEFINDUNLOCK    	_MUTEX_UNLOCK(Mutex.namefind_mutex)
-
-#define ALIASFINDLOCK     	_MUTEX_LOCK(  Mutex.aliasfind_mutex)
-#define ALIASFINDUNLOCK   	_MUTEX_UNLOCK(Mutex.aliasfind_mutex)
 
 #define ALIASLISTLOCK     	_MUTEX_LOCK(  Mutex.aliaslist_mutex)
 #define ALIASLISTUNLOCK   	_MUTEX_UNLOCK(Mutex.aliaslist_mutex)

@@ -187,7 +187,7 @@ void fatal_error(const char * file, int line, const char * func, const char *fmt
 #else
 		vsprintf(buf, fmt, ap);
 #endif
-		fprintf(stderr, buf);
+		fprintf(stderr, "%s", buf);
 	}
 #else /* OWNETC_OW_DEBUG */
 	if(Globals.fatal_debug) {
