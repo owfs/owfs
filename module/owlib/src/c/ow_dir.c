@@ -704,7 +704,7 @@ static ZERO_OR_ERROR FS_realdir(void (*dirfunc) (void *, const struct parsedname
    */
 void FS_LoadDirectoryOnly(struct parsedname *pn_directory, const struct parsedname *pn_original)
 {
-	memmove( pn_directory, pn_original, sizeof(struct parsename)) ; // shallow copy
+	memmove( pn_directory, pn_original, sizeof(struct parsedname)) ; // shallow copy
 	if (RootNotBranch(pn_directory)) {
 		memset(pn_directory->sn, 0, SERIAL_NUMBER_SIZE);
 	} else {

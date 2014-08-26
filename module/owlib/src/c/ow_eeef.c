@@ -84,13 +84,20 @@ enum e_cal_type {
 #define _EEEF_RESET_TO_FACTORY_DEFAULTS 0xF7
 
 #define _EEEF_READ_SENSOR 0x21
-#define _EEEF_SET_LEAF 0x22
-#define _EEEF_GET_LEAF 0x23
-#define _EEEF_SET_LEAF_MAX 0x24
-#define _EEEF_GET_LEAF_MAX 0x25
-#define _EEEF_SET_LEAF_MIN 0x26
-#define _EEEF_GET_LEAF_MIN 0x27
-#define _EEEF_GET_LEAF_RAW 0x31
+#define _EEEF_SET_LEAF_OLD 0x22
+#define _EEEF_SET_LEAF_NEW 0xA2
+#define _EEEF_GET_LEAF_OLD 0x23
+#define _EEEF_GET_LEAF_NEW 0x22
+#define _EEEF_SET_LEAF_MAX_OLD 0x24
+#define _EEEF_SET_LEAF_MAX_NEW 0xA3
+#define _EEEF_GET_LEAF_MAX_OLD 0x25
+#define _EEEF_GET_LEAF_MAX_NEW 0x23
+#define _EEEF_SET_LEAF_MIN_OLD 0x26
+#define _EEEF_SET_LEAF_MIN_NEW 0xA4
+#define _EEEF_GET_LEAF_MIN_OLD 0x27
+#define _EEEF_GET_LEAF_MIN_NEW 0x24
+#define _EEEF_GET_LEAF_RAW_OLD 0x31
+#define _EEEF_GET_LEAF_RAW_NEW 0x31
 
 #define _EEEF_HUB_SET_CHANNELS 0x21
 #define _EEEF_HUB_GET_CHANNELS_ACTIVE 0x22
@@ -310,6 +317,9 @@ static struct filetype HobbyBoards_EF[] = {
 
 DeviceEntry(EF, HobbyBoards_EF, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
+/* Internal properties */
+Make_SlaveSpecificTag(VER, fc_stable);	// version
+#define EFversion(maj,min) (maj*256+min)
 
 static enum e_EF_type VISIBLE_EF( const struct parsedname * pn ) ;
 
@@ -388,6 +398,7 @@ static enum e_visibility VISIBLE_EF_HUB( const struct parsedname * pn )
 /* prototypes */
 static GOOD_OR_BAD OW_version(BYTE * major, BYTE * minor, struct parsedname * pn) ;
 static GOOD_OR_BAD OW_type(BYTE * type_number, struct parsedname * pn) ;
+static GOOD_OR_BAD OW_get_version( int * version, struct parsedname * pn ) ;
 
 static GOOD_OR_BAD OW_read(BYTE command, BYTE * bytes, size_t size, struct parsedname * pn) ;
 static GOOD_OR_BAD OW_write(BYTE command, BYTE * bytes, size_t size, struct parsedname * pn);
@@ -473,8 +484,14 @@ static ZERO_OR_ERROR FS_r_sensor(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_r_moist(struct one_wire_query *owq)
 {
     BYTE moist ;
+    BYTE cmd ;
+    int version ;
+    struct parsedname * pn = PN(owq) ;
     
-    if ( BAD( OW_read( _EEEF_GET_LEAF, &moist, 1, PN(owq) ) ) ) {
+    RETURN_ERROR_IF_BAD( OW_get_version( &version, pn ) ) ;
+    cmd = ( version>=EFversion(1,80) ) ? _EEEF_GET_LEAF_NEW : _EEEF_GET_LEAF_OLD ;
+    
+    if ( BAD( OW_read( cmd, &moist, 1, pn ) ) ) {
 		return -EINVAL ;
 	}
 	OWQ_U(owq) = (~moist) & 0x0F ;
@@ -484,7 +501,14 @@ static ZERO_OR_ERROR FS_r_moist(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_w_moist(struct one_wire_query *owq)
 {
     BYTE moist = (~OWQ_U(owq)) & 0x0F ;
-    return GB_to_Z_OR_E( OW_write(_EEEF_SET_LEAF, &moist, 1, PN(owq))) ;
+    BYTE cmd ;
+    int version ;
+    struct parsedname * pn = PN(owq) ;
+    
+    RETURN_ERROR_IF_BAD( OW_get_version( &version, pn ) ) ;
+    cmd = ( version>=EFversion(1,80) ) ? _EEEF_SET_LEAF_NEW : _EEEF_SET_LEAF_OLD ;
+    
+    return GB_to_Z_OR_E( OW_write( cmd, &moist, 1, pn)) ;
 }
 
 static ZERO_OR_ERROR FS_r_leaf(struct one_wire_query *owq)
@@ -507,20 +531,24 @@ static ZERO_OR_ERROR FS_w_leaf(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_r_cal(struct one_wire_query *owq)
 {
-	BYTE command ;
+    BYTE cmd ;
+    int version ;
+    struct parsedname * pn = PN(owq) ;
+    
+    RETURN_ERROR_IF_BAD( OW_get_version( &version, pn ) ) ;
 	
 	switch( (enum e_cal_type) PN(owq)->selected_filetype->data.i ) {
 		case cal_min:
-			command = _EEEF_GET_LEAF_MIN ;
+			cmd = ( version>=EFversion(1,80) ) ? _EEEF_GET_LEAF_MIN_NEW : _EEEF_GET_LEAF_MIN_OLD ;
 			break ;
 		case cal_max:
-			command = _EEEF_GET_LEAF_MAX ;
+			cmd = ( version>=EFversion(1,80) ) ? _EEEF_GET_LEAF_MAX_NEW : _EEEF_GET_LEAF_MAX_OLD ;
 			break ;
 		default:
 			return -EINVAL ;
 	}
 			
-    return GB_to_Z_OR_E( OW_r_doubles( command, &OWQ_U(owq), 1, PN(owq))) ;
+    return GB_to_Z_OR_E( OW_r_doubles( cmd, &OWQ_U(owq), 1, pn)) ;
 }
 
 static ZERO_OR_ERROR FS_r_variable(struct one_wire_query *owq)
@@ -681,27 +709,38 @@ static ZERO_OR_ERROR FS_w_variable(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_w_cal(struct one_wire_query *owq)
 {
-	BYTE command ;
+    BYTE cmd ;
+    int version ;
+    struct parsedname * pn = PN(owq) ;
+    
+    RETURN_ERROR_IF_BAD( OW_get_version( &version, pn ) ) ;
 	
 	switch( (enum e_cal_type) PN(owq)->selected_filetype->data.i ) {
 		case cal_min:
-			command = _EEEF_SET_LEAF_MIN ;
+			cmd = ( version>=EFversion(1,80) ) ? _EEEF_SET_LEAF_MIN_NEW : _EEEF_SET_LEAF_MIN_OLD ;
 			break ;
 		case cal_max:
-			command = _EEEF_SET_LEAF_MAX ;
+			cmd = ( version>=EFversion(1,80) ) ? _EEEF_SET_LEAF_MAX_NEW : _EEEF_SET_LEAF_MAX_OLD ;
 			break ;
 		default:
 			return -EINVAL ;
 	}
 			
-    return GB_to_Z_OR_E( OW_w_doubles( command, &OWQ_U(owq), 1, PN(owq))) ;
+    return GB_to_Z_OR_E( OW_w_doubles( cmd, &OWQ_U(owq), 1, pn)) ;
 }
 
 static ZERO_OR_ERROR FS_r_raw(struct one_wire_query *owq)
 {
 	UINT raw[4] ;
+    BYTE cmd ;
+    int version ;
+    struct parsedname * pn = PN(owq) ;
+    
+    RETURN_ERROR_IF_BAD( OW_get_version( &version, pn ) ) ;
+    cmd = ( version>=EFversion(1,80) ) ? _EEEF_GET_LEAF_RAW_NEW : _EEEF_GET_LEAF_RAW_OLD ;
+    
 
-	if ( BAD( OW_r_doubles( _EEEF_GET_LEAF_RAW, raw, 4, PN(owq) ) ) ) {
+	if ( BAD( OW_r_doubles( cmd, raw, 4, pn ) ) ) {
 		return -EINVAL ;
 	}
 	
@@ -880,4 +919,17 @@ static GOOD_OR_BAD OW_w_doubles( BYTE command, UINT * dubs, int elements, struct
 	}
 
 	return OW_write( command, data, size, pn ) ;
+}
+
+static GOOD_OR_BAD OW_get_version( int * version, struct parsedname * pn )
+{
+	/* Version */
+	if ( BAD( Cache_Get_SlaveSpecific(version, sizeof(*version), SlaveSpecificTag(VER), pn)) ) {
+		BYTE major, minor;
+		RETURN_BAD_IF_BAD( OW_version( &major, &minor, pn ) ) ;
+		version[0] = minor + 256*major ;
+		// Add a succesful/correct result to cache, else we will be re-reading
+		Cache_Add_SlaveSpecific(version, sizeof(*version), SlaveSpecificTag(VER), pn);
+	}
+	return gbGOOD ;
 }

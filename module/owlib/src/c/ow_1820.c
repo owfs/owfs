@@ -763,7 +763,7 @@ static GOOD_OR_BAD OW_test_resolution( int * resolution_changed, struct tempreso
 		}
 		// Always add a succesful/correct result to cache, else we will be re-reading
 		// every time if we use default resolution
-		Cache_Add_SlaveSpecific(&(Resolution->bits), sizeof(int), SlaveSpecificTag(RES), pn);
+		Cache_Add_SlaveSpecific(&(Resolution->bits), sizeof(stored_resolution), SlaveSpecificTag(RES), pn);
 	}
 
 	return gbGOOD;	
