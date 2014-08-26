@@ -509,7 +509,7 @@ static int WriteToServer(int file_descriptor, struct server_msg *sm, struct serv
 		io[nio].iov_base = (char *) sp->path ; // gives a spurious compiler error -- constant is OK HERE!
 #endif
 		io[nio].iov_len = strlen(sp->path) + 1;
-		payload =  io[nio].iov_len +1;
+		payload =  io[nio].iov_len ;
 		nio++;
 		LEVEL_DEBUG("ToServer path=%s\n", sp->path);
 	}
