@@ -39,6 +39,8 @@ struct HA7_response {
 } ;
 #pragma pack(pop)
 
+static int Read_HA7_response( FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct addrinfo *now, char * name ) ;
+
 static int Test_HA7_response( struct HA7_response * ha7_response )
 {
 	LEVEL_DEBUG("From ha7_response: signature=%.2s, command=%X, port=%d, ssl=%d, MAC=%.12s, device=%s",
@@ -76,15 +78,23 @@ static void Setup_HA7_hint( struct addrinfo * hint )
 
 static int Get_HA7_response( struct addrinfo *now, char * name )
 {
+	FILE_DESCRIPTOR_OR_ERROR file_descriptor = socket(now->ai_family, now->ai_socktype, now->ai_protocol) ;
+	int read_return  = Read_HA7_response( file_descriptor, now, name ) ;
+
+	Test_and_Close( & file_descriptor ) ;
+	
+	return read_return ;
+}
+
+static int Read_HA7_response( FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct addrinfo *now, char * name )
+{
 	struct timeval tv = { 50, 0 };
-	FILE_DESCRIPTOR_OR_ERROR file_descriptor;
 	struct HA7_response ha7_response ;
 
 	struct sockaddr_in from ;
 	socklen_t fromlen = sizeof(struct sockaddr_in) ;
 	int on = 1;
 
-	file_descriptor = socket(now->ai_family, now->ai_socktype, now->ai_protocol) ;
 	if ( FILE_DESCRIPTOR_NOT_VALID(file_descriptor) ) {
 		ERROR_DEBUG("Cannot get socket file descriptor for broadcast.");
 		return 1;
@@ -94,8 +104,7 @@ static int Get_HA7_response( struct addrinfo *now, char * name )
 		ERROR_DEBUG("Cannot set socket option for broadcast.");
 		return 1;
 	}
-	if (sendto(file_descriptor, "HA\000\001", 4, 0, now->ai_addr, now->ai_addrlen)
-		!= 4) {
+	if (sendto(file_descriptor, "HA\000\001", 4, 0, now->ai_addr, now->ai_addrlen) != 4) {
 		ERROR_CONNECT("Trouble sending broadcast message");
 		return 1;
 	}
@@ -106,7 +115,7 @@ static int Get_HA7_response( struct addrinfo *now, char * name )
 		return 1;
 	}
 
-	if ( Test_HA7_response( &ha7_response ) ) {
+	if ( Test_HA7_response( &ha7_response ) != 0 ) {
 		return 1 ;
 	}
 
