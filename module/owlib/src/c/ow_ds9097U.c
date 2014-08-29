@@ -629,12 +629,13 @@ static RESET_TYPE DS2480_reset_once(struct connection_in * in)
 	}
 }
 
+#define SERIAL_NUMBER_BITS (8*SERIAL_NUMBER_SIZE)
 /* search = normal and alarm */
 static enum search_status DS2480_next_both(struct device_search *ds, const struct parsedname *pn)
 {
 	int mismatched;
-	BYTE sn[8];
-	BYTE bitpairs[16];
+	BYTE sn[SERIAL_NUMBER_SIZE];
+	BYTE bitpairs[SERIAL_NUMBER_SIZE*2];
 	struct connection_in * in = pn->selected_connection ;
 	BYTE searchon = (BYTE) ( CMD_COMM | FUNCTSEL_SEARCHON | DS2480b_speed_byte(in) );
 	BYTE searchoff = (BYTE) ( CMD_COMM | FUNCTSEL_SEARCHOFF | DS2480b_speed_byte(in) );
@@ -654,6 +655,9 @@ static enum search_status DS2480_next_both(struct device_search *ds, const struc
 		return search_done;
 	}
 
+	// clear sn to satisfy static error checking (Coverity)
+	memset( sn, 0, SERIAL_NUMBER_SIZE ) ;
+	
 	// build the command stream
 	// call a function that may add the change mode command to the buff
 	// check if correct mode
@@ -666,7 +670,7 @@ static enum search_status DS2480_next_both(struct device_search *ds, const struc
 	mismatched = -1;
 
 	// add the 16 bytes of the search
-	memset(bitpairs, 0, 16);
+	memset(bitpairs, 0, SERIAL_NUMBER_SIZE*2);
 
 	// set the bits in the added buffer
 	for (i = 0; i < ds->LastDiscrepancy; i++) {
@@ -689,14 +693,14 @@ static enum search_status DS2480_next_both(struct device_search *ds, const struc
 	// search OFF
 	if ( BAD(BUS_send_data(&(ds->search), 1, pn))
 		|| BAD(DS2480_sendout_cmd(&searchon, 1, in))
-		|| BAD( DS2480_sendback_data(bitpairs, bitpairs, 16, pn) )
+		|| BAD( DS2480_sendback_data(bitpairs, bitpairs, SERIAL_NUMBER_SIZE*2, pn) )
 		|| BAD(DS2480_sendout_cmd(&searchoff, 1, in))
 		) {
 		return search_error;
 	}
 
 	// interpret the bit stream
-	for (i = 0; i < 64; i++) {
+	for (i = 0; i < SERIAL_NUMBER_BITS; i++) {
 		// get the SerialNum bit
 		UT_setbit(sn, i, UT_get2bit(bitpairs, i) >> 1);
 		// check LastDiscrepancy
@@ -711,7 +715,7 @@ static enum search_status DS2480_next_both(struct device_search *ds, const struc
 	}
 
 	// CRC check
-	if (CRC8(sn, 8) || (ds->LastDiscrepancy == 63) || (sn[0] == 0)) {
+	if (CRC8(sn, SERIAL_NUMBER_SIZE) || (ds->LastDiscrepancy == SERIAL_NUMBER_BITS-1) || (sn[0] == 0)) {
 		return search_error;
 	}
 
