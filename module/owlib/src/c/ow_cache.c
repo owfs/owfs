@@ -959,7 +959,6 @@ GOOD_OR_BAD Cache_Get_Simul_Time(const struct internal_prop *ip, time_t * dwell_
 	// valid cached primary data -- see if a simultaneous conversion should be used instead
 	struct tree_node tn;
 	time_t duration ;
-	time_t time_left ;
 	size_t dsize_simul = 0 ;
 	struct parsedname pn_directory ;
 
@@ -973,13 +972,13 @@ GOOD_OR_BAD Cache_Get_Simul_Time(const struct internal_prop *ip, time_t * dwell_
 	
 	FS_LoadDirectoryOnly(&pn_directory, pn);
 	LoadTK(pn_directory.sn, ip->name, 0, &tn ) ;
-	if ( Get_Stat(&cache_int, Cache_Get_Common(NULL, &dsize_simul, &time_left, &tn)) ) {
+	if ( Get_Stat(&cache_int, Cache_Get_Common(NULL, &dsize_simul, &duration, &tn)) ) {
 		return gbBAD ;
 	}
 	// duration_simul is time left
 	// duration is time allocated
 	// back-compute dwell time
-	dwell_time[0] = duration - time_left ;
+	dwell_time[0] = TimeOut(ip->change) - time_left ;
 	return gbGOOD ;
 }
 
@@ -1058,8 +1057,11 @@ ASCII * Cache_Get_Alias(const BYTE * sn)
 	return alias_name ;
 }
 
-/* Look in caches, 0=found and valid, 1=not or uncachable in the first place */
+/* Look in caches */
 /* duration is time left */
+/* inputs: dsize, duration, tn
+ * outputs: return value, data, dsize (updated), duration (updated)
+ * */
 static enum cache_task_return Cache_Get_Common(void *data, size_t * dsize, time_t * duration, const struct tree_node *tn)
 {
 	enum cache_task_return ctr_ret;
