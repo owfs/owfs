@@ -44,6 +44,7 @@ void serial_free(struct connection_in *connection)
 			ERROR_CONNECT("Cannot restore port attributes: %s", pin->init_data);
 		}
 	}
+	pin->file_descriptor = fd ;
 	Test_and_Close( &( pin->file_descriptor) ) ;
 }
 
