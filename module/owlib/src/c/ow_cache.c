@@ -978,7 +978,7 @@ GOOD_OR_BAD Cache_Get_Simul_Time(const struct internal_prop *ip, time_t * dwell_
 	// duration_simul is time left
 	// duration is time allocated
 	// back-compute dwell time
-	dwell_time[0] = TimeOut(ip->change) - time_left ;
+	dwell_time[0] = TimeOut(ip->change) - duration ;
 	return gbGOOD ;
 }
 
