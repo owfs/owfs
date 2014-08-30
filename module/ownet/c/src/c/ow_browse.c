@@ -190,7 +190,7 @@ void OW_Browse(void)
 	struct RefStruct *rs = malloc(sizeof(struct RefStruct));
 	DNSServiceErrorType dnserr;
 
-	if (( rs == NULL) {
+	if ( rs == NULL) {
 		return;
 	}
 
