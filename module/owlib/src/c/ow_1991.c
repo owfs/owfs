@@ -122,7 +122,7 @@ static GOOD_OR_BAD OW_r_subkey(BYTE * data, const size_t size, const off_t offse
 static GOOD_OR_BAD OW_w_subkey(const BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn, const int extension);
 
 /* array with magic bytes representing the Copy Scratch operations */
-enum block { ALL = 0, IDENT, PASSWORD, DATA };
+enum block { block_ALL = 0, block_IDENT, block_PASSWORD, block_DATA };
 static const BYTE cp_array[9][8] = {
 	{0x56, 0x56, 0x7F, 0x51, 0x57, 0x5D, 0x5A, 0x7F},	// 00-3F
 	{0x9A, 0x9A, 0xB3, 0x9D, 0x64, 0x6E, 0x69, 0x4C},	// ident
@@ -351,7 +351,7 @@ static GOOD_OR_BAD OW_w_ident(const BYTE * data, const size_t size, const off_t 
 	struct transaction_log tcopy[] = {
 		TRXN_START,
 		TRXN_WRITE3(copy_scratch),
-		TRXN_WRITE(cp_array[IDENT], 8),
+		TRXN_WRITE(cp_array[block_IDENT], 8),
 		TRXN_WRITE(global_passwd[pn->extension], 8),
 		TRXN_END,
 	};
@@ -383,7 +383,7 @@ static GOOD_OR_BAD OW_w_change_password(const BYTE * data, const size_t size, co
 	struct transaction_log tcopy[] = {
 		TRXN_START,
 		TRXN_WRITE3(copy_scratch),
-		TRXN_WRITE(cp_array[PASSWORD], 8),
+		TRXN_WRITE(cp_array[block_PASSWORD], 8),
 		TRXN_WRITE(global_passwd[pn->extension], 8),
 		TRXN_END,
 	};
@@ -460,7 +460,7 @@ static GOOD_OR_BAD OW_w_page(const BYTE * data, const size_t size, const off_t o
 
 		copy_scratch[1] = (pn->extension << 6);
 		copy_scratch[2] = ~(copy_scratch[1]);
-		tcopy[2].out = cp_array[DATA + i];
+		tcopy[2].out = cp_array[block_IDENT+i];
 		RETURN_BAD_IF_BAD(BUS_transaction(tcopy, pn)) ;
 		left -= nr_bytes;
 	}
