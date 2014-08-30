@@ -286,6 +286,7 @@ void enet_list_add( char * ip, char * port, int version, struct enet_list * elis
 	
 	if ( strcmp( port, "0" ) == 0 ) {
 		LEVEL_CALL("ENET at %s has 1-wire telnet access disabled.\n--> Use the Web configuration http://%s '1-Wire Setup'",ip,ip) ;
+		owfree( new ) ;
 		return ;
 	}
 	
