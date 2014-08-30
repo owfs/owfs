@@ -215,7 +215,7 @@ static GOOD_OR_BAD HA7_read( struct memblob *mb, struct connection_in * in )
 	
 	ASCII readin_area[HA7_READ_BUFFER_LENGTH + 1];
 	ASCII *start;
-	size_t read_size;
+	ssize_t read_size;
 
 	MemblobInit(mb, HA7_READ_BUFFER_LENGTH);
 	pin->timeout.tv_sec = 2 ;
