@@ -187,11 +187,12 @@ static void BrowseBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 
 void OW_Browse(void)
 {
-	struct RefStruct *rs;
+	struct RefStruct *rs = malloc(sizeof(struct RefStruct));
 	DNSServiceErrorType dnserr;
 
-	if ((rs = malloc(sizeof(struct RefStruct))) == NULL)
+	if (( rs == NULL) {
 		return;
+	}
 
 	dnserr = DNSServiceBrowse(&Globals.browse, 0, 0, "_owserver._tcp", NULL, BrowseBack, NULL);
 	rs->sref = Globals.browse;
@@ -202,9 +203,11 @@ void OW_Browse(void)
 		err = pthread_create(&thread, 0, Process, (void *) rs);
 		if (err) {
 			ERROR_CONNECT("Zeroconf/Bounjour browsing thread error %d).\n", err);
+			free(rs) ;
 		}
 	} else {
 		LEVEL_CONNECT("DNSServiceBrowse error = %d\n", dnserr);
+		free( rs ) ;
 	}
 }
 
