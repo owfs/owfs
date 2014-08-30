@@ -115,8 +115,6 @@ GOOD_OR_BAD HA7_detect(struct port_in *pin)
 
 static RESET_TYPE HA7_reset(const struct parsedname *pn)
 {
-	struct memblob mb;
-	RESET_TYPE ret = BUS_RESET_OK;
 	struct toHA7 ha7;
 	struct connection_in * in = pn->selected_connection ;
 
@@ -124,13 +122,17 @@ static RESET_TYPE HA7_reset(const struct parsedname *pn)
 	ha7.command = "Reset";
 	if ( BAD(HA7_toHA7( &ha7, in)) ) {
 		LEVEL_DEBUG("Trouble sending reset command");
-		ret = BUS_RESET_ERROR;
-	} else if ( BAD(HA7_read( &mb, in )) ) {
-		LEVEL_DEBUG("Trouble with reset command response");
-		ret = BUS_RESET_ERROR;
+		return BUS_RESET_ERROR;
+	} else {
+		RESET_TYPE ret = BUS_RESET_OK;
+		struct memblob mb;
+		if ( BAD(HA7_read( &mb, in )) ) {
+			LEVEL_DEBUG("Trouble with reset command response");
+			ret = BUS_RESET_ERROR;
+		}
+		MemblobClear(&mb);
+		return ret;
 	}
-	MemblobClear(&mb);
-	return ret;
 }
 
 static GOOD_OR_BAD HA7_directory( struct device_search *ds, const struct parsedname *pn)
