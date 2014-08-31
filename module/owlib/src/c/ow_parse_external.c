@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -520,22 +519,22 @@ static struct family_node * create_family_node( char * s_family )
 
 static struct property_node * create_property_node( char * s_property, char * s_family, enum ft_format s_format, size_t s_array, enum ag_combined s_combined, enum ag_index s_index_type, size_t s_length, enum fc_change s_change, char * s_read, char * s_write, char * s_data, char * s_other, enum external_type et )
 {
+	// AddPropertyToTree (the calling routine) ensures these aren't null
 	int l_property = strlen( s_property )+1 ;
 	int l_family = strlen( s_family )+1 ;
 	int l_read = strlen( s_read )+1 ;
 	int l_write = strlen( s_write )+1 ;
 	int l_data = strlen( s_data )+1 ;
 	int l_other = strlen( s_other )+1 ;
-
-	struct property_node * s = owmalloc( sizeof(struct property_node) 
-	+ l_property + l_family + l_read + l_write + l_data + l_other ) ;
+	int l_total = sizeof(struct property_node) + l_property + l_family + l_read + l_write + l_data + l_other ;
+	
+	struct property_node * s = owmalloc( l_total ) ;
 	
 	if ( s==NULL) {
 		return NULL ;
 	}
 
-	memset( s, 0, sizeof(struct property_node) 
-	+ l_property + l_family + l_read + l_write + l_data + l_other ) ;
+	memset( s, 0, l_total ) ;
 
 	s->property = s->payload ;
 	strcpy( s->property, s_property ) ;
@@ -569,12 +568,12 @@ static struct property_node * create_property_node( char * s_property, char * s_
 	s->ft.data.a = s->data ;
 	
 	// Check read function
-	if ( s_read != NULL && strlen(s_read) > 0 ) {
+	if ( l_read > 1 ) {
 		s->ft.read = FS_r_external ;
 	}
 	
 	// Check write function
-	if ( s_write != NULL && strlen(s_write) > 0 ) {
+	if ( l_write > 1 ) {
 		s->ft.write = FS_w_external ;
 	}
 	
@@ -626,13 +625,25 @@ static void AddFamilyToTree( char * s_family )
 	}
 }
 
+#define NonNull(x)  if(x==NULL) { x=""; }
+
 static void AddPropertyToTree( char * s_property, char * s_family, enum ft_format s_format, size_t s_array, enum ag_combined s_combined, enum ag_index s_index_type, size_t s_length, enum fc_change s_change, char * s_read, char * s_write, char * s_data, char * s_other, enum external_type et )
 {
-	struct property_node * n = create_property_node( s_property, s_family, s_format, s_array, s_combined, s_index_type, s_length, s_change, s_read, s_write, s_data, s_other, et ) ;
+	struct property_node * n  ;
 	struct {
 		struct property_node * key ;
 		char other[0] ;
-	} * opaque = tsearch( (void *) n, &property_tree, property_compare ) ;
+	} * opaque ;
+	
+	NonNull( s_property )
+	NonNull( s_family )
+	NonNull( s_read )
+	NonNull( s_write )
+	NonNull( s_data )
+	NonNull( s_other )
+
+	n = create_property_node( s_property, s_family, s_format, s_array, s_combined, s_index_type, s_length, s_change, s_read, s_write, s_data, s_other, et ) ;
+	opaque = tsearch( (void *) n, &property_tree, property_compare ) ;
 	
 	if ( opaque->key != n ) {
 		// already exists
