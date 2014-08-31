@@ -143,6 +143,9 @@ static void SetupAntiloop(int argc, char **argv)
 		left -= argsize ;
 	}
 	
+	// backup definition
+	memcpy( Globals.Token.uuid, (void *) &data_struct, 16 ) ;
+	
 	// use MD5 has (gives the required 16 bytes)
 	md5( (void *) &data_struct, sizeof(data_struct) , Globals.Token.uuid ) ;
 	
