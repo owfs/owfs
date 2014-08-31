@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -828,7 +827,8 @@ static ZERO_OR_ERROR FS_r_temp(struct one_wire_query *owq)
 		off = _1W_DS2760_TEMPERATURE;
 	}
 	RETURN_ERROR_IF_BAD( OW_r_int(&I, off, pn) ) ;
-	OWQ_F(owq) = (I / 32) * .125;
+	
+	OWQ_F(owq) = ( (int) (I >> 5) ) * .125;
 	return 0;
 }
 

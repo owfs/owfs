@@ -1,5 +1,4 @@
 /*
-$Id$
  * http.c for owhttpd (1-wire web server)
  * By Paul Alfille 2003, using libow
  * offshoot of the owfs ( 1wire file system )

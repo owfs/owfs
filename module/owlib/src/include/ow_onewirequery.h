@@ -1,8 +1,6 @@
 /*
-$Id$
     OW -- One-Wire filesystem
     version 0.4 7/2/2003
-
 */
 
 // encapsulation or parameters for read, write and directory
