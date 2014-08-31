@@ -5,8 +5,6 @@
 # {copyright} 2004 Paul H. Alfille
 # GPL v2 license
 
-# $Id$
-
 use OW ;
 
 die (

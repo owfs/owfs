@@ -17,6 +17,10 @@ API_setup(program_type_swig) ;
 // define this to add debug-output from newer swig-versions.
 //#define SWIGRUNTIME_DEBUG 1
 
+// Opposite of internal code
+#define SWIG_BAD   0
+#define SWIG_GOOD  1
+
 char *version( ) 
 {
 	return VERSION;
@@ -25,22 +29,22 @@ char *version( )
 int init( const char * dev ) 
 {
 	if ( BAD(API_init(dev, restart_if_repeat)) ) {
-		return 0 ; // error
+		return SWIG_BAD ; // error
 	}
-	return 1 ;
+	return SWIG_GOOD ;
 }
 
 int put( const char * path, const char * value ) 
 {
-	int ret = 0 ; /* bad result */
+	int ret = SWIG_BAD ; /* bad result */
 
 	if ( API_access_start() != 0 ) {
-		return 0 ; // bad result
+		return SWIG_BAD ; // bad result
 	}
 
 	if ( value!=NULL) {
 		if ( FS_write( path, value, strlen(value), 0 ) < 0  ) {
-			ret = 1 ; // success
+			ret = SWIG_GOOD ; // success
 		}
 	}
 	API_access_end() ;
@@ -49,7 +53,6 @@ int put( const char * path, const char * value )
 
 /*
   Get a directory,  returning a copy of the contents in *buffer (which must be free-ed elsewhere)
-  return length of string, or <0 for error
   *buffer will be returned as NULL on error
  */
 
