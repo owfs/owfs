@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -995,7 +994,7 @@ static GOOD_OR_BAD Cache_Get_Simultaneous(const struct internal_prop *ip, struct
 	struct parsedname * pn = PN(owq) ;
 	size_t dsize = sizeof(union value_object) ;
 	
-	duration = TimeOut(pn->selected_filetype->change);
+	time_left = duration = TimeOut(pn->selected_filetype->change);
 	if (duration <= 0) {
 		// probably "uncached" requested
 		return gbBAD;
