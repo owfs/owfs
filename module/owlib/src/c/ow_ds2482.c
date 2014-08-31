@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -420,6 +419,7 @@ static GOOD_OR_BAD DS2482_detect_single(int lowindex, int highindex, char * i2c_
 				|| (c != (DS2482_REG_STS_LL | DS2482_REG_STS_RST))	// make sure status is properly set
 				) {
 				LEVEL_CONNECT("i2c device at %s address %.2X cannot be reset. Not a DS2482.", i2c_device, trial_address);
+				in->pown->file_descriptor = FILE_DESCRIPTOR_BAD ;
 				continue;
 			}
 			LEVEL_CONNECT("i2c device at %s address %.2X appears to be DS2482-x00", i2c_device, trial_address);
@@ -441,6 +441,7 @@ static GOOD_OR_BAD DS2482_detect_single(int lowindex, int highindex, char * i2c_
 	}
 	/* fell though, no device found */
 	COM_close( in ) ;
+	Test_and_Close( & file_descriptor ) ;
 	return gbBAD;
 }
 
