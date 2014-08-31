@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -209,6 +208,7 @@ void RemoveIn( struct connection_in * conn )
 		return ;
 	}
 
+	// owning port
 	pin = conn->pown ;
 
 	/* First unlink from list */
@@ -250,7 +250,6 @@ void RemoveIn( struct connection_in * conn )
 	
 	/* Finally delete the structure */
 	owfree(conn);
-	conn = NO_CONNECTION ;
 }
 
 void RemovePort( struct port_in * pin )

@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -30,12 +29,14 @@ void OWNET_close(OWNET_HANDLE h)
 */
 void OWNET_closeall(void)
 {
-	struct connection_in *target;
+	struct connection_in *target = head_inbound_list ;
 
 	CONNIN_WLOCK;
 	// step through head_inbound_list linked list
-	for (target = head_inbound_list; target != NULL; target = target->next) {
+	while ( target != NULL ) {
+		struct connection_in * next = target->next ;
 		FreeIn(target);
+		target = next ;
 	}
 	CONNIN_WUNLOCK;
 }

@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -22,6 +21,13 @@ $Id$
 #endif
 
 #include "jsmn.h"
+
+static GOOD_OR_BAD ENET_response( FILE_DESCRIPTOR_OR_ERROR file_descriptor, int multiple, struct enet_list * elist, struct addrinfo *now ) ;
+static void Setup_ENET_hint( struct addrinfo * hint ) ;
+static GOOD_OR_BAD send_ENET_discover( FILE_DESCRIPTOR_OR_ERROR file_descriptor, struct addrinfo *now ) ;
+static GOOD_OR_BAD set_ENET_broadcast( FILE_DESCRIPTOR_OR_ERROR file_descriptor ) ;
+static GOOD_OR_BAD Get_ENET_response( int multiple, struct enet_list * elist, struct addrinfo *now ) ;
+static void parse_ENET_response( char * response_buffer, int * found_version, char * found_ip, char * found_port ) ;
 
 /* from http://stackoverflow.com/questions/337422/how-to-udp-broadcast-with-c-in-linux */
 static void Setup_ENET_hint( struct addrinfo * hint )
@@ -166,20 +172,53 @@ static void parse_ENET_response( char * response_buffer, int * found_version, ch
 
 static GOOD_OR_BAD Get_ENET_response( int multiple, struct enet_list * elist, struct addrinfo *now )
 {
-	struct timeval tv = { 2, 0 };
 	FILE_DESCRIPTOR_OR_ERROR file_descriptor;
+	GOOD_OR_BAD resp ;
+	
+	file_descriptor = socket(now->ai_family, now->ai_socktype, now->ai_protocol) ;
+	if ( FILE_DESCRIPTOR_NOT_VALID(file_descriptor) ) {
+		ERROR_DEBUG("Cannot get socket file descriptor for broadcast.");
+		return gbBAD;
+	}
+
+	resp = ENET_response( file_descriptor, multiple, elist, now ) ;
+	
+	Test_and_Close( & file_descriptor ) ;
+	
+	return resp ;
+}
+
+void Find_ENET_all( struct enet_list * elist )
+{
+	struct addrinfo *ai;
+	struct addrinfo hint;
+	struct addrinfo *now;
+	int getaddr_error ;
+
+	Setup_ENET_hint( &hint ) ;
+
+	if ((getaddr_error = getaddrinfo("255.255.255.255", "30303", &hint, &ai))) {
+		LEVEL_CONNECT("Couldn't set up ENET broadcast message %s", gai_strerror(getaddr_error));
+		return;
+	}
+
+	for (now = ai; now; now = now->ai_next) {
+		if ( Get_ENET_response( 1, elist, now ) ) {
+			continue ;
+		}
+	}
+	freeaddrinfo(ai);
+}
+
+static GOOD_OR_BAD ENET_response( FILE_DESCRIPTOR_OR_ERROR file_descriptor, int multiple, struct enet_list * elist, struct addrinfo *now )
+{
+	struct timeval tv = { 2, 0 };
 	char response_buffer[RESPONSE_BUFFER_LENGTH] ;
 	
 	int at_least_one = 0 ;
 
 	struct sockaddr_in from ;
 	socklen_t fromlen = sizeof(struct sockaddr_in) ;
-
-	file_descriptor = socket(now->ai_family, now->ai_socktype, now->ai_protocol) ;
-	if ( FILE_DESCRIPTOR_NOT_VALID(file_descriptor) ) {
-		ERROR_DEBUG("Cannot get socket file descriptor for broadcast.");
-		return 1;
-	}
 
 	if ( multiple ) {
 		RETURN_BAD_IF_BAD( set_ENET_broadcast( file_descriptor ) ) ;
@@ -214,28 +253,6 @@ static GOOD_OR_BAD Get_ENET_response( int multiple, struct enet_list * elist, st
 	} while (1) ;
 
 	return gbBAD ;
-}
-
-void Find_ENET_all( struct enet_list * elist )
-{
-	struct addrinfo *ai;
-	struct addrinfo hint;
-	struct addrinfo *now;
-	int getaddr_error ;
-
-	Setup_ENET_hint( &hint ) ;
-
-	if ((getaddr_error = getaddrinfo("255.255.255.255", "30303", &hint, &ai))) {
-		LEVEL_CONNECT("Couldn't set up ENET broadcast message %s", gai_strerror(getaddr_error));
-		return;
-	}
-
-	for (now = ai; now; now = now->ai_next) {
-		if ( Get_ENET_response( 1, elist, now ) ) {
-			continue ;
-		}
-	}
-	freeaddrinfo(ai);
 }
 
 void Find_ENET_Specific( char * addr, struct enet_list * elist )
