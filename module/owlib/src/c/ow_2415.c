@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -58,8 +57,6 @@ READ_FUNCTION(FS_r_itime);
 WRITE_FUNCTION(FS_w_itime);
 READ_FUNCTION(FS_r_control);
 WRITE_FUNCTION(FS_w_control);
-READ_FUNCTION(FS_r_user);
-WRITE_FUNCTION(FS_w_user);
 
 /* ------- Structures ----------- */
 
@@ -67,11 +64,10 @@ WRITE_FUNCTION(FS_w_user);
 static struct bitfield DS2415_on = { "ControlRegister", 1, 3, } ;
 static struct bitfield DS2415_user = { "ControlRegister", 4, 4, } ;
 
-static struct aggregate A2415 = { 4, ag_numbers, ag_aggregate, };
+//static struct aggregate A2415 = { 4, ag_numbers, ag_aggregate, };
 static struct filetype DS2415[] = {
 	F_STANDARD,
 	{"ControlRegister", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_control, FS_w_control, INVISIBLE, NO_FILETYPE_DATA, },
-//	{"user", PROPERTY_LENGTH_UNSIGNED, &A2415, ft_bitfield, fc_link, FS_r_user, FS_w_user, VISIBLE, NO_FILETYPE_DATA, },
 	{"user", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE, {v: &DS2415_user,}, },
 //	{"running", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_run, FS_w_run, VISIBLE, NO_FILETYPE_DATA, },
 	{"running", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE, {v: &DS2415_on,}, },
@@ -128,23 +124,6 @@ static ZERO_OR_ERROR FS_w_interval(struct one_wire_query *owq)
 	UINT U = ( OWQ_U(owq) << 4 ) & _MASK_DS2417_IS ; // Move to upper nibble
 
 	return FS_w_sibling_bitwork( U, _MASK_DS2417_IS, "ControlRegister", owq ) ;
-}
-
-/* DS2415 User bits */
-static ZERO_OR_ERROR FS_r_user(struct one_wire_query *owq)
-{
-	UINT U = 0 ;
-	ZERO_OR_ERROR z_or_e = FS_r_sibling_U( &U, "ControlRegister", owq ) ;
-
-	OWQ_U(owq) = ( U & _MASK_DS2415_USER ) >> 4 ;
-	return z_or_e ;
-}
-
-static ZERO_OR_ERROR FS_w_user(struct one_wire_query *owq)
-{
-	UINT U = ( OWQ_U(owq) << 4 ) & _MASK_DS2415_USER ; // Move to upper nibble
-
-	return FS_w_sibling_bitwork( U, _MASK_DS2415_USER, "ControlRegister", owq ) ;
 }
 
 /* DS2415-DS2417 Oscillator control */
