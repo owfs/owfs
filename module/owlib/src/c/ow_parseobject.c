@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -29,7 +28,7 @@ struct one_wire_query * OWQ_create_from_path(const char *path)
 	
 	LEVEL_DEBUG("%s", path);
 
-	if ( owq== NO_ONE_WIRE_QUERY) {
+	if ( owq == NO_ONE_WIRE_QUERY) {
 		LEVEL_DEBUG("No memory to create object for path %s",path) ;
 		return NO_ONE_WIRE_QUERY ;
 	}
@@ -45,8 +44,8 @@ struct one_wire_query * OWQ_create_from_path(const char *path)
 			OWQ_size(owq) = OWQ_DEFAULT_READ_BUFFER_SIZE ;
 			return owq ;
 		}
-		OWQ_destroy(owq);
 	}
+	OWQ_destroy(owq);
 	return NO_ONE_WIRE_QUERY ;
 }
 
