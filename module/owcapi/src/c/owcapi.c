@@ -1,5 +1,4 @@
 /*
-$Id$
      OW -- One-Wire filesystem
     version 0.4 7/2/2003
 
@@ -130,6 +129,7 @@ int OW_present(const char *path)
 			ret = -ENOENT;
 		} else {
 			FS_ParsedName_destroy(&s_pn);
+			ret = 0 ; // good result
 		}
 		API_access_end();
 	}
