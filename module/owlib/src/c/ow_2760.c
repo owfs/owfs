@@ -804,10 +804,10 @@ static ZERO_OR_ERROR FS_r_volt(struct one_wire_query *owq)
 	RETURN_ERROR_IF_BAD( OW_r_int(&I, _1W_DS27XX_VOLTAGE, pn) ) ;
 	switch (pn->sn[0]) {
 	case 0x3D:					//DS2781
-		OWQ_F(owq) = (I / 32) * .00976;
+		OWQ_F(owq) = ((int)(I >>5)) * .00976;
 		break;
 	default:
-		OWQ_F(owq) = (I / 32) * .00488;
+		OWQ_F(owq) = ((int)(I >>5)) * .00488;
 		break;
 	}
 	return 0;
