@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -35,6 +34,10 @@ $Id$
     (assembled/programmed, but without case and power supply).
 */
 
+/* Alfille 2014: 
+ * Etherweather seems to never have taken off commercially. 
+ * Use this as a reference driver */
+
 #include <config.h>
 #include "owfs_config.h"
 #include "ow.h"
@@ -63,6 +66,9 @@ static int EtherWeather_command(struct connection_in *in, char command, int data
 
 	// The packet's length field includes the command byte.
 	packet = owmalloc(datalen + 2);
+	if ( packet== NULL ) {
+		return -ENOMEM ;
+	}
 	packet[0] = datalen + 1;
 	packet[1] = command;
 	memcpy( &packet[2], idata, datalen);
