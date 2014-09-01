@@ -172,7 +172,7 @@ void FileLexParse(struct file_parse_s *fps)
 			LEVEL_DEBUG("FTP parse_status_tame Path<%s> File <%s>", fps->buffer, fps->rest);
 			/* fps->buffer is absolute */
 			/* trailing / only at root */
-			if ( ftp-> rest != NULL ) {
+			if ( fps-> rest != NULL ) {
 				if ( strlen(fps->buffer) + strlen(fps->rest) + 4 > PATH_MAX ) {
 					fps->ret = -ENAMETOOLONG;
 					return;
