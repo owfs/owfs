@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -332,7 +331,7 @@ static ZERO_OR_ERROR FS_r_s_alarm(struct one_wire_query *owq)
 /* data[0] selection  */
 static ZERO_OR_ERROR FS_w_s_alarm(struct one_wire_query *owq)
 {
-	BYTE data[3];
+	BYTE data[3] = { 0, 0, 0, }; // coverity likes this initialized
 	int i;
 	UINT p;
 	UINT U = OWQ_U(owq);
