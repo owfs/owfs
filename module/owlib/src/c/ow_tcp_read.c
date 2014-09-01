@@ -136,5 +136,7 @@ void tcp_read_flush( FILE_DESCRIPTOR_OR_ERROR file_descriptor)
 		continue;
 	}
 
-	fcntl(file_descriptor, F_SETFL, flags);
+	if ( fcntl(file_descriptor, F_SETFL, flags) < 0 ) {
+		LEVEL_DEBUG("Can't flush");
+	}
 }
