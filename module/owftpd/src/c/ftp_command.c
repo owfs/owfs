@@ -1,5 +1,7 @@
 /*
- * $Id$
+ * Part of owftp by Paul Alfille
+ * although this source was (legally) culled from open source
+ * the whole is GPLv2 licenced
  */
 
 #include "owftpd.h"
@@ -23,32 +25,31 @@ struct {
 	char *name;
 	int arg_type;
 } command_def[] = {
-	{
-	"USER", ARG_STRING}, {
-	"PASS", ARG_STRING}, {
-	"CWD", ARG_STRING}, {
-	"CDUP", ARG_NONE}, {
-	"QUIT", ARG_NONE}, {
-	"PORT", ARG_HOST_PORT}, {
-	"LPRT", ARG_HOST_PORT_LONG}, {
-	"EPRT", ARG_HOST_PORT_EXT}, {
-	"PASV", ARG_NONE}, {
-	"LPSV", ARG_NONE}, {
-	"EPSV", ARG_OPTIONAL_NUMBER}, {
-	"TYPE", ARG_TYPE}, {
-	"STRU", ARG_STRUCTURE}, {
-	"MODE", ARG_MODE}, {
-	"RETR", ARG_STRING}, {
-	"STOR", ARG_STRING}, {
-	"PWD", ARG_NONE}, {
-	"LIST", ARG_OPTIONAL_STRING}, {
-	"NLST", ARG_OPTIONAL_STRING}, {
-	"SYST", ARG_NONE}, {
-	"HELP", ARG_OPTIONAL_STRING}, {
-	"NOOP", ARG_NONE}, {
-	"REST", ARG_OFFSET}, {
-	"SIZE", ARG_STRING}, {
-	"MDTM", ARG_STRING}
+	{ "USER", ARG_STRING},
+	{ "PASS", ARG_STRING},
+	{ "CWD",  ARG_STRING},
+	{ "CDUP", ARG_NONE},
+	{ "QUIT", ARG_NONE},
+	{ "PORT", ARG_HOST_PORT},
+	{ "LPRT", ARG_HOST_PORT_LONG},
+	{ "EPRT", ARG_HOST_PORT_EXT},
+	{ "PASV", ARG_NONE},
+	{ "LPSV", ARG_NONE},
+	{ "EPSV", ARG_OPTIONAL_NUMBER},
+	{ "TYPE", ARG_TYPE},
+	{ "STRU", ARG_STRUCTURE},
+	{ "MODE", ARG_MODE},
+	{ "RETR", ARG_STRING},
+	{ "STOR", ARG_STRING},
+	{ "PWD",  ARG_NONE},
+	{ "LIST", ARG_OPTIONAL_STRING},
+	{ "NLST", ARG_OPTIONAL_STRING},
+	{ "SYST", ARG_NONE},
+	{ "HELP", ARG_OPTIONAL_STRING},
+	{ "NOOP", ARG_NONE},
+	{ "REST", ARG_OFFSET},
+	{ "SIZE", ARG_STRING},
+	{ "MDTM", ARG_STRING},
 };
 
 #define NUM_COMMAND (sizeof(command_def) / sizeof(command_def[0]))
@@ -334,7 +335,7 @@ static const char *parse_host_port_long(sockaddr_storage_t * sa, const char *s)
 	if (s == NULL) {
 		return NULL;
 	}
-	if (*s != ',') {
+	if (s[0] != ',') {
 		return NULL;
 	}
 	s++;
@@ -344,7 +345,7 @@ static const char *parse_host_port_long(sockaddr_storage_t * sa, const char *s)
 	if (s == NULL) {
 		return NULL;
 	}
-	if (*s != ',') {
+	if (s[0] != ',') {
 		return NULL;
 	}
 	s++;
@@ -357,7 +358,7 @@ static const char *parse_host_port_long(sockaddr_storage_t * sa, const char *s)
 		if (s == NULL) {
 			return NULL;
 		}
-		if (*s != ',') {
+		if (s[0] != ',') {
 			return NULL;
 		}
 		s++;
@@ -365,13 +366,13 @@ static const char *parse_host_port_long(sockaddr_storage_t * sa, const char *s)
 
 	/* parse port length */
 	s = parse_number(&port_len, s, 255);
-	if (s == NULL) {
-		return NULL;
-	}
 
 	/* parse port */
 	for (i = 0; i < port_len; i++) {
-		if (*s != ',') {
+		if (s == NULL) {
+			return NULL;
+		}
+		if (s[0] != ',') {
 			return NULL;
 		}
 		s++;
@@ -391,9 +392,8 @@ static const char *parse_host_port_long(sockaddr_storage_t * sa, const char *s)
 		}
 		memcpy(&SINADDR(sa), addr, addr_len);
 		SINPORT(sa) = htons((port[0] << 8) + port[1]);
-	}
 #ifdef INET6
-	else if (family == 6) {
+	} else if (family == 6) {
 		SAFAM(sa) = AF_INET6;
 		if (addr_len != sizeof(struct in6_addr)) {
 			return NULL;
@@ -403,9 +403,8 @@ static const char *parse_host_port_long(sockaddr_storage_t * sa, const char *s)
 		}
 		memcpy(&SIN6ADDR(sa), addr, addr_len);
 		SINPORT(sa) = htons((port[0] << 8) + port[1]);
-	}
 #endif
-	else {
+	} else {
 		SAFAM(sa) = -1;
 	}
 
@@ -432,13 +431,11 @@ static const char *parse_host_port_ext(sockaddr_storage_t * sa, const char *s)
 	/* get address family */
 	if (*s == '1') {
 		family = AF_INET;
-	}
 #ifdef INET6
-	else if (*s == '2') {
+	} else if (*s == '2') {
 		family = AF_INET6;
-	}
 #endif
-	else {
+	} else {
 		return NULL;
 	}
 	s++;
