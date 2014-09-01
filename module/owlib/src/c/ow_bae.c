@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -902,27 +901,39 @@ static ZERO_OR_ERROR FS_w_sector_data(struct one_wire_query *owq)
 	int size=(int)OWQ_size(owq);
 	int wlen,rlen,i,retry;
 	int timeout=100;
-	if (BAD( Cache_Get_SlaveSpecific((void *) &sector_nr, sizeof(UINT), SlaveSpecificTag(SNR), pn))) sector_nr=0; // record doesn't (yet) exist
+	
+	if (BAD( Cache_Get_SlaveSpecific((void *) &sector_nr, sizeof(UINT), SlaveSpecificTag(SNR), pn))) {
+		sector_nr=0; // record doesn't (yet) exist
+	}
 
 	LEVEL_DEBUG("write SD sector %d data len=%d",sector_nr,size ) ;
-	if (OWQ_offset(owq)) return -ERANGE;
-	if (size!=512) return -ERANGE;
+	
+	if ( OWQ_offset(owq) != 0 ) {
+		return -ERANGE;
+	}
+	
+	if ( size!=512 ) {
+		return -ERANGE;
+	}
+	
 	BAE_uint32_to_bytes( sector_nr*512, wparam ); // convert 32bit value to msb first
 	rlen=0;
 	wlen=4;
 	RETURN_ERROR_IF_BAD(OW_wr_complete_transaction(wlen,_FC03_WR_BEGIN_SD_W, &rlen, wparam, rparam, timeout, pn));
 	wlen= _FC02_MAX_WRITE_GULP;
 	retry=0;
-	for(i=size;i;)
-	{
-		if (i>_FC02_MAX_WRITE_GULP) wlen=_FC02_MAX_WRITE_GULP; else wlen=i;
-		LEVEL_DEBUG("WRITE SD %d bytes at offset %d ",size,512-i ) ;
-		if (BAD(OW_seqw_complete_transaction(wlen,_FC03_SEQW_SD, buffer, timeout, pn)))
-		{
-			if (retry++>3) return gbBAD;
+	for(i=size;i;) {
+		if ( i > _FC02_MAX_WRITE_GULP) {
+			wlen=_FC02_MAX_WRITE_GULP; 
+		} else { 
+			wlen=i;
 		}
-		else
-		{
+		LEVEL_DEBUG("WRITE SD %d bytes at offset %d ",size,512-i ) ;
+		if (BAD(OW_seqw_complete_transaction(wlen,_FC03_SEQW_SD, buffer, timeout, pn))) {
+			if (retry++>3) {
+				return gbBAD;
+			}
+		} else {
 			buffer+=wlen;
 			i-=wlen;
 			retry=0;
@@ -931,7 +942,7 @@ static ZERO_OR_ERROR FS_w_sector_data(struct one_wire_query *owq)
 	rlen=0;
 	wlen=0;
 	LEVEL_DEBUG("WRITE SD END, send trailer " ) ;
-	return OW_wr_complete_transaction(wlen,_FC03_WR_END_SD_W, &rlen, wparam, rparam, timeout, pn);
+	return GB_to_Z_OR_E( OW_wr_complete_transaction(wlen,_FC03_WR_END_SD_W, &rlen, wparam, rparam, timeout, pn));
 }
 
 static ZERO_OR_ERROR FS_r_sector_data(struct one_wire_query *owq)
@@ -944,74 +955,95 @@ static ZERO_OR_ERROR FS_r_sector_data(struct one_wire_query *owq)
 	int size=(int)OWQ_size(owq);
 	int wlen,rlen,i,retry;
 	int timeout=100;
-	if (BAD( Cache_Get_SlaveSpecific((void *) &sector_nr, sizeof(UINT), SlaveSpecificTag(SNR), pn))) sector_nr=0; // record doesn't (yet) exist
+	
+	if (BAD( Cache_Get_SlaveSpecific((void *) &sector_nr, sizeof(UINT), SlaveSpecificTag(SNR), pn))) {
+		sector_nr=0; // record doesn't (yet) exist
+	}
 
 	LEVEL_DEBUG("read SD sector %d data len=%d",sector_nr,size ) ;
-	if (OWQ_offset(owq)) return -ERANGE;
-	if (size!=512) return -ERANGE;
+	if ( OWQ_offset(owq) != 0 ) {
+		return -ERANGE;
+	}
+	
+	if ( size != 512 ) {
+		return -ERANGE;
+	}
+	
 	BAE_uint32_to_bytes( sector_nr*512, wparam ); // convert 32bit value to msb first
 	rlen=0;
 	wlen=4;
 	retry=0;
 	RETURN_ERROR_IF_BAD(OW_wr_complete_transaction(wlen,_FC03_WR_BEGIN_SD_R, &rlen, wparam, rparam, timeout, pn));
 	rlen= _FC02_MAX_READ_GULP;
-	for(i=size;i;)
-	{
-		if (i>_FC02_MAX_READ_GULP) rlen=_FC02_MAX_WRITE_GULP; else rlen=i;
+	for(i=size;i;) {
+		if (i>_FC02_MAX_READ_GULP) {
+			rlen=_FC02_MAX_WRITE_GULP; 
+		} else {
+			rlen=i;
+		}
 		LEVEL_DEBUG("READ SD %d bytes at offset %d ",size,512-i ) ;
 		if (BAD(OW_seqr_complete_transaction(&rlen,_FC03_SEQR_SD, buffer, timeout, pn)))
 		{
-			if (retry++>3) return gbBAD;
-		}
-		else
-		{
-				buffer+=rlen;
-				i-=rlen;
-				retry=0;
+			if ( retry++ > 3 ) {
+				return gbBAD;
+			}
+		} else {
+			buffer+=rlen;
+			i-=rlen;
+			retry=0;
 		}
 	}
 	OWQ_length(owq) = OWQ_size(owq);
 	rlen=0;
 	wlen=0;
 	LEVEL_DEBUG("READ SD END, send trailer " ) ;
-	return OW_wr_complete_transaction(wlen,_FC03_WR_END_SD_R, &rlen, wparam, rparam, timeout, pn);
+	return GB_to_Z_OR_E( OW_wr_complete_transaction(wlen,_FC03_WR_END_SD_R, &rlen, wparam, rparam, timeout, pn));
 }
 
 static int hex_digit(BYTE c)
 {
 	int v;
-	if ((c>='0') && (c<='9')) v=c-'0';
-	else if ((c>='a') && (c<='f')) v=c-'a'+10;
-			 else if ((c>='A') && (c<='F')) v=c-'A'+10;
-			  		else v=-1000;
+	if ((c>='0') && (c<='9')) {
+		v=c-'0';
+	} else if ((c>='a') && (c<='f')) {
+		v=c-'a'+10;
+	} else if ((c>='A') && (c<='F')) {
+		v=c-'A'+10;
+	} else {
+		v=-1000;
+	}
 	return v;		  		
 }
 
 static GOOD_OR_BAD scan_token_read(char* mask,BYTE *buffer, struct one_wire_query *owq)
 {
-	int i,j,v;
-	char *pt=mask;
+	int i = 0 ;
+	char *pt ;
+	
 	LEVEL_DEBUG("begin token read loop: " ) ;
 	OWQ_U(owq)=0;
-	for(i=0;*pt;pt++)
-	{
-			v=hex_digit(*pt)*16 + hex_digit(*(pt+1));
-			if (v>=0) { 
-				pt+=2;
-				if (buffer[i++]!=v) return gbBAD;  //if the received byte doen not match the mask, return error
+	for( pt = mask; *pt; pt++ )	{
+		int v=hex_digit(*pt)*16 + hex_digit(*(pt+1));
+		if (v>=0) { 
+			pt+=2;
+			if ( buffer[i++] != v ) {
+				return gbBAD;  //if the received byte doen not match the mask, return error
 			}
-			switch (*pt)
-			{
-				case '?': 
-					i++; // '?' in mask means to ignore this received byte
-				case '$': 
-					if ((*(pt+1)>='0') && (*(pt+1) <='7')) { //store received byte on position j
-						pt++;
-						j=*pt-'0';
-						OWQ_U(owq)|= buffer[i++]<<j; 
-						LEVEL_DEBUG("after token assign: @%d(%d)  %08x", j,buffer[i], OWQ_U(owq) ) ;
-					}
-			}
+		}
+		switch (*pt)
+		{
+			case '?': 
+				i++; // '?' in mask means to ignore this received byte
+				break ;
+			case '$': 
+				if ((*(pt+1)>='0') && (*(pt+1) <='7')) { //store received byte on position j
+					int j ;
+					pt++;
+					j=*pt-'0';
+					OWQ_U(owq)|= buffer[i++]<<j; 
+					LEVEL_DEBUG("after token assign: @%d(%d)  %08x", j,buffer[i], OWQ_U(owq) ) ;
+				}
+		}
 	}
 	return gbGOOD;
 }
@@ -1024,30 +1056,36 @@ static GOOD_OR_BAD scan_token_read(char* mask,BYTE *buffer, struct one_wire_quer
 
 void scan_token_write(char* mask,BYTE *buffer,	int *plenw,int * plenr, struct one_wire_query *owq)
 {
-int i,j,v;
-char *pt=mask;
+	int i = 0;
+	char *pt ;
+
 	*plenw=-1;
 	LEVEL_DEBUG("begin token write loop: " ) ;
 	
-	for(i=0;*pt;pt++)
-	{
-			v=hex_digit(*pt)*16 + hex_digit(*(pt+1));
-			if (v>=0) { buffer[i++]=v;pt+=2;}
-			switch (*pt)
-			{
-				case '=': *plenw=i; //write limit, after '=' this is the receive mask
-									break;
-				case '$': if ((*(pt+1)>='0') && (*(pt+1)<='7')) 
-									{
-										pt++;
-										j=*pt-'0';
-										LEVEL_DEBUG("token test: @%d= %d", j,BYTE_MASK(OWQ_U(owq)>>j) ) ;
-										buffer[i++]= BYTE_MASK(OWQ_U(owq)>>j); // BYTE_MASK(OWQ_array_U(owq,j));
-									}
-									break;
-			}
+	for( pt = mask; *pt; pt++ ) {
+		int v=hex_digit(*pt)*16 + hex_digit(*(pt+1));
+		if (v>=0) { 
+			buffer[i++]=v;
+			pt+=2;
+		}
+		switch (*pt) {
+			case '=': 
+				*plenw=i; //write limit, after '=' this is the receive mask
+				break;
+			case '$': 
+				if ((*(pt+1)>='0') && (*(pt+1)<='7'))  {
+					int j ;
+					pt++;
+					j=*pt-'0';
+					LEVEL_DEBUG("token test: @%d= %d", j,BYTE_MASK(OWQ_U(owq)>>j) ) ;
+					buffer[i++]= BYTE_MASK(OWQ_U(owq)>>j); // BYTE_MASK(OWQ_array_U(owq,j));
+				}
+				break;
+		}
 	}
-	if (*plenw<0) *plenw=i; 
+	if (*plenw<0) {
+		*plenw=i; 
+	}
 	*plenr=i-*plenw;
 	buffer[i]='\0'; //just for level debug
 }
@@ -1059,20 +1097,32 @@ static ZERO_OR_ERROR FS_w_iic(struct one_wire_query *owq) //generic write to iic
 	BYTE *rparam;
 	int wlen,rlen,timeout;
 	char mask[255],*pt; 
+	
 	rparam=wparam+_FC02_MAX_WRITE_GULP+1;
-	if (OWQ_offset(owq)) return -ERANGE;
-	strcpy(mask,pn->selected_filetype->data.a);
+	
+	if ( OWQ_offset(owq) != 0 ) {
+		// only allow from beginning
+		return -ERANGE;
+	}
+	strncpy( mask, pn->selected_filetype->data.a, 255);
+	
 	pt=strchr(mask,'-');
-	if (pt==NULL) return -EINVAL; //invalid mask for generic iic
+	if (pt==NULL) {
+		return -EINVAL; //invalid mask for generic iic
+	}
 	*pt=0; //split mask write and mask read
+	
 	scan_token_write(mask, wparam, &wlen, &rlen, owq);
 	timeout=100; 
 	LEVEL_DEBUG("iic write: wlen=%d mask=%s wparam=%s", wlen,mask,wparam ) ;
 	RETURN_ERROR_IF_BAD(OW_wr_complete_transaction(wlen,_FC03_WR_BEGIN_IIC, &rlen, wparam, rparam, timeout, pn));
 	pt=strchr(mask,'=');
-	if (pt) RETURN_ERROR_IF_BAD(scan_token_read(pt+1, rparam,  owq)); 
+	if (pt) {
+		RETURN_ERROR_IF_BAD(scan_token_read(pt+1, rparam,  owq)); 
+	}
+	
 	wlen=rlen=0;
-	return OW_wr_complete_transaction(wlen,_FC03_WR_END_IIC, &rlen, wparam, rparam, timeout, pn);
+	return GB_to_Z_OR_E( OW_wr_complete_transaction(wlen,_FC03_WR_END_IIC, &rlen, wparam, rparam, timeout, pn));
 }
 
 static ZERO_OR_ERROR FS_r_iic(struct one_wire_query *owq) //generic read from iic
@@ -1082,20 +1132,32 @@ static ZERO_OR_ERROR FS_r_iic(struct one_wire_query *owq) //generic read from ii
 	int wlen, rlen, timeout;
 	char mask[255],*pt;
 	struct parsedname *pn = PN(owq);
+	
 	rparam=wparam+_FC02_MAX_WRITE_GULP+1;
-	if (OWQ_offset(owq)) return -ERANGE;
-	strcpy(mask,pn->selected_filetype->data.a);
+	
+	if ( OWQ_offset(owq) != 0 ) {
+		// only start at beginning
+		return -ERANGE;
+	}
+	
+	strncpy( mask, pn->selected_filetype->data.a, 255 );
 	pt=strchr(mask,'-');
-	if (pt==NULL) return -EINVAL; //invalid mask for generic iic
+
+	if (pt==NULL) {
+		return -EINVAL; //invalid mask for generic iic
+	}
+	
 	scan_token_write(pt+1, wparam, &wlen, &rlen, owq); 
 	pt=strchr(mask,'=');
-	if (pt==NULL) return -EINVAL; //read mask has no '=' token!
+	if (pt==NULL) {
+		return -EINVAL; //read mask has no '=' token!
+	}
 	timeout=100;
 	LEVEL_DEBUG("iic read: wlen=%d mask=%s wparam=%s", wlen,mask,wparam ) ;
 	RETURN_ERROR_IF_BAD(OW_wr_complete_transaction(wlen,_FC03_WR_BEGIN_IIC, &rlen, wparam, rparam, timeout, pn));
 	RETURN_ERROR_IF_BAD(scan_token_read(pt+1, rparam,  owq)); 
 	wlen=rlen=0;
-	return OW_wr_complete_transaction(wlen,_FC03_WR_END_IIC, &rlen, wparam, rparam, timeout, pn);
+	return GB_to_Z_OR_E( OW_wr_complete_transaction(wlen,_FC03_WR_END_IIC, &rlen, wparam, rparam, timeout, pn));
 }
 
 static ZERO_OR_ERROR FS_w_seq_text(struct one_wire_query *owq)
@@ -1106,20 +1168,27 @@ static ZERO_OR_ERROR FS_w_seq_text(struct one_wire_query *owq)
 	int size=(int)OWQ_size(owq);
 	BYTE func=BYTE_MASK(PN(owq)->selected_filetype->data.u);
 	LEVEL_DEBUG("SEQ text func=%d len=%d, offset=%d",func, size,OWQ_offset(owq) ) ;
-	if (func==_FC03_SEQW_LCDD) size--; //remove last CR for lcd
+	if (func==_FC03_SEQW_LCDD) {
+		size--; //remove last CR for lcd
+	}
 	retry=0;
 	timeout=100;
-  if (size<=0)	return -EINVAL;
-	for(i=size;i;)
-	{
-		if (i>_FC02_MAX_WRITE_GULP) wlen=_FC02_MAX_WRITE_GULP; else wlen=i;
-		LEVEL_DEBUG("WRITE seq %d bytes at position %d ",wlen,size-i ) ;
-		if (BAD(OW_seqw_complete_transaction(wlen,func, start_of_text, timeout, pn)))
-		{
-			if (retry++>3) return -EINVAL;
+	if (size<=0) {
+		return -EINVAL;
+	}
+	
+	for(i=size;i;) {
+		if (i>_FC02_MAX_WRITE_GULP) {
+			wlen=_FC02_MAX_WRITE_GULP; 
+		} else {
+			wlen=i;
 		}
-		else
-		{
+		LEVEL_DEBUG("WRITE seq %d bytes at position %d ",wlen,size-i ) ;
+		if (BAD(OW_seqw_complete_transaction(wlen,func, start_of_text, timeout, pn))){
+			if (retry++>3) {
+				return -EINVAL;
+			}
+		} else {
 			start_of_text+=wlen;
 			i-=wlen;
 			retry=0;
@@ -1238,10 +1307,13 @@ static ZERO_OR_ERROR FS_w_flash(struct one_wire_query *owq)
 	for ( rom_offset=0 ; rom_offset<OWQ_size(owq) ; rom_offset += _FC02_MAX_WRITE_GULP ) {
 		int tries = 0 ;
 //just for diagnostic...   
-        {UINT v;
-            if (BAD(OW_version( &v, PN(owq) ) ))
-           {      LEVEL_DEBUG("Cannot read version after begin flash initialization");}
-            else LEVEL_DEBUG("version=%04X",v);
+        {
+			UINT v;
+            if (BAD(OW_version( &v, PN(owq) ) )) {      
+				LEVEL_DEBUG("Cannot read version after begin flash initialization");
+			} else {
+				LEVEL_DEBUG("version=%04X",v);
+			}
         }
         		
 		LEVEL_DEBUG("Flash up to %d bytes.",rom_offset);
@@ -1381,14 +1453,16 @@ static ZERO_OR_ERROR FS_r_8_ext(struct one_wire_query *owq)
 	struct parsedname * pn = PN(owq) ;
 	int bytes = 8/8 ;
 	BYTE data[bytes] ;
-	int array_index, ofs, uplimit, *v; 
-	array_index = pn->extension ;
-	v=(int*) pn->selected_filetype->data.v;
-	ofs= v[0];
-	uplimit=v[1];
+	int array_index = pn->extension ;
+	int * v = (int*) pn->selected_filetype->data.v;
+	int ofs = v[0] ;
+	int uplimit= v[1] ;
+
 	LEVEL_DEBUG("test numeric extension : ofs=%d, uplimit=%d extension=%d", ofs,uplimit,array_index ) ;
 
-	if ((array_index<0) || (array_index>=uplimit)) return -EINVAL ;
+	if ((array_index<0) || (array_index>=uplimit)) {
+		return -EINVAL ;
+	}
 	RETURN_ERROR_IF_BAD( OW_r_mem_small(data, bytes, ofs + bytes * array_index, pn ) );
 	OWQ_U(owq) = data[0] ;
 	return 0 ;
@@ -1404,7 +1478,9 @@ static ZERO_OR_ERROR FS_w_8_ext(struct one_wire_query *owq)
 	v=(int*) pn->selected_filetype->data.v;
 	ofs= v[0];
 	uplimit=v[1];
-	if ((array_index<0) || (array_index>=uplimit)) return -EINVAL ;
+	if ((array_index<0) || (array_index>=uplimit)) {
+		return -EINVAL ;
+	}
 	
 	data[0] = BYTE_MASK( OWQ_U(owq) ) ;
 	return GB_to_Z_OR_E(OW_w_mem(data, bytes,  ofs + bytes * array_index, pn ) ) ;
@@ -1587,45 +1663,32 @@ static GOOD_OR_BAD OW_r_flow_nocrc(BYTE wf, BYTE * param, size_t plen, BYTE * da
 static GOOD_OR_BAD OW_poll_until_timeout(int *prlen, BYTE * rparam, int timeout, struct parsedname *pn)
 {
 	UINT tries;
-	BYTE retcode;	
-	int rlen;  //temporary var to hold len received rlen when retcode==0xff
-	GOOD_OR_BAD r;
+
 	LEVEL_DEBUG("BAE Query result until timeout (%d ms), expected rlen=%d", timeout, *prlen) ;
-	tries=0;
 	
-	while (1)
-	{
-			LEVEL_DEBUG( "try %d when querying result from previous function.", tries ) ;
-		  r=OW_query_cmd(&rlen, &retcode,rparam,pn );
-		  if (BAD(r))
-		  {
-			  	++tries ;
-					if ( tries > 5 ) 
-					{
-	 			 		LEVEL_DEBUG( "Too many failures getting result from previous function." ) ;
-						return -EIO ;
-					}
-		  }
-		  else
-		  {
-					if (retcode==0xff) 
-					{
-							timeout-=10;
-							if (timeout<=0) 	{
-									LEVEL_DEBUG( "Timeout getting result from previous function." ) ;
-									return -EINVAL ;
-							}
-							UT_delay(10); //10ms delay if slave still busy
-					}
-					else 
-					{
-							 *prlen=rlen; //only when retcode is not 0xff 
-							 LEVEL_DEBUG( "Previous command terminated with retcode=%d, rlen=%d.", retcode,rlen ) ;
-							 if (retcode==0) return gbGOOD;
-		 					 return -EINVAL ;
-					}
+	for ( tries=0 ; tries<= 5 ; ++ tries ) {
+		BYTE retcode;	
+		int rlen;  //temporary var to hold len received rlen when retcode==0xff
+
+		LEVEL_DEBUG( "try %d when querying result from previous function.", tries ) ;
+
+		if ( GOOD(OW_query_cmd(&rlen, &retcode,rparam,pn )) ) {
+			if (retcode==0xff) {
+				timeout-=10;
+				if (timeout<=0) {
+					LEVEL_DEBUG( "Timeout getting result from previous function." ) ;
+					return gbBAD ;
+				}
+				UT_delay(10); //10ms delay if slave still busy
+			} else {
+				*prlen=rlen; //only when retcode is not 0xff 
+				LEVEL_DEBUG( "Previous command terminated with retcode=%d, rlen=%d.", retcode,rlen ) ;
+				return (retcode==0) ? gbGOOD : gbBAD ;
 			}
+		}
 	}
+	LEVEL_DEBUG( "Too many failures getting result from previous function." ) ;
+	return gbBAD ;
 }
 
 //WR command 0X17  with query until return of result
@@ -1702,9 +1765,9 @@ static GOOD_OR_BAD OW_query_cmd(int *prlen, BYTE *retcode,BYTE * rparam , struct
 	retcode[0]=p[1]; //retcode of previous command
 	rlen=p[2];
 	*prlen=rlen;
-	if (p[1]==0xff)  return gbGOOD;  //no communication error, but still busy processing the previous command
-	else
-	{
+	if (p[1]==0xff) {
+		return gbGOOD;  //no communication error, but still busy processing the previous command
+	} else {
 		struct transaction_log t2[] = {
 			TRXN_READ(p+3,rlen+2),
 			TRXN_CRC16(p,rlen+3+2),
