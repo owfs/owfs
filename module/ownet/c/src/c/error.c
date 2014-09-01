@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -147,18 +146,20 @@ void _Debug_Writev(struct iovec *io, int iosz)
 	char *buf;
 	int length;
 	
-	while(ionr < iosz) {
+	for (ionr = 0 ; ionr < iosz ; ++ ionr ) {
 		buf = io[ionr].iov_base;
 		length = io[ionr].iov_len;
 		
 		fprintf(stderr,"Writev byte buffer ionr=%d/%d length=%d", ionr+1, iosz, (int) length);
 		if (length <= 0) {
 			fprintf(stderr,"\n-- Attempt to write with bad length\n");
+			continue ;
 		}
 		if (buf == NULL) {
 			fprintf(stderr,"\n-- NULL buffer\n");
+			continue ;
 		}
-#if 1
+
 		/* hex lines -- 16 bytes each */
 		for (i = 0; i < length; ++i) {
 			if ((i & 0x0F) == 0) {	// devisible by 16
@@ -166,8 +167,7 @@ void _Debug_Writev(struct iovec *io, int iosz)
 			}
 			fprintf(stderr," %.2X", (unsigned char)buf[i]);
 		}
-		
-#endif
+
 		/* char line -- printable or . */
 		fprintf(stderr,"\n   <");
 		for (i = 0; i < length; ++i) {
@@ -175,7 +175,6 @@ void _Debug_Writev(struct iovec *io, int iosz)
 			fprintf(stderr,"%c", isprint(c) ? c : '.');
 		}
 		fprintf(stderr,">\n");
-		ionr++;
 	}
 }
 
