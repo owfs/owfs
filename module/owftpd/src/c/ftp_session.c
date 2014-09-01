@@ -1,5 +1,6 @@
-/* 
- * $Id$
+/*
+ * part of owftpd By Paul H Alfille
+ * The whole is GPLv2 licenced though the ftp code was more liberally licenced when first used.
  */
 
 #include "owftpd.h"
@@ -1042,7 +1043,6 @@ static void do_retr(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 /* Write to 1-wire device */
 static void do_stor(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 {
-	int file_fd;
 	int socket_fd;
 	struct timeval start_timestamp;
 	struct timeval end_timestamp;
@@ -1062,7 +1062,6 @@ static void do_stor(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 	daemon_assert(cmd->num_arg == 1);
 
 	/* set up for exit */
-	file_fd = -1;
 	socket_fd = -1;
 
 	/* create an absolute name for our file */
@@ -1159,9 +1158,6 @@ static void do_stor(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 	f->file_offset = 0;
 	if (socket_fd != -1) {
 		close(socket_fd);
-	}
-	if (file_fd != -1) {
-		close(file_fd);
 	}
 	daemon_assert(invariant(f));
 }
