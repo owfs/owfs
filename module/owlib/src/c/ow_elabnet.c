@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
 
@@ -336,7 +335,10 @@ static RESET_TYPE PBM_reset_in(struct connection_in * in)
 		PBM_flush(in);
 	}
 
-	PBM_SelectChannel(in);
+	if ( BAD(PBM_SelectChannel(in)) ) {
+		return BUS_RESET_ERROR ;
+	};
+	
 	if ( BAD(PBM_write(PBM_string("r"), 1, in) || BAD( PBM_read(resp, 1, in))) ) {
 		LEVEL_DEBUG("Error resetting PBM device");
 		PBM_slurp(in);
