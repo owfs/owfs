@@ -1,5 +1,6 @@
 /*
- * $Id$
+ * part of owftpd By Paul H Alfille
+ * The whole is GPLv2 licenced though the ftp code was more liberally licenced when first used.
  */
 
 #include "owftpd.h"
@@ -171,13 +172,16 @@ void FileLexParse(struct file_parse_s *fps)
 			LEVEL_DEBUG("FTP parse_status_tame Path<%s> File <%s>", fps->buffer, fps->rest);
 			/* fps->buffer is absolute */
 			/* trailing / only at root */
-			if (fps->rest && (strlen(fps->buffer) + strlen(fps->rest) + 4 > PATH_MAX)) {
-				fps->ret = -ENAMETOOLONG;
-				return;
+			if ( ftp-> rest != NULL ) {
+				if ( strlen(fps->buffer) + strlen(fps->rest) + 4 > PATH_MAX ) {
+					fps->ret = -ENAMETOOLONG;
+					return;
+				}
+				if ( fps->buffer[1] != 0 ) {
+					strcat(fps->buffer, "/");
+				}
+				strcat(fps->buffer, fps->rest);
 			}
-			if (fps->buffer[1])
-				strcat(fps->buffer, "/");
-			strcat(fps->buffer, fps->rest);
 			if (FS_ParsedName(fps->buffer, &pn) == 0) {
 				if (IsDir(&pn)) {
 					fps->start = strlen(fps->buffer) + 1;
