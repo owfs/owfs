@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -131,7 +130,7 @@ static ZERO_OR_ERROR OW_read_external_script( struct sensor_node * sensor_n, str
 	
 	zoe = OW_script_read( script_f, owq ) ;
 	
-	fclose( script_f ) ;
+	pclose( script_f ) ;
 	return zoe ;
 }
 
