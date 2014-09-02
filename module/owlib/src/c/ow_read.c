@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -781,7 +780,7 @@ static ZERO_OR_ERROR FS_read_a_part( struct one_wire_query *owq_part )
 			char *buffer_pointer = OWQ_buffer(owq_all);
 
 			// All prior elements
-			for (extension_index = 0; extension_index < extension; ++extension) {
+			for (extension_index = 0; extension_index < extension; ++extension_index) {
 				// move past their buffer position
 				buffer_pointer += OWQ_array_length(owq_all, extension_index);
 			}
