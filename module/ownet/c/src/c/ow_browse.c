@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -174,8 +173,11 @@ static void BrowseBack(DNSServiceRef s, DNSServiceFlags f, uint32_t i,
 						}
 					}
 					DNSServiceRefDeallocate(sr);
-					if (err == kDNSServiceErr_NoError)
+					if (err == kDNSServiceErr_NoError) {
+						// Successful exit
+						CONNIN_WUNLOCK;
 						return;
+					}
 				}
 			}
 			BSKill(bs);

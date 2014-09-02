@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -165,6 +164,7 @@ static void USB_scan_for_adapters(void)
 		struct port_in * pin = AllocPort(NULL) ;
 		struct connection_in * in ;
 		if ( pin == NULL ) {
+			MONITOR_RUNLOCK;
 			return ;
 		}
 		in = pin->first ;
