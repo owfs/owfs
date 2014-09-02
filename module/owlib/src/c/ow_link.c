@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -343,6 +342,7 @@ static GOOD_OR_BAD LINK_version(struct connection_in * in)
 					case lvs_0d:
 						return LinkVersion_knownstring( version_string, in ) ;
 				}
+				break ;
 			default:
 				switch ( lvs ) {
 					case lvs_string:
