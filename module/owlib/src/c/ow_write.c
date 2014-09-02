@@ -549,7 +549,7 @@ static ZERO_OR_ERROR FS_write_a_part( struct one_wire_query *owq_part )
 			buffer_pointer = buffer_pointer + OWQ_array_length(owq_all, extension); // current start next element
 
 			// move rest of elements to new locations
-			for (extension_index = extension + 1; extension_index < elements; ++extension) {
+			for (extension_index = extension + 1; extension_index < elements; ++extension_index ) {
 				size_t this_length = OWQ_array_length(owq_all, extension_index);
 				memmove(target_pointer, buffer_pointer, this_length);
 				target_pointer += this_length;
