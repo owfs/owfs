@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -356,6 +355,7 @@ static ZERO_OR_ERROR FS_r_baud(struct one_wire_query *owq)
 	switch ( get_busmode(in) ) {
 		case bus_serial:
 		case bus_link:
+		case bus_masterhub:
 		case bus_ha5:
 		case bus_ha7e:
 		case bus_pbm:
@@ -372,6 +372,7 @@ static ZERO_OR_ERROR FS_w_baud(struct one_wire_query *owq)
 	switch ( get_busmode(in) ) {
 		case bus_serial:
 		case bus_link:
+		case bus_masterhub:
 		case bus_pbm:
 			in->pown->baud = COM_MakeBaud( (speed_t) OWQ_U(owq) ) ;
 			++in->changed_bus_settings ;

@@ -184,6 +184,11 @@ const struct option owopts_long[] = {
 	{"browse", no_argument, NO_LINKED_VAR, e_browse},
 	{"w1", no_argument, NO_LINKED_VAR, e_w1_monitor},
 	{"W1", no_argument, NO_LINKED_VAR, e_w1_monitor},
+	{"masterhub", required_argument, NO_LINKED_VAR, e_masterhub},
+	{"Masterhub", required_argument, NO_LINKED_VAR, e_masterhub},
+	{"MasterHub", required_argument, NO_LINKED_VAR, e_masterhub},
+	{"MASTERHUB", required_argument, NO_LINKED_VAR, e_masterhub},
+
 	{"announce", required_argument, NO_LINKED_VAR, e_announce},
 	{"allow_other", no_argument, &Globals.allow_other, 1},
 	{"altUSB", no_argument, &Globals.altUSB, 1},	/* Willy Robison's tweaks */
@@ -805,6 +810,8 @@ GOOD_OR_BAD owopt(const int option_char, const char *arg)
 		return ARG_Mock(arg);
 	case e_etherweather:
 		return ARG_EtherWeather(arg);
+	case e_masterhub:
+		return ARG_MasterHub(arg);
 	case e_w1_monitor:
 		return ARG_W1_monitor();
 	case e_usb_monitor:

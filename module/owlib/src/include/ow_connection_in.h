@@ -1,5 +1,4 @@
 /*
-$Id$
     OW -- One-Wire filesystem
     version 0.4 7/2/2003
 
@@ -55,6 +54,7 @@ enum adapter_type {
 	adapter_LINK_14,
 	adapter_LINK_other,
 	adapter_LINK_E,
+	adapter_masterhub,
 	adapter_DS2482_100,
 	adapter_DS2482_800,
 	adapter_HA7NET,

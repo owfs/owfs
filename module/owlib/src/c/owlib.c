@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -204,6 +203,13 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct port_in * pin )
 	case bus_link:
 		if ( BAD( LINK_detect(pin) )) {
 			LEVEL_CONNECT("Cannot open LINK bus master at %s", DEVICENAME(in));
+			return gbBAD ;
+		}
+		break;
+
+	case bus_masterhub:
+		if ( BAD( MasterHub_detect(pin) )) {
+			LEVEL_CONNECT("Cannot open Hobby Boards MAsterHub bus master at %s", DEVICENAME(in));
 			return gbBAD ;
 		}
 		break;

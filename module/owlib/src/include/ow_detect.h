@@ -65,6 +65,7 @@ GOOD_OR_BAD LINKE_detect(struct port_in * pin);
 GOOD_OR_BAD Fake_detect(struct port_in * pin);
 GOOD_OR_BAD Tester_detect(struct port_in * pin);
 GOOD_OR_BAD Mock_detect(struct port_in * pin);
+GOOD_OR_BAD MasterHub_detect(struct port_in * pin);
 GOOD_OR_BAD EtherWeather_detect(struct port_in * pin);
 GOOD_OR_BAD Browse_detect(struct port_in * pin);
 GOOD_OR_BAD W1_monitor_detect(struct port_in * pin);

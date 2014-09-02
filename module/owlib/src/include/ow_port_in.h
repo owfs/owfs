@@ -1,5 +1,4 @@
 /*
-$Id$
     OW -- One-Wire filesystem
     version 0.4 7/2/2003
 
@@ -48,6 +47,7 @@ enum bus_mode {
 	bus_tester,
 	bus_mock,
 	bus_link,
+	bus_masterhub,
 	bus_pbm,
 	bus_etherweather,
 	bus_bad,

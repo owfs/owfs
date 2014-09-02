@@ -290,6 +290,22 @@ GOOD_OR_BAD ARG_Link(const char *arg)
 	return Serial_or_telnet( arg, in ) ;
 }
 
+GOOD_OR_BAD ARG_MasterHub(const char *arg)
+{
+	struct port_in * pin = NewPort( NULL ) ;
+	struct connection_in * in ;
+	if ( pin == NULL ) {
+		return gbBAD;
+	}
+	in = pin->first ;
+	if (in == NO_CONNECTION) {
+		return gbBAD;
+	}
+	arg_data(arg,pin) ;
+	pin->busmode = bus_masterhub ; // link
+	return Serial_or_telnet( arg, in ) ;
+}
+
 GOOD_OR_BAD ARG_Mock(const char *arg)
 {
 	struct port_in * pin = NewPort( NULL ) ;

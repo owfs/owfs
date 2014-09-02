@@ -1,5 +1,4 @@
 /*
-$Id$
     OW -- One-Wire filesystem
     version 0.4 7/2/2003
 
@@ -63,7 +62,7 @@ enum e_long_option { e_error_print = 257, e_error_level, e_debug,
 	e_max_clients,
 	e_safemode,
 	e_ha7, e_fake, e_link, e_ha3, e_ha4b, e_ha5, e_ha7e, e_tester, e_mock, e_etherweather, e_passive, e_i2c, e_xport, 
-	e_enet, e_pbm,
+	e_enet, e_pbm, e_masterhub,
 	e_want_background, e_want_foreground,
 	e_w1_monitor, e_usb_monitor, e_browse,
 	e_pressure_mbar, e_pressure_atm, e_pressure_mmhg, e_pressure_inhg, e_pressure_psi, e_pressure_Pa, e_pressure_6, e_pressure_7,
