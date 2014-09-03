@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -222,6 +221,8 @@ void ow_help_device(void)
 	"  -u3:4 --USB=3:4 Specific USB location (bus 3, device 4)\n"
 	"  -uscan --USB_scan=n Keep looking for new USB adapters (every n seconds; default 10)\n"
 	"  -d /dev/ttyUSB0 ECLO USB bus master\n"
+	"  --link /dev/ttyUSB0 Link-USB\n"
+	"  --masterhub=/dev/ttyUSB0 Link-USB\n"
 	"  --altUSB        Change some settings for DS9490 bus master (especially for AAG and DS2423)\n"
 	"  --usb_flextime | --usb_regulartime     Needed for Louis Swart's LCD module\n"
 	"\n"
@@ -232,6 +233,7 @@ void ow_help_device(void)
 	"  --HA7NET        HA7NET bus master address auto-discovered\n"
 	"  --ENET=address  OWServer-Enet or ENET2 bus master\n"
 	"  --ENET          OWServer-Enet or ENET2 automatically discovered\n"
+	"  --masterhub=address Hobby Boards Master Hub ethernet or wireless\n"
 //	"  --ENET=scan     Keep looking for ENET or ENET2 bus masters\n"
 	"  --etherweather=address EtherWeather\n"
 	"  --autoserver    Find owserver using zeroconf\n"

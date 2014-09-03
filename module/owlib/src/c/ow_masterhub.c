@@ -31,6 +31,7 @@
  * cdc_acm: USB Abstract Control Model driver for USB modems and ISDN adapters
  * 
  * MAC address: 00:04:a3:f4:4c:9c
+ * Serial settings 9600,8N1
  *  
  * */
 
