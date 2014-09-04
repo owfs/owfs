@@ -1104,7 +1104,9 @@ static ZERO_OR_ERROR FS_w_iic(struct one_wire_query *owq) //generic write to iic
 		// only allow from beginning
 		return -ERANGE;
 	}
-	strncpy( mask, pn->selected_filetype->data.a, 255);
+	
+	mask[254] = '\0' ;
+	strncpy( mask, pn->selected_filetype->data.a, 254);
 	
 	pt=strchr(mask,'-');
 	if (pt==NULL) {
@@ -1140,7 +1142,8 @@ static ZERO_OR_ERROR FS_r_iic(struct one_wire_query *owq) //generic read from ii
 		return -ERANGE;
 	}
 	
-	strncpy( mask, pn->selected_filetype->data.a, 255 );
+	mask[254] = '\0' ;
+	strncpy( mask, pn->selected_filetype->data.a, 254 );
 	pt=strchr(mask,'-');
 
 	if (pt==NULL) {
