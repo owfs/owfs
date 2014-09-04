@@ -376,102 +376,102 @@ static void ParseTheLine(struct lineparse *lp)
 		// change states on special chars
 		switch (*current_char) {
 			// end of line characters
-		case '#':
-		case '\n':
-		case '\r':
-			*current_char = '\0';
-			return;
-			// whitespace characters
-		case ' ':
-		case '\t':
-			switch (parse_state) {
-			case ps_in_opt:
-				*current_char = '\0';
-				parse_state = ps_pre_equals;
-				break;
-			case ps_in_value:
+			case '#':
+			case '\n':
+			case '\r':
 				*current_char = '\0';
 				return;
-			default:
+				// whitespace characters
+			case ' ':
+			case '\t':
+				switch (parse_state) {
+				case ps_in_opt:
+					*current_char = '\0';
+					parse_state = ps_pre_equals;
+					break;
+				case ps_in_value:
+					*current_char = '\0';
+					return;
+				default:
+					break;
+				}
 				break;
-			}
-			break;
-			// dashes before options ignored (only needed in real command line)
-		case '-':
-			switch (parse_state) {
-			case ps_pre_value:	// not ignored before values, of course
-				lp->val = current_char;
-				parse_state = ps_in_value;
+				// dashes before options ignored (only needed in real command line)
+			case '-':
+				switch (parse_state) {
+				case ps_pre_value:	// not ignored before values, of course
+					lp->val = current_char;
+					parse_state = ps_in_value;
+					break;
+				default:
+					break;
+				}
 				break;
-			default:
+				// negate program state (even though program not yet assigned)
+			case '!':
+				switch (parse_state) {
+					case ps_pre_opt:
+						lp->reverse_prog = !lp->reverse_prog;
+						break;
+					case ps_pre_value:	// not ignored before values, of course
+						lp->val = current_char;
+						parse_state = ps_in_value;
+						break;
+					default:
+						break;
+				}
 				break;
-			}
-			break;
-			// negate program state (even though program not yet assigned)
-		case '!':
-			switch (parse_state) {
-			case ps_pre_opt:
-				lp->reverse_prog = !lp->reverse_prog;
-				break;
-			case ps_pre_value:	// not ignored before values, of course
-				lp->val = current_char;
-				parse_state = ps_in_value;
-				break;
-			default:
-				break;
-			}
-			break;
-			// colon special case -- assigns to a program
-			// Since we had assumed this was an opt, we have to adjust
-		case ':':
-			switch (parse_state) {
-			case ps_in_opt:
-			case ps_pre_equals:
-				*current_char = '\0';
-				lp->prog = lp->opt;
-				lp->opt = NULL;
-				{	// put in lower case
-					ASCII *prog_char;
-					for (prog_char = lp->prog; *prog_char; ++prog_char) {
-						*prog_char = tolower(*prog_char);
+				// colon special case -- assigns to a program
+				// Since we had assumed this was an opt, we have to adjust
+			case ':':
+				switch (parse_state) {
+					case ps_in_opt:
+					case ps_pre_equals:
+						*current_char = '\0';
+						lp->prog = lp->opt;
+						lp->opt = NULL;
+						{	// put in lower case
+							ASCII *prog_char;
+							for (prog_char = lp->prog; *prog_char; ++prog_char) {
+								*prog_char = tolower(*prog_char);
+							}
+						}
+						// special cases for sensor and property lines
+						// they use a different syntax
+						if (strstr(lp->prog, "sensor") != NULL) {
+							// sensor line for external device
+							LEVEL_DEBUG("SENSOR entry found <%s>", current_char+1);
+							lp->prog = NULL ;
+							AddSensor(current_char+1) ;
+							return ;
+						} else if (strstr(lp->prog, "script") != NULL) {
+							// property line for external device
+							LEVEL_DEBUG("SCRIPT entry found <%s>", current_char+1);
+							lp->prog = NULL ;
+							AddProperty(current_char+1,et_script) ;
+							return ;
+						} else if (strstr(lp->prog, "property") != NULL) {
+							// property line for external device
+							LEVEL_DEBUG("PROPERTY (SCRIPT) entry found <%s>", current_char+1);
+							lp->prog = NULL ;
+							AddProperty(current_char+1,et_script) ;
+							return ;
 					}
-				}
-				// special cases for sensor and property lines
-				// they use a different syntax
-				if (strstr(lp->prog, "sensor") != NULL) {
-					// sensor line for external device
-					LEVEL_DEBUG("SENSOR entry found <%s>", current_char+1);
-					lp->prog = NULL ;
-					AddSensor(current_char+1) ;
-					return ;
-				} else if (strstr(lp->prog, "script") != NULL) {
-					// property line for external device
-					LEVEL_DEBUG("SCRIPT entry found <%s>", current_char+1);
-					lp->prog = NULL ;
-					AddProperty(current_char+1,et_script) ;
-					return ;
-				} else if (strstr(lp->prog, "property") != NULL) {
-					// property line for external device
-					LEVEL_DEBUG("PROPERTY (SCRIPT) entry found <%s>", current_char+1);
-					lp->prog = NULL ;
-					AddProperty(current_char+1,et_script) ;
-					return ;
-				}
-				parse_state = ps_pre_opt;
-				break;
-			case ps_pre_value:	// not ignored before values, of course
-				lp->val = current_char;
-				parse_state = ps_in_value;
-				break;
-			default:
-				break;
+					parse_state = ps_pre_opt;
+					break;
+				case ps_pre_value:	// not ignored before values, of course
+					lp->val = current_char;
+					parse_state = ps_in_value;
+					break;
+				default:
+					break;
 			}
 			break;
 			// equals special case: jump state
 		case '=':
 			switch (parse_state) {
 			case ps_in_opt:
-				parse_state = ps_pre_equals;
+				// parse_state = ps_pre_equals;
 				// fall through intentionally
 			case ps_pre_equals:
 				*current_char = '\0';

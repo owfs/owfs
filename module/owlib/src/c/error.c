@@ -216,6 +216,7 @@ void fatal_error(const char * file, int line, const char * func, const char *fmt
 				sl = e_err_print_console;
 				break;
 			default:
+				va_end(ap);
 				return;
 		}
 
