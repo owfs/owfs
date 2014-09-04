@@ -432,9 +432,7 @@ static char * GetPostPath( FILE * out )
 		char * namestart ;
 		LEVEL_DEBUG("Post data:%s",SAFESTRING(text_in));
 		if ( strcmp(text_in, "\r\n")==0 || strcmp(text_in, "\n")==0 ) {
-			if ( text_in ) {
-				free( text_in) ;
-			}
+			free( text_in) ;
 			return path_found ;
 		}
 
