@@ -1,12 +1,11 @@
 /* From Paul Alfille */
-/* $Id$ */
 /* Implementation of Reader/Writer locks using semaphores and mutexes */
-/* based on "The Little Book of Semaphores" bu Allen B. Downey */
-/* http://www.greenteapress.com */
 
 /* Note, these are relatively light-weight rwlocks,
     only solve writer starvation and no timeout or
     queued wakeup */
+
+/* From: Communications of the ACM :Concurrent Control with "Readers" and "Writers" P.J. Courtois,* F. H, 1971 */
 
 #ifndef RWLOCK_H
 #define RWLOCK_H
@@ -17,10 +16,13 @@
 #include "sem.h"
 
 typedef struct {
-	pthread_mutex_t protect_reader_count;
-	int reader_count;
-	sem_t allow_readers;
-	sem_t no_processes;
+	pthread_mutex_t protect_reader; // mutex 3 in article
+	pthread_mutex_t protect_writer; // mutex 2 in article
+	pthread_mutex_t protect_reader_count; // mutex 2 in article
+	int readcount;
+	int writecount;
+	sem_t allow_readers; // 'r'
+	sem_t no_processes; // 'w'
 } my_rwlock_t;
 
 void my_rwlock_init(my_rwlock_t * rwlock);
