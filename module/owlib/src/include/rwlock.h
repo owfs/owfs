@@ -22,7 +22,7 @@ typedef struct {
 	int readcount;
 	int writecount;
 	sem_t allow_readers; // 'r'
-	sem_t no_processes; // 'w'
+	sem_t allow_writers; // 'w'
 } my_rwlock_t;
 
 void my_rwlock_init(my_rwlock_t * rwlock);

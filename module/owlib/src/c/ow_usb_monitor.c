@@ -164,15 +164,14 @@ static void USB_scan_for_adapters(void)
 		struct port_in * pin = AllocPort(NULL) ;
 		struct connection_in * in ;
 		if ( pin == NULL ) {
-			MONITOR_RUNLOCK;
-			return ;
+			break ;
 		}
 		in = pin->first ;
 		DEVICENAME(in) = DS9490_device_name(&ul) ;
 		pin->init_data = owstrdup( DEVICENAME(in) ) ;
 		pin->type = ct_usb ;
 		
-		// Can do detect. Becasue the name makes this a specific adapter (USB pair)
+		// Can do detect. Because the name makes this a specific adapter (USB pair)
 		// we won't do a directory and won't add the directory and devices with the wrong index
 		if ( BAD( DS9490_detect(pin)) ) {
 			// Remove the extra connection

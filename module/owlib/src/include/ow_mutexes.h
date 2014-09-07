@@ -73,6 +73,10 @@ extern struct mutexes {
 	my_rwlock_t lib;
 	my_rwlock_t cache;
 	my_rwlock_t persistent_cache;
+	my_rwlock_t monitor; // allow monitor processes
+	my_rwlock_t connin; // allow connection_in changes
+
+
   #ifdef __UCLIBC__
 	pthread_mutex_t uclibc_mutex;
   #endif							/* __UCLIBC__ */
@@ -116,15 +120,15 @@ extern struct mutexes {
 #define PERSISTENT_RLOCK    RWLOCK_RLOCK(   Mutex.persistent_cache )
 #define PERSISTENT_RUNLOCK  RWLOCK_RUNLOCK( Mutex.persistent_cache )
 
-#define CONNIN_WLOCK      	RWLOCK_WLOCK(   Inbound_Control.lock )
-#define CONNIN_WUNLOCK    	RWLOCK_WUNLOCK( Inbound_Control.lock )
-#define CONNIN_RLOCK      	RWLOCK_RLOCK(   Inbound_Control.lock )
-#define CONNIN_RUNLOCK    	RWLOCK_RUNLOCK( Inbound_Control.lock )
+#define CONNIN_WLOCK      	RWLOCK_WLOCK(   Mutex.connin )
+#define CONNIN_WUNLOCK    	RWLOCK_WUNLOCK( Mutex.connin )
+#define CONNIN_RLOCK      	RWLOCK_RLOCK(   Mutex.connin )
+#define CONNIN_RUNLOCK    	RWLOCK_RUNLOCK( Mutex.connin )
 
-#define MONITOR_WLOCK      	RWLOCK_WLOCK(   Inbound_Control.monitor_lock )
-#define MONITOR_WUNLOCK    	RWLOCK_WUNLOCK( Inbound_Control.monitor_lock )
-#define MONITOR_RLOCK      	RWLOCK_RLOCK(   Inbound_Control.monitor_lock )
-#define MONITOR_RUNLOCK    	RWLOCK_RUNLOCK( Inbound_Control.monitor_lock )
+#define MONITOR_WLOCK      	RWLOCK_WLOCK(   Mutex.monitor )
+#define MONITOR_WUNLOCK    	RWLOCK_WUNLOCK( Mutex.monitor )
+#define MONITOR_RLOCK      	RWLOCK_RLOCK(   Mutex.monitor )
+#define MONITOR_RUNLOCK    	RWLOCK_RUNLOCK( Mutex.monitor )
 
 #define STATLOCK          	_MUTEX_LOCK(  Mutex.stat_mutex   )
 #define STATUNLOCK        	_MUTEX_UNLOCK(Mutex.stat_mutex   )
