@@ -35,6 +35,29 @@
  *  
  * */
 
+/* Ascii commands */
+#define MH_available    'a'
+#define MH_reset	    'r'
+#define MH_bitwrite	    'B'
+#define MH_bitread	    'b'
+#define MH_address 	    'A'
+#define MH_strong  	    'S'
+#define MH_first  	    'f'
+#define MH_next  	    'n'
+#define MH_pullup  	    'P'
+#define MH_write  	    'W'
+#define MH_read  	    'R'
+#define MH_lastheard  	'L'
+#define MH_clearcache  	'C'
+#define MH_info  	    'I'
+#define MH_setlocation  'l'
+#define MH_version      'V'
+#define MH_help         'H'
+#define MH_sync         's'
+#define MH_reset        'p'
+
+
+
 //static void byteprint( const BYTE * b, int size ) ;
 static RESET_TYPE MasterHub_reset(const struct parsedname *pn);
 static enum search_status MasterHub_next_both(struct device_search *ds, const struct parsedname *pn);
@@ -44,7 +67,7 @@ static void MasterHub_setroutines(struct connection_in *in);
 static void MasterHub_close(struct connection_in *in);
 static GOOD_OR_BAD MasterHub_directory( struct device_search *ds, const struct parsedname *pn);
 static GOOD_OR_BAD MasterHub_select( const struct parsedname * pn ) ;
-static GOOD_OR_BAD MasterHub_resync( const struct parsedname * pn ) ;
+static void MasterHub_resync( const struct parsedname * pn ) ;
 static void MasterHub_powerdown(struct connection_in * in) ;
 
 static void MasterHub_setroutines(struct connection_in *in)
@@ -200,7 +223,8 @@ static GOOD_OR_BAD MasterHub_directory(struct device_search *ds, const struct pa
 
 	while (1) {
 		if ( BAD(COM_write((BYTE*)current, 1, pn->selected_connection)) ) {
-			return MasterHub_resync(pn) ;
+			MasterHub_resync(pn) ;
+			return gbBAD ;
 		}
 		current = next ; // set up for next pass
 		//One needs to check the first character returned.
@@ -211,13 +235,15 @@ static GOOD_OR_BAD MasterHub_directory(struct device_search *ds, const struct pa
 		//in the resp buffer and get the rest of the response from the MasterHub
 		//device
 		if ( BAD(COM_read((BYTE*)resp, 1, pn->selected_connection)) ) {
-			return MasterHub_resync(pn) ;
+			MasterHub_resync(pn) ;
+			return gbBAD ;
 		}
 		if ( resp[0] == 0x0D ) {
 			return gbGOOD ; // end of list
 		}
 		if ( BAD(COM_read((BYTE*)&resp[1], 16, pn->selected_connection)) ) {
-			return MasterHub_resync(pn) ;
+			MasterHub_resync(pn) ;
+			return gbBAD ;
 		}
 		sn[7] = string2num(&resp[0]);
 		sn[6] = string2num(&resp[2]);
@@ -233,7 +259,8 @@ static GOOD_OR_BAD MasterHub_directory(struct device_search *ds, const struct pa
 
 		LEVEL_DEBUG("SN found: " SNformat, SNvar(sn));
 		if ( resp[16]!=0x0D ) {
-			return MasterHub_resync(pn) ;
+			MasterHub_resync(pn) ;
+			return gbBAD ;
 		}
 
 		// CRC check
@@ -241,14 +268,15 @@ static GOOD_OR_BAD MasterHub_directory(struct device_search *ds, const struct pa
 			/* A minor "error" and should perhaps only return -1 */
 			/* to avoid reconnect */
 			LEVEL_DEBUG("sn = %s", sn);
-			return MasterHub_resync(pn) ;
+			MasterHub_resync(pn) ;
+			return gbBAD ;
 		}
 
 		DirblobAdd(sn, &(ds->gulp) );
 	}
 }
 
-static GOOD_OR_BAD MasterHub_resync( const struct parsedname * pn )
+static void MasterHub_resync( const struct parsedname * pn )
 {
 	COM_flush(pn->selected_connection);
 	MasterHub_reset(pn);
@@ -256,8 +284,6 @@ static GOOD_OR_BAD MasterHub_resync( const struct parsedname * pn )
 
 	// Poison current "Address" for adapter
 	memset( pn->selected_connection->remembered_sn, 0, SERIAL_NUMBER_SIZE ) ; // so won't match
-
-	return gbBAD ;
 }
 
 static GOOD_OR_BAD MasterHub_select( const struct parsedname * pn )
@@ -283,21 +309,25 @@ static GOOD_OR_BAD MasterHub_select( const struct parsedname * pn )
 	if ( memcmp( pn->sn, pn->selected_connection->remembered_sn, SERIAL_NUMBER_SIZE ) ) {
 		if ( BAD(COM_write((BYTE*)send_address,18,pn->selected_connection)) ) {
 			LEVEL_DEBUG("Error with sending MasterHub A-ddress") ;
-			return MasterHub_resync(pn) ;
+			MasterHub_resync(pn) ;
+			return gbBAD ;
 		}
 	} else {
 		if ( BAD(COM_write((BYTE*)"M",1,pn->selected_connection)) ) {
 			LEVEL_DEBUG("Error with sending MasterHub M-atch") ;
-			return MasterHub_resync(pn) ;
+			MasterHub_resync(pn) ;
+			return gbBAD ;
 		}
 	}
 	if ( BAD(COM_read((BYTE*)resp_address,17,pn->selected_connection)) ) {
 		LEVEL_DEBUG("Error with reading MasterHub select") ;
-		return MasterHub_resync(pn) ;
+		MasterHub_resync(pn) ;
+		return gbBAD ;
 	}
 	if ( memcmp( &resp_address[0],&send_address[1],17) ) {
 		LEVEL_DEBUG("Error with MasterHub select response") ;
-		return MasterHub_resync(pn) ;
+		MasterHub_resync(pn) ;
+		return gbBAD ;
 	}
 
 	// Set as current "Address" for adapter

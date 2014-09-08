@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -234,9 +233,11 @@ static ZERO_OR_ERROR FS_r_present(struct one_wire_query *owq)
 
 	switch (pn->selected_connection->Adapter) {
 		case adapter_fake:
+		case adapter_mock:
 		case adapter_tester:
-			// fake adapter -- simple memory look
+			// fake adapter -- simple memory look-up
 			OWQ_Y(owq) = (DirblobElements(&(pn->selected_connection->master.fake.main)) > 0);
+			/* fall through */
 		default:
 		{
 			struct parsedname pn_directory;
