@@ -15,7 +15,7 @@
 static int invariant(const struct ftp_session_s *f);
 static void reply(struct ftp_session_s *f, int code, const char *fmt, ...);
 static void change_dir(struct ftp_session_s *f, const char *new_dir);
-static int open_connection(struct ftp_session_s *f);
+static FILE_DESCRIPTOR_OR_ERROR open_connection(struct ftp_session_s *f);
 static int write_fully(int file_descriptor, const char *buf, int buflen);
 static void init_passive_port(void);
 static int get_passive_port(void);
@@ -910,8 +910,7 @@ static void get_absolute_fname(char *fname, size_t fname_len, const char *dir, c
 static void do_retr(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 {
 	const char *file_name;
-	int file_fd;
-	int socket_fd;
+	FILE_DESCRIPTOR_OR_ERROR socket_fd;
 	ASCII *buf2 = NULL;
 	ASCII *bufwrite;
 	struct timeval start_timestamp;
@@ -927,8 +926,7 @@ static void do_retr(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 	daemon_assert(cmd->num_arg == 1);
 
 	/* set up for exit */
-	file_fd = -1;
-	socket_fd = -1;
+	socket_fd = FILE_DESCRIPTOR_BAD;
 
 	/* create an absolute name for our file */
 	file_name = cmd->arg[0].string;
@@ -997,8 +995,9 @@ static void do_retr(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 
 	/* open data path */
 	socket_fd = open_connection(f);
-	if (socket_fd == -1)
+	if (FILE_DESCRIPTOR_NOT_VALID(socket_fd)) {
 		goto exit_retr;
+	}
 
 	/* we're golden, send the file */
 	if (write_fully(socket_fd, bufwrite, size_write) == -1) {
@@ -1009,8 +1008,7 @@ static void do_retr(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 	watchdog_defer_watched(f->watched);
 
 	/* disconnect */
-	close(socket_fd);
-	socket_fd = -1;
+	Test_and_Close(&socket_fd);
 
 	/* hey, it worked, let the other side know */
 	reply(f, 226, "File transfer complete.");
@@ -1031,19 +1029,14 @@ static void do_retr(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 		free(buf2);
 	}
 	f->file_offset = 0;
-	if (socket_fd != -1) {
-		close(socket_fd);
-	}
-	if (file_fd != -1) {
-		close(file_fd);
-	}
+	Test_and_Close(&socket_fd) ;
 	daemon_assert(invariant(f));
 }
 
 /* Write to 1-wire device */
 static void do_stor(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 {
-	int socket_fd;
+	FILE_DESCRIPTOR_OR_ERROR socket_fd;
 	struct timeval start_timestamp;
 	struct timeval end_timestamp;
 	struct timeval transfer_time;
@@ -1051,9 +1044,13 @@ static void do_stor(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 
 	size_t size_read;
 	off_t offset = 0 ;
-	char * data_in ;
+	char * data_in = NULL ;
 	struct parsedname *pn;
 	OWQ_allocate_struct_and_pointer(owq);
+
+	if ( owq == NULL ) {
+		return ;
+	}
 
 	pn = PN(owq);
 
@@ -1062,7 +1059,7 @@ static void do_stor(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 	daemon_assert(cmd->num_arg == 1);
 
 	/* set up for exit */
-	socket_fd = -1;
+	socket_fd = FILE_DESCRIPTOR_BAD;
 
 	/* create an absolute name for our file */
 	if ( BAD( OWQ_create_plus(f->dir, cmd->arg[0].string, owq) ) ) {
@@ -1100,7 +1097,7 @@ static void do_stor(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 
 	/* open data path */
 	socket_fd = open_connection(f);
-	if (socket_fd == -1) {
+	if ( FILE_DESCRIPTOR_NOT_VALID(socket_fd) ) {
 		goto exit_stor;
 	}
 
@@ -1118,18 +1115,15 @@ static void do_stor(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 			goto exit_stor;
 		}
 		if ( BAD( OWQ_allocate_write_buffer( data_in, size_actual, offset, owq )) ) {
-			owfree(data_in) ;
 			reply(f, 550, "Out of memory.");
 			goto exit_stor;
 		}
-		owfree(data_in) ;
 	}
 
 	watchdog_defer_watched(f->watched);
 
 	/* disconnect */
-	close(socket_fd);
-	socket_fd = -1;
+	Test_and_Close(&socket_fd) ;
 
 	/* hey, it worked, let the other side know */
 	reply(f, 226, "File transfer complete.");
@@ -1153,18 +1147,27 @@ static void do_stor(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 	LEVEL_DATA("%s stored \"%s\", %ld bytes in "TVformat,
 			   f->client_addr_str, pn->path, OWQ_size(owq), TVvar(&transfer_time) );
 
+
+	/* Fall through */
   exit_stor:
 	OWQ_destroy(owq);
+
 	f->file_offset = 0;
-	if (socket_fd != -1) {
-		close(socket_fd);
-	}
+
+	/* Free memory */
+	if ( data_in != NULL ) {
+		owfree(data_in) ;
+	} 
+
+	/* disconnect */
+	Test_and_Close(&socket_fd) ;
+
 	daemon_assert(invariant(f));
 }
 
-static int open_connection(struct ftp_session_s *f)
+static FILE_DESCRIPTOR_OR_ERROR open_connection(struct ftp_session_s *f)
 {
-	int socket_fd;
+	FILE_DESCRIPTOR_OR_ERROR socket_fd;
 	struct sockaddr_in addr;
 	unsigned addr_len;
 
@@ -1172,24 +1175,24 @@ static int open_connection(struct ftp_session_s *f)
 
 	if (f->data_channel == DATA_PORT) {
 		socket_fd = socket(SSFAM(&f->data_port), SOCK_STREAM, 0);
-		if (socket_fd == -1) {
+		if ( FILE_DESCRIPTOR_NOT_VALID(socket_fd) ) {
 			reply(f, 425, "Error creating socket; %s.", strerror(errno));
-			return -1;
+			return FILE_DESCRIPTOR_BAD ;
 		}
 //		fcntl (socket_fd, F_SETFD, FD_CLOEXEC); // for safe forking
 		if (connect(socket_fd, (struct sockaddr *) &f->data_port, sizeof(sockaddr_storage_t)) != 0) {
 			reply(f, 425, "Error connecting; %s.", strerror(errno));
-			close(socket_fd);
-			return -1;
+			Test_and_Close(&socket_fd);
+			return FILE_DESCRIPTOR_BAD;
 		}
 	} else {
 		daemon_assert(f->data_channel == DATA_PASSIVE);
 
 		addr_len = sizeof(struct sockaddr_in);
 		socket_fd = accept(f->server_fd, (struct sockaddr *) &addr, &addr_len);
-		if (socket_fd == -1) {
+		if ( FILE_DESCRIPTOR_NOT_VALID(socket_fd) ) {
 			reply(f, 425, "Error accepting connection; %s.", strerror(errno));
-			return -1;
+			return FILE_DESCRIPTOR_BAD;
 		}
 #ifdef INET6
 		/* in IPv6, the client can connect to a channel using a different */
@@ -1198,15 +1201,15 @@ static int open_connection(struct ftp_session_s *f)
 		if (SAFAM(addr) == SSFAM(&f->client_addr)) {
 			if (memcmp(&SINADDR(&f->client_addr), &SINADDR(&addr), sizeof(SINADDR(&addr)))) {
 				reply(f, 425, "Error accepting connection; connection from invalid IP.");
-				close(socket_fd);
-				return -1;
+				Test_and_Close(&socket_fd);
+				return FILE_DESCRIPTOR_BAD;
 			}
 		}
 #else
 		if (memcmp(&f->client_addr.sin_addr, &addr.sin_addr, sizeof(struct in_addr))) {
 			reply(f, 425, "Error accepting connection; connection from invalid IP.");
-			close(socket_fd);
-			return -1;
+			Test_and_Close(&socket_fd);
+			return FILE_DESCRIPTOR_BAD;
 		}
 #endif
 	}
