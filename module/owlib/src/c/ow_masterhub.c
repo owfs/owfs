@@ -54,7 +54,7 @@
 #define MH_version      'V'
 #define MH_help         'H'
 #define MH_sync         's'
-#define MH_reset        'p'
+#define MH_powerreset   'p'
 
 
 
