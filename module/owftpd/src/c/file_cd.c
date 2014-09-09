@@ -92,12 +92,13 @@ void FileLexCD(struct cd_parse_s *cps)
 					WildLexCD(cps, oldrest);
 					return;
 				} else {
-					if (oldrest && (strlen(cps->buffer) + strlen(oldrest) + 4 > PATH_MAX)) {
+					if (strlen(cps->buffer) + strlen(oldrest) + 4 > PATH_MAX) {
 						cps->ret = -ENAMETOOLONG;
 						return;
 					}
-					if (cps->buffer[1])
+					if (cps->buffer[1]) {
 						strcat(cps->buffer, "/");
+					}
 					strcat(cps->buffer, oldrest);
 					cps->pse = parse_status_next;
 				}
@@ -111,14 +112,16 @@ void FileLexCD(struct cd_parse_s *cps)
 				cps->ret = -ENAMETOOLONG;
 				return;
 			}
-			if (cps->buffer[1])
+			if (cps->buffer[1]) {
 				strcat(cps->buffer, "/");
+			}
 			strcat(cps->buffer, cps->rest);
 			if (FS_ParsedName(cps->buffer, &pn) == 0) {
 				if (IsDir(&pn)) {
 					++cps->solutions;
-					if (cps->solutions == 1)
+					if (cps->solutions == 1) {
 						cps->dir = strdup(pn.path);
+					}
 				} else {
 					cps->ret = -ENOTDIR;
 				}
@@ -138,8 +141,9 @@ void FileLexCD(struct cd_parse_s *cps)
 			if (FS_ParsedNamePlus(cps->buffer, cps->rest, &pn) == 0) {
 				if (IsDir(&pn)) {
 					++cps->solutions;
-					if (cps->solutions == 1)
+					if (cps->solutions == 1) {
 						cps->dir = strdup(pn.path);
+					}
 				} else {
 					cps->ret = -ENOTDIR;
 				}
