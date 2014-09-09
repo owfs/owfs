@@ -96,8 +96,9 @@ void FileLexParse(struct file_parse_s *fps)
 			/* trailing / only at root */
 			fps->ret = 0;
 			fps->start = strlen(fps->buffer);
-			if (fps->start > 1)
+			if (fps->start > 1) {
 				++fps->start;
+			}
 			fps->rest = skip_ls_options(fps->rest);
 			if (fps->rest == NULL || fps->rest[0] == '\0') {
 				fps->pse = parse_status_tame;
@@ -157,12 +158,13 @@ void FileLexParse(struct file_parse_s *fps)
 					WildLexParse(fps, oldrest);
 					return;
 				} else {
-					if (oldrest && (strlen(fps->buffer) + strlen(oldrest) + 4 > PATH_MAX)) {
+					if (strlen(fps->buffer) + strlen(oldrest) + 4 > PATH_MAX) {
 						fps->ret = -ENAMETOOLONG;
 						return;
 					}
-					if (fps->buffer[1])
+					if (fps->buffer[1]) {
 						strcat(fps->buffer, "/");
+					}
 					strcat(fps->buffer, oldrest);
 					fps->pse = parse_status_next;
 				}
@@ -274,12 +276,14 @@ static void WildLexParse(struct file_parse_s *fps, ASCII * match)
 
 		wlp.end = &fps->buffer[strlen(fps->buffer)];
 
-		if (root)
+		if (root) {
 			--wlp.end;
+		}
 		wlp.end[0] = '/';
 		FS_dir(WildLexParseCallback, &wlp, &pn);
-		if (root)
+		if (root) {
 			++wlp.end;
+		}
 		wlp.end[0] = '\0';		// restore fps->buffer
 	}
 	FS_ParsedName_destroy(&pn);
