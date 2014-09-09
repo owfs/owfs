@@ -16,15 +16,15 @@ static int invariant(const struct ftp_session_s *f);
 static void reply(struct ftp_session_s *f, int code, const char *fmt, ...);
 static void change_dir(struct ftp_session_s *f, const char *new_dir);
 static FILE_DESCRIPTOR_OR_ERROR open_connection(struct ftp_session_s *f);
-static int write_fully(int file_descriptor, const char *buf, int buflen);
+static int write_fully(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const char *buf, int buflen);
 static void init_passive_port(void);
 static int get_passive_port(void);
 static int convert_newlines(char *dst, const char *src, int srclen);
 static void get_addr_str(const sockaddr_storage_t * s, char *buf, int bufsiz);
 static void send_readme(const struct ftp_session_s *f, int code);
-static void netscape_hack(int file_descriptor);
+static void netscape_hack(FILE_DESCRIPTOR_OR_ERROR file_descriptor);
 static void set_port(struct ftp_session_s *f, const sockaddr_storage_t * host_port);
-static int set_pasv(struct ftp_session_s *f, sockaddr_storage_t * host_port);
+static FILE_DESCRIPTOR_OR_ERROR set_pasv(struct ftp_session_s *f, sockaddr_storage_t * host_port);
 //static int ip_equal(const sockaddr_storage_t *a, const sockaddr_storage_t *b);
 static int ip_equal(const sockaddr_storage_t * a, const sockaddr_storage_t * b);
 static void get_absolute_fname(char *fname, size_t fname_len, const char *dir, const char *file);
@@ -154,7 +154,7 @@ int ftp_session_init(struct ftp_session_s *f,
 
 	f->data_channel = DATA_PORT;
 	f->data_port = *client_addr;
-	f->server_fd = -1;
+	f->server_fd = FILE_DESCRIPTOR_BAD;
 
 	daemon_assert(invariant(f));
 
@@ -244,10 +244,7 @@ void ftp_session_destroy(struct ftp_session_s *f)
 {
 	daemon_assert(invariant(f));
 
-	if (f->server_fd != -1) {
-		close(f->server_fd);
-		f->server_fd = -1;
-	}
+	Test_and_Close( & f->server_fd ) ;
 }
 
 #ifndef NDEBUG
@@ -289,12 +286,12 @@ static int invariant(const struct ftp_session_s *f)
 		if (!ip_equal(&f->client_addr, &f->data_port)) {
 			return 0;
 		}
-		if (f->server_fd != -1) {
+		if ( FILE_DESCRIPTOR_NOT_VALID(f->server_fd)) {
 			return 0;
 		}
 		break;
 	case DATA_PASSIVE:
-		if (f->server_fd < 0) {
+		if ( FILE_DESCRIPTOR_NOT_VALID(f->server_fd)) {
 			return 0;
 		}
 		break;
@@ -500,8 +497,7 @@ static void set_port(struct ftp_session_s *f, const sockaddr_storage_t * host_po
 	} else {
 		/* close any outstanding PASSIVE port */
 		if (f->data_channel == DATA_PASSIVE) {
-			close(f->server_fd);
-			f->server_fd = -1;
+			Test_and_Close( & f->server_fd ) ;
 		}
 
 		f->data_channel = DATA_PORT;
@@ -575,18 +571,18 @@ static void do_eprt(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 /* support for the various pasv setting functions */
 /* returns the file descriptor of the bound port, or -1 on error */
 /* note: the "host_port" parameter will be modified, having its port set */
-static int set_pasv(struct ftp_session_s *f, sockaddr_storage_t * bind_addr)
+static FILE_DESCRIPTOR_OR_ERROR set_pasv(struct ftp_session_s *f, sockaddr_storage_t * bind_addr)
 {
-	int socket_fd;
+	FILE_DESCRIPTOR_OR_ERROR socket_fd;
 	int port;
 
 	daemon_assert(invariant(f));
 	daemon_assert(bind_addr != NULL);
 
 	socket_fd = socket(SSFAM(bind_addr), SOCK_STREAM, 0);
-	if (socket_fd == -1) {
+	if (FILE_DESCRIPTOR_NOT_VALID(socket_fd)) {
 		reply(f, 500, "Error creating server socket; %s.", strerror(errno));
-		return -1;
+		return FILE_DESCRIPTOR_BAD;
 	}
 //	fcntl (socket_fd, F_SETFD, FD_CLOEXEC); // for safe forking
 
@@ -598,15 +594,15 @@ static int set_pasv(struct ftp_session_s *f, sockaddr_storage_t * bind_addr)
 		}
 		if (errno != EADDRINUSE) {
 			reply(f, 500, "Error binding server port; %s.", strerror(errno));
-			close(socket_fd);
-			return -1;
+			Test_and_Close(&socket_fd);
+			return FILE_DESCRIPTOR_BAD;
 		}
 	}
 
 	if (listen(socket_fd, 1) != 0) {
 		reply(f, 500, "Error listening on server port; %s.", strerror(errno));
-		close(socket_fd);
-		return -1;
+		Test_and_Close(&socket_fd);
+		return FILE_DESCRIPTOR_BAD;
 	}
 
 	return socket_fd;
@@ -615,7 +611,7 @@ static int set_pasv(struct ftp_session_s *f, sockaddr_storage_t * bind_addr)
 /* pick a server port to listen for connection on */
 static void do_pasv(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 {
-	int socket_fd;
+	FILE_DESCRIPTOR_OR_ERROR socket_fd;
 	unsigned int addr;
 	int port;
 
@@ -629,7 +625,7 @@ static void do_pasv(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 	}
 
 	socket_fd = set_pasv(f, &f->server_ipv4_addr);
-	if (socket_fd == -1) {
+	if (FILE_DESCRIPTOR_NOT_VALID(socket_fd)) {
 		goto exit_pasv;
 	}
 
@@ -641,7 +637,7 @@ static void do_pasv(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 
 	/* close any outstanding PASSIVE port */
 	if (f->data_channel == DATA_PASSIVE) {
-		close(f->server_fd);
+		Test_and_Close( & f->server_fd);
 	}
 	f->data_channel = DATA_PASSIVE;
 	f->server_fd = socket_fd;
@@ -653,7 +649,7 @@ static void do_pasv(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 /* pick a server port to listen for connection on, including IPv6 */
 static void do_lpsv(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 {
-	int socket_fd;
+	FILE_DESCRIPTOR_OR_ERROR socket_fd;
 	char addr[80];
 	uint8_t *a;
 	uint8_t *p;
@@ -668,7 +664,7 @@ static void do_lpsv(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 	}
 
 	socket_fd = set_pasv(f, &f->server_addr);
-	if (socket_fd == -1) {
+	if (FILE_DESCRIPTOR_NOT_VALID(socket_fd)) {
 		goto exit_lpsv;
 	}
 
@@ -692,7 +688,7 @@ static void do_lpsv(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 
 	/* close any outstanding PASSIVE port */
 	if (f->data_channel == DATA_PASSIVE) {
-		close(f->server_fd);
+		Test_and_Close( & f->server_fd);
 	}
 	f->data_channel = DATA_PASSIVE;
 	f->server_fd = socket_fd;
@@ -704,7 +700,7 @@ static void do_lpsv(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 /* pick a server port to listen for connection on, new IPv6 method */
 static void do_epsv(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 {
-	int socket_fd;
+	FILE_DESCRIPTOR_OR_ERROR socket_fd;
 	sockaddr_storage_t *addr;
 
 	daemon_assert(invariant(f));
@@ -744,7 +740,7 @@ static void do_epsv(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 
 	/* bind port and so on */
 	socket_fd = set_pasv(f, addr);
-	if (socket_fd == -1) {
+	if (FILE_DESCRIPTOR_NOT_VALID(socket_fd)) {
 		goto exit_epsv;
 	}
 
@@ -753,7 +749,7 @@ static void do_epsv(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 
 	/* close any outstanding PASSIVE port */
 	if (f->data_channel == DATA_PASSIVE) {
-		close(f->server_fd);
+		Test_and_Close( & f->server_fd ) ;
 	}
 	f->data_channel = DATA_PASSIVE;
 	f->server_fd = socket_fd;
@@ -1236,7 +1232,7 @@ static int convert_newlines(char *dst, const char *src, int srclen)
 	return dstlen;
 }
 
-static int write_fully(int file_descriptor, const char *buf, int buflen)
+static int write_fully(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const char *buf, int buflen)
 {
 	int amt_written;
 	int write_ret;
@@ -1271,7 +1267,7 @@ static void both_list(struct ftp_session_s *f, const struct ftp_command_s *cmd, 
 	fps.rest = NULL;
 	fps.pse = parse_status_init;
 	fps.fle = fle;
-	fps.out = -1;
+	fps.out = FILE_DESCRIPTOR_BAD;
 
 
 	daemon_assert(invariant(f));
@@ -1294,7 +1290,7 @@ static void both_list(struct ftp_session_s *f, const struct ftp_command_s *cmd, 
 
 	/* open our data connection */
 	fps.out = open_connection(f);
-	if (fps.out == -1) {
+	if (FILE_DESCRIPTOR_NOT_VALID(fps.out)) {
 		goto exit_blst;
 	}
 
@@ -1312,8 +1308,7 @@ static void both_list(struct ftp_session_s *f, const struct ftp_command_s *cmd, 
 
 	/* clean up and exit */
   exit_blst:
-	if (fps.out != -1)
-		close(fps.out);
+	Test_and_Close( & fps.out ) ;
 	daemon_assert(invariant(f));
 }
 
@@ -1471,14 +1466,14 @@ static void send_readme(const struct ftp_session_s *f, int code)
 }
 
 /* hack which prevents Netscape error in file list */
-static void netscape_hack(int file_descriptor)
+static void netscape_hack(FILE_DESCRIPTOR_OR_ERROR file_descriptor)
 {
 	fd_set readfds;
 	struct timeval ns_timeout = {15, 0 } ; // 15 seconds
 	int select_ret;
 	char c;
 
-	daemon_assert(file_descriptor >= 0);
+	daemon_assert(FILE_DESCRIPTOR_VALID(file_descriptor));
 
 	shutdown(file_descriptor, 1);
 	FD_ZERO(&readfds);

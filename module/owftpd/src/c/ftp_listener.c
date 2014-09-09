@@ -1,6 +1,9 @@
 /*
+ * part of owftpd By Paul H Alfille
+ * The whole is GPLv2 licenced though the ftp code was more liberally licenced when first used.
+ */
 
-$Id$
+/*
  
 This is the code that waits for client connections and creates the
 threads that handle them.  When ftp_listener_init() is called, it binds
@@ -148,7 +151,7 @@ static int invariant(const struct ftp_listener_s *f)
 	if (f == NULL) {
 		return 0;
 	}
-	if (f->file_descriptor < 0) {
+	if (FILE_DESCRIPTOR_NOT_VALID(f->file_descriptor)) {
 		return 0;
 	}
 	if (f->max_connections <= 0) {
@@ -162,10 +165,10 @@ static int invariant(const struct ftp_listener_s *f)
 	if ((dir_len <= 0) || (dir_len > PATH_MAX)) {
 		return 0;
 	}
-	if (f->shutdown_request_fd[fd_pipe_write] < 0) {
+	if (FILE_DESCRIPTOR_NOT_VALID(f->shutdown_request_fd[fd_pipe_write])) {
 		return 0;
 	}
-	if (f->shutdown_request_fd[fd_pipe_read] < 0) {
+	if (FILE_DESCRIPTOR_NOT_VALID(f->shutdown_request_fd[fd_pipe_read])) {
 		return 0;
 	}
 	return 1;
@@ -178,7 +181,7 @@ static void *connection_acceptor(void *v)
 	struct ftp_listener_s *f = (struct ftp_listener_s *) v;
 	int num_error;
 
-	int file_descriptor;
+	FILE_DESCRIPTOR_OR_ERROR file_descriptor;
 	int tcp_nodelay;
 	sockaddr_storage_t client_addr;
 	sockaddr_storage_t server_addr;
@@ -208,7 +211,7 @@ static void *connection_acceptor(void *v)
 
 		/* if data arrived on our pipe, we've been asked to exit */
 		if (FD_ISSET(f->shutdown_request_fd[fd_pipe_read], &readfds)) {
-			close(f->file_descriptor);
+			Test_and_Close( & f->file_descriptor);
 			LEVEL_CONNECT("Listener no longer accepting connections");
 			pthread_exit(NULL);
 			return VOID_RETURN;
@@ -217,18 +220,18 @@ static void *connection_acceptor(void *v)
 		/* otherwise accept our pending connection (if any) */
 		addr_len = sizeof(sockaddr_storage_t);
 		file_descriptor = accept(f->file_descriptor, (struct sockaddr *) &client_addr, &addr_len);
-		if (file_descriptor >= 0) {
+		if (FILE_DESCRIPTOR_VALID(file_descriptor)) {
 			tcp_nodelay = 1;
 			if (setsockopt(file_descriptor, IPPROTO_TCP, TCP_NODELAY, (void *) &tcp_nodelay, sizeof(int)) != 0) {
 				ERROR_CONNECT("Error in setsockopt(), FTP server dropping connection");
-				close(file_descriptor);
+				Test_and_Close( & file_descriptor);
 				continue;
 			}
 
 			addr_len = sizeof(sockaddr_storage_t);
 			if (getsockname(file_descriptor, (struct sockaddr *) &server_addr, &addr_len) == -1) {
 				ERROR_CONNECT("Error in getsockname(), FTP server dropping connection");
-				close(file_descriptor);
+				Test_and_Close( & file_descriptor);
 				continue;
 			}
 
@@ -236,7 +239,7 @@ static void *connection_acceptor(void *v)
 				malloc(sizeof(struct connection_info_s));
 			if (info == NULL) {
 				LEVEL_CONNECT("Out of memory, FTP server dropping connection");
-				close(file_descriptor);
+				Test_and_Close( & file_descriptor);
 				continue;
 			}
 			info->ftp_listener = f;

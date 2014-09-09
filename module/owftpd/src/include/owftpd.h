@@ -1,5 +1,6 @@
 /*
- * $Id$
+ * part of owftpd By Paul H Alfille
+ * The whole is GPLv2 licenced though the ftp code was more liberally licenced when first used.
  */
 
 #ifndef OWFTPD_H
@@ -112,7 +113,7 @@ struct file_parse_s {
 	ASCII *rest;
 	enum parse_status_e pse;	// state machine
 	enum file_list_e fle;		// long or short listing flag
-	int out;					// file descriptor to send result
+	FILE_DESCRIPTOR_OR_ERROR out;					// file descriptor to send result
 	int ret;					// return status
 	int start;
 };
@@ -169,7 +170,7 @@ void watchdog_remove_watched(struct watched_s *watched);
 
 /* information on a telnet session */
 struct telnet_session_s {
-	int in_fd;
+	FILE_DESCRIPTOR_OR_ERROR in_fd;
 	int in_errno;
 	int in_eof;
 	int in_take;
@@ -179,7 +180,7 @@ struct telnet_session_s {
 
 	int in_status;
 
-	int out_fd;
+	FILE_DESCRIPTOR_OR_ERROR out_fd;
 	int out_errno;
 	int out_eof;
 	int out_take;
@@ -261,7 +262,7 @@ struct ftp_session_s {
 	   and client address or server port depending on type */
 	int data_channel;
 	sockaddr_storage_t data_port;
-	int server_fd;
+	FILE_DESCRIPTOR_OR_ERROR server_fd;
 
 	/* watchdog to handle timeout */
 	struct watched_s *watched;
@@ -276,7 +277,7 @@ void ftp_session_destroy(struct ftp_session_s *f);
 struct ftp_listener_s {
 
 	/* file descriptor incoming connections arrive on */
-	int file_descriptor;
+	FILE_DESCRIPTOR_OR_ERROR file_descriptor;
 
 	/* maximum number of connections */
 	int max_connections;
@@ -304,7 +305,7 @@ struct ftp_listener_s {
 
 	/* end of pipe to wake up listening thread with */
 	/* end of pipe listening thread waits on */
-	int shutdown_request_fd[2];
+	FILE_DESCRIPTOR_OR_ERROR shutdown_request_fd[2];
 
 	/* condition to signal thread requesting shutdown */
 	pthread_cond_t shutdown_cond;
@@ -339,7 +340,7 @@ struct ftp_command_s {
 int ftp_command_parse(const char *input, struct ftp_command_s *cmd);
 
 /* functions */
-void telnet_session_init(struct telnet_session_s *t, int in, int out);
+void telnet_session_init(struct telnet_session_s *t, FILE_DESCRIPTOR_OR_ERROR in, FILE_DESCRIPTOR_OR_ERROR out);
 int telnet_session_print(struct telnet_session_s *t, const char *s);
 int telnet_session_println(struct telnet_session_s *t, const char *s);
 int telnet_session_readln(struct telnet_session_s *t, char *buf, int buflen);

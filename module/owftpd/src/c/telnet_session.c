@@ -1,5 +1,6 @@
 /*
- * $Id$
+ * part of owftpd By Paul H Alfille
+ * The whole is GPLv2 licenced though the ftp code was more liberally licenced when first used.
  */
 
 #include "owftpd.h"
@@ -43,7 +44,7 @@ static void add_outgoing_char(struct telnet_session_s *t, int c);
 static int max_input_read(struct telnet_session_s *t);
 
 /* initialize a telnet session */
-void telnet_session_init(struct telnet_session_s *t, int in, int out)
+void telnet_session_init(struct telnet_session_s *t, FILE_DESCRIPTOR_OR_ERROR in, FILE_DESCRIPTOR_OR_ERROR out)
 {
 	daemon_assert(t != NULL);
 	daemon_assert(in >= 0);
@@ -162,12 +163,8 @@ void telnet_session_destroy(struct telnet_session_s *t)
 {
 	daemon_assert(invariant(t));
 
-	close(t->in_fd);
-	if (t->out_fd != t->in_fd) {
-		close(t->out_fd);
-	}
-	t->in_fd = -1;
-	t->out_fd = -1;
+	Test_and_Close( & t->in_fd);
+	Test_and_Close( & t->out_fd);
 }
 
 /* receive any incoming data, send any pending data */
@@ -432,7 +429,7 @@ static int invariant(const struct telnet_session_s *t)
 	if (t == NULL) {
 		return 0;
 	}
-	if (t->in_fd < 0) {
+	if (FILE_DESCRIPTOR_NOT_VALID(t->in_fd)) {
 		return 0;
 	}
 	if ((t->in_take < 0) || (t->in_take >= BUF_LEN)) {
@@ -464,7 +461,7 @@ static int invariant(const struct telnet_session_s *t)
 		return 0;
 	}
 
-	if (t->out_fd < 0) {
+	if (FILE_DESCRIPTOR_NOT_VALID(t->out_fd)) {
 		return 0;
 	}
 	if ((t->out_take < 0) || (t->out_take >= BUF_LEN)) {

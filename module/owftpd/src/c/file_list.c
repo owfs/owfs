@@ -23,7 +23,7 @@ char *alloca();
 # endif
 #endif
 
-static void fdprintf(int file_descriptor, const char *fmt, ...);
+static void fdprintf(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const char *fmt, ...);
 static void List_show(struct file_parse_s *fps, const struct parsedname *pn);
 static void WildLexParse(struct file_parse_s *fps, ASCII * match);
 static char *skip_ls_options(char *filespec);
@@ -62,26 +62,26 @@ static void List_show(struct file_parse_s *fps, const struct parsedname *pn)
 	};
 	LEVEL_DEBUG("List_show %s", pn->path);
 	switch (fps->fle) {
-	case file_list_list:
-		FS_fstat_postparse(&stbuf, pn);
-		fdprintf(fps->out, "%s%s", stbuf.st_mode & S_IFDIR ? "d" : "-", perms[stbuf.st_mode & 0x07]);
-		/* fps->output link & ownership information */
-		fdprintf(fps->out, " %3d %-8d %-8d %8lu ", stbuf.st_nlink, stbuf.st_uid, stbuf.st_gid, (unsigned long) stbuf.st_size);
-		/* fps->output date */
-		time(&now);
-		localtime_r(&stbuf.st_mtime, &tm_now);
-		age = difftime(now, stbuf.st_mtime);
-		if ((age > 60 * 60 * 24 * 30 * 6)
-			|| (age < -(60 * 60 * 24 * 30 * 6))) {
-			strftime(date_buf, sizeof(date_buf), "%b %e  %Y", &tm_now);
-		} else {
-			strftime(date_buf, sizeof(date_buf), "%b %e %H:%M", &tm_now);
-		}
-		fdprintf(fps->out, "%s ", date_buf);
-		/* Fall Through */
-	case file_list_nlst:
-		/* fps->output filename */
-		fdprintf(fps->out, "%s\r\n", &pn->path[fps->start]);
+		case file_list_list:
+			FS_fstat_postparse(&stbuf, pn);
+			fdprintf(fps->out, "%s%s", stbuf.st_mode & S_IFDIR ? "d" : "-", perms[stbuf.st_mode & 0x07]);
+			/* fps->output link & ownership information */
+			fdprintf(fps->out, " %3d %-8d %-8d %8lu ", stbuf.st_nlink, stbuf.st_uid, stbuf.st_gid, (unsigned long) stbuf.st_size);
+			/* fps->output date */
+			time(&now);
+			localtime_r(&stbuf.st_mtime, &tm_now);
+			age = difftime(now, stbuf.st_mtime);
+			if ((age > 60 * 60 * 24 * 30 * 6)
+				|| (age < -(60 * 60 * 24 * 30 * 6))) {
+				strftime(date_buf, sizeof(date_buf), "%b %e  %Y", &tm_now);
+			} else {
+				strftime(date_buf, sizeof(date_buf), "%b %e %H:%M", &tm_now);
+			}
+			fdprintf(fps->out, "%s ", date_buf);
+			/* Fall Through */
+		case file_list_nlst:
+			/* fps->output filename */
+			fdprintf(fps->out, "%s\r\n", &pn->path[fps->start]);
 	}
 }
 
@@ -287,7 +287,7 @@ static void WildLexParse(struct file_parse_s *fps, ASCII * match)
 }
 
 /* write with care for max length and incomplete outout */
-static void fdprintf(int file_descriptor, const char *fmt, ...)
+static void fdprintf(FILE_DESCRIPTOR_OR_ERROR file_descriptor, const char *fmt, ...)
 {
 	char buf[PATH_MAX + 1];
 	ssize_t buflen;
@@ -295,7 +295,7 @@ static void fdprintf(int file_descriptor, const char *fmt, ...)
 	int amt_written;
 	int write_ret;
 
-	daemon_assert(file_descriptor >= 0);
+	daemon_assert(FILE_DESCRIPTOR_VALID(file_descriptor));
 	daemon_assert(fmt != NULL);
 
 	va_start(ap, fmt);
