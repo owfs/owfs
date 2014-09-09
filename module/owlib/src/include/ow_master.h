@@ -1,5 +1,4 @@
 /*
-$Id$
     OW -- One-Wire filesystem
     version 0.4 7/2/2003
 
@@ -48,6 +47,7 @@ struct master_fake {
 	struct dirblob alarm;       /* alarm directory */
 };
 
+// DS2490R (usb) hub
 struct master_usb {
 #if OW_USB
 	struct usb_device *dev;
@@ -70,6 +70,7 @@ struct master_usb {
 	BYTE ds1420_address[SERIAL_NUMBER_SIZE];
 };
 
+// DS2482 (i2c) hub -- 800 has 8 channels
 struct master_i2c {
 	int channels;
 	int index;
@@ -83,6 +84,17 @@ struct master_i2c {
 	struct connection_in *head;
 };
 
+// HobbyBoards Master Hub
+// Single char channel (1,2,3,4,W -- ignore A)
+struct master_masterhub {
+	// Need to lock directory for "next" command"
+	int channels;
+	int index;
+	char channel_char;
+	struct connection_in *head;
+};
+
+// Embedded Data Systems HA7 hub
 struct master_ha7 {
 	ASCII lock[10];
 	int locked;
@@ -100,6 +112,7 @@ struct master_link {
 	enum e_link_t_mode qmode ; //extra '?' after b command
 };
 
+// Embedded Data Systems HA5 hub
 struct master_ha5 {
 	int checksum ;              /* flag to use checksum byte in communication */
 	char channel ;
@@ -113,6 +126,7 @@ struct master_pbm {
 	struct connection_in *head;
 };
 
+// W1 (kernel) "device" 
 struct master_w1 {
 #if OW_W1
 	// bus master name kept in name
@@ -123,6 +137,7 @@ struct master_w1 {
 #endif /* OW_W1 */
 };
 
+// Search for W1 (kernel) devices
 struct master_w1_monitor {
 #if OW_W1
 	// netlink fd kept in file_descriptor
@@ -135,6 +150,7 @@ struct master_w1_monitor {
 #endif /* OW_W1 */
 };
 
+// Search for USB (DS9490R) devices
 struct master_usb_monitor {
 	FILE_DESCRIPTOR_OR_ERROR shutdown_pipe[2] ;
 };
@@ -175,6 +191,7 @@ union master_union {
 	struct master_ha7 ha7;
 	struct master_pbm pbm;
 	struct master_w1 w1;
+	struct master_masterhub masterhub;
 	struct master_w1_monitor w1_monitor ;
 	struct master_browse browse;
 	struct master_usb_monitor usb_monitor ;

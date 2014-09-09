@@ -828,7 +828,7 @@ AC_DEFUN([ACX_EXPAND], [
 	fi
 
 	full_var="$FROM_VAR"
-	dnl loop until it doesn't change anymore
+	dnl loop until it doesnt change anymore
 	while true; do
 		new_full_var="`eval echo $full_var`"
 		if test "x$new_full_var"="x$full_var"; then break; fi
