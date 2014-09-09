@@ -189,10 +189,22 @@
 #ifndef SKIP_SEARCH_H
 #ifndef __USE_GNU
 #define __USE_GNU
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
 #include <search.h>
+#undef _GNU_SOURCE
+#else
+#include <search.h>
+#endif
 #undef __USE_GNU
 #else							/* __USE_GNU */
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
 #include <search.h>
+#undef _GNU_SOURCE
+#else
+#include <search.h>
+#endif
 #endif							/* __USE_GNU */
 #endif							/* SKIP_SEARCH_H */
 
