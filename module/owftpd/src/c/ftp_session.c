@@ -458,8 +458,8 @@ static void change_dir(struct ftp_session_s *f, const char *new_dir)
 	if (cps.ret) {
 		reply(f, 550, "Error changing directory. %s", strerror(-cps.ret));
 	} else {
-		f->dir[PATHMAX] = '\0' ; // trailing null
-		strncpy(f->dir, cps.dir, PATHMAX);
+		f->dir[PATH_MAX] = '\0' ; // trailing null
+		strncpy(f->dir, cps.dir, PATH_MAX);
 		reply(f, 250, "Directory change successful.");
 	}
 
