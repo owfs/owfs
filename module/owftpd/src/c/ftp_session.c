@@ -1045,10 +1045,6 @@ static void do_stor(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 	struct parsedname *pn;
 	OWQ_allocate_struct_and_pointer(owq);
 
-	if ( owq == NULL ) {
-		return ;
-	}
-
 	pn = PN(owq);
 
 	daemon_assert(invariant(f));
