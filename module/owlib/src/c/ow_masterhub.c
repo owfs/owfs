@@ -69,6 +69,8 @@ static GOOD_OR_BAD MasterHub_directory( struct device_search *ds, const struct p
 static GOOD_OR_BAD MasterHub_select( const struct parsedname * pn ) ;
 static void MasterHub_resync( const struct parsedname * pn ) ;
 static void MasterHub_powerdown(struct connection_in * in) ;
+static GOOD_OR_BAD MasterHub_sender_ascii( char cmd, char channel, ASCII * data, int length, const struct parsedname * pn ) ;
+static GOOD_OR_BAD MasterHub_sender_bytes( char cmd, char channel, BYTE * data, int length, const struct parsedname * pn );
 
 static void MasterHub_setroutines(struct connection_in *in)
 {
@@ -397,3 +399,34 @@ static void MasterHub_powerdown(struct connection_in * in)
 	COM_write((BYTE*)"P", 1, in) ;
 	COM_slurp(in) ;
 }
+
+static GOOD_OR_BAD MasterHub_sender_bytes( char cmd, char channel, BYTE * data, int length, const struct parsedname * pn )
+{
+	char send_string[250] ;
+	bytes2string( send_string, data, length ) ;
+	return MasterHub_sender_ascii( cmd, channel, send_string, length*2, pn  ) ;
+}
+
+static GOOD_OR_BAD MasterHub_sender_ascii( char cmd, char channel, ASCII * data, int length, const struct parsedname * pn )
+{
+	char send_string[250] = { cmd, } ;
+	int length_so_far = 1 ;
+	
+	if ( channel != '\0' ) {
+		send_string[length_so_far++] = channel ;
+	}
+	
+	if ( length > 120 ) {
+		LEVEL_DEBUG("String too long for MasterHub" ) ;
+		return gbBAD ;
+	}
+	
+	memcpy( &send_string[length_so_far], data, length ) ;
+	length_so_far += length ;
+	
+	strcpy( &send_string[length_so_far], "\r" ) ;
+	length_so_far += 1 ;
+	
+	return COM_write( (BYTE*)send_string, length_so_far, pn->selected_connection ) ;
+}	
+	
