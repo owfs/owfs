@@ -8,9 +8,14 @@
  * Based on chttpd. copyright(c) 0x7d0 greg olszewski <noop@nwonknu.org>
  *
  */
+ 
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #include <stdio.h> // for getline
 #undef _GNU_SOURCE
+#else
+#include <stdio.h> // for getline
+#endif
 
 #include "owhttpd.h"
 
