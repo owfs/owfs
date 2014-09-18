@@ -861,9 +861,9 @@ case "${host_cpu}-${host_os}" in
 	;;
 	*-freebsd* | *)
 		# have to add this to support pthread_rwlock_t
-		CFLAGS="$CFLAGS -D_XOPEN_SOURCE=500"
-		EXTRACFLAGS="$EXTRACFLAGS -D_XOPEN_SOURCE=500"
-		AC_MSG_RESULT([-D_XOPEN_SOURCE=500])
+		CFLAGS="$CFLAGS -D_XOPEN_SOURCE=600"
+		EXTRACFLAGS="$EXTRACFLAGS -D_XOPEN_SOURCE=600"
+		AC_MSG_RESULT([-D_XOPEN_SOURCE=600])
 	;;
 esac
 
