@@ -31,7 +31,9 @@
  * cdc_acm: USB Abstract Control Model driver for USB modems and ISDN adapters
  * 
  * MAC address: 00:04:a3:f4:4c:9c
- * Serial settings 9600,8N1
+ * Serial settings 9600,8N1 although other baud rates seem well tolerated
+ * 
+ * According to Eric Vickary
  *  
  * */
 
@@ -69,8 +71,8 @@ static GOOD_OR_BAD MasterHub_directory( struct device_search *ds, const struct p
 static GOOD_OR_BAD MasterHub_select( const struct parsedname * pn ) ;
 static void MasterHub_resync( const struct parsedname * pn ) ;
 static void MasterHub_powerdown(struct connection_in * in) ;
-static GOOD_OR_BAD MasterHub_sender_ascii( char cmd, char channel, ASCII * data, int length, const struct parsedname * pn ) ;
-static GOOD_OR_BAD MasterHub_sender_bytes( char cmd, char channel, BYTE * data, int length, const struct parsedname * pn );
+static GOOD_OR_BAD MasterHub_sender_ascii( char cmd, ASCII * data, int length, const struct parsedname * pn ) ;
+static GOOD_OR_BAD MasterHub_sender_bytes( char cmd, BYTE * data, int length, const struct parsedname * pn );
 
 static void MasterHub_setroutines(struct connection_in *in)
 {
@@ -400,25 +402,52 @@ static void MasterHub_powerdown(struct connection_in * in)
 	COM_slurp(in) ;
 }
 
-static GOOD_OR_BAD MasterHub_sender_bytes( char cmd, char channel, BYTE * data, int length, const struct parsedname * pn )
+// Send bytes to the master hub --
+// this routine converts the bytes to ascii hex and uses MasterHub_sender_ascii
+static GOOD_OR_BAD MasterHub_sender_bytes( char cmd, BYTE * data, int length, const struct parsedname * pn )
 {
 	char send_string[250] ;
 	bytes2string( send_string, data, length ) ;
-	return MasterHub_sender_ascii( cmd, channel, send_string, length*2, pn  ) ;
+	return MasterHub_sender_ascii( cmd, send_string, length*2, pn  ) ;
 }
 
-static GOOD_OR_BAD MasterHub_sender_ascii( char cmd, char channel, ASCII * data, int length, const struct parsedname * pn )
+static GOOD_OR_BAD MasterHub_sender_ascii( char cmd, ASCII * data, int length, const struct parsedname * pn )
 {
 	char send_string[250] = { cmd, } ;
 	int length_so_far = 1 ;
 	
-	if ( channel != '\0' ) {
-		send_string[length_so_far++] = channel ;
-	}
-	
 	if ( length > 120 ) {
 		LEVEL_DEBUG("String too long for MasterHub" ) ;
 		return gbBAD ;
+	}
+	
+	// potentially add the channel char based on type of command
+	switch (cmd) {
+		case MH_available:	//'a'
+		case MH_next:		//'n'
+		case MH_lastheard:	//'L'
+		case MH_clearcache:	//'C'
+		case MH_info:		//'I'
+		case MH_setlocation://'l'
+		case MH_version:	//'V'
+		case MH_help:		//'H'
+		case MH_sync:		//'s'
+		case MH_powerreset: //'p'
+			// command with no channel included
+			break ;
+		case MH_reset:		//'r'
+		case MH_bitwrite:	//'B'
+		case MH_bitread:	//'b'
+		case MH_address:	//'A'
+		case MH_strong:		//'S'
+		case MH_first:		//'f'
+		case MH_pullup:		//'P'
+		case MH_write:		//'W'
+		case MH_read:		//'R'
+			// this command needs the channel char added
+			send_string[length_so_far] = pn->selected_connection->master.masterhub.channel_char ;
+			++length_so_far ;
+			break ;
 	}
 	
 	memcpy( &send_string[length_so_far], data, length ) ;
