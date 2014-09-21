@@ -45,7 +45,9 @@
 #define MH_address 	    'A'
 #define MH_strong  	    'S'
 #define MH_first  	    'f'
+#define MH_firstcap	    'F'
 #define MH_next  	    'n'
+#define MH_nextcap 	    'N'
 #define MH_pullup  	    'P'
 #define MH_write  	    'W'
 #define MH_read  	    'R'
@@ -54,11 +56,11 @@
 #define MH_info  	    'I'
 #define MH_setlocation  'l'
 #define MH_version      'V'
-#define MH_help         'H'
+#define MH_help         'h'
+#define MH_helpcap      'H'
 #define MH_sync         's'
 #define MH_powerreset   'p'
-
-
+#define MH_update   	'U'
 
 //static void byteprint( const BYTE * b, int size ) ;
 static RESET_TYPE MasterHub_reset(const struct parsedname *pn);
@@ -71,8 +73,13 @@ static GOOD_OR_BAD MasterHub_directory( struct device_search *ds, const struct p
 static GOOD_OR_BAD MasterHub_select( const struct parsedname * pn ) ;
 static void MasterHub_resync( const struct parsedname * pn ) ;
 static void MasterHub_powerdown(struct connection_in * in) ;
-static GOOD_OR_BAD MasterHub_sender_ascii( char cmd, ASCII * data, int length, const struct parsedname * pn ) ;
-static GOOD_OR_BAD MasterHub_sender_bytes( char cmd, BYTE * data, int length, const struct parsedname * pn );
+
+static GOOD_OR_BAD MasterHub_sender_ascii( char cmd, ASCII * data, int length, struct connection_in * in ) ;
+static GOOD_OR_BAD MasterHub_sender_bytes( char cmd, BYTE * data, int length, struct connection_in * in );
+
+static GOOD_OR_BAD MasterHub_read(BYTE * buf, size_t size, struct connection_in * in) ;
+
+static GOOD_OR_BAD MasterHub_sync(struct connection_in *in) ;
 
 static void MasterHub_setroutines(struct connection_in *in)
 {
@@ -116,11 +123,13 @@ GOOD_OR_BAD MasterHub_detect(struct port_in *pin)
 	COM_set_standard( in ) ; // standard COM port settings
 	RETURN_BAD_IF_BAD(COM_open(in)) ;
 	COM_slurp(in) ;
+	MasterHub_sync(in) ;
 	if ( GOOD( gbRESET( MasterHub_reset(&pn) ) ) ) {
 		in->Adapter = adapter_masterhub ;
 		in->adapter_name = "MasterHub/S";
 		return gbGOOD;
 	}
+	MasterHub_sync(in) ;
 	if ( GOOD( serial_powercycle(in) ) ) {
 		COM_slurp(in) ;
 		if ( GOOD( gbRESET( MasterHub_reset(&pn) ) ) ) {
@@ -404,14 +413,14 @@ static void MasterHub_powerdown(struct connection_in * in)
 
 // Send bytes to the master hub --
 // this routine converts the bytes to ascii hex and uses MasterHub_sender_ascii
-static GOOD_OR_BAD MasterHub_sender_bytes( char cmd, BYTE * data, int length, const struct parsedname * pn )
+static GOOD_OR_BAD MasterHub_sender_bytes( char cmd, BYTE * data, int length, struct connection_in * in )
 {
 	char send_string[250] ;
 	bytes2string( send_string, data, length ) ;
-	return MasterHub_sender_ascii( cmd, send_string, length*2, pn  ) ;
+	return MasterHub_sender_ascii( cmd, send_string, length*2, in  ) ;
 }
 
-static GOOD_OR_BAD MasterHub_sender_ascii( char cmd, ASCII * data, int length, const struct parsedname * pn )
+static GOOD_OR_BAD MasterHub_sender_ascii( char cmd, ASCII * data, int length, struct connection_in * in )
 {
 	char send_string[250] = { cmd, } ;
 	int length_so_far = 1 ;
@@ -425,14 +434,17 @@ static GOOD_OR_BAD MasterHub_sender_ascii( char cmd, ASCII * data, int length, c
 	switch (cmd) {
 		case MH_available:	//'a'
 		case MH_next:		//'n'
+		case MH_nextcap:	//'N'
 		case MH_lastheard:	//'L'
 		case MH_clearcache:	//'C'
 		case MH_info:		//'I'
 		case MH_setlocation://'l'
 		case MH_version:	//'V'
-		case MH_help:		//'H'
+		case MH_help:		//'h'
+		case MH_helpcap:	//'H'
 		case MH_sync:		//'s'
 		case MH_powerreset: //'p'
+		case MH_update:		//'U'
 			// command with no channel included
 			break ;
 		case MH_reset:		//'r'
@@ -441,11 +453,12 @@ static GOOD_OR_BAD MasterHub_sender_ascii( char cmd, ASCII * data, int length, c
 		case MH_address:	//'A'
 		case MH_strong:		//'S'
 		case MH_first:		//'f'
+		case MH_firstcap:	//'F'
 		case MH_pullup:		//'P'
 		case MH_write:		//'W'
 		case MH_read:		//'R'
 			// this command needs the channel char added
-			send_string[length_so_far] = pn->selected_connection->master.masterhub.channel_char ;
+			send_string[length_so_far] = in->master.masterhub.channel_char ;
 			++length_so_far ;
 			break ;
 	}
@@ -456,6 +469,29 @@ static GOOD_OR_BAD MasterHub_sender_ascii( char cmd, ASCII * data, int length, c
 	strcpy( &send_string[length_so_far], "\r" ) ;
 	length_so_far += 1 ;
 	
-	return COM_write( (BYTE*)send_string, length_so_far, pn->selected_connection ) ;
+	LEVEL_DEBUG("Sending %d chars to masterhub <%s>", length_so_far, send_string ) ;
+	
+	return COM_write( (BYTE*)send_string, length_so_far, in ) ;
 }	
 	
+static GOOD_OR_BAD MasterHub_read(BYTE * buf, size_t size, struct connection_in *in)
+{
+	return COM_read( buf, size, in ) ;
+}
+
+static GOOD_OR_BAD MasterHub_sync(struct connection_in *in)
+{
+	BYTE read_buffer[4] ;
+	BYTE happy_return[] = { '+', 0x0D, 0x0A, '?' } ;
+	
+	do { 
+		COM_slurp(in) ;
+		RETURN_BAD_IF_BAD( MasterHub_sender_ascii( MH_sync, "", 0, in ) ) ;
+		MasterHub_read( read_buffer, 4, in ) ;
+		_Debug_Bytes( "sync return", read_buffer, 4 ) ;
+	} while ( memcmp( read_buffer, happy_return, 4 ) != 0 ) ;
+
+	LEVEL_DEBUG("Successful Sync") ;
+
+	return gbBAD ;
+}
