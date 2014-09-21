@@ -52,6 +52,7 @@ $Id$
 #define OW_MUTEXES_H
 
 #include <pthread.h>
+#include "ow_mutex.h"
 
 extern struct mutexes {
 	pthread_mutexattr_t *pmattr;

@@ -77,6 +77,7 @@ noinst_HEADERS =           \
         ow_master.h        \
         ow_memblob.h       \
         ow_message.h       \
+        ow_mutex.h         \
         ow_mutexes.h       \
         ow_none.h          \
         ow_onewirequery.h  \

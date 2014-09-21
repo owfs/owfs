@@ -248,3 +248,18 @@ AM_CFLAGS = -I../include \
 	${LIBUSB_CFLAGS} \
 	${PIC_FLAGS}
 
+
+if HAVE_CYGWIN
+NOWINE=1
+else
+DOS_OWFSROOT:=$(OWFSROOT)
+LINT_DIR:=$(DOS_OWFSROOT)/src/tools/lint
+LINT_CC:=wine $(LINT_DIR)/lint-nt.exe
+endif
+
+SRC:=$(OWLIB_SOURCE)
+include $(abs_top_srcdir)/src/tools/lint/lint.mk
+
+clean-generic:
+	@RM@ -f *~ .*~ *.lint *.lint.txt .#* *.bak
+

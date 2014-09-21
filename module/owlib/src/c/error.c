@@ -29,7 +29,6 @@
 
 /* module/ownet/c/src/c/error.c & module/owlib/src/c/error.c are identical */
 
-const char sem_init_failed[] = "semaphore_init failed rc=%d [%s]\n";
 const char mutex_init_failed[] = "mutex_init failed rc=%d [%s]\n";
 const char mutex_destroy_failed[] = "mutex_destroy failed rc=%d [%s]\n";
 const char mutex_lock_failed[] = "mutex_lock failed rc=%d [%s]\n";
@@ -42,9 +41,16 @@ const char rwlock_read_lock_failed[] = "rwlock_read_lock failed rc=%d [%s]\n";
 const char rwlock_read_unlock_failed[] = "rwlock_read_unlock failed rc=%d [%s]\n";
 const char cond_timedwait_failed[] = "cond_timedwait failed rc=%d [%s]\n";
 const char cond_signal_failed[] = "cond_signal failed rc=%d [%s]\n";
+const char cond_broadcast_failed[] = "cond_broadcast failed rc=%d [%s]\n";
 const char cond_wait_failed[] = "cond_wait failed rc=%d [%s]\n";
 const char cond_init_failed[] = "cond_init failed rc=%d [%s]\n";
 const char cond_destroy_failed[] = "cond_destroy failed rc=%d [%s]\n";
+const char sem_init_failed[] = "sem_init failed rc=%d [%s]\n";
+const char sem_post_failed[] = "sem_post failed rc=%d [%s]\n";
+const char sem_wait_failed[] = "sem_wait failed rc=%d [%s]\n";
+const char sem_trywait_failed[] = "sem_trywait failed rc=%d [%s]\n";
+const char sem_timedwait_failed[] = "sem_timedwait failed rc=%d [%s]\n";
+const char sem_destroy_failed[] = "sem_destroy failed rc=%d [%s]\n";
 
 static void err_format(char * format, int errno_save, const char * level_string, const char * file, int line, const char * func, const char * fmt);
 static void hex_print( const char * buf, int length ) ;
@@ -60,6 +66,27 @@ int log_available = 0;
 /* Print message and return to caller
  * Caller specifies "errnoflag" and "level" */
 #define MAXLINE     1023
+
+void print_timestamp_(const char * file, int line, const char * func, const char *fmt, ...)
+{
+	struct timeval tv;
+	char buf[MAXLINE + 3];
+	char format[MAXLINE + 3];
+	va_list va;
+
+	gettimeofday(&tv, NULL);
+	va_start(va, fmt);
+	snprintf(format, MAXLINE, "%s:%s(%d) %s", file,func,line,fmt);  /* safe */
+
+#ifdef HAVE_VSNPRINTF
+	vsnprintf(buf, MAXLINE, format, va);    /* safe */
+#else
+	vsprintf(buf, format, va);      /* not safe */
+#endif
+
+	fprintf(stderr, "%ld DEFAULT: %s %ld.%06ld\n", time(NULL), buf, tv.tv_sec, tv.tv_usec);
+	fflush(stderr);
+}
 
 void err_msg(enum e_err_type errnoflag, enum e_err_level level, const char * file, int line, const char * func, const char *fmt, ...)
 {
@@ -253,7 +280,8 @@ void fatal_error(const char * file, int line, const char * func, const char *fmt
 	}
 #endif /* OWNETC_OW_DEBUG */
 	va_end(ap);
-	exit(EXIT_FAILURE) ;
+	debug_crash(); // Core-dump to make it possible to trace down the problem!
+	//exit(EXIT_FAILURE) ;
 }
 
 static void err_format(char * format, int errno_save, const char * level_string, const char * file, int line, const char * func, const char * fmt)

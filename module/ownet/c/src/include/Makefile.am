@@ -15,6 +15,7 @@ EXTRA_DIST = ${header_DATA} \
         ow.h              \
         ow_localtypes.h   \
         ow_message.h      \
+        ow_mutex.h      \
         ow_mutexes.h      \
         ownetapi.h        \
         ow_pressure.h     \

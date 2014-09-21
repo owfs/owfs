@@ -46,8 +46,7 @@ AC_MSG_RESULT(Configuring ${PACKAGE}-${VERSION})
 
 AC_CONFIG_AUX_DIR(src/scripts/install)dnl
 
-#added based on libtoolize warning output
-AC_CONFIG_MACRO_DIR([m4])dnl
+AC_CONFIG_MACRO_DIR([src/scripts/m4])
 
 AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE(${PACKAGE}, ${VERSION})dnl
@@ -80,11 +79,6 @@ AC_PROG_INSTALL
 AC_LIBTOOL_WIN32_DLL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
-
-# Modern libtool prefers LT_INIT over AC_PROG_RABLIB
-#AC_PROG_RANLIB
-LT_INIT
-
 AC_PROG_AWK
 AC_LIBTOOL_DLOPEN
 AM_PROG_LIBTOOL
@@ -170,7 +164,7 @@ fi
 OWFSROOT="`pwd`"
 AC_SUBST(OWFSROOT)
 
-m4_include(acx_pthread.m4)
+m4_include([src/scripts/m4/acx_pthread.m4])
 
 # Checks for header files.
 AC_HEADER_DIRENT
@@ -194,6 +188,23 @@ AC_ARG_ENABLE(debug,
 ])
 AC_SUBST(ENABLE_DEBUG)
 AM_CONDITIONAL(ENABLE_DEBUG, test "${ENABLE_DEBUG}" = "true")
+
+# Test if mutex-debugging is enabled. Should not be enabled for smaller embedded systems
+ENABLE_MUTEX_DEBUG="true"
+AC_MSG_CHECKING([if mutexdebug is enabled])
+AC_ARG_ENABLE(mutexdebug,
+[  --enable-mutexdebug     Enable mutexdebug-output (default true)],
+[
+	AC_MSG_RESULT([$enableval])
+	if ! test "$enableval" = "yes" ; then
+		ENABLE_MUTEX_DEBUG="false"
+	fi
+],
+[
+	AC_MSG_RESULT([yes (default)])
+])
+AC_SUBST(ENABLE_MUTEX_DEBUG)
+AM_CONDITIONAL(ENABLE_MUTEX_DEBUG, test "${ENABLE_MUTEX_DEBUG}" = "true")
 
 # Test if OWSHELL should be supported
 ENABLE_OWSHELL="true"
@@ -1514,6 +1525,13 @@ else
 fi
 AC_SUBST(OW_DEBUG)
 
+if test "${ENABLE_MUTEX_DEBUG}" = "true" ; then
+	OW_MUTEX_DEBUG=1
+else
+	OW_MUTEX_DEBUG=0
+fi
+AC_SUBST(OW_MUTEX_DEBUG)
+
 if test "${ENABLE_OWMALLOC}" = "true" ; then
 	OW_ALLOC_DEBUG=1
 else
@@ -1703,6 +1721,11 @@ if test "${ENABLE_DEBUG}" = "true"; then
 	AC_MSG_RESULT([             Debug-output is enabled])
 else
 	AC_MSG_RESULT([             Debug-output is DISABLED])
+fi
+if test "${ENABLE_MUTEX_DEBUG}" = "true"; then
+	AC_MSG_RESULT([               Mutexdebug is enabled])
+else
+	AC_MSG_RESULT([               Mutexdebug is DISABLED])
 fi
 if test "${ENABLE_PROFILING}" = "true"; then
 	AC_MSG_RESULT([                Profiling is enabled])

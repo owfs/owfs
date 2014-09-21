@@ -22,6 +22,21 @@
 
 #include <stdarg.h>
 
+/* rwlocks in pthread is preferred. If not, use own implementation with semaphores. */
+#define PTHREAD_RWLOCK 1
+
+#if OW_MUTEX_DEBUG
+// Detect double unlock etc. (PTHREAD_MUTEX_ERRORCHECK)
+// This should not be used for smaller embedded systems
+#define EXTENDED_MUTEX_DEBUG
+
+// Allow debugging rwlocks.
+#define EXTENDED_RWLOCK_DEBUG
+#else
+#undef  EXTENDED_MUTEX_DEBUG
+#undef  EXTENDED_RWLOCK_DEBUG
+#endif
+
 /* module/ownet/c/src/include/ow_debug.h & module/owlib/src/include/ow_debug.h
    are identical except this define */
 //#define OWNETC_OW_DEBUG 1
@@ -40,7 +55,16 @@ void _Debug_Bytes(const char *title, const unsigned char *buf, int length);
 void fatal_error(const char * file, int line, const char * func, const char *fmt, ...);
 static inline int return_ok(void) { return 0; }
 
+void print_timestamp_(const char * file, int line, const char * func, const char *fmt, ...);
+#define print_timestamp(...)    print_timestamp_(__FILE__,__LINE__,__func__,__VA_ARGS__);
+
 extern int log_available;
+
+#define debug_crash() {													\
+		char *crash_ptr = NULL;											\
+		print_timestamp_(__FILE__,__LINE__,__func__,"debug_crash");     \
+		*crash_ptr = '\000';											\
+	} //lint -e413 Force Core-dump to allow debugging the core-file
 
 #if OW_DEBUG
 #define LEVEL_DEFAULT(...)    if (Globals.error_level>=e_err_default) {\
@@ -104,78 +128,6 @@ extern int log_available;
 #define SNformat	"%.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X"
 #define SNvar(sn)	(sn)[0],(sn)[1],(sn)[2],(sn)[3],(sn)[4],(sn)[5],(sn)[6],(sn)[7]
 
-extern const char  sem_init_failed[];
-// FreeBSD note: if we continue with failed semaphores, we WILL segfault later on.
-#define my_sem_init(sem, shared, value)              do {\
-	int mrc = sem_init(sem, shared, value);	            \
-	if(mrc != 0) { fprintf(stderr, sem_init_failed,        errno, strerror(errno)); \
-		if(errno == 28) { \
-			LEVEL_DEFAULT("Too many semaphores running, please run fewer apps utilizing semaphores (owfs apps for example), or tweak sysctl kern.ipc.sem*. Exiting.\n"); \
-		} \
-		FATAL_ERROR(sem_init_failed, mrc, strerror(mrc));			\
-	}} while(0)
- 
- 
-/* Need to define those functions to get FILE and LINE information */
-
-extern const char  mutex_init_failed[];
-#define my_pthread_mutex_init(mutex, attr)              do {\
-	int mrc = pthread_mutex_init(mutex, attr);	            \
-	if(mrc != 0) { FATAL_ERROR( mutex_init_failed,        mrc, strerror(mrc)); }} while(0)
-
-extern const char  mutex_destroy_failed[];
-#define my_pthread_mutex_destroy(mutex)                 do {\
-	int mrc = pthread_mutex_destroy(mutex);                 \
-	if(mrc != 0) { FATAL_ERROR( mutex_destroy_failed,     mrc, strerror(mrc)); }} while(0)
-
-extern const char  mutex_lock_failed[];
-#define my_pthread_mutex_lock(mutex)                    do {\
-	int mrc = pthread_mutex_lock(mutex);		            \
-	if(mrc != 0) { FATAL_ERROR( mutex_lock_failed,        mrc, strerror(mrc)); }} while (0)
-
-extern const char  mutex_unlock_failed[];
-#define my_pthread_mutex_unlock(mutex)                  do {\
-	int mrc = pthread_mutex_unlock(mutex);                  \
-	if(mrc != 0) { FATAL_ERROR( mutex_unlock_failed,      mrc, strerror(mrc)); }} while (0)
-
-extern const char  mutexattr_init_failed[];
-#define my_pthread_mutexattr_init(attr)                 do {\
-	int mrc = pthread_mutexattr_init(attr);	                \
-	if(mrc != 0) { FATAL_ERROR( mutexattr_init_failed,    mrc, strerror(mrc)); }} while (0)
-
-extern const char  mutexattr_destroy_failed[];
-#define my_pthread_mutexattr_destroy(attr)              do {\
-	int mrc = pthread_mutexattr_destroy(attr);	            \
-	if(mrc != 0) { FATAL_ERROR( mutexattr_destroy_failed, mrc, strerror(mrc)); }} while (0)
-
-extern const char  mutexattr_settype_failed[];
-#define my_pthread_mutexattr_settype(attr, typ)         do {\
-	int mrc = pthread_mutexattr_settype(attr, typ);	        \
-	if(mrc != 0) { FATAL_ERROR( mutexattr_settype_failed, mrc, strerror(mrc)); }} while (0)
-
-extern const char  cond_timedwait_failed[];
-#define my_pthread_cond_timedwait(cond, mutex, abstime)	do {\
-	int mrc = pthread_cond_timedwait(cond, mutex, abstime);	\
-	if(mrc != 0) { FATAL_ERROR( cond_timedwait_failed,    mrc, strerror(mrc)); }} while (0)
-
-extern const char  cond_wait_failed[];
-#define my_pthread_cond_wait(cond, mutex)	            do {\
-	int mrc = pthread_cond_wait(cond, mutex);	            \
-	if(mrc != 0) { FATAL_ERROR( cond_wait_failed,         mrc, strerror(mrc)); }} while (0)
-
-extern const char  cond_signal_failed[];
-#define my_pthread_cond_signal(cond)	                do {\
-	int mrc = pthread_cond_signal(cond);	                \
-	if(mrc != 0) { FATAL_ERROR( cond_signal_failed,       mrc, strerror(mrc)); }} while (0)
-
-extern const char  cond_init_failed[];
-#define my_pthread_cond_init(cond, attr)                do {\
-	int mrc = pthread_cond_init(cond, attr);			    \
-	if(mrc != 0) { FATAL_ERROR( cond_init_failed,         mrc, strerror(mrc)); }} while (0)
-
-extern const char  cond_destroy_failed[];
-#define my_pthread_cond_destroy(cond)	                do {\
-	int mrc = pthread_cond_destroy(cond);	                \
-	if(mrc != 0) { FATAL_ERROR( cond_destroy_failed,      mrc, strerror(mrc)); }} while (0)
+#include "ow_mutex.h"
 
 #endif							/* OW_DEBUG_H */

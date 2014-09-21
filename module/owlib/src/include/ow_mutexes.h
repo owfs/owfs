@@ -51,6 +51,8 @@
 #define OW_MUTEXES_H
 
 #include <pthread.h>
+#include "ow_mutex.h"
+
 #define DEFAULT_THREAD_ATTR	NULL
 
 extern struct mutexes {

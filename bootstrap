@@ -1,4 +1,4 @@
 #! /bin/sh
 
 rm -rf *cache
-aclocal && autoheader && autoconf && automake && echo "Run './configure' and 'make' to build owfs"
+libtoolize -f -c -i && aclocal -I src/scripts/m4 && autoheader && autoconf && automake -a -c --foreign && echo "Run './configure' and 'make' to build owfs"

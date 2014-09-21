@@ -35,8 +35,8 @@ void LockSetup(void)
 	/* global mutex attribute */
 	_MUTEX_ATTR_INIT(Mutex.mattr);
 
-  #ifdef __UCLIBC__
-    #if ((__UCLIBC_MAJOR__ << 16)+(__UCLIBC_MINOR__ << 8)+(__UCLIBC_SUBLEVEL__) < 0x00091D)
+#ifdef __UCLIBC__
+#if ((__UCLIBC_MAJOR__ << 16)+(__UCLIBC_MINOR__ << 8)+(__UCLIBC_SUBLEVEL__) < 0x00091D)
 	/* If uClibc < 0.9.29, then re-initialize internal pthread-structs
 	 * pthread and mutexes doesn't work after daemon() is called and
 	 *   the main-process is gone.
@@ -47,22 +47,31 @@ void LockSetup(void)
 	__pthread_initial_thread_bos = NULL;
 	__pthread_initialize();
 
+	/* global mutex attribute */
 	_MUTEX_ATTR_SET(Mutex.mattr, PTHREAD_MUTEX_ADAPTIVE_NP);
-    #else /* UCLIBC_VERSION */
+#else /* UCLIBC_VERSION */
 	_MUTEX_ATTR_SET(Mutex.mattr, PTHREAD_MUTEX_DEFAULT);
-    #endif							/* UCLIBC_VERSION */
+#endif							/* UCLIBC_VERSION */
+#define MUTEX_ATTR_INIT_DONE
 	_MUTEX_INIT(Mutex.uclibc_mutex);
-  #else /* __UCLIBC__ */
-	_MUTEX_ATTR_SET(Mutex.mattr, PTHREAD_MUTEX_DEFAULT);   
-  #endif							/* __UCLIBC__ */
+#endif							/* __UCLIBC__ */
 
+#ifndef MUTEX_ATTR_INIT_DONE
+#define MUTEX_ATTR_INIT_DONE
+#ifdef EXTENDED_MUTEX_DEBUG
+	_MUTEX_ATTR_SET(Mutex.mattr, PTHREAD_MUTEX_ERRORCHECK);
+#else
+	_MUTEX_ATTR_SET(Mutex.mattr, PTHREAD_MUTEX_DEFAULT);
+#endif
+#endif
+	
 	_MUTEX_INIT(Mutex.stat_mutex);
 	_MUTEX_INIT(Mutex.controlflags_mutex);
 	_MUTEX_INIT(Mutex.fstat_mutex);
 	_MUTEX_INIT(Mutex.dir_mutex);
-  #if OW_USB
+#if OW_USB
 	_MUTEX_INIT(Mutex.libusb_mutex);
-  #endif							/* OW_USB */
+#endif							/* OW_USB */
 	_MUTEX_INIT(Mutex.typedir_mutex);
 	_MUTEX_INIT(Mutex.externaldir_mutex);
 	_MUTEX_INIT(Mutex.namefind_mutex);

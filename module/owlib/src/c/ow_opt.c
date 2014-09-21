@@ -106,6 +106,8 @@ const struct option owopts_long[] = {
 	{"foreground", no_argument, NO_LINKED_VAR, e_want_foreground},
 	{"fatal_debug", no_argument, &Globals.fatal_debug, 1},
 	{"fatal-debug", no_argument, &Globals.fatal_debug, 1},
+	{"nofatal_debug", no_argument, &Globals.fatal_debug, 0},
+	{"nofatal-debug", no_argument, &Globals.fatal_debug, 0},
 	{"fatal_debug_file", required_argument, NO_LINKED_VAR, e_fatal_debug_file},
 	{"fatal-debug-file", required_argument, NO_LINKED_VAR, e_fatal_debug_file},
 	{"error_print", required_argument, NO_LINKED_VAR, e_error_print},

@@ -49,7 +49,7 @@ struct global Globals = {
 	.error_level = e_err_default,
 	.error_level_restore = e_err_default,
 	.error_print = e_err_print_mixed,
-	.fatal_debug = 0,
+	.fatal_debug = 1,
 	.fatal_debug_file = NULL,
 
 	.concurrent_connections = 10,

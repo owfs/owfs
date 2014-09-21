@@ -1,8 +1,10 @@
+ACLOCAL_AMFLAGS = -I src/scripts/m4
+
 SUBDIRS = src module
 RPMMACROS = ${HOME}/.rpmmacros
 RPMDIR = ${HOME}/.rpm
 
-EXTRA_DIST = bootstrap acx_pthread.m4
+EXTRA_DIST = bootstrap
 
 clean-generic:
 
