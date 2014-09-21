@@ -51,7 +51,7 @@ void COM_slurp( struct connection_in * connection ) {
 			LEVEL_DEBUG("Unimplemented");
 			return ;
 		case ct_serial:
-			usec = 1000 ;
+			usec = 100000 ; // timeout increased for slurp based on Johan Strom's recommendation
 			break ;
 	}
 
