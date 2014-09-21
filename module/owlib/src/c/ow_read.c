@@ -6,7 +6,6 @@
     Released under the GPL
     See the header file: ow.h for full attribution
     1wire/iButton system from Dallas Semiconductor
-$ID: $
 */
 
 #include <config.h>

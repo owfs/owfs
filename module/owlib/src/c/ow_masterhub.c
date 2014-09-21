@@ -77,9 +77,11 @@ static void MasterHub_powerdown(struct connection_in * in) ;
 static GOOD_OR_BAD MasterHub_sender_ascii( char cmd, ASCII * data, int length, struct connection_in * in ) ;
 static GOOD_OR_BAD MasterHub_sender_bytes( char cmd, BYTE * data, int length, struct connection_in * in );
 
+static SIZE_OR_ERROR MasterHub_readin( BYTE * data, size_t minlength, size_t maxlength, struct connection_in * in ) ;
 static GOOD_OR_BAD MasterHub_read(BYTE * buf, size_t size, struct connection_in * in) ;
 
 static GOOD_OR_BAD MasterHub_sync(struct connection_in *in) ;
+static GOOD_OR_BAD MasterHub_available(struct connection_in *in) ;
 
 static void MasterHub_setroutines(struct connection_in *in)
 {
@@ -124,29 +126,14 @@ GOOD_OR_BAD MasterHub_detect(struct port_in *pin)
 	RETURN_BAD_IF_BAD(COM_open(in)) ;
 	COM_slurp(in) ;
 	MasterHub_sync(in) ;
-	if ( GOOD( gbRESET( MasterHub_reset(&pn) ) ) ) {
+	if ( GOOD( MasterHub_sync(in) ) ) {
 		in->Adapter = adapter_masterhub ;
 		in->adapter_name = "MasterHub/S";
+		MasterHub_available( in ) ;
 		return gbGOOD;
-	}
-	MasterHub_sync(in) ;
-	if ( GOOD( serial_powercycle(in) ) ) {
-		COM_slurp(in) ;
-		if ( GOOD( gbRESET( MasterHub_reset(&pn) ) ) ) {
-			in->Adapter = adapter_masterhub ;
-			in->adapter_name = "MasterHub/S";
-			return gbGOOD;
-		}
 	}
 	
 	pin->flow = flow_second; // flow control
-	RETURN_BAD_IF_BAD(COM_change(in)) ;
-	COM_slurp(in) ;
-	if ( GOOD( gbRESET( MasterHub_reset(&pn) ) ) ) {
-		in->Adapter = adapter_masterhub ;
-		in->adapter_name = "MasterHub/S";
-		return gbGOOD;
-	}
 	
 	LEVEL_DEFAULT("Error in MasterHub detection: can't perform RESET");
 	return gbBAD;
@@ -481,17 +468,93 @@ static GOOD_OR_BAD MasterHub_read(BYTE * buf, size_t size, struct connection_in 
 
 static GOOD_OR_BAD MasterHub_sync(struct connection_in *in)
 {
-	BYTE read_buffer[4] ;
-	BYTE happy_return[] = { '+', 0x0D, 0x0A, '?' } ;
+	int attempts ;
 	
-	do { 
-		COM_slurp(in) ;
-		RETURN_BAD_IF_BAD( MasterHub_sender_ascii( MH_sync, "", 0, in ) ) ;
-		MasterHub_read( read_buffer, 4, in ) ;
-		_Debug_Bytes( "sync return", read_buffer, 4 ) ;
-	} while ( memcmp( read_buffer, happy_return, 4 ) != 0 ) ;
+	// Try to sync a few times until successful
+	for ( attempts = 0 ; attempts < 4 ; ++ attempts ) {
+		BYTE read_buffer[4] ;
+		BYTE happy_return[] = { '+', 0x0D, 0x0A, '?' } ;
+	
+		COM_slurp(in) ; // empty pending data
 
-	LEVEL_DEBUG("Successful Sync") ;
+		RETURN_BAD_IF_BAD( MasterHub_sender_ascii( MH_sync, "", 0, in ) ) ; // send sync
+		MasterHub_read( read_buffer, 4, in ) ; // read back
+		
+		if ( memcmp( read_buffer, happy_return, 4 ) == 0 ) {
+			LEVEL_DEBUG("Successful Sync") ;
+			return gbGOOD ;
+		}
+			
+		_Debug_Bytes( "Bad sync response:", read_buffer, 4 ) ;
+	}
 
+	LEVEL_DEBUG("Sync failure") ;
 	return gbBAD ;
+}
+
+// data is a buffer of *length size
+// returns data and length  -- don't include preamble (+ ) and post-amble (\r\n?)
+static SIZE_OR_ERROR MasterHub_readin( BYTE * data, size_t minlength, size_t maxlength, struct connection_in * in )
+{
+	size_t min_l = 2 + 2 + 1 ; // "+ \r\n?" or "! \r\n?"
+	size_t max_l = 250 ;
+	BYTE buffer[max_l+min_l] ;
+	SIZE_OR_ERROR length ;
+	BYTE end_string[] = { 0x0D, 0x0A, '?' } ;
+	
+	if ( max_l < maxlength ) {
+		LEVEL_DEBUG( "read too large" ) ;
+		return gbBAD ;
+	}
+	
+	memset( data, 0, maxlength ) ; // zero-fill
+	
+	// read enough for error
+	RETURN_BAD_IF_BAD( MasterHub_read( buffer, min_l, in ) ) ;
+	
+	if ( buffer[0] != '+' ) {
+		// An error return from the hub
+		if ( buffer[min_l-1] != '?' ) {
+			// more to read in than the minimum
+			COM_slurp( in ) ;
+		}
+	}
+	
+	if ( maxlength == 0 ) {
+		// no data
+		return 0 ;
+	}
+	
+	// read rest of minimum
+	RETURN_BAD_IF_BAD( MasterHub_read( &buffer[min_l], minlength, in ) ) ;
+	
+	for ( length = minlength ; length < ( ssize_t) maxlength ; ++length ) {
+		if ( memcmp( &buffer[ length+min_l-3 ], end_string, 3 ) == 0 ) {
+			// Success!
+			memcpy( data, &buffer[2], length ) ;
+			return length ;
+		} 
+		RETURN_BAD_IF_BAD( MasterHub_read( &buffer[min_l+length], 1, in ) ) ;
+	}
+
+	memcpy( data, &buffer[2], maxlength ) ;
+	return maxlength ;
+}	
+
+static GOOD_OR_BAD MasterHub_available(struct connection_in *in)
+{
+	SIZE_OR_ERROR length ;
+	BYTE data[6] ;
+	
+	RETURN_BAD_IF_BAD( MasterHub_sender_ascii( MH_available, "", 0, in ) ) ; // send available
+	
+	// two possible returns: A1234 and A1234W
+	length = MasterHub_readin( data, 5, 6, in ) ;
+	
+	if ( length < 0 ) {
+		return gbBAD ;
+	}
+	
+	LEVEL_DEBUG( "Available %*s", length, data ) ;
+	return gbGOOD ;
 }

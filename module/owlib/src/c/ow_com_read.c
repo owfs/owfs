@@ -117,6 +117,7 @@ static SIZE_OR_ERROR COM_read_get_size( BYTE * data, size_t length, struct conne
 {
 	size_t actual_size ;
 	struct port_in * pin = connection->pown ;
+	// tcp_read seems to work with serial and network
 	ZERO_OR_ERROR zoe = tcp_read( pin->file_descriptor, data, length, &(pin->timeout), &actual_size ) ;
 
 	if ( zoe < 0 ) {
