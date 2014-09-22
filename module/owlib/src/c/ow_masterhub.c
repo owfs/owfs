@@ -64,6 +64,8 @@
 
 //static void byteprint( const BYTE * b, int size ) ;
 static RESET_TYPE MasterHub_reset(const struct parsedname *pn);
+static RESET_TYPE MasterHub_reset_once(struct connection_in * in) ;
+
 static enum search_status MasterHub_next_both(struct device_search *ds, const struct parsedname *pn);
 static GOOD_OR_BAD MasterHub_sendback_part(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn) ;
 static GOOD_OR_BAD MasterHub_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
@@ -71,13 +73,12 @@ static void MasterHub_setroutines(struct connection_in *in);
 static void MasterHub_close(struct connection_in *in);
 static GOOD_OR_BAD MasterHub_directory( struct device_search *ds, const struct parsedname *pn);
 static GOOD_OR_BAD MasterHub_select( const struct parsedname * pn ) ;
-static void MasterHub_resync( const struct parsedname * pn ) ;
-static void MasterHub_powerdown(struct connection_in * in) ;
 
 static GOOD_OR_BAD MasterHub_sender_ascii( char cmd, ASCII * data, int length, struct connection_in * in ) ;
-static GOOD_OR_BAD MasterHub_sender_bytes( char cmd, BYTE * data, int length, struct connection_in * in );
+static GOOD_OR_BAD MasterHub_sender_bytes( char cmd, const BYTE * data, int length, struct connection_in * in );
 
-static SIZE_OR_ERROR MasterHub_readin( BYTE * data, size_t minlength, size_t maxlength, struct connection_in * in ) ;
+static SIZE_OR_ERROR MasterHub_readin( ASCII * data, size_t minlength, size_t maxlength, struct connection_in * in ) ;
+static SIZE_OR_ERROR MasterHub_readin_bytes( BYTE * data, size_t length, struct connection_in * in ) ;
 static GOOD_OR_BAD MasterHub_read(BYTE * buf, size_t size, struct connection_in * in) ;
 
 static GOOD_OR_BAD MasterHub_sync(struct connection_in *in) ;
@@ -125,15 +126,9 @@ GOOD_OR_BAD MasterHub_detect(struct port_in *pin)
 	COM_set_standard( in ) ; // standard COM port settings
 	RETURN_BAD_IF_BAD(COM_open(in)) ;
 	COM_slurp(in) ;
-	MasterHub_sync(in) ;
 	if ( GOOD( MasterHub_sync(in) ) ) {
-		in->Adapter = adapter_masterhub ;
-		in->adapter_name = "MasterHub/S";
-		MasterHub_available( in ) ;
-		return gbGOOD;
+		return MasterHub_available( in ) ;
 	}
-	
-	pin->flow = flow_second; // flow control
 	
 	LEVEL_DEFAULT("Error in MasterHub detection: can't perform RESET");
 	return gbBAD;
@@ -141,20 +136,35 @@ GOOD_OR_BAD MasterHub_detect(struct port_in *pin)
 
 static RESET_TYPE MasterHub_reset(const struct parsedname *pn)
 {
-	BYTE resp[1];
+	struct connection_in * in = pn->selected_connection ;
+	
+	if ( MasterHub_reset_once(in) != BUS_RESET_OK ) {
 
-	COM_flush(pn->selected_connection);
-	if ( BAD(COM_write((BYTE*)"R", 1, pn->selected_connection)) ) {
-		LEVEL_DEBUG("Error sending MasterHub reset");
+		// resync and retry
+		MasterHub_sync( in ) ;
+		return MasterHub_reset_once( in ) ;
+	}
+
+	return BUS_RESET_OK;
+}
+
+// single send
+static RESET_TYPE MasterHub_reset_once(struct connection_in * in)
+{
+	ASCII resp[11];
+	SIZE_OR_ERROR length ;
+	
+	RETURN_BAD_IF_BAD( MasterHub_sender_ascii( MH_reset, "", 0, in ) ) ; // send reset
+	
+	// two possible returns: "Presence" and "No Presence"
+	length = MasterHub_readin( resp, 8, 11, in ) ;
+	
+	if ( length == -1 ) {
 		return BUS_RESET_ERROR;
 	}
-	if ( BAD(COM_read(resp, 1, pn->selected_connection)) ) {
-		LEVEL_DEBUG("Error reading MasterHub reset");
-		return BUS_RESET_ERROR;
-	}
-	if (resp[0]!=0x0D) {
-		LEVEL_DEBUG("Error MasterHub reset bad <cr>");
-		return BUS_RESET_ERROR;
+	
+	if ( length == 11 ) {
+		in->AnyDevices = anydevices_no ;
 	}
 	return BUS_RESET_OK;
 }
@@ -165,9 +175,8 @@ static enum search_status MasterHub_next_both(struct device_search *ds, const st
 		return search_done;
 	}
 
-	COM_flush(pn->selected_connection);
-
 	if (ds->index == -1) {
+		// gulp it in
 		if ( BAD( MasterHub_directory(ds, pn) ) ) {
 			return search_error;
 		}
@@ -200,9 +209,8 @@ static enum search_status MasterHub_next_both(struct device_search *ds, const st
 /************************************************************************/
 static GOOD_OR_BAD MasterHub_directory(struct device_search *ds, const struct parsedname *pn)
 {
-	char resp[17];
-	BYTE sn[SERIAL_NUMBER_SIZE];
-	char *first, *next, *current ;
+	struct connection_in * in = pn->selected_connection ;
+	char first, next, current ;
 
 	DirblobClear( &(ds->gulp) );
 
@@ -212,39 +220,52 @@ static GOOD_OR_BAD MasterHub_directory(struct device_search *ds, const struct pa
 	//tF0 -- Normal searching
 
 	// Send the configuration command and check response
+
 	if (ds->search == _1W_CONDITIONAL_SEARCH_ROM) {
-		first = "C" ;
-		next = "c" ;
+		LEVEL_DEBUG("Conditional search not supported on MasterHub")
+		first = MH_first ;
+		next = MH_next ;
 	} else {
-		first = "S" ;
-		next = "s" ;
+		first = MH_first ;
+		next = MH_next ;
 	}
 	current = first ;
 
+	if ( MasterHub_reset( pn ) != BUS_RESET_OK ) {
+		LEVEL_DEBUG("Unable to reset MasterHub for directory search") ;
+		return gbBAD ;
+	}
+	
 	while (1) {
-		if ( BAD(COM_write((BYTE*)current, 1, pn->selected_connection)) ) {
-			MasterHub_resync(pn) ;
+		SIZE_OR_ERROR length ;
+		ASCII resp[16];
+		BYTE sn[SERIAL_NUMBER_SIZE];
+
+		RETURN_BAD_IF_BAD( MasterHub_sender_ascii( current, "", 0, in ) ) ; // request directory element
+	
+		/* three possible returns:
+		* No more devices
+		* No devices found
+		* 6300080054141010
+		* */
+		length = MasterHub_readin( resp, 15, 16, in ) ;
+
+		if ( length < 0 ) {
+			LEVEL_DEBUG("Error reading MasterHub directory" );
 			return gbBAD ;
 		}
+
 		current = next ; // set up for next pass
-		//One needs to check the first character returned.
-		//If nothing is found, the MasterHub will timeout rather then have a quick
-		//return.  This happens when looking at the alarm directory and
-		//there are no alarms pending
-		//So we grab the first character and check it.  If not an E leave it
-		//in the resp buffer and get the rest of the response from the MasterHub
-		//device
-		if ( BAD(COM_read((BYTE*)resp, 1, pn->selected_connection)) ) {
-			MasterHub_resync(pn) ;
-			return gbBAD ;
+
+		if ( length == 15 ) {
+			// No more devices
+			return gbGOOD ;
 		}
-		if ( resp[0] == 0x0D ) {
-			return gbGOOD ; // end of list
+		
+		if ( strncmp( resp, "No devices found", 16 ) == 0 ) {
+			return gbGOOD ;
 		}
-		if ( BAD(COM_read((BYTE*)&resp[1], 16, pn->selected_connection)) ) {
-			MasterHub_resync(pn) ;
-			return gbBAD ;
-		}
+
 		sn[7] = string2num(&resp[0]);
 		sn[6] = string2num(&resp[2]);
 		sn[5] = string2num(&resp[4]);
@@ -258,17 +279,12 @@ static GOOD_OR_BAD MasterHub_directory(struct device_search *ds, const struct pa
 		memcpy( pn->selected_connection->remembered_sn, sn, SERIAL_NUMBER_SIZE) ;
 
 		LEVEL_DEBUG("SN found: " SNformat, SNvar(sn));
-		if ( resp[16]!=0x0D ) {
-			MasterHub_resync(pn) ;
-			return gbBAD ;
-		}
 
 		// CRC check
 		if (CRC8(sn, SERIAL_NUMBER_SIZE) || (sn[0] == 0)) {
 			/* A minor "error" and should perhaps only return -1 */
 			/* to avoid reconnect */
-			LEVEL_DEBUG("sn = %s", sn);
-			MasterHub_resync(pn) ;
+			LEVEL_DEBUG("CRC error sn = %s", sn);
 			return gbBAD ;
 		}
 
@@ -276,89 +292,67 @@ static GOOD_OR_BAD MasterHub_directory(struct device_search *ds, const struct pa
 	}
 }
 
-static void MasterHub_resync( const struct parsedname * pn )
-{
-	COM_flush(pn->selected_connection);
-	MasterHub_reset(pn);
-	COM_flush(pn->selected_connection);
-
-	// Poison current "Address" for adapter
-	memset( pn->selected_connection->remembered_sn, 0, SERIAL_NUMBER_SIZE ) ; // so won't match
-}
-
 static GOOD_OR_BAD MasterHub_select( const struct parsedname * pn )
 {
-	char send_address[18] ;
-	char resp_address[17] ;
+	struct connection_in * in = pn->selected_connection ;
 
 	if ( (pn->selected_device==NO_DEVICE) || (pn->selected_device==DeviceThermostat) ) {
 		return gbRESET( MasterHub_reset(pn) ) ;
 	}
 
-	send_address[0] = 'A' ;
-	num2string( &send_address[ 1], pn->sn[7] ) ;
-	num2string( &send_address[ 3], pn->sn[6] ) ;
-	num2string( &send_address[ 5], pn->sn[5] ) ;
-	num2string( &send_address[ 7], pn->sn[4] ) ;
-	num2string( &send_address[ 9], pn->sn[3] ) ;
-	num2string( &send_address[11], pn->sn[2] ) ;
-	num2string( &send_address[13], pn->sn[1] ) ;
-	num2string( &send_address[15], pn->sn[0] ) ;
-	send_address[17] = 0x0D;
-
-	if ( memcmp( pn->sn, pn->selected_connection->remembered_sn, SERIAL_NUMBER_SIZE ) ) {
-		if ( BAD(COM_write((BYTE*)send_address,18,pn->selected_connection)) ) {
-			LEVEL_DEBUG("Error with sending MasterHub A-ddress") ;
-			MasterHub_resync(pn) ;
-			return gbBAD ;
-		}
-	} else {
-		if ( BAD(COM_write((BYTE*)"M",1,pn->selected_connection)) ) {
-			LEVEL_DEBUG("Error with sending MasterHub M-atch") ;
-			MasterHub_resync(pn) ;
-			return gbBAD ;
-		}
-	}
-	if ( BAD(COM_read((BYTE*)resp_address,17,pn->selected_connection)) ) {
-		LEVEL_DEBUG("Error with reading MasterHub select") ;
-		MasterHub_resync(pn) ;
+	if ( MasterHub_reset( pn ) != BUS_RESET_OK ) {
+		LEVEL_DEBUG("Unable to reset MasterHub for device addressing") ;
 		return gbBAD ;
 	}
-	if ( memcmp( &resp_address[0],&send_address[1],17) ) {
-		LEVEL_DEBUG("Error with MasterHub select response") ;
-		MasterHub_resync(pn) ;
-		return gbBAD ;
+	
+	if ( memcmp( pn->sn, pn->selected_connection->remembered_sn, SERIAL_NUMBER_SIZE ) != 0 ) {
+		// not already remembered here
+		char send_address[16] ;
+		char resp[22] ;
+		SIZE_OR_ERROR length ;
+		
+		num2string( &send_address[ 0], pn->sn[7] ) ;
+		num2string( &send_address[ 2], pn->sn[6] ) ;
+		num2string( &send_address[ 4], pn->sn[5] ) ;
+		num2string( &send_address[ 6], pn->sn[4] ) ;
+		num2string( &send_address[ 8], pn->sn[3] ) ;
+		num2string( &send_address[10], pn->sn[2] ) ;
+		num2string( &send_address[12], pn->sn[1] ) ;
+		num2string( &send_address[14], pn->sn[0] ) ;
+		
+		// Send command
+		RETURN_BAD_IF_BAD( MasterHub_sender_ascii( MH_address, send_address, 16, in ) ) ;
+		
+		/* Possible responses:
+		 * +
+		 * ! Network Error
+		 * ! Device Not Found Error
+		 * */
+		length = MasterHub_readin( resp, 0, 22, in ) ;
+		
+		if ( length < 0 ) {
+			return gbBAD ;
+		} 
+		// Set as current "Address" for adapter
+		memcpy( pn->selected_connection->remembered_sn, pn->sn, SERIAL_NUMBER_SIZE) ;
 	}
-
-	// Set as current "Address" for adapter
-	memcpy( pn->selected_connection->remembered_sn, pn->sn, SERIAL_NUMBER_SIZE) ;
 
 	return gbGOOD ;
 }
 
-//  Send data and return response block -- up to 32 bytes
+//  Send data and return response block -- up to 120 bytes
 static GOOD_OR_BAD MasterHub_sendback_part(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
 {
-	char send_data[1+2+32*2+1] ;
-	char get_data[32*2+1] ;
+	struct connection_in * in = pn->selected_connection ;
+	SIZE_OR_ERROR length ;
 
-	send_data[0] = 'W' ;
-	num2string( &send_data[1], size ) ;
-	bytes2string(&send_data[3], data, size) ;
-	send_data[3+2*size] = 0x0D ;
-
-	if ( BAD(COM_write((BYTE*)send_data,size*2+4,pn->selected_connection)) ) {
-		LEVEL_DEBUG("Error with sending MasterHub block") ;
-		MasterHub_resync(pn) ;
+	RETURN_BAD_IF_BAD( MasterHub_sender_bytes( MH_write, data, size, in ) ) ;
+	
+	length = MasterHub_readin_bytes( resp, size, in ) ;
+	
+	if ( length != (int) size ) {
 		return gbBAD ;
 	}
-	if ( BAD(COM_read((BYTE*)get_data,size*2+1,pn->selected_connection)) ) {
-		LEVEL_DEBUG("Error with reading MasterHub block") ;
-		MasterHub_resync(pn) ;
-		return gbBAD ;
-	}
-
-	string2bytes(get_data, resp, size) ;
 	return gbGOOD ;
 }
 
@@ -366,9 +360,9 @@ static GOOD_OR_BAD MasterHub_sendback_data(const BYTE * data, BYTE * resp, const
 {
 	int left;
 
-	for ( left=size ; left>0 ; left -= 32 ) {
+	for ( left=size ; left>0 ; left -= 120 ) {
 		size_t pass_start = size - left ;
-		size_t pass_size = (left>32)?32:left ;
+		size_t pass_size = (left>120)?120:left ;
 		RETURN_BAD_IF_BAD( MasterHub_sendback_part( &data[pass_start], &resp[pass_start], pass_size, pn ) ) ;
 	}
 	return gbGOOD;
@@ -382,25 +376,13 @@ static GOOD_OR_BAD MasterHub_sendback_data(const BYTE * data, BYTE * resp, const
 
 static void MasterHub_close(struct connection_in *in)
 {
-	MasterHub_powerdown(in) ;
 	COM_close(in);
 
 }
 
-static void MasterHub_powerdown(struct connection_in * in)
-{
-	struct parsedname pn;
-
-	FS_ParsedName_Placeholder(&pn);	// minimal parsename -- no destroy needed
-	pn.selected_connection = in;
-
-	COM_write((BYTE*)"P", 1, in) ;
-	COM_slurp(in) ;
-}
-
 // Send bytes to the master hub --
 // this routine converts the bytes to ascii hex and uses MasterHub_sender_ascii
-static GOOD_OR_BAD MasterHub_sender_bytes( char cmd, BYTE * data, int length, struct connection_in * in )
+static GOOD_OR_BAD MasterHub_sender_bytes( char cmd, const BYTE * data, int length, struct connection_in * in )
 {
 	char send_string[250] ;
 	bytes2string( send_string, data, length ) ;
@@ -469,6 +451,12 @@ static GOOD_OR_BAD MasterHub_read(BYTE * buf, size_t size, struct connection_in 
 static GOOD_OR_BAD MasterHub_sync(struct connection_in *in)
 {
 	int attempts ;
+	struct connection_in * channel ;
+	
+	// first clear "remembered" devices
+	for ( channel = in->pown->first ; channel != NO_CONNECTION ; channel = channel->next ) {
+		channel->remembered_sn[0] = 0 ; // essentially clears
+	}
 	
 	// Try to sync a few times until successful
 	for ( attempts = 0 ; attempts < 4 ; ++ attempts ) {
@@ -492,9 +480,23 @@ static GOOD_OR_BAD MasterHub_sync(struct connection_in *in)
 	return gbBAD ;
 }
 
+static SIZE_OR_ERROR MasterHub_readin_bytes( BYTE * data, size_t length, struct connection_in * in )
+{
+	ASCII buffer[250] ;
+	SIZE_OR_ERROR lengthback = MasterHub_readin( buffer, length*2, length*2, in ) ;
+	
+	if ( lengthback < 0 ) {
+		return lengthback ;
+	}
+	
+	string2bytes( buffer, data, length ) ;
+	
+	return length ;
+}
+
 // data is a buffer of *length size
 // returns data and length  -- don't include preamble (+ ) and post-amble (\r\n?)
-static SIZE_OR_ERROR MasterHub_readin( BYTE * data, size_t minlength, size_t maxlength, struct connection_in * in )
+static SIZE_OR_ERROR MasterHub_readin( ASCII * data, size_t minlength, size_t maxlength, struct connection_in * in )
 {
 	size_t min_l = 2 + 2 + 1 ; // "+ \r\n?" or "! \r\n?"
 	size_t max_l = 250 ;
@@ -512,14 +514,6 @@ static SIZE_OR_ERROR MasterHub_readin( BYTE * data, size_t minlength, size_t max
 	// read enough for error
 	RETURN_BAD_IF_BAD( MasterHub_read( buffer, min_l, in ) ) ;
 	
-	if ( buffer[0] != '+' ) {
-		// An error return from the hub
-		if ( buffer[min_l-1] != '?' ) {
-			// more to read in than the minimum
-			COM_slurp( in ) ;
-		}
-	}
-	
 	if ( maxlength == 0 ) {
 		// no data
 		return 0 ;
@@ -532,29 +526,62 @@ static SIZE_OR_ERROR MasterHub_readin( BYTE * data, size_t minlength, size_t max
 		if ( memcmp( &buffer[ length+min_l-3 ], end_string, 3 ) == 0 ) {
 			// Success!
 			memcpy( data, &buffer[2], length ) ;
+			if ( buffer[0] != '+' ) {
+				// an error of sorts
+				return -length ;
+			}
 			return length ;
 		} 
 		RETURN_BAD_IF_BAD( MasterHub_read( &buffer[min_l+length], 1, in ) ) ;
 	}
 
 	memcpy( data, &buffer[2], maxlength ) ;
+	if ( buffer[0] != '+' ) {
+		COM_slurp( in ) ;
+		return -maxlength ;
+	}
 	return maxlength ;
 }	
 
-static GOOD_OR_BAD MasterHub_available(struct connection_in *in)
+// Not only finds the available channels, but sets up the port and connections.
+// Note this is the only place to change if future hubs support more channels
+static GOOD_OR_BAD MasterHub_available(struct connection_in *head)
 {
 	SIZE_OR_ERROR length ;
-	BYTE data[6] ;
+	int index ;
+	ASCII data[6] ;
+	char *name[] = { "MasterHub(All)", "MasterHub(1)", "MasterHub(2)",
+		"MasterHub(3)", "MasterHub(4)", "MasterHub(W)",
+	};
 	
-	RETURN_BAD_IF_BAD( MasterHub_sender_ascii( MH_available, "", 0, in ) ) ; // send available
+	RETURN_BAD_IF_BAD( MasterHub_sender_ascii( MH_available, "", 0, head ) ) ; // send available
 	
 	// two possible returns: A1234 and A1234W
-	length = MasterHub_readin( data, 5, 6, in ) ;
+	length = MasterHub_readin( data, 5, 6, head ) ;
 	
 	if ( length < 0 ) {
 		return gbBAD ;
 	}
 	
 	LEVEL_DEBUG( "Available %*s", length, data ) ;
+	
+	for ( index = 1 ; index < length ; ++index ) {
+		struct connection_in * added ;
+		if ( index == 1 ) {
+			// already head
+			added = head ;
+		} else {
+			added = AddtoPort(head->pown);
+			if (added == NO_CONNECTION) {
+				return gbBAD;
+			}
+		}
+		added->master.masterhub.channel_char = data[index] ;
+		added->master.masterhub.channels = length - 1 ; // ignore 'A' (All channels)
+		added->adapter_name = name[index];
+		added->Adapter = adapter_masterhub ;
+		LEVEL_DEBUG( "Added %s on channel %c", added->adapter_name, added->master.masterhub.channel_char ) ;
+	}
+		
 	return gbGOOD ;
 }

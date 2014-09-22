@@ -29,7 +29,7 @@ struct connection_in;
 struct port_in ;
 
 /* -------------------------------------------- */
-/* bUS-MASTER-specific routines ---------------- */
+/* BUS-MASTER-specific routines ---------------- */
 #include "ow_master.h"
 
 #define CHANGED_USB_SPEED  0x001

@@ -89,9 +89,7 @@ struct master_i2c {
 struct master_masterhub {
 	// Need to lock directory for "next" command"
 	int channels;
-	int index;
 	char channel_char;
-	struct connection_in *head;
 };
 
 // Embedded Data Systems HA7 hub
