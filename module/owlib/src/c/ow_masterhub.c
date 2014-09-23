@@ -73,6 +73,7 @@ static void MasterHub_setroutines(struct connection_in *in);
 static void MasterHub_close(struct connection_in *in);
 static GOOD_OR_BAD MasterHub_directory( struct device_search *ds, const struct parsedname *pn);
 static GOOD_OR_BAD MasterHub_select( const struct parsedname * pn ) ;
+static GOOD_OR_BAD MasterHub_verify( const struct parsedname * pn ) ;
 
 static GOOD_OR_BAD MasterHub_sender_ascii( char cmd, ASCII * data, int length, struct connection_in * in ) ;
 static GOOD_OR_BAD MasterHub_sender_bytes( char cmd, const BYTE * data, int length, struct connection_in * in );
@@ -82,8 +83,12 @@ static SIZE_OR_ERROR MasterHub_readin_bytes( BYTE * data, size_t length, struct 
 static GOOD_OR_BAD MasterHub_read(BYTE * buf, size_t size, struct connection_in * in) ;
 
 static GOOD_OR_BAD MasterHub_powercycle(struct connection_in *in) ;
+
 static GOOD_OR_BAD MasterHub_sync(struct connection_in *in) ;
-static GOOD_OR_BAD MasterHub_available(struct connection_in *in) ;
+static GOOD_OR_BAD MasterHub_sync_once(struct connection_in *in) ;
+
+static GOOD_OR_BAD MasterHub_available(struct connection_in *head) ;
+static GOOD_OR_BAD MasterHub_available_once(struct connection_in *head) ;
 
 static void MasterHub_setroutines(struct connection_in *in)
 {
@@ -100,7 +105,7 @@ static void MasterHub_setroutines(struct connection_in *in)
 	in->iroutines.get_config = NO_GET_CONFIG_ROUTINE;
 	in->iroutines.reconnect = NO_RECONNECT_ROUTINE;
 	in->iroutines.close = MasterHub_close;
-	in->iroutines.verify = NO_VERIFY_ROUTINE ;
+	in->iroutines.verify = MasterHub_verify ;
 	in->iroutines.flags = ADAP_FLAG_dirgulp | ADAP_FLAG_bundle | ADAP_FLAG_dir_auto_reset | ADAP_FLAG_no2404delay ;
 	in->bundling_length = 240; // characters not bytes (in hex)
 }
@@ -124,7 +129,8 @@ GOOD_OR_BAD MasterHub_detect(struct port_in *pin)
 	/* Open the com port */
 	COM_set_standard( in ) ; // standard COM port settings
 	RETURN_BAD_IF_BAD(COM_open(in)) ;
-	RETURN_BAD_IF_BAD( MasterHub_powercycle(in) ) ;
+
+	// Sync, then get channels
 	if ( GOOD( MasterHub_sync(in) ) ) {
 		return MasterHub_available( in ) ;
 	}
@@ -338,6 +344,49 @@ static GOOD_OR_BAD MasterHub_select( const struct parsedname * pn )
 	return gbGOOD ;
 }
 
+static GOOD_OR_BAD MasterHub_verify( const struct parsedname * pn )
+{
+	struct connection_in * in = pn->selected_connection ;
+	char send_address[16] ;
+	char resp[22] ;
+	SIZE_OR_ERROR length ;
+
+	if ( (pn->selected_device==NO_DEVICE) || (pn->selected_device==DeviceThermostat) ) {
+		return gbRESET( MasterHub_reset(pn) ) ;
+	}
+
+	if ( MasterHub_reset( pn ) != BUS_RESET_OK ) {
+		LEVEL_DEBUG("Unable to reset MasterHub for device addressing") ;
+		return gbBAD ;
+	}
+	
+		
+	num2string( &send_address[ 0], pn->sn[7] ) ;
+	num2string( &send_address[ 2], pn->sn[6] ) ;
+	num2string( &send_address[ 4], pn->sn[5] ) ;
+	num2string( &send_address[ 6], pn->sn[4] ) ;
+	num2string( &send_address[ 8], pn->sn[3] ) ;
+	num2string( &send_address[10], pn->sn[2] ) ;
+	num2string( &send_address[12], pn->sn[1] ) ;
+	num2string( &send_address[14], pn->sn[0] ) ;
+	
+	// Send command
+	RETURN_BAD_IF_BAD( MasterHub_sender_ascii( MH_strong, send_address, 16, in ) ) ;
+	
+	/* Possible responses:
+	 * +
+	 * ! Network Error
+	 * ! Device Not Found Error
+	 * */
+	length = MasterHub_readin( resp, 0, 22, in ) ;
+	
+	if ( length < 0 ) {
+		return gbBAD ;
+	}
+
+	return gbGOOD ;
+}
+
 //  Send data and return response block -- up to 120 bytes
 static GOOD_OR_BAD MasterHub_sendback_part(const BYTE * data, BYTE * resp, const size_t size, const struct parsedname *pn)
 {
@@ -452,20 +501,35 @@ static GOOD_OR_BAD MasterHub_sync(struct connection_in *in)
 	
 	// Try to sync a few times until successful
 	for ( attempts = 0 ; attempts < 4 ; ++ attempts ) {
-		BYTE read_buffer[4] ;
-		BYTE happy_return[] = { '+', 0x0D, 0x0A, '?' } ;
+		if ( GOOD( MasterHub_sync_once( in ) ) ) {
+			return gbGOOD ;
+		}
+		LEVEL_DEBUG("Try power cycle to recapture MasterHub" ) ;
+		RETURN_BAD_IF_BAD( MasterHub_powercycle( in ) ) ;	
+	}
+
+	return MasterHub_sync_once( in ) ;
+}
+
+static GOOD_OR_BAD MasterHub_sync_once(struct connection_in *in)
+{
+	int attempts ;
+	
+	// Try to sync a few times until successful
+	for ( attempts = 0 ; attempts < 4 ; ++ attempts ) {
+		ASCII read_buffer[10] ;
 	
 		COM_slurp(in) ; // empty pending data
 
 		RETURN_BAD_IF_BAD( MasterHub_sender_ascii( MH_sync, "", 0, in ) ) ; // send sync
-		MasterHub_read( read_buffer, 4, in ) ; // read back
 		
-		if ( memcmp( read_buffer, happy_return, 4 ) == 0 ) {
-			LEVEL_DEBUG("Successful Sync") ;
+		// read back
+		if ( MasterHub_readin( read_buffer, 0, 10, in ) == 0 ) {
+		LEVEL_DEBUG("Sync success") ;
 			return gbGOOD ;
 		}
-			
-		_Debug_Bytes( "Bad sync response:", read_buffer, 4 ) ;
+		
+		LEVEL_DEBUG( "Bad sync response %d", attempts ) ;
 	}
 
 	LEVEL_DEBUG("Sync failure") ;
@@ -497,6 +561,8 @@ static SIZE_OR_ERROR MasterHub_readin_bytes( BYTE * data, size_t length, struct 
 
 // data is a buffer of *length size
 // returns data and length  -- don't include preamble (+ ) and post-amble (\r\n?)
+//
+// Also special case in minlength==0: "+\r\n?" ( no space after + )
 static SIZE_OR_ERROR MasterHub_readin( ASCII * data, size_t minlength, size_t maxlength, struct connection_in * in )
 {
 	size_t min_l = 2 + 2 + 1 ; // "+ \r\n?" or "! \r\n?"
@@ -512,16 +578,33 @@ static SIZE_OR_ERROR MasterHub_readin( ASCII * data, size_t minlength, size_t ma
 	
 	memset( data, 0, maxlength ) ; // zero-fill
 	
-	// read enough for error
-	RETURN_BAD_IF_BAD( MasterHub_read( buffer, min_l, in ) ) ;
-	
-	if ( maxlength == 0 ) {
-		// no data
-		return 0 ;
+	if ( minlength > 0 ) {
+		// read enough for error
+		RETURN_BAD_IF_BAD( MasterHub_read( buffer, min_l, in ) ) ;
+		
+		if ( maxlength == 0 ) {
+			// no data
+			return 0 ;
+		}
+		
+		// read rest of minimum
+		RETURN_BAD_IF_BAD( MasterHub_read( &buffer[min_l], minlength, in ) ) ;
+	} else {
+		// special case with minlength -- 0 to allow "+\t\n?" -- no space
+		// read enough for error
+		RETURN_BAD_IF_BAD( MasterHub_read( buffer, min_l-1, in ) ) ;
+		
+		if ( memcmp( &buffer[1], end_string, 3 ) == 0 ) {
+			// Success!
+			if ( buffer[0] != '+' ) {
+				// an error of sorts
+				return -1 ;
+			}
+			return 0 ;
+		} 
+		// read rest of minimum ( for the ignored space
+		RETURN_BAD_IF_BAD( MasterHub_read( &buffer[min_l-1], 1, in ) ) ;
 	}
-	
-	// read rest of minimum
-	RETURN_BAD_IF_BAD( MasterHub_read( &buffer[min_l], minlength, in ) ) ;
 	
 	for ( length = minlength ; length < ( ssize_t) maxlength ; ++length ) {
 		if ( memcmp( &buffer[ length+min_l-3 ], end_string, 3 ) == 0 ) {
@@ -547,6 +630,21 @@ static SIZE_OR_ERROR MasterHub_readin( ASCII * data, size_t minlength, size_t ma
 // Not only finds the available channels, but sets up the port and connections.
 // Note this is the only place to change if future hubs support more channels
 static GOOD_OR_BAD MasterHub_available(struct connection_in *head)
+{
+	int attempts ;
+	
+	for ( attempts = 0 ; attempts < 4 ; ++ attempts ) {
+		if ( GOOD( MasterHub_available_once( head ) ) ) {
+			return gbGOOD ;
+		}
+		LEVEL_DEBUG("Need to try searching for available MasterHub channels again") ;
+		RETURN_BAD_IF_BAD( MasterHub_sync( head ) ) ;
+	}
+		
+	return MasterHub_available_once( head ) ; ;
+}
+
+static GOOD_OR_BAD MasterHub_available_once(struct connection_in *head)
 {
 	SIZE_OR_ERROR length ;
 	int index ;

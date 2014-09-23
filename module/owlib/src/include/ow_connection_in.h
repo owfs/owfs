@@ -120,7 +120,7 @@ enum e_bus_stat {
 struct connection_in {
 	struct connection_in *next;
 	struct port_in * pown ; // pointer to port_in that owns us.
-	INDEX_OR_ERROR index; // gneral index in all the list
+	INDEX_OR_ERROR index; // general index number across all ports
 	int channel ; // index (0-based) in this port's channels
 	
 	// Formerly Serial / tcp / telnet / i2c abstraction
