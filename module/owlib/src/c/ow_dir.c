@@ -255,26 +255,11 @@ struct dir_all_connections_struct {
 };
 
 /* Embedded function */
-static void *FS_dir_all_connections_callback_conn(void *v)
+/* Directory on a particular port's channel */
+static void FS_dir_all_connections_callback_conn( struct dir_all_connections_struct * dacs )
 {
-	struct dir_all_connections_struct *dacs = v;
-	struct dir_all_connections_struct dacs_next ;
-	pthread_t thread;
-	int threadbad = 0;
-	
-	// set up structure
-	dacs_next.cin = dacs->cin->next ;
-
-	if ( dacs_next.cin == NO_CONNECTION ) {
-		threadbad = 1 ;
-	} else {
-		dacs_next.pin = dacs->pin ;
-		dacs_next.dirfunc = dacs->dirfunc ;
-		memcpy( &(dacs_next.pn_directory), &(dacs->pn_directory), sizeof(struct parsedname));	// shallow copy
-		dacs_next.v = dacs->v ;
-		dacs_next.flags = dacs->flags ;
-		dacs_next.ret = dacs->ret ;
-		threadbad = pthread_create(&thread, DEFAULT_THREAD_ATTR, FS_dir_all_connections_callback_conn, (void *) (&dacs_next));
+	if ( dacs->cin == NO_CONNECTION ) {
+		return ;
 	}
 
 	SetKnownBus(dacs->cin->index, &(dacs->pn_directory) );
@@ -290,21 +275,14 @@ static void *FS_dir_all_connections_callback_conn(void *v)
 	} else {
 		dacs->ret = FS_cache_or_real(dacs->dirfunc, dacs->v, &(dacs->pn_directory), &(dacs->flags));
 	}
-	//printf("FS_dir_all_connections4 pid=%ld adapter=%d ret=%d\n",pthread_self(), dacs->pn_directory->selected_connection->index,ret);
-	/* See if next bus was also queried */
-	if (threadbad == 0) {		/* was a thread created? */
-		if (pthread_join(thread, NULL)!= 0) {
-			return VOID_RETURN ;			/* cannot join, so return only this result */
-		}
-		if (dacs_next.ret >= 0) {
-			dacs->ret = dacs_next.ret;	/* is it an error return? Then return this one */
-		} else {
-			dacs->flags |= dacs_next.flags ;
-		}		
-	}
-	return VOID_RETURN;
+	
+	// next channel
+	dacs->cin = dacs->cin->next ;
+	FS_dir_all_connections_callback_conn( dacs ) ;
 }
 
+/* Callback (thread) once per port */
+/* Will need  to probe each connection (channel) on this port */
 static void *FS_dir_all_connections_callback_port(void *v)
 {
 	struct dir_all_connections_struct *dacs = v;
@@ -330,10 +308,9 @@ static void *FS_dir_all_connections_callback_port(void *v)
 		threadbad = pthread_create(&thread, DEFAULT_THREAD_ATTR, FS_dir_all_connections_callback_port, (void *) (&dacs_next));
 	}
 
+	// First channel
 	dacs->cin = dacs->pin->first ;
-	if ( dacs->cin != NO_CONNECTION ) {
-		FS_dir_all_connections_callback_conn( v ) ;
-	}
+	FS_dir_all_connections_callback_conn( v ) ;
 		
 	//printf("FS_dir_all_connections4 pid=%ld adapter=%d ret=%d\n",pthread_self(), dacs->pn_directory->selected_connection->index,ret);
 	/* See if next bus was also queried */
