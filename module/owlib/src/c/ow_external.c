@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -41,6 +40,7 @@ static void External_setroutines(struct connection_in *in)
 	in->iroutines.get_config = NO_GET_CONFIG_ROUTINE;
 	in->iroutines.reconnect = NO_RECONNECT_ROUTINE;
 	in->iroutines.close = NO_CLOSE_ROUTINE;
+	in->iroutines.verify = NO_VERIFY_ROUTINE ;
 	in->iroutines.flags = 0 ;
 	in->bundling_length = 1;
 }

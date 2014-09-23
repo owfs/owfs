@@ -66,6 +66,7 @@ static void PBM_setroutines(struct connection_in *in)
 	in->iroutines.get_config = NO_GET_CONFIG_ROUTINE;
 	in->iroutines.reconnect = PBM_reconnect;
 	in->iroutines.close = PBM_close;
+	in->iroutines.verify = NO_VERIFY_ROUTINE ;
 	in->iroutines.flags = ADAP_FLAG_no2409path | ADAP_FLAG_no2404delay | ADAP_FLAG_unlock_during_delay;
 	in->bundling_length = PBM_FIFO_SIZE;
 }

@@ -60,6 +60,7 @@ static void HA5_setroutines(struct connection_in *in)
 	in->iroutines.get_config = NO_GET_CONFIG_ROUTINE;
 	in->iroutines.reconnect = HA5_reconnect;
 	in->iroutines.close = HA5_close;
+	in->iroutines.verify = NO_VERIFY_ROUTINE ;
 	in->iroutines.flags = ADAP_FLAG_dirgulp | ADAP_FLAG_bundle | ADAP_FLAG_dir_auto_reset | ADAP_FLAG_no2404delay | ADAP_FLAG_presence_from_dirblob ;
 	in->bundling_length = HA5_FIFO_SIZE;
 }

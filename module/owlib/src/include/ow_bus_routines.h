@@ -1,5 +1,4 @@
 /*
-$Id$
     OW -- One-Wire filesystem
     version 0.4 7/2/2003
 
@@ -59,7 +58,7 @@ struct interface_routines {
 	GOOD_OR_BAD (*PowerByte) (const BYTE data, BYTE * resp, const UINT delay, const struct parsedname * pn);
 	/* Send a bit with bus power to follow */
 	GOOD_OR_BAD (*PowerBit) (const BYTE data, BYTE * resp, const UINT delay, const struct parsedname * pn);
-	/* Send a 12V 480msec oulse to program EEPROM */
+	/* Send a 12V 480msec pulse to program EEPROM */
 	GOOD_OR_BAD (*ProgramPulse) (const struct parsedname * pn);
 	/* send and recieve data -- byte at a time */
 	GOOD_OR_BAD (*sendback_data) (const BYTE * data, BYTE * resp, const size_t len, const struct parsedname * pn);
@@ -77,6 +76,8 @@ struct interface_routines {
 	GOOD_OR_BAD (*reconnect) (const struct parsedname * pn);
 	/* Close the connection (port) */
 	void (*close) (struct connection_in * in);
+	/* Verify a slave is actually on the bus, and address */
+	GOOD_OR_BAD (*verify) (const struct parsedname * pn );
 	/* capabilities flags */
 	UINT flags;
 };
@@ -95,6 +96,7 @@ struct interface_routines {
 #define NO_GET_CONFIG_ROUTINE			NULL
 #define NO_RECONNECT_ROUTINE			NULL
 #define NO_CLOSE_ROUTINE				NULL
+#define NO_VERIFY_ROUTINE				NULL
 
 /* placed in iroutines.flags */
 

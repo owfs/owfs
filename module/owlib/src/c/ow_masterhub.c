@@ -81,6 +81,7 @@ static SIZE_OR_ERROR MasterHub_readin( ASCII * data, size_t minlength, size_t ma
 static SIZE_OR_ERROR MasterHub_readin_bytes( BYTE * data, size_t length, struct connection_in * in ) ;
 static GOOD_OR_BAD MasterHub_read(BYTE * buf, size_t size, struct connection_in * in) ;
 
+static GOOD_OR_BAD MasterHub_powercycle(struct connection_in *in) ;
 static GOOD_OR_BAD MasterHub_sync(struct connection_in *in) ;
 static GOOD_OR_BAD MasterHub_available(struct connection_in *in) ;
 
@@ -99,6 +100,7 @@ static void MasterHub_setroutines(struct connection_in *in)
 	in->iroutines.get_config = NO_GET_CONFIG_ROUTINE;
 	in->iroutines.reconnect = NO_RECONNECT_ROUTINE;
 	in->iroutines.close = MasterHub_close;
+	in->iroutines.verify = NO_VERIFY_ROUTINE ;
 	in->iroutines.flags = ADAP_FLAG_dirgulp | ADAP_FLAG_bundle | ADAP_FLAG_dir_auto_reset | ADAP_FLAG_no2404delay ;
 	in->bundling_length = 240; // characters not bytes (in hex)
 }
@@ -114,9 +116,6 @@ GOOD_OR_BAD MasterHub_detect(struct port_in *pin)
 	/* Set up low-level routines */
 	MasterHub_setroutines(in);
 
-	// Poison current "Address" for adapter
-	memset( in->remembered_sn, 0x00, SERIAL_NUMBER_SIZE ) ;
-
 	if (pin->init_data == NULL) {
 		LEVEL_DEFAULT("MasterHub bus master requires port name");
 		return gbBAD;
@@ -125,12 +124,12 @@ GOOD_OR_BAD MasterHub_detect(struct port_in *pin)
 	/* Open the com port */
 	COM_set_standard( in ) ; // standard COM port settings
 	RETURN_BAD_IF_BAD(COM_open(in)) ;
-	COM_slurp(in) ;
+	RETURN_BAD_IF_BAD( MasterHub_powercycle(in) ) ;
 	if ( GOOD( MasterHub_sync(in) ) ) {
 		return MasterHub_available( in ) ;
 	}
 	
-	LEVEL_DEFAULT("Error in MasterHub detection: can't perform RESET");
+	LEVEL_DEFAULT("Error in MasterHub detection: can't sync and query");
 	return gbBAD;
 }
 
@@ -138,14 +137,21 @@ static RESET_TYPE MasterHub_reset(const struct parsedname *pn)
 {
 	struct connection_in * in = pn->selected_connection ;
 	
-	if ( MasterHub_reset_once(in) != BUS_RESET_OK ) {
+	if ( MasterHub_reset_once(in) == BUS_RESET_OK ) {
+		return BUS_RESET_OK ;
+	}
 
-		// resync and retry
-		MasterHub_sync( in ) ;
+	// resync and retry
+	if ( GOOD( MasterHub_sync( in ) ) ) {
 		return MasterHub_reset_once( in ) ;
 	}
 
-	return BUS_RESET_OK;
+	// resync and retry
+	if ( GOOD( MasterHub_sync( in ) ) ) {
+		return MasterHub_reset_once( in ) ;
+	}
+
+	return BUS_RESET_ERROR ;
 }
 
 // single send
@@ -275,9 +281,6 @@ static GOOD_OR_BAD MasterHub_directory(struct device_search *ds, const struct pa
 		sn[1] = string2num(&resp[12]);
 		sn[0] = string2num(&resp[14]);
 
-		// Set as current "Address" for adapter
-		memcpy( pn->selected_connection->remembered_sn, sn, SERIAL_NUMBER_SIZE) ;
-
 		LEVEL_DEBUG("SN found: " SNformat, SNvar(sn));
 
 		// CRC check
@@ -295,6 +298,9 @@ static GOOD_OR_BAD MasterHub_directory(struct device_search *ds, const struct pa
 static GOOD_OR_BAD MasterHub_select( const struct parsedname * pn )
 {
 	struct connection_in * in = pn->selected_connection ;
+	char send_address[16] ;
+	char resp[22] ;
+	SIZE_OR_ERROR length ;
 
 	if ( (pn->selected_device==NO_DEVICE) || (pn->selected_device==DeviceThermostat) ) {
 		return gbRESET( MasterHub_reset(pn) ) ;
@@ -305,36 +311,28 @@ static GOOD_OR_BAD MasterHub_select( const struct parsedname * pn )
 		return gbBAD ;
 	}
 	
-	if ( memcmp( pn->sn, pn->selected_connection->remembered_sn, SERIAL_NUMBER_SIZE ) != 0 ) {
-		// not already remembered here
-		char send_address[16] ;
-		char resp[22] ;
-		SIZE_OR_ERROR length ;
 		
-		num2string( &send_address[ 0], pn->sn[7] ) ;
-		num2string( &send_address[ 2], pn->sn[6] ) ;
-		num2string( &send_address[ 4], pn->sn[5] ) ;
-		num2string( &send_address[ 6], pn->sn[4] ) ;
-		num2string( &send_address[ 8], pn->sn[3] ) ;
-		num2string( &send_address[10], pn->sn[2] ) ;
-		num2string( &send_address[12], pn->sn[1] ) ;
-		num2string( &send_address[14], pn->sn[0] ) ;
-		
-		// Send command
-		RETURN_BAD_IF_BAD( MasterHub_sender_ascii( MH_address, send_address, 16, in ) ) ;
-		
-		/* Possible responses:
-		 * +
-		 * ! Network Error
-		 * ! Device Not Found Error
-		 * */
-		length = MasterHub_readin( resp, 0, 22, in ) ;
-		
-		if ( length < 0 ) {
-			return gbBAD ;
-		} 
-		// Set as current "Address" for adapter
-		memcpy( pn->selected_connection->remembered_sn, pn->sn, SERIAL_NUMBER_SIZE) ;
+	num2string( &send_address[ 0], pn->sn[7] ) ;
+	num2string( &send_address[ 2], pn->sn[6] ) ;
+	num2string( &send_address[ 4], pn->sn[5] ) ;
+	num2string( &send_address[ 6], pn->sn[4] ) ;
+	num2string( &send_address[ 8], pn->sn[3] ) ;
+	num2string( &send_address[10], pn->sn[2] ) ;
+	num2string( &send_address[12], pn->sn[1] ) ;
+	num2string( &send_address[14], pn->sn[0] ) ;
+	
+	// Send command
+	RETURN_BAD_IF_BAD( MasterHub_sender_ascii( MH_address, send_address, 16, in ) ) ;
+	
+	/* Possible responses:
+	 * +
+	 * ! Network Error
+	 * ! Device Not Found Error
+	 * */
+	length = MasterHub_readin( resp, 0, 22, in ) ;
+	
+	if ( length < 0 ) {
+		return gbBAD ;
 	}
 
 	return gbGOOD ;
@@ -451,12 +449,6 @@ static GOOD_OR_BAD MasterHub_read(BYTE * buf, size_t size, struct connection_in 
 static GOOD_OR_BAD MasterHub_sync(struct connection_in *in)
 {
 	int attempts ;
-	struct connection_in * channel ;
-	
-	// first clear "remembered" devices
-	for ( channel = in->pown->first ; channel != NO_CONNECTION ; channel = channel->next ) {
-		channel->remembered_sn[0] = 0 ; // essentially clears
-	}
 	
 	// Try to sync a few times until successful
 	for ( attempts = 0 ; attempts < 4 ; ++ attempts ) {
@@ -478,6 +470,15 @@ static GOOD_OR_BAD MasterHub_sync(struct connection_in *in)
 
 	LEVEL_DEBUG("Sync failure") ;
 	return gbBAD ;
+}
+
+static GOOD_OR_BAD MasterHub_powercycle(struct connection_in *in)
+{
+	LEVEL_DEBUG("MasterHub initial power cycle start" );
+	RETURN_BAD_IF_BAD( MasterHub_sender_ascii( MH_powerreset, "", 0, in ) ); // send power cycle
+	sleep(2) ;
+	LEVEL_DEBUG("MasterHub initial power cycle done" );
+	return gbGOOD ;
 }
 
 static SIZE_OR_ERROR MasterHub_readin_bytes( BYTE * data, size_t length, struct connection_in * in )
@@ -585,3 +586,4 @@ static GOOD_OR_BAD MasterHub_available(struct connection_in *head)
 		
 	return gbGOOD ;
 }
+

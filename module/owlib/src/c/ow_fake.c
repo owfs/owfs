@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -46,6 +45,7 @@ static void Fake_setroutines(struct connection_in *in)
 	in->iroutines.get_config = NO_GET_CONFIG_ROUTINE;
 	in->iroutines.reconnect = NO_RECONNECT_ROUTINE;
 	in->iroutines.close = Fake_close;
+	in->iroutines.verify = NO_VERIFY_ROUTINE ;
 	in->iroutines.flags = ADAP_FLAG_no2409path | ADAP_FLAG_presence_from_dirblob | ADAP_FLAG_no2404delay ;
 
 	DirblobInit( &(in->master.fake.main) );

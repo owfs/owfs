@@ -145,6 +145,7 @@ static void DS2482_setroutines(struct connection_in *in)
 	in->iroutines.get_config = NO_GET_CONFIG_ROUTINE;
 	in->iroutines.reconnect = DS2482_redetect;
 	in->iroutines.close = DS2482_close;
+	in->iroutines.verify = NO_VERIFY_ROUTINE ;
 	in->iroutines.flags = ADAP_FLAG_overdrive;
 	in->bundling_length = I2C_FIFO_SIZE;
 }

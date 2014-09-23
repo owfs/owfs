@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -57,6 +56,7 @@ static void W1_setroutines(struct connection_in *in)
 	in->iroutines.get_config = NO_GET_CONFIG_ROUTINE;
 	in->iroutines.reconnect = NO_RECONNECT_ROUTINE;
 	in->iroutines.close = W1_close;
+	in->iroutines.verify = NO_VERIFY_ROUTINE ;
 	// Directory obtained in a single gulp (W1_LIST_SLAVES)
 	// Bundle transactions
 	//

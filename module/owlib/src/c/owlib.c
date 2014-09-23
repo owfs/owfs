@@ -209,7 +209,7 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct port_in * pin )
 
 	case bus_masterhub:
 		if ( BAD( MasterHub_detect(pin) )) {
-			LEVEL_CONNECT("Cannot open Hobby Boards MAsterHub bus master at %s", DEVICENAME(in));
+			LEVEL_CONNECT("Cannot open Hobby Boards MasterHub bus master at %s", DEVICENAME(in));
 			return gbBAD ;
 		}
 		break;

@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -41,6 +40,7 @@ GOOD_OR_BAD BadAdapter_detect(struct port_in *pin)
 	in->iroutines.get_config = NO_GET_CONFIG_ROUTINE;
 	in->iroutines.reconnect = NO_RECONNECT_ROUTINE;
 	in->iroutines.close = BadAdapter_close;
+	in->iroutines.verify = NO_VERIFY_ROUTINE ;
 	in->iroutines.flags = ADAP_FLAG_sham;
 	in->adapter_name = "Bad Adapter";
 	SAFEFREE( DEVICENAME(in) ) ;

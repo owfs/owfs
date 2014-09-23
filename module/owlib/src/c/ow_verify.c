@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -21,11 +20,17 @@ $Id$
 
 // BUS_verify tests if device is present in requested mode
 //   serialnumber is 1-wire device address (64 bits)
-//   return 0 good, 1 bad
 GOOD_OR_BAD BUS_verify(BYTE search, const struct parsedname *pn)
 {
 	BYTE buffer[25];
 	int i, goodbits = 0;
+	struct connection_in * in = pn->selected_connection ;
+
+	/* Adapter-specific verify routine? */
+	if ( in->iroutines.verify != NO_VERIFY_ROUTINE ) {
+		LEVEL_DEBUG("Use adapter-specific verify routine");
+		return (in->iroutines.verify) (pn);
+	}
 
 	// set all bits at first
 	memset(buffer, 0xFF, 25);
@@ -36,7 +41,7 @@ GOOD_OR_BAD BUS_verify(BYTE search, const struct parsedname *pn)
 		UT_setbit(buffer, 3 * i + 10, UT_getbit(pn->sn, i));
 	}
 
-	// send/recieve the transfer buffer
+	// send/receive the transfer buffer
 	RETURN_BAD_IF_BAD(BUS_sendback_data(buffer, buffer, 25, pn) ) ;
 
 	if (buffer[0] != search) {

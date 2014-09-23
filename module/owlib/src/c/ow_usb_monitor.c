@@ -79,6 +79,7 @@ GOOD_OR_BAD USB_monitor_detect(struct port_in *pin)
 	in->iroutines.get_config = NO_GET_CONFIG_ROUTINE;
 	in->iroutines.reconnect = NO_RECONNECT_ROUTINE;
 	in->iroutines.close = USB_monitor_close;
+	in->iroutines.verify = NO_VERIFY_ROUTINE ;
 	in->iroutines.flags = ADAP_FLAG_sham;
 	in->adapter_name = "USB scan";
 	pin->busmode = bus_usb_monitor ; // repeat since can come via usb=scan
