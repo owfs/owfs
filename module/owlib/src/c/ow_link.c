@@ -41,6 +41,65 @@ unlikely. Handling these would be just the same as the FF FA codes above.
  * None the less, all settings are assigned to the head line
  */
  
+/* lsusb output for LinkUSB
+	Bus 001 Device 024: ID 0403:6001 Future Technology Devices International, Ltd FT232 USB-Serial (UART) IC
+	Device Descriptor:
+	  bLength                18
+	  bDescriptorType         1
+	  bcdUSB               2.00
+	  bDeviceClass            0 (Defined at Interface level)
+	  bDeviceSubClass         0 
+	  bDeviceProtocol         0 
+	  bMaxPacketSize0         8
+	  idVendor           0x0403 Future Technology Devices International, Ltd
+	  idProduct          0x6001 FT232 USB-Serial (UART) IC
+	  bcdDevice            6.00
+	  iManufacturer           1 FTDI
+	  iProduct                2 FT232R USB UART
+	  iSerial                 3 A900a3Z7
+	  bNumConfigurations      1
+	  Configuration Descriptor:
+		bLength                 9
+		bDescriptorType         2
+		wTotalLength           32
+		bNumInterfaces          1
+		bConfigurationValue     1
+		iConfiguration          0 
+		bmAttributes         0xa0
+		  (Bus Powered)
+		  Remote Wakeup
+		MaxPower               90mA
+		Interface Descriptor:
+		  bLength                 9
+		  bDescriptorType         4
+		  bInterfaceNumber        0
+		  bAlternateSetting       0
+		  bNumEndpoints           2
+		  bInterfaceClass       255 Vendor Specific Class
+		  bInterfaceSubClass    255 Vendor Specific Subclass
+		  bInterfaceProtocol    255 Vendor Specific Protocol
+		  iInterface              2 FT232R USB UART
+		  Endpoint Descriptor:
+			bLength                 7
+			bDescriptorType         5
+			bEndpointAddress     0x81  EP 1 IN
+			bmAttributes            2
+			  Transfer Type            Bulk
+			  Synch Type               None
+			  Usage Type               Data
+			wMaxPacketSize     0x0040  1x 64 bytes
+			bInterval               0
+		  Endpoint Descriptor:
+			bLength                 7
+			bDescriptorType         5
+			bEndpointAddress     0x02  EP 2 OUT
+			bmAttributes            2
+			  Transfer Type            Bulk
+			  Synch Type               None
+			  Usage Type               Data
+			wMaxPacketSize     0x0040  1x 64 bytes
+			bInterval               0
+*/ 
 struct LINK_id {
 	char verstring[36];
 	char name[30];

@@ -17,8 +17,192 @@
  * None the less, all settings are assigned to the head line
  */
  
- 
+/* lsusb for the TAI603B
+	Bus 001 Device 025: ID 10c4:ea60 Cygnal Integrated Products, Inc. CP210x UART Bridge / myAVR mySmartUSB light
+	Device Descriptor:
+	  bLength                18
+	  bDescriptorType         1
+	  bcdUSB               1.10
+	  bDeviceClass            0 (Defined at Interface level)
+	  bDeviceSubClass         0 
+	  bDeviceProtocol         0 
+	  bMaxPacketSize0        64
+	  idVendor           0x10c4 Cygnal Integrated Products, Inc.
+	  idProduct          0xea60 CP210x UART Bridge / myAVR mySmartUSB light
+	  bcdDevice            1.00
+	  iManufacturer           1 Silicon Labs
+	  iProduct                2 CP2102 USB to UART Bridge Controller
+	  iSerial                 3 0001
+	  bNumConfigurations      1
+	  Configuration Descriptor:
+		bLength                 9
+		bDescriptorType         2
+		wTotalLength           32
+		bNumInterfaces          1
+		bConfigurationValue     1
+		iConfiguration          0 
+		bmAttributes         0x80
+		  (Bus Powered)
+		MaxPower              100mA
+		Interface Descriptor:
+		  bLength                 9
+		  bDescriptorType         4
+		  bInterfaceNumber        0
+		  bAlternateSetting       0
+		  bNumEndpoints           2
+		  bInterfaceClass       255 Vendor Specific Class
+		  bInterfaceSubClass      0 
+		  bInterfaceProtocol      0 
+		  iInterface              2 CP2102 USB to UART Bridge Controller
+		  Endpoint Descriptor:
+			bLength                 7
+			bDescriptorType         5
+			bEndpointAddress     0x81  EP 1 IN
+			bmAttributes            2
+			  Transfer Type            Bulk
+			  Synch Type               None
+			  Usage Type               Data
+			wMaxPacketSize     0x0040  1x 64 bytes
+			bInterval               0
+		  Endpoint Descriptor:
+			bLength                 7
+			bDescriptorType         5
+			bEndpointAddress     0x01  EP 1 OUT
+			bmAttributes            2
+			  Transfer Type            Bulk
+			  Synch Type               None
+			  Usage Type               Data
+			wMaxPacketSize     0x0040  1x 64 bytes
+			bInterval               0
+*/
 
+/* lsusb for the USB9097 (PCsensor)
+	Bus 001 Device 037: ID 1a86:7523 QinHeng Electronics HL-340 USB-Serial adapter
+	Device Descriptor:
+	  bLength                18
+	  bDescriptorType         1
+	  bcdUSB               1.10
+	  bDeviceClass          255 Vendor Specific Class
+	  bDeviceSubClass         0 
+	  bDeviceProtocol         0 
+	  bMaxPacketSize0         8
+	  idVendor           0x1a86 QinHeng Electronics
+	  idProduct          0x7523 HL-340 USB-Serial adapter
+	  bcdDevice            2.54
+	  iManufacturer           0 
+	  iProduct                2 USB2.0-Serial
+	  iSerial                 0 
+	  bNumConfigurations      1
+	  Configuration Descriptor:
+		bLength                 9
+		bDescriptorType         2
+		wTotalLength           39
+		bNumInterfaces          1
+		bConfigurationValue     1
+		iConfiguration          0 
+		bmAttributes         0x80
+		  (Bus Powered)
+		MaxPower               96mA
+		Interface Descriptor:
+		  bLength                 9
+		  bDescriptorType         4
+		  bInterfaceNumber        0
+		  bAlternateSetting       0
+		  bNumEndpoints           3
+		  bInterfaceClass       255 Vendor Specific Class
+		  bInterfaceSubClass      1 
+		  bInterfaceProtocol      2 
+		  iInterface              0 
+		  Endpoint Descriptor:
+			bLength                 7
+			bDescriptorType         5
+			bEndpointAddress     0x82  EP 2 IN
+			bmAttributes            2
+			  Transfer Type            Bulk
+			  Synch Type               None
+			  Usage Type               Data
+			wMaxPacketSize     0x0020  1x 32 bytes
+			bInterval               0
+		  Endpoint Descriptor:
+			bLength                 7
+			bDescriptorType         5
+			bEndpointAddress     0x02  EP 2 OUT
+			bmAttributes            2
+			  Transfer Type            Bulk
+			  Synch Type               None
+			  Usage Type               Data
+			wMaxPacketSize     0x0020  1x 32 bytes
+			bInterval               0
+		  Endpoint Descriptor:
+			bLength                 7
+			bDescriptorType         5
+			bEndpointAddress     0x81  EP 1 IN
+			bmAttributes            3
+			  Transfer Type            Interrupt
+			  Synch Type               None
+			  Usage Type               Data
+			wMaxPacketSize     0x0008  1x 8 bytes
+			bInterval               1
+*/
+
+/* lsusb for the ECLO adapter
+	Bus 001 Device 035: ID 0403:ea90 Future Technology Devices International, Ltd Eclo 1-Wire Adapter
+	Device Descriptor:
+	  bLength                18
+	  bDescriptorType         1
+	  bcdUSB               2.00
+	  bDeviceClass            0 (Defined at Interface level)
+	  bDeviceSubClass         0 
+	  bDeviceProtocol         0 
+	  bMaxPacketSize0         8
+	  idVendor           0x0403 Future Technology Devices International, Ltd
+	  idProduct          0xea90 Eclo 1-Wire Adapter
+	  bcdDevice            4.00
+	  iManufacturer           1 Eclo
+	  iProduct                2 Eclo COM to 1-Wire USB adapter
+	  iSerial                 3 04000220
+	  bNumConfigurations      1
+	  Configuration Descriptor:
+		bLength                 9
+		bDescriptorType         2
+		wTotalLength           32
+		bNumInterfaces          1
+		bConfigurationValue     1
+		iConfiguration          0 
+		bmAttributes         0x80
+		  (Bus Powered)
+		MaxPower              500mA
+		Interface Descriptor:
+		  bLength                 9
+		  bDescriptorType         4
+		  bInterfaceNumber        0
+		  bAlternateSetting       0
+		  bNumEndpoints           2
+		  bInterfaceClass       255 Vendor Specific Class
+		  bInterfaceSubClass    255 Vendor Specific Subclass
+		  bInterfaceProtocol    255 Vendor Specific Protocol
+		  iInterface              2 Eclo COM to 1-Wire USB adapter
+		  Endpoint Descriptor:
+			bLength                 7
+			bDescriptorType         5
+			bEndpointAddress     0x81  EP 1 IN
+			bmAttributes            2
+			  Transfer Type            Bulk
+			  Synch Type               None
+			  Usage Type               Data
+			wMaxPacketSize     0x0040  1x 64 bytes
+			bInterval               0
+		  Endpoint Descriptor:
+			bLength                 7
+			bDescriptorType         5
+			bEndpointAddress     0x02  EP 2 OUT
+			bmAttributes            2
+			  Transfer Type            Bulk
+			  Synch Type               None
+			  Usage Type               Data
+			wMaxPacketSize     0x0040  1x 64 bytes
+			bInterval               0
+*/
 
 #include <config.h>
 #include "owfs_config.h"

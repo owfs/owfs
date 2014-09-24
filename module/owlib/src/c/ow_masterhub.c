@@ -36,6 +36,95 @@
  * According to Eric Vickary
  *  
  * */
+ 
+/* Full lsusb output
+	Device Descriptor:
+	  bLength                18
+	  bDescriptorType         1
+	  bcdUSB               2.00
+	  bDeviceClass            2 Communications
+	  bDeviceSubClass         0 
+	  bDeviceProtocol         0 
+	  bMaxPacketSize0        16
+	  idVendor           0x04d8 Microchip Technology, Inc.
+	  idProduct          0xf897 
+	  bcdDevice            1.00
+	  iManufacturer           1 Hobby Boards
+	  iProduct                2 Hobby Boards USB Master
+	  iSerial                 0 
+	  bNumConfigurations      1
+	  Configuration Descriptor:
+		bLength                 9
+		bDescriptorType         2
+		wTotalLength           67
+		bNumInterfaces          2
+		bConfigurationValue     1
+		iConfiguration          0 
+		bmAttributes         0xc0
+		  Self Powered
+		MaxPower              500mA
+		Interface Descriptor:
+		  bLength                 9
+		  bDescriptorType         4
+		  bInterfaceNumber        0
+		  bAlternateSetting       0
+		  bNumEndpoints           1
+		  bInterfaceClass         2 Communications
+		  bInterfaceSubClass      2 Abstract (modem)
+		  bInterfaceProtocol      1 AT-commands (v.25ter)
+		  iInterface              0 
+		  CDC Header:
+			bcdCDC               1.10
+		  CDC ACM:
+			bmCapabilities       0x02
+			  line coding and serial state
+		  CDC Union:
+			bMasterInterface        0
+			bSlaveInterface         1 
+		  CDC Call Management:
+			bmCapabilities       0x00
+			bDataInterface          1
+		  Endpoint Descriptor:
+			bLength                 7
+			bDescriptorType         5
+			bEndpointAddress     0x81  EP 1 IN
+			bmAttributes            3
+			  Transfer Type            Interrupt
+			  Synch Type               None
+			  Usage Type               Data
+			wMaxPacketSize     0x000a  1x 10 bytes
+			bInterval               1
+		Interface Descriptor:
+		  bLength                 9
+		  bDescriptorType         4
+		  bInterfaceNumber        1
+		  bAlternateSetting       0
+		  bNumEndpoints           2
+		  bInterfaceClass        10 CDC Data
+		  bInterfaceSubClass      0 Unused
+		  bInterfaceProtocol      0 
+		  iInterface              0 
+		  Endpoint Descriptor:
+			bLength                 7
+			bDescriptorType         5
+			bEndpointAddress     0x02  EP 2 OUT
+			bmAttributes            2
+			  Transfer Type            Bulk
+			  Synch Type               None
+			  Usage Type               Data
+			wMaxPacketSize     0x0040  1x 64 bytes
+			bInterval               0
+		  Endpoint Descriptor:
+			bLength                 7
+			bDescriptorType         5
+			bEndpointAddress     0x82  EP 2 IN
+			bmAttributes            2
+			  Transfer Type            Bulk
+			  Synch Type               None
+			  Usage Type               Data
+			wMaxPacketSize     0x0040  1x 64 bytes
+			bInterval               0
+*/
 
 /* Ascii commands */
 #define MH_available    'a'
