@@ -126,6 +126,11 @@
 			bInterval               0
 */
 
+/*
+ * Updated 10/2014 to version 1.1
+ * 
+ */
+
 /* Ascii commands */
 #define MH_available    'a'
 #define MH_reset	    'r'
@@ -135,13 +140,15 @@
 #define MH_strong  	    'S'
 #define MH_first  	    'f'
 #define MH_firstcap	    'F'
+#define MH_conditional  'c'
+#define MH_conditionalcap 'C'
 #define MH_next  	    'n'
 #define MH_nextcap 	    'N'
 #define MH_pullup  	    'P'
 #define MH_write  	    'W'
 #define MH_read  	    'R'
 #define MH_lastheard  	'L'
-#define MH_clearcache  	'C'
+#define MH_deletecache 	'D'
 #define MH_info  	    'I'
 #define MH_setlocation  'l'
 #define MH_version      'V'
@@ -323,19 +330,18 @@ static GOOD_OR_BAD MasterHub_directory(struct device_search *ds, const struct pa
 	// Send the configuration command and check response
 
 	if (ds->search == _1W_CONDITIONAL_SEARCH_ROM) {
-		LEVEL_DEBUG("Conditional search not supported on MasterHub")
-		first = MH_first ;
-		next = MH_next ;
+		first = MH_conditionalcap ;
+		next = MH_nextcap ;
 	} else {
-		first = MH_first ;
-		next = MH_next ;
+		first = MH_firstcap ;
+		next = MH_nextcap ;
 	}
 	current = first ;
 
-	if ( MasterHub_reset( pn ) != BUS_RESET_OK ) {
-		LEVEL_DEBUG("Unable to reset MasterHub for directory search") ;
-		return gbBAD ;
-	}
+//	if ( MasterHub_reset( pn ) != BUS_RESET_OK ) {
+//		LEVEL_DEBUG("Unable to reset MasterHub for directory search") ;
+//		return gbBAD ;
+//	}
 	
 	while (1) {
 		SIZE_OR_ERROR length ;
@@ -541,7 +547,7 @@ static GOOD_OR_BAD MasterHub_sender_ascii( char cmd, ASCII * data, int length, s
 		case MH_next:		//'n'
 		case MH_nextcap:	//'N'
 		case MH_lastheard:	//'L'
-		case MH_clearcache:	//'C'
+		case MH_deletecache://'D'
 		case MH_info:		//'I'
 		case MH_setlocation://'l'
 		case MH_version:	//'V'
@@ -559,6 +565,8 @@ static GOOD_OR_BAD MasterHub_sender_ascii( char cmd, ASCII * data, int length, s
 		case MH_strong:		//'S'
 		case MH_first:		//'f'
 		case MH_firstcap:	//'F'
+		case MH_conditional://'c'
+		case MH_conditionalcap://'C'
 		case MH_pullup:		//'P'
 		case MH_write:		//'W'
 		case MH_read:		//'R'
