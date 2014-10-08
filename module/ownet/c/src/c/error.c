@@ -27,8 +27,6 @@
 #include <sys/uio.h>
 #endif
 
-/* module/ownet/c/src/c/error.c & module/owlib/src/c/error.c are identical */
-
 const char mutex_init_failed[] = "mutex_init failed rc=%d [%s]\n";
 const char mutex_destroy_failed[] = "mutex_destroy failed rc=%d [%s]\n";
 const char mutex_lock_failed[] = "mutex_lock failed rc=%d [%s]\n";
@@ -93,31 +91,46 @@ void err_msg(enum e_err_type errnoflag, enum e_err_level level, const char * fil
 	int errno_save = (errnoflag==e_err_type_error)?errno:0;		/* value caller might want printed */
 	char format[MAXLINE + 3];
 	char buf[MAXLINE + 3];
-	enum e_err_print sl;		// 2=console 1=syslog
 	va_list ap;
 	const char * level_string ;
+
 	switch (level) {
-	case e_err_default:
-		level_string = "DEFAULT: ";
-		break;
-	case e_err_connect:
-		level_string = "CONNECT: ";
-		break;
-	case e_err_call:
-		level_string = "   CALL: ";
-		break;
-	case e_err_data:
-		level_string = "   DATA: ";
-		break;
-	case e_err_detail:
-		level_string = " DETAIL: ";
-		break;
-	case e_err_debug:
-	case e_err_beyond:
-	default:
-		level_string = "  DEBUG: ";
-		break;
+		case e_err_default:
+			level_string = "DEFAULT: ";
+			break;
+		case e_err_connect:
+			level_string = "CONNECT: ";
+			break;
+		case e_err_call:
+			level_string = "   CALL: ";
+			break;
+		case e_err_data:
+			level_string = "   DATA: ";
+			break;
+		case e_err_detail:
+			level_string = " DETAIL: ";
+			break;
+		case e_err_debug:
+		case e_err_beyond:
+		default:
+			level_string = "  DEBUG: ";
+			break;
 	}
+
+	va_start(ap, fmt);
+	err_format( format, errno_save, level_string, file, line, func, fmt) ;
+
+	UCLIBCLOCK;
+	/* Create output string */
+#ifdef    HAVE_VSNPRINTF
+	vsnprintf(buf, MAXLINE, format, ap);	/* safe */
+#else
+	vsprintf(buf, format, ap);		/* not safe */
+#endif
+	UCLIBCUNLOCK;
+	va_end(ap);
+//printf("About to output an error \n");
+
 	fputs(buf, stderr);
 	fflush(stderr);
 	return;
@@ -150,7 +163,6 @@ void fatal_error(const char * file, int line, const char * func, const char *fmt
 	va_list ap;
 	char format[MAXLINE + 1];
 	char buf[MAXLINE + 1];
-	enum e_err_print sl;		// 2=console 1=syslog
 	va_start(ap, fmt);
 
 	err_format( format, 0, "FATAL ERROR: ", file, line, func, fmt) ;
