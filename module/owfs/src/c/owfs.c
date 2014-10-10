@@ -52,6 +52,7 @@ int main(int argc, char *argv[])
 			break;
 		case e_fuse_opt:		/* fuse_mnt_opt */
 			if (fuse_mnt_opt) {
+				// delete prior
 				owfree(fuse_mnt_opt);
 			}
 			fuse_mnt_opt = Fuse_arg(optarg, "FUSE mount options");
@@ -61,6 +62,7 @@ int main(int argc, char *argv[])
 			break;
 		case e_fuse_open_opt:	/* fuse_open_opt */
 			if (fuse_open_opt) {
+				// delete prior
 				owfree(fuse_open_opt);
 			}
 			fuse_open_opt = Fuse_arg(optarg, "FUSE open options");
@@ -69,8 +71,9 @@ int main(int argc, char *argv[])
 			}
 			break;
 		}
+		// rest of options -- use common opt arguments code
 		if ( BAD( owopt(c, optarg) ) ) {
-			ow_exit(0);			/* rest of message */
+			ow_exit(0);	
 		}
 	}
 
@@ -112,13 +115,12 @@ int main(int argc, char *argv[])
 	Fuse_add("direct_io", &fuse_options);
 #endif							/* FUSE_VERSION >= 22 */
 	switch (Globals.daemon_status) {
-		case e_daemon_want_bg:
-		case e_daemon_bg:
+		case e_daemon_fg:
 			Fuse_add("-f", &fuse_options);	// foreground for fuse too
 			if (Globals.error_level > 2) {
 				Fuse_add("-d", &fuse_options);	// debug for fuse too
 			}
-			Globals.daemon_status = e_daemon_bg;
+//			Globals.daemon_status = e_daemon_bg;
 			break ;
 		default:
 			break ;
