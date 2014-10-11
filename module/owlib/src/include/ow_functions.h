@@ -1,9 +1,8 @@
 /*
-$Id$
     OW -- One-Wire filesystem
     version 0.4 7/2/2003
 
-\    LICENSE (As of version 2.5p4 2-Oct-2006)
+    LICENSE (As of version 2.5p4 2-Oct-2006)
     owlib: GPL v2
     owfs, owhttpd, owftpd, owserver: GPL v2
     owshell(owdir owread owwrite owpresent): GPL v2
@@ -33,7 +32,7 @@ $Id$
     GNU General Public License for more details.
 
     Other portions based on Dallas Semiconductor Public Domain Kit,
-//     ---------------------------------------------------------------------------
+    ---------------------------------------------------------------------------
     Implementation:
     25-05-2003 iButtonLink device
 */

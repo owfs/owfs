@@ -1,5 +1,6 @@
 /*
- * $Id$
+ * part of owftpd By Paul H Alfille
+ * The whole is GPLv2 licenced though the ftp code was more liberally licenced when first used.
  */
 
 #include "owftpd.h"
