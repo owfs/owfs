@@ -17,6 +17,7 @@ $Id$
 
 #include "owfs.h"
 #include "ow_connection.h"
+#include "sys/mount.h"
 
 /*
     OW -- One Wire
@@ -126,6 +127,10 @@ int main(int argc, char *argv[])
 			break ;
 	}		
 
+	// Unmount just in case
+	// No checks -- can fail without consequences
+	umount( Outbound_Control.head->name ) ;
+
 	Fuse_parse(fuse_mnt_opt, &fuse_options);
 	LEVEL_DEBUG("fuse_mnt_opt=[%s]", fuse_mnt_opt);
 	Fuse_parse(fuse_open_opt, &fuse_options);
@@ -134,6 +139,7 @@ int main(int argc, char *argv[])
 		Fuse_add("-o", &fuse_options);	// add "-o allow_other" to permit other users access
 		Fuse_add("allow_other", &fuse_options);
 	}
+
 
 #if FUSE_VERSION > 25
 	fuse_main(fuse_options.argc, fuse_options.argv, &owfs_oper, NULL);

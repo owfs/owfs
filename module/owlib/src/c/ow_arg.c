@@ -453,6 +453,7 @@ GOOD_OR_BAD ARG_Serial(const char *arg)
 }
 
 // This is owserver's listening port
+// and owfs's mountpoint
 GOOD_OR_BAD ARG_Server(const char *arg)
 {
 	switch (Globals.daemon_status) {

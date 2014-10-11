@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -23,10 +22,10 @@ ZERO_OR_ERROR FS_fstat(const char *path, struct stat *stbuf)
 
 	/* Bad path */
 	if (FS_ParsedName(path, &pn) != 0 ) {
-		ret = -ENOENT;
-	} else {
-		ret = FS_fstat_postparse(stbuf, &pn);
+		return -ENOENT;
 	}
+
+	ret = FS_fstat_postparse(stbuf, &pn);
 	FS_ParsedName_destroy(&pn);
 	return ret;
 }

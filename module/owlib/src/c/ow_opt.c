@@ -670,20 +670,20 @@ GOOD_OR_BAD owopt(const int option_char, const char *arg)
 			return gbGOOD ;
 		}
 		switch (Globals.program_type) {
-		case program_type_httpd:
-		case program_type_server:
-		case program_type_external:
-		case program_type_ftpd:
-			return ARG_Server(arg);
-		default:
-			return gbGOOD;
+			case program_type_httpd:
+			case program_type_server:
+			case program_type_external:
+			case program_type_ftpd:
+				return ARG_Server(arg);
+			default:
+				return gbGOOD;
 		}
 	case 'm':
 		switch (Globals.program_type) {
-		case program_type_filesystem:
-			return ARG_Server(arg);
-		default:
-			return gbGOOD;
+			case program_type_filesystem:
+				return ARG_Server(arg);
+			default:
+				return gbGOOD;
 		}
 	case 'f':
 		if (!strcasecmp(arg, "f.i")) {

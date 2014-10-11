@@ -142,69 +142,51 @@ extern const char sem_destroy_failed[];
 		if(mrc != 0) {													\
 			FATAL_ERROR(sem_destroy_failed, mrc, strerror(mrc));		\
 		}																\
-		if (Globals.error_level>=10) {									\
-			LEVEL_DEFAULT("sem_destroy %lX", (unsigned long)sem);		\
-		}																\
+		LEVEL_DEBUG("sem_destroy %lX", (unsigned long)sem);		\
 	} while(0)
 
 
 #define my_pthread_mutex_init(mutex, attr)                              \
 	do {																\
 		int mrc;														\
-		if (Globals.error_level>=e_err_debug) {							\
-			LEVEL_DEFAULT("pthread_mutex_init %lX begin", (unsigned long)mutex); \
-		}																\
+		LEVEL_DEBUG("pthread_mutex_init %lX begin", (unsigned long)mutex); \
 		mrc = pthread_mutex_init(mutex, attr);							\
 		if(mrc != 0) {													\
 			FATAL_ERROR(mutex_init_failed, mrc, strerror(mrc));			\
 		}																\
-		if (Globals.error_level>=10) {									\
-			LEVEL_DEFAULT("pthread_mutex_init %lX done", (unsigned long)mutex); \
-		}																\
+		LEVEL_DEBUG("pthread_mutex_init %lX done", (unsigned long)mutex); \
 	} while(0)
 
 #define my_pthread_mutex_destroy(mutex)                                 \
 	do {																\
 		int mrc = pthread_mutex_destroy(mutex);							\
-		if (Globals.error_level>=e_err_debug) {							\
-			LEVEL_DEFAULT("pthread_mutex_destroy %lX begin", (unsigned long)mutex); \
-		}																\
+		LEVEL_DEBUG("pthread_mutex_destroy %lX begin", (unsigned long)mutex); \
 		if(mrc != 0) {													\
 			LEVEL_DEFAULT(mutex_destroy_failed, mrc, strerror(mrc));	\
 		}																\
-		if (Globals.error_level>=10) {									\
-			LEVEL_DEFAULT("pthread_mutex_destroy %lX done", (unsigned long)mutex); \
-		}																\
+		LEVEL_DEBUG("pthread_mutex_destroy %lX done", (unsigned long)mutex); \
 	} while(0)
 
 #define my_pthread_mutex_lock(mutex)                                    \
 	do {																\
 		int mrc;														\
-		if (Globals.error_level>=e_err_debug) {							\
-			LEVEL_DEFAULT("pthread_mutex_lock %lX begin", (unsigned long)mutex); \
-		}																\
+		LEVEL_DEBUG("pthread_mutex_lock %lX begin", (unsigned long)mutex); \
 		mrc = pthread_mutex_lock(mutex);								\
 		if(mrc != 0) {													\
 			FATAL_ERROR(mutex_lock_failed, mrc, strerror(mrc));			\
 		}																\
-		if (Globals.error_level>=10) {									\
-			LEVEL_DEFAULT("pthread_mutex_lock %lX done", (unsigned long)mutex); \
-		}																\
+		LEVEL_DEBUG("pthread_mutex_lock %lX done", (unsigned long)mutex); \
 	} while(0)
 
 #define my_pthread_mutex_unlock(mutex)                                  \
 	do {																\
 		int mrc;														\
-		if (Globals.error_level>=e_err_debug) {							\
-			LEVEL_DEFAULT("pthread_mutex_unlock %lX begin", (unsigned long)mutex); \
-		}																\
+		LEVEL_DEBUG("pthread_mutex_unlock %lX begin", (unsigned long)mutex); \
 		mrc = pthread_mutex_unlock(mutex);								\
 		if(mrc != 0) {													\
 			FATAL_ERROR(mutex_unlock_failed, mrc, strerror(mrc));		\
 		}																\
-		if (Globals.error_level>=10) {									\
-			LEVEL_DEFAULT("pthread_mutex_unlock %lX done", (unsigned long)mutex); \
-		}																\
+		LEVEL_DEBUG("pthread_mutex_unlock %lX done", (unsigned long)mutex); \
 	} while(0)
 
 #define my_pthread_mutexattr_init(attr)                                 \
