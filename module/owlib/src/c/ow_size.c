@@ -25,8 +25,8 @@ int FS_size( const char *path ) {
     //printf("FS_size: pid=%ld path=%s\n", pthread_self(), path);
     LEVEL_CALL("SIZE path=%s\n", SAFESTRING(path));
 
-    if ( FS_ParsedName( path , &pn ) ) {
-        r = -ENOENT;
+    if ( FS_ParsedName( path , &pn ) != 0 ) {
+        return -ENOENT;
     } else if ( pn.dev==NULL || pn.ft == NULL ) {
         r = -EISDIR ;
     } else {
