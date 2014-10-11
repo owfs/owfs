@@ -44,7 +44,7 @@ void USB_first(struct usb_list *ul)
 	ul->dev = NULL;
 }
 
-GOOD_OR_BAD USB_next(struct usb_list *ul)
+GOOD_OR_BAD USB_next_match(struct usb_list *ul)
 {
 	while (ul->bus) {
 		// First pass, look for next device
@@ -80,7 +80,7 @@ GOOD_OR_BAD USB_next(struct usb_list *ul)
 /* Includes a count of the rejected existing USB devices
  * needed for compatibility with the -u2 -u3 arguments
  */
-GOOD_OR_BAD USB_next_until_n(struct usb_list *ul, int num)
+GOOD_OR_BAD USB_next_match_until_n(struct usb_list *ul, int num)
 {
 	int found = 0 ;
 	

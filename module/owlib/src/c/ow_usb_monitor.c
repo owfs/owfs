@@ -161,7 +161,8 @@ static void USB_scan_for_adapters(void)
 	
 	LEVEL_DEBUG("USB SCAN!");
 	USB_first(&ul);
-	while ( GOOD(USB_next(&ul)) ) {
+	while ( GOOD(USB_next_match(&ul)) ) {
+		// Create a port and connection, fill is with name and then test for function and uniqueness
 		struct port_in * pin = AllocPort(NULL) ;
 		struct connection_in * in ;
 		if ( pin == NULL ) {

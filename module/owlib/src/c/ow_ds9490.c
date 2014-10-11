@@ -273,10 +273,10 @@ static GOOD_OR_BAD DS9490_detect_single_adapter(int usb_nr, struct connection_in
 
 	if ( usb_nr == 1 ) {
 		// return the first free
-		RETURN_BAD_IF_BAD( USB_next( &ul ) ) ;
+		RETURN_BAD_IF_BAD( USB_next_match( &ul ) ) ;
 	} else {
 		// return the nth
-		RETURN_BAD_IF_BAD( USB_next_until_n( &ul, usb_nr ) ) ;
+		RETURN_BAD_IF_BAD( USB_next_match_until_n( &ul, usb_nr ) ) ;
 	}
 
 	RETURN_BAD_IF_BAD( DS9490_open_and_name(&ul, in)) ;
@@ -297,7 +297,7 @@ static GOOD_OR_BAD DS9490_detect_specific_adapter(int bus_nr, int dev_nr, struct
 	in->master.usb.specific_usb_address = 1 ;
 
 	USB_first(&ul);
-	while ( GOOD(USB_next(&ul)) ) {
+	while ( GOOD(USB_next_match(&ul)) ) {
 		if ( ul.usb_bus_number != bus_nr || ul.usb_dev_number != dev_nr ) {
 			LEVEL_CONNECT("USB DS9490 %d:%d passed over. (Looking for %d:%d)", ul.usb_bus_number, ul.usb_dev_number, bus_nr, dev_nr );
 			continue ;
@@ -316,7 +316,7 @@ static GOOD_OR_BAD DS9490_detect_all_adapters(struct port_in * pin_first)
 	struct port_in * pin = pin_first ;
 
 	USB_first(&ul);
-	while ( GOOD(USB_next(&ul)) ) {
+	while ( GOOD(USB_next_match(&ul)) ) {
 		struct connection_in * in = pin->first ;
 		if ( BAD(DS9490_open_and_name(&ul, in)) ) {
 			LEVEL_DEBUG("Cannot open USB device %.d:%.d", ul.usb_bus_number, ul.usb_dev_number );
@@ -399,7 +399,7 @@ static GOOD_OR_BAD DS9490_redetect_low(struct connection_in * in)
 
 	USB_first(&ul);
 		
-	while ( GOOD(USB_next(&ul)) ) {
+	while ( GOOD(USB_next_match(&ul)) ) {
 		// try to open the DS9490
 		if ( BAD(DS9490_open_and_name(&ul, in)) ) {
 			LEVEL_CONNECT("Cannot open USB bus master, Find next...");
