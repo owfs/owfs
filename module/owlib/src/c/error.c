@@ -75,15 +75,20 @@ void print_timestamp_(const char * file, int line, const char * func, const char
 	va_list va;
 
 	gettimeofday(&tv, NULL);
-	va_start(va, fmt);
+	
+	// Add line and file to message
 	snprintf(format, MAXLINE, "%s:%s(%d) %s", file,func,line,fmt);  /* safe */
 
+	va_start( va, fmt );
+	// Add print format arguemnts (variable number)
 #ifdef HAVE_VSNPRINTF
 	vsnprintf(buf, MAXLINE, format, va);    /* safe */
 #else
 	vsprintf(buf, format, va);      /* not safe */
 #endif
+	va_end( va ) ;
 
+	//` Now print it out
 	fprintf(stderr, "%ld DEFAULT: %s %ld.%06ld\n", time(NULL), buf, tv.tv_sec, tv.tv_usec);
 	fflush(stderr);
 }
