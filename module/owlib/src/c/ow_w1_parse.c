@@ -171,6 +171,11 @@ static GOOD_OR_BAD Get_and_Parse_Pipe( FILE_DESCRIPTOR_OR_ERROR file_descriptor,
 
 	memcpy( nlm, &peek_nlm, W1_NLM_LENGTH ) ; // copy header
 	// read rest of packet
+	if ( peek_nlm.nlmsg_len <= W1_NLM_LENGTH ) {
+		owfree(nlm) ;
+		LEVEL_DEBUG( "W1 packet error. Length is too short." ) ;
+		return gbBAD ;
+	}
 	payload_length = peek_nlm.nlmsg_len - W1_NLM_LENGTH ;
 	if ( read( file_descriptor, NLMSG_DATA(nlm), payload_length ) != (ssize_t) payload_length ) {
 		owfree(nlm) ;
