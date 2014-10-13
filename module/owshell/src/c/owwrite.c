@@ -1,5 +1,4 @@
 /*
-$Id$
      OW -- One-Wire filesystem
     version 0.4 7/2/2003
 
@@ -45,12 +44,10 @@ int main(int argc, char *argv[])
 		char * hex_convert ;
 		/* non-option arguments */
 		while (optind < argc - 1) {
-			hex_convert = HexConvert(argv[optind + 1]) ;
+			hex_convert = HexConvert(argv[optind + 1]) ; // never null (will exit if null)
 			rc = ServerWrite(argv[optind], hex_convert);
 			optind += 2;
-			if ( hex_convert ) {
-				free(hex_convert ) ;
-			}
+			free(hex_convert ) ;
 		}
 	} else {
 		/* non-option arguments */
@@ -100,13 +97,14 @@ static int HexVal( char c )
 	return -1 ; // never gets here
 }
 
+// allocates a string -- must be freed by caller
 static char * HexConvert( char * input_string )
 {
 	int length = strlen( input_string ) ;
-	int pad_first =  ( (length/2)*2 != length ) ;
-	char * return_string = malloc( (length + pad_first)/2 ) ;
-	int hex_pointer = 0 ;
-	int char_pointer = 0 ;
+	int pad_first =  ( (length/2)*2 != length ) ; // odd
+	char * return_string = malloc( length ) ; / make same size (intensionally large)
+	int hex_pointer = 0 ; // pointer into input_string
+	int char_pointer = 0 ; // pointer into return_string
 
 	if ( return_string == NULL ) {
 		PRINT_ERROR("Out of memory.\n") ;
@@ -114,7 +112,7 @@ static char * HexConvert( char * input_string )
 		Exit(1) ;
 	}
 
-	if ( pad_first ) {
+	if ( pad_first ) { // odd number of chars
 		return_string[0] = HexVal(input_string[0]) ;
 		++char_pointer ;
 		++hex_pointer ;
@@ -126,5 +124,6 @@ static char * HexConvert( char * input_string )
 		++char_pointer ;
 	}
 
+	return[string[ char_pointer] = '\0' ; // trailing null
 	return return_string ; //freed in calling function
 }
