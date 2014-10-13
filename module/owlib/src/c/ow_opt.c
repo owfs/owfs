@@ -498,8 +498,6 @@ static void ParseTheLine(struct lineparse *lp)
 				parse_state = ps_in_opt;
 				break;
 			case ps_pre_equals:
-				parse_state = ps_pre_value;
-				// fall through intentionally
 			case ps_pre_value:
 				lp->val = current_char;
 				parse_state = ps_in_value;
