@@ -54,7 +54,11 @@ ZERO_OR_ERROR FS_fstat_postparse(struct stat *stbuf, const struct parsedname *pn
 		   it's unlikely that this "feature" will go away.
 		 */
 		stbuf->st_nlink += nr;
+		FSTATLOCK;
 		stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = StateInfo.start_time;
+		FSTATUNLOCK;
+		stbuf->st_size = 4096 ; // Common directory size
+		return 0;
 	} else if (pn->selected_filetype == NO_FILETYPE) {
 		int nr = 0;
 		//printf("FS_fstat pn.selected_filetype == NULL  (1-wire device)\n");
@@ -67,18 +71,20 @@ ZERO_OR_ERROR FS_fstat_postparse(struct stat *stbuf, const struct parsedname *pn
 		FSTATLOCK;
 		stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = StateInfo.dir_time;
 		FSTATUNLOCK;
+		stbuf->st_size = 4096 ; // Common directory size
+		return 0;
 	} else if (pn->selected_filetype->format == ft_directory || pn->selected_filetype->format == ft_subdir) {	/* other directory */
 		int nr = 0;
-		//printf("FS_fstat other dir inside device\n");
 		stbuf->st_mode = S_IFDIR | 0777;
 		stbuf->st_nlink = 2;	// plus number of sub-directories
 		nr = -1;				// make it 1
-		//printf("FS_fstat seem to be %d entries (%d dirs) in device\n", NFT(pn.selected_filetype));
 		stbuf->st_nlink += nr;
 
 		FSTATLOCK;
 		stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = StateInfo.dir_time;
 		FSTATUNLOCK;
+		stbuf->st_size = 4096 ; // Common directory size
+		return 0;
 	} else {					/* known 1-wire filetype */
 		stbuf->st_mode = S_IFREG;
         if (pn->selected_filetype->read != NO_READ_FUNCTION) {
@@ -104,8 +110,7 @@ ZERO_OR_ERROR FS_fstat_postparse(struct stat *stbuf, const struct parsedname *pn
 			stbuf->st_atime = stbuf->st_ctime = stbuf->st_mtime = StateInfo.start_time;
 			break;
 		}
-		//printf("FS_fstat file\n");
+		stbuf->st_size = FullFileLength(pn);
+		return 0;
 	}
-	stbuf->st_size = FullFileLength(pn);
-	return 0;
 }

@@ -600,6 +600,7 @@ GOOD_OR_BAD owopt_packed(const char *params)
 
 /* Parses one argument */
 /* return 0 if ok */
+/* Note: owopt is called in single thread mode -- rest of owfs machinery hasn't been launched */
 GOOD_OR_BAD owopt(const int option_char, const char *arg)
 {
 	// depth of nesting for config files
