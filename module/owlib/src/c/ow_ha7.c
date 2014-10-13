@@ -308,7 +308,7 @@ static GOOD_OR_BAD HA7_toHA7( const struct toHA7 *ha7, struct connection_in *in)
 	strcat(full_command, ".html");
 
 	if (ha7->address[0]) {
-		strcat(full_command, first ? "?" : "&");
+		strcat(full_command, "?" ); // first (if exists)
 		strcat(full_command, "Address=");
 		strcat(full_command, ha7->address);
 		first = 0;
