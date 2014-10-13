@@ -160,6 +160,7 @@ struct wildlexcd {
 	ASCII *match;
 	struct cd_parse_s *cps;
 };
+
 static void WildLexCDCallback(void *v, const struct parsedname *const pn_entry)
 {
 	struct wildlexcd *wlcd = v;
@@ -175,6 +176,7 @@ static void WildLexCDCallback(void *v, const struct parsedname *const pn_entry)
 	cps.pse = parse_status_next;
 	FileLexCD(&cps);
 }
+
 static void WildLexCD(struct cd_parse_s *cps, ASCII * match)
 {
 	struct parsedname pn;

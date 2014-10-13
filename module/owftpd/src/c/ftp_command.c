@@ -65,48 +65,52 @@ static const char *parse_host_port_ext(sockaddr_storage_t * sa, const char *s);
 int ftp_command_parse(const char *input, struct ftp_command_s *cmd)
 {
 	size_t match;
-	struct ftp_command_s tmp;
 	int c;
 	const char *optional_number;
 
-	if (input == NULL || cmd == NULL)
+	if (input == NULL || cmd == NULL) {	
 		return 0;
+	}
 
 	/* see if our input starts with a valid command */
-	for (match = 0; match < NUM_COMMAND; ++match) {
-		if (strncasecmp(input, command_def[match].name, strlen(command_def[match].name)) == 0)
+	for (match = 0; match < NUM_COMMAND; ++match) { // loop though known commands
+		if (strncasecmp(input, command_def[match].name, strlen(command_def[match].name)) == 0) {
+			/* copy our command */
+			strcpy(cmd->command, command_def[match].name);
+
+			/* advance input past the command */
+			input += strlen(command_def[match].name);
 			break;
+		}
 	}
 
 	/* if we didn't find a match, return error */
-	if (match == NUM_COMMAND)
+	if (match == NUM_COMMAND) {
 		return 0;
+	}
 
-	/* copy our command */
-	strcpy(tmp.command, command_def[match].name);
-
-	/* advance input past the command */
-	input += strlen(command_def[match].name);
 
 	/* now act based on the command */
 	switch (command_def[match].arg_type) {
 	case ARG_NONE:
-		tmp.num_arg = 0;
+		cmd->num_arg = 0;
 		break;
 	case ARG_STRING:
-		if (*input != ' ')
+		if (*input != ' ') {
+			// no space before arguments
 			return 0;
+		}
 		++input;
-		input = copy_string(tmp.arg[0].string, input);
-		tmp.num_arg = 1;
+		input = copy_string(cmd->arg[0].string, input);
+		cmd->num_arg = 1;
 		break;
 	case ARG_OPTIONAL_STRING:
 		if (*input == ' ') {
 			++input;
-			input = copy_string(tmp.arg[0].string, input);
-			tmp.num_arg = 1;
+			input = copy_string(cmd->arg[0].string, input);
+			cmd->num_arg = 1;
 		} else {
-			tmp.num_arg = 0;
+			cmd->num_arg = 0;
 		}
 		break;
 	case ARG_HOST_PORT:
@@ -115,49 +119,54 @@ int ftp_command_parse(const char *input, struct ftp_command_s *cmd)
 		}
 		input++;
 		/* parse the host & port information (if any) */
-		input = parse_host_port(&tmp.arg[0].host_port, input);
-		if (input == NULL)
+		input = parse_host_port(&cmd->arg[0].host_port, input);
+		if (input == NULL) {
 			return 0;
-		tmp.num_arg = 1;
+		}
+		cmd->num_arg = 1;
 		break;
 	case ARG_HOST_PORT_LONG:
-		if (*input != ' ')
+		if (*input != ' ') {
 			return 0;
+		}
 		input++;
 		/* parse the host & port information (if any) */
-		input = parse_host_port_long(&tmp.arg[0].host_port, input);
-		if (input == NULL)
+		input = parse_host_port_long(&cmd->arg[0].host_port, input);
+		if (input == NULL) {
 			return 0;
-		tmp.num_arg = 1;
+		}
+		cmd->num_arg = 1;
 		break;
 	case ARG_HOST_PORT_EXT:
-		if (*input != ' ')
+		if (*input != ' ') {
 			return 0;
+		}
 		input++;
 		/* parse the host & port information (if any) */
-		input = parse_host_port_ext(&tmp.arg[0].host_port, input);
-		if (input == NULL)
+		input = parse_host_port_ext(&cmd->arg[0].host_port, input);
+		if (input == NULL) {
 			return 0;
-		tmp.num_arg = 1;
+		}
+		cmd->num_arg = 1;
 		break;
 		/* the optional number may also be "ALL" */
 	case ARG_OPTIONAL_NUMBER:
 		if (*input == ' ') {
 			++input;
-			optional_number = parse_number(&tmp.arg[0].num, input, 255);
+			optional_number = parse_number(&cmd->arg[0].num, input, 255);
 			if (optional_number != NULL) {
 				input = optional_number;
 			} else {
 				if ((tolower(input[0]) == 'a') && (tolower(input[1]) == 'l') && (tolower(input[2]) == 'l')) {
-					tmp.arg[0].num = EPSV_ALL;
+					cmd->arg[0].num = EPSV_ALL;
 					input += 3;
 				} else {
 					return 0;
 				}
 			}
-			tmp.num_arg = 1;
+			cmd->num_arg = 1;
 		} else {
-			tmp.num_arg = 0;
+			cmd->num_arg = 0;
 		}
 		break;
 	case ARG_TYPE:
@@ -167,34 +176,35 @@ int ftp_command_parse(const char *input, struct ftp_command_s *cmd)
 		input++;
 		c = toupper(*input);
 		if ((c == 'A') || (c == 'E')) {
-			tmp.arg[0].string[0] = c;
-			tmp.arg[0].string[1] = '\0';
+			cmd->arg[0].string[0] = c;
+			cmd->arg[0].string[1] = '\0';
 			input++;
 			if (*input == ' ') {
 				input++;
 				c = toupper(*input);
 				if ((c != 'N') && (c != 'T') && (c != 'C'))
 					return 0;
-				tmp.arg[1].string[0] = c;
-				tmp.arg[1].string[1] = '\0';
+				cmd->arg[1].string[0] = c;
+				cmd->arg[1].string[1] = '\0';
 				input++;
-				tmp.num_arg = 2;
+				cmd->num_arg = 2;
 			} else {
-				tmp.num_arg = 1;
+				cmd->num_arg = 1;
 			}
 		} else if (c == 'I') {
-			tmp.arg[0].string[0] = 'I';
-			tmp.arg[0].string[1] = '\0';
+			cmd->arg[0].string[0] = 'I';
+			cmd->arg[0].string[1] = '\0';
 			input++;
-			tmp.num_arg = 1;
+			cmd->num_arg = 1;
 		} else if (c == 'L') {
-			tmp.arg[0].string[0] = 'L';
-			tmp.arg[0].string[1] = '\0';
+			cmd->arg[0].string[0] = 'L';
+			cmd->arg[0].string[1] = '\0';
 			input++;
-			input = parse_number(&tmp.arg[1].num, input, 255);
-			if (input == NULL)
+			input = parse_number(&cmd->arg[1].num, input, 255);
+			if (input == NULL) {
 				return 0;
-			tmp.num_arg = 2;
+			}
+			cmd->num_arg = 2;
 		} else {
 			return 0;
 		}
@@ -204,44 +214,49 @@ int ftp_command_parse(const char *input, struct ftp_command_s *cmd)
 			return 0;
 		input++;
 		c = toupper(*input);
-		if ((c != 'F') && (c != 'R') && (c != 'P'))
+		if ((c != 'F') && (c != 'R') && (c != 'P')) {
 			return 0;
+		}
 		input++;
-		tmp.arg[0].string[0] = c;
-		tmp.arg[0].string[1] = '\0';
-		tmp.num_arg = 1;
+		cmd->arg[0].string[0] = c;
+		cmd->arg[0].string[1] = '\0';
+		cmd->num_arg = 1;
 		break;
 	case ARG_MODE:
-		if (*input != ' ')
+		if (*input != ' ') {
 			return 0;
+		}
 		input++;
 		c = toupper(*input);
-		if ((c != 'S') && (c != 'B') && (c != 'C'))
+		if ((c != 'S') && (c != 'B') && (c != 'C')) {
 			return 0;
+		}
 		input++;
-		tmp.arg[0].string[0] = c;
-		tmp.arg[0].string[1] = '\0';
-		tmp.num_arg = 1;
+		cmd->arg[0].string[0] = c;
+		cmd->arg[0].string[1] = '\0';
+		cmd->num_arg = 1;
 		break;
 	case ARG_OFFSET:
-		if (*input != ' ')
+		if (*input != ' ') {
 			return 0;
+		}
 		input++;
-		input = parse_offset(&tmp.arg[0].offset, input);
-		if (input == NULL)
+		input = parse_offset(&cmd->arg[0].offset, input);
+		if (input == NULL) {
 			return 0;
-		tmp.num_arg = 1;
+		}
+		cmd->num_arg = 1;
 		break;
 	default:
 		daemon_assert(0);
 	}
 
 	/* check for our ending newline */
-	if (*input != '\n')
+	if (*input != '\n') {
 		return 0;
+	}
 
 	/* return our result */
-	*cmd = tmp;
 	return 1;
 }
 
@@ -276,17 +291,20 @@ static const char *parse_host_port(struct sockaddr_in *addr, const char *s)
 	/* scan in 5 pairs of "#," */
 	for (i = 0; i < 5; i++) {
 		s = parse_number(&octets[i], s, 255);
-		if (s == NULL)
+		if (s == NULL) {
 			return NULL;
-		if (*s != ',')
+		}
+		if (*s != ',') {
 			return NULL;
+		}
 		s++;
 	}
 
 	/* scan in ending "#" */
 	s = parse_number(&octets[5], s, 255);
-	if (s == NULL)
+	if (s == NULL) {
 		return NULL;
+	}
 
 	daemon_assert(octets[0] >= 0);
 	daemon_assert(octets[0] <= 255);

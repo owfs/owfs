@@ -102,7 +102,7 @@ static char * HexConvert( char * input_string )
 {
 	int length = strlen( input_string ) ;
 	int pad_first =  ( (length/2)*2 != length ) ; // odd
-	char * return_string = malloc( length ) ; / make same size (intensionally large)
+	char * return_string = malloc( length ) ; // make same size (intensionally large)
 	int hex_pointer = 0 ; // pointer into input_string
 	int char_pointer = 0 ; // pointer into return_string
 
@@ -124,6 +124,7 @@ static char * HexConvert( char * input_string )
 		++char_pointer ;
 	}
 
-	return[string[ char_pointer] = '\0' ; // trailing null
+	return_string[ char_pointer] = '\0' ; // trailing null
+
 	return return_string ; //freed in calling function
 }

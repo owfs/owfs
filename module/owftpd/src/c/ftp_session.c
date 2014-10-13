@@ -208,8 +208,9 @@ void ftp_session_run(struct ftp_session_s *f, struct watched_s *watched)
 			reply(f, 500, "Command line too long.");
 			while (telnet_session_readln(f->telnet_session, buf, sizeof(buf))) {
 				len = strlen(buf);
-				if (buf[len - 1] == '\n')
+				if (buf[len - 1] == '\n') {
 					break;
+				}
 			}
 			goto next_command;
 		}
