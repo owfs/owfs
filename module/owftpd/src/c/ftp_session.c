@@ -437,7 +437,7 @@ static void change_dir(struct ftp_session_s *f, const char *new_dir)
 	struct cd_parse_s cps;
 
 	strcpy(cps.buffer, (ASCII *) f->dir);
-	strcpy(cps.rest, new_dir);
+	cps.rest = new_dir;
 	cps.pse = parse_status_init;
 
 	LEVEL_DEBUG("CD dir=%s, file=%s", SAFESTRING(cps.buffer), SAFESTRING(new_dir));

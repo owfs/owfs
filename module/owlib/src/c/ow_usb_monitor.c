@@ -16,6 +16,8 @@
 
 #if OW_USB
 
+/* This "adapter" is actually a thread that intermittently looks for new USB bus masters */
+
 static void USB_monitor_close(struct connection_in *in);
 static GOOD_OR_BAD usb_monitor_in_use(const struct connection_in * in_selected) ;
 static void USB_scan_for_adapters(void) ;
