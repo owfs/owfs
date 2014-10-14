@@ -587,6 +587,7 @@ static ZERO_OR_ERROR FS_r_variable(struct one_wire_query *owq)
 				default:
 					return -EINVAL ;
 			}
+			break ;
 		case vt_signed:
 			switch ( size ) {
 				case 1:
