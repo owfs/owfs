@@ -1,6 +1,5 @@
 /*
-$Id$
-     OW -- One-Wire filesystem
+    OW -- One-Wire filesystem
     version 0.4 7/2/2003
 
     Function naming scheme:
@@ -23,9 +22,13 @@ $Id$
 
 int Fuse_setup(struct Fuse_option *fo)
 {
-	fo->max_options = 0;
+	fo->allocated_slots = 0;
 	fo->argc = 0;
-	fo->argv = NULL;
+	fo->argv = (char **) owmalloc( sizeof( char *) ) ;
+	if ( fo->argv == NULL ) {
+		return -ENOMEM ;
+	}
+	fo->argv[0] = NULL ;
 	/* create "0th" item -- the program name */
 	/* Note this is required since the final NULL item doesn't exist yet */
 	return Fuse_add("OWFS", fo);
@@ -40,6 +43,8 @@ void Fuse_cleanup(struct Fuse_option *fo)
 		}
 		owfree(fo->argv);
 		fo->argv = NULL ;
+		fo->allocated_slots = 0 ;
+		fo->argc = 0 ;
 	}
 }
 
@@ -62,19 +67,20 @@ int Fuse_parse(char *opts, struct Fuse_option *fo)
 int Fuse_add(char *opt, struct Fuse_option *fo)
 {
 	//LEVEL_DEBUG("Adding option %s",opt);
-	if (fo->argc >= fo->max_options-1) {	
-		char ** old_argv = fo->argv ;
+	if (fo->argc >= fo->allocated_slots-1) {	
+		char ** new_argv ;
+
 		// need to allocate more space
-		fo->max_options += 10;
-		
-		fo->argv = (char **) owrealloc(old_argv, (fo->max_options + 1) * sizeof(char *));
-		if (fo->argv == NULL) {
+		new_argv = (char **) owrealloc( fo->argv, (fo->allocated_slots + 10) * sizeof(char *));
+		if ( new_argv == NULL) {
 			// not enough memory. Clean up and return an error
-			fo->argv = old_argv ;
 			Fuse_cleanup(fo) ;
 			return -ENOMEM;
 		}	
+		fo->allocated_slots += 10;
+		fo->argv = new_argv ;
 	}
+
 	// Add new element
 	fo->argv[fo->argc++] = owstrdup(opt);
 	// and guard element at end

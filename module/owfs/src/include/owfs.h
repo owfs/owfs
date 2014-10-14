@@ -1,5 +1,4 @@
 /*
-$Id$
    OWFS and OWHTTPD
    one-wire file system and
    one-wire web server
@@ -37,7 +36,7 @@ $Id$
 extern struct fuse_operations owfs_oper;
 
 struct Fuse_option {
-	int max_options;
+	int allocated_slots;
 	char **argv;
 	int argc;
 };
