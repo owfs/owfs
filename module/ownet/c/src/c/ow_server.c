@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -408,6 +407,8 @@ static int To_Server( struct server_connection_state * scs, struct server_msg * 
 	old_flags = fcntl( scs->file_descriptor, F_GETFL, 0 ) ; // save socket flags
 	if ( old_flags == -1 ) {
 		rcv_value = -2 ;
+	} else if ( scs->file_descriptor < 0 ) {
+		rcv_value = 0 ; // bad file descriptor -- need to reset
 	} else if ( fcntl( scs->file_descriptor, F_SETFL, old_flags | O_NONBLOCK ) == -1 ) { // set non-blocking
 		rcv_value = -2 ;
 	} else {
