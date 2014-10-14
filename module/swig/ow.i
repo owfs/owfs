@@ -1,5 +1,4 @@
 /* File: ow.i */
-/* $Id$ */
 
 %module OW
 
@@ -38,34 +37,31 @@ int put( const char * path, const char * value )
 {
 	int ret = SWIG_BAD ; /* bad result */
 
-	if ( API_access_start() != 0 ) {
-		return SWIG_BAD ; // bad result
-	}
-
-	if ( value!=NULL) {
-		if ( FS_write( path, value, strlen(value), 0 ) < 0  ) {
-			ret = SWIG_GOOD ; // success
+	if ( API_access_start() == 0 ) {
+		if ( value!=NULL) {
+			if ( FS_write( path, value, strlen(value), 0 ) >= 0  ) {
+				ret = SWIG_GOOD ; // success
+			}
 		}
+		API_access_end() ;
 	}
-	API_access_end() ;
+		
 	return ret ;
 }
 
 /*
   Get a directory,  returning a copy of the contents in *buffer (which must be free-ed elsewhere)
   *buffer will be returned as NULL on error
+  Also functions as a read
  */
 
 char * get( const char * path ) 
 {
 	char * return_buffer = NULL ;
-	if ( API_access_start() != 0 ) {
-		return NULL ; // error
+	if ( API_access_start() == 0 ) {
+		FS_get( path, &return_buffer, NULL ) ;
+		API_access_end() ;
 	}
-
-	FS_get( path, &return_buffer, NULL ) ;
-
-	API_access_end() ;
 	return return_buffer ;
 }
 
