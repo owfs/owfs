@@ -1,0 +1,55 @@
+'\"
+'\" Copyright (c) 2003-2004 Paul H Alfille, MD
+'\" (paul.alfille@gmail.com)
+'\"
+'\" Device manual page for the OWFS -- 1-wire filesystem package
+'\" Based on Dallas Semiconductor, Inc's datasheets, and trial and error.
+'\"
+'\" Free for all use. No waranty. None. Use at your own risk.
+'\" $Id$
+'\"
+.TH DS2401 3  2003 "OWFS Manpage" "One-Wire File System"
+.SH NAME
+.TP
+.B DS2401
+Silicon Serial Number
+.TP
+.B DS1990A
+Serial Number iButton
+.PP
+.B 01
+[.]XXXXXXXXXXXX[XX][/[
+.so man3/standard_mini.3so
+]]
+.SH SYNOPSIS
+Unique serial number only.
+.SH FAMILY CODE
+.PP
+.I 01
+.SH SPECIAL PROPERTIES
+None.
+.SH STANDARD PROPERTIES
+.so man3/standard.3so
+.SH ALARMS
+None.
+.SH DESCRIPTION
+.so man3/description.3so
+.SS DS2401 DS1990A
+The
+.B DS2401 (3)
+and
+.B DS1990A (3)
+are the most basic of 1-wire devices. Their sole property is it's unique address. It can be used for unique identification. Nonetheless, many keylocks, night watchman systems, and tracking systems use this device.
+.SH ADDRESSING
+.so man3/addressing.3so
+.SH DATASHEET
+.br
+http://pdfserv.maxim-ic.com/en/ds/DS2401.pdf
+.br
+http://pdfserv.maxim-ic.com/en/ds/DS1990A-F3-DS1990A-F5.pdf
+.SH SEE ALSO
+.so man3/seealso.3so
+.SH AVAILABILITY
+http://www.owfs.org
+.SH AUTHOR
+Paul Alfille (paul.alfille@gmail.com)

@@ -1,0 +1,47 @@
+'\"
+'\" Copyright (c) 2003-2004 Paul H Alfille, MD
+'\" (paul.alfille@gmail.com)
+'\"
+'\" Program manual page for the OWFS -- 1-wire filesystem package
+'\" Based on Dallas Semiconductor, Inc's datasheets, and trial and error.
+'\"
+'\" Free for all use. No waranty. None. Use at your own risk.
+'\" $Id$
+'\"
+.SH FORMAT OPTIONS
+Choose the representation of the 1-wire unique identifiers. OWFS uses these identifiers as unique directory names.
+.PP
+Although several display formats are selectable, all must be in 
+.I family-id-crc8
+form, unlike some other programs and the labelling on iButtons, which are
+.I crc8-id-family
+form.
+.SS \-f \-\-format="f[.]i[[.]c]"
+Display format for the 1-wire devices. Each device has a 8byte address, consisting of:
+.TP
+.I f
+family code, 1 byte
+.TP
+.I i
+ID number, 6 bytes
+.TP
+.I c
+CRC checksum, 1 byte
+.PP
+Possible formats are
+.I f.i
+(default, 01.A1B2C3D4E5F6),
+.I fi fic f.ic f.i.c
+and
+.I fi.c
+.PP
+All formats are accepted as input, but the output will be in the specified format.
+.PP
+The address elements can be retrieved from a device entry in owfs by the 
+.I family, id and crc8
+properties, and as a whole with
+.I address.
+The reversed id and address can be retrieved as
+.I r_id
+and 
+.I r_address.

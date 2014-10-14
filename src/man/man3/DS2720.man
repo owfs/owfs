@@ -1,0 +1,111 @@
+'\"
+'\" Copyright (c) 2003-2004 Paul H Alfille, MD
+'\" (paul.alfille@gmail.com)
+'\"
+'\" Device manual page for the OWFS -- 1-wire filesystem package
+'\" Based on Dallas Semiconductor, Inc's datasheets, and trial and error.
+'\"
+'\" Free for all use. No waranty. None. Use at your own risk.
+'\" $Id$
+'\"
+.TH DS2720 3  2003 "OWFS Manpage" "One-Wire File System"
+.SH NAME
+.TP
+.B DS2720
+Efficient Addressable Single-cell Rechargeable Lithium Protection IC
+.SH SYNOPSIS
+Memory and warnings.
+.PP
+.B 31
+[.]XXXXXXXXXXXX[XX][/[
+.B lock.[0-1|ALL]
+|
+.B memory
+|
+.B pages/page.[0-1|ALL]
+|
+.br
+.B cc
+|
+.B ce
+|
+.B dc
+|
+.B de
+|
+.B doc
+|
+.B ot
+|
+.B ov
+|
+.B psf
+|
+.B uv
+|
+.br
+.so man3/standard_mini.3so
+]]
+.SH FAMILY CODE
+.PP
+.I 31
+.SH SPECIAL PROPERTIES
+.SS lock.[0-1|ALL]
+.I read-write, yes-no
+.br
+Lock either of the two eprom pages to prevent further writes. Apparently setting
+.I lock
+is permanent.
+.SS memory
+.I read-write, binary
+.br
+Access to the full 256 byte memory range. Much of this space is reserved or special use. User space is the
+.I page
+area.
+.br
+See the
+.I DATASHEET
+for a full memory map.
+.SS pages/pages.[0-1|ALL]
+.I read-write, binary
+Two 8 byte areas of memory for user application. The
+.I lock
+property can prevent further alteration.
+.br
+NOTE that the
+.I page
+property is different from the common 
+.I OWFS
+implementation in that all of
+.I memory
+is not accessible.
+.SH OBSCURE PROPERTIES
+.SS cc ce dc de doc ot ov uv
+.I varies, yes-no
+.br
+Bit flags corresponding to various battery management functions of the chip. See the 
+.I DATASHEET
+for details of the identically named entries.
+.br
+In general, writing "0" corresponds to a 0 bit value, and non-zero corresponds to a 1 bit value.
+.SH STANDARD PROPERTIES
+.so man3/standard.3so
+.SH ALARMS
+None.
+.SH DESCRIPTION
+.so man3/description.3so
+.SS DS2720
+The
+.B DS2720 (3)
+is a battery charging monitor. Besides it's intended use, it may have use in monitoring for device failures.
+.SH ADDRESSING
+.so man3/addressing.3so
+.SH DATASHEET
+.br
+http://pdfserv.maxim-ic.com/en/ds/DS2720.pdf
+.SH SEE ALSO
+.so man3/seealso.3so
+.SH AVAILABILITY
+http://www.owfs.org
+.SH AUTHOR
+Paul Alfille (paul.alfille@gmail.com)

@@ -1,0 +1,64 @@
+'\"
+'\" Copyright (c) 2003-2004 Paul H Alfille, MD
+'\" (paul.alfille@gmail.com)
+'\"
+'\" Device manual page for the OWFS -- 1-wire filesystem package
+'\" Based on Dallas Semiconductor, Inc's datasheets, and trial and error.
+'\"
+'\" Free for all use. No waranty. None. Use at your own risk.
+'\" $Id$
+'\"
+.TH OWHTTPD 1 2004 "OWFS Manpage" "One-Wire File System"
+.SH NAME
+.B owhttpd
+\- Tiny webserver for 1-wire control
+.SH SYNOPSIS
+.B owhttpd
+.so man1/cmdline_mini.1so
+.I \-p
+tcp-port
+.SH "DESCRIPTION"
+.so man1/description.1so
+.SS owhttpd
+.B owhttpd (1)
+is a small webserver that shows the Dallas/Maxim 1-Wire bus attached to a serial port. The main view shows the devices found, You can then navigate to individual devices, and view/alter their properties.
+.PP
+.B owhttpd (1)
+uses the same naming convention as
+.B owfs (1)
+, where the URL corresponds to the filename.
+.PP
+The web server is a modified version of chttpd by Greg Olszewski. It serves no files from the disk, only virtual files from the 1-wire bus. Security should therefore be good. Only the 1-wire bus is at risk.
+.SH SPECIFIC OPTIONS
+.SS \-p portnum
+Sets the tcp port the web server runs on. Access with the URL http://servernameoripaddress:portnum
+.PP
+If no port is specified, an ephemeral port is selected by the operating system. Use
+.I zeroconf (Bonjour)
+to discover the assigned port.
+.so man1/device.1so
+.so man1/temperature.1so
+.so man1/pressure.1so
+.so man1/format.1so
+.so man1/job_control.1so
+.so man1/configuration.1so
+.so man1/help.1so
+.so man1/timeout.1so
+.SH EXAMPLE
+.TP
+owhttpd \-p 3001 \-d /dev/ttyS0
+Web server runs on tcp port 3001, serial adapter at ttyS0
+.TP
+owhttpd \-p 3001 \-s littlehost:4304 \-\-error_level=3
+Web server on port 3001, from
+.I owserver
+process on host "littlehost", extensive error messages.
+.TP
+owhttpd \-p 3001 \-u \-u2 \-r
+Read-only web server on port 3001, using two usb adapters.
+.SH AVAILABILITY
+http://www.owfs.org
+.SH SEE ALSO
+.so man1/seealso.1so
+.SH AUTHOR
+Paul Alfille (paul.alfille@gmail.com)

@@ -1,0 +1,287 @@
+'\"
+'\" Copyright (c) 2003-2004 Paul H Alfille, MD
+'\" (paul.alfille@gmail.com)
+'\"
+'\" Program manual page for the OWFS -- 1-wire filesystem package
+'\" Based on Dallas Semiconductor, Inc's datasheets, and trial and error.
+'\"
+'\" Free for all use. No waranty. None. Use at your own risk.
+'\" $Id$
+'\"
+.TH OWSHELL 1 2004 "OWSHELL Manpage" "One-Wire File System"
+.SH NAME
+owdir, owread, owwrite, owget, owpresent \- lightweight owserver access
+.SH SYNOPSIS
+.SS Minimal options
+.B owdir
+.I -s 
+[host:]port
+[directory]
+.br
+.B owread
+.I -s 
+[host:]port
+filepath
+.br
+.B owwrite
+.I -s 
+[host:]port
+filepath value
+.br
+.B owget
+.I -s 
+[host:]port
+[directory] | filepath
+.br
+.SS Server discovery
+.B owdir
+.I --autoserver
+[directory]
+.br
+.B owread
+.I --autoserver
+filepath
+.br
+.B owwrite
+.I --autoserver
+filepath value
+.br
+.B owget
+.I --autoserver
+[directory] | filepath
+.br
+.SS Full options
+.B owdir
+.I -q --quiet
+.I -f --format
+f[.]i[[.]c]
+] [
+.I --dir
+]
+.I -s 
+[host:]port
+[directory] [directory2 ...]
+.PP
+.B owread
+.I -q --quiet
+.I -C --celsius
+.I -K --kelvin
+.I -F --fahrenheit
+.I -R --rankine
+[
+.I --hex
+] [
+.I --start=
+offset
+] [
+.I --size=
+bytes
+]
+.I -s 
+[host:]port
+filepath [filepath2 ...]
+.PP
+.B owwrite
+.I -q --quiet
+.I -C --celsius
+.I -K --kelvin
+.I -F --fahrenheit
+.I -R --rankine
+[
+.I --hex
+] [
+.I --start=
+offset
+]
+.I -s 
+[host:]port
+filepath value [filepath2 value2 ...]
+.PP
+.B owget
+.I -q --quiet
+.I -f --format
+f[.]i[[.]c]
+.I -C --celsius
+.I -K --kelvin
+.I -F --fahrenheit
+.I -R --rankine
+[
+.I --hex
+] [
+.I --start=
+offset
+] [
+.I --size=
+bytes
+] [
+.I --dir
+]
+.I -s 
+[host:]port
+[directory] | filepath
+.br
+.SS Version
+.B owdir
+.I \-V \-\-version
+.br
+.B owread
+.I \-V \-\-version
+.br
+.B owwrite
+.I \-V \-\-version
+.br
+.B owget
+.I \-V \-\-version
+.br
+.SS Help
+.B owdir
+.I \-h | \-\-help
+.br
+.B owread
+.I \-h | \-\-help
+.br
+.B owwrite
+.I \-h | \-\-help
+.br
+.B owget
+.I \-h | \-\-help
+.br
+.SH "DESCRIPTION"
+.so man1/description.1so
+.SS OWSHELL programs
+.B owdir owread owwrite 
+and 
+.B owget
+are collectively called the
+.B owshell
+programs. They allow lightweight access to an
+.B owserver (1)
+for use in command line scripts.
+.PP
+Unlike
+.B owserver (1) owhttpd (1) owftpd (1) owhttpd (1)
+there is not persistent connection with the 1-wire bus, no caching and no multithreading. Instead, each program connects to a running
+.B owserver (1)
+and performs a quick set of queries.
+.PP
+.B owserver (1)
+performs the actual 1-wire connection (to physical 1-wire busses or other
+.B owserver
+programs), performs concurrency locking, caching, and error collection.
+.PP
+.B owshell
+programs are intended for use in command line scripts. An alternative approach is to mount an
+.B owfs (1)
+filesystem and perform direct file lists, reads and writes.
+.SS owdir
+.B owdir
+performs a
+.I directory
+listing. With no argument, all the devices on the main 1-wire bus will be listed. Given the name of a 1-wire device, the available properties will be listed. It is the equivalent of
+.IP
+.I ls directory
+.P
+in the
+.B owfs (1)
+filesystem.
+.SS owread
+.B owread
+obtains for value of a 1-wire device property. e.g. 28.0080BE21AA00/temperature gives the DS18B20 temperature. It is the equivalent of
+.IP
+.I cat filepath
+.P
+in the
+.B owfs (1)
+filesystem.
+.SS owwrite
+.B owwrite
+performs a change of a property, changing a 1-wire device setting or writing to memory. It is the equivalent of
+.IP
+.I echo "value" > filepath
+.P
+in the
+.B owfs (1)
+filesystem.
+.SS owget
+.B owget (1)
+is a convenience program, combining the function of
+.B owdir (1)
+and
+.B owread (1)
+by first trying to read the argument as a directory, and if that fails as a 1-wire property.
+.SH STANDARD OPTIONS
+.SS \-\-autoserver
+Find an 
+.I owserver
+using the Service Discovery protocol. Essentially Apple's Bonjour (aka zeroconf). Only the first 
+.I owserver 
+will be used, and that choice is probably arbitrary.
+.SS \-s [host:]port
+Connect via tcp (network) to an
+.I owserver
+process that is connected to a physical 1-wire bus. This allows multiple processes to share the same bus. The
+.I owserver
+process can be local or remote.
+.PP
+If the server option is not specified, the default is the local machine and the IANA allocated default port of 4304. Thus "-s localhost:4304" is the equivalent.
+.SH DATA OPTIONS
+.SH \-\-hex
+Hexidecimal mode. For reading data, each byte of character will be displayed as two characrters 0-9ABCDEF. Most useful for reading memory locations. No spaces between data.
+.P
+Writing data in hexidecimal mode just means that the data should be given as one long hexidecimal string.
+.SH \-\-start=offset
+Read or write memory locations starting at the offset byte rather than the beginning. An offset of 0 means the beginning (and is the default).
+.P
+.SH \-\-size=bytes
+Read up to the specified number of bytes of a memory location.
+.SH HELP OPTIONS
+.SS \-h \-\-help
+Shows (this) basic summary of options.
+.SS \-V \-\-version
+.I Version
+of this program.
+.SH DISPLAY OPTIONS
+.SS \-\-dir
+Modify the display of directories to indicate which entries are also directories. A directory member will have a trailing '/' if it is a directory itself. This aids recursive searches.
+.SS \-f \-\-format "f[.]i[[.]c]"
+Display format for the 1-wire devices. Each device has a 8 byte address, consisting of:
+.TP
+.I f
+family code, 1 byte
+.TP
+.I i
+ID number, 6 bytes
+.TP
+.I c
+CRC checksum, 1 byte
+.PP
+Possible formats are
+.I f.i
+(default, 01.A1B2C3D4E5F6),
+.I fi fic f.ic f.i.c
+and
+.I fi.c
+.PP
+All formats are accepted as input, but the output will be in the specified format.
+.SH EXAMPLE
+.TP
+owdir \-s 3000 \-\-format fic
+Get the device listing (full 16 hex digits, no dots) from the local
+.I owserver
+at port 3000
+.TP
+owread \-F \-\-autoserver 51.125499A32000/typeK/temperature
+Read temperature from the DS2751-based thermocouple on an auto-discovered
+.I owserver
+Temperature in fahrenheit.
+.TP
+owwrite \-s 10.0.1.2:3001 32.000800AD23110/pages/page.1 "Passed"
+Connect to a OWFS server process (
+.I owserver
+) that was started on another machine at tcp port 3001 and write to the memory of a DS2780
+.SH SEE ALSO
+.so man1/seealso.1so
+.SH AVAILABILITY
+http://www.owfs.org
+.SH AUTHOR
+Paul Alfille (paul.alfille@gmail.com)

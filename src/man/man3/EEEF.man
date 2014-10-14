@@ -1,0 +1,260 @@
+'\"
+'\" Copyright (c) 2003-2004 Paul H Alfille, MD
+'\" (paul.alfille@gmail.com)
+'\"
+'\" Device manual page for the OWFS -- 1-wire filesystem package
+'\" Based on Dallas Semiconductor, Inc's datasheets, and trial and error.
+'\"
+'\" Free for all use. No waranty. None. Use at your own risk.
+'\" $Id$
+'\"
+.TH HobbyBoards_EE/EF 3  2009 "OWFS Manpage" "One-Wire File System"
+.SH NAME
+.TP 
+EEEF
+HobbyBoards EE/EF Microprocessor-based slaves
+.TP
+UVI
+Ultra Violet (UV) Index sensor
+.TP
+Moisture
+Soil and Leaf moisture measurements
+.TP
+HUB
+4-channel hub with switchable branches
+.SH SYNOPSIS
+.SS General EE device
+.B EE
+[.]XXXXXXXXXXXX[XX][/[
+.B temperature
+|
+.B version
+|
+.B type_number
+|
+.B temperature_offset
+|
+.so man3/standard_mini.3so
+]]
+.SS UVI sensor
+.B EE
+[.]XXXXXXXXXXXX[XX][/[
+.B UVI/UVI
+|
+.B UVI/UVI_offset
+|
+.B UVI/in_case
+|
+.B UVI/valid
+|
+.B temperature
+|
+.B version
+|
+.B type_number
+|
+.B temperature_offset
+]]
+.SS General EF device
+.B EF
+[.]XXXXXXXXXXXX[XX][/[
+.B version
+|
+.B type_number
+|
+.so man3/standard_mini.3so
+]]
+.SS Moisture Meter
+.B moisture/sensor.[0-3|ALL]
+.br
+.B moisture/is_moisture.[0-3|ALL|BYTE]
+|
+.B moisture/is_leaf.[0-3|ALL|BYTE]
+.br
+.B moisture/calibrate/min
+|
+.B moisture/calibrate/max
+|
+.B moisture/calibrate/raw.[0-4|ALL]
+.SS Hub
+. B hub/branch.[0-3|ALL|BYTE]
+|
+. B hub/short.[0-3|ALL|BYTE]
+.SH FAMILY CODE
+.TP
+.I EE
+Device with temperature
+.TP
+.I EE
+UVI
+.TP
+.I EF
+Device without temperature
+.TP
+.I EF
+Moisture Meter
+.TP
+.I EF
+Hub
+.SH TEMPERATURE PROPERTIES
+.SS temperature
+.I read-only, floating point
+.br
+Temperature read every 30 seconds. Resolution .5C (uses an on-board DS18B20). Temperature is only present in the EE-series devices.
+.SS temperature_offset
+.I read-write, floating point
+.br
+Offset stored on device to apply to temperature readings.
+.SH UVI PROPERTIES
+.SS UVI/UVI
+.I read-only floating point
+.br
+UV Index (ultraviolet index) in the range 0.0 to 16.0 resolution .1
+.PP
+Only the UVI version of the EE device has a UVI sensor. Readings made every .5 seconds.
+.SS UVI/UVI_offset
+.I read-write, floating point
+.br
+Signed offset to apply to the UVI measurement. Stored on-device non-volatile.
+.SS UVI/in_case
+.I read-write, yes-no
+.br
+Flag to apply compensation for the protective case. Stored on-device non-volatile.
+.SS UVI/valid
+.I read-only, yes-no
+Flag the the EE device type matches the known UVI type.
+.SH Moisture Meter
+.SS moisture/sensor.0 .. moisture/sensor.3 moisture/sensor.ALL
+.I read-only integer
+.br
+Up to 4 sensors reading moisture can be attached. 
+.I OWFS
+addresses the sensors as 0 through 3 while the datasheet uses 1-4.
+Two types of external sensors are supported (and the data range):
+.TP
+Watermark Soil Moisture Sensor
+0-199
+.TP
+Leaf Wetness Sensor
+0-99
+.SS moisture/is_moisture.0 .. moisture/is_moisture.3 moisture/is_moisture.ALL
+.SS moisture/is_leaf.0 .. moisture/is_leaf.3 moisture/is_leaf.ALL
+.I read-write yes_no
+.br
+Set or get the type of sensor attached to each channel. Note that 
+.I OWFS
+addresses the sensors as 0 through 3 while the datasheet uses 1-4.
+Two types of external sensors are supported:
+.TP
+Watermark Soil Moisture
+Sensor
+.TP
+Leaf Wetness
+Sensor
+.P
+Note that
+.I is_leaf
+and 
+.I is_moisture
+are complementary and clearing one sets the other.
+
+.SS moisture/calibrate/min
+.SS moisture/calibrate/max
+.I read-write unsigned integer
+.br
+Set or get the upper and lower range for the raw data for leaf wetness scaling. See the datasheet for details.
+
+.SS moisture/calibrate/raw.0 .. moisture/calibrate/raw.3 moisture/calibrate/raw.ALL
+.I read-only unsigned integer
+.br
+Read the raw leaf wetness values for setting scaling. See the datasheet for details.
+Note that 
+.I OWFS
+addresses the sensors as 0 through 3 while the datasheet uses 1-4.
+.SH Hub
+4-channel hub. Individual branches can be switched on and off.
+.SS hub/branch.0 .. hub/branch.3 hub/branch.ALL hub/branch.BYTE
+.I read-write, yes-no
+.br
+The HobbyBoards hub has four 1-wire bus lines. Each branch is electricaly isolated from reflections and shorts, and can be optionally excluded from the 1-wire network.
+.PP
+You can turn each
+.I branch
+on or off by writing 0 (off) or 1 (on) to the corresponding property. Note that
+.I OWFS
+indexes the branches 0 to 3 while the datasheet uses 1 to 4.
+.PP
+The easiest way to turn all the branches on is to write 15 (0x0F) to
+.I hub/branch.BYTE
+.SS hub/short.0 .. hub/short.3 hub/short.ALL hub/short.BYTE
+.I read-only, yes-no
+.br
+Is the corresponding branch in "short" condition? (Electrically shorted out).
+.SH IDENTIFICATION PROPERTIES
+.SS version
+.I read-only, ascii
+.br
+Firmware version for the EE/EF device. Reported in nn.nn format where nn is major/minor decimal value.
+.P
+Note: This format was changed as of version owfs-2.9p6 at the request of the HobbyBoards. Formerly reported in HH.HH format where HH is a hex digit (0-9A-F).
+.SS type_number
+.I read-only, integer
+.br
+Index of the type of sensor built into this device. Current known assignments:
+.TP
+1
+UVI (Ultraviolet index)
+.TP
+2
+Moisture meter
+.TP
+3
+Moisture meter with datalogger
+.TP
+4
+Sniffer
+.TP
+5
+Hub
+.SH STANDARD PROPERTIES
+.so man3/standard.3so
+.SH ALARMS
+None
+.SH DESCRIPTION
+.so man3/description.3so
+.SS EE / EF
+The
+.B EEEF (3)
+are a reference platform of microprocessor based 1-wire slaves. In general they require external power, and have an on-board index for the specific capabilities. They are designed by Eric Vickery at HobbyBoards.com
+.PP
+The
+.I EE
+class device uses family code EE and has an included temperature sensor. The
+.I EF
+devices have no temperature sensor,
+.SS UVI
+The
+.I UVI
+sensor is an implementation of the
+.I EE
+class device with Ultra Violet Index sensing. All it's specific properties are in the
+.I UVI/
+directory.
+.SH ADDRESSING
+.so man3/addressing.3so
+.SH DATASHEET
+.TP
+.B UVI
+http://www.hobby-boards.com/catalog/links/uvi2-r1/UVI%20Meter%20User%20Manual.pdf
+.TP
+.B Moisture and Leaf Sensor
+http://www.hobby-boards.com/download/manuals/Moisture%20Meter.pdf
+.TP
+.B 4 Channel Hub
+http://www.hobby-boards.com/download/manuals/4%20Channel%20Hub.pdf
+.SH SEE ALSO
+.so man3/seealso.3so
+.SH AVAILABILITY
+http://www.owfs.org
+.SH AUTHOR
+Paul Alfille (paul.alfille@gmail.com)

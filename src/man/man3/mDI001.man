@@ -1,0 +1,76 @@
+'\"
+'\" Copyright (c) 2003-2004 Paul H Alfille, MD
+'\" (paul.alfille@gmail.com)
+'\"
+'\" Device manual page for the OWFS -- 1-wire filesystem package
+'\" Based on Dallas Semiconductor, Inc's datasheets, and trial and error.
+'\"
+'\" Free for all use. No waranty. None. Use at your own risk.
+'\" $Id$
+'\"
+.TH mDI001 3  2003 "OWFS Manpage" "One-Wire File System"
+.SH NAME
+.TP
+.B mDI001
+Digital Input Module
+.SH SYNOPSIS
+.SS Monitor 4 digital lines
+.PP
+.B A5
+[.]XXXXXXXXXXXX[XX][/[
+.B switch_closed.[0-3|ALL|BYTE]
+|
+.B loop_open.[0-3|ALL|BYTE]
+|
+.B loop_shorted.[0-3|ALL|BYTE]
+|
+.so man3/standard_mini.3so
+]]
+.SH FAMILY CODE
+.PP
+.I A5
+.SH SPECIAL PROPERTIES
+.SS switch_closed.[0-3|ALL|BYTE]
+.I read-only, yes-no
+.br
+Is the relay closed? (1=yes, 0=no).
+.P
+Note that 
+.I OWFS 
+uses 0 through 3 as the index and the datasheet uses 1 through 4.
+.SS loop_shorted.[0-3|ALL|BYTE]
+.I read-only, yes-no
+.br
+Is the loop shorted? (1=yes, 0=no). Failsafe mode.
+.P
+Note that 
+.I OWFS 
+uses 0 through 3 as the index and the datasheet uses 1 through 4.
+.SS loop_open.[0-3|ALL|BYTE]
+.I read-only, yes-no
+.br
+Is the loop open? (1=yes, 0=no). Failsafe mode.
+.P
+Note that 
+.I OWFS 
+uses 0 through 3 as the index and the datasheet uses 1 through 4.
+.SH STANDARD PROPERTIES
+.so man3/standard.3so
+.SH ALARMS
+None.
+.SH DESCRIPTION
+.so man3/description.3so
+.SS mDI001
+The
+.B mDI001 (3)
+is used to monitor digital lines for simple switching.
+.SH ADDRESSING
+.so man3/addressing.3so
+.SH WEBSITE
+.br
+http://www.cmciel.com/products-solutions/individual-products/4-channel-fail-safe-digital-module-mdi001/
+.so man3/seealso.3so
+.SH AVAILABILITY
+http://www.owfs.org
+.SH AUTHOR
+Paul Alfille (paul.alfille@gmail.com)

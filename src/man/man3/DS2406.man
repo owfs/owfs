@@ -1,0 +1,283 @@
+'\"
+'\" Copyright (c) 2003-2004 Paul H Alfille, MD
+'\" (paul.alfille@gmail.com)
+'\"
+'\" Device manual page for the OWFS -- 1-wire filesystem package
+'\" Based on Dallas Semiconductor, Inc's datasheets, and trial and error.
+'\"
+'\" Free for all use. No waranty. None. Use at your own risk.
+'\" $Id$
+'\"
+.TH DS2406 3  2003 "OWFS Manpage" "One-Wire File System"
+.SH NAME
+.TP
+.B DS2406
+Dual Addressable Switch with 1kbit Memory
+.TP
+.B DS2407
+Hidable Dual Addressable Switch with 1kbit Memory
+.SH SYNOPSIS
+Dual Switch, Write-once Memory
+.PP
+.B 12
+[.]XXXXXXXXXXXX[XX][/[
+.B channels
+|
+.B latch.[A|B|ALL|BYTE]
+|
+.B memory
+|
+.B pages/page.[0-3|ALL]
+|
+.B PIO.[A|B|ALL|BYTE]
+|
+.B power
+|
+.B sensed.[A|B|ALL|BYTE]
+|
+.B set_alarm
+|
+.B TAI8570/[sibling|temperature|pressure]
+|
+.B T8A/volt.[0-7,ALL]
+.so man3/standard_mini.3so
+]]
+.SH FAMILY CODE
+.PP
+.I 12
+.SH SPECIAL PROPERTIES
+.SS channels
+.I read-only, unsigned integer
+.br
+Is this a 1 or 2 channel switch? The
+.I DS2406
+comes in two forms, one has only one
+.I PIO
+pin (PIO.A). Returns 1 or 2.
+.SS latch.A latch.B latch.ALL latch.BYTE
+.I read-write, yes-no
+.br
+The activity latch is set to 1 with the first negative or positive edge detected on the associated PIO channel.
+.br
+Writing any data will clear latch for all (both)) channels. This is a hardware "feature" of the chip.
+.br
+.I ALL
+references both channels simultaneously, comma separated
+.br
+.I BYTE
+references both channels simultaneously as a single byte, with channel A in bit 0.
+.SS memory
+.I read-write, binary
+.br
+128 bytes of non-volatile, write-once data.
+.SS pages/page.0 ... pages/page.3 pages/page.ALL
+.I read-write, binary
+.br
+Memory organized as 4 pages or 32 bytes. Memory is write-once.
+.br
+.I ALL
+is the aggregate of all 4 pages, sequentially accessed.
+.SS PIO.A PIO.B PIO.ALL PIO.BYTE
+.I read-write, yes-no
+.br
+State of the open-drain output (
+.I PIO
+) pin. 0 = non-conducting (off), 1 = conducting (on).
+.br
+Writing zero will turn off the switch, non-zero will turn on the switch. Reading the
+.I PIO
+state will return the switch setting (flipflop in the data sheet). To determine the actual logic level at the switch, refer to the
+.I sensed
+property.
+.br
+Note that the actual pin setting for the chip uses the opposite polarity -- 0 for conducting, 1 for non-conducting. However, to turn a connected device on (i.e. to deliver power) we use the software concept of 1 as conducting or "on".
+.br
+.I ALL
+references both channels simultaneously, comma separated.
+.br
+.I BYTE
+references both channels simultaneously as a single byte, with channel A in bit 0.
+.SS power
+.I read-only, yes-no
+.br
+Is the
+.I DS2406
+powered parasitically =0 or separately on the Vcc pin =1
+.SS sensed.A sensed.B sensed.ALL sensed.BYTE
+.I read-only, yes-no
+.br
+Logic level at the
+.I PIO
+pin. 0 = ground. 1 = high (~2.4V - 5V ). Really makes sense only if the
+.I PIO
+state is set to zero (off), else will read zero.
+.br
+.I ALL
+references both channels simultaneously, comma separated.
+.br
+.I BYTE
+references both channels simultaneously as a single byte, with channel A in bit 0.
+.SS set_alarm
+.I read-write, unsigned integer (0-331)
+.br
+A number consisting of three digits XYZ, where:
+.TP
+X
+channel selection
+.br
+.I 0
+neither
+.br
+.I 1
+A only
+.br
+.I 2
+B only
+.br
+.I 3
+A or B
+.TP
+Y
+source selection
+.br
+.I 0
+undefined
+.br
+.I 1
+latch
+.br
+.I 2
+PIO
+.br
+.I 3
+sensed
+.TP
+Z
+polarity selection
+.br
+.I 0
+low
+.br
+.I 1
+high
+.PP
+All digits will be truncated to the 0-3 (or 0-1) range. Leading zeroes are optional (and may be problematic for some shells).
+.PP
+Example:
+.TP
+311
+Responds on Conditional Search when either latch.A or latch.B (or both) are set to 1.
+.TP
+<100
+Never responds to Conditional Search.
+.SS TAI8570/
+.I subdirectory
+.br
+Properties when the
+.I DS2406 (3)
+is built into a
+.I TAI8570.
+.br
+If the
+.I DS2406 (3)
+is not part of a
+.I TAI8570
+or is not the controlling switch, attempts to read will result in an error.
+.SS TAI8570/pressure
+.I read-only, floating point
+.br
+Barometric
+.I pressure
+in millibar.
+.SS TAI8570/sibling
+.I read-only, ascii
+.br
+Hex address of the
+.I DS2406 (3)
+paired with this chip in a
+.I TAI8570.
+.SS TAI8570/temperature
+.I read-only, floating-point
+.br
+Ambient
+.I temperature
+measured by the
+.I TAI8570
+in prevailing temperature units (Centigrade is the default).
+.SS T8A/volt.[0-7|ALL]
+.I read-only, floating-point
+.br
+Uses the T8A (by
+.I Embedded Data Systems
+) 8 channel voltage converter. Units in volts, 0 to 5V range. 12 bit resolution.
+.SH STANDARD PROPERTIES
+.so man3/standard.3so
+.SH ALARMS
+Use the
+.I set_alarm
+property to set the alarm triggering criteria.
+.SH DESCRIPTION
+.so man3/description.3so
+.SS DS2406
+The
+.B DS2406 (3)
+allows control of other devices, like LEDs and relays. It superceeds the
+.B DS2405
+and
+.B DS2407
+Alternative switches include the
+.B DS2408
+or even
+.B DS2450
+.br
+The
+.B DS2407
+is practically identical to the
+.I DS2406
+except for a strange
+.I hidden
+mode. It is supported just like the
+.B DS2406
+.SS TAI8570
+The
+.I TAI-8570 Pressure Sensor
+is based on a 1-wire composite device by
+.I AAG Electronica.
+The
+.I TAI8570
+uses 2
+.I DS2406 (3)
+chips, paired as a reader and writer to synthesize 3-wire communication. Only 1 of the
+.I DS2406 (3)
+will allow
+.I temperature
+or
+.I pressure
+readings. It's mate's address can be shown as
+.I sibling.
+.PP
+The
+.I TAI8570
+uses the
+.I Intersema MS5534a
+pressure sensor, and stores calibration and temperature compensation values internally.
+.PP
+Design and code examples are available from AAG Electronica http://aag.com.mx
+, specific permission to use code in a GPL product was given by Mr. Aitor Arrieta of AAG and Dr. Simon Melhuish of OWW.
+.SH ADDRESSING
+.so man3/addressing.3so
+.SH DATASHEET
+.br
+http://pdfserv.maxim-ic.com/en/ds/DS2406.pdf
+.br
+http://pdfserv.maxim-ic.com/en/ds/DS2407.pdf
+.br
+http://www.embeddeddatasystems.com/page/EDS/PROD/IO/T8A
+.br
+http://oww.sourceforge.net/hardware.html#bp
+.SH SEE ALSO
+.so man3/seealso.3so
+.SH AVAILABILITY
+http://www.owfs.org
+.SH AUTHOR
+Paul Alfille (paul.alfille@gmail.com)

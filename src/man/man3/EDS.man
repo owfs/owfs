@@ -1,0 +1,673 @@
+'\"
+'\" Copyright (c) 2003-2004 Paul H Alfille, MD
+'\" (paul.alfille@gmail.com)
+'\"
+'\" Device manual page for the OWFS -- 1-wire filesystem package
+'\" Based on Dallas Semiconductor, Inc's datasheets, and trial and error.
+'\"
+'\" Free for all use. No waranty. None. Use at your own risk.
+'\" $Id$
+'\"
+.TH EDS00xx 3  2003 "OWFS Manpage" "One-Wire File System"
+.SH NAME
+.TP
+EDS
+Embedded Data Systems Sensors
+.TP
+.B EDS0064
+Temperature
+.TP
+.B EDS0065
+Temperature and Humidity
+.TP
+.B EDS0066
+Temperature and Barometric Pressure
+.TP
+.B EDS0067
+Temperature and Light
+.TP
+.B EDS0068
+Temperature, Barometric Pressure and Light
+.TP
+.B EDS0070
+Vibration
+.TP
+.B EDS0071
+RTD 4-wire temperature
+.TP
+.B EDS0072
+RTD 3-wire temperature
+.TP
+.B EDS0080
+8 Channel Analog Current Input
+.TP
+.B EDS0082
+8 Channel Analog Voltage Input
+.TP
+.B EDS0083
+4 Channel Analog Current Input
+.TP
+.B EDS0085
+4 Channel Analog Voltage Input
+.TP
+.B EDS0090
+8 Discrete I/O
+.SH SYNOPSIS
+.B Embedded Data Systems
+microprocessor-based sensors
+.SS Sub-type ( all )
+.B 7E
+[.]XXXXXXXXXXXX[XX][/[
+.B device_id
+|
+.B device_type
+|
+.B tag
+]]
+.SS Memory ( all )
+.B 7E
+[.]XXXXXXXXXXXX[XX][/[
+.B memory
+|
+.B pages/page.[0-2|ALL]
+]]
+.SS Standard ( all )
+.B 7E
+[.]XXXXXXXXXXXX[XX][/[
+.B 
+.so man3/standard_mini.3so
+]]
+.SS Temperature ( EDS0064/5/6/7/8 )
+.B 7E.XXXXXXXXXXXX/EDS006X
+[/[
+.B temperature
+|
+.B counters/seconds
+|
+.B alarm/temp_[hi|low]
+|
+.B alarm/clear
+|
+.B set_alarm/temp_[hi|low]
+|
+.B threshold/temp_[hi|low]
+]]
+.SS Humidity ( EDS0065/8 )
+.B 7E.XXXXXXXXXXXX/EDS006X
+[/[
+.B humidity
+|
+.B humidex
+|
+.B dew_point
+|
+.B heat_index
+|
+.B alarm/humidity_[hi|low]
+|
+.B alarm/humidex_[hi|low]
+|
+.B alarm/dew_point_[hi|low]
+|
+.B alarm/heat_index_[hi|low]
+|
+.B alarm/clear
+|
+.B set_alarm/humidity_[hi|low]
+|
+.B set_alarm/humidex_[hi|low]
+|
+.B set_alarm/dew_point_[hi|low]
+|
+.B set_alarm/heat_index_[hi|low]
+|
+.B threshold/humidity_[hi|low]
+|
+.br
+.B threshold/humidex_[hi|low]
+|
+.B threshold/dew_point_[hi|low]
+|
+.B threshold/heat_index_[hi|low]
+]]
+.SS Barometric Pressure ( EDS0066/8 )
+.B 7E.XXXXXXXXXXXX/EDS006X
+[/[
+.B pressure
+|
+.B inHg
+|
+.B alarm/pressure_[hi|low]
+|
+.B alarm/inHg_[hi|low]
+|
+.B alarm/clear
+|
+.B set_alarm/pressure_[hi|low]
+|
+.B set_alarm/inHg_[hi|low]
+|
+.B threshold/pressure_[hi|low]
+|
+.B threshold/inHg_[hi|low]
+]]
+.SS Light ( EDS0067/8 )
+.B 7E.XXXXXXXXXXXX/EDS006X
+[/[
+.B light
+|
+.B alarm/light_[hi|low]
+|
+.B alarm/clear
+|
+.B set_alarm/light_[hi|low]
+|
+.B threshold/light_[hi|low]
+]]
+.SS Vibration ( EDS0070 )
+.B 7E.XXXXXXXXXXXX/EDS0070
+[/[
+.B vib_level
+|
+.B vib_peak
+|
+.B vib_min
+|
+.B vib_max
+|
+.B counter/seconds
+|
+.B alarm/vib_[hi|low]
+|
+.B alarm/clear
+|
+.B set_alarm/vib_[hi|low]
+|
+.B threshold/vib_[hi|low]
+]]
+.SS RTD Temperature ( EDS0071/2 )
+.B 7E.XXXXXXXXXXXX/EDS007X
+[/[
+.B temperature
+|
+.B resistance
+|
+.B raw
+|
+.B delay
+|
+.B user_byte
+|
+.B calibration/[key|constant]
+|
+.B counter/[seconds|samples]
+|
+.B alarm/temp_[hi|low]
+|
+.B alarm/RTD_[hi_low]
+|
+.B alarm/clear
+|
+.B set_alarm/temp_[hi|low]
+|
+.B set_alarm/RTD_[hi_low]
+|
+.B threshold/temp_[hi|low]
+|
+.B threshold/RTD_[hi_low]
+]]
+.SS Analog Current ( EDS0080 [0-7] EDS0083 [0-3] )
+.B 7E.XXXXXXXXXXXX/EDS0080
+[/[
+.B current.[0-7|ALL]
+|
+.B max_current.[0-7|ALL]
+|
+.B min_current.[0-7|ALL]
+|
+.B threshold/current_hi.[0-7|ALL]
+|
+.B threshold/current_low.[0-7|ALL]
+|
+.B alarm/current_hi.[0-7|ALL|BYTE]
+|
+.B alarm/current_low.[0-7|ALL|BYTE]
+|
+.B set_alarm/current_hi.[0-7|ALL|BYTE]
+|
+.B set_alarm/current_low.[0-7|ALL|BYTE]
+|
+.B counter/seconds
+|
+.B memory
+|
+.B pages/page.[0-4|ALL]
+.SS Analog Voltage ( EDS0082 [0-7] EDS0085 [0-3] )
+.B 7E.XXXXXXXXXXXX/EDS0082
+[/[
+.B volts.[0-7|ALL]
+|
+.B max_volts.[0-7|ALL]
+|
+.B min_volts.[0-7|ALL]
+|
+.B threshold/volts_hi.[0-7|ALL]
+|
+.B threshold/volts_low.[0-7|ALL]
+|
+.B alarm/volts_hi.[0-7|ALL|BYTE]
+|
+.B alarm/volts_low.[0-7|ALL|BYTE]
+|
+.B set_alarm/volts_hi.[0-7|ALL|BYTE]
+|
+.B set_alarm/volts_low.[0-7|ALL|BYTE]
+|
+.B counter/seconds
+|
+.B memory
+|
+.B pages/page.[0-4|ALL]
+.SS I/O ( EDS0090 )
+.B 7E.XXXXXXXXXXXX/EDS009X 
+[/[
+.B input.[0-7|ALL]
+|
+.B counter/[seconds | pulses.[0-7|ALL]|reset.[0-7|ALL|BYTE]]
+|
+.B output/[set.[0-7|ALL|BYTE]|off.[0-7|ALL|BYTE]|reset.[0-7|ALL|BYTE]]
+|
+.B latch/[state.[0-7|ALL|BYTE]|reset.[0-7|ALL|BYTE]]
+|
+.B alarm/[hi.[0-7|ALL]|low.[0-7|ALL]|clear]
+|
+.B set_alarm/[hi.[0-7|ALL]|low.[0-7|ALL]]
+.SS LED ( all )
+.B 7E.XXXXXXXXXXXX/EDS00XX/LED/[state|control]
+.SS relay ( all )
+.B 7E.XXXXXXXXXXXX/EDS00XX/relay/[state|control]
+.SH FAMILY CODE
+.TP
+.I 7E
+.SH TEMPERATURE
+.SS EDS006X/temperature
+.I read-only, floating-point
+.br
+Temperature for the EDS006X series of chips. In the \-55C to 125C range, with 0.0636C precision. The temperature is read every second, continually. Data is presented in the specified temperature scale, Celsius by default.
+.SS EDS007X/temperature
+.I read-only, floating-point
+.br
+Temperature for the EDS007X series of chips. Read using a wide-range precise RTD sensor. Typical range is \-60C to 260C with 0.15C accuracy, although a range of \-200C to 850C is possible. The temperature is read every second unless a longer
+.I EDS007X/delay
+is given. Data is presented in the specified temperature scale, Celsius by default.
+.SS EDS007X/resistance
+.I read-only, floating-point
+.br
+Actual measured resistance (Ohms) of the RTD element. Useful if the RTD element doesn't conform to the typical European IEC 60751 standard.
+.SH HUMIDITY
+.SS EDS006X/humidity
+.I read-only, floating-point
+.br
+Relative humidity in the 0-100 range (percent). Read every 0.2 seconds.
+.SS EDS006X/dew_point
+.I read-only, floating-point
+.br
+Dew point computed from
+.I EDS006X/temperature
+and
+.I EDS006X/humidity
+computered every 0.2 seconds. Data is a calculated temperature and is reported in the specified temperature scale. Default Celsius.
+.SS EDS006X/heat_index
+.I read-only, floating-point
+.br
+Heat index computed from
+.I EDS006X/temperature
+and
+.I EDS006X/humidity
+computered every 0.2 seconds. Data is a calculated temperature and is reported in the specified temperature scale. Default Celsius.
+.SS EDS006X/humidex
+.I read-only, floating-point
+.br
+Humidex (popular in Canada) computed from
+.I EDS006X/temperature
+and
+.I EDS006X/humidity
+computed every 0.2 seconds. Data is a percent and reported in the 0-100 range.
+.SH LIGHT
+.SS EDS006X/light
+.I read-only, unsigned integer
+.br
+Ambient light in Lux. Measured every 0.2 seconds.
+.SH PRESSURE
+.SS EDS006X/pressure
+.I read-only, floating-point
+.br
+Ambient pressure, measured every 0.2 seconds. Data in the selected pressure scale (default mBar).
+.SS EDS006X/inHg
+.I read-only, floating-point
+.br
+Ambient pressure, measured every 0.2 seconds. Data in the inHg scale.
+.SH VIBRATION
+.SS EDS0070/vib_level
+.I read_only, unsigned integer
+.br
+Vibration registered by sensor (instantaneous value) in 0-1023 range.
+.SS EDS0070/vib_peak
+.I read_only, unsigned integer
+.br
+Vibration registered by sensor (highest recent value -- slowly decays) in 0-1023 range.
+.SS EDS0070/vib_min
+.I read_only, unsigned integer
+.br
+Vibration registered by sensor (lowest value) in 0-1023 range.
+.SS EDS0070/vib_max
+.I read_only, unsigned integer
+.br
+Vibration registered by sensor (highest value) in 0-1023 range.
+.SH CURRENT
+The 
+.B EDS0080
+and
+.B EDS0083
+measure current in the 4-20mA range, with upper and threshold limits and the ability to set an alarm and independently trigger a relay if the value is out of range.
+.SS EDS0080/current.[0-7|ALL] EDS0083/current.[0-3|ALL]
+.I read-only, floating point
+.br
+Current current level. (4-20mA)
+.SS EDS0080/max_current.[0-7|ALL] EDS0080/max_current.[0-3|ALL]
+.SS EDS0083/min_current.[0-7|ALL] EDS0083/min_current.[0-3|ALL]
+.I read-only, floating point
+.br
+Maximum and minimum current readings since last
+.I alarm/clear
+command.
+.SH VOLTAGE
+The 
+.B EDS0082
+and
+.B EDS0085
+measure voltage in the 0-10V range, with upper and threshold limits and the ability to set an alarm and independently trigger a relay if the value is out of range.
+.SS EDS0082/volts.[0-7|ALL] EDS0085/volts.[0-3|ALL]
+.I read-only, floating point
+.br
+Current voltage level. (0-10V)
+.SS EDS0082/max_volts.[0-7|ALL] EDS0085/max_volts.[0-3|ALL]
+.SS EDS0082/min_volts.[0-7|ALL] EDS0085/min_volts.[0-3|ALL]
+.I read-only, floating point
+.br
+Maximum and minimum voltage readings since last
+.I alarm/clear
+command.
+.SH THRESHOLD
+High and low range of acceptable sensor readings. Values outside this range will trigger an alarm if the corresponding
+.I EDS00XX/set_alarm flag is set.
+.SS EDS00XX/threshold/temp_hi EDS00XX/threshold/temp_low
+.I read-write, floating-point
+.br
+Threshold temperatures in the specified temperature scale. Default Celsius.
+.SS EDS006X/threshold/humidity_hi \tEDS006X/threshold/humidity_low
+.SS EDS006X/threshold/dew_point_hi \tEDS006X/threshold/dew_point_low
+.SS EDS006X/threshold/heat_index_hi \tEDS006X/threshold/heat_index_low
+.SS EDS006X/threshold/humidex_hi \t\tEDS006X/threshold/humidex_low
+.I read-write, floating-point
+.br
+Threshold humidity values. 
+.I Dew point 
+and 
+.I Heat index 
+are in the specified temperature scale. Default Celsius.
+.SS EDS006X/threshold/pressure_hi \tEDS006X/threshold/pressure_low
+.SS EDS006X/threshold/inHg_hi \tEDS006X/threshold/inHg_low
+.I read-write, floating-point
+.br
+Threshold barometric pressure values. 
+.I Pressure
+is the specified pressure scale. Default mBar.
+.SS EDS006X/threshold/light_hi \tEDS006X/threshold/light_low
+.I read-write, unsigned
+.br
+Threshold light (lux) values.
+.SS EDS0070/threshold/vib_hi \tEDS0070/threshold/vib_low
+.I read-write, unsigned
+.br
+Vibration sensor alarm limits in 0-1023 range.
+.SS EDS007X/threshold/resistance_hi  \tEDS007X/threshold/resistance_low
+.I read-write, floating-point
+.br
+Threshold RTD resistance values (Ohm).
+.SS EDS0080/threshold/current_hi.[0-7|ALL]\tEDS0080/threshold/current_low.[0-7|ALL]
+.SS EDS0082/threshold/volts_hi.[0-7|ALL]\tEDS0082/threshold/volts_low.[0-7|ALL]
+.SS EDS0083/threshold/current_hi.[0-3|ALL]\tEDS0083/threshold/current_low.[0-3|ALL]
+.SS EDS0085/threshold/volts_hi.[0-3|ALL]\tEDS0085/threshold/volts_low.[0-3|ALL|]
+.I read-write, floating-point
+.br
+Voltage or current threshold limits
+.SH SET ALARM
+Set conditional alarm to trigger if corresponding flag is set. Also must set high and low
+.I threshold.
+.SS EDS00XX/set_alarm/temp_hi \t\tEDS00XX/set_alarm/temp_low
+.SS EDS006X/set_alarm/humidity_hi \tEDS006X/set_alarm/humidity_low
+.SS EDS006X/set_alarm/dew_point_hi \tEDS006X/set_alarm/dew_point_low
+.SS EDS006X/set_alarm/heat_index_hi \tEDS006X/set_alarm/heat_index_low
+.SS EDS006X/set_alarm/humidex_hi \t\tEDS006X/set_alarm/humidex_low
+.SS EDS006X/set_alarm/pressure_hi \tEDS006X/set_alarm/pressure_low
+.SS EDS006X/set_alarm/inHg_hi \t\tEDS006X/set_alarm/inHg_low
+.SS EDS006X/set_alarm/light_hi \t\tEDS006X/set_alarm/light_low
+.SS EDS0070/set_alarm/vib_hi \t\tEDS0070/set_alarm/vib_low
+.SS EDS007X/set_alarm/resistance_hi \tEDS007X/set_alarm/resistance_low
+.SS EDS0080/set_alarm/current_hi.[0-7|ALL|BYTE]\tEDS0080/set_alarm/current_low.[0-7|ALL|BYTE]
+.SS EDS0082/set_alarm/volts_hi.[0-7|ALL|BYTE]\tEDS0082/set_alarm/volts_low.[0-7|ALL|BYTE]
+.SS EDS0083/set_alarm/current_hi.[0-3|ALL|BYTE]\tEDS0083/set_alarm/current_low.[0-3|ALL|BYTE]
+.SS EDS0085/set_alarm/volts_hi.[0-3|ALL|BYTE]\tEDS0085/set_alarm/volts_low.[0-3|ALL|BYTE]
+.I read-write, yes-no
+.br
+Flag to set corresponding out-of-range alarm. "1" turns on flag, and "0" turns off.
+.SH ALARM
+Show or clear the out-of-range flags. When set, the device will respond to a conditional search. Clearing the flags is performed with the
+.I EDS00XX/alarm/clear
+command, not just having the measured value return to the center range.
+.SS EDS00XX/alarm/clear
+.I write-only, yes-no
+.br
+Write "1" to clear
+.B ALL
+the alarm flags.
+.SS EDS00XX/alarm/temp_hi \t\tEDS00XX/alarm/temp_low
+.SS EDS006X/alarm/humidity_hi \tEDS006X/alarm/humidity_low
+.SS EDS006X/alarm/dew_point_hi \tEDS006X/alarm/dew_point_low
+.SS EDS006X/alarm/heat_index_hi \tEDS006X/alarm/heat_index_low
+.SS EDS006X/alarm/humidex_hi \t\tEDS006X/alarm/humidex_low
+.SS EDS006X/alarm/pressure_hi \tEDS006X/alarm/pressure_low
+.SS EDS006X/alarm/inHg_hi \t\tEDS006X/alarm/inHg_low
+.SS EDS006X/alarm/light_hi \t\tEDS006X/alarm/light_low
+.SS EDS0070/alarm/vib_hi \t\tEDS007X/alarm/vib_low
+.SS EDS007X/alarm/resistance_hi \tEDS007X/alarm/resistance_low
+.SS EDS0080/alarm/current_hi.[0-7|ALL|BYTE]\tEDS0080/alarm/current_low.[0-7|ALL|BYTE]
+.SS EDS0082/alarm/volts_hi.[0-7|ALL|BYTE]\tEDS0082/alarm/volts_low.[0-7|ALL|BYTE]
+.SS EDS0083/alarm/current_hi.[0-3|ALL|BYTE]\tEDS0083/alarm/current_low.[0-3|ALL|BYTE]
+.SS EDS0085/alarm/volts_hi.[0-3|ALL|BYTE]\tEDS0085/alarm/volts_low.[0-3|ALL|BYTE]
+.SS EDS0090/alarm/hi[0-7|ALL] \tEDS0090/alarm/low[0-7|ALL]
+.I read-only, yes-no
+.br
+Show corresponding out-of-range alarm. "1" means in alarm state. Can only be turned off with
+.I clear
+.SH RELAY
+Optionally found on the EDS006X and EDS007X. Can be controlled by software or the alarm condition.
+.SS EDS00XX/relay/control
+.I read-write, unsigned
+.br
+Set the relay control scheme:
+.TP
+0
+alarm control with hysteresis
+.TP
+1
+alarm control but need
+.I EDS00XX/alarm/clear
+to unset
+.TP
+2
+Control with
+.I EDS00XX/relay/state
+.TP
+3
+Always off
+.SS EDS00XX/relay/state
+.I read-write, yes-no
+.br
+Turn the relay on or off if the
+.I EDS00XX/relay/control is set to "2"
+.SH LED light
+Found on the EDS006X and EDS007X. Can be controlled by software or the alarm condition.
+.SS EDS00XX/LED/control
+.I read-write, unsigned
+.br
+Set the LED control scheme:
+.TP
+0
+alarm control with hysteresis
+.TP
+1
+alarm control but need
+.I EDS00XX/alarm/clear
+to unset
+.TP
+2
+Control with
+.I EDS00XX/LED/state
+.TP
+3
+Always off
+.SS EDS00XX/LED/state
+.I read-write, yes-no
+.br
+Turn the LED on or off if the
+.I EDS00XX/LED/control is set to "2"
+.SH COUNTER
+.SS EDS00XX/counter/seconds
+.I read-only, unsigned integer
+.br
+Approximate seconds since power up.
+.SS EDS0090/counter/pulses.0-7 | ALL
+.I read-only, unsigned integer
+.br
+Pulses on each channel since power up or reset. Channel should be set to input (
+.I EDS0090/output/set.x
+=0 )
+.SS EDS0090/counter/reset.0-7 | ALL | BYTE
+.I read-write, yes-no
+.br
+Clear the pulse count on the corresponding channel.
+.SS EDS007X/counter/samples
+.I read-only, unsigned integer
+.br
+Approximate samples since power up.
+.SH MEMORY
+.SS memory
+.I read-write, binary
+.br
+96 bytes of memory. Not all is writable. Access to
+.I EDS00XX
+functions is better accomplished through the data fields, which expose all the chip features.
+.SS pages/page.0 ... pages/page.2 pages/page.ALL
+.I read-write, binary
+.br
+Memory is split into 3 pages of 32 bytes each. Only page 2 is writable.
+.I ALL
+is an aggregate of the pages. Each page is accessed sequentially.
+.SS EDS008X/memory
+.I read-write, binary
+.br
+160 bytes of memory. Not all is writable. Access to
+.I EDS008X
+functions is better accomplished through the data fields, which expose all the chip features. The
+.I EDS008X
+has more memory than the other chips, so a separate entry in the sudbirectory makes it available.
+.SS EDS008X/pages/page.0-4 EDS008X/pages/page.ALL
+.I read-write, binary
+.br
+Memory is split into 5 pages of 32 bytes each. Only page 5 is writable.  The
+.I EDS008X
+has more memory than the other chips, so a separate entry in the sudbirectory makes the extra pages available.
+.I ALL
+is an aggregate of the pages. Each page is accessed sequentially.
+.SH SUB-TYPE
+.SS tag
+.I read-only, ascii
+.br
+Text description of the device. Up to 30 characters.
+.SS device_type
+.I read-only, ascii
+.br
+Device name. E.g: "EDS0071"
+.SS device_id
+.I read-only, unsigned
+.br
+Number corresponding to the hexidecimal type. E.g:
+.br
+EDS0071 -> 0x0071 -> 113 in decimal
+.SH STANDARD PROPERTIES
+.so man3/standard.3so
+.SH ALARMS
+None.
+.SH DESCRIPTION
+.so man3/description.3so
+.SS EDS00XX Overview
+The EDS00XX sensors are a family of devices from 
+.I Embedded Data Systems.
+Although provisional support for several types is included, only early
+.I EDS0071
+has been tested with
+.I OWFS.
+.PP
+The sensors all share the same 
+.I 7E
+family code. They have the same first memory page layout with a text
+.I tag
+property that describes them, and a
+.I sub-type
+field giving the particular sensor. The data properties shown in a directory listing will be specific to the sensor
+.I sub-type.
+.SS EDS0071
+The
+.B EDS0071 (3)
+is a micro-processor based 1-wire slave made by EDS (Embedded Data Systams). Is uses a high accuracy and extended range RTD sensor to accurately measure temperatures.
+.SS Memory
+The
+.I EDS00XX
+sensors are read and controlled by accessing parts of their on-chip memory. Although the raw memory contents are exposed in the 
+.I memory
+and
+.I pages
+fields, all the available functionality is best accessed by the other fields. In fact, directly changing memory will confuse
+.I OWFS.
+.SS Relay and LED
+All the
+.I EDS00XX
+sensors have an LED and optional relay. Both can be controlled either directly, or when the sensors reaches an alarm state.
+.SH ADDRESSING
+.so man3/addressing.3so
+.SH DATASHEET
+.TP
+.B EDS0064 EDS0065 EDS0066 EDS0067 EDS0068
+https://docs.google.com/viewer?a=v&pid=explorer&chrome=true&srcid=0B_K3iXLLAI7vN2E4NGUwMGItMzc5MS00NDNmLTljZGYtN2NmM2Q3YWE5NmVh&hl=en
+.B EDS0070
+http://www.embeddeddatasystems.com/assets/images/supportFiles/manuals/EN-UserMan%20%20OW-Vibration%20V01.pdf
+.TP
+.B EDS0071 EDS0072
+https://docs.google.com/viewer?a=v&pid=explorer&chrome=true&srcid=0B_K3iXLLAI7vMjVhNWQzYzItZTRhMi00NGY2LWI4NTQtYjZlYTgzYzY0NmNm&hl=en
+.TP
+.B EDS0080 EDS0083
+https://eds.zendesk.com/attachments/token/ulnpj6mvpp6yzwo/?name=EN-USERMAN+OW-IO-AIX-420+v1p0.pdf
+.TP
+.B EDS0082 EDS0085
+https://eds.zendesk.com/attachments/token/vyai6ylpw6edala/?name=EN-USERMAN+OW-IO-AIX-10V+v1p0.pdf
+.TP
+.B EDS0090
+8 Discrete I/O
+.SH SEE ALSO
+.so man3/seealso.3so
+.SH AVAILABILITY
+http://www.owfs.org
+.SH AUTHOR
+Paul Alfille (paul.alfille@gmail.com)
