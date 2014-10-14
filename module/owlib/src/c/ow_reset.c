@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -37,13 +36,13 @@ RESET_TYPE BUS_reset(const struct parsedname *pn)
 		STAT_ADD1_BUS(e_bus_short_errors, in);
 		return BUS_RESET_SHORT;
 	case BUS_RESET_ERROR:
+	default:
 		if ( in->ds2404_found ) {
 			// extra reset for DS1994/DS2404 might be needed
 			if ( (in->iroutines.reset) (pn) == BUS_RESET_OK ) {
 				return BUS_RESET_OK ;
 			}
 		}
-	default:
 		in->reconnect_state++;	// Flag for eventual reconnection
 		LEVEL_DEBUG("Reset error. Reconnection %d/%d",in->reconnect_state,reconnect_error); 
 		STAT_ADD1_BUS(e_bus_reset_errors, in);

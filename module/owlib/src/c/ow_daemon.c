@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -152,6 +151,8 @@ GOOD_OR_BAD EnterBackground(void)
 					LockSetup();
 				#endif							/* __UCLIBC__ */
 				}
+				PIDstart();
+				break;
 			default: // other type of program
 				PIDstart();
 				break;
