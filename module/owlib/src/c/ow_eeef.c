@@ -590,13 +590,13 @@ static ZERO_OR_ERROR FS_r_variable(struct one_wire_query *owq)
 		case vt_signed:
 			switch ( size ) {
 				case 1:
-					OWQ_U(owq) = UT_int8( data ) ;
+					OWQ_I(owq) = UT_int8( data ) ;
 					break ;
 				case 2:
-					OWQ_U(owq) = UT_int16( data ) ;
+					OWQ_I(owq) = UT_int16( data ) ;
 					break ;
 				case 4:
-					OWQ_U(owq) = UT_int32( data ) ;
+					OWQ_I(owq) = UT_int32( data ) ;
 					break ;
 				default:
 					return -EINVAL ;
