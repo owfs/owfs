@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -138,7 +137,7 @@ GOOD_OR_BAD COMMON_read_memory_toss_counter(struct one_wire_query *owq, size_t p
 
 #define _1W_Throw_Away_Bytes    1
 
-/*  0xA5 code */
+/* 0xA5 code */
 /* Extra 8 bytes, too */
 GOOD_OR_BAD COMMON_read_memory_plus_counter(BYTE * extra, size_t page, size_t pagesize, struct parsedname *pn)
 {
@@ -151,9 +150,8 @@ GOOD_OR_BAD COMMON_read_memory_plus_counter(BYTE * extra, size_t page, size_t pa
 	};
 
 	RETURN_BAD_IF_BAD(BUS_transaction(t, pn)) ;
-	if (extra) {
-		memcpy(extra, &p[3 + _1W_Throw_Away_Bytes], 8);
-	}
-	LEVEL_DEBUG("Counter Data: " SNformat, SNvar(extra));
+	memcpy(extra, &p[3 + _1W_Throw_Away_Bytes], 8);
+
+	LEVEL_DEBUG("Counter Data: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X", extra[0], extra[1], extra[2], extra[3], extra[4], extra[5], extra[6], extra[7] );
 	return gbGOOD;
 }
