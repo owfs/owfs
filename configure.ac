@@ -68,6 +68,8 @@ AC_PATH_PROG(RM,rm,,$PATH)dnl
 AC_PATH_PROG(RPM,rpm,,$PATH)dnl
 AC_PATH_PROG(RPMBUILD,rpmbuild,,$PATH)dnl
 AC_PATH_PROG([SWIG],[swig],,$PATH)dnl
+AC_PATH_PROG([SOELIM],[soelim])
+AM_CONDITIONAL([SOELIM], [test -n "${SOELIM}"])
 
 # Check for additional programs
 
@@ -1665,7 +1667,13 @@ AC_CONFIG_FILES([
 
 	src/Makefile
 	src/include/Makefile
+
 	src/man/Makefile
+	src/man/man1/Makefile
+	src/man/man3/Makefile
+	src/man/man5/Makefile
+	src/man/mann/Makefile
+
 	src/rpm/Makefile
 	src/rpm/owfs.spec
 	src/scripts/Makefile
