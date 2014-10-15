@@ -1,11 +1,10 @@
 /*
-$Id$
-W1 Announce -- daemon  for showing w1 busmasters using Avahi
-Written 2008 Paul H Alfille
-email: paul.alfille@gmail.com
-Released under the GPLv2
-Much thanks to Evgeniy Polyakov
-This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
+	W1 Announce -- daemon  for showing w1 busmasters using Avahi
+	Written 2008 Paul H Alfille
+	email: paul.alfille@gmail.com
+	Released under the GPLv2
+	Much thanks to Evgeniy Polyakov
+	This file itself  is amodestly modified version of w1d by Evgeniy Polyakov
 */
 
 /*
