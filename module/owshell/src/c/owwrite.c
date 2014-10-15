@@ -102,7 +102,7 @@ static char * HexConvert( char * input_string )
 {
 	int length = strlen( input_string ) ;
 	int pad_first =  ( (length/2)*2 != length ) ; // odd
-	char * return_string = malloc( length ) ; // make same size (intensionally large)
+	char * return_string = malloc( length+1 ) ; // make same size (intentionally large)
 	int hex_pointer = 0 ; // pointer into input_string
 	int char_pointer = 0 ; // pointer into return_string
 
@@ -111,6 +111,8 @@ static char * HexConvert( char * input_string )
 		errno = ENOMEM ;
 		Exit(1) ;
 	}
+
+	memset( return_string, 0, length+1 ) ;
 
 	if ( pad_first ) { // odd number of chars
 		return_string[0] = HexVal(input_string[0]) ;
