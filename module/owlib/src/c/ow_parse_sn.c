@@ -13,10 +13,16 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 
+/* Fill get serikal number from a character string */ 
 enum parse_serialnumber Parse_SerialNumber(char *sn_char, BYTE * sn)
 {
 	ASCII ID[14];
 	int i;
+
+	memset( sn, 0, SERIAL_NUMBER_SIZE ) ;
+	if ( sn_char == NULL ) {
+		return sn_null ;
+	}
 
 	for (i = 0; i < 14; ++i, ++sn_char) {	/* get ID number */
 		if (*sn_char == '.') { // ignore dots

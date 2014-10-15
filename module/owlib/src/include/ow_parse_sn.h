@@ -1,9 +1,8 @@
 /*
-$Id$
     OW -- One-Wire filesystem
     version 0.4 7/2/2003
 
-\    LICENSE (As of version 2.5p4 2-Oct-2006)
+    LICENSE (As of version 2.5p4 2-Oct-2006)
     owlib: GPL v2
     owfs, owhttpd, owftpd, owserver: GPL v2
     owshell(owdir owread owwrite owpresent): GPL v2
@@ -43,7 +42,7 @@ $Id$
 #ifndef OW_PARSE_SN_H			/* tedious wrapper */
 #define OW_PARSE_SN_H
 
-enum parse_serialnumber { sn_valid, sn_invalid, sn_not_sn, } ;
+enum parse_serialnumber { sn_valid, sn_invalid, sn_not_sn, sn_null, } ;
 
 enum parse_serialnumber Parse_SerialNumber(char *sn_char, BYTE * sn) ;
 int SerialNumber_length(char *sn_char, BYTE * sn) ;
