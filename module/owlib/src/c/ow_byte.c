@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -32,12 +31,14 @@ struct one_wire_query * ALLtoBYTE(struct one_wire_query *owq_all)
 struct one_wire_query * BYTEtoALL(struct one_wire_query *owq_byte)
 {
 	struct one_wire_query * owq_all = OWQ_create_aggregate( owq_byte );
-	size_t elements = PN(owq_all)->selected_filetype->ag->elements ;
+	size_t elements ;
 	size_t extension ;
 
 	if ( owq_all == NO_ONE_WIRE_QUERY ) {
 		return NO_ONE_WIRE_QUERY ;
 	}
+
+	elements = PN(owq_all)->selected_filetype->ag->elements ;
 
 	for ( extension = 0 ; extension < elements ; ++extension ) {
 		OWQ_array_Y(owq_all,extension) = UT_getbit_U( OWQ_U(owq_byte), extension ) ;

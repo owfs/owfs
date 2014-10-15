@@ -577,6 +577,7 @@ static ZERO_OR_ERROR FS_alarmdir(void (*dirfunc) (void *, const struct parsednam
 
 	switch ( ret ) {
 		case search_good:
+			// include fo completeness -- can't actually be a value.
 		case search_done:
 			return 0 ;
 		case search_error:
