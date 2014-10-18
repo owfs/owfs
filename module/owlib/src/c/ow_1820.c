@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -224,7 +223,7 @@ struct tempresolution Resolution9  = { 9, 0x1F, 110, 0xF8, 16.} ;			/*  9 bit */
 struct tempresolution Resolution10 = {10, 0x3F, 200, 0xFC, 16.} ;			/* 10 bit */
 struct tempresolution Resolution11 = {11, 0x5F, 400, 0xFE, 16.} ;			/* 11 bit */
 struct tempresolution Resolution12 = {12, 0x7F,1000, 0xFF, 16.};			/* 12 bit */
-struct tempresolution ResolutionS  = { 9, 0x00,1000, 0xFF, 2.};		    /* DS18S20  -- different scaling */
+struct tempresolution ResolutionS  = { 9, 0x00,1000, 0xFE, 2.};		    /* DS18S20  -- different scaling */
 struct tempresolution ResolutionMAX= {12, 0x00, 150, 0xFF, 16.};			/* MAX31826  cold junction*/
 struct tempresolution ResolutionCLD= {12, 0x00, 100, 0xF0, 256.};			/* MAX31850  cold junction*/
 struct tempresolution ResolutionTCP= {12, 0x00, 100, 0xFC, 16.};			/* MAX31850  thermocouple*/
