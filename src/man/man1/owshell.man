@@ -223,7 +223,7 @@ process that is connected to a physical 1-wire bus. This allows multiple process
 .I owserver
 process can be local or remote.
 .PP
-If the server option is not specified, the default is the local machine and the IANA allocated default port of 4304. Thus "-s localhost:4304" is the equivalent.
+If the server option is not specified, the default is the local machine and the IANA allocated default port of 4304. Thus "\-s localhost:4304" is the equivalent.
 .SH DATA OPTIONS
 .SH \-\-hex
 Hexidecimal mode. For reading data, each byte of character will be displayed as two characrters 0-9ABCDEF. Most useful for reading memory locations. No spaces between data.
