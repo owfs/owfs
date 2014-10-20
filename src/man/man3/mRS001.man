@@ -10,9 +10,8 @@
 '\"
 .TH mRS001 3  2003 "OWFS Manpage" "One-Wire File System"
 .SH NAME
-.TP
 .B mRS001
-Rotation Sensor
+\- Rotation Sensor
 .SH SYNOPSIS
 .SS Rotation (in RPM)
 .PP

@@ -10,9 +10,8 @@
 '\"
 .TH DS2433 3  2003 "OWFS Manpage" "One-Wire File System"
 .SH NAME
-.TP
 .B DS2433
-EEPROM (4 kBit)
+\- EEPROM (4 kBit)
 .SH SYNOPSIS
 Erasable programmable read-only memory (EEPROM)
 .PP

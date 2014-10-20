@@ -10,12 +10,11 @@
 '\"
 .TH DS2760 3  2003 "OWFS Manpage" "One-Wire File System"
 .SH NAME
-.TP
 .B DS2780
-Stand-alone Fuel Gauge IC
+\- Stand-alone Fuel Gauge IC
 .TP
 .B DS2788
-Stand-alone Fuel Gauge with LED Drivers
+\- Stand-alone Fuel Gauge with LED Drivers
 .SH SYNOPSIS
 .SS Temperature Voltage Current Memory and Switch.
 .PP

@@ -10,18 +10,17 @@
 '\"
 .TH DS2404 3  2006 "OWFS Manpage" "One-Wire File System"
 .SH NAME
-.TP
 .B DS2404
-EconoRAM time chip
+\- EconoRAM time chip
 .TP
 .B DS2404S
-Dual port memory plus time
+\- Dual port memory plus time
 .TP
 .B DS1994
-4k plus time iButton
+\- 4k plus time iButton
 .TP
 .B DS1427
-Time iButton
+\- Time iButton
 .SH SYNOPSIS
 Real time clock, 4kbit memory. 3-wire interface, too.
 .P

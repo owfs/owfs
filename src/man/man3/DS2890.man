@@ -10,9 +10,8 @@
 '\"
 .TH DS2890 3  2003 "OWFS Manpage" "One-Wire File System"
 .SH NAME
-.TP
 .B DS2890
-1-Wire Digital Potentiometer
+\- 1-Wire Digital Potentiometer
 .SH SYNOPSIS
 Variable resistance
 .PP

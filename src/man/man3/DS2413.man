@@ -10,9 +10,8 @@
 '\"
 .TH DS2413 3  2005 "OWFS Manpage" "One-Wire File System"
 .SH NAME
-.TP
 .B DS2413
-Dual Channel Addressable Switch
+\- Dual Channel Addressable Switch
 .SH SYNOPSIS
 Dual Switch
 .PP

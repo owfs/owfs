@@ -10,12 +10,8 @@
 '\"
 .TH DS2430A 3  2003 "OWFS Manpage" "One-Wire File System"
 .SH NAME
-.TP
-.B DS2430A
-256-bit 1-wire EEPROM
-.TP
-.B DS1971
-256-bit EEPROM ibutton
+.B DS2430A, DS1971
+\- 256-bit 1-wire EEPROM, 256-bit EEPROM ibutton
 .SH SYNOPSIS
 EEPROM
 .PP

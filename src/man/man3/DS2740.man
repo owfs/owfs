@@ -10,9 +10,8 @@
 '\"
 .TH DS2740 3  2003 "OWFS Manpage" "One-Wire File System"
 .SH NAME
-.TP
 .B DS2740
-High-Precision Coulomb Counter
+\- High-Precision Coulomb Counter
 .SH SYNOPSIS
 Voltage and Switch
 .PP

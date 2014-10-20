@@ -10,9 +10,8 @@
 '\"
 .TH DS1821 3  2003 "OWFS Manpage" "One-Wire File System"
 .SH NAME
-.TP
 .B DS1821
-Programmable Digital Thermostat and Thermometer
+\- Programmable Digital Thermostat and Thermometer
 .SH SYNOPSIS
 Thermostat.
 .PP

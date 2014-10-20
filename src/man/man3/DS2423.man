@@ -10,9 +10,8 @@
 '\"
 .TH DS2423 3  2003 "OWFS Manpage" "One-Wire File System"
 .SH NAME
-.TP
 .B DS2423
-4kbit 1-Wire RAM with Counter
+\- 4kbit 1-Wire RAM with Counter
 .SH SYNOPSIS
 RAM and counters.
 .PP

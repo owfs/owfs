@@ -10,9 +10,8 @@
 '\"
 .TH DS1921-Thermochron 3  2005 "OWFS Manpage" "One-Wire File System"
 .SH NAME
-.TP
 .B DS1921
-Thermochron temperature logging iButton.
+\- Thermochron temperature logging iButton.
 .SH SYNOPSIS
 Temperature logging iButton.
 .PP

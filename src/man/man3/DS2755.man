@@ -10,9 +10,8 @@
 '\"
 .TH DS2755 3  2003 "OWFS Manpage" "One-Wire File System"
 .SH NAME
-.TP
 .B DS2755, DS2756
-Multichemistry Battery Fuel Gauge
+\- Multichemistry Battery Fuel Gauge
 .SH SYNOPSIS
 .SS Temperature Voltage, Current, Memory, and Switch.
 .PP

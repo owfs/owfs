@@ -10,9 +10,8 @@
 '\"
 .TH DS2720 3  2003 "OWFS Manpage" "One-Wire File System"
 .SH NAME
-.TP
 .B DS2720
-Efficient Addressable Single-cell Rechargeable Lithium Protection IC
+\- Efficient Addressable Single-cell Rechargeable Lithium Protection IC
 .SH SYNOPSIS
 Memory and warnings.
 .PP

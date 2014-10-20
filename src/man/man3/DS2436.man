@@ -10,9 +10,8 @@
 '\"
 .TH DS2436 3  2003 "OWFS Manpage" "One-Wire File System"
 .SH NAME
-.TP
 .B DS2436
-Battery ID/Monitor Chip
+\- Battery ID/Monitor Chip
 .SH SYNOPSIS
 Temperature Voltage and Memory.
 .PP

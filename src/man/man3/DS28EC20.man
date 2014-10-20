@@ -10,9 +10,8 @@
 '\"
 .TH DS28EC20 3  2003 "OWFS Manpage" "One-Wire File System"
 .SH NAME
-.TP
 .B DS28EC20
-EEPROM (20 kBit)
+\- EEPROM (20 kBit)
 .SH SYNOPSIS
 Erasable programmable read-only memory (EEPROM)
 .PP

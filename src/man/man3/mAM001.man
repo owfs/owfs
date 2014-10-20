@@ -10,9 +10,8 @@
 '\"
 .TH mAM001 3  2003 "OWFS Manpage" "One-Wire File System"
 .SH NAME
-.TP
 .B mAM001
-Analog Input Module
+\- Analog Input Module
 .SH SYNOPSIS
 .SS Voltage or current meter.
 .PP
