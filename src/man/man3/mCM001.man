@@ -34,7 +34,7 @@ Range
 0-5A
 .TP
 Resolution
-.01A
+0.01A
 .TP
 Units
 A (amperes)

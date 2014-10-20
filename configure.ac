@@ -466,24 +466,6 @@ AC_SUBST(ENABLE_OWMALLOC)
 AM_CONDITIONAL(ENABLE_OWMALLOC, test "${ENABLE_OWMALLOC}" = "true")
 
 
-#Check for all bus traffic being reported
-ENABLE_TRAFFIC="false"
-AC_MSG_CHECKING(if bus traffic reports is enabled)
-AC_ARG_ENABLE(owtraffic,
-[  --enable-owtraffic      Enable bus traffic reports (default false)],
-[
-	AC_MSG_RESULT([$enableval])
-	if test "$enableval" = "yes" ; then
-		ENABLE_TRAFFIC="true"
-	fi
-],
-[
-	AC_MSG_RESULT([no (default)])
-])
-AC_SUBST(ENABLE_TRAFFIC)
-AM_CONDITIONAL(ENABLE_TRAFFIC, test "${ENABLE_TRAFFIC}" = "true")
-
-
 #Check owmon
 AC_MSG_CHECKING(if owmon is enabled)
 ENABLE_OWMON="true"
@@ -1541,13 +1523,6 @@ else
 fi
 AC_SUBST(OW_ALLOC_DEBUG)
 
-if test "${ENABLE_TRAFFIC}" = "true" ; then
-	OW_SHOW_TRAFFIC=1
-else
-	OW_SHOW_TRAFFIC=0
-fi
-AC_SUBST(OW_SHOW_TRAFFIC)
-
 # Checks for typedefs, structures, and compiler characteristics.
 
 AC_C_CONST
@@ -1744,11 +1719,6 @@ if test "${ENABLE_OWMALLOC}" = "true"; then
 	AC_MSG_RESULT([Tracing memory allocation is enabled])
 else
 	AC_MSG_RESULT([Tracing memory allocation is DISABLED])
-fi
-if test "${ENABLE_TRAFFIC}" = "true"; then
-	AC_MSG_RESULT([1wire bus traffic reports is enabled])
-else
-	AC_MSG_RESULT([1wire bus traffic reports is DISABLED])
 fi
 
 AC_MSG_RESULT()

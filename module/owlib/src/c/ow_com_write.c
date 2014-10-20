@@ -43,9 +43,9 @@ GOOD_OR_BAD COM_write( const BYTE * data, size_t length, struct connection_in *c
 		case ct_telnet:
 			// telnet gets special processing to send communication parameters (in band)
 			if ( pin->dev.telnet.telnet_negotiated == needs_negotiation ) {
-#if OW_SHOW_TRAFFIC
-				LEVEL_DEBUG("TELNET: Do negotiation");
-#endif /* OW_SHOW_TRAFFIC */
+				if (Globals.traffic) {
+					LEVEL_DEBUG("TELNET: Do negotiation");
+				}
 				RETURN_BAD_IF_BAD(  telnet_change( connection ) ) ;
 				pin->dev.telnet.telnet_negotiated = completed_negotiation ;
 			}
