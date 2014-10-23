@@ -294,6 +294,10 @@ time_t timegm(struct tm *tm);
 #endif							/* OW_CYGWIN */
 #endif							/* OW_ZERO */
 
+#if OW_USB
+#include <libusb.h>
+#endif /* OW_USB */
+
 /*
     OW -- One Wire
     Globals variables -- each invokation will have it's own data
