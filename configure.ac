@@ -1222,6 +1222,9 @@ if test "${ENABLE_USB}" != "false"; then
 		LDFLAGS="$save_LDFLAGS"
 
 		#LIBUSB_CONFIG
+		PKG_CHECK_MODULES(LIBUSB, [libusb-1.0 >= 0.9.1])
+		AC_SUBST(LIBUSB_CFLAGS)
+		AC_SUBST(LIBUSB_LIBS)
 	fi
 
 	# last test to see if libusb is found after AC_CHECK_LIB
