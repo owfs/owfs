@@ -32,11 +32,19 @@ void LibClose(void)
 	OW_Free_avahi_library();
 #endif
 
+#ifdef OW_USB
+	if ( Globals.luc != NULL ) {
+		libusb_exit( Globals.luc ) ;
+		Globals.luc = NULL ;
+	}
+#endif /* OW_USB */
+
 	LEVEL_CALL("Finished Library cleanup");
 	if (log_available) {
 		closelog();
 		log_available = 0;
 	}
+
 	SAFEFREE(Globals.announce_name) ;
 	SAFEFREE(Globals.progname) ;
 	SAFEFREE(Globals.fatal_debug_file) ;

@@ -140,6 +140,9 @@ struct global {
 	int locks ; // show mutexes
 	_FLOAT templow ;
 	_FLOAT temphigh ;
+#ifdef OW_USB
+	libusb_context * luc ;
+#endif /* OW_USB */
 };
 extern struct global Globals;
 
