@@ -1,6 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
 
-AC_REVISION($Id$)
 AC_INIT
 
 # Making releases:
@@ -1221,10 +1220,6 @@ if test "${ENABLE_USB}" != "false"; then
 		CPPFLAGS="$save_CPPFLAGS"
 		LDFLAGS="$save_LDFLAGS"
 
-		#LIBUSB_CONFIG
-		PKG_CHECK_MODULES(LIBUSB, [libusb-1.0 >= 0.9.1])
-		AC_SUBST(LIBUSB_CFLAGS)
-		AC_SUBST(LIBUSB_LIBS)
 	fi
 
 	# last test to see if libusb is found after AC_CHECK_LIB
@@ -1251,6 +1246,9 @@ if test "${ENABLE_USB}" != "false"; then
 	fi
 
 	# ENABLE_USB
+
+	#LIBUSB_CONFIG
+	PKG_CHECK_MODULES(LIBUSB, [libusb-1.0 >= 0.9.1])
 fi
 
 AC_SUBST(LIBUSB_CFLAGS)
