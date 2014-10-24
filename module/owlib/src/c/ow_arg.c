@@ -341,18 +341,23 @@ GOOD_OR_BAD ARG_W1_monitor(void)
 GOOD_OR_BAD ARG_USB_monitor(const char *arg)
 {
 #if OW_USB
-	struct port_in * pin = NewPort( NULL ) ;
-	struct connection_in * in ;
-	if ( pin == NULL ) {
-		return gbBAD;
+	if ( Globals.luc != NULL ) {
+		struct port_in * pin = NewPort( NULL ) ;
+		struct connection_in * in ;
+		if ( pin == NULL ) {
+			return gbBAD;
+		}
+		in = pin->first ;
+		if (in == NO_CONNECTION) {
+			return gbBAD;
+		}
+		arg_data(arg,pin) ;
+		pin->busmode = bus_usb_monitor;
+		return gbGOOD;
+	} else {
+		LEVEL_DEFAULT("USB library could not be initialized -- cannot proceed") ;
+		return gbBAD ;
 	}
-	in = pin->first ;
-	if (in == NO_CONNECTION) {
-		return gbBAD;
-	}
-	arg_data(arg,pin) ;
-	pin->busmode = bus_usb_monitor;
-	return gbGOOD;
 #else
 	fprintf(stderr, "OWFS is compiled without USB support.\n");
 	return gbBAD;
@@ -494,18 +499,23 @@ GOOD_OR_BAD ARG_Tester(const char *arg)
 GOOD_OR_BAD ARG_USB(const char *arg)
 {
 #if OW_USB
-	struct port_in * pin = NewPort( NULL ) ;
-	struct connection_in * in ;
-	if ( pin == NULL ) {
-		return gbBAD;
+	if ( Globals.luc != NULL ) {
+		struct port_in * pin = NewPort( NULL ) ;
+		struct connection_in * in ;
+		if ( pin == NULL ) {
+			return gbBAD;
+		}
+		in = pin->first ;
+		if (in == NO_CONNECTION) {
+			return gbBAD;
+		}
+		pin->busmode = bus_usb;
+		arg_data(arg,pin) ;
+		return gbGOOD;
+	} else {
+		LEVEL_DEFAULT( "USB library initialization had problems -- can't proceed") ;
+		return gbBAD ;
 	}
-	in = pin->first ;
-	if (in == NO_CONNECTION) {
-		return gbBAD;
-	}
-	pin->busmode = bus_usb;
-	arg_data(arg,pin) ;
-	return gbGOOD;
 #else							/* OW_USB */
 	LEVEL_DEFAULT("USB support (intentionally) not included in compilation. Check LIBUSB, then reconfigure and recompile.");
 	return gbBAD;
