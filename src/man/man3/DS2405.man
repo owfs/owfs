@@ -10,9 +10,8 @@
 '\"
 .TH DS2405 3  2003 "OWFS Manpage" "One-Wire File System"
 .SH NAME
-.TP
 .B DS2405
-Addressable Switch
+\- Addressable Switch
 .SH SYNOPSIS
 1-wire network branch controller.
 .PP

@@ -10,15 +10,14 @@
 '\"
 .TH DS1825 3  2006 "OWFS Manpage" "One-Wire File System"
 .SH NAME
-.TP
 .B DS1825
-Programmable Resolution 1-Wire Digital Thermometer with ID
+\- Programmable Resolution 1-Wire Digital Thermometer with ID
 .TP
 .B MAX31826
-Digital Temperature Sensor with 1Kb Lockable EEPROM
+\- Digital Temperature Sensor with 1Kb Lockable EEPROM
 .TP
 .B MAX31850 MAX31851
-Cold-Junction Compensated Thermocouple
+\- Cold-Junction Compensated Thermocouple
 .SH SYNOPSIS
 .SS Thermometer with hardware address pins (DS1825)
 .PP

@@ -287,6 +287,9 @@ const struct option owopts_long[] = {
 	{"TRIM", no_argument, &Globals.trim, 1},
 	{"detail", required_argument, NO_LINKED_VAR, e_detail},	/* slave detail */
 	{"details", required_argument, NO_LINKED_VAR, e_detail},	/* slave detail */
+	{"traffic", no_argument, &Globals.traffic, 1},
+	{"notraffic", no_argument, &Globals.traffic, 0},
+	{"no_traffic", no_argument, &Globals.traffic, 0},
 	{0, 0, 0, 0},
 };
 

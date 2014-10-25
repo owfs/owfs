@@ -451,8 +451,6 @@ Error (and undef return value) if:
 
 =item 2 No B<owserver> at I<address>
 
-=item
-
 =back
 
 =cut
@@ -501,8 +499,6 @@ Error (and undef return value) if:
 =item 3 Bad I<path>
 
 =item 4 I<path> not a readable device property
-
-=item
 
 =back
 
@@ -554,8 +550,6 @@ Error (and undef return value) if:
 
 =item 5 I<value> incorrect size or format
 
-=item
-
 =back
 
 =cut
@@ -604,8 +598,6 @@ Error (and undef return value) if:
 =item 3 Bad I<path>
 
 =item 4 I<path> not a directory
-
-=item
 
 =back
 
@@ -681,8 +673,6 @@ Error (and undef return value) if:
 =item 3 Bad I<path>
 
 =item 4 I<path> not a device
-
-=item
 
 =back
 

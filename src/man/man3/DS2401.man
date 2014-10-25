@@ -10,12 +10,11 @@
 '\"
 .TH DS2401 3  2003 "OWFS Manpage" "One-Wire File System"
 .SH NAME
-.TP
 .B DS2401
-Silicon Serial Number
+\- Silicon Serial Number
 .TP
 .B DS1990A
-Serial Number iButton
+\- Serial Number iButton
 .PP
 .B 01
 [.]XXXXXXXXXXXX[XX][/[

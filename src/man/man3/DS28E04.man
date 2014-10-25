@@ -10,9 +10,8 @@
 '\"
 .TH DS28E04-100 3  2003 "OWFS Manpage" "One-Wire File System"
 .SH NAME
-.TP
 .B DS28E04
-1-Wire EEPROM chip (4096-bit) with seven address inputs
+\- 1-Wire EEPROM chip (4096-bit) with seven address inputs
 .SH SYNOPSIS
 4096-bit EEPROM, 2 port switch
 .PP

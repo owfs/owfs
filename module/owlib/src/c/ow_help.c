@@ -57,6 +57,7 @@ void ow_help_job(void)
 	"  --error_print n  Where debug info is placed 0-mixed 1-syslog 2-console\n"
 	"  --debug          Shortcut for --error_level=9 --foreground\n"
 	"  --detail=10.1231234566,12 Detail debugging for particular slaves\n"
+	"  --traffic --notraffic show/no_show bus traffic\n"
 	"  -V --version     Program and library versions\n"
 	"\n"
 	" Control\n"

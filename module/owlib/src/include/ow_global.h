@@ -1,5 +1,4 @@
 /*
-$Id$
     OW -- One-Wire filesystem
     version 0.4 7/2/2003
 
@@ -137,6 +136,7 @@ struct global {
 	int i2c_APU ;
 	int i2c_PPM ;
 	int baud ;
+	int traffic ; // show bus traffic
 	_FLOAT templow ;
 	_FLOAT temphigh ;
 };

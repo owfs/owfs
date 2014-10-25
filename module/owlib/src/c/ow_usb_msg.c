@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -69,10 +68,10 @@ GOOD_OR_BAD USB_Control_Msg(BYTE bRequest, UINT wValue, UINT wIndex, const struc
 		return gbBAD;
 	}
 	ret = usb_control_msg(usb, CONTROL_REQUEST_TYPE, bRequest, wValue, wIndex, NULL, 0, in->master.usb.timeout);
-#if OW_SHOW_TRAFFIC
-	fprintf(stderr, "TRAFFIC OUT <control> bus=%d (%s)\n", in->index, DEVICENAME(in) ) ;
-	fprintf(stderr, "\tbus name=%s request type=0x%.2X, wValue=0x%X, wIndex=0x%X, return code=%d\n",in->adapter_name, bRequest, wValue, wIndex, ret) ;
-#endif /* OW_SHOW_TRAFFIC */
+	if (Globals.traffic) {
+		fprintf(stderr, "TRAFFIC OUT <control> bus=%d (%s)\n", in->index, DEVICENAME(in) ) ;
+		fprintf(stderr, "\tbus name=%s request type=0x%.2X, wValue=0x%X, wIndex=0x%X, return code=%d\n",in->adapter_name, bRequest, wValue, wIndex, ret) ;
+	}
 	if( ret < 0 ) {
 		LEVEL_DEBUG("USB control problem = %d", ret) ;
 		return gbBAD ;
@@ -185,23 +184,23 @@ RESET_TYPE DS9490_getstatus(BYTE * buffer, int * readlen, const struct parsednam
 		}
 
 		if (buffer[8] & STATUSFLAGS_IDLE) {
-#if OW_SHOW_TRAFFIC
-			// See note below for register info
-			LEVEL_DEBUG("USB status registers (Idle) EFlags:%u->SPU:%u Dspeed:%u,Speed:%u,SPUdur:%u, PDslew:%u, W1lowtime:%u, W0rectime:%u, DevState:%u, CC1:%u, CC2:%u, CCState:%u, DataOutState:%u, DataInState:%u", 
-			    buffer[0], (buffer[0]&0x01), (buffer[0]&0x04 ? 1 : 0), 
-			    buffer[1],
-			    buffer[2], 
-			    buffer[4],
-			    buffer[5],
-			    buffer[6],
-			    buffer[8],
-			    buffer[9],
-			    buffer[10],
-			    buffer[11],
-			    buffer[12],
-			    buffer[13]
-			    );
-#endif /* OW_SHOW_TRAFFIC */
+			if (Globals.traffic) {
+				// See note below for register info
+				LEVEL_DEBUG("USB status registers (Idle) EFlags:%u->SPU:%u Dspeed:%u,Speed:%u,SPUdur:%u, PDslew:%u, W1lowtime:%u, W0rectime:%u, DevState:%u, CC1:%u, CC2:%u, CCState:%u, DataOutState:%u, DataInState:%u", 
+					buffer[0], (buffer[0]&0x01), (buffer[0]&0x04 ? 1 : 0), 
+					buffer[1],
+					buffer[2], 
+					buffer[4],
+					buffer[5],
+					buffer[6],
+					buffer[8],
+					buffer[9],
+					buffer[10],
+					buffer[11],
+					buffer[12],
+					buffer[13]
+					);
+			}
 			if (*readlen > 0) {
 				// we have enough bytes to read now!
 				// buffer[13] == (ReadBufferStatus)
@@ -212,8 +211,7 @@ RESET_TYPE DS9490_getstatus(BYTE * buffer, int * readlen, const struct parsednam
 			} else {
 				break;
 			}
-		} else {
-#if OW_SHOW_TRAFFIC
+		} else if (Globals.traffic) {
 			// See note below for register info
 			LEVEL_DEBUG("USB status registers (Not idle) EFlags:%u->SPU:%u Dspeed:%u,Speed:%u,SPUdur:%u, PDslew:%u, W1lowtime:%u, W0rectime:%u, DevState:%u, CC1:%u, CC2:%u, CCState:%u, DataOutState:%u, DataInState:%u", 
 			    buffer[0], (buffer[0]&0x01), (buffer[0]&0x04 ? 1 : 0), 
@@ -229,7 +227,6 @@ RESET_TYPE DS9490_getstatus(BYTE * buffer, int * readlen, const struct parsednam
 			    buffer[12],
 			    buffer[13]
 			    );
- #endif /* OW_SHOW_TRAFFIC */
 		}
 		// this value might be decreased later...
 		if (++loops > 100) {

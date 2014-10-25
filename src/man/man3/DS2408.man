@@ -10,9 +10,8 @@
 '\"
 .TH DS2408 3  2003 "OWFS Manpage" "One-Wire File System"
 .SH NAME
-.TP
 .B DS2408
-1-Wire 8 Channel Addressable Switch
+\- 1-Wire 8 Channel Addressable Switch
 .SH SYNOPSIS
 8 port switch
 .PP

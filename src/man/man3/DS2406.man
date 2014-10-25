@@ -10,12 +10,8 @@
 '\"
 .TH DS2406 3  2003 "OWFS Manpage" "One-Wire File System"
 .SH NAME
-.TP
-.B DS2406
-Dual Addressable Switch with 1kbit Memory
-.TP
-.B DS2407
-Hidable Dual Addressable Switch with 1kbit Memory
+.B DS2406, DS2407
+\- Dual Addressable Switch with 1kbit Memory, Hidable Dual Addressable Switch with 1kbit Memory
 .SH SYNOPSIS
 Dual Switch, Write-once Memory
 .PP

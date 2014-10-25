@@ -10,9 +10,8 @@
 '\"
 .TH mDI001 3  2003 "OWFS Manpage" "One-Wire File System"
 .SH NAME
-.TP
 .B mDI001
-Digital Input Module
+\- Digital Input Module
 .SH SYNOPSIS
 .SS Monitor 4 digital lines
 .PP

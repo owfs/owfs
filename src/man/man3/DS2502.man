@@ -10,21 +10,14 @@
 '\"
 .TH DS2502 3  2003 "OWFS Manpage" "One-Wire File System"
 .SH NAME
-.TP
 .B DS2502
-Add-Only Memory (1 kBit)
+\- Add-Only Memory (1 kBit)
 .TP
-.B DS2502-E48
-48-bit Node Address Chip
+.B DS2502-E48, DS2502-UNW
+\- 48-bit Node Address Chip, UniqueWare Add-Only Memory (1 kBit)
 .TP
-.B DS2502-UNW
-UniqueWare Add-Only Memory (1 kBit)
-.TP
-.B DS1982
-Add-Only iButton (1 kBit)
-.TP
-.B DS1982U
-UniqueWare iButton (1 kBit)
+.B DS1982, DS1982U
+\- Add-Only iButton (1 kBit), UniqueWare iButton (1 kBit)
 .SH SYNOPSIS
 EPROM add-only memory.
 .PP

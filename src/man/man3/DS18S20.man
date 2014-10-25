@@ -10,12 +10,11 @@
 '\"
 .TH DS18S20 3  2003 "OWFS Manpage" "One-Wire File System"
 .SH NAME
-.TP
 .B DS18S20
-High-Precision 1-Wire Digital Thermometer
+\- High-Precision 1-Wire Digital Thermometer
 .TP
 .B DS1920
-iButton version of the thermometer
+\- iButton version of the thermometer
 .SH SYNOPSIS
 Thermometer.
 .PP

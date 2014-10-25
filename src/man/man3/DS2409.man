@@ -10,9 +10,8 @@
 '\"
 .TH DS2409 3  2003 "OWFS Manpage" "One-Wire File System"
 .SH NAME
-.TP
 .B DS2409
-MicroLAN Coupler
+\- MicroLAN Coupler
 .SH SYNOPSIS
 1-wire network branch controller.
 .PP

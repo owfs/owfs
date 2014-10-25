@@ -10,18 +10,11 @@
 '\"
 .TH DS2506 3  2003 "OWFS Manpage" "One-Wire File System"
 .SH NAME
+.B DS2506, DS2506-UNW
+\- Add-Only Memory (64 kBit), UniqueWare Add-Only Memory (64 kBit)
 .TP
-.B DS2506
-Add-Only Memory (64 kBit)
-.TP
-.B DS2506-UNW
-UniqueWare Add-Only Memory (64 kBit)
-.TP
-.B DS1986
-Add-Only iButton (64 kBit)
-.TP
-.B DS1986U
-UniqueWare iButton (64 kBit)
+.B DS1986, DS1986U
+\- Add-Only iButton (64 kBit), UniqueWare iButton (64 kBit)
 .SH SYNOPSIS
 EPROM add-only memory.
 .PP

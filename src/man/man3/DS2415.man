@@ -10,15 +10,14 @@
 '\"
 .TH DS2415 3  2003 "OWFS Manpage" "One-Wire File System"
 .SH NAME
-.TP
 .B DS2415
-1-Wire Time Chip
-.B
+/- 1-Wire Time Chip
+.TP
 .B DS1904
-RTC iButton
+/- RTC (real time clock) iButton
 .TP
 .B DS2417
-1-Wire Time Chip with Interrupt
+/- 1-Wire Time Chip with Interrupt
 .SH SYNOPSIS
 Real time clock.
 .br

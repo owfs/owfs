@@ -10,9 +10,8 @@
 '\"
 .TH mCM001 3  2003 "OWFS Manpage" "One-Wire File System"
 .SH NAME
-.TP
 .B mCM001
-AC Current Monitor
+\- AC Current Monitor
 .SH SYNOPSIS
 .SS AC Amp meter.
 .PP
@@ -35,7 +34,7 @@ Range
 0-5A
 .TP
 Resolution
-.01A
+0.01A
 .TP
 Units
 A (amperes)

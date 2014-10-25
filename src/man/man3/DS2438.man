@@ -10,9 +10,8 @@
 '\"
 .TH DS2438 3  2003 "OWFS Manpage" "One-Wire File System"
 .SH NAME
-.TP
 .B DS2438
-Smart Battery Monitor
+\- Smart Battery Monitor
 .SH SYNOPSIS
 .SS Temperature Voltages and Current.
 .PP

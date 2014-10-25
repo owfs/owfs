@@ -10,48 +10,47 @@
 '\"
 .TH EDS00xx 3  2003 "OWFS Manpage" "One-Wire File System"
 .SH NAME
-.TP
 EDS
-Embedded Data Systems Sensors
+\- Embedded Data Systems Sensors
 .TP
 .B EDS0064
-Temperature
+\- Temperature
 .TP
 .B EDS0065
-Temperature and Humidity
+\- Temperature and Humidity
 .TP
 .B EDS0066
-Temperature and Barometric Pressure
+\- Temperature and Barometric Pressure
 .TP
 .B EDS0067
-Temperature and Light
+\- Temperature and Light
 .TP
 .B EDS0068
-Temperature, Barometric Pressure and Light
+\- Temperature, Barometric Pressure and Light
 .TP
 .B EDS0070
-Vibration
+\- Vibration
 .TP
 .B EDS0071
-RTD 4-wire temperature
+\- RTD 4-wire temperature
 .TP
 .B EDS0072
-RTD 3-wire temperature
+\- RTD 3-wire temperature
 .TP
 .B EDS0080
-8 Channel Analog Current Input
+\- 8 Channel Analog Current Input
 .TP
 .B EDS0082
-8 Channel Analog Voltage Input
+\- 8 Channel Analog Voltage Input
 .TP
 .B EDS0083
-4 Channel Analog Current Input
+\- 4 Channel Analog Current Input
 .TP
 .B EDS0085
-4 Channel Analog Voltage Input
+\- 4 Channel Analog Voltage Input
 .TP
 .B EDS0090
-8 Discrete I/O
+\- 8 Discrete I/O
 .SH SYNOPSIS
 .B Embedded Data Systems
 microprocessor-based sensors
@@ -405,10 +404,10 @@ High and low range of acceptable sensor readings. Values outside this range will
 .I read-write, floating-point
 .br
 Threshold temperatures in the specified temperature scale. Default Celsius.
-.SS EDS006X/threshold/humidity_hi \tEDS006X/threshold/humidity_low
-.SS EDS006X/threshold/dew_point_hi \tEDS006X/threshold/dew_point_low
-.SS EDS006X/threshold/heat_index_hi \tEDS006X/threshold/heat_index_low
-.SS EDS006X/threshold/humidex_hi \t\tEDS006X/threshold/humidex_low
+.SS EDS006X/threshold/humidity_hi EDS006X/threshold/humidity_low
+.SS EDS006X/threshold/dew_point_hi EDS006X/threshold/dew_point_low
+.SS EDS006X/threshold/heat_index_hi EDS006X/threshold/heat_index_low
+.SS EDS006X/threshold/humidex_hi tEDS006X/threshold/humidex_low
 .I read-write, floating-point
 .br
 Threshold humidity values. 
@@ -416,49 +415,49 @@ Threshold humidity values.
 and 
 .I Heat index 
 are in the specified temperature scale. Default Celsius.
-.SS EDS006X/threshold/pressure_hi \tEDS006X/threshold/pressure_low
-.SS EDS006X/threshold/inHg_hi \tEDS006X/threshold/inHg_low
+.SS EDS006X/threshold/pressure_hi EDS006X/threshold/pressure_low
+.SS EDS006X/threshold/inHg_hi EDS006X/threshold/inHg_low
 .I read-write, floating-point
 .br
 Threshold barometric pressure values. 
 .I Pressure
 is the specified pressure scale. Default mBar.
-.SS EDS006X/threshold/light_hi \tEDS006X/threshold/light_low
+.SS EDS006X/threshold/light_hi EDS006X/threshold/light_low
 .I read-write, unsigned
 .br
 Threshold light (lux) values.
-.SS EDS0070/threshold/vib_hi \tEDS0070/threshold/vib_low
+.SS EDS0070/threshold/vib_hi EDS0070/threshold/vib_low
 .I read-write, unsigned
 .br
 Vibration sensor alarm limits in 0-1023 range.
-.SS EDS007X/threshold/resistance_hi  \tEDS007X/threshold/resistance_low
+.SS EDS007X/threshold/resistance_hi EDS007X/threshold/resistance_low
 .I read-write, floating-point
 .br
 Threshold RTD resistance values (Ohm).
-.SS EDS0080/threshold/current_hi.[0-7|ALL]\tEDS0080/threshold/current_low.[0-7|ALL]
-.SS EDS0082/threshold/volts_hi.[0-7|ALL]\tEDS0082/threshold/volts_low.[0-7|ALL]
-.SS EDS0083/threshold/current_hi.[0-3|ALL]\tEDS0083/threshold/current_low.[0-3|ALL]
-.SS EDS0085/threshold/volts_hi.[0-3|ALL]\tEDS0085/threshold/volts_low.[0-3|ALL|]
+.SS EDS0080/threshold/current_hi.[0-7|ALL] EDS0080/threshold/current_low.[0-7|ALL]
+.SS EDS0082/threshold/volts_hi.[0-7|ALL] EDS0082/threshold/volts_low.[0-7|ALL]
+.SS EDS0083/threshold/current_hi.[0-3|ALL EDS0083/threshold/current_low.[0-3|ALL]
+.SS EDS0085/threshold/volts_hi.[0-3|ALL] EDS0085/threshold/volts_low.[0-3|ALL|]
 .I read-write, floating-point
 .br
 Voltage or current threshold limits
 .SH SET ALARM
 Set conditional alarm to trigger if corresponding flag is set. Also must set high and low
 .I threshold.
-.SS EDS00XX/set_alarm/temp_hi \t\tEDS00XX/set_alarm/temp_low
-.SS EDS006X/set_alarm/humidity_hi \tEDS006X/set_alarm/humidity_low
-.SS EDS006X/set_alarm/dew_point_hi \tEDS006X/set_alarm/dew_point_low
-.SS EDS006X/set_alarm/heat_index_hi \tEDS006X/set_alarm/heat_index_low
-.SS EDS006X/set_alarm/humidex_hi \t\tEDS006X/set_alarm/humidex_low
-.SS EDS006X/set_alarm/pressure_hi \tEDS006X/set_alarm/pressure_low
-.SS EDS006X/set_alarm/inHg_hi \t\tEDS006X/set_alarm/inHg_low
-.SS EDS006X/set_alarm/light_hi \t\tEDS006X/set_alarm/light_low
-.SS EDS0070/set_alarm/vib_hi \t\tEDS0070/set_alarm/vib_low
-.SS EDS007X/set_alarm/resistance_hi \tEDS007X/set_alarm/resistance_low
-.SS EDS0080/set_alarm/current_hi.[0-7|ALL|BYTE]\tEDS0080/set_alarm/current_low.[0-7|ALL|BYTE]
-.SS EDS0082/set_alarm/volts_hi.[0-7|ALL|BYTE]\tEDS0082/set_alarm/volts_low.[0-7|ALL|BYTE]
-.SS EDS0083/set_alarm/current_hi.[0-3|ALL|BYTE]\tEDS0083/set_alarm/current_low.[0-3|ALL|BYTE]
-.SS EDS0085/set_alarm/volts_hi.[0-3|ALL|BYTE]\tEDS0085/set_alarm/volts_low.[0-3|ALL|BYTE]
+.SS EDS00XX/set_alarm/temp_hi EDS00XX/set_alarm/temp_low
+.SS EDS006X/set_alarm/humidity_hi EDS006X/set_alarm/humidity_low
+.SS EDS006X/set_alarm/dew_point_hi EDS006X/set_alarm/dew_point_low
+.SS EDS006X/set_alarm/heat_index_hi EDS006X/set_alarm/heat_index_low
+.SS EDS006X/set_alarm/humidex_hi EDS006X/set_alarm/humidex_low
+.SS EDS006X/set_alarm/pressure_hi EDS006X/set_alarm/pressure_low
+.SS EDS006X/set_alarm/inHg_hi EDS006X/set_alarm/inHg_low
+.SS EDS006X/set_alarm/light_hi EDS006X/set_alarm/light_low
+.SS EDS0070/set_alarm/vib_hi EDS0070/set_alarm/vib_low
+.SS EDS007X/set_alarm/resistance_hi EDS007X/set_alarm/resistance_low
+.SS EDS0080/set_alarm/current_hi.[0-7|ALL|BYTE] EDS0080/set_alarm/current_low.[0-7|ALL|BYTE]
+.SS EDS0082/set_alarm/volts_hi.[0-7|ALL|BYTE] EDS0082/set_alarm/volts_low.[0-7|ALL|BYTE]
+.SS EDS0083/set_alarm/current_hi.[0-3|ALL|BYTE] EDS0083/set_alarm/current_low.[0-3|ALL|BYTE]
+.SS EDS0085/set_alarm/volts_hi.[0-3|ALL|BYTE] EDS0085/set_alarm/volts_low.[0-3|ALL|BYTE]
 .I read-write, yes-no
 .br
 Flag to set corresponding out-of-range alarm. "1" turns on flag, and "0" turns off.
@@ -472,21 +471,21 @@ command, not just having the measured value return to the center range.
 Write "1" to clear
 .B ALL
 the alarm flags.
-.SS EDS00XX/alarm/temp_hi \t\tEDS00XX/alarm/temp_low
-.SS EDS006X/alarm/humidity_hi \tEDS006X/alarm/humidity_low
-.SS EDS006X/alarm/dew_point_hi \tEDS006X/alarm/dew_point_low
-.SS EDS006X/alarm/heat_index_hi \tEDS006X/alarm/heat_index_low
-.SS EDS006X/alarm/humidex_hi \t\tEDS006X/alarm/humidex_low
-.SS EDS006X/alarm/pressure_hi \tEDS006X/alarm/pressure_low
-.SS EDS006X/alarm/inHg_hi \t\tEDS006X/alarm/inHg_low
-.SS EDS006X/alarm/light_hi \t\tEDS006X/alarm/light_low
-.SS EDS0070/alarm/vib_hi \t\tEDS007X/alarm/vib_low
-.SS EDS007X/alarm/resistance_hi \tEDS007X/alarm/resistance_low
-.SS EDS0080/alarm/current_hi.[0-7|ALL|BYTE]\tEDS0080/alarm/current_low.[0-7|ALL|BYTE]
-.SS EDS0082/alarm/volts_hi.[0-7|ALL|BYTE]\tEDS0082/alarm/volts_low.[0-7|ALL|BYTE]
-.SS EDS0083/alarm/current_hi.[0-3|ALL|BYTE]\tEDS0083/alarm/current_low.[0-3|ALL|BYTE]
-.SS EDS0085/alarm/volts_hi.[0-3|ALL|BYTE]\tEDS0085/alarm/volts_low.[0-3|ALL|BYTE]
-.SS EDS0090/alarm/hi[0-7|ALL] \tEDS0090/alarm/low[0-7|ALL]
+.SS EDS00XX/alarm/temp_hi EDS00XX/alarm/temp_low
+.SS EDS006X/alarm/humidity_hi EDS006X/alarm/humidity_low
+.SS EDS006X/alarm/dew_point_hi EDS006X/alarm/dew_point_low
+.SS EDS006X/alarm/heat_index_hi EDS006X/alarm/heat_index_low
+.SS EDS006X/alarm/humidex_hi EDS006X/alarm/humidex_low
+.SS EDS006X/alarm/pressure_hi EDS006X/alarm/pressure_low
+.SS EDS006X/alarm/inHg_hi EDS006X/alarm/inHg_low
+.SS EDS006X/alarm/light_hi EDS006X/alarm/light_low
+.SS EDS0070/alarm/vib_hi EDS007X/alarm/vib_low
+.SS EDS007X/alarm/resistance_hi EDS007X/alarm/resistance_low
+.SS EDS0080/alarm/current_hi.[0-7|ALL|BYTE] EDS0080/alarm/current_low.[0-7|ALL|BYTE]
+.SS EDS0082/alarm/volts_hi.[0-7|ALL|BYTE] EDS0082/alarm/volts_low.[0-7|ALL|BYTE]
+.SS EDS0083/alarm/current_hi.[0-3|ALL|BYTE] EDS0083/alarm/current_low.[0-3|ALL|BYTE]
+.SS EDS0085/alarm/volts_hi.[0-3|ALL|BYTE] EDS0085/alarm/volts_low.[0-3|ALL|BYTE]
+.SS EDS0090/alarm/hi[0-7|ALL] EDS0090/alarm/low[0-7|ALL]
 .I read-only, yes-no
 .br
 Show corresponding out-of-range alarm. "1" means in alarm state. Can only be turned off with
@@ -651,6 +650,7 @@ sensors have an LED and optional relay. Both can be controlled either directly, 
 .TP
 .B EDS0064 EDS0065 EDS0066 EDS0067 EDS0068
 https://docs.google.com/viewer?a=v&pid=explorer&chrome=true&srcid=0B_K3iXLLAI7vN2E4NGUwMGItMzc5MS00NDNmLTljZGYtN2NmM2Q3YWE5NmVh&hl=en
+.TP
 .B EDS0070
 http://www.embeddeddatasystems.com/assets/images/supportFiles/manuals/EN-UserMan%20%20OW-Vibration%20V01.pdf
 .TP

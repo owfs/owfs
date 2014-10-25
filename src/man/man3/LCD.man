@@ -10,9 +10,8 @@
 '\"
 .TH LCD 3  2003 "OWFS Manpage" "One-Wire File System"
 .SH NAME
-.TP
 .B LCD
-LCD controller
+\- LCD controller
 .SH SYNOPSIS
 1-wire LCD controller by Louis Swart
 .PP

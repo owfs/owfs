@@ -10,9 +10,8 @@
 '\"
 .TH DS1992 3  2003 "OWFS Manpage" "One-Wire File System"
 .SH NAME
-.TP
 .B DS1992
-1kbit Memory iButton
+\- 1kbit Memory iButton
 .SH SYNOPSIS
 Non-volatile memory.
 .PP
