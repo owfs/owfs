@@ -29,22 +29,6 @@
 #include "ow_usb_msg.h"
 #include "ow_usb_cycle.h"
 
-/* Extensive FreeBSD workarounds by Robert Nilsson <rnilsson@mac.com> */
-/* Peter Radcliffe updated support for FreeBSD >= 8 */
-#ifdef __FreeBSD__
-	// Add a few definitions we need
-#undef HAVE_USB_INTERRUPT_READ	// This call in libusb is unneeded for FreeBSD (and it's broken)
-#if __FreeBSD__ < 8
-#include <sys/types.h>
-#include <dev/usb/usb.h>
-#define USB_CLEAR_HALT BSD_usb_clear_halt
-#endif /* __FreeBSD__ < 8 */
-#endif /* __FreeBSD__ */
-
-#ifndef USB_CLEAR_HALT
-#define USB_CLEAR_HALT usb_clear_halt
-#endif /* USB_CLEAR_HALT */
-
 /* All the rest of the code sees is the DS9490_detect routine and the iroutine structure */
 
 static RESET_TYPE DS9490_reset(const struct parsedname *pn);

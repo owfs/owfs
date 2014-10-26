@@ -23,30 +23,6 @@
 
 #if OW_USB						/* conditional inclusion of USB */
 
-/* Extensive FreeBSD workarounds by Robert Nilsson <rnilsson@mac.com> */
-/* Peter Radcliffe updated support for FreeBSD >= 8 */
-#ifdef __FreeBSD__
-	// Add a few definitions we need
-#undef HAVE_USB_INTERRUPT_READ	// This call in libusb is unneeded for FreeBSD (and it's broken)
-#if __FreeBSD__ < 8
-#include <sys/types.h>
-#include <dev/usb/usb.h>
-#define USB_CLEAR_HALT BSD_usb_clear_halt
-#endif /* __FreeBSD__ < 8 */
-struct usb_dev_handle {
-	FILE_DESCRIPTOR_OR_ERROR file_descriptor;
-	struct usb_bus *bus;
-	struct usb_device *device;
-	int config;
-	int interface;
-	int altsetting;
-	void *impl_info;
-};
-#endif /* __FreeBSD__ */
-
-#ifndef USB_CLEAR_HALT
-#define USB_CLEAR_HALT usb_clear_halt
-#endif /* USB_CLEAR_HALT */
 
 /* All the rest of the code sees is the DS9490_detect routine and the iroutine structure */
 

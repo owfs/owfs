@@ -52,6 +52,8 @@ struct master_usb {
 #if OW_USB
 	struct usb_device *dev;
 	struct usb_dev_handle *usb;
+	libusb_device * lusb_dev ;
+	libusb_device_handle * lusb_handle ;
 	int usb_bus_number;
 	int usb_dev_number;
 	int datasampleoffset;

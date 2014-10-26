@@ -62,6 +62,8 @@
 struct usb_list {
 	struct usb_bus *bus;
 	struct usb_device *dev;
+	libusb_device * lusb_dev ;
+	libusb_device_handle * lusb_handle ;
 	int usb_bus_number;
 	int usb_dev_number;
 };
