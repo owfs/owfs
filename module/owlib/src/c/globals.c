@@ -104,7 +104,7 @@ struct global Globals = {
 //	.allow_external = 1 , // for testing
 	.allow_external = 0 , // unless program == owexternal
 	
-#ifdef OW_USB
+#if OW_USB
 	.luc = NULL ,
 #endif /* OW_USB */
 };

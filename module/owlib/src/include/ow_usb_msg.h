@@ -27,7 +27,7 @@
 /* All the rest of the code sees is the DS9490_detect routine and the iroutine structure */
 
 GOOD_OR_BAD USB_Control_Msg(BYTE bRequest, UINT wValue, UINT wIndex, const struct parsedname *pn);
-GOOD_OR_BAD DS9490_open(struct usb_list *ul, struct connection_in *in);
+GOOD_OR_BAD DS9490_open(struct connection_in *in);
 
 #define DS9490_getstatus_BUFFER_LENGTH ( 32 + 1 )
 RESET_TYPE DS9490_getstatus(BYTE * buffer, int * readlen, const struct parsedname *pn);

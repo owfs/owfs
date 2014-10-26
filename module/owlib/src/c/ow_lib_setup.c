@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -34,4 +33,14 @@ void LibSetup(enum enum_program_type program_type)
 	SetLocalControlFlags() ; // reset by every option and other change.
 	errno = 0;					/* set error level none */
 
+#if OW_USB
+	// for libusb
+	if ( Globals.luc == NULL ) {
+		// testing for NULL protects against double inits
+		if ( libusb_init( & ( Globals.luc ) ) != 0 ) {
+			LEVEL_DEFAULT( "Cannot initialize libusb  -- USB library for using some bus masters" );
+			Globals.luc = NULL ;
+		}
+	}  
+#endif /* OW_USB */
 }

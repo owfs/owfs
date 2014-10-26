@@ -169,17 +169,17 @@ static void usb_buffer_traffic( BYTE * buffer )
 
 
 // libusb version
-GOOD_OR_BAD DS9490_open(struct usb_list *ul, struct connection_in *in)
+// dev already set
+GOOD_OR_BAD DS9490_open( struct connection_in *in )
 {
-	libusb_device_handle * usb;
+	libusb_device_handle * usb ;
+	libusb_device * dev = in->master.usb.lusb_dev ;
 
-	in->master.usb.dev = ul->dev;
-
-	if (in->master.usb.dev ==NULL ) {
+	if ( dev == NULL ) {
 		return gbBAD ;
 	}
 
-	if ( libusb_open( in->master.usb.lusb_dev, &usb ) != 0 ) {
+	if ( libusb_open( dev, &usb ) != 0 ) {
 		// intentional print to console
 		fprintf(stderr, "Could not open the USB bus master. Is there a problem with permissions?\n");
 		// And log
@@ -189,8 +189,8 @@ GOOD_OR_BAD DS9490_open(struct usb_list *ul, struct connection_in *in)
 	}
 
 	in->master.usb.lusb_handle = usb;
-	in->master.usb.usb_bus_number = ul->usb_bus_number ;
-	in->master.usb.usb_dev_number = ul->usb_dev_number ;
+	in->master.usb.bus_number = libusb_get_bus_number( dev ) ;
+	in->master.usb.address = libusb_get_device_address( dev ) ;
 //	if ( libusb_set_auto_detach_kernel_driver( usb, 1) != 0 ) {
 //		LEVEL_CONNECT( "Could not set automatic USB driver management option" ) ;
 //	}

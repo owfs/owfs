@@ -29,6 +29,7 @@
 
 static void DS9490_dir_callback( void * v, const struct parsedname * pn_entry );
 static GOOD_OR_BAD usbdevice_in_use(const struct usb_list *ul);
+static GOOD_OR_BAD lusbdevice_in_use(int address, int bus_number);
 
 /* ------------------------------------------------------------ */
 /* --- USB bus scaning -----------------------------------------*/
@@ -75,6 +76,25 @@ GOOD_OR_BAD USB_next_match(struct usb_list *ul)
 		}
 	}
 	return gbBAD;
+}
+
+GOOD_OR_BAD USB_match(libusb_device * dev)
+{
+	struct libusb_device_descriptor lusbd ;
+	
+	if ( libusb_get_device_descriptor( dev, &lusbd ) != 0 ) {
+		return gbBAD ;
+	}
+	
+	if ( lusbd.idVendor != DS2490_USB_VENDOR ) {
+		return gbBAD ;
+	}
+	
+	if ( lusbd.idProduct != DS2490_USB_PRODUCT ) {
+		return gbBAD ;
+	}
+	
+	return lusbdevice_in_use( libusb_get_device_address(dev), libusb_get_bus_number(dev) ) ;
 }
 
 /* Includes a count of the rejected existing USB devices
@@ -237,20 +257,58 @@ static GOOD_OR_BAD usbdevice_in_use(const struct usb_list *ul)
 	return gbGOOD;					// not found in the current inbound list
 }
 
+// return bad if already exists and is open
+// matches bus and address
+static GOOD_OR_BAD lusbdevice_in_use(int address, int bus_number)
+{
+	struct port_in * pin ; 
+	
+	for ( pin = Inbound_Control.head_port ; pin != NULL ; pin = pin->next ) {
+		struct connection_in *cin;
+
+		if ( pin->busmode != bus_usb ) {
+			continue ;
+		}
+		for (cin = pin->first; cin != NO_CONNECTION; cin = cin->next) {
+			if ( cin->master.usb.usb_bus_number != bus_number ) {
+				continue ;
+			}
+			if ( cin->master.usb.address != address ) {
+				continue ;
+			}
+			if ( cin->master.usb.lusb_handle != NULL ) {
+				continue ;
+			}
+			return gbBAD;			// It seems to be in use already
+		}
+	}
+	return gbGOOD;					// not found in the current inbound list
+}
+
 /* Construct the device name */
 /* Return NULL if there is a problem */
-char *DS9490_device_name(const struct usb_list *ul)
+char *DS9490_device_name(struct connection_in * in)
 {
 	size_t len = 32 ;
 	int sn_ret ;
 	char * return_string = owmalloc(len+1);
+	libusb_device * dev = in->master.usb.lusb_dev ;
+
+	if ( dev == NULL ) {
+		return NULL ;
+	}
+	
+	in->master.usb.address = libusb_get_device_address( dev ) ;
+	in->master.usb.bus_number = libusb_get_bus_number( dev ) ;
+
+	printf("------------ address=%d, bus=%d\n",in->master.usb.address,in->master.usb.bus_number);
 
 	if ( return_string == NULL ) {
 		return NULL ;
 	}
 
 	UCLIBCLOCK ;
-	sn_ret = snprintf(return_string, len, "%.d:%.d", ul->usb_bus_number, ul->usb_dev_number) ;
+	sn_ret = snprintf(return_string, len, "%.d:%.d", in->master.usb.bus_number, in->master.usb.address) ;
 	UCLIBCUNLOCK ;
 
 	if (sn_ret <= 0) {

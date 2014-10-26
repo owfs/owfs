@@ -157,36 +157,49 @@ static void * USB_monitor_loop( void * v )
 /* Open a DS9490  -- low level code (to allow for repeats)  */
 static void USB_scan_for_adapters(void)
 {
-	struct usb_list ul;
-
-	MONITOR_RLOCK ;
+	// discover devices
+	libusb_device **device_list;
+	int n_devices = libusb_get_device_list( Globals.luc, &device_list) ;
+	int i_device ;
 	
+	if ( n_devices < 1 ) {
+		LEVEL_CONNECT("Could not find a list of USB devices");
+		return ;
+	}
+
 	LEVEL_DEBUG("USB SCAN!");
-	USB_first(&ul);
-	while ( GOOD(USB_next_match(&ul)) ) {
-		// Create a port and connection, fill is with name and then test for function and uniqueness
-		struct port_in * pin = AllocPort(NULL) ;
-		struct connection_in * in ;
-		if ( pin == NULL ) {
-			break ;
-		}
-		in = pin->first ;
-		DEVICENAME(in) = DS9490_device_name(&ul) ;
-		pin->init_data = owstrdup( DEVICENAME(in) ) ;
-		pin->type = ct_usb ;
-		
-		// Can do detect. Because the name makes this a specific adapter (USB pair)
-		// we won't do a directory and won't add the directory and devices with the wrong index
-		if ( BAD( DS9490_detect(pin)) ) {
-			// Remove the extra connection
-			RemovePort(pin);
-		} else {
-			// Add the device, but no need to check for bad match
-			Add_InFlight( NULL, pin ) ;
+	MONITOR_RLOCK ;
+
+	for ( i_device = 0 ; i_device < n_devices ; ++i_device ) {
+		libusb_device * current = device_list[i_device] ;
+		if ( GOOD( USB_match( current ) ) ) {
+			// Create a port and connection, fill in with name and then test for function and uniqueness
+			struct port_in * pin = AllocPort(NULL) ;
+			struct connection_in * in ;
+			if ( pin == NULL ) {
+				break ;
+			}
+			in = pin->first ;
+			in->master.usb.lusb_dev = current ;
+			DEVICENAME(in) = DS9490_device_name(in) ;
+			pin->init_data = owstrdup( DEVICENAME(in) ) ;
+			pin->type = ct_usb ;
+			
+			// Can do detect. Because the name makes this a specific adapter (USB pair)
+			// we won't do a directory and won't add the directory and devices with the wrong index
+			if ( BAD( DS9490_detect(pin)) ) {
+				// Remove the extra connection
+				RemovePort(pin);
+			} else {
+				// Add the device, but no need to check for bad match
+				Add_InFlight( NULL, pin ) ;
+			}
 		}
 	}
 
-	MONITOR_RUNLOCK ;
+	MONITOR_RLOCK ;
+	
+	libusb_free_device_list(device_list, 1);
 }
 
 #else /*  OW_USB */

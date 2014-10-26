@@ -56,6 +56,9 @@ struct master_usb {
 	libusb_device_handle * lusb_handle ;
 	int usb_bus_number;
 	int usb_dev_number;
+	int bus_number;
+	int port_number;
+	int address;
 	int datasampleoffset;
 	int writeonelowtime;
 	int pulldownslewrate;

@@ -32,7 +32,7 @@ void LibClose(void)
 	OW_Free_avahi_library();
 #endif
 
-#ifdef OW_USB
+#if OW_USB
 	if ( Globals.luc != NULL ) {
 		libusb_exit( Globals.luc ) ;
 		Globals.luc = NULL ;

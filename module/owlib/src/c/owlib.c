@@ -36,18 +36,7 @@ GOOD_OR_BAD LibStart(void)
 	if ( OW_Load_dnssd_library() == 0 ) {
 		Globals.zero = zero_bonjour ;
 	}
-#endif
-
-#ifdef OW_USB
-	// for libusb
-	if ( Globals.luc == NULL ) {
-		// testing for NULL protects against double inits
-		if ( libusb_init( & ( Globals.luc ) ) != 0 ) {
-			LEVEL_DEFAULT( "Cannot initialize libusb  -- USB library for using some bus masters" );
-			Globals.luc = NULL ;
-		}
-	}  
-#endif /* OW_USB */
+#endif /* OW_ZERO */
 
 	/* Initialize random number generator, make sure fake devices get the same
 	 * id each time */
