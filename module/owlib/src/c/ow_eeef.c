@@ -17,7 +17,6 @@
 
 /* Hobby boards UVI and colleagues */
 READ_FUNCTION(FS_version);
-READ_FUNCTION(FS_type_number);
 READ_FUNCTION(FS_localtype);
 READ_FUNCTION(FS_r_sensor);
 READ_FUNCTION(FS_r_moist);
@@ -138,6 +137,18 @@ struct location_pair {
 	} type ;
 } ;
 
+struct location_pair lp_type_number = {
+	_EEEF_READ_TYPE,
+	_EEEF_BLANK,
+	1,
+	vt_unsigned,
+} ;
+struct location_pair lp_version_number = {
+	_EEEF_READ_VERSION,
+	_EEEF_BLANK,
+	2,
+	vt_unsigned,
+} ;
 struct location_pair lp_config = {
 	_EEEF_GET_CONFIG,
 	_EEEF_SET_CONFIG,
@@ -258,7 +269,8 @@ static struct filetype HobbyBoards_EE[] = {
 	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_r_variable, NO_WRITE_FUNCTION, VISIBLE_EF_UVI, {v:&lp_ee_temperature,}, },
 	{"temperature_offset", PROPERTY_LENGTH_TEMPGAP, NON_AGGREGATE, ft_tempgap, fc_stable, FS_r_variable, FS_w_variable, VISIBLE_EF_UVI, {v:&lp_ee_temperature_offset}, },
 	{"version", _EEEF_version_length, NON_AGGREGATE, ft_ascii, fc_stable, FS_version, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
-	{"type_number", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_type_number, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"version_number", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_variable, NO_WRITE_FUNCTION, INVISIBLE, {v:&lp_version_number}, },
+	{"type_number", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_variable, NO_WRITE_FUNCTION, VISIBLE, {v:&lp_type_number}, },
 	{"type", PROPERTY_LENGTH_TYPE, NON_AGGREGATE, ft_ascii, fc_link, FS_localtype, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"UVI", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EF_UVI, NO_FILETYPE_DATA, },
 	{"UVI/UVI", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_variable, NO_WRITE_FUNCTION, VISIBLE_EF_UVI, {v:&lp_uvi}, },
@@ -272,8 +284,9 @@ static struct aggregate AMOIST = { 4, ag_numbers, ag_aggregate, };
 static struct aggregate AHUB = { 4, ag_numbers, ag_aggregate, };
 static struct filetype HobbyBoards_EF[] = {
 	F_STANDARD_NO_TYPE,
-	{"version", _EEEF_version_length, NON_AGGREGATE, ft_ascii, fc_stable, FS_version, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
-	{"type_number", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_type_number, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"version", _EEEF_version_length, NON_AGGREGATE, ft_ascii, fc_link, FS_version, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"version_number", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_variable, NO_WRITE_FUNCTION, INVISIBLE, {v:&lp_version_number}, },
+	{"type_number", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_variable, NO_WRITE_FUNCTION, VISIBLE, {v:&lp_type_number}, },
 	{"type", PROPERTY_LENGTH_TYPE, NON_AGGREGATE, ft_ascii, fc_link, FS_localtype, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	
 	{"moisture", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EF_MOISTURE, NO_FILETYPE_DATA, },
@@ -396,10 +409,6 @@ static enum e_visibility VISIBLE_EF_HUB( const struct parsedname * pn )
 /* ------- Functions ------------ */
 
 /* prototypes */
-static GOOD_OR_BAD OW_version(BYTE * major, BYTE * minor, struct parsedname * pn) ;
-static GOOD_OR_BAD OW_type(BYTE * type_number, struct parsedname * pn) ;
-static GOOD_OR_BAD OW_get_version( int * version, struct parsedname * pn ) ;
-
 static GOOD_OR_BAD OW_read(BYTE command, BYTE * bytes, size_t size, struct parsedname * pn) ;
 static GOOD_OR_BAD OW_write(BYTE command, BYTE * bytes, size_t size, struct parsedname * pn);
 
@@ -420,25 +429,19 @@ static ZERO_OR_ERROR FS_version(struct one_wire_query *owq)
     char v[_EEEF_version_length];
     BYTE major, minor ;
     int ret_size ;
+    UINT version_number ;
+    if ( FS_r_sibling_U( &version_number, "version_number", owq ) != 0 ) {
+        return -EINVAL ;
+    }
 
-    RETURN_ERROR_IF_BAD(OW_version(&major,&minor,PN(owq))) ;
+	minor = version_number & 0xFF ;
+	major = (version_number>>8) & 0xFF ;
 
     UCLIBCLOCK;
     ret_size = snprintf(v,_EEEF_version_length,"%u.%u",major,minor);
     UCLIBCUNLOCK;
 
     return OWQ_format_output_offset_and_size(v, ret_size, owq);
-}
-
-static ZERO_OR_ERROR FS_type_number(struct one_wire_query *owq)
-{
-    BYTE type_number ;
-
-    RETURN_ERROR_IF_BAD(OW_type(&type_number,PN(owq))) ;
-
-    OWQ_U(owq) = type_number ;
-
-    return 0;
 }
 
 static ZERO_OR_ERROR FS_localtype(struct one_wire_query *owq)
@@ -485,10 +488,16 @@ static ZERO_OR_ERROR FS_r_moist(struct one_wire_query *owq)
 {
     BYTE moist ;
     BYTE cmd ;
-    int version ;
+    UINT version ;
     struct parsedname * pn = PN(owq) ;
     
-    RETURN_ERROR_IF_BAD( OW_get_version( &version, pn ) ) ;
+    if ( BAD( Cache_Get_SlaveSpecific( &version, sizeof(UINT), SlaveSpecificTag(VER), pn) ) ) {
+		if ( FS_r_sibling_U( &version, "version_number", owq ) != 0 ) {
+			return -EINVAL ;
+		}
+		Cache_Add_SlaveSpecific( &version, sizeof(UINT), SlaveSpecificTag(VER), pn) ;
+	}
+
     cmd = ( version>=EFversion(1,80) ) ? _EEEF_GET_LEAF_NEW : _EEEF_GET_LEAF_OLD ;
     
     if ( BAD( OW_read( cmd, &moist, 1, pn ) ) ) {
@@ -502,10 +511,16 @@ static ZERO_OR_ERROR FS_w_moist(struct one_wire_query *owq)
 {
     BYTE moist = (~OWQ_U(owq)) & 0x0F ;
     BYTE cmd ;
-    int version ;
+    UINT version ;
     struct parsedname * pn = PN(owq) ;
     
-    RETURN_ERROR_IF_BAD( OW_get_version( &version, pn ) ) ;
+    if ( BAD( Cache_Get_SlaveSpecific( &version, sizeof(UINT), SlaveSpecificTag(VER), pn) ) ) {
+		if ( FS_r_sibling_U( &version, "version_number", owq ) != 0 ) {
+			return -EINVAL ;
+		}
+		Cache_Add_SlaveSpecific( &version, sizeof(UINT), SlaveSpecificTag(VER), pn);
+	}
+
     cmd = ( version>=EFversion(1,80) ) ? _EEEF_SET_LEAF_NEW : _EEEF_SET_LEAF_OLD ;
     
     return GB_to_Z_OR_E( OW_write( cmd, &moist, 1, pn)) ;
@@ -532,10 +547,15 @@ static ZERO_OR_ERROR FS_w_leaf(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_r_cal(struct one_wire_query *owq)
 {
     BYTE cmd ;
-    int version ;
+    UINT version ;
     struct parsedname * pn = PN(owq) ;
     
-    RETURN_ERROR_IF_BAD( OW_get_version( &version, pn ) ) ;
+    if ( BAD( Cache_Get_SlaveSpecific( &version, sizeof(UINT), SlaveSpecificTag(VER), pn) ) ) {
+		if ( FS_r_sibling_U( &version, "version_number", owq ) != 0 ) {
+			return -EINVAL ;
+		}
+		Cache_Add_SlaveSpecific( &version, sizeof(UINT), SlaveSpecificTag(VER), pn);
+	}
 	
 	switch( (enum e_cal_type) PN(owq)->selected_filetype->data.i ) {
 		case cal_min:
@@ -711,10 +731,15 @@ static ZERO_OR_ERROR FS_w_variable(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_w_cal(struct one_wire_query *owq)
 {
     BYTE cmd ;
-    int version ;
+    UINT version ;
     struct parsedname * pn = PN(owq) ;
     
-    RETURN_ERROR_IF_BAD( OW_get_version( &version, pn ) ) ;
+    if ( BAD( Cache_Get_SlaveSpecific( &version, sizeof(UINT), SlaveSpecificTag(VER), pn) ) ) {
+		if ( FS_r_sibling_U( &version, "version_number", owq ) != 0 ) {
+			return -EINVAL ;
+		}
+		Cache_Add_SlaveSpecific( &version, sizeof(UINT), SlaveSpecificTag(VER), pn);
+	}
 	
 	switch( (enum e_cal_type) PN(owq)->selected_filetype->data.i ) {
 		case cal_min:
@@ -734,12 +759,17 @@ static ZERO_OR_ERROR FS_r_raw(struct one_wire_query *owq)
 {
 	UINT raw[4] ;
     BYTE cmd ;
-    int version ;
+    UINT version ;
     struct parsedname * pn = PN(owq) ;
     
-    RETURN_ERROR_IF_BAD( OW_get_version( &version, pn ) ) ;
+    if ( BAD( Cache_Get_SlaveSpecific( &version, sizeof(UINT), SlaveSpecificTag(VER), pn) ) ) {
+		if ( FS_r_sibling_U( &version, "version_number", owq ) != 0 ) {
+			return -EINVAL ;
+		}
+		Cache_Add_SlaveSpecific( &version, sizeof(UINT), SlaveSpecificTag(VER), pn);
+	}
+
     cmd = ( version>=EFversion(1,80) ) ? _EEEF_GET_LEAF_RAW_NEW : _EEEF_GET_LEAF_RAW_OLD ;
-    
 
 	if ( BAD( OW_r_doubles( cmd, raw, 4, pn ) ) ) {
 		return -EINVAL ;
@@ -838,24 +868,6 @@ static ZERO_OR_ERROR FS_short(struct one_wire_query *owq)
 	return 0 ;
 }
 
-static GOOD_OR_BAD OW_version(BYTE * major, BYTE * minor, struct parsedname * pn)
-{
-    BYTE response[2] ;
-    
-	RETURN_BAD_IF_BAD(OW_read(_EEEF_READ_VERSION, response, 2, pn)) ;
-
-    *minor = response[0] ;
-    *major = response[1] ;
-    return gbGOOD ;
-}
-
-static GOOD_OR_BAD OW_type(BYTE * type_number, struct parsedname * pn)
-{
-    
-	RETURN_BAD_IF_BAD(OW_read(_EEEF_READ_TYPE, type_number, 1, pn)) ;
-    return gbGOOD ;
-}
-
 static GOOD_OR_BAD OW_read(BYTE command, BYTE * bytes, size_t size, struct parsedname * pn)
 {
     BYTE c[] = { command,} ;
@@ -920,17 +932,4 @@ static GOOD_OR_BAD OW_w_doubles( BYTE command, UINT * dubs, int elements, struct
 	}
 
 	return OW_write( command, data, size, pn ) ;
-}
-
-static GOOD_OR_BAD OW_get_version( int * version, struct parsedname * pn )
-{
-	/* Version */
-	if ( BAD( Cache_Get_SlaveSpecific(version, sizeof(*version), SlaveSpecificTag(VER), pn)) ) {
-		BYTE major, minor;
-		RETURN_BAD_IF_BAD( OW_version( &major, &minor, pn ) ) ;
-		version[0] = minor + 256*major ;
-		// Add a succesful/correct result to cache, else we will be re-reading
-		Cache_Add_SlaveSpecific(version, sizeof(*version), SlaveSpecificTag(VER), pn);
-	}
-	return gbGOOD ;
 }
