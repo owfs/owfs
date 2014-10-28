@@ -412,8 +412,6 @@ static enum e_visibility VISIBLE_EF_HUB( const struct parsedname * pn )
 static GOOD_OR_BAD OW_read(BYTE command, BYTE * bytes, size_t size, struct parsedname * pn) ;
 static GOOD_OR_BAD OW_write(BYTE command, BYTE * bytes, size_t size, struct parsedname * pn);
 
-static GOOD_OR_BAD OW_r_wetness( UINT *wetness, struct parsedname * pn);
-
 static GOOD_OR_BAD OW_r_doubles( BYTE command, UINT * dubs, int elements, struct parsedname * pn ) ;
 static GOOD_OR_BAD OW_w_doubles( BYTE command, UINT * dubs, int elements, struct parsedname * pn ) ;
 
@@ -469,14 +467,14 @@ static ZERO_OR_ERROR FS_localtype(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_r_sensor(struct one_wire_query *owq)
 {
-	UINT w[4] ;
+	BYTE w[4] ;
 	
-	RETURN_ERROR_IF_BAD( OW_r_wetness( w, PN(owq) ) ) ;
-	
-	OWQ_array_I(owq, 0) = w[0] ;
-	OWQ_array_I(owq, 1) = w[1] ;
-	OWQ_array_I(owq, 2) = w[2] ;
-	OWQ_array_I(owq, 3) = w[3] ;
+	RETURN_ERROR_IF_BAD( OW_read( _EEEF_READ_SENSOR, w, 4, PN(owq) ) ) ;
+
+	OWQ_array_I(owq, 0) = (uint8_t) w[0] ;
+	OWQ_array_I(owq, 1) = (uint8_t) w[1] ;
+	OWQ_array_I(owq, 2) = (uint8_t) w[2] ;
+	OWQ_array_I(owq, 3) = (uint8_t) w[3] ;
 
 	return 0 ;
 }
@@ -868,8 +866,10 @@ static ZERO_OR_ERROR FS_short(struct one_wire_query *owq)
 	return 0 ;
 }
 
+/* Make a change to handle bus master not ready */
 static GOOD_OR_BAD OW_read(BYTE command, BYTE * bytes, size_t size, struct parsedname * pn)
 {
+	int retries ;
     BYTE c[] = { command,} ;
     struct transaction_log t[] = {
         TRXN_START,
@@ -877,7 +877,15 @@ static GOOD_OR_BAD OW_read(BYTE command, BYTE * bytes, size_t size, struct parse
         TRXN_READ(bytes,size),
         TRXN_END,
     };
-    return BUS_transaction(t, pn) ;
+    for ( retries = 0 ; retries < 10 ; ++ retries ) {
+		RETURN_BAD_IF_BAD( BUS_transaction(t, pn) ) ;
+		if ( bytes[0] != 0xFF ) {
+			break ;
+		}
+		LEVEL_DEBUG("Slave "SNformat" apparently not ready to read %d bytes",SNvar(pn->sn),size) ;
+	}
+	// Maybe that's a real value?
+	return gbGOOD ;
 }
 
 static GOOD_OR_BAD OW_write(BYTE command, BYTE * bytes, size_t size, struct parsedname * pn)
@@ -890,20 +898,6 @@ static GOOD_OR_BAD OW_write(BYTE command, BYTE * bytes, size_t size, struct pars
         TRXN_END,
     };
     return  BUS_transaction(t, pn) ;
-}
-
-static GOOD_OR_BAD OW_r_wetness( UINT *wetness, struct parsedname * pn)
-{
-    BYTE w[4] ;
-    
-	RETURN_BAD_IF_BAD(OW_read(_EEEF_READ_SENSOR, w, 4, pn)) ;
-
-    wetness[0] = (uint8_t) w[0] ;
-    wetness[1] = (uint8_t) w[1] ;
-    wetness[2] = (uint8_t) w[2] ;
-    wetness[3] = (uint8_t) w[3] ;
-
-    return gbGOOD ;
 }
 
 static GOOD_OR_BAD OW_r_doubles( BYTE command, UINT * dubs, int elements, struct parsedname * pn ) 
