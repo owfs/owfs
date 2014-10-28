@@ -24,12 +24,12 @@ ZERO_OR_ERROR FS_r_alias(struct one_wire_query *owq)
 
 	if ( alias_name != NULL ) {
 		ZERO_OR_ERROR zoe = OWQ_format_output_offset_and_size_z(alias_name, owq);
-		LEVEL_DEBUG("Found alias %s for "SNformat"\n",alias_name,SNvar(sn));
+		LEVEL_DEBUG("Found alias %s for "SNformat,alias_name,SNvar(sn));
 		owfree( alias_name ) ;
 		return zoe;
 	}
 
-	LEVEL_DEBUG("Didn't find alias %s for "SNformat"\n",alias_name,SNvar(sn));
+	LEVEL_DEBUG("Didn't find alias %s for "SNformat,alias_name,SNvar(sn));
 	return OWQ_format_output_offset_and_size_z("", owq);
 }
 

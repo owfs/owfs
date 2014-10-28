@@ -586,7 +586,7 @@ static enum search_status DS2482_next_both(struct device_search *ds, const struc
 	// if the search was successful then
 	ds->LastDiscrepancy = last_zero;
 	ds->LastDevice = (last_zero < 0);
-	LEVEL_DEBUG("SN found: " SNformat "", SNvar(ds->sn));
+	LEVEL_DEBUG("SN found: " SNformat, SNvar(ds->sn));
 	return search_good;
 }
 

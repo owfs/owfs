@@ -546,7 +546,7 @@ static enum search_status LINK_next_both(struct device_search *ds, const struct 
 
 	switch ( DirblobGet(ds->index, ds->sn, &(ds->gulp) ) ) {
 		case 0:
-			LEVEL_DEBUG("SN found: " SNformat "", SNvar(ds->sn));
+			LEVEL_DEBUG("SN found: " SNformat, SNvar(ds->sn));
 			return search_good;
 		case -ENODEV:
 		default:
