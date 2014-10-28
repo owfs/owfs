@@ -101,3 +101,8 @@ src/scripts/windows/owfs.nsi
 
 cov-int*
 cov-int/*
+
+config.guess
+config.sub
+install-sh
+*.m4
