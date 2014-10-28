@@ -15,6 +15,8 @@
 #include "owfs_config.h"
 #include "ow.h"
 
+#define LOCK_DEBUG(...)  if ( Globals.locks != 0 ) { LEVEL_DEFAULT(__VA_ARGS__) ; }
+
 #if PTHREAD_RWLOCK
 
 #ifndef EXTENDED_RWLOCK_DEBUG
@@ -23,7 +25,8 @@ void my_rwlock_init(my_rwlock_t * rwlock)
 	int semrc;
 	semrc = pthread_rwlock_init(rwlock, NULL);
 	if(semrc != 0) {
-		LEVEL_DEFAULT("semrc=%d [%s] RWLOCK INIT", semrc, strerror(errno));
+		if ( 
+		LOCK_DEBUG("semrc=%d [%s] RWLOCK INIT", semrc, strerror(errno));
 		debug_crash();
 	}
 }
@@ -34,7 +37,7 @@ void my_rwlock_destroy(my_rwlock_t * rwlock)
 	semrc = pthread_rwlock_destroy(rwlock);
 	if(semrc != 0) {
 		/* Might return EBUSY */
-		LEVEL_DEFAULT("semrc=%d [%s] RWLOCK DESTROY", semrc, strerror(errno));
+		LOCK_DEBUG("semrc=%d [%s] RWLOCK DESTROY", semrc, strerror(errno));
 		debug_crash();
 	}
 }
@@ -44,7 +47,7 @@ int my_rwlock_write_lock(my_rwlock_t * rwlock)
 	int semrc;
 	semrc = pthread_rwlock_wrlock(rwlock);
 	if(semrc != 0) {
-		LEVEL_DEFAULT("semrc=%d [%s] RWLOCK WLOCK", semrc, strerror(errno));
+		LOCK_DEBUG("semrc=%d [%s] RWLOCK WLOCK", semrc, strerror(errno));
 		debug_crash();
 	}
 	return semrc;
@@ -66,7 +69,7 @@ int my_rwlock_read_lock(my_rwlock_t * rwlock)
 	int semrc;
 	semrc = pthread_rwlock_rdlock(rwlock);
 	if(semrc != 0) {
-		LEVEL_DEFAULT("semrc=%d [%s] RWLOCK RLOCK", semrc, strerror(errno));
+		LOCK_DEBUG("semrc=%d [%s] RWLOCK RLOCK", semrc, strerror(errno));
 		debug_crash();
 	}
 	return semrc;
@@ -77,7 +80,7 @@ int my_rwlock_read_unlock(my_rwlock_t * rwlock)
 	int semrc;
 	semrc = pthread_rwlock_unlock(rwlock);
 	if(semrc != 0) {
-		LEVEL_DEFAULT("semrc=%d [%s] RWLOCK RUNLOCK", semrc, strerror(errno));
+		LOCK_DEBUG("semrc=%d [%s] RWLOCK RUNLOCK", semrc, strerror(errno));
 		debug_crash();
 	}
 	return semrc;
@@ -96,12 +99,12 @@ void my_rwlock_init(my_rwlock_t * my_rwlock)
 	_MUTEX_INIT(my_rwlock->protect_reader_count);
 	semrc |= sem_init(&(my_rwlock->allow_readers), 0, 1);
 	if(semrc != 0) {
-		LEVEL_DEFAULT("rc=%d [%s] RWLOCK INIT1", semrc, strerror(errno));
+		LOCK_DEBUG("rc=%d [%s] RWLOCK INIT1", semrc, strerror(errno));
 		debug_crash();
 	}
 	semrc |= sem_init(&(my_rwlock->no_processes), 0, 1);
 	if(semrc != 0) {
-		LEVEL_DEFAULT("rc=%d [%s] RWLOCK INIT2", semrc, strerror(errno));
+		LOCK_DEBUG("rc=%d [%s] RWLOCK INIT2", semrc, strerror(errno));
 		debug_crash();
 	}
 	my_rwlock->reader_count = 0;
@@ -113,12 +116,12 @@ void my_rwlock_destroy(my_rwlock_t * my_rwlock)
 	_MUTEX_DESTROY(my_rwlock->protect_reader_count);
 	semrc |= sem_destroy(&(my_rwlock->allow_readers));
 	if(semrc != 0) {
-		LEVEL_DEFAULT("rc=%d [%s] RWLOCK DESTROY1", semrc, strerror(errno));
+		LOCK_DEBUG("rc=%d [%s] RWLOCK DESTROY1", semrc, strerror(errno));
 		debug_crash();
 	}
 	semrc |= sem_destroy(&(my_rwlock->no_processes));
 	if(semrc != 0) {
-		LEVEL_DEFAULT("rc=%d [%s] RWLOCK DESTROY2", semrc, strerror(errno));
+		LOCK_DEBUG("rc=%d [%s] RWLOCK DESTROY2", semrc, strerror(errno));
 		debug_crash();
 	}
 	memset(my_rwlock, 0, sizeof(my_rwlock_t));
@@ -161,7 +164,7 @@ int my_rwlock_read_unlock(my_rwlock_t * my_rwlock)
 		sem_post(&(my_rwlock->no_processes));
 	}
 	if(my_rwlock->reader_count < 0) {
-		LEVEL_DEFAULT("RWLOCK RUNLOCK");
+		LOCK_DEBUG("RWLOCK RUNLOCK");
 		debug_crash();
 	}
 	_MUTEX_UNLOCK(my_rwlock->protect_reader_count);

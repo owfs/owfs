@@ -73,6 +73,7 @@ extern const char sem_trywait_failed[];
 extern const char sem_timedwait_failed[];
 extern const char sem_destroy_failed[];
 
+#define LOCK_DEBUG(...)  if ( Globals.locks != 0 ) { LEVEL_DEFAULT(__VA_ARGS__) ; }
 
 /* FreeBSD might fail on sem_init() since they are limited per machine */
 #define my_sem_init(sem, shared, value)                                 \
@@ -81,9 +82,7 @@ extern const char sem_destroy_failed[];
 		if(mrc != 0) {													\
 			FATAL_ERROR(sem_init_failed, mrc, strerror(mrc));			\
 		}																\
-		if (Globals.error_level>=10) {									\
-			LEVEL_DEFAULT("sem_init %lX, %d, %d\n", (unsigned long)sem, shared, value); \
-		}																\
+		LOCK_DEBUG("sem_init %lX, %d, %d\n", (unsigned long)sem, shared, value); \
 	} while(0)
 
 #define my_sem_post(sem)                                                \
@@ -92,9 +91,7 @@ extern const char sem_destroy_failed[];
 		if(mrc != 0) {													\
 			FATAL_ERROR(sem_post_failed, mrc, strerror(mrc));			\
 		}																\
-		if (Globals.error_level>=10) {									\
-			LEVEL_DEFAULT("sem_post %lX done", (unsigned long)sem);		\
-		}																\
+		LOCK_DEBUG("sem_post %lX done", (unsigned long)sem);		\
 	} while(0)
 
 #define my_sem_wait(sem)                                                \
@@ -103,9 +100,7 @@ extern const char sem_destroy_failed[];
 		if(mrc != 0) {													\
 			FATAL_ERROR(sem_wait_failed, mrc, strerror(mrc));			\
 		}																\
-		if (Globals.error_level>=10) {									\
-			LEVEL_DEFAULT("sem_wait %lX done", (unsigned long)sem);		\
-		}																\
+		LOCK_DEBUG("sem_wait %lX done", (unsigned long)sem);		\
 	} while(0)
 
 #define my_sem_trywait(sem, res)                                        \
@@ -115,9 +110,7 @@ extern const char sem_destroy_failed[];
 			FATAL_ERROR(sem_trywait_failed, mrc, strerror(mrc));		\
 		}																\
 		*(res) = mrc;													\
-		if (Globals.error_level>=10) {									\
-			LEVEL_DEFAULT("sem_trywait %lX done", (unsigned long)sem);	\
-		}																\
+		LOCK_DEBUG("sem_trywait %lX done", (unsigned long)sem);	\
 	} while(0)
 
 #define my_sem_timedwait(sem, ts, res)                                  \
@@ -130,9 +123,7 @@ extern const char sem_destroy_failed[];
 			FATAL_ERROR(sem_timedwait_failed, mrc, strerror(mrc));		\
 		}																\
 		*(res) = mrc; /* res=-1 timeout, res=0 succeed */				\
-		if (Globals.error_level>=10) {									\
-			LEVEL_DEFAULT("sem_timedwait %lX done", (unsigned long)sem); \
-		}																\
+		LOCK_DEBUG("sem_timedwait %lX done", (unsigned long)sem); \
 	} while(0)
 
 #define my_sem_destroy(sem)                                             \
@@ -141,51 +132,51 @@ extern const char sem_destroy_failed[];
 		if(mrc != 0) {													\
 			FATAL_ERROR(sem_destroy_failed, mrc, strerror(mrc));		\
 		}																\
-		LEVEL_DEBUG("sem_destroy %lX", (unsigned long)sem);		\
+		LOCK_DEBUG("sem_destroy %lX", (unsigned long)sem);		\
 	} while(0)
 
 
 #define my_pthread_mutex_init(mutex, attr)                              \
 	do {																\
 		int mrc;														\
-		LEVEL_DEBUG("pthread_mutex_init %lX begin", (unsigned long)mutex); \
+		LOCK_DEBUG("pthread_mutex_init %lX begin", (unsigned long)mutex); \
 		mrc = pthread_mutex_init(mutex, attr);							\
 		if(mrc != 0) {													\
 			FATAL_ERROR(mutex_init_failed, mrc, strerror(mrc));			\
 		}																\
-		LEVEL_DEBUG("pthread_mutex_init %lX done", (unsigned long)mutex); \
+		LOCK_DEBUG("pthread_mutex_init %lX done", (unsigned long)mutex); \
 	} while(0)
 
 #define my_pthread_mutex_destroy(mutex)                                 \
 	do {																\
 		int mrc = pthread_mutex_destroy(mutex);							\
-		LEVEL_DEBUG("pthread_mutex_destroy %lX begin", (unsigned long)mutex); \
+		LOCK_DEBUG("pthread_mutex_destroy %lX begin", (unsigned long)mutex); \
 		if(mrc != 0) {													\
 			LEVEL_DEFAULT(mutex_destroy_failed, mrc, strerror(mrc));	\
 		}																\
-		LEVEL_DEBUG("pthread_mutex_destroy %lX done", (unsigned long)mutex); \
+		LOCK_DEBUG("pthread_mutex_destroy %lX done", (unsigned long)mutex); \
 	} while(0)
 
 #define my_pthread_mutex_lock(mutex)                                    \
 	do {																\
 		int mrc;														\
-		LEVEL_DEBUG("pthread_mutex_lock %lX begin", (unsigned long)mutex); \
+		LOCK_DEBUG("pthread_mutex_lock %lX begin", (unsigned long)mutex); \
 		mrc = pthread_mutex_lock(mutex);								\
 		if(mrc != 0) {													\
 			FATAL_ERROR(mutex_lock_failed, mrc, strerror(mrc));			\
 		}																\
-		LEVEL_DEBUG("pthread_mutex_lock %lX done", (unsigned long)mutex); \
+		LOCK_DEBUG("pthread_mutex_lock %lX done", (unsigned long)mutex); \
 	} while(0)
 
 #define my_pthread_mutex_unlock(mutex)                                  \
 	do {																\
 		int mrc;														\
-		LEVEL_DEBUG("pthread_mutex_unlock %lX begin", (unsigned long)mutex); \
+		LOCK_DEBUG("pthread_mutex_unlock %lX begin", (unsigned long)mutex); \
 		mrc = pthread_mutex_unlock(mutex);								\
 		if(mrc != 0) {													\
 			FATAL_ERROR(mutex_unlock_failed, mrc, strerror(mrc));		\
 		}																\
-		LEVEL_DEBUG("pthread_mutex_unlock %lX done", (unsigned long)mutex); \
+		LOCK_DEBUG("pthread_mutex_unlock %lX done", (unsigned long)mutex); \
 	} while(0)
 
 #define my_pthread_mutexattr_init(attr)                                 \

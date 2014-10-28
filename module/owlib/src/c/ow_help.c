@@ -58,6 +58,7 @@ void ow_help_job(void)
 	"  --debug          Shortcut for --error_level=9 --foreground\n"
 	"  --detail=10.1231234566,12 Detail debugging for particular slaves\n"
 	"  --traffic --notraffic show/no_show bus traffic\n"
+	"  --locks --nolocks show/no_show mutex locking\n"
 	"  -V --version     Program and library versions\n"
 	"\n"
 	" Control\n"

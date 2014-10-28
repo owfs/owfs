@@ -137,6 +137,7 @@ struct global {
 	int i2c_PPM ;
 	int baud ;
 	int traffic ; // show bus traffic
+	int locks ; // show mutexes
 	_FLOAT templow ;
 	_FLOAT temphigh ;
 };

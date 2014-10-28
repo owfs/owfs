@@ -96,6 +96,7 @@ struct global Globals = {
 	.i2c_PPM = 0 , // to prevent confusing the DS2483
 	.baud = B9600 ,
 	.traffic = 0, // show bus traffic
+	.locks = 0, // show locks (mutexes)
 
 	.templow = GLOBAL_UNTOUCHED_TEMP_LIMIT,
 	.temphigh = GLOBAL_UNTOUCHED_TEMP_LIMIT,

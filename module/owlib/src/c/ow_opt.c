@@ -290,6 +290,9 @@ const struct option owopts_long[] = {
 	{"traffic", no_argument, &Globals.traffic, 1},
 	{"notraffic", no_argument, &Globals.traffic, 0},
 	{"no_traffic", no_argument, &Globals.traffic, 0},
+	{"locks", no_argument, &Globals.locks, 1},
+	{"nolocks", no_argument, &Globals.locks, 0},
+	{"no_locks", no_argument, &Globals.locks, 0},
 	{0, 0, 0, 0},
 };
 
