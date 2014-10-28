@@ -59,22 +59,9 @@
 
 /* All the rest of the code sees is the DS9490_detect routine and the iroutine structure */
 
-struct usb_list {
-	struct usb_bus *bus;
-	struct usb_device *dev;
-	libusb_device * lusb_dev ;
-	libusb_device_handle * lusb_handle ;
-	int usb_bus_number;
-	int usb_dev_number;
-};
-
-void USB_first(struct usb_list *ul);
 GOOD_OR_BAD USB_match(libusb_device * dev);
-GOOD_OR_BAD USB_next_match(struct usb_list *ul);
-GOOD_OR_BAD USB_next_match_until_n(struct usb_list *ul, int num) ;
 GOOD_OR_BAD DS9490_root_dir( struct dirblob * db, struct connection_in * in ) ;
 GOOD_OR_BAD DS9490_ID_this_master(struct connection_in *in);
-char *DS9490_device_name(struct connection_in * in);
 
 #define DS2490_USB_VENDOR  0x04FA
 #define DS2490_USB_PRODUCT 0x2490

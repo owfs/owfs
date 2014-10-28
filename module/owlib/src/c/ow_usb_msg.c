@@ -354,5 +354,47 @@ static int usb_transfer( int (*transfer_function) (struct libusb_device_handle *
 	} while (1) ;
 }	
 
+void DS9490_port_setup( libusb_device * dev, struct port_in * pin )
+{
+	struct connection_in * in = pin->first ;
+	
+	in->master.usb.lusb_handle = NULL ;
+	in->master.usb.lusb_dev = dev ;
+	pin->type = ct_usb ;
+	pin->busmode = bus_usb;
+
+	in->flex = 1 ; // Michael Markstaller suggests this
+	in->Adapter = adapter_DS9490;	/* OWFS assigned value */
+	in->adapter_name = "DS9490";
+	memset( in->master.usb.ds1420_address, 0, SERIAL_NUMBER_SIZE ) ;
+	
+	SAFEFREE(DEVICENAME(in)) ;
+
+	if ( dev == NULL ) {
+		in->master.usb.address = -1 ;
+		in->master.usb.bus_number = -1 ;
+		DEVICENAME(in) = owstrdup("") ;
+	} else {
+		size_t len = 32 ;
+		int sn_ret ;
+		
+		in->master.usb.address = libusb_get_device_address( dev ) ;
+		in->master.usb.bus_number = libusb_get_bus_number( dev ) ;
+
+		DEVICENAME(in) = owmalloc( len+1 ) ;
+		if ( DEVICENAME(in) == NULL ) {
+			return ;
+		}
+
+		UCLIBCLOCK ;
+		sn_ret = snprintf(DEVICENAME(in), len, "%.d:%.d", in->master.usb.bus_number, in->master.usb.address) ;
+		UCLIBCUNLOCK ;
+
+		if (sn_ret <= 0) {
+			DEVICENAME(in)[0] = '\0' ;
+		}
+	}
+}
+
 #endif							/* OW_USB */
 

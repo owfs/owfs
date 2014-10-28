@@ -34,6 +34,7 @@ RESET_TYPE DS9490_getstatus(BYTE * buffer, int * readlen, const struct parsednam
 SIZE_OR_ERROR DS9490_read(BYTE * buf, size_t size, const struct parsedname *pn);
 SIZE_OR_ERROR DS9490_write(const BYTE * buf, size_t size, const struct parsedname *pn);
 void DS9490_close(struct connection_in *in);
+void DS9490_port_setup( libusb_device * dev, struct port_in * pin ) ;
 
 // Mode Command Code Constants
 #define ONEWIREDEVICEDETECT               0xA5

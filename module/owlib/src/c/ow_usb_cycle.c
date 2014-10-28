@@ -34,50 +34,6 @@ static GOOD_OR_BAD lusbdevice_in_use(int address, int bus_number);
 /* ------------------------------------------------------------ */
 /* --- USB bus scaning -----------------------------------------*/
 
-void USB_first(struct usb_list *ul)
-{
-	usb_init();
-	usb_find_busses();
-	usb_find_devices();
-	ul->bus = usb_get_busses();
-	ul->usb_bus_number = -1 ;
-	ul->usb_bus_number = atoi(ul->bus->dirname) ;
-	ul->dev = NULL;
-}
-
-GOOD_OR_BAD USB_next_match(struct usb_list *ul)
-{
-	while (ul->bus) {
-		// First pass, look for next device
-		if (ul->dev == NULL) {
-			ul->dev = ul->bus->devices;
-		} else {				// New bus, find first device
-			ul->dev = ul->dev->next;
-			ul->usb_dev_number = -1 ;
-		}
-		if (ul->dev) {			// device found
-			if (ul->dev->descriptor.idVendor != DS2490_USB_VENDOR || ul->dev->descriptor.idProduct != DS2490_USB_PRODUCT) {
-				continue;		// not DS9490
-			}
-			if ( sscanf( ul->dev->filename, "%u", &(ul->usb_dev_number) ) <= 0 ) {
-				ul->usb_dev_number = -1 ;
-			}
-			if ( BAD ( usbdevice_in_use( ul ) ) ) {
-				continue ;
-			}
-			LEVEL_CONNECT("Bus master found: %.d:%.d", ul->usb_bus_number, ul->usb_dev_number);
-			return gbGOOD;
-		} else {
-			ul->bus = ul->bus->next;
-			if ( ul->bus == NULL || sscanf( ul->bus->dirname, "%u", &(ul->usb_bus_number) ) <= 0 ) {
-				ul->usb_bus_number = -1 ;
-			}
-			ul->dev = NULL;
-		}
-	}
-	return gbBAD;
-}
-
 GOOD_OR_BAD USB_match(libusb_device * dev)
 {
 	struct libusb_device_descriptor lusbd ;
@@ -95,45 +51,6 @@ GOOD_OR_BAD USB_match(libusb_device * dev)
 	}
 	
 	return lusbdevice_in_use( libusb_get_device_address(dev), libusb_get_bus_number(dev) ) ;
-}
-
-/* Includes a count of the rejected existing USB devices
- * needed for compatibility with the -u2 -u3 arguments
- */
-GOOD_OR_BAD USB_next_match_until_n(struct usb_list *ul, int num)
-{
-	int found = 0 ;
-	
-	while (ul->bus) {
-		// First pass, look for next device
-		if (ul->dev == NULL) {
-			ul->dev = ul->bus->devices;
-		} else {				// New bus, find first device
-			ul->dev = ul->dev->next;
-			ul->usb_dev_number = -1 ;
-		}
-		if (ul->dev) {			// device found
-			if (ul->dev->descriptor.idVendor != DS2490_USB_VENDOR || ul->dev->descriptor.idProduct != DS2490_USB_PRODUCT) {
-				continue;		// not DS9490
-			}
-			if ( sscanf( ul->dev->filename, "%u", &(ul->usb_dev_number) ) <= 0 ) {
-				ul->usb_dev_number = -1 ;
-			}
-			++ found ;
-			if ( found < num ) {
-				continue ;
-			}
-			LEVEL_CONNECT("Bus master found: %.d:%.d", ul->usb_bus_number, ul->usb_dev_number);
-			return usbdevice_in_use( ul );
-		} else {
-			ul->bus = ul->bus->next;
-			if ( ul->bus == NULL || sscanf( ul->bus->dirname, "%u", &(ul->usb_bus_number) ) <= 0 ) {
-				ul->usb_bus_number = -1 ;
-			}
-			ul->dev = NULL;
-		}
-	}
-	return gbBAD;
 }
 
 /* Used only in root_dir */
@@ -234,29 +151,6 @@ GOOD_OR_BAD DS9490_ID_this_master(struct connection_in *in)
 	return gbGOOD;
 }
 
-static GOOD_OR_BAD usbdevice_in_use(const struct usb_list *ul)
-{
-	struct port_in * pin ; 
-	
-	for ( pin = Inbound_Control.head_port ; pin != NULL ; pin = pin->next ) {
-		struct connection_in *cin;
-
-		if ( pin->busmode != bus_usb ) {
-			continue ;
-		}
-		for (cin = pin->first; cin != NO_CONNECTION; cin = cin->next) {
-			if ( cin->master.usb.usb_bus_number != ul->usb_bus_number ) {
-				continue ;
-			}
-			if ( cin->master.usb.usb_dev_number != ul->usb_dev_number ) {
-				continue ;
-			}
-			return gbBAD;			// It seems to be in use already
-		}
-	}
-	return gbGOOD;					// not found in the current inbound list
-}
-
 // return bad if already exists and is open
 // matches bus and address
 static GOOD_OR_BAD lusbdevice_in_use(int address, int bus_number)
@@ -283,39 +177,6 @@ static GOOD_OR_BAD lusbdevice_in_use(int address, int bus_number)
 		}
 	}
 	return gbGOOD;					// not found in the current inbound list
-}
-
-/* Construct the device name */
-/* Return NULL if there is a problem */
-char *DS9490_device_name(struct connection_in * in)
-{
-	size_t len = 32 ;
-	int sn_ret ;
-	char * return_string = owmalloc(len+1);
-	libusb_device * dev = in->master.usb.lusb_dev ;
-
-	if ( dev == NULL ) {
-		return NULL ;
-	}
-	
-	in->master.usb.address = libusb_get_device_address( dev ) ;
-	in->master.usb.bus_number = libusb_get_bus_number( dev ) ;
-
-	printf("------------ address=%d, bus=%d\n",in->master.usb.address,in->master.usb.bus_number);
-
-	if ( return_string == NULL ) {
-		return NULL ;
-	}
-
-	UCLIBCLOCK ;
-	sn_ret = snprintf(return_string, len, "%.d:%.d", in->master.usb.bus_number, in->master.usb.address) ;
-	UCLIBCUNLOCK ;
-
-	if (sn_ret <= 0) {
-		SAFEFREE(return_string) ;
-	}
-
-	return return_string;
 }
 
 #endif							/* OW_USB */
