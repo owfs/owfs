@@ -628,7 +628,7 @@ static ZERO_OR_ERROR FS_r_variable(struct one_wire_query *owq)
 			OWQ_F(owq) = ( (_FLOAT) (UT_int16(data)) ) * 0.01 ;
 			break ;
 		case vt_temperature:
-			OWQ_F(owq) = ( (_FLOAT) (UT_int8(data)) ) * 0.1 ;
+			OWQ_F(owq) = ( (_FLOAT) (UT_int16(data)) ) * 0.1 ;
 			break ;
 		case vt_uvi:
 			if ( data[0] == 0xFF ) {
