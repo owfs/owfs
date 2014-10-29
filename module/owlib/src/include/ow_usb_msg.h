@@ -32,7 +32,7 @@ GOOD_OR_BAD DS9490_open(struct connection_in *in);
 #define DS9490_getstatus_BUFFER_LENGTH ( 32 + 1 )
 RESET_TYPE DS9490_getstatus(BYTE * buffer, int * readlen, const struct parsedname *pn);
 SIZE_OR_ERROR DS9490_read(BYTE * buf, size_t size, const struct parsedname *pn);
-SIZE_OR_ERROR DS9490_write(const BYTE * buf, size_t size, const struct parsedname *pn);
+SIZE_OR_ERROR DS9490_write(BYTE * buf, size_t size, const struct parsedname *pn);
 void DS9490_close(struct connection_in *in);
 void DS9490_port_setup( libusb_device * dev, struct port_in * pin ) ;
 

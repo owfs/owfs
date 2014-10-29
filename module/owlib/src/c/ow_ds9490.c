@@ -816,9 +816,12 @@ static GOOD_OR_BAD DS9490_open_and_name( libusb_device * dev, struct connection_
 /* ------------------------------------------------------------ */
 /* --- USB read and write --------------------------------------*/
 
-static GOOD_OR_BAD DS9490_sendback_data(const BYTE * data, BYTE * resp, size_t len, const struct parsedname *pn)
+static GOOD_OR_BAD DS9490_sendback_data(const BYTE * const_data, BYTE * resp, size_t len, const struct parsedname *pn)
 {
 	size_t location = 0 ;
+	BYTE data[len] ; // to avoid const problem
+
+	memcpy( data, const_data, len ) ;
 
 	while ( location < len ) {
 		BYTE buffer[ DS9490_getstatus_BUFFER_LENGTH ];

@@ -28,7 +28,6 @@
 #if OW_USB
 
 static void DS9490_dir_callback( void * v, const struct parsedname * pn_entry );
-static GOOD_OR_BAD usbdevice_in_use(const struct usb_list *ul);
 static GOOD_OR_BAD lusbdevice_in_use(int address, int bus_number);
 
 /* ------------------------------------------------------------ */

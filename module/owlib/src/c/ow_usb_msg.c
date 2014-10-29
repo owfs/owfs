@@ -38,7 +38,7 @@
 
 char badUSBname[] = "-1:-1";
 
-static int usb_transfer( int (*transfer_function) (struct libusb_device_handle *dev_handle, unsigned char endpoint, unsigned char *data, int length, int *transferred, unsigned int timeout),  unsigned char endpoint, BYTE * data, int length, struct connection_in * in ) ;
+static int usb_transfer( int (*transfer_function) (struct libusb_device_handle *dev_handle, unsigned char endpoint, BYTE *data, int length, int *transferred, unsigned int timeout),  unsigned char endpoint, BYTE * data, int length, struct connection_in * in ) ;
 static void usb_buffer_traffic( BYTE * buffer ) ;
 
 /* ------------------------------------------------------------ */
@@ -79,7 +79,7 @@ RESET_TYPE DS9490_getstatus(BYTE * buffer, int * readlen, const struct parsednam
 		ret = usb_transfer( libusb_interrupt_transfer, DS2490_EP1, buffer, readlen[0], in ) ;
 
 		if ( ret < 0 ) {
-			LEVEL_DATA("USB_INTERRUPT_READ error reading ret=%d", ret);
+			LEVEL_DATA("USB_INTERRUPT_READ error reading ret=%d <%s>", ret, libusb_error_name(ret));
 			STAT_ADD1_BUS(e_bus_status_errors, in);
 			return BUS_RESET_ERROR;
 		} else if (ret > 32 ) {
@@ -174,16 +174,17 @@ GOOD_OR_BAD DS9490_open( struct connection_in *in )
 {
 	libusb_device_handle * usb ;
 	libusb_device * dev = in->master.usb.lusb_dev ;
+	int usb_err ;
 
 	if ( dev == NULL ) {
 		return gbBAD ;
 	}
 
-	if ( libusb_open( dev, &usb ) != 0 ) {
+	if ( (usb_err=libusb_open( dev, &usb )) != 0 ) {
 		// intentional print to console
-		fprintf(stderr, "Could not open the USB bus master. Is there a problem with permissions?\n");
+		fprintf(stderr, "Could not open the USB bus master. Is there a problem with permissions? <%s>\n",libusb_error_name(usb_err));
 		// And log
-		LEVEL_DEFAULT("Could not open the USB bus master. Is there a problem with permissions?");
+		LEVEL_DEFAULT("Could not open the USB bus master. Is there a problem with permissions? <%s>",libusb_error_name(usb_err));
 		STAT_ADD1_BUS(e_bus_open_errors, in);
 		return gbBAD ;
 	}
@@ -194,32 +195,36 @@ GOOD_OR_BAD DS9490_open( struct connection_in *in )
 //	if ( libusb_set_auto_detach_kernel_driver( usb, 1) != 0 ) {
 //		LEVEL_CONNECT( "Could not set automatic USB driver management option" ) ;
 //	}
-	if ( libusb_detach_kernel_driver( usb, 0) != 0 ) {
-		LEVEL_CONNECT( "Could not release kernal module" ) ;
+	if ( (usb_err=libusb_detach_kernel_driver( usb, 0))!= 0 ) {
+		LEVEL_CONNECT( "Could not release kernal module <%s>",libusb_error_name(usb_err) ) ;
 	}
 
 	// store timeout value -- sec -> msec
 	in->master.usb.timeout = 1000 * Globals.timeout_usb;
 
-	if ( libusb_set_configuration(usb, 1) != 0 ) {
-		LEVEL_CONNECT("Failed to set configuration on USB DS9490 bus master at %s.", DEVICENAME(in));
-	} else if ( libusb_claim_interface(usb, 0) != 0 ) {
-		LEVEL_CONNECT("Failed to claim interface on USB DS9490 bus master at %s.", DEVICENAME(in));
+	if ( (usb_err=libusb_set_configuration(usb, 1)) != 0 ) {
+		LEVEL_CONNECT("Failed to set configuration on USB DS9490 bus master at %s. <%s>", DEVICENAME(in),libusb_error_name(usb_err));
+	} else if ( (usb_err=libusb_claim_interface(usb, 0)) != 0 ) {
+		LEVEL_CONNECT("Failed to claim interface on USB DS9490 bus master at %s. <%s>", DEVICENAME(in),libusb_error_name(usb_err));
 	} else {
-		if ( libusb_set_interface_alt_setting(usb, 0, 3) != 0 ) {
-			LEVEL_CONNECT("Failed to set alt interface on USB DS9490 bus master at %s.", DEVICENAME(in));
+		if ( (usb_err=libusb_set_interface_alt_setting(usb, 0, 3)) != 0 ) {
+			LEVEL_CONNECT("Failed to set alt interface on USB DS9490 bus master at %s. <%s>", DEVICENAME(in),libusb_error_name(usb_err));
 		} else {
 			LEVEL_DEFAULT("Opened USB DS9490 bus master at %s.", DEVICENAME(in));
 
 			// clear endpoints
-			if ( libusb_clear_halt(usb, DS2490_EP3) || libusb_clear_halt(usb, DS2490_EP2) || libusb_clear_halt(usb, DS2490_EP1) ) {
-				LEVEL_DEFAULT("USB_CLEAR_HALT failed");
+			if ( (usb_err=libusb_clear_halt(usb, DS2490_EP3)) || (usb_err=libusb_clear_halt(usb, DS2490_EP2)) || (usb_err=libusb_clear_halt(usb, DS2490_EP1)) ) {
+				LEVEL_DEFAULT("USB_CLEAR_HALT failed <%s>",libusb_error_name(usb_err));
 			} else {		/* All GOOD */
 				return gbGOOD;
 			}
 		}
-		libusb_release_interface(usb, 0);
-		libusb_attach_kernel_driver( usb,0 ) ;
+		if ((usb_err=libusb_release_interface(usb, 0)) != 0 ) {
+			LEVEL_DEBUG("%s",libusb_error_name(usb_err)) ;
+		}
+		if ((usb_err=libusb_attach_kernel_driver( usb,0 )) != 0 ) {
+			LEVEL_DEBUG("%s",libusb_error_name(usb_err));
+		}
 	}
 	libusb_close(usb);
 	in->master.usb.usb = NULL;
@@ -277,7 +282,7 @@ SIZE_OR_ERROR DS9490_read(BYTE * buf, size_t size, const struct parsedname *pn)
    returns number of bytes (size)
    or <0 for an error */
 // libusb version
-SIZE_OR_ERROR DS9490_write(const BYTE * buf, size_t size, const struct parsedname *pn)
+SIZE_OR_ERROR DS9490_write(BYTE * buf, size_t size, const struct parsedname *pn)
 {
 	int ret;
 	struct connection_in * in = pn->selected_connection ;
@@ -325,7 +330,7 @@ SIZE_OR_ERROR DS9490_write(const BYTE * buf, size_t size, const struct parsednam
         13: 1-Wire Data In Buffer Status
 */
 
-static int usb_transfer( int (*transfer_function) (struct libusb_device_handle *dev_handle, unsigned char endpoint, unsigned char *data, int length, int *transferred, unsigned int timeout),  unsigned char endpoint, BYTE * data, int length, struct connection_in * in )
+static int usb_transfer( int (*transfer_function) (struct libusb_device_handle *dev_handle, unsigned char endpoint, BYTE *data, int length, int *transferred, unsigned int timeout),  unsigned char endpoint, BYTE * data, int length, struct connection_in * in )
 {
 	int transferred_so_far = 0 ;
 	libusb_device_handle *usb = in->master.usb.lusb_handle;
