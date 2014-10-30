@@ -164,6 +164,9 @@ static void USB_scan_for_adapters(void)
 	
 	if ( n_devices < 1 ) {
 		LEVEL_CONNECT("Could not find a list of USB devices");
+		if ( n_devices<0 ) {
+			LEVEL_DEBUG("%s",libusb_error_name(n_devices));
+		}
 		return ;
 	}
 

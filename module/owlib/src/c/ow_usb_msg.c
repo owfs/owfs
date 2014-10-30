@@ -38,7 +38,7 @@
 
 char badUSBname[] = "-1:-1";
 
-static int usb_transfer( int (*transfer_function) (struct libusb_device_handle *dev_handle, unsigned char endpoint, BYTE *data, int length, int *transferred, unsigned int timeout),  unsigned char endpoint, BYTE * data, int length, struct connection_in * in ) ;
+static int usb_transfer( int (*transfer_function) (struct libusb_device_handle *dev_handle, unsigned char endpoint, BYTE *data, int length, int *transferred, unsigned int timeout),  unsigned char endpoint, BYTE * data, int length, int * transferred, struct connection_in * in ) ;
 static void usb_buffer_traffic( BYTE * buffer ) ;
 
 /* ------------------------------------------------------------ */
@@ -72,29 +72,30 @@ RESET_TYPE DS9490_getstatus(BYTE * buffer, int * readlen, const struct parsednam
 	int ret ;
 	int loops = 0;
 	struct connection_in * in = pn->selected_connection ;
+	int transferred ;
 	
 	memset(buffer, 0, DS9490_getstatus_BUFFER_LENGTH );		// should not be needed
 
 	do {
-		ret = usb_transfer( libusb_interrupt_transfer, DS2490_EP1, buffer, readlen[0], in ) ;
+		ret = usb_transfer( libusb_interrupt_transfer, DS2490_EP1, buffer, 32, &transferred, in ) ;
 
 		if ( ret < 0 ) {
-			LEVEL_DATA("USB_INTERRUPT_READ error reading ret=%d <%s>", ret, libusb_error_name(ret));
+			LEVEL_DATA("USB_INTERRUPT_READ error reading <%s>", libusb_error_name(ret));
 			STAT_ADD1_BUS(e_bus_status_errors, in);
 			return BUS_RESET_ERROR;
-		} else if (ret > 32 ) {
-			LEVEL_DATA("Bad DS2490 status %d > 32",ret) ;
+		} else if (transferred > 32 ) {
+			LEVEL_DATA("Bad DS2490 status %d > 32",transferred) ;
 			return BUS_RESET_ERROR;
-		} else if (ret > 16) {
+		} else if (transferred > 16) {
 			int i ;
-			if (ret == 32) {	// FreeBSD buffers the input, so this could just be two readings
+			if (transferred == 32) {	// FreeBSD buffers the input, so this could just be two readings
 				if (!memcmp(buffer, &buffer[16], 6)) {
 					memmove(buffer, &buffer[16], 16);
-					ret = 16;
+					transferred = 16;
 					LEVEL_DATA("Corrected buffer 32 byte read");
 				}
 			}
-			for (i = 16; i < ret; i++) {
+			for (i = 16; i < transferred; i++) {
 				BYTE val = buffer[i];
 				if (val != ONEWIREDEVICEDETECT) {
 					LEVEL_DATA("Status byte[%X]: %X", i - 16, val);
@@ -138,11 +139,11 @@ RESET_TYPE DS9490_getstatus(BYTE * buffer, int * readlen, const struct parsednam
 		UT_delay_us(100);
 	} while (1);
 
-	if (ret < 16) {
-		LEVEL_DATA("incomplete packet ret=%d", ret);
+	if (transferred < 16) {
+		LEVEL_DATA("incomplete packet size=%d", transferred);
 		return BUS_RESET_ERROR;			// incomplete packet??
 	}
-	readlen[0] = ret ; // pass this data back (used by reset)
+	readlen[0] = transferred ; // pass this data back (used by reset)
 	return BUS_RESET_OK ;
 }
 
@@ -240,11 +241,11 @@ void DS9490_close(struct connection_in *in)
 
 	if (usb != NULL) {
 		int ret = libusb_release_interface(usb, 0);
-		libusb_attach_kernel_driver( usb,0 ) ;
 		if (ret) {
 			in->master.usb.dev = NULL;	// force a re-scan
-			LEVEL_CONNECT("Release interface (USB) failed ret=%d", ret);
+			LEVEL_CONNECT("Release interface (USB) failed <%s>", libusb_error_name(ret));
 		}
+		libusb_attach_kernel_driver( usb,0 ) ;
 
 		/* It might already be closed? (returning -ENODEV)
 		 * I have seen problem with calling usb_close() twice, so we
@@ -265,15 +266,16 @@ void DS9490_close(struct connection_in *in)
 SIZE_OR_ERROR DS9490_read(BYTE * buf, size_t size, const struct parsedname *pn)
 {
 	int ret;
+	int transferred ;
 	struct connection_in * in = pn->selected_connection ;
 	
-	ret = usb_transfer( libusb_bulk_transfer, DS2490_EP3, buf, size, in ) ;
+	ret = usb_transfer( libusb_bulk_transfer, DS2490_EP3, buf, size, &transferred, in ) ;
 	if ( ret == 0 ) {
 		TrafficIn("read",buf,size,pn->selected_connection) ;
-		return size;
+		return transferred;
 	}
 	
-	LEVEL_DATA("failed DS9490 read: ret=%d", ret);
+	LEVEL_DATA("Failed DS9490 read <%s>", libusb_error_name(ret));
 	STAT_ADD1_BUS(e_bus_read_errors, in);
 	return ret;
 }
@@ -285,6 +287,7 @@ SIZE_OR_ERROR DS9490_read(BYTE * buf, size_t size, const struct parsedname *pn)
 SIZE_OR_ERROR DS9490_write(BYTE * buf, size_t size, const struct parsedname *pn)
 {
 	int ret;
+	int transferred ;
 	struct connection_in * in = pn->selected_connection ;
 
 	if (size == 0) {
@@ -292,14 +295,14 @@ SIZE_OR_ERROR DS9490_write(BYTE * buf, size_t size, const struct parsedname *pn)
 	}
 
 	// usb library doesn't require a const data type for writing
-	ret = usb_transfer( libusb_bulk_transfer, DS2490_EP2, buf, size, in ) ;
+	ret = usb_transfer( libusb_bulk_transfer, DS2490_EP2, buf, size, &transferred, in ) ;
 	TrafficOut("write",buf,size,pn->selected_connection);
 	if ( ret != 0 ) {
-		LEVEL_DATA("failed DS9490 write: ret=%d", ret);
+		LEVEL_DATA("Failed DS9490 write <%s>", libusb_error_name(ret));
 		STAT_ADD1_BUS(e_bus_write_errors, in);
 		return ret ;
 	}
-	return size ;
+	return transferred ;
 }
 
 // Notes from Michael Markstaller:
@@ -330,30 +333,39 @@ SIZE_OR_ERROR DS9490_write(BYTE * buf, size_t size, const struct parsedname *pn)
         13: 1-Wire Data In Buffer Status
 */
 
-static int usb_transfer( int (*transfer_function) (struct libusb_device_handle *dev_handle, unsigned char endpoint, BYTE *data, int length, int *transferred, unsigned int timeout),  unsigned char endpoint, BYTE * data, int length, struct connection_in * in )
+static int usb_transfer( int (*transfer_function) (struct libusb_device_handle *dev_handle, unsigned char endpoint, BYTE *data, int length, int *transferred, unsigned int timeout),  unsigned char endpoint, BYTE * data, int length, int * transferred_return, struct connection_in * in )
 {
-	int transferred_so_far = 0 ;
 	libusb_device_handle *usb = in->master.usb.lusb_handle;
 	int timeout = in->master.usb.timeout ;
+	int libusb_err ;
 
+	transferred_return[0] = 0 ;
 	do {
 		int transferred ;
-		int ret = transfer_function(usb, endpoint, (BYTE *) data+transferred_so_far, (int) length-transferred_so_far, &transferred, timeout) ;
+		int ret = transfer_function(usb, endpoint, data, length, &transferred, timeout) ;
 		
 		switch (ret ) {
 			case 0:
+				transferred_return[0] += transferred ;
 				return 0 ;
 			case LIBUSB_ERROR_TIMEOUT:
 				if ( transferred == 0 ) {
 					// timeout with no data
-					libusb_clear_halt( usb, endpoint ) ;
+					if ( (libusb_err=libusb_clear_halt( usb, endpoint )) != 0 ) {
+						LEVEL_DEBUG("Synchronous IO error %s",libusb_error_name(libusb_err)) ;
+					}				
 					return ret ;
 				}
-				transferred_so_far += transferred ;
+				// partial transfer
+				transferred_return[0] += transferred ;
+				length -= transferred ; // decrease remaining length
+				data += transferred ; // move pointer
 				break ;
 			default:
 				// error
-				libusb_clear_halt( usb, endpoint ) ;
+				if ( (libusb_err=libusb_clear_halt( usb, endpoint )) != 0 ) {
+					LEVEL_DEBUG("Synchronous IO error %s",libusb_error_name(libusb_err)) ;
+				}				
 				return ret ;
 		}
 	} while (1) ;
