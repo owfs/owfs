@@ -36,8 +36,10 @@ static GOOD_OR_BAD lusbdevice_in_use(int address, int bus_number);
 GOOD_OR_BAD USB_match(libusb_device * dev)
 {
 	struct libusb_device_descriptor lusbd ;
+	int libusb_err ;
 	
-	if ( libusb_get_device_descriptor( dev, &lusbd ) != 0 ) {
+	if ( (libusb_err=libusb_get_device_descriptor( dev, &lusbd )) != 0 ) {
+		LEVEL_DEBUG("%s",libusb_error_name(libusb_err));
 		return gbBAD ;
 	}
 	

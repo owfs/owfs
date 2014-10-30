@@ -61,7 +61,7 @@ GOOD_OR_BAD USB_Control_Msg(BYTE bRequest, UINT wValue, UINT wIndex, const struc
 		fprintf(stderr, "\tbus name=%s request type=0x%.2X, wValue=0x%X, wIndex=0x%X, return code=%d\n",in->adapter_name, bRequest, wValue, wIndex, ret) ;
 	}
 	if( ret < 0 ) {
-		LEVEL_DEBUG("USB control problem = %d", ret) ;
+		LEVEL_DEBUG("USB control problem <%s>", libusb_error_name(ret)) ;
 		return gbBAD ;
 	}
 	return gbGOOD ;
@@ -241,18 +241,21 @@ void DS9490_close(struct connection_in *in)
 
 	if (usb != NULL) {
 		int ret = libusb_release_interface(usb, 0);
-		if (ret) {
+		if ( ret != 0 ) {
 			in->master.usb.dev = NULL;	// force a re-scan
 			LEVEL_CONNECT("Release interface (USB) failed <%s>", libusb_error_name(ret));
 		}
-		libusb_attach_kernel_driver( usb,0 ) ;
+		ret =libusb_attach_kernel_driver( usb,0 ) ;
+		if ( ret != 0 ) {
+			LEVEL_DEBUG("Linux kernel driver reattach: %s",libusb_error_name(ret)) ;
+		}
 
 		/* It might already be closed? (returning -ENODEV)
 		 * I have seen problem with calling usb_close() twice, so we
 		 * might perhaps skip it if usb_release_interface() fails */
 		libusb_close(usb);
 		in->master.usb.lusb_handle = NULL ;
-		LEVEL_CONNECT("Closed USB DS9490 bus master at %s. ret=%d", DEVICENAME(in), ret);
+		LEVEL_CONNECT("Closed USB DS9490 bus master at %s", DEVICENAME(in));
 	}
 	in->master.usb.dev = NULL;
 	SAFEFREE(DEVICENAME(in)) ;
