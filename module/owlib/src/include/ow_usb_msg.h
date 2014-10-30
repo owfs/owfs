@@ -29,7 +29,8 @@
 GOOD_OR_BAD USB_Control_Msg(BYTE bRequest, UINT wValue, UINT wIndex, const struct parsedname *pn);
 GOOD_OR_BAD DS9490_open(struct connection_in *in);
 
-#define DS9490_getstatus_BUFFER_LENGTH ( 32 + 1 )
+#define DS9490_getstatus_BUFFER ( 16 )
+#define DS9490_getstatus_BUFFER_LENGTH ( DS9490_getstatus_BUFFER * 2 )
 RESET_TYPE DS9490_getstatus(BYTE * buffer, int * readlen, const struct parsedname *pn);
 SIZE_OR_ERROR DS9490_read(BYTE * buf, size_t size, const struct parsedname *pn);
 SIZE_OR_ERROR DS9490_write(BYTE * buf, size_t size, const struct parsedname *pn);

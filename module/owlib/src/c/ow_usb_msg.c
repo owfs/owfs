@@ -77,28 +77,28 @@ RESET_TYPE DS9490_getstatus(BYTE * buffer, int * readlen, const struct parsednam
 	memset(buffer, 0, DS9490_getstatus_BUFFER_LENGTH );		// should not be needed
 
 	do {
-		ret = usb_transfer( libusb_interrupt_transfer, DS2490_EP1, buffer, 32, &transferred, in ) ;
+		ret = usb_transfer( libusb_interrupt_transfer, DS2490_EP1, buffer, DS9490_getstatus_BUFFER_LENGTH, &transferred, in ) ;
 
 		if ( ret < 0 ) {
 			LEVEL_DATA("USB_INTERRUPT_READ error reading <%s>", libusb_error_name(ret));
 			STAT_ADD1_BUS(e_bus_status_errors, in);
 			return BUS_RESET_ERROR;
-		} else if (transferred > 32 ) {
+		} else if (transferred > DS9490_getstatus_BUFFER_LENGTH ) {
 			LEVEL_DATA("Bad DS2490 status %d > 32",transferred) ;
 			return BUS_RESET_ERROR;
-		} else if (transferred > 16) {
+		} else if ( transferred > DS9490_getstatus_BUFFER ) {
 			int i ;
-			if (transferred == 32) {	// FreeBSD buffers the input, so this could just be two readings
-				if (!memcmp(buffer, &buffer[16], 6)) {
-					memmove(buffer, &buffer[16], 16);
-					transferred = 16;
+			if ( transferred == DS9490_getstatus_BUFFER_LENGTH ) {	// FreeBSD buffers the input, so this could just be two readings
+				if (!memcmp(buffer, &buffer[DS9490_getstatus_BUFFER], 6)) {
+					memmove(buffer, &buffer[DS9490_getstatus_BUFFER], DS9490_getstatus_BUFFER);
+					transferred = DS9490_getstatus_BUFFER;
 					LEVEL_DATA("Corrected buffer 32 byte read");
 				}
 			}
-			for (i = 16; i < transferred; i++) {
+			for (i = DS9490_getstatus_BUFFER; i < transferred; i++) {
 				BYTE val = buffer[i];
 				if (val != ONEWIREDEVICEDETECT) {
-					LEVEL_DATA("Status byte[%X]: %X", i - 16, val);
+					LEVEL_DATA("Status byte[%X]: %X", i - DS9490_getstatus_BUFFER, val);
 				}
 				if (val & COMMCMDERRORRESULT_SH) {	// short detected
 					LEVEL_DATA("short detected");
@@ -139,7 +139,7 @@ RESET_TYPE DS9490_getstatus(BYTE * buffer, int * readlen, const struct parsednam
 		UT_delay_us(100);
 	} while (1);
 
-	if (transferred < 16) {
+	if (transferred < DS9490_getstatus_BUFFER) {
 		LEVEL_DATA("incomplete packet size=%d", transferred);
 		return BUS_RESET_ERROR;			// incomplete packet??
 	}

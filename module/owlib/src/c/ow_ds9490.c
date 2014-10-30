@@ -532,7 +532,7 @@ static GOOD_OR_BAD DS9490_redetect_match( struct connection_in * in)
 static RESET_TYPE DS9490_reset(const struct parsedname *pn)
 {
 	int i; 
-	BYTE buffer[ DS9490_getstatus_BUFFER_LENGTH ];
+	BYTE buffer[ DS9490_getstatus_BUFFER_LENGTH + 1 ];
 	int USpeed;
 	struct connection_in * in = pn->selected_connection ;
 	int readlen = 0 ;
@@ -680,7 +680,7 @@ static enum search_status DS9490_next_both(struct device_search *ds, const struc
 // a dirblob. Called from DS9490_next_both every 7 devices to fill.
 static enum search_status DS9490_directory(struct device_search *ds, const struct parsedname *pn)
 {
-	BYTE status_buffer[ DS9490_getstatus_BUFFER_LENGTH ];
+	BYTE status_buffer[ DS9490_getstatus_BUFFER_LENGTH + 1 ];
 	BYTE EP2_data[SERIAL_NUMBER_SIZE] ; //USB endpoint 3 buffer
 	union {
 		BYTE b[DS2490_BULK_BUFFER_SIZE] ;
@@ -836,7 +836,7 @@ static GOOD_OR_BAD DS9490_sendback_data(const BYTE * const_data, BYTE * resp, si
 	memcpy( data, const_data, len ) ;
 
 	while ( location < len ) {
-		BYTE buffer[ DS9490_getstatus_BUFFER_LENGTH ];
+		BYTE buffer[ DS9490_getstatus_BUFFER_LENGTH + 1 ];
 		int readlen ;
 
 		size_t block = len - location ;
@@ -921,7 +921,7 @@ static GOOD_OR_BAD DS9490_ProgramPulse(const struct parsedname *pn)
 
 static GOOD_OR_BAD DS9490_HaltPulse(const struct parsedname *pn)
 {
-	BYTE buffer[ DS9490_getstatus_BUFFER_LENGTH ];
+	BYTE buffer[ DS9490_getstatus_BUFFER_LENGTH + 1 ];
 	struct timeval tv;
 	struct timeval tvtarget;
 	struct timeval tvlimit = { 0, 300000 } ; // 300 millisec from PDKit /ib/other/libUSB/libusbds2490.c
@@ -1051,7 +1051,7 @@ static GOOD_OR_BAD DS9490_setup_adapter(struct connection_in * in)
 {
 	struct parsedname s_pn;
 	struct parsedname * pn = &s_pn ;
-	BYTE buffer[ DS9490_getstatus_BUFFER_LENGTH ];
+	BYTE buffer[ DS9490_getstatus_BUFFER_LENGTH + 1 ];
 	int readlen = 0 ;
 
 	FS_ParsedName_Placeholder(pn);	// minimal parsename -- no destroy needed
