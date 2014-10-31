@@ -39,7 +39,7 @@ void LibSetup(enum enum_program_type program_type)
 		int libusb_err;
 		// testing for NULL protects against double inits
 		if ( (libusb_err=libusb_init( & ( Globals.luc )) ) != 0 ) {
-			LEVEL_DEFAULT( "Cannot initialize libusb  -- USB library for using some bus masters <%s>",libusb_error_name(libusb_err) );
+			LEVEL_DEFAULT( "<%s> Cannot initialize libusb  -- USB library for using some bus masters",libusb_error_name(libusb_err) );
 			Globals.luc = NULL ;
 		}
 	}  

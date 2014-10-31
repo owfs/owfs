@@ -39,7 +39,7 @@ GOOD_OR_BAD USB_match(libusb_device * dev)
 	int libusb_err ;
 	
 	if ( (libusb_err=libusb_get_device_descriptor( dev, &lusbd )) != 0 ) {
-		LEVEL_DEBUG("%s",libusb_error_name(libusb_err));
+		LEVEL_DEBUG("<%s>",libusb_error_name(libusb_err));
 		return gbBAD ;
 	}
 	

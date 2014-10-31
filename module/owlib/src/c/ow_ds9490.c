@@ -258,7 +258,7 @@ static GOOD_OR_BAD DS9490_detect_single_adapter(int usb_nr, struct connection_in
 	if ( n_devices < 1 ) {
 		LEVEL_CONNECT("Could not find a list of USB devices");
 		if ( n_devices<0 ) {
-			LEVEL_DEBUG("%s",libusb_error_name(n_devices));
+			LEVEL_DEBUG("<%s>",libusb_error_name(n_devices));
 		}
 		return gbBAD ;
 	}
@@ -302,7 +302,7 @@ static GOOD_OR_BAD DS9490_detect_specific_adapter(int bus_nr, int dev_nr, struct
 	if ( n_devices < 1 ) {
 		LEVEL_CONNECT("Could not find a list of USB devices");
 		if ( n_devices<0 ) {
-			LEVEL_DEBUG("%s",libusb_error_name(n_devices));
+			LEVEL_DEBUG("<%s>",libusb_error_name(n_devices));
 		}
 		return gbBAD ;
 	}
@@ -353,7 +353,7 @@ static GOOD_OR_BAD DS9490_detect_all_adapters(struct port_in * pin_first)
 	if ( n_devices < 1 ) {
 		LEVEL_CONNECT("Could not find a list of USB devices");
 		if ( n_devices<0 ) {
-			LEVEL_DEBUG("%s",libusb_error_name(n_devices));
+			LEVEL_DEBUG("<%s>",libusb_error_name(n_devices));
 		}
 		return gbBAD ;
 	}
@@ -433,7 +433,7 @@ static GOOD_OR_BAD DS9490_redetect_low(struct connection_in * in)
 	if ( n_devices < 1 ) {
 		LEVEL_CONNECT("Could not find a list of USB devices");
 		if ( n_devices<0 ) {
-			LEVEL_DEBUG("%s",libusb_error_name(n_devices));
+			LEVEL_DEBUG("<%s>",libusb_error_name(n_devices));
 		}
 		return gbBAD;
 	}
