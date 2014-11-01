@@ -207,7 +207,6 @@ GOOD_OR_BAD DS9490_detect(struct port_in *pin)
 	Parse_Address( pin->init_data, &ap ) ;
 
 	DS9490_setroutines(in);
-
 	switch ( ap.entries ) {
 		case 0:
 			// Minimal specification, so use first USB device
@@ -243,6 +242,7 @@ GOOD_OR_BAD DS9490_detect(struct port_in *pin)
 			}
 			break ;
 	}
+
 	Free_Address( &ap ) ;
 	return gbResult;
 }
@@ -539,7 +539,7 @@ static RESET_TYPE DS9490_reset(const struct parsedname *pn)
 
 	LEVEL_DEBUG("DS9490 RESET. changed %d, flex: %d", in->changed_bus_settings, in->flex) ;	
 
-	if (in->master.usb.usb == NULL || in->master.usb.dev == NULL) {
+	if (in->master.usb.lusb_dev == NULL || in->master.usb.lusb_handle == NULL) {
 		// From Michael Markstaller:
 		LEVEL_DEBUG("Attempting RESET on null bus") ;
 		//FIXME! what doees it mean? no action/reconnect is even tried-> shouldn't we just drop this BM and let uscan rediscover it? DS9490 must always have an ID chip..
@@ -1056,7 +1056,6 @@ static GOOD_OR_BAD DS9490_setup_adapter(struct connection_in * in)
 
 	FS_ParsedName_Placeholder(pn);	// minimal parsename -- no destroy needed
 	pn->selected_connection = in;
-
 	// reset the device (not the 1-wire bus)
 	if ( BAD(USB_Control_Msg(CONTROL_CMD, CTL_RESET_DEVICE, 0x0000, pn))) {
 		LEVEL_DATA("ResetDevice error");

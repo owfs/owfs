@@ -165,7 +165,7 @@ static GOOD_OR_BAD lusbdevice_in_use(int address, int bus_number)
 			continue ;
 		}
 		for (cin = pin->first; cin != NO_CONNECTION; cin = cin->next) {
-			if ( cin->master.usb.usb_bus_number != bus_number ) {
+			if ( cin->master.usb.bus_number != bus_number ) {
 				continue ;
 			}
 			if ( cin->master.usb.address != address ) {

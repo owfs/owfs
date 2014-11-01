@@ -228,7 +228,7 @@ GOOD_OR_BAD DS9490_open( struct connection_in *in )
 		}
 	}
 	libusb_close(usb);
-	in->master.usb.usb = NULL;
+	in->master.usb.lusb_dev = NULL;
 
 	LEVEL_DEBUG("Did not successfully open DS9490 %s -- permission problem?",DEVICENAME(in)) ;
 	STAT_ADD1_BUS(e_bus_open_errors, in);
@@ -242,7 +242,7 @@ void DS9490_close(struct connection_in *in)
 	if (usb != NULL) {
 		int ret = libusb_release_interface(usb, 0);
 		if ( ret != 0 ) {
-			in->master.usb.dev = NULL;	// force a re-scan
+			in->master.usb.lusb_dev = NULL;	// force a re-scan
 			LEVEL_CONNECT("<%s> Release interface (USB) failed", libusb_error_name(ret));
 		}
 		ret =libusb_attach_kernel_driver( usb,0 ) ;
@@ -257,7 +257,7 @@ void DS9490_close(struct connection_in *in)
 		in->master.usb.lusb_handle = NULL ;
 		LEVEL_CONNECT("Closed USB DS9490 bus master at %s", DEVICENAME(in));
 	}
-	in->master.usb.dev = NULL;
+	in->master.usb.lusb_dev = NULL;
 	SAFEFREE(DEVICENAME(in)) ;
 	DEVICENAME(in) = owstrdup(badUSBname);
 }
