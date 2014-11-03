@@ -126,6 +126,7 @@
 #endif							/* OW_CYGWIN */
 #endif							/* HAVE_STDINT_H */
 
+#include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
 
