@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -71,30 +70,30 @@ static struct filetype DS2404[] = {
 
 	{"alarm", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_alarm, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"set_alarm", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_set_alarm, FS_w_set_alarm, VISIBLE, NO_FILETYPE_DATA, },
-	{"running", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {c:0x10}, },
-	{"auto", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {c:0x20}, },
-	{"start", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {c:0x40}, },
-	{"delay", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {c:0x80}, },
-	{"date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_link, COMMON_r_date, COMMON_w_date, VISIBLE, {a:"udate"}, },
-	{"udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter5, FS_w_counter5, VISIBLE, {s:0x202}, },
-	{"cycle", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter4, FS_w_counter4, VISIBLE, {s:0x20C}, },
+	{"running", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {.c=0x10}, },
+	{"auto", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {.c=0x20}, },
+	{"start", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {.c=0x40}, },
+	{"delay", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {.c=0x80}, },
+	{"date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_link, COMMON_r_date, COMMON_w_date, VISIBLE, {.a="udate"}, },
+	{"udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter5, FS_w_counter5, VISIBLE, {.s=0x202}, },
+	{"cycle", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter4, FS_w_counter4, VISIBLE, {.s=0x20C}, },
 
 	{"interval", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
-	{"interval/date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_link, COMMON_r_date, COMMON_w_date, VISIBLE, {a:"interval/udate"}, },
-	{"interval/udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter5, FS_w_counter5, VISIBLE, {s:0x207}, },
+	{"interval/date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_link, COMMON_r_date, COMMON_w_date, VISIBLE, {.a="interval/udate"}, },
+	{"interval/udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter5, FS_w_counter5, VISIBLE, {.s=0x207}, },
 	
 	{"trigger", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
-	{"trigger/date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_link, COMMON_r_date, COMMON_w_date, VISIBLE, {a:"trigger/udate"}, },
-	{"trigger/udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter5, FS_w_counter5, VISIBLE, {s:0x210}, },
-	{"trigger/interval_date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_link, COMMON_r_date, COMMON_w_date, VISIBLE, {a:"trigger/interval_udate"}, },
-	{"trigger/interval_udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter5, FS_w_counter5, VISIBLE, {s:0x215}, },
-	{"trigger/cycle", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter4, FS_w_counter4, VISIBLE, {s:0x21A}, },
+	{"trigger/date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_link, COMMON_r_date, COMMON_w_date, VISIBLE, {.a="trigger/udate"}, },
+	{"trigger/udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter5, FS_w_counter5, VISIBLE, {.s=0x210}, },
+	{"trigger/interval_date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_link, COMMON_r_date, COMMON_w_date, VISIBLE, {.a="trigger/interval_udate"}, },
+	{"trigger/interval_udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter5, FS_w_counter5, VISIBLE, {.s=0x215}, },
+	{"trigger/cycle", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter4, FS_w_counter4, VISIBLE, {.s=0x21A}, },
 	
 	{"readonly", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
-	{"readonly/memory", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {c:0x08}, },
-	{"readonly/cycle", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {c:0x04}, },
-	{"readonly/interval", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {c:0x02}, },
-	{"readonly/clock", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {c:0x01}, },
+	{"readonly/memory", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {.c=0x08}, },
+	{"readonly/cycle", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {.c=0x04}, },
+	{"readonly/interval", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {.c=0x02}, },
+	{"readonly/clock", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_flag, FS_w_flag, VISIBLE, {.c=0x01}, },
 };
 
 DeviceEntryExtended(04, DS2404, DEV_alarm, NO_GENERIC_READ, NO_GENERIC_WRITE);

@@ -68,11 +68,11 @@ static struct bitfield DS2415_user = { "ControlRegister", 4, 4, } ;
 static struct filetype DS2415[] = {
 	F_STANDARD,
 	{"ControlRegister", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_control, FS_w_control, INVISIBLE, NO_FILETYPE_DATA, },
-	{"user", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE, {v: &DS2415_user,}, },
+	{"user", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE, {.v= &DS2415_user,}, },
 //	{"running", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_run, FS_w_run, VISIBLE, NO_FILETYPE_DATA, },
-	{"running", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE, {v: &DS2415_on,}, },
+	{"running", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, FS_w_bitfield, VISIBLE, {.v= &DS2415_on,}, },
 	{"udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter, FS_w_counter, VISIBLE, NO_FILETYPE_DATA, },
-	{"date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_link, COMMON_r_date, COMMON_w_date, VISIBLE, {a:"udate"}, },
+	{"date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_link, COMMON_r_date, COMMON_w_date, VISIBLE, {.a="udate"}, },
 };
 
 DeviceEntry(24, DS2415, NO_GENERIC_READ, NO_GENERIC_WRITE);
@@ -85,7 +85,7 @@ static struct filetype DS2417[] = {
 	{"itime", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_integer, fc_link, FS_r_itime, FS_w_itime, VISIBLE, NO_FILETYPE_DATA, },
 	{"running", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_run, FS_w_run, VISIBLE, NO_FILETYPE_DATA, },
 	{"udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter, FS_w_counter, VISIBLE, NO_FILETYPE_DATA, },
-	{"date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_link, COMMON_r_date, COMMON_w_date, VISIBLE, {a:"udate"}, },
+	{"date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_link, COMMON_r_date, COMMON_w_date, VISIBLE, {.a="udate"}, },
 };
 
 DeviceEntry(27, DS2417, NO_GENERIC_READ, NO_GENERIC_WRITE);

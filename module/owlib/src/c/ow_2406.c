@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -123,7 +122,7 @@ static struct filetype DS2406[] = {
 	{"T8A", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_T8A, NO_FILETYPE_DATA, },
 	{"T8A/volt", PROPERTY_LENGTH_FLOAT, &AT8Ac, ft_float, fc_volatile, FS_voltage, NO_WRITE_FUNCTION, VISIBLE_T8A, NO_FILETYPE_DATA, },
 
-	{"aux", 0, NON_AGGREGATE, ft_directory, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, {i:eBranch_aux}, }, //3TA 2-line HUB
+	{"aux", 0, NON_AGGREGATE, ft_directory, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, {.i=eBranch_aux}, }, //3TA 2-line HUB
 };
 
 DeviceEntryExtended(12, DS2406, DEV_alarm, NO_GENERIC_READ, NO_GENERIC_WRITE);

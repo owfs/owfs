@@ -1,12 +1,11 @@
 /*
-$Id$
-OWFS -- One-Wire filesystem
-OWHTTPD -- One-Wire Web Server
-Written 2003 Paul H Alfille
-email: paul.alfille@gmail.com
-Released under the GPL
-See the header file: ow.h for full attribution
-1wire/iButton system from Dallas Semiconductor
+	OWFS -- One-Wire filesystem
+	OWHTTPD -- One-Wire Web Server
+	Written 2003 Paul H Alfille
+	email: paul.alfille@gmail.com
+	Released under the GPL
+	See the header file: ow.h for full attribution
+	1wire/iButton system from Dallas Semiconductor
 */
 
 #include <config.h>
