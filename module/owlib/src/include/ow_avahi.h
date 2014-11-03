@@ -1,5 +1,4 @@
 /*
-$Id$
 OWFS -- One-Wire filesystem
 OWHTTPD -- One-Wire Web Server
 Written 2003 Paul H Alfille
@@ -33,8 +32,6 @@ USA.
 
 #ifndef OW_AVAHI_H
 #define OW_AVAHI_H
-
-#if ! OW_DARWIN // not for Macintosh OSX
 
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
@@ -406,7 +403,5 @@ GOOD_OR_BAD OW_Load_avahi_library(void) ;
 void OW_Free_avahi_library(void) ;
 void *OW_Avahi_Announce( void * v ) ;
 void *OW_Avahi_Browse(void * v) ;
-
-#endif /* OW_DARWIN */
 
 #endif 	/* OW_AVAHI_H */
