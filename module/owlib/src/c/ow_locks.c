@@ -58,11 +58,11 @@ void LockSetup(void)
 
 #ifndef MUTEX_ATTR_INIT_DONE
 #define MUTEX_ATTR_INIT_DONE
-#ifdef EXTENDED_MUTEX_DEBUG
-	_MUTEX_ATTR_SET(Mutex.mattr, PTHREAD_MUTEX_ERRORCHECK);
-#else
-	_MUTEX_ATTR_SET(Mutex.mattr, PTHREAD_MUTEX_DEFAULT);
-#endif
+	if ( Globals.locks ) {
+		_MUTEX_ATTR_SET(Mutex.mattr, PTHREAD_MUTEX_ERRORCHECK);
+	} else {
+		_MUTEX_ATTR_SET(Mutex.mattr, PTHREAD_MUTEX_DEFAULT);
+	}
 #endif
 	
 	_MUTEX_INIT(Mutex.stat_mutex);
