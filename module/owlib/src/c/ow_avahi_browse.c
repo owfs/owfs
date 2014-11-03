@@ -17,7 +17,7 @@ See the header file: ow.h for full attribution
 #include "stdlib.h"  // need this for NULL
 #endif /* HAVE_STDLIB_H */
 
-#if OW_ZERO && ! OW_CYGWIN && ! OW_DARWIN
+#if OW_ZERO
 
 #include "ow_connection.h"
 
@@ -255,4 +255,4 @@ void * OW_Avahi_Browse(void * v)
 	return VOID_RETURN;
 }
 
-#endif  /* OW_ZERO && ! OW_CYGWIN && ! OW_DARWIN */
+#endif  /* OW_ZERO */
