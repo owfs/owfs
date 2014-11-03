@@ -26,14 +26,9 @@
 #define PTHREAD_RWLOCK 1
 
 #if OW_MUTEX_DEBUG
-// Detect double unlock etc. (PTHREAD_MUTEX_ERRORCHECK)
-// This should not be used for smaller embedded systems
-#define EXTENDED_MUTEX_DEBUG
-
 // Allow debugging rwlocks.
 #define EXTENDED_RWLOCK_DEBUG
 #else
-#undef  EXTENDED_MUTEX_DEBUG
 #undef  EXTENDED_RWLOCK_DEBUG
 #endif
 
