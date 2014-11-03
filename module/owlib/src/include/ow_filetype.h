@@ -150,7 +150,6 @@ struct parsedname;
 
 #define NON_AGGREGATE	NULL
 
-#define NO_FILETYPE_DATA {v:NULL}
 
 #define NO_READ_FUNCTION NULL
 #define NO_WRITE_FUNCTION NULL
@@ -177,6 +176,7 @@ struct filetype {
 		ASCII *a;
 	} data;						// extra data pointer (used for separating similar but differently named functions)
 };
+#define NO_FILETYPE_DATA {.v=NULL}
 
 #include "ow_bitfield.h" // read/write bit fields
 
