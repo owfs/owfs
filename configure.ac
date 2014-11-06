@@ -1304,12 +1304,21 @@ if test "${ENABLE_AVAHI}" != "false"; then
 		#LIBAVAHI_CONFIG
 	fi
 
-	# last test to see if libusb is found after AC_CHECK_LIB
+	# ultimate test to see if libavahi is found after AC_CHECK_LIB
 	if test "X${LIBAVAHI_CONFIG}" == "X"; then
 
-		AC_CHECK_LIB(avahi-client,avahi_client_new,[
-			LIBAVAHI_LIBS="-lavahi-client"],[
-			AC_MSG_WARN([Cannot find libavahi])
+		AC_CHECK_LIB(avahi-common,avahi_threaded_poll_new,[
+			AC_CHECK_LIB(avahi-client,avahi_client_new,[
+				LIBAVAHI_LIBS="-lavahi-client -lavahi-client"],[
+				AC_MSG_WARN([Cannot find libavahi-client])
+				if test "${ENABLE_AVAHI}" = "true" ; then
+					AC_MSG_ERROR([libavahi must be installed to use a Avahi zero-configuration])
+				else
+					AC_MSG_WARN([libavahi not found, avahi will be disabled])
+					ENABLE_AVAHI=false
+				fi
+			],)],[
+			AC_MSG_WARN([Cannot find libavahi-common])
 			if test "${ENABLE_AVAHI}" = "true" ; then
 				AC_MSG_ERROR([libavahi must be installed to use a Avahi zero-configuration])
 			else
