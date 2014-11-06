@@ -1,17 +1,19 @@
 /*
-$Id$
-OWFS -- One-Wire filesystem
-OWHTTPD -- One-Wire Web Server
-Written 2003 Paul H Alfille
-email: paul.alfille@gmail.com
-Released under the GPL
-See the header file: ow.h for full attribution
-1wire/iButton system from Dallas Semiconductor
+	OWFS -- One-Wire filesystem
+	OWHTTPD -- One-Wire Web Server
+	Written 2003 Paul H Alfille
+	email: paul.alfille@gmail.com
+	Released under the GPL
+	See the header file: ow.h for full attribution
+	1wire/iButton system from Dallas Semiconductor
 */
 
 
+#if OW_AVAHI
+
 #include <config.h>
 #include "owfs_config.h"
+#include "ow.h"
 #include "ow_connection.h"
 
 #if OW_ZERO && !OW_CYGWIN && !OW_DARWIN
@@ -25,26 +27,6 @@ See the header file: ow.h for full attribution
 #ifdef HAVE_ARPA_INET_H
 #include <arpa/inet.h>
 #endif
-
-/* Special functions that need to be linked in dynamically
--- libavahi-client.so
-avahi_client_errno
-avahi_client_free
-avahi_client_new
-avahi_entry_group_add_service
-avahi_entry_group_commit
-avahi_entry_group_is_empty
-avahi_entry_group_new
-avahi_entry_group_reset
---libavahi-common.so
-avahi_simple_poll_free
-avahi_simple_poll_get
-avahi_simple_poll_loop
-avahi_simple_poll_new
-avahi_simple_poll_quit
-avahi_strerror
-*/
-
 
 struct announce_avahi_struct {
 	AvahiEntryGroup *group ;
@@ -270,4 +252,4 @@ void *OW_Avahi_Announce( void * v )
 	return VOID_RETURN ;
 }
 
-#endif /* OW_ZERO && !OW_CYGWIN && !OW_DARWIN */
+#endif /* OW_AVAHI */

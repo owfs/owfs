@@ -161,17 +161,16 @@ struct master_browse {
 #if OW_ZERO
 	DNSServiceRef bonjour_browse;
 
-#if !OW_CYGWIN
-	AvahiServiceBrowser *avahi_browser ;
-	AvahiSimplePoll *avahi_poll ;
-	AvahiClient *avahi_client ;
+#if OW_AVAHI
+	AvahiClient *client ;
+	AvahiThreadedPoll *threaded_poll ;
 #if __HAS_IPV6__
 	char avahi_host[INET6_ADDRSTRLEN+1] ;
 #else
 	char avahi_host[INET_ADDRSTRLEN+1] ;
 #endif
 	char avahi_service[10] ;
-#endif							/* OW_CYGWIN */
+#endif	/* OW_AVAHI */
 #endif /* OW_ZERO */
 };
 
