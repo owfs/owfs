@@ -216,9 +216,9 @@ libow_la_SOURCES = ${OWLIB_SOURCE}
 
 
 if HAVE_CYGWIN
-libow_la_LDFLAGS = ${PTHREAD_LIBS} -shared -no-undefined ${LIBUSB_LIBS} ${LD_EXTRALIBS}
+libow_la_LDFLAGS = ${PTHREAD_LIBS} -shared -no-undefined ${LIBUSB_LIBS} ${LIBAVAHI_LIBS} ${LD_EXTRALIBS}
 else
-libow_la_LDFLAGS = -version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE) -release $(LT_RELEASE) ${PTHREAD_LIBS} -shared -shrext .so ${LIBUSB_LIBS} ${LD_EXTRALIBS}
+libow_la_LDFLAGS = -version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE) -release $(LT_RELEASE) ${PTHREAD_LIBS} -shared -shrext .so ${LIBUSB_LIBS} ${LIBAVAHI_LIBS} ${LD_EXTRALIBS}
 endif
 
 # Maybe need this for MacOS X

@@ -1,5 +1,4 @@
 /*
-$Id$
     OW -- One-Wire filesystem
 
     Function naming scheme:
@@ -59,8 +58,8 @@ $Id$
 #define OWFS_PATCHLEVEL "@VERSION_PATCHLEVEL@"
 
 #define OW_ALLOC_DEBUG  @OW_ALLOC_DEBUG@
-#define OW_SHOW_TRAFFIC @OW_SHOW_TRAFFIC@
 #define OW_USB          @OW_USB@
+#define OW_AVAHI        @OW_AVAHI@
 #define OW_PARPORT      @OW_PARPORT@
 #define OW_DEBUG        @OW_DEBUG@
 #define OW_MUTEX_DEBUG  @OW_MUTEX_DEBUG@
