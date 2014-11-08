@@ -8,11 +8,11 @@
 	1wire/iButton system from Dallas Semiconductor
 */
 
+#include <config.h>
+#include "owfs_config.h"
 
 #if OW_AVAHI
 
-#include <config.h>
-#include "owfs_config.h"
 #include "ow.h"
 #include "ow_connection.h"
 
@@ -51,7 +51,7 @@ static void entry_group_callback(AvahiEntryGroup *group, AvahiEntryGroupState st
 
 		case AVAHI_ENTRY_GROUP_FAILURE :
 			LEVEL_DEBUG("group failure: %s", avahi_strerror(avahi_client_errno(out->client)));
-			avahi_simple_poll_quit(aas->poll);
+			avahi_threaded_poll_quit(out->poll);
 			break;
 
 		case AVAHI_ENTRY_GROUP_UNCOMMITED:
@@ -116,13 +116,14 @@ static void create_services(struct connection_out * out)
 				ret1 = avahi_entry_group_add_service( out->group, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC, 0, name,"_ftp._tcp", NULL, NULL, port, NULL) ;
 				break;
 			default:
-				avahi_threaded_poll_quit(aas->poll);
+				LEVEL_DEBUG("This program type doesn't support service announcement");
+				avahi_threaded_poll_quit(out->poll);
 				return;
 		}
-		//printf("AVAHI ANNOUNCE: domain=<%s>\n",avahi_client_get_domain_name(aas->client) ) ;
+
 		if ( ret1 < 0 || ret2 < 0 ) {
 			LEVEL_DEBUG("Failed to add a service: %s or %s", avahi_strerror(ret1), avahi_strerror(ret2));
-			avahi_threaded_poll_quit(aas->poll);
+			avahi_threaded_poll_quit(out->poll);
 			return;
 		}
 
@@ -209,7 +210,7 @@ static void client_callback(AvahiClient *client, AvahiClientState state, AVAHI_G
 }
 
 // Now uses Avahi threads
-GOOD_OR_BAD OW_Avahi_Announce( connection_out *out )
+GOOD_OR_BAD OW_Avahi_Announce( struct connection_out *out )
 {
 	int error ;
 

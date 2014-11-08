@@ -160,18 +160,19 @@ struct master_enet_monitor {
 struct master_browse {
 #if OW_ZERO
 	DNSServiceRef bonjour_browse;
+#endif /* OW_ZERO */
 
 #if OW_AVAHI
 	AvahiClient *client ;
-	AvahiThreadedPoll *threaded_poll ;
+	AvahiServiceBrowser * browser ;
+	AvahiThreadedPoll *poll ;
 #if __HAS_IPV6__
-	char avahi_host[INET6_ADDRSTRLEN+1] ;
+	char host[INET6_ADDRSTRLEN+1] ;
 #else
-	char avahi_host[INET_ADDRSTRLEN+1] ;
+	char host[INET_ADDRSTRLEN+1] ;
 #endif
-	char avahi_service[10] ;
+	char service[10] ;
 #endif	/* OW_AVAHI */
-#endif /* OW_ZERO */
 };
 
 union master_union {

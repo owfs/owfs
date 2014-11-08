@@ -361,7 +361,6 @@ GOOD_OR_BAD ARG_USB_monitor(const char *arg)
 
 GOOD_OR_BAD ARG_Browse(void)
 {
-#if OW_ZERO
 	struct port_in * pin = NewPort( NULL ) ;
 	struct connection_in * in ;
 	if ( pin == NULL ) {
@@ -374,10 +373,6 @@ GOOD_OR_BAD ARG_Browse(void)
 	arg_data("ZeroConf monitor",pin) ;
 	pin->busmode = bus_browse;
 	return gbGOOD;
-#else
-	fprintf(stderr, "OWFS is compiled without Zeroconf/Bonjour support.\n");
-	return gbBAD;
-#endif
 }
 
 // This is to connect to owserver as a (remote) bus

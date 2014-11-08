@@ -10,6 +10,7 @@
 
 #include <config.h>
 #include "owfs_config.h"
+#include "ow.h"
 #include "ow_connection.h"
 
 #if OW_ZERO
@@ -120,8 +121,11 @@ void ZeroConf_Announce(struct connection_out *out)
 		return;
 	} else if ( Globals.zero == zero_avahi ) {
 		
+#if OW_AVAHI
 		GOOD_OR_BAD oaa = OW_Avahi_Announce( out ) ;
 		LEVEL_DEBUG( "Avahi (zero-configuration service) broadcast was %s successful",BAD(oaa)?"NOT":"") ;
+#endif /* OW_AVAHI */
+
 	} else if ( Globals.zero == zero_bonjour ) {
 		pthread_t thread;
 		int err = pthread_create(&thread, DEFAULT_THREAD_ATTR, Announce, (void *) out);

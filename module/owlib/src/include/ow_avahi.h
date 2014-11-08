@@ -20,8 +20,6 @@
 #include <avahi-common/thread-watch.h>
 #include <avahi-common/error.h>
 
-typedef enum { EnumDummy, } Enum ;
-
 struct connection_in ;
 struct connection_out ;
 

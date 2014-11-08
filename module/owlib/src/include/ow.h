@@ -289,10 +289,8 @@ time_t timegm(struct tm *tm);
 /* Zeroconf / Bonjour */
 #include "ow_dl.h"
 #include "ow_dnssd.h"
-#if !OW_CYGWIN
-#include "ow_avahi.h"
-#endif							/* OW_CYGWIN */
 #endif							/* OW_ZERO */
+#include "ow_avahi.h"
 
 /*
     OW -- One Wire
