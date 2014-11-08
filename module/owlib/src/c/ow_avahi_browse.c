@@ -12,11 +12,11 @@
 #include "owfs_config.h"
 #include "ow.h"
 
+#if OW_AVAHI
+
 #ifdef HAVE_STDLIB_H
 #include "stdlib.h"  // need this for NULL
 #endif /* HAVE_STDLIB_H */
-
-#if OW_ZERO && ! OW_CYGWIN && ! OW_DARWIN
 
 #include "ow_connection.h"
 
@@ -251,6 +251,40 @@ GOOD_OR_BAD OW_Avahi_Browse( struct connection_in * in)
 	}
 
 	return VOID_RETURN;
+	int error ;
+
+	out->poll = avahi_threaded_poll_new() ;
+	out->client = NULL ;
+	out->group = NULL ;
+
+	if ( out->poll == NULL ) {
+		LEVEL_CONNECT("Could not create an Avahi object for service announcement");
+		return gbBAD ;
+	}
+
+	/* Allocate a new client */
+	LEVEL_DEBUG("Creating Avahi client");
+	out->client = avahi_client_new(avahi_threaded_poll_get(out->poll), 0, client_callback, (void *) out, &error);
+	if (out->client == NULL) {
+		LEVEL_CONNECT("Could not create an Avahi client for service announcement");
+		return gbBAD ;
+	}
+
+	/* Run the main loop */
+	LEVEL_DEBUG("Starting Avahi thread");
+	if ( avahi_threaded_poll_start(out->poll) < 0 ) {
+		LEVEL_CONNECT("Could not start Avahi service discovery thread") ;
+	}
+
+	// done
+	avahi_threaded_poll_free(out->poll);
+	LEVEL_DEBUG("Freeing Avahi objects");
+	
+	out->poll = NULL ;
+	out->client = NULL ;
+	out->group = NULL ;
+
+	return gbBAD ;
 }
 
-#endif  /* OW_ZERO && ! OW_CYGWIN && ! OW_DARWIN */
+#endif  /* OW_AVAHI */

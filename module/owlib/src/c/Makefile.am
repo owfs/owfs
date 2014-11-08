@@ -45,7 +45,6 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_api.c           \
                ow_avahi_announce.c\
                ow_avahi_browse.c  \
-               ow_avahi_link.c    \
                ow_badadapter.c    \
                ow_bae.c           \
                ow_browse.c        \
