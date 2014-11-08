@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -120,14 +119,9 @@ void ZeroConf_Announce(struct connection_out *out)
 	if ( Globals.announce_off) {
 		return;
 	} else if ( Globals.zero == zero_avahi ) {
-#if ! OW_CYGWIN && ! OW_DARWIN
-		// avahi only implemented with multithreading
-		pthread_t thread;
-		int err = pthread_create(&thread, DEFAULT_THREAD_ATTR, OW_Avahi_Announce, (void *) out);
-		if (err) {
-			LEVEL_CONNECT("Avahi registration thread error %d.", err);
-		}
-#endif /* ! OW_CYGWIN && ! OW_DARWIN */
+		
+		GOOD_OR_BAD oaa = OW_Avahi_Announce( out ) ;
+		LEVEL_DEBUG( "Avahi (zero-configuration service) broadcast was %s successful",BAD(oaa)?"NOT":"") ;
 	} else if ( Globals.zero == zero_bonjour ) {
 		pthread_t thread;
 		int err = pthread_create(&thread, DEFAULT_THREAD_ATTR, Announce, (void *) out);

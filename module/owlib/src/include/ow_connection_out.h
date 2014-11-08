@@ -1,5 +1,4 @@
 /*
-$Id$
     OW -- One-Wire filesystem
     version 0.4 7/2/2003
 
@@ -37,15 +36,26 @@ struct connection_out {
 	struct addrinfo *ai_ok;
 	FILE_DESCRIPTOR_OR_ERROR file_descriptor;
 	struct {
-		char *type;					// for zeroconf
-		char *domain;				// for zeroconf
-		char *name;					// zeroconf name
+		char * type;	// for zeroconf
+		char * domain;  // for zeroconf
+		char * name;	// zeroconf name
 	} zero ;
 	pthread_t tid;
 #if OW_ZERO
 	DNSServiceRef sref0;
 	DNSServiceRef sref1;
 #endif
+#if OW_AVAHI
+	AvahiClient       * client ;
+	AvahiThreadedPoll * poll ;
+	AvahiEntryGroup   * group ;
+#if __HAS_IPV6__
+	char avahi_host[INET6_ADDRSTRLEN+1] ;
+#else
+	char avahi_host[INET_ADDRSTRLEN+1] ;
+#endif
+	char avahi_service[10] ;
+#endif	/* OW_AVAHI */
 };
 
 extern struct outbound_control {
