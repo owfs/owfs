@@ -978,7 +978,7 @@ if test "${ENABLE_OWFS}" != "false" ; then
 
 	AC_CHECK_HEADER(fuse.h,,[
 	AC_MSG_WARN([
-	Can't find fuse.h - Add the search path with --with-fuseinclude])
+	Cannot find fuse.h - Add the search path with --with-fuseinclude])
 
 	FUSE_FLAGS=""
 	FUSE_INCLUDES=""
@@ -1004,13 +1004,13 @@ if test "${ENABLE_OWFS}" != "false" ; then
 	LIBS="$LIBS $PTHREAD_LIBS"
 	AC_CHECK_LIB(fuse,fuse_main, [FUSE_LIBS="$FUSE_LIBS -lfuse"],[
 		AC_MSG_WARN([
-	Can't find libfuse.a - add the search path with --with-fuselib])
+	Cannot find libfuse.a - add the search path with --with-fuselib])
 		AC_MSG_WARN([Running ldconfig or adding "/usr/local/lib" to /etc/ld.so.conf might also solve the problem, otherwise re-install fuse.])
 		if test "${ENABLE_OWFS}" = "auto"; then
 			AC_MSG_WARN([OWFS is disabled because libfuse.a is not found.])
 			ENABLE_OWFS="false"
 		else
-			AC_MSG_ERROR([Can't enable OWFS])
+			AC_MSG_ERROR([Cannot enable OWFS])
 		fi
 		],)
 	CFLAGS="$save_CFLAGS"
@@ -1119,7 +1119,7 @@ acx_usb_interrupt_read_ok=no
 
         save_LIBS="$LIBS"
         save_CFLAGS="$CFLAGS"
-	LIBS="$save_LIBS $LIBUSB_LIBS"
+		LIBS="$save_LIBS $LIBUSB_LIBS"
         CFLAGS="$save_CFLAGS $LIBUSB_CFLAGS"
         AC_TRY_LINK([#include <usb.h>],
                     [usb_interrupt_read(NULL, 0, NULL, 0, 0);],
@@ -1132,7 +1132,7 @@ acx_usb_interrupt_read_ok=no
 
 # Finally, execute ACTION-IF-FOUND/ACTION-IF-NOT-FOUND:
 if test x"$acx_usb_interrupt_read_ok" = xyes; then
-        ifelse([$1],,AC_DEFINE(HAVE_USB_INTERRUPT_READ,1,[Define to 1 if you have the `usb_interrupt_read' function.]),[$1])
+        ifelse([$1],,AC_DEFINE(HAVE_USB_INTERRUPT_READ,1,[Define to 1 if you have the usb_interrupt_read function.]),[$1])
         :
 else
         acx_usb_interrupt_read_ok=no
@@ -1227,7 +1227,7 @@ if test "${ENABLE_USB}" != "false"; then
 
 		AC_CHECK_LIB(usb,usb_open,[
 			LIBUSB_LIBS="-lusb"],[
-			AC_MSG_WARN([Can't find libusb])
+			AC_MSG_WARN([Cannot find libusb])
 			if test "${ENABLE_USB}" = "true" ; then
 				AC_MSG_ERROR([libusb must be installed to use a USB adapter])
 			else
@@ -1255,6 +1255,92 @@ AC_SUBST(LIBUSB_CFLAGS)
 AC_SUBST(LIBUSB_LIBS)
 AC_SUBST(ENABLE_USB)
 AM_CONDITIONAL(ENABLE_USB, test "${ENABLE_USB}" = "true")
+
+# Check for Avahi enabled
+ENABLE_AVAHI=auto
+AC_MSG_CHECKING([if Avahi support is enabled])
+
+AC_ARG_ENABLE(avahi,
+[  --enable-avahi          Enable zero-config autodiscovery (default auto)],
+[
+	AC_MSG_RESULT([$enableval])
+
+	if ! test "$enableval" = "yes" ; then
+		ENABLE_AVAHI=false
+	fi
+],
+[
+	AC_MSG_RESULT([auto (default)])
+])
+
+if test "${ENABLE_AVAHI}" != "false"; then
+
+	# Include libavahi if the avahi is enabled
+	if test "X${LIBAVAHI_CONFIG}" != "X" ; then
+
+		LIBAVAHI_CFLAGS=`$LIBAVAHI_CONFIG --cflags`
+		LIBAVAHI_LIBS=`$LIBAVAHI_CONFIG --libs`
+
+		save_CPPFLAGS="$CPPFLAGS"
+		save_LDFLAGS="$LDFLAGS"
+		CPPFLAGS="$save_CPPFLAGS $LIBAVAHI_CFLAGS"
+		LDFLAGS="$save_LDFLAGS $LIBAVAHI_LIBS"
+
+		AC_MSG_CHECKING([if libavahi compiles with includes+lib ])
+		AC_COMPILE_IFELSE([
+		AC_LANG_PROGRAM([[#include <avahi-chient/client.h>]],
+		[[
+			avahi_client_new(NULL,0,NULL);
+		]])],
+		[AC_MSG_RESULT([ok])],
+		[AC_MSG_RESULT([compilation error])
+		LIBAVAHI_CFLAGS=""
+		LIBAVAHI_LDFLAGS=""
+		LIBAVAHI_CONFIG=""
+		])
+
+		CPPFLAGS="$save_CPPFLAGS"
+		LDFLAGS="$save_LDFLAGS"
+
+		#LIBAVAHI_CONFIG
+	fi
+
+	# ultimate test to see if libavahi is found after AC_CHECK_LIB
+	if test "X${LIBAVAHI_CONFIG}" == "X"; then
+
+		AC_CHECK_LIB(avahi-common,avahi_threaded_poll_new,[
+			AC_CHECK_LIB(avahi-client,avahi_client_new,[
+				LIBAVAHI_LIBS="-lavahi-client -lavahi-client"],[
+				AC_MSG_WARN([Cannot find libavahi-client])
+				if test "${ENABLE_AVAHI}" = "true" ; then
+					AC_MSG_ERROR([libavahi must be installed to use a Avahi zero-configuration])
+				else
+					AC_MSG_WARN([libavahi not found, avahi will be disabled])
+					ENABLE_AVAHI=false
+				fi
+			],)],[
+			AC_MSG_WARN([Cannot find libavahi-common])
+			if test "${ENABLE_AVAHI}" = "true" ; then
+				AC_MSG_ERROR([libavahi must be installed to use a Avahi zero-configuration])
+			else
+				AC_MSG_WARN([libavahi not found, avahi will be disabled])
+				ENABLE_AVAHI=false
+			fi
+		],)
+
+	fi
+
+	if test "${ENABLE_AVAHI}" != "false" ; then
+	ENABLE_AVAHI=true
+	fi
+
+	# ENABLE_AVAHI
+fi
+
+AC_SUBST(LIBAVAHI_CFLAGS)
+AC_SUBST(LIBAVAHI_LIBS)
+AC_SUBST(ENABLE_AVAHI)
+AM_CONDITIONAL(ENABLE_AVAHI, test "${ENABLE_AVAHI}" = "true")
 
 # Check for Parallel port enabled
 ENABLE_PARPORT=auto
@@ -1332,7 +1418,7 @@ fi
 AC_CHECK_TYPES([struct addrinfo], , , [[#include <netdb.h>]])
 AC_CHECK_TYPE(socklen_t, ,
 [AC_DEFINE([socklen_t], [unsigned int],
-[If we don't have a real socklen_t, unsigned int is good enough.])],
+[If we do not have a real socklen_t, unsigned int is good enough.])],
 [
 	#ifdef HAVE_SYS_TYPES_H
 		#include <sys/types.h>
@@ -1401,7 +1487,7 @@ AC_COMPILE_IFELSE(
 	    )],
 [
 	if test "${HAVE_CYGWIN}" = "true" ; then
-		AC_MSG_RESULT([no, Cygwin's ipv6 is incomplete])
+		AC_MSG_RESULT([no, Cygwins ipv6 is incomplete])
 		have_v6=no
 	else
 		have_v6=yes
@@ -1439,7 +1525,7 @@ AC_TRY_LINK([
 ],
     [sem_timedwait(NULL, NULL)],[
     ac_cv_sem_timedwait="yes"],[
-    AC_MSG_WARN([Can't find sem_timedwait])
+    AC_MSG_WARN([Cannot find sem_timedwait])
     ac_cv_sem_timedwait="no"
 ])
 LIBS="$save_LIBS"
@@ -1447,7 +1533,7 @@ CFLAGS="$save_CFLAGS"
 ])
 
 if test "$ac_cv_sem_timedwait" = "yes"; then
-    AC_DEFINE(HAVE_SEM_TIMEDWAIT, 1, [Define to 1 if you have the `sem_timedwait' function.])
+    AC_DEFINE(HAVE_SEM_TIMEDWAIT, 1, [Define to 1 if you have the sem_timedwait function.])
 fi
 
 
@@ -1488,6 +1574,13 @@ else
 	OW_USB=0
 fi
 AC_SUBST(OW_USB)
+
+if test "${ENABLE_AVAHI}" = "true" ; then
+	OW_AVAHI=1
+else
+	OW_AVAHI=0
+fi
+AC_SUBST(OW_AVAHI)
 
 if test "${ENABLE_ZERO}" = "true" ; then
 	OW_ZERO=1
@@ -1680,6 +1773,11 @@ if test "${ENABLE_USB}" = "true"; then
 	AC_MSG_RESULT([                      USB is enabled])
 else
 	AC_MSG_RESULT([                      USB is DISABLED])
+fi
+if test "${ENABLE_AVAHI}" = "true"; then
+	AC_MSG_RESULT([                    AVAHI is enabled])
+else
+	AC_MSG_RESULT([                    AVAHI is DISABLED])
 fi
 if test "${ENABLE_I2C}" = "true"; then
 	AC_MSG_RESULT([                      I2C is enabled])

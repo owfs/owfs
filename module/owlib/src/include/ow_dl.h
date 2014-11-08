@@ -1,5 +1,4 @@
 /*
-$Id$
     OW -- One-Wire filesystem
     version 0.4 7/2/2003
 
@@ -39,7 +38,5 @@ typedef void *DLHANDLE;
 #endif							/* OW_ZERO */
 
 extern DLHANDLE libdnssd;
-extern DLHANDLE avahi_client ;
-extern DLHANDLE avahi_common ;
 
 #endif
