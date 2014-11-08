@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -29,7 +28,6 @@ void LibClose(void)
 #if OW_ZERO
 	// Used by browse and announce
 	OW_Free_dnssd_library();
-	OW_Free_avahi_library();
 #endif
 
 	LEVEL_CALL("Finished Library cleanup");

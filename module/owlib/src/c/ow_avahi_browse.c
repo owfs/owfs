@@ -1,12 +1,11 @@
 /*
-$Id$
-OWFS -- One-Wire filesystem
-OWHTTPD -- One-Wire Web Server
-Written 2003 Paul H Alfille
-email: paul.alfille@gmail.com
-Released under the GPL
-See the header file: ow.h for full attribution
-1wire/iButton system from Dallas Semiconductor
+	OWFS -- One-Wire filesystem
+	OWHTTPD -- One-Wire Web Server
+	Written 2003 Paul H Alfille
+	email: paul.alfille@gmail.com
+	Released under the GPL
+	See the header file: ow.h for full attribution
+	1wire/iButton system from Dallas Semiconductor
 */
 
 #include <config.h>
@@ -200,9 +199,8 @@ static void client_callback(AvahiClient *c, AvahiClientState state, void * v)
 	}
 }
 
-void * OW_Avahi_Browse(void * v)
+GOOD_OR_BAD OW_Avahi_Browse( struct connection_in * in)
 {
-	struct connection_in * in = v ;
 	int error;
 
 	DETACH_THREAD;

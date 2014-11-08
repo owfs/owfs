@@ -22,14 +22,13 @@
 
 typedef enum { EnumDummy, } Enum ;
 
+struct connection_in ;
+struct connection_out ;
 
 /**********************************************/
 /* Prototypes */
-struct connection_out ;
-GOOD_OR_BAD OW_Load_avahi_library(void) ;
-void OW_Free_avahi_library(void) ;
 GOOD_OR_BAD OW_Avahi_Announce( struct connection_out *out ) ;
-void *OW_Avahi_Browse(void * v) ;
+GOOD_OR_BAD OW_Avahi_Browse(struct connection_in * in) ;
 
 #endif /* OW_AVAHI */
 
