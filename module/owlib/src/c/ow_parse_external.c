@@ -53,6 +53,7 @@ void * sensor_tree = NULL ;
 		++ start_pointer ;                                        \
 	}                                                             \
 	s_##name = unquote_parse( trim_parse( s_##name ) ) ;          \
+	LEVEL_DEBUG( #name" assigned %s",s_##name ) ;               \
 } while (0) ;
 
 // Look through text_string, ignore backslash and match quoting varibles
@@ -226,6 +227,9 @@ static int LastParam( char * input_string )
 
 // Gets a string with property,family,structure,read_function,write_function,property_data,extra
 // write, data and extra are optional
+
+// starts with script:
+// or property:
 /*
  * property
  * family
