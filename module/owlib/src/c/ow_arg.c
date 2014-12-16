@@ -8,6 +8,8 @@
     1wire/iButton system from Dallas Semiconductor
 */
 
+# regex
+
 /* ow_opt -- owlib specific command line options processing */
 
 #include <config.h>

@@ -8,6 +8,8 @@
     1wire/iButton system from Dallas Semiconductor
 */
 
+# regex
+
 /* General Device File format:
     This device file corresponds to a specific 1wire/iButton chip type
     ( or a closely related family of chips )
