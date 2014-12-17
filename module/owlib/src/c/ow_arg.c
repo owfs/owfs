@@ -17,24 +17,42 @@
 #include "ow.h"
 #include "ow_connection.h"
 
-enum arg_address { arg_addr_device, arg_addr_null, arg_addr_ip, arg_addr_colon, arg_addr_number, arg_addr_other } ;
+enum arg_address { arg_addr_device, arg_addr_null, arg_addr_ip, arg_addr_colon, arg_addr_number, arg_addr_other, arg_addr_error, } ;
 
 static enum arg_address ArgType( const char * arg )
 {
+	static regex_t rx_dev ;
+	static regex_t rx_num ;
+	static regex_t rx_ip ;
+	static regex_t rx_col ;
+	
+	static rx_prep = -1 ; // nothing yet
+	
+	if ( rx_prep != 0 ) {
+		if ( 
+			regcom( &rx_dev, "/", REG_NOSUB ) != 0
+			||
+			regcom( &rx_num, "^[:digit:]\{\1,\}$", REG_NOSUB ) != 0 
+			||
+			regcom( &rx_ip, "[:digit:]\{1,3\}\.[:digit:]\{1,3\}\.[:digit:]\{1,3\}\.[:digit:]\{1,3\}", REG_NOSUB ) != 0
+			||
+			regcom( &rx_col, ":", REG_NOSUB ) != 0
+		) {
+			return arg_addr_error ;
+		}
+		rx_prep = 0 ;
+	}
+
 	if ( arg == NULL ) {
 		return arg_addr_null ;
-	} else if ( strchr( arg, '/' ) ) {
-		return arg_addr_device ;
-	} else if ( strchr( arg, ':' ) ) {
-		return arg_addr_colon ;
-	} else if ( strspn( arg, "0123456789" ) == strlen(arg) ) {
-		return arg_addr_number ;
-	} else if ( strchr(                     arg,                      '.' )
-		&&  strchr( strchr(                 arg,               '.' ), '.' )
-		&&  strchr( strchr( strchr(         arg,        '.' ), '.' ), '.' )
-		&&  strchr( strchr( strchr( strchr( arg, '.' ), '.' ), '.' ), '.' )
-		) {
+	} else if ( regexec( &rx_ip, arg, 0, NULL, 0 ) == 0 ) {
 		return arg_addr_ip ;
+	} else if ( regexec( &rx_col, arg, 0, NULL, 0 ) == 0 ) {
+		return arg_addr_colon ;
+	} else if ( regexec( &rx_dev, arg, 0, NULL, 0 ) == 0 ) {
+		return arg_addr_device ;
+	} else if ( regexec( &rx_num, arg, 0, NULL, 0 ) == 0 ) {
+		return arg_addr_number ;
 	}
 	return arg_addr_other ;
 }
