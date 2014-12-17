@@ -208,6 +208,9 @@
 #endif							/* __USE_GNU */
 #endif							/* SKIP_SEARCH_H */
 
+# regular expressions
+#include <regex.h>
+
 /* If no getline, use our version */
 #ifndef HAVE_GETLINE
 ssize_t getline (char **lineptr, size_t *n, FILE *stream) ;
