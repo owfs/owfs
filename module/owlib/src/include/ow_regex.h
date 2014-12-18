@@ -2,6 +2,13 @@
     OW -- One-Wire filesystem
     version 0.4 7/2/2003
 
+    Function naming scheme:
+    OW -- Generic call to interaface
+    LI -- LINK commands
+    L1 -- 2480B commands
+    FS -- filesystem commands
+    UT -- utility functions
+
     Written 2003 Paul H Alfille
         Fuse code based on "fusexmp" {GPL} by Miklos Szeredi, mszeredi@inf.bme.hu
         Serial code based on "xt" {GPL} by David Querbach, www.realtime.bc.ca
@@ -18,10 +25,9 @@
     GNU General Public License for more details.
 
     Other portions based on Dallas Semiconductor Public Domain Kit,
-    Implementation:
-    2006 dirblob
 */
 
+// Not intended to be stand-alone -- called from ow.h
 #ifndef OW_REGEX_H			/* tedious wrapper */
 #define OW_REGEX_H
 
