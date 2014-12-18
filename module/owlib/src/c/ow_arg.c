@@ -8,7 +8,7 @@
     1wire/iButton system from Dallas Semiconductor
 */
 
-# regex
+// regex
 
 /* ow_opt -- owlib specific command line options processing */
 
@@ -28,15 +28,16 @@ static enum arg_address ArgType( const char * arg )
 	
 	static rx_prep = -1 ; // nothing yet
 	
+	// compile regex expressions
 	if ( rx_prep != 0 ) {
 		if ( 
-			regcom( &rx_dev, "/", REG_NOSUB ) != 0
+			regcomp( &rx_dev, "/", REG_NOSUB ) != 0
 			||
-			regcom( &rx_num, "^[:digit:]\{\1,\}$", REG_NOSUB ) != 0 
+			regcomp( &rx_num, "^[:digit:]\{\1,\}$", REG_NOSUB ) != 0 
 			||
-			regcom( &rx_ip, "[:digit:]\{1,3\}\.[:digit:]\{1,3\}\.[:digit:]\{1,3\}\.[:digit:]\{1,3\}", REG_NOSUB ) != 0
+			regcomp( &rx_ip, "[:digit:]\{1,3\}\.[:digit:]\{1,3\}\.[:digit:]\{1,3\}\.[:digit:]\{1,3\}", REG_NOSUB ) != 0
 			||
-			regcom( &rx_col, ":", REG_NOSUB ) != 0
+			regcomp( &rx_col, ":", REG_NOSUB ) != 0
 		) {
 			return arg_addr_error ;
 		}

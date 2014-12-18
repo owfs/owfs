@@ -8,7 +8,7 @@
 	1wire/iButton system from Dallas Semiconductor
 */
 
-# regex
+// regex
 
 #include <config.h>
 #include "owfs_config.h"

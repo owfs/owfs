@@ -8,7 +8,7 @@
 	1wire/iButton system from Dallas Semiconductor
 */
 
-# regex
+// regex
 
 /* ow_interate.c */
 /* routines to split reads and writes if longer than page */

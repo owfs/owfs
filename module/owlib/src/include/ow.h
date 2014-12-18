@@ -208,7 +208,7 @@
 #endif							/* __USE_GNU */
 #endif							/* SKIP_SEARCH_H */
 
-# regular expressions
+// regular expressions
 #include <regex.h>
 
 /* If no getline, use our version */
