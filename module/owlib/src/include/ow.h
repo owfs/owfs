@@ -208,9 +208,6 @@
 #endif							/* __USE_GNU */
 #endif							/* SKIP_SEARCH_H */
 
-// regular expressions
-#include "ow_regex.h"
-
 /* If no getline, use our version */
 #ifndef HAVE_GETLINE
 ssize_t getline (char **lineptr, size_t *n, FILE *stream) ;
@@ -287,6 +284,9 @@ time_t timegm(struct tm *tm);
 #include "rwlock.h"
 /* Many mutexes separated out for readability */
 #include "ow_mutexes.h"
+
+// regular expressions
+#include "ow_regex.h"
 
 #if OW_ZERO
 /* Zeroconf / Bonjour */
