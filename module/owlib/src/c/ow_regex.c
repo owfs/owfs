@@ -8,7 +8,6 @@
 	1wire/iButton system from Dallas Semiconductor
 */
 
-# regex
 
 /* ow_interate.c */
 /* routines to split reads and writes if longer than page */
@@ -17,6 +16,7 @@
 #include "owfs_config.h"
 #include "ow.h"
 
-#include "ow_regex.h"
+// tree to hold pointers to compiled regex expressions to cache compilation and free
+void * regex_tree = NULL ;
 
-int OW_regex( char * reg, char * string, regmatch_t 
+GOOD_OR_BAD ow_regcomp( regex_t * preg, const char * regex, int cflags ) ;

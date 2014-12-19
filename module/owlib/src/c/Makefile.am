@@ -147,6 +147,7 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_read_external.c \
                ow_read_telnet.c   \
                ow_reconnect.c     \
+               ow_regex.c         \
                ow_remote_alias.c  \
                ow_reset.c         \
                ow_return_code.c   \
