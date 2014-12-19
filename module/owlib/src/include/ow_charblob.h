@@ -22,13 +22,24 @@
     2006 dirblob
 */
 
-#ifndef OW_REGEX_H			/* tedious wrapper */
-#define OW_REGEX_H
+#ifndef OW_CHARBLOB_H			/* tedious wrapper */
+#define OW_CHARBLOB_H
 
-#include <regex.h>
+#define NO_CHARBLOB	NULL
 
-extern void * regex_tree ;
+struct charblob {
+	int troubled;
+	size_t allocated;
+	size_t used;
+	ASCII *blob;
+};
 
-GOOD_OR_BAD ow_regcomp( regex_t * preg, const char * regex, int cflags ) ;
+void CharblobClear(struct charblob *cb);
+void CharblobInit(struct charblob *cb);
+int CharblobPure(struct charblob *cb);
+int CharblobAdd(const ASCII * a, size_t s, struct charblob *cb);
+int CharblobAddChar(const ASCII a, struct charblob *cb);
+ASCII * CharblobData(struct charblob * cb);
+size_t CharblobLength( struct charblob * cb );
 
-#endif							/* OW_REGEX_H */
+#endif							/* OW_CHARBLOB_H */
