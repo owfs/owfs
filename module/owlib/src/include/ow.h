@@ -208,9 +208,6 @@
 #endif							/* __USE_GNU */
 #endif							/* SKIP_SEARCH_H */
 
-// regular expressions
-#include <regex.h>
-
 /* If no getline, use our version */
 #ifndef HAVE_GETLINE
 ssize_t getline (char **lineptr, size_t *n, FILE *stream) ;
@@ -341,6 +338,9 @@ struct connection_out;
 
 /* device display format */
 enum deviceformat { fdi, fi, fdidc, fdic, fidc, fic };
+
+// regular expressions
+#include "ow_regex.h"
 
 /* OWSERVER messages */
 #include "ow_message.h"

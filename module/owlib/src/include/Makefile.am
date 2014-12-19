@@ -90,6 +90,7 @@ noinst_HEADERS =           \
         ow_pressure.h      \
         ow_programs.h      \
         ow_reset.h         \
+        ow_regex.h         \
         ow_return_code.h   \
         ow_settings.h      \
         ow_search.h        \
