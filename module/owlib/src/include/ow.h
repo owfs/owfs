@@ -341,10 +341,6 @@ struct connection_out;
 
 /* device display format */
 enum deviceformat { fdi, fi, fdidc, fdic, fidc, fic };
-
-// regular expressions
-#include "ow_regex.h"
-
 /* OWSERVER messages */
 #include "ow_message.h"
 
@@ -376,5 +372,9 @@ enum deviceformat { fdi, fi, fdidc, fdic, fidc, fic };
 
 /* Return and error codes */
 #include "ow_return_code.h"
+
+
+// regular expressions
+#include "ow_regex.h"
 
 #endif							/* OW_H */

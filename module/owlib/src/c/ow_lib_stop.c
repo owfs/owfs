@@ -26,6 +26,9 @@ void LibStop(void)
 	FreeInAll();
 	LEVEL_CALL("Closing output devices");
 	FreeOutAll();
+	LEVEL_CALL("Clearing compiled expressions");
+	ow_regdestroy() ;
+
 
 	/* Have to reset more internal variables, and this should be fixed
 	 * by setting optind = 0 and call getopt()

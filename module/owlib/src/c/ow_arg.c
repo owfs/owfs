@@ -26,22 +26,17 @@ static enum arg_address ArgType( const char * arg )
 	static regex_t rx_ip ;
 	static regex_t rx_col ;
 	
-	static rx_prep = -1 ; // nothing yet
-	
 	// compile regex expressions
-	if ( rx_prep != 0 ) {
-		if ( 
-			regcomp( &rx_dev, "/", REG_NOSUB ) != 0
-			||
-			regcomp( &rx_num, "^[:digit:]\{\1,\}$", REG_NOSUB ) != 0 
-			||
-			regcomp( &rx_ip, "[:digit:]\{1,3\}\.[:digit:]\{1,3\}\.[:digit:]\{1,3\}\.[:digit:]\{1,3\}", REG_NOSUB ) != 0
-			||
-			regcomp( &rx_col, ":", REG_NOSUB ) != 0
-		) {
-			return arg_addr_error ;
-		}
-		rx_prep = 0 ;
+	if ( 
+		BAD( ow_regcomp( &rx_dev, "/", REG_NOSUB ) )
+		||
+		BAD( ow_regcomp( &rx_num, "^[:digit:]\\{1,\\}$", REG_NOSUB ) )
+		||
+		BAD( ow_regcomp( &rx_ip, "[:digit:]\\{1,3\\}\\.[:digit:]\\{1,3\\}\\.[:digit:]\\{1,3\\}\\.[:digit:]\\{1,3\\}", REG_NOSUB ) )
+		||
+		BAD( ow_regcomp( &rx_col, ":", REG_NOSUB ) )
+	) {
+		return arg_addr_error ;
 	}
 
 	if ( arg == NULL ) {
@@ -75,6 +70,7 @@ static GOOD_OR_BAD Serial_or_telnet( const char * arg, struct connection_in * in
 {
 	switch( ArgType(arg) ) {
 		case arg_addr_null:
+		case arg_addr_error:
 			LEVEL_DEFAULT("Error with device. Specify a serial port, or a serial-over-telnet network address");
 			return gbBAD ;
 		case arg_addr_device:
@@ -545,3 +541,4 @@ GOOD_OR_BAD ARG_Xport(const char *arg)
 	pin->type = ct_telnet ; // network
 	return gbGOOD;
 }
+

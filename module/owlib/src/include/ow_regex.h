@@ -33,8 +33,8 @@
 
 #include <regex.h>
 
-extern void * regex_tree ;
-
 GOOD_OR_BAD ow_regcomp( regex_t * preg, const char * regex, int cflags ) ;
+void ow_regdestroy( void ) ;
+void ow_regfree( regex_t * reg ) ;
 
 #endif							/* OW_REGEX_H */
