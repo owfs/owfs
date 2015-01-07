@@ -99,7 +99,7 @@
 #endif							/* HAVE_SYS_TYPES_H */
 
 #ifdef __CYGWIN__
-#define __BSD_VISIBLE  /* for strep */
+#define __BSD_VISIBLE  1 /* for strep */
 #endif
 #ifdef HAVE_SYS_TIMES_H
 #include <sys/times.h>			/* for times */
