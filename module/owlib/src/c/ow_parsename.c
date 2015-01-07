@@ -455,7 +455,7 @@ static enum parse_enum Parse_Bus(char *pathnow, struct parsedname *pn)
 	char *found;
 	INDEX_OR_ERROR bus_number;
 	/* Processing for bus.X directories -- eventually will make this more generic */
-	if (!isdigit(pathnow[4])) {
+	if ( !isdigit( (int) pathnow[4] ) ) {
 		return parse_error;
 	}
 

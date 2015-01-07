@@ -157,7 +157,7 @@ int ftp_command_parse(const char *input, struct ftp_command_s *cmd)
 			if (optional_number != NULL) {
 				input = optional_number;
 			} else {
-				if ((tolower(input[0]) == 'a') && (tolower( (int) input[1] ) == 'l') && (tolower( (int) input[2] ) == 'l')) {
+				if ((tolower( (int) input[0] ) == 'a') && (tolower( (int) input[1] ) == 'l') && (tolower( (int) input[2] ) == 'l')) {
 					cmd->arg[0].num = EPSV_ALL;
 					input += 3;
 				} else {
@@ -541,14 +541,14 @@ static const char *parse_number(int *num, const char *s, int max_num)
 	daemon_assert(num != NULL);
 
 	/* handle first character */
-	if (!isdigit(*s)) {
+	if (!isdigit( (int) s[0] )) {
 		return NULL;
 	}
 	tmp = (*s - '0');
 	s++;
 
 	/* handle subsequent characters */
-	while (isdigit(*s)) {
+	while (isdigit( (int) s[0] )) {
 		cur_digit = (*s - '0');
 
 		/* check for overflow */
@@ -591,14 +591,14 @@ static const char *parse_offset(off_t * ofs, const char *s)
 	daemon_assert(max_ofs != 0);
 
 	/* handle first character */
-	if (!isdigit(*s)) {
+	if (!isdigit( (int) s[0] )) {
 		return NULL;
 	}
 	tmp_ofs = (*s - '0');
 	s++;
 
 	/* handle subsequent characters */
-	while (isdigit(*s)) {
+	while (isdigit( (int) s[0] )) {
 		cur_digit = (*s - '0');
 
 		/* check for overflow */
