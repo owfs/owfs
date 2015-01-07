@@ -294,7 +294,7 @@ static void ascii_print( const char * buf, int length )
 	fprintf(stderr,"\n   <");
 	for (i = 0; i < length; ++i) {
 		char c = buf[i];
-		fprintf(stderr,"%c", isprint(c) ? c : '.');
+		fprintf(stderr,"%c", isprint( (int) c) ? c : '.');
 		if(i >= ( HEX_PRINT_BYTES_PER_LINE * HEX_PRINT_MAX_LINES -1 )) {
 			/* Sorry for this, but I think it's better to strip off all huge 8192 packages in the debug-output. */
 			break;

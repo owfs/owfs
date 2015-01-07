@@ -157,7 +157,7 @@ int ftp_command_parse(const char *input, struct ftp_command_s *cmd)
 			if (optional_number != NULL) {
 				input = optional_number;
 			} else {
-				if ((tolower(input[0]) == 'a') && (tolower(input[1]) == 'l') && (tolower(input[2]) == 'l')) {
+				if ((tolower(input[0]) == 'a') && (tolower( (int) input[1] ) == 'l') && (tolower( (int) input[2] ) == 'l')) {
 					cmd->arg[0].num = EPSV_ALL;
 					input += 3;
 				} else {
@@ -174,14 +174,14 @@ int ftp_command_parse(const char *input, struct ftp_command_s *cmd)
 			return 0;
 		}
 		input++;
-		c = toupper(*input);
+		c = toupper( (int) input[0] );
 		if ((c == 'A') || (c == 'E')) {
 			cmd->arg[0].string[0] = c;
 			cmd->arg[0].string[1] = '\0';
 			input++;
 			if (*input == ' ') {
 				input++;
-				c = toupper(*input);
+				c = toupper( (int) input[0] );
 				if ((c != 'N') && (c != 'T') && (c != 'C'))
 					return 0;
 				cmd->arg[1].string[0] = c;
@@ -213,7 +213,7 @@ int ftp_command_parse(const char *input, struct ftp_command_s *cmd)
 		if (*input != ' ')
 			return 0;
 		input++;
-		c = toupper(*input);
+		c = toupper( (int) input[0] );
 		if ((c != 'F') && (c != 'R') && (c != 'P')) {
 			return 0;
 		}
@@ -227,7 +227,7 @@ int ftp_command_parse(const char *input, struct ftp_command_s *cmd)
 			return 0;
 		}
 		input++;
-		c = toupper(*input);
+		c = toupper( (int) input[0] );
 		if ((c != 'S') && (c != 'B') && (c != 'C')) {
 			return 0;
 		}

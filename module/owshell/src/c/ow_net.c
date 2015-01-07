@@ -39,7 +39,7 @@ int ClientAddr(char *sname)
 		owserver_connection->host = NULL;
 		owserver_connection->service = strdup(OWSERVER_DEFAULT_PORT);
 	} else if ((p = strrchr(sname, ':')) == NULL) {	/* : NOT exist */
-		if (strchr(sname, '.') || isalpha(sname[0])) {	//probably an address
+		if (strchr(sname, '.') || isalpha( (int) sname[0] )) {	//probably an address
 			owserver_connection->host = strdup(sname);
 			owserver_connection->service = strdup(OWSERVER_DEFAULT_PORT);
 		} else {				// assume a port

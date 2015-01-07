@@ -445,7 +445,7 @@ static void ParseTheLine(struct lineparse *lp)
 						{	// put in lower case
 							ASCII *prog_char;
 							for (prog_char = lp->prog; *prog_char; ++prog_char) {
-								*prog_char = tolower(*prog_char);
+								*prog_char = tolower( (int) prog_char[0] );
 							}
 						}
 						// special cases for sensor and property lines

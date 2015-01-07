@@ -67,6 +67,9 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <stdio.h>
+#ifdef __CYGWIN__
+#define __BSD_VISIBLE  1 /* for strep */
+#endif
 #include <string.h>
 #include <dirent.h>
 #include <signal.h>
