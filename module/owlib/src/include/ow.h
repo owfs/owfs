@@ -98,6 +98,9 @@
 #include <sys/types.h>			/* for stat */
 #endif							/* HAVE_SYS_TYPES_H */
 
+#ifdef __CYGWIN__
+#define __BSD_VISIBLE  /* for strep */
+#endif
 #ifdef HAVE_SYS_TIMES_H
 #include <sys/times.h>			/* for times */
 #endif							/* HAVE_SYS_TIMES_H */
