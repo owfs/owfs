@@ -213,8 +213,14 @@
 
 /* If no getline, use our version */
 #ifndef HAVE_GETLINE
+#define WE_NEED_GETLINE
 ssize_t getline (char **lineptr, size_t *n, FILE *stream) ;
 #endif /* HAVE_GETLINE */
+
+#if defined(__DARWIN_C_LEVEL) && __DARWIN_C_LEVEL < 200809L
+#define WE_NEED_GETLINE
+ssize_t getline (char **lineptr, size_t *n, FILE *stream) ;
+#endif /* __DARWIN_C_LEVEL < 200809L */
 
 /* If no timegm, use our version */
 #if (!defined _BSD_SOURCE && !defined _SVID_SOURCE)

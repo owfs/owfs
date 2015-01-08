@@ -1,4 +1,10 @@
 #! /bin/sh
 
 rm -rf *cache
-libtoolize -f -c -i && aclocal -I src/scripts/m4 && autoheader && autoconf && automake -a -c --foreign && echo "Run './configure' and 'make' to build owfs"
+
+case `uname` in
+    Darwin*) LTIZE=glibtoolize ;;
+    *) LTIZE=libtoolize ;;
+esac
+
+$LTIZE -f -c -i && aclocal -I src/scripts/m4 && autoheader && autoconf && automake -a -c --foreign && echo "Run './configure' and 'make' to build owfs"

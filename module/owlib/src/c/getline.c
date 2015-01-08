@@ -1,144 +1,113 @@
-/* $Id$ */
+/* getline.c -- Replacement for GNU C library function getline
 
-/* getdelim.c --- Implementation of replacement getdelim function.
-   Copyright (C) 1994, 1996, 1997, 1998, 2001, 2003, 2005 Free
-   Software Foundation, Inc.
+Copyright (C) 1993 Free Software Foundation, Inc.
 
-   This program is free software; you can redistribute it and/or
-   modify it under the terms of the GNU General Public License as
-   published by the Free Software Foundation; either version 2, or (at
-   your option) any later version.
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation; either version 2 of the
+License, or (at your option) any later version.
 
-   This program is distributed in the hope that it will be useful, but
-   WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   General Public License for more details.
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
 
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-   02110-1301, USA.  */
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA. */
 
-/* Ported from glibc by Simon Josefsson. */
-
+/* Written by Jan Brittenson, bson@gnu.ai.mit.edu.  */
 /* modified very slightly for OWFS proect  by Paul Alfille
- * original code, but combine getline and getdelim in same file 
- * Code obtained 3/1/2010 from
- * http://www.koders.com/c/fid7449041983F5893CBF13458C88271146BA685037.aspx?s=printf
  * */
 
 #include <config.h>
 #include "owfs_config.h"
 #include "ow.h"
 
-#ifndef HAVE_GETLINE
+#ifdef WE_NEED_GETLINE
 
-#include <limits.h>
+#include <sys/types.h>
+#include <stdio.h>
+#include <assert.h>
 #include <stdlib.h>
-#include <errno.h>
 
-#ifndef SIZE_MAX
-# define SIZE_MAX ((size_t) -1)
-#endif
-#ifndef SSIZE_MAX
-# define SSIZE_MAX ((ssize_t) (SIZE_MAX / 2))
-#endif
-#if !HAVE_FLOCKFILE
-# undef flockfile
-# define flockfile(x) ((void) 0)
-#endif
-#if !HAVE_FUNLOCKFILE
-# undef funlockfile
-# define funlockfile(x) ((void) 0)
-#endif
+/* Read up to (and including) a TERMINATOR from STREAM into *LINEPTR
+   + OFFSET (and null-terminate it). *LINEPTR is a pointer returned from
+   malloc (or NULL), pointing to *N characters of space.  It is realloc'd
+   as necessary.  Return the number of characters read (not including the
+   null terminator), or -1 on error or EOF.  */
 
-static ssize_t getdelim (char **lineptr, size_t *n, int delimiter, FILE *fp) ;
-
-ssize_t getline (char **lineptr, size_t *n, FILE *stream)
+int getstr (char ** lineptr, size_t *n, FILE * stream, char terminator, int offset)
 {
-  return getdelim (lineptr, n, '\n', stream);
-}
+  int nchars_avail;             /* Allocated but unused chars in *LINEPTR.  */
+  char *read_pos;               /* Where we're reading into *LINEPTR. */
+  int ret;
 
-/* Read up to (and including) a DELIMITER from FP into *LINEPTR (and
-   NUL-terminate it).  *LINEPTR is a pointer returned from malloc (or
-   NULL), pointing to *N characters of space.  It is realloc'ed as
-   necessary.  Returns the number of characters read (not including
-   the null terminator), or -1 on error or EOF.  */
+  if (!lineptr || !n || !stream)
+    return -1;
 
-static ssize_t getdelim (char **lineptr, size_t *n, int delimiter, FILE *fp)
-{
-  ssize_t result;
-  size_t cur_len = 0;
-
-  if (lineptr == NULL || n == NULL || fp == NULL)
+  if (!*lineptr)
     {
-      errno = EINVAL;
-      return -1;
-    }
-
-  flockfile (fp);
-
-  if (*lineptr == NULL || *n == 0)
-    {
-      *n = 120;
+      *n = 64;
       *lineptr = (char *) malloc (*n);
-      if (*lineptr == NULL)
-	{
-	  result = -1;
-	  goto unlock_return;
-	}
+      if (!*lineptr)
+        return -1;
     }
+
+  nchars_avail = *n - offset;
+  read_pos = *lineptr + offset;
 
   for (;;)
     {
-      int i;
+      register int c = getc (stream);
 
-      i = getc (fp);
-      if (i == EOF)
-	{
-	  result = -1;
-	  break;
-	}
+      /* We always want at least one char left in the buffer, since we
+         always (unless we get an error while reading the first char)
+         NUL-terminate the line buffer.  */
 
-      /* Make enough space for len+1 (for final NUL) bytes.  */
-      if (cur_len + 1 >= *n)
-	{
-	  size_t needed_max =
-	    SSIZE_MAX < SIZE_MAX ? (size_t) SSIZE_MAX + 1 : SIZE_MAX;
-	  size_t needed = 2 * *n + 1;   /* Be generous. */
-	  char *new_lineptr;
+      assert(*n - nchars_avail == read_pos - *lineptr);
+      if (nchars_avail < 1)
+        {
+          if (*n > 64)
+            *n *= 2;
+          else
+            *n += 64;
 
-	  if (needed_max < needed)
-	    needed = needed_max;
-	  if (cur_len + 1 >= needed)
-	    {
-	      result = -1;
-	      goto unlock_return;
-	    }
+          nchars_avail = *n + *lineptr - read_pos;
+          *lineptr = (char *) realloc (*lineptr, *n);
+          if (!*lineptr)
+            return -1;
+          read_pos = *n - nchars_avail + *lineptr;
+          assert(*n - nchars_avail == read_pos - *lineptr);
+        }
 
-	  new_lineptr = (char *) realloc (*lineptr, needed);
-	  if (new_lineptr == NULL)
-	    {
-	      result = -1;
-	      goto unlock_return;
-	    }
+      if (c == EOF || ferror (stream))
+        {
+          /* Return partial line, if any.  */
+          if (read_pos == *lineptr)
+            return -1;
+          else
+            break;
+        }
 
-	  *lineptr = new_lineptr;
-	  *n = needed;
-	}
+      *read_pos++ = c;
+      nchars_avail--;
 
-      (*lineptr)[cur_len] = i;
-      cur_len++;
-
-      if (i == delimiter)
-	break;
+      if (c == terminator)
+        /* Return the line.  */
+        break;
     }
-  (*lineptr)[cur_len] = '\0';
-  result = cur_len ? cur_len : result;
 
- unlock_return:
-  funlockfile (fp);
-  return result;
+  /* Done - NUL terminate and return the number of chars read.  */
+  *read_pos = '\0';
+
+  ret = read_pos - (*lineptr + offset);
+  return ret;
 }
 
-#endif /* HAVE_GETLINE */
+ssize_t getline(char **lineptr, size_t *n, FILE *stream)
+{
+  return getstr (lineptr, n, stream, '\n', 0);
+}
+
+#endif /* WE_NEED_GETLINE */
