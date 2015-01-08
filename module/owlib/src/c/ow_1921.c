@@ -148,8 +148,8 @@ static struct filetype DS1921[] = {
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"pages/page", 32, &A1921p, ft_binary, fc_page, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA, },
 
-	{"ControlRegister", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_register, FS_w_register, INVISIBLE, {u:_ADDRESS_DS1921_CONTROL_REGISTER}, },
-	{"StatusRegister", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_register, FS_w_register, INVISIBLE, {u:_ADDRESS_DS1921_STATUS_REGISTER}, },
+	{"ControlRegister", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_register, FS_w_register, INVISIBLE, {.u=_ADDRESS_DS1921_CONTROL_REGISTER}, },
+	{"StatusRegister", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_register, FS_w_register, INVISIBLE, {.u=_ADDRESS_DS1921_STATUS_REGISTER}, },
 
 	{"histogram", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"histogram/counts", PROPERTY_LENGTH_UNSIGNED, &A1921h, ft_unsigned, fc_volatile, FS_r_histogram, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
@@ -160,7 +160,7 @@ static struct filetype DS1921[] = {
 	{"clock", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"clock/date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_second, FS_r_date, FS_w_date, VISIBLE, NO_FILETYPE_DATA, },
 	{"clock/udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_second, FS_r_counter, FS_w_counter, VISIBLE, NO_FILETYPE_DATA, },
-	{"clock/running", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_controlrbit, FS_w_controlrbit, VISIBLE, {u:_MASK_DS1921_CLOCK_ENABLE}, },
+	{"clock/running", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_controlrbit, FS_w_controlrbit, VISIBLE, {.u=_MASK_DS1921_CLOCK_ENABLE}, },
 
 	{"about", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"about/resolution", PROPERTY_LENGTH_TEMPGAP, NON_AGGREGATE, ft_tempgap, fc_static, FS_r_resolution, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
@@ -168,25 +168,25 @@ static struct filetype DS1921[] = {
 	{"about/temphigh", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_static, FS_r_rangehigh, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"about/version", 11, NON_AGGREGATE, ft_ascii, fc_stable, FS_r_version, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"about/samples", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_3byte, NO_WRITE_FUNCTION, VISIBLE, {s:0x021D}, },
-	{"about/measuring", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_rbitread, NO_WRITE_FUNCTION, VISIBLE, {v:&BitReads[0]}, },
+	{"about/measuring", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_rbitread, NO_WRITE_FUNCTION, VISIBLE, {.v=&BitReads[0]}, },
 
 	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_r_temperature, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 
 	{"mission", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
-	{"mission/enable", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_controlrbit, FS_w_controlrbit, VISIBLE, {u:_MASK_DS1921_MISSION_ENABLE}, },
-	{"mission/clear", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, NO_READ_FUNCTION, FS_clrmem, VISIBLE, {u:_MASK_DS1921_CLEAR_MEMORY}, },
-	{"mission/running", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_bitread, FS_w_mip, VISIBLE, {v:&BitReads[1]}, },
+	{"mission/enable", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_controlrbit, FS_w_controlrbit, VISIBLE, {.u=_MASK_DS1921_MISSION_ENABLE}, },
+	{"mission/clear", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, NO_READ_FUNCTION, FS_clrmem, VISIBLE, {.u=_MASK_DS1921_CLEAR_MEMORY}, },
+	{"mission/running", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_bitread, FS_w_mip, VISIBLE, {.v=&BitReads[1]}, },
 	{"mission/frequency", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_samplerate, FS_w_samplerate, VISIBLE, NO_FILETYPE_DATA, },
 	{"mission/samples", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_3byte, NO_WRITE_FUNCTION, VISIBLE, {s:0x021A}, },
 	{"mission/delay", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_delay, FS_w_delay, VISIBLE, NO_FILETYPE_DATA, },
-	{"mission/rollover", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_controlbit, FS_w_controlbit, VISIBLE, {u:_MASK_DS1921_ROLLOVER}, },
+	{"mission/rollover", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_controlbit, FS_w_controlbit, VISIBLE, {.u=_MASK_DS1921_ROLLOVER}, },
 	{"mission/date", PROPERTY_LENGTH_DATE, NON_AGGREGATE, ft_date, fc_volatile, FS_mdate, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"mission/udate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_umdate, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
-	{"mission/sampling", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_bitread, NO_WRITE_FUNCTION, VISIBLE, {v:&BitReads[2]}, },
+	{"mission/sampling", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_bitread, NO_WRITE_FUNCTION, VISIBLE, {.v=&BitReads[2]}, },
 	{"mission/easystart", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, NO_READ_FUNCTION, FS_easystart, VISIBLE, NO_FILETYPE_DATA, },
-	{"mission/templow", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_statusbit, FS_w_statusbit, VISIBLE, {u:_MASK_DS1921_TEMP_LOW_STATUS}, },
-	{"mission/temphigh", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_statusbit, FS_w_statusbit, VISIBLE, {u:_MASK_DS1921_TEMP_HIGH_STATUS}, },
-	{"mission/timer", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_statusbit, FS_w_statusbit, INVISIBLE, {u:_MASK_DS1921_TIMER_STATUS}, },
+	{"mission/templow", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_statusbit, FS_w_statusbit, VISIBLE, {.u=_MASK_DS1921_TEMP_LOW_STATUS}, },
+	{"mission/temphigh", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_statusbit, FS_w_statusbit, VISIBLE, {.u=_MASK_DS1921_TEMP_HIGH_STATUS}, },
+	{"mission/timer", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_statusbit, FS_w_statusbit, INVISIBLE, {.u=_MASK_DS1921_TIMER_STATUS}, },
 
 	{"overtemp", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"overtemp/date", PROPERTY_LENGTH_DATE, &A1921m, ft_date, fc_volatile, FS_alarmstart, NO_WRITE_FUNCTION, VISIBLE, {s:0x0250}, },
@@ -213,9 +213,9 @@ static struct filetype DS1921[] = {
 	// no entries in these directories yet
 	{"set_alarm", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"set_alarm/trigger", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_yesno, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
-	{"set_alarm/templow", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_controlbit, FS_w_controlbit, VISIBLE, {u:_MASK_DS1921_TEMP_LOW_ALARM}, },
-	{"set_alarm/temphigh", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_controlbit, FS_w_controlbit, VISIBLE, {u:_MASK_DS1921_TEMP_HIGH_ALARM}, },
-	{"set_alarm/date", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_controlbit, FS_w_controlbit, VISIBLE, {u:_MASK_DS1921_TIMER_ALARM}, },
+	{"set_alarm/templow", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_controlbit, FS_w_controlbit, VISIBLE, {.u=_MASK_DS1921_TEMP_LOW_ALARM}, },
+	{"set_alarm/temphigh", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_controlbit, FS_w_controlbit, VISIBLE, {.u=_MASK_DS1921_TEMP_HIGH_ALARM}, },
+	{"set_alarm/date", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_controlbit, FS_w_controlbit, VISIBLE, {.u=_MASK_DS1921_TIMER_ALARM}, },
 
 	{"alarm_state", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_samplerate, FS_w_samplerate, VISIBLE, NO_FILETYPE_DATA, },
 

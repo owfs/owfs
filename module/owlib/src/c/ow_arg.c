@@ -394,6 +394,7 @@ GOOD_OR_BAD ARG_Net(const char *arg)
 
 GOOD_OR_BAD ARG_Parallel(const char *arg)
 {
+	(void) arg ;
 #if OW_PARPORT
 	struct port_in * pin = NewPort( NULL ) ;
 	struct connection_in * in ;
