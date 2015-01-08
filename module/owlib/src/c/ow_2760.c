@@ -231,7 +231,7 @@ static struct filetype DS2740[] = {
 
 	{"PIO", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_pio, FS_w_pio, VISIBLE, {.u=(_1W_DS2760_SPECIAL_REG << 8) | 6}, },
 	{"vis", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_vis, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
-	{"vis_B", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_vis, NO_WRITE_FUNCTION, VISIBLE, {f:1.5625E-6}, },
+	{"vis_B", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_vis, NO_WRITE_FUNCTION, VISIBLE, {.f=1.5625E-6}, },
 	{"volthours", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_r_vh, FS_w_vh, VISIBLE, NO_FILETYPE_DATA, },
 
 	{"smod", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_bit, FS_w_bit, VISIBLE, {.u=(_1W_DS27XX_STATUS_REG << 8) | 6}, },
