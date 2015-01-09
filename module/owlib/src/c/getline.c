@@ -24,12 +24,9 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA. */
 #include "owfs_config.h"
 #include "ow.h"
 
-#ifdef WE_NEED_GETLINE
+#ifndef HAVE_GETLINE
 
-#include <sys/types.h>
-#include <stdio.h>
 #include <assert.h>
-#include <stdlib.h>
 
 /* Read up to (and including) a TERMINATOR from STREAM into *LINEPTR
    + OFFSET (and null-terminate it). *LINEPTR is a pointer returned from
@@ -110,4 +107,4 @@ ssize_t getline(char **lineptr, size_t *n, FILE *stream)
   return getstr (lineptr, n, stream, '\n', 0);
 }
 
-#endif /* WE_NEED_GETLINE */
+#endif /* HAVE_GETLINE */
