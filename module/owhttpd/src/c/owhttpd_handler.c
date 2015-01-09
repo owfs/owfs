@@ -9,9 +9,6 @@
  *
  */
  
-#define _GNU_SOURCE 1
-#include <stdio.h> // for getline
-
 #include "owhttpd.h"
 
 // #include <libgen.h>  /* for dirname() */
