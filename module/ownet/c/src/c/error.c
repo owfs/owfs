@@ -83,7 +83,7 @@ void print_timestamp_(const char * file, int line, const char * func, const char
 #endif
 	va_end(va);
 
-	fprintf(stderr, "%ld DEFAULT: %s %ld.%06ld\n", time(NULL), buf, tv.tv_sec, tv.tv_usec);
+	fprintf(stderr, "%ld DEFAULT: %s %ld.%06ld\n", time(NULL), buf, (long int) tv.tv_sec, (long int) tv.tv_usec);
 	fflush(stderr);
 }
 
