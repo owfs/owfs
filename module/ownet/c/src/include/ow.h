@@ -71,7 +71,7 @@
 #define __BSD_VISIBLE  1 /* for strep */
 #endif
 #include <string.h>
-#if __APPLE__
+#ifdef __APPLE__
 #include <strings.h> /* for strcasecmp */
 #endif /* __APPLE__ */
 #include <dirent.h>

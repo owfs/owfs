@@ -1,10 +1,14 @@
 /* From Geo Carncross geocar@internetconnection.net -- GPL */
 /* File for incomplete semaphore implementations */
-/* $Id$ */
 /* Note: gcc wants inline before int */
 
 #ifndef __semaphore_h
 #define __semaphore_h
+
+#if defined(__MAC_OS_X_VERSION_MIN_REQUIRED) && __MAC_OS_X_VERSION_MIN_REQUIRED > 1050
+/* Newer OSX deprecates semaphore */
+#undef HAVE_SEMAPHORE_H
+#endif
 
 #ifdef HAVE_SEMAPHORE_H
 #include <semaphore.h>

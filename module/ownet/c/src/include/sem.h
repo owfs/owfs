@@ -1,13 +1,17 @@
 /* From Geo Carncross geocar@internetconnection.net -- GPL */
 /* File for incomplete semaphore implementations */
-/* $Id$ */
 /* Note: gcc wants inline before int */
 
 #ifndef __semaphore_h
 #define __semaphore_h
 
+#if defined(__MAC_OS_X_VERSION_MIN_REQUIRED) && __MAC_OS_X_VERSION_MIN_REQUIRED > 1050
+/* Newer OSX deprecates semaphore */
+#undef HAVE_SEMAPHORE_H
+#endif
+
 #ifdef HAVE_SEMAPHORE_H
-#include <semaphore.h>
+	#include <semaphore.h>
 #else							/* HAVE_SEMAPHORE_H */
 
 #include <pthread.h>
@@ -21,7 +25,7 @@ typedef struct {
 	volatile unsigned int v, w;
 } sem_t;
 
-//static int inline sem_destroy(sem_t *s) {
+//static int inline sem_destroy(sem_t * s) {
 static inline int sem_destroy(sem_t * s)
 {
 	pthread_mutex_lock(&s->m);
@@ -36,7 +40,7 @@ static inline int sem_destroy(sem_t * s)
 	return 0;
 }
 
-//static int inline sem_init(sem_t *s, int ign, int val) {
+//static int inline sem_init(sem_t * s, int ign, int val) {
 static inline int sem_init(sem_t * s, int ign, int val)
 {
 	if (ign != 0) {
@@ -53,7 +57,7 @@ static inline int sem_init(sem_t * s, int ign, int val)
 	return 0;
 }
 
-//static int inline sem_post(sem_t *s) {
+//static int inline sem_post(sem_t * s) {
 static inline int sem_post(sem_t * s)
 {
 	int ok;
