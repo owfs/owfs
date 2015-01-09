@@ -1788,15 +1788,24 @@ static GOOD_OR_BAD OW_r_mem(BYTE * data, size_t size, off_t offset, struct parse
 {
 	size_t remain = size ;
 	off_t local_offset = 0 ;
+	int retry=0;
 	
 	while ( remain > 0 ) {
 		size_t gulp = remain ;
 		if ( gulp > _FC02_MAX_READ_GULP ) {
 			gulp = _FC02_MAX_READ_GULP ;
 		}
-		RETURN_BAD_IF_BAD( OW_r_mem_small( &data[local_offset], gulp, offset+local_offset, pn ));
-		remain -= gulp ;
-		local_offset += gulp ;
+//		RETURN_BAD_IF_BAD( OW_r_mem_small( &data[local_offset], gulp, offset+local_offset, pn ));
+		if (BAD(OW_r_mem_small( &data[local_offset], gulp, offset+local_offset, pn )))
+		{
+			if (retry++>3) return gbBAD;
+		}
+		else
+		{
+			remain -= gulp ;
+			local_offset += gulp ;
+			retry=0;
+		}
 	}
 	return gbGOOD ;	
 }
@@ -1824,16 +1833,25 @@ static GOOD_OR_BAD OW_w_mem_eeprom(BYTE * data, size_t size, off_t offset, struc
 {
 	size_t remain = size ;
 	off_t local_offset = 0 ;
+	int retry=0;
 	
 	while ( remain > 0 ) {
 		size_t gulp = remain ;
 		if ( gulp > _FC02_MAX_READ_GULP ) {
 			gulp = _FC02_MAX_READ_GULP ;
 		}
-		RETURN_BAD_IF_BAD( OW_w_mem_small( &data[local_offset], gulp, offset+local_offset, pn ));
+//		RETURN_BAD_IF_BAD( OW_w_mem_small( &data[local_offset], gulp, offset+local_offset, pn ));
+		if (BAD(OW_w_mem_small( &data[local_offset], gulp, offset+local_offset, pn )))
+		{
+			if (retry++>3) return gbBAD;
+		}
+		else
+		{
+			remain -= gulp ;
+			local_offset += gulp ;
+			retry=0;
+		}
 		UT_delay(2) ; //1.5 msec
-		remain -= gulp ;
-		local_offset += gulp ;
 	}
 	return gbGOOD ;	
 }
