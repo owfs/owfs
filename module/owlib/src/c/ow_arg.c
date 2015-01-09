@@ -354,6 +354,7 @@ GOOD_OR_BAD ARG_USB_monitor(const char *arg)
 	pin->busmode = bus_usb_monitor;
 	return gbGOOD;
 #else
+	(void) arg ;
 	fprintf(stderr, "OWFS is compiled without USB support.\n");
 	return gbBAD;
 #endif
@@ -503,6 +504,7 @@ GOOD_OR_BAD ARG_USB(const char *arg)
 	arg_data(arg,pin) ;
 	return gbGOOD;
 #else							/* OW_USB */
+	(void) arg ;
 	LEVEL_DEFAULT("USB support (intentionally) not included in compilation. Check LIBUSB, then reconfigure and recompile.");
 	return gbBAD;
 #endif							/* OW_USB */

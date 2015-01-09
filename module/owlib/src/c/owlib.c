@@ -243,7 +243,9 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct port_in * pin )
 		break;
 
 	case bus_usb_monitor:
+#if OW_USB
 		RETURN_BAD_IF_BAD( USB_monitor_detect(pin) ) ;
+#endif /* OW_USB */
 		break;
 
 	case bus_w1:

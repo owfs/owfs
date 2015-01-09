@@ -16,7 +16,6 @@
 
 #include <pthread.h>
 #include <errno.h>
-#include <stdio.h>
 
 typedef struct {
 	pthread_mutex_t m;

@@ -10,14 +10,6 @@
 
 /* ow_opt -- owlib specific command line options processing */
 
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#include <stdio.h> // for getline
-#undef _GNU_SOURCE
-#else
-#include <stdio.h> // for getline
-#endif
-
 #include <config.h>
 #include "owfs_config.h"
 #include "ow.h"

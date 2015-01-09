@@ -9,13 +9,8 @@
  *
  */
  
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
+#define _GNU_SOURCE 1
 #include <stdio.h> // for getline
-#undef _GNU_SOURCE
-#else
-#include <stdio.h> // for getline
-#endif
 
 #include "owhttpd.h"
 

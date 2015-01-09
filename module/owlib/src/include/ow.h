@@ -78,6 +78,9 @@
 
 #define _FILE_OFFSET_BITS   64
 
+/* For everything */
+#define _GNU_SOURCE 1
+
 #ifdef __FreeBSD__
 /* from Johan Ström: needed for sys/param.h if sys/types.h sees it */
 #define __BSD_VISIBLE 1 
@@ -101,24 +104,24 @@
 #ifdef __CYGWIN__
 #define __BSD_VISIBLE  1 /* for strep */
 #endif
+
 #ifdef HAVE_SYS_TIMES_H
 #include <sys/times.h>			/* for times */
 #endif							/* HAVE_SYS_TIMES_H */
+
+#include <stdio.h> // for getline
+
 #include <ctype.h>
 #include <stdlib.h>
-#include <stdio.h>
-#ifdef STRING_WITH_STRINGS
-# include <string.h>
-# include <strings.h>			/* for strcasecmp */
-#else
-# ifdef HAVE_STRING_H
-#  include <string.h>
-# else
-#  ifdef HAVE_STRINGS_H
-#   include <strings.h>			/* for strcasecmp */
-#  endif
-# endif
+
+#ifdef HAVE_STRING_H
+#include <string.h>
 #endif
+
+#ifdef HAVE_STRINGS_H
+#include <strings.h>			/* for strcasecmp */
+#endif
+
 #include <dirent.h>
 #include <signal.h>
 
@@ -190,25 +193,7 @@
 
 /* Can't include search.h when compiling owperl on Fedora Core 1. */
 #ifndef SKIP_SEARCH_H
-#ifndef __USE_GNU
-#define __USE_GNU
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
 #include <search.h>
-#undef _GNU_SOURCE
-#else
-#include <search.h>
-#endif
-#undef __USE_GNU
-#else							/* __USE_GNU */
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#include <search.h>
-#undef _GNU_SOURCE
-#else
-#include <search.h>
-#endif
-#endif							/* __USE_GNU */
 #endif							/* SKIP_SEARCH_H */
 
 /* If no getline, use our version */
