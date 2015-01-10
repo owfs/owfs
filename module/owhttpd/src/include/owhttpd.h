@@ -1,5 +1,4 @@
 /*
-$Id$
    OWFS and OWHTTPD
    one-wire file system and
    one-wire web server
@@ -69,6 +68,5 @@ void Favicon(FILE * out);
 /* in owhttpd_escape */
 void httpunescape(BYTE * httpstr) ;
 char * httpescape( const char * original_string ) ;
-
 
 #endif							/* OWHTTPD_H */

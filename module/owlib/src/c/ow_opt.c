@@ -10,14 +10,6 @@
 
 /* ow_opt -- owlib specific command line options processing */
 
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#include <stdio.h> // for getline
-#undef _GNU_SOURCE
-#else
-#include <stdio.h> // for getline
-#endif
-
 #include <config.h>
 #include "owfs_config.h"
 #include "ow.h"
@@ -445,7 +437,7 @@ static void ParseTheLine(struct lineparse *lp)
 						{	// put in lower case
 							ASCII *prog_char;
 							for (prog_char = lp->prog; *prog_char; ++prog_char) {
-								*prog_char = tolower(*prog_char);
+								*prog_char = tolower( (int) prog_char[0] );
 							}
 						}
 						// special cases for sensor and property lines

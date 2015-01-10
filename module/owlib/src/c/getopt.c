@@ -33,7 +33,6 @@
 
 #ifndef HAVE_GETOPT_LONG
 
-#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <libintl.h>

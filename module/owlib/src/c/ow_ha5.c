@@ -206,12 +206,12 @@ static GOOD_OR_BAD HA5_channel_list( char * alpha_string, struct connection_in *
 
 	for ( current_char = alpha_string ; current_char[0]!= '\0' ; ++ current_char ) {
 		char c = current_char[0];
-		if ( !isalpha(c) ) {
+		if ( !isalpha( (int) c ) ) {
 			LEVEL_DEBUG("Urecognized HA5 channel <%c>",c) ;
 			continue ;
 		}
 
-		current_in->master.ha5.channel = tolower(c) ;
+		current_in->master.ha5.channel = tolower( (int) c ) ;
 		LEVEL_DEBUG("Looking for HA5 adapter on %s:%c", DEVICENAME(current_in), current_in->master.ha5.channel ) ;
 
 		if (

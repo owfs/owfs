@@ -157,7 +157,7 @@ int ftp_command_parse(const char *input, struct ftp_command_s *cmd)
 			if (optional_number != NULL) {
 				input = optional_number;
 			} else {
-				if ((tolower(input[0]) == 'a') && (tolower(input[1]) == 'l') && (tolower(input[2]) == 'l')) {
+				if ((tolower( (int) input[0] ) == 'a') && (tolower( (int) input[1] ) == 'l') && (tolower( (int) input[2] ) == 'l')) {
 					cmd->arg[0].num = EPSV_ALL;
 					input += 3;
 				} else {
@@ -174,14 +174,14 @@ int ftp_command_parse(const char *input, struct ftp_command_s *cmd)
 			return 0;
 		}
 		input++;
-		c = toupper(*input);
+		c = toupper( (int) input[0] );
 		if ((c == 'A') || (c == 'E')) {
 			cmd->arg[0].string[0] = c;
 			cmd->arg[0].string[1] = '\0';
 			input++;
 			if (*input == ' ') {
 				input++;
-				c = toupper(*input);
+				c = toupper( (int) input[0] );
 				if ((c != 'N') && (c != 'T') && (c != 'C'))
 					return 0;
 				cmd->arg[1].string[0] = c;
@@ -213,7 +213,7 @@ int ftp_command_parse(const char *input, struct ftp_command_s *cmd)
 		if (*input != ' ')
 			return 0;
 		input++;
-		c = toupper(*input);
+		c = toupper( (int) input[0] );
 		if ((c != 'F') && (c != 'R') && (c != 'P')) {
 			return 0;
 		}
@@ -227,7 +227,7 @@ int ftp_command_parse(const char *input, struct ftp_command_s *cmd)
 			return 0;
 		}
 		input++;
-		c = toupper(*input);
+		c = toupper( (int) input[0] );
 		if ((c != 'S') && (c != 'B') && (c != 'C')) {
 			return 0;
 		}
@@ -541,14 +541,14 @@ static const char *parse_number(int *num, const char *s, int max_num)
 	daemon_assert(num != NULL);
 
 	/* handle first character */
-	if (!isdigit(*s)) {
+	if (!isdigit( (int) s[0] )) {
 		return NULL;
 	}
 	tmp = (*s - '0');
 	s++;
 
 	/* handle subsequent characters */
-	while (isdigit(*s)) {
+	while (isdigit( (int) s[0] )) {
 		cur_digit = (*s - '0');
 
 		/* check for overflow */
@@ -591,14 +591,14 @@ static const char *parse_offset(off_t * ofs, const char *s)
 	daemon_assert(max_ofs != 0);
 
 	/* handle first character */
-	if (!isdigit(*s)) {
+	if (!isdigit( (int) s[0] )) {
 		return NULL;
 	}
 	tmp_ofs = (*s - '0');
 	s++;
 
 	/* handle subsequent characters */
-	while (isdigit(*s)) {
+	while (isdigit( (int) s[0] )) {
 		cur_digit = (*s - '0');
 
 		/* check for overflow */

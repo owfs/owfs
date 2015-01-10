@@ -455,7 +455,7 @@ static enum parse_enum Parse_Bus(char *pathnow, struct parsedname *pn)
 	char *found;
 	INDEX_OR_ERROR bus_number;
 	/* Processing for bus.X directories -- eventually will make this more generic */
-	if (!isdigit(pathnow[4])) {
+	if ( !isdigit( (int) pathnow[4] ) ) {
 		return parse_error;
 	}
 
@@ -741,7 +741,7 @@ static enum parse_enum Parse_Property(char *filename, struct parsedname *pn)
 	} else {				/* specific extension */
 		if (pn->selected_filetype->ag->letters == ag_letters) {	/* Letters */
 			//printf("FP letters\n") ;
-			if ((strlen(dot) != 1) || !isupper(dot[0])) {
+			if ( (strlen(dot) != 1) || !isupper( (int) dot[0] ) ) {
 				return parse_error;
 			}
 			pn->extension = dot[0] - 'A';	/* Letter extension */

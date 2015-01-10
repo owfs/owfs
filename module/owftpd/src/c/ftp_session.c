@@ -931,7 +931,7 @@ static void do_retr(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 
 	/* if the last command was a REST command, restart at the */
 	/* requested position in the file                         */
-	if ((f->file_offset_command_number == (f->command_number - 1))) {
+	if ( f->file_offset_command_number == (f->command_number - 1) ) {
 		offset = f->file_offset;
 	}
 
@@ -1063,7 +1063,7 @@ static void do_stor(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 
 	/* if the last command was a REST command, restart at the */
 	/* requested position in the file                         */
-	if ((f->file_offset_command_number == (f->command_number - 1))) {
+	if ( f->file_offset_command_number == (f->command_number - 1) ) {
 		offset = f->file_offset;
 	}
 
