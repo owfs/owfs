@@ -1808,12 +1808,9 @@ static GOOD_OR_BAD OW_r_mem(BYTE * data, size_t size, off_t offset, struct parse
 			gulp = _FC02_MAX_READ_GULP ;
 		}
 //		RETURN_BAD_IF_BAD( OW_r_mem_small( &data[local_offset], gulp, offset+local_offset, pn ));
-		if (BAD(OW_r_mem_small( &data[local_offset], gulp, offset+local_offset, pn )))
-		{
+		if ( BAD( OW_r_mem_small( &data[local_offset], gulp, offset+local_offset, pn ))) {
 			if (retry++>3) return gbBAD;
-		}
-		else
-		{
+		} else {
 			remain -= gulp ;
 			local_offset += gulp ;
 			retry=0;
@@ -1842,24 +1839,21 @@ static GOOD_OR_BAD OW_r_mem(BYTE * data, size_t size, off_t offset, struct parse
 */
 //write bytes[size] is now common for normal and eeprom 
 static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname * pn)
- {
+{
 	size_t remain = size ;
 	off_t local_offset = 0 ;
 	int retry=0; //retry at 32byte block level because it is sometime hard to have a scuccession of 16 successfull bloc writes
- 
+
 	while ( remain > 0 ) {
 		size_t gulp = remain ;
 		if ( gulp > _FC02_MAX_READ_GULP ) {
 			gulp = _FC02_MAX_READ_GULP ;
 		}
 //		RETURN_BAD_IF_BAD( OW_w_mem_small( &data[local_offset], gulp, offset+local_offset, pn ));
-		if (BAD(OW_w_mem_small( &data[local_offset], gulp, offset+local_offset, pn ))) 
- 		{
- 			if (retry++>3) return gbBAD;
+		if ( BAD( OW_w_mem_small( &data[local_offset], gulp, offset+local_offset, pn ))) {
+			if (retry++>3) return gbBAD;
 			UT_delay(2) ; //give 1.5 msec to finish prev write before retrying (specificly for eeprom write)
- 		}
- 		else
- 		{
+		} else {
 			remain -= gulp ;
 			local_offset += gulp ;
 			retry=0;
