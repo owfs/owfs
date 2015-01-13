@@ -136,6 +136,11 @@ AM_CONDITIONAL(HAVE_CYGWIN, test "${HAVE_CYGWIN}" = "true")
 AC_SUBST(HAVE_FREEBSD)
 AM_CONDITIONAL(HAVE_FREEBSD, test "${HAVE_FREEBSD}" = "true")
 
+# launchd taken from CUPS configuration
+# AC_CHECK_FUNC(launch_msg, AC_DEFINE([HAVE_LAUNCHD],[1]))
+AC_CHECK_FUNCS(launch_activate_socket)
+AC_CHECK_HEADERS(launch.h)
+
 PIC_FLAGS=""
 if test "$lt_prog_compiler_pic_works" = yes; then
 	PIC_FLAGS="$lt_prog_compiler_pic"
