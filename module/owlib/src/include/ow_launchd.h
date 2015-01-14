@@ -17,7 +17,7 @@
 
 
 #ifdef HAVE_LAUNCH_ACTIVATE_SOCKET
-#include	<launchd.h>
+#include	<launch.h>
 #endif /* HAVE_LAUNCH_ACTIVATE_SOCKET */
 
 #endif							/* OW_LAUNCHD_H */
