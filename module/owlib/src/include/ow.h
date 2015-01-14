@@ -359,4 +359,7 @@ enum deviceformat { fdi, fi, fdidc, fdic, fidc, fic };
 /* Return and error codes */
 #include "ow_return_code.h"
 
+/* Launchd  -- OSX-specific startup code */
+#include "ow_launchd.h"
+
 #endif							/* OW_H */
