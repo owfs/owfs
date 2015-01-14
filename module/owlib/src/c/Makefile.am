@@ -112,7 +112,7 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_help.c          \
                ow_interface.c     \
                ow_iterate.c       \
-               ow_launchd.h       \
+               ow_launchd.c       \
                ow_lcd.c           \
                ow_lib_close.c     \
                ow_lib_setup.c     \

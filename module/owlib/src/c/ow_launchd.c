@@ -17,24 +17,42 @@
  * Sets up the connection_out as well
  * */
 
+static void Launchd_out( int ** fds, size_t fd_count ) ;
+
 void Setup_Launchd( void )
 {
 #ifdef HAVE_LAUNCH_ACTIVATE_SOCKET
-	int fds = sd_listen_fds(0) ;
-	int fd_count = 0 ;
-	int i ;
+	int * fds ;
+	size_t fd_count ;
 
-	for ( i = 0 ; i < fds ; ++i ) {
+	switch ( launch_activate_socket( "Listeners", & fds , & fd_count ) ) {
+		case 0:
+			Launchd_out( fds, fd_count ) ;
+			free( fds ) ;
+			break ;
+		case ESRCH:
+			LEVEL_DEBUG("Not started by the launchd daemon -- use command line for ports");
+			break ;
+		case ENOENT:
+			LEVEL_CALL("No sockets specified in the launchd plist");
+			break ;
+		default:
+			LEVEL_DEBUG("Launchd error");
+			break ;
+#endif /* HAVE_LAUNCH_ACTIVATE_SOCKET */
+	}
+}
+
+static void Launchd_out( int ** fds, size_t fd_count )
+{
+	size_t i ;
+	for ( i=0 ; i < fd_count ; ++ i ) {
 		struct connection_out *out = NewOut();
 		if (out == NULL) {
 			break ;
 		}
-		out->file_descriptor = i + SD_LISTEN_FDS_START ;
-		++ fd_count ;
-		out->name = owstrdup("systemd");
+		out->file_descriptor = fds[i] ;
+		out->name = owstrdup("launchd");
+		out->inet_type = inet_launchd ;
 	}
-	if ( fd_count > 0 ) {
-		Globals.daemon_status = e_daemon_sd ;
-	}
-#endif /* HAVE_LAUNCH_ACTIVATE_SOCKET */
 }

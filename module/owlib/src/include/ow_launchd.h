@@ -17,7 +17,13 @@
 
 
 #ifdef HAVE_LAUNCH_ACTIVATE_SOCKET
+
+// Header file from OSX
 #include	<launch.h>
+
 #endif /* HAVE_LAUNCH_ACTIVATE_SOCKET */
+
+// Our function -- safe outside of OSX too
+void Setup_Launchd( void ) ;
 
 #endif							/* OW_LAUNCHD_H */

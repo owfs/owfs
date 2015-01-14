@@ -46,6 +46,7 @@ int main(int argc, char **argv)
 	/* Set up owlib */
 	LibSetup(program_type_server);
 	Setup_Systemd() ; // systemd?
+	Setup_Launchd() ; // launchd?
 
 	/* grab our executable name */
 	if (argc > 0) {

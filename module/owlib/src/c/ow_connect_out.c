@@ -30,6 +30,7 @@ struct connection_out *NewOut(void)
 	if (now) {
 		memset(now, 0, len);
 		now->next = Outbound_Control.head;
+		now->inet_type = inet_none ;
 		Outbound_Control.head = now;
 		now->index = Outbound_Control.next_index++;
 		++Outbound_Control.active ;
