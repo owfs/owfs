@@ -17,7 +17,21 @@
  * Sets up the connection_out as well
  * */
 
-static void Launchd_out( int ** fds, size_t fd_count ) ;
+#ifdef HAVE_LAUNCH_ACTIVATE_SOCKET
+static void Launchd_out( int * fds, size_t fd_count )
+{
+	size_t i ;
+	for ( i=0 ; i < fd_count ; ++ i ) {
+		struct connection_out *out = NewOut();
+		if (out == NULL) {
+			break ;
+		}
+		out->file_descriptor = fds[i] ;
+		out->name = owstrdup("launchd");
+		out->inet_type = inet_launchd ;
+	}
+}
+#endif /* HAVE_LAUNCH_ACTIVATE_SOCKET */
 
 void Setup_Launchd( void )
 {
@@ -39,20 +53,7 @@ void Setup_Launchd( void )
 		default:
 			LEVEL_DEBUG("Launchd error");
 			break ;
-#endif /* HAVE_LAUNCH_ACTIVATE_SOCKET */
 	}
+#endif /* HAVE_LAUNCH_ACTIVATE_SOCKET */
 }
 
-static void Launchd_out( int ** fds, size_t fd_count )
-{
-	size_t i ;
-	for ( i=0 ; i < fd_count ; ++ i ) {
-		struct connection_out *out = NewOut();
-		if (out == NULL) {
-			break ;
-		}
-		out->file_descriptor = fds[i] ;
-		out->name = owstrdup("launchd");
-		out->inet_type = inet_launchd ;
-	}
-}
