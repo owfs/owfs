@@ -24,9 +24,11 @@ static void Launchd_out( int * fds, size_t fd_count )
 	for ( i=0 ; i < fd_count ; ++ i ) {
 		struct connection_out *out = NewOut();
 		if (out == NULL) {
+			LEVEL_DEBUG("Memory error -- can't create a launchd structure");
 			break ;
 		}
 		out->file_descriptor = fds[i] ;
+		LEVEL_DEBUG("Found a launchd file descriptor at %d",out->file_descriptor);
 		out->name = owstrdup("launchd");
 		out->inet_type = inet_launchd ;
 	}

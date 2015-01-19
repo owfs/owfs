@@ -30,7 +30,7 @@ FILE_DESCRIPTOR_OR_ERROR shutdown_pipe[2] ;
 
 /* Prototypes */
 static GOOD_OR_BAD ServerAddr(const char * default_port, struct connection_out *out);
-static FILE_DESCRIPTOR_OR_ERROR ServerListen(struct connection_out *out);
+static GOOD_OR_BAD ServerListen(struct connection_out *out);
 
 static FILE_DESCRIPTOR_OR_ERROR SetupListenSet( fd_set * listenset ) ;
 static GOOD_OR_BAD SetupListenSockets( void (*HandlerRoutine) (FILE_DESCRIPTOR_OR_ERROR file_descriptor) ) ;
@@ -85,51 +85,56 @@ static GOOD_OR_BAD ServerAddr(const char * default_port, struct connection_out *
 /* for all connection_out
  * use ip and port to open a socket for listening
  * systemd and launchd already have the socket
+ * so this routine is not called for them
+ * (caught in ServerOutSetup)
  * */
-static FILE_DESCRIPTOR_OR_ERROR ServerListen(struct connection_out *out)
+static GOOD_OR_BAD ServerListen(struct connection_out *out)
 {
-	switch ( out->inet_type ) {
-		case inet_launchd:
-		case inet_systemd:
-			return out->file_descriptor ;
-		default:
-			if (out->ai == NULL) {
-				LEVEL_CONNECT("Server address not yet parsed [%s]", SAFESTRING(out->name));
-				return FILE_DESCRIPTOR_BAD;
-			} 
+	if (out->ai == NULL) {
+		LEVEL_CONNECT("Server address not yet parsed [%s]", SAFESTRING(out->name));
+		return gbBAD ;
+	} 
 
-			if (out->ai_ok == NULL) {
-				out->ai_ok = out->ai;
-			}
-
-			do {
-				int on = 1;
-				FILE_DESCRIPTOR_OR_ERROR file_descriptor = socket(out->ai_ok->ai_family, out->ai_ok->ai_socktype, out->ai_ok->ai_protocol);
-
-				if ( FILE_DESCRIPTOR_NOT_VALID(file_descriptor) ) {
-					ERROR_CONNECT("Socket problem [%s]", SAFESTRING(out->name));
-				} else if (setsockopt(file_descriptor, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof(on)) != 0) {
-					ERROR_CONNECT("SetSockOpt problem [%s]", SAFESTRING(out->name));
-				} else if (bind(file_descriptor, out->ai_ok->ai_addr, out->ai_ok->ai_addrlen) != 0) {
-					// this is where the default linking to a busy port shows up
-					ERROR_CONNECT("Bind problem [%s]", SAFESTRING(out->name));
-				} else if (listen(file_descriptor, SOMAXCONN) != 0) {
-					ERROR_CONNECT("Listen problem [%s]", SAFESTRING(out->name));
-				} else {
-//					fcntl (file_descriptor, F_SETFD, FD_CLOEXEC); // for safe forking
-					out->file_descriptor = file_descriptor;
-					return file_descriptor;
-				}
-				Test_and_Close(&file_descriptor) ;
-			} while ((out->ai_ok = out->ai_ok->ai_next));
-			break ;
+	if (out->ai_ok == NULL) {
+		out->ai_ok = out->ai;
 	}
+
+	do {
+		int on = 1;
+		FILE_DESCRIPTOR_OR_ERROR file_descriptor = socket(out->ai_ok->ai_family, out->ai_ok->ai_socktype, out->ai_ok->ai_protocol);
+
+		if ( FILE_DESCRIPTOR_NOT_VALID(file_descriptor) ) {
+			ERROR_CONNECT("Socket problem [%s]", SAFESTRING(out->name));
+		} else if (setsockopt(file_descriptor, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof(on)) != 0) {
+			ERROR_CONNECT("SetSockOpt problem [%s]", SAFESTRING(out->name));
+		} else if (bind(file_descriptor, out->ai_ok->ai_addr, out->ai_ok->ai_addrlen) != 0) {
+			// this is where the default linking to a busy port shows up
+			ERROR_CONNECT("Bind problem [%s]", SAFESTRING(out->name));
+		} else if (listen(file_descriptor, SOMAXCONN) != 0) {
+			ERROR_CONNECT("Listen problem [%s]", SAFESTRING(out->name));
+		} else {
+//					fcntl (file_descriptor, F_SETFD, FD_CLOEXEC); // for safe forking
+			out->file_descriptor = file_descriptor;
+			return gbGOOD;
+		}
+		Test_and_Close(&file_descriptor) ;
+	} while ((out->ai_ok = out->ai_ok->ai_next));
+
 	LEVEL_CONNECT("No good listen network sockets [%s]", SAFESTRING(out->name));
-	return FILE_DESCRIPTOR_BAD;
+	return gbBAD;
 }
 
 GOOD_OR_BAD ServerOutSetup(struct connection_out *out)
 {
+	switch ( out->inet_type ) {
+		case inet_launchd:
+		case inet_systemd:
+			// file descriptor already set up
+			return gbGOOD ;
+		default:
+			break ;
+	}
+	
 	if ( out->name == NULL ) { // NULL name means default attempt
 		char * default_port ;
 		// First time through, try default port
@@ -147,19 +152,17 @@ GOOD_OR_BAD ServerOutSetup(struct connection_out *out)
 		}
 		if ( default_port != NULL ) { // one of the 2 cases above
 			RETURN_BAD_IF_BAD( ServerAddr( default_port, out ) ) ;
-			if ( FILE_DESCRIPTOR_VALID(ServerListen(out)) ) {
+			if ( GOOD(ServerListen(out)) ) {
 				return gbGOOD ;
 			}
 			ERROR_CONNECT("Default port not successful. Try an ephemeral port");
 		}
 	}
 
-	if ( Globals.daemon_status != e_daemon_sd ) {
-		// second time through, use ephemeral port
-		RETURN_BAD_IF_BAD( ServerAddr( "0", out ) ) ;
-	}
+	// second time through, use ephemeral port
+	RETURN_BAD_IF_BAD( ServerAddr( "0", out ) ) ;
 
-	return FILE_DESCRIPTOR_VALID(ServerListen(out)) ? gbGOOD : gbBAD ;
+	return ServerListen(out) ;
 }
 
 /* MAke a set of the listening sockets to poll for a connection */
