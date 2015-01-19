@@ -82,43 +82,48 @@ static GOOD_OR_BAD ServerAddr(const char * default_port, struct connection_out *
 	return gbGOOD;
 }
 
+/* for all connection_out
+ * use ip and port to open a socket for listening
+ * systemd and launchd already have the socket
+ * */
 static FILE_DESCRIPTOR_OR_ERROR ServerListen(struct connection_out *out)
 {
-	if ( Globals.daemon_status == e_daemon_sd ) {
-		// system listen file descriptor already set by systemd
-		return out->file_descriptor ;
-	}
-	
-	if (out->ai == NULL) {
-		LEVEL_CONNECT("Server address not yet parsed [%s]", SAFESTRING(out->name));
-		return FILE_DESCRIPTOR_BAD;
-	}
+	switch ( out->inet_type ) {
+		case inet_launchd:
+		case inet_systemd:
+			return out->file_descriptor ;
+		default:
+			if (out->ai == NULL) {
+				LEVEL_CONNECT("Server address not yet parsed [%s]", SAFESTRING(out->name));
+				return FILE_DESCRIPTOR_BAD;
+			} 
 
-	if (out->ai_ok == NULL) {
-		out->ai_ok = out->ai;
+			if (out->ai_ok == NULL) {
+				out->ai_ok = out->ai;
+			}
+
+			do {
+				int on = 1;
+				FILE_DESCRIPTOR_OR_ERROR file_descriptor = socket(out->ai_ok->ai_family, out->ai_ok->ai_socktype, out->ai_ok->ai_protocol);
+
+				if ( FILE_DESCRIPTOR_NOT_VALID(file_descriptor) ) {
+					ERROR_CONNECT("Socket problem [%s]", SAFESTRING(out->name));
+				} else if (setsockopt(file_descriptor, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof(on)) != 0) {
+					ERROR_CONNECT("SetSockOpt problem [%s]", SAFESTRING(out->name));
+				} else if (bind(file_descriptor, out->ai_ok->ai_addr, out->ai_ok->ai_addrlen) != 0) {
+					// this is where the default linking to a busy port shows up
+					ERROR_CONNECT("Bind problem [%s]", SAFESTRING(out->name));
+				} else if (listen(file_descriptor, SOMAXCONN) != 0) {
+					ERROR_CONNECT("Listen problem [%s]", SAFESTRING(out->name));
+				} else {
+//					fcntl (file_descriptor, F_SETFD, FD_CLOEXEC); // for safe forking
+					out->file_descriptor = file_descriptor;
+					return file_descriptor;
+				}
+				Test_and_Close(&file_descriptor) ;
+			} while ((out->ai_ok = out->ai_ok->ai_next));
+			break ;
 	}
-
-	do {
-		int on = 1;
-		FILE_DESCRIPTOR_OR_ERROR file_descriptor = socket(out->ai_ok->ai_family, out->ai_ok->ai_socktype, out->ai_ok->ai_protocol);
-
-		//printf("ServerListen file_descriptor=%d\n",file_descriptor);
-		if ( FILE_DESCRIPTOR_NOT_VALID(file_descriptor) ) {
-			ERROR_CONNECT("Socket problem [%s]", SAFESTRING(out->name));
-		} else if (setsockopt(file_descriptor, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof(on)) != 0) {
-			ERROR_CONNECT("SetSockOpt problem [%s]", SAFESTRING(out->name));
-		} else if (bind(file_descriptor, out->ai_ok->ai_addr, out->ai_ok->ai_addrlen) != 0) {
-			// this is where the default linking to a busy port shows up
-			ERROR_CONNECT("Bind problem [%s]", SAFESTRING(out->name));
-		} else if (listen(file_descriptor, SOMAXCONN) != 0) {
-			ERROR_CONNECT("Listen problem [%s]", SAFESTRING(out->name));
-		} else {
-//			fcntl (file_descriptor, F_SETFD, FD_CLOEXEC); // for safe forking
-			out->file_descriptor = file_descriptor;
-			return file_descriptor;
-		}
-		Test_and_Close(&file_descriptor) ;
-	} while ((out->ai_ok = out->ai_ok->ai_next));
 	LEVEL_CONNECT("No good listen network sockets [%s]", SAFESTRING(out->name));
 	return FILE_DESCRIPTOR_BAD;
 }
@@ -157,6 +162,8 @@ GOOD_OR_BAD ServerOutSetup(struct connection_out *out)
 	return FILE_DESCRIPTOR_VALID(ServerListen(out)) ? gbGOOD : gbBAD ;
 }
 
+/* MAke a set of the listening sockets to poll for a connection */
+/* Done by looking though connect_out */
 static FILE_DESCRIPTOR_OR_ERROR SetupListenSet( fd_set * listenset )
 {
 	FILE_DESCRIPTOR_OR_ERROR maxfd = FILE_DESCRIPTOR_BAD ;
@@ -190,6 +197,7 @@ static GOOD_OR_BAD SetupListenSockets( void (*HandlerRoutine) (FILE_DESCRIPTOR_O
 	return any_sockets ;
 }
 
+/* close all connection_out listen sockets */
 static void CloseListenSockets( void )
 {
 	struct connection_out * out ;
@@ -199,6 +207,7 @@ static void CloseListenSockets( void )
 	}
 }
 
+/* Go through list set to find requesting sockets */
 static void ProcessListenSet( fd_set * listenset )
 {
 	struct connection_out * out ;
@@ -216,6 +225,9 @@ struct Accept_Socket_Data {
 	struct connection_out * out;
 };
 
+/* Wait for a connection 
+ * process it
+ * Expects to be called in a loop */
 static GOOD_OR_BAD ListenCycle( void )
 {
 	fd_set listenset ;
@@ -298,6 +310,9 @@ static void ProcessListenSocket( struct connection_out * out )
 }
 
 /* Setup Servers -- select on each port */
+/* Not only sets up, we start a loop for new connections and processes them,
+ * basically, this is the main loop of the owserver and owhttpd program
+ * */
 void ServerProcess(void (*HandlerRoutine) (FILE_DESCRIPTOR_OR_ERROR file_descriptor))
 {
 	/* Locking for thread work */
