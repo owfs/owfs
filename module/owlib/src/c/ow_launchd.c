@@ -44,6 +44,7 @@ void Setup_Launchd( void )
 	switch ( launch_activate_socket( "Listeners", & fds , & fd_count ) ) {
 		case 0:
 			Launchd_out( fds, fd_count ) ;
+			Globals.inet_type = inet_launchd ;
 			free( fds ) ;
 			break ;
 		case ESRCH:

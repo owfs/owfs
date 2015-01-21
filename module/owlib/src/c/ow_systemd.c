@@ -35,6 +35,7 @@ void Setup_Systemd( void )
 	}
 	if ( fd_count > 0 ) {
 		Globals.daemon_status = e_daemon_sd ;
+		Globals.inet_type = inet_systemd ;
 	}
 }
 

@@ -140,6 +140,9 @@ struct global {
 	int locks ; // show mutexes
 	_FLOAT templow ;
 	_FLOAT temphigh ;
+	int argc;
+	char ** argv ;
+	enum e_inet_type inet_type ;
 };
 extern struct global Globals;
 

@@ -22,6 +22,7 @@ void LibClose(void)
 	PIDstop();
 	DeviceDestroy();
 	Detail_Close() ;
+	ArgFree() ;
 
 	_MUTEX_ATTR_DESTROY(Mutex.mattr);
 
@@ -36,7 +37,6 @@ void LibClose(void)
 		log_available = 0;
 	}
 	SAFEFREE(Globals.announce_name) ;
-	SAFEFREE(Globals.progname) ;
 	SAFEFREE(Globals.fatal_debug_file) ;
 	LEVEL_DEBUG("Libraries closed");
 }

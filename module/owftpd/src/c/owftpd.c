@@ -25,6 +25,8 @@ int main(int argc, char *argv[])
 		Globals.progname = strdup(argv[0]);
 	}
 
+	ArgCopy( argc, argv ) ;
+
 	/* check our command-line arguments */
 	while ((c = getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL)) != -1) {
 		switch (c) {

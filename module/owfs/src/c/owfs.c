@@ -41,9 +41,8 @@ int main(int argc, char *argv[])
 	LibSetup(program_type_filesystem);
 
 	/* grab our executable name */
-	if (argc > 0) {
-		Globals.progname = owstrdup(argv[0]);
-	}
+	ArgCopy( argc, argv ) ;
+
 	//mtrace() ;
 	/* process command line arguments */
 	while ((c = getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL)) != -1) {

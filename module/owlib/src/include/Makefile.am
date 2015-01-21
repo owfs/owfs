@@ -62,6 +62,7 @@ noinst_HEADERS =           \
         ow_eds.h           \
         ow_eeef.h          \
         ow_example_slave.h \
+        ow_exec.h          \
         ow_external.h      \
         ow_fd.h            \
         ow_filetype.h      \

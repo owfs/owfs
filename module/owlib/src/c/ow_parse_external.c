@@ -261,7 +261,7 @@ void AddProperty( char * input_string, enum external_type et )
 	}
 	
 	if ( ! Globals.allow_external ) {
-		LEVEL_DEBUG("External prgroams not supported by %s",Globals.progname) ;
+		LEVEL_DEBUG("External prgroams not supported by %s",Globals.argv[0]) ;
 		return ;
 	}
 
@@ -456,7 +456,7 @@ void AddSensor( char * input_string )
 	}
 	
 	if ( ! Globals.allow_external ) {
-		LEVEL_DEBUG("External prgroams not supported by %s",Globals.progname) ;
+		LEVEL_DEBUG("External prgroams not supported by %s",Globals.argv[0]) ;
 		return ;
 	}
 	

@@ -577,6 +577,8 @@ GOOD_OR_BAD owopt_packed(const char *params)
 	}
 
 	// analyze argv/argc as if real command line arguments
+	ArgCopy( argc, argv ) ;
+
 	while (ret == 0) {
 		if ((option_char = getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL)) == -1) {
 			break;

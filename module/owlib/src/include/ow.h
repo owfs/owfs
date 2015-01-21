@@ -273,6 +273,9 @@ time_t timegm(struct tm *tm);
 /* Many mutexes separated out for readability */
 #include "ow_mutexes.h"
 
+/* Program startup type */
+enum  e_inet_type { inet_none, inet_systemd , inet_launchd, } ;
+
 #if OW_ZERO
 /* Zeroconf / Bonjour */
 #include "ow_dl.h"
@@ -361,5 +364,8 @@ enum deviceformat { fdi, fi, fdidc, fdic, fidc, fic };
 
 /* Launchd  -- OSX-specific startup code */
 #include "ow_launchd.h"
+
+/* Argument and restart */
+#include "ow_exec.h"
 
 #endif							/* OW_H */

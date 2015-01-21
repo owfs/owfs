@@ -42,9 +42,9 @@ void ow_help_general(void)
 	"\n"
 	" man %s                 man page for this program\n"
 	"  and man pages for individual 1-wire devices e.g. 'man DS2409'\n",
-	SAFESTRING(Globals.progname), SAFESTRING(Globals.progname),
-	SAFESTRING(Globals.progname), SAFESTRING(Globals.progname), SAFESTRING(Globals.progname),
-	SAFESTRING(Globals.progname), SAFESTRING(Globals.progname), SAFESTRING(Globals.progname)
+	SAFESTRING(Globals.argv[0]), SAFESTRING(Globals.argv[0]),
+	SAFESTRING(Globals.argv[0]), SAFESTRING(Globals.argv[0]), SAFESTRING(Globals.argv[0]),
+	SAFESTRING(Globals.argv[0]), SAFESTRING(Globals.argv[0]), SAFESTRING(Globals.argv[0])
 	);
 }
 

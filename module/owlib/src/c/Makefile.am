@@ -89,6 +89,7 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_eprom_write.c   \
                ow_etherweather.c  \
                ow_example_slave.c \
+               ow_exec.c          \
                ow_exit.c          \
                ow_external.c      \
                ow_find_external.c \

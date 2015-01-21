@@ -110,9 +110,7 @@ static GOOD_OR_BAD setup_from_commandline( const char *command_line )
 static GOOD_OR_BAD setup_from_args( int argc, char **argv )
 {
 	/* grab our executable name */
-	if (argc > 0) {
-		Globals.progname = owstrdup(argv[0]);
-	}
+	ArgCopy( argc, argv ) ;
 
 	// process the command line flags
 	do {
@@ -153,6 +151,7 @@ GOOD_OR_BAD API_init_args(int argc, char **argv, enum restart_init repeat)
 		StateInfo.owlib_state = lib_state_setup;
 	}
 	// now restart
+	ArgCopy( argc, argv ) ;
 	if (StateInfo.owlib_state == lib_state_setup) {
 		return_code = setup_from_args( argc, argv ) ;
 	}

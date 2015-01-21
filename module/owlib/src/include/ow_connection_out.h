@@ -40,7 +40,7 @@ struct connection_out {
 		char * domain;  // for zeroconf
 		char * name;	// zeroconf name
 	} zero ;
-	enum { inet_none, inet_systemd , inet_launchd, } inet_type ;
+	enum e_inet_type inet_type ;
 	pthread_t tid;
 #if OW_ZERO
 	DNSServiceRef sref0;

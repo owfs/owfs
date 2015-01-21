@@ -49,11 +49,9 @@ int main(int argc, char **argv)
 	Setup_Launchd() ; // launchd?
 
 	/* grab our executable name */
-	if (argc > 0) {
-		Globals.progname = owstrdup(argv[0]);
-		if ( strcasecmp( Globals.progname, "owexternal" ) == 0 ) {
-			Globals.allow_external = 1 ; // only if program named "owexternal"
-		}
+	ArgCopy( argc, argv ) ;
+	if ( strcasecmp( Globals.progname, "owexternal" ) == 0 ) {
+		Globals.allow_external = 1 ; // only if program named "owexternal"
 	}
 
 	while ((c = getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL)) != -1) {

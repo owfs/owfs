@@ -46,9 +46,7 @@ int main(int argc, char *argv[])
 	Setup_Launchd() ; // launchd?
 
 	/* grab our executable name */
-	if (argc > 0) {
-		Globals.progname = owstrdup(argv[0]);
-	}
+	ArgCopy( argc, argv ) ;
 
 	while ((c = getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL)) != -1) {
 		switch (c) {
