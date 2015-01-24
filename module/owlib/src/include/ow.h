@@ -273,6 +273,20 @@ time_t timegm(struct tm *tm);
 /* Many mutexes separated out for readability */
 #include "ow_mutexes.h"
 
+/* Special checks for config file changes -- OS specific */
+ #ifdef HAVE_SYS_EVENT_H
+  /* BSD and OSX */
+  #include <sys/event.h>
+  #define WE_HAVE_KEVENT
+#else /* HAVE_SYS_EVENT_H */
+  #ifdef HAVE_LINUX_INOTOFY_H
+   #include <linux/inotify.h>
+   #define WE_HAVE_INOTIFY
+  #endif /* HAVE_LINUX_INOTOFY_H */  
+#endif /* HAVE_SYS_EVENT_H */
+#include "ow_kevent.h"
+#include "ow_inotify.h"
+
 /* Program startup type */
 enum  e_inet_type { inet_none, inet_systemd , inet_launchd, } ;
 

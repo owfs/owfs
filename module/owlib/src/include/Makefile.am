@@ -70,8 +70,10 @@ noinst_HEADERS =           \
         ow_generic_read.h  \
         ow_generic_write.h \
         ow_global.h        \
+        ow_inotify.h       \
         ow_integer.h       \
         ow_interface.h     \
+        ow_kevent.h        \
         ow_launchd.h       \
         ow_localtypes.h    \
         ow_localreturns.h  \

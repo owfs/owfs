@@ -177,6 +177,7 @@ AC_HEADER_DIRENT
 AC_HEADER_STDC
 AC_CHECK_HEADERS([asm/types.h arpa/inet.h sys/ioctl.h sys/mkdev.h sys/socket.h sys/time.h sys/times.h sys/types.h sys/uio.h feature_tests.h fcntl.h netinet/in.h stdlib.h string.h strings.h sys/file.h syslog.h termios.h unistd.h limits.h stdint.h features.h getopt.h resolv.h semaphore.h])
 AC_CHECK_HEADERS([linux/limits.h linux/types.h netdb.h dlfcn.h])
+AC_CHECK_HEADERS(sys/event.h linux/inotify.h)
 
 # Test if debugging out enabled
 ENABLE_DEBUG="true"
