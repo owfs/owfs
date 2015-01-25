@@ -39,7 +39,7 @@ void Config_Monitor_Add( char * filename )
 		LEVEL_DEBUG("Can't open %s for monitoring", filename ) ;
 		return ;
 	}
-	EV_SET( &ke, fd, EVFILT_VNODE, EV_ADD, NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND|NOTE_RENAME, NULL ) ;
+	EV_SET( &ke, fd, EVFILT_VNODE, EV_ADD, NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND|NOTE_RENAME, 0, NULL ) ;
 	if ( kevent( kq, &ke, 1, NULL, 0, NULL ) != 0 ) {
 		LEVEL_DEBUG("Couldn't add %s to kqueue for monitoring",filename ) ;
 	} else {
@@ -65,7 +65,7 @@ static void * Config_Monitor_Watchthread( void * v)
 	(void) v ;
 	DETACH_THREAD ;
 	// Blocking call unil a config change detected
-	Config_Monitor_block() ;
+	Config_Monitor_Block() ;
 	LEVEL_DEBUG("Configuration file change detected. Will restart %s",Globals.argv[0]);
 	// Restart the program
 	ReExecute() ;
