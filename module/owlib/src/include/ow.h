@@ -276,13 +276,13 @@ time_t timegm(struct tm *tm);
 /* Special checks for config file changes -- OS specific */
  #ifdef HAVE_SYS_EVENT_H
   /* BSD and OSX */
-  #include <sys/event.h>
   #define WE_HAVE_KEVENT
-#else /* HAVE_SYS_EVENT_H */
-  #ifdef HAVE_LINUX_INOTOFY_H
-   #include <linux/inotify.h>
+#elif defined( HAVE_LINUX_INOTOFY_H )
    #define WE_HAVE_INOTIFY
-  #endif /* HAVE_LINUX_INOTOFY_H */  
+#else /* HAVE_SYS_EVENT_H */
+	// no change notification available
+   #define Config_Monitor_Add(x)
+   #define Config_Monitor_Watch()
 #endif /* HAVE_SYS_EVENT_H */
 #include "ow_kevent.h"
 #include "ow_inotify.h"

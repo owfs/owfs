@@ -42,6 +42,8 @@ const struct option owopts_long[] = {
 	{"aliases", required_argument, NO_LINKED_VAR, 'a'},
 	{"aliasfile", required_argument, NO_LINKED_VAR, 'a'},
 	{"configuration", required_argument, NO_LINKED_VAR, 'c'},
+	{"config", required_argument, NO_LINKED_VAR, 'c'},
+	{"conf", required_argument, NO_LINKED_VAR, 'c'},
 	{"device", required_argument, NO_LINKED_VAR, 'd'},
 	{"usb", optional_argument, NO_LINKED_VAR, 'u'},
 	{"USB", optional_argument, NO_LINKED_VAR, 'u'},
@@ -621,6 +623,7 @@ GOOD_OR_BAD owopt(const int option_char, const char *arg)
 		} else {
 			GOOD_OR_BAD ret;
 			++config_depth;
+			Config_Monitor_Add( arg ) ; // add for monitoring changes
 			ret = ConfigurationFile(arg);
 			--config_depth;
 			return ret;

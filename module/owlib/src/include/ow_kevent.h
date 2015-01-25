@@ -19,6 +19,11 @@
 // kevent based monitor for configuration file changes
 // usually OSX and BSD systems
 #warn "Kevent"
+
+#include <sys/event.h>
+void Config_Monitor_Watch( void ) ;
+void Config_Monitor_Add( char * file ) ;
+
 #endif /* WE_HAVE_KEVENT */
 
 #endif							/* OW_KEVENT_H */

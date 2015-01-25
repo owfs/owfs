@@ -22,6 +22,9 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct port_in * pin ) ;
 /* Start the owlib process -- already in background */
 GOOD_OR_BAD LibStart(void)
 {
+	/* Start configuration monitoring */
+	Config_Monitor_Watch() ;
+	
 	/* Build device and filetype arrays (including externals) */
 	DeviceSort();
 

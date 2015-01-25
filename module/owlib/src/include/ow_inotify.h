@@ -19,6 +19,11 @@
 // kevent based monitor for configuration file changes
 // usually linux systems
 #warn "iNotify"
+
+#include <linux/inotify.h>
+void Config_Monitor_Add( char * file ) ;
+void Config_Monitor_Watch( void ) ;
+
 #endif /* WE_HAVE_INOTIFY */
 
 #endif							/* OW_INOTIFY_H */
