@@ -18,7 +18,6 @@
 #ifdef WE_HAVE_KEVENT
 // kevent based monitor for configuration file changes
 // usually OSX and BSD systems
-#warn "Kevent"
 
 #include <sys/event.h>
 void Config_Monitor_Watch( void ) ;

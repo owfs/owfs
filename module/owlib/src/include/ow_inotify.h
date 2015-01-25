@@ -18,7 +18,6 @@
 #ifdef WE_HAVE_INOTIFY
 // kevent based monitor for configuration file changes
 // usually linux systems
-#warn "iNotify"
 
 #include <linux/inotify.h>
 void Config_Monitor_Add( char * file ) ;
