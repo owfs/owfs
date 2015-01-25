@@ -22,7 +22,7 @@
 static int config_monitor_num_files = 0 ; // keep track
 static int kq ; // kqueue
 
-void Config_Monitor_Add( char * filename )
+void Config_Monitor_Add( const char * filename )
 {
 	FILE_DESCRIPTOR_OR_ERROR fd ;
 	struct kevent ke ;
@@ -62,13 +62,13 @@ static void Config_Monitor_Block( void )
 // Thread that waits for forfig change and then restarts the program
 static void * Config_Monitor_Watchthread( void * v)
 {
-	(void) v ;
 	DETACH_THREAD ;
 	// Blocking call unil a config change detected
 	Config_Monitor_Block() ;
 	LEVEL_DEBUG("Configuration file change detected. Will restart %s",Globals.argv[0]);
 	// Restart the program
 	ReExecute() ;
+	rerurn v ;
 }
 
 static void Config_Monitor_Makethread( void )

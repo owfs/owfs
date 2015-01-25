@@ -277,7 +277,7 @@ time_t timegm(struct tm *tm);
  #ifdef HAVE_SYS_EVENT_H
   /* BSD and OSX */
   #define WE_HAVE_KEVENT
-#elif defined( HAVE_LINUX_INOTOFY_H )
+#elif defined( HAVE_SYS_INOTIFY_H )
    #define WE_HAVE_INOTIFY
 #else /* HAVE_SYS_EVENT_H */
 	// no change notification available

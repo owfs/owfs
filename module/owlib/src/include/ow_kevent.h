@@ -21,7 +21,7 @@
 
 #include <sys/event.h>
 void Config_Monitor_Watch( void ) ;
-void Config_Monitor_Add( char * file ) ;
+void Config_Monitor_Add( const char * file ) ;
 
 #endif /* WE_HAVE_KEVENT */
 

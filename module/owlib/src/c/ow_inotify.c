@@ -23,17 +23,17 @@ static int config_monitor_num_files = 0 ;
 static FILE_DESCRIPTOR_OR_ERROR inotify_fd ;
  
 
-void Config_Monitor_Add( char * filename )
+void Config_Monitor_Add( const char * filename )
 {
 	if ( config_monitor_num_files == 0 ) {
 		// first time
-		inotify_fd = inotofy_init() ;
+		inotify_fd = inotify_init() ;
 		if ( FILE_DESCRIPTOR_NOT_VALID( inotify_fd ) ) {
 			LEVEL_DEBUG( "Trouble creating inotify queue" ) ;
 			return ;
 		}
 	}
-	if ( inotify_add_watch inotify_fd, filename, IN_MODIFY | IN_CREATE ) >= 0 ) {
+	if ( inotify_add_watch( inotify_fd, filename, IN_MODIFY | IN_CREATE ) >= 0 ) {
 		LEVEL_DEBUG("Added %s to the watch list", filename ) ;
 		++ config_monitor_num_files ;
 	} else {
@@ -44,7 +44,7 @@ void Config_Monitor_Add( char * filename )
 static void Config_Monitor_Block( void )
 {
 	// OS specific code
-	int buffer_len = 100
+	int buffer_len = 100 ;
 	char buffer[buffer_len] ;
 	while ( read( inotify_fd, buffer, buffer_len ) < 0 ) {
 		LEVEL_DEBUG("Error reading inotify events" ) ;
@@ -55,13 +55,13 @@ static void Config_Monitor_Block( void )
 // Thread that waits for forfig change and then restarts the program
 static void * Config_Monitor_Watchthread( void * v)
 {
-	(void) v ;
-	DETATCH_THREAD ;
+	DETACH_THREAD ;
 	// Blocking call unil a config change detected
 	Config_Monitor_Block() ;
 	LEVEL_DEBUG("Configuration file change detected. Will restart %s",Globals.argv[0]);
 	// Restart the program
 	ReExecute() ;
+	return v ;
 }
 
 static void Config_Monitor_Makethread( void )

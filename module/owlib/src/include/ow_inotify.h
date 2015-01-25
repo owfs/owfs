@@ -19,8 +19,8 @@
 // kevent based monitor for configuration file changes
 // usually linux systems
 
-#include <linux/inotify.h>
-void Config_Monitor_Add( char * file ) ;
+#include <sys/inotify.h>
+void Config_Monitor_Add( const char * file ) ;
 void Config_Monitor_Watch( void ) ;
 
 #endif /* WE_HAVE_INOTIFY */
