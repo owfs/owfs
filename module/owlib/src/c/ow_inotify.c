@@ -56,7 +56,7 @@ static void Config_Monitor_Block( void )
 static void * Config_Monitor_Watchthread( void * v)
 {
 	DETACH_THREAD ;
-	// Blocking call unil a config change detected
+	// Blocking call until a config change detected
 	Config_Monitor_Block() ;
 	LEVEL_DEBUG("Configuration file change detected. Will restart %s",Globals.argv[0]);
 	// Restart the program
