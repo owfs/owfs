@@ -61,10 +61,6 @@ static ssize_t OW_init_both(const char *params, enum restart_init repeat)
 	/* Set up owlib */
 	API_setup(program_type_clibrary);
 
-	/* Proceed with init while lock held */
-	/* grab our executable name */
-	Globals.progname = owstrdup("OWCAPI");
-
 	if ( BAD( API_init(params, repeat) ) ) {
 		API_finish();
 		return ReturnAndErrno(-EINVAL) ;

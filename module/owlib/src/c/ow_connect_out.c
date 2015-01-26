@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -54,7 +53,6 @@ void FreeOutAll(void)
 	while (next) {
 		now = next;
 		next = now->next;
-		LEVEL_DEBUG("Freeing outbound %s #%d",now->zero.name,now->index);
 		SAFEFREE(now->zero.name) ;
 		SAFEFREE(now->zero.type) ;
 		SAFEFREE(now->zero.domain) ;
@@ -64,6 +62,10 @@ void FreeOutAll(void)
 		if (now->ai) {
 			freeaddrinfo(now->ai);
 			now->ai = NULL;
+		}
+		if ( FILE_DESCRIPTOR_VALID(now->file_descriptor) ) {
+			shutdown(now->file_descriptor, SHUT_RDWR ) ;
+			close(now->file_descriptor) ;
 		}
 #if OW_ZERO
 		if (libdnssd != NULL) {

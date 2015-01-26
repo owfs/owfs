@@ -50,7 +50,7 @@ int main(int argc, char **argv)
 
 	/* grab our executable name */
 	ArgCopy( argc, argv ) ;
-	if ( strcasecmp( Globals.progname, "owexternal" ) == 0 ) {
+	if ( strcasecmp( Globals.argv[0], "owexternal" ) == 0 ) {
 		Globals.allow_external = 1 ; // only if program named "owexternal"
 	}
 

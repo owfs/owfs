@@ -88,7 +88,6 @@ struct global {
 	enum enum_daemon_status daemon_status ;
 	int allow_external ; // allow this program to call external programs for read/write -- dangerous
 	int allow_other ;
-	ASCII *progname;
 	struct antiloop Token;
 	int uncached ; // all requests are from /uncached directory
 	int unaliased ; // all requests are from /unaliased (no alias substitution on results)

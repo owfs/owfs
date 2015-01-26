@@ -74,7 +74,7 @@ static void SetupTemperatureLimits( void )
 	} else {
 		Globals.temphigh = fromTemperature(Globals.temphigh,&pn) ; // internal scale
 	}
-	LEVEL_DEBUG("Globals temp limits %gC %gC (for simulated adapters)",Globals.templow,Globals.temphigh);
+	LEVEL_DEBUG("Global temp limit %gC to %gC (for fake and mock adapters)",Globals.templow,Globals.temphigh);
 }
 
 static void SetupInboundConnections(void)

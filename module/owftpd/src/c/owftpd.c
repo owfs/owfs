@@ -21,10 +21,6 @@ int main(int argc, char *argv[])
 	Setup_Launchd() ; // launchd?
 
 	/* grab our executable name */
-	if (argc > 0) {
-		Globals.progname = strdup(argv[0]);
-	}
-
 	ArgCopy( argc, argv ) ;
 
 	/* check our command-line arguments */

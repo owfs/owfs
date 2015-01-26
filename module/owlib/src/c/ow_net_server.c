@@ -73,7 +73,7 @@ static GOOD_OR_BAD ServerAddr(const char * default_port, struct connection_out *
 	hint.ai_family = AF_UNSPEC;
 #endif							/* __FreeBSD__ */
 
-	//printf("ServerAddr: [%s] [%s]\n", out->host, out->service);
+	LEVEL_DEBUG("ServerAddr: [%s] [%s]", SAFESTRING(out->host), SAFESTRING(out->service));
 
 	if ( getaddrinfo(out->host, out->service, &hint, &out->ai) != 0 ) {
 		ERROR_CONNECT("GetAddrInfo error [%s]=%s:%s", SAFESTRING(out->name), SAFESTRING(out->host), SAFESTRING(out->service));

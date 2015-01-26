@@ -57,6 +57,7 @@ static void Config_Monitor_Block( void )
 		LEVEL_DEBUG("kevent loop (shouldn't happen!)" ) ;
 	}
 	// fall though -- event happened, time to resurrect
+	LEVEL_DEBUG("Configuration file change -- time to resurrect");
 }
 
 // Thread that waits for forfig change and then restarts the program

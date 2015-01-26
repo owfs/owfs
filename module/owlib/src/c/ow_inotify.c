@@ -49,7 +49,7 @@ static void Config_Monitor_Block( void )
 	while ( read( inotify_fd, buffer, buffer_len ) < 0 ) {
 		LEVEL_DEBUG("Error reading inotify events" ) ;
 	}
-	LEVEL_DEBUG( "Configuration file change -- time to resuract" ) ;
+	LEVEL_DEBUG( "Configuration file change -- time to resurrect" ) ;
 }
 
 // Thread that waits for forfig change and then restarts the program

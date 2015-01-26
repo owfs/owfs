@@ -53,6 +53,32 @@ void ArgFree( void )
 	}
 }
 
+static void RestartProgram( void )
+{
+	int argc = Globals.argc ;
+	char * argv[argc+1] ;
+	int i ;
+	
+	/* Copy arguements before cleaning up */
+	for ( i=0 ; i <= argc ; ++i ) {
+		argv[i] = NULL ;
+		if ( Globals.argv[i] != NULL ) {
+			argv[i] = strdup( Globals.argv[i] ) ;
+		}		
+	}
+	
+	/* Clean up everything */
+	LibClose() ;
+	sleep(10) ;
+
+	/* Execute fresh version */
+	errno = 0 ;
+	execvp( argv[0], argv ) ;
+	
+	fprintf(stderr,"Could not rerun %s. %s Exit\n",argv[0],strerror(errno));
+	exit(0) ;
+}
+
 /* Restart program -- configuration file changed, presumably */
 void ReExecute( void )
 {
@@ -65,9 +91,7 @@ void ReExecute( void )
 			LEVEL_CALL("Will close %s and let the operating system (systemd) restart",Globals.argv[0] ) ;
 			exit(0) ;
 		default:
-			execvp( Globals.argv[0], Globals.argv ) ;
-			LEVEL_CALL("Could not run a newer version. Exit");
-			exit(0) ;
+			RestartProgram() ;
 	}
 }
 		
