@@ -68,6 +68,7 @@ static void RestartProgram( void )
 	}
 	
 	/* Clean up everything */
+	Globals.exitmode = exit_exec ;
 	LibClose() ;
 	sleep(10) ;
 
@@ -75,6 +76,7 @@ static void RestartProgram( void )
 	errno = 0 ;
 	execvp( argv[0], argv ) ;
 	
+	Globals.exitmode = exit_normal ;
 	fprintf(stderr,"Could not rerun %s. %s Exit\n",argv[0],strerror(errno));
 	exit(0) ;
 }

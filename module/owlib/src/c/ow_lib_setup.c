@@ -32,5 +32,6 @@ void LibSetup(enum enum_program_type program_type)
 	StateInfo.start_time = NOW_TIME;
 	SetLocalControlFlags() ; // reset by every option and other change.
 	errno = 0;					/* set error level none */
+	Globals.exitmode = exit_normal ;
 
 }

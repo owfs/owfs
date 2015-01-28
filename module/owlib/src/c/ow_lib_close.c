@@ -17,6 +17,7 @@
 /* All ow library closeup */
 void LibClose(void)
 {
+	Globals.exitmode = exit_early ;
 	LEVEL_CALL("Starting Library cleanup");
 	LibStop();
 	PIDstop();

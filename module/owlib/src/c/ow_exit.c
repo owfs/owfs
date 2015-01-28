@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -17,7 +16,14 @@ void ow_exit(int exit_code)
 {
 	LEVEL_DEBUG("Exit code = %d", exit_code);
 	if (IS_MAINTHREAD) {
-		LibClose();
+		switch ( Globals.exitmode ) {
+			case exit_normal:
+				LibClose();
+				break ;
+			case exit_exec:
+			default:
+				break ;
+		}
 	}
 
 #ifdef __UCLIBC__
