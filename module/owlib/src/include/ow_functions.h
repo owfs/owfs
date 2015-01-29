@@ -135,6 +135,7 @@ void FreeClientAddr(struct connection_in *in);
 
 void ServerProcess(void (*HandlerRoutine) (FILE_DESCRIPTOR_OR_ERROR file_descriptor));
 GOOD_OR_BAD ServerOutSetup(struct connection_out *out);
+void InterruptListening( void ) ;
 
 void Setup_Systemd( void ) ;
 void Announce_Systemd( void ) ;

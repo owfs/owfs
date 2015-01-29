@@ -364,3 +364,22 @@ void ServerProcess(void (*HandlerRoutine) (FILE_DESCRIPTOR_OR_ERROR file_descrip
 	/* Cleanup that may never be reached */
 	return;
 }
+
+/* Call from elseware
+ * specifically the configuration monitoring code
+ * to stop the loops
+ * */
+void InterruptListening( void )
+{
+	// Launch Handler thread only if shutdown not in progress
+	LEVEL_DEBUG("Stop listening process") ;
+	RWLOCK_WLOCK( shutdown_mutex_rw ) ;
+	shutdown_in_progress = 1 ;
+	RWLOCK_WUNLOCK( shutdown_mutex_rw ) ;
+	LEVEL_DEBUG("Listening loop stopped") ;
+
+	// this means no processing is going on
+	// and no more calls to connection_out structures
+	// so can close those file descriptors bore exit or restart
+}
+

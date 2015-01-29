@@ -69,7 +69,8 @@ static void RestartProgram( void )
 	
 	/* Clean up everything */
 	Globals.exitmode = exit_exec ;
-	LibClose() ;
+	InterruptListening() ;
+	FreeOutAll() ;
 	sleep(10) ;
 
 	/* Execute fresh version */
