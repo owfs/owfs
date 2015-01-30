@@ -21,7 +21,7 @@ void ow_exit(int exit_code)
 				LibClose();
 				break ;
 			case exit_exec:
-				sleep(15) ; // wait for RestartProgram() to do it's work
+				sleep( 2 * Globals.restart_seconds ) ; // wait for RestartProgram() to do it's work
 				break ;
 		}
 	}

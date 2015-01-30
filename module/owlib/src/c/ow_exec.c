@@ -71,7 +71,7 @@ static void RestartProgram( void )
 	Globals.exitmode = exit_exec ;
 	InterruptListening() ;
 	FreeOutAll() ;
-	sleep(10) ;
+	sleep( Globals.restart_seconds ) ;
 
 	/* Execute fresh version */
 	errno = 0 ;

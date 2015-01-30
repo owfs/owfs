@@ -143,6 +143,7 @@ struct global {
 	char ** argv ;
 	enum e_inet_type inet_type ;
 	enum { exit_early, exit_normal, exit_exec, } exitmode ; // is this an execpe on config file change?
+	int restart_seconds ; // time after close before execve
 };
 extern struct global Globals;
 
