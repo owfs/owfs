@@ -104,7 +104,7 @@ struct global Globals = {
 	.argv = NULL,
 	.inet_type = inet_none,
 	.exitmode = exit_early, // how long to pause after closing sockets before exit
-	.restart_seconds = 5 ;
+	.restart_seconds = 5 ,
 	
 //	.allow_external = 1 , // for testing
 	.allow_external = 0 , // unless program == owexternal

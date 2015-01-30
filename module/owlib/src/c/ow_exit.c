@@ -23,6 +23,8 @@ void ow_exit(int exit_code)
 			case exit_exec:
 				sleep( 2 * Globals.restart_seconds ) ; // wait for RestartProgram() to do it's work
 				break ;
+			case exit_early:
+				break ;
 		}
 	}
 
