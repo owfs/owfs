@@ -20,7 +20,7 @@
 // usually OSX and BSD systems
 
 #include <sys/event.h>
-void Config_Monitor_Watch( void ) ;
+void Config_Monitor_Watch( void * v ) ;
 void Config_Monitor_Add( const char * file ) ;
 
 #endif /* WE_HAVE_KEVENT */

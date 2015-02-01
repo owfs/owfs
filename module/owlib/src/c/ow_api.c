@@ -102,7 +102,7 @@ init_exit:
 static GOOD_OR_BAD setup_from_commandline( const char *command_line )
 {
 	RETURN_BAD_IF_BAD( owopt_packed(command_line) ) ;
-	RETURN_BAD_IF_BAD( LibStart() );
+	RETURN_BAD_IF_BAD( LibStart(NULL) );
 	StateInfo.owlib_state = lib_state_started;
 	return gbGOOD ;
 }	

@@ -53,7 +53,36 @@ void ArgFree( void )
 	}
 }
 
-static void RestartProgram( void )
+// Stop the loop that accepts connections
+// and close sockets
+static void StopProgram( void * v )
+{
+	/* Clean up everything */
+	Globals.exitmode = exit_exec ;
+	switch (Globals.program_type) {
+		case program_type_ftpd:
+			// owftpd uses it's own loop and stop
+			// data and function pointer passed in argument
+			{
+				struct re_exec * sre = v ;
+				(sre->func)(sre->data) ;
+			}
+			break ;
+		default:
+			// All the other routines use the standard loop
+			// and standard stopper
+			InterruptListening() ;
+			break ;
+	}
+	
+	// Close sockets
+	FreeOutAll() ;
+	
+	// wait to settle down
+	sleep( Globals.restart_seconds ) ;
+}
+
+static void RestartProgram( void * v )
 {
 	int argc = Globals.argc ;
 	char * argv[argc+1] ;
@@ -67,11 +96,8 @@ static void RestartProgram( void )
 		}		
 	}
 	
-	/* Clean up everything */
-	Globals.exitmode = exit_exec ;
-	InterruptListening() ;
-	FreeOutAll() ;
-	sleep( Globals.restart_seconds ) ;
+	// Close sockets
+	StopProgram( v ) ;
 
 	/* Execute fresh version */
 	errno = 0 ;
@@ -83,7 +109,7 @@ static void RestartProgram( void )
 }
 
 /* Restart program -- configuration file changed, presumably */
-void ReExecute( void )
+void ReExecute( void * v )
 {
 	LEVEL_CALL( "Restarting %s",Globals.argv[0] ) ;
 	switch( Globals.inet_type ) {
@@ -94,7 +120,7 @@ void ReExecute( void )
 			LEVEL_CALL("Will close %s and let the operating system (systemd) restart",Globals.argv[0] ) ;
 			exit(0) ;
 		default:
-			RestartProgram() ;
+			RestartProgram(v) ;
 	}
 }
 		

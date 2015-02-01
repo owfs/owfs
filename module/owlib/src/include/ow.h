@@ -282,7 +282,7 @@ time_t timegm(struct tm *tm);
 #else /* HAVE_SYS_EVENT_H */
 	// no change notification available
    #define Config_Monitor_Add(x)
-   #define Config_Monitor_Watch()
+   #define Config_Monitor_Watch(v)
 #endif /* HAVE_SYS_EVENT_H */
 #include "ow_kevent.h"
 #include "ow_inotify.h"

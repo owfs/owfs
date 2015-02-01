@@ -14,6 +14,12 @@ int main(int argc, char *argv[])
 	int err, signo;
 	struct ftp_listener_s ftp_listener;
 	sigset_t myset;
+	
+	struct re_exec sre =
+	{
+		& ftp_listener, 
+		ftp_listener_stop, 
+	};
 
 	/* Set up owlib */
 	LibSetup(program_type_ftpd);
@@ -60,7 +66,7 @@ int main(int argc, char *argv[])
 	pthread_sigmask(SIG_BLOCK, &myset, NULL);
 
 	/* Set up adapters and systemd */
-	if ( BAD(LibStart()) ) {
+	if ( BAD(LibStart(&sre)) ) {
 		ow_exit(1);
 	}
 

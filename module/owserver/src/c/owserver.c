@@ -84,7 +84,7 @@ int main(int argc, char **argv)
 	}
 
 	/* Set up adapters and systemd*/
-	if ( BAD(LibStart()) ) {
+	if ( BAD(LibStart(NULL)) ) {
 		ow_exit(1);
 	}
 

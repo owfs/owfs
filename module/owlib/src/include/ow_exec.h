@@ -15,8 +15,13 @@
 #error Please make sure owfs_config.h is included *before* this header file
 #endif
 
+struct re_exec {
+	void * data ;
+	void (* func) ( void * ) ;
+} ;
+
 void ArgCopy( int argc, char * argv[] ) ;
 void ArgFree( void ) ;
-void ReExecute( void ) ;
+void ReExecute( void * v ) ;
 
 #endif							/* OW_EXEC_H */

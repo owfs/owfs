@@ -50,7 +50,7 @@
 
 /* Prototypes for owlib.c -- libow overall control */
 void LibSetup(enum enum_program_type op);
-GOOD_OR_BAD LibStart(void);
+GOOD_OR_BAD LibStart(void * v);
 void HandleSignals(void);
 void LibStop(void);
 void LibClose(void);

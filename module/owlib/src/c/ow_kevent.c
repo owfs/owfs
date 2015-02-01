@@ -65,22 +65,22 @@ static void * Config_Monitor_Watchthread( void * v)
 {
 	DETACH_THREAD ;
 	// Blocking call until a config change detected
-	Config_Monitor_Block() ;
+	Config_Monitor_Block( v ) ;
 	LEVEL_DEBUG("Configuration file change detected. Will restart %s",Globals.argv[0]);
 	// Restart the program
-	ReExecute() ;
+	ReExecute(v) ;
 	return v ;
 }
 
-static void Config_Monitor_Makethread( void )
+static void Config_Monitor_Makethread( void * v )
 {
 	pthread_t thread ;
-	if ( pthread_create( &thread, DEFAULT_THREAD_ATTR, Config_Monitor_Watchthread, NULL ) != 0 ) {
+	if ( pthread_create( &thread, DEFAULT_THREAD_ATTR, Config_Monitor_Watchthread, v ) != 0 ) {
 		LEVEL_DEBUG( "Could not create Configuration monitoring thread" ) ;
 	}
 }
 
-void Config_Monitor_Watch( void )
+void Config_Monitor_Watch( void * v)
 {
 	if ( config_monitor_num_files > 0 ) {
 		Config_Monitor_Makethread() ;

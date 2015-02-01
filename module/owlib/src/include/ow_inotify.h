@@ -21,7 +21,7 @@
 
 #include <sys/inotify.h>
 void Config_Monitor_Add( const char * file ) ;
-void Config_Monitor_Watch( void ) ;
+void Config_Monitor_Watch( void * v ) ;
 
 #endif /* WE_HAVE_INOTIFY */
 

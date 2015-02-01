@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
 	//set_signal_handlers(exit_handler);
 
 	/* Set up adapters */
-	if ( BAD(LibStart()) ) {
+	if ( BAD(LibStart(NULL)) ) {
 		ow_exit(1);
 	}
 
