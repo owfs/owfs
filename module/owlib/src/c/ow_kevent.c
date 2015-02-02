@@ -83,7 +83,7 @@ static void Config_Monitor_Makethread( void * v )
 void Config_Monitor_Watch( void * v)
 {
 	if ( config_monitor_num_files > 0 ) {
-		Config_Monitor_Makethread() ;
+		Config_Monitor_Makethread(v) ;
 	} else {
 		LEVEL_DEBUG("No configuration files to monitor" ) ;
 	}
