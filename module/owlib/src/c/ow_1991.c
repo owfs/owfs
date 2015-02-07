@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -52,15 +51,28 @@ WRITE_FUNCTION(FS_w_ident);
 READ_FUNCTION(FS_r_memory);
 WRITE_FUNCTION(FS_w_memory);
 WRITE_FUNCTION(FS_w_password);
+WRITE_FUNCTION(FS_password);
+READ_FUNCTION(FS_r_subkey);
+WRITE_FUNCTION(FS_w_subkey);
 WRITE_FUNCTION(FS_w_reset_password);
 WRITE_FUNCTION(FS_w_change_password);
 
 #define _DS1991_PAGES	3
-#define _DS1991_PAGESIZE   48
+#define _DS1991_DATA_START   0x10
+#define _DS1991_PADE_LENGTH 0x40
+#define _DS1991_PAGESIZE   (_DS1991_PADE_LENGTH-_DS1991_DATA_START)
+#define _DS1991_ID_START   0x00
+#define _DS1991_PWD_START   0x08
+
+#define _DS1991_PASSWORD_LENGTH   8
+#define _DS1991_ID_LENGTH   8
+
+BYTE subkey_byte[3] = { 0x00, 0x40, 0x80, } ;
 
 
 /* ------- Structures ----------- */
 
+static struct aggregate A1991_password = { 0, ag_letters, ag_sparse, };
 static struct aggregate A1991 = { _DS1991_PAGES, ag_numbers, ag_separate, };
 static struct filetype DS1991[] = {
 	F_STANDARD,
@@ -70,11 +82,21 @@ static struct filetype DS1991[] = {
 	{"pages/password", 8, &A1991, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_password, VISIBLE, NO_FILETYPE_DATA, },
 	{"pages/ident", 8, &A1991, ft_binary, fc_volatile, FS_r_ident, FS_w_ident, VISIBLE, NO_FILETYPE_DATA, },
 
+	{"subkey0", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"subkey0/password", _DS1991_ID_LENGTH, &A1991_password, ft_binary, fc_stable, NO_READ_FUNCTION, FS_password, VISIBLE,  {.i=0,}, },
+	{"subkey0/secure_data", _DS1991_PAGESIZE, &A1991_password, ft_binary, fc_stable, FS_r_subkey, FS_w_subkey, VISIBLE,  {.i=0,}, },
+
+	{"subkey1", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"subkey1/password", _DS1991_ID_LENGTH, &A1991_password, ft_binary, fc_stable, NO_READ_FUNCTION, FS_password, VISIBLE,  {.i=1,}, },
+	{"subkey1/secure_data", _DS1991_PAGESIZE, &A1991_password, ft_binary, fc_stable, FS_r_subkey, FS_w_subkey, VISIBLE,  {.i=1,}, },
+
+	{"subkey2", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"subkey2/password", _DS1991_ID_LENGTH, &A1991_password, ft_binary, fc_stable, NO_READ_FUNCTION, FS_password, VISIBLE,  {.i=2,}, },
+	{"subkey2/secure_data", _DS1991_PAGESIZE, &A1991_password, ft_binary, fc_stable, FS_r_subkey, FS_w_subkey, VISIBLE,  {.i=2,}, },
+
 	{"settings", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"settings/reset_password", 8, &A1991, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_reset_password, VISIBLE, NO_FILETYPE_DATA, },
 	{"settings/change_password", 8, &A1991, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_change_password, VISIBLE, NO_FILETYPE_DATA, },
-	{"settings/password", 8, &A1991, ft_binary, fc_stable, NO_READ_FUNCTION, FS_w_password, VISIBLE, NO_FILETYPE_DATA, },
-	{"settings/ident", 8, &A1991, ft_binary, fc_volatile, FS_r_ident, FS_w_ident, VISIBLE, NO_FILETYPE_DATA, },
 	{"settings/page", 48, &A1991, ft_binary, fc_volatile, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA, },
 };
 
@@ -120,6 +142,11 @@ static GOOD_OR_BAD OW_r_memory(BYTE * data, const size_t size, const off_t offse
 static GOOD_OR_BAD OW_w_memory(const BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn);
 static GOOD_OR_BAD OW_r_subkey(BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn, const int extension);
 static GOOD_OR_BAD OW_w_subkey(const BYTE * data, const size_t size, const off_t offset, const struct parsedname *pn, const int extension);
+static GOOD_OR_BAD OW_password( int subkey, const BYTE * new_id, const BYTE * new_password, const struct parsedname * pn ) ;
+static GOOD_OR_BAD OW_read_subkey( int subkey, BYTE * password, size_t size, off_t offset, BYTE * data, const struct parsedname * pn ) ;
+static GOOD_OR_BAD OW_write_subkey( int subkey, BYTE * password, size_t size, off_t offset, BYTE * data, const struct parsedname * pn ) ;
+static GOOD_OR_BAD ToPassword( char * text, BYTE * psw ) ;
+
 
 /* array with magic bytes representing the Copy Scratch operations */
 enum block { block_ALL = 0, block_IDENT, block_PASSWORD, block_DATA };
@@ -151,6 +178,64 @@ static ZERO_OR_ERROR FS_w_password(struct one_wire_query *owq)
 	memcpy(global_passwd[pn->extension], (BYTE *) OWQ_buffer(owq), s);
 	//printf("Use password [%s] for subkey %d\n", global_passwd[pn->extension], pn->extension);
 	return 0;
+}
+
+static ZERO_OR_ERROR FS_password(struct one_wire_query *owq)
+{
+	struct parsedname *pn = PN(owq);
+	int subkey = pn->selected_filetype->data.i ;
+	BYTE new_id[_DS1991_ID_LENGTH] ;
+	BYTE new_password[_DS1991_PASSWORD_LENGTH] ;
+	
+	if ( OWQ_offset(owq) != 0 ) {
+		return -EINVAL ;
+	}
+	
+	if ( OWQ_size(owq) != _DS1991_ID_LENGTH ) {
+		return -EINVAL ;
+	}
+	
+	memcpy( new_id, (BYTE *)OWQ_buffer(owq) , _DS1991_ID_LENGTH ) ;
+	if ( BAD(ToPassword( pn->sparse_name, new_password ) ) ) {
+		return -EINVAL ;
+	}
+	
+	return GB_to_Z_OR_E(OW_password(subkey, new_id, new_password, pn)) ;
+}
+
+static ZERO_OR_ERROR FS_w_subkey(struct one_wire_query *owq)
+{
+	struct parsedname *pn = PN(owq);
+	int subkey = pn->selected_filetype->data.i ;
+	BYTE password[_DS1991_PASSWORD_LENGTH] ;
+	
+	if ( BAD(ToPassword( pn->sparse_name, password ) ) ) {
+		return -EINVAL ;
+	}
+
+	if ( BAD (OW_write_subkey( subkey, password, OWQ_size(owq), OWQ_offset(owq)+_DS1991_DATA_START, (BYTE *) OWQ_buffer(owq), pn )) ) {
+		return -EINVAL ;
+	}
+
+	return 0 ;
+}
+
+static ZERO_OR_ERROR FS_r_subkey(struct one_wire_query *owq)
+{
+	struct parsedname *pn = PN(owq);
+	int subkey = pn->selected_filetype->data.i ;
+	BYTE password[_DS1991_PASSWORD_LENGTH] ;
+	
+	if ( BAD(ToPassword( pn->sparse_name, password ) ) ) {
+		return -EINVAL ;
+	}
+
+	if ( BAD (OW_read_subkey( subkey, password, OWQ_size(owq), OWQ_offset(owq)+_DS1991_DATA_START, (BYTE *) OWQ_buffer(owq), pn )) ) {
+		return -EINVAL ;
+	}
+	OWQ_length(owq) = OWQ_size(owq) ;
+
+	return 0 ;
 }
 
 static ZERO_OR_ERROR FS_w_reset_password(struct one_wire_query *owq)
@@ -466,3 +551,80 @@ static GOOD_OR_BAD OW_w_page(const BYTE * data, const size_t size, const off_t o
 	}
 	return gbGOOD;
 }
+
+static GOOD_OR_BAD OW_password( int subkey, const BYTE * new_id, const BYTE * new_password, const struct parsedname * pn )
+{
+	BYTE subkey_addr = subkey_byte[ subkey ] ;
+	BYTE write_pwd[] = { _1W_WRITE_PASSWORD, subkey_addr, BYTE_INVERSE(subkey_addr), } ;
+	BYTE old_id[_DS1991_ID_LENGTH] ;
+	struct transaction_log t[] = {
+		TRXN_START,
+		TRXN_WRITE3(write_pwd),
+		TRXN_READ(old_id, _DS1991_ID_LENGTH),
+		TRXN_WRITE(old_id, _DS1991_ID_LENGTH),
+		TRXN_WRITE(new_id, _DS1991_ID_LENGTH),
+		TRXN_WRITE(new_password, _DS1991_PASSWORD_LENGTH),
+		TRXN_END,
+	};
+	
+	return BUS_transaction(t, pn) ;
+}
+
+
+static GOOD_OR_BAD OW_read_subkey( int subkey, BYTE * password, size_t size, off_t offset, BYTE * data, const struct parsedname * pn )
+{
+	BYTE subkey_addr = subkey_byte[ subkey ] + offset ;
+	BYTE write_sbk[] = { _1W_WRITE_SUBKEY, subkey_addr, BYTE_INVERSE(subkey_addr), } ;
+	BYTE old_id[_DS1991_ID_LENGTH] ;
+	struct transaction_log t[] = {
+		TRXN_START,
+		TRXN_WRITE3(write_sbk),
+		TRXN_READ(old_id, _DS1991_ID_LENGTH),
+		TRXN_WRITE(password, _DS1991_PASSWORD_LENGTH),
+		TRXN_WRITE(data, size),
+		TRXN_END,
+	};
+	
+	return BUS_transaction(t, pn) ;
+}
+
+static GOOD_OR_BAD OW_write_subkey( int subkey, BYTE * password, size_t size, off_t offset, BYTE * data, const struct parsedname * pn )
+{
+	BYTE subkey_addr = subkey_byte[ subkey ] + offset ;
+	BYTE write_sbk[] = { _1W_READ_SUBKEY, subkey_addr, BYTE_INVERSE(subkey_addr), } ;
+	BYTE old_id[_DS1991_ID_LENGTH] ;
+	struct transaction_log t[] = {
+		TRXN_START,
+		TRXN_WRITE3(write_sbk),
+		TRXN_READ(old_id, _DS1991_ID_LENGTH),
+		TRXN_WRITE(password, _DS1991_PASSWORD_LENGTH),
+		TRXN_READ(data, size),
+		TRXN_END,
+	};
+	
+	return BUS_transaction(t, pn) ;
+}
+
+static GOOD_OR_BAD ToPassword( char * text, BYTE * psw )
+{
+	unsigned int  text_length = _DS1991_PASSWORD_LENGTH * 2 ;
+	char convert_text[ text_length + 1 ] ;
+	
+	memset( convert_text, '0', text_length ) ;
+	convert_text[text_length] = '\0' ;
+	
+	if ( text == NULL ) {
+		return gbBAD ;
+	}
+	
+	if ( strlen( text ) > text_length ) {
+		LEVEL_DEBUG("Password extension <%s> longer than %d bytes" , text, _DS1991_PASSWORD_LENGTH ) ;
+		return gbBAD ;
+	}
+	
+	strcpy( & convert_text[ text_length - strlen(text) ] , text ) ;
+	string2bytes( convert_text, psw, _DS1991_PASSWORD_LENGTH ) ;
+	return gbGOOD ;
+}
+
+	
