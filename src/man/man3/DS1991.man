@@ -17,82 +17,96 @@ Non-volatile memory with password protection.
 .PP
 .B 02
 [.]XXXXXXXXXXXX[XX][/[
-.B memory
+.B subkey0/reset.
+.I hex_pwd
 |
-.B pages/ident.[0-2|ALL]
+.B subkey0/password.
+.I hex_pwd
 |
-.B pages/page.[0-2|ALL]
+.B subkey0/secure_data.
+.I hex_pwd
 |
-.B pages/password.[0-2|ALL]
+.B subkey0/id.
+.I hex_pwd
+.PP
+.B 02
+[.]XXXXXXXXXXXX[XX][/[
+.B subkey1/reset.
+.I hex_pwd
 |
-.B settings/ident.[0-2|ALL]
+.B subkey1/password.
+.I hex_pwd
 |
-.B settings/page.[0-2|ALL]
+.B subkey1/secure_data.
+.I hex_pwd
 |
-.B settings/password.[0-2|ALL]
+.B subkey1/id.
+.I hex_pwd
+.PP
+.B 02
+[.]XXXXXXXXXXXX[XX][/[
+.B subkey0/reset.
+.I hex_pwd
 |
-.B settings/change_password.[0-2|ALL]
+.B subkey2/password.
+.I hex_pwd
 |
-.B settings/reset_password.[0-2|ALL]
+.B subkey2/secure_data.
+.I hex_pwd
 |
+.B subkey2/id.
+.I hex_pwd
 .so man3/standard_mini.3so
 ]]
 .SH FAMILY CODE
 .PP
 .I 02
 .SH SPECIAL PROPERTIES
-.SS memory
+.SS subkey[0|1|2]/reset.hex_pwd
+.I write-only, yes-no
+.br
+Initialize one of the three secure data areas and set a new password.
+.PP
+The extension (hex_pwd) is the new 8-byte password in hexidecimal (e.g. password.000204006080A0C0E for bytes 0,2,4,6,8,10,12,14)
+.PP
+The data must be "1" or "yes" to actually reset the subkey.
+.PP
+.I Note: writing a password will clear any existing data and ID.
+.SS subkey[0|1|2]/password.hex_pwd
+.I write-only, binary
+.br
+Change the 
+.I password 
+of one of the secure subkey areas 
+.I without losing data.
+.PP
+The extension (hex_pwd) is the existing 8-byte 
+.I password 
+in hexidecimal (e.g. password.000204006080A0C0E for bytes 0,2,4,6,8,10,12,14)
+.PP
+The data portion is 8 bytes that will be used as a new 
+.I password.
+.SS subkey[0|1|2]/secure_data.hex_pwd
 .I read-write, binary
 .br
-144 bytes of non-volatile memory. Reading and writing (with offset) to the files will only work if currently used password is correct for all 3 pages.
-.SS pages/page.0 pages/page.1 pages/page.2 pages/page.ALL
+Read or write data in one of the three sucure data areas.
+.PP
+The extension (hex_pwd) is the existing 8-byte password in hexidecimal (e.g. password.000204006080A0C0E for bytes 0,2,4,6,8,10,12,14)
+.PP
+The data portion binary data. Up to 48 bytes in each subkey area, starting at location 0. If the wrong password is specified, "random data" is returned on read and data is silently ignored on write.
+.SS subkey[0|1|2]/id.hex_pwd
 .I read-write, binary
 .br
-Memory is split into 3 pages of 48 bytes each.
-.I ALL
-is an aggregate of the pages. Each page is accessed sequentially. If currently used password is incorrect, random data will be returned when reading a page.
-.SS pages/password.0 pages/password.1 pages/password.2 pages/password.ALL
-.I write, binary
-.br
-Memory is split into 3 pages and each page has a unique password (8 bytes).
-.I ALL
-is an aggregate of the password. Each page is accessed sequentially. Writing to this file will set the currently used password when accessing memory in corresponding page. If the password is wrong, random data will be returned when reading memory.
-.SS pages/ident.0 pages/ident.1 pages/ident.2 pages/ident.ALL
-.I read-write, binary
-.br
-Memory is split into 3 pages and each page has a unique identification (8 bytes).
-.I ALL
-is an aggregate of the ident. Each page is accessed sequentially. Identification will return correct result even if currently used password is incorrect.
-.SS settings/page.0 settings/page.1 settings/page.2 settings/page.ALL
-.I read-write, binary
-.br
-Memory is split into 3 pages of 48 bytes each.
-.I ALL
-is an aggregate of the pages. Each page is accessed sequentially. If currently used password is incorrect, random data will be returned when reading a page. (same as pages/page.*)
-.SS settings/ident.0 settings/ident.1 settings/ident.2 settings/ident.ALL
-.I read-write, binary
-.br
-Memory is split into 3 pages and each page has a unique identification (8 bytes).
-.I ALL
-is an aggregate of the ident. Each page is accessed sequentially. Identification will return correct result even if currently used password is incorrect. (same as pages/ident.*)
-.SS settings/password.0 settings/password.1 settings/password.2 settings/password.ALL
-.I write, binary
-.br
-Memory is split into 3 pages and each page has a unique password (8 bytes).
-.I ALL
-is an aggregate of the password. Each page is accessed sequentially. Writing to this file will set the currently used password when accessing memory in corresponding page. If the password is wrong, random data will be returned when reading memory. (same as pages/password.*)
-.SS settings/reset_password.0 settings/reset_password.1 settings/reset_password.2 settings/reset_password.ALL
-.I write, binary
-.br
-Memory is split into 3 pages and each page has a unique password (8 bytes).
-.I ALL
-is an aggregate of the ident. Each page is accessed sequentially. Writing to this file will reset the password on the page. NOTE: All data in corresponding page will be deleted!
-.SS settings/change_password.0 settings/change_password.1 settings/change_password.2 settings/change_password.ALL
-.I write, binary
-.br
-Memory is split into 3 pages and each page has a unique password (8 bytes).
-.I ALL
-is an aggregate of the ident. Each page is accessed sequentially. Writing to this file will change the password on the page. NOTE: Currently used password have to be set to correct password before changing password. Data in the corresponding page is NOT effected.
+Read or write the subkey
+.I id.
+.PP
+The extension (hex_pwd) is the existing 8-byte password in hexidecimal (e.g. password.000204006080A0C0E for bytes 0,2,4,6,8,10,12,14)
+.PP
+The data portion 8 binary bytes. This is the subkey 
+.I id.
+The correct password must be used to write a new 
+.I id
+but not to read it.
 .SH STANDARD PROPERTIES
 .so man3/standard.3so
 .SH ALARMS
