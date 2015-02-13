@@ -921,8 +921,8 @@ static GOOD_OR_BAD OW_w_doubles( BYTE command, UINT * dubs, int elements, struct
 	int counter ;
 	
 	for ( counter = 0 ; counter < elements ; ++counter ) {
-		data[2*counter] = dubs[counter] & 0xFF ;
-		data[2*counter+1] = (dubs[counter]>>8) & 0xFF ;
+		data[2*counter] = BYTE_MASK( dubs[counter] ) ;
+		data[2*counter+1] =  BYTE_MASK( dubs[counter]>>8 ) ;
 	}
 
 	return OW_write( command, data, size, pn ) ;

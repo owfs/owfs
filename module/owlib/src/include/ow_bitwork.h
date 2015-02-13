@@ -1,5 +1,4 @@
 /*
-$Id$
     OW -- One-Wire filesystem
     version 0.4 7/2/2003
 
@@ -49,8 +48,8 @@ $Id$
 #ifndef OW_BITWORK_H				/* tedious wrapper */
 #define OW_BITWORK_H
 
-#define BYTE_MASK(x)        ( (unsigned char) ((x)&0xFF) )
-#define BYTE_INVERSE(x)     BYTE_MASK((x)^0xFF)
+#define BYTE_MASK(x)        ( (unsigned char) ((x) & 0xFF) )
+#define BYTE_INVERSE(x)     BYTE_MASK((x) ^ 0xFF)
 #define LOW_HIGH_ADDRESS(x)         BYTE_MASK(x),BYTE_MASK((x)>>8)
 
 #endif							/* OW_BITWORK_H */

@@ -718,13 +718,16 @@ static enum parse_enum Parse_Property(char *filename, struct parsedname *pn)
 		if (pn->selected_filetype->ag->letters == ag_letters) {	/* text string */
 			pn->extension = 0;	/* text extension, not number */
 			pn->sparse_name = owstrdup(dot) ;
+			LEVEL_DEBUG("Sparse alpha extension found: <%s>",pn->sparse_name);
 		} else {			/* Numbers */
 			char *p;
 			//printf("FP numbers\n") ;
 			pn->extension = strtol(dot, &p, 0);	/* Number conversion */
 			if ((p == dot) || ((pn->extension == 0) && (errno == -EINVAL))) {
+				LEVEL_DEBUG("Sparse numeric extension bad: <%s>",dot);
 				return parse_error;	/* Bad number */
 			}
+			LEVEL_DEBUG("Sparse numeric extension found: <%ld>",(long int) pn->extension);
 		}
 
 	// Non-sparse "ALL"
