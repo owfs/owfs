@@ -313,10 +313,10 @@ static GOOD_OR_BAD OW_password( int subkey, const BYTE * new_id, const BYTE * ne
 static GOOD_OR_BAD OW_read_id( int subkey, BYTE * id, const struct parsedname * pn )
 {
 	BYTE subkey_addr = subkey_byte[ subkey ] + _DS1991_DATA_START ;
-	BYTE write_sbk[] = { _1W_WRITE_SUBKEY, subkey_addr, BYTE_INVERSE(subkey_addr), } ;
+	BYTE read_sbk[] = { _1W_READ_SUBKEY, subkey_addr, BYTE_INVERSE(subkey_addr), } ;
 	struct transaction_log t[] = {
 		TRXN_START,
-		TRXN_WRITE3(write_sbk),
+		TRXN_WRITE3(read_sbk),
 		TRXN_READ(id, _DS1991_ID_LENGTH),
 		TRXN_END,
 	};
@@ -374,7 +374,7 @@ static GOOD_OR_BAD OW_write_id( int subkey, BYTE * password, BYTE * id, const st
 	struct transaction_log twrite[] = {
 		TRXN_START,
 		TRXN_WRITE3(copy_scratch),
-		TRXN_WRITE(cp_array[0], _DS1991_COPY_BLOCK_LENGTH),
+		TRXN_WRITE(cp_array[block_IDENT], _DS1991_COPY_BLOCK_LENGTH),
 		TRXN_WRITE(password, _DS1991_PASSWORD_LENGTH),
 		TRXN_END,
 	};
@@ -398,7 +398,7 @@ static GOOD_OR_BAD OW_write_password( int subkey, BYTE * old_password, BYTE * ne
 	struct transaction_log tcopy[] = {
 		TRXN_START,
 		TRXN_WRITE3(copy_scratch),
-		TRXN_WRITE(cp_array[1], _DS1991_COPY_BLOCK_LENGTH),
+		TRXN_WRITE(cp_array[block_PASSWORD], _DS1991_COPY_BLOCK_LENGTH),
 		TRXN_WRITE(old_password, _DS1991_PASSWORD_LENGTH),
 		TRXN_END,
 	};
