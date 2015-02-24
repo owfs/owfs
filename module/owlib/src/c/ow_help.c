@@ -250,6 +250,7 @@ void ow_help_device(void)
 	" Linux Kernel Device\n"
 	"  --w1            Scan for kernel-managed bus masters\n"
 	"\n" 
+	"  --DS1WM address Synthesizable 1-Wire BusMaster (address is base register location)\n"
 	"  --external      Allow external scripts to be called\n"
 	"  --no_external   Do not allow external scripts to be called\n"
 	

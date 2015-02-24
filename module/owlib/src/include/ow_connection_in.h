@@ -73,6 +73,7 @@ enum adapter_type {
 	adapter_enet_monitor,
 	adapter_external,
 	adapter_pbm,
+	adapter_ds1wm,
 };
 
 enum e_reconnect {
