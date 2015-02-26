@@ -14,40 +14,39 @@
 // #include <libgen.h>  /* for dirname() */
 
 /* --------------- Prototypes---------------- */
-//static void Show(FILE * out, const char *const path, const char *const file);
-//static void ShowText(FILE * out, const char *path, const char *file);
+static void Show(struct OutputControl * oc, const struct parsedname *pn_entry);
+static void ShowDirectory(struct OutputControl * oc, const struct parsedname *pn_entry);
+static void ShowReadWrite(struct OutputControl * oc, struct one_wire_query *owq);
+static void ShowReadonly(struct OutputControl * oc, struct one_wire_query *owq);
+static void ShowWriteonly(struct OutputControl * oc, struct one_wire_query *owq);
+static void ShowStructure(struct OutputControl * oc, struct one_wire_query *owq);
+static void StructureDetail(struct OutputControl * oc, const char * structure_details );
+static void Upload( struct OutputControl * oc, const struct parsedname * pn ) ;
+static void Extension( struct OutputControl * oc, const struct parsedname * pn ) ;
 
-static void Show(FILE * out, const struct parsedname *pn_entry);
-static void ShowDirectory(FILE * out, const struct parsedname *pn_entry);
-static void ShowReadWrite(FILE * out, struct one_wire_query *owq);
-static void ShowReadonly(FILE * out, struct one_wire_query *owq);
-static void ShowWriteonly(FILE * out, struct one_wire_query *owq);
-static void ShowStructure(FILE * out, struct one_wire_query *owq);
-static void StructureDetail(FILE * out, const char * structure_details );
-static void Upload( FILE * out, const struct parsedname * pn ) ;
+static void ShowText(struct OutputControl * oc, const struct parsedname *pn_entry);
+static void ShowTextDirectory(struct OutputControl * oc, const struct parsedname *pn_entry);
+static void ShowTextReadWrite(struct OutputControl * oc, struct one_wire_query *owq);
+static void ShowTextReadonly(struct OutputControl * oc, struct one_wire_query *owq);
+static void ShowTextWriteonly(struct OutputControl * oc, struct one_wire_query *owq);
+static void ShowTextStructure(struct OutputControl * oc, struct one_wire_query *owq);
 
-static void ShowText(FILE * out, const struct parsedname *pn_entry);
-static void ShowTextDirectory(FILE * out, const struct parsedname *pn_entry);
-static void ShowTextReadWrite(FILE * out, struct one_wire_query *owq);
-static void ShowTextReadonly(FILE * out, struct one_wire_query *owq);
-static void ShowTextWriteonly(FILE * out, struct one_wire_query *owq);
-static void ShowTextStructure(FILE * out, struct one_wire_query *owq);
-
-static void ShowJson(FILE * out, const struct parsedname *pn_entry);
-static void ShowJsonDirectory(FILE * out, const struct parsedname *pn_entry);
-static void ShowJsonReadWrite(FILE * out, struct one_wire_query *owq);
-static void ShowJsonReadonly(FILE * out, struct one_wire_query *owq);
-static void ShowJsonWriteonly(FILE * out, struct one_wire_query *owq);
-static void ShowJsonStructure(FILE * out, struct one_wire_query *owq);
-static void StructureDetailJson(FILE * out, const char * structure_details );
+static void ShowJson(struct OutputControl * oc, const struct parsedname *pn_entry);
+static void ShowJsonDirectory(struct OutputControl * oc, const struct parsedname *pn_entry);
+static void ShowJsonReadWrite(struct OutputControl * oc, struct one_wire_query *owq);
+static void ShowJsonReadonly(struct OutputControl * oc, struct one_wire_query *owq);
+static void ShowJsonWriteonly(struct OutputControl * oc, struct one_wire_query *owq);
+static void ShowJsonStructure(struct OutputControl * oc, struct one_wire_query *owq);
+static void StructureDetailJson(struct OutputControl * oc, const char * structure_details );
 
 /* --------------- Functions ---------------- */
 
 /* Device entry -- table line for a filetype */
-static void Show(FILE * out, const struct parsedname *pn_entry)
+static void Show(struct OutputControl * oc, const struct parsedname *pn_entry)
 {
+	FILE * out = oc->out ;
 	struct one_wire_query *owq = OWQ_create_from_path(pn_entry->path); // for read or dir
-	
+	struct filetype * ft = pn_entry->selected_filetype ;
 	/* Left column */
 	fprintf(out, "<TR><TD><B>%s</B></TD><TD>", FS_DirName(pn_entry));
 
@@ -55,23 +54,27 @@ static void Show(FILE * out, const struct parsedname *pn_entry)
 		fprintf(out, "<B>Memory exhausted</B>");
 	} else if ( BAD( OWQ_allocate_read_buffer(owq)) ) {
 		fprintf(out, "<B>Memory exhausted</B>");
-	} else if (pn_entry->selected_filetype == NO_FILETYPE) {
-		ShowDirectory(out, pn_entry);
+	} else if (ft == NO_FILETYPE) {
+		ShowDirectory(oc, pn_entry);
 	} else if (IsStructureDir(pn_entry)) {
-		ShowStructure(out, owq);
-	} else if (pn_entry->selected_filetype->format == ft_directory || pn_entry->selected_filetype->format == ft_subdir) {
+		ShowStructure(oc, owq);
+	} else if (ft->format == ft_directory || ft->format == ft_subdir) {
 		// Directory
-		ShowDirectory(out, pn_entry);
-	} else if (pn_entry->selected_filetype->write == NO_WRITE_FUNCTION || Globals.readonly) {
+		ShowDirectory(oc, pn_entry);
+	} else if ( pn_entry->extension == EXTENSION_UNKNOWN  && ft->ag != NON_AGGREGATE && ft->ag->combined == ag_sparse ) {
+		Extension(oc, pn_entry ) ; // flag as generic needing an extension chosen
+	} else if (ft->write == NO_WRITE_FUNCTION || Globals.readonly) {
 		// Unwritable
-		if (pn_entry->selected_filetype->read != NO_READ_FUNCTION) {
-			ShowReadonly(out, owq);
+		if (ft->read != NO_READ_FUNCTION) {
+			ShowReadonly(oc, owq);
+		} else {
+			// Property has no read or write ability
 		}
 	} else {					// Writeable
-		if (pn_entry->selected_filetype->read == NO_READ_FUNCTION) {
-			ShowWriteonly(out, owq);
+		if (ft->read == NO_READ_FUNCTION) {
+			ShowWriteonly(oc, owq);
 		} else {
-			ShowReadWrite(out, owq);
+			ShowReadWrite(oc, owq);
 		}
 	}
 	fprintf(out, "</TD></TR>\r\n");
@@ -80,8 +83,9 @@ static void Show(FILE * out, const struct parsedname *pn_entry)
 
 
 /* Device entry -- table line for a filetype */
-static void ShowReadWrite(FILE * out, struct one_wire_query *owq)
+static void ShowReadWrite(struct OutputControl * oc, struct one_wire_query *owq)
 {
+	FILE * out = oc->out ;
 	struct parsedname * pn = PN(owq) ;
 	const char *file = FS_DirName(pn);
 	SIZE_OR_ERROR read_return = FS_read_postparse(owq);
@@ -89,53 +93,70 @@ static void ShowReadWrite(FILE * out, struct one_wire_query *owq)
 		fprintf(out, "Error: %s", strerror(-read_return));
 		return;
 	}
+		
 	switch (pn->selected_filetype->format) {
-	case ft_binary:
-		{
-			int i = 0;
-			fprintf(out, "<CODE><FORM METHOD='GET'><TEXTAREA NAME='%s' COLS='64' ROWS='%-d'>", file, read_return >> 5);
-			while (i < read_return) {
-				fprintf(out, "%.2hhX", OWQ_buffer(owq)[i]);
-				if (((++i) < read_return) && (i & 0x1F) == 0) {
-					fprintf(out, "\r\n");
+		case ft_binary:
+			{
+				int i = 0;
+				fprintf(out, "<CODE><FORM METHOD='GET' ACTION='http://%s%s'><TEXTAREA NAME='%s' COLS='64' ROWS='%-d'>", oc->host, oc->base_url, file, read_return >> 5);
+				while (i < read_return) {
+					fprintf(out, "%.2hhX", OWQ_buffer(owq)[i]);
+					if (((++i) < read_return) && (i & 0x1F) == 0) {
+						fprintf(out, "\r\n");
+					}
 				}
+				fprintf(out, "</TEXTAREA><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM></CODE>");
+				Upload( oc, pn ) ;
+				break;
 			}
-			fprintf(out, "</TEXTAREA><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM></CODE>");
-			Upload( out, pn ) ;
-			break;
-		}
-	case ft_yesno:
-	case ft_bitfield:
-		if (pn->extension >= 0) {
+		case ft_yesno:
+		case ft_bitfield:
+			if (pn->extension >= 0) {
+				fprintf(out,
+						"<FORM METHOD='GET' ACTION='http://%s%s'><INPUT TYPE='CHECKBOX' NAME='%s' %s><INPUT TYPE='SUBMIT' VALUE='CHANGE' NAME='%s'></FORM>",oc->host, oc->base_url, 
+						file, (OWQ_buffer(owq)[0] == '0') ? "" : "CHECKED", file);
+				break;
+			}
+			// fall through
+		default:
 			fprintf(out,
-					"<FORM METHOD=\"GET\"><INPUT TYPE='CHECKBOX' NAME='%s' %s><INPUT TYPE='SUBMIT' VALUE='CHANGE' NAME='%s'></FORM></FORM>",
-					file, (OWQ_buffer(owq)[0] == '0') ? "" : "CHECKED", file);
+					"<FORM METHOD='GET' ACTION='http://%s%s'><INPUT TYPE='TEXT' NAME='%s' VALUE='%.*s'><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM>",oc->host, oc->base_url, 
+					file, read_return, OWQ_buffer(owq));
 			break;
-		}
-		// fall through
-	default:
-		fprintf(out,
-				"<FORM METHOD='GET'><INPUT TYPE='TEXT' NAME='%s' VALUE='%.*s'><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM>",
-				file, read_return, OWQ_buffer(owq));
-		break;
 	}
 }
 
-static void Upload( FILE * out, const struct parsedname * pn )
+static void Upload( struct OutputControl * oc, const struct parsedname * pn )
 {
-	fprintf(out,"<FORM METHOD='POST' ENCTYPE='multipart/form-data'>Load from file: <INPUT TYPE=FILE NAME='%s' SIZE=30><INPUT TYPE=SUBMIT VALUE='UPLOAD'></FORM>",pn->path);
+	FILE * out = oc->out ;
+	fprintf(out,"<FORM METHOD='POST'  ACTION='http://%s%s' ENCTYPE='multipart/form-data'>Load from file: <INPUT TYPE=FILE NAME='%s' SIZE=30><INPUT TYPE=SUBMIT VALUE='UPLOAD'></FORM>",oc->host, oc->base_url, pn->path);
+}
+
+static void Extension( struct OutputControl * oc, const struct parsedname * pn )
+{
+	FILE * out = oc->out ;
+	const char * file = FS_DirName(pn);
+	char * file_copy = owstrdup(file) ;
+	char * extension = file_copy ;
+	
+	file_copy = strsep( &extension, "." ) ;
+	
+	fprintf(out, "<CODE><FORM METHOD='GET' ACTION='http://%s%s'><INPUT NAME='EXTENSION' TYPE='TEXT' SIZE='30' VALUE='%s.' ID='EXTENSION'><INPUT TYPE='SUBMIT' VALUE='EXTENSION'></FORM>", oc->host, oc->base_url, file_copy);
+	owfree(file_copy) ;
 }
 
 /* Device entry -- table line for a filetype */
-static void ShowReadonly(FILE * out, struct one_wire_query *owq)
+static void ShowReadonly(struct OutputControl * oc, struct one_wire_query *owq)
 {
+	FILE * out = oc->out ;
 	SIZE_OR_ERROR read_return = FS_read_postparse(owq);
+	struct parsedname * pn = PN(owq) ;
 	if (read_return < 0) {
 		fprintf(out, "Error: %s", strerror(-read_return));
 		return;
 	}
 
-	switch (PN(owq)->selected_filetype->format) {
+	switch (pn->selected_filetype->format) {
 	case ft_binary:
 		{
 			int i = 0;
@@ -151,7 +172,7 @@ static void ShowReadonly(FILE * out, struct one_wire_query *owq)
 		}
 	case ft_yesno:
 	case ft_bitfield:
-		if (PN(owq)->extension >= 0) {
+		if (pn->extension >= 0) {
 			switch (OWQ_buffer(owq)[0]) {
 			case '0':
 				fprintf(out, "NO  (0)");
@@ -170,8 +191,9 @@ static void ShowReadonly(FILE * out, struct one_wire_query *owq)
 }
 
 /* Structure entry */
-static void ShowStructure(FILE * out, struct one_wire_query *owq)
+static void ShowStructure(struct OutputControl * oc, struct one_wire_query *owq)
 {
+	FILE * out = oc->out ;
 	SIZE_OR_ERROR read_return = FS_read_postparse(owq);
 	if (read_return < 0) {
 		fprintf(out, "Error: %s", strerror(-read_return));
@@ -181,12 +203,13 @@ static void ShowStructure(FILE * out, struct one_wire_query *owq)
 	fprintf(out, "%.*s", read_return, OWQ_buffer(owq));
 	
 	// Optional structure details
-	StructureDetail(out,OWQ_buffer(owq)) ;
+	StructureDetail(oc,OWQ_buffer(owq)) ;
 }
 
 /* Detailed (parsed) structure entry */
-static void StructureDetail(FILE * out, const char * structure_details )
+static void StructureDetail(struct OutputControl * oc, const char * structure_details )
 {
+	FILE * out = oc->out ;
 	char format_type ;
 	int extension ;
 	int elements ;
@@ -273,39 +296,46 @@ static void StructureDetail(FILE * out, const char * structure_details )
 }
 
 /* Device entry -- table line for a filetype */
-static void ShowWriteonly(FILE * out, struct one_wire_query *owq)
+static void ShowWriteonly(struct OutputControl * oc, struct one_wire_query *owq)
 {
-	const char *file = FS_DirName(PN(owq));
-	switch (PN(owq)->selected_filetype->format) {
+	FILE * out = oc->out ;
+	struct parsedname * pn = PN(owq) ;
+	const char *file = FS_DirName(pn);
+	
+fprintf(stderr,"XXXXXXX Showing %s (%s) Extension %d\n",pn->path,file,pn->extension); 
+	switch (pn->selected_filetype->format) {
 	case ft_binary:
 		fprintf(out,
-				"<CODE><FORM METHOD='GET'><TEXTAREA NAME='%s' COLS='64' ROWS='%-d'></TEXTAREA><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM></CODE>",
+				"<CODE><FORM METHOD='GET' ACTION='http://%s%s'><TEXTAREA NAME='%s' COLS='64' ROWS='%-d'></TEXTAREA><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM></CODE>",oc->host, oc->base_url, 
 				file, (int) (OWQ_size(owq) >> 5));
-		Upload(out,PN(owq)) ;
+		Upload(oc,pn) ;
 		break;
 	case ft_yesno:
 	case ft_bitfield:
-		if (PN(owq)->extension >= 0) {
+		if (pn->extension >= 0) {
 			fprintf(out,
-					"<FORM METHOD='GET'><INPUT TYPE='SUBMIT' NAME='%s' VALUE='ON'><INPUT TYPE='SUBMIT' NAME='%s' VALUE='OFF'></FORM>", file, file);
+					"<FORM METHOD='GET' ACTION='http://%s%s'><INPUT TYPE='SUBMIT' NAME='%s' VALUE='ON'><INPUT TYPE='SUBMIT' NAME='%s' VALUE='OFF'></FORM>", oc->host, oc->base_url, file, file);
 			break;
 		}
 		// fall through
 	default:
-		fprintf(out, "<FORM METHOD='GET'><INPUT TYPE='TEXT' NAME='%s'><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM>", file);
+		fprintf(out, "<FORM METHOD='GET' ACTION='http://%s%s'><INPUT TYPE='TEXT' NAME='%s'><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM>", oc->host, oc->base_url, file);
 		break;
 	}
 }
 
-static void ShowDirectory(FILE * out, const struct parsedname *pn_entry)
+static void ShowDirectory(struct OutputControl * oc, const struct parsedname *pn_entry)
 {
+	FILE * out = oc->out ;
 	fprintf(out, "<A HREF='%s'>%s</A>", pn_entry->path, FS_DirName(pn_entry));
 }
 
 /* Device entry -- table line for a filetype */
-static void ShowText(FILE * out, const struct parsedname *pn_entry)
+static void ShowText(struct OutputControl * oc, const struct parsedname *pn_entry)
 {
+	FILE * out = oc->out ;
 	struct one_wire_query *owq = OWQ_create_from_path(pn_entry->path); // for read or dir
+	struct filetype * ft = pn_entry->selected_filetype ;
 
 	/* Left column */
 	fprintf(out, "%s ", FS_DirName(pn_entry));
@@ -313,22 +343,22 @@ static void ShowText(FILE * out, const struct parsedname *pn_entry)
 	if (owq == NO_ONE_WIRE_QUERY) {
 	} else if ( BAD( OWQ_allocate_read_buffer(owq)) ) {
 		//fprintf(out, "(memory exhausted)");
-	} else if (pn_entry->selected_filetype == NO_FILETYPE) {
-		ShowTextDirectory(out, pn_entry);
-	} else if (pn_entry->selected_filetype->format == ft_directory || pn_entry->selected_filetype->format == ft_subdir) {
-		ShowTextDirectory(out, pn_entry);
+	} else if (ft == NO_FILETYPE) {
+		ShowTextDirectory(oc, pn_entry);
+	} else if (ft->format == ft_directory || ft->format == ft_subdir) {
+		ShowTextDirectory(oc, pn_entry);
 	} else if (IsStructureDir(pn_entry)) {
-		ShowTextStructure(out, owq);
-	} else if (pn_entry->selected_filetype->write == NO_WRITE_FUNCTION || Globals.readonly) {
+		ShowTextStructure(oc, owq);
+	} else if (ft->write == NO_WRITE_FUNCTION || Globals.readonly) {
 		// Unwritable
-		if (pn_entry->selected_filetype->read != NO_READ_FUNCTION) {
-			ShowTextReadonly(out, owq);
+		if (ft->read != NO_READ_FUNCTION) {
+			ShowTextReadonly(oc, owq);
 		}
 	} else {					// Writeable
-		if (pn_entry->selected_filetype->write == NO_READ_FUNCTION) {
-			ShowTextWriteonly(out, owq);
+		if (ft->read == NO_READ_FUNCTION) {
+			ShowTextWriteonly(oc, owq);
 		} else {
-			ShowTextReadWrite(out, owq);
+			ShowTextReadWrite(oc, owq);
 		}
 	}
 	fprintf(out, "\r\n");
@@ -336,8 +366,9 @@ static void ShowText(FILE * out, const struct parsedname *pn_entry)
 }
 
 /* Device entry -- table line for a filetype */
-static void ShowTextStructure(FILE * out, struct one_wire_query *owq)
+static void ShowTextStructure(struct OutputControl * oc, struct one_wire_query *owq)
 {
+	FILE * out = oc->out ;
 	SIZE_OR_ERROR read_return = FS_read_postparse(owq);
 	if (read_return < 0) {
 		//fprintf(out, "error: %s", strerror(-read_return));
@@ -348,8 +379,9 @@ static void ShowTextStructure(FILE * out, struct one_wire_query *owq)
 }
 
 /* Device entry -- table line for a filetype */
-static void ShowTextReadWrite(FILE * out, struct one_wire_query *owq)
+static void ShowTextReadWrite(struct OutputControl * oc, struct one_wire_query *owq)
 {
+	FILE * out = oc->out ;
 	SIZE_OR_ERROR read_return = FS_read_postparse(owq);
 	if (read_return < 0) {
 		//fprintf(out, "error: %s", strerror(-read_return));
@@ -379,96 +411,100 @@ static void ShowTextReadWrite(FILE * out, struct one_wire_query *owq)
 }
 
 /* Device entry -- table line for a filetype */
-static void ShowTextReadonly(FILE * out, struct one_wire_query *owq)
+static void ShowTextReadonly(struct OutputControl * oc, struct one_wire_query *owq)
 {
-	ShowTextReadWrite(out, owq);
+	ShowTextReadWrite(oc, owq);
 }
 
 /* Device entry -- table line for a filetype */
-static void ShowTextWriteonly(FILE * out, struct one_wire_query *owq)
+static void ShowTextWriteonly(struct OutputControl * oc, struct one_wire_query *owq)
 {
+	FILE * out = oc->out ;
 	(void) owq;
 	fprintf(out, "(writeonly)");
 }
 
-static void ShowTextDirectory(FILE * out, const struct parsedname *pn_entry)
+static void ShowTextDirectory(struct OutputControl * oc, const struct parsedname *pn_entry)
 {
-	(void) out;
+	(void) oc;
 	(void) pn_entry;
 }
 
 /* Now show the device */
 static void ShowDeviceTextCallback(void *v, const struct parsedname * pn_entry)
 {
-	FILE *out = v;
-	ShowText(out, pn_entry);
+	struct OutputControl * oc = v;
+	ShowText(oc, pn_entry);
 }
 
 static void ShowDeviceCallback(void *v, const struct parsedname * pn_entry)
 {
-	FILE *out = v;
-//    Show(sds->out, sds->path, FS_DirName(pn_entry));
-	Show(out, pn_entry);
+	struct OutputControl * oc = v;
+	Show(oc, pn_entry);
 }
 
-static void ShowDeviceText(FILE * out, struct parsedname *pn)
+static void ShowDeviceText(struct OutputControl * oc, struct parsedname *pn)
 {
-	HTTPstart(out, "200 OK", ct_text);
+	HTTPstart(oc, "200 OK", ct_text);
 
 	if (pn->selected_filetype == NO_DEVICE) {	/* whole device */
 		//printf("whole directory path=%s \n", pn->path);
-		FS_dir(ShowDeviceTextCallback, out, pn);
+		FS_dir(ShowDeviceTextCallback, oc, pn);
 	} else {					/* Single item */
 		//printf("single item path=%s\n", pn->path);
-		ShowText(out, pn);
+		ShowText(oc, pn);
 	}
 }
 
 /* Device entry -- table line for a filetype */
-static void ShowJson(FILE * out, const struct parsedname *pn_entry)
+static void ShowJson(struct OutputControl * oc, const struct parsedname *pn_entry)
 {
+	FILE * out = oc->out ;
 	struct one_wire_query *owq = OWQ_create_from_path(pn_entry->path); // for read or dir
+	struct filetype * ft = pn_entry->selected_filetype ;
 
 	if (owq == NO_ONE_WIRE_QUERY) {
 		fprintf(out, "null");
 	} else if ( BAD( OWQ_allocate_read_buffer(owq)) ) {
 		fprintf(out, "null");
-	} else if (pn_entry->selected_filetype == NO_FILETYPE) {
-		ShowJsonDirectory(out, pn_entry);
+	} else if (ft == NO_FILETYPE) {
+		ShowJsonDirectory(oc, pn_entry);
 	} else if (IsStructureDir(pn_entry)) {
-		ShowJsonStructure(out, owq);
-	} else if (pn_entry->selected_filetype->format == ft_directory || pn_entry->selected_filetype->format == ft_subdir) {
-		ShowJsonDirectory(out, pn_entry);
-	} else if (pn_entry->selected_filetype->write == NO_WRITE_FUNCTION || Globals.readonly) {
+		ShowJsonStructure(oc, owq);
+	} else if (ft->format == ft_directory || ft->format == ft_subdir) {
+		ShowJsonDirectory(oc, pn_entry);
+	} else if (ft->write == NO_WRITE_FUNCTION || Globals.readonly) {
 		// Unwritable
-		if (pn_entry->selected_filetype->read != NO_READ_FUNCTION) {
-			ShowJsonReadonly(out, owq);
+		if (ft->read != NO_READ_FUNCTION) {
+			ShowJsonReadonly(oc, owq);
 		}
 	} else {					// Writeable
-		if (pn_entry->selected_filetype->write == NO_READ_FUNCTION) {
-			ShowJsonWriteonly(out, owq);
+		if (ft->read == NO_READ_FUNCTION) {
+			ShowJsonWriteonly(oc, owq);
 		} else {
-			ShowJsonReadWrite(out, owq);
+			ShowJsonReadWrite(oc, owq);
 		}
 	}
 	OWQ_destroy(owq);
 }
 
 /* Device entry -- table line for a filetype */
-static void ShowJsonStructure(FILE * out, struct one_wire_query *owq)
+static void ShowJsonStructure(struct OutputControl * oc, struct one_wire_query *owq)
 {
+	FILE * out = oc->out ;
 	SIZE_OR_ERROR read_return = FS_read_postparse(owq);
 	if (read_return < 0) {
 		fprintf(out, "null");
 		return;
 	}
 	fprintf(out, "\"%.*s\":", read_return, OWQ_buffer(owq));
-	StructureDetailJson( out, OWQ_buffer(owq) ) ;
+	StructureDetailJson( oc, OWQ_buffer(owq) ) ;
 }
 
 /* Detailed (parsed) structure entry */
-static void StructureDetailJson(FILE * out, const char * structure_details )
+static void StructureDetailJson(struct OutputControl * oc, const char * structure_details )
 {
+	FILE * out = oc->out ;
 	char format_type ;
 	int extension ;
 	int elements ;
@@ -556,8 +592,9 @@ static void StructureDetailJson(FILE * out, const char * structure_details )
 }
 
 /* Device entry -- table line for a filetype */
-static void ShowJsonReadWrite(FILE * out, struct one_wire_query *owq)
+static void ShowJsonReadWrite(struct OutputControl * oc, struct one_wire_query *owq)
 {
+	FILE * out = oc->out ;
 	struct parsedname * pn = PN(owq) ;
 	SIZE_OR_ERROR read_return = FS_read_postparse(owq);
 
@@ -579,7 +616,7 @@ static void ShowJsonReadWrite(FILE * out, struct one_wire_query *owq)
 		}
 	case ft_yesno:
 	case ft_bitfield:
-		if (PN(owq)->extension >= 0) {
+		if (pn->extension >= 0) {
 			fprintf(out, "\"%s\"", OWQ_buffer(owq)[0]=='0'?"false":"true");
 			break;
 		}
@@ -591,19 +628,21 @@ static void ShowJsonReadWrite(FILE * out, struct one_wire_query *owq)
 }
 
 /* Device entry -- table line for a filetype */
-static void ShowJsonReadonly(FILE * out, struct one_wire_query *owq)
+static void ShowJsonReadonly(struct OutputControl * oc, struct one_wire_query *owq)
 {
-	ShowJsonReadWrite(out, owq);
+	ShowJsonReadWrite(oc, owq);
 }
 
 /* Device entry -- table line for a filetype */
-static void ShowJsonWriteonly(FILE * out, struct one_wire_query *owq)
+static void ShowJsonWriteonly(struct OutputControl * oc, struct one_wire_query *owq)
 {
+	FILE * out = oc->out ;
 	(void) owq ;
 	fprintf(out,"null") ;
 }
-static void ShowJsonDirectory(FILE * out, const struct parsedname *pn_entry)
+static void ShowJsonDirectory(struct OutputControl * oc, const struct parsedname *pn_entry)
 {
+	FILE * out = oc->out ;
 	(void) pn_entry;
 	fprintf(out,"[]") ;
 }
@@ -611,45 +650,47 @@ static void ShowJsonDirectory(FILE * out, const struct parsedname *pn_entry)
 /* Now show the device */
 static void ShowDeviceJsonCallback(void *v, const struct parsedname * pn_entry)
 {
-	struct JsonCBstruct * jcbs = v ;
-	JSON_dir_entry(jcbs, "\"%s\":",FS_DirName(pn_entry) ) ;
-	ShowJson(jcbs->out, pn_entry);
+	struct OutputControl * oc = v ;
+	JSON_dir_entry(oc, "\"%s\":",FS_DirName(pn_entry) ) ;
+	ShowJson(oc, pn_entry);
 }
 
-static void ShowDeviceJson(FILE * out, struct parsedname *pn)
+static void ShowDeviceJson(struct OutputControl * oc, struct parsedname *pn)
 {
-	HTTPstart(out, "200 OK", ct_json);
+	FILE * out = oc->out ;
+	
+	HTTPstart(oc, "200 OK", ct_json);
 
 	if (pn->selected_filetype == NO_DEVICE) {	/* whole device */
-		struct JsonCBstruct jcbs ;
-		JSON_dir_init( &jcbs, out ) ;
+		JSON_dir_init( oc ) ;
 		fprintf(out, "{\n" ) ;
-		FS_dir(ShowDeviceJsonCallback, &jcbs, pn);
-		JSON_dir_finish(&jcbs) ;
+		FS_dir(ShowDeviceJsonCallback, oc, pn);
+		JSON_dir_finish(oc) ;
 		fprintf(out, "}" );
 	} else {					/* Single item */
 		//printf("single item path=%s\n", pn->path);
 		fprintf(out, "[ " ) ;		
-		ShowJson(out, pn);
+		ShowJson(oc, pn);
 		fprintf(out, " ]" ) ;		
 	}
 }
 
 
-void ShowDevice(FILE * out, struct parsedname *pn)
+void ShowDevice(struct OutputControl * oc, struct parsedname *pn)
 {
+	FILE * out = oc->out ;
 	if (pn->state & ePS_text) {
-		ShowDeviceText(out, pn);
+		ShowDeviceText(oc, pn);
 		return;
 	} else if (pn->state & ePS_json) {
-		ShowDeviceJson(out, pn);
+		ShowDeviceJson(oc, pn);
 		return;
 	}
 
-	HTTPstart(out, "200 OK", ct_html);
+	HTTPstart(oc, "200 OK", ct_html);
 
-	HTTPtitle(out, &pn->path[1]);
-	HTTPheader(out, &pn->path[1]);
+	HTTPtitle(oc, &pn->path[1]);
+	HTTPheader(oc, &pn->path[1]);
 
 	if (NotUncachedDir(pn) && IsRealDir(pn)) {
 		fprintf(out, "<BR><small><A href='/uncached%s'>uncached version</A></small>", pn->path);
@@ -659,10 +700,10 @@ void ShowDevice(FILE * out, struct parsedname *pn)
 
 
 	if (pn->selected_filetype == NO_FILETYPE) {	/* whole device */
-		FS_dir(ShowDeviceCallback, out, pn);
+		FS_dir(ShowDeviceCallback, oc, pn);
 	} else {					/* single item */
-		Show(out, pn);
+		Show(oc, pn);
 	}
 	fprintf(out, "</TABLE>");
-	HTTPfoot(out);
+	HTTPfoot(oc);
 }

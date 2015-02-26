@@ -332,8 +332,6 @@ void ServerProcess(void (*HandlerRoutine) (FILE_DESCRIPTOR_OR_ERROR file_descrip
 		ERROR_DEFAULT("Cannot allocate a shutdown pipe. The program shutdown may be messy");
 		Init_Pipe( shutdown_pipe ) ;
 	}
-//	fcntl (shutdown_pipe[fd_pipe_read], F_SETFD, FD_CLOEXEC); // for safe forking
-//	fcntl (shutdown_pipe[fd_pipe_write], F_SETFD, FD_CLOEXEC); // for safe forking
 		
 	if ( GOOD( SetupListenSockets( HandlerRoutine ) ) ) {
 		Announce_Systemd() ; // systemd mode -- ready for business

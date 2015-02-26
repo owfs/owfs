@@ -91,9 +91,7 @@ struct ds2409_hubs {
 
 #define EXTENSION_BYTE	-2
 #define EXTENSION_ALL	-1
-#define EXTENSION_ALL_SEPARATE	-1
-#define EXTENSION_ALL_MIXED		-1
-#define EXTENSION_ALL_AGGREGATE	-1
+#define EXTENSION_UNKNOWN -3 /* Sparse and not given yet */
 
 #define NO_FILETYPE NULL
 #define NO_SUBDIR NULL
