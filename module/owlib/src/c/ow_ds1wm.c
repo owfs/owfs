@@ -319,17 +319,19 @@ static enum search_status DS1WM_next_both(struct device_search *ds, const struct
 	}
 	// after last discrepancy so leave zeros
 
+	// search ON
+	// Send search rom or conditional search byte
+	if ( BAD( DS1WM_sendback_byte(&(ds->search), &dummy, in) ) ) {
+		return search_error;
+	}
+
 	// Set search accelerator
 	UT_setbit( &DS1WM_command(in), e_ds1wm_sra, 1 ) ;
 
-	// search ON
-	// change back to command mode
 	// send the packet
 	// cannot use single-bit mode with search accerator
 	// search OFF
-	if ( BAD( DS1WM_sendback_byte(&(ds->search), &dummy, in))
-		|| BAD( DS1WM_sendback_data(bitpairs, bitpairs, SERIAL_NUMBER_SIZE*2, pn) )
-		) {
+	if ( BAD( DS1WM_sendback_data(bitpairs, bitpairs, SERIAL_NUMBER_SIZE*2, pn) ) ) {
 		return search_error;
 	}
 
