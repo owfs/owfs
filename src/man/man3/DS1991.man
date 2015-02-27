@@ -82,7 +82,7 @@ of one of the secure subkey areas
 .PP
 The extension (hex_pwd) is the existing 8-byte 
 .I password 
-in hexidecimal (e.g. password.000204006080A0C0E for bytes 0,2,4,6,8,10,12,14)
+in hexidecimal (e.g. password.00020406080A0C0E for bytes 0,2,4,6,8,10,12,14)
 .PP
 The data portion is 8 bytes that will be used as a new 
 .I password.
@@ -91,7 +91,7 @@ The data portion is 8 bytes that will be used as a new
 .br
 Read or write data in one of the three sucure data areas.
 .PP
-The extension (hex_pwd) is the existing 8-byte password in hexidecimal (e.g. password.000204006080A0C0E for bytes 0,2,4,6,8,10,12,14)
+The extension (hex_pwd) is the existing 8-byte password in hexidecimal (e.g. password.00020406080A0C0E for bytes 0,2,4,6,8,10,12,14)
 .PP
 The data portion binary data. Up to 48 bytes in each subkey area, starting at location 0. If the wrong password is specified, "random data" is returned on read and data is silently ignored on write.
 .SS subkey[0|1|2]/id.hex_pwd
@@ -100,7 +100,7 @@ The data portion binary data. Up to 48 bytes in each subkey area, starting at lo
 Read or write the subkey
 .I id.
 .PP
-The extension (hex_pwd) is the existing 8-byte password in hexidecimal (e.g. password.000204006080A0C0E for bytes 0,2,4,6,8,10,12,14)
+The extension (hex_pwd) is the existing 8-byte password in hexidecimal (e.g. password.00020406080A0C0E for bytes 0,2,4,6,8,10,12,14)
 .PP
 The data portion 8 binary bytes. This is the subkey 
 .I id.
@@ -117,6 +117,13 @@ None.
 The
 .B DS1991 (3)
 is an iButton with password protected non-volatile memory. Data is read/written with error checking (transparent to the user). The memory is divided into 3 different pages with 3 separate passwords.
+.PP
+In theory, choosing an incorrect password is hard to discern because the chip responds normally but with incorrect data. There is a published analysis suggesting that the "random data" follows a pattern and so a concerted attack might be successful.
+.PP
+The password (in hexidecimal) is used a the file extension
+.B 02.1234123414/subkey0/id.
+.I password
+allowing a password to be passed to the program within the filesystem paradigm.
 .SH ADDRESSING
 .so man3/addressing.3so
 .SH DATASHEET
@@ -127,4 +134,4 @@ http://pdfserv.maxim-ic.com/en/ds/DS1991.pdf
 .SH AVAILABILITY
 http://www.owfs.org
 .SH AUTHOR
-Christian Magnusson (mag@mag.cx)
+Christian Magnusson (mag@mag.cx) and Paul Alfille
