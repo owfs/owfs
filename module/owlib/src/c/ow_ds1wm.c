@@ -527,7 +527,7 @@ static RESET_TYPE DS1WM_wait_for_reset( struct connection_in * in )
 	if ( UT_getbit( &interrupt, e_ds1wm_ow_short ) == 1 ) {
 		return BUS_RESET_SHORT ;
 	}
-	in->AnyDevices = ( UT_getbit( &interrupt, e_ds1wm_pdr ) == 1 ) ? anydevices_yes : anydevices_no ;
+	in->AnyDevices = ( UT_getbit( &interrupt, e_ds1wm_pdr ) == 0 ) ? anydevices_yes : anydevices_no ;
 	return BUS_RESET_OK ;
 }
 
