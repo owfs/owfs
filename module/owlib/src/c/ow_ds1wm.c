@@ -332,8 +332,13 @@ static enum search_status DS1WM_next_both(struct device_search *ds, const struct
 	// cannot use single-bit mode with search accerator
 	// search OFF
 	if ( BAD( DS1WM_sendback_data(bitpairs, bitpairs, SERIAL_NUMBER_SIZE*2, pn) ) ) {
+		// Clear search accelerator
+		UT_setbit( &DS1WM_command(in), e_ds1wm_sra, 0 ) ;
 		return search_error;
 	}
+
+	// Clear search accelerator
+	UT_setbit( &DS1WM_command(in), e_ds1wm_sra, 0 ) ;
 
 	// interpret the bit stream
 	for (i = 0; i < SERIAL_NUMBER_BITS; i++) {
