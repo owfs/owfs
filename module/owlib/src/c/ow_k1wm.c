@@ -17,7 +17,7 @@
  * 
  */ 
  
- /* Based on a device used by Kistler Corporatopn
+ /* Based on a device used by Kistler Corporation
   * and tested in-house by Martin Rapavy
   * 
   * That testing also covers the DS1WM
@@ -41,11 +41,7 @@
 #define DS1WM_CONTROL_REGISTER 5
  
 // Access register via mmap-ed memory
-#ifndef K1WM
-#define DS1WM_register(in, off) (((uint8_t *) (in->master.ds1wm.page_start))[(in->master.ds1wm.page_offset)+off])
-#else
 #define DS1WM_register(in, off) (((uint8_t *) (in->master.ds1wm.mm))[(in->master.ds1wm.base)+off])
-#endif
 
 // Register access macros
 #define DS1WM_command(in)	DS1WM_register(in,DS1WM_COMMAND_REGISTER)
@@ -64,46 +60,43 @@ enum e_DS1WM_enable { e_ds1wm_epd=0, e_ds1wm_ias, e_ds1wm_etbe, e_ds1wm_etmt, e_
 
 enum e_DS1WM_control { e_ds1wm_llm=0, e_ds1wm_ppm, e_ds1wm_en_fow, e_ds1wm_stpen, e_ds1wm_stp_sply, e_ds1wm_bit_ctl, e_ds1wm_od } ;
 
-static RESET_TYPE DS1WM_reset(const struct parsedname *pn);
-static enum search_status DS1WM_next_both(struct device_search *ds, const struct parsedname *pn);
-static GOOD_OR_BAD DS1WM_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname *pn);
-static GOOD_OR_BAD DS1WM_PowerBit(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname *pn);
-static GOOD_OR_BAD DS1WM_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
-static GOOD_OR_BAD DS1WM_sendback_bits(const BYTE * databits, BYTE * respbits, const size_t len, const struct parsedname * pn);
-static GOOD_OR_BAD DS1WM_reconnect(const struct parsedname * pn);
-static void DS1WM_close(struct connection_in *in) ;
+static RESET_TYPE K1WM_reset(const struct parsedname *pn);
+static enum search_status K1WM_next_both(struct device_search *ds, const struct parsedname *pn);
+static GOOD_OR_BAD K1WM_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn);
+static GOOD_OR_BAD K1WM_reconnect(const struct parsedname * pn);
+static void K1WM_close(struct connection_in *in) ;
 
-static void DS1WM_setroutines(struct connection_in *in);
+static void K1WM_setroutines(struct connection_in *in);
 
-static GOOD_OR_BAD DS1WM_setup( struct connection_in * in );
-static RESET_TYPE DS1WM_wait_for_reset( struct connection_in * in );
-static GOOD_OR_BAD DS1WM_wait_for_read( const struct connection_in * in );
-static GOOD_OR_BAD DS1WM_wait_for_write( const struct connection_in * in );
-static GOOD_OR_BAD DS1WM_wait_for_byte( const struct connection_in * in );
-static GOOD_OR_BAD DS1WM_sendback_byte(const BYTE * data, BYTE * resp, const struct connection_in * in ) ;
+static GOOD_OR_BAD K1WM_setup( struct connection_in * in );
+static RESET_TYPE K1WM_wait_for_reset( struct connection_in * in );
+static GOOD_OR_BAD K1WM_wait_for_read( const struct connection_in * in );
+static GOOD_OR_BAD K1WM_wait_for_write( const struct connection_in * in );
+static GOOD_OR_BAD K1WM_wait_for_byte( const struct connection_in * in );
+static GOOD_OR_BAD K1WM_sendback_byte(const BYTE * data, BYTE * resp, const struct connection_in * in ) ;
 
 static GOOD_OR_BAD read_device_map_offset(const char *device_name, off_t *offset);
 static GOOD_OR_BAD read_device_map_size(const char *device_name, size_t *size);
-static GOOD_OR_BAD DS1WM_select_channel(const struct connection_in * in, uint8_t channel);
-static GOOD_OR_BAD DS1WM_create_channels(struct connection_in *head, int channels_count);
+static GOOD_OR_BAD K1WM_select_channel(const struct connection_in * in, uint8_t channel);
+static GOOD_OR_BAD K1WM_create_channels(struct connection_in *head, int channels_count);
 
-static void DS1WM_setroutines(struct connection_in *in)
+static void K1WM_setroutines(struct connection_in *in)
 {
-	in->iroutines.detect = DS1WM_detect;
-	in->iroutines.reset = DS1WM_reset;
-	in->iroutines.next_both = DS1WM_next_both;
+	in->iroutines.detect = K1WM_detect;
+	in->iroutines.reset = K1WM_reset;
+	in->iroutines.next_both = K1WM_next_both;
 	// K1WM doesn't have strong pull-up support
 	in->iroutines.PowerByte = NO_POWERBYTE_ROUTINE;
 	in->iroutines.PowerBit = NO_POWERBIT_ROUTINE;
 	in->iroutines.sendback_bits = NO_SENDBACKBITS_ROUTINE;
 	in->iroutines.ProgramPulse = NO_PROGRAMPULSE_ROUTINE;
-	in->iroutines.sendback_data = DS1WM_sendback_data;
+	in->iroutines.sendback_data = K1WM_sendback_data;
 	in->iroutines.select = NO_SELECT_ROUTINE;
 	in->iroutines.select_and_sendback = NO_SELECTANDSENDBACK_ROUTINE;
 	in->iroutines.set_config = NO_SET_CONFIG_ROUTINE;
 	in->iroutines.get_config = NO_GET_CONFIG_ROUTINE;
-	in->iroutines.reconnect = DS1WM_reconnect ;
-	in->iroutines.close = DS1WM_close;
+	in->iroutines.reconnect = K1WM_reconnect ;
+	in->iroutines.close = K1WM_close;
 	in->iroutines.verify = NO_VERIFY_ROUTINE ;
 	in->iroutines.flags = ADAP_FLAG_default;
 	in->bundling_length = UART_FIFO_SIZE;
@@ -114,10 +107,11 @@ static void DS1WM_setroutines(struct connection_in *in)
 
 /* Setup DS1WM bus master structure */
 // bus locking at a higher level
-GOOD_OR_BAD DS1WM_detect(struct port_in *pin)
+GOOD_OR_BAD K1WM_detect(struct port_in *pin)
 {
 	struct connection_in * in = pin->first ;
 	long long int prebase ;
+	unsigned int prechannels_count;
 	off_t base ;
 	void * mm ;
 	FILE_DESCRIPTOR_OR_ERROR mem_fd ;
@@ -135,12 +129,13 @@ GOOD_OR_BAD DS1WM_detect(struct port_in *pin)
 	in->master.ds1wm.active_channel = 0;
 	in->master.ds1wm.channels_count = 1;
 
-	int param_count = sscanf( pin->init_data, "%u,%u", &prebase, &(in->master.ds1wm.channels_count));
+	int param_count = sscanf( pin->init_data, "%lli,%u", &prebase, &prechannels_count);
 	if ( param_count < 1 || param_count > 2) {
 		LEVEL_DEFAULT("K1WM: Could not interpret <%s> as a memory address:channel_count pair", pin->init_data ) ;
 		return gbBAD ;
 	}
 
+	in->master.ds1wm.channels_count = prechannels_count ;
 	base = prebase ; // convert types long long int -> off_t
 	if ( base == 0 ) {
 		LEVEL_DEFAULT("K1WM: Illegal address 0x0000 from <%s>", pin->init_data ) ;
@@ -176,16 +171,16 @@ GOOD_OR_BAD DS1WM_detect(struct port_in *pin)
 	in->master.ds1wm.mm = mm ;
 
 	/* Set up low-level routines */
-	DS1WM_setroutines(in);
+	K1WM_setroutines(in);
 
 	// Add channels
-	DS1WM_create_channels(in, in->master.ds1wm.channels_count);
+	K1WM_create_channels(in, in->master.ds1wm.channels_count);
 
-	return DS1WM_setup(in) ;
+	return K1WM_setup(in) ;
 }
 
 // set control pins and frequency for defauts and global settings 
-static GOOD_OR_BAD DS1WM_setup( struct connection_in * in )
+static GOOD_OR_BAD K1WM_setup( struct connection_in * in )
 {
 	uint8_t control_register = DS1WM_control(in) ;
 	LEVEL_DEBUG("[%s] control_register before setup: 0x%x", __FUNCTION__, control_register);
@@ -212,10 +207,10 @@ static GOOD_OR_BAD DS1WM_setup( struct connection_in * in )
 	return gbGOOD ;
 }	
 
-static GOOD_OR_BAD DS1WM_reconnect(const struct parsedname * pn)
+static GOOD_OR_BAD K1WM_reconnect(const struct parsedname * pn)
 {
 	LEVEL_DEBUG("Attempting reconnect on %s",SAFESTRING(DEVICENAME(pn->selected_connection)));
-	return DS1WM_setup(pn->selected_connection) ;
+	return K1WM_setup(pn->selected_connection) ;
 }
 
 //--------------------------------------------------------------------------
@@ -224,39 +219,39 @@ static GOOD_OR_BAD DS1WM_reconnect(const struct parsedname * pn)
 //          This routine will not function correctly on some
 //          Alarm reset types of the DS1994/DS1427/DS2404 with
 //          Rev 1,2, and 3 of the DS2480/DS2480B.
-static RESET_TYPE DS1WM_reset(const struct parsedname * pn)
+static RESET_TYPE K1WM_reset(const struct parsedname * pn)
 {
 	LEVEL_DEBUG("[%s] BUS reset", __FUNCTION__);
 	struct connection_in * in = pn->selected_connection ; 
 	if ( in->changed_bus_settings != 0) {
 		in->changed_bus_settings = 0 ;
-		DS1WM_setup(in);	// reset paramters
+		K1WM_setup(in);	// reset paramters
 	}
 
 	// select channel
-	DS1WM_select_channel(in, in->master.ds1wm.active_channel);
+	K1WM_select_channel(in, in->master.ds1wm.active_channel);
 
 	// read interrupt register to clear all bits
-	DS1WM_interrupt(in);
+	(void) DS1WM_interrupt(in);
 
 	UT_setbit( &DS1WM_command(in), e_ds1wm_1wr, 1 ) ;
 	
 	// TODO timing issue?
 	//usleep(2000);
 
-	switch( DS1WM_wait_for_reset(in) ) {
+	switch( K1WM_wait_for_reset(in) ) {
 		case BUS_RESET_SHORT:
 			return BUS_RESET_SHORT ;
 		case BUS_RESET_OK:
 			return BUS_RESET_OK ;
 		default:
-			return DS1WM_wait_for_reset(in) ;
+			return K1WM_wait_for_reset(in) ;
 	}
 }
 
 #define SERIAL_NUMBER_BITS (8*SERIAL_NUMBER_SIZE)
 /* search = normal and alarm */
-static enum search_status DS1WM_next_both(struct device_search *ds, const struct parsedname *pn)
+static enum search_status K1WM_next_both(struct device_search *ds, const struct parsedname *pn)
 {
 	LEVEL_DEBUG("[%s] BUS search", __FUNCTION__);
 	int mismatched;
@@ -317,7 +312,7 @@ static enum search_status DS1WM_next_both(struct device_search *ds, const struct
 
 	// search ON
 	// Send search rom or conditional search byte
-	if ( BAD( DS1WM_sendback_byte(&(ds->search), &dummy, in) ) ) {
+	if ( BAD( K1WM_sendback_byte(&(ds->search), &dummy, in) ) ) {
 		LEVEL_DEBUG("[%s] Sending SearchROM/SearchByte '0x%x' failed -> search_error", __FUNCTION__, ds->search);
 		return search_error;
 	}
@@ -328,7 +323,7 @@ static enum search_status DS1WM_next_both(struct device_search *ds, const struct
 	// send the packet
 	// cannot use single-bit mode with search accerator
 	// search OFF
-	if ( BAD( DS1WM_sendback_data(bitpairs, bitpairs, SERIAL_NUMBER_SIZE*2, pn) ) ) {
+	if ( BAD( K1WM_sendback_data(bitpairs, bitpairs, SERIAL_NUMBER_SIZE*2, pn) ) ) {
 		LEVEL_DEBUG("[%s] Sending the packet (bitpairs) failed -> search_error", __FUNCTION__);
 		return search_error;
 	}
@@ -374,112 +369,12 @@ static enum search_status DS1WM_next_both(struct device_search *ds, const struct
 	return search_good;
 }
 
-//--------------------------------------------------------------------------
-// Send 8 bits of communication to the 1-Wire Net and verify that the
-// 8 bits read from the 1-Wire Net is the same (write operation).
-// The parameter 'byte' least significant 8 bits are used.  After the
-// 8 bits are sent change the level of the 1-Wire net.
-// Delay delay msec and return to normal
-//
-static GOOD_OR_BAD DS1WM_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname *pn)
-{
-	LEVEL_DEBUG("[%s]", __FUNCTION__);
-	GOOD_OR_BAD ret = gbBAD ; // default
-	struct connection_in * in = pn->selected_connection ;
-	uint8_t control_register ;
-	
-	DS1WM_select_channel(in, in->master.ds1wm.active_channel);
-
-	// Set power on
-	control_register = DS1WM_control(in) ;
-	UT_setbit( &control_register,e_ds1wm_stp_sply, 1 ) ;
-	DS1WM_control(in) = control_register ;
-
-	if ( GOOD( DS1WM_sendback_byte( &byte, resp, in ) ) && GOOD( DS1WM_wait_for_write(in) ) ) {
-		UT_delay(delay);
-		ret = gbGOOD ;
-	}
-
-	// Set power off
-	control_register = DS1WM_control(in) ;
-	UT_setbit( &control_register,e_ds1wm_stp_sply, 0 ) ;
-	DS1WM_control(in) = control_register ;
-
-	return ret ;
-}
-
-
-//--------------------------------------------------------------------------
-// Send 1 bit of communication to the 1-Wire Net and verify that the
-// bit read from the 1-Wire Net is the same (write operation).
-// Delay delay msec and return to normal
-//
-static GOOD_OR_BAD DS1WM_PowerBit(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname *pn)
-{
-	LEVEL_DEBUG("[%s]", __FUNCTION__);
-	GOOD_OR_BAD ret = gbBAD ; // default
-	struct connection_in * in = pn->selected_connection ;
-	uint8_t control_register ;
-	
-	DS1WM_select_channel(in, in->master.ds1wm.active_channel);
-
-	// Set power, bitmode on
-	control_register = DS1WM_control(in) ;
-	UT_setbit( &control_register,e_ds1wm_stp_sply, 1 ) ;
-	UT_setbit( &control_register,e_ds1wm_bit_ctl, 1 ) ;
-	in->master.ds1wm.byte_mode = 0 ;
-	DS1WM_control(in) = control_register ;
-
-	if ( GOOD( DS1WM_sendback_byte( &byte, resp, in ) ) && GOOD( DS1WM_wait_for_write(in) ) ) {
-		UT_delay(delay);
-		ret = gbGOOD ;
-	}
-
-	// Set power, bitmode off
-	control_register = DS1WM_control(in) ;
-	UT_setbit( &control_register,e_ds1wm_stp_sply, 0 ) ;
-	UT_setbit( &control_register,e_ds1wm_bit_ctl, 0 ) ;
-	in->master.ds1wm.byte_mode = 1 ;
-	DS1WM_control(in) = control_register ;
-
-	return ret ;
-}
-
-//--------------------------------------------------------------------------
-// Send  and receive 1 bit of communication to the 1-Wire
-//
-static GOOD_OR_BAD DS1WM_sendback_bits(const BYTE * databits, BYTE * respbits, const size_t len, const struct parsedname * pn)
-{
-	LEVEL_DEBUG("[%s]", __FUNCTION__);
-	struct connection_in * in = pn->selected_connection ;
-	uint8_t control_register ;
-	GOOD_OR_BAD ret ;
-
-	DS1WM_select_channel(in, in->master.ds1wm.active_channel);
-
-	// Set bitmode on
-	control_register = DS1WM_control(in) ;
-	UT_setbit( &control_register,e_ds1wm_bit_ctl, 1 ) ;
-	in->master.ds1wm.byte_mode = 0 ;
-	DS1WM_control(in) = control_register ;
-
-	ret = DS1WM_sendback_data( databits, respbits, len, pn ) ;
-
-	// Set bitmode off
-	control_register = DS1WM_control(in) ;
-	in->master.ds1wm.byte_mode = 1 ;
-	UT_setbit( &control_register,e_ds1wm_bit_ctl, 0 ) ;
-	DS1WM_control(in) = control_register ;
-
-	return ret ;
-}
-
-static GOOD_OR_BAD DS1WM_sendback_byte(const BYTE * data, BYTE * resp, const struct connection_in * in )
+static GOOD_OR_BAD K1WM_sendback_byte(const BYTE * data, BYTE * resp, const struct connection_in * in )
 {
 	LEVEL_DEBUG("[%s] sending byte: 0x%x", __FUNCTION__, data[0]);
-	RETURN_BAD_IF_BAD( DS1WM_wait_for_write(in) ) ;
+	RETURN_BAD_IF_BAD( K1WM_wait_for_write(in) ) ;
 	DS1WM_txrx(in) = data[0] ;
-	RETURN_BAD_IF_BAD( DS1WM_wait_for_read(in) ) ;
+	RETURN_BAD_IF_BAD( K1WM_wait_for_read(in) ) ;
 	resp[0] = DS1WM_txrx(in) ;
 	LEVEL_DEBUG("[%s] received byte: 0x%x", __FUNCTION__, resp[0]);
 	return gbGOOD ;
@@ -488,22 +383,22 @@ static GOOD_OR_BAD DS1WM_sendback_byte(const BYTE * data, BYTE * resp, const str
 //
 // sendback_data
 //  Send data and return response block
-static GOOD_OR_BAD DS1WM_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn)
+static GOOD_OR_BAD K1WM_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn)
 {
 	LEVEL_DEBUG("[%s]", __FUNCTION__);
 	struct connection_in * in = pn->selected_connection ;
 	size_t i ;
 
-	DS1WM_select_channel(in, in->master.ds1wm.active_channel);
+	K1WM_select_channel(in, in->master.ds1wm.active_channel);
 
 	for (i=0 ; i<len ; ++i ) {
-		RETURN_BAD_IF_BAD( DS1WM_sendback_byte( data+i, resp+i, in ) ) ;
+		RETURN_BAD_IF_BAD( K1WM_sendback_byte( data+i, resp+i, in ) ) ;
 	}
 
 	return gbGOOD ;
 }
 
-static void DS1WM_close(struct connection_in *in)
+static void K1WM_close(struct connection_in *in)
 {
 	LEVEL_DEBUG("[%s] Closing BUS", __FUNCTION__);
 	// the standard COM_free cleans up the connection
@@ -511,7 +406,7 @@ static void DS1WM_close(struct connection_in *in)
 }
 
 // wait for reset
-static GOOD_OR_BAD DS1WM_wait_for_byte( const struct connection_in * in )
+static GOOD_OR_BAD K1WM_wait_for_byte( const struct connection_in * in )
 {
 	int bits = in->master.ds1wm.byte_mode ? 8 : 1 ;
 	long int t_slot = in->overdrive ? 15000 : 86000 ; // nsec
@@ -527,7 +422,7 @@ static GOOD_OR_BAD DS1WM_wait_for_byte( const struct connection_in * in )
 }
 
 // Wait max time needed for reset
-static RESET_TYPE DS1WM_wait_for_reset( struct connection_in * in )
+static RESET_TYPE K1WM_wait_for_reset( struct connection_in * in )
 {
 	LEVEL_DEBUG("[%s]", __FUNCTION__);
 	long int t_reset = in->overdrive ? (74000+63000) : (636000+626000) ; // nsec
@@ -556,7 +451,7 @@ static RESET_TYPE DS1WM_wait_for_reset( struct connection_in * in )
 	return BUS_RESET_OK ;
 }
 
-static GOOD_OR_BAD DS1WM_wait_for_read( const struct connection_in * in )
+static GOOD_OR_BAD K1WM_wait_for_read( const struct connection_in * in )
 {
 	int i ;
 	
@@ -568,7 +463,7 @@ static GOOD_OR_BAD DS1WM_wait_for_read( const struct connection_in * in )
 	}
 
 	for ( i=0 ; i < 5 ; ++i ) {
-		RETURN_BAD_IF_BAD( DS1WM_wait_for_byte(in) ) ;
+		RETURN_BAD_IF_BAD( K1WM_wait_for_byte(in) ) ;
 		if ( UT_getbit( &DS1WM_interrupt(in), e_ds1wm_rbf ) == 1 ) {
 			return gbGOOD ;
 		}
@@ -576,7 +471,7 @@ static GOOD_OR_BAD DS1WM_wait_for_read( const struct connection_in * in )
 	return gbBAD ;
 }
 
-static GOOD_OR_BAD DS1WM_wait_for_write( const struct connection_in * in )
+static GOOD_OR_BAD K1WM_wait_for_write( const struct connection_in * in )
 {
 	int i ;
 	
@@ -585,7 +480,7 @@ static GOOD_OR_BAD DS1WM_wait_for_write( const struct connection_in * in )
 	}
 
 	for ( i=0 ; i < 5 ; ++i ) {
-		RETURN_BAD_IF_BAD( DS1WM_wait_for_byte(in) ) ;
+		RETURN_BAD_IF_BAD( K1WM_wait_for_byte(in) ) ;
 		if ( UT_getbit( &DS1WM_interrupt(in), e_ds1wm_tbe ) == 1 ) {
 			return gbGOOD ;
 		}
@@ -601,8 +496,9 @@ static GOOD_OR_BAD read_device_map_offset(const char *device_name, off_t *offset
 
 	// Get device filename (e.g. uio0)
 	const char *uio_filename = strrchr(device_name, '/');
-	if (uio_filename == NULL)
+	if (uio_filename == NULL) {
 		return gbBAD;
+	}
 
 	// Offset parameter file path
 	char uio_map_offset_file[path_length];
@@ -610,10 +506,10 @@ static GOOD_OR_BAD read_device_map_offset(const char *device_name, off_t *offset
 
 	// Read offset parameter
 	file = fopen(uio_map_offset_file, "r");
-	if (file == NULL)
+	if (file == NULL) {
 		return gbBAD;
-	if (fscanf(file, "%x", &preoffset) != 1)
-	{
+	}
+	if (fscanf(file, "%x", &preoffset) != 1) {
 		fclose(file);
 		return gbBAD;
 	}
@@ -628,12 +524,14 @@ static GOOD_OR_BAD read_device_map_offset(const char *device_name, off_t *offset
 static GOOD_OR_BAD read_device_map_size(const char *device_name, size_t *size)
 {
 	const unsigned char path_length = 100;
+	unsigned int usize ;
 	FILE* file;
 
 	// Get device filename (e.g. uio0)
 	const char *uio_filename = strrchr(device_name, '/');
-	if (uio_filename == NULL)
+	if (uio_filename == NULL) {
 		return gbBAD;
+	}
 
 	// Size parameter file path
 	char uio_map_size_file[path_length];
@@ -641,20 +539,21 @@ static GOOD_OR_BAD read_device_map_size(const char *device_name, size_t *size)
 
 	// Read size parameter
 	file = fopen(uio_map_size_file, "r");
-	if (file == NULL)
+	if (file == NULL) {
 		return gbBAD;
-	if (fscanf(file, "%x", size) != 1)
-	{
+	}
+	if (fscanf(file, "%x", &usize) != 1){
 		fclose(file);
 		return gbBAD;
 	}
+	*size = usize ;
 	fclose(file);
 	LEVEL_DEBUG("[%s] map size: 0x%x", __FUNCTION__, *size);
 
 	return gbGOOD;
 }
 
-static GOOD_OR_BAD DS1WM_select_channel(const struct connection_in * in, uint8_t channel)
+static GOOD_OR_BAD K1WM_select_channel(const struct connection_in * in, uint8_t channel)
 {
 	LEVEL_DEBUG("[%s] Selecting channel %u", __FUNCTION__, channel);
 
@@ -663,11 +562,11 @@ static GOOD_OR_BAD DS1WM_select_channel(const struct connection_in * in, uint8_t
 	return K1WM_channel(in) == channel ? gbGOOD : gbBAD;
 }
 
-static GOOD_OR_BAD DS1WM_create_channels(struct connection_in *head, int channels_count)
+static GOOD_OR_BAD K1WM_create_channels(struct connection_in *head, int channels_count)
 {
 	int i;
 
-	static const char *channel_names[] = {
+	static char *channel_names[] = {
 		"K1WM(0)", "K1WM(1)", "K1WM(2)", "K1WM(3)", "K1WM(4)", "K1WM(5)", "K1WM(6)", "K1WM(7)",
 		"K1WM(8)", "K1WM(9)", "K1WM(10)", "K1WM(11)", "K1WM(12)", "K1WM(13)", "K1WM(14)", "K1WM(15)",
 		"K1WM(16)", "K1WM(17)", "K1WM(18)", "K1WM(19)", "K1WM(20)", "K1WM(21)", "K1WM(22)", "K1WM(23)",
@@ -678,14 +577,14 @@ static GOOD_OR_BAD DS1WM_create_channels(struct connection_in *head, int channel
 		"K1WM(56)", "K1WM(57)", "K1WM(58)", "K1WM(59)", "K1WM(60)", "K1WM(61)", "K1WM(62)", "K1WM(63)"
 	};
 	head->master.ds1wm.active_channel = 0;
-	head->adapter_name = (char *)(channel_names[0]);
+	head->adapter_name = channel_names[0] ;
 	for (i = 1; i < channels_count; ++i) {
 		struct connection_in * added = AddtoPort(head->pown);
 		if (added == NO_CONNECTION) {
 			return gbBAD;
 		}
 		added->master.ds1wm.active_channel = i;
-		added->adapter_name = (char *)(channel_names[i]);
+		added->adapter_name = channel_names[i] ;
 	}
 	return gbGOOD;
 }

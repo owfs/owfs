@@ -112,7 +112,7 @@ struct master_ds1wm {
 	int byte_mode ;
 	long int frequency ;
 	int presence_mask ;
-	int mm_pagesize ;
+	size_t mm_size ;
 	uint8_t channels_count; // for k1wm
 	uint8_t active_channel; // for k1wm
 };

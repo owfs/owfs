@@ -250,7 +250,7 @@ void ow_help_device(void)
 	" Linux Kernel Device\n"
 	"  --w1            Scan for kernel-managed bus masters\n"
 	"\n" 
-	" Synthesized (FPGA) based device
+	" Synthesized (FPGA) based device\n"
 	"  --DS1WM address Synthesizable 1-Wire BusMaster (address is base register location)\n"
 	"  --K1WM  address,channels Kistler precision sensors\n"
 	"\n"

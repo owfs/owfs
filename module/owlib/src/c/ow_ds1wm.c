@@ -16,7 +16,7 @@
  * Obviously we'll nee root access
  * 
  */ 
- /* Based on a device used by Kistler Corporatopn
+ /* Based on a device used by Kistler Corporation
   * and tested in-house by Martin Rapavy
   * 
   * That testing also covers this, the DS1WM
@@ -109,7 +109,6 @@ GOOD_OR_BAD DS1WM_detect(struct port_in *pin)
 	off_t base ;
 	void * mm ;
 	FILE_DESCRIPTOR_OR_ERROR mem_fd ;
-	int pagesize = getpagesize() ;
 	const char * mem_device = "/dev/mem";
 
 	
@@ -136,9 +135,9 @@ GOOD_OR_BAD DS1WM_detect(struct port_in *pin)
 	}
 	LEVEL_DEBUG("DS1WM at address %p",(void *)base);
 	
-	in->master.ds1wm.mm_size = pagesize;
+	in->master.ds1wm.mm_size = (size_t) getpagesize() ;
 	in->master.ds1wm.base = base ;
-	in->master.ds1wm.page_offset = base % pagesize ;
+	in->master.ds1wm.page_offset = base % in->master.ds1wm.mm_size ;
 	in->master.ds1wm.page_start = base - in->master.ds1wm.page_offset ;
 	
 	// open /dev/mem
@@ -149,7 +148,7 @@ GOOD_OR_BAD DS1WM_detect(struct port_in *pin)
 		return gbBAD ;
 	}
 	
-	mm = mmap( NULL, pagesize, PROT_READ|PROT_WRITE, MAP_SHARED, mem_fd, in->master.ds1wm.page_start );
+	mm = mmap( NULL, in->master.ds1wm.mm_size, PROT_READ|PROT_WRITE, MAP_SHARED, mem_fd, in->master.ds1wm.page_start );
 	
 	close(mem_fd) ; // no longer needed
 	
@@ -505,7 +504,7 @@ static GOOD_OR_BAD DS1WM_sendback_data(const BYTE * data, BYTE * resp, const siz
 static void DS1WM_close(struct connection_in *in)
 {
 	// the standard COM_free cleans up the connection
-	munmap( in->master.ds1wm.mm, getpagesize() );
+	munmap( in->master.ds1wm.mm, in->master.ds1wm.mm_size );
 }
 
 // wait for reset
