@@ -250,7 +250,10 @@ void ow_help_device(void)
 	" Linux Kernel Device\n"
 	"  --w1            Scan for kernel-managed bus masters\n"
 	"\n" 
+	" Synthesized (FPGA) based device
 	"  --DS1WM address Synthesizable 1-Wire BusMaster (address is base register location)\n"
+	"  --K1WM  address,channels Kistler precision sensors\n"
+	"\n"
 	"  --external      Allow external scripts to be called\n"
 	"  --no_external   Do not allow external scripts to be called\n"
 	

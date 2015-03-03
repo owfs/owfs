@@ -16,10 +16,11 @@
  * Obviously we'll nee root access
  * 
  */ 
+ 
  /* Based on a device used by Kistler Corporatopn
   * and tested in-house by Martin Rapavy
   * 
-  * That testing also covers this, the DS1WM
+  * That testing also covers the DS1WM
   * */
  
 #include <config.h>
@@ -27,8 +28,8 @@
 #include "ow.h"
 #include "ow_counters.h"
 #include "ow_connection.h"
+#include "ow_global.h"
 #include <sys/mman.h>
-
  
 // DS1WM Registers
 #define DS1WM_COMMAND_REGISTER 0
@@ -36,10 +37,15 @@
 #define DS1WM_INTERRUPT_REGISTER 2
 #define DS1WM_INTERRUPT_ENABLE_REGISTER 3
 #define DS1WM_CLOCK_DEVISOR_REGISTER 4
+#define K1WM_CHANNEL_SELECT_REGISTER DS1WM_CLOCK_DEVISOR_REGISTER
 #define DS1WM_CONTROL_REGISTER 5
  
 // Access register via mmap-ed memory
+#ifndef K1WM
 #define DS1WM_register(in, off) (((uint8_t *) (in->master.ds1wm.page_start))[(in->master.ds1wm.page_offset)+off])
+#else
+#define DS1WM_register(in, off) (((uint8_t *) (in->master.ds1wm.mm))[(in->master.ds1wm.base)+off])
+#endif
 
 // Register access macros
 #define DS1WM_command(in)	DS1WM_register(in,DS1WM_COMMAND_REGISTER)
@@ -47,6 +53,7 @@
 #define DS1WM_interrupt(in)	DS1WM_register(in,DS1WM_INTERRUPT_REGISTER)
 #define DS1WM_enable(in)	DS1WM_register(in,DS1WM_INTERRUPT_ENABLE_REGISTER)
 #define DS1WM_clock(in)		DS1WM_register(in,DS1WM_CLOCK_DEVISOR_REGISTER)
+#define K1WM_channel(in)	DS1WM_register(in,K1WM_CHANNEL_SELECT_REGISTER)
 #define DS1WM_control(in)	DS1WM_register(in,DS1WM_CONTROL_REGISTER)
 
 enum e_DS1WM_command { e_ds1wm_1wr=0, e_ds1wm_sra, e_ds1wm_fow, e_ds1wm_ow_in, } ;
@@ -68,7 +75,6 @@ static void DS1WM_close(struct connection_in *in) ;
 
 static void DS1WM_setroutines(struct connection_in *in);
 
-static unsigned char DS1WM_freq( unsigned long f );
 static GOOD_OR_BAD DS1WM_setup( struct connection_in * in );
 static RESET_TYPE DS1WM_wait_for_reset( struct connection_in * in );
 static GOOD_OR_BAD DS1WM_wait_for_read( const struct connection_in * in );
@@ -76,16 +82,22 @@ static GOOD_OR_BAD DS1WM_wait_for_write( const struct connection_in * in );
 static GOOD_OR_BAD DS1WM_wait_for_byte( const struct connection_in * in );
 static GOOD_OR_BAD DS1WM_sendback_byte(const BYTE * data, BYTE * resp, const struct connection_in * in ) ;
 
+static GOOD_OR_BAD read_device_map_offset(const char *device_name, off_t *offset);
+static GOOD_OR_BAD read_device_map_size(const char *device_name, size_t *size);
+static GOOD_OR_BAD DS1WM_select_channel(const struct connection_in * in, uint8_t channel);
+static GOOD_OR_BAD DS1WM_create_channels(struct connection_in *head, int channels_count);
+
 static void DS1WM_setroutines(struct connection_in *in)
 {
 	in->iroutines.detect = DS1WM_detect;
 	in->iroutines.reset = DS1WM_reset;
 	in->iroutines.next_both = DS1WM_next_both;
-	in->iroutines.PowerByte = DS1WM_PowerByte;
-	in->iroutines.PowerBit = DS1WM_PowerBit;
+	// K1WM doesn't have strong pull-up support
+	in->iroutines.PowerByte = NO_POWERBYTE_ROUTINE;
+	in->iroutines.PowerBit = NO_POWERBIT_ROUTINE;
+	in->iroutines.sendback_bits = NO_SENDBACKBITS_ROUTINE;
 	in->iroutines.ProgramPulse = NO_PROGRAMPULSE_ROUTINE;
 	in->iroutines.sendback_data = DS1WM_sendback_data;
-    in->iroutines.sendback_bits = DS1WM_sendback_bits;
 	in->iroutines.select = NO_SELECT_ROUTINE;
 	in->iroutines.select_and_sendback = NO_SELECTANDSENDBACK_ROUTINE;
 	in->iroutines.set_config = NO_SET_CONFIG_ROUTINE;
@@ -109,124 +121,81 @@ GOOD_OR_BAD DS1WM_detect(struct port_in *pin)
 	off_t base ;
 	void * mm ;
 	FILE_DESCRIPTOR_OR_ERROR mem_fd ;
-	int pagesize = getpagesize() ;
-	const char * mem_device = "/dev/mem";
+	const char * mem_device = "/dev/uio0";
 
-	
+	if (pin->init_data == NULL) {
+		LEVEL_DEFAULT("K1WM needs a memory location");
+		return gbBAD;
+	}
+
 	in->Adapter = adapter_ds1wm ;
 	in->master.ds1wm.longline = 0 ; // longline timing
 	in->master.ds1wm.frequency = 10000000 ; // 10MHz
 	in->master.ds1wm.presence_mask = 1 ; // pulse presence mask
-	in->master.ds1wm.active_channel = 0; // always for ds1wm
-	in->master.ds1wm.channels_count = 1; // always for ds1wm
+	in->master.ds1wm.active_channel = 0;
+	in->master.ds1wm.channels_count = 1;
 
-	if (pin->init_data == NULL) {
-		LEVEL_DEFAULT("DS1WM needs a memory location");
-		return gbBAD;
-	}
-
-	if ( sscanf( pin->init_data, "%lli", &prebase ) != 1 ) {
-		LEVEL_DEFAULT("DS1WM: Could not interpret <%s> as a memory address", pin->init_data ) ;
+	int param_count = sscanf( pin->init_data, "%u,%u", &prebase, &(in->master.ds1wm.channels_count));
+	if ( param_count < 1 || param_count > 2) {
+		LEVEL_DEFAULT("K1WM: Could not interpret <%s> as a memory address:channel_count pair", pin->init_data ) ;
 		return gbBAD ;
 	}
+
 	base = prebase ; // convert types long long int -> off_t
 	if ( base == 0 ) {
-		LEVEL_DEFAULT("DS1WM: Illegal address 0x0000 from <%s>", pin->init_data ) ;
+		LEVEL_DEFAULT("K1WM: Illegal address 0x0000 from <%s>", pin->init_data ) ;
 		return gbBAD ;
 	}
-	LEVEL_DEBUG("DS1WM at address %p",(void *)base);
-	
-	in->master.ds1wm.mm_size = pagesize;
+	LEVEL_DEBUG("K1WM at address %p",(void *)base);
+
+	in->master.ds1wm.mm_size = getpagesize();
 	in->master.ds1wm.base = base ;
-	in->master.ds1wm.page_offset = base % pagesize ;
+	in->master.ds1wm.page_offset = base % in->master.ds1wm.mm_size ;
 	in->master.ds1wm.page_start = base - in->master.ds1wm.page_offset ;
-	
+
+	read_device_map_size(mem_device, &(in->master.ds1wm.mm_size));
+	read_device_map_offset(mem_device, &(in->master.ds1wm.page_start));
+
 	// open /dev/mem
 	mem_fd = open( mem_device, O_RDWR | O_SYNC ) ;
-	
+
 	if ( FILE_DESCRIPTOR_NOT_VALID(mem_fd) ) {
-		LEVEL_DEFAULT("DS1WM: Cannot open memmory directly -- permissions problem?");
+		LEVEL_DEFAULT("K1WM: Cannot open memmory directly -- permissions problem?");
 		return gbBAD ;
 	}
-	
-	mm = mmap( NULL, pagesize, PROT_READ|PROT_WRITE, MAP_SHARED, mem_fd, in->master.ds1wm.page_start );
-	
+
+	mm = mmap( NULL, in->master.ds1wm.mm_size, PROT_READ|PROT_WRITE, MAP_SHARED, mem_fd, in->master.ds1wm.page_start );
+
 	close(mem_fd) ; // no longer needed
-	
+
 	if ( mm == MAP_FAILED ) {
-		LEVEL_DEFAULT("DS1WM: Cannot map memmory") ;
+		LEVEL_DEFAULT("K1WM: Cannot map memmory") ;
 		return gbBAD ;
 	}
-	
+
 	in->master.ds1wm.mm = mm ;
 
 	/* Set up low-level routines */
 	DS1WM_setroutines(in);
-	in->adapter_name = "DS1WM";
+
+	// Add channels
+	DS1WM_create_channels(in, in->master.ds1wm.channels_count);
 
 	return DS1WM_setup(in) ;
-}
-
-static unsigned char DS1WM_freq( unsigned long f )
-{
-	static struct {
-			unsigned long freq;
-			unsigned char divisor;
-	} freq[] = {
-			{   1000000, 0x80 },
-			{   2000000, 0x84 },
-			{   3000000, 0x81 },
-			{   4000000, 0x88 },
-			{   5000000, 0x82 },
-			{   6000000, 0x85 },
-			{   7000000, 0x83 },
-			{   8000000, 0x8c },
-			{  10000000, 0x86 },
-			{  12000000, 0x89 },
-			{  14000000, 0x87 },
-			{  16000000, 0x90 },
-			{  20000000, 0x8a },
-			{  24000000, 0x8d },
-			{  28000000, 0x8b },
-			{  32000000, 0x94 },
-			{  40000000, 0x8e },
-			{  48000000, 0x91 },
-			{  56000000, 0x8f },
-			{  64000000, 0x98 },
-			{  80000000, 0x92 },
-			{  96000000, 0x95 },
-			{ 112000000, 0x93 },
-			{ 128000000, 0x9c },
-	/* you can continue this table, consult the OPERATION - CLOCK DIVISOR
-	   section of the ds1wm spec sheet. */
-	};
-	int n = sizeof(freq) / sizeof(freq[0]) ;
-	int i ;
-	int last = 0 ;
-
-	for ( i=1 ; i<n ; ++i ) {
-		if ( freq[i].freq > f ) {
-			break ;
-		}
-		last = i ;
-	}
-	LEVEL_DEBUG( "Frequency %ld matches %ld",f,freq[last],freq ) ;
-	return freq[last].divisor ;
 }
 
 // set control pins and frequency for defauts and global settings 
 static GOOD_OR_BAD DS1WM_setup( struct connection_in * in )
 {
 	uint8_t control_register = DS1WM_control(in) ;
+	LEVEL_DEBUG("[%s] control_register before setup: 0x%x", __FUNCTION__, control_register);
 
-	DS1WM_clock(in) = 0x00 ; // off (causes reset?)
-	
 	// set some defaults:
 	UT_setbit( &control_register, e_ds1wm_ppm, in->master.ds1wm.presence_mask ) ; // pulse presence masked
 	UT_setbit( &control_register, e_ds1wm_en_fow, 0 ) ; // no bit banging
 	
-	UT_setbit( &control_register, e_ds1wm_stpen, 1 ) ; // allow strong pullup
-	UT_setbit( &control_register, e_ds1wm_stp_sply, 0 ) ; // not in strong pullup state, however
+	UT_setbit( &control_register, e_ds1wm_stpen, 0 ) ; // strong pullup not supported in K1WM
+	UT_setbit( &control_register, e_ds1wm_stp_sply, 0 ) ; // not in strong pullup state, too
 	
 	in->master.ds1wm.byte_mode = 1 ; // default
 	UT_setbit( &control_register, e_ds1wm_bit_ctl, 0 ) ; // byte mode
@@ -234,13 +203,12 @@ static GOOD_OR_BAD DS1WM_setup( struct connection_in * in )
 	UT_setbit( &control_register, e_ds1wm_od, in->overdrive ) ; // not overdrive
 	UT_setbit( &control_register, e_ds1wm_llm, in->master.ds1wm.longline ) ; // set long line flag
 	DS1WM_control(in) = control_register ;
+	LEVEL_DEBUG("[%s] control_register after setup: 0x%x", __FUNCTION__, DS1WM_control(in));
 	
 	if ( DS1WM_control(in) != control_register ) {
 		return gbBAD ;
 	}
-	
-	DS1WM_clock(in) = DS1WM_freq( in->master.ds1wm.frequency ) ;
-	
+
 	return gbGOOD ;
 }	
 
@@ -258,14 +226,24 @@ static GOOD_OR_BAD DS1WM_reconnect(const struct parsedname * pn)
 //          Rev 1,2, and 3 of the DS2480/DS2480B.
 static RESET_TYPE DS1WM_reset(const struct parsedname * pn)
 {
+	LEVEL_DEBUG("[%s] BUS reset", __FUNCTION__);
 	struct connection_in * in = pn->selected_connection ; 
 	if ( in->changed_bus_settings != 0) {
 		in->changed_bus_settings = 0 ;
 		DS1WM_setup(in);	// reset paramters
 	}
 
+	// select channel
+	DS1WM_select_channel(in, in->master.ds1wm.active_channel);
+
+	// read interrupt register to clear all bits
+	DS1WM_interrupt(in);
+
 	UT_setbit( &DS1WM_command(in), e_ds1wm_1wr, 1 ) ;
 	
+	// TODO timing issue?
+	//usleep(2000);
+
 	switch( DS1WM_wait_for_reset(in) ) {
 		case BUS_RESET_SHORT:
 			return BUS_RESET_SHORT ;
@@ -280,6 +258,7 @@ static RESET_TYPE DS1WM_reset(const struct parsedname * pn)
 /* search = normal and alarm */
 static enum search_status DS1WM_next_both(struct device_search *ds, const struct parsedname *pn)
 {
+	LEVEL_DEBUG("[%s] BUS search", __FUNCTION__);
 	int mismatched;
 	BYTE sn[SERIAL_NUMBER_SIZE];
 	BYTE bitpairs[SERIAL_NUMBER_SIZE*2];
@@ -287,25 +266,29 @@ static enum search_status DS1WM_next_both(struct device_search *ds, const struct
 	struct connection_in * in = pn->selected_connection ;
 	int i;
 
+	LEVEL_DEBUG("[%s] ds->LastDevice == true ?", __FUNCTION__);
 	if (ds->LastDevice) {
 		LEVEL_DEBUG("[%s] ds->LastDevice == true -> search_done", __FUNCTION__);
 		return search_done;
 	}
 
+	LEVEL_DEBUG("[%s] BUS_select failed ?", __FUNCTION__);
 	if ( BAD( BUS_select(pn) ) ) {
+		LEVEL_DEBUG("[%s] BUS_select failed -> search_error", __FUNCTION__);
 		return search_error;
 	}
 
+	// Standard SEARCH ROM using SRA
 	// need the reset done in BUS-select to set AnyDevices
 	if ( in->AnyDevices == anydevices_no ) {
-		ds->LastDevice = 1;
 		LEVEL_DEBUG("[%s] in->AnyDevices == anydevices_no -> search_done", __FUNCTION__);
+		ds->LastDevice = 1;
 		return search_done;
 	}
 
 	// clear sn to satisfy static error checking (Coverity)
 	memset( sn, 0, SERIAL_NUMBER_SIZE ) ;
-	
+
 	// build the command stream
 	// call a function that may add the change mode command to the buff
 	// check if correct mode
@@ -320,6 +303,7 @@ static enum search_status DS1WM_next_both(struct device_search *ds, const struct
 	// add the 16 bytes of the search
 	memset(bitpairs, 0, SERIAL_NUMBER_SIZE*2);
 
+	LEVEL_DEBUG("[%s] ds->LastDiscrepancy == %i", __FUNCTION__, ds->LastDiscrepancy);
 	// set the bits in the added buffer
 	for (i = 0; i < ds->LastDiscrepancy; i++) {
 		// before last discrepancy
@@ -334,6 +318,7 @@ static enum search_status DS1WM_next_both(struct device_search *ds, const struct
 	// search ON
 	// Send search rom or conditional search byte
 	if ( BAD( DS1WM_sendback_byte(&(ds->search), &dummy, in) ) ) {
+		LEVEL_DEBUG("[%s] Sending SearchROM/SearchByte '0x%x' failed -> search_error", __FUNCTION__, ds->search);
 		return search_error;
 	}
 
@@ -344,12 +329,11 @@ static enum search_status DS1WM_next_both(struct device_search *ds, const struct
 	// cannot use single-bit mode with search accerator
 	// search OFF
 	if ( BAD( DS1WM_sendback_data(bitpairs, bitpairs, SERIAL_NUMBER_SIZE*2, pn) ) ) {
-		// Clear search accelerator
-		UT_setbit( &DS1WM_command(in), e_ds1wm_sra, 0 ) ;
+		LEVEL_DEBUG("[%s] Sending the packet (bitpairs) failed -> search_error", __FUNCTION__);
 		return search_error;
 	}
 
-	// Clear search accelerator
+	// Turn off search accelerator
 	UT_setbit( &DS1WM_command(in), e_ds1wm_sra, 0 ) ;
 
 	// interpret the bit stream
@@ -364,11 +348,13 @@ static enum search_status DS1WM_next_both(struct device_search *ds, const struct
 
 	if ( sn[0]==0xFF && sn[1]==0xFF && sn[2]==0xFF && sn[3]==0xFF && sn[4]==0xFF && sn[5]==0xFF && sn[6]==0xFF && sn[7]==0xFF ) {
 		// special case for no alarm present
+		LEVEL_DEBUG("[%s] sn == 0xFFFFFFFFFFFFFFFF -> search_error", __FUNCTION__);
 		return search_done ;
 	}
 
 	// CRC check
 	if (CRC8(sn, SERIAL_NUMBER_SIZE) || (ds->LastDiscrepancy == SERIAL_NUMBER_BITS-1) || (sn[0] == 0)) {
+		LEVEL_DEBUG("[%s] CRC check failed -> search_error", __FUNCTION__);
 		return search_error;
 	}
 
@@ -397,10 +383,13 @@ static enum search_status DS1WM_next_both(struct device_search *ds, const struct
 //
 static GOOD_OR_BAD DS1WM_PowerByte(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname *pn)
 {
+	LEVEL_DEBUG("[%s]", __FUNCTION__);
 	GOOD_OR_BAD ret = gbBAD ; // default
 	struct connection_in * in = pn->selected_connection ;
 	uint8_t control_register ;
 	
+	DS1WM_select_channel(in, in->master.ds1wm.active_channel);
+
 	// Set power on
 	control_register = DS1WM_control(in) ;
 	UT_setbit( &control_register,e_ds1wm_stp_sply, 1 ) ;
@@ -427,10 +416,13 @@ static GOOD_OR_BAD DS1WM_PowerByte(const BYTE byte, BYTE * resp, const UINT dela
 //
 static GOOD_OR_BAD DS1WM_PowerBit(const BYTE byte, BYTE * resp, const UINT delay, const struct parsedname *pn)
 {
+	LEVEL_DEBUG("[%s]", __FUNCTION__);
 	GOOD_OR_BAD ret = gbBAD ; // default
 	struct connection_in * in = pn->selected_connection ;
 	uint8_t control_register ;
 	
+	DS1WM_select_channel(in, in->master.ds1wm.active_channel);
+
 	// Set power, bitmode on
 	control_register = DS1WM_control(in) ;
 	UT_setbit( &control_register,e_ds1wm_stp_sply, 1 ) ;
@@ -458,9 +450,12 @@ static GOOD_OR_BAD DS1WM_PowerBit(const BYTE byte, BYTE * resp, const UINT delay
 //
 static GOOD_OR_BAD DS1WM_sendback_bits(const BYTE * databits, BYTE * respbits, const size_t len, const struct parsedname * pn)
 {
+	LEVEL_DEBUG("[%s]", __FUNCTION__);
 	struct connection_in * in = pn->selected_connection ;
 	uint8_t control_register ;
 	GOOD_OR_BAD ret ;
+
+	DS1WM_select_channel(in, in->master.ds1wm.active_channel);
 
 	// Set bitmode on
 	control_register = DS1WM_control(in) ;
@@ -481,10 +476,12 @@ static GOOD_OR_BAD DS1WM_sendback_bits(const BYTE * databits, BYTE * respbits, c
 
 static GOOD_OR_BAD DS1WM_sendback_byte(const BYTE * data, BYTE * resp, const struct connection_in * in )
 {
+	LEVEL_DEBUG("[%s] sending byte: 0x%x", __FUNCTION__, data[0]);
 	RETURN_BAD_IF_BAD( DS1WM_wait_for_write(in) ) ;
 	DS1WM_txrx(in) = data[0] ;
 	RETURN_BAD_IF_BAD( DS1WM_wait_for_read(in) ) ;
 	resp[0] = DS1WM_txrx(in) ;
+	LEVEL_DEBUG("[%s] received byte: 0x%x", __FUNCTION__, resp[0]);
 	return gbGOOD ;
 }
 
@@ -493,19 +490,24 @@ static GOOD_OR_BAD DS1WM_sendback_byte(const BYTE * data, BYTE * resp, const str
 //  Send data and return response block
 static GOOD_OR_BAD DS1WM_sendback_data(const BYTE * data, BYTE * resp, const size_t len, const struct parsedname *pn)
 {
+	LEVEL_DEBUG("[%s]", __FUNCTION__);
 	struct connection_in * in = pn->selected_connection ;
 	size_t i ;
 
+	DS1WM_select_channel(in, in->master.ds1wm.active_channel);
+
 	for (i=0 ; i<len ; ++i ) {
-		RETURN_BAD_IF_BAD( DS1WM_sendback_byte( &data[i], &resp[i], in ) ) ;
+		RETURN_BAD_IF_BAD( DS1WM_sendback_byte( data+i, resp+i, in ) ) ;
 	}
+
 	return gbGOOD ;
 }
 
 static void DS1WM_close(struct connection_in *in)
 {
+	LEVEL_DEBUG("[%s] Closing BUS", __FUNCTION__);
 	// the standard COM_free cleans up the connection
-	munmap( in->master.ds1wm.mm, getpagesize() );
+	munmap( in->master.ds1wm.mm, in->master.ds1wm.mm_size );
 }
 
 // wait for reset
@@ -527,6 +529,7 @@ static GOOD_OR_BAD DS1WM_wait_for_byte( const struct connection_in * in )
 // Wait max time needed for reset
 static RESET_TYPE DS1WM_wait_for_reset( struct connection_in * in )
 {
+	LEVEL_DEBUG("[%s]", __FUNCTION__);
 	long int t_reset = in->overdrive ? (74000+63000) : (636000+626000) ; // nsec
 	uint8_t interrupt ;
 	struct timespec t = {
@@ -537,14 +540,19 @@ static RESET_TYPE DS1WM_wait_for_reset( struct connection_in * in )
 	if ( nanosleep( & t, NULL ) != 0 ) {
 		return gbBAD ;
 	}
+
 	interrupt = DS1WM_interrupt(in) ;
 	if ( UT_getbit( &interrupt, e_ds1wm_pd ) == 0 ) {
+		LEVEL_DEBUG("[%s] presence_detect bit == 0", __FUNCTION__);
 		return BUS_RESET_ERROR ;
 	}
 	if ( UT_getbit( &interrupt, e_ds1wm_ow_short ) == 1 ) {
+		LEVEL_DEBUG("[%s] short bit == 1", __FUNCTION__);
 		return BUS_RESET_SHORT ;
 	}
+
 	in->AnyDevices = ( UT_getbit( &interrupt, e_ds1wm_pdr ) == 0 ) ? anydevices_yes : anydevices_no ;
+	LEVEL_DEBUG("[%s] in->AnyDevices == %i", __FUNCTION__, in->AnyDevices);
 	return BUS_RESET_OK ;
 }
 
@@ -552,6 +560,9 @@ static GOOD_OR_BAD DS1WM_wait_for_read( const struct connection_in * in )
 {
 	int i ;
 	
+	// TODO timing issue?
+	usleep(1000);
+
 	if ( UT_getbit( &DS1WM_interrupt(in), e_ds1wm_rbf ) == 1 ) {
 		return gbGOOD ;
 	}
@@ -582,4 +593,100 @@ static GOOD_OR_BAD DS1WM_wait_for_write( const struct connection_in * in )
 	return gbBAD ;
 }
 
+static GOOD_OR_BAD read_device_map_offset(const char *device_name, off_t *offset)
+{
+	const unsigned char path_length = 100;
+	FILE* file;
+	unsigned int preoffset;
+
+	// Get device filename (e.g. uio0)
+	const char *uio_filename = strrchr(device_name, '/');
+	if (uio_filename == NULL)
+		return gbBAD;
+
+	// Offset parameter file path
+	char uio_map_offset_file[path_length];
+	snprintf(uio_map_offset_file, path_length, "/sys/class/uio/%s/maps/map0/offset", uio_filename);
+
+	// Read offset parameter
+	file = fopen(uio_map_offset_file, "r");
+	if (file == NULL)
+		return gbBAD;
+	if (fscanf(file, "%x", &preoffset) != 1)
+	{
+		fclose(file);
+		return gbBAD;
+	}
+	fclose(file);
+	*offset = preoffset;
+	LEVEL_DEBUG("[%s] map offset: 0x%x", __FUNCTION__, preoffset);
+	LEVEL_DEBUG("[%s] map offset: 0x%x", __FUNCTION__, *offset);
+
+	return gbGOOD;
+}
+
+static GOOD_OR_BAD read_device_map_size(const char *device_name, size_t *size)
+{
+	const unsigned char path_length = 100;
+	FILE* file;
+
+	// Get device filename (e.g. uio0)
+	const char *uio_filename = strrchr(device_name, '/');
+	if (uio_filename == NULL)
+		return gbBAD;
+
+	// Size parameter file path
+	char uio_map_size_file[path_length];
+	snprintf(uio_map_size_file, path_length, "/sys/class/uio/%s/maps/map0/size", uio_filename);
+
+	// Read size parameter
+	file = fopen(uio_map_size_file, "r");
+	if (file == NULL)
+		return gbBAD;
+	if (fscanf(file, "%x", size) != 1)
+	{
+		fclose(file);
+		return gbBAD;
+	}
+	fclose(file);
+	LEVEL_DEBUG("[%s] map size: 0x%x", __FUNCTION__, *size);
+
+	return gbGOOD;
+}
+
+static GOOD_OR_BAD DS1WM_select_channel(const struct connection_in * in, uint8_t channel)
+{
+	LEVEL_DEBUG("[%s] Selecting channel %u", __FUNCTION__, channel);
+
+	// in K1WM clock register is used as output multiplexer register
+	K1WM_channel(in) = channel;
+	return K1WM_channel(in) == channel ? gbGOOD : gbBAD;
+}
+
+static GOOD_OR_BAD DS1WM_create_channels(struct connection_in *head, int channels_count)
+{
+	int i;
+
+	static const char *channel_names[] = {
+		"K1WM(0)", "K1WM(1)", "K1WM(2)", "K1WM(3)", "K1WM(4)", "K1WM(5)", "K1WM(6)", "K1WM(7)",
+		"K1WM(8)", "K1WM(9)", "K1WM(10)", "K1WM(11)", "K1WM(12)", "K1WM(13)", "K1WM(14)", "K1WM(15)",
+		"K1WM(16)", "K1WM(17)", "K1WM(18)", "K1WM(19)", "K1WM(20)", "K1WM(21)", "K1WM(22)", "K1WM(23)",
+		"K1WM(24)", "K1WM(25)", "K1WM(26)", "K1WM(27)", "K1WM(28)", "K1WM(29)", "K1WM(30)", "K1WM(31)",
+		"K1WM(32)", "K1WM(33)", "K1WM(34)", "K1WM(35)", "K1WM(36)", "K1WM(37)", "K1WM(38)", "K1WM(39)",
+		"K1WM(40)", "K1WM(41)", "K1WM(42)", "K1WM(43)", "K1WM(44)", "K1WM(45)", "K1WM(46)", "K1WM(47)",
+		"K1WM(48)", "K1WM(49)", "K1WM(50)", "K1WM(51)", "K1WM(52)", "K1WM(53)", "K1WM(54)", "K1WM(55)",
+		"K1WM(56)", "K1WM(57)", "K1WM(58)", "K1WM(59)", "K1WM(60)", "K1WM(61)", "K1WM(62)", "K1WM(63)"
+	};
+	head->master.ds1wm.active_channel = 0;
+	head->adapter_name = (char *)(channel_names[0]);
+	for (i = 1; i < channels_count; ++i) {
+		struct connection_in * added = AddtoPort(head->pown);
+		if (added == NO_CONNECTION) {
+			return gbBAD;
+		}
+		added->master.ds1wm.active_channel = i;
+		added->adapter_name = (char *)(channel_names[i]);
+	}
+	return gbGOOD;
+}
 

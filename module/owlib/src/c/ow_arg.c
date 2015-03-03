@@ -253,6 +253,22 @@ GOOD_OR_BAD ARG_DS1WM(const char *arg)
 	return gbGOOD ;
 }
 
+GOOD_OR_BAD ARG_K1WM(const char *arg)
+{
+	struct port_in * pin = NewPort( NULL ) ;
+	struct connection_in * in ;
+	if ( pin == NULL ) {
+		return gbBAD;
+	}
+	in = pin->first ;
+	if (in == NO_CONNECTION) {
+		return gbBAD;
+	}
+	arg_data(arg,pin) ;
+	pin->busmode = bus_k1wm ;
+	return gbGOOD ;
+}
+
 GOOD_OR_BAD ARG_ENET(const char *arg)
 {
 	struct port_in * pin = NewPort( NULL ) ;

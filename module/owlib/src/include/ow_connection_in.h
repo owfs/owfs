@@ -74,6 +74,7 @@ enum adapter_type {
 	adapter_external,
 	adapter_pbm,
 	adapter_ds1wm,
+	adapter_k1wm,
 };
 
 enum e_reconnect {

@@ -56,6 +56,7 @@ enum bus_mode {
 	bus_xport_control,
 	bus_external,
 	bus_ds1wm,
+	bus_k1wm,
 };
 
 enum com_state {

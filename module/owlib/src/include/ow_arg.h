@@ -54,6 +54,7 @@ GOOD_OR_BAD ARG_HA5( const char *arg);
 GOOD_OR_BAD ARG_HA7(const char *arg);
 GOOD_OR_BAD ARG_HA7E(const char *arg);
 GOOD_OR_BAD ARG_DS1WM(const char *arg);
+GOOD_OR_BAD ARG_K1WM(const char *arg);
 GOOD_OR_BAD ARG_ENET(const char *arg);
 GOOD_OR_BAD ARG_PBM(const char *arg);
 GOOD_OR_BAD ARG_EtherWeather(const char *arg);

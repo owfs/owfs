@@ -183,6 +183,13 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct port_in * pin )
 		}
 		break;
 
+	case bus_k1wm:
+		if ( BAD( K1WM_detect(pin) )) {
+			LEVEL_CONNECT("Cannot detect an K1WM synthesized bus master at %s", DEVICENAME(in));
+			return gbBAD ;
+		}
+		break;
+
 	case bus_parallel:
 #if OW_PARPORT
 		if ( BAD( DS1410_detect(pin) )) {
