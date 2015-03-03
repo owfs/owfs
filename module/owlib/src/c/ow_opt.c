@@ -132,8 +132,8 @@ const struct option owopts_long[] = {
 	{"PASSIVE", required_argument, NO_LINKED_VAR, e_passive},	/* DS9097 passive */
 	{"ds1wm", required_argument, NO_LINKED_VAR, e_ds1wm},	/* DS1WM synthesizable adapters */
 	{"DS1WM", required_argument, NO_LINKED_VAR, e_ds1wm},	/* DS1WM synthesizable adapters */
-	{"k1wm", required_argument, NO_LINKED_VAR, e_ds1wm},	/* DS1WM synthesizable adapters */
-	{"K1WM", required_argument, NO_LINKED_VAR, e_ds1wm},	/* DS1WM synthesizable adapters */
+	{"k1wm", required_argument, NO_LINKED_VAR, e_k1wm},	/* DS1WM synthesizable adapters */
+	{"K1WM", required_argument, NO_LINKED_VAR, e_k1wm},	/* DS1WM synthesizable adapters */
 	{"i2c", optional_argument, NO_LINKED_VAR, e_i2c},	/* i2c adapters */
 	{"I2C", optional_argument, NO_LINKED_VAR, e_i2c},	/* i2c adapters */
 	{"HA7", optional_argument, NO_LINKED_VAR, e_ha7},	/* HA7Net */

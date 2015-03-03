@@ -144,7 +144,7 @@ GOOD_OR_BAD DS1WM_detect(struct port_in *pin)
 	mem_fd = open( mem_device, O_RDWR | O_SYNC ) ;
 	
 	if ( FILE_DESCRIPTOR_NOT_VALID(mem_fd) ) {
-		LEVEL_DEFAULT("DS1WM: Cannot open memmory directly -- permissions problem?");
+		LEVEL_DEFAULT("DS1WM: Cannot open memory directly -- permissions problem?");
 		return gbBAD ;
 	}
 	
@@ -153,7 +153,7 @@ GOOD_OR_BAD DS1WM_detect(struct port_in *pin)
 	close(mem_fd) ; // no longer needed
 	
 	if ( mm == MAP_FAILED ) {
-		LEVEL_DEFAULT("DS1WM: Cannot map memmory") ;
+		LEVEL_DEFAULT("DS1WM: Cannot map memory") ;
 		return gbBAD ;
 	}
 	

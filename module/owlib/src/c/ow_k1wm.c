@@ -112,7 +112,6 @@ GOOD_OR_BAD K1WM_detect(struct port_in *pin)
 	struct connection_in * in = pin->first ;
 	long long int prebase ;
 	unsigned int prechannels_count;
-	off_t base ;
 	void * mm ;
 	FILE_DESCRIPTOR_OR_ERROR mem_fd ;
 	const char * mem_device = "/dev/uio0";
@@ -122,9 +121,9 @@ GOOD_OR_BAD K1WM_detect(struct port_in *pin)
 		return gbBAD;
 	}
 
-	in->Adapter = adapter_ds1wm ;
+	in->Adapter = adapter_k1wm ;
 	in->master.ds1wm.longline = 0 ; // longline timing
-	in->master.ds1wm.frequency = 10000000 ; // 10MHz
+	// in->master.ds1wm.frequency = 0 ; // unused in k1wm
 	in->master.ds1wm.presence_mask = 1 ; // pulse presence mask
 	in->master.ds1wm.active_channel = 0;
 	in->master.ds1wm.channels_count = 1;
@@ -136,26 +135,22 @@ GOOD_OR_BAD K1WM_detect(struct port_in *pin)
 	}
 
 	in->master.ds1wm.channels_count = prechannels_count ;
-	base = prebase ; // convert types long long int -> off_t
-	if ( base == 0 ) {
+	in->master.ds1wm.base = prebase ; // convert types long long int -> off_t
+	if ( in->master.ds1wm.base == 0 ) {
 		LEVEL_DEFAULT("K1WM: Illegal address 0x0000 from <%s>", pin->init_data ) ;
 		return gbBAD ;
 	}
-	LEVEL_DEBUG("K1WM at address %p",(void *)base);
-
-	in->master.ds1wm.mm_size = getpagesize();
-	in->master.ds1wm.base = base ;
-	in->master.ds1wm.page_offset = base % in->master.ds1wm.mm_size ;
-	in->master.ds1wm.page_start = base - in->master.ds1wm.page_offset ;
+	LEVEL_DEBUG("K1WM at address %p",(void *)in->master.ds1wm.base);
+	LEVEL_DEBUG("K1WM channels: %u",in->master.ds1wm.channels_count);
 
 	read_device_map_size(mem_device, &(in->master.ds1wm.mm_size));
 	read_device_map_offset(mem_device, &(in->master.ds1wm.page_start));
 
-	// open /dev/mem
+	// open /dev/uio0
 	mem_fd = open( mem_device, O_RDWR | O_SYNC ) ;
 
 	if ( FILE_DESCRIPTOR_NOT_VALID(mem_fd) ) {
-		LEVEL_DEFAULT("K1WM: Cannot open memmory directly -- permissions problem?");
+		LEVEL_DEFAULT("K1WM: Cannot open memory directly -- permissions problem?");
 		return gbBAD ;
 	}
 
@@ -164,7 +159,7 @@ GOOD_OR_BAD K1WM_detect(struct port_in *pin)
 	close(mem_fd) ; // no longer needed
 
 	if ( mm == MAP_FAILED ) {
-		LEVEL_DEFAULT("K1WM: Cannot map memmory") ;
+		LEVEL_DEFAULT("K1WM: Cannot map memory") ;
 		return gbBAD ;
 	}
 
@@ -184,6 +179,9 @@ static GOOD_OR_BAD K1WM_setup( struct connection_in * in )
 {
 	uint8_t control_register = DS1WM_control(in) ;
 	LEVEL_DEBUG("[%s] control_register before setup: 0x%x", __FUNCTION__, control_register);
+
+	// Set to channel
+	K1WM_channel(in) = in->master.ds1wm.active_channel ;
 
 	// set some defaults:
 	UT_setbit( &control_register, e_ds1wm_ppm, in->master.ds1wm.presence_mask ) ; // pulse presence masked
@@ -236,9 +234,6 @@ static RESET_TYPE K1WM_reset(const struct parsedname * pn)
 
 	UT_setbit( &DS1WM_command(in), e_ds1wm_1wr, 1 ) ;
 	
-	// TODO timing issue?
-	//usleep(2000);
-
 	switch( K1WM_wait_for_reset(in) ) {
 		case BUS_RESET_SHORT:
 			return BUS_RESET_SHORT ;
