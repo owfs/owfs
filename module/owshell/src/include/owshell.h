@@ -177,8 +177,6 @@ struct antiloop {
 /* Globals information (for local control) */
 struct global {
 	int announce_off;			// use zeroconf?
-	ASCII *announce_name;
-	ASCII *progname;
 	struct antiloop Token;
 	int readonly;
 	int max_clients;			// for ftp

@@ -237,6 +237,38 @@ GOOD_OR_BAD ARG_HA7E(const char *arg)
 	return Serial_or_telnet( arg, in ) ;
 }
 
+GOOD_OR_BAD ARG_DS1WM(const char *arg)
+{
+	struct port_in * pin = NewPort( NULL ) ;
+	struct connection_in * in ;
+	if ( pin == NULL ) {
+		return gbBAD;
+	}
+	in = pin->first ;
+	if (in == NO_CONNECTION) {
+		return gbBAD;
+	}
+	arg_data(arg,pin) ;
+	pin->busmode = bus_ds1wm ;
+	return gbGOOD ;
+}
+
+GOOD_OR_BAD ARG_K1WM(const char *arg)
+{
+	struct port_in * pin = NewPort( NULL ) ;
+	struct connection_in * in ;
+	if ( pin == NULL ) {
+		return gbBAD;
+	}
+	in = pin->first ;
+	if (in == NO_CONNECTION) {
+		return gbBAD;
+	}
+	arg_data(arg,pin) ;
+	pin->busmode = bus_k1wm ;
+	return gbGOOD ;
+}
+
 GOOD_OR_BAD ARG_ENET(const char *arg)
 {
 	struct port_in * pin = NewPort( NULL ) ;
@@ -359,6 +391,7 @@ GOOD_OR_BAD ARG_USB_monitor(const char *arg)
 		return gbBAD ;
 	}
 #else
+	(void) arg ;
 	fprintf(stderr, "OWFS is compiled without USB support.\n");
 	return gbBAD;
 #endif
@@ -399,6 +432,7 @@ GOOD_OR_BAD ARG_Net(const char *arg)
 
 GOOD_OR_BAD ARG_Parallel(const char *arg)
 {
+	(void) arg ;
 #if OW_PARPORT
 	struct port_in * pin = NewPort( NULL ) ;
 	struct connection_in * in ;
@@ -512,6 +546,7 @@ GOOD_OR_BAD ARG_USB(const char *arg)
 		return gbBAD ;
 	}
 #else							/* OW_USB */
+	(void) arg ;
 	LEVEL_DEFAULT("USB support (intentionally) not included in compilation. Check LIBUSB, then reconfigure and recompile.");
 	return gbBAD;
 #endif							/* OW_USB */

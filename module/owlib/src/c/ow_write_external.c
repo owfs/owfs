@@ -92,7 +92,7 @@ static ZERO_OR_ERROR OW_write_external_script( struct sensor_node * sensor_n, st
 		// not a text sparse name
 		snp_return =
 		snprintf( cmd, PATH_MAX+1, "%s %s %s %d %s %d %d %s %s",
-			property_n->read, // command
+			property_n->write, // command
 			sensor_n->name, // sensor name
 			property_n->property, // property,
 			pn->extension, // extension
@@ -105,7 +105,7 @@ static ZERO_OR_ERROR OW_write_external_script( struct sensor_node * sensor_n, st
 	} else {
 		snp_return =
 		snprintf( cmd, PATH_MAX+1, "%s %s %s %s %s %d %d %s %s",
-			property_n->read, // command
+			property_n->write, // command
 			sensor_n->name, // sensor name
 			property_n->property, // property,
 			pn->sparse_name, // extension

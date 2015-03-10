@@ -175,7 +175,7 @@ WRITE_FUNCTION(FS_w_32) ;
 #define _FC03_PC0        0x7E07    /* u16 */
 #define _FC03_CLATCH     0x7E09    /* u8 */
 #define _FC03_SCIC       0x7E0A    /* u8 */
-
+#define _FC03_PAGECRC    0x7E0B    /* u16 */
 
 #define _FC03_SEQW_LCDD 0x00
 #define _FC03_SEQW_SD 0x02
@@ -242,6 +242,7 @@ WRITE_FUNCTION(FS_w_32) ;
 #define _FC03_USER_BYTES 0x7FAB    /* u128 */
 #define _FC03_USER_WORDS 0x7FBB    /* u256 */
 #define _FC03_USER_DW    0x7FDB    /* u256 */
+#define _FC03_WATCHDOG1W 0x7FFB    /* u8 */
 
 #define _FC03_PIO0       0x7900    /* u8 */
 #define _FC03_PIO1       0x7901    /* u8 */
@@ -420,6 +421,7 @@ WRITE_FUNCTION(FS_w_32) ;
 #define _FC03_ACMPLATCH  0x79AE    /* u8 */
 #define _FC03_ACMPO      0x79AF    /* u8 */
 #define _FC03_ACMPOE     0x79B0    /* u8 */
+#define _FC03_ADCEN      0x79B1    /* u8 */
 #define _FC03_TPM1C      0x7A00    /* u8 */
 #define _FC03_TPM2C      0x7A01    /* u8 */
 
@@ -443,6 +445,7 @@ WRITE_FUNCTION(FS_w_32) ;
 #define _FC03_C2CH1      0x7A11    /* u8 */
 #define _FC03_NBYTES     0x7A12    /* u8 */
 #define _FC03_BAUDDIV    0x7A13    /* u16 */
+#define _FC03_PORFLAG    0x7A29    /* u8 */
 
 #define _FC03_GLOBAL_MEM 0x7C00    /* u8[64]*/
 
@@ -501,6 +504,7 @@ static struct filetype BAE[] = {
 //	{"eeprom/memory",_FC_EEPROM_PAGE_SIZE*_FC_MAX_EEPROM_PAGES, NON_AGGREGATE, ft_binary, fc_link, FS_eeprom_r_mem, FS_eeprom_w_mem, VISIBLE_eeprom_bytes, NO_FILETYPE_DATA, },
 	{"eeprom/page",_FC_EEPROM_PAGE_SIZE, &ABAEeeprom, ft_binary, fc_page, FS_eeprom_r_page, FS_eeprom_w_page, VISIBLE_eeprom_pages, NO_FILETYPE_DATA, },
 	{"eeprom/erase", PROPERTY_LENGTH_YESNO, &ABAEeeprom, ft_yesno, fc_link, NO_READ_FUNCTION, FS_eeprom_erase, VISIBLE_eeprom_pages, NO_FILETYPE_DATA, },
+	{"eeprom/pagecrc", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {u:_FC03_PAGECRC,}, },
 
 	{"generic", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_generic, NO_FILETYPE_DATA, },
 	{"generic/memory", _FC02_MEMORY_SIZE, NON_AGGREGATE, ft_binary, fc_link, FS_r_mem, FS_w_mem, VISIBLE_generic, NO_FILETYPE_DATA, },
@@ -569,6 +573,10 @@ static struct filetype BAE[] = {
 	{"910/pc3", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_910, {.u=_FC02_PC3,}, },
 
 	{"911", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA, },
+	{"911/system", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA, },
+	{"911/system/poweronflags", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_read_stable, FS_r_8, NO_WRITE_FUNCTION, VISIBLE_911, {u:_FC03_PORFLAG,}, },
+	{"911/system/watchdog1w", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_read_stable, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_WATCHDOG1W,}, },
+	{"911/system/owidletime", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {u:_FC03_OWIDLETIME,}, },
 	{"911/automation_engine", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA, },
 	{"911/automation_engine/pc0", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_16, FS_w_16, VISIBLE_911, {.u=_FC03_PC0,}, },
 	{"911/automation_engine/global_mem", PROPERTY_LENGTH_UNSIGNED, &A911globalmem, ft_unsigned, fc_volatile, FS_r_8, FS_w_8,  VISIBLE_911, {.u=_FC03_GLOBAL_MEM,}, },
@@ -576,7 +584,7 @@ static struct filetype BAE[] = {
 	{"911/pio", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
 	{"911/pio/pio",   PROPERTY_LENGTH_YESNO, &A911pio , ft_yesno, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {.u=_FC03_PIO0,}, },
 	{"911/pio/direction", PROPERTY_LENGTH_YESNO, &A911piodd, ft_yesno, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {.u=_FC03_PIODIR0,}, },
-	{"911/pio/strenght",  PROPERTY_LENGTH_YESNO, &A911piods, ft_yesno, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {.u=_FC03_PIODS0,}, },
+	{"911/pio/strength",  PROPERTY_LENGTH_YESNO, &A911piods, ft_yesno, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {.u=_FC03_PIODS0,}, },
 	{"911/pio/pull_enable", PROPERTY_LENGTH_YESNO, &A911piope, ft_yesno, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {.u=_FC03_PIOPE0,}, },
 	{"911/pio/pull_down", PROPERTY_LENGTH_YESNO, &A911piopd, ft_yesno, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {.u=_FC03_PULLDOWN0,}, },
 	{"911/alarm", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA, },
@@ -595,7 +603,7 @@ static struct filetype BAE[] = {
 	{"911/counters/enable_encoder9",  PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {.u=_FC03_EENCODER9,}, },
 	{"911/counters/enable_encoder16",  PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {.u=_FC03_EENCODER16,}, },
 	{"911/counters/enable_encoder17",  PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {.u=_FC03_EENCODER17,}, },
-  {"911/timers", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA, },
+	{"911/timers", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA, },
 	{"911/timers/countdown", PROPERTY_LENGTH_UNSIGNED, &A911userarray, ft_unsigned, fc_volatile, FS_r_8, FS_w_8,  VISIBLE_911, {.u=_FC03_USER_ARRAY,}, },
 	{"911/timers/countdown_number",  PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {.u=_FC03_NBYTES,}, },
 	{"911/timers/clock", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile,  FS_r_32, FS_w_32, VISIBLE_911, {.u=_FC03_RTCH,}, },
@@ -606,6 +614,7 @@ static struct filetype BAE[] = {
 	{"911/user_registers/dword", PROPERTY_LENGTH_UNSIGNED, &A911userdw, ft_unsigned, fc_volatile, FS_r_32, FS_w_32, VISIBLE_911, {.u=_FC03_USER_DW,}, },
 	{"911/analog", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
 	{"911/analog/adc", PROPERTY_LENGTH_UNSIGNED, &A911adc, ft_unsigned, fc_volatile, FS_r_16, NO_WRITE_FUNCTION, VISIBLE_911, {.u=_FC03_ADC0,}, },
+	{"911/analog/adc_enable", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {.u=_FC03_ADCEN,}, },
 	{"911/analog/comparator", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA, },
 	{"911/analog/comparator/acmp_enable", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {.u=_FC03_ACMPE,}, },
 	{"911/analog/comparator/out_enable", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {.u=_FC03_ACMPOE,}, },
@@ -725,7 +734,7 @@ Make_SlaveSpecificTag(SNR, fc_persistent);	// sector number
 /* ------- Functions ------------ */
 
 static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
-static GOOD_OR_BAD OW_w_mem_eeprom(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
+//static GOOD_OR_BAD OW_w_mem_eeprom(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
 static GOOD_OR_BAD OW_w_mem_small(BYTE * data, size_t size, off_t offset, struct parsedname *pn);
 static GOOD_OR_BAD OW_w_extended(BYTE * data, size_t size, struct parsedname *pn);
 static GOOD_OR_BAD OW_version( UINT * version, struct parsedname * pn ) ;
@@ -1228,6 +1237,9 @@ static ZERO_OR_ERROR FS_eeprom_w_mem(struct one_wire_query *owq)
 {
 	struct parsedname * pn = PN(owq) ;
 	size_t size = OWQ_size(owq) ;
+	LEVEL_DEBUG("write eeprom size of %d.", (int)OWQ_size(owq) ) ;
+	LEVEL_DEBUG("write eeprom offset %d.", (int)OWQ_offset(owq) ) ;
+
 /*
 	BYTE * eeprom = owmalloc( size ) ;
 	if ( eeprom==NULL ) {
@@ -1246,7 +1258,7 @@ static ZERO_OR_ERROR FS_eeprom_w_mem(struct one_wire_query *owq)
 */
 
 	// write back
-	if ( BAD( OW_w_mem_eeprom((BYTE *) OWQ_buffer(owq), size, OWQ_offset(owq)+eeprom_offset(pn), pn)) ) {
+		if ( BAD( OW_w_mem((BYTE *) OWQ_buffer(owq), size, OWQ_offset(owq)+eeprom_offset(pn), pn)) ) {
 		LEVEL_DEBUG("Cannot write to eeprom") ;
 		//owfree(eeprom) ;
 		return -EINVAL ;
@@ -1788,21 +1800,27 @@ static GOOD_OR_BAD OW_r_mem(BYTE * data, size_t size, off_t offset, struct parse
 {
 	size_t remain = size ;
 	off_t local_offset = 0 ;
+	int retry=0;
 	
 	while ( remain > 0 ) {
 		size_t gulp = remain ;
 		if ( gulp > _FC02_MAX_READ_GULP ) {
 			gulp = _FC02_MAX_READ_GULP ;
 		}
-		RETURN_BAD_IF_BAD( OW_r_mem_small( &data[local_offset], gulp, offset+local_offset, pn ));
-		remain -= gulp ;
-		local_offset += gulp ;
+//		RETURN_BAD_IF_BAD( OW_r_mem_small( &data[local_offset], gulp, offset+local_offset, pn ));
+		if ( BAD( OW_r_mem_small( &data[local_offset], gulp, offset+local_offset, pn ))) {
+			if (retry++>3) return gbBAD;
+		} else {
+			remain -= gulp ;
+			local_offset += gulp ;
+			retry=0;
+		}
 	}
 	return gbGOOD ;	
 }
 
 //write bytes[size] to position
-static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname * pn)
+/*static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname * pn)
 {
 	size_t remain = size ;
 	off_t local_offset = 0 ;
@@ -1818,22 +1836,28 @@ static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parse
 	}
 	return gbGOOD ;	
 }
-
-//write bytes[size] to eeprom position ( only difference is eeprom delay)
-static GOOD_OR_BAD OW_w_mem_eeprom(BYTE * data, size_t size, off_t offset, struct parsedname * pn)
+*/
+//write bytes[size] is now common for normal and eeprom 
+static GOOD_OR_BAD OW_w_mem(BYTE * data, size_t size, off_t offset, struct parsedname * pn)
 {
 	size_t remain = size ;
 	off_t local_offset = 0 ;
-	
+	int retry=0; //retry at 32byte block level because it is sometime hard to have a scuccession of 16 successfull bloc writes
+
 	while ( remain > 0 ) {
 		size_t gulp = remain ;
 		if ( gulp > _FC02_MAX_READ_GULP ) {
 			gulp = _FC02_MAX_READ_GULP ;
 		}
-		RETURN_BAD_IF_BAD( OW_w_mem_small( &data[local_offset], gulp, offset+local_offset, pn ));
-		UT_delay(2) ; //1.5 msec
-		remain -= gulp ;
-		local_offset += gulp ;
+//		RETURN_BAD_IF_BAD( OW_w_mem_small( &data[local_offset], gulp, offset+local_offset, pn ));
+		if ( BAD( OW_w_mem_small( &data[local_offset], gulp, offset+local_offset, pn ))) {
+			if (retry++>3) return gbBAD;
+			UT_delay(2) ; //give 1.5 msec to finish prev write before retrying (specificly for eeprom write)
+		} else {
+			remain -= gulp ;
+			local_offset += gulp ;
+			retry=0;
+		}
 	}
 	return gbGOOD ;	
 }

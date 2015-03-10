@@ -17,11 +17,13 @@
 /* All ow library closeup */
 void LibClose(void)
 {
+	Globals.exitmode = exit_early ;
 	LEVEL_CALL("Starting Library cleanup");
 	LibStop();
 	PIDstop();
 	DeviceDestroy();
 	Detail_Close() ;
+	ArgFree() ;
 
 	_MUTEX_ATTR_DESTROY(Mutex.mattr);
 
@@ -44,7 +46,6 @@ void LibClose(void)
 	}
 
 	SAFEFREE(Globals.announce_name) ;
-	SAFEFREE(Globals.progname) ;
 	SAFEFREE(Globals.fatal_debug_file) ;
 	LEVEL_DEBUG("Libraries closed");
 }

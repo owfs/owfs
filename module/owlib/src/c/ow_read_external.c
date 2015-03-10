@@ -67,7 +67,7 @@ static ZERO_OR_ERROR OW_trees_for_read( char * device, char * property, struct o
 				case et_none:
 					return 0 ;
 				case et_internal:
-					return -ENOTSUP ;
+					return OWQ_format_output_offset_and_size_z( property_n->data, owq ) ;
 				case et_script:
 					return OW_read_external_script( sense_n, property_n, owq ) ;
 				default:

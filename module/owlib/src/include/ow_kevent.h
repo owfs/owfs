@@ -8,17 +8,21 @@
 	1wire/iButton system from Dallas Semiconductor
 */
 
-#ifndef OW_SYSTEM_H
-#define OW_SYSTEM_H
+#ifndef OW_KEVENT_H
+#define OW_KEVENT_H
 
 #ifndef OWFS_CONFIG_H
 #error Please make sure owfs_config.h is included *before* this header file
 #endif
-#include "ow_standard.h"
 
-/* -------- Structures ---------- */
-DeviceHeader(sys_process);
-DeviceHeader(sys_connections);
-DeviceHeader(sys_configure);
+#ifdef WE_HAVE_KEVENT
+// kevent based monitor for configuration file changes
+// usually OSX and BSD systems
 
-#endif							/* OW_SYSTEM_H */
+#include <sys/event.h>
+void Config_Monitor_Watch( void * v ) ;
+void Config_Monitor_Add( const char * file ) ;
+
+#endif /* WE_HAVE_KEVENT */
+
+#endif							/* OW_KEVENT_H */

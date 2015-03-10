@@ -465,10 +465,10 @@ static void change_dir(struct ftp_session_s *f, const char *new_dir)
 	}
 
 	if (cps.dir) {
-		free(cps.dir);
+		owfree(cps.dir);
 	}
 	if (cps.rest) {
-		free(cps.dir);
+		owfree(cps.dir);
 	}
 }
 
@@ -931,7 +931,7 @@ static void do_retr(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 
 	/* if the last command was a REST command, restart at the */
 	/* requested position in the file                         */
-	if ((f->file_offset_command_number == (f->command_number - 1))) {
+	if ( f->file_offset_command_number == (f->command_number - 1) ) {
 		offset = f->file_offset;
 	}
 
@@ -975,7 +975,7 @@ static void do_retr(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 		goto good_retr;
 	}
 
-	buf2 = malloc(2 * returned_length);
+	buf2 = owmalloc(2 * returned_length);
 	if (buf2 == NULL) {
 		reply(f, 550, "Error, file too large.");
 		goto exit_retr;
@@ -1024,7 +1024,7 @@ static void do_retr(struct ftp_session_s *f, const struct ftp_command_s *cmd)
   exit_retr:
 	OWQ_destroy(&owq); // safe at any speed
 	if (buf2) {
-		free(buf2);
+		owfree(buf2);
 	}
 	f->file_offset = 0;
 	Test_and_Close(&socket_fd) ;
@@ -1063,7 +1063,7 @@ static void do_stor(struct ftp_session_s *f, const struct ftp_command_s *cmd)
 
 	/* if the last command was a REST command, restart at the */
 	/* requested position in the file                         */
-	if ((f->file_offset_command_number == (f->command_number - 1))) {
+	if ( f->file_offset_command_number == (f->command_number - 1) ) {
 		offset = f->file_offset;
 	}
 

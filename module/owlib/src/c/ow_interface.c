@@ -113,6 +113,26 @@ static enum e_visibility VISIBLE_PBM( const struct parsedname * pn )
 	}
 }
 
+static enum e_visibility VISIBLE_DS1WM( const struct parsedname * pn )
+{
+	switch ( get_busmode(pn->selected_connection) ) {
+		case bus_ds1wm:
+			return visible_now ;
+		default:
+			return visible_not_now ;
+	}
+}
+
+static enum e_visibility VISIBLE_K1WM( const struct parsedname * pn )
+{
+	switch ( get_busmode(pn->selected_connection) ) {
+		case bus_k1wm:
+			return visible_now ;
+		default:
+			return visible_not_now ;
+	}
+}
+
 static enum e_visibility VISIBLE_PSEUDO( const struct parsedname * pn )
 {
 	switch ( get_busmode(pn->selected_connection) ) {
@@ -160,6 +180,14 @@ static struct filetype interface_settings[] = {
 	{"PBM/serial", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_PBM_serial, NO_WRITE_FUNCTION, VISIBLE_PBM, NO_FILETYPE_DATA, },
 	{"PBM/features", 256, NON_AGGREGATE, ft_ascii, fc_static, FS_r_PBM_features, NO_WRITE_FUNCTION, VISIBLE_PBM, NO_FILETYPE_DATA, },
 	{"PBM/activation_code", 128, NON_AGGREGATE, ft_ascii, fc_static,  NO_READ_FUNCTION, FS_w_PBM_activationcode, VISIBLE_PBM, NO_FILETYPE_DATA, },
+
+	{"DS1WM", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_DS1WM, NO_FILETYPE_DATA, },
+	{"DS1WM/long_line_mode", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_yesno, FS_w_yesno, VISIBLE_DS1WM, {.s=offsetof(struct connection_in,master.ds1wm.longline),}, },
+	{"DS1WM/pulse_presence_mask", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_yesno, FS_w_yesno, VISIBLE_DS1WM, {.s=offsetof(struct connection_in,master.ds1wm.presence_mask),}, },
+
+	{"K1WM", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_K1WM, NO_FILETYPE_DATA, },
+	{"K1WM/long_line_mode", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_yesno, FS_w_yesno, VISIBLE_K1WM, {.s=offsetof(struct connection_in,master.ds1wm.longline),}, },
+	{"K1WM/pulse_presence_mask", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_yesno, FS_w_yesno, VISIBLE_K1WM, {.s=offsetof(struct connection_in,master.ds1wm.presence_mask),}, },
 
 	{"i2c", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_DS2482, NO_FILETYPE_DATA, },
 	{"i2c/ActivePullUp", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_APU, FS_w_APU, VISIBLE_DS2482, NO_FILETYPE_DATA, },

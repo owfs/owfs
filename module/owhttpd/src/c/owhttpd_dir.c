@@ -1,5 +1,4 @@
 /*
-$Id$
  * http.c for owhttpd (1-wire web server)
  * By Paul Alfille 2003, using libow
  * offshoot of the owfs ( 1wire file system )
@@ -15,8 +14,8 @@ $Id$
 // #include <libgen.h>  /* for dirname() */
 
 /* --------------- Functions ---------------- */
-static void ShowDirText(FILE * out, struct parsedname * pn);
-static void ShowDirJson(FILE * out, struct parsedname * pn);
+static void ShowDirText(struct OutputControl * oc, struct parsedname * pn);
+static void ShowDirJson(struct OutputControl * oc, struct parsedname * pn);
 /* Find he next higher level by search for last slash that doesn't end the string */
 /* return length of "higher level" */
 /* Assumes good path:
@@ -45,7 +44,8 @@ static void ShowDirCallback(void *v, const struct parsedname *pn_entry)
 	/* uncached tag */
 	/* device name */
 	/* Have to allocate all buffers to make it work for Coldfire */
-	FILE *out = v;
+	struct OutputControl * oc = v;
+	FILE * out = oc->out ;
 	const char *nam;
 	const char *typ;
 	char * escaped_path = httpescape( pn_entry->path ) ;
@@ -68,30 +68,32 @@ static void ShowDirCallback(void *v, const struct parsedname *pn_entry)
 }
 
 	/* Misnamed. Actually all directory */
-void ShowDir(FILE * out, struct parsedname * pn)
+void ShowDir(struct OutputControl * oc, struct parsedname * pn)
 {
+	FILE * out = oc->out ;
 	int b = Backup(pn->path); // length of string to get to higher level
+	
 	if (pn->state & ePS_text) {
-		ShowDirText(out, pn);
+		ShowDirText(oc, pn);
 		return;
 	} else if (pn->state & ePS_json) {
-		ShowDirJson(out, pn);
+		ShowDirJson(oc, pn);
 		return;
 	}
 
-	HTTPstart(out, "200 OK", ct_html);
-	HTTPtitle(out, "Directory");
+	HTTPstart(oc, "200 OK", ct_html);
+	HTTPtitle(oc, "Directory");
 
 	if (NotRealDir(pn)) {
 		/* return whole path since tree structure could be much deeper now */
 		/* first / is stripped off */
-		HTTPheader(out, &pn->path[1]);
+		HTTPheader(oc, &pn->path[1]);
 	} else if (pn->state) {
 		/* return whole path since tree structure could be much deeper now */
 		/* first / is stripped off */
-		HTTPheader(out, &pn->path[1]);
+		HTTPheader(oc, &pn->path[1]);
 	} else {
-		HTTPheader(out, "directory");
+		HTTPheader(oc, "directory");
 	}
 
 
@@ -107,9 +109,9 @@ void ShowDir(FILE * out, struct parsedname * pn)
 		fprintf(out, "<TR><TD><A HREF='/'><CODE><B><BIG>top</BIG></B></CODE></A></TD><TD>highest level</TD><TD>directory</TD></TR>");
 	}
 
-	FS_dir(ShowDirCallback, out, pn);
+	FS_dir(ShowDirCallback, oc, pn);
 	fprintf(out, "</TABLE>");
-	HTTPfoot(out);
+	HTTPfoot(oc);
 }
 
 static void ShowDirTextCallback(void *v, const struct parsedname *const pn_entry)
@@ -117,7 +119,8 @@ static void ShowDirTextCallback(void *v, const struct parsedname *const pn_entry
 	/* uncached tag */
 	/* device name */
 	/* Have to allocate all buffers to make it work for Coldfire */
-	FILE *out = v;
+	struct OutputControl * oc = v;
+	FILE * out = oc->out ;
 	const char *nam;
 	const char *typ;
 	if (IsDir(pn_entry)) {
@@ -130,36 +133,39 @@ static void ShowDirTextCallback(void *v, const struct parsedname *const pn_entry
 	fprintf(out, "%s %s \"%s\"\r\n", FS_DirName(pn_entry), nam, typ);
 }
 
-static void ShowDirText(FILE * out, struct parsedname * pn)
+static void ShowDirText(struct OutputControl * oc, struct parsedname * pn)
 {
-	HTTPstart(out, "200 OK", ct_text);
+	HTTPstart(oc, "200 OK", ct_text);
 
-	FS_dir(ShowDirTextCallback, out, pn);
+	FS_dir(ShowDirTextCallback, oc, pn);
 	return;
 }
 
-void JSON_dir_init( struct JsonCBstruct * jcbs, FILE * out )
+void JSON_dir_init( struct OutputControl * oc )
 {
-	jcbs->not_first = 0 ;
-	jcbs->out = out ;
+	oc->not_first = 0 ;
 }
 	
-void JSON_dir_entry( struct JsonCBstruct * jcbs, const char * format, const char * data )
+void JSON_dir_entry( struct OutputControl * oc, const char * format, const char * data )
 {
+	FILE * out = oc->out ;
+	
 	// handle comma (so not after last entry)
-	if ( jcbs->not_first ) {
-		fprintf(jcbs->out, ",\n" ) ;
+	if ( oc->not_first ) {
+		fprintf(out, ",\n" ) ;
 	} else {
-		jcbs->not_first = 1 ;
+		oc->not_first = 1 ;
 	}
-	fprintf(jcbs->out, format, data ) ;
+	fprintf(out, format, data ) ;
 }
 
 
-void JSON_dir_finish( struct JsonCBstruct * jcbs )
+void JSON_dir_finish( struct OutputControl * oc )
 {
-	if ( jcbs->not_first ) {
-		fprintf(jcbs->out, "\n" ) ;
+	FILE * out = oc->out ;
+	
+	if ( oc->not_first ) {
+		fprintf(out, "\n" ) ;
 	}
 }	
 
@@ -169,7 +175,7 @@ static void ShowDirJsonCallback(void *v, const struct parsedname *const pn_entry
 	/* uncached tag */
 	/* device name */
 	/* Have to allocate all buffers to make it work for Coldfire */
-	struct JsonCBstruct * jcbs = v ;
+	struct OutputControl * oc = v ;
 	const char *nam;
 
 	if (IsDir(pn_entry)) {
@@ -178,21 +184,21 @@ static void ShowDirJsonCallback(void *v, const struct parsedname *const pn_entry
 		nam = pn_entry->selected_device->readable_name;
 	}
 	
-	JSON_dir_entry( jcbs, "\"%s\":[]", nam ) ;
+	JSON_dir_entry( oc, "\"%s\":[]", nam ) ;
 }
 
-static void ShowDirJson(FILE * out, struct parsedname * pn)
+static void ShowDirJson(struct OutputControl * oc, struct parsedname * pn)
 {
-	struct JsonCBstruct jcbs ;
+	FILE * out = oc->out ;
 	
-	JSON_dir_init( &jcbs, out ) ;
+	JSON_dir_init( oc ) ;
 
-	HTTPstart(out, "200 OK", ct_json);
+	HTTPstart(oc, "200 OK", ct_json);
 
 	fprintf(out, "{" );
-	FS_dir(ShowDirJsonCallback, &jcbs, pn);
+	FS_dir(ShowDirJsonCallback, oc, pn);
 	
-	JSON_dir_finish( &jcbs ) ;
+	JSON_dir_finish( oc ) ;
 	fprintf(out, "}" );
 	return;
 }

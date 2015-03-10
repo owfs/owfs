@@ -8,17 +8,20 @@
 	1wire/iButton system from Dallas Semiconductor
 */
 
-#ifndef OW_SYSTEM_H
-#define OW_SYSTEM_H
+#ifndef OW_EXEC_H
+#define OW_EXEC_H
 
 #ifndef OWFS_CONFIG_H
 #error Please make sure owfs_config.h is included *before* this header file
 #endif
-#include "ow_standard.h"
 
-/* -------- Structures ---------- */
-DeviceHeader(sys_process);
-DeviceHeader(sys_connections);
-DeviceHeader(sys_configure);
+struct re_exec {
+	void * data ;
+	void (* func) ( void * ) ;
+} ;
 
-#endif							/* OW_SYSTEM_H */
+void ArgCopy( int argc, char * argv[] ) ;
+void ArgFree( void ) ;
+void ReExecute( void * v ) ;
+
+#endif							/* OW_EXEC_H */

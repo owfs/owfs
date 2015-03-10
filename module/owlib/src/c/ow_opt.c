@@ -10,14 +10,6 @@
 
 /* ow_opt -- owlib specific command line options processing */
 
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#include <stdio.h> // for getline
-#undef _GNU_SOURCE
-#else
-#include <stdio.h> // for getline
-#endif
-
 #include <config.h>
 #include "owfs_config.h"
 #include "ow.h"
@@ -50,6 +42,8 @@ const struct option owopts_long[] = {
 	{"aliases", required_argument, NO_LINKED_VAR, 'a'},
 	{"aliasfile", required_argument, NO_LINKED_VAR, 'a'},
 	{"configuration", required_argument, NO_LINKED_VAR, 'c'},
+	{"config", required_argument, NO_LINKED_VAR, 'c'},
+	{"conf", required_argument, NO_LINKED_VAR, 'c'},
 	{"device", required_argument, NO_LINKED_VAR, 'd'},
 	{"usb", optional_argument, NO_LINKED_VAR, 'u'},
 	{"USB", optional_argument, NO_LINKED_VAR, 'u'},
@@ -136,6 +130,10 @@ const struct option owopts_long[] = {
 
 	{"passive", required_argument, NO_LINKED_VAR, e_passive},	/* DS9097 passive */
 	{"PASSIVE", required_argument, NO_LINKED_VAR, e_passive},	/* DS9097 passive */
+	{"ds1wm", required_argument, NO_LINKED_VAR, e_ds1wm},	/* DS1WM synthesizable adapters */
+	{"DS1WM", required_argument, NO_LINKED_VAR, e_ds1wm},	/* DS1WM synthesizable adapters */
+	{"k1wm", required_argument, NO_LINKED_VAR, e_k1wm},	/* DS1WM synthesizable adapters */
+	{"K1WM", required_argument, NO_LINKED_VAR, e_k1wm},	/* DS1WM synthesizable adapters */
 	{"i2c", optional_argument, NO_LINKED_VAR, e_i2c},	/* i2c adapters */
 	{"I2C", optional_argument, NO_LINKED_VAR, e_i2c},	/* i2c adapters */
 	{"HA7", optional_argument, NO_LINKED_VAR, e_ha7},	/* HA7Net */
@@ -445,7 +443,7 @@ static void ParseTheLine(struct lineparse *lp)
 						{	// put in lower case
 							ASCII *prog_char;
 							for (prog_char = lp->prog; *prog_char; ++prog_char) {
-								*prog_char = tolower(*prog_char);
+								*prog_char = tolower( (int) prog_char[0] );
 							}
 						}
 						// special cases for sensor and property lines
@@ -585,6 +583,8 @@ GOOD_OR_BAD owopt_packed(const char *params)
 	}
 
 	// analyze argv/argc as if real command line arguments
+	ArgCopy( argc, argv ) ;
+
 	while (ret == 0) {
 		if ((option_char = getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL)) == -1) {
 			break;
@@ -627,6 +627,7 @@ GOOD_OR_BAD owopt(const int option_char, const char *arg)
 		} else {
 			GOOD_OR_BAD ret;
 			++config_depth;
+			Config_Monitor_Add( arg ) ; // add for monitoring changes
 			ret = ConfigurationFile(arg);
 			--config_depth;
 			return ret;
@@ -825,6 +826,10 @@ GOOD_OR_BAD owopt(const int option_char, const char *arg)
 		return ARG_MasterHub(arg);
 	case e_w1_monitor:
 		return ARG_W1_monitor();
+	case e_ds1wm:
+		return ARG_DS1WM(arg);
+	case e_k1wm:
+		return ARG_K1WM(arg);
 	case e_usb_monitor:
 		return ARG_USB_monitor(arg);
 	case e_browse:

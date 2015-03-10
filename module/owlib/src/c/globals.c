@@ -34,7 +34,6 @@ struct global Globals = {
 	.announce_off = 0,
 	.announce_name = NULL,
 	.program_type = program_type_swig,
-	.progname = NULL,			// "One Wire File System" , Can't allocate here since it's freed
 	.allow_other = 0 , // for fuse
 
 	.temp_scale = temp_celsius,
@@ -100,6 +99,12 @@ struct global Globals = {
 
 	.templow = GLOBAL_UNTOUCHED_TEMP_LIMIT,
 	.temphigh = GLOBAL_UNTOUCHED_TEMP_LIMIT,
+	
+	.argc = 0,
+	.argv = NULL,
+	.inet_type = inet_none,
+	.exitmode = exit_early, // how long to pause after closing sockets before exit
+	.restart_seconds = 5 ,
 	
 //	.allow_external = 1 , // for testing
 	.allow_external = 0 , // unless program == owexternal

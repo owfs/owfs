@@ -55,13 +55,17 @@ int ftp_listener_init(struct ftp_listener_s *f)
 
 	daemon_assert(f != NULL);
 
+	if ( Outbound_Control.head->name == NULL ) {
+		Outbound_Control.head->name = owstrdup( DEFAULT_FTP_PORT ) ;
+	}
+	
 	LEVEL_DEBUG("ftp_listener_init: name=[%s]", Outbound_Control.head->name);
 	
 	// For sone reason, there must be an IP address included
 	if (strchr(Outbound_Control.head->name, ':') == NULL) {
 		char *newname;
 		char *oldname = Outbound_Control.head->name;
-		newname = malloc(8 + strlen(oldname) + 1); // "0.0.0.0:" + null-char.
+		newname = owmalloc(8 + strlen(oldname) + 1); // "0.0.0.0:" + null-char.
 		if (newname == NULL) {
 			LEVEL_DEFAULT("Cannot allocate menory for port name");
 			return 0;
@@ -70,7 +74,7 @@ int ftp_listener_init(struct ftp_listener_s *f)
 		strcat(newname, oldname);
 		//LEVEL_DEBUG("OWSERVER composite name <%s> -> <%s>\n",oldname,newname);
 		Outbound_Control.head->name = newname;
-		free(oldname);
+		owfree(oldname);
 	}
 
 	if ( BAD( ServerOutSetup(Outbound_Control.head) ) ) {
@@ -235,8 +239,7 @@ static void *connection_acceptor(void *v)
 				continue;
 			}
 
-			info = (struct connection_info_s *)
-				malloc(sizeof(struct connection_info_s));
+			info = (struct connection_info_s *) owmalloc(sizeof(struct connection_info_s));
 			if (info == NULL) {
 				LEVEL_CONNECT("Out of memory, FTP server dropping connection");
 				Test_and_Close( & file_descriptor);
@@ -250,7 +253,7 @@ static void *connection_acceptor(void *v)
 				LEVEL_CONNECT("Eerror initializing FTP session, FTP server exiting");
 				close(file_descriptor);
 				telnet_session_destroy(&info->telnet_session);
-				free(info);
+				owfree(info);
 				continue;
 			}
 
@@ -262,7 +265,7 @@ static void *connection_acceptor(void *v)
 				ERROR_CONNECT("Error creating new thread");
 				close(file_descriptor);
 				telnet_session_destroy(&info->telnet_session);
-				free(info);
+				owfree(info);
 			}
 
 			num_error = 0;
@@ -386,7 +389,7 @@ static void connection_handler_cleanup(void *v)
 	ftp_session_destroy(&info->ftp_session);
 	telnet_session_destroy(&info->telnet_session);
 
-	free(info);
+	owfree(info);
 }
 
 void ftp_listener_stop(struct ftp_listener_s *f)

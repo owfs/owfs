@@ -103,6 +103,20 @@ struct master_enet {
 	int version;
 };
 
+struct master_ds1wm {
+	off_t base ;
+	off_t page_start ;
+	off_t page_offset ;
+	void * mm ; // mmap
+	int longline ;
+	int byte_mode ;
+	long int frequency ;
+	int presence_mask ;
+	size_t mm_size ;
+	uint8_t channels_count; // for k1wm
+	uint8_t active_channel; // for k1wm
+};
+
 enum e_link_t_mode { e_link_t_unknown, e_link_t_extra, e_link_t_none } ;
 
 struct master_link {
@@ -195,6 +209,7 @@ union master_union {
 	struct master_browse browse;
 	struct master_usb_monitor usb_monitor ;
 	struct master_enet_monitor enet_monitor ;
+	struct master_ds1wm ds1wm ;
 };
 
 

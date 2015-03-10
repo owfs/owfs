@@ -11,9 +11,9 @@ AC_INIT
 # set OWFS_BINARY_AGE _and_ OWFS_INTERFACE_AGE to 0.
 # (In our case it's better to always keep AGE to 0, since nobody else will use our library)
 
-VERSION_MAJOR=2
-VERSION_MINOR=9
-VERSION_PATCHLEVEL=8
+VERSION_MAJOR=3
+VERSION_MINOR=0
+VERSION_PATCHLEVEL=1
 
 OWFS_INTERFACE_AGE=0
 OWFS_BINARY_AGE=0
@@ -135,6 +135,10 @@ AM_CONDITIONAL(HAVE_CYGWIN, test "${HAVE_CYGWIN}" = "true")
 AC_SUBST(HAVE_FREEBSD)
 AM_CONDITIONAL(HAVE_FREEBSD, test "${HAVE_FREEBSD}" = "true")
 
+# launchd using the new launch_activate_socket
+AC_CHECK_FUNCS(launch_activate_socket)
+# AC_CHECK_HEADERS(launch.h)
+
 PIC_FLAGS=""
 if test "$lt_prog_compiler_pic_works" = yes; then
 	PIC_FLAGS="$lt_prog_compiler_pic"
@@ -172,6 +176,7 @@ AC_HEADER_DIRENT
 AC_HEADER_STDC
 AC_CHECK_HEADERS([asm/types.h arpa/inet.h sys/ioctl.h sys/mkdev.h sys/socket.h sys/time.h sys/times.h sys/types.h sys/uio.h feature_tests.h fcntl.h netinet/in.h stdlib.h string.h strings.h sys/file.h syslog.h termios.h unistd.h limits.h stdint.h features.h getopt.h resolv.h semaphore.h])
 AC_CHECK_HEADERS([linux/limits.h linux/types.h netdb.h dlfcn.h])
+AC_CHECK_HEADERS(sys/event.h sys/inotify.h)
 
 # Test if debugging out enabled
 ENABLE_DEBUG="true"
@@ -795,6 +800,14 @@ if test "${ENABLE_OWTCL}" = "true" ; then
 		# TCL_PACKAGE_PATH. TCL_BIN_DIR is usually correct, but this
 		# might contain staging_dir prefix when cross-compiling.
 		OWTCL_INSTALL_PATH="`echo ${TCL_PACKAGE_PATH} | cut -d' ' -f1`"
+		case "${host_cpu}-${host_os}" in
+			*-darwin*)
+				OWTCL_INSTALL_PATH="`echo ${TCL_BIN_DIR} | cut -d' ' -f1`"
+				;;
+			*)
+				OWTCL_INSTALL_PATH="`echo ${TCL_PACKAGE_PATH} | cut -d' ' -f1`"
+				;;
+		esac
 		# Debian Hack: do not install in /usr/local/lib/tcltk
 		# OWTCL_INSTALL_PATH="/usr/lib/tcltk"
 		AC_SUBST(OWTCL_INSTALL_PATH)

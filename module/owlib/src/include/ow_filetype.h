@@ -150,6 +150,7 @@ struct parsedname;
 
 #define NON_AGGREGATE	NULL
 
+#define NO_FILETYPE_DATA {.v=NULL}
 
 #define NO_READ_FUNCTION NULL
 #define NO_WRITE_FUNCTION NULL

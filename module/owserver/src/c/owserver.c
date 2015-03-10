@@ -46,13 +46,12 @@ int main(int argc, char **argv)
 	/* Set up owlib */
 	LibSetup(program_type_server);
 	Setup_Systemd() ; // systemd?
+	Setup_Launchd() ; // launchd?
 
 	/* grab our executable name */
-	if (argc > 0) {
-		Globals.progname = owstrdup(argv[0]);
-		if ( strcasecmp( Globals.progname, "owexternal" ) == 0 ) {
-			Globals.allow_external = 1 ; // only if program named "owexternal"
-		}
+	ArgCopy( argc, argv ) ;
+	if ( strcasecmp( Globals.argv[0], "owexternal" ) == 0 ) {
+		Globals.allow_external = 1 ; // only if program named "owexternal"
 	}
 
 	while ((c = getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL)) != -1) {
@@ -85,7 +84,7 @@ int main(int argc, char **argv)
 	}
 
 	/* Set up adapters and systemd*/
-	if ( BAD(LibStart()) ) {
+	if ( BAD(LibStart(NULL)) ) {
 		ow_exit(1);
 	}
 

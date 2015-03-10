@@ -9,14 +9,6 @@
  *
  */
  
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#include <stdio.h> // for getline
-#undef _GNU_SOURCE
-#else
-#include <stdio.h> // for getline
-#endif
-
 #include "owhttpd.h"
 
 // #include <libgen.h>  /* for dirname() */
@@ -36,17 +28,18 @@ enum http_return { http_ok, http_dir, http_icon, http_400, http_404 } ;
 
 	/* Error page functions */
 enum content_type PoorMansParser( char * bad_url ) ;
-static void Bad400(FILE * out, const enum content_type ct);
-static void Bad404(FILE * out, const enum content_type ct);
+static void Bad400( struct OutputControl * oc, const enum content_type ct);
+static void Bad404( struct OutputControl * oc, const enum content_type ct);
 
 /* URL parsing function */
 static void URLparse(struct urlparse *up);
-static enum http_return handle_GET(FILE * out, struct urlparse * up) ;
-static enum http_return handle_POST(FILE * out, struct urlparse * up) ;
-static void ReadToCRLF( FILE * out ) ;
+static enum http_return handle_GET( struct OutputControl * oc, struct urlparse * up) ;
+static enum http_return handle_POST( struct OutputControl * oc, struct urlparse * up) ;
+static void ReadToCRLF( struct OutputControl * oc ) ;
 static void TrimBoundary( char ** boundary ) ;
-static int GetPostData( char * boundary, struct memblob * mb, FILE * out ) ;
-static char * GetPostPath( FILE * out ) ;
+static int GetPostData( char * boundary, struct memblob * mb, struct OutputControl * oct ) ;
+static char * GetPostPath(  struct OutputControl * oc ) ;
+static GOOD_OR_BAD GetHostURL( struct OutputControl * oc ) ;
 
 /* --------------- Functions ---------------- */
 
@@ -57,6 +50,9 @@ int handle_socket(FILE * out)
 	enum content_type pmp = ct_html;
 
 	struct urlparse up;
+	
+	struct OutputControl s_oc = { out, 0, NULL, NULL, } ;
+	struct OutputControl * oc = &s_oc ;
 
 	struct parsedname s_pn;
 	struct parsedname * pn = &s_pn ;
@@ -69,11 +65,18 @@ int handle_socket(FILE * out)
 		httpunescape((BYTE *) up.request );
 		httpunescape((BYTE *) up.value   );
 
-		LEVEL_CALL
-		("WLcmd: %s\tfile: %s\trequest: %s\tvalue: %s\tversion: %s",
-		SAFESTRING(up.cmd), SAFESTRING(up.file), SAFESTRING(up.request), SAFESTRING(up.value), SAFESTRING(up.version));
+		LEVEL_CALL(
+		"WLcmd: %s\tfile: %s\trequest: %s\tvalue: %s\tversion: %s",
+		SAFESTRING(up.cmd), SAFESTRING(up.file), SAFESTRING(up.request), SAFESTRING(up.value), SAFESTRING(up.version)
+		);
 
-		if (up.cmd == NULL) {
+		oc->base_url = owstrdup( up.file ) ;
+
+		if ( BAD( GetHostURL(oc) ) ) {
+			// No command line in request
+			pn = NO_PARSEDNAME ;
+			http_code = http_400 ;
+		} else if (up.cmd == NULL) {
 			// No command line in request
 			pn = NO_PARSEDNAME ;
 			http_code = http_400 ;
@@ -84,26 +87,26 @@ int handle_socket(FILE * out)
 		} else if (strcasecmp(up.file, "/favicon.ico") == 0) {
 			// special case for the icon
 			LEVEL_DEBUG("http icon request.");
-			ReadToCRLF(out) ;
+			ReadToCRLF(oc) ;
 			pn = NO_PARSEDNAME ;
 			http_code = http_icon ;
 		} else 	if (FS_ParsedName(up.file, pn) != 0) {
 			// Can't understand the file name = URL
 			LEVEL_DEBUG("http %s not understood.",up.file);
-			ReadToCRLF(out) ;
+			ReadToCRLF(oc) ;
 			pn = NO_PARSEDNAME ;
 			http_code = http_404 ;
 		} else if (pn->selected_device == NO_DEVICE) {
 			// directory!
 			LEVEL_DEBUG("http directory request.");
-			ReadToCRLF(out) ;
+			ReadToCRLF(oc) ;
 			http_code = http_dir ;
 		} else if (strcmp(up.cmd, "POST") == 0) {
 			LEVEL_DEBUG("http POST request.");
-			http_code = handle_POST( out, &up ) ;
+			http_code = handle_POST( oc, &up ) ;
 		} else if (strcmp(up.cmd, "GET") == 0) {
 			LEVEL_DEBUG("http GET request.");
-			http_code = handle_GET( out, &up ) ;
+			http_code = handle_GET( oc, &up ) ;
 			// special case for possible alias changes
 			// Parsedname structure may point to a device that no longer exists
 			if ( http_code == http_ok ) { // was able to write
@@ -120,7 +123,7 @@ int handle_socket(FILE * out)
 				}
 			}
 		} else {
-			ReadToCRLF(out) ;
+			ReadToCRLF(oc) ;
 			http_code = http_400 ;
 		}
 		switch ( http_code ) {
@@ -146,34 +149,41 @@ int handle_socket(FILE * out)
 	
 	switch ( http_code ) {
 		case http_icon:
-			Favicon(out);
+			Favicon(oc);
 			break ;
 		case http_400:
-			Bad400(out,pmp);
+			Bad400(oc,pmp);
 			break ;
 		case http_404:
-			Bad404(out,pmp);
+			Bad404(oc,pmp);
 			break ;
 		case http_dir:
-			ShowDir(out, pn);
+			ShowDir(oc, pn);
 			break ;
 		case http_ok:
-			ShowDevice(out, pn);
+			ShowDevice(oc, pn);
 			break ;
 	}
 	if ( pn != NO_PARSEDNAME ) {
 		FS_ParsedName_destroy(pn);
 	}
 	
+	if ( oc->base_url != NULL ) {
+		owfree( oc->base_url ) ;
+	}
+	if ( oc->host != NULL ) {
+		owfree( oc->host ) ;
+	}
+	
 	return 0 ;
 }	
 
 /* The HTTP request is a GET message */
-static enum http_return handle_GET(FILE * out, struct urlparse * up)
+static enum http_return handle_GET( struct OutputControl * oc, struct urlparse * up)
 {
 	/* read lines until blank */
 	if (up->version) {
-		ReadToCRLF( out ) ;
+		ReadToCRLF( oc ) ;
 	}
 	
 	if (up->request == NULL) {
@@ -223,8 +233,9 @@ static enum http_return handle_GET(FILE * out, struct urlparse * up)
 }
 
 /* The HTTP request is a POST message */
-static enum http_return handle_POST(FILE * out, struct urlparse * up)
+static enum http_return handle_POST( struct OutputControl * oc, struct urlparse * up)
 {
+	FILE* out = oc->out ;
 	enum http_return http_code = http_404 ; // default error mode
 
 	char * boundary = NULL ;
@@ -232,19 +243,19 @@ static enum http_return handle_POST(FILE * out, struct urlparse * up)
 	
 	/* read lines until blank */
 	if (up->version) {
-		ReadToCRLF( out ) ;
+		ReadToCRLF( oc ) ;
 	}
 	
 	// use getline because it handles null chars
 	if ( getline(&boundary,&boundary_length,out) > 2 ) {
-		char * post_path  = GetPostPath( out ) ;
+		char * post_path  = GetPostPath( oc ) ;
 
 		TrimBoundary( &boundary) ;
 		LEVEL_CALL("POST boundary=%s",boundary);
 
 		if ( post_path ) {
 			struct memblob mb ;
-			if ( GetPostData( boundary, &mb, out ) == 0 ) {
+			if ( GetPostData( boundary, &mb, oc ) == 0 ) {
 				struct one_wire_query * owq = OWQ_create_from_path( post_path ) ; // for write
 				if ( owq ) {
 					LEVEL_DEBUG("File upload %s for %ld bytes",post_path,MemblobLength(&mb));
@@ -277,9 +288,22 @@ static void URLparse(struct urlparse *up)
 {
 	char *str;
 	int first = 1;
+	char * extension ;
 
 	up->cmd = up->version = up->file = up->request = up->value = NULL;
-
+	
+	/* Special case for sparse array
+	 * Substitute "/" for "?EXTENSION=" 
+	 * */
+	extension = strchr( up->line, '?' ) ;
+	if ( extension != NULL ) {
+		if ( strncmp( "?EXTENSION=" , extension, 11 ) == 0 ) {
+			int l = strlen( extension ) ;
+			extension[0] = '/' ;
+			memmove(  &extension[1], &extension[11], l-10 ) ;
+		}
+	}
+	 
 	/* Separate out the three parameters, all in same line */
 	for (str = up->line; *str; str++) {
 		switch (*str) {
@@ -347,52 +371,56 @@ static void URLparse(struct urlparse *up)
 }
 
 
-static void Bad400(FILE * out, const enum content_type ct)
+static void Bad400(struct OutputControl * oc, const enum content_type ct)
 {
+	FILE * out = oc->out ;
+	
 	LEVEL_CALL("Return a 400 HTTP error code");
 	switch( ct ) {
 		case ct_text:
-			HTTPstart(out, "400 Bad Request", ct_text);
+			HTTPstart(oc, "400 Bad Request", ct_text);
 			fprintf(out, "400 Bad request");
 			break ;
 		case ct_json:
-			HTTPstart(out, "400 Bad Request", ct_json);
+			HTTPstart(oc, "400 Bad Request", ct_json);
 			fprintf(out, "{}");
 			break ;
 		default:
-			HTTPstart(out, "400 Bad Request", ct_html);
-			HTTPtitle(out, "Error 400 -- Bad request");
-			HTTPheader(out, "Unrecognized Request");
+			HTTPstart(oc, "400 Bad Request", ct_html);
+			HTTPtitle(oc, "Error 400 -- Bad request");
+			HTTPheader(oc, "Unrecognized Request");
 			fprintf(out, "<P>The 1-wire web server is carefully constrained for security and stability. Your requested web page is not recognized.</P>");
 			fprintf(out, "<P>Navigate from the <A HREF=\"/\">Main page</A> for best results.</P>");
-			HTTPfoot(out);
+			HTTPfoot(oc);
 	}
 }
 
-static void Bad404(FILE * out, const enum content_type ct)
+static void Bad404(struct OutputControl * oc, const enum content_type ct)
 {
+	FILE * out = oc->out ;
 	LEVEL_CALL("Return a 404 HTTP error code");
 	switch( ct ) {
 		case ct_text:
-			HTTPstart(out, "404 Not Found", ct_text);
+			HTTPstart(oc, "404 Not Found", ct_text);
 			fprintf(out, "404 Not Found");
 			break ;
 		case ct_json:
-			HTTPstart(out, "404 Not Found", ct_json);
+			HTTPstart(oc, "404 Not Found", ct_json);
 			fprintf(out, "{}");
 			break ;
 		default:
-			HTTPstart(out, "404 Not Found", ct_html);
-			HTTPtitle(out, "Error 404 -- Item doesn't exist");
-			HTTPheader(out, "Nonexistent Device");
+			HTTPstart(oc, "404 Not Found", ct_html);
+			HTTPtitle(oc, "Error 404 -- Item doesn't exist");
+			HTTPheader(oc, "Nonexistent Device");
 			fprintf(out, "<P>The 1-wire web server is carefully constrained for security and stability. Your requested device is not recognized.</P>");
 			fprintf(out, "<P>Navigate from the <A HREF=\"/\">Main page</A> for best results.</P>");
-			HTTPfoot(out);
+			HTTPfoot(oc);
 }	}
 
 
-static void ReadToCRLF( FILE * out )
+static void ReadToCRLF( struct OutputControl * oc )
 {
+	FILE * out = oc->out ;
 	char * text_in = NULL ;
 	size_t length_in = 0 ;
 	ssize_t getline_length ;
@@ -426,8 +454,9 @@ static void TrimBoundary( char ** boundary )
 	}
 }
 
-static char * GetPostPath( FILE * out )
+static char * GetPostPath(struct OutputControl * oc )
 {
+	FILE * out = oc->out ;
 	char * text_in = NULL ;
 	size_t length_in = 0 ;
 	char * path_found = NO_PATH ;
@@ -462,8 +491,9 @@ static char * GetPostPath( FILE * out )
 }
 
 // read data from file upload
-static int GetPostData( char * boundary, struct memblob * mb, FILE * out )
+static int GetPostData( char * boundary, struct memblob * mb, struct OutputControl * oc )
 {
+	FILE * out = oc->out ;
 	char * data = NULL ;
 	size_t data_length ;
 
@@ -514,3 +544,46 @@ enum content_type PoorMansParser( char * bad_url )
 	return ct_html ;
 }
 			
+static GOOD_OR_BAD GetHostURL( struct OutputControl * oc )
+{
+	FILE * out = oc->out ;
+	char * line = NULL ;
+	char * pline ;
+	do {
+		size_t s ;
+		if ( getline( &line, &s, out ) < 0 ) {
+			free( line ) ;
+			LEVEL_DEBUG("Couldn't find Host: line in HTTP header") ;
+			return gbBAD ;
+		}
+		if ( s < 5 ) {
+			continue ; // too short for Host:
+		}
+		for ( pline = line ; *pline != '\0' ; ++pline ) {
+			if ( pline[0] != ' ' ) {
+				if ( strncasecmp( pline, "host", 4 ) == 0 ) {
+					// Found host
+					strsep( &pline, ":" ) ; // look for ':'
+					if ( pline == NULL ) {
+						LEVEL_DEBUG("No : in Host HTTP line") ;
+						free(line) ;
+						return gbBAD ;
+					}
+					for ( ; *pline==' ' ; ++pline ) {
+						continue ;
+					}
+					oc->host = owstrdup(strsep( &pline, " \r\n" )) ;
+					LEVEL_DEBUG("Found host <%s>",oc->host) ;
+					free(line) ;
+					return gbGOOD ;				
+				} else {
+					continue ;
+				}
+			}
+		}
+	} while (1) ;
+}
+
+
+				
+	

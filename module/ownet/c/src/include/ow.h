@@ -67,7 +67,13 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <stdio.h>
+#ifdef __CYGWIN__
+#define __BSD_VISIBLE  1 /* for strep */
+#endif
 #include <string.h>
+#ifdef __APPLE__
+#include <strings.h> /* for strcasecmp */
+#endif /* __APPLE__ */
 #include <dirent.h>
 #include <signal.h>
 

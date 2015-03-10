@@ -15,6 +15,8 @@
  * quote and double quote matching
  * */
 
+/* 11/2014 -- considerable testing and patches from Sven Giermann */
+
 #include <config.h>
 #include "owfs_config.h"
 #include "ow.h"
@@ -40,7 +42,7 @@ void * property_tree = NULL ;
 void * family_tree = NULL ;
 void * sensor_tree = NULL ;
 
-// ForAddSensor and AddProperty
+// For AddSensor and AddProperty
 // uses the various tools to get a string into s_name (name is given)
 // start_pointer (a char *) is used and updated.
 #define GetQuotedString( name ) do {                               \
@@ -51,6 +53,7 @@ void * sensor_tree = NULL ;
 		++ start_pointer ;                                        \
 	}                                                             \
 	s_##name = unquote_parse( trim_parse( s_##name ) ) ;          \
+	LEVEL_DEBUG( #name" assigned %s",s_##name ) ;               \
 } while (0) ;
 
 // Look through text_string, ignore backslash and match quoting varibles
@@ -133,22 +136,47 @@ static char * trim_parse( char * raw_string )
 	char * start_position ;
 	char * end_position ;
 	char * return_string ;
+
+	// trim off preamble whitespace
 	for ( start_position = raw_string ; start_position[0] ; ++ start_position ) {
-		if ( start_position[0] != ' ' ) {
-			break ;
+		switch ( start_position[0] ) {
+			case ' ':
+			case '\t':
+			// ignore these characters
+				continue ;
+			case '\n':
+			case '\r':
+				// end of the line -- empty string return
+				owfree( raw_string );
+				return owstrdup("") ;
+			default:
+				break ;
 		}
+		// getting here means a valid character found
+		break ;
 	}
+
+	// delete old string and use new copy starting at first non whitespace position
 	return_string = owstrdup ( start_position ) ;
 	owfree( raw_string ) ;
 	
+	// trim off 
 	for ( end_position = return_string + strlen( return_string ) ; end_position >= return_string ; -- end_position ) {
-		if ( end_position[0] == '\0' ) {
-			continue ;
-		} else if ( end_position[0] != ' ' ) {
-			break ;
-		} else {
-			end_position[0] = '\0' ;
+		switch ( end_position[0] ) {
+			case ' ':
+			case '\0':
+			case '\r':
+			case '\n':
+			case '\t':
+				// ignorable end char -- make null
+				end_position[0] = '\0' ;
+				continue ;
+			default:
+				// good char
+				break ;			
 		}
+		// getting here means a valid character found
+		break ;
 	}
 	
 	return return_string ;
@@ -160,23 +188,23 @@ static char * unquote_parse( char * raw_string )
 		return NULL ;
 	}
 	switch ( raw_string[0] ) {		
-	case '"':
-	case '\'':
-		if ( raw_string[1] == '\0' ) {
-			owfree( raw_string ) ;
-			return owstrdup("") ;
-		} else {
-			char * unquoted = owstrdup( raw_string+1 ) ;
-			char * unquoted_end = unquoted + strlen(unquoted) -1 ;
-			if ( unquoted_end[0] == raw_string[0] ) {
-				unquoted_end[0] = '\0' ;
+		case '"':
+		case '\'':
+			if ( raw_string[1] == '\0' ) {
+				owfree( raw_string ) ;
+				return owstrdup("") ;
+			} else {
+				char * unquoted = owstrdup( raw_string+1 ) ;
+				char * unquoted_end = unquoted + strlen(unquoted) -1 ;
+				if ( unquoted_end[0] == raw_string[0] ) {
+					unquoted_end[0] = '\0' ;
+				}
+				owfree( raw_string ) ;
+				return unquoted ;
 			}
-			owfree( raw_string ) ;
-			return unquoted ;
-		}
-		break ;
-	default:
-		return raw_string ;
+			break ;
+		default:
+			return raw_string ;
 	}
 }	
 	
@@ -199,6 +227,9 @@ static int LastParam( char * input_string )
 
 // Gets a string with property,family,structure,read_function,write_function,property_data,extra
 // write, data and extra are optional
+
+// starts with script:
+// or property:
 /*
  * property
  * family
@@ -230,7 +261,7 @@ void AddProperty( char * input_string, enum external_type et )
 	}
 	
 	if ( ! Globals.allow_external ) {
-		LEVEL_DEBUG("External prgroams not supported by %s",Globals.progname) ;
+		LEVEL_DEBUG("External prgroams not supported by %s",Globals.argv[0]) ;
 		return ;
 	}
 
@@ -326,8 +357,8 @@ void AddProperty( char * input_string, enum external_type et )
 			}
 			break ;
 		case '+':
-			if ( isalpha(s_dummy[1]) ) {
-				s_array = toupper(s_dummy[1]) - 'A' ;
+			if ( isalpha( (int) s_dummy[1] ) ) {
+				s_array = toupper( (int) s_dummy[1] ) - 'A' ;
 				s_combined = ag_aggregate ;
 				s_index_type = ag_letters ;
 			} else {
@@ -337,8 +368,8 @@ void AddProperty( char * input_string, enum external_type et )
 			}
 			break ;
 		default:
-			if ( isalpha(s_dummy[0]) ) {
-				s_array = toupper(s_dummy[0]) - 'A' ;
+			if ( isalpha( (int) s_dummy[0] ) ) {
+				s_array = toupper( (int) s_dummy[0] ) - 'A' ;
 				s_combined = ag_separate ;
 				s_index_type = ag_letters ;
 			} else {
@@ -425,7 +456,7 @@ void AddSensor( char * input_string )
 	}
 	
 	if ( ! Globals.allow_external ) {
-		LEVEL_DEBUG("External prgroams not supported by %s",Globals.progname) ;
+		LEVEL_DEBUG("External prgroams not supported by %s",Globals.argv[0]) ;
 		return ;
 	}
 	

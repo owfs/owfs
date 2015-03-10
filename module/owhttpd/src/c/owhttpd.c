@@ -1,5 +1,4 @@
 /*
-$Id$
     OW_HTML -- OWFS used for the web
     OW -- One-Wire filesystem
 
@@ -43,11 +42,10 @@ int main(int argc, char *argv[])
 	/* Set up owlib */
 	LibSetup(program_type_httpd);
 	Setup_Systemd() ; // systemd?
+	Setup_Launchd() ; // launchd?
 
 	/* grab our executable name */
-	if (argc > 0) {
-		Globals.progname = owstrdup(argv[0]);
-	}
+	ArgCopy( argc, argv ) ;
 
 	while ((c = getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL)) != -1) {
 		switch (c) {
@@ -92,7 +90,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* Set up adapters and systemd */
-	if ( BAD(LibStart()) ) {
+	if ( BAD(LibStart(NULL)) ) {
 		ow_exit(1);
 	}
 

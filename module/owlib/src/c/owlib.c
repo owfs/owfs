@@ -20,8 +20,11 @@ static void SetupInboundConnections(void);
 static GOOD_OR_BAD SetupSingleInboundConnection( struct port_in * pin ) ;
 
 /* Start the owlib process -- already in background */
-GOOD_OR_BAD LibStart(void)
+GOOD_OR_BAD LibStart(void* v)
 {
+	/* Start configuration monitoring */
+	Config_Monitor_Watch(v) ;
+	
 	/* Build device and filetype arrays (including externals) */
 	DeviceSort();
 
@@ -71,7 +74,7 @@ static void SetupTemperatureLimits( void )
 	} else {
 		Globals.temphigh = fromTemperature(Globals.temphigh,&pn) ; // internal scale
 	}
-	LEVEL_DEBUG("Globals temp limits %gC %gC (for simulated adapters)",Globals.templow,Globals.temphigh);
+	LEVEL_DEBUG("Global temp limit %gC to %gC (for fake and mock adapters)",Globals.templow,Globals.temphigh);
 }
 
 static void SetupInboundConnections(void)
@@ -173,6 +176,20 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct port_in * pin )
 		}
 		break;
 
+	case bus_ds1wm:
+		if ( BAD( DS1WM_detect(pin) )) {
+			LEVEL_CONNECT("Cannot detect an DS1WM synthesized bus master at %s", DEVICENAME(in));
+			return gbBAD ;
+		}
+		break;
+
+	case bus_k1wm:
+		if ( BAD( K1WM_detect(pin) )) {
+			LEVEL_CONNECT("Cannot detect an K1WM synthesized bus master at %s", DEVICENAME(in));
+			return gbBAD ;
+		}
+		break;
+
 	case bus_parallel:
 #if OW_PARPORT
 		if ( BAD( DS1410_detect(pin) )) {
@@ -243,7 +260,9 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct port_in * pin )
 		break;
 
 	case bus_usb_monitor:
+#if OW_USB
 		RETURN_BAD_IF_BAD( USB_monitor_detect(pin) ) ;
+#endif /* OW_USB */
 		break;
 
 	case bus_w1:

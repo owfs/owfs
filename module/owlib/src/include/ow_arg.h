@@ -2,7 +2,7 @@
     OW -- One-Wire filesystem
     version 0.4 7/2/2003
 
-\    LICENSE (As of version 2.5p4 2-Oct-2006)
+    LICENSE (As of version 2.5p4 2-Oct-2006)
     owlib: GPL v2
     owfs, owhttpd, owftpd, owserver: GPL v2
     owshell(owdir owread owwrite owpresent): GPL v2
@@ -53,6 +53,8 @@ GOOD_OR_BAD ARG_I2C(const char *arg);
 GOOD_OR_BAD ARG_HA5( const char *arg);
 GOOD_OR_BAD ARG_HA7(const char *arg);
 GOOD_OR_BAD ARG_HA7E(const char *arg);
+GOOD_OR_BAD ARG_DS1WM(const char *arg);
+GOOD_OR_BAD ARG_K1WM(const char *arg);
 GOOD_OR_BAD ARG_ENET(const char *arg);
 GOOD_OR_BAD ARG_PBM(const char *arg);
 GOOD_OR_BAD ARG_EtherWeather(const char *arg);

@@ -212,6 +212,10 @@ static int CB_read(const char *path, char *buffer, size_t size, off_t offset, st
 		// fuse requests a useless read at end of file -- just return ok.
 		return_size = 0 ;
 	} else {
+		if ( size > MAX_OWSERVER_PROTOCOL_PAYLOAD_SIZE ) {
+			LEVEL_DEBUG( "Requested read length %ld will be trimmed to owfs max %ld",(long int) size, (long int) MAX_OWSERVER_PROTOCOL_PAYLOAD_SIZE ) ;
+			size = MAX_OWSERVER_PROTOCOL_PAYLOAD_SIZE ;
+		}
 		OWQ_assign_read_buffer( buffer, size, offset, owq) ;
 		return_size = FS_read_postparse(owq) ;
 	}

@@ -8,17 +8,22 @@
 	1wire/iButton system from Dallas Semiconductor
 */
 
-#ifndef OW_SYSTEM_H
-#define OW_SYSTEM_H
+#ifndef OW_LAUNCHD_H
+#define OW_LAUNCHD_H
 
 #ifndef OWFS_CONFIG_H
 #error Please make sure owfs_config.h is included *before* this header file
 #endif
-#include "ow_standard.h"
 
-/* -------- Structures ---------- */
-DeviceHeader(sys_process);
-DeviceHeader(sys_connections);
-DeviceHeader(sys_configure);
 
-#endif							/* OW_SYSTEM_H */
+#ifdef HAVE_LAUNCH_ACTIVATE_SOCKET
+
+// Header file from OSX
+#include	<launch.h>
+
+#endif /* HAVE_LAUNCH_ACTIVATE_SOCKET */
+
+// Our function -- safe outside of OSX too
+void Setup_Launchd( void ) ;
+
+#endif							/* OW_LAUNCHD_H */

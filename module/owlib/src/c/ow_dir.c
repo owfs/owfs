@@ -395,8 +395,11 @@ static ZERO_OR_ERROR FS_devdir(void (*dirfunc) (void *, const struct parsedname 
 		} else if (ft_pointer->ag->combined==ag_sparse) {
 			struct parsedname s_pn_file_entry;
 			struct parsedname *pn_file_entry = &s_pn_file_entry;
+			
+			
 			if (ft_pointer->ag->letters==ag_letters) {
 				if (FS_ParsedNamePlusText(pn_device_directory->path, namepart, "xxx", pn_file_entry) == 0) {
+					pn_file_entry->extension = EXTENSION_UNKNOWN ; // unspecified (for owhttpd)
 					switch ( FS_visible(pn_file_entry) ) { // hide hidden properties
 						case visible_now :
 						case visible_always:
@@ -410,6 +413,7 @@ static ZERO_OR_ERROR FS_devdir(void (*dirfunc) (void *, const struct parsedname 
 				}
 			} else {
 				if (FS_ParsedNamePlusText(pn_device_directory->path, namepart, "000", pn_file_entry) == 0) {
+					pn_file_entry->extension = EXTENSION_UNKNOWN ; // unspecified (for owhttpd)
 					switch ( FS_visible(pn_file_entry) ) { // hide hidden properties
 						case visible_now :
 						case visible_always:
