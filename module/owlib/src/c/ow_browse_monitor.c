@@ -41,7 +41,9 @@ GOOD_OR_BAD Browse_detect(struct port_in *pin)
 	
 	RETURN_BAD_IF_BAD( browse_in_use(in) ) ;
 
+#if OW_ZERO
 	in->master.browse.bonjour_browse = 0 ;
+#endif
 
 #if OW_AVAHI	
 	in->master.browse.browser = NULL ;

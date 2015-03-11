@@ -34,7 +34,12 @@ void Config_Monitor_Add( const char * filename )
 			return ;
 		}
 	}
+#if defined(O_EVTONLY)
 	fd = open( filename, O_EVTONLY ) ;
+#else
+	// O_EVTONLY not available on FreeBSD
+	fd = open( filename, O_RDONLY) ;
+#endif
 	if ( FILE_DESCRIPTOR_NOT_VALID( fd ) ) {
 		LEVEL_DEBUG("Can't open %s for monitoring", filename ) ;
 		return ;
