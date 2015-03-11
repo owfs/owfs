@@ -17,7 +17,7 @@
 #include "owshell.h"
 
 static int HexVal( char c ) ;
-static char * HexConvert( char * input_string ) ;
+static char * HexConvert( char * input_string, int *out_size ) ;
 
 /* ---------------------------------------------- */
 /* Command line parsing and result generation     */
@@ -44,15 +44,16 @@ int main(int argc, char *argv[])
 		char * hex_convert ;
 		/* non-option arguments */
 		while (optind < argc - 1) {
-			hex_convert = HexConvert(argv[optind + 1]) ; // never null (will exit if null)
-			rc = ServerWrite(argv[optind], hex_convert);
+			int size = 0;
+			hex_convert = HexConvert(argv[optind + 1], &size) ; // never null (will exit if null)
+			rc = ServerWrite(argv[optind], hex_convert, size);
 			optind += 2;
 			free(hex_convert ) ;
 		}
 	} else {
 		/* non-option arguments */
 		while (optind < argc - 1) {
-			rc = ServerWrite(argv[optind], argv[optind + 1]);
+			rc = ServerWrite(argv[optind], argv[optind + 1], strlen(argv[optind + 1]));
 			optind += 2;
 		}
 	}
@@ -98,7 +99,7 @@ static int HexVal( char c )
 }
 
 // allocates a string -- must be freed by caller
-static char * HexConvert( char * input_string )
+static char * HexConvert( char * input_string, int *out_size  )
 {
 	int length = strlen( input_string ) ;
 	int pad_first =  ( (length/2)*2 != length ) ; // odd
@@ -120,10 +121,12 @@ static char * HexConvert( char * input_string )
 		++hex_pointer ;
 	}
 
+	*out_size = 0;
 	while ( hex_pointer < length ) {
 		return_string[char_pointer] = HexVal(input_string[hex_pointer]) * 16 + HexVal(input_string[hex_pointer+1]) ;
 		hex_pointer += 2 ;
 		++char_pointer ;
+		(*out_size)++;
 	}
 
 	return_string[ char_pointer] = '\0' ; // trailing null

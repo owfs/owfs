@@ -273,7 +273,7 @@ void OW_Browse(void);
 
 void Server_detect(void);
 int ServerRead(ASCII * path);
-int ServerWrite(ASCII * path, ASCII * data);
+int ServerWrite(ASCII * path, ASCII * data, int size);
 int ServerDir(ASCII * path);
 int ServerDirall(ASCII * path);
 int ServerPresence(ASCII * path);

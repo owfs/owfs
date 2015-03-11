@@ -76,11 +76,10 @@ int ServerRead(ASCII * path)
 	return ret;
 }
 
-int ServerWrite(ASCII * path, ASCII * data)
+int ServerWrite(ASCII * path, ASCII * data, int size)
 {
 	struct server_msg sm;
 	struct client_msg cm;
-	int size = strlen(data);
 	struct serverpackage sp = { path, (BYTE *) data, size, NULL, 0, };
 	int connectfd = ClientConnect();
 	int ret = 0;
