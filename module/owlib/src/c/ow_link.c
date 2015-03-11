@@ -749,6 +749,37 @@ static GOOD_OR_BAD LINK_directory(struct device_search *ds, struct connection_in
 	return gbGOOD;
 }
 
+/* Control The Link AUX port, an extra physical line which
+ * can be set high, low or HiZ by means of reading line state */
+GOOD_OR_BAD LINK_aux_write(int level, struct connection_in * in) {
+	BYTE out[1];
+	if(level) {
+		// Set the Auxiliary line to the HIGH (default) level and low impedance.
+		out[0] = 'd';
+	}
+	else
+	{
+		// Set the Auxiliary line to the LOW level and low impedance.
+		out[0] = 'z';
+	}
+	RETURN_BAD_IF_BAD(LINK_write(out, 1, in)) ;
+	// These commands does not generate any response
+
+	return gbGOOD;
+}
+
+GOOD_OR_BAD LINK_aux_read(int *level_out, struct connection_in * in) {
+	BYTE buf[1+in->CRLF_size] ;
+
+	// Set the Auxiliary line to high impedance and report the current intended input level.
+	RETURN_BAD_IF_BAD(LINK_write(LINK_string("&"), 1, in)) ;
+	RETURN_BAD_IF_BAD(LINK_readback_data(buf, 1, in)) ;
+
+	*level_out = (buf[0]=='0') ? 0 : 1 ;
+	return gbGOOD;
+}
+
+
 static void LINK_close(struct connection_in *in)
 {
 	// the standard COM_free routine cleans up the connection

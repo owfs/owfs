@@ -61,6 +61,10 @@ READ_FUNCTION(FS_r_PBM_channel);
 READ_FUNCTION(FS_r_PBM_features);
 READ_FUNCTION(FS_w_PBM_activationcode);
 
+/* Link AUX functions */
+READ_FUNCTION(FS_w_LINK_aux);
+READ_FUNCTION(FS_r_LINK_aux);
+
 static enum e_visibility VISIBLE_DS2482( const struct parsedname * pn )
 {
 	switch ( get_busmode(pn->selected_connection) ) {
@@ -87,6 +91,16 @@ static enum e_visibility VISIBLE_DS2480B( const struct parsedname * pn )
 		case bus_serial:
 		case bus_xport:
 		case bus_pbm:
+			return visible_now ;
+		default:
+			return visible_not_now ;
+	}
+}
+
+static enum e_visibility VISIBLE_LINK( const struct parsedname * pn )
+{
+	switch ( get_busmode(pn->selected_connection) ) {
+		case bus_link:
 			return visible_now ;
 		default:
 			return visible_not_now ;
@@ -168,6 +182,11 @@ static struct filetype interface_settings[] = {
 	{"serial/reverse_polarity", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_yesno, FS_w_yesno, VISIBLE_DS2480B, {.s=offsetof(struct connection_in,master.serial.reverse_polarity),}, },
 	{"serial/baudrate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_static, FS_r_baud, FS_w_baud, VISIBLE_DS2480B, NO_FILETYPE_DATA, },
 	{"serial/flexible_timing", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_yesno, FS_w_yesno, VISIBLE_DS2480B, {.s=offsetof(struct connection_in,flex),}, },
+
+	/* Link/LinkUSB AUX line control */
+	{"link", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_LINK, NO_FILETYPE_DATA, },
+	{"link/auxout", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_w_LINK_aux, VISIBLE_LINK, NO_FILETYPE_DATA, },
+	{"link/auxin", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_LINK_aux, NO_WRITE_FUNCTION, VISIBLE_LINK, NO_FILETYPE_DATA, },
 
 	{"ha5", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_HA5, NO_FILETYPE_DATA, },
 	{"ha5/checksum", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_yesno, FS_w_yesno, VISIBLE_HA5, {.s=offsetof(struct connection_in,master.ha5.checksum), }, },
@@ -513,6 +532,30 @@ static ZERO_OR_ERROR FS_r_PBM_serial(struct one_wire_query *owq)
 	
 	return 0 ;
 }
+
+/* Link/LinkUSB Aux line control */
+
+// from ow_link.c
+GOOD_OR_BAD LINK_aux_write(int level, struct connection_in * in) ;
+GOOD_OR_BAD LINK_aux_read(int *level_out, struct connection_in * in) ;
+
+static ZERO_OR_ERROR FS_r_LINK_aux(struct one_wire_query *owq)
+{
+	struct connection_in * in = PN(owq)->selected_connection ;
+	int level;
+	RETURN_ERROR_IF_BAD(LINK_aux_read(&level, in));
+
+	OWQ_Y(owq) = level;
+	return OWQ_parse_output(owq);
+}
+
+static ZERO_OR_ERROR FS_w_LINK_aux(struct one_wire_query *owq)
+{
+	struct connection_in * in = PN(owq)->selected_connection ;
+	int level = OWQ_Y(owq) ;
+	return GB_to_Z_OR_E(LINK_aux_write(level, in));
+}
+
 
 #ifdef DEBUG_DS2490
 static ZERO_OR_ERROR FS_r_ds2490status(struct one_wire_query *owq)
