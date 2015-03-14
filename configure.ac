@@ -1122,67 +1122,6 @@ LIBUSB_CFLAGS=""
 LIBUSB_LIBS=""
 
 
-AC_DEFUN([ACX_USB_INTERRUPT_READ], [
-AC_REQUIRE([AC_CANONICAL_HOST])
-AC_LANG_SAVE
-AC_LANG_C
-acx_usb_interrupt_read_ok=no
-
-        AC_MSG_CHECKING([if usb_interrupt_read is found])
-
-        save_LIBS="$LIBS"
-        save_CFLAGS="$CFLAGS"
-		LIBS="$save_LIBS $LIBUSB_LIBS"
-        CFLAGS="$save_CFLAGS $LIBUSB_CFLAGS"
-        AC_TRY_LINK([#include <usb.h>],
-                    [usb_interrupt_read(NULL, 0, NULL, 0, 0);],
-                    acx_usb_interrupt_read_ok=yes)
-
-        LIBS="$save_LIBS"
-        CFLAGS="$save_CFLAGS"
-
-        AC_MSG_RESULT(${acx_usb_interrupt_read_ok})
-
-# Finally, execute ACTION-IF-FOUND/ACTION-IF-NOT-FOUND:
-if test x"$acx_usb_interrupt_read_ok" = xyes; then
-        ifelse([$1],,AC_DEFINE(HAVE_USB_INTERRUPT_READ,1,[Define to 1 if you have the usb_interrupt_read function.]),[$1])
-        :
-else
-        acx_usb_interrupt_read_ok=no
-        $2
-fi
-AC_LANG_RESTORE
-])dnl ACX_USB_INTERRUPT_READ
-
-
-if test "$cross_compiling" != yes; then
-AC_CHECK_PROGS(LIBUSB_CONFIG, libusb-config)
-else
-LIBUSB_CONFIG=""
-fi
-AC_SUBST(LIBUSB_CONFIG)
-
-AC_ARG_WITH(libusb-config,
-            [  --with-libusb-config=PATH Specify full path to libusb-config])
-dnl Check if user passed a specific php-config program.
-if test "X$with_libusb_config" != "X" ; then
-	LIBUSB_CONFIG=$with_libusb_config
-fi
-
-if test "$cross_compiling" != yes; then
-	if test "X$LIBUSB_CONFIG" == "X" ; then
-		dirs="/usr/bin /usr/local/bin /opt/local/bin"
-		for i in $dirs; do
-			echo $i/libusb-config
-			if test -x $i/libusb-config; then
-				AC_MSG_RESULT($i/libusb-config is found)
-				LIBUSB_CONFIG="$i/libusb-config"
-				break;
-			fi
-		done
-	fi
-fi
-
 # Check for USB enabled
 ENABLE_USB=auto
 AC_MSG_CHECKING([if usb support is enabled])
@@ -1201,67 +1140,8 @@ AC_ARG_ENABLE(usb,
 ])
 
 if test "${ENABLE_USB}" != "false"; then
-
-	# Include libusb if the usb is enabled
-	if test "X${LIBUSB_CONFIG}" != "X" ; then
-
-		LIBUSB_CFLAGS=`$LIBUSB_CONFIG --cflags`
-		LIBUSB_LIBS=`$LIBUSB_CONFIG --libs`
-
-		save_CPPFLAGS="$CPPFLAGS"
-		save_LDFLAGS="$LDFLAGS"
-		CPPFLAGS="$save_CPPFLAGS $LIBUSB_CFLAGS"
-		LDFLAGS="$save_LDFLAGS $LIBUSB_LIBS"
-
-		AC_MSG_CHECKING([if libusb compiles with includes+lib ])
-		AC_COMPILE_IFELSE([
-		AC_LANG_PROGRAM([[#include <usb.h>]],
-		[[
-			usb_open(NULL);
-		]])],
-		[AC_MSG_RESULT([ok])],
-		[AC_MSG_RESULT([compilation error])
-		LIBUSB_CFLAGS=""
-		LIBUSB_LDFLAGS=""
-		LIBUSB_CONFIG=""
-		])
-
-		if test "X${LIBUSB_CONFIG}" != "X" ; then
-			ACX_USB_INTERRUPT_READ
-		fi
-
-		CPPFLAGS="$save_CPPFLAGS"
-		LDFLAGS="$save_LDFLAGS"
-
-	fi
-
-	# last test to see if libusb is found after AC_CHECK_LIB
-	if test "X${LIBUSB_CONFIG}" == "X"; then
-
-		AC_CHECK_LIB(usb,usb_open,[
-			LIBUSB_LIBS="-lusb"],[
-			AC_MSG_WARN([Cannot find libusb])
-			if test "${ENABLE_USB}" = "true" ; then
-				AC_MSG_ERROR([libusb must be installed to use a USB adapter])
-			else
-				AC_MSG_WARN([libusb not found, usb will be disabled])
-				ENABLE_USB=false
-			fi
-		],)
-
-		if test "${ENABLE_USB}" != "false" ; then
-			ACX_USB_INTERRUPT_READ
-		fi
-	fi
-
-	if test "${ENABLE_USB}" != "false" ; then
-	ENABLE_USB=true
-	fi
-
-	# ENABLE_USB
-
 	#LIBUSB_CONFIG
-	PKG_CHECK_MODULES(LIBUSB, [libusb-1.0 >= 0.9.1])
+	PKG_CHECK_MODULES([LIBUSB], [libusb-1.0 >= 0.9.1], [ENABLE_USB=true],[ENABLE_USB=false])
 fi
 
 AC_SUBST(LIBUSB_CFLAGS)
