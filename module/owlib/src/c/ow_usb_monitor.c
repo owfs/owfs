@@ -170,7 +170,7 @@ static void USB_scan_for_adapters(void)
 		return ;
 	}
 
-	LEVEL_DEBUG("USB SCAN!");
+	LEVEL_DEBUG("USB SCAN! %d total entries",n_devices);
 	MONITOR_RLOCK ;
 
 	for ( i_device = 0 ; i_device < n_devices ; ++i_device ) {

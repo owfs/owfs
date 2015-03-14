@@ -204,6 +204,7 @@ GOOD_OR_BAD DS9490_detect(struct port_in *pin)
 	GOOD_OR_BAD gbResult = gbBAD;
 	
 	/* uses "name" before it's cleared by connection_init */
+    //fprintf(stderr,"XXXXX Init of USB <%s>\n",SAFESTRING(pin->init_data));
 	Parse_Address( pin->init_data, &ap ) ;
 
 	DS9490_setroutines(in);

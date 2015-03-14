@@ -197,7 +197,7 @@ GOOD_OR_BAD DS9490_open( struct connection_in *in )
 //		LEVEL_CONNECT( "Could not set automatic USB driver management option" ) ;
 //	}
 	if ( (usb_err=libusb_detach_kernel_driver( usb, 0))!= 0 ) {
-		LEVEL_CONNECT( "<%s> Could not release kernel module",libusb_error_name(usb_err) ) ;
+		LEVEL_DEBUG( "<%s> Could not release kernel module",libusb_error_name(usb_err) ) ;
 	}
 
 	// store timeout value -- sec -> msec
