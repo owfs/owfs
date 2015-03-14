@@ -196,7 +196,7 @@ static void USB_scan_for_adapters(void)
 		}
 	}
 
-	MONITOR_RLOCK ;
+	MONITOR_RUNLOCK ;
 	
 	libusb_free_device_list(device_list, 1);
 }
