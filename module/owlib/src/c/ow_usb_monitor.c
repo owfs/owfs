@@ -192,6 +192,9 @@ static void USB_scan_for_adapters(void)
 			} else {
 				// Add the device, but no need to check for bad match
 				Add_InFlight( NULL, pin ) ;
+				if ( BAD(DS9490_ID_this_master(pin->first)) ) {
+					Del_InFlight( NULL, pin ) ;
+				}
 			}
 		}
 	}

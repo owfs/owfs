@@ -539,6 +539,7 @@ GOOD_OR_BAD ARG_USB(const char *arg)
 			return gbBAD;
 		}
 		pin->busmode = bus_usb;
+		DS9490_port_setup( NULL, pin ) ; // flag as not yet set up
 		arg_data(arg,pin) ;
 		return gbGOOD;
 	} else {

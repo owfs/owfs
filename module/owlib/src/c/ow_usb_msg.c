@@ -250,9 +250,6 @@ void DS9490_close(struct connection_in *in)
 			LEVEL_DEBUG("<%s> Linux kernel driver reattach problem",libusb_error_name(ret)) ;
 		}
 
-		/* It might already be closed? (returning -ENODEV)
-		 * I have seen problem with calling usb_close() twice, so we
-		 * might perhaps skip it if usb_release_interface() fails */
 		libusb_close(usb);
 		in->master.usb.lusb_handle = NULL ;
 		LEVEL_CONNECT("Closed USB DS9490 bus master at %s", DEVICENAME(in));

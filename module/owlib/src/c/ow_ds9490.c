@@ -203,11 +203,19 @@ GOOD_OR_BAD DS9490_detect(struct port_in *pin)
 	struct address_pair ap ;
 	GOOD_OR_BAD gbResult = gbBAD;
 	
+	DS9490_setroutines(in);
+
+	if ( in->master.usb.lusb_dev != NULL ) {
+		// special case: exists (from scan)
+		return DS9490_open_and_name( in->master.usb.lusb_dev, in ) ;
+		// Note DS9490_ID_this_master needs to be called,
+		// but the bus hasn't yet been added.
+		// So it's done in USB_scan_for_adapters
+	}
+		
 	/* uses "name" before it's cleared by connection_init */
-    //fprintf(stderr,"XXXXX Init of USB <%s>\n",SAFESTRING(pin->init_data));
 	Parse_Address( pin->init_data, &ap ) ;
 
-	DS9490_setroutines(in);
 	switch ( ap.entries ) {
 		case 0:
 			// Minimal specification, so use first USB device

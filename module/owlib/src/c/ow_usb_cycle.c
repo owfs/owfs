@@ -39,7 +39,7 @@ GOOD_OR_BAD USB_match(libusb_device * dev)
 	int libusb_err ;
 	
 	if ( (libusb_err=libusb_get_device_descriptor( dev, &lusbd )) != 0 ) {
-		LEVEL_DEBUG("<%s>",libusb_error_name(libusb_err));
+		LEVEL_DEBUG("<%s> Cannot get descriptor",libusb_error_name(libusb_err));
 		return gbBAD ;
 	}
 	
@@ -153,7 +153,7 @@ GOOD_OR_BAD DS9490_ID_this_master(struct connection_in *in)
 }
 
 // return bad if already exists and is open
-// matches bus and address
+// matches usb bus and usb address
 static GOOD_OR_BAD lusbdevice_in_use(int address, int bus_number)
 {
 	struct port_in * pin ; 
@@ -164,17 +164,15 @@ static GOOD_OR_BAD lusbdevice_in_use(int address, int bus_number)
 		if ( pin->busmode != bus_usb ) {
 			continue ;
 		}
+		// cycle through connections (although there is only one each for DS9490)
 		for (cin = pin->first; cin != NO_CONNECTION; cin = cin->next) {
-			if ( cin->master.usb.bus_number != bus_number ) {
-				continue ;
+			LEVEL_DEBUG("Compare (add,bus) (%d,%d) with (%d,%d) handle %p\n",address,bus_number,cin->master.usb.address,cin->master.usb.bus_number,cin->master.usb.lusb_handle);
+			if ( ( cin->master.usb.bus_number == bus_number ) && ( cin->master.usb.address == address ) ) {
+				if ( cin->master.usb.lusb_handle == NULL ) {
+					return gbGOOD ;
+				}
+				return gbBAD;			// It seems to be in use already
 			}
-			if ( cin->master.usb.address != address ) {
-				continue ;
-			}
-			if ( cin->master.usb.lusb_handle != NULL ) {
-				continue ;
-			}
-			return gbBAD;			// It seems to be in use already
 		}
 	}
 	return gbGOOD;					// not found in the current inbound list
