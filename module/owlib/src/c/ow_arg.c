@@ -14,6 +14,7 @@
 #include "owfs_config.h"
 #include "ow.h"
 #include "ow_connection.h"
+#include "ow_usb_msg.h" // for DS9490_port_setup
 
 enum arg_address { arg_addr_device, arg_addr_null, arg_addr_ip, arg_addr_colon, arg_addr_number, arg_addr_other } ;
 
