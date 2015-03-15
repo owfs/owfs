@@ -450,9 +450,6 @@ static GOOD_OR_BAD K1WM_wait_for_read( const struct connection_in * in )
 {
 	int i ;
 	
-	// TODO timing issue?
-	usleep(1000);
-
 	if ( UT_getbit( &DS1WM_interrupt(in), e_ds1wm_rbf ) == 1 ) {
 		return gbGOOD ;
 	}
